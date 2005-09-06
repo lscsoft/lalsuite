@@ -65,7 +65,6 @@ int main( int argc, char *argv[]) {
   /* detector, ephemeris and velocity/position vector */
   LALDetector detector;
   EphemerisData *edat = NULL;
-  LIGOTimeGPSVector **midTs=NULL; /* time stamps of mid points of sfts */
   LIGOTimeGPSVector midTstack, startTsft; 
   REAL8VectorSequence *velStack=NULL, *posStack=NULL; /* velocities and positions at midTstack */
   LALLeapSecFormatAndAcc lsfas = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
@@ -94,6 +93,7 @@ int main( int argc, char *argv[]) {
   INT4  nfSizeCylinder=NFSIZE;
   HOUGHPeakGramVector pgV;
   HoughParams houghPar;
+  HOUGHMapTotal *ht;
 
   /* variables for logging */
   CHAR *fnamelog=NULL;
@@ -390,8 +390,6 @@ int main( int argc, char *argv[]) {
   
   /* set up parameters for Fstat calculation */
   FstatPar.mCohSft = mCohSft;
-  FstatPar.tStack = tStack;
-  FstatPar.nStacks = nStacks;
   FstatPar.timeBase = timeBase;
   FstatPar.refTime = refTime;
   FstatPar.SSBprecision = uvar_SSBprecision;
@@ -401,11 +399,9 @@ int main( int argc, char *argv[]) {
   FstatPar.ts = &startTsft;
   FstatPar.alpha = uvar_alpha;
   FstatPar.delta = uvar_delta;
-  FstatPar.fkdot = NULL;
-  LAL_CALL ( LALDCreateVector( &status, &(FstatPar.fkdot), 2), &status);
-  FstatPar.fkdot->data[0] = uvar_fStart;
-  FstatPar.fkdot->data[1] = uvar_fdot;
-
+  FstatPar.fdot = NULL;
+  LAL_CALL ( LALDCreateVector( &status, &(FstatPar.fdot), 1), &status);
+  FstatPar.fdot->data[0] = uvar_fdot;
 
   /* calculate the Fstatistic */
   LAL_CALL(ComputeFstatStack( &status, &FstatVect, &stackSFTs, &FstatPar), &status);
@@ -424,39 +420,54 @@ int main( int argc, char *argv[]) {
   LAL_CALL( FstatVectToPeakGram( &status, &pgV, &FstatVect, uvar_FstatThr), &status);
 
 
-  /*************** calculate Hough map *************/
+  /*--------------- calculate Hough map ---------------*/
   /* set up the Hough parameters */
+  houghPar.tStart = tStart;
+  houghPar.nfSizeCylinder = nfSizeCylinder;
+  houghPar.detector = detector;
+  houghPar.ts = &midTstack;
+  houghPar.vel = velStack;
+  houghPar.pos = posStack;
+  houghPar.alpha = uvar_alpha;
+  houghPar.delta = uvar_delta;
+  houghPar.fdot = NULL;
+  LAL_CALL ( LALDCreateVector( &status, &(houghPar.fdot), 1), &status);
+  houghPar.fdot->data[0] = uvar_fdot;
+
+  LAL_CALL ( ComputeFstatHoughMap ( &status, ht, &pgV, &houghPar), &status);
+
+  /*------------ free all remaining memory -----------*/
 
 
-  /*********** free all remaining memory **********/
-  /* free timestamp and Vel/Pos vectors */
-  LALFree(startTsft.data);
-  LALFree(midTstack.data);
-  LALFree(mCohSft);
-  LALFree(tStack);
-  LAL_CALL( LALDDestroyVectorSequence (&status,  &velStack), &status);
-  LAL_CALL( LALDDestroyVectorSequence (&status,  &posStack), &status);
-
+  /* these can be moved to after Fstat calculation */
   for(k=0; k<nStacks; k++) {
     LALFree(FstatVect.data[k].data->data);
     LALFree(FstatVect.data[k].data);
   }
   LALFree(FstatVect.data);
-
+  LAL_CALL (LALDestroySFTVector(&status, &inputSFTs),&status );
+  LAL_CALL (LALDDestroyVector (&status, &(FstatPar.fdot)), &status);
+  LAL_CALL (LALDDestroyVector (&status, &(houghPar.fdot)), &status);
   LALFree(stackSFTs.data);
+  LALFree(startTsft.data);
+  LALFree(mCohSft);
+
+  /* these can be moved to after hough map calculation */
+  /* free peakgrams */
+  for (k=0; k<nStacks; k++) 
+    LALFree(pgV.pg[k].peak);
+  LALFree(pgV.pg);
+  /* free timestamp and Vel/Pos vectors */
+  LALFree(midTstack.data);
+  LALFree(tStack);
+  LAL_CALL( LALDDestroyVectorSequence (&status,  &velStack), &status);
+  LAL_CALL( LALDDestroyVectorSequence (&status,  &posStack), &status);
 
   /* free ephemeris */
   LALFree(edat->ephemE);
   LALFree(edat->ephemS);
   LALFree(edat);
 
-  /* free peakgrams */
-  for (k=0; k<nStacks; k++) 
-    LALFree(pgV.pg[k].peak);
-  LALFree(pgV.pg);
-
-  LAL_CALL (LALDestroySFTVector(&status, &inputSFTs),&status );
-  LAL_CALL (LALDDestroyVector (&status, &(FstatPar.fkdot)), &status);
   LAL_CALL (LALDestroyUserVars(&status), &status);  
 
   LALCheckMemoryLeaks();
@@ -470,39 +481,50 @@ void ComputeFstatStack (LALStatus *status,
 			const SFTVectorSequence *stackSFTs, 
 			FstatStackParams *params)
 {
+  /* stuff copied from params */
+  REAL8 timeBase = params->timeBase; /* can also be copied from SFTs */
+  REAL8 refTime = params->refTime;
+  INT4 *mCohSft = params->mCohSft;
+  REAL8Vector *fdot = params->fdot;
+
+  /* stuff copied from output Fstat vector */
+  INT4 binsFstat = out->data->data->length;
+  INT4 nStacks = out->length;
+  REAL8 deltaF = out->data->deltaF;
+  REAL8 fStart = out->data->f0;
+
+  /* other variables */
   SSBtimes tSSB;
   AMCoeffs amcoe;
   SkyPosition skyPoint;
   DetectorStateSeries *DetectorStates=NULL;
   LIGOTimeGPSVector timeStack;
-  REAL8 timeBase = params->timeBase;
-  REAL8 refTime = params->refTime;
-  REAL8 deltaF = out->data->deltaF;
   INT4 k, j, indexSft;
-  INT4 binsFstat = out->data->data->length;
-  INT4 nStacks = params->nStacks;
-  REAL8Vector *fkdot = params->fkdot;
-  REAL8Vector *fkdot1=NULL;
-  INT4 *mCohSft = params->mCohSft;
+  REAL8Vector *fkdot=NULL;
   LIGOTimeGPS tempRef;
 
   INITSTATUS( status, "ComputeFstatStack", rcsid );
   ATTATCHSTATUSPTR (status);
 
+  /* other stuff copied from params */
   skyPoint.longitude = params->alpha;
   skyPoint.latitude = params->delta;
   skyPoint.system = COORDINATESYSTEM_EQUATORIAL;
   TRY (LALNormalizeSkyPosition( status->statusPtr, &skyPoint, &skyPoint), status);
 
+  /* set reference time in GPS struct */
   TRY (LALFloatToGPS ( status->statusPtr, &tempRef, &refTime), status);
 
-  fkdot1 = NULL;
-  TRY ( LALDCreateVector( status->statusPtr, &(fkdot1), 2), status);
-  fkdot1->data[1] = fkdot->data[1];
+  /* copy spindown */
+  fkdot = NULL;
+  TRY ( LALDCreateVector( status->statusPtr, &(fkdot), 2), status);
+  fkdot->data[1] = fdot->data[0];
 
+  /* start loop over stacks */
   indexSft = 0;
   for(k=0; k<nStacks; k++) {
 
+    /* set timestamps vector for sfts in stack */
     timeStack.length = mCohSft[k];
     timeStack.data = params->ts->data + indexSft;
 
@@ -517,16 +539,18 @@ void ComputeFstatStack (LALStatus *status,
     amcoe.b = NULL;
     TRY (LALSCreateVector(status->statusPtr, &(amcoe.a), mCohSft[k]), status);
     TRY (LALSCreateVector(status->statusPtr, &(amcoe.b), mCohSft[k]), status);
+
     /* allocate memory for tssb */
     tSSB.DeltaT = NULL;
     tSSB.Tdot = NULL;
     TRY ( LALDCreateVector(status->statusPtr, &(tSSB.DeltaT), mCohSft[k]), status );
     TRY ( LALDCreateVector(status->statusPtr, &(tSSB.Tdot), mCohSft[k]), status );
 
+    /* loop over frequency bins and get Fstatistic */
     for(j=0; j<binsFstat; j++) {
 
       /* increase frequency value */
-      fkdot1->data[0] = fkdot->data[0] + j*deltaF;
+      fkdot->data[0] = fStart + j*deltaF;
 
       /* transform to SSB frame */ 
       TRY ( LALGetSSBtimes ( status->statusPtr, &tSSB, DetectorStates, skyPoint, 
@@ -543,7 +567,7 @@ void ComputeFstatStack (LALStatus *status,
 	REAL4 At, Bt, Ct;
 	REAL4 FaRe, FaIm, FbRe, FbIm;
 	
-	XLALComputeFaFb ( &FaFb, stackSFTs->data + k, fkdot1, &tSSB, 
+	XLALComputeFaFb ( &FaFb, stackSFTs->data + k, fkdot, &tSSB, 
 			  &amcoe, params->Dterms);
 	At = amcoe.A;
 	Bt = amcoe.B;
@@ -555,29 +579,32 @@ void ComputeFstatStack (LALStatus *status,
 	FbIm = FaFb.Fb.im;
 	
 	fact = 2.0f / (1.0f * stackSFTs->data[k].length * amcoe.D);    
-	
+
+	/* fill up output vector */	
 	out->data[k].data->data[j] = fact * (Bt * (FaRe*FaRe + FaIm*FaIm) 
 					     + At * (FbRe*FbRe + FbIm*FbIm) 
 					     - 2.0f * Ct *(FaRe*FbRe + FaIm*FbIm) );
-      } /* fstat calculation block */
+      } /* end fstat calculation block */
     
-    } /* loop over frequencies */
+    } /* end loop over frequencies */
 
+    /* increment over correct number of sfts */
     indexSft += mCohSft[k];
 
+    /*---------- clear memory -----------*/
     /* destroy DetectorStateSeries */
     TRY ( LALDestroyDetectorStateSeries (status->statusPtr, &DetectorStates), status);
 
-      /* Free AM-coefficients */
+    /* Free AM-coefficients */
     TRY (LALSDestroyVector(status->statusPtr, &(amcoe.a)), status);
     TRY (LALSDestroyVector(status->statusPtr, &(amcoe.b)), status);
     /* Free SSB-times */
     TRY (LALDDestroyVector(status->statusPtr, &(tSSB.DeltaT)), status);
     TRY (LALDDestroyVector(status->statusPtr, &(tSSB.Tdot)), status);
 
-  } /* loop over stacks */
+  } /* end loop over stacks */
 
-  TRY (LALDDestroyVector ( status->statusPtr, &(fkdot1)), status);
+  TRY (LALDDestroyVector ( status->statusPtr, &(fkdot)), status);
   
   DETATCHSTATUSPTR (status);
   RETURN(status); 
@@ -588,7 +615,7 @@ void ComputeFstatStack (LALStatus *status,
 
 void ComputeFstatHoughMap(LALStatus *status,
 			  HOUGHMapTotal   *ht,   /* the total Hough map */
-			  const HOUGHPeakGramVector *pgV,
+			  const HOUGHPeakGramVector *pgV, /* peakgram vector */
 			  HoughParams *params)
 {
 
@@ -603,51 +630,65 @@ void ComputeFstatHoughMap(LALStatus *status,
   static HOUGHSizePar    parSize; 
 
   UINT2  xSide, ySide, maxNBins, maxNBorders;
-  INT8  f0Bin, fLastBin, fBin;
-  INT4  iHmap, nSpin1Max, mObsCoh, nfSizeCylinder;
+  INT8  fBinIni, fBinFin, fBin;
+  INT4  k, iHmap, nSpin1Max, nStacks, nfSizeCylinder;
   REAL8 deltaF, alpha, delta;
-  REAL8 patchSizeX, patchSizeY, f1jump;
-  static REAL8Cart3CoorVector velV;
-  static LIGOTimeGPSVector   timeV;
-  static REAL8Vector timeDiffV;
+  REAL8 patchSizeX, patchSizeY, f1jump, tStart;
+  REAL8VectorSequence *vel, *pos;
+  REAL8Vector *fdot;
+  LIGOTimeGPSVector   *ts;
+  REAL8Vector timeDiffV;
 
   INITSTATUS( status, "ComputeFstatHoughMap", rcsid );
   ATTATCHSTATUSPTR (status);
 
   /* copy some params to local variables */
-  mObsCoh = params->nStacks;
   nfSizeCylinder = params->nfSizeCylinder;
-  deltaF = pgV->pg->deltaF;
   alpha = params->alpha;
   delta = params->delta;
+  vel = params->vel;
+  pos = params->pos;
+  fdot = params->fdot;
+  ts = params->ts;
+  tStart = params->tStart;
+
+  /* copy some parameters from peakgram vector */
+  deltaF = pgV->pg->deltaF;
+  fBinIni = pgV->pg->fBinIni;
+  fBinFin = pgV->pg->fBinFin;
+  nStacks = pgV->length;
+
+  /* set patch size */
+  /* this is supposed to be the "educated guess" 
+     delta theta = 1.0 / (Tcoh * f0 * Vepi )
+     where Tcoh is coherent time baseline, 
+     f0 is frequency and Vepi is rotational velocity 
+     of detector */
+  patchSizeX = 1.0 / ( fBinFin * VEPI ); 
+  patchSizeY = 1.0 / ( fBinFin * VEPI ); 
 
   /* first memory allocation */
-  lutV.length    = mObsCoh;
+  lutV.length = nStacks;
   lutV.lut = NULL;
-  lutV.lut = (HOUGHptfLUT *)LALMalloc(mObsCoh*sizeof(HOUGHptfLUT));
+  lutV.lut = (HOUGHptfLUT *)LALMalloc(nStacks*sizeof(HOUGHptfLUT));
   
-  phmdVS.length  = mObsCoh;
+  phmdVS.length  = nStacks;
   phmdVS.nfSize  = nfSizeCylinder;
   phmdVS.deltaF  = deltaF;
   phmdVS.phmd = NULL;
-  phmdVS.phmd=(HOUGHphmd *)LALMalloc(mObsCoh*nfSizeCylinder*sizeof(HOUGHphmd));
+  phmdVS.phmd=(HOUGHphmd *)LALMalloc(nStacks*nfSizeCylinder*sizeof(HOUGHphmd));
   
   freqInd.deltaF = deltaF;
-  freqInd.length = mObsCoh;
+  freqInd.length = nStacks;
   freqInd.data = NULL;
-  freqInd.data =  ( UINT8 *)LALMalloc(mObsCoh*sizeof(UINT8));
-  
- 
-  /* Case: no spins-demodulaton  or Non demodulation (SFT input)*/
+  freqInd.data =  ( UINT8 *)LALMalloc(nStacks*sizeof(UINT8));
+   
+  /* Case: no spindown */
   parDem.deltaF = deltaF;
   parDem.skyPatch.alpha = alpha;
   parDem.skyPatch.delta = delta;
-  parDem.timeDiff = 0.0;
-  parDem.spin.length = 0;
-  parDem.spin.data = NULL;
-  parDem.positC.x = 0.0;
-  parDem.positC.y = 0.0;
-  parDem.positC.z = 0.0;
+  parDem.spin.length = fdot->length;
+  parDem.spin.data = fdot->data;
   
   parRes.deltaF = deltaF;
   parRes.patchSkySizeX  = patchSizeX;
@@ -656,21 +697,31 @@ void ComputeFstatHoughMap(LALStatus *status,
   parRes.pixErr = PIXERR;
   parRes.linErr = LINERR;
   parRes.vTotC = VTOT;
-  
-  fBin= f0Bin;
+
+  /* initialization */  
+  fBin= fBinIni;
   iHmap = 0;
 
+  /* calculate time differences from start of observation time */
+  timeDiffV.length = nStacks;
+  timeDiffV.data = (REAL8 *)LALMalloc( nStacks * sizeof(REAL8));
+  for (k=0; k<nStacks; k++) {
+    REAL8 tMidStack;
+
+    TRY ( LALGPStoFloat ( status->statusPtr, &tMidStack, ts->data + k), status);
+    timeDiffV.data[k] = tMidStack - tStart;
+  }
+
   /* if there are spindowns */
-  nSpin1Max = floor(nfSizeCylinder/2.0);
-  f1jump = 1./timeDiffV.data[mObsCoh - 1];
+  nSpin1Max = floor(nfSizeCylinder/2.0); /* max number of spindowns */
+  f1jump = 1./timeDiffV.data[nStacks - 1]; /* resolution in fdot */
   
   /* start main Hough calculation */
-  while( fBin <= fLastBin){
+  while( fBin <= fBinFin){
     INT8 fBinSearch, fBinSearchMax;
     UINT4 i,j; 
     REAL8UnitPolarCoor sourceLocation;
-    
-	
+    	
     parRes.f0Bin =  fBin;      
     TRY( LALHOUGHComputeSizePar( status->statusPtr, &parSize, &parRes ),  status );
     xSide = parSize.xSide;
@@ -678,7 +729,7 @@ void ComputeFstatHoughMap(LALStatus *status,
     maxNBins = parSize.maxNBins;
     maxNBorders = parSize.maxNBorders;
 	
-    /* *******************create patch grid at fBin ****************  */
+    /*------------------ create patch grid at fBin ----------------------*/
     patch.xSide = xSide;
     patch.ySide = ySide;
     patch.xCoor = NULL;
@@ -687,7 +738,7 @@ void ComputeFstatHoughMap(LALStatus *status,
     patch.yCoor = (REAL8 *)LALMalloc(ySide*sizeof(REAL8));
     TRY( LALHOUGHFillPatchGrid( status->statusPtr, &patch, &parSize ), status );
     
-    /*************** other memory allocation and settings************ */
+    /*------------- other memory allocation and settings----------------- */
     for(j=0; j<lutV.length; ++j){
       lutV.lut[j].maxNBins = maxNBins;
       lutV.lut[j].maxNBorders = maxNBorders;
@@ -712,11 +763,16 @@ void ComputeFstatHoughMap(LALStatus *status,
       phmdVS.phmd[j].firstColumn = (UCHAR *)LALMalloc(ySide*sizeof(UCHAR));
     }
     
-    /* ************* create all the LUTs at fBin ********************  */  
-    for (j=0;j< mObsCoh;++j){  /* create all the LUTs */
-      parDem.veloC.x = velV.data[j].x;
-      parDem.veloC.y = velV.data[j].y;
-      parDem.veloC.z = velV.data[j].z;      
+    /*------------------- create all the LUTs at fBin ---------------------*/  
+    for (j=0; j < (UINT4)nStacks; j++){  /* create all the LUTs */
+      parDem.veloC.x = vel->data[3*j];
+      parDem.veloC.y = vel->data[3*j + 1];
+      parDem.veloC.z = vel->data[3*j + 2];      
+      parDem.positC.x = pos->data[3*j];
+      parDem.positC.y = pos->data[3*j + 1];
+      parDem.positC.z = pos->data[3*j + 2];
+      parDem.timeDiff = 0.0;
+
       /* calculate parameters needed for buiding the LUT */
       TRY( LALHOUGHParamPLUT( status->statusPtr, &parLut, &parSize, &parDem),status );
       /* build the LUT */
@@ -724,46 +780,41 @@ void ComputeFstatHoughMap(LALStatus *status,
 	   status );
     }
     
-    /************* build the set of  PHMD centered around fBin***********/     
+    /*--------- build the set of  PHMD centered around fBin -------------*/     
     phmdVS.fBinMin = fBin-floor(nfSizeCylinder/2.);
     TRY( LALHOUGHConstructSpacePHMD(status->statusPtr, &phmdVS, pgV, &lutV), status );
     
-    /* ************ initializing the Total Hough map space *********** */   
+    /*-------------- initializing the Total Hough map space ------------*/   
     ht->xSide = xSide;
     ht->ySide = ySide;
-    ht->mObsCoh = mObsCoh;
+    ht->mObsCoh = nStacks;
     ht->deltaF = deltaF;
     ht->map   = NULL;
     ht->map   = (HoughTT *)LALMalloc(xSide*ySide*sizeof(HoughTT));
     TRY( LALHOUGHInitializeHT( status->statusPtr, ht, &patch), status); /*not needed */
     
-    /******************************************************************/
+
     /*  Search frequency interval possible using the same LUTs */
     fBinSearch = fBin;
-    fBinSearchMax= fBin + parSize.nFreqValid -1-floor( (nfSizeCylinder-1)/2.);
+    fBinSearchMax = fBin + parSize.nFreqValid -1-floor( (nfSizeCylinder-1)/2.);
     
-    /** >>>>>>>>>>>>>>>>>>>>>>>>>>>>> * <<<<<<<<<<<<<<<<<<<<<<<<<<<< **/
-    /* Study all possible frequencies with one set of LUT */
-    /** >>>>>>>>>>>>>>>>>>>>>>>>>>>>> * <<<<<<<<<<<<<<<<<<<<<<<<<<<< **/
-    
-    while ( (fBinSearch <= fLastBin) && (fBinSearch < fBinSearchMax) )  { 
+ 
+    /* Study all possible frequencies with one set of LUT */    
+    while ( (fBinSearch <= fBinFin) && (fBinSearch < fBinSearchMax) )  { 
       
-      /**********************************************/
-      /* Case: No spin-down.  Study the fBinSearch */
-      /**********************************************/
+
+      /* Case: No spin-down. Study the fBinSearch */
       ht->f0Bin = fBinSearch;
       ht->spinRes.length =0;
       ht->spinRes.data = NULL;
-      for (j=0;j< mObsCoh;++j){	freqInd.data[j]= fBinSearch; } 
+      for (j=0; j < (UINT4)nStacks; j++)
+	freqInd.data[j]= fBinSearch; 
       TRY( LALHOUGHConstructHMT( status->statusPtr, ht, &freqInd, &phmdVS ), status );
             
-      
       ++iHmap;
-      
-      
-      /********************************************/
+            
+
       /* Case: 1 spin-down. at  fBinSearch */
-      /********************************************/
       {
 	INT4   n;
 	REAL8  f1dis;
@@ -776,29 +827,28 @@ void ComputeFstatHoughMap(LALStatus *status,
 	  f1dis = - n*f1jump;
 	  ht->spinRes.data[0] =  f1dis*deltaF;
 	  
-	  for (j=0;j< mObsCoh;++j){
+	  for (j=0; j < (UINT4)nStacks; j++)
 	    freqInd.data[j] = fBinSearch +floor(timeDiffV.data[j]*f1dis+0.5);
-	  }
 	  
 	  TRY( LALHOUGHConstructHMT(status->statusPtr, ht, &freqInd, &phmdVS),status );
 	  	  
 	  
 	  ++iHmap;
 	  
-	}
+	} /* end loop over nSpin1Max */
 	LALFree(ht->spinRes.data);
       }
       
-      /********************************************/
-      /* *** shift the search freq. & PHMD structure 1 freq.bin ****** */
+
+      /*------ shift the search freq. & PHMD structure 1 freq.bin -------*/
       ++fBinSearch;
       TRY( LALHOUGHupdateSpacePHMDup(status->statusPtr, &phmdVS, pgV, &lutV), status );
       
-    }   /* ********>>>>>>  closing second while  <<<<<<<<**********<  */
+    }   /* closing second while  */
     
     fBin = fBinSearch;
     
-    /* ********************  Free partial memory ******************* */
+    /*--------------  Free partial memory -----------------*/
     LALFree(patch.xCoor);
     LALFree(patch.yCoor);
     
@@ -815,13 +865,13 @@ void ComputeFstatHoughMap(LALStatus *status,
       LALFree( phmdVS.phmd[j].firstColumn);
     }
     
-  } /* closing while */
+  } /* closing first while */
   
   /* free remaining memory */
   LALFree(lutV.lut);
   LALFree(phmdVS.phmd);
   LALFree(freqInd.data);
-
+  LALFree(timeDiffV.data);
   DETATCHSTATUSPTR (status);
   RETURN(status);
 
@@ -849,10 +899,10 @@ void FstatVectToPeakGram (LALStatus *status,
   for (k=0; k<nStacks; k++) {
     INT4 *pInt; /* temporary pointer */
     REAL8 *pV;  /* temporary pointer */
-
+    REAL8 f0, deltaF;
     pV = FstatVect->data[k].data->data;
 
-    /* loop over stack, count peaks, and set upg values */
+    /* loop over Fstat vector, count peaks, and set upg values */
     nPeaks = 0;
     for(j=0; j<nSearchBins; j++) {
       if ( pV[j] > thr ) {
@@ -863,10 +913,19 @@ void FstatVectToPeakGram (LALStatus *status,
 	upg[j] = 0;
     }
 
+    /* fix length of peakgram and allocate memory appropriately */
     pgV->pg[k].length = nPeaks; 
     pgV->pg[k].peak = (INT4 *)LALMalloc( nPeaks * sizeof(INT4)); 
-    pInt = pgV->pg[k].peak;
+
+    /* fill up other peakgram parameters */
+    pgV->pg[k].deltaF = FstatVect->data[k].deltaF;
+    f0 = FstatVect->data[k].f0;
+    deltaF = FstatVect->data[k].deltaF;
+    pgV->pg[k].fBinIni = floor( f0/deltaF + 0.5);
+    pgV->pg[k].fBinFin = pgV->pg[k].fBinIni + nSearchBins - 1;
+
     /* do loop again and fill peakgram vector */
+    pInt = pgV->pg[k].peak;
     for (j=0; j<nSearchBins; j++) {
       if ( upg[j] == 1) {
 	*pInt = j;

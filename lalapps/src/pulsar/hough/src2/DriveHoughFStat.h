@@ -121,8 +121,6 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
   /** parameters for calculating Fstatistic for multiple stacks */ 
   typedef struct tagFstatStackParams {
     INT4 *mCohSft;          /**< number of sfts in each stack */
-    REAL8 *tStack;          /**< duration of each stack */
-    INT4 nStacks;           /**< number of stacks */
     REAL8 timeBase;         /**< time baseline of SFTs */
     REAL8 refTime;          /**< reference time for pulsar frequency and spndn. */
     INT4 SSBprecision;      /**< precision for transformation from detector to SSB times*/
@@ -132,32 +130,23 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
     LIGOTimeGPSVector *ts;  /**< timestamp vector for each sft */
     REAL8 alpha;            /**< sky-location -- right acsension */
     REAL8 delta;            /**< sky-location -- declination */
-    REAL8Vector *fkdot;     /**< vector containing frequency and spindown values */
+    REAL8Vector *fdot;      /**< vector containing spindown values */
   } FstatStackParams;
 
-  /** parameters for calculating a Hough Map */
+  /** parameters for calculating Hough Maps */
   typedef struct tagHoughParams {
-    INT4 *mCohSft;             /**< number of SFTs in each stack */
-    INT4 nStacks;              /**< number ofs tacks */
-    REAL8 fBand;               /**< frequency band */
+    REAL8 tStart;              /**< start time of first stack */
     INT4 nfSizeCylinder;       /**< cylinder of LUTs */
     LALDetector detector;      /**< detector */
-    EphemerisData *edat;       /**< ephemeris data */
     LIGOTimeGPSVector *ts;     /**< timestamps of mid points of stacks */
     REAL8VectorSequence *vel;  /**< detector velocity for each stack */
     REAL8VectorSequence *pos;  /**< detector position for each stack */
     REAL8 alpha;               /**< right ascension */
     REAL8 delta;               /**< declination */
-    REAL8Vector *spindown;     /**< spindown parameters */
+    REAL8Vector *fdot;     /**< spindown parameters */
   } HoughParams;
 
-  /* keep this here just for now */
-  typedef struct tagREAL8Cart3CoorVector{
-    UINT4   	  length; /* number of elements */
-    REAL8Cart3Coor  *data; /* x.y.z */
-  } REAL8Cart3CoorVector;  
   
-
   void ComputeFstatStack (LALStatus *status, 
 			  REAL8FrequencySeriesVector *out, 
 			  const SFTVectorSequence *sfts, 
