@@ -342,6 +342,9 @@ int main( int argc, char *argv[] )
   SnglInspiralTable  *thisLoudestEvent = NULL;
   SimInspiralTable   *thisSimInspiral = NULL;
   SimInstParamsTable *thisSimInstParams = NULL;
+  SimInspiralTable   *bankSimHead = NULL;
+  SimInspiralTable   *thisBankSim = NULL;
+  FindChirpBankSimParams *bankSimParamsPtr = NULL;
 
   /* injection information */
   int                  numInjections = 0;
@@ -1471,7 +1474,6 @@ int main( int argc, char *argv[] )
   {
     if ( vrbflg ) fprintf( stdout, "initializing template bank simulation\n" );
 
-
     /* use the created random parameters */
     bankSimParams.randParams = randParams;
 
@@ -1481,6 +1483,31 @@ int main( int argc, char *argv[] )
     fcInitParams->numChisqBins = 0;
     snrThresh                  = 0;
     chisqThresh                = LAL_REAL4_MAX;
+
+    if ( bankSimFileName )
+    {
+      /* read in the simuation parameters from a sim_inspiral_table */
+      bankSim = SimInspiralTableFromLIGOLw( &bankSimHead, bankSimFileName,
+          0, 0 );
+      for ( thisBankSim = bankSimHead; thisBankSim; 
+          thisBankSim = thisBankSim->next )
+      {
+        /* set the time of the injection to zero so it is injected in  */
+        /* the middle of the data segment: the other times are ignored */
+        thisBankSim->geocent_end_time.gpsSeconds = 0;
+        thisBankSim->geocent_end_time.gpsNanoSeconds = 0;
+      }
+      thisBankSim = bankSimHead;
+      if ( vrbflg ) fprintf( stdout, "Read %d bank sim parameters from %s\n",
+            bankSim, bankSimFileName );
+    }
+    else
+    {
+      /* use the bank sim params to generate the simulated signals */
+      bankSimParamsPtr = &bankSimParams;
+      if ( vrbflg ) 
+        fprintf( stdout, "internally generating bank sim siganls\n" );
+    }
 
     bankSimCut = XLALFindChirpBankSimInitialize( &spec, &resp, fLow );
 
@@ -1588,12 +1615,12 @@ int main( int argc, char *argv[] )
       /* inject a random signal if we are doing a template bank simulation */ 
       if ( ! siminspiral.simInspiralTable )
         thisSimInspiral = siminspiral.simInspiralTable =
-          XLALFindChirpBankSimInjectSignal( dataSegVec, &resp, NULL, 
-              &bankSimParams );
+          XLALFindChirpBankSimInjectSignal( dataSegVec, &resp, thisBankSim, 
+              bankSimParamsPtr );
       else
         thisSimInspiral = thisSimInspiral->next = 
-          XLALFindChirpBankSimInjectSignal( dataSegVec, &resp, NULL, 
-              &bankSimParams );
+          XLALFindChirpBankSimInjectSignal( dataSegVec, &resp, thisBankSim, 
+              bankSimParamsPtr );
 
       /* write the channel data plus injection to the output frame file */
       if ( writeRawData ) outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
@@ -2183,6 +2210,12 @@ int main( int argc, char *argv[] )
       savedEvents.snglInspiralTable = NULL;
     }
 
+    /* increment the bank sim sim_inspiral table if necessary */
+    if ( bankSimHead )
+    {
+      thisBankSim = thisBankSim->next;
+    }
+
   } while ( ++bankSimCount < bankSim ); /* end loop over bank simulations */
 
   if ( bankSim )
@@ -2237,10 +2270,22 @@ int main( int argc, char *argv[] )
     LALFree( bankCurrent );
     bankCurrent = NULL;
   }
+
   /* destroy linked list of template nodes */
   while ( tmpltHead )
   {
     LAL_CALL( LALFindChirpDestroyTmpltNode( &status, &tmpltHead ), &status );
+  }
+
+  /* free any bank sim parameters */
+  if ( bankSimHead )
+  {
+    while ( bankSimHead )
+    {
+      thisBankSim = bankSimHead;
+      bankSimHead = bankSimHead->next;
+      LALFree( thisBankSim );
+    }
   }
 
   /* free the data storage */
