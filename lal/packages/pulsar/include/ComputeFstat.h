@@ -84,9 +84,11 @@ typedef struct
 
 /** Simple container for two REAL8-vectors, namely the SSB-timings DeltaT_alpha  and Tdot_alpha,
  * with one entry per SFT-timestamp. These are required input for XLALNewDemod().
+ * We also store the SSB reference-time tau0.
  */
 typedef struct {
-  REAL8Vector *DeltaT;		/**< Time-difference of SFT-alpha and SFT-0 in SSB-frame */
+  LIGOTimeGPS refTime;
+  REAL8Vector *DeltaT;		/**< Time-difference of SFT-alpha - tau0 in SSB-frame */
   REAL8Vector *Tdot;		/**< dT/dt : time-derivative of SSB-time wrt local time for SFT-alpha */
 } SSBtimes;
 
@@ -122,7 +124,7 @@ LALGetSSBtimes (LALStatus *,
 		SSBtimes *tSSB,
 		const DetectorStateSeries *DetectorStates, 
 		SkyPosition pos,
-		REAL8 refTime,
+		LIGOTimeGPS refTime,
 		SSBprecision precision);
 
 void
