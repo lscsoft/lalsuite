@@ -94,6 +94,7 @@ int main( int argc, char *argv[]) {
   /* hough variables */
   INT4  nfSizeCylinder=NFSIZE;
   HOUGHPeakGramVector pgV;
+  HoughParams houghPar;
 
   /* variables for logging */
   CHAR *fnamelog=NULL;
@@ -376,12 +377,30 @@ int main( int argc, char *argv[]) {
     FstatVect.data[k].data->data = (REAL8 *)LALMalloc( binsFstat * sizeof(REAL8));
   }
   
+  /* set up parameters for Fstat calculation */
+  FstatPar.mCohSft = mCohSft;
+  FstatPar.tStack = tStack;
+  FstatPar.nStacks = nStacks;
+  FstatPar.timeBase = timeBase;
+  FstatPar.refTime = refTime;
+  FstatPar.SSBprecision = uvar_SSBprecision;
+  FstatPar.Dterms = uvar_Dterms;
+  FstatPar.binsFstat = binsFstat;
+  FstatPar.detector = detector;
+  FstatPar.edat = edat;
+  FstatPar.ts = &startTsft;
+  FstatPar.alpha = uvar_alpha;
+  FstatPar.delta = uvar_delta;
+  LAL_CALL ( LALDCreateVector( &status, &(FstatPar.fkdot), 2), &status);
+  FstatPar.fkdot->data[0] = uvar_fStart;
+  FstatPar.fkdot->data[1] = uvar_fdot;
 
-  /* now calculate F-statistic */
 
+  /* calculate the Fstatistic */
+  LAL_CALL(ComputeFstatStack( &status, &FstatVect, &stackSFTs, &FstatPar), &status);
 
   /*------------ select peaks ------------*/ 
-  /* first allocate some memory */
+  /* first allocate memory for peakgrams */
   pgV.length = nStacks;
   pgV.pg = (HOUGHPeakGram *)LALMalloc( nStacks * sizeof(HOUGHPeakGram));
   for (k=0; k<nStacks; k++) {
@@ -440,8 +459,8 @@ int main( int argc, char *argv[]) {
 
 
 void ComputeFstatStack (LALStatus *status, 
-			REAL8FrequencySeriesVector *Fstat, 
-			SFTVectorSequence *stackSFTs, 
+			REAL8FrequencySeriesVector *out, 
+			const SFTVectorSequence *stackSFTs, 
 			FstatStackParams *params)
 {
   SSBtimes *tSSB=NULL;
@@ -451,7 +470,7 @@ void ComputeFstatStack (LALStatus *status,
   LIGOTimeGPSVector timeStack;
   REAL8 timeBase = params->timeBase;
   REAL8 refTime = params->refTime;
-  REAL8 deltaF = Fstat->data->deltaF;
+  REAL8 deltaF = out->data->deltaF;
   INT4 k, j, indexSft;
   INT4 binsFstat = params->binsFstat;
   INT4 nStacks = params->nStacks;
@@ -514,9 +533,9 @@ void ComputeFstatStack (LALStatus *status,
 	
 	fact = 2.0f / (1.0f * stackSFTs->data[k].length * amcoe->D);    
 	
-	Fstat = fact * (Bt * (FaRe*FaRe + FaIm*FaIm) 
-			+ At * (FbRe*FbRe + FbIm*FbIm) 
-			- 2.0f * Ct *(FaRe*FbRe + FaIm*FbIm) );
+	out->data[k].data->data[j] = fact * (Bt * (FaRe*FaRe + FaIm*FaIm) 
+					     + At * (FbRe*FbRe + FbIm*FbIm) 
+					     - 2.0f * Ct *(FaRe*FbRe + FaIm*FbIm) );
       } /* fstat calculation block */
     
     } /* loop over frequencies */
@@ -544,7 +563,7 @@ void ComputeFstatStack (LALStatus *status,
 
 void ComputeFstatHoughMap(LALStatus *status,
 			  HOUGHMapTotal   *ht,   /* the total Hough map */
-			  HOUGHPeakGramVector *pgV,
+			  const HOUGHPeakGramVector *pgV,
 			  HoughParams *params)
 {
 
@@ -561,7 +580,7 @@ void ComputeFstatHoughMap(LALStatus *status,
 
 void FstatVectToPeakGram (LALStatus *status,
 			  HOUGHPeakGramVector *pgV,
-			  REAL8FrequencySeriesVector *FstatVect,
+			  const REAL8FrequencySeriesVector *FstatVect,
 			  REAL8  thr)
 {
   INT4 j, k;

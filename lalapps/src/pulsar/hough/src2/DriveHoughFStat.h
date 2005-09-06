@@ -138,7 +138,7 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 
   /** parameters for calculating a Hough Map */
   typedef struct tagHoughParams {
-    INT4 mCohSft;              /**< number of SFTs in each stack */
+    INT4 *mCohSft;              /**< number of SFTs in each stack */
     INT4 nStacks;              /**< number ofs tacks */
     REAL8 fStart;              /**< start frequency */
     REAL8 fBand;               /**< frequency band */
@@ -157,17 +157,17 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 
   void ComputeFstatStack (LALStatus *status, 
 			  REAL8FrequencySeriesVector *out, 
-			  SFTVectorSequence *sfts, 
+			  const SFTVectorSequence *sfts, 
 			  FstatStackParams *params);
 
   void ComputeFstatHoughMap (LALStatus *status,
 			     HOUGHMapTotal  *ht,  
-			     HOUGHPeakGramVector *pgV,
+			     const HOUGHPeakGramVector *pgV,
 			     HoughParams *params);
 
   void FstatVectToPeakGram (LALStatus *status,
 			    HOUGHPeakGramVector *pgV,
-			    REAL8FrequencySeriesVector *FstatVect,
+			    const REAL8FrequencySeriesVector *FstatVect,
 			    REAL8  thr);
 
   void SetUpStacks1( LALStatus *status,
