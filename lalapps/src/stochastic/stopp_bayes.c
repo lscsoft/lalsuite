@@ -464,6 +464,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       /* close output file */
       fclose(out);
     }
+
     /* output as xml file */
     else
     {
