@@ -788,6 +788,7 @@ XLALFindChirpBankSimInjectSignal (
     {
       /* use injParams so copy the parameters from the input table */
       memcpy( bankInjection, injParams, sizeof(SimInspiralTable) );
+      bankInjection->next = NULL;
     }
     else
     {
