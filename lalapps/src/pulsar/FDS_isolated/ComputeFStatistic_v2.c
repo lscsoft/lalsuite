@@ -85,6 +85,8 @@ RCSID( "$Id$");
 /** convert GPS-time to REAL8 */
 #define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
 
+#define MYMAX(x,y) ( (x) > (y) ? (x) : (y) )
+
 /*---------- internal types ----------*/
 
 /** Detectors Vector; contains all quantities that are 'detector-specific', i.e for which we need an entry per detector */
@@ -771,7 +773,7 @@ InitFStatDetector (LALStatus *status, ConfigVariables *cfg, UINT4 nD)
     if (!uvar_DataFiles)
       strcpy (uvar_DataFiles, ".");
     
-    TRY ( LALReadSFTfiles(status->statusPtr, &(cfg->ifos.sftVects[nD]), f_min, f_max, uvar_Dterms, 
+    TRY ( LALReadSFTfiles(status->statusPtr, &(cfg->ifos.sftVects[nD]), f_min, f_max, MYMAX(uvar_Dterms, uvar_windowsize), 
 			  uvar_DataFiles), status);
   
     /* this normalized by 1/sqrt(Sh), where Sh is the median of |X|^2  
