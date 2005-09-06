@@ -753,6 +753,8 @@ XLALFindChirpBankSimInjectSignal (
   if ( simParams && simParams->approx == FrameFile )
   {
 #ifdef LAL_FRAME_ENABLED
+
+#if 0
     /* add the waveform from a frame file */
     if ( ! simParams->frameName || ! simParams->frameChan )
     {
@@ -818,6 +820,9 @@ XLALFindChirpBankSimInjectSignal (
     }
 
     XLALDestroyREAL4Vector( frameData.data );
+#endif
+    XLALPrintError( "XLAL Error: frame reading not implemented\n" );
+    XLAL_ERROR_NULL( func, XLAL_EINVAL );
 #else
     XLALPrintError( "XLAL Error: LAL not compiled with frame support\n" );
     XLAL_ERROR_NULL( func, XLAL_EINVAL );
