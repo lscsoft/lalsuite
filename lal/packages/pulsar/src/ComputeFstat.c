@@ -84,6 +84,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,
   UINT4 spdnOrder;		/* maximal spindown-orders */
   UINT4 numSFTs;		/* number of SFTs (M in the Notes) */
   UINT4 freqIndex0;		/* index of first frequency-bin in SFTs */
+  UINT4 freqIndex1;		/* index of last frequency-bin in SFTs */
   COMPLEX16 Fa, Fb;
   REAL8 f;		/* !! MUST be REAL8, or precision breaks down !! */
   REAL8 Tsft; 			/* length of SFTs in seconds */
@@ -110,6 +111,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,
   Tsft = 1.0 / sfts->data[0].deltaF;
 
   freqIndex0 = (UINT4) ( sfts->data[0].f0 / sfts->data[0].deltaF + 0.5); /* lowest freqency-index */
+  freqIndex1 = freqIndex0 + sfts->data[0].data->length;
 
   spdnOrder = fkdot->length - 1;
 
@@ -138,7 +140,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,
       REAL4 realXP, imagXP;	/* the sum_k X_alpha_k P_alpha_k */
       REAL4 realQ, imagQ;	/* Re and Im of Q = e^{-i y} */
       REAL4 realQXP, imagQXP;	/* Re/Im of Q_alpha XP_alpha */
-      UINT4 k0;
+      UINT4 k0, k1;
       /* ----- calculate x(alpha,0) and y(alpha) */
       {
 	UINT4 s; 		/* loop-index over spindown-order */
@@ -192,9 +194,10 @@ XLALComputeFaFb ( Fcomponents *FaFb,
       imagXP = 0;
 
       k0 = kstar - Dterms;
-      if ( k0 < freqIndex0 ) {
-	LALPrintError ("\nLowest frequency-index k0=%d outside of SFT-interval (%d)\n\n",
-		       k0, freqIndex0 );
+      k1 = k0 + 2 * Dterms;
+      if ( (k0 < freqIndex0) || (k1 > freqIndex1) ) {
+	LALPrintError ("Required frequency-bins [%d, %d] not covered by SFT-interval [%d, %d]\n\n",
+		       k0, k1, freqIndex0, freqIndex1 );
 	XLAL_ERROR("XLALComputeFaFb", XLAL_EDOM);
       }
 
@@ -420,7 +423,7 @@ LALGetSSBtimes (LALStatus *status,
 		SSBtimes *tSSB,			/**< [out] DeltaT_alpha = T(t_alpha) - T_0; and Tdot(t_alpha) */
 		const DetectorStateSeries *DetectorStates,/**< [in] detector-states at timestamps t_i */
 		SkyPosition pos,		/**< source sky-location */
-		REAL8 refTime,			/**< SSB reference-time T_0 of pulsar-parameters */
+		LIGOTimeGPS refTime,		/**< SSB reference-time T_0 of pulsar-parameters */
 		SSBprecision precision		/**< relativistic or Newtonian SSB transformation? */
 		)
 {
@@ -464,7 +467,7 @@ LALGetSSBtimes (LALStatus *status,
 	  /* DeltaT_alpha */
 	  tSSB->DeltaT->data[i]  = GPS2REAL8 ( (*ti) );
 	  tSSB->DeltaT->data[i] += SCALAR(vn, DetectorStates->data[i].rDetector);
-	  tSSB->DeltaT->data[i] -= refTime;
+	  tSSB->DeltaT->data[i] -= GPS2REAL8 ( refTime );
 
 	  /* Tdot_alpha */
 	  tSSB->Tdot->data[i] = 1.0 + SCALAR(vn, DetectorStates->data[i].vDetector);
@@ -493,7 +496,7 @@ LALGetSSBtimes (LALStatus *status,
 
 	  TRY ( LALBarycenter(status->statusPtr, &emit, &baryinput, &(state->earthState)), status);
 
-	  tSSB->DeltaT->data[i] = GPS2REAL8 ( emit.te ) - refTime;
+	  tSSB->DeltaT->data[i] = GPS2REAL8 ( emit.te ) - GPS2REAL8 ( refTime );
 	  tSSB->Tdot->data[i] = emit.tDot;
 
 	} /* for i < numSteps */
@@ -505,6 +508,8 @@ LALGetSSBtimes (LALStatus *status,
       break;
     } /* switch precision */
 
+  /* finally: store the reference-time used into the output-structure */
+  tSSB->refTime = refTime;
 
   DETATCHSTATUSPTR (status);
   RETURN(status);
