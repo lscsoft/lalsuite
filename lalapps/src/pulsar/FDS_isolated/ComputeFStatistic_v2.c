@@ -107,8 +107,6 @@ typedef struct {
   REAL8 df1dot;			/**< spindown resolution (f1 = df/dt!!) */
   LIGOTimeGPS startTime;	/**< start time of observation */
   LIGOTimeGPS refTime;		/**< reference-time for pulsar-parameters in SBB frame */
-  REAL8 refTime0;		/**< *internal* SSB reference time: e.g. start of observation */
-  REAL8Vector *fkdot0;		/**< start frequency- and spindowns- at internal reference-time */
   REAL8Vector *fkdot;		/**< vector of frequency + derivatives (spindowns)*/
   EphemerisData *edat;		/**< ephemeris data (from LALInitBarycenter()) */
   CHAR *skyRegionString;	/**< sky-region to search (polygon defined by list of points) */
@@ -305,9 +303,6 @@ int main(int argc,char *argv[])
       UINT4 nFreq, nf1dot;	/* number of frequency- and f1dot-bins */
       UINT4 iFreq, if1dot;  	/* counters over freq- and f1dot- bins */
 
-      nFreq =  (UINT4)(uvar_FreqBand  / GV.dFreq + 0.5) + 1;  
-      nf1dot = (UINT4)(uvar_f1dotBand / GV.df1dot+ 0.5) + 1; 
-      
       LAL_CALL (NextDopplerPos( &status, &dopplerpos, &thisScan ), &status);
       if (thisScan.state == STATE_FINISHED) /* scanned all DopplerPositions yet? */
 	break;
@@ -317,31 +312,34 @@ int main(int argc,char *argv[])
       thisPoint.latitude = dopplerpos.Delta;
       thisPoint.system = COORDINATESYSTEM_EQUATORIAL;
       LAL_CALL (LALNormalizeSkyPosition(&status, &thisPoint, &thisPoint), &status);
-      
-      
+
+
+      nFreq =  (UINT4)(uvar_FreqBand  / GV.dFreq + 0.5) + 1;  
+      nf1dot = (UINT4)(uvar_f1dotBand / GV.df1dot+ 0.5) + 1; 
       /*----- loop over first-order spindown values */
       for (if1dot = 0; if1dot < nf1dot; if1dot ++)
 	{
-	  GV.fkdot->data[1] = GV.fkdot0->data[1] + if1dot * GV.df1dot;
+	  GV.fkdot->data[1] = uvar_f1dot + if1dot * GV.df1dot;
 	  
 	  /* Loop over frequencies to be demodulated */
 	  for ( iFreq = 0 ; iFreq < nFreq ; iFreq ++ )
 	    {
-	      GV.fkdot->data[0] = GV.fkdot0->data[0] + iFreq * GV.dFreq;	
+	      GV.fkdot->data[0] = uvar_Freq + iFreq * GV.dFreq;	
 	      
 	      for(nD=0; nD < GV.ifos.length; nD++)
 		{
 		  
 		  /*----- calculate SSB-times DeltaT_alpha and Tdot_alpha for this skyposition */
-		  LAL_CALL ( LALGetSSBtimes (&status, GV.ifos.tSSB[nD],
+		  LAL_CALL ( LALGetSSBtimes (&status, 
+					     GV.ifos.tSSB[nD],
 					     GV.ifos.DetectorStates[nD], 
 					     thisPoint, 
-					     GV.refTime0,
+					     GV.refTime,
 					     uvar_SSBprecision), &status);
 		  
 		  /*----- calculate skypos-specific coefficients a_i, b_i, A, B, C, D */
-		  LAL_CALL ( LALGetAMCoeffs (&status, GV.ifos.amcoe[nD], GV.ifos.DetectorStates[nD], 
-					     thisPoint), &status);
+		  LAL_CALL ( LALGetAMCoeffs (&status, GV.ifos.amcoe[nD], GV.ifos.DetectorStates[nD], thisPoint), 
+			     &status);
 		  
 		  /** Caculate F-statistic using XLALComputeFaFb() */
 		  {
@@ -674,7 +672,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   /* determine start-time from first set of SFTs */
   cfg->startTime = cfg->ifos.sftVects[0]->data[0].epoch;
   
-  
+
   /*---------- Standardise reference-time: ----------*/
   /* translate spindown-paramters {f, fdot, fdotdot..} from the user-specified 
    * reference-time uvar_refTime to the internal reference-time, which 
@@ -684,6 +682,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     UINT4 spdnOrder = 1;	/* hard-coded default FIXME. DON'T change without fixing main() */
  
     REAL8Vector *fkdotRef = NULL;
+    REAL8Vector *fkdot0 = NULL;
     LIGOTimeGPS refTime0;	/* internal reference-time */
 
     if ( LALUserVarWasSet(&uvar_refTime)) {
@@ -691,18 +690,21 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     } else
       cfg->refTime = cfg->startTime;
 
+    /* NOT USEFUL RIGHT NOW: this piece of code should be required 
+     * for figuring out the frequency-interval to read from the SFTs though!\
+     */
+
     TRY ( LALDCreateVector (status->statusPtr, &fkdotRef, 1 + spdnOrder), status);
-    TRY ( LALDCreateVector (status->statusPtr, &(cfg->fkdot0), 1 + spdnOrder), status);
+    TRY ( LALDCreateVector (status->statusPtr, &fkdot0, 1 + spdnOrder), status);
     fkdotRef->data[0] = uvar_Freq;
     if ( spdnOrder > 0 )
       fkdotRef->data[1] = uvar_f1dot;	    /* currently not more spindowns implemented... */
 
     /* currently we use the observation GPS start-time as internal SSB reference-time: */
     refTime0 = cfg->startTime;
-    cfg->refTime0 = GPS2REAL8 (refTime0);
 
     /*----- now translate spin-params to internal reference-time */
-    if ( XLALExtrapolatePulsarSpins ( cfg->fkdot0, refTime0, fkdotRef, cfg->refTime) ) 
+    if ( XLALExtrapolatePulsarSpins ( fkdot0, refTime0, fkdotRef, cfg->refTime) ) 
       {
 	int code = xlalErrno;
 	XLALClearErrno(); 
@@ -711,6 +713,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
       }
 
     TRY ( LALDDestroyVector (status->statusPtr, &fkdotRef), status);
+    TRY ( LALDDestroyVector (status->statusPtr, &fkdot0), status);
   }
 
   DETATCHSTATUSPTR (status);
@@ -989,7 +992,6 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
   LALFree(cfg->edat->ephemS);
   LALFree(cfg->edat);
     
-  TRY (LALDDestroyVector (status->statusPtr, &(cfg->fkdot0)), status);
   TRY (LALDDestroyVector (status->statusPtr, &(cfg->fkdot)), status);
     
   DETATCHSTATUSPTR (status);
