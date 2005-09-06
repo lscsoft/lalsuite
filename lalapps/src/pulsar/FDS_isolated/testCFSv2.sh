@@ -47,7 +47,7 @@ freq=300.4
 f1dot=1e-8
 df1dot=0.3e-8	## search about 3 spindown-values
 
-noiseSigma=0.1
+noiseSigma=10
 
 IFO=LHO
 
@@ -132,7 +132,7 @@ echo "Fstat_v2.dat: "
 cat Fstat_v2.dat
 
 echo
-cmdline="$cmp_code -1 ./Fstat_v1.dat -2 ./Fstat_v2.dat --clusterFiles=0 --Ftolerance=0.04"
+cmdline="$cmp_code -1 ./Fstat_v1.dat -2 ./Fstat_v2.dat --clusterFiles=0 --Ftolerance=0.1"
 echo $cmdline
 if ! eval $cmdline; then
     echo "OUCH... files differ. Something might be wrong..."
