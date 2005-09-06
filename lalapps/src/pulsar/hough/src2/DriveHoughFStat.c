@@ -93,7 +93,7 @@ int main( int argc, char *argv[]) {
   INT4  nfSizeCylinder=NFSIZE;
   HOUGHPeakGramVector pgV;
   HoughParams houghPar;
-  HOUGHMapTotal *ht;
+  HOUGHMapTotal ht;
 
   /* variables for logging */
   CHAR *fnamelog=NULL;
@@ -434,7 +434,7 @@ int main( int argc, char *argv[]) {
   LAL_CALL ( LALDCreateVector( &status, &(houghPar.fdot), 1), &status);
   houghPar.fdot->data[0] = uvar_fdot;
 
-  LAL_CALL ( ComputeFstatHoughMap ( &status, ht, &pgV, &houghPar), &status);
+  LAL_CALL ( ComputeFstatHoughMap ( &status, &ht, &pgV, &houghPar), &status);
 
   /*------------ free all remaining memory -----------*/
 
