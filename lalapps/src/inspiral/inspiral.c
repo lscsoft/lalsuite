@@ -198,7 +198,8 @@ INT4  unitResponse      = 0;            /* set the response to unity    */
 
 /* template bank simulation params */
 INT4  bankSim           = 0;            /* number of template bank sims */
-FindChirpBankSimParams bankSimParams = { 0, 0, -1, -1, NULL, -1};
+CHAR *bankSimFileName   = NULL;         /* file contining sim_inspiral  */
+FindChirpBankSimParams bankSimParams = { 0, 0, -1, -1, NULL, -1, NULL, NULL };
                                         /* template bank sim params     */
 
 /* output parameters */
@@ -2648,10 +2649,14 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "                                 (urandom|integer)\n"\
 "\n"\
 "  --bank-simulation N          perform N injections to test the template bank\n"\
+"                                (sim_inspiral.xml|integer)\n"\
 "  --enable-bank-sim-max        compute the maximum match over the bank\n"\
 "  --disable-bank-sim-max       do not maximize the match over the bank\n"\
 "  --sim-approximant APX        set approximant of the injected waveform to APX\n"\
-"                                 (TaylorT1|TaylorT2|TaylorT3|PadeT1|EOB|GeneratePPN)\n"\
+"                                 (TaylorT1|TaylorT2|TaylorT3|PadeT1|EOB|\n"\
+"                                  GeneratePPN|FrameFile)\n"\
+"  --sim-frame-file F           read the bank sim waveform from frame named F\n"\
+"  --sim-frame-channel C        read the bank sim waveform from frame channel C\n"\
 "  --sim-minimum-mass M         set minimum mass of bank injected signal to M\n"\
 "  --sim-maximum-mass M         set maximum mass of bank injected signal to M\n"\
 "\n"\
@@ -2747,6 +2752,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"rsq-veto-threshold",      required_argument, 0,                '4'},  
     {"enable-bank-sim-max",     no_argument,       0,                '5'},  
     {"disable-bank-sim-max",    no_argument,       0,                '6'},  
+    {"sim-frame-file",          required_argument, 0,                '7'},
+    {"sim-frame-channel",       required_argument, 0,                '8'},
     /* frame writing options */
     {"write-raw-data",          no_argument,       &writeRawData,     1 },
     {"write-filter-data",       no_argument,       &writeFilterData,  1 },
@@ -3459,16 +3466,29 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       case 'K':
-        bankSim = (INT4) atoi( optarg );
-        if ( bankSim < 1 )
+        if ( strstr( optarg, "xml" ) )
         {
-          fprintf( stderr, "invalid argument to --%s:\n"
-              "number of template bank simulations"
-              "must be greater than 1: (%d specified)\n", 
-              long_options[option_index].name, bankSim );
-          exit( 1 );
+          /* we have been passed an xml file name */
+          optarg_len = strlen( optarg ) + 1;
+          bankSimFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+          memcpy( bankSimFileName, optarg, optarg_len );
+          bankSim = 1;
+          ADD_PROCESS_PARAM( "string", "%s", optarg );
         }
-        ADD_PROCESS_PARAM( "int", "%d", bankSim );
+        else
+        {
+          /* parse the agument as an integer numer of simulations */
+          bankSim = (INT4) atoi( optarg );
+          if ( bankSim < 1 )
+          {
+            fprintf( stderr, "invalid argument to --%s:\n"
+                "number of template bank simulations"
+                "must be greater than 1: (%d specified)\n", 
+                long_options[option_index].name, bankSim );
+            exit( 1 );
+          }
+          ADD_PROCESS_PARAM( "int", "%d", bankSim );
+        }
         break;
 
       case 'L':
@@ -3496,11 +3516,15 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           bankSimParams.approx = GeneratePPN;
         }
+        else if ( ! strcmp( "FrameFile", optarg ) )
+        {
+          bankSimParams.approx = FrameFile;
+        }
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
-              "unknown order specified: %s\n(must be one of "
-              "TaylorT1, TaylorT2, TaylorT3, PadeT1, EOB, GeneratePPN)\n", 
+              "unknown order specified: %s\n(must be one of TaylorT1, "
+              "TaylorT2, TaylorT3, PadeT1, EOB, GeneratePPN, FrameFile)\n", 
               long_options[option_index].name, optarg );
           exit( 1 );
         }
@@ -3728,6 +3752,22 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case '6':
         bankSimParams.maxMatch = 0;
         ADD_PROCESS_PARAM( "string", "%s", " " );
+        break;
+
+      case '7':
+        /* create storage for the bank sim frame file name */
+        optarg_len = strlen( optarg ) + 1;
+        bankSimParams.frameName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( bankSimParams.frameName, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+
+      case '8':
+        /* create storage for the bank sim frame file channel */
+        optarg_len = strlen( optarg ) + 1;
+        bankSimParams.frameChan = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( bankSimParams.frameChan, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case '?':
@@ -4147,49 +4187,65 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     exit( 1 );
   }
 
-  /* check that if we are doing a bank sim that an approx has been given */
+  /* check the bank simulation parameters */
   if ( bankSim )
   {
-    if ( ! haveBankSimApprox )
-    {
-      fprintf( stderr, "--sim-approximant must be specified if "
-          "--bank-simulation is given\n" );
-      exit( 1 );
-    }
     if ( bankSimParams.maxMatch < 0 )
     {
       fprintf( stderr, "--enable-bank-sim-max or --disable-bank-sim-max "
           "must be specified\n" );
       exit( 1 );
     }
-    if ( randSeedType == unset )
+
+    if ( ! bankSimFileName )
     {
-      fprintf( stderr, "--random-seed must be specified if "
-          "--bank-simulation is given\n" );
-      exit( 1 );
-    }
-    if ( bankSimParams.minMass < 0 )
-    {
-      fprintf( stderr, "--sim-minimum-mass must be specified if "
-          "--bank-simulation is given\n" );
-      exit( 1 );
-    }
-    if ( bankSimParams.maxMass < 0 )
-    {
-      fprintf( stderr, "--sim-maximum-mass must be specified "
-          "--bank-simulation is given\n" );
-      exit( 1 );
+      if ( ! haveBankSimApprox )
+      {
+        fprintf( stderr, "--sim-approximant must be specified if "
+            "--bank-simulation is not a sim_inspiral file\n" );
+        exit( 1 );
+      }
+
+      if ( bankSimParams.approx == FrameFile )
+      {
+        if ( ! bankSimParams.frameName || ! bankSimParams.frameChan )
+        {
+          fprintf( stderr, "--sim-frame-file and --sim-frame-channel\n"
+              "must be specified if --sim-approximant is FrameFile\n" );
+          exit( 1 );
+        }
+      }
+      else
+      {
+        if ( randSeedType == unset )
+        {
+          fprintf( stderr, "--random-seed must be specified if\n"
+              "--bank-simulation is given and approx is not FrameFile\n" );
+          exit( 1 );
+        }
+        if ( bankSimParams.minMass < 0 )
+        {
+          fprintf( stderr, "--sim-minimum-mass must be specified if\n"
+              "--bank-simulation is given and approx is not FrameFile\n" );
+          exit( 1 );
+        }
+        if ( bankSimParams.maxMass < 0 )
+        {
+          fprintf( stderr, "--sim-maximum-mass must be specified if\n"
+              "--bank-simulation is given and approx is not FrameFile\n" );
+          exit( 1 );
+        }
+      }
     }
   }
 
-  if (mmFast >= 0.0)
+  if ( mmFast >= 0.0 )
   {
-    if (mmFast > minimalMatch)
+    if ( mmFast > minimalMatch )
     {
-      fprintf (stderr, "The argument of --fast (%e) cannot exceed the "
-          "minimalMatch (%e)\n",
-          mmFast, minimalMatch);
-      exit (1);
+      fprintf( stderr, "the argument of --fast (%e) cannot exceed the "
+          "minimalmatch (%e)\n", mmFast, minimalMatch );
+      exit( 1 );
     }
   }
 
