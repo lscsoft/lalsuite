@@ -264,7 +264,7 @@ LALFindChirpInjectSignals (
       CHECKSTATUSPTR( status );
 
       waveformStartTime += (INT8) ( 1000000000.0 * 
-          ((REAL8) (chan->data->length - ppnParams.length) / 2) * chan->deltaT
+          ((REAL8) (chan->data->length - ppnParams.length) / 2.0) * chan->deltaT
           );
     }
 
@@ -733,6 +733,9 @@ XLALFindChirpBankSimInjectSignal (
   REAL4                 M, mu;
   FrStream             *frStream = NULL;
   REAL4TimeSeries       frameData;
+  INT8                  waveformStartTime = 0;
+  UINT4                 waveformLengthCtr = 0;
+  UINT4                 i;
 
   memset( &status, 0, sizeof(LALStatus) );
 
@@ -749,6 +752,7 @@ XLALFindChirpBankSimInjectSignal (
 
   if ( simParams && simParams->approx == FrameFile )
   {
+#ifdef LAL_FRAME_ENABLED
     /* add the waveform from a frame file */
     if ( ! simParams->frameName || ! simParams->frameChan )
     {
@@ -759,6 +763,10 @@ XLALFindChirpBankSimInjectSignal (
 
     fprintf( stderr, "reading data from %s %s\n", 
         simParams->frameName, simParams->frameChan );
+    LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR),
+        "%s", simParams->frameName );
+    LALSnprintf( bankInjection->source, LIGOMETA_SOURCE_MAX * sizeof(CHAR),
+        "%s", simParams->frameChan );
 
     frStream = XLALFrOpen( NULL, simParams->frameName );
     XLALFrSetMode( frStream, LAL_FR_VERBOSE_MODE );
@@ -767,9 +775,17 @@ XLALFindChirpBankSimInjectSignal (
     LALSnprintf( frameData.name, 
         sizeof(frameData.name) / sizeof(*(frameData.name)), "%s",
         simParams->frameChan );
-    XLALFrGetREAL4TimeSeriesMetadata( &frameData, frStream );
-    frameData.data = dataSegVec->data->chan->data;
+    
+    frameData.data = 
+      XLALCreateREAL4Vector( dataSegVec->data->chan->data->length );
+    
     XLALFrGetREAL4TimeSeries( &frameData, frStream );
+    if ( xlalErrno == XLAL_EIO )
+    {
+      /* ignore end of data: we need the channel */
+      /* to be longer than the waveform          */
+      xlalErrno = 0;
+    }
     
     fprintf( stderr, "template frame epoch is %d.%d\n", 
         frameData.epoch.gpsSeconds, frameData.epoch.gpsNanoSeconds );
@@ -779,6 +795,33 @@ XLALFindChirpBankSimInjectSignal (
         dataSegVec->data->chan->deltaT );
 
     XLALFrClose( frStream );
+
+    /* center the waveform in the data segment */
+    waveformStartTime = XLALGPStoINT8( &(dataSegVec->data->chan->epoch) );
+
+    for ( i = 0; i < frameData.data->length; ++i )
+    {
+      if ( frameData.data->data[i] ) ++waveformLengthCtr;
+    }
+
+    waveformStartTime += (INT8) ( 1000000000.0 *
+        ((REAL8) ( dataSegVec->data->chan->data->length - waveformLengthCtr ) /
+         2.0) * dataSegVec->data->chan->deltaT );
+
+    XLALINT8toGPS( &(frameData.epoch), waveformStartTime );
+
+    LALSSInjectTimeSeries( &status, dataSegVec->data->chan, &frameData );
+    if ( status.statusCode )
+    {
+      REPORTSTATUS( &status );
+      XLAL_ERROR_NULL( func, XLAL_EFAILED );
+    }
+
+    XLALDestroyREAL4Vector( frameData.data );
+#else
+    XLALPrintError( "XLAL Error: LAL not compiled with frame support\n" );
+    XLAL_ERROR_NULL( func, XLAL_EINVAL );
+#endif
   }
   else
   {
