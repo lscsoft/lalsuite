@@ -1191,6 +1191,262 @@ discussing till now.
 
 \clearpage
 
+\subsection{Tuning the excess power pipeline}
+\label{section:tuning}
+
+The excess power search identifies time-frequency tiles as events when the 
+probability of getting power in the tile from Gaussian noise alone
+is below some particular threshold.  The search assumes no particular 
+information about the gravitational wave signals other than the time
+frequency ranges to search for,  so once those ranges are chosen the main 
+tool to tune the pipeline is by tweaking the threshold.  The other parameter 
+to test in the tuning procedure is the coincidence window.  Thus to 
+summarize the parameters to tune in the excess power search are:
+\begin{itemize}
+\item maximum duration(seconds) of the tiles
+\item maximum bandwidth of the tiles
+\item probability thresholds on the individual instruments
+\item the coincidence window
+\end{itemize}
+In the following sections we will go over the tuning of the different 
+parameters in more details.
+
+\subsubsection{Tuning the size of the tiles}
+\label{section:tunetilesize}
+
+The size(duration and bandwidth) of the tiles are largely guided by the
+time-frequency content of the gravitational waves one is searching for.
+  Here,  we describe the tuning procedure where we were concentrating 
+on the search of the merger phase preceded by an inspiral phase.  As
+mentioned before the physical parameters describing the merger phase
+of a binary black hole coalescence are very poorly understood till
+today.  However there are some rough estimates available in the literature 
+which we will briefly describe here.  These will provide us a guideline
+in choosing the parameters of our search pipeline. [FH:Flannagan and Hughes]
+
+The process of coalescence can be roughly divided into three phases:
+\begin{itemize}
+\item Inspiral phase
+\item Merger phase
+\item Ringdown phase
+\end{itemize}
+The inspiral phase can be modelled accurately enough to use the match
+filtering techniques to search for the waveforms, however for massive
+black holes when there are not enough cycles left in the inspiral phase 
+we have to rely on the merger phase for the detection of the coalescence.
+According to the estimates of FH, binary black hole systems with total
+mass $M \leq 30M_{\odot}$ are best searched for via their inspiral waves
+while systems with $M > 30M_{\odot}$ must be searched via their
+merger waves and/or their well understood ringdown waves.  
+
+
+FH has estimated a conservative value for the merger frequency given
+by 
+\begin{equation}
+f_{merge} = \frac{0.02}{M} \\
+          = 205 Hz (\frac{20M_{\odot}}{M})
+\label{eq:fmerge}
+\end{equation}.
+This is conservative in the sense that one can reasonably be sure that
+numerically generated templates will not be needed before $f = f_{merger}$.
+Now LIGO noise floor restricts the lowest frequency that can be searched 
+for and in $S4$ this is $\approx 50 Hz$. Using Eq~\ref{eq:fmerge} we 
+then get that a binary system of maximum mass $\approx 80M_{\odot}$ 
+can be searched for in $S4$.  However for a $80 M_{\odot}$ binary the 
+number of cycles in the inspiral phase will be very small and since we
+are interested in the coincidence of the mergers with the inspirals we
+would like to restrict our search to a bit lower total mass.  Thus the 
+mass range of the binary black holes that we decide to look at for the 
+IB search is given by 
+\begin{equation}
+30 M_{\odot} < M \leq 70 M_{\odot}. 
+\label{eq:massrange}
+\end{equation}
+Given this mass range let us now see what can we estimate about the 
+expected frequency and duration of the merger signals. From 
+Eq~\ref{eq:fmerge} we get the approximte range of the merger frequencies:
+\begin{equation}
+58 Hz < f_{merge} \leq 140 Hz
+\label{eq:frange}
+\end{equation}
+Now according to FH the high frequency shut off for the mergers are
+roughly given by 
+\begin{equation}
+f_{qnr} = 1320 Hz (\frac{20M_{\odot}}{M})
+\label{eq:fqnr}
+\end{equation}
+Thus if the assumed bandwidth of the merger signal is 
+$\Delta f = f_{qnr} - f_{merge}$,  then for our mass range of 
+interest we may expect the bandwidth to be of the order of few
+hundred Hertz.  
+
+The effective duration for the signals has also been roughly estimated
+by FH to be:
+\begin{equation}
+50 M < T < 10 M
+\label{eq:timerange}
+\end{equation}
+depending on the total spin of the binary system. If we consider
+a coalescence where both the inspiraling black holes are nearly
+maximally spinning, with their spins and the orbital angular momentum
+nearly alligned then the merger may be expected to be long,  while
+for non-spinning black holes the merger will be rather quick.  Thus 
+given our mass range of interest (Eq~\ref{eq:massrange}) the 
+time duration of the expected signals whould be somewhere in the 
+range:
+\begin{equation}
+17.2 ms < T < 1.5 ms
+\label{eq:trange}
+\end{equation} 
+  
+So given these estimates about the bandwidth and the duration of the 
+signals of our main interest we choose the following parameters in our
+search pipeline:
+\begin{itemize}
+\item Low frequency cutoff: $50 Hz$
+\item Bandwidth: $1024 Hz$
+\item Maximum duration of a tile: $125 ms$; we have set the duration 
+a few times longer than the maximum duration in Eq~\ref{eq:trange}
+because of the uncertainty in the estimations related to the nature 
+of the merger signals.
+\item Maximum bandwidth of a tile: $128 Hz$; we have the bandwidth 
+smaller than the estimated bandwidths for the merger signals since
+because of the LIGO noise curve the prominent contribution to the 
+power from the merger phase will be for a few hundred Hertz.
+\end{itemize}
+The last two parameters set the maximum duration and bandwith of 
+a single tile in the search,  which does not preclude us from searching
+for longer or broader signals since we can always sum up the power
+from multiple tiles triggered by the particular signal. 
+    
+\subsubsection{Deciding on the probability thresholds}
+\label{section:tunethreshold}
+We saw in Sec~\ref{section:tunetilesize} that the sizes of the tiles
+are mainly guided by the rough expectations about the signals that 
+we are interested in.  However, the threshold on the probability
+of power in a tile is guided by the optimisation between the false 
+rate and efficiency to a set of Monte Carlo simulations.  The idea
+we usually follow is to choose a threshold which lowers the false rate 
+maintaining the efficiency at an acceptable value.
+
+To get a rough idea about the region where we start loosing significant 
+amount of efficiency without an appreciable effect in lowering the false 
+rate we estimate the efficiencies and the false rates for a number of 
+thresholds. We have used $Q9$ Sine-Gaussian waveforms at $235 Hz $ to
+perform the tuning and the confidence thresholds are
+$\{-30.0, -35.0, -40.0, -45.0, -50.0, -55.0, -60.0, -65.0, -70.0, -80.0, 
+-90.0, -100.0, -150.0, -200.0\}$. How the efficiency and the false rate 
+depend on the thresholds are shown in Fig~\ref{fig:dt125df128tune}: 
+\begin{figure}[h]
+\begin{center}
+\includegraphics[width=1.0\textwidth]{figures/H1_L1_dt125_df128}
+\caption{Efficiency vs. False rate for different |thresholds|}
+\label{fig:dt125df128tune}
+\end{center}
+\end{figure}
+The circles on the curves show the values corresponding to different 
+thresholds.  The maximum false rate and the best efficiency are obtained 
+for the lowest |threshold|(30.0),  then as the |threshold| is increased
+the false rate decreases while the efficiency gets worse. Around the 
+|thresholds| of $50.0 - 60.0$ one may notice that for a very small 
+decrease in false rate the efficiency gets a whole lot worse.  This gives 
+us a rough idea that we should choose $ |threshold| < 60.0$.  However
+one should be aware of the fact that tuning must be specific to the 
+pipeline being run.  In our pipeline we have a coincidence step which
+involves the burst triggers and the inspiral triggers and we are not
+quite sure how many of the false triggers will survive that step. We
+also plan to use the Hanford 2Km instrument in a coherent follow up at
+the end of the pipeline which will also hopefully get rid off many of the
+false triggers. However we would like to  
+have a good estimate of the background distribution of triggers and so 
+have a few surviviors at the end of the pipeline.  Keeping that 
+in mind we decided to choose a looser threshold on the confidence 
+probabilities. The thresholds we chose are 
+\begin{itemize}
+\item Threshold on H1: -38.0
+\item Threshold on L1: -38.0; The instrument in Livingstone was less 
+sensitive than the one in Hanford for the first half of the run but 
+for the second half both the instruments had equal sensitivity.  So
+we decided to have the same thresholds on both the instruments.
+\end{itemize}      
+These thresholds were so chosen so that the false rate after 
+coincidence between H1 and L1 triggers is $\approx 0.2 mHz$ while 
+the $ h_{rss}$ is $\approx 1.12e-21$.
+
+\subsubsection{Choosing the coincidence window(W)}
+\label{section:tunewindow}
+The coincidence window(W) is given in milliseconds(ms).  When we 
+have a trigger and want to find if there are triggers in the 
+other instrument which are 
+coincident with that we first pick the triggers which are within
+$+/- W ms$ of the peak time of that trigger.  Once we find such a 
+trigger we compare the time duration and frequency bandwidths and
+if they overlap we mark them as coincident triggers. Ideally if a trigger 
+is caused by a real gravitational wave signal then we expect that the
+signal will trigger in the other instrument within $\approx +/- 10 ms$
+since the light travel time between the two sites is that. But in the 
+real analysis we may at times have to set longer windows because of 
+errors creeping in from different sources like the timing inaccuracies 
+of the search algorithm, errors in calibrations, etc..  In this step 
+we choose the coincidence window for our pipeline.
+
+We decided to choose the right window by doing a number of experiments
+in the sense that we estimated the false rates and efficiencies
+for a number of window sizes: $\{400 ms, 300ms, 200ms, 150 ms, 130ms,
+110ms, 90ms, 70ms, 50ms, 30ms, 15ms\} $.  Fig~\ref{fig:tuneburcawindow}
+shows the results of that experiment:   
+\begin{figure}[h]
+\begin{center}
+\includegraphics[width=1.0\textwidth]{figures/tune_burca_window}
+\caption{Efficiency vs. False rate for different coincidence windows}
+\label{fig:tuneburcawindow}
+\end{center}
+\end{figure} 
+From the Fig~\ref{fig:tuneburcawindow} we then see that the coincidence
+window has no effect in the efficicency and some minimal effects on
+the false rates. This implies that our time-frequency overlap criterion
+in the coincidence step has made the window length a somewhat less 
+important parameter for the coincidence. Allowing a margin of error 
+from sources like calibration we therefore choose the window size to be
+\begin{itemize}
+\item Coincidence Window: 30 ms
+\end{itemize}
+
+Here we present a set of results from S4 using the parameters tuned
+as decribed in the previous sections:
+\begin{itemize}
+\item Fig~\ref{fig:eventsvstimelag} shows the number of false events 
+at each time lag.
+\item Fig~\ref{fig:sg235q9eff} shows the efficiency of the pipeline to 
+$Q9$ SineGaussians at $235 Hz$. The $h_{rss}$ 50 p.c. is at $1.12e-21$.
+\item Fig~\ref{fig:eobeff} shows the efficiency of the pipeline to 
+EOB waveforms. The $50 p.c.$ efficiency is at $66.5 Mpc$ effective distance.   
+\end{itemize}.
+\begin{figure}[h]
+\begin{center}
+\includegraphics[width=1.0\textwidth]{figures/eventsvstimelag_20050829_1}
+\caption{No. of false triggers at different time lags}
+\label{fig:eventsvstimelag}
+\end{center}
+\end{figure}
+
+\begin{figure}[h]
+\begin{center}
+\includegraphics[width=1.0\textwidth]{figures/H1L1_eff_sg235q9_20050829_2.pdf}
+\caption{Efficiency to Q9 SineGausians at 235 Hz}
+\label{fig:sg235q9eff}
+\end{center}
+\end{figure}
+
+\begin{figure}[h]
+\begin{center}
+\includegraphics[width=1.0\textwidth]{figures/H1L1_eff_eob_20050829_3.pdf}
+\caption{Efficiency to EOB waveforms}
+\label{fig:eobeff}
+\end{center}
+\end{figure}
+
+\clearpage
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % BURCA:  coincidence analysis code
