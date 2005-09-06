@@ -35,6 +35,7 @@ RCSID("$Id$");
   " --version                    display version\n"\
   " --verbose                    verbose mode\n"\
   " --cat-only                   only cat xml files\n"\
+  " --analyse-only               only combine statistics\n"\
   " --text                       output file as text\n"\
   " --output FILE                write output data to FILE\n"
 
@@ -46,6 +47,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* getopt flags */
   static int text_flag;
   static int cat_flag;
+  static int analyse_flag;
 
   /* counters */
   INT4 i;
@@ -80,6 +82,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       {"verbose", no_argument, &vrbflg, 1},
       {"text", no_argument, &text_flag, 1},
       {"cat-only", no_argument, &cat_flag, 1},
+      {"analyse-only", no_argument, &analyse_flag, 1},
       /* options that don't set a flag */
       {"help", no_argument, 0, 'h'},
       {"version", no_argument, 0, 'v'},
@@ -212,48 +215,52 @@ INT4 main(INT4 argc, CHAR *argv[])
     fprintf(stdout, "sigmaOpt = %e\n", sigmaOpt);
   }
 
-  /* output as text file */
-  if (text_flag)
+  if (!analyse_flag)
   {
-    /* open output file */
-    if ((out = fopen(outputFileName, "w")) == NULL)
+    /* output as text file */
+    if (text_flag)
     {
-      fprintf(stderr, "Can't open file \"%s\" for output...\n", \
-          outputFileName);
-      exit(1);
+      /* open output file */
+      if ((out = fopen(outputFileName, "w")) == NULL)
+      {
+        fprintf(stderr, "Can't open file \"%s\" for output...\n", \
+            outputFileName);
+        exit(1);
+      }
+
+      /* write details of events */
+      for (thisStoch = stochHead; thisStoch; thisStoch = thisStoch->next)
+      {
+        fprintf(out, "%d %e %e\n", thisStoch->start_time.gpsSeconds, \
+            thisStoch->cc_stat, thisStoch->cc_sigma);
+      }
+
+      /* close output file */
+      fclose(out);
     }
 
-    /* write details of events */
-    for (thisStoch = stochHead; thisStoch; thisStoch = thisStoch->next)
+    /* output as xml file */
+    else
     {
-      fprintf(out, "%d %e %e\n", thisStoch->start_time.gpsSeconds, \
-          thisStoch->cc_stat, thisStoch->cc_sigma);
-    }
-
-    /* close output file */
-    fclose(out);
-  }
-  /* output as xml file */
-  else
-  {
-    /* open xml file stream */
-    memset(&xmlStream, 0, sizeof(LIGOLwXMLStream));
-    LAL_CALL(LALOpenLIGOLwXMLFile(&status, &xmlStream, outputFileName), \
-        &status);
-
-    /* write stochastic table */
-    if (stochHead)
-    {
-      outputTable.stochasticTable = stochHead;
-      LAL_CALL(LALBeginLIGOLwXMLTable(&status, &xmlStream, stochastic_table), \
+      /* open xml file stream */
+      memset(&xmlStream, 0, sizeof(LIGOLwXMLStream));
+      LAL_CALL(LALOpenLIGOLwXMLFile(&status, &xmlStream, outputFileName), \
           &status);
-      LAL_CALL(LALWriteLIGOLwXMLTable(&status, &xmlStream, outputTable, \
-            stochastic_table), &status);
-      LAL_CALL(LALEndLIGOLwXMLTable(&status, &xmlStream), &status);
-    }
 
-    /* close xml file */
-    LAL_CALL(LALCloseLIGOLwXMLFile(&status, &xmlStream), &status);
+      /* write stochastic table */
+      if (stochHead)
+      {
+        outputTable.stochasticTable = stochHead;
+        LAL_CALL(LALBeginLIGOLwXMLTable(&status, &xmlStream, \
+              stochastic_table), &status);
+        LAL_CALL(LALWriteLIGOLwXMLTable(&status, &xmlStream, outputTable, \
+              stochastic_table), &status);
+        LAL_CALL(LALEndLIGOLwXMLTable(&status, &xmlStream), &status);
+      }
+
+      /* close xml file */
+      LAL_CALL(LALCloseLIGOLwXMLFile(&status, &xmlStream), &status);
+    }
   }
 
   /* check for memory leaks and exit */
