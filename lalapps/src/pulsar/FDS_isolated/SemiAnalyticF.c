@@ -229,6 +229,9 @@ ComputeF( LALStatus *status, struct CommandLineArgsTag CLA)
     + (B*pow(delta,2) + A*pow(kappa,2)- 2*C*delta*kappa);
   F *= To / (D * Sh);
 
+  /* Note: the expectation-value of 2F is 4 + lambda ==> add 2 to Fstat*/
+  F += 2.0;
+
   lambda = SQ(A1) * A + 2.0 * C * A1 * A2 + SQ(A2) * B + SQ(A3) * A + 2.0 * C * A3 * A4 + SQ(A4) * B;
   lambda *= 0.5 * To / Sh;
   
