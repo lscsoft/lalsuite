@@ -69,6 +69,7 @@ LALFree()
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiralBank.h>
 #include <lal/GenerateInspiral.h>
+#include <lal/FrameStream.h>
 
 
 NRCSID( FINDCHIRPSIMULATIONC, "$Id$" );
@@ -126,6 +127,7 @@ LALFindChirpInjectSignals (
   CHECKSTATUSPTR( status );
 
   /* fixed waveform injection parameters */
+  memset( &ppnParams, 0, sizeof(PPNParamStruc) );
   ppnParams.deltaT   = chan->deltaT;
   ppnParams.lengthIn = 0;
   ppnParams.ppn      = NULL;
@@ -238,13 +240,10 @@ LALFindChirpInjectSignals (
     /* clear the waveform structure */
     memset( &waveform, 0, sizeof(CoherentGW) );
 
-
     LALGenerateInspiral(status->statusPtr, &waveform, thisEvent, &ppnParams );
     CHECKSTATUSPTR( status );
 
-
     LALInfo( status, ppnParams.termDescription );
-
 
     if ( thisEvent->geocent_end_time.gpsSeconds )
     {
@@ -256,6 +255,9 @@ LALFindChirpInjectSignals (
     }
     else
     {
+      LALInfo( status, "Waveform start time is zero: injecting waveform "
+          "into center of data segment" );
+      
       /* center the waveform in the data segment */
       LALGPStoINT8( status->statusPtr, &waveformStartTime, 
           &(chan->epoch) );
@@ -729,6 +731,8 @@ XLALFindChirpBankSimInjectSignal (
   SimInspiralTable     *bankInjection;
   CHAR                  tmpChName[LALNameLength];
   REAL4                 M, mu;
+  FrStream             *frStream = NULL;
+  REAL4TimeSeries       frameData;
 
   memset( &status, 0, sizeof(LALStatus) );
 
@@ -743,94 +747,136 @@ XLALFindChirpBankSimInjectSignal (
   bankInjection = (SimInspiralTable *) 
     LALCalloc( 1, sizeof(SimInspiralTable) );
 
-  if ( injParams )
+  if ( simParams && simParams->approx == FrameFile )
   {
-    /* copy the parameters from the input table */
-    memcpy( bankInjection, injParams, sizeof(SimInspiralTable) );
-  }
-  else
-  {
-    /* set up the injection masses */
-    if ( simParams->maxMass == simParams->minMass )
-    {
-      bankInjection->mass1 = simParams->maxMass;
-      bankInjection->mass2 = simParams->maxMass;
-    }
-    else
-    {
-      /* generate random parameters for the injection */
-      bankInjection->mass1 = XLALUniformDeviate( simParams->randParams );
-      bankInjection->mass1 *= (simParams->maxMass - simParams->minMass);
-      bankInjection->mass1 += simParams->minMass;
-
-      bankInjection->mass2 = XLALUniformDeviate( simParams->randParams );
-      bankInjection->mass2 *= (simParams->maxMass - simParams->minMass);
-      bankInjection->mass2 += simParams->minMass;
-    }
-
-    M = bankInjection->mass1 + bankInjection->mass2;
-    mu = bankInjection->mass1 * bankInjection->mass2 / M;
-    bankInjection->eta =  mu / M;
-    bankInjection->mchirp = pow( mu, 3.0/5.0) * pow( M, 2.0/5.0 );
-
-    if ( simParams->approx == TaylorT1 )
-    {
-      LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
-          "TaylorT1twoPN" );
-    }
-    else if ( simParams->approx == TaylorT2 )
-    {
-      LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
-          "TaylorT2twoPN" );
-    }
-    else if ( simParams->approx == TaylorT3 )
-    {
-      LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
-          "TaylorT3twoPN" );
-    }
-    else if ( simParams->approx == PadeT1 )
-    {
-      LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
-          "PadeT1twoPN" );
-    }
-    else if ( simParams->approx == EOB )
-    {
-      LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
-          "EOBtwoPN" );
-    }
-    else if ( simParams->approx == GeneratePPN )
-    {
-      LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
-          "GeneratePPNtwoPN" );
-    }
-    else
+    /* add the waveform from a frame file */
+    if ( ! simParams->frameName || ! simParams->frameChan )
     {
       XLALPrintError( 
-          "error: unknown waveform for bank simulation injection\n" );
+          "XLAL Error: frame name and channel name must be specified\n" );
       XLAL_ERROR_NULL( func, XLAL_EINVAL );
     }
 
-    /* set the injection distance to 1 Mpc */
-    bankInjection->distance = 1.0;
-  }
+    fprintf( stderr, "reading data from %s %s\n", 
+        simParams->frameName, simParams->frameChan );
 
-  /* inject the signals, preserving the channel name (Tev mangles it) */
-  LALSnprintf( tmpChName, LALNameLength * sizeof(CHAR), "%s", 
-      dataSegVec->data->chan->name );
-  
-  /* make sure the injection is hplus with no time delays */
-  dataSegVec->data->chan->name[0] = 'P';
-  LALFindChirpInjectSignals( &status, 
-      dataSegVec->data->chan, bankInjection, resp );
-  if ( status.statusCode )
-  {
-    REPORTSTATUS( &status );
-    XLAL_ERROR_NULL( func, XLAL_EFAILED );
+    frStream = XLALFrOpen( NULL, simParams->frameName );
+    XLALFrSetMode( frStream, LAL_FR_VERBOSE_MODE );
+
+    memset( &frameData, 0, sizeof(REAL4TimeSeries) );
+    LALSnprintf( frameData.name, 
+        sizeof(frameData.name) / sizeof(*(frameData.name)), "%s",
+        simParams->frameChan );
+    XLALFrGetREAL4TimeSeriesMetadata( &frameData, frStream );
+    frameData.data = dataSegVec->data->chan->data;
+    XLALFrGetREAL4TimeSeries( &frameData, frStream );
+    
+    fprintf( stderr, "template frame epoch is %d.%d\n", 
+        frameData.epoch.gpsSeconds, frameData.epoch.gpsNanoSeconds );
+    fprintf( stderr, "template frame sampling rate = %le\n", 
+        frameData.deltaT );
+    fprintf( stderr, "expected template sampling rate = %le\n", 
+        dataSegVec->data->chan->deltaT );
+
+    XLALFrClose( frStream );
   }
-  
-  /* restore the saved channel name */
-  LALSnprintf( dataSegVec->data->chan->name,  
-      LALNameLength * sizeof(CHAR), "%s", tmpChName );
+  else
+  {
+    /* we read from the injParams or generate our own params */
+
+    if ( injParams )
+    {
+      /* use injParams so copy the parameters from the input table */
+      memcpy( bankInjection, injParams, sizeof(SimInspiralTable) );
+    }
+    else
+    {
+      /* use simParams so generate our own injection parameters */
+      
+      /* set up the injection masses */
+      if ( simParams->maxMass == simParams->minMass )
+      {
+        bankInjection->mass1 = simParams->maxMass;
+        bankInjection->mass2 = simParams->maxMass;
+      }
+      else
+      {
+        /* generate random parameters for the injection */
+        bankInjection->mass1 = XLALUniformDeviate( simParams->randParams );
+        bankInjection->mass1 *= (simParams->maxMass - simParams->minMass);
+        bankInjection->mass1 += simParams->minMass;
+
+        bankInjection->mass2 = XLALUniformDeviate( simParams->randParams );
+        bankInjection->mass2 *= (simParams->maxMass - simParams->minMass);
+        bankInjection->mass2 += simParams->minMass;
+      }
+
+      /* set up derived mass quantities */
+      M = bankInjection->mass1 + bankInjection->mass2;
+      mu = bankInjection->mass1 * bankInjection->mass2 / M;
+      bankInjection->eta =  mu / M;
+      bankInjection->mchirp = pow( mu, 3.0/5.0) * pow( M, 2.0/5.0 );
+
+      /* set the correct waveform approximant */
+      if ( simParams->approx == TaylorT1 )
+      {
+        LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
+            "TaylorT1twoPN" );
+      }
+      else if ( simParams->approx == TaylorT2 )
+      {
+        LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
+            "TaylorT2twoPN" );
+      }
+      else if ( simParams->approx == TaylorT3 )
+      {
+        LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
+            "TaylorT3twoPN" );
+      }
+      else if ( simParams->approx == PadeT1 )
+      {
+        LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
+            "PadeT1twoPN" );
+      }
+      else if ( simParams->approx == EOB )
+      {
+        LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
+            "EOBtwoPN" );
+      }
+      else if ( simParams->approx == GeneratePPN )
+      {
+        LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
+            "GeneratePPNtwoPN" );
+      }
+      else
+      {
+        XLALPrintError( 
+            "error: unknown waveform for bank simulation injection\n" );
+        XLAL_ERROR_NULL( func, XLAL_EINVAL );
+      }
+
+      /* set the injection distance to 1 Mpc */
+      bankInjection->distance = 1.0;
+    }
+
+    /* inject the signals, preserving the channel name (Tev mangles it) */
+    LALSnprintf( tmpChName, LALNameLength * sizeof(CHAR), "%s", 
+        dataSegVec->data->chan->name );
+
+    /* make sure the injection is hplus with no time delays */
+    dataSegVec->data->chan->name[0] = 'P';
+    LALFindChirpInjectSignals( &status, 
+        dataSegVec->data->chan, bankInjection, resp );
+    if ( status.statusCode )
+    {
+      REPORTSTATUS( &status );
+      XLAL_ERROR_NULL( func, XLAL_EFAILED );
+    }
+
+    /* restore the saved channel name */
+    LALSnprintf( dataSegVec->data->chan->name,  
+        LALNameLength * sizeof(CHAR), "%s", tmpChName );
+  }
 
   /* return a pointer to the created sim_inspiral table */
   return bankInjection;
@@ -869,6 +915,7 @@ XLALFindChirpBankSimSignalNorm(
     case PadeT1:
     case EOB:
     case GeneratePPN:
+    case FrameFile:
       for ( k = cut; k < fcDataParams->wtildeVec->length; ++k )
       {
         if ( wtilde[k].re ) matchNorm += ( fcData[k].re * fcData[k].re +
@@ -914,7 +961,7 @@ XLALFindChirpBankSimMaxMatch (
     LALFree( tmpEvent );
   }
 
-  /* make sure we return a null terminated list containing only the best tmplt */
+  /* make sure we return a null terminated list with only the best tmplt */
   loudestEvent->next = NULL;
   *bestTmplt = loudestEvent;
 

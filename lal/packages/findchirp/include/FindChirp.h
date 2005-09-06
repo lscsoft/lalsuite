@@ -608,6 +608,8 @@ tagFindChirpBankSimParams
   REAL4                 maxMass;
   RandomParams         *randParams;
   INT4                  maxMatch;
+  CHAR                 *frameName;
+  CHAR                 *frameChan;
 }
 FindChirpBankSimParams;
 /* </lalVerbatim> */
