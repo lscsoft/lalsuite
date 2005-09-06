@@ -127,7 +127,6 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
     REAL8 refTime;          /**< reference time for pulsar frequency and spndn. */
     INT4 SSBprecision;      /**< precision for transformation from detector to SSB times*/
     INT4 Dterms;            /**< value of Dterms for LALDemod */
-    INT4 binsFstat;         /**< calculate Fstat for this frequency band */
     LALDetector detector;   /**< detector */
     EphemerisData *edat;    /**< ephemeris info */ 
     LIGOTimeGPSVector *ts;  /**< timestamp vector for each sft */
@@ -138,11 +137,10 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 
   /** parameters for calculating a Hough Map */
   typedef struct tagHoughParams {
-    INT4 *mCohSft;              /**< number of SFTs in each stack */
+    INT4 *mCohSft;             /**< number of SFTs in each stack */
     INT4 nStacks;              /**< number ofs tacks */
-    REAL8 fStart;              /**< start frequency */
     REAL8 fBand;               /**< frequency band */
-    REAL8 deltaF;              /**< frequency resolution */
+    INT4 nfSizeCylinder;       /**< cylinder of LUTs */
     LALDetector detector;      /**< detector */
     EphemerisData *edat;       /**< ephemeris data */
     LIGOTimeGPSVector *ts;     /**< timestamps of mid points of stacks */
@@ -152,8 +150,13 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
     REAL8 delta;               /**< declination */
     REAL8Vector *spindown;     /**< spindown parameters */
   } HoughParams;
-  
 
+  /* keep this here just for now */
+  typedef struct tagREAL8Cart3CoorVector{
+    UINT4   	  length; /* number of elements */
+    REAL8Cart3Coor  *data; /* x.y.z */
+  } REAL8Cart3CoorVector;  
+  
 
   void ComputeFstatStack (LALStatus *status, 
 			  REAL8FrequencySeriesVector *out, 
@@ -175,11 +178,12 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 		    const SFTVector *sftVect,
 		    INT4 nStacks);
 
-  void SetUpStacks1( LALStatus *status,
-		    SFTVectorSequence *out,
-		    const SFTVector *sftVect,
-		    INT4 nStacks);
-
+  void SetUpStacks2( LALStatus *status,
+		     SFTVectorSequence *out,
+		     const SFTVector *sftVect,
+		     const LIGOTimeGPSVector *ts,
+		     INT4 nStacks);
+  
 #ifdef  __cplusplus
 }                /* Close C++ protection */
 #endif

@@ -48,7 +48,6 @@ extern int lalDebugLevel;
 #define BLOCKSRNGMED 101 /* Running median window size */
 #define FSTART 255.0       
 #define FBAND 0.001
-#define DELTAF 2.778e-05 /* resolution corresponding to 10h */
 #define FDOT 0.0
 #define ALPHA 1.57
 #define DELTA  0.0
@@ -68,7 +67,7 @@ int main( int argc, char *argv[]) {
   EphemerisData *edat = NULL;
   LIGOTimeGPSVector **midTs=NULL; /* time stamps of mid points of sfts */
   LIGOTimeGPSVector midTstack, startTsft; 
-  REAL8VectorSequence *velStack, *posStack; /* velocities and positions at midTstack */
+  REAL8VectorSequence *velStack=NULL, *posStack=NULL; /* velocities and positions at midTstack */
   LALLeapSecFormatAndAcc lsfas = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
   INT4 tmpLeap; 
   REAL8 tObs, tStart, tEnd;
@@ -232,21 +231,23 @@ int main( int argc, char *argv[]) {
   /*------------- read sfts and set up sft timestamp vector ----------*/
   {
     CHAR *tempDir;
+    REAL8 doppWings, fmin, fmax;
 
     tempDir = (CHAR *)LALMalloc(512*sizeof(CHAR));
     strcpy(tempDir, uvar_sftDir);
-    strcat(tempDir, "/*SFT*.*"); 
-    LAL_CALL( LALReadSFTfiles ( &status, &inputSFTs, uvar_fStart, uvar_fStart + uvar_fBand, nfSizeCylinder + uvar_blocksRngMed , tempDir), &status);
+    strcat(tempDir, "/*SFT*.*");
+
+    doppWings = (uvar_fStart + uvar_fBand) * VTOT;    
+    fmin = uvar_fStart - doppWings;
+    fmax = uvar_fStart + uvar_fBand + doppWings;
+    LAL_CALL( LALReadSFTfiles ( &status, &inputSFTs, fmin, fmax, 
+				nfSizeCylinder + uvar_blocksRngMed + uvar_Dterms, 
+				tempDir), &status); 
 
     /* normalize sfts */
     LAL_CALL( LALNormalizeSFTVect (&status, inputSFTs, uvar_blocksRngMed, 0), &status);
 
     LALFree(tempDir);
-  
-    /* get start time of sfts */
-    startTsft.data = (LIGOTimeGPS *)LALMalloc( nSFTs * sizeof(LIGOTimeGPS));
-    for (j=0; j<nSFTs; j++) 
-      startTsft.data[j] = inputSFTs->data[j].epoch;
     
     /* set other sft parameters */
     nSFTs = inputSFTs->length;
@@ -255,9 +256,15 @@ int main( int argc, char *argv[]) {
     timeBase = 1.0/deltaF;
     sftFminBin = floor( timeBase * inputSFTs->data->f0 + 0.5);
 
+    /* get start time of sfts */
+    startTsft.length = nSFTs;
+    startTsft.data = (LIGOTimeGPS *)LALMalloc( nSFTs * sizeof(LIGOTimeGPS));
+    for (j=0; j<nSFTs; j++) 
+      startTsft.data[j] = inputSFTs->data[j].epoch;
+
     /* calculate start and end times and tobs */
     LAL_CALL( LALGPStoFloat ( &status, &tStart, startTsft.data), &status);
-    LAL_CALL( LALGPStoFloat ( &status, &tEnd, startTsft.data + nSFTs), &status);
+    LAL_CALL( LALGPStoFloat ( &status, &tEnd, startTsft.data + nSFTs - 1), &status);
     tEnd += timeBase;
     tObs = tEnd - tStart;
 
@@ -279,7 +286,10 @@ int main( int argc, char *argv[]) {
   }
 
   /* set up the stacks */
+  /* if sfts are to be split evenly among stacks */
   LAL_CALL( SetUpStacks1( &status, &stackSFTs, inputSFTs, uvar_nStacks), &status);
+  /* if time is to be split evenly between stacks */
+  /* LAL_CALL( SetUpStacks2( &status, &stackSFTs, inputSFTs, &startTsft, uvar_nStacks), &status); */
 
   /* set number of stacks -- may be different from uvar_nStacks! */
   nStacks = stackSFTs.length;
@@ -307,7 +317,7 @@ int main( int argc, char *argv[]) {
 
     /* duration of each stack */
     tempT1 = stackSFTs.data[k].data[0].epoch;
-    tempT2 = stackSFTs.data[k].data[tempInt].epoch;
+    tempT2 = stackSFTs.data[k].data[tempInt-1].epoch;
     LAL_CALL ( LALGPStoFloat ( &status, &tempF1, &tempT1), &status);
     LAL_CALL ( LALGPStoFloat ( &status, &tempF2, &tempT2), &status);
     tStack[k] = tempF2 + timeBase - tempF1;
@@ -358,8 +368,8 @@ int main( int argc, char *argv[]) {
   /* calculate detector velocity and position at mid time of stacks*/
   /* maybe calculate average over stack as well? */
   for (k=0; k<nStacks; k++){
-    LAL_CALL (LALDetectorVel ( &status, velStack->data + k*nStacks, midTstack.data + k, detector, edat), &status);
-    LAL_CALL (LALDetectorPos ( &status, posStack->data + k*nStacks, midTstack.data + k, detector, edat), &status);
+    LAL_CALL (LALDetectorVel ( &status, velStack->data + 3*k, midTstack.data + k, detector, edat), &status);
+    LAL_CALL (LALDetectorPos ( &status, posStack->data + 3*k, midTstack.data + k, detector, edat), &status);
   }
 
 
@@ -373,6 +383,7 @@ int main( int argc, char *argv[]) {
     FstatVect.data[k].epoch = midTstack.data[k];
     FstatVect.data[k].deltaF = deltaFstack;
     FstatVect.data[k].f0 = uvar_fStart;
+    FstatVect.data[k].data = (REAL8Sequence *)LALMalloc(sizeof(REAL8Sequence));
     FstatVect.data[k].data->length = binsFstat;
     FstatVect.data[k].data->data = (REAL8 *)LALMalloc( binsFstat * sizeof(REAL8));
   }
@@ -385,12 +396,12 @@ int main( int argc, char *argv[]) {
   FstatPar.refTime = refTime;
   FstatPar.SSBprecision = uvar_SSBprecision;
   FstatPar.Dterms = uvar_Dterms;
-  FstatPar.binsFstat = binsFstat;
   FstatPar.detector = detector;
   FstatPar.edat = edat;
   FstatPar.ts = &startTsft;
   FstatPar.alpha = uvar_alpha;
   FstatPar.delta = uvar_delta;
+  FstatPar.fkdot = NULL;
   LAL_CALL ( LALDCreateVector( &status, &(FstatPar.fkdot), 2), &status);
   FstatPar.fkdot->data[0] = uvar_fStart;
   FstatPar.fkdot->data[1] = uvar_fdot;
@@ -419,21 +430,17 @@ int main( int argc, char *argv[]) {
 
   /*********** free all remaining memory **********/
   /* free timestamp and Vel/Pos vectors */
-  for (k=0; k<nStacks; k++) {
-      LALFree(midTs[k]->data);
-      LALFree(midTs[k]);
-    }  
-  LALFree(midTs);
   LALFree(startTsft.data);
   LALFree(midTstack.data);
   LALFree(mCohSft);
   LALFree(tStack);
-
   LAL_CALL( LALDDestroyVectorSequence (&status,  &velStack), &status);
   LAL_CALL( LALDDestroyVectorSequence (&status,  &posStack), &status);
 
-  for(k=0; k<nStacks; k++)
+  for(k=0; k<nStacks; k++) {
     LALFree(FstatVect.data[k].data->data);
+    LALFree(FstatVect.data[k].data);
+  }
   LALFree(FstatVect.data);
 
   LALFree(stackSFTs.data);
@@ -463,8 +470,8 @@ void ComputeFstatStack (LALStatus *status,
 			const SFTVectorSequence *stackSFTs, 
 			FstatStackParams *params)
 {
-  SSBtimes *tSSB=NULL;
-  AMCoeffs *amcoe=NULL;
+  SSBtimes tSSB;
+  AMCoeffs amcoe;
   SkyPosition skyPoint;
   DetectorStateSeries *DetectorStates=NULL;
   LIGOTimeGPSVector timeStack;
@@ -472,45 +479,62 @@ void ComputeFstatStack (LALStatus *status,
   REAL8 refTime = params->refTime;
   REAL8 deltaF = out->data->deltaF;
   INT4 k, j, indexSft;
-  INT4 binsFstat = params->binsFstat;
+  INT4 binsFstat = out->data->data->length;
   INT4 nStacks = params->nStacks;
   REAL8Vector *fkdot = params->fkdot;
+  REAL8Vector *fkdot1=NULL;
+  INT4 *mCohSft = params->mCohSft;
+  LIGOTimeGPS tempRef;
 
   INITSTATUS( status, "ComputeFstatStack", rcsid );
   ATTATCHSTATUSPTR (status);
 
-  /*   DetectorStates = (DetectorStateSeries *)LALCalloc( 1,sizeof(DetectorStateSeries)); */
-  /*   tSSB = (SSBtimes *)LALCalloc(1, sizeof(SSBtimes)); */
-  /*   amcoe = (AMCoeffs *)LALCalloc(1, sizeof(AMCoeffs)); */
-
   skyPoint.longitude = params->alpha;
   skyPoint.latitude = params->delta;
   skyPoint.system = COORDINATESYSTEM_EQUATORIAL;
-  LAL_CALL (LALNormalizeSkyPosition( status, &skyPoint, &skyPoint), status);
+  TRY (LALNormalizeSkyPosition( status->statusPtr, &skyPoint, &skyPoint), status);
+
+  TRY (LALFloatToGPS ( status->statusPtr, &tempRef, &refTime), status);
+
+  fkdot1 = NULL;
+  TRY ( LALDCreateVector( status->statusPtr, &(fkdot1), 2), status);
+  fkdot1->data[1] = fkdot->data[1];
 
   indexSft = 0;
   for(k=0; k<nStacks; k++) {
 
-    timeStack.length = params->mCohSft[k];
+    timeStack.length = mCohSft[k];
     timeStack.data = params->ts->data + indexSft;
 
     /* obtain detector positions and velocities, together with LMSTs for the SFT midpoints (i.e. shifted by tSFT/2) */
-    LAL_CALL ( LALGetDetectorStates ( status, &DetectorStates, &timeStack, 
+    TRY ( LALGetDetectorStates ( status->statusPtr, &DetectorStates, &timeStack, 
 				      &(params->detector), params->edat, 
 				      timeBase / 2.0 ), status);
+
+
+    /* allocate memory for am coeffs */
+    amcoe.a = NULL;
+    amcoe.b = NULL;
+    TRY (LALSCreateVector(status->statusPtr, &(amcoe.a), mCohSft[k]), status);
+    TRY (LALSCreateVector(status->statusPtr, &(amcoe.b), mCohSft[k]), status);
+    /* allocate memory for tssb */
+    tSSB.DeltaT = NULL;
+    tSSB.Tdot = NULL;
+    TRY ( LALDCreateVector(status->statusPtr, &(tSSB.DeltaT), mCohSft[k]), status );
+    TRY ( LALDCreateVector(status->statusPtr, &(tSSB.Tdot), mCohSft[k]), status );
 
     for(j=0; j<binsFstat; j++) {
 
       /* increase frequency value */
-      fkdot->data[0] += j * deltaF;
+      fkdot1->data[0] = fkdot->data[0] + j*deltaF;
 
-      /* transform to SSB frame */
-      LAL_CALL ( LALGetSSBtimes ( status, tSSB, DetectorStates, skyPoint, 
-				  refTime, params->SSBprecision), status);
-      
+      /* transform to SSB frame */ 
+      TRY ( LALGetSSBtimes ( status->statusPtr, &tSSB, DetectorStates, skyPoint, 
+			     tempRef , params->SSBprecision), status);
+     
+
       /* calculate amplitude modulation coefficients */
-      LAL_CALL ( LALGetAMCoeffs( status, amcoe, DetectorStates, skyPoint), status);
-      
+      TRY ( LALGetAMCoeffs( status->statusPtr, &amcoe, DetectorStates, skyPoint), status);      
 
       {
 	/* get the F statistic */
@@ -518,20 +542,19 @@ void ComputeFstatStack (LALStatus *status,
 	REAL4 fact;
 	REAL4 At, Bt, Ct;
 	REAL4 FaRe, FaIm, FbRe, FbIm;
-	REAL8 Fstat;
 	
-	XLALComputeFaFb ( &FaFb, stackSFTs->data + k, params->fkdot, tSSB, 
-			  amcoe, params->Dterms);
-	At = amcoe->A;
-	Bt = amcoe->B;
-	Ct = amcoe->C;
+	XLALComputeFaFb ( &FaFb, stackSFTs->data + k, fkdot1, &tSSB, 
+			  &amcoe, params->Dterms);
+	At = amcoe.A;
+	Bt = amcoe.B;
+	Ct = amcoe.C;
 	
 	FaRe = FaFb.Fa.re;
 	FaIm = FaFb.Fa.im;	    
 	FbRe = FaFb.Fb.re;
 	FbIm = FaFb.Fb.im;
 	
-	fact = 2.0f / (1.0f * stackSFTs->data[k].length * amcoe->D);    
+	fact = 2.0f / (1.0f * stackSFTs->data[k].length * amcoe.D);    
 	
 	out->data[k].data->data[j] = fact * (Bt * (FaRe*FaRe + FaIm*FaIm) 
 					     + At * (FbRe*FbRe + FbIm*FbIm) 
@@ -540,19 +563,21 @@ void ComputeFstatStack (LALStatus *status,
     
     } /* loop over frequencies */
 
-    indexSft += params->mCohSft[k];
+    indexSft += mCohSft[k];
 
     /* destroy DetectorStateSeries */
-    LAL_CALL ( LALDestroyDetectorStateSeries (status, &DetectorStates), status);
+    TRY ( LALDestroyDetectorStateSeries (status->statusPtr, &DetectorStates), status);
 
       /* Free AM-coefficients */
-    LAL_CALL (LALSDestroyVector(status, &(amcoe->a)), status);
-    LAL_CALL (LALSDestroyVector(status, &(amcoe->b)), status);
+    TRY (LALSDestroyVector(status->statusPtr, &(amcoe.a)), status);
+    TRY (LALSDestroyVector(status->statusPtr, &(amcoe.b)), status);
     /* Free SSB-times */
-    LAL_CALL (LALDDestroyVector(status, &(tSSB->DeltaT)), status);
-    LAL_CALL (LALDDestroyVector(status, &(tSSB->Tdot)), status);
+    TRY (LALDDestroyVector(status->statusPtr, &(tSSB.DeltaT)), status);
+    TRY (LALDDestroyVector(status->statusPtr, &(tSSB.Tdot)), status);
 
   } /* loop over stacks */
+
+  TRY (LALDDestroyVector ( status->statusPtr, &(fkdot1)), status);
   
   DETATCHSTATUSPTR (status);
   RETURN(status); 
@@ -567,10 +592,235 @@ void ComputeFstatHoughMap(LALStatus *status,
 			  HoughParams *params)
 {
 
+  /* hough structures */
+  static HOUGHptfLUTVector   lutV; /* the Look Up Table vector*/
+  static PHMDVectorSequence  phmdVS;  /* the partial Hough map derivatives */
+  static UINT8FrequencyIndexVector freqInd; /* for trajectory in time-freq plane */
+  static HOUGHResolutionPar parRes;   /* patch grid information */
+  static HOUGHPatchGrid  patch;   /* Patch description */ 
+  static HOUGHParamPLUT  parLut;  /* parameters needed to build lut  */
+  static HOUGHDemodPar   parDem;  /* demodulation parameters */
+  static HOUGHSizePar    parSize; 
+
+  UINT2  xSide, ySide, maxNBins, maxNBorders;
+  INT8  f0Bin, fLastBin, fBin;
+  INT4  iHmap, nSpin1Max, mObsCoh, nfSizeCylinder;
+  REAL8 deltaF, alpha, delta;
+  REAL8 patchSizeX, patchSizeY, f1jump;
+  static REAL8Cart3CoorVector velV;
+  static LIGOTimeGPSVector   timeV;
+  static REAL8Vector timeDiffV;
+
   INITSTATUS( status, "ComputeFstatHoughMap", rcsid );
   ATTATCHSTATUSPTR (status);
 
+  /* copy some params to local variables */
+  mObsCoh = params->nStacks;
+  nfSizeCylinder = params->nfSizeCylinder;
+  deltaF = pgV->pg->deltaF;
+  alpha = params->alpha;
+  delta = params->delta;
 
+  /* first memory allocation */
+  lutV.length    = mObsCoh;
+  lutV.lut = NULL;
+  lutV.lut = (HOUGHptfLUT *)LALMalloc(mObsCoh*sizeof(HOUGHptfLUT));
+  
+  phmdVS.length  = mObsCoh;
+  phmdVS.nfSize  = nfSizeCylinder;
+  phmdVS.deltaF  = deltaF;
+  phmdVS.phmd = NULL;
+  phmdVS.phmd=(HOUGHphmd *)LALMalloc(mObsCoh*nfSizeCylinder*sizeof(HOUGHphmd));
+  
+  freqInd.deltaF = deltaF;
+  freqInd.length = mObsCoh;
+  freqInd.data = NULL;
+  freqInd.data =  ( UINT8 *)LALMalloc(mObsCoh*sizeof(UINT8));
+  
+ 
+  /* Case: no spins-demodulaton  or Non demodulation (SFT input)*/
+  parDem.deltaF = deltaF;
+  parDem.skyPatch.alpha = alpha;
+  parDem.skyPatch.delta = delta;
+  parDem.timeDiff = 0.0;
+  parDem.spin.length = 0;
+  parDem.spin.data = NULL;
+  parDem.positC.x = 0.0;
+  parDem.positC.y = 0.0;
+  parDem.positC.z = 0.0;
+  
+  parRes.deltaF = deltaF;
+  parRes.patchSkySizeX  = patchSizeX;
+  parRes.patchSkySizeY  = patchSizeY;
+  parRes.pixelFactor = PIXELFACTOR;
+  parRes.pixErr = PIXERR;
+  parRes.linErr = LINERR;
+  parRes.vTotC = VTOT;
+  
+  fBin= f0Bin;
+  iHmap = 0;
+
+  /* if there are spindowns */
+  nSpin1Max = floor(nfSizeCylinder/2.0);
+  f1jump = 1./timeDiffV.data[mObsCoh - 1];
+  
+  /* start main Hough calculation */
+  while( fBin <= fLastBin){
+    INT8 fBinSearch, fBinSearchMax;
+    UINT4 i,j; 
+    REAL8UnitPolarCoor sourceLocation;
+    
+	
+    parRes.f0Bin =  fBin;      
+    TRY( LALHOUGHComputeSizePar( status->statusPtr, &parSize, &parRes ),  status );
+    xSide = parSize.xSide;
+    ySide = parSize.ySide;
+    maxNBins = parSize.maxNBins;
+    maxNBorders = parSize.maxNBorders;
+	
+    /* *******************create patch grid at fBin ****************  */
+    patch.xSide = xSide;
+    patch.ySide = ySide;
+    patch.xCoor = NULL;
+    patch.yCoor = NULL;
+    patch.xCoor = (REAL8 *)LALMalloc(xSide*sizeof(REAL8));
+    patch.yCoor = (REAL8 *)LALMalloc(ySide*sizeof(REAL8));
+    TRY( LALHOUGHFillPatchGrid( status->statusPtr, &patch, &parSize ), status );
+    
+    /*************** other memory allocation and settings************ */
+    for(j=0; j<lutV.length; ++j){
+      lutV.lut[j].maxNBins = maxNBins;
+      lutV.lut[j].maxNBorders = maxNBorders;
+      lutV.lut[j].border =
+	(HOUGHBorder *)LALMalloc(maxNBorders*sizeof(HOUGHBorder));
+      lutV.lut[j].bin =
+	(HOUGHBin2Border *)LALMalloc(maxNBins*sizeof(HOUGHBin2Border));
+      for (i=0; i<maxNBorders; ++i){
+	lutV.lut[j].border[i].ySide = ySide;
+	lutV.lut[j].border[i].xPixel =
+	  (COORType *)LALMalloc(ySide*sizeof(COORType));
+      }
+    }
+    for(j=0; j<phmdVS.length * phmdVS.nfSize; ++j){
+      phmdVS.phmd[j].maxNBorders = maxNBorders;
+      phmdVS.phmd[j].leftBorderP =
+	(HOUGHBorder **)LALMalloc(maxNBorders*sizeof(HOUGHBorder *));
+      phmdVS.phmd[j].rightBorderP =
+	(HOUGHBorder **)LALMalloc(maxNBorders*sizeof(HOUGHBorder *));
+      phmdVS.phmd[j].ySide = ySide;
+      phmdVS.phmd[j].firstColumn = NULL;
+      phmdVS.phmd[j].firstColumn = (UCHAR *)LALMalloc(ySide*sizeof(UCHAR));
+    }
+    
+    /* ************* create all the LUTs at fBin ********************  */  
+    for (j=0;j< mObsCoh;++j){  /* create all the LUTs */
+      parDem.veloC.x = velV.data[j].x;
+      parDem.veloC.y = velV.data[j].y;
+      parDem.veloC.z = velV.data[j].z;      
+      /* calculate parameters needed for buiding the LUT */
+      TRY( LALHOUGHParamPLUT( status->statusPtr, &parLut, &parSize, &parDem),status );
+      /* build the LUT */
+      TRY( LALHOUGHConstructPLUT( status->statusPtr, &(lutV.lut[j]), &patch, &parLut ),
+	   status );
+    }
+    
+    /************* build the set of  PHMD centered around fBin***********/     
+    phmdVS.fBinMin = fBin-floor(nfSizeCylinder/2.);
+    TRY( LALHOUGHConstructSpacePHMD(status->statusPtr, &phmdVS, pgV, &lutV), status );
+    
+    /* ************ initializing the Total Hough map space *********** */   
+    ht->xSide = xSide;
+    ht->ySide = ySide;
+    ht->mObsCoh = mObsCoh;
+    ht->deltaF = deltaF;
+    ht->map   = NULL;
+    ht->map   = (HoughTT *)LALMalloc(xSide*ySide*sizeof(HoughTT));
+    TRY( LALHOUGHInitializeHT( status->statusPtr, ht, &patch), status); /*not needed */
+    
+    /******************************************************************/
+    /*  Search frequency interval possible using the same LUTs */
+    fBinSearch = fBin;
+    fBinSearchMax= fBin + parSize.nFreqValid -1-floor( (nfSizeCylinder-1)/2.);
+    
+    /** >>>>>>>>>>>>>>>>>>>>>>>>>>>>> * <<<<<<<<<<<<<<<<<<<<<<<<<<<< **/
+    /* Study all possible frequencies with one set of LUT */
+    /** >>>>>>>>>>>>>>>>>>>>>>>>>>>>> * <<<<<<<<<<<<<<<<<<<<<<<<<<<< **/
+    
+    while ( (fBinSearch <= fLastBin) && (fBinSearch < fBinSearchMax) )  { 
+      
+      /**********************************************/
+      /* Case: No spin-down.  Study the fBinSearch */
+      /**********************************************/
+      ht->f0Bin = fBinSearch;
+      ht->spinRes.length =0;
+      ht->spinRes.data = NULL;
+      for (j=0;j< mObsCoh;++j){	freqInd.data[j]= fBinSearch; } 
+      TRY( LALHOUGHConstructHMT( status->statusPtr, ht, &freqInd, &phmdVS ), status );
+            
+      
+      ++iHmap;
+      
+      
+      /********************************************/
+      /* Case: 1 spin-down. at  fBinSearch */
+      /********************************************/
+      {
+	INT4   n;
+	REAL8  f1dis;
+	
+	ht->spinRes.length = 1;
+	ht->spinRes.data = NULL;
+	ht->spinRes.data = (REAL8 *)LALMalloc(ht->spinRes.length*sizeof(REAL8));
+	    
+	for( n=1; n<= nSpin1Max; ++n){ /*loop over all values of f1 */
+	  f1dis = - n*f1jump;
+	  ht->spinRes.data[0] =  f1dis*deltaF;
+	  
+	  for (j=0;j< mObsCoh;++j){
+	    freqInd.data[j] = fBinSearch +floor(timeDiffV.data[j]*f1dis+0.5);
+	  }
+	  
+	  TRY( LALHOUGHConstructHMT(status->statusPtr, ht, &freqInd, &phmdVS),status );
+	  	  
+	  
+	  ++iHmap;
+	  
+	}
+	LALFree(ht->spinRes.data);
+      }
+      
+      /********************************************/
+      /* *** shift the search freq. & PHMD structure 1 freq.bin ****** */
+      ++fBinSearch;
+      TRY( LALHOUGHupdateSpacePHMDup(status->statusPtr, &phmdVS, pgV, &lutV), status );
+      
+    }   /* ********>>>>>>  closing second while  <<<<<<<<**********<  */
+    
+    fBin = fBinSearch;
+    
+    /* ********************  Free partial memory ******************* */
+    LALFree(patch.xCoor);
+    LALFree(patch.yCoor);
+    
+    for (j=0; j<lutV.length ; ++j){
+      for (i=0; i<maxNBorders; ++i){
+	LALFree( lutV.lut[j].border[i].xPixel);
+      }
+      LALFree( lutV.lut[j].border);
+      LALFree( lutV.lut[j].bin);
+    }
+    for(j=0; j<phmdVS.length * phmdVS.nfSize; ++j){
+      LALFree( phmdVS.phmd[j].leftBorderP);
+      LALFree( phmdVS.phmd[j].rightBorderP);
+      LALFree( phmdVS.phmd[j].firstColumn);
+    }
+    
+  } /* closing while */
+  
+  /* free remaining memory */
+  LALFree(lutV.lut);
+  LALFree(phmdVS.phmd);
+  LALFree(freqInd.data);
 
   DETATCHSTATUSPTR (status);
   RETURN(status);
@@ -669,15 +919,62 @@ void SetUpStacks1(LALStatus *status,
 
 
 void SetUpStacks2(LALStatus *status, 
-		 SFTVectorSequence  *out,  
-		 const SFTVector  *sftVect,
-		 INT4 nStacks)
+		  SFTVectorSequence  *out,  
+		  const SFTVector  *sftVect,
+		  const LIGOTimeGPSVector *ts,
+		  INT4 nStacks)
 {
+  REAL8 tStart, tEnd, tStack, timeBase;
+  INT4 k, j;
+  REAL8 thisTime;
+  INT4 nSFTs, sftCount;
+  SFTVector *tempVect;
 
   INITSTATUS( status, "SetUpStacks2", rcsid );
   ATTATCHSTATUSPTR (status);
 
+  out->length = nStacks;
+  out->data = (SFTVector *)LALMalloc( nStacks * sizeof(SFTVector));
+
+  nSFTs = ts->length;
+  timeBase = 1.0/sftVect->data->deltaF;
+  TRY ( LALGPStoFloat ( status->statusPtr, &tStart, ts->data), status);
+  TRY ( LALGPStoFloat ( status->statusPtr, &tEnd, ts->data + nSFTs), status);
+  tEnd += timeBase;
+  tStack = (tEnd - tStart) / nStacks;
+
+  /* count number of sfts between tStart + k*tStack and tStart + (k+1)*tStack */
+  k = 0; /* initialization -- stack label */
+  sftCount = 0; /* initialization -- number of sfts in a stack */
+
+  /* loop over the sfts and find out if it belongs to the k^th stack */
+  for( j=0; j<nSFTs; j++) {
+
+    /* if sft time stamp is within the k^th stack, then go on to next sft 
+       otherwise set up the k^th output vector */
+    TRY ( LALGPStoFloat ( status->statusPtr, &thisTime, ts->data + j), status);
+    if ( thisTime < tStart + (k+1)*tStack ) {
+      sftCount++;
+    }
+    else {
+      /* set up the output vector only if there are sfts */
+      if (sftCount) {
+	tempVect = out->data + k;
+	tempVect->length = sftCount;
+	tempVect->data = sftVect->data + j;
+
+	/* increment stack counter and reset sft counter */
+	k++;
+	sftCount = 0;
+      }
+    }
+  }
   
+  /* if some stacks were empty then realloc output vector */
+  if ( k<nStacks ) {
+    out->length = k;
+    out->data = (SFTVector *)LALRealloc( out->data, k*sizeof(SFTVector));
+  }
 
   DETATCHSTATUSPTR (status);
   RETURN(status);
