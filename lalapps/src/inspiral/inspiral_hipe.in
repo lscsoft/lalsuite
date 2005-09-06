@@ -1505,72 +1505,72 @@ df_job.set_sub_file( basename + '.datafind'+ subsuffix )
 tmplt_job.set_sub_file( basename + '.tmpltbank' + subsuffix )
 trig_job.set_sub_file( basename + '.trigbank' + subsuffix )
 
-insp_h1_job.set_sub_file( basename + '.inspiral_h1' + subsuffix )
-insp_h2_job.set_sub_file( basename + '.inspiral_h2' + subsuffix )
-insp_l1_job.set_sub_file( basename + '.inspiral_l1' + subsuffix )
-insp_g1_job.set_sub_file( basename + '.inspiral_g1' + subsuffix )
-insp_h1v_job.set_sub_file( basename + '.inspiral_h1_veto' + subsuffix )
-insp_h2v_job.set_sub_file( basename + '.inspiral_h2_veto' + subsuffix )
-insp_l1v_job.set_sub_file( basename + '.inspiral_l1_veto' + subsuffix )
-insp_g1v_job.set_sub_file( basename + '.inspiral_g1_veto' + subsuffix )
+insp_h1_job.set_sub_file( basename + '.inspiral_H1' + subsuffix )
+insp_h2_job.set_sub_file( basename + '.inspiral_H2' + subsuffix )
+insp_l1_job.set_sub_file( basename + '.inspiral_L1' + subsuffix )
+insp_g1_job.set_sub_file( basename + '.inspiral_G1' + subsuffix )
+insp_h1v_job.set_sub_file( basename + '.inspiral_H1_veto' + subsuffix )
+insp_h2v_job.set_sub_file( basename + '.inspiral_H2_veto' + subsuffix )
+insp_l1v_job.set_sub_file( basename + '.inspiral_L1_veto' + subsuffix )
+insp_g1v_job.set_sub_file( basename + '.inspiral_G1_veto' + subsuffix )
 
 single_inca_job.set_sub_file( basename + '.s_inca' + subsuffix )
 
-thinca_h1h2_job.set_sub_file( basename + '.thinca_h1h2' + subsuffix )
-thinca_h1l1_job.set_sub_file( basename + '.thinca_h1l1' + subsuffix )
-thinca_h2l1_job.set_sub_file( basename + '.thinca_h2l1' + subsuffix )
-thinca_g1l1_job.set_sub_file( basename + '.thinca_g1l1' + subsuffix )
-thinca_g1h1_job.set_sub_file( basename + '.thinca_g1h1' + subsuffix )
-thinca_g1h2_job.set_sub_file( basename + '.thinca_g1h2' + subsuffix )
+thinca_h1h2_job.set_sub_file( basename + '.thinca_H1H2' + subsuffix )
+thinca_h1l1_job.set_sub_file( basename + '.thinca_H1L1' + subsuffix )
+thinca_h2l1_job.set_sub_file( basename + '.thinca_H2L1' + subsuffix )
+thinca_g1l1_job.set_sub_file( basename + '.thinca_G1L1' + subsuffix )
+thinca_g1h1_job.set_sub_file( basename + '.thinca_G1H1' + subsuffix )
+thinca_g1h2_job.set_sub_file( basename + '.thinca_G1H2' + subsuffix )
 
-thinca_h1h2l1_job.set_sub_file( basename + '.thinca_h1h2l1' + subsuffix )
-thinca_g1h1h2_job.set_sub_file( basename + '.thinca_h1h2g1' + subsuffix )
-thinca_g1h1l1_job.set_sub_file( basename + '.thinca_h1l1g1' + subsuffix )
-thinca_g1h2l1_job.set_sub_file( basename + '.thinca_h2l1g1' + subsuffix )
+thinca_h1h2l1_job.set_sub_file( basename + '.thinca_H1H2L1' + subsuffix )
+thinca_g1h1h2_job.set_sub_file( basename + '.thinca_G1H1H2' + subsuffix )
+thinca_g1h1l1_job.set_sub_file( basename + '.thinca_G1H1L1' + subsuffix )
+thinca_g1h2l1_job.set_sub_file( basename + '.thinca_G1H2L1' + subsuffix )
 
-thinca_h1h2l1g1_job.set_sub_file( basename + '.thinca_h1h2l1g1' + subsuffix )
+thinca_h1h2l1g1_job.set_sub_file( basename + '.thinca_G1H1H2L1' + subsuffix )
 
-thinca_slides_h1h2_job.set_sub_file( basename + '.thinca_slides_h1h2' + subsuffix )
-thinca_slides_h1l1_job.set_sub_file( basename + '.thinca_slides_h1l1' + subsuffix )
-thinca_slides_h2l1_job.set_sub_file( basename + '.thinca_slides_h2l1' + subsuffix )
-thinca_slides_h1g1_job.set_sub_file( basename + '.thinca_slides_h1g1' + subsuffix )
-thinca_slides_l1g1_job.set_sub_file( basename + '.thinca_slides_l1g1' + subsuffix )
-thinca_slides_h2g1_job.set_sub_file( basename + '.thinca_slides_h2g1' + subsuffix )
+thinca_slides_h1h2_job.set_sub_file( basename + '.thinca_slides_H1H2' + subsuffix )
+thinca_slides_h1l1_job.set_sub_file( basename + '.thinca_slides_H1L1' + subsuffix )
+thinca_slides_h2l1_job.set_sub_file( basename + '.thinca_slides_H2L1' + subsuffix )
+thinca_slides_h1g1_job.set_sub_file( basename + '.thinca_slides_G1H1' + subsuffix )
+thinca_slides_l1g1_job.set_sub_file( basename + '.thinca_slides_G1L1' + subsuffix )
+thinca_slides_h2g1_job.set_sub_file( basename + '.thinca_slides_G1H2' + subsuffix )
 
-thinca_slides_h1h2l1_job.set_sub_file( basename + '.thinca_slides_h1h2l1' + subsuffix )
-thinca_slides_h1h2g1_job.set_sub_file( basename + '.thinca_slides_h1h2g1' + subsuffix )
-thinca_slides_h1l1g1_job.set_sub_file( basename + '.thinca_slides_h1l1g1' + subsuffix )
-thinca_slides_h2l1g1_job.set_sub_file( basename + '.thinca_slides_h2l1g1' + subsuffix )
+thinca_slides_h1h2l1_job.set_sub_file( basename + '.thinca_slides_H1H2L1' + subsuffix )
+thinca_slides_h1h2g1_job.set_sub_file( basename + '.thinca_slides_G1H1H2' + subsuffix )
+thinca_slides_h1l1g1_job.set_sub_file( basename + '.thinca_slides_G1H1L1' + subsuffix )
+thinca_slides_h2l1g1_job.set_sub_file( basename + '.thinca_slides_G1H2L1' + subsuffix )
 
-thinca_slides_h1h2l1g1_job.set_sub_file( basename + '.thinca_slides_h1h2l1g1' + subsuffix )
+thinca_slides_h1h2l1g1_job.set_sub_file( basename + '.thinca_slides_G1H1H2L1' + subsuffix )
 
-thinca2_h1h2_job.set_sub_file( basename + '.thinca2_h1h2' + subsuffix )
-thinca2_h1l1_job.set_sub_file( basename + '.thinca2_h1l1' + subsuffix )
-thinca2_h2l1_job.set_sub_file( basename + '.thinca2_h2l1' + subsuffix )
-thinca2_h1g1_job.set_sub_file( basename + '.thinca2_h1g1' + subsuffix )
-thinca2_l1g1_job.set_sub_file( basename + '.thinca2_l1g1' + subsuffix )
-thinca2_h2g1_job.set_sub_file( basename + '.thinca2_h2g1' + subsuffix )
+thinca2_h1h2_job.set_sub_file( basename + '.thinca2_H1H2' + subsuffix )
+thinca2_h1l1_job.set_sub_file( basename + '.thinca2_H1L1' + subsuffix )
+thinca2_h2l1_job.set_sub_file( basename + '.thinca2_H2L1' + subsuffix )
+thinca2_h1g1_job.set_sub_file( basename + '.thinca2_G1H1' + subsuffix )
+thinca2_l1g1_job.set_sub_file( basename + '.thinca2_G1L1' + subsuffix )
+thinca2_h2g1_job.set_sub_file( basename + '.thinca2_G1H2' + subsuffix )
 
-thinca2_h1h2l1_job.set_sub_file( basename + '.thinca2_h1h2l1' + subsuffix )
-thinca2_h1h2g1_job.set_sub_file( basename + '.thinca2_h1h2g1' + subsuffix )
-thinca2_h1l1g1_job.set_sub_file( basename + '.thinca2_h1l1g1' + subsuffix )
-thinca2_h2l1g1_job.set_sub_file( basename + '.thinca2_h2l1g1' + subsuffix )
+thinca2_h1h2l1_job.set_sub_file( basename + '.thinca2_H1H2L1' + subsuffix )
+thinca2_h1h2g1_job.set_sub_file( basename + '.thinca2_G1H1H2' + subsuffix )
+thinca2_h1l1g1_job.set_sub_file( basename + '.thinca2_G1H1L1' + subsuffix )
+thinca2_h2l1g1_job.set_sub_file( basename + '.thinca2_G1H2L1' + subsuffix )
 
-thinca2_h1h2l1g1_job.set_sub_file( basename + '.thinca2_h1h2l1g1' + subsuffix )
+thinca2_h1h2l1g1_job.set_sub_file( basename + '.thinca2_G1H1H2L1' + subsuffix )
 
-thinca2_slides_h1h2_job.set_sub_file( basename + '.thinca2_slides_h1h2' + subsuffix )
-thinca2_slides_h1l1_job.set_sub_file( basename + '.thinca2_slides_h1l1' + subsuffix )
-thinca2_slides_h2l1_job.set_sub_file( basename + '.thinca2_slides_h2l1' + subsuffix )
-thinca2_slides_h1g1_job.set_sub_file( basename + '.thinca2_slides_h1g1' + subsuffix )
-thinca2_slides_h2g1_job.set_sub_file( basename + '.thinca2_slides_h2g1' + subsuffix )
-thinca2_slides_l1g1_job.set_sub_file( basename + '.thinca2_slides_l1g1' + subsuffix )
+thinca2_slides_h1h2_job.set_sub_file( basename + '.thinca2_slides_H1H2' + subsuffix )
+thinca2_slides_h1l1_job.set_sub_file( basename + '.thinca2_slides_H1L1' + subsuffix )
+thinca2_slides_h2l1_job.set_sub_file( basename + '.thinca2_slides_H2L1' + subsuffix )
+thinca2_slides_h1g1_job.set_sub_file( basename + '.thinca2_slides_G1H1' + subsuffix )
+thinca2_slides_h2g1_job.set_sub_file( basename + '.thinca2_slides_G1H2' + subsuffix )
+thinca2_slides_l1g1_job.set_sub_file( basename + '.thinca2_slides_G1L1' + subsuffix )
 
-thinca2_slides_h1h2l1_job.set_sub_file( basename + '.thinca2_slides_h1h2l1' + subsuffix )
-thinca2_slides_h1h2g1_job.set_sub_file( basename + '.thinca2_slides_h1h2g1' + subsuffix )
-thinca2_slides_h1l1g1_job.set_sub_file( basename + '.thinca2_slides_h1l1g1' + subsuffix )
-thinca2_slides_h2l1g1_job.set_sub_file( basename + '.thinca2_slides_h2l1g1' + subsuffix )
+thinca2_slides_h1h2l1_job.set_sub_file( basename + '.thinca2_slides_H1H2L1' + subsuffix )
+thinca2_slides_h1h2g1_job.set_sub_file( basename + '.thinca2_slides_G1H1H2' + subsuffix )
+thinca2_slides_h1l1g1_job.set_sub_file( basename + '.thinca2_slides_G1H1L1' + subsuffix )
+thinca2_slides_h2l1g1_job.set_sub_file( basename + '.thinca2_slides_G1H2L1' + subsuffix )
 
-thinca2_slides_h1h2l1g1_job.set_sub_file( basename + '.thinca2_slides_h1h2l1g1' + subsuffix )
+thinca2_slides_h1h2l1g1_job.set_sub_file( basename + '.thinca2_slides_G1H1H2L1' + subsuffix )
 
 sire_job.set_sub_file( basename + '.sire' + subsuffix )
 sire_clust_job.set_sub_file( basename + '.sire_clust' + subsuffix )
@@ -2069,9 +2069,9 @@ except:
 h1_data = pipeline.ScienceData() 
 if h1_segments:
   h1_data.read(h1_segments,length) 
-  h1_data.make_chunks(length,overlap,playground_only,0,overlap/2)
+  h1_data.make_chunks(length,overlap,playground_only,0,overlap/2,pad)
   h1_data.make_chunks_from_unused(length,overlap/2,playground_only,
-      0,0,overlap/2)
+      0,0,overlap/2,pad)
 
 # H2 
 try:
@@ -2082,9 +2082,9 @@ except:
 h2_data = pipeline.ScienceData()
 if h2_segments:
   h2_data.read(h2_segments,length) 
-  h2_data.make_chunks(length,overlap,playground_only,0,overlap/2)
+  h2_data.make_chunks(length,overlap,playground_only,0,overlap/2,pad)
   h2_data.make_chunks_from_unused(length,overlap/2,playground_only,
-      0,0,overlap/2)
+      0,0,overlap/2,pad)
 
 # L1  
 try:
@@ -2095,9 +2095,9 @@ except:
 l1_data = pipeline.ScienceData()  
 if l1_segments:
   l1_data.read(cp.get('input', 'l1-segments'),length) 
-  l1_data.make_chunks(length,overlap,playground_only,0,overlap/2)
+  l1_data.make_chunks(length,overlap,playground_only,0,overlap/2,pad)
   l1_data.make_chunks_from_unused(length,overlap/2,playground_only,
-      0,0,overlap/2)
+      0,0,overlap/2,pad)
 
 # G1
 try:
@@ -2108,9 +2108,9 @@ except:
 g1_data = pipeline.ScienceData()  
 if g1_segments:
   g1_data.read(cp.get('input', 'g1-segments'),length) 
-  g1_data.make_chunks(length,overlap,playground_only,0,overlap/2)
+  g1_data.make_chunks(length,overlap,playground_only,0,overlap/2,pad)
   g1_data.make_chunks_from_unused(length,overlap/2,playground_only,
-      0,0,overlap/2)
+      0,0,overlap/2,pad)
 
 print "done"
 
@@ -2125,8 +2125,8 @@ g1_data_out = copy.deepcopy(g1_data)
 # remove start and end of science segments which can't be analyzed for triggers
 for sci_data in [h1_data_out,h2_data_out,l1_data_out, g1_data_out]:
   for seg in sci_data:
-    seg.set_start(seg.start()+overlap/2)
-    seg.set_end(seg.end()-overlap/2)
+    seg.set_start(seg.start() + overlap/2 + pad)
+    seg.set_end(seg.end() - overlap/2 - pad)
 
 if playground_only:
   h1_data_out.play()
@@ -2314,6 +2314,7 @@ g1_chunks_analyzed = []
 # H1
 prev_df = None
 
+pad = 0
 print "setting up jobs to filter H1 data...",
 sys.stdout.flush()
 (prev_df,h1_chunks_analyzed) = analyze_ifo(h1_data,'H1',h1_data_to_do,  
