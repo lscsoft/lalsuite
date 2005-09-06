@@ -100,7 +100,7 @@ echo
 ## common cmdline-options for v1 and v2    
 cfs_CL="--IFO=$IFO --Freq=$freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --f1dotBand=$f1dot --df1dot=$df1dot --Fthreshold=0 --DataFiles=$SFTdir/testSFT* --refTime=$refTime"
     
-cmdline="$cfs_code $cfs_CL  --outputFstat=Fstat_v1.dat --expLALDemod=1";
+cmdline="$cfs_code $cfs_CL  --outputFstat=Fstat_v1.dat --expLALDemod=0";
 echo $cmdline;
 
 if ! eval time $cmdline; then
