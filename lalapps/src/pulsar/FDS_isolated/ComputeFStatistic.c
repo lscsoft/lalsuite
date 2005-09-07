@@ -228,7 +228,7 @@ REAL8 uvar_startTime;
 REAL8 uvar_endTime;
 REAL8 uvar_refTime;
 CHAR *uvar_outputClusters;
-
+INT4 uvar_RngMedWindow;
 #if BOINC_COMPRESS
 BOOLEAN uvar_useCompression;
 #endif
@@ -283,7 +283,7 @@ extern "C" {
   void CreateNautilusDetector (LALStatus *, LALDetector *Detector);
   void Freemem (LALStatus *);
   void EstimateFLines(LALStatus *);
-  void NormaliseSFTDataRngMdn (LALStatus *);
+  void NormaliseSFTDataRngMdn (LALStatus *, INT4 windowSize);
   INT4 EstimateSignalParameters(INT4 * maxIndex);
   int writeFLines(INT4 *maxIndex, DopplerPosition searchpos, FILE *fpOut);
   INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN, DopplerPosition searchpos);
@@ -513,7 +513,7 @@ int main(int argc,char *argv[])
   if (ReadSFTData()) return COMPUTEFSTAT_EXIT_READSFTFAIL;
 
   /* normalize SFTs by running median */
-  LAL_CALL (NormaliseSFTDataRngMdn(status), status);
+  LAL_CALL (NormaliseSFTDataRngMdn(status, uvar_RngMedWindow), status);
 
 #ifdef FILE_FMAX
   {
@@ -1005,7 +1005,6 @@ initUserVars (LALStatus *status)
 
   uvar_ephemYear = (CHAR*)LALCalloc (1, strlen(EPHEM_YEARS)+1);
 
-
 #if USE_BOINC
   strcpy (uvar_ephemYear, "");            /* the default year-string under BOINC is empty! */
 #else
@@ -1071,6 +1070,7 @@ initUserVars (LALStatus *status)
   uvar_MaxFileSizeKB = 5*1024;
   uvar_NumCandidatesToKeep = 0;	/* default: 0 = don't use toplist at all*/
 
+  uvar_RngMedWindow = 50;
 
   /* register all our user-variables */
   LALregBOOLUserVar(status,       help,           'h', UVAR_HELP,     "Print this message"); 
@@ -1135,6 +1135,7 @@ initUserVars (LALStatus *status)
   LALregINTUserVar(status,        NumCandidatesToKeep,0, UVAR_DEVELOPER, 
 		   "Number of Fstat 'canidates' to keep. (0 = All)");
 
+  LALregINTUserVar(status,        RngMedWindow,     0, UVAR_DEVELOPER, "Window-size to use in running-median normalization of data");
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -1998,7 +1999,15 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     globfree(&globbuf);
 #endif
   }
-  cfg->SFTno=fileno; /* remember this is 1 more than the index value */
+  cfg->SFTno = fileno; /* remember this is 1 more than the index value */
+
+  /* check that we found any suitable SFTs at all!! */
+  if ( cfg->SFTno  == 0 )
+    {
+      LALPrintError ("\nNo suitable SFTs found within given time-range [%f, %g]\n\n", uvar_startTime, uvar_endTime);
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+    }
+
 
   if (!uvar_mergedSFTFile) {
     /* open FIRST file and get info from it*/
@@ -2959,7 +2968,7 @@ EstimateFLines(LALStatus *stat)
  * multiplied by F statistics.
  */
 void 
-NormaliseSFTDataRngMdn(LALStatus *stat)
+NormaliseSFTDataRngMdn(LALStatus *stat, INT4 windowSize)
 {
 #ifdef FILE_SPRNG  
   FILE *outfile;
@@ -2969,7 +2978,6 @@ NormaliseSFTDataRngMdn(LALStatus *stat)
   REAL8Vector *Sp=NULL, *RngMdnSp=NULL;   /* |SFT|^2 and its rngmdn  */
   REAL8 B;                          /* SFT Bandwidth */
   REAL8 deltaT,norm,*N, *Sp1;
-  INT2 windowSize=50;                  /* Running Median Window Size*/
   REAL4 xre,xim,xreNorm,ximNorm;
 
   INITSTATUS( stat, "NormaliseSFTDataRngMdn", rcsid );
