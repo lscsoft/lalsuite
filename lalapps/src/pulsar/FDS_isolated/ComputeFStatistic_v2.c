@@ -149,12 +149,11 @@ CHAR *uvar_DataFiles2;
 BOOLEAN uvar_help;
 CHAR *uvar_outputLabel;
 CHAR *uvar_outputFstat;
-REAL8 uvar_FstatMin;
 CHAR *uvar_skyGridFile;
 CHAR *uvar_outputSkyGrid;
 CHAR *uvar_workingDir;
 REAL8 uvar_dopplermax;
-INT4 uvar_windowsize;
+INT4 uvar_RngMedWindow;
 REAL8 uvar_refTime;
 INT4 uvar_SSBprecision;
 
@@ -488,7 +487,6 @@ initUserVars (LALStatus *status)
   uvar_outputLabel = NULL;
 
   uvar_outputFstat = NULL;
-  uvar_FstatMin = 0.0;
 
   uvar_skyGridFile = NULL;
 
@@ -496,49 +494,49 @@ initUserVars (LALStatus *status)
   strcpy(uvar_workingDir, ".");
 
   uvar_dopplermax =  1.05e-4;
-  uvar_windowsize = 50;	/* for running-median */
+  uvar_RngMedWindow = 50;	/* for running-median */
 
   uvar_SSBprecision = SSBPREC_RELATIVISTIC;
 
   /* register all our user-variables */
   LALregBOOLUserVar(status, 	help, 		'h', UVAR_HELP,     "Print this message"); 
-  LALregINTUserVar(status,	Dterms,		't', UVAR_OPTIONAL, "Number of terms to keep in Dirichlet kernel sum");
   LALregREALUserVar(status, 	Freq, 		'f', UVAR_REQUIRED, "Starting search frequency in Hz");
   LALregREALUserVar(status, 	FreqBand, 	'b', UVAR_OPTIONAL, "Search frequency band in Hz");
   LALregREALUserVar(status,     dFreq,          'r', UVAR_OPTIONAL, "Frequency resolution in Hz (default: 1/(2*Tsft*Nsft)");
-  LALregREALUserVar(status, 	Alpha, 		'a', UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in radians");
-  LALregREALUserVar(status, 	Delta, 		'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians");
-  LALregREALUserVar(status, 	AlphaBand, 	'z', UVAR_OPTIONAL, "Band in alpha (equatorial coordinates) in radians");
-  LALregREALUserVar(status, 	DeltaBand, 	'c', UVAR_OPTIONAL, "Band in delta (equatorial coordinates) in radians");
-  LALregREALUserVar(status, 	dAlpha, 	'l', UVAR_OPTIONAL, "Resolution in alpha (equatorial coordinates) in radians");
-  LALregREALUserVar(status, 	dDelta, 	'g', UVAR_OPTIONAL, "Resolution in delta (equatorial coordinates) in radians");
-  LALregSTRINGUserVar(status,	DataFiles, 	'D', UVAR_REQUIRED, "Directory where SFT's are located"); 
-  LALregSTRINGUserVar(status,	DataFiles2, 	 0,  UVAR_OPTIONAL, "Directory where SFT's are located");
-  LALregSTRINGUserVar(status,	ephemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
-  LALregSTRINGUserVar(status,	ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
-  LALregSTRINGUserVar(status, 	IFO, 		'I', UVAR_REQUIRED, "Detector: GEO(0), LLO(1), LHO(2), NAUTILUS(3), VIRGO(4), TAMA(5), CIT(6)");
-  LALregSTRINGUserVar(status, 	IFO2, 		 0,  UVAR_OPTIONAL, "Detector: GEO(0), LLO(1), LHO(2), NAUTILUS(3), VIRGO(4), TAMA(5), CIT(6)"); 
-  LALregBOOLUserVar(status, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
-  LALregREALUserVar(status, 	dopplermax, 	'q', UVAR_OPTIONAL, "Maximum doppler shift expected");  
   LALregREALUserVar(status, 	f1dot, 		's', UVAR_OPTIONAL, "First spindown parameter f1dot");
   LALregREALUserVar(status, 	f1dotBand, 	'm', UVAR_OPTIONAL, "Search-band for f1dot");
   LALregREALUserVar(status, 	df1dot, 	'e', UVAR_OPTIONAL, "Resolution for f1dot (default 1/(2*Tobs*tSFT*Nsft)");
+  LALregREALUserVar(status, 	Alpha, 		'a', UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in radians");
+  LALregREALUserVar(status, 	AlphaBand, 	'z', UVAR_OPTIONAL, "Band in alpha (equatorial coordinates) in radians");
+  LALregREALUserVar(status, 	dAlpha, 	'l', UVAR_OPTIONAL, "Resolution in alpha (equatorial coordinates) in radians");
+  LALregREALUserVar(status, 	Delta, 		'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians");
+  LALregREALUserVar(status, 	DeltaBand, 	'c', UVAR_OPTIONAL, "Band in delta (equatorial coordinates) in radians");
+  LALregREALUserVar(status, 	dDelta, 	'g', UVAR_OPTIONAL, "Resolution in delta (equatorial coordinates) in radians");
+  LALregSTRINGUserVar(status,	skyRegion, 	'R', UVAR_OPTIONAL, "ALTERNATIVE: Specify sky-region by polygon (or use 'allsky')");
+  LALregSTRINGUserVar(status,	DataFiles, 	'D', UVAR_REQUIRED, "File-pattern specifying (first) set of data SFT-files"); 
+  LALregSTRINGUserVar(status, 	IFO, 		'I', UVAR_REQUIRED, "Detector: GEO(0), LLO(1), LHO(2), NAUTILUS(3), VIRGO(4), TAMA(5), CIT(6)");
+  LALregSTRINGUserVar(status,	DataFiles2, 	 0,  UVAR_OPTIONAL, "File-pattern specifying second set of data SFT-files");
+  LALregSTRINGUserVar(status, 	IFO2, 		 0,  UVAR_OPTIONAL, "Detector corresponding to second data-set (--DataFiles2)"); 
+  LALregSTRINGUserVar(status,	ephemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
+  LALregSTRINGUserVar(status,	ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
+  LALregBOOLUserVar(status, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
   LALregREALUserVar(status, 	Fthreshold,	'F', UVAR_OPTIONAL, "Signal Set the threshold for selection of 2F");
-  LALregINTUserVar(status, 	windowsize,	'k', UVAR_OPTIONAL, "Running-Median window size");
   LALregINTUserVar(status, 	gridType,	 0 , UVAR_OPTIONAL, "Template grid: 0=flat, 1=isotropic, 2=metric, 3=file");
   LALregINTUserVar(status, 	metricType,	'M', UVAR_OPTIONAL, "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
-  LALregREALUserVar(status, 	metricMismatch,	'X', UVAR_OPTIONAL, "Maximal mismatch for metric tiling");
-  LALregSTRINGUserVar(status,	skyRegion, 	'R', UVAR_OPTIONAL, "Specify sky-region by polygon");
+  LALregREALUserVar(status, 	metricMismatch,	'X', UVAR_OPTIONAL, "Maximal allowed mismatch for metric tiling");
   LALregSTRINGUserVar(status,	outputLabel,	'o', UVAR_OPTIONAL, "Label to be appended to all output file-names");
   LALregSTRINGUserVar(status,	skyGridFile,	 0,  UVAR_OPTIONAL, "Load sky-grid from this file.");
-  LALregSTRINGUserVar(status,	outputSkyGrid,	 0,  UVAR_OPTIONAL, "Write sky-grid into this file.");
-  LALregSTRINGUserVar(status,   workingDir,     'w', UVAR_OPTIONAL, "Directory to be made the working directory, . is default");
   LALregREALUserVar(status,	refTime,	 0,  UVAR_OPTIONAL, "SSB reference time for pulsar-paramters");
+  LALregREALUserVar(status, 	dopplermax, 	'q', UVAR_OPTIONAL, "Maximum doppler shift expected");  
+  LALregSTRINGUserVar(status,	outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for F-statistic field over the parameter-space");
 
   /* more experimental and unofficial stuff follows here */
-  LALregSTRINGUserVar(status,	outputFstat,	 0,  UVAR_OPTIONAL, "Output the F-statistic field over the parameter-space");
-  LALregREALUserVar(status, 	FstatMin,	 0,  UVAR_OPTIONAL, "Minimum F-Stat value to written into outputFstat-file");
   LALregINTUserVar (status, 	SSBprecision,	 0,  UVAR_DEVELOPER, "Precision to use for time-transformation to SSB: 0=Newtonian 1=relativistic");
+  LALregINTUserVar(status, 	RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");
+  LALregINTUserVar(status,	Dterms,		't', UVAR_DEVELOPER, "Number of terms to keep in Dirichlet kernel sum");
+  LALregSTRINGUserVar(status,   workingDir,     'w', UVAR_DEVELOPER, "Directory to be made the working directory, . is default");
+  LALregSTRINGUserVar(status,	outputSkyGrid,	 0,  UVAR_DEVELOPER, "Write sky-grid into this file.");
+
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -773,15 +771,65 @@ InitFStatDetector (LALStatus *status, ConfigVariables *cfg, UINT4 nD)
     if (!uvar_DataFiles)
       strcpy (uvar_DataFiles, ".");
     
-    TRY ( LALReadSFTfiles(status->statusPtr, &(cfg->ifos.sftVects[nD]), f_min, f_max, MYMAX(uvar_Dterms, uvar_windowsize), 
+    TRY ( LALReadSFTfiles(status->statusPtr, &(cfg->ifos.sftVects[nD]), f_min, f_max, MYMAX(uvar_Dterms, uvar_RngMedWindow), 
 			  uvar_DataFiles), status);
-  
+
+    /* experiment for running-median */
+    {
+      REAL8FrequencySeries periodo;
+      REAL8FrequencySeries psd50, psd100, psd200;
+      SFTtype *sft;
+      UINT4 length;
+      FILE *fp;
+      UINT4 i;
+      REAL8 f0, df;
+
+      sft = &(cfg->ifos.sftVects[nD]->data[0]);
+      length = sft->data->length;
+      f0 = sft->f0;
+      df = sft->deltaF;
+
+      psd50.data = NULL;
+      psd50.data = (REAL8Sequence *)LALMalloc(sizeof(REAL8Sequence));
+      psd50.data->length = length;
+      psd50.data->data = (REAL8 *)LALMalloc( length * sizeof(REAL8));
+
+      psd100.data = NULL;
+      psd100.data = (REAL8Sequence *)LALMalloc(sizeof(REAL8Sequence));
+      psd100.data->length = length;
+      psd100.data->data = (REAL8 *)LALMalloc( length * sizeof(REAL8));
+
+      psd200.data = NULL;
+      psd200.data = (REAL8Sequence *)LALMalloc(sizeof(REAL8Sequence));
+      psd200.data->length = length;
+      psd200.data->data = (REAL8 *)LALMalloc( length * sizeof(REAL8));
+
+      periodo.data = NULL;
+      periodo.data = (REAL8Sequence *)LALMalloc(sizeof(REAL8Sequence));
+      periodo.data->length = length;
+      periodo.data->data = (REAL8 *)LALMalloc( length * sizeof(REAL8));
+
+      /* calculate the periodogram */
+      TRY (LALSFTtoPeriodogram (status->statusPtr, &periodo, sft), status);
+
+      /* calculate the psd */
+      TRY (LALPeriodoToPSDRngMed (status->statusPtr, &psd50, &periodo, 50), status);
+      TRY (LALPeriodoToPSDRngMed (status->statusPtr, &psd100, &periodo, 100), status);
+      TRY (LALPeriodoToPSDRngMed (status->statusPtr, &psd200, &periodo, 200), status);
+
+      /* output this psd-estimate */
+      fp = fopen("PeriodoPsd.dat", "wb");
+      for (i=0; i < length; i++)
+	fprintf (fp, "%f %f %f %f %f\n", f0 + i*df, periodo.data->data[i], psd50.data->data[i], psd100.data->data[i], psd200.data->data[i]);
+      fclose(fp);
+    }
+
     /* this normalized by 1/sqrt(Sh), where Sh is the median of |X|^2  
      * NOTE: this corresponds to a double-sided PSD, therefore we need to 
      * divide by another factor of 2 with respect to the JKS formulae.
      */
     if ( ! uvar_SignalOnly ) {
-      TRY ( LALNormalizeSFTVect (status->statusPtr, cfg->ifos.sftVects[nD], uvar_windowsize, 0 ), 
+      TRY ( LALNormalizeSFTVect (status->statusPtr, cfg->ifos.sftVects[nD], uvar_RngMedWindow, 0 ), 
 	    status );
     }
     
