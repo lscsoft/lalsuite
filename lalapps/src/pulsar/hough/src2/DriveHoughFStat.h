@@ -118,10 +118,18 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
     SFTVector *data; /**< the SFT vectors */
   } SFTVectorSequence;
 
-  /** parameters for calculating Fstatistic for multiple stacks */ 
+  /** parameters for calculating Fstatistic for multiple stacks 
+      --- this assumes that the output will be used in a Hough or perhaps 
+      other semi-coherent method; therefore it also requires some
+      Hough parameters */ 
   typedef struct tagFstatStackParams {
+    INT4 nStacks;           /**< number of stacks */
+    REAL8 tStackAvg;        /**< average timebaseline of each stack */
+    REAL8 fBand;            /**< search band -- fstat is actually calculated in a larger band */
+    REAL8 fStart;           /**< start search frequency -- fstat calculation actually starts at a somewhat smaller frequency */
+    INT4 nfSizeCylinder;    /**< Hough nfSizeCylinder -- used for calculating extra frequency bins */
     INT4 *mCohSft;          /**< number of sfts in each stack */
-    REAL8 timeBase;         /**< time baseline of SFTs */
+    LIGOTimeGPSVector *tsStack; /**< mid times of stacks */
     REAL8 refTime;          /**< reference time for pulsar frequency and spndn. */
     INT4 SSBprecision;      /**< precision for transformation from detector to SSB times*/
     INT4 Dterms;            /**< value of Dterms for LALDemod */
@@ -131,7 +139,6 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
     REAL8 alpha;            /**< sky-location -- right acsension */
     REAL8 delta;            /**< sky-location -- declination */
     REAL8Vector *fdot;      /**< vector containing spindown values */
-    INT4 nfSizeCylinder;    /**< extra bins added due to Hough calculation */
   } FstatStackParams;
 
   /** parameters for calculating Hough Maps */

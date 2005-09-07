@@ -82,7 +82,6 @@ int main( int argc, char *argv[]) {
   REAL8 deltaF, timeBase; /* frequency resolution of SFTs */
   INT8 sftFminBin; /* first sft bin index */
   INT8 fHoughBinIni, fHoughBinFin, binsHough; /* frequency bins of start and end search frequencies */
-  INT8 fFstatBinIni, fFstatBinFin, binsFstat; /* same as above for Fstat */
   REAL8 deltaFstack; /* frequency resolution of Fstat calculation */
 
   /* LALdemod related stuff */
@@ -338,18 +337,7 @@ int main( int argc, char *argv[]) {
   tStackAvg /= nStacks;
   deltaFstack = 1.0/tStackAvg;
 
-  /* number of bins for calculating Fstat */
-  /* add nfSizeCylinder on either side*/
-  binsFstat = floor( tStackAvg * uvar_fBand ) + 2*nfSizeCylinder;
-  fFstatBinIni = floor( tStackAvg * uvar_fStart + 0.5) - nfSizeCylinder;
-  fFstatBinFin = fFstatBinIni + binsFstat - 1;
-
-  /* start and end bin for calculating hough map */
-  binsHough = floor( tStackAvg * uvar_fBand );
-  fHoughBinIni = floor( tStackAvg * uvar_fStart + 0.5);
-  fHoughBinFin = fHoughBinIni + binsHough - 1;
-    
-
+ 
   /*------------- calculate velocity and position for each stack ------------*/
   /* setting of ephemeris info */ 
   edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
@@ -382,23 +370,15 @@ int main( int argc, char *argv[]) {
 
 
   /*------------- calculate F statistic for each stack --------------*/
-  /* memory for Fstatistic Vector */
-  FstatVect.length = nStacks;
-  FstatVect.data = NULL;
-  FstatVect.data = (REAL8FrequencySeries *)LALMalloc(nStacks * sizeof(REAL8FrequencySeries));
-  for (k=0; k<nStacks; k++) {
-    FstatVect.data[k].epoch = midTstack.data[k];
-    FstatVect.data[k].deltaF = deltaFstack;
-    FstatVect.data[k].f0 = deltaFstack * fFstatBinIni;
-    FstatVect.data[k].data = (REAL8Sequence *)LALMalloc(sizeof(REAL8Sequence));
-    FstatVect.data[k].data->length = binsFstat;
-    FstatVect.data[k].data->data = (REAL8 *)LALMalloc( binsFstat * sizeof(REAL8));
-  }
-  
 
   /* set up parameters for Fstat calculation */
+  FstatPar.nStacks = nStacks;
+  FstatPar.tsStack = &midTstack;
+  FstatPar.tStackAvg = tStackAvg;
+  FstatPar.fBand = uvar_fBand;
+  FstatPar.fStart = uvar_fStart;
+  FstatPar.nfSizeCylinder = nfSizeCylinder;
   FstatPar.mCohSft = mCohSft;
-  FstatPar.timeBase = timeBase;
   FstatPar.refTime = refTime;
   FstatPar.SSBprecision = uvar_SSBprecision;
   FstatPar.Dterms = uvar_Dterms;
@@ -410,30 +390,26 @@ int main( int argc, char *argv[]) {
   FstatPar.fdot = NULL;
   LAL_CALL ( LALDCreateVector( &status, &(FstatPar.fdot), 1), &status);
   FstatPar.fdot->data[0] = uvar_fdot;
-  FstatPar.nfSizeCylinder = nfSizeCylinder;
+
 
   /* calculate the Fstatistic */
   LAL_CALL(ComputeFstatStack( &status, &FstatVect, &stackSFTs, &FstatPar), &status);
 
-
-
-  /*------------ select peaks ------------*/ 
-  /* first allocate memory for peakgrams */
-  pgV.length = nStacks;
-  pgV.pg = (HOUGHPeakGram *)LALMalloc( nStacks * sizeof(HOUGHPeakGram));
-  for (k=0; k<nStacks; k++) {
-    pgV.pg[k].deltaF = deltaF;
-    pgV.pg[k].fBinIni = fFstatBinIni;
-    pgV.pg[k].fBinFin = fFstatBinFin;
-  }
-
-  /* compute the peakgrams */
-  LAL_CALL( FstatVectToPeakGram( &status, &pgV, &FstatVect, uvar_FstatThr), &status);
-
   LAL_CALL( PrintFstat ( &status, FstatVect.data, uvar_fnameout), &status);
 
 
+  /*------------ select peaks ------------*/ 
+
+  LAL_CALL( FstatVectToPeakGram( &status, &pgV, &FstatVect, uvar_FstatThr), &status);
+
+
   /*--------------- calculate Hough map ---------------*/
+  /* start and end bin for calculating hough map */
+  /* these are just what the user specified */
+  binsHough = floor( tStackAvg * uvar_fBand );
+  fHoughBinIni = floor( tStackAvg * uvar_fStart + 0.5);
+  fHoughBinFin = fHoughBinIni + binsHough - 1;
+
   /* set up the Hough parameters */
   houghPar.tStart = tStart;
   houghPar.fBinIni = fHoughBinIni;
@@ -497,18 +473,18 @@ void ComputeFstatStack (LALStatus *status,
 			FstatStackParams *params)
 {
   /* stuff copied from params */
-  REAL8 timeBase = params->timeBase; /* can also be copied from SFTs */
+  INT4 nStacks = params->nStacks;
   REAL8 refTime = params->refTime;
   INT4 *mCohSft = params->mCohSft;
   REAL8Vector *fdot = params->fdot;
   INT4 nfSizeCylinder = params->nfSizeCylinder;
+  REAL8 fStart = params->fStart;
+  REAL8 fBand = params->fBand;
+  REAL8 tStackAvg = params->tStackAvg;
+  REAL8 deltaF = 1.0/tStackAvg;
 
-  /* stuff copied from output Fstat vector */
-  INT4 binsFstat = out->data->data->length;
-  INT4 nStacks = out->length;
-  REAL8 deltaF = out->data->deltaF;
-  REAL8 fStart = out->data->f0;
-
+  /* copy timeBase from SFT vector */
+  REAL8 timeBase = 1.0 / ( stackSFTs->data->data->deltaF);
 
   /* other variables */
   SSBtimes tSSB;
@@ -519,9 +495,61 @@ void ComputeFstatStack (LALStatus *status,
   INT4 k, j, indexSft;
   REAL8Vector *fkdot=NULL;
   LIGOTimeGPS tempRef;
+  INT8 binsFstat;
 
   INITSTATUS( status, "ComputeFstatStack", rcsid );
   ATTATCHSTATUSPTR (status);
+
+
+  /*---------- memory for Fstatistic Vector -----------*/
+
+  /* number of bins for calculating Fstat */
+  /* add extraBins on either side*/
+  {
+    /* extraBins = nfSizeCylinder/2 + maxNBins/2 
+       nfSizeCylinder is parameter, but maxNBins must 
+       be calculated from Hough routines.  It is the 
+       largest number of bins affected by the skypatch */
+
+    INT4 extraBins; /* the extra number of bins for which the Fstat must be calculated */
+    HOUGHResolutionPar resPar;
+    HOUGHSizePar sizePar;
+    INT8 tempBin, fBinIni, fBinFin;
+    REAL8 patchSize;
+
+    /* calculate sizePar for fStart */
+    tempBin = (INT8) ( tStackAvg * fStart );    
+    patchSize = 0.5 / ( tempBin * VEPI ); 
+
+    resPar.f0Bin = tempBin;
+    resPar.deltaF = deltaF;
+    resPar.patchSkySizeX = patchSize;
+    resPar.patchSkySizeY = patchSize;
+    resPar.pixelFactor = PIXELFACTOR;
+    resPar.pixErr = PIXERR;
+    resPar.linErr = LINERR;
+    resPar.vTotC = VTOT;
+
+    TRY ( LALHOUGHComputeSizePar ( status->statusPtr, &sizePar, &resPar ), status);
+    extraBins = nfSizeCylinder/2 + sizePar.maxNBins/2;
+
+    /* now we can calculate required span of Fstat vector */
+    binsFstat = floor( tStackAvg * fBand ) + 2*extraBins;
+    fBinIni = floor( tStackAvg * fStart + 0.5) - extraBins;
+    fBinFin = fBinIni + binsFstat - 1;
+
+    out->length = nStacks;
+    out->data = NULL;
+    out->data = (REAL8FrequencySeries *)LALMalloc(nStacks * sizeof(REAL8FrequencySeries));
+    for (k=0; k<nStacks; k++) {
+      out->data[k].epoch = params->tsStack->data[k];
+      out->data[k].deltaF = deltaF;
+      out->data[k].f0 = deltaF * fBinIni;
+      out->data[k].data = (REAL8Sequence *)LALMalloc(sizeof(REAL8Sequence));
+      out->data[k].data->length = binsFstat;
+      out->data[k].data->data = (REAL8 *)LALMalloc( binsFstat * sizeof(REAL8));
+    }
+  } /* end of Fstat memory allocation */
 
   /* other stuff copied from params */
   skyPoint.longitude = params->alpha;
@@ -907,8 +935,14 @@ void FstatVectToPeakGram (LALStatus *status,
   INITSTATUS( status, "FstatVectToPeakGram", rcsid );
   ATTATCHSTATUSPTR (status);
 
-  nStacks = pgV->length;
+  nStacks = FstatVect->length;
   nSearchBins = FstatVect->data->data->length;
+
+
+  /* first memory allocation */  
+  pgV->length = nStacks;
+  pgV->pg = (HOUGHPeakGram *)LALMalloc( nStacks * sizeof(HOUGHPeakGram));
+
 
   upg = (UCHAR *)LALMalloc( nSearchBins * sizeof(UCHAR));
 
@@ -1077,7 +1111,7 @@ void PrintFstat( LALStatus *status,
   fp = fopen(fname, "w");
 
   for (k=0; k<length; k++) {
-    fprintf(fp, "%g   %g\n", freq, Fstat->data->data[k]);
+    fprintf(fp, "%e   %e\n", freq, Fstat->data->data[k]);
     freq += deltaF;
   }
 
