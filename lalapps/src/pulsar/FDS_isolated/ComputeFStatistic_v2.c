@@ -774,56 +774,6 @@ InitFStatDetector (LALStatus *status, ConfigVariables *cfg, UINT4 nD)
     TRY ( LALReadSFTfiles(status->statusPtr, &(cfg->ifos.sftVects[nD]), f_min, f_max, MYMAX(uvar_Dterms, uvar_RngMedWindow/2 +1), 
 			  uvar_DataFiles), status);
 
-    /* experiment for running-median */
-    {
-      REAL8FrequencySeries periodo;
-      REAL8FrequencySeries psd50, psd100, psd200;
-      SFTtype *sft;
-      UINT4 length;
-      FILE *fp;
-      UINT4 i;
-      REAL8 f0, df;
-
-      sft = &(cfg->ifos.sftVects[nD]->data[0]);
-      length = sft->data->length;
-      f0 = sft->f0;
-      df = sft->deltaF;
-
-      psd50.data = NULL;
-      psd50.data = (REAL8Sequence *)LALMalloc(sizeof(REAL8Sequence));
-      psd50.data->length = length;
-      psd50.data->data = (REAL8 *)LALMalloc( length * sizeof(REAL8));
-
-      psd100.data = NULL;
-      psd100.data = (REAL8Sequence *)LALMalloc(sizeof(REAL8Sequence));
-      psd100.data->length = length;
-      psd100.data->data = (REAL8 *)LALMalloc( length * sizeof(REAL8));
-
-      psd200.data = NULL;
-      psd200.data = (REAL8Sequence *)LALMalloc(sizeof(REAL8Sequence));
-      psd200.data->length = length;
-      psd200.data->data = (REAL8 *)LALMalloc( length * sizeof(REAL8));
-
-      periodo.data = NULL;
-      periodo.data = (REAL8Sequence *)LALMalloc(sizeof(REAL8Sequence));
-      periodo.data->length = length;
-      periodo.data->data = (REAL8 *)LALMalloc( length * sizeof(REAL8));
-
-      /* calculate the periodogram */
-      TRY (LALSFTtoPeriodogram (status->statusPtr, &periodo, sft), status);
-
-      /* calculate the psd */
-      TRY (LALPeriodoToPSDRngMed (status->statusPtr, &psd50, &periodo, 50), status);
-      TRY (LALPeriodoToPSDRngMed (status->statusPtr, &psd100, &periodo, 100), status);
-      TRY (LALPeriodoToPSDRngMed (status->statusPtr, &psd200, &periodo, 200), status);
-
-      /* output this psd-estimate */
-      fp = fopen("PeriodoPsd.dat", "wb");
-      for (i=0; i < length; i++)
-	fprintf (fp, "%f %f %f %f %f\n", f0 + i*df, periodo.data->data[i], psd50.data->data[i], psd100.data->data[i], psd200.data->data[i]);
-      fclose(fp);
-    }
-
     /* this normalized by 1/sqrt(Sh), where Sh is the median of |X|^2  
      * NOTE: this corresponds to a double-sided PSD, therefore we need to 
      * divide by another factor of 2 with respect to the JKS formulae.
