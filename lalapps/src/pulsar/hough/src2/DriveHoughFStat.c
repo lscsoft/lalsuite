@@ -59,9 +59,6 @@ extern int lalDebugLevel;
 
 int main( int argc, char *argv[]) {
   LALStatus status = blank_status;	/* initialize status */
-
-  /* for debugging */
-  INT4 tempDbg;
   
   INT4 j,k; /* temp loop variables: k loops over stacks and j over SFTs in a stack*/
 
@@ -421,7 +418,7 @@ int main( int argc, char *argv[]) {
   /* calculate the Fstatistic */
   LAL_CALL(ComputeFstatStack( &status, &FstatVect, &stackSFTs, &FstatPar), &status);
 
-  tempDbg = FstatVect.data[0].data->length;
+
 
   /*------------ select peaks ------------*/ 
   /* first allocate memory for peakgrams */
@@ -435,6 +432,8 @@ int main( int argc, char *argv[]) {
 
   /* compute the peakgrams */
   LAL_CALL( FstatVectToPeakGram( &status, &pgV, &FstatVect, uvar_FstatThr), &status);
+
+  LAL_CALL( PrintFstat ( &status, FstatVect.data, uvar_fnameout), &status);
 
 
   /*--------------- calculate Hough map ---------------*/
@@ -733,7 +732,7 @@ void ComputeFstatHoughMap(LALStatus *status,
 
   /* if there are spindowns */
   nSpin1Max = floor(nfSizeCylinder/2.0); /* max number of spindowns */
-  f1jump = 1./timeDiffV.data[nStacks - 1]; /* resolution in fdot */
+  f1jump = 1.0 / timeDiffV.data[nStacks - 1]; /* resolution in fdot */
   
   /* start main Hough calculation */
   while( fBin <= fBinFin){
@@ -1053,6 +1052,37 @@ void SetUpStacks2(LALStatus *status,
     out->length = k;
     out->data = (SFTVector *)LALRealloc( out->data, k*sizeof(SFTVector));
   }
+
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+}
+
+
+
+void PrintFstat( LALStatus *status,
+		 REAL8FrequencySeries *Fstat, 
+		 CHAR *fname)
+{
+
+  FILE *fp=NULL;
+  INT4 k, length;
+  REAL8 freq, deltaF;
+
+  INITSTATUS( status, "PrintFstat", rcsid );
+  ATTATCHSTATUSPTR (status);
+
+  length = Fstat->data->length;
+  freq = Fstat->f0;
+  deltaF = Fstat->deltaF;
+  
+  fp = fopen(fname, "w");
+
+  for (k=0; k<length; k++) {
+    fprintf(fp, "%g   %g\n", freq, Fstat->data->data[k]);
+    freq += deltaF;
+  }
+
+  fclose(fp);
 
   DETATCHSTATUSPTR (status);
   RETURN(status);

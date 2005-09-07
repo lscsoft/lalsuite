@@ -174,6 +174,10 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 		     const SFTVector *sftVect,
 		     const LIGOTimeGPSVector *ts,
 		     INT4 nStacks);
+
+  void PrintFstat( LALStatus *status,
+		   REAL8FrequencySeries *Fstat, 
+		   CHAR *fname);
   
 #ifdef  __cplusplus
 }                /* Close C++ protection */
