@@ -136,6 +136,8 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
   /** parameters for calculating Hough Maps */
   typedef struct tagHoughParams {
     REAL8 tStart;              /**< start time of first stack */
+    INT8 fBinIni;              /**< start frequency */
+    INT8 fBinFin;              /**< frequency band */
     INT4 nfSizeCylinder;       /**< cylinder of LUTs */
     LALDetector detector;      /**< detector */
     LIGOTimeGPSVector *ts;     /**< timestamps of mid points of stacks */
@@ -143,7 +145,7 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
     REAL8VectorSequence *pos;  /**< detector position for each stack */
     REAL8 alpha;               /**< right ascension */
     REAL8 delta;               /**< declination */
-    REAL8Vector *fdot;     /**< spindown parameters */
+    REAL8Vector *fdot;         /**< spindown parameters */
   } HoughParams;
 
   

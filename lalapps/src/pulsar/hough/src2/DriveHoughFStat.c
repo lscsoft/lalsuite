@@ -59,6 +59,9 @@ extern int lalDebugLevel;
 
 int main( int argc, char *argv[]) {
   LALStatus status = blank_status;	/* initialize status */
+
+  /* for debugging */
+  INT4 tempDbg;
   
   INT4 j,k; /* temp loop variables: k loops over stacks and j over SFTs in a stack*/
 
@@ -72,6 +75,7 @@ int main( int argc, char *argv[]) {
   REAL8 tObs, tStart, tEnd;
   REAL8  *tStack, tStackAvg; /* duration of each stack */
   REAL8 refTime;
+  REAL8 extra, fStartExtra, fBandExtra; /* extra wings for Fstat calculation */
 
   /* sft related stuff */
   SFTVector *inputSFTs=NULL;  /* vector of SFTtypes and SFTtype is COMPLEX8FrequencySeries */
@@ -81,13 +85,13 @@ int main( int argc, char *argv[]) {
   INT4 sftlength; /* number of bins in each sft */
   REAL8 deltaF, timeBase; /* frequency resolution of SFTs */
   INT8 sftFminBin; /* first sft bin index */
-  INT4 fSearchBinIni, fSearchBinFin; /* frequency bins of start and end search frequencies */
+  INT8 fBinIni, fBinFin, binsHough; /* frequency bins of start and end search frequencies */
+  INT8 fSearchBinIni, fSearchBinFin, binsFstat; /* same as above for Fstat */
   REAL8 deltaFstack; /* frequency resolution of Fstat calculation */
 
   /* LALdemod related stuff */
   REAL8FrequencySeriesVector FstatVect; /* Fstatistic vectors for each stack */
   FstatStackParams FstatPar;
-  INT4 binsFstat; /* number of frequency values where Fstat is calculated */
 
   /* hough variables */
   INT4  nfSizeCylinder=NFSIZE;
@@ -238,8 +242,12 @@ int main( int argc, char *argv[]) {
     strcat(tempDir, "/*SFT*.*");
 
     doppWings = (uvar_fStart + uvar_fBand) * VTOT;    
-    fmin = uvar_fStart - doppWings;
-    fmax = uvar_fStart + uvar_fBand + doppWings;
+    extra = doppWings;
+    fStartExtra = uvar_fStart - extra; /* read in a little bit extra ?*/
+    fBandExtra = uvar_fBand + 2.0*extra;
+
+    fmin = fStartExtra - doppWings;
+    fmax = fStartExtra + fBandExtra + doppWings;
     LAL_CALL( LALReadSFTfiles ( &status, &inputSFTs, fmin, fmax, 
 				nfSizeCylinder + uvar_blocksRngMed + uvar_Dterms, 
 				tempDir), &status); 
@@ -337,10 +345,16 @@ int main( int argc, char *argv[]) {
     tStackAvg += tStack[k];
   tStackAvg /= nStacks;
   deltaFstack = 1.0/tStackAvg;
-  /* starting bin, number of bins and final bin for calculating Fstat */
-  fSearchBinIni = floor( tStackAvg * uvar_fStart + 0.5);
-  binsFstat = floor( uvar_fBand * tStackAvg + 0.5);
-  fSearchBinFin = fSearchBinIni + binsFstat - 1;
+
+  /* number of bins for calculating Fstat */
+  binsFstat = floor( fBandExtra * tStackAvg + 0.5);
+  fSearchBinIni = floor( tStackAvg * fStartExtra + 0.5);
+  fSearchBinFin = fSearchBinIni + binsFstat;
+
+  /* start and end bin for calculating hough map */
+  fBinIni = floor( tStackAvg * uvar_fStart + 0.5);
+  binsHough = floor( tStackAvg * uvar_fBand + 0.5);
+  fBinFin = fBinIni + binsHough - 1;
     
 
   /*------------- calculate velocity and position for each stack ------------*/
@@ -382,12 +396,13 @@ int main( int argc, char *argv[]) {
   for (k=0; k<nStacks; k++) {
     FstatVect.data[k].epoch = midTstack.data[k];
     FstatVect.data[k].deltaF = deltaFstack;
-    FstatVect.data[k].f0 = uvar_fStart;
+    FstatVect.data[k].f0 = fStartExtra;
     FstatVect.data[k].data = (REAL8Sequence *)LALMalloc(sizeof(REAL8Sequence));
     FstatVect.data[k].data->length = binsFstat;
     FstatVect.data[k].data->data = (REAL8 *)LALMalloc( binsFstat * sizeof(REAL8));
   }
   
+
   /* set up parameters for Fstat calculation */
   FstatPar.mCohSft = mCohSft;
   FstatPar.timeBase = timeBase;
@@ -406,6 +421,8 @@ int main( int argc, char *argv[]) {
   /* calculate the Fstatistic */
   LAL_CALL(ComputeFstatStack( &status, &FstatVect, &stackSFTs, &FstatPar), &status);
 
+  tempDbg = FstatVect.data[0].data->length;
+
   /*------------ select peaks ------------*/ 
   /* first allocate memory for peakgrams */
   pgV.length = nStacks;
@@ -423,6 +440,8 @@ int main( int argc, char *argv[]) {
   /*--------------- calculate Hough map ---------------*/
   /* set up the Hough parameters */
   houghPar.tStart = tStart;
+  houghPar.fBinIni = fBinIni;
+  houghPar.fBinFin = fBinFin;
   houghPar.nfSizeCylinder = nfSizeCylinder;
   houghPar.detector = detector;
   houghPar.ts = &midTstack;
@@ -644,6 +663,8 @@ void ComputeFstatHoughMap(LALStatus *status,
 
   /* copy some params to local variables */
   nfSizeCylinder = params->nfSizeCylinder;
+  fBinIni = params->fBinIni;
+  fBinFin = params->fBinFin;
   alpha = params->alpha;
   delta = params->delta;
   vel = params->vel;
@@ -654,8 +675,6 @@ void ComputeFstatHoughMap(LALStatus *status,
 
   /* copy some parameters from peakgram vector */
   deltaF = pgV->pg->deltaF;
-  fBinIni = pgV->pg->fBinIni;
-  fBinFin = pgV->pg->fBinFin;
   nStacks = pgV->length;
 
   /* set patch size */
@@ -664,8 +683,8 @@ void ComputeFstatHoughMap(LALStatus *status,
      where Tcoh is coherent time baseline, 
      f0 is frequency and Vepi is rotational velocity 
      of detector */
-  patchSizeX = 1.0 / ( fBinFin * VEPI ); 
-  patchSizeY = 1.0 / ( fBinFin * VEPI ); 
+  patchSizeX = 0.5 / ( fBinIni * VEPI ); 
+  patchSizeY = 0.5 / ( fBinIni * VEPI ); 
 
   /* first memory allocation */
   lutV.length = nStacks;
@@ -771,7 +790,7 @@ void ComputeFstatHoughMap(LALStatus *status,
       parDem.positC.x = pos->data[3*j];
       parDem.positC.y = pos->data[3*j + 1];
       parDem.positC.z = pos->data[3*j + 2];
-      parDem.timeDiff = 0.0;
+      parDem.timeDiff = timeDiffV.data[j];
 
       /* calculate parameters needed for buiding the LUT */
       TRY( LALHOUGHParamPLUT( status->statusPtr, &parLut, &parSize, &parDem),status );
@@ -781,7 +800,7 @@ void ComputeFstatHoughMap(LALStatus *status,
     }
     
     /*--------- build the set of  PHMD centered around fBin -------------*/     
-    phmdVS.fBinMin = fBin-floor(nfSizeCylinder/2.);
+    phmdVS.fBinMin = fBin - floor(nfSizeCylinder/2.);
     TRY( LALHOUGHConstructSpacePHMD(status->statusPtr, &phmdVS, pgV, &lutV), status );
     
     /*-------------- initializing the Total Hough map space ------------*/   
@@ -796,9 +815,8 @@ void ComputeFstatHoughMap(LALStatus *status,
 
     /*  Search frequency interval possible using the same LUTs */
     fBinSearch = fBin;
-    fBinSearchMax = fBin + parSize.nFreqValid -1-floor( (nfSizeCylinder-1)/2.);
-    
- 
+    fBinSearchMax = fBin + parSize.nFreqValid - 1 - floor((nfSizeCylinder - 1 )/2.0);
+     
     /* Study all possible frequencies with one set of LUT */    
     while ( (fBinSearch <= fBinFin) && (fBinSearch < fBinSearchMax) )  { 
       
@@ -851,7 +869,8 @@ void ComputeFstatHoughMap(LALStatus *status,
     /*--------------  Free partial memory -----------------*/
     LALFree(patch.xCoor);
     LALFree(patch.yCoor);
-    
+    LALFree(ht->map);
+
     for (j=0; j<lutV.length ; ++j){
       for (i=0; i<maxNBorders; ++i){
 	LALFree( lutV.lut[j].border[i].xPixel);
