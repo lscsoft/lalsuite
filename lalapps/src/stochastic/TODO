@@ -37,8 +37,6 @@ stopp.c/stopp_bayes.c:
 
 * output bayesian pdf into a separate xml table
 
-* add option to only perform the post processing, not combine
-
 * add process and process params tables
 
 stochastic_pipe.in/stochastic_bayes.in:
