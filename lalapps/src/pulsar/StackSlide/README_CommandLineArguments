@@ -5,7 +5,7 @@
 #SUMs: The STKs are slid and then summed to produce SUMs; 
 
 #For historical reasons, parameters for controlling Monte Carlo Simulations occur in several places.
-#See: maxMCinterations, maxMCfracErr, orientationAngle, cosInclinationAngle, testFlag, numMCInjections, numMCRescalings, rescaleMCFraction, parameterMC, and debugOptionFlag.
+#See: maxMCinterations, maxMCErr, orientationAngle, cosInclinationAngle, testFlag, numMCInjections, numMCRescalings, rescaleMCFraction, parameterMC, and debugOptionFlag.
 
 #Example command line arguments for ComputeStackSlide: 
 
@@ -56,7 +56,7 @@ set maxMCinterations                         1; #24 INT4 maximum number of times
 set priorResultsFile     None; #25 CHAR* file with the loudest event and estimated UL from a prior step in the pipeline. 
 set parameterSpaceFile   None; #26 CHAR* file with parameter space data 
 
-set maxMCfracErr     5.0000000000000001e-03; #27 REAL8 maximum fractional error allowed when testing for convergence of confidence when iterating Monte Carlo. 
+set maxMCErr     5.0000000000000001e-03; #27 REAL8 maximum absolute error allowed when testing for convergence of confidence when iterating Monte Carlo. 
 
 set parameterSpaceFlag                       0; #28 INT2 how to generate parameter space. 
 #The parameterSpaceFlag options are: 
@@ -117,7 +117,7 @@ set testFlag                                 0; #46 INT2 specify test case.
 # if ((testFlag & 64) > 0) search surrounding parameters space pts during Monte Carlo Simulations; else search nearest only.
 # The prior results must be given in the priorResultsFile set above.
 # The maximum number of iterations is given by maxMCinterations set above.
-# The maximum fractional error allowed when testing for convergence of confidence when iterating the Monte Carlo is set by maxMCfracErr above.
+# The maximum absolute error allowed when testing for convergence of confidence when iterating the Monte Carlo is set by maxMCErr above.
 # The loudest event, upper limits and confidence are reported in the searchresults_stackslidemontecarlo table in the xml file.
 
 set linesAndHarmonicsFile None; #47 CHAR* file with instrument line and harmonic spectral disturbances data.

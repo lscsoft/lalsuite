@@ -146,6 +146,7 @@
 /*               search surrounding parameters space pts; else search nearest only */
 /* 08/24/05 gam; Fix off by one error when computing tmpNumRA in CountOrAssignSkyPosData */
 /* 08/31/05 gam; In StackSlideComputeSky set ssbT0 to gpsStartTime, which is gpsEpochStartTime in this code; this now gives the epoch that defines T_0 at the SSB! */
+/* 09/06/05 gam; Change params->maxMCfracErr to params->maxMCErr, the absolute error in confidence for convergence. */
 
 /*********************************************/
 /*                                           */
@@ -348,7 +349,7 @@ params->numFDeriv5   =   0;
 		case 26: params->parameterSpaceFile = (CHAR *) LALMalloc( (strlen( argv[i] ) + 1) * sizeof(CHAR) );
 		         strcpy(params->parameterSpaceFile, argv[i]); break;
 
-		case 27: params->maxMCfracErr = (REAL8)atof(argv[i]); break;
+		case 27: params->maxMCErr = (REAL8)atof(argv[i]); break;
 
 		case 28: params->parameterSpaceFlag = (INT2)atoi(argv[i]); break;
 
@@ -527,7 +528,7 @@ params->numFDeriv5   =   0;
     	fprintf(stdout,"#SUMs: The STKs are slid and then summed to produce SUMs; \n");
     	fprintf(stdout,"\n");
     	fprintf(stdout,"#For historical reasons, parameters for controlling Monte Carlo Simulations occur in several places.\n");
-    	fprintf(stdout,"#See: maxMCinterations, maxMCfracErr, orientationAngle, cosInclinationAngle, testFlag, numMCInjections, numMCRescalings, rescaleMCFraction, parameterMC, and debugOptionFlag.\n");
+    	fprintf(stdout,"#See: maxMCinterations, maxMCErr, orientationAngle, cosInclinationAngle, testFlag, numMCInjections, numMCRescalings, rescaleMCFraction, parameterMC, and debugOptionFlag.\n");
     	fprintf(stdout,"\n");
     	fprintf(stdout,"#Example command line arguments for ComputeStackSlide: \n");
     	fprintf(stdout,"\n");
@@ -578,7 +579,7 @@ params->numFDeriv5   =   0;
     	fprintf(stdout,"set priorResultsFile     %s; #25 CHAR* file with the loudest event and estimated UL from a prior step in the pipeline. \n", params->priorResultsFile);
     	fprintf(stdout,"set parameterSpaceFile   %s; #26 CHAR* file with parameter space data \n", params->parameterSpaceFile);
     	fprintf(stdout,"\n");
-    	fprintf(stdout,"set maxMCfracErr    %23.16e; #27 REAL8 maximum fractional error allowed when testing for convergence of confidence when iterating Monte Carlo. \n", params->maxMCfracErr);
+    	fprintf(stdout,"set maxMCErr    %23.16e; #27 REAL8 maximum absolute error allowed when testing for convergence of confidence when iterating Monte Carlo. \n", params->maxMCErr);
     	fprintf(stdout,"\n");
     	fprintf(stdout,"set parameterSpaceFlag %23d; #28 INT2 how to generate parameter space. \n", params->parameterSpaceFlag);
     	fprintf(stdout,"#The parameterSpaceFlag options are: \n");
@@ -645,7 +646,7 @@ params->numFDeriv5   =   0;
     	fprintf(stdout,"# if ((testFlag & 64) > 0) search surrounding parameters space pts during Monte Carlo Simulations; else search nearest only.\n");
     	fprintf(stdout,"# The prior results must be given in the priorResultsFile set above.\n");
     	fprintf(stdout,"# The maximum number of iterations is given by maxMCinterations set above.\n");
-    	fprintf(stdout,"# The maximum fractional error allowed when testing for convergence of confidence when iterating the Monte Carlo is set by maxMCfracErr above.\n");
+    	fprintf(stdout,"# The maximum absolute error allowed when testing for convergence of confidence when iterating the Monte Carlo is set by maxMCErr above.\n");
     	fprintf(stdout,"# The loudest event, upper limits and confidence are reported in the searchresults_stackslidemontecarlo table in the xml file.\n");
     	fprintf(stdout,"\n");
     	fprintf(stdout,"set linesAndHarmonicsFile %s; #47 CHAR* file with instrument line and harmonic spectral disturbances data.\n", params->linesAndHarmonicsFile);

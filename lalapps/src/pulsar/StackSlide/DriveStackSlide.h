@@ -89,6 +89,7 @@
 /* 05/24/05 gam; add StackSlideMonteCarloResultsTable */
 /* 07/13/05 gam; make RandomParams *randPar a parameter for CleanCOMPLEX8SFT; initialze RandomParams *randPar once to avoid repeatly opening /dev/urandom */
 /* 07/17/05 gam; Change ...Deriv5 command line arguments to ones that control new Monte Carlo (MC) options */
+/* 09/06/05 gam; Change params->maxMCfracErr to params->maxMCErr, the absolute error in confidence for convergence. */
 
 #ifndef _DRIVESTACKSLIDE_H
 #define _DRIVESTACKSLIDE_H
@@ -532,7 +533,7 @@ typedef struct tagStackSlideSearchParams {
   CHAR *priorResultsFile;             /* 05/24/05 gam; file with the loudest event and estimated UL from a prior step in the pipeline */
   CHAR *parameterSpaceFile;           /* 05/24/05 gam; file with parameter space data */
 
-  REAL8 maxMCfracErr;                 /* maximum allowed fractional error allowed when Monte Carlo Simulations are converging on desired confidence */
+  REAL8 maxMCErr;                     /* maximum allowed absolute error allowed when Monte Carlo Simulations are converging on desired confidence */
 
   INT2    parameterSpaceFlag;        /* 0 = use input delta for each param, 1 = params are input as vectors of data, 2 = use input param metric, 3 = create param metric */
     INT4    numParamSpacePts;          /* Total number of points in the parameter space to cover */

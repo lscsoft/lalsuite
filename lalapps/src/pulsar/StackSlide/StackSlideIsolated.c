@@ -35,10 +35,12 @@ $Id$
 /*                 random point in the parameters space a random number of times.  */
 /* 07/29/05 gam; if (params->testFlag & 64) > 0 set searchSurroundingPts == 1 and  */
 /*               search surrounding parameters space pts; else search nearest only */
-/* 07/29/05 gam; If params->numMCRescalings > 0 use this and params->rescaleMCFractionSFTs to */
-/*               rescale SFTs to run numMCRescalings Monte Carlo simulations in parallel.     */
 /* 08/31/05 gam; In StackSlideComputeSky set ssbT0 to gpsStartTime, which is gpsEpochStartTime in this code; this now gives the epoch that defines T_0 at the SSB! */
 /*               This affects GPSin and tRef as well. */
+/* 09/01/05 gam; If params->numMCRescalings > 0 use this and params->rescaleMCFractionSFTs to */
+/*               rescale SFTs to run numMCRescalings Monte Carlo simulations in parallel.     */
+/* 09/05/05 gam; To inject isotropically on the sky, inject uniform distribution for sin(DEC). */
+/* 09/06/05 gam; Change params->maxMCfracErr to params->maxMCErr, the absolute error in confidence for convergence. */
 
 /*********************************************/
 /*                                           */
@@ -437,7 +439,11 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
   REAL8 startFDeriv4 = params->startFDeriv4;
   REAL8 startFDeriv5 = params->startFDeriv5;
   REAL8 rangeRA  = params->stksldSkyPatchData->stopRA - params->stksldSkyPatchData->startRA;
-  REAL8 rangeDec = params->stksldSkyPatchData->stopDec - params->stksldSkyPatchData->startDec;
+  /* REAL8 rangeDec = params->stksldSkyPatchData->stopDec - params->stksldSkyPatchData->startDec; */
+  REAL8 rangeDec = sin(params->stksldSkyPatchData->stopDec) - sin(params->stksldSkyPatchData->startDec); /* 09/05/05 gam */
+  REAL8 sinStartDec = sin(startDec);                                                                     /* 09/05/05 gam */
+  REAL8 sinStartDecmhalfDeltaDec = sin(startDec-(0.5*DeltaDec));                                         /* 09/05/05 gam */
+  REAL8 rangeDecStartDecpmhDeltaDec = sin(startDec+(0.5*DeltaDec)) - sin(startDec-(0.5*DeltaDec));       /* 09/05/05 gam */
   REAL8 rangeFDeriv1 = params->stopFDeriv1 - params->startFDeriv1;
   REAL8 rangeFDeriv2 = params->stopFDeriv2 - params->startFDeriv2;
   REAL8 rangeFDeriv3 = params->stopFDeriv3 - params->startFDeriv3;
@@ -453,15 +459,27 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
   REAL8 priorConfidence = 0.0;
   REAL8 priorUL = 0.0;
   REAL8 priorUncertainty = 0.0;
-  REAL8 nAboveLE = 0.0;
-  REAL8 nTrials = 0.0;
+  /* REAL8 nAboveLE = 0.0;
+  REAL8 nTrials = 0.0; */ /* 09/01/05 gam */
+  REAL8 *nAboveLE = NULL;
+  REAL8 *nTrials = NULL;
+  REAL8 *h_0Rescaled = NULL;  
+  INT4 iRescale = 0;
+  INT4 iRescaleBest = 0;
   REAL8 *arrayULs = NULL;
   REAL8 *arrayConfs = NULL;
   INT4 *arrayConverged = NULL;
+  REAL8 *arrayIteratedULs = NULL;   /* 09/01/05 gam */
+  REAL8 *arrayIteratedConfs = NULL; /* 09/01/05 gam */ 
   INT4 iMC = 0;             /* which entire MC simulation is currently running */
-  INT4 countMC = 0;         /* count of number of complted MC simulations */
-  INT4 maxMC = 1;           /* maximum number of times to run the entire MC */
-  REAL8 maxFracErr = 0.005; /* when interating, maximum fractional error to allow for convergence to desired confidence */
+  INT4 countMC = 0;         /* count of number of completed MC simulations, including rescalings */
+  INT4 maxMC = 1;           /* default number of MC iterations to perform; set equal to params->maxMCinterations when interating MC */
+  BOOLEAN breakOutOfLoop;   /* 09/01/05 gam; if interated MC converges or "runs off the tracks" break out of loop */
+  INT4 onePlusNumMCRescalings = 1 + params->numMCRescalings; /* 09/01/05 gam; one plus number of times to rescale fake SFTs */
+  INT4 twoPlusNumMCRescalings = 2 + params->numMCRescalings; /* 09/01/05 gam; one plus number of times to rescale fake SFTs */
+  REAL8 maxMCErr = params->maxMCErr;  /* maximum absolute error in confidence to accept.  */
+  REAL8 thisMCErr = 1;           /* keep track of last absolute error in confidence. */
+  REAL8 lastMCErr = 1;           /* keep track of last absolute error in confidence. */
   INT4  *savSumBinMask;          /* 07/15/2005 gam */
   INT4  *arrayAvailableFreqBins; /* 07/15/2005 gam */
   INT4  nAvailableBins;          /* 07/15/2005 gam */
@@ -476,16 +494,32 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
       ABORT( status, STACKSLIDEISOLATEDH_EMCEVENTTHRESHOLDFLAGS, STACKSLIDEISOLATEDH_MSGEMCEVENTTHRESHOLDFLAGS);
   }
 
-  /* 07/29/05 gam; if testFlag if (params->testFlag & 64) > 0 search all parameters spaces points surrounding the injection; else search nearest only */
-  if ( (params->testFlag & 64) > 0 ) {
-       searchSurroundingPts = 1;  /* Search only the surrounding paremeters space point, in the Euclidean sense. */
-  } else {
-       searchSurroundingPts = 0;  /* Search only the nearest paremeters space point, in the Euclidean sense. */
+  /* 09/01/05 gam */
+  if (params->numMCRescalings < 0) {
+      ABORT( status, STACKSLIDEISOLATEDH_ENUMMCRESCALINGS, STACKSLIDEISOLATEDH_MSGENUMMCRESCALINGS);
+  }
+  h_0Rescaled = (REAL8 *)LALMalloc(onePlusNumMCRescalings*sizeof(REAL8));
+
+  if ( (params->testFlag & 32) > 0 ) {
+      /* 05/24/05 gam; iterate MC to converge on desired confidence */
+      maxMC = params->maxMCinterations;
+  }
+  if (maxMC < 1) {
+      ABORT( status, STACKSLIDEISOLATEDH_EMAXMC, STACKSLIDEISOLATEDH_MSGEMAXMC);
   }
 
   if ( (params->testFlag & 16) > 0 ) {
     /* 05/24/05 gam; use results from prior jobs in the pipeline and report on current MC results */
     reportMCResults = 1;
+
+    if (maxMCErr <= 0.0) {
+       ABORT( status, STACKSLIDEISOLATEDH_EMAXMCERR, STACKSLIDEISOLATEDH_MSGEMAXMCERR);
+    }
+
+    /* 09/01/05 gam; allocate memory dependent on the number of rescalings */
+    nAboveLE = (REAL8 *)LALMalloc(onePlusNumMCRescalings*sizeof(REAL8));
+    nTrials  = (REAL8 *)LALMalloc(onePlusNumMCRescalings*sizeof(REAL8));
+
     /* get results for previous jobs in the pipeline */
     getStackSlidePriorResults(status->statusPtr,
                                &priorLoudestEvent,
@@ -505,14 +539,27 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
         fflush(stdout);
       }
     #endif
-    if ( (params->testFlag & 32) > 0 ) {
-      /* 05/24/05 gam; iterate MC to converge on desired confidence */
-      maxMC = params->maxMCinterations;
-      maxFracErr = params->maxMCfracErr;
+    if (params->numMCRescalings > 0) {
+      arrayULs   = (REAL8 *)LALMalloc((twoPlusNumMCRescalings*maxMC)*sizeof(REAL8));
+      arrayConfs = (REAL8 *)LALMalloc((twoPlusNumMCRescalings*maxMC)*sizeof(REAL8));
+      arrayConverged = (INT4 *)LALMalloc((twoPlusNumMCRescalings*maxMC)*sizeof(INT4));
+    } else {
+      arrayULs   = (REAL8 *)LALMalloc(maxMC*sizeof(REAL8));
+      arrayConfs = (REAL8 *)LALMalloc(maxMC*sizeof(REAL8));
+      arrayConverged = (INT4 *)LALMalloc(maxMC*sizeof(INT4));
     }
-    arrayULs   = (REAL8 *)LALMalloc(maxMC*sizeof(REAL8));
-    arrayConfs = (REAL8 *)LALMalloc(maxMC*sizeof(REAL8));
-    arrayConverged = (INT4 *)LALMalloc(maxMC*sizeof(INT4));
+    arrayIteratedULs   = (REAL8 *)LALMalloc(maxMC*sizeof(REAL8));
+    arrayIteratedConfs = (REAL8 *)LALMalloc(maxMC*sizeof(REAL8));
+  } /* END if ( (params->testFlag & 16) > 0 ) */
+  if ( (params->numMCRescalings > 0) && (reportMCResults != 1)) {
+      ABORT( status, STACKSLIDEISOLATEDH_E2NUMMCRESCALINGS, STACKSLIDEISOLATEDH_MSGE2NUMMCRESCALINGS);
+  }
+
+  /* 07/29/05 gam; if testFlag if (params->testFlag & 64) > 0 search all parameters spaces points surrounding the injection; else search nearest only */
+  if ( (params->testFlag & 64) > 0 ) {
+       searchSurroundingPts = 1;  /* Search only the surrounding paremeters space point, in the Euclidean sense. */
+  } else {
+       searchSurroundingPts = 0;  /* Search only the nearest paremeters space point, in the Euclidean sense. */
   }
 
   /* 05/21/04 gam; save the input noise SFTs */
@@ -762,9 +809,17 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
  for(iMC=0;iMC<maxMC;iMC++) {
    
   /* This is the big loop that reruns the entire MC maxMC times or until MC has converged */
-  nAboveLE = 0.0; /* initialize at beginning of each MC */
-  nTrials = 0.0;  /* initialize at beginning of each MC */
-
+  
+  /* initialize at beginning of each MC */
+  /* nAboveLE = 0.0;
+  nTrials = 0.0; */ /* 09/01/05 gam */
+  if (reportMCResults) {  
+    for(iRescale=0;iRescale<onePlusNumMCRescalings;iRescale++) {
+      nAboveLE[iRescale] = 0.0;
+      nTrials[iRescale] = 0.0;
+    }
+  }
+  
   /* 07/15/05 gam; change Monte Carlo Simulation to inject random signals from the parameter space */
   /**********************************************/
   /*                                            */
@@ -773,12 +828,6 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
   /**********************************************/
   for(kSUM=0;kSUM<params->numMCInjections;kSUM++) {
 
-/*		case 76: params->numMCInjections = (INT4)atol(argv[i]); break;
-		case 77: params->numMCRescalings = (INT4)atol(argv[i]); break;
-		case 78: params->rescaleMCFraction = (REAL8)atof(argv[i]); break;
-		case 79: params->parameterMC = (REAL8)atof(argv[i]); break; */
-
-  
     params->whichMCSUM = kSUM; /* kSUM is which injection we are working on */  
 
     /* 07/15/05 gam; Find random sky position: RA and Dec */
@@ -790,9 +839,13 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
        tmpRA = startRA;  /* Use fixed RA */
     }
     if (rangeDec != 0.0) {
-       StackSlideGetUniformDeviate(status->statusPtr, &tmpDec, startDec, rangeDec, randPar); CHECKSTATUSPTR (status);
+       /* StackSlideGetUniformDeviate(status->statusPtr, &tmpDec, startDec, rangeDec, randPar); CHECKSTATUSPTR (status); */ /* 09/05/05 gam */
+       StackSlideGetUniformDeviate(status->statusPtr, &tmpDec, sinStartDec, rangeDec, randPar); CHECKSTATUSPTR (status);
+       tmpDec = asin(tmpDec); /* 09/05/05 gam; found uniformly distributed sin(DEC); need DEC in radians */
     } else if (DeltaDec != 0.0) {
-       StackSlideGetUniformDeviate(status->statusPtr, &tmpDec, startDec-(0.5*DeltaDec), DeltaDec, randPar); CHECKSTATUSPTR (status);
+       /* StackSlideGetUniformDeviate(status->statusPtr, &tmpDec, startDec-(0.5*DeltaDec), DeltaDec, randPar); CHECKSTATUSPTR (status); */ /* 09/05/05 gam */
+       StackSlideGetUniformDeviate(status->statusPtr, &tmpDec, sinStartDecmhalfDeltaDec, rangeDecStartDecpmhDeltaDec, randPar); CHECKSTATUSPTR (status);
+       tmpDec = asin(tmpDec); /* 09/05/05 gam; found uniformly distributed sin(DEC); need DEC in radians */
     } else {
        tmpDec = startDec;  /* Use fixed Dec */
     }
@@ -1122,7 +1175,7 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
          #endif
          cosIota = 2.0*((REAL8)randval) - 1.0;
     } /* END if ( (params->testFlag & 8) > 0 ) */
-    /* h_0 is fixed equal to params->threshold4 above; get A_+ and A_x from h_0 and random cosIota */
+    /* get A_+ and A_x from h_0 and cosIota */
     pPulsarSignalParams->pulsar.aPlus = (REAL4)(0.5*h_0*(1.0 + cosIota*cosIota));
     pPulsarSignalParams->pulsar.aCross = (REAL4)(h_0*cosIota);
 
@@ -1154,7 +1207,7 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
         /* 07/14/04 gam; use SkyConstAndZeroPsiAMResponse from LALComputeSkyAndZeroPsiAMResponse and SFTandSignalParams to generate SFTs fast. */
         LALFastGeneratePulsarSFTs (status->statusPtr, &outputSFTs, pSkyConstAndZeroPsiAMResponse, pSFTandSignalParams);
         CHECKSTATUSPTR (status);
-        
+
         #ifdef PRINT_ONEMONTECARLO_OUTPUTSFT
           if (params->whichMCSUM == 0 && iFreq == 0) {
             REAL4  fPlus;
@@ -1177,7 +1230,7 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
             }
           }
         #endif
-        
+
         #ifdef PRINT_MAXPOWERANDBINEACHSFT
          {
            INT4 jMaxPwr;
@@ -1303,19 +1356,17 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
         /* Add outputSFTs with injected signal to input noise SFTs; renorm is needed. */
         /* 05/21/04 gam; Normalize the SFTs from LALSignalToSFTs as per the normalization in makefakedata_v2.c and lalapps/src/pulsar/make_sfts.c. */
         renorm = ((REAL4)nSamples)/((REAL4)(outputSFTs->data[0].data->length - 1)); /* 05/21/04 gam; should be the same for all outputSFTs; note minus 1 is needed */
+        #ifdef DEBUG_MONTECARLOSFT_DATA  
+          fprintf(stdout,"Mutiplying outputSFTs->data[%i] with renorm = %g \n",i,renorm);
+          fflush(stdout);
+        #endif
         for(i=0;i<params->numBLKs;i++) {
-          /* renorm = ((REAL4)nSamples)/((REAL4)outputSFTs->data[i].data->length); */ /* 05/21/04 gam; do once correctly above */ /* Should be the same for all SFTs, but just in case recompute. */
-          #ifdef DEBUG_MONTECARLOSFT_DATA  
-            fprintf(stdout,"Mutiplying outputSFTs->data[%i] with renorm = %g \n",i,renorm);
-            fflush(stdout);
-          #endif  
           for(j=0;j<params->nBinsPerBLK;j++) {
              #ifdef PRINTCOMPARISON_INPUTVSMONTECARLOSFT_DATA
                fprintf(stdout,"savBLKData[%i]->fft->data->data[%i].re, outputSFTs->data[%i].data->data[%i].re = %g, %g\n",i,j,i,j,savBLKData[i]->fft->data->data[j].re,renorm*outputSFTs->data[i].data->data[j].re);
                fprintf(stdout,"savBLKData[%i]->fft->data->data[%i].im, outputSFTs->data[%i].data->data[%i].im = %g, %g\n",i,j,i,j,savBLKData[i]->fft->data->data[j].im,renorm*outputSFTs->data[i].data->data[j].im);
                fflush(stdout);
              #endif
-             /* 05/21/04 gam; changed next two lines so that params->BLKData is sum of saved noise SFTs and SFTs with injection data. */
              params->BLKData[i]->fft->data->data[j].re = savBLKData[i]->fft->data->data[j].re + renorm*outputSFTs->data[i].data->data[j].re;
              params->BLKData[i]->fft->data->data[j].im = savBLKData[i]->fft->data->data[j].im + renorm*outputSFTs->data[i].data->data[j].im;
           }
@@ -1342,7 +1393,58 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
           }
         }
     #endif
+
+    /* 09/01/05 gam; this loop will run at least once; if params->numMCRescalings > 0 rescale the SFTs and rerun the injection params->numMCRescalings times */
+    for(iRescale=0;iRescale<onePlusNumMCRescalings;iRescale++) {
+
+      /* if (kSUM > 0 ) */ /* 09/01/05 gam */
+      if ( (kSUM > 0)  || (iRescale > 0) ) {
+       params->startSUMs = 0;  /* Indicate that SUMs already started */
+      }
       
+      if ( (iRescale % 2) == 1 ) {
+        h_0Rescaled[iRescale] = h_0 + ((REAL8)((iRescale + 1)/2))*params->rescaleMCFraction*h_0;
+      } else {
+        h_0Rescaled[iRescale] = h_0 - ((REAL8)(iRescale/2))*params->rescaleMCFraction*h_0;
+      }      
+      params->threshold4 = h_0Rescaled[iRescale];
+      
+      if (iRescale > 0) {
+         /* Rescale the SFTs using the ratio h_0Rescaled[iRescale]/h_0 */
+         REAL4 rescaleFactor = ((REAL4)(h_0Rescaled[iRescale]/h_0));
+         if ( !( (params->testFlag & 4) > 0 ) ) {
+           /* Not using LALFastGeneratePulsarSFTs! Need to include renorm factor in RescaleFactor */
+           renorm = ((REAL4)nSamples)/((REAL4)(outputSFTs->data[0].data->length - 1)); /* 05/21/04 gam; should be the same for all outputSFTs; note minus 1 is needed */
+           rescaleFactor = rescaleFactor*renorm;
+         } /* END if ( (params->testFlag & 4) > 0 ) else ... */
+         /* Add rescaled outputSFTs with injected signal to input noise SFTs */
+         for(i=0;i<params->numBLKs;i++) {
+           for(j=0;j<params->nBinsPerBLK;j++) {
+                params->BLKData[i]->fft->data->data[j].re = savBLKData[i]->fft->data->data[j].re + rescaleFactor*outputSFTs->data[i].data->data[j].re;
+                params->BLKData[i]->fft->data->data[j].im = savBLKData[i]->fft->data->data[j].im + rescaleFactor*outputSFTs->data[i].data->data[j].im;
+           }
+         }
+      } /* END if (iRescale > 0) */
+
+      /**************************************************************/
+      /* Call StackSlideApplySearch to analyze this MC injection!!! */
+      /**************************************************************/
+      params->maxPower = 0.0; /* 05/24/05 gam; need to reinitialize */
+      StackSlideApplySearch(status->statusPtr,params);
+      CHECKSTATUSPTR (status);
+
+      /* 05/24/05 gam */
+      if (reportMCResults) {
+         nTrials[iRescale] += 1.0;  /* count total number of MC trials run */
+         /* priorLoudestEvent is the Loudest event from prior jobs in the pipeline */
+         if (params->maxPower >= priorLoudestEvent) {
+            nAboveLE[iRescale] += 1.0;  /* count number of MC trials that result in power >= to the loudest event */
+         }
+      }
+
+    } /* END for(iRescale=0;iRescale<onePlusNumMCRescalings;iRescale++) */ /* 09/01/05 gam */
+
+    /* 09/01/06 gam; moved after StackSlideApplySearch and outside iRescale loop */
     /* 07/14/04 gam; check if using LALComputeSkyAndZeroPsiAMResponse and LALFastGeneratePulsarSFTs */
     if ( !((params->testFlag & 4) > 0) ) {
         LALDestroySFTVector(status->statusPtr, &outputSFTs);
@@ -1351,24 +1453,6 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
         LALFree(signal->data->data);
         LALFree(signal->data);
         LALFree(signal);
-    }
-
-    if (kSUM > 0 ) {
-       params->startSUMs = 0;  /* Indicate that SUMs already started */
-    }
-            
-    /* Call StackSlideApplySearch to analyze this MC injection */
-    params->maxPower = 0.0; /* 05/24/05 gam; need to reinitialize */
-    StackSlideApplySearch(status->statusPtr,params);
-    CHECKSTATUSPTR (status);
-
-    /* 05/24/05 gam */
-    if (reportMCResults) {
-         nTrials += 1.0;  /* count total number of MC trials run */
-         /* priorLoudestEvent is the Loudest event from prior jobs in the pipeline */
-         if (params->maxPower >= priorLoudestEvent) {
-            nAboveLE += 1.0;  /* count number of MC trials that result in power >= to the loudest event */
-         }
     }
 
   } /* END for(kSUM=0;kSUM<numSUMsTotal;kSUM++) */
@@ -1381,41 +1465,84 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
   /* 05/24/05 gam */  
   if (reportMCResults) {
 
-     countMC++; /* count how many MC simulations have been completed */
-     
-     /* Compute confidence; note that h_0 == params->threshold4 == injection amplitude */
-     arrayULs[iMC] = h_0;
-     if (nTrials > 0.0) {
-       arrayConfs[iMC] = nAboveLE/nTrials;
-       /* Check, are we done? */     
-       if ( fabs(priorConfidence - arrayConfs[iMC])/priorConfidence <= maxFracErr ) {
-          arrayConverged[iMC] = 1;  /* converged on desired confidence */
-          break; /* We are within maxFracErr; break out of the iMC loop */
+     /* 09/01/05 gam */
+     breakOutOfLoop = 0; /* 09/01/05 gam; if we converge, then exit interated MC loop */     
+     iRescaleBest = 0;   /* keep track of which rescaling came closest to desired confidence. */             
+     lastMCErr = 1;      /* keep track of last absolute error in confidence. */
+     for(iRescale=0;iRescale<onePlusNumMCRescalings;iRescale++) {
+       /* Compute confidence; note that h_0 == params->threshold4 == injection amplitude */
+       arrayULs[countMC] = h_0Rescaled[iRescale];
+       if (nTrials[iRescale] > 0.0) {
+         arrayConfs[countMC] = nAboveLE[iRescale]/nTrials[iRescale];
+         thisMCErr = fabs(priorConfidence - arrayConfs[countMC]);
+         /* Check, are we closer? */
+         if ( thisMCErr < lastMCErr ) {
+            iRescaleBest = iRescale;
+            lastMCErr = thisMCErr;
+         }
+         /* Check, are we done? */
+         /* if ( fabs(priorConfidence - arrayConfs[countMC])/priorConfidence <= maxMCfracErr ) */ /* 09/06/05 gam */
+         if ( thisMCErr <= maxMCErr ) {
+            arrayConverged[countMC] = 1;  /* converged on desired confidence */
+            breakOutOfLoop = 1; /* We are within maxMCErr; break out of the iMC loop */
+         } else {
+            arrayConverged[countMC] = 0; /* not converged on desired confidence */
+         }       
        } else {
-           arrayConverged[iMC] = 0; /* not converged on desired confidence */
-       }       
-     } else {
-       arrayConfs[iMC] = -1;
-       arrayConverged[iMC] = 0; /* not converged on desired confidence */
-       break; /* MC not producing any trials; should not happen but stop if it does */
+         arrayConfs[countMC] = -1;
+         arrayConverged[countMC] = 0; /* not converged on desired confidence */
+         breakOutOfLoop = 1; /* MC not producing any trials; should not happen but stop if it does */
+       }
+       countMC++; /* Initialzed to 0 above; count how many MC simulations have been completed */
+     } /* END for(iRescale=0;iRescale<onePlusNumMCRescalings;iRescale++) */
+
+     if (breakOutOfLoop) {
+         break; /* MC converged or not producing any trials so break out of iMC loop. */
      }
 
+     if (params->numMCRescalings > 0) {
+       StackSlideULLeastSquaresLinFit(&(arrayULs[countMC]),arrayULs,arrayConfs,priorConfidence,(countMC - onePlusNumMCRescalings), onePlusNumMCRescalings);
+       arrayConfs[countMC] = -1; /* We hope this is priorConfidence, but we do not know yet what the confidence is for this interpolated value. */
+       arrayConverged[countMC] = -1; /* We do not know yet whether this interpolated UL converges on the desired confidence. */
+       countMC++; /* Initialzed to 0 above; count how many MC simulations have been completed */
+     } 
+
+     /* 09/01/05 gam; when iterating the entire MC use best values from each iteration */
+     arrayIteratedULs[iMC] = h_0Rescaled[iRescaleBest];
+     arrayIteratedConfs[iMC] = nAboveLE[iRescaleBest]/nTrials[iRescaleBest];
+          
      /* if (maxMC > 1) then interate entire MC to converge on desired confidence */
      if (maxMC > 1) {
         /* Compute new guess for h_0 */
-        if ( iMC > 0 ) {
-           /* linearly interpolate to next guess */
-           if ( (arrayConfs[iMC] - arrayConfs[iMC-1]) != 0.0 ) {
-             h_0 = arrayULs[iMC] + (priorConfidence - arrayConfs[iMC])*(arrayULs[iMC]
-                   - arrayULs[iMC-1])/(arrayConfs[iMC] - arrayConfs[iMC-1]);
-           }
+        if (params->numMCRescalings > 0) {
+            /* 09/01/05 gam; if just finished first iteration; next try is interpolated value from rescaled MC */
+            if (arrayULs[countMC-1] > 0.0) {
+                 h_0 = arrayULs[countMC-1];  /* Note that the minus 1 is needed because we did countMC++ above */
+            } else {
+                 h_0 = arrayIteratedULs[iMC]; /* The least squares fit failed for some reason; go with the best value from above */
+            }
+        } else {
+          if ( iMC > 0 ) {
+            /* linearly interpolate to next guess */
+            /* if ( (arrayIteratedConfs[iMC] - arrayIteratedConfs[iMC-1]) != 0.0 ) {
+              h_0 = arrayIteratedULs[iMC] + (priorConfidence - arrayIteratedConfs[iMC])*(arrayIteratedULs[iMC]
+                   - arrayIteratedULs[iMC-1])/(arrayIteratedConfs[iMC] - arrayIteratedConfs[iMC-1]);
+            } */  /* 09/01/05 gam; find the least square linear fit to the previous iteration to get next guess */
+            StackSlideULLeastSquaresLinFit(&h_0,arrayIteratedULs,arrayIteratedConfs,priorConfidence,0,iMC+1);
+            if (h_0 <= 0.0) {
+               h_0 = h_0Rescaled[0]; /* The least squares fit failed for some reason; will force new guess just below. */
+            }
+          } else {
+            h_0 = h_0Rescaled[0]; /* Will force new guess just below. */
+          }
         }
-        if ( arrayULs[iMC] == h_0 ) {
-           /* Either iMC == 0 or arrayConfs[iMC] == arrayConfs[iMC-1]; so make sure new guess differs by something */
-           if ( (priorConfidence - arrayConfs[iMC]) > 0.0 ) {
-              h_0 = arrayULs[iMC] + priorUncertainty; /* need to make h_0 larger */
+        if ( h_0Rescaled[0] == h_0 ) {
+           /* Make sure guess for new iteration differs from previous guess. Note that */
+           /* if nTrials[0] == 0 then we would have broken out of the iMC loop above. */
+           if ( (priorConfidence - (nAboveLE[0]/nTrials[0])) > 0.0 ) {
+              h_0 = h_0Rescaled[0] + priorUncertainty; /* need to make h_0 larger */
            } else {
-              h_0 = arrayULs[iMC] - priorUncertainty; /* need to make h_0 smaller */
+              h_0 = h_0Rescaled[0] - priorUncertainty; /* need to make h_0 smaller */
            }
         }
         if (h_0 <= 0.0) {
@@ -1486,8 +1613,13 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
     LALFree(arrayULs);
     LALFree(arrayConfs);
     LALFree(arrayConverged);
+    LALFree(arrayIteratedULs);
+    LALFree(arrayIteratedConfs);    
+    LALFree(nAboveLE);   /* 09/01/05 gam */
+    LALFree(nTrials);    /* 09/01/05 gam */
   } /* END if (reportMCResults) */
-  
+  LALFree(h_0Rescaled); /* 09/01/05 gam */
+      
   LALDestroyRandomParams(status->statusPtr, &randPar); /* 05/28/04 gam */
   CHECKSTATUSPTR (status);
   
@@ -1604,3 +1736,51 @@ void StackSlideGetUniformDeviate(LALStatus *status, REAL8 *returnVal, REAL8 star
   CHECKSTATUSPTR (status);
   DETATCHSTATUSPTR (status);
 }
+
+/* 09/01/05 gam */
+void StackSlideULLeastSquaresLinFit(REAL8 *interpolatedUL, const REAL8 *arrayULs, const REAL8 *arrayConfs, REAL8 desiredConf, INT4 startIndex, INT4 numVals)
+{
+     /* Use standard least square linear regression fit of data :         
+          A*slope + B*intercept = E,
+          C*slope + D*intercept = F,
+        where A,B,C,D come from minimizing sum of square deviations,
+          sum_i (slope*arrayULs[i] + intercept - arrayConfs[i])^2 
+     */
+
+     INT4 i;
+     REAL8 A,B,C,D,E,F,determ,slope,intercept,startIndexPlusNumVals;
+     startIndexPlusNumVals = startIndex+numVals;
+     if (numVals < 2) {
+        *interpolatedUL = -1;
+        return;
+     }
+
+     A = 0.0;
+     B = 0.0;
+     C = 0.0;
+     D = numVals;
+     E = 0;
+     F = 0;     
+     for(i=startIndex;i<startIndexPlusNumVals;i++) {
+        A += arrayULs[i]*arrayULs[i];
+        B += arrayULs[i];
+        E += arrayULs[i]*arrayConfs[i];
+        F += arrayConfs[i];
+     }
+     C = B;
+     determ = A*D-B*C;
+     if (determ !=0) {
+       slope = (D*E-B*F)/determ;
+       intercept = (A*F-C*E)/determ;
+       if (slope !=0) {
+          *interpolatedUL = (desiredConf - intercept)/slope;
+          return;
+       } else {
+          *interpolatedUL = -1;
+          return;
+       }
+     } else {
+       *interpolatedUL = -1;
+       return;
+     }
+} /* END INT4 StackSlideULLeastSquaresLinFit */

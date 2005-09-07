@@ -11,7 +11,7 @@ $Id$
 /*                 random point in the parameters space a random number of times.  */
 /* 07/29/05 gam; if (params->testFlag & 64) > 0 set searchSurroundingPts == 1 and  */
 /*               search surrounding parameters space pts; else search nearest only */
-/* 07/29/05 gam; If params->numMCRescalings > 0 use this and params->rescaleMCFractionSFTs to */
+/* 09/01/05 gam; If params->numMCRescalings > 0 use this and params->rescaleMCFractionSFTs to */
 /*               rescale SFTs to run numMCRescalings Monte Carlo simulations in parallel.     */
 
 #ifndef _STACKSLIDEISOLATED_H
@@ -63,6 +63,10 @@ NRCSID (STACKSLIDEISOLATEDH, "$Id$");
 #define STACKSLIDEISOLATEDH_EMCEVENTTHRESHOLDFLAGS 5
 #define STACKSLIDEISOLATEDH_EIFO 6
 #define STACKSLIDEISOLATEDH_ENOFREQBINS 7
+#define STACKSLIDEISOLATEDH_ENUMMCRESCALINGS 8
+#define STACKSLIDEISOLATEDH_E2NUMMCRESCALINGS 9
+#define STACKSLIDEISOLATEDH_EMAXMC 10
+#define STACKSLIDEISOLATEDH_EMAXMCERR 11
 #define STACKSLIDEISOLATEDH_MSGENULL "Null Pointer"
 #define STACKSLIDEISOLATEDH_MSGENNUL "Non-Null Pointer"
 #define STACKSLIDEISOLATEDH_MSGENEGA "Bad Negative Value"
@@ -70,6 +74,10 @@ NRCSID (STACKSLIDEISOLATEDH, "$Id$");
 #define STACKSLIDEISOLATEDH_MSGEMCEVENTTHRESHOLDFLAGS "Monte Carlo needs (outputEventFlag and 2) > 0 and thresholdFlag <= 0"
 #define STACKSLIDEISOLATEDH_MSGEIFO "Invalid or null IFO"
 #define STACKSLIDEISOLATEDH_MSGENOFREQBINS "Avoiding or cleaning all freq bins! Monte Carlo cannot inject any signals!"
+#define STACKSLIDEISOLATEDH_MSGENUMMCRESCALINGS "The command parameter numMCRescalings cannot be negative."
+#define STACKSLIDEISOLATEDH_MSGE2NUMMCRESCALINGS "The command parameter numMCRescalings cannot be > 0 if not reporting MC results."
+#define STACKSLIDEISOLATEDH_MSGEMAXMC "The number of MC iterations must be at least 1."
+#define STACKSLIDEISOLATEDH_MSGEMAXMCERR "The absolute maximum MC error must be a positive number."
 /*********************************************/
 /*                                           */
 /* END SECTION: define constants             */
@@ -102,6 +110,9 @@ void getStackSlidePriorResults(LALStatus *status,
 
 /* 07/15/2005 gam; Change RunStackSlideIsolatedMonteCarloSimulation */
 void StackSlideGetUniformDeviate(LALStatus *status, REAL8 *returnVal, REAL8 startVal, REAL8 range, RandomParams *randPar);
+
+/* 09/01/05 gam */
+void StackSlideULLeastSquaresLinFit(REAL8 *interpolatedUL, const REAL8 *arrayULs, const REAL8 *arrayConfs, REAL8 desiredConf, INT4 startIndex, INT4 numVals);
 
 #ifdef __cplusplus
 }
