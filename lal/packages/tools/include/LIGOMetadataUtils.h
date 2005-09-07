@@ -259,6 +259,11 @@ XLALCountProcessParamsTable(
     );
 
 int 
+XLALCountMultiInspiralTable(
+    MultiInspiralTable *head
+    );
+
+int 
 XLALIFONumber( 
     const char *ifo 
     );

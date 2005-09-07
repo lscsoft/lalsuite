@@ -127,6 +127,19 @@ int XLALCountProcessParamsTable(ProcessParamsTable *head)
 }
 
 /* <lalVerbatim file="LIGOMetadataUtilsCP"> */
+int XLALCountMultiInspiralTable(MultiInspiralTable *head)
+/* </lalVerbatim> */
+{
+	int length;
+	/* count the number of events in the list */
+	for(length = 0; head; head = head->next)
+		length++;
+
+	return(length);
+}
+
+
+/* <lalVerbatim file="LIGOMetadataUtilsCP"> */
 int 
 XLALIFONumber( 
     const char *ifo 
