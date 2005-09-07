@@ -273,6 +273,60 @@ MetaTableDirectory * XLALCreateMetaTableDir(
     case sngl_inspiral_table:
       break;
     case multi_inspiral_table:
+      {
+        MetaTableDirectory tmpTableDir[] =
+        {
+          {"ifos",                    -1, 0},
+          {"search",                  -1, 1},
+          {"end_time",                -1, 2},
+          {"end_time_ns",             -1, 3},
+          {"end_time_gmst",           -1, 4},
+          {"impulse_time",            -1, 5},
+          {"impulse_time_ns",         -1, 6},
+          {"amplitude",               -1, 7},
+          {"ifo1_eff_distance",       -1, 8},
+          {"ifo2_eff_distance",       -1, 9},
+          {"eff_distance",            -1, 10},
+          {"coa_phase",               -1, 11},
+          {"mass1",                   -1, 12},
+          {"mass2",                   -1, 13},
+          {"mchirp",                  -1, 14},
+          {"eta",                     -1, 15},
+          {"tau0",                    -1, 16},
+          {"tau2",                    -1, 17},
+          {"tau3",                    -1, 18},
+          {"tau4",                    -1, 19},
+          {"tau5",                    -1, 20},
+          {"ttotal",                  -1, 21},
+          {"ifo1_snr",                -1, 22},
+          {"ifo2_snr",                -1, 23},
+          {"snr",                     -1, 24},
+          {"chisq",                   -1, 25},
+          {"chisq_dof",               -1, 26},
+          {"sigmasq",                 -1, 27},
+          {"ligo_axis_ra",            -1, 28},
+          {"ligo_axis_dec",           -1, 29},
+          {"ligo_angle",              -1, 30},
+          {"ligo_angle_sig",          -1, 31},
+          {"inclination",             -1, 32},
+          {"polarization",            -1, 33},
+          {NULL,                       0, 0}
+        };
+        for ( i=0 ; tmpTableDir[i].name; ++i )
+        {
+          if ( (tmpTableDir[i].pos = 
+                MetaioFindColumn( env, tmpTableDir[i].name )) < 0 )
+          {
+            fprintf( stderr, "unable to find column %s\n", 
+                tmpTableDir[i].name );
+            XLAL_ERROR_NULL( func, XLAL_EFAILED );
+          }
+        }
+
+        tableDir = (MetaTableDirectory *) LALMalloc( (i+1) * 
+            sizeof(MetaTableDirectory)) ;
+        memcpy(tableDir, tmpTableDir, (i+1)*sizeof(MetaTableDirectory) );
+      }
       break;
     case sim_inspiral_table:
       break;
@@ -728,6 +782,229 @@ ProcessParamsTable    * XLALProcessParamsTableFromLIGOLw (
 
   return eventHead;
 }
+
+
+/* <lalVerbatim file="LIGOLwXMLReadCP"> */
+MultiInspiralTable    * XLALMultiInspiralTableFromLIGOLw (
+    CHAR               *fileName
+    )
+/* </lalVerbatim> */
+{
+  static const char   *func = "XLALMultiInspiralTableFromLIGOLw";
+  int                                   i, j, nrows;
+  int                                   mioStatus=0;
+  MultiInspiralTable                   *thisEvent = NULL;
+  MultiInspiralTable                   *eventHead = NULL;
+  struct MetaioParseEnvironment         parseEnv;
+  const  MetaioParseEnv                 env = &parseEnv;
+  MetaTableDirectory                   *tableDir = NULL;
+
+  /* open the multi_inspiral XML file */
+  mioStatus = MetaioOpenTable( env, fileName, "multi_inspiral" );
+  if ( mioStatus )
+  {
+    XLAL_ERROR_NULL( func, XLAL_EIO );
+  }
+
+  /* create table directory to find columns in file*/
+  tableDir = XLALCreateMetaTableDir(env, multi_inspiral_table);
+
+  /* loop over the rows in the file */
+  i = nrows = 0;
+  while ( (mioStatus = MetaioGetRow(env)) == 1 ) 
+  {
+    /* count the rows in the file */
+    i++;
+    /* allocate memory for the template we are about to read in */
+    if ( ! eventHead )
+    {
+      thisEvent = eventHead = (MultiInspiralTable *) 
+        LALCalloc( 1, sizeof(MultiInspiralTable) );
+    }
+    else
+    {
+      thisEvent = thisEvent->next = (MultiInspiralTable *) 
+        LALCalloc( 1, sizeof(MultiInspiralTable) );
+    }
+    if ( ! thisEvent )
+    {
+      fprintf( stderr, "could not allocate multi inspiral event\n" );
+      XLAL_CLOBBER_EVENTS;
+      MetaioClose( env );
+      XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+    }
+
+    /* parse the contents of the row into the InspiralTemplate structure */
+    for ( j = 0; tableDir[j].name; ++j )
+    {
+      REAL4 r4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
+      REAL8 r8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_8; 
+      INT4  i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
+
+      if ( tableDir[j].idx == 0 )
+      {
+        LALSnprintf( thisEvent->ifos, LIGOMETA_IFO_MAX * sizeof(CHAR), 
+            "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+      }
+      else if ( tableDir[j].idx == 1 )
+      {
+        LALSnprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
+            "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+      }
+      else if ( tableDir[j].idx == 2 )
+      {
+        thisEvent->end_time.gpsSeconds = i4colData;
+      }
+      else if ( tableDir[j].idx == 3 )
+      {
+        thisEvent->end_time.gpsNanoSeconds = i4colData;
+      }
+      else if ( tableDir[j].idx == 4 )
+      {
+        thisEvent->end_time_gmst = r8colData;
+      }
+      else if ( tableDir[j].idx == 5 )
+      {
+        thisEvent->impulse_time.gpsSeconds = i4colData;
+      }
+      else if ( tableDir[j].idx == 6 )
+      {
+        thisEvent->impulse_time.gpsNanoSeconds = i4colData;
+      }
+      else if ( tableDir[j].idx == 7 )
+      {
+        thisEvent->amplitude = r4colData;
+      }
+      else if ( tableDir[j].idx == 8 )
+      {
+        thisEvent->ifo1_eff_distance = r4colData;
+      }
+      else if ( tableDir[j].idx == 9 )
+      {
+        thisEvent->ifo2_eff_distance = r4colData;
+      }
+      else if ( tableDir[j].idx == 10 )
+      {
+        thisEvent->eff_distance = r4colData;
+      }
+      else if ( tableDir[j].idx == 11 )
+      {
+        thisEvent->coa_phase = r4colData;
+      }
+      else if ( tableDir[j].idx == 12 )
+      {
+        thisEvent->mass1 = r4colData;
+      }
+      else if ( tableDir[j].idx == 13 )
+      {
+        thisEvent->mass2 = r4colData;
+      }
+      else if ( tableDir[j].idx == 14 )
+      {
+        thisEvent->mchirp = r4colData;
+      }
+      else if ( tableDir[j].idx == 15 )
+      {
+        thisEvent->eta = r4colData;
+      }
+      else if ( tableDir[j].idx == 16 )
+      {
+        thisEvent->tau0 = r4colData;
+      }
+      else if ( tableDir[j].idx == 17 )
+      {
+        thisEvent->tau2 = r4colData;
+      }
+      else if ( tableDir[j].idx == 18 )
+      {
+        thisEvent->tau3 = r4colData;
+      }
+      else if ( tableDir[j].idx == 19 )
+      {
+        thisEvent->tau4 = r4colData;
+      }
+      else if ( tableDir[j].idx == 20 )
+      {
+        thisEvent->tau5 = r4colData;
+      }
+      else if ( tableDir[j].idx == 21 )
+      {
+        thisEvent->ttotal = r4colData;
+      }
+      else if ( tableDir[j].idx == 22 )
+      {
+        thisEvent->ifo1_snr = r4colData;
+      }
+      else if ( tableDir[j].idx == 23 )
+      {
+        thisEvent->ifo2_snr = r4colData;
+      }
+      else if ( tableDir[j].idx == 24 )
+      {
+        thisEvent->snr = r4colData;
+      }
+      else if ( tableDir[j].idx == 25 )
+      {
+        thisEvent->chisq = r4colData;
+      }
+      else if ( tableDir[j].idx == 26 )
+      {
+        thisEvent->chisq_dof = i4colData;
+      }
+      else if ( tableDir[j].idx == 27 )
+      {
+        thisEvent->sigmasq = r8colData;
+      }
+      else if ( tableDir[j].idx == 28 )
+      {
+        thisEvent->ligo_axis_ra = r4colData;
+      }
+      else if ( tableDir[j].idx == 29 )
+      {
+        thisEvent->ligo_axis_dec = r4colData;
+      }
+      else if ( tableDir[j].idx == 30 )
+      {
+        thisEvent->ligo_angle = r4colData;
+      }
+      else if ( tableDir[j].idx == 31 )
+      {
+        thisEvent->ligo_angle_sig = r4colData;
+      }
+      else if ( tableDir[j].idx == 32 )
+      {
+        thisEvent->inclination = r4colData;
+      }
+      else if ( tableDir[j].idx == 33 )
+      {
+        thisEvent->polarization = r4colData;
+      }
+      else
+      {
+        XLAL_CLOBBER_EVENTS;
+        XLAL_ERROR_NULL( func, XLAL_EIO);
+      }
+    }
+    /* count the number of triggers parsed */
+    nrows++;
+  }
+
+  if ( mioStatus == -1 )
+  {
+    fprintf( stderr, "error parsing after row %d\n", i );
+    XLAL_CLOBBER_EVENTS;
+    MetaioClose( env );
+    XLAL_ERROR_NULL( func, XLAL_EIO);
+  }
+
+  /* Normal exit */
+  LALFree( tableDir );
+  MetaioClose( env );
+
+  return eventHead;
+}
+
+
 
 /*
  *

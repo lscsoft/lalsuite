@@ -144,6 +144,11 @@ ProcessParamsTable    * XLALProcessParamsTableFromLIGOLw (
     CHAR               *fileName
     );
 
+MultiInspiralTable    * XLALMultiInspiralTableFromLIGOLw (
+    CHAR               *fileName
+    );
+
+
 void
 LALSnglBurstTableFromLIGOLw (
     LALStatus          *status,
