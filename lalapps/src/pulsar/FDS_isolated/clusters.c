@@ -21,13 +21,14 @@ NRCSID( CLUSTERSC, "$Id$");
 #define CLUSTERSC_EMEM			3
 #define CLUSTERSC_ESYS      		4
 #define CLUSTERSC_ETMP			5
-
+#define CLUSTERSC_EINPUT		6
 
 #define CLUSTERSC_MSGENULL 		"Arguments contained an unexpected null pointer"
 #define CLUSTERSC_MSGENONULL		"Input pointer was not NULL"
 #define CLUSTERSC_MSGEMEM		"Out of memory"
 #define CLUSTERSC_MSGESYS		"System call failed (probably file IO)"
 #define CLUSTERSC_MSGETMP		"Something failed in subroutine.(FIXME)"
+#define CLUSTERSC_MSGEINPUT		"Invalid input in function"
 
 /** Estimates the floor of a givendata set by the running median.
  * input : vector (N points) over which the running median code is ran with a  
@@ -49,7 +50,14 @@ EstimateFloor(LALStatus *stat, REAL8Vector *input, INT2 windowSize, REAL8Vector 
   INITSTATUS( stat, "EstimateFloor", CLUSTERSC);
   ATTATCHSTATUSPTR (stat); 
 
-  M = nbins-windowSize+1;
+  M = nbins - windowSize + 1;
+  
+  if ( M <= 0 )	/* did we have enough bins? */
+    {
+      LALPrintError ("\nDon't have enough frequency-bins (%d) for a rngmed-window of %d!\n\n", nbins, windowSize );
+      ABORT ( stat, CLUSTERSC_EINPUT, CLUSTERSC_MSGEINPUT );
+    }
+
   if( (dmp = (REAL8 *) LALCalloc(M,sizeof(REAL8))) == NULL) {
     ABORT (stat, CLUSTERSC_EMEM, CLUSTERSC_MSGEMEM);
   }
