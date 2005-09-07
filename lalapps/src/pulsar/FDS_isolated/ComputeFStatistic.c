@@ -1082,7 +1082,7 @@ initUserVars (LALStatus *status)
   LALregREALUserVar(status,       Delta,          'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians");
   LALregREALUserVar(status,       AlphaBand,      'z', UVAR_OPTIONAL, "Band in alpha (equatorial coordinates) in radians");
   LALregREALUserVar(status,       DeltaBand,      'c', UVAR_OPTIONAL, "Band in delta (equatorial coordinates) in radians");
-  LALregSTRINGUserVar(status,     skyRegion,      'R', UVAR_OPTIONAL, "ALTERNATIVE: specify sky-region by polygon");
+  LALregSTRINGUserVar(status,     skyRegion,      'R', UVAR_OPTIONAL, "ALTERNATIVE: specify sky-region by polygon (or use 'allsky')");
   LALregINTUserVar(status,        gridType,        0 , UVAR_OPTIONAL, "Template SKY-grid: 0=flat, 1=isotropic, 2=metric, 3=file");
   LALregINTUserVar(status,        metricType,     'M', UVAR_OPTIONAL, "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
   LALregREALUserVar(status,       metricMismatch, 'X', UVAR_OPTIONAL, "Maximal mismatch for SKY-grid (adjust value for more dimensions)");
@@ -1095,18 +1095,18 @@ initUserVars (LALStatus *status)
   LALregREALUserVar(status,       df1dot,         'e', UVAR_OPTIONAL, "Resolution for f1dot (default: use metric or 1/(2*T^2))");
   LALregSTRINGUserVar(status,     DataDir,        'D', UVAR_OPTIONAL, "Directory where SFT's are located");
   LALregSTRINGUserVar(status,     BaseName,       'i', UVAR_OPTIONAL, "The base name of the input  file you want to read");
-  LALregSTRINGUserVar(status, 	DataFiles,	 0 , UVAR_OPTIONAL, "Alternative: specify path+file-pattern of SFT-files");
+  LALregSTRINGUserVar(status,     DataFiles,	   0 , UVAR_OPTIONAL, "ALTERNATIVE: path+file-pattern specifying data SFT-files");
   LALregSTRINGUserVar(status,     ephemDir,       'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
   LALregSTRINGUserVar(status,     ephemYear,      'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
   LALregBOOLUserVar(status,       SignalOnly,     'S', UVAR_OPTIONAL, "Signal only flag");
   LALregBOOLUserVar(status,       EstimSigParam,  'p', UVAR_OPTIONAL, "Do Signal Parameter Estimation");
-  LALregREALUserVar(status,       Fthreshold,     'F', UVAR_OPTIONAL, "Signal Set the threshold for selection of 2F");
+  LALregREALUserVar(status,       Fthreshold,     'F', UVAR_OPTIONAL, "Output-threshold on 2F");
   LALregSTRINGUserVar(status,     outputLabel,    'o', UVAR_OPTIONAL, "Label to be appended to all output file-names");
   LALregREALUserVar(status,       startTime,       0,  UVAR_OPTIONAL, "Ignore SFTs with GPS_time <  this value. Default:");
   LALregREALUserVar(status,       endTime,         0,  UVAR_OPTIONAL, "Ignore SFTs with GPS_time >= this value. Default:");
-  LALregREALUserVar(status,	refTime,	 0,  UVAR_OPTIONAL, "SSB reference time for pulsar-paramters");
+  LALregREALUserVar(status,	  refTime,	   0,  UVAR_OPTIONAL, "SSB reference time for pulsar-parameters");
 
-  LALregSTRINGUserVar(status,     outputFstat,	0,  UVAR_OPTIONAL,
+  LALregSTRINGUserVar(status,     outputFstat,	   0,  UVAR_OPTIONAL,
 		      "Output-file for the (unclustered) F-statistic field over the parameter-space");
   LALregSTRINGUserVar(status,     outputClusters,	0,  UVAR_OPTIONAL,
 		      "Output-file for the *clustered* F-statistic field over the parameter-space");
@@ -1122,7 +1122,7 @@ initUserVars (LALStatus *status)
   LALregBOOLUserVar(status,       useCompression,  0,  UVAR_DEVELOPER, "BOINC: use compression for download/uploading data");
 #endif
 
-  LALregBOOLUserVar(status,	projectMetric,	0,   UVAR_DEVELOPER, 
+  LALregBOOLUserVar(status,	  projectMetric,	0,   UVAR_DEVELOPER, 
 		    "Use projected metric for skygrid");
   LALregSTRINGUserVar(status,     outputLoudest,	0,  UVAR_DEVELOPER, 
 		      "Output-file for the loudest F-statistic candidate in this search");
