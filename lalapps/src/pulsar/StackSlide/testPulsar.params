@@ -5,6 +5,7 @@
 # 12/06/04 gam; defaults are set for most parameters in runComputeStackSlideSums.tclsh; only set non-default values here.
 # 05/13/05 gam; add defaults for more parameters.
 # 07/17/05 gam; Change ...Deriv5 command line arguments to ones that control new Monte Carlo (MC) options
+# 09/07/05 gam; Change searchMaxMCfracErr to absolute error searchMaxMCErr
 
 # parameters for test pulsar
 set targetName "testPulsar"; # CHAR; identifies the target of the search
@@ -64,7 +65,7 @@ set searchLinesAndHarmonicsFile "None";  # 05/14/05 gam;
 set searchPriorResultsFile      "None";  # 05/24/05 gam;
 set searchParameterSpaceFile    "None";  # 05/24/05 gam;
 set searchMaxMCinterations           1;  # 05/25/05 gam;
-set searchMaxMCfracErr           0.005;  # 05/25/05 gam;
+set searchMaxMCErr               0.005;  # 05/25/05 gam;
 set searchNumMCInjections            0;  # 07/17/05 gam;
 set searchNumMCRescalings            0;  # 07/17/05 gam;
 set searchRescaleMCFraction          0;  # 07/17/05 gam;
