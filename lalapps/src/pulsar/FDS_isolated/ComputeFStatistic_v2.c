@@ -771,7 +771,7 @@ InitFStatDetector (LALStatus *status, ConfigVariables *cfg, UINT4 nD)
     if (!uvar_DataFiles)
       strcpy (uvar_DataFiles, ".");
     
-    TRY ( LALReadSFTfiles(status->statusPtr, &(cfg->ifos.sftVects[nD]), f_min, f_max, MYMAX(uvar_Dterms, uvar_RngMedWindow), 
+    TRY ( LALReadSFTfiles(status->statusPtr, &(cfg->ifos.sftVects[nD]), f_min, f_max, MYMAX(uvar_Dterms, uvar_RngMedWindow/2 +1), 
 			  uvar_DataFiles), status);
 
     /* experiment for running-median */
