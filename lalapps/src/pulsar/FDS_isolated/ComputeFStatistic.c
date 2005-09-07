@@ -322,6 +322,8 @@ extern "C" {
 #define FALSE (1==0)
 #endif
 
+#define MYMAX(x,y) ((x) > (y) ? (x) : (y) )
+
 extern int vrbflg;
 
 /* initialize LAL-status.  
@@ -492,8 +494,8 @@ int main(int argc,char *argv[])
     else
       f_max += df;
 
-    GV.ifmin = (INT4) floor( (1.0-DOPPLERMAX)* f_min * GV.tsft) - uvar_Dterms;
-    GV.ifmax = (INT4) ceil( (1.0+DOPPLERMAX) * f_max * GV.tsft) + uvar_Dterms;
+    GV.ifmin = (INT4) floor( (1.0-DOPPLERMAX)* f_min * GV.tsft) - MYMAX(uvar_Dterms, uvar_RngMedWindow/2 + 1 );
+    GV.ifmax = (INT4) ceil( (1.0+DOPPLERMAX) * f_max * GV.tsft) + MYMAX(uvar_Dterms, uvar_RngMedWindow/2 + 1);
   }
 
   /* allocate F-statistic arrays */
