@@ -54,7 +54,7 @@ extern int lalDebugLevel;
 #define NFSIZE  21
 #define DTERMS 8
 #define FSTATTHRESHOLD 2.6
-#define SFTDIRECTORY "/local_data/badkri/fakesfts/"
+#define SFTDIRECTORY "/home/badkri/fakesfts/"
 #define FNAMEOUT "./OutHoughFStat"
 
 int main( int argc, char *argv[]) {
@@ -72,7 +72,6 @@ int main( int argc, char *argv[]) {
   REAL8 tObs, tStart, tEnd;
   REAL8  *tStack, tStackAvg; /* duration of each stack */
   REAL8 refTime;
-  REAL8 extra, fStartExtra, fBandExtra; /* extra wings for Fstat calculation */
 
   /* sft related stuff */
   SFTVector *inputSFTs=NULL;  /* vector of SFTtypes and SFTtype is COMPLEX8FrequencySeries */
@@ -82,8 +81,8 @@ int main( int argc, char *argv[]) {
   INT4 sftlength; /* number of bins in each sft */
   REAL8 deltaF, timeBase; /* frequency resolution of SFTs */
   INT8 sftFminBin; /* first sft bin index */
-  INT8 fBinIni, fBinFin, binsHough; /* frequency bins of start and end search frequencies */
-  INT8 fSearchBinIni, fSearchBinFin, binsFstat; /* same as above for Fstat */
+  INT8 fHoughBinIni, fHoughBinFin, binsHough; /* frequency bins of start and end search frequencies */
+  INT8 fFstatBinIni, fFstatBinFin, binsFstat; /* same as above for Fstat */
   REAL8 deltaFstack; /* frequency resolution of Fstat calculation */
 
   /* LALdemod related stuff */
@@ -239,14 +238,10 @@ int main( int argc, char *argv[]) {
     strcat(tempDir, "/*SFT*.*");
 
     doppWings = (uvar_fStart + uvar_fBand) * VTOT;    
-    extra = doppWings;
-    fStartExtra = uvar_fStart - extra; /* read in a little bit extra ?*/
-    fBandExtra = uvar_fBand + 2.0*extra;
-
-    fmin = fStartExtra - doppWings;
-    fmax = fStartExtra + fBandExtra + doppWings;
+    fmin = uvar_fStart - doppWings;
+    fmax = uvar_fStart + uvar_fBand + doppWings;
     LAL_CALL( LALReadSFTfiles ( &status, &inputSFTs, fmin, fmax, 
-				nfSizeCylinder + uvar_blocksRngMed + uvar_Dterms, 
+				uvar_blocksRngMed + uvar_Dterms, 
 				tempDir), &status); 
 
     /* normalize sfts */
@@ -344,14 +339,15 @@ int main( int argc, char *argv[]) {
   deltaFstack = 1.0/tStackAvg;
 
   /* number of bins for calculating Fstat */
-  binsFstat = floor( fBandExtra * tStackAvg + 0.5);
-  fSearchBinIni = floor( tStackAvg * fStartExtra + 0.5);
-  fSearchBinFin = fSearchBinIni + binsFstat;
+  /* add nfSizeCylinder on either side*/
+  binsFstat = floor( tStackAvg * uvar_fBand ) + 2*nfSizeCylinder;
+  fFstatBinIni = floor( tStackAvg * uvar_fStart + 0.5) - nfSizeCylinder;
+  fFstatBinFin = fFstatBinIni + binsFstat - 1;
 
   /* start and end bin for calculating hough map */
-  fBinIni = floor( tStackAvg * uvar_fStart + 0.5);
-  binsHough = floor( tStackAvg * uvar_fBand + 0.5);
-  fBinFin = fBinIni + binsHough - 1;
+  binsHough = floor( tStackAvg * uvar_fBand );
+  fHoughBinIni = floor( tStackAvg * uvar_fStart + 0.5);
+  fHoughBinFin = fHoughBinIni + binsHough - 1;
     
 
   /*------------- calculate velocity and position for each stack ------------*/
@@ -393,7 +389,7 @@ int main( int argc, char *argv[]) {
   for (k=0; k<nStacks; k++) {
     FstatVect.data[k].epoch = midTstack.data[k];
     FstatVect.data[k].deltaF = deltaFstack;
-    FstatVect.data[k].f0 = fStartExtra;
+    FstatVect.data[k].f0 = deltaFstack * fFstatBinIni;
     FstatVect.data[k].data = (REAL8Sequence *)LALMalloc(sizeof(REAL8Sequence));
     FstatVect.data[k].data->length = binsFstat;
     FstatVect.data[k].data->data = (REAL8 *)LALMalloc( binsFstat * sizeof(REAL8));
@@ -414,6 +410,7 @@ int main( int argc, char *argv[]) {
   FstatPar.fdot = NULL;
   LAL_CALL ( LALDCreateVector( &status, &(FstatPar.fdot), 1), &status);
   FstatPar.fdot->data[0] = uvar_fdot;
+  FstatPar.nfSizeCylinder = nfSizeCylinder;
 
   /* calculate the Fstatistic */
   LAL_CALL(ComputeFstatStack( &status, &FstatVect, &stackSFTs, &FstatPar), &status);
@@ -426,8 +423,8 @@ int main( int argc, char *argv[]) {
   pgV.pg = (HOUGHPeakGram *)LALMalloc( nStacks * sizeof(HOUGHPeakGram));
   for (k=0; k<nStacks; k++) {
     pgV.pg[k].deltaF = deltaF;
-    pgV.pg[k].fBinIni = fSearchBinIni;
-    pgV.pg[k].fBinFin = fSearchBinFin;
+    pgV.pg[k].fBinIni = fFstatBinIni;
+    pgV.pg[k].fBinFin = fFstatBinFin;
   }
 
   /* compute the peakgrams */
@@ -439,8 +436,8 @@ int main( int argc, char *argv[]) {
   /*--------------- calculate Hough map ---------------*/
   /* set up the Hough parameters */
   houghPar.tStart = tStart;
-  houghPar.fBinIni = fBinIni;
-  houghPar.fBinFin = fBinFin;
+  houghPar.fBinIni = fHoughBinIni;
+  houghPar.fBinFin = fHoughBinFin;
   houghPar.nfSizeCylinder = nfSizeCylinder;
   houghPar.detector = detector;
   houghPar.ts = &midTstack;
@@ -504,12 +501,14 @@ void ComputeFstatStack (LALStatus *status,
   REAL8 refTime = params->refTime;
   INT4 *mCohSft = params->mCohSft;
   REAL8Vector *fdot = params->fdot;
+  INT4 nfSizeCylinder = params->nfSizeCylinder;
 
   /* stuff copied from output Fstat vector */
   INT4 binsFstat = out->data->data->length;
   INT4 nStacks = out->length;
   REAL8 deltaF = out->data->deltaF;
   REAL8 fStart = out->data->f0;
+
 
   /* other variables */
   SSBtimes tSSB;

@@ -131,6 +131,7 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
     REAL8 alpha;            /**< sky-location -- right acsension */
     REAL8 delta;            /**< sky-location -- declination */
     REAL8Vector *fdot;      /**< vector containing spindown values */
+    INT4 nfSizeCylinder;    /**< extra bins added due to Hough calculation */
   } FstatStackParams;
 
   /** parameters for calculating Hough Maps */
