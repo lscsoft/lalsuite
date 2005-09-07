@@ -1,15 +1,36 @@
-/*-----------------------------------------------------------------------
- *
- * File Name: PHMD.h
- *
- * Authors: Sintes, A.M.,  
- *
- * Revision: $Id$
+/** \file PHMD.h
+ *  \ingroup Hough
+ *  \author Sintes, A. M.
+ *  \date $Date$
+ *  \brief Conversion from peaks in a spectrum into a partial Hough map derivative
+ * 
+ *  $Id$
  *
  * History:   Created by Sintes June 21, 2001
  *            Modified...
  *
- *-----------------------------------------------------------------------
+ *
+
+\par Description 
+
+The Hough map is an histogram, thus additive. It can be seen as the sum of several 
+partial Hough maps constructed using just one periodogram, or equivalently, as
+the sum of partial Hough map derivatives phmd and then integrating the
+result.
+
+A phmd can be represented by a set of borders, here called \it
+left and right. They indicate the beginning and the end of the annuli. 
+The position of the so-called left borders should be marked with $+1$,
+and
+the position of the right borders should be marked with $-1$ in the {\sc phmd}.
+To obtain a partial Hough map, one needs to integrate each row of the {\sc phmd}
+from left to right.
+ 
+The representation of a {\sc phmd} is simplified by considering 
+pointers to the borders in a pre-calculated look-up-table, plus some 
+extra information about
+their character and edge effects when clipping on a finite patch.
+
  */
 
 

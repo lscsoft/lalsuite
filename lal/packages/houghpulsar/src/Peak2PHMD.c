@@ -1,16 +1,47 @@
-/*-----------------------------------------------------------------------
- *
- * File Name: Peak2PHMD.c
- *
- * Authors: Sintes, A.M., 
+/** \file Peak2PHMD.c
+ *  \ingroup Hough
+ *  \date $Date$
+ *  \brief Construction of Partial-Hough-Map-Derivatives given a peak-gram and the look-up-table.
+ *  \author Sintes, A.M.
  *
  * Revision: $Id$
  *
  * History:   Created by Sintes June 20, 2001
  *            Modified...
  *
- *-----------------------------------------------------------------------
- */
+ *
+
+\par Description 
+
+This routine produces a phmd at a certain frequency for a given  peak-gram and
+look-up-table.
+
+The inputs are:
+
+phmd->fBin: The frequency bin of this phmd.
+
+lut : The look-up-table HOUGHptfLUT
+
+pg : The peak-gram HOUGHPeakGram
+
+
+The function LALHOUGHPeak2PHMD() makes sure that the  lut the
+peak-gram and also the frequency of the phmd
+are compatible.
+
+The output HOUGHphmd is  a structure
+containing the frequency bin of this phmd
+the total number of borders of each type Left and Right to be
+marked, the pointers to the borders in the corresponding
+look-up-table, plus border effects of clipping  on a finite
+patch. 
+
+\par Uses
+\code
+LALHOUGHPeak2PHMD()
+\endcode
+
+*/
 
 /************************************ <lalVerbatim file="Peak2PHMDCV">
 Author: Sintes, A. M. 

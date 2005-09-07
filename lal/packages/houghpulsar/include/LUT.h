@@ -1,14 +1,102 @@
-/*-----------------------------------------------------------------------
- *
+/** \file LUT.h
+ * \ingroup Hough 
+ * \date $Date$
+ * \brief Provides structures and function prototypes required for the construction of look up tables
+   that are the core for building the Hough maps.
+ *  \author Sintes, A.M, Papa, M.A. and Krishnan, B.
  * File Name: LUT.h
  *
- * Authors: Sintes, A.M.,  Papa, M.A., Krishnan, B.
  *
- * Revision: $Id$
+ *
+ * $Id$
  *
  * History:   Created by Sintes May 11, 2001
  *            Modified by Badri Krishnan Feb 2003
- *-----------------------------------------------------------------------
+ *
+ 
+\par Description
+
+ Our goal is the construction of Hough maps. In order to produce them
+ efficiently, the present implemetation makes use of {\sc lut}s. 
+ Here we provide the necessary routines for their construction and use.\\
+ 
+ In principle, the subroutines provided are valid for
+  {\sc any} Hough master equation of the form:
+   \f$ \nu-F_0  =\vec\xi (t) \cdot (\hat n -\hat N )\, ,\f$
+ where \f$\nu\f$ is the measured frequency of the signal at time \f$t\f$, 
+  \f$F_0\f$ intrinsic frequency of the signal at that time, \f$\hat n\f$ location of the
+  souce in the sky, \f$\hat N\f$ the center of the sky patch used in the
+  demodulation procedure,
+   and 
+  \f$\vec\xi (t)\f$ any vector.  
+  
+  The  form of this vector \f$\vec\xi (t)\f$
+  depends on the demodulation procedure
+   used in the previous  step.  In our case this corresponds to 
+\f$\vec\xi (t) = \left( F_0+ 
+\sum_k F_k \left[ \Delta T  \right]^k\right) \frac{\vec v(t)}{c}
+ + \left( \sum_k k F_k \left[ \Delta  T \right]^{k-1}\right)
+\frac {\vec x(t)- \vec x(\hat t_0)}{c}\, ,\f$
+and
+   \f$F_0 \equiv  f_0 + \sum_k \Delta f_k
+ \left[ \Delta T \right]^k \, , \f$
+ where
+ \f$\vec v(t)\f$ is the velocity of the detector, \f$\vec x(t)\f$ is the detector
+ position,
+ \f$ T_{\hat N}(t)\f$ is the  time  at  
+ the solar system barycenter (for a given sky 
+  location \f$\hat N\f$),  
+   \f$\Delta T \equiv T_{\hat N}(t)-T_{\hat N}(\hat t_0)\f$, 
+  \f$\Delta f_k = f_k-F_k\f$ the  residual spin-down parameter,
+\f$F_k\f$ the  spin-down parameter used in the demodulation, and \f$f_0\f$, \f$f_k\f$ the
+intrinsic  frequency and spin-down parameters of the source at time \f$\hat t_0\f$.\\
+ 
+ Looking at the generic Hough master equation, one realizes that
+ for a fixed  time, a given value of \f$F_0\f$, and a measured frequency \f$\nu\f$
+  (from a selected peak), the source could be located anywhere on a circle (whose 
+ center points in the same direction of \f$\vec\xi (t)\f$ and is characterized by 
+ \f$\phi\f$, the angle between \f$\hat n\f$ and \f$\vec\xi\f$).  Since the Hough transform is performed on a
+  set of spectra with discrete frequencies, a peak on the spectrum appearing at
+  \f$\nu\f$  could correspond to any source with a demodulated 
+   frequency in a certain interval. As a consequence, the location of the sources
+   compatible with \f$F_0\f$ and \f$\nu\f$ is not a circle but an annulus with a certain
+   width.\\
+   
+   Our purpose is to map these annuli on a discrete space. An estimation of the 
+   average thickness of the annuli  tells us that the vast majority of
+    annuli will be very thin, and therefore our algorithm should not be
+    optimized for drawing
+   thick annuli but for thin ones. Also, the mapping implementation should be one with a uniform
+    probability distribution in order to avoid discretization errors. 
+    In order to remove border effects, we use a biunivocal mapping, which
+    requires
+    that a pixel in a partial Hough map can belong only to one annulus, 
+    just touched by one peak of the spectrum. The criteria for the biunivocal mapping 
+    is that if and only if the center of the pixel is inside the annulus, then the pixel
+   will be enhanced.\\
+   
+  In order to simplify  (reduce the computational cost of) this task we
+  construct look up tables ({\sc lut}) where the  borders of these annuli are
+  marked for any possible \f$\nu
+   -F_0\f$ value. Since we work on a discrete space these {\sc lut} are
+   valid for many \f$F_0\f$ values.\\
+
+\par Uses
+\code
+LALHOUGHComputeSizePar ()
+LALHOUGHComputeNDSizePar () 
+LALHOUGHFillPatchGrid ()
+LALHOUGHParamPLUT ()
+LALNDHOUGHParamPLUT ()
+LALRotatePolarU()
+LALInvRotatePolarU()
+LALStereoProjectPolar()
+LALStereoProjectCart()
+LALStereoInvProjectPolar()
+LALStereoInvProjectCart()
+LALHOUGHConstructPLUT()
+\endcode
+
  */
 
 
@@ -566,6 +654,7 @@ typedef INT2 COORType;
  /* typedef INT4 COORType; */
   /* typedef  UCHAR COORType; */  
 
+  /** This structure stores the border of a circle clipped on the projected plane. */
 typedef struct tagHOUGHBorder{
   INT4  yUpper;    /**< upper y pixel affected by this border */
   INT4  yLower;    /**< lower y pixel affected by this border and 
@@ -576,7 +665,8 @@ typedef struct tagHOUGHBorder{
 } HOUGHBorder;
 
 
-
+  /** This structure stores the border indexes corresponding to one frequency
+      bin plus the corrections to be added to the first column of the patch. */
 typedef struct tagHOUGHBin2Border{
   INT2   leftB1;     /**< index  of the border[xxx] to be used */
   INT2   rightB1;
@@ -606,7 +696,7 @@ typedef struct tagHOUGHptfLUT{
 } HOUGHptfLUT;
    
 
-  /** Patch-Frequency Grid*/
+  /** Patch-Frequency Grid information */
 typedef struct tagHOUGHPatchGrid{
   REAL8   f0;         /**< frequency to construct grid */
   REAL8   deltaF;     /**< df=1/TCOH */
@@ -622,6 +712,7 @@ typedef struct tagHOUGHPatchGrid{
   REAL8   *yCoor;   /**< coordinates of the pixel centers  */
 } HOUGHPatchGrid;
 
+  /** parameters needed for gridding the patch */
 typedef struct tagHOUGHResolutionPar{
   INT8    f0Bin; /**< frequency bin */
   REAL8   deltaF;        /**< df=1/TCOH */
@@ -633,6 +724,7 @@ typedef struct tagHOUGHResolutionPar{
   REAL8   vTotC;    /**< estimate value of v-total/C as VTOT */
 } HOUGHResolutionPar;
 
+  /** required for constructing patch */
 typedef struct tagHOUGHSizePar{
   INT8    f0Bin; /**< corresponding freq. bin  */
   REAL8   deltaF;        /**< df=1/TCOH */
@@ -649,27 +741,32 @@ typedef struct tagHOUGHSizePar{
 			       a circle as a line in the projected plane */
 } HOUGHSizePar;
 
+  /** cartesian coordinates on a plane */
 typedef struct tagREAL8Cart3Coor{
   REAL8  x;
   REAL8  y;
   REAL8  z;
 } REAL8Cart3Coor;
 
+  /** cartesian coordinates on a plane */
 typedef struct tagREAL8Cart2Coor{
   REAL8  x;
   REAL8  y;
 } REAL8Cart2Coor;
 
+  /** polar coordinates on a plane */
 typedef struct tagREAL8Polar2Coor{
   REAL8  alpha;
   REAL8  radius;
 } REAL8Polar2Coor;
 
+  /** right ascension and declination */
 typedef struct tagREAL8UnitPolarCoor{
   REAL8  alpha;  /**< any value */
   REAL8  delta;  /**< \f$ -\pi/2, \pi/2 \f$ */
 } REAL8UnitPolarCoor;
 
+  /** Parameters required for constructing LUT */
 typedef struct tagHOUGHParamPLUT{
   INT8             f0Bin;   /**< freq. bin for which it has been constructed */
   REAL8            deltaF;  /**< df=1/TCOH */
@@ -683,7 +780,7 @@ typedef struct tagHOUGHParamPLUT{
 			       a circle as a line in the projected plane */
 } HOUGHParamPLUT;
 
-
+  /** Demodulation parameters needed for the Hough transform (all in same coordinate system */
 typedef struct tagHOUGHDemodPar{
   /* all coordinates with respect the same reference system */
   REAL8               deltaF;   /**<   df=1/TCOH */

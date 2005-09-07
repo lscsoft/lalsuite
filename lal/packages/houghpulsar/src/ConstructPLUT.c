@@ -1,15 +1,79 @@
-/*-----------------------------------------------------------------------
- *
- * File Name: ConstructPLUT.c
- *
- * Authors: Sintes, A.M., Krishnan, B.
- *
+/** \file  ConstructPLUT.c
+ * \ingroup Hough
+ * \author Sintes, A and Krishnan, B
+ * \brief Core routines for constructing the Hough Look-Up-Tables
+ * \date $Date$
  * Revision: $Id$
  *
  * History:   Created by Sintes June 7, 2001
  *            Modified by Badri Krishnan Feb 2003
  *-----------------------------------------------------------------------
- */
+ *
+\par Deccription 
+
+This module is the core of the Hough transform. The LAL function 
+LALHOUGHConstructPLUT()
+constructs the look up tables that will be used to build the so-called
+partial-Hough maps. Each look up table is valid for a given sky-patch, time, and
+frequency range around a certain  \verb@f0@ value. The look up table contains
+all the necessary information regarding the borders of the annuli clipped on
+the \lq projected' two dimensional sky-patch.
+
+The inputs are:  HOUGHPatchGrid   containing the grid patch
+information. This is independent of the sky location of the
+patch, And  HOUGHParamPLUT  with all the other parameters needed.
+
+The output is the look up table  HOUGHptfLUT  
+
+
+\par Uses
+\code
+PLUTInitialize(HOUGHptfLUT  *)
+FillPLUT(HOUGHParamPLUT *, HOUGHptfLUT *, HOUGHPatchGrid *)
+CheckLeftCircle(REAL8, REAL8, REAL8, INT4 *, INT4 *, INT4 *, 
+                HOUGHPatchGrid *)
+CheckRightCircle(REAL8, REAL8, REAL8, INT4 *, INT4 *, INT4 *, 
+                 HOUGHPatchGrid *)
+DrawRightCircle(REAL8, REAL8, REAL8, INT4, INT4, COORType *, 
+                HOUGHPatchGrid *)
+DrawLeftCircle(REAL8, REAL8, REAL8, INT4, INT4, COORType *, 
+               HOUGHPatchGrid *)
+CheckLineCase(REAL8, REAL8, REAL8, REAL8 *, INT4 *)
+FindExactLine(REAL8, REAL8, REAL8 *, REAL8 *)
+FindLine(REAL8, REAL8, REAL8, REAL8 *, REAL8 *)
+CheckLineIntersection(REAL8, REAL8, REAL8, INT4 *, INT4 *, INT4 *, 
+                      HOUGHPatchGrid *)
+DrawLine(REAL8, REAL8, REAL8,INT4, INT4, COORType *, HOUGHPatchGrid *)
+Fill1Column(INT4, INT4*, HOUGHptfLUT *, HOUGHPatchGrid *)
+FillCaseN1(INT4, INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *)
+FillCaseN2(INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *)
+FillCaseN3(INT4, INT4, INT4, INT4 *, HOUGHptfLUT *, HOUGHPatchGrid *)
+FillCaseN4(INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *)
+FillCaseN5(INT4, INT4, INT4, HOUGHptfLUT *)
+FillCaseN6(INT4, INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *)
+FillCaseN7(INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *)
+FillCaseN8(INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *)
+Fill1ColumnAnor(INT4, HOUGHptfLUT *, HOUGHPatchGrid *)
+FillCaseA1(INT4, INT4, INT4, HOUGHptfLUT *)
+FillCaseA2(INT4, INT4, INT4, HOUGHptfLUT *)
+FillCaseA3(INT4, INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *)
+InitialCircleCase(INT4 *,REAL8, REAL8, REAL8, REAL8 *, INT4 *, INT4 *, 
+                  HOUGHptfLUT *, HOUGHPatchGrid *)
+SecondCircleCase(INT4, INT4*, REAL8, REAL8, REAL8, INT4, REAL8 *,
+                 INT4*,INT4 *,INT4*, HOUGHptfLUT *, HOUGHPatchGrid *)
+FollowCircleCase(INT4,INT4 *,REAL8,REAL8,REAL8,REAL8,REAL8,INT4 *,
+                 INT4 *,INT4 *, HOUGHptfLUT *, HOUGHPatchGrid *)
+InitialLineCase(INT4 *, REAL8, REAL8, REAL8, INT4 *, HOUGHptfLUT *, 
+                HOUGHPatchGrid *)
+SecondLineCase(INT4, INT4 *, REAL8, REAL8, REAL8, INT4 *, HOUGHptfLUT *, 
+               HOUGHPatchGrid *)
+FollowLineCase(INT4, INT4 *, REAL8, REAL8, REAL8, REAL8, INT4, INT4 *, 
+                           HOUGHptfLUT *, HOUGHPatchGrid *)
+\endcode
+
+
+*/
+
 
 /*
  * 1.  An author and Id block
