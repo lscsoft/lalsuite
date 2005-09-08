@@ -155,7 +155,6 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
     REAL8 delta;               /**< declination */
     REAL8Vector *fdot;         /**< spindown parameters */
   } HoughParams;
-
   
   void ComputeFstatStack (LALStatus *status, 
 			  REAL8FrequencySeriesVector *out, 
@@ -185,7 +184,14 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 
   void PrintFstat( LALStatus *status,
 		   REAL8FrequencySeries *Fstat, 
-		   CHAR *fname);
+		   CHAR *fname,
+		   INT4 stackIndex);
+
+  void PrintHmap2file(LALStatus *status,
+		      HOUGHMapTotal *ht, 
+		      CHAR *fnameOut, 
+		      INT4 iHmap);
+
   
 #ifdef  __cplusplus
 }                /* Close C++ protection */

@@ -395,13 +395,11 @@ int main( int argc, char *argv[]) {
   /* calculate the Fstatistic */
   LAL_CALL(ComputeFstatStack( &status, &FstatVect, &stackSFTs, &FstatPar), &status);
 
-  LAL_CALL( PrintFstat ( &status, FstatVect.data, uvar_fnameout), &status);
-
+  LAL_CALL( PrintFstat ( &status, FstatVect.data, uvar_fnameout, 0 ), &status);
 
   /*------------ select peaks ------------*/ 
 
   LAL_CALL( FstatVectToPeakGram( &status, &pgV, &FstatVect, uvar_FstatThr), &status);
-
 
   /*--------------- calculate Hough map ---------------*/
   /* start and end bin for calculating hough map */
@@ -1094,12 +1092,14 @@ void SetUpStacks2(LALStatus *status,
 
 void PrintFstat( LALStatus *status,
 		 REAL8FrequencySeries *Fstat, 
-		 CHAR *fname)
+		 CHAR *fname, 
+		 INT4 stackIndex)
 {
 
   FILE *fp=NULL;
   INT4 k, length;
   REAL8 freq, deltaF;
+  CHAR filename[256], filenumber[16]; 
 
   INITSTATUS( status, "PrintFstat", rcsid );
   ATTATCHSTATUSPTR (status);
@@ -1107,8 +1107,12 @@ void PrintFstat( LALStatus *status,
   length = Fstat->data->length;
   freq = Fstat->f0;
   deltaF = Fstat->deltaF;
+
+  strcpy ( filename, fname);
+  sprintf ( filenumber, ".%d", stackIndex);
+  strcpy ( filename, filenumber);
   
-  fp = fopen(fname, "w");
+  fp = fopen(filename, "w");
 
   for (k=0; k<length; k++) {
     fprintf(fp, "%e   %e\n", freq, Fstat->data->data[k]);
@@ -1119,4 +1123,49 @@ void PrintFstat( LALStatus *status,
 
   DETATCHSTATUSPTR (status);
   RETURN(status);
+}
+
+
+void PrintHmap2file(LALStatus *status,
+		    HOUGHMapTotal *ht, 
+		    CHAR *fnameOut, 
+		    INT4 iHmap)
+{
+
+  FILE  *fp=NULL;   /* Output file */
+  CHAR filename[256], filenumber[16]; 
+  INT4  k, i ;
+  UINT2 xSide, ySide;
+  
+  INITSTATUS( status, "PrintHmap2file", rcsid );
+  ATTATCHSTATUSPTR (status);
+
+  strcpy(  filename, fnameOut);
+  sprintf( filenumber, ".%06d",iHmap); 
+  strcat(  filename, filenumber);
+  fp=fopen(filename,"w");
+
+  /* replace this by an assert */
+  /*   if ( !fp ){   */
+  /*     fprintf(stderr,"Unable to find file %s\n",filename); */
+  /*     return DRIVEHOUGHFSTAT_EFILE;  */
+  /*   } */
+
+  ySide= ht->ySide;
+  xSide= ht->xSide;
+
+  for(k=ySide-1; k>=0; --k){
+    for(i=0;i<xSide;++i){
+      fprintf( fp ," %d", ht->map[k*xSide +i]);
+      fflush( fp );
+    }
+    fprintf( fp ," \n");
+    fflush( fp );
+  }
+
+  fclose( fp );  
+ 
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+
 }
