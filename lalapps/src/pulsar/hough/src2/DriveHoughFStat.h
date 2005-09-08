@@ -106,12 +106,6 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
  */
 
 
-  /** structure containing dtector velocity and position for set of timestamps */
-  typedef struct tagTimeVelPosVector {
-    INT4 length;     /**< number of time stamps */
-    LIGOTimeGPS *ts; /**< time stamps */
-  } TimeVelPosVector; 
-
   /** sequence of SFT vectors -- for each stack */
   typedef struct tagSFTVectorSequence {
     UINT4 length;     /**< number of stacks */
@@ -156,13 +150,28 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
     REAL8Vector *fdot;         /**< spindown parameters */
   } HoughParams;
   
+
+  /** structure for storing candidates produced by Hough search */
+  typedef struct tagHoughCandidates {
+    REAL8 freq;       /**< frequency */
+    REAL8 alpha;      /**< right ascension */
+    REAL8 delta;      /**< declination */
+    REAL8Vector fdot; /**< spindown vector */
+    REAL8 dFreq;      /**< frequency error */
+    REAL8 dAlpha;     /**< alpha error */
+    REAL8 dDelta;     /**< delta error */
+    REAL8Vector dFdot;/**< fdot error */
+  } HoughCandidates;
+
+
+
   void ComputeFstatStack (LALStatus *status, 
 			  REAL8FrequencySeriesVector *out, 
 			  const SFTVectorSequence *sfts, 
 			  FstatStackParams *params);
 
   void ComputeFstatHoughMap (LALStatus *status,
-			     HOUGHMapTotal  *ht,  
+			     HoughCandidates *out,
 			     const HOUGHPeakGramVector *pgV,
 			     HoughParams *params);
 

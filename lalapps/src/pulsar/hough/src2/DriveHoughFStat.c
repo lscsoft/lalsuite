@@ -93,6 +93,7 @@ int main( int argc, char *argv[]) {
   HOUGHPeakGramVector pgV;
   HoughParams houghPar;
   HOUGHMapTotal ht;
+  HoughCandidates houghCand;
 
   /* variables for logging */
   CHAR *fnamelog=NULL;
@@ -423,7 +424,7 @@ int main( int argc, char *argv[]) {
   LAL_CALL ( LALDCreateVector( &status, &(houghPar.fdot), 1), &status);
   houghPar.fdot->data[0] = uvar_fdot;
 
-  LAL_CALL ( ComputeFstatHoughMap ( &status, &ht, &pgV, &houghPar), &status);
+  LAL_CALL ( ComputeFstatHoughMap ( &status, &houghCand, &pgV, &houghPar), &status);
 
   /*------------ free all remaining memory -----------*/
 
@@ -464,7 +465,21 @@ int main( int argc, char *argv[]) {
   return 0;
 }
 
+/** \brief Function for calculating the Fstatistic for a stack of SFT data
+    \param *stackSFTs : pointer to SFTVectorSequence -- a sequence of SFT vectors
+    \param *params : structure of type FstatStackParams -- parameters for calculating Fstatistic 
+    \return *out : pointer to REAL8FrequencySeriesVector -- sequence of Fstatistic vectors
 
+    This function takes a set of SFTs broken up into stacks appropriately 
+    and calculates the Fstatistic for each stack over a frequency range for 
+    a single sky-location and a single value of the first spindown (the demodulation parameters). 
+    It allocates memory for the Fstatistic vectors appropriately which must 
+    be freed later outside the function.  It uses the ComputeFstatistic_v2 code
+    as a prototype.  The output set of Fstatistic vectors are meant to be 
+    combined semicoherently in a small parameter space patch around the 
+    demodulation parameters.  Thus, the Fstatistic is calculated for a somewhat 
+    larger frequency range than what the user specified. 
+*/
 void ComputeFstatStack (LALStatus *status, 
 			REAL8FrequencySeriesVector *out, 
 			const SFTVectorSequence *stackSFTs, 
@@ -655,14 +670,27 @@ void ComputeFstatStack (LALStatus *status,
 
 
 
+/** \brief Function for calculating Hough Maps and candidates 
+    \param pgV is a HOUGHPeakGramVector obtained after thresholding Fstatistic vectors
+    \param params is a pointer to HoughParams -- parameters for calculating Hough maps
+    \out houghCand Candidates from thresholding Hough number counts
 
+    This function takes a peakgram as input. This peakgram was constructed
+    by setting a threshold on a sequence of Fstatistic vectors.  The function 
+    produces a Hough map in the sky for each value of the frequency and spindown.
+    The Hough nummber counts are then used to select candidates in 
+    parameter space to be followed up in a more refined search.
+    This uses DriveHough_v3.c as a prototype suitably modified to work 
+    on demodulated data instead of SFTs.  
+*/
 void ComputeFstatHoughMap(LALStatus *status,
-			  HOUGHMapTotal   *ht,   /* the total Hough map */
+			  HoughCandidates  *out,   /* output candidates */
 			  const HOUGHPeakGramVector *pgV, /* peakgram vector */
 			  HoughParams *params)
 {
 
   /* hough structures */
+  static HOUGHMapTotal ht;
   static HOUGHptfLUTVector   lutV; /* the Look Up Table vector*/
   static PHMDVectorSequence  phmdVS;  /* the partial Hough map derivatives */
   static UINT8FrequencyIndexVector freqInd; /* for trajectory in time-freq plane */
@@ -828,13 +856,13 @@ void ComputeFstatHoughMap(LALStatus *status,
     TRY( LALHOUGHConstructSpacePHMD(status->statusPtr, &phmdVS, pgV, &lutV), status );
     
     /*-------------- initializing the Total Hough map space ------------*/   
-    ht->xSide = xSide;
-    ht->ySide = ySide;
-    ht->mObsCoh = nStacks;
-    ht->deltaF = deltaF;
-    ht->map   = NULL;
-    ht->map   = (HoughTT *)LALMalloc(xSide*ySide*sizeof(HoughTT));
-    TRY( LALHOUGHInitializeHT( status->statusPtr, ht, &patch), status); /*not needed */
+    ht.xSide = xSide;
+    ht.ySide = ySide;
+    ht.mObsCoh = nStacks;
+    ht.deltaF = deltaF;
+    ht.map   = NULL;
+    ht.map   = (HoughTT *)LALMalloc(xSide*ySide*sizeof(HoughTT));
+    TRY( LALHOUGHInitializeHT( status->statusPtr, &ht, &patch), status); /*not needed */
     
 
     /*  Search frequency interval possible using the same LUTs */
@@ -846,12 +874,12 @@ void ComputeFstatHoughMap(LALStatus *status,
       
 
       /* Case: No spin-down. Study the fBinSearch */
-      ht->f0Bin = fBinSearch;
-      ht->spinRes.length =0;
-      ht->spinRes.data = NULL;
+      ht.f0Bin = fBinSearch;
+      ht.spinRes.length =0;
+      ht.spinRes.data = NULL;
       for (j=0; j < (UINT4)nStacks; j++)
 	freqInd.data[j]= fBinSearch; 
-      TRY( LALHOUGHConstructHMT( status->statusPtr, ht, &freqInd, &phmdVS ), status );
+      TRY( LALHOUGHConstructHMT( status->statusPtr, &ht, &freqInd, &phmdVS ), status );
             
       ++iHmap;
             
@@ -861,24 +889,24 @@ void ComputeFstatHoughMap(LALStatus *status,
 	INT4   n;
 	REAL8  f1dis;
 	
-	ht->spinRes.length = 1;
-	ht->spinRes.data = NULL;
-	ht->spinRes.data = (REAL8 *)LALMalloc(ht->spinRes.length*sizeof(REAL8));
+	ht.spinRes.length = 1;
+	ht.spinRes.data = NULL;
+	ht.spinRes.data = (REAL8 *)LALMalloc(ht.spinRes.length*sizeof(REAL8));
 	    
 	for( n=1; n<= nSpin1Max; ++n){ /*loop over all values of f1 */
 	  f1dis = - n*f1jump;
-	  ht->spinRes.data[0] =  f1dis*deltaF;
+	  ht.spinRes.data[0] =  f1dis*deltaF;
 	  
 	  for (j=0; j < (UINT4)nStacks; j++)
 	    freqInd.data[j] = fBinSearch +floor(timeDiffV.data[j]*f1dis+0.5);
 	  
-	  TRY( LALHOUGHConstructHMT(status->statusPtr, ht, &freqInd, &phmdVS),status );
+	  TRY( LALHOUGHConstructHMT(status->statusPtr, &ht, &freqInd, &phmdVS),status );
 	  	  
 	  
 	  ++iHmap;
 	  
 	} /* end loop over nSpin1Max */
-	LALFree(ht->spinRes.data);
+	LALFree(ht.spinRes.data);
       }
       
 
@@ -893,7 +921,7 @@ void ComputeFstatHoughMap(LALStatus *status,
     /*--------------  Free partial memory -----------------*/
     LALFree(patch.xCoor);
     LALFree(patch.yCoor);
-    LALFree(ht->map);
+    LALFree(ht.map);
 
     for (j=0; j<lutV.length ; ++j){
       for (i=0; i<maxNBorders; ++i){
@@ -920,7 +948,16 @@ void ComputeFstatHoughMap(LALStatus *status,
 
 }
 
+/** \brief Function for selecting frequency bins from a set of Fstatistic vectors
+    \param FstatVect : sequence of Fstatistic vectors
+    \param thr is a REAL8 threshold for selecting frequency bins
+    \return pgV : a vector of peakgrams 
 
+    Input is a vector of Fstatistic vectors.  It allocates memory 
+    for the peakgrams based on the frequency span of the Fstatistic vectors
+    and fills tyem up by setting a threshold on the Fstatistic.  Peakgram must be 
+    deallocated outside the function.
+*/
 void FstatVectToPeakGram (LALStatus *status,
 			  HOUGHPeakGramVector *pgV,
 			  const REAL8FrequencySeriesVector *FstatVect,
@@ -991,12 +1028,14 @@ void FstatVectToPeakGram (LALStatus *status,
 }
 
 
-/* given a sftVector, this function splits it up into several different sft vectors */
-/* there are basically two ways of doing this: either each stack contains the same number
-   of SFTs, or each stack spans the same duration. These two methods are equivalent
-   only if there are no gaps between the SFTs */
-/* The function SetUpStacks1 distributes the SFT equally among the stacks while 
-   SetUpStacks2 makes each stack span the same time duration. */
+/** given a sftVector, this function splits it up into several different sft vectors 
+    there are basically two ways of doing this: either each stack contains the same number
+    of SFTs, or each stack spans the same duration. These two methods are equivalent
+    only if there are no gaps between the SFTs 
+    
+    The function SetUpStacks1 distributes the SFT equally among the stacks while 
+    SetUpStacks2 makes each stack span the same time duration. 
+*/
 void SetUpStacks1(LALStatus *status, 
 		 SFTVectorSequence  *out,  
 		 const SFTVector  *sftVect,
@@ -1089,7 +1128,7 @@ void SetUpStacks2(LALStatus *status,
 }
 
 
-
+/** prints Fstatistic values as a function of frequency to a specified output file */ 
 void PrintFstat( LALStatus *status,
 		 REAL8FrequencySeries *Fstat, 
 		 CHAR *fname, 
@@ -1169,3 +1208,5 @@ void PrintHmap2file(LALStatus *status,
   RETURN(status);
 
 }
+
+
