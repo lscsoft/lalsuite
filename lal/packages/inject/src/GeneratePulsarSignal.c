@@ -1241,8 +1241,14 @@ LALDestroySFTtype (LALStatus *status,
     DETATCHSTATUSPTR( status );
     RETURN (status);
   }
-    
-  LALCDestroyVector (status->statusPtr, &((*sft)->data) );
+
+  if ( (*sft)->data )
+    {
+      if ( (*sft)->data->data )
+	LALFree ( (*sft)->data->data );
+      LALFree ( (*sft)->data );
+    }
+  
   LALFree ( (*sft) );
 
   *sft = NULL;
@@ -1262,6 +1268,7 @@ LALDestroySFTVector (LALStatus *status,
 		     SFTVector **vect)	/* the SFT-vector to free */
 { /* </lalVerbatim> */
   UINT4 i;
+  SFTtype *sft;
 
   INITSTATUS( status, "LALDestroySFTVector", GENERATEPULSARSIGNALC);
   ATTATCHSTATUSPTR( status );
@@ -1271,7 +1278,15 @@ LALDestroySFTVector (LALStatus *status,
 
   
   for (i=0; i < (*vect)->length; i++)
-    LALCDestroyVector (status->statusPtr, &((*vect)->data[i].data) );
+    {
+      sft = &( (*vect)->data[i] );
+      if ( sft->data )
+	{
+	  if ( sft->data->data )
+	    LALFree ( sft->data->data );
+	  LALFree ( sft->data );
+	}
+    }
 
   LALFree ( (*vect)->data );
   LALFree ( *vect );
