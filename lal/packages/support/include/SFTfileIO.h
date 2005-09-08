@@ -1,37 +1,39 @@
-/*-----------------------------------------------------------------------
+/*
+ * Copyright (C) 2004, 2005 R. Prix, B. Machenschalk, A.M. Sintes
  *
- * File Name: SFTfileIO.h
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
  *
- * Authors: Sintes, A.M., Krishnan, B., Prix, R., Makchenschalk, B.,
- *          inspired from Siemens, X.
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
- * Revision: $Id$
+ *  You should have received a copy of the GNU General Public License
+ *  along with with program; see the file COPYING. If not, write to the 
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  MA  02111-1307  USA
+ */
+
+/** \defgroup SFTfileIO
+ * \ingroup support
+ * \author R. Prix, B. Machenschalk, A.M. Sintes
+ * \date $Date$
+ * \brief IO-Module for reading/writing SFTs (Short Fourier transform data-files)
  *
- * History:   Created by Sintes & Prix May 21, 2003
- *            Modified by Machenschalk Jun 16, 2004
- *
- *-----------------------------------------------------------------------
  */
  
-/* *********************************** <lalVerbatim file="SFTfileIOHV">
-Author: Sintes, A.M., Prix. R, Machenschalk, B.
-$Id$
-************************************* </lalVerbatim> */
-
-   	      	   
-/* <lalLaTeX>  *********************************************
-\section{Header \texttt{SFTfileIO.h}}
-\label{s:SFTfileIO.h}
-
-Routines for reading and writing SFT binary files
-
-\subsection*{Synopsis}
-
-\begin{verbatim}
-#include <lal/SFTfileIO.h>
-\end{verbatim}
-
-*************************************************</lalLaTeX> */
+/** \file 
+ * \ingroup SFTfileIO
+ * \date $Date$
+ * \brief Header file defining the API for the SFTfileIO modules.
+ *
+ *
+ * Routines for reading and writing SFT binary files.
+ * 
+ */
 
 #ifndef _SFTFILEIO_H  	/* Double-include protection. */
 #define _SFTFILEIO_H
@@ -54,10 +56,8 @@ extern "C" {
 
 NRCSID (SFTFILEIOH, "$Id$");
 
-/********************************************************** <lalLaTeX>
-\subsection*{Error codes}
-</lalLaTeX>
-***************************************************** <lalErrTable> */
+/** \name Error codes */
+/*@{*/
 #define SFTFILEIOH_ENULL 	1
 #define SFTFILEIOH_EFILE 	2
 #define SFTFILEIOH_EHEADER 	3
@@ -83,51 +83,25 @@ NRCSID (SFTFILEIOH, "$Id$");
 #define SFTFILEIOH_MSGEGLOB 	"Failed to get filelist from directory/pattern"
 #define SFTFILEIOH_MSGECOPYSIZE	"Target SFT-struct has not enough frequency-bins for copying"
 #define SFTFILEIOH_MSGEDIFFLENGTH "Sorry, can only read SFTs of identical length (currently)"
-/*************************************************** </lalErrTable> */
+/*@}*/
 
-/****************************************************** <lalLaTeX>
-\subsection*{Types}
 
-\subsubsection*{Structure \texttt{SFTHeader}}
-\idx[Type]{SFTHeader}
-
-This structure contains the header-info contained in an SFT of specification 
-version v1.0.
-
-</lalLaTeX> */
-/* <lalVerbatim> */
-typedef struct tagSFTHeader {
-  REAL8  version;		/* SFT version-number (currently only 1.0 allowed )*/
-  INT4   gpsSeconds;		/* gps start-time */
-  INT4   gpsNanoSeconds;
-  REAL8  timeBase;		/* length of data-stretch in seconds */
-  INT4   fminBinIndex;		/* first frequency-index contained in SFT */
-  INT4   length;  		/* number of frequency bins */
-} SFTHeader;
-/* </lalVerbatim> */
-
-/* just for reference: this is the FrequencySeries type:
- * {
- *   CHAR              name[LALNameLength];
- *   LIGOTimeGPS       epoch;
- *   REAL8             f0;
- *   REAL8             deltaF;
- *   LALUnit           sampleUnits
- *   COMPLEX8Sequence *data;
- * }
- * COMPLEX8FrequencySeries;
+/** This structure contains the header-info contained in an SFT-file of specification 
+ * version v1.0.
  */
+typedef struct tagSFTHeader {
+  REAL8  version;		/**< SFT version-number (currently only 1.0 allowed )*/
+  INT4   gpsSeconds;		/**< gps start-time (seconds)*/
+  INT4   gpsNanoSeconds;	/**< gps start-time (nanoseconds) */
+  REAL8  timeBase;		/**< length of data-stretch in seconds */
+  INT4   fminBinIndex;		/**< first frequency-index contained in SFT */
+  INT4   length;  		/**< number of frequency bins */
+} SFTHeader;
 
-/********************************************************** <lalLaTeX>
-\vfill{\footnotesize\input{SFTfileIOHV}}
-\newpage\input{SFTfileIOC}
-\newpage\input{SFTfileIOTestC}
-******************************************************* </lalLaTeX> */
 
 /*
  * Functions Declarations (i.e., prototypes).
  */
-
 void LALReadSFTheader (LALStatus  *status, SFTHeader *header, const CHAR *fname); 
 void LALReadSFTdata (LALStatus  *status, SFTtype *sft, const CHAR *fname, INT4 fminBinIndex);
 void LALWriteSFTfile (LALStatus  *status, const SFTtype *sft, const CHAR *outfname);
@@ -139,7 +113,6 @@ void LALReadSFTfiles (LALStatus *status,
 		      REAL8 fMax, 
 		      UINT4 wingBins, 
 		      const CHAR *fpattern);
-
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */
