@@ -55,6 +55,7 @@
 #include "DriveStackSlide.h"
 /* 04/12/05 gam; RunStackSlideIsolatedMonteCarloSimulation is in StackSlideIsolated.c. */
 #include "StackSlideIsolated.h"
+#include "StackSlideBinary.h"
 /*********************************************/
 /*                                           */
 /* END SECTION: include header files         */

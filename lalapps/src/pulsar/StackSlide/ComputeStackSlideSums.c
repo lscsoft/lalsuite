@@ -107,8 +107,16 @@ int main(int argc,char *argv[])
   if ( (params->testFlag & 2) > 0 ) {
     /* 05/11/04 gam; Add code to software inject signals into the SFTs for Monte Carlo simulations */    
     /* RunStackSlideMonteCarloSimulation(&status,params); */ /* 04/12/05 gam; moved to StackSlideIsolated.c */
-    RunStackSlideIsolatedMonteCarloSimulation(&status,params,GV.nsamples);
-    INTERNAL_CHECKSTATUS_FROMMAIN(status);    
+
+	 	  
+/*!05/09/07 */	  if ( params->binaryFlag == 1 ){
+/*!*/        RunStackSlideBinaryMonteCarloSimulation(&status,params,GV.nsamples);
+/*!*/        INTERNAL_CHECKSTATUS_FROMMAIN(status);    
+
+/*!*/               }else{
+              RunStackSlideIsolatedMonteCarloSimulation(&status,params,GV.nsamples);
+              INTERNAL_CHECKSTATUS_FROMMAIN(status);    
+/*!*/	        }
   } else {      
     StackSlideApplySearch(&status,params);
     INTERNAL_CHECKSTATUS_FROMMAIN(status)
