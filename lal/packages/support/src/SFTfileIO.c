@@ -49,15 +49,9 @@ typedef struct {
 /* prototypes for internal helper functions */
 static StringVector *find_files (const CHAR *fpattern);
 static void DestroyStringVector (StringVector *strings);
-static void LALCopySFT (LALStatus *stat, SFTtype *dest, const SFTtype *src);
+static void LALCopySFT (LALStatus *status, SFTtype *dest, const SFTtype *src);
 static void endian_swap(CHAR * pdata, size_t dsize, size_t nelements);
 static void SortStringVector (StringVector *strings);
-
-#if 0 /* REMOVED */
-static void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
-static void write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series);
-static void LALwriteSFTtoXMGR (LALStatus *stat, const SFTtype *sft, const CHAR *fname);
-#endif /* REMOVED */
 
 static int amatch(char *str, char *p);	/* glob pattern-matcher (public domain)*/
 
@@ -74,8 +68,10 @@ static const size_t header_len_v1 = 32;
  *  Given a filename \a fname and frequency-limits [\a fMin, \a fMax], 
  *  returns an SFTtype \a sft containing the SFT-data.
  * 
- * \note 1) the actual returned frequency-band is <tt>[floor(fMin), ceil(fMax)]</tt>,
- * i.e. the requested frequency-band is guaranteed to be contained in the output 
+ * \note 1) the actual returned frequency-band is 
+ * <tt>[floor(Tsft * fMin), ceil(Tsft * fMax)] / Tsft</tt>,
+ * i.e. we need to round to an integer frequency-bin within the SFT, but
+ * the requested frequency-band is guaranteed to be contained in the output 
  * (if present in the SFT-file), but can be slightly larger.
  * 
  * 2) The special input <tt>fMin=fMax=0</tt> means to read and
@@ -85,7 +81,7 @@ static const size_t header_len_v1 = 32;
  *
  */
 void
-LALReadSFTfile (LALStatus *stat, 
+LALReadSFTfile (LALStatus *status, 
 		SFTtype **sft, 		/**< [out] output SFT */
 		REAL8 fMin, 		/**< lower frequency-limit */
 		REAL8 fMax,		/**< upper frequency-limit */
@@ -99,16 +95,16 @@ LALReadSFTfile (LALStatus *stat,
   UINT4 i;
   REAL4 renorm;
 
-  INITSTATUS (stat, "LALReadSFTfile", SFTFILEIOC);
-  ATTATCHSTATUSPTR (stat); 
+  INITSTATUS (status, "LALReadSFTfile", SFTFILEIOC);
+  ATTATCHSTATUSPTR (status); 
   
-  ASSERT (sft, stat, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
-  ASSERT (*sft == NULL, stat, SFTFILEIOH_ENONULL, SFTFILEIOH_MSGENONULL);
-  ASSERT (fname,  stat, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
-  ASSERT (fMin <= fMax, stat, SFTFILEIOH_EVAL, SFTFILEIOH_MSGEVAL);
+  ASSERT (sft, status, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
+  ASSERT (*sft == NULL, status, SFTFILEIOH_ENONULL, SFTFILEIOH_MSGENONULL);
+  ASSERT (fname,  status, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
+  ASSERT (fMin <= fMax, status, SFTFILEIOH_EVAL, SFTFILEIOH_MSGEVAL);
 
   /* read the header */
-  TRY ( LALReadSFTheader (stat->statusPtr, &header, fname), stat);
+  TRY ( LALReadSFTheader (status->statusPtr, &header, fname), status);
 
   /* ----- figure out which data we want to read ----- */
   deltaF = 1.0 / header.timeBase;
@@ -132,14 +128,14 @@ LALReadSFTfile (LALStatus *stat,
   readlen = (UINT4)(fmaxBinIndex - fminBinIndex) + 1;	/* number of bins to read */
 
   /* allocate the final SFT to be returned */
-  TRY ( LALCreateSFTtype (stat->statusPtr, &outputSFT, readlen), stat);
+  TRY ( LALCreateSFTtype (status->statusPtr, &outputSFT, readlen), status);
 
 
   /* and read it, using the lower-level function: */
-  LALReadSFTdata (stat->statusPtr, outputSFT, fname, fminBinIndex);
-  BEGINFAIL (stat) {
-    LALDestroySFTtype (stat->statusPtr, &outputSFT);
-  } ENDFAIL (stat);
+  LALReadSFTdata (status->statusPtr, outputSFT, fname, fminBinIndex);
+  BEGINFAIL (status) {
+    LALDestroySFTtype (status->statusPtr, &outputSFT);
+  } ENDFAIL (status);
 
 
   /*
@@ -164,8 +160,8 @@ LALReadSFTfile (LALStatus *stat,
   /* that's it: return */
   *sft = outputSFT;
 
-  DETATCHSTATUSPTR (stat);
-  RETURN(stat);
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
 
 } /* LALReadSFTfile() */
 
@@ -186,7 +182,7 @@ LALReadSFTfile (LALStatus *stat,
  *
  */
 void
-LALReadSFTfiles (LALStatus *stat,
+LALReadSFTfiles (LALStatus *status,
 		 SFTVector **sftvect,	/**< [out] output SFT vector */
 		 REAL8 fMin,	       	/**< lower frequency-limit */
 		 REAL8 fMax,		/**< upper frequency-limit */
@@ -202,25 +198,25 @@ LALReadSFTfiles (LALStatus *stat,
   REAL8 fWing;		/* frequency band to be added as "wings" to the 'physical band' */
   StringVector *fnames;
 
-  INITSTATUS (stat, "LALReadSFTfiles", SFTFILEIOC);
-  ATTATCHSTATUSPTR (stat); 
+  INITSTATUS (status, "LALReadSFTfiles", SFTFILEIOC);
+  ATTATCHSTATUSPTR (status); 
   
-  ASSERT (sftvect, stat, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
-  ASSERT (*sftvect == NULL, stat, SFTFILEIOH_ENONULL, SFTFILEIOH_MSGENONULL);
-  ASSERT (fpattern,  stat, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
-  ASSERT (fMin <= fMax, stat, SFTFILEIOH_EVAL, SFTFILEIOH_MSGEVAL);
+  ASSERT (sftvect, status, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
+  ASSERT (*sftvect == NULL, status, SFTFILEIOH_ENONULL, SFTFILEIOH_MSGENONULL);
+  ASSERT (fpattern,  status, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
+  ASSERT (fMin <= fMax, status, SFTFILEIOH_EVAL, SFTFILEIOH_MSGEVAL);
 
   /* make filelist 
    * NOTE: we don't use glob() as it was reported to fail under condor */
   if ( (fnames = find_files (fpattern)) == NULL) {
-    ABORT (stat, SFTFILEIOH_EGLOB, SFTFILEIOH_MSGEGLOB);
+    ABORT (status, SFTFILEIOH_EGLOB, SFTFILEIOH_MSGEGLOB);
   }
 
   /* read header of first sft to determine Tsft, and therefore dfreq */
-  LALReadSFTheader(stat->statusPtr, &header, fnames->data[0]);
-  BEGINFAIL(stat) {
+  LALReadSFTheader(status->statusPtr, &header, fnames->data[0]);
+  BEGINFAIL(status) {
     DestroyStringVector (fnames);    
-  } ENDFAIL(stat);
+  } ENDFAIL(status);
 
   numSFTs = fnames->length;
   dFreq = 1.0 / header.timeBase;
@@ -229,45 +225,45 @@ LALReadSFTfiles (LALStatus *stat,
   /* main loop: load all SFTs and put them into the SFTvector */
   for (i=0; i < numSFTs; i++)
     {
-      LALReadSFTfile (stat->statusPtr, &oneSFT, fMin-fWing, fMax+fWing, fnames->data[i]);
-      BEGINFAIL (stat) {
+      LALReadSFTfile (status->statusPtr, &oneSFT, fMin-fWing, fMax+fWing, fnames->data[i]);
+      BEGINFAIL (status) {
 	DestroyStringVector (fnames);    
-	LALDestroySFTtype (stat->statusPtr, &oneSFT);
-	if (out) LALDestroySFTVector (stat->statusPtr, &out);
-      } ENDFAIL (stat);
+	LALDestroySFTtype (status->statusPtr, &oneSFT);
+	if (out) LALDestroySFTVector (status->statusPtr, &out);
+      } ENDFAIL (status);
 
       /* after the first time we can allocate the output-vector, 
        * as we now kpnow how many frequency-bins we need */
       if (out == NULL)
 	{
-	  LALCreateSFTVector(stat->statusPtr, &out, numSFTs, oneSFT->data->length);
-	  BEGINFAIL(stat) {
+	  LALCreateSFTVector(status->statusPtr, &out, numSFTs, oneSFT->data->length);
+	  BEGINFAIL(status) {
 	    DestroyStringVector (fnames);    
-	    LALDestroySFTtype (stat->statusPtr, &oneSFT);
-	  } ENDFAIL(stat);
+	    LALDestroySFTtype (status->statusPtr, &oneSFT);
+	  } ENDFAIL(status);
 	}
 
       /* make sure all SFTs have same length */
       if ( oneSFT->data->length != out->data->data->length)
 	{
 	  DestroyStringVector (fnames);    
-	  LALDestroySFTtype (stat->statusPtr, &oneSFT);
-	  LALDestroySFTVector (stat->statusPtr, &out);
-	  ABORT (stat, SFTFILEIOH_EDIFFLENGTH, SFTFILEIOH_MSGEDIFFLENGTH);
+	  LALDestroySFTtype (status->statusPtr, &oneSFT);
+	  LALDestroySFTVector (status->statusPtr, &out);
+	  ABORT (status, SFTFILEIOH_EDIFFLENGTH, SFTFILEIOH_MSGEDIFFLENGTH);
 	} /* if length(thisSFT) != common length */
 
       /* transfer the returned SFT into the SFTVector 
        * this is a bit complicated by the fact that it's a vector
        * of SFTtypes, not pointers: therefore we need to *COPY* the stuff !
        */
-      LALCopySFT (stat->statusPtr, &(out->data[i]), oneSFT);
-      BEGINFAIL (stat) {
+      LALCopySFT (status->statusPtr, &(out->data[i]), oneSFT);
+      BEGINFAIL (status) {
 	DestroyStringVector (fnames);    
-	LALDestroySFTtype (stat->statusPtr, &oneSFT);
-	LALDestroySFTVector (stat->statusPtr, &out);
-      } ENDFAIL (stat);
+	LALDestroySFTtype (status->statusPtr, &oneSFT);
+	LALDestroySFTVector (status->statusPtr, &out);
+      } ENDFAIL (status);
 
-      LALDestroySFTtype (stat->statusPtr, &oneSFT);
+      LALDestroySFTtype (status->statusPtr, &oneSFT);
       oneSFT = NULL;	/* important for next call of LALReadSFTfile()! */
 
     } /* for i < numSFTs */
@@ -276,8 +272,8 @@ LALReadSFTfiles (LALStatus *stat,
 
   *sftvect = out;
 
-  DETATCHSTATUSPTR (stat);
-  RETURN (stat);
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
 
 } /* LALReadSFTfiles () */
 
@@ -665,21 +661,21 @@ LALReadSFTdata(LALStatus *status,
  * as the source, but it can have less..
  */
 void
-LALCopySFT (LALStatus *stat, 
+LALCopySFT (LALStatus *status, 
 	    SFTtype *dest, 	/**< [out] copied SFT (needs to be allocated already) */
 	    const SFTtype *src)	/**< input-SFT to be copied */
 {
 
-  INITSTATUS( stat, "LALDestroySFTVector", SFTFILEIOC);
+  INITSTATUS( status, "LALDestroySFTVector", SFTFILEIOC);
 
-  ASSERT (dest,  stat, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
-  ASSERT (dest->data,  stat, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
-  ASSERT (src, stat, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
-  ASSERT (src->data, stat, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
+  ASSERT (dest,  status, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
+  ASSERT (dest->data,  status, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
+  ASSERT (src, status, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
+  ASSERT (src->data, status, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
 
   /* some hard requirements */
   if ( dest->data->length < src->data->length ) {
-    ABORT (stat, SFTFILEIOH_ECOPYSIZE, SFTFILEIOH_MSGECOPYSIZE);
+    ABORT (status, SFTFILEIOH_ECOPYSIZE, SFTFILEIOH_MSGECOPYSIZE);
   }
   
   /* copy head */
@@ -691,7 +687,7 @@ LALCopySFT (LALStatus *stat,
   /* copy data */
   memcpy (dest->data->data, src->data->data, dest->data->length * sizeof (dest->data->data[0]));
   
-  RETURN (stat);
+  RETURN (status);
 
 } /* LALCopySFT() */
 
@@ -922,216 +918,7 @@ SortStringVector (StringVector *strings)
 } /* SortStringVector() */
 
 
-
-/***********************************************************************
- *
- * the following are
- * DEBUG + testing functions: not meant for general use!! 
- *
- ***********************************************************************/
-
-#if 0 /* REMOVED */
-
-/* write a time-series into a text-file */
-static void
-write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series)
-{
-  REAL8 timestamp; 
-  UINT4 i;
-
-  if (series == NULL)
-    {
-      printf ("\nempty input!\n");
-      return; 
-    }
-
-  timestamp = 1.0*series->epoch.gpsSeconds + series->epoch.gpsNanoSeconds * 1.0e-9;
-
-  for( i = 0; i < series->data->length; i++)
-    {
-      fprintf( fp, "%16.9f %e\n", timestamp, series->data->data[i] );
-      timestamp += series->deltaT;
-    }
-
-  return;
-
-} /* write_timeSeriesR4() */
-
-static void
-write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series)
-{
-  REAL8 timestamp; 
-  UINT4 i;
-
-  timestamp = 1.0*series->epoch.gpsSeconds + series->epoch.gpsNanoSeconds * 1.0e-9;
-
-  for( i = 0; i < series->data->length; i++)
-    {
-      fprintf( fp, "%f %e\n", timestamp, series->data->data[i] );
-      timestamp += series->deltaT;
-    }
-
-  return;
-
-} /* write_timeSeriesR4() */
-
-
-/* write an SFT in xmgrace-readable format */
-static void 
-LALwriteSFTtoXMGR (LALStatus *stat, const SFTtype *sft, const CHAR *fname)
-{
-  FILE *fp;
-
-  REAL4 val;
-  UINT4 i;
-  REAL8 Tsft, freqBand;
-  REAL8 f0, df, ff;
-  UINT4 set, nsamples;
-
-  const CHAR *xmgrHeader = 
-    "@version 50103\n"
-    "@xaxis label \"f (Hz)\"\n";
-
-  INITSTATUS( stat, "LALwriteSFTtoXMGR", SFTFILEIOC);
-  ATTATCHSTATUSPTR( stat );
-
-  fp = fopen (fname, "w");
-
-  if( !fp ) {
-    ABORT (stat, SFTFILEIOH_EFILE, SFTFILEIOH_MSGEFILE);
-  }
-
-
-  f0 = sft->f0;
-  df = sft->deltaF;
-  nsamples = sft->data->length;
-  Tsft = 1.0 / sft->deltaF;
-  freqBand = (nsamples-1.0) * df;
-
-  fprintf (fp, xmgrHeader);
-  fprintf (fp, "@subtitle \"epoch = (%d s, %d ns), Tsft = %f\"\n", 
-	   sft->epoch.gpsSeconds, sft->epoch.gpsNanoSeconds, Tsft);
-
-  set = 0;
-  /* Print set header. */
-  fprintf( fp, "\n@target G0.S%d\n@type xy\n", set);
-  fprintf( fp, "@s%d color (0,0,1)\n", set );
-  for (i=0; i < nsamples; i++)
-    {
-      ff = f0 + i*df;
-      val = sft->data->data[i].re;
-
-      fprintf(fp, "%f %e\n", ff, val);
-        
-    } /* for i < nsamples */
-
-  set ++;
-  /* Print set header. */
-  fprintf( fp, "\n@target G0.S%d\n@type xy\n", set);
-  fprintf( fp, "@s%d color (0,1,0)\n", set );
-  for (i=0; i < nsamples; i++)
-    {
-      ff = f0 + i*df;
-      val = sft->data->data[i].im;
-
-      fprintf(fp, "%f %e\n", ff, val);
-        
-    } /* for i < nsamples */
-
-  set ++;
-  /* Print set header. */
-  fprintf( fp, "\n@target G0.S%d\n@type xy\n", set);
-  fprintf( fp, "@s%d color (1,0,0)\n", set );
-  for (i=0; i < nsamples; i++)
-    {
-      ff = f0 + i*df;
-      val = (sft->data->data[i].re * sft->data->data[i].re + sft->data->data[i].im*sft->data->data[i].im) / freqBand;
-      
-      fprintf(fp, "%f %e\n", ff, val);
-        
-    } /* for i < nsamples */
-
-  
-  fclose(fp);
-
-  DETATCHSTATUSPTR( stat );
-  RETURN (stat);
-  
-} /* write_SFT() */
-
-
-/* dump an SFT into a text-file 
- * format: 0 = openDX (include header), 1 = xmgrace (no header)
- */
-static void dump_SFT (FILE *fp, const SFTtype *sft, INT4 format)
-{
-
-  REAL4 valre, valim;
-  UINT4 i;
-  REAL8 Tsft, freqBand;
-  REAL8 f0, df, ff;
-  UINT4 nsamples;
-  REAL4 norm;
-  REAL4 P_k;
-
-  f0 = sft->f0;
-  df = sft->deltaF;
-  nsamples = sft->data->length;
-  Tsft = 1.0 / sft->deltaF;
-  freqBand = (nsamples-1.0) * df;
-
-  norm = (REAL4)( Tsft / nsamples);
-
-  /* if openDX format: add a header with number of points..*/
-  if ( format == 0)
-    {
-      fprintf (fp, "points = %d\n", nsamples);
-      fprintf (fp, "format = ascii\n");
-      fprintf (fp, "field = field0\n");
-      fprintf (fp, "structure = 2-vector\n");
-      fprintf (fp, "type = float\n");
-      fprintf (fp, "dependency = positions\n");
-      fprintf (fp, "header = marker \"SFT-data\\n\"\n");
-      fprintf (fp, "positions = regular, %f, %f \n", f0, df);
-      fprintf(fp, "end\n\n");
-      
-      /* write some SFT header-info */
-      fprintf (fp, "SFT-header\n");
-      fprintf (fp, "Name = %s\n", sft->name);
-      fprintf (fp, "Timestamp = %d s, %d ns\n", sft->epoch.gpsSeconds, sft->epoch.gpsNanoSeconds);
-      fprintf (fp, "Tsft = %f\n", Tsft);
-      fprintf (fp, "Start-frequency = %f Hz\n", f0);
-      fprintf (fp, "Frequency-step = %f Hz\n", df);
-      fprintf (fp, "Frequency-band = %f Hz\n", freqBand);
-      fprintf (fp, "Number of frequency-bins nsamples = %d\n", nsamples);
-      
-      /* write SFT-data */
-      fprintf (fp, "\nSFT-data\n");
-    }
-
-  for (i=0; i < nsamples; i++)
-    {
-      ff = f0 + i*df;
-      valre = norm * sft->data->data[i].re;
-      valim = norm * sft->data->data[i].im;
-      if ( (i==0) && (i == nsamples-1) )
-	P_k = sqrt(valre*valre + valim*valim);
-      else
-	P_k = 2.0 * sqrt(valre*valre + valim*valim);
-
-      if (format == 1) /* xmgrace */
-	fprintf (fp, "%f %e %e %e\n", ff, valre, valim, P_k );
-      else if (format == 0) /* openDX */
-	fprintf (fp, "%e %e\n", valre, valim);
-        
-    } /* for i < nsamples */
-  
-  return;
-  
-} /* dump_SFT() */
-
-#endif /* REMOVED */
-
+/*======================================================================*/
 /*
  * robust glob pattern matcher
  * ozan s. yigit/dec 1994
@@ -1158,6 +945,9 @@ static void dump_SFT (FILE *fp, const SFTtype *sft, INT4 format)
  *	a[-a-z]c	a-c aac abc ...
  *
  * $Log$
+ * Revision 1.38  2005/09/08 21:21:41  reinhard
+ * some cleanup.
+ *
  * Revision 1.37  2005/09/08 21:12:35  reinhard
  * corrected authorlist and fully doxygenized documentation.
  *
