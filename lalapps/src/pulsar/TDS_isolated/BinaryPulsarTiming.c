@@ -843,11 +843,11 @@ LALReadTEMPOParFile(	LALStatus *status,
 			}
 		}
 		else if( !strcmp(val[i], "omdot") || !strcmp(val[i], "OMDOT")){
-			output->omdot = atof(val[i+1]);
+			output->wdot = atof(val[i+1]);
 			j++;
 			
 			if(atoi(val[i+2])==1){
-				output->omdotErr = atof(val[i+3]);
+				output->wdotErr = atof(val[i+3]);
 				j+=2;
 			}
 		}
