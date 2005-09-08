@@ -743,211 +743,211 @@ LALReadTEMPOParFile(	LALStatus *status,
 			j++;
     }
     else if( !strcmp(val[i],"a1") || !strcmp(val[i],"A1")) {
-			while(atof(val[j+1])!=0){
-				if(j==i)
-					output->x = atof(val[j+1]);
-				if(j==i+2)
-					output->xErr = atof(val[j+1]);
-				j++;
+			output->x = atof(val[i+1]);
+			j++;
+			
+			if(atoi(val[i+2])==1){
+				output->xErr = atof(val[i+3]);
+				j+=2;
 			}
 		}
     else if( !strcmp(val[i],"e") || !strcmp(val[i],"E") || !strcmp(val[i],"ECC") ||
 		!strcmp(val[i],"ecc")) {
-			while(atof(val[j+1])!=0){
-				if(j==i)
-					output->e = atof(val[j+1]);
-				if(j==i+2)
-					output->eErr = atof(val[j+1]);
-				j++;
+			output->e = atof(val[i+1]);
+			j++;
+			
+			if(atoi(val[i+2])==1){
+				output->eErr = atof(val[i+3]);
+				j+=2;
 			}
 		}
 		else if( !strcmp(val[i],"pb") || !strcmp(val[i],"PB")) {
-			while(atof(val[j+1])!=0){
-				if(j==i)
-					output->Pb = atof(val[j+1]);
-				if(j==i+2)
-					output->PbErr = atof(val[j+1]);
-				j++;
+			output->Pb = atof(val[i+1]);
+			j++;
+			
+			if(atoi(val[i+2])==1){
+				output->PbErr = atof(val[i+3]);
+				j+=2;
 			}
     }
     else if( !strcmp(val[i],"om") || !strcmp(val[i],"OM")) {
-			while(atof(val[j+1])!=0){
-				if(j==i)
-					output->w0 = atof(val[j+1]);
-				if(j==i+2)
-					output->w0Err = atof(val[j+1]);
-				j++;
+			output->w0 = atof(val[i+1]);
+			j++;
+			
+			if(atoi(val[i+2])==1){
+				output->w0Err = atof(val[i+3]);
+				j+=2;
 			}
     }
 		else if( !strcmp(val[i], "T0")){
-			while(atof(val[j+1])!=0){
-				if(j==i)
-					output->T0 = atof(val[j+1]);
-				if(j==i+2)
-					output->T0Err = atof(val[j+1]);
-				j++;
+			output->T0 = atof(val[i+1]);
+			j++;
+			
+			if(atoi(val[i+2])==1){
+				output->T0Err = atof(val[i+3]);
+				j+=2;
 			}
 		}
 		else if( !strcmp(val[i], "Tasc") || !strcmp(val[i], "TASC")){
-			while(atof(val[j+1])!=0){
-				if(j==i)
-					output->Tasc = atof(val[j+1]);
-				if(j==i+2)
-					output->TascErr = atof(val[j+1]);
-				j++;
+			output->Tasc = atof(val[i+1]);
+			j++;
+			
+			if(atoi(val[i+2])==1){
+				output->TascErr = atof(val[i+3]);
+				j+=2;
 			}
 		}
 		else if( !strcmp(val[i], "eps1") || !strcmp(val[i], "EPS1")){
-			while(atof(val[j+1])!=0){
-				if(j==i)
-					output->eps1 = atof(val[j+1]);
-				if(j==i+2)
-					output->eps1Err = atof(val[j+1]);
-				j++;
+			output->eps1 = atof(val[i+1]);
+			j++;
+			
+			if(atoi(val[i+2])==1){
+				output->eps1Err = atof(val[i+3]);
+				j+=2;
 			}
 		}
 		else if( !strcmp(val[i], "eps2") || !strcmp(val[i], "EPS2")){
-			while(atof(val[j+1])!=0){
-				if(j==i)
-					output->eps2 = atof(val[j+1]);
-				if(j==i+2)
-					output->eps2Err = atof(val[j+1]);
-				j++;
+			output->eps2 = atof(val[i+1]);
+			j++;
+			
+			if(atoi(val[i+2])==1){
+				output->eps2Err = atof(val[i+3]);
+				j+=2;
 			}
 		}
 		else if( !strcmp(val[i], "eps1dot") || !strcmp(val[i], "EPS1DOT")){
-			while(atof(val[j+1])!=0){
-				if(j==i)
-					output->eps1dot = atof(val[j+1]);
-				if(j==i+2)
-					output->eps1dotErr = atof(val[j+1]);
-				j++;
+			output->eps1dot = atof(val[i+1]);
+			j++;
+			
+			if(atoi(val[i+2])==1){
+				output->eps1dotErr = atof(val[i+3]);
+				j+=2;
 			}
 		}
 		else if( !strcmp(val[i], "eps2dot") || !strcmp(val[i], "EPS2DOT")){
-			while(atof(val[j+1])!=0){
-				if(j==i)
-					output->eps2dot = atof(val[j+1]);
-				if(j==i+2)
-					output->eps2dotErr = atof(val[j+1]);
-				j++;
+			output->eps2dot = atof(val[i+1]);
+			j++;
+			
+			if(atoi(val[i+2])==1){
+				output->eps2dotErr = atof(val[i+3]);
+				j+=2;
 			}
 		}
 		else if( !strcmp(val[i], "xpbdot") || !strcmp(val[i], "XPBDOT")){
-			while(atof(val[j+1])!=0){
-				if(j==i)
-					output->xpbdot = atof(val[j+1]);
-				if(j==i+2)
-					output->xpbdotErr = atof(val[j+1]);
-				j++;
+			output->xpbdot = atof(val[i+1]);
+			j++;
+			
+			if(atoi(val[i+2])==1){
+				output->xpbdotErr = atof(val[i+3]);
+				j+=2;
 			}
 		}
 		else if( !strcmp(val[i], "omdot") || !strcmp(val[i], "OMDOT")){
-			while(atof(val[j+1])!=0){
-				if(j==i)
-					output->wdot = atof(val[j+1]);
-				if(j==i+2)
-					output->wdotErr = atof(val[j+1]);
-				j++;
+			output->omdot = atof(val[i+1]);
+			j++;
+			
+			if(atoi(val[i+2])==1){
+				output->omdotErr = atof(val[i+3]);
+				j+=2;
 			}
 		}
 		else if( !strcmp(val[i], "pbdot") || !strcmp(val[i], "PBDOT")){
-			while(atof(val[j+1])!=0){
-				if(j==i)
-					output->Pbdot = atof(val[j+1]);
-				if(j==i+2)
-					output->PbdotErr = atof(val[j+1]);
-				j++;
+			output->Pbdot = atof(val[i+1]);
+			j++;
+			
+			if(atoi(val[i+2])==1){
+				output->PbdotErr = atof(val[i+3]);
+				j+=2;
 			}
 		}
 		else if( !strcmp(val[i], "xdot") || !strcmp(val[i], "XDOT")){
-			while(atof(val[j+1])!=0){
-				if(j==i)
-					output->xdot = atof(val[j+1]);
-				if(j==i+2)
-					output->xdotErr = atof(val[j+1]);
-				j++;
+			output->xdot = atof(val[i+1]);
+			j++;
+			
+			if(atoi(val[i+2])==1){
+				output->xdotErr = atof(val[i+3]);
+				j+=2;
 			}
 		}
 		else if( !strcmp(val[i], "edot") || !strcmp(val[i], "EDOT")){
-			while(atof(val[j+1])!=0){
-				if(j==i)
-					output->edot = atof(val[j+1]);
-				if(j==i+2)
-					output->edotErr = atof(val[j+1]);
-				j++;
+			output->edot = atof(val[i+1]);
+			j++;
+			
+			if(atoi(val[i+2])==1){
+				output->edotErr = atof(val[i+3]);
+				j+=2;
 			}
 		}
 		else if( !strcmp(val[i], "gamma") || !strcmp(val[i], "GAMMA")){
-			while(atof(val[j+1])!=0){
-				if(j==i)
-					output->gamma = atof(val[j+1]);
-				if(j==i+2)
-					output->gammaErr = atof(val[j+1]);
-				j++;
+			output->gamma = atof(val[i+1]);
+			j++;
+			
+			if(atoi(val[i+2])==1){
+				output->gammaErr = atof(val[i+3]);
+				j+=2;
 			}
 		}
 		else if( !strcmp(val[i], "sini") || !strcmp(val[i], "SINI")){
-			while(atof(val[j+1])!=0){
-				if(j==i)
-					output->s = atof(val[j+1]);
-				if(j==i+2)
-					output->sErr = atof(val[j+1]);
-				j++;
+			output->s = atof(val[i+1]);
+			j++;
+			
+			if(atoi(val[i+2])==1){
+				output->sErr = atof(val[i+3]);
+				j+=2;
 			}
 		}
 		else if( !strcmp(val[i], "mtot") || !strcmp(val[i], "MTOT")){
-			while(atof(val[j+1])!=0){
-				if(j==i)
-					output->M = atof(val[j+1]);
-				if(j==i+2)
-					output->MErr = atof(val[j+1]);
-				j++;
+			output->M = atof(val[i+1]);
+			j++;
+			
+			if(atoi(val[i+2])==1){
+				output->MErr = atof(val[i+3]);
+				j+=2;
 			}
 		}
 		else if( !strcmp(val[i], "m2") || !strcmp(val[i], "M2")){
-			while(atof(val[j+1])!=0){
-				if(j==i)
-					output->m2 = atof(val[j+1]);
-				if(j==i+2)
-					output->m2Err = atof(val[j+1]);
-				j++;
+			output->m2 = atof(val[i+1]);
+			j++;
+			
+			if(atoi(val[i+2])==1){
+				output->m2Err = atof(val[i+3]);
+				j+=2;
 			}
 		}
 		else if( !strcmp(val[i], "a0") || !strcmp(val[i], "A0")){
-			while(atof(val[j+1])!=0){
-				if(j==i)
-					output->a0 = atof(val[j+1]);
-				if(j==i+2)
-					output->a0Err = atof(val[j+1]);
-				j++;
+			output->a0 = atof(val[i+1]);
+			j++;
+			
+			if(atoi(val[i+2])==1){
+				output->a0Err = atof(val[i+3]);
+				j+=2;
 			}
 		}
 		else if( !strcmp(val[i], "b0") || !strcmp(val[i], "B0")){
-			while(atof(val[j+1])!=0){
-				if(j==i)
-					output->b0 = atof(val[j+1]);
-				if(j==i+2)
-					output->b0Err = atof(val[j+1]);
-				j++;
+			output->b0 = atof(val[i+1]);
+			j++;
+			
+			if(atoi(val[i+2])==1){
+				output->b0Err = atof(val[i+3]);
+				j+=2;
 			}
 		}
 		else if( !strcmp(val[i], "dr") || !strcmp(val[i], "DR")){
-			while(atof(val[j+1])!=0){
-				if(j==i)
-					output->dr = atof(val[j+1]);
-				if(j==i+2)
-					output->drErr = atof(val[j+1]);
-				j++;
+			output->dr = atof(val[i+1]);
+			j++;
+			
+			if(atoi(val[i+2])==1){
+				output->drErr = atof(val[i+3]);
+				j+=2;
 			}
 		}
 		else if( !strcmp(val[i], "dtheta") || !strcmp(val[i], "DTHETA")){
-			while(atof(val[j+1])!=0){
-				if(j==i)
-					output->dth = atof(val[j+1]);
-				if(j==i+2)
-					output->dthErr = atof(val[j+1]);
-				j++;
+			output->dth = atof(val[i+1]);
+			j++;
+			
+			if(atoi(val[i+2])==1){
+				output->dthErr = atof(val[i+3]);
+				j+=2;
 			}
 		}
 		
