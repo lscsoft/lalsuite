@@ -1,112 +1,33 @@
-/*-----------------------------------------------------------------------
+/*
+ * Copyright (C) 2004, 2005 R. Prix, B. Machenschalk, A.M. Sintes
  *
- * File Name: SFTfileIO.c
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
  *
- * Authors: Sintes, A.M.,  Prix, R., Krishnan, B. Machenschalk, B.
- *          inspired from Siemens, X.
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
- * Revision: $Id$
- *
- * History:   Created by Sintes & Prix May 21, 2003
- *            Modified by Krishnan on Feb 22, 2004
- *            Modified by Machenschalk on Jun 16 2004
- *
- *-----------------------------------------------------------------------
+ *  You should have received a copy of the GNU General Public License
+ *  along with with program; see the file COPYING. If not, write to the 
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  MA  02111-1307  USA
  */
 
-/************************************ <lalVerbatim file="SFTfileIOCV">
-Author: Sintes, A.M., Krishnan, B., Prix, R., Machenschalk, B.
-$Id$
-************************************* </lalVerbatim> */
+/** \file
+ * \ingroup SFTfileIO
+ * \author R. Prix, B. Machenschalk, A.M. Sintes
+ * 
+ * \brief IO library for reading/writing "Short Fourier transform" (SFT) data files.
+ *
+ * $Id$ 
+ *
+ *
+ */
 
-/* <lalLaTeX>  *******************************************************
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Module \texttt{SFTfileIO.c}}
-\label{ss:SFTfileIO.c}
-Routines for reading and writing SFT binary files
-
-
-\subsubsection*{Prototypes}
-\idx{LALReadSFTheader()}
-\idx{LALReadSFTdata()}
-\idx{LALReadSFTfile()}
-\idx{LALReadSFTfiles()}
-\idx{LALWriteSFTfile()}
-
-\input{SFTfileIOCP}
-
-\subsubsection*{Description}
-
-\begin{description}
-
-\item{LALReadSFTfile():} basic SFT reading-function. Given filename
-(\verb+fname+) and frequency-limits (\verb+fMin, fMax+), returns the
-SFTtype containing the data.
-
-\textbf{Note 1:} the \emph{actual} returned frequency-band is
-\verb+[floor(fMin), ceil(fMax)]+, i.e. the requested
-frequency-band is guaranteed to be contained in the output (if present
-in the SFT-file), but can be slightly larger.
-
-\textbf{Note 2:} The special input \verb+fMin=fMax=0+ means to read and
-return the \emph{whole} frequency-band contained in the SFT-file.
-
-\item{LALReadSFTfiles():} higher-level SFT-reading function to read a
-list of SFT files and return an \verb+SFTvector+. The handling of
-\verb+fMin, fMax+ is identical to \verb+LALReadSFTfile+.
-
-\textbf{Note 1:} currently the argument of \verb+globdir+ is interpreted
-a bit unconventionally, namely if you pass \verb+"path1/subdir/pattern"+,
-this will be matched \verb+"path1/subdir/+\verb+*pattern*"+. This might be
-changed in the near future to require you to specify the file-pattern
-explicitly. 
-
-\textbf{Note 2:} currently the SFTs matching the pattern are required
-to have the same number of frequency bins, otherwise an error will be
-returned. (This might be relaxed in the future).
-
-\item{LALWriteSFTfile():} given an SFT (\verb+SFTtype *sft+), write it
-into a file (\verb+CHAR *outfname+). 
-
-\item{LALReadSFTheader():} lower-level function to read only the
-SFT-header of a given file.
-
-\item{LALReadSFTdata():} lower-level function to read an SFT-file. The
-two main differences to \verb+LALReadSFTfile()+ are: 1) the memory for
-SFTtype has to be allocated already with the number of frequency bins
-to be read, and 2) one specifies the first frequency-index to be read,
-instead of the physical frequencies.
-
-\item{LALCopySFT():} copy an SFT-struct and its data from \verb+src+
-to \verb+dest+. Note that the destination SFTtype has to be allocated
-already and has to have the same size (number of frequency-bins) as 
-\verb+src+.
-
-\end{description}
-
-\subsubsection*{Algorithm}
-
-\subsubsection*{Uses}
-
-\begin{verbatim}
-LALCreateSFTtype	LALDestroySFTtype
-LALCreateSFTVector	LALDestroySFTVector
-LALOpenDataFile		LALPrintError
-LALMalloc		LALCalloc
-LALRealloc		LALFree
-
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-The current library only supports SFT-files conforming to the
-SFT-version v1.0. The future API should mostly remain the same when
-upgrading to v2.0 (impending), but minor changes/additions should be
-expected. 
-
-\vfill{\footnotesize\input{SFTfileIOCV}}
-
-*********************************************** </lalLaTeX> */
 #include <sys/types.h>
 #ifndef _MSC_VER
 #include <dirent.h>
@@ -144,28 +65,32 @@ static int amatch(char *str, char *p);	/* glob pattern-matcher (public domain)*/
 static const size_t header_len_v1 = 32;	
 
 
-
 /***********************************************************************
  * The functions that make up the guts of this module
  ***********************************************************************/
 
 
-/*----------------------------------------------------------------------
- * Read a given frequency-range from an SFT-file into a memory struct SFTtype
+/** Basic SFT reading-function.
+ *  Given a filename \a fname and frequency-limits [\a fMin, \a fMax], 
+ *  returns an SFTtype \a sft containing the SFT-data.
+ * 
+ * \note 1) the actual returned frequency-band is <tt>[floor(fMin), ceil(fMax)]</tt>,
+ * i.e. the requested frequency-band is guaranteed to be contained in the output 
+ * (if present in the SFT-file), but can be slightly larger.
+ * 
+ * 2) The special input <tt>fMin=fMax=0</tt> means to read and
+ * return the <em>whole</em> frequency-band contained in the SFT-file.
  *
- * NOTE: currently only SFT-spec v1.0 is supported! 
+ * 3) Currently only SFTv1 are supported!!
  *
- * NOTE2: this is a convenience wrapper for LALReadSFTheader() and LALReadSFTdata()
- *
- *----------------------------------------------------------------------*/
-/* <lalVerbatim file="SFTfileIOCP"> */
+ */
 void
 LALReadSFTfile (LALStatus *stat, 
-		SFTtype **sft, 		/* output SFT */
-		REAL8 fMin, 		/* lower frequency-limit */
-		REAL8 fMax,		/* upper frequency-limit */
-		const CHAR *fname)	/* path+filename */
-{ /* </lalVerbatim> */
+		SFTtype **sft, 		/**< [out] output SFT */
+		REAL8 fMin, 		/**< lower frequency-limit */
+		REAL8 fMax,		/**< upper frequency-limit */
+		const CHAR *fname)	/**< path+filename */
+{ 
   SFTHeader  header;		/* SFT file-header version1 */
   REAL8 deltaF;
   UINT4 readlen;
@@ -217,11 +142,16 @@ LALReadSFTfile (LALStatus *stat,
   } ENDFAIL (stat);
 
 
-  /***************************************************
-   * FIXME: questionable renormalization follows... to be clarified
-   ***************************************************/
+  /*
+   * NOTE: the following renormalization is necessary for v1-SFTs
+   * as the data are not multiplied by dt, therefore extracting a 
+   * sub-band B' of the total band B requires mulitplication of 
+   * the data by B'/B.
+   * SFTv2 will store FFT-data multiplied by dt and then this will
+   * not be necessary any more.
+   * 
+   */
   renorm = 1.0 * readlen / header.length;
-  /* **************************************************/
 
   /* let's re-normalize and fill data into output-vector */
   if (renorm != 1)
@@ -241,26 +171,35 @@ LALReadSFTfile (LALStatus *stat,
 
 
 
-/** Read a bunch of SFTs matching a given glob-like file-pattern.
+/** Higher-level SFT-reading function to read a whole vector of SFT files 
+ * and return an SFTvector \a sftvect. The handling of
+ * [fMin, fMax] is identical to LALReadSFTfile().
+ * 
+ * \note 1) the file-pattern \a fpattern can use a wide range of glob-patterns.
  *
- * NOTE: this does not depend on glob, so it should be safe under condor.
+ * 2) currently the SFTs matching the pattern are required to have the same 
+ * number of frequency bins, otherwise an error will be returned. 
+ * (This might be relaxed in the future).
+ *
+ * 3) This function does <em>not</em> use <tt>glob()</tt> and should therefore
+ * be safe even under condor.
+ *
  */
-/* <lalVerbatim file="SFTfileIOCP"> */
 void
 LALReadSFTfiles (LALStatus *stat,
-		 SFTVector **sftvect,	/**< output SFT vector */
+		 SFTVector **sftvect,	/**< [out] output SFT vector */
 		 REAL8 fMin,	       	/**< lower frequency-limit */
 		 REAL8 fMax,		/**< upper frequency-limit */
 		 UINT4 wingBins,	/**< number of frequency-bins to be added left and right. */
 		 const CHAR *fpattern)	/**< path/filepattern */
-{ /* </lalVerbatim> */
+{
 
   UINT4 i, numSFTs;
   SFTVector *out = NULL;
   SFTtype *oneSFT = NULL;
   SFTHeader header;
-  REAL8 dFreq; 		/**< frequency spacing in SFT */
-  REAL8 fWing;		/**< frequency band to be added as "wings" to the 'physical band' */
+  REAL8 dFreq; 		/* frequency spacing in SFT */
+  REAL8 fWing;		/* frequency band to be added as "wings" to the 'physical band' */
   StringVector *fnames;
 
   INITSTATUS (stat, "LALReadSFTfiles", SFTFILEIOC);
@@ -344,19 +283,16 @@ LALReadSFTfiles (LALStatus *stat,
 
 
 
-/* ----------------------------------------------------------------------*/
-/* function to write an entire SFT to a file 
+/** Write an entire SFT to a file. 
  * 
- * NOTE: currently only SFT-spec v1.0 is supported
+ * \note: currently only SFT-spec v1.0 is supported
  *
- *----------------------------------------------------------------------*/
-/* <lalVerbatim file="SFTfileIOCP"> */
+ */
 void
 LALWriteSFTfile (LALStatus  *status,
-		 const SFTtype *sft,		/* input: SFT to write to disk */
-		 const CHAR *outfname)		/*  filename */
-{ /* </lalVerbatim> */
-
+		 const SFTtype *sft,		/**< SFT to write to disk */
+		 const CHAR *outfname)		/**< filename */
+{
   FILE  *fp = NULL;
   COMPLEX8  *inData;
   INT4  i;
@@ -454,14 +390,12 @@ LALWriteSFTfile (LALStatus  *status,
 
 
 
-/*----------------------------------------------------------------------*/
-/* <lalVerbatim file="SFTfileIOCP"> */
+/** Lower-level function to read only the SFT-header of a given file. */
 void 
 LALReadSFTheader (LALStatus  *status,
-		  SFTHeader   *header,	/* returned header */
-		  const CHAR  *fname)	/* path+filename */
-{ /* </lalVerbatim> */
-  
+		  SFTHeader   *header,	/**< [out] returned header */
+		  const CHAR  *fname)	/**< path+filename */
+{
   FILE *fp = NULL;
   SFTHeader  header1;
   CHAR *rawheader = NULL;
@@ -583,22 +517,20 @@ LALReadSFTheader (LALStatus  *status,
 
 
 
-/* ------------------------------------------------------------
- * this is a function for low-level SFT data-reading:
+/** This is a function for low-level SFT data-reading:
  * the SFT-data is read starting from fminBinIndex and filled
  * into the pre-allocate vector sft of length N
  *
  * NOTE: !! NO re-normalization is done here!! this remains up
  *       to the caller of this function!!
  *
- *------------------------------------------------------------*/
-/* <lalVerbatim file="SFTfileIOCP"> */
+ */
 void
 LALReadSFTdata(LALStatus *status,
-	       SFTtype    *sft,    /* return SFT: assuming memory is allocated  */
-	       const CHAR *fname,  /* path+filename */
-	       INT4 fminBinIndex)  /* minimun frequency-index to read */
-{ /* </lalVerbatim> */
+	       SFTtype    *sft,    /**< [out] output-SFT: assuming memory is allocated  */
+	       const CHAR *fname,  /**< path+filename */
+	       INT4 fminBinIndex)  /**< minimun frequency-index to read */
+{ 
   FILE        *fp = NULL;
   SFTHeader  header;
   UINT4 offset, readlen;
@@ -728,17 +660,15 @@ LALReadSFTdata(LALStatus *status,
 
 
 
-/*----------------------------------------------------------------------
- *  copy an entire SFT-type into another
- *  we require the destination to have at least as many frequency-bins
- *  as the source, but it can have less..
- *----------------------------------------------------------------------*/
-/* <lalVerbatim file="SFTfileIOCP"> */
+/** Copy an entire SFT-type into another. 
+ * We require the destination to have at least as many frequency-bins
+ * as the source, but it can have less..
+ */
 void
 LALCopySFT (LALStatus *stat, 
-	    SFTtype *dest, 	/* output: copied SFT (has to be allocated) */
-	    const SFTtype *src)	/* input-SFT to be copied */
-{ /* </lalVerbatim> */
+	    SFTtype *dest, 	/**< [out] copied SFT (needs to be allocated already) */
+	    const SFTtype *src)	/**< input-SFT to be copied */
+{
 
   INITSTATUS( stat, "LALDestroySFTVector", SFTFILEIOC);
 
@@ -1228,6 +1158,9 @@ static void dump_SFT (FILE *fp, const SFTtype *sft, INT4 format)
  *	a[-a-z]c	a-c aac abc ...
  *
  * $Log$
+ * Revision 1.37  2005/09/08 21:12:35  reinhard
+ * corrected authorlist and fully doxygenized documentation.
+ *
  * Revision 1.36  2005/06/17 21:49:04  jolien
  * moved glob.c code into SFTfileIO.c ; removed non-LAL functions from SFTfileIO.c
  *
