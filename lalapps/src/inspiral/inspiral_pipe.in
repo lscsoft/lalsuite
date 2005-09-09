@@ -247,6 +247,9 @@ first_df2 = None
 # create a list to store the inspiral jobs
 insp_nodes = []
 
+# help pegasus plan jobs which use the same data on the same pool
+group = 0
+
 for seg in data:
   # find all the data
   df1 = pipeline.LSCDataFindNode(df_job)
@@ -282,6 +285,7 @@ for seg in data:
     bank.set_ifo(ifo1)
     bank.set_cache(df1.get_output())
     bank.calibration()
+    bank.set_vds_group(group)
 
     if do_datafind: 
       bank.add_parent(df1)
@@ -299,6 +303,7 @@ for seg in data:
     insp1.set_cache(df1.get_output())
     insp1.set_bank(bank.get_output())
     insp1.calibration()
+    insp1.set_vds_group(group)
 
     if do_tmpltbank:
       insp1.add_parent(bank)
@@ -310,6 +315,7 @@ for seg in data:
     trigbank = inspiral.TrigToTmpltNode(trig_job)
     trigbank.add_file_arg(insp1.get_output())
     trigbank.make_trigbank(chunk,0,ifo1,ifo2,usertag)
+    trigbank.set_vds_group(group)
 
     if do_inspiral:
       trigbank.add_parent(insp1)
@@ -337,6 +343,9 @@ for seg in data:
 
     # add the two inspiral jobs for this chunk to the stored list
     seg_insp_nodes.append(tuple([insp1,insp2]))
+
+    # increment the group for each chunk
+    group += 1
 
   # add the inspiral jobs for this segment to the list
   insp_nodes.append(seg_insp_nodes)
