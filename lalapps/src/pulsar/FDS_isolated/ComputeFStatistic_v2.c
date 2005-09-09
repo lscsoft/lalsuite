@@ -76,9 +76,9 @@ RCSID( "$Id$");
 
 #define COMPUTEFSTATISTICC_MSGENULL 		"Arguments contained an unexpected null pointer"
 #define COMPUTEFSTATISTICC_MSGESYS		"System call failed (probably file IO)"
-#define COMPUTEFSTATISTICC_MSGEINPUT   	"Invalid input"
-#define COMPUTEFSTATISTICC_MSGEMEM   	"Out of memory. Bad."
-#define COMPUTEFSTATISTICC_MSGENONULL 	"Output pointer is non-NULL"
+#define COMPUTEFSTATISTICC_MSGEINPUT   		"Invalid input"
+#define COMPUTEFSTATISTICC_MSGEMEM   		"Out of memory. Bad."
+#define COMPUTEFSTATISTICC_MSGENONULL 		"Output pointer is non-NULL"
 #define COMPUTEFSTATISTICC_MSGEXLAL		"XLALFunction-call failed"
 
 /*----- Macros -----*/
@@ -86,6 +86,7 @@ RCSID( "$Id$");
 #define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
 
 #define MYMAX(x,y) ( (x) > (y) ? (x) : (y) )
+#define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
 
 /*---------- internal types ----------*/
 
@@ -241,7 +242,7 @@ int main(int argc,char *argv[])
     t0 = GV.ifos.sftVects[0]->data[0].epoch;
     t1 = GV.ifos.sftVects[0]->data[numSFTs-1].epoch;
     LAL_CALL (LALDeltaFloatGPS (&status, &tObs, &t1, &t0), &status);	/* t1 - t0 */
-    tObs += 1.0 / (GV.ifos.sftVects[0]->data[0].deltaF );			/* +tSFT */
+    tObs += 1.0 / (GV.ifos.sftVects[0]->data[0].deltaF );		/* +tSFT */
     GV.startTime = t0;
 
     scanInit.obsDuration = tObs;
@@ -339,8 +340,8 @@ int main(int argc,char *argv[])
 					     uvar_SSBprecision), &status);
 		  
 		  /*----- calculate skypos-specific coefficients a_i, b_i, A, B, C, D */
-		  LAL_CALL ( LALGetAMCoeffs (&status, GV.ifos.amcoe[nD], GV.ifos.DetectorStates[nD], thisPoint), 
-			     &status);
+		  LAL_CALL ( LALGetAMCoeffs (&status, GV.ifos.amcoe[nD], GV.ifos.DetectorStates[nD], 
+					     thisPoint), &status);
 		  
 		  /** Caculate F-statistic using XLALComputeFaFb() */
 		  {
@@ -379,7 +380,8 @@ int main(int argc,char *argv[])
 		    Bt = GV.ifos.amcoe[nD]->B;
 		    Ct = GV.ifos.amcoe[nD]->C;
 
-		    if ( XLALComputeFaFb (&FaFb, GV.ifos.sftVects[nD], GV.fkdot, GV.ifos.tSSB[nD], GV.ifos.amcoe[nD], uvar_Dterms) != 0)
+		    if ( XLALComputeFaFb (&FaFb, GV.ifos.sftVects[nD], GV.fkdot, GV.ifos.tSSB[nD], 
+					  GV.ifos.amcoe[nD], uvar_Dterms) != 0)
 		      {
 			LALPrintError ("\nXALNewLALDemod() failed\n");
 			XLAL_ERROR ("XLALcomputeFStat", XLAL_EFUNC);
@@ -655,11 +657,13 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
       tSFT = 1.0 / cfg->ifos.sftVects[nD]->data[0].deltaF ;
 
       /* extract vector of timestamps from SFT-vector (for call to GetDetectorStates()) */
-      TRY (LALCreateTimestampVector (status->statusPtr, &timestamps, cfg->ifos.sftVects[nD]->length ), status);
+      TRY (LALCreateTimestampVector (status->statusPtr, &timestamps, cfg->ifos.sftVects[nD]->length ), 
+	   status);
       for (i=0; i < timestamps->length; i++)
 	timestamps->data[i] = cfg->ifos.sftVects[nD]->data[i].epoch;	
       
-      /* obtain detector positions and velocities, together with LMSTs for the SFT midpoints (i.e. shifted by tSFT/2) */
+      /* obtain detector positions and velocities, together with LMSTs for the SFT midpoints 
+       * (i.e. shifted by tSFT/2) */
       TRY (LALGetDetectorStates(status->statusPtr, &(GV.ifos.DetectorStates[nD]), timestamps, 
 				&(GV.ifos.Detectors[nD]), cfg->edat, tSFT / 2.0 ), status);
 
@@ -673,48 +677,12 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   cfg->startTime = cfg->ifos.sftVects[0]->data[0].epoch;
   
 
-  /*---------- Standardise reference-time: ----------*/
-  /* translate spindown-paramters {f, fdot, fdotdot..} from the user-specified 
-   * reference-time uvar_refTime to the internal reference-time, which 
-   * we chose as the start-time of the first SFT (*verbatim*, i.e. not translated to SSB! )
-   */
-  {
-    UINT4 spdnOrder = 1;	/* hard-coded default FIXME. DON'T change without fixing main() */
- 
-    REAL8Vector *fkdotRef = NULL;
-    REAL8Vector *fkdot0 = NULL;
-    LIGOTimeGPS refTime0;	/* internal reference-time */
+  /*---------- Set reference-time: ----------*/
+  if ( LALUserVarWasSet(&uvar_refTime)) {
+    TRY ( LALFloatToGPS (status->statusPtr, &(cfg->refTime), &uvar_refTime), status);
+  } else
+    cfg->refTime = cfg->startTime;
 
-    if ( LALUserVarWasSet(&uvar_refTime)) {
-      TRY ( LALFloatToGPS (status->statusPtr, &(cfg->refTime), &uvar_refTime), status);
-    } else
-      cfg->refTime = cfg->startTime;
-
-    /* NOT USEFUL RIGHT NOW: this piece of code should be required 
-     * for figuring out the frequency-interval to read from the SFTs though!\
-     */
-
-    TRY ( LALDCreateVector (status->statusPtr, &fkdotRef, 1 + spdnOrder), status);
-    TRY ( LALDCreateVector (status->statusPtr, &fkdot0, 1 + spdnOrder), status);
-    fkdotRef->data[0] = uvar_Freq;
-    if ( spdnOrder > 0 )
-      fkdotRef->data[1] = uvar_f1dot;	    /* currently not more spindowns implemented... */
-
-    /* currently we use the observation GPS start-time as internal SSB reference-time: */
-    refTime0 = cfg->startTime;
-
-    /*----- now translate spin-params to internal reference-time */
-    if ( XLALExtrapolatePulsarSpins ( fkdot0, refTime0, fkdotRef, cfg->refTime) ) 
-      {
-	int code = xlalErrno;
-	XLALClearErrno(); 
-	LALPrintError ("\nERROR: XLALExtrapolatePulsarSpins() failed (xlalErrno = %d)!\n\n", code);
-	ABORT (status,  COMPUTEFSTATISTICC_EXLAL,  COMPUTEFSTATISTICC_MSGEXLAL);
-      }
-
-    TRY ( LALDDestroyVector (status->statusPtr, &fkdotRef), status);
-    TRY ( LALDDestroyVector (status->statusPtr, &fkdot0), status);
-  }
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -736,45 +704,73 @@ InitFStatDetector (LALStatus *status, ConfigVariables *cfg, UINT4 nD)
    */
   /* min and max physical frequency to read */
   {
-    REAL8 f_min, f_max; 
-    f_min = uvar_Freq;			/* lower physical frequency requested by user */
-    f_max = f_min + uvar_FreqBand; 	/* upper physical frequency requested by user */
+    REAL8 f_min, f_max, f1dot_min, f1dot_max;
+    REAL8 deltaFreq_min, deltaFreq_max;	/* frequency-shift due to spindown */
 
-    /* NOTE: the following correction for the frequency-drift due to spindown
-     * requires to know the total observation time, which right now we don't
-     * have access to (haven't read the SFTs yet..).
-     * ==> we either need a new function in SFTIO-lib, or we load the 
-     * SFTs twice if the initial guess turns out to be to small .. (->easy)
-     * but it's not a high priority right now, as spindowns are not yet the 
-     * focus of v2-development [FIXME]
-     */
-    /* correct for spindown-shift of frequency: extend the frequency-band */
-#if 0
-      {
-	REAL8 f1dot_1 = uvar_f1dot;
-	REAL8 f1dot_2 = f1dot_1 + uvar_f1dotBand;
-	REAL8 f1dot_max = fabs(f1dot_1) > fabs(f1dot_2) ? f1dot_1 : f1dot_2;
-	REAL8 df = f1dot_max * (GV.tObs);	/* don't use!! undefined tObs */
-	if ( df < 0)
-	  f_min += df;
-	else
-	  f_max += df;
-      }
-#endif
+    UINT4 wings;
+    CHAR *fname = NULL;
+    SFTVector *headers = NULL;
+    LIGOTimeGPS startTime, endTime;
+    REAL8 refTime;
+    REAL8 duration;
+
+    REAL8 refShift;		/* time between reference-time and first-SFT timestamp */
+
+    if ( nD == 0 ) fname = uvar_DataFiles;
+    if ( nD == 1 ) fname = uvar_DataFiles2;
+    if ( nD > 1 ) {
+      LALPrintError ("\nERROR: currently maximally two detectors are supported!\n\n");
+      ABORT (status, COMPUTEFSTATISTICC_EINPUT, COMPUTEFSTATISTICC_MSGEINPUT);
+    }
+
+    /* frequency/spindown ranges (at reference-time tRef) */
+    f_min = MYMIN(uvar_Freq, uvar_Freq + uvar_FreqBand);
+    f_max = MYMAX(uvar_Freq, uvar_Freq + uvar_FreqBand);
+
+    f1dot_min = MYMIN(uvar_f1dot, uvar_f1dot + uvar_f1dotBand );
+    f1dot_max = MYMAX(uvar_f1dot, uvar_f1dot + uvar_f1dotBand );
+
+    /* read in all SFT-header in order to get data time-span */
+    TRY ( LALGetSFTheaders (status->statusPtr, &headers, fname, NULL, NULL ), status );
+
+    /* figure out observation time-span */
+    startTime = headers->data[0].epoch;
+    endTime = headers->data[ headers->length - 1 ].epoch;
+    duration = GPS2REAL8(endTime) - GPS2REAL8(startTime);
+    if ( LALUserVarWasSet ( &uvar_refTime ) )
+      refTime = uvar_refTime;
+    else
+      refTime = GPS2REAL8 (startTime);
+
+    /* time from refTime to startTime */
+    refShift = GPS2REAL8(startTime) - refTime;
+
+    /* first propagate frequency-interval from tRef to startTime: */
+    deltaFreq_max = f1dot_max * refShift;
+    deltaFreq_min = f1dot_min * refShift;
+
+
+    /* now propagate from startTime to endTime, keeping the 'covering' Band */
+    if ( f1dot_max > 0 )
+      deltaFreq_max += f1dot_max * duration;
+    if ( f1dot_min < 0 )
+      deltaFreq_min += f1dot_min * duration;
+
+    /* final 'propagated' physical frequency-interval */
+    f_min += deltaFreq_min;
+    f_max += deltaFreq_max;
     
     /* ----- correct for maximal dopper-shift due to earth's motion */
     f_min *= (1.0 - uvar_dopplermax);
     f_max *= (1.0 + uvar_dopplermax);
     
-    /* ----- contruct file-patterns and load the SFTs */
-    
-    if (!uvar_DataFiles)
-      strcpy (uvar_DataFiles, ".");
-    
-    TRY ( LALReadSFTfiles(status->statusPtr, &(cfg->ifos.sftVects[nD]), f_min, f_max, MYMAX(uvar_Dterms, uvar_RngMedWindow/2 +1), 
-			  uvar_DataFiles), status);
+    /* ----- load the SFT-vector ----- */
+    wings = MYMAX(uvar_Dterms, uvar_RngMedWindow/2 +1);
 
-    /* this normalized by 1/sqrt(Sh), where Sh is the median of |X|^2  
+    TRY ( LALReadSFTfiles(status->statusPtr, &(cfg->ifos.sftVects[nD]), f_min, f_max, wings, fname), 
+	  status);
+
+    /* this is normalized by 1/sqrt(Sh), where Sh is the median of |X|^2  
      * NOTE: this corresponds to a double-sided PSD, therefore we need to 
      * divide by another factor of 2 with respect to the JKS formulae.
      */
