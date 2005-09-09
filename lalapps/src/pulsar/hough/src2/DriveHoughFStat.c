@@ -92,7 +92,6 @@ int main( int argc, char *argv[]) {
   INT4  nfSizeCylinder=NFSIZE;
   HOUGHPeakGramVector pgV;
   HoughParams houghPar;
-  HOUGHMapTotal ht;
   HoughCandidates houghCand;
 
   /* variables for logging */
@@ -102,6 +101,7 @@ int main( int argc, char *argv[]) {
 
   /* user variables */
   BOOLEAN uvar_help; /* true if -h option is given */
+  BOOLEAN uvar_log; /* logging done if true */
   REAL8 uvar_alpha, uvar_delta;  /* sky-location angles */
   REAL8 uvar_fdot; /* first spindown value */
   REAL8 uvar_fStart, uvar_fBand;
@@ -125,6 +125,7 @@ int main( int argc, char *argv[]) {
 
   /* now set the defaults */
   uvar_help = FALSE;
+  uvar_log = FALSE;
   uvar_nStacks = NSTACKS;
   uvar_Dterms = DTERMS;
   uvar_alpha = ALPHA;
@@ -149,6 +150,7 @@ int main( int argc, char *argv[]) {
 
   /* register user input variables */
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",            'h', UVAR_HELP,     "Print this message",            &uvar_help),            &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "log",              0, UVAR_OPTIONAL,  "Write log file",                &uvar_log),             &status);  
   LAL_CALL( LALRegisterINTUserVar(    &status, "ifo",             'i', UVAR_OPTIONAL, "Detector GEO(1) LLO(2) LHO(3)", &uvar_ifo ),            &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "nStacks",         'N', UVAR_OPTIONAL, "Number of stacks",              &uvar_nStacks ),        &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "Dterms",          'n', UVAR_OPTIONAL, "For Dirichlet Kernel approx.",  &uvar_Dterms ),         &status);
@@ -193,40 +195,42 @@ int main( int argc, char *argv[]) {
   if (uvar_ifo ==3) detector=lalCachedDetectors[LALDetectorIndexLHODIFF];
 
   /* write the log file */
-  fnamelog = (CHAR *)LALMalloc( 512*sizeof(CHAR));
-  strcpy(fnamelog, uvar_fnameout);
-  strcat(fnamelog, ".log");
-  /* open the log file for writing */
-  if ((fpLog = fopen(fnamelog, "w")) == NULL) {
-    fprintf(stderr, "Unable to open file %s for writing\n", fnamelog);
-    LALFree(fnamelog);
-    exit(1);
-  }
+  if (uvar_log) {
 
-  /* get the log string */
-  LAL_CALL( LALUserVarGetLog(&status, &logstr, UVAR_LOGFMT_CFGFILE), &status);  
+    fnamelog = (CHAR *)LALMalloc( 512*sizeof(CHAR));
+    strcpy(fnamelog, uvar_fnameout);
+    strcat(fnamelog, ".log");
+    /* open the log file for writing */
+    if ((fpLog = fopen(fnamelog, "w")) == NULL) {
+      fprintf(stderr, "Unable to open file %s for writing\n", fnamelog);
+      LALFree(fnamelog);
+      exit(1);
+    }
 
-  fprintf( fpLog, "## Log file for MCInjectHoughS2\n\n");
-  fprintf( fpLog, "# User Input:\n");
-  fprintf( fpLog, "#-------------------------------------------\n");
-  fprintf( fpLog, logstr);
-  LALFree(logstr);
+    /* get the log string */
+    LAL_CALL( LALUserVarGetLog(&status, &logstr, UVAR_LOGFMT_CFGFILE), &status);  
 
-  /*get the cvs tags */
-  {
-    CHAR command[1024] = "";
-    fprintf (fpLog, "\n\n# CVS-versions of executable:\n");
-    fprintf (fpLog, "# -----------------------------------------\n");
-    fclose (fpLog);
+    fprintf( fpLog, "## Log file for MCInjectHoughS2\n\n");
+    fprintf( fpLog, "# User Input:\n");
+    fprintf( fpLog, "#-------------------------------------------\n");
+    fprintf( fpLog, logstr);
+    LALFree(logstr);
     
-    sprintf (command, "ident %s | sort -u >> %s", argv[0], fnamelog);
-    system (command);	/* we don't check this. If it fails, we assume that */
+    /*get the cvs tags */
+    {
+      CHAR command[1024] = "";
+      fprintf (fpLog, "\n\n# CVS-versions of executable:\n");
+      fprintf (fpLog, "# -----------------------------------------\n");
+      fclose (fpLog);
+      
+      sprintf (command, "ident %s | sort -u >> %s", argv[0], fnamelog);
+      system (command);	/* we don't check this. If it fails, we assume that */
     			/* one of the system-commands was not available, and */
     			/* therefore the CVS-versions will not be logged */
 
-    LALFree(fnamelog); 
-  } /* end of user var reading */
-
+      LALFree(fnamelog); 
+    } /* end of user var reading */
+  } /* end of logging */
 
   /*------------- read sfts and set up sft timestamp vector ----------*/
   {
@@ -802,9 +806,9 @@ void ComputeFstatHoughMap(LALStatus *status,
     timeDiffV.data[k] = tMidStack - tStart;
   }
 
-  /* if there are spindowns */
+  /* if there are residual spindowns */
   nSpin1Max = nfSizeCylinder/2; /* integer division -- maximum number of spindowns */
-  f1jump = 1.0 / timeDiffV.data[nStacks - 1]; /* resolution in fdot */
+  f1jump = 1.0 / timeDiffV.data[nStacks - 1]; /* resolution in residual fdot */
  
   /*------------------ start main Hough calculation ---------------------*/
 
@@ -1161,7 +1165,7 @@ void PrintFstat( LALStatus *status,
 
   strcpy ( filename, fname);
   sprintf ( filenumber, ".%d", stackIndex);
-  strcpy ( filename, filenumber);
+  strcat ( filename, filenumber);
   
   fp = fopen(filename, "w");
 
