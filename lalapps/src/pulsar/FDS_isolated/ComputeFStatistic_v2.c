@@ -111,6 +111,7 @@ typedef struct {
   LIGOTimeGPS startTime;	/**< start time of observation */
   LIGOTimeGPS refTime;		/**< reference-time for pulsar-parameters in SBB frame */
   REAL8Vector *fkdot;		/**< vector of frequency + derivatives (spindowns)*/
+  DopplerRegion searchRegion;	/**< parameter-space region to search over */
   EphemerisData *edat;		/**< ephemeris data (from LALInitBarycenter()) */
   CHAR *skyRegionString;	/**< sky-region to search (polygon defined by list of points) */
   IFOspecifics ifos;		/**< IFO-specific configuration data  */
@@ -244,16 +245,15 @@ int main(int argc,char *argv[])
     LAL_CALL (LALDeltaFloatGPS (&status, &tObs, &t1, &t0), &status);	/* t1 - t0 */
     tObs += 1.0 / (GV.ifos.sftVects[0]->data[0].deltaF );		/* +tSFT */
     GV.startTime = t0;
-
     scanInit.obsDuration = tObs;
   }
 
   scanInit.obsBegin = GV.startTime;
-  /* scanInit.fmax  = uvar_Freq + uvar_FreqBand;*/
   scanInit.Detector = &(GV.ifos.Detectors[0]);
   scanInit.ephemeris = GV.edat;		/* used by Ephemeris-based metric */
-  scanInit.searchRegion.skyRegionString = GV.skyRegionString;
   scanInit.skyGridFile = uvar_skyGridFile;
+
+  scanInit.searchRegion = GV.searchRegion;
   
   if (lalDebugLevel) printf ("\nSetting up template grid ...");
   
@@ -434,6 +434,9 @@ Search progress: %5.1f%%", (100.0* loopcounter / thisScan.numGridPoints));
   /* Free memory */
   LAL_CALL ( FreeDopplerScan(&status, &thisScan), &status);
   
+  if ( GV.searchRegion.skyRegionString )
+    LALFree ( GV.searchRegion.skyRegionString );
+
   LAL_CALL ( Freemem(&status, &GV), &status);
   
   /* did we forget anything ? */
@@ -763,7 +766,7 @@ InitFStatDetector (LALStatus *status, ConfigVariables *cfg, UINT4 nD)
     /* final 'propagated' physical frequency-interval */
     f_min += deltaFreq_min;
     f_max += deltaFreq_max;
-    
+
     /* ----- correct for maximal dopper-shift due to earth's motion */
     f_min *= (1.0 - uvar_dopplermax);
     f_max *= (1.0 + uvar_dopplermax);
@@ -783,12 +786,47 @@ InitFStatDetector (LALStatus *status, ConfigVariables *cfg, UINT4 nD)
 	    status );
     }
     
+
+    /* ----- find search region ----- */
+    {
+      BOOLEAN haveAlphaDelta = LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta);
+
+      cfg->searchRegion.Freq = f_min;
+      cfg->searchRegion.FreqBand = f_max - f_min;
+
+      cfg->searchRegion.f1dot = f1dot_min;
+      cfg->searchRegion.f1dotBand = f1dot_max - f1dot_min;
+
+      /* get sky-region */
+      if (uvar_skyRegion)
+	{
+	  cfg->searchRegion.skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
+	  if ( cfg->searchRegion.skyRegionString == NULL ) {
+	    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+	  }
+	  strcpy (cfg->searchRegion.skyRegionString, uvar_skyRegion);
+	}
+      else if (haveAlphaDelta)    /* parse this into a sky-region */
+	{
+	  REAL8 eps = 1e-9;	/* hack for backwards compatbility */
+	  TRY ( SkySquare2String( status->statusPtr, &(cfg->searchRegion.skyRegionString),
+				  uvar_Alpha, uvar_Delta,
+				  uvar_AlphaBand + eps, uvar_DeltaBand + eps), status);
+	}
+    } /* find search-region */
+
+
   } /* SFT-loading */
 
   if(nD == 0)
     IFO=uvar_IFO;
   else 
     IFO=uvar_IFO2;
+
+
+
+
+
 
 
   /*----------------------------------------------------------------------
