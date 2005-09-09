@@ -737,6 +737,10 @@ InitFStatDetector (LALStatus *status, ConfigVariables *cfg, UINT4 nD)
     startTime = headers->data[0].epoch;
     endTime = headers->data[ headers->length - 1 ].epoch;
     duration = GPS2REAL8(endTime) - GPS2REAL8(startTime);
+
+
+    TRY ( LALDestroySFTVector (status->statusPtr, &headers), status );
+
     if ( LALUserVarWasSet ( &uvar_refTime ) )
       refTime = uvar_refTime;
     else
