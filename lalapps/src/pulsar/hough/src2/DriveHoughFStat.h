@@ -21,11 +21,10 @@
 
 
 /**
- * DriveHoughFStat.h 
+ * \file DriveHoughFStat.h
+ * \brief Header file for DriveHoughFStat.c 
  * \author Badri Krishnan, Alicia Sintes
- * Date : August 2005
- * \brief
- * Header file for DriveHoughFStat.c 
+ * \date $Date$
  * 
  ****/
 
@@ -153,14 +152,16 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 
   /** structure for storing candidates produced by Hough search */
   typedef struct tagHoughCandidates {
-    REAL8 freq;       /**< frequency */
-    REAL8 alpha;      /**< right ascension */
-    REAL8 delta;      /**< declination */
-    REAL8Vector fdot; /**< spindown vector */
-    REAL8 dFreq;      /**< frequency error */
-    REAL8 dAlpha;     /**< alpha error */
-    REAL8 dDelta;     /**< delta error */
-    REAL8Vector dFdot;/**< fdot error */
+    INT4 length;        /**< maximum allowed length of vectors */
+    INT4 nCandidates;   /**< number of candidates -- must be less than length */
+    REAL8 *freq;        /**< frequency */
+    REAL8 *alpha;       /**< right ascension */
+    REAL8 *delta;       /**< declination */
+    REAL8Vector *fdot;  /**< spindown vector */
+    REAL8 *dFreq;       /**< frequency error */
+    REAL8 *dAlpha;      /**< alpha error */
+    REAL8 *dDelta ;     /**< delta error */
+    REAL8Vector *dFdot; /**< fdot error */
   } HoughCandidates;
 
 
