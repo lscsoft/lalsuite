@@ -406,7 +406,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   {
     alpha = min_alpha + ((j/99.) * (max_alpha - min_alpha));
     fprintf(omega_out, "%e %e\n", alpha, omega_hat[j]);
-    fprintf(sigma_out, "%e %e\n", alpha, sigma_omega_hat[j]);
+    fprintf(sigma_out, "%e %e\n", alpha, sqrt(sigma_omega_hat[j]));
   }
 
   /* close files */
