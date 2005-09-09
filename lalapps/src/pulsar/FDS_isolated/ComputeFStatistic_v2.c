@@ -411,7 +411,7 @@ int main(int argc,char *argv[])
 			  {
 			    snprintf (buf, 511, "%8.7f %8.7f %16.12f %.17g %10.6g\n", 
 				      dopplerpos.Alpha, dopplerpos.Delta, 
-				      freq, GV.fkdot->data[1], Fstat);
+				      freq, GV.fkdot->data[1], 2.0 * Fstat);
 			    buf[511] = 0;
 			    if ( fpOut )
 			      fprintf (fpOut, buf );
@@ -512,7 +512,7 @@ initUserVars (LALStatus *status)
   uvar_df1dot 	= 0.0;
   uvar_f1dotBand = 0.0;
   
-  uvar_Fthreshold = 5.0;
+  uvar_Fthreshold = 10.0;
   uvar_metricType =  LAL_PMETRIC_NONE;
   uvar_gridType = GRID_FLAT;
 
@@ -555,7 +555,7 @@ initUserVars (LALStatus *status)
   LALregSTRINGUserVar(status,	ephemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
   LALregSTRINGUserVar(status,	ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
   LALregBOOLUserVar(status, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
-  LALregREALUserVar(status, 	Fthreshold,	'F', UVAR_OPTIONAL, "Signal Set the threshold for selection of F");
+  LALregREALUserVar(status, 	Fthreshold,	'F', UVAR_OPTIONAL, "Signal Set the threshold for selection of 2F");
   LALregINTUserVar(status, 	gridType,	 0 , UVAR_OPTIONAL, "Template grid: 0=flat, 1=isotropic, 2=metric, 3=file");
   LALregINTUserVar(status, 	metricType,	'M', UVAR_OPTIONAL, "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
   LALregREALUserVar(status, 	metricMismatch,	'X', UVAR_OPTIONAL, "Maximal allowed mismatch for metric tiling");
