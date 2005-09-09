@@ -151,6 +151,7 @@ CHAR *uvar_DataFiles2;
 BOOLEAN uvar_help;
 CHAR *uvar_outputLabel;
 CHAR *uvar_outputFstat;
+CHAR *uvar_outputLoudest;
 CHAR *uvar_skyGridFile;
 CHAR *uvar_outputSkyGrid;
 CHAR *uvar_workingDir;
@@ -198,6 +199,9 @@ int main(int argc,char *argv[])
   SkyPosition thisPoint;
   FILE *fpOut=NULL;
   UINT4 loopcounter;
+  CHAR loudestEntry[512];
+  CHAR buf[512];
+  REAL8 loudestF = 0;
 
   UINT4 nD;         /** index over number of Detectors**/
   lalDebugLevel = 0;  
@@ -284,7 +288,7 @@ int main(int argc,char *argv[])
   
   /* if a complete output of the F-statistic file was requested,
    * we open and prepare the output-file here */
-  if (uvar_outputFstat) 
+  if (uvar_outputFstat)
     {
       if ( (fpOut = fopen (uvar_outputFstat, "wb")) == NULL)
 	{
@@ -398,18 +402,29 @@ int main(int argc,char *argv[])
 				    + At * (FbRe*FbRe + FbIm*FbIm) 
 				    - 2.0f * Ct *(FaRe*FbRe + FaIm*FbIm) );
 
-
 		    /* now, if user requested it, we output ALL F-statistic results above threshold */
-		    if ( fpOut )
+		    if ( uvar_outputFstat || uvar_outputLoudest )
 		      {
-			REAL8 TwoFStat = 2.0 * Fstat;
 			REAL8 freq = GV.fkdot->data[0];
 
-			if ( TwoFStat > uvar_Fthreshold )
-			  fprintf (fpOut, "%8.7f %8.7f %16.12f %.17g %10.6g\n", 
-				   dopplerpos.Alpha, dopplerpos.Delta, 
-				   freq, GV.fkdot->data[1], TwoFStat);
-		      } /* if fpOut */
+			if ( Fstat > uvar_Fthreshold )
+			  {
+			    snprintf (buf, 511, "%8.7f %8.7f %16.12f %.17g %10.6g\n", 
+				      dopplerpos.Alpha, dopplerpos.Delta, 
+				      freq, GV.fkdot->data[1], Fstat);
+			    buf[511] = 0;
+			    if ( fpOut )
+			      fprintf (fpOut, buf );
+			  } /* if F > threshold */
+		      }  
+
+		    if ( Fstat > loudestF )
+		      {
+			loudestF = Fstat;
+			strcpy ( loudestEntry,  buf );
+		      }
+			
+
 	      
 		  } /* Calculate F-statistic */
 		  
@@ -428,6 +443,21 @@ Search progress: %5.1f%%", (100.0* loopcounter / thisScan.numGridPoints));
   
   if (uvar_outputFstat && fpOut)
     fclose (fpOut);
+
+  /* now write loudest canidate into separate file ".loudest" */
+  if ( uvar_outputLoudest )
+    {
+      FILE *fpLoudest;
+      if ( (fpLoudest = fopen (uvar_outputLoudest, "wb")) == NULL)
+	{
+	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputLoudest);
+	  return COMPUTEFSTATISTICC_ESYS;
+	}
+      fprintf (fpLoudest, "%s", loudestEntry );
+      fclose(fpLoudest);
+    } /* write loudest candidate to file */
+
+
   
   if (lalDebugLevel) printf ("\nSearch finished.\n");
   
@@ -482,7 +512,7 @@ initUserVars (LALStatus *status)
   uvar_df1dot 	= 0.0;
   uvar_f1dotBand = 0.0;
   
-  uvar_Fthreshold = 10.0;
+  uvar_Fthreshold = 5.0;
   uvar_metricType =  LAL_PMETRIC_NONE;
   uvar_gridType = GRID_FLAT;
 
@@ -525,7 +555,7 @@ initUserVars (LALStatus *status)
   LALregSTRINGUserVar(status,	ephemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
   LALregSTRINGUserVar(status,	ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
   LALregBOOLUserVar(status, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
-  LALregREALUserVar(status, 	Fthreshold,	'F', UVAR_OPTIONAL, "Signal Set the threshold for selection of 2F");
+  LALregREALUserVar(status, 	Fthreshold,	'F', UVAR_OPTIONAL, "Signal Set the threshold for selection of F");
   LALregINTUserVar(status, 	gridType,	 0 , UVAR_OPTIONAL, "Template grid: 0=flat, 1=isotropic, 2=metric, 3=file");
   LALregINTUserVar(status, 	metricType,	'M', UVAR_OPTIONAL, "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
   LALregREALUserVar(status, 	metricMismatch,	'X', UVAR_OPTIONAL, "Maximal allowed mismatch for metric tiling");
@@ -541,6 +571,8 @@ initUserVars (LALStatus *status)
   LALregINTUserVar(status,	Dterms,		't', UVAR_DEVELOPER, "Number of terms to keep in Dirichlet kernel sum");
   LALregSTRINGUserVar(status,   workingDir,     'w', UVAR_DEVELOPER, "Directory to be made the working directory, . is default");
   LALregSTRINGUserVar(status,	outputSkyGrid,	 0,  UVAR_DEVELOPER, "Write sky-grid into this file.");
+  LALregSTRINGUserVar(status,   outputLoudest,	 0,  UVAR_DEVELOPER, 
+		      "Output-file for the loudest F-statistic candidate in this search");
 
 
   DETATCHSTATUSPTR (status);
