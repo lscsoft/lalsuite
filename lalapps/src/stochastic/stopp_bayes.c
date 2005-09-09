@@ -365,11 +365,11 @@ INT4 main(INT4 argc, CHAR *argv[])
           /* \hat{\Omega}_R */
           omega_numerator += (thisStoch->cc_stat / (thisStoch->cc_sigma * \
                 thisStoch->cc_sigma)) * pow((freq/freq_ref), alpha);
-          omega_denominator += (1 / (thisStoch->cc_sigma * \
+          omega_denominator += (1. / (thisStoch->cc_sigma * \
                 thisStoch->cc_sigma)) * pow((freq/freq_ref), 2 * alpha);
 
           /* sigma^2_{\hat{\Omega}_R} */
-          sigma_denominator += (1 / (thisStoch->cc_sigma * \
+          sigma_denominator += (1. / (thisStoch->cc_sigma * \
                 thisStoch->cc_sigma)) * pow((freq/freq_ref), 2 * alpha);
         }
 
@@ -378,8 +378,8 @@ INT4 main(INT4 argc, CHAR *argv[])
             omega_denominator);
 
         /* construct sigma^2_{\hat{\Omega}_R} */
-        sigma_omega_hat[j] = (1 / (stochHead->duration.gpsSeconds * \
-              stochHead->duration.gpsSeconds) / sigma_denominator);
+        sigma_omega_hat[j] = 1. / (stochHead->duration.gpsSeconds * \
+              stochHead->duration.gpsSeconds * sigma_denominator);
 
         /* construct pdf */
         pdf_powerlaw[i][j] = exp(-0.5 * ((omega - omega_hat[j]) / \
