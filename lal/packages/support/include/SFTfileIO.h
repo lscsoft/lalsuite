@@ -58,31 +58,31 @@ NRCSID (SFTFILEIOH, "$Id$");
 
 /** \name Error codes */
 /*@{*/
-#define SFTFILEIOH_ENULL 	1
-#define SFTFILEIOH_EFILE 	2
-#define SFTFILEIOH_EHEADER 	3
-#define SFTFILEIOH_EVERSION 	4
-#define SFTFILEIOH_EVAL 	5
-#define SFTFILEIOH_EENDIAN 	6
-#define SFTFILEIOH_ENONULL 	12
-#define SFTFILEIOH_EFREQBAND 	13
-#define SFTFILEIOH_EMEM 	14
-#define SFTFILEIOH_EGLOB 	15
-#define SFTFILEIOH_ECOPYSIZE	16
-#define SFTFILEIOH_EDIFFLENGTH  17
+#define SFTFILEIO_ENULL 	1
+#define SFTFILEIO_EFILE 	2
+#define SFTFILEIO_EHEADER 	3
+#define SFTFILEIO_EVERSION 	4
+#define SFTFILEIO_EVAL 		5
+#define SFTFILEIO_EENDIAN 	6
+#define SFTFILEIO_ENONULL 	12
+#define SFTFILEIO_EFREQBAND 	13
+#define SFTFILEIO_EMEM 		14
+#define SFTFILEIO_EGLOB 	15
+#define SFTFILEIO_ECOPYSIZE	16
+#define SFTFILEIO_EDIFFLENGTH 	17
 
-#define SFTFILEIOH_MSGENULL 	"Null pointer"
-#define SFTFILEIOH_MSGEFILE 	"Error in file-IO"
-#define SFTFILEIOH_MSGEHEADER 	"Incorrect header in file"
-#define SFTFILEIOH_MSGEVERSION 	"This SFT-version is not currently supported"
-#define SFTFILEIOH_MSGEVAL  	"Invalid value"
-#define SFTFILEIOH_MSGEENDIAN 	"Wrong endian encoding of SFT (not supported yet"
-#define SFTFILEIOH_MSGENONULL  	"Output pointer not NULL"
-#define SFTFILEIOH_MSGEFREQBAND "Required frequency-band is not in SFT"
-#define SFTFILEIOH_MSGEMEM 	"Out of memory"
-#define SFTFILEIOH_MSGEGLOB 	"Failed to get filelist from directory/pattern"
-#define SFTFILEIOH_MSGECOPYSIZE	"Target SFT-struct has not enough frequency-bins for copying"
-#define SFTFILEIOH_MSGEDIFFLENGTH "Sorry, can only read SFTs of identical length (currently)"
+#define SFTFILEIO_MSGENULL 	"Null pointer"
+#define SFTFILEIO_MSGEFILE 	"Error in file-IO"
+#define SFTFILEIO_MSGEHEADER 	"Incorrect header in file"
+#define SFTFILEIO_MSGEVERSION 	"This SFT-version is not currently supported"
+#define SFTFILEIO_MSGEVAL  	"Invalid value"
+#define SFTFILEIO_MSGEENDIAN 	"Wrong endian encoding of SFT (not supported yet"
+#define SFTFILEIO_MSGENONULL  	"Output pointer not NULL"
+#define SFTFILEIO_MSGEFREQBAND 	"Required frequency-band is not in SFT"
+#define SFTFILEIO_MSGEMEM 	"Out of memory"
+#define SFTFILEIO_MSGEGLOB 	"Failed to get filelist from directory/pattern"
+#define SFTFILEIO_MSGECOPYSIZE	"Target SFT-struct has not enough frequency-bins for copying"
+#define SFTFILEIO_MSGEDIFFLENGTH "Sorry, can only read SFTs of identical length (currently)"
 /*@}*/
 
 
@@ -102,17 +102,25 @@ typedef struct tagSFTHeader {
 /*
  * Functions Declarations (i.e., prototypes).
  */
-void LALReadSFTheader (LALStatus  *status, SFTHeader *header, const CHAR *fname); 
-void LALReadSFTdata (LALStatus  *status, SFTtype *sft, const CHAR *fname, INT4 fminBinIndex);
-void LALWriteSFTfile (LALStatus  *status, const SFTtype *sft, const CHAR *outfname);
-void LALReadSFTfile (LALStatus *status, SFTtype **sft, REAL8 fMin, REAL8 fMax, const CHAR *fname);
+void LALReadSFTheader (LALStatus *, SFTHeader *header, const CHAR *fname); 
+void LALReadSFTdata (LALStatus *, SFTtype *sft, const CHAR *fname, INT4 fminBinIndex);
+void LALWriteSFTfile (LALStatus *, const SFTtype *sft, const CHAR *outfname);
+void LALReadSFTfile (LALStatus *, SFTtype **sft, REAL8 fMin, REAL8 fMax, const CHAR *fname);
 
-void LALReadSFTfiles (LALStatus *status,
+void LALReadSFTfiles (LALStatus *,
 		      SFTVector **sftvect, 
 		      REAL8 fMin, 
 		      REAL8 fMax, 
 		      UINT4 wingBins, 
 		      const CHAR *fpattern);
+
+void
+LALGetSFTheaders (LALStatus *,
+		  SFTVector **headers,
+		  const CHAR *fpattern,
+		  const LIGOTimeGPS *startTime,
+		  const LIGOTimeGPS *endTime);
+
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */
