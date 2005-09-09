@@ -584,7 +584,7 @@ LALReadTEMPOParFile(	LALStatus *status,
 	while(1){
 		j=i;
 		if(!strcmp(val[i], "NAME") || !strcmp(val[i], "name")){
-			output->name = val[i+1];
+			output->name = strdup(val[i+1]);
 			
 			j++;
 		}
@@ -594,7 +594,7 @@ LALReadTEMPOParFile(	LALStatus *status,
 			j++;
 			
 			/* only try to get error if one exists */
-			if(atoi(val[i+2])==1){
+			if(atoi(val[i+2])==1 && i+2<k){
 				/* assuming at the moment that error is in arcsec */
 				output->raErr = LAL_TWOPI*atof(val[i+3])/(24.0*60.0*60.0);
 				j+=2;
@@ -604,7 +604,7 @@ LALReadTEMPOParFile(	LALStatus *status,
 			output->dec = LALDegsToRads(val[i+1], "DEC");
 			j++;
 			
-			if(atoi(val[i+2])==1){
+			if(atoi(val[i+2])==1 && i+2<k){
 				/* assuming at the moment that error is in arcsec */
 				output->decErr = LAL_TWOPI*atof(val[i+3])/(360.0*60.0*60.0);
 				j+=2;
@@ -614,7 +614,7 @@ LALReadTEMPOParFile(	LALStatus *status,
 			/* convert pmra from mas/year to rads/sec */
 			output->pmra = LAL_PI_180*atof(val[i+1])/(60.0*60.0*1000*LAL_YRSID_SI);
 			j++;
-			if(atoi(val[i+2])==1){
+			if(atoi(val[i+2])==1 && i+2<k){
 				output->pmraErr = LAL_PI_180*atof(val[i+3])/(60.0*60.0*1000*LAL_YRSID_SI);
 				j+=2;
 			}
@@ -624,7 +624,7 @@ LALReadTEMPOParFile(	LALStatus *status,
 			output->pmdec = LAL_PI_180*atof(val[j+1])/(60.0*60.0*1000*LAL_YRSID_SI);
 			j++;
 			
-			if(atoi(val[i+2])==1){
+			if(atoi(val[i+2])==1 && i+2<k){
 				output->pmdecErr = LAL_PI_180*atof(val[i+3])/(60.0*60.0*1000*LAL_YRSID_SI);
 				j+=2;
 			}
@@ -649,7 +649,7 @@ LALReadTEMPOParFile(	LALStatus *status,
 			output->f0 = atof(val[i+1]);
 			j++;
 			
-			if(atoi(val[i+2])==1){
+			if(atoi(val[i+2])==1 && i+2<k){
 				/* check if exponent contains e/E or d/D or neither */
 				if((loc = strstr(val[i+3], "D"))!=NULL || 
 						(loc = strstr(val[i+3], "d"))!=NULL){
@@ -674,7 +674,7 @@ LALReadTEMPOParFile(	LALStatus *status,
 			}
 			j++;
 			
-			if(atoi(val[i+2])==1){
+			if(atoi(val[i+2])==1 && i+2<k){
 				/* check if exponent contains e/E or d/D or neither */
 				if((loc = strstr(val[i+3], "D"))!=NULL || 
 						(loc = strstr(val[i+3], "d"))!=NULL){
@@ -699,7 +699,7 @@ LALReadTEMPOParFile(	LALStatus *status,
 			}
 			j++;
 			
-			if(atoi(val[i+2])==1){
+			if(atoi(val[i+2])==1 && i+2<k){
 				/* check if exponent contains e/E or d/D or neither */
 				if((loc = strstr(val[i+3], "D"))!=NULL || 
 						(loc = strstr(val[i+3], "d"))!=NULL){
@@ -724,7 +724,7 @@ LALReadTEMPOParFile(	LALStatus *status,
 			}
 			j++;
 				
-			if(atoi(val[i+2])==1){
+			if(atoi(val[i+2])==1 && i+2<k){
 				/* check if exponent contains e/E or d/D or neither */
 				if((loc = strstr(val[i+3], "D"))!=NULL || 
 						(loc = strstr(val[i+3], "d"))!=NULL){
@@ -738,7 +738,7 @@ LALReadTEMPOParFile(	LALStatus *status,
     }
 		else if( !strcmp(val[i],"binary") || !strcmp(val[i],"BINARY")) {
 			/*sprintf(output->model, "%s", val[j+1]);*/
-			output->model = val[i+1];
+			output->model = strdup(val[i+1]);
 			
 			j++;
     }
@@ -746,7 +746,7 @@ LALReadTEMPOParFile(	LALStatus *status,
 			output->x = atof(val[i+1]);
 			j++;
 			
-			if(atoi(val[i+2])==1){
+			if(atoi(val[i+2])==1 && i+2<k){
 				output->xErr = atof(val[i+3]);
 				j+=2;
 			}
@@ -756,7 +756,7 @@ LALReadTEMPOParFile(	LALStatus *status,
 			output->e = atof(val[i+1]);
 			j++;
 			
-			if(atoi(val[i+2])==1){
+			if(atoi(val[i+2])==1 && i+2<k){
 				output->eErr = atof(val[i+3]);
 				j+=2;
 			}
@@ -765,7 +765,7 @@ LALReadTEMPOParFile(	LALStatus *status,
 			output->Pb = atof(val[i+1]);
 			j++;
 			
-			if(atoi(val[i+2])==1){
+			if(atoi(val[i+2])==1 && i+2<k){
 				output->PbErr = atof(val[i+3]);
 				j+=2;
 			}
@@ -774,7 +774,7 @@ LALReadTEMPOParFile(	LALStatus *status,
 			output->w0 = atof(val[i+1]);
 			j++;
 			
-			if(atoi(val[i+2])==1){
+			if(atoi(val[i+2])==1 && i+2<k){
 				output->w0Err = atof(val[i+3]);
 				j+=2;
 			}
@@ -783,7 +783,7 @@ LALReadTEMPOParFile(	LALStatus *status,
 			output->T0 = atof(val[i+1]);
 			j++;
 			
-			if(atoi(val[i+2])==1){
+			if(atoi(val[i+2])==1 && i+2<k){
 				output->T0Err = atof(val[i+3]);
 				j+=2;
 			}
@@ -792,7 +792,7 @@ LALReadTEMPOParFile(	LALStatus *status,
 			output->Tasc = atof(val[i+1]);
 			j++;
 			
-			if(atoi(val[i+2])==1){
+			if(atoi(val[i+2])==1 && i+2<k){
 				output->TascErr = atof(val[i+3]);
 				j+=2;
 			}
@@ -801,7 +801,7 @@ LALReadTEMPOParFile(	LALStatus *status,
 			output->eps1 = atof(val[i+1]);
 			j++;
 			
-			if(atoi(val[i+2])==1){
+			if(atoi(val[i+2])==1 && i+2<k){
 				output->eps1Err = atof(val[i+3]);
 				j+=2;
 			}
@@ -810,7 +810,7 @@ LALReadTEMPOParFile(	LALStatus *status,
 			output->eps2 = atof(val[i+1]);
 			j++;
 			
-			if(atoi(val[i+2])==1){
+			if(atoi(val[i+2])==1 && i+2<k){
 				output->eps2Err = atof(val[i+3]);
 				j+=2;
 			}
@@ -819,7 +819,7 @@ LALReadTEMPOParFile(	LALStatus *status,
 			output->eps1dot = atof(val[i+1]);
 			j++;
 			
-			if(atoi(val[i+2])==1){
+			if(atoi(val[i+2])==1 && i+2<k){
 				output->eps1dotErr = atof(val[i+3]);
 				j+=2;
 			}
@@ -828,7 +828,7 @@ LALReadTEMPOParFile(	LALStatus *status,
 			output->eps2dot = atof(val[i+1]);
 			j++;
 			
-			if(atoi(val[i+2])==1){
+			if(atoi(val[i+2])==1 && i+2<k){
 				output->eps2dotErr = atof(val[i+3]);
 				j+=2;
 			}
@@ -837,7 +837,7 @@ LALReadTEMPOParFile(	LALStatus *status,
 			output->xpbdot = atof(val[i+1]);
 			j++;
 			
-			if(atoi(val[i+2])==1){
+			if(atoi(val[i+2])==1 && i+2<k){
 				output->xpbdotErr = atof(val[i+3]);
 				j+=2;
 			}
@@ -846,7 +846,7 @@ LALReadTEMPOParFile(	LALStatus *status,
 			output->wdot = atof(val[i+1]);
 			j++;
 			
-			if(atoi(val[i+2])==1){
+			if(atoi(val[i+2])==1 && i+2<k){
 				output->wdotErr = atof(val[i+3]);
 				j+=2;
 			}
@@ -855,7 +855,7 @@ LALReadTEMPOParFile(	LALStatus *status,
 			output->Pbdot = atof(val[i+1]);
 			j++;
 			
-			if(atoi(val[i+2])==1){
+			if(atoi(val[i+2])==1 && i+2<k){
 				output->PbdotErr = atof(val[i+3]);
 				j+=2;
 			}
@@ -864,7 +864,7 @@ LALReadTEMPOParFile(	LALStatus *status,
 			output->xdot = atof(val[i+1]);
 			j++;
 			
-			if(atoi(val[i+2])==1){
+			if(atoi(val[i+2])==1 && i+2<k){
 				output->xdotErr = atof(val[i+3]);
 				j+=2;
 			}
@@ -873,7 +873,7 @@ LALReadTEMPOParFile(	LALStatus *status,
 			output->edot = atof(val[i+1]);
 			j++;
 			
-			if(atoi(val[i+2])==1){
+			if(atoi(val[i+2])==1 && i+2<k){
 				output->edotErr = atof(val[i+3]);
 				j+=2;
 			}
@@ -882,7 +882,7 @@ LALReadTEMPOParFile(	LALStatus *status,
 			output->gamma = atof(val[i+1]);
 			j++;
 			
-			if(atoi(val[i+2])==1){
+			if(atoi(val[i+2])==1 && i+2<k){
 				output->gammaErr = atof(val[i+3]);
 				j+=2;
 			}
@@ -891,7 +891,7 @@ LALReadTEMPOParFile(	LALStatus *status,
 			output->s = atof(val[i+1]);
 			j++;
 			
-			if(atoi(val[i+2])==1){
+			if(atoi(val[i+2])==1 && i+2<k){
 				output->sErr = atof(val[i+3]);
 				j+=2;
 			}
@@ -900,7 +900,7 @@ LALReadTEMPOParFile(	LALStatus *status,
 			output->M = atof(val[i+1]);
 			j++;
 			
-			if(atoi(val[i+2])==1){
+			if(atoi(val[i+2])==1 && i+2<k){
 				output->MErr = atof(val[i+3]);
 				j+=2;
 			}
@@ -909,7 +909,7 @@ LALReadTEMPOParFile(	LALStatus *status,
 			output->m2 = atof(val[i+1]);
 			j++;
 			
-			if(atoi(val[i+2])==1){
+			if(atoi(val[i+2])==1 && i+2<k){
 				output->m2Err = atof(val[i+3]);
 				j+=2;
 			}
@@ -918,7 +918,7 @@ LALReadTEMPOParFile(	LALStatus *status,
 			output->a0 = atof(val[i+1]);
 			j++;
 			
-			if(atoi(val[i+2])==1){
+			if(atoi(val[i+2])==1 && i+2<k){
 				output->a0Err = atof(val[i+3]);
 				j+=2;
 			}
@@ -927,7 +927,7 @@ LALReadTEMPOParFile(	LALStatus *status,
 			output->b0 = atof(val[i+1]);
 			j++;
 			
-			if(atoi(val[i+2])==1){
+			if(atoi(val[i+2])==1 && i+2<k){
 				output->b0Err = atof(val[i+3]);
 				j+=2;
 			}
@@ -936,7 +936,7 @@ LALReadTEMPOParFile(	LALStatus *status,
 			output->dr = atof(val[i+1]);
 			j++;
 			
-			if(atoi(val[i+2])==1){
+			if(atoi(val[i+2])==1 && i+2<k){
 				output->drErr = atof(val[i+3]);
 				j+=2;
 			}
@@ -945,7 +945,7 @@ LALReadTEMPOParFile(	LALStatus *status,
 			output->dth = atof(val[i+1]);
 			j++;
 			
-			if(atoi(val[i+2])==1){
+			if(atoi(val[i+2])==1 && i+2<k){
 				output->dthErr = atof(val[i+3]);
 				j+=2;
 			}
