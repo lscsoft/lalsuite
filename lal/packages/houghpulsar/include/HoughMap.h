@@ -1,9 +1,11 @@
 /*-----------------------------------------------------------------------
  *
- * File Name: HoughMap.h
+ * \file HoughMap.h
  *
- * Authors: Sintes, A.M.,  
+ * \author Sintes, A.M., Krishnan, B
  *
+ * \brief Provides subroutines for initialization and construction of Hough-map derivatives and total Hough-maps.
+ * 
  * Revision: $Id$
  *
  * History:   Created by Sintes June 22, 2001
@@ -230,28 +232,28 @@ typedef UINT2 HoughTT;
 
 
 typedef struct tagHOUGHMapDeriv{
-  UINT2     xSide;  /* number of physical pixels in the x direction */
-  UINT2     ySide;  /* number of physical pixels in the y direction */
-  HoughDT   *map ;  /* the pixel count derivatives. 
+  UINT2     xSide;  /**< number of physical pixels in the x direction */
+  UINT2     ySide;  /**< number of physical pixels in the y direction */
+  HoughDT   *map ;  /**< the pixel count derivatives. 
   			 The number of elements to allocate is ySide*(xSide+1)* */
 } HOUGHMapDeriv;
 
 
+  /**  general info in case we want to save results -- xSide, ySide and *map are what we really need*/
 typedef struct tagHOUGHMapTotal{
-  /*  >>>>>>>>>> general info in case we want to save results <<<<<<<< */
-  INT8      f0Bin;    /* frequency bin for which it has been constructed */
-  REAL8     deltaF;   /* frequency resolution */
-  UINT4     mObsCoh; /* ratio of observation time and coherent timescale */
-  UINT4     nPG;      /* <= mObsCoh number of peakgrams used */
-                      /* there could be gaps during the observation time */
-  REAL8UnitPolarCoor skyPatch;       /* N_center {alpha, delta } */
-  REAL8Vector spinDem;       /* spin parameters used in the demodulation */ 
-  REAL8Vector spinRes;          /* refined spin parameters used in Hough */ 
-           /* There should be some time info, etc... */
-  /* >>>>>>>>>> Here starts what I really need <<<<<<<<  */
-  UINT2     xSide;       /* number of physical pixels in the x direction */
-  UINT2     ySide;       /* number of physical pixels in the y direction */
-  HoughTT   *map;      /* the pixel counts.  
+  INT8               f0Bin;      /**< frequency bin for which it has been constructed */
+  REAL8              deltaF;     /**< frequency resolution */
+  UINT4              mObsCoh;    /**< ratio of observation time and coherent timescale */
+  UINT4              nPG;        /**< number of peakgrams used  */
+  REAL8              patchSizeX; /**< x size of patch */
+  REAL8              patchSizeY; /**< y size of patch */
+  REAL8UnitPolarCoor skyPatch;   /**< center of sky patch */
+  REAL8Vector        spinDem;    /**< spin parameters used in the demodulation */ 
+  REAL8Vector        spinRes;    /**< refined spin parameters used in Hough */
+  REAL8Vector        dFdot;      /**< resolution in spindown parameters */
+  UINT2              xSide;      /**< number of physical pixels in the x direction */
+  UINT2              ySide;      /**< number of physical pixels in the y direction */
+  HoughTT            *map;       /**< the pixel counts.  
   			The number of elements to allocate is ySide*xSide */
 } HOUGHMapTotal;
 
