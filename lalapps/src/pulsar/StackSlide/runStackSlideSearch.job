@@ -38,6 +38,7 @@
 # 05/14/05 gam; Change numSUMsPerCall to linesAndHarmonicsFile; file with instrument line and harmonic spectral disturbances data.
 # 07/17/05 gam; Change ...Deriv5 command line arguments to ones that control new Monte Carlo (MC) options
 # 09/07/05 gam; Change searchMaxMCfracErr to absolute error searchMaxMCErr
+# 09/08/05 gam; Add searchDterms with default equal to 32, which gives Dterms used with MC fast SFT generation and LALDemod.
 
 set maxEarthOrbVelOverC 1.1e-4; # Should be overestimate by 10%.
 
@@ -147,7 +148,8 @@ set parameterMC $searchParameterMC;             # 07/17/05 gam;
 set parameterSpaceFlag $searchParameterSpaceFlag;
 
 set stackTypeFlag  0;     # 0 = STKs are PSDs from SFTs; 1 = STKs are F-stat from SFTs.
-set Dterms 32;            # Terms to use in direchlet kernel in LALDemod (when STKs are F-stat)
+#set Dterms 32;            # Terms to use in direchlet kernel in LALDemod (when STKs are F-stat)
+set Dterms $searchDterms; # 09/08/05 gam;
 
 # 01/20/04 gam; Change unusedFlag2 to threshold3.
 # 01/21/04 gam; Note that code finds peaks in SUMs only if thresholdFlag > 0; must set threshold1, threshold2, and threshold3.

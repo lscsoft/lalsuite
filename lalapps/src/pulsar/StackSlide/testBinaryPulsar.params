@@ -6,6 +6,7 @@
 # 05/13/05 gam; add defaults for more parameters.
 # 07/17/05 gam; Change ...Deriv5 command line arguments to ones that control new Monte Carlo (MC) options
 # 09/07/05 gam; Change searchMaxMCfracErr to absolute error searchMaxMCErr
+# 09/08/05 gam; Add searchDterms with default equal to 32, which gives Dterms used with MC fast SFT generation and LALDemod.
 
 # parameters for test pulsar
 set targetName "testBinaryPulsar"; # CHAR; identifies the target of the search
@@ -81,3 +82,5 @@ set searchNumMCInjections            0;  # 07/17/05 gam;
 set searchNumMCRescalings            0;  # 07/17/05 gam;
 set searchRescaleMCFraction          0;  # 07/17/05 gam;
 set searchParameterMC                0;  # 07/17/05 gam;
+
+set searchDterms 3; # 09/08/05 gam; note that for StackSlide of SFTs only need to generate fake signal in a few bins; thus make this 3;

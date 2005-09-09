@@ -24,6 +24,7 @@
 # 05/14/05 gam; add searchLinesAndHarmonicsFile
 # 07/17/05 gam; Change ...Deriv5 command line arguments to ones that control new Monte Carlo (MC) options
 # 09/07/05 gam; Change searchMaxMCfracErr to absolute error searchMaxMCErr
+# 09/08/05 gam; Add searchDterms with default equal to 32, which gives Dterms used with MC fast SFT generation and LALDemod.
 
 set ::CONDOR_MODE 0; # #02/27/04 default is false.
 set ::RUN 0;         #02/27/04 default value false.
@@ -224,6 +225,8 @@ set templateGPSEpochStartTimeNan 0;        # 12/06/04 gam; UINT4 GPS nanoseconds
 set targetName "Unknown";
 
 set searchParameterSpaceFlag 0; # 05/13/05 gam;
+
+set searchDterms 32; # 09/08/05 gam;
 
 set searchWeightFlag 0;
 

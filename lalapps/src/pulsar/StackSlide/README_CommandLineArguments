@@ -65,7 +65,7 @@ set parameterSpaceFlag                       0; #28 INT2 how to generate paramet
 # if (parameterSpaceFlag & 2) > 0 rotate skyPosData into galactic plane.
 
 set stackTypeFlag                            0; #29 INT2 how to generate STKs from BLKs. 
-set Dterms                                  32; #30 INT4 number of terms for Dirichlet kernel (when generating the F-stat or fake SFTs with a signal). 
+set Dterms                                   3; #30 INT4 number of terms for Dirichlet kernel (when generating the F-stat or fake SFTs with a signal). 
 # Note that 0 means stacks are PSDs from SFTs (the only option currently supported); 1 means stacks are F-statistic from SFTs. 
 
 set thresholdFlag                            1; #31 INT2 how to apply the thresholds. 
