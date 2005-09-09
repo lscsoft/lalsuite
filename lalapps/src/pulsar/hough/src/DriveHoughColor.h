@@ -136,12 +136,7 @@ int PrintHistogram(UINT4Vector *, CHAR *);
 int PrintHmap2file(HOUGHMapTotal *, CHAR *, INT4 );
 int PrintHmap2m_file(HOUGHMapTotal *, CHAR *, INT4 );
 
-void Stereo2SkyLocation (LALStatus  *status,
-             REAL8UnitPolarCoor    *sourceLocation, /* output*/
-	     UINT2              xPos,
-	     UINT2              yPos,
-	     HOUGHPatchGrid    *patch,
-	     HOUGHDemodPar     *parDem);
+
 	     
 void PrintHoughEvents (LALStatus       *status,
         	      FILE            *fpEvents,

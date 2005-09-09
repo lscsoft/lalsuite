@@ -912,9 +912,10 @@ int main(int argc, char *argv[]){
 	  
 	  /* ********************* perfom stat. analysis on the maps ****************** */
 	  SUB( LALHoughStatistics ( &status, &stats, &ht), &status );
-	  SUB( Stereo2SkyLocation (&status, &sourceLocation, 
-				   stats.maxIndex[0], stats.maxIndex[1], &patch, &parDem), &status);
-		  SUB( LALHoughHistogram ( &status, &hist, &ht), &status);
+	  SUB( LALStereo2SkyLocation (&status, &sourceLocation, 
+				   stats.maxIndex[0], stats.maxIndex[1], 
+				   &patch, &parDem), &status);
+	  SUB( LALHoughHistogram ( &status, &hist, &ht), &status);
 	  for(j=0; j< histTotal.length; ++j){ histTotal.data[j]+=hist.data[j]; }
 
 	  if (stats.maxCount > nStar[fBinSearch-f0Bin])
@@ -974,7 +975,7 @@ int main(int argc, char *argv[]){
 	      
 	      /* ********************* perfom stat. analysis on the maps ****************** */
 	      SUB( LALHoughStatistics ( &status, &stats, &ht), &status );
-	      SUB( Stereo2SkyLocation (&status, &sourceLocation, 
+	      SUB( LALStereo2SkyLocation (&status, &sourceLocation, 
 				       stats.maxIndex[0], stats.maxIndex[1], &patch, &parDem), &status);
 	      SUB( LALHoughHistogram ( &status, &hist, &ht), &status);
 	      for(j=0; j< histTotal.length; ++j){ histTotal.data[j]+=hist.data[j]; }
@@ -1288,45 +1289,6 @@ int PrintHmap2m_file(HOUGHMapTotal *ht, CHAR *fnameOut, INT4 iHmap){
 /* >>>>>>>>>>>>>>>>>>>>>*************************<<<<<<<<<<<<<<<<<<<< */
 /* >>>>>>>>>>>>>>>>>>>>>*************************<<<<<<<<<<<<<<<<<<<< */
 
-/******************************************************************/
-/*  Find source sky location given stereographic coordinates indexes */
-/******************************************************************/
-void Stereo2SkyLocation (LALStatus  *status,
-         REAL8UnitPolarCoor *sourceLocation, /* output*/
-	 UINT2              xPos,
-	 UINT2              yPos,
-	 HOUGHPatchGrid    *patch,
-	 HOUGHDemodPar     *parDem){
-    
-  REAL8Cart2Coor        sourceProjected;
-  REAL8UnitPolarCoor    sourceRotated;
-  REAL8UnitPolarCoor    skyPatchCenter;
-  /* --------------------------------------------- */
-  INITSTATUS (status, "Stereo2SkyLocation", DRIVEHOUGHCOLORC);
-  ATTATCHSTATUSPTR (status);
-
-  ASSERT (sourceLocation, status, DRIVEHOUGHCOLOR_ENULL,DRIVEHOUGHCOLOR_MSGENULL);
-  ASSERT (patch , status, DRIVEHOUGHCOLOR_ENULL,DRIVEHOUGHCOLOR_MSGENULL);
-  ASSERT (parDem, status, DRIVEHOUGHCOLOR_ENULL,DRIVEHOUGHCOLOR_MSGENULL);
-
-  sourceProjected.x = patch->xCoor[xPos];
-  sourceProjected.y = patch->yCoor[yPos];
-
-  skyPatchCenter.alpha = parDem->skyPatch.alpha;
-  skyPatchCenter.delta = parDem->skyPatch.delta;
-  
-  /* invert the stereographic projection for a point on the projected plane */
-  TRY( LALStereoInvProjectCart( status->statusPtr, 
-				&sourceRotated, &sourceProjected ), status );
-  
-  /* undo roation in case the patch is not centered at the south pole */
-  TRY( LALInvRotatePolarU( status->statusPtr,
-       sourceLocation, &sourceRotated, &skyPatchCenter ), status );
-
-  DETATCHSTATUSPTR (status);
-  /* normal exit */
-  RETURN (status);
-}
 
 /* >>>>>>>>>>>>>>>>>>>>>*************************<<<<<<<<<<<<<<<<<<<< */
 /******************************************************************/
@@ -1368,7 +1330,7 @@ void PrintHoughEvents (LALStatus       *status,
       /* read the current number count */
       temp = ht->map[yPos*xSide + xPos];
       if(temp > houghThreshold){
-        TRY( Stereo2SkyLocation(status->statusPtr, 
+        TRY( LALStereo2SkyLocation(status->statusPtr, 
 				&sourceLocation,xPos,yPos,patch, parDem), status);
 	if (ht->spinRes.length) {
 	  fprintf(fpEvents, "%d %g %g %g %g \n", 
