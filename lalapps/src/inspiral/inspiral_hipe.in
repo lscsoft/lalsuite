@@ -95,14 +95,14 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
   insp_job.add_ini_opts(cp,'no-veto-inspiral')
   
   # add the ifo specific options
-  insp_job.add_ini_opts(cp,ifo_name + '-inspiral')
+  insp_job.add_ini_opts(cp,ifo_name.lower() + '-inspiral')
 
   GeoBank = None
   if ifo_name == 'G1':
     data_opts = 'geo-data'
     channel = cp.get('input','geo-channel')
     # to analyze GEO data we may use a fixed bank specified in ini file
-    GeoBank = cp.get('G1-inspiral','bank-file')
+    GeoBank = cp.get('g1-inspiral','bank-file')
     if GeoBank: print "For G1 we use bank ", GeoBank
   else:
     data_opts = 'ligo-data'
@@ -296,7 +296,7 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
   # add the veto option
   insp_veto_job.add_ini_opts(cp,'veto-inspiral')
   # add ifo specific options
-  insp_veto_job.add_ini_opts(cp,ifo_name + '-inspiral')
+  insp_veto_job.add_ini_opts(cp,ifo_name.lower() + '-inspiral')
   
   if ifo == 'G1':
     data_opts = 'geo-data'
@@ -451,7 +451,7 @@ def coherent_analysis(ifos,single_ifo_segments,coinc_nodes,cb_job,
   for ifo in ifo_list:
     if ifo in ifos:
       insp_coh_jobs[ifo].add_ini_opts(cp,'no-veto-inspiral')
-      insp_coh_jobs[ifo].add_ini_opts(cp,ifo + '-inspiral')
+      insp_coh_jobs[ifo].add_ini_opts(cp,ifo.lower() + '-inspiral')
       if ifo == 'G1':
         data_opts[ifo] = 'geo-data'
         chan = cp.get('input','geo-channel')
