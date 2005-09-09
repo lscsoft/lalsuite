@@ -1010,6 +1010,9 @@ int main ( int argc, char *argv[] )
   if ( channelName ) free( channelName );
   if ( fqChanName ) free( fqChanName );
   LALCheckMemoryLeaks();
+
+  /* print a success message to stdout for parsing by exitcode */
+  fprintf( stdout, "%s: EXITCODE0\n", argv[0] );
   exit( 0 );
 }
 
