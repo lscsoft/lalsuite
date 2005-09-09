@@ -286,6 +286,13 @@ void LALHOUGHInitializeHT (LALStatus      *status,
 			  HOUGHPatchGrid  *patch      /* patch information */
 			  );
 
+void LALStereo2SkyLocation (LALStatus  *status,
+			    REAL8UnitPolarCoor *sourceLocation, /* output*/
+			    UINT2              xPos,
+			    UINT2              yPos,
+			    HOUGHPatchGrid    *patch,
+			    HOUGHDemodPar     *parDem);
+
 #ifdef  __cplusplus
 }                /* Close C++ protection */
 #endif

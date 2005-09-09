@@ -1,15 +1,38 @@
 /*-----------------------------------------------------------------------
  *
- * File Name: HoughMap.c
- *
- * Authors: Sintes, A.M., 
+ * \file HoughMap.c
+ * \brief Subroutines for initialization and construction of Hough-map derivatives and total Hough-maps.
+ * \author Sintes, A.M., 
  *
  * Revision: $Id$
  *
  * History:   Created by Sintes June 22, 2001
  *            Modified    "    August 6, 2001
  *
- *-----------------------------------------------------------------------
+ 
+\par Description 
+
+The function  LALHOUGHInitializeHD() initializes the Hough map derivative
+space  HOUGHMapDeriv *hd to zero. Note that the length of the map
+hd->map should be hd->ySide * (hd->xSide + 1).
+
+The function  LALHOUGHInitializeHT() initializes the total Hough map 
+HOUGHMapTotal *ht  to zero and checks consistency between 
+the number of physical pixels in the
+map  and  those given by the grid information structure 
+HOUGHPatchGrid *patch.
+
+Given an initial Hough map derivative HOUGHMapDeriv *hd and a representation
+of a phmd HOUGHphmd *phmd, the function  LALHOUGHAddPHMD2HD() accumulates
+the partial Hough map derivative *phmd to *hd by adding +1 or
+-1 to the pixels corresponding to the left or right borders respectively. 
+It takes into account corrections due to border effects as well.
+ 
+The function  LALHOUGHIntegrHD2HT() constructs a total Hough map 
+HOUGHMapTotal *ht from its derivative HOUGHMapDeriv *hd by
+integrating each row (x-direction).
+
+
  */
 
 /************************************ <lalVerbatim file="HoughMapCV">
@@ -301,3 +324,43 @@ void LALHOUGHIntegrHD2HT (LALStatus       *status,
   RETURN (status);
 }
 
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+/* *******************************  <lalVerbatim file="HoughMapD"> */
+/**  Find source sky location given stereographic coordinates indexes */
+void LALStereo2SkyLocation (LALStatus  *status,
+         REAL8UnitPolarCoor *sourceLocation, /* output*/
+	 UINT2              xPos,
+	 UINT2              yPos,
+	 HOUGHPatchGrid    *patch,
+	 HOUGHDemodPar     *parDem)
+{  /*   *********************************************  </lalVerbatim> */
+    
+  REAL8Cart2Coor        sourceProjected;
+  REAL8UnitPolarCoor    sourceRotated;
+  REAL8UnitPolarCoor    skyPatchCenter;
+  /* --------------------------------------------- */
+  INITSTATUS (status, "Stereo2SkyLocation", HOUGHMAPH);
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT (sourceLocation, status, HOUGHMAPH_ENULL,HOUGHMAPH_MSGENULL);
+  ASSERT (patch , status, HOUGHMAPH_ENULL,HOUGHMAPH_MSGENULL);
+  ASSERT (parDem, status, HOUGHMAPH_ENULL,HOUGHMAPH_MSGENULL);
+
+  sourceProjected.x = patch->xCoor[xPos];
+  sourceProjected.y = patch->yCoor[yPos];
+
+  skyPatchCenter.alpha = parDem->skyPatch.alpha;
+  skyPatchCenter.delta = parDem->skyPatch.delta;
+  
+  /* invert the stereographic projection for a point on the projected plane */
+  TRY( LALStereoInvProjectCart( status->statusPtr, 
+				&sourceRotated, &sourceProjected ), status );
+  
+  /* undo roation in case the patch is not centered at the south pole */
+  TRY( LALInvRotatePolarU( status->statusPtr,
+       sourceLocation, &sourceRotated, &skyPatchCenter ), status );
+
+  DETATCHSTATUSPTR (status);
+  /* normal exit */
+  RETURN (status);
+}
