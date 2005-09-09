@@ -25,9 +25,10 @@
  *
  * $Id$ 
  *
- *
+ * \todo Sort by GPS-time, not by filename
  */
 
+/*---------- INCLUDES ----------*/
 #include <sys/types.h>
 #ifndef _MSC_VER
 #include <dirent.h>
@@ -38,15 +39,23 @@
 #include <lal/FileIO.h>
 #include <lal/SFTfileIO.h>
 
+/*---------- DEFINES ----------*/
 NRCSID (SFTFILEIOC, "$Id$");
 
+/*----- Macros ----- */
+#define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
+
+/*---------- internal types ----------*/
 /* for private use: a vector of 'strings' */
 typedef struct {
   UINT4 length;
   CHAR **data;
 } StringVector;
 
-/* prototypes for internal helper functions */
+/*---------- empty initializers ---------- */
+/*---------- Global variables ----------*/
+
+/*---------- internal prototypes ----------*/
 static StringVector *find_files (const CHAR *fpattern);
 static void DestroyStringVector (StringVector *strings);
 static void LALCopySFT (LALStatus *status, SFTtype *dest, const SFTtype *src);
@@ -59,11 +68,110 @@ static int amatch(char *str, char *p);	/* glob pattern-matcher (public domain)*/
 static const size_t header_len_v1 = 32;	
 
 
-/***********************************************************************
- * The functions that make up the guts of this module
- ***********************************************************************/
-
+/*==================== FUNCTION DEFINITIONS ====================*/
 
+/** Function to read and return a list of SFT-headers for given 
+ * filepattern and start/end times.
+ *
+ * The \a startTime and \a endTime entries are allowed to be NULL, 
+ * in which case they are ignored.
+ *
+ * \note We return the headers as an SFTVector, but with empty data-fields.
+ */
+void
+LALGetSFTheaders (LALStatus *status,
+		  SFTVector **headers,		/**< [out] Vector of SFT-headers */
+		  const CHAR *fpattern,		/**< path/filepattern */
+		  const LIGOTimeGPS *startTime,	/**< include only SFTs after this time (can be NULL) */
+		  const LIGOTimeGPS *endTime)	/**< include only SFTs before this (can be NULL)*/
+{
+  UINT4 i, numSFTs;
+  SFTVector *out = NULL;
+  StringVector *fnames;
+  REAL8 t0, t1;		/* start- and end-times as reals */
+  UINT4 numHeaders;
+
+  INITSTATUS (status, "LALGetSFTheaders", SFTFILEIOC);
+  ATTATCHSTATUSPTR (status); 
+
+  /* check input */
+  ASSERT ( headers, status,  SFTFILEIO_ENULL,  SFTFILEIO_MSGENULL);
+  ASSERT ( *headers == NULL, status,  SFTFILEIO_ENONULL,  SFTFILEIO_MSGENONULL);
+  ASSERT ( fpattern, status,  SFTFILEIO_ENULL,  SFTFILEIO_MSGENULL);
+
+  if ( startTime )
+    t0 = GPS2REAL8( *startTime );
+  else
+    t0 = 0;
+  
+  if ( endTime )
+    t1 = GPS2REAL8 ( *endTime );
+  else
+    t1 = 0;
+
+  /* get filelist of files matching fpattern */
+  if ( (fnames = find_files (fpattern)) == NULL) {
+    ABORT (status, SFTFILEIO_EGLOB, SFTFILEIO_MSGEGLOB);
+  }
+
+  /* prepare output-vector */
+  if ( (out = LALCalloc (1, sizeof(*out) )) == NULL ) {
+    ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
+  }
+
+  numSFTs = fnames->length;
+
+  /* main loop: load all SFT-headers and put them into an SFTvector */
+  numHeaders = 0;
+  for (i=0; i < numSFTs; i++)
+    {
+      SFTHeader header;
+      REAL8 epoch;
+      SFTtype *sft;
+
+      TRY ( LALReadSFTheader (status->statusPtr, &header, fnames->data[i]), status );
+      epoch = 1.0 * header.gpsSeconds + 1.0e-9 * header.gpsNanoSeconds;
+
+      if ( t0 && ( epoch < t0 ) )	/* epoch earlier than start-time ==> skip */
+	continue;
+      if ( t1 && ( epoch > t1 ) )	/* epoch later than end-time ==> skip */
+	continue;
+
+      /* found suitable SFT ==> add to SFTVector of headers */
+      numHeaders ++;
+      if ( ( out->data = LALRealloc(out->data, numHeaders * sizeof( *out->data) )) == NULL ) 
+	{
+	  LALFree (out);
+	  ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
+	}
+      
+      sft = &(out->data[numHeaders - 1]);
+
+      /* fill in header-data */
+      strncpy (sft->name, fnames->data[i], LALNameLength);
+      sft->name[LALNameLength - 1 ] = '\0';	/* make sure it's 0-terminated */
+      sft->deltaF  			= 1.0 / header.timeBase;
+      sft->f0      			= header.fminBinIndex / header.timeBase;
+      sft->epoch.gpsSeconds     	= header.gpsSeconds;
+      sft->epoch.gpsNanoSeconds 	= header.gpsNanoSeconds;
+
+      sft->data = NULL;	/* no SFT-data proper */
+
+    } /* for i < numSFTs */
+
+  out->length = numHeaders;
+
+  DestroyStringVector (fnames);
+
+  *headers = out;
+  
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+
+} /* LALGetSFTheaders() */		  
+
+
+
 /** Basic SFT reading-function.
  *  Given a filename \a fname and frequency-limits [\a fMin, \a fMax], 
  *  returns an SFTtype \a sft containing the SFT-data.
@@ -98,10 +206,10 @@ LALReadSFTfile (LALStatus *status,
   INITSTATUS (status, "LALReadSFTfile", SFTFILEIOC);
   ATTATCHSTATUSPTR (status); 
   
-  ASSERT (sft, status, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
-  ASSERT (*sft == NULL, status, SFTFILEIOH_ENONULL, SFTFILEIOH_MSGENONULL);
-  ASSERT (fname,  status, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
-  ASSERT (fMin <= fMax, status, SFTFILEIOH_EVAL, SFTFILEIOH_MSGEVAL);
+  ASSERT (sft, status, SFTFILEIO_ENULL,  SFTFILEIO_MSGENULL);
+  ASSERT (*sft == NULL, status, SFTFILEIO_ENONULL, SFTFILEIO_MSGENONULL);
+  ASSERT (fname,  status, SFTFILEIO_ENULL,  SFTFILEIO_MSGENULL);
+  ASSERT (fMin <= fMax, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
 
   /* read the header */
   TRY ( LALReadSFTheader (status->statusPtr, &header, fname), status);
@@ -201,15 +309,15 @@ LALReadSFTfiles (LALStatus *status,
   INITSTATUS (status, "LALReadSFTfiles", SFTFILEIOC);
   ATTATCHSTATUSPTR (status); 
   
-  ASSERT (sftvect, status, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
-  ASSERT (*sftvect == NULL, status, SFTFILEIOH_ENONULL, SFTFILEIOH_MSGENONULL);
-  ASSERT (fpattern,  status, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
-  ASSERT (fMin <= fMax, status, SFTFILEIOH_EVAL, SFTFILEIOH_MSGEVAL);
+  ASSERT (sftvect, status, SFTFILEIO_ENULL,  SFTFILEIO_MSGENULL);
+  ASSERT (*sftvect == NULL, status, SFTFILEIO_ENONULL, SFTFILEIO_MSGENONULL);
+  ASSERT (fpattern,  status, SFTFILEIO_ENULL,  SFTFILEIO_MSGENULL);
+  ASSERT (fMin <= fMax, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
 
   /* make filelist 
    * NOTE: we don't use glob() as it was reported to fail under condor */
   if ( (fnames = find_files (fpattern)) == NULL) {
-    ABORT (status, SFTFILEIOH_EGLOB, SFTFILEIOH_MSGEGLOB);
+    ABORT (status, SFTFILEIO_EGLOB, SFTFILEIO_MSGEGLOB);
   }
 
   /* read header of first sft to determine Tsft, and therefore dfreq */
@@ -249,7 +357,7 @@ LALReadSFTfiles (LALStatus *status,
 	  DestroyStringVector (fnames);    
 	  LALDestroySFTtype (status->statusPtr, &oneSFT);
 	  LALDestroySFTVector (status->statusPtr, &out);
-	  ABORT (status, SFTFILEIOH_EDIFFLENGTH, SFTFILEIOH_MSGEDIFFLENGTH);
+	  ABORT (status, SFTFILEIO_EDIFFLENGTH, SFTFILEIO_MSGEDIFFLENGTH);
 	} /* if length(thisSFT) != common length */
 
       /* transfer the returned SFT into the SFTVector 
@@ -301,10 +409,10 @@ LALWriteSFTfile (LALStatus  *status,
   ATTATCHSTATUSPTR (status);   
  
   /*   Make sure the arguments are not NULL and perform basic checks*/ 
-  ASSERT (sft,   status, SFTFILEIOH_ENULL, SFTFILEIOH_MSGENULL);
-  ASSERT (sft->data,  status, SFTFILEIOH_EVAL, SFTFILEIOH_MSGEVAL);
-  ASSERT (sft->deltaF > 0, status, SFTFILEIOH_EVAL, SFTFILEIOH_MSGEVAL);
-  ASSERT (outfname, status, SFTFILEIOH_ENULL, SFTFILEIOH_MSGENULL); 
+  ASSERT (sft,   status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL);
+  ASSERT (sft->data,  status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
+  ASSERT (sft->deltaF > 0, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
+  ASSERT (outfname, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL); 
 
   /* fill in the header information */
   header.version = 1.0;
@@ -317,7 +425,7 @@ LALWriteSFTfile (LALStatus  *status,
   /* build raw header for writing to disk */
   rawheader = LALCalloc (1, header_len_v1);
   if (rawheader == NULL) {
-    ABORT (status, SFTFILEIOH_EMEM, SFTFILEIOH_MSGEMEM);    
+    ABORT (status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM);    
   }
   ptr = rawheader;
   *(REAL8*) ptr = header.version;
@@ -338,7 +446,7 @@ LALWriteSFTfile (LALStatus  *status,
   rawdata = LALCalloc (1, datalen);
   if (rawdata == NULL) {
     LALFree (rawheader);
-    ABORT (status, SFTFILEIOH_EMEM, SFTFILEIOH_MSGEMEM);    
+    ABORT (status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM);    
   }
 
   inData = sft->data->data;
@@ -354,7 +462,7 @@ LALWriteSFTfile (LALStatus  *status,
   if (fp == NULL) {
     LALFree (rawheader);
     LALFree (rawdata);
-    ABORT (status, SFTFILEIOH_EFILE,  SFTFILEIOH_MSGEFILE);
+    ABORT (status, SFTFILEIO_EFILE,  SFTFILEIO_MSGEFILE);
   }
 
   /* write the header*/
@@ -362,7 +470,7 @@ LALWriteSFTfile (LALStatus  *status,
     LALFree (rawheader);
     LALFree (rawdata);
     fclose (fp);
-    ABORT (status, SFTFILEIOH_EFILE, SFTFILEIOH_MSGEFILE);
+    ABORT (status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE);
   }
   
   /* write the data */
@@ -370,7 +478,7 @@ LALWriteSFTfile (LALStatus  *status,
     LALFree (rawheader);
     LALFree (rawdata);
     fclose (fp);
-    ABORT (status, SFTFILEIOH_EFILE, SFTFILEIOH_MSGEFILE);
+    ABORT (status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE);
   }
 
   /* done */
@@ -404,20 +512,20 @@ LALReadSFTheader (LALStatus  *status,
   ATTATCHSTATUSPTR (status); 
   
   /*   Make sure the arguments are not NULL: */ 
-  ASSERT (header, status, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
-  ASSERT (fname,  status, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
+  ASSERT (header, status, SFTFILEIO_ENULL,  SFTFILEIO_MSGENULL);
+  ASSERT (fname,  status, SFTFILEIO_ENULL,  SFTFILEIO_MSGENULL);
   
   /* opening the SFT binary file */
   fp = LALOpenDataFile( fname );
   if (fp == NULL) {
-    ABORT (status, SFTFILEIOH_EFILE,  SFTFILEIOH_MSGEFILE);
+    ABORT (status, SFTFILEIO_EFILE,  SFTFILEIO_MSGEFILE);
   }
   
   /* read version-number */
   if  (fread (inVersion, sizeof(inVersion), 1, fp) != 1) {
     fclose (fp);
     if (lalDebugLevel) LALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
-    ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
+    ABORT (status, SFTFILEIO_EHEADER,  SFTFILEIO_MSGEHEADER);
   }
 
   /* try version 1.0 */
@@ -430,7 +538,7 @@ LALReadSFTheader (LALStatus  *status,
     if(memcmp(inVersion,&version,sizeof(version))){
       fclose (fp);
       if (lalDebugLevel) LALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
-      ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
+      ABORT (status, SFTFILEIO_EHEADER,  SFTFILEIO_MSGEHEADER);
     }
   }
 
@@ -438,7 +546,7 @@ LALReadSFTheader (LALStatus  *status,
   rawheader = LALCalloc (1, header_len_v1);
   if (rawheader == NULL) {
     fclose (fp);
-    ABORT (status, SFTFILEIOH_EMEM, SFTFILEIOH_MSGEMEM);    
+    ABORT (status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM);    
   }
   
   rewind (fp);	/* go back to start */
@@ -446,7 +554,7 @@ LALReadSFTheader (LALStatus  *status,
     fclose (fp);
     LALFree (rawheader);
     if (lalDebugLevel) LALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
-    ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
+    ABORT (status, SFTFILEIO_EHEADER,  SFTFILEIO_MSGEHEADER);
   }
 
   fclose(fp);
@@ -482,25 +590,25 @@ LALReadSFTheader (LALStatus  *status,
   /* gps_sec and gps_nsec >= 0 */
   if ( (header1.gpsSeconds < 0) || (header1.gpsNanoSeconds <0) ) {
     if (lalDebugLevel) LALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
-    ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
+    ABORT (status, SFTFILEIO_EHEADER,  SFTFILEIO_MSGEHEADER);
   }
 
   /* tbase > 0 */
   if ( header1.timeBase <= 0 ) {
     if (lalDebugLevel) LALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
-    ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
+    ABORT (status, SFTFILEIO_EHEADER,  SFTFILEIO_MSGEHEADER);
   }
 
   /* fminindex >= 0 */
   if (header1.fminBinIndex < 0) {
     if (lalDebugLevel) LALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
-    ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
+    ABORT (status, SFTFILEIO_EHEADER,  SFTFILEIO_MSGEHEADER);
   }
   
   /* nsamples >= 0 */
   if (header1.length < 0) {
     if (lalDebugLevel) LALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
-    ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
+    ABORT (status, SFTFILEIO_EHEADER,  SFTFILEIO_MSGEHEADER);
   }
 
   /* ok, the SFT-header seems consistent, so let's return it */
@@ -540,9 +648,9 @@ LALReadSFTdata(LALStatus *status,
   ATTATCHSTATUSPTR (status); 
   
   /*   Make sure the arguments are not NULL: */ 
-  ASSERT (sft,   status, SFTFILEIOH_ENULL, SFTFILEIOH_MSGENULL);
-  ASSERT (sft->data, status, SFTFILEIOH_ENULL, SFTFILEIOH_MSGENULL);
-  ASSERT (fname, status, SFTFILEIOH_ENULL, SFTFILEIOH_MSGENULL);
+  ASSERT (sft,   status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL);
+  ASSERT (sft->data, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL);
+  ASSERT (fname, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL);
   
   /* Read header */
   TRY ( LALReadSFTheader (status->statusPtr, &header, fname), status);
@@ -551,7 +659,7 @@ LALReadSFTdata(LALStatus *status,
   readlen = sft->data->length;
   if ( (fminBinIndex < header.fminBinIndex) 
        || (fminBinIndex + (INT4)readlen > header.fminBinIndex + header.length) ) {
-    ABORT (status, SFTFILEIOH_EFREQBAND, SFTFILEIOH_MSGEFREQBAND);
+    ABORT (status, SFTFILEIO_EFREQBAND, SFTFILEIO_MSGEFREQBAND);
   }
 
   /* how many frequency-bins to skip */
@@ -559,14 +667,14 @@ LALReadSFTdata(LALStatus *status,
 
   /* open file for reading */
   if ( (fp = LALOpenDataFile( fname )) == NULL) {
-    ABORT (status, SFTFILEIOH_EFILE, SFTFILEIOH_MSGEFILE);
+    ABORT (status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE);
   }
 
   /* read version-number */
   if  (fread (inVersion, sizeof(inVersion), 1, fp) != 1) {
     fclose (fp);
     if (lalDebugLevel) LALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
-    ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
+    ABORT (status, SFTFILEIO_EHEADER,  SFTFILEIO_MSGEHEADER);
   }
 
   /* set invalid version */
@@ -592,40 +700,40 @@ LALReadSFTdata(LALStatus *status,
   if (version < 0) {
     fclose (fp);
     if (lalDebugLevel) LALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
-    ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
+    ABORT (status, SFTFILEIO_EHEADER,  SFTFILEIO_MSGEHEADER);
   }
 
   /* check compatibility of version with this function */
   if (version != 1) {
     fclose (fp);
-    ABORT (status, SFTFILEIOH_EVERSION, SFTFILEIOH_MSGEVERSION);
+    ABORT (status, SFTFILEIO_EVERSION, SFTFILEIO_MSGEVERSION);
   }
 
   /* skip SFT-header in file */
   rewind (fp);
   if (fseek(fp, header_len_v1, SEEK_SET) != 0) {
     fclose (fp);
-    ABORT (status, SFTFILEIOH_EFILE, SFTFILEIOH_MSGEFILE);
+    ABORT (status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE);
   }
 
   /* skip offset data points to the correct frequency-bin */
   if (fseek(fp, offset * 2 * sizeof(REAL4), SEEK_CUR) != 0) {
     fclose (fp);
-    ABORT (status, SFTFILEIOH_EFILE, SFTFILEIOH_MSGEFILE);
+    ABORT (status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE);
   }
 
   /* ----- prepare memory for data-reading ----- */
   rawdata = LALCalloc (1, 2 * readlen *sizeof(REAL4) );
   if (rawdata == NULL) {
     fclose (fp);
-    ABORT (status, SFTFILEIOH_EMEM, SFTFILEIOH_MSGEMEM);
+    ABORT (status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM);
   }
 
   /* we don't rely on memory-packing, so we read into a REAL4 array first */
   if (fread( rawdata, 2 * readlen * sizeof(REAL4), 1, fp) != 1) {
     fclose(fp);
     LALFree (rawdata);
-    ABORT (status, SFTFILEIOH_EFILE, SFTFILEIOH_MSGEFILE);
+    ABORT (status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE);
   }
   fclose(fp);
 
@@ -668,14 +776,14 @@ LALCopySFT (LALStatus *status,
 
   INITSTATUS( status, "LALDestroySFTVector", SFTFILEIOC);
 
-  ASSERT (dest,  status, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
-  ASSERT (dest->data,  status, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
-  ASSERT (src, status, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
-  ASSERT (src->data, status, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
+  ASSERT (dest,  status, SFTFILEIO_ENULL,  SFTFILEIO_MSGENULL);
+  ASSERT (dest->data,  status, SFTFILEIO_ENULL,  SFTFILEIO_MSGENULL);
+  ASSERT (src, status, SFTFILEIO_ENULL,  SFTFILEIO_MSGENULL);
+  ASSERT (src->data, status, SFTFILEIO_ENULL,  SFTFILEIO_MSGENULL);
 
   /* some hard requirements */
   if ( dest->data->length < src->data->length ) {
-    ABORT (status, SFTFILEIOH_ECOPYSIZE, SFTFILEIOH_MSGECOPYSIZE);
+    ABORT (status, SFTFILEIO_ECOPYSIZE, SFTFILEIO_MSGECOPYSIZE);
   }
   
   /* copy head */
@@ -945,6 +1053,9 @@ SortStringVector (StringVector *strings)
  *	a[-a-z]c	a-c aac abc ...
  *
  * $Log$
+ * Revision 1.39  2005/09/09 09:48:56  reinhard
+ * new function: LALGetSFTheaders() returns an SFTVect containing only the headers!
+ *
  * Revision 1.38  2005/09/08 21:21:41  reinhard
  * some cleanup.
  *
