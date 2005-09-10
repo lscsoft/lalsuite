@@ -157,11 +157,11 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
     REAL8 *freq;        /**< frequency */
     REAL8 *alpha;       /**< right ascension */
     REAL8 *delta;       /**< declination */
-    REAL8Vector *fdot;  /**< spindown vector */
+    REAL8 *fdot;        /**< spindown vector */
     REAL8 *dFreq;       /**< frequency error */
     REAL8 *dAlpha;      /**< alpha error */
     REAL8 *dDelta ;     /**< delta error */
-    REAL8Vector *dFdot; /**< fdot error */
+    REAL8 *dFdot;       /**< fdot error */
   } HoughCandidates;
 
 
@@ -202,6 +202,16 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 		      CHAR *fnameOut, 
 		      INT4 iHmap);
 
+  void GetHoughCandidates(LALStatus *status,
+			  HoughCandidates *houghCand,
+			  const HOUGHMapTotal *ht,
+			  const HOUGHPatchGrid  *patch,
+			  const HOUGHDemodPar   *parDem,
+			  REAL8 houghThreshold);
+
+  void PrintHoughCandidates(LALStatus *status,
+			    HoughCandidates *in,
+			    CHAR *fname);
   
 #ifdef  __cplusplus
 }                /* Close C++ protection */

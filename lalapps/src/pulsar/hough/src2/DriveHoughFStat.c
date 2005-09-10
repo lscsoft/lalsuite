@@ -54,7 +54,7 @@ extern int lalDebugLevel;
 #define NFSIZE  21
 #define DTERMS 8
 #define FSTATTHRESHOLD 2.6
-#define SFTDIRECTORY "/local_data/badkri/fakesfts/"
+#define SFTDIRECTORY "/home/badkri/fakesfts/"
 #define FNAMEOUT "./OutHoughFStat"
 
 int main( int argc, char *argv[]) {
@@ -400,13 +400,26 @@ int main( int argc, char *argv[]) {
   /* calculate the Fstatistic */
   LAL_CALL(ComputeFstatStack( &status, &FstatVect, &stackSFTs, &FstatPar), &status);
 
-  LAL_CALL( PrintFstat ( &status, FstatVect.data, uvar_fnameout, 0 ), &status);
+  /* free sfts */
+  LALFree(stackSFTs.data);
+  LAL_CALL (LALDestroySFTVector(&status, &inputSFTs),&status );
+
+  /* print fstat vector -- for debugging */
+  /*   LAL_CALL( PrintFstat ( &status, FstatVect.data, uvar_fnameout, 0 ), &status); */
 
   /*------------ select peaks ------------*/ 
 
   LAL_CALL( FstatVectToPeakGram( &status, &pgV, &FstatVect, uvar_FstatThr), &status);
 
-  /*--------------- calculate Hough map ---------------*/
+  /* free Fstat */
+  for(k=0; k<nStacks; k++) {
+    LALFree(FstatVect.data[k].data->data);
+    LALFree(FstatVect.data[k].data);
+  }
+  LALFree(FstatVect.data);
+
+
+  /*--------------- calculate Hough map and get candidates ---------------*/
   /* start and end bin for calculating hough map */
   /* these are just what the user specified */
   binsHough = floor( tStackAvg * uvar_fBand );
@@ -437,29 +450,19 @@ int main( int argc, char *argv[]) {
   houghCand.dFreq = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
   houghCand.dAlpha = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
   houghCand.dDelta = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
-  houghCand.fdot = (REAL8Vector *)LALMalloc( houghCand.length * sizeof(REAL8Vector));
-  houghCand.dFdot = (REAL8Vector *)LALMalloc( houghCand.length * sizeof(REAL8Vector));
+  houghCand.fdot = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
+  houghCand.dFdot = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
 
-
+  /* get candidates */
   LAL_CALL ( ComputeFstatHoughMap ( &status, &houghCand, &pgV, &houghPar), &status);
 
-  /*------------ free all remaining memory -----------*/
 
-
-  /* these can be moved to after Fstat calculation */
-  for(k=0; k<nStacks; k++) {
-    LALFree(FstatVect.data[k].data->data);
-    LALFree(FstatVect.data[k].data);
-  }
-  LALFree(FstatVect.data);
-  LAL_CALL (LALDestroySFTVector(&status, &inputSFTs),&status );
-  LAL_CALL (LALDDestroyVector (&status, &(FstatPar.fdot)), &status);
-  LAL_CALL (LALDDestroyVector (&status, &(houghPar.fdot)), &status);
-  LALFree(stackSFTs.data);
+  /* free memory */
   LALFree(startTsft.data);
   LALFree(mCohSft);
+  LAL_CALL (LALDDestroyVector (&status, &(FstatPar.fdot)), &status);
+  LAL_CALL (LALDDestroyVector (&status, &(houghPar.fdot)), &status);
 
-  /* these can be moved to after hough map calculation */
   /* free peakgrams */
   for (k=0; k<nStacks; k++) 
     LALFree(pgV.pg[k].peak);
@@ -469,6 +472,13 @@ int main( int argc, char *argv[]) {
   LALFree(tStack);
   LAL_CALL( LALDDestroyVectorSequence (&status,  &velStack), &status);
   LAL_CALL( LALDDestroyVectorSequence (&status,  &posStack), &status);
+
+
+  /* print candidates */
+  LAL_CALL ( PrintHoughCandidates ( &status, &houghCand, uvar_fnameout), &status);
+
+
+  /*------------ free all remaining memory -----------*/
 
   /* free ephemeris */
   LALFree(edat->ephemE);
@@ -765,22 +775,35 @@ void ComputeFstatHoughMap(LALStatus *status,
   patchSizeX = 0.5 / ( fBinIni * VEPI ); 
   patchSizeY = 0.5 / ( fBinIni * VEPI ); 
 
-  /* first memory allocation */
+  /*--------------- first memory allocation --------------*/
+  /* look up table vector */
   lutV.length = nStacks;
   lutV.lut = NULL;
   lutV.lut = (HOUGHptfLUT *)LALMalloc(nStacks*sizeof(HOUGHptfLUT));
   
+  /* partial hough map derivative vector */
   phmdVS.length  = nStacks;
   phmdVS.nfSize  = nfSizeCylinder;
   phmdVS.deltaF  = deltaF;
   phmdVS.phmd = NULL;
   phmdVS.phmd=(HOUGHphmd *)LALMalloc(nStacks*nfSizeCylinder*sizeof(HOUGHphmd));
   
+  /* residual spindown trajectory */
   freqInd.deltaF = deltaF;
   freqInd.length = nStacks;
   freqInd.data = NULL;
   freqInd.data =  ( UINT8 *)LALMalloc(nStacks*sizeof(UINT8));
    
+  /* resolution in space of residual spindowns */
+  ht.dFdot.length = 1;
+  ht.dFdot.data = NULL;
+  ht.dFdot.data = (REAL8 *)LALMalloc( ht.dFdot.length * sizeof(REAL8));
+
+  /* the residual spindowns */
+  ht.spinRes.length = 1;
+  ht.spinRes.data = NULL;
+  ht.spinRes.data = (REAL8 *)LALMalloc(ht.spinRes.length*sizeof(REAL8));
+
   /* Case: no spindown */
   parDem.deltaF = deltaF;
   parDem.skyPatch.alpha = alpha;
@@ -819,7 +842,6 @@ void ComputeFstatHoughMap(LALStatus *status,
   while( fBin <= fBinFin){
     INT8 fBinSearch, fBinSearchMax;
     UINT4 i,j; 
-    REAL8UnitPolarCoor sourceLocation;
     	
     parRes.f0Bin =  fBin;      
     TRY( LALHOUGHComputeSizePar( status->statusPtr, &parSize, &parRes ),  status );
@@ -886,15 +908,22 @@ void ComputeFstatHoughMap(LALStatus *status,
     /*-------------- initializing the Total Hough map space ------------*/   
     ht.xSide = xSide;
     ht.ySide = ySide;
+    ht.skyPatch.alpha = alpha;
+    ht.skyPatch.delta = delta;
     ht.mObsCoh = nStacks;
     ht.deltaF = deltaF;
+    ht.spinDem.length = fdot->length;
+    ht.spinDem.data = fdot->data;
+    ht.patchSizeX = patchSizeX;
+    ht.patchSizeY = patchSizeY;
+    ht.dFdot.data[0] = deltaF * f1jump;
     ht.map   = NULL;
     ht.map   = (HoughTT *)LALMalloc(xSide*ySide*sizeof(HoughTT));
     TRY( LALHOUGHInitializeHT( status->statusPtr, &ht, &patch), status); /*not needed */
     
     /*  Search frequency interval possible using the same LUTs */
     fBinSearch = fBin;
-    fBinSearchMax = fBin + parSize.nFreqValid - 1 - floor((nfSizeCylinder - 1 )/2.0);
+    fBinSearchMax = fBin + parSize.nFreqValid - 1 - (nfSizeCylinder - 1 )/2;
      
     /* Study all possible frequencies with one set of LUT */    
     while ( (fBinSearch <= fBinFin) && (fBinSearch < fBinSearchMax) )  { 
@@ -903,26 +932,29 @@ void ComputeFstatHoughMap(LALStatus *status,
       {
 	INT4   n;
 	REAL8  f1dis;
-	
-	ht.spinRes.length = 1;
-	ht.spinRes.data = NULL;
-	ht.spinRes.data = (REAL8 *)LALMalloc(ht.spinRes.length*sizeof(REAL8));
+
+	ht.f0Bin = fBinSearch;
 	    
-	for( n=0; n<= nSpin1Max; n++ ){  /*loop over all values of spindown */
+	/*loop over all values of residual spindown */
+	for( n=-nSpin1Max; n<= nSpin1Max; n++ ){ 
 	  f1dis = - n*f1jump;
+
 	  ht.spinRes.data[0] =  f1dis*deltaF;
 	  
 	  for (j=0; j < (UINT4)nStacks; j++)
 	    freqInd.data[j] = fBinSearch + floor(timeDiffV.data[j]*f1dis + 0.5);
 	  
 	  TRY( LALHOUGHConstructHMT(status->statusPtr, &ht, &freqInd, &phmdVS),status );
+
+	  /* get candidates */
+	  TRY(GetHoughCandidates( status->statusPtr, out, &ht, &patch, 
+				  &parDem, 0.6 * nStacks), status);
 	  	 
 	  /* increment hough map index */ 	  
 	  ++iHmap;
 	  
 	} /* end loop over spindown trajectories */
 
-	LALFree(ht.spinRes.data);
       } /* end of block for calculating total hough maps */
       
 
@@ -930,7 +962,7 @@ void ComputeFstatHoughMap(LALStatus *status,
       ++fBinSearch;
       TRY( LALHOUGHupdateSpacePHMDup(status->statusPtr, &phmdVS, pgV, &lutV), status );
       
-    }   /* closing second while  */
+    }   /* closing while loop over fBinSearch */
     
     fBin = fBinSearch;
     
@@ -955,6 +987,8 @@ void ComputeFstatHoughMap(LALStatus *status,
   } /* closing first while */
   
   /* free remaining memory */
+  LALFree(ht.spinRes.data);
+  LALFree(ht.dFdot.data);
   LALFree(lutV.lut);
   LALFree(phmdVS.phmd);
   LALFree(freqInd.data);
@@ -1224,3 +1258,115 @@ void PrintHmap2file(LALStatus *status,
 }
 
 
+/** get Hough candidates */
+void GetHoughCandidates(LALStatus *status,
+			HoughCandidates *houghCand,
+			const HOUGHMapTotal *ht,
+			const HOUGHPatchGrid  *patch,
+			const HOUGHDemodPar   *parDem,
+			REAL8 houghThreshold)
+{
+  REAL8UnitPolarCoor sourceLocation;
+  REAL8 deltaF, f0, fdot, dFdot, patchSizeX, patchSizeY;
+  INT8 f0Bin;  
+  INT4 nCandidates, i,j, xSide, ySide;
+  
+  INITSTATUS( status, "GetHoughCandidates", rcsid );
+  ATTATCHSTATUSPTR (status);
+
+  deltaF = ht->deltaF;
+  f0Bin = ht->f0Bin;
+  f0 = f0Bin * deltaF;
+
+  fdot = ht->spinDem.data[0] + ht->spinRes.data[0];
+  dFdot = ht->dFdot.data[0];
+
+  xSide = ht->xSide;
+  ySide = ht->ySide;
+
+  patchSizeX = ht->patchSizeX;
+  patchSizeY = ht->patchSizeY;
+
+  for (i = 0; i < ySide; i++){
+    for (j = 0; j < xSide; j++){ 
+      /* if threshold is exceeded then add candidate */
+      if ( ht->map[i*xSide + j] > houghThreshold ) {
+
+	nCandidates = houghCand->nCandidates;
+
+	/* if there isn't enough memory then realloc */
+	if ( nCandidates >= houghCand->length ) {
+	  houghCand->length += 5000;
+	  houghCand->freq = (REAL8 *)LALRealloc( houghCand->freq, 
+						 houghCand->length * sizeof(REAL8));
+	  houghCand->alpha = (REAL8 *)LALRealloc( houghCand->alpha, 
+						 houghCand->length * sizeof(REAL8));
+	  houghCand->delta = (REAL8 *)LALRealloc( houghCand->delta, 
+						 houghCand->length * sizeof(REAL8));
+	  houghCand->dFreq = (REAL8 *)LALRealloc( houghCand->dFreq, 
+						 houghCand->length * sizeof(REAL8));
+	  houghCand->dAlpha = (REAL8 *)LALRealloc( houghCand->dAlpha, 
+						 houghCand->length * sizeof(REAL8));
+	  houghCand->dDelta = (REAL8 *)LALRealloc( houghCand->dDelta, 
+						 houghCand->length * sizeof(REAL8));
+	  houghCand->fdot = (REAL8 *)LALRealloc( houghCand->fdot, 
+						 houghCand->length * sizeof(REAL8));
+	  houghCand->dFdot = (REAL8 *)LALRealloc( houghCand->dFdot, 
+						  houghCand->length * sizeof(REAL8));
+	} /* end of reallocs */
+
+	houghCand->freq[nCandidates] = f0;
+	houghCand->dFreq[nCandidates] = deltaF;
+	
+	houghCand->fdot[nCandidates] = fdot;
+	houghCand->dFdot[nCandidates] = dFdot;
+
+	/* get sky location of pixel */
+	TRY( LALStereo2SkyLocation (status->statusPtr, &sourceLocation, 
+				    j, i, patch, parDem), status);
+
+	houghCand->alpha[nCandidates] = sourceLocation.alpha;
+	houghCand->delta[nCandidates] = sourceLocation.delta;
+
+	houghCand->dAlpha[nCandidates] = patchSizeX / ((REAL8)xSide);
+	houghCand->dDelta[nCandidates] = patchSizeY / ((REAL8)ySide);
+
+	/* increment candidate count */
+	houghCand->nCandidates += 1;
+
+      } /* end if statement */
+    } /* end loop over xSide */
+  } /* end loop over ySide */
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+}
+
+
+
+/** print Hough candidates */
+void PrintHoughCandidates(LALStatus *status,
+			  HoughCandidates *in,
+			  CHAR *fname)
+{
+  FILE  *fp=NULL;   /* Output file */
+  CHAR filename[256]; 
+  INT4 k;
+
+  INITSTATUS( status, "GetHoughCandidates", rcsid );
+  ATTATCHSTATUSPTR (status);
+
+  strcpy(filename, fname);
+  strcat(filename, ".cand");
+  
+  fp = fopen(filename, "w");
+
+  for (k=0; k < in->nCandidates; k++)
+    fprintf(fp, "%e   %e   %g   %g   %g   %g   %e   %e\n", in->freq[k], 
+	    in->dFreq[k], in->alpha[k], in->dAlpha[k], in->delta[k], in->dDelta[k],
+	    in->fdot[k], in->dFdot[k]);
+  
+  fclose(fp);
+
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+}
