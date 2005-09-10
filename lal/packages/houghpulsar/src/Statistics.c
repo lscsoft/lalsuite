@@ -1,15 +1,27 @@
 /*****************************************************************
  *
- *  File Name: Statistics.c
- *
+ *  \file Statistics.c
+ *  \author Krishnan, B
+ *  \brief Module for calculating statistics and histogram of a total Hough map
  *  $Id$
  *
- *  Authors: Badri Krishnan
- *           July 09, 2003
+ * 
  *
- *           Bug in variance corrected on Feb 01, 2004
+ *  Bug in variance corrected on Feb 01, 2004
  *
- ******************************************************************/
+
+\par Decsription
+
+The fuction LALHoughStatistics() calculates the maximum number count, minimum
+   number count, average and standard deviation of a given total Hough map.
+The input HOUGHMapTotal *in is  a total Hough map
+and the output is a structure HoughStats *out.
+
+LALHoughHistogram@ produces a histogram of the number counts in a total Hough map. 
+The input is of type HOUGHMapTotal *in and the output UINT4Vector *out.
+
+
+*/
 
 /************************************<lalVerbatim file="StatisticsCV">
 Authors: Krishnan, B., Sintes, A.M.
@@ -63,7 +75,7 @@ NRCSID (STATISTICSC, "$Id$");
  */
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/* Given a total hough map, this calculates the maximum number count, minimum
+/** Given a total hough map, this calculates the maximum number count, minimum
    number count, average and standard deviation */
 
 /* *******************************  <lalVerbatim file="StatisticsD"> */
@@ -162,7 +174,7 @@ void LALHoughStatistics( LALStatus     *status,
 
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/* given a total hough map, this function produces a histogram of
+/** given a total hough map, this function produces a histogram of
    the number counts */
 /* *******************************  <lalVerbatim file="StatisticsD"> */
 void LALHoughHistogram(LALStatus      *status,
