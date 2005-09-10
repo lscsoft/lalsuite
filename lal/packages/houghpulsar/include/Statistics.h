@@ -1,12 +1,21 @@
 /* ***************************************************
- *  File Name: Statistics.h
- *
- *  Author: Krishnan, B.
+ *  \file Statistics.h
+ *  \brief Functions prototypes and structures for calculating statistical properties of Hough maps
+ *  \author Krishnan, B.
  *
  *  $Id$ 
  *
  *  Created by Badri Krishnan on July 09, 2003
-***************************************************** */
+
+
+\par Description 
+
+Given a total Hough map, the function LALHoughStatistics() calculates  
+the maximum number count, minimum number count, average and 
+standard deviation of the number counts in a given Hough map.  The 
+function LALHoughHistogram() produces a histogram of the number counts.
+
+*/
 
 
 /* ***********************************<lalVerbatim file="StatisticsHV">
@@ -119,13 +128,14 @@ NRCSID( STATISTICSH, "$Id$");
  *   Structure, enum, union, etc., typdefs.
  */
 
+/** Structure for storing statistical information about a Hough map */
 typedef struct tagHoughStats {
-  UINT4    maxCount;
-  UINT2    maxIndex[2];
-  UINT4    minCount; 
-  UINT2    minIndex[2];
-  REAL8    avgCount;
-  REAL8    stdDev;
+  UINT4    maxCount;    /**< maximum number count */
+  UINT2    maxIndex[2]; /**< loctaion of maximum number count */
+  UINT4    minCount;    /**< minimum number count */
+  UINT2    minIndex[2]; /**< location of minimum number count */
+  REAL8    avgCount;    /**< average number count */
+  REAL8    stdDev;      /**< standard deviation of number counts */
 } HoughStats;
 
 /*
@@ -136,14 +146,15 @@ typedef struct tagHoughStats {
 /* ***************************************************
  *  Functions Declarations (i.e., prototypes).
  */
- 
+/** Calculates max, min, average and standard deviation of Hough number counts */
 void LALHoughStatistics(LALStatus      *status,
-		        HoughStats     *out, /* output containing statistics */ 
-		        HOUGHMapTotal  *in); /* hough map */
+		        HoughStats     *out, /**< output containing statistics */ 
+		        HOUGHMapTotal  *in); /**< hough map */
 
+/** Calculates number count histogram */
 void LALHoughHistogram(LALStatus       *status, 
-		       UINT4Vector     *out,  /* histogram */ 
-		       HOUGHMapTotal   *in);  /* hough map*/
+		       UINT4Vector     *out,  /**< histogram */ 
+		       HOUGHMapTotal   *in);  /**< hough map*/
 
 /* ****************************************************** */
 
