@@ -545,7 +545,7 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 	  (*thisEvent)->bandwidth    = strtemplate[m].f-CLA.fbankstart;				     
 	  (*thisEvent)->snr          = maximum;
 	  (*thisEvent)->amplitude   = vector->data[pmax]/strtemplate[m].norm;
-	  (*thisEvent)->confidence   = -abs((*thisEvent)->amplitude); /* FIXME */
+	  (*thisEvent)->confidence   = -fabs((*thisEvent)->amplitude); /* FIXME */
 	  (*thisEvent)->clusterT   = CLA.cluster;
 	  
 	}
