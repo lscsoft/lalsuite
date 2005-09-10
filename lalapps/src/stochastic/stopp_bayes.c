@@ -135,9 +135,9 @@ INT4 main(INT4 argc, CHAR *argv[])
   REAL8 freq_ref = 100;
   REAL8 omega_numerator;
   REAL8 omega_denominator;
-  REAL8 sigma_denominator;
+  REAL8 sigma2_denominator;
   REAL8 omega_hat[100];
-  REAL8 sigma_omega_hat[100];
+  REAL8 sigma2_omega_hat[100];
 
   /* program option variables */
   CHAR *outputFileName = NULL;
@@ -353,7 +353,7 @@ INT4 main(INT4 argc, CHAR *argv[])
         /* initialise numerator */
         omega_numerator = 0;
         omega_denominator = 0;
-        sigma_denominator = 0;
+        sigma2_denominator = 0;
 
         /* loop over segments */
         for (thisStoch = stochHead; thisStoch; thisStoch = thisStoch->next)
@@ -369,7 +369,7 @@ INT4 main(INT4 argc, CHAR *argv[])
                 thisStoch->cc_sigma)) * pow((freq/freq_ref), 2 * alpha);
 
           /* sigma^2_{\hat{\Omega}_R} */
-          sigma_denominator += (1. / (thisStoch->cc_sigma * \
+          sigma2_denominator += (1. / (thisStoch->cc_sigma * \
                 thisStoch->cc_sigma)) * pow((freq/freq_ref), 2 * alpha);
         }
 
@@ -378,13 +378,13 @@ INT4 main(INT4 argc, CHAR *argv[])
             omega_denominator);
 
         /* construct sigma^2_{\hat{\Omega}_R} */
-        sigma_omega_hat[j] = 1. / (stochHead->duration.gpsSeconds * \
-              stochHead->duration.gpsSeconds * sigma_denominator);
+        sigma2_omega_hat[j] = 1. / (stochHead->duration.gpsSeconds * \
+              stochHead->duration.gpsSeconds * sigma2_denominator);
 
         /* construct pdf */
         pdf_powerlaw[i][j] = exp(-0.5 * ((omega - omega_hat[j]) / \
-              sqrt(sigma_omega_hat[j])) * ((omega - omega_hat[j]) / \
-                sqrt(sigma_omega_hat[j])));
+              sqrt(sigma2_omega_hat[j])) * ((omega - omega_hat[j]) / \
+                sqrt(sigma2_omega_hat[j])));
       }
     }
   }
@@ -406,7 +406,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   {
     alpha = min_alpha + ((j/99.) * (max_alpha - min_alpha));
     fprintf(omega_out, "%e %e\n", alpha, omega_hat[j]);
-    fprintf(sigma_out, "%e %e\n", alpha, sqrt(sigma_omega_hat[j]));
+    fprintf(sigma_out, "%e %e\n", alpha, sqrt(sigma2_omega_hat[j]));
   }
 
   /* close files */
