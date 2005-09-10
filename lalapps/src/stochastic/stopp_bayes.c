@@ -383,8 +383,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 
         /* construct pdf */
         pdf_powerlaw[i][j] = exp(-0.5 * ((omega - omega_hat[j]) / \
-              sigma_omega_hat[j]) * ((omega - omega_hat[j]) / \
-                sigma_omega_hat[j]));
+              sqrt(sigma_omega_hat[j])) * ((omega - omega_hat[j]) / \
+                sqrt(sigma_omega_hat[j])));
       }
     }
   }
