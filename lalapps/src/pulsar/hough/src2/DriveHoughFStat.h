@@ -136,6 +136,7 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 
   /** parameters for calculating Hough Maps */
   typedef struct tagHoughParams {
+    REAL8 houghThr;            /**< number count threshold */
     REAL8 tStart;              /**< start time of first stack */
     INT8 fBinIni;              /**< start frequency */
     INT8 fBinFin;              /**< frequency band */
@@ -212,6 +213,11 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
   void PrintHoughCandidates(LALStatus *status,
 			    HoughCandidates *in,
 			    CHAR *fname);
+
+
+  void GetLoudestFstat(LALStatus *status,
+		       REAL8 *max,
+		       REAL8FrequencySeries *Fstat);
   
 #ifdef  __cplusplus
 }                /* Close C++ protection */
