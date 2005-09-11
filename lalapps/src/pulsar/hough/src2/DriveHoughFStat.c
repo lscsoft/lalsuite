@@ -21,12 +21,87 @@
 /** 
  * \author Badri Krishnan, Alicia Sintes
  * \file DriveHoughFStat.c
- * \brief
- * Puts together the F-statistic and Hough routines.  It calculates F-stat values
- * for different time segments and combines them semi-coherently using the
- * Hough transform
- *                                                                          
- ****/
+ * \brief Program for calculating F-stat values for different time segments 
+   and combining them semi-coherently using the Hough transform, and follows 
+   up candidates.
+
+   \par  Description
+   
+   This code is a hierarchical code to look for unknown gravitational wave 
+   pulsars. It scans through the parameter space using a less sensitive but 
+   computationally inexpensive search and follows up the candidates using 
+   more sensitive methods.  
+
+   \par Algorithm
+   
+   Currently the code does a single stage hierarchical search using the Hough
+   algorithm and follows up the candidates using a full coherent integration.  
+
+   - The user specifies a directory containing SFTs, and the number of \e stacks 
+     that this must be broken up into.  
+     At present two ways of breaking up the SFTs into stacks are supported. 
+     These are equivalent if there are no gaps in the data.  
+
+       - Either the SFTs are divided up equally
+       - or the total time spanned by the data is broken up equally
+
+
+   - The user specifies a region in parameter space to search over.  At present, 
+     only a single sky-location and spindown are allowed, though a frequency range 
+     can be specified.  The F-statistic is calculated for each stack at the chosen
+     sky-position, spindown, and frequency range.  
+
+   - A threshold is set on the F-statistic to convert the 
+     F-statistic vector into a vector of 0s and 1s known as a \e peakgram -- there 
+     is one peakgram for each stack.
+
+   - The peakgrams are combined using the Hough transform.
+
+   - The Hough part of the search constructs a grid in a small patch around the 
+     chosen sky-position and spindown and stacks up the different segments in frequency
+     following the \e master equation 
+     \f[
+        f(t) - F_0(t) = \xi(t).(\hat{n} - \hat{n}_0)
+     \f]	
+     where 
+     \f[
+        F_0 = f_0 + \sum \Delta f_k (\Delta t)^k \over k!
+     \f]
+     Here \f$ \hat{n}_0 \f$ is the sky-point at which the F-statistic is calculated
+     and \f$ \Delta f_k \f$ is the \e residual spindown parameter.  For details see
+     Phys.Rev.D 70, 082001 (2004).  The size of the patch depends on the validity of
+     the above master equation.  
+
+   - The output of the Hough search is a \e number \e count at point of the grid. 
+     A threshold is set on the number count, leading to candidates in parameter space.
+
+   - These candidates are followed up using a second set of SFTs (also specified by
+     the user).  The follow up consists of a full coherent integration, i.e. the F-statistic
+     is calculated for the whole set of SFTs without breaking them up into stacks. 
+     A threshold can be set on the F-statistic to get the final list of candidates.  
+
+
+   \par Immediate to-do list
+
+   - The reference time is not yet handled correctly -- ok if it the default, i.e. the start 
+     time of the first SFT but not in general
+
+   \par Longer term
+   
+   - What is the best grid for calculating the F-statistic grid?  At first glance, the 
+     Hough patch and the metric F-statistic patch do not seem to be compatible.  If we
+     use the Hough patches to break up the sky, it could be far from optimal.  What is 
+     the exact connection between the two grids?  
+
+   - Implement multiple semi-coherent stages
+
+   - Get timings and optimize the pipeline parameters
+
+   - Incorporate stack slide as an alternative to Hough in the semi-coherent stages
+
+   - ....
+
+ */
 
 
 
