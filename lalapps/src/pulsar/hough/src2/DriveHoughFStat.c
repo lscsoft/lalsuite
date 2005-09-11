@@ -22,13 +22,13 @@
  * \author Badri Krishnan, Alicia Sintes
  * \file DriveHoughFStat.c
  * \brief Program for calculating F-stat values for different time segments 
-   and combining them semi-coherently using the Hough transform, and follows 
-   up candidates.
+   and combining them semi-coherently using the Hough transform, and following 
+   up candidates using a more sensitive search.
 
    \par  Description
    
-   This code is a hierarchical code to look for unknown gravitational wave 
-   pulsars. It scans through the parameter space using a less sensitive but 
+   This code implements a hierarchical strategy to look for unknown gravitational 
+   wave pulsars. It scans through the parameter space using a less sensitive but 
    computationally inexpensive search and follows up the candidates using 
    more sensitive methods.  
 
@@ -40,11 +40,9 @@
    - The user specifies a directory containing SFTs, and the number of \e stacks 
      that this must be broken up into.  
      At present two ways of breaking up the SFTs into stacks are supported. 
-     These are equivalent if there are no gaps in the data.  
-
-       - Either the SFTs are divided up equally
-       - or the total time spanned by the data is broken up equally
-
+     These are equivalent if there are no gaps in the data. Either the SFTs are 
+     divided up equally among the stacks, or the total time spanned by the data is 
+     broken up equally
 
    - The user specifies a region in parameter space to search over.  At present, 
      only a single sky-location and spindown are allowed, though a frequency range 
@@ -65,7 +63,7 @@
      \f]	
      where 
      \f[
-        F_0 = f_0 + \sum \Delta f_k (\Delta t)^k \over k!
+        F_0 = f_0 + \sum \Delta  f_k {(\Delta t)^k \over k!}
      \f]
      Here \f$ \hat{n}_0 \f$ is the sky-point at which the F-statistic is calculated
      and \f$ \Delta f_k \f$ is the \e residual spindown parameter.  For details see
@@ -96,6 +94,8 @@
    - Implement multiple semi-coherent stages
 
    - Get timings and optimize the pipeline parameters
+
+   - Checkpointing for running on Einstein@Home
 
    - Incorporate stack slide as an alternative to Hough in the semi-coherent stages
 
