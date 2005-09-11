@@ -214,35 +214,85 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 
       Xalpha_k = Xalpha + k0 - freqIndex0;  /* first frequency-bin in sum */
       x0 = (REAL4)(xhat_alpha - (REAL8)k0);	/* first xhat-value in the loop */
-      /* count down 2*Dterms values */
-      for ( k = 2 * Dterms; k != 0;  k -- )
+
+      /* we branch now (instead of inside the central loop)
+       * depending on wether x0 can ever become SMALL in the loop or not, 
+       * because it requires special treatment in the Dirichlet kernel
+       * [We use that fact here that xhat_alpha > 0 ! (see above)] 
+       */
+      if ( xhat_alpha - (UINT4)(xhat_alpha + 0.5) < LD_SMALL ) /* close to an integer? */
 	{
-	  REAL4 realP, imagP;	/* real and imaginary parts of Dirichlet-kernel P_alpha_k */
-	  COMPLEX8 Xa = *Xalpha_k;
-	  REAL4 xinv = OOTWOPI_FLOAT / x0;
+	  /* count down 2*Dterms values */
+	  for ( k = 2 * Dterms; k != 0;  k -- )
+	    {
+	      REAL4 realP, imagP;	/* real and imaginary parts of Dirichlet-kernel P_alpha_k */
+	      COMPLEX8 Xa = *Xalpha_k;
+	      REAL4 xinv;
+	      
+	      /* calculate Dirichlet-kernel: P_alpha_k */
+	      if( fabs(x0) <  LD_SMALL) /* If x0 is small: correct x->0 limit : P_apha_k = 1 */
+		{
+		  realXP += Xa.re;
+		  imagXP += Xa.im;
+		} /* x0 too near zero */      
+	      else 	
+		{ /* safe to invert x0 */
+		  xinv = OOTWOPI_FLOAT / x0;
+		  realP = sinx * xinv;
+		  imagP = cosxm1 * xinv;
+		  
+		  /* calculate P_alpha_k * X_alpha_k */
+		  realXP += realP * Xa.re - imagP * Xa.im;
+		  imagXP += imagP * Xa.re + realP * Xa.im;
+		} /* x0 not near zero */
+	      
+	      Xalpha_k ++;	/* point to next frequency-bin */
+	      x0 -- ;	/* x0-value for next iteration */
+	      
+	    } /* for k=kstar-Dterms to kstar+Dterms */
+	  
+	} /* if x could become close to 0 */
+      else
+	{ /* normal loop: no danger of x0 becoming zero.. */
+	  
+	  /* count down 2*Dterms values */
+	  for ( k = 2 * Dterms; k != 0;  k -- )
+	    {
+	      REAL4 realP, imagP;	/* real and imaginary parts of Dirichlet-kernel P_alpha_k */
+	      COMPLEX8 Xa = *Xalpha_k;
+	      REAL4 xinv = OOTWOPI_FLOAT / x0;
+	      
+	      /* calculate P_alpha_k */
+	      realP = sinx * xinv;
+	      imagP = cosxm1 * xinv;
+	      
+	      /* calculate P_alpha_k * X_alpha_k */
+	      realXP += realP * Xa.re - imagP * Xa.im;
+	      imagXP += imagP * Xa.re + realP * Xa.im;
+	      
+	      Xalpha_k ++;	/* point to next frequency-bin */
+	      x0 -- ;	/* x0-value for next iteration */
+	      
+	    } /* for k=kstar-Dterms to kstar+Dterms */
+	  
+	} /* normal loop: no danger of x0 becoming zero */
 
-	  /* calculate P_alpha_k */
-	  realP = sinx * xinv;
-	  imagP = cosxm1 * xinv;
-
-	  /* calculate P_alpha_k * X_alpha_k */
-	  realXP += realP * Xa.re - imagP * Xa.im;
-	  imagXP += imagP * Xa.re + realP * Xa.im;
-
-	  Xalpha_k ++;	/* point to next frequency-bin */
-	  x0 -- ;	/* x0-value for next iteration */
-
-	} /* for k=kstar-Dterms to kstar+Dterms */
-      
       realQXP = realQ * realXP - imagQ * imagXP;
       imagQXP = realQ * imagXP + imagQ * realXP;
-
+      
       /* we're done: ==> combine these into Fa and Fb */
       Fa.re += a * realQXP;
       Fa.im += a * imagQXP;
       
       Fb.re += b * realQXP;
       Fb.im += b * imagQXP;
+      
+      if ( !isnormal(Fa.re) || !isnormal(Fa.im) || !isnormal(Fb.re) || !isnormal(Fb.im) )
+	{
+	  LALPrintError("\nnon-normal number encountered in SFT-loop alpha=%d!\n", alpha );
+	  LALPrintError("Fa = %f + i %f, Fb = %f + i %f\n\n", Fa.re, Fa.im, Fb.re, Fb.im );
+	  XLAL_ERROR("XLALComputeFaFb", XLAL_ERANGE);
+	}
 
     } /* for alpha < numSFTs */
       
