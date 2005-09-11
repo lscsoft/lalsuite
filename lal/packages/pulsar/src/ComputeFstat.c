@@ -63,7 +63,7 @@ int sin_cos_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x); /* LUT-calculation of
 /*==================== FUNCTION DEFINITIONS ====================*/
 
 
-#define LD_SMALL        (1.0e-9 / LAL_TWOPI)	/**< "small" number */
+#define LD_SMALL4       (1.0e-6)		/**< "small" number for REAL4*/
 #define OOTWOPI         (1.0 / LAL_TWOPI)	/**< 1/2pi */
 
 #define TWOPI_FLOAT     6.28318530717958f  	/**< single-precision 2*pi */
@@ -141,6 +141,8 @@ XLALComputeFaFb ( Fcomponents *FaFb,
       REAL4 realQ, imagQ;	/* Re and Im of Q = e^{-i y} */
       REAL4 realQXP, imagQXP;	/* Re/Im of Q_alpha XP_alpha */
       UINT4 k0, k1;
+      REAL4 x0_remainder;
+
       /* ----- calculate x(alpha,0) and y(alpha) */
       {
 	UINT4 s; 		/* loop-index over spindown-order */
@@ -220,7 +222,8 @@ XLALComputeFaFb ( Fcomponents *FaFb,
        * because it requires special treatment in the Dirichlet kernel
        * [We use that fact here that xhat_alpha > 0 ! (see above)] 
        */
-      if ( xhat_alpha - (UINT4)(xhat_alpha + 0.5) < LD_SMALL ) /* close to an integer? */
+      x0_remainder = (REAL4)( xhat_alpha - kstar );
+      if ( x0_remainder < LD_SMALL4 ) /* too close to an integer? */
 	{
 	  /* count down 2*Dterms values */
 	  for ( k = 2 * Dterms; k != 0;  k -- )
@@ -230,7 +233,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 	      REAL4 xinv;
 	      
 	      /* calculate Dirichlet-kernel: P_alpha_k */
-	      if( fabs(x0) <  LD_SMALL) /* If x0 is small: correct x->0 limit : P_apha_k = 1 */
+	      if( fabs(x0) <  LD_SMALL4 ) /* If x0 is small: correct x->0 limit : P_apha_k = 1 */
 		{
 		  realXP += Xa.re;
 		  imagXP += Xa.im;
