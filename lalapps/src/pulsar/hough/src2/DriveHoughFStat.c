@@ -115,6 +115,9 @@ RCSID( "$Id$");
 
 extern int lalDebugLevel;
 
+BOOLEAN uvar_printMaps; /* global variable for printing Hough maps */
+BOOLEAN uvar_printStats; /* global variable for calculating Hough map stats */
+
 /* default values for input variables */
 #define EARTHEPHEMERIS "../src/earth00-04.dat" /**< Default location of earth ephemeris */
 #define SUNEPHEMERIS "../src/sun00-04.dat"   /**< Default location of sun ephemeris */
@@ -129,7 +132,7 @@ extern int lalDebugLevel;
 #define NFSIZE  21    /**< Default size of hough cylinder of look up tables */
 #define DTERMS 8     /**< Default number of dirichlet kernel terms for calculating Fstat */
 #define FSTATTHRESHOLD 2.6  /**< Default threshold on Fstatistic for peak selection */
-#define SFTDIRECTORY "/local_data/badkri/fakesfts/"  /**< Default directory containing sfts */
+#define SFTDIRECTORY "/home/badkri/fakesfts/"  /**< Default directory containing sfts */
 #define FNAMEOUT "./temp/OutHoughFStat"  /**< Default output file basename */
 
 int main( int argc, char *argv[]) {
@@ -179,7 +182,6 @@ int main( int argc, char *argv[]) {
   /* user variables */
   BOOLEAN uvar_help; /* true if -h option is given */
   BOOLEAN uvar_log; /* logging done if true */
-  BOOLEAN uvar_printMaps; /* decide if hough maps are to be printed */
   REAL8 uvar_alpha, uvar_delta;  /* sky-location angles */
   REAL8 uvar_fdot; /* first spindown value */
   REAL8 uvar_fStart, uvar_fBand;
@@ -208,6 +210,7 @@ int main( int argc, char *argv[]) {
   uvar_help = FALSE;
   uvar_log = FALSE;
   uvar_printMaps = FALSE;
+  uvar_printStats = FALSE;
   uvar_nStacks = NSTACKS;
   uvar_Dterms = DTERMS;
   uvar_alpha = ALPHA;
@@ -259,6 +262,7 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar (   &status, "SSBprecision",	   0,  UVAR_DEVELOPER,"Precision for SSB transform.",  &uvar_SSBprecision),    &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "nfSize",           0,  UVAR_DEVELOPER,"No.of LUTs to keep in memory",  &uvar_nfSize),          &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printMaps",        0,  UVAR_DEVELOPER,"Print Hough maps",              &uvar_printMaps),       &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printStats",       0,  UVAR_DEVELOPER,"Print Hough map statistics",    &uvar_printStats),      &status);  
 
   /* read all command line variables */
   LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
@@ -528,11 +532,7 @@ int main( int argc, char *argv[]) {
   /* set up the Hough parameters */
   if ( ! LALUserVarWasSet(&uvar_houghThr))
     uvar_houghThr = 0.65 * nStacks;
-  houghPar.outfileMaps = NULL;
-  if ( uvar_printMaps ) {
-    houghPar.outfileMaps = (CHAR *)LALMalloc( 256 * sizeof(CHAR));
-    strcpy(houghPar.outfileMaps, uvar_fnameout);
-  }
+  houghPar.outBaseName = uvar_fnameout;
   houghPar.houghThr = uvar_houghThr;
   houghPar.tStart = tStart;
   houghPar.fBinIni = fHoughBinIni;
@@ -741,6 +741,9 @@ int main( int argc, char *argv[]) {
       
     } /* end loop over candidates */
 
+    /* print loudest event */
+    fprintf(stdout, "Loudest Candidate has F = %e\n", fStatMax);
+
     /* we are done with follow-up */
     /*free sfts */
     LALFree(startTsft.data);
@@ -753,7 +756,7 @@ int main( int argc, char *argv[]) {
  } /* end block for follow-up stage */ 
 
 
-  fprintf(stdout, "Loudest Candidate has F = %e\n", fStatMax);
+
 
   /*------------ free all remaining memory -----------*/
   /* free candidates */
@@ -766,9 +769,6 @@ int main( int argc, char *argv[]) {
   LALFree(houghCand.fdot);
   LALFree(houghCand.dFdot);
   
-  if ( uvar_printMaps )
-    LALFree(houghPar.outfileMaps);
-
   LAL_CALL (LALDDestroyVector (&status, &(FstatPar.fdot)), &status); 
 
   /* free ephemeris */
@@ -1021,15 +1021,15 @@ void ComputeFstatHoughMap(LALStatus *status,
 {
 
   /* hough structures */
-  static HOUGHMapTotal ht;
-  static HOUGHptfLUTVector   lutV; /* the Look Up Table vector*/
-  static PHMDVectorSequence  phmdVS;  /* the partial Hough map derivatives */
-  static UINT8FrequencyIndexVector freqInd; /* for trajectory in time-freq plane */
-  static HOUGHResolutionPar parRes;   /* patch grid information */
-  static HOUGHPatchGrid  patch;   /* Patch description */ 
-  static HOUGHParamPLUT  parLut;  /* parameters needed to build lut  */
-  static HOUGHDemodPar   parDem;  /* demodulation parameters */
-  static HOUGHSizePar    parSize; 
+  HOUGHMapTotal ht;
+  HOUGHptfLUTVector   lutV; /* the Look Up Table vector*/
+  PHMDVectorSequence  phmdVS;  /* the partial Hough map derivatives */
+  UINT8FrequencyIndexVector freqInd; /* for trajectory in time-freq plane */
+  HOUGHResolutionPar parRes;   /* patch grid information */
+  HOUGHPatchGrid  patch;   /* Patch description */ 
+  HOUGHParamPLUT  parLut;  /* parameters needed to build lut  */
+  HOUGHDemodPar   parDem;  /* demodulation parameters */
+  HOUGHSizePar    parSize; 
 
   UINT2  xSide, ySide, maxNBins, maxNBorders;
   INT8  fBinIni, fBinFin, fBin;
@@ -1041,6 +1041,11 @@ void ComputeFstatHoughMap(LALStatus *status,
   LIGOTimeGPSVector   *ts;
   REAL8Vector timeDiffV;
   REAL8 houghThr;
+  UINT4Vector hist; /* histogram vector */ 
+  UINT4Vector histTotal; /* total histogram vector */
+  HoughStats stats; /* statistics struct */
+  CHAR *fileStats = NULL;
+  FILE *fpStats = NULL;
 
   INITSTATUS( status, "ComputeFstatHoughMap", rcsid );
   ATTATCHSTATUSPTR (status);
@@ -1115,6 +1120,27 @@ void ComputeFstatHoughMap(LALStatus *status,
   parRes.linErr = LINERR;
   parRes.vTotC = VTOT;
 
+
+  /* memory allocation for histogram and opening stats file*/
+  if ( uvar_printStats ) {
+    hist.length = nStacks+1;
+    histTotal.length = nStacks+1;
+    hist.data = NULL;
+    histTotal.data = NULL;
+    hist.data = (UINT4 *)LALMalloc((nStacks+1)*sizeof(UINT4));
+    histTotal.data = (UINT4 *)LALMalloc((nStacks+1)*sizeof(UINT4));
+    { 
+      UINT4   j;
+      for(j=0; j< histTotal.length; ++j) 
+	histTotal.data[j]=0; 
+    }
+    fileStats = NULL;
+    fileStats = (CHAR *)LALMalloc( 256 * sizeof(CHAR));
+    strcpy( fileStats, params->outBaseName);
+    strcat( fileStats, "stats");
+    fpStats = fopen(fileStats, "w");
+  }
+
   /* calculate time differences from start of observation time */
   timeDiffV.length = nStacks;
   timeDiffV.data = (REAL8 *)LALMalloc( nStacks * sizeof(REAL8));
@@ -1138,6 +1164,7 @@ void ComputeFstatHoughMap(LALStatus *status,
   while( fBin <= fBinFin){
     INT8 fBinSearch, fBinSearchMax;
     UINT4 i,j; 
+    REAL8UnitPolarCoor sourceLocation;
     	
     parRes.f0Bin =  fBin;      
     TRY( LALHOUGHComputeSizePar( status->statusPtr, &parSize, &parRes ),  status );
@@ -1245,11 +1272,28 @@ void ComputeFstatHoughMap(LALStatus *status,
 	  /* get candidates */
 	  TRY(GetHoughCandidates( status->statusPtr, out, &ht, &patch, 
 				  &parDem, houghThr), status);
-	  	 
 
+
+	  /* calculate statistics and histogram */
+	  if ( uvar_printStats ) {
+	    TRY( LALHoughStatistics ( status->statusPtr, &stats, &ht), status );
+	    TRY( LALStereo2SkyLocation ( status->statusPtr, &sourceLocation, 
+					stats.maxIndex[0], stats.maxIndex[1], 
+					&patch, &parDem), status);
+
+	    fprintf(fpStats, "%d %f %f %d %d %f %f %f %g \n",
+		    iHmap, sourceLocation.alpha, sourceLocation.delta,
+		    stats.maxCount, stats.minCount, stats.avgCount,stats.stdDev,
+		    fBinSearch*deltaF,  ht.spinRes.data[0] );
+
+	    TRY( LALHoughHistogram ( status->statusPtr, &hist, &ht), status);
+	    for(j=0; j< histTotal.length; ++j) 
+	      histTotal.data[j]+=hist.data[j]; 
+	  }
+	  
 	  /* print hough map */
-	  if ( params->outfileMaps != NULL )
-	    TRY( PrintHmap2file( status->statusPtr, &ht, params->outfileMaps, iHmap), status);
+	  if ( uvar_printMaps )
+	    TRY( PrintHmap2file( status->statusPtr, &ht, params->outBaseName, iHmap), status);
 
 	  /* increment hough map index */ 	  
 	  ++iHmap;
@@ -1286,6 +1330,7 @@ void ComputeFstatHoughMap(LALStatus *status,
     }
     
   } /* closing first while */
+
   
   /* free remaining memory */
   LALFree(ht.spinRes.data);
@@ -1294,6 +1339,21 @@ void ComputeFstatHoughMap(LALStatus *status,
   LALFree(phmdVS.phmd);
   LALFree(freqInd.data);
   LALFree(timeDiffV.data);
+
+  if (uvar_printStats ) {
+    
+    /* print the histogram */
+    TRY( PrintHistogram(status->statusPtr, &histTotal, params->outBaseName), status);
+
+    /* close stats file */
+    LALFree(fileStats);
+    fclose(fpStats);
+    
+    /* free histograms */
+    LALFree(hist.data);
+    LALFree(histTotal.data);
+  }
+
   DETATCHSTATUSPTR (status);
   RETURN(status);
 
@@ -1697,4 +1757,32 @@ void GetLoudestFstat(LALStatus *status,
 
   DETATCHSTATUSPTR (status);
   RETURN(status);
+}
+
+
+/** print hough histogram to a file */
+void PrintHistogram( LALStatus *status,
+		     UINT4Vector *hist, 
+		     CHAR *fnameOut)
+{
+
+  FILE  *fp=NULL;   /* Output file */
+  char filename[256];
+  UINT4  i ;
+ 
+  INITSTATUS( status, "GetHoughCandidates", rcsid );
+  ATTATCHSTATUSPTR (status);
+
+  strcpy(  filename, fnameOut);
+  strcat(  filename, "histo");
+  fp=fopen(filename,"w");
+
+  for (i=0; i < hist->length; i++)
+    fprintf(fp,"%d  %d\n", i, hist->data[i]);
+  
+  fclose( fp );  
+  
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+
 }

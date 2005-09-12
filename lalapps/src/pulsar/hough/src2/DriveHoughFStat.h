@@ -61,6 +61,7 @@
 #include <lal/LALHough.h> 
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/ComputeFstat.h>
+#include <lal/Statistics.h>
 
 #include <lalapps.h>
 
@@ -148,7 +149,7 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
     REAL8 alpha;               /**< right ascension */
     REAL8 delta;               /**< declination */
     REAL8Vector *fdot;         /**< spindown parameters */
-    CHAR *outfileMaps;         /**< file for writing output -- if chosen */
+    CHAR *outBaseName;         /**< file for writing output -- if chosen */
   } HoughParams;
   
 
@@ -219,6 +220,11 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
   void GetLoudestFstat(LALStatus *status,
 		       REAL8 *max,
 		       REAL8FrequencySeries *Fstat);
+
+
+  void PrintHistogram(LALStatus *status,
+		      UINT4Vector *hist, 
+		      CHAR *fnameOut);
   
 #ifdef  __cplusplus
 }                /* Close C++ protection */
