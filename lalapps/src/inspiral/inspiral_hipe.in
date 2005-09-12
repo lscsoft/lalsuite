@@ -1013,7 +1013,7 @@ for ifo in ifo_list:
   
   data[ifo] = pipeline.ScienceData() 
   if segments[ifo]:
-    data[ifo].read(segments[ifo],length) 
+    data[ifo].read(segments[ifo],length + 2 * pad) 
     data[ifo].make_chunks(length,overlap,playground_only,0,overlap/2,pad)
     data[ifo].make_chunks_from_unused(length,overlap/2,playground_only,
         0,0,overlap/2,pad)
