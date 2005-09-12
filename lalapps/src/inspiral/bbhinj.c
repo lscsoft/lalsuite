@@ -696,9 +696,9 @@ int main( int argc, char *argv[] )
 
       /* compute random longitude and latitude */
       LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
-      this_inj->longitude = LAL_PI * u - LAL_PI_2 ;
+      this_inj->latitude = asin( 2.0 * u - 1.0 ) ;
       LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
-      this_inj->latitude = LAL_TWOPI * u ;
+      this_inj->longitude = LAL_TWOPI * u ;
      
 
 #if 0
