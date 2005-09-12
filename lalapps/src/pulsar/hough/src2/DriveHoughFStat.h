@@ -148,6 +148,7 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
     REAL8 alpha;               /**< right ascension */
     REAL8 delta;               /**< declination */
     REAL8Vector *fdot;         /**< spindown parameters */
+    CHAR *outfileMaps;         /**< file for writing output -- if chosen */
   } HoughParams;
   
 

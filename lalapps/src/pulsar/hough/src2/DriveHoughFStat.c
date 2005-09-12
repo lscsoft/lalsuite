@@ -116,21 +116,21 @@ RCSID( "$Id$");
 extern int lalDebugLevel;
 
 /* default values for input variables */
-#define EARTHEPHEMERIS "../src/earth00-04.dat"
-#define SUNEPHEMERIS "../src/sun00-04.dat"
-#define NSTACKS 10    /**< number of stacks */
-#define IFO 2         /**<  detector, 1:GEO, 2:LLO, 3:LHO */
-#define BLOCKSRNGMED 101 /**< Running median window size */
-#define FSTART 255.0   /**< start search frequency */
-#define FBAND 0.001    /**< search band */
-#define FDOT 0.0      /**< first spindown */
-#define ALPHA 1.57    /**< sky location -- right ascension */
-#define DELTA  0.0    /**< sky location -- declination */
-#define NFSIZE  21    /**< size of hough cylinder of look up tables */
-#define DTERMS 8     /**< number of dirichlet kernel terms for calculating Fstat */
-#define FSTATTHRESHOLD 2.6  /**< threshold on Fstatistic for peak selection */
-#define SFTDIRECTORY "/home/badkri/fakesfts/"  /**< directory containing sfts */
-#define FNAMEOUT "./OutHoughFStat"  /**< output file basename */
+#define EARTHEPHEMERIS "../src/earth00-04.dat" /**< Default location of earth ephemeris */
+#define SUNEPHEMERIS "../src/sun00-04.dat"   /**< Default location of sun ephemeris */
+#define NSTACKS 10    /**< Default number of stacks */
+#define IFO 2         /**<  Default detector, 1:GEO, 2:LLO, 3:LHO  */
+#define BLOCKSRNGMED 101 /**< Default running median window size */
+#define FSTART 255.0   /**< Default Start search frequency */
+#define FBAND 0.001    /**< Default search band */
+#define FDOT 0.0      /**< Default value of first spindown */
+#define ALPHA 1.57    /**< Default sky location -- right ascension */
+#define DELTA  0.0    /**< Default sky location -- declination */
+#define NFSIZE  21    /**< Default size of hough cylinder of look up tables */
+#define DTERMS 8     /**< Default number of dirichlet kernel terms for calculating Fstat */
+#define FSTATTHRESHOLD 2.6  /**< Default threshold on Fstatistic for peak selection */
+#define SFTDIRECTORY "/local_data/badkri/fakesfts/"  /**< Default directory containing sfts */
+#define FNAMEOUT "./temp/OutHoughFStat"  /**< Default output file basename */
 
 int main( int argc, char *argv[]) {
   LALStatus status = blank_status;	/* initialize status */
@@ -179,6 +179,7 @@ int main( int argc, char *argv[]) {
   /* user variables */
   BOOLEAN uvar_help; /* true if -h option is given */
   BOOLEAN uvar_log; /* logging done if true */
+  BOOLEAN uvar_printMaps; /* decide if hough maps are to be printed */
   REAL8 uvar_alpha, uvar_delta;  /* sky-location angles */
   REAL8 uvar_fdot; /* first spindown value */
   REAL8 uvar_fStart, uvar_fBand;
@@ -206,6 +207,7 @@ int main( int argc, char *argv[]) {
   /* now set the defaults */
   uvar_help = FALSE;
   uvar_log = FALSE;
+  uvar_printMaps = FALSE;
   uvar_nStacks = NSTACKS;
   uvar_Dterms = DTERMS;
   uvar_alpha = ALPHA;
@@ -256,6 +258,7 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterREALUserVar(   &status, "refTime",          0,  UVAR_OPTIONAL, "Reference time for pulsar par", &uvar_refTime),         &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "SSBprecision",	   0,  UVAR_DEVELOPER,"Precision for SSB transform.",  &uvar_SSBprecision),    &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "nfSize",           0,  UVAR_DEVELOPER,"No.of LUTs to keep in memory",  &uvar_nfSize),          &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printMaps",        0,  UVAR_DEVELOPER,"Print Hough maps",              &uvar_printMaps),       &status);  
 
   /* read all command line variables */
   LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
@@ -524,7 +527,12 @@ int main( int argc, char *argv[]) {
 
   /* set up the Hough parameters */
   if ( ! LALUserVarWasSet(&uvar_houghThr))
-    uvar_houghThr = 0.7 * nStacks;
+    uvar_houghThr = 0.65 * nStacks;
+  houghPar.outfileMaps = NULL;
+  if ( uvar_printMaps ) {
+    houghPar.outfileMaps = (CHAR *)LALMalloc( 256 * sizeof(CHAR));
+    strcpy(houghPar.outfileMaps, uvar_fnameout);
+  }
   houghPar.houghThr = uvar_houghThr;
   houghPar.tStart = tStart;
   houghPar.fBinIni = fHoughBinIni;
@@ -757,6 +765,9 @@ int main( int argc, char *argv[]) {
   LALFree(houghCand.dDelta);
   LALFree(houghCand.fdot);
   LALFree(houghCand.dFdot);
+  
+  if ( uvar_printMaps )
+    LALFree(houghPar.outfileMaps);
 
   LAL_CALL (LALDDestroyVector (&status, &(FstatPar.fdot)), &status); 
 
@@ -1235,6 +1246,11 @@ void ComputeFstatHoughMap(LALStatus *status,
 	  TRY(GetHoughCandidates( status->statusPtr, out, &ht, &patch, 
 				  &parDem, houghThr), status);
 	  	 
+
+	  /* print hough map */
+	  if ( params->outfileMaps != NULL )
+	    TRY( PrintHmap2file( status->statusPtr, &ht, params->outfileMaps, iHmap), status);
+
 	  /* increment hough map index */ 	  
 	  ++iHmap;
 	  
