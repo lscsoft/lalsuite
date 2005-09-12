@@ -82,6 +82,7 @@ RCSID( "$Id$");
 #define COMPUTEFSTATISTICC_MSGEXLAL		"XLALFunction-call failed"
 
 /*----- Macros -----*/
+
 /** convert GPS-time to REAL8 */
 #define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
 
@@ -104,8 +105,6 @@ typedef struct {
  * These are 'pre-processed' settings, which have been derived from the user-input.
  */
 typedef struct {
-  CHAR EphemEarth[MAXFILENAMELENGTH];	/**< filename of earth-ephemeris data */
-  CHAR EphemSun[MAXFILENAMELENGTH];	/**< filename of sun-ephemeris data */
   REAL8 dFreq;			/**< frequency resolution */
   REAL8 df1dot;			/**< spindown resolution (f1 = df/dt!!) */
   LIGOTimeGPS startTime;	/**< start time of observation */
@@ -409,7 +408,7 @@ int main(int argc,char *argv[])
 
 			if ( Fstat > uvar_Fthreshold )
 			  {
-			    snprintf (buf, 511, "%8.7f %8.7f %16.12f %.17g %10.6g\n", 
+			    LALSnprintf (buf, 511, "%8.7f %8.7f %16.12f %.17g %10.6g\n", 
 				      dopplerpos.Alpha, dopplerpos.Delta, 
 				      freq, GV.fkdot->data[1], 2.0 * Fstat);
 			    buf[511] = 0;
@@ -596,24 +595,43 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   INITSTATUS (status, "InitFStat", rcsid);
   ATTATCHSTATUSPTR (status);
 
-  /*----------------------------------------------------------------------
-   * set up and check ephemeris-file locations
-   */
+  /*---------- Initialize Ephemeris-data ---------- */
+  {
+#define FNAME_LENGTH 1024
+    CHAR EphemEarth[FNAME_LENGTH];	/* filename of earth-ephemeris data */
+    CHAR EphemSun[FNAME_LENGTH];	/* filename of sun-ephemeris data */
+    LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
+    INT4 leap;
 
-  if (LALUserVarWasSet (&uvar_ephemDir) )
-    {
-      sprintf(cfg->EphemEarth, "%s/earth%s.dat", uvar_ephemDir, uvar_ephemYear);
-      sprintf(cfg->EphemSun, "%s/sun%s.dat", uvar_ephemDir, uvar_ephemYear);
-    }
-  else
-    {
-      sprintf(cfg->EphemEarth, "earth%s.dat", uvar_ephemYear);
-      sprintf(cfg->EphemSun, "sun%s.dat",  uvar_ephemYear);
-    }
+    if (LALUserVarWasSet (&uvar_ephemDir) )
+      {
+	LALSnprintf(EphemEarth, FNAME_LENGTH, "%s/earth%s.dat", uvar_ephemDir, uvar_ephemYear);
+	LALSnprintf(EphemSun, FNAME_LENGTH, "%s/sun%s.dat", uvar_ephemDir, uvar_ephemYear);
+      }
+    else
+      {
+	LALSnprintf(EphemEarth, FNAME_LENGTH, "earth%s.dat", uvar_ephemYear);
+	LALSnprintf(EphemSun, FNAME_LENGTH, "sun%s.dat",  uvar_ephemYear);
+      }
+    EphemEarth[FNAME_LENGTH-1]=0;
+    EphemSun[FNAME_LENGTH-1]=0;
+    
+    cfg->edat = LALCalloc(1, sizeof(EphemerisData));
+    /* NOTE: the 'ephiles' are ONLY ever used in LALInitBarycenter, which is
+     * why we could use local variables (EphemEarth, EphemSun) to initialize them.
+     */
+    cfg->edat->ephiles.earthEphemeris = EphemEarth;
+    cfg->edat->ephiles.sunEphemeris = EphemSun;
+    
+    TRY (LALLeapSecs (status->statusPtr, &leap, &(cfg->startTime), &formatAndAcc), status);
+    cfg->edat->leap = (INT2) leap;
 
-/*----------------------------------------------------------------------
-   * initialize+check  template-grid related parameters 
-   */
+    TRY (LALInitBarycenter(status->statusPtr, cfg->edat), status);               
+
+  } /* end: init ephemeris data */
+
+
+  /* ---------- initialize+check  template-grid related parameters ---------- */
   {
     BOOLEAN haveSkyRegion, haveAlphaDelta;
 
@@ -652,26 +670,6 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   cfg->ifos.amcoe = LALCalloc ( nDet,  sizeof( *(cfg->ifos.amcoe) ) );
   TRY ( LALDCreateVector (status->statusPtr, &(cfg->fkdot), 2), status);
 
-
-  /* ----------------------------------------------------------------------*/
-  /*
-   * initialize Ephemeris-data 
-   */
-  {
-    LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
-    INT4 leap;
-
-    cfg->edat = LALCalloc(1, sizeof(EphemerisData));
-    cfg->edat->ephiles.earthEphemeris = cfg->EphemEarth;
-    cfg->edat->ephiles.sunEphemeris = cfg->EphemSun;
-    
-
-    TRY (LALLeapSecs (status->statusPtr, &leap, &(cfg->startTime), &formatAndAcc), status);
-    cfg->edat->leap = leap;
-
-    TRY (LALInitBarycenter(status->statusPtr, cfg->edat), status);               
-
-  } /* end: init ephemeris data */
 
 
 
