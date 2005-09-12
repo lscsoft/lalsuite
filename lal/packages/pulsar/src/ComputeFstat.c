@@ -56,7 +56,7 @@ static const BarycenterInput empty_BarycenterInput;
 
 
 /*---------- internal prototypes ----------*/
-int sin_cos_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x); /* LUT-calculation of sin/cos */
+int sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x); /* LUT-calculation of sin/cos */
 
 
 
@@ -171,10 +171,9 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 	y_alpha -= 0.5 * xhat_alpha;
 	
 	/* real- and imaginary part of e^{-i 2 pi y } */
-	if ( sin_cos_LUT ( &imagQ, &realQ, y_alpha ) ) {
+	if ( sin_cos_LUT ( &imagQ, &realQ, - LAL_TWOPI * y_alpha ) ) {
 	  XLAL_ERROR ( "XLALComputeFaFb", XLAL_EFUNC);
 	}
-	imagQ = -imagQ;
       }
       /* ---------------------------------------- */
 
@@ -188,7 +187,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,
        */
 
       /*-------------------- calculate sin(x), cos(x) */
-      sin_cos_LUT ( &sinx, &cosxm1, xhat_alpha );
+      sin_cos_LUT ( &sinx, &cosxm1, LAL_TWOPI * xhat_alpha );
       cosxm1 -= 1.0f; 
       /*-------------------- */
 
@@ -379,12 +378,15 @@ LALGetAMCoeffs(LALStatus *status,
   /*---------- coefficient ahN, bhN dependent ONLY on detector-position  ---------- */
   /* FIXME: put these coefficients into DetectorStateSeries */
   {
-    REAL4 sin2gamma = sinf ( 2.0f * gamma );
-    REAL4 cos2gamma = cosf ( 2.0f * gamma );
-    REAL4 sin1lambda = sinf ( lambda );
-    REAL4 cos1lambda = cosf ( lambda );
-    REAL4 sin2lambda = 2.0f * sin1lambda * cos1lambda;
-    REAL4 cos2lambda = cos1lambda * cos1lambda - sin1lambda * sin1lambda;
+    REAL4 sin2gamma, cos2gamma;
+    REAL4 sin1lambda, cos1lambda;
+    REAL4 sin2lambda, cos2lambda;
+
+    sin_cos_LUT (&sin2gamma, &cos2gamma, 2.0f * gamma );
+    sin_cos_LUT (&sin1lambda, &cos1lambda, lambda );
+
+    sin2lambda = 2.0f * sin1lambda * cos1lambda;
+    cos2lambda = cos1lambda * cos1lambda - sin1lambda * sin1lambda;
 
     /* coefficients for a(t) */
     ah1 = 0.0625f * sin2gamma * (3.0f - cos2lambda);	/* 1/16 = 0.0625 */
@@ -403,8 +405,8 @@ LALGetAMCoeffs(LALStatus *status,
   /*---------- coefficients aN, bN dependent ONLY on {ahN, bhN} and source-latitude delta */
   alpha = skypos.longitude;
   delta = skypos.latitude;
-  sin1delta = sinf (delta);
-  cos1delta = cosf (delta);
+
+  sin_cos_LUT (&sin1delta, &cos1delta, delta );
   sin2delta = 2.0f * sin1delta * cos1delta;
   cos2delta = cos1delta * cos1delta - sin1delta * sin1delta;
 
@@ -435,8 +437,7 @@ LALGetAMCoeffs(LALStatus *status,
 
       ah = alpha - DetectorStates->data[i].LMST;
 
-      sin1ah = sinf ( ah );
-      cos1ah = cosf ( ah );
+      sin_cos_LUT ( &sin1ah, &cos1ah, ah );
       sin2ah = 2.0f * sin1ah * cos1ah;
       cos2ah = cos1ah * cos1ah - sin1ah * sin1ah;
 
@@ -724,7 +725,7 @@ LALDestroyDetectorStateSeries (LALStatus *status,
 } /* LALDestroyDetectorStateSeries() */
 
 
-/** Calculate sin(2 pi x) and cos(2 pi x) to roughly 1e-7 error using 
+/** Calculate sin(x) and cos(x) to roughly 1e-7 precision using 
  * a lookup-table and Tayler-expansion.
  * This is meant to be fast, so we don't even check the input-pointers...
  *
@@ -734,47 +735,49 @@ LALDestroyDetectorStateSeries (LALStatus *status,
  * return = 0: OK, nonzero=ERROR
  */
 int
-sin_cos_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
+sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x)
 {
 #define LUT_RES         64      /* resolution of lookup-table */
   UINT4 ind; 
-  REAL8 rem;
+  REAL8 kappa, kappat;
+
   static BOOLEAN firstCall = TRUE;
   static REAL4 sinVal[LUT_RES+1], cosVal[LUT_RES+1];
 
-
+  /* the first time we get called, we set up the lookup-table */
   if ( firstCall )
     {
       UINT4 k;
       for (k=0; k <= LUT_RES; k++)
         {
-          sinVal[k] = sin( (LAL_TWOPI*k)/LUT_RES );
-          cosVal[k] = cos( (LAL_TWOPI*k)/LUT_RES );
+          sinVal[k] = sin( LAL_TWOPI * k / LUT_RES );
+          cosVal[k] = cos( LAL_TWOPI * k / LUT_RES );
         }
       firstCall = FALSE;
     }
 
-  rem = x - (INT8)x;	/* rem in (-1, 1) */
-  if ( rem < 0 )
-    rem += 1.0;		/* rem in [0, 1) */
+  kappa = x / LAL_TWOPI;
+  kappat = kappa - (INT8)kappa;		/* lies in (-1, 1) */
+  if ( kappat < 0 )
+    kappat += 1.0;	/* equiv. adding 2pi to x ==> kappat lies in (0, 1) */
 
   /* security check if we didn't overstretch the numerics here (can happen for x too large) */
-  if ( (rem < 0) || (rem > 1) )
+  if ( (kappat < 0) || (kappat > 1) )
     {
       LALPrintError ("\nLUT-index out of bounds. Input argument was probably too large!\n\n");
       XLAL_ERROR ( "sin_cos_LUT", XLAL_EDOM);
     }
   
-			   
-  ind = (UINT4)( rem * LUT_RES + 0.5 );   /* closest LUT-entry */
+  ind = (UINT4)( kappat * LUT_RES + 0.5 );   /* find closest LUT-entry */
   {
-    REAL8 d = LAL_TWOPI *(rem - (REAL8)ind/(REAL8)LUT_RES);
+    REAL8 d = kappat - (REAL8)ind/(REAL8)LUT_RES ;
     REAL8 d2 = 0.5 * d * d;
     REAL8 ts = sinVal[ind];
     REAL8 tc = cosVal[ind];
-                
-    (*sin2pix) = ts + d * tc - d2 * ts;
-    (*cos2pix) = tc - d * ts - d2 * tc;
+   
+    /* use Taylor-expansions for sin/cos around LUT-points */
+    (*sinx) = ts + d * tc - d2 * ts;
+    (*cosx) = tc - d * ts - d2 * tc;
   }
   
   return XLAL_SUCCESS;
