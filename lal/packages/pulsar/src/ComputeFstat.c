@@ -290,8 +290,8 @@ XLALComputeFaFb ( Fcomponents *FaFb,
       Fb.re += b * realQXP;
       Fb.im += b * imagQXP;
       
-#ifdef HAVE_ISNORMAL
-      if ( !isnormal(Fa.re) || !isnormal(Fa.im) || !isnormal(Fb.re) || !isnormal(Fb.im) )
+#ifdef HAVE_ISFINITE
+      if ( !isfinite(Fa.re) || !isfinite(Fa.im) || !isfinite(Fb.re) || !isfinite(Fb.im) )
 	{
 	  LALPrintError("\nnon-normal number encountered in SFT-loop alpha=%d!\n", alpha );
 	  LALPrintError("Fa = %f + i %f, Fb = %f + i %f\n\n", Fa.re, Fa.im, Fb.re, Fb.im );
