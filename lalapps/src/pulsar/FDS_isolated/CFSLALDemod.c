@@ -35,8 +35,10 @@ static inline vector float vec_div( vector float a, vector float b ) {
 }
 #endif
 
+#if defined(EXTERNAL_INNER_LOOP)
 void cfs_inner_loop(REAL4 tsin, REAL4 tcos, COMPLEX8*Xalpha_k, REAL8*realXP, REAL8*imagXP) {
-    for(int k=0; k < klim ; k++) {
+  int k;
+    for(k=0; k < klim ; k++) {
 	REAL8 realXP, imagXP;
 	REAL4 xinv = (REAL4)OOTWOPI / (REAL4)tempFreq1;
 	COMPLEX8 Xa = *Xalpha_k;
@@ -51,7 +53,7 @@ void cfs_inner_loop(REAL4 tsin, REAL4 tcos, COMPLEX8*Xalpha_k, REAL8*realXP, REA
 	
     } /* for k < klim */
 }
-
+#endif
 
 #ifdef USE_R4LALDEMOD
 /* <lalVerbatim file="LALDemodCP"> */
