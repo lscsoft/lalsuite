@@ -15,13 +15,15 @@
  \par Description 
 
 This module contains functions for normalizing SFTs.  Currently two normalizations 
-are supported.  Given SFT data \f$\tilde{x}_k \f$ where k labels a frequency bin, 
+are supported.  Given SFT data \f$\tilde{x}_k \f$ where \f$ k\f$ labels a frequency bin, 
 the normalized SFT is either \f$ \tilde{x}_k/\sqrt{ < |\tilde{x}_k|^2 >} \f$ or 
-\f$ \sqrt{2N} \tilde{x}_k/\sqrt{ < |\tilde{x}_k|^2 >} \f$.   The first normalization
-ensures that the SFT power follows an exponential distribution with unit mean, 
-while the second normalization is appropriate in the time domain.  In either case, 
-the mean of \f$ |\tilde{x}_k|^2 \f$ is estimated using the median, suitably 
-normalized assuming that the power is distributed is exponentially.
+\f$ \sqrt{2N} \tilde{x}_k/\sqrt{ < |\tilde{x}_k|^2 >} \f$, where \f$ N \f$ is the number
+of frequency bins in the SFT.   The first normalization
+ensures that the SFT power follows an exponential distribution with unit mean 
+(if the SFT data is distributed normally), while the second normalization is appropriate 
+in the time domain.  In either case, the mean of \f$ |\tilde{x}_k|^2 \f$ is 
+estimated using the median, suitably normalized assuming that the power is 
+distributed is exponentially.
 
 
 \par Uses
