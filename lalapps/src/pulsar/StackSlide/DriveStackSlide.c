@@ -147,6 +147,9 @@
 /* 08/24/05 gam; Fix off by one error when computing tmpNumRA in CountOrAssignSkyPosData */
 /* 08/31/05 gam; In StackSlideComputeSky set ssbT0 to gpsStartTime, which is gpsEpochStartTime in this code; this now gives the epoch that defines T_0 at the SSB! */
 /* 09/06/05 gam; Change params->maxMCfracErr to params->maxMCErr, the absolute error in confidence for convergence. */
+/* 09/09/05 gam; Use SFT cleaning function in LAL SFTClean.h rather than in SFTbin.h */
+/* 09/12/05 gam; if ( (params->weightFlag & 16) > 0 ) save inverseMedians and weight STKs with these. */
+/* 09/12/05 gam; if (params->testFlag & 128) > 0 make BLKs and STKs narrower band based on extra bins */
 
 /*********************************************/
 /*                                           */
@@ -528,7 +531,7 @@ params->numFDeriv5   =   0;
     	fprintf(stdout,"#SUMs: The STKs are slid and then summed to produce SUMs; \n");
     	fprintf(stdout,"\n");
     	fprintf(stdout,"#For historical reasons, parameters for controlling Monte Carlo Simulations occur in several places.\n");
-    	fprintf(stdout,"#See: maxMCinterations, maxMCErr, orientationAngle, cosInclinationAngle, testFlag, numMCInjections, numMCRescalings, rescaleMCFraction, parameterMC, and debugOptionFlag.\n");
+    	fprintf(stdout,"#See: maxMCinterations, maxMCErr, orientationAngle, cosInclinationAngle, weightFlag, testFlag, numMCInjections, numMCRescalings, rescaleMCFraction, parameterMC, and debugOptionFlag.\n");
     	fprintf(stdout,"\n");
     	fprintf(stdout,"#Example command line arguments for ComputeStackSlide: \n");
     	fprintf(stdout,"\n");
@@ -614,6 +617,8 @@ params->numFDeriv5   =   0;
     	fprintf(stdout,"# if (weightFlag & 2 > 0) include beam pattern F_+ in calculation of weights,\n");
     	fprintf(stdout,"# if (weightFlag & 4 > 0) include beam pattern F_x in calculation of weights,\n");
     	fprintf(stdout,"# if (weightFlag & 8 > 0) rescale STKs with threshold5 to prevent dynamic range issues.\n"); /* 11/01/04 gam */
+    	fprintf(stdout,"# if (weightFlag & 16 > 0) save medians and weight SFTs with inverse medians; must using running median (see normalizationFlag rules).\n"); /* 09/12/05 gam */
+    	fprintf(stdout,"# This last option will reuse the medians which can speed up Monte Carlo Simulations. However one must test what bias this introduces by also running the MC with this option off.\n"); /* 09/12/05 gam */
     	fprintf(stdout,"\n");
     	/* fprintf(stdout,"set windowFilterFlag   %23d; #40 INT2 whether to window or filter data (< 0 already done, 0 no, 1 yes) \n", params->windowFilterFlag); */ /* 10/28/04 gam */
     	/* fprintf(stdout,"# Note that < 0 and 0 are only options currently supported. \n"); */ /* 10/28/04 gam */
@@ -644,6 +649,7 @@ params->numFDeriv5   =   0;
     	fprintf(stdout,"# if ((testFlag & 16) > 0) use results from prior jobs in the pipeline and report on current Monte Carlo results.\n");
     	fprintf(stdout,"# if ((testFlag & 32) > 0) iterate entire Monte Carlo Simulation to converge on desired confidence.\n");
     	fprintf(stdout,"# if ((testFlag & 64) > 0) search surrounding parameters space pts during Monte Carlo Simulations; else search nearest only.\n");
+    	fprintf(stdout,"# if ((testFlag & 128) > 0) speed up Monte Carlo Simulations by injecting into middle of a band with nBinsPerBLK - nBinsPerSUM bins only.\n");
     	fprintf(stdout,"# The prior results must be given in the priorResultsFile set above.\n");
     	fprintf(stdout,"# The maximum number of iterations is given by maxMCinterations set above.\n");
     	fprintf(stdout,"# The maximum absolute error allowed when testing for convergence of confidence when iterating the Monte Carlo is set by maxMCErr above.\n");
@@ -818,6 +824,9 @@ params->numFDeriv5   =   0;
 
   /* 02/28/05 gam; moved here */
   params->weightSTKsIncludingBeamPattern = 0;  /* default value */
+  params->weightSTKsWithInverseMedians = 0;    /* 09/12/05 gam; default value */
+  params->inverseMediansSaved = 0;             /* 09/12/05 gam; default value */
+  params->inverseMedians = NULL;               /* 09/12/05 gam; default value */
   params->plusOrCross = 1;                     /* default value */
   if ( (params->weightFlag & 1) > 0 )  {
      if ( ( (params->weightFlag & 2) > 0 ) || ( (params->weightFlag & 4) > 0 ) ) {
@@ -828,8 +837,10 @@ params->numFDeriv5   =   0;
              params->plusOrCross = 0; /* get F_x */
           }               
      }
+  } else if ( (params->weightFlag & 16) > 0 ) {
+     params->weightSTKsWithInverseMedians = 1; /* 09/12/05 gam */
   }
-  
+
   /* 02/28/05 gam; moved here */
   params->nBinsPerOutputEvent = 0;
   
@@ -1694,12 +1705,20 @@ void StackSlideApplySearch(
        params->savSTKData = NULL;
        params->detResponseTStampMidPts = NULL;
     }
- } else {
-   /* else do not save medians */
-   params->savSTKData = NULL;
-   params->detResponseTStampMidPts = NULL;
-   params->inverseSquareMedians = NULL;
-   params->sumInverseSquareMedians = NULL;
+ } else { 
+    if ( params->weightSTKsWithInverseMedians && !(params->inverseMediansSaved) ) {
+       /* 09/12/05 gam; allocate memory for params->inverseMedians; was set to NULL in StackSlideInit function */
+       params->inverseMedians=(REAL4Vector **)LALMalloc(params->numSTKs*sizeof(REAL4Vector *));
+       for(i=0;i<params->numSTKs;i++) {
+          params->inverseMedians[i]=(REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
+          params->inverseMedians[i]->data=(REAL4 *)LALMalloc(params->nBinsPerSTK*sizeof(REAL4));
+       }
+    }
+    /* not saving square medians */
+    params->savSTKData = NULL;
+    params->detResponseTStampMidPts = NULL;
+    params->inverseSquareMedians = NULL;
+    params->sumInverseSquareMedians = NULL;
  }
 
  if (params->stackTypeFlag == 0) {
@@ -1854,9 +1873,18 @@ void StackSlideApplySearch(
               }
 
               /* 10/28/04 gam; if weightFlag set save inverse square medians for later weighting of STKs; else normalize now with medians */
-              if ( (params->weightFlag & 1) > 0 )  { 
+              if ( (params->weightFlag & 1) > 0 )  {
                  /* Call function that save inverse square medians for weighting STKs */
                  SaveInverseSquareMedians(params->inverseSquareMedians, params->sumInverseSquareMedians, params->weightFlag, medians, k, mediansOffset1, mediansOffset2, mediansLengthm1, params->nBinsPerSTK);
+              } else if ( params->weightSTKsWithInverseMedians ) {
+                /* 09/12/05 gam; save params->inverseMedians first time through;
+                else do nothing here; will weight STKs with inverseMedians below. */
+                if ( !(params->inverseMediansSaved) ) {
+                  SaveInverseMedians(params->inverseMedians, medians, k, mediansOffset1, mediansOffset2, mediansLengthm1, params->nBinsPerSTK);
+                  if ( k==(params->numSTKs-1) ) {
+                     params->inverseMediansSaved = 1;  /* All inverse medians have been saved */
+                  }
+                } 
               } else {              
                  /* Note NO factor of 2; makes mean STK power = 1, but NRM is not the one-sided power spectral density */
                  for(istkNRM=0;istkNRM<mediansOffset1;istkNRM++) {
@@ -2232,8 +2260,11 @@ void StackSlideApplySearch(
           /* Just need to apply weights once */       
           WeightSTKsWithoutBeamPattern(params->STKData, params->inverseSquareMedians, params->sumInverseSquareMedians, params->numSTKs, params->nBinsPerSTK);
      }
+  } else if (params->weightSTKsWithInverseMedians) {
+          /* 09/12/05 gam; weight STKs with saved inverse medians for StackSlide style weighting */
+          WeightSTKsWithInverseMedians(params->STKData, params->inverseMedians, params->numSTKs, params->nBinsPerSTK);
   }
-    
+
   /* Check whether this is the isolated or binary case */
   if (params->binaryFlag==0) {
    
@@ -2504,6 +2535,15 @@ void StackSlideFinalizeSearch(
   } /* END if ( ((params->normalizationFlag & 32) > 0) || ((params->normalizationFlag & 64) > 0)  ) */
 
   LALFree(params->sumBinMask);  /* 05/19/05 gam */
+
+  /* 09/12/05 gam; deallocate memory for parameters needed if weighting of STKs with inverse medians is done */
+  if ( params->weightSTKsWithInverseMedians && (params->inverseMedians != NULL) ) {
+     for(i=0;i<params->numSTKs;i++) {
+        LALFree(params->inverseMedians[i]->data);
+        LALFree(params->inverseMedians[i]);
+     }         
+     LALFree(params->inverseMedians);
+  }
 
   /* LALFree(params); */ /*Declared and freed in the calling function */
 
@@ -3235,6 +3275,35 @@ Machine dependent: to be fixed!
  }
 #endif
 
+/* 09/12/05 gam; function that saves inverse medians for StackSlide style weighting of STKs */
+void SaveInverseMedians(REAL4Vector **inverseMedians, REAL4Vector *medians, INT4 k, INT4 mediansOffset1, INT4 mediansOffset2, INT4 mediansLengthm1, INT4 nBinsPerSTK)
+{
+          INT4 i;
+
+          for(i=0;i<mediansOffset1;i++) {
+                inverseMedians[k]->data[i] = 1.0/medians->data[0];
+          }
+
+          for(i=mediansOffset1;i<mediansOffset2;i++) {
+               inverseMedians[k]->data[i] = 1.0/medians->data[i-mediansOffset1];
+          }
+          
+          for(i=mediansOffset2;i<nBinsPerSTK;i++) {
+              inverseMedians[k]->data[i] = 1.0/medians->data[mediansLengthm1];
+          }
+} /* END SaveInverseMedians */
+
+/* 09/12/04 gam; weight STKs with inverse mediasl for StackSlide style weighting of STKs */
+void WeightSTKsWithInverseMedians(REAL4FrequencySeries **STKData, REAL4Vector **inverseMedians, INT4 numSTKs, INT4 nBinsPerSTK)
+{
+    INT4 i,k;
+    for(k=0;k<numSTKs;k++) {
+        for(i=0;i<nBinsPerSTK;i++) {
+            STKData[k]->data->data[i] = inverseMedians[k]->data[i] * STKData[k]->data->data[i];
+        }
+    }
+} /* END WeightSTKsWithoutBeamPattern */
+
 /* 10/28/04 gam; function that saves inverse square medians for weighting STKs */
 void SaveInverseSquareMedians(REAL4Vector **inverseSquareMedians, REAL4Vector *sumInverseSquareMedians, INT2 weightFlag, REAL4Vector *medians, INT4 k, INT4 mediansOffset1, INT4 mediansOffset2, INT4 mediansLengthm1, INT4 nBinsPerSTK)
 {
@@ -3573,7 +3642,9 @@ void StackSlideGetLinesAndHarmonics(LALStatus *status, LineHarmonicsInfo *infoHa
   lines.leftWing  = NULL;
   lines.rightWing = NULL;
 
-  FindNumberHarmonics(status->statusPtr, infoHarmonics, linesAndHarmonicsFile);
+  /* FindNumberHarmonics(status->statusPtr, infoHarmonics, linesAndHarmonicsFile); */ /* 09/09/05 gam */
+  LALFindNumberHarmonics(status->statusPtr, infoHarmonics, linesAndHarmonicsFile);
+  
   CHECKSTATUSPTR (status);
   nHarmonicSets = infoHarmonics->nHarmonicSets;
 
@@ -3584,7 +3655,8 @@ void StackSlideGetLinesAndHarmonics(LALStatus *status, LineHarmonicsInfo *infoHa
       infoHarmonics->leftWing = (REAL8 *)LALMalloc(nHarmonicSets * sizeof(REAL8));
       infoHarmonics->rightWing = (REAL8 *)LALMalloc(nHarmonicSets * sizeof(REAL8));
 
-      ReadHarmonicsInfo(status->statusPtr, infoHarmonics, linesAndHarmonicsFile);
+      /* ReadHarmonicsInfo(status->statusPtr, infoHarmonics, linesAndHarmonicsFile); */ /* 09/09/05 gam */
+      LALReadHarmonicsInfo(status->statusPtr, infoHarmonics, linesAndHarmonicsFile);
       CHECKSTATUSPTR (status);
       
       nLines = 0;
@@ -3597,7 +3669,8 @@ void StackSlideGetLinesAndHarmonics(LALStatus *status, LineHarmonicsInfo *infoHa
       lines.leftWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
       lines.rightWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
 
-      Harmonics2Lines(status->statusPtr, &lines, infoHarmonics);
+      /* Harmonics2Lines(status->statusPtr, &lines, infoHarmonics); */ /* 09/09/05 gam */
+      LALHarmonics2Lines(status->statusPtr, &lines, infoHarmonics);
       CHECKSTATUSPTR (status);
       
       infoLines->nLines = nLines;
@@ -3605,7 +3678,8 @@ void StackSlideGetLinesAndHarmonics(LALStatus *status, LineHarmonicsInfo *infoHa
       infoLines->leftWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
       infoLines->rightWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
 
-      ChooseLines(status->statusPtr, infoLines, &lines, fStart, fStart + fBand);
+      /* ChooseLines(status->statusPtr, infoLines, &lines, fStart, fStart + fBand); */ /* 09/09/05 gam */
+      LALChooseLines(status->statusPtr, infoLines, &lines, fStart, fStart + fBand);
       CHECKSTATUSPTR (status);
 
       if (nLines > 0) {
@@ -3685,7 +3759,8 @@ void StackSlideCleanSFTs(LALStatus *status, FFT **BLKData, LineNoiseInfo *infoLi
            oneSFT->data->data[j].re = BLKData[i]->fft->data->data[j].re;
            oneSFT->data->data[j].im = BLKData[i]->fft->data->data[j].im;
       }
-      CleanCOMPLEX8SFT(status->statusPtr, oneSFT, maxBins, nBinsPerNRM, infoLines, randPar); /* clean this SFT */
+      /* CleanCOMPLEX8SFT(status->statusPtr, oneSFT, maxBins, nBinsPerNRM, infoLines, randPar); */ /* 09/09/05 gam */
+      LALCleanCOMPLEX8SFT(status->statusPtr, oneSFT, maxBins, nBinsPerNRM, infoLines, randPar); /* clean this SFT */
       CHECKSTATUSPTR (status);
       /* copy the clean SFT data back to this BLK */
       for(j=0;j<nBinsPerBLK;j++) {

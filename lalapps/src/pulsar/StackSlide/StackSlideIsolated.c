@@ -41,6 +41,8 @@ $Id$
 /*               rescale SFTs to run numMCRescalings Monte Carlo simulations in parallel.     */
 /* 09/05/05 gam; To inject isotropically on the sky, inject uniform distribution for sin(DEC). */
 /* 09/06/05 gam; Change params->maxMCfracErr to params->maxMCErr, the absolute error in confidence for convergence. */
+/* 09/08/05 gam; Add Dterms to params used with LALFastGeneratePulsarSFTs. */
+/* 09/12/05 gam; if (params->testFlag & 128) > 0 make BLKs and STKs narrower band based on extra bins */
 
 /*********************************************/
 /*                                           */
@@ -485,7 +487,14 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
   INT4  nAvailableBins;          /* 07/15/2005 gam */
   REAL8 real8NAvailableBins;     /* 07/15/2005 gam */
   BOOLEAN searchSurroundingPts;  /* 07/29/05 gam; if (params->testFlag & 64) > 0 search surrounding parameters space pts */
-
+  BOOLEAN narrowBLKandSTKband;   /* 09/12/05 gam; if (params->testFlag & 128) > 0 make BLKs and STKs narrower band based on extra bins */  
+  INT4 jStart = 0;
+  INT4 jSavedBLK = 0;
+  INT4 extraBins = 0;
+  REAL8 deltaBLKf0 = 0.0;
+  REAL8 f0BLK, f0STK, bandBLK, bandSTK;
+  INT4 nBinsPerBLK, nBinsPerSTK;
+  
   INITSTATUS( status, "RunStackSlideIsolatedMonteCarloSimulation", STACKSLIDEISOLATEDC );
   ATTATCHSTATUSPTR(status);
 
@@ -580,7 +589,55 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
            savBLKData[i]->fft->data->data[j].im = params->BLKData[i]->fft->data->data[j].im;
         }
   }  
- 
+
+  /* 09/12/05 gam; save the original values and check if using use narrow band BLKs and STKS */
+  nBinsPerBLK = params->nBinsPerBLK; 
+  nBinsPerSTK = params->nBinsPerSTK;
+  f0BLK = params->f0BLK;
+  f0STK = params->f0STK;
+  bandBLK = params->bandBLK;
+  bandSTK = params->bandSTK;
+  if ( (params->testFlag & 128) > 0 ) {    
+     extraBins = params->nBinsPerBLK - params->nBinsPerSUM;  /* The difference should be twice the maximum bandwidth of a signal during a run */
+     extraBins = extraBins/2 + 1;  /* Want half the extra number of bins plus 1 for safety. */
+     deltaBLKf0 = ((REAL8)(extraBins))/params->tEffBLK; /* Shift start frequency of BLKs and STKs from injected frequency by this much. */
+     params->nBinsPerBLK = 2*extraBins;
+     if ( (extraBins < 1) || (params->nBinsPerBLK > nBinsPerBLK) ) {
+        params->nBinsPerBLK = nBinsPerBLK; /* reset this and just continue; should add ABORT */
+        narrowBLKandSTKband = 0;
+     } else {     
+       narrowBLKandSTKband = 1;
+       params->nBinsPerSTK = params->nBinsPerBLK;
+       params->bandBLK = ((REAL8)(params->nBinsPerBLK))/params->tEffBLK;
+       params->bandSTK = params->bandBLK;
+       params->iMinBLK = 0;
+       params->iMaxBLK = params->nBinsPerBLK - 1;
+
+       /* reallocate BLK data */
+       for (i=0;i<params->numBLKs;i++) {
+          LALFree(params->BLKData[i]->fft->data->data);
+          LALFree(params->BLKData[i]->fft->data);
+          LALFree(params->BLKData[i]->fft);
+          LALFree(params->BLKData[i]);
+       }
+       LALFree(params->BLKData);
+       params->BLKData=(FFT **)LALMalloc(params->numBLKs*sizeof(FFT *));
+       for (i=0;i<params->numBLKs;i++) {
+           params->BLKData[i]=(FFT *)LALMalloc(sizeof(FFT));
+           params->BLKData[i]->fft=(COMPLEX8FrequencySeries *)LALMalloc(sizeof(COMPLEX8FrequencySeries));
+           params->BLKData[i]->fft->data=(COMPLEX8Vector *)LALMalloc(sizeof(COMPLEX8Vector));
+           params->BLKData[i]->fft->data->data=(COMPLEX8 *)LALMalloc(params->nBinsPerBLK*sizeof(COMPLEX8));
+           params->BLKData[i]->fft->epoch = savBLKData[i]->fft->epoch;
+           params->BLKData[i]->fft->f0 = savBLKData[i]->fft->f0; /* This will get updated with each injection */
+           params->BLKData[i]->fft->deltaF = savBLKData[i]->fft->deltaF;
+           params->BLKData[i]->fft->data->length = params->nBinsPerBLK;
+       }     
+     }     
+  } else {
+     narrowBLKandSTKband = 0;
+     jStart = 0;
+  }
+  
   /* 05/21/04 gam; save the input skyPosData */
   savSkyPosData=(REAL8 **)LALMalloc(params->numSkyPosTotal*sizeof(REAL8 *));
   for(i=0;i<params->numSkyPosTotal;i++)
@@ -684,7 +741,7 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
   pPulsarSignalParams->startTimeGPS.gpsNanoSeconds = (INT4)params->gpsStartTimeNan;
   pPulsarSignalParams->duration = (UINT4)params->duration;
   pPulsarSignalParams->samplingRate = (REAL8)ceil(2.0*params->bandBLK); /* Make sampleRate an integer so that T*samplingRate = integer for integer T */
-  pPulsarSignalParams->fHeterodyne = params->f0BLK;  
+  pPulsarSignalParams->fHeterodyne = params->f0BLK;
   /* Find the time at the SSB that corresponds to the arrive time at the detector of first data requested. */
   GPSin.gpsSeconds = (INT4)params->gpsEpochStartTimeSec;     /* 12/06/04 gam; GPS epoch Sec that gives reference time in SSB */
   GPSin.gpsNanoSeconds = (INT4)params->gpsEpochStartTimeNan; /* 12/06/04 gam; GPS epoch Nan that gives reference time in SSB */
@@ -702,7 +759,7 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
   params->finishPeriodicTable = 0; /* 05/24/05 gam */ /* 05/26/04 gam; use to control I/O during Monte Carlo. Default is TRUE. */
   params->whichMCSUM = -1; /* 05/26/04 gam; which SUM the Monte Carlo Simulation is running on. Default is -1 */
   numSUMsTotalm1 = numSUMsTotal - 1;  /* Index of last SUM */
-  
+
   /* 05/26/04 gam; initialize variables that keep track of which frequency we are working on */  
   f0SUM = params->f0SUM;
   bandSUM = params->bandSUM;
@@ -753,9 +810,11 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
      pSFTandSignalParams->pSigParams = pPulsarSignalParams;
      pSFTandSignalParams->pSFTParams = pSFTParams;
      pSFTandSignalParams->nSamples = nSamples;
+     pSFTandSignalParams->Dterms = params->Dterms; /* 09/08/05 gam */
      pPulsarSignalParams->samplingRate = 2.0*params->bandBLK; /* can set samplingRate to exactly 2.0*bandBLK when using LALFastGeneratePulsarSFTs */
      GPSin.gpsSeconds = params->timeStamps[0].gpsSeconds;         /* 08/02/04 gam */
      GPSin.gpsNanoSeconds = params->timeStamps[0].gpsNanoSeconds; /* 08/02/04 gam */
+     TRY (LALCreateSFTVector (status->statusPtr, &outputSFTs, params->numBLKs, params->nBinsPerBLK), status); /* 09/08/05 gam */
   } else { 
      pSkyConstAndZeroPsiAMResponse = NULL;
      pSFTandSignalParams = NULL;
@@ -1118,7 +1177,7 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
     /* if (savSumBinMask[iFreq] == 0) probably should ABORT ! */
     params->f0SUM = f0SUM + iFreq*params->dfSUM;
     StackSlideGetUniformDeviate(status->statusPtr, &real8RandVal, params->f0SUM-(0.5*params->dfSUM), params->dfSUM, randPar); CHECKSTATUSPTR (status);
-    pPulsarSignalParams->pulsar.f0 = real8RandVal; /* injected frequency + random mismatch */
+    pPulsarSignalParams->pulsar.f0 = real8RandVal; /* injected frequency including random mismatch */
     
     /* 07/29/05 gam; search is over 2 freq bins; find the other bin */
     if (searchSurroundingPts) {    
@@ -1156,6 +1215,20 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
         } /* END if (params->f0SUM < pPulsarSignalParams->pulsar.f0) */
     } /* END if (searchSurroundingPts) */
 
+    /* 09/12/05 gam */
+    if (narrowBLKandSTKband) {
+       params->f0BLK = params->f0SUM - deltaBLKf0;
+       params->f0STK = params->f0BLK;
+       pPulsarSignalParams->fHeterodyne = params->f0BLK;
+       /* what is the index to params->f0BLK in the savBLKs */
+       jStart = floor((params->f0BLK - f0BLK)*params->tEffBLK + 0.5);  /* else jStart is initialized to zero above */
+    }
+    #ifdef DEBUG_RANDOMTRIALPARAMETERS
+                   fprintf(stdout,"narrowBLKandSTKband = %i, extraBins = %i, params->f0BLK = %23.10e, deltaBLKf0 = %23.10e, params->f0SUM = = %23.10e, pPulsarSignalParams->pulsar.f0 = %23.10e\n",narrowBLKandSTKband,extraBins,params->f0BLK,deltaBLKf0,params->f0SUM,pPulsarSignalParams->pulsar.f0);
+                   fprintf(stdout,"jStart = %i,\n",jStart);
+                   fflush(stdout);
+    #endif
+
     /* 12/06/04 gam */
     if ( (params->testFlag & 8) > 0 ) {
          pPulsarSignalParams->pulsar.psi = params->orientationAngle;
@@ -1189,7 +1262,7 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
         fprintf(stdout,"iFreq = %i, inject cosIota = %23.10e, A_+ = %23.10e, A_x = %23.10e \n",iFreq,cosIota,pPulsarSignalParams->pulsar.aPlus,pPulsarSignalParams->pulsar.aCross);
         fprintf(stdout,"iFreq = %i, inject psi = %23.10e \n",iFreq,pPulsarSignalParams->pulsar.psi);
         fprintf(stdout,"iFreq = %i, inject phi0 = %23.10e \n",iFreq,pPulsarSignalParams->pulsar.phi0);
-        fprintf(stdout,"iFreq = %i, search f0 = %23.10e, inject f0 = %23.10e \n",iFreq,f0SUM + iFreq*params->dfSUM,pPulsarSignalParams->pulsar.f0);
+        fprintf(stdout,"iFreq = %i, search start f0 = %23.10e, closest f0 = %23.10e, inject f0 = %23.10e \n",iFreq,params->f0SUM,f0SUM + iFreq*params->dfSUM,pPulsarSignalParams->pulsar.f0);
         fflush(stdout);
     #endif
     #ifdef DEBUG_MONTECARLOTIMEDOMAIN_DATA
@@ -1204,12 +1277,21 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
           fprintf(stdout,"About to call LALFastGeneratePulsarSFTs \n");
           fflush(stdout);
         #endif
+
+        /* 09/08/05 gam; LALFastGeneratePulsarSFTs only fills in data in a band 2*Dterms wide, for safety reinitialize. */
+        for(i=0;i<params->numBLKs;i++) {
+             for(j=0;j<params->nBinsPerBLK;j++) {
+                 outputSFTs->data[i].data->data[j].re = 0.0;
+                 outputSFTs->data[i].data->data[j].im = 0.0;
+               }
+        }
+
         /* 07/14/04 gam; use SkyConstAndZeroPsiAMResponse from LALComputeSkyAndZeroPsiAMResponse and SFTandSignalParams to generate SFTs fast. */
         LALFastGeneratePulsarSFTs (status->statusPtr, &outputSFTs, pSkyConstAndZeroPsiAMResponse, pSFTandSignalParams);
         CHECKSTATUSPTR (status);
 
         #ifdef PRINT_ONEMONTECARLO_OUTPUTSFT
-          if (params->whichMCSUM == 0 && iFreq == 0) {
+          if (params->whichMCSUM == 0) {
             REAL4  fPlus;
             REAL4  fCross;
             i=0; /* index of which outputSFT to output */
@@ -1254,20 +1336,23 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
 
         /* Add outputSFTs with injected signal to input noise SFTs; no renorm should be needed */
         for(i=0;i<params->numBLKs;i++) {
+          params->BLKData[i]->fft->f0 = params->f0BLK; /* update with each injection */
           for(j=0;j<params->nBinsPerBLK;j++) {
+             jSavedBLK = j + jStart; /* 09/12/05 gam */
              #ifdef PRINTCOMPARISON_INPUTVSMONTECARLOSFT_DATA
-               fprintf(stdout,"savBLKData[%i]->fft->data->data[%i].re, outputSFTs->data[%i].data->data[%i].re = %g, %g\n",i,j,i,j,savBLKData[i]->fft->data->data[j].re,outputSFTs->data[i].data->data[j].re);
-               fprintf(stdout,"savBLKData[%i]->fft->data->data[%i].im, outputSFTs->data[%i].data->data[%i].im = %g, %g\n",i,j,i,j,savBLKData[i]->fft->data->data[j].im,outputSFTs->data[i].data->data[j].im);
+               fprintf(stdout,"savBLKData[%i]->fft->data->data[%i].re, outputSFTs->data[%i].data->data[%i].re = %g, %g\n",i,j,i,j,savBLKData[i]->fft->data->data[jSavedBLK].re,outputSFTs->data[i].data->data[j].re);
+               fprintf(stdout,"savBLKData[%i]->fft->data->data[%i].im, outputSFTs->data[%i].data->data[%i].im = %g, %g\n",i,j,i,j,savBLKData[i]->fft->data->data[jSavedBLK].im,outputSFTs->data[i].data->data[j].im);
                fflush(stdout);
              #endif
-             params->BLKData[i]->fft->data->data[j].re = savBLKData[i]->fft->data->data[j].re + outputSFTs->data[i].data->data[j].re;
-             params->BLKData[i]->fft->data->data[j].im = savBLKData[i]->fft->data->data[j].im + outputSFTs->data[i].data->data[j].im;
+             params->BLKData[i]->fft->data->data[j].re = savBLKData[i]->fft->data->data[jSavedBLK].re + outputSFTs->data[i].data->data[j].re;
+             params->BLKData[i]->fft->data->data[j].im = savBLKData[i]->fft->data->data[jSavedBLK].im + outputSFTs->data[i].data->data[j].im;
+
           }
         }
     /* next is else for if ( (params->testFlag & 4) > 0 ) else... */
     } else {
         #ifdef PRINT_ONEMONTECARLO_OUTPUTSFT
-          if (params->whichMCSUM == 0 && iFreq == 0) {
+          if (params->whichMCSUM == 0) {
             /* To compare with LALFastGeneratePulsarSFTs, which uses ComputeSky, use first time stamp as reference time */
             GPSin.gpsSeconds = params->timeStamps[0].gpsSeconds;
             GPSin.gpsNanoSeconds = params->timeStamps[0].gpsNanoSeconds;
@@ -1301,7 +1386,7 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
         CHECKSTATUSPTR (status);
 
         #ifdef PRINT_ONEMONTECARLO_OUTPUTSFT
-           if (params->whichMCSUM == 0 && iFreq == 0) {
+           if (params->whichMCSUM == 0) {
               REAL4 realHetPhaseCorr;
               REAL4 imagHetPhaseCorr;
               REAL8 deltaTHeterodyne;
@@ -1361,14 +1446,16 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
           fflush(stdout);
         #endif
         for(i=0;i<params->numBLKs;i++) {
+          params->BLKData[i]->fft->f0 = params->f0BLK; /* update with each injection */
           for(j=0;j<params->nBinsPerBLK;j++) {
+             jSavedBLK = j + jStart; /* 09/12/05 gam */
              #ifdef PRINTCOMPARISON_INPUTVSMONTECARLOSFT_DATA
-               fprintf(stdout,"savBLKData[%i]->fft->data->data[%i].re, outputSFTs->data[%i].data->data[%i].re = %g, %g\n",i,j,i,j,savBLKData[i]->fft->data->data[j].re,renorm*outputSFTs->data[i].data->data[j].re);
-               fprintf(stdout,"savBLKData[%i]->fft->data->data[%i].im, outputSFTs->data[%i].data->data[%i].im = %g, %g\n",i,j,i,j,savBLKData[i]->fft->data->data[j].im,renorm*outputSFTs->data[i].data->data[j].im);
+               fprintf(stdout,"savBLKData[%i]->fft->data->data[%i].re, outputSFTs->data[%i].data->data[%i].re = %g, %g\n",i,j,i,j,savBLKData[i]->fft->data->data[jSavedBLK].re,renorm*outputSFTs->data[i].data->data[j].re);
+               fprintf(stdout,"savBLKData[%i]->fft->data->data[%i].im, outputSFTs->data[%i].data->data[%i].im = %g, %g\n",i,j,i,j,savBLKData[i]->fft->data->data[jSavedBLK].im,renorm*outputSFTs->data[i].data->data[j].im);
                fflush(stdout);
              #endif
-             params->BLKData[i]->fft->data->data[j].re = savBLKData[i]->fft->data->data[j].re + renorm*outputSFTs->data[i].data->data[j].re;
-             params->BLKData[i]->fft->data->data[j].im = savBLKData[i]->fft->data->data[j].im + renorm*outputSFTs->data[i].data->data[j].im;
+             params->BLKData[i]->fft->data->data[j].re = savBLKData[i]->fft->data->data[jSavedBLK].re + renorm*outputSFTs->data[i].data->data[j].re;
+             params->BLKData[i]->fft->data->data[j].im = savBLKData[i]->fft->data->data[jSavedBLK].im + renorm*outputSFTs->data[i].data->data[j].im;
           }
         }
     } /* END if ( (params->testFlag & 4) > 0 ) else */
@@ -1420,8 +1507,9 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
          /* Add rescaled outputSFTs with injected signal to input noise SFTs */
          for(i=0;i<params->numBLKs;i++) {
            for(j=0;j<params->nBinsPerBLK;j++) {
-                params->BLKData[i]->fft->data->data[j].re = savBLKData[i]->fft->data->data[j].re + rescaleFactor*outputSFTs->data[i].data->data[j].re;
-                params->BLKData[i]->fft->data->data[j].im = savBLKData[i]->fft->data->data[j].im + rescaleFactor*outputSFTs->data[i].data->data[j].im;
+                jSavedBLK = j + jStart; /* 09/12/05 gam */
+                params->BLKData[i]->fft->data->data[j].re = savBLKData[i]->fft->data->data[jSavedBLK].re + rescaleFactor*outputSFTs->data[i].data->data[j].re;
+                params->BLKData[i]->fft->data->data[j].im = savBLKData[i]->fft->data->data[jSavedBLK].im + rescaleFactor*outputSFTs->data[i].data->data[j].im;
            }
          }
       } /* END if (iRescale > 0) */

@@ -5,7 +5,7 @@
 #SUMs: The STKs are slid and then summed to produce SUMs; 
 
 #For historical reasons, parameters for controlling Monte Carlo Simulations occur in several places.
-#See: maxMCinterations, maxMCErr, orientationAngle, cosInclinationAngle, testFlag, numMCInjections, numMCRescalings, rescaleMCFraction, parameterMC, and debugOptionFlag.
+#See: maxMCinterations, maxMCErr, orientationAngle, cosInclinationAngle, weightFlag, testFlag, numMCInjections, numMCRescalings, rescaleMCFraction, parameterMC, and debugOptionFlag.
 
 #Example command line arguments for ComputeStackSlide: 
 
@@ -88,6 +88,8 @@ set weightFlag                               0; #38 INT2 how to weight STKs.
 # if (weightFlag & 2 > 0) include beam pattern F_+ in calculation of weights,
 # if (weightFlag & 4 > 0) include beam pattern F_x in calculation of weights,
 # if (weightFlag & 8 > 0) rescale STKs with threshold5 to prevent dynamic range issues.
+# if (weightFlag & 16 > 0) save medians and weight SFTs with inverse medians; must using running median (see normalizationFlag rules).
+# This last option will reuse the medians which can speed up Monte Carlo Simulations. However one must test what bias this introduces by also running the MC with this option off.
 
 set orientationAngle     0.0000000000000000e+00; #39 REAL8 orientation angle in radians used to find F_+ and F_x when used to weight STKs or if using fixed polarization for a Monte Carlo Simulation. 
 set cosInclinationAngle  0.0000000000000000e+00; #40 REAL8 cosine inclination angle if using fixed value for a Monte Carlo Simulation. 
@@ -115,6 +117,7 @@ set testFlag                                 0; #46 INT2 specify test case.
 # if ((testFlag & 16) > 0) use results from prior jobs in the pipeline and report on current Monte Carlo results.
 # if ((testFlag & 32) > 0) iterate entire Monte Carlo Simulation to converge on desired confidence.
 # if ((testFlag & 64) > 0) search surrounding parameters space pts during Monte Carlo Simulations; else search nearest only.
+# if ((testFlag & 128) > 0) speed up Monte Carlo Simulations by injecting into middle of a band with nBinsPerBLK - nBinsPerSUM bins only.
 # The prior results must be given in the priorResultsFile set above.
 # The maximum number of iterations is given by maxMCinterations set above.
 # The maximum absolute error allowed when testing for convergence of confidence when iterating the Monte Carlo is set by maxMCErr above.

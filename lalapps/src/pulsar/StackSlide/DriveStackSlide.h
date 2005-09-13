@@ -90,6 +90,8 @@
 /* 07/13/05 gam; make RandomParams *randPar a parameter for CleanCOMPLEX8SFT; initialze RandomParams *randPar once to avoid repeatly opening /dev/urandom */
 /* 07/17/05 gam; Change ...Deriv5 command line arguments to ones that control new Monte Carlo (MC) options */
 /* 09/06/05 gam; Change params->maxMCfracErr to params->maxMCErr, the absolute error in confidence for convergence. */
+/* 09/09/05 gam; Use SFT cleaning function in LAL SFTClean.h rather than in SFTbin.h */
+/* 09/12/05 gam; if ( (params->weightFlag & 16) > 0 ) save inverse medians and weight STKs with these. */
 
 #ifndef _DRIVESTACKSLIDE_H
 #define _DRIVESTACKSLIDE_H
@@ -117,7 +119,8 @@
 #include <lal/LIGOMetadataTables.h>
 #include "StackSlide.h"
 /* #include <lal/LALStackSlide.h> Will need to switch to this version when StackSlide is in LAL. */
-#include "SFTbin.h"
+/* #include "SFTbin.h" */
+#include <lal/SFTClean.h>
 #include <lal/Random.h>
 /*********************************************/
 /*                                           */
@@ -688,6 +691,8 @@ typedef struct tagStackSlideSearchParams {
   REAL4Vector *detResponseTStampMidPts;  /* 10/28/04 gam; container for detector response F_+ or F_x for one sky position, one polarization angle, for midpoints of a timeStamps */
   REAL4Vector **inverseSquareMedians;    /* 10/28/04 gam; container with inverse square medians for each STK for each frequency bin; for use with powerFlux style weighting of STKs */
   REAL4Vector *sumInverseSquareMedians;  /* 10/28/04 gam; container with sum of inverse square medians for each frequency bin; for use with powerFlux style weighting of STKs. */
+
+  REAL4Vector **inverseMedians; /* 09/09/05 gam; container with inverse medians for each STK for each frequency bin; for use with StackSlide style weighting of STKs */
   
   INT4 iMinBLK;      /* Index of minimum frequency in BLK band */
   INT4 iMaxBLK;      /* Index of maximum frequency in BLK band */
@@ -737,6 +742,9 @@ typedef struct tagStackSlideSearchParams {
   INT2    plusOrCross;  
   INT4    numFreqDerivIncludingNoSpinDown;
   INT4    nBinsPerOutputEvent;
+
+  BOOLEAN weightSTKsWithInverseMedians; /* 09/12/05 gam */
+  BOOLEAN inverseMediansSaved;          /* 09/12/05 gam */
 
   BarycenterInput baryinput; /* 04/12/05 gam */
 
@@ -843,6 +851,12 @@ void StackSlideGetBinMask(LALStatus *status, INT4 *binMask, REAL8 *percentBinsEx
 
 /* 05/14/05 gam; cleans SFTs using CleanCOMPLEX8SFT by Sintes, A.M., Krishnan, B. */  /* 07/13/05 gam; add RandomParams *randPar */
 void StackSlideCleanSFTs(LALStatus *status, FFT **BLKData, LineNoiseInfo *infoLines, INT4 numBLKs, INT4 nBinsPerNRM, INT4 maxBins, RandomParams *randPar);
+
+/* 09/12/05 gam; function that saves inverse medians for StackSlide style weighting of STKs */
+void SaveInverseMedians(REAL4Vector **inverseMedians, REAL4Vector *medians, INT4 k, INT4 mediansOffset1, INT4 mediansOffset2, INT4 mediansLengthm1, INT4 nBinsPerSTK);
+
+/* 09/12/04 gam; weight STKs with inverse mediasl for StackSlide style weighting of STKs */
+void WeightSTKsWithInverseMedians(REAL4FrequencySeries **STKData, REAL4Vector **inverseMedians, INT4 numSTKs, INT4 nBinsPerSTK);
 
 /* void FindBinaryLoudest(REAL4FrequencySeries **SUMData, StackSlideParams *stksldParams);*/
 
