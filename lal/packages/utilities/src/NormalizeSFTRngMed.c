@@ -102,11 +102,15 @@ NRCSID (NORMALIZESFTRNGMEDC, "$Id$");
 
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<*/
 /********************************* <lalVerbatim file="NormalizeSFTRngMedD"> */
+/** \brief Calculate the modulus square of a single SFT 
+    \param *SFT : pointer to a SFT
+    \param *periodo : pointer to REAL8FrequencySeries containing modulus square of SFT data 
+*/
 void LALSFTtoPeriodogram (LALStatus    *status,
 			  REAL8FrequencySeries    *periodo,
 			  const COMPLEX8FrequencySeries *SFT)
 {/*   *********************************************  </lalVerbatim> */
- /* Calculates the periodogram for a given SFT */
+
 
   INT4     length, j;
   REAL8    *out, re, im;
@@ -156,7 +160,12 @@ void LALSFTtoPeriodogram (LALStatus    *status,
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* *******************************  <lalVerbatim file="NormalizeSFTRngMedD"> */
-/* calculates running median for a periodogram */
+/** \brief  Calculates running psd for a single periodogram using the running median
+    \param  *periodo : pointer to REAL8FrequencySeries containing square modulus of a SFT
+    \param blockSize : Running median block size
+    \param *psd : pointer to REAL8FrequencySeries containing psd estimate
+
+*/
 void LALPeriodoToPSDRngMed (LALStatus  *status,
 			    REAL8FrequencySeries  *psd,
 			    const REAL8FrequencySeries  *periodo,
@@ -226,7 +235,11 @@ void LALPeriodoToPSDRngMed (LALStatus  *status,
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* *******************************  <lalVerbatim file="NormalizeSFTRngMedD"> */
-/* normalizes a sft based on RngMed */
+/** \brief Normalizes a sft based on RngMed 
+    \param *sft : pointer to a SFT which will be normalized
+    \param blockSize : Running median block size
+    \param normSwitch : Switch for normalization -- 0 for frequency domain and 1 for time domain
+*/
 void LALNormalizeSFT (LALStatus  *status,
 		      SFTtype  *sft,
 		      INT4     blockSize, 
@@ -295,6 +308,11 @@ void LALNormalizeSFT (LALStatus  *status,
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* *******************************  <lalVerbatim file="NormalizeSFTRngMedD"> */
+/** \brief Function for normalizing a vector of SFTs
+    \param *sftVect  pointer to a vector of SFTs which will be normalized
+    \param blockSize : Running median window size
+    \param normSwitch : 0 for frequency domain normalization and 1 for time domain 
+*/
 void LALNormalizeSFTVect (LALStatus  *status,
 			  SFTVector  *sftVect,
 			  INT4     blockSize,
