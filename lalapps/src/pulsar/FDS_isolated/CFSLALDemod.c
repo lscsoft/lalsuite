@@ -36,22 +36,24 @@ static inline vector float vec_div( vector float a, vector float b ) {
 #endif
 
 #if defined(EXTERNAL_INNER_LOOP)
-void cfs_inner_loop(REAL4 tsin, REAL4 tcos, COMPLEX8*Xalpha_k, REAL8*realXP, REAL8*imagXP) {
-  int k;
-    for(k=0; k < klim ; k++) {
-	REAL8 realXP, imagXP;
-	REAL4 xinv = (REAL4)OOTWOPI / (REAL4)tempFreq1;
-	COMPLEX8 Xa = *Xalpha_k;
-	Xalpha_k ++;
-	tempFreq1 --;
-	
-	realP = tsin * xinv;
-	imagP = tcos * xinv;
-	/* these lines compute P*xtilde */
-	*realXP += Xa.re * realP - Xa.im * imagP;
-	*imagXP += Xa.re * imagP + Xa.im * realP;
-	
-    } /* for k < klim */
+void cfs_inner_loop(UINT4 klim, REAL8 tempFreq1, REAL4 tsin, REAL4 tcos, COMPLEX8*Xalpha_k, REAL8*realXP, REAL8*imagXP) {
+  UINT4 k;
+  for(k=0; k < klim ; k++) {
+    REAL8 realP, imagP;
+    REAL4 xinv = (REAL4)OOTWOPI / (REAL4)tempFreq1;
+    COMPLEX8 Xa = *Xalpha_k;
+
+    Xalpha_k ++;
+    tempFreq1 --;
+    
+    realP = tsin * xinv;
+    imagP = tcos * xinv;
+
+    /* these lines compute P*xtilde */
+    *realXP += Xa.re * realP - Xa.im * imagP;
+    *imagXP += Xa.re * imagP + Xa.im * realP;
+    
+  } /* for k < klim */
 }
 #endif
 
@@ -947,7 +949,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
           } /* if x could become close to 0 */
         else
 #if defined(EXTERNAL_INNER_LOOP)
-	    cfs_inner_loop(tsin,tcos,Xalpha_k,&realXP,&imagXP);
+	    cfs_inner_loop(klim, tempFreq1, tsin, tcos, Xalpha+sftIndex, &realXP, &imagXP);
 #elif defined(USE_SSE2)
           {
             COMPLEX8 *Xalpha_k = Xalpha + sftIndex;
