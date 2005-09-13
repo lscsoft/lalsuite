@@ -375,7 +375,6 @@ DetectClusters(LALStatus *stat, ClustersInput *input, ClustersParams *clParams, 
 
 
 
-
 /* Given the input (the data and the index of the first datum) and the parameters (the "floor" of the data used to normalize the data, the threshold on the normalized data, the wings that we would like to leave at the edges and the index of the first datum) this routine determines the outliers (how many, how many wing-bins at the edges, the indexes of the outliers, their value)*/
 int ComputeOutliers(OutliersInput *input, OutliersParams *outliersParams, Outliers *outliers){
 
@@ -398,18 +397,23 @@ int ComputeOutliers(OutliersInput *input, OutliersParams *outliersParams, Outlie
   imin=input->ifmin;
   thresh = outliersParams->Thr;
 
+
   if (!(outliers->ratio=(REAL8 *)LALMalloc(nbins*sizeof(REAL8)))){
     fprintf(stderr,"Memory allocation failure for SpOutliers.ratio\n");
     return 1;
   }
 
   if (!(RDMP = (REAL4 *) LALCalloc(nbins,sizeof(REAL4)))){
-    printf("RDMP memory allocation failure in ComputeOutliers");
-    return 0;
+    LALFree(outliers->ratio);
+    fprintf(stderr,"RDMP memory allocation failure in ComputeOutliers");
+    return 1;
   }
+
   if (!(IDMP = (UINT4 *) LALCalloc(nbins,sizeof(UINT4)))){
-    printf("IDMP memory allocation failure in ComputeOutliers");
-    return 0;
+    LALFree(RDMP);
+    LALFree(outliers->ratio);
+    fprintf(stderr,"IDMP memory allocation failure in ComputeOutliers");
+    return 1;
   }
 
 

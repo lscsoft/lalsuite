@@ -2849,8 +2849,8 @@ EstimateFLines(LALStatus *stat)
   outliersInput->data = F1;
 
   /*find values of F above THR and populate outliers with them */
-  ComputeOutliers(outliersInput, outliersParams, outliers);
-
+  if (ComputeOutliers(outliersInput, outliersParams, outliers))
+    ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
 
   /*if no outliers were found clean and exit */
    if (outliers->Noutliers == 0){
