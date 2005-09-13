@@ -62,10 +62,55 @@
 extern "C" {
 #endif
 
-NRCSID( EXTRAPOLATEPULSARSPINS, "$Id$");
+NRCSID( EXTRAPOLATEPULSARSPINSH, "$Id$");
+
+/*---------- exported INCLUDES ----------*/
+
+/*---------- exported DEFINES ----------*/
+
+/*----- Error-codes -----*/
+
+#define EXTRAPOLATEPULSARSPINS_ENULL 		1
+#define EXTRAPOLATEPULSARSPINS_ENONULL		2
+#define EXTRAPOLATEPULSARSPINS_EMEM		3
+#define EXTRAPOLATEPULSARSPINS_EINPUT		4
+#define EXTRAPOLATEPULSARSPINS_ELIST		5
+#define EXTRAPOLATEPULSARSPINS_EXLAL		6
+
+#define EXTRAPOLATEPULSARSPINS_MSGENULL 	"Arguments contained an unexpected null pointer"
+#define EXTRAPOLATEPULSARSPINS_MSGENONULL	"Output pointer is not NULL"
+#define EXTRAPOLATEPULSARSPINS_MSGEMEM		"Out of memory"
+#define EXTRAPOLATEPULSARSPINS_MSGEINPUT	"Invald input parameter"
+#define EXTRAPOLATEPULSARSPINS_MSGELIST		"Error occurred in list-handling ..."
+#define EXTRAPOLATEPULSARSPINS_MSGEXLAL		"XLAL sub-routine failed"
+
+/*---------- exported TYPES ----------*/
+
+/** Simple frequency-interval [fmin, fmax] */
+typedef struct
+{
+  REAL8 FreqMin;	/**< lower bound on frequency */
+  REAL8 FreqMax;	/**< upper bound */
+} LALFrequencyInterval;
+
+
+/*---------- exported Global variables ----------*/
+
+/*---------- exported prototypes [API] ----------*/
 
 int XLALExtrapolatePulsarSpins (REAL8Vector *fkdotNew, LIGOTimeGPS epochNew,
 				const REAL8Vector *fkdotOld, LIGOTimeGPS epochOld);
+
+void LALExtrapolatePulsarSpins (LALStatus *, REAL8Vector *fkdotNew, LIGOTimeGPS epochNew,
+				const REAL8Vector *fkdotOld, LIGOTimeGPS epochOld);
+
+void
+LALExtrapolatePulsarSpinRange (LALStatus *,
+			       LALFrequencyInterval *spinRange,
+			       const REAL8Vector *fkdotRef,
+			       const REAL8Vector *fkdotBand,
+			       LIGOTimeGPS tRef,
+			       LIGOTimeGPS t0 );
 
 
 #ifdef  __cplusplus
