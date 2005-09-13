@@ -17,6 +17,10 @@ Author: Krishnan, B
 $Id$
 ************************************* </lalVerbatim> */
 
+/* REVISIONS: */
+/* 09/09/05 gam; make RandomParams *randPar a parameter for CleanCOMPLEX8SFT. Thus only need to */
+/*               initialze RandomParams *randPar once and avoid repeatly opening /dev/urandom.  */
+
 /* <lalLaTeX>  *********************************************
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Header \texttt{SFTClean.h}}
@@ -223,12 +227,10 @@ void LALReadLineInfo (LALStatus        *status,
 
 void LALCleanCOMPLEX8SFT (LALStatus          *status,
 		       SFTtype            *sft,
-		       INT4               width,
+		       INT4               width,       
 		       INT4               window,
-		       LineNoiseInfo      *lineInfo
-		       );
-
-
+		       LineNoiseInfo      *lineInfo,
+		       RandomParams       *randPar);
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

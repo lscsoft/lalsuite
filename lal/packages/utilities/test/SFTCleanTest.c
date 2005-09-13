@@ -15,6 +15,10 @@ Author: Krishnan, B.
 $Id$
 ************************************* </lalVerbatim> */
 
+/* REVISIONS: */
+/* 09/09/05 gam; make RandomParams *randPar a parameter for LALCleanCOMPLEX8SFT. Thus only need to */
+/*               initialze RandomParams *randPar once and avoid repeatly opening /dev/urandom.  */
+
 /* <lalLaTeX>  *******************************************************
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 *********************************************** </lalLaTeX> */
@@ -29,17 +33,21 @@ NRCSID (SFTCLEANTESTC, "$Id$");
 /* Error codes and messages */
 
 /************** <lalErrTable file="SFTCLEANTESTCErrorTable"> */
-#define SFTCLEANTESTC_ENORM 0
-#define SFTCLEANTESTC_ESUB  1
-#define SFTCLEANTESTC_EARG  2
-#define SFTCLEANTESTC_EBAD  3
-#define SFTCLEANTESTC_EFILE 4
+#define SFTCLEANTESTC_ENORM     0
+#define SFTCLEANTESTC_ESUB      1
+#define SFTCLEANTESTC_EARG      2
+#define SFTCLEANTESTC_EBAD      3
+#define SFTCLEANTESTC_EFILE     4
+#define SFTCLEANTESTC_ERANDFILE 5
+#define SFTCLEANTESTC_ERANDSEED 6
 
-#define SFTCLEANTESTC_MSGENORM "Normal exit"
-#define SFTCLEANTESTC_MSGESUB  "Subroutine failed"
-#define SFTCLEANTESTC_MSGEARG  "Error parsing arguments"
-#define SFTCLEANTESTC_MSGEBAD  "Bad argument values"
-#define SFTCLEANTESTC_MSGEFILE "Could not create output file"
+#define SFTCLEANTESTC_MSGENORM     "Normal exit"
+#define SFTCLEANTESTC_MSGESUB      "Subroutine failed"
+#define SFTCLEANTESTC_MSGEARG      "Error parsing arguments"
+#define SFTCLEANTESTC_MSGEBAD      "Bad argument values"
+#define SFTCLEANTESTC_MSGEFILE     "Could not create output file"
+#define SFTCLEANTESTC_MSGERANDFILE "Could not open /dev/urandom"
+#define SFTCLEANTESTC_MSGERANDSEED "Error initializing random seed"
 /******************************************** </lalErrTable> */
 
 
@@ -129,6 +137,11 @@ int main(int argc, char *argv[]){
   REAL8 uvar_fStart, uvar_fBand;
   INT4  uvar_window, uvar_maxBins;
 
+  /* 09/09/05 gam; randPar now a parameter for LALCleanCOMPLEX8SFT */
+  FILE *fp=NULL;   
+  INT4 seed, ranCount;  
+  RandomParams *randPar=NULL; 
+
   /* set defaults */
 
   lalDebugLevel = 0;
@@ -167,7 +180,21 @@ int main(int argc, char *argv[]){
   /* exit if help was required */
   if (uvar_help)
     exit(0); 
-
+    
+  /* 09/09/05 gam; randPar now a parameter for LALCleanCOMPLEX8SFT */
+  fp=fopen("/dev/urandom", "r");
+  if (!fp) {
+     fprintf(stderr,"Error in SFTCleanTest. Error code %i; desc: %s \n",SFTCLEANTESTC_ERANDFILE,SFTCLEANTESTC_MSGERANDFILE);
+     exit(1);
+  }
+  ranCount = fread(&seed, sizeof(seed), 1, fp);
+  if (!(ranCount==1)) {
+     fprintf(stderr,"Error in SFTCleanTest. Error code %i; desc: %s \n",SFTCLEANTESTC_ERANDSEED,SFTCLEANTESTC_MSGERANDSEED);
+     exit(1);
+  }
+  fclose(fp);
+  SUB ( LALCreateRandomParams (&status, &randPar, seed), &status );
+  
   /********logging the user input variables*********************/
   /* open log file for writing */
   fnameLog = (CHAR *)LALMalloc( 512*sizeof(CHAR));
@@ -292,8 +319,9 @@ int main(int argc, char *argv[]){
 
       /* clean the sft */
       if (nLines > 0)
-	SUB( LALCleanCOMPLEX8SFT( &status, sft, uvar_maxBins, uvar_window, &lines2), &status);
-      
+/*      SUB( LALCleanCOMPLEX8SFT( &status, sft, uvar_maxBins, uvar_window, &lines2), &status); */ /* 09/09/05 gam */
+	SUB( LALCleanCOMPLEX8SFT( &status, sft, uvar_maxBins, uvar_window, &lines2, randPar), &status);
+
       /* make the output sft filename */
       sprintf(tempstr1, "%d", sft->epoch.gpsSeconds);
       strcpy(tempstr2,uvar_outputSFTDir);
@@ -328,7 +356,10 @@ int main(int argc, char *argv[]){
       LALFree(harmonics.leftWing);
       LALFree(harmonics.rightWing);
     }
-
+  
+  /* 09/09/05 gam; randPar now a parameter for LALCleanCOMPLEX8SFT */
+  SUB ( LALDestroyRandomParams (&status, &randPar), &status);
+  
   SUB (LALDestroyUserVars(&status), &status);
 
   LALCheckMemoryLeaks(); 

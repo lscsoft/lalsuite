@@ -17,6 +17,14 @@ Author: Sintes, A.M., Krishnan, B.
 $Id$
 ************************************* </lalVerbatim> */
 
+/* REVISIONS: */
+/* 09/09/05 gam; if (nLinesOut == 0) still need outLine->nLines = nLinesOut; calling function needs to know this */
+/* 09/09/05 gam; make RandomParams *randPar a parameter for CleanCOMPLEX8SFT. Thus only need to */
+/*               initialze RandomParams *randPar once and avoid repeatly opening /dev/urandom.  */
+/* 09/09/05 gam; prefix function names with LAL in init status macros */
+/* 09/09/05 gam; only assert harmonicInfo and fname in LALFindNumberHarmonic and fix assert of fp. */
+/*               Other pointers can be unititialized until nHarmonicSets is determined.            */
+
 /* <lalLaTeX>  *******************************************************
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Module \texttt{SFTClean.c}}
@@ -83,22 +91,23 @@ void LALFindNumberHarmonics (LALStatus    *status,
   REAL8 temp1, temp2, temp3, temp4;   
 
 
-  INITSTATUS (status, "FindNumberHarmonics", SFTCLEANC);
+  INITSTATUS (status, "LALFindNumberHarmonics", SFTCLEANC);
   ATTATCHSTATUSPTR (status);
 
   /* make sure arguments are not null */
   ASSERT (harmonicInfo, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL ); 
-  ASSERT (harmonicInfo->nHarmonicSets > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);
+  /* ASSERT (harmonicInfo->nHarmonicSets > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL); 
   ASSERT (harmonicInfo->startFreq, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
   ASSERT (harmonicInfo->gapFreq, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
   ASSERT (harmonicInfo->numHarmonics, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
   ASSERT (harmonicInfo->leftWing, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL); 
-  ASSERT (harmonicInfo->rightWing, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL); 
+  ASSERT (harmonicInfo->rightWing, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL); */ /* 09/09/05 gam */
   ASSERT (fname, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL ); 
 
   /* open harmonics file for reading */
   fp = fopen( fname, "r");
-  ASSERT (fname, status, SFTCLEANH_EFILE, SFTCLEANH_MSGEFILE);
+  /* ASSERT (fname, status, SFTCLEANH_EFILE, SFTCLEANH_MSGEFILE); */ /* 09/09/05 gam */
+  ASSERT (fp, status, SFTCLEANH_EFILE, SFTCLEANH_MSGEFILE);
 
   harmonicCount = 0;
 
@@ -137,7 +146,7 @@ void  LALReadHarmonicsInfo (LALStatus          *status,
   REAL8   *rightWing=NULL;
   CHAR    dump[128];
 
-  INITSTATUS (status, "ReadHarmonicsInfo", SFTCLEANC);
+  INITSTATUS (status, "LALReadHarmonicsInfo", SFTCLEANC);
   ATTATCHSTATUSPTR (status);  
 
   /* make sure arguments are not null */
@@ -194,7 +203,7 @@ void  LALHarmonics2Lines (LALStatus          *status,
   REAL8   f0, deltaf, leftDeltaf, rightDeltaf;
 
 
-  INITSTATUS (status, "Harmonics2Lines", SFTCLEANC);
+  INITSTATUS (status, "LALHarmonics2Lines", SFTCLEANC);
   ATTATCHSTATUSPTR (status);  
 
   /* make sure arguments are not null */
@@ -260,7 +269,7 @@ void LALFindNumberLines (LALStatus          *status,
   INT4  lineCount, r;
   CHAR  dump[128]; 
 
-  INITSTATUS (status, "FindNumberLines", SFTCLEANC);
+  INITSTATUS (status, "LALFindNumberLines", SFTCLEANC);
   ATTATCHSTATUSPTR (status);  
 
   /* make sure arguments are not null */
@@ -303,7 +312,7 @@ void  LALReadLineInfo (LALStatus     *status,
   REAL8   *rightWing=NULL;
   CHAR    dump[128];
 
-  INITSTATUS (status, "ReadLineInfo", SFTCLEANC);
+  INITSTATUS (status, "LALReadLineInfo", SFTCLEANC);
   ATTATCHSTATUSPTR (status);  
 
   /* make sure arguments are not null */
@@ -350,7 +359,7 @@ void LALChooseLines (LALStatus        *status,
   INT4 nLinesIn, nLinesOut, j;
   REAL8 lineFreq, leftWing, rightWing;
 
-  INITSTATUS (status, "ChooseLines", SFTCLEANC);
+  INITSTATUS (status, "LALChooseLines", SFTCLEANC);
   ATTATCHSTATUSPTR (status);   
 
   /* some sanity checks */
@@ -396,6 +405,7 @@ void LALChooseLines (LALStatus        *status,
   /* if there are no lines inband then free memory */
   if (nLinesOut == 0)
     {
+      outLine->nLines = nLinesOut; /* 09/09/05 gam; calling function needs to know this. */
       LALFree(outLine->lineFreq);
       LALFree(outLine->leftWing);
       LALFree(outLine->rightWing);
@@ -426,7 +436,7 @@ void LALCheckLines ( LALStatus           *status,
   INT4 nLines, j;
   REAL8 lineFreq, leftWing, rightWing, doppler;
 
-  INITSTATUS (status, "CheckLines", SFTCLEANC);
+  INITSTATUS (status, "LALCheckLines", SFTCLEANC);
   ATTATCHSTATUSPTR (status);   
 
   /* sanity checks */
@@ -462,7 +472,8 @@ void LALCleanCOMPLEX8SFT (LALStatus          *status,
 		       SFTtype            *sft,
 		       INT4               width,       
 		       INT4               window,
-		       LineNoiseInfo      *lineInfo)
+		       LineNoiseInfo      *lineInfo,
+		       RandomParams       *randPar)
 { /*   *********************************************  </lalVerbatim> */
   /* function to clean the SFT based on the line information read earlier */
   
@@ -475,13 +486,13 @@ void LALCleanCOMPLEX8SFT (LALStatus          *status,
   REAL8    *leftWing=NULL;
   REAL8    *rightWing=NULL;
   COMPLEX8 *inData;
-  FILE *fp=NULL;   
+  /* FILE *fp=NULL;   
   INT4 seed, ranCount;  
-  RandomParams *randPar=NULL;
+  RandomParams *randPar=NULL; */ /* 09/09/05 gam; randPar now a function argument */
   static REAL4Vector *ranVector=NULL; 
   REAL4 *randVal;
   /* --------------------------------------------- */
-  INITSTATUS (status, "CleanCOMPLEX8SFT", SFTCLEANC);
+  INITSTATUS (status, "LALCleanCOMPLEX8SFT", SFTCLEANC);
   ATTATCHSTATUSPTR (status);   
   
   /*   Make sure the arguments are not NULL: */ 
@@ -515,14 +526,15 @@ void LALCleanCOMPLEX8SFT (LALStatus          *status,
 
   /* allocate memory for storing sft power */
   tempDataPow = LALMalloc(2*window*sizeof(REAL8));
- 
-  fp=fopen("/dev/urandom", "r");
+  
+  /* 09/09/05 gam; randPar now a function argument */
+  /* fp=fopen("/dev/urandom", "r");
   ASSERT(fp, status, SFTCLEANH_EFILE, SFTCLEANH_MSGEFILE);  
 
   ranCount = fread(&seed, sizeof(seed), 1, fp);
   ASSERT(ranCount==1, status, SFTCLEANH_EREAD, SFTCLEANH_MSGEREAD);  
 
-  fclose(fp);
+  fclose(fp); */
 
   /* calculate total number of bins to see how many random numbers must be generated */
   sumBins = 0;
@@ -535,10 +547,10 @@ void LALCleanCOMPLEX8SFT (LALStatus          *status,
       } 
     }
 
-  TRY ( LALCreateRandomParams (status->statusPtr, &randPar, seed), status);
+  /* TRY ( LALCreateRandomParams (status->statusPtr, &randPar, seed), status); */ /* 09/09/05 gam; randPar now a function argument */
   TRY ( LALCreateVector (status->statusPtr, &ranVector, 2*(sumBins + nLines)), status);
   TRY ( LALNormalDeviates (status->statusPtr, ranVector, randPar), status);
-  TRY ( LALDestroyRandomParams (status->statusPtr, &randPar), status);  
+  /* TRY ( LALDestroyRandomParams (status->statusPtr, &randPar), status);  */ /* 09/09/05 gam; randPar now a function argument */
 
   tempk = 0;  
   /* loop over the lines */
