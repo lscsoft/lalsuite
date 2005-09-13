@@ -109,7 +109,8 @@ typedef struct {
   REAL8 df1dot;			/**< spindown resolution (f1 = df/dt!!) */
   LIGOTimeGPS startTime;	/**< start time of observation */
   LIGOTimeGPS refTime;		/**< reference-time for pulsar-parameters in SBB frame */
-  REAL8Vector *fkdot;		/**< vector of frequency + derivatives (spindowns)*/
+  REAL8Vector *fkdot;		/**< vector of frequency + derivatives ("spins")*/
+  REAL8Vector *fkdotBand;	/**< vector of spin-bands */
   DopplerRegion searchRegion;	/**< parameter-space region to search over */
   EphemerisData *edat;		/**< ephemeris data (from LALInitBarycenter()) */
   CHAR *skyRegionString;	/**< sky-region to search (polygon defined by list of points) */
@@ -631,6 +632,60 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   } /* end: init ephemeris data */
 
 
+  /* ----- get search region (from user-input) ----- */
+  {
+    BOOLEAN haveAlphaDelta = LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta);
+    REAL8 fMin = MYMIN ( uvar_Freq, uvar_Freq + uvar_FreqBand );
+    REAL8 fMax = MYMAX ( uvar_Freq, uvar_Freq + uvar_FreqBand );
+    REAL8 f1dotMin = MYMIN ( uvar_f1dot, uvar_f1dot + uvar_f1dotBand );
+    REAL8 f1dotMax = MYMAX ( uvar_f1dot, uvar_f1dot + uvar_f1dotBand );
+
+    cfg->searchRegion.Freq = fMin;
+    cfg->searchRegion.FreqBand = fMax - fMin;
+
+    cfg->searchRegion.f1dot = f1dotMin;
+    cfg->searchRegion.f1dotBand = f1dotMax - f1dotMin;
+
+    /* ALTERNATIVE: store those in vectors */
+#define NUM_SPINS 2
+    if ( (cfg->fkdot = XLALCreateREAL8Vector ( NUM_SPINS )) == NULL ) {
+      ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+    }
+    if ( (cfg->fkdotBand = XLALCreateREAL8Vector ( NUM_SPINS )) == NULL ) {
+      ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+    }
+    cfg->fkdot->data[0] = fMin;
+    cfg->fkdot->data[1] = f1dotMin;
+    cfg->fkdotBand->data[0] = fMax - fMin;
+    cfg->fkdotBand->data[1] = f1dotMax - f1dotMin;
+
+
+    /* get sky-region */
+    if (uvar_skyRegion)
+      {
+	cfg->searchRegion.skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
+	if ( cfg->searchRegion.skyRegionString == NULL ) {
+	  ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+	}
+	strcpy (cfg->searchRegion.skyRegionString, uvar_skyRegion);
+      }
+    else if (haveAlphaDelta)    /* parse this into a sky-region */
+      {
+	REAL8 eps = 1e-9;	/* hack for backwards compatbility */
+	TRY ( SkySquare2String( status->statusPtr, &(cfg->searchRegion.skyRegionString),
+				uvar_Alpha, uvar_Delta,
+				uvar_AlphaBand + eps, uvar_DeltaBand + eps), status);
+      }
+  } /* find search-region */
+
+
+  /*---------- Set reference-time: ----------*/
+  if ( LALUserVarWasSet(&uvar_refTime)) {
+    TRY ( LALFloatToGPS (status->statusPtr, &(cfg->refTime), &uvar_refTime), status);
+  } else
+    cfg->refTime = cfg->startTime;
+
+
   /* ---------- initialize+check  template-grid related parameters ---------- */
   {
     BOOLEAN haveSkyRegion, haveAlphaDelta;
@@ -671,8 +726,6 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   TRY ( LALDCreateVector (status->statusPtr, &(cfg->fkdot), 2), status);
 
 
-
-
   /**---------------------------------------------------------**/
   /** Starting the Loop for different Detectors **/
   /** At this moment we are trying to match it for single detector **/
@@ -708,13 +761,6 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   
   /* determine start-time from first set of SFTs */
   cfg->startTime = cfg->ifos.sftVects[0]->data[0].epoch;
-  
-
-  /*---------- Set reference-time: ----------*/
-  if ( LALUserVarWasSet(&uvar_refTime)) {
-    TRY ( LALFloatToGPS (status->statusPtr, &(cfg->refTime), &uvar_refTime), status);
-  } else
-    cfg->refTime = cfg->startTime;
 
 
   DETATCHSTATUSPTR (status);
@@ -732,23 +778,15 @@ InitFStatDetector (LALStatus *status, ConfigVariables *cfg, UINT4 nD)
   INITSTATUS (status, "InitFStatDetector", rcsid);
   ATTATCHSTATUSPTR (status);
 
-  /*----------------------------------------------------------------------
-   * load SFT data-files
-   */
-  /* min and max physical frequency to read */
+  /* ---------- load SFT data-files ---------- */
   {
-    REAL8 f_min, f_max, f1dot_min, f1dot_max;
-    REAL8 deltaFreq_min, deltaFreq_max;	/* frequency-shift due to spindown */
-
-    UINT4 wings;
-    CHAR *fname = NULL;
+    LALFrequencyInterval fBand1, fBand2, fBandCover;
     SFTVector *headers = NULL;
-    LIGOTimeGPS startTime, endTime;
-    REAL8 refTime;
-    REAL8 duration;
+    UINT4 numSFTs;
+    CHAR *fname = NULL;
+    UINT4 wings;
 
-    REAL8 refShift;		/* time between reference-time and first-SFT timestamp */
-
+    /* determine which DataFiles to read */
     if ( nD == 0 ) fname = uvar_DataFiles;
     if ( nD == 1 ) fname = uvar_DataFiles2;
     if ( nD > 1 ) {
@@ -756,58 +794,39 @@ InitFStatDetector (LALStatus *status, ConfigVariables *cfg, UINT4 nD)
       ABORT (status, COMPUTEFSTATISTICC_EINPUT, COMPUTEFSTATISTICC_MSGEINPUT);
     }
 
-    /* frequency/spindown ranges (at reference-time tRef) */
-    f_min = MYMIN(uvar_Freq, uvar_Freq + uvar_FreqBand);
-    f_max = MYMAX(uvar_Freq, uvar_Freq + uvar_FreqBand);
-
-    f1dot_min = MYMIN(uvar_f1dot, uvar_f1dot + uvar_f1dotBand );
-    f1dot_max = MYMAX(uvar_f1dot, uvar_f1dot + uvar_f1dotBand );
-
-    /* read in all SFT-header in order to get data time-span */
+    /* first read in all SFT-headers in order to get data time-span */
     TRY ( LALGetSFTheaders (status->statusPtr, &headers, fname, NULL, NULL ), status );
 
-    /* figure out observation time-span */
-    startTime = headers->data[0].epoch;
-    endTime = headers->data[ headers->length - 1 ].epoch;
-    duration = GPS2REAL8(endTime) - GPS2REAL8(startTime);
+    numSFTs = headers->length;
 
+    /* figure out fmin and fmax at startTime of these SFTs */
+    TRY ( LALExtrapolatePulsarSpinRange (status->statusPtr, 
+					 &fBand1, cfg->fkdot, cfg->fkdotBand, cfg->refTime, 
+					 headers->data[0].epoch ), status );
 
+    /* get fmin and fmax at endTime of  observation */
+    TRY ( LALExtrapolatePulsarSpinRange (status->statusPtr, 
+					 &fBand2, cfg->fkdot, cfg->fkdotBand, cfg->refTime, 
+					 headers->data[numSFTs-1].epoch ), status );
+
+    /* get rid of SFT-headers */
     TRY ( LALDestroySFTVector (status->statusPtr, &headers), status );
 
-    if ( LALUserVarWasSet ( &uvar_refTime ) )
-      refTime = uvar_refTime;
-    else
-      refTime = GPS2REAL8 (startTime);
-
-    /* time from refTime to startTime */
-    refShift = GPS2REAL8(startTime) - refTime;
-
-    /* first propagate frequency-interval from tRef to startTime: */
-    deltaFreq_max = f1dot_max * refShift;
-    deltaFreq_min = f1dot_min * refShift;
-
-
-    /* now propagate from startTime to endTime, keeping the 'covering' Band */
-    if ( f1dot_max > 0 )
-      deltaFreq_max += f1dot_max * duration;
-    if ( f1dot_min < 0 )
-      deltaFreq_min += f1dot_min * duration;
-
-    /* final 'propagated' physical frequency-interval */
-    f_min += deltaFreq_min;
-    f_max += deltaFreq_max;
+    /* get covering frequency-band */
+    fBandCover.FreqMax = MYMAX ( fBand1.FreqMax, fBand2.FreqMax );
+    fBandCover.FreqMin = MYMIN ( fBand1.FreqMin, fBand2.FreqMin );
 
     /* ----- correct for maximal dopper-shift due to earth's motion */
-    f_min *= (1.0 - uvar_dopplermax);
-    f_max *= (1.0 + uvar_dopplermax);
+    fBandCover.FreqMax *= (1.0 + uvar_dopplermax);
+    fBandCover.FreqMin *= (1.0 - uvar_dopplermax);
     
     /* ----- load the SFT-vector ----- */
     wings = MYMAX(uvar_Dterms, uvar_RngMedWindow/2 +1);
 
-    TRY ( LALReadSFTfiles(status->statusPtr, &(cfg->ifos.sftVects[nD]), f_min, f_max, wings, fname), 
-	  status);
+    TRY ( LALReadSFTfiles(status->statusPtr, &(cfg->ifos.sftVects[nD]), 
+			  fBandCover.FreqMin, fBandCover.FreqMax, wings, fname), status);
 
-    /* this is normalized by 1/sqrt(Sh), where Sh is the median of |X|^2  
+    /* Normalized this by 1/sqrt(Sh), where Sh is the median of |X|^2  
      * NOTE: this corresponds to a double-sided PSD, therefore we need to 
      * divide by another factor of 2 with respect to the JKS formulae.
      */
@@ -816,52 +835,17 @@ InitFStatDetector (LALStatus *status, ConfigVariables *cfg, UINT4 nD)
 	    status );
     }
     
-
-    /* ----- find search region ----- */
-    {
-      BOOLEAN haveAlphaDelta = LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta);
-
-      cfg->searchRegion.Freq = f_min;
-      cfg->searchRegion.FreqBand = f_max - f_min;
-
-      cfg->searchRegion.f1dot = f1dot_min;
-      cfg->searchRegion.f1dotBand = f1dot_max - f1dot_min;
-
-      /* get sky-region */
-      if (uvar_skyRegion)
-	{
-	  cfg->searchRegion.skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
-	  if ( cfg->searchRegion.skyRegionString == NULL ) {
-	    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
-	  }
-	  strcpy (cfg->searchRegion.skyRegionString, uvar_skyRegion);
-	}
-      else if (haveAlphaDelta)    /* parse this into a sky-region */
-	{
-	  REAL8 eps = 1e-9;	/* hack for backwards compatbility */
-	  TRY ( SkySquare2String( status->statusPtr, &(cfg->searchRegion.skyRegionString),
-				  uvar_Alpha, uvar_Delta,
-				  uvar_AlphaBand + eps, uvar_DeltaBand + eps), status);
-	}
-    } /* find search-region */
-
-
   } /* SFT-loading */
+
+  /*----------------------------------------------------------------------
+   * initialize detector 
+   */
 
   if(nD == 0)
     IFO=uvar_IFO;
   else 
     IFO=uvar_IFO2;
 
-
-
-
-
-
-
-  /*----------------------------------------------------------------------
-   * initialize detector 
-   */
   if ( !strcmp (IFO, "GEO") || !strcmp (IFO, "0") ) 
     cfg->ifos.Detectors[nD] = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
   else if ( !strcmp (IFO, "LLO") || ! strcmp (IFO, "1") ) 
@@ -880,11 +864,10 @@ InitFStatDetector (LALStatus *status, ConfigVariables *cfg, UINT4 nD)
     cfg->ifos.Detectors[nD] = lalCachedDetectors[LALDetectorIndexCIT40DIFF];
   else
     {
-      LALPrintError ("\nUnknown detector. Currently allowed are \
-'GEO', 'LLO', 'LHO', 'NAUTILUS', 'VIRGO', 'TAMA', 'CIT' or '0'-'6'\n\n");
+      LALPrintError ("\nUnknown detector. Currently allowed are "
+		     " 'GEO', 'LLO', 'LHO', 'NAUTILUS', 'VIRGO', 'TAMA', 'CIT' or '0'-'6'\n\n");
       ABORT (status, COMPUTEFSTATISTICC_EINPUT, COMPUTEFSTATISTICC_MSGEINPUT);
     }
-
 
   /* ----------------------------------------------------------------------
    * initialize + allocate space for AM-coefficients and SSB-times 
@@ -1196,4 +1179,3 @@ const char *va(const char *format, ...)
 
         return string;
 }
-
