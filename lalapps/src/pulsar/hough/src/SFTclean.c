@@ -121,6 +121,11 @@ int main(int argc, char *argv[]){
   CHAR   *fnameLog=NULL; 
   CHAR   *logstr=NULL; 
 
+  /* 09/09/05 gam; randPar now a parameter for LALCleanCOMPLEX8SFT */
+  FILE *fp=NULL;   
+  INT4 seed, ranCount;  
+  RandomParams *randPar=NULL; 
+
   /* user input variables */
   BOOLEAN uvar_help;
   CHAR *uvar_harmonicfname;        /* file with harmonics info */
@@ -188,6 +193,22 @@ int main(int argc, char *argv[]){
   fprintf( fpLog, logstr);
   LALFree(logstr);
 
+
+
+  /* 09/09/05 gam; randPar now a parameter for LALCleanCOMPLEX8SFT */
+  fp=fopen("/dev/urandom", "r");
+  /*   if (!fp) { */
+  /*      fprintf(stderr,"Error in SFTCleanTest. Error code %i; desc: %s \n",SFTCLEANTESTC_ERANDFILE,SFTCLEANTESTC_MSGERANDFILE); */
+  /*      exit(1); */
+  /*   } */
+  ranCount = fread(&seed, sizeof(seed), 1, fp);
+  /*   if (!(ranCount==1)) { */
+  /*      fprintf(stderr,"Error in SFTCleanTest. Error code %i; desc: %s \n",SFTCLEANTESTC_ERANDSEED,SFTCLEANTESTC_MSGERANDSEED); */
+  /*      exit(1); */
+  /*   } */
+  fclose(fp);
+  SUB ( LALCreateRandomParams (&status, &randPar, seed), &status );
+
   /* copy contents of harmonics file into logfile */
   fprintf(fpLog, "\n\n# Contents of harmonics file:\n");
   fclose(fpLog);
@@ -213,6 +234,9 @@ int main(int argc, char *argv[]){
     LALFree(fnameLog); 
   }
   /*end of logging*********************************************************/
+
+
+
  
   SUB( LALFindNumberHarmonics (&status, &harmonics, uvar_harmonicfname), &status); 
   nHarmonicSets = harmonics.nHarmonicSets; 
@@ -292,7 +316,8 @@ int main(int argc, char *argv[]){
 
       /* clean the sft */
       if (nLines > 0)
-	SUB( LALCleanCOMPLEX8SFT( &status, sft, uvar_maxBins, uvar_window, &lines2), &status);
+	SUB( LALCleanCOMPLEX8SFT( &status, sft, uvar_maxBins, uvar_window, &lines2, randPar), &status);
+
       
       /* make the output sft filename */
       sprintf(tempstr1, "%d", sft->epoch.gpsSeconds);
@@ -330,6 +355,9 @@ int main(int argc, char *argv[]){
     }
 
   SUB (LALDestroyUserVars(&status), &status);
+
+  /* 09/09/05 gam; randPar now a parameter for LALCleanCOMPLEX8SFT */
+  SUB ( LALDestroyRandomParams (&status, &randPar), &status);
 
   LALCheckMemoryLeaks(); 
 
