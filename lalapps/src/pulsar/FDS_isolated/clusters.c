@@ -405,14 +405,14 @@ int ComputeOutliers(OutliersInput *input, OutliersParams *outliersParams, Outlie
 
   if (!(RDMP = (REAL4 *) LALCalloc(nbins,sizeof(REAL4)))){
     LALFree(outliers->ratio);
-    fprintf(stderr,"RDMP memory allocation failure in ComputeOutliers");
+    fprintf(stderr,"RDMP memory allocation failure in ComputeOutliers\n");
     return 1;
   }
 
   if (!(IDMP = (UINT4 *) LALCalloc(nbins,sizeof(UINT4)))){
     LALFree(RDMP);
     LALFree(outliers->ratio);
-    fprintf(stderr,"IDMP memory allocation failure in ComputeOutliers");
+    fprintf(stderr,"IDMP memory allocation failure in ComputeOutliers\n");
     return 1;
   }
 
