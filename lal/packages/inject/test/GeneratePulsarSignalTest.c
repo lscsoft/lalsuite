@@ -9,6 +9,7 @@ $Id$
 /* 10/12/04 gam; update error conditions. */
 /* 02/02/05 gam; if NOT pSFTandSignalParams->resTrig > 0 should not create trigArg etc... */
 /* 02/02/05 gam; fix warnings about setting ephemeris files pointers equal to constant strings and unused variables. */
+/* 09/07/05 gam; Add Dterms parameter to LALFastGeneratePulsarSFTs; use this to fill in SFT bins with fake data as per LALDemod else fill in bin with zero */
 
 /********************************************************** <lalLaTeX>
 
@@ -109,7 +110,7 @@ int main(int argc, char **argv)
 
   int mainArgc = 0; /* 02/02/05 gam; */
   static LALStatus status; /* status structure */
-  
+
   /* initialize status */
   status.statusCode = 0;
   status.statusPtr = NULL;
@@ -211,6 +212,7 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
   REAL8 bandSGNL = 0.005;
   INT4  nBinsSGNL = (INT4)(bandSGNL*tSFT + 0.5);
   INT4  nsamples = 18000; /* nsamples from SFT header; 2 x this would be the effective number of time samples used to create an SFT from raw data */
+  INT4  Dterms = 3;       /* 09/07/05 gam; use Dterms to fill in SFT bins with fake data as per LALDemod else fill in bin with zero */
   REAL8 h_0 = 7.0e-22;    /* Source amplitude; use arbitrary small number for default */
   REAL8 cosIota;        /* cosine of inclination angle iota of the source */
   
@@ -234,7 +236,7 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
    RandomParams *randPar=NULL;
    FILE *fpRandom;
   #endif
-  
+
   INITSTATUS( status, "RunGeneratePulsarSignalTest", GENERATEPULSARSIGNALTESTC );
   ATTATCHSTATUSPTR(status);
 
@@ -399,6 +401,7 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
   pSFTandSignalParams->pSigParams = pPulsarSignalParams;
   pSFTandSignalParams->pSFTParams = pSFTParams;
   pSFTandSignalParams->nSamples = nsamples;
+  pSFTandSignalParams->Dterms = Dterms;  /* 09/07/05 gam */
 
   /*********************************************************/
   /*                                                       */
@@ -551,11 +554,11 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
               }
            }
        #endif
-      
+
        /* SECOND: Use LALComputeSkyAndZeroPsiAMResponse and LALFastGeneratePulsarSFTs to generate outputSFTs */
        LALFastGeneratePulsarSFTs (status->statusPtr, &fastOutputSFTs, pSkyConstAndZeroPsiAMResponse, pSFTandSignalParams);
        CHECKSTATUSPTR (status);
-        
+
        #ifdef PRINT_FASTOUTPUTSFT
           if (testNumber == TESTNUMBER_TO_PRINT) {
             REAL4  fPlus;
@@ -663,6 +666,14 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
          fprintf(stdout,"overallMaxDiffSFTMod, testNumber = %i, SFT %i, bin %i = %g \n",testNumber,iOverallMaxDiffSFTMod,jOverallMaxDiff,overallMaxDiffSFTMod);
          fflush(stdout);
        #endif
+
+       /* 09/07/05 gam; Initialize fastOutputSFTs since only 2*Dterms bins are changed by LALFastGeneratePulsarSFTs */
+       for (i = 0; i < numSFTs; i++) {
+          for(j=0;j<nBinsSFT;j++) {
+             fastOutputSFTs->data[i].data->data[j].re = 0.0;
+             fastOutputSFTs->data[i].data->data[j].im = 0.0;
+          }
+       }
 
        LALDestroySFTVector(status->statusPtr, &outputSFTs);
        CHECKSTATUSPTR (status);

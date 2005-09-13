@@ -7,6 +7,7 @@ $Id$
 /* 07/14/04 gam; add functions LALComputeSkyAndZeroPsiAMResponse and LALFastGeneratePulsarSFTs */
 /* 10/08/04 gam; fix indexing into trig lookup tables (LUTs) by having table go from -2*pi to 2*pi */
 /* 10/12/04 gam; When computing fCross and fPlus need to use 2.0*psi. */
+/* 09/07/05 gam; Add Dterms parameter to LALFastGeneratePulsarSFTs; use this to fill in SFT bins with fake data as per LALDemod else fill in bin with zero */
 
 /********************************************************** <lalLaTeX>
 \subsection{Module \texttt{GeneratePulsarSignal.c}}
@@ -236,6 +237,13 @@ give the start frequency and frequency band of the SFTs output from \verb+LALFas
 \noindent 3) If \verb+resTrig+ is set to zero in the \verb+SFTandSignalParams+ struct, then
 the C math libary \verb+cos+ and \verb+sin+ functions are called, else lookup tables (LUTs) are used
 for calls to trig functions.  There may be a slight speedup in using LUTs.
+
+\noindent 4) To maximize the speed of SFT generations, \verb+LALFastGeneratePulsarSFTs()+ only generates
+values for the bins in the band 2*Dterms centered on the signal frequency in each SFT. Dterms must be
+greater than zero and less than or equal to the number of frequency bins in the output SFTs. Note that
+Dterms is used the same way here as it is in LALDemod. Nothing is done to the other bins, unless
+\verb+*outputSFTs+ is \verb+NULL+; then, since memory is allocates for the output SFTs, the bins
+not in the 2*Dterms band are initialized to zero.
 
 \vfill{\footnotesize\input{GeneratePulsarSignalCV}}
 
@@ -812,6 +820,8 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
   SFTtype *thisSFT, *thisNoiseSFT;      /* SFT-pointers */
   SFTVector *sftvect = NULL;            /* return value. For better readability */
   INT4 j, k, k0, s, spOrder, tmpInt, index0n;
+  INT4 jStart, jEnd, k1;
+  BOOLEAN setToZero = 0;  /* 09/07/05 gam; flag that set whether to zero bins not within the Dterms loop */
   REAL8 smallX=0.000000001;
   /* Next are for LUT for trig calls */
   INT4 indexTrig;
@@ -850,14 +860,20 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
   band = 0.5*params->pSigParams->samplingRate;      /* frequency band */
   SFTlen = (INT4)(band*tSFT + 0.5);                 /* number of frequency-bins */
   numSFTs = params->pSFTParams->timestamps->length; /* number of SFTs */  
-  
+
+  if ( (params->Dterms < 1) || (params->Dterms > SFTlen) ) {
+     ABORT (status, GENERATEPULSARSIGNALH_EDTERMS, GENERATEPULSARSIGNALH_MSGEDTERMS);
+  }
+
   /* prepare SFT-vector for return */
   if (*outputSFTs == NULL) {
     TRY (LALCreateSFTVector (status->statusPtr, &sftvect, numSFTs, SFTlen), status);
+    setToZero = 1; /* 09/07/05 gam; allocated memory for the output SFTs, zero bins not within the Dterms loop */
   } else {
     sftvect = *outputSFTs;  /* Assume memory already allocated for SFTs */
+    setToZero = 0; /* 09/07/05 gam; it's up to the user in this case to initialize bin to zero */
   }
-    
+
   /* if noiseSFTs are given: check they are consistent with signal! */
   if (params->pSFTParams->noiseSFTs) {
     TRY (checkNoiseSFTs (status->statusPtr, params->pSFTParams->noiseSFTs, f0, f0 + band, deltaF), status);
@@ -957,8 +973,22 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
 
       } /* END if (params->resTrig > 0) else ... */
       
+      /* 09/07/05 gam; use Dterms to fill in SFT bins with fake data as per LALDemod else fill in bin with zero */
+      k1=(INT4)kappa-params->Dterms+1; /* This is the same as k1 in LALDemod */
+      jStart = k1 - k0;
+      if (jStart < 0) jStart = 0;
+      jEnd = k1 + 2*params->Dterms - k0;
+      if (jEnd > SFTlen) jEnd = SFTlen;
+
       /* fill in the data */
-      for (j=0; j<SFTlen; j++) {
+      if (setToZero) {
+        for (j=0; j<jStart; j++) {
+          thisSFT->data->data[j].re = 0.0;
+          thisSFT->data->data[j].im = 0.0;
+        }
+      }
+      /* This is the same as the inner most loop over k in LALDemod */
+      for (j=jStart; j<jEnd; j++) {
           k = k0 + j;  /* k is the index of the frequency associated with index j */
           /* xTmp is the same as x in LALDemod */
           xTmp=real8TwoPi*(kappa - ((REAL8)k));
@@ -975,8 +1005,13 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
           imagTmp = realQcc*imagPcc + imagQcc*realPcc;
           thisSFT->data->data[j].re = (REAL4)(realTmp*realA - imagTmp*imagA);
           thisSFT->data->data[j].im = (REAL4)(realTmp*imagA + imagTmp*realA);
-      } /* for j < SFTlen */
-            
+      } /* END for (j=jStart; j<jEnd; j++) */
+      if (setToZero) {      
+        for (j=jEnd; j<SFTlen; j++) {
+          thisSFT->data->data[j].re = 0.0;
+          thisSFT->data->data[j].im = 0.0;
+        }
+      }
       /* fill in SFT metadata */
       thisSFT->epoch = params->pSFTParams->timestamps->data[iSFT];
       thisSFT->f0 = f0;          /* start frequency */

@@ -6,6 +6,7 @@ $Id$
 /* NOTES: */
 /* 07/14/04 gam; add functions LALFastGeneratePulsarSFTs and LALComputeSkyAndZeroPsiAMResponse */
 /* 10/08/04 gam; fix indexing into trig lookup tables (LUTs) by having table go from -2*pi to 2*pi */
+/* 09/07/05 gam; Add Dterms parameter to LALFastGeneratePulsarSFTs; use this to fill in SFT bins with fake data as per LALDemod else fill in bin with zero */
 
 /********************************************************** <lalLaTeX>
 \section{Header \texttt{GeneratePulsarSignal.h}}
@@ -61,6 +62,7 @@ NRCSID( GENERATEPULSARSIGNALH, "$Id$");
 #define GENERATEPULSARSIGNALH_ENOISEBINS	12
 #define GENERATEPULSARSIGNALH_EBADCOORDS	13
 #define GENERATEPULSARSIGNALH_ELUTS		14
+#define GENERATEPULSARSIGNALH_EDTERMS		15
 
 #define GENERATEPULSARSIGNALH_MSGENULL 		"Arguments contained an unexpected null pointer"
 #define GENERATEPULSARSIGNALH_MSGENONULL	"Output pointer is not NULL"
@@ -76,6 +78,7 @@ NRCSID( GENERATEPULSARSIGNALH, "$Id$");
 #define GENERATEPULSARSIGNALH_MSGENOISEBINS	"Frequency bins of noise-SFTs inconsistent with signal"
 #define GENERATEPULSARSIGNALH_MSGEBADCOORDS	"Current code requires sky position in equatorial coordinates"
 #define GENERATEPULSARSIGNALH_MSGELUTS		"Lookup tables (LUTs) for trig functions must be defined on domain -2pi to 2pi inclusive"
+#define GENERATEPULSARSIGNALH_MSGEDTERMS	"Dterms must be greater than zero and less than or equal to half the number of SFT bins"
 /*************************************************** </lalErrTable> */
 
 /*************************************************** 
@@ -140,6 +143,7 @@ typedef struct {
    PulsarSignalParams *pSigParams; 
    SFTParams *pSFTParams;
    INT4  nSamples;  /* nsample from noise SFT header; 2x this equals effective number of time samples  */
+   INT4  Dterms;    /* use this to fill in SFT bins with fake data as per LALDemod else fill in bin with zero */
    INT4  resTrig;   /* length sinVal, cosVal; domain: -2pi to 2pi; resolution = 4pi/resTrig */
    REAL8 *trigArg;  /* array of arguments to hold lookup table (LUT) values for doing trig calls */
    REAL8 *sinVal;   /* sinVal holds lookup table (LUT) values for doing trig sin calls */
