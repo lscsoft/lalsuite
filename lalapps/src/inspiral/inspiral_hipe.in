@@ -539,7 +539,7 @@ parser.add_option("-v", "--version",action="store_true",default=False,\
 parser.add_option("-u", "--user-tag",action="store",type="string",\
     default=None,metavar=" USERTAG",\
     help="tag the jobs with USERTAG (overrides value in ini file)")
-    
+
 parser.add_option("-g", "--g1-data",action="store_true",default=False,\
     help="analyze g1 data")
 parser.add_option("-a", "--h1-data",action="store_true",default=False,\
@@ -598,6 +598,7 @@ parser.add_option("-p", "--log-path",action="store",type="string",\
 parser.add_option("-o", "--output-segs",action="store_true",default=False,\
     help="output the segment lists of analyzed data")
 
+command_line = sys.argv[1:]
 (opts,args) = parser.parse_args()
 
 #################################
@@ -618,8 +619,33 @@ if not opts.log_path:
   print >> sys.stderr, "Use --log-path PATH to specify a location."
   sys.exit(1)
 
+  
+if not opts.g1_data and not opts.h1_data and not opts.h2_data and \
+    not opts.l1_data and not opts.analyze_all:
+  print >> sys.stderr, "No ifos specified.  Please specify at least one of"
+  print >> sys.stderr, "--g1-data, --h1-data, --h2-data, --l1-data"
+  print >> sys.stderr, "or use --analyze-all to analyze all ifos all data"
+  sys.exit(1)
 
- 
+if not opts.one_ifo and not opts.two_ifo and not opts.three_ifo and \
+    not opts.four_ifo and not opts.analyze_all:
+  print >> sys.stderr, "No number of ifos given. Please specify at least one of"
+  print >> sys.stderr, "--one-ifo, --two-ifo, --three-ifo, --four-ifo"
+  print >> sys.stderr, "or use --analyze-all to analyze all ifos all data"
+  sys.exit(1)
+  
+if not opts.datafind and not opts.template_bank and \
+     not opts.inspiral and not opts.coincidence and \
+     not opts.trigbank and not opts.inspiral_veto and \
+     not opts.second_coinc and not opts.coherent_bank and \
+     not opts.coherent_inspiral:
+  print >> sys.stderr, "No steps of the pipeline specified."
+  print >> sys.stderr, "Please specify at least one of"
+  print >> sys.stderr, "--datafind, --template-bank, --inspiral,"
+  print >> sys.stderr, "--coincidence, --trigbank, --inspiral-veto,"
+  print >> sys.stderr, "--second-coinc, --coherent-bank or --coherent-inspiral"
+  sys.exit(1)
+   
 ifo_list = ['H1','H2','L1','G1']
 
 ifotag = None
@@ -1257,10 +1283,13 @@ else:
   
 log_fh.write( "$Id$" + "\n" )
 log_fh.write( "$Name$" + "\n\n" )
-log_fh.write( "Invoked with arguments:\n" )
-#for o, a in opts:
-#  log_fh.write( o + ' ' + a + '\n' )
+log_fh.write( "Invoked with arguments:" )
+for arg in command_line:
+  if arg[0] == '-':
+    log_fh.write( "\n" )
+  log_fh.write( arg + ' ')
 
+log_fh.write( "\n" )
 log_fh.write( "Config file has CVS strings:\n" )
 log_fh.write( cp.get('pipeline','version') + "\n" )
 log_fh.write( cp.get('pipeline','cvs-tag') + "\n\n" )
