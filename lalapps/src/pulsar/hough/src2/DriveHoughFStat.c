@@ -84,7 +84,15 @@
    - The reference time is not yet handled correctly -- ok if it the default, i.e. the start 
      time of the first SFT but not in general
 
+   - Use average velocity instead of mid-time
+
+   - Do Fstat memory allocation outside Fstat calculation function
+
    \par Longer term
+
+   - Should we over-resolve the Fstat calculation to reduce loss in signal power?  We would
+     still calculate the peakgrams at the 1/T resolution, but the peak selection would 
+     take into account Fstat values over several over-resolved bins.  
    
    - What is the best grid for calculating the F-statistic grid?  At first glance, the 
      Hough patch and the metric F-statistic patch do not seem to be compatible.  If we
@@ -115,8 +123,8 @@ RCSID( "$Id$");
 
 extern int lalDebugLevel;
 
-BOOLEAN uvar_printMaps; /* global variable for printing Hough maps */
-BOOLEAN uvar_printStats; /* global variable for calculating Hough map stats */
+BOOLEAN uvar_printMaps; /**< global variable for printing Hough maps */
+BOOLEAN uvar_printStats; /**< global variable for calculating Hough map stats */
 
 /* default values for input variables */
 #define EARTHEPHEMERIS "../src/earth00-04.dat" /**< Default location of earth ephemeris */
@@ -176,7 +184,6 @@ int main( int argc, char *argv[]) {
   FILE *fpLog = NULL;
   CHAR *logstr=NULL; 
 
-
   REAL8 fStatMax = 0.0;
 
   /* user variables */
@@ -200,7 +207,7 @@ int main( int argc, char *argv[]) {
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
 
-  /************/
+  /*---------------------------------------------------------------*/
   /* set defaults, read user variables, log user variables and log cvs tags */
   /* LALDebugLevel must be called before anything else */
   lalDebugLevel = 0;
@@ -1343,7 +1350,7 @@ void ComputeFstatHoughMap(LALStatus *status,
   if (uvar_printStats ) {
     
     /* print the histogram */
-    TRY( PrintHistogram(status->statusPtr, &histTotal, params->outBaseName), status);
+    TRY( PrintHoughHistogram(status->statusPtr, &histTotal, params->outBaseName), status);
 
     /* close stats file */
     LALFree(fileStats);
@@ -1439,7 +1446,7 @@ void FstatVectToPeakGram (LALStatus *status,
 }
 
 
-/** given a sftVector, this function splits it up into several different sft vectors 
+/** Given a sftVector, this function splits it up into several different sft vectors 
     there are basically two ways of doing this: either each stack contains the same number
     of SFTs, or each stack spans the same duration. These two methods are equivalent
     only if there are no gaps between the SFTs 
@@ -1539,7 +1546,7 @@ void SetUpStacks2(LALStatus *status,
 }
 
 
-/** prints Fstatistic values as a function of frequency to a specified output file */ 
+/** Prints Fstatistic values as a function of frequency to a specified output file */ 
 void PrintFstat( LALStatus *status,
 		 REAL8FrequencySeries *Fstat, 
 		 CHAR *fname, 
@@ -1575,7 +1582,7 @@ void PrintFstat( LALStatus *status,
   RETURN(status);
 }
 
-/** print single Hough map to a specified output file */
+/** Print single Hough map to a specified output file */
 void PrintHmap2file(LALStatus *status,
 		    HOUGHMapTotal *ht, 
 		    CHAR *fnameOut, 
@@ -1619,7 +1626,7 @@ void PrintHmap2file(LALStatus *status,
 }
 
 
-/** get Hough candidates */
+/** Get Hough candidates */
 void GetHoughCandidates(LALStatus *status,
 			HoughCandidates *houghCand,
 			const HOUGHMapTotal *ht,
@@ -1704,7 +1711,7 @@ void GetHoughCandidates(LALStatus *status,
 
 
 
-/** print Hough candidates */
+/** Print Hough candidates */
 void PrintHoughCandidates(LALStatus *status,
 			  HoughCandidates *in,
 			  CHAR *fname)
@@ -1734,7 +1741,7 @@ void PrintHoughCandidates(LALStatus *status,
 
 
 
-/** utility function for getting largest value in a Fstat vector */
+/** Utility function for getting largest value in a Fstat vector */
 void GetLoudestFstat(LALStatus *status,
 		     REAL8 *max,
 		     REAL8FrequencySeries *Fstat)
@@ -1759,9 +1766,68 @@ void GetLoudestFstat(LALStatus *status,
   RETURN(status);
 }
 
+/** Sets threshold on Fstat vector and fills up frequency and deltaF values in candidate list. 
+    Important -- Currently this function does not get the sky-loctaion and spindown
+    values for the candidates because the input does not have this information.  This 
+    is to be fixed as soon as possible!
+*/
+void GetFstatCandidates( LALStatus *status,
+			 HoughCandidates *cand,
+			 const REAL8FrequencySeries *in,
+			 REAL8 FstatThr)
+{
+  INT4 k, length, nCandidates;
+  REAL8 deltaF, f0;
 
-/** print hough histogram to a file */
-void PrintHistogram( LALStatus *status,
+  INITSTATUS( status, "GetFstatCandidates", rcsid );
+  ATTATCHSTATUSPTR (status);
+
+  length = in->data->length;
+  deltaF = in->deltaF;
+  f0 = in->f0;
+
+  for ( k=0; k<length; k++) {
+    
+	nCandidates = cand->nCandidates;
+	
+	/* if there isn't enough memory then realloc */
+	if ( nCandidates >= cand->length ) {
+	  cand->length += 5000;
+	  cand->freq = (REAL8 *)LALRealloc( cand->freq, 
+					    cand->length * sizeof(REAL8));
+	  cand->alpha = (REAL8 *)LALRealloc( cand->alpha, 
+					     cand->length * sizeof(REAL8));
+	  cand->delta = (REAL8 *)LALRealloc( cand->delta, 
+					     cand->length * sizeof(REAL8));
+	  cand->dFreq = (REAL8 *)LALRealloc( cand->dFreq, 
+					     cand->length * sizeof(REAL8));
+	  cand->dAlpha = (REAL8 *)LALRealloc( cand->dAlpha, 
+					      cand->length * sizeof(REAL8));
+	  cand->dDelta = (REAL8 *)LALRealloc( cand->dDelta, 
+					      cand->length * sizeof(REAL8));
+	  cand->fdot = (REAL8 *)LALRealloc( cand->fdot, 
+					    cand->length * sizeof(REAL8));
+	  cand->dFdot = (REAL8 *)LALRealloc( cand->dFdot, 
+					     cand->length * sizeof(REAL8)); 
+	} /* end of reallocs */
+
+
+	if ( in->data->data[k] > FstatThr ) {
+
+	  cand->freq[nCandidates] = f0 + k*deltaF;
+	  cand->dFreq[nCandidates] = deltaF;
+
+	  cand->nCandidates += 1;
+	}
+  }
+  
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+}
+
+
+/** Print hough histogram to a file */
+void PrintHoughHistogram( LALStatus *status,
 		     UINT4Vector *hist, 
 		     CHAR *fnameOut)
 {

@@ -216,13 +216,16 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 			    HoughCandidates *in,
 			    CHAR *fname);
 
-
   void GetLoudestFstat(LALStatus *status,
 		       REAL8 *max,
 		       REAL8FrequencySeries *Fstat);
 
+  void GetFstatCandidates( LALStatus *status,
+			   HoughCandidates *cand,
+			   const REAL8FrequencySeries *in,
+			   REAL8 FstatThr);
 
-  void PrintHistogram(LALStatus *status,
+  void PrintHoughHistogram(LALStatus *status,
 		      UINT4Vector *hist, 
 		      CHAR *fnameOut);
   
