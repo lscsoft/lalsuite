@@ -36,7 +36,7 @@ static inline vector float vec_div( vector float a, vector float b ) {
 #endif
 
 #if defined(EXTERNAL_INNER_LOOP)
-void cfs_inner_loop(UINT4 klim, REAL8 tempFreq1, REAL4 tsin, REAL4 tcos, COMPLEX8*Xalpha_k, REAL8*realXP, REAL8*imagXP);
+extern void cfs_inner_loop(UINT4 klim, REAL8 tempFreq1, REAL4 tsin, REAL4 tcos, COMPLEX8*Xalpha_k, REAL8*realXP, REAL8*imagXP);
 #endif
 
 #if defined(LOCAL_INNER_LOOP)
