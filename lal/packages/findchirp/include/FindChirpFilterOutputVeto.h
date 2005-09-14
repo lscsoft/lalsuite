@@ -89,9 +89,11 @@ FindChirpFilterOutputVetoParams;
 <lalLaTeX>
 
 \begin{description}
-\item[\texttt{REAL4 rsqvetoWindow}] Width of the veto window.
+\item[\texttt{REAL4 rsqvetoWindow}] Width of the $r^2$ veto window in units of 
+seconds.
 
-\item[\texttt{REAL4 rsqvetoThresh}] Threshold of the veto window.
+\item[\texttt{REAL4 rsqvetoThresh}] Threshold of the $r^2$ veto test analogous to 
+the $\chi^2$ threshold employed in the bns and macho inspiral searches.
 \end{description}
 
 \vfill{\footnotesize\input{FindChirpFilterOutputVetoHV}}
