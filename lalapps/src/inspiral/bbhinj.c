@@ -53,6 +53,7 @@ RCSID( "$Id$" );
 "lalapps_bbhinj [options]\n"\
 "\nDefaults are shown in brackets\n\n" \
 "  --help                   display this message\n"\
+"  --version                print version information and exit\n"\
 "  --verbose                print mass and galactocentic cartesian coordinates\n"\
 "  --gps-start-time TIME    start injections at GPS time TIME (729273613)\n"\
 "  --gps-end-time TIME      end injections at GPS time TIME (734367613)\n"\
@@ -137,17 +138,6 @@ int main( int argc, char *argv[] )
   REAL4  deltaM, mtotal;
   /* XXX CHECK XXX */
   LALMSTUnitsAndAcc     gmstUnits = { MST_HRS, LALLEAPSEC_STRICT };
-  LALGPSandAcc          gpsAndAcc;
-  SkyPosition           skyPos;
-  LALSource             source;
-  LALPlaceAndGPS        placeAndGPS;
-  DetTimeAndASource     detTimeAndSource;
-  LALDetector           lho = lalCachedDetectors[LALDetectorIndexLHODIFF];
-  LALDetector           llo = lalCachedDetectors[LALDetectorIndexLLODIFF];
-  LALDetAndSource       detAndSource;
-  LALDetAMResponse      resp;
-  REAL8                 time_diff_ns;
-  REAL4                 splus, scross, cosiota;
   /* XXX END CHECK XXX */
 
 
@@ -177,6 +167,7 @@ int main( int argc, char *argv[] )
   {
     {"help",                    no_argument,       0,                'h'},
     {"verbose",                 no_argument,       &vrbflg,           1 },
+    {"version",                 no_argument,       0,                'V'},
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-end-time",            required_argument, 0,                'b'},
     {"time-step",               required_argument, 0,                't'},
@@ -481,6 +472,15 @@ int main( int argc, char *argv[] )
             "string", "%s", optarg );
         break;
 
+      case 'V':
+        /* print version information and exit */
+        fprintf( stdout, "Binary Black Hole INJection generation routine\n" 
+            "Duncan A Brown and Eirini Messaritaki\n"
+            "CVS Version: " CVS_ID_STRING "\n"
+            "CVS Tag: " CVS_NAME_STRING "\n" );
+        exit( 0 );
+        break;
+        
       case 'h':
         fprintf( stderr, USAGE );
         exit( 0 );
@@ -603,7 +603,6 @@ int main( int argc, char *argv[] )
       LAL_CALL( LALAddFloatToGPS( &status, &(this_inj->geocent_end_time),
           &(this_inj->geocent_end_time), u * timeInterval ), &status );
     }
-    gpsAndAcc.gps = this_inj->geocent_end_time;
 
     /* set gmst */
     LAL_CALL( LALGPStoGMST1( &status, &(this_inj->end_time_gmst),
@@ -728,95 +727,10 @@ int main( int argc, char *argv[] )
     LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
     this_inj->coa_phase = LAL_TWOPI * u ;
     
-    /* set up params for the site end times and detector response */
-    memset( &skyPos, 0, sizeof(SkyPosition) );
-    memset( &source, 0, sizeof(LALSource) );
-    memset( &placeAndGPS, 0, sizeof(LALPlaceAndGPS) );
-    memset( &detTimeAndSource, 0, sizeof(DetTimeAndASource) );
-    memset( &detAndSource, 0, sizeof(LALDetAndSource) );
-
-    skyPos.longitude = this_inj->longitude;
-    skyPos.latitude  = this_inj->latitude;
-    skyPos.system    = COORDINATESYSTEM_EQUATORIAL;
-
-    source.equatorialCoords = skyPos;
-    source.orientation      = this_inj->polarization;
-
-    placeAndGPS.p_gps = &(this_inj->geocent_end_time);
-
-    detTimeAndSource.p_det_and_time = &placeAndGPS;
-    detTimeAndSource.p_source = &skyPos;
-
-    detAndSource.pSource = &source;
-
-    gpsAndAcc.accuracy = LALLEAPSEC_STRICT;
-    gpsAndAcc.gps = this_inj->geocent_end_time;
-
-    /*
-    * compute site end times
-    * (copied from SnglInspiralUtils.c)
-    */
-
-    /* initialize end times with geocentric value */
-    this_inj->h_end_time = this_inj->l_end_time = this_inj->geocent_end_time;
-
-    /* lho */
-    placeAndGPS.p_detector = &lho;
-    LAL_CALL( LALTimeDelayFromEarthCenter( &status, &time_diff_ns,
-          &detTimeAndSource ), &status );
-    LAL_CALL( LALAddFloatToGPS( &status, &(this_inj->h_end_time),
-          &(this_inj->h_end_time), time_diff_ns ), &status );
-
-    /* llo */
-    placeAndGPS.p_detector = &llo;
-    LAL_CALL( LALTimeDelayFromEarthCenter( &status,  &time_diff_ns,
-          &detTimeAndSource ), &status);
-    LAL_CALL( LALAddFloatToGPS( &status,  &(this_inj->l_end_time),
-          &(this_inj->l_end_time), time_diff_ns ), &status);
-
-    /* temporarily, populate the fields for the */
-    /* GEO, TAMA and VIRGO times                */
-
-    memset( &(this_inj->g_end_time), 0,sizeof(&(this_inj->l_end_time)) ); 
-    memset( &(this_inj->t_end_time), 0,sizeof(&(this_inj->l_end_time)) );
-    memset( &(this_inj->v_end_time), 0,sizeof(&(this_inj->l_end_time)) );
-
-     /*
-     * compute the effective distance of the inspiral
-     * (copied from SnglInspiralUtils.c)
-     */
-      
-     /* initialize distances with real distance and compute splus and scross*/
-     this_inj->eff_dist_h = this_inj->eff_dist_l = 2.0 * this_inj->distance;
-     cosiota = cos( this_inj->inclination );
-     splus = -( 1.0 + cosiota * cosiota );
-     scross = -2.0 * cosiota;
-              
-     /* compute the response of the LHO detectors */
-     detAndSource.pDetector = &lho;
-     LAL_CALL( LALComputeDetAMResponse( &status, &resp, &detAndSource,
-                  &gpsAndAcc ), &status );
-                    
-     /* compute the effective distance for LHO */
-     this_inj->eff_dist_h /= sqrt( splus*splus*resp.plus*resp.plus +
-                 scross*scross*resp.cross*resp.cross );
-                      
-     /* compute the response of the LLO detector */
-     detAndSource.pDetector = &llo;
-     LAL_CALL( LALComputeDetAMResponse( &status, &resp, &detAndSource,
-                  &gpsAndAcc ), &status);
-                            
-     /* compute the effective distance for LLO */
-     this_inj->eff_dist_l /= sqrt( splus*splus*resp.plus*resp.plus 
-                 + scross*scross*resp.cross*resp.cross );
-
-     /* temporarily, populate the fields for the */
-     /* GEO, TAMA and VIRGO effective distances  */
-
-     memset( &(this_inj->eff_dist_g), 0, sizeof(&(this_inj->eff_dist_g)) );
-     memset( &(this_inj->eff_dist_t), 0, sizeof(&(this_inj->eff_dist_g)) );
-     memset( &(this_inj->eff_dist_v), 0, sizeof(&(this_inj->eff_dist_g)) );
-
+    /* populate the site specific information */
+    LAL_CALL(LALPopulateSimInspiralSiteInfo( &status, this_inj ), 
+        &status);
+    
     /* increment the injection time */
     LAL_CALL( LALAddFloatToGPS( &status, &gpsStartTime, &gpsStartTime, 
           meanTimeStep ), &status );
