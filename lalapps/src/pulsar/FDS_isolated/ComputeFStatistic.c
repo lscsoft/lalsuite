@@ -68,6 +68,7 @@ RCSID( "$Id$");
 */
 
 /*----------------------------------------------------------------------*/
+/* BOINC stuff for running Einstein@Home */
 /* USE_BOINC should be set to 1 to be run under BOINC */
 /* NO_BOINC_GRAPHICS should be unset or 0 to have BOINC application graphics */
 
@@ -261,7 +262,7 @@ FILE *fpFstat;		/**< output-file pointer to *unclustered* Fstat output */
 ConfigVariables GV;	/**< global container for various derived configuration settings */
 int reverse_endian=-1;	/**< endian order of SFT data.  -1: unknown, 0: native, 1: reversed */
 CHAR *FstatFilename; 	/**< (unclustered) Fstats file name*/
-CHAR ckp_fname[260];	/**< filename of checkpoint-file, global for polka */
+CHAR ckp_fname[MAXFILENAMELENGTH+4]; /**< filename of checkpoint-file, global for polka */
 CHAR *Outputfilename;	/**< Name of output file, either Fstats- or Polka file name*/
 INT4 cfsRunNo = 0;	/**< CFS run-number: 0=run only once, 1=first run, 2=second run */
 
@@ -375,14 +376,14 @@ int main(int argc,char *argv[])
 {
   LALStatus *status = &global_status;
 
-  INT4 *maxIndex=NULL;           /*  array that contains indexes of maximum of each cluster */
+  INT4 *maxIndex=NULL;           /* array that contains indexes of maximum of each cluster */
   INT4 spdwn;                    /* counter over spindown-params */
   DopplerScanState thisScan = empty_DopplerScanState; /* current state of the Doppler-scan */
-  DopplerPosition dopplerpos;           /* current search-parameters */
+  DopplerPosition dopplerpos;    /* current search-parameters */
   SkyPosition thisPoint;
-  UINT4 loopcounter;            /* Checkpoint-counters for restarting checkpointed search */
+  UINT4 loopcounter;             /* Checkpoint-counters for restarting checkpointed search */
   long fstat_bytecounter;
-  UINT4 fstat_checksum = 0;             /* Checksum of fstats file contents */
+  UINT4 fstat_checksum = 0;      /* Checksum of fstats file contents */
   FstatOutputEntry loudest = empty_FstatOutputEntry; /* loudest canidate in search-region */
 
 #ifdef RUN_POLKA
@@ -390,7 +391,7 @@ int main(int argc,char *argv[])
 #endif
 
 #if USE_BOINC
-  CHAR resfname[256];   /* buffer for boinc-resolving config-file name */
+  CHAR resfname[MAXFILENAMELENGTH]; /* buffer for boinc-resolving config-file name */
 
   /* set LAL error-handler */
   lal_errhandler = BOINC_ERR_EXIT;
@@ -519,7 +520,7 @@ int main(int argc,char *argv[])
 
 #ifdef FILE_FMAX
   {
-    CHAR Fmaxfilename[256];             /* Fmax file name*/
+    CHAR Fmaxfilename[MAXFILENAMELENGTH]; /* Fmax file name*/
 
     /*   open file */
     strcpy(Fmaxfilename,"Fmax");
@@ -1163,7 +1164,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
   REAL8 error_tol=1.0/pow(10,14);
   REAL8 norm;
   FILE * fpMLEParam;
-  CHAR Paramfilename[256];
+  CHAR Paramfilename[MAXFILENAMELENGTH];
   
 
 #ifdef DEBG_ESTSIGPAR
@@ -1384,13 +1385,13 @@ int writeFaFb(INT4 *maxIndex, DopplerPosition searchpos)
 {
   INT4 irec,jrec;
   INT4 index,krec=0;
-  CHAR filename[256];         /* Base of the output file name */
+  CHAR filename[MAXFILENAMELENGTH]; /* Base of the output file name */
   CHAR noiseswitch[16];
   CHAR clusterno[16];
   INT4 N;
   FILE * fp=NULL;
   REAL8 bias=1.0;
-  CHAR FaFbfilename[256];
+  CHAR FaFbfilename[MAXFILENAMELENGTH];
 
   if ( lalDebugLevel > 10)	/* dummy: avoid warnings */
     printf ("%f, %f", searchpos.Alpha, searchpos.Delta);
@@ -1859,7 +1860,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
      instead.
   */
   if (uvar_useCompression) {
-    char zippedname[256];
+    char zippedname[MAXFILENAMELENGTH];
     int boinczipret;
     
     /* see if there is a softlink to earth.zip */
@@ -3135,7 +3136,7 @@ void swapheader(struct headertag *thisheader) {
 /* BOINC-specific functions follow here */
 #if USE_BOINC
 void use_boinc_filename0(char *orig_name ) {
-  char resolved_name[512];
+  char resolved_name[MAXFILENAMELENGTH];
   if (boinc_resolve_filename(orig_name, resolved_name, sizeof(resolved_name))) {
     fprintf(stderr, 
             "Can't resolve file \"%s\"\n"
@@ -3149,7 +3150,7 @@ void use_boinc_filename0(char *orig_name ) {
 }
 
 void use_boinc_filename1(char **orig_name ) {
-  char resolved_name[512];
+  char resolved_name[MAXFILENAMELENGTH];
   if (boinc_resolve_filename(*orig_name, resolved_name, sizeof(resolved_name))) {
     fprintf(stderr, 
             "Can't resolve file \"%s\"\n"
@@ -3188,8 +3189,8 @@ void worker() {
   Outputfilename=FstatFilename;
 #else
   int a1,a2,retval;
-  CHAR ckptfname1[260];
-  CHAR Fstatsfilename1[260];
+  CHAR ckptfname1[MAXFILENAMELENGTH+4];
+  CHAR Fstatsfilename1[MAXFILENAMELENGTH+4];
 
   /* find first // delimiter */ 
   for(a1=0;(a1<globargc)&&(strncmp(globargv[a1],"//",3));a1++);
@@ -3268,7 +3269,7 @@ int main(int argc, char *argv[]){
   if ((fp_debug=fopen("../../DEBUG_CFS", "r")) || (fp_debug=fopen("./DEBUG_CFS", "r"))) {
     
     char commandstring[256];
-    char resolved_name[256];
+    char resolved_name[MAXFILENAMELENGTH];
     char *ptr;
     pid_t process_id=getpid();
     
@@ -3284,11 +3285,11 @@ int main(int argc, char *argv[]){
     }
     
     /* if file name is an XML soft link, resolve it */
-    if (boinc_resolve_filename(ptr, resolved_name, 256))
+    if (boinc_resolve_filename(ptr, resolved_name, sizeof(resolved_name)))
       fprintf(stderr, "Unable to boinc_resolve_filename(%s), so no debugging\n", ptr);
     else {
       skipsighandler=1;
-      sprintf(commandstring,"ddd %s %d &", resolved_name ,process_id);
+      snprintf(commandstring,sizeof(commandstring),"ddd %s %d &", resolved_name ,process_id);
       system(commandstring);
       sleep(20);
     }
