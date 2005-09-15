@@ -1667,7 +1667,7 @@ int main( int argc, char *argv[] )
       case BCVSpin:
         if ( vrbflg ) 
           fprintf( stdout, "findchirp conditioning data for BCVSpin\n" );
-        LAL_CALL( LALFindChirpBCVSpinData( &status, fcSegVec, dataSegVec, 
+        LAL_CALL( LALFindChirpTDData( &status, fcSegVec, dataSegVec, 
               fcDataParams ), &status );
         break;
       default:
