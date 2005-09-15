@@ -150,6 +150,7 @@
 /* 09/09/05 gam; Use SFT cleaning function in LAL SFTClean.h rather than in SFTbin.h */
 /* 09/12/05 gam; if ( (params->weightFlag & 16) > 0 ) save inverseMedians and weight STKs with these. */
 /* 09/12/05 gam; if (params->testFlag & 128) > 0 make BLKs and STKs narrower band based on extra bins */
+/* 09/14/05 gam; add more vetting of command line arguments and ABORTs */
 
 /*********************************************/
 /*                                           */
@@ -860,25 +861,51 @@ params->numFDeriv5   =   0;
   	fprintf(stdout, "\nSTART SECTION: validate parameters\n");
   	fflush(stdout);
   #endif
-  
-  /* 02/28/05 gam; move into initStackSlide */ 
-  if ( ( (params->outputEventFlag & 2) <= 0 ) && (params->thresholdFlag < 1) && (params->outputEventFlag > 0)  ) {
-       ABORT( status, DRIVESTACKSLIDEH_EOUTPUTREQUEST, DRIVESTACKSLIDEH_MSGEOUTPUTREQUEST ); /* Cannot output all events if thresholds are not used */
-  }
-  if ( (params->outputLoudestFromPeaks || params->outputLoudestFromSUMs) && (params->keepThisNumber < 1) ) {
-       ABORT( status, DRIVESTACKSLIDEH_EKEEPTHISNEVENTS, DRIVESTACKSLIDEH_MSGEKEEPTHISNEVENTS );
+
+  if (params->duration <= 0.0) {
+       ABORT( status, DRIVESTACKSLIDEH_EDURATION, DRIVESTACKSLIDEH_MSGEDURATION );
   }
 
-  if (params->tBLK <= 0.0 || params->tBLK > params->duration) {
+  /* vet BKL parameters */
+  if (params->numBLKs <= 0.0) {
+       ABORT( status, DRIVESTACKSLIDEH_ENBLKS, DRIVESTACKSLIDEH_MSGENBLKS );
+  }
+  if (params->tBLK <= 0.0 || params->tBLK > params->duration || params->tEffBLK <= 0.0) {
     ABORT( status, DRIVESTACKSLIDEH_ETBLK, DRIVESTACKSLIDEH_MSGETBLK);
   }
-
-  if (params->stksldSkyPatchData->startRA < 0 || params->stksldSkyPatchData->startRA > (REAL8)LAL_TWOPI) {
-    ABORT( status, DRIVESTACKSLIDEH_ERA, DRIVESTACKSLIDEH_MSGERA);
+  if ( (params->bandBLK <= 0) || (floor(params->bandBLK*params->tEffBLK + 0.5) != params->nBinsPerBLK) ) {
+         ABORT( status, DRIVESTACKSLIDEH_EBANDBLK, DRIVESTACKSLIDEH_MSGEBANDBLK );
   }
 
-  if (params->stksldSkyPatchData->startDec < -1.0*(REAL8)LAL_PI_2 || params->stksldSkyPatchData->startDec > (REAL8)LAL_PI_2) {
-    ABORT( status, DRIVESTACKSLIDEH_EDEC, DRIVESTACKSLIDEH_MSGEDEC);
+  /* vet STK parameters */
+  if (params->numBLKsPerSTK <= 0) {
+       ABORT( status, DRIVESTACKSLIDEH_ENBLKSPERSTK, DRIVESTACKSLIDEH_MSGENBLKSPERSTK );
+  }
+  if (params->tEffSTK <= 0.0) {
+       ABORT( status, DRIVESTACKSLIDEH_ETEFFSTK, DRIVESTACKSLIDEH_MSGETEFFSTK );
+  }
+  if ( (params->bandSTK <= 0) || (floor(params->bandSTK*params->tEffSTK + 0.5) != params->nBinsPerSTK) ) {
+         ABORT( status, DRIVESTACKSLIDEH_EBANDSTK, DRIVESTACKSLIDEH_MSGEBANDSTK );
+  }
+
+  /* vet SUM parameters */
+  if (params->numSTKsPerSUM <= 0.0) {
+       ABORT( status, DRIVESTACKSLIDEH_ENSTKSPERSUM, DRIVESTACKSLIDEH_MSGENSTKSPERSUM );
+  }  
+  if (params->tEffSUM <= 0.0) {
+       ABORT( status, DRIVESTACKSLIDEH_ETEFFSUM, DRIVESTACKSLIDEH_MSGETEFFSUM );
+  }
+  if ( (params->bandSUM <= 0) || (floor(params->bandSUM*params->tEffSUM + 0.5) != params->nBinsPerSUM) ) {
+         ABORT( status, DRIVESTACKSLIDEH_EBANDSUM, DRIVESTACKSLIDEH_MSGEBANDSUM );
+  }
+
+  /* 07/17/05 gam; since entire frequency band slides together, band cannot exceed (c/v_Earth)_max/tEffSTK  */
+  if ( params->bandSUM > 1.0/(params->tEffSTK*((REAL8)STACKSLIDEMAXV)) ){
+    if ((params->debugOptionFlag & 128) > 0 ) {
+      /* continue; sliding is turned off */
+    } else {
+      ABORT( status, DRIVESTACKSLIDEH_EBANDTOOWIDE, DRIVESTACKSLIDEH_MSGEBANDTOOWIDE);
+    }
   }
 
   /* "Invalid or null ifoNickName" */
@@ -896,26 +923,237 @@ params->numFDeriv5   =   0;
     ABORT( status, DRIVESTACKSLIDEH_ETARGETNAME, DRIVESTACKSLIDEH_MSGETARGETNAME);
   }
 
+  if ( params->parameterSpaceFlag < 0 ) {
+    ABORT( status, DRIVESTACKSLIDEH_EPARAMSPACEFLAG, DRIVESTACKSLIDEH_MSGEPARAMSPACEFLAG );
+  }
+
+  if ( params->stackTypeFlag !=0 ) {
+    /* 0 is the only currently available option */
+    ABORT( status, DRIVESTACKSLIDEH_ESTKTYPEFLAG, DRIVESTACKSLIDEH_MSGESTKTYPEFLAG );
+  }
+
+  if ( params->weightFlag < 0 ) {
+    ABORT( status, DRIVESTACKSLIDEH_EWEIGHTFLAG, DRIVESTACKSLIDEH_MSGEWEIGHTFLAG );
+  }
+
+  if ( params->orientationAngle < -1.0*((REAL8)LAL_TWOPI) || params->orientationAngle > ((REAL8)LAL_TWOPI) ) {
+    ABORT( status, DRIVESTACKSLIDEH_EBADORIANGLE, DRIVESTACKSLIDEH_MSGEBADORIANGLE );
+  }
+
+  if ( (params->cosInclinationAngle < -1.0) || (params->cosInclinationAngle > 1.0) ) {
+    ABORT( status, DRIVESTACKSLIDEH_EBADCOSINC, DRIVESTACKSLIDEH_MSGEBADCOSINC );
+  }
+
+  if ( params->normalizationFlag < 0 ) {
+    ABORT( status, DRIVESTACKSLIDEH_ENORMFLAG, DRIVESTACKSLIDEH_MSGENORMFLAG );
+  }
+
+  /* Normalization of BLKs not currently supported; it is the STKs that get normalized */
+  if ((params->normalizationFlag & 2) > 0) {
+    ABORT( status, DRIVESTACKSLIDEH_ENORMBLKs, DRIVESTACKSLIDEH_MSGENORMBLKs );
+  }
+
+  /* Check that params->nBinsPerNRM makes sense */
+  if ( (params->normalizationFlag & 4) > 0 ) {
+    /* Using running median; blocksize = params->nBinsPerNRM */
+    if ( (params->nBinsPerNRM <= 0) || (params->nBinsPerNRM > params->nBinsPerSTK) ) {
+       ABORT( status, DRIVESTACKSLIDEH_EBANDNRM, DRIVESTACKSLIDEH_MSGEBANDNRM );
+    }
+  } else if ( params->normalizationFlag > 0 ) {
+    if ( (params->bandNRM <= 0) || (floor(params->bandNRM*params->tEffSTK + 0.5) != params->nBinsPerNRM) ) {
+       ABORT( status, DRIVESTACKSLIDEH_EBANDNRM, DRIVESTACKSLIDEH_MSGEBANDNRM );
+    }
+  }
+
+  /* Bit 8 vetoes power above the normalizationParameter when finding mean power to normalize STKs. */
+  /* Cannot do this when bit 4 is set and using the running median. (Instead should use cleaning options.) */
+  if ( ((params->normalizationFlag & 8) > 0) && ((params->normalizationFlag & 4) > 0) ) {
+      ABORT( status, DRIVESTACKSLIDEH_ENORMBIT4AND8, DRIVESTACKSLIDEH_MSGENORMBIT4AND8 );
+  }
+  
+  if ( params->testFlag < 0 ) {
+    ABORT( status, DRIVESTACKSLIDEH_ETESTFLAG, DRIVESTACKSLIDEH_MSGETESTFLAG );
+  }
+
+  /* Cannot set weightFlag bit 16 and testFlag bit 128; these options are incompatible. */
+  /* The first reuses the medians from the first injection with each injection; the     */
+  /* second uses a narrow band for injections, changing this band with each injection.  */
+  if ( ((params->weightFlag & 16) > 0) && ((params->testFlag & 128) > 0) ) {
+      ABORT( status, DRIVESTACKSLIDEH_EBADWEIGHTTEST, DRIVESTACKSLIDEH_MSGEBADWEIGHTTEST );
+  }
+
+  /* 02/28/05 gam; move into initStackSlide */ 
+  if ( ( (params->outputEventFlag & 2) <= 0 ) && (params->thresholdFlag < 1) && (params->outputEventFlag > 0)  ) {
+       ABORT( status, DRIVESTACKSLIDEH_EOUTPUTREQUEST, DRIVESTACKSLIDEH_MSGEOUTPUTREQUEST ); /* Cannot output all events if thresholds are not used */
+  }
+
+  /* 2nd bit in outputEventFlag set to keep loudest but keepThisNumber was < 1! */
+  if ( (params->outputLoudestFromPeaks || params->outputLoudestFromSUMs) && (params->keepThisNumber < 1) ) {
+       ABORT( status, DRIVESTACKSLIDEH_EKEEPTHISNEVENTS, DRIVESTACKSLIDEH_MSGEKEEPTHISNEVENTS );
+  }
+
+  /* vet sky RA parameters */
+  if (params->stksldSkyPatchData->startRA < 0 || params->stksldSkyPatchData->startRA > (REAL8)LAL_TWOPI) {
+    ABORT( status, DRIVESTACKSLIDEH_ERA, DRIVESTACKSLIDEH_MSGERA);
+  }
+  if (params->stksldSkyPatchData->deltaRA < 0.0) {
+      ABORT( status, DRIVESTACKSLIDEH_EDELTARA, DRIVESTACKSLIDEH_MSGEDELTARA );
+  }
+  if (params->stksldSkyPatchData->numRA <= 0.0) {
+      ABORT( status, DRIVESTACKSLIDEH_ENUMRA, DRIVESTACKSLIDEH_MSGENUMRA );
+  }  
+  if (params->stksldSkyPatchData->deltaRA > 0.0) {
+    /* Interval is [startRA, stopRA). However, numRA is calculated internally as ceil(stopRA - startRA)/deltaRA. */
+    /* The numRA from the command line is not really used; however check if it is consistent with this calculation. */
+    if ( ( fabs( params->stksldSkyPatchData->stopRA - ( params->stksldSkyPatchData->startRA + 
+         ((REAL8)params->stksldSkyPatchData->numRA)*params->stksldSkyPatchData->deltaRA ) ) )
+         > params->stksldSkyPatchData->deltaRA )
+    {
+      ABORT( status, DRIVESTACKSLIDEH_ENUMRA, DRIVESTACKSLIDEH_MSGENUMRA );
+    }  
+  } else {
+    if ( (params->stksldSkyPatchData->stopRA != params->stksldSkyPatchData->startRA) || (params->stksldSkyPatchData->numRA != 1) ) {
+      ABORT( status, DRIVESTACKSLIDEH_ENUMRA, DRIVESTACKSLIDEH_MSGENUMRA );
+    }
+  }
+
+  /* vet sky DEC parameters */
+  if (params->stksldSkyPatchData->startDec < -1.0*(REAL8)LAL_PI_2 || params->stksldSkyPatchData->startDec > (REAL8)LAL_PI_2) {
+    ABORT( status, DRIVESTACKSLIDEH_EDEC, DRIVESTACKSLIDEH_MSGEDEC );
+  }
+  if (params->stksldSkyPatchData->deltaDec < 0.0) {
+      ABORT( status, DRIVESTACKSLIDEH_EDELTADEC, DRIVESTACKSLIDEH_MSGEDELTADEC );
+  }
+  if (params->stksldSkyPatchData->numDec <= 0.0) {
+      ABORT( status, DRIVESTACKSLIDEH_ENUMDEC, DRIVESTACKSLIDEH_MSGENUMDEC );
+  }  
+  if (params->stksldSkyPatchData->deltaDec > 0.0) {
+    /* Interval covered must be [startDEC, stopDEC) or [startDEC, stopDEC] */
+    if ( ( floor( (params->stksldSkyPatchData->stopDec - params->stksldSkyPatchData->startDec)
+           /params->stksldSkyPatchData->deltaDec + 0.5 ) != params->stksldSkyPatchData->numDec )      
+         &&
+         ( floor( (params->stksldSkyPatchData->stopDec - params->stksldSkyPatchData->startDec)
+           /params->stksldSkyPatchData->deltaDec + 0.5 ) != (params->stksldSkyPatchData->numDec - 1) )
+     ) 
+    {
+      ABORT( status, DRIVESTACKSLIDEH_ENUMDEC, DRIVESTACKSLIDEH_MSGENUMDEC );
+    }
+  } else {
+    if ( (params->stksldSkyPatchData->stopDec != params->stksldSkyPatchData->startDec) || (params->stksldSkyPatchData->numDec != 1) ) {
+      ABORT( status, DRIVESTACKSLIDEH_ENUMDEC, DRIVESTACKSLIDEH_MSGENUMDEC );
+    }
+  }
+
   /* 07/17/05 gam; currently only support a maximum of 4 spindown parameters */
-  if ( params->numSpinDown > 4 ){
+  if ( params->numSpinDown > 4 ) {
       ABORT( status, DRIVESTACKSLIDEH_ETOOMANYSPINDOWN, DRIVESTACKSLIDEH_MSGETOOMANYSPINDOWN);
   }
 
-  /* 07/17/05 gam;  */
-  if ( params->numSpinDown > 4 ){
-      ABORT( status, DRIVESTACKSLIDEH_ETOOMANYSPINDOWN, DRIVESTACKSLIDEH_MSGETOOMANYSPINDOWN);
-  }
-  
-  /* 07/17/05 gam; since entire frequency band slides together, band cannot exceed (c/v_Earth)_max/tEffSTK  */
-  
-  /* 07/17/05 gam;  */
-  if ( params->bandSUM > 1.0/(params->tEffSTK*((REAL8)STACKSLIDEMAXV)) ){
-    if ((params->debugOptionFlag & 128) > 0 ) {
-      /* continue; sliding is turned off */
+  if ( params->numSpinDown > 0 ) {
+    /* vet FDeriv1 parameters; note that deltaFDeriv1 cannot be positive */
+    if (params->deltaFDeriv1 > 0.0) {
+      ABORT( status, DRIVESTACKSLIDEH_EDELTADERIV1, DRIVESTACKSLIDEH_MSGEDELTADERIV1 );
+    }
+    if (params->numFDeriv1 <= 0.0) {
+      ABORT( status, DRIVESTACKSLIDEH_ENUMDERIV1, DRIVESTACKSLIDEH_MSGENUMDERIV1 );
+    }  
+    if (params->deltaFDeriv1 < 0.0) {
+      /* Interval covered must be [startFDeriv1, stopFDeriv1) or [startFDeriv1, stopFDeriv1] */
+      if ( ( floor( (params->stopFDeriv1 - params->startFDeriv1)
+           /params->deltaFDeriv1 + 0.5 ) != params->numFDeriv1 )
+         &&
+         ( floor( (params->stopFDeriv1 - params->startFDeriv1)
+           /params->deltaFDeriv1 + 0.5 ) != (params->numFDeriv1 - 1) )
+       ) 
+      {
+         ABORT( status, DRIVESTACKSLIDEH_ENUMDERIV1, DRIVESTACKSLIDEH_MSGENUMDERIV1 );
+      }
     } else {
-      ABORT( status, DRIVESTACKSLIDEH_EBANDTOOWIDE, DRIVESTACKSLIDEH_MSGEBANDTOOWIDE);
+      if ( (params->stopFDeriv1 != params->startFDeriv1) || (params->numFDeriv1 != 1) ) {
+        ABORT( status, DRIVESTACKSLIDEH_ENUMDERIV1, DRIVESTACKSLIDEH_MSGENUMDERIV1 );
+      }
     }
   }
+
+  if ( params->numSpinDown > 1 ) {
+    /* vet FDeriv2 parameters; note that deltaFDeriv2 cannot be negative */
+    if (params->deltaFDeriv2 < 0.0) {
+      ABORT( status, DRIVESTACKSLIDEH_EDELTADERIV2, DRIVESTACKSLIDEH_MSGEDELTADERIV2 );
+    }
+    if (params->numFDeriv2 <= 0.0) {
+      ABORT( status, DRIVESTACKSLIDEH_ENUMDERIV2, DRIVESTACKSLIDEH_MSGENUMDERIV2 );
+    }  
+    if (params->deltaFDeriv2 > 0.0) {
+      /* Interval covered must be [startFDeriv2, stopFDeriv2) or [startFDeriv2, stopFDeriv2] */
+      if ( ( floor( (params->stopFDeriv2 - params->startFDeriv2)
+           /params->deltaFDeriv2 + 0.5 ) != params->numFDeriv2 )
+         &&
+         ( floor( (params->stopFDeriv2 - params->startFDeriv2)
+           /params->deltaFDeriv2 + 0.5 ) != (params->numFDeriv2 - 1) )
+       ) 
+      {
+         ABORT( status, DRIVESTACKSLIDEH_ENUMDERIV2, DRIVESTACKSLIDEH_MSGENUMDERIV2 );
+      }
+    } else {
+      if ( (params->stopFDeriv2 != params->startFDeriv2) || (params->numFDeriv2 != 1) ) {
+        ABORT( status, DRIVESTACKSLIDEH_ENUMDERIV2, DRIVESTACKSLIDEH_MSGENUMDERIV2 );
+      }
+    }
+  }
+  
+  if ( params->numSpinDown > 2 ) {
+    /* vet FDeriv3 parameters; note that deltaFDeriv3 cannot be positive */
+    if (params->deltaFDeriv3 > 0.0) {
+      ABORT( status, DRIVESTACKSLIDEH_EDELTADERIV3, DRIVESTACKSLIDEH_MSGEDELTADERIV3 );
+    }
+    if (params->numFDeriv3 <= 0.0) {
+      ABORT( status, DRIVESTACKSLIDEH_ENUMDERIV3, DRIVESTACKSLIDEH_MSGENUMDERIV3 );
+    }  
+    if (params->deltaFDeriv3 < 0.0) {
+      /* Interval covered must be [startFDeriv3, stopFDeriv3) or [startFDeriv3, stopFDeriv3] */
+      if ( ( floor( (params->stopFDeriv3 - params->startFDeriv3)
+           /params->deltaFDeriv3 + 0.5 ) != params->numFDeriv3 )
+         &&
+         ( floor( (params->stopFDeriv3 - params->startFDeriv3)
+           /params->deltaFDeriv3 + 0.5 ) != (params->numFDeriv3 - 1) )
+       ) 
+      {
+         ABORT( status, DRIVESTACKSLIDEH_ENUMDERIV3, DRIVESTACKSLIDEH_MSGENUMDERIV3 );
+      }
+    } else {
+      if ( (params->stopFDeriv3 != params->startFDeriv3) || (params->numFDeriv3 != 1) ) {
+        ABORT( status, DRIVESTACKSLIDEH_ENUMDERIV3, DRIVESTACKSLIDEH_MSGENUMDERIV3 );
+      }
+    }
+  }
+
+  if ( params->numSpinDown > 3 ) {
+    /* vet FDeriv4 parameters; note that deltaFDeriv4 cannot be negative */
+    if (params->deltaFDeriv4 < 0.0) {
+      ABORT( status, DRIVESTACKSLIDEH_EDELTADERIV4, DRIVESTACKSLIDEH_MSGEDELTADERIV4 );
+    }
+    if (params->numFDeriv4 <= 0.0) {
+      ABORT( status, DRIVESTACKSLIDEH_ENUMDERIV4, DRIVESTACKSLIDEH_MSGENUMDERIV4 );
+    }  
+    if (params->deltaFDeriv4 > 0.0) {
+      /* Interval covered must be [startFDeriv4, stopFDeriv4) or [startFDeriv4, stopFDeriv4] */
+      if ( ( floor( (params->stopFDeriv4 - params->startFDeriv4)
+           /params->deltaFDeriv4 + 0.5 ) != params->numFDeriv4 )
+         &&
+         ( floor( (params->stopFDeriv4 - params->startFDeriv4)
+           /params->deltaFDeriv4 + 0.5 ) != (params->numFDeriv4 - 1) )
+       ) 
+      {
+         ABORT( status, DRIVESTACKSLIDEH_ENUMDERIV4, DRIVESTACKSLIDEH_MSGENUMDERIV4 );
+      }
+    } else {
+      if ( (params->stopFDeriv4 != params->startFDeriv4) || (params->numFDeriv4 != 1) ) {
+        ABORT( status, DRIVESTACKSLIDEH_ENUMDERIV4, DRIVESTACKSLIDEH_MSGENUMDERIV4 );
+      }
+    }
+  }
+
+  /* Note that the Monte Carlo parameters are vetting in the modules with the Monto Carlo code. */
 
 /**********************************************/
 /*                                            */

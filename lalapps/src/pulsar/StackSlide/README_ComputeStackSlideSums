@@ -61,7 +61,7 @@ c. StackSlideIsolated.c and StackSlideIsolated.h: contains loops over the parame
 
 d. StackSlideBinary.c and StackSlideBinary.h: contains loops over the parameter space for the binary search.
 
-e. SFTbin.c and SFTbin.h: code for reading in known line information and cleaning SFTs
+e. SFTbin.c and SFTbin.h: code for reading in known line information and cleaning SFTs (These files are now obsolete. Functions in SFTClean.c and SFTClean.h in LAL utilities package are now used.)
 
 f. StackSlide.c and StackSlide.h: contains the core algorithm functions; as appropriate these will be transferred to LAL.
 

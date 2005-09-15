@@ -92,6 +92,7 @@
 /* 09/06/05 gam; Change params->maxMCfracErr to params->maxMCErr, the absolute error in confidence for convergence. */
 /* 09/09/05 gam; Use SFT cleaning function in LAL SFTClean.h rather than in SFTbin.h */
 /* 09/12/05 gam; if ( (params->weightFlag & 16) > 0 ) save inverse medians and weight STKs with these. */
+/* 09/14/05 gam; add more vetting of command line arguments and ABORTs */
 
 #ifndef _DRIVESTACKSLIDE_H
 #define _DRIVESTACKSLIDE_H
@@ -167,30 +168,61 @@ NRCSID( DRIVESTACKSLIDEH, "$Id$");
 #define DRIVESTACKSLIDEH_ELONGLATFROMVEC 33
 #define DRIVESTACKSLIDEH_ETOOMANYSPINDOWN 34
 #define DRIVESTACKSLIDEH_EBANDTOOWIDE 35
+#define DRIVESTACKSLIDEH_EDURATION 36
+#define DRIVESTACKSLIDEH_ENBLKS 37
+#define DRIVESTACKSLIDEH_EBANDBLK 38
+#define DRIVESTACKSLIDEH_EBANDSTK 39
+#define DRIVESTACKSLIDEH_EBANDSUM 40
+#define DRIVESTACKSLIDEH_ENBLKSPERSTK 41
+#define DRIVESTACKSLIDEH_ETEFFSTK 42
+#define DRIVESTACKSLIDEH_ENSTKSPERSUM 43
+#define DRIVESTACKSLIDEH_ETEFFSUM 44
+#define DRIVESTACKSLIDEH_ESTKTYPEFLAG 45
+#define DRIVESTACKSLIDEH_EWEIGHTFLAG 46
+#define DRIVESTACKSLIDEH_ENORMFLAG 47
+#define DRIVESTACKSLIDEH_ETESTFLAG 48
+#define DRIVESTACKSLIDEH_ENORMBLKs 49
+#define DRIVESTACKSLIDEH_ENORMBIT4AND8 50
+#define DRIVESTACKSLIDEH_EBADWEIGHTTEST 51
+#define DRIVESTACKSLIDEH_EBADCOSINC 52
+#define DRIVESTACKSLIDEH_EBADORIANGLE 53
+#define DRIVESTACKSLIDEH_EBANDNRM 54
+#define DRIVESTACKSLIDEH_EDELTARA 55
+#define DRIVESTACKSLIDEH_ENUMRA 56
+#define DRIVESTACKSLIDEH_EDELTADEC 57
+#define DRIVESTACKSLIDEH_ENUMDEC 58
+#define DRIVESTACKSLIDEH_EDELTADERIV1 59
+#define DRIVESTACKSLIDEH_ENUMDERIV1 60
+#define DRIVESTACKSLIDEH_EDELTADERIV2 61
+#define DRIVESTACKSLIDEH_ENUMDERIV2 62
+#define DRIVESTACKSLIDEH_EDELTADERIV3 63
+#define DRIVESTACKSLIDEH_ENUMDERIV3 64
+#define DRIVESTACKSLIDEH_EDELTADERIV4 65
+#define DRIVESTACKSLIDEH_ENUMDERIV4 66
 
-#define DRIVESTACKSLIDEH_MSGENULL           "Null pointer"
-#define DRIVESTACKSLIDEH_MSGEGPSTINT        "Unexpected GPS time interval"
-#define DRIVESTACKSLIDEH_MSGEDELTAT         "Invalid deltaT"
-#define DRIVESTACKSLIDEH_MSGETBLK           "Invalid tBLK"
-#define DRIVESTACKSLIDEH_MSGERA             "Invalid right ascension"
-#define DRIVESTACKSLIDEH_MSGEDEC            "Invalid declination"
-#define DRIVESTACKSLIDEH_MSGEFREQ           "Invalid frequency +/- 0.5*band (could be negative, outside LIGO band, or too high for sample rate)"
-#define DRIVESTACKSLIDEH_MSGEFREQDERIV      "One of the frequency derivatives is possibly too large; frequency will evolve outside allowed band"
-#define DRIVESTACKSLIDEH_MSGEALOC           "Memory allocation error"
-#define DRIVESTACKSLIDEH_MSGENODATA         "No input data was found"
-#define DRIVESTACKSLIDEH_MSGENDATA          "Invalid number of input data points"
-#define DRIVESTACKSLIDEH_MSGETIMESTEP       "Incorrect input data time step"
-#define DRIVESTACKSLIDEH_MSGESTARTTIME      "Incorrect input data start time"
-#define DRIVESTACKSLIDEH_MSGESTOPTIME       "Incorrect input data stop time"
-#define DRIVESTACKSLIDEH_MSGENTBLK          "nSamplesPerBLK and tBLK are inconsistent with deltaT"
-#define DRIVESTACKSLIDEH_MSGELINEHARMONICS  "Problem reading linesAndHarmonicsFile"
-#define DRIVESTACKSLIDEH_MSGEIFONICKNAME    "Invalid or null ifoNickName"
-#define DRIVESTACKSLIDEH_MSGEIFO            "Invalid or null IFO"
-#define DRIVESTACKSLIDEH_MSGETARGETNAME     "Invalid or null Target Name"
-#define DRIVESTACKSLIDEH_MSGEISTARTTIME     "Requested GPS start time resulted in invalid index to input data."
-#define DRIVESTACKSLIDEH_MSGEMISSINGBLKDATA "Some requested input BLK data is missing"
-#define DRIVESTACKSLIDEH_MSGESTARTFREQ      "Input BLK start frequency does not agree with that requested"
-#define DRIVESTACKSLIDEH_MSGEFREQSTEPSIZE   "Input BLK frequency step size does not agree with that expected"
+#define DRIVESTACKSLIDEH_MSGENULL            "Null pointer"
+#define DRIVESTACKSLIDEH_MSGEGPSTINT         "Unexpected GPS time interval"
+#define DRIVESTACKSLIDEH_MSGEDELTAT          "Invalid deltaT"
+#define DRIVESTACKSLIDEH_MSGETBLK            "tBLK or tEffBLK were <= 0 or duration <= tBLK"
+#define DRIVESTACKSLIDEH_MSGERA              "Invalid right ascension"
+#define DRIVESTACKSLIDEH_MSGEDEC             "Invalid declination"
+#define DRIVESTACKSLIDEH_MSGEFREQ            "Invalid frequency +/- 0.5*band (could be negative, outside LIGO band, or too high for sample rate)"
+#define DRIVESTACKSLIDEH_MSGEFREQDERIV       "One of the frequency derivatives is possibly too large; frequency will evolve outside allowed band"
+#define DRIVESTACKSLIDEH_MSGEALOC            "Memory allocation error"
+#define DRIVESTACKSLIDEH_MSGENODATA          "No input data was found"
+#define DRIVESTACKSLIDEH_MSGENDATA           "Invalid number of input data points"
+#define DRIVESTACKSLIDEH_MSGETIMESTEP        "Incorrect input data time step"
+#define DRIVESTACKSLIDEH_MSGESTARTTIME       "Incorrect input data start time"
+#define DRIVESTACKSLIDEH_MSGESTOPTIME        "Incorrect input data stop time"
+#define DRIVESTACKSLIDEH_MSGENTBLK           "nSamplesPerBLK and tBLK are inconsistent with deltaT"
+#define DRIVESTACKSLIDEH_MSGELINEHARMONICS   "Problem reading linesAndHarmonicsFile"
+#define DRIVESTACKSLIDEH_MSGEIFONICKNAME     "Invalid or null ifoNickName"
+#define DRIVESTACKSLIDEH_MSGEIFO             "Invalid or null IFO"
+#define DRIVESTACKSLIDEH_MSGETARGETNAME      "Invalid or null Target Name"
+#define DRIVESTACKSLIDEH_MSGEISTARTTIME      "Requested GPS start time resulted in invalid index to input data."
+#define DRIVESTACKSLIDEH_MSGEMISSINGBLKDATA  "Some requested input BLK data is missing"
+#define DRIVESTACKSLIDEH_MSGESTARTFREQ       "Input BLK start frequency does not agree with that requested"
+#define DRIVESTACKSLIDEH_MSGEFREQSTEPSIZE    "Input BLK frequency step size does not agree with that expected"
 #define DRIVESTACKSLIDEH_MSGEPARAMSPACEFLAG  "Value for parameterSpaceFlag is invalid or currently unsupported"
 #define DRIVESTACKSLIDEH_MSGEKEEPTHISNEVENTS "2nd bit in outputEventFlag set to keep loudest but keepThisNumber was < 1!"
 #define DRIVESTACKSLIDEH_MSGEOUTPUTREQUEST   "Cannot set thresholdFlag < 1 and outputEventFlag to output everything!"
@@ -200,6 +232,37 @@ NRCSID( DRIVESTACKSLIDEH, "$Id$");
 #define DRIVESTACKSLIDEH_MSGELONGLATFROMVEC  "Vector has zero length in FindLongLatFromVec"
 #define DRIVESTACKSLIDEH_MSGETOOMANYSPINDOWN "Command line argument, numSpindown, cannot exceed 4"
 #define DRIVESTACKSLIDEH_MSGEBANDTOOWIDE     "Since entire frequency band slides together, bandSUM cannot exceed (c/v_Earth)_max/tEffSTK"
+#define DRIVESTACKSLIDEH_MSGEDURATION        "duration must be positive"
+#define DRIVESTACKSLIDEH_MSGENBLKS           "numBLKs must be positive"
+#define DRIVESTACKSLIDEH_MSGEBANDBLK         "bandBLK is not positive or is inconsistent with nBinsPerBLK and tEffBLK"
+#define DRIVESTACKSLIDEH_MSGEBANDSTK         "bandSTK is not positive or is inconsistent with nBinsPerSTK and tEffSTK"
+#define DRIVESTACKSLIDEH_MSGEBANDSUM         "bandSUM is not positive or is inconsistent with nBinsPerSUM and tEffSUM"
+#define DRIVESTACKSLIDEH_MSGENBLKSPERSTK     "numBLKsPerSTK must be positive"
+#define DRIVESTACKSLIDEH_MSGETEFFSTK         "tEffSTK must be positive"
+#define DRIVESTACKSLIDEH_MSGENSTKSPERSUM     "numSTKsPerSUM must be positive"
+#define DRIVESTACKSLIDEH_MSGETEFFSUM         "tEffSUM must be positive"
+#define DRIVESTACKSLIDEH_MSGESTKTYPEFLAG     "Value for stackTypeFlag is invalid or currently unsupported"
+#define DRIVESTACKSLIDEH_MSGEWEIGHTFLAG      "Value for weightFlag is invalid or currently unsupported"
+#define DRIVESTACKSLIDEH_MSGENORMFLAG        "Value for normalizationFlag is invalid or currently unsupported"
+#define DRIVESTACKSLIDEH_MSGETESTFLAG        "Value for testFlag is invalid or currently unsupported"
+#define DRIVESTACKSLIDEH_MSGENORMBLKs        "Normalization of BLKS not currently supported; normalizationFlag bit 2 is set."
+#define DRIVESTACKSLIDEH_MSGENORMBIT4AND8    "In normalizationFlag cannot set bit 8 to veto power when bit 4 is set to use running median"
+#define DRIVESTACKSLIDEH_MSGEBADWEIGHTTEST   "Cannot set weightFlag bit 16 and testFlag bit 128; these options are incompatible"
+#define DRIVESTACKSLIDEH_MSGEBADCOSINC       "Must have -1 <= cosInclinationAngle <= 1"
+#define DRIVESTACKSLIDEH_MSGEBADORIANGLE     "Must have -2*pi <= orientationAngle <= 2*pi"
+#define DRIVESTACKSLIDEH_MSGEBANDNRM         "nBinsPerNRM is not positive or is inconsistent with nBinsPerSTK, or bandNRM is not positive or is inconsistent with nBinsPerNRM and tEffSTK"
+#define DRIVESTACKSLIDEH_MSGEDELTARA         "deltaRA cannot be negative"
+#define DRIVESTACKSLIDEH_MSGENUMRA           "startRA, stopRA, deltaRA, and numRA are inconsistent"
+#define DRIVESTACKSLIDEH_MSGEDELTADEC        "deltaDEC cannot be negative"
+#define DRIVESTACKSLIDEH_MSGENUMDEC          "startDEC, stopDEC, deltaDEC, and numDEC are inconsistent"
+#define DRIVESTACKSLIDEH_MSGEDELTADERIV1     "deltaFDeriv1 cannot be positive"
+#define DRIVESTACKSLIDEH_MSGENUMDERIV1       "startFDeriv1, stopFDeriv1, deltaFDeriv1, and numFDeriv1 are inconsistent"
+#define DRIVESTACKSLIDEH_MSGEDELTADERIV2     "deltaFDeriv2 cannot be negative"
+#define DRIVESTACKSLIDEH_MSGENUMDERIV2       "startFDeriv2, stopFDeriv2, deltaFDeriv2, and numFDeriv2 are inconsistent"
+#define DRIVESTACKSLIDEH_MSGEDELTADERIV3     "deltaFDeriv3 cannot be positive"
+#define DRIVESTACKSLIDEH_MSGENUMDERIV3       "startFDeriv3, stopFDeriv3, deltaFDeriv3, and numFDeriv3 are inconsistent"
+#define DRIVESTACKSLIDEH_MSGEDELTADERIV4     "deltaFDeriv4 cannot be negative"
+#define DRIVESTACKSLIDEH_MSGENUMDERIV4       "startFDeriv4, stopFDeriv4, deltaFDeriv4, and numFDeriv4 are inconsistent"
 /* Limit on size of arrays holding channel names */
 /* #define dbNameLimit 256; */ /* Should be defined in LAL? */
 /* 05/19/05 gam; Add in maximum velocity of Earth used to find maximum doppler shift */
