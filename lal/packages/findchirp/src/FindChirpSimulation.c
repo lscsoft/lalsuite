@@ -964,6 +964,7 @@ XLALFindChirpBankSimSignalNorm(
     case PadeT1:
     case EOB:
     case GeneratePPN:
+    case BCVSpin:
       for ( k = cut; k < fcDataParams->wtildeVec->length; ++k )
       {
         if ( wtilde[k].re ) matchNorm += ( fcData[k].re * fcData[k].re +
