@@ -327,8 +327,8 @@ LALFindChirpBCVSpinFilterSegment (
     	qtilde[k].re        = r * x - s * y ;
     	qtilde[k].im        = s * x + r * y ;
    
-      	qtilde[k].re *= wtilde[k].re;
-      	qtilde[k].im *= wtilde[k].re; 
+/*      	qtilde[k].re *= wtilde[k].re;
+      	qtilde[k].im *= wtilde[k].re; */
  
     	qtildeBCVSpin1[k] =  qtilde[k]; 
     	qtildeBCVSpin2[k] =  qtilde[k];   
