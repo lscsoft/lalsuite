@@ -28,25 +28,24 @@ workspace memory for findchirp.
 \idx{LALFindChirpFilterOutputVeto()}
 
 \subsubsection*{Description}
-
 The function \texttt{LALFindChirpFilterOutputVeto()} implements a signal based   
 veto, currently it is used primarily for testing. The function itself tests the 
 consistency of the triggers that survive the bns and macho inspiral search pipeline 
 by monitoring the behavior of the $r^2$ time series which is calculated for each 
-segment of data (256 seconds). \\
-
-  Two thresholds are currently employed in the bns and macho inspiral searches: a 
- signal to noise, $\rho$, threshold and a threshold on the consistency of the 
- template chirp waveform with the data, $r^2$. The search code compares 
- $\rho$(\emph{t$_j$}) and $r^2$(\emph{t$_j$}) for a given segment of data and looks 
- for $\rho(\emph{t$_j$})$ $>$ $\rho^*(\emph{t$_j$})$ and $r^2(\emph{t$_j$})$ $<$ 
- $r^{2*}(\emph{t$_j$})$, where $^*$ denotes the threshold used in the search. If 
- both these criteria are met at a given \emph{t$_j$}, an inspiral "trigger" is 
- recorded. 
+segment of data (256 seconds). 
+\\
+\\
+Two thresholds are currently employed in the bns and macho inspiral searches: a 
+signal to noise ($\rho$) threshold and a threshold on the consistency of the 
+template chirp waveform with the data ($r^2$). The search code calculates 
+$\rho$(\emph{t$_j$}) and $r^2$(\emph{t$_j$}) for a given segment of data and looks 
+for $\rho(\emph{t$_j$})$ $>$ $\rho^*(\emph{t$_j$})$ and $r^2(\emph{t$_j$})$ $<$ 
+$r^{2*}(\emph{t$_j$})$, where $^*$ denotes the threshold used in the search. If 
+both these criteria are met at a given \emph{t$_j$}, an inspiral "trigger" is 
+recorded. 
 \\
 \\
 $r^2$(\emph{t$_j$}) is defined as:
-
 \begin{equation}
 {r^2(\emph{t$_j$})} = \frac{\chi^2(\emph{t$_j$})}{p + \delta^2\rho^2(\emph{t$_j$})}  
 \end{equation}
@@ -54,26 +53,28 @@ $r^2$(\emph{t$_j$}) is defined as:
 where:
 \\
 \\
-p $\equiv$  number of  $\chi^2$ bins\\
+p = number of $\chi^2$ bins\\
 $\delta$ = mismatch parameter between the template and data\\ 
-$\rho$ = the signal to noise ratio. 
+$\rho$ = signal to noise ratio
 
 \subsubsection*{Algorithm}
-  The algorithm inputs the the vector  \texttt{chisqVec} (which is actually $r^2$) 
-  for the whole data segment and searches a time window prior to the inferred 
-  coalescence time (\texttt{rsqvetoWindow}) of the trigger up to the trigger time 
-  and counts the number of time samples above a given $\chi^2$ threshold, looser 
-  than the search pipeline employs (\texttt{rsqvetoThresh}). The value is currently 
-  stored under the \texttt{rsqveto\_duration} field in the \texttt{sngl\_inspiral} 
-  xml table. Future implementation of this function will have it take the 
-  calculated value and decide whether or not to store the trigger for future 
-  analysis.
+The algorithm inputs the the vector \texttt{chisqVec} (which is actually $r^2$) 
+for the whole data segment and searches a time window (\texttt{rsqvetoWindow}) 
+prior to the inferred coalescence time of the trigger up to the trigger time 
+and counts the number of time samples above a given $r^2$ threshold 
+(\texttt{rsqvetoThresh}), looser than the search pipeline employs. The value 
+is currently stored under the \texttt{rsqveto\_duration} field in the 
+\texttt{sngl\_inspiral} xml table. Future implementation of this function will 
+have it take the calculated value and decide whether or not to store the trigger 
+for future analysis.
+
 \subsubsection*{Uses}
 
 \subsubsection*{Notes}
-  The same test described here could also be employed for monitoring the behavior 
-  of the signal to noise time series, $\rho(\emph{t$_j$})$, about a trigger, 
-  therefore the inclusion of  \texttt{qVec} as input to the function for future work.
+The same test described here could also be employed for monitoring the behavior 
+of the signal to noise time series, $\rho(\emph{t$_j$})$, about a trigger, 
+therefore the inclusion of \texttt{qVec} and \texttt{qNorm} as input to the function 
+for future work.
 
 \vfill{\footnotesize\input{FindChirpFilterOutputVetoCV}}
 </lalLaTeX>
