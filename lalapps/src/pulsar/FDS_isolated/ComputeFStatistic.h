@@ -65,7 +65,11 @@ extern "C" {
 /* (Half the ) number of terms to keep in the Dirichlet kernel sum */
 #define NTERMS 32
 
-#define MAXFILENAMELENGTH 256   /* Maximum # of characters of a SFT filename */
+#ifdef USE_BOINC
+#define MAXFILENAMELENGTH 512   /* Maximum # of characters of a filename */
+#else
+#define MAXFILENAMELENGTH 256   /* Maximum # of characters of a filename */
+#endif
 
 /* The command line arguments are not the actual search parameters that will be used, 
 just the ones that the user requested.  The actual parameters that
