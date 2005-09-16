@@ -204,9 +204,9 @@ int read_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxbytes) {
 			" %" LAL_REAL8_FORMAT
 			" %" LAL_REAL8_FORMAT
 			"%c",
+			&FstatLine.Freq,
 			&FstatLine.Alpha,
 			&FstatLine.Delta,
-			&FstatLine.Freq,
 			&FstatLine.f1dot,
 			&FstatLine.Fstat,
 			&lastchar);
