@@ -307,12 +307,17 @@ LALParseDataFile (LALStatus *status,
   ENDFAIL (status);
 
   /* initialize the 'wasRead' flags for the lines */
-  if ( ((*cfgdata)->wasRead = 
-	LALCalloc(1,(*cfgdata)->lines->nTokens * sizeof( (*cfgdata)->wasRead[0]))) == NULL) 
+  if ( (*cfgdata)->lines->nTokens )
     {
-      LALFree ((*cfgdata)->lines);
-      ABORT (status, CONFIGFILEH_EMEM, CONFIGFILEH_MSGEMEM);
+      if ( ((*cfgdata)->wasRead = 
+	    LALCalloc(1,(*cfgdata)->lines->nTokens * sizeof( (*cfgdata)->wasRead[0]))) == NULL) 
+	{
+	  LALFree ((*cfgdata)->lines);
+	  ABORT (status, CONFIGFILEH_EMEM, CONFIGFILEH_MSGEMEM);
+	}
     }
+  else
+    (*cfgdata)->wasRead = NULL;
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -331,10 +336,12 @@ LALDestroyParsedDataFile (LALStatus *status,
   ASSERT (cfgdata != NULL, status, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
   ASSERT (*cfgdata != NULL, status, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
   ASSERT ((*cfgdata)->lines != NULL, status, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
-  ASSERT ( (*cfgdata)->wasRead != NULL, status, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
 
   TRY ( LALDestroyTokenList (status->statusPtr, &((*cfgdata)->lines)), status);
-  LALFree ( (*cfgdata)->wasRead);
+
+  if ( (*cfgdata)->wasRead )
+    LALFree ( (*cfgdata)->wasRead);
+
   LALFree ( *cfgdata );
   
   *cfgdata = NULL;
