@@ -261,6 +261,7 @@ FILE *fpFstat;		/**< output-file pointer to *unclustered* Fstat output */
 
 ConfigVariables GV;	/**< global container for various derived configuration settings */
 int reverse_endian=-1;	/**< endian order of SFT data.  -1: unknown, 0: native, 1: reversed */
+CHAR CFstatFilename[MAXFILENAMELENGTH]; /**< clustered Fstats file name*/
 CHAR FstatFilename[MAXFILENAMELENGTH]; 	/**< (unclustered) Fstats file name*/
 CHAR ckp_fname[MAXFILENAMELENGTH+4];    /**< filename of checkpoint-file, global for polka */
 CHAR *Outputfilename;	/**< Name of output file, either Fstats- or Polka file name*/
@@ -539,27 +540,19 @@ int main(int argc,char *argv[])
   /* ----- prepare cluster-output filename if given and append outputLabel */
   if ( uvar_outputClusters && (strlen(uvar_outputClusters) > 0) )
     {
-      CHAR *buf = NULL;
-      UINT4 len = strlen( uvar_outputClusters );
+      strncpy ( CFstatFilename, uvar_outputClusters, sizeof(CFstatFilename) );
       if ( uvar_outputLabel )
-	len += strlen ( uvar_outputLabel );
+	strncat ( CFstatFilename, uvar_outputLabel, sizeof(CFstatFilename) );
 
-      if ( (buf = LALCalloc(1, len + 1 )) == NULL ) {
-	LALPrintError ("\nOut of memory!\n\n");
-	return (COMPUTEFSTATC_EMEM);
-      }
-      strcpy ( buf, uvar_outputClusters );
-      if ( uvar_outputLabel )
-	strcat ( buf, uvar_outputLabel );
-
-      if ( (fpClusters = fopen (buf, "wb")) == NULL ) {
-	LALPrintError ("\nError: failed to open Clusters-file '%s' for writing!\n\n", buf );
+      if ( (fpClusters = fopen (CFstatFilename, "wb")) == NULL ) {
+	LALPrintError ("\nError: failed to open Clusters-file '%s' for writing!\n\n", CFstatFilename );
 	return ( COMPUTEFSTATC_ESYS );
       }
-      LALFree ( buf );
     }
-  else
+  else {
+    strcpy (CFstatFilename,"");
     fpClusters = NULL;
+  }
 
   /* ----- prepare (unclustered) Fstat-output filename if given and apprend outputLabel */ 
   if ( uvar_outputFstat )
