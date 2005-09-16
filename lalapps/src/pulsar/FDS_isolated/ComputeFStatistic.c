@@ -3171,7 +3171,11 @@ void worker() {
 
 #ifndef RUN_POLKA
   int retval=boincmain(globargc,globargv);
+#ifdef CLUSTERED_OUTPUT
+  Outputfilename=CFstatFilename;
+#else
   Outputfilename=FstatFilename;
+#endif
 #else
   int a1,a2,retval;
   CHAR ckptfname1[MAXFILENAMELENGTH+4];
@@ -3187,7 +3191,11 @@ void worker() {
   /* if there was no //, globargc==a1 and this is old-style command line */
   if(a1<globargc) {
     /* remember first file names */
+#ifdef CLUSTERED_OUTPUT
+    strncpy(Fstatsfilename1,CFstatFilename,sizeof(Fstatsfilename1));
+#else
     strncpy(Fstatsfilename1,FstatFilename,sizeof(Fstatsfilename1));
+#endif
     strncpy(ckptfname1,ckp_fname,sizeof(ckptfname1));
     if (!retval){
       /* find second // delimiter */ 
@@ -3209,7 +3217,11 @@ void worker() {
       remove (Fstatsfilename1);
     */
   } else {
+#ifdef CLUSTERED_OUTPUT
+    Outputfilename=CFstatFilename;
+#else
     Outputfilename=FstatFilename;
+#endif
     remove (ckp_fname);
   }
 #endif
@@ -3243,6 +3255,10 @@ void worker() {
   return;
 }
 
+
+/*********************************************************************************
+ * main() in case of USE_BOINC
+ */
 int main(int argc, char *argv[]){
 
   int skipsighandler=0;
