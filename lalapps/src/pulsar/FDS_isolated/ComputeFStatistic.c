@@ -261,8 +261,8 @@ FILE *fpFstat;		/**< output-file pointer to *unclustered* Fstat output */
 
 ConfigVariables GV;	/**< global container for various derived configuration settings */
 int reverse_endian=-1;	/**< endian order of SFT data.  -1: unknown, 0: native, 1: reversed */
-CHAR *FstatFilename; 	/**< (unclustered) Fstats file name*/
-CHAR ckp_fname[MAXFILENAMELENGTH+4]; /**< filename of checkpoint-file, global for polka */
+CHAR FstatFilename[MAXFILENAMELENGTH]; 	/**< (unclustered) Fstats file name*/
+CHAR ckp_fname[MAXFILENAMELENGTH+4];    /**< filename of checkpoint-file, global for polka */
 CHAR *Outputfilename;	/**< Name of output file, either Fstats- or Polka file name*/
 INT4 cfsRunNo = 0;	/**< CFS run-number: 0=run only once, 1=first run, 2=second run */
 
@@ -568,17 +568,12 @@ int main(int argc,char *argv[])
       if ( uvar_outputLabel )
 	len += strlen ( uvar_outputLabel );
 
-      if ( (FstatFilename = LALCalloc(1, len + 1 )) == NULL ) {
-	LALPrintError ("\nOut of memory!\n\n");
-	return (COMPUTEFSTATC_EMEM);
-      }
-      
-      strcpy ( FstatFilename, uvar_outputFstat );
+      strncpy ( FstatFilename, uvar_outputFstat, sizeof(FstatFilename) );
       if ( uvar_outputLabel )
-	strcat ( FstatFilename, uvar_outputLabel );
+	strncat ( FstatFilename, uvar_outputLabel, sizeof(FstatFilename) );
     }
   else
-    FstatFilename = NULL;
+    strncpy ( FstatFilename, "", sizeof(FstatFilename) );
 
 
   if ( uvar_NumCandidatesToKeep > 0 )
@@ -586,11 +581,11 @@ int main(int argc,char *argv[])
 
 
   /* prepare checkpointing file */
-  if ( FstatFilename ) 
-    strcpy(ckp_fname, FstatFilename);
+  if ( strlen(FstatFilename) ) 
+    strncpy(ckp_fname, FstatFilename, sizeof(ckp_fname));
   else
     strcpy(ckp_fname, "Fstats");
-  strcat(ckp_fname, ".ckp");
+  strncat(ckp_fname, ".ckp", sizeof(ckp_fname));
 
 #if USE_BOINC
   /* only boinc_resolve the filename if we run CFS once */
@@ -641,7 +636,7 @@ int main(int argc,char *argv[])
   /* allow for checkpointing: 
    * open Fstat file for writing or appending, depending on loopcounter. 
    */
-  if ( FstatFilename 
+  if ( strlen(FstatFilename)
        && ( (fpFstat = fopen( FstatFilename, fstat_bytecounter>0 ? "rb+" : "wb")) == NULL) )
     {
       fprintf(stderr,"in Main: unable to open Fstats file '%s'\n", FstatFilename);
@@ -934,9 +929,6 @@ int main(int argc,char *argv[])
 	  fprintf(fpFstat, "%%DONE\n");
 	  fclose(fpFstat);
 	}
-
-      LALFree ( FstatFilename );
-      FstatFilename = NULL;
 
     } /* if fpFstat */
 
@@ -1903,7 +1895,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 
     fileno = 0;
     while (fread((void*)&header,sizeof(header),1,fp) == 1) {
-      char tmp[256];
+      char tmp[MAXFILENAMELENGTH];
 
       /* prepare memory for another filename */
       if ( (cfg->filelist=(CHAR**)LALRealloc(cfg->filelist, (fileno+1)*sizeof(CHAR*)))==NULL) {
