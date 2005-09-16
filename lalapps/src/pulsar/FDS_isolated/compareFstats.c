@@ -168,6 +168,9 @@ compareClusterFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALP
   nlines1 = f1->lines->nTokens;
   nlines2 = f2->lines->nTokens;
 
+  if ( !nlines1 || !nlines2 )	/* one file is empty.. don't continue */
+    return;
+
   /* cluster-files: last line now HAS to contain 'DONE'-marker */
   line1 = f1->lines->tokens[nlines1-1];
   line2 = f2->lines->tokens[nlines2-1];
