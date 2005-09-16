@@ -262,10 +262,10 @@ int write_toplist_item_to_fp(TOPLISTLINE fline, FILE*fp, UINT4*checksum) {
 
     UINT4 length =
 	snprintf(linebuf, sizeof(linebuf),
-		 "%8.7f %8.7f %16.12f %.17g %10.6g\n", 
+		 "%16.12f %8.7f %8.7f %.17g %10.6g\n", 
+		 fline.Freq,
 		 fline.Alpha,
 		 fline.Delta,
-		 fline.Freq,
 		 fline.f1dot,
 		 fline.Fstat);
 
