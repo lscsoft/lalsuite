@@ -45,7 +45,7 @@ set bandSUM             5.0000000000000003e-02; #19 REAL8 frequency band of SUMs
 set nBinsPerSUM                             90; #20 INT4 number of frequency bins in one SUM. 
 #Note that nBinsPerSUM takes precedence. An error is thrown if this does not correspond to tEffSUM*bandSUM rounded to the nearest integer. 
 #Since the entire frequency band slides together, bandSUM cannot exceed 1.0/((v_Earth/c)_max*tEffSTK),
-#where (v_Earth/c)_max =  1.0600000000000000e-04 
+#where (v_Earth/c)_max =  1.0600000000000000e-04. This keeps the maximum error in the number of bins to slide less than or equal to 0.5 bins. 
 
 set ifoNickName                             H1; #21 CHAR* H2, H1, L1, or G1. 
 set IFO                                    LHO; #22 CHAR* LHO, LLO, or GEO. 
@@ -108,6 +108,7 @@ set normalizationParameter  0.0000000000000000e+00; #45 REAL4 see uses below.
 # if (normalizationFlag & 32) > 0 then ignore bins using info in linesAndHarmonicsFile.
 # if (normalizationFlag & 64) > 0 then clean SFTs using info in linesAndHarmonicsFile before normalizing.
 # Note that the (normalizationFlag & 32) > 0 and (normalizationFlag & 64) > 0 options can be set independently.
+# WARNING: if searching for very young pulsars with frequencies that change significantly in less that 8 minutes due to spindown, or pulsars that spinup, check how maxSpindownFreqShift is used in the code before cleaning SFTs.
 
 set testFlag                                 0; #46 INT2 specify test case.
 # if ((testFlag & 1) > 0) output Hough number counts instead of power; use threshold5 for Hough cutoff.
@@ -147,8 +148,8 @@ set stopRA              0.0000000000000000e+00; #52 REAL8 end right ascension in
 set deltaRA             0.0000000000000000e+00; #53 REAL8 delta right ascension in radians. 
 set numRA                                    1; #54 INT4 number of right ascensions for DEC = 0.  
 #Note that deltaRA >= 0.0 must be true, otherwise an error is thrown! 
-#Note that deltaRA takes precedence; numRA just indicates the number of RA's for DEC = 0. An error is thrown if its value is not consistent with startRA, stopRA, and deltaRA.
-#For each declination, deltaRA = deltaRA/cos(DEC) is used to cover interval [startRA stopRA). 
+#An error is thrown if deltaRA is not consistent with numRA and [startRA stopRA) for DEC = 0.
+#For each declination, deltaRA = input deltaRA/cos(DEC); numRA = ceil((stopRA-startRA)/deltaRA); deltaRA = (stopRA-startRA)/numRA is used to cover interval [startRA stopRA). 
 
 set startDec            0.0000000000000000e+00; #55 REAL8 start declination in radians. 
 set stopDec             0.0000000000000000e+00; #56 REAL8 end declination in radians. 

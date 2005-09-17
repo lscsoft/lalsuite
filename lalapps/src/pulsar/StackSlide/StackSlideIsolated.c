@@ -43,6 +43,10 @@ $Id$
 /* 09/06/05 gam; Change params->maxMCfracErr to params->maxMCErr, the absolute error in confidence for convergence. */
 /* 09/08/05 gam; Add Dterms to params used with LALFastGeneratePulsarSFTs. */
 /* 09/12/05 gam; if (params->testFlag & 128) > 0 make BLKs and STKs narrower band based on extra bins */
+/* 09/16/06 gam; In CountOrAssignSkyPosData and MC code, for each DEC adjust deltaRA and numRA to evenly  */
+/*               space grid points so that deltaRA used is <= input deltaRA from the command line divided */
+/*               by cos(DEC). This fixes a problem where the last grid point could wrap around the sphere */
+/*               and be closer to the first grid point that the spacing between other grid points.        */
 
 /*********************************************/
 /*                                           */
@@ -421,6 +425,7 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
   INT4 rndCount;
   REAL8 cosTmpDEC;
   REAL8 tmpDeltaRA;
+  INT4 tmpNumRA; /* 09/16/05 gam */
   REAL8 tmpRA;
   REAL8 tmpDec;
   INT4 iRA;
@@ -434,6 +439,7 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
   REAL8 DeltaFDeriv4 = params->deltaFDeriv4;
   REAL8 DeltaFDeriv5 = params->deltaFDeriv5;
   REAL8 startRA  = params->stksldSkyPatchData->startRA;
+  REAL8 stopRA   = params->stksldSkyPatchData->stopRA;  /* 09/16/05 gam */
   REAL8 startDec = params->stksldSkyPatchData->startDec;
   REAL8 startFDeriv1 = params->startFDeriv1;
   REAL8 startFDeriv2 = params->startFDeriv2;
@@ -919,6 +925,13 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
     cosTmpDEC = cos(params->skyPosData[0][1]);
     if (cosTmpDEC != 0.0) {
           tmpDeltaRA = DeltaRA/cosTmpDEC;
+          /* 09/16/05 gam */
+          if ( (tmpDeltaRA != 0.0) && (stopRA > startRA) ) {
+            tmpNumRA = ceil((stopRA - startRA)/tmpDeltaRA);
+            tmpDeltaRA = (stopRA - startRA)/((REAL8)tmpNumRA);
+          } else {
+            tmpDeltaRA = 0.0;
+          }
     } else {
           tmpDeltaRA = 0.0; /* We are at a celestial pole */
     }
@@ -952,6 +965,13 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
        cosTmpDEC = cos(params->skyPosData[2][1]);
        if (cosTmpDEC != 0.0) {
           tmpDeltaRA = DeltaRA/cosTmpDEC;
+          /* 09/16/05 gam */
+          if ( (tmpDeltaRA != 0.0) && (stopRA > startRA) ) {
+            tmpNumRA = ceil((stopRA - startRA)/tmpDeltaRA);
+            tmpDeltaRA = (stopRA - startRA)/((REAL8)tmpNumRA);
+          } else {
+            tmpDeltaRA = 0.0;
+          }
        } else {
           tmpDeltaRA = 0.0; /* We are at a celestial pole */
        }

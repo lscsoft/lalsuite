@@ -151,6 +151,11 @@
 /* 09/12/05 gam; if ( (params->weightFlag & 16) > 0 ) save inverseMedians and weight STKs with these. */
 /* 09/12/05 gam; if (params->testFlag & 128) > 0 make BLKs and STKs narrower band based on extra bins */
 /* 09/14/05 gam; add more vetting of command line arguments and ABORTs */
+/* 09/16/06 gam; In CountOrAssignSkyPosData and MC code, for each DEC adjust deltaRA and numRA to evenly  */
+/*               space grid points so that deltaRA used is <= input deltaRA from the command line divided */
+/*               by cos(DEC). This fixes a problem where the last grid point could wrap around the sphere */
+/*               and be closer to the first grid point that the spacing between other grid points.        */
+/* 09/16/06 gam; Add some error checking and clean up parameter space assignment code. */
 
 /*********************************************/
 /*                                           */
@@ -468,7 +473,10 @@ params->numFDeriv5   =   0;
   params->dfSTK = 1.0/params->tEffSTK;                     /* Freq resolution of STK = 1.0/tEffSTK. Could be different from 1/tSTK due to oversampling  */
 
   params->tSUM = params->tSTK*params->numSTKsPerSUM; /* duration in seconds of output SUMs = tSTK*numSTKsPerSUM. (Usually = duration) */
-  params->numSUMsPerParamSpacePt = params->duration/params->tSUM; /* Number of output SUMs per parameter space point = params->duration/params->tSUM. (Usually will = 1) */
+  params->numSUMsPerParamSpacePt = params->duration/params->tSUM; /* Number of output SUMs per parameter space point = params->duration/params->tSUM. (Usually will == 1) */
+  if (params->numSUMsPerParamSpacePt != 1) {
+     ABORT( status, DRIVESTACKSLIDEH_ENSUMPERPARAMPT, DRIVESTACKSLIDEH_MSGENSUMPERPARAMPT); /* 09/16/06 gam; currently must == 1 */
+  }
   params->dfSUM = 1.0/params->tEffSUM;  /* Freq resolution of output SUMs.  dfSUM = 1.0/tEffSUM. Could be different from dfSTK in some algorithms?  */
 
   /* Initialize and set up number of points in the parameter space */
@@ -477,10 +485,14 @@ params->numFDeriv5   =   0;
   params->numParamSpacePts = 0;   /* Total number of points in the parameter space to cover */
 
   /* 05/13/05 gam; add options */
-  /* if (params->parameterSpaceFlag == 0) */
   if (params->parameterSpaceFlag >= 0) {
+
+     /* The third argument is 0; this just counts the number of sky postions: */
      CountOrAssignSkyPosData(params->skyPosData,&(params->numSkyPosTotal),0,params->stksldSkyPatchData);
-          
+     if (params->numSkyPosTotal <= 0) {
+        ABORT( status, DRIVESTACKSLIDEH_ENUMSKYPOS, DRIVESTACKSLIDEH_MSGENUMSKYPOS); /* 09/16/06 gam */
+     }
+
      for (i=0;i<params->numSpinDown;i++) {
          switch(i) {
            case  0: params->numFreqDerivTotal = params->numFDeriv1; break;
@@ -490,29 +502,39 @@ params->numFDeriv5   =   0;
            case  4: params->numFreqDerivTotal *= params->numFDeriv5; break;
          }
      }
-     
+
      /* 02/28/05 gam; moved here */
      if (params->numFreqDerivTotal != 0) {
         params->numFreqDerivIncludingNoSpinDown = params->numFreqDerivTotal;
      } else {
         params->numFreqDerivIncludingNoSpinDown = 1;  /* Even if numSpinDown = 0 still need to count case of zero spindown. */
      }
-     
-     if (params->numSpinDown > 0) {
-        /*05/02/18 vir:*/
-        if (params->binaryFlag==0) {
-           params->numParamSpacePts = params->numSkyPosTotal*params->numFreqDerivTotal;
-        } else { 
-           params->numParamSpacePts = params->numSkyPosTotal*params->numFreqDerivTotal*params->nMaxSMA*params->nMaxTperi;
-        }
-     } else {
-        /*05/02/18 vir:*/     
-        if (params->binaryFlag==0) {
-           params->numParamSpacePts = params->numSkyPosTotal; 
-        } else { 
-           params->numParamSpacePts = params->numSkyPosTotal*params->nMaxSMA*params->nMaxTperi;
-        }
+
+     /*05/02/18 vir:*/
+     if (params->binaryFlag==0) {
+        params->numParamSpacePts = params->numSkyPosTotal*params->numFreqDerivIncludingNoSpinDown;
+     } else { 
+        params->numParamSpacePts = params->numSkyPosTotal*params->numFreqDerivIncludingNoSpinDown*params->nMaxSMA*params->nMaxTperi;
      }
+
+     /* 09/16/05 gam; moved here and revised */
+     params->maxSpindownFreqShift = 0; /* Used when "cleaning" SFTs to decide how many bins to ignore near a line due to spindown */
+     for(i=0;i<params->numSpinDown;i++) {
+       /* This estimates the maximum the frequency of a signal can change due to spindown during the analysis,  */
+       /* which is max(abs(f1))*max(abs(T - T0))) + max(abs(f2))*max(abs(T - T0)))^2 + .... Here we approximate */
+       /* the maximum value of abs(T - T0) to an accuracy of 8 minutes. If the frequency changes by more than   */
+       /* 0.5 bins during 8 minutes due to spindown you are looking for very young pulsars!                     */
+       REAL8 maxDeltaT = MAX(fabs((REAL8)(params->gpsStartTimeSec + params->duration - params->gpsEpochStartTimeSec)),fabs((REAL8)(params->gpsStartTimeSec - params->gpsEpochStartTimeSec)));
+       /* In the typical case, maxDeltaT is about the same as params->duration */
+       switch(i) {
+        case  0: params->maxSpindownFreqShift += MAX(fabs(params->startFDeriv1), fabs(params->stopFDeriv1))*maxDeltaT; break;
+        case  1: params->maxSpindownFreqShift += MAX(fabs(params->startFDeriv2), fabs(params->stopFDeriv2))*pow(maxDeltaT,2.0); break;
+        case  2: params->maxSpindownFreqShift += MAX(fabs(params->startFDeriv3), fabs(params->stopFDeriv3))*pow(maxDeltaT,3.0); break;
+        case  3: params->maxSpindownFreqShift += MAX(fabs(params->startFDeriv4), fabs(params->stopFDeriv4))*pow(maxDeltaT,4.0); break;
+        case  4: params->maxSpindownFreqShift += MAX(fabs(params->startFDeriv5), fabs(params->stopFDeriv5))*pow(maxDeltaT,5.0); break;
+       }
+     }
+
   } else {
      ABORT( status, DRIVESTACKSLIDEH_EPARAMSPACEFLAG, DRIVESTACKSLIDEH_MSGEPARAMSPACEFLAG); /* 02/02/04 gam */
   } /* END if (params->parameterSpaceFlag >= 0) else ...*/  
@@ -572,7 +594,7 @@ params->numFDeriv5   =   0;
     	fprintf(stdout,"set nBinsPerSUM        %23d; #20 INT4 number of frequency bins in one SUM. \n", params->nBinsPerSUM);
     	fprintf(stdout,"#Note that nBinsPerSUM takes precedence. An error is thrown if this does not correspond to tEffSUM*bandSUM rounded to the nearest integer. \n");
     	fprintf(stdout,"#Since the entire frequency band slides together, bandSUM cannot exceed 1.0/((v_Earth/c)_max*tEffSTK),\n");
-    	fprintf(stdout,"#where (v_Earth/c)_max = %23.16e \n", ((REAL8)STACKSLIDEMAXV));
+    	fprintf(stdout,"#where (v_Earth/c)_max = %23.16e. This keeps the maximum error in the number of bins to slide less than or equal to 0.5 bins. \n", ((REAL8)STACKSLIDEMAXV));
     	fprintf(stdout,"\n");
     	fprintf(stdout,"set ifoNickName                             %s; #21 CHAR* H2, H1, L1, or G1. \n", params->ifoNickName);
     	fprintf(stdout,"set IFO                                    %s; #22 CHAR* LHO, LLO, or GEO. \n", params->IFO);
@@ -641,6 +663,7 @@ params->numFDeriv5   =   0;
     	fprintf(stdout,"# if (normalizationFlag & 32) > 0 then ignore bins using info in linesAndHarmonicsFile.\n"); /* 05/14/05 gam */
     	fprintf(stdout,"# if (normalizationFlag & 64) > 0 then clean SFTs using info in linesAndHarmonicsFile before normalizing.\n"); /* 07/13/05 gam */
     	fprintf(stdout,"# Note that the (normalizationFlag & 32) > 0 and (normalizationFlag & 64) > 0 options can be set independently.\n"); /* 07/13/05 gam */
+    	fprintf(stdout,"# WARNING: if searching for very young pulsars with frequencies that change significantly in less that 8 minutes due to spindown, or pulsars that spinup, check how maxSpindownFreqShift is used in the code before cleaning SFTs.\n"); /* 09/16/05 gam */
     	fprintf(stdout,"\n");
     	fprintf(stdout,"set testFlag           %23d; #46 INT2 specify test case.\n", params->testFlag); /* 05/11/04 gam */
     	fprintf(stdout,"# if ((testFlag & 1) > 0) output Hough number counts instead of power; use threshold5 for Hough cutoff.\n"); /* 05/11/04 gam */
@@ -680,8 +703,8 @@ params->numFDeriv5   =   0;
     	fprintf(stdout,"set deltaRA            %23.16e; #53 REAL8 delta right ascension in radians. \n", params->stksldSkyPatchData->deltaRA);
     	fprintf(stdout,"set numRA              %23d; #54 INT4 number of right ascensions for DEC = 0.  \n", params->stksldSkyPatchData->numRA);
     	fprintf(stdout,"#Note that deltaRA >= 0.0 must be true, otherwise an error is thrown! \n");
-    	fprintf(stdout,"#Note that deltaRA takes precedence; numRA just indicates the number of RA's for DEC = 0. An error is thrown if its value is not consistent with startRA, stopRA, and deltaRA.\n");
-    	fprintf(stdout,"#For each declination, deltaRA = deltaRA/cos(DEC) is used to cover interval [startRA stopRA). \n");
+    	fprintf(stdout,"#An error is thrown if deltaRA is not consistent with numRA and [startRA stopRA) for DEC = 0.\n");
+    	fprintf(stdout,"#For each declination, deltaRA = input deltaRA/cos(DEC); numRA = ceil((stopRA-startRA)/deltaRA); deltaRA = (stopRA-startRA)/numRA is used to cover interval [startRA stopRA). \n");
     	fprintf(stdout,"\n");
     	fprintf(stdout,"set startDec           %23.16e; #55 REAL8 start declination in radians. \n", params->stksldSkyPatchData->startDec);
     	fprintf(stdout,"set stopDec            %23.16e; #56 REAL8 end declination in radians. \n", params->stksldSkyPatchData->stopDec);
@@ -900,6 +923,7 @@ params->numFDeriv5   =   0;
   }
 
   /* 07/17/05 gam; since entire frequency band slides together, band cannot exceed (c/v_Earth)_max/tEffSTK  */
+  /* This keeps the maximum error in the number of bins to slide less than or equal to 0.5 bins.            */
   if ( params->bandSUM > 1.0/(params->tEffSTK*((REAL8)STACKSLIDEMAXV)) ){
     if ((params->debugOptionFlag & 128) > 0 ) {
       /* continue; sliding is turned off */
@@ -1003,12 +1027,10 @@ params->numFDeriv5   =   0;
       ABORT( status, DRIVESTACKSLIDEH_ENUMRA, DRIVESTACKSLIDEH_MSGENUMRA );
   }  
   if (params->stksldSkyPatchData->deltaRA > 0.0) {
-    /* Interval is [startRA, stopRA). However, numRA is calculated internally as ceil(stopRA - startRA)/deltaRA. */
-    /* The numRA from the command line is not really used; however check if it is consistent with this calculation. */
-    if ( ( fabs( params->stksldSkyPatchData->stopRA - ( params->stksldSkyPatchData->startRA + 
-         ((REAL8)params->stksldSkyPatchData->numRA)*params->stksldSkyPatchData->deltaRA ) ) )
-         > params->stksldSkyPatchData->deltaRA )
-    {
+    /* numRA and deltaRA must be consistent with the interval [startRA, stopRA) for DEC = 0. For each declination,   */
+    /* deltaRA = input deltaRA/cos(DEC); numRA = ceil((stopRA-startRA)/deltaRA); deltaRA = (stopRA-startRA)/numRA is used. */
+    if ( floor( (params->stksldSkyPatchData->stopRA - params->stksldSkyPatchData->startRA)
+           /params->stksldSkyPatchData->deltaRA + 0.5 ) != params->stksldSkyPatchData->numRA ) {
       ABORT( status, DRIVESTACKSLIDEH_ENUMRA, DRIVESTACKSLIDEH_MSGENUMRA );
     }  
   } else {
@@ -1153,6 +1175,10 @@ params->numFDeriv5   =   0;
     }
   }
 
+  /* 09/16/05 gam */
+  if ( (params->outputSUMFlag > 0) && (params->numSUMsTotal > 100) ) {
+     ABORT( status, DRIVESTACKSLIDEH_EOUTPUTSUMS, DRIVESTACKSLIDEH_MSGEOUTPUTSUMS );
+  }
   /* Note that the Monte Carlo parameters are vetting in the modules with the Monto Carlo code. */
 
 /**********************************************/
@@ -1187,13 +1213,8 @@ params->numFDeriv5   =   0;
  }
 
  /* 05/13/05 gam; add options */
- /* if (params->parameterSpaceFlag == 0) */
  if (params->parameterSpaceFlag >= 0) { 
 
-   /* 01/31/04 gam; now call CountOrAssignSkyPosData */
-   /* INT4 iRA = 0;
-   INT4 iDec = 0; */
-   
    INT4 iFDeriv1 = 0;
    INT4 iFDeriv2 = 0;
    INT4 iFDeriv3 = 0;
@@ -1206,6 +1227,9 @@ params->numFDeriv5   =   0;
    INT4 repeatFDeriv4every = 0;
    INT4 repeatFDeriv5every = 0;
 
+   /* The third argument is 1; this assigns params->skyPosData isotropically on the sphere: */
+   CountOrAssignSkyPosData(params->skyPosData,&(params->numSkyPosTotal),1,params->stksldSkyPatchData);
+
    for(i=0;i<params->numSpinDown;i++)
    {
         switch(i) {
@@ -1216,29 +1240,6 @@ params->numFDeriv5   =   0;
 	   case  4: repeatFDeriv5every = params->numFDeriv5*repeatFDeriv4every; break;
 	}
    }
-
-  /* 05/19/05 gam; Maximum shift in frequency due to spindown */
-  params->maxSpindownFreqShift = 0;
-  for(i=0;i<params->numSpinDown;i++)
-  {
-        switch(i) {
-	   case  0: params->maxSpindownFreqShift += ((REAL8)(params->numFDeriv1-1))*fabs(params->deltaFDeriv1)*params->duration; break;
-	   case  1: params->maxSpindownFreqShift += ((REAL8)(params->numFDeriv2-1))*fabs(params->deltaFDeriv2)*pow(params->duration,2.0); break;
-	   case  2: params->maxSpindownFreqShift += ((REAL8)(params->numFDeriv3-1))*fabs(params->deltaFDeriv3)*pow(params->duration,3.0); break;
-	   case  3: params->maxSpindownFreqShift += ((REAL8)(params->numFDeriv4-1))*fabs(params->deltaFDeriv4)*pow(params->duration,4.0); break;
-	   case  4: params->maxSpindownFreqShift += ((REAL8)(params->numFDeriv5-1))*fabs(params->deltaFDeriv5)*pow(params->duration,5.0); break;
-	}
-  }
-
-   /*   for(i=0;i<params->numSkyPosTotal;i++)
-   {
-	iDec = i % params->stksldSkyPatchData->numDec;
-	iRA = floor(i/params->stksldSkyPatchData->numDec);
-	params->skyPosData[i][0] = params->stksldSkyPatchData->startRA + iRA*params->stksldSkyPatchData->deltaRA;
-	params->skyPosData[i][1] = params->stksldSkyPatchData->startDec + iDec*params->stksldSkyPatchData->deltaDec;
-   } */ /* 01/31/04 gam */
-   /* 01/31/04 gam; Note arg3 is 1; call CountOrAssignSkyPosData to assign params->skyPosData on the 2-sphere */
-   CountOrAssignSkyPosData(params->skyPosData,&(params->numSkyPosTotal),1,params->stksldSkyPatchData);
 
    for(i=0;i<params->numFreqDerivTotal;i++)
    { 
@@ -3366,28 +3367,27 @@ void CountOrAssignSkyPosData(REAL8 **skyPosData, INT4 *numSkyPosTotal, BOOLEAN r
       fflush(stdout);
     }
    #endif
-   
+
    for(iDec=0;iDec<params->numDec;iDec++) {
         tmpDEC = params->startDec + iDec*params->deltaDec;
 	cosTmpDEC = cos(tmpDEC);
 	if (cosTmpDEC != 0.0) {
             tmpDeltaRA = params->deltaRA/cosTmpDEC;
-            #ifdef INCLUDE_DEBUG_SKY_POSITIONS_CODE
-              /* 04/15/04 gam */
-              if ((params->debugOptionFlag & 4) > 0 ) {
-	        fprintf(stdout,"tmpDeltaRA = %g \n",tmpDeltaRA);
-	        fflush(stdout);
-	      }
-            #endif
-	    if ((tmpDeltaRA > 0.0) && (params->stopRA > params->startRA)) {
-	       /* tmpNumRA = floor((params->stopRA - params->startRA)/tmpDeltaRA); */ /* 08/24/05 gam */
+	    if ( (tmpDeltaRA != 0.0) && (params->stopRA > params->startRA) ) {
 	       tmpNumRA = ceil((params->stopRA - params->startRA)/tmpDeltaRA);
+	       tmpDeltaRA = (params->stopRA - params->startRA)/((REAL8)tmpNumRA); /* 09/16/05 gam */
 	       if (tmpNumRA < 1) {
 	          tmpNumRA = 1;  /* Always do at least one point in the Sky for each DEC */
 	       }
 	    } else {
 	       tmpNumRA = 1; /* Always do at least one point in the Sky for each DEC */
 	    }
+            #ifdef INCLUDE_DEBUG_SKY_POSITIONS_CODE
+              if ((params->debugOptionFlag & 4) > 0 ) {
+	        fprintf(stdout,"tmpDeltaRA = %g, tmpNumRA = %i \n",tmpDeltaRA, tmpNumRA);
+	        fflush(stdout);
+              }
+            #endif
 	} else {
 	    tmpDeltaRA = 0.0; /* We are at the North or South Celestial Pole */
 	    tmpNumRA = 1;    /* Always do at least one point in the Sky for each DEC including the poles. */

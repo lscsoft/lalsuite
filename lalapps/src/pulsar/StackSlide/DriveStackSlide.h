@@ -199,6 +199,9 @@ NRCSID( DRIVESTACKSLIDEH, "$Id$");
 #define DRIVESTACKSLIDEH_ENUMDERIV3 64
 #define DRIVESTACKSLIDEH_EDELTADERIV4 65
 #define DRIVESTACKSLIDEH_ENUMDERIV4 66
+#define DRIVESTACKSLIDEH_ENUMSKYPOS 67
+#define DRIVESTACKSLIDEH_ENSUMPERPARAMPT 68
+#define DRIVESTACKSLIDEH_EOUTPUTSUMS 69
 
 #define DRIVESTACKSLIDEH_MSGENULL            "Null pointer"
 #define DRIVESTACKSLIDEH_MSGEGPSTINT         "Unexpected GPS time interval"
@@ -263,6 +266,9 @@ NRCSID( DRIVESTACKSLIDEH, "$Id$");
 #define DRIVESTACKSLIDEH_MSGENUMDERIV3       "startFDeriv3, stopFDeriv3, deltaFDeriv3, and numFDeriv3 are inconsistent"
 #define DRIVESTACKSLIDEH_MSGEDELTADERIV4     "deltaFDeriv4 cannot be negative"
 #define DRIVESTACKSLIDEH_MSGENUMDERIV4       "startFDeriv4, stopFDeriv4, deltaFDeriv4, and numFDeriv4 are inconsistent"
+#define DRIVESTACKSLIDEH_MSGENUMSKYPOS       "numSkyPosTotal was calculated to be <= 0"
+#define DRIVESTACKSLIDEH_MSGENSUMPERPARAMPT  "numSUMsPerParamSpacePt must currently be 1; check that numSTKsPerSUM = duration/tBLK on the command line."
+#define DRIVESTACKSLIDEH_MSGEOUTPUTSUMS      "Cannot set outputSUMFlag > 0 if producing more than 100 SUMs, else you will fill up the file system with files."
 /* Limit on size of arrays holding channel names */
 /* #define dbNameLimit 256; */ /* Should be defined in LAL? */
 /* 05/19/05 gam; Add in maximum velocity of Earth used to find maximum doppler shift */
@@ -353,6 +359,9 @@ NRCSID( DRIVESTACKSLIDEH, "$Id$");
 "\n" \
 "      </Stream>\n" \
 "   </Table>\n"
+
+/* 09/16/05 gam; useful macro */
+#define MAX(A, B)  (((A) < (B)) ? (B) : (A))
 
 /*********************************************/
 /*                                           */
