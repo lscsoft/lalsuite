@@ -706,8 +706,12 @@ for seg in h2_data:
           if inspiral.overlap_test(chunk,l1_h1_done.get_chunk(),
             abs(slide_time)):
             trigbank.add_file_arg(l1_h1_done.get_dag_node().get_output_b())
-            if not slide_time or check_bkgr_dag:
-              trigbank.add_parent(l1_h1_done.get_dag_node())
+            # XXX change for dax generation
+            # why didn't we add the inca as a parent for the background jobs?
+            #if not slide_time or check_bkgr_dag:
+            #  trigbank.add_parent(l1_h1_done.get_dag_node())
+            trigbank.add_parent(l1_h1_done.get_dag_node())
+            # XXX end change for dax generation
         # analyze the H2 master chunk with this triggered template bank
         insp = inspiral.InspiralNode(insp_job)
         insp.set_start(chunk.start())
