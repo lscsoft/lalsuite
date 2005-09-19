@@ -777,8 +777,6 @@ for seg in l1_h1_h2_data:
   inca3.add_parent(inca2)
   inca3.add_file_arg(inca2.get_output_a())
   # add the nodes to the dag
-  inca2.get_output_a()
-  inca2.get_output_b()
   dag.add_node(inca2)
   inca3.get_output_a()
   inca3.get_output_b()
