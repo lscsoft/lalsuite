@@ -575,7 +575,11 @@ int main(int argc,char *argv[])
 
   /* prepare checkpointing file */
   if ( strlen(FstatFilename) ) 
+#ifdef CLUSTERED_OUTPUT
+    strncpy(ckp_fname, CFstatFilename, sizeof(ckp_fname));
+#else
     strncpy(ckp_fname, FstatFilename, sizeof(ckp_fname));
+#endif
   else
     strcpy(ckp_fname, "Fstats");
   strncat(ckp_fname, ".ckp", sizeof(ckp_fname));
@@ -604,7 +608,11 @@ int main(int argc,char *argv[])
 
 #ifdef RUN_POLKA
   /* look for a Fstat file ending in "%DONE" and quit (boinc)main if found */
+#ifdef CLUSTERED_OUTPUT
+  fpFstat = fopen( CFstatFilename,"rb");
+#else
   fpFstat = fopen( FstatFilename,"rb");
+#endif
   if(fpFstat){
     char done[6];
     done[0] = '\0';
@@ -621,6 +629,37 @@ int main(int argc,char *argv[])
   if (!fstats_completed) {
 #endif /* RUN_POLKA */
 
+#ifdef CLUSTERED_OUTPUT
+  /* Checkpointed information is retrieved from checkpoint-file (if found) */
+  if (uvar_doCheckpointing)
+    LAL_CALL (getCheckpointCounters( status, &loopcounter, &fstat_checksum, &fstat_bytecounter, 
+				     CFstatFilename, ckp_fname ), status); 
+
+  /* allow for checkpointing: 
+   * open Fstat file for writing or appending, depending on loopcounter. 
+   */
+  if ( strlen(CFstatFilename)
+       && ( (fpClusters = fopen( CFstatFilename, fstat_bytecounter>0 ? "rb+" : "wb")) == NULL) )
+    {
+      fprintf(stderr,"in Main: unable to open Fstats file '%s'\n", FstatFilename);
+      return COMPUTEFSTAT_EXIT_OPENFSTAT2;
+    }
+
+  /* set a buffer large enough that no output is written to disk
+   *  unless we fflush().  Policy is fully buffered. Note: the man
+   * page says "The setvbuf function may only be used after opening
+   * a stream and BEFORE ANY OTHER OPERATIONS HAVE BEEN PERFORMED ON IT."
+   */
+  if ( fpClusters && uvar_OutputBufferKB )
+    {
+      if ( (fstatbuff=(char *)LALCalloc(uvar_OutputBufferKB * 1024, 1)))
+	setvbuf(fpClusters, fstatbuff, _IOFBF, uvar_OutputBufferKB * 1024);
+      else {
+	LALPrintError ("Failed to allocate memory for Fstats file buffering. Exiting.\n");
+	return COMPUTEFSTAT_EXIT_NOMEM;
+      }
+    }
+#else /* checkpointing clustered output */
   /* Checkpointed information is retrieved from checkpoint-file (if found) */
   if (uvar_doCheckpointing)
     LAL_CALL (getCheckpointCounters( status, &loopcounter, &fstat_checksum, &fstat_bytecounter, 
@@ -650,6 +689,7 @@ int main(int argc,char *argv[])
 	return COMPUTEFSTAT_EXIT_NOMEM;
       }
     }
+#endif
 
   /* if we checkpointed we need to "spool forward" to the right entry in the sky-position list */
   if ( loopcounter > 0 ) 
@@ -665,7 +705,11 @@ int main(int argc,char *argv[])
       /* seek to right point of fstats file (truncate what's left over) */
       if ( fpFstat )
 	{
+#ifdef CLUSTERED_OUTPUT
+	  if ( 0 != fseek( fpClusters, fstat_bytecounter, SEEK_SET) ) 
+#else
 	  if ( 0 != fseek( fpFstat, fstat_bytecounter, SEEK_SET) ) 
+#endif
 	    {   /* something gone wrong seeking .. */
 	      if (lalDebugLevel) 
 		LALPrintError ("broken Fstat-file '%s'.\nStarting main-loop from beginning.\n", 
@@ -679,7 +723,11 @@ int main(int argc,char *argv[])
   while (1)
     {
       /* flush fstats-file and write checkpoint-file */
+#ifdef CLUSTERED_OUTPUT
+      if ( uvar_doCheckpointing && fpClusters )
+#else
       if ( uvar_doCheckpointing && fpFstat )
+#endif
         {
 #if USE_BOINC
           /* make sure the last checkpoint is written even if is not time_to_checkpoint */
@@ -687,7 +735,11 @@ int main(int argc,char *argv[])
             {
 #endif
               FILE *fp;
+#ifdef CLUSTERED_OUTPUT
+              fflush (fpClusters);
+#else
               fflush (fpFstat);
+#endif
               if ( (fp = fopen(ckp_fname, "wb")) == NULL) {
                 LALPrintError ("Failed to open checkpoint-file '%s' for writing. Exiting.\n", ckp_fname);
                 return COMPUTEFSTATC_ECHECKPOINT;
