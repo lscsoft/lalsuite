@@ -152,12 +152,14 @@ Usage: lalapps_inspiral_pipe [options]
   
   -l, --log-path PATH      directory to write condor log file
   -f, --config-file FILE   use configuration file FILE
+
+  -X, --dax                write abstract DAX file
 """
   print >> sys.stderr, msg
 
 ##############################################################################
 # pasrse the command line options to figure out what we should do
-shortop = "hvu:cj:pP:s:x:y:l:f:"
+shortop = "hvu:cj:pP:s:x:y:l:f:X"
 longop = [
   "help",
   "version",
@@ -171,6 +173,7 @@ longop = [
   "priority=",
   "log-path=",
   "config-file=",
+  "dax"
   ]
 
 try:
@@ -189,6 +192,7 @@ condor_prio = None
 log_path = None
 config_file = None
 check_bkgr_dag = None
+dax = False
 
 for o, a in opts:
   if o in ("-h", "--help"):
@@ -221,6 +225,8 @@ for o, a in opts:
     log_path = a
   elif o in ("-f", "--config-file"):
     config_file = a
+  elif o in ("-X", "--dax"):
+    dax = True
   else:
     print >> sys.stderr, "Unknown option:", o
     usage()
@@ -285,7 +291,7 @@ fh.close()
 
 ##############################################################################
 # create the DAG writing the log to the specified directory
-dag = pipeline.CondorDAG(logfile)
+dag = pipeline.CondorDAG(logfile,dax)
 if usertag:
   dag.set_dag_file(basename + '.' + usertag + '.dag')
 else:
@@ -293,10 +299,10 @@ else:
 
 ##############################################################################
 # create the Condor jobs that will be used in the DAG
-df_job = pipeline.LSCDataFindJob('cache','logs',cp)
-tmplt_job = inspiral.TmpltBankJob(cp)
-insp_job = inspiral.InspiralJob(cp)
-l_insp_job = inspiral.InspiralJob(cp)
+df_job = pipeline.LSCDataFindJob('cache','logs',cp,dax)
+tmplt_job = inspiral.TmpltBankJob(cp,dax)
+insp_job = inspiral.InspiralJob(cp,dax)
+l_insp_job = inspiral.InspiralJob(cp,dax)
 trig_job = inspiral.TrigToTmpltJob(cp)
 inca_job = inspiral.IncaJob(cp)
 lho_inca_job = inspiral.IncaJob(cp)
@@ -725,7 +731,7 @@ print "setting up jobs to get L1/H1/H2 triple coincident triggers...",
 sys.stdout.flush()
 
 # make sure we use the range cut for analyzing the LHO conincidences
-lho_inca_job.add_opt('ifo-b-range-cut',None)
+lho_inca_job.add_opt('ifo-b-range-cut','')
 
 for seg in l1_h1_h2_data:
   # do the second inca to get the H1 triggers that are in H2 or can't be seen
@@ -775,9 +781,19 @@ sys.stdout.flush()
 dag.write_sub_files()
 dag.write_dag()
 
-print "\nCreated a DAG file which can be submitted by executing"
-print "\n   condor_submit_dag", dag.get_dag_file()
-print """\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)\n
+# write a message telling the user that the DAG has been written
+if dax: 	 
+  print """\nCreated a DAX file which can be submitted to the Grid using 	 
+Pegasus. See the page: 	 
+  	 
+  http://www.lsc-group.phys.uwm.edu/lscdatagrid/griphynligo/vds_howto.html 	 
+  	 
+for instructions.
+"""
+else:
+  print "\nCreated a DAG file which can be submitted by executing"
+  print "\n   condor_submit_dag", dag.get_dag_file()
+  print """\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)\n
 If you are running LALdataFind jobs, do not forget to initialize your grid 
 proxy certificate on the condor submit machine by running the commands
 
