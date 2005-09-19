@@ -33,6 +33,8 @@
 
 int snprintf(char *str, size_t size, const  char  *format, ...);
 
+extern int random(void);
+extern void srandom(unsigned int seed);
 
 #define USAGE \
 "lalapps_binj [options]\n"\
@@ -672,7 +674,25 @@ int main( int argc, char *argv[] ){
     /* make injection times at intervals of 100/pi seconds */
     ninj = 1;
     iamp = 1.0;
+
     freq = flow;
+    
+    /* if we are doing string cusps; we want to inject the correct
+       population of frequencies; what's distributed uniformly is
+       theta^2 (the square of the angle the line of sight makes
+       with direction of the cusp) */
+
+    if ( !strcmp(waveform, "StringCusp")) 
+      {
+	REAL4 thetasqmin = pow(fhigh, -2./3.), thetasqmax=pow(flow, -2./3.), thetasq;	
+	
+	fprintf(stdout, "Generating cusp population\n");
+
+	srandom(rand_seed);
+	thetasq= (thetasqmax-thetasqmin) * ((float)random() / (float)RAND_MAX) + thetasqmin;
+	freq=pow(thetasq,-3./2.);
+      }
+
     while ( 1 )
     {
       long tsec;
@@ -827,7 +847,16 @@ int main( int argc, char *argv[] ){
       /* increment to next frequency and test it's still in band */
       freq += deltaf;
       if ( freq > fhigh ) freq=flow;
+      
+      /* if we are doing string cusps; we want to inject the correct
+	 population of frequencies */
+      if ( !strcmp(waveform, "StringCusp")) 
+	{
+	  REAL4 thetasqmin = pow(fhigh, -2./3.), thetasqmax=pow(flow, -2./3.), thetasq;
 
+	  thetasq= (thetasqmax-thetasqmin) * ((float)random() / (float)RAND_MAX) + thetasqmin;
+	  freq=pow(thetasq,-3./2.);
+	}
     }
 
     /* if using the MDC signal frames for injections:
