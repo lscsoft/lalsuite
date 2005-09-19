@@ -105,7 +105,7 @@ def analyze_lho_ifo(l1_lho_data,l1_chunks_analyzed,ifo_data,ifo_name,
           trigbank.make_trigbank(chunk,max_slide,'L1',ifo_name,usertag)
           for l1_done in l1_chunks_analyzed:
             if inspiral.overlap_test(chunk,l1_done.get_chunk(),max_slide):
-              trigbank.add_var_arg(l1_done.get_dag_node().get_output())
+              trigbank.add_file_arg(l1_done.get_dag_node().get_output())
               trigbank.add_parent(l1_done.get_dag_node())
           if not slide_time or check_bkgr_dag: dag.add_node(trigbank)
           # analyze the LHO master chunk with this triggered template bank
@@ -293,9 +293,9 @@ fh.close()
 # create the DAG writing the log to the specified directory
 dag = pipeline.CondorDAG(logfile,dax)
 if usertag:
-  dag.set_dag_file(basename + '.' + usertag + '.dag')
+  dag.set_dag_file(basename + '.' + usertag )
 else:
-  dag.set_dag_file(basename + '.dag')
+  dag.set_dag_file(basename)
 
 ##############################################################################
 # create the Condor jobs that will be used in the DAG
@@ -584,13 +584,13 @@ for seg in l1_h1_data:
   # add all L1 master chunks that overlap with segment to input
   for l1_done in l1_chunks_analyzed:
     if inspiral.overlap_test(l1_done.get_chunk(),seg):
-      inca.add_var_arg(l1_done.get_dag_node().get_output())
+      inca.add_file_arg(l1_done.get_dag_node().get_output())
       if not slide_time or check_bkgr_dag: 
         inca.add_parent(l1_done.get_dag_node())
   # add all H1 master chunks that overlap with segment to input
   for h1_done in h1_chunks_analyzed:
     if inspiral.overlap_test(h1_done.get_chunk(),seg,abs(slide_time)):
-      inca.add_var_arg(h1_done.get_dag_node().get_output())
+      inca.add_file_arg(h1_done.get_dag_node().get_output())
       if not slide_time or check_bkgr_dag:
         inca.add_parent(h1_done.get_dag_node())
   dag.add_node(inca)
@@ -611,13 +611,13 @@ for seg in l1_h2_data:
   # add all L1 master chunks that overlap with segment to input
   for l1_done in l1_chunks_analyzed:
     if inspiral.overlap_test(l1_done.get_chunk(),seg):
-      inca.add_var_arg(l1_done.get_dag_node().get_output())
+      inca.add_file_arg(l1_done.get_dag_node().get_output())
       if not slide_time or check_bkgr_dag: 
         inca.add_parent(l1_done.get_dag_node())
   # add all H2 master chunks that overlap with segment to input
   for h2_done in l1_h2_chunks_analyzed:
     if inspiral.overlap_test(h2_done.get_chunk(),seg,abs(slide_time)):
-      inca.add_var_arg(h2_done.get_dag_node().get_output())
+      inca.add_file_arg(h2_done.get_dag_node().get_output())
       if not slide_time or check_bkgr_dag: 
         inca.add_parent(h2_done.get_dag_node())
   dag.add_node(inca)
@@ -651,13 +651,13 @@ for seg in l1_h1_h2_data:
   # add all L1 master segments that overlap with segment to input
   for l1_done in l1_chunks_analyzed:
     if inspiral.overlap_test(l1_done.get_chunk(),seg):
-      inca1.add_var_arg(l1_done.get_dag_node().get_output())
+      inca1.add_file_arg(l1_done.get_dag_node().get_output())
       if not slide_time or check_bkgr_dag: 
         inca1.add_parent(l1_done.get_dag_node())
   # add all H1 master segments that overlap with segment to input
   for h1_done in h1_chunks_analyzed:
     if inspiral.overlap_test(h1_done.get_chunk(),seg,abs(slide_time)):
-      inca1.add_var_arg(h1_done.get_dag_node().get_output())
+      inca1.add_file_arg(h1_done.get_dag_node().get_output())
       if not slide_time or check_bkgr_dag: 
         inca1.add_parent(h1_done.get_dag_node())
   # add the nodes to the dag
@@ -701,7 +701,7 @@ for seg in h2_data:
         for l1_h1_done in l1_h1_inca_nodes:
           if inspiral.overlap_test(chunk,l1_h1_done.get_chunk(),
             abs(slide_time)):
-            trigbank.add_var_arg(l1_h1_done.get_dag_node().get_output_b())
+            trigbank.add_file_arg(l1_h1_done.get_dag_node().get_output_b())
             if not slide_time or check_bkgr_dag:
               trigbank.add_parent(l1_h1_done.get_dag_node())
         # analyze the H2 master chunk with this triggered template bank
@@ -760,16 +760,16 @@ for seg in l1_h1_h2_data:
     if ( l1_h1_done.get_chunk().start() == seg.start() and 
       l1_h1_done.get_chunk().end() == seg.end() ):
       inca2.add_parent(l1_h1_done.get_dag_node())
-      inca2.add_var_arg(l1_h1_done.get_dag_node().get_output_b())
+      inca2.add_file_arg(l1_h1_done.get_dag_node().get_output_b())
       inca3.add_parent(l1_h1_done.get_dag_node())
-      inca3.add_var_arg(l1_h1_done.get_dag_node().get_output_a())
+      inca3.add_file_arg(l1_h1_done.get_dag_node().get_output_a())
   # add all H2 master segments that overlap with segment to input
   for h2_done in l1_h1_h2_chunks_analyzed:
     if inspiral.overlap_test(h2_done.get_chunk(),seg):
-      inca2.add_var_arg(h2_done.get_dag_node().get_output())
+      inca2.add_file_arg(h2_done.get_dag_node().get_output())
       inca2.add_parent(h2_done.get_dag_node())
   inca3.add_parent(inca2)
-  inca3.add_var_arg(inca2.get_output_a())
+  inca3.add_file_arg(inca2.get_output_a())
   # add the nodes to the dag
   dag.add_node(inca2)
   dag.add_node(inca3)
