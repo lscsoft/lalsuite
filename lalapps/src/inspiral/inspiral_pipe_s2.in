@@ -665,8 +665,6 @@ for seg in l1_h1_h2_data:
       if not slide_time or check_bkgr_dag: 
         inca1.add_parent(h1_done.get_dag_node())
   # add the nodes to the dag
-  inca1.get_output_a()
-  inca1.get_output_b()
   dag.add_node(inca1)
   l1_h1_inca_nodes.append(AnalyzedIFOData(seg,inca1))
 print "done"
@@ -779,7 +777,6 @@ for seg in l1_h1_h2_data:
   # add the nodes to the dag
   dag.add_node(inca2)
   inca3.get_output_a()
-  inca3.get_output_b()
   dag.add_node(inca3)
 print "done"
 sys.stdout.flush()
