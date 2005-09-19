@@ -183,6 +183,7 @@ Clustering clusterMethod;               /* chosen clustering algorithm  */
 REAL4 clusterWindow     = -1;           /* cluster over time window     */  
 Approximant approximant;                /* waveform approximant         */
 INT4 bcvConstraint      = 0;            /* constraint BCV filter        */
+INT4 flagFilterInjOnly  = -1;            /* flag for filtering inj. only */ 
 
 /* rsq veto params */
 INT4 enableRsqVeto      = -1;           /* enable the r^2 veto          */
@@ -1875,7 +1876,7 @@ int main( int argc, char *argv[] )
 
         /* If injections are being done - check if for any      */
         /* reason the analyseTag flag needs to be brought down. */
-        if ( injectionFile ) 
+        if ( injectionFile && flagFilterInjOnly ) 
         {
           analyseTag = XLALCmprSgmntTmpltFlags( numInjections, 
               analyseThisTmplt[thisTemplateIndex], 
@@ -2645,8 +2646,11 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "  --point-calibration          use the first point in the chunk to calibrate\n"\
 "\n"\
 "  --injection-file FILE        inject simulated inspiral signals from FILE\n"\
-"  --fast F                     analyse injections templates withing a match F\n"\
+"  --fast F                     analyse injections templates within a match F\n"\
 "  --inject-overhead            inject signals from overhead detector\n"\
+"  --enable-filter-inj-only     enables the mechanism to filter only segments with injections.\n"\
+"  --disable-filter-inj-only    disables the mechanism to filter only segments with injections.\n"\
+"                               All segments are filtered.\n"\
 "\n"\
 "  --bank-file FILE             read template bank parameters from FILE\n"\
 "  --minimal-match M            override bank minimal match with M (sets delta)\n"\
@@ -2738,6 +2742,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"point-calibration",       no_argument,       &pointCal,         1 },
     {"enable-rsq-veto",         no_argument,       &enableRsqVeto,    1 },
     {"disable-rsq-veto",        no_argument,       &enableRsqVeto,    0 },
+    {"enable-filter-inj-only",  no_argument,       &flagFilterInjOnly,1 },
+    {"disable-filter-inj-only", no_argument,       &flagFilterInjOnly,0 },
     /* these options don't set a flag */
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-start-time-ns",       required_argument, 0,                'A'},
@@ -3763,6 +3769,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
             exit (1);
           }
           mmFast = (REAL4) mmFastArg;
+          ADD_PROCESS_PARAM( "float", "%e", mmFast );
         }
         break;
 
@@ -3816,7 +3823,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         bankSimParams.frameChan = (CHAR *) calloc( optarg_len, sizeof(CHAR));
         memcpy( bankSimParams.frameChan, optarg, optarg_len );
         ADD_PROCESS_PARAM( "string", "%s", optarg );
-        break;
+        break;  
 
       case '?':
         exit( 1 );
@@ -4312,6 +4319,31 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           "be specified if the --enable-rsq-veto argument is given\n" );
       exit( 1 );
     }
+  }
+
+  /* check to filter injection segments only */
+  if ( flagFilterInjOnly==1 )
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+		 "%s", PROGRAM_NAME );
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+		 "--enable-filter-inj-only" );
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+  } else if ( flagFilterInjOnly==0 ) {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+		 "%s", PROGRAM_NAME );
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+		 "--disable-filter-inj-only" );
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+  } else if ( flagFilterInjOnly==-1 && injectionFile ) {
+    fprintf( stderr, "one of --enable-filter-inj-only or --disable-filter-inj-only must be specified\n" );
+    exit( 1 );
   }
 
   return 0;
