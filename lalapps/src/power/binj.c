@@ -33,9 +33,6 @@
 
 int snprintf(char *str, size_t size, const  char  *format, ...);
 
-extern int random(void);
-extern void srandom(unsigned int seed);
-
 #define USAGE \
 "lalapps_binj [options]\n"\
 "\nDefaults are shown in brackets\n\n" \
@@ -688,8 +685,8 @@ int main( int argc, char *argv[] ){
 	
 	fprintf(stdout, "Generating cusp population\n");
 
-	srandom(rand_seed);
-	thetasq= (thetasqmax-thetasqmin) * ((float)random() / (float)RAND_MAX) + thetasqmin;
+	srand(rand_seed);
+	thetasq= (thetasqmax-thetasqmin) * ((float)rand() / (float)RAND_MAX) + thetasqmin;
 	freq=pow(thetasq,-3./2.);
       }
 
@@ -854,7 +851,7 @@ int main( int argc, char *argv[] ){
 	{
 	  REAL4 thetasqmin = pow(fhigh, -2./3.), thetasqmax=pow(flow, -2./3.), thetasq;
 
-	  thetasq= (thetasqmax-thetasqmin) * ((float)random() / (float)RAND_MAX) + thetasqmin;
+	  thetasq= (thetasqmax-thetasqmin) * ((float)rand() / (float)RAND_MAX) + thetasqmin;
 	  freq=pow(thetasq,-3./2.);
 	}
     }
