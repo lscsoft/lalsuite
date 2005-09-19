@@ -102,11 +102,11 @@ void LALGenerateInspiral(LALStatus        *status,
 /* three function to read the order and approximant from a string */
 void LALGetOrderFromString(LALStatus *status,
 			   CHAR *message,
-			   UINT4 *result);
+			   Order *result);
      
 void LALGetApproximantFromString(LALStatus *status,
 			    CHAR *message,
-			    UINT4 *result);
+			    Approximant *result);
 
 /*  three function to populate the needed structures */
 void  LALGenerateInspiralPopulatePPN(LALStatus             *status,
