@@ -30,7 +30,9 @@
 [\option{--geo-high-pass-order}~\parm{O}] \newline \hspace*{0.5in}     
 [\option{--geo-high-pass-atten}~\parm{A}] \newline \hspace*{0.5in}     
 [\option{--injection-file}~\parm{FILE}] \newline \hspace*{0.5in}       
-[\option{--inject-overhead} \newline \hspace*{0.5in}             
+[\option{--inject-overhead} \newline \hspace*{0.5in} 
+\option{--enable-filter-inj-only} \newline \hspace*{0.5in}       
+\option{--disable-filter-inj-only} \newline \hspace*{0.5in}       
 \option{--bank-file}~\parm{FILE} \newline \hspace*{0.5in}             
 \option{--minimal-match}~\parm{M} \newline \hspace*{0.5in}             
 [\option{--start-template}~\parm{N}] \newline \hspace*{0.5in}          
@@ -145,6 +147,13 @@ attenuation of the high pass filter to an attenuation \parm{A}.
 
 \item[\option{--injection-file}~\parm{FILE}] Optional. Inject simulated 
 inspiral signals from file \parm{FILE}.
+
+\item[\option{--inject-overhead}] Optional. Inject signals directly overhead 
+detector.
+
+\item[\option{--enable-filter-inj-only}]  Enables the mechanism to filter only segments with injections. All other segments are not filtered. Either \option{--enable-filter-inj-only} or \option{--disable-filter-inj-only} must be specified.
+
+\item[\option{--disable-filter-inj-only}]  Disables the mechanism to filter only segments with injections. All segments are filtered. Either \option{--enable-filter-inj-only} or \option{--disable-filter-inj-only} must be specified.
 
 \item[\option{--inject-overhead}] Optional. Inject signals directly overhead 
 detector.
