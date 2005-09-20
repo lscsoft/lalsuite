@@ -328,6 +328,8 @@ void RunStackSlideBinaryMonteCarloSimulation(LALStatus *status, StackSlideSearch
   SkyConstAndZeroPsiAMResponse *pSkyConstAndZeroPsiAMResponse;
   SFTandSignalParams *pSFTandSignalParams;
 
+  BOOLEAN searchSurroundingPts = 0;
+  
   INT4 MCInjectRandomSMA = 0;                    /* 05/09/12 vir : will be moved into command line */
   INT4 MCInjectRandomTperi = 0;                  /* 05/09/12 vir : will be moved into command line */
   INT4 MCInjectRandomSignalPars = 0;  
@@ -335,6 +337,8 @@ void RunStackSlideBinaryMonteCarloSimulation(LALStatus *status, StackSlideSearch
   REAL8 SemiMajorAxis;
   REAL8 HalfAmplSMAParSpace = 0.18;         /* 05/09/12 vir :in sec */
   REAL8 HalfAmplTperiParSpace = 300;        /* 05/09/12 vir :in sec */
+  REAL8 ClosestSMATemplate;
+  UINT4 ClosestTperiTemplate;
 
   REAL8 f0SUM = 0.0;                        /* 05/26/04 gam */
   REAL8 bandSUM = 0.0;                      /* 05/26/04 gam */
@@ -351,6 +355,13 @@ void RunStackSlideBinaryMonteCarloSimulation(LALStatus *status, StackSlideSearch
   INT4  nAvailableBins;          /* 07/15/2005 gam */
   REAL8 real8NAvailableBins;     /* 07/15/2005 gam */
 
+  INT4 onePlusNumMCRescalings = 1 + params->numMCRescalings; /* 09/01/05 gam; one plus number of times to rescale fake SFTs */
+  REAL8 *h_0Rescaled = NULL;  
+  INT4 iRescale = 0;
+
+  INT4 jStart = 0;
+  INT4 jSavedBLK = 0;
+
 
   INT4 seed=0;
   INT4 iMC = 0;             /* which entire MC simulation is currently running */
@@ -362,6 +373,11 @@ void RunStackSlideBinaryMonteCarloSimulation(LALStatus *status, StackSlideSearch
    ATTATCHSTATUSPTR(status);
 
 printf("!!!!!!!!!start function MC!!!!!!!!!!!!!!!\n");
+
+/*Insert here sanity checks*/
+h_0Rescaled = (REAL8 *)LALMalloc(onePlusNumMCRescalings*sizeof(REAL8));
+
+
 
 /*allocate memory for initial BLKs of data 05/09/07 vir*/
 savBLKData=(FFT **)LALMalloc(params->numBLKs*sizeof(FFT *));
@@ -484,6 +500,7 @@ for (i=0;i<params->numBLKs;i++)
   for(iFreq=0;iFreq<nBinsPerSUM;iFreq++) {
      savSumBinMask[iFreq] = params->sumBinMask[iFreq]; /* 07/15/2005 gam; save this value */
      /* 05/19/05 gam; Only inject into bins that are not exclude */
+/*     printf("params->sumBinMask[%d], %d\n", iFreq, params->sumBinMask[iFreq]);*/
      if (params->sumBinMask[iFreq] != 0) {
         if (firstNonExcludedBin == -1) {
            firstNonExcludedBin = iFreq;
@@ -491,11 +508,22 @@ for (i=0;i<params->numBLKs;i++)
         lastNonExcludedBin = iFreq;
      }
   }
+  printf("nBinsPerSUM %i firstNonExcludedBin %i lastNonExcludedBin %i\n",nBinsPerSUM,firstNonExcludedBin, lastNonExcludedBin);
   LALFree(params->sumBinMask); /* 07/15/2005 gam; reallocate and save just 1 */
 
-  /*......Search surrounding points.........*/
+
   
-/*Store frequency bins where a signal is injected into an array */
+  /*if(Search surrounding points)*/
+  /* 07/29/05 gam */
+  if (searchSurroundingPts) {
+    params->sumBinMask=(INT4 *)LALMalloc(2*sizeof(INT4));
+    params->sumBinMask[0] = 1;   /* Default value; will check when injected frequency is set up below */
+    params->sumBinMask[1] = 1;   /* Default value; will check when injected frequency is set up below */
+  } else {
+    params->sumBinMask=(INT4 *)LALMalloc(sizeof(INT4));
+    params->sumBinMask[0] = 1;   /* Will only inject next bins where savSumBinMask != 0. */
+  }  /* end if(Search surrounding points)*/
+ 
 
   /* 07/15/2005 gam; initialize array with available frequency; i.e., bins not excluded due to instrument lines */ 
   arrayAvailableFreqBins=(INT4 *)LALMalloc(nBinsPerSUM*sizeof(INT4));
@@ -515,7 +543,7 @@ for (i=0;i<params->numBLKs;i++)
   real8NAvailableBins = ((REAL8)nAvailableBins);
   
 #ifdef STACKSLIDEBINARY_DEBUG
-fprintf(stdout, "%f\n",real8NAvailableBins);
+fprintf(stdout, "real8NAvailableBins %f\n",real8NAvailableBins);
 fflush(stdout);
 #endif
 
@@ -578,10 +606,66 @@ if (MCInjectRandomTperi ) {
         CHECKSTATUSPTR (status);
     }    
 
+ /* FIND RANDOM FREQUENCY THAT IS NOT EXCLUDED */
+     LALCreateRandomParams(status->statusPtr, &randPar, seed); 
+     LALUniformDeviate(status->statusPtr, &randval, randPar); 
+     real8RandVal=randval*real8NAvailableBins;
+     i = floor( real8RandVal );    /* nearest bin arrayAvailableFreqBins */
+     if (i >= nAvailableBins) i = nAvailableBins - 1; if (i < 0) i = 0; /* make sure i in range */
+     iFreq = arrayAvailableFreqBins[i];  /* randomly chosen available frequency bin */
+     fprintf(stdout,"iFreq %i real8RandVal %f\n", iFreq, real8RandVal);
+    
+    
     /*choose a frequency for injection */
 
-         pPulsarSignalParams->pulsar.f0 = 480.0; /*will become random*/
+         params->f0SUM = f0SUM + iFreq*params->dfSUM;
+         LALCreateRandomParams(status->statusPtr, &randPar, seed); 
+         LALUniformDeviate(status->statusPtr, &randval, randPar); 
+         real8RandVal=params->f0SUM - (0.5*params->dfSUM) + randval*params->dfSUM;
+	 pPulsarSignalParams->pulsar.f0 = real8RandVal; /*will become random*/
+         fprintf(stdout, "pPulsarSignalParams->pulsar.f0 %f\n", pPulsarSignalParams->pulsar.f0);
 
+	 
+    /* 07/29/05 gam; search is over 2 freq bins; find the other bin */
+    if (searchSurroundingPts) {    
+        if (params->f0SUM < pPulsarSignalParams->pulsar.f0) {
+           /* Check if iFreq + 1 is a valid frequency bin */
+           if ( (iFreq+1) < nBinsPerSUM ) {
+              /* Set up to search the closest bin and the one AFTER it */
+              params->bandSUM = 2.0*params->dfSUM;
+              params->nBinsPerSUM = 2;
+              params->sumBinMask[0] = 1; /* By contruction above it is an available bin */
+              params->sumBinMask[1] = savSumBinMask[iFreq+1];
+           } else {
+              /* Only the closest bin is in the search parameter space */
+              params->bandSUM = params->dfSUM;
+              params->nBinsPerSUM = 1;
+              params->sumBinMask[0] = 1; /* By contruction above it is an available bin */
+              params->sumBinMask[1] = 0; 
+           }
+        } else {
+           /* Check if iFreq - 1 is a valid frequency bin */
+           if ( (iFreq-1) >= 0 ) {
+              /* Set up to search the closest bin and the one BEFORE it */
+              params->bandSUM = 2.0*params->dfSUM;
+              params->nBinsPerSUM = 2;
+              params->f0SUM = params->f0SUM - params->dfSUM; /* start search one bin before injected freq */
+              params->sumBinMask[0] = savSumBinMask[iFreq-1];
+              params->sumBinMask[1] = 1; /* By contruction above it is an available bin */
+           } else {
+              /* Only the closest bin is in the search parameter space */
+              params->bandSUM = params->dfSUM;
+              params->nBinsPerSUM = 1;
+              params->sumBinMask[0] = 1; /* By contruction above it is an available bin */
+              params->sumBinMask[1] = 0;
+           }
+        } /* END if (params->f0SUM < pPulsarSignalParams->pulsar.f0) */
+    } /* END if (searchSurroundingPts) */
+
+
+
+
+	 
     /*nuisance parameters*/
 
 	 if ( (params->testFlag & 8) > 0 || (MCInjectRandomSignalPars == 0) ) {
@@ -618,7 +702,7 @@ if (MCInjectRandomTperi ) {
    
            if (pPulsarSignalParams->orbit != NULL)
                   {
-                  pPulsarSignalParams->orbit->omega = 1.0;
+                  pPulsarSignalParams->orbit->omega = 0.0;
                   pPulsarSignalParams->orbit->orbitEpoch = TperiLIGO;
                   pPulsarSignalParams->orbit->oneMinusEcc = 1.0;
                   pPulsarSignalParams->orbit->angularSpeed = 0.00001;
@@ -692,10 +776,6 @@ if (MCInjectRandomTperi ) {
         fprintf(stdout,"pPulsarSignalParams->duration*pPulsarSignalParams->samplingRate, signal->data->length = %g %i\n",pPulsarSignalParams->duration*pPulsarSignalParams->samplingRate,signal->data->length);
         fprintf(stdout,"pPulsarSignalParams->samplingRate = %g \n",pPulsarSignalParams->samplingRate);
         
-	/*for(j=0; j< 15; j++){
-	fprintf(stdout,"signal->data->data[%d] = %5.6f\n",j, signal->data->data[j]);
-        	}*/
-	/*}*/
     
         outputSFTs = NULL; /* Call LALSignalToSFTs to generate outputSFTs with injection data */
         LALSignalToSFTs(status->statusPtr, &outputSFTs, signal, pSFTParams);
@@ -709,7 +789,7 @@ if (MCInjectRandomTperi ) {
               fprintf(stdout,"iFreq = %i, search f0 = %23.10e, inject f0 = %23.10e \n",iFreq,f0SUM + iFreq*params->dfSUM,pPulsarSignalParams->pulsar.f0);
              fprintf(stdout,"outputSFTs->data[0].data->length = %i \n",outputSFTs->data[0].data->length);
 
-/*maybe renorm here....*/
+/*maybe renorm here : CHECK the index i*/
              i=0;
 	     renorm = ((REAL4)nSamples)/((REAL4)(outputSFTs->data[i].data->length - 1));
 
@@ -779,14 +859,161 @@ if (pPulsarSignalParams->orbit != NULL) {
     } /* END if ( (params->testFlag & 4) > 0 ) else */
 
     
+/*
+ Search will be done using nearest template or the nearest neighbours?
+  */
+    
+/*.....if(SearchSurroundingPts).......*/  
+if(searchSurroundingPts){
+fprintf(stdout,"option still not implemented\n");
+} else{
+fprintf(stdout,"will search only for the nearest neighbour in orbital par space\n");
+
+/*05/09/13 vir: open the orbital parameter file and estimate which is the closest template*/
+
+FILE *fpOrbParamsTemplates;
+fpOrbParamsTemplates = fopen("OrbParamsTemplates.txt","r");
+
+float col1 ;
+UINT4 col2 ;
+
+INT4 numParams = 0 ;
+
+
+while( fscanf(fpOrbParamsTemplates, "%g %i", &col1, &col2)!= EOF){
+ numParams = numParams +1;
+  }
+ printf("numPars %i\n", numParams);
+fclose(fpOrbParamsTemplates);
+ 
+
+REAL8 *TemplateSMA = NULL;
+UINT4 *TemplateTperi = NULL;
+
+TemplateSMA = (REAL8 *)LALMalloc(numParams*sizeof(REAL8));
+TemplateTperi = (UINT4 *)LALMalloc(numParams*sizeof(UINT4));
+
+	      fpOrbParamsTemplates = fopen("OrbParamsTemplates.txt","r");
+                  INT4 k=0;
+      while( (fscanf(fpOrbParamsTemplates, "%g %i", &col1, &col2)) != EOF){
+          
+	        TemplateSMA[k]=col1;
+		TemplateTperi[k]=col2;    
+			k++;
+              
+              }
+        fclose(fpOrbParamsTemplates);	
+
+	REAL8 minDiff = 1.0E5 ;
+	REAL8 Diff = 0;
+    
+	for(k=0; k<numParams; k++){
+  
+		/*Diff=abs(TemplateSMA[k] - SemiMajorAxis);*/
+
+		if( (TemplateSMA[k] - SemiMajorAxis) < 0){
+                         Diff=(TemplateSMA[k] - SemiMajorAxis)*(-1.0);
+		}else{
+		Diff=(TemplateSMA[k] - SemiMajorAxis);
+		}
+
+
+		if(Diff < minDiff){	
+		ClosestSMATemplate=TemplateSMA[k];
+		minDiff=Diff;
+			}
+			
+           }
+	INT4 minDiffT = 1.0E5;
+	INT4 DiffT = 0;
+        for(k=0; k<numParams; k++){
+         
+		 DiffT=abs(TemplateTperi[k] - TperiLIGO.gpsSeconds);
+		
+		if( DiffT < minDiffT ){                            
+        	      ClosestTperiTemplate=TemplateTperi[k];
+		      minDiffT=DiffT;
+					}
+			
+           }
+
+	fprintf(stdout,"ClosestSMATemplate %f InjectionSMA  %f ClosestTperiTemplate %i InjectionTperi %i\n",ClosestSMATemplate, SemiMajorAxis, ClosestTperiTemplate, TperiLIGO.gpsSeconds);
+
+/*Store That value for the search*/
+
+params->SMAcentral = ClosestSMATemplate;
+params->TperiapseSSBSec = ClosestTperiTemplate;
+
+
+
+
+LALFree(TemplateSMA);
+LALFree(TemplateTperi);
+
+	
+	}/*end of if(nearestneighbours) else...*/
+/*...end if (SearchSurroundingPoints)*/
+    
+
+/*!*/
+
+    for(iRescale=0;iRescale<onePlusNumMCRescalings;iRescale++) {
+
+      /* if (kSUM > 0 ) */ /* 09/01/05 gam */
+      if ( (kSUM > 0)  || (iRescale > 0) ) {
+       params->startSUMs = 0;  /* Indicate that SUMs already started */
+      }
+      
+      if ( (iRescale % 2) == 1 ) {
+        h_0Rescaled[iRescale] = h_0 + ((REAL8)((iRescale + 1)/2))*params->rescaleMCFraction*h_0;
+      } else {
+        h_0Rescaled[iRescale] = h_0 - ((REAL8)(iRescale/2))*params->rescaleMCFraction*h_0;
+      }      
+      params->threshold4 = h_0Rescaled[iRescale];
+      
+      if (iRescale > 0) {
+         /* Rescale the SFTs using the ratio h_0Rescaled[iRescale]/h_0 */
+         REAL4 rescaleFactor = ((REAL4)(h_0Rescaled[iRescale]/h_0));
+         if ( !( (params->testFlag & 4) > 0 ) ) {
+           /* Not using LALFastGeneratePulsarSFTs! Need to include renorm factor in RescaleFactor */
+           renorm = ((REAL4)nSamples)/((REAL4)(outputSFTs->data[0].data->length - 1)); /* 05/21/04 gam; should be the same for all outputSFTs; note minus 1 is needed */
+           rescaleFactor = rescaleFactor*renorm;
+         } /* END if ( (params->testFlag & 4) > 0 ) else ... */
+         /* Add rescaled outputSFTs with injected signal to input noise SFTs */
+         for(i=0;i<params->numBLKs;i++) {
+           for(j=0;j<params->nBinsPerBLK;j++) {
+                jSavedBLK = j + jStart; /* 09/12/05 gam */
+                params->BLKData[i]->fft->data->data[j].re = savBLKData[i]->fft->data->data[jSavedBLK].re + rescaleFactor*outputSFTs->data[i].data->data[j].re;
+                params->BLKData[i]->fft->data->data[j].im = savBLKData[i]->fft->data->data[jSavedBLK].im + rescaleFactor*outputSFTs->data[i].data->data[j].im;
+           }
+         }
+      } /* END if (iRescale > 0) */
+
+
+/*!*/
+
+
     /**************************************************************/
     /* Call StackSlideApplySearch to analyze this MC injection!!! */
     /**************************************************************/
-      
+
+
       params->maxPower = 0.0; /* 05/24/05 gam; need to reinitialize */
       StackSlideApplySearch(status->statusPtr,params);
       CHECKSTATUSPTR (status);
 
+     /* 05/24/05 gam */
+      /*if (reportMCResults) {
+         nTrials[iRescale] += 1.0;*/  /* count total number of MC trials run */
+         /* priorLoudestEvent is the Loudest event from prior jobs in the pipeline */
+        /* if (params->maxPower >= priorLoudestEvent) {
+            nAboveLE[iRescale] += 1.0;*/  /* count number of MC trials that result in power >= to the loudest event */
+         /*}
+      }*/
+
+    } /* END for(iRescale=0;iRescale<onePlusNumMCRescalings;iRescale++) */ /* 09/01/05 gam */
+
+      
 	    if ( !((params->testFlag & 4) > 0) ) {
         LALDestroySFTVector(status->statusPtr, &outputSFTs);
         CHECKSTATUSPTR (status); /* 06/01/04 gam */
@@ -813,7 +1040,6 @@ if (pPulsarSignalParams->orbit != NULL) {
  /* END SECTION: LOOP OVER ENTIRE MONTE CARLO SIMULATIONS   */
  /*                                                         */
  /***********************************************************/
-
 
 CHECKSTATUSPTR(status);
 DETATCHSTATUSPTR(status);
