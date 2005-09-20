@@ -308,17 +308,17 @@ INT4 main(INT4 argc, CHAR *argv[])
     }
     yOpt = (1./stochHead->duration.gpsSeconds) * (numerator / denominator);
     sigmaOpt = (1./stochHead->duration.gpsSeconds) * (1./sqrt(denominator));
+
+    /* report point estimate and sigma */
+    fprintf(stdout, "yOpt       = %e\n", yOpt);
+    fprintf(stdout, "sigmaOpt   = %e\n", sigmaOpt);
+
+    /* calculate upperlimit */
+    zeta = yOpt / (sqrt(2) * sigmaOpt);
+    upperlimit = yOpt + (sqrt(2) * sigmaOpt * \
+        stopp_erfcinv((1 - confidence) * gsl_sf_erfc(-zeta)));
+    fprintf(stdout, "upperlimit = %e\n", upperlimit);
   }
-
-  /* report point estimate and sigma */
-  fprintf(stdout, "yOpt       = %e\n", yOpt);
-  fprintf(stdout, "sigmaOpt   = %e\n", sigmaOpt);
-
-  /* calculate upperlimit */
-  zeta = yOpt / (sqrt(2) * sigmaOpt);
-  upperlimit = yOpt + (sqrt(2) * sigmaOpt * \
-      stopp_erfcinv((1 - confidence) * gsl_sf_erfc(-zeta)));
-  fprintf(stdout, "upperlimit = %e\n", upperlimit);
 
   /* calculate pdf */
   if (!powerlaw_flag)
