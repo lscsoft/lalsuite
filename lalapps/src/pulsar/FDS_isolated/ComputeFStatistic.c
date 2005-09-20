@@ -1700,6 +1700,7 @@ writeFLines(INT4 *maxIndex, DopplerPosition searchpos, FILE *fpOut)
 
 
 /* checksumming version of WriteFLines for checkpointing the clustered output */
+int 
 writeFLinesCS(INT4 *maxIndex, DopplerPosition searchpos, FILE *fpOut, long*bytecount, UINT4*checksum)
 {
   INT4 i,j,j1,j2,k,N;
@@ -1755,7 +1756,7 @@ writeFLinesCS(INT4 *maxIndex, DopplerPosition searchpos, FILE *fpOut, long*bytec
 	if (len > sizeof(buf))
 	    return(-1);
 	*bytecount += len;
-	for(chr=0,chr<len,chr++)
+	for(chr=0;chr<len;chr++)
 	    *checksum += buf[chr];
 	if (fprintf(fpOut,"%s",buf) <0)
 	    return(-1);
