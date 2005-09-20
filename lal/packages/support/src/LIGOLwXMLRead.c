@@ -252,6 +252,7 @@ MetaTableDirectory * XLALCreateMetaTableDir(
           {"confidence",              -1, 10},
           {"peak_time",               -1, 11},
           {"peak_time_ns",            -1, 12},
+          {"clusterT",                -1, 13},
           {NULL,                       0, 0}
         };
         for ( i=0 ; tmpTableDir[i].name; ++i )
@@ -512,7 +513,11 @@ SnglBurstTable    * XLALSnglBurstTableFromLIGOLw (
       {
         thisEvent->peak_time.gpsNanoSeconds = i4colData;
       }
-      else
+       else if ( tableDir[j].idx == 13 )
+      {
+        thisEvent->clusterT = r4colData;
+      }
+     else
       {
         XLAL_CLOBBER_EVENTS;
         XLAL_ERROR_NULL( func, XLAL_EIO);
@@ -1060,6 +1065,7 @@ MultiInspiralTable    * XLALMultiInspiralTableFromLIGOLw (
           {"confidence",              -1, 10},
           {"peak_time",               -1, 11},
           {"peak_time_ns",            -1, 12},
+          {"clusterT",                -1, 13},
           {NULL,                       0, 0}
         };
         for ( i=0 ; tmpTableDir[i].name; ++i )
@@ -1264,6 +1270,10 @@ LALSnglBurstTableFromLIGOLw (
       else if ( tableDir[j].idx == 12 )
       {
         thisEvent->peak_time.gpsNanoSeconds = i4colData;
+      }
+      else if ( tableDir[j].idx == 13 )
+      {
+        thisEvent->clusterT = r4colData;
       }
       else
       {

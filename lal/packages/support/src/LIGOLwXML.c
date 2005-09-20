@@ -399,8 +399,9 @@ LALWriteLIGOLwXMLTable (
               tablePtr.snglBurstTable->central_freq,
               tablePtr.snglBurstTable->bandwidth,
               tablePtr.snglBurstTable->amplitude,
-              tablePtr.snglBurstTable->snr,
-              tablePtr.snglBurstTable->confidence
+	      tablePtr.snglBurstTable->snr,
+	      tablePtr.snglBurstTable->confidence,
+	      tablePtr.snglBurstTable->clusterT
               );
         tablePtr.snglBurstTable = tablePtr.snglBurstTable->next;
       }
