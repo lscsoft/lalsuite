@@ -288,6 +288,7 @@ extern "C" {
   void NormaliseSFTDataRngMdn (LALStatus *, INT4 windowSize);
   INT4 EstimateSignalParameters(INT4 * maxIndex);
   int writeFLines(INT4 *maxIndex, DopplerPosition searchpos, FILE *fpOut);
+  int writeFLinesCS(INT4 *maxIndex, DopplerPosition searchpos, FILE *fpOut, long*bytecount, UINT4*checksum);
   INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN, DopplerPosition searchpos);
   int compare(const void *ip, const void *jp);
   INT4 writeFaFb(INT4 *maxIndex, DopplerPosition searchpos);
@@ -912,7 +913,11 @@ int main(int argc,char *argv[])
 		  maxIndex=(INT4 *)LALMalloc(highFLines->Nclusters*sizeof(INT4));
 		  
 		  /*  for every cluster writes the information about it in file fpClusters */
+#ifdef CLUSTERED_OUTPUT
+		  if (writeFLinesCS(maxIndex, dopplerpos, fpClusters, &fstat_bytecounter, &fstat_checksum))
+#else
 		  if (writeFLines(maxIndex, dopplerpos, fpClusters))
+#endif
 		    {
 		      fprintf(stderr, "\nError in writeFLines()\n\n" );
 		      return COMPUTEFSTAT_EXIT_WRITEFSTAT;
@@ -1686,6 +1691,75 @@ writeFLines(INT4 *maxIndex, DopplerPosition searchpos, FILE *fpOut)
     if (fpOut) 
       fprintf( fpOut, "%16.12f %10.8f %10.8f    %d %10.5f %10.5f %20.17f\n",
 	       freq, searchpos.Alpha, searchpos.Delta, N, mean, std, max );
+    
+  } /*  end i loop over different clusters */
+  
+  return 0;
+
+} /* writeFLines() */
+
+
+/* checksumming version of WriteFLines for checkpointing the clustered output */
+writeFLinesCS(INT4 *maxIndex, DopplerPosition searchpos, FILE *fpOut, long*bytecount, UINT4*checksum)
+{
+  INT4 i,j,j1,j2,k,N;
+  REAL8 max,log2val,mean,var,std,R;
+  REAL8 freq;
+  INT4 imax;
+  CHAR buf[256];
+  INT4 len,chr;
+
+  log2val=medianbias;
+ 
+  j1=0;
+  j2=0;
+
+  for (i=0;i<highFLines->Nclusters;i++){
+    N=highFLines->NclustPoints[i];
+    
+    /*  determine maximum of j-th cluster */
+    /*  and compute mean */
+    max=0.0;
+    imax=0;
+    mean=0.0;
+    std=0.0;
+    for (j=0;j<N;j++){
+      R=2.0*log2val*highFLines->clusters[j1];
+      k=highFLines->Iclust[j1];
+      j1=j1+1;
+      mean=mean+R;
+      if( R > max){
+        max=R;
+        imax=k;
+      }
+    }/*  end j loop over points of i-th cluster  */
+    /*  and start again to compute variance */
+    maxIndex[i]=imax;
+    mean=mean/N;
+    var=0.0;
+    for (j=0;j<N;j++){
+      R=2.0*log2val*highFLines->clusters[j2];
+      j2=j2+1;
+      var=var+(R-mean)*(R-mean);
+    }/*  end j loop over points of i-th cluster  */
+    var=var/N;
+    std=sqrt(var);
+    /* correct frequency back to reference-time: assume maximally 1 spindown */
+    freq = GV.searchRegion.Freq + imax * DemodParams->df + GV.DeltaFreqRef;
+
+    /* print the output */
+    if (fpOut) {
+	len =
+	    snprintf( buf, sizeof(buf), "%16.12f %10.8f %10.8f    %d %10.5f %10.5f %20.17f\n",
+		    freq, searchpos.Alpha, searchpos.Delta, N, mean, std, max );
+	if (len > sizeof(buf))
+	    return(-1);
+	*bytecount += len;
+	for(chr=0,chr<len,chr++)
+	    *checksum += buf[chr];
+	if (fprintf(fpOut,"%s",buf) <0)
+	    return(-1);
+    }
     
   } /*  end i loop over different clusters */
   
