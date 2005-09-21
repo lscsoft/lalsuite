@@ -598,6 +598,9 @@ parser.add_option("-p", "--log-path",action="store",type="string",\
 parser.add_option("-o", "--output-segs",action="store_true",default=False,\
     help="output the segment lists of analyzed data")
 
+parser.add_option("-x","--dax", action="store_true", default=False,\
+    help="create a dax instead of a dag")
+
 command_line = sys.argv[1:]
 (opts,args) = parser.parse_args()
 
@@ -747,7 +750,7 @@ fh.close()
 
 ##############################################################################
 # create the DAG writing the log to the specified directory
-dag = pipeline.CondorDAG(logfile)
+dag = pipeline.CondorDAG(logfile, opts.dax)
 if usertag:
   dag.set_dag_file(basename + '.' + usertag )
 else:
