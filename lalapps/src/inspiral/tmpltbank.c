@@ -1716,7 +1716,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
       case 'R':
         psi3Min = (REAL4) atof( optarg );
-        if ( psi0Min <= 0 )
+        if ( psi3Min >= 0 )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
               "miniumum value of psi3 must be < 0: "
