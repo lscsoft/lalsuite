@@ -450,6 +450,8 @@ tagInspiralCoarseBankIn
   REAL8                         fUpper;        
   REAL8                         tSampling;     
   REAL8                         etamin;         
+  REAL8				betaMin;
+  REAL8				betaMax;
 
   REAL8FrequencySeries          shf;
 

@@ -50,9 +50,10 @@
  * least twice the maximum smaller mass.  Choosing mass values that violate
  * these conditions will cause an error message.
  *
- * \item Only up to 10,000 templates will be read from an XML file. Anything
- * more than that is likely to bog \MATHEMATICA down. Keep this in mind even
- * if you are generating a template bank from model noise.
+ * \item Only up to 20,000 templates will be read from an XML file. Making
+ * an animated image will start bogging most systems down with more than a
+ * few thousand templates, so you can switch the option off by editing the
+ * notebook within Mathematica.
  *
  * \end{itemize}
  *
@@ -146,7 +147,7 @@ int main( int argc, char *argv[] )
       case 'b':
 #if LAL_METAIO_ENABLED
 	if( (ntiles = LALSnglInspiralTableFromLIGOLw( &bankHead, optarg, 1,
-            10000)) < 1 )
+            20000)) < 1 )
         {
           fprintf( stderr, INSPIRALSPINBANKTESTC_MSGEFILE );
           return INSPIRALSPINBANKTESTC_EFILE;

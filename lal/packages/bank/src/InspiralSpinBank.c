@@ -16,32 +16,40 @@
  *
  * \subsubsection*{Description}
  *
- * This function creates a bank of templates to search for precessing
- * binaries.
+ * This function creates a bank of BCVSpin templates to search for
+ * precessing binaries.
  *
  * \subsubsection*{Algorithm}
  *
- * The target region of parameter space is a distorted box in the
- * coordinates $(x=\psi_0, y=\psi_3, z=\beta)$. The metric at high values of
- * $\beta$ is flat. It is convenient to rotate to coordinates $(x',y',z')$
- * which lie along eigenvectors of the metric.
+ * The code checks \verb@coarseIn->mMin@ to determine whether the limits on
+ * the target region are in terms of masses or phenomenological parameters.
+ * A positive value indicates that mass limits are being used.
+ *
+ * If mass limits are used, the target region of parameter space is a
+ * distorted box in the coordinates $(x=\psi_0, y=\psi_3, z=\beta)$. The
+ * metric at high values of $\beta$ is constant. It is convenient to rotate
+ * to coordinates $(x',y',z')$ which lie along eigenvectors of the metric.
  *
  * The algorithm first draws a rectilinear box in the primed coordinates
- * which includes the distorted box, then steps through along the directions
- * of the primed coordinates.  At each point it tests if the point lies
- * within the distorted box. If the point is inside the distorted box, the
- * algorithm adds a template to the linked list. If not, it continues.
+ * which includes the target region, then steps through along the
+ * directions of the primed coordinates.  At each point it tests if the
+ * point lies within the target region. If the point is inside the target
+ * region, the algorithm adds a template to the linked list. If not, it
+ * continues through the box containing the target region.
  *
  * The tiling is done with a body-centered cubic lattice. People usually
  * solve the non-overlapping bcc problem rather than the overlapping one
  * here, so it's worth mentioning how we do it. I don't have time to stick
  * in the 3D figures you need to show it properly, but you can figure out
- * the spacing by finding the smallest sphere that contains the Wigner-Seitz
- * cell. When you do that you find that the lattice constant (spacing
- * between templates in the plane, in proper distance) is
+ * the spacing by finding the smallest sphere that contains the
+ * Wigner-Seitz cell. When you do that you find that the lattice constant
+ * (spacing between templates in the plane, in proper distance) is
  * $(4/3)\sqrt{2\mu}$. So the coordinate spacing is that divided by the
  * square root of the corresponding eigenvalue of the metric. (The vertical
  * spacing in the bcc lattice is multiplied by a further 1/2.)
+ *
+ * If $(\psi_0, \psi_3, \beta)$ limits are used, the tiling is done in the
+ * given box with a bcc lattice.
  *
  * \subsubsection*{Uses}
  *
@@ -60,8 +68,10 @@
  *
  * The metric relies on approximations that make it valid only for a binary
  * system with a total mass $<15M\odot$ where the larger body's minimum mass
- * is at least twice the smaller body's maximum mass.  Using mass values
- * that violate these conditions will result in an error message.   
+ * is at least twice the smaller body's maximum mass.  If the parameter
+ * range is specified with physical parameters rather than the
+ * phenomenological parameters $(\psi_0, \psi_3, \beta)$ then using mass
+ * values that violate these conditions will result in an error message.   
  *
  * \vfill{\footnotesize\input{InspiralSpinBankCV}}
  *
@@ -85,8 +95,6 @@
 
 #define INSPIRALSPINBANKC_ENOTILES 5 
 #define INSPIRALSPINBANKC_MSGENOTILES "No templates were generated"
-
-
 
 
 NRCSID(INSPIRALSPINBANKC, "$Id$");
@@ -140,6 +148,14 @@ static INT4 test(
     REAL4,
     REAL4 
     ); /* test() prototype */
+
+static BOOLEAN inPsiRegion(
+    REAL4,
+    REAL4,
+    REAL4,
+    InspiralCoarseBankIn *,
+    REAL4
+);
 
 /* END - Internal structures and functions --------------------------------- */
 
@@ -202,6 +218,24 @@ LALInspiralSpinBankMetric(
   metric->data[6] = (REAL4) 0.0;
   metric->data[7] = (REAL4) 0.0;
   metric->data[8] = (REAL4) 0.5*(J11-J9*J9-(J6-J4*J9)*(J6-J4*J9)/(J1-J4*J4));
+
+  /* Say it if we're asked to. */
+  if ( lalDebugLevel & LALINFO )
+  {
+    CHAR msg[256];
+    LALSnprintf( msg, sizeof(msg) / sizeof(*msg), "metric components:\n"
+                 "psi0-psi0 %e\npsi0-psi3 %e psi3-psi3 %e\npsi0-beta %e "
+		 "psi3-beta %e beta-beta %e\n", metric->data[0] /
+		 pow(*f0,10./3), metric->data[3] / pow(*f0,7./3),
+                 metric->data[4] / pow(*f0,4./3), metric->data[6] /
+		 pow(*f0,7./3), metric->data[7] / pow(*f0,4./3),
+                 metric->data[8] / pow(*f0,4./3) );
+    LALInfo( status, msg );
+    LALSnprintf( msg, sizeof(msg) / sizeof(*msg), "f0 = %f j1=%f j4=%f "
+		 "j6=%f j9=%f j11=%f j12=%f j14=%f j17=%f", *f0, J1, J4,
+                 J6, J9, J11, J12, J14, J17 );
+    LALInfo( status, msg );
+  }
   
   DETATCHSTATUSPTR( status );
   RETURN( status );
@@ -217,7 +251,8 @@ allocate(
     REAL4               z,
     REAL4               f0,
     SnglInspiralTable **tmplt,
-    INT4               *ntiles )
+    INT4               *ntiles,
+    BOOLEAN             havePsi )
 {
   REAL4 mass, eta, m1, m2;
 
@@ -229,10 +264,13 @@ allocate(
   m1 = 0.5*mass* (1 + sqrt(1 - 4*eta));
   m2 = 0.5*mass* (1 - sqrt(1 - 4*eta));
 
-  (*tmplt)->mass1 = m1;
-  (*tmplt)->mass2 = m2;
-  (*tmplt)->eta = eta;
-  (*tmplt)->mchirp = pow(m1*m2,0.6)/pow(m1+m2,0.2);
+  if ( ! havePsi )
+  {
+    (*tmplt)->mass1 = m1;
+    (*tmplt)->mass2 = m2;
+    (*tmplt)->eta = eta;
+    (*tmplt)->mchirp = pow(m1*m2,0.6)/pow(m1+m2,0.2);
+  }
   (*tmplt)->psi0 = x*pow(f0,5./3);
   (*tmplt)->psi3 = y*pow(f0,2./3);
   (*tmplt)->beta = z*pow(f0,2./3);
@@ -270,6 +308,7 @@ LALInspiralSpinBank(
   INT2 bccFlag = 0;      		/* determines offset for bcc tiling */
   INT4 cnt = 0;				/* loop counter set to value of ntiles */
   REAL4 shf0 = 1;			/* used to find minimum of shf */
+  BOOLEAN havePsi;			/* are we using phenom parameters?  */
   
   /* Set up status pointer. */
   INITSTATUS( status, "LALInspiralSpinBank", INSPIRALSPINBANKC );
@@ -281,30 +320,37 @@ LALInspiralSpinBank(
   /* Check that minimal match is OK. */
   ASSERT( coarseIn->mmCoarse > 0, status, LALINSPIRALBANKH_ECHOICE,
           LALINSPIRALBANKH_MSGECHOICE );
-  ASSERT( coarseIn->mmCoarse < 1, status, LALINSPIRALBANKH_ECHOICE,
-          LALINSPIRALBANKH_MSGECHOICE );
-  /* Another mass bound needed, or go to psi bounds instead? */
-  ASSERT( coarseIn->mMin > 0, status, LALINSPIRALBANKH_ECHOICE,
-          LALINSPIRALBANKH_MSGECHOICE );
-  ASSERT( coarseIn->MMax > 0, status, LALINSPIRALBANKH_ECHOICE,
-          LALINSPIRALBANKH_MSGECHOICE );
-  ASSERT( coarseIn->MMax > 2*coarseIn->mMin, status,
-          LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE );
+  /* Sanity check parameter bounds. */
+  if( coarseIn->mMin > 0 )
+  {
+    ASSERT( coarseIn->MMax > 0, status, LALINSPIRALBANKH_ECHOICE,
+            LALINSPIRALBANKH_MSGECHOICE );
+    ASSERT( coarseIn->MMax > 2*coarseIn->mMin, status,
+            LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE );
+    havePsi = 0;
+  }
+  /* Sanity check phenomenological parameter bounds. */
+  else
+  {
+    ASSERT( coarseIn->psi0Min > 0, status, LALINSPIRALBANKH_ECHOICE,
+            LALINSPIRALBANKH_MSGECHOICE );
+    ASSERT( coarseIn->psi0Max > coarseIn->psi0Min, status,
+            LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE );
+    ASSERT( coarseIn->psi3Min < 0, status, LALINSPIRALBANKH_ECHOICE,
+            LALINSPIRALBANKH_MSGECHOICE );
+    ASSERT( coarseIn->psi3Max > coarseIn->psi3Min, status,
+            LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE );
+    ASSERT( coarseIn->betaMax > coarseIn->betaMin, status,
+            LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE );
+    havePsi = 1;
+  }
   /* Check that noise curve exists. */
   ASSERT( coarseIn->shf.data, status, LALINSPIRALBANKH_ENULL,
           LALINSPIRALBANKH_MSGENULL );
   ASSERT( coarseIn->shf.data->data, status, LALINSPIRALBANKH_ENULL,
           LALINSPIRALBANKH_MSGENULL );
 
-  /*These parameters have not been added to InspiralCoarseBankIn yet, but when they are the will need to be checked */
-  /*
-    if (coarseIn->betaMax < 0) 
-      ABORT(status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE);
-  */
-
-  /* Allocate memory for 3x3 parameter-space metric. */
-  /* BEN: mess creating all these structures & adding TRYs etc */
-  /* BEN: do it by hand, since it's so simple? */
+  /* Allocate memory for 3x3 parameter-space metric & eigenvalues. */
   LALU4CreateVector( status->statusPtr, &metricDimensions, (UINT4) 2 );
   BEGINFAIL(status)
     cleanup(status->statusPtr, &metric, &metricDimensions, &eigenval, *tiles, tmplt, ntiles);
@@ -314,6 +360,11 @@ LALInspiralSpinBank(
   LALSCreateArray( status->statusPtr, &metric, metricDimensions );
   BEGINFAIL(status)
     cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,*tiles,tmplt, ntiles);
+  ENDFAIL(status);
+  eigenval = NULL;
+  LALSCreateVector( status->statusPtr, &eigenval, 3 );
+  BEGINFAIL(status)
+    cleanup(status->statusPtr,&metric, &metricDimensions,&eigenval,*tiles,tmplt, ntiles);
   ENDFAIL(status);
 
   /* Set f0 to frequency of minimum of noise curve. */
@@ -335,24 +386,29 @@ LALInspiralSpinBank(
     cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,*tiles,tmplt,ntiles);
   ENDFAIL(status);
 
-  /* Call the metric */
+  /* Find the metric. */
   LALInspiralSpinBankMetric(status->statusPtr, metric, &moments, &inspiralTemplate, &f0);	
   BEGINFAIL(status)
     cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,*tiles,tmplt, ntiles);
   ENDFAIL(status);
-
-  /* Find eigenvalues and eigenvectors of metric. */
-  eigenval = NULL;
-  LALSCreateVector( status->statusPtr, &eigenval, 3 );
-  BEGINFAIL(status)
-    cleanup(status->statusPtr,&metric, &metricDimensions,&eigenval,*tiles,tmplt, ntiles);
-  ENDFAIL(status);
+  /* Find eigenvalues and eigenvectors. */
   LALSSymmetricEigenVectors( status->statusPtr, eigenval, metric );
   BEGINFAIL(status)
     cleanup(status->statusPtr,&metric, &metricDimensions,&eigenval,*tiles,tmplt, ntiles);
   ENDFAIL(status);
-    
-  /* Set stepsizes and xp-yp rotation angle from metric. */
+
+  /* Allocate first template, which will remain blank. */
+  *tiles = tmplt = (SnglInspiralTable *) LALCalloc( 1,
+                   sizeof( SnglInspiralTable ) );
+  if ( *tiles == NULL )
+  {
+    cleanup( status->statusPtr, &metric, &metricDimensions, &eigenval,
+             *tiles, tmplt, ntiles);
+    ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
+  }
+  *ntiles = 0;
+
+  /* Set stepsizes from eigenvalues and angle from eigenvectors. */
   if( eigenval->data[0] <= 0 || eigenval->data[1] <=0 || eigenval->data[2]
       <= 0 )
   {
@@ -362,37 +418,45 @@ LALInspiralSpinBank(
   dyp = 1.333333*sqrt(2*(1-coarseIn->mmCoarse)/eigenval->data[1]);
   dzp = 0.6666667*sqrt(2*(1-coarseIn->mmCoarse)/eigenval->data[2]);
   theta = atan2( -metric->data[3], -metric->data[0] );
+printf( "theta is %e\n", theta );
 
-  /* Hardcode mass range on higher mass for the moment. */
-  m2Min = coarseIn->mMin*LAL_MTSUN_SI;
-  m2Max = coarseIn->MMax*LAL_MTSUN_SI/2;
-  m1Min = 2.0*m2Max;
-  m1Max = 15.0*LAL_MTSUN_SI - m2Max;
+  /* If target region is given in terms of masses... */
+  if ( ! havePsi )
+  {
+    /* Hardcode mass range on higher mass for the moment. */
+    m2Min = coarseIn->mMin*LAL_MTSUN_SI;
+    m2Max = coarseIn->MMax*LAL_MTSUN_SI/2;
+    m1Min = 2.0*m2Max;
+    m1Max = 15.0*LAL_MTSUN_SI - m2Max;
 
-  /* Set box on unprimed coordinates including region. */
-  x0 = 0.9*(3.0/128) / (pow(LAL_PI*f0*(m1Max+m2Max),1.666667)*(m1Max*m2Max/pow(m1Max+m2Max,2)));
-  myy0 = 1.1*(-.375*LAL_PI) / (pow(LAL_PI*f0*(m1Max+m2Min),0.6666667)*(m1Max*m2Min/pow(m1Max+m2Min,2)));
-  z0 = 0;
-  x1 = 1.1*(3.0/128) / (pow(LAL_PI*f0*(m1Min+m2Min),1.666667)*(m1Min*m2Min/pow(m1Min+m2Min,2)));
-  myy1 = .9*(-.375*LAL_PI) / (pow(LAL_PI*f0*(m1Min+m2Max),0.6666667)*(m1Min*m2Max/pow(m1Min+m2Max,2)));
-  z1 = 3.8* LAL_PI/29.961432 * (1+0.75*m2Max/m1Min) * (m1Max/m2Min) * pow(LAL_MTSUN_SI*100.0/(m1Min+m2Min), 0.6666667);
+    /* Set box on unprimed phenom coordinates including region. */
+    x0 = 0.9*(3.0/128) / (pow(LAL_PI*f0*(m1Max+m2Max),1.666667)
+         *(m1Max*m2Max/pow(m1Max+m2Max,2)));
+    myy0 = 1.1*(-.375*LAL_PI) / (pow(LAL_PI*f0*(m1Max+m2Min),0.6666667)*(m1Max*m2Min/pow(m1Max+m2Min,2)));
+    z0 = 0;
+    x1 = 1.1*(3.0/128) / (pow(LAL_PI*f0*(m1Min+m2Min),1.666667)*(m1Min*m2Min/pow(m1Min+m2Min,2)));
+    myy1 = .9*(-.375*LAL_PI) / (pow(LAL_PI*f0*(m1Min+m2Max),0.6666667)*(m1Min*m2Max/pow(m1Min+m2Max,2)));
+    z1 = 3.8* LAL_PI/29.961432 * (1+0.75*m2Max/m1Min) * (m1Max/m2Min) * pow(LAL_MTSUN_SI*100.0/(m1Min+m2Min), 0.6666667);
+  }
+  /* Target region is given in terms of psi etc (unprimed). */
+  else
+  {
+    /* Rescale to dimensionless parameters used internally. */
+    x0 = coarseIn->psi0Min / pow( f0, 5./3 );
+    x1 = coarseIn->psi0Max / pow( f0, 5./3 );
+    myy0 = coarseIn->psi3Min / pow( f0, 2./3 );
+    myy1 = coarseIn->psi3Max / pow( f0, 2./3 );
+    z0 = coarseIn->betaMin / pow( f0, 2./3 );
+    z1 = coarseIn->betaMax / pow( f0, 2./3 );
+  }
 
-  /* Set boundaries of box in primed coordinates. */
+  /* Set boundaries of bigger box in primed (eigen) coordinates. */
   xp0 = x0 + sin(theta)*sin(theta) * (x1 - x0);
   yp0 = myy0 - cos(theta)*sin(theta) * (x1 - x0);
   yp1 = sin(theta) * (x1 - x0) + cos(theta) * (myy1 - myy0);
   xp1 = sin(theta) * (myy1 - myy0) + cos(theta) * (x1 - x0);
   zp0 = z0;
   zp1 = z1;
-    
-  /* Allocate first template, which will remain blank. */
-  *tiles = tmplt = (SnglInspiralTable *) LALCalloc( 1,
-                   sizeof(SnglInspiralTable) );
-  if (*tiles == NULL) {
-    cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,*tiles,tmplt,ntiles);
-    ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
-  }
-  *ntiles = 0;
 
   /* This loop generates the template bank. */
   for (zp = 0; zp <= zp1; zp += dzp)
@@ -402,14 +466,15 @@ LALInspiralSpinBank(
     {
       for (xp = 0; xp <= xp1; xp += dxp)
       {
-        /* Calculate Coordinate values at this point */
+
+        /* If the point is in the target region, allocate a template. */
         x = calculateX(0, xp0, xp, dxp, yp, dyp, bccFlag, theta);
         y = calculateY(0, yp0, xp, dxp, yp, dyp, bccFlag, theta);
         z = calculateZ(0, zp, dzp);
-        /* If the point is in the target region, allocate a template. */
-        if( test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0) )
+        if( ( havePsi && inPsiRegion( x, y, z, coarseIn, f0 ) )
+            || ( ! havePsi && test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0) ) )
         {
-          allocate( x, y, z, f0, &tmplt, ntiles );
+          allocate( x, y, z, f0, &tmplt, ntiles, havePsi );
           if( tmplt == NULL )
           {
             cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,*tiles,tmplt,ntiles);
@@ -417,13 +482,16 @@ LALInspiralSpinBank(
           }
         }
         
-        /* Test a spot dx behind */
+        /* If dx behind is not in region, try dx/2 behind. */
         x = calculateX(-1, xp0, xp, dxp, yp, dyp, bccFlag, theta);
-        if(!test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0)){
+        if( ( havePsi && ! inPsiRegion( x, y, z, coarseIn, f0 ) )
+            || ( ! havePsi && ! test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0) ) )
+        {
           x = calculateX(-0.5, xp0, xp, dxp, yp, dyp, bccFlag, theta);
-          /* If its not in the range check 1/2 dx behind. */
-          if (test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0)){
-            allocate( x, y, z, f0, &tmplt, ntiles );
+          if( ( havePsi && inPsiRegion( x, y, z, coarseIn, f0 ) )
+              || ( ! havePsi && test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0) ) )
+          {
+            allocate( x, y, z, f0, &tmplt, ntiles, havePsi );
             if( tmplt == NULL )
             {
               cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,*tiles,tmplt,ntiles);
@@ -432,14 +500,17 @@ LALInspiralSpinBank(
           }
         }
 
-        /* Test a spot dy behind */
+        /* If dy behind is not in region, try dy/2 behind. */
         x = calculateX(0, xp0, xp, dxp, yp, dyp, bccFlag, theta);
         y = calculateY(-1, yp0, xp, dxp, yp, dyp, bccFlag, theta);
-        if(!test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0)){
+        if( ( havePsi && ! inPsiRegion( x, y, z, coarseIn, f0 ) )
+            || ( ! havePsi && ! test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0) ) )
+        {
           y = calculateY(-0.5, yp0, xp, dxp, yp, dyp, bccFlag, theta);
-          /* If its not in the range check 1/2 dy behind. */
-          if (test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0)){
-            allocate( x, y, z, f0, &tmplt, ntiles );
+          if( ( havePsi && inPsiRegion( x, y, z, coarseIn, f0 ) )
+              || ( ! havePsi && test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0) ) )
+          {
+            allocate( x, y, z, f0, &tmplt, ntiles, havePsi );
             if (!tmplt){
               cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,*tiles,tmplt,ntiles);
               ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
@@ -447,14 +518,17 @@ LALInspiralSpinBank(
           }
         }
 
-        /* Test a spot dz behind */
+        /* If dz behind is not in region, try dz/2 behind. */
         y = calculateY(0, yp0, xp, dxp, yp, dyp, (bccFlag+1), theta);
         z = calculateZ(-1, zp, dzp);
-        if(!test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0)){
+        if( ( havePsi && ! inPsiRegion( x, y, z, coarseIn, f0 ) )
+            || ( ! havePsi && ! test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0) ) )
+        {
           z = calculateZ(-0.5, zp, dzp);
-          /*  if its not in the range check 1/2 dz behind. */
-          if (test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0)){
-            allocate( x, y, z, f0, &tmplt, ntiles );
+          if( ( havePsi && inPsiRegion( x, y, z, coarseIn, f0 ) )
+              || ( ! havePsi && test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0) ) )
+          {
+            allocate( x, y, z, f0, &tmplt, ntiles, havePsi );
             if (!tmplt){
               cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,*tiles,tmplt,ntiles);
               ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
@@ -462,16 +536,18 @@ LALInspiralSpinBank(
           }
         }
 
-        /* Test a spot dx ahead */
+        /* If dx ahead is not in region, try dx/2 ahead. */
         x = calculateX(1, xp0, xp, dxp, yp, dyp, bccFlag, theta);
         y = calculateY(0, yp0, xp, dxp, yp, dyp, (bccFlag+1), theta);
         z = calculateZ(0, zp, dzp);
-
-        if(!test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0)){
+        if( ( havePsi && ! inPsiRegion( x, y, z, coarseIn, f0 ) )
+            || ( ! havePsi && ! test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0) ) )
+        {
           x = calculateX(0.5, xp0, xp, dxp, yp, dyp, bccFlag, theta);
-          /* If its not in the range check 1/2 dx. */
-          if (test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0)){
-            allocate( x, y, z, f0, &tmplt, ntiles );
+          if( ( havePsi && inPsiRegion( x, y, z, coarseIn, f0 ) )
+              || ( ! havePsi && test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0) ) )
+          {
+            allocate( x, y, z, f0, &tmplt, ntiles, havePsi );
             if (!tmplt){
               cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,*tiles,tmplt,ntiles);
               ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
@@ -479,14 +555,17 @@ LALInspiralSpinBank(
           }
         }
 
-        /* Test a spot dy ahead */
+        /* If dy ahead is not in region, try dy/2 ahead. */
         x = calculateX(0, xp0, xp, dxp, yp, dyp, bccFlag, theta);
         y = calculateY(1, yp0, xp, dxp, yp, dyp, bccFlag, theta);
-        if(!test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0)){
+        if( ( havePsi && ! inPsiRegion( x, y, z, coarseIn, f0 ) )
+            || ( ! havePsi && ! test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0) ) )
+        {
           y = calculateY(0.5, yp0, xp, dxp, yp, dyp, bccFlag, theta);
-          /* If its not in the range check 1/2 dy. */
-          if (test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0)){
-            allocate( x, y, z, f0, &tmplt, ntiles );
+          if( ( havePsi && inPsiRegion( x, y, z, coarseIn, f0 ) )
+              || ( ! havePsi && test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0) ) )
+          {
+            allocate( x, y, z, f0, &tmplt, ntiles, havePsi );
             if (!tmplt){
               cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,*tiles,tmplt,ntiles);
               ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
@@ -494,14 +573,17 @@ LALInspiralSpinBank(
           }
         }
 
-        /* Test a spot dz ahead */
+        /* If dz ahead is not in region, try dz/2 ahead. */
         y = calculateY(0, yp0, xp, dxp, yp, dyp, (bccFlag+1), theta);
         z = calculateZ(1, zp, dzp);
-        if(!test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0)){
+        if( ( havePsi && ! inPsiRegion( x, y, z, coarseIn, f0 ) )
+            || ( ! havePsi && ! test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0) ) )
+        {
           z = calculateZ(0.5, zp, dzp);
-          /*  if its not in the range check 1/2 dz. */
-          if (test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0)){
-            allocate( x, y, z, f0, &tmplt, ntiles );
+          if( ( havePsi && inPsiRegion( x, y, z, coarseIn, f0 ) )
+              || ( ! havePsi && test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0) ) )
+          {
+            allocate( x, y, z, f0, &tmplt, ntiles, havePsi );
             if (!tmplt){
               cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,*tiles,tmplt,ntiles);
               ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
@@ -523,7 +605,7 @@ LALInspiralSpinBank(
     cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,*tiles,tmplt,ntiles);
     ABORT(status, INSPIRALSPINBANKC_ENOTILES, INSPIRALSPINBANKC_MSGENOTILES);
   }
-  
+
   /* free memory allocated for the vectors and arrays */
   cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,NULL,NULL,&cnt);
   DETATCHSTATUSPTR( status );
@@ -531,6 +613,7 @@ LALInspiralSpinBank(
 } /* LALInspiralSpinBank() */
 
 
+/* Try to free up memory. */
 static void cleanup(
     LALStatus *s, 
     REAL4Array **m, 
@@ -578,8 +661,8 @@ static REAL4 calculateX(REAL4 n,
                INT4 bccFlag, 
                REAL4 theta)
   {
-  return (xp0 + (n*dxp + xp+dxp/2.0*((bccFlag)%2))*cos(theta) - 
-                (yp+dyp/2.0*((bccFlag)%2))*sin(theta));
+  return xp0 + (n*dxp + xp+dxp/2.0*(bccFlag%2))*cos(theta) - 
+                (yp+dyp/2.0*(bccFlag%2))*sin(theta);
   } /* REAL4 x(); */
 
 static REAL4 calculateY(REAL4 n,
@@ -602,6 +685,8 @@ static REAL4 calculateZ(REAL4 n,
   return (zp + n*dzp);
   } /* REAL4 z(); */
 
+
+/* Check if we're in physical parameter region. */
 static INT4 test(REAL4 x, 
                  REAL4 y, 
                  REAL4 z,
@@ -625,3 +710,32 @@ static INT4 test(REAL4 x,
     return 0;
   return 1;
 }
+
+
+/* Check eigencoordinates to see if we're in the target region. Used only
+ * if the parameter range is given as psi's rather than masses.
+ */
+static BOOLEAN inPsiRegion( REAL4 psi0,
+                            REAL4 psi3,
+                            REAL4 beta,
+                            InspiralCoarseBankIn *coarseIn,
+                            REAL4 f0 )
+{
+  REAL4 fac1 = pow( f0, 5./3 );
+  REAL4 fac2 = fac1 / f0;
+
+  if ( psi0 < coarseIn->psi0Min/fac1 )
+    return 0;
+  if ( psi0 > coarseIn->psi0Max/fac1 )
+    return 0;
+  if ( psi3 < coarseIn->psi3Min/fac2 )
+    return 0;
+  if ( psi3 > coarseIn->psi3Max/fac2 )
+    return 0;
+  if ( beta < coarseIn->betaMin/fac2 )
+    return 0;
+  if ( beta > coarseIn->betaMax/fac2 )
+    return 0;
+
+  return 1;
+} /* inPsiRegion */
