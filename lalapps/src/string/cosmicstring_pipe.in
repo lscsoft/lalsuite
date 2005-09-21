@@ -2,6 +2,7 @@
 """
 cosmicstring_pipe.py - standalone ring pipeline driver script
 
+
 $Id$
 
 This script produces the condor submit and dag files to run
@@ -34,16 +35,18 @@ Usage: lalapps_ring_pipe [options]
   -s, --timeslides         do timeslides
   -f, --config-file FILE   use configuration file FILE
   -l, --log-path PATH      directory to write condor log file
+  -p, --playground         run on playground data only 
 """
   print >> sys.stderr, msg
 
 # pasrse the command line options to figure out what we should do
-shortop = "hvisf:l:"
+shortop = "hvispf:l:"
 longop = [
   "help",
   "version",
   "injections",
   "timeslides",
+  "playground",
   "config-file=",
   "log-path="
   ]
@@ -59,6 +62,7 @@ do_inj = 0
 config_file = None
 log_path = None
 do_slides = None
+playground = 0
 
 for o, a in opts:
   if o in ("-v", "--version"):
@@ -71,6 +75,8 @@ for o, a in opts:
     do_inj = 1
   elif o in ("-s", "--timeslides"):
     do_slides = 1
+  elif o in ("-p", "--playground"):
+    playground = 1
   elif o in ("-f", "--config-file"):
     config_file = a
   elif o in ("-l", "--log-path"):
@@ -150,9 +156,9 @@ data = pipeline.ScienceData()
 data.read(cp.get('input','segments'),length)
 
 # create the chunks from the science segments
-data.make_chunks(length,overlap+trig_overlap,0,0,0)
+data.make_chunks(length,overlap+trig_overlap,playground,0,0)
 #make_chunks(self, length, overlap=0, play=0, sl=0, excl_play=0)
-data.make_chunks_from_unused(length,overlap/2+trig_overlap,0,overlap/2+trig_overlap,0,0)
+data.make_chunks_from_unused(length,overlap/2+trig_overlap,playground,overlap/2+trig_overlap,0,0)
 #make_chunks_from_unused(self, length, trig_overlap, play=0, min_length=0, sl=0, excl_play=0)
 
 # get the order of the ifos to filter
