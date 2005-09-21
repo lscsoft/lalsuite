@@ -116,6 +116,8 @@ REAL4   psi0Max         = 0;            /* maximum value of psi0        */
 REAL4   psi3Min         = 0;            /* minimum value of psi3        */
 REAL4   psi3Max         = 0;            /* maximum value of psi3        */
 REAL4   alpha           = 0;            /* BCV amplitude correction     */
+REAL4	betaMin		= 0;		/* minimum BCV spin parameter	*/
+REAL4	betaMax		= 0;		/* maximum BCV spin parameter	*/
 INT4    maxFcutTmplts   = -1;           /* num tmplts in fcut direction */
 REAL4   minMatch        = -1;           /* minimum requested match      */
 REAL4   fUpper          = -1;           /* upper frequency cutoff       */
@@ -873,6 +875,8 @@ int main ( int argc, char *argv[] )
   bankIn.psi3Max       = (REAL8) psi3Max;
   bankIn.numFcutTemplates = (UINT4) maxFcutTmplts;
   bankIn.alpha         = (REAL8) alpha;
+  bankIn.betaMin       = (REAL8) betaMin;
+  bankIn.betaMax       = (REAL8) betaMax;
   bankIn.mmCoarse      = (REAL8) minMatch;
   bankIn.mmFine        = 0.99; /* doesn't matter since no fine bank yet */
   bankIn.fLower        = (REAL8) fLow;
@@ -1133,6 +1137,8 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --maximum-psi3 PSI3          set maximum range of BCV parameter psi3 to PSI3\n"\
 "  --maximum-fcut-tmplts N      maximum number of tmplts in fcut direction is N\n"\
 "  --alpha ALPHA                set alpha for the BCV bank generation\n"\
+"  --minimum-beta BETA		set minimum BCV spin parameter beta to BETA\n"\
+"  --maximum-beta BETA		set maximum BCV spin parameter beta to BETA\n"\
 "\n"\
 "  --minimal-match M            generate bank with minimal match M\n"\
 "\n"\
@@ -1202,6 +1208,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"minimum-psi3",            required_argument, 0,                'R'},
     {"maximum-psi3",            required_argument, 0,                'S'},
     {"maximum-fcut-tmplts",     required_argument, 0,                'U'},
+    {"minimum-beta",		required_argument, 0,                'o'},
+    {"maximum-beta",		required_argument, 0,                'O'},
     {"alpha",                   required_argument, 0,                'T'},
     {"minimal-match",           required_argument, 0,                'C'},
     {"high-frequency-cutoff",   required_argument, 0,                'D'},
@@ -1247,8 +1255,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "a:b:c:d:e:f:g:hi:j:k:l:m:n:p:r:s:t:u:v:x:yz:"
-        "A:B:C:D:E:F:G:H:I:J:K:L:M:P:Q:R:S:T:U:VZ:",
+        "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:r:s:t:u:v:x:yz:"
+        "A:B:C:D:E:F:G:H:I:J:K:L:M:O:P:Q:R:S:T:U:VZ:",
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -1724,6 +1732,16 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         psi3Max = (REAL4) atof( optarg );
         ADD_PROCESS_PARAM( "float", "%e", psi3Max );
         havePsi3Max = 1;
+        break;
+
+      case 'o':
+        betaMin = (REAL4) atof( optarg );
+        ADD_PROCESS_PARAM( "float", "%e", betaMin );
+        break;
+
+      case 'O':
+        betaMax = (REAL4) atof( optarg );
+        ADD_PROCESS_PARAM( "float", "%e", betaMax );
         break;
 
       case 'U':
@@ -2349,6 +2367,21 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     }
 
     minMass = maxMass = 0;
+  }
+  else if ( approximant == BCVSpin )
+  {
+    if ( minMass < 0 && ( ! havePsi0Min || ! havePsi3Min ) )
+    {
+      fprintf( stderr, "--minimum-mass or --minimum-psi0 and --minimum-psi3 "
+                       "must be specified\n" );
+      exit( 1 );
+    }
+    if ( maxMass < 0 && ( ! havePsi0Max || ! havePsi3Max ) )
+    {
+      fprintf( stderr, "--maximum-mass or --maximum-psi0 and --maximum-psi3 "
+                       "must be specified\n" );
+      exit( 1 );
+    }
   }
   else
   {
