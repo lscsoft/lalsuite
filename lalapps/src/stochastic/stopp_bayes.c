@@ -389,57 +389,63 @@ INT4 main(INT4 argc, CHAR *argv[])
     }
   }
 
-  /* open omega and sigma output files */
-  if ((omega_out = fopen("omega.dat", "w")) == NULL)
+  if (!cat_flag)
   {
-    fprintf(stderr, "Can't open file for omega output...\n");
-    exit(1);
-  }
-  if ((sigma_out = fopen("sigma.dat", "w")) == NULL)
-  {
-    fprintf(stderr, "Can't open file for sigma output...\n");
-    exit(1);
-  }
-
-  /* save out omega and sigma */
-  for (j = 0; j < 100; j++)
-  {
-    alpha = min_alpha + ((j/99.) * (max_alpha - min_alpha));
-    fprintf(omega_out, "%e %e\n", alpha, omega_hat[j]);
-    fprintf(sigma_out, "%e %e\n", alpha, sqrt(sigma2_omega_hat[j]));
-  }
-
-  /* close files */
-  fclose(omega_out);
-  fclose(sigma_out);
-
-  /* save out pdf */
-  if ((pdf_out = fopen("pdf.dat", "w")) == NULL)
-  {
-    fprintf(stderr, "Can't open file for pdf output...\n");
-    exit(1);
-  }
-  if (powerlaw_flag)
-  {
-    for (i = 0; i < 100; i++)
+    if (powerlaw_flag)
     {
+      /* open omega and sigma output files */
+      if ((omega_out = fopen("omega.dat", "w")) == NULL)
+      {
+        fprintf(stderr, "Can't open file for omega output...\n");
+        exit(1);
+      }
+      if ((sigma_out = fopen("sigma.dat", "w")) == NULL)
+      {
+        fprintf(stderr, "Can't open file for sigma output...\n");
+        exit(1);
+      }
+
+      /* save out omega and sigma */
       for (j = 0; j < 100; j++)
       {
-        omega = min_omega + ((i/99.) * (max_omega - min_omega));
         alpha = min_alpha + ((j/99.) * (max_alpha - min_alpha));
-        fprintf(pdf_out, "%e %e %e\n", omega, alpha, pdf_powerlaw[i][j]);
+        fprintf(omega_out, "%e %e\n", alpha, omega_hat[j]);
+        fprintf(sigma_out, "%e %e\n", alpha, sqrt(sigma2_omega_hat[j]));
+      }
+
+      /* close files */
+      fclose(omega_out);
+      fclose(sigma_out);
+    }
+
+    /* save out pdf */
+    if ((pdf_out = fopen("pdf.dat", "w")) == NULL)
+    {
+      fprintf(stderr, "Can't open file for pdf output...\n");
+      exit(1);
+    }
+    if (powerlaw_flag)
+    {
+      for (i = 0; i < 100; i++)
+      {
+        for (j = 0; j < 100; j++)
+        {
+          omega = min_omega + ((i/99.) * (max_omega - min_omega));
+          alpha = min_alpha + ((j/99.) * (max_alpha - min_alpha));
+          fprintf(pdf_out, "%e %e %e\n", omega, alpha, pdf_powerlaw[i][j]);
+        }
       }
     }
-  }
-  else
-  {
-    for (i = 0; i < 100; i++)
+    else
     {
-      omega = min_omega + (((i - 1)/99.) * (max_omega - min_omega));
-      fprintf(pdf_out, "%e %e\n", omega, pdf[i]);
+      for (i = 0; i < 100; i++)
+      {
+        omega = min_omega + (((i - 1)/99.) * (max_omega - min_omega));
+        fprintf(pdf_out, "%e %e\n", omega, pdf[i]);
+      }
     }
+    fclose(pdf_out);
   }
-  fclose(pdf_out);
 
   if (!analyse_flag)
   {
