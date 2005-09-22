@@ -556,10 +556,12 @@ int main(int argc,char *argv[])
 	return ( COMPUTEFSTATC_ESYS );
       }
     }
+#ifndef CLUSTERED_OUTPUT
   else {
     strcpy (CFstatFilename,"");
     fpClusters = NULL;
   }
+#endif
 
   /* ----- prepare (unclustered) Fstat-output filename if given and apprend outputLabel */ 
   if ( uvar_outputFstat )
