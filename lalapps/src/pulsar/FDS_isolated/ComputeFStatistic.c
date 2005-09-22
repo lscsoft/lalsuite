@@ -539,9 +539,15 @@ int main(int argc,char *argv[])
 #endif
 
   /* ----- prepare cluster-output filename if given and append outputLabel */
+#ifndef CLUSTERED_OUTPUT
   if ( uvar_outputClusters && (strlen(uvar_outputClusters) > 0) )
+#endif
     {
+#ifdef CLUSTERED_OUTPUT
+      strncpy ( CFstatFilename, "Fstats", sizeof(CFstatFilename) );
+#else
       strncpy ( CFstatFilename, uvar_outputClusters, sizeof(CFstatFilename) );
+#endif
       if ( uvar_outputLabel )
 	strncat ( CFstatFilename, uvar_outputLabel, sizeof(CFstatFilename) );
 
