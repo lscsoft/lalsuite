@@ -434,6 +434,9 @@ INT4 main(INT4 argc, CHAR *argv[])
           alpha = min_alpha + ((j/99.) * (max_alpha - min_alpha));
           fprintf(pdf_out, "%e %e %e\n", omega, alpha, pdf_powerlaw[i][j]);
         }
+
+        /* gnuplot */
+        fprintf(pdf_out, "\n");
       }
     }
     else
