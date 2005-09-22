@@ -588,7 +588,11 @@ int main(int argc,char *argv[])
 #if USE_BOINC
   /* only boinc_resolve the filename if we run CFS once */
   if (cfsRunNo == 0)
+#ifdef CLUSTERED_OUTPUT
+          use_boinc_filename0(CFstatFilename);
+#else
           use_boinc_filename0(FstatFilename);
+#endif
   /* use_boinc_filename0(ckp_fname); */
 #endif /* USE_BOINC */
 
