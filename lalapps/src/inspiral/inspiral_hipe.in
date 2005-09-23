@@ -1263,38 +1263,38 @@ dag.write_dag()
 ##############################################################################  
 # write a message telling the user that the DAG has been written
 if opts.dax:
-	
-	print "\nCreated an abstract DAX file", dag.get_dag_file()
-	print "which can be transformed into a concrete DAG with gencdag."
-	print "\nSee the documentation on http://www.lsc-group.phys.uwm.edu/lscdatagrid/griphynligo/pegasus_lsc.html"
+  
+  print "\nCreated an abstract DAX file", dag.get_dag_file()
+  print "which can be transformed into a concrete DAG with gencdag."
+  print "\nSee the documentation on http://www.lsc-group.phys.uwm.edu/lscdatagrid/griphynligo/pegasus_lsc.html"
 
 else:
-	print "\nCreated a DAG file which can be submitted by executing"
-	print "\n   condor_submit_dag", dag.get_dag_file()
-	print """\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)\n
-	If you are running LSCdataFind jobs, do not forget to initialize your grid 
-	proxy certificate on the condor submit machine by running the commands
-	
-	   unset X509_USER_PROXY
+  print "\nCreated a DAG file which can be submitted by executing"
+  print "\n   condor_submit_dag", dag.get_dag_file()
+  print """\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)\n
+  If you are running LSCdataFind jobs, do not forget to initialize your grid 
+  proxy certificate on the condor submit machine by running the commands
+  
+     unset X509_USER_PROXY
            grid-proxy-init -hours 72
 
-	Enter your pass phrase when promted. The proxy will be valid for 72 hours. 
-	If you expect the LSCdataFind jobs to take longer to complete, increase the
-	time specified in the -hours option to grid-proxy-init. You can check that 
-	the grid proxy has been sucessfully created by executing the command:
-	
-	  grid-cert-info -all -file /tmp/x509up_u`id -u`
-	
-	This will also give the expiry time of the proxy. You should also make sure
-	that the environment variable LSC_DATAFIND_SERVER is set the hostname and
-	optional port of server to query. For example on the UWM medusa cluster this
-	you should use
-	
-	  export LSC_DATAFIND_SERVER=dataserver.phys.uwm.edu
-	
-	Contact the administrator of your cluster to find the hostname and port of the
-	LSCdataFind server.
-	"""
+  Enter your pass phrase when promted. The proxy will be valid for 72 hours. 
+  If you expect the LSCdataFind jobs to take longer to complete, increase the
+  time specified in the -hours option to grid-proxy-init. You can check that 
+  the grid proxy has been sucessfully created by executing the command:
+  
+    grid-cert-info -all -file /tmp/x509up_u`id -u`
+  
+  This will also give the expiry time of the proxy. You should also make sure
+  that the environment variable LSC_DATAFIND_SERVER is set the hostname and
+  optional port of server to query. For example on the UWM medusa cluster this
+  you should use
+  
+    export LSC_DATAFIND_SERVER=dataserver.phys.uwm.edu
+  
+  Contact the administrator of your cluster to find the hostname and port of the
+  LSCdataFind server.
+  """
 
 ##############################################################################
 # write out a log file for this script
