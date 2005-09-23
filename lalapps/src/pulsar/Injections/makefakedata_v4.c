@@ -492,16 +492,17 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 	    LALPrintError ("\nHardware injection mode is incompatible with producing SFTs\n\n");
 	    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
 	  }
-	if ( uvar_duration < uvar_Tsft )
-	  {
-	    LALPrintError ("\nERROR: requested duration of %d sec is less than minimal "
-			   "chunk-size of Tsft =%.0f sec.\n\n",
-			   uvar_duration, uvar_Tsft);
-	    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-	  }
-
       } /* ----- if hardware-injection ----- */
     
+
+    if ( uvar_duration < uvar_Tsft )
+      {
+	LALPrintError ("\nERROR: requested duration of %d sec is less than minimal "
+		       "chunk-size of Tsft =%.0f sec.\n\n",
+		       uvar_duration, uvar_Tsft);
+	ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+      }
+
     if ( ! ( haveStart || haveTimestamps ) )
       {
 	LALPrintError ("\nCould not infer start of observation-period (need either"
@@ -921,9 +922,15 @@ ReadTimestamps (LALStatus* status, LIGOTimeGPSVector **timestamps, const CHAR *f
 
   while(1)
     {
-      UINT4 secs, ns;
+      INT4 secs, ns;
       if (fscanf ( fp, "%d  %d\n", &secs, &ns ) != 2)
 	break;
+
+      if ( ( secs < 0 ) || ( ns < 0 ) ) {
+	LALPrintError ("\nERROR: timestamps-file contained negative time-entry in line %d \n\n",
+		       ts->length);
+	ABORT ( status, MAKEFAKEDATAC_EREADFILE, MAKEFAKEDATAC_MSGEREADFILE);
+      }
 
       /* make space for the new entry */
       ts->length ++;
@@ -931,8 +938,8 @@ ReadTimestamps (LALStatus* status, LIGOTimeGPSVector **timestamps, const CHAR *f
 	ABORT (status, MAKEFAKEDATAC_EMEM, MAKEFAKEDATAC_MSGEMEM);
       }
       
-      ts->data[ts->length - 1].gpsSeconds = secs;
-      ts->data[ts->length - 1].gpsNanoSeconds = ns;
+      ts->data[ts->length - 1].gpsSeconds = (UINT4) secs;
+      ts->data[ts->length - 1].gpsNanoSeconds = (UINT4) ns;
 
     } /* while entries found */
   fclose(fp);
