@@ -1416,6 +1416,8 @@ LALMakeTimestamps(LALStatus *status,
   ASSERT (*timestamps == NULL,status, GENERATEPULSARSIGNALH_ENONULL, 
 	  GENERATEPULSARSIGNALH_MSGENONULL);
 
+  ASSERT ( duration >= Tsft, status, GENERATEPULSARSIGNALH_EINPUT, GENERATEPULSARSIGNALH_MSGEINPUT);
+
   numSFTs = (UINT4)( duration / Tsft );			/* floor */
   if ( (ts = LALCalloc (1, sizeof( *ts )) ) == NULL ) {
     ABORT (status,  GENERATEPULSARSIGNALH_EMEM,  GENERATEPULSARSIGNALH_MSGEMEM);
