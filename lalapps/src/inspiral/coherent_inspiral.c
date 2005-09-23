@@ -643,7 +643,7 @@ int main( int argc, char *argv[] )
 			  strcpy( namearray[3], tempName2 );
 			}
 		      strcpy(namearray2[3],"GeoBeamCoeff.dat");
-		      LALSnprintf( namearray3[3], LALNameLength*sizeof(CHAR), "G1:LSC-AS_Q_CData_%d", geoChanNum );
+		      LALSnprintf( namearray3[3], LALNameLength*sizeof(CHAR), "G1:DER_DATA_H_CData_%d", geoChanNum );
 		      LALSnprintf( namearray4[3], LALNameLength*sizeof(CHAR), "_SegNorm_%d", geoChanNum );
 		      LAL_CALL( LALDestroyFrCache(&status, &tempCache), &status );
 		      tempCache = NULL;
