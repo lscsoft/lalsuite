@@ -1293,14 +1293,15 @@ int main( int argc, char *argv[] )
   thisInspiralTrigger = inspiralEventList;
   for (numTriggers = 0 ; thisInspiralTrigger; ++numTriggers,
       thisInspiralTrigger = thisInspiralTrigger->next )
-    
+  {  
     while ( thisInspiralTrigger->event_id )
     {
       eventId = (thisInspiralTrigger)->event_id;
       (thisInspiralTrigger)->event_id = (thisInspiralTrigger)->event_id->next;
       LALFree( eventId );
     }
-  
+  }
+
   if ( vrbflg ) fprintf( stdout, 
       "%d remaining triggers after time and data type cut.\n", numTriggers );
 
