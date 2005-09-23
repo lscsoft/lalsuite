@@ -583,10 +583,11 @@ int main(int argc,char *argv[])
 
 
   /* prepare checkpointing file */
-  if ( strlen(FstatFilename) ) 
 #ifdef CLUSTERED_OUTPUT
+  if ( strlen(CFstatFilename) ) 
     strncpy(ckp_fname, CFstatFilename, sizeof(ckp_fname));
 #else
+  if ( strlen(FstatFilename) ) 
     strncpy(ckp_fname, FstatFilename, sizeof(ckp_fname));
 #endif
   else
