@@ -205,6 +205,8 @@ int main( int argc, char *argv[] )
   CoincInspiralTable   *coincInspiralList = NULL;
   CoincInspiralTable   *thisCoinc = NULL;
 
+  EventIDColumn        *eventId;
+
   InspiralAccuracyList  accuracyParams;
 
   SearchSummvarsTable  *inputFiles = NULL;
@@ -1286,10 +1288,19 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALPlayTestSingleInspiral( &status, &inspiralEventList,
         &dataType ), &status );
 
-  /* scroll to the end of the linked list of triggers, counting triggers */
+  /* scroll to the end of the linked list of triggers, counting triggers and
+   * freeing event_id's that were read in */
   thisInspiralTrigger = inspiralEventList;
   for (numTriggers = 0 ; thisInspiralTrigger; ++numTriggers,
-      thisInspiralTrigger = thisInspiralTrigger->next );
+      thisInspiralTrigger = thisInspiralTrigger->next )
+    
+    while ( thisInspiralTrigger->event_id )
+    {
+      eventId = (thisInspiralTrigger)->event_id;
+      (thisInspiralTrigger)->event_id = (thisInspiralTrigger)->event_id->next;
+      LALFree( eventId );
+    }
+  
   if ( vrbflg ) fprintf( stdout, 
       "%d remaining triggers after time and data type cut.\n", numTriggers );
 
