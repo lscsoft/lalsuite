@@ -766,7 +766,7 @@ else:
 # create the Condor jobs that will be used in the DAG
 
 # datafind:
-df_job = pipeline.LSCDataFindJob('cache','logs',cp)
+df_job = pipeline.LSCDataFindJob('cache','logs',cp,opts.dax)
 df_job.set_sub_file( basename + '.datafind'+ subsuffix )
 
 # tmpltbank:
