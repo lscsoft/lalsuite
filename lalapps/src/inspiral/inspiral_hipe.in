@@ -91,7 +91,7 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
   usertag = the usertag to add to the job names
   """
 
-  # add the non veto options
+  # add the non veto inspiral options
   insp_job.add_ini_opts(cp,'no-veto-inspiral')
   
   # add the ifo specific options
@@ -100,16 +100,21 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
   GeoBank = None
   if ifo_name == 'G1':
     data_opts = 'geo-data'
+    try: type = cp.get('input','geo-type')
+    except: type = None
     channel = cp.get('input','geo-channel')
     # to analyze GEO data we may use a fixed bank specified in ini file
-    GeoBank = cp.get('g1-inspiral','bank-file')
+    try: GeoBank = cp.get('input','geo-bank')
+    except: GeoBank = None
     if GeoBank: print "For G1 we use bank ", GeoBank
   else:
     data_opts = 'ligo-data'
+    try: type = cp.get('input','ligo-type')
+    except: type = None
     channel = cp.get('input','ligo-channel')
+   
   
-  
-  if not GeoBank: tmplt_job.add_ini_opts(cp,data_opts)
+  tmplt_job.add_ini_opts(cp,data_opts)
   insp_job.add_ini_opts(cp,data_opts)
 
   tmplt_job.set_channel(channel)
@@ -148,6 +153,7 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
               df.set_start(seg.start())
               df.set_end(seg.end())
               seg.set_df_node(df)
+              if type: df.set_type(type)
               if prev_df: df.add_parent(prev_df)
               if opts.datafind: dag.add_node(df)
               prev_df = df
@@ -175,7 +181,9 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
           if not opts.read_cache: insp.set_cache(df.get_output())
           else:  insp.set_cache(cp.get('datafind',ifo_name+"-cache"))
           if not calibrated: insp.calibration()
-          if not GeoBank: 
+          if GeoBank: 
+            insp.set_bank(GeoBank)
+          else:  
             insp.set_bank(bank.get_output())
           if opts.datafind: insp.add_parent(df)
           if (opts.template_bank and not GeoBank): insp.add_parent(bank)
@@ -770,8 +778,11 @@ df_job = pipeline.LSCDataFindJob('cache','logs',cp,opts.dax)
 df_job.set_sub_file( basename + '.datafind'+ subsuffix )
 
 # tmpltbank:
-tmplt_job = inspiral.TmpltBankJob(cp)
-tmplt_job.set_sub_file( basename + '.tmpltbank' + subsuffix )
+tmplt_jobs = {}
+
+for ifo in ifo_list:
+  tmplt_jobs[ifo] = inspiral.TmpltBankJob(cp)
+  tmplt_jobs[ifo].set_sub_file( basename + '.tmpltbank' + subsuffix )
 
 # inspiral:
 insp_jobs = {}
@@ -809,7 +820,7 @@ insp_veto_jobs = {}
 
 for ifo in ifo_list:
   insp_veto_jobs[ifo] = inspiral.InspiralJob(cp)
-  insp_veto_jobs[ifo].set_sub_file( basename + '.inspiral_' + ifo + '_veto' +
+  insp_veto_jobs[ifo].set_sub_file( basename + '.inspiral_veto' + ifo +
     subsuffix )
 
 # thinca:
@@ -860,8 +871,9 @@ sire_clust_job = inspiral.SireJob(cp)
 sire_clust_job.set_sub_file( basename + '.sire_clust' + subsuffix )
 
 
-all_jobs = [tmplt_job, single_inca_job, trig_job, cb_job, sire_job, 
+all_jobs = [single_inca_job, trig_job, cb_job, sire_job, 
   sire_clust_job]
+all_jobs.extend(tmplt_jobs.values())
 all_jobs.extend(insp_jobs.values())
 all_jobs.extend(thinca_jobs.values())
 all_jobs.extend(thinca_slide_jobs.values())
@@ -1110,7 +1122,7 @@ for ifo in ifo_list:
   sys.stdout.flush()
 
   (prev_df,chunks_analyzed[ifo]) = analyze_ifo(ifo,data[ifo],data_to_do[ifo],  
-      tmplt_job,insp_jobs[ifo],df_job,prev_df,dag,usertag)
+      tmplt_jobs[ifo],insp_jobs[ifo],df_job,prev_df,dag,usertag)
   
   # Step 4S: Run sire on the single ifo triggers
   if opts.sire and len(chunks_analyzed[ifo]):   
