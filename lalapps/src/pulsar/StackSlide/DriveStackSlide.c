@@ -156,6 +156,9 @@
 /*               by cos(DEC). This fixes a problem where the last grid point could wrap around the sphere */
 /*               and be closer to the first grid point that the spacing between other grid points.        */
 /* 09/16/06 gam; Add some error checking and clean up parameter space assignment code. */
+/* 09/23/06 gam; if ((params->debugOptionFlag & 4) > 0 ) also print out the spindown grid. */
+/* 09/23/06 gam; Besides checking that startRA and startDEC are in range, also check stopRA and stopDEc. */
+/* 09/23/06 gam; In addition to maxSpindownFreqShift add maxSpinupFreqShift */
 
 /*********************************************/
 /*                                           */
@@ -166,7 +169,7 @@
 /* #define INCLUDE_TIMEFLOAT_CODE */
 #define INCLUDE_DEBUG_PARAMETERS_CODE
 #define INCLUDE_PRINT_PEAKS_TABLE_CODE
-#define INCLUDE_DEBUG_SKY_POSITIONS_CODE
+#define INCLUDE_DEBUG_SKYANDSPINDOWNGRID_CODE
 /* #define DEBUG_DRIVESTACKSLIDE */
 /* #define DEBUG_SUM_TEMPLATEPARAMS */
 /* #define DEBUG_EPHEMERISDATA */
@@ -519,19 +522,27 @@ params->numFDeriv5   =   0;
 
      /* 09/16/05 gam; moved here and revised */
      params->maxSpindownFreqShift = 0; /* Used when "cleaning" SFTs to decide how many bins to ignore near a line due to spindown */
+     params->maxSpinupFreqShift = 0;   /* 09/23/05 gam; used when "cleaning" SFTs to decide how many bins to ignore near a line due to spinup */
      for(i=0;i<params->numSpinDown;i++) {
-       /* This estimates the maximum the frequency of a signal can change due to spindown during the analysis,  */
-       /* which is max(abs(f1))*max(abs(T - T0))) + max(abs(f2))*max(abs(T - T0)))^2 + .... Here we approximate */
-       /* the maximum value of abs(T - T0) to an accuracy of 8 minutes. If the frequency changes by more than   */
-       /* 0.5 bins during 8 minutes due to spindown you are looking for very young pulsars!                     */
+       /* This estimates the maximum the frequency of a signal can change due to spindown or spinup during the analysis, */
+       /* Here we approximate the maximum value of T - T0 to an accuracy of 8 minutes. If the frequency changes by more  */
+       /* than 0.5 bins during 8 minutes due to spindown you are looking for very young pulsars!                         */
        REAL8 maxDeltaT = MAX(fabs((REAL8)(params->gpsStartTimeSec + params->duration - params->gpsEpochStartTimeSec)),fabs((REAL8)(params->gpsStartTimeSec - params->gpsEpochStartTimeSec)));
-       /* In the typical case, maxDeltaT is about the same as params->duration */
+       /* Typically maxDeltaT is about equal to the duration; if gpsEpochStartTimeSec is larger than gpsStartTimeSec + duration/2 then we over-estimate the effects of spindown and spinup here. */
        switch(i) {
-        case  0: params->maxSpindownFreqShift += MAX(fabs(params->startFDeriv1), fabs(params->stopFDeriv1))*maxDeltaT; break;
-        case  1: params->maxSpindownFreqShift += MAX(fabs(params->startFDeriv2), fabs(params->stopFDeriv2))*pow(maxDeltaT,2.0); break;
-        case  2: params->maxSpindownFreqShift += MAX(fabs(params->startFDeriv3), fabs(params->stopFDeriv3))*pow(maxDeltaT,3.0); break;
-        case  3: params->maxSpindownFreqShift += MAX(fabs(params->startFDeriv4), fabs(params->stopFDeriv4))*pow(maxDeltaT,4.0); break;
-        case  4: params->maxSpindownFreqShift += MAX(fabs(params->startFDeriv5), fabs(params->stopFDeriv5))*pow(maxDeltaT,5.0); break;
+        case  0: params->maxSpindownFreqShift += STKSLDMIN(params->startFDeriv1, params->stopFDeriv1)*maxDeltaT; break;
+        case  1: params->maxSpindownFreqShift += STKSLDMIN(params->startFDeriv2, params->stopFDeriv2)*pow(maxDeltaT,2.0); break;
+        case  2: params->maxSpindownFreqShift += STKSLDMIN(params->startFDeriv3, params->stopFDeriv3)*pow(maxDeltaT,3.0); break;
+        case  3: params->maxSpindownFreqShift += STKSLDMIN(params->startFDeriv4, params->stopFDeriv4)*pow(maxDeltaT,4.0); break;
+        case  4: params->maxSpindownFreqShift += STKSLDMIN(params->startFDeriv5, params->stopFDeriv5)*pow(maxDeltaT,5.0); break;
+       }
+       /* 09/23/05 gam */
+       switch(i) {
+        case  0: params->maxSpinupFreqShift += STKSLDMAX(params->startFDeriv1, params->stopFDeriv1)*maxDeltaT; break;
+        case  1: params->maxSpinupFreqShift += STKSLDMAX(params->startFDeriv2, params->stopFDeriv2)*pow(maxDeltaT,2.0); break;
+        case  2: params->maxSpinupFreqShift += STKSLDMAX(params->startFDeriv3, params->stopFDeriv3)*pow(maxDeltaT,3.0); break;
+        case  3: params->maxSpinupFreqShift += STKSLDMAX(params->startFDeriv4, params->stopFDeriv4)*pow(maxDeltaT,4.0); break;
+        case  4: params->maxSpinupFreqShift += STKSLDMAX(params->startFDeriv5, params->stopFDeriv5)*pow(maxDeltaT,5.0); break;
        }
      }
 
@@ -663,7 +674,7 @@ params->numFDeriv5   =   0;
     	fprintf(stdout,"# if (normalizationFlag & 32) > 0 then ignore bins using info in linesAndHarmonicsFile.\n"); /* 05/14/05 gam */
     	fprintf(stdout,"# if (normalizationFlag & 64) > 0 then clean SFTs using info in linesAndHarmonicsFile before normalizing.\n"); /* 07/13/05 gam */
     	fprintf(stdout,"# Note that the (normalizationFlag & 32) > 0 and (normalizationFlag & 64) > 0 options can be set independently.\n"); /* 07/13/05 gam */
-    	fprintf(stdout,"# WARNING: if searching for very young pulsars with frequencies that change significantly in less that 8 minutes due to spindown, or pulsars that spinup, check how maxSpindownFreqShift is used in the code before cleaning SFTs.\n"); /* 09/16/05 gam */
+    	fprintf(stdout,"# WARNING: if searching for very young pulsars with frequencies that change significantly in less that 8 minutes due to spindown or spinup, or if gpsEpochStartTimeSec is larger than gpsStartTimeSec + duration/2, check how maxSpindownFreqShift and maxSpinupFreqShift are used in the code before cleaning SFTs.\n");
     	fprintf(stdout,"\n");
     	fprintf(stdout,"set testFlag           %23d; #46 INT2 specify test case.\n", params->testFlag); /* 05/11/04 gam */
     	fprintf(stdout,"# if ((testFlag & 1) > 0) output Hough number counts instead of power; use threshold5 for Hough cutoff.\n"); /* 05/11/04 gam */
@@ -755,7 +766,7 @@ params->numFDeriv5   =   0;
     	fprintf(stdout,"# if (debugOptionFlag & 1) > 0 then print command line arguments.\n");
     	fprintf(stdout,"# if (debugOptionFlag == 1) then print command line arguments and abort!\n"); /* 02/25/05 gam */
     	fprintf(stdout,"# if (debugOptionFlag & 2) > 0 then print table with events (isolated case only).\n");
-    	fprintf(stdout,"# if (debugOptionFlag & 4) > 0 then print sky positions with debugging information.\n");
+    	fprintf(stdout,"# if (debugOptionFlag & 4) > 0 then print sky grid and spindown grid with debugging information.\n");
     	fprintf(stdout,"# if (debugOptionFlag & 8) > 0 then the STK bin with max power is set to 1, all other to 0.\n");
     	fprintf(stdout,"# if (debugOptionFlag & 16) > 0 also set to 1 one bin to either side of the bin with maxPwr.\n");
     	fprintf(stdout,"# if (debugOptionFlag & 32) > 0 print Monte Carlo Simulation results to stdout.\n");
@@ -1020,6 +1031,9 @@ params->numFDeriv5   =   0;
   if (params->stksldSkyPatchData->startRA < 0 || params->stksldSkyPatchData->startRA > (REAL8)LAL_TWOPI) {
     ABORT( status, DRIVESTACKSLIDEH_ERA, DRIVESTACKSLIDEH_MSGERA);
   }
+  if (params->stksldSkyPatchData->stopRA < 0 || params->stksldSkyPatchData->stopRA > (REAL8)LAL_TWOPI) {
+    ABORT( status, DRIVESTACKSLIDEH_ERA, DRIVESTACKSLIDEH_MSGERA);
+  }  
   if (params->stksldSkyPatchData->deltaRA < 0.0) {
       ABORT( status, DRIVESTACKSLIDEH_EDELTARA, DRIVESTACKSLIDEH_MSGEDELTARA );
   }
@@ -1043,6 +1057,9 @@ params->numFDeriv5   =   0;
   if (params->stksldSkyPatchData->startDec < -1.0*(REAL8)LAL_PI_2 || params->stksldSkyPatchData->startDec > (REAL8)LAL_PI_2) {
     ABORT( status, DRIVESTACKSLIDEH_EDEC, DRIVESTACKSLIDEH_MSGEDEC );
   }
+  if (params->stksldSkyPatchData->stopDec < -1.0*(REAL8)LAL_PI_2 || params->stksldSkyPatchData->stopDec > (REAL8)LAL_PI_2) {
+    ABORT( status, DRIVESTACKSLIDEH_EDEC, DRIVESTACKSLIDEH_MSGEDEC );
+  }  
   if (params->stksldSkyPatchData->deltaDec < 0.0) {
       ABORT( status, DRIVESTACKSLIDEH_EDELTADEC, DRIVESTACKSLIDEH_MSGEDELTADEC );
   }
@@ -1262,8 +1279,23 @@ params->numFDeriv5   =   0;
 		   params->freqDerivData[i][k] = params->startFDeriv5 + iFDeriv4*params->deltaFDeriv5;
 		} /* END if (k == 0) ELSE ... */
         } /* END for(k=0;k<params->numSpinDown;k++) */
-   }
- /* END for(i=0;i<params->numFreqDerivTotal;i++) */
+   } /* END for(i=0;i<params->numFreqDerivTotal;i++) */
+   
+   #ifdef INCLUDE_DEBUG_SKYANDSPINDOWNGRID_CODE
+    /* 09/23/05 gam */
+    if ((params->debugOptionFlag & 4) > 0 ) {
+      fprintf(stdout,"\nSpindown Grid Info:\n");
+      fprintf(stdout,"numFreqDerivIncludingNoSpinDown = %i, numFreqDerivTotal = %i, numSpinDown = %i\n",params->numFreqDerivIncludingNoSpinDown,params->numFreqDerivTotal,params->numSpinDown);
+      fflush(stdout);
+      for(i=0;i<params->numFreqDerivTotal;i++) {
+        for(k=0;k<params->numSpinDown;k++) {
+           fprintf(stdout,"fDeriv%i = params->freqDerivData[%i][%i] = %23.16e ",(k+1),i,k,params->freqDerivData[i][k]);
+           fflush(stdout);
+        }
+        fprintf(stdout,"\n");
+      }
+    }    
+   #endif
  } /* END if (params->parameterSpaceFlag >= 0) */
 /**********************************************/
 /*                                            */
@@ -1480,7 +1512,7 @@ void StackSlideConditionData(
     if ( (params->normalizationFlag & 32) > 0 ) {
       /* 05/19/05 gam; set up params->sumBinMask with bins to exclude from search or Monte Carlo due to cleaning */
       StackSlideGetBinMask(status->statusPtr, params->sumBinMask, &(params->percentBinsExcluded), params->infoLines,
-         ((REAL8)STACKSLIDEMAXV),params->maxSpindownFreqShift, params->f0SUM, params->tEffSUM, params->nBinsPerSUM);
+         ((REAL8)STACKSLIDEMAXV), params->maxSpindownFreqShift, params->maxSpinupFreqShift, params->f0SUM, params->tEffSUM, params->nBinsPerSUM);
       CHECKSTATUSPTR (status);
     } 
 
@@ -1521,6 +1553,7 @@ void StackSlideConditionData(
         fflush(stdout);
     }
     fprintf(stdout,"params->maxSpindownFreqShift = %g\n",params->maxSpindownFreqShift);
+    fprintf(stdout,"params->maxSpinupFreqShift = %g\n",params->maxSpinupFreqShift);
     fprintf(stdout,"params->percentBinsExcluded = %g\n",params->percentBinsExcluded);
     fflush(stdout);
   #endif
@@ -1677,19 +1710,19 @@ void StackSlideConditionData(
   }
 
   #ifdef DEBUG_ROTATESKYCOORDINATES
-    fprintf(stdout,"params->aveEarthAccVec[0] = %g \n",params->aveEarthAccVec[0]);
-    fprintf(stdout,"params->aveEarthAccVec[1] = %g \n",params->aveEarthAccVec[1]);
-    fprintf(stdout,"params->aveEarthAccVec[2] = %g \n",params->aveEarthAccVec[2]);
-    fprintf(stdout,"params->aveEarthAccRA = %g \n",params->aveEarthAccRA);
-    fprintf(stdout,"params->aveEarthAccDEC = %g \n",params->aveEarthAccDEC);
+    fprintf(stdout,"params->aveEarthAccVec[0] = %23.16e \n",params->aveEarthAccVec[0]);
+    fprintf(stdout,"params->aveEarthAccVec[1] = %23.16e \n",params->aveEarthAccVec[1]);
+    fprintf(stdout,"params->aveEarthAccVec[2] = %23.16e \n",params->aveEarthAccVec[2]);
+    fprintf(stdout,"params->aveEarthAccRA = %23.16f \n",params->aveEarthAccRA);
+    fprintf(stdout,"params->aveEarthAccDEC = %23.16f \n",params->aveEarthAccDEC);
     fflush(stdout);
     for(k=0;k<params->numSkyPosTotal;k++) {
-       fprintf(stdout, "params->skyPosData[%i][0] = %g\n",k,params->skyPosData[k][0]);
-       fprintf(stdout, "params->skyPosData[%i][1] = %g\n",k,params->skyPosData[k][1]);
+       fprintf(stdout, "params->skyPosData[%i][0] = %23.16f\n",k,params->skyPosData[k][0]);
+       fprintf(stdout, "params->skyPosData[%i][1] = %23.16f\n",k,params->skyPosData[k][1]);
        fflush(stdout);
     }
   #endif
-  
+
 /************************************************/
 /*                                              */
 /* END SECTION: Find Earth's ave acceleration   */
@@ -3360,9 +3393,9 @@ void CountOrAssignSkyPosData(REAL8 **skyPosData, INT4 *numSkyPosTotal, BOOLEAN r
    REAL8 tmpDeltaRA = 0.0;
    INT4  tmpNumRA = 0;
 
-   #ifdef INCLUDE_DEBUG_SKY_POSITIONS_CODE
-    /* 04/15/04 gam */
+   #ifdef INCLUDE_DEBUG_SKYANDSPINDOWNGRID_CODE
     if ((params->debugOptionFlag & 4) > 0 ) {
+      fprintf(stdout,"\nSky Grid Info:\n");
       fprintf(stdout,"returnData = %i \n",returnData);
       fflush(stdout);
     }
@@ -3382,25 +3415,23 @@ void CountOrAssignSkyPosData(REAL8 **skyPosData, INT4 *numSkyPosTotal, BOOLEAN r
 	    } else {
 	       tmpNumRA = 1; /* Always do at least one point in the Sky for each DEC */
 	    }
-            #ifdef INCLUDE_DEBUG_SKY_POSITIONS_CODE
-              if ((params->debugOptionFlag & 4) > 0 ) {
-	        fprintf(stdout,"tmpDeltaRA = %g, tmpNumRA = %i \n",tmpDeltaRA, tmpNumRA);
-	        fflush(stdout);
-              }
-            #endif
 	} else {
 	    tmpDeltaRA = 0.0; /* We are at the North or South Celestial Pole */
 	    tmpNumRA = 1;    /* Always do at least one point in the Sky for each DEC including the poles. */
 	}
+        #ifdef INCLUDE_DEBUG_SKYANDSPINDOWNGRID_CODE
+          if ((params->debugOptionFlag & 4) > 0 ) {
+	    fprintf(stdout,"tmpDeltaRA = %23.16f, tmpNumRA = %i \n",tmpDeltaRA,tmpNumRA);
+	    fflush(stdout);
+          }
+        #endif
         for(iRA=0;iRA<tmpNumRA;iRA++) {
             if (returnData) {
 	      skyPosData[i][0] = params->startRA + iRA*tmpDeltaRA;
 	      skyPosData[i][1] = tmpDEC;
-              #ifdef INCLUDE_DEBUG_SKY_POSITIONS_CODE
-                /* 04/15/04 gam */
+              #ifdef INCLUDE_DEBUG_SKYANDSPINDOWNGRID_CODE
                 if ((params->debugOptionFlag & 4) > 0 ) {
-	          /* fprintf(stdout,"RA = skyPosData[%i][0] = %g, RA = skyPosData[%i][1] = %g \n",i,skyPosData[i][0],i,skyPosData[i][1]); */ /* 04/11/04 gam */
-	          fprintf(stdout,"RA = skyPosData[%i][0] = %g, DEC = skyPosData[%i][1] = %g \n",i,skyPosData[i][0],i,skyPosData[i][1]);  
+	          fprintf(stdout,"RA = skyPosData[%i][0] = %23.16f, DEC = skyPosData[%i][1] = %23.16f \n",i,skyPosData[i][0],i,skyPosData[i][1]);
 	          fflush(stdout);
                 }
               #endif
@@ -3409,8 +3440,7 @@ void CountOrAssignSkyPosData(REAL8 **skyPosData, INT4 *numSkyPosTotal, BOOLEAN r
 	}
    }
    *numSkyPosTotal = i; /* Always return number of sky positions */
-   #ifdef INCLUDE_DEBUG_SKY_POSITIONS_CODE
-      /* 04/15/04 gam */
+   #ifdef INCLUDE_DEBUG_SKYANDSPINDOWNGRID_CODE
      if ((params->debugOptionFlag & 4) > 0 ) {
        fprintf(stdout,"numSkyPosTotal= %i \n",*numSkyPosTotal);
        fflush(stdout);
@@ -3934,16 +3964,18 @@ void StackSlideGetLinesAndHarmonics(LALStatus *status, LineHarmonicsInfo *infoHa
 
 /* 05/19/05 gam; set up params->sumBinMask with bins to exclude from search or Monte Carlo due to cleaning */
 void StackSlideGetBinMask(LALStatus *status, INT4 *binMask, REAL8 *percentBinsExcluded, LineNoiseInfo *infoLines,
-     REAL8 maxDopplerVOverC, REAL8 maxSpindownFreqShift, REAL8 f0, REAL8 tBase, INT4 nBins)
+     REAL8 maxDopplerVOverC, REAL8 maxSpindownFreqShift, REAL8 maxSpinupFreqShift, REAL8 f0, REAL8 tBase, INT4 nBins)
 {
-  INT4 j,k,f0Bin, spindownBins,minBin,maxBin,binCount;
+  INT4 j,k,f0Bin,spindownBins,spinupBins,minBin,maxBin,binCount;
   REAL8 tBaseOverOneMinusMaxDoppler, tBaseOverOnePlusMaxDoppler;
   
   INITSTATUS( status, "StackSlideGetBinMask", DRIVESTACKSLIDEC );
   ATTATCHSTATUSPTR (status);
   
   f0Bin = floor(f0*tBase + 0.5);
-  spindownBins = ((INT4)maxSpindownFreqShift*tBase);
+  /* 09/23/05 gam; the floor and ceil are used here to be conservative regardless of the sign of the spindown or spinup shifts */
+  spindownBins = floor(maxSpindownFreqShift*tBase);  /* Usually maxSpindownFreqShift is negative */
+  spinupBins = ceil(maxSpinupFreqShift*tBase);       /* Usually maxSpinupFreqShift is zero or positive */
   tBaseOverOneMinusMaxDoppler = tBase/(1.0 - maxDopplerVOverC);
   tBaseOverOnePlusMaxDoppler  = tBase/(1.0 + maxDopplerVOverC);
 
@@ -3951,9 +3983,9 @@ void StackSlideGetBinMask(LALStatus *status, INT4 *binMask, REAL8 *percentBinsEx
 
         /* Find min and max bin that could be affected by this line */
         /* Assuming templates do not spinup, but spindown only */
-        minBin = floor( (infoLines->lineFreq[k] - infoLines->leftWing[k])*tBaseOverOnePlusMaxDoppler ) - f0Bin;
+        minBin = floor( (infoLines->lineFreq[k] - infoLines->leftWing[k])*tBaseOverOnePlusMaxDoppler ) - spinupBins - f0Bin;
         if (minBin < 0) minBin = 0;
-        maxBin = ceil(  (infoLines->lineFreq[k] + infoLines->rightWing[k])*tBaseOverOneMinusMaxDoppler ) + spindownBins - f0Bin;
+        maxBin = ceil(  (infoLines->lineFreq[k] + infoLines->rightWing[k])*tBaseOverOneMinusMaxDoppler ) - spindownBins - f0Bin;
         if (maxBin >= nBins) maxBin = nBins - 1;
         
         /* Exclude bins that could be affected by this line; note sum from minBin to maxBin inclusive */

@@ -93,6 +93,8 @@
 /* 09/09/05 gam; Use SFT cleaning function in LAL SFTClean.h rather than in SFTbin.h */
 /* 09/12/05 gam; if ( (params->weightFlag & 16) > 0 ) save inverse medians and weight STKs with these. */
 /* 09/14/05 gam; add more vetting of command line arguments and ABORTs */
+/* 09/23/06 gam; Besides checking that startRA and startDEC are in range, also check stopRA and stopDEc. */
+/* 09/23/06 gam; In addition to maxSpindownFreqShift add maxSpinupFreqShift */
 
 #ifndef _DRIVESTACKSLIDE_H
 #define _DRIVESTACKSLIDE_H
@@ -207,8 +209,8 @@ NRCSID( DRIVESTACKSLIDEH, "$Id$");
 #define DRIVESTACKSLIDEH_MSGEGPSTINT         "Unexpected GPS time interval"
 #define DRIVESTACKSLIDEH_MSGEDELTAT          "Invalid deltaT"
 #define DRIVESTACKSLIDEH_MSGETBLK            "tBLK or tEffBLK were <= 0 or duration <= tBLK"
-#define DRIVESTACKSLIDEH_MSGERA              "Invalid right ascension"
-#define DRIVESTACKSLIDEH_MSGEDEC             "Invalid declination"
+#define DRIVESTACKSLIDEH_MSGERA              "startRA or stopRA is less than 0 or greater than 2*pi"
+#define DRIVESTACKSLIDEH_MSGEDEC             "startDEC or stopDEC is less than -pi/2 or greater than pi/2"
 #define DRIVESTACKSLIDEH_MSGEFREQ            "Invalid frequency +/- 0.5*band (could be negative, outside LIGO band, or too high for sample rate)"
 #define DRIVESTACKSLIDEH_MSGEFREQDERIV       "One of the frequency derivatives is possibly too large; frequency will evolve outside allowed band"
 #define DRIVESTACKSLIDEH_MSGEALOC            "Memory allocation error"
@@ -361,7 +363,8 @@ NRCSID( DRIVESTACKSLIDEH, "$Id$");
 "   </Table>\n"
 
 /* 09/16/05 gam; useful macro */
-#define MAX(A, B)  (((A) < (B)) ? (B) : (A))
+#define STKSLDMAX(A, B)  (((A) < (B)) ? (B) : (A))
+#define STKSLDMIN(A, B)  (((A) > (B)) ? (B) : (A))
 
 /*********************************************/
 /*                                           */
@@ -798,6 +801,7 @@ typedef struct tagStackSlideSearchParams {
   INT4 numSkyPosTotal;    /* Total number of Sky positions to cover */
   INT4 numFreqDerivTotal; /* Total number of Frequency evolution models to cover */
   REAL8 maxSpindownFreqShift; /* 05/19/05 gam; Maximum shift in frequency due to spindown */
+  REAL8 maxSpinupFreqShift;   /* 05/19/05 gam; Maximum shift in frequency due to spinup   */
 
   /* FreqSeriesPowerStats *SUMStats; */ /* 02/11/04 gam */ /* Container for statistics about each SUM */
   
@@ -919,7 +923,7 @@ void StackSlideGetLinesAndHarmonics(LALStatus *status, LineHarmonicsInfo *infoHa
 
 /* 05/19/05 gam; set up params->sumBinMask with bins to exclude from search or Monte Carlo due to cleaning */
 void StackSlideGetBinMask(LALStatus *status, INT4 *binMask, REAL8 *percentBinsExcluded, LineNoiseInfo *infoLines,
-     REAL8 maxDopplerVOverC, REAL8 maxSpindownFreqShift, REAL8 f0, REAL8 tBase, INT4 nBins);
+     REAL8 maxDopplerVOverC, REAL8 maxSpindownFreqShift, REAL8 maxSpinupFreqShift, REAL8 f0, REAL8 tBase, INT4 nBins);
 
 /* 05/14/05 gam; cleans SFTs using CleanCOMPLEX8SFT by Sintes, A.M., Krishnan, B. */  /* 07/13/05 gam; add RandomParams *randPar */
 void StackSlideCleanSFTs(LALStatus *status, FFT **BLKData, LineNoiseInfo *infoLines, INT4 numBLKs, INT4 nBinsPerNRM, INT4 maxBins, RandomParams *randPar);
