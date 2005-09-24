@@ -108,7 +108,7 @@ set normalizationParameter  0.0000000000000000e+00; #45 REAL4 see uses below.
 # if (normalizationFlag & 32) > 0 then ignore bins using info in linesAndHarmonicsFile.
 # if (normalizationFlag & 64) > 0 then clean SFTs using info in linesAndHarmonicsFile before normalizing.
 # Note that the (normalizationFlag & 32) > 0 and (normalizationFlag & 64) > 0 options can be set independently.
-# WARNING: if searching for very young pulsars with frequencies that change significantly in less that 8 minutes due to spindown, or pulsars that spinup, check how maxSpindownFreqShift is used in the code before cleaning SFTs.
+# WARNING: if searching for very young pulsars with frequencies that change significantly in less that 8 minutes due to spindown or spinup, or if gpsEpochStartTimeSec is larger than gpsStartTimeSec + duration/2, check how maxSpindownFreqShift and maxSpinupFreqShift are used in the code before cleaning SFTs.
 
 set testFlag                                 0; #46 INT2 specify test case.
 # if ((testFlag & 1) > 0) output Hough number counts instead of power; use threshold5 for Hough cutoff.
@@ -200,7 +200,7 @@ set debugOptionFlag                          1; #84 INT2 debugging information t
 # if (debugOptionFlag & 1) > 0 then print command line arguments.
 # if (debugOptionFlag == 1) then print command line arguments and abort!
 # if (debugOptionFlag & 2) > 0 then print table with events (isolated case only).
-# if (debugOptionFlag & 4) > 0 then print sky positions with debugging information.
+# if (debugOptionFlag & 4) > 0 then print sky grid and spindown grid with debugging information.
 # if (debugOptionFlag & 8) > 0 then the STK bin with max power is set to 1, all other to 0.
 # if (debugOptionFlag & 16) > 0 also set to 1 one bin to either side of the bin with maxPwr.
 # if (debugOptionFlag & 32) > 0 print Monte Carlo Simulation results to stdout.
