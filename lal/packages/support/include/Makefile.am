@@ -4,7 +4,7 @@ pkginclude_HEADERS = FileIO.h PrintVector.h PrintFTSeries.h ReadFTSeries.h \
                      LALInitBarycenter.h LALXMGRInterface.h \
                      LIGOLwXML.h LIGOLwXMLHeaders.h \
                      LIGOLwXMLRead.h ReadNoiseSpectrum.h  SFTfileIO.h \
-                     UserInput.h ConfigFile.h LALMathematica.h
+                     UserInput.h ConfigFile.h LALMathematica.h SegmentsIO.h
 
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
