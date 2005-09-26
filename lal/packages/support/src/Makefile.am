@@ -25,7 +25,7 @@ liblalsupport_la_SOURCES = FileIO.c PrintVector.c PrintFrequencySeries.c \
   LALInitBarycenter.c LALXMGRInterface.c \
   LIGOLwXML.c SFTfileIO.c \
   UserInput.c ConfigFile.c getopt.c getopt.h getopt1.c \
-  LALMath3DPlot.c LALMathNDPlot.c
+  LALMath3DPlot.c LALMathNDPlot.c SegmentsIO.c
 
 
 MAINTAINERCLEANFILES = PrintVector.c PrintFrequencySeries.c PrintTimeSeries.c \
