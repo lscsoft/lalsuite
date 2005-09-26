@@ -3,7 +3,8 @@ pkginclude_HEADERS = Units.h DetectorSite.h DetResponse.h Calibration.h \
                      CoherentEstimation.h ResampleTimeSeries.h \
                      LIGOMetadataTables.h LIGOMetadataUtils.h BurstUtils.h \
                      TemplateBankGeneration.h \
-		     Sequence.h TimeSeries.h FrequencySeries.h
+		     Sequence.h TimeSeries.h FrequencySeries.h \
+		     Segments.h
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 MAINTAINERCLEANFILES = FrequencySeries.h Sequence.h TimeSeries.h
