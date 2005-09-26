@@ -63,6 +63,8 @@ NRCSID( GENERATEPULSARSIGNALH, "$Id$");
 #define GENERATEPULSARSIGNALH_EBADCOORDS	13
 #define GENERATEPULSARSIGNALH_ELUTS		14
 #define GENERATEPULSARSIGNALH_EDTERMS		15
+#define GENERATEPULSARSIGNALH_EINPUT		16
+
 
 #define GENERATEPULSARSIGNALH_MSGENULL 		"Arguments contained an unexpected null pointer"
 #define GENERATEPULSARSIGNALH_MSGENONULL	"Output pointer is not NULL"
@@ -79,6 +81,7 @@ NRCSID( GENERATEPULSARSIGNALH, "$Id$");
 #define GENERATEPULSARSIGNALH_MSGEBADCOORDS	"Current code requires sky position in equatorial coordinates"
 #define GENERATEPULSARSIGNALH_MSGELUTS		"Lookup tables (LUTs) for trig functions must be defined on domain -2pi to 2pi inclusive"
 #define GENERATEPULSARSIGNALH_MSGEDTERMS	"Dterms must be greater than zero and less than or equal to half the number of SFT bins"
+#define GENERATEPULSARSIGNALH_MSGEINPUT		"Invalid input-arguments to function"
 /*************************************************** </lalErrTable> */
 
 /*************************************************** 
