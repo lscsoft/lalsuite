@@ -8,7 +8,7 @@ else
 NEED_FRAME = 
 EXTRA_TEXSOURCES = ResampleTimeSeriesTest.c ComputeCalibrationFactorsTest.c
 endif
-check_PROGRAMS = UnitsTest DetectorSiteTest LALTestDetResponse0 LALIndependentTestDetResponse ComputeTransferTest CoherentEstimationTest $(NEED_FRAME)
+check_PROGRAMS = UnitsTest DetectorSiteTest LALTestDetResponse0 LALIndependentTestDetResponse ComputeTransferTest CoherentEstimationTest SegmentsTest $(NEED_FRAME)
 UnitsTest_SOURCES = UnitsTest.c
 UnitsTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 DetectorSiteTest_SOURCES = DetectorSiteTest.c
@@ -21,6 +21,8 @@ ComputeTransferTest_SOURCES = ComputeTransferTest.c
 ComputeTransferTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 CoherentEstimationTest_SOURCES = CoherentEstimationTest.c
 CoherentEstimationTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+SegmentsTest_SOURCES = SegmentsTest.c
+SegmentsTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 if FRAME
 ResampleTimeSeriesTest_SOURCES = ResampleTimeSeriesTest.c
 ResampleTimeSeriesTest_LDADD = $(top_builddir)/packages/framedata/src/liblalframe.la $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
