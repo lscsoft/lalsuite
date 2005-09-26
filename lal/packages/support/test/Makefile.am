@@ -2,9 +2,10 @@
 check_PROGRAMS = PrintVectorTest\
 	         PrintFTSeriesTest ReadFTSeriesTest StreamInputTest\
                  StreamSeriesInputTest SFTfileIOTest \
-		 ConfigFileTest UserInputTest LALMath3DPlotTest LALMathNDPlotTest
+		 ConfigFileTest UserInputTest LALMath3DPlotTest LALMathNDPlotTest \
+		 SegmentsIOTest
 
-noinst_DATA = StreamInput.data StreamSeriesInput.data inputsft.0 inputsft.1 ConfigFileSample.cfg
+noinst_DATA = StreamInput.data StreamSeriesInput.data inputsft.0 inputsft.1 ConfigFileSample.cfg SegmentsInput1.data
 EXTRA_DIST = $(DATA)
 
 PrintVectorTest_SOURCES = PrintVectorTest.c
@@ -37,6 +38,9 @@ LALMath3DPlotTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la 
 LALMathNDPlotTest_SOURCES = LALMathNDPlotTest.c
 LALMathNDPlotTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 
+SegmentsIOTest_SOURCES = SegmentsIOTest.c
+SegmentsIOTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 #TESTS = PrintVectorTest \
@@ -46,11 +50,12 @@ INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 TESTS = PrintVectorTest \
         ReadFTSeriesTest PrintFTSeriesTest StreamInputTest \
         StreamSeriesInputTest ConfigFileTest UserInputTest SFTfileIOTest \
-        LALMath3DPlotTest LALMathNDPlotTest
+        LALMath3DPlotTest LALMathNDPlotTest SegmentsIOTest
 
 TESTS_ENVIRONMENT = 1>/dev/null 2>/dev/null LAL_DATA_PATH=$(srcdir)
 MOSTLYCLEANFILES = .dvi-dep *.dat *PrintVector.00* *.out  outputsft.0 \
-		   TestOutputSFT.0 TestOutputSFT.1 Math3DNotebook.nb MathNDNotebook.nb
+		   TestOutputSFT.0 TestOutputSFT.1 Math3DNotebook.nb MathNDNotebook.nb \
+		   SegmentsOutput1.data
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
 @DVIMKFILE@
