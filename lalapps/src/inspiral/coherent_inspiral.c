@@ -2,7 +2,7 @@
  * 
  * File Name: coherent_inspiral.c
  *
- * Author: Bose, S. and Seader, S.
+ * Author: Bose, S. and Seader, S. and Rogan, A.
  * 
  * Revision: $Id$
  * 
@@ -59,6 +59,7 @@
 #include <lal/LALInspiral.h>
 #include <lal/CoherentInspiral.h>
 #include <lal/LALStatusMacros.h>
+#include <lal/SkyCoordinates.h>
 
 RCSID( "$Id$" );
 
@@ -131,6 +132,12 @@ LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
 CHAR  *userTag          = NULL;         /* string the user can tag with */
 CHAR  *ifoTag           = NULL;         /* string to tag parent IFOs    */
 INT4  globFrameData     = 0;            /* glob to get frame data */
+
+/* Params to convert from geocentric to equatorial */
+
+ConvertSkyParams             convertParams;
+SkyPosition		     tempSky;
+MultiInspiralTable           *thisEventTemp = NULL;
 
 int main( int argc, char *argv[] )
 {
@@ -1161,7 +1168,23 @@ int main( int argc, char *argv[] )
 	      /* Now that the time series are commensurate, do the filtering... */
               cohInspFilterParams->cohSNRVec->epoch = cohInspCVec->cData[0].epoch;  
 	      LALCoherentInspiralFilterSegment (&status, &thisEvent, cohInspFilterInput, cohInspFilterParams);
-	      
+
+ /* Now change from geocentric to equatorial */
+	      thisEventTemp = thisEvent;
+	      while( thisEventTemp )
+		    {
+		      convertParams.system = COORDINATESYSTEM_EQUATORIAL;
+		      convertParams.zenith = NULL;
+		      convertParams.gpsTime = &(thisEventTemp->end_time);
+		      tempSky.system = COORDINATESYSTEM_GEOGRAPHIC;
+		      tempSky.longitude = thisEventTemp->ligo_axis_dec;
+		      tempSky.latitude = thisEventTemp->ligo_axis_ra;
+		      LALConvertSkyCoordinates(&status,&tempSky, &tempSky,&convertParams);	     
+		      thisEventTemp->ligo_axis_dec = LAL_PI*0.5-tempSky.latitude;
+		      thisEventTemp->ligo_axis_ra = tempSky.longitude;
+
+		      thisEventTemp = thisEventTemp->next;
+		    }	      
 
 	      if ( cohSNROut )
 		{
