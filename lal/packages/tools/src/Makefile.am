@@ -7,7 +7,8 @@ libtools_la_SOURCES = \
   BurstUtils.c CoincInspiralUtils.c SimInspiralUtils.c \
   ComputeCalibrationFactors.c LIGOMetadataUtils.c \
   NDTemplateBank.c ComputeStrain.c \
-  Sequence.c TimeSeries.c FrequencySeries.c
+  Sequence.c TimeSeries.c FrequencySeries.c \
+  Segments.c
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MAINTAINERCLEANFILES = FrequencySeries.c Sequence.c TimeSeries.c
 EXTRA_DIST = \
