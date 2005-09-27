@@ -89,6 +89,7 @@ some information on stderr.
 
 
 
+
 #ifdef USE_UNZIP
 #include "unzip.h"
 #include "readzipfile_util.h"
@@ -192,6 +193,7 @@ typedef struct PolkaConfigVarsTag
   REAL8 Shiftf;      /*  Parallel shift of frequency in Hz of cell */
   REAL8 ShiftAlpha;  /*  Parallel shift of Alpha in Hz of cell */
   REAL8 ShiftDelta;  /*  Parallel shift of Delta in Hz of cell */
+  BOOLEAN UseUnzip;
 } PolkaConfigVars;
 
 
@@ -269,6 +271,8 @@ void ReadCommandLineArgs( LALStatus *, INT4 argc, CHAR *argv[], PolkaConfigVars 
 void GetFilesListInThisDir(LALStatus *, const CHAR *directory, const CHAR *basename, CHAR ***filelist, UINT4 *nfiles );
 void ReadCandidateFiles( LALStatus *, CandidateList **Clist, PolkaConfigVars *CLA, UINT4 *datalen );
 void ReadOneCandidateFile( LALStatus *, CandidateList **CList, const CHAR *fname, UINT4 *datalen );
+void ReadOneCandidateFileV2( LALStatus *lalStatus, CandidateList **CList, const CHAR *fname, UINT4 *candlen );
+
 
 #ifdef USE_UNZIP
 void ReadCandidateListFromZipFile (LALStatus *, CandidateList **CList, CHAR *fname, UINT4 *candlen, const INT4 *FileID);
@@ -1020,7 +1024,7 @@ void print_Fstat_of_the_cell( LALStatus *lalStatus,
 
 /* ########################################################################################## */
 /*!
-  Sorting function to sort cell indices in the INCREASING order of f, delta, alpha, and 
+  Sorting function to sort cell indices in the INCREASING order of f, delta, alpha, FileID and 
   DECREASING ORDER OF a significance.
 
   @param[in] a CellData* to be compared. 
@@ -1282,17 +1286,28 @@ ReadCandidateFiles(LALStatus *lalStatus,
 	    fprintf(stderr,"%s\n",CLA->Filelist[kc]);
 	  }
 
+	  if( CLA->UseUnzip ) 
+	    {
 #ifdef USE_UNZIP
-	  {INT4 FileID = 2*kc; /* the factor 2 because we have 2 sections in each file. */
-	  TRY( ReadCandidateListFromZipFile( lalStatus->statusPtr, 
-					     CList, 
-					     CLA->Filelist[kc], 
-					     clen, 
-					     &FileID), 
-	       lalStatus);
-	  }
+	      {INT4 FileID = 2*kc; /* the factor 2 because we have 2 sections in each file. */
+	      TRY( ReadCandidateListFromZipFile( lalStatus->statusPtr, 
+						 CList, 
+						 CLA->Filelist[kc], 
+						 clen, 
+						 &FileID), 
+		   lalStatus);
+	      }
 #endif
-	} 
+	    } /* if( CLA->UseUnzip ) */
+	  else 
+	    {	      
+	      TRY( ReadOneCandidateFileV2( lalStatus->statusPtr, 
+					   CList, 
+					   CLA->Filelist[kc], 
+					   clen ), 
+		   lalStatus);	      
+	    }
+	} /*       for (kc=0;kc<CLA->NFiles;kc++) */
 
     } /* if( (CLA->InputDir != NULL) && (CLA->BaseName != NULL) )  */
   else if ( CLA->FstatsFile != NULL ) 
@@ -1726,6 +1741,276 @@ ReadCandidateListFromZipFile( LALStatus *lalStatus,
 
 
 
+/* ########################################################################################## */
+/*!
+  Read one candidate-events file and fill CandidateList structure \b CList. 
+  Count the number of the candidate events and fill it in \b candlen.
+  The function aborts almost all the cases when the checks below failed.
+  This function checks 
+  \li if the file \b fname is readable. 
+  \li if the file \b fname has the correct ending tag "%DONE".
+  \li if the ranges of the values in the file are sensible.
+  \li if the number of each row of the file is correct.
+  \li if we could read all the events in the file.
+
+  This function prints the bytecounts and the checksum of the file \b fname.
+
+  @param[in,out] lalStatus LALStatus* 
+  @param[out]    CList     CandidateList** CandidateList str to be filled in this code 
+  @param[in]     fname     CHAR* the name of the file to be read
+  @param[in,out]    candlen   UINT4* total number of the candidate events
+*/
+void  
+ReadOneCandidateFileV2( LALStatus *lalStatus, 
+		      CandidateList **CList, 
+		      const CHAR *fname, 
+		      UINT4 *candlen )
+{
+  UINT4 i;
+  UINT4 numlines;
+  REAL8 epsilon=1e-5;
+  CHAR line1[256];
+  FILE *fp;
+  INT4 nread;
+  UINT4 checksum=0;
+  UINT4 bytecount=0;
+
+
+  INITSTATUS( lalStatus, "ReadOneCandidateFile", rcsid );
+  ATTATCHSTATUSPTR (lalStatus);
+  ASSERT( fname != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
+
+
+  /* ------ Open and count candidates file ------ */
+  i=0;
+  fp=fopen(fname,"rb");
+  if (fp==NULL) 
+    {
+      LALPrintError("File %s doesn't exist!\n",fname);
+      ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+     }
+  while(fgets(line1,sizeof(line1),fp)) {
+    UINT4 k;
+    size_t len=strlen(line1);
+
+    /* check that each line ends with a newline char (no overflow of
+       line1 or null chars read) */
+    if (!len || line1[len-1] != '\n') {
+      LALPrintError(
+              "Line %d of file %s is too long or has no NEWLINE.  First 255 chars are:\n%s\n",
+              i+1, fname, line1);
+      fclose(fp);
+      ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+     }
+
+    /* increment line counter */
+    i++;
+
+    /* maintain a running checksum and byte count */
+    bytecount+=len;
+    for (k=0; k<len; k++)
+      checksum+=(INT4)line1[k];
+  }
+  numlines=i;
+  /* -- close candidate file -- */
+  fclose(fp);     
+
+  if ( numlines == 0) 
+    {
+      LALPrintError ("ERROR: File '%s' has no lines so is not properly terminated by: %s", fname, DONE_MARKER);
+      ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+    }
+
+  /* output a record of the running checksun amd byte count */
+  LALPrintError( "%% %s: bytecount %" LAL_UINT4_FORMAT " checksum %" LAL_UINT4_FORMAT "\n", fname, bytecount, checksum);
+
+  /* check validity of this Fstats-file */
+  if ( strcmp(line1, DONE_MARKER ) ) 
+    {
+      LALPrintError ("ERROR: File '%s' is not properly terminated by: %sbut has %s instead", fname, DONE_MARKER, line1);
+      ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+    }
+  else
+    numlines --;        /* avoid stepping on DONE-marker */
+
+
+
+  if( numlines == 0 ) { /* This file is empty. Go to the next file.*/
+    if( lalDebugLevel > 1 ) {
+      LALPrintError( "No candidate events in the file %s\n\n", fname);
+    }
+    DETATCHSTATUSPTR (lalStatus);
+    RETURN (lalStatus);
+  } 
+
+#if 0 /* Do we need to check this for UINT4? */
+  if ( numlines < 0  )
+    {
+      LALPrintError("candidate length overflow (or indeed negative) = %ud!\n",numlines);
+      exit(POLKA_EXIT_ERR);
+    }/* check that we have candidates. */
+#endif
+
+
+  /* ------------------------------------------------------------------------- */
+  /* reserve memory for fstats-file contents */
+  if ( numlines > 0) 
+    { 
+      CandidateList *tmp;
+      tmp = (CandidateList *)LALRealloc (*CList, ( *candlen + numlines )*sizeof(CandidateList));
+      if ( !tmp ) 
+	{ 
+	  LALPrintError("Could not allocate memory for candidate file %s\n\n", fname);
+	  ABORT (lalStatus, POLKAC_EMEM, POLKAC_MSGEMEM);
+	}
+      *CList = tmp;
+    }
+
+  
+
+  /* ------ Open and count candidates file ------ */
+  i=0; /* append the new candidate events to the existing list. */
+  fp=fopen(fname,"rb");
+  if (fp==NULL) 
+    {
+      LALPrintError("fopen(%s) failed!\n", fname);
+      LALFree ((*CList));
+      ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+    }
+  while(i < numlines && fgets(line1,sizeof(line1),fp))
+    {
+      CHAR newline='\0';
+      CandidateList *cl=&(*CList)[i+(*candlen)];
+
+      if (strlen(line1)==0 || line1[strlen(line1)-1] != '\n') {
+        LALPrintError(
+                "Line %d of file %s is too long or has no NEWLINE.  First 255 chars are:\n%s\n",
+                i+1, fname, line1);
+        LALFree ((*CList));
+        fclose(fp);
+	ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+      }
+      
+      nread = sscanf (line1, 
+                     "%" LAL_INT4_FORMAT "%" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT 
+                     "%c", 
+                     &(cl->FileID), &(cl->f), &(cl->Alpha), &(cl->Delta), &(cl->TwoF), &newline );
+
+      /* check that values that are read in are sensible */
+      if (
+          cl->FileID < 0                        ||
+          cl->f < 0.0                        ||
+          cl->TwoF < 0.0                        ||
+          cl->Alpha <         0.0 - epsilon  ||
+          cl->Alpha >   LAL_TWOPI + epsilon  ||
+          cl->Delta < -0.5*LAL_PI - epsilon  ||
+          cl->Delta >  0.5*LAL_PI + epsilon  ||
+	  !finite(cl->FileID)                     ||                                                                 
+          !finite(cl->f)                     ||
+          !finite(cl->Alpha)                 ||
+          !finite(cl->Delta)                 ||
+          !finite(cl->TwoF)
+          ) {
+          LALPrintError(
+                  "Line %d of file %s has invalid values.\n"
+                  "First 255 chars are:\n"
+                  "%s\n"
+                  "1st and 4th field should be positive.\n" 
+                  "2nd field should lie between 0 and %1.15f.\n" 
+                  "3rd field should lie between %1.15f and %1.15f.\n"
+                  "All fields should be finite\n",
+                  i+1, fname, line1, (double)LAL_TWOPI, (double)-LAL_PI/2.0, (double)LAL_PI/2.0);
+          LALFree ((*CList));
+          fclose(fp);
+	  ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+      }
+           
+           
+
+      /* check that the FIRST character following the Fstat value is a
+         newline.  Note deliberate LACK OF WHITE SPACE char before %c
+         above */
+      if (newline != '\n') {
+        LALPrintError(
+                "Line %d of file %s had extra chars after F value and before newline.\n"
+                "First 255 chars are:\n"
+                "%s\n",
+                i+1, fname, line1);
+        LALFree ((*CList));
+        fclose(fp);
+	ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+      }
+
+      /* check that we read 6 quantities with exactly the right format */
+      if ( nread != 6 )
+        {
+          LALPrintError ("Found %d not %d values on line %d in file '%s'\n"
+                         "Line in question is\n%s",
+                         nread, 6, i+1, fname, line1);               
+          LALFree ((*CList));
+          fclose(fp);
+	  ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+        }
+
+
+
+      i++;
+    } /*  end of main while loop */
+  /* check that we read ALL lines! */
+  if (i != numlines) {
+    LALPrintError(
+            "Read of file %s terminated after %d line but numlines=%d\n",
+            fname, i, numlines);
+    LALFree((*CList));
+    fclose(fp);
+    ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+  }
+
+  /* read final line with %DONE\n marker */
+  if (!fgets(line1, sizeof(line1), fp)) {
+    LALPrintError(
+            "Failed to find marker line of file %s\n",
+            fname);
+    LALFree((*CList));
+    fclose(fp);
+    ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+  }
+
+  /* check for %DONE\n marker */
+  if (strcmp(line1, DONE_MARKER)) {
+    LALPrintError(
+            "Failed to parse marker: 'final' line of file %s contained %s not %s",
+            fname, line1, DONE_MARKER);
+    LALFree ((*CList));
+    fclose(fp);
+    ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+  }
+
+  /* check that we are now at the end-of-file */
+  if (fgetc(fp) != EOF) {
+    LALPrintError(
+            "File %s did not terminate after %s",
+            fname, DONE_MARKER);
+    LALFree ((*CList));
+    fclose(fp);
+    ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+  }
+
+  /* -- close candidate file -- */
+  fclose(fp);     
+
+
+  (*candlen) += numlines; /* total number of candidate so far */
+
+
+  DETATCHSTATUSPTR (lalStatus);
+  RETURN (lalStatus);
+
+} /* ReadOneCandidateFileV2() */
+
+
+
+
 
 /* ########################################################################################## */
 /*!
@@ -1821,13 +2106,13 @@ ReadOneCandidateFile( LALStatus *lalStatus,
 
   *candlen=numlines;
 
-
+#if 0 /* Do we need to check this? */
   if (*candlen <= 0  )
     {
       LALPrintError("candidate length = %ud!\n",*candlen);
       exit(POLKA_EXIT_ERR);;
     }/* check that we have candidates. */
-
+#endif
 
   
   /* reserve memory for fstats-file contents */
@@ -1978,6 +2263,11 @@ ReadOneCandidateFile( LALStatus *lalStatus,
 } /* ReadOneCandidateFile() */
 
 
+
+
+
+
+
 /* ########################################################################################## */
 /*!
   Read command line arguments and fill a PolkaConfigVars structure \b CLA. 
@@ -2021,6 +2311,7 @@ ReadCommandLineArgs( LALStatus *lalStatus,
   REAL8 uvar_AlphaShift;
   REAL8 uvar_DeltaShift;
   BOOLEAN uvar_help;
+  BOOLEAN uvar_UseUnzip;
 
 
   const CHAR BNAME[] = "Test";
@@ -2046,11 +2337,12 @@ ReadCommandLineArgs( LALStatus *lalStatus,
   uvar_FreqShift = 0.0;
   uvar_AlphaShift = 0.0;
   uvar_DeltaShift = 0.0;
-
+  uvar_UseUnzip = 0;
 
 
   /* register all our user-variables */
   LALregBOOLUserVar(lalStatus,       help,           'h', UVAR_HELP,     "Print this message"); 
+  LALregBOOLUserVar(lalStatus,       UseUnzip,       'z', UVAR_OPTIONAL, "Use Unzip"); 
 
   LALregSTRINGUserVar(lalStatus,     OutputData,     'o', UVAR_REQUIRED, "Ouput candidates file name");
 
@@ -2093,13 +2385,14 @@ ReadCommandLineArgs( LALStatus *lalStatus,
   }
 
 
+  if( uvar_UseUnzip ) {
 #ifndef USE_UNZIP
-  if( LALUserVarWasSet (&uvar_InputDirectory) ) {
-    LALPrintError("\nCannot use -i option without enabling unzip.\n");
+    LALPrintError("\n unzip can be used only when compiling with unzip enabled.\n");
     exit(POLKA_EXIT_ERR);
-  }
 #endif
+  }
 
+  CLA->UseUnzip = uvar_UseUnzip;
 
   CLA->FstatsFile = NULL;
   CLA->OutputFile = NULL;
