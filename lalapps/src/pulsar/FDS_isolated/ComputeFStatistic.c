@@ -590,9 +590,11 @@ int main(int argc,char *argv[])
   /* only boinc_resolve the filename if we run CFS once */
   if (cfsRunNo == 0)
 #ifdef CLUSTERED_OUTPUT
-          use_boinc_filename0(CFstatFilename);
+    if(strlen(CFstatFilename))
+      use_boinc_filename0(CFstatFilename);
 #else
-          use_boinc_filename0(FstatFilename);
+    if(strlen(FstatFilename))
+      use_boinc_filename0(FstatFilename);
 #endif
   /* use_boinc_filename0(ckp_fname); */
 #endif /* USE_BOINC */
@@ -3605,7 +3607,7 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long
   UINT4 cksum;           /* as read for .ckp file */
   UINT4 computecksum;    /* as computed from contents of Fstats file */
   int i;
-#if 0
+#ifdef DEBUG_CHECKPOINTING
   int savelaldebuglevel=lalDebugLevel;
   lalDebugLevel=1;
 #endif
@@ -3706,7 +3708,7 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long
   *bytecounter = bcount;
   *checksum=cksum;
 
-#if 0
+#ifdef DEBUG_CHECKPOINTING
   lalDebugLevel=savelaldebuglevel;
 #endif
 
