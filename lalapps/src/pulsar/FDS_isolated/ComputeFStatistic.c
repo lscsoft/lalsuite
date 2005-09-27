@@ -539,15 +539,9 @@ int main(int argc,char *argv[])
 #endif
 
   /* ----- prepare cluster-output filename if given and append outputLabel */
-#ifndef CLUSTERED_OUTPUT
   if ( uvar_outputClusters && (strlen(uvar_outputClusters) > 0) )
-#endif
     {
-#ifdef CLUSTERED_OUTPUT
-      strncpy ( CFstatFilename, "Fstats", sizeof(CFstatFilename) );
-#else
       strncpy ( CFstatFilename, uvar_outputClusters, sizeof(CFstatFilename) );
-#endif
       if ( uvar_outputLabel )
 	strncat ( CFstatFilename, uvar_outputLabel, sizeof(CFstatFilename) );
 
@@ -556,12 +550,10 @@ int main(int argc,char *argv[])
 	return ( COMPUTEFSTATC_ESYS );
       }
     }
-#ifndef CLUSTERED_OUTPUT
   else {
     strcpy (CFstatFilename,"");
     fpClusters = NULL;
   }
-#endif
 
   /* ----- prepare (unclustered) Fstat-output filename if given and apprend outputLabel */ 
   if ( uvar_outputFstat )
@@ -1112,7 +1104,11 @@ initUserVars (LALStatus *status)
 #if USE_BOINC
   uvar_doCheckpointing = TRUE;
   uvar_expLALDemod = 1;
+#ifdef CLUSTERED_OUTPUT
+  uvar_outputClusters = "Fstats";
+#else
   uvar_outputClusters = NULL;	/* by default: no more cluster-output */
+#endif
 #else
   uvar_doCheckpointing = FALSE;
   uvar_expLALDemod = 0;
@@ -3623,7 +3619,7 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long
   *bytecounter = 0;
   
   /* try opening checkpoint-file read-only */
-  if (lalDebugLevel) printf("Checking presence of checkpoint-file ... ");
+  if (lalDebugLevel) printf("Checking presence of checkpoint-file \"%s\" ...", ckpfn);
   if (!(fp = fopen(ckpfn, "rb"))) {
     if (lalDebugLevel) printf ("none found. \nStarting main-loop from beginning.\n");
     RETURN(stat);
@@ -3638,7 +3634,7 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long
   fclose( fp );
   
   /* checkpoint-file read successfully: check consistency with fstats-file */
-  if (lalDebugLevel) printf ("ok.\nChecking if fstats-file is ok ...");
+  if (lalDebugLevel) printf ("ok.\nChecking if fstats-file \"%s\" is ok ...", fstat_fname);
   if (!(fp = fopen(fstat_fname, "rb"))) {
     if (lalDebugLevel) printf ("none found.\nStarting main-loop from beginning.\n");
     RETURN(stat);
