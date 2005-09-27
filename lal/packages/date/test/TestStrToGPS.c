@@ -17,6 +17,36 @@ struct TESTCASE {
 int lalDebugLevel = 0;
 
 
+int runtest(const struct TESTCASE *testcase)
+{
+	int retval;
+	LIGOTimeGPS gps;
+	LIGOTimeGPS gpsCorrect;
+	char *endptr;
+	int failure = 0;
+
+	XLALGPSSet(&gpsCorrect, testcase->sec, testcase->ns);
+
+	XLALClearErrno();
+	retval = XLALStrToGPS(&gps, testcase->string, &endptr);
+
+	fprintf(stdout, "Input = \"%s\"\n\tOutput =\t%lld ns with \"%s\" remainder, errno %d\n\tCorrect =\t%lld ns with \"%s\" remainder, errno %d\n\t\t===>", testcase->string, XLALGPSToINT8NS(&gps), endptr, XLALGetBaseErrno(), XLALGPSToINT8NS(&gpsCorrect), testcase->remainder, testcase->xlal_errno);
+
+	if(retval == 0 && testcase->xlal_errno == 0) {
+		if(XLALGPSCmp(&gps, &gpsCorrect) || strcmp(endptr, testcase->remainder))
+			failure = 1;
+	} else if(XLALGetBaseErrno() != testcase->xlal_errno)
+		failure = 1;
+
+	if(failure)
+		fprintf(stdout, "*** FAIL ***\n");
+	else
+		fprintf(stdout, "Pass\n");
+
+	return(failure);
+}
+
+
 int main(void)
 {
 	/* Most of these test were shamelessly stolen from Peter's original
@@ -115,33 +145,10 @@ int main(void)
 		{NULL, 0, 0, NULL, 0}
 	};
 	struct TESTCASE *testcase;
-
-	int retval;
-	LIGOTimeGPS gps;
-	LIGOTimeGPS gpsCorrect;
-	char *endptr;
 	int failures = 0;
 
-	for(testcase = testcases; testcase->string; testcase++) {
-		XLALGPSSet(&gpsCorrect, testcase->sec, testcase->ns);
-
-		XLALClearErrno();
-		retval = XLALStrToGPS(&gps, testcase->string, &endptr);
-
-		fprintf(stdout, "Input = \"%s\"\n\tOutput =\t%lld ns with \"%s\" remainder, errno %d\n\tCorrect =\t%lld ns with \"%s\" remainder, errno %d\n\t\t===>", testcase->string, XLALGPSToINT8NS(&gps), endptr, XLALGetBaseErrno(), XLALGPSToINT8NS(&gpsCorrect), testcase->remainder, testcase->xlal_errno);
-
-		if(retval == 0 && testcase->xlal_errno == 0) {
-			if(XLALGPSCmp(&gps, &gpsCorrect) || strcmp(endptr, testcase->remainder)) {
-				fprintf(stdout, "*** FAIL ***\n");
-				failures++;
-			} else
-				fprintf(stdout, "Pass\n");
-		} else if(XLALGetBaseErrno() != testcase->xlal_errno) {
-			fprintf(stdout, "*** FAIL ***\n");
-			failures++;
-		} else
-			fprintf(stdout, "Pass\n");
-	}
+	for(testcase = testcases; testcase->string; testcase++)
+		failures += runtest(testcase);
 
 	fprintf(stdout, "Summary of GPS string conversion tests: ");
 	if(failures) {
