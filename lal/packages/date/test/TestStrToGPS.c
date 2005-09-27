@@ -17,7 +17,7 @@ struct TESTCASE {
 int lalDebugLevel = 0;
 
 
-int runtest(const struct TESTCASE *testcase)
+static int runtest(const struct TESTCASE *testcase)
 {
 	int retval;
 	LIGOTimeGPS gps;
@@ -51,7 +51,7 @@ int main(void)
 {
 	/* Most of these test were shamelessly stolen from Peter's original
 	 * code for testing LALStringToGPS() */
-	struct TESTCASE testcases[] = {
+	struct TESTCASE general_testcases[] = {
 		{"1234.5", 1234, 500000000, "", 0},
 		{"712345678", 712345678, 0, "", 0},
 		{"00000000712346678", 712346678, 0, "", 0},
@@ -134,21 +134,30 @@ int main(void)
 		{"e3", 0, 0, "e3", 0},
 		{"x", 0, 0, "x", 0},
 		{"0x", 0, 0, "x", 0},
+		{"0.0000000000000000000000000000000000000001e40", 1, 0, "", 0},
+		{"10000000000000000000000000000000000000000e-40", 1, 0, "", 0},
+		{NULL, 0, 0, NULL, 0}
+	};
+	struct TESTCASE glibc_testcases[] = {
 		{"0x0", 0, 0, "", 0},
 		{"0x00", 0, 0, "", 0},
 		{"00x0", 0, 0, "x0", 0},
 		{"00x00", 0, 0, "x00", 0},
 		{"0x2CD7E24E.8", 752345678, 500000000, "", 0},
 		{"0x10P-6", 0, 250000000, "", 0},
-		{"0.0000000000000000000000000000000000000001e40", 1, 0, "", 0},
-		{"10000000000000000000000000000000000000000e-40", 1, 0, "", 0},
 		{NULL, 0, 0, NULL, 0}
 	};
 	struct TESTCASE *testcase;
 	int failures = 0;
 
-	for(testcase = testcases; testcase->string; testcase++)
+	/* run tests that all platforms must pass */
+	for(testcase = general_testcases; testcase->string; testcase++)
 		failures += runtest(testcase);
+
+	/* if C library is smart enough to handle hex floats, do more tests */
+	if(strtod("0x.8", NULL) == 0.5)
+		for(testcase = glibc_testcases; testcase->string; testcase++)
+			failures += runtest(testcase);
 
 	fprintf(stdout, "Summary of GPS string conversion tests: ");
 	if(failures) {
