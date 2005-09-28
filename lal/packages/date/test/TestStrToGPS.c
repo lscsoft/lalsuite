@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -73,8 +74,6 @@ int main(void)
 		/*{"712345678.9999999995", 712345679, 0, "", 0},*/
 		{"722345678.9999999996", 722345679, 0, "", 0},
 		{"2000000000", 2000000000, 0, "", 0},
-		{"7323456785", LONG_MAX, 0, "", XLAL_ERANGE},
-		{"7423456785234", LONG_MAX, 0, "", XLAL_ERANGE},
 		{"752345678e0", 752345678, 0, "", 0},
 		{"762345678e+0", 762345678, 0, "", 0},
 		{"772345678e-0", 772345678, 0, "", 0},
@@ -113,7 +112,6 @@ int main(void)
 		{"702345678.5933-258", 702345678, 593300000, "-258", 0},
 		{"712345678.5033.258E02", 712345678, 503300000, ".258E02", 0},
 		{"-722345678.5133", -722345679, 486700000, "", 0},
-		{"-73234567800.5233", LONG_MIN, 0, "", XLAL_ERANGE},
 		{"-742345678.000000625", -742345679, 999999375, "", 0},
 		{"-743345678.9999999994", -743345679, 1, "", 0},
 		/*{"-744345678.9999999995", -744345678, -999999999, "", 0},*/
@@ -138,7 +136,13 @@ int main(void)
 		{"10000000000000000000000000000000000000000e-40", 1, 0, "", 0},
 		{NULL, 0, 0, NULL, 0}
 	};
-	struct TESTCASE glibc_testcases[] = {
+	struct TESTCASE overflow_testcases[] = {
+		{"7323456785", LONG_MAX, 0, "", XLAL_ERANGE},
+		{"7423456785234", LONG_MAX, 0, "", XLAL_ERANGE},
+		{"-73234567800.5233", LONG_MIN, 0, "", XLAL_ERANGE},
+		{NULL, 0, 0, NULL, 0}
+	};
+	struct TESTCASE hexfloat_testcases[] = {
 		{"0x0", 0, 0, "", 0},
 		{"0x00", 0, 0, "", 0},
 		{"00x0", 0, 0, "x0", 0},
@@ -154,10 +158,22 @@ int main(void)
 	for(testcase = general_testcases; testcase->string; testcase++)
 		failures += runtest(testcase);
 
+	/* if C library is smart enough to detect overflow, do more tests */
+	errno = 0;
+	strtol("7323456785", NULL, 0);
+	if(errno == ERANGE)
+		for(testcase = overflow_testcases; testcase->string; testcase++)
+			failures += runtest(testcase);
+	else
+		fprintf(stderr, "WARNING: your C library can't detect integer overflow on input!\n");
+	errno = 0;
+
 	/* if C library is smart enough to handle hex floats, do more tests */
 	if(strtod("0x.8", NULL) == 0.5)
-		for(testcase = glibc_testcases; testcase->string; testcase++)
+		for(testcase = hexfloat_testcases; testcase->string; testcase++)
 			failures += runtest(testcase);
+	else
+		fprintf(stderr, "WARNING: your C library can't parse hex floats!\n");
 
 	fprintf(stdout, "Summary of GPS string conversion tests: ");
 	if(failures) {
