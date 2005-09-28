@@ -158,17 +158,17 @@ int main(void)
 	for(testcase = general_testcases; testcase->string; testcase++)
 		failures += runtest(testcase);
 
-	/* if C library is smart enough to detect overflow, do more tests */
+	/* do extra tests if ints > 32 bits overflow strtol() */
 	errno = 0;
 	strtol("7323456785", NULL, 0);
 	if(errno == ERANGE)
 		for(testcase = overflow_testcases; testcase->string; testcase++)
 			failures += runtest(testcase);
 	else
-		fprintf(stderr, "WARNING: your C library can't detect integer overflow on input!\n");
+		fprintf(stderr, "WARNING: your C library can parse ints that LIGOTimeGPS can't store!\n");
 	errno = 0;
 
-	/* if C library is smart enough to handle hex floats, do more tests */
+	/* do more tests if C library is smart enough to handle hex floats */
 	if(strtod("0x.8", NULL) == 0.5)
 		for(testcase = hexfloat_testcases; testcase->string; testcase++)
 			failures += runtest(testcase);
