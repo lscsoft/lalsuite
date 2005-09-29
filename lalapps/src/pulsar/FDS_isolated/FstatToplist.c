@@ -222,7 +222,6 @@ int read_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxbytes) {
 	    !finite(FstatLine.Fstat)	||
 
 	    FstatLine.Freq  < 0.0                    ||
-	    FstatLine.f1dot < 0.0                    ||
 	    FstatLine.Alpha <         0.0 - epsilon  ||
 	    FstatLine.Alpha >   LAL_TWOPI + epsilon  ||
 	    FstatLine.Delta < -0.5*LAL_PI - epsilon  ||
@@ -234,7 +233,7 @@ int read_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxbytes) {
 		"Line %d has invalid values.\n"
 		"First %d chars are:\n"
 		"%s\n"
-		"All fields should be finite\n",
+		"All fields should be finite\n"
 		"1st and 2nd field should be positive.\n" 
 		"3rd field should lie between 0 and %1.15f.\n" 
 		"4th field should lie between %1.15f and %1.15f.\n",
