@@ -745,7 +745,7 @@ int main(int argc,char *argv[])
         {
 #if USE_BOINC
           /* make sure the last checkpoint is written even if is not time_to_checkpoint */
-          if (boinc_time_to_checkpoint() || (loopcounter >= (thisScan.numGridPoints-1)))
+	  if ( boinc_is_standalone() || boinc_time_to_checkpoint() || (loopcounter >= (thisScan.numGridPoints-1)) )
             {
 #endif
               FILE *fp;
