@@ -303,6 +303,8 @@ extern "C" {
   void swapheader(struct headertag *thisheader);
   void getCheckpointCounters(LALStatus *, UINT4 *loopcounter, UINT4 *checksum, 
 			     long *bytecounter, const CHAR *fstat_fname, const CHAR *ckpfn);
+  
+  int debug_dump_commandline (int argc,  char *argv[]);
 
 #ifdef FILE_AMCOEFFS
   void PrintAMCoeffs (REAL8 Alpha, REAL8 Delta, AMCoeffs* amc);
@@ -403,6 +405,10 @@ int main(int argc,char *argv[])
 
   lalDebugLevel = 0 ;  
   vrbflg = 1;   /* verbose error-messages */
+  
+#ifdef USE_BOINC_DEBUG
+  debug_dump_commandline (argc, argv);
+#endif
 
   /* register all user-variable */
   LAL_CALL (LALGetDebugLevel(status, argc, argv, 'v'), status);
@@ -3788,3 +3794,16 @@ InitSearchGrid ( LALStatus *status,
   DETATCHSTATUSPTR (status);
   RETURN(status);
 } /* InitSearchGrid() */
+
+int
+debug_dump_commandline (int argc,  char *argv[])
+{
+  int i;
+
+  printf ("DEBUG: commandline-was: \n");
+  for (i=0; i < argc; i++)
+    printf ("%s ", argv[i]);
+  printf ("\n");
+
+  return 0;
+}
