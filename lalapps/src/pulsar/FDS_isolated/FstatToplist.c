@@ -2,6 +2,11 @@
 #include <lal/StringInput.h> /* for LAL_REAL8_FORMAT etc. */
 #include <stdio.h> /* for rename */
 
+#ifdef USE_BOINC
+#include "filesys.h"
+#define fopen boinc_fopen
+#endif
+
 RCSID("$Id$");
 
 /* MSC specifics */
