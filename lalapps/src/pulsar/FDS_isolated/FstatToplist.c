@@ -192,8 +192,8 @@ int read_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxbytes) {
 
 	if (len==0 || line[len-1] != '\n') {
 	    LALPrintError(
-                "Line too long or has no NEWLINE. First %d chars are:\n%s\n",
-                sizeof(line)-1, line);
+                "Line %d is too long or has no NEWLINE. First %d chars are:\n%s\n",
+                lines,sizeof(line)-1, line);
 	    return -1;
 	}
       
