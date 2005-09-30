@@ -736,6 +736,38 @@ int main(int argc,char *argv[])
   
   while (1)
     {
+      BOOLEAN need2checkpoint = FALSE;
+      /* If our Fstat-file reaches a MaxFileSizeKB-threshold, we 'compatify'
+       * the candidate-list back to the toplist of NumCandidatesToKeep
+       * and write this to disk.
+       * 
+       * NOTE: if we use the toplist AND checkpointing, we must make sure that after
+       * this compatification, we also checkpoint the state, 
+       * because otherwise the *true* Fstat filestate will differ from the checkpointed one!
+       */
+      if ((uvar_NumCandidatesToKeep>0) && (fstat_bytecounter > uvar_MaxFileSizeKB * 1024) )
+	{
+	  INT4 howmany;
+	  fclose(fpFstat);
+	  howmany = atomic_write_toplist_to_file(toplist, FstatFilename, &fstat_checksum);
+	  if (howmany < 0) {
+	    fprintf(stderr,"Couldn't write compacted toplist\n");
+	    return (COMPUTEFSTAT_EXIT_OPENFSTAT);
+	  }
+	  fstat_bytecounter = howmany;
+	  
+	  if ( (fpFstat = fopen(FstatFilename, "ab")) == NULL )
+	    {
+	      fprintf(stderr,"Couldn't open compacted toplist for appending\n");
+	      return (COMPUTEFSTAT_EXIT_OPENFSTAT2);
+	    }
+	  if ( fstatbuff )
+	    setvbuf(fpFstat, fstatbuff, _IOFBF, uvar_OutputBufferKB * 1024);
+
+	  need2checkpoint = TRUE;
+	} /* if maxFileSizeKB atteined => re-compactify output file by toplist */
+
+
       /* flush fstats-file and write checkpoint-file */
 #ifdef CLUSTERED_OUTPUT
       if ( uvar_doCheckpointing && fpClusters )
@@ -745,7 +777,7 @@ int main(int argc,char *argv[])
         {
 #if USE_BOINC
           /* make sure the last checkpoint is written even if is not time_to_checkpoint */
-	  if ( boinc_is_standalone() || boinc_time_to_checkpoint() || (loopcounter >= (thisScan.numGridPoints-1)) )
+	  if ( boinc_is_standalone() || need2checkpoint || boinc_time_to_checkpoint() || (loopcounter >= (thisScan.numGridPoints-1)) )
             {
 #endif
               FILE *fp;
@@ -754,6 +786,7 @@ int main(int argc,char *argv[])
 #else
               fflush (fpFstat);
 #endif
+
               if ( (fp = fopen(ckp_fname, "wb")) == NULL) {
                 LALPrintError ("Failed to open checkpoint-file '%s' for writing. Exiting.\n", ckp_fname);
                 return COMPUTEFSTATC_ECHECKPOINT;
@@ -766,6 +799,9 @@ int main(int argc,char *argv[])
               fclose (fp);
 #if USE_BOINC
               boinc_checkpoint_completed();
+
+	      need2checkpoint = FALSE;
+
             } /* if boinc_time_to_checkpoint() */
 #endif
         } /* if doCheckpointing && fpstat */
@@ -896,28 +932,7 @@ int main(int argc,char *argv[])
 
             } /* if outputFstat || outputLoudest */
 
-	  
-	  if ((uvar_NumCandidatesToKeep>0) && (fstat_bytecounter > uvar_MaxFileSizeKB * 1024) )
-	    {
-	      INT4 howmany;
-	      fclose(fpFstat);
-	      howmany = atomic_write_toplist_to_file(toplist, FstatFilename, &fstat_checksum);
-	      if (howmany < 0) {
-		fprintf(stderr,"Couldn't write compacted toplist\n");
-		return (COMPUTEFSTAT_EXIT_OPENFSTAT);
-	      }
-	      fstat_bytecounter = howmany;
-
-	      if ( (fpFstat = fopen(FstatFilename, "ab")) == NULL )
-		{
-		  fprintf(stderr,"Couldn't open compacted toplist for appending\n");
-		  return (COMPUTEFSTAT_EXIT_OPENFSTAT2);
-		}
-	      if ( fstatbuff )
-		setvbuf(fpFstat, fstatbuff, _IOFBF, uvar_OutputBufferKB * 1024);
-	    } /* if maxFileSizeKB atteined => re-compactify output file by toplist */
-	  	  
-          
+        
           /* CLUSTER-OUTPUT: This fills-in highFLines  */
           if (fpClusters)
 	    {
@@ -1768,7 +1783,7 @@ writeFLinesCS(INT4 *maxIndex, DopplerPosition searchpos, FILE *fpOut, long*bytec
     /* print the output */
     if (fpOut) {
 	len =
-	    snprintf( buf, sizeof(buf), "%16.12f %10.8f %10.8f    %d %10.5f %10.5f %20.17f\n",
+	    LALSnprintf( buf, sizeof(buf), "%16.12f %10.8f %10.8f    %d %10.5f %10.5f %20.17f\n",
 		    freq, searchpos.Alpha, searchpos.Delta, N, mean, std, max );
 	if (len > sizeof(buf))
 	    return(-1);

@@ -1,6 +1,7 @@
 #include "FstatToplist.h"
 #include <lal/StringInput.h> /* for LAL_REAL8_FORMAT etc. */
-#include <stdio.h> /* for rename */
+
+#include <lal/LALStdio.h>
 
 #ifdef USE_BOINC
 #include "filesys.h"
@@ -257,9 +258,12 @@ int read_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxbytes) {
 	
 	insert_into_toplist(l, FstatLine);
 	lines++;
-    }
+
+    } /* while (fgets() ) */
+
     return 0;
-}
+
+} /* read_toplist_from_fp() */
 
 /* writes an TOPLISTLINE line to an open filepointer.
    Returns the number of chars written, -1 if in error
@@ -269,7 +273,7 @@ int write_toplist_item_to_fp(TOPLISTLINE fline, FILE*fp, UINT4*checksum) {
     UINT4 i;
 
     UINT4 length =
-	snprintf(linebuf, sizeof(linebuf),
+      LALSnprintf(linebuf, sizeof(linebuf),
 		 "%16.12f %8.7f %8.7f %.17g %10.6g\n", 
 		 fline.Freq,
 		 fline.Alpha,
