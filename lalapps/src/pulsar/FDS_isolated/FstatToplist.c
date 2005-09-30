@@ -190,12 +190,17 @@ int read_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxbytes) {
 	maxbytes--;
 
     lines=1;
-    while(fgets(line,min(sizeof(line)-1, maxbytes - chars + 1),fp)) {
+    while(fgets(line, min(sizeof(line)-1, maxbytes-chars+1), fp)) {
 
 	len = strlen(line);
 	chars += len;
 
-	if (len==0 || line[len-1] != '\n') {
+	if (len==0) {
+	    LALPrintError(
+                "Line %d is empty.\n", lines);
+	    return -1;
+	}
+	else if (line[len-1] != '\n') {
 	    LALPrintError(
                 "Line %d is too long or has no NEWLINE. First %d chars are:\n\"%s\"\n",
                 lines,sizeof(line)-1, line);
@@ -207,8 +212,7 @@ int read_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxbytes) {
 			" %" LAL_REAL8_FORMAT
 			" %" LAL_REAL8_FORMAT
 			" %" LAL_REAL8_FORMAT
-			" %" LAL_REAL8_FORMAT
-			"%c",
+			" %" LAL_REAL8_FORMAT "%c",
 			&FstatLine.Freq,
 			&FstatLine.Alpha,
 			&FstatLine.Delta,
@@ -288,13 +292,13 @@ int write_toplist_item_to_fp(TOPLISTLINE fline, FILE*fp, UINT4*checksum) {
    derived from the filename by appending ".tmp". Returns the number
    of chars written or -1 if the temp file could not be opened. */
 int atomic_write_toplist_to_file(toplist_t *l, char *filename, UINT4*checksum) {
-    char tempname[256];
+    char tempname[MAXFILENAMELENGTH];
     UINT4 length;
     FILE * fpnew;
 
     strncpy(tempname,filename,sizeof(tempname)-4);
     strcat(tempname,".tmp");
-    fpnew=fopen(tempname, "w");
+    fpnew=fopen(tempname, "wb");
     if(!fpnew)
 	return -1;
     length = write_toplist_to_fp(l,fpnew,checksum);
