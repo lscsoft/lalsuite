@@ -14,7 +14,7 @@ RCSID("$Id$");
 #ifdef _MSC_VER
 
 /* snprintf */
-#define snprintf _snprintf
+#define LALSnprintf _snprintf
 
 /* finite */
 #include <float.h>
