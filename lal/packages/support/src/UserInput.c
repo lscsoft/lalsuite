@@ -786,7 +786,7 @@ LALUserVarReadAllInput (LALStatus *status, int argc, char *argv[])
 	   *
 	   * ==> therefore we ensure that the path is relative to "./" in that case.
 	   */
-	  if ( (tmp[0] != '.') || (tmp[0] != '/') )
+	  if ( (tmp[0] != '.') && (tmp[0] != '/') )
 	    sprintf (fname, "./%s", tmp);
 	  else
 	    strcpy (fname, tmp);
