@@ -142,11 +142,11 @@ RCSID( "$Id$");
 #define remove boinc_delete_file
 
 int boincmain(int argc, char *argv[]);
-void worker();
+void worker(void);
 
 /* hooks for communication with the graphics thread */
 void (*set_search_pos_hook)(float,float) = NULL;
-int (*boinc_init_graphics_hook)(void (*worker)()) = NULL;
+int (*boinc_init_graphics_hook)(void (*worker)(void)) = NULL;
 double *fraction_done_hook = NULL;
 
 void use_boinc_filename1(char** orig_name);
@@ -160,7 +160,7 @@ extern "C" {
 extern double fraction_done;
 /* FIXME: include proper header for this! */
 extern void set_search_pos(float RAdeg, float DEdeg);
-extern int boinc_init_graphics(void (*worker)());
+extern int boinc_init_graphics(void (*worker)(void));
 #endif
 
 void sighandler(int sig);
@@ -600,7 +600,7 @@ int main(int argc,char *argv[])
       use_boinc_filename0(FstatFilename);
 #endif
   /* use_boinc_filename0(ckp_fname); */
-#endif /* USE_BOINC */
+#endif 
 
   /*----------------------------------------------------------------------
    * main loop: demodulate data for each point in the sky-position grid
@@ -3308,7 +3308,7 @@ void use_boinc_filename1(char **orig_name ) {
 int globargc=0;
 char **globargv=NULL;
 
-void worker() {
+void worker(void) {
 
 #if (BOINC_GRAPHICS == 2) 
   if (graphics_lib_handle) {
@@ -3415,50 +3415,49 @@ void worker() {
 /*********************************************************************************
  * main() in case of USE_BOINC
  */
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[])
+{
   FILE *fp_debug=NULL;
   int skipsighandler=0;
-
-    lalDebugLevel = 3;
-
-    /* see if user has a DEBUG_CFS_LOG file: turn on lalDebugLevel=3 */
-    if ((fp_debug=fopen("../../DEBUG_CFS_LOG", "r")) || (fp_debug=fopen("./DEBUG_CFS_LOG", "r"))) {  
-      {
-	fprintf (stderr, "Found 'DEBUG_CFS_LOG' file: setting lalDebugLevel -> 3 \n");
-	lalDebugLevel = 3;
-      }
+  
+  /* see if user has a DEBUG_CFS_LOG file: turn on lalDebugLevel=3 */
+  if ((fp_debug=fopen("../../DEBUG_CFS_LOG", "r")) || (fp_debug=fopen("./DEBUG_CFS_LOG", "r")) )
+    {
+      fprintf (stderr, "Found 'DEBUG_CFS_LOG' file: setting lalDebugLevel -> 3 \n");
+      lalDebugLevel = 3;
+    }
 
 
 #if defined(__GNUC__)
-  /* see if user has created a DEBUG_CFS_DDD file: turn on debuggin using 'ddd' */
-  if ((fp_debug=fopen("../../DEBUG_CFS_DDD", "r")) || (fp_debug=fopen("./DEBUG_CFS_DDD", "r"))) {
-    
-    char commandstring[256];
-    char resolved_name[MAXFILENAMELENGTH];
-    char *ptr;
-    pid_t process_id=getpid();
-    
-    fclose(fp_debug);
-    fprintf(stderr, "Found 'DEBUG_CFS_DDD' file, so trying real-time debugging with 'ddd'\n");
-
-    /* see if the path is absolute or has slashes.  If it has
-       slashes, take tail name */
-    if ((ptr = strrchr(argv[0], '/'))) {
-      ptr++;
-    } else {
-      ptr = argv[0];
-    }
-    
-    /* if file name is an XML soft link, resolve it */
-    if (boinc_resolve_filename(ptr, resolved_name, sizeof(resolved_name)))
-      fprintf(stderr, "Unable to boinc_resolve_filename(%s), so no debugging\n", ptr);
-    else {
-      skipsighandler=1;
-      LALSnprintf(commandstring,sizeof(commandstring),"ddd %s %d &", resolved_name ,process_id);
-      system(commandstring);
-      sleep(20);
-    }
-  } /* DEBUGGING */
+    /* see if user has created a DEBUG_CFS_DDD file: turn on debuggin using 'ddd' */
+  if ((fp_debug=fopen("../../DEBUG_CFS_DDD", "r")) || (fp_debug=fopen("./DEBUG_CFS_DDD", "r")) ) 
+    {
+      char commandstring[256];
+      char resolved_name[MAXFILENAMELENGTH];
+      char *ptr;
+      pid_t process_id=getpid();
+      
+      fclose(fp_debug);
+      fprintf(stderr, "Found 'DEBUG_CFS_DDD' file, so trying real-time debugging with 'ddd'\n");
+      
+      /* see if the path is absolute or has slashes.  If it has
+	 slashes, take tail name */
+      if ((ptr = strrchr(argv[0], '/'))) {
+	ptr++;
+      } else {
+	ptr = argv[0];
+      }
+      
+      /* if file name is an XML soft link, resolve it */
+      if (boinc_resolve_filename(ptr, resolved_name, sizeof(resolved_name)))
+	fprintf(stderr, "Unable to boinc_resolve_filename(%s), so no debugging\n", ptr);
+      else {
+	skipsighandler=1;
+	LALSnprintf(commandstring,sizeof(commandstring),"ddd %s %d &", resolved_name ,process_id);
+	system(commandstring);
+	sleep(20);
+      }
+    } /* DEBUGGING */
 #endif // GNUC
 
 
