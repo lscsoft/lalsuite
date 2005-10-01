@@ -226,6 +226,12 @@ more convenient to use the \verb+UserInput+ infrastructure
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <errno.h>
+
 /* #include <ctype.h> */  /* don't use this, as it binds us to GLIBC_2.3 symbols!! */
 
 #include <lal/LALStdlib.h>
@@ -269,6 +275,7 @@ LALParseDataFile (LALStatus *status,
 { 
 
   CHARSequence *rawdata = NULL;
+  struct stat stat_out;
   FILE *fp;
 
   INITSTATUS( status, "LALParseDataFile", CONFIGFILEC );
@@ -276,6 +283,18 @@ LALParseDataFile (LALStatus *status,
 
   ASSERT (*cfgdata == NULL, status, CONFIGFILEH_ENONULL, CONFIGFILEH_MSGENONULL);
   ASSERT (fname != NULL, status, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
+
+  if (  stat ( fname, &stat_out ) )
+    {
+      LALPrintError ("Could not stat data-file: `%s` : \n\n", fname, strerror(errno) );
+      ABORT (status, CONFIGFILEH_EFILE, CONFIGFILEH_MSGEFILE);
+    }
+
+  if ( ! S_ISREG(stat_out.st_mode)  )
+    {
+      LALPrintError ("'%s' does not seem to be a regular file!\n");
+      ABORT (status, CONFIGFILEH_EFILE, CONFIGFILEH_MSGEFILE);
+    }
 
   if ( (fp = LALOpenDataFile (fname)) == NULL) {
     LALPrintError ("Could not open data-file: `%s`\n\n", fname);
