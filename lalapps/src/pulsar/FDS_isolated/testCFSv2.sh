@@ -1,7 +1,7 @@
 #!/bin/sh
 
 ## take user-arguments for CFS-v2:
-extra_args="$@"
+extra_args="--IFO2=LHO --DataFiles2=./testSFTs/testSFT*"
 
 ##---------- names of codes and input/output files  
 saf_code="lalapps_SemiAnalyticF"

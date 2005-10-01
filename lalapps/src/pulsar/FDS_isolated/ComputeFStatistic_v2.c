@@ -409,9 +409,9 @@ int main(int argc,char *argv[])
 
 			if ( Fstat > uvar_Fthreshold )
 			  {
-			    LALSnprintf (buf, 511, "%8.7f %8.7f %16.12f %.17g %10.6g\n", 
-				      dopplerpos.Alpha, dopplerpos.Delta, 
-				      freq, GV.fkdot->data[1], 2.0 * Fstat);
+			    LALSnprintf (buf, 511, "%16.12f %8.7f %8.7f %.17g %10.6g\n", 
+				      freq, dopplerpos.Alpha, dopplerpos.Delta, 
+				      GV.fkdot->data[1], 2.0 * Fstat);
 			    buf[511] = 0;
 			    if ( fpOut )
 			      fprintf (fpOut, buf );
@@ -723,7 +723,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   cfg->ifos.DetectorStates =  LALCalloc ( nDet,  sizeof( *(cfg->ifos.DetectorStates) ) );
   cfg->ifos.tSSB = LALCalloc( nDet, sizeof( *(cfg->ifos.tSSB) ) );
   cfg->ifos.amcoe = LALCalloc ( nDet,  sizeof( *(cfg->ifos.amcoe) ) );
-  TRY ( LALDCreateVector (status->statusPtr, &(cfg->fkdot), 2), status);
+/*   TRY ( LALDCreateVector (status->statusPtr, &(cfg->fkdot), 2), status); */
 
 
   /**---------------------------------------------------------**/
