@@ -466,19 +466,19 @@ int main(int argc,char *argv[])
   /* debug output about search-parameters */
   if ( lalDebugLevel )
     {
-      printf ("DEBUG: Search-region (at start-time of observation):\n");
-      printf ("       skyRegion = \"%s\"\n", GV.searchRegion.skyRegionString);
-      printf ("       Freq in  = [%.16g, %.16g]\n", 
+      fprintf (stderr, "DEBUG: Search-region (at start-time of observation):\n");
+      fprintf (stderr, "       skyRegion = \"%s\"\n", GV.searchRegion.skyRegionString);
+      fprintf (stderr, "       Freq in  = [%.16g, %.16g]\n", 
 	      GV.searchRegion.Freq, GV.searchRegion.Freq + GV.searchRegion.FreqBand);
-      printf ("       f1dot in = [%.16g, %.16g]\n",
+      fprintf (stderr, "       f1dot in = [%.16g, %.16g]\n",
 	      GV.searchRegion.f1dot, GV.searchRegion.f1dot + GV.searchRegion.f1dotBand);
 
-      printf ("\nDEBUG: actual grid-spacings: dFreq = %g, df1dot = %g\n\n",
+      fprintf (stderr, "\nDEBUG: actual grid-spacings: dFreq = %g, df1dot = %g\n\n",
 	      thisScan.dFreq, thisScan.df1dot);
 
-      printf ("Frequency-templates: %d, first frequency-value: %.16g\n", 
+      fprintf (stderr, "Frequency-templates: %d, first frequency-value: %.16g\n", 
 	      GV.FreqImax, GV.searchRegion.Freq);
-      printf ("Spindown-templates: %d, first spindown-value: %.16g\n\n", 
+      fprintf (stderr, "Spindown-templates: %d, first spindown-value: %.16g\n\n", 
 	      GV.SpinImax, GV.searchRegion.f1dot);
     }
 
@@ -1030,7 +1030,7 @@ int main(int argc,char *argv[])
     } /* write loudest candidate to file */
 
   if (lalDebugLevel >= 2) 
-    printf ("\nSearch finished.\n");
+    fprintf (stderr, "\nSearch finished.\n");
   
 #ifdef FILE_FMAX  
   fclose(fpmax);
@@ -1465,7 +1465,7 @@ int writeFaFb(INT4 *maxIndex, DopplerPosition searchpos)
   CHAR FaFbfilename[MAXFILENAMELENGTH];
 
   if ( lalDebugLevel > 10)	/* dummy: avoid warnings */
-    printf ("%f, %f", searchpos.Alpha, searchpos.Delta);
+    fprintf (stderr, "%f, %f", searchpos.Alpha, searchpos.Delta);
   
   strcpy(FaFbfilename,"FaFb");
   if (uvar_outputLabel)
@@ -2381,12 +2381,12 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   /* Tell the user what we have arrived at */
   if ( lalDebugLevel >= 2)
     {
-      printf("\nDEBUG:\n");
-      printf("# SFT time baseline:                  %f min\n",header.tbase/60.0);
-      printf("# Starting search frequency:          %f Hz\n", cfg->searchRegion.Freq);
-      printf("# Demodulation frequency band:        %f Hz\n",cfg->searchRegion.FreqBand);
-      printf("# Actual # of SFTs:                   %d\n", cfg->SFTno);
-      printf("# total observation time:             %f hours\n",1.0*(cfg->Tf - cfg->Ti)/3600.0);
+      fprintf(stderr, "\nDEBUG:\n");
+      fprintf(stderr, "# SFT time baseline:                  %f min\n",header.tbase/60.0);
+      fprintf(stderr, "# Starting search frequency:          %f Hz\n", cfg->searchRegion.Freq);
+      fprintf(stderr, "# Demodulation frequency band:        %f Hz\n",cfg->searchRegion.FreqBand);
+      fprintf(stderr, "# Actual # of SFTs:                   %d\n", cfg->SFTno);
+      fprintf(stderr, "# total observation time:             %f hours\n",1.0*(cfg->Tf - cfg->Ti)/3600.0);
     } /* lalDebugLevel */
 
     DETATCHSTATUSPTR (status);
@@ -2759,7 +2759,7 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN, DopplerPosition searchpos)
   log2val = medianbias;
 
   if ( lalDebugLevel > 10)	/* dummy: avoid warnings */
-    printf ("%f, %f", searchpos.Alpha, searchpos.Delta);
+    fprintf (stderr, "%f, %f", searchpos.Alpha, searchpos.Delta);
 
   for (i=0;i<highFLines->Nclusters;i++){
     N=highFLines->NclustPoints[i];
@@ -3416,14 +3416,22 @@ void worker() {
  * main() in case of USE_BOINC
  */
 int main(int argc, char *argv[]){
-
-  int skipsighandler=0;
-  
-#if defined(__GNUC__)
-  /* see if user has created a DEBUG_CFS file at the top level... */
   FILE *fp_debug=NULL;
-  
-  if ((fp_debug=fopen("../../DEBUG_CFS", "r")) || (fp_debug=fopen("./DEBUG_CFS", "r"))) {
+  int skipsighandler=0;
+
+    lalDebugLevel = 3;
+
+    /* see if user has a DEBUG_CFS_LOG file: turn on lalDebugLevel=3 */
+    if ((fp_debug=fopen("../../DEBUG_CFS_LOG", "r")) || (fp_debug=fopen("./DEBUG_CFS_LOG", "r"))) {  
+      {
+	fprintf (stderr, "Found 'DEBUG_CFS_LOG' file: setting lalDebugLevel -> 3 \n");
+	lalDebugLevel = 3;
+      }
+
+
+#if defined(__GNUC__)
+  /* see if user has created a DEBUG_CFS_DDD file: turn on debuggin using 'ddd' */
+  if ((fp_debug=fopen("../../DEBUG_CFS_DDD", "r")) || (fp_debug=fopen("./DEBUG_CFS_DDD", "r"))) {
     
     char commandstring[256];
     char resolved_name[MAXFILENAMELENGTH];
@@ -3431,10 +3439,8 @@ int main(int argc, char *argv[]){
     pid_t process_id=getpid();
     
     fclose(fp_debug);
-    fprintf(stderr, "Found ../../DEBUG_CFS file, so trying real-time debugging\n");
+    fprintf(stderr, "Found 'DEBUG_CFS_DDD' file, so trying real-time debugging with 'ddd'\n");
 
-    lalDebugLevel = 3;
-    
     /* see if the path is absolute or has slashes.  If it has
        slashes, take tail name */
     if ((ptr = strrchr(argv[0], '/'))) {
@@ -3448,12 +3454,12 @@ int main(int argc, char *argv[]){
       fprintf(stderr, "Unable to boinc_resolve_filename(%s), so no debugging\n", ptr);
     else {
       skipsighandler=1;
-      snprintf(commandstring,sizeof(commandstring),"ddd %s %d &", resolved_name ,process_id);
+      LALSnprintf(commandstring,sizeof(commandstring),"ddd %s %d &", resolved_name ,process_id);
       system(commandstring);
       sleep(20);
     }
   } /* DEBUGGING */
-#endif
+#endif // GNUC
 
 
 #ifdef MAC_LIB
@@ -3801,9 +3807,9 @@ InitSearchGrid ( LALStatus *status,
   /* ---------- should we write the sky-grid to disk? ---------- */
   if ( uvar_outputSkyGrid ) 
     {
-      printf ("\nNow writing sky-grid into file '%s' ...", uvar_outputSkyGrid);
+      fprintf (stderr, "\nNow writing sky-grid into file '%s' ...", uvar_outputSkyGrid);
       TRY (writeSkyGridFile( status->statusPtr, scan->grid, uvar_outputSkyGrid, &scanInit), status);
-      printf (" done.\n\n");
+      fprintf (stderr, " done.\n\n");
     }
 
   DETATCHSTATUSPTR (status);
