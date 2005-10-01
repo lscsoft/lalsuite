@@ -119,7 +119,6 @@ RCSID( "$Id$");
 #include <pthread.h>
 #endif
 
-#define USE_BOINC_DEBUG 0
 /* for getpid() */
 #include <sys/types.h>
 
@@ -403,12 +402,10 @@ int main(int argc,char *argv[])
   lal_errhandler = LAL_ERR_EXIT;
 #endif
 
-  lalDebugLevel = 0 ;  
   vrbflg = 1;   /* verbose error-messages */
   
-#ifdef USE_BOINC_DEBUG
-  debug_dump_commandline (argc, argv);
-#endif
+  if ( lalDebugLevel )
+    debug_dump_commandline (argc, argv);
 
   /* register all user-variable */
   LAL_CALL (LALGetDebugLevel(status, argc, argv, 'v'), status);
@@ -1785,7 +1782,7 @@ writeFLinesCS(INT4 *maxIndex, DopplerPosition searchpos, FILE *fpOut, long*bytec
 	len =
 	    LALSnprintf( buf, sizeof(buf), "%16.12f %10.8f %10.8f    %d %10.5f %10.5f %20.17f\n",
 		    freq, searchpos.Alpha, searchpos.Delta, N, mean, std, max );
-	if (len > sizeof(buf))
+	if ((UINT4)len > sizeof(buf))
 	    return(-1);
 	*bytecount += len;
 	for(chr=0;chr<len;chr++)
@@ -3435,6 +3432,8 @@ int main(int argc, char *argv[]){
     
     fclose(fp_debug);
     fprintf(stderr, "Found ../../DEBUG_CFS file, so trying real-time debugging\n");
+
+    lalDebugLevel = 3;
     
     /* see if the path is absolute or has slashes.  If it has
        slashes, take tail name */
@@ -3642,30 +3641,30 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long
   *bytecounter = 0;
   
   /* try opening checkpoint-file read-only */
-  if (lalDebugLevel) printf("Checking presence of checkpoint-file \"%s\" ...", ckpfn);
+  if (lalDebugLevel) fprintf(stderr, "Checking presence of checkpoint-file \"%s\" ...", ckpfn);
   if (!(fp = fopen(ckpfn, "rb"))) {
-    if (lalDebugLevel) printf ("none found. \nStarting main-loop from beginning.\n");
+    if (lalDebugLevel) fprintf (stderr, "none found. \nStarting main-loop from beginning.\n");
     RETURN(stat);
   }
   
   /* try reading checkpoint-counters: three INT's loopcounter, checksum, and fstat_bytecounter */
-  if (lalDebugLevel) printf ("found! \nTrying to read checkpoint counters from it...");
+  if (lalDebugLevel) fprintf (stderr, "found! \nTrying to read checkpoint counters from it...");
   if ( 4 != fscanf (fp, "%" LAL_UINT4_FORMAT " %" LAL_UINT4_FORMAT " %ld\nDONE%c", &lcount, &cksum, &bcount, &lastnewline) || lastnewline!='\n') {
-    if (lalDebugLevel) printf ("failed! \nStarting main-loop from beginning.\n");
+    if (lalDebugLevel) fprintf (stderr, "failed! \nStarting main-loop from beginning.\n");
     goto exit;
   }
   fclose( fp );
   
   /* checkpoint-file read successfully: check consistency with fstats-file */
-  if (lalDebugLevel) printf ("ok.\nChecking if fstats-file \"%s\" is ok ...", fstat_fname);
+  if (lalDebugLevel) fprintf (stderr, "ok.\nChecking if fstats-file \"%s\" is ok ...", fstat_fname);
   if (!(fp = fopen(fstat_fname, "rb"))) {
-    if (lalDebugLevel) printf ("none found.\nStarting main-loop from beginning.\n");
+    if (lalDebugLevel) fprintf (stderr, "none found.\nStarting main-loop from beginning.\n");
     RETURN(stat);
   }
 
   /* seek to end of fstats file */
   if (fseek( fp, 0, SEEK_END)) {        /* something gone wrong seeking .. */
-    if (lalDebugLevel) printf ("broken fstats-file.\nStarting main-loop from beginning.\n");
+    if (lalDebugLevel) fprintf (stderr, "broken fstats-file.\nStarting main-loop from beginning.\n");
     goto exit;
   }
   
@@ -3678,7 +3677,8 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long
   /* is bytecounter consistent with length of this file? */
   if ( bcount > flen) {
     if (lalDebugLevel) 
-      printf ("seems corrupted: has %ld bytes instead of %ld.\nStarting main-loop from beginning.\n", flen, bcount);
+      fprintf (stderr, "corrupted: has %ld bytes instead of %ld.\nStarting main-loop from beginning.\n",
+	       flen, bcount);
     goto exit;
   }
   
@@ -3689,12 +3689,12 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long
     {
       if (fseek(fp, 0, SEEK_SET)) /* something gone wrong seeking .. */
 	{ 
-	  if (lalDebugLevel) printf ("broken fstats-file.\nStarting main-loop from beginning.\n");
+	  if (lalDebugLevel) fprintf (stderr, "broken Fstat-file.\nStarting from beginning.\n");
 	  goto exit;
 	}
       if( read_toplist_from_fp( toplist, fp, &computecksum, bcount) <0 ) 
 	{
-	  if (lalDebugLevel) printf ("couldn't read toplist.\nStarting main-loop from beginning.\n");
+	  if (lalDebugLevel) fprintf (stderr, "couldn't read toplist.\nStarting from beginning.\n");
 	  goto exit;
 	}
     } /* if toplist */
@@ -3703,7 +3703,7 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long
       /* compute checksum */
       computecksum=0;
       if (fseek( fp, 0, SEEK_SET)) {        /* something gone wrong seeking .. */
-	if (lalDebugLevel) printf ("broken fstats-file.\nStarting main-loop from beginning.\n");
+	if (lalDebugLevel) fprintf (stderr, "broken fstats-file.\nStarting main-loop from beginning.\n");
 	goto exit;
       }
       for (i=0; i<bcount; i++) {
@@ -3718,12 +3718,12 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long
 
   if (computecksum!=cksum) {
     if (lalDebugLevel) 
-      printf ("fstats file seems corrupted: has incorrect checksum.\nStarting main-loop from beginning.\n");
+      fprintf (stderr, "Fstats file corrupted: incorrect checksum.\nStarting from beginning.\n");
     goto exit;
   }
 
   if (lalDebugLevel) 
-    printf ("seems ok.\nWill resume from loopcounter = %d\n", lcount);
+    fprintf (stderr, "seems ok.\nWill resume from loopcounter = %d\n", lcount);
 
   *loopcounter = lcount;
   *bytecounter = bcount;
@@ -3775,7 +3775,7 @@ InitSearchGrid ( LALStatus *status,
 
   /* Prepare input-structure for initialization of DopplerScan
    */
-  if (lalDebugLevel) printf ("\nSetting up template grid ...");
+  if (lalDebugLevel) fprintf (stderr, "\nSetting up template grid ...");
   scanInit.metricType = (LALPulsarMetricType) uvar_metricType;
   scanInit.dAlpha = uvar_dAlpha;
   scanInit.dDelta = uvar_dDelta;
@@ -3815,10 +3815,10 @@ debug_dump_commandline (int argc,  char *argv[])
 {
   int i;
 
-  printf ("DEBUG: commandline-was: \n");
+  fprintf (stderr, "DEBUG: commandline-was: \n");
   for (i=0; i < argc; i++)
-    printf ("%s ", argv[i]);
-  printf ("\n");
+    fprintf (stderr, "%s ", argv[i]);
+  fprintf (stderr, "\n");
 
   return 0;
 }
