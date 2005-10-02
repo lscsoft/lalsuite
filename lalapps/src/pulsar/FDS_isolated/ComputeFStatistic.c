@@ -3448,7 +3448,7 @@ int main(int argc, char *argv[])
 #define DEBUG_DDD_FNAME   "CFS_DEBUG_DDD"
 
   LogPrintfVerbatim (LOG_NORMAL, "\n\n");
-  LogPrintfVerbatim (LOG_NORMAL, "Start of BOINC application '%s'.\n", argv[0]);
+  LogPrintf (LOG_NORMAL, "Start of BOINC application '%s'.\n", argv[0]);
 
   /* see if user has a DEBUG_LEVEL_FNAME file: read integer and set lalDebugLevel */
   if ((fp_debug=fopen("../../" DEBUG_LEVEL_FNAME, "r")) || (fp_debug=fopen("./" DEBUG_LEVEL_FNAME, "r")))
