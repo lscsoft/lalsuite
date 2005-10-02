@@ -3610,6 +3610,7 @@ void sighandler(int sig){
   /* lets start by ignoring ANY further occurences of this signal
      (hopefully just in THIS thread, if truly implementing POSIX threads */
   now = time(NULL);
+  LogPrintfVerbatim(LOG_CRITICAL, "\n");
   LogPrintf (LOG_CRITICAL, "APP DEBUG: Application caught signal %d. %s\n", sig, ctime(&now));
 
   /* ignore TERM interrupts once  */
@@ -3749,6 +3750,7 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long
 	  fclose(fp);
 	  RETURN(stat);
 	}
+      LogPrintfVerbatim (LOG_NORMAL, " ok.\n");
     } /* if toplist */
   else
     {
@@ -3831,7 +3833,7 @@ InitSearchGrid ( LALStatus *status,
 
   /* Prepare input-structure for initialization of DopplerScan
    */
-  LogPrintf (LOG_DEBUG, "Setting up template grid ...");
+  LogPrintf (LOG_DEBUG, "Setting up template grid ...\n");
   scanInit.metricType = (LALPulsarMetricType) uvar_metricType;
   scanInit.dAlpha = uvar_dAlpha;
   scanInit.dDelta = uvar_dDelta;
