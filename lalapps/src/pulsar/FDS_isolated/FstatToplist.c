@@ -260,6 +260,29 @@ int read_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxbytes) {
 	insert_into_toplist(l, FstatLine);
 	lines++;
 
+	/* NOTE: it *CAN* happen (and on Linux it DOES) that the fully buffered Fstat stream
+	 * gets written to the File at program termination.
+	 * This does not seem to happen on Mac though, most likely due to different
+	 * exit()-calls used (_exit() vs exit() etc.....)
+	 *
+	 * The bottom-line is: the File-contents CAN legally extend beyond maxbytes,
+	 * which is why we'll ensure here that we don't actually read more than 
+	 * maxbytes.
+	 */
+	if ( chars == maxbytes )
+	  {
+	    LogPrintf (LOG_DEBUG, "Read exactly %d == maxbytes from Fstat-file, that's enough.\n", 
+		       chars);
+	    break;
+	  }
+	/* however, if we've read more than maxbytes, something is gone wrong */
+	if ( chars > maxbytes )
+	  {
+	    LogPrintf (LOG_CRITICAL, "Read %d bytes > maxbytes %d from Fstat-file ... corrupted.\n",
+		       chars, maxbytes );
+	    return -1;
+	  }
+
     } /* while (fgets() ) */
 
     return 0;
