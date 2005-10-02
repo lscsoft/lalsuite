@@ -3610,7 +3610,7 @@ void sighandler(int sig){
   /* lets start by ignoring ANY further occurences of this signal
      (hopefully just in THIS thread, if truly implementing POSIX threads */
   now = time(NULL);
-  LALPrintError ( "\nAPP DEBUG: %s Application caught signal %d\n", ctime(&now), sig);
+  LALPrintError ( "\nAPP DEBUG: Application caught signal %d. %s\n", sig, ctime(&now));
 
   /* ignore TERM interrupts once  */
   if ( sig == SIGTERM || sig == SIGINT )
