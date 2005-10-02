@@ -801,8 +801,8 @@ int main(int argc,char *argv[])
 #else
               fflush (fpFstat);
 #endif
-	      LogPrintf (LOG_NORMAL, "Checkpointing state (%d/%d/%ld) into file '%s' ... ", 
-			 loopcounter, fstat_checksum, fstat_bytecounter, ckp_fname );
+	      LogPrintf (LOG_DEBUG, "Checkpointing state (%d/%d/%ld) ... ", 
+			 loopcounter, fstat_checksum, fstat_bytecounter );
               if ( (fp = fopen(ckp_fname, "wb")) == NULL) {
                 LogPrintf (LOG_CRITICAL, "Failed to open checkpoint-file '%s' for writing. Exiting.\n", 
 			   ckp_fname);
@@ -814,7 +814,7 @@ int main(int argc,char *argv[])
                 return COMPUTEFSTATC_ECHECKPOINT;
               }
               fclose (fp);
-	      LogPrintfVerbatim (LOG_NORMAL, "ok.\n");
+	      LogPrintfVerbatim (LOG_DEBUG, "ok.\n");
 
 #if USE_BOINC
               boinc_checkpoint_completed();
@@ -3709,6 +3709,8 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long
       RETURN(stat);
     }
   fclose( fp );
+  LogPrintf (LOG_DEBUG, "Read checkpoint-counters (%d/%d/%ld)\n", 
+	     lcount, cksum, bcount );
 
   /* checkpoint-file read successfully: check consistency with fstats-file */
   if ( (fp = fopen(fstat_fname, "rb")) == NULL )
@@ -3784,6 +3786,7 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long
   if ( computecksum != cksum) 
     {
       LogPrintf ( LOG_CRITICAL, "Fstats file '%s' has incorrect checksum.\n", fstat_fname );
+      LogPrintf ( LOG_CRITICAL, "Checkpointed checksum: %d, computed: %d\n", cksum, computecksum );
       fclose(fp);
       RETURN(stat);
     }
