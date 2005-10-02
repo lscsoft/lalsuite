@@ -193,7 +193,7 @@ int read_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxbytes) {
 	maxbytes--;
 
     lines=1;
-    while(fgets(line, min(sizeof(line)-1, maxbytes-chars+1), fp)) {
+    while(fgets(line,sizeof(line)-1, fp)) {
 
 	len = strlen(line);
 	chars += len;
