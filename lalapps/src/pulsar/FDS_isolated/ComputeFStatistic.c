@@ -3447,6 +3447,9 @@ int main(int argc, char *argv[])
 #define DEBUG_LEVEL_FNAME "CFS_DEBUG_LEVEL"
 #define DEBUG_DDD_FNAME   "CFS_DEBUG_DDD"
 
+  LogPrintfVerbatim (LOG_NORMAL, "\n\n");
+  LogPrintfVerbatim (LOG_NORMAL, "Start of BOINC application '%s'.\n", argv[0]);
+
   /* see if user has a DEBUG_LEVEL_FNAME file: read integer and set lalDebugLevel */
   if ((fp_debug=fopen("../../" DEBUG_LEVEL_FNAME, "r")) || (fp_debug=fopen("./" DEBUG_LEVEL_FNAME, "r")))
     {
@@ -3611,7 +3614,7 @@ void sighandler(int sig){
      (hopefully just in THIS thread, if truly implementing POSIX threads */
   now = time(NULL);
   LogPrintfVerbatim(LOG_CRITICAL, "\n");
-  LogPrintf (LOG_CRITICAL, "APP DEBUG: Application caught signal %d. %s\n", sig, ctime(&now));
+  LogPrintf (LOG_CRITICAL, "APP DEBUG: Application caught signal %d. %s\n\n", sig, ctime(&now));
 
   /* ignore TERM interrupts once  */
   if ( sig == SIGTERM || sig == SIGINT )
@@ -3620,7 +3623,7 @@ void sighandler(int sig){
 
       if ( killcounter >= 4 )
         {
-          LogPrintf (LOG_CRITICAL,   "APP DEBUG: got 4th kill-signal, guess you mean it. Exiting now\n");
+          LogPrintf (LOG_CRITICAL, "APP DEBUG: got 4th kill-signal, guess you mean it. Exiting now\n\n");
           boinc_finish(COMPUTEFSTAT_EXIT_USER);
         }
       else
