@@ -36,7 +36,7 @@ lalapps_ComputeFStatistic_SOURCES = ComputeFStatistic.c CFSLALDemod.c $(CFSsourc
 
 lalapps_FrComputeFStatistic_SOURCES = FrComputeFStatistic.c FrComputeFStatistic.h	\
 	rngmed.c rngmed.h clusters.c clusters.h  			\
-	DopplerScan.c DopplerScan.h NeighboringGridPoints.c
+	DopplerScan.c DopplerScan.h NeighboringGridPoints.c LogPrintf.c
 
 lalapps_FstatShapeTest_SOURCES = FstatShapeTest.c 
 lalapps_FstatShapeTestLAL_SOURCES = FstatShapeTestLAL.c
@@ -57,15 +57,16 @@ lalapps_skynet_SOURCES = skynet.c
 
 compareFstats_SOURCES = compareFstats.c
 
-ComputeFStatistic_v2_SOURCES = ComputeFStatistic_v2.c  DopplerScan.c DopplerScan.h 
+ComputeFStatistic_v2_SOURCES = ComputeFStatistic_v2.c  DopplerScan.c DopplerScan.h LogPrintf.c
 
 TESTS = testFStat.sh
 
-getMetric_SOURCES = getMetric.c DopplerScan.c DopplerScan.h FlatPulsarMetric.c FlatPulsarMetric.h
+getMetric_SOURCES = getMetric.c DopplerScan.c DopplerScan.h FlatPulsarMetric.c FlatPulsarMetric.h \
+		    LogPrintf.c
 
-getMesh_SOURCES = getMesh.c DopplerScan.c DopplerScan.h 
+getMesh_SOURCES = getMesh.c DopplerScan.c DopplerScan.h LogPrintf.c
 
-testLatticeCovering_SOURCES = testLatticeCovering.c  DopplerScan.c
+testLatticeCovering_SOURCES = testLatticeCovering.c  DopplerScan.c LogPrintf.c
 
 testFlatPulsarMetric_SOURCES = testFlatPulsarMetric.c FlatPulsarMetric.c FlatPulsarMetric.h
 

@@ -41,6 +41,7 @@
 
 #include "DopplerScan.h"
 
+#include "LogPrintf.h"
 
 /*---------- DEFINES ----------*/
 #define MIN(x,y) (x < y ? x : y)
@@ -138,14 +139,17 @@ InitDopplerScan( LALStatus *status,
   /* trap some abnormal input */
   if ( (init->gridType != GRID_FILE) && (init->searchRegion.skyRegionString == NULL) ) 
     {
-      LALPrintError ( "\nERROR: No sky-region was specified!\n\n");
+      LogPrintf (LOG_CRITICAL, "ERROR: No sky-region was specified!\n\n");
       ABORT (status,  DOPPLERSCANH_ENULL ,  DOPPLERSCANH_MSGENULL );
     } 
   if ( (init->gridType == GRID_FILE) && (init->skyGridFile == NULL) )
     {
-      LALPrintError ("\nERROR: no skyGridFile has been specified!\n\n");
+      LogPrintf (LOG_CRITICAL, "ERROR: no skyGridFile has been specified!\n\n");
       ABORT (status,  DOPPLERSCANH_ENULL ,  DOPPLERSCANH_MSGENULL );
     }
+
+  /* FIXME: for now we enforce setting the log-level to lalDebugLevel! */
+  LogSetLevel ( lalDebugLevel );
 
   /* general initializations */
   scan->grid = NULL;  
@@ -182,7 +186,7 @@ InitDopplerScan( LALStatus *status,
       break;
 
     default:
-      LALPrintError ("\nUnknown grid-type `%d`\n\n", init->gridType);
+      LogPrintf (LOG_CRITICAL, "Unknown grid-type `%d`\n\n", init->gridType);
       ABORT ( status, DOPPLERSCANH_EMETRICTYPE, DOPPLERSCANH_MSGEMETRICTYPE);
       break;
 
@@ -215,13 +219,12 @@ InitDopplerScan( LALStatus *status,
       node = node->next;
     }
 
-  if (lalDebugLevel >= 1)
-    LALPrintError ("\nSky-grid has %d nodes\n", scan->numGridPoints);
+  LogPrintf (LOG_DEBUG, "Sky-grid has %d nodes\n", scan->numGridPoints);
   if (lalDebugLevel >= 4)
     {
-      LALPrintError ("\nDEBUG: plotting sky-grid into file 'mesh_debug.agr' ...");
+      LogPrintf (LOG_NORMAL, "DEBUG: plotting sky-grid into file 'mesh_debug.agr' ...");
       TRY( plotGrid (status->statusPtr, scan->grid, &(scan->skyRegion), init), status);
-      LALPrintError (" done. \n");
+      LogPrintfVerbatim (LOG_NORMAL, " done.\n");
     }
 
   /* ----------
@@ -241,12 +244,8 @@ InitDopplerScan( LALStatus *status,
     TRY ( getGridSpacings( status->statusPtr, &gridSpacings, gridpoint, init), status);
 
 
-    if (lalDebugLevel >= 3)
-      {
-	LALPrintError ("\nDEBUG: 'theoretical' spacings in frequency and spindown: \n");
-	LALPrintError ("        dFreq = %g, df1dot = %g\n", gridSpacings.Freq, gridSpacings.f1dot);
-
-    } /* if lalDebugLevel */
+    LogPrintf (LOG_DETAIL, "'theoretical' spacings in frequency and spindown: \n");
+    LogPrintf (LOG_DETAIL, "dFreq = %g, df1dot = %g\n", gridSpacings.Freq, gridSpacings.f1dot);
 
     scan->dFreq  = gridSpacings.Freq;
     scan->df1dot = gridSpacings.f1dot;
@@ -491,15 +490,15 @@ void getMetric( LALStatus *status, REAL4 g[3], REAL4 skypos[2], void *params )
       REAL8 det = g[0] * g[1] - g[2]*g[2];
       if ( (g[0] <=0) || ( g[1] <= 0 ) || ( det <= 0 ) ) 
 	{
-	  LALPrintError ("\nERROR: negative sky-metric found!\n");
-	  LALPrintError ("Skypos = [%16g, %16g],\n\n"
-			 "metric = [ %16g, %16g ;\n"
-			 "           %16g, %16g ],\n\n"
-			 "det = %16g\n\n",
-			 metricpar.position.longitude, metricpar.position.latitude,
-			 metric->data[INDEX_A_A], metric->data[INDEX_A_D],
-			 metric->data[INDEX_A_D], metric->data[INDEX_D_D],
-			 det);
+	  LogPrintf (LOG_CRITICAL, "Negative sky-metric found!\n");
+	  LogPrintf (LOG_CRITICAL, "Skypos = [%16g, %16g],\n\n"
+		     "metric = [ %16g, %16g ;\n"
+		     "           %16g, %16g ],\n\n"
+		     "det = %16g\n\n",
+		     metricpar.position.longitude, metricpar.position.latitude,
+		     metric->data[INDEX_A_A], metric->data[INDEX_A_D],
+		     metric->data[INDEX_A_D], metric->data[INDEX_D_D],
+		     det);
 	  ABORT ( status, DOPPLERSCANH_ENEGMETRIC, DOPPLERSCANH_MSGENEGMETRIC);
 	} /* if negative metric */
     } /* if lalDebugLevel() */
@@ -1048,7 +1047,7 @@ loadSkyGridFile (LALStatus *status, DopplerScanGrid **grid, const CHAR *fname)
 
       if ( 2 != sscanf( data->lines->tokens[i], "%" LAL_REAL8_FORMAT "%" LAL_REAL8_FORMAT, &(node->Alpha), &(node->Delta)) )
 	{
-	  LALPrintError ("\nERROR: could not parse line %d in skyGrid-file '%s'\n\n", i, fname);
+	  LogPrintf (LOG_CRITICAL,"ERROR: could not parse line %d in skyGrid-file '%s'\n\n", i, fname);
 	  freeGrid (head.next);
 	  ABORT (status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
 	}
@@ -1083,7 +1082,7 @@ writeSkyGridFile (LALStatus *status, const DopplerScanGrid *grid, const CHAR *fn
 
   if ( (fp = fopen(fname, "w")) == NULL )
     {
-      LALPrintError ("\nERROR: could not open %s for writing!\n", fname);
+      LogPrintf (LOG_CRITICAL, "ERROR: could not open %s for writing!\n", fname);
       ABORT (status, DOPPLERSCANH_ESYS, DOPPLERSCANH_MSGESYS);
     }
 
@@ -1136,7 +1135,7 @@ printFrequencyShifts ( LALStatus *status, const DopplerScanState *scan, const Do
   ATTATCHSTATUSPTR (status);
 
   if ( (fp = fopen(fname, "w")) == NULL) {
-    LALPrintError ("\nERROR: could not open %s for writing!\n", fname);
+    LogPrintf (LOG_CRITICAL, "ERROR: could not open %s for writing!\n", fname);
     ABORT (status, DOPPLERSCANH_ESYS, DOPPLERSCANH_MSGESYS);
   }
 
@@ -1311,7 +1310,7 @@ ParseSkyRegionString (LALStatus *status, SkyRegion *region, const CHAR *input)
     }
 
   if (region->numVertices == 0) {
-    LALPrintError ("Failed to parse sky-region: `%s`\n", skyRegion);
+    LogPrintf (LOG_CRITICAL, "Failed to parse sky-region: `%s`\n", skyRegion);
     ABORT (status, DOPPLERSCANH_ESKYREGION, DOPPLERSCANH_MSGESKYREGION);
   }
     
@@ -1620,9 +1619,9 @@ getMCDopplerCube (LALStatus *status,
       /* now we can estimate the Doppler-Band on f: |dFreq| < Freq * 1e-4 * smajor */
       DopplerFreqBand = 2.0 * signal.Freq * 1.0e-4 * ellipse.smajor;
 
-      if ( lalDebugLevel )
-	LALPrintError ("\nUsing projected sky-metric: canonical FreqBand would be %g,"
-		       " but Doppler-FreqBand = %g\n", fB, DopplerFreqBand);
+      LogPrintf (LOG_DEBUG, 
+		 "Using projected sky-metric: canonical FreqBand would be %g,"
+		 "but Doppler-FreqBand = %g\n", fB, DopplerFreqBand);
 
       FreqBand = MAX( fB, DopplerFreqBand );	/* pick larger one */
 	
