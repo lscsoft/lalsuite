@@ -654,7 +654,7 @@ int main(int argc,char *argv[])
   if ( loopcounter && fstat_bytecounter )
     LogPrintf (LOG_NORMAL, "Resuming computation at loop=%d, bytes=%d\n", loopcounter,fstat_bytecounter);
   else
-    LogPrintf (LOG_NORMAL, "No checkpoint found, starting from beginning\n");
+    LogPrintf (LOG_NORMAL, "No checkpoint found, starting from beginning.\n");
 
   /* allow for checkpointing: 
    * open Fstat file for writing or appending, depending on loopcounter. 
@@ -689,7 +689,7 @@ int main(int argc,char *argv[])
   if ( loopcounter && fstat_bytecounter )
     LogPrintf (LOG_NORMAL, "Resuming computation at loop=%d, bytes=%d\n", loopcounter,fstat_bytecounter);
   else
-    LogPrintf (LOG_NORMAL, "No checkpoint found, starting from beginning\n");
+    LogPrintf (LOG_NORMAL, "No checkpoint found, starting from beginning.\n");
 
 
   /* allow for checkpointing: 
@@ -802,7 +802,7 @@ int main(int argc,char *argv[])
 #else
               fflush (fpFstat);
 #endif
-
+	      LogPrintf (LOG_NORMAL, "Checkpointing state into file '%s' ... ", ckp_fname );
               if ( (fp = fopen(ckp_fname, "wb")) == NULL) {
                 LogPrintf (LOG_CRITICAL, "Failed to open checkpoint-file '%s' for writing. Exiting.\n", 
 			   ckp_fname);
@@ -814,6 +814,8 @@ int main(int argc,char *argv[])
                 return COMPUTEFSTATC_ECHECKPOINT;
               }
               fclose (fp);
+	      LogPrintfVerbatim (LOG_NORMAL, "ok.\n");
+
 #if USE_BOINC
               boinc_checkpoint_completed();
 	      
@@ -3447,7 +3449,7 @@ int main(int argc, char *argv[])
 #define DEBUG_LEVEL_FNAME "CFS_DEBUG_LEVEL"
 #define DEBUG_DDD_FNAME   "CFS_DEBUG_DDD"
 
-  LogPrintfVerbatim (LOG_NORMAL, "\n\n");
+  LogPrintfVerbatim (LOG_NORMAL, "\n");
   LogPrintf (LOG_NORMAL, "Start of BOINC application '%s'.\n", argv[0]);
 
   /* see if user has a DEBUG_LEVEL_FNAME file: read integer and set lalDebugLevel */
