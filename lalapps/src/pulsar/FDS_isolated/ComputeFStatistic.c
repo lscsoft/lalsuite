@@ -854,7 +854,7 @@ int main(int argc,char *argv[])
 #define GO_BACK "\r"
 #endif
 	
-      LogPrintfVerbatim (LOG_DEBUG, GO_BACK "%5.1f%% ", 
+      LogPrintfVerbatim (LOG_DETAIL, GO_BACK "%5.1f%% ", 
 			 (100.0* loopcounter / thisScan.numGridPoints));
       
       LAL_CALL (NextDopplerPos( status, &dopplerpos, &thisScan ), status);
@@ -862,7 +862,7 @@ int main(int argc,char *argv[])
       /* Have we scanned all DopplerPositions yet? */
       if (thisScan.state == STATE_FINISHED)
 	{
-	  LogPrintfVerbatim(LOG_DEBUG, "\n");
+	  LogPrintfVerbatim(LOG_DETAIL, "\n");
 	  break;
 	}
 
