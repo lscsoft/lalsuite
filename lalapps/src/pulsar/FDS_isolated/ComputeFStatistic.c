@@ -3595,7 +3595,7 @@ void sighandler(int sig){
   void *array[64];
   size_t size;
   static int killcounter = 0;
-
+  time_t now;
   /* RP: not sure what this is for. FIXME: better remove?
 #ifndef _WIN32
   sigset_t signalset;
@@ -3609,8 +3609,8 @@ void sighandler(int sig){
                                            * allowed to use the global_status struct !! */
   /* lets start by ignoring ANY further occurences of this signal
      (hopefully just in THIS thread, if truly implementing POSIX threads */
-  
-  LALPrintError (  "APP DEBUG: Application caught signal %d\n", sig);
+  now = time(NULL);
+  LALPrintError ( "\nAPP DEBUG: %s Application caught signal %d\n", ctime(&now), sig);
 
   /* ignore TERM interrupts once  */
   if ( sig == SIGTERM || sig == SIGINT )
