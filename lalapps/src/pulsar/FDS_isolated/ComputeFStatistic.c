@@ -3742,7 +3742,7 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long
    */
   if ( toplist ) 
     {
-      LogPrintf (LOG_NORMAL, "Trying to read Fstat-file into toplist ... ");
+      LogPrintf (LOG_NORMAL, "Trying to read Fstat-file into toplist ...\n");
       if ( fseek(fp, 0, SEEK_SET) )
 	{ 
 	  LogPrintf (LOG_CRITICAL, "fseek(SEEK_SET) failed on Fstat-file.\n");
@@ -3756,7 +3756,6 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long
 	  fclose(fp);
 	  RETURN(stat);
 	}
-      LogPrintfVerbatim (LOG_NORMAL, " ok.\n");
     } /* if toplist */
   else
     {
@@ -3790,6 +3789,9 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long
       fclose(fp);
       RETURN(stat);
     }
+  else
+    LogPrintf (LOG_NORMAL, "Checksum Ok. Successfully read_toplist_from_fp()\n");
+
   
   *loopcounter = lcount;
   *bytecounter = bcount;
