@@ -650,12 +650,6 @@ int main(int argc,char *argv[])
   if (uvar_doCheckpointing)
     LAL_CALL (getCheckpointCounters( status, &loopcounter, &fstat_checksum, &fstat_bytecounter, 
 				     CFstatFilename, ckp_fname ), status); 
-
-  if ( loopcounter && fstat_bytecounter )
-    LogPrintf (LOG_NORMAL, "Resuming computation at loop=%d, bytes=%d\n", loopcounter,fstat_bytecounter);
-  else
-    LogPrintf (LOG_NORMAL, "No checkpoint found, starting from beginning.\n");
-
   /* allow for checkpointing: 
    * open Fstat file for writing or appending, depending on loopcounter. 
    */
@@ -686,12 +680,6 @@ int main(int argc,char *argv[])
     LAL_CALL (getCheckpointCounters( status, &loopcounter, &fstat_checksum, &fstat_bytecounter, 
 				     FstatFilename, ckp_fname ), status); 
 
-  if ( loopcounter && fstat_bytecounter )
-    LogPrintf (LOG_NORMAL, "Resuming computation at loop=%d, bytes=%d\n", loopcounter,fstat_bytecounter);
-  else
-    LogPrintf (LOG_NORMAL, "No checkpoint found, starting from beginning.\n");
-
-
   /* allow for checkpointing: 
    * open Fstat file for writing or appending, depending on loopcounter. 
    */
@@ -717,6 +705,17 @@ int main(int argc,char *argv[])
       }
     }
 #endif
+
+  /* log-output of checkpoint status */
+  if ( uvar_doCheckpointing )
+    {
+      if ( loopcounter && fstat_bytecounter )
+	LogPrintf (LOG_NORMAL, "Resuming computation at (%d/%d/%ld).\n", 
+		   loopcounter, fstat_checksum, fstat_bytecounter);
+      else
+	LogPrintf (LOG_NORMAL, "No usable checkpoint found, starting from beginning.\n");
+    }
+
 
   /* if we checkpointed we need to "spool forward" to the right entry in the sky-position list */
   if ( loopcounter > 0 ) 
@@ -802,7 +801,8 @@ int main(int argc,char *argv[])
 #else
               fflush (fpFstat);
 #endif
-	      LogPrintf (LOG_NORMAL, "Checkpointing state into file '%s' ... ", ckp_fname );
+	      LogPrintf (LOG_NORMAL, "Checkpointing state (%d/%d/%ld) into file '%s' ... ", 
+			 loopcounter, fstat_checksum, fstat_bytecounter, ckp_fname );
               if ( (fp = fopen(ckp_fname, "wb")) == NULL) {
                 LogPrintf (LOG_CRITICAL, "Failed to open checkpoint-file '%s' for writing. Exiting.\n", 
 			   ckp_fname);
