@@ -3728,7 +3728,7 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long
   if ( bcount > flen) 
     {
       LogPrintf (LOG_CRITICAL, "Corrupted Fstat-file '%s': has %ld bytes instead of %ld.\n",
-		 flen, bcount);
+		 fstat_fname, flen, bcount);
       fclose(fp);
       RETURN(stat);
     }
