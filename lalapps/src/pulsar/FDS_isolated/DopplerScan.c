@@ -216,8 +216,8 @@ InitDopplerScan( LALStatus *status,
     }
 
   if (lalDebugLevel >= 1)
-    printf ("\nSky-grid has %d nodes\n", scan->numGridPoints);
-  if (lalDebugLevel >= 3)
+    LALPrintError ("\nSky-grid has %d nodes\n", scan->numGridPoints);
+  if (lalDebugLevel >= 4)
     {
       LALPrintError ("\nDEBUG: plotting sky-grid into file 'mesh_debug.agr' ...");
       TRY( plotGrid (status->statusPtr, scan->grid, &(scan->skyRegion), init), status);
@@ -241,12 +241,12 @@ InitDopplerScan( LALStatus *status,
     TRY ( getGridSpacings( status->statusPtr, &gridSpacings, gridpoint, init), status);
 
 
-    if (lalDebugLevel)
+    if (lalDebugLevel >= 3)
       {
-	printf ("\nDEBUG: 'theoretical' spacings in frequency and spindown: \n");
-	printf (  "        dFreq = %g, df1dot = %g\n", gridSpacings.Freq, gridSpacings.f1dot);
+	LALPrintError ("\nDEBUG: 'theoretical' spacings in frequency and spindown: \n");
+	LALPrintError ("        dFreq = %g, df1dot = %g\n", gridSpacings.Freq, gridSpacings.f1dot);
 
-    } /* if lalDebugLevel >= 1 */
+    } /* if lalDebugLevel */
 
     scan->dFreq  = gridSpacings.Freq;
     scan->df1dot = gridSpacings.f1dot;
@@ -1175,18 +1175,18 @@ printFrequencyShifts ( LALStatus *status, const DopplerScanState *scan, const Do
       V2[j] = v[j] + 0.5 * a[j]*Tobs + (2.0/5.0)*accDot[j] * Tobs * Tobs; /* 2nd order */
     }
 
-  printf ("dT = %f, tdiffE = %f, Tobs = %f\n", dT, tdiffE, Tobs);
-  printf (" vel =  [ %g, %g, %g ]\n", vel[0], vel[1], vel[2]);
-  printf (" acc =  [ %g, %g, %g ]\n", acc[0], acc[1], acc[2]);
-  printf (" accDot =  [ %g, %g, %g ]\n\n", accDot[0], accDot[1], accDot[2]);
+  LALPrintError ("dT = %f, tdiffE = %f, Tobs = %f\n", dT, tdiffE, Tobs);
+  LALPrintError (" vel =  [ %g, %g, %g ]\n", vel[0], vel[1], vel[2]);
+  LALPrintError (" acc =  [ %g, %g, %g ]\n", acc[0], acc[1], acc[2]);
+  LALPrintError (" accDot =  [ %g, %g, %g ]\n\n", accDot[0], accDot[1], accDot[2]);
 
-  printf (" v =  [ %g, %g, %g ]\n", v[0], v[1], v[2]);
-  printf (" a =  [ %g, %g, %g ]\n", a[0], a[1], a[2]);
+  LALPrintError (" v =  [ %g, %g, %g ]\n", v[0], v[1], v[2]);
+  LALPrintError (" a =  [ %g, %g, %g ]\n", a[0], a[1], a[2]);
 
-  printf ("\nVelocity-expression in circle-equation: \n");
-  printf (" V0 = [ %g, %g, %g ]\n", V0[0], V0[1], V0[2] );
-  printf (" V1 = [ %g, %g, %g ]\n", V1[0], V1[1], V1[2] );
-  printf (" V2 = [ %g, %g, %g ]\n", V2[0], V2[1], V2[2] );
+  LALPrintError ("\nVelocity-expression in circle-equation: \n");
+  LALPrintError (" V0 = [ %g, %g, %g ]\n", V0[0], V0[1], V0[2] );
+  LALPrintError (" V1 = [ %g, %g, %g ]\n", V1[0], V1[1], V1[2] );
+  LALPrintError (" V2 = [ %g, %g, %g ]\n", V2[0], V2[1], V2[2] );
 
   node = scan->grid;
 
@@ -1253,7 +1253,7 @@ getDopplermax(EphemerisData *edat)
       maxvS = mymax( maxvS, beta );
     }
   
-  printf ("Maximal Doppler-shift to be expected from ephemeris: %e", maxvE + maxvS );
+  LALPrintError ("Maximal Doppler-shift to be expected from ephemeris: %e", maxvE + maxvS );
 
   return (maxvE + maxvS);
 
@@ -1481,17 +1481,17 @@ getGridSpacings( LALStatus *status,
       if ( params->projectMetric ) {
 	TRY ( LALProjectMetric( status->statusPtr, metric, 0 ), status);
       }
-      if ( lalDebugLevel ) 
+      if ( lalDebugLevel >= 3 ) 
 	{
-	  printf ("\ngetGridSpacing(): using the %s metric\n", 
-		  params->projectMetric ? "projected" : "unprojected");
-	  printf (" %g \n", g_f0_f0);
-	  printf (" %g  %g\n", metric->data[INDEX_f0_A], metric->data[INDEX_A_A]);
-	  printf (" %g  %g  %g\n", 
-		  metric->data[INDEX_f0_D], metric->data[INDEX_A_D], metric->data[INDEX_D_D]);
-	  printf (" %g  %g  %g  %g\n\n",
-		  metric->data[INDEX_f0_f1], metric->data[INDEX_A_f1], metric->data[INDEX_D_f1],
-		  metric->data[INDEX_f1_f1]);
+	  LALPrintError ("\ngetGridSpacing(): using the %s metric\n", 
+			 params->projectMetric ? "projected" : "unprojected");
+	  LALPrintError (" %g \n", g_f0_f0);
+	  LALPrintError (" %g  %g\n", metric->data[INDEX_f0_A], metric->data[INDEX_A_A]);
+	  LALPrintError (" %g  %g  %g\n", 
+			 metric->data[INDEX_f0_D], metric->data[INDEX_A_D], metric->data[INDEX_D_D]);
+	  LALPrintError (" %g  %g  %g  %g\n\n",
+			 metric->data[INDEX_f0_f1], metric->data[INDEX_A_f1], metric->data[INDEX_D_f1],
+			 metric->data[INDEX_f1_f1]);
 	}
 
       
@@ -1621,8 +1621,8 @@ getMCDopplerCube (LALStatus *status,
       DopplerFreqBand = 2.0 * signal.Freq * 1.0e-4 * ellipse.smajor;
 
       if ( lalDebugLevel )
-	printf ("\nUsing projected sky-metric: canonical FreqBand would be %g,"
-		" but Doppler-FreqBand = %g\n", fB, DopplerFreqBand);
+	LALPrintError ("\nUsing projected sky-metric: canonical FreqBand would be %g,"
+		       " but Doppler-FreqBand = %g\n", fB, DopplerFreqBand);
 
       FreqBand = MAX( fB, DopplerFreqBand );	/* pick larger one */
 	
