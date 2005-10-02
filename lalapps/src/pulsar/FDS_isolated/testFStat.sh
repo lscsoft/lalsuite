@@ -78,13 +78,20 @@ if [ ! -x "$prog" ]; then
     echo "Cannot execute '$prog' ... exiting"
     exit 1
 fi
-echo "$prog $CFSparams1 $extra_args"
-time $prog $CFSparams1 $extra_args
+
+cmdline="$prog $CFSparams1 $extra_args";
+echo $cmdline
+if ! $cmdline ; then
+    echo "Something failed ... giving up.";
+    exit 2;
+fi    
 
 echo
-echo -n "Comparing output-file 'Fstats' with reference-version 'Fstats.ref1' ... "
+echo "Comparing output-file 'Fstats' with reference-version 'Fstats.ref1' ... "
 
-if $FCOMPARE -1 ./Fstats -2 ${srcdir}/Fstats.ref1 ; then
+cmdline="$FCOMPARE -1 ./Fstats -2 ${srcdir}/Fstats.ref1";
+echo $cmdline
+if $cmdline ; then
     echo "OK."
 else
     echo "OUCH... files differ. Something might be wrong..."
@@ -97,14 +104,19 @@ echo
 echo "----------------------------------------------------------------------"
 echo "Test 2) isotropic sky-grid:"
 echo "----------------------------------------------------------------------"
-echo "$prog $CFSparams2 $extra_args"
 
-time $prog $CFSparams2 $extra_args
+cmdline="$prog $CFSparams2 $extra_args"
+echo $cmdline
+if ! $cmdline ; then
+    echo "Something failed ... giving up.";
+    exit 2;
+fi
 
 echo
-echo -n "Comparing output-file 'Fstats' with reference-version 'Fstats.ref2' ... "
-
-if $FCOMPARE -1 ./Fstats -2 ${srcdir}/Fstats.ref2 ; then
+echo "Comparing output-file 'Fstats' with reference-version 'Fstats.ref2' ... "
+cmdline="$FCOMPARE -1 ./Fstats -2 ${srcdir}/Fstats.ref2"
+echo $cmdline
+if $cmdline; then
     echo "OK."
 else
     echo "OUCH... files differ. Something might be wrong..."
@@ -130,7 +142,7 @@ if ! "$prog" $CFSparams3; then
 fi
 
 echo
-echo -n "Comparing output-file 'Fstats' with reference-version 'Fstats.ref3' ... "
+echo "Comparing output-file 'Fstats' with reference-version 'Fstats.ref3' ... "
 
 if $FCOMPARE -1 ./Fstats -2 ${srcdir}/Fstats.ref3 ; then
     echo "OK."
