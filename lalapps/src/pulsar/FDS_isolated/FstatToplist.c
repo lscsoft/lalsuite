@@ -8,6 +8,8 @@
 #define fopen boinc_fopen
 #endif
 
+#include "LogPrintf.h"
+
 RCSID("$Id$");
 
 /* MSC specifics */
@@ -197,15 +199,14 @@ int read_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxbytes) {
 	chars += len;
 
 	if (len==0) {
-	    LALPrintError(
-                "Line %d is empty.\n", lines);
+	  LogPrintf (LOG_CRITICAL, "Line %d is empty.\n", lines);
 	    return -1;
 	}
 	else if (line[len-1] != '\n') {
-	    LALPrintError(
-                "Line %d is too long or has no NEWLINE. First %d chars are:\n\"%s\"\n",
-                lines,sizeof(line)-1, line);
-	    return -1;
+	  LogPrintf (LOG_CRITICAL, 
+		     "Line %d is too long or has no NEWLINE. First %d chars are:\n'%s'\n",
+		     lines,sizeof(line)-1, line);
+	  return -1;
 	}
       
 	items = sscanf (line,
@@ -239,16 +240,16 @@ int read_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxbytes) {
 
 	    lastchar != '\n'
 	    ) {
-	    LALPrintError(
-		"Line %d has invalid values.\n"
-		"First %d chars are:\n"
-		"%s\n"
-		"All fields should be finite\n"
-		"1st and 2nd field should be positive.\n" 
-		"3rd field should lie between 0 and %1.15f.\n" 
-		"4th field should lie between %1.15f and %1.15f.\n",
-		lines, sizeof(line)-1, line,
-		(double)LAL_TWOPI, (double)-LAL_PI/2.0, (double)LAL_PI/2.0);
+	    LogPrintf (LOG_CRITICAL, 
+		       "Line %d has invalid values.\n"
+		       "First %d chars are:\n"
+		       "%s\n"
+		       "All fields should be finite\n"
+		       "1st and 2nd field should be positive.\n" 
+		       "3rd field should lie between 0 and %1.15f.\n" 
+		       "4th field should lie between %1.15f and %1.15f.\n",
+		       lines, sizeof(line)-1, line,
+		       (double)LAL_TWOPI, (double)-LAL_PI/2.0, (double)LAL_PI/2.0);
 	    return -1;
         }
 
