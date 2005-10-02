@@ -357,7 +357,7 @@ int BOINC_ERR_EXIT(LALStatus  *stat, const char *func, const char *file, const i
             "\tfile %s, line %d\n",
             id, func, file, line );
     REPORTSTATUS(stat);
-    fprintf (stderr, "BOINC_ERR_EXIT: now calling boinc_finish()\n");
+    LALPrintError (  "BOINC_ERR_EXIT: now calling boinc_finish()\n");
     boinc_finish( COMPUTEFSTAT_EXIT_LALCALLERROR+stat->statusCode );
   }
   /* should this call boinc_finish too?? */
@@ -388,6 +388,7 @@ int main(int argc,char *argv[])
   long fstat_bytecounter;
   UINT4 fstat_checksum = 0;      /* Checksum of fstats file contents */
   FstatOutputEntry loudest = empty_FstatOutputEntry; /* loudest canidate in search-region */
+  BOOLEAN outputProgress = FALSE;
 
 #ifdef RUN_POLKA
   INT4 fstats_completed = FALSE; /* did we find a completed fstats file? */
@@ -403,13 +404,19 @@ int main(int argc,char *argv[])
 #endif
 
   vrbflg = 1;   /* verbose error-messages */
-  
-  if ( lalDebugLevel )
-    debug_dump_commandline (argc, argv);
 
   /* register all user-variable */
   LAL_CALL (LALGetDebugLevel(status, argc, argv, 'v'), status);
   LAL_CALL (initUserVars(status), status);  
+
+  if ( lalDebugLevel )
+    {
+      time_t now = time(NULL);
+      LALPrintError ("\nSearch started. %s\n", ctime(&now) );
+    }
+
+  if ( lalDebugLevel >= 2 )
+    debug_dump_commandline (argc, argv);
 
 #if USE_BOINC
   /* handle config file request with boinc_resolve_filename */
@@ -418,7 +425,7 @@ int main(int argc,char *argv[])
     {
       resfname[0] = '@';
       if (boinc_resolve_filename(argv[1]+1,resfname+1,sizeof(resfname)))
-        fprintf(stderr,"WARNING: Can't boinc-resolve config file \"%s\"\n", argv[1]+1);
+        LALPrintError ( "WARNING: Can't boinc-resolve config file \"%s\"\n", argv[1]+1);
       else
         {
           /* hack the command-line: replace config-file by boinc-resolved path */
@@ -464,24 +471,24 @@ int main(int argc,char *argv[])
   GV.SpinImax = (INT4)(GV.searchRegion.f1dotBand/ thisScan.df1dot + 1e-6) + 1;  
 
   /* debug output about search-parameters */
-  if ( lalDebugLevel )
+  if ( lalDebugLevel >= 3)
     {
-      fprintf (stderr, "DEBUG: Search-region (at start-time of observation):\n");
-      fprintf (stderr, "       skyRegion = \"%s\"\n", GV.searchRegion.skyRegionString);
-      fprintf (stderr, "       Freq in  = [%.16g, %.16g]\n", 
-	      GV.searchRegion.Freq, GV.searchRegion.Freq + GV.searchRegion.FreqBand);
-      fprintf (stderr, "       f1dot in = [%.16g, %.16g]\n",
-	      GV.searchRegion.f1dot, GV.searchRegion.f1dot + GV.searchRegion.f1dotBand);
-
-      fprintf (stderr, "\nDEBUG: actual grid-spacings: dFreq = %g, df1dot = %g\n\n",
-	      thisScan.dFreq, thisScan.df1dot);
-
-      fprintf (stderr, "Frequency-templates: %d, first frequency-value: %.16g\n", 
-	      GV.FreqImax, GV.searchRegion.Freq);
-      fprintf (stderr, "Spindown-templates: %d, first spindown-value: %.16g\n\n", 
-	      GV.SpinImax, GV.searchRegion.f1dot);
+      LALPrintError ( "DEBUG: Search-region (at start-time of observation):\n");
+      LALPrintError ( "       skyRegion = \"%s\"\n", GV.searchRegion.skyRegionString);
+      LALPrintError ( "       Freq in  = [%.16g, %.16g]\n", 
+		      GV.searchRegion.Freq, GV.searchRegion.Freq + GV.searchRegion.FreqBand);
+      LALPrintError ( "       f1dot in = [%.16g, %.16g]\n",
+		      GV.searchRegion.f1dot, GV.searchRegion.f1dot + GV.searchRegion.f1dotBand);
+      
+      LALPrintError ( "\nDEBUG: actual grid-spacings: dFreq = %g, df1dot = %g\n\n",
+		      thisScan.dFreq, thisScan.df1dot);
+      
+      LALPrintError ( "Frequency-templates: %d, first frequency-value: %.16g\n", 
+		      GV.FreqImax, GV.searchRegion.Freq);
+      LALPrintError ( "Spindown-templates: %d, first spindown-value: %.16g\n\n", 
+		      GV.SpinImax, GV.searchRegion.f1dot);
     }
-
+  
 
   /* determine smallest required band of frequency-bins for the search-parameters */
   {
@@ -514,12 +521,12 @@ int main(int argc,char *argv[])
       Fstat.Fa = NULL;
       Fstat.Fb = NULL;
     }
-
+  
   /* ----------------------------------------------------------------------*/
 
   /* read in SFT-data */
   if (ReadSFTData()) return COMPUTEFSTAT_EXIT_READSFTFAIL;
-
+  
   /* normalize SFTs by running median */
   LAL_CALL (NormaliseSFTDataRngMdn(status, uvar_RngMedWindow), status);
 
@@ -535,7 +542,7 @@ int main(int argc,char *argv[])
     use_boinc_filename0(Fmaxfilename);
 #endif /* USE_BOINC */
     if (!(fpmax=fopen(Fmaxfilename,"wb"))){
-      fprintf(stderr,"in Main: unable to open Fmax file %s\n", Fmaxfilename);
+      LALPrintError ( "in Main: unable to open Fmax file %s\n", Fmaxfilename);
       return COMPUTEFSTAT_EXIT_OPENFMAX;
     }
   }
@@ -630,7 +637,7 @@ int main(int argc,char *argv[])
     if(!fseek(fpFstat,-6,SEEK_END))
       if(fread(done,6,1,fpFstat)==1)
         if(strncmp(done,"%DONE",5)==0){
-          fprintf(stderr,"detected finished Fstat file - skipping Fstat run %d\n",cfsRunNo);
+          LALPrintError ( "detected finished Fstat file - skipping Fstat run %d\n",cfsRunNo);
 	  fstats_completed = TRUE;
         }
     fclose(fpFstat);
@@ -652,7 +659,7 @@ int main(int argc,char *argv[])
   if ( strlen(CFstatFilename)
        && ( (fpClusters = fopen( CFstatFilename, fstat_bytecounter>0 ? "rb+" : "wb")) == NULL) )
     {
-      fprintf(stderr,"in Main: unable to open Fstats file '%s'\n", FstatFilename);
+      LALPrintError ( "in Main: unable to open Fstats file '%s'\n", FstatFilename);
       return COMPUTEFSTAT_EXIT_OPENFSTAT2;
     }
 
@@ -682,7 +689,7 @@ int main(int argc,char *argv[])
   if ( strlen(FstatFilename)
        && ( (fpFstat = fopen( FstatFilename, fstat_bytecounter>0 ? "rb+" : "wb")) == NULL) )
     {
-      fprintf(stderr,"in Main: unable to open Fstats file '%s'\n", FstatFilename);
+      LALPrintError ( "in Main: unable to open Fstats file '%s'\n", FstatFilename);
       return COMPUTEFSTAT_EXIT_OPENFSTAT2;
     }
 
@@ -722,15 +729,20 @@ int main(int argc,char *argv[])
 	  if ( 0 != fseek( fpFstat, fstat_bytecounter, SEEK_SET) ) 
 #endif
 	    {   /* something gone wrong seeking .. */
-	      if (lalDebugLevel) 
-		LALPrintError ("broken Fstat-file '%s'.\nStarting main-loop from beginning.\n", 
-			       FstatFilename);
+	      LALPrintError ("broken Fstat-file '%s'.\nStarting main-loop from beginning.\n", 
+			     FstatFilename);
 	      return COMPUTEFSTATC_ECHECKPOINT;;
 	    }
 	} /* if fpFstat */
 
     } /* if loopcounter > 0 */
   
+  if ( lalDebugLevel >= 2 )
+    {
+      outputProgress = TRUE;
+      LALPrintError (  "\nSearch progress:\n");
+    }
+
   while (1)
     {
       BOOLEAN need2checkpoint = FALSE;
@@ -748,14 +760,14 @@ int main(int argc,char *argv[])
 	  fclose(fpFstat);
 	  howmany = atomic_write_toplist_to_file(toplist, FstatFilename, &fstat_checksum);
 	  if (howmany < 0) {
-	    fprintf(stderr,"Couldn't write compacted toplist\n");
+	    LALPrintError ( "Couldn't write compacted toplist\n");
 	    return (COMPUTEFSTAT_EXIT_OPENFSTAT);
 	  }
 	  fstat_bytecounter = howmany;
 	  
 	  if ( (fpFstat = fopen(FstatFilename, "ab")) == NULL )
 	    {
-	      fprintf(stderr,"Couldn't open compacted toplist for appending\n");
+	      LALPrintError ( "Couldn't open compacted toplist for appending\n");
 	      return (COMPUTEFSTAT_EXIT_OPENFSTAT2);
 	    }
 	  if ( fstatbuff )
@@ -796,7 +808,7 @@ int main(int argc,char *argv[])
               fclose (fp);
 #if USE_BOINC
               boinc_checkpoint_completed();
-
+	      
 	      need2checkpoint = FALSE;
 
             } /* if boinc_time_to_checkpoint() */
@@ -825,16 +837,25 @@ int main(int argc,char *argv[])
 	  *fraction_done_hook=local_fraction_done;
       }
 #endif
-      if (lalDebugLevel >= 2) 
-	fprintf (stderr, ""
-		       "Search progress: %5.1f%%", 
+
+#if USE_BOINC
+#define GO_BACK " "
+#else
+#define GO_BACK "\r"
+#endif
+	
+      if ( outputProgress ) 
+	LALPrintError (GO_BACK "%5.1f%% ", 
 		       (100.0* loopcounter / thisScan.numGridPoints));
       
       LAL_CALL (NextDopplerPos( status, &dopplerpos, &thisScan ), status);
       
       /* Have we scanned all DopplerPositions yet? */
       if (thisScan.state == STATE_FINISHED)
-        break;
+	{
+	  if ( outputProgress ) LALPrintError (" done.\n");
+	  break;
+	}
 
       /* normalize skyposition: correctly map into [0,2pi]x[-pi/2,pi/2] */
       thisPoint.longitude = dopplerpos.Alpha;
@@ -944,7 +965,7 @@ int main(int argc,char *argv[])
 		  if (writeFLines(maxIndex, dopplerpos, fpClusters))
 #endif
 		    {
-		      fprintf(stderr, "\nError in writeFLines()\n\n" );
+		      LALPrintError (  "\nError in writeFLines()\n\n" );
 		      return COMPUTEFSTAT_EXIT_WRITEFSTAT;
 		    }
 		  
@@ -990,7 +1011,7 @@ int main(int argc,char *argv[])
 	  sort_toplist(toplist);
 	  if( atomic_write_toplist_to_file ( toplist, FstatFilename, &fstat_checksum ) < 0 ) 
 	    {
-	      fprintf(stderr,"Couldn't write compacted toplist\n");
+	      LALPrintError ( "Couldn't write compacted toplist\n");
 	      return (COMPUTEFSTAT_EXIT_OPENFSTAT);
 	    }
 	}
@@ -999,7 +1020,7 @@ int main(int argc,char *argv[])
 	 on the final line */
       if ( (fpFstat = fopen (FstatFilename, "ab")) == NULL ) 
 	{
-	  fprintf(stderr, "\nFailed to open Fstat-file '%s' for final '%%DONE' marker!\n\n", 
+	  LALPrintError (  "\nFailed to open Fstat-file '%s' for final '%%DONE' marker!\n\n", 
 		  FstatFilename);
 	  fprintf(fpFstat, "%%DONE\n");
 	  fclose(fpFstat);
@@ -1029,8 +1050,11 @@ int main(int argc,char *argv[])
       fclose(fpLoudest);
     } /* write loudest candidate to file */
 
-  if (lalDebugLevel >= 2) 
-    fprintf (stderr, "\nSearch finished.\n");
+  if (lalDebugLevel) 
+    {
+      time_t now = time(NULL);
+      LALPrintError ("\nSearch finished. %s\n", ctime(&now) );
+    }
   
 #ifdef FILE_FMAX  
   fclose(fpmax);
@@ -1249,7 +1273,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
     strcat(Paramfilename,uvar_outputLabel);
   
   if(!(fpMLEParam=fopen(Paramfilename,"wb"))) {
-    fprintf(stderr,"Error in EstimateSignalParameters: unable to open the file");
+    LALPrintError ( "Error in EstimateSignalParameters: unable to open the file");
     return 1;
   }
 
@@ -1281,7 +1305,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
 
 
       if(ampratio<0.25-error_tol||ampratio>2.0+error_tol) {
-        fprintf(stderr,
+        LALPrintError ( 
                 "Imaginary Cos[iota]; cannot compute parameters\n"
                 "in the EstimateSignalParameters routine\n"
                 "in ComputeFStatistic code\n"
@@ -1304,7 +1328,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
 
       if(Asq*Asq < 4.0*detA*detA)
         {
-          fprintf(stderr,"Imaginary beta; cannot compute parameters");
+          LALPrintError ( "Imaginary beta; cannot compute parameters");
           break;
         }
 
@@ -1341,44 +1365,44 @@ int EstimateSignalParameters(INT4 * maxIndex)
                     +mu_mle*cos(2.0*psi_mle)*cos(2.0*Phi0_mle));
 
 
-      fprintf(stderr,"LALDemod_Estimate output: "
+      LALPrintError ( "LALDemod_Estimate output: "
               "A1=%20.15f A2=%20.15f A3=%20.15f A4=%20.15f\n"
               ,A1,A2,A3,A4);
-      fprintf(stderr,"Reconstructed from MLE: "
+      LALPrintError ( "Reconstructed from MLE: "
               "A1=%20.15f A2=%20.15f A3=%20.15f A4=%20.15f !!!!\n\n",
               A1test,A2test,A3test,A4test);
       fflush(stderr);
 
 
       if(fabs(A1-A1test)>fabs(A1)/(10e5)){ 
-        fprintf(stderr,"Something is wrong with Estimate A1\n");
-        fprintf(stderr,"Frequency index %d, %lf (Hz),A1=%f,A1test=%f\n",
+        LALPrintError ( "Something is wrong with Estimate A1\n");
+        LALPrintError ( "Frequency index %d, %lf (Hz),A1=%f,A1test=%f\n",
                 irec,GV.fkdot0->data[0]+irec*DemodParams->df,A1,A1test);
-        fprintf(stderr,"relative error Abs((A1-A1test)/A1)=%lf\n",
+        LALPrintError ( "relative error Abs((A1-A1test)/A1)=%lf\n",
                 fabs(A1-A1test)/fabs(A1));
         return 1;
       }
       if(fabs(A2-A2test)>fabs(A2)/(10e5)){ 
-        fprintf(stderr,"Something is wrong with Estimate A2\n");
-        fprintf(stderr,"Frequency index %d, %lf (Hz),A2=%f,A2test=%f\n",
+        LALPrintError ( "Something is wrong with Estimate A2\n");
+        LALPrintError ( "Frequency index %d, %lf (Hz),A2=%f,A2test=%f\n",
                 irec,GV.fkdot0->data[0]+irec*DemodParams->df,A2,A2test);
-        fprintf(stderr,"relative error Abs((A2-A2test)/A2)=%lf\n",
+        LALPrintError ( "relative error Abs((A2-A2test)/A2)=%lf\n",
                 fabs(A2-A2test)/fabs(A2));
         return 1;
       }
       if(fabs(A3-A3test)>fabs(A3)/(10e5)){ 
-        fprintf(stderr,"Something is wrong with Estimate A3\n");
-        fprintf(stderr,"Frequency index %d, %lf (Hz),A3=%f,A3test=%f\n",
+        LALPrintError ( "Something is wrong with Estimate A3\n");
+        LALPrintError ( "Frequency index %d, %lf (Hz),A3=%f,A3test=%f\n",
                 irec,GV.fkdot0->data[0]+irec*DemodParams->df,A3,A3test);
-        fprintf(stderr,"relative error Abs((A3-A3test)/A3)=%lf\n",
+        LALPrintError ( "relative error Abs((A3-A3test)/A3)=%lf\n",
                 fabs(A3-A3test)/fabs(A3));
         return 1;
       }
       if(fabs(A4-A4test)>fabs(A4)/(10e5)){ 
-        fprintf(stderr,"Something is wrong with Estimate A4\n");
-        fprintf(stderr,"Frequency index %d, %lf (Hz),A4=%f,A4test=%f\n",
+        LALPrintError ( "Something is wrong with Estimate A4\n");
+        LALPrintError ( "Frequency index %d, %lf (Hz),A4=%f,A4test=%f\n",
                 irec,GV.fkdot0->data[0]+irec*DemodParams->df,A1,A1test);
-        fprintf(stderr,"relative error Abs((A4-A4test)/A4)=%lf\n",
+        LALPrintError ( "relative error Abs((A4-A4test)/A4)=%lf\n",
                 fabs(A4-A4test)/fabs(A4));
         return 1;
       }
@@ -1390,10 +1414,10 @@ int EstimateSignalParameters(INT4 * maxIndex)
 
 
       if(fabs(Fstat.F[irec] - Ftest)> fabs(Ftest)/10e5){ 
-        fprintf(stderr,"Something is wrong with Estimate in F\n");
-        fprintf(stderr,"Frequency index %d, %lf (Hz),F=%f,Ftest=%f\n",
+        LALPrintError ( "Something is wrong with Estimate in F\n");
+        LALPrintError ( "Frequency index %d, %lf (Hz),F=%f,Ftest=%f\n",
                 irec,GV.fkdot0->data[0]+irec*DemodParams->df,Fstat.F[irec],Ftest);
-        fprintf(stderr,"relative error Abs((F-Ftest)/Ftest)=%lf\n",
+        LALPrintError ( "relative error Abs((F-Ftest)/Ftest)=%lf\n",
                 fabs(Fstat.F[irec]-Ftest)/fabs(Ftest));
         return 1;
       }
@@ -1420,7 +1444,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
                                    +C*sin(4.0*psi_mle))
                             +hc*hc*((A+B)/2.0-(A-B)/2.0*cos(4.0*psi_mle)
                                     -C*sin(4.0*psi_mle)));
-      fprintf(stderr,"A=%f,B=%f,C=%f,f=%f,h0=%f,F=%f\n",
+      LALPrintError ( "A=%f,B=%f,C=%f,f=%f,h0=%f,F=%f\n",
               A,B,C,GV.searchRegion.Freq+irec* DemodParams->df,h0mle,Fstat.F[irec]*medianbias);
       }
 #endif
@@ -1465,7 +1489,7 @@ int writeFaFb(INT4 *maxIndex, DopplerPosition searchpos)
   CHAR FaFbfilename[MAXFILENAMELENGTH];
 
   if ( lalDebugLevel > 10)	/* dummy: avoid warnings */
-    fprintf (stderr, "%f, %f", searchpos.Alpha, searchpos.Delta);
+    LALPrintError (  "%f, %f", searchpos.Alpha, searchpos.Delta);
   
   strcpy(FaFbfilename,"FaFb");
   if (uvar_outputLabel)
@@ -1482,7 +1506,7 @@ int writeFaFb(INT4 *maxIndex, DopplerPosition searchpos)
     strcat(filename,clusterno);
 
     if((fp=fopen(filename,"wb"))==NULL) {
-      fprintf(stderr,"Unable to open a file %s\n",filename);
+      LALPrintError ( "Unable to open a file %s\n",filename);
       return 1;
     }
 
@@ -1829,13 +1853,13 @@ int ReadSFTData(void)
       /* seek to fileno'th SFT k bytes in */
       if (uvar_mergedSFTFile){
         if (fseek(fp,k,SEEK_SET)) {
-          fprintf(stderr,"Unable to seek to the start of %s !\n",GV.filelist[fileno]);
+          LALPrintError ( "Unable to seek to the start of %s !\n",GV.filelist[fileno]);
           return 1;
         }
       }
       else {
         if (!(fp=fopen(GV.filelist[fileno],"rb"))) {
-          fprintf(stderr,"Weird... %s doesn't exist!\n",GV.filelist[fileno]);
+          LALPrintError ( "Weird... %s doesn't exist!\n",GV.filelist[fileno]);
           return 1;
         }
       }
@@ -1844,7 +1868,7 @@ int ReadSFTData(void)
       errorcode=fread((void*)&header,sizeof(header),1,fp);
       if (errorcode!=1) 
         {
-          fprintf(stderr,"No header in data file %s\n",GV.filelist[fileno]);
+          LALPrintError ( "No header in data file %s\n",GV.filelist[fileno]);
           return 1;
         }
 
@@ -1853,15 +1877,15 @@ int ReadSFTData(void)
       
       if (header.endian!=1.0)
         {
-          fprintf(stderr,"First object in file %s is not (double)1.0!\n",GV.filelist[fileno]);
-          fprintf(stderr,"The file might be corrupted\n\n");
+          LALPrintError ( "First object in file %s is not (double)1.0!\n",GV.filelist[fileno]);
+          LALPrintError ( "The file might be corrupted\n\n");
           return 2;
         }
     
       /* Check that the time base is positive */
       if (header.tbase<=0.0)
         {
-          fprintf(stderr,"Timebase %f from data file %s non-positive!\n",
+          LALPrintError ( "Timebase %f from data file %s non-positive!\n",
                   header.tbase,GV.filelist[fileno]);
           return 3;
         }
@@ -1870,7 +1894,7 @@ int ReadSFTData(void)
       if (GV.ifmin<header.firstfreqindex || 
           GV.ifmax>header.firstfreqindex+header.nsamples) 
         {
-          fprintf(stderr,"Freq index range %d->%d not in %d to %d (file %s)\n",
+          LALPrintError ( "Freq index range %d->%d not in %d to %d (file %s)\n",
                 GV.ifmin,GV.ifmax,header.firstfreqindex,
                   header.firstfreqindex+header.nsamples,GV.filelist[fileno]);
           return 4;
@@ -1882,7 +1906,7 @@ int ReadSFTData(void)
       if (errorcode) 
         {
           perror(GV.filelist[fileno]);
-          fprintf(stderr,"Can't get to offset %d in file %s\n",offset,GV.filelist[fileno]);
+          LALPrintError ( "Can't get to offset %d in file %s\n",offset,GV.filelist[fileno]);
           return 5;
         }
 
@@ -1909,7 +1933,7 @@ int ReadSFTData(void)
       errorcode=fread((void*)(SFTData[fileno]->fft->data->data), sizeof(COMPLEX8), ndeltaf, fp);
       if (errorcode!=ndeltaf){
         perror(GV.filelist[fileno]);
-        fprintf(stderr, "The SFT data was truncated.  Only read %d not %d complex floats\n", 
+        LALPrintError (  "The SFT data was truncated.  Only read %d not %d complex floats\n", 
 		(int)errorcode, ndeltaf);
         return 6;
       }
@@ -1969,7 +1993,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   /* set the current working directory */
   if(chdir(uvar_workingDir) != 0)
     {
-      fprintf(stderr, "in Main: unable to change directory to %s\n", uvar_workingDir);
+      LALPrintError (  "in Main: unable to change directory to %s\n", uvar_workingDir);
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }
 
@@ -2008,7 +2032,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     if (!boinc_resolve_filename("earth.zip", zippedname,sizeof(zippedname))) {
       /* if there is, unzip it into the current directory */
       if ((boinczipret=boinc_zip(UNZIP_IT, zippedname, "./"))) {
-        fprintf(stderr, "Error in unzipping file %s to earth.  Return value %d\n", 
+        LALPrintError (  "Error in unzipping file %s to earth.  Return value %d\n", 
 		zippedname, boinczipret);
         boinc_finish(COMPUTEFSTAT_EXIT_CANTUNZIP);
       }
@@ -2017,7 +2041,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     if (!boinc_resolve_filename("sun.zip", zippedname, sizeof(zippedname))) {
       /* if there is, unzip it into the current directory */
       if ((boinczipret=boinc_zip(UNZIP_IT, zippedname, "./"))) {
-        fprintf(stderr, "Error in unzipping file %s to sun.  Return value %d\n", 
+        LALPrintError (  "Error in unzipping file %s to sun.  Return value %d\n", 
 		zippedname, boinczipret);
         boinc_finish(COMPUTEFSTAT_EXIT_CANTUNZIP);
       }
@@ -2038,7 +2062,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     use_boinc_filename1(&(uvar_mergedSFTFile));
 #endif
     if (!(fp=fp_mergedSFT=fopen(uvar_mergedSFTFile,"rb"))){
-      fprintf(stderr,"Unable to open SFT file %s\n", uvar_mergedSFTFile);
+      LALPrintError ( "Unable to open SFT file %s\n", uvar_mergedSFTFile);
       ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
     }
 
@@ -2069,8 +2093,8 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
         swapheader(&header);
 
       if (header.endian!=1.0) {
-        fprintf(stderr,"First object in file %s is not (double)1.0!\n",cfg->filelist[fileno]);
-        fprintf(stderr,"The file might be corrupted\n\n");
+        LALPrintError ( "First object in file %s is not (double)1.0!\n",cfg->filelist[fileno]);
+        LALPrintError ( "The file might be corrupted\n\n");
         ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
       }
       
@@ -2179,8 +2203,8 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     /* check that data is correct endian order */
     if (header.endian!=1.0)
       {
-        fprintf(stderr,"First object in file %s is not (double)1.0!\n",cfg->filelist[0]);
-        fprintf(stderr,"The file might be corrupted\n\n");
+        LALPrintError ( "First object in file %s is not (double)1.0!\n",cfg->filelist[0]);
+        LALPrintError ( "The file might be corrupted\n\n");
         ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
       }
     fclose(fp);
@@ -2196,7 +2220,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     errorcode=fread((void*)&header,sizeof(header),1,fp);
     if (errorcode!=1) 
       {
-        fprintf(stderr,"No header in data file %s\n",cfg->filelist[fileno-1]);
+        LALPrintError ( "No header in data file %s\n",cfg->filelist[fileno-1]);
         ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
       }
     if (reverse_endian)
@@ -2205,8 +2229,8 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     /* check that data is correct endian order */
     if (header.endian!=1.0)
       {
-        fprintf(stderr,"First object in file %s is not (double)1.0!\n",cfg->filelist[fileno-1]);
-        fprintf(stderr,"The file might be corrupted\n\n");
+        LALPrintError ( "First object in file %s is not (double)1.0!\n",cfg->filelist[fileno-1]);
+        LALPrintError ( "The file might be corrupted\n\n");
         ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
       }
     fclose(fp);
@@ -2379,14 +2403,14 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   }/* end: init AM- and demod-params */
 
   /* Tell the user what we have arrived at */
-  if ( lalDebugLevel >= 2)
+  if ( lalDebugLevel >= 3)
     {
-      fprintf(stderr, "\nDEBUG:\n");
-      fprintf(stderr, "# SFT time baseline:                  %f min\n",header.tbase/60.0);
-      fprintf(stderr, "# Starting search frequency:          %f Hz\n", cfg->searchRegion.Freq);
-      fprintf(stderr, "# Demodulation frequency band:        %f Hz\n",cfg->searchRegion.FreqBand);
-      fprintf(stderr, "# Actual # of SFTs:                   %d\n", cfg->SFTno);
-      fprintf(stderr, "# total observation time:             %f hours\n",1.0*(cfg->Tf - cfg->Ti)/3600.0);
+      LALPrintError (  "\nDEBUG:\n");
+      LALPrintError (  "# SFT time baseline:                  %f min\n",header.tbase/60.0);
+      LALPrintError (  "# Starting search frequency:          %f Hz\n", cfg->searchRegion.Freq);
+      LALPrintError (  "# Demodulation frequency band:        %f Hz\n",cfg->searchRegion.FreqBand);
+      LALPrintError (  "# Actual # of SFTs:                   %d\n", cfg->SFTno);
+      LALPrintError (  "# total observation time:             %f hours\n",1.0*(cfg->Tf - cfg->Ti)/3600.0);
     } /* lalDebugLevel */
 
     DETATCHSTATUSPTR (status);
@@ -2759,7 +2783,7 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN, DopplerPosition searchpos)
   log2val = medianbias;
 
   if ( lalDebugLevel > 10)	/* dummy: avoid warnings */
-    fprintf (stderr, "%f, %f", searchpos.Alpha, searchpos.Delta);
+    LALPrintError (  "%f, %f", searchpos.Alpha, searchpos.Delta);
 
   for (i=0;i<highFLines->Nclusters;i++){
     N=highFLines->NclustPoints[i];
@@ -2771,14 +2795,14 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN, DopplerPosition searchpos)
 
 /*    check that ReturnMaxN is sensible */
   if (ReturnMaxN>GV.FreqImax){
-    fprintf(stderr,"PrintTopValues() WARNING: resetting ReturnMaxN=%d to %d\n",
+    LALPrintError ( "PrintTopValues() WARNING: resetting ReturnMaxN=%d to %d\n",
             ReturnMaxN, GV.FreqImax);
     ReturnMaxN=GV.FreqImax;
   }
 
 /*    create an array of indexes */
   if (!(indexes=(INT4 *)LALMalloc(sizeof(INT4)*GV.FreqImax))){
-    fprintf(stderr,"Unable to allocate index array in PrintTopValues()\n");
+    LALPrintError ( "Unable to allocate index array in PrintTopValues()\n");
     return 1;
   }
 
@@ -2803,7 +2827,7 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN, DopplerPosition searchpos)
     ic++;
   } 
   if( ic==0 ) {
-    fprintf(stderr,"Warning: Search frequency band may be too small to cover the outlier.\n");
+    LALPrintError ( "Warning: Search frequency band may be too small to cover the outlier.\n");
     leftEdgeTwoF = Fstat.F[ic];
     leftEdgeFreq = GV.searchRegion.Freq + ic*GV.dFreq;
   } else {/* shift slightly downwards to cover the half-maximum point, if possible */
@@ -2817,7 +2841,7 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN, DopplerPosition searchpos)
     ic--;
   } 
   if( ic==GV.FreqImax-1 ) {
-    fprintf(stderr,"Warning: Search frequency band may be too small to cover the outlier.\n");
+    LALPrintError ( "Warning: Search frequency band may be too small to cover the outlier.\n");
     rightEdgeTwoF = Fstat.F[ic];
     rightEdgeFreq = GV.searchRegion.Freq + ic*GV.dFreq;
   } else { /* shift slightly upwards to cover the half-maximum point, if possible */
@@ -2841,7 +2865,7 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN, DopplerPosition searchpos)
                     GV.searchRegion.Freq + indexes[ntop]*GV.dFreq,
                     searchpos.Alpha, searchpos.Delta, 2.0*log2val*Fstat.F[indexes[ntop]]);
         if (err<=0) {
-          fprintf(stderr,"PrintTopValues couldn't print to Fmax!\n");
+          LALPrintError ( "PrintTopValues couldn't print to Fmax!\n");
           LALFree(indexes);
           return 3;
         }
@@ -2891,7 +2915,7 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN, DopplerPosition searchpos)
   LALFree(indexes);
 #ifdef FILE_FMAX_DEBG    
   if (err<=0) {
-    fprintf(stderr,"PrintTopValues couldn't print to Fmax!\n");
+    LALPrintError ( "PrintTopValues couldn't print to Fmax!\n");
     return 4;
   }
 #endif
@@ -3023,7 +3047,7 @@ EstimateFLines(LALStatus *stat)
      TRY ( LALDDestroyVector(stat->statusPtr, &F1), stat);
      TRY ( LALDDestroyVector(stat->statusPtr, &FloorF1), stat);
 
-     /*      fprintf(stderr,"Nclusters zero \n"); */
+     /*      LALPrintError ( "Nclusters zero \n"); */
      /*      fflush(stderr); */
 
      goto finished;
@@ -3279,7 +3303,7 @@ void swapheader(struct headertag *thisheader) {
 void use_boinc_filename0(char *orig_name ) {
   char resolved_name[MAXFILENAMELENGTH];
   if (boinc_resolve_filename(orig_name, resolved_name, sizeof(resolved_name))) {
-    fprintf(stderr, 
+    LALPrintError (  
             "Can't resolve file \"%s\"\n"
             "If running a non-BOINC test, create [INPUT] or touch [OUTPUT] file\n",
             orig_name);
@@ -3293,7 +3317,7 @@ void use_boinc_filename0(char *orig_name ) {
 void use_boinc_filename1(char **orig_name ) {
   char resolved_name[MAXFILENAMELENGTH];
   if (boinc_resolve_filename(*orig_name, resolved_name, sizeof(resolved_name))) {
-    fprintf(stderr, 
+    LALPrintError (  
             "Can't resolve file \"%s\"\n"
             "If running a non-BOINC test, create [INPUT] or touch [OUTPUT] file\n",
             *orig_name);
@@ -3313,16 +3337,16 @@ void worker(void) {
 #if (BOINC_GRAPHICS == 2) 
   if (graphics_lib_handle) {
     if (!(set_search_pos_hook = dlsym(graphics_lib_handle,"set_search_pos"))) {
-      fprintf(stderr, "unable to resolve set_search_pos(): %s\n", dlerror());
+      LALPrintError (  "unable to resolve set_search_pos(): %s\n", dlerror());
       boinc_finish(COMPUTEFSTAT_EXIT_DLOPEN);
     }
     if (!(fraction_done_hook = dlsym(graphics_lib_handle,"fraction_done"))) {
-      fprintf(stderr, "unable to resolve fraction_done(): %s\n", dlerror());
+      LALPrintError (  "unable to resolve fraction_done(): %s\n", dlerror());
       boinc_finish(COMPUTEFSTAT_EXIT_DLOPEN);
     }
   }
   else
-    fprintf(stderr,"graphics_lib_handle NULL: running without graphics\n");
+    LALPrintError ( "graphics_lib_handle NULL: running without graphics\n");
 #endif
 
 #ifndef RUN_POLKA
@@ -3389,17 +3413,17 @@ void worker(void) {
 
     boinczipret=boinc_delete_file(zipname);
     if (boinczipret) {
-      fprintf(stderr,"can't remove old zip file %s. not zipping output.\n",zipname);
+      LALPrintError ( "can't remove old zip file %s. not zipping output.\n",zipname);
     } else {
       boinczipret=boinc_zip(ZIP_IT, zipname , Outputfilename);
       if (boinczipret) {
-        fprintf(stderr, "Error in zipping file %s to temp.zip. Return value %d. not zipping output.\n",
+        LALPrintError (  "Error in zipping file %s to temp.zip. Return value %d. not zipping output.\n",
                 Outputfilename, boinczipret);
         /* boinc_finish(COMPUTEFSTAT_EXIT_CANTZIP); */
       } else {
         boinczipret=boinc_rename(zipname, Outputfilename);
         if (boinczipret) {
-          fprintf(stderr, "Error in renaming file %s to %s. rename() returned %d. not zipping output.\n",
+          LALPrintError (  "Error in renaming file %s to %s. rename() returned %d. not zipping output.\n",
                   zipname, Outputfilename, boinczipret);
           /* boinc_finish(COMPUTEFSTAT_EXIT_CANTRENAME); */
         }
@@ -3419,18 +3443,34 @@ int main(int argc, char *argv[])
 {
   FILE *fp_debug=NULL;
   int skipsighandler=0;
-  
-  /* see if user has a DEBUG_CFS_LOG file: turn on lalDebugLevel=3 */
-  if ((fp_debug=fopen("../../DEBUG_CFS_LOG", "r")) || (fp_debug=fopen("./DEBUG_CFS_LOG", "r")) )
+
+#define DEBUG_LEVEL_FNAME "CFS_DEBUG_LEVEL"
+#define DEBUG_DDD_FNAME   "CFS_DEBUG_DDD"
+
+  /* see if user has a DEBUG_LEVEL_FNAME file: read integer and set lalDebugLevel */
+  if ((fp_debug=fopen("../../" DEBUG_LEVEL_FNAME, "r")) || (fp_debug=fopen("./" DEBUG_LEVEL_FNAME, "r")))
     {
-      fprintf (stderr, "Found 'DEBUG_CFS_LOG' file: setting lalDebugLevel -> 3 \n");
-      lalDebugLevel = 3;
-    }
+      int read_int;
 
+      LALPrintError("Found valid '%s' file ", DEBUG_LEVEL_FNAME);
+      if ( 1 == fscanf(fp_debug, "%d", &read_int ) ) 
+	{
+	  LALPrintError ("containing int: Setting lalDebugLevel -> %d\n", read_int );
+	  lalDebugLevel = read_int;
+	}
+      else
+	{
+	  LALPrintError ("with no parsable int: Setting lalDebugLevel -> 1\n");
+	  lalDebugLevel = 1;
+	}
+      fclose (fp_debug);
 
+    } /* if DEBUG_LEVEL_FNAME file found */
+
+  
 #if defined(__GNUC__)
-    /* see if user has created a DEBUG_CFS_DDD file: turn on debuggin using 'ddd' */
-  if ((fp_debug=fopen("../../DEBUG_CFS_DDD", "r")) || (fp_debug=fopen("./DEBUG_CFS_DDD", "r")) ) 
+  /* see if user has created a DEBUG_DDD_FNAME file: turn on debuggin using 'ddd' */
+  if ((fp_debug=fopen("../../" DEBUG_DDD_FNAME, "r")) || (fp_debug=fopen("./" DEBUG_DDD_FNAME, "r")) ) 
     {
       char commandstring[256];
       char resolved_name[MAXFILENAMELENGTH];
@@ -3438,7 +3478,7 @@ int main(int argc, char *argv[])
       pid_t process_id=getpid();
       
       fclose(fp_debug);
-      fprintf(stderr, "Found 'DEBUG_CFS_DDD' file, so trying real-time debugging with 'ddd'\n");
+      LALPrintError (  "Found '%s' file, so trying real-time debugging with 'ddd'\n", DEBUG_DDD_FNAME);
       
       /* see if the path is absolute or has slashes.  If it has
 	 slashes, take tail name */
@@ -3450,7 +3490,7 @@ int main(int argc, char *argv[])
       
       /* if file name is an XML soft link, resolve it */
       if (boinc_resolve_filename(ptr, resolved_name, sizeof(resolved_name)))
-	fprintf(stderr, "Unable to boinc_resolve_filename(%s), so no debugging\n", ptr);
+	LALPrintError (  "Unable to boinc_resolve_filename(%s), so no debugging\n", ptr);
       else {
 	skipsighandler=1;
 	LALSnprintf(commandstring,sizeof(commandstring),"ddd %s %d &", resolved_name ,process_id);
@@ -3459,12 +3499,12 @@ int main(int argc, char *argv[])
       }
     } /* DEBUGGING */
 #endif // GNUC
-
-
+  
+  
 #ifdef MAC_LIB
   setMacResources(argv[0]);
 #endif
-
+  
   globargc=argc;
   globargv=argv;
 
@@ -3532,7 +3572,7 @@ int main(int argc, char *argv[])
     /* no dynamic library, just call boinc_init_graphics() */
     retval = boinc_init_graphics(worker);
 #endif /* BOINC_GRAPHICS==1 */
-    fprintf(stderr,"boinc_init_graphics[_lib]() returned %d. This indicates an error...\n", retval);
+    LALPrintError ( "boinc_init_graphics[_lib]() returned %d. This indicates an error...\n", retval);
     boinc_finish(COMPUTEFSTAT_EXIT_WORKER );
   }
 #endif /*  BOINC_GRAPHICS>0 */
@@ -3570,7 +3610,7 @@ void sighandler(int sig){
   /* lets start by ignoring ANY further occurences of this signal
      (hopefully just in THIS thread, if truly implementing POSIX threads */
   
-  fprintf(stderr, "APP DEBUG: Application caught signal %d\n", sig);
+  LALPrintError (  "APP DEBUG: Application caught signal %d\n", sig);
 
   /* ignore TERM interrupts once  */
   if ( sig == SIGTERM || sig == SIGINT )
@@ -3579,7 +3619,7 @@ void sighandler(int sig){
 
       if ( killcounter >= 4 )
         {
-          fprintf (stderr, "APP DEBUG: got 4th kill-signal, guess you mean it. Exiting now\n");
+          LALPrintError (  "APP DEBUG: got 4th kill-signal, guess you mean it. Exiting now\n");
           boinc_finish(COMPUTEFSTAT_EXIT_USER);
         }
       else
@@ -3588,12 +3628,12 @@ void sighandler(int sig){
     } /* termination signals */
 
   if (mystat)
-    fprintf(stderr, "Stack trace of LAL functions in worker thread:\n");
+    LALPrintError (  "Stack trace of LAL functions in worker thread:\n");
   while (mystat) {
-    fprintf(stderr, "%s at line %d of file %s\n", mystat->function, mystat->line, mystat->file);
+    LALPrintError (  "%s at line %d of file %s\n", mystat->function, mystat->line, mystat->file);
     if (!(mystat->statusPtr)) {
       const char *p=mystat->statusDescription;
-      fprintf(stderr, "At lowest level status code = %d, description: %s\n", mystat->statusCode, p?p:"NO LAL ERROR REGISTERED");
+      LALPrintError (  "At lowest level status code = %d, description: %s\n", mystat->statusCode, p?p:"NO LAL ERROR REGISTERED");
     }
     mystat=mystat->statusPtr;
   }
@@ -3601,8 +3641,8 @@ void sighandler(int sig){
 #ifdef __GLIBC__
   /* now get TRUE stacktrace */
   size = backtrace (array, 64);
-  fprintf(stderr, "Obtained %zd stack frames for this thread.\n", size);
-  fprintf(stderr, "Use gdb command: 'info line *0xADDRESS' to print corresponding line numbers.\n");
+  LALPrintError (  "Obtained %zd stack frames for this thread.\n", size);
+  LALPrintError (  "Use gdb command: 'info line *0xADDRESS' to print corresponding line numbers.\n");
   backtrace_symbols_fd(array, size, fileno(stderr));
 #endif /* __GLIBC__ */
   /* sleep a few seconds to let the OTHER thread(s) catch the signal too... */
@@ -3646,43 +3686,41 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long
   *bytecounter = 0;
   
   /* try opening checkpoint-file read-only */
-  if (lalDebugLevel) fprintf(stderr, "Checking presence of checkpoint-file \"%s\" ...", ckpfn);
+  if (lalDebugLevel) LALPrintError (  "Checking presence of checkpoint-file \"%s\" ...", ckpfn);
   if (!(fp = fopen(ckpfn, "rb"))) {
-    if (lalDebugLevel) fprintf (stderr, "none found. \nStarting main-loop from beginning.\n");
+    if (lalDebugLevel) LALPrintError (  "none found. \nStarting main-loop from beginning.\n");
     RETURN(stat);
   }
   
   /* try reading checkpoint-counters: three INT's loopcounter, checksum, and fstat_bytecounter */
-  if (lalDebugLevel) fprintf (stderr, "found! \nTrying to read checkpoint counters from it...");
+  if (lalDebugLevel) LALPrintError (  "found! \nTrying to read checkpoint counters from it...");
   if ( 4 != fscanf (fp, "%" LAL_UINT4_FORMAT " %" LAL_UINT4_FORMAT " %ld\nDONE%c", &lcount, &cksum, &bcount, &lastnewline) || lastnewline!='\n') {
-    if (lalDebugLevel) fprintf (stderr, "failed! \nStarting main-loop from beginning.\n");
+    if (lalDebugLevel) LALPrintError (  "failed! \nStarting main-loop from beginning.\n");
     goto exit;
   }
   fclose( fp );
   
   /* checkpoint-file read successfully: check consistency with fstats-file */
-  if (lalDebugLevel) fprintf (stderr, "ok.\nChecking if fstats-file \"%s\" is ok ...", fstat_fname);
+  if (lalDebugLevel) LALPrintError (  "ok.\nChecking if fstats-file \"%s\" is ok ...", fstat_fname);
   if (!(fp = fopen(fstat_fname, "rb"))) {
-    if (lalDebugLevel) fprintf (stderr, "none found.\nStarting main-loop from beginning.\n");
+    if (lalDebugLevel) LALPrintError (  "none found.\nStarting main-loop from beginning.\n");
     RETURN(stat);
   }
 
   /* seek to end of fstats file */
   if (fseek( fp, 0, SEEK_END)) {        /* something gone wrong seeking .. */
-    if (lalDebugLevel) fprintf (stderr, "broken fstats-file.\nStarting main-loop from beginning.\n");
+    if (lalDebugLevel) LALPrintError (  "broken fstats-file.\nStarting main-loop from beginning.\n");
     goto exit;
   }
   
   flen = ftell(fp);
 
-#ifdef USE_BOINC
-  fprintf(stderr,"Resuming computation at %d/%ld/%ld\n", lcount, bcount, flen);
-#endif
+  LALPrintError ( "Resuming computation at %d/%ld/%ld\n", lcount, bcount, flen);
 
   /* is bytecounter consistent with length of this file? */
   if ( bcount > flen) {
     if (lalDebugLevel) 
-      fprintf (stderr, "corrupted: has %ld bytes instead of %ld.\nStarting main-loop from beginning.\n",
+      LALPrintError (  "corrupted: has %ld bytes instead of %ld.\nStarting main-loop from beginning.\n",
 	       flen, bcount);
     goto exit;
   }
@@ -3694,12 +3732,12 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long
     {
       if (fseek(fp, 0, SEEK_SET)) /* something gone wrong seeking .. */
 	{ 
-	  if (lalDebugLevel) fprintf (stderr, "broken Fstat-file.\nStarting from beginning.\n");
+	  if (lalDebugLevel) LALPrintError (  "broken Fstat-file.\nStarting from beginning.\n");
 	  goto exit;
 	}
       if( read_toplist_from_fp( toplist, fp, &computecksum, bcount) <0 ) 
 	{
-	  if (lalDebugLevel) fprintf (stderr, "couldn't read toplist.\nStarting from beginning.\n");
+	  if (lalDebugLevel) LALPrintError (  "couldn't read toplist.\nStarting from beginning.\n");
 	  goto exit;
 	}
     } /* if toplist */
@@ -3708,7 +3746,7 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long
       /* compute checksum */
       computecksum=0;
       if (fseek( fp, 0, SEEK_SET)) {        /* something gone wrong seeking .. */
-	if (lalDebugLevel) fprintf (stderr, "broken fstats-file.\nStarting main-loop from beginning.\n");
+	if (lalDebugLevel) LALPrintError (  "broken fstats-file.\nStarting main-loop from beginning.\n");
 	goto exit;
       }
       for (i=0; i<bcount; i++) {
@@ -3723,12 +3761,12 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long
 
   if (computecksum!=cksum) {
     if (lalDebugLevel) 
-      fprintf (stderr, "Fstats file corrupted: incorrect checksum.\nStarting from beginning.\n");
+      LALPrintError (  "Fstats file corrupted: incorrect checksum.\nStarting from beginning.\n");
     goto exit;
   }
 
   if (lalDebugLevel) 
-    fprintf (stderr, "seems ok.\nWill resume from loopcounter = %d\n", lcount);
+    LALPrintError (  "seems ok.\nWill resume from loopcounter = %d\n", lcount);
 
   *loopcounter = lcount;
   *bytecounter = bcount;
@@ -3780,7 +3818,7 @@ InitSearchGrid ( LALStatus *status,
 
   /* Prepare input-structure for initialization of DopplerScan
    */
-  if (lalDebugLevel) fprintf (stderr, "\nSetting up template grid ...");
+  if ( lalDebugLevel >= 2) LALPrintError (  "\nSetting up template grid ...");
   scanInit.metricType = (LALPulsarMetricType) uvar_metricType;
   scanInit.dAlpha = uvar_dAlpha;
   scanInit.dDelta = uvar_dDelta;
@@ -3806,9 +3844,9 @@ InitSearchGrid ( LALStatus *status,
   /* ---------- should we write the sky-grid to disk? ---------- */
   if ( uvar_outputSkyGrid ) 
     {
-      fprintf (stderr, "\nNow writing sky-grid into file '%s' ...", uvar_outputSkyGrid);
+      LALPrintError (  "\nNow writing sky-grid into file '%s' ...", uvar_outputSkyGrid);
       TRY (writeSkyGridFile( status->statusPtr, scan->grid, uvar_outputSkyGrid, &scanInit), status);
-      fprintf (stderr, " done.\n\n");
+      LALPrintError (  " done.\n\n");
     }
 
   DETATCHSTATUSPTR (status);
@@ -3820,10 +3858,10 @@ debug_dump_commandline (int argc,  char *argv[])
 {
   int i;
 
-  fprintf (stderr, "DEBUG: commandline-was: \n");
+  LALPrintError (  "DEBUG: commandline-was: \n");
   for (i=0; i < argc; i++)
-    fprintf (stderr, "%s ", argv[i]);
-  fprintf (stderr, "\n");
-
+    LALPrintError (  "%s ", argv[i]);
+  LALPrintError (  "\n");
+  
   return 0;
 }
