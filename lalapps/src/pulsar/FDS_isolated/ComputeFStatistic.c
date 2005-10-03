@@ -801,7 +801,7 @@ int main(int argc,char *argv[])
 #else
               fflush (fpFstat);
 #endif
-	      LogPrintf (LOG_DEBUG, "Checkpointing state (%d/%d/%ld) ... ", 
+	      LogPrintf (LOG_DETAIL, "Checkpointing state (%d/%d/%ld) ... ", 
 			 loopcounter, fstat_checksum, fstat_bytecounter );
               if ( (fp = fopen(ckp_fname, "wb")) == NULL) {
                 LogPrintf (LOG_CRITICAL, "Failed to open checkpoint-file '%s' for writing. Exiting.\n", 
