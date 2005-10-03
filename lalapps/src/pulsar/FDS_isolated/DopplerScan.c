@@ -219,7 +219,6 @@ InitDopplerScan( LALStatus *status,
       node = node->next;
     }
 
-  LogPrintf (LOG_DEBUG, "Sky-grid has %d nodes\n", scan->numGridPoints);
   if (lalDebugLevel >= 4)
     {
       LogPrintf (LOG_NORMAL, "DEBUG: plotting sky-grid into file 'mesh_debug.agr' ...");

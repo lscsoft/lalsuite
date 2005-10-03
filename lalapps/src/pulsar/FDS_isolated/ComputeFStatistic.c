@@ -469,9 +469,9 @@ int main(int argc,char *argv[])
   GV.SpinImax = (INT4)(GV.searchRegion.f1dotBand/ thisScan.df1dot + 1e-6) + 1;  
 
   /* debug output about search-parameters */
-  LogPrintf (LOG_DEBUG, "Total number of templates (sky x f x fdot) = %d x %d x %d = %ld\n",
+  LogPrintf (LOG_DEBUG, "Total number of templates (sky x f x fdot) = %d x %d x %d = %g\n",
 	     thisScan.numGridPoints, GV.FreqImax, GV.SpinImax, 
-	     thisScan.numGridPoints * GV.FreqImax * GV.SpinImax );
+	     1.0 * thisScan.numGridPoints * GV.FreqImax * GV.SpinImax );
 
   LogPrintf (LOG_DETAIL, "skyRegion = '%s'\n", GV.searchRegion.skyRegionString);
   LogPrintf (LOG_DETAIL, "Frequency-range [%.16g, %.16g]\n", 
@@ -843,7 +843,7 @@ int main(int argc,char *argv[])
 #endif
 
 #if !USE_BOINC
-      LogPrintfVerbatim (LOG_DETAIL, GO_BACK "%5.1f%% ", 
+      LogPrintfVerbatim (LOG_DETAIL, "\r %5.1f%% ", 
 			 (100.0* loopcounter / thisScan.numGridPoints));
 #endif
       
