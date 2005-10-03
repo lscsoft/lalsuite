@@ -155,6 +155,8 @@ tagSnglInspiralAccuracy
   REAL4       dm;
   REAL4       deta;
   REAL4       dmchirp;
+  REAL4	      dmchirpHi;
+  REAL4       highMass;
   REAL4       dpsi0;
   REAL4       dpsi3;
   SnglInspiralParameterTest test;
