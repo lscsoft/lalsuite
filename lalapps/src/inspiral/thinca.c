@@ -147,6 +147,9 @@ static void print_usage(char *program)
       "  [--t1-psi3-accuracy]  t1_dpsi3   specify the psi3 accuracy of T1\n"\
       "  [--v1-psi3-accuracy]  v1_dpsi3   specify the psi3 accuracy of V1\n"\
       "\n"\
+      "  [--dmchirp-high]      dmchirp    different chirp mass window for high masses\n"\
+      "  [--high-mass]         mass       total mass for trigger above which the high mass mchirp is used\n"\
+      "\n"\
       "   --data-type        data_type specify the data type, must be one of\n"\
       "                                (playground_only|exclude_play|all_data)\n"\
       "\n"\
@@ -230,6 +233,7 @@ int main( int argc, char *argv[] )
   InterferometerNumber  ifoNumber = LAL_UNKNOWN_IFO;
   InterferometerNumber  ifoTwo    = LAL_UNKNOWN_IFO;
   INT4                  i;
+  INT4                  loopVar;
   INT4                  maximizationInterval = 0;
 
   const CHAR                   ifoList[LAL_NUM_IFO][LIGOMETA_IFO_MAX] = 
@@ -307,6 +311,8 @@ int main( int argc, char *argv[] )
     {"help",                no_argument,       0,                    'h'}, 
     {"debug-level",         required_argument, 0,                    'z'},
     {"version",             no_argument,       0,                    'V'},
+    {"dmchirp-high",	    required_argument, 0,		     '^'},
+    {"high-mass",           required_argument, 0,                    '&'},
     {0, 0, 0, 0}
   };
   int c;
@@ -362,7 +368,7 @@ int main( int argc, char *argv[] )
     c = getopt_long_only( argc, argv, 
         "A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:VZ:"
         "a:b:c:d:e:f:g:hi:k:m:n:o:p:q:r:s:t:x:z:"
-        "2:3:4:5:6:7:8:9:!:-:+:=:@:", 
+        "2:3:4:5:6:7:8:9:!:-:+:=:@:^:&:", 
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -881,6 +887,15 @@ int main( int argc, char *argv[] )
         ADD_PROCESS_PARAM( "int", "%ld",  maximizationInterval );
         break;
   
+      case '^':
+	for (loopVar=0; loopVar < LAL_NUM_IFO; loopVar++)
+	  accuracyParams.ifoAccuracy[loopVar].dmchirpHi = atof( optarg );
+        break;  
+
+      case '&':
+        for (loopVar=0; loopVar < LAL_NUM_IFO; loopVar++) 
+          accuracyParams.ifoAccuracy[loopVar].highMass = atof( optarg );
+        break; 
 
       default:
         fprintf( stderr, "Error: Unknown error while parsing options\n" );
@@ -961,7 +976,16 @@ int main( int argc, char *argv[] )
     }
   }
 
-  
+  /* Check that if using different chirp mass accuracy at high mass, both 
+     chirp mass accuracy and the high mass threshold are given */
+  if ((accuracyParams.ifoAccuracy[0].dmchirpHi || accuracyParams.ifoAccuracy[0].highMass)
+   && !(accuracyParams.ifoAccuracy[0].dmchirpHi && accuracyParams.ifoAccuracy[0].highMass))
+  {
+    fprintf( stderr, "Error: both --dmchirp-high and --high-mass must be specified\n");
+    exit(1);
+  }
+    
+
   /* check that we have at least two IFOs specified, or can't do coincidence */
   if ( numIFO < 2 )
   {
