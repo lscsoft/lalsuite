@@ -619,7 +619,14 @@ LALCompareInspirals (
     deta = fabs( aPtr->eta - bPtr->eta );
 
     /* compare mchirp and eta parameters */
-    if ( (dmchirp <= (aAcc.dmchirp + bAcc.dmchirp))
+    REAL4 dmchirpTest;
+    if (aAcc.highMass &&
+    ((aPtr->mass1 + aPtr->mass2 > aAcc.highMass) ||
+    (bPtr->mass1 + bPtr->mass2 > bAcc.highMass)))
+      dmchirpTest = aAcc.dmchirpHi + bAcc.dmchirpHi;
+    else
+      dmchirpTest = aAcc.dmchirp + bAcc.dmchirp;
+    if ( (dmchirp <= dmchirpTest)
           && (deta <= (aAcc.deta + bAcc.deta)) )
     {
       LALInfo( status, "Triggers are coincident in mchirp and eta" );
