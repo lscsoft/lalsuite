@@ -469,23 +469,17 @@ int main(int argc,char *argv[])
   GV.SpinImax = (INT4)(GV.searchRegion.f1dotBand/ thisScan.df1dot + 1e-6) + 1;  
 
   /* debug output about search-parameters */
-  if ( lalDebugLevel >= 4)
-    {
-      LALPrintError ( "DEBUG: Search-region (at start-time of observation):\n");
-      LALPrintError ( "       skyRegion = '%s'\n", GV.searchRegion.skyRegionString);
-      LALPrintError ( "       Freq in  = [%.16g, %.16g]\n", 
-		      GV.searchRegion.Freq, GV.searchRegion.Freq + GV.searchRegion.FreqBand);
-      LALPrintError ( "       f1dot in = [%.16g, %.16g]\n",
-		      GV.searchRegion.f1dot, GV.searchRegion.f1dot + GV.searchRegion.f1dotBand);
-      
-      LALPrintError ( "\nDEBUG: actual grid-spacings: dFreq = %g, df1dot = %g\n\n",
-		      thisScan.dFreq, thisScan.df1dot);
-      
-      LALPrintError ( "Frequency-templates: %d, first frequency-value: %.16g\n", 
-		      GV.FreqImax, GV.searchRegion.Freq);
-      LALPrintError ( "Spindown-templates: %d, first spindown-value: %.16g\n\n", 
-		      GV.SpinImax, GV.searchRegion.f1dot);
-    }
+  LogPrintf (LOG_DEBUG, "Total number of templates (sky x f x fdot) = %d x %d x %d = %ld\n",
+	     thisScan.numGridPoints, GV.FreqImax, GV.SpinImax, 
+	     thisScan.numGridPoints * GV.FreqImax * GV.SpinImax );
+
+  LogPrintf (LOG_DETAIL, "skyRegion = '%s'\n", GV.searchRegion.skyRegionString);
+  LogPrintf (LOG_DETAIL, "Frequency-range [%.16g, %.16g]\n", 
+	     GV.searchRegion.Freq, GV.searchRegion.Freq + GV.searchRegion.FreqBand);
+  LogPrintf (LOG_DETAIL, "Spindown-range [%.16g, %.16g]\n", 
+	     GV.searchRegion.f1dot, GV.searchRegion.f1dot + GV.searchRegion.f1dotBand);
+  LogPrintf (LOG_DETAIL, "Grid-spacings: dFreq = %g, df1dot = %g\n\n",
+	     thisScan.dFreq, thisScan.df1dot);
   
 
   /* determine smallest required band of frequency-bins for the search-parameters */
@@ -848,14 +842,10 @@ int main(int argc,char *argv[])
       }
 #endif
 
-#if USE_BOINC
-#define GO_BACK " "
-#else
-#define GO_BACK "\r"
-#endif
-	
+#if !USE_BOINC
       LogPrintfVerbatim (LOG_DETAIL, GO_BACK "%5.1f%% ", 
 			 (100.0* loopcounter / thisScan.numGridPoints));
+#endif
       
       LAL_CALL (NextDopplerPos( status, &dopplerpos, &thisScan ), status);
       
@@ -1917,11 +1907,9 @@ int ReadSFTData(void)
 
 
       /* determine if THIS SFT is in the range of times of those which
-         we need to use.  If so, read the data into arrays, else
-         ignore it.  For my first CVS commit I will not indent this
-         correctly so that the differences are obvious. A later commit
-         will just clean up the indentation but make no changes to the
-         actual non-whitespace code. */
+       * we need to use.  If so, read the data into arrays, else ignore it.
+       */
+
       thisSFTtime=(REAL8)header.gps_sec+(1.e-9)*(REAL8)header.gps_nsec;
       if (uvar_startTime<=thisSFTtime && thisSFTtime<uvar_endTime) {
 
