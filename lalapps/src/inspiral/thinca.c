@@ -1647,13 +1647,16 @@ cleanexit:
         search_summvars_table), &status );
   LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream), &status );
 
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status ,&xmlStream, 
+  /* write the summ_value table */
+  if( summValueList )
+  {
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status ,&xmlStream, 
         summ_value_table), &status );
-  summValueTable.summValueTable = summValueList;
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, summValueTable,
+    summValueTable.summValueTable = summValueList;
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, summValueTable,
         summ_value_table), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream), &status );
-
+    LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream), &status );
+  }
   /* write the sngl_inspiral table */
   if( snglOutput )
   {
