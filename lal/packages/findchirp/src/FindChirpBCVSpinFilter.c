@@ -431,10 +431,10 @@ LALFindChirpBCVSpinFilterSegment (
   
   /* fprintf (stdout, "ignoreIndex = %d\n", ignoreIndex);*/
   
-  if ( ignoreIndex > numPoints / 4 )
+/*  if ( ignoreIndex > numPoints / 4 )
   {
   	ABORT( status, FINDCHIRPH_ECRUP, FINDCHIRPH_MSGECRUP );
-  }
+  }*/
   /* XXX reset ignoreIndex to one quarter of a segment XXX */
   ignoreIndex = numPoints / 4;
   
