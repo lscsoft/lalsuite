@@ -32,7 +32,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifindef _MSC_VER
+#ifndef _MSC_VER
 #include <sys/time.h>
 #endif
 #include <time.h>
