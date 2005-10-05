@@ -53,6 +53,121 @@ class AnalyzedIFOData:
     return self.__dag_node
 
 ##############################################################################
+def create_config_files(cp):
+  	"""
+    	creating the configuration files needed to run 'gencdag'
+    	to create a concrete DAG
+  	""" 
+   	# create the properties file which is the same at all
+       	file_properties = open('properties','w')
+       	file_properties.write("""vds.rls.url = rls://dataserver.phys.uwm.edu
+vds.transfer.mode = Chain
+vds.dir.storage = storagedir
+vds.exitcode.arguments=-e
+vds.exitcode.mode = all
+vds.pool.mode = xml
+vds.pool.file = ./sites.xml
+vds.tc.mode = File
+vds.tc.file = ./tc.data
+vds.rls.query = bulk
+vds.rls.query.attrib = true
+vds.rls.exit = never
+vds.tc.mapper = Submit
+vds.transfer.mode.links = true
+       	""" )
+       	file_properties.close()
+
+       	os.system("mkdir -p storagedir");
+
+       	# create pool.config.txt file
+       	user=os.environ['USER']
+       	pwd=os.environ['PWD']
+       	os.system('hostname -f > tmp')
+       	file=open('tmp')
+       	fqdn=file.readline()
+       	file.close()
+
+       	file_pool = open('sites.txt','w')
+       	file_pool.write("""pool local {
+  lrc "rlsn://smarty.isi.edu"
+  workdir "%s"
+  gridftp "gsiftp://%s%s" "2.4"
+  universe transfer "localhost/jobmanager-fork" "2.4.3"
+  universe vanilla "localhost/jobmanager-fork" "2.4.3"
+  gridlaunch "/opt/ldg-3.0/vds/bin/kickstart"  	   	
+  profile env "GLOBUS_LOCATION" "/opt/ldg-3.0/globus"
+  profile env "LD_LIBRARY_PATH" "/opt/ldg-3.0/globus/lib"
+  profile env "JAVA_HOME" "/opt/ldg-3.0/jdk1.4"
+  profile env "VDS_HOME" "/opt/ldg-3.0/vds"
+}
+pool uwm {
+  lrc "rlsn://smarty.isi.edu"
+  profile env "GLOBUS_LOCATION" "/opt/ldg-3.0/globus"
+  profile env "LD_LIBRARY_PATH" "/opt/ldg-3.0/globus/lib"
+  gridftp "gsiftp://hydra.phys.uwm.edu/home/duncan/pegasus" "2.2.4"
+  gridlaunch "/home/duncan/pegasus/vds-1.3.6/bin/kickstart"
+  workdir "/home/%s/pegasus"
+  universe transfer "hydra.phys.uwm.edu/jobmanager-fork" "2.2.4"
+  universe vanilla "hydra.phys.uwm.edu/jobmanager-condor" "2.2.4"
+}
+pool cit {
+  lrc "rlsn://smarty.isi.edu"
+  profile env "GLOBUS_LOCATION" "/ldcg/ldg/globus"
+  profile env "LD_LIBRARY_PATH" "/ldcg/ldg/globus/lib"
+  gridftp "gsiftp://ldas-grid.ligo.caltech.edu/archive/home/dietz/pegasus" "2.2.4"
+  gridlaunch "/archive/home/dbrown/projects/grid/vds/vds/bin/kickstart"
+  workdir "/archive/home/%s/pegasus"
+  universe transfer "ldas-grid.ligo.caltech.edu/jobmanager-fork" "2.2.4"
+  universe vanilla "ldas-grid.ligo.caltech.edu/jobmanager-condor" "2.2.4"
+}
+       """ % ( pwd, string.strip(fqdn), pwd, user, user ) )
+       	file_pool.close()
+
+	# create 
+       	os.system("genpoolconfig --poolconfig sites.txt --output sites.xml");
+
+       	# now create tc.data
+       	os.system('which rls-client > tmp')
+       	file=open('tmp')
+       	rls_client=file.readline()
+       	print rls_client
+
+	executable_name=[]
+	executables=cp.items('condor')
+       	for executable in executables:
+   		# find out if the exec. has a absolute path or a relative!
+		print executable[1]
+		basename=os.path.basename(executable[1])
+		if (executable[0]=="."):
+			# maybe with an additional '/'???/ TOCHECK
+			executable=pwd+basename
+		executable_name.append(basename)
+
+
+       	# now create the tc.data file
+       	file_tc = open('tc.data','w')
+       	file_tc.write("""uwm   transfer
+	/home/duncan/pegasus/vds-1.3.6/bin/transfer INSTALLED INTEL32::LINUX vds::bundle_stagein=1
+	uwm   dirmanager /home/duncan/pegasus/vds-1.3.6/bin/dirmanager INSTALLED INTEL32::LINUX
+	cit   transfer /archive/home/dbrown/projects/grid/vds/vds/bin/transfer INSTALLED INTEL32::LINUX vds::bundle_stagein=1
+	cit   dirmanager /archive/home/dbrown/projects/grid/vds/vds/bin/dirmanager INSTALLED INTEL32::LINUX
+	psu   transfer /usr3/home/ux001010/vds-1.3.6/bin/transfer INSTALLED INTEL32::LINUX vds::bundle_stagein=1
+	psu   dirmanager /usr3/home/ux001010/vds-1.3.6/bin/dirmanager INSTALLED INTEL32::LINUX
+	lsu   transfer /home1/dbrown/vds-1.3.6/bin/transfer INSTALLED INTEL32::LINUX vds::bundle_stagein=1
+	lsu   dirmanager /home1/dbrown/vds-1.3.6/bin/dirmanager INSTALLED INTEL32::LINUX local RLS_Client %s INSTALLED INTEL32::LINUX
+	""" % (string.strip(rls_client)) )
+
+	# DO OTHER WISE
+
+
+       	for executableName in executable_name:
+         	executable=executables[executable_name.index(executableName)]
+         	file_tc.write("""local ligo::%s:1.0 gsiftp://%s/%s STATIC_BINARY INTEL32::LINUX
+         """ % (executableName, string.strip(fqdn), executable) )
+       	file_tc.close() 
+
+
+##############################################################################
 # function to generate the coincident segments from four input segment lists
 def generate_segments(ifo1_data, ifo2_data, ifo3_data, ifo4_data):
   """
@@ -612,6 +727,8 @@ parser.add_option("-x","--dax", action="store_true", default=False,\
 command_line = sys.argv[1:]
 (opts,args) = parser.parse_args()
 
+
+
 #################################
 # if --version flagged
 if opts.version:
@@ -732,6 +849,12 @@ except: pass
 # create the config parser object and read in the ini file
 cp = ConfigParser.ConfigParser()
 cp.read(opts.config_file)
+
+#create_config_files(cp)
+
+#sys.exit(0)
+
+
 
 ##############################################################################
 # if a usertag has been specified, override the config file
@@ -1267,6 +1390,8 @@ if opts.dax:
   print "\nCreated an abstract DAX file", dag.get_dag_file()
   print "which can be transformed into a concrete DAG with gencdag."
   print "\nSee the documentation on http://www.lsc-group.phys.uwm.edu/lscdatagrid/griphynligo/pegasus_lsc.html"
+
+
 
 else:
   print "\nCreated a DAG file which can be submitted by executing"
