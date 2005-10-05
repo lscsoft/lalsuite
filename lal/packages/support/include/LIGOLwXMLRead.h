@@ -222,6 +222,15 @@ LALExtTriggerTableFromLIGOLw (
     INT4                stopEvent
     );
 
+int
+XLALReadInspiralTriggerFile (
+    SnglInspiralTable    **inspiralEventList,
+    SnglInspiralTable    **lastTrigger,
+    SearchSummaryTable   **searchSummList,
+    SearchSummvarsTable  **inputFileList,
+    CHAR                  *fileName
+    );
+
 #ifdef  __cplusplus
 }
 #endif

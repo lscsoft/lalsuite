@@ -513,11 +513,11 @@ SnglBurstTable    * XLALSnglBurstTableFromLIGOLw (
       {
         thisEvent->peak_time.gpsNanoSeconds = i4colData;
       }
-       else if ( tableDir[j].idx == 13 )
+      else if ( tableDir[j].idx == 13 )
       {
         thisEvent->clusterT = r4colData;
       }
-     else
+      else
       {
         XLAL_CLOBBER_EVENTS;
         XLAL_ERROR_NULL( func, XLAL_EIO);
@@ -1017,15 +1017,15 @@ MultiInspiralTable    * XLALMultiInspiralTableFromLIGOLw (
  *
  */
 
-  /* <lalVerbatim file="LIGOLwXMLReadCP"> */
-  void
-  LALCreateMetaTableDir(
-      LALStatus              *status,
-      MetaTableDirectory    **tableDir,
-      const MetaioParseEnv    env,
-      MetadataTableType       table
-      )
-  /* </lalVerbatim> */
+/* <lalVerbatim file="LIGOLwXMLReadCP"> */
+void
+LALCreateMetaTableDir(
+    LALStatus              *status,
+    MetaTableDirectory    **tableDir,
+    const MetaioParseEnv    env,
+    MetadataTableType       table
+    )
+/* </lalVerbatim> */
 {
   INT4 i;
 
@@ -1803,10 +1803,10 @@ LALSnglInspiralTableFromLIGOLw (
         {
           thisEvent->sigmasq = r8colData;
         }
-	else if ( tableDir[j].idx == 39 )
+        else if ( tableDir[j].idx == 39 )
         {
           thisEvent->rsqveto_duration = r4colData;
-	}
+        }
         else if ( tableDir[j].idx == 40 )
         {
           if ( tableDir[j].pos > 0 && i8colData )
@@ -1952,7 +1952,7 @@ InspiralTmpltBankFromLIGOLw (
     return 0;
   }
 
-    /* figure out the column positions of the template parameters */
+  /* figure out the column positions of the template parameters */
   for ( i = 0; tableDir[i].name; ++i )
   {
     if ( (tableDir[i].pos = MetaioFindColumn( env, tableDir[i].name )) < 0 )
@@ -2011,8 +2011,8 @@ InspiralTmpltBankFromLIGOLw (
       for ( j = 0; tableDir[j].name; ++j )
       {
         REAL4 colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
-	INT4 i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
-	UINT8 i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
+        INT4 i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
+        UINT8 i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
         if ( tableDir[j].idx == 0 )
         {
           thisTmplt->mass1 = colData;
@@ -2069,20 +2069,20 @@ InspiralTmpltBankFromLIGOLw (
         {
           thisTmplt->fFinal = colData;
         }
-	else if ( tableDir[j].idx == 14 )
-	{
-	  thisTmplt->end_time.gpsSeconds = i4colData;
-	}
-	else if ( tableDir[j].idx == 15 )
-	{
-	  thisTmplt->end_time.gpsNanoSeconds = i4colData;
-	}
+        else if ( tableDir[j].idx == 14 )
+        {
+          thisTmplt->end_time.gpsSeconds = i4colData;
+        }
+        else if ( tableDir[j].idx == 15 )
+        {
+          thisTmplt->end_time.gpsNanoSeconds = i4colData;
+        }
         else if ( tableDir[j].idx == 16 )
         {
           if ( tableDir[j].pos > 0 && i8colData )
           {
             thisTmplt->event_id = (EventIDColumn *) 
-                 LALCalloc( 1, sizeof(EventIDColumn) );
+              LALCalloc( 1, sizeof(EventIDColumn) );
             thisTmplt->event_id->id = i8colData;
             thisTmplt->event_id->inspiralTemplate = thisTmplt;
           }
@@ -2090,7 +2090,7 @@ InspiralTmpltBankFromLIGOLw (
         else if ( tableDir[j].idx == 17 )
         {
           LALSnprintf( thisTmplt->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), 
-             "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+              "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else
         {
@@ -3524,29 +3524,29 @@ LALExtTriggerTableFromLIGOLw (
         {
           thisEvent->obs_loc_long = r4colData;
         }
-	else if ( tableDir[j].idx == 33 )
-	{
-	    thisEvent->ligo_fave_lho = r4colData;
+        else if ( tableDir[j].idx == 33 )
+        {
+          thisEvent->ligo_fave_lho = r4colData;
         }
-	else if ( tableDir[j].idx == 34 )
+        else if ( tableDir[j].idx == 34 )
         {
           thisEvent->ligo_fave_llo = r4colData;
         }
-	else if ( tableDir[j].idx == 35 )
+        else if ( tableDir[j].idx == 35 )
         {
           thisEvent->ligo_delay = r4colData;
         }
-	else if ( tableDir[j].idx == 36 )
+        else if ( tableDir[j].idx == 36 )
         {
           thisEvent->event_number_gcn= i4colData;
         }
-	else if ( tableDir[j].idx == 37 )
+        else if ( tableDir[j].idx == 37 )
         {
           LALSnprintf( thisEvent->event_number_grb, 8 * sizeof(CHAR),
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
-	else if ( tableDir[j].idx == 38 )
-	{
+        else if ( tableDir[j].idx == 38 )
+        {
           thisEvent->event_status = i4colData;
         }
         else
@@ -3582,3 +3582,114 @@ LALExtTriggerTableFromLIGOLw (
 
 
 #undef CLOBBER_EVENTS
+
+
+/* <lalVerbatim file="LIGOLwXMLReadCP"> */
+int
+XLALReadInspiralTriggerFile (
+    SnglInspiralTable    **inspiralEventList,
+    SnglInspiralTable    **lastTrigger,
+    SearchSummaryTable   **searchSummList,
+    SearchSummvarsTable  **inputFileList,
+    CHAR                  *fileName
+    )
+/* </lalVerbatim> */
+{
+  const char *func = "XLALReadInspiralTriggerFile";
+  INT4 haveSearchSum = 0;
+  INT4 numFileTriggers = 0;
+  SnglInspiralTable  *inputData = NULL;
+  SearchSummaryTable *inputSummary = NULL;
+  SearchSummaryTable *thisSearchSumm = NULL;
+  SearchSummvarsTable  *thisInputFile = NULL;
+
+
+  /* store the file name in search summvars */
+  XLALPrintInfo(
+      "XLALReadInspiralTriggerFile(): storing input file name %s\n"
+      "in search summvars table\n", fileName );
+
+  if ( ! *inputFileList )
+  {
+    *inputFileList = thisInputFile = (SearchSummvarsTable *)
+      LALCalloc( 1, sizeof(SearchSummvarsTable) );
+  }
+  else
+  {
+    for ( thisInputFile = *inputFileList; thisInputFile->next; 
+        thisInputFile = thisInputFile->next );
+    thisInputFile = thisInputFile->next = (SearchSummvarsTable *)
+      LALCalloc( 1, sizeof(SearchSummvarsTable) );
+  }
+  LALSnprintf( thisInputFile->name, LIGOMETA_NAME_MAX, 
+      "input_file" );
+  LALSnprintf( thisInputFile->string, LIGOMETA_NAME_MAX, 
+      "%s", fileName );      
+
+
+  /* read in the search summary and store */ 
+  XLALPrintInfo( 
+      "XLALReadInspiralTriggerFile(): Reading search_summary table\n");
+
+  haveSearchSum = SearchSummaryTableFromLIGOLw( &inputSummary, fileName );
+
+  if ( haveSearchSum < 1 || ! inputSummary )
+  {
+    XLALPrintError("No valid search_summary table in %s, exiting\n",
+        fileName );
+    LALFree(thisInputFile);
+    XLAL_ERROR(func, XLAL_EIO);
+  }
+  else
+  {
+    /* store the search summary table in searchSummList list */
+    if ( ! *searchSummList )
+    {
+      *searchSummList = thisSearchSumm = inputSummary;
+    }
+    else
+    {
+      for ( thisSearchSumm = *searchSummList; thisSearchSumm->next; 
+          thisSearchSumm = thisSearchSumm->next);
+      thisSearchSumm = thisSearchSumm->next = inputSummary;
+    }
+  }
+
+  /* read in the triggers */
+  numFileTriggers = 
+    LALSnglInspiralTableFromLIGOLw( &inputData, fileName, 0, -1 );
+
+  if ( numFileTriggers < 0 )
+  {
+    XLALPrintError("Unable to read sngl_inspiral table from %s\n", 
+        fileName );
+    LALFree(thisInputFile);
+    XLAL_ERROR(func, XLAL_EIO);
+  }
+  else if ( numFileTriggers > 0 )
+  {
+
+    XLALPrintInfo( 
+        "XLALReadInspiralTriggerFile(): Got %d sngl_inspiral rows from %s\n", 
+        numFileTriggers, fileName );
+
+    /* store the triggers */
+    if ( ! *inspiralEventList )
+    {
+      /* store the head of the linked list */
+      *inspiralEventList = *lastTrigger = inputData;
+    }
+    else
+    {
+      /* append to the end of the linked list and set current    */
+      /* trigger to the first trigger of the list being appended */
+      *lastTrigger = (*lastTrigger)->next = inputData;
+    }
+
+    /* scroll to the end of the linked list of triggers */
+    for ( ; (*lastTrigger)->next; *lastTrigger = (*lastTrigger)->next );
+  }
+
+  return( numFileTriggers );
+}
+
