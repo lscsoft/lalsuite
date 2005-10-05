@@ -159,16 +159,16 @@ void LALSFTtoPeriodogram (LALStatus    *status,
 void LALPeriodoToPSDRngMed (LALStatus  *status,
 			    REAL8FrequencySeries  *psd,
 			    const REAL8FrequencySeries  *periodo,
-			    INT4                  blockSize);
+			    UINT4                  blockSize);
 
 void LALNormalizeSFT (LALStatus  *status,
 		      SFTtype  *sft,
-		      INT4     blockSize,
+		      UINT4     blockSize,
 		      UCHAR    normSwitch);
 
 void LALNormalizeSFTVect (LALStatus  *status,
 			  SFTVector  *sftVect,
-			  INT4     blockSize,
+			  UINT4     blockSize,
 			  UCHAR    normSwitch); /* normSwitch == 0 for frequency domain 
 						   normalization and == 1 for time domain */
 
