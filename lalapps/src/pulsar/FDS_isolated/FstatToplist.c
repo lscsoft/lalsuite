@@ -6,6 +6,7 @@
 #ifdef USE_BOINC
 #include "filesys.h"
 #define fopen boinc_fopen
+#define rename boinc_rename
 #endif
 
 #include "LogPrintf.h"
@@ -331,6 +332,8 @@ int atomic_write_toplist_to_file(toplist_t *l, char *filename, UINT4*checksum) {
 	return -1;
     length = write_toplist_to_fp(l,fpnew,checksum);
     fclose(fpnew);
-    rename(tempname, filename);
-    return length;
+    if(rename(tempname, filename))
+      return -1;
+    else
+      return length;
 }
