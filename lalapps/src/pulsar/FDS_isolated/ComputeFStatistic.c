@@ -806,7 +806,7 @@ int main(int argc,char *argv[])
                 return COMPUTEFSTATC_ECHECKPOINT;
               }
               fclose (fp);
-	      LogPrintf (LOG_DETAIL, "Checkpointed state (%d/%d/%ld).", 
+	      LogPrintf (LOG_DETAIL, "Checkpointed state (%d/%d/%ld).\n", 
 			 loopcounter, fstat_checksum, fstat_bytecounter );
 
 
