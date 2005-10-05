@@ -28,13 +28,18 @@
  * 	  mostly modelled after the MSG_LOG class in BOINC.
  */
 
+/* Windows version fixed by Bernd Machenschalk */
+
 /*---------- INCLUDES ----------*/
 #include <stdio.h>
 #include <string.h>
 
-#ifndef _MSC_VER
+#ifdef _MSC_VER
+#include <Windows.h>
+#else
 #include <sys/time.h>
 #endif
+
 #include <time.h>
 
 #include "LogPrintf.h"
@@ -170,16 +175,12 @@ LogTimeToString ( double t )
 static double 
 LogDtime (void) 
 {
+#ifdef _MSC_VER
 
-#if 0
-  /* FIXME: the following is the windows-code taken from BOINC, 
-   * but I don't trust this to compile without the right includes
-   * and I can't test this. 
-   *
-   * ==> Detactivated for now. Windows will simply have a constant timestamp until fixed
-   */
+  /* Windows version of dtime() from BOINC.
+     Compile switch is MS compiler macro,
+     because I suspect gettimeofday should be present in MinGW */
 
-  /* #ifdef _WIN32 */
   LARGE_INTEGER time;
   FILETIME sysTime;
   double t;
@@ -190,18 +191,15 @@ LogDtime (void)
   t /= TEN_MILLION;                /* In seconds */
   t -= EPOCHFILETIME_SEC;     /* Offset to the Epoch time */
   return t;
-  /* #else */
-#endif
 
-#ifndef _WIN32
+#else
+
   struct timeval tv;
   gettimeofday(&tv, 0);
 
   return tv.tv_sec + (tv.tv_usec/1.e6);
-#else
-  return 0;
-#endif
 
+#endif
 } /* LogDtime() */
 
 /* returns static timestamps-string for 'now' */
