@@ -112,8 +112,8 @@ void LALSFTtoPeriodogram (LALStatus    *status,
 {/*   *********************************************  </lalVerbatim> */
 
 
-  INT4     length, j;
-  REAL8    *out, re, im;
+  UINT4     length, j;
+  REAL8    *out;
   COMPLEX8 *in;
 
   INITSTATUS (status, "LALSFTtoPeriodogram", NORMALIZESFTRNGMEDC);
@@ -143,9 +143,10 @@ void LALSFTtoPeriodogram (LALStatus    *status,
   in = SFT->data->data;
 
   for (j=0; j<length; j++) {
-    re = in->re;
-    im = in->im;
-    *out = re*re + im*im;
+    /* extra-paranoia: make absolutely sure that the calculation below is in REAL8
+     * in order to avoid underflow-problems (data 'in' can be of order ~ 1e-20 )
+     */
+    *out = ((REAL8)in->re)*((REAL8)in->re) + ((REAL8)in->im)*((REAL8)in->im);
     ++out;
     ++in;
   }
@@ -169,12 +170,14 @@ void LALSFTtoPeriodogram (LALStatus    *status,
 void LALPeriodoToPSDRngMed (LALStatus  *status,
 			    REAL8FrequencySeries  *psd,
 			    const REAL8FrequencySeries  *periodo,
-			    INT4                  blockSize)
+			    UINT4                  blockSize)
 {/*   *********************************************  </lalVerbatim> */
-  INT4 blocks2, j, length;
+  UINT4 blocks2;
+  UINT4 j;
+  UINT4 length;
   LALRunningMedianPar rngMedPar;
   REAL8Sequence mediansV, inputV;
-  REAL8 *medians, medianBias;
+  REAL8 medianBias;
 
   INITSTATUS (status, "LALPeriodoToPSDRngMed", NORMALIZESFTRNGMEDC);
   ATTATCHSTATUSPTR (status);
@@ -200,6 +203,7 @@ void LALPeriodoToPSDRngMed (LALStatus  *status,
   /* check lengths are same */
   length = periodo->data->length;
   ASSERT (length == psd->data->length, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);  
+  ASSERT (length > blockSize, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);  
 
   blocks2 = blockSize/2; /* integer division */
 
@@ -242,7 +246,7 @@ void LALPeriodoToPSDRngMed (LALStatus  *status,
 */
 void LALNormalizeSFT (LALStatus  *status,
 		      SFTtype  *sft,
-		      INT4     blockSize, 
+		      UINT4     blockSize, 
 		      UCHAR    normSwitch)
 {/*   *********************************************  </lalVerbatim> */
   INT4 j, length;
@@ -315,7 +319,7 @@ void LALNormalizeSFT (LALStatus  *status,
 */
 void LALNormalizeSFTVect (LALStatus  *status,
 			  SFTVector  *sftVect,
-			  INT4     blockSize,
+			  UINT4     blockSize,
 			  UCHAR    normSwitch)
 {/*   *********************************************  </lalVerbatim> */
   /* normalizes a sft vector using RngMed */
