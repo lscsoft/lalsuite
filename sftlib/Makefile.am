@@ -29,16 +29,16 @@ LDADD = $(lib_LIBRARIES)
 #handling our documentation files
 docsdir=$(prefix)/doc
 
-docname         = T040164-00
+docname         = T040164
 
-docsources      =      README \
-                       SFT_v2_specification \
-                       SCCB_2004_09_09 \
-                       $(docname).tex \
-                       ligodcc.cls \
+docsources      =      README 		\
+                       T040164.tex 	\
+                       SCCB_2004_09_09 	\
+                       $(docname).tex 	\
+                       ligodcc.cls 	\
                        pdfdraftcopy.sty 
 
-docs_DATA       =      $(docname).pdf \
+docs_DATA       =      $(docname).pdf 	\
                        $(docsources)
 
 #rule for our pdf documentation-file
