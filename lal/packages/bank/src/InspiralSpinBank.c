@@ -698,6 +698,8 @@ static INT4 test(REAL4 x,
 
   REAL4 mass, eta, m1, m2, betaMax;
   mass = -y/x / (16.0*LAL_PI*LAL_PI*f0);
+  if (mass < 0)
+     return 0;
   eta = 16.0457 * pow( -x*x/y/y/y/y/y, 0.3333333 );
   if (eta > 0.25 || eta < 0)
     return 0;
