@@ -11,7 +11,7 @@ LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 #AM_LDFLAGS = -all-static
 
 
-isolated_src = $(isolated_DIR)/rngmed.c $(isolated_DIR)/DopplerScan.c $(isolated_DIR)/DopplerScan.h 
+isolated_src = $(isolated_DIR)/rngmed.c $(isolated_DIR)/DopplerScan.c $(isolated_DIR)/LogPrintf.c
 
 bin_PROGRAMS = lalapps_ComputeFStatisticBinary lalapps_GenerateBinaryMesh \
 	lalapps_MakeSubMesh lalapps_GenerateRandomBinaryInput \
