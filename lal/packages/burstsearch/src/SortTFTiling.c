@@ -30,5 +30,13 @@ void XLALSortTFTilingByAlpha(
 )
 /******** </lalVerbatim> ********************************/
 {
+	/*
+	 * Sort tiles in order of increasing lnalpha (log of tile
+	 * probability).  Since the probability is in [0, 1], lnalpha's are
+	 * negative with more negative numbers indicating the less likely
+	 * tiles;  therefore the tiles are sorted with the least likely
+	 * tiles --- tiles with greatest excess power --- first.
+	 */
+
 	qsort(tiling->tile, tiling->numtiles, sizeof(*tiling->tile), TileCompareByAlpha);
 }
