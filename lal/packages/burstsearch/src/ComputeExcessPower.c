@@ -51,13 +51,13 @@ XLALComputeExcessPower(
 	INT4 nf = plane->params.freqBins;
 	INT4 nt = plane->params.timeBins;
 	size_t i;
-	FILE *fp;
 
-	/*fp = fopen("hrssfactor.dat","w");
-	for(i=0; i<nf; i++, hrssfactor++){
-	  fprintf(fp,"%d %e\n",i, *hrssfactor);
-	}
-	fclose(fp);*/
+	/*{
+		FILE *fp = fopen("hrssfactor.dat","w");
+		for(i=0; i<nf; i++, hrssfactor++)
+			fprintf(fp,"%d %e\n",i, *hrssfactor);
+		fclose(fp);
+	}*/
 
 	/* check on some parameter values */
 	if((nf <= 0) || (nt <= 0))
