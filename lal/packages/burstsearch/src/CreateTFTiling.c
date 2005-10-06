@@ -33,8 +33,8 @@ REAL8 XLALTFTileDegreesOfFreedom(const TFTile *tile)
 #define FOR_EACH_TILE \
 	for(tbins = 2; tbins <= max_tbins; tbins *= 2) \
 		for(fbins = 1 / (tbins * planeparams->deltaT * planeparams->deltaF); fbins <= max_fbins; fbins *= 2) \
-			for(tstart = 0; tstart + tbins <= planeparams->timeBins; tstart += tbins / input->overlapFactor) \
-				for(fstart = 0; fstart + fbins <= planeparams->freqBins; fstart += fbins / input->overlapFactor)
+			for(tstart = 0; tstart + tbins <= planeparams->timeBins; tstart += tbins / input->inv_fractional_stride) \
+				for(fstart = 0; fstart + fbins <= planeparams->freqBins; fstart += fbins / input->inv_fractional_stride)
 
 
 

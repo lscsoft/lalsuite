@@ -198,7 +198,7 @@ simulated data.
 [\option{--siminjection-file}~\parm{injection file}] \newline \hspace*{0.5in}
 [\option{--seed}~\parm{seed}] \newline \hspace*{0.5in}
 \option{--target-sample-rate}~\parm{Hz} \newline \hspace*{0.5in}
-\option{--tile-overlap-factor}~\parm{factor} \newline \hspace*{0.5in}
+\option{--tile-stride-fraction}~\parm{fraction} \newline \hspace*{0.5in}
 [\option{--useoverwhitening}] \newline \hspace*{0.5in}
 [\option{--user-tag}~\parm{comment}] \newline \hspace*{0.5in}
 [\option{--verbose}] \newline \hspace*{0.5in}
@@ -450,12 +450,12 @@ For example, the number of samples used to estimate the average PSD as
 given by \option{--psd-average-points} refers to the time series following
 data rate down-conversion.
 
-\item[\option{--tile-overlap-factor} \parm{factor}]
-This parameter influences the amount of overlap between neighboring
-time-frequency tiles.  It must be an integer power of 2.  A reasonable
-value for this parameter is 2, which causes each tile to overlap its
-neighbours by \(\frac{1}{2}\) its duration and \(\frac{1}{2}\) its
-bandwidth.
+\item[\option{--tile-stride-fraction} \parm{fraction}]
+This parameter controls the amount by which adjacent time-frequency tiles
+overlap one-another.  This numeric parameter must be \(= 2^{-n}\), where
+\(n \in \mathrm{Integers}\).  A reasonable value is 0.5, which causes each
+tile to overlap its neighbours in time by \(\frac{1}{2}\) its duration and
+in frequency by \(\frac{1}{2}\) its bandwidth.
 
 \item[\option{--user-tag} \parm{comment}]
 Set the user tag to the string \parm{comment}.  This string must not
@@ -508,7 +508,7 @@ lalapps_power \
 --psd-average-points 548864 \
 --target-sample-rate 16384 \
 --lnthreshold -80.0 \
---tile-overlap-factor 3 \
+--tile-stride-fraction 0.5 \
 --user-tag testing \
 --verbose \
 --window 2 \

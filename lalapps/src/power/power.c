@@ -249,7 +249,7 @@ static void print_usage(char *program)
 "       [--sim-seconds <sim seconds>]\n" \
 "	[--siminjection-file <file name>]\n" \
 "	[--seed <seed>]\n" \
-"	 --tile-overlap-factor <factor>\n" \
+"	 --tile-stride-fraction <fraction>\n" \
 "	 --lnthreshold <ln threshold>\n" \
 "	[--useoverwhitening]\n" \
 "	[--user-tag <comment>]\n" \
@@ -335,7 +335,7 @@ static int check_for_missing_parameters(char *prog, struct option *long_options,
 			break;
 
 			case 'f':
-			arg_is_missing = !params->tfTilingInput.overlapFactor;
+			arg_is_missing = !params->tfTilingInput.inv_fractional_stride;
 			break;
 
 			case 'g':
@@ -460,7 +460,7 @@ void parse_command_line(
 		{"sim-cache",           required_argument, NULL,           'q'},
 		{"siminjection-file",   required_argument, NULL,           't'},
 		{"seed",                required_argument, NULL,           'c'},
-		{"tile-overlap-factor", required_argument, NULL,           'f'},
+		{"tile-stride-fraction", required_argument, NULL,           'f'},
 		{"lnthreshold",         required_argument, NULL,           'g'},
 		{"useoverwhitening",    no_argument, &useoverwhitening,   TRUE},  
 		{"user-tag",            required_argument, NULL,           'h'},
@@ -479,7 +479,7 @@ void parse_command_line(
 	params->method = -1;	/* impossible */
 	params->tfPlaneParams.flow = -1.0;	/* impossible */
 	params->tfTilingInput.maxTileBandwidth = 0;  /* impossible */
-	params->tfTilingInput.overlapFactor = 0;	/* impossible */
+	params->tfTilingInput.inv_fractional_stride = 0;	/* impossible */
 	params->windowShift = 0;	/* impossible */
 
 	options.bandwidth = 0;	/* impossible */
@@ -716,9 +716,9 @@ void parse_command_line(
 		break;
 
 		case 'f':
-		params->tfTilingInput.overlapFactor = atoi(optarg);
-		if(params->tfTilingInput.overlapFactor < 0 ||  !is_power_of_2(params->tfTilingInput.overlapFactor)) {
-			sprintf(msg, "must be > 0 (%i specified) and a power of 2", params->tfTilingInput.overlapFactor);
+		params->tfTilingInput.inv_fractional_stride = 1.0 / atof(optarg);
+		if(params->tfTilingInput.inv_fractional_stride < 0 ||  !is_power_of_2(params->tfTilingInput.inv_fractional_stride)) {
+			sprintf(msg, "must be 2^-n, n integer, (%g specified)", 1.0 / params->tfTilingInput.inv_fractional_stride);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
