@@ -32,6 +32,7 @@ standard C routines.
 #ifndef _LALMALLOC_H
 #define _LALMALLOC_H
 
+#include <stddef.h>
 #include <lal/LALRCSID.h>
 #include <lal/LALConfig.h>
 
