@@ -452,10 +452,10 @@ data rate down-conversion.
 
 \item[\option{--tile-stride-fraction} \parm{fraction}]
 This parameter controls the amount by which adjacent time-frequency tiles
-overlap one-another.  This numeric parameter must be \(= 2^{-n}\), where
-\(n \in \mathrm{Integers}\).  A reasonable value is 0.5, which causes each
-tile to overlap its neighbours in time by \(\frac{1}{2}\) its duration and
-in frequency by \(\frac{1}{2}\) its bandwidth.
+of the same size overlap one-another.  This numeric parameter must be \(=
+2^{-n}\), where \(n \in \mathrm{Integers}\).  A reasonable value is 0.5,
+which causes each tile to overlap its neighbours in time by \(\frac{1}{2}\)
+its duration and in frequency by \(\frac{1}{2}\) its bandwidth.
 
 \item[\option{--user-tag} \parm{comment}]
 Set the user tag to the string \parm{comment}.  This string must not
