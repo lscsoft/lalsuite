@@ -309,6 +309,13 @@ int main(int argc,char *argv[])
       UINT4 nFreq, nf1dot;	/* number of frequency- and f1dot-bins */
       UINT4 iFreq, if1dot;  	/* counters over freq- and f1dot- bins */
 
+      Fcomponents FaFb;
+      REAL4 fact;
+      REAL4 At, Bt, Ct, Dt;
+      REAL4 FaRe, FaIm, FbRe, FbIm;
+      REAL8 Fstat;
+      UINT4 M;
+	
       LAL_CALL (NextDopplerPos( &status, &dopplerpos, &thisScan ), &status);
       if (thisScan.state == STATE_FINISHED) /* scanned all DopplerPositions yet? */
 	break;
@@ -330,9 +337,11 @@ int main(int argc,char *argv[])
 	  /* Loop over frequencies to be demodulated */
 	  for ( iFreq = 0 ; iFreq < nFreq ; iFreq ++ )
 	    {
+
 	      GV.fkdot->data[0] = uvar_Freq + iFreq * GV.dFreq;	
 	      
 	      for(nD=0; nD < GV.ifos.length; nD++)
+
 		{
 		  
 		  /*----- calculate SSB-times DeltaT_alpha and Tdot_alpha for this skyposition */
@@ -344,91 +353,86 @@ int main(int argc,char *argv[])
 					     uvar_SSBprecision), &status);
 		  
 		  /*----- calculate skypos-specific coefficients a_i, b_i, A, B, C, D */
-		  LAL_CALL ( LALGetAMCoeffs (&status, GV.ifos.amcoe[nD], GV.ifos.DetectorStates[nD], 
+		  LAL_CALL ( LALGetAMCoeffs (&status, 
+					     GV.ifos.amcoe[nD], 
+					     GV.ifos.DetectorStates[nD], 
 					     thisPoint), &status);
 		  
 		  /** Caculate F-statistic using XLALComputeFaFb() */
-		  {
-		    Fcomponents FaFb;
-		    REAL4 fact;
-		    REAL4 At, Bt, Ct;
-		    REAL4 FaRe, FaIm, FbRe, FbIm;
-		    REAL8 Fstat;
-
-		    /* prepare quantities to calculate Fstat from Fa and Fb */
-		    fact = 4.0f / (1.0f * GV.ifos.sftVects[nD]->length * GV.ifos.amcoe[nD]->D);
-
-		    /* In the signal-only case (only for testing using fake data),
-		     * we did not apply any normalization to the data, and we need
-		     * the use the correct factor now (taken from CFS_v1)
-		     * [see Xavie's notes on LALDemod() for details]
-		     */
-		    if ( uvar_SignalOnly )
-		      {
-			REAL8 Ns = 2.0 * GV.ifos.sftVects[0]->data[0].data->length;
-			REAL8 Tsft = 1.0 / (GV.ifos.sftVects[0]->data[0].deltaF );
-			REAL8 norm = Tsft / ( Ns * Ns ); 
-
-			fact *= norm;
-		      }
-		    else
-		      {
-			/* NOTE: we normalized the data by a double-sided PSD, (LALNormalizeSFTVect),
-			 * therefore we apply another factor of 1/2 now with respect to the 
-			 * equations in JKS, which are based on the single-sided PSD:
-			 */
-			fact *= 0.5f;
-		      }
-
-		    At = GV.ifos.amcoe[nD]->A;
-		    Bt = GV.ifos.amcoe[nD]->B;
-		    Ct = GV.ifos.amcoe[nD]->C;
-
-		    if ( XLALComputeFaFb (&FaFb, GV.ifos.sftVects[nD], GV.fkdot, GV.ifos.tSSB[nD], 
-					  GV.ifos.amcoe[nD], uvar_Dterms) != 0)
-		      {
-			LALPrintError ("\nXALNewLALDemod() failed\n");
-			XLAL_ERROR ("XLALcomputeFStat", XLAL_EFUNC);
-		      }
-		    
-		    FaRe = FaFb.Fa.re;
-		    FaIm = FaFb.Fa.im;
-		    
-		    FbRe = FaFb.Fb.re;
-		    FbIm = FaFb.Fb.im;
-		    
-		    /* calculate F-statistic from  Fa and Fb */
-		    Fstat = fact * (Bt * (FaRe*FaRe + FaIm*FaIm) 
-				    + At * (FbRe*FbRe + FbIm*FbIm) 
-				    - 2.0f * Ct *(FaRe*FbRe + FaIm*FbIm) );
-
-		    /* now, if user requested it, we output ALL F-statistic results above threshold */
-		    if ( uvar_outputFstat || uvar_outputLoudest )
-		      {
-			REAL8 freq = GV.fkdot->data[0];
-
-			if ( Fstat > uvar_Fthreshold )
-			  {
-			    LALSnprintf (buf, 511, "%16.12f %8.7f %8.7f %.17g %10.6g\n", 
-				      freq, dopplerpos.Alpha, dopplerpos.Delta, 
-				      GV.fkdot->data[1], 2.0 * Fstat);
-			    buf[511] = 0;
-			    if ( fpOut )
-			      fprintf (fpOut, buf );
-			  } /* if F > threshold */
-		      }  
-
-		    if ( Fstat > loudestF )
-		      {
-			loudestF = Fstat;
-			strcpy ( loudestEntry,  buf );
-		      }
-			
-
-	      
-		  } /* Calculate F-statistic */
+		  /* prepare quantities to calculate Fstat from Fa and Fb */
+		  
+		  Dt += GV.ifos.amcoe[nD]->D;
+		  M = 1.0f * GV.ifos.sftVects[nD]->length;
+		  fact = 4.0f / (M * Dt);
+		  
+		  /* In the signal-only case (only for testing using fake data),
+		   * we did not apply any normalization to the data, and we need
+		   * the use the correct factor now (taken from CFS_v1)
+		   * [see Xavie's notes on LALDemod() for details]
+		   */
+		  if ( uvar_SignalOnly )
+		    {
+		      REAL8 Ns = 2.0 * GV.ifos.sftVects[0]->data[0].data->length;
+		      REAL8 Tsft = 1.0 / (GV.ifos.sftVects[0]->data[0].deltaF );
+		      REAL8 norm = Tsft / ( Ns * Ns ); 
+		      
+		      fact *= norm;
+		    }
+		  else
+		    {
+		      /* NOTE: we normalized the data by a double-sided PSD, (LALNormalizeSFTVect),
+		       * therefore we apply another factor of 1/2 now with respect to the 
+		       * equations in JKS, which are based on the single-sided PSD:
+		       */
+		      fact *= 0.5f;
+		    }
+		  
+		  At += GV.ifos.amcoe[nD]->A;
+		  Bt += GV.ifos.amcoe[nD]->B;
+		  Ct += GV.ifos.amcoe[nD]->C;
+		  
+		  if ( XLALComputeFaFb (&FaFb, GV.ifos.sftVects[nD], GV.fkdot, GV.ifos.tSSB[nD], 
+					GV.ifos.amcoe[nD], uvar_Dterms) != 0)
+		    {
+		      LALPrintError ("\nXALNewLALDemod() failed\n");
+		      XLAL_ERROR ("XLALcomputeFStat", XLAL_EFUNC);
+		    }
+		  
+		  FaRe += FaFb.Fa.re;
+		  FaIm += FaFb.Fa.im;
+		  
+		  FbRe += FaFb.Fb.re;
+		  FbIm += FaFb.Fb.im;
+		  
 		  
 		} /* End of loop over detectors */
+	      
+	      /* calculate F-statistic from  Fa and Fb */
+	      Fstat = fact * (Bt * (FaRe*FaRe + FaIm*FaIm) 
+			      + At * (FbRe*FbRe + FbIm*FbIm) 
+			      - 2.0f * Ct *(FaRe*FbRe + FaIm*FbIm) );
+	      
+	      /* now, if user requested it, we output ALL F-statistic results above threshold */
+	      if ( uvar_outputFstat || uvar_outputLoudest )
+		{
+		  REAL8 freq = GV.fkdot->data[0];
+		  
+		  if ( Fstat > uvar_Fthreshold )
+		    {
+		      LALSnprintf (buf, 511, "%16.12f %8.7f %8.7f %.17g %10.6g\n", 
+				   freq, dopplerpos.Alpha, dopplerpos.Delta, 
+				   GV.fkdot->data[1], 2.0 * Fstat);
+		      buf[511] = 0;
+		      if ( fpOut )
+			fprintf (fpOut, buf );
+		    } /* if F > threshold */
+		}  
+	      
+	      if ( Fstat > loudestF )
+		{
+		  loudestF = Fstat;
+		  strcpy ( loudestEntry,  buf );
+		}
 	      
 	    } /* for i < nBins: loop over frequency-bins */
 	  
@@ -816,7 +820,7 @@ InitFStatDetector (LALStatus *status, ConfigVariables *cfg, UINT4 nD)
     fBandCover.FreqMax = MYMAX ( fBand1.FreqMax, fBand2.FreqMax );
     fBandCover.FreqMin = MYMIN ( fBand1.FreqMin, fBand2.FreqMin );
 
-    /* ----- correct for maximal dopper-shift due to earth's motion */
+    /* ----- correct for maximal doppler-shift due to earth's motion */
     fBandCover.FreqMax *= (1.0 + uvar_dopplermax);
     fBandCover.FreqMin *= (1.0 - uvar_dopplermax);
     
