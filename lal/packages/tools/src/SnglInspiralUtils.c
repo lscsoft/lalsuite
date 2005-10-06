@@ -615,11 +615,11 @@ LALCompareInspirals (
   }
   else if ( params->test == mchirp_and_eta )
   {  
+    REAL4 dmchirpTest;
     dmchirp = fabs( aPtr->mchirp - bPtr->mchirp );
     deta = fabs( aPtr->eta - bPtr->eta );
 
     /* compare mchirp and eta parameters */
-    REAL4 dmchirpTest;
     if (aAcc.highMass &&
     ((aPtr->mass1 + aPtr->mass2 > aAcc.highMass) ||
     (bPtr->mass1 + bPtr->mass2 > bAcc.highMass)))
