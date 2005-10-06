@@ -300,6 +300,7 @@ XLALEPSearch(
 
 		XLALPrintInfo("XLALEPSearch(): computing the time-frequency decomposition\n");
 		if(XLALFreqSeriesToTFPlane(tfplane, fseries, window->data->length / 2 - params->windowShift, fachrss, normalisation, response, PsdSpec, overwhiten_flag)) {
+			XLALDestroyCOMPLEX8FrequencySeries(fseries);
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}

@@ -39,10 +39,9 @@ typedef struct tagREAL4TimeFrequencyPlane {
 } REAL4TimeFrequencyPlane;
 
 
-int
+COMPLEX8FrequencySeries *
 XLALComputeFrequencySeries(
-	COMPLEX8FrequencySeries *freqSeries,
-	const REAL4TimeSeries *timeSeries,
+	const REAL4TimeSeries *tseries,
 	const REAL4Window *window,
 	const REAL4FFTPlan *plan
 );

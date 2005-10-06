@@ -9,56 +9,53 @@ $Id$
 
 NRCSID (COMPUTEFREQUENCYSERIESC, "$Id$");
 
+#include <lal/FrequencySeries.h>
 #include <lal/RealFFT.h>
 #include <lal/Sequence.h>
 #include <lal/TFTransform.h>
+#include <lal/Units.h>
 #include <lal/Window.h>
 #include <lal/XLALError.h>
 
 /******** <lalVerbatim file="ComputeFrequencySeriesCP"> ********/
-int
+COMPLEX8FrequencySeries *
 XLALComputeFrequencySeries(
-	COMPLEX8FrequencySeries *freqSeries,
-	const REAL4TimeSeries *timeSeries,
+	const REAL4TimeSeries *tseries,
 	const REAL4Window *window,
 	const REAL4FFTPlan *plan
 )
 /******** </lalVerbatim> ********/
 {
 	static const char *func = "XLALComputeFrequencySeries";
+	COMPLEX8FrequencySeries *fseries;
 	REAL4Sequence *tmp;
 	REAL4 fac;
 	size_t i;
-	size_t length = timeSeries->data->length;
+	size_t length = tseries->data->length;
 
 	/* make sure sizes are reasonable and agree */
-	if((freqSeries->data->length != length/2 + 1) ||
-	   (window->data->length != length) ||
-	   (timeSeries->deltaT <= 0.0) ||
+	if((window->data->length != length) ||
+	   (tseries->deltaT <= 0.0) ||
 	   (window->sumofsquares <= 0.0))
-		XLAL_ERROR(func, XLAL_EINVAL);
+		XLAL_ERROR_NULL(func, XLAL_EINVAL);
 
-	/* copy metadata into frequency series structure */
-	freqSeries->epoch = timeSeries->epoch;
-	freqSeries->f0 = timeSeries->f0;
-	freqSeries->deltaF = 1.0 / (length * timeSeries->deltaT);
-
-	/* create working copy of time series */
-	tmp = XLALCutREAL4Sequence(timeSeries->data, 0, length);
-	if(!tmp)
-		XLAL_ERROR(func, XLAL_EFUNC);
+	/* create the frequency series, and a copy of the time series data */
+	fseries = XLALCreateCOMPLEX8FrequencySeries("anonymous", &tseries->epoch, tseries->f0, 1.0 / (length * tseries->deltaT), &lalDimensionlessUnit, length / 2 + 1);
+	tmp = XLALCutREAL4Sequence(tseries->data, 0, length);
+	if(!fseries || !tmp)
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 
 	/* compute normalization factor */
-	fac = sqrt(length / window->sumofsquares) * timeSeries->deltaT;
+	fac = sqrt(length / window->sumofsquares) * tseries->deltaT;
 
 	/* compute windowed version of time series data */
 	for(i = 0; i < length; i++)
 		tmp->data[i] *= fac * window->data->data[i];
 
 	/* compute the DFT */
-	XLALREAL4ForwardFFT(freqSeries->data, tmp, plan);
+	XLALREAL4ForwardFFT(fseries->data, tmp, plan);
 
 	/* clean up */
 	XLALDestroyREAL4Sequence(tmp);
-	return(0);
+	return(fseries);
 }
