@@ -7,6 +7,7 @@ $Id$
 
 NRCSID(CREATETFPLANEC, "$Id$");
 
+#include <lal/LALMalloc.h>
 #include <lal/LALStdlib.h>
 #include <lal/TFTransform.h>
 #include <lal/XLALError.h>
@@ -32,7 +33,7 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 
 	/* Allocate memory */
 	plane = LALMalloc(sizeof(*plane));
-	data = LALMalloc(params->timeBins * params->freqBins * sizeof(*data));
+	data = LALCalloc(params->timeBins * params->freqBins, sizeof(*data));
 	if(!plane || !data) {
 		LALFree(plane);
 		LALFree(data);
@@ -47,7 +48,6 @@ REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	plane->epoch.gpsNanoSeconds = 0;
 	plane->params = *params;
 	plane->data = data;
-	memset(data, 0, params->timeBins * params->freqBins * sizeof(*data));
 
 	/* Normal exit */
 	return(plane);
