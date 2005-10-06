@@ -167,7 +167,7 @@ XLALEPSearch(
 	int errorcode;
 	int                      start_sample;
 	int                      overwhiten_flag = 0; /* default */
-	COMPLEX8FrequencySeries *fseries;
+	COMPLEX8FrequencySeries *fseries = NULL;
 	const COMPLEX8FrequencySeries *response;
 	REAL4Window             *window = params->window;
 	RealFFTPlan             *plan;
@@ -192,7 +192,6 @@ XLALEPSearch(
 
 	plan = XLALCreateForwardREAL4FFTPlan(window->data->length, 0);
 	AverageSpec = XLALCreateREAL4FrequencySeries("anonymous", &gps_zero, 0, 0, &lalDimensionlessUnit, window->data->length / 2 + 1);
-	fseries = XLALCreateCOMPLEX8FrequencySeries("anonymous", &gps_zero, 0, 0, &lalDimensionlessUnit, window->data->length / 2 + 1);
 	tfplane = XLALCreateTFPlane(&params->tfPlaneParams);
 	normalisation = LALMalloc(params->tfPlaneParams.freqBins * sizeof(*normalisation));
 	hrssfactor = LALMalloc(params->tfPlaneParams.freqBins * sizeof(*hrssfactor));
@@ -202,7 +201,7 @@ XLALEPSearch(
 		errorcode = XLAL_ENOMEM;
 		goto error;
 	}
-	if(!plan || !AverageSpec || !fseries || !tfplane || !Tiling) {
+	if(!plan || !AverageSpec || !tfplane || !Tiling) {
 		errorcode = XLAL_EFUNC;
 		goto error;
 	}
@@ -260,7 +259,8 @@ XLALEPSearch(
 		XLALPrintInfo("XLALEPSearch(): analyzing samples %zu -- %zu (%.9lf s -- %.9lf s)\n", start_sample, start_sample + cutTimeSeries->data->length, start_sample * cutTimeSeries->deltaT, (start_sample + cutTimeSeries->data->length) * cutTimeSeries->deltaT);
 
 		XLALPrintInfo("XLALEPSearch(): computing the Fourier transform\n");
-		if(XLALComputeFrequencySeries(fseries, cutTimeSeries, window, plan)) {
+		fseries = XLALComputeFrequencySeries(cutTimeSeries, window, plan);
+		if(!fseries) {
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}
@@ -303,6 +303,8 @@ XLALEPSearch(
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}
+		XLALDestroyCOMPLEX8FrequencySeries(fseries);
+		fseries = NULL;
 	
 		/*
 		 * Compute the excess power for each time-frequency tile
@@ -336,7 +338,7 @@ XLALEPSearch(
 		 * The threhsold cut determined by alpha is applied here
 		 */
 
-		EventAddPoint = TFTilesToSnglBurstTable(Tiling, tseries->name, EventAddPoint, &fseries->epoch, params);
+		EventAddPoint = TFTilesToSnglBurstTable(Tiling, tseries->name, EventAddPoint, &tfplane->epoch, params);
 	}
 
 	/*
@@ -344,7 +346,6 @@ XLALEPSearch(
 	 */
 
 	XLALPrintInfo("XLALEPSearch(): done\n");
-	XLALDestroyCOMPLEX8FrequencySeries(fseries);
 	XLALDestroyREAL4FrequencySeries(AverageSpec);
 	XLALDestroyREAL4FFTPlan(plan);
 	XLALDestroyTFPlane(tfplane);
