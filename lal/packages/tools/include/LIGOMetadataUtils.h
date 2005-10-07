@@ -570,10 +570,23 @@ LALExtractSnglInspiralFromCoinc(
     INT4                        slideNum
     );
 
+int
+XLALRecreateCoincFromSngls(
+    CoincInspiralTable        **coincPtr,
+    SnglInspiralTable          *snglInspiral
+    );
+
 void
 LALCoincCutSnglInspiral(
     LALStatus                  *status,
     SnglInspiralTable         **snglPtr
+    );
+
+int 
+XLALGenerateCoherentBank(
+    SnglInspiralTable         **coherentBank,
+    CoincInspiralTable         *coincInput,
+    CHAR                       *ifos
     );
 
 /* sim inspiral */

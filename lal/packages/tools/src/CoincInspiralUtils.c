@@ -30,6 +30,7 @@ $Id$
 #include <lal/DetectorSite.h>
 #include <lal/DetResponse.h>
 #include <lal/TimeDelay.h>
+#include <lal/XLALError.h>
 
 NRCSID( COINCINSPIRALUTILSC, "$Id$" );
 
@@ -97,12 +98,26 @@ linked list of \texttt{coincInspiralTable}s and returns it as a linked list of
 a linked list of single inspiral tables.  That list contains only single
 inspirals which are found in coincidence.  In order to preserve the coincidence
 information, we assign to each coincident event an integer value.  This is
-stored in the \texttt{UINT4 id} field of the \texttt{eventIDColumn} of each
+stored in the \texttt{UINT8 id} field of the \texttt{eventIDColumn} of each
 single inspiral which forms part of the coincidence.  The \texttt{id} is set
 equal to $10^{9} \times$ \texttt{gpsStartTime} $+ 10^{5} \times$
 \texttt{slideNum} $+$ event number. We do not assign multiple \texttt{id}
 values to a given single inspiral table, but instead make multiple copies of
 the table, each with a unique \texttt{id}.  
+
+\texttt{XLALRecreateCoincFromSngls()} is used to recreate a list of coinc
+inspirals from a list of \texttt{snglInspiralTable}s with populated 
+\texttt{eventIDColumn}.  The code searches for entries in 
+\texttt{snglInspiral} which have the same numerical value of the \texttt{id} 
+field in the \texttt{eventIDColumn}.  
+
+\texttt{XLALGenerateCoherentBank()} is used to generate a coherent bank from
+a list of \texttt{coincInspiralTable}s.  The coherent bank has the same mass
+parameters for each ifo.  These are currently chosen as the mass parameters
+of the trigger in the coinc with the highest \texttt{snr}.  If the 
+\texttt{ifos} field is not \texttt{NULL}, then a template is generated for
+every ifo in \texttt{ifos}.  If it is \texttt{NULL} then templates are only
+generated for those ifos which have triggers in the coinc.
 
 \texttt{LALCoincCutSnglInspiral()} extracts all single inspirals from a
 specific ifo which are in coinc inspirals.  The output \texttt{snglPtr} is a
@@ -604,9 +619,6 @@ LALAddSnglInspiralToCoinc(
 }
 
 
-
-
-
 /* <lalVerbatim file="CoincInspiralUtilsCP"> */
 void
 LALSnglInspiralCoincTest(
@@ -750,6 +762,220 @@ LALExtractSnglInspiralFromCoinc(
 }
 
 
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+int 
+XLALRecreateCoincFromSngls(
+    CoincInspiralTable        **coincPtr,
+    SnglInspiralTable          *snglInspiral
+    )
+/* </lalVerbatim> */
+{
+  static const char *func = "RecreateCoincFromSngls";
+  SnglInspiralTable    *thisSngl  = NULL;
+  CoincInspiralTable   *thisCoinc = NULL;
+  CoincInspiralTable   *prevCoinc = NULL;
+  CoincInspiralTable   *coincHead = NULL;
+  UINT8                 eventId = 0;
+  INT4                  numCoincs = 0;
+  InterferometerNumber  ifoNumber = LAL_UNKNOWN_IFO;
+  InterferometerNumber  ifoInCoinc = LAL_UNKNOWN_IFO;
+  
+    
+  if ( !snglInspiral )
+  {
+    XLALPrintInfo( 
+      "XLALRecreateCoincFromSngls: Empty snglInspiral passed as input" );
+    return( 0 );
+  }
+
+  /* loop over the linked list of sngl inspirals */
+  for( thisSngl = snglInspiral; thisSngl; thisSngl = thisSngl->next )
+  {
+    ifoNumber = XLALIFONumber( thisSngl->ifo );
+    thisCoinc = coincHead;
+    while ( thisCoinc )
+    {
+      /* loop over the interferometers to get the event_id*/
+      for ( ifoInCoinc = 0; ifoInCoinc < LAL_NUM_IFO; ifoInCoinc++)
+      {
+        if ( thisCoinc->snglInspiral[ifoInCoinc] )
+        {
+          eventId = thisCoinc->snglInspiral[ifoInCoinc]->event_id->id;
+          break;
+        }
+      }
+      
+      if ( thisSngl->event_id->id == eventId )
+      {
+        /* thisSngl is part of the coinc, so add it */
+        if ( thisCoinc->snglInspiral[ifoNumber] )
+        {
+          /* already have an event for this ifo */
+          XLALPrintError(
+              "Already have a single from this ifo with event id %lld",
+              eventId);
+          /* free memory */
+          while ( coincHead )
+          {
+            thisCoinc = coincHead;
+            coincHead = coincHead->next;
+            LALFree(thisCoinc);
+          }
+          XLAL_ERROR(func, XLAL_EDATA);
+        }
+        else
+        {
+          thisCoinc->snglInspiral[ifoNumber] = thisSngl;
+          thisCoinc->numIfos += 1;
+          thisSngl->event_id->coincInspiralTable = thisCoinc;
+          break;
+        }
+      }
+
+      /* proceed to the next coinc */
+      prevCoinc = thisCoinc;
+      thisCoinc = thisCoinc->next;
+    }
+
+    if ( thisSngl->event_id->id != eventId )
+    {
+      /* need to start a new coinc */
+      if ( coincHead )
+      {
+        thisCoinc = prevCoinc->next = 
+          LALCalloc( 1, sizeof(CoincInspiralTable) );
+      }
+      else
+      {
+        thisCoinc = coincHead = LALCalloc( 1, sizeof(CoincInspiralTable) );
+      }
+      if ( !thisCoinc )
+      {
+        /* out of memory: free memory + exit*/
+        while ( coincHead )
+        {
+          thisCoinc = coincHead;
+          coincHead = coincHead->next;
+          LALFree( thisCoinc );
+        }
+        XLAL_ERROR(func,XLAL_ENOMEM);
+      }
+
+      thisCoinc->snglInspiral[ifoNumber] = thisSngl;
+      thisCoinc->numIfos = 1;
+      thisSngl->event_id->coincInspiralTable = thisCoinc;
+      numCoincs +=1;
+    }
+  }
+
+  *coincPtr = coincHead;
+        
+  return( numCoincs );
+}
+
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+int 
+XLALGenerateCoherentBank(
+    SnglInspiralTable         **coherentBank,
+    CoincInspiralTable         *coincInput,
+    CHAR                       *ifos
+    )
+{
+  static const char *func = "CreateCoherentBank";
+  InterferometerNumber  ifoInCoinc = LAL_UNKNOWN_IFO;  
+  InterferometerNumber  ifoNumber  = LAL_UNKNOWN_IFO;
+  InterferometerNumber  ifoMax  = LAL_UNKNOWN_IFO;
+  SnglInspiralTable    *bankHead = NULL;
+  SnglInspiralTable    *currentTrigger = NULL;
+  CoincInspiralTable   *thisCoinc = NULL;
+  INT4                  numTmplts = 0;
+  
+  if ( !coincInput )
+  {
+    XLALPrintInfo( 
+      "XLALGenerateCoherentBank: Empty coincInput passed as input" );
+    return( 0 );
+  }
+  
+  for ( thisCoinc = coincInput; thisCoinc; thisCoinc = thisCoinc->next )
+  {
+    REAL4 max_snr = 0;
+
+    /* loop over the interferometers to get the highest snr*/
+    for ( ifoInCoinc = 0; ifoInCoinc < LAL_NUM_IFO; ifoInCoinc++)
+    {
+      if (( thisCoinc->snglInspiral[ifoInCoinc] ) && 
+        (thisCoinc->snglInspiral[ifoInCoinc]->snr > max_snr) )
+      {
+        max_snr = thisCoinc->snglInspiral[ifoInCoinc]->snr;
+        ifoMax = ifoInCoinc;
+      }
+    }
+    
+    for (ifoNumber = 0; ifoNumber < LAL_NUM_IFO ; ++ifoNumber )
+    {
+
+      CHAR ifo[LIGOMETA_IFO_MAX];
+       
+      XLALReturnIFO( ifo, ifoNumber);
+
+      /* decide whether we want a template for this ifo */
+      if ( (thisCoinc->snglInspiral[ifoNumber] &&  !ifos) ||
+           ( ifos && strstr(ifos,ifo)) )
+      {
+        numTmplts++;
+        
+        if( bankHead )
+        {
+          currentTrigger = currentTrigger->next = 
+            LALCalloc( 1, sizeof(SnglInspiralTable) );
+        }
+        else 
+        {
+          bankHead = currentTrigger = 
+              LALCalloc( 1, sizeof(SnglInspiralTable) );
+        }
+        if ( !currentTrigger )
+        {
+          goto error;
+        }
+        /* copy the info from the loudest trigger */
+        memcpy(currentTrigger, thisCoinc->snglInspiral[ifoMax], 
+            sizeof(SnglInspiralTable));
+        /* terminate the list */
+        currentTrigger->next = NULL;
+        currentTrigger->event_id = NULL;
+        /* set the ifo */
+        LALSnprintf( currentTrigger->ifo, LIGOMETA_IFO_MAX, ifo );
+        /* set the event id */
+        currentTrigger->event_id = LALCalloc( 1, sizeof(EventIDColumn) );
+        if ( !(currentTrigger->event_id) )
+        {
+		      goto error;
+        }
+        currentTrigger->event_id->id = 
+          thisCoinc->snglInspiral[ifoMax]->event_id->id;
+        currentTrigger->event_id->snglInspiralTable = currentTrigger;
+      }
+    }
+  }
+  
+  *coherentBank = bankHead;
+  return( numTmplts );
+
+  error:
+  while ( bankHead )
+  {
+    currentTrigger = bankHead;
+    bankHead = bankHead->next;
+    XLALFreeSnglInspiral( &currentTrigger );
+  }
+  XLAL_ERROR(func,XLAL_ENOMEM);
+  
+}
+  
+
+  
 
 /* <lalVerbatim file="CoincInspiralUtilsCP"> */
 void
@@ -772,7 +998,7 @@ LALCoincCutSnglInspiral(
  
 
   /* Scan through a linked list of sngl_inspiral tables and return a
-     pointer to the head of a linked list of tables for a specific IFO */
+     pointer to the head of a linked list of tables which are in coincs */
 
   thisEvent = *eventHead;
   
