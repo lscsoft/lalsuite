@@ -159,21 +159,23 @@ NRCSID (SFTCLEANH, "$Id$");
  */
 
 
-
+/** structure for storing list of spectral lines -- constructed by expanding list of harmonics*/
   typedef struct tagLineNoiseInfo{
-    INT4         nLines; /* number of lines */ 
-    REAL8        *lineFreq; /* central frequency of the lines */
-    REAL8        *leftWing; /* width to the left from central ferquency */
-    REAL8        *rightWing; /* width to the right */
+    INT4         nLines;     /**< number of lines */ 
+    REAL8        *lineFreq;  /**< central frequency of the line in Hz */
+    REAL8        *leftWing;  /**< width to the left from central ferquency in Hz */
+    REAL8        *rightWing; /**< width to the right in Hz */
   } LineNoiseInfo; 
 
+  /** structure for storing the contents of the input list of known
+      spectral disturbances */
   typedef struct tagLineHarmonicsInfo{
-    INT4         nHarmonicSets; /* number of sets of harmonics */
-    REAL8        *startFreq; /* starting frequency of set */
-    REAL8        *gapFreq;  /* frequency difference between adjacent harmonics */
-    INT4         *numHarmonics; /* Number of harmonics */  
-    REAL8        *leftWing; /* width to the left of each line in set */
-    REAL8        *rightWing; /* width to the right */
+    INT4         nHarmonicSets; /**< number of sets of harmonics */
+    REAL8        *startFreq;    /**< starting frequency of set in Hz */
+    REAL8        *gapFreq;      /**< frequency difference between adjacent harmonics in Hz */
+    INT4         *numHarmonics; /**< Number of harmonics */  
+    REAL8        *leftWing;     /**< width to the left of each line in set in Hz */
+    REAL8        *rightWing;    /**< width to the right in Hz */
   } LineHarmonicsInfo; 
 
 /*
