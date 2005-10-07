@@ -309,13 +309,6 @@ int main(int argc,char *argv[])
       UINT4 nFreq, nf1dot;	/* number of frequency- and f1dot-bins */
       UINT4 iFreq, if1dot;  	/* counters over freq- and f1dot- bins */
 
-      Fcomponents FaFb;
-      REAL4 fact;
-      REAL4 At = 0.0, Bt = 0.0, Ct = 0.0, Dt = 0.0;
-      REAL4 FaRe = 0.0, FaIm = 0.0, FbRe = 0.0, FbIm = 0.0;
-      REAL8 Fstat;
-      UINT4 M;
-	
       LAL_CALL (NextDopplerPos( &status, &dopplerpos, &thisScan ), &status);
       if (thisScan.state == STATE_FINISHED) /* scanned all DopplerPositions yet? */
 	break;
@@ -337,6 +330,14 @@ int main(int argc,char *argv[])
 	  /* Loop over frequencies to be demodulated */
 	  for ( iFreq = 0 ; iFreq < nFreq ; iFreq ++ )
 	    {
+
+	      Fcomponents FaFb;
+	      REAL4 fact;
+	      REAL4 At = 0.0, Bt = 0.0, Ct = 0.0, Dt = 0.0;
+	      REAL4 FaRe = 0.0, FaIm = 0.0, FbRe = 0.0, FbIm = 0.0;
+	      REAL8 Fstat;
+	      UINT4 M;
+	
 
 	      GV.fkdot->data[0] = uvar_Freq + iFreq * GV.dFreq;	
 	      
