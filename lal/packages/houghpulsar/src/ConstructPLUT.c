@@ -9,7 +9,7 @@
  *            Modified by Badri Krishnan Feb 2003
  *-----------------------------------------------------------------------
  *
-\par Deccription 
+\par Description 
 
 This module is the core of the Hough transform. The LAL function 
 LALHOUGHConstructPLUT()
