@@ -311,8 +311,8 @@ int main(int argc,char *argv[])
 
       Fcomponents FaFb;
       REAL4 fact;
-      REAL4 At, Bt, Ct, Dt;
-      REAL4 FaRe, FaIm, FbRe, FbIm;
+      REAL4 At = 0.0, Bt = 0.0, Ct = 0.0, Dt = 0.0;
+      REAL4 FaRe = 0.0, FaIm = 0.0, FbRe = 0.0, FbIm = 0.0;
       REAL8 Fstat;
       UINT4 M;
 	
