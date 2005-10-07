@@ -32,7 +32,7 @@ RCSID("$Id$");
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
-#define PROGRAM_NAME "inca"
+#define PROGRAM_NAME "trigbank"
 
 #define TRIGBANK_EARG   1
 #define TRIGBANK_EROW   2
@@ -123,7 +123,7 @@ int main( int argc, char *argv[] )
   MetadataTable         proctable;
   MetadataTable         processParamsTable;
   MetadataTable         searchsumm;
-  MetadataTable		      searchSummvarsTable;
+  MetadataTable         searchSummvarsTable;
   MetadataTable         inspiralTable;
   ProcessParamsTable   *this_proc_param = NULL;
   LIGOLwXMLStream       xmlStream;
@@ -241,10 +241,10 @@ int main( int argc, char *argv[] )
               long_options[option_index].name, optarg );
           exit( 1 );
         }
-	else if ( ! strcmp( "no_test", optarg ) )
-	{
-	  test = no_test;
-	}
+        else if ( ! strcmp( "no_test", optarg ) )
+        {
+          test = no_test;
+        }
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -467,102 +467,18 @@ int main( int argc, char *argv[] )
   {
     for( i = optind; i < argc; ++i )
     {
-      INT4 haveSearchSum = 0;
       INT4 numFileTriggers = 0;
-      SnglInspiralTable  *inputData = NULL;
-      SearchSummaryTable *inputSummary = NULL;
 
-
-      /* store the file name in search summvars */
-      if ( vrbflg ) fprintf( stdout, 
-          "storing input file name %s in search summvars table\n", argv[i] );
-
-      if ( ! inputFiles )
+      numFileTriggers = XLALReadInspiralTriggerFile( &inspiralEventList,
+          &currentTrigger, &searchSummList, &inputFiles, argv[i] );
+      if (numFileTriggers < 0)
       {
-        inputFiles = thisInputFile = (SearchSummvarsTable *)
-          LALCalloc( 1, sizeof(SearchSummvarsTable) );
-      }
-      else
-      {
-        thisInputFile = thisInputFile->next = (SearchSummvarsTable *)
-          LALCalloc( 1, sizeof(SearchSummvarsTable) );
-      }
-      LALSnprintf( thisInputFile->name, LIGOMETA_NAME_MAX, 
-          "input_file" );
-      LALSnprintf( thisInputFile->string, LIGOMETA_NAME_MAX, 
-          "%s", argv[i] );      
-
-
-      /* read in the search summary and store */ 
-      if ( vrbflg ) fprintf( stdout, 
-          "reading search_summary table from file: %s\n", argv[i] );
-
-      haveSearchSum = SearchSummaryTableFromLIGOLw( &inputSummary, argv[i] );
-
-      if ( haveSearchSum < 1 || ! inputSummary )
-      {
-        if ( vrbflg ) 
-          fprintf( stdout, "no valid search_summary table, exiting\n" );
+        fprintf(stderr, "Error reading triggers from file %s",
+            argv[i]);
         exit( 1 );
       }
-      else
-      {
-        /* store the search summary table in searchSummList list */
-        if ( !searchSummList )
-        {
-          searchSummList = thisSearchSumm = inputSummary;
-        }
-        else
-        {
-          thisSearchSumm = thisSearchSumm->next = inputSummary;
-        }
-        inputSummary = NULL;
-      }
-
-      /* read in the triggers */
-      if ( vrbflg ) 
-        fprintf( stdout, "reading triggers from file: %s\n", argv[i] );
-
-      numFileTriggers = 
-        LALSnglInspiralTableFromLIGOLw( &inputData, argv[i], 0, -1 );
-
-      if ( numFileTriggers < 0 )
-      {
-        fprintf( stderr, "error: unable to read sngl_inspiral table from %s\n", 
-            argv[i] );
-        exit( 1 );
-      }
-      else if ( numFileTriggers > 0 )
-      {
-
-        if ( vrbflg ) 
-          fprintf( stdout, "got %d sngl_inspiral rows from %s\n", 
-              numFileTriggers, argv[i] );
-
-        /* store the triggers */
-        if ( ! inspiralEventList )
-        {
-          /* store the head of the linked list */
-          inspiralEventList = currentTrigger = inputData;
-        }
-        else
-        {
-          /* append to the end of the linked list and set current    */
-          /* trigger to the first trigger of the list being appended */
-          currentTrigger = currentTrigger->next = inputData;
-        }
-
-        /* scroll to the end of the linked list of triggers */
-        for ( ; currentTrigger->next; currentTrigger = currentTrigger->next );
-
-        if ( vrbflg ) fprintf( stdout, "added triggers to list\n" );
-        numTriggers += numFileTriggers;
-      }
-      else
-      {
-        if ( vrbflg ) 
-          fprintf( stdout, "%s contains no triggers, skipping\n", argv[i] );
-      }
+      
+      numTriggers += numFileTriggers;
     }
   }
   else
@@ -635,7 +551,7 @@ int main( int argc, char *argv[] )
   if( test != no_test )
   {
     LAL_CALL( LALCreateTrigBank( &status, &inspiralEventList, &test ), 
-	&status );
+        &status );
   }
 
   /* count the number of triggers  */

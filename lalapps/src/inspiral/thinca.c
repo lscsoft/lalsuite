@@ -218,14 +218,12 @@ int main( int argc, char *argv[] )
   SearchSummaryTable   *searchSummList = NULL;
   SearchSummaryTable   *thisSearchSumm = NULL;
 
-  SummValueTable       *summValueList = NULL;
   SummValueTable       *thisSummValue = NULL;
 
   MetadataTable         proctable;
   MetadataTable         processParamsTable;
   MetadataTable         searchsumm;
   MetadataTable         searchSummvarsTable;
-  MetadataTable         summValueTable;
   MetadataTable         inspiralTable;
   ProcessParamsTable   *this_proc_param = NULL;
   LIGOLwXMLStream       xmlStream;
@@ -311,7 +309,7 @@ int main( int argc, char *argv[] )
     {"help",                no_argument,       0,                    'h'}, 
     {"debug-level",         required_argument, 0,                    'z'},
     {"version",             no_argument,       0,                    'V'},
-    {"dmchirp-high",	    required_argument, 0,		     '^'},
+    {"dmchirp-high",        required_argument, 0,                    '^'},
     {"high-mass",           required_argument, 0,                    '&'},
     {0, 0, 0, 0}
   };
@@ -888,8 +886,8 @@ int main( int argc, char *argv[] )
         break;
   
       case '^':
-	for (loopVar=0; loopVar < LAL_NUM_IFO; loopVar++)
-	  accuracyParams.ifoAccuracy[loopVar].dmchirpHi = atof( optarg );
+        for (loopVar=0; loopVar < LAL_NUM_IFO; loopVar++)
+          accuracyParams.ifoAccuracy[loopVar].dmchirpHi = atof( optarg );
         break;  
 
       case '&':
@@ -978,10 +976,13 @@ int main( int argc, char *argv[] )
 
   /* Check that if using different chirp mass accuracy at high mass, both 
      chirp mass accuracy and the high mass threshold are given */
-  if ((accuracyParams.ifoAccuracy[0].dmchirpHi || accuracyParams.ifoAccuracy[0].highMass)
-   && !(accuracyParams.ifoAccuracy[0].dmchirpHi && accuracyParams.ifoAccuracy[0].highMass))
+  if ( (accuracyParams.ifoAccuracy[0].dmchirpHi || 
+        accuracyParams.ifoAccuracy[0].highMass)  && 
+       !(accuracyParams.ifoAccuracy[0].dmchirpHi 
+         && accuracyParams.ifoAccuracy[0].highMass))
   {
-    fprintf( stderr, "Error: both --dmchirp-high and --high-mass must be specified\n");
+    fprintf( stderr, 
+        "Error: both --dmchirp-high and --high-mass must be specified\n");
     exit(1);
   }
     
@@ -1008,8 +1009,8 @@ int main( int argc, char *argv[] )
       fprintf( stdout, 
           "Finding all double/triple/quadruple coincidences in %d IFO time.\n",
           numIFO);
-		}
-	}
+                }
+        }
 
   /* set ifos to be the alphabetical list of the ifos with triggers */
   if( numIFO == 2 )
@@ -1116,146 +1117,18 @@ int main( int argc, char *argv[] )
   {
     for( i = optind; i < argc; ++i )
     {
-      INT4 haveSearchSum = 0;
       INT4 numFileTriggers = 0;
-      INT4 haveSummValue = 0;
-      SummValueTable   *inputSummValue = NULL;
-      SnglInspiralTable     *inputData = NULL;
-      SearchSummaryTable *inputSummary = NULL;
 
-      if ( vrbflg ) fprintf( stdout, 
-          "storing input file name %s in search summvars table\n", argv[i] );
-
-      if ( ! inputFiles )
+      numFileTriggers = XLALReadInspiralTriggerFile( &inspiralEventList,
+          &thisInspiralTrigger, &searchSummList, &inputFiles, argv[i] );
+      if (numFileTriggers < 0)
       {
-        inputFiles = thisInputFile = (SearchSummvarsTable *)
-          LALCalloc( 1, sizeof(SearchSummvarsTable) );
-      }
-      else
-      {
-        thisInputFile = thisInputFile->next = (SearchSummvarsTable *)
-          LALCalloc( 1, sizeof(SearchSummvarsTable) );
-      }
-      LALSnprintf( thisInputFile->name, LIGOMETA_NAME_MAX, 
-          "input_file" );
-      LALSnprintf( thisInputFile->string, LIGOMETA_NAME_MAX, 
-          "%s", argv[i] );      
-
-
-      /* read in the search summary and store */ 
-      if ( vrbflg ) fprintf( stdout, 
-          "reading search_summary table from file: %s\n", argv[i] );
-
-      haveSearchSum = SearchSummaryTableFromLIGOLw( &inputSummary, argv[i] );
-
-      if ( haveSearchSum < 1 || ! inputSummary )
-      {
-        if ( vrbflg ) 
-          fprintf( stdout, "no valid search_summary table, continuing\n" );
-      }
-      else
-      {
-        /* store the search summary table in searchSummList list */
-        if ( !searchSummList )
-        {
-          searchSummList = thisSearchSumm = inputSummary;
-        }
-        else
-        {
-          thisSearchSumm = thisSearchSumm->next = inputSummary;
-        }
-        inputSummary = NULL;
-      }
-
-
-      /* read in the summ_value table and store */
-      if ( vrbflg ) fprintf( stdout, 
-          "reading summ_value table from file: %s\n", argv[i] );
-
-      haveSummValue = SummValueTableFromLIGOLw( &inputSummValue, argv[i] );
-
-      if ( haveSummValue < 1 || ! inputSummValue )
-      {
-        if ( vrbflg ) fprintf( stdout, 
-            "Unable to read summ_value table from %s\n", argv[i] );
-      }
-      else
-      {
-        /* store the summ value table in summValueList list */
-        if ( !summValueList )
-        {
-          summValueList = thisSummValue = inputSummValue;
-        }
-        else
-        {
-          thisSummValue = thisSummValue->next = inputSummValue;
-        }
-        inputSummValue = NULL;
-
-        /* scroll to the end of the linked list of summValues */
-        for ( ; thisSummValue->next; thisSummValue = thisSummValue->next );
-      }
-
-
-
-      /* read in the triggers */
-      if ( vrbflg ) 
-        fprintf( stdout, "reading triggers from file: %s\n", argv[i] );
-
-      numFileTriggers = 
-        LALSnglInspiralTableFromLIGOLw( &inputData, argv[i], 0, -1 );
-
-      if ( numFileTriggers < 0 )
-      {
-        fprintf( stderr, "error: unable to read sngl_inspiral table from %s\n", 
-            argv[i] );
+        fprintf(stderr, "Error reading triggers from file %s",
+            argv[i]);
         exit( 1 );
       }
-      else if ( numFileTriggers > 0 )
-      {
-
-        if ( vrbflg ) 
-          fprintf( stdout, "got %d sngl_inspiral rows from %s\n", 
-              numFileTriggers, argv[i] );
-
-        /* maximize over a given interval */
-        if ( maximizationInterval )
-        {
-          if (vrbflg)
-          {
-            fprintf( stdout, "Clustering triggers for over %d ms window\n",
-                maximizationInterval);
-          }
-          XLALMaxSnglInspiralOverIntervals( &inputData, 
-              (1.0e6 * maximizationInterval) );
-        }
-
-        /* store them */
-        if ( ! inspiralEventList )
-        {
-          /* store the head of the linked list */
-          inspiralEventList = thisInspiralTrigger = inputData;
-        }
-        else
-        {
-          /* append to the end of the linked list and set current    */
-          /* trigger to the first trigger of the list being appended */
-          thisInspiralTrigger = thisInspiralTrigger->next = inputData;
-        }
-
-        /* scroll to the end of the linked list of triggers */
-        for ( ; thisInspiralTrigger->next; thisInspiralTrigger = 
-            thisInspiralTrigger->next );
-
-        if ( vrbflg ) fprintf( stdout, "added %d triggers to list\n",
-            numFileTriggers );
-        numTriggers += numFileTriggers;
-      }
-      else
-      {
-        if ( vrbflg ) 
-          fprintf( stdout, "%s contains no triggers, skipping\n", argv[i] );
-      }
+      
+      numTriggers += numFileTriggers;
     }
   }
   else
@@ -1266,6 +1139,18 @@ int main( int argc, char *argv[] )
 
   if ( vrbflg ) fprintf( stdout, "Read in a total of %d triggers.\n",
       numTriggers );
+
+  /* maximize over a given interval */
+  if ( maximizationInterval )
+  {
+    if (vrbflg)
+    {
+      fprintf( stdout, "Clustering triggers for over %d ms window\n",
+          maximizationInterval);
+    }
+    XLALMaxSnglInspiralOverIntervals( &inspiralEventList, 
+        (1.0e6 * maximizationInterval) );
+  }
 
 
   /* check that we have read in data for all the requested times
@@ -1647,16 +1532,6 @@ cleanexit:
         search_summvars_table), &status );
   LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream), &status );
 
-  /* write the summ_value table */
-  if( summValueList )
-  {
-    LAL_CALL( LALBeginLIGOLwXMLTable( &status ,&xmlStream, 
-        summ_value_table), &status );
-    summValueTable.summValueTable = summValueList;
-    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, summValueTable,
-        summ_value_table), &status );
-    LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream), &status );
-  }
   /* write the sngl_inspiral table */
   if( snglOutput )
   {
@@ -1706,12 +1581,6 @@ cleanexit:
     LALFree( thisSearchSumm );
   }
 
-  while ( summValueList )
-  {
-    thisSummValue = summValueList;
-    summValueList = summValueList->next;
-    LALFree( thisSummValue );
-  }
 
   /* free the snglInspirals */
   while ( inspiralEventList )
