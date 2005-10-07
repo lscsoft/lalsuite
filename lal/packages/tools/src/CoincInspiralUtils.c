@@ -880,6 +880,7 @@ XLALGenerateCoherentBank(
     CoincInspiralTable         *coincInput,
     CHAR                       *ifos
     )
+/* </lalVerbatim> */
 {
   static const char *func = "CreateCoherentBank";
   InterferometerNumber  ifoInCoinc = LAL_UNKNOWN_IFO;  
