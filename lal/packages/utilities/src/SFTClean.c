@@ -123,17 +123,16 @@ NRCSID (SFTCLEANC, "$Id$");
  */
 
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 
-
-/*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<*/
-/********************************* <lalVerbatim file="SFTCleanD"> */
+/**
+ * Looks into the input file containing list of lines, does some checks on the 
+ * file format, and calculates the number of harmonic sets in this file.  
+ */
+/*<lalVerbatim file="SFTCleanD"> */
 void LALFindNumberHarmonics (LALStatus    *status,
-			  LineHarmonicsInfo   *harmonicInfo,
-			  CHAR         *fname)
+			     LineHarmonicsInfo   *harmonicInfo, /**< list of harmonics */
+			     CHAR         *fname /**< input filename */)
 {/*   *********************************************  </lalVerbatim> */
- /* this function finds the number of harmonic sets in file "fname" and
-    checks the file format */
 
   FILE *fp = NULL;
   CHAR  dump[128];
@@ -179,11 +178,14 @@ void LALFindNumberHarmonics (LALStatus    *status,
 }
 
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/* *******************************  <lalVerbatim file="SFTCleanD"> */
+/** Reads in the contents of the input line-info file and fills up
+ *  the LineHarmonicsInfo structure.  Appropriate memory must be allocated for
+ *  this structure before this function is called.  
+ */
+/*  <lalVerbatim file="SFTCleanD"> */
 void  LALReadHarmonicsInfo (LALStatus          *status,
-			 LineHarmonicsInfo  *harmonicsInfo,
-			 CHAR               *fname)
+			    LineHarmonicsInfo  *harmonicsInfo, /**< list of harmonics */
+			    CHAR               *fname /**< input file */)  
 {/*   *********************************************  </lalVerbatim> */
   /* this reads the information about the lines: central frequency, left wing and 
      right wing */
@@ -235,11 +237,13 @@ void  LALReadHarmonicsInfo (LALStatus          *status,
 
 }
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/* *******************************  <lalVerbatim file="SFTCleanD"> */
+/** Converts the list of harmonic sets into an explicit list of spectral 
+ *  lines.
+ */
+/*  <lalVerbatim file="SFTCleanD"> */
 void  LALHarmonics2Lines (LALStatus          *status,
-		       LineNoiseInfo      *lineInfo,
-		       LineHarmonicsInfo  *harmonicsInfo)
+			  LineNoiseInfo      *lineInfo, /**< output list of explicit lines */
+			  LineHarmonicsInfo  *harmonicsInfo) /**< input list of harmonics */
 {/*   *********************************************  </lalVerbatim> */
   /* this reads the information about the lines: central frequency, left wing and 
      right wing */
@@ -305,8 +309,12 @@ void  LALHarmonics2Lines (LALStatus          *status,
 
 
 
-/*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<*/
-/* *******************************  <lalVerbatim file="SFTCleanD"> */
+/** 
+ * Finds total number of spectral-lines contained in case the input file is 
+ * a list of explicit spectral lines -- obsolete.  
+ * Use instead LALFindNumberHarmonics(). 
+ */
+/*  <lalVerbatim file="SFTCleanD"> */
 void LALFindNumberLines (LALStatus          *status,
 		      LineNoiseInfo      *lineInfo,            
 		      CHAR               *fname)
@@ -347,10 +355,12 @@ void LALFindNumberLines (LALStatus          *status,
   RETURN (status);
 }
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/* *******************************  <lalVerbatim file="SFTCleanD"> */
+/** Reads information from file containing list of explicit lines - obsolete. 
+ *  Use instead LALReadHarmonicsInfo()  
+ */
+/*  <lalVerbatim file="SFTCleanD"> */
 void  LALReadLineInfo (LALStatus     *status,
-		    LineNoiseInfo *lineInfo,
+		    LineNoiseInfo *lineInfo,  
 		    CHAR          *fname)
 {/*   *********************************************  </lalVerbatim> */
   /* this reads the information about the lines: central frequency, left wing and 
@@ -396,16 +406,21 @@ void  LALReadLineInfo (LALStatus     *status,
 }
 
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+/** Takes a set of spectral lines and a frequency range as input and 
+ * returns those lines which lie within the specified frequency range.  The output
+ * is a reduced list of spectral lines which either lie completely within the 
+ * frequency range or whose wings overlap with the frequency range.  This is useful
+ * for discarding unnecessary lines to save computational cost and memory. 
+ */
+/*  <lalVerbatim file="SFTCleanD"> */
 void LALChooseLines (LALStatus        *status,
-		  LineNoiseInfo    *outLine,
-		  LineNoiseInfo    *inLine,
-		  REAL8            fMin,
-		  REAL8            fMax
+		     LineNoiseInfo    *outLine,  /**< reduced list of lines */
+		     LineNoiseInfo    *inLine,   /**< input list of lines */
+		     REAL8            fMin,      /**< start of frequency band */
+		     REAL8            fMax       /**< end of frequency band */
 		  )
-{
-  /* this function takes a set of lines and a frequency range as input */
-  /* it returns a those lines which lie within the specified frequency range */
+{/*   *********************************************  </lalVerbatim> */
+
   INT4 nLinesIn, nLinesOut, j;
   REAL8 lineFreq, leftWing, rightWing;
 
@@ -476,13 +491,20 @@ void LALChooseLines (LALStatus        *status,
 #define TRUE (1==1)
 #define FALSE (1==0)
 
-/* function to count how many lines affect a given frequency */
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+/** Function to count how many lines affect a given frequency.  Input is a 
+ * list of lines and a frequency.  The output is an integer which is equal to the 
+ * number of lines which intersect this frequency.  An output of zero indicates
+ * that the frequencty is not influenced by the lines.  Note that the doppler
+ * broadening of the lines is taken into account while deciding whether the 
+ * frequency is affected or not. 
+ */
+/*  <lalVerbatim file="SFTCleanD"> */
 void LALCheckLines ( LALStatus           *status,
-		  INT4                *countL,
-		  LineNoiseInfo       *lines,
-		  REAL8               freq)
-{
+		     INT4                *countL, /**< number of lines affecting frequency */
+		     LineNoiseInfo       *lines, /**< list of lines */
+		     REAL8               freq)   /**< frequency to be checked */
+{/*   *********************************************  </lalVerbatim> */
+
   INT4 nLines, j;
   REAL8 lineFreq, leftWing, rightWing, doppler;
 
@@ -516,14 +538,38 @@ void LALCheckLines ( LALStatus           *status,
   RETURN (status);
 }
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+
+/**
+ * Function for cleaning a SFT given a set of known spectral disturbances.  
+ * The algorithm is the following.  For each 
+ * spectral line, first the central frequency of the line is converted to a 
+ * bin index by floor(tBase * freq + 0.5).  If the wings are set to zero, then only this 
+ * central bin is cleaned.  Note that if the frequency lies between two exactly 
+ * resolved frequencies, then only one of these bins is cleaned.  The user must 
+ * know about the SFT timebase and make sure that the central frequency is an
+ * exactly resolved one.  The wingsize is calculated in bins according to 
+ * floor(tBase * wingsize).  This is done separately for the left and right wings.  
+ * Note the use of the floor function.  If the wingsize corresponds to say 2.5 bins, then
+ * only 2 bins will be cleaned in addition to the central frequency.  
+ *
+ * Having decided which bins ar eto be cleaned, the next step is to produce random noise 
+ * to replace the data in these bins. The fake random noise must mimic the 
+ * behavior of the true noise in the vicinity of the spectral disturbance, and we must 
+ * therefore estimate the noise floor in the vicinity of the disturbance.  
+ * The user specifies a "window size" for cleaning,  and this determines how many data 
+ * points from the SFT are to be used for estimating this noise floor.  
+ * Consider the number of frequency bins on each side of the spectral disturbance  
+ * (excluding the wings) given by the user specified window size.  The function calculates 
+ * the SFT power in these bins and calculates their median.  The median is then converted
+ * to a standard deviation. 
+ */
 /* *******************************  <lalVerbatim file="SFTCleanD"> */
 void LALCleanCOMPLEX8SFT (LALStatus          *status,
-		       SFTtype            *sft,
-		       INT4               width,       
-		       INT4               window,
-		       LineNoiseInfo      *lineInfo,
-		       RandomParams       *randPar)
+			  SFTtype            *sft,  /**< SFT to be cleaned */
+			  INT4               width, /**< maximum width to be cleaned -- set sufficiently large if all bins in each line are to be cleaned*/      
+			  INT4               window,/**< window size for noise floor estimation in vicinity of a line */
+			  LineNoiseInfo      *lineInfo, /**< list of lines */ 
+			  RandomParams       *randPar /**< parameters for generating random noise */)
 { /*   *********************************************  </lalVerbatim> */
   /* function to clean the SFT based on the line information read earlier */
   
