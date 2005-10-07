@@ -1,16 +1,66 @@
-/*-----------------------------------------------------------------------
+/*
+ *  Copyright (C) 2005 Badri Krishnan, Alicia Sintes  
  *
- * File Name: SFTClean.c
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
  *
- * Authors: Krishnan, B.
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
- * Revision: $Id$
- *
- * History:   Created by B. Krishnan on Feb 22, 2004
- *            Moved from lalapps to lal on July 31, 2005
- *
- *-----------------------------------------------------------------------
+ *  You should have received a copy of the GNU General Public License
+ *  along with with program; see the file COPYING. If not, write to the 
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  MA  02111-1307  USA
  */
+
+/**
+ * \author Badri Krishnan, Alicia Sintes, Greg Mendell
+ * \file SFTClean.c
+ * \brief Module containing routines for dealing with spectral disturbances in SFTs
+
+   \par Description 
+   
+   This module contains routines for dealing with lists of known spectral disturbances 
+   in the frequency domain, and using them to clean SFTs.  
+
+   The basic input is a text file containing a list of known spectral lines.  An example 
+   is the following
+
+   \verbatim
+   0.0      0.25     4000     0.0        0.0   0.25Hzlines  
+   0.0      60.0     20       0.5        0.5   60Hzlines     
+   0.0      16.0     100      0.0        0.0   16Hzlines   
+   166.7    0.0      1        0.0        0.0   Calibrationline 
+   345.0    0.0      1        3.0        3.0   violinmodes   
+   \endverbatim
+
+   The file consists of rows with 6 columns each.  Each row has information about
+   a set of spectral lines of the form \f$ f_n = f_0 + n\Delta f \f$.  The first column 
+   is the start frequency \f$ f_0 \f$, the second column is the spacing \f$ \Delta f \f$,
+   the third column is the total number of lines, the fourth column is the 
+   left-width of each line (in Hz), the fifth column is the width on the right, and
+   the last column is a brief comment string (no spaces).  If this file is meant to
+   be used for cleaning SFTs, then certain features which the user must be aware of
+   are explained in the documentation of the function LALCleanCOMPLEX8SFT().  
+
+   \par Uses
+   \code
+   void LALFindNumberHarmonics (LALStatus, LineHarmonicsInfo, CHAR)
+   void LALReadHarmonicsInfo (LALStatus, LineHarmonicsInfo, CHAR)
+   void LALHarmonics2Lines (LALStatus, LineNoiseInfo, LineHarmonicsInfo)
+   void LALChooseLines (LALStatus, LineNoiseInfo, LineNoiseInfo, REAL8, REAL8)
+   void LALCheckLines ( LALStatus, INT4, LineNoiseInfo, REAL8)
+   void LALFindNumberLines (LALStatus, LineNoiseInfo, CHAR)
+   void LALReadLineInfo (LALStatus, LineNoiseInfo, CHAR)
+   void LALCleanCOMPLEX8SFT (LALStatus, SFTtype, INT4, INT4, LineNoiseInfo, RandomParams)
+   \endcode
+
+
+*/
 
 /************************************ <lalVerbatim file="SFTCleanCV">
 Author: Sintes, A.M., Krishnan, B.

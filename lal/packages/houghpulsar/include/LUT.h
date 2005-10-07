@@ -625,23 +625,22 @@ NRCSID (LUTH, "$Id$");
  * 9. Constant Declarations. (discouraged) 
  */
  
-/* Maximum ``error'' (as a fraction of the width of the thinnest annulus) */
-/* which allows to represent a circle by  a line. */
+/** Maximum ``error'' (as a fraction of the width of the thinnest annulus)
+    which allows to represent a circle by  a line. */
 #define LINERR     0.001
 
-/* Maximum ``error'' (as a fraction of the width of the thinnest annulus) */
-/* which allows to consider two border equivalents!  */
-/*It is relevant for determining the LUT frequency range validity */
- /* #define PIXERR     0.1 */
+/** Maximum ``error'' (as a fraction of the width of the thinnest annulus)
+    which allows to consider two border equivalents! 
+    It is relevant for determining the LUT frequency range validity */
 #define PIXERR     0.5
   
 
-/* Width of the thinnest annulus in terms of pixels */
+/** Width of the thinnest annulus in terms of pixels */
 #define PIXELFACTOR  2
 
-/* Earth v_epicycle/c, & v_total/c TO BE CHANGED DEPENDING ON DETECTOR */
+/** Earth v_epicycle/c  TO BE CHANGED DEPENDING ON DETECTOR */
 #define VEPI 1.0e-06
-/* #define VTOT 1.08e-04 , or let's make it bigger for security */
+/** Total detector velocity/c TO BE CHANGED DEPENDING ON DETECTOR */
 #define VTOT 1.06e-04
 
 
