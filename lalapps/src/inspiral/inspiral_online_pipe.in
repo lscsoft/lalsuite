@@ -153,15 +153,15 @@ run = cp.get('pipeline','run')
 # create a shell script to publish the output data
 # XXX this is a hack: it should be done properly
 publish_location = os.path.join(cp.get('publish','outputdir'), '${1}')
-dmt_location = os.path.join(cp.get('publish','outputdir'), '${1}')
+dmt_location = os.path.join(cp.get('publish','dmtdir'), '${1}')
 pfn_location = "gsiftp://" + socket.getfqdn() + publish_location
 publish_script = open('publish.sh','w')
-publish_script.write("#!/bin/bash")
-publish_script.write("cp -f ${1} %s" % publish_location)
-publish_script.write("ln -sf %s %s" % (publish_location, dmt_location)
-publish_script.write("ldbdc --server %s --insert %s --pfn %s" \
-  % ( cp.get('output','ldbdserver'), publish_location, pfn_location )
-cluster_cp_script.close()
+publish_script.write("#!/bin/bash\n")
+publish_script.write("cp -f ${1} %s\n" % publish_location)
+publish_script.write("ln -sf %s %s\n" % (publish_location, dmt_location) )
+publish_script.write("ldbdc --server %s --insert %s --pfn %s\n"
+  % ( cp.get('publish','ldbdserver'), publish_location, pfn_location ) )
+publish_script.close()
 os.chmod('publish.sh',0755)
 
 # create all the LSCdataFind jobs to run in sequence
