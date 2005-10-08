@@ -1,16 +1,30 @@
-/*-----------------------------------------------------------------------
+/*
+ *  Copyright (C) 2005 Badri Krishnan, Alicia Sintes, Greg Mendell  
  *
- * File Name: SFTClean.h
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
  *
- * Authors: Krishnan, B.
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
- * Revision: $Id$
- *
- * History:   Moved from LALAPPS 31/7/05
- *            
- *
- *-----------------------------------------------------------------------
+ *  You should have received a copy of the GNU General Public License
+ *  along with with program; see the file COPYING. If not, write to the 
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  MA  02111-1307  USA
  */
+
+
+/**
+ * \author Badri Krishnan, Alicia Sintes, Greg Mendell
+ * \file SFTClean.h
+ * \brief Header file for cleaning routines
+ */
+
+
  
 /* *********************************** <lalVerbatim file="SFTbinHV">
 Author: Krishnan, B 
@@ -163,7 +177,7 @@ NRCSID (SFTCLEANH, "$Id$");
   typedef struct tagLineNoiseInfo{
     INT4         nLines;     /**< number of lines */ 
     REAL8        *lineFreq;  /**< central frequency of the line in Hz */
-    REAL8        *leftWing;  /**< width to the left from central ferquency in Hz */
+    REAL8        *leftWing;  /**< width to the left from central frequency in Hz */
     REAL8        *rightWing; /**< width to the right in Hz */
   } LineNoiseInfo; 
 

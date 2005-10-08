@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2005 Badri Krishnan, Alicia Sintes  
+ *  Copyright (C) 2005 Badri Krishnan, Alicia Sintes, Greg Mendell  
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -552,7 +552,7 @@ void LALCheckLines ( LALStatus           *status,
  * Note the use of the floor function.  If the wingsize corresponds to say 2.5 bins, then
  * only 2 bins will be cleaned in addition to the central frequency.  
  *
- * Having decided which bins ar eto be cleaned, the next step is to produce random noise 
+ * Having decided which bins are to be cleaned, the next step is to produce random noise 
  * to replace the data in these bins. The fake random noise must mimic the 
  * behavior of the true noise in the vicinity of the spectral disturbance, and we must 
  * therefore estimate the noise floor in the vicinity of the disturbance.  
@@ -561,7 +561,61 @@ void LALCheckLines ( LALStatus           *status,
  * Consider the number of frequency bins on each side of the spectral disturbance  
  * (excluding the wings) given by the user specified window size.  The function calculates 
  * the SFT power in these bins and calculates their median.  The median is then converted
- * to a standard deviation. 
+ * to a standard deviation for the real and imaginary parts of the SFT data, 
+ * taking into account the median bias.  There is also a width parameter.  This is 
+ * an upper limit on the number of bins that will be cleaned on either wing. Thus, if
+ * width is specified to say 3, then only a maximum 3 bins will be cleaned on either side
+ * irrespective of the actual wing size specified.  This parameter is present 
+ * for historical reasons, and should probably be removed.  Currently, it is recommended
+ * to set this sufficiently large (larger that any wing size in bins) so that 
+ * it has no effect.  
+
+ \par Some "features" that must be kept in mind
+ 
+ The following is part of a email sent to pulgroup on 4/10/05.  Some of these points
+ have already been mentioned above.  
+
+ i) If the width of the line to be cleaned is specified to be zero and if the central frequency is midway between two exactly resolved bins, then the code
+ will only clean one frequency bin and not both as it perhaps should.
+ 
+ ii) The wings size is converted from Hz to frequency bins using the floor function. So some bins are being dropped at the edges due to rounding off.
+ 
+ iii) The cleaning uses data from neighboring bins to generate random noise.  This is a problem if there are other spectral disturbances in the
+ neighborhood or if the frequency bin is at the edge of the SFT.  Shouldn't one make sure that the data used to generate the random number are
+ un-contaminated?
+ 
+                                                                                                                                                             
+ Regarding the first two points, the user is supposed to know the properties of the SFTs which are being cleaned and the list of lines is meant to be
+ tailored for a particular set of SFTs. Therefore, the user should know the timebaseline of the SFT to make sure that the central frequency value being
+ specified is a resolved frequency bin and
+ the wings should be specified correctly.  In many cases, the size of the wings, when it is non-zero, is somewhat uncertain, and this uncertainty is often
+ larger that this rounding off error.
+ 
+ Perhaps one should specify the frequency bin index of the central frequency value and the wing size also in bins, but this makes the code more cumbersome
+ and non-intuitive to use.
+ 
+ Both of these points can be handled by documenting the code better, so that the user knows exactly what is being done and chooses the input
+ appropriately .  I will do this as soon as possible.
+ 
+ The third point is more difficult.  Currently, the code calculates the *median* of the power in the neighboring bins and uses that to generate a random
+ number with the appropriate standard deviation.
+ 
+ Let us first consider the cases when there are other spectral disturbances in the neighborhood so that the median estimate might be corrupted.  When
+ there are only a small number of narrow (only few bins) disturbances in
+ the neighborhood, the use of the median is meant to eliminate the effects of these lines.  However, this might not work for the cases when there is a
+ broad spectral disturbance or when there are a large number of narrow disturbances.
+ 
+ If there are a large number of narrow spectral disturbances very close to each other, it might make more sense to group them together and consider them
+ to be one single broad disturbance; we probably won't trust a detection near these lines anyway.
+ 
+ In the case of a broad spectral feature, it will certainly corrupt the median value and the random number generated won't be correct.  The alternative is
+ to skip the broad feature and take only undisturbed bins further away. This might be ok, but recall that the purpose of the cleaning is to replace a
+ spectral disturbance with a random number whose distribution is similar to the noise in the *neighborhood* of the disturbance.  For colored noise, if we
+ have to go very far away in frequency to get a undisturbed frequency bin, then the random number distribution won't be correct either.
+ Edge effects are taken care by making sure that the SFT being read in is large enough. There
+ must be extra wings to the SFT equal to the window size used for cleaning.  If the edge effects are important, then the code using the cleaning routines
+ must read in the extra bins.  
+   
  */
 /* *******************************  <lalVerbatim file="SFTCleanD"> */
 void LALCleanCOMPLEX8SFT (LALStatus          *status,
