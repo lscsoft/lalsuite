@@ -153,7 +153,6 @@ run = cp.get('pipeline','run')
 # create a shell script to publish the output data
 # XXX this is a hack: it should be done properly
 publish_location = os.path.join(cp.get('publish','outputdir'), '${1}')
-dmt_location = os.path.join(cp.get('publish','dmtdir'), '${1}')
 pfn_location = "gsiftp://" + socket.getfqdn() + publish_location
 publish_script = open('publish.sh','w')
 publish_script.write("#!/bin/bash\n")
@@ -229,7 +228,9 @@ for seg in data:
     for insp in sub_insp:
       sinca.add_parent(insp)
       sinca.add_var_arg(insp.get_output())
-    sinca.set_post_script("ln -sf %s %s" % (sinca.get_output_a(), dmt_location) )
+    sinca.set_post_script( "ln -sf %s %s" % 
+      (os.path.join(os.getcwd(), sinca.get_output_a()), 
+       os.path.join(cp.get('publish','dmtdir'), sinca.get_output_a()) )
     dag.add_node(sinca)
     sinca_nodes.append(sinca)
 
