@@ -228,7 +228,7 @@ for seg in data:
     for insp in sub_insp:
       sinca.add_parent(insp)
       sinca.add_var_arg(insp.get_output())
-    sinca.set_post_script( "ln -sf %s %s" % 
+    sinca.set_post_script( "/bin/ln -sf %s %s" % 
       (os.path.join(os.getcwd(), sinca.get_output_a()), 
        os.path.join(cp.get('publish','dmtdir'), sinca.get_output_a())) )
     dag.add_node(sinca)
