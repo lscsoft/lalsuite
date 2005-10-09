@@ -86,6 +86,8 @@ else \
   summvalue.summValueTable = this_summ_value = (SummValueTable *) \
   LALCalloc( 1, sizeof(SummValueTable) ); \
 } \
+LALSnprintf( this_summ_value->program, LIGOMETA_PROGRAM_MAX, "%s", \
+  PROGRAM_NAME ); \
 this_summ_value->version = 0; \
 this_summ_value->start_time = searchsumm.searchSummaryTable->out_start_time; \
 this_summ_value->end_time = searchsumm.searchSummaryTable->out_end_time; \
