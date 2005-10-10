@@ -822,9 +822,7 @@ void ComputeFstatStack (LALStatus *status,
   REAL8 refTime = params->refTime;
   INT4 *mCohSft = params->mCohSft;
   REAL8Vector *fdot = params->fdot;
-  INT4 nfSizeCylinder = params->nfSizeCylinder;
   REAL8 fStart = params->fStart;
-  REAL8 fBand = params->fBand;
   REAL8 tStackAvg = params->tStackAvg;
   REAL8 deltaF = 1.0/tStackAvg;
 
