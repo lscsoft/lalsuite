@@ -78,6 +78,7 @@ LALFindChirpCreateCoherentInput(
   INT4                     nonCorruptStart = 0;
   INT4                     overlap         = 0;
   INT4                     fullCohSegLength = 0;
+  INT4                     eventTimePoint = 0;
 
   INITSTATUS( status, "LALFindChirpCreateCoherentInput",
 	      COHERENTINSPIRALINPUTC );
@@ -125,8 +126,9 @@ LALFindChirpCreateCoherentInput(
   nonCorruptEnd = numPoints - crupDataLength;
   cohSegStart = (INT4) rint( ((end_time.gpsSeconds + end_time.gpsNanoSeconds*1.0e-9) - (inputEpochSeconds + inputEpochNanoSeconds*1.0e-9)-cohSegLength)/deltaT - 1.0);
   cohSegEnd = cohSegStart + 2* (INT4)cohSegLength/deltaT + 1;
+  eventTimePoint = (INT4) rint( ((end_time.gpsSeconds + end_time.gpsNanoSeconds*1.0e-9) - (inputEpochSeconds + inputEpochNanoSeconds*1.0e-9))/deltaT - 1.0);
 
-  if( cohSegEnd < nonCorruptEnd && cohSegStart >= nonCorruptStart )
+  if( eventTimePoint < nonCorruptEnd && eventTimePoint >= nonCorruptStart )
     {
       /* The coherent chunk is outside of the corrupted data */
 
@@ -142,53 +144,6 @@ LALFindChirpCreateCoherentInput(
       memcpy(cohInputData->data->data, &(input->data->data[cohSegStart]), fullCohSegLength * sizeof(COMPLEX8) );
       cohInputData->deltaT = deltaT;
       tempTime = inputEpochSeconds + inputEpochNanoSeconds*1.0e-9 + cohSegStart * deltaT;
-      fracpart = modf(tempTime, &intpart);
-      cohInputData->epoch.gpsSeconds = (INT4) intpart;
-      cohInputData->epoch.gpsNanoSeconds = (INT4) (fracpart*1.0e9); 
-    }
-  else if( (cohSegStart >= nonCorruptEnd) || (cohSegEnd <= nonCorruptStart) )
-    {
-      /* The coherent chunk is entirely within corrupted data */
-      /* The cohInputData will return a null value on exit of function */ 
-    }
-  else if( cohSegEnd >= nonCorruptEnd )
-    {
-      /* The coherent chunk is in corrupted data at the end of the segment */
-
-      cohInputData = *coherentInputData = (COMPLEX8TimeSeries *)
-	LALCalloc(1, sizeof(COMPLEX8TimeSeries) );
-
-      overlap = cohSegEnd - nonCorruptEnd;
-      fullCohSegLength = 2*cohSegLength/deltaT - overlap;
-
-      LALCCreateVector( status->statusPtr, &(cohInputData->data), fullCohSegLength );
-      CHECKSTATUSPTR( status );
-      memcpy(cohInputData->name, input->name, LALNameLength * sizeof(CHAR) );
-      memcpy( cohInputData->data->data, &(input->data->data[cohSegStart]),fullCohSegLength * sizeof(COMPLEX8) );
-      /* store C-data snippet and its associated info */
-      cohInputData->deltaT = deltaT;
-      tempTime = inputEpochSeconds + inputEpochNanoSeconds*1.0e-9 + cohSegStart*deltaT;
-      fracpart = modf(tempTime, &intpart);
-      cohInputData->epoch.gpsSeconds = (INT4) intpart;
-      cohInputData->epoch.gpsNanoSeconds = (INT4) (fracpart*1.0e9); 
-    }
-  else if( cohSegStart <= nonCorruptStart )
-    {
-      /* The coherent chunk is in corrupted data at the start of the segment */
-
-      cohInputData = *coherentInputData = (COMPLEX8TimeSeries *)
-	LALCalloc(1, sizeof(COMPLEX8TimeSeries) );
-
-      overlap = nonCorruptStart - cohSegStart;
-      fullCohSegLength = 2*cohSegLength/deltaT - overlap;
-
-      LALCCreateVector( status->statusPtr, &(cohInputData->data), fullCohSegLength );
-      CHECKSTATUSPTR( status );
-      /* store C-data snippet and its associated info */
-      memcpy(cohInputData->name, input->name, LALNameLength * sizeof(CHAR) );
-      memcpy( cohInputData->data->data, &(input->data->data[cohSegStart + overlap]), fullCohSegLength * sizeof(COMPLEX8) );
-      cohInputData->deltaT = deltaT;
-      tempTime = inputEpochSeconds + inputEpochNanoSeconds*1.0e-9 + (cohSegStart + overlap)*deltaT;
       fracpart = modf(tempTime, &intpart);
       cohInputData->epoch.gpsSeconds = (INT4) intpart;
       cohInputData->epoch.gpsNanoSeconds = (INT4) (fracpart*1.0e9); 
