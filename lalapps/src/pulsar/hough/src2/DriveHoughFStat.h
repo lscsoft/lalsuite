@@ -168,6 +168,9 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
   } HoughCandidates;
 
 
+  void SetUpFstatStack (LALStatus *status, 
+			REAL8FrequencySeriesVector *out,  
+			FstatStackParams *params);
 
   void ComputeFstatStack (LALStatus *status, 
 			  REAL8FrequencySeriesVector *out, 

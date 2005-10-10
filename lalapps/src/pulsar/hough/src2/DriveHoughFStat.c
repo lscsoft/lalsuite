@@ -504,6 +504,8 @@ int main( int argc, char *argv[]) {
   LAL_CALL ( LALDCreateVector( &status, &(FstatPar.fdot), 1), &status);
   FstatPar.fdot->data[0] = uvar_fdot;
 
+  /* set up memory for Fstat vectors */
+  LAL_CALL(SetUpFstatStack( &status, &FstatVect, &FstatPar), &status);
 
   /* calculate the Fstatistic */
   LAL_CALL(ComputeFstatStack( &status, &FstatVect, &stackSFTs, &FstatPar), &status);
@@ -729,7 +731,9 @@ int main( int argc, char *argv[]) {
       FstatPar.alpha = houghCand.alpha[j];
       FstatPar.delta = houghCand.delta[j];
       FstatPar.fdot->data[0] = houghCand.fdot[j];
-      
+
+      LAL_CALL(SetUpFstatStack( &status, &FstatVect, &FstatPar), &status);
+
       LAL_CALL(ComputeFstatStack( &status, &FstatVect, &stackSFTs, &FstatPar), &status);
 
       LAL_CALL ( GetLoudestFstat ( &status, &tempMax, FstatVect.data), &status);
@@ -840,68 +844,7 @@ void ComputeFstatStack (LALStatus *status,
 
   INITSTATUS( status, "ComputeFstatStack", rcsid );
   ATTATCHSTATUSPTR (status);
-
-
-  /*---------- memory for Fstatistic Vector -----------*/
-
-  /* number of bins for calculating Fstat */
-  /* add extraBins on either side*/
-  {
-    /* extraBins = nfSizeCylinder/2 + maxNBins/2 
-       nfSizeCylinder is parameter, but maxNBins must 
-       be calculated from Hough routines.  It is the 
-       largest number of bins affected by the skypatch */
-
-    INT4 extraBins; /* the extra number of bins for which the Fstat must be calculated */
-    HOUGHResolutionPar resPar;
-    HOUGHSizePar sizePar;
-    INT8 tempBin, fBinIni, fBinFin;
-    REAL8 patchSize;
-
-    /* extraBins required only if there is a hough follow up 
-       which happens only if nStacks is more than 1 */
-    if (nStacks > 1) {
-      
-      /* calculate sizePar for fStart */
-      tempBin = (INT8) ( tStackAvg * fStart );    
-      patchSize = 0.5 / ( tempBin * VEPI ); 
-
-      resPar.f0Bin = tempBin;
-      resPar.deltaF = deltaF;
-      resPar.patchSkySizeX = patchSize;
-      resPar.patchSkySizeY = patchSize;
-      resPar.pixelFactor = PIXELFACTOR;
-      resPar.pixErr = PIXERR;
-      resPar.linErr = LINERR;
-      resPar.vTotC = VTOT;
-      
-      TRY ( LALHOUGHComputeSizePar ( status->statusPtr, &sizePar, &resPar ), status);
-      extraBins = nfSizeCylinder/2 + sizePar.maxNBins/2;
-    }
-    else
-      extraBins = 0;
-
-    /* now we can calculate required span of Fstat vector */
-    binsFstat = floor( tStackAvg * fBand ) + 2*extraBins;
-    fBinIni = floor( tStackAvg * fStart + 0.5) - extraBins;
-    fBinFin = fBinIni + binsFstat - 1;
-
-    out->length = nStacks;
-    out->data = NULL;
-    out->data = (REAL8FrequencySeries *)LALMalloc(nStacks * sizeof(REAL8FrequencySeries));
-    for (k=0; k<nStacks; k++) {
-      out->data[k].epoch = params->tsStack->data[k];
-      out->data[k].deltaF = deltaF;
-      out->data[k].f0 = deltaF * fBinIni;
-      out->data[k].data = (REAL8Sequence *)LALMalloc(sizeof(REAL8Sequence));
-      out->data[k].data->length = binsFstat;
-      out->data[k].data->data = (REAL8 *)LALMalloc( binsFstat * sizeof(REAL8));
-    }
-  } /* end of Fstat memory allocation */
-  /* maybe Fstat mallocs should be done outside this function? */
    
-
-
   /* other stuff copied from params */
   skyPoint.longitude = params->alpha;
   skyPoint.latitude = params->delta;
@@ -1005,6 +948,92 @@ void ComputeFstatStack (LALStatus *status,
   DETATCHSTATUSPTR (status);
   RETURN(status); 
 }
+
+
+
+/** Function for allocating memory for Fstat vectors */
+void SetUpFstatStack (LALStatus *status, 
+		      REAL8FrequencySeriesVector *out, 
+		      FstatStackParams *params)
+{
+  /* stuff copied from params */
+  INT4 nStacks = params->nStacks;
+  INT4 nfSizeCylinder = params->nfSizeCylinder;
+  REAL8 fStart = params->fStart;
+  REAL8 fBand = params->fBand;
+  REAL8 tStackAvg = params->tStackAvg;
+  REAL8 deltaF = 1.0/tStackAvg;
+
+
+  /* other variables */
+  INT4 k;
+  INT8 binsFstat;
+
+  INITSTATUS( status, "ComputeFstatStack", rcsid );
+  ATTATCHSTATUSPTR (status);
+
+
+  /*---------- memory for Fstatistic Vector -----------*/
+
+  /* number of bins for calculating Fstat */
+  /* add extraBins on either side*/
+  {
+    /* extraBins = nfSizeCylinder/2 + maxNBins/2 
+       nfSizeCylinder is parameter, but maxNBins must 
+       be calculated from Hough routines.  It is the 
+       largest number of bins affected by the skypatch */
+
+    INT4 extraBins; /* the extra number of bins for which the Fstat must be calculated */
+    HOUGHResolutionPar resPar;
+    HOUGHSizePar sizePar;
+    INT8 tempBin, fBinIni, fBinFin;
+    REAL8 patchSize;
+
+    /* extraBins required only if there is a hough follow up 
+       which happens only if nStacks is more than 1 */
+    if (nStacks > 1) {
+      
+      /* calculate sizePar for fStart */
+      tempBin = (INT8) ( tStackAvg * fStart );    
+      patchSize = 0.5 / ( tempBin * VEPI ); 
+
+      resPar.f0Bin = tempBin;
+      resPar.deltaF = deltaF;
+      resPar.patchSkySizeX = patchSize;
+      resPar.patchSkySizeY = patchSize;
+      resPar.pixelFactor = PIXELFACTOR;
+      resPar.pixErr = PIXERR;
+      resPar.linErr = LINERR;
+      resPar.vTotC = VTOT;
+      
+      TRY ( LALHOUGHComputeSizePar ( status->statusPtr, &sizePar, &resPar ), status);
+      extraBins = nfSizeCylinder/2 + sizePar.maxNBins/2;
+    }
+    else
+      extraBins = 0;
+
+    /* now we can calculate required span of Fstat vector */
+    binsFstat = floor( tStackAvg * fBand ) + 2*extraBins;
+    fBinIni = floor( tStackAvg * fStart + 0.5) - extraBins;
+    fBinFin = fBinIni + binsFstat - 1;
+
+    out->length = nStacks;
+    out->data = NULL;
+    out->data = (REAL8FrequencySeries *)LALMalloc(nStacks * sizeof(REAL8FrequencySeries));
+    for (k=0; k<nStacks; k++) {
+      out->data[k].epoch = params->tsStack->data[k];
+      out->data[k].deltaF = deltaF;
+      out->data[k].f0 = deltaF * fBinIni;
+      out->data[k].data = (REAL8Sequence *)LALMalloc(sizeof(REAL8Sequence));
+      out->data[k].data->length = binsFstat;
+      out->data[k].data->data = (REAL8 *)LALMalloc( binsFstat * sizeof(REAL8));
+    }
+  } /* end of Fstat memory allocation */
+   
+  DETATCHSTATUSPTR (status);
+  RETURN(status); 
+}
+
 
 
 
@@ -1299,9 +1328,10 @@ void ComputeFstatHoughMap(LALStatus *status,
 	  }
 	  
 	  /* print hough map */
-	  if ( uvar_printMaps )
+	  if ( uvar_printMaps ) {
 	    TRY( PrintHmap2file( status->statusPtr, &ht, params->outBaseName, iHmap), status);
-
+	  }
+	  
 	  /* increment hough map index */ 	  
 	  ++iHmap;
 	  
