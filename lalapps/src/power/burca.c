@@ -56,6 +56,7 @@ int main(int argc, char **argv)
   INT4                   ignorePlayground = FALSE;
   INT4                   ignoreTFcomparison = FALSE;
   INT4                   ignoreTcomparison = FALSE;
+  INT4                   noRepeats=FALSE;
 
   CHAR                   *comment = "";
 
@@ -103,8 +104,9 @@ int main(int argc, char **argv)
       {"noplayground",            no_argument,       &usePlayground,     0 },
       {"noncoincident",           no_argument,       &noncoincident,     1 },
       {"ignore-playground",       no_argument,       &ignorePlayground,  1 },
-      {"ignore-tfcomparison",     no_argument,       &ignoreTFcomparison,  1 },
+      {"ignore-tfcomparison",     no_argument,       &ignoreTFcomparison,1 },
       {"ignore-tcomparison",      no_argument,       &ignoreTcomparison, 1 },
+      {"no-repeats",              no_argument,       &noRepeats,         1 },
       /* parameters used to generate calibrated power spectrum */
       {"ifo-a",                   required_argument, 0,                'a'},
       {"ifo-b",                   required_argument, 0,                'b'},
@@ -468,6 +470,12 @@ int main(int argc, char **argv)
 		  LAL_CALL( LALGPStoINT8(&stat, &tb, &(tmpEvent->peak_time)), &stat);
 		  if (tb > ta+deltaT)
 		    break;
+
+		  if ( noRepeats && coin == 1)
+		    {
+		      coin=0;
+		      break;
+		    }
 
 		  /* this is a LAL function which compares events */
 		  if( ignoreTcomparison )
