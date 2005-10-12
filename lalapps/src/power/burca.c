@@ -57,6 +57,7 @@ int main(int argc, char **argv)
   INT4                   ignoreTFcomparison = FALSE;
   INT4                   ignoreTcomparison = FALSE;
   INT4                   noRepeats=FALSE;
+  INT4                   amplitudeCut=FALSE;
 
   CHAR                   *comment = "";
 
@@ -96,6 +97,8 @@ int main(int argc, char **argv)
 
   CHAR                   *outputdir = "./";
 
+  INT4                   failamplitudetest=0;
+
   /* getopt arguments */
   struct option long_options[] =
     {
@@ -107,6 +110,7 @@ int main(int argc, char **argv)
       {"ignore-tfcomparison",     no_argument,       &ignoreTFcomparison,1 },
       {"ignore-tcomparison",      no_argument,       &ignoreTcomparison, 1 },
       {"no-repeats",              no_argument,       &noRepeats,         1 },
+      {"amplitude-cut",           no_argument,       &amplitudeCut,      1 },
       /* parameters used to generate calibrated power spectrum */
       {"ifo-a",                   required_argument, 0,                'a'},
       {"ifo-b",                   required_argument, 0,                'b'},
@@ -130,7 +134,7 @@ int main(int argc, char **argv)
    * initialize things
    *******************************************************************/
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "2" );
+  set_debug_level( "33" );
   memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
 
   trigFile = (CHAR **) LALCalloc( MAXIFO * MAXFILES, sizeof(CHAR*) );
@@ -482,26 +486,34 @@ int main(int argc, char **argv)
 		    accParams.difference = XLALCompareSnglBurstByFreq((const SnglBurstTable * const *)&currentTrigger[0], (const SnglBurstTable * const *)&tmpEvent);
 		  else if ( !ignoreTFcomparison )
 		    accParams.difference = XLALCompareSnglBurst((const SnglBurstTable * const *)&currentTrigger[0], (const SnglBurstTable * const *)&tmpEvent);
-		
-		  if (!accParams.difference || ignoreTFcomparison)
+		  
+		  /* Here's the string cusp amplitude cut test */
+		  if ( amplitudeCut )
+		    failamplitudetest = XLALCompareStringBurstByAmplitude((const SnglBurstTable * const *)&currentTrigger[0], (const SnglBurstTable * const *)&tmpEvent);
+		  
+		  if ( !amplitudeCut || (amplitudeCut && !failamplitudetest) )
 		    {
-		      coin = 1;
-		      if (coincidentEvents == NULL)
+		      if (!accParams.difference || ignoreTFcomparison )
 			{
-			  outEvent = coincidentEvents = (SnglBurstTable *)
-			    LALCalloc(1, sizeof(SnglBurstTable) );
+			  coin = 1;
+			  if (coincidentEvents == NULL)
+			    {
+			      outEvent = coincidentEvents = (SnglBurstTable *)
+				LALCalloc(1, sizeof(SnglBurstTable) );
+			      prevEvent = outEvent;
+			    }
+			  else 
+			    {
+			      outEvent = (SnglBurstTable *)
+				LALCalloc(1, sizeof(SnglBurstTable) );
+			      prevEvent->next = outEvent;
+			    }
+			  memcpy( outEvent, currentTrigger[0], sizeof(SnglBurstTable));
 			  prevEvent = outEvent;
+			  outEvent = outEvent->next = NULL; 
 			}
-		      else 
-			{
-			  outEvent = (SnglBurstTable *)
-			    LALCalloc(1, sizeof(SnglBurstTable) );
-			  prevEvent->next = outEvent;
-			}
-		      memcpy( outEvent, currentTrigger[0], sizeof(SnglBurstTable));
-		      prevEvent = outEvent;
-		      outEvent = outEvent->next = NULL;
 		    }
+
 		  tmpEvent = tmpEvent->next;
 		}
 	    }
