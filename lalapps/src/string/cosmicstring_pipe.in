@@ -309,6 +309,7 @@ for seg in data:
     burca13.add_parent(string1)
     burca13.add_parent(string3)
     burca13.add_var_opt('dt',dtHH)
+    burca13.add_var_opt('amplitude-cut','')
     burca13.set_name("burca_"+ifo1+ifo3+"_"+str(segment_number)+"_"+str(chunk_number))
     burca13.add_var_opt('output-dir','coincidences')
     if do_slides:
@@ -326,6 +327,7 @@ for seg in data:
     burca31.add_parent(string1)
     burca31.add_parent(string3)
     burca31.add_var_opt('dt',dtHH)
+    burca31.add_var_opt('amplitude-cut','')
     burca31.set_name("burca_"+ifo3+ifo1+"_"+str(segment_number)+"_"+str(chunk_number))
     burca31.add_var_opt('output-dir','coincidences')
     if do_slides:
