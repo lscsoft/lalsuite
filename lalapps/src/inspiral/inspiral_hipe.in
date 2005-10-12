@@ -565,14 +565,13 @@ def coherent_analysis(ifos,single_ifo_segments,coinc_nodes,cb_job,
   dag                 = name of the dag
   """
 
-  # set the options for the various jobs
-  # XXX make this automatic in inspiral.py XXX
-  cb_job.add_ini_opts(cp,'cohbank')
-
-  # set up inspirals:
   data_opts = {}
   for ifo in ifo_list:
     if ifo in ifos:
+      # set up the trigbanks
+      
+      trig_coh_jobs[ifo].add_ini_opts(cp,'coh-trig')
+      # set up inspirals:
       insp_coh_jobs[ifo].add_ini_opts(cp,'no-veto-inspiral')
       insp_coh_jobs[ifo].add_ini_opts(cp,ifo.lower() + '-inspiral')
       if ifo == 'G1':
@@ -584,21 +583,22 @@ def coherent_analysis(ifos,single_ifo_segments,coinc_nodes,cb_job,
       insp_coh_jobs[ifo].add_ini_opts(cp,data_opts[ifo])
       insp_coh_jobs[ifo].set_channel(chan)
 
-  # XXX make this automatic XXX
-  cohinsp_job.add_ini_opts(cp,'chia')
-  
+      
   ifotag = ifos + 'C'
 
   for coinc_done in coinc_nodes:
     # set up cohbank
-    cohbnk = inspiral.CohBankNode( cb_job )
-    cohbnk.set_bank(coinc_done.get_dag_node().get_output())
-    if opts.second_coinc: cohbnk.add_parent(coinc_done.get_dag_node())
-    if opts.coherent_bank: dag.add_node(cohbnk)
+    cohbank = inspiral.CohBankNode( cb_job )
+    cohbank.set_bank(coinc_done.get_dag_node().get_output())
+    cohbank.set_start(coinc_done.get_chunk().start())
+    cohbank.set_end(coinc_done.get_chunk().end())
+    cohbank.set_ifos(ifos) 
+    if opts.second_coinc: cohbank.add_parent(coinc_done.get_dag_node())
+    if opts.coherent_bank: dag.add_node(cohbank)
     
     # set up cohinsp
     cohinsp = inspiral.ChiaNode(cohinsp_job)
-    cohinsp.set_bank(cohbnk.get_output())
+    cohinsp.set_bank(cohbank.get_output())
     cohinsp.set_start(coinc_done.get_chunk().start())
     cohinsp.set_end(coinc_done.get_chunk().end())
     cohinsp.add_var_opt('ifo-tag',ifotag)
@@ -616,11 +616,8 @@ def coherent_analysis(ifos,single_ifo_segments,coinc_nodes,cb_job,
               trigbank.set_input_ifo(ifo)
               trigbank.set_start(chunk.start())
               trigbank.set_end(chunk.end())
-              trigbank.add_var_opt('parameter-test','no_test')
-              trigbank.add_var_opt('data-type','all_data')
-              trigbank.add_var_opt('debug-level','33')
-              trigbank.add_var_arg(cohbnk.get_output())
-              if opts.coherent_bank: trigbank.add_parent(cohbnk)
+              trigbank.add_var_arg(cohbank.get_output())
+              if opts.coherent_bank: trigbank.add_parent(cohbank)
               if opts.coherent_bank: dag.add_node(trigbank)
 
               insp = inspiral.InspiralNode(insp_coh_jobs[ifo])
@@ -859,7 +856,7 @@ cp.read(opts.config_file)
 ##############################################################################
 # if a usertag has been specified, override the config file
 if opts.user_tag:
-  usertag = opts.usertag
+  usertag = opts.user_tag
   cp.set('pipeline','user-tag',usertag)
 else:
   try:
@@ -1058,6 +1055,7 @@ play_jobs.extend(thinca_jobs.values())
 play_jobs.extend(thinca_slide_jobs.values())
 play_jobs.extend(thinca2_jobs.values())
 play_jobs.extend(thinca2_slide_jobs.values())
+play_jobs.extend(trig_coh_jobs.values())
 
 if play_data_mask == 'playground_only':
   playground_only = 2
