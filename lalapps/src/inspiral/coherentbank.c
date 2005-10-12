@@ -2,7 +2,7 @@
  * 
  * File Name: coherent_bank.c
  *
- * Author: Seader, S.E.
+ * Author: Fairhust, S. and Seader, S.E.
  * 
  * Revision: $Id$
  * 
@@ -34,14 +34,6 @@ RCSID("$Id$");
 #define CVS_DATE "$Date$"
 #define PROGRAM_NAME "lalapps_coherentbank"
 
-#define COHBANK_EARG   1
-#define COHBANK_EROW   2
-#define COHBANK_EFILE  3
-
-#define COHBANK_MSGEARG   "Error parsing arguments"
-#define COHBANK_MSGROW    "Error reading row from XML table"
-#define COHBANK_MSGEFILE  "Could not open file"
-
 #define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
   this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 calloc( 1, sizeof(ProcessParamsTable) ); \
@@ -51,6 +43,9 @@ LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
     long_options[option_index].name ); \
 LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
 LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
+
+extern int vrbflg;
+int allIFO = -1;
 
 /*
  *
@@ -62,16 +57,22 @@ static void print_usage(char *program)
 {
   fprintf(stderr,
       "Usage: %s [options] [LIGOLW XML input files]\n"\
-      "The following options are recognized.  Options not surrounded in [] are\n" \
-      "required.\n" \
-      "  [--help]                      display this message\n"\
-      "  [--verbose]                   print progress information\n"\
-      "  [--version]                   print version information and exit\n"\
-      "  [--debug-level]   level       set the LAL debug level to LEVEL\n"\
-      "  [--user-tag]      usertag     set the process_params usertag\n"\
-      "  [--comment]       string      set the process table comment\n"\
-      "  [--bank-file]     file        the input trigger file.\n"\
-      "\n", program);
+      "The following options are recognized.  Options not surrounded in []\n"\
+      "are required.\n", program );
+  fprintf(stderr,    
+      " [--help]                      display this message\n"\
+      " [--verbose]                   print progress information\n"\
+      " [--version]                   print version information and exit\n"\
+      " [--debug-level]   level       set the LAL debug level to LEVEL\n"\
+      " [--user-tag]      usertag     set the process_params usertag\n"\
+      " [--comment]       string      set the process table comment\n"\
+      "  --bank-file      file        the input trigger file.\n"\
+      "  --ifos           ifos        list of ifos for which we have data\n"\
+      "  --gps-start-time start_time  start time of the job\n"\
+      "  --gps-end-time   end_time    end time of the job\n"\
+      "  --enable-all-ifo             generate bank with templates for all ifos\n"\
+      "  --disable-all-ifo            only generate bank for triggers in coinc\n"\
+      "\n");
 }
 
 
@@ -80,30 +81,30 @@ int main( int argc, char *argv[] )
   static LALStatus      status;
   LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
 
-  extern int vrbflg;
 
-  INT8 eventID = 0;
-  INT4 j = 0;
-  INT4 i = 0;
-  INT4 k = 0;
-  INT4 inputFileNameFlag = 0;
-  INT4 inputFileNameLength = 0;
-  REAL4 snrTemp = 0.0;
-  REAL4 mass1 = 0.0;
-  REAL4 mass2 = 0.0;
+  INT4 numTriggers = 0;
+  INT4 numCoincs = 0;
+  INT4 numTmplts = 0;
+ 
+  INT4        startTime = -1;
+  LIGOTimeGPS startTimeGPS = {0,0};
+  INT4        endTime = -1;
+  LIGOTimeGPS endTimeGPS = {0,0};
 
-  CHAR tempStr[FILENAME_MAX];
+  CHAR  ifos[LIGOMETA_IFOS_MAX];
+  CHAR *inputFileName = NULL;
 
-  CHAR  comment[LIGOMETA_NAME_MAX];
+  CHAR  comment[LIGOMETA_COMMENT_MAX];
   CHAR *userTag = NULL;
 
   CHAR  fileName[FILENAME_MAX];
-  CHAR  inputFileName[FILENAME_MAX];
 
   SnglInspiralTable    *inspiralEventList=NULL;
   SnglInspiralTable    *currentTrigger = NULL;
-  SnglInspiralTable    *tempTable = NULL;
   SnglInspiralTable    *newEventList = NULL;
+
+  CoincInspiralTable   *coincHead = NULL;
+  CoincInspiralTable   *thisCoinc = NULL;
 
   SearchSummvarsTable  *inputFiles = NULL;
   SearchSummvarsTable  *thisInputFile = NULL;
@@ -114,7 +115,7 @@ int main( int argc, char *argv[] )
   MetadataTable         proctable;
   MetadataTable         processParamsTable;
   MetadataTable         searchsumm;
-  MetadataTable		searchSummvarsTable;
+  MetadataTable         searchSummvarsTable;
   MetadataTable         inspiralTable;
   ProcessParamsTable   *this_proc_param = NULL;
   LIGOLwXMLStream       xmlStream;
@@ -124,12 +125,17 @@ int main( int argc, char *argv[] )
   struct option long_options[] =
   {
     {"verbose",                no_argument,     &vrbflg,                  1 },
-    {"comment",                required_argument,     0,                 's'},
+    {"enable-all-ifo",         no_argument,     &allIFO,                  1 },
+    {"disable-all-ifo",        no_argument,     &allIFO,                  0 },
+    {"comment",                required_argument,     0,                 'x'},
     {"user-tag",               required_argument,     0,                 'Z'},
     {"help",                   no_argument,           0,                 'h'}, 
     {"debug-level",            required_argument,     0,                 'z'},
     {"version",                no_argument,           0,                 'V'},
     {"bank-file",              required_argument,     0,                 'b'},
+    {"gps-start-time",         required_argument,     0,                 's'},
+    {"gps-end-time",           required_argument,     0,                 't'},
+    {"ifos",                   required_argument,     0,                 'i'},
     {0, 0, 0, 0}
   };
   int c;
@@ -152,7 +158,10 @@ int main( int argc, char *argv[] )
         PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &status );
   this_proc_param = processParamsTable.processParamsTable = 
     (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
+
+  /* initialize variables */
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
+  memset( ifos, 0, LIGOMETA_IFOS_MAX * sizeof(CHAR) );
 
   /* create the search summary and zero out the summvars table */
   searchsumm.searchSummaryTable = (SearchSummaryTable *)
@@ -165,9 +174,10 @@ int main( int argc, char *argv[] )
     /* getopt_long stores long option here */
     int option_index = 0;
     size_t optarg_len;
+    long int gpstime;
 
     c = getopt_long_only( argc, argv, 
-        "hs:z:b:Z:V", long_options, 
+        "b:hi:s:t:x:z:VZ:", long_options, 
         &option_index );
 
     /* detect the end of the options */
@@ -193,11 +203,72 @@ int main( int argc, char *argv[] )
         break;
 
       case 'b':
-	strcpy(inputFileName, optarg);
-	inputFileNameFlag = 1;
-	break;
+        /* set bank file */
+        optarg_len = strlen( optarg ) + 1;
+        inputFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( inputFileName, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
 
-      case 's':
+      case 'i':
+        /* set ifos */
+        strncpy( ifos, optarg, LIGOMETA_IFOS_MAX * sizeof(CHAR) );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+
+      case 's':  
+        /* start time coincidence window */
+        gpstime = atol( optarg );
+        if ( gpstime < 441417609 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "GPS start time is prior to " 
+              "Jan 01, 1994  00:00:00 UTC:\n"
+              "(%ld specified)\n",
+              long_options[option_index].name, gpstime );
+          exit( 1 );
+        }
+        if ( gpstime > 999999999 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "GPS start time is after " 
+              "Sep 14, 2011  01:46:26 UTC:\n"
+              "(%ld specified)\n", 
+              long_options[option_index].name, gpstime );
+          exit( 1 );
+        }
+        startTime = (INT4) gpstime;
+        startTimeGPS.gpsSeconds = startTime;
+        ADD_PROCESS_PARAM( "int", "%ld", startTime );
+        break;
+
+      case 't':
+        /* end time coincidence window */
+        gpstime = atol( optarg );
+        if ( gpstime < 441417609 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "GPS start time is prior to " 
+              "Jan 01, 1994  00:00:00 UTC:\n"
+              "(%ld specified)\n",
+              long_options[option_index].name, gpstime );
+          exit( 1 );
+        }
+        if ( gpstime > 999999999 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "GPS start time is after " 
+              "Sep 14, 2011  01:46:26 UTC:\n"
+              "(%ld specified)\n", 
+              long_options[option_index].name, gpstime );
+          exit( 1 );
+        }
+        endTime = (INT4) gpstime;
+        endTimeGPS.gpsSeconds = endTime;
+        ADD_PROCESS_PARAM( "int", "%ld", endTime );
+        break;
+
+      case 'x':
         if ( strlen( optarg ) > LIGOMETA_COMMENT_MAX - 1 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -240,8 +311,8 @@ int main( int argc, char *argv[] )
 
       case 'V':
         /* print version information and exit */
-        fprintf( stdout, "Inspiral Triggered Bank Generator\n" 
-            "Patrick Brady, Duncan Brown and Steve Fairhurst\n"
+        fprintf( stdout, "Coherent Bank Generator\n" 
+            "Steve Fairhurst and Shawn Seader\n"
             "CVS Version: " CVS_ID_STRING "\n"
             "CVS Tag: " CVS_NAME_STRING "\n" );
         exit( 0 );
@@ -260,14 +331,15 @@ int main( int argc, char *argv[] )
   }
 
   if (optind < argc)
+  {
+    fprintf( stderr, "extraneous command line arguments:\n" );
+    while ( optind < argc )
     {
-      fprintf( stderr, "extraneous command line arguments:\n" );
-      while ( optind < argc )
-	{
-          fprintf ( stderr, "%s\n", argv[optind++] );
-        }
-      exit( 1 );      
+      fprintf ( stderr, "%s\n", argv[optind++] );
     }
+    exit( 1 );      
+  }
+
   /* fill the comment, if a user has specified one, or leave it blank */
   if ( ! *comment )
   {
@@ -283,208 +355,161 @@ int main( int argc, char *argv[] )
         "%s", comment );
   }
 
-  /* delete the first, empty process_params entry */
-  this_proc_param = processParamsTable.processParamsTable;
-  processParamsTable.processParamsTable = 
-    processParamsTable.processParamsTable->next;
-  free( this_proc_param );
+  /* enable/disable-all-ifo is stored in the first process param row */
+  if ( allIFO == 1 )
+  {
+    LALSnprintf( processParamsTable.processParamsTable->program,
+        LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
+    LALSnprintf( processParamsTable.processParamsTable->param,
+        LIGOMETA_PARAM_MAX, "--enable-all-ifo" );
+    LALSnprintf( processParamsTable.processParamsTable->type,
+        LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( processParamsTable.processParamsTable->value,
+        LIGOMETA_TYPE_MAX, " " );
+  }
+  else if ( allIFO == 0 )
+  {
+    LALSnprintf( processParamsTable.processParamsTable->program,
+        LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
+    LALSnprintf( processParamsTable.processParamsTable->param,
+        LIGOMETA_PARAM_MAX, "--disable-all-ifo" );
+    LALSnprintf( processParamsTable.processParamsTable->type,
+        LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( processParamsTable.processParamsTable->value,
+        LIGOMETA_TYPE_MAX, " " );
+  }
+  else
+  {
+    fprintf( stderr, "--enable-all-ifo or --disable-all-ifo "
+        "argument must be specified\n" );
+    exit( 1 );
+  }
 
   /*
    *
-   * read in the input data from the rest of the arguments
+   * check the values of the arguments 
    *
    */
 
-  if( !inputFileNameFlag )
-    {
-      fprintf(stderr,"You must specify a bank file. Exiting.\n");
-      exit(1);
-    }
+  if ( startTime < 0 )
+  {
+    fprintf( stderr, "Error: --gps-start-time must be specified\n" );
+    exit( 1 );
+  }
 
-    INT4 haveSearchSum = 0;
-    INT4 numFileTriggers = 0;
-    SnglInspiralTable  *inputData = NULL;
-    SearchSummaryTable *inputSummary = NULL;
+  if ( endTime < 0 )
+  {
+    fprintf( stderr, "Error: --gps-end-time must be specified\n" );
+    exit( 1 );
+  }
 
+  if( !inputFileName )
+  {
+    fprintf(stderr,"You must specify a bank file. Exiting.\n");
+    exit(1);
+  }
 
-    /* store the file name in search summvars */
-    if ( vrbflg ) fprintf( stdout, 
-        "storing input file name %s in search summvars table\n", inputFileName );
-
-    if ( ! inputFiles )
-    {
-      inputFiles = thisInputFile = (SearchSummvarsTable *)
-        LALCalloc( 1, sizeof(SearchSummvarsTable) );
-    }
-    else
-    {
-      thisInputFile = thisInputFile->next = (SearchSummvarsTable *)
-        LALCalloc( 1, sizeof(SearchSummvarsTable) );
-    }
-    LALSnprintf( thisInputFile->name, LIGOMETA_NAME_MAX, 
-        "input_file" );
-    LALSnprintf( thisInputFile->string, LIGOMETA_NAME_MAX, 
-        "%s", inputFileName );      
+  if ( !strlen(ifos) )
+  {
+    fprintf(stderr,"You must specify a list of ifos with --ifos. Exiting.\n");
+    exit(1);
+  }
 
 
-    /* read in the search summary and store */ 
-    if ( vrbflg ) fprintf( stdout, 
-        "reading search_summary table from file: %s\n", inputFileName );
-
-    haveSearchSum = SearchSummaryTableFromLIGOLw( &inputSummary, inputFileName );
-
-    if ( haveSearchSum < 1 || ! inputSummary )
-    {
-      if ( vrbflg ) 
-        fprintf( stdout, "no valid search_summary table, exiting\n" );
-      exit( 1 );
-    }
-    else
-    {
-      /* store the search summary table in searchSummList list */
-      if ( !searchSummList )
-      {
-        searchSummList = thisSearchSumm = inputSummary;
-      }
-      else
-      {
-        thisSearchSumm = thisSearchSumm->next = inputSummary;
-      }
-      inputSummary = NULL;
-    }
-
-    /* read in the triggers */
-    if ( vrbflg ) 
-      fprintf( stdout, "reading triggers from file: %s\n", inputFileName );
-
-    numFileTriggers = 
-      LALSnglInspiralTableFromLIGOLw( &inputData, inputFileName, 0, -1 );
-      
-    if ( numFileTriggers < 0 )
-    {
-      fprintf( stderr, "error: unable to read sngl_inspiral table from %s\n", 
-          inputFileName );
-      exit( 1 );
-    }
-    else if ( numFileTriggers > 0 )
-    {
-      if ( vrbflg ) 
-        fprintf( stdout, "got %d sngl_inspiral rows from %s\n" , 
-            numFileTriggers, inputFileName );
-
-        /* store the triggers */
-	inspiralEventList = currentTrigger = inputData;
-    
-
-
-        /* store the values of masses corresponding to the loudest trigger */
-	/* for each unique event ID */
-
-        REAL4 massMatrix[numFileTriggers][2];
-	for( i = 0; i < numFileTriggers; i++)
-	  {
-	    /* get the values from first snglInspiralTable */
-	    if( i == 0 )
-	      {
-		eventID = inspiralEventList->event_id->id;
-		snrTemp = inspiralEventList->snr;
-		mass1 = inspiralEventList->mass1;
-		mass2 = inspiralEventList->mass2;
-		j++;
-		inspiralEventList = inspiralEventList->next;
-	      }
-	    else if( inspiralEventList->event_id->id == (UINT8)eventID)
-	      {
-		/* update values if greater snr for same event ID */ 
-		if( inspiralEventList->snr > snrTemp )
-		  {
-		    snrTemp = inspiralEventList->snr;
-		    mass1 = inspiralEventList->mass1;
-		    mass2 = inspiralEventList->mass2;
-		    j++;
-		    inspiralEventList = inspiralEventList->next;
-		  }
-		else
-		  {
-		    /* do nothing if snr is not greater for same event ID */
-		    inspiralEventList = inspiralEventList->next;
-		    j++;
-		  }
-		
-		if( i == numFileTriggers - 1 )
-		  {
-		    /* store masses for the last event */
-		    for( k = i-j+1; k < i+1; k++ )
-		      {
-			massMatrix[k][0] = mass1;
-			massMatrix[k][1] = mass2;
-		      }
-		  }
-
-	      }
-	    else
-	      {
-		/* store masses in mass matrix */
-		for( k = i-j; k < i; k++ )
-		  {
-		    massMatrix[k][0] = mass1;
-		    massMatrix[k][1] = mass2;
-		  }
-		j = 1;
-		k = 0;
-		mass1 = inspiralEventList->mass1;
-		mass2 = inspiralEventList->mass2;
-		snrTemp = inspiralEventList->snr;
-		eventID = inspiralEventList->event_id->id;
-		inspiralEventList = inspiralEventList->next;
-	       
-	      }
-	  }
-
-	/* Now generate an event table with the new masses */
-	
-	newEventList = tempTable = inputData;
-	for( i = 0; i < numFileTriggers; i++ )
-	  {
-	    tempTable->mass1 = massMatrix[i][0];
-	    tempTable->mass2 = massMatrix[i][1];
-	    tempTable = tempTable->next;
-	  }
-      }
-      else
-      { 
-	fprintf( stderr, "%s contains no triggers - the cohernt bank will be empty\n",inputFileName );
-      }
+     
+  /* read in the triggers */
+  numTriggers = XLALReadInspiralTriggerFile( &inspiralEventList,
+      &currentTrigger, &searchSummList, &inputFiles, inputFileName );
   
+  if ( numTriggers < 0 )
+  {
+    fprintf(stderr, "Error reading triggers from file %s", inputFileName);
+    exit( 1 );
+  }
+  else if ( numTriggers == 0 )
+  { 
+    if( vrbflg )
+    {
+      fprintf( stdout, 
+         "%s contains no triggers - the coherent bank will be empty\n",
+         inputFileName );
+    }
+  }
+  else
+  {
+    if( vrbflg )
+    {
+      fprintf( stdout, 
+          "Read in %d triggers from the file %s\n", numTriggers, 
+          inputFileName );
+    }
+    
+    /* reconstruct the coincs */
+    numCoincs = XLALRecreateCoincFromSngls( &coincHead, inspiralEventList );
+    if( numCoincs < 0 )
+    {
+      fprintf(stderr, "Unable to reconstruct coincs from single ifo triggers");
+      exit( 1 );
+    }
+    else if ( vrbflg )
+    {
+      fprintf( stdout,
+          "Recreated %d coincs from the %d triggers\n", numCoincs, 
+          numTriggers );
+    }
 
-  goto cleanexit;
+    /*
+     *
+     *  Create the coherent bank
+     *
+     */
 
+    if ( allIFO )
+    {
+      numTmplts = XLALGenerateCoherentBank( &newEventList, coincHead, ifos );
+    }
+    else
+    {
+      numTmplts = XLALGenerateCoherentBank( &newEventList, coincHead, NULL );
+    }
+
+    if ( numTmplts < 0 )
+    {
+      fprintf(stderr, "Unable to generate coherent bank\n");
+      exit( 1 );
+    }
+    else if ( vrbflg )
+    {
+      fprintf(stdout, "Generated a coherent bank with %d templates\n", 
+          numTmplts);
+    }
+  }
   /*
    *
    * write the output xml file
    *
    */
 
+  /* search summary entries: */
+  searchsumm.searchSummaryTable->in_start_time = startTimeGPS;
+  searchsumm.searchSummaryTable->in_end_time = endTimeGPS;
+  searchsumm.searchSummaryTable->out_start_time = startTimeGPS;
+  searchsumm.searchSummaryTable->out_end_time = endTimeGPS;
+  searchsumm.searchSummaryTable->nevents = numTmplts;
 
-cleanexit:
 
-  /* search summary entries: nevents is from primary ifo */
- 
   if ( vrbflg ) fprintf( stdout, "writing output file... " );
 
   /* set the file name correctly */
-  inputFileNameLength = strlen( inputFileName );
-  memcpy(tempStr, inputFileName, inputFileNameLength -4);
- 
   if ( userTag )
   {
-    LALSnprintf( fileName, FILENAME_MAX, "%s-COHBANK_%s.xml", 
-        tempStr, userTag );
+    LALSnprintf( fileName, FILENAME_MAX, "%s-COHBANK_%s-%d-%d.xml", 
+        ifos, userTag, startTime, endTime - startTime );  
   }
   else
   {
-    LALSnprintf( fileName, FILENAME_MAX, "%s-COHBANK.xml", 
-        tempStr);
+    LALSnprintf( fileName, FILENAME_MAX, "%s-COHBANK-%d-%d.xml", 
+        ifos, startTime, endTime - startTime );
   }
   memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
   LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, fileName), 
@@ -514,13 +539,14 @@ cleanexit:
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
 
   /* write the search_summvars tabls */
+  /* XXX not necessary as bank file specified in arguements XXX 
   LAL_CALL( LALBeginLIGOLwXMLTable( &status ,&xmlStream, 
         search_summvars_table), &status );
   searchSummvarsTable.searchSummvarsTable = inputFiles;
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, searchSummvarsTable,
         search_summvars_table), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream), &status );
-
+  LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream), &status ); */
+  
   /* write the sngl_inspiral table if we have one*/
   if ( newEventList )
   {
@@ -576,14 +602,21 @@ cleanexit:
   {
     currentTrigger = inspiralEventList;
     inspiralEventList = inspiralEventList->next;
-    LALFree( currentTrigger );
+    LAL_CALL( LALFreeSnglInspiral( &status, &currentTrigger ), &status );
   }
-  
- while ( newEventList )
+
+  while ( newEventList )
   {
-    tempTable = newEventList;
+    currentTrigger = newEventList;
     newEventList = newEventList->next;
-    LALFree( tempTable );
+    LAL_CALL( LALFreeSnglInspiral( &status, &currentTrigger ), &status );
+  }
+
+  while ( coincHead )
+  {
+    thisCoinc = coincHead;
+    coincHead = coincHead->next;
+    LALFree( thisCoinc );
   }
 
   if ( userTag ) free( userTag );
