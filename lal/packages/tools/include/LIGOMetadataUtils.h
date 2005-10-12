@@ -686,6 +686,13 @@ XLALCompareStringBurstByTime(
 );
 
 int
+XLALCompareStringBurstByAmplitude(
+	const SnglBurstTable * const *a,
+	const SnglBurstTable * const *b
+);
+
+
+int
 XLALCompareSnglBurstBySNR(
 	const SnglBurstTable * const *a,
 	const SnglBurstTable * const *b

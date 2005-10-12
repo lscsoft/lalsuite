@@ -346,6 +346,33 @@ XLALCompareStringBurstByTime(
 	return(0);
 }
 
+int
+XLALCompareStringBurstByAmplitude(
+	const SnglBurstTable * const *a,
+	const SnglBurstTable * const *b
+)
+/* </lalVerbatim> */
+{
+        REAL4 Ampa, Ampb, A;
+	REAL4 snra, snrb;
+	REAL4 delta;
+
+	Ampa = (*a)->amplitude;
+	Ampb = (*b)->amplitude;
+	snra = (*a)->snr;
+	snrb = (*b)->snr;
+
+	A = (Ampa+Ampb)/2.0;
+	delta = 3*A*(1.0/snra+1.0/snrb);
+
+	if(Ampa > Ampb + delta)
+		return(1);
+	if(Ampa < Ampb - delta)
+		return(-1);
+	return(0);
+}
+
+
 /*
  * Compare the end time of a SnglInspiral event with the start time  
  * of a SnglBurst event.
