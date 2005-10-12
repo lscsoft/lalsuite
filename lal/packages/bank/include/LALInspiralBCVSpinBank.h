@@ -1,3 +1,4 @@
+$ $
 int BCVspin_metric(
    /*input*/
    int N,double *Sn,double fmin,double fmax,double beta,
