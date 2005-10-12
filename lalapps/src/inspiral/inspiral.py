@@ -1003,6 +1003,7 @@ class CohBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     pipeline.AnalysisNode.__init__(self)
     self.__usertag = job.get_config('pipeline','user-tag')
     self.__bank = None
+    self.__ifos = None
 
   def set_user_tag(self,usertag):
     """
@@ -1025,33 +1026,31 @@ class CohBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   def get_bank(self):
     return self.__bank
 
+  def set_ifos(self,ifos):
+    self.add_var_opt('ifos', ifos)
+    self.__ifos = ifos
+   
+  def get_ifos(self):
+    return self.__ifos
+    
   def get_output(self):
     """
-    Returns the file name of output from the inspiral code. This must be kept
-    synchronized with the name of the output file in thinca??? or sire??.
+    Returns the file name of output from the coherent bank. 
+    """
     
     if not self.get_ifos():
       raise InspiralError, "Ifos have not been set"
-    """  
-    """
-    basename = self.get_ifos() + '-THINCA'
+    
+    basename = self.get_ifos() + '-COHBANK'
 
-    if self.get_ifo_tag():
-      basename += '_' + self.get_ifo_tag()
     if self.__usertag:
       basename += '_' + self.__usertag
 
     filename = basename + '-' + str(self.get_start()) + '-' + \
-      str(self.get_end() - self.get_start()) + '-COHBANK' + '.xml'
+      str(self.get_end() - self.get_start()) + '.xml'
 
     self.add_output_file(filename)
-    """
-    basename = self.get_bank()
-    length = len(basename)
-    length -= 4
-    basename2 = basename[:length]
-    filename = basename2 + '-COHBANK' + '.xml'
-    self.add_output_file(filename)
+
     return filename    
 
 
