@@ -2650,8 +2650,8 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "  --injection-file FILE        inject simulated inspiral signals from FILE\n"\
 "  --fast F                     analyse injections templates within a match F\n"\
 "  --inject-overhead            inject signals from overhead detector\n"\
-"  --enable-filter-inj-only     enables the mechanism to filter only segments with injections.\n"\
-"  --disable-filter-inj-only    disables the mechanism to filter only segments with injections.\n"\
+"  --enable-filter-inj-only     filter only segments with injections\n"\
+"  --disable-filter-inj-only    filter all segments when doing injections\n"\
 "                               All segments are filtered.\n"\
 "\n"\
 "  --bank-file FILE             read template bank parameters from FILE\n"\
