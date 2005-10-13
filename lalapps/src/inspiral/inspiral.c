@@ -2691,7 +2691,7 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "  --rsq-veto-window SEC        set the r^2 veto window to SEC\n"\
 "  --rsq-veto-threshold RSQ     set r^2 veto threshold to RSQ\n"\
 "\n"\
-"  --maximization-interval NSEC set length of maximization interval\n"\
+"  --maximization-interval msec set length of maximization interval\n"\
 "\n"\
 "  --enable-output              write the results to a LIGO LW XML file\n"\
 "  --disable-output             do not write LIGO LW XML output file\n"\
@@ -3746,17 +3746,21 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
       case '@':
         {
-          long int maxns = atol( optarg );
-          if ( maxns < 0 )
+          long int maxms = atol( optarg );
+          if ( maxms < 0 )
           {
             fprintf( stderr, "invalid argument to --%s:\n"
-                "maximization interval is less than 0 nsecs: "
-                "(%ld nsecs specified)\n",
-                long_options[option_index].name, maxns );
+                "maximization interval is less than 0 msecs: "
+                "(%ld msecs specified)\n",
+                long_options[option_index].name, maxms );
             exit( 1 );
           }
-          maximizationInterval = (INT4) maxns;
-          ADD_PROCESS_PARAM( "int", "%ld", maxns );
+	  /* internally we require maximizationInterval to be in nano seconds */
+ 	  /* This will be passed as an argument in the call to                */
+          /* XLALMaxSnglInspiralOverIntervals (). Therefore multiply by       */
+          /* 1000000 to convert msec to nano seconds                          */ 
+          maximizationInterval = (INT4) maxms * 1000000;
+          ADD_PROCESS_PARAM( "int", "%ld", maxms );
         }
         break;
 
