@@ -4328,27 +4328,32 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   }
 
   /* check to filter injection segments only */
-  if ( flagFilterInjOnly==1 )
+  if ( flagFilterInjOnly == 1 )
   {
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
     LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
-		 "%s", PROGRAM_NAME );
+        "%s", PROGRAM_NAME );
     LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
-		 "--enable-filter-inj-only" );
+        "--enable-filter-inj-only" );
     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
     LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
-  } else if ( flagFilterInjOnly==0 ) {
+  }
+  else if ( flagFilterInjOnly == 0 )
+  {
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
     LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
-		 "%s", PROGRAM_NAME );
+        "%s", PROGRAM_NAME );
     LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
-		 "--disable-filter-inj-only" );
+        "--disable-filter-inj-only" );
     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
     LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
-  } else if ( flagFilterInjOnly==-1 && injectionFile ) {
-    fprintf( stderr, "one of --enable-filter-inj-only or --disable-filter-inj-only must be specified\n" );
+  } 
+  else if ( flagFilterInjOnly == -1 && injectionFile ) 
+  {
+    fprintf( stderr, "one of --enable-filter-inj-only or "
+        "--disable-filter-inj-only must be specified\n" );
     exit( 1 );
   }
 
