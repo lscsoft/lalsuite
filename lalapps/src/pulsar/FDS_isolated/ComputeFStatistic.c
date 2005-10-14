@@ -3486,6 +3486,10 @@ int main(int argc, char *argv[])
 	LogPrintf (LOG_NORMAL,  "Unable to boinc_resolve_filename(%s), so no debugging\n", ptr);
       else {
 	skipsighandler=1;
+#ifdef MAC_LIB
+        /* only sets $DISPLAY if not already set */
+        setenv("DISPLAY", "localhost:0.0", 0);
+#endif
 	LALSnprintf(commandstring,sizeof(commandstring),"ddd %s %d &", resolved_name ,process_id);
 	system(commandstring);
 	sleep(20);
