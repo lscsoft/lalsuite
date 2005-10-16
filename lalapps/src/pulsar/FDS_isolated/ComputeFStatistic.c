@@ -3434,6 +3434,16 @@ int main(int argc, char *argv[])
   FILE *fp_debug=NULL;
   int skipsighandler=0;
 
+/* setup windows diagnostics (e.g. redirect stderr into a file!) */
+#ifdef _WIN32
+  boinc_init_diagnostics(BOINC_DIAG_DUMPCALLSTACKENABLED |
+                         BOINC_DIAG_HEAPCHECKENABLED |
+                         BOINC_DIAG_ARCHIVESTDERR |
+                         BOINC_DIAG_REDIRECTSTDERR |
+                         BOINC_DIAG_TRACETOSTDERR);
+#endif
+
+
 #define DEBUG_LEVEL_FNAME "CFS_DEBUG_LEVEL"
 #define DEBUG_DDD_FNAME   "CFS_DEBUG_DDD"
 
@@ -3541,14 +3551,6 @@ int main(int argc, char *argv[])
 #if (BOINC_GRAPHICS == 1)
   set_search_pos_hook = set_search_pos;
   fraction_done_hook = &fraction_done;
-#endif
-
-#ifdef _WIN32
-  boinc_init_diagnostics(BOINC_DIAG_DUMPCALLSTACKENABLED |
-                         BOINC_DIAG_HEAPCHECKENABLED |
-                         BOINC_DIAG_ARCHIVESTDERR |
-                         BOINC_DIAG_REDIRECTSTDERR |
-                         BOINC_DIAG_TRACETOSTDERR);
 #endif
 
   /* boinc_init() or boinc_init_graphics() needs to be run before any
