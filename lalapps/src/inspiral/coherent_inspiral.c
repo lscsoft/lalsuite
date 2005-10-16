@@ -1170,21 +1170,26 @@ int main( int argc, char *argv[] )
 	      LALCoherentInspiralFilterSegment (&status, &thisEvent, cohInspFilterInput, cohInspFilterParams);
 
  /* Now change from geocentric to equatorial */
-	      thisEventTemp = thisEvent;
-	      while( thisEventTemp )
+	      thisEventTemp =thisEvent;
+	      if ( (numDetectors == 3 && !( caseID[0] && caseID[5])) || numDetectors == 4 )
+		{
+	      	  while( thisEventTemp )
 		    {
-		      convertParams.system = COORDINATESYSTEM_EQUATORIAL;
-		      convertParams.zenith = NULL;
-		      convertParams.gpsTime = &(thisEventTemp->end_time);
-		      tempSky.system = COORDINATESYSTEM_GEOGRAPHIC;
-		      tempSky.longitude = thisEventTemp->ligo_axis_dec;
-		      tempSky.latitude = thisEventTemp->ligo_axis_ra;
+		      convertParams.system=COORDINATESYSTEM_EQUATORIAL;
+		      convertParams.zenith= NULL;
+		      convertParams.gpsTime=&(thisEventTemp->end_time);
+		      /*The next few lines gets the parameters ready for conversion. Need to check to make sure that thisEvent->ligo_axis_dec is in proper notation, i.e. */
+
+		      tempSky.system=COORDINATESYSTEM_GEOGRAPHIC;
+		      tempSky.latitude=thisEventTemp->ligo_axis_dec;
+		      tempSky.longitude=thisEventTemp->ligo_axis_ra;
 		      LALConvertSkyCoordinates(&status,&tempSky, &tempSky,&convertParams);	     
-		      thisEventTemp->ligo_axis_dec = LAL_PI*0.5-tempSky.latitude;
-		      thisEventTemp->ligo_axis_ra = tempSky.longitude;
+		      thisEventTemp->ligo_axis_dec=LAL_PI*0.5-tempSky.latitude;
+		      thisEventTemp->ligo_axis_ra=tempSky.longitude;
 
 		      thisEventTemp = thisEventTemp->next;
-		    }	      
+		    }
+		}	      
 
 	      if ( cohSNROut )
 		{
