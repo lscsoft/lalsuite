@@ -98,6 +98,7 @@ LogPrintfVerbatim (LogLevel_t level, const char* format, ...)
 
     /* simply print this to output  */
     vfprintf (LogOutput, format, va );
+    fflush(LogOutput);
 
     va_end(va);
 
@@ -129,6 +130,7 @@ LogPrintf_va (LogLevel_t level, const char* format, va_list va )
      
   fprintf(LogOutput, "%s [%s]: ", LogGetTimestamp(), LogFormatLevel(level) );
   vfprintf(LogOutput, format, va);
+  fflush(LogOutput);
 
   return;
 
