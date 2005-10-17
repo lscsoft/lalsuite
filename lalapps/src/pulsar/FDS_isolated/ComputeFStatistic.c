@@ -1024,6 +1024,10 @@ int main(int argc,char *argv[])
 	{
 	  LogPrintf ( LOG_CRITICAL, "Failed to open Fstat-file '%s' for final '%%DONE' marker!\n\n", 
 		      FstatFilename);
+	  return (COMPUTEFSTAT_EXIT_OPENFSTAT);
+	}
+      else
+	{
 	  fprintf(fpFstat, "%%DONE\n");
 	  fclose(fpFstat);
 	}
