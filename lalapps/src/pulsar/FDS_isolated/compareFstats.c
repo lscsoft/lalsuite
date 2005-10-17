@@ -43,6 +43,8 @@ RCSID ("$Id$");
 #define TRUE (1==1)
 #define FALSE (1==0)
 
+#define DONE_MARKER "%DONE"
+
 /* local prototypes */
 /* Prototypes for the functions defined in this file */
 void initUserVars (LALStatus *);
@@ -175,7 +177,6 @@ compareClusterFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALP
   line1 = f1->lines->tokens[nlines1-1];
   line2 = f2->lines->tokens[nlines2-1];
 
-#define DONE_MARKER "%DONE"
   if ( strcmp(line1, DONE_MARKER ) ) 
     {
       LALPrintError ("ERROR: File 1 is not properly terminated by '%s' marker!\n\n", 
@@ -284,6 +285,28 @@ compareFstatFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALPar
 
   nlines1 = f1->lines->nTokens;
   nlines2 = f2->lines->nTokens;
+
+  /* last line HAS to contain 'DONE'-marker */
+  line1 = f1->lines->tokens[nlines1-1];
+  line2 = f2->lines->tokens[nlines2-1];
+
+  if ( strcmp(line1, DONE_MARKER ) ) 
+    {
+      LALPrintError ("ERROR: File 1 is not properly terminated by '%s' marker!\n\n", 
+		     DONE_MARKER);
+      (*diff) ++;	/* increase difference-counter */
+    }
+  else
+    nlines1 --; /* avoid stepping on DONE-marker in comparison */
+
+  if ( strcmp(line2, DONE_MARKER ) )  
+    {
+      LALPrintError ("ERROR: File 2 is not properly terminated by '%s' marker!\n\n", 
+		     DONE_MARKER);
+      (*diff) ++;
+    }
+  else
+    nlines2 --;	/* avoid stepping on DONE-marker in comparison */
 
   /* step through the two files and compare (trying to avoid stumbling on roundoff-errors ) */
   minlines = (nlines1 < nlines2) ? nlines1 : nlines2;
