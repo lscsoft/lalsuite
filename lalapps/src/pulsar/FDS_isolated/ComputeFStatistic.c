@@ -19,6 +19,9 @@
 #include <glob.h>
 #endif
 
+#include <string.h>
+#include <errno.h>
+
 #define	 __USE_ISOC99 1
 #include <math.h>
 
@@ -772,7 +775,7 @@ int main(int argc,char *argv[])
 	    setvbuf(fpFstat, fstatbuff, _IOFBF, uvar_OutputBufferKB * 1024);
 
 	  need2checkpoint = TRUE;
-	  LogPrintf ( LOG_NORMAL, " done.\n");
+	  LogPrintfVerbatim ( LOG_NORMAL, " done.\n");
 
 	} /* if maxFileSizeKB atteined => re-compactify output file by toplist */
 
@@ -1095,7 +1098,7 @@ initUserVars (LALStatus *status)
   uvar_ephemYear = (CHAR*)LALCalloc (1, strlen(EPHEM_YEARS)+1);
 
 #if USE_BOINC
-  strcpy (uvar_ephemYear, "");            /* the default year-string under BOINC is empty! */
+  strcpy (uvar_ephemYear, "");            /* the default year-string UNDER BOINC is empty! */
 #else
   strcpy (uvar_ephemYear, EPHEM_YEARS);
 #endif
@@ -3397,33 +3400,52 @@ void worker(void) {
 #endif
 #if BOINC_COMPRESS
   /* compress the file if it exists */
-  if (uvar_useCompression && !retval) {
-    int boinczipret;
-    char* zipname="temp.zip";
+  if (uvar_useCompression && !retval) 
+    {
+      int boinczipret;
+      char* zipname = "temp.zip";
 
-    boinczipret=boinc_delete_file(zipname);
-    if (boinczipret) {
-      LogPrintf (LOG_CRITICAL,  "can't remove old zip file %s. not zipping output.\n",zipname);
-    } else {
-      boinczipret=boinc_zip(ZIP_IT, zipname , Outputfilename);
-      if (boinczipret) {
-        LogPrintf (LOG_CRITICAL,   "Error in zipping file %s to temp.zip. Return value %d. not zipping output.\n",
-                Outputfilename, boinczipret);
-        /* boinc_finish(COMPUTEFSTAT_EXIT_CANTZIP); */
-      } else {
-        boinczipret=boinc_rename(zipname, Outputfilename);
-        if (boinczipret) {
-          LogPrintf (LOG_CRITICAL,   "Error in renaming file %s to %s. boinc_rename() returned %d. not zipping output.\n",
-                  zipname, Outputfilename, boinczipret);
-          /* boinc_finish(COMPUTEFSTAT_EXIT_CANTRENAME); */
-        }
-      }
-    }
-  } /* if useCompression && ok */
+      LogPrintf (LOG_DEBUG, "Now boinc_deleting '%s' ... ", zipname);
+      boinczipret = boinc_delete_file(zipname);
+      if (boinczipret) 
+	{
+	  LogPrintf (LOG_CRITICAL,  "can't remove old zip file %s. not zipping output.\n",zipname);
+	}
+      else 
+	{
+	  LogPrintfVerbatim (LOG_DEBUG, "done.\n");
+	  LogPrintf (LOG_DEBUG, "Now boinc_zip'ing '%s' to '%s' ... ", Outputfilename, zipname );
+	  boinczipret=boinc_zip(ZIP_IT, zipname , Outputfilename);
+	  if (boinczipret) 
+	    {
+	      LogPrintf (LOG_CRITICAL,   "Error in zipping file %s to temp.zip. Return value %d. not zipping output.\n",
+			 Outputfilename, boinczipret);
+	    } 
+	  else 
+	    {
+	      LogPrintfVerbatim (LOG_DEBUG, "done.\n");
+	      LogPrintf (LOG_DEBUG, "Now boinc_rename'ing '%s' to '%s' ... ", zipname, Outputfilename );
+	      boinczipret=boinc_rename(zipname, Outputfilename);
+	      if (boinczipret) 
+		{
+		  LogPrintf (LOG_CRITICAL,   "Error in renaming file %s to %s. boinc_rename() returned %d. not zipping output.\n",
+			     zipname, Outputfilename, boinczipret);
+		  LogPrintf (LOG_CRITICAL, "System says: %s\n", strerror (errno) );
+		}
+	      else
+		{
+		  LogPrintfVerbatim (LOG_DEBUG, " done.\n");
+		}
+	    } /* if !boinczipret */
+
+	} /* if !boinczipret (deleting) */
+
+    } /* if useCompression && ok */
 #endif
   boinc_finish(retval);
   return;
-}
+
+} /* worker() */
 
 
 /*********************************************************************************
