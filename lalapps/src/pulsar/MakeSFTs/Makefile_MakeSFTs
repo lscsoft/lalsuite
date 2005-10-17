@@ -1,0 +1,70 @@
+# -----------------------------------------------------------
+
+# $Id$
+
+# determine architecture
+OSType=`uname`
+
+# your compiler
+CC=/usr/bin/gcc
+
+# header file directories
+LAL_INCLUDE=$(LALPREFIX)/include
+FRAME_INCLUDE=$(FRAMEPREFIX)/include
+USR_INCLUDE=/usr/include
+
+# library file directories
+LAL_LIB=$(LALPREFIX)/lib
+FRAME_LIB=$(FRAMEPREFIX)/lib
+USR_LIB=/usr/lib
+
+# libraries
+#LRFFTW = rfftw
+#LFFTW = fftw
+LFFTW3F = fftw3f
+LFFTW3 = fftw3
+LLAL = lal
+LALS = lalsupport
+LLALF = lalframe
+#LGSL = gsl
+LFRAME = Frame
+
+# compiler options
+#CFLAGS =  -I$(LAL_INCLUDE) -I$(FRAME_INCLUDE) -I$(USR_INCLUDE)
+CFLAGS =  -Wall -v -ggdb -I$(LAL_INCLUDE) -I$(FRAME_INCLUDE) -I$(USR_INCLUDE)
+#CFLAGS =  -Wall -v -ggdb -I$(LAL_INCLUDE) -I$(USR_INCLUDE)
+
+# linking options
+LDFLAGS =  -L$(LAL_LIB) -L$(FRAME_LIB) -L$(USR_LIB)
+#LDFLAGS =  -L$(LAL_LIB) -L$(USR_LIB)
+#LIBS =  -l$(LALS) -l$(LLAL) -l$(LFFTW3F) -lm
+#LIBS =  -l$(LALS) -l$(LLAL) -l$(LFFTW3F) -l$(LFFTW3) -lm
+#LIBS =  -l$(LALS) -l$(LLAL) -l$(LFRAME) -l$(LFFTW3F) -l$(LFFTW3) -l$(LGSL) -lm
+#LIBS =  -l$(LALS) -l$(LLAL) -l$(LFRAME) -l$(LFFTW3F) -l$(LFFTW3) -lm
+LIBS =  -l$(LALS) -l$(LLALF) -l$(LLAL) -l$(LFRAME) -l$(LFFTW3F) -l$(LFFTW3) -lm
+
+# the object files
+OBJS = MakeSFTs.o
+
+# ------------------------------------------------------------------
+
+# default target
+
+all: lalapps_MakeSFTs 
+
+# compile code
+MakeSFTs.o: MakeSFTs.c
+	$(CC) $(CFLAGS) -c MakeSFTs.c
+        
+# link code
+
+lalapps_MakeSFTs: $(OBJS)
+	$(CC) $(CFLAGS) -o lalapps_MakeSFTs $(OBJS) $(LIBS) $(LDFLAGS) -static -g
+
+#---------------------------------------------------------------------------
+
+# cleaning
+
+clean: 
+	/bin/rm -f *.o *.a *~ core lalapps_MakeSFTs 
+
