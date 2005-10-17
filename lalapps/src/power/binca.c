@@ -105,6 +105,8 @@ struct options_t {
   CHAR *inputInspiralFiles;
   CHAR *ifoCut;
   CHAR *inspiralclusterchoice;
+
+  INT4  combineSnr;
   
   INT4  usePlayground;
   INT4  ignorePlayground;
@@ -138,6 +140,8 @@ static void set_option_defaults(struct options_t *options)
   options->ifoCut = NULL;
   options->inspiralclusterchoice = NULL;
 
+  options->combineSnr = FALSE;
+
   options->usePlayground = TRUE;
   options->ignorePlayground = FALSE;
   options->verbose = FALSE;
@@ -163,11 +167,12 @@ static void parse_command_line(int argc, char *argv[], struct options_t *options
   int option_index;
   struct option long_options[] = {
     /* these options set a flag */
-    {"verbose",                 no_argument, &options->verbose, TRUE},
-    {"noplayground",            no_argument, &options->usePlayground, FALSE},
+    {"verbose",                 no_argument, &options->verbose,          TRUE},
+    {"noplayground",            no_argument, &options->usePlayground,    FALSE},
     {"ignore-playground",       no_argument, &options->ignorePlayground, TRUE},
-    {"write-inspiral",          no_argument, &options->writeInspiral, TRUE},
-    {"free-inspmemory",         no_argument, &options->freeinspmemory, TRUE},
+    {"write-inspiral",          no_argument, &options->writeInspiral,    TRUE},
+    {"free-inspmemory",         no_argument, &options->freeinspmemory,   TRUE},
+    {"combine-snr",             no_argument, &options->combineSnr,       TRUE},
     /* sets the values */
     {"burst-list-files",        required_argument, NULL, 'a'},
     {"inspiral-list-files",     required_argument, NULL, 'b'},
@@ -366,7 +371,8 @@ static SnglInspiralTable *read_inspiraltriggers(LALStatus *stat, char *filename,
       if(*addpoint)
 	{
 	  LAL_CALL( LALClusterSnglInspiralTable(stat, *addpoint, 0, clusterchoice ), stat);
-	  LAL_CALL( LALIfoCutSingleInspiral(stat, &(*addpoint), options.ifoCut ), stat);
+	  if(options.ifoCut)
+	    LAL_CALL( LALIfoCutSingleInspiral(stat, &(*addpoint), options.ifoCut ), stat);
 	}
 
       while(*addpoint != NULL)
@@ -516,13 +522,15 @@ static void find_coincident_events(LALStatus *stat, SnglInspiralTable *inspiralt
 
   while ( (bursttriggers != NULL) && (bursttriggers->start_time.gpsSeconds * NSEC < end) )
     {
-      INT8 burststart, burstend, inspiralend;
+      INT8 burststart, burstend, burstpeak, inspiralend;
       INT4 isPlay = 0;
       LIGOTimeGPS burstendgps={0,0};
       INT4 match = 0;
 
       /* Convert the start time of the burst trigger to nanoseconds(ns.) */ 
       LAL_CALL( LALGPStoINT8(stat, &burststart, &(bursttriggers->start_time)), stat);
+      /* Covert the peak time into nanoseconds */
+      LAL_CALL( LALGPStoINT8(stat, &burstpeak, &(bursttriggers->peak_time)), stat);
 
       /* Find the gps end time of the burst trigger and convert to ns. */
       LAL_CALL(LALAddFloatToGPS(stat, &burstendgps, &(bursttriggers->start_time), bursttriggers->duration), stat);
@@ -535,7 +543,7 @@ static void find_coincident_events(LALStatus *stat, SnglInspiralTable *inspiralt
       while (inspiraltriggers != NULL)
 	{
 	  LAL_CALL( LALGPStoINT8(stat, &inspiralend, &(inspiraltriggers->end_time)), stat);
-	  if (inspiralend > burststart - options.deltaT)
+	  if (inspiralend > burstpeak - options.deltaT)
 	    {
 	      break;
 	    }
@@ -582,10 +590,10 @@ static void find_coincident_events(LALStatus *stat, SnglInspiralTable *inspiralt
 	      LAL_CALL( LALGPStoINT8(stat, &inspiralend, &(tmpInspiralEvent->end_time)), stat);
 
 	      /* As long as the inspiral end time is less than the
-	       * burst end time + deltat keep on considering them as 
+	       * burst peak time + deltat keep on considering them as 
 	       * coincident triggers 
 	       */
-	      if (inspiralend > burstend + options.deltaT)
+	      if (inspiralend > burstpeak + options.deltaT)
 		break;
 
 
@@ -620,11 +628,23 @@ static void find_coincident_events(LALStatus *stat, SnglInspiralTable *inspiralt
 
       if (match)
 	{
+	  REAL4 tmpsnr = 0.0;
+
 	  (*nbcoincident)++;
+
+	  if (options.combineSnr)
+	    {
+	      tmpsnr = bursttriggers->snr;
+	      bursttriggers->snr = bursttriggers->snr + pow(bestsnr->snr,2);
+	    }
+
 	  *coincburst = LALMalloc(sizeof(**coincburst));
 	  **coincburst = *bursttriggers;
 	  coincburst = &(*coincburst)->next;
 	  *coincburst = NULL;
+
+	  if (options.combineSnr)
+	    bursttriggers->snr = tmpsnr;
 	}
 
       /* Move on to the next burst trigger */
