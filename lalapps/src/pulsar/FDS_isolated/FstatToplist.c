@@ -299,13 +299,19 @@ int write_toplist_item_to_fp(TOPLISTLINE fline, FILE*fp, UINT4*checksum) {
 
     UINT4 length =
       LALSnprintf(linebuf, sizeof(linebuf),
-		 "%16.12f %8.7f %8.7f %.17g %10.6g\n", 
-		 fline.Freq,
-		 fline.Alpha,
-		 fline.Delta,
-		 fline.f1dot,
-		 fline.Fstat);
-
+		  /* output precision: choose by following (generous!) relative-error constraints:
+		   * Freq:1e-9 
+		   * Alpha,Delta:1e-9 
+		   * f1dot:1e-9 
+		   * F:1e-6 
+		   */
+		  "%10f %10f %10f %10g %7f\n", 
+		  fline.Freq,
+		  fline.Alpha,
+		  fline.Delta,
+		  fline.f1dot,
+		  fline.Fstat);
+    
     if(length>sizeof(linebuf))
 	return -1;
 
