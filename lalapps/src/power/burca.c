@@ -110,7 +110,6 @@ int main(int argc, char **argv)
       {"ignore-tfcomparison",     no_argument,       &ignoreTFcomparison,1 },
       {"ignore-tcomparison",      no_argument,       &ignoreTcomparison, 1 },
       {"no-repeats",              no_argument,       &noRepeats,         1 },
-      {"amplitude-cut",           no_argument,       &amplitudeCut,      1 },
       /* parameters used to generate calibrated power spectrum */
       {"ifo-a",                   required_argument, 0,                'a'},
       {"ifo-b",                   required_argument, 0,                'b'},
@@ -124,6 +123,7 @@ int main(int argc, char **argv)
       {"slide-time-ns",           required_argument, 0,                'Y'},
       {"output-dir",              required_argument, 0,                'o'},
       {"number-slides",           required_argument, 0,                'k'},
+      {"amplitude-cut",           required_argument, 0,                'z'},
       {"user-tag",                required_argument, 0,                'i'},
       {"help",                    no_argument,       0,                'h'}, 
       {0, 0, 0, 0}
@@ -159,7 +159,7 @@ int main(int argc, char **argv)
       int option_index = 0;
 
       c = getopt_long_only( argc, argv, 
-			    "a:b:c:d:f:t:r:s:i:j:k:X:Y:o:h", long_options, &option_index );
+			    "a:b:c:d:f:t:r:s:i:j:k:X:Y:o:z:h", long_options, &option_index );
 
       /* detect the end of the options */
       if ( c == - 1 )
@@ -245,6 +245,10 @@ int main(int argc, char **argv)
 
 	case 'Y':
 	  slideData.gpsNanoSeconds = (INT4) atoi( optarg );
+	  break;
+
+	case 'z':
+	  amplitudeCut = (INT4) atoi( optarg );
 	  break;
 
 	case 'f':
