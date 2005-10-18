@@ -24,6 +24,9 @@ import tempfile
 #from glue import pipeline
 #import strain
 
+#
+# USAGE FUNCTION
+#
 def usage():
   msg = """\
 Usage: MakeSFTDAG [options]
@@ -51,6 +54,22 @@ Usage: MakeSFTDAG [options]
 """
   print >> sys.stderr, msg
 
+#
+# FUNCTION THAT WRITE ONE JOB TO DAG FILE
+#
+def writeToDag(dagFID, nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site):
+  LSCdataFind = 'LSCdataFind_%i' % nodeCount
+  MakeSFTs    = 'MakeSFTs_%i' % nodeCount
+  cacheFile   = '%s/%s-%s-%s.cache' % (cachePath, site,startTimeThisNode,endTimeThisNode)
+  dagFID.write('JOB %s datafind.sub\n' % LSCdataFind)
+  dagFID.write('RETRY %s 10\n' % LSCdataFind)
+  dagFID.write('VARS %s macrogpsstarttime="%s" macrogpsendtime="%s" macroobservatory="%s"\n' % (LSCdataFind, startTimeThisNode, endTimeThisNode, site))
+  dagFID.write('JOB %s MakeSFTs.sub\n' % MakeSFTs)
+  dagFID.write('RETRY %s 1\n' % MakeSFTs)
+  argList = '-f %s -t %s -p %s -C %s -s %s -e %s -N %s' %(filterKneeFreq, timeBaseline, outputSFTPath, cacheFile, startTimeThisNode, endTimeThisNode, channelName)
+  dagFID.write('VARS %s argList="%s"\n'%(MakeSFTs,argList))
+  dagFID.write('PARENT %s CHILD %s\n'%(LSCdataFind,MakeSFTs))
+  
 #
 # MAIN CODE START HERE 
 #
@@ -95,7 +114,7 @@ analysisStartTime = None
 analysisEndTime = None
 dagFileName = None
 auxPath = None
-filterKneeFreq = None
+filterKneeFreq = -1
 timeBaseline = None
 outputSFTPath = None
 cachePath = None
@@ -114,21 +133,21 @@ for o, a in opts:
     usage()
     sys.exit(0)
   elif o in ("-s", "--gps-start-time"):
-    gpsStartTime = a
+    gpsStartTime = long(a)
   elif o in ("-e", "--gps-end-time"):
-    gpsEndTime = a
+    gpsEndTime = long(a)
   elif o in ("-a", "--analysis-start-time"):
-    analysisStartTime = a
+    analysisStartTime = long(a)
   elif o in ("-b", "--analysis-end-time"):
-    analysisEndTime = a    
+    analysisEndTime = long(a)    
   elif o in ("-f", "--dag-file"):
     dagFileName = a   
   elif o in ("-t", "--aux-path"):
     auxPath = a
   elif o in ("-k", "--filter-knee-freq"):
-    filterKneeFreq = a
+    filterKneeFreq = long(a)
   elif o in ("-T", "--time-baseline"):
-    timeBaseline = a
+    timeBaseline = long(a)
   elif o in ("-p", "--output-sft-path"):
     outputSFTPath = a
   elif o in ("-C", "--cache-path"):
@@ -136,15 +155,15 @@ for o, a in opts:
   elif o in ("-N", "--channel-name"):
     channelName = a
   elif o in ("-r", "--sample-rate"):
-    sampleRate = a
+    sampleRate = long(a)
   elif o in ("-w", "--window-type"):
     windowType = a
   elif o in ("-v", "--sft-ver"):
-    sftVersion = a
+    sftVersion = long(a)
   elif o in ("-m", "--max-num-per-node"):
-    maxNumPerNode = a
+    maxNumPerNode = long(a)
   elif o in ("-L", "--max-length-all-jobs"):
-    maxLengthAllJobs = a
+    maxLengthAllJobs = long(a)
   elif o in ("-g", "--segment-file"):
     segmentFile = a
   elif o in ("-H", "--use-hot"):
@@ -186,7 +205,7 @@ if not auxPath:
   print >> sys.stderr, "Use --help for usage details."
   sys.exit(1)
 
-if not filterKneeFreq:
+if filterKneeFreq < 0:
   print >> sys.stderr, "No filter knee frequency specified."
   print >> sys.stderr, "Use --help for usage details."
   sys.exit(1)
@@ -269,19 +288,49 @@ if not log_path:
 #fh = open( logfile, "w" )
 #fh.close()
 
-# create the DAG writing the log to the specified directory
+# Make sure not to exceed maximum allow analysis
+if (analysisEndTime > analysisStartTime + maxLengthAllJobs):
+    analysisEndTime = analysisStartTime + maxLengthAllJobs
+
+# Get the IFO site, which is the first letter of the channel name.
+site = channelName[0]
+
+# create the DAG file with the jobs to run
 dagFileName = dagFileName + '.dag'
 dagFID = file(dagFileName,'w')
-dagFID.write('JOB LSCdataFind datafind.sub\n')
-dagFID.write('RETRY LSCdataFind 10\n')
-dagFID.write('VARS LSCdataFind macrogpsendtime="GPSENDTIME" macroobservatory="SITE" macrogpsstarttime="GPSSTARTTIME"\n')
-dagFID.write('JOB MakeSFTs MakeSFTs.sub\n')
-dagFID.write('RETRY MakeSFTs 1\n')
-argList = '-f %s -t %s -p %s -C %s -s %s -e %s -N %s' %(filterKneeFreq, timeBaseline, outputSFTPath, cachePath, analysisStartTime, analysisEndTime, channelName)
-dagFID.write('VARS MakeSFTs argList="%s"\n'%argList)
-dagFID.write('PARENT LSCdataFind CHILD MakeSFTs\n')
+# Loop through the analysis time; make sure no more than 
+startTimeThisNode = analysisStartTime
+endTimeThisNode   = analysisStartTime
+endTimeAllNodes   = analysisStartTime
+nodeCount         = 0L
+numThisNode       = 0L
+while (endTimeAllNodes < analysisEndTime):
+     # increment endTimeAllNodes by the timeBaseline until we get past the analysisEndTime
+     endTimeAllNodes = endTimeAllNodes + timeBaseline
+     if (endTimeAllNodes <= analysisEndTime):
+        # increment the number of SFTs output from this node, and update the end time this node.
+        numThisNode = numThisNode + 1
+        endTimeThisNode = endTimeAllNodes
+        if (numThisNode < maxNumPerNode):
+           continue
+        else:
+           # write jobs to dag for this node
+           nodeCount = nodeCount + 1
+           writeToDag(dagFID,nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site)
+           # Update for next node
+           startTimeThisNode = endTimeThisNode
+           numThisNode       = 0L
+else:
+     # we are at or past the analysisEndTime; output job for last node if needed.
+     if (numThisNode > 0L):
+        # write jobs to dag for this node
+        nodeCount = nodeCount + 1
+        writeToDag(dagFID,nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site)
+# END while (endTimeAllNodes < analysisEndTime)
 dagFID.close
 
-print >> sys.stdout, analysisStartTime, analysisEndTime
+# Update actual end time of the last job and print out the times all jobs will run on:
+endTimeAllNodes = endTimeThisNode
+print >> sys.stdout, analysisStartTime, endTimeAllNodes
 
 sys.exit(0)
