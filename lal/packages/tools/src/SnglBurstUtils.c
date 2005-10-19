@@ -356,6 +356,7 @@ XLALCompareStringBurstByAmplitude(
         REAL4 Ampa, Ampb, A;
 	REAL4 snra, snrb;
 	REAL4 delta;
+	REAL4 kappa = 0.4;
 
 	Ampa = (*a)->amplitude;
 	Ampb = (*b)->amplitude;
@@ -363,7 +364,7 @@ XLALCompareStringBurstByAmplitude(
 	snrb = (*b)->snr;
 
 	A = (Ampa+Ampb)/2.0;
-	delta = 3*A*(1.0/snra+1.0/snrb);
+	delta = 3*A*(1.0/snra+1.0/snrb)+A*kappa;
 
 	if(Ampa > Ampb + delta)
 		return(1);
