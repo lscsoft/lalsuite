@@ -191,8 +191,11 @@ static REAL4TimeSeries *ring_get_data( struct ring_params *params )
     /* inject burst signals */
     if ( params->injectFile )
       inject_signal( channel, burst_inject, params->injectFile,
-          params->calibCache, params->dynRangeFac );
-
+          params->calibCache, 1.0 ); 
+    /*  inject_signal( channel, burst_inject, params->injectFile,
+                    params->calibCache, params->dynRangeFac ); */
+    /*  write_REAL4TimeSeries( channel ); */
+        
     /* condition the data: resample and highpass */
     resample_REAL4TimeSeries( channel, params->sampleRate );
     if ( params->writeProcessedData ) /* write processed data */
@@ -445,23 +448,6 @@ static int is_in_list( int i, const char *list )
 
     /* now see if this token is a range */
     if ( ( tok2 = strchr( tok, '-' ) ) )
-      *tok2++ = 0; /* nul terminate first part of token; tok2 is second part */
-
-    if ( tok2 ) /* range */
-    {
-      int n1, n2;
-      if ( strcmp( tok, "^" ) == 0 ) 
-        n1 = INT_MIN;
-      else
-        n1 = atoi( tok );
-      if ( strcmp( tok2, "$" ) == 0 )
-        n2 = INT_MAX;
-      else
-        n2 = atoi( tok2 );
-      if ( i >= n1 && i <= n2 ) /* see if i is in the range */
-        ans = 1;
-    }
-    else if ( i == atoi( tok ) )
       ans = 1;
 
     if ( ans ) /* i is in the list */
