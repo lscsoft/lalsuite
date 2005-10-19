@@ -623,14 +623,18 @@ int main( int argc, char *argv[] )
     gpsAndAcc.accuracy = LALLEAPSEC_STRICT;
     gpsAndAcc.gps = this_inj->geocent_start_time;
     
-    /* calculate hpeak */
-    this_inj->hpeak = sqrt( 5.0 / 2.0 * this_inj->epsilon )  
+    /* calculate h0 */
+    this_inj->h0 = sqrt( 5.0 / 2.0 * this_inj->epsilon )  
       * ( LAL_G_SI * this_inj->totalmass * LAL_MSUN_SI / pow( LAL_C_SI, 2) /
            this_inj->distance / LAL_PC_SI /1000000.0 ) 
        * pow( this_inj->quality, -0.5 ) * pow( 1.0 + 7.0 / 
            24.0 / pow( this_inj->quality, 2.0), -0.5 )
        * pow(  1.0 - 0.63 * pow( 1.0 - this_inj->spin,0.3 ), -0.5);
     
+    /* calculate hrss */
+    this_inj->hrss = this_inj->h0 * pow( ( 2.0 * pow( this_inj->quality, 3.0 ) + this_inj->quality ) / 
+        ( 2.0 * LAL_PI * this_inj->centralfreq * ( 1.0 + 4.0 * pow ( this_inj->quality, 2 ) ) ) , 0.5);
+      
     /* initialize end times with geocentric value */
     this_inj->h_start_time = this_inj->l_start_time = this_inj->geocent_start_time;
     
@@ -656,11 +660,14 @@ int main( int argc, char *argv[] )
     this_inj->eff_dist_h /= sqrt( splus*splus*resp.plus*resp.plus +
         scross*scross*resp.cross*resp.cross );
 
-    /* initialize 'effective hpeaks' with real hpeak */
-    this_inj->hpeak_h = this_inj->hpeak_l = this_inj->hpeak / 2.0;
-    
-    /* compute hpeak at LHO */ 
-    this_inj->hpeak_h *= sqrt(splus*splus*resp.plus*resp.plus + 
+    /* compute hrss at LHO */ 
+    this_inj->hrss_h = this_inj->h0 * pow ( ( 
+          (2*pow(this_inj->quality,3)+this_inj->quality ) * splus*splus*resp.plus*resp.plus +
+          2*pow(this_inj->quality,2) * splus*scross*resp.plus*resp.cross +
+          2*pow(this_inj->quality,3) * scross*scross*resp.cross*resp.cross )
+        / ( 2.0 * LAL_PI * this_inj->centralfreq * ( 1.0 + 4.0 * pow ( this_inj->quality, 2 ) ) ) , 0.5 );
+      
+      sqrt(splus*splus*resp.plus*resp.plus + 
         scross*scross*resp.cross*resp.cross);
     
     
@@ -680,10 +687,13 @@ int main( int argc, char *argv[] )
     this_inj->eff_dist_l /= sqrt( splus*splus*resp.plus*resp.plus 
         + scross*scross*resp.cross*resp.cross );
     
-    /* compute hpeak at LLO */
-    this_inj->hpeak_l *= sqrt(splus*splus*resp.plus*resp.plus + 
-        scross*scross*resp.cross*resp.cross); 
-
+    /* compute hrss at LLO */
+    this_inj->hrss_l = this_inj->h0 * pow ( (
+          (2*pow(this_inj->quality,3)+this_inj->quality ) * splus*splus*resp.plus*resp.plus +
+          2*pow(this_inj->quality,2) * splus*scross*resp.plus*resp.cross +
+          2*pow(this_inj->quality,3) * scross*scross*resp.cross*resp.cross )
+          / ( 2.0 * LAL_PI * this_inj->centralfreq * ( 1.0 + 4.0 * pow ( this_inj->quality, 2 ) ) ) , 0.5 );
+        
     /* increment the injection time */
     LAL_CALL( LALAddFloatToGPS( &status, &gpsStartTime, &gpsStartTime, 
           meanTimeStep ), &status );
