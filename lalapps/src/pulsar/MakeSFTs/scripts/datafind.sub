@@ -1,0 +1,9 @@
+universe = scheduler
+executable = /opt/lscsoft/glue/bin/LSCdataFind
+arguments = --observatory $(observatory) --url-type file --gps-start-time $(gpsstarttime) --gps-end-time $(gpsendtime) --lal-cache --type $(inputdatatype) --match localhost/frames
+getenv = True
+log = /usr1/ugmendell/datafind/datafind_$(tagstring).log
+error = logs/datafind_$(tagstring).err
+output = cache/$(macroobservatory)-$(macrogpsstarttime)-$(macrogpsendtime).cache
+notification = never
+queue 1
