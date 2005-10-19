@@ -621,9 +621,10 @@ LALWriteLIGOLwXMLTable (
                 tablePtr.simRingTable->quality,
                 tablePtr.simRingTable->eff_dist_h,
                 tablePtr.simRingTable->eff_dist_l,
-                tablePtr.simRingTable->hpeak,
-                tablePtr.simRingTable->hpeak_h,
-                tablePtr.simRingTable->hpeak_l
+                tablePtr.simRingTable->h0,
+                tablePtr.simRingTable->hrss,
+                tablePtr.simRingTable->hrss_h,
+                tablePtr.simRingTable->hrss_l
                 );
           tablePtr.simRingTable = tablePtr.simRingTable->next;
           }

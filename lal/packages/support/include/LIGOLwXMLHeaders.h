@@ -460,14 +460,15 @@ fputs( "      <Column Name=\"sim_inspiralgroup:sim_ring:centralfreq\" Type=\"rea
 fputs( "      <Column Name=\"sim_inspiralgroup:sim_ring:quality\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_inspiralgroup:sim_ring:eff_dist_h\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_inspiralgroup:sim_ring:eff_dist_l\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_inspiralgroup:sim_ring:hpeak\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_inspiralgroup:sim_ring:hpeak_h\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_inspiralgroup:sim_ring:hpeak_l\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_ring:h0\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_ring:hrss\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_ring:hrss_h\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_ring:hrss_l\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_inspiralgroup:sim_ring:simulation_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
 fputs( "      <Stream Name=\"sim_inspiralgroup:sim_ring:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 #define SIM_RING_ROW \
-  "         \"process:process_id:0\",\"%s\",\"%s\",%d,%d,%d,%d,%d,%d,%22.16e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,\"sim_ring:simulation_id:0\""
+  "         \"process:process_id:0\",\"%s\",\"%s\",%d,%d,%d,%d,%d,%d,%22.16e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,\"sim_ring:simulation_id:0\""
 
 #define PRINT_LIGOLW_XML_SUMM_VALUE(fp) ( \
 fputs( "   <Table Name=\"summ_valuegroup:summ_value:table\">\n" , fp ) == EOF || \

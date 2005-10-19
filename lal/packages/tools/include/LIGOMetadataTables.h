@@ -582,9 +582,10 @@ tagSimRingTable
   REAL4          quality;
   REAL4          eff_dist_h;
   REAL4          eff_dist_l;
-  REAL4          hpeak;
-  REAL4          hpeak_h;
-  REAL4          hpeak_l;
+  REAL4          h0;
+  REAL4          hrss;
+  REAL4          hrss_h;
+  REAL4          hrss_l;
   EventIDColumn  *event_id;
 }
 SimRingTable;
