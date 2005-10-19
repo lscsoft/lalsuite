@@ -235,6 +235,9 @@ LALBeginLIGOLwXMLTable (
     case sim_burst_table:
       myfprintf( xml->fp, LIGOLW_XML_SIM_BURST );
       break;
+    case sim_ring_table:
+      myfprintf( xml->fp, LIGOLW_XML_SIM_RING );
+      break;
     case summ_value_table:
       myfprintf( xml->fp, LIGOLW_XML_SUMM_VALUE );
       break;
@@ -591,6 +594,39 @@ LALWriteLIGOLwXMLTable (
               );
         tablePtr.simBurstTable = tablePtr.simBurstTable->next;
       }
+      break;
+    case sim_ring_table:
+      while( tablePtr.simRingTable )
+        {
+          FIRST_TABLE_ROW
+            fprintf( xml->fp, SIM_RING_ROW,
+                tablePtr.simRingTable->waveform,
+                tablePtr.simRingTable->coordinates,
+                tablePtr.simRingTable->geocent_start_time.gpsSeconds,
+                tablePtr.simRingTable->geocent_start_time.gpsNanoSeconds,
+                tablePtr.simRingTable->h_start_time.gpsSeconds,
+                tablePtr.simRingTable->h_start_time.gpsNanoSeconds,
+                tablePtr.simRingTable->l_start_time.gpsSeconds,
+                tablePtr.simRingTable->l_start_time.gpsNanoSeconds,
+                tablePtr.simRingTable->start_time_gmst,
+                tablePtr.simRingTable->totalmass,
+                tablePtr.simRingTable->rightascension,
+                tablePtr.simRingTable->declination,
+                tablePtr.simRingTable->distance,
+                tablePtr.simRingTable->inclination,
+                tablePtr.simRingTable->polarization,
+                tablePtr.simRingTable->epsilon,
+                tablePtr.simRingTable->spin,
+                tablePtr.simRingTable->centralfreq,
+                tablePtr.simRingTable->quality,
+                tablePtr.simRingTable->eff_dist_h,
+                tablePtr.simRingTable->eff_dist_l,
+                tablePtr.simRingTable->hpeak,
+                tablePtr.simRingTable->hpeak_h,
+                tablePtr.simRingTable->hpeak_l
+                );
+          tablePtr.simRingTable = tablePtr.simRingTable->next;
+          }
       break;
     case summ_value_table:
       while( tablePtr.summValueTable )

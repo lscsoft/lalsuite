@@ -52,6 +52,8 @@ defined in this file are
 \item SIM\_INSPIRAL\_ROW 
 \item LIGOLW\_XML\_SIM\_BURST 
 \item SIM\_BURST\_ROW 
+\item LIGOLW\_XML\_SIM\_RING
+\item SIM\_RING\_ROW
 \item LIGOLW\_XML\_SUMM\_VALUE 
 \item SUMM\_VALUE\_ROW 
 \item LIGOLW\_XML\_SIM\_INST\_PARAMS
@@ -433,6 +435,39 @@ fputs( "      <Stream Name=\"sim_burstgroup:sim_burst:table\" Type=\"Local\" Del
 
 #define SIM_BURST_ROW \
 "         \"process:process_id:0\",\"%s\",%d,%d,%d,%d,%d,%d,%22.16e,%e,%e,%e,%e,\"%s\",%e,%e,%e,%e,%e,%e,%d,\"sim_burst:simulation_id:0\""
+
+#define PRINT_LIGOLW_XML_SIM_RING(fp) ( \
+fputs( "   <Table Name=\"sim_inspiralgroup:sim_ring:table\">\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_ring:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF ||  \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_ring:waveform\" Type=\"lstring\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_ring:coordinates\" Type=\"lstring\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_ring:geocent_start_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_ring:geocent_start_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_ring:h_start_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_ring:h_start_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_ring:l_start_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_ring:l_start_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_ring:start_time_gmst\" Type=\"real_8\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_ring:totalmass\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_ring:rightascension\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_ring:declination\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_ring:distance\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_ring:inclination\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_ring:polarization\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_ring:epsilon\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_ring:spin\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_ring:centralfreq\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_ring:quality\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_ring:eff_dist_h\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_ring:eff_dist_l\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_ring:hpeak\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_ring:hpeak_h\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_ring:hpeak_l\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_ring:simulation_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
+fputs( "      <Stream Name=\"sim_inspiralgroup:sim_ring:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
+
+#define SIM_RING_ROW \
+  "         \"process:process_id:0\",\"%s\",\"%s\",%d,%d,%d,%d,%d,%d,%22.16e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,\"sim_ring:simulation_id:0\""
 
 #define PRINT_LIGOLW_XML_SUMM_VALUE(fp) ( \
 fputs( "   <Table Name=\"summ_valuegroup:summ_value:table\">\n" , fp ) == EOF || \

@@ -112,6 +112,7 @@ typedef enum
   multi_inspiral_table,
   sim_inspiral_table,
   sim_burst_table,
+  sim_ring_table,
   summ_value_table,
   sim_inst_params_table,
   coinc_inspiral_table,
@@ -263,6 +264,7 @@ tagEventIDColumn
   struct tagSnglTransdataTable  *snglTransdataTable;
   struct tagSimInspiralTable    *simInspiralTable;
   struct tagSimBurstTable       *simBurstTable;
+  struct tagSimRingTable        *simRingTable;
   struct tagCoincInspiralTable  *coincInspiralTable;
   struct tagInspiralTemplate    *inspiralTemplate;
 }
@@ -545,6 +547,51 @@ tagSimBurstTable
   EventIDColumn   *event_id;
 }
 SimBurstTable;
+
+
+/* </lalVerbatim> */
+#if 0
+<lalLaTeX>
+
+Document table.
+
+\subsubsection*{Type \texttt{SimRingTable}}
+
+</lalLaTeX>
+#endif
+/* <lalVerbatim> */
+typedef struct
+tagSimRingTable
+{
+  struct tagSimRingTable *next;
+  CHAR           waveform[LIGOMETA_WAVEFORM_MAX];
+  CHAR           coordinates[LIGOMETA_COORDINATES_MAX];
+  LIGOTimeGPS    geocent_start_time;
+  LIGOTimeGPS    h_start_time;
+  LIGOTimeGPS    l_start_time;
+  REAL8          start_time_gmst;
+  REAL4          totalmass;
+  REAL4          rightascension;
+  REAL4          declination;
+  REAL4          distance;
+  REAL4          inclination;
+  REAL4          polarization;
+  REAL4          epsilon;
+  REAL4          spin;
+  REAL4          centralfreq;
+  REAL4          quality;
+  REAL4          eff_dist_h;
+  REAL4          eff_dist_l;
+  REAL4          hpeak;
+  REAL4          hpeak_h;
+  REAL4          hpeak_l;
+  EventIDColumn  *event_id;
+}
+SimRingTable;
+                              
+
+
+
 /* </lalVerbatim> */
 #if 0
 <lalLaTeX>
@@ -765,6 +812,7 @@ tagMetadataTable
   MultiInspiralTable    *multiInspiralTable;
   SimInspiralTable      *simInspiralTable;
   SimBurstTable         *simBurstTable;
+  SimRingTable          *simRingTable;
   SnglTransdataTable    *snglTransdataTable;
   SummValueTable        *summValueTable;
   SimInstParamsTable    *simInstParamsTable;
