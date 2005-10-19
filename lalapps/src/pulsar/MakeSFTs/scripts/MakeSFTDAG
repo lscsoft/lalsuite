@@ -38,6 +38,8 @@ Usage: MakeSFTDAG [options]
   -b, --analysis-end-time   GPS end time of data from which to generate SFTs
   -f, --dag-file            filename for .dag file (excluding the .dag)
   -t, --aux-path            path to auxiliary data files
+  -G, --tag-string          tag string used in names of various files unique to jobs run under DAG
+  -d, --input-data-type     input data type for use with LSCdataFind --type option
   -k  --filter-knee-freq    high pass filter knee frequency used on time domain data before generating SFTs.
   -T  --time-baseline       time baseline of SFTs  (e.g., 60 or 1800 seconds)
   -p  --output-sft-path     path to output SFTs
@@ -57,17 +59,19 @@ Usage: MakeSFTDAG [options]
 #
 # FUNCTION THAT WRITE ONE JOB TO DAG FILE
 #
-def writeToDag(dagFID, nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site):
+def writeToDag(dagFID, nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, useHoT, tagString):
   LSCdataFind = 'LSCdataFind_%i' % nodeCount
   MakeSFTs    = 'MakeSFTs_%i' % nodeCount
+  tagStringOut = '%s_%i' % (tagString, nodeCount)
   cacheFile   = '%s/%s-%s-%s.cache' % (cachePath, site,startTimeThisNode,endTimeThisNode)
   dagFID.write('JOB %s datafind.sub\n' % LSCdataFind)
   dagFID.write('RETRY %s 10\n' % LSCdataFind)
-  dagFID.write('VARS %s macrogpsstarttime="%s" macrogpsendtime="%s" macroobservatory="%s"\n' % (LSCdataFind, startTimeThisNode, endTimeThisNode, site))
+  dagFID.write('VARS %s gpsstarttime="%s" gpsendtime="%s" observatory="%s" inputdatatype="%s" tagstring="%s"\n' % (LSCdataFind, startTimeThisNode, endTimeThisNode, site, inputDataType, tagStringOut))
   dagFID.write('JOB %s MakeSFTs.sub\n' % MakeSFTs)
   dagFID.write('RETRY %s 1\n' % MakeSFTs)
   argList = '-f %s -t %s -p %s -C %s -s %s -e %s -N %s' %(filterKneeFreq, timeBaseline, outputSFTPath, cacheFile, startTimeThisNode, endTimeThisNode, channelName)
-  dagFID.write('VARS %s argList="%s"\n'%(MakeSFTs,argList))
+  if useHoT: argList = argList + ' -H'
+  dagFID.write('VARS %s argList="%s" tagstring="%s"\n'%(MakeSFTs,argList, tagStringOut))
   dagFID.write('PARENT %s CHILD %s\n'%(LSCdataFind,MakeSFTs))
   
 #
@@ -75,7 +79,7 @@ def writeToDag(dagFID, nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, c
 #
  
 # parse the command line options
-shortop = "s:e:a:b:f:t:k:T:p:C:N:r:w:v:m:L:g:hHo"
+shortop = "s:e:a:b:f:t:G:d:k:T:p:C:N:r:w:v:m:L:g:hHo"
 longop = [
   "help",
   "gps-start-time=",
@@ -84,6 +88,8 @@ longop = [
   "analysis-end-time=",
   "dag-file=",
   "aux-path=",
+  "tag-string=",
+  "input-data-type=",
   "filter-knee-freq=",
   "time-baseline=",
   "output-sft-path=",
@@ -114,6 +120,8 @@ analysisStartTime = None
 analysisEndTime = None
 dagFileName = None
 auxPath = None
+tagString = None
+inputDataType = None
 filterKneeFreq = -1
 timeBaseline = None
 outputSFTPath = None
@@ -144,6 +152,10 @@ for o, a in opts:
     dagFileName = a   
   elif o in ("-t", "--aux-path"):
     auxPath = a
+  elif o in ("-G", "--tag-string"):
+    tagString = a
+  elif o in ("-d", "--input-data-type"):
+    inputDataType = a
   elif o in ("-k", "--filter-knee-freq"):
     filterKneeFreq = long(a)
   elif o in ("-T", "--time-baseline"):
@@ -202,6 +214,16 @@ if not dagFileName:
 
 if not auxPath:
   print >> sys.stderr, "No auxilary data path specified."
+  print >> sys.stderr, "Use --help for usage details."
+  sys.exit(1)
+
+if not tagString:
+  print >> sys.stderr, "No tag string specified."
+  print >> sys.stderr, "Use --help for usage details."
+  sys.exit(1)
+
+if not inputDataType:
+  print >> sys.stderr, "No input data type specified."
   print >> sys.stderr, "Use --help for usage details."
   sys.exit(1)
 
@@ -271,11 +293,10 @@ if not log_path:
   sys.exit(1)
   
 # try and make a directory to store the cache files and job logs
-#try: os.mkdir('logs')
-#except: pass
-
-#try: os.mkdir('cache')
-#except: pass
+try: os.mkdir('logs')
+except: pass
+try: os.mkdir('cache')
+except: pass
 
 # create the config parser object and read in the ini file
 #cp = ConfigParser.ConfigParser()
@@ -316,7 +337,7 @@ while (endTimeAllNodes < analysisEndTime):
         else:
            # write jobs to dag for this node
            nodeCount = nodeCount + 1
-           writeToDag(dagFID,nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site)
+           writeToDag(dagFID,nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, useHoT, tagString)
            # Update for next node
            startTimeThisNode = endTimeThisNode
            numThisNode       = 0L
@@ -325,7 +346,7 @@ else:
      if (numThisNode > 0L):
         # write jobs to dag for this node
         nodeCount = nodeCount + 1
-        writeToDag(dagFID,nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site)
+        writeToDag(dagFID,nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, useHoT, tagString)
 # END while (endTimeAllNodes < analysisEndTime)
 dagFID.close
 
