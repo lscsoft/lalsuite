@@ -74,7 +74,7 @@ LALGenerateRing(
   REAL8 t0, gtime ;  /* central time, decay time, gaussian time */
   REAL8 f0, quality/*, phi0*/;      /* initial phase and frequency */
   REAL8 twopif0;       /* 2*pi*f0 */
-  REAL4 hpeak;         /* peak strain for burst */
+  REAL4 h0;;         /* peak strain for burst */
   REAL4 *fData;        /* pointer to frequency data */
   REAL8 *phiData;      /* pointer to phase data */
   REAL4 *aData;        /* pointer to frequency data */
@@ -123,7 +123,7 @@ LALGenerateRing(
   startTime = simRing->geocent_start_time;
     
     /* Generic ring parameters */
-  hpeak = simRing->hpeak;
+  h0 = simRing->h0;
   quality = (REAL8)simRing->quality;
   f0 = (REAL8)simRing->centralfreq;
   twopif0 = f0*LAL_TWOPI;
@@ -210,10 +210,10 @@ LALGenerateRing(
       *(fData++)   = f0;
       *(phiData++) = twopif0 * t;
       if ( gtime > 0 )
-        *(aData++) = hpeak * ( 1.0 + pow( cos( simRing->inclination ), 2 ) ) * exp( - gtime );
+        *(aData++) = h0 * ( 1.0 + pow( cos( simRing->inclination ), 2 ) ) * exp( - gtime );
       else
         *(aData++) = 0;
-      *(aData++) = hpeak * 2.0 * cos( simRing->inclination ) * exp( - gtime );
+      *(aData++) = h0* 2.0 * cos( simRing->inclination ) * exp( - gtime );
     }
   }
   else
