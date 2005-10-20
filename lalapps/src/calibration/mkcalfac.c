@@ -28,7 +28,9 @@ int read_time_series( struct series *aser, struct series *abser,
   int t1 = 0;
   int dt;
   FILE *fp;
-
+  float a,b,ab;
+  int t, tmp_t1;
+ 
   aser->dom = Time;
   aser->type = FR_VECT_8C;
   abser->dom = Time;
@@ -58,7 +60,7 @@ int read_time_series( struct series *aser, struct series *abser,
   /* scan to end to get final time */
   while ( get_next_line( line, sizeof( line ), fp ) )
   {
-    int tmp_t1;
+
     sscanf( line, "%d", &tmp_t1 );
     if ( ( (tmp_t1 - t0) % dt ) == 0 )
     {
@@ -85,10 +87,7 @@ int read_time_series( struct series *aser, struct series *abser,
 
   while ( get_next_line( line, sizeof( line ), fp ) )
   {
-    float a;
-    float b;
-    float ab;
-    int t;
+    
     
     if ( sensemon_format )
     {
@@ -108,7 +107,7 @@ int read_time_series( struct series *aser, struct series *abser,
     }
     else
     {
-      if ( ! isnan( a ) && ! isnan( b ) )
+      if ( ! isnan( a ) && ! isnan( ab ) )
       {
         int i;
         i = ( t - t0 ) / dt;
@@ -166,6 +165,13 @@ int main( int argc, char *argv[] )
   const char *ifo = NULL;
   int arg;
   int done = 0;
+  char aname[64];
+  char abname[64];
+  struct series a;
+  struct series ab;
+  int code;
+  char fname[256];
+  int dt;
 
   sensemon_format = 0;
   skip_first_line = 0;
@@ -178,8 +184,6 @@ int main( int argc, char *argv[] )
   }
   for ( arg = 1; arg < argc; ++arg )
   {
-    char aname[64];
-    char abname[64];
     if ( strstr( argv[arg], "--run" ) )
     {
       run = argv[++arg];
@@ -213,9 +217,7 @@ int main( int argc, char *argv[] )
     }
     else
     {
-      struct series a;
-      struct series ab;
-      int code;
+      
       if ( ! ifo || ! run || ! ver )
       {
         fprintf( stderr, "Error: ifo, run or version not specified\n" );
@@ -265,8 +267,7 @@ int main( int argc, char *argv[] )
       epoch_add( &ab.tend, &ab.tbeg, ab.step * ab.size );
       if ( ! frfile )
       {
-        char fname[256];
-        int dt = (int)ceil( epoch_diff( &a.tend, &a.tbeg ) );
+        dt = (int)ceil( epoch_diff( &a.tend, &a.tbeg ) );
         sprintf( fname, "%c-CAL_FAC_%s_%s-%d-%d.gwf", *ifo, ver, ifo, 
             a.tbeg.gpsSeconds, dt );
         frfile = FrFileONew( fname, 0 );
