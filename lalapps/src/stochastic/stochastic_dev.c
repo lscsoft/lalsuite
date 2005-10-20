@@ -1533,7 +1533,6 @@ static REAL4TimeSeries *generate_random_noise(LALStatus *status,
 static SSSimStochBGOutput *generate_fake_detector_output(LALStatus *status,
     REAL4TimeSeries *noise_one,
     REAL4TimeSeries *noise_two,
-    REAL4FrequencySeries *omega,
     REAL8 deltaF)
 {
   /* variables */
@@ -1548,6 +1547,7 @@ static SSSimStochBGOutput *generate_fake_detector_output(LALStatus *status,
   INT4 freq_length;
   struct timeval tv;
   UINT4 i;
+  REAL4FrequencySeries *omega;
 
   /* initialise epoch */
   start.gpsSeconds = 0;
@@ -1572,6 +1572,12 @@ static SSSimStochBGOutput *generate_fake_detector_output(LALStatus *status,
       lalDimensionlessUnit, freq_length);
   response_two = unity_response(status, start, 0, deltaF, \
       lalDimensionlessUnit, freq_length);
+
+  /* generate omega */
+  if (vrbflg)
+    fprintf(stdout, "Generating spectrum for optimal filter...\n");
+  omega = omega_gw(status, 0, (fMax - fMin) / 2, 1, freq_length, \
+      0, deltaF);
 
   /* get current time, for random seed */
   gettimeofday(&tv, NULL);
