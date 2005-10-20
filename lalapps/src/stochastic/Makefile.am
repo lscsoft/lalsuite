@@ -3,8 +3,9 @@
 
 if FRAME
 if LALFRAME
-FRAMEPROGRAMS = lalapps_stochastic
+FRAMEPROGRAMS = lalapps_stochastic lalapps_stochastic_dev
 lalapps_stochastic_SOURCES = stochastic.c
+lalapps_stochastic_dev_SOURCES = stochastic_dev.c
 endif
 endif
 if LALMETAIO
