@@ -67,13 +67,13 @@
 
 #define INDEX_f1_f1	PMETRIC_INDEX(3,3)
 
-/* stay away a few 1e-4 from all boundaries to avoid roundoff-problems leading to discrete 
+/* stay away ~ 1e-2 from all boundaries to avoid roundoff-problems leading to discrete 
  * differences on different platforms. This is particularly important for E@H-validation.
  */
-#define DELTA_0     "-1.5706)"
-#define DELTA_1     " 1.5706)"
-#define ALPHA_0     "(1.0e-4, "
-#define ALPHA_1     "(6.2830, "
+#define DELTA_0     "-1.56)"
+#define DELTA_1     " 1.56)"
+#define ALPHA_0     "(1.0e-2, "
+#define ALPHA_1     "(6.27, "
 
 #define SKYREGION_ALLSKY  ALPHA_0 DELTA_0 "," ALPHA_1 DELTA_0 "," ALPHA_1 DELTA_1 "," ALPHA_0 DELTA_1
 
