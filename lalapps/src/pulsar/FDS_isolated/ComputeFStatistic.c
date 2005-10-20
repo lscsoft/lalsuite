@@ -415,7 +415,7 @@ int main(int argc,char *argv[])
   /* we use lalDebugLevel for our logging */
   LogSetLevel ( lalDebugLevel );
 
-  LogPrintf (LOG_NORMAL, "Started search\n");
+  LogPrintf (LOG_NORMAL, "Started search at lalDebugLevel = %d\n", lalDebugLevel);
 
   debug_dump_commandline (argc, argv);
 
