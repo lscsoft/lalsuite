@@ -17,7 +17,7 @@ __version__ = '$Revision$'[11:-2]
 ##############################################################################
 # import standard modules and append the lalapps prefix to the python path
 import sys, os, copy, math
-import popen2, time
+import socket, time
 import re, string
 from optparse import *
 import tempfile
@@ -29,6 +29,44 @@ sys.path.append('@PYTHONLIBDIR@')
 # import the modules we need to build the pipeline
 from glue import pipeline
 import inspiral
+
+##############################################################################
+# concrete dag setup functions
+def write_local_tc(cp):
+  """
+  Function to add the executables that this DAX needs to the transformation 
+  catalog so pegasus can stage them to the remote sites.
+  """
+  # open the transformation catalog file
+  try:
+    tc = open('tc.data','w')
+  except:
+    print >> sys.stderr, "Cannot open transformation catalog for writing"
+    sys.exit(1)
+
+  # write a line to the transformation catalog for each executable
+  host = socket.getfqdn()
+  programs = cp.items('condor')
+  for prog in programs:
+    if prog[0] != '/':
+      # relative path, so append the pwd to the path
+      prog = os.path.join(os.getcwd(), prog)
+    tc.write("local ligo::%s:1.0 gsiftp://" + os.path.join(host,prog))
+    tc.write(" STATIC_BINARY INTEL32::LINUX\n")
+  tc.close()
+
+def create_local_pool(cp):
+  """
+  Function to set up the local pool entries in to pool catalog.
+  """
+  pass
+
+def create_static_pfn_cache(cp):
+  """
+  Function to create a static PFN cache for any files already created.
+  """
+  pass
+
 
 ##############################################################################
 # some functions to make life easier later
@@ -51,121 +89,6 @@ class AnalyzedIFOData:
 
   def get_dag_node(self):
     return self.__dag_node
-
-##############################################################################
-def create_config_files(cp):
-  	"""
-    	creating the configuration files needed to run 'gencdag'
-    	to create a concrete DAG
-  	""" 
-   	# create the properties file which is the same at all
-       	file_properties = open('properties','w')
-       	file_properties.write("""vds.rls.url = rls://dataserver.phys.uwm.edu
-vds.transfer.mode = Chain
-vds.dir.storage = storagedir
-vds.exitcode.arguments=-e
-vds.exitcode.mode = all
-vds.pool.mode = xml
-vds.pool.file = ./sites.xml
-vds.tc.mode = File
-vds.tc.file = ./tc.data
-vds.rls.query = bulk
-vds.rls.query.attrib = true
-vds.rls.exit = never
-vds.tc.mapper = Submit
-vds.transfer.mode.links = true
-       	""" )
-       	file_properties.close()
-
-       	os.system("mkdir -p storagedir");
-
-       	# create pool.config.txt file
-       	user=os.environ['USER']
-       	pwd=os.environ['PWD']
-       	os.system('hostname -f > tmp')
-       	file=open('tmp')
-       	fqdn=file.readline()
-       	file.close()
-
-       	file_pool = open('sites.txt','w')
-       	file_pool.write("""pool local {
-  lrc "rlsn://smarty.isi.edu"
-  workdir "%s"
-  gridftp "gsiftp://%s%s" "2.4"
-  universe transfer "localhost/jobmanager-fork" "2.4.3"
-  universe vanilla "localhost/jobmanager-fork" "2.4.3"
-  gridlaunch "/opt/ldg-3.0/vds/bin/kickstart"  	   	
-  profile env "GLOBUS_LOCATION" "/opt/ldg-3.0/globus"
-  profile env "LD_LIBRARY_PATH" "/opt/ldg-3.0/globus/lib"
-  profile env "JAVA_HOME" "/opt/ldg-3.0/jdk1.4"
-  profile env "VDS_HOME" "/opt/ldg-3.0/vds"
-}
-pool uwm {
-  lrc "rlsn://smarty.isi.edu"
-  profile env "GLOBUS_LOCATION" "/opt/ldg-3.0/globus"
-  profile env "LD_LIBRARY_PATH" "/opt/ldg-3.0/globus/lib"
-  gridftp "gsiftp://hydra.phys.uwm.edu/home/duncan/pegasus" "2.2.4"
-  gridlaunch "/home/duncan/pegasus/vds-1.3.6/bin/kickstart"
-  workdir "/home/%s/pegasus"
-  universe transfer "hydra.phys.uwm.edu/jobmanager-fork" "2.2.4"
-  universe vanilla "hydra.phys.uwm.edu/jobmanager-condor" "2.2.4"
-}
-pool cit {
-  lrc "rlsn://smarty.isi.edu"
-  profile env "GLOBUS_LOCATION" "/ldcg/ldg/globus"
-  profile env "LD_LIBRARY_PATH" "/ldcg/ldg/globus/lib"
-  gridftp "gsiftp://ldas-grid.ligo.caltech.edu/archive/home/dietz/pegasus" "2.2.4"
-  gridlaunch "/archive/home/dbrown/projects/grid/vds/vds/bin/kickstart"
-  workdir "/archive/home/%s/pegasus"
-  universe transfer "ldas-grid.ligo.caltech.edu/jobmanager-fork" "2.2.4"
-  universe vanilla "ldas-grid.ligo.caltech.edu/jobmanager-condor" "2.2.4"
-}
-       """ % ( pwd, string.strip(fqdn), pwd, user, user ) )
-       	file_pool.close()
-
-	# create 
-       	os.system("genpoolconfig --poolconfig sites.txt --output sites.xml");
-
-       	# now create tc.data
-       	os.system('which rls-client > tmp')
-       	file=open('tmp')
-       	rls_client=file.readline()
-       	print rls_client
-
-	executable_name=[]
-	executables=cp.items('condor')
-       	for executable in executables:
-   		# find out if the exec. has a absolute path or a relative!
-		print executable[1]
-		basename=os.path.basename(executable[1])
-		if (executable[0]=="."):
-			# maybe with an additional '/'???/ TOCHECK
-			executable=pwd+basename
-		executable_name.append(basename)
-
-
-       	# now create the tc.data file
-       	file_tc = open('tc.data','w')
-       	file_tc.write("""uwm   transfer
-	/home/duncan/pegasus/vds-1.3.6/bin/transfer INSTALLED INTEL32::LINUX vds::bundle_stagein=1
-	uwm   dirmanager /home/duncan/pegasus/vds-1.3.6/bin/dirmanager INSTALLED INTEL32::LINUX
-	cit   transfer /archive/home/dbrown/projects/grid/vds/vds/bin/transfer INSTALLED INTEL32::LINUX vds::bundle_stagein=1
-	cit   dirmanager /archive/home/dbrown/projects/grid/vds/vds/bin/dirmanager INSTALLED INTEL32::LINUX
-	psu   transfer /usr3/home/ux001010/vds-1.3.6/bin/transfer INSTALLED INTEL32::LINUX vds::bundle_stagein=1
-	psu   dirmanager /usr3/home/ux001010/vds-1.3.6/bin/dirmanager INSTALLED INTEL32::LINUX
-	lsu   transfer /home1/dbrown/vds-1.3.6/bin/transfer INSTALLED INTEL32::LINUX vds::bundle_stagein=1
-	lsu   dirmanager /home1/dbrown/vds-1.3.6/bin/dirmanager INSTALLED INTEL32::LINUX local RLS_Client %s INSTALLED INTEL32::LINUX
-	""" % (string.strip(rls_client)) )
-
-	# DO OTHER WISE
-
-
-       	for executableName in executable_name:
-         	executable=executables[executable_name.index(executableName)]
-         	file_tc.write("""local ligo::%s:1.0 gsiftp://%s/%s STATIC_BINARY INTEL32::LINUX
-         """ % (executableName, string.strip(fqdn), executable) )
-       	file_tc.close() 
-
 
 ##############################################################################
 # function to generate the coincident segments from four input segment lists
@@ -336,7 +259,7 @@ def single_coinc(ifo_analyzed,ifo_name,ifo_single,single_coinc_job,dag,
     # add all master chunks that overlap with segment to input
     for ifo_done in ifo_analyzed:
       if inspiral.overlap_test(ifo_done.get_chunk(),seg):
-        sinca.add_var_arg(ifo_done.get_dag_node().get_output())
+        sinca.add_file_arg(ifo_done.get_dag_node().get_output())
         if opts.inspiral: sinca.add_parent(ifo_done.get_dag_node())
     
     if opts.coincidence: dag.add_node(sinca)
@@ -387,7 +310,7 @@ def thinca_coinc(ifos,single_data_analyzed,coinc_segs,coinc_job,
         # add all IFO A master chunks that overlap with segment to input
         for done in single_data_analyzed[ifo]:
           if inspiral.overlap_test(done.get_chunk(),seg):
-            thinca.add_var_arg(done.get_dag_node().get_output())
+            thinca.add_file_arg(done.get_dag_node().get_output())
             if do_insp: thinca.add_parent(done.get_dag_node())
 
     if do_coinc: dag.add_node(thinca)
@@ -487,7 +410,7 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
             trig_chunks_analyzed.append(AnalyzedIFOData(chunk,insp))
 
             # jobs already set up, just add the var_arg and parent to trigbank
-          trigbank.add_var_arg(coinc_done.get_dag_node().get_output())
+          trigbank.add_file_arg(coinc_done.get_dag_node().get_output())
           if opts.coincidence: trigbank.add_parent(coinc_done.get_dag_node())
 
   return trig_chunks_analyzed
@@ -616,7 +539,7 @@ def coherent_analysis(ifos,single_ifo_segments,coinc_nodes,cb_job,
               trigbank.set_input_ifo(ifo)
               trigbank.set_start(chunk.start())
               trigbank.set_end(chunk.end())
-              trigbank.add_var_arg(cohbank.get_output())
+              trigbank.add_file_arg(cohbank.get_output())
               if opts.coherent_bank: trigbank.add_parent(cohbank)
               if opts.coherent_bank: dag.add_node(trigbank)
 
@@ -847,12 +770,6 @@ except: pass
 cp = ConfigParser.ConfigParser()
 cp.read(opts.config_file)
 
-#create_config_files(cp)
-
-#sys.exit(0)
-
-
-
 ##############################################################################
 # if a usertag has been specified, override the config file
 if opts.user_tag:
@@ -901,14 +818,14 @@ df_job.set_sub_file( basename + '.datafind'+ subsuffix )
 tmplt_jobs = {}
 
 for ifo in ifo_list:
-  tmplt_jobs[ifo] = inspiral.TmpltBankJob(cp)
+  tmplt_jobs[ifo] = inspiral.TmpltBankJob(cp,dax)
   tmplt_jobs[ifo].set_sub_file( basename + '.tmpltbank' + subsuffix )
 
 # inspiral:
 insp_jobs = {}
 
 for ifo in ifo_list:
-  insp_jobs[ifo] = inspiral.InspiralJob(cp)
+  insp_jobs[ifo] = inspiral.InspiralJob(cp,dax)
   insp_jobs[ifo].set_sub_file( basename + '.inspiral_' + ifo + subsuffix )
 
 # single_inca:
@@ -939,7 +856,7 @@ trig_job.set_sub_file( basename + '.trigbank' + subsuffix )
 insp_veto_jobs = {}
 
 for ifo in ifo_list:
-  insp_veto_jobs[ifo] = inspiral.InspiralJob(cp)
+  insp_veto_jobs[ifo] = inspiral.InspiralJob(cp,dax)
   insp_veto_jobs[ifo].set_sub_file( basename + '.inspiral_veto' + ifo +
     subsuffix )
 
@@ -975,7 +892,7 @@ for ifo in ifo_list:
 insp_coh_jobs = {}
 
 for ifo in ifo_list:
-  insp_coh_jobs[ifo] = inspiral.InspiralJob(cp)
+  insp_coh_jobs[ifo] = inspiral.InspiralJob(cp,dax)
   insp_coh_jobs[ifo].set_sub_file( basename + '.insp_coh_' + ifo +
     subsuffix )
 
