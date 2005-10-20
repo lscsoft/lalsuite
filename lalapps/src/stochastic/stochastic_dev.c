@@ -3345,7 +3345,7 @@ INT4 main_fake(INT4 argc, CHAR *argv[])
   overlap = overlap_reduction_function(&status, filterLength, fMin, deltaF, \
       siteOne, siteTwo);
 
-  /* generage omegaGW */
+  /* generate omegaGW */
   if (vrbflg)
     fprintf(stdout, "Generating spectrum for optimal filter...\n");
   omegaGW = omega_gw(&status, alpha, fRef, omegaRef, filterLength, \
