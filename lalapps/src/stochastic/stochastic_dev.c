@@ -3204,6 +3204,212 @@ INT4 main(INT4 argc, CHAR *argv[])
   exit(0);
 }
 
+/* program entry point for fake data */
+INT4 main_fake(INT4 argc, CHAR *argv[])
+{
+  /* lal initialisation variables */
+  LALStatus status = blank_status;
+  LALLeapSecAccuracy accuracy = LALLEAPSEC_LOOSE;
+  
+  /* xml */
+  CHAR baseName[FILENAME_MAX];
+  StochasticTable *stochHead = NULL;
+  StochasticTable *thisStoch = NULL;
+
+  /* counter */
+  INT4 i;
+
+  /* data structures */
+  REAL4TimeSeries *seriesOne;
+  REAL4TimeSeries *seriesTwo;
+  REAL4FrequencySeries *overlap;
+  REAL4FrequencySeries *mask;
+  REAL4FrequencySeries *omegaGW;
+  REAL4Window *dataWindow;
+  LIGOTimeGPS gpsStartTime;
+  LIGOTimeGPS gpsEndTime;
+
+  /* noise */
+  REAL4TimeSeries *noiseOne;
+  REAL4TimeSeries *noiseTwo;
+
+  /* variables */
+  INT4 numSegments;
+  INT4 segsInInt;
+  INT4 segmentLength;
+  INT4 padData;
+  REAL8 deltaF;
+  INT4 filterLength;
+  INT4 numFMin;
+  INT4 numFMax;
+
+  /* error handler */
+  status.statusPtr = NULL;
+  lal_errhandler = LAL_ERR_EXIT;
+  set_debug_level("3");
+
+  /* create the process and process params tables */
+  proctable.processTable = (ProcessTable *) calloc(1, sizeof(ProcessTable));
+  LAL_CALL(LALGPSTimeNow(&status, &(proctable.processTable->start_time), \
+        &accuracy), &status);
+  LAL_CALL(populate_process_table(&status, proctable.processTable, \
+        PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE), &status);
+  this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) \
+                    calloc(1, sizeof(ProcessParamsTable));
+  memset(comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR));
+
+  /* parse command line options */
+  parse_options(argc, argv);
+
+  /* get xml file basename */
+  if (userTag)
+  {
+    LALSnprintf(baseName, FILENAME_MAX, "%s%s-FAKE-STOCHASTIC_%s_%d-%d", \
+        ifoOne, ifoTwo, userTag, startTime, (endTime - startTime));
+  }
+  else
+  {
+    LALSnprintf(baseName, FILENAME_MAX, "%s%s-FAKE-STOCHASTIC-%d-%d", \
+        ifoOne, ifoTwo, startTime, (endTime - startTime));
+  }
+
+  /* get number of segments */
+  numSegments = totalDuration / segmentDuration;
+  segsInInt = intervalDuration / segmentDuration;
+  
+  /* add a resample buffer, if required */
+  if ((resampleRate) || (high_pass_flag))
+    padData = 1;
+  else
+    padData = 0;
+
+  /* initialise gps time structures */
+  gpsStartTime.gpsSeconds = 0;
+  gpsStartTime.gpsNanoSeconds = 0;
+  gpsEndTime.gpsSeconds = endTime;
+  gpsEndTime.gpsNanoSeconds = 0;
+
+  /* generate random noise */
+  noiseOne = generate_random_noise(&status, totalDuration, resampleRate);
+  noiseTwo = generate_random_noise(&status, totalDuration, resampleRate);
+
+  /* read data */
+  seriesOne = get_time_series(&status, ifoOne, frameCacheOne, channelOne, \
+      gpsStartTime, gpsEndTime, padData);
+  seriesTwo = get_time_series(&status, ifoTwo, frameCacheTwo, channelTwo, \
+      gpsStartTime, gpsEndTime, padData);
+
+  /* check that the two series have the same sample rate */
+  if (seriesOne->deltaT != seriesTwo->deltaT)
+  {
+    fprintf(stderr, "Series have different sample rates...\n");
+    exit(1);
+  }
+  else
+  {
+    /* get resample rate, if required */
+    if (!resampleRate)
+      resampleRate = (INT4)(1./seriesOne->deltaT);
+  }
+
+  /* get deltaF for optimal filter */
+  deltaF = 1./(REAL8)PSD_WINDOW_DURATION;
+
+  /* get bins for min and max frequencies */
+  numFMin = (INT4)(fMin / deltaF);
+  numFMax = (INT4)(fMax / deltaF);
+
+  /* get lengths */
+  filterLength = numFMax - numFMin + 1;
+  segmentLength = segmentDuration * resampleRate;
+
+  if (vrbflg)
+    fprintf(stdout, "Generating data segment window...\n");
+
+  /* for overlapping hann windows, the hann window length is the segment
+   * length */
+  if (overlap_hann_flag)
+    hannDuration = segmentDuration;
+
+  /* create window for data */
+  dataWindow = data_window(seriesOne->deltaT, segmentLength, hannDuration);
+
+  /* generate overlap reduction function */
+  if (vrbflg)
+    fprintf(stdout, "Generating the overlap reduction function...\n");
+  overlap = overlap_reduction_function(&status, filterLength, fMin, deltaF, \
+      siteOne, siteTwo);
+
+  /* generage omegaGW */
+  if (vrbflg)
+    fprintf(stdout, "Generating spectrum for optimal filter...\n");
+  omegaGW = omega_gw(&status, alpha, fRef, omegaRef, filterLength, \
+      fMin, deltaF);
+
+  /* frequency mask */
+  if (apply_mask_flag)
+  {
+    if (vrbflg)
+      fprintf(stdout, "Applying frequency mask to spectrum..\n");
+
+    /* generate frequency mask */
+    mask = frequency_mask(&status, fMin, deltaF, filterLength, maskBin);
+
+    /* apply mask to omegaGW */
+    for (i = 0; i < filterLength; i++)
+      omegaGW->data->data[i] *= mask->data->data[i];
+
+    /* destroy frequency mask */
+    XLALDestroyREAL4FrequencySeries(mask);
+  }
+
+  /* perform search */
+  stochHead = stochastic_search(&status, seriesOne, seriesTwo, overlap, \
+      omegaGW, dataWindow, numSegments, filterLength, segsInInt, \
+      segmentLength);
+
+  /* save out xml table */
+  save_xml_file(&status, accuracy, outputPath, baseName, stochHead);
+
+  /* cleanup */
+  XLALDestroyREAL4FrequencySeries(overlap);
+  XLALDestroyREAL4FrequencySeries(omegaGW);
+  XLALDestroyREAL4Window(dataWindow);
+  XLALDestroyREAL4TimeSeries(seriesOne);
+  XLALDestroyREAL4TimeSeries(seriesTwo);
+
+  /* free memory used in the stochastic xml table */
+  while(stochHead)
+  {
+    thisStoch = stochHead;
+		stochHead = stochHead->next;
+		LALFree(thisStoch);
+	}
+
+  /* free calloc'd memory */
+  if (strcmp(frameCacheOne, frameCacheTwo))
+  {
+    free(frameCacheOne);
+    free(frameCacheTwo);
+  }
+  else
+  {
+    free(frameCacheOne);
+  }
+  free(calCacheOne);
+  free(calCacheTwo);
+  free(channelOne);
+  free(channelTwo);
+  free(ifoOne);
+  free(ifoTwo);
+  free(userTag);
+  free(outputPath);
+
+  /* check for memory leaks and exit */
+  LALCheckMemoryLeaks();
+  exit(0);
+}
+
 /*
  * vim: et
  */
