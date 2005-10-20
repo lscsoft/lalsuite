@@ -1496,6 +1496,7 @@ static REAL4TimeSeries *generate_random_noise(LALStatus *status,
   REAL8 deltaT;
   RandomParams *noise_params = NULL;
   struct timeval tv;
+  UINT4 i;
 
   /* initialise time */
   start.gpsSeconds = 0;
@@ -1526,6 +1527,10 @@ static REAL4TimeSeries *generate_random_noise(LALStatus *status,
   /* destroy noise_params */
   LAL_CALL(LALDestroyRandomParams(status, &noise_params), status);
 
+  /* scale random noise */
+  for (i = 0; i < series->data->length; i++)
+    series->data->data[i] *= 1e-18;
+  
   return(series);
 }
 
