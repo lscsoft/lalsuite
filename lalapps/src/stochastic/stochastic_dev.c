@@ -3220,8 +3220,8 @@ INT4 main_fake(INT4 argc, CHAR *argv[])
   INT4 i;
 
   /* data structures */
-  REAL4TimeSeries *seriesOne;
-  REAL4TimeSeries *seriesTwo;
+  REAL4TimeSeries *seriesOne = NULL;
+  REAL4TimeSeries *seriesTwo = NULL;
   REAL4FrequencySeries *overlap;
   REAL4FrequencySeries *mask;
   REAL4FrequencySeries *omegaGW;
@@ -3232,6 +3232,7 @@ INT4 main_fake(INT4 argc, CHAR *argv[])
   /* noise */
   REAL4TimeSeries *noiseOne;
   REAL4TimeSeries *noiseTwo;
+  SSSimStochBGOutput *fakeOutput = NULL;
 
   /* variables */
   INT4 numSegments;
@@ -3292,6 +3293,10 @@ INT4 main_fake(INT4 argc, CHAR *argv[])
   /* generate random noise */
   noiseOne = generate_random_noise(&status, totalDuration, resampleRate);
   noiseTwo = generate_random_noise(&status, totalDuration, resampleRate);
+
+  /* set out for generate_fake_detector_output */
+  fakeOutput->SSimStochBG1 = seriesOne;
+  fakeOutput->SSimStochBG2 = seriesTwo;
 
   /* read data */
   seriesOne = get_time_series(&status, ifoOne, frameCacheOne, channelOne, \
