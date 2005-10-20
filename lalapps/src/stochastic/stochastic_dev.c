@@ -3259,7 +3259,7 @@ INT4 main_fake(INT4 argc, CHAR *argv[])
   memset(comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR));
 
   /* parse command line options */
-  parse_options(argc, argv);
+  parse_options_fake(argc, argv);
 
   /* get xml file basename */
   if (userTag)
