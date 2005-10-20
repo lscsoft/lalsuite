@@ -138,50 +138,6 @@ static double myround(double x)
   return(x < 0 ? ceil(x - 0.5): floor(x + 0.5));
 }
 
-/* function for generating random noise */
-static REAL4TimeSeries *generate_random_noise(LALStatus *status,
-    INT4 duration,
-    INT4 sample_rate)
-{
-  /* variables */
-  REAL4TimeSeries *series;
-  LIGOTimeGPS start;
-  REAL8 deltaT;
-  RandomParams *noise_params = NULL;
-  struct timeval tv;
-
-  /* initialise time */
-  start.gpsSeconds = 0;
-  start.gpsNanoSeconds = 0;
-
-  /* get deltaT from sample_rate */
-  deltaT = 1.0/(REAL8)(sample_rate);
-
-  if (vrbflg)
-    fprintf(stderr, "Allocating memory for random noise...\n");
-
-  /* create and initialise time series */
-  LAL_CALL(LALCreateREAL4TimeSeries(status, &series, "noise", start, 0, \
-        deltaT, lalSecondUnit, duration * sample_rate), status);
-
-  /* get current time, for random seed */
-  gettimeofday(&tv, NULL);
-
-  if (vrbflg)
-    fprintf(stderr, "Generating random noise...\n");
-
-  /* generate noise_params */
-  LAL_CALL(LALCreateRandomParams(status, &noise_params, tv.tv_usec), status);
-
-  /* generate random noise */
-  LAL_CALL(LALNormalDeviates(status, series->data, noise_params), status);
-
-  /* destroy noise_params */
-  LAL_CALL(LALDestroyRandomParams(status, &noise_params), status);
-
-  return(series);
-}
-
 /* read a LIGO time series */
 static REAL4TimeSeries *get_ligo_data(LALStatus *status,
     FrStream *stream,
@@ -1525,6 +1481,50 @@ static StochasticTable *stochastic_search(LALStatus *status,
   XLALDestroyCOMPLEX8FrequencySeries(cc_spectra);
 
   return(stochHead);
+}
+
+/* function for generating random noise */
+static REAL4TimeSeries *generate_random_noise(LALStatus *status,
+    INT4 duration,
+    INT4 sample_rate)
+{
+  /* variables */
+  REAL4TimeSeries *series;
+  LIGOTimeGPS start;
+  REAL8 deltaT;
+  RandomParams *noise_params = NULL;
+  struct timeval tv;
+
+  /* initialise time */
+  start.gpsSeconds = 0;
+  start.gpsNanoSeconds = 0;
+
+  /* get deltaT from sample_rate */
+  deltaT = 1.0/(REAL8)(sample_rate);
+
+  if (vrbflg)
+    fprintf(stderr, "Allocating memory for random noise...\n");
+
+  /* create and initialise time series */
+  LAL_CALL(LALCreateREAL4TimeSeries(status, &series, "noise", start, 0, \
+        deltaT, lalSecondUnit, duration * sample_rate), status);
+
+  /* get current time, for random seed */
+  gettimeofday(&tv, NULL);
+
+  if (vrbflg)
+    fprintf(stderr, "Generating random noise...\n");
+
+  /* generate noise_params */
+  LAL_CALL(LALCreateRandomParams(status, &noise_params, tv.tv_usec), status);
+
+  /* generate random noise */
+  LAL_CALL(LALNormalDeviates(status, series->data, noise_params), status);
+
+  /* destroy noise_params */
+  LAL_CALL(LALDestroyRandomParams(status, &noise_params), status);
+
+  return(series);
 }
 
 /* display usage information */
