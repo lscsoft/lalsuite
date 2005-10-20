@@ -30,6 +30,7 @@
 #include <lal/LIGOMetadataTables.h>
 #include <lal/PrintFTSeries.h>
 #include <lal/Random.h>
+#include <lal/SimulateSB.h>
 
 #include <lalapps.h>
 #include <processtable.h>
@@ -1525,6 +1526,85 @@ static REAL4TimeSeries *generate_random_noise(LALStatus *status,
   LAL_CALL(LALDestroyRandomParams(status, &noise_params), status);
 
   return(series);
+}
+
+/* function for generating fake detector output */
+static SSSimStochBGOutput *generate_fake_detector_output(LALStatus *status,
+    REAL4TimeSeries *noise_one,
+    REAL4TimeSeries *noise_two,
+    REAL4FrequencySeries *omega,
+    REAL8 deltaF)
+{
+  /* variables */
+  REAL4TimeSeries *series_one;
+  REAL4TimeSeries *series_two;
+  SSSimStochBGInput input;
+  SSSimStochBGParams params;
+  SSSimStochBGOutput *output;
+  COMPLEX8FrequencySeries *response_one = NULL;
+  COMPLEX8FrequencySeries *response_two = NULL;
+  LIGOTimeGPS start;
+  INT4 freq_length;
+  struct timeval tv;
+  UINT4 i;
+
+  /* initialise epoch */
+  start.gpsSeconds = 0;
+  start.gpsNanoSeconds = 0;
+
+  /* get frequency length */
+  freq_length = (noise_one->data->length / 2) + 1;
+
+  if (vrbflg)
+    fprintf(stderr, "Allocating memory for fake detector output...\n");
+
+  /* create and initialise time series' */
+  LAL_CALL(LALCreateREAL4TimeSeries(status, &series_one, "one", \
+        noise_one->epoch, noise_one->f0, noise_one->deltaT, \
+        noise_one->sampleUnits, noise_one->data->length), status);
+  LAL_CALL(LALCreateREAL4TimeSeries(status, &series_two, "two", \
+        noise_two->epoch, noise_two->f0, noise_two->deltaT, \
+        noise_two->sampleUnits, noise_two->data->length), status);
+
+  /* generate unity response functions */
+  response_one = unity_response(status, start, 0, deltaF, \
+      lalDimensionlessUnit, freq_length);
+  response_two = unity_response(status, start, 0, deltaF, \
+      lalDimensionlessUnit, freq_length);
+
+  /* get current time, for random seed */
+  gettimeofday(&tv, NULL);
+
+  /* setup params for fake signal generation */
+  params.length = noise_one->data->length;
+  params.deltaT = noise_one->deltaT;
+  params.seed = tv.tv_usec;
+  params.detectorOne = lalCachedDetectors[LALDetectorIndexLHODIFF];
+  params.detectorTwo = lalCachedDetectors[LALDetectorIndexLHODIFF];
+  params.SSimStochBGTimeSeries1Unit = lalStrainUnit;
+  params.SSimStochBGTimeSeries2Unit = lalStrainUnit;
+
+  /* setup intputs for fake signal generation */
+  input.omegaGW = omega;
+  input.whiteningFilter1 = response_one;
+  input.whiteningFilter2 = response_two;
+
+  /* setup output for fake signal generation */
+  output->SSimStochBG1 = series_one;
+  output->SSimStochBG2 = series_two;
+
+  /* generate fake signal */
+  LAL_CALL(LALSSSimStochBGTimeSeries(status, output, &input, &params), \
+      status);
+
+  /* inject signal into noise */
+  for (i = 0; i < series_one->data->length; i++)
+  {
+    series_one->data->data[i] += noise_one->data->data[i];
+    series_two->data->data[i] += noise_two->data->data[i];
+  }
+
+  return(output);
 }
 
 /* display usage information */
