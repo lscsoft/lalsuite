@@ -818,14 +818,14 @@ df_job.set_sub_file( basename + '.datafind'+ subsuffix )
 tmplt_jobs = {}
 
 for ifo in ifo_list:
-  tmplt_jobs[ifo] = inspiral.TmpltBankJob(cp,dax)
+  tmplt_jobs[ifo] = inspiral.TmpltBankJob(cp,opts.dax)
   tmplt_jobs[ifo].set_sub_file( basename + '.tmpltbank' + subsuffix )
 
 # inspiral:
 insp_jobs = {}
 
 for ifo in ifo_list:
-  insp_jobs[ifo] = inspiral.InspiralJob(cp,dax)
+  insp_jobs[ifo] = inspiral.InspiralJob(cp,opts.dax)
   insp_jobs[ifo].set_sub_file( basename + '.inspiral_' + ifo + subsuffix )
 
 # single_inca:
@@ -856,7 +856,7 @@ trig_job.set_sub_file( basename + '.trigbank' + subsuffix )
 insp_veto_jobs = {}
 
 for ifo in ifo_list:
-  insp_veto_jobs[ifo] = inspiral.InspiralJob(cp,dax)
+  insp_veto_jobs[ifo] = inspiral.InspiralJob(cp,opts.dax)
   insp_veto_jobs[ifo].set_sub_file( basename + '.inspiral_veto' + ifo +
     subsuffix )
 
@@ -892,7 +892,7 @@ for ifo in ifo_list:
 insp_coh_jobs = {}
 
 for ifo in ifo_list:
-  insp_coh_jobs[ifo] = inspiral.InspiralJob(cp,dax)
+  insp_coh_jobs[ifo] = inspiral.InspiralJob(cp,opts.dax)
   insp_coh_jobs[ifo].set_sub_file( basename + '.insp_coh_' + ifo +
     subsuffix )
 
