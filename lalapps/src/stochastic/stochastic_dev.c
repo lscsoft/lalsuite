@@ -2538,7 +2538,6 @@ static void parse_options_fake(INT4 argc, CHAR *argv[])
       {"high-pass-filter", no_argument, &high_pass_flag, 1},
       {"overlap-hann", no_argument, &overlap_hann_flag, 1},
       {"verbose", no_argument, &vrbflg, 1},
-      {"recentre", no_argument, &recentre_flag, 1},
       {"cc-spectra", no_argument, &cc_spectra_flag, 1},
       {"debug", no_argument, &debug_flag, 1},
       /* options that don't set a flag */
@@ -2808,48 +2807,6 @@ static void parse_options_fake(INT4 argc, CHAR *argv[])
         ADD_PROCESS_PARAM("int", "%d", highPassOrder);
         break;
 
-      case 'E':
-        /* GEO high pass knee filter frequency */
-        geoHighPassFreq = atof(optarg);
-        if (geoHighPassFreq < 0)
-        {
-          fprintf(stderr, "Invalid argument tp --%s:\n" \
-              "GEO high pass filter knee frequency is less than 0 Hz: "\
-              "(%f specified)\n", long_options[option_index].name, \
-              geoHighPassFreq);
-          exit(1);
-        }
-        ADD_PROCESS_PARAM("float", "%e", geoHighPassFreq);
-        break;
-
-      case 'F':
-        /* GEO high pass filter attenuation */
-        geoHighPassAtten = atof(optarg);
-        if ((geoHighPassAtten < 0.0) || (geoHighPassAtten > 1.0))
-        {
-          fprintf(stderr, "Invalid argument to --%s:\n" \
-              "GEO high pass filter attenuation must be in the range [0:1]: " \
-              "(%f specified)\n", long_options[option_index].name, \
-              geoHighPassAtten);
-          exit(1);
-        }
-        ADD_PROCESS_PARAM("float", "%e", geoHighPassAtten);
-        break;
-
-      case 'G':
-        /* GEO high pass filter order */
-        geoHighPassOrder = atoi(optarg);
-        if (geoHighPassOrder <= 0)
-        {
-          fprintf(stderr, "Invalid argument to --%s:\n" \
-              "GEO high pass filter order must be greater than 0: " \
-              "(%d specified)\n", long_options[option_index].name,
-              geoHighPassOrder);
-          exit(1);
-        }
-        ADD_PROCESS_PARAM("int", "%d", geoHighPassOrder);
-        break;
-
       case 'H':
         /* filter spectrum exponent */
         alpha = atof(optarg);
@@ -2904,18 +2861,13 @@ static void parse_options_fake(INT4 argc, CHAR *argv[])
 
   /* check for required arguments */
 
-  /* start/end time */
-  if (startTime == 0)
+  /* duration */
+  if (totalDuration == -1)
   {
-    fprintf(stderr, "--gps-start-time must be specified\n");
+    fprintf(stderr, "--duration must be specified\n");
     exit(1);
   }
-  if (endTime == 0)
-  {
-    fprintf(stderr, "--gps-end-time must be specified\n");
-    exit(1);
-  }
-
+  
   /* interval duration */
   if (intervalDuration == -1)
   {
@@ -2939,77 +2891,6 @@ static void parse_options_fake(INT4 argc, CHAR *argv[])
   if (fMax == -1)
   {
     fprintf(stderr, "--f-max must be specified\n");
-    exit(1);
-  }
-
-  /* ifos */
-  if (ifoOne == NULL)
-  {
-    fprintf(stderr, "--ifo-one must be specified\n");
-    exit(1);
-  }
-  if (ifoTwo == NULL)
-  {
-    fprintf(stderr, "--ifo-two must be specified\n");
-    exit(1);
-  }
-
-  /* channels */
-  if (channelOne == NULL)
-  {
-    fprintf(stderr, "--channel-one must be specified\n");
-    exit(1);
-  }
-  if (channelTwo == NULL)
-  {
-    fprintf(stderr, "--channel-two must be specified\n");
-    exit(1);
-  }
-
-  /* frame cache */
-  if (frameCacheOne == NULL)
-  {
-    fprintf(stderr, "--frame-cache-one must be specified\n");
-    exit(1);
-  }
-  if (siteOne != siteTwo)
-  {
-    /* only need second frame cache if ifos differ */
-    if (frameCacheTwo == NULL)
-    {
-      fprintf(stderr, "--frame-cache-two must be specified\n");
-      exit(1);
-    }
-  }
-  else
-  {
-    /* if site ids are the same then the frames for the different
-     * detectors are in the same frame cache */
-    frameCacheTwo = frameCacheOne;
-  }
-
-  /* calibration cache */
-  if (strncmp(ifoOne, "G1", 2) != 0)
-  {
-    if (calCacheOne == NULL)
-    {
-      fprintf(stderr, "--calibration-cache-one must be specified\n");
-      exit(1);
-    }
-  }
-  if (strncmp(ifoTwo, "G1", 2) != 0)
-  {
-    if (calCacheTwo == NULL)
-    {
-      fprintf(stderr, "--calibration-cache-two must be specified\n");
-      exit(1);
-    }
-  }
-
-  /* calibration offset */
-  if (calibOffset == -1)
-  {
-    fprintf(stderr, "--calibration-offset must be specified\n");
     exit(1);
   }
 
@@ -3061,42 +2942,7 @@ static void parse_options_fake(INT4 argc, CHAR *argv[])
     }
   }
 
-  /* GEO high pass filter */
-  if ((strncmp(ifoOne, "G1", 2) == 0) || (strncmp(ifoTwo, "G1", 2) == 0))
-  {  
-    if (geoHighPassFreq == -1)
-    {
-      fprintf(stderr, "--geo-hpf-frequency must be specified\n");
-      exit(1);
-    }
-    if (geoHighPassAtten == -1)
-    {
-      fprintf(stderr, "--geo-hpf-attenuation must be specified\n");
-      exit(1);
-    }
-    if (geoHighPassOrder == -1)
-    {
-      fprintf(stderr, "--geo-hpf-order must be specified\n");
-      exit(1);
-    }
-  }
-
   /* check for sensible arguments */
-
-  /* start time same as stop time */
-  if (startTime == endTime)
-  {
-    fprintf(stderr, "Start time same as end time; no analysis to perform\n");
-    exit(1);
-  }
-
-  /* stop time before start time */
-  if (startTime > endTime)
-  {
-    fprintf(stderr, "Invalid start/end time; end time (%d) is before " \
-        "start time (%d)\n", endTime, startTime);
-    exit(1);
-  }
 
   /* interval duration must be a least 3 times the segment duration */
   if ((intervalDuration / segmentDuration) < 3)
@@ -3146,16 +2992,6 @@ static void parse_options_fake(INT4 argc, CHAR *argv[])
         "frequency (%f Hz)\n", fRef, fMax);
     exit(1);
   }
-
-  /* set channels */
-  strcpy(channelOne, ifoOne);
-  strcpy(channelTwo, ifoTwo);
-  strcat(channelOne, ":");
-  strcat(channelTwo, ":");
-  strcat(channelOne, channelOneTemp);
-  strcat(channelTwo, channelTwoTemp);
-  free(channelOneTemp);
-  free(channelTwoTemp);
 
   return;
 }
