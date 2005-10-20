@@ -3304,6 +3304,13 @@ INT4 main_fake(INT4 argc, CHAR *argv[])
   noiseOne = generate_random_noise(&status, totalDuration, resampleRate);
   noiseTwo = generate_random_noise(&status, totalDuration, resampleRate);
 
+  /* save out noise */
+  LALSPrintTimeSeries(noiseOne, "noise1.dat");
+  LALSPrintTimeSeries(noiseTwo, "noise2.dat");
+
+  /* quit */
+  exit(1);
+
   /* set out for generate_fake_detector_output */
   fakeOutput->SSimStochBG1 = seriesOne;
   fakeOutput->SSimStochBG2 = seriesTwo;
