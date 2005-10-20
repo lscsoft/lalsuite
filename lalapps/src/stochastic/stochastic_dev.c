@@ -3003,6 +3003,7 @@ static void parse_options_fake(INT4 argc, CHAR *argv[])
   return;
 }
 
+#if 0
 /* program entry point */
 INT4 main(INT4 argc, CHAR *argv[])
 {
@@ -3214,9 +3215,10 @@ INT4 main(INT4 argc, CHAR *argv[])
   LALCheckMemoryLeaks();
   exit(0);
 }
+#endif
 
 /* program entry point for fake data */
-INT4 main_fake(INT4 argc, CHAR *argv[])
+INT4 main(INT4 argc, CHAR *argv[])
 {
   /* lal initialisation variables */
   LALStatus status = blank_status;
