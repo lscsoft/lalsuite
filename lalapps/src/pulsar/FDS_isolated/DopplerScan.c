@@ -584,7 +584,7 @@ plotGrid (LALStatus *status,
   fprintf( fp1, "\n\n");
 
   /* if metric is given: plot ellipses */
-  if ( ( init->metricType > LAL_PMETRIC_NONE) && (init->metricType < LAL_PMETRIC_LAST) )
+  if ( (lalDebugLevel >=5) && ( init->metricType > LAL_PMETRIC_NONE) && (init->metricType < LAL_PMETRIC_LAST) )
     {
       REAL8Vector  *metric = NULL;   /* Parameter-space metric: for plotting ellipses */
       MetricEllipse ellipse;
