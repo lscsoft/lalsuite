@@ -791,7 +791,7 @@ int main(int argc, char **argv)
       read_search_summary_start_end(&stat, line, &SearchStart, &SearchEnd, NULL, ifo);
 
       /* Check if the burst and inspiral ifo.s match */
-      if(strcmp(ifo, options.ifoCut) != 0 )
+      if(options.ifoCut && (strcmp(ifo, options.ifoCut) != 0 ))
 	{
 	  fprintf(stderr,"Error:burst trigger ifo and inspiral trigger ifo do not match\n");
 	  exit(1);
