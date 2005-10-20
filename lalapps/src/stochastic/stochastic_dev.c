@@ -3296,6 +3296,10 @@ INT4 main_fake(INT4 argc, CHAR *argv[])
   gpsEndTime.gpsSeconds = endTime;
   gpsEndTime.gpsNanoSeconds = 0;
 
+
+  /* get deltaF for optimal filter */
+  deltaF = 1./(REAL8)PSD_WINDOW_DURATION;
+
   /* generate random noise */
   noiseOne = generate_random_noise(&status, totalDuration, resampleRate);
   noiseTwo = generate_random_noise(&status, totalDuration, resampleRate);
@@ -3304,11 +3308,9 @@ INT4 main_fake(INT4 argc, CHAR *argv[])
   fakeOutput->SSimStochBG1 = seriesOne;
   fakeOutput->SSimStochBG2 = seriesTwo;
 
-  /* read data */
-  seriesOne = get_time_series(&status, ifoOne, frameCacheOne, channelOne, \
-      gpsStartTime, gpsEndTime, padData);
-  seriesTwo = get_time_series(&status, ifoTwo, frameCacheTwo, channelTwo, \
-      gpsStartTime, gpsEndTime, padData);
+  /* generate fake data */
+  fakeOutput = generate_fake_detector_output(&status, noiseOne, noiseTwo, \
+      deltaF);
 
   /* check that the two series have the same sample rate */
   if (seriesOne->deltaT != seriesTwo->deltaT)
@@ -3322,9 +3324,6 @@ INT4 main_fake(INT4 argc, CHAR *argv[])
     if (!resampleRate)
       resampleRate = (INT4)(1./seriesOne->deltaT);
   }
-
-  /* get deltaF for optimal filter */
-  deltaF = 1./(REAL8)PSD_WINDOW_DURATION;
 
   /* get bins for min and max frequencies */
   numFMin = (INT4)(fMin / deltaF);
