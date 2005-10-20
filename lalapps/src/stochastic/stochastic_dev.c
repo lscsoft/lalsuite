@@ -86,6 +86,7 @@ INT4 resampleRate;
 /* data parameters */
 INT4 startTime = 0;
 INT4 endTime = 0;
+INT4 totalDuration = -1;
 INT4 intervalDuration = -1;
 INT4 segmentDuration = -1;
 INT4 calibOffset = -1;
@@ -2074,6 +2075,682 @@ static void parse_options(INT4 argc, CHAR *argv[])
           exit(1);
         }
         ADD_PROCESS_PARAM("int", "%d", maskBin);
+        break;
+
+      case 'x':
+        /* hann window duration */
+        hannDuration = atoi(optarg);
+        if (hannDuration < 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Hann duartion is less than 0: (%d specified)\n", \
+              long_options[option_index].name, hannDuration);
+          exit(1);
+        }
+        ADD_PROCESS_PARAM("int", "%d", hannDuration);
+        break;
+
+      case 'y':
+        /* high pass knee filter frequency  */
+        highPassFreq = atof(optarg);
+        if (highPassFreq < 0)
+        {
+          fprintf(stderr, "Invalid argument tp --%s:\n" \
+              "High pass filter knee frequency is less than 0 Hz: "\
+              "(%f specified)\n", long_options[option_index].name, \
+              highPassFreq);
+          exit(1);
+        }
+        ADD_PROCESS_PARAM("float", "%e", highPassFreq);
+        break;
+
+      case 'z':
+        /* high pass filter attenuation  */
+        highPassAtten = atof(optarg);
+        if ((highPassAtten < 0.0) || (highPassAtten > 1.0))
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "High pass filter attenuation must be in the range [0:1]: " \
+              "(%f specified)\n", long_options[option_index].name, \
+              highPassAtten);
+          exit(1);
+        }
+        ADD_PROCESS_PARAM("float", "%e", highPassAtten);
+        break;
+
+      case 'A':
+        /* high pass filter order  */
+        highPassOrder = atoi(optarg);
+        if (highPassOrder <= 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "High pass filter order must be greater than 0: " \
+              "(%d specified)\n", long_options[option_index].name,
+              highPassOrder);
+          exit(1);
+        }
+        ADD_PROCESS_PARAM("int", "%d", highPassOrder);
+        break;
+
+      case 'E':
+        /* GEO high pass knee filter frequency */
+        geoHighPassFreq = atof(optarg);
+        if (geoHighPassFreq < 0)
+        {
+          fprintf(stderr, "Invalid argument tp --%s:\n" \
+              "GEO high pass filter knee frequency is less than 0 Hz: "\
+              "(%f specified)\n", long_options[option_index].name, \
+              geoHighPassFreq);
+          exit(1);
+        }
+        ADD_PROCESS_PARAM("float", "%e", geoHighPassFreq);
+        break;
+
+      case 'F':
+        /* GEO high pass filter attenuation */
+        geoHighPassAtten = atof(optarg);
+        if ((geoHighPassAtten < 0.0) || (geoHighPassAtten > 1.0))
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "GEO high pass filter attenuation must be in the range [0:1]: " \
+              "(%f specified)\n", long_options[option_index].name, \
+              geoHighPassAtten);
+          exit(1);
+        }
+        ADD_PROCESS_PARAM("float", "%e", geoHighPassAtten);
+        break;
+
+      case 'G':
+        /* GEO high pass filter order */
+        geoHighPassOrder = atoi(optarg);
+        if (geoHighPassOrder <= 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "GEO high pass filter order must be greater than 0: " \
+              "(%d specified)\n", long_options[option_index].name,
+              geoHighPassOrder);
+          exit(1);
+        }
+        ADD_PROCESS_PARAM("int", "%d", geoHighPassOrder);
+        break;
+
+      case 'H':
+        /* filter spectrum exponent */
+        alpha = atof(optarg);
+        ADD_PROCESS_PARAM("float", "%e", alpha);
+        break;
+
+      case 'I':
+        /* filter reference frequency */
+        fRef = atof(optarg);
+        if (fRef < 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Reference frequency must be greater than 0: " \
+              "(%f specified)\n", long_options[option_index].name, fRef);
+          exit(1);
+        }
+        ADD_PROCESS_PARAM("float", "%e", fRef);
+        break;
+
+      case 'J':
+        /* filter reference omega */
+        omegaRef = atof(optarg);
+        if (omegaRef <= 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Reference omega_0 must be positive: (%f specified)\n", \
+              long_options[option_index].name, omegaRef);
+          exit(1);
+        }
+        ADD_PROCESS_PARAM("float", "%e", omegaRef);
+        break;
+
+      case '?':
+        exit(1);
+        break;
+
+      default:
+        fprintf(stderr, "Unknown error while parsing options\n");
+        exit(1);
+    }
+  }
+
+  if (optind < argc)
+  {
+    fprintf(stderr, "Extraneous command line arguments:\n");
+    while(optind < argc)
+    {
+      fprintf(stderr, "%s\n", argv[optind++]);
+    }
+    exit(1);
+  }
+
+  /* check for required arguments */
+
+  /* start/end time */
+  if (startTime == 0)
+  {
+    fprintf(stderr, "--gps-start-time must be specified\n");
+    exit(1);
+  }
+  if (endTime == 0)
+  {
+    fprintf(stderr, "--gps-end-time must be specified\n");
+    exit(1);
+  }
+
+  /* interval duration */
+  if (intervalDuration == -1)
+  {
+    fprintf(stderr, "--interval-duration must be specified\n");
+    exit(1);
+  }
+
+  /* segment duration */
+  if (segmentDuration == -1)
+  {
+    fprintf(stderr, "--segment-duration must be specified\n");
+    exit(1);
+  }
+
+  /* min/max frequency */
+  if (fMin == -1)
+  {
+    fprintf(stderr, "--f-min must be specified\n");
+    exit(1);
+  }
+  if (fMax == -1)
+  {
+    fprintf(stderr, "--f-max must be specified\n");
+    exit(1);
+  }
+
+  /* ifos */
+  if (ifoOne == NULL)
+  {
+    fprintf(stderr, "--ifo-one must be specified\n");
+    exit(1);
+  }
+  if (ifoTwo == NULL)
+  {
+    fprintf(stderr, "--ifo-two must be specified\n");
+    exit(1);
+  }
+
+  /* channels */
+  if (channelOne == NULL)
+  {
+    fprintf(stderr, "--channel-one must be specified\n");
+    exit(1);
+  }
+  if (channelTwo == NULL)
+  {
+    fprintf(stderr, "--channel-two must be specified\n");
+    exit(1);
+  }
+
+  /* frame cache */
+  if (frameCacheOne == NULL)
+  {
+    fprintf(stderr, "--frame-cache-one must be specified\n");
+    exit(1);
+  }
+  if (siteOne != siteTwo)
+  {
+    /* only need second frame cache if ifos differ */
+    if (frameCacheTwo == NULL)
+    {
+      fprintf(stderr, "--frame-cache-two must be specified\n");
+      exit(1);
+    }
+  }
+  else
+  {
+    /* if site ids are the same then the frames for the different
+     * detectors are in the same frame cache */
+    frameCacheTwo = frameCacheOne;
+  }
+
+  /* calibration cache */
+  if (strncmp(ifoOne, "G1", 2) != 0)
+  {
+    if (calCacheOne == NULL)
+    {
+      fprintf(stderr, "--calibration-cache-one must be specified\n");
+      exit(1);
+    }
+  }
+  if (strncmp(ifoTwo, "G1", 2) != 0)
+  {
+    if (calCacheTwo == NULL)
+    {
+      fprintf(stderr, "--calibration-cache-two must be specified\n");
+      exit(1);
+    }
+  }
+
+  /* calibration offset */
+  if (calibOffset == -1)
+  {
+    fprintf(stderr, "--calibration-offset must be specified\n");
+    exit(1);
+  }
+
+  /* mask */
+  if (apply_mask_flag)
+  {
+    if (maskBin == -1)
+    {
+      fprintf(stderr, "--mask-bin must be specified\n");
+      exit(1);
+    }
+  }
+
+  /* hann duration */
+  if (overlap_hann_flag)
+  {
+    if (hannDuration != -1)
+    {
+      fprintf(stderr, "Overlapping Hann windows specified, --hann-duration " \
+          "will be ignored\n");
+    }
+  }
+  else
+  {
+    if (hannDuration == -1)
+    {
+      fprintf(stderr, "--hann-duration must be specified\n");
+      exit(1);
+    }
+  }
+
+  /* high pass filter */
+  if (high_pass_flag)
+  {
+    if (highPassFreq == -1)
+    {
+      fprintf(stderr, "--hpf-frequency must be specified\n");
+      exit(1);
+    }
+    if (highPassAtten == -1)
+    {
+      fprintf(stderr, "--hpf-attenuation must be specified\n");
+      exit(1);
+    }
+    if (highPassOrder == -1)
+    {
+      fprintf(stderr, "--hpf-order must be specified\n");
+      exit(1);
+    }
+  }
+
+  /* GEO high pass filter */
+  if ((strncmp(ifoOne, "G1", 2) == 0) || (strncmp(ifoTwo, "G1", 2) == 0))
+  {  
+    if (geoHighPassFreq == -1)
+    {
+      fprintf(stderr, "--geo-hpf-frequency must be specified\n");
+      exit(1);
+    }
+    if (geoHighPassAtten == -1)
+    {
+      fprintf(stderr, "--geo-hpf-attenuation must be specified\n");
+      exit(1);
+    }
+    if (geoHighPassOrder == -1)
+    {
+      fprintf(stderr, "--geo-hpf-order must be specified\n");
+      exit(1);
+    }
+  }
+
+  /* check for sensible arguments */
+
+  /* start time same as stop time */
+  if (startTime == endTime)
+  {
+    fprintf(stderr, "Start time same as end time; no analysis to perform\n");
+    exit(1);
+  }
+
+  /* stop time before start time */
+  if (startTime > endTime)
+  {
+    fprintf(stderr, "Invalid start/end time; end time (%d) is before " \
+        "start time (%d)\n", endTime, startTime);
+    exit(1);
+  }
+
+  /* interval duration must be a least 3 times the segment duration */
+  if ((intervalDuration / segmentDuration) < 3)
+  {
+    fprintf(stderr, "Invalid interval duration (%d): must be a least 3 times " \
+        "the segment\nduration (%d)\n", intervalDuration, segmentDuration);
+    exit(1);
+  }
+
+  /* interval duration must be an odd mutliple of segment duration */
+  if (((intervalDuration / segmentDuration) % 2) != 1)
+  {
+    fprintf(stderr, "Invalid interval duration (%d): must be an odd " \
+        "multiple of the segment\nduration (%d)\n", intervalDuration, \
+        segmentDuration);
+    exit(1);
+  }
+
+  /* min frequency same as max */
+  if (fMin == fMax)
+  {
+    fprintf(stderr, "Minimum frequency same as maximum; no analysis to " \
+        "perform\n");
+    exit(1);
+  }
+
+  /* max frequency less than min */
+  if (fMin > fMax)
+  {
+    fprintf(stderr, "Invalid frequency band; maximum frequency (%f Hz) is " \
+        "before minimum\nfrequency (%f Hz)\n", fMax, fMin);
+    exit(1);
+  }
+
+  /* filter reference frequency less than min */
+  if (fRef < fMin)
+  {
+    fprintf(stderr, "Reference frequency (%f Hz) is less than minimum " \
+        "frequency (%f Hz)\n", fRef, fMin);
+    exit(1);
+  }
+
+  /* filter reference frequency greater than max */
+  if (fRef > fMax)
+  {
+    fprintf(stderr, "Reference frequency (%f Hz) is greater than maximum " \
+        "frequency (%f Hz)\n", fRef, fMax);
+    exit(1);
+  }
+
+  /* set channels */
+  strcpy(channelOne, ifoOne);
+  strcpy(channelTwo, ifoTwo);
+  strcat(channelOne, ":");
+  strcat(channelTwo, ":");
+  strcat(channelOne, channelOneTemp);
+  strcat(channelTwo, channelTwoTemp);
+  free(channelOneTemp);
+  free(channelTwoTemp);
+
+  return;
+}
+
+/* display usage information for fake data*/
+static void display_usage_fake()
+{
+  fprintf(stdout, "Usage: " PROGRAM_NAME " [options]\n");
+  fprintf(stdout, " --help                        print this message\n");
+  fprintf(stdout, " --version                     display version\n");
+  fprintf(stdout, " --verbose                     verbose mode\n");
+  fprintf(stdout, " --debug                       debug mode\n");
+  fprintf(stdout, " --debug-level N               set lalDebugLevel\n");
+  fprintf(stdout, " --user-tag STRING             set the user tag\n"); 
+  fprintf(stdout, " --comment STRING              set the comment\n");
+  fprintf(stdout, " --output-dir DIR              directory for output files\n");
+  fprintf(stdout, " --cc-spectra                  save out cross correlation spectra\n");
+  fprintf(stdout, " --duration N                  duration of fake data to generate\n");
+  fprintf(stdout, " --interval-duration N         interval duration\n");
+  fprintf(stdout, " --segment-duration N          segment duration\n");
+  fprintf(stdout, " --resample-rate N             resample rate\n");
+  fprintf(stdout, " --f-min N                     minimal frequency\n");
+  fprintf(stdout, " --f-max N                     maximal frequency\n");
+  fprintf(stdout, " --apply-mask                  apply frequency masking\n");
+  fprintf(stdout, " --mask-bin N                  number of bins to mask\n");
+  fprintf(stdout, " --overlap-hann                overlaping hann windows\n");
+  fprintf(stdout, " --hann-duration N             hann duration\n");
+  fprintf(stdout, " --high-pass-filter            apply high pass filtering\n");
+  fprintf(stdout, " --hpf-frequency N             high pass filter knee frequency\n");
+  fprintf(stdout, " --hpf-attenuation N           high pass filter attenuation\n");
+  fprintf(stdout, " --hpf-order N                 high pass filter order\n");
+  fprintf(stdout, " --recentre                    recentre jobs\n");
+  fprintf(stdout, " --middle-segment              use middle segment in PSD estimation\n");
+  fprintf(stdout, " --alpha N                     exponent on filter spectrum\n");
+  fprintf(stdout, " --f-ref N                     reference frequency for filter spectrum\n");
+  fprintf(stdout, " --omega0 N                    reference omega_0 for filter spectrum\n");
+}
+
+/* parse command line options for fake data */
+static void parse_options_fake(INT4 argc, CHAR *argv[])
+{
+  int c = -1;
+  struct stat fileStatus;
+
+  /* tempory variables */
+  CHAR *channelOneTemp = NULL;
+  CHAR *channelTwoTemp = NULL;
+
+  while(1)
+  {
+    static struct option long_options[] =
+    {
+      /* options that set a flag */
+      {"middle-segment", no_argument, &middle_segment_flag, 1},
+      {"apply-mask", no_argument, &apply_mask_flag, 1},
+      {"high-pass-filter", no_argument, &high_pass_flag, 1},
+      {"overlap-hann", no_argument, &overlap_hann_flag, 1},
+      {"verbose", no_argument, &vrbflg, 1},
+      {"recentre", no_argument, &recentre_flag, 1},
+      {"cc-spectra", no_argument, &cc_spectra_flag, 1},
+      {"debug", no_argument, &debug_flag, 1},
+      /* options that don't set a flag */
+      {"help", no_argument, 0, 'a'},
+      {"version", no_argument, 0, 'b'},
+      {"debug-level", required_argument, 0, 'c'},
+      {"user-tag", required_argument, 0, 'd'},
+      {"comment", required_argument, 0, 'e'},
+      {"output-dir", required_argument, 0, 'f'},
+      {"duration", required_argument, 0, 'g'},
+      {"interval-duration", required_argument, 0, 'i'},
+      {"segment-duration", required_argument, 0, 'j'},
+      {"resample-rate", required_argument, 0, 'k'},
+      {"f-min", required_argument, 0, 'l'},
+      {"f-max", required_argument, 0, 'm'},
+      {"mask-bin", required_argument, 0, 'w'},
+      {"hann-duration", required_argument, 0, 'x'},
+      {"hpf-frequency", required_argument, 0, 'y'},
+      {"hpf-attenuation", required_argument, 0, 'z'},
+      {"hpf-order", required_argument, 0, 'A'},
+      {"alpha", required_argument, 0, 'H'},
+      {"f-ref", required_argument, 0, 'I'},
+      {"omega0", required_argument, 0, 'J'},
+      {0, 0, 0, 0}
+    };
+
+    /* getopt_long stores the option here */
+    int option_index = 0;
+    size_t optarg_len;
+
+    c = getopt_long_only(argc, argv, \
+        "abc:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:" \
+        "A:E:F:G:H:I:J:", long_options, &option_index);
+
+    if (c == -1)
+    {
+      /* end of options, break loop */
+      break;
+    }
+
+    switch(c)
+    {
+      case 0:
+        /* If this option set a flag, do nothing else now. */
+        if (long_options[option_index].flag != 0)
+        {
+          break;
+        }
+        else
+        {
+          fprintf(stderr, "error parseing option %s with argument %s\n", \
+              long_options[option_index].name, optarg);
+          exit(1);
+        }
+        break;
+
+      case 'a':
+        /* help */
+        display_usage();
+        exit(0);
+        break;
+
+      case 'b':
+        /* display version info and exit */
+        fprintf(stdout, "Standalone SGWB Search Engine\n" CVS_ID "\n");
+        exit(0);
+        break;
+
+      case 'c':
+        /* debug level */
+        set_debug_level( optarg );
+        ADD_PROCESS_PARAM("string", "%s", optarg);
+        break;
+
+      case 'd':
+        /* user tag */
+        optarg_len = strlen(optarg) + 1;
+        userTag = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        memcpy(userTag, optarg, optarg_len);
+
+        /* add to process_params table */
+        this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
+                          calloc(1, sizeof(ProcessParamsTable));
+        LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+            PROGRAM_NAME);
+        LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, "--user-tag");
+        LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
+        LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, "%s", optarg);
+        break;
+
+      case 'e':
+        /* xml comment */
+        if (strlen(optarg) > LIGOMETA_COMMENT_MAX - 1)
+        {
+          fprintf(stderr, "invalid argument to --%s:\n" \
+              "comment must be less than %d characters\n", \
+              long_options[option_index].name, LIGOMETA_COMMENT_MAX);
+          exit(1);
+        }
+        else
+        {
+          LALSnprintf(comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
+        }
+        break;
+
+      case 'f':
+        /* directory for output files */
+        optarg_len = strlen(optarg) + 1;
+        outputPath = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        memcpy(outputPath, optarg, optarg_len);
+        if (stat(outputPath, &fileStatus) == -1)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Directory does not exist: (%s specified)\n", \
+              long_options[option_index].name, outputPath);
+          exit(1);
+        }
+        ADD_PROCESS_PARAM("string", "%s", outputPath);
+        break;
+
+      case 'g':
+        /* duration */
+        totalDuration = atoi(optarg);
+        if (totalDuration <= 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Total duration must be greater than 0: (%d specified)\n", \
+              long_options[option_index].name, totalDuration);
+          exit(1);
+        }
+        ADD_PROCESS_PARAM("int", "%d", totalDuration);
+        break;
+
+      case 'i':
+        /* interval duration */
+        intervalDuration = atoi(optarg);
+        if (intervalDuration <= 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Interval duration must be greater than 0: (%d specified)\n", \
+              long_options[option_index].name, intervalDuration);
+          exit(1);
+        }
+        ADD_PROCESS_PARAM("int", "%d", intervalDuration);
+        break;
+
+      case 'j':
+        /* segment duration */
+        segmentDuration = atoi(optarg);
+        if (segmentDuration <= 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Segment duration must be greater than 0: (%d specified)\n", \
+              long_options[option_index].name, segmentDuration);
+          exit(1);
+        }
+        ADD_PROCESS_PARAM("int", "%d", segmentDuration);
+        break;
+
+      case 'k':
+        /* resample rate */
+        resampleRate = atoi(optarg);
+        if (resampleRate < 2 || resampleRate > 16384 || resampleRate % 2)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Resample rate must be a power of 2 between 2 and 16384: " \
+              "inclusive: (%d specified)\n", long_options[option_index].name, \
+              resampleRate);
+          exit(1);
+        }
+        ADD_PROCESS_PARAM("int", "%d", resampleRate);
+
+        break;
+
+      case 'l':
+        /* minimal frequency */
+        fMin = atof(optarg);
+        if (fMin < 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Minimum frequency is less than 0 Hz (%f specified)\n", \
+              long_options[option_index].name, fMin);
+          exit(1);
+        }
+        /* check that min frequency can be represented by the
+         * sampling rate of the data and round accordingly */
+        if (fMin != myround(fMin * PSD_WINDOW_DURATION) / PSD_WINDOW_DURATION)
+        {
+          fMin = myround(fMin * PSD_WINDOW_DURATION) / PSD_WINDOW_DURATION;
+          fprintf(stderr, "warning: fMin has been rounded to %f\n", fMin);
+        }
+        ADD_PROCESS_PARAM("float", "%e", fMin);
+        break;
+
+      case 'm':
+        /* maximal frequency */
+        fMax = atof(optarg);
+        if (fMax < 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Maximum frequency is less than 0 Hz (%f specified)\n", \
+              long_options[option_index].name, fMax);
+          exit(1);
+        }
+        /* check that the max frequency can be represented by the
+         * sampling rate of the data and round accordingly */
+        if (fMax != myround(fMax * PSD_WINDOW_DURATION) / PSD_WINDOW_DURATION)
+        {
+          fMax = myround(fMax * PSD_WINDOW_DURATION) / PSD_WINDOW_DURATION;
+          fprintf(stderr, "warning: fMax has been rounded to %f\n", fMax);
+        }
+        ADD_PROCESS_PARAM("float", "%e", fMax);
         break;
 
       case 'x':
