@@ -2524,10 +2524,6 @@ static void parse_options_fake(INT4 argc, CHAR *argv[])
   int c = -1;
   struct stat fileStatus;
 
-  /* tempory variables */
-  CHAR *channelOneTemp = NULL;
-  CHAR *channelTwoTemp = NULL;
-
   while(1)
   {
     static struct option long_options[] =
