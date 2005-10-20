@@ -2592,7 +2592,7 @@ static void parse_options_fake(INT4 argc, CHAR *argv[])
 
       case 'a':
         /* help */
-        display_usage();
+        display_usage_fake();
         exit(0);
         break;
 
