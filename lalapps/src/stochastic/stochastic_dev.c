@@ -1,8 +1,8 @@
 /*
- * stochastic.c - SGWB Standalone Analysis Pipeline
+ * stochastic_dev.c - SGWB Standalone Analysis Pipeline
+ *                  - Development Branch
  *
  * Adam Mercer <ram@star.sr.bham.ac.uk>
- * Tania Regimbau <Tania.Regimbau@astro.cf.ac.uk>
  *
  * $Id$
  */
@@ -36,7 +36,7 @@ NRCSID(STOCHASTICC, "$Id$");
 RCSID("$Id$");
 
 /* cvs info */
-#define PROGRAM_NAME "stochastic"
+#define PROGRAM_NAME "stochastic_dev"
 #define CVS_ID "$Id$"
 #define CVS_REVISION "$Revision$"
 #define CVS_DATE "$Date$"
