@@ -95,6 +95,7 @@
 /* 09/14/05 gam; add more vetting of command line arguments and ABORTs */
 /* 09/23/06 gam; Besides checking that startRA and startDEC are in range, also check stopRA and stopDEc. */
 /* 09/23/06 gam; In addition to maxSpindownFreqShift add maxSpinupFreqShift */
+/* 10/20/06 gam; if ( (params->weightFlag & 8) > 0 ) renorm the BLK (SFT) data up front with the inverse mean absolute value of the BLK data = params->blkRescaleFactor */
 
 #ifndef _DRIVESTACKSLIDE_H
 #define _DRIVESTACKSLIDE_H
@@ -204,6 +205,8 @@ NRCSID( DRIVESTACKSLIDEH, "$Id$");
 #define DRIVESTACKSLIDEH_ENUMSKYPOS 67
 #define DRIVESTACKSLIDEH_ENSUMPERPARAMPT 68
 #define DRIVESTACKSLIDEH_EOUTPUTSUMS 69
+#define DRIVESTACKSLIDEH_EDYNAMICRANGE 70
+#define DRIVESTACKSLIDEH_EBLKRESCALEFACT 71
 
 #define DRIVESTACKSLIDEH_MSGENULL            "Null pointer"
 #define DRIVESTACKSLIDEH_MSGEGPSTINT         "Unexpected GPS time interval"
@@ -271,10 +274,19 @@ NRCSID( DRIVESTACKSLIDEH, "$Id$");
 #define DRIVESTACKSLIDEH_MSGENUMSKYPOS       "numSkyPosTotal was calculated to be <= 0"
 #define DRIVESTACKSLIDEH_MSGENSUMPERPARAMPT  "numSUMsPerParamSpacePt must currently be 1; check that numSTKsPerSUM = duration/tBLK on the command line."
 #define DRIVESTACKSLIDEH_MSGEOUTPUTSUMS      "Cannot set outputSUMFlag > 0 if producing more than 100 SUMs, else you will fill up the file system with files."
+#define DRIVESTACKSLIDEH_MSGEDYNAMICRANGE    "Loss of precision due to floating point underflow or overflow is possible; set (weightFlag & 8) > 0 to rescale BLK data to avoid this!"
+#define DRIVESTACKSLIDEH_MSGEBLKRESCALEFACT  "blkRescaleFactor, used to rescale BLKs (SFTs), was less than or equal to zero"
 /* Limit on size of arrays holding channel names */
 /* #define dbNameLimit 256; */ /* Should be defined in LAL? */
 /* 05/19/05 gam; Add in maximum velocity of Earth used to find maximum doppler shift */
 #define STACKSLIDEMAXV 1.06e-04
+#define STACKSLIDEUNDERFLOWDANGE 4.0e-19
+#define STACKSLIDEOVERFLOWDANGE  1.0e19
+#define INTERNAL_SHOWERRORFROMSUB(status)  \
+      if (status->statusPtr->statusCode) { \
+         fprintf(stderr,"Error: statusCode = %i statusDescription = %s \n", status->statusPtr->statusCode, status->statusPtr->statusDescription); \
+         REPORTSTATUS(status); \
+      }
 /*********************************************/
 /*                                           */
 /* END SECTION: define constants             */
@@ -825,7 +837,9 @@ typedef struct tagStackSlideSearchParams {
   BarycenterInput baryinput; /* 04/12/05 gam */
 
   RandomParams *randPar;     /* 07/13/05 gam */
-        
+
+  REAL4 blkRescaleFactor;    /* 10/20/05 gam */
+  
   /******************************************/
   /*                                        */
   /* END SECTION: other parameters          */
@@ -894,7 +908,9 @@ void WeightSTKsIncludingBeamPattern(REAL4FrequencySeries **STKData,
            REAL4Vector *detResponseTStampMidPts,
            INT4 numSTKs, INT4 nBinsPerSTK, REAL8 tSTK);
 /* 11/01/04 gam; if (params->weightFlag & 8) > 0 rescale STKs with threshold5 to prevent dynamic range issues. */
-void RescaleSTKData(REAL4FrequencySeries **STKData, INT4 numSTKs, INT4 nBinsPerSTK,REAL4 RescaleFactor);
+/* void RescaleSTKData(REAL4FrequencySeries **STKData, INT4 numSTKs, INT4 nBinsPerSTK,REAL4 RescaleFactor); */
+/* 10/20/05 gam */
+void CheckDynamicRangeAndRescaleBLKData(LALStatus *status, REAL4 *blkRescaleFactor, FFT **BLKData, INT4 numBLKs, INT2 weightFlag);
 /* 02/25/05 gam; utility for printing one SUM to a file */
 void printOneStackSlideSUM( const REAL4FrequencySeries *oneSUM,
                   INT2                       outputSUMFlag,

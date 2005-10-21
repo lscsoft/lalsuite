@@ -73,7 +73,7 @@ set threshold1          2.7999999523162842e+00; #32 REAL4 peak found if power is
 set threshold2          1.0700000524520874e+00; #33 REAL4 peak ends if power drops below this. 
 set threshold3          2.0000000298023224e-01; #34 REAL4 ratio peak height to valley depth that indicates a new peak rather than subpeak in a cluster. 
 set threshold4          0.0000000000000000e+00; #35 REAL4 unused (except when testFlag & 2 > 0; see below).
-set threshold5          0.0000000000000000e+00; #36 REAL4 unused (except when testFlag & 1 > 0 or weightFlag & 8 > 0; see below).
+set threshold5          0.0000000000000000e+00; #36 REAL4 unused (except when testFlag & 1 > 0).
 set maxWidthBins                             3; #37 REAL4 maximum width in bins. 
 #The thresholdFlag rules are: 
 # if (thresholdFlag <= 0) do not analyze SUMs for peaks about threshold,
@@ -87,7 +87,7 @@ set weightFlag                               0; #38 INT2 how to weight STKs.
 # if (weightFlag & 1 > 0) use powerFlux style weights; must using running median (see normalizationFlag rules),
 # if (weightFlag & 2 > 0) include beam pattern F_+ in calculation of weights,
 # if (weightFlag & 4 > 0) include beam pattern F_x in calculation of weights,
-# if (weightFlag & 8 > 0) rescale STKs with threshold5 to prevent dynamic range issues.
+# if (weightFlag & 8 > 0) rescale input BLK data (SFTs) with the inverse mean of absolute value of this data, [Re(BLKData) + Im(BLKData)]/2, to prevent dynamic range issues.
 # if (weightFlag & 16 > 0) save medians and weight SFTs with inverse medians; must using running median (see normalizationFlag rules).
 # This last option will reuse the medians which can speed up Monte Carlo Simulations. However one must test what bias this introduces by also running the MC with this option off.
 
@@ -102,7 +102,8 @@ set normalizationParameter  0.0000000000000000e+00; #45 REAL4 see uses below.
 #The normalizationFlag rules are: 
 # if (normalizationFlag & 2) > 0 normalize BLKs else normalize STKs, 
 # if (normalizationFlag & 4) > 0 normalize STKs using running median (or use medians in weights when weightFlag > 0), 
-#The running median block size is given by nBinsPerNRM.
+# The running median block size is given by nBinsPerNRM.
+# If normalizing with the running median and normalizationParameter > 0, this is used to correct bias in the median to get the mean; otherwise LALRngMedBias is used to correct this bias.
 # if (normalizationFlag & 8) > 0 normalize with veto on power above normalizationParameter = max_power_allowed/mean_power.
 # if (normalizationFlag & 16) > 0 then output into .Sh file GPS startTime and PSD estimate for each SFT.
 # if (normalizationFlag & 32) > 0 then ignore bins using info in linesAndHarmonicsFile.
@@ -205,6 +206,7 @@ set debugOptionFlag                          1; #84 INT2 debugging information t
 # if (debugOptionFlag & 16) > 0 also set to 1 one bin to either side of the bin with maxPwr.
 # if (debugOptionFlag & 32) > 0 print Monte Carlo Simulation results to stdout.
 # if (debugOptionFlag & 128) > 0 creates SUMs from the STKs without sliding (isolated case only).
+# if (debugOptionFlag & 256) > 0 then print the factor used to rescale BLKs to prevent dynamic range issues; see discussion of weightFlag & 8 > 0 above.
 # Use of the debugOptionFlag provides an easy way to validate the StackSlide code! 
 # For fake data with a signal and no noise, run on the exact template for the signal with the 
 # debugOptionFlag bit for 8, or 8 and 16, set. The StackSlide power should equal the number of SFTs,

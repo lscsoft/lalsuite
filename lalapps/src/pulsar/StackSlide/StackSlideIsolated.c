@@ -47,6 +47,7 @@ $Id$
 /*               space grid points so that deltaRA used is <= input deltaRA from the command line divided */
 /*               by cos(DEC). This fixes a problem where the last grid point could wrap around the sphere */
 /*               and be closer to the first grid point that the spacing between other grid points.        */
+/* 10/20/06 gam; if ( (params->weightFlag & 8) > 0 ) renorm the BLK (SFT) data up front with the inverse mean absolute value of the BLK data = params->blkRescaleFactor */
 
 /*********************************************/
 /*                                           */
@@ -545,7 +546,8 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
                                &priorUncertainty,
                                params->priorResultsFile);
     CHECKSTATUSPTR (status);
-    params->threshold4 = priorUL; /* Change injection amplitude to estimate from prior jobs in the pipeline */
+    /* 10/20/05 gam; use params->blkRescaleFactor to rescale priorUL for internal use. */
+    params->threshold4 = params->blkRescaleFactor*priorUL; /* Change injection amplitude to estimate from prior jobs in the pipeline */
     h_0 = params->threshold4;     /* Note that h_0 == params->threshold4 */
     #ifdef INCLUDE_PRINT_REPORTMCRESULTS_CODE
       if ((params->debugOptionFlag & 32) > 0 ) {
@@ -1688,7 +1690,7 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
           stksldMonteCarloResultsTable->loudest_event = priorLoudestEvent; /* from prior jobs in the pipeline */
           stksldMonteCarloResultsTable->start_freq    = f0SUM;             /* saved value MC actually ran on  */
           stksldMonteCarloResultsTable->band          = bandSUM;           /* saved value MC actually ran on  */
-          stksldMonteCarloResultsTable->upper_limit   = arrayULs[iMC];
+          stksldMonteCarloResultsTable->upper_limit   = arrayULs[iMC]/params->blkRescaleFactor; /* 10/20/05 gam; need to remove blkRescaleFactor which has a default value of 1.0 */
           stksldMonteCarloResultsTable->confidence    = arrayConfs[iMC];
           stksldMonteCarloResultsTable->converged     = arrayConverged[iMC];
           stksldMonteCarloResultsTable->next          = NULL;
@@ -1713,7 +1715,7 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
     #ifdef INCLUDE_PRINT_REPORTMCRESULTS_CODE
       for(iMC=0;iMC<countMC;iMC++) {
         if ((params->debugOptionFlag & 32) > 0 ) {
-              fprintf(stdout,"MC Trial #%i UL = %20.10e, Conf = %20.10f, Converged = %i\n",iMC,arrayULs[iMC],arrayConfs[iMC],arrayConverged[iMC]);
+              fprintf(stdout,"MC Trial #%i UL = %20.10e, Conf = %20.10f, Converged = %i\n",iMC,arrayULs[iMC]/params->blkRescaleFactor,arrayConfs[iMC],arrayConverged[iMC]);
               fflush(stdout);
         }
       }

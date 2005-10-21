@@ -151,14 +151,16 @@
 /* 09/12/05 gam; if ( (params->weightFlag & 16) > 0 ) save inverseMedians and weight STKs with these. */
 /* 09/12/05 gam; if (params->testFlag & 128) > 0 make BLKs and STKs narrower band based on extra bins */
 /* 09/14/05 gam; add more vetting of command line arguments and ABORTs */
-/* 09/16/06 gam; In CountOrAssignSkyPosData and MC code, for each DEC adjust deltaRA and numRA to evenly  */
+/* 09/16/05 gam; In CountOrAssignSkyPosData and MC code, for each DEC adjust deltaRA and numRA to evenly  */
 /*               space grid points so that deltaRA used is <= input deltaRA from the command line divided */
 /*               by cos(DEC). This fixes a problem where the last grid point could wrap around the sphere */
 /*               and be closer to the first grid point that the spacing between other grid points.        */
-/* 09/16/06 gam; Add some error checking and clean up parameter space assignment code. */
-/* 09/23/06 gam; if ((params->debugOptionFlag & 4) > 0 ) also print out the spindown grid. */
-/* 09/23/06 gam; Besides checking that startRA and startDEC are in range, also check stopRA and stopDEc. */
-/* 09/23/06 gam; In addition to maxSpindownFreqShift add maxSpinupFreqShift */
+/* 09/16/05 gam; Add some error checking and clean up parameter space assignment code. */
+/* 09/23/05 gam; if ((params->debugOptionFlag & 4) > 0 ) also print out the spindown grid. */
+/* 09/23/05 gam; Besides checking that startRA and startDEC are in range, also check stopRA and stopDEc. */
+/* 09/23/05 gam; In addition to maxSpindownFreqShift add maxSpinupFreqShift */
+/* 10/20/05 gam; if ( (params->weightFlag & 8) > 0 ) renorm the BLK (SFT) data up front with the inverse mean absolute value of the BLK data = params->blkRescaleFactor */
+/* 10/20/05 gam; if using running median and params->normalizationParameter > 0, then use to correct the bias. */
 
 /*********************************************/
 /*                                           */
@@ -186,6 +188,7 @@
 /* #define DEBUG_SUMBINMASK */
 /* #define DEBUG_CALIBRATEBLKS */
 /* #define DEBUG_TESTCASE */
+/* #define DEBUG_CHECKDYNAMICRANGEANDRESCALEBLKDATA */
 /* #define INCLUDE_INTERNALLALINITBARYCENTER */
 /*********************************************/
 /*                                           */
@@ -633,7 +636,7 @@ params->numFDeriv5   =   0;
     	fprintf(stdout,"set threshold2         %23.16e; #33 REAL4 peak ends if power drops below this. \n", params->threshold2);
     	fprintf(stdout,"set threshold3         %23.16e; #34 REAL4 ratio peak height to valley depth that indicates a new peak rather than subpeak in a cluster. \n", params->threshold3); /* 01/20/04 gam */
     	fprintf(stdout,"set threshold4         %23.16e; #35 REAL4 unused (except when testFlag & 2 > 0; see below).\n", params->threshold4); /* 05/11/04 gam */ /* 01/27/04 gam */
-    	fprintf(stdout,"set threshold5         %23.16e; #36 REAL4 unused (except when testFlag & 1 > 0 or weightFlag & 8 > 0; see below).\n", params->threshold5); /* 05/11/04 gam */ /* 01/27/04 gam */ /* 11/01/04 gam */
+    	fprintf(stdout,"set threshold5         %23.16e; #36 REAL4 unused (except when testFlag & 1 > 0).\n", params->threshold5); /* 05/11/04 gam */ /* 01/27/04 gam */ /* 11/01/04 gam */ /* 10/20/05 gam */
     	fprintf(stdout,"set maxWidthBins       %23d; #37 REAL4 maximum width in bins. \n", params->maxWidthBins); /* 02/20/04 gam */ /* 02/23/04 gam */
     	fprintf(stdout,"#The thresholdFlag rules are: \n");
     	fprintf(stdout,"# if (thresholdFlag <= 0) do not analyze SUMs for peaks about threshold,\n");
@@ -650,7 +653,7 @@ params->numFDeriv5   =   0;
     	fprintf(stdout,"# if (weightFlag & 1 > 0) use powerFlux style weights; must using running median (see normalizationFlag rules),\n");
     	fprintf(stdout,"# if (weightFlag & 2 > 0) include beam pattern F_+ in calculation of weights,\n");
     	fprintf(stdout,"# if (weightFlag & 4 > 0) include beam pattern F_x in calculation of weights,\n");
-    	fprintf(stdout,"# if (weightFlag & 8 > 0) rescale STKs with threshold5 to prevent dynamic range issues.\n"); /* 11/01/04 gam */
+    	fprintf(stdout,"# if (weightFlag & 8 > 0) rescale input BLK data (SFTs) with the inverse mean of absolute value of this data, [Re(BLKData) + Im(BLKData)]/2, to prevent dynamic range issues.\n"); /* 11/01/04 gam */
     	fprintf(stdout,"# if (weightFlag & 16 > 0) save medians and weight SFTs with inverse medians; must using running median (see normalizationFlag rules).\n"); /* 09/12/05 gam */
     	fprintf(stdout,"# This last option will reuse the medians which can speed up Monte Carlo Simulations. However one must test what bias this introduces by also running the MC with this option off.\n"); /* 09/12/05 gam */
     	fprintf(stdout,"\n");
@@ -667,8 +670,8 @@ params->numFDeriv5   =   0;
     	fprintf(stdout,"#The normalizationFlag rules are: \n");
     	fprintf(stdout,"# if (normalizationFlag & 2) > 0 normalize BLKs else normalize STKs, \n");
     	fprintf(stdout,"# if (normalizationFlag & 4) > 0 normalize STKs using running median (or use medians in weights when weightFlag > 0), \n"); /* 04/14/04 gam; now implemented */ /* 10/28/04 gam */
-    	fprintf(stdout,"#The running median block size is given by nBinsPerNRM.\n");
-    	/* fprintf(stdout,"# if normalizing with the running median the normalizationParameter must be set to the expected ratio of median to mean power. This is used to correct bias in the median to get the mean.\n"); */ /* 07/09/04 gam */ /* 05/05/04 gam; */
+    	fprintf(stdout,"# The running median block size is given by nBinsPerNRM.\n");
+    	fprintf(stdout,"# If normalizing with the running median and normalizationParameter > 0, this is used to correct bias in the median to get the mean; otherwise LALRngMedBias is used to correct this bias.\n"); /* 07/09/04 gam */ /* 05/05/04 gam; */ /* 10/20/05 gam */
     	fprintf(stdout,"# if (normalizationFlag & 8) > 0 normalize with veto on power above normalizationParameter = max_power_allowed/mean_power.\n");
     	fprintf(stdout,"# if (normalizationFlag & 16) > 0 then output into .Sh file GPS startTime and PSD estimate for each SFT.\n"); /* 04/15/04 gam */
     	fprintf(stdout,"# if (normalizationFlag & 32) > 0 then ignore bins using info in linesAndHarmonicsFile.\n"); /* 05/14/05 gam */
@@ -771,6 +774,7 @@ params->numFDeriv5   =   0;
     	fprintf(stdout,"# if (debugOptionFlag & 16) > 0 also set to 1 one bin to either side of the bin with maxPwr.\n");
     	fprintf(stdout,"# if (debugOptionFlag & 32) > 0 print Monte Carlo Simulation results to stdout.\n");
     	fprintf(stdout,"# if (debugOptionFlag & 128) > 0 creates SUMs from the STKs without sliding (isolated case only).\n");
+    	fprintf(stdout,"# if (debugOptionFlag & 256) > 0 then print the factor used to rescale BLKs to prevent dynamic range issues; see discussion of weightFlag & 8 > 0 above.\n");
     	fprintf(stdout,"# Use of the debugOptionFlag provides an easy way to validate the StackSlide code! \n");
     	fprintf(stdout,"# For fake data with a signal and no noise, run on the exact template for the signal with the \n");
     	fprintf(stdout,"# debugOptionFlag bit for 8, or 8 and 16, set. The StackSlide power should equal the number of SFTs,\n");
@@ -1402,7 +1406,6 @@ void StackSlideConditionData(
     )
 {
 
-
  INITSTATUS( status, "StackSlideConditionData", DRIVESTACKSLIDEC );
  ATTATCHSTATUSPTR (status);
 
@@ -1446,7 +1449,29 @@ void StackSlideConditionData(
 /* END SECTION: validate parameters after reading BLKs   */
 /*                                                       */
 /*********************************************************/
-  
+
+/************************************************************************************/
+/*                                                                                  */
+/* START SECTION: check BLK Data for dynamic range issues and rescale if indicated. */
+/*                                                                                  */
+/************************************************************************************/
+      /* 10/20/05 gam */
+      CheckDynamicRangeAndRescaleBLKData(status->statusPtr, &(params->blkRescaleFactor), params->BLKData, params->numBLKs, params->weightFlag);
+      INTERNAL_SHOWERRORFROMSUB (status); CHECKSTATUSPTR (status);
+      if ((params->debugOptionFlag & 256) > 0 ) {
+         fprintf(stdout, "\nAll input BLK (SFT) data has been rescaled using params->blkRescaleFactor = %23.16e\n",params->blkRescaleFactor);
+         fflush(stdout);
+      }
+      if (params->blkRescaleFactor <= 0.0) {
+              ABORT( status, DRIVESTACKSLIDEH_EBLKRESCALEFACT , DRIVESTACKSLIDEH_MSGEBLKRESCALEFACT );
+      }
+      /* Always rescale params->threshold4, which is guess for h_0 when running MC, but note default value for params->blkRescaleFactor is 1.0 unless (params->weightFlag & 8) > 0 */
+      params->threshold4 = params->blkRescaleFactor*params->threshold4;
+/************************************************************************************/
+/*                                                                                  */
+/* END SECTION: check BLK Data for dynamic range issues and rescale if indicated.   */
+/*                                                                                  */
+/************************************************************************************/
 
 /*****************************************************/
 /*                                                   */
@@ -1455,15 +1480,17 @@ void StackSlideConditionData(
 /*****************************************************/  
   /* 07/09/04 gam; Use LALRngMedBias to correct bias in the median. */
   if ( (params->normalizationFlag & 4) > 0 )  {
-     REAL8 tmpBiasFactor;
-     LALRngMedBias(status->statusPtr, &tmpBiasFactor, params->nBinsPerNRM);
-     CHECKSTATUSPTR (status);
-     params->normalizationParameter = (REAL4)tmpBiasFactor;   
-           
-    /* 05/05/04 gam; If normalizing with running median use normalizationParameter to correct bias in median to get mean. */
-    if (params->normalizationParameter < ((REAL4)LAL_LN2) || params->normalizationParameter > 1.0) {
+     if (params->normalizationParameter <= 0) {
+       /* 10/20/05 gam; get this value from LAL only if not entered from command line */
+       REAL8 tmpBiasFactor;
+       LALRngMedBias(status->statusPtr, &tmpBiasFactor, params->nBinsPerNRM);
+       CHECKSTATUSPTR (status);
+       params->normalizationParameter = (REAL4)tmpBiasFactor;
+       /* 05/05/04 gam; If normalizing with running median use normalizationParameter to correct bias in median to get mean. */
+       if (params->normalizationParameter < ((REAL4)LAL_LN2) || params->normalizationParameter > 1.0) {
         ABORT( status, DRIVESTACKSLIDEH_ENORMPARAM, DRIVESTACKSLIDEH_MSGENORMPARAM );
-    }
+       }
+     }
   }
 /*****************************************************/
 /*                                                   */
@@ -1506,14 +1533,14 @@ void StackSlideConditionData(
     params->infoLines->rightWing = NULL;
 
     StackSlideGetLinesAndHarmonics(status->statusPtr, params->infoHarmonics, params->infoLines, params->f0BLK, params->bandBLK, params->linesAndHarmonicsFile);
-    CHECKSTATUSPTR (status);
+    INTERNAL_SHOWERRORFROMSUB (status); CHECKSTATUSPTR (status);
 
     /* 07/13/05 gam */  
     if ( (params->normalizationFlag & 32) > 0 ) {
       /* 05/19/05 gam; set up params->sumBinMask with bins to exclude from search or Monte Carlo due to cleaning */
       StackSlideGetBinMask(status->statusPtr, params->sumBinMask, &(params->percentBinsExcluded), params->infoLines,
          ((REAL8)STACKSLIDEMAXV), params->maxSpindownFreqShift, params->maxSpinupFreqShift, params->f0SUM, params->tEffSUM, params->nBinsPerSUM);
-      CHECKSTATUSPTR (status);
+      INTERNAL_SHOWERRORFROMSUB (status); CHECKSTATUSPTR (status);
     } 
 
     /* 07/13/05 gam; make RandomParams *randPar a parameter for CleanCOMPLEX8SFT; initialze RandomParams *randPar once to avoid repeatly opening /dev/urandom */
@@ -1663,7 +1690,7 @@ void StackSlideConditionData(
   /* 02/24/04 gam; Set edat->leap = 13; Was NOT getting initialized. Note 13 is OK for 2000; Check for current date! */
   /* params->edat->leap = 13; */  
   LALLeapSecs(status->statusPtr,&leap,&(params->timeStamps[0]),&formatAndAcc); /* 03/01/04 gam; Call LALLeapSecs to get edat->leap */
-  CHECKSTATUSPTR (status);
+  INTERNAL_SHOWERRORFROMSUB (status); CHECKSTATUSPTR (status);
   params->edat->leap = (INT2)leap;
   #ifdef DEBUG_EPHEMERISDATA
        fprintf(stdout, "\nparams->edat->leap = %i \n",params->edat->leap);
@@ -1676,7 +1703,7 @@ void StackSlideConditionData(
   #else
     LALInitBarycenter(status->statusPtr, params->edat);
   #endif
-  CHECKSTATUSPTR (status);
+  INTERNAL_SHOWERRORFROMSUB (status); CHECKSTATUSPTR (status);
      
 /**********************************************/
 /*                                            */
@@ -1695,18 +1722,18 @@ void StackSlideConditionData(
   /* 05/13/05 gam; Add function FindAveEarthAcc that finds aveEarthAccVec, the Earth's average acceleration vector during the analysis time. */
   /* 05/13/05 gam; Add function FindLongLatFromVec that find for a vector that points from the center to a position on a sphere, the latitude and longitude of this position */
   FindAveEarthAcc(status->statusPtr, params->aveEarthAccVec, ((REAL8)(params->gpsStartTimeSec)),((REAL8)(params->gpsStartTimeSec) + params->duration), params->edat);
-  CHECKSTATUSPTR (status);
+  INTERNAL_SHOWERRORFROMSUB (status); CHECKSTATUSPTR (status);
   FindLongLatFromVec(status->statusPtr, &(params->aveEarthAccRA), &(params->aveEarthAccDEC), params->aveEarthAccVec);
-  CHECKSTATUSPTR (status);
+  INTERNAL_SHOWERRORFROMSUB (status); CHECKSTATUSPTR (status);
 
   if ( (params->parameterSpaceFlag & 1) >  0) {
     /* 05/13/05 gam; if (params->parameterSpaceFlag & 1) > 0 rotate skyPosData into coordinates with Earth's average acceleration at the pole. */
     RotateSkyPosData(status->statusPtr, params->skyPosData, params->numSkyPosTotal, params->aveEarthAccRA, params->aveEarthAccDEC, 0.0);
-    CHECKSTATUSPTR (status);
+    INTERNAL_SHOWERRORFROMSUB (status); CHECKSTATUSPTR (status);
   } else if ( (params->parameterSpaceFlag & 2) >  0) {
     /* 05/13/05 gam; if (params->parameterSpaceFlag & 2) > 0 rotate skyPosData into galactic plane */
     RotateSkyPosData(status->statusPtr, params->skyPosData, params->numSkyPosTotal, 4.65,((REAL8)LAL_PI_2)-0.4, 0.0);
-    CHECKSTATUSPTR (status);
+    INTERNAL_SHOWERRORFROMSUB (status); CHECKSTATUSPTR (status);
   }
 
   #ifdef DEBUG_ROTATESKYCOORDINATES
@@ -1858,7 +1885,7 @@ void StackSlideApplySearch(
       /* 05/14/05 gam; cleans SFTs using CleanCOMPLEX8SFT by Sintes, A.M., Krishnan, B. */ /* 07/13/05 gam; add params->randPar */
       /* 07/13/05 gam NOTE THAT THE MAXIMUM NUMBER OF BINS TO CLEAN IS NOW params->nBinsPerBLK, i.e., COULD CLEAN ENTIRE BAND! */
       StackSlideCleanSFTs(status->statusPtr,params->BLKData,params->infoLines,params->numBLKs,params->nBinsPerNRM,params->nBinsPerBLK,params->randPar);
-      CHECKSTATUSPTR (status);
+      INTERNAL_SHOWERRORFROMSUB (status); CHECKSTATUSPTR (status);
     }
   }
 /***********************************************************/
@@ -2060,10 +2087,10 @@ void StackSlideApplySearch(
 	} /* END for(k=0;k<params->numBLKs;k++) */
 
         /* 11/01/04 gam; if (params->weightFlag & 8) > 0 rescale STKs with threshold5 to prevent dynamic range issues. */
-        if ( (params->weightFlag & 8) > 0 )  {
+        /* if ( (params->weightFlag & 8) > 0 )  {
            RescaleSTKData(params->STKData, params->numSTKs, params->nBinsPerSTK, params->threshold5);
-        }
-        
+        } */ /* 10/20/05 gam */
+
         /* 04/15/04 gam; open file for output of PSD estimates for each SFT */
         if ( ((params->normalizationFlag & 16) > 0) && !((params->normalizationFlag & 2) > 0) ) {
             CHAR *psdFile;
@@ -2116,7 +2143,7 @@ void StackSlideApplySearch(
            for(k=0;k<params->numSTKs;k++) {
               /* LALSRunningMedian(status->statusPtr, medians, params->STKData[k]->data, runningMedianParams); */
               LALSRunningMedian2(status->statusPtr, medians, params->STKData[k]->data, runningMedianParams); /* 12/18/04 gam */
-              CHECKSTATUSPTR (status);
+              INTERNAL_SHOWERRORFROMSUB (status); CHECKSTATUSPTR (status);
 
               /* 05/05/04 gam; If normalizing with running median use normalizationParameter to correct bias in median to get mean. */
               for(istkNRM=0;istkNRM<mediansLength;istkNRM++) {
@@ -2550,7 +2577,7 @@ void StackSlideApplySearch(
       &cachedDetector,
       stksldParams,
       params );
-   CHECKSTATUSPTR (status);
+   INTERNAL_SHOWERRORFROMSUB (status); CHECKSTATUSPTR (status);
     
   } else if ((params->binaryFlag & 1) == 1) {
    
@@ -3701,15 +3728,72 @@ void GetDetResponseTStampMidPts(LALStatus *stat, REAL4Vector *detResponseTStampM
 }  
 
 /* 11/01/04 gam; if (params->weightFlag & 8) > 0 rescale STKs with threshold5 to prevent dynamic range issues. */
-void RescaleSTKData(REAL4FrequencySeries **STKData, INT4 numSTKs, INT4 nBinsPerSTK,REAL4 RescaleFactor)
+/* void RescaleSTKData(REAL4FrequencySeries **STKData, INT4 numSTKs, INT4 nBinsPerSTK,REAL4 RescaleFactor)
 {
      INT4 i,k;
      for(k=0;k<numSTKs;k++) {
          for(i=0;i<nBinsPerSTK;i++) {
-             STKData[k]->data->data[i] *= RescaleFactor; /* Multiply by RescaleFactor */
+             STKData[k]->data->data[i] *= RescaleFactor;
          }
+     }     
+} */ /* END RescaleSTKData */ /* 10/20/05 gam */
+
+/* 10/20/05 gam */
+void CheckDynamicRangeAndRescaleBLKData(LALStatus *status, REAL4 *blkRescaleFactor, FFT **BLKData, INT4 numBLKs, INT2 weightFlag)
+{
+
+  INT4 i,j, nBinsPerBLK, count;
+  REAL4 minFabsBLKData, maxFabsBLKData, sumFabsBLKData, meanFabsBLKData, temp;
+
+  INITSTATUS( status, "CheckAndRescaleBLKData", DRIVESTACKSLIDEC );
+  ATTATCHSTATUSPTR (status);
+
+  nBinsPerBLK = BLKData[0]->fft->data->length;
+  minFabsBLKData = 1.0;
+  maxFabsBLKData = 0.0;
+  sumFabsBLKData = 0.0;
+  for(i=0;i<numBLKs;i++) {
+      for(j=0;j<nBinsPerBLK;j++) {
+          temp = ( fabs(BLKData[i]->fft->data->data[j].re) + fabs(BLKData[i]->fft->data->data[j].im) ) /2.0;
+          if ( (temp > 0.0) && (temp < minFabsBLKData) ) {
+              minFabsBLKData = temp;
+          }
+          if ( temp > maxFabsBLKData ) {
+              maxFabsBLKData = temp;
+          }
+          sumFabsBLKData += temp;
+          count++;
+      }
+  }
+  meanFabsBLKData = sumFabsBLKData/((REAL4) count);
+
+  #ifdef DEBUG_CHECKDYNAMICRANGEANDRESCALEBLKDATA
+     fprintf(stdout, "minimum nonzero absolute value of BKL data = %23.16e\n",minFabsBLKData);
+     fprintf(stdout, "maximum nonzero absolute value of BKL data = %23.16e\n",maxFabsBLKData);
+     fprintf(stdout, "mean absolute value of BKL data = %23.16e\n",meanFabsBLKData);
+     fflush(stdout);
+  #endif
+
+  if ( (weightFlag & 8) > 0 )  {
+     *blkRescaleFactor = 1.0/meanFabsBLKData;
+     /* Rescale the BLK data with *blkRescaleFactor */
+     for(i=0;i<numBLKs;i++) {
+         for(j=0;j<nBinsPerBLK;j++) {
+            BLKData[i]->fft->data->data[j].re = (*blkRescaleFactor) * BLKData[i]->fft->data->data[j].re;
+            BLKData[i]->fft->data->data[j].im = (*blkRescaleFactor) * BLKData[i]->fft->data->data[j].im;
+         }
+     }     
+  } else {
+    *blkRescaleFactor = 1.0;
+     /* Since we work with absolute squares of BKL data, make sure we are not in danger of underflows or overflows */
+     if ( (meanFabsBLKData <= STACKSLIDEUNDERFLOWDANGE) || (maxFabsBLKData >=  STACKSLIDEOVERFLOWDANGE) ) {
+        ABORT( status, DRIVESTACKSLIDEH_EDYNAMICRANGE , DRIVESTACKSLIDEH_MSGEDYNAMICRANGE );
      }
-} /* END RescaleSTKData */
+  }
+
+  CHECKSTATUSPTR (status);
+  DETATCHSTATUSPTR (status);
+}
 
 /* 02/25/05 gam; utility for printing one SUM to a file */
 void printOneStackSlideSUM( const REAL4FrequencySeries *oneSUM,
