@@ -309,9 +309,9 @@ hackedLALTwoDMesh( LALStatus          *stat,
 /* <lalVerbatim file="TwoDMeshInternalCP"> */
 void
 hackedLALTwoDColumn( LALStatus            *stat,
-	       h_TwoDMeshNode         **tail,
-	       h_TwoDColumnParamStruc *column,
-	       h_TwoDMeshParamStruc   *params )
+		     h_TwoDMeshNode         **tail,
+		     h_TwoDColumnParamStruc *column,
+		     h_TwoDMeshParamStruc   *params )
 { /* </lalVerbatim> */
   BOOLEAN tiled = 0;    /* whether tiles were placed on the centreline */
   REAL8 position[2];    /* current top of column */
@@ -459,7 +459,7 @@ hackedLALTwoDColumn( LALStatus            *stat,
   if ( ( ( column->leftClip[0] < leftTiled[0] ) || ( centreClip[0] < myy0 ) ) &&
        ( column->leftRange[0] < leftTiled[0] ) &&( ( column->leftRange[1] > column->leftClip[0] ) ||
 	 ( centreRange[1] > centreClip[0] ) ) ) {
-    TwoDColumnParamStruc column2;
+    h_TwoDColumnParamStruc column2;
     column2.domain[0] = column->domain[0];
     column2.domain[1] = position[0];
     memcpy( column2.leftRange, column->leftRange, 2*sizeof(REAL8) );
@@ -470,7 +470,7 @@ hackedLALTwoDColumn( LALStatus            *stat,
       column2.leftClip[1] = leftTiled[0];
       column2.rightClip[1] = myy0;
     }
-    LALTwoDColumn( stat->statusPtr, &here, &column2, params );
+    hackedLALTwoDColumn( stat->statusPtr, &here, &column2, params );
     BEGINFAIL( stat )
       TRY( hackedLALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next), NULL ), stat );
     ENDFAIL( stat );
@@ -487,7 +487,7 @@ hackedLALTwoDColumn( LALStatus            *stat,
   if ( ( ( column->rightClip[0] < rightTiled[0] ) || ( centreClip[0] < myy0 ) ) &&
        ( column->rightRange[0] < rightTiled[0] ) && ( ( column->rightRange[1] > column->rightClip[0] ) ||
 	 ( centreRange[1] > centreClip[0] ) ) ) {
-    TwoDColumnParamStruc column2;
+    h_TwoDColumnParamStruc column2;
     column2.domain[1] = column->domain[1];
     column2.domain[0] = position[0];
     memcpy( column2.rightRange, column->rightRange, 2*sizeof(REAL8) );
@@ -498,7 +498,7 @@ hackedLALTwoDColumn( LALStatus            *stat,
       column2.rightClip[1] = rightTiled[0];
       column2.leftClip[1] = myy0;
     }
-    LALTwoDColumn( stat->statusPtr, &here, &column2, params );
+    hackedLALTwoDColumn( stat->statusPtr, &here, &column2, params );
     BEGINFAIL( stat )
       TRY( hackedLALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next), NULL ), stat );
     ENDFAIL( stat );
@@ -521,7 +521,7 @@ hackedLALTwoDColumn( LALStatus            *stat,
 	 ( column->leftRange[1] > leftTiled[1] ) &&
 	 ( ( column->leftRange[0] < column->leftClip[1] ) ||
 	   ( centreRange[0] < centreClip[1] ) ) ) {
-      TwoDColumnParamStruc column2;
+      h_TwoDColumnParamStruc column2;
       column2.domain[0] = column->domain[0];
       column2.domain[1] = position[0];
       memcpy( column2.leftRange, column->leftRange, 2*sizeof(REAL8) );
@@ -533,7 +533,7 @@ hackedLALTwoDColumn( LALStatus            *stat,
 	column2.leftClip[0] = leftTiled[1];
 	column2.rightClip[0] = myy0;
       }
-      LALTwoDColumn( stat->statusPtr, &here, &column2, params );
+      hackedLALTwoDColumn( stat->statusPtr, &here, &column2, params );
       BEGINFAIL( stat )
 	TRY( hackedLALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next), NULL ), stat );
       ENDFAIL( stat );
@@ -552,7 +552,7 @@ hackedLALTwoDColumn( LALStatus            *stat,
 	 ( column->rightRange[1] > rightTiled[1] ) &&
 	 ( ( column->rightRange[0] < column->rightClip[1] ) ||
 	   ( centreRange[0] < centreClip[1] ) ) ) {
-      TwoDColumnParamStruc column2;
+      h_TwoDColumnParamStruc column2;
       column2.domain[1] = column->domain[1];
       column2.domain[0] = position[0];
       memcpy( column2.rightRange, column->rightRange, 2*sizeof(REAL8) );
@@ -563,7 +563,7 @@ hackedLALTwoDColumn( LALStatus            *stat,
 	column2.rightClip[0] = rightTiled[1];
 	column2.leftClip[0] = myy0;
       }
-      LALTwoDColumn( stat->statusPtr, &here, &column2, params );
+      hackedLALTwoDColumn( stat->statusPtr, &here, &column2, params );
       BEGINFAIL( stat )
 	TRY( hackedLALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next), NULL ), stat );
       ENDFAIL( stat );
