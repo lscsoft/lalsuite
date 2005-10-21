@@ -1572,6 +1572,9 @@ static SSSimStochBGOutput *generate_fake_detector_output(LALStatus *status,
         noise_two->epoch, noise_two->f0, noise_two->deltaT, \
         noise_two->sampleUnits, noise_two->data->length), status);
 
+  if (vrbflg)
+    fprintf(stderr, "Generating unity response functions...\n");
+
   /* generate unity response functions */
   response_one = unity_response(status, start, 0, deltaF, \
       lalDimensionlessUnit, freq_length);
@@ -1605,9 +1608,15 @@ static SSSimStochBGOutput *generate_fake_detector_output(LALStatus *status,
   output->SSimStochBG1 = series_one;
   output->SSimStochBG2 = series_two;
 
+  if (vrbflg)
+    fprintf(stderr, "Generating fake signal...\n");
+
   /* generate fake signal */
   LAL_CALL(LALSSSimStochBGTimeSeries(status, output, &input, &params), \
       status);
+
+  if (vrbflg)
+    fprintf(stderr, "Injecting fake signal into random noise...\n");
 
   /* inject signal into noise */
   for (i = 0; i < series_one->data->length; i++)
@@ -3303,7 +3312,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   gpsEndTime.gpsSeconds = endTime;
   gpsEndTime.gpsNanoSeconds = 0;
 
-
   /* get deltaF for optimal filter */
   deltaF = 1./(REAL8)PSD_WINDOW_DURATION;
 
@@ -3315,9 +3323,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   LALSPrintTimeSeries(noiseOne, "noise1.dat");
   LALSPrintTimeSeries(noiseTwo, "noise2.dat");
 
-  /* quit */
-  exit(1);
-
   /* set out for generate_fake_detector_output */
   fakeOutput->SSimStochBG1 = seriesOne;
   fakeOutput->SSimStochBG2 = seriesTwo;
@@ -3325,6 +3330,11 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* generate fake data */
   fakeOutput = generate_fake_detector_output(&status, noiseOne, noiseTwo, \
       deltaF);
+
+  LALSPrintTimeSeries(seriesOne, "series1.dat");
+  LALSPrintTimeSeries(seriesTwo, "series2.dat");
+
+  exit(1);
 
   /* check that the two series have the same sample rate */
   if (seriesOne->deltaT != seriesTwo->deltaT)
