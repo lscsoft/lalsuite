@@ -36,11 +36,14 @@ Usage: lalapps_ring_pipe [options]
   -f, --config-file FILE   use configuration file FILE
   -l, --log-path PATH      directory to write condor log file
   -p, --playground         run on playground data only 
+  -d, --datafind           perform the datafind step
+  -b, --burst-search       perform the burst search
+  -c, --coincidence        perform the coincidence step
 """
   print >> sys.stderr, msg
 
 # pasrse the command line options to figure out what we should do
-shortop = "hvispf:l:"
+shortop = "hvispf:l:dbc"
 longop = [
   "help",
   "version",
@@ -48,7 +51,10 @@ longop = [
   "timeslides",
   "playground",
   "config-file=",
-  "log-path="
+  "log-path=",
+  "datafind",
+  "burst-search",
+  "coincidence"
   ]
 
 try:
@@ -63,6 +69,9 @@ config_file = None
 log_path = None
 do_slides = None
 playground = 0
+do_datafind = None
+do_burstsearch = None
+do_coincidence = None
 
 for o, a in opts:
   if o in ("-v", "--version"):
@@ -81,6 +90,12 @@ for o, a in opts:
     config_file = a
   elif o in ("-l", "--log-path"):
     log_path = a
+  elif o in ("-d", "--datafind"):
+    do_datafind = 1
+  elif o in ("-b", "--burst-search"):
+    do_burstsearch = 1
+  elif o in ("-c", "--coincidence"):
+    do_coincidence = 1
   else:
     print >> sys.stderr, "Unknown option:", o
     usage()
@@ -195,6 +210,8 @@ segment_number = -1
 for seg in data:
 
   segment_number=segment_number+1
+
+
   # find all the data for first ifo
   df1 = pipeline.LSCDataFindNode(df_job)
   df1.set_start(seg.start())
@@ -202,9 +219,10 @@ for seg in data:
   df1.set_observatory(ifo1[0])
   df1.set_type(datatype1)
   df1.set_name("df_"+ifo1+"_"+str(segment_number))
-  if prev_df1: 
+  if do_datafind and prev_df1: 
     df1.add_parent(prev_df1)
-  dag.add_node(df1)
+  if do_datafind:
+    dag.add_node(df1)
   prev_df1 = df1
 
   # find data for second ifo
@@ -214,9 +232,10 @@ for seg in data:
   df2.set_observatory(ifo2[0])
   df2.set_type(datatype2)
   df2.set_name("df_"+ifo2+"_"+str(segment_number))
-  if prev_df2: 
+  if do_datafind and prev_df2: 
     df2.add_parent(prev_df2)
-  dag.add_node(df2)
+  if do_datafind:
+    dag.add_node(df2)
   prev_df2 = df2
 
   # find data for third ifo
@@ -226,11 +245,11 @@ for seg in data:
   df3.set_observatory(ifo3[0])
   df3.set_type(datatype3)
   df3.set_name("df_"+ifo3+"_"+str(segment_number))
-  if prev_df3: 
+  if do_datafind and prev_df3: 
     df3.add_parent(prev_df3)
-  dag.add_node(df3)
+  if do_datafind:
+    dag.add_node(df3)
   prev_df3 = df3
-
 
   if do_inj:
     # create injection jobs
@@ -251,6 +270,7 @@ for seg in data:
   for chunk in seg:
     
     chunk_number=chunk_number+1    
+
     #string job for first ifo
     string1 = cosmicstring.StringNode(string_job)
     string1.set_start(chunk.start())
@@ -260,12 +280,14 @@ for seg in data:
     string1.add_var_opt('threshold',snrH1)
     string1.add_var_opt('trig-start-time',chunk.trig_start())
     string1.add_var_opt('outfile',string1.get_output())
-    string1.add_parent(df1)
+    if do_datafind:
+      string1.add_parent(df1)
     string1.set_name("string_"+ifo1+"_"+str(segment_number)+"_"+str(chunk_number))
     if do_inj:
       string1.add_parent(inject1)
       string1.add_var_opt('injection-file',inject1.get_output())
-    dag.add_node(string1)
+    if do_burstsearch:
+      dag.add_node(string1)
 
     #string job for second ifo  
     string2 = cosmicstring.StringNode(string_job)
@@ -276,12 +298,14 @@ for seg in data:
     string2.add_var_opt('threshold',snrL1)
     string2.add_var_opt('trig-start-time',chunk.trig_start())
     string2.add_var_opt('outfile',string2.get_output())
-    string2.add_parent(df2)
+    if do_datafind:
+      string2.add_parent(df2)
     string2.set_name("string_"+ifo2+"_"+str(segment_number)+"_"+str(chunk_number))
     if do_inj:
       string2.add_parent(inject1)
       string2.add_var_opt('injection-file',inject1.get_output())
-    dag.add_node(string2)
+    if do_burstsearch:
+      dag.add_node(string2)
 
     #string job for second ifo  
     string3 = cosmicstring.StringNode(string_job)
@@ -292,12 +316,14 @@ for seg in data:
     string3.add_var_opt('threshold',snrH2)
     string3.add_var_opt('trig-start-time',chunk.trig_start())
     string3.add_var_opt('outfile',string3.get_output())
-    string3.add_parent(df3)
+    if do_datafind:
+      string3.add_parent(df3)
     string3.set_name("string_"+ifo3+"_"+str(segment_number)+"_"+str(chunk_number))
     if do_inj:
       string3.add_parent(inject1)
       string3.add_var_opt('injection-file',inject1.get_output())
-    dag.add_node(string3)
+    if do_burstsearch:
+      dag.add_node(string3)
 
     # Coincidence jobs
     #13 H1-H2 coincidences (produces H1 survivors)
@@ -306,8 +332,9 @@ for seg in data:
     burca13.set_end(chunk.end())
     burca13.set_ifoa(string1.get_output(),ifo1)
     burca13.set_ifob(string3.get_output(),ifo3) 
-    burca13.add_parent(string1)
-    burca13.add_parent(string3)
+    if do_burstsearch:
+      burca13.add_parent(string1)
+      burca13.add_parent(string3)
     burca13.add_var_opt('dt',dtHH)
     burca13.add_var_opt('amplitude-cut',1)
     burca13.set_name("burca_"+ifo1+ifo3+"_"+str(segment_number)+"_"+str(chunk_number))
@@ -316,7 +343,8 @@ for seg in data:
       burca13.add_var_opt('slide-time',0)
       burca13.add_var_opt('slide-time-ns',0)
       burca13.add_var_opt('number-slides',0)
-    dag.add_node(burca13)
+    if do_coincidence:  
+      dag.add_node(burca13)
 
     #31 H2-H1 coincidences (produces H2 survivors)
     burca31 = cosmicstring.BurcaNode(burca_job)
@@ -324,8 +352,9 @@ for seg in data:
     burca31.set_end(chunk.end())
     burca31.set_ifoa(string3.get_output(),ifo3)
     burca31.set_ifob(string1.get_output(),ifo1) 
-    burca31.add_parent(string1)
-    burca31.add_parent(string3)
+    if do_burstsearch:
+      burca31.add_parent(string1)
+      burca31.add_parent(string3)
     burca31.add_var_opt('dt',dtHH)
     burca31.add_var_opt('amplitude-cut',1)
     burca31.set_name("burca_"+ifo3+ifo1+"_"+str(segment_number)+"_"+str(chunk_number))
@@ -334,7 +363,8 @@ for seg in data:
       burca31.add_var_opt('slide-time',0)
       burca31.add_var_opt('slide-time-ns',0)
       burca31.add_var_opt('number-slides',0)
-    dag.add_node(burca31)
+    if do_coincidence:  
+      dag.add_node(burca31)
 
     #132 H1-H2 survivors in coincidence with L1 (gives H1 survivors)
     burca132 = cosmicstring.BurcaNode(burca_job)
@@ -342,8 +372,10 @@ for seg in data:
     burca132.set_end(chunk.end())
     burca132.set_ifoa(burca13.get_output(),ifo1)
     burca132.set_ifob(string2.get_output(),ifo2) 
-    burca132.add_parent(burca13)
-    burca132.add_parent(string2)
+    if do_coincidence:  
+      burca132.add_parent(burca13)
+    if do_burstsearch:
+      burca132.add_parent(string2)
     burca132.add_var_opt('dt',dtHL)
     burca132.add_var_opt('amplitude-cut',0)
     burca132.set_name("burca_"+ifo1+ifo3+ifo2+"_"+str(segment_number)+"_"+str(chunk_number))
@@ -352,7 +384,8 @@ for seg in data:
       burca132.add_var_opt('slide-time',slidetime)
       burca132.add_var_opt('slide-time-ns',slidetimens)
       burca132.add_var_opt('number-slides',no_slides)
-    dag.add_node(burca132)
+    if do_coincidence:  
+      dag.add_node(burca132)
 
     #213 L1 events in coincidence with H1-H2 survivors (gives L1 survivors)
     burca213 = cosmicstring.BurcaNode(burca_job)
@@ -360,8 +393,10 @@ for seg in data:
     burca213.set_end(chunk.end())
     burca213.set_ifoa(string2.get_output(),ifo2) 
     burca213.set_ifob(burca13.get_output(),ifo1)
-    burca213.add_parent(burca13)
-    burca213.add_parent(string2)
+    if do_coincidence:  
+      burca213.add_parent(burca13)
+    if do_burstsearch:  
+      burca213.add_parent(string2)
     burca213.add_var_opt('dt',dtHL)
     burca213.add_var_opt('amplitude-cut',0)
     burca213.set_name("burca_"+ifo2+ifo1+ifo3+"_"+str(segment_number)+"_"+str(chunk_number))
@@ -370,7 +405,8 @@ for seg in data:
       burca213.add_var_opt('slide-time',slidetime)
       burca213.add_var_opt('slide-time-ns',slidetimens)
       burca213.add_var_opt('number-slides',no_slides)
-    dag.add_node(burca213)
+    if do_coincidence:  
+      dag.add_node(burca213)
 
     #312 H2-H1 survivors in coincidence with L1 (gives H2 survivors)
     burca312 = cosmicstring.BurcaNode(burca_job)
@@ -378,8 +414,10 @@ for seg in data:
     burca312.set_end(chunk.end())
     burca312.set_ifoa(burca31.get_output(),ifo3)
     burca312.set_ifob(string2.get_output(),ifo2) 
-    burca312.add_parent(burca31)
-    burca312.add_parent(string2)
+    if do_coincidence:  
+      burca312.add_parent(burca31)
+    if do_burstsearch:  
+      burca312.add_parent(string2)
     burca312.add_var_opt('dt',dtHL)
     burca312.add_var_opt('amplitude-cut',0)
     burca312.set_name("burca_"+ifo3+ifo1+ifo2+"_"+str(segment_number)+"_"+str(chunk_number))
@@ -388,7 +426,8 @@ for seg in data:
       burca312.add_var_opt('slide-time',slidetime)
       burca312.add_var_opt('slide-time-ns',slidetimens)
       burca312.add_var_opt('number-slides',no_slides)
-    dag.add_node(burca312)
+    if do_coincidence:  
+      dag.add_node(burca312)
 
     #H1-L1 double coincidences
     #12 H1-L1 coincidences (produces H1 survivors)
@@ -397,8 +436,9 @@ for seg in data:
     burca12.set_end(chunk.end())
     burca12.set_ifoa(string1.get_output(),ifo1)
     burca12.set_ifob(string2.get_output(),ifo2) 
-    burca12.add_parent(string1)
-    burca12.add_parent(string2)
+    if do_burstsearch:
+      burca12.add_parent(string1)
+      burca12.add_parent(string2)
     burca12.add_var_opt('dt',dtHL)
     burca12.add_var_opt('amplitude-cut',0)
     burca12.set_name("burca_"+ifo1+ifo2+"_"+str(segment_number)+"_"+str(chunk_number))
@@ -407,7 +447,8 @@ for seg in data:
       burca12.add_var_opt('slide-time',slidetime)
       burca12.add_var_opt('slide-time-ns',slidetimens)
       burca12.add_var_opt('number-slides',no_slides)
-    dag.add_node(burca12)
+    if do_coincidence:  
+      dag.add_node(burca12)
 
     #21 L1-H1 coincidences (produces L1 survivors)
     burca21 = cosmicstring.BurcaNode(burca_job)
@@ -415,8 +456,9 @@ for seg in data:
     burca21.set_end(chunk.end())
     burca21.set_ifoa(string2.get_output(),ifo2)
     burca21.set_ifob(string1.get_output(),ifo1) 
-    burca21.add_parent(string1)
-    burca21.add_parent(string2)
+    if do_burstsearch:
+      burca21.add_parent(string1)
+      burca21.add_parent(string2)
     burca21.add_var_opt('dt',dtHL)
     burca21.add_var_opt('amplitude-cut',0)
     burca21.set_name("burca_"+ifo2+ifo1+"_"+str(segment_number)+"_"+str(chunk_number))
@@ -425,7 +467,8 @@ for seg in data:
       burca21.add_var_opt('slide-time', slidetime)
       burca21.add_var_opt('slide-time-ns', slidetimens)
       burca21.add_var_opt('number-slides',no_slides)
-    dag.add_node(burca21)
+    if do_coincidence:  
+      dag.add_node(burca21)
 
 # write out the DAG
 dag.write_sub_files()
