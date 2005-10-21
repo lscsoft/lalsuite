@@ -411,7 +411,8 @@ XLALCompareSnglBurstSnglInspiralByTime(
 int
 XLALCompareSnglBurstByLowFreq(
 	const SnglBurstTable * const *a,
-	const SnglBurstTable * const *b)
+	const SnglBurstTable * const *b
+)
 /* </lalVerbatim> */
 {
 	REAL4 flowa, flowb;
@@ -545,6 +546,8 @@ XLALCompareSnglBurstSnglInspiral(
 	return(result);
 }
 
+
+
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
 void
 LALCompareSnglBurstSnglInspiral(
@@ -559,6 +562,33 @@ LALCompareSnglBurstSnglInspiral(
 	INITSTATUS (status, "LALCompareSnglBurstSnglInspiral", SNGLBURSTUTILSC);
 	*difference = XLALCompareSnglBurstSnglInspiral(&a, &b);
 	RETURN(status);
+}
+
+
+/* <lalVerbatim file="SnglBurstUtilsCP"> */
+int
+XLALCompareSimBurstSnglInspiral(
+	const SimBurstTable * const *a,
+	const SnglInspiralTable * const *b
+)
+/* </lalVerbatim> */
+{
+	INT8 ta;
+	INT8 inspwindow = 1000000000; /* insp window = 10 ms */
+
+	if(! strcmp("ZENITH",(*a)->coordinates))
+		ta = XLALGPStoINT8(&(*a)->geocent_peak_time);
+	else {
+		if(! strcmp("H1",(*b)->ifo))
+			ta = XLALGPStoINT8(&(*a)->h_peak_time);
+		else if(! strcmp("H2",(*b)->ifo))
+			ta = XLALGPStoINT8(&(*a)->h_peak_time);
+		else if(! strcmp("L1",(*b)->ifo))
+			ta = XLALGPStoINT8(&(*a)->l_peak_time);
+	}
+
+	return(((inspiral_end_time(*b) - inspwindow) < ta) && (ta < (inspiral_end_time(*b) + inspwindow)));
+
 }
 
 

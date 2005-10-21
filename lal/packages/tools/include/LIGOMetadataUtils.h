@@ -771,6 +771,12 @@ LALCompareSnglBurstSnglInspiral(
 );
 
 int
+XLALCompareSimBurstSnglInspiral(
+	const SimBurstTable * const *a,
+	const SnglInspiralTable * const *b
+);
+
+int
 XLALCompareSimBurstAndSnglBurstByTimeandFreq(
 	const SimBurstTable * const *a,
 	const SnglBurstTable * const *b
