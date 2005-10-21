@@ -353,22 +353,23 @@ XLALCompareStringBurstByAmplitude(
 )
 /* </lalVerbatim> */
 {
-        REAL4 Ampa, Ampb, A;
-	REAL4 snra, snrb;
+        REAL4 Ampa, Ampb, Amin, Amax;
+	REAL4 snra;
 	REAL4 delta;
-	REAL4 kappa = 0.4;
+	REAL4 kappa = 0.5;
 
 	Ampa = (*a)->amplitude;
 	Ampb = (*b)->amplitude;
 	snra = (*a)->snr;
-	snrb = (*b)->snr;
 
-	A = (Ampa+Ampb)/2.0;
-	delta = 3*A*(1.0/snra+1.0/snrb)+A*kappa;
-
-	if(Ampa > Ampb + delta)
+	delta = fabs(Ampa)*(3/snra+kappa);
+	
+	Amin = Ampb - delta;
+	Amax = Ampb + delta;
+	
+	if(Ampa > Amax)
 		return(1);
-	if(Ampa < Ampb - delta)
+	if(Ampa < Amin)
 		return(-1);
 	return(0);
 }
