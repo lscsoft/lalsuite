@@ -33,7 +33,7 @@ CFSsources = 	ComputeFStatistic.h	\
 		LogPrintf.c LogPrintf.h		\
 		hackedTwoDMesh.c
 
-lalapps_ComputeFStatistic_CPPFLAGS= -DUSE_HACKED_TWODMESH $(CPPFLAGS) $(AM_CPPFLAGS)
+##lalapps_ComputeFStatistic_CPPFLAGS= -DUSE_HACKED_TWODMESH $(CPPFLAGS) $(AM_CPPFLAGS)
 lalapps_ComputeFStatistic_SOURCES = ComputeFStatistic.c CFSLALDemod.c $(CFSsources)
 
 lalapps_FrComputeFStatistic_SOURCES = FrComputeFStatistic.c FrComputeFStatistic.h	\
