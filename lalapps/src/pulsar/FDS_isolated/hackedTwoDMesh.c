@@ -116,11 +116,11 @@ do {                                                                 \
 /* <lalVerbatim file="TwoDMeshCP"> */
 void
 hackedLALCreateTwoDMesh( LALStatus          *stat,
-			 TwoDMeshNode       **mesh,
-			 TwoDMeshParamStruc *params )
+			 h_TwoDMeshNode       **mesh,
+			 h_TwoDMeshParamStruc *params )
 { /* </lalVerbatim> */
-  TwoDMeshNode head;     /* dummy head node */
-  TwoDMeshNode *headPtr; /* pointer to above */
+  h_TwoDMeshNode head;     /* dummy head node */
+  h_TwoDMeshNode *headPtr; /* pointer to above */
 
   INITSTATUS( stat, "LALCreateTwoDMesh", HTWODMESHC );
   ATTATCHSTATUSPTR( stat );
@@ -174,11 +174,11 @@ hackedLALCreateTwoDMesh( LALStatus          *stat,
 /* <lalVerbatim file="TwoDMeshInternalCP"> */
 void
 hackedLALTwoDMesh( LALStatus          *stat,
-		   TwoDMeshNode       **tail,
-		   TwoDMeshParamStruc *params )
+		   h_TwoDMeshNode       **tail,
+		   h_TwoDMeshParamStruc *params )
 { /* </lalVerbatim> */
   TwoDColumnParamStruc column; /* parameters for current column */
-  TwoDMeshNode *here;          /* current tail of linked list */
+  h_TwoDMeshNode *here;          /* current tail of linked list */
 
   /* Default parameter values: */
   REAL8 widthRetryFac = TWODMESHINTERNALC_WRETRYFAC;
@@ -224,8 +224,8 @@ hackedLALTwoDMesh( LALStatus          *stat,
   /* Main loop: add columns until we're past the end of the space. */
   here = *tail;
   while ( column.domain[0] < params->domain[1] ) {
-    REAL4 position[2]; /* position in parameter space */
-    REAL4 metric[3];   /* components of metric at position */
+    REAL8 position[2]; /* position in parameter space */
+    REAL8 metric[3];   /* components of metric at position */
     REAL8 w1, w2;      /* bottom and top widths of column */
 
     /* Estimate column width. */
@@ -309,20 +309,20 @@ hackedLALTwoDMesh( LALStatus          *stat,
 /* <lalVerbatim file="TwoDMeshInternalCP"> */
 void
 hackedLALTwoDColumn( LALStatus            *stat,
-	       TwoDMeshNode         **tail,
-	       TwoDColumnParamStruc *column,
-	       TwoDMeshParamStruc   *params )
+	       h_TwoDMeshNode         **tail,
+	       h_TwoDColumnParamStruc *column,
+	       h_TwoDMeshParamStruc   *params )
 { /* </lalVerbatim> */
   BOOLEAN tiled = 0;    /* whether tiles were placed on the centreline */
-  REAL4 position[2];    /* current top of column */
+  REAL8 position[2];    /* current top of column */
   REAL8 dx;             /* half-width of column */
   REAL8 myy0, myy1;         /* temporary variables storing y-coordinates */
-  REAL4 centreRange[2]; /* centreline of column parameter space */
+  REAL8 centreRange[2]; /* centreline of column parameter space */
   REAL8 centreClip[2];  /* centre of clip boundary */
   REAL8 leftTiled[2];   /* left side of region tiled */
   REAL8 rightTiled[2];  /* right side of region tiled */
-  REAL4 metric[3];      /* current metric components */
-  TwoDMeshNode *here;   /* current node in list */
+  REAL8 metric[3];      /* current metric components */
+  h_TwoDMeshNode *here;   /* current node in list */
 
   /* Default parameter values: */
   REAL8 widthMaxFac = TWODMESHINTERNALC_WMAXFAC;
@@ -372,11 +372,11 @@ hackedLALTwoDColumn( LALStatus            *stat,
     /* Add base tile of column. */
     tiled = 1;
     TRY( (params->getMetric)( stat->statusPtr, metric, position, params->metricParams ), stat );
-    here->next = (TwoDMeshNode *)LALMalloc( sizeof(TwoDMeshNode) );
+    here->next = (h_TwoDMeshNode *)LALMalloc( sizeof(h_TwoDMeshNode) );
     if ( here == NULL ) {
       ABORT( stat, TWODMESHH_EMEM, TWODMESHH_MSGEMEM );
     }
-    memset( here->next, 0, sizeof(TwoDMeshNode) );
+    memset( here->next, 0, sizeof(h_TwoDMeshNode) );
     params->nOut++;
     if (lalDebugLevel >= 3) 
       {
@@ -411,12 +411,12 @@ hackedLALTwoDColumn( LALStatus            *stat,
       BEGINFAIL( stat )
 	TRY( LALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next), NULL ), stat );
       ENDFAIL( stat );
-      here->next = (TwoDMeshNode *)LALMalloc( sizeof(TwoDMeshNode) );
+      here->next = (h_TwoDMeshNode *)LALMalloc( sizeof(h_TwoDMeshNode) );
       if ( here == NULL ) {
 	TRY( LALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next), NULL ), stat );
 	ABORT( stat, TWODMESHH_EMEM, TWODMESHH_MSGEMEM );
       }
-      memset( here->next, 0, sizeof(TwoDMeshNode) );
+      memset( here->next, 0, sizeof(h_TwoDMeshNode) );
       params->nOut++;
       if (lalDebugLevel >= 3) 
 	{
@@ -462,10 +462,10 @@ hackedLALTwoDColumn( LALStatus            *stat,
     TwoDColumnParamStruc column2;
     column2.domain[0] = column->domain[0];
     column2.domain[1] = position[0];
-    memcpy( column2.leftRange, column->leftRange, 2*sizeof(REAL4) );
-    memcpy( column2.leftClip, column->leftClip, 2*sizeof(REAL4) );
-    memcpy( column2.rightRange, centreRange, 2*sizeof(REAL4) );
-    memcpy( column2.rightClip, centreClip, 2*sizeof(REAL4) );
+    memcpy( column2.leftRange, column->leftRange, 2*sizeof(REAL8) );
+    memcpy( column2.leftClip, column->leftClip, 2*sizeof(REAL8) );
+    memcpy( column2.rightRange, centreRange, 2*sizeof(REAL8) );
+    memcpy( column2.rightClip, centreClip, 2*sizeof(REAL8) );
     if ( ( leftTiled[0] < column2.leftClip[1] ) && ( myy0 < column2.rightClip[1] ) ) {
       column2.leftClip[1] = leftTiled[0];
       column2.rightClip[1] = myy0;
@@ -490,10 +490,10 @@ hackedLALTwoDColumn( LALStatus            *stat,
     TwoDColumnParamStruc column2;
     column2.domain[1] = column->domain[1];
     column2.domain[0] = position[0];
-    memcpy( column2.rightRange, column->rightRange, 2*sizeof(REAL4) );
-    memcpy( column2.rightClip, column->rightClip, 2*sizeof(REAL4) );
-    memcpy( column2.leftRange, centreRange, 2*sizeof(REAL4) );
-    memcpy( column2.leftClip, centreClip, 2*sizeof(REAL4) );
+    memcpy( column2.rightRange, column->rightRange, 2*sizeof(REAL8) );
+    memcpy( column2.rightClip, column->rightClip, 2*sizeof(REAL8) );
+    memcpy( column2.leftRange, centreRange, 2*sizeof(REAL8) );
+    memcpy( column2.leftClip, centreClip, 2*sizeof(REAL8) );
     if ( ( rightTiled[0] < column2.rightClip[1] ) && ( myy0 < column2.leftClip[1] ) ) {
       column2.rightClip[1] = rightTiled[0];
       column2.leftClip[1] = myy0;
@@ -524,10 +524,10 @@ hackedLALTwoDColumn( LALStatus            *stat,
       TwoDColumnParamStruc column2;
       column2.domain[0] = column->domain[0];
       column2.domain[1] = position[0];
-      memcpy( column2.leftRange, column->leftRange, 2*sizeof(REAL4) );
-      memcpy( column2.leftClip, column->leftClip, 2*sizeof(REAL4) );
-      memcpy( column2.rightRange, centreRange, 2*sizeof(REAL4) );
-      memcpy( column2.rightClip, centreClip, 2*sizeof(REAL4) );
+      memcpy( column2.leftRange, column->leftRange, 2*sizeof(REAL8) );
+      memcpy( column2.leftClip, column->leftClip, 2*sizeof(REAL8) );
+      memcpy( column2.rightRange, centreRange, 2*sizeof(REAL8) );
+      memcpy( column2.rightClip, centreClip, 2*sizeof(REAL8) );
       if ( ( leftTiled[1] > column2.leftClip[0] ) &&
 	   ( myy0 > column2.rightClip[0] ) ) {
 	column2.leftClip[0] = leftTiled[1];
@@ -555,10 +555,10 @@ hackedLALTwoDColumn( LALStatus            *stat,
       TwoDColumnParamStruc column2;
       column2.domain[1] = column->domain[1];
       column2.domain[0] = position[0];
-      memcpy( column2.rightRange, column->rightRange, 2*sizeof(REAL4) );
-      memcpy( column2.rightClip, column->rightClip, 2*sizeof(REAL4) );
-      memcpy( column2.leftRange, centreRange, 2*sizeof(REAL4) );
-      memcpy( column2.leftClip, centreClip, 2*sizeof(REAL4) );
+      memcpy( column2.rightRange, column->rightRange, 2*sizeof(REAL8) );
+      memcpy( column2.rightClip, column->rightClip, 2*sizeof(REAL8) );
+      memcpy( column2.leftRange, centreRange, 2*sizeof(REAL8) );
+      memcpy( column2.leftClip, centreClip, 2*sizeof(REAL8) );
       if ( ( rightTiled[1] > column2.rightClip[0] ) && ( myy0 > column2.leftClip[0] ) ) {
 	column2.rightClip[0] = rightTiled[1];
 	column2.leftClip[0] = myy0;
@@ -580,6 +580,40 @@ hackedLALTwoDColumn( LALStatus            *stat,
   /* Everything worked fine, so update *tail and exit. */
   *tail = here;
   column->tooWide = 0;
+  DETATCHSTATUSPTR( stat );
+  RETURN( stat );
+}
+
+
+
+/* <lalVerbatim file="TwoDMeshCP"> */
+void
+hackedLALDestroyTwoDMesh( LALStatus    *stat,
+			  h_TwoDMeshNode **mesh,
+			  UINT4        *nFree )
+{ /* </lalVerbatim> */
+  INITSTATUS( stat, "LALDestroyTwoDMesh", HTWODMESHC );
+  ATTATCHSTATUSPTR( stat );
+
+  /* Check that all parameters exist. */
+  ASSERT( mesh, stat, TWODMESHH_ENUL, TWODMESHH_MSGENUL );
+  if ( nFree )
+    *nFree = 0;
+
+  /* Free everything, recursively freeing sub-meshes if necessary. */
+  while ( *mesh ) {
+    UINT4 nSub = 0;             /* nodes freed from sub-meshes */
+    h_TwoDMeshNode *last = *mesh; /* pointer to previous node */
+    if ( last->subMesh ) {
+      TRY( hackedLALDestroyTwoDMesh( stat->statusPtr, &(last->subMesh), &nSub ), stat );
+    }
+    *mesh = last->next;
+    LALFree( last );
+    if ( nFree )
+      *nFree += nSub + 1;
+  }
+
+  /* If we got here without sigsegving, we're done. */
   DETATCHSTATUSPTR( stat );
   RETURN( stat );
 }

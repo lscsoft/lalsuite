@@ -92,9 +92,20 @@ enum {
 
 static int meshOrder = ORDER_DELTA_ALPHA;
 
+#ifdef USE_HACKED_TWODMESH
+typedef REAL8	meshREAL;
+typedef h_TwoDMeshNode meshNODE;
+typedef h_TwoDMeshParamStruc meshPARAMS;
+#else
+typedef REAL4	meshREAL;
+typedef TwoDMeshNode meshNODE;
+typedef TwoDMeshParamStruc meshPARAMS;
+#endif
+
 /*---------- empty initializers ---------- */
 /* some empty structs for initializations */
-static const TwoDMeshParamStruc empty_meshpar;
+static const meshPARAMS empty_meshpar;
+
 static const PtoleMetricIn empty_metricpar;
 static const MetricParamStruc empty_MetricParamStruc;
 static const PulsarTimesParamStruc empty_PulsarTimesParamStruc;
@@ -109,16 +120,16 @@ const DopplerRegion empty_DopplerRegion;
 extern INT4 lalDebugLevel;
 
 /*---------- internal prototypes ----------*/
-void getRange( LALStatus *, REAL4 y[2], REAL4 x, void *params );
-void getMetric( LALStatus *, REAL4 g[3], REAL4 skypos[2], void *params );
+void getRange( LALStatus *, meshREAL y[2], meshREAL x, void *params );
+void getMetric( LALStatus *, meshREAL g[3], meshREAL skypos[2], void *params );
 void LALTemplateDistance (LALStatus *, REAL8 *dist, const DopplerPosition *pos1, const DopplerPosition *pos2);
 REAL8 getDopplermax(EphemerisData *edat);
 
-void ConvertTwoDMesh2Grid ( LALStatus *, DopplerScanGrid **grid, const TwoDMeshNode *mesh2d, const SkyRegion *region );
+void ConvertTwoDMesh2Grid ( LALStatus *, DopplerScanGrid **grid, const meshNODE *mesh2d, const SkyRegion *region );
 
 BOOLEAN pointInPolygon ( const SkyPosition *point, const SkyRegion *polygon );
 
-void gridFlipOrder ( TwoDMeshNode *grid );
+void gridFlipOrder ( meshNODE *grid );
 
 void buildFlatGrid (LALStatus *, DopplerScanGrid **grid, const SkyRegion *region, REAL8 dAlpha, REAL8 dDelta);
 void buildIsotropicGrid (LALStatus *, DopplerScanGrid **grid, const SkyRegion *skyRegion, REAL8 dAlpha, REAL8 dDelta);
@@ -386,10 +397,10 @@ NextDopplerPos( LALStatus *status, DopplerPosition *pos, DopplerScanState *scan)
  * rectangular parameter-area [ a1, a2 ] x [ d1, d2 ]
  * 
  *----------------------------------------------------------------------*/
-void getRange( LALStatus *status, REAL4 y[2], REAL4 x, void *params )
+void getRange( LALStatus *status, meshREAL y[2], meshREAL x, void *params )
 {
   SkyRegion *region = (SkyRegion*)params;
-  REAL4 nix;
+  meshREAL nix;
 
   /* Set up shop. */
   INITSTATUS( status, "getRange", DOPPLERSCANC );
@@ -427,7 +438,7 @@ void getRange( LALStatus *status, REAL4 y[2], REAL4 x, void *params )
  * NOTE2: this is only using the 2D projected sky-metric !
  *
  *----------------------------------------------------------------------*/
-void getMetric( LALStatus *status, REAL4 g[3], REAL4 skypos[2], void *params )
+void getMetric( LALStatus *status, meshREAL g[3], meshREAL skypos[2], void *params )
 {
   REAL8Vector   *metric = NULL;  /* for output of metric */
   DopplerScanInit *par = (DopplerScanInit*) params;
@@ -760,10 +771,10 @@ pointInPolygon ( const SkyPosition *point, const SkyRegion *polygon )
 void 
 ConvertTwoDMesh2Grid ( LALStatus *status, 
 		       DopplerScanGrid **grid, 	/* output: a dopperScan-grid */
-		       const TwoDMeshNode *mesh2d, /* input: a 2Dmesh */
+		       const meshNODE *mesh2d, /* input: a 2Dmesh */
 		       const SkyRegion *region )   /* a sky-region for clipping */
 {
-  const TwoDMeshNode *meshpoint;
+  const meshNODE *meshpoint;
   DopplerScanGrid head = empty_DopplerScanGrid;
   DopplerScanGrid *node = NULL;
   SkyPosition point;
@@ -957,8 +968,8 @@ buildMetricGrid (LALStatus *status,
 		 const DopplerScanInit *init)
 {
   SkyPosition thisPoint;
-  TwoDMeshNode *mesh2d = NULL;
-  TwoDMeshParamStruc meshpar = empty_meshpar;
+  meshNODE *mesh2d = NULL;
+  meshPARAMS meshpar = empty_meshpar;
   PtoleMetricIn metricpar = empty_metricpar;
 
   INITSTATUS( status, "makeMetricGrid", DOPPLERSCANC );
@@ -1020,7 +1031,11 @@ buildMetricGrid (LALStatus *status,
     ConvertTwoDMesh2Grid ( status->statusPtr, grid, mesh2d, skyRegion );
 
   /* get rid of 2D-mesh */
+#ifdef USE_HACKED_TWODMESH
+  TRY ( hackedLALDestroyTwoDMesh ( status->statusPtr,  &mesh2d, 0), status);
+#else
   TRY ( LALDestroyTwoDMesh ( status->statusPtr,  &mesh2d, 0), status);
+#endif
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
