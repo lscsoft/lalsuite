@@ -128,15 +128,6 @@ void `LALCopy'SEQUENCETYPE (
 }
 
 
-static void `Shift'SEQUENCETYPE (
-	SEQUENCETYPE *sequence,
-	int count
-)
-{
-	memshift(sequence->data, sequence->length * sizeof(*sequence->data), count * (int) sizeof(*sequence->data));
-}
-
-
 void `XLALShift'SEQUENCETYPE (
 	SEQUENCETYPE *sequence,
 	int count
@@ -145,7 +136,7 @@ void `XLALShift'SEQUENCETYPE (
 	if(!sequence || !sequence->data || !count)
 		return;
 
-	`Shift'SEQUENCETYPE (sequence, count);
+	memshift(sequence->data, sequence->length * sizeof(*sequence->data), count * (int) sizeof(*sequence->data));
 	if((size_t) labs(count) >= sequence->length)
 		memset(sequence->data, 0, sequence->length * sizeof(*sequence->data));
 	else if(count > 0)
@@ -168,8 +159,9 @@ void `LALShift'SEQUENCETYPE (
 }
 
 
-/* FIXME: this function does not take care to move the least number of bytes
- * possible.  A performance gain would be realized by being more careful. */
+/* FIXME: this function does not take care to move and zero the least
+ * number of bytes possible.  A performance gain would be realized by being
+ * more careful. */
 /* FIXME: this function does not conform to the XLAL error reporting
  * convention. */
 size_t `XLALResize'SEQUENCETYPE (
@@ -185,19 +177,23 @@ size_t `XLALResize'SEQUENCETYPE (
 		/* need to increase memory */
 		sequence->data = LALRealloc(sequence->data, length * sizeof(*sequence->data));
 
-		if(sequence->data)
-			`Shift'SEQUENCETYPE (sequence, -first);
-		else
-			length = 0;
+		if(sequence->data) {
+			memset(sequence->data + sequence->length, 0, (length - sequence->length) * sizeof(*sequence->data));
+			sequence->length = length;
+			`XLALShift'SEQUENCETYPE (sequence, -first);
+		} else
+			sequence->length = 0;
 	} else {
 		/* do not need to increase memory */
-		`Shift'SEQUENCETYPE (sequence, -first);
+		`XLALShift'SEQUENCETYPE (sequence, -first);
 		sequence->data = LALRealloc(sequence->data, length * sizeof(*sequence->data));
-		if(!sequence->data)
-			length = 0;
+		if(sequence->data)
+			sequence->length = length;
+		else
+			sequence->length = 0;
 	}
 
-	return(sequence->length = length);
+	return(sequence->length);
 }
 
 
