@@ -138,8 +138,7 @@ is adjusted to have the specified length, and that part of the original
 sequence starting at sample first is used to fill the new sequence.  If
 first is negative, then the start of the new sequence is padded by that
 many samples.  If part of the new sequence does not correspond to some part
-of the original sequence, then those samples are uninitialized (this
-behaviour may change in the future).
+of the original sequence, then those samples are set to 0.
 
 The shrink functions, originally, could only handle the special case in
 which the new sequence is wholly contained in the original sequence.  Now
