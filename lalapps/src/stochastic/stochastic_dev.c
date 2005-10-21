@@ -1545,7 +1545,7 @@ static SSSimStochBGOutput *generate_fake_detector_output(LALStatus *status,
   REAL4TimeSeries *series_two;
   SSSimStochBGInput input;
   SSSimStochBGParams params;
-  SSSimStochBGOutput *output;
+  SSSimStochBGOutput *output = NULL;
   COMPLEX8FrequencySeries *response_one = NULL;
   COMPLEX8FrequencySeries *response_two = NULL;
   LIGOTimeGPS start;
