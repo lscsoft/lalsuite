@@ -48,7 +48,7 @@ do {                                                                 \
     LALInfo( stat, "Column too wide" );                              \
     LALPrintError( "\tnode count %u\n", params->nOut );              \
   }                                                                  \
-  TRY( LALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next),        \
+  TRY( hackedLALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next),        \
 			   &nFree ), stat );                         \
   params->nOut -= nFree;                                             \
   column->tooWide = 1;                                               \
@@ -72,7 +72,7 @@ do {                                                                 \
   REAL8 det = (REAL8)(metric)[0]*(REAL8)(metric)[1] - (REAL8)(metric)[2]*(REAL8)(metric)[2];     \
   if ( ( (metric)[0] <= 0.0 ) || ( (metric)[1] <= 0.0 ) ||           \
        ( det <= 0.0 ) ) {                                            \
-    TRY( LALDestroyTwoDMesh( stat->statusPtr, &((*(tail))->next),    \
+    TRY( hackedLALDestroyTwoDMesh( stat->statusPtr, &((*(tail))->next),    \
 			     NULL ), stat );                         \
     ABORT( stat, TWODMESHH_EMETRIC, TWODMESHH_MSGEMETRIC );          \
   }                                                                  \
@@ -101,7 +101,7 @@ do {                                                                 \
   REAL8 disc;                                                        \
   if ( ( metric[0] <= 0.0 ) || ( metric[1] <= 0.0 ) ||               \
        ( det <= 0.0 ) ) {                                            \
-    TRY( LALDestroyTwoDMesh( stat->statusPtr, &((*(tail))->next),    \
+    TRY( hackedLALDestroyTwoDMesh( stat->statusPtr, &((*(tail))->next),    \
 			     NULL ), stat );                         \
     ABORT( stat, TWODMESHH_EMETRIC, TWODMESHH_MSGEMETRIC );          \
   }                                                                  \
@@ -177,7 +177,7 @@ hackedLALTwoDMesh( LALStatus          *stat,
 		   h_TwoDMeshNode       **tail,
 		   h_TwoDMeshParamStruc *params )
 { /* </lalVerbatim> */
-  TwoDColumnParamStruc column; /* parameters for current column */
+  h_TwoDColumnParamStruc column; /* parameters for current column */
   h_TwoDMeshNode *here;          /* current tail of linked list */
 
   /* Default parameter values: */
@@ -233,13 +233,13 @@ hackedLALTwoDMesh( LALStatus          *stat,
     position[1] = column.leftRange[0];
     (params->getMetric)( stat->statusPtr, metric, position, params->metricParams );
     BEGINFAIL( stat )
-      TRY( LALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next), NULL ), stat );
+      TRY( hackedLALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next), NULL ), stat );
     ENDFAIL( stat );
     GETWIDTH( w1, metric, params->mThresh );
     position[1] = column.leftRange[1];
     (params->getMetric)( stat->statusPtr, metric, position, params->metricParams );
     BEGINFAIL( stat )
-      TRY( LALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next), NULL ), stat );
+      TRY( hackedLALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next), NULL ), stat );
     ENDFAIL( stat );
     GETWIDTH( w2, metric, params->mThresh );
     if ( w2 < w1 )
@@ -250,7 +250,7 @@ hackedLALTwoDMesh( LALStatus          *stat,
     do {
       /* Make sure width is not too small or too big. */
       if ( maxColumnFac*( params->domain[1] - params->domain[0] ) > w1 ) {
-	TRY( LALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next), NULL ), stat );
+	TRY( hackedLALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next), NULL ), stat );
 	ABORT( stat, TWODMESHH_EWIDTH, TWODMESHH_MSGEWIDTH );
       }
       column.domain[1] = (REAL8)( (REAL8)column.domain[0] + (REAL8)w1);
@@ -263,14 +263,14 @@ hackedLALTwoDMesh( LALStatus          *stat,
       (params->getRange)( stat->statusPtr, column.rightRange,
 			  column.domain[1], params->rangeParams );
       BEGINFAIL( stat )
-	TRY( LALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next), NULL ), stat );
+	TRY( hackedLALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next), NULL ), stat );
       ENDFAIL( stat );
       column.tooWide = 0;
 
       /* Call LALTwoDColumn() to place the column. */
       hackedLALTwoDColumn( stat->statusPtr, &here, &column, params );
       BEGINFAIL( stat )
-	TRY( LALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next), NULL ), stat );
+	TRY( hackedLALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next), NULL ), stat );
       ENDFAIL( stat );
 
       /* See if we've reached the maximum number of mesh points. */
@@ -409,11 +409,11 @@ hackedLALTwoDColumn( LALStatus            *stat,
     while ( ( position[1] < centreRange[1] ) && ( position[1] < centreClip[1] ) ) {
       (params->getMetric)( stat->statusPtr, metric, position, params->metricParams );
       BEGINFAIL( stat )
-	TRY( LALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next), NULL ), stat );
+	TRY( hackedLALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next), NULL ), stat );
       ENDFAIL( stat );
       here->next = (h_TwoDMeshNode *)LALMalloc( sizeof(h_TwoDMeshNode) );
       if ( here == NULL ) {
-	TRY( LALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next), NULL ), stat );
+	TRY( hackedLALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next), NULL ), stat );
 	ABORT( stat, TWODMESHH_EMEM, TWODMESHH_MSGEMEM );
       }
       memset( here->next, 0, sizeof(h_TwoDMeshNode) );
@@ -472,7 +472,7 @@ hackedLALTwoDColumn( LALStatus            *stat,
     }
     LALTwoDColumn( stat->statusPtr, &here, &column2, params );
     BEGINFAIL( stat )
-      TRY( LALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next), NULL ), stat );
+      TRY( hackedLALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next), NULL ), stat );
     ENDFAIL( stat );
     if ( params->nOut >= nIn ) {
       *tail = here;
@@ -500,7 +500,7 @@ hackedLALTwoDColumn( LALStatus            *stat,
     }
     LALTwoDColumn( stat->statusPtr, &here, &column2, params );
     BEGINFAIL( stat )
-      TRY( LALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next), NULL ), stat );
+      TRY( hackedLALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next), NULL ), stat );
     ENDFAIL( stat );
     if ( params->nOut >= nIn ) {
       *tail = here;
@@ -535,7 +535,7 @@ hackedLALTwoDColumn( LALStatus            *stat,
       }
       LALTwoDColumn( stat->statusPtr, &here, &column2, params );
       BEGINFAIL( stat )
-	TRY( LALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next), NULL ), stat );
+	TRY( hackedLALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next), NULL ), stat );
       ENDFAIL( stat );
       if ( params->nOut >= nIn ) {
 	*tail = here;
@@ -565,7 +565,7 @@ hackedLALTwoDColumn( LALStatus            *stat,
       }
       LALTwoDColumn( stat->statusPtr, &here, &column2, params );
       BEGINFAIL( stat )
-	TRY( LALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next), NULL ), stat );
+	TRY( hackedLALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next), NULL ), stat );
       ENDFAIL( stat );
       if ( params->nOut >= nIn ) {
 	*tail = here;
