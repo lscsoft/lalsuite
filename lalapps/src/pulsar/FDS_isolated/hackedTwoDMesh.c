@@ -76,7 +76,7 @@ do {                                                                 \
 			     NULL ), stat );                         \
     ABORT( stat, TWODMESHH_EMETRIC, TWODMESHH_MSGEMETRIC );          \
   }                                                                  \
-  (dx) = (REAL4) sqrt( (REAL8)(metric)[1]*(mismatch)/det );                         \
+  (dx) = (REAL8) sqrt( (REAL8)(metric)[1]*(mismatch)/det );                         \
 } while (0)
 
 
@@ -105,11 +105,11 @@ do {                                                                 \
 			     NULL ), stat );                         \
     ABORT( stat, TWODMESHH_EMETRIC, TWODMESHH_MSGEMETRIC );          \
   }                                                                  \
-  if ( widthMaxFac*(dx) > (REAL4)sqrt( (REAL8)(metric)[1]*(mismatch)/det ) )       \
+  if ( widthMaxFac*(dx) > (REAL8)sqrt( (REAL8)(metric)[1]*(mismatch)/det ) )       \
     TOOWIDERETURN;                                                   \
   disc = sqrt( (REAL8)(metric)[1]*(mismatch) - det*(dx)*(dx) );             \
-  (dy)[0] = (REAL4)( - (REAL8)metric[2]*dx - disc ) / metric[1];                    \
-  (dy)[1] = (REAL4)( - (REAL8)metric[2]*dx + disc ) / metric[1];                    \
+  (dy)[0] = (REAL8)( - (REAL8)metric[2]*dx - disc ) / metric[1];                    \
+  (dy)[1] = (REAL8)( - (REAL8)metric[2]*dx + disc ) / metric[1];                    \
 } while (0)
 
 
@@ -136,7 +136,7 @@ hackedLALCreateTwoDMesh( LALStatus          *stat,
      larger than is reasonable. */
 #ifndef NDEBUG
   if ( lalDebugLevel&LALWARNING ) {
-    REAL4 retry = params->widthRetryFac;
+    REAL8 retry = params->widthRetryFac;
     if ( params->widthMaxFac > LAL_SQRT2 )
       LALWarning( stat, "widthMaxFac > sqrt(2)" );
     if ( retry > 1.0 && retry*retry > params->widthMaxFac )
@@ -181,8 +181,8 @@ hackedLALTwoDMesh( LALStatus          *stat,
   TwoDMeshNode *here;          /* current tail of linked list */
 
   /* Default parameter values: */
-  REAL4 widthRetryFac = TWODMESHINTERNALC_WRETRYFAC;
-  REAL4 maxColumnFac = 0.0;
+  REAL8 widthRetryFac = TWODMESHINTERNALC_WRETRYFAC;
+  REAL8 maxColumnFac = 0.0;
   UINT4 nIn = (UINT4)( -1 );
 
   INITSTATUS( stat, "LALTwoDMesh", HTWODMESHC );
@@ -226,7 +226,7 @@ hackedLALTwoDMesh( LALStatus          *stat,
   while ( column.domain[0] < params->domain[1] ) {
     REAL4 position[2]; /* position in parameter space */
     REAL4 metric[3];   /* components of metric at position */
-    REAL4 w1, w2;      /* bottom and top widths of column */
+    REAL8 w1, w2;      /* bottom and top widths of column */
 
     /* Estimate column width. */
     position[0] = column.domain[0];
@@ -253,10 +253,10 @@ hackedLALTwoDMesh( LALStatus          *stat,
 	TRY( LALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next), NULL ), stat );
 	ABORT( stat, TWODMESHH_EWIDTH, TWODMESHH_MSGEWIDTH );
       }
-      column.domain[1] = (REAL4)( (REAL8)column.domain[0] + (REAL8)w1);
+      column.domain[1] = (REAL8)( (REAL8)column.domain[0] + (REAL8)w1);
       if ( column.domain[1] > params->domain[1] ) {
 	column.domain[1] = params->domain[1];
-	w1 = (REAL4)((REAL8)column.domain[1] - (REAL8)column.domain[0]);
+	w1 = (REAL8)((REAL8)column.domain[1] - (REAL8)column.domain[0]);
       }
 
       /* Set remaining column parameters. */
@@ -281,7 +281,7 @@ hackedLALTwoDMesh( LALStatus          *stat,
       }
 
       /* If necessary, repeat with a narrower column. */
-      w1 = (REAL4)( (REAL8) w1 / widthRetryFac );
+      w1 = (REAL8)( (REAL8) w1 / widthRetryFac );
     } while ( column.tooWide );
 
     /* Otherwise, go on to the next column. */
@@ -315,17 +315,17 @@ hackedLALTwoDColumn( LALStatus            *stat,
 { /* </lalVerbatim> */
   BOOLEAN tiled = 0;    /* whether tiles were placed on the centreline */
   REAL4 position[2];    /* current top of column */
-  REAL4 dx;             /* half-width of column */
-  REAL4 myy0, myy1;         /* temporary variables storing y-coordinates */
+  REAL8 dx;             /* half-width of column */
+  REAL8 myy0, myy1;         /* temporary variables storing y-coordinates */
   REAL4 centreRange[2]; /* centreline of column parameter space */
-  REAL4 centreClip[2];  /* centre of clip boundary */
-  REAL4 leftTiled[2];   /* left side of region tiled */
-  REAL4 rightTiled[2];  /* right side of region tiled */
+  REAL8 centreClip[2];  /* centre of clip boundary */
+  REAL8 leftTiled[2];   /* left side of region tiled */
+  REAL8 rightTiled[2];  /* right side of region tiled */
   REAL4 metric[3];      /* current metric components */
   TwoDMeshNode *here;   /* current node in list */
 
   /* Default parameter values: */
-  REAL4 widthMaxFac = TWODMESHINTERNALC_WMAXFAC;
+  REAL8 widthMaxFac = TWODMESHINTERNALC_WMAXFAC;
   UINT4 nIn = (UINT4)( -1 );
 
   INITSTATUS( stat, "LALTwoDColumn", HTWODMESHC );
