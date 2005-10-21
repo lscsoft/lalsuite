@@ -1346,7 +1346,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 	return 1;
       }     
 
-    if( CLA->ShortSegDuration/4  < CLA->TruncSecs)
+    if( CLA->ShortSegDuration/4.0  < CLA->TruncSecs)
       {
         fprintf(stderr,"Short segment length t=%d is too small to accomodate truncation time requested.\n",
 		small_seg_length);
