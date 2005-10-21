@@ -37,6 +37,10 @@
 #include <lal/ConfigFile.h>
 #include <lal/Velocity.h>
 
+#ifdef USE_HACKED_TWODMESH
+#include "hackedTwoDMesh.h"
+#endif
+
 #include "FlatPulsarMetric.h"
 
 #include "DopplerScan.h"
@@ -996,7 +1000,13 @@ buildMetricGrid (LALStatus *status,
   meshpar.metricParams = (const void *) init;
 
   /* finally: create the mesh! (ONLY 2D for now!) */
+#ifdef USE_HACKED_TWODMESH
+  LogPrintf (LOG_DEBUG, "Calling hackedLALCreateTwoDMesh()\n");
+  TRY( hackedLALCreateTwoDMesh( status->statusPtr, &mesh2d, &meshpar ), status);
+#else
+  LogPrintf (LOG_DEBUG, "Calling ('non-hacked') LALCreateTwoDMesh()\n");
   TRY( LALCreateTwoDMesh( status->statusPtr, &mesh2d, &meshpar ), status);
+#endif
 
   if (metricpar.spindown) {
     /* FIXME: this is currently broken in LAL, as length=0 is not allowed */

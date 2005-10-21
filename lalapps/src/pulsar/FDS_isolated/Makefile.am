@@ -30,8 +30,10 @@ CFSsources = 	ComputeFStatistic.h	\
 		clusters.c clusters.h  	\
 		DopplerScan.c DopplerScan.h \
 		FstatToplist.c FstatToplist.h \
-		LogPrintf.c LogPrintf.h
+		LogPrintf.c LogPrintf.h		\
+		hackedTwoDMesh.c
 
+lalapps_ComputeFStatistic_CPPFLAGS= -DUSE_HACKED_TWODMESH $(CPPFLAGS) $(AM_CPPFLAGS)
 lalapps_ComputeFStatistic_SOURCES = ComputeFStatistic.c CFSLALDemod.c $(CFSsources)
 
 lalapps_FrComputeFStatistic_SOURCES = FrComputeFStatistic.c FrComputeFStatistic.h	\
