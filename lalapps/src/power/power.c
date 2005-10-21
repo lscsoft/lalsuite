@@ -1178,8 +1178,9 @@ static void add_inspiral_injections(
 
 	if(options.verbose)
 	  fprintf(stderr, "add_inspiral_injections(): injecting signals into time series\n");
-	
-	LAL_CALL(LALFindChirpInjectSignals(stat, series, injections, response), stat); 
+
+	if(numInjections > 0)	
+	  LAL_CALL(LALFindChirpInjectSignals(stat, series, injections, response), stat); 
 
 	if(options.verbose)
 	  fprintf(stderr, "add_inspiral_injections(): finished making the injections\n");
