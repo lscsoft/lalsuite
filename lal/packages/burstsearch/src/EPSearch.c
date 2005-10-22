@@ -364,8 +364,9 @@ XLALEPSearch(
 		 * The threhsold cut determined by alpha is applied here
 		 */
 
+		XLALClearErrno();
 		head = XLALTFTilesToSnglBurstTable(head, Tiling, tseries->name, &tfplane->epoch, params);
-		if(!head) {
+		if(xlalErrno) {
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}
