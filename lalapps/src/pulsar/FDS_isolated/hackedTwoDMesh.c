@@ -449,6 +449,10 @@ hackedLALTwoDColumn( LALStatus            *stat,
     }
   }
 
+  /* RP: mesh 'stability' experiment: don't try any patching-up, only
+   * use center-line stacking */
+#if 0
+
   /* Centreline stacking is complete.  Now check for exposed corners
      of the parameter space, and call LALTwoDColumn() recursively. */
 
@@ -576,6 +580,8 @@ hackedLALTwoDColumn( LALStatus            *stat,
 	TOOWIDERETURN;
     }
   }
+
+#endif
 
   /* Everything worked fine, so update *tail and exit. */
   *tail = here;
