@@ -46,7 +46,9 @@ static SnglBurstTable *TFTileToBurstEvent(
 	strncpy(event->ifo, channelName, 2);
 	event->ifo[2] = '\0';
 	strncpy(event->search, "power", LIGOMETA_SEARCH_MAX);
+	event->search[LIGOMETA_SEARCH_MAX] = '\0';
 	strncpy(event->channel, channelName, LIGOMETA_CHANNEL_MAX);
+	event->channel[LIGOMETA_CHANNEL_MAX] = '\0';
 
 	event->start_time = *epoch; 
  
