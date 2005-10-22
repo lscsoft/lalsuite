@@ -13,11 +13,11 @@ Revision: $Id$
 #include <lal/LALDatatypes.h>
 #include <lal/LALErrno.h>
 #include <lal/LALRCSID.h>
+#include <lal/LALStatusMacros.h>
 #include <lal/LALStdlib.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/RealFFT.h>
 #include <lal/ResampleTimeSeries.h>
-#include <lal/LALStatusMacros.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>
@@ -28,21 +28,38 @@ NRCSID(EPSEARCHC, "$Id$");
 
 
 /*
+ * Delete a SnglBurstTable linked list
+ */
+
+static void XLALDestroySnglBurstTable(SnglBurstTable *head)
+{
+	SnglBurstTable *event;
+
+	while(head) {
+		event = head;
+		head = head->next;
+		LALFree(event);
+	}
+}
+
+
+/*
  * Convert an array of tiles to a linked list of burst events.  Tiles must
  * be sorted in order of decreasing significance since the threshold cut is
  * applied here as well.
  */
  
-static SnglBurstTable *TFTileToBurstEvent(
+static SnglBurstTable *XLALTFTileToBurstEvent(
 	const TFTile *tile,
 	const char *channelName,
 	const LIGOTimeGPS *epoch,
 	const EPSearchParams *params  
 )
 {
+	const char *func = "XLALTFTileToBurstEvent";
 	SnglBurstTable *event = LALCalloc(1, sizeof(*event));
 	if(!event)
-		return(NULL);
+		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
 
 	event->next = NULL;
 	strncpy(event->ifo, channelName, 2);
@@ -70,19 +87,24 @@ static SnglBurstTable *TFTileToBurstEvent(
 }
 
 
-static SnglBurstTable **TFTilesToSnglBurstTable(const TFTiling *tiling, const char *channelName, SnglBurstTable **addpoint, const LIGOTimeGPS *epoch, const EPSearchParams *params)
+static SnglBurstTable *XLALTFTilesToSnglBurstTable(SnglBurstTable *head, const TFTiling *tiling, const char *channelName, const LIGOTimeGPS *epoch, const EPSearchParams *params)
 {
+	const char *func = "XLALTFTilesToSnglBurstTable";
+	SnglBurstTable *oldhead;
 	TFTile *tile;
 	size_t i;
 
 	for(i = 0, tile = tiling->tile; (i < tiling->numtiles) && (tile->lnalpha <= params->lnalphaThreshold - tile->lnweight); i++, tile++) {
-		*addpoint = TFTileToBurstEvent(tile, channelName, epoch, params); 
-
-		if(*addpoint)
-			addpoint = &(*addpoint)->next;
+		oldhead = head;
+		head = XLALTFTileToBurstEvent(tile, channelName, epoch, params); 
+		if(!head) {
+			XLALDestroySnglBurstTable(oldhead);
+			XLAL_ERROR_NULL(func, XLAL_EFUNC);
+		}
+		head->next = oldhead;
 	}
 
-	return(addpoint);
+	return(head);
 }
 
 
@@ -158,9 +180,8 @@ static void whiten(COMPLEX8FrequencySeries *fseries, const REAL4FrequencySeries 
  */
 
 /******** <lalVerbatim file="EPSearchCP"> ********/
-int
+SnglBurstTable *
 XLALEPSearch(
-	SnglBurstTable  **burstEvent,
 	const COMPLEX8FrequencySeries  *hrssresponse,
 	const REAL4TimeSeries  *tseries,
 	EPSearchParams   *params
@@ -168,6 +189,7 @@ XLALEPSearch(
 /******** </lalVerbatim> ********/
 { 
 	static const char *func = "EPSearch";
+	SnglBurstTable *head = NULL;
 	int errorcode;
 	int                      start_sample;
 	int                      overwhiten_flag = 0; /* default */
@@ -178,7 +200,6 @@ XLALEPSearch(
 	REAL4FrequencySeries    *AverageSpec;
 	REAL4FrequencySeries    *PsdSpec;
 	REAL4TimeSeries         *cutTimeSeries;
-	SnglBurstTable         **EventAddPoint = burstEvent;
 	TFTiling                *Tiling;
 	REAL4TimeFrequencyPlane *tfplane;
 	REAL4                   *normalisation;
@@ -343,7 +364,11 @@ XLALEPSearch(
 		 * The threhsold cut determined by alpha is applied here
 		 */
 
-		EventAddPoint = TFTilesToSnglBurstTable(Tiling, tseries->name, EventAddPoint, &tfplane->epoch, params);
+		head = XLALTFTilesToSnglBurstTable(head, Tiling, tseries->name, &tfplane->epoch, params);
+		if(!head) {
+			errorcode = XLAL_EFUNC;
+			goto error;
+		}
 	}
 
 	/*
@@ -357,7 +382,7 @@ XLALEPSearch(
 	LALFree(normalisation);
 	LALFree(hrssfactor);
 	XLALDestroyTFTiling(Tiling);
-	return(0);
+	return(head);
 
 	error:
 	XLALDestroyREAL4FFTPlan(plan);
@@ -367,7 +392,8 @@ XLALEPSearch(
 	LALFree(normalisation);
 	LALFree(hrssfactor);
 	XLALDestroyTFTiling(Tiling);
-	XLAL_ERROR(func, errorcode);
+	XLALDestroySnglBurstTable(head);
+	XLAL_ERROR_NULL(func, errorcode);
 }
 
 

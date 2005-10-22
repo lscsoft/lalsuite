@@ -1521,12 +1521,13 @@ static SnglBurstTable **analyze_series(
 		if(options.verbose)
 			fprintf(stderr, "analyze_series(): analyzing samples %zu -- %zu (%.9lf s -- %.9lf s)\n", start, start + interval->data->length, start * interval->deltaT, (start + interval->data->length) * interval->deltaT);
 
-		if(XLALEPSearch(addpoint, hrssresponse, interval, params)) {
+		*addpoint = XLALEPSearch(hrssresponse, interval, params);
+		while(*addpoint)
+			addpoint = &(*addpoint)->next;
+		if(xlalErrno) {
 			fprintf(stderr, "analyze_series(): fatal error: XLALEPSearch() returned failure\n");
 			exit(1);
 		}
-		while(*addpoint)
-			addpoint = &(*addpoint)->next;
 
 		XLALDestroyREAL4TimeSeries(interval);
 	}

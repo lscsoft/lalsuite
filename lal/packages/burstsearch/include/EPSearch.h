@@ -34,9 +34,8 @@ tagEPSearchParams {
 	TFPlaneParams         tfPlaneParams;
 } EPSearchParams;
 
-int
+SnglBurstTable *
 XLALEPSearch(
-	SnglBurstTable  **burstEvent,
 	const COMPLEX8FrequencySeries  *hrssresponse,
 	const REAL4TimeSeries  *tseries,
 	EPSearchParams   *params
