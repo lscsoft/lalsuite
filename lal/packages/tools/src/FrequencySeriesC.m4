@@ -180,7 +180,7 @@ SERIESTYPE *`XLALAdd'SERIESTYPE (
 	unsigned int i;
 
 	/* make sure arguments are compatible */
-	if((XLALDeltaFloatGPS(&arg1->epoch, &arg2->epoch) != 0.0) || (arg1->deltaF != arg2->deltaF) || XLALIsREAL8FailNaN(ratio))
+	if(XLALGPSCmp(&arg1->epoch, &arg2->epoch) || (arg1->deltaF != arg2->deltaF) || XLALIsREAL8FailNaN(ratio))
 		XLAL_ERROR_NULL(func, XLAL_EDATA);
 	/* FIXME: generalize to relax this requirement */
 	if((arg2->f0 < arg1->f0) || (offset + arg2->data->length > arg1->data->length))
@@ -213,7 +213,7 @@ SERIESTYPE *`XLALSubtract'SERIESTYPE (
 	unsigned int i;
 
 	/* make sure arguments are compatible */
-	if((XLALDeltaFloatGPS(&arg1->epoch, &arg2->epoch) != 0.0) || (arg1->deltaF != arg2->deltaF) || XLALIsREAL8FailNaN(ratio))
+	if(XLALGPSCmp(&arg1->epoch, &arg2->epoch) || (arg1->deltaF != arg2->deltaF) || XLALIsREAL8FailNaN(ratio))
 		XLAL_ERROR_NULL(func, XLAL_EDATA);
 	/* FIXME: generalize to relax this requirement */
 	if((arg2->f0 < arg1->f0) || (offset + arg2->data->length > arg1->data->length))

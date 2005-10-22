@@ -102,7 +102,7 @@ SERIESTYPE *`XLALCut'SERIESTYPE (
 
 	*new = *series;
 	new->data = sequence;
-	XLALAddFloatToGPS(&new->epoch, first * new->deltaT);
+	XLALGPSAdd(&new->epoch, first * new->deltaT);
 
 	return(new);
 }
@@ -141,7 +141,7 @@ size_t `XLALResize'SERIESTYPE (
 	if(!series)
 		return(0);
 
-	XLALAddFloatToGPS(&series->epoch, first * series->deltaT);
+	XLALGPSAdd(&series->epoch, first * series->deltaT);
 	return(`XLALResize'SEQUENCETYPE (series->data, first, length));
 }
 
