@@ -8,7 +8,7 @@ else
 NEED_FRAME = 
 EXTRA_TEXSOURCES = ResampleTimeSeriesTest.c ComputeCalibrationFactorsTest.c
 endif
-check_PROGRAMS = UnitsTest DetectorSiteTest LALTestDetResponse0 LALIndependentTestDetResponse ComputeTransferTest CoherentEstimationTest SegmentsTest $(NEED_FRAME) SequenceTest TimeSeriesTest
+check_PROGRAMS = UnitsTest DetectorSiteTest LALTestDetResponse0 LALIndependentTestDetResponse ComputeTransferTest CoherentEstimationTest SegmentsTest $(NEED_FRAME) SequenceTest TimeSeriesTest FrequencySeriesTest
 UnitsTest_SOURCES = UnitsTest.c
 UnitsTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 DetectorSiteTest_SOURCES = DetectorSiteTest.c
@@ -23,6 +23,8 @@ CoherentEstimationTest_SOURCES = CoherentEstimationTest.c
 CoherentEstimationTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 SegmentsTest_SOURCES = SegmentsTest.c
 SegmentsTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+FrequencySeriesTest_SOURCES = FrequencySeriesTest.c
+FrequencySeriesTest_LDADD = $(top_builddir)/lib/liblal.la
 SequenceTest_SOURCES = SequenceTest.c
 SequenceTest_LDADD = $(top_builddir)/lib/liblal.la
 TimeSeriesTest_SOURCES = TimeSeriesTest.c
@@ -36,10 +38,10 @@ endif
 EXTRA_DIST = ResampleTimeSeriesTest.c ComputeCalibrationFactorsTest.c LALIndTestDetRes.sh indTestDetResLHO.cfg indTestDetResLLO.cfg indTestDetResGEO.cfg
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 if FRAME
-#TESTS = UnitsTest DetectorSiteTest LALTestDetResponse0 LALIndependentTestDetResponse ComputeTransferTest ComputeCalibrationFactorsTest SequenceTest TimeSeriesTest
-TESTS = UnitsTest DetectorSiteTest LALTestDetResponse0 LALIndependentTestDetResponse LALIndTestDetRes.sh ComputeTransferTest SequenceTest TimeSeriesTest
+#TESTS = UnitsTest DetectorSiteTest LALTestDetResponse0 LALIndependentTestDetResponse ComputeTransferTest ComputeCalibrationFactorsTest SequenceTest TimeSeriesTest FrequencySeriesTest
+TESTS = UnitsTest DetectorSiteTest LALTestDetResponse0 LALIndependentTestDetResponse LALIndTestDetRes.sh ComputeTransferTest SequenceTest TimeSeriesTest FrequencySeriesTest
 else
-TESTS = UnitsTest DetectorSiteTest LALTestDetResponse0 LALIndependentTestDetResponse LALIndTestDetRes.sh ComputeTransferTest SequenceTest TimeSeriesTest
+TESTS = UnitsTest DetectorSiteTest LALTestDetResponse0 LALIndependentTestDetResponse LALIndTestDetRes.sh ComputeTransferTest SequenceTest TimeSeriesTest FrequencySeriesTest
 endif
 TESTS_ENVIRONMENT = 1>/dev/null 2>/dev/null
 MOSTLYCLEANFILES = .dvi-dep PrintVector.* transfer.out \
