@@ -40,7 +40,7 @@ static SnglBurstTable *TFTileToBurstEvent(
 	const EPSearchParams *params  
 )
 {
-	SnglBurstTable *event = LALCalloc(sizeof(*event));
+	SnglBurstTable *event = LALCalloc(1, sizeof(*event));
 	if(!event)
 		return(NULL);
 
