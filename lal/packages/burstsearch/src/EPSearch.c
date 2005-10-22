@@ -28,7 +28,9 @@ NRCSID(EPSEARCHC, "$Id$");
 
 
 /*
- * Convert an array of tiles to a linked list of burst events.
+ * Convert an array of tiles to a linked list of burst events.  Tiles must
+ * be sorted in order of decreasing significance since the threshold cut is
+ * applied here as well.
  */
  
 static SnglBurstTable *TFTileToBurstEvent(
@@ -38,7 +40,7 @@ static SnglBurstTable *TFTileToBurstEvent(
 	const EPSearchParams *params  
 )
 {
-	SnglBurstTable *event = LALMalloc(sizeof(*event));
+	SnglBurstTable *event = LALCalloc(sizeof(*event));
 	if(!event)
 		return(NULL);
 
