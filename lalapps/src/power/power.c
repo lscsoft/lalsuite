@@ -1213,10 +1213,12 @@ static void add_mdc_injections(
 	if(options.verbose)
 		fprintf(stderr, "add_mdc_injections(): using MDC frames for injections\n");
 
-	options.getcaltimeseries = TRUE;
+	{
+	REAL8 old_high_pass = options.cal_high_pass;
 	options.cal_high_pass = 40.0;
-
-	mdc = get_time_series(stat, mdcDirName, mdcCacheFile, options.mdcchannelName, epoch, stopepoch, lengthlimit, options.getcaltimeseries );
+	mdc = get_time_series(stat, mdcDirName, mdcCacheFile, options.mdcchannelName, epoch, stopepoch, lengthlimit, TRUE);
+	options.cal_high_pass = old_high_pass;
+	}
 
 	/* write diagnostic info to disk */
 	if(options.printData)
@@ -1227,7 +1229,6 @@ static void add_mdc_injections(
 		series->data->data[i] += mdc->data->data[i];
 
 	/* clean up */
-	options.getcaltimeseries = FALSE;
 	LAL_CALL(LALDestroyREAL4TimeSeries(stat, mdc), stat);
 }
 
