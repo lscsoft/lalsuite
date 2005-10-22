@@ -133,30 +133,6 @@ static size_t min(size_t a, size_t b)
 
 
 /*
- * Compare two GPS times.
- */
-
-static int CompareGPS(LALStatus *stat, LIGOTimeGPS *gps1, LIGOTimeGPS *gps2)
-{
-	LALGPSCompareResult result;
-	LAL_CALL(LALCompareGPS(stat, &result, gps1, gps2), stat);
-	return(result);
-}
-
-
-/*
- * Return the difference between two GPS times as REAL8.
- */
-
-static REAL8 DeltaGPStoFloat(LALStatus *stat, LIGOTimeGPS *stop, LIGOTimeGPS *start)
-{
-	REAL8 d;
-	LAL_CALL(LALDeltaFloatGPS(stat, &d, stop, start), stat);
-	return(d);
-}
-
-
-/*
  * Round length down so that an integer number of intervals of length
  * block_length, each shifted by block_shift with respect to its neighbours,
  * fits into the result.  This is used to ensure that an integer number of
@@ -303,11 +279,11 @@ static int check_for_missing_parameters(char *prog, struct option *long_options,
 			break;
 
 			case 'K':
-			arg_is_missing = !XLALGPStoINT8(&options.stopEpoch);
+			arg_is_missing = !XLALGPSToINT8NS(&options.stopEpoch);
 			break;
 
 			case 'M':
-			arg_is_missing = !XLALGPStoINT8(&options.startEpoch);
+			arg_is_missing = !XLALGPSToINT8NS(&options.startEpoch);
 			break;
 
 			case 'Q':
@@ -503,8 +479,8 @@ void parse_command_line(
 	options.max_event_rate = 0;	/* default */
 	options.windowType = NumberWindowTypes;	/* impossible */
 	options.windowLength = 0;	/* impossible */
-	XLALINT8toGPS(&options.startEpoch, 0);	/* impossible */
-	XLALINT8toGPS(&options.stopEpoch, 0);	/* impossible */
+	XLALINT8NSToGPS(&options.startEpoch, 0);	/* impossible */
+	XLALINT8NSToGPS(&options.stopEpoch, 0);	/* impossible */
 
 	options.simCacheFile = NULL;	/* default */
 	options.simdirname = NULL;      /* default */
@@ -591,7 +567,7 @@ void parse_command_line(
 			sprintf(msg, "range error parsing \"%s\"", optarg);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
-		} else if(XLALGPStoINT8(&options.stopEpoch) < LAL_INT8_C(441417609000000000) || XLALGPStoINT8(&options.stopEpoch) > LAL_INT8_C(999999999000000000)) {
+		} else if(XLALGPSToINT8NS(&options.stopEpoch) < LAL_INT8_C(441417609000000000) || XLALGPSToINT8NS(&options.stopEpoch) > LAL_INT8_C(999999999000000000)) {
 			sprintf(msg, "must be in the range [Jan 01 1994 00:00:00 UTC, Sep 14 2011 01:46:26 UTC] (%d.%09d specified)", options.stopEpoch.gpsSeconds, options.stopEpoch.gpsNanoSeconds);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
@@ -604,7 +580,7 @@ void parse_command_line(
 			sprintf(msg, "range error parsing \"%s\"", optarg);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
-		} else if(XLALGPStoINT8(&options.startEpoch) < LAL_INT8_C(441417609000000000) || XLALGPStoINT8(&options.startEpoch) > LAL_INT8_C(999999999000000000)) {
+		} else if(XLALGPSToINT8NS(&options.startEpoch) < LAL_INT8_C(441417609000000000) || XLALGPSToINT8NS(&options.startEpoch) > LAL_INT8_C(999999999000000000)) {
 			sprintf(msg, "must be in the range [Jan 01 1994 00:00:00 UTC, Sep 14 2011 01:46:26 UTC] (%d.%09d specified)", options.startEpoch.gpsSeconds, options.startEpoch.gpsNanoSeconds);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
@@ -832,7 +808,7 @@ void parse_command_line(
 	 * Check the order of the start and stop times.
 	 */
 
-	if(XLALGPStoINT8(&options.startEpoch) > XLALGPStoINT8(&options.stopEpoch)) {
+	if(XLALGPSCmp(&options.startEpoch, &options.stopEpoch) > 0) {
 		fprintf(stderr, "%s: error: GPS start time > GPS stop time\n", argv[0]);
 		args_are_bad = TRUE;
 	}
@@ -982,7 +958,7 @@ static REAL4TimeSeries *get_time_series(
 	REAL4TimeSeries *series;
 	FrStream *stream = NULL;
 	FrCache *frameCache = NULL;
-	double duration = DeltaGPStoFloat(stat, &end, &start);
+	double duration = XLALGPSDiff(&start, &end);
 
 	/* Open frame stream */
 	if(cachefile && dirname && options.verbose)
@@ -1379,7 +1355,8 @@ static void add_sim_injections(
 	  simDuration = (simBurst->dtplus + simBurst->dtminus);
 	  n = (INT4) (simDuration / series->deltaT);
  
-	  LAL_CALL(LALAddFloatToGPS(stat, &end, &start, simDuration), stat);
+	  end = start;
+	  XLALGPSAdd(&end, simDuration);
 
 	  options.getcaltimeseries = FALSE;
 	  /* Get the plus time series */
@@ -1641,7 +1618,8 @@ int main( int argc, char *argv[])
 	if(options.verbose)
 		fprintf(stderr, "%s: time series overlap is %zu samples (%.9lf s)\n", argv[0], overlap, overlap / (double) options.ResampleRate);
 
-	LAL_CALL(LALAddFloatToGPS(&stat, &boundepoch, &options.stopEpoch, -(2 * options.FilterCorruption + (int) overlap) / (double) options.ResampleRate), &stat);
+	boundepoch = options.stopEpoch;
+	XLALGPSAdd(&boundepoch, -(2 * options.FilterCorruption + (int) overlap) / (double) options.ResampleRate);
 	if(options.verbose)
 		fprintf(stderr, "%s: time series epochs must be less than %u.%09u s\n", argv[0], boundepoch.gpsSeconds, boundepoch.gpsNanoSeconds);
 
@@ -1655,7 +1633,7 @@ int main( int argc, char *argv[])
 	 * small enough to fit in RAM.
 	 */
 
-	for(epoch = options.startEpoch; CompareGPS(&stat, &epoch, &boundepoch) < 0;) {
+	for(epoch = options.startEpoch; XLALGPSCmp(&epoch, &boundepoch) < 0;) {
 		/*
 		 * Get the data, if reading calibrated data set the flag
 		 */
@@ -1683,7 +1661,7 @@ int main( int argc, char *argv[])
 		if(options.noiseAmpl > 0.0) {
 			if(!series) {
 				size_t i, length;
-				length = DeltaGPStoFloat(&stat, &options.stopEpoch, &epoch) * options.ResampleRate;
+				length = XLALGPSDiff(&epoch, &options.stopEpoch) * options.ResampleRate;
 				if(options.maxSeriesLength)
 					length = min(options.maxSeriesLength, length);
 				LAL_CALL(LALCreateREAL4TimeSeries(&stat, &series, options.channelName, epoch, 0.0, (REAL8) 1.0 / options.ResampleRate, lalADCCountUnit, length), &stat);
@@ -1778,9 +1756,12 @@ int main( int argc, char *argv[])
 		 * gets analyzed.
 		 */
 
-		if(!searchsumm.searchSummaryTable->out_start_time.gpsSeconds)
-			LAL_CALL(LALAddFloatToGPS(&stat, &searchsumm.searchSummaryTable->out_start_time, &series->epoch, series->deltaT * (options.windowLength / 2 - params.windowShift)), &stat);
-		LAL_CALL(LALAddFloatToGPS(&stat, &searchsumm.searchSummaryTable->out_end_time, &series->epoch, series->deltaT * (series->data->length - (options.windowLength / 2 - params.windowShift))), &stat);
+		if(!searchsumm.searchSummaryTable->out_start_time.gpsSeconds) {
+			searchsumm.searchSummaryTable->out_start_time = series->epoch;
+			XLALGPSAdd(&searchsumm.searchSummaryTable->out_start_time, series->deltaT * (options.windowLength / 2 - params.windowShift));
+		}
+		searchsumm.searchSummaryTable->out_end_time = series->epoch;
+		XLALGPSAdd(&searchsumm.searchSummaryTable->out_end_time, series->deltaT * (series->data->length - (options.windowLength / 2 - params.windowShift)));
 
 
 		/*
@@ -1799,7 +1780,7 @@ int main( int argc, char *argv[])
 		 * needed.
 		 */
 
-		LAL_CALL(LALAddFloatToGPS(&stat, &epoch, &epoch, (series->data->length - overlap) * series->deltaT), &stat);
+		XLALGPSAdd(&epoch, (series->data->length - overlap) * series->deltaT);
 		LAL_CALL(LALDestroyREAL4TimeSeries(&stat, series), &stat);
 		LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&stat, hrssresponse), &stat);
 	}
@@ -1816,7 +1797,7 @@ int main( int argc, char *argv[])
 	 * Check event rate limit.
 	 */
 
-	if((options.max_event_rate > 0) && (SnglBurstTableLength(burstEvent) > XLALDeltaFloatGPS(&searchsumm.searchSummaryTable->out_end_time, &searchsumm.searchSummaryTable->out_start_time) * options.max_event_rate)) {
+	if((options.max_event_rate > 0) && (SnglBurstTableLength(burstEvent) > XLALGPSDiff(&searchsumm.searchSummaryTable->out_start_time, &searchsumm.searchSummaryTable->out_end_time) * options.max_event_rate)) {
 		XLALPrintError("%s: event rate limit exceeded!", argv[0]);
 		exit(1);
 	}

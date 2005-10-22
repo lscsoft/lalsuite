@@ -71,10 +71,10 @@ static SnglBurstTable *XLALTFTileToBurstEvent(
 
 	event->start_time = *epoch; 
  
-	XLALAddFloatToGPS(&event->start_time, (tile->tstart * tile->deltaT));
+	XLALGPSAdd(&event->start_time, tile->tstart * tile->deltaT);
 	event->duration = tile->tbins * tile->deltaT;
 	event->peak_time = event->start_time;
-	XLALAddFloatToGPS(&event->peak_time, 0.5 * event->duration);
+	XLALGPSAdd(&event->peak_time, 0.5 * event->duration);
 	event->bandwidth = tile->fbins * tile->deltaF;
 	event->central_freq = params->tfPlaneParams.flow + tile->fstart*tile->deltaF + (0.5 * event->bandwidth);
 	event->amplitude = tile->hrss;
@@ -292,7 +292,7 @@ XLALEPSearch(
 		XLALDestroyREAL4TimeSeries(cutTimeSeries);
 
 		/* tweak the frequency series' epoch */
-		XLALAddFloatToGPS(&fseries->epoch, params->windowShift * tseries->deltaT);
+		XLALGPSAdd(&fseries->epoch, params->windowShift * tseries->deltaT);
 		
 		/*
 		 * Normalize the frequency series to the average PSD.
