@@ -110,7 +110,7 @@ static const PtoleMetricIn empty_metricpar;
 static const MetricParamStruc empty_MetricParamStruc;
 static const PulsarTimesParamStruc empty_PulsarTimesParamStruc;
 
-const DopplerScanGrid empty_DopplerScanGrid;
+const DopplerSkyGrid empty_DopplerSkyGrid;
 const DopplerScanState empty_DopplerScanState;
 const DopplerScanInit empty_DopplerScanInit;
 const DopplerPosition empty_DopplerPosition;
@@ -125,20 +125,19 @@ void getMetric( LALStatus *, meshREAL g[3], meshREAL skypos[2], void *params );
 void LALTemplateDistance (LALStatus *, REAL8 *dist, const DopplerPosition *pos1, const DopplerPosition *pos2);
 REAL8 getDopplermax(EphemerisData *edat);
 
-void ConvertTwoDMesh2Grid ( LALStatus *, DopplerScanGrid **grid, const meshNODE *mesh2d, const SkyRegion *region );
+void ConvertTwoDMesh2Grid ( LALStatus *, DopplerSkyGrid **grid, const meshNODE *mesh2d, const SkyRegion *region );
 
 BOOLEAN pointInPolygon ( const SkyPosition *point, const SkyRegion *polygon );
 
 void gridFlipOrder ( meshNODE *grid );
 
-void buildFlatGrid (LALStatus *, DopplerScanGrid **grid, const SkyRegion *region, REAL8 dAlpha, REAL8 dDelta);
-void buildIsotropicGrid (LALStatus *, DopplerScanGrid **grid, const SkyRegion *skyRegion, REAL8 dAlpha, REAL8 dDelta);
-void buildMetricGrid (LALStatus *, DopplerScanGrid **grid, SkyRegion *skyRegion,  const DopplerScanInit *init);
-void loadSkyGridFile (LALStatus *, DopplerScanGrid **grid, const CHAR *fname);
+void buildFlatGrid (LALStatus *, DopplerSkyGrid **grid, const SkyRegion *region, REAL8 dAlpha, REAL8 dDelta);
+void buildIsotropicGrid (LALStatus *, DopplerSkyGrid **grid, const SkyRegion *skyRegion, REAL8 dAlpha, REAL8 dDelta);
+void buildMetricGrid (LALStatus *, DopplerSkyGrid **grid, SkyRegion *skyRegion,  const DopplerScanInit *init);
 
-void plotGrid (LALStatus *, DopplerScanGrid *grid, const SkyRegion *region, const DopplerScanInit *init);
+void plotGrid (LALStatus *, DopplerSkyGrid *grid, const SkyRegion *region, const DopplerScanInit *init);
 
-void freeGrid(DopplerScanGrid *grid);
+void freeGrid(DopplerSkyGrid *grid);
 void printFrequencyShifts(LALStatus *, const DopplerScanState *scan, const DopplerScanInit *init);
 
 const char *va(const char *format, ...);	/* little var-arg string helper function */
@@ -149,7 +148,7 @@ InitDopplerScan( LALStatus *status,
 		 DopplerScanState *scan, 	/**< [out] the initialized scan-structure */
 		 const DopplerScanInit *init)	/**< [in] init-params */
 {
-  DopplerScanGrid *node; 
+  DopplerSkyGrid *node; 
 
   INITSTATUS( status, "DopplerScanInit", DOPPLERSCANC );
   ATTATCHSTATUSPTR (status); 
@@ -221,7 +220,7 @@ InitDopplerScan( LALStatus *status,
    */
   if (scan->grid == NULL)
     {
-      scan->grid = LALCalloc (1, sizeof(DopplerScanGrid));
+      scan->grid = LALCalloc (1, sizeof(DopplerSkyGrid));
       if (scan->grid == NULL) {
 	ABORT (status, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
       }
@@ -322,9 +321,9 @@ FreeDopplerScan (LALStatus *status, DopplerScanState *scan)
  *  helper-function: free the linked list containing the grid 
  *----------------------------------------------------------------------*/
 void
-freeGrid (DopplerScanGrid *grid)
+freeGrid (DopplerSkyGrid *grid)
 {
-  DopplerScanGrid *node, *next;
+  DopplerSkyGrid *node, *next;
 
   if ( grid == NULL)
     return;
@@ -368,8 +367,6 @@ NextDopplerPos( LALStatus *status, DopplerPosition *pos, DopplerScanState *scan)
 	{
 	  pos->Alpha = scan->gridNode->Alpha;
 	  pos->Delta = scan->gridNode->Delta;
-	  pos->Freq  = scan->gridNode->Freq;
-	  pos->f1dot = scan->gridNode->f1dot;
 
 	  scan->gridNode = scan->gridNode->next;  /* step forward */
 	}
@@ -542,13 +539,13 @@ void getMetric( LALStatus *status, meshREAL g[3], meshREAL skypos[2], void *para
 
 void 
 plotGrid (LALStatus *status, 
-	   DopplerScanGrid *grid, 
+	   DopplerSkyGrid *grid, 
 	   const SkyRegion *region, 
 	   const DopplerScanInit *init)
 {
   FILE *fp = NULL;	/* output xmgrace-file */
   FILE *fp1 = NULL;	/* output pure data */
-  DopplerScanGrid *node;
+  DopplerSkyGrid *node;
   REAL8 Alpha, Delta;
   UINT4 set, i;
 
@@ -764,19 +761,19 @@ pointInPolygon ( const SkyPosition *point, const SkyRegion *polygon )
 } /* pointInPolygon() */
 
 /*----------------------------------------------------------------------
- * Translate a TwoDMesh into a DopplerScanGrid using a SkyRegion for clipping
+ * Translate a TwoDMesh into a DopplerSkyGrid using a SkyRegion for clipping
  * 
  * NOTE: the returned grid will be NULL if there are no points inside the sky-region
  *----------------------------------------------------------------------*/
 void 
 ConvertTwoDMesh2Grid ( LALStatus *status, 
-		       DopplerScanGrid **grid, 	/* output: a dopperScan-grid */
+		       DopplerSkyGrid **grid, 	/* output: a dopperScan-grid */
 		       const meshNODE *mesh2d, /* input: a 2Dmesh */
 		       const SkyRegion *region )   /* a sky-region for clipping */
 {
   const meshNODE *meshpoint;
-  DopplerScanGrid head = empty_DopplerScanGrid;
-  DopplerScanGrid *node = NULL;
+  DopplerSkyGrid head = empty_DopplerSkyGrid;
+  DopplerSkyGrid *node = NULL;
   SkyPosition point;
 
   INITSTATUS( status, "ConvertTwoDMesh2Grid", DOPPLERSCANC );
@@ -805,7 +802,7 @@ ConvertTwoDMesh2Grid ( LALStatus *status,
       if (pointInPolygon (&point, region) )
 	{
 	  /* prepare a new node for this point */
-	  if ( (node->next = (DopplerScanGrid*) LALCalloc (1, sizeof(DopplerScanGrid) )) == NULL) {
+	  if ( (node->next = (DopplerSkyGrid*) LALCalloc (1, sizeof(DopplerSkyGrid) )) == NULL) {
 	    ABORT ( status, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM );
 	  }
 	  node = node->next;
@@ -834,14 +831,14 @@ ConvertTwoDMesh2Grid ( LALStatus *status,
  *----------------------------------------------------------------------*/
 void
 buildFlatGrid (LALStatus *status, 
-	       DopplerScanGrid **grid, 
+	       DopplerSkyGrid **grid, 
 	       const SkyRegion *skyRegion, 
 	       REAL8 dAlpha, 
 	       REAL8 dDelta)
 {
   SkyPosition thisPoint;
-  DopplerScanGrid head = empty_DopplerScanGrid;  /* empty head to start grid-list */
-  DopplerScanGrid *node = NULL;
+  DopplerSkyGrid head = empty_DopplerSkyGrid;  /* empty head to start grid-list */
+  DopplerSkyGrid *node = NULL;
 
   INITSTATUS( status, "buildFlatGrid", DOPPLERSCANC );
 
@@ -859,7 +856,7 @@ buildFlatGrid (LALStatus *status,
       if (pointInPolygon (&thisPoint, skyRegion) )
 	{
 	  /* prepare this node */
-	  node->next = LALCalloc (1, sizeof(DopplerScanGrid));
+	  node->next = LALCalloc (1, sizeof(DopplerSkyGrid));
 	  if (node->next == NULL) {
 	    freeGrid ( head.next );
 	    ABORT (status, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
@@ -898,11 +895,11 @@ buildFlatGrid (LALStatus *status,
  *
  *----------------------------------------------------------------------*/
 void
-buildIsotropicGrid (LALStatus *status, DopplerScanGrid **grid, const SkyRegion *skyRegion, REAL8 dAlpha, REAL8 dDelta)
+buildIsotropicGrid (LALStatus *status, DopplerSkyGrid **grid, const SkyRegion *skyRegion, REAL8 dAlpha, REAL8 dDelta)
 {
   SkyPosition thisPoint;
-  DopplerScanGrid head = empty_DopplerScanGrid;  /* empty head to start grid-list */
-  DopplerScanGrid *node = NULL;
+  DopplerSkyGrid head = empty_DopplerSkyGrid;  /* empty head to start grid-list */
+  DopplerSkyGrid *node = NULL;
   REAL8 step_Alpha, step_Delta, cos_Delta;
 
   INITSTATUS( status, "makeIsotropicGrid", DOPPLERSCANC );
@@ -923,7 +920,7 @@ buildIsotropicGrid (LALStatus *status, DopplerScanGrid **grid, const SkyRegion *
       if (pointInPolygon ( &thisPoint, skyRegion ) ) 
 	{
 	  /* prepare this node */
-	  node->next = LALCalloc (1, sizeof(DopplerScanGrid));
+	  node->next = LALCalloc (1, sizeof(DopplerSkyGrid));
 	  if (node->next == NULL) {
 	    freeGrid ( head.next );
 	    ABORT (status, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
@@ -963,7 +960,7 @@ buildIsotropicGrid (LALStatus *status, DopplerScanGrid **grid, const SkyRegion *
  *----------------------------------------------------------------------*/
 void
 buildMetricGrid (LALStatus *status, 
-		 DopplerScanGrid **grid, 
+		 DopplerSkyGrid **grid, 
 		 SkyRegion *skyRegion,  
 		 const DopplerScanInit *init)
 {
@@ -1049,10 +1046,10 @@ buildMetricGrid (LALStatus *status,
  *
  *----------------------------------------------------------------------*/
 void
-loadSkyGridFile (LALStatus *status, DopplerScanGrid **grid, const CHAR *fname)
+loadSkyGridFile (LALStatus *status, DopplerSkyGrid **grid, const CHAR *fname)
 {
   LALParsedDataFile *data = NULL;
-  DopplerScanGrid *node, head = empty_DopplerScanGrid;
+  DopplerSkyGrid *node, head = empty_DopplerSkyGrid;
   UINT4 i;
 
   INITSTATUS( status, "loadGridFile", DOPPLERSCANC );
@@ -1069,7 +1066,7 @@ loadSkyGridFile (LALStatus *status, DopplerScanGrid **grid, const CHAR *fname)
   for (i=0; i < data->lines->nTokens; i++)
     {
       /* prepare next list-entry */
-      if ( (node->next = LALCalloc (1, sizeof (DopplerScanGrid))) == NULL)
+      if ( (node->next = LALCalloc (1, sizeof (DopplerSkyGrid))) == NULL)
 	{
 	  freeGrid (head.next);
 	  ABORT (status, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
@@ -1100,10 +1097,10 @@ loadSkyGridFile (LALStatus *status, DopplerScanGrid **grid, const CHAR *fname)
  * parameters of the grid (?)
  *----------------------------------------------------------------------*/
 void
-writeSkyGridFile (LALStatus *status, const DopplerScanGrid *grid, const CHAR *fname, const DopplerScanInit *init)
+writeSkyGridFile (LALStatus *status, const DopplerSkyGrid *grid, const CHAR *fname, const DopplerScanInit *init)
 {
   FILE *fp;
-  const DopplerScanGrid *node;
+  const DopplerSkyGrid *node;
 
   INITSTATUS( status, "writeGridFile", DOPPLERSCANC );
   ATTATCHSTATUSPTR (status);
@@ -1142,7 +1139,7 @@ printFrequencyShifts ( LALStatus *status, const DopplerScanState *scan, const Do
 {
   FILE *fp;
   const CHAR *fname = "dFreq.pred";
-  const DopplerScanGrid *node = NULL;
+  const DopplerSkyGrid *node = NULL;
 
   REAL8 v[3], a[3];
   REAL8 np[3], n[3];

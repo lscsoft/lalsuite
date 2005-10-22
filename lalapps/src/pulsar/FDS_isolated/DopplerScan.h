@@ -122,13 +122,11 @@ typedef struct {
 } SkyRegion;
 
 /** general scan-grid */
-typedef struct tagDopplerScanGrid {
+typedef struct tagDopplerSkyGrid {
   REAL8 Alpha;
   REAL8 Delta;
-  REAL8 Freq;
-  REAL8 f1dot;
-  struct tagDopplerScanGrid *next;
-} DopplerScanGrid;
+  struct tagDopplerSkyGrid *next;
+} DopplerSkyGrid;
 
 /** a "sky-ellipse", described by the two major axes and it's angle wrt x-axis */
 typedef struct {
@@ -160,13 +158,13 @@ typedef struct {
   UINT4 numGridPoints;		/**< how many grid-points */
   REAL8 dFreq;			/**< stepsize in frequency */
   REAL8 df1dot;			/**< stepsize in spindown-value f1dot */
-  DopplerScanGrid *grid; 	/**< head of linked list of skygrid nodes */  
-  DopplerScanGrid *gridNode;	/**< pointer to current grid-node in skygrid */
+  DopplerSkyGrid *grid; 	/**< head of linked list of skygrid nodes */  
+  DopplerSkyGrid *gridNode;	/**< pointer to current grid-node in skygrid */
 } DopplerScanState;
 
 /*---------- Global variables ----------*/
 /* some empty structs for initializations */
-extern const DopplerScanGrid empty_DopplerScanGrid;
+extern const DopplerSkyGrid empty_DopplerSkyGrid;
 extern const DopplerScanState empty_DopplerScanState;
 extern const DopplerScanInit empty_DopplerScanInit;
 extern const DopplerPosition empty_DopplerPosition;
@@ -178,7 +176,7 @@ void InitDopplerScan(LALStatus *, DopplerScanState *scan, const DopplerScanInit 
 void NextDopplerPos(LALStatus *, DopplerPosition *pos, DopplerScanState *scan);
 void FreeDopplerScan(LALStatus *, DopplerScanState *scan);
 
-void writeSkyGridFile(LALStatus *, const DopplerScanGrid *grid, const CHAR *fname, 
+void writeSkyGridFile(LALStatus *, const DopplerSkyGrid *grid, const CHAR *fname, 
 		      const DopplerScanInit *init);
 void ParseSkyRegionString (LALStatus *, SkyRegion *region, const CHAR *input);
 void SkySquare2String (LALStatus *, CHAR **string, REAL8 Alpha, REAL8 Delta, 
@@ -194,6 +192,8 @@ void getMetricEllipse(LALStatus *,
 		      REAL8 mismatch, 
 		      const REAL8Vector *metric, 
 		      UINT4 dim0);
+
+void loadSkyGridFile (LALStatus *, DopplerSkyGrid **grid, const CHAR *fname);
 
 #ifdef  __cplusplus
 }
