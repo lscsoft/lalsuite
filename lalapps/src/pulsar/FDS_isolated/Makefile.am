@@ -17,8 +17,9 @@ endif
 bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnalyticF \
 	lalapps_polka lalapps_uberpolka lalapps_FstatShapeTestLAL compareFstats\
 	ComputeFStatistic_v2 lalapps_makeInvetofile lalapps_extractSFTband lalapps_FindSh \
-	lalapps_monteint lalapps_skynet getMetric getMesh lalapps_zellepolka	\
-	testLatticeCovering testFlatPulsarMetric
+	lalapps_monteint lalapps_skynet getMetric lalapps_zellepolka	\
+	testLatticeCovering testFlatPulsarMetric matchGrids	\
+	getMesh getHackedMesh
 
 EXTRA_PROGRAMS = $(FRAMEPROGRAMS)
 
@@ -66,9 +67,14 @@ TESTS = testFStat.sh
 getMetric_SOURCES = getMetric.c DopplerScan.c DopplerScan.h FlatPulsarMetric.c FlatPulsarMetric.h \
 		    LogPrintf.c
 
+getHackedMesh_CPPFLAGS= -DUSE_HACKED_TWODMESH -DNDEBUG $(CPPFLAGS) $(AM_CPPFLAGS)
+getHackedMesh_SOURCES = getMesh.c DopplerScan.c DopplerScan.h LogPrintf.c hackedTwoDMesh.c
+
 getMesh_SOURCES = getMesh.c DopplerScan.c DopplerScan.h LogPrintf.c
+
 
 testLatticeCovering_SOURCES = testLatticeCovering.c  DopplerScan.c LogPrintf.c
 
 testFlatPulsarMetric_SOURCES = testFlatPulsarMetric.c FlatPulsarMetric.c FlatPulsarMetric.h
 
+matchGrids_SOURCES = matchGrids.c DopplerScan.c LogPrintf.c
