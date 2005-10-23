@@ -76,9 +76,10 @@ do {                                                                 \
 			     NULL ), stat );                         \
     ABORT( stat, TWODMESHH_EMETRIC, TWODMESHH_MSGEMETRIC );          \
   }                                                                  \
-  (dx) = (REAL8) sqrt( (REAL8)(metric)[1]*(mismatch)/det );                         \
+  /* Try to avoid catastrophic cancellations in the following: */	\
+  /* (dx) = (REAL8) sqrt( (REAL8)(metric)[1]*(mismatch)/det ); */	\
+  (dx) = sqrt( (metric)[1]*(mismatch)/det ); 		\
 } while (0)
-
 
 /* This macro computes the positions of the right-hand corners of a
 tile given a tile half width, the metric, and a mismatch value.  If
@@ -111,6 +112,12 @@ do {                                                                 \
   (dy)[0] = (REAL8)( - (REAL8)metric[2]*dx - disc ) / metric[1];                    \
   (dy)[1] = (REAL8)( - (REAL8)metric[2]*dx + disc ) / metric[1];                    \
 } while (0)
+
+
+REAL8 widthMaxFac = TWODMESHINTERNALC_WMAXFAC;
+
+int getWidth( REAL8 *dx, REAL8 metric[3], REAL8 mismatch );
+int getSize( REAL8 dy[2], REAL8 dx, REAL8 metric[3], REAL8 mismatch );
 
 
 /* <lalVerbatim file="TwoDMeshCP"> */
@@ -235,13 +242,26 @@ hackedLALTwoDMesh( LALStatus          *stat,
     BEGINFAIL( stat )
       TRY( hackedLALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next), NULL ), stat );
     ENDFAIL( stat );
-    GETWIDTH( w1, metric, params->mThresh );
+
+    if ( getWidth( &w1, metric, params->mThresh ) < 0 )
+      {
+	TRY( hackedLALDestroyTwoDMesh( stat->statusPtr, &((*(tail))->next), NULL ), stat );
+	ABORT( stat, TWODMESHH_EMETRIC, TWODMESHH_MSGEMETRIC );
+      }
+
     position[1] = column.leftRange[1];
     (params->getMetric)( stat->statusPtr, metric, position, params->metricParams );
     BEGINFAIL( stat )
       TRY( hackedLALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next), NULL ), stat );
     ENDFAIL( stat );
-    GETWIDTH( w2, metric, params->mThresh );
+
+
+    if ( getWidth( &w2, metric, params->mThresh ) < 0 )
+      {
+	TRY( hackedLALDestroyTwoDMesh( stat->statusPtr, &((*(tail))->next), NULL ), stat );
+	ABORT( stat, TWODMESHH_EMETRIC, TWODMESHH_MSGEMETRIC );
+      }
+
     if ( w2 < w1 )
       w1 = w2;
     w1 *= LAL_SQRT2;
@@ -323,9 +343,9 @@ hackedLALTwoDColumn( LALStatus            *stat,
   REAL8 rightTiled[2];  /* right side of region tiled */
   REAL8 metric[3];      /* current metric components */
   h_TwoDMeshNode *here;   /* current node in list */
+  INT4 ret;
 
   /* Default parameter values: */
-  REAL8 widthMaxFac = TWODMESHINTERNALC_WMAXFAC;
   UINT4 nIn = (UINT4)( -1 );
 
   INITSTATUS( stat, "LALTwoDColumn", HTWODMESHC );
@@ -382,7 +402,28 @@ hackedLALTwoDColumn( LALStatus            *stat,
       {
 	LALPrintError( "\r%16u", params->nOut );
       }
-    GETSIZE( here->next->dy, dx, metric, params->mThresh );
+
+    ret = getSize( here->next->dy, dx, metric, params->mThresh );
+    if ( ret == -1 )
+      {
+	TRY( hackedLALDestroyTwoDMesh( stat->statusPtr, &((*(tail))->next), NULL ), stat );
+	ABORT( stat, TWODMESHH_EMETRIC, TWODMESHH_MSGEMETRIC );
+      }
+    else if ( ret == -2 )	/* column too wide */
+      {
+	UINT4 nFree;
+	if ( lalDebugLevel & LALINFO ) 
+	  {
+	    LALInfo( stat, "Column too wide" );
+	    LALPrintError( "\tnode count %u\n", params->nOut );
+	  }
+	TRY( hackedLALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next), &nFree ), stat );
+	params->nOut -= nFree;
+	column->tooWide = 1;
+	DETATCHSTATUSPTR( stat );
+	RETURN( stat );
+      }
+
     here->next->y = position[1];
     here = here->next;
     here->x = position[0];
@@ -422,7 +463,28 @@ hackedLALTwoDColumn( LALStatus            *stat,
 	{
 	  LALPrintError( "\r%16u", params->nOut );
 	}
-      GETSIZE( here->next->dy, dx, metric, params->mThresh );
+
+      ret = getSize( here->next->dy, dx, metric, params->mThresh );
+      if ( ret == -1 )
+	{
+	  TRY( hackedLALDestroyTwoDMesh( stat->statusPtr, &((*(tail))->next), NULL ), stat );
+	  ABORT( stat, TWODMESHH_EMETRIC, TWODMESHH_MSGEMETRIC );
+	}
+      else if ( ret == -2 )
+      {
+	UINT4 nFree;
+	if ( lalDebugLevel & LALINFO ) 
+	  {
+	    LALInfo( stat, "Column too wide" );
+	    LALPrintError( "\tnode count %u\n", params->nOut );
+	  }
+	TRY( hackedLALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next), &nFree ), stat );
+	params->nOut -= nFree;
+	column->tooWide = 1;
+	DETATCHSTATUSPTR( stat );
+	RETURN( stat );
+      }
+
       myy0 = (REAL8)here->dy[1] - here->next->dy[0];
       myy1 = (REAL8)here->next->dy[1] - here->dy[0];
       if ( myy0 > myy1 )
@@ -623,4 +685,51 @@ hackedLALDestroyTwoDMesh( LALStatus    *stat,
   DETATCHSTATUSPTR( stat );
   RETURN( stat );
 }
+
+/* turned GETWIDTH-macro into a function, makes things easier... 
+ * RETURN: 0 = OK; -1 = ERROR
+ */
+int
+getWidth( REAL8 *dx, REAL8 metric[3], REAL8 mismatch )
+{
+  REAL8 det;
+
+  det = metric[0] * metric[1] - metric[2] * metric[2];
+
+  if ( ( (metric)[0] <= 0.0 ) || ( (metric)[1] <= 0.0 ) || ( det <= 0.0 ) ) 
+    return -1;
+
+  /* Try to avoid catastrophic cancellations in the following: */
+  /* oringinally: (dx) = (REAL8) sqrt( (REAL8)(metric)[1]*(mismatch)/det ); */
+  (*dx) = sqrt( mismatch / ( metric[0] - metric[2]*metric[2] / metric[1]) );
+
+  return 0;
+
+} /* getWidth() */
+
+
+/* turned GETSIZE-macro into a function, makes experimenting with numerical stability easier 
+ *
+ * RETURN: 0=OK; -1=ERROR, -2='column too wide'
+ */
+int
+getSize( REAL8 dy[2], REAL8 dx, REAL8 metric[3], REAL8 mismatch )
+{
+  REAL8 det = metric[0] * metric[1] - metric[2] * metric[2];
+  REAL8 disc;
+
+  if ( ( metric[0] <= 0.0 ) || ( metric[1] <= 0.0 ) || ( det <= 0.0 ) ) 
+    return -1;
+
+  if ( widthMaxFac*(dx) > sqrt( metric[1] * mismatch /det ) )
+    return -2;
+
+  disc = sqrt( metric[1] * mismatch - det * dx * dx );
+
+  dy[0] = ( - metric[2] * dx - disc ) / metric[1];
+  dy[1] = ( - metric[2] * dx + disc ) / metric[1];
+
+  return 0;
+
+} /* getSize() */
 
