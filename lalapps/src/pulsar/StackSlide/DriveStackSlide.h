@@ -280,8 +280,8 @@ NRCSID( DRIVESTACKSLIDEH, "$Id$");
 /* #define dbNameLimit 256; */ /* Should be defined in LAL? */
 /* 05/19/05 gam; Add in maximum velocity of Earth used to find maximum doppler shift */
 #define STACKSLIDEMAXV 1.06e-04
-#define STACKSLIDEUNDERFLOWDANGE 4.0e-19
-#define STACKSLIDEOVERFLOWDANGE  1.0e19
+#define STACKSLIDEUNDERFLOWDANGER 4.0e-19
+#define STACKSLIDEOVERFLOWDANGER  1.0e19
 #define INTERNAL_SHOWERRORFROMSUB(status)  \
       if (status->statusPtr->statusCode) { \
          fprintf(stderr,"Error: statusCode = %i statusDescription = %s \n", status->statusPtr->statusCode, status->statusPtr->statusDescription); \

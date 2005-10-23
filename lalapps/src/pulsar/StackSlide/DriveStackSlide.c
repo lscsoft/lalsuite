@@ -653,7 +653,7 @@ params->numFDeriv5   =   0;
     	fprintf(stdout,"# if (weightFlag & 1 > 0) use powerFlux style weights; must using running median (see normalizationFlag rules),\n");
     	fprintf(stdout,"# if (weightFlag & 2 > 0) include beam pattern F_+ in calculation of weights,\n");
     	fprintf(stdout,"# if (weightFlag & 4 > 0) include beam pattern F_x in calculation of weights,\n");
-    	fprintf(stdout,"# if (weightFlag & 8 > 0) rescale input BLK data (SFTs) with the inverse mean of absolute value of this data, [Re(BLKData) + Im(BLKData)]/2, to prevent dynamic range issues.\n"); /* 11/01/04 gam */
+    	fprintf(stdout,"# if (weightFlag & 8 > 0) rescale the input BLK data (SFTs) with the inverse mean of the absolute value of this data, [fabs(Re(BLKData)) + fabs(Im(BLKData))]/2, to prevent dynamic range issues.\n"); /* 11/01/04 gam */
     	fprintf(stdout,"# if (weightFlag & 16 > 0) save medians and weight SFTs with inverse medians; must using running median (see normalizationFlag rules).\n"); /* 09/12/05 gam */
     	fprintf(stdout,"# This last option will reuse the medians which can speed up Monte Carlo Simulations. However one must test what bias this introduces by also running the MC with this option off.\n"); /* 09/12/05 gam */
     	fprintf(stdout,"\n");
@@ -3749,6 +3749,7 @@ void CheckDynamicRangeAndRescaleBLKData(LALStatus *status, REAL4 *blkRescaleFact
   ATTATCHSTATUSPTR (status);
 
   nBinsPerBLK = BLKData[0]->fft->data->length;
+  count = 0;
   minFabsBLKData = 1.0;
   maxFabsBLKData = 0.0;
   sumFabsBLKData = 0.0;
@@ -3786,7 +3787,7 @@ void CheckDynamicRangeAndRescaleBLKData(LALStatus *status, REAL4 *blkRescaleFact
   } else {
     *blkRescaleFactor = 1.0;
      /* Since we work with absolute squares of BKL data, make sure we are not in danger of underflows or overflows */
-     if ( (meanFabsBLKData <= STACKSLIDEUNDERFLOWDANGE) || (maxFabsBLKData >=  STACKSLIDEOVERFLOWDANGE) ) {
+     if ( (meanFabsBLKData <= STACKSLIDEUNDERFLOWDANGER) || (maxFabsBLKData >=  STACKSLIDEOVERFLOWDANGER) ) {
         ABORT( status, DRIVESTACKSLIDEH_EDYNAMICRANGE , DRIVESTACKSLIDEH_MSGEDYNAMICRANGE );
      }
   }

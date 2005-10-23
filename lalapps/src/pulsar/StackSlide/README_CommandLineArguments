@@ -87,7 +87,7 @@ set weightFlag                               0; #38 INT2 how to weight STKs.
 # if (weightFlag & 1 > 0) use powerFlux style weights; must using running median (see normalizationFlag rules),
 # if (weightFlag & 2 > 0) include beam pattern F_+ in calculation of weights,
 # if (weightFlag & 4 > 0) include beam pattern F_x in calculation of weights,
-# if (weightFlag & 8 > 0) rescale input BLK data (SFTs) with the inverse mean of absolute value of this data, [Re(BLKData) + Im(BLKData)]/2, to prevent dynamic range issues.
+# if (weightFlag & 8 > 0) rescale the input BLK data (SFTs) with the inverse mean of the absolute value of this data, [fabs(Re(BLKData)) + fabs(Im(BLKData))]/2, to prevent dynamic range issues.
 # if (weightFlag & 16 > 0) save medians and weight SFTs with inverse medians; must using running median (see normalizationFlag rules).
 # This last option will reuse the medians which can speed up Monte Carlo Simulations. However one must test what bias this introduces by also running the MC with this option off.
 
