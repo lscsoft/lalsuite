@@ -2412,6 +2412,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 		LogPrintf (LOG_CRITICAL, "System says: %s\n", strerror (errno) );
 		ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
 	      }
+	    LogPrintfVerbatim ( LOG_DEBUG, " done.\n");
 
 	    /* finally: remove tmpfile */
 	    if ( (ret = boinc_delete_file ( tmpfile ) ) != 0 )
