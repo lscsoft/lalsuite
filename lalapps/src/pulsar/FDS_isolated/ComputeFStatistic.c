@@ -308,6 +308,7 @@ extern "C" {
 			     long *bytecounter, const CHAR *fstat_fname, const CHAR *ckpfn);
   
   int debug_dump_commandline (int argc,  char *argv[]);
+  int is_zip_file ( const char *fname );
 
 #ifdef FILE_AMCOEFFS
   void PrintAMCoeffs (REAL8 Alpha, REAL8 Delta, AMCoeffs* amc);
@@ -2357,7 +2358,77 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 
 #if USE_BOINC
     if (uvar_skyGridFile)
-      use_boinc_filename1(&(uvar_skyGridFile));
+      {
+	int is_zipped;
+	/* get physical file-name for sky-grid file */
+	LogPrintf (LOG_DEBUG, "boinc-resolving sky-grid file '%s' ... ", uvar_skyGridFile );
+	use_boinc_filename1( &(uvar_skyGridFile) );
+	LogPrintfVerbatim ( LOG_DEBUG, "resolved to '%s'.\n", uvar_skyGridFile );
+	
+	is_zipped = is_zip_file ( uvar_skyGridFile );
+	if ( is_zipped == -1 ) {
+	  LogPrintf (LOG_CRITICAL, "Error determining whether '%s' is a zip-file.\n", uvar_skyGridFile);
+	  ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+	}
+	
+	/* skyGrid-file is zipped ==> unzip it */
+	if ( is_zipped )
+	  {
+	    int ret;
+	    char *ptr;
+	    char *outdir;
+	    char *tmpfile = "./__tmp.zip";
+	    char *zipfile = uvar_skyGridFile;
+	    LogPrintf (LOG_DEBUG, "Sky-grid file is zip-compressed.\n");
+	    LogPrintf (LOG_DEBUG, "Now boinc_rename'ing '%s' to '%s' ... ", zipfile, tmpfile );
+	    if ( (ret = boinc_rename ( zipfile, tmpfile)) != 0 )
+	      {
+		LogPrintf (LOG_CRITICAL, "Error in renaming '%s' to '%s'. boinc_rename() returned %d.\n",
+			   zipfile, tmpfile, ret);
+		LogPrintf (LOG_CRITICAL, "System says: %s\n", strerror (errno) );
+	      }
+	    else
+	      LogPrintfVerbatim (LOG_DEBUG, " done.\n");
+
+
+	    /* find directory of physical file-location */
+	    if ( (outdir = LALCalloc (1, strlen ( uvar_skyGridFile ) + 1 )) == NULL ) {
+	      ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+	    }
+	    strcpy ( outdir, uvar_skyGridFile ); 
+
+	    /* simply truncate at last '/' */
+	    if ( (ptr = strrchr ( outdir, '/' )) == NULL ) /* no  path? -> local dir */
+	      strcpy ( outdir, "./" );
+	    else
+	      *(ptr + 1) = 0;	/* truncate outdir to basename-path */
+
+	    /* unzip '__tmp.zip' into outdir */
+	    LogPrintf (LOG_DEBUG, "Now boinc_unzipping '%s' to '%s' ... ", tmpfile, outdir );
+	    if ( (ret = boinc_zip ( UNZIP_IT, tmpfile, outdir ) ) != 0 )
+	      {
+		LogPrintf (LOG_CRITICAL,  "Error in unzipping file '%s'. Return value: %d\n", 
+			   tmpfile, ret);
+		LogPrintf (LOG_CRITICAL, "System says: %s\n", strerror (errno) );
+		ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+	      }
+
+	    /* finally: remove tmpfile */
+	    if ( (ret = boinc_delete_file ( tmpfile ) ) != 0 )
+	      {
+		LogPrintf (LOG_CRITICAL,  "Error removing '%s'. Return value: %d\n", 
+			   tmpfile, ret);
+		LogPrintf (LOG_CRITICAL, "System says: %s\n", strerror (errno) );
+		ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+	      }
+	    
+
+	  } /* if is_zipped */
+	else
+	  LogPrintf (LOG_DEBUG, "Sky-grid file is NOT zip-compressed.\n");
+
+      } /* if uvar_skyGridFile */
+    
 #endif
 
   /* ----------------------------------------------------------------------*/
@@ -3909,3 +3980,38 @@ debug_dump_commandline (int argc,  char *argv[])
   
   return 0;
 } /* debug_dump_commandline() */
+
+
+/* check if given file is a zip-file by checking the zip-magic header 'PK\003\044'
+ * RETURN: 1 = true, 0 = false, -1 = error
+ */
+int
+is_zip_file ( const char *fname )
+{
+  FILE *fp;
+  CHAR zip_magic[] = {'P', 'K', 3, 4 };
+  CHAR file_header[4];
+
+  if ( (fp = fopen( fname, "rb")) == NULL )
+    {
+      LogPrintf (LOG_CRITICAL, "Failed to open '%s' for reading.\n", fname);
+      return -1;
+    }
+	
+  if ( 4 != fread ( file_header, sizeof(CHAR), 4, fp ) )
+    {
+      LogPrintf (LOG_CRITICAL, "Failed to read first 4 bytes from '%s'.\n", fname);
+      return -1;
+    }
+
+  fclose(fp);
+
+  if ( memcmp ( file_header, zip_magic, 4 ) )
+    return 0;	/* false: no zip-file */
+  else
+    return 1;	/* yep, found magic zip-header */
+
+} /* is_zip_file() */
+
+
+	    
