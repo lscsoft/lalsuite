@@ -81,6 +81,11 @@
 
 #define SKYREGION_ALLSKY  ALPHA_0 DELTA_0 "," ALPHA_1 DELTA_0 "," ALPHA_1 DELTA_1 "," ALPHA_0 DELTA_1
 
+/* the amount by which we push-in the encosing rectangle to avoid spurious polygon-clipping
+ * of boundary-points due to numerical fluctuations in TwoDMesh(). 
+ */
+#define EPS4	1e-6
+
 NRCSID( DOPPLERSCANC, "$Id$" );
 
 /*---------- internal types ----------*/
@@ -387,13 +392,16 @@ NextDopplerPos( LALStatus *status, DopplerPosition *pos, DopplerScanState *scan)
    FIXME: generalize to N-dimensional parameter-searches
 ********************************************************************** */
 
-/* ----------------------------------------------------------------------
- * This is the parameter range function as required by TwoDMesh. 
+/** This is the parameter range function as required by TwoDMesh(). 
  *
  * NOTE: for the moment we only provide a trival range as defined by the  
  * rectangular parameter-area [ a1, a2 ] x [ d1, d2 ]
  * 
- *----------------------------------------------------------------------*/
+ * In order to avoid later cliping of boundary-points only due to numerical 
+ * fluctuations, we push the enclosing rectangle boundaries inside
+ * by about EPS~1e-6 [as REAL4-arithmetic is used in TwoDMesh()].
+ *
+ */
 void getRange( LALStatus *status, meshREAL y[2], meshREAL x, void *params )
 {
   SkyRegion *region = (SkyRegion*)params;
@@ -408,13 +416,13 @@ void getRange( LALStatus *status, meshREAL y[2], meshREAL x, void *params )
   /* for now: we return the fixed y-range, indendent of x */
   if (meshOrder == ORDER_ALPHA_DELTA)
     {
-      y[0] = region->lowerLeft.latitude;
-      y[1] = region->upperRight.latitude;
+      y[0] = region->lowerLeft.latitude + EPS4;
+      y[1] = region->upperRight.latitude - EPS4;
     }
   else
     {
-      y[0] = region->lowerLeft.longitude;
-      y[1] = region->upperRight.longitude;
+      y[0] = region->lowerLeft.longitude + EPS4;
+      y[1] = region->upperRight.longitude - EPS4;
     }
 
 
@@ -697,7 +705,7 @@ plotGrid (LALStatus *status,
  *  polygon, which is specified by a list of points in a SkyPositionVector.
  *
  * \par Note1: 
- * 	The list of points must not close on itself, the last point
+ * 	The list of polygon-points must not close on itself, the last point
  * 	is automatically assumed to be connected to the first 
  * 
  * \par Alorithm: 
@@ -708,7 +716,6 @@ plotGrid (LALStatus *status,
  *     we try to get this algorith to count all boundary-points as 'inside'
  *     we do this by counting intersection to the left _AND_ to the right
  *     and consider the point inside if either of those says its inside...
- *     to this end we even allow points to lie outside by up to eps~1e-14
  *
  * \return : TRUE or FALSE
  *----------------------------------------------------------------------*/
@@ -811,6 +818,9 @@ ConvertTwoDMesh2Grid ( LALStatus *status,
 	  node->Delta = point.latitude;
 
 	} /* if point in polygon */
+      else
+	LogPrintf (LOG_DEBUG, "Point [%g, %g] has been discarded by polygon-clipping!\n",
+		   point.longitude, point.latitude );
 
       meshpoint = meshpoint->next;
 
@@ -953,11 +963,17 @@ buildIsotropicGrid (LALStatus *status, DopplerSkyGrid **grid, const SkyRegion *s
 
 } /* buildIsotropicGrid() */
 
-/*----------------------------------------------------------------------
+/** Build the skygrid using a specified metric.
  *
- * make skygrid using a specified metric
+ * \note: first we cover the enclosing rectange of the skyRegion
+ * using the metric-covering code, then we clip out the actual 
+ * polygon-skyRegion using pointInPolygon().
+ * 
+ * In order for this not to clip boundary-points only due to numerical 
+ * fluctuations, we push the enclosing rectangle boundaries inside
+ * by about EPS~1e-6 [as REAL4-arithmetic is used in TwoDMesh()].
  *
- *----------------------------------------------------------------------*/
+ */
 void
 buildMetricGrid (LALStatus *status, 
 		 DopplerSkyGrid **grid, 
@@ -985,13 +1001,13 @@ buildMetricGrid (LALStatus *status,
       
   if (meshOrder == ORDER_ALPHA_DELTA)
     {
-      meshpar.domain[0] = skyRegion->lowerLeft.longitude;
-      meshpar.domain[1] = skyRegion->upperRight.longitude;
+      meshpar.domain[0] = skyRegion->lowerLeft.longitude + EPS4;
+      meshpar.domain[1] = skyRegion->upperRight.longitude - EPS4;
     }
   else
     {
-      meshpar.domain[0] = skyRegion->lowerLeft.latitude;
-      meshpar.domain[1] = skyRegion->upperRight.latitude;
+      meshpar.domain[0] = skyRegion->lowerLeft.latitude + EPS4;
+      meshpar.domain[1] = skyRegion->upperRight.latitude - EPS4;
     }
   
   meshpar.rangeParams = (void*) skyRegion;
@@ -1092,12 +1108,15 @@ loadSkyGridFile (LALStatus *status, DopplerSkyGrid **grid, const CHAR *fname)
   
 } /* loadSkyGridFile() */
 
-/*----------------------------------------------------------------------
- * write a sky-grid to a file, including some comments containing the 
- * parameters of the grid (?)
- *----------------------------------------------------------------------*/
+/** Write the given sky-grid to a file.
+ * Possibly including some comments containing the parameters of the grid (?).
+ *
+ */
 void
-writeSkyGridFile (LALStatus *status, const DopplerSkyGrid *grid, const CHAR *fname, const DopplerScanInit *init)
+writeSkyGridFile (LALStatus *status, 
+		  const DopplerSkyGrid *grid, 
+		  const CHAR *fname, 
+		  const DopplerScanInit *init)
 {
   FILE *fp;
   const DopplerSkyGrid *node;
@@ -1731,3 +1750,4 @@ getMetricEllipse(LALStatus *status,
   RETURN(status);
 
 } /* getMetricEllipse() */
+
