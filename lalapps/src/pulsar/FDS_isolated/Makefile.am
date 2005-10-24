@@ -19,7 +19,7 @@ bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnal
 	ComputeFStatistic_v2 lalapps_makeInvetofile lalapps_extractSFTband lalapps_FindSh \
 	lalapps_monteint lalapps_skynet getMetric lalapps_zellepolka	\
 	testLatticeCovering testFlatPulsarMetric matchGrids	\
-	getMesh getHackedMesh
+	getMesh 
 
 EXTRA_PROGRAMS = $(FRAMEPROGRAMS)
 
@@ -31,8 +31,7 @@ CFSsources = 	ComputeFStatistic.h	\
 		clusters.c clusters.h  	\
 		DopplerScan.c DopplerScan.h \
 		FstatToplist.c FstatToplist.h \
-		LogPrintf.c LogPrintf.h		\
-		hackedTwoDMesh.c
+		LogPrintf.c LogPrintf.h	
 
 ##lalapps_ComputeFStatistic_CPPFLAGS= -DUSE_HACKED_TWODMESH $(CPPFLAGS) $(AM_CPPFLAGS)
 lalapps_ComputeFStatistic_SOURCES = ComputeFStatistic.c CFSLALDemod.c $(CFSsources)
@@ -67,8 +66,8 @@ TESTS = testFStat.sh
 getMetric_SOURCES = getMetric.c DopplerScan.c DopplerScan.h FlatPulsarMetric.c FlatPulsarMetric.h \
 		    LogPrintf.c
 
-getHackedMesh_CPPFLAGS= -DUSE_HACKED_TWODMESH $(CPPFLAGS) $(AM_CPPFLAGS)
-getHackedMesh_SOURCES = getMesh.c DopplerScan.c DopplerScan.h LogPrintf.c hackedTwoDMesh.c
+##getHackedMesh_CPPFLAGS= -DUSE_HACKED_TWODMESH $(CPPFLAGS) $(AM_CPPFLAGS)
+##getHackedMesh_SOURCES = getMesh.c DopplerScan.c DopplerScan.h LogPrintf.c hackedTwoDMesh.c
 
 getMesh_SOURCES = getMesh.c DopplerScan.c DopplerScan.h LogPrintf.c
 
