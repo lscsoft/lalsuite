@@ -923,7 +923,7 @@ int main( int argc, char *argv[] )
     {
       calGlobPattern = (CHAR *) LALCalloc( calGlobLen, sizeof(CHAR) );
       LALSnprintf( calGlobPattern, calGlobLen * sizeof(CHAR), 
-          "*%c*CAL*.gwf", fqChanName[0] );
+          "*CAL*%s*.gwf", ifo );
       if ( vrbflg ) fprintf( stdout, "globbing for %s calibration frame files "
           "in current directory\n", calGlobPattern );
     }
@@ -1067,7 +1067,7 @@ int main( int argc, char *argv[] )
           {
             calGlobPattern = (CHAR *) LALCalloc( calGlobLen, sizeof(CHAR) );
             LALSnprintf( calGlobPattern, calGlobLen * sizeof(CHAR), 
-                "*%c*CAL*.gwf", fqChanName[0] );
+                "*CAL*%s*.gwf", ifo );
             if ( vrbflg ) fprintf( stdout, 
                 "globbing for %s calibration frame files "
                 "in current directory\n", calGlobPattern );
