@@ -1534,9 +1534,11 @@ static REAL4TimeSeries *generate_random_noise(LALStatus *status,
   LAL_CALL(LALDestroyRandomParams(status, &noise_params), status);
 
   /* scale random noise */
+#if 0
   for (i = 0; i < series->data->length; i++)
     series->data->data[i] *= 1e-18;
-  
+#endif
+
   return(series);
 }
 
