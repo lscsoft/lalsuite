@@ -1264,6 +1264,12 @@ static StochasticTable *stochastic_search(LALStatus *status,
         LALSPrintTimeSeries(segment_two, debug_filename);
       }
 
+      if (vrbflg)
+      {
+        fprintf(stdout, "Generating response functions for epoch %d\n", \
+            seg_epoch.gpsSeconds);
+      }
+
       /* compute response */
       response_one = generate_response(status, ifoOne, calCacheOne, \
           seg_epoch, fMin, delta_f, countPerAttoStrain, filter_length, \
