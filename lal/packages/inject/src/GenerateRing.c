@@ -74,7 +74,7 @@ LALGenerateRing(
   REAL8 t0, gtime ;  /* central time, decay time, gaussian time */
   REAL8 f0, quality/*, phi0*/;      /* initial phase and frequency */
   REAL8 twopif0;       /* 2*pi*f0 */
-  REAL4 h0;;         /* peak strain for burst */
+  REAL4 h0;         /* peak strain for burst */
   REAL4 *fData;        /* pointer to frequency data */
   REAL8 *phiData;      /* pointer to phase data */
   REAL4 *aData;        /* pointer to frequency data */
