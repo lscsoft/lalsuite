@@ -240,7 +240,7 @@ int main( int argc, char *argv[] )
   FrStream     *frStream = NULL;
   FrChanIn      frChan;
   FrCacheSieve  sieve;
-  const size_t  calGlobLen = 12;
+  const size_t  calGlobLen = FILENAME_MAX;
   CHAR         *calGlobPattern;
 
   /* frame output data */
