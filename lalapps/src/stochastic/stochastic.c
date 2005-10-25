@@ -153,20 +153,20 @@ static REAL4TimeSeries *get_ligo_data(LALStatus *status,
   channel_in.type = ADCDataChannel;
 
   if (vrbflg)
-    fprintf(stderr, "Allocating memory for \"%s\" series...\n", channel);
+    fprintf(stdout, "Allocating memory for \"%s\" series...\n", channel);
 
   /* create and initialise time series */
   LAL_CALL(LALCreateREAL4TimeSeries(status, &series, channel, start, 0, 0, \
         lalADCCountUnit, 0), status);
 
   if (vrbflg)
-    fprintf(stderr, "Reading \"%s\" series metadata...\n", channel);
+    fprintf(stdout, "Reading \"%s\" series metadata...\n", channel);
 
   /* get the series meta data */
   XLALFrGetREAL4TimeSeriesMetadata(series, stream);
 
   if (vrbflg)
-    fprintf(stderr, "Resizing \"%s\" series...\n", channel);
+    fprintf(stdout, "Resizing \"%s\" series...\n", channel);
 
   /* resize series to the correct number of samples */
   length = floor((XLALDeltaFloatGPS(&end, &start) / series->deltaT) + 0.5);
@@ -202,20 +202,20 @@ static REAL4TimeSeries *get_geo_data(LALStatus *status,
   channel_in.type = ADCDataChannel;
 
   if (vrbflg)
-    fprintf(stderr, "Allocating memory for \"%s\" series...\n", channel);
+    fprintf(stdout, "Allocating memory for \"%s\" series...\n", channel);
 
   /* create and initialise time series */
   LAL_CALL(LALCreateREAL8TimeSeries(status, &geo, channel, start, 0, 0, \
         lalADCCountUnit, 0), status);
 
   if (vrbflg)
-    fprintf(stderr, "Reading \"%s\" series metadata...\n", channel);
+    fprintf(stdout, "Reading \"%s\" series metadata...\n", channel);
 
   /* get the series meta data */
   XLALFrGetREAL8TimeSeriesMetadata(geo, stream);
 
   if (vrbflg)
-    fprintf(stderr, "Resizing \"%s\" series...\n", channel);
+    fprintf(stdout, "Resizing \"%s\" series...\n", channel);
 
   /* resize series to the correct number of samples */
   length = floor((XLALDeltaFloatGPS(&end, &start) / series->deltaT) + 0.5);
