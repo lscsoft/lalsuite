@@ -3323,6 +3323,18 @@ INT4 main(INT4 argc, CHAR *argv[])
   LALSPrintTimeSeries(noiseOne, "noise1.dat");
   LALSPrintTimeSeries(noiseTwo, "noise2.dat");
 
+  /* generate random noise for sgwb signal */
+  seriesOne = generate_random_noise(&status, totalDuration, resampleRate);
+  seriesTwo = generate_random_noise(&status, totalDuration, resampleRate);
+
+  /* inject signal into noise */
+  for (i = 0; i < noiseOne->data->length; i++)
+  {
+    seriesTwo->data->data[i] = seriesOne->data->data[i] + noiseTwo->data->data[i];
+    seriesOne->data->data[i] += noiseOne->data->data[i];
+  }
+
+#if 0
   /* set out for generate_fake_detector_output */
   fakeOutput->SSimStochBG1 = seriesOne;
   fakeOutput->SSimStochBG2 = seriesTwo;
@@ -3330,11 +3342,11 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* generate fake data */
   fakeOutput = generate_fake_detector_output(&status, noiseOne, noiseTwo, \
       deltaF);
+#endif
 
+  /* save out signal */
   LALSPrintTimeSeries(seriesOne, "series1.dat");
   LALSPrintTimeSeries(seriesTwo, "series2.dat");
-
-  exit(1);
 
   /* check that the two series have the same sample rate */
   if (seriesOne->deltaT != seriesTwo->deltaT)
