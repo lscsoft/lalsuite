@@ -3290,6 +3290,12 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* parse command line options */
   parse_options_fake(argc, argv);
 
+  /* set fake ifos */
+  ifoOne = (CHAR*)calloc(3, sizeof(CHAR));
+  ifoTwo = (CHAR*)calloc(3, sizeof(CHAR));
+  ifoOne = "G1";
+  ifoTwo = "G1";
+
   /* get xml file basename */
   if (userTag)
   {
