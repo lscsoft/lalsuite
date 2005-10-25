@@ -3260,7 +3260,9 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* noise */
   REAL4TimeSeries *noiseOne;
   REAL4TimeSeries *noiseTwo;
+#if 0
   SSSimStochBGOutput *fakeOutput = NULL;
+#endif
 
   /* variables */
   INT4 numSegments;
