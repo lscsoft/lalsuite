@@ -2359,74 +2359,103 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 #if USE_BOINC
     if (uvar_skyGridFile)
       {
+	char resolved_name[MAXFILENAMELENGTH];
 	int is_zipped;
 	/* get physical file-name for sky-grid file */
 	LogPrintf (LOG_DEBUG, "boinc-resolving sky-grid file '%s' ... ", uvar_skyGridFile );
-	use_boinc_filename1( &(uvar_skyGridFile) );
-	LogPrintfVerbatim ( LOG_DEBUG, "resolved to '%s'.\n", uvar_skyGridFile );
+	if ( boinc_resolve_filename ( uvar_skyGridFile, resolved_name, sizeof(resolved_name)) )
+	  {
+	    LogPrintf (LOG_CRITICAL,  "Can't resolve file '%s'\n", uvar_skyGridFile );
+	    ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+	  }
+	LogPrintfVerbatim ( LOG_DEBUG, "resolved to '%s'.\n", resolved_name );
 	
-	is_zipped = is_zip_file ( uvar_skyGridFile );
+	is_zipped = is_zip_file ( resolved_name );
 	if ( is_zipped == -1 ) {
-	  LogPrintf (LOG_CRITICAL, "Error determining whether '%s' is a zip-file.\n", uvar_skyGridFile);
+	  LogPrintf (LOG_CRITICAL, "Error determining whether '%s' is a zip-file.\n", resolved_name );
 	  ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
 	}
 	
-	/* skyGrid-file is zipped ==> unzip it */
-	if ( is_zipped )
+	/* if sky-Grid is not zipped ==> use the resolved name */
+	if ( !is_zipped )
 	  {
-	    int ret;
-	    char *ptr;
-	    char *outdir;
-	    char *tmpfile = "./__tmp.zip";
-	    char *zipfile = uvar_skyGridFile;
-	    LogPrintf (LOG_DEBUG, "Sky-grid file is zip-compressed.\n");
-	    LogPrintf (LOG_DEBUG, "Now boinc_rename'ing '%s' to '%s' ... ", zipfile, tmpfile );
-	    if ( (ret = boinc_rename ( zipfile, tmpfile)) != 0 )
-	      {
-		LogPrintf (LOG_CRITICAL, "Error in renaming '%s' to '%s'. boinc_rename() returned %d.\n",
-			   zipfile, tmpfile, ret);
-		LogPrintf (LOG_CRITICAL, "System says: %s\n", strerror (errno) );
-	      }
-	    else
-	      LogPrintfVerbatim (LOG_DEBUG, " done.\n");
-
-
-	    /* find directory of physical file-location */
-	    if ( (outdir = LALCalloc (1, strlen ( uvar_skyGridFile ) + 1 )) == NULL ) {
+	    LogPrintf ( LOG_DEBUG, "Skygrid file is not zip-compressed. Using boinc-resolved file.\n");
+	    LALFree ( uvar_skyGridFile );
+	    if ( (uvar_skyGridFile = LALCalloc ( 1, strlen ( resolved_name ) + 1 )) == NULL ) {
 	      ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
 	    }
-	    strcpy ( outdir, uvar_skyGridFile ); 
+	    strcpy ( uvar_skyGridFile, resolved_name );	/* done */
+	  }
+	/* ELSE, if physical skyGrid-file is zipped ==> unzip it *locally*:
+	 * NOTE: a-priori we don't know the output-file(s) of the unzipping-process.
+	 * we rely here on the unzipped skygrid-files ALWAYS having the same name
+	 * as the original uvar_skyGridFile (i.e. BEFORE boinc-resolving!)
+	 **/
+	else 	
+	  {
+	    int ret;
+	    char *outdir;
+	    char *ptr;
+	    char *zipfile;
+	    char *tmpfile = "./__tmp.zip";
 
-	    /* simply truncate at last '/' */
-	    if ( (ptr = strrchr ( outdir, '/' )) == NULL ) /* no  path? -> local dir */
-	      strcpy ( outdir, "./" );
+	    LogPrintf (LOG_DEBUG, "Sky-grid file is zip-compressed.\n");
+
+	    /* unzip the resolved-name locally: first make sure to remove the uvar_skyGridFile,
+	     * as the unzipped file is expected to replace it
+	     */
+	    if ( strcmp ( uvar_skyGridFile, resolved_name )  ) /* only if different files! */
+	      {
+		LogPrintf (LOG_DEBUG, "Removing boinc-link file '%s' ... ", uvar_skyGridFile );
+		if ( (ret = boinc_delete_file ( uvar_skyGridFile ) ) != 0 )
+		  {
+		    LogPrintf (LOG_CRITICAL,  "Error removing '%s'. Return value: %d\n", uvar_skyGridFile, ret);
+		    LogPrintf (LOG_CRITICAL, "System says: %s\n", strerror (errno) );
+		    ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+		  }
+		zipfile = resolved_name;
+		LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
+	      } /* if boinc-link is different from physical file */
 	    else
-	      *(ptr + 1) = 0;	/* truncate outdir to basename-path */
+	      {	/* same file: move to temporary file to allow replacing original */
+		LogPrintf (LOG_DEBUG, "Now rename'ing '%s' to '%s' ... ", resolved_name, tmpfile );
+		if ( (ret = boinc_rename ( resolved_name, tmpfile)) != 0 )
+		  {
+		    LogPrintf (LOG_CRITICAL, "Error in renaming '%s' to '%s'. boinc_rename() returned %d.\n",
+			       resolved_name, tmpfile, ret);
+		    LogPrintf (LOG_CRITICAL, "System says: %s\n", strerror (errno) );
+		  }
+		else
+		  LogPrintfVerbatim (LOG_DEBUG, " done.\n");
 
-	    /* unzip '__tmp.zip' into outdir */
-	    LogPrintf (LOG_DEBUG, "Now boinc_unzipping '%s' to '%s' ... ", tmpfile, outdir );
-	    if ( (ret = boinc_zip ( UNZIP_IT, tmpfile, outdir ) ) != 0 )
+		zipfile = tmpfile;
+
+	      } /* if boinc-link == physical file */
+
+	    /* find directory of boinc-link file */
+	    if ( (outdir = LALCalloc (1, strlen ( uvar_skyGridFile ) + 1 )) == NULL ) {
+ 	      ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+ 	    }
+ 	    strcpy ( outdir, uvar_skyGridFile ); 
+ 	    /* simply truncate at last '/' */
+ 	    if ( (ptr = strrchr ( outdir, '/' )) == NULL ) /* no  path? -> local dir */
+ 	      strcpy ( outdir, "./" );
+ 	    else
+ 	      *(ptr + 1) = 0;	/* truncate outdir to basename-path */
+ 
+	    LogPrintf (LOG_DEBUG, "Now boinc_unzipping '%s' to '%s' ... ", zipfile, outdir );
+	    if ( (ret = boinc_zip ( UNZIP_IT, zipfile, outdir ) ) != 0 )
 	      {
 		LogPrintf (LOG_CRITICAL,  "Error in unzipping file '%s'. Return value: %d\n", 
-			   tmpfile, ret);
+			   zipfile, ret);
 		LogPrintf (LOG_CRITICAL, "System says: %s\n", strerror (errno) );
 		ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
 	      }
+
+	    /* the original 'uvar_skyGridfile' should now point to the correct locally unzipped skygrid-file */
 	    LogPrintfVerbatim ( LOG_DEBUG, " done.\n");
-
-	    /* finally: remove tmpfile */
-	    if ( (ret = boinc_delete_file ( tmpfile ) ) != 0 )
-	      {
-		LogPrintf (LOG_CRITICAL,  "Error removing '%s'. Return value: %d\n", 
-			   tmpfile, ret);
-		LogPrintf (LOG_CRITICAL, "System says: %s\n", strerror (errno) );
-		ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-	      }
 	    
-
 	  } /* if is_zipped */
-	else
-	  LogPrintf (LOG_DEBUG, "Sky-grid file is NOT zip-compressed.\n");
 
       } /* if uvar_skyGridFile */
     
