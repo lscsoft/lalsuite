@@ -1516,7 +1516,7 @@ static REAL4TimeSeries *generate_random_noise(LALStatus *status,
 
   /* create and initialise time series */
   LAL_CALL(LALCreateREAL4TimeSeries(status, &series, "noise", start, 0, \
-        deltaT, lalSecondUnit, duration * sample_rate), status);
+        deltaT, lalADCCountUnit, duration * sample_rate), status);
 
   /* get current time, for random seed */
   gettimeofday(&tv, NULL);
