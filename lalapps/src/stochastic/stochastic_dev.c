@@ -3319,9 +3319,12 @@ INT4 main(INT4 argc, CHAR *argv[])
   noiseOne = generate_random_noise(&status, totalDuration, resampleRate);
   noiseTwo = generate_random_noise(&status, totalDuration, resampleRate);
 
-  /* save out noise */
-  LALSPrintTimeSeries(noiseOne, "noise1.dat");
-  LALSPrintTimeSeries(noiseTwo, "noise2.dat");
+  if (debug_flag)
+  {
+    /* save out noise */
+    LALSPrintTimeSeries(noiseOne, "noise1.dat");
+    LALSPrintTimeSeries(noiseTwo, "noise2.dat");
+  }
 
   /* generate random noise for sgwb signal */
   seriesOne = generate_random_noise(&status, totalDuration, resampleRate);
@@ -3344,9 +3347,12 @@ INT4 main(INT4 argc, CHAR *argv[])
       deltaF);
 #endif
 
-  /* save out signal */
-  LALSPrintTimeSeries(seriesOne, "series1.dat");
-  LALSPrintTimeSeries(seriesTwo, "series2.dat");
+  if (debug_flag)
+  {
+    /* save out signal */
+    LALSPrintTimeSeries(seriesOne, "series1.dat");
+    LALSPrintTimeSeries(seriesTwo, "series2.dat");
+  }
 
   /* check that the two series have the same sample rate */
   if (seriesOne->deltaT != seriesTwo->deltaT)
