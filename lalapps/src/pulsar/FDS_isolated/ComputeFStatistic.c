@@ -2394,7 +2394,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 	else 	
 	  {
 	    int ret;
-	    char *outdir;
+	    char *outdir = NULL;
 	    char *ptr;
 	    char *zipfile;
 	    char *tmpfile = "./__tmp.zip";
@@ -2451,6 +2451,8 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 		LogPrintf (LOG_CRITICAL, "System says: %s\n", strerror (errno) );
 		ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
 	      }
+
+	    LALFree(outfile);
 
 	    /* the original 'uvar_skyGridfile' should now point to the correct locally unzipped skygrid-file */
 	    LogPrintfVerbatim ( LOG_DEBUG, " done.\n");
