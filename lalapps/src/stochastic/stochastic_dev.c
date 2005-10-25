@@ -157,20 +157,20 @@ static REAL4TimeSeries *get_ligo_data(LALStatus *status,
   channel_in.type = ADCDataChannel;
 
   if (vrbflg)
-    fprintf(stderr, "Allocating memory for \"%s\" series...\n", channel);
+    fprintf(stdout, "Allocating memory for \"%s\" series...\n", channel);
 
   /* create and initialise time series */
   LAL_CALL(LALCreateREAL4TimeSeries(status, &series, channel, start, 0, 0, \
         lalADCCountUnit, 0), status);
 
   if (vrbflg)
-    fprintf(stderr, "Reading \"%s\" series metadata...\n", channel);
+    fprintf(stdout, "Reading \"%s\" series metadata...\n", channel);
 
   /* get the series meta data */
   XLALFrGetREAL4TimeSeriesMetadata(series, stream);
 
   if (vrbflg)
-    fprintf(stderr, "Resizing \"%s\" series...\n", channel);
+    fprintf(stdout, "Resizing \"%s\" series...\n", channel);
 
   /* resize series to the correct number of samples */
   length = floor((XLALDeltaFloatGPS(&end, &start) / series->deltaT) + 0.5);
@@ -206,20 +206,20 @@ static REAL4TimeSeries *get_geo_data(LALStatus *status,
   channel_in.type = ADCDataChannel;
 
   if (vrbflg)
-    fprintf(stderr, "Allocating memory for \"%s\" series...\n", channel);
+    fprintf(stdout, "Allocating memory for \"%s\" series...\n", channel);
 
   /* create and initialise time series */
   LAL_CALL(LALCreateREAL8TimeSeries(status, &geo, channel, start, 0, 0, \
         lalADCCountUnit, 0), status);
 
   if (vrbflg)
-    fprintf(stderr, "Reading \"%s\" series metadata...\n", channel);
+    fprintf(stdout, "Reading \"%s\" series metadata...\n", channel);
 
   /* get the series meta data */
   XLALFrGetREAL8TimeSeriesMetadata(geo, stream);
 
   if (vrbflg)
-    fprintf(stderr, "Resizing \"%s\" series...\n", channel);
+    fprintf(stdout, "Resizing \"%s\" series...\n", channel);
 
   /* resize series to the correct number of samples */
   length = floor((XLALDeltaFloatGPS(&end, &start) / series->deltaT) + 0.5);
@@ -1512,7 +1512,7 @@ static REAL4TimeSeries *generate_random_noise(LALStatus *status,
   deltaT = 1.0/(REAL8)(sample_rate);
 
   if (vrbflg)
-    fprintf(stderr, "Allocating memory for random noise...\n");
+    fprintf(stdout, "Allocating memory for random noise...\n");
 
   /* create and initialise time series */
   LAL_CALL(LALCreateREAL4TimeSeries(status, &series, "noise", start, 0, \
@@ -1522,7 +1522,7 @@ static REAL4TimeSeries *generate_random_noise(LALStatus *status,
   gettimeofday(&tv, NULL);
 
   if (vrbflg)
-    fprintf(stderr, "Generating random noise...\n");
+    fprintf(stdout, "Generating random noise...\n");
 
   /* generate noise_params */
   LAL_CALL(LALCreateRandomParams(status, &noise_params, tv.tv_usec), status);
@@ -1568,7 +1568,7 @@ static SSSimStochBGOutput *generate_fake_detector_output(LALStatus *status,
   freq_length = (noise_one->data->length / 2) + 1;
 
   if (vrbflg)
-    fprintf(stderr, "Allocating memory for fake detector output...\n");
+    fprintf(stdout, "Allocating memory for fake detector output...\n");
 
   /* create and initialise time series' */
   LAL_CALL(LALCreateREAL4TimeSeries(status, &series_one, "one", \
@@ -1579,7 +1579,7 @@ static SSSimStochBGOutput *generate_fake_detector_output(LALStatus *status,
         noise_two->sampleUnits, noise_two->data->length), status);
 
   if (vrbflg)
-    fprintf(stderr, "Generating unity response functions...\n");
+    fprintf(stdout, "Generating unity response functions...\n");
 
   /* generate unity response functions */
   response_one = unity_response(status, start, 0, deltaF, \
@@ -1615,14 +1615,14 @@ static SSSimStochBGOutput *generate_fake_detector_output(LALStatus *status,
   output->SSimStochBG2 = series_two;
 
   if (vrbflg)
-    fprintf(stderr, "Generating fake signal...\n");
+    fprintf(stdout, "Generating fake signal...\n");
 
   /* generate fake signal */
   LAL_CALL(LALSSSimStochBGTimeSeries(status, output, &input, &params), \
       status);
 
   if (vrbflg)
-    fprintf(stderr, "Injecting fake signal into random noise...\n");
+    fprintf(stdout, "Injecting fake signal into random noise...\n");
 
   /* inject signal into noise */
   for (i = 0; i < series_one->data->length; i++)
