@@ -2452,7 +2452,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 		ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
 	      }
 
-	    LALFree(outfile);
+	    LALFree(outdir);
 
 	    /* the original 'uvar_skyGridfile' should now point to the correct locally unzipped skygrid-file */
 	    LogPrintfVerbatim ( LOG_DEBUG, " done.\n");
