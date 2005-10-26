@@ -591,7 +591,7 @@ LALInspiralCreateBCVBank (
     );
 
 void 
-LALInspiralCreateFlatBankS3 (
+LALInspiralCreateFlatBankS3S4 (
     LALStatus            *status, 
     REAL4VectorSequence  *list, 
     InspiralBankParams   *bankParams,
@@ -608,7 +608,7 @@ LALExcludeTemplate(
     );
 
 void 
-LALInspiralBCVBankFcutS3 (
+LALInspiralBCVBankFcutS3S4 (
     LALStatus            *status, 
     InspiralTemplateList **list, 
     INT4                *NList, 
@@ -875,7 +875,22 @@ LALRectangleVertices
 );
 
 
-void 
+/* <lalLaTeX>
+\newpage\input{LALInsidePolygonC}
+</lalLaTeX>  */
+void
+LALInsidePolygon(
+   LALStatus            *status,
+   REAL4                *inputx, 
+   REAL4               *inputy, 
+   INT4                 n, 
+   REAL4                x, 
+   REAL4                y, 
+   INT4                 *valid
+   ); 
+   
+
+   void 
 LALEmpiricalPSI2MassesConversion(
     InspiralTemplate    *params,
     UINT4               *valid,
