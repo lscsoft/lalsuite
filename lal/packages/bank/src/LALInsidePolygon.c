@@ -18,7 +18,8 @@ the point is inside or valid = 0 if outside.
 \begin{itemize}
    \item \texttt{vx, vy} Input, two arrays of floats defining the polygon. 
    \item \texttt{x, y} Input, coordinate of the point to look at.
-   \item \texttt{minimalmatch} Input, the minimal match
+   \item \texttt{n} Input, the size of the vectors.
+   \item \texttt{valid} Output, 0 if outside and 1 if inside.
 \end{itemize}
 
 \subsubsection*{Description/Algorithm}
