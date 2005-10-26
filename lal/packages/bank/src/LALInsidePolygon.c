@@ -7,13 +7,9 @@ $Id$
 
 \subsection{Module \texttt{LALInsidePolygon.c}}
 
-Module to check whether a point with coordinate (x,y) in inside 
-a polygon defined by the vector (vx, vy). It return valid = 1 if 
+Module to check whether a point with coordinates (x,y) in inside 
+a polygon defined by the vectors (vx, vy). It return valid = 1 if 
 the point is inside or valid = 0 if outside. 
-
-The polygon must be defined by its n points (not n+1 ). The module
- uses n+1 points (append the first point to the end of the arrays)
- in order to close the polygon. 
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
@@ -26,12 +22,6 @@ The polygon must be defined by its n points (not n+1 ). The module
 \end{itemize}
 
 \subsubsection*{Description/Algorithm}
-The algorithm computes the angle between the point(x,y) and each segment
- of the polygon. If the pint is inside the polygon, the sum of the angles 
-should be 2 pi. If ouside it is less than 2 pi. 
-
-
-
 
 \subsubsection*{Uses}
 None.
@@ -49,13 +39,13 @@ None.
 NRCSID (LALINSIDEPOLYGONC, "Id: $");
 
 /*  <lalVerbatim file="LALInsidePolygonCP"> */
-void LALInsidePolygon(LALStatus          *status,
-                             REAL4              *inputx,
-                             REAL4              *inputy,
-                             INT4               n,
-                             REAL4              x0,
-                             REAL4              y0,
-                             INT4               *valid)
+void LALInsidePolygon(  LALStatus          *status,
+                        REAL4              *inputx,
+                        REAL4              *inputy,
+                        INT4               n,
+                        REAL4              x0,
+                        REAL4              y0,
+                        INT4               *valid)
 
                              
 {  /*  </lalVerbatim>  */
@@ -63,7 +53,7 @@ void LALInsidePolygon(LALStatus          *status,
 
    INITSTATUS (status, "LALInsidePolygon", LALINSIDEPOLYGONC);
    ATTATCHSTATUSPTR(status);
-   ASSERT (n>2,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
+   ASSERT (n>=3,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
    
    {
      int i, j, c = 0;
