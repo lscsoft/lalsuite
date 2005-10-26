@@ -2,7 +2,7 @@
 """
 
 MakeSFTDAG.py - Creates DAGs to run jobs that generates SFTs; can act as a dag generator for use with onasys.
-Loosly based on lalapps_strain_pipe
+Loosely based on lalapps_strain_pipe
 
 $Id$
 
@@ -51,8 +51,7 @@ Usage: MakeSFTDAG [options]
   -m, --max-num-per-node    maximum number of SFTs to generate on one node (this and next option control max number of parallel jobs)
   -L, --max-length-all-jobs maximum amount of data to process, in seconds
   -g, --segment-file        alternative file with segments to use, rather than input times. (currently unused)
-  -H  --use-hot             input data is from h(t) calibrated frames (h of t = hot!) (0 or 1).  
-  -o  --online              create dag for online processing
+  -H  --use-hot             input data is from h(t) calibrated frames (h of t = hot!) (0 or 1).
 """
   print >> sys.stderr, msg
 
@@ -79,7 +78,7 @@ def writeToDag(dagFID, nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, c
 #
  
 # parse the command line options
-shortop = "s:e:a:b:f:t:G:d:k:T:p:C:N:r:w:v:m:L:g:hHo"
+shortop = "s:e:a:b:f:t:G:d:k:T:p:C:N:r:w:v:m:L:g:hH"
 longop = [
   "help",
   "gps-start-time=",
@@ -102,7 +101,6 @@ longop = [
   "max-length-all-jobs",
   "segment-file",
   "use-hot",
-  "oneline"
   ]
 
 try:
@@ -134,8 +132,7 @@ maxNumPerNode = None
 maxLengthAllJobs = None
 segmentFile = None
 useHoT = False
-oneline = False
-    
+
 for o, a in opts:
   if o in ("-h", "--help"):
     usage()
@@ -180,8 +177,6 @@ for o, a in opts:
     segmentFile = a
   elif o in ("-H", "--use-hot"):
     useHoT = True
-  elif o in ("-o", "--oneline"):
-    oneline = True
   else:
     print >> sys.stderr, "Unknown option:", o
     usage()
@@ -309,6 +304,44 @@ except: pass
 #fh = open( logfile, "w" )
 #fh.close()
 
+# Check if segment file was given, else set up one segment from the command line
+segList = [];
+adjustSegExtraTime = False
+if (segmentFile != None):
+    # the next flag causes extra time that cannot be processes to be trimmed from the start and end of a segment
+    adjustSegExtraTime = True
+    try:
+         for line in open(segmentFile):
+             try: 
+                 splitLine = line.split();
+                 try: 
+                     oneSeg = [];
+                     oneSeg.append(long(splitLine[0]));
+                     oneSeg.append(long(splitLine[1]));
+                     segList.append(oneSeg);
+                 except:
+                     pass
+             except:
+                 pass
+         # End for line in open(segmentFile)
+         if (len(segList) < 1):
+             print >> sys.stderr, "No segments found in segment file: %s." % segmentFile
+             sys.exit(1)
+    except:
+         print >> sys.stderr, "Error reading or parsing segment file: %s." % segmentFile
+         sys.exit(1)
+else:
+    try:
+        oneSeg = [];
+        oneSeg.append(analysisStartTime);
+        oneSeg.append(analysisEndTime);
+        segList.append(oneSeg);
+    except:
+        print >> sys.stderr, "There was a problem setting up the segment to run on: [%s, %s)." % (analysisStartTime,analysisEndTime)
+        sys.exit(1)
+    
+# END if (segmentFile != None)
+
 # Make sure not to exceed maximum allow analysis
 if (analysisEndTime > analysisStartTime + maxLengthAllJobs):
     analysisEndTime = analysisStartTime + maxLengthAllJobs
@@ -316,42 +349,77 @@ if (analysisEndTime > analysisStartTime + maxLengthAllJobs):
 # Get the IFO site, which is the first letter of the channel name.
 site = channelName[0]
 
+# initialize count of nodes
+nodeCount         = 0L
+
 # create the DAG file with the jobs to run
 dagFileName = dagFileName + '.dag'
 dagFID = file(dagFileName,'w')
-# Loop through the analysis time; make sure no more than 
-startTimeThisNode = analysisStartTime
-endTimeThisNode   = analysisStartTime
-endTimeAllNodes   = analysisStartTime
-nodeCount         = 0L
-numThisNode       = 0L
-while (endTimeAllNodes < analysisEndTime):
-     # increment endTimeAllNodes by the timeBaseline until we get past the analysisEndTime
-     endTimeAllNodes = endTimeAllNodes + timeBaseline
-     if (endTimeAllNodes <= analysisEndTime):
-        # increment the number of SFTs output from this node, and update the end time this node.
-        numThisNode = numThisNode + 1
-        endTimeThisNode = endTimeAllNodes
-        if (numThisNode < maxNumPerNode):
-           continue
-        else:
-           # write jobs to dag for this node
-           nodeCount = nodeCount + 1
-           writeToDag(dagFID,nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, useHoT, tagString)
-           # Update for next node
-           startTimeThisNode = endTimeThisNode
-           numThisNode       = 0L
-else:
-     # we are at or past the analysisEndTime; output job for last node if needed.
-     if (numThisNode > 0L):
-        # write jobs to dag for this node
-        nodeCount = nodeCount + 1
-        writeToDag(dagFID,nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, useHoT, tagString)
-# END while (endTimeAllNodes < analysisEndTime)
+
+startTimeAllNodes = None
+for seg in segList:
+    # Each segment in the segList runs on one or more nodes; initialize the number SFTs produced by the current node:
+    numThisNode = 0L
+    if (adjustSegExtraTime):
+       segStartTime = seg[0]
+       segEndTime = seg[1]
+       segExtraTime = (segEndTime - segStartTime) % timeBaseline
+       segExtraStart =  long(segExtraTime / 2)
+       segExtraEnd = segExtraTime - segExtraStart
+       #print segStartTime,segEndTime, segExtraTime, segExtraStart, segExtraEnd
+       analysisStartTime = segStartTime + segExtraStart
+       if analysisStartTime > segEndTime: analysisStartTime = segEndTime
+       analysisEndTime = segEndTime - segExtraEnd
+       if analysisEndTime < segStartTime: analysisEndTime = segStartTime
+    else:
+       analysisStartTime = seg[0]
+       analysisEndTime = seg[1]     
+    #print analysisStartTime, analysisEndTime
+    # Loop through the analysis time; make sure no more than maxNumPerNode SFTs are produced by any one node
+    startTimeThisNode = analysisStartTime
+    endTimeThisNode   = analysisStartTime
+    endTimeAllNodes   = analysisStartTime
+    while (endTimeAllNodes < analysisEndTime):
+         # increment endTimeAllNodes by the timeBaseline until we get past the analysisEndTime
+         endTimeAllNodes = endTimeAllNodes + timeBaseline
+         if (endTimeAllNodes <= analysisEndTime):
+            # increment the number of SFTs output from this node, and update the end time this node.
+            numThisNode = numThisNode + 1
+            endTimeThisNode = endTimeAllNodes
+            if (numThisNode < maxNumPerNode):
+               continue
+            else:
+               # write jobs to dag for this node
+               nodeCount = nodeCount + 1
+               if (nodeCount ==1): startTimeAllNodes = startTimeThisNode
+               writeToDag(dagFID,nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, useHoT, tagString)
+               # Update for next node
+               startTimeThisNode = endTimeThisNode
+               numThisNode       = 0L
+    else:
+         # we are at or past the analysisEndTime; output job for last node if needed.
+         if (numThisNode > 0L):
+            # write jobs to dag for this node
+            nodeCount = nodeCount + 1
+            if (nodeCount ==1): startTimeAllNodes = startTimeThisNode
+            writeToDag(dagFID,nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, useHoT, tagString)
+    # END while (endTimeAllNodes < analysisEndTime)
+# END for seg in segList
+
+# Close the DAG file
 dagFID.close
 
 # Update actual end time of the last job and print out the times all jobs will run on:
 endTimeAllNodes = endTimeThisNode
-print >> sys.stdout, analysisStartTime, endTimeAllNodes
+
+if not startTimeAllNodes:
+  print >> sys.stderr, "The startTimeAllNodes == none; the DAG file contains no jobs!"
+  sys.exit(1)
+
+if (endTimeAllNodes <= startTimeAllNodes):
+  print >> sys.stderr, "The endTimeAllNodes <= startTimeAllNodes; the DAG file contains no jobs!"
+  sys.exit(1)
+
+print >> sys.stdout, startTimeAllNodes, endTimeAllNodes
 
 sys.exit(0)

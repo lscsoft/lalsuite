@@ -1,7 +1,7 @@
 universe = standard
-executable = /archive/home/ugmendell/searchcode/src/lalapps/src/pulsar/MakeSFTs/lalapps_MakeSFTs
+executable = $ENV(MAKESFTS_PATH)/lalapps_MakeSFTs
 arguments = $(argList)
-log = /usr1/gmendell/MakeSFTs/MakeSFTs_$(tagstring).log
+log = $ENV(CONDOR_SUBLOGFILES_PATH)/MakeSFTs_$(tagstring).log
 error = logs/MakeSFTs_$(tagstring).err
 output = logs/MakeSFTs_$(tagstring).out
 notification = never
