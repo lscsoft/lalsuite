@@ -293,7 +293,7 @@ if (segmentFile != None):
                      oneSeg = [];
                      oneSeg.append(long(splitLine[0]));
                      oneSeg.append(long(splitLine[1]));
-                     if ((oneSeg[1] - oneSeg[1]) >= minSegLength):
+                     if ((oneSeg[1] - oneSeg[0]) >= minSegLength):
                          segList.append(oneSeg)
                      else:
                          pass
