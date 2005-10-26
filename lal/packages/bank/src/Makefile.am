@@ -4,6 +4,7 @@ libbank_la_SOURCES = \
 InspiralBankGeneration.c\
 InspiralSpinBank.c\
 LALDeterminant3.c\
+LALInsidePolygon.c\
 LALInspiralComputeMetric.c\
 LALInspiralComputeParams.c\
 LALInspiralCreateCoarseBank.c\
