@@ -90,7 +90,8 @@ typedef enum
   GRID_FLAT,			/**< "flat" sky-grid: fixed step-size (dAlpha,dDelta) */
   GRID_ISOTROPIC,		/**< approximately isotropic sky-grid */
   GRID_METRIC,			/**< generate grid using a 2D sky-metric */
-  GRID_FILE,			/**< read grid from a file */
+  GRID_FILE,			/**< read skygrid from a file */
+  GRID_METRIC_SKYFILE,		/**< 'hybrid' grid-construction: use skygrid from file, metric for others */
   GRID_LAST
 } DopplerGridType;
 

@@ -1184,9 +1184,9 @@ initUserVars (LALStatus *status)
   LALregREALUserVar(status,       AlphaBand,      'z', UVAR_OPTIONAL, "Band in alpha (equatorial coordinates) in radians");
   LALregREALUserVar(status,       DeltaBand,      'c', UVAR_OPTIONAL, "Band in delta (equatorial coordinates) in radians");
   LALregSTRINGUserVar(status,     skyRegion,      'R', UVAR_OPTIONAL, "ALTERNATIVE: specify sky-region by polygon (or use 'allsky')");
-  LALregINTUserVar(status,        gridType,        0 , UVAR_OPTIONAL, "Template SKY-grid: 0=flat, 1=isotropic, 2=metric, 3=file");
+  LALregINTUserVar(status,        gridType,        0 , UVAR_OPTIONAL, "Grid: 0=flat, 1=isotropic, 2=metric, 3=file, 4=SkyGridFILE+metric");
   LALregINTUserVar(status,        metricType,     'M', UVAR_OPTIONAL, "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
-  LALregREALUserVar(status,       metricMismatch, 'X', UVAR_OPTIONAL, "Maximal mismatch for SKY-grid (adjust value for more dimensions)");
+  LALregREALUserVar(status,       metricMismatch, 'X', UVAR_OPTIONAL, "Maximal mismatch per dimension for metric grid");
   LALregREALUserVar(status,       dAlpha,         'l', UVAR_OPTIONAL, "Resolution in alpha (equatorial coordinates) in radians");
   LALregREALUserVar(status,       dDelta,         'g', UVAR_OPTIONAL, "Resolution in delta (equatorial coordinates) in radians");
   LALregSTRINGUserVar(status,     skyGridFile,     0,  UVAR_OPTIONAL, "Load sky-grid from this file.");
@@ -2585,14 +2585,14 @@ checkUserInputConsistency (LALStatus *lstat)
   {
     BOOLEAN haveAlphaBand = LALUserVarWasSet( &uvar_AlphaBand );
     BOOLEAN haveDeltaBand = LALUserVarWasSet( &uvar_DeltaBand );
-    BOOLEAN haveSkyRegion, haveAlphaDelta, haveGridFile, useGridFile, haveMetric, useMetric;
+    BOOLEAN haveSkyRegion, haveAlphaDelta, haveSkyGridFile, useSkyGridFile, haveMetric, useMetric;
 
     haveSkyRegion  = (uvar_skyRegion != NULL);
     haveAlphaDelta = (LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta) );
-    haveGridFile   = (uvar_skyGridFile != NULL);
-    useGridFile   = (uvar_gridType == GRID_FILE);
+    haveSkyGridFile   = (uvar_skyGridFile != NULL);
+    useSkyGridFile   = (uvar_gridType == GRID_FILE) || (uvar_gridType == GRID_METRIC_SKYFILE);
     haveMetric     = (uvar_metricType > LAL_PMETRIC_NONE);
-    useMetric     = (uvar_gridType == GRID_METRIC);
+    useMetric     = (uvar_gridType == GRID_METRIC) || (uvar_gridType == GRID_METRIC_SKYFILE);
 
     if ( (haveAlphaBand && !haveDeltaBand) || (haveDeltaBand && !haveAlphaBand) )
       {
@@ -2600,7 +2600,7 @@ checkUserInputConsistency (LALStatus *lstat)
         ABORT (lstat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
       }
 
-    if ( !useGridFile && !(haveSkyRegion || haveAlphaDelta) )
+    if ( !useSkyGridFile && !(haveSkyRegion || haveAlphaDelta) )
       {
         LogPrintf (LOG_CRITICAL, "Need sky-region: either use (Alpha,Delta) or skyRegion!\n\n");
         ABORT (lstat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
@@ -2611,17 +2611,17 @@ checkUserInputConsistency (LALStatus *lstat)
 		       " OR skyRegion!\n\n");
         ABORT (lstat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
       }
-    if ( useGridFile && !haveGridFile )
+    if ( useSkyGridFile && !haveSkyGridFile )
       {
-        LogPrintf (LOG_CRITICAL, "ERROR: gridType=FILE, but no skyGridFile specified!\n\n");
+        LogPrintf (LOG_CRITICAL, "ERROR: gridType=(FILE|METRIC_SKYFILE), but no skyGridFile specified!\n\n");
         ABORT (lstat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);  
       }
-    if ( !useGridFile && haveGridFile )
+    if ( !useSkyGridFile && haveSkyGridFile )
       {
         LALWarning (lstat, "WARNING: skyGridFile was specified but not needed ..."
 		    " will be ignored\n");
       }
-    if ( useGridFile && (haveSkyRegion || haveAlphaDelta) )
+    if ( useSkyGridFile && (haveSkyRegion || haveAlphaDelta) )
       {
         LALWarning (lstat, "WARNING: We are using skyGridFile, but sky-region was"
 		    " also specified ... will be ignored!\n");

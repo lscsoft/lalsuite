@@ -164,7 +164,7 @@ InitDopplerScan( LALStatus *status,
   ASSERT ( init->gridType < GRID_LAST, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
   
   /* trap some abnormal input */
-  if ( (init->gridType != GRID_FILE) && (init->searchRegion.skyRegionString == NULL) ) 
+  if ( (init->gridType != GRID_FILE) && (init->gridType != GRID_METRIC_SKYFILE) && (init->searchRegion.skyRegionString == NULL) ) 
     {
       LogPrintf (LOG_CRITICAL, "ERROR: No sky-region was specified!\n\n");
       ABORT (status,  DOPPLERSCANH_ENULL ,  DOPPLERSCANH_MSGENULL );
@@ -182,14 +182,15 @@ InitDopplerScan( LALStatus *status,
   scan->grid = NULL;  
   scan->gridNode = NULL;
   
-  if (init->gridType != GRID_FILE ) {
-    TRY (ParseSkyRegionString(status->statusPtr, &(scan->skyRegion), 
-			      init->searchRegion.skyRegionString), status);
+  if ( (init->gridType != GRID_FILE) && ( init->gridType != GRID_METRIC_SKYFILE) ) 
+    {
+      TRY (ParseSkyRegionString(status->statusPtr, &(scan->skyRegion), 
+				init->searchRegion.skyRegionString), status);
 
-    if (scan->skyRegion.numVertices == 2){ /* anomaly! Allowed are either 1 or >= 3 */
-      ABORT (status, DOPPLERSCANH_E2DSKY, DOPPLERSCANH_MSGE2DSKY);
-    }
-  } /* if gridType != GRID_FILE */
+      if (scan->skyRegion.numVertices == 2){ /* anomaly! Allowed are either 1 or >= 3 */
+	ABORT (status, DOPPLERSCANH_E2DSKY, DOPPLERSCANH_MSGE2DSKY);
+      }
+    } /* if gridType != GRID_FILE || GRID_METRIC_SKYFILE */
 
  
   switch (init->gridType)
@@ -208,6 +209,7 @@ InitDopplerScan( LALStatus *status,
       TRY ( buildMetricGrid (status->statusPtr, &(scan->grid), &(scan->skyRegion), init), status);
       break;
 
+    case GRID_METRIC_SKYFILE:
     case GRID_FILE:
       TRY ( loadSkyGridFile (status->statusPtr, &(scan->grid), init->skyGridFile), status);
       break;
@@ -1487,7 +1489,7 @@ getGridSpacings( LALStatus *status,
   ASSERT ( params != NULL, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );  
   ASSERT ( spacings != NULL, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );  
 
-  if ( params->gridType == GRID_METRIC)	/* use the metric to fix f0/fdot stepsizes */
+  if ( (params->gridType == GRID_METRIC) || (params->gridType == GRID_METRIC_SKYFILE) )	/* use the metric to fix f0/fdot stepsizes */
     {
       /* setup metric parameters */
       metricpar.position.system = COORDINATESYSTEM_EQUATORIAL;
