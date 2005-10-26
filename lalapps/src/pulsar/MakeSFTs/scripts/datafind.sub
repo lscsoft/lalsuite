@@ -4,6 +4,6 @@ arguments = --observatory $(observatory) --url-type file --gps-start-time $(gpss
 getenv = True
 log = $ENV(CONDOR_SUBLOGFILES_PATH)/datafind_$(tagstring).log
 error = logs/datafind_$(tagstring).err
-output = cache/$(macroobservatory)-$(macrogpsstarttime)-$(macrogpsendtime).cache
+output = cache/$(observatory)-$(gpsstarttime)-$(gpsendtime).cache
 notification = never
 queue 1

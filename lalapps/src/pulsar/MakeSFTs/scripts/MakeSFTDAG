@@ -31,41 +31,46 @@ def usage():
   msg = """\
 Usage: MakeSFTDAG [options]
 
-  -h, --help                display this message
-  -s, --gps-start-time      GPS start time of data segment
-  -e, --gps-end-time        GPS end time of data segment
-  -a, --analysis-start-time GPS start time of data from which to generate SFTs
-  -b, --analysis-end-time   GPS end time of data from which to generate SFTs
-  -f, --dag-file            filename for .dag file (excluding the .dag)
-  -t, --aux-path            path to auxiliary data files
-  -G, --tag-string          tag string used in names of various files unique to jobs run under DAG
-  -d, --input-data-type     input data type for use with LSCdataFind --type option
-  -k  --filter-knee-freq    high pass filter knee frequency used on time domain data before generating SFTs.
-  -T  --time-baseline       time baseline of SFTs  (e.g., 60 or 1800 seconds)
-  -p  --output-sft-path     path to output SFTs
-  -C  --cache-path          path to cache files (cache files will follow a naming convention based on analysis times)
-  -N  --channel-name        name of input time-domain channel to read from frames
-  -r  --sample-rate         sample rate of input time-domain channel
-  -w  --window-type         type of windowing of time-domain to do before generating SFTs (currently unused)
-  -v, --sft-ver             sft version to output (1 or 2).
-  -m, --max-num-per-node    maximum number of SFTs to generate on one node (this and next option control max number of parallel jobs)
-  -L, --max-length-all-jobs maximum amount of data to process, in seconds
-  -g, --segment-file        alternative file with segments to use, rather than input times. (currently unused)
-  -H  --use-hot             input data is from h(t) calibrated frames (h of t = hot!) (0 or 1).
+  -h, --help                 display this message
+  -s, --gps-start-time       (optional) GPS start time of data segment (unused except by onasys)
+  -e, --gps-end-time         (optional) GPS end time of data segment (unused except by onasys)
+  -a, --analysis-start-time  GPS start time of data from which to generate SFTs (optional and unused if a segment file is given)
+  -b, --analysis-end-time    GPS end time of data from which to generate SFTs (optional and unused if a segment file is given)
+  -f, --dag-file             filename for .dag file (excluding the .dag)
+  -t, --aux-path             (optional) path to auxiliary data files (unused except by onasys)
+  -G, --tag-string           tag string used in names of various files unique to jobs that will run under the DAG
+  -d, --input-data-type      input data type for use with the LSCdataFind --type option
+  -x, --extra-datafind-time  (optional) extra time to subtract/add from/to start/end time arguments of LSCdataFind (default is 0)
+  -k  --filter-knee-freq     high pass filter knee frequency used on time domain data before generating SFTs
+  -T  --time-baseline        time baseline of SFTs  (e.g., 60 or 1800 seconds)
+  -p  --output-sft-path      path to output SFTs
+  -C  --cache-path           (optional) path to cache files that will be produced by LSCdataFind (default is $PWD/cache; this directory is created if it does not exist and must agree with that given in .sub files)
+  -O  --log-path             (optional) path to some log and error files (default is $PWD/logs; this directory is created if it does not exist and should agree with that given in .sub files)
+  -N  --channel-name         name of input time-domain channel to read from frames
+  -r  --sample-rate          (optional) sample rate of input time-domain channel (default is 16384; currently unused)
+  -w  --window-type          (optional) type of windowing of time-domain to do before generating SFTs (1 = Tukey, 2 = Hann; default is 1; currently MakeSFT code defaults to option 1 regardless)
+  -v, --sft-ver              (optional) sft version to output (1 or 2; default is 1; currently MakeSFT code defaults to option 1 regardless)
+  -m, --max-num-per-node     maximum number of SFTs to generate on one node
+  -L, --max-length-all-jobs  maximum total amount of data to process, in seconds (optional and unused if a segment file is given)
+  -g, --segment-file         alternative file with segments to use, rather than the input times.
+  -l, --min-seg-length       (optional) minimum length segments to process in seconds (used only if a segment file is given; default is 0)
+  -H  --use-hot              input data is from h(t) calibrated frames (h of t = hot!) (0 or 1).
 """
   print >> sys.stderr, msg
 
 #
 # FUNCTION THAT WRITE ONE JOB TO DAG FILE
 #
-def writeToDag(dagFID, nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, useHoT, tagString):
+def writeToDag(dagFID, nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, extraDatafindTime, useHoT, tagString):
   LSCdataFind = 'LSCdataFind_%i' % nodeCount
   MakeSFTs    = 'MakeSFTs_%i' % nodeCount
+  startTimeDatafind = startTimeThisNode - extraDatafindTime
+  endTimeDatafind = endTimeThisNode + extraDatafindTime
   tagStringOut = '%s_%i' % (tagString, nodeCount)
-  cacheFile   = '%s/%s-%s-%s.cache' % (cachePath, site,startTimeThisNode,endTimeThisNode)
+  cacheFile   = '%s/%s-%s-%s.cache' % (cachePath, site,startTimeDatafind,endTimeDatafind)
   dagFID.write('JOB %s datafind.sub\n' % LSCdataFind)
   dagFID.write('RETRY %s 10\n' % LSCdataFind)
-  dagFID.write('VARS %s gpsstarttime="%s" gpsendtime="%s" observatory="%s" inputdatatype="%s" tagstring="%s"\n' % (LSCdataFind, startTimeThisNode, endTimeThisNode, site, inputDataType, tagStringOut))
+  dagFID.write('VARS %s gpsstarttime="%s" gpsendtime="%s" observatory="%s" inputdatatype="%s" tagstring="%s"\n' % (LSCdataFind, startTimeDatafind, endTimeDatafind, site, inputDataType, tagStringOut))
   dagFID.write('JOB %s MakeSFTs.sub\n' % MakeSFTs)
   dagFID.write('RETRY %s 1\n' % MakeSFTs)
   argList = '-f %s -t %s -p %s -C %s -s %s -e %s -N %s' %(filterKneeFreq, timeBaseline, outputSFTPath, cacheFile, startTimeThisNode, endTimeThisNode, channelName)
@@ -76,9 +81,9 @@ def writeToDag(dagFID, nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, c
 #
 # MAIN CODE START HERE 
 #
- 
+
 # parse the command line options
-shortop = "s:e:a:b:f:t:G:d:k:T:p:C:N:r:w:v:m:L:g:hH"
+shortop = "s:e:a:b:f:t:G:d:x:k:T:p:C:O:N:r:w:v:m:L:g:l:hH"
 longop = [
   "help",
   "gps-start-time=",
@@ -89,17 +94,20 @@ longop = [
   "aux-path=",
   "tag-string=",
   "input-data-type=",
+  "extra-datafind-time=",
   "filter-knee-freq=",
   "time-baseline=",
   "output-sft-path=",
   "cache-path=",
+  "log-path=",
   "channel-name=",
   "sample-rate=",
   "window-type=",
   "sft-ver=",
   "max-num-per-node=",
-  "max-length-all-jobs",
-  "segment-file",
+  "max-length-all-jobs=",
+  "segment-file=",
+  "min-seg-length=",
   "use-hot",
   ]
 
@@ -110,8 +118,6 @@ except getopt.GetoptError:
   sys.exit(1)
 
 # initialize with default values or with None
-config_file = None
-log_path = None
 gpsStartTime = None
 gpsEndTime = None
 analysisStartTime = None
@@ -120,17 +126,20 @@ dagFileName = None
 auxPath = None
 tagString = None
 inputDataType = None
+extraDatafindTime = 0L
 filterKneeFreq = -1
 timeBaseline = None
 outputSFTPath = None
-cachePath = None
+cachePath = "cache"
+logPath = "logs"
 channelName = None
-sampleRate = None
-windowType = None
-sftVersion = None
+sampleRate = 16384
+windowType = 1
+sftVersion = 1
 maxNumPerNode = None
 maxLengthAllJobs = None
 segmentFile = None
+minSegLength = 0L
 useHoT = False
 
 for o, a in opts:
@@ -153,28 +162,34 @@ for o, a in opts:
     tagString = a
   elif o in ("-d", "--input-data-type"):
     inputDataType = a
+  elif o in ("-x", "--extra-datafind-time"):
+    extraDatafindTime = long(a)
   elif o in ("-k", "--filter-knee-freq"):
-    filterKneeFreq = long(a)
+    filterKneeFreq = int(a)
   elif o in ("-T", "--time-baseline"):
     timeBaseline = long(a)
   elif o in ("-p", "--output-sft-path"):
     outputSFTPath = a
   elif o in ("-C", "--cache-path"):
     cachePath = a
+  elif o in ("-O", "--log-path"):
+    logPath = a
   elif o in ("-N", "--channel-name"):
     channelName = a
   elif o in ("-r", "--sample-rate"):
-    sampleRate = long(a)
+    sampleRate = int(a)
   elif o in ("-w", "--window-type"):
-    windowType = a
+    windowType = int(a)
   elif o in ("-v", "--sft-ver"):
-    sftVersion = long(a)
+    sftVersion = int(a)
   elif o in ("-m", "--max-num-per-node"):
     maxNumPerNode = long(a)
   elif o in ("-L", "--max-length-all-jobs"):
     maxLengthAllJobs = long(a)
   elif o in ("-g", "--segment-file"):
     segmentFile = a
+  elif o in ("-l", "--min-seg-length"):
+    minSegLength = long(a)
   elif o in ("-H", "--use-hot"):
     useHoT = True
   else:
@@ -182,33 +197,8 @@ for o, a in opts:
     usage()
     sys.exit(1)
 
-if not gpsStartTime:
-  print >> sys.stderr, "No GPS start time specified."
-  print >> sys.stderr, "Use --help for usage details."
-  sys.exit(1)
-
-if not gpsEndTime:
-  print >> sys.stderr, "No GPS end time specified."
-  print >> sys.stderr, "Use --help for usage details."
-  sys.exit(1)
-
-if not analysisStartTime:
-  print >> sys.stderr, "No GPS analysis start time specified."
-  print >> sys.stderr, "Use --help for usage details."
-  sys.exit(1)
-
-if not analysisEndTime:
-  print >> sys.stderr, "No GPS analysis end time specified."
-  print >> sys.stderr, "Use --help for usage details."
-  sys.exit(1)
-
 if not dagFileName:
   print >> sys.stderr, "No dag filename specified."
-  print >> sys.stderr, "Use --help for usage details."
-  sys.exit(1)
-
-if not auxPath:
-  print >> sys.stderr, "No auxilary data path specified."
   print >> sys.stderr, "Use --help for usage details."
   sys.exit(1)
 
@@ -222,6 +212,11 @@ if not inputDataType:
   print >> sys.stderr, "Use --help for usage details."
   sys.exit(1)
 
+if extraDatafindTime < 0L:
+  print >> sys.stderr, "Invalid extra datafind time specified."
+  print >> sys.stderr, "Use --help for usage details."
+  sys.exit(1)
+  
 if filterKneeFreq < 0:
   print >> sys.stderr, "No filter knee frequency specified."
   print >> sys.stderr, "Use --help for usage details."
@@ -242,23 +237,28 @@ if not cachePath:
   print >> sys.stderr, "Use --help for usage details."
   sys.exit(1)
 
+if not logPath:
+  print >> sys.stderr, "No log path specified."
+  print >> sys.stderr, "Use --help for usage details."
+  sys.exit(1)
+
 if not channelName:
   print >> sys.stderr, "No channel name specified."
   print >> sys.stderr, "Use --help for usage details."
   sys.exit(1)
 
-if not sampleRate:
+if sampleRate < 1:
   print >> sys.stderr, "No sample rate specified."
   print >> sys.stderr, "Use --help for usage details."
   sys.exit(1)
   
-if not windowType:
-  print >> sys.stderr, "No window type specified."
+if (windowType != 1) and (windowType != 2):
+  print >> sys.stderr, "Invalid window type specified."
   print >> sys.stderr, "Use --help for usage details."
   sys.exit(1)
 
-if not sftVersion:
-  print >> sys.stderr, "No SFT version specified."
+if (sftVersion != 1) and (sftVersion != 2):
+  print >> sys.stderr, "Invalid SFT version specified."
   print >> sys.stderr, "Use --help for usage details."
   sys.exit(1)
 
@@ -267,47 +267,22 @@ if not maxNumPerNode:
   print >> sys.stderr, "Use --help for usage details."
   sys.exit(1)
 
-if not maxLengthAllJobs:
-  print >> sys.stderr, "No maximum length of all jobs specified."
-  print >> sys.stderr, "Use --help for usage details."
-  sys.exit(1)
-
-# initialize other variable
-config_file = auxPath + '/MakeSFTDAG.ini' 
-log_path = './'
-
-# vet variables for errors:
-if not config_file:
-  print >> sys.stderr, "No configuration file specified."
-  print >> sys.stderr, "Use --help for usage details."
-  sys.exit(1)
-
-if not log_path:
-  print >> sys.stderr, "No log file path specified."
-  print >> sys.stderr, "Use --help for usage details."
-  sys.exit(1)
-  
 # try and make a directory to store the cache files and job logs
-try: os.mkdir('logs')
+try: os.mkdir(logPath)
 except: pass
-try: os.mkdir('cache')
+try: os.mkdir(cachePath)
 except: pass
-
-# create the config parser object and read in the ini file
-#cp = ConfigParser.ConfigParser()
-#cp.read(config_file)
-
-# create a log file that the Condor jobs will write to
-#tempfile.tempdir = log_path
-#tempfile.template = auxPath + '.dag.log.'
-#logfile = tempfile.mktemp()
-#fh = open( logfile, "w" )
-#fh.close()
 
 # Check if segment file was given, else set up one segment from the command line
 segList = [];
 adjustSegExtraTime = False
 if (segmentFile != None):
+
+    if minSegLength < 0L:
+      print >> sys.stderr, "Invalid minimum segment length specified."
+      print >> sys.stderr, "Use --help for usage details."
+      sys.exit(1)
+
     # the next flag causes extra time that cannot be processes to be trimmed from the start and end of a segment
     adjustSegExtraTime = True
     try:
@@ -318,7 +293,10 @@ if (segmentFile != None):
                      oneSeg = [];
                      oneSeg.append(long(splitLine[0]));
                      oneSeg.append(long(splitLine[1]));
-                     segList.append(oneSeg);
+                     if ((oneSeg[1] - oneSeg[1]) >= minSegLength):
+                         segList.append(oneSeg)
+                     else:
+                         pass
                  except:
                      pass
              except:
@@ -331,6 +309,25 @@ if (segmentFile != None):
          print >> sys.stderr, "Error reading or parsing segment file: %s." % segmentFile
          sys.exit(1)
 else:
+    if not analysisStartTime:
+      print >> sys.stderr, "No GPS analysis start time specified."
+      print >> sys.stderr, "Use --help for usage details."
+      sys.exit(1)
+
+    if not analysisEndTime:
+      print >> sys.stderr, "No GPS analysis end time specified."
+      print >> sys.stderr, "Use --help for usage details."
+      sys.exit(1)
+
+    if not maxLengthAllJobs:
+      print >> sys.stderr, "No maximum length of all jobs specified."
+      print >> sys.stderr, "Use --help for usage details."
+      sys.exit(1)
+
+    # Make sure not to exceed maximum allow analysis
+    if (analysisEndTime > analysisStartTime + maxLengthAllJobs):
+       analysisEndTime = analysisStartTime + maxLengthAllJobs
+
     try:
         oneSeg = [];
         oneSeg.append(analysisStartTime);
@@ -341,10 +338,6 @@ else:
         sys.exit(1)
     
 # END if (segmentFile != None)
-
-# Make sure not to exceed maximum allow analysis
-if (analysisEndTime > analysisStartTime + maxLengthAllJobs):
-    analysisEndTime = analysisStartTime + maxLengthAllJobs
 
 # Get the IFO site, which is the first letter of the channel name.
 site = channelName[0]
@@ -391,8 +384,8 @@ for seg in segList:
             else:
                # write jobs to dag for this node
                nodeCount = nodeCount + 1
-               if (nodeCount ==1): startTimeAllNodes = startTimeThisNode
-               writeToDag(dagFID,nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, useHoT, tagString)
+               if (nodeCount == 1): startTimeAllNodes = startTimeThisNode
+               writeToDag(dagFID,nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, extraDatafindTime, useHoT, tagString)
                # Update for next node
                startTimeThisNode = endTimeThisNode
                numThisNode       = 0L
@@ -401,8 +394,8 @@ for seg in segList:
          if (numThisNode > 0L):
             # write jobs to dag for this node
             nodeCount = nodeCount + 1
-            if (nodeCount ==1): startTimeAllNodes = startTimeThisNode
-            writeToDag(dagFID,nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, useHoT, tagString)
+            if (nodeCount == 1): startTimeAllNodes = startTimeThisNode
+            writeToDag(dagFID,nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, extraDatafindTime, useHoT, tagString)
     # END while (endTimeAllNodes < analysisEndTime)
 # END for seg in segList
 
