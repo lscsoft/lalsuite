@@ -643,14 +643,15 @@ int main( int argc, char **argv )
 	return 2;
       }
 
-      if ( strncmp(intext,"### Trigger Statistics:",23) != 0 ) {
+      if ( strncmp(intext,"# Created",9) != 0 ) {
 	printf( "Veto file is not a valid LIGO_LW file nor an"
-		" absGlitch .dat file: %s\n", vFile->filename );
+		" segwizard file: %s\n", vFile->filename );
 	AbortAll( candEnv, vetoFile, nvetofiles, outEnv );
 	return 2;
       }
 
       /*-- If we get here, this seems to be a valid absGlitch .dat file --*/
+      /*candDatFile=vFile->datFile;*/
     }
 
     if ( vFile->datFile == NULL ) {
@@ -691,6 +692,7 @@ int main( int argc, char **argv )
 
   /*-- Open the output file (if any) --*/
   if ( strlen(outFile) > 0 ) {
+
     /*-- Make sure input is a LIGO_LW file --*/
     if ( candDatFile ) {
       printf( "Cannot create an output file unless candidate file"
@@ -753,23 +755,10 @@ int main( int argc, char **argv )
 	if ( intext[0] == '#' ) continue;
 
 	/*-- Parse the line; ignore it if unparsable --*/
-	if ( sscanf( intext, "%*s %*s %*s %s %lf", ttext, &dur ) < 2 )
+	if ( sscanf( intext, "%*s %s %*s %lf", ttext, &dur ) < 2 )
 	  continue;
 
-	/*-- Parse the time text.  We break it up into integer and
-	  fractional parts so that we can subtract the timeBase from the
-	  integer part before forming a floating-point number --*/
-	chptr = strchr( ttext, '.' );
-	if ( chptr == NULL ) {
-	  /*-- This is already an integer --*/
-	  secfrac = 0.0;
-	} else {
-	  /*-- Convert fractional part; append 0 in case it's blank --*/
-	  strcat( ttext, "0" );
-	  secfrac = atof( chptr );
-	  /*-- Re-terminate the string to just keep the integer part --*/
-	  *chptr = '\0';
-	}
+	secfrac=0;
 
 	/*-- If this is the first event, set the time base.  This is a trick
 	  to retain more numerical precision in time values --*/
@@ -783,7 +772,8 @@ int main( int argc, char **argv )
 	  }
 	}
   
-	tCand = (double) ( atoi(ttext) - timeBase ) + secfrac + 0.5*dur;
+	/*tCand = (double) ( atoi(ttext) - timeBase ) + secfrac + 0.5*dur;*/
+	tCand = (double) ( atoi(ttext) - timeBase );
 	/*-- I'm not sure if an "SNR" or "significance" is in the file --*/
 	snrCand = 1.0;
 	chisqCand = 0.0;
@@ -948,23 +938,10 @@ int main( int argc, char **argv )
 	      if ( intext[0] == '#' ) continue;
 
 	      /*-- Parse the line; ignore it if unparsable --*/
-	      if ( sscanf( intext, "%*s %*s %*s %s %lf", ttext, &dur ) < 2 )
+	      if ( sscanf( intext, "%*s %s %*s %lf", ttext, &dur ) < 2 )
 		continue;
 
-	      /*-- Parse the time text.  We break it up into integer and
-		fractional parts so that we can subtract the timeBase from the
-		integer part before forming a floating-point number --*/
-	      chptr = strchr( ttext, '.' );
-	      if ( chptr == NULL ) {
-		/*-- This is already an integer --*/
-		secfrac = 0.0;
-	      } else {
-		/*-- Convert fractional part; append 0 in case it's blank --*/
-		strcat( ttext, "0" );
-		secfrac = atof( chptr );
-		/*-- Re-terminate the string to just keep the integer part --*/
-		*chptr = '\0';
-	      }
+	    secfrac=0;
 
 	      vFile->tLast = (double) ( atoi(ttext) - timeBase ) + secfrac;
 	      vFile->tLastNeg = vFile->tLast + vFile->winNeg;
@@ -1351,7 +1328,7 @@ ___Start__ _Dur_ __Veto__used__used% __Cand___cut___cut% _Clus___cut__cut% dead%
     if ( jRange < nRange ) {
       printf( "%10.0lf %5.0lf", timeBaseD+cRange->t1, cRange->secs );
     } else {
-      printf( "   Total %7.0lf", cRange->secs );
+      printf( "   Total (SNR cut: %5.1f) %7.0lf", snrcut, cRange->secs );
     }
 
     printf( " %6d %6d", cRange->nVeto, cRange->nVetoUsed );
