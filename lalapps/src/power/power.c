@@ -79,6 +79,7 @@ static struct {
  	CHAR *simCacheFile;         /* name of the sim waveform cache file */
  	CHAR *simdirname;           /* name of the dir. with the sim. wave */
 
+ 	REAL4 simDistance;          /* Distance at which the sim waveforms have been generated */
 	int cluster;                /* TRUE == perform clustering          */
 	int estimateHrss;           /* TRUE == estimate hrss               */
 	CHAR *comment;              /* user comment                        */
@@ -223,6 +224,7 @@ static void print_usage(char *program)
 "	 --resample-rate <Hz>\n" \
 "       [--sim-cache <sim cache file>]\n" \
 "       [--sim-seconds <sim seconds>]\n" \
+"       [--sim-distance <sim distance(Kpc)>]\n" \
 "	[--siminjection-file <file name>]\n" \
 "	[--seed <seed>]\n" \
 "	 --tile-stride-fraction <fraction>\n" \
@@ -408,7 +410,7 @@ void parse_command_line(
 		{"calibrated-data",	required_argument, NULL,           'J'},
 		{"calibration-cache",   required_argument, NULL,           'B'},
 		{"channel-name",        required_argument, NULL,           'C'},
-		{"cluster",             no_argument, &options.cluster,    TRUE},
+		{"cluster",             no_argument, &options.cluster,      TRUE},
 		{"estimatehrss",        no_argument, &options.estimateHrss, TRUE},
 		{"debug-level",         required_argument, NULL,           'D'},
 		{"max-event-rate",      required_argument, NULL,           'F'},
@@ -435,8 +437,9 @@ void parse_command_line(
 		{"resample-rate",       required_argument, NULL,           'e'},
 		{"sim-cache",           required_argument, NULL,           'q'},
 		{"siminjection-file",   required_argument, NULL,           't'},
+		{"sim-distance",        required_argument, NULL,           'u'},
 		{"seed",                required_argument, NULL,           'c'},
-		{"tile-stride-fraction", required_argument, NULL,           'f'},
+		{"tile-stride-fraction", required_argument, NULL,          'f'},
 		{"lnthreshold",         required_argument, NULL,           'g'},
 		{"useoverwhitening",    no_argument, &useoverwhitening,   TRUE},  
 		{"user-tag",            required_argument, NULL,           'h'},
@@ -482,6 +485,7 @@ void parse_command_line(
 	XLALINT8NSToGPS(&options.startEpoch, 0);	/* impossible */
 	XLALINT8NSToGPS(&options.stopEpoch, 0);	/* impossible */
 
+	options.simDistance = 10000;    /* default (10 Mpc) */
 	options.simCacheFile = NULL;	/* default */
 	options.simdirname = NULL;      /* default */
 
@@ -771,6 +775,16 @@ void parse_command_line(
 		case 't':
 		  simInjectionFile = optarg;
 		  ADD_PROCESS_PARAM("string");
+		  break;
+
+		case 'u':
+		  options.simDistance = atof(optarg);
+		if(options.simDistance <= 0.0) {
+			sprintf(msg, "must not be zero/negative (%f Kpc specified), check the specification file for the generation of the sim waveforms to get the distance value", options.simDistance);
+			print_bad_argument(argv[0], long_options[option_index].name, msg);
+			args_are_bad = TRUE;
+		}
+		  ADD_PROCESS_PARAM("float");
 		  break;
 
 		/* option sets a flag */
@@ -1393,16 +1407,15 @@ static void add_sim_injections(
 
 	  /* copy the plus and cross data properly scaled for distance.
 	   *
-	   * NOTE: The waveforms in the frames are always produced at
-	   * distance of 10000 Kpc. However the distance in the 
-	   * parameter file, BBHWaveGen.in, shu'd be 1000 Kpc., since 
-	   * in the wave generation script the definition of kpc 
-	   * is 1 kpc = 3.086e20 m . where as the right definition is
-	   * 1 kpc = 3.086e19 m.
+	   * NOTE: 
+	   * options.simDistance specify the distance at which the simulated waveforms
+	   * are produced. Check that the specified distance is 10 times of the distance
+	   * as in parameter file, BBHWaveGen.in. Since in the wave generation 
+	   * script 1 kpc = 3.086e20 m where as the right definition is 1 kpc = 3.086e19 m.
 	   */
 	  for( i = 0; i < n; i++){
-	    *(aData++) = plusseries->data->data[i] * 10000/ simBurst->distance;
-	    *(aData++) = crossseries->data->data[i] * 10000/ simBurst->distance;
+	    *(aData++) = plusseries->data->data[i] * options.simDistance / simBurst->distance;
+	    *(aData++) = crossseries->data->data[i] * options.simDistance / simBurst->distance;
 	  }
 
 	  /* must set the epoch of signal since it's used by coherent GW */
