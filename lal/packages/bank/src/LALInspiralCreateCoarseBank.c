@@ -1467,9 +1467,14 @@ LALInspiralCreateBCVBank (
   LALSCreateVectorSequence( status->statusPtr, &tempList, &in );
   CHECKSTATUSPTR( status );
 
-  if (coarseIn.LowGM  == -2)
+  if (coarseIn.LowGM  == -4)
   {
-    LALInspiralCreateFlatBankS3( status->statusPtr, tempList, &bankParams , coarseIn);
+    LALInspiralCreateFlatBankS3S4( status->statusPtr, tempList, &bankParams , coarseIn);
+    CHECKSTATUSPTR( status );
+  }
+  else if (coarseIn.LowGM  == -2)
+  {
+    LALInspiralCreateFlatBankS3S4( status->statusPtr, tempList, &bankParams , coarseIn);
     CHECKSTATUSPTR( status );
   }
   else 
@@ -1514,9 +1519,9 @@ LALInspiralCreateBCVBank (
    * HighGM 
    * option -2 is used to try hexagonal grid and so on. In that case lowGM is
    * equal to 3 */
-  if (coarseIn.LowGM  == -2)
+  if (coarseIn.LowGM  == -4 || coarseIn.LowGM == -2)
     {
-      LALInspiralBCVBankFcutS3( status->statusPtr, 
+      LALInspiralBCVBankFcutS3S4( status->statusPtr, 
 				list, nlist, coarseIn);
       CHECKSTATUSPTR( status );
     }
@@ -1742,7 +1747,7 @@ PSItoMasses (
 
 /*  <lalVerbatim file="LALInspiralBCVFcutBankCP"> */
 void 
-LALInspiralBCVBankFcutS3 (
+LALInspiralBCVBankFcutS3S4 (
     LALStatus            *status, 
     InspiralTemplateList **list, 
     INT4                *NList, 
@@ -1757,13 +1762,13 @@ LALInspiralBCVBankFcutS3 (
   INT4  nf;
   
 
-  INITSTATUS( status, "LALInspiralBCVBankFcutS3", LALINSPIRALCREATECOARSEBANKC );
+  INITSTATUS( status, "LALInspiralBCVBankFcutS3S4", LALINSPIRALCREATECOARSEBANKC );
 
   nf    = coarseIn.numFcutTemplates;
 
   ndx   = nlist = *NList;
 
-  LowGM         = coarseIn.LowGM  = 3.;
+  LowGM         =  3.;
   HighGM        = coarseIn.HighGM;
 
 
@@ -1950,9 +1955,9 @@ LALEmpiricalPSI2MassesConversion (
 
 
 
-/* <lalVerbatim file="LALInspiralCreateFlatBankS3CP"> */
+/* <lalVerbatim file="LALInspiralCreateFlatBankS3S4CP"> */
 void 
-LALInspiralCreateFlatBankS3 (
+LALInspiralCreateFlatBankS3S4 (
     LALStatus            *status, 
     REAL4VectorSequence  *list, 
     InspiralBankParams   *bankParams,
@@ -1966,10 +1971,16 @@ LALInspiralCreateFlatBankS3 (
   UINT4 nlist = 0;
   INT4 layer  = 1;
   INT4 valid = -1;
-  INITSTATUS( status, "LALInspiralCreateFlatBankS3", 
+  REAL4 xp[8] = {3000, 40000, 100000, 300000, 550000, 550000, 250000,3000};
+  REAL4 yp[8] = {0, -3000, -3000, -2000, -1500, -300, -300, 0};
+  INT4 npol = 8;
+
+  
+  INITSTATUS( status, "LALInspiralCreateFlatBankS3S4", 
       LALINSPIRALCREATECOARSEBANKC );
   ATTATCHSTATUSPTR( status );
 
+  
   /* From the knowledge of the metric and the minimal match 
      find the constant increments bankParams->dx0 and 
      bankParmams->dx1        */
@@ -2004,7 +2015,6 @@ LALInspiralCreateFlatBankS3 (
     break;
   }
 
-
   
   switch (coarseIn.gridSpacing){
   case Hexagonal:
@@ -2033,19 +2043,30 @@ LALInspiralCreateFlatBankS3 (
 	    if ( (x > bankParams->x0Min -dx0/2.) && (y < bankParams->x1Max + dx1/2.) && 
 		 (x < bankParams->x0Max +dx0/2.) && (y > bankParams->x1Min - dx1/2.))
 	      {
-                LALExcludeTemplate(status->statusPtr, &valid, bankParams, x, y);
-                if (valid)
-                {
-                  list->data = (REAL4 *) LALRealloc( list->data, (ndx+2) * sizeof(REAL4) );
-                  if ( !list->data )
-                  {
-                    ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
-                  }
-                  list->data[ndx] = x;
-                  list->data[ndx + 1] = y;
-                  ++nlist;                 
+
+                if (coarseIn.LowGM == -2){
+                  LALExcludeTemplate(status->statusPtr, &valid, bankParams, x, y);
+                }
+                if (coarseIn.LowGM == -4){
+                   
+		  LALInsidePolygon(status->statusPtr, xp, yp, npol, x, y, &valid);
 		}
-	      }
+
+
+                if (valid == 1)
+                    {
+                      list->data = (REAL4 *) LALRealloc( list->data, (ndx+2) * sizeof(REAL4) );
+                      if ( !list->data )
+                        {
+                          ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
+                        }
+                      list->data[ndx] = x;
+                      list->data[ndx + 1] = y;
+                      ++nlist;                 
+                    } 
+                
+	                        
+              } 
 	  }      
       }
       break;
@@ -2077,7 +2098,13 @@ LALInspiralCreateFlatBankS3 (
 		 (x < bankParams->x0Max + dx0/2.) && (y > bankParams->x1Min - dx1/2.))
 	    
 	      {
-		LALExcludeTemplate(status->statusPtr, &valid, bankParams, x, y);
+                if (coarseIn.LowGM == -2){
+                  LALExcludeTemplate(status->statusPtr, &valid, bankParams, x, y);
+                }
+                if (coarseIn.LowGM == -4){
+		  LALInsidePolygon(status->statusPtr, xp, yp, npol, x, y, &valid);
+
+                }
                 if (valid)
                 {
                   list->data = (REAL4 *) LALRealloc( list->data, (ndx+2) * sizeof(REAL4) );
@@ -2243,8 +2270,6 @@ LALSPAValidPosition(LALStatus *status,
 	(*cell)[id1].status = Fertile;
 	(cellEvolution->fertile)=cellEvolution->fertile+1;
 	append(cellList, id1);
-
-  
       }
 
   }
