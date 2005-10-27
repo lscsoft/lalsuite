@@ -1086,7 +1086,8 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
   LALFree(cfg->edat->ephemS);
   LALFree(cfg->edat);
     
-  TRY (LALDDestroyVector (status->statusPtr, &(cfg->fkdot)), status);
+  XLALDestroyREAL8Vector ( cfg->fkdot );
+  XLALDestroyREAL8Vector ( cfg->fkdotBand );
     
   DETATCHSTATUSPTR (status);
   RETURN (status);
