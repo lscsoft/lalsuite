@@ -63,7 +63,7 @@ def create_local_pool(cp):
 
 def create_static_pfn_cache(cp):
   """
-  Function to create a static PFN cache for any files already created.
+  Function to create a static PFN cache for any files needed by not in RLS.
   """
   pass
 
@@ -948,7 +948,7 @@ if inj_file:
   inj_jobs.extend(insp_coh_jobs.values())
 
   for job in inj_jobs:
-    job.add_opt('injection-file',inj_file)
+    job.add_file_opt('injection-file',inj_file)
 
 
 ##############################################################################
