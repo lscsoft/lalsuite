@@ -239,6 +239,7 @@ int main(int argc,char *argv[])
   scanInit.gridType = uvar_gridType;
   scanInit.metricType = uvar_metricType;
   scanInit.metricMismatch = uvar_metricMismatch;
+  scanInit.projectMetric = TRUE;
 
   /*----- figure out total observation time */
   {
