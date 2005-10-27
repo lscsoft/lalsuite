@@ -152,6 +152,7 @@ BOOLEAN uvar_help;
 CHAR *uvar_outputLabel;
 CHAR *uvar_outputFstat;
 CHAR *uvar_outputBstat;
+CHAR *uvar_outputBeamPattern;
 CHAR *uvar_outputLoudest;
 CHAR *uvar_skyGridFile;
 CHAR *uvar_outputSkyGrid;
@@ -200,6 +201,7 @@ int main(int argc,char *argv[])
   SkyPosition thisPoint;
   FILE *fpFstat = NULL;
   FILE *fpBstat = NULL;
+  FILE *fpBeam = NULL;
   UINT4 loopcounter;
   CHAR loudestEntry[512];
   CHAR buf[512];
@@ -309,6 +311,25 @@ int main(int argc,char *argv[])
 	}
     } /* if outputFstat */
 
+  if (uvar_outputBstat)
+    {
+      if ( (fpBstat = fopen (uvar_outputBstat, "wb")) == NULL)
+	{
+	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputBstat);
+	  return (COMPUTEFSTATISTICC_ESYS);
+	}
+    } /* if outputBstat */
+
+  if (uvar_outputBeamPattern)
+    {
+      if ( (fpBeam = fopen (uvar_outputBeamPattern, "wb")) == NULL)
+	{
+	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputBeamPattern);
+	  return (COMPUTEFSTATISTICC_ESYS);
+	}
+    } /* if outputBeamPattern */
+
+
 
 
   if (lalDebugLevel) printf ("\nStarting main search-loop.. \n");
@@ -336,6 +357,7 @@ int main(int argc,char *argv[])
 
       nFreq =  (UINT4)(uvar_FreqBand  / GV.dFreq + 0.5) + 1;  
       nf1dot = (UINT4)(uvar_f1dotBand / GV.df1dot+ 0.5) + 1; 
+
       /*----- loop over first-order spindown values */
       for (if1dot = 0; if1dot < nf1dot; if1dot ++)
 	{
@@ -462,6 +484,19 @@ int main(int argc,char *argv[])
 	      
 	    } /* for i < nBins: loop over frequency-bins */
 	  
+
+	  /* experimental: output beam-pattern over the sky [only 1st detector!] */
+	  if ( fpBeam )
+	    {
+	      fprintf ( fpBeam, "%8.7f %8.7f %g %g %g %g\n", 
+			thisPoint.longitude, thisPoint.latitude, 
+			GV.ifos.amcoe[0]->A,
+			GV.ifos.amcoe[0]->B,
+			GV.ifos.amcoe[0]->C,
+			GV.ifos.amcoe[0]->D );
+	    }
+
+
 	} /* For GV.spinImax: loop over spindowns */
       
       loopcounter ++;
@@ -484,6 +519,11 @@ Search progress: %5.1f%%", (100.0* loopcounter / thisScan.numGridPoints));
       fpBstat = NULL;
     }
 
+  if ( fpBeam )
+    {
+      fclose(fpBeam);
+      fpBeam = NULL;
+    }
 
   /* now write loudest canidate into separate file ".loudest" */
   if ( uvar_outputLoudest )
@@ -564,6 +604,7 @@ initUserVars (LALStatus *status)
 
   uvar_outputFstat = NULL;
   uvar_outputBstat = NULL;
+  uvar_outputBeamPattern = NULL;
 
   uvar_skyGridFile = NULL;
 
@@ -609,6 +650,7 @@ initUserVars (LALStatus *status)
   LALregSTRINGUserVar(status,	outputBstat,	 0,  UVAR_OPTIONAL, "Output-file for 'B-statistic' field over the parameter-space");
 
   /* more experimental and unofficial stuff follows here */
+  LALregSTRINGUserVar(status,	outputBeamPattern, 0,  UVAR_DEVELOPER, "Output-file beam-pattern [A,B,C,D] over the sky" );
   LALregINTUserVar (status, 	SSBprecision,	 0,  UVAR_DEVELOPER, "Precision to use for time-transformation to SSB: 0=Newtonian 1=relativistic");
   LALregINTUserVar(status, 	RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");
   LALregINTUserVar(status,	Dterms,		't', UVAR_DEVELOPER, "Number of terms to keep in Dirichlet kernel sum");
