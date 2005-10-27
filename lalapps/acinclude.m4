@@ -164,6 +164,21 @@ fi
 AC_MSG_RESULT([no]),
 AC_MSG_RESULT([unknown]) ) ] )
 
+AC_DEFUN([LALAPPS_ENABLE_NIGHTLY],[AC_ARG_ENABLE(
+      [nightly],
+      [  --enable-nightly        nightly build [default=no] ],
+      [ case "${enableval}" in
+        yes) NIGHTLY_VERSION=`date +"%Y%m%d"`
+          VERSION="${VERSION}.${NIGHTLY_VERSION}" ;;
+        no)  NIGHTLY_VERSION="";;
+        *)   NIGHTLY_VERSION="${enableval}"
+          VERSION="${VERSION}.${NIGHTLY_VERSION}" ;;
+        esac ],
+      [ NIGHTLY_VERSION="" ] )
+  AC_SUBST(NIGHTLY_VERSION)
+])
+
+
 
 # pkg.m4 - Macros to locate and utilise pkg-config.            -*- Autoconf -*-
 # 
