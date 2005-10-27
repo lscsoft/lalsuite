@@ -447,7 +447,10 @@ Search progress: %5.1f%%", (100.0* loopcounter / thisScan.numGridPoints));
     } /*  while SkyPos : loop over skypositions */
   
   if (uvar_outputFstat && fpOut)
-    fclose (fpOut);
+    {
+      fprintf (fpOut, "%%DONE\n");
+      fclose (fpOut);
+    }
 
   /* now write loudest canidate into separate file ".loudest" */
   if ( uvar_outputLoudest )
