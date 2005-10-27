@@ -1372,12 +1372,11 @@ static void add_sim_injections(
 	  end = start;
 	  XLALGPSAdd(&end, simDuration);
 
-	  options.getcaltimeseries = FALSE;
 	  /* Get the plus time series */
-	  plusseries = get_time_series(stat, options.simdirname, options.simCacheFile, pluschan, start, end, lengthlimit, options.getcaltimeseries );
+	  plusseries = get_time_series(stat, options.simdirname, options.simCacheFile, pluschan, start, end, lengthlimit, FALSE);
 	  
 	  /* Get the cross time series */
-	  crossseries = get_time_series(stat, options.simdirname, options.simCacheFile, crosschan, start, end, lengthlimit, options.getcaltimeseries  );
+	  crossseries = get_time_series(stat, options.simdirname, options.simCacheFile, crosschan, start, end, lengthlimit, FALSE);
 	  
 	  /* write diagnostic info to disk */
 	  if(options.printData){
