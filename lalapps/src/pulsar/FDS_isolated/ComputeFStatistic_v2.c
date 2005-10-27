@@ -151,6 +151,7 @@ CHAR *uvar_DataFiles2;
 BOOLEAN uvar_help;
 CHAR *uvar_outputLabel;
 CHAR *uvar_outputFstat;
+CHAR *uvar_outputBstat;
 CHAR *uvar_outputLoudest;
 CHAR *uvar_skyGridFile;
 CHAR *uvar_outputSkyGrid;
@@ -197,7 +198,8 @@ int main(int argc,char *argv[])
   DopplerScanState thisScan = empty_DopplerScanState; /* current state of the Doppler-scan */
   DopplerPosition dopplerpos;		/* current search-parameters */
   SkyPosition thisPoint;
-  FILE *fpOut=NULL;
+  FILE *fpFstat = NULL;
+  FILE *fpBstat = NULL;
   UINT4 loopcounter;
   CHAR loudestEntry[512];
   CHAR buf[512];
@@ -290,13 +292,24 @@ int main(int argc,char *argv[])
    * we open and prepare the output-file here */
   if (uvar_outputFstat)
     {
-      if ( (fpOut = fopen (uvar_outputFstat, "wb")) == NULL)
+      if ( (fpFstat = fopen (uvar_outputFstat, "wb")) == NULL)
 	{
 	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputFstat);
-	  exit(-1);
+	  return (COMPUTEFSTATISTICC_ESYS);
 	}
     } /* if outputFstat */
   
+  if (uvar_outputBstat)
+    {
+      if ( (fpBstat = fopen (uvar_outputBstat, "wb")) == NULL)
+	{
+	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputBstat);
+	  return (COMPUTEFSTATISTICC_ESYS);
+	}
+    } /* if outputFstat */
+
+
+
   if (lalDebugLevel) printf ("\nStarting main search-loop.. \n");
   
   /*----------------------------------------------------------------------
@@ -336,6 +349,7 @@ int main(int argc,char *argv[])
 	      REAL4 At = 0.0, Bt = 0.0, Ct = 0.0, Dt = 0.0;
 	      REAL4 FaRe = 0.0, FaIm = 0.0, FbRe = 0.0, FbIm = 0.0;
 	      REAL8 Fstat;
+	      REAL8 Bstat;
 	      UINT4 M;
 	
 
@@ -412,6 +426,16 @@ int main(int argc,char *argv[])
 	      Fstat = fact * (Bt * (FaRe*FaRe + FaIm*FaIm) 
 			      + At * (FbRe*FbRe + FbIm*FbIm) 
 			      - 2.0f * Ct *(FaRe*FbRe + FaIm*FbIm) );
+
+
+	      /* calculate the baysian-marginalized 'B-statistic' */
+	      if ( fpBstat )
+		{
+		  Bstat = exp( Fstat ) / Dt ;
+		  fprintf (fpBstat, "%16.12f %8.7f %8.7f %.17g %10.6g\n", 
+			   GV.fkdot->data[0], dopplerpos.Alpha, dopplerpos.Delta, GV.fkdot->data[1], 
+			   Bstat );
+		}
 	      
 	      /* now, if user requested it, we output ALL F-statistic results above threshold */
 	      if ( uvar_outputFstat || uvar_outputLoudest )
@@ -424,8 +448,8 @@ int main(int argc,char *argv[])
 				   freq, dopplerpos.Alpha, dopplerpos.Delta, 
 				   GV.fkdot->data[1], 2.0 * Fstat);
 		      buf[511] = 0;
-		      if ( fpOut )
-			fprintf (fpOut, buf );
+		      if ( fpFstat )
+			fprintf (fpFstat, buf );
 		    } /* if F > threshold */
 		}  
 	      
@@ -446,11 +470,19 @@ Search progress: %5.1f%%", (100.0* loopcounter / thisScan.numGridPoints));
       
     } /*  while SkyPos : loop over skypositions */
   
-  if (uvar_outputFstat && fpOut)
+  if ( fpFstat )
     {
-      fprintf (fpOut, "%%DONE\n");
-      fclose (fpOut);
+      fprintf (fpFstat, "%%DONE\n");
+      fclose (fpFstat);
+      fpFstat = NULL;
     }
+  if ( fpBstat )
+    {
+      fprintf (fpBstat, "%%DONE\n");
+      fclose (fpBstat);
+      fpBstat = NULL;
+    }
+
 
   /* now write loudest canidate into separate file ".loudest" */
   if ( uvar_outputLoudest )
@@ -530,6 +562,7 @@ initUserVars (LALStatus *status)
   uvar_outputLabel = NULL;
 
   uvar_outputFstat = NULL;
+  uvar_outputBstat = NULL;
 
   uvar_skyGridFile = NULL;
 
@@ -572,6 +605,7 @@ initUserVars (LALStatus *status)
   LALregREALUserVar(status,	refTime,	 0,  UVAR_OPTIONAL, "SSB reference time for pulsar-paramters");
   LALregREALUserVar(status, 	dopplermax, 	'q', UVAR_OPTIONAL, "Maximum doppler shift expected");  
   LALregSTRINGUserVar(status,	outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for F-statistic field over the parameter-space");
+  LALregSTRINGUserVar(status,	outputBstat,	 0,  UVAR_OPTIONAL, "Output-file for 'B-statistic' field over the parameter-space");
 
   /* more experimental and unofficial stuff follows here */
   LALregINTUserVar (status, 	SSBprecision,	 0,  UVAR_DEVELOPER, "Precision to use for time-transformation to SSB: 0=Newtonian 1=relativistic");
