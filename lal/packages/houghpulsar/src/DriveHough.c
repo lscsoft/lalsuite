@@ -352,11 +352,13 @@ void LALHOUGHupdateSpacePHMDdn  (LALStatus            *status,
 }
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+/** Calculates the total hough map for a given trajectory in the 
+    time-frequency plane and a set of partial hough map derivatives */ 
 /* *******************************  <lalVerbatim file="DriveHoughD"> */
 void LALHOUGHConstructHMT  (LALStatus                  *status, 
-			    HOUGHMapTotal              *ht,
-			    UINT8FrequencyIndexVector  *freqInd,
-			    PHMDVectorSequence         *phmdVS)
+			    HOUGHMapTotal              *ht, /**< The output hough map */
+			    UINT8FrequencyIndexVector  *freqInd, /**< time-frequency trajectory */ 
+			    PHMDVectorSequence         *phmdVS /**< set of partial hough map derivatives */)
 { /*   *********************************************  </lalVerbatim> */
 
 
@@ -382,7 +384,7 @@ void LALHOUGHConstructHMT  (LALStatus                  *status,
 
   ASSERT (phmdVS->phmd,  status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
   ASSERT (freqInd->data, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
- /* -------------------------------------------   */
+  /* -------------------------------------------   */
 
   /* Make sure there is no size mismatch */
   ASSERT (freqInd->length == phmdVS->length, status, 
