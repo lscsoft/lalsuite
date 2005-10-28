@@ -47,10 +47,10 @@ int main() {
     memset( &ppnParams, 0, sizeof(PPNParamStruc) );
 
     /* --- first we fill the SimInspiral structure --- */
-    injParams.mass1 		= 14.0;
-    injParams.mass2 		= 10.0;
-    injParams.f_final           = 1000.0;
-    injParams.f_lower 		= 40.0;
+    injParams.mass1 		= 100.0;
+    injParams.mass2 		= 1.4;
+    injParams.f_final           = 500.0;
+    injParams.f_lower 		= 10.0;
     
     LALSnprintf( injParams.waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), "SpinTaylortwoPN" );
     
@@ -77,7 +77,7 @@ int main() {
     }
 
     /* --- and finally save in a file --- */
-    outputfile = fopen("wave1.dat","a");
+    outputfile = fopen("wave1.dat","w");
 
     length 	= thewaveform.phi->data->length;
     dt 		= thewaveform.phi->deltaT;
