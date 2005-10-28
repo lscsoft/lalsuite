@@ -68,7 +68,7 @@ static int isbinaryexp(const char *s)
  * Parse an ASCII string into a LIGOTimeGPS structure.
  */
 
-int XLALStrToGPS(LIGOTimeGPS *time, const char *nptr, char **endptr)
+int XLALStrToGPS(LIGOTimeGPS *t, const char *nptr, char **endptr)
 {
 	const char *func = "XLALStrToGPS";
 	int olderrno;
@@ -111,7 +111,7 @@ int XLALStrToGPS(LIGOTimeGPS *time, const char *nptr, char **endptr)
 		base = 10;
 	} else {
 		/* this isn't a recognized number */
-		XLALGPSSet(time, 0, 0);
+		XLALGPSSet(t, 0, 0);
 		return(0);
 	}
 
@@ -209,7 +209,7 @@ int XLALStrToGPS(LIGOTimeGPS *time, const char *nptr, char **endptr)
 	digits[radixpos] = radix;
 
 	/* parse the integer part */
-	XLALINT8NSToGPS(time, sign * strtol(digits, NULL, base) * exppart * 1000000000ll);
+	XLALINT8NSToGPS(t, sign * strtol(digits, NULL, base) * exppart * 1000000000ll);
 
 	/* parse the fractional part */
 	if(errno != ERANGE) {
@@ -223,7 +223,7 @@ int XLALStrToGPS(LIGOTimeGPS *time, const char *nptr, char **endptr)
 			radixpos -= 2;
 			break;
 		}
-		XLALGPSAdd(time, sign * strtod(digits + radixpos, NULL) * exppart);
+		XLALGPSAdd(t, sign * strtod(digits + radixpos, NULL) * exppart);
 	}
 
 	/* free the scratch space */
