@@ -33,50 +33,48 @@ NRCSID( LALSTPNWaveformTestC, "$Id: LALSTPNWaveformTest.c,v 1.1 2004/05/05 20:06
 int main() {
     static LALStatus 	mystatus;
     CoherentGW 		thewaveform;
-    InspiralTemplate 	parameters;
+    SimInspiralTable    injParams;
     PPNParamStruc       ppnParams;
+
     FILE 		*outputfile;
     INT4 		i,length;
     REAL8		dt;
     REAL8 		a1, a2, phi, shift;
 
-    /* --- first we fill the InspiralTemplate structure --- */
-    parameters.mass1 		= 14.0;
-    parameters.mass2 		= 10.0;
-    parameters.fCutoff 		= 1000.0;
-    parameters.fLower 		= 40.0;
-    parameters.approximant 	= SpinTaylor;
-    parameters.massChoice  	= m1Andm2;
-    /* possible orders: newtonian, oneHalfPN, onePN, onePointFivePN,
-       twoPN, twoPointFivePN, threePN, threePointFivePN */
+    memset( &mystatus, 0, sizeof(LALStatus) );
+    memset( &thewaveform, 0, sizeof(CoherentGW) );
+    memset( &injParams, 0, sizeof(SimInspiralTable) );
+    memset( &ppnParams, 0, sizeof(PPNParamStruc) );
 
-    /* twoPointFivePN seems to have termination problems as well as 1 and .5*/
-
-    parameters.order 		= twoPN;
+    /* --- first we fill the SimInspiral structure --- */
+    injParams.mass1 		= 14.0;
+    injParams.mass2 		= 10.0;
+    injParams.f_final           = 1000.0;
+    injParams.f_lower 		= 40.0;
     
-    parameters.distance 	= 1e10;
-    parameters.tSampling 	= 4000;
-    parameters.orbitTheta0 	= 1.5;
-    parameters.orbitPhi0 	= 0.0;
+    LALSnprintf( injParams.waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), "SpinTaylortwoPN" );
+    
+    injParams.distance 	        = 1e10;
+    injParams.theta0            = 1.5;
+    injParams.phi0              = 0.0;
 
-    parameters.spin1[0] 	= 0.3/sqrt(3.0);
-    parameters.spin1[1] 	= 0.86/sqrt(3.0);
-    parameters.spin1[2] 	= 1.53/sqrt(3.0);
+    injParams.spin1x 	= 0.3/sqrt(3.0);
+    injParams.spin1y 	= 0.86/sqrt(3.0);
+    injParams.spin1z 	= 1.53/sqrt(3.0);
 
-    parameters.spin2[0] 	= 0.7;
-    parameters.spin2[1] 	= 0.86;
-    parameters.spin2[2] 	= 1.53;
-
-    /* --- then the coherent structure --- */
-    thewaveform.a 	= 0;
-    thewaveform.f 	= 0;
-    thewaveform.phi 	= 0;
-    thewaveform.shift 	= 0;
+    injParams.spin2x 	= 0.7;
+    injParams.spin2y 	= 0.86;
+    injParams.spin2z 	= 1.53;
+    
+    ppnParams.deltaT = 1.0 / 4096.0;
 
     /* --- now we can call the injection function --- */
-    LALSTPNWaveformForInjection(&mystatus,&thewaveform,&parameters, &ppnParams);
-
-
+    LALGenerateInspiral( &mystatus, &thewaveform, &injParams, &ppnParams );
+    if ( mystatus.statusCode )
+    {
+      fprintf( stderr, "error generating waveform\n" );
+      exit( 1 );
+    }
 
     /* --- and finally save in a file --- */
     outputfile = fopen("wave1.dat","a");
