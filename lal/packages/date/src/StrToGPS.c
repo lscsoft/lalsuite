@@ -163,18 +163,18 @@ int XLALStrToGPS(LIGOTimeGPS *time, const char *nptr, char **endptr)
 
 	/* check for and parse an exponent, performing an adjustment of the
 	 * radix position */
+	exppart = 1;
 	switch(base) {
 	case 10:
 		/* exponent is the number of powers of 10 */
 		if(isdecimalexp(nptr))
-			radixpos += strtol(++nptr, &nptr, 10);
-		exppart = 1;
+			radixpos += strtol(nptr + 1, &nptr, 10);
 		break;
 
 	case 16:
 		/* exponent is the number of powers of 2 */
 		if(isbinaryexp(nptr)) {
-			exppart = strtol(++nptr, &nptr, 10);
+			exppart = strtol(nptr + 1, &nptr, 10);
 			radixpos += exppart / 4;
 			exppart %= 4;
 			if(exppart < 0) {
@@ -182,8 +182,7 @@ int XLALStrToGPS(LIGOTimeGPS *time, const char *nptr, char **endptr)
 				exppart += 4;
 			}
 			exppart = 1 << exppart;
-		} else
-			exppart = 1;
+		}
 		break;
 	}
 
