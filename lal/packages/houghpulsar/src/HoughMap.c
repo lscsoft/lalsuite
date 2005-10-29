@@ -189,10 +189,12 @@ void LALHOUGHInitializeHT (LALStatus      *status,
 
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+/** Adds a hough map derivative into a total hough map derivative WITHOUT 
+    taking into account the weight of the partial hough map */
 /* *******************************  <lalVerbatim file="HoughMapD"> */
-void LALHOUGHAddPHMD2HD (LALStatus      *status,
-			 HOUGHMapDeriv  *hd,  /* the Hough map derivative */
-			 HOUGHphmd      *phmd) /* info from a partial map */ 
+void LALHOUGHAddPHMD2HD (LALStatus      *status, /**< the status pointer */
+			 HOUGHMapDeriv  *hd,  /**< the Hough map derivative */
+			 HOUGHphmd      *phmd) /**< info from a partial map */ 
 { /*   *********************************************  </lalVerbatim> */
 
   INT2     k,j;
@@ -257,6 +259,93 @@ void LALHOUGHAddPHMD2HD (LALStatus      *status,
 
     for(j=yLower; j<=yUpper;++j){
       hd->map[j*(xSide+1) + xPixel[j] ] -= 1;
+    }
+  }
+
+
+  /* -------------------------------------------   */
+  
+  DETATCHSTATUSPTR (status);
+  
+  /* normal exit */
+  RETURN (status);
+}
+
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+/** Adds a hough map derivative into a total hough map derivative taking into
+    account the weight of the partial hough map */
+/* *******************************  <lalVerbatim file="HoughMapD"> */
+void LALHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
+			   HOUGHMapDeriv  *hd,  /**< the Hough map derivative */
+			   HOUGHphmd      *phmd) /**< info from a partial map */ 
+{ /*   *********************************************  </lalVerbatim> */
+
+  INT2     k,j;
+  INT2     yLower, yUpper;
+  UINT2    lengthLeft,lengthRight, xSide,ySide;
+  COORType     *xPixel;
+  HOUGHBorder  *borderP;
+  HoughDT    weight;
+
+   /* --------------------------------------------- */
+  INITSTATUS (status, "LALHOUGHAddPHMD2HD_W", HOUGHMAPC);
+  ATTATCHSTATUSPTR (status); 
+
+  /*   Make sure the arguments are not NULL: */ 
+  ASSERT (hd,   status, HOUGHMAPH_ENULL, HOUGHMAPH_MSGENULL);
+  ASSERT (phmd, status, HOUGHMAPH_ENULL, HOUGHMAPH_MSGENULL);
+  /* -------------------------------------------   */
+  /* Make sure the map contains some pixels */
+  ASSERT (hd->xSide, status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
+  ASSERT (hd->ySide, status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE);
+
+  weight = phmd->weight;
+
+  xSide = hd->xSide;
+  ySide = hd->ySide;
+  
+  /* first column correction */
+  for ( k=0; k< ySide; ++k ){
+    hd->map[k*(xSide+1) + 0] += phmd->firstColumn[k] * weight;
+  }
+
+  lengthLeft = phmd->lengthLeft;
+  lengthRight= phmd->lengthRight;
+
+  /* left borders =>  increase according to weight*/
+  for (k=0; k< lengthLeft; ++k){
+
+    /*  Make sure the arguments are not NULL: (Commented for performance) */ 
+    /*  ASSERT (phmd->leftBorderP[k], status, HOUGHMAPH_ENULL,
+	HOUGHMAPH_MSGENULL); */
+
+    borderP = phmd->leftBorderP[k];
+
+    yLower = (*borderP).yLower;
+    yUpper = (*borderP).yUpper;
+    xPixel =  &( (*borderP).xPixel[0] );
+
+    for(j=yLower; j<=yUpper;++j){
+      hd->map[j *(xSide+1) + xPixel[j] ] += weight;
+    }
+  }
+
+  /* right borders => decrease according to weight*/
+  for (k=0; k< lengthRight; ++k){
+  
+    /*  Make sure the arguments are not NULL: (Commented for performance) */ 
+    /*  ASSERT (phmd->rightBorderP[k], status, HOUGHMAPH_ENULL,
+	HOUGHMAPH_MSGENULL); */
+
+    borderP = phmd->rightBorderP[k];
+  	
+    yLower = (*borderP).yLower;
+    yUpper = (*borderP).yUpper;
+    xPixel =  &( (*borderP).xPixel[0] );
+
+    for(j=yLower; j<=yUpper;++j){
+      hd->map[j*(xSide+1) + xPixel[j] ] -= weight;
     }
   }
 

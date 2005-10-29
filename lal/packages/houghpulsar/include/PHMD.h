@@ -164,7 +164,7 @@ containing the edge effects  when clipping on a finite patch.
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
 
-# include <lal/LUT.h>
+#include <lal/LUT.h>
 
 /*
  *  #include "LALRCSID.h"
@@ -229,27 +229,32 @@ NRCSID (PHMDH, "$Id$");
  * 10. Structure, enum, union, etc., typdefs.
  */
 
+/*  Hough Map derivative pixel type */
+/* typedef CHAR  HoughDT; */
+/*  typedef INT2  HoughDT; */
+  typedef REAL4 HoughDT; /* for weighted hough maps */
+
 /** structure to store peakgrams */
-typedef struct tagHOUGHPeakGram{
-  INT2    timeIndex;  /**< time index of the Peakgram */
-  REAL8   deltaF;     /**< df=1/TCOH */
-  UINT8   fBinIni;    /**< frequency bin of the zero peak (initial offset) */
-  UINT8   fBinFin;    /**< maximum frequency bin of the peakgram */
-  UINT4   length;     /**< number of peaks present in the peakgram  */
-  INT4    *peak;      /**< the peak indexes relative to fBinIni*/
-} HOUGHPeakGram;
+  typedef struct tagHOUGHPeakGram{
+    INT2    timeIndex;  /**< time index of the Peakgram */
+    REAL8   deltaF;     /**< df=1/TCOH */
+    UINT8   fBinIni;    /**< frequency bin of the zero peak (initial offset) */
+    UINT8   fBinFin;    /**< maximum frequency bin of the peakgram */
+    UINT4   length;     /**< number of peaks present in the peakgram  */
+    INT4    *peak;      /**< the peak indexes relative to fBinIni*/
+  } HOUGHPeakGram;
   
   /** partial hough map derivative structure */
 typedef struct tagHOUGHphmd{
-  UINT8          fBin;  /**< frequency bin of this partial map deriv. */
+  UINT8          fBin;  /**< frequency bin of this partial map derivative */
   UINT2          lengthLeft; /**< exact number of Left borders */
   UINT2          lengthRight;/**< exact number of Right borders */
-  UINT2          maxNBorders; /**< maximun number of borders of each type (for
- 					 memory allocation purposes) */
+  UINT2          maxNBorders; /**< maximun number of borders of each type (for memory allocation purposes) */
   HOUGHBorder    **leftBorderP; /**< pointer the borders[x] +1 */
   HOUGHBorder    **rightBorderP; /**< pointer the borders[x] -1 */
   UINT2          ySide;  /**< number of elements of firstColumn */
   UCHAR          *firstColumn; /**< border corrections on 1st column */
+  HoughDT        weight; /**< weighting factor of phmd -- for improving sensitivity */
 } HOUGHphmd;
 
 

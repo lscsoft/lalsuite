@@ -220,13 +220,10 @@ NRCSID (HOUGHMAPH, "$Id$");
  * 10. Structure, enum, union, etc., typdefs.
  */
   
-/*  Hough Map derivative pixel type */
-/* typedef CHAR  HoughDT; */
-typedef INT2  HoughDT;
-
 /* Total Hough Map pixel type */
 /* typedef UCHAR HoughTT; */
-typedef UINT2 HoughTT;
+/*typedef UINT2 HoughTT; */
+  typedef REAL4 HoughTT; /* for weighted hough maps only */
   /* Depending of the number of maps to accumulate, */
   /* if needed change both types  to INT2 or UINT2  */
 
@@ -277,10 +274,16 @@ void LALHOUGHAddPHMD2HD (LALStatus      *status,
 			 HOUGHphmd      *phmd  /* info from a partial map */ 
 			 );  
 
+void LALHOUGHAddPHMD2HD_W (LALStatus      *status,
+			   HOUGHMapDeriv  *hd,  /* the Hough map derivative */
+			   HOUGHphmd      *phmd  /* info from a partial map */ 
+			   );  
+
 void LALHOUGHIntegrHD2HT (LALStatus       *status,
 			  HOUGHMapTotal   *ht,     /* the total Hough map */
 			  HOUGHMapDeriv   *hd /* the Hough map derivative */
-			  );  
+			  );
+  
 void LALHOUGHInitializeHT (LALStatus      *status,
 			  HOUGHMapTotal   *ht,     /* the total Hough map */
 			  HOUGHPatchGrid  *patch      /* patch information */
