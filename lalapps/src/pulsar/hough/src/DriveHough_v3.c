@@ -1,9 +1,28 @@
-/*-----------------------------------------------------------------------
+/*
+ *  Copyright (C) 2005 Badri Krishnan, Alicia Sintes  
  *
- * File Name: DRIVEHOUGHCOLOR.c
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
  *
- * Authors: Krishnan, B. Sintes, A.M., 
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
+ *  You should have received a copy of the GNU General Public License
+ *  along with with program; see the file COPYING. If not, write to the 
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  MA  02111-1307  USA
+ */
+
+/**
+ * \file DriveHough_v3.c
+ * \author Badri Krishnan, Alicia Sintes 
+ * \brief Driver code for performing Hough transform search on non-demodulated
+   data.
+
  * Revision: $Id$
  *
  * History:   Created by Sintes July 04, 2003
@@ -20,7 +39,7 @@
 #include "./timer/cycle_counter/Intel/GCC/cycle_counter.h"
 #endif
 
-NRCSID (DRIVEHOUGHCOLORC, "$Id$");
+NRCSID (DRIVEHOUGH_V3C, "$Id$");
 
 
 /* ***************************************************************
@@ -70,10 +89,16 @@ int main(int argc, char *argv[]){
   static LALDetector         detector;
 
   /* time and velocity vectors and files*/
-  static LIGOTimeGPSVector1   timeV;
+  static LIGOTimeGPSVector   timeV;
   static REAL8Cart3CoorVector velV;
   /*   static REAL8Cart3CoorVector velVmid; */
   static REAL8Vector         timeDiffV;
+
+  /* vector of weights */
+  REAL4Vector weightsV;
+
+  /* ephemeris */
+  EphemerisData    *edat=NULL;
 
   /* hough structures */
   static HOUGHptfLUTVector   lutV; /* the Look Up Table vector*/
@@ -322,8 +347,7 @@ int main(int argc, char *argv[]){
 		 skySizeAlpha + skyCounter,  skySizeDelta + skyCounter);
       }
     
-    fclose(fpsky); 
-    
+    fclose(fpsky);     
   }
   
   /******************************************************************/
@@ -406,8 +430,8 @@ int main(int argc, char *argv[]){
   /* ****************************************************************/
 
   timeV.length = mObsCoh;
-  timeV.time = NULL;  
-  timeV.time = (LIGOTimeGPS *)LALMalloc(mObsCoh*sizeof(LIGOTimeGPS));
+  timeV.data = NULL;  
+  timeV.data = (LIGOTimeGPS *)LALMalloc(mObsCoh*sizeof(LIGOTimeGPS));
   
   pgV.length = mObsCoh;
   pgV.pg = NULL;
@@ -485,8 +509,8 @@ int main(int argc, char *argv[]){
  */
 
       nPeaks = pg1.nPeaks;
-      timeV.time[j].gpsSeconds = pg1.epoch.gpsSeconds;
-      timeV.time[j].gpsNanoSeconds = pg1.epoch.gpsNanoSeconds;
+      timeV.data[j].gpsSeconds = pg1.epoch.gpsSeconds;
+      timeV.data[j].gpsNanoSeconds = pg1.epoch.gpsNanoSeconds;
 
       pgV.pg[j].length = nPeaks;
       pgV.pg[j].peak = NULL;
@@ -518,7 +542,6 @@ int main(int argc, char *argv[]){
     VelocityPar   velPar;
     REAL8     vel[3], tempVel[3]; 
     UINT4     j; 
-    EphemerisData    *edat=NULL;
     
     LALLeapSecFormatAndAcc lsfas = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
     INT4 tmpLeap; /* need this because Date pkg defines leap seconds as
@@ -537,7 +560,7 @@ int main(int argc, char *argv[]){
    (*edat).ephiles.sunEphemeris = uvar_sunEphemeris;
 
     /* Leap seconds for the start time of the run */
-    SUB( LALLeapSecs(&status, &tmpLeap, &(timeV.time[0]), &lsfas), &status);
+    SUB( LALLeapSecs(&status, &tmpLeap, &(timeV.data[0]), &lsfas), &status);
     (*edat).leap = (INT2)tmpLeap;
     /* (*edat).leap = 13;   <<<<<<< Correct this */
 
@@ -546,8 +569,8 @@ int main(int argc, char *argv[]){
     velPar.edat = edat;
     
     for(j=0; j< velV.length; ++j){
-      velPar.startTime.gpsSeconds     = timeV.time[j].gpsSeconds;
-      velPar.startTime.gpsNanoSeconds = timeV.time[j].gpsNanoSeconds;
+      velPar.startTime.gpsSeconds     = timeV.data[j].gpsSeconds;
+      velPar.startTime.gpsNanoSeconds = timeV.data[j].gpsNanoSeconds;
       
       SUB( LALAvgDetectorVel ( &status, vel, &velPar), &status ); 
       
@@ -561,13 +584,13 @@ int main(int argc, char *argv[]){
 
 	/* in case time to calculate velocity i smid time of sft */
 	/* add mid time base to start time of sft */
- 	tempGPS.gpsSeconds = midTimeBaseGPS.gpsSeconds + timeV.time[j].gpsSeconds; 
- 	tempGPS.gpsNanoSeconds = midTimeBaseGPS.gpsNanoSeconds + timeV.time[j].gpsNanoSeconds;  
+ 	tempGPS.gpsSeconds = midTimeBaseGPS.gpsSeconds + timeV.data[j].gpsSeconds; 
+ 	tempGPS.gpsNanoSeconds = midTimeBaseGPS.gpsNanoSeconds + timeV.data[j].gpsNanoSeconds;  
 	
 	/* for debugging purposes */
 	/*      in case time to calculate velocity is start time */
-	/* 	tempGPS.gpsSeconds = timeV.time[j].gpsSeconds;  */
-	/* 	tempGPS.gpsNanoSeconds = timeV.time[j].gpsNanoSeconds;  */
+	/* 	tempGPS.gpsSeconds = timeV.data[j].gpsSeconds;  */
+	/* 	tempGPS.gpsNanoSeconds = timeV.data[j].gpsNanoSeconds;  */
         SUB( LALDetectorVel ( &status, tempVel, &tempGPS, detector, edat), &status ); 
       }
 
@@ -584,11 +607,6 @@ int main(int argc, char *argv[]){
       /*       velVmid.data[j].y = tempVel[1]; */
       /*       velVmid.data[j].z = tempVel[2]; */
     }
-    
-    LALFree(edat->ephemE);
-    LALFree(edat->ephemS);
-    LALFree(edat);
-
   }
 
   /******************************************************************/
@@ -603,14 +621,14 @@ int main(int argc, char *argv[]){
     UINT4   j; 
 
     midTimeBase=0.5*timeBase;
-    ts = timeV.time[0].gpsSeconds;
-    tn = timeV.time[0].gpsNanoSeconds * 1.00E-9;
+    ts = timeV.data[0].gpsSeconds;
+    tn = timeV.data[0].gpsNanoSeconds * 1.00E-9;
     t0=ts+tn;
     timeDiffV.data[0] = midTimeBase;
 
     for(j=1; j< velV.length; ++j){
-      ts = timeV.time[j].gpsSeconds;
-      tn = timeV.time[j].gpsNanoSeconds * 1.00E-9;  
+      ts = timeV.data[j].gpsSeconds;
+      tn = timeV.data[j].gpsNanoSeconds * 1.00E-9;  
       timeDiffV.data[j] = ts+tn - t0 + midTimeBase; 
     }  
   }
@@ -631,7 +649,7 @@ int main(int argc, char *argv[]){
   /*       /\*     read data format:  INT4 INT4  REAL8 REAL8 REAL8 *\/ */
   /*       for (j=0; j<mObsCoh;++j){  */
   /* 	fprintf(fp, "%d %d %g %g %g %g %g %g\n",  */
-  /* 		timeV.time[j].gpsSeconds, timeV.time[j].gpsNanoSeconds, velV.data[j].x, velV.data[j].y,  */
+  /* 		timeV.data[j].gpsSeconds, timeV.data[j].gpsNanoSeconds, velV.data[j].x, velV.data[j].y,  */
   /* 		velV.data[j].z, velVmid.data[j].x, velVmid.data[j].y, velVmid.data[j].z );  */
   
   /* 	fflush(fp);  */
@@ -646,14 +664,21 @@ int main(int argc, char *argv[]){
   /*       /\* read data format:  INT4 INT4 *\/ */
   /*       for (j=0; j<mObsCoh;++j){  */
   /* 	fprintf(fp, "%d %d \n",  */
-  /* 		(timeV.time[j].gpsSeconds),  */
-  /* 		(timeV.time[j].gpsNanoSeconds) );  */
+  /* 		(timeV.data[j].gpsSeconds),  */
+  /* 		(timeV.data[j].gpsNanoSeconds) );  */
   
   /* 	fflush(fp);  */
   /*       }  */
   /*       fclose(fp);  */
   /*  }  */
   
+
+
+  /* *****************/
+  /* set up weights vector */
+  /* *****************/
+  weightsV.length = mObsCoh;
+  weightsV.data = (REAL4 *)LALMalloc(mObsCoh*sizeof(REAL4));
 
   
   /* loop over sky patches */
@@ -665,6 +690,12 @@ int main(int argc, char *argv[]){
       patchSizeX = skySizeDelta[skyCounter];
       patchSizeY = skySizeAlpha[skyCounter];
 
+
+      /* calculate weights */
+      SUB( LALHOUGHInitializeWeights( &status, &weightsV), &status);
+      SUB( LALHOUGHComputeAMWeights( &status, &weightsV, &timeV, &detector, 
+				     edat, alpha, delta), &status);
+				     
 
       /******************************************************************/  
       /* opening the output statistic, and event files */
@@ -880,6 +911,7 @@ int main(int argc, char *argv[]){
 	/************* build the set of  PHMD centered around fBin***********/     
 	phmdVS.fBinMin = fBin-floor(nfSizeCylinder/2.);
 	SUB( LALHOUGHConstructSpacePHMD(&status, &phmdVS, &pgV, &lutV), &status );
+	SUB( LALHOUGHWeighSpacePHMD(&status, &phmdVS, &weightsV), &status);
 	
 	/* ************ initializing the Total Hough map space *********** */   
 	ht.xSide = xSide;
@@ -908,7 +940,7 @@ int main(int argc, char *argv[]){
 	  ht.spinRes.length =0;
 	  ht.spinRes.data = NULL;
 	  for (j=0;j< mObsCoh;++j){	freqInd.data[j]= fBinSearch; } 
-	  SUB( LALHOUGHConstructHMT( &status, &ht, &freqInd, &phmdVS ), &status );
+	  SUB( LALHOUGHConstructHMT_W( &status, &ht, &freqInd, &phmdVS ), &status );
 	  
 	  /* ********************* perfom stat. analysis on the maps ****************** */
 	  SUB( LALHoughStatistics ( &status, &stats, &ht), &status );
@@ -971,7 +1003,7 @@ int main(int argc, char *argv[]){
 		freqInd.data[j] = fBinSearch +floor(timeDiffV.data[j]*f1dis+0.5);
 	      }
 	      
-	      SUB( LALHOUGHConstructHMT(&status,&ht, &freqInd, &phmdVS),&status );
+	      SUB( LALHOUGHConstructHMT_W(&status,&ht, &freqInd, &phmdVS),&status );
 	      
 	      /* ********************* perfom stat. analysis on the maps ****************** */
 	      SUB( LALHoughStatistics ( &status, &stats, &ht), &status );
@@ -1021,6 +1053,7 @@ int main(int argc, char *argv[]){
 	  /* *** shift the search freq. & PHMD structure 1 freq.bin ****** */
 	  ++fBinSearch;
 	  SUB( LALHOUGHupdateSpacePHMDup(&status, &phmdVS, &pgV, &lutV), &status );
+	  SUB( LALHOUGHWeighSpacePHMD( &status, &phmdVS, &weightsV), &status);
 	  
 	}   /* ********>>>>>>  closing second while  <<<<<<<<**********<  */
 	
@@ -1135,10 +1168,16 @@ int main(int argc, char *argv[]){
     for (j=0;j< mObsCoh;++j) LALFree( pgV.pg[j].peak); 
   }
   LALFree(pgV.pg);
-
+  
   LALFree(timeDiffV.data);
-  LALFree(timeV.time);
+  LALFree(timeV.data);
   LALFree(velV.data);
+
+  LALFree(weightsV.data);
+  
+  LALFree(edat->ephemE);
+  LALFree(edat->ephemS);
+  LALFree(edat);
 
   LALFree(skyAlpha);
   LALFree(skyDelta);
@@ -1222,7 +1261,7 @@ int PrintHmap2file(HOUGHMapTotal *ht, CHAR *fnameOut, INT4 iHmap){
 
   for(k=ySide-1; k>=0; --k){
     for(i=0;i<xSide;++i){
-      fprintf( fp ," %d", ht->map[k*xSide +i]);
+      fprintf( fp ," %f", ht->map[k*xSide +i]);
       fflush( fp );
     }
     fprintf( fp ," \n");
@@ -1274,7 +1313,7 @@ int PrintHmap2m_file(HOUGHMapTotal *ht, CHAR *fnameOut, INT4 iHmap){
 
   for(k=ySide-1; k>=0; --k){
     for(i=0;i<xSide;++i){
-      fprintf( fp ," %d", ht->map[k*xSide +i]);
+      fprintf( fp ," %f", ht->map[k*xSide +i]);
       fflush( fp );
     }
     fprintf( fp ," \n");
@@ -1307,7 +1346,7 @@ void PrintHoughEvents (LALStatus       *status,
   INT4     temp;
   REAL8    f0;
   /* --------------------------------------------- */
-  INITSTATUS (status, "PrintHoughEvents", DRIVEHOUGHCOLORC);
+  INITSTATUS (status, "PrintHoughEvents", DRIVEHOUGH_V3C);
   ATTATCHSTATUSPTR (status);
   
  /* make sure arguments are not null */

@@ -1,5 +1,27 @@
-/*-----------------------------------------------------------------------
+/*
+ *  Copyright (C) 2005 Badri Krishnan, Alicia Sintes  
  *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with with program; see the file COPYING. If not, write to the 
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  MA  02111-1307  USA
+ */
+
+/**
+ * \file DriveHoughColor.h
+ * \author Alicia Sintes, Badri Krishnan
+   \brief Header file for non-demodulated Hough search
+
  * File Name: DRIVEHOUGHCOLOR.h
  *
  * Authors: Sintes, A.M., Krishnan, B.
@@ -123,11 +145,6 @@ typedef struct tagREAL8Cart3CoorVector{
   UINT4   	  length; /* number of elements */
   REAL8Cart3Coor  *data; /* x.y.z */
 } REAL8Cart3CoorVector;
-
-typedef struct tagLIGOTimeGPSVector1{
-  UINT4        length; /* number of elements */
-  LIGOTimeGPS  *time; /* the collection of times */
-} LIGOTimeGPSVector1;
 
 /*
  *  Functions Declarations (i.e., prototypes).
