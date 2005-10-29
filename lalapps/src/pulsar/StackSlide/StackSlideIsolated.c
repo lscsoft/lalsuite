@@ -43,11 +43,12 @@ $Id$
 /* 09/06/05 gam; Change params->maxMCfracErr to params->maxMCErr, the absolute error in confidence for convergence. */
 /* 09/08/05 gam; Add Dterms to params used with LALFastGeneratePulsarSFTs. */
 /* 09/12/05 gam; if (params->testFlag & 128) > 0 make BLKs and STKs narrower band based on extra bins */
-/* 09/16/06 gam; In CountOrAssignSkyPosData and MC code, for each DEC adjust deltaRA and numRA to evenly  */
+/* 09/16/05 gam; In CountOrAssignSkyPosData and MC code, for each DEC adjust deltaRA and numRA to evenly  */
 /*               space grid points so that deltaRA used is <= input deltaRA from the command line divided */
 /*               by cos(DEC). This fixes a problem where the last grid point could wrap around the sphere */
 /*               and be closer to the first grid point that the spacing between other grid points.        */
-/* 10/20/06 gam; if ( (params->weightFlag & 8) > 0 ) renorm the BLK (SFT) data up front with the inverse mean absolute value of the BLK data = params->blkRescaleFactor */
+/* 10/20/05 gam; if ( (params->weightFlag & 8) > 0 ) renorm the BLK (SFT) data up front with the inverse mean absolute value of the BLK data = params->blkRescaleFactor */
+/* 10/29/05 gam; Fix bug, when setting up MC sky grid stay in bounds of startRA, stopRA, startDec and stopDec. */
 
 /*********************************************/
 /*                                           */
@@ -67,6 +68,7 @@ $Id$
 /* #define PRINT_MONTECARLOSFT_DATA */
 /* #define PRINTCOMPARISON_INPUTVSMONTECARLOSFT_DATA */
 /* #define DEBUG_RANDOMTRIALPARAMETERS */
+/* #define PRINT_INJECTION_COSIOTA_PSI_PHI_F0_RA_DEC_FDERIVS */
 /* #define DEBUG_LALFASTGENERATEPULSARSFTS */
 /* #define DEBUG_SETFIXED_RANDVAL */
 /* #define PRINT_ONEMONTECARLO_OUTPUTSFT */
@@ -442,6 +444,7 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
   REAL8 startRA  = params->stksldSkyPatchData->startRA;
   REAL8 stopRA   = params->stksldSkyPatchData->stopRA;  /* 09/16/05 gam */
   REAL8 startDec = params->stksldSkyPatchData->startDec;
+  REAL8 stopDec  = params->stksldSkyPatchData->stopDec; /* 10/29/05 gam */
   REAL8 startFDeriv1 = params->startFDeriv1;
   REAL8 startFDeriv2 = params->startFDeriv2;
   REAL8 startFDeriv3 = params->startFDeriv3;
@@ -924,6 +927,7 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
        iDec = 0;
     }
     params->skyPosData[0][1] = startDec + ((REAL8)iDec)*DeltaDec;
+    if (params->skyPosData[0][1] > stopDec) params->skyPosData[0][1] = stopDec; /* 10/29/05 gam; stay in bounds */
     cosTmpDEC = cos(params->skyPosData[0][1]);
     if (cosTmpDEC != 0.0) {
           tmpDeltaRA = DeltaRA/cosTmpDEC;
@@ -943,6 +947,7 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
        iRA = 0;
     }
     params->skyPosData[0][0] = startRA + ((REAL8)iRA)*tmpDeltaRA;
+    if (params->skyPosData[0][0] > stopRA) params->skyPosData[0][0] = stopRA; /* 10/29/05 gam; stay in bounds */
 
     /* 07/29/05 gam; find 3 other surrounding sky positions */
     if (searchSurroundingPts) {
@@ -950,16 +955,20 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
        /* Go to next nearest RA; keep DEC the same */
        if (params->skyPosData[0][0] < tmpRA) {
           params->skyPosData[1][0] = params->skyPosData[0][0] + tmpDeltaRA;
+          if (params->skyPosData[1][0] > stopRA) params->skyPosData[1][0] = stopRA; /* 10/29/05 gam; stay in bounds */
        } else {
           params->skyPosData[1][0] = params->skyPosData[0][0] - tmpDeltaRA;
+          if (params->skyPosData[1][0] < startRA) params->skyPosData[1][0] = startRA; /* 10/29/05 gam; stay in bounds */
        }
        params->skyPosData[1][1] = params->skyPosData[0][1];
        
        /* Go to next nearest DEC; keep RA the same */
        if (params->skyPosData[0][1] < tmpDec) {
           params->skyPosData[2][1] = params->skyPosData[0][1] + DeltaDec;
+          if (params->skyPosData[2][1] > stopDec) params->skyPosData[2][1] = stopDec; /* 10/29/05 gam; stay in bounds */
        } else {
           params->skyPosData[2][1] = params->skyPosData[0][1] - DeltaDec;
+          if (params->skyPosData[2][1] < startDec) params->skyPosData[2][1] = startDec; /* 10/29/05 gam; stay in bounds */
        }
        params->skyPosData[2][0] = params->skyPosData[0][0];
        
@@ -982,8 +991,10 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
        params->skyPosData[3][1] = params->skyPosData[2][1]; /* same DEC as skyPosData[2] */
        if (params->skyPosData[2][0] < tmpRA) {
           params->skyPosData[3][0] = params->skyPosData[2][0] + tmpDeltaRA;
+          if (params->skyPosData[3][0] > stopRA) params->skyPosData[3][0] = stopRA; /* 10/29/05 gam; stay in bounds */
        } else {
           params->skyPosData[3][0] = params->skyPosData[2][0] - tmpDeltaRA;
+          if (params->skyPosData[3][0] < startRA) params->skyPosData[3][0] = startRA; /* 10/29/05 gam; stay in bounds */
        }
     } /* END if (searchSurroundingPts) */
     
@@ -1005,7 +1016,8 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
     pPulsarSignalParams->pulsar.position.latitude = tmpDec;
 
     #ifdef DEBUG_RANDOMTRIALPARAMETERS
-        fprintf(stdout,"\nkSUM = %i, search  RA[0] = %23.10e, inject RA = %23.10e \n",kSUM,params->skyPosData[0][0],pPulsarSignalParams->pulsar.position.longitude);
+        fprintf(stdout,"\nStarting Injection Number %i.\n",kSUM);
+        fprintf(stdout,"kSUM = %i, search  RA[0] = %23.10e, inject RA = %23.10e \n",kSUM,params->skyPosData[0][0],pPulsarSignalParams->pulsar.position.longitude);
         fprintf(stdout,"kSUM = %i, search DEC[0] = %23.10e, inject DEC = %23.10e \n",kSUM,params->skyPosData[0][1],pPulsarSignalParams->pulsar.position.latitude);
         if (searchSurroundingPts) {
           fprintf(stdout,"search  RA[1] = %23.10e \n",params->skyPosData[1][0]);
@@ -1103,7 +1115,7 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
         } /* END if (k == 0) ELSE ... */
 
         #ifdef DEBUG_RANDOMTRIALPARAMETERS
-          fprintf(stdout,"kSUM = %i, search fDeriv[%i] = %23.10e, inject fDeriv[%i] = %23.10e \n",kSUM,k,params->freqDerivData[0][k],k,pPulsarSignalParams->pulsar.spindown->data[k]);
+          fprintf(stdout,"kSUM = %i, search fDeriv[0][%i] = %23.10e, inject pulsar.spindown->data[%i] = %23.10e \n",kSUM,k,params->freqDerivData[0][k],k,pPulsarSignalParams->pulsar.spindown->data[k]);
           fflush(stdout);
         #endif
       } /* END for(k=0;k<params->numSpinDown;k++) */
@@ -1291,6 +1303,16 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
         fprintf(stdout,"iFreq = %i, params->f0SUM = %23.10e, pPulsarSignalParams->pulsar.f0 = %23.10e \n",iFreq,params->f0SUM,pPulsarSignalParams->pulsar.f0);
         fprintf(stdout,"nBinsPerSUM = %i, params->nBinsPerSUM = %i\n",nBinsPerSUM,params->nBinsPerSUM);
         fflush(stdout);	
+    #endif
+    #ifdef PRINT_INJECTION_COSIOTA_PSI_PHI_F0_RA_DEC_FDERIVS
+        fprintf(stdout,"%23.10e %23.10e %23.10e %23.10e %23.10e %23.10e ",cosIota,pPulsarSignalParams->pulsar.psi,pPulsarSignalParams->pulsar.phi0,pPulsarSignalParams->pulsar.f0,pPulsarSignalParams->pulsar.position.longitude,pPulsarSignalParams->pulsar.position.latitude);
+        if (params->numSpinDown > 0) {
+           for(k=0;k<params->numSpinDown;k++) {
+              fprintf(stdout,"%23.10e ",pPulsarSignalParams->pulsar.spindown->data[k]);
+           }
+        }
+        fprintf(stdout,"\n");
+        fflush(stdout);
     #endif
 
     /* 07/14/04 gam; check if using LALComputeSkyAndZeroPsiAMResponse and LALFastGeneratePulsarSFTs */
