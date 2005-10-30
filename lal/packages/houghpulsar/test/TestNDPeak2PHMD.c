@@ -203,7 +203,7 @@ int main(int argc, char *argv[]){
 
   INT4 arg;                         /* Argument counter */
   INT4 i,j,k;                       /* Index counter, etc */
-  UINT4 ii;
+
   REAL8 f0, alpha, delta, veloMod;
   REAL8 patchSizeX, patchSizeY;
 
@@ -475,7 +475,7 @@ int main(int argc, char *argv[]){
  
   for(j=ySide-1; j>=0; --j){
     for(i=0;i<xSide;++i){
-      fprintf( fp ," %d",  PHMD[j*(xSide+1) + i]);
+      fprintf( fp ," %f",  PHMD[j*(xSide+1) + i]);
       fflush( fp );
     }
     fprintf( fp ," \n");

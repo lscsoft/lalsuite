@@ -228,19 +228,19 @@ int main(int argc, char *argv[]){
 
   SUB( LALDetectorVel( &status,  vel,  &tGPS, velPar.detector, velPar.edat), &status); 
 
-  printf("Detector velocity at %ld = %g, %g, %g \n", T0SEC, vel[0],vel[1],vel[2]);
+  printf("Detector velocity at %d = %g, %g, %g \n", T0SEC, vel[0],vel[1],vel[2]);
 
   SUB( LALDetectorPos( &status,  vel,  &tGPS, velPar.detector, velPar.edat), &status); 
 
-  printf("Detector position at %ld = %g, %g, %g \n", T0SEC, vel[0],vel[1],vel[2]);
+  printf("Detector position at %d = %g, %g, %g \n", T0SEC, vel[0],vel[1],vel[2]);
 
   SUB( LALAvgDetectorVel ( &status, vel, &velPar), &status );
 
-  printf("Avg. detector velocity in a interval of %g from %ld = %g, %g, %g \n", TBASE, T0SEC, vel[0],vel[1],vel[2]);
+  printf("Avg. detector velocity in a interval of %g from %d = %g, %g, %g \n", TBASE, T0SEC, vel[0],vel[1],vel[2]);
 
   SUB( LALAvgDetectorPos ( &status, pos, &velPar), &status );
 
-  printf("Avg. detector position in a interval of %g from %ld = %g, %g, %g \n", TBASE, T0SEC, pos[0],pos[1],pos[2]);
+  printf("Avg. detector position in a interval of %g from %d = %g, %g, %g \n", TBASE, T0SEC, pos[0],pos[1],pos[2]);
 
   LALFree(edat->ephemE);
   LALFree(edat->ephemS);

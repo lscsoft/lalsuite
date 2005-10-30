@@ -499,7 +499,7 @@ int main(int argc, char *argv[]){
  
   for(k=ySide-1; k>=0; --k){
     for(i=0;i<xSide;++i){
-      fprintf( fp ," %d", ht.map[k*xSide +i]);
+      fprintf( fp ," %f", ht.map[k*xSide +i]);
       fflush( fp );
     }
     fprintf( fp ," \n");
