@@ -795,12 +795,20 @@ void LALHOUGHComputeAMWeights  (LALStatus          *status,
   amParams->leapAcc = LALLEAPSEC_STRICT;
 
   /* allocate memory for a[i] and b[i] */
-  amc.a = NULL;
-  amc.b = NULL;
-  TRY( LALSCreateVector( status, &(amc.a), length), status);
-  TRY( LALSCreateVector( status, &(amc.b), length), status);
+  /*   TRY( LALSCreateVector( status, &(amc.a), length), status); */
+  /*   TRY( LALSCreateVector( status, &(amc.b), length), status); */
 
-  TRY (LALComputeAM( status, &amc, timeV->data, amParams), status); 
+  amc.a = NULL;
+  amc.a = (REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
+  amc.a->length = length; 
+  amc.a->data = (REAL4 *)LALMalloc(length*sizeof(REAL4)); 
+
+  amc.b = NULL;
+  amc.b = (REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
+  amc.b->length = length; 
+  amc.b->data = (REAL4 *)LALMalloc(length*sizeof(REAL4)); 
+
+  TRY (LALComputeAM( status->statusPtr, &amc, timeV->data, amParams), status); 
   aVec = amc.a; /* a and b are as defined in JKS */
   bVec = amc.b;
   A = amc.A; /* note A is twice average of a[i]^2 */ 
@@ -812,8 +820,12 @@ void LALHOUGHComputeAMWeights  (LALStatus          *status,
     weightV->data[j] *= 2.0*(a*a + b*b)/(A+B);
   }
 
-  TRY( LALSDestroyVector( status, &(amc.a)), status);
-  TRY( LALSDestroyVector( status, &(amc.b)), status);
+  /*   TRY( LALSDestroyVector( status, &(amc.a)), status); */
+  /*   TRY( LALSDestroyVector( status, &(amc.b)), status); */
+  LALFree(amc.a->data);
+  LALFree(amc.b->data);
+  LALFree(amc.a);
+  LALFree(amc.b);
 
   DETATCHSTATUSPTR (status);
    /* normal exit */
