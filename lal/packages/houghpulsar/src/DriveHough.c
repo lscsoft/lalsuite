@@ -121,12 +121,19 @@ NRCSID (DRIVEHOUGHC, "$Id$");
  */
 
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+/** Constructs cylindrical buffer of partial hough map derivatives.  
+    For each timestamp, there are nfsize number of look up tables. 
+    The input is a vector of peakgrams and a set of look up tables 
+    for each timestamp.  A partial hough map derivative basically 
+    contains pointers to a left and right border in a look up table.
+    For every selected peak, we get an annulus bounded by a left and 
+    right border, and this function figures out what the borders are 
+    and constructs pointers to them */
 /* *******************************  <lalVerbatim file="DriveHoughD"> */
 void LALHOUGHConstructSpacePHMD  (LALStatus            *status, 
-				  PHMDVectorSequence   *phmdVS,
-				  HOUGHPeakGramVector  *pgV, 
-				  HOUGHptfLUTVector    *lutV) 
+				  PHMDVectorSequence   *phmdVS, /**< Cylindrical buffer of PHMDs */
+				  HOUGHPeakGramVector  *pgV, /**< Vetor of peakgrams */
+				  HOUGHptfLUTVector    *lutV /**< vector of look up tables */) 
 { /*   *********************************************  </lalVerbatim> */
 
   UINT4    k,j;
@@ -200,6 +207,9 @@ void LALHOUGHConstructSpacePHMD  (LALStatus            *status,
 
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+/** Function for shifting the cylindrical buffer of PHMDs up by one
+    frequency bin -- the lowest frequency bin is dropped and an 
+    extra frequency bin is added at the highest frequency */
 /* *******************************  <lalVerbatim file="DriveHoughD"> */
 void LALHOUGHupdateSpacePHMDup  (LALStatus            *status, 
 				  PHMDVectorSequence   *phmdVS,
@@ -283,6 +293,9 @@ void LALHOUGHupdateSpacePHMDup  (LALStatus            *status,
 }
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+/** Function for shifting the cylindrical buffer of PHMDs down by one
+    frequency bin -- the highest frequency bin is dropped and an 
+    extra frequency bin is added at the lowest frequency */
 /* *******************************  <lalVerbatim file="DriveHoughD"> */
 void LALHOUGHupdateSpacePHMDdn  (LALStatus            *status, 
 				 PHMDVectorSequence   *phmdVS,
@@ -367,7 +380,9 @@ void LALHOUGHupdateSpacePHMDdn  (LALStatus            *status,
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /** Calculates the total hough map for a given trajectory in the 
-    time-frequency plane and a set of partial hough map derivatives */ 
+    time-frequency plane and a set of partial hough map derivatives 
+    -- this is the top level function to be called for constructing
+    a total hough map.*/ 
 /* *******************************  <lalVerbatim file="DriveHoughD"> */
 void LALHOUGHConstructHMT  (LALStatus                  *status, 
 			    HOUGHMapTotal              *ht, /**< The output hough map */
@@ -528,7 +543,9 @@ void LALHOUGHComputeFBinMap (LALStatus             *status,
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /** Calculates the total hough map for a given trajectory in the 
-    time-frequency plane and a set of partial hough map derivatives */ 
+    time-frequency plane and a set of partial hough map derivatives allowing 
+    each PHMD to have a different weight factor to account for varying
+    sensitivity at different sky-locations. */ 
 /* *******************************  <lalVerbatim file="DriveHoughD"> */
 void LALHOUGHConstructHMT_W (LALStatus                  *status, 
 			     HOUGHMapTotal              *ht, /**< The output hough map */
@@ -627,7 +644,8 @@ void LALHOUGHConstructHMT_W (LALStatus                  *status,
 
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/** Adds weight factors for set of partial hough map derivatives */
+/** Adds weight factors for set of partial hough map derivatives -- the 
+    weights must be calculated outside this function.  */
 /* *******************************  <lalVerbatim file="DriveHoughD"> */
 void LALHOUGHWeighSpacePHMD  (LALStatus            *status, 
 			      PHMDVectorSequence   *phmdVS, /**< partial hough map derivatives */
@@ -637,9 +655,8 @@ void LALHOUGHWeighSpacePHMD  (LALStatus            *status,
   UINT4    k,j;
   UINT4    nfSize;    /* number of different frequencies */
   UINT4    length;    /* number of elements for each frequency */
-
-
   /* --------------------------------------------- */
+
   INITSTATUS (status, "LALHOUGHWeighSpacePHMD", DRIVEHOUGHC);
   ATTATCHSTATUSPTR (status); 
 

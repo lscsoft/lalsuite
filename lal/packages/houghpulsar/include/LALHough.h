@@ -350,33 +350,40 @@ NRCSID (LALHOUGHH, "$Id$");
  * 10. Structure, enum, union, etc., typdefs.
  */
 
+/** Vector of frequency bin indexes */
 typedef struct tagUINT8FrequencyIndexVector{
   UINT4      length;  /**< number of elements */
   REAL8      deltaF;  /**< frequency resolution */
   UINT8      *data;   /**< the frequency indexes */
 } UINT8FrequencyIndexVector;  
 
+/** Sequency of frequency bin index vectors */
 typedef struct tagUINT8FrequencyIndexVectorSequence{
   UINT4                          length;        /**< number of elements */
   UINT4                          vectorLength;  /**< frequency resolution */
   UINT8FrequencyIndexVector      *freqIndV;     /**< the frequency indexes */
 } UINT8FrequencyIndexVectorSequence;
 
+/** Vector of Hough peak grams */
 typedef struct tagHOUGHPeakGramVector{
   UINT4             length; /**< number of elements */
   HOUGHPeakGram     *pg;    /**< the Peakgrams */
 } HOUGHPeakGramVector;  
 
+/** Vector of Hough look up tables for a particular patch, time and frequency */
 typedef struct tagHOUGHptfLUTVector{
   UINT4            length; /**< number of elements */
   HOUGHptfLUT     *lut;    /**< the partial Look Up Tables */
 } HOUGHptfLUTVector;  
 
+/** Vector of total Hough maps */
 typedef struct tagHOUGHMapTotalVector{
   UINT4            length; /**< number of elements */
   HOUGHMapTotal    *ht;    /**< the Hough maps */
 } HOUGHMapTotalVector;
 
+/** Cylindrical buffer of partial Hough map derivatives -- to be added and integrated
+    along x-axis to obtain total hough map */
 typedef struct tagPHMDVectorSequence{
   UINT4       nfSize;    /**< number of different frequencies */
   UINT4       length;    /**< number of elements for each frequency */
@@ -388,6 +395,8 @@ typedef struct tagPHMDVectorSequence{
   HOUGHphmd   *phmd;     /**< the partial Hough map derivatives */
 } PHMDVectorSequence;   
 
+/** Residual values of spindown parameters -- difference from value used
+    for demodulation */
 typedef struct tagHOUGHResidualSpinPar{
   REAL8          deltaF;   /**<  frequency resolution;  df=1/TCOH */
   REAL8          timeDiff; /**<   T(t)-T(t0) */
