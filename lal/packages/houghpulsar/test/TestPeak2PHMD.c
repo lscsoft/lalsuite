@@ -171,7 +171,7 @@ char *lalWatch;
 #endif
 
 /* the Hough Map derivative pixel type */
-typedef CHAR HoughDT;
+/*typedef CHAR HoughDT; */
 
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
