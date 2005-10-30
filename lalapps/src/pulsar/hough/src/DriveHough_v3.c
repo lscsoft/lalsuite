@@ -144,7 +144,7 @@ int main(int argc, char *argv[]){
   FILE   *fpStar = NULL;  
 
   /* user input variables */
-  BOOLEAN uvar_help;
+  BOOLEAN uvar_help, uvar_weighAM, uvar_weighNoise;
   INT4 uvar_ifo, uvar_blocksRngMed;
   REAL8 uvar_f0, uvar_peakThreshold, uvar_houghFalseAlarm, uvar_fSearchBand;
   CHAR *uvar_earthEphemeris=NULL;
@@ -187,6 +187,8 @@ int main(int argc, char *argv[]){
   SUB( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
 
   uvar_help = FALSE;
+  uvar_weighAM = FALSE;
+  uvar_weighNoise = FALSE;
   uvar_ifo = IFO;
   uvar_blocksRngMed = BLOCKSRNGMED;
   uvar_f0 = F0;
@@ -214,6 +216,8 @@ int main(int argc, char *argv[]){
 
   /* register user input variables */
   SUB( LALRegisterBOOLUserVar(   &status, "help",            'h', UVAR_HELP,     "Print this message",            &uvar_help),            &status);  
+  SUB( LALRegisterBOOLUserVar(   &status, "weighAM",          0,  UVAR_OPTIONAL, "Print this message",            &uvar_weighAM),         &status);  
+  SUB( LALRegisterBOOLUserVar(   &status, "weighNoise",       0,  UVAR_OPTIONAL, "Print this message",            &uvar_weighNoise),      &status);  
   SUB( LALRegisterINTUserVar(    &status, "ifo",             'i', UVAR_OPTIONAL, "Detector GEO(1) LLO(2) LHO(3)", &uvar_ifo ),            &status);
   SUB( LALRegisterINTUserVar(    &status, "blocksRngMed",    'w', UVAR_OPTIONAL, "RngMed block size",             &uvar_blocksRngMed),    &status);
   SUB( LALRegisterREALUserVar(   &status, "f0",              'f', UVAR_OPTIONAL, "Start search frequency",        &uvar_f0),              &status);
@@ -693,9 +697,11 @@ int main(int argc, char *argv[]){
 
       /* calculate weights */
       SUB( LALHOUGHInitializeWeights( &status, &weightsV), &status);
-      SUB( LALHOUGHComputeAMWeights( &status, &weightsV, &timeV, &detector, 
-				     edat, alpha, delta), &status);
-				     
+
+      if (uvar_weighAM) {
+	SUB( LALHOUGHComputeAMWeights( &status, &weightsV, &timeV, &detector, 
+				       edat, alpha, delta), &status);
+      }
 
       /******************************************************************/  
       /* opening the output statistic, and event files */
