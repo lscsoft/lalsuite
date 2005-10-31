@@ -242,6 +242,7 @@ int read_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxbytes) {
 	    FstatLine.Alpha >   LAL_TWOPI + epsilon  ||
 	    FstatLine.Delta < -0.5*LAL_PI - epsilon  ||
 	    FstatLine.Delta >  0.5*LAL_PI + epsilon  ||
+            FstatLine.Fstat < 0.0                    ||
 
 	    lastchar != '\n'
 	    ) {
