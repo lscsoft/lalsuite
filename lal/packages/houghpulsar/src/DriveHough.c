@@ -107,9 +107,6 @@ LALHOUGHIntegrHD2HT()
 
 
 
-/* #include <../include/LALHough.h> */
-
-
 #include <lal/LALHough.h>
 
 NRCSID (DRIVEHOUGHC, "$Id$");
@@ -730,12 +727,56 @@ void LALHOUGHInitializeWeights  (LALStatus  *status,
   RETURN (status);
 }
 
+
+
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+/** Normalizes weight factors so that their sum is N */
+/* *******************************  <lalVerbatim file="DriveHoughD"> */
+void LALHOUGHNormalizeWeights  (LALStatus  *status, 
+				REAL8Vector *weightV /**< vector of weights */) 
+{ /*   *********************************************  </lalVerbatim> */
+
+  UINT4 j, length;
+  REAL8 sum; 
+
+   /* --------------------------------------------- */
+  INITSTATUS (status, "LALHOUGHNormalizeWeights", DRIVEHOUGHC);
+  ATTATCHSTATUSPTR (status); 
+
+
+  /*   Make sure the arguments are not NULL: */ 
+  ASSERT (weightV, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
+  ASSERT (weightV->data,status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
+  /* -------------------------------------------   */
+
+  /* Make sure there are elements to be computed*/
+  ASSERT (weightV->length, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE);
+
+  length = weightV->length;
+
+  /* calculate sum of weights */
+  sum = 0.0;
+  for (j=0; j<length; j++) {
+    sum += weightV->data[j];
+  }
+ 
+  /* normalize weights */
+  for (j=0; j<length; j++) {
+    weightV->data[j] *= length/sum;
+  }
+
+  DETATCHSTATUSPTR (status);
+   /* normal exit */
+  RETURN (status);
+}
+
+
+
 /** Computes weight factors arising from amplitude modulation -- it multiplies 
     an existing weight vector */
 /* *******************************  <lalVerbatim file="DriveHoughD"> */
 void LALHOUGHComputeAMWeights  (LALStatus          *status, 
-				REAL4Vector        *weightV,
+				REAL8Vector        *weightV,
 				LIGOTimeGPSVector  *timeV, 
 				LALDetector        *detector,
 				EphemerisData      *edat,
@@ -843,6 +884,100 @@ void LALHOUGHComputeAMWeights  (LALStatus          *status,
   LALFree(amc.b->data);
   LALFree(amc.a);
   LALFree(amc.b);
+
+  DETATCHSTATUSPTR (status);
+   /* normal exit */
+  RETURN (status);
+}
+
+
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+/** Computes weight factors arising from SFTs with different noise 
+    floors -- it multiplies an existing weight vector */
+/* *******************************  <lalVerbatim file="DriveHoughD"> */
+void LALHOUGHComputeNoiseWeights  (LALStatus    *status, 
+				   REAL8Vector  *weightV,
+				   SFTVector    *sftVect,
+				   INT4         blkSize) 
+{ /*   *********************************************  </lalVerbatim> */
+
+  UINT4 lengthVect, lengthSFT, lengthPSD;
+  UINT4 j;
+  SFTtype sft;
+  REAL8FrequencySeries periodo;
+  REAL8Sequence mediansV, inputV;
+  LALRunningMedianPar rngMedPar;
+
+  /* --------------------------------------------- */
+  INITSTATUS (status, "LALHOUGHComputeNoiseWeights", DRIVEHOUGHC);
+  ATTATCHSTATUSPTR (status); 
+
+  /*   Make sure the arguments are not NULL: */ 
+  ASSERT (weightV, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
+  ASSERT (sftVect, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
+  ASSERT (blkSize > 0, status,  LALHOUGHH_EVAL, LALHOUGHH_MSGEVAL);
+  ASSERT (weightV->data,status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
+  ASSERT (sftVect->data,status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
+  /* -------------------------------------------   */
+
+  /* Make sure there is no size mismatch */
+  ASSERT (weightV->length == sftVect->length, status, 
+	  LALHOUGHH_ESZMM, LALHOUGHH_MSGESZMM);
+  /* -------------------------------------------   */
+
+  /* Make sure there are elements to be computed*/
+  ASSERT (sftVect->length, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE);
+  
+
+  /* set various lengths */
+  lengthVect = sftVect->length;
+  lengthSFT = sftVect->data->data->length;
+  ASSERT( lengthSFT > 0, status,  LALHOUGHH_EVAL, LALHOUGHH_MSGEVAL);
+  lengthPSD = lengthSFT - blkSize + 1;
+  /* make sure blksize is not too big */
+  ASSERT(lengthPSD > 0, status, LALHOUGHH_EVAL, LALHOUGHH_MSGEVAL);
+
+  /* allocate memory for periodogram */
+  periodo.data = NULL;
+  periodo.data = (REAL8Sequence *)LALMalloc(sizeof(REAL8Sequence));
+  periodo.data->length = lengthSFT;
+  periodo.data->data = (REAL8 *)LALMalloc( lengthSFT * sizeof(REAL8));
+
+  /* allocate memory for vector of medians */
+  mediansV.length = lengthPSD;
+  mediansV.data = (REAL8 *)LALMalloc(lengthPSD * sizeof(REAL8));
+
+
+  /* loop over sfts and calculate weights */
+  for (j=0; j<lengthVect; j++) {
+    REAL8 sumMed = 0.0;
+    INT4 k;
+
+    /* calculate the periodogram */
+    TRY (LALSFTtoPeriodogram (status->statusPtr, &periodo, &sft), status);
+    
+    /* calculate the running median */
+    inputV.length = lengthSFT;
+    inputV.data = periodo.data->data;
+    TRY( LALDRunningMedian2(status->statusPtr, &mediansV, &inputV, rngMedPar), status);
+
+    for (k=0; k<lengthPSD; k++) {
+      sumMed += mediansV.data[k];
+    }
+
+    /* weight is proportional to 1/sumMed */    
+    weightV->data[j] /= sumMed;
+    
+  } /* end of loop over sfts */
+
+  /* normalize weights */
+  TRY( LALHOUGHNormalizeWeights( status->statusPtr, weightV ), status); 
+
+  /* free memory */
+  LALFree(mediansV.data);
+  LALFree(periodo.data->data);
+  LALFree(periodo.data);
 
   DETATCHSTATUSPTR (status);
    /* normal exit */

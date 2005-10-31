@@ -286,6 +286,7 @@ spin-down parameter,
 #include <lal/PHMD.h>
 #include <lal/HoughMap.h>
 #include <lal/PulsarDataTypes.h>
+#include <lal/NormalizeSFTRngMed.h>
 
 /*
  *  #include "LALRCSID.h"
@@ -458,14 +459,25 @@ void LALHOUGHInitializeWeights  (LALStatus            *status,
 				 REAL4Vector *weightV
 				 );
 
+void LALHOUGHNormalizeWeights  (LALStatus            *status, 
+				REAL8Vector *weightV
+				);
+
 void LALHOUGHComputeAMWeights  (LALStatus         *status, 
-				REAL4Vector       *weightV, 
+				REAL8Vector       *weightV, 
 				LIGOTimeGPSVector *timeV,
 				LALDetector       *detector,
 				EphemerisData     *edat,				
 				REAL8             alpha,
 				REAL8             delta
 				);
+
+void LALHOUGHComputeNoiseWeights  (LALStatus    *status, 
+				   REAL8Vector  *weightV,
+				   SFTVector    *sftVect,
+				   INT4         blkSize
+				   );
+
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */
