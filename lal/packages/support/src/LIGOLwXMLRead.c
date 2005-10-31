@@ -39,6 +39,7 @@ files.
 \idx{LALCreateMetaTableDir()}
 \idx{LALSnglBurstTableFromLIGOLw()}
 \idx{LALSimBurstTableFromLIGOLw()}
+\idx{LALSimRingdownTableFromLIGOLw()}
 \idx{LALSnglInspiralTableFromLIGOLw()}
 \idx{InspiralTmpltBankFromLIGOLw()}
 \idx{SimInspiralTableFromLIGOLw()}
@@ -368,6 +369,53 @@ MetaTableDirectory * XLALCreateMetaTableDir(
         }
 
         tableDir = (MetaTableDirectory *) LALMalloc( (i+1) * 
+            sizeof(MetaTableDirectory)) ;
+        memcpy(tableDir, tmpTableDir, (i+1)*sizeof(MetaTableDirectory) );
+      }
+      break;
+    case sim_ringdown_table:
+      {
+        MetaTableDirectory tmpTableDir[] =
+        {
+          {"waveform",                     -1, 0},
+          {"coordinates",                  -1, 1},
+          {"geocent_start_time",           -1, 2},
+          {"geocent_start_time_ns",        -1, 3},
+          {"h_start_time",                 -1, 4},
+          {"h_start_time_ns",              -1, 5},
+          {"l_start_time",                 -1, 6},
+          {"l_start_time_ns",              -1, 7},
+          {"start_time_gmst",              -1, 8},
+          {"mass",                         -1, 9},
+          {"longitude",                    -1, 10},
+          {"latitude",                     -1, 11},
+          {"distance",                     -1, 12},
+          {"inclination",                  -1, 13},
+          {"polarization",                 -1, 14},
+          {"epsilon",                      -1, 15},
+          {"spin",                         -1, 16},
+          {"frequency",                    -1, 17},
+          {"quality",                      -1, 18},
+          {"eff_dist_h",                   -1, 19},
+          {"eff_dist_l",                   -1, 20},
+          {"h0",                           -1, 21},
+          {"hrss",                         -1, 22},
+          {"hrss_h",                       -1, 23},
+          {"hrss_l",                       -1, 24},
+          {NULL,                            0, 0}
+        };
+        for ( i=0 ; tmpTableDir[i].name; ++i )
+        {
+          if ( (tmpTableDir[i].pos =
+                MetaioFindColumn( env, tmpTableDir[i].name )) < 0 )
+          {
+            fprintf( stderr, "unable to find column %s\n",
+                tmpTableDir[i].name );
+            XLAL_ERROR_NULL( func, XLAL_EFAILED );
+          }
+        }
+        
+        tableDir = (MetaTableDirectory *) LALMalloc( (i+1) *
             sizeof(MetaTableDirectory)) ;
         memcpy(tableDir, tmpTableDir, (i+1)*sizeof(MetaTableDirectory) );
       }
@@ -1132,6 +1180,53 @@ LALCreateMetaTableDir(
         memcpy(*tableDir, tmpTableDir, (i+1)*sizeof(MetaTableDirectory) );
       }
       break;
+    case sim_ringdown_table:
+      {
+        MetaTableDirectory tmpTableDir[] =
+        {
+          {"waveform",                     -1, 0},
+          {"coordinates",                  -1, 1},
+          {"geocent_start_time",           -1, 2},
+          {"geocent_start_time_ns",        -1, 3},
+          {"h_start_time",                 -1, 4},
+          {"h_start_time_ns",              -1, 5},
+          {"l_start_time",                 -1, 6},
+          {"l_start_time_ns",              -1, 7},
+          {"start_time_gmst",              -1, 8},
+          {"mass",                         -1, 9},
+          {"longitude",                    -1, 10},
+          {"latitude",                     -1, 11},
+          {"distance",                     -1, 12},
+          {"inclination",                  -1, 13},
+          {"polarization",                 -1, 14},
+          {"epsilon",                      -1, 15},
+          {"spin",                         -1, 16},
+          {"frequency",                    -1, 17},
+          {"quality",                      -1, 18},
+          {"eff_dist_h",                   -1, 19},
+          {"eff_dist_l",                   -1, 20},
+          {"h0",                           -1, 21},
+          {"hrss",                         -1, 22},
+          {"hrss_h",                       -1, 23},
+          {"hrss_l",                       -1, 24},
+          {NULL,                            0, 0}
+        };
+        for ( i=0 ; tmpTableDir[i].name; ++i )
+        {
+          if ( (tmpTableDir[i].pos =
+                MetaioFindColumn( env, tmpTableDir[i].name )) < 0 )
+          {
+            fprintf( stderr, "unable to find column %s\n",
+                tmpTableDir[i].name );
+            ABORT(status,LIGOLWXMLREADH_ENCOL,LIGOLWXMLREADH_MSGENCOL);
+          }
+        }
+        
+        *tableDir = (MetaTableDirectory *) LALMalloc( (i+1) *
+            sizeof(MetaTableDirectory)) ;
+        memcpy(*tableDir, tmpTableDir, (i+1)*sizeof(MetaTableDirectory) );
+      }
+      break;
     case summ_value_table:
       break;
     default:
@@ -1490,6 +1585,221 @@ LALSimBurstTableFromLIGOLw (
   DETATCHSTATUSPTR( status );
   RETURN( status );
 }
+
+
+
+/* <lalVerbatim file="LIGOLwXMLReadCP"> */
+void
+LALSimRingdownTableFromLIGOLw (
+    LALStatus          *status,
+    SimRingdownTable   **eventHead,
+    CHAR               *fileName,
+    INT4                startTime,
+    INT4                stopTime
+    )
+
+/* </lalVerbatim> */
+{
+  int                                   i, j, nrows;
+  int                                   mioStatus=0;
+  SimRingdownTable                     *thisEvent = NULL;
+  struct MetaioParseEnvironment         parseEnv;
+  const  MetaioParseEnv                 env = &parseEnv;
+  MetaTableDirectory                   *tableDir = NULL;
+
+  INITSTATUS( status, "LALSimRingdownTableFromLIGOLw", LIGOLWXMLREADC );
+  ATTATCHSTATUSPTR (status);
+  
+  /* check that the event handle and pointer are vaid */
+  if ( ! eventHead )
+    {
+      ABORT(status, LIGOLWXMLREADH_ENULL, LIGOLWXMLREADH_MSGENULL);
+      }
+  if ( *eventHead )
+    {
+      ABORT(status, LIGOLWXMLREADH_ENNUL, LIGOLWXMLREADH_MSGENNUL);
+      }
+
+  /* open the sim_ringdown XML file */
+  mioStatus = MetaioOpenTable( env, fileName, "sim_ringdown" );
+  if ( mioStatus )
+    {
+      ABORT(status, LIGOLWXMLREADH_ENTAB, LIGOLWXMLREADH_MSGENTAB);
+      }
+  
+  /* create table directory to find columns in file*/
+  LALCreateMetaTableDir(status->statusPtr, &tableDir, env, sim_ringdown_table);
+  CHECKSTATUSPTR (status);
+
+  /* loop over the rows in the file */
+  i = nrows = 0;
+  while ( (mioStatus = MetaioGetRow(env)) == 1 ) 
+    {
+      INT4 geo_time = env->ligo_lw.table.elt[tableDir[2].pos].data.int_4s;
+      
+      /* count the rows in the file */
+      i++;
+      
+      /* get the injetcion time and check that it is within the time window */
+      /* JC: I'VE ADDED PARENTHESES HERE... HOPE THEY'RE IN THE RIGHT PLACE! */
+      if ( ! stopTime || ( geo_time > startTime && geo_time < stopTime ) )
+        {
+
+          /* allocate memory for the template we are about to read in */
+          if ( ! *eventHead )
+            {
+              thisEvent = *eventHead = (SimRingdownTable *) 
+                LALCalloc( 1, sizeof(SimRingdownTable) );
+              }
+          else
+            {
+              thisEvent = thisEvent->next = (SimRingdownTable *) 
+                LALCalloc( 1, sizeof(SimRingdownTable) );
+              }
+          if ( ! thisEvent )
+            {
+              fprintf( stderr, "could not allocate ring event\n" );
+              CLOBBER_EVENTS;
+              MetaioClose( env );
+              ABORT(status, LIGOLWXMLREADH_EALOC, LIGOLWXMLREADH_MSGEALOC);
+              }
+
+          /* parse the contents of the row into the InspiralTemplate structure
+           * */
+          for ( j = 0; tableDir[j].name; ++j )
+            {
+              REAL4 r4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
+              REAL8 r8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_8;
+              INT4  i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
+              
+              if ( tableDir[j].idx == 0 )
+                {
+                  LALSnprintf( thisEvent->waveform, 
+                      LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), "%s", 
+                      env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+                  }
+              else if ( tableDir[j].idx == 1 )
+                {
+                  LALSnprintf( thisEvent->coordinates, LIGOMETA_COORDINATES_MAX * sizeof(CHAR), 
+                      "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+                  }
+              else if ( tableDir[j].idx == 2 )
+                {
+                  thisEvent->geocent_start_time.gpsSeconds = i4colData;
+                  }
+              else if ( tableDir[j].idx == 3 )
+                {
+                  thisEvent->geocent_start_time.gpsNanoSeconds = i4colData;
+                  }
+              else if ( tableDir[j].idx == 4 )
+                {
+                  thisEvent->h_start_time.gpsSeconds = i4colData;
+                  }
+              else if ( tableDir[j].idx == 5 )
+                {
+                  thisEvent->h_start_time.gpsNanoSeconds = i4colData;
+                  }
+              else if ( tableDir[j].idx == 6 )
+                {
+                  thisEvent->l_start_time.gpsSeconds = i4colData;
+                  }
+              else if ( tableDir[j].idx == 7 )
+                {
+                  thisEvent->l_start_time.gpsNanoSeconds = i4colData;
+                  }
+              else if ( tableDir[j].idx == 8 )
+                {
+                  thisEvent->start_time_gmst = r8colData;
+                  }
+              else if ( tableDir[j].idx == 9 )
+                {
+                  thisEvent->mass = r4colData;
+                  }
+              else if ( tableDir[j].idx == 10 )
+                {
+                  thisEvent->longitude = r4colData;
+                  }
+              else if ( tableDir[j].idx == 11 )
+                {
+                  thisEvent->latitude = r4colData;
+                  }
+              else if ( tableDir[j].idx == 12 )
+                {
+                  thisEvent->distance = r4colData;
+                  }
+              else if ( tableDir[j].idx == 13 )
+                {
+                  thisEvent->inclination = r4colData;
+                  }
+              else if ( tableDir[j].idx == 14 )
+                {
+                  thisEvent->polarization = r4colData;
+                  }
+              else if ( tableDir[j].idx == 15 )
+                {
+                  thisEvent->epsilon = r4colData;
+                  }
+              else if ( tableDir[j].idx == 16 )
+              {
+                thisEvent->spin = r4colData;
+              }
+              else if ( tableDir[j].idx == 17 )
+              {
+                thisEvent->frequency = r4colData;
+              }
+              else if ( tableDir[j].idx == 18 )
+              {
+                thisEvent->quality = r4colData;
+              }
+              else if ( tableDir[j].idx == 19 )
+              {
+                thisEvent->eff_dist_h = r4colData;
+              }
+              else if ( tableDir[j].idx == 20 )
+              {
+                thisEvent->eff_dist_l = r4colData;
+              }
+              else if ( tableDir[j].idx == 21 )
+              {
+                thisEvent->h0 = r4colData;
+              }
+              else if ( tableDir[j].idx == 22 )
+              {
+                thisEvent->hrss = r4colData;
+              }
+              else if ( tableDir[j].idx == 23 )
+              {
+                thisEvent->hrss_h = r4colData;
+              }
+              else if ( tableDir[j].idx == 24 )
+              {
+                thisEvent->hrss_l = r4colData;
+              }
+              else
+                {
+                  CLOBBER_EVENTS;
+                  ABORT(status, LIGOLWXMLREADH_ENCOL, LIGOLWXMLREADH_MSGENCOL);
+                  }
+              }
+          
+          nrows++;
+          }
+      }
+
+  if ( mioStatus == -1 )
+    {
+      fprintf( stderr, "error parsing after row %d\n", i );
+      CLOBBER_EVENTS;
+      MetaioClose( env );
+      ABORT(status, LIGOLWXMLREADH_EPARS, LIGOLWXMLREADH_MSGEPARS);
+    }
+  
+  /* Normal exit */
+  LALFree( tableDir );
+  MetaioClose( env );
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
+  }
 
 /* <lalVerbatim file="LIGOLwXMLReadCP"> */
 int

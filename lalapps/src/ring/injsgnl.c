@@ -3,7 +3,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/AVFactories.h>
-#include <lal/GenerateBurst.h>
+#include <lal/GenerateRing.h>
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/Units.h>
 
@@ -25,8 +25,8 @@ int inject_signal( REAL4TimeSeries *series, int injectSignalType,
   const REAL8 duration = 16; /* determines deltaF=1/dataDuration Hz*/
   LALStatus                status     = blank_status;
   COMPLEX8FrequencySeries *response   = NULL;
-  SimBurstTable           *injectList = NULL;
-  SimBurstTable           *thisInject;
+  SimRingdownTable        *injectList = NULL;
+  SimRingdownTable        *thisInject;
   char                     injFile[FILENAME_LENGTH + 1];
   LIGOTimeGPS              epoch;
   UINT4                    numInject;
@@ -45,7 +45,7 @@ int inject_signal( REAL4TimeSeries *series, int injectSignalType,
   ifoName[2] = 0;
 
   /* get list of injections for this data epoch */
-  verbose( "reading simulated-burst tables from file %s\n", injFile );
+  verbose( "reading simulated-ring tables from file %s\n", injFile );
   startSec = series->epoch.gpsSeconds;
   stopSec  = startSec + ceil( 1e-9 * series->epoch.gpsNanoSeconds
       + series->deltaT * series->data->length );
@@ -54,8 +54,8 @@ int inject_signal( REAL4TimeSeries *series, int injectSignalType,
   /* FIXME: only bursts done at the moment */
   switch ( injectSignalType )
   {
-    case burst_inject:
-      LAL_CALL( LALSimBurstTableFromLIGOLw( &status, &injectList, injFile,
+    case ring_inject:
+      LAL_CALL( LALSimRingdownTableFromLIGOLw( &status, &injectList, injFile,
             startSec, stopSec ), &status );
       break;
     default:
@@ -95,8 +95,8 @@ int inject_signal( REAL4TimeSeries *series, int injectSignalType,
         numInject == 1 ? "" : "s" );
     switch ( injectSignalType )
     {
-      case burst_inject:
-        LAL_CALL( LALBurstInjectSignals(&status, series, injectList, response, calType),
+      case ring_inject:
+        LAL_CALL( LALRingInjectSignals(&status, series, injectList, response, calType),
             &status );
         break;
       default:

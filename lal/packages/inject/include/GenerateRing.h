@@ -78,7 +78,7 @@ waveform
 /******************************************** <lalVerbatim> */
 typedef struct tagRingParamStruc {
   REAL8 deltaT;             /* requested sampling interval (s) */
-  CoordinateSystem system;  /* coordinate system to assume for simRing */
+  CoordinateSystem system;  /* coordinate system to assume for simRingdown */
 } RingParamStruc;
 /******************************************** </lalVerbatim> */
 
@@ -97,7 +97,7 @@ void
 LALGenerateRing( 
     LALStatus          *status, 
     CoherentGW         *output, 
-    SimRingTable       *simRing,
+    SimRingdownTable   *simRingdown,
     RingParamStruc     *params
     );
 
@@ -105,7 +105,7 @@ void
 LALRingInjectSignals( 
     LALStatus               *status, 
     REAL4TimeSeries         *series, 
-    SimRingTable           *injections,
+    SimRingdownTable        *injections,
     COMPLEX8FrequencySeries *resp,
     INT4                     calType
     );

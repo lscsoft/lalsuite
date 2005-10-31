@@ -165,6 +165,16 @@ LALSimBurstTableFromLIGOLw (
     INT4                stopTime
     );
 
+void
+LALSimRingdownTableFromLIGOLw (
+    LALStatus          *status,
+    SimRingdownTable    **eventHead,
+    CHAR               *fileName,
+    INT4                startTime,
+    INT4                stopTime
+    );
+
+
 int
 LALSnglInspiralTableFromLIGOLw (
     SnglInspiralTable **eventHead,

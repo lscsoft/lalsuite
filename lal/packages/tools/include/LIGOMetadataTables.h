@@ -112,7 +112,7 @@ typedef enum
   multi_inspiral_table,
   sim_inspiral_table,
   sim_burst_table,
-  sim_ring_table,
+  sim_ringdown_table,
   summ_value_table,
   sim_inst_params_table,
   coinc_inspiral_table,
@@ -264,7 +264,7 @@ tagEventIDColumn
   struct tagSnglTransdataTable  *snglTransdataTable;
   struct tagSimInspiralTable    *simInspiralTable;
   struct tagSimBurstTable       *simBurstTable;
-  struct tagSimRingTable        *simRingTable;
+  struct tagSimRingdownTable    *simRingdownTable;
   struct tagCoincInspiralTable  *coincInspiralTable;
   struct tagInspiralTemplate    *inspiralTemplate;
 }
@@ -561,24 +561,24 @@ Document table.
 #endif
 /* <lalVerbatim> */
 typedef struct
-tagSimRingTable
+tagSimRingdownTable
 {
-  struct tagSimRingTable *next;
+  struct tagSimRingdownTable *next;
   CHAR           waveform[LIGOMETA_WAVEFORM_MAX];
   CHAR           coordinates[LIGOMETA_COORDINATES_MAX];
   LIGOTimeGPS    geocent_start_time;
   LIGOTimeGPS    h_start_time;
   LIGOTimeGPS    l_start_time;
   REAL8          start_time_gmst;
-  REAL4          totalmass;
-  REAL4          rightascension;
-  REAL4          declination;
+  REAL4          mass;
+  REAL4          longitude;
+  REAL4          latitude;
   REAL4          distance;
   REAL4          inclination;
   REAL4          polarization;
   REAL4          epsilon;
   REAL4          spin;
-  REAL4          centralfreq;
+  REAL4          frequency;
   REAL4          quality;
   REAL4          eff_dist_h;
   REAL4          eff_dist_l;
@@ -588,7 +588,7 @@ tagSimRingTable
   REAL4          hrss_l;
   EventIDColumn  *event_id;
 }
-SimRingTable;
+SimRingdownTable;
                               
 
 
@@ -813,7 +813,7 @@ tagMetadataTable
   MultiInspiralTable    *multiInspiralTable;
   SimInspiralTable      *simInspiralTable;
   SimBurstTable         *simBurstTable;
-  SimRingTable          *simRingTable;
+  SimRingdownTable      *simRingdownTable;
   SnglTransdataTable    *snglTransdataTable;
   SummValueTable        *summValueTable;
   SimInstParamsTable    *simInstParamsTable;

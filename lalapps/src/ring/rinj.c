@@ -51,8 +51,8 @@ RCSID( "$Id$" );
 "  --time-step STEP         space injections by ave of STEP sec (2630/PI)\n"\
 "  --seed SEED              seed random number generator with SEED (1)\n"\
 "  --user-tag STRING        set the usertag to STRING\n"\
-"  --minimum-mass MIN       set the minimum componenet mass to MIN (5)\n"\
-"  --maximum-mass MAX       set the maximum componenet mass to MAX (560)\n"\
+"  --minimum-mass MIN       set the minimum componenet mass to MIN (13.8)\n"\
+"  --maximum-mass MAX       set the maximum componenet mass to MAX (236.8)\n"\
 "  --minimum-spin AMIN      set the minimum component of the dimensionless spin parameter (0)\n"\
 "  --maximum-spin AMAX      set the maximum component of the dimensionless spin parameter (0.994)\n"\
 "  --minimum-distance DMIN  set the minimum distance to DMIN kpc (1)\n"\
@@ -140,7 +140,7 @@ int main( int argc, char *argv[] )
   MetadataTable         procparams;
   MetadataTable         injections;
   ProcessParamsTable   *this_proc_param;
-  SimRingTable         *this_inj = NULL; 
+  SimRingdownTable     *this_inj = NULL; 
   LIGOLwXMLStream       xmlfp;
 
   /* getopt arguments */
@@ -512,7 +512,7 @@ int main( int argc, char *argv[] )
    REAL4 deltaA = maxSpin - minSpin;
   
   /* null out the head of the linked list */
-   injections.simRingTable = NULL;
+   injections.simRingdownTable = NULL;
 
   /* create the output file name */
   if ( userTag )
@@ -541,16 +541,16 @@ int main( int argc, char *argv[] )
 
   while ( compareGPS == LALGPS_EARLIER )
   {
-    /* create the sim_ring table */
-    if ( injections.simRingTable )
+    /* create the sim_ringdown table */
+    if ( injections.simRingdownTable )
       {
-        this_inj = this_inj->next = (SimRingTable *)
-          LALCalloc( 1, sizeof(SimRingTable) );
+        this_inj = this_inj->next = (SimRingdownTable *)
+          LALCalloc( 1, sizeof(SimRingdownTable) );
         }
     else
       {
-        injections.simRingTable = this_inj = (SimRingTable *)
-          LALCalloc( 1, sizeof(SimRingTable) );
+        injections.simRingdownTable = this_inj = (SimRingdownTable *)
+          LALCalloc( 1, sizeof(SimRingdownTable) );
         }
 
     /* set the waveform and coordinates fields */
@@ -566,22 +566,22 @@ int main( int argc, char *argv[] )
 
     /* mass distribution */
     LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
-    this_inj->totalmass = minMass + u * deltaM;
+    this_inj->mass = minMass + u * deltaM;
     
     /* generate random spin parameter */  
     LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
     this_inj->spin = minSpin + u * deltaA;
 
     /* calculate central frequency, f0, and quality factor Q */
-    this_inj->centralfreq = 32000.0 * ( 1.0 - 0.63 * pow( ( 1.0 - this_inj->spin ), 0.3 ) ) / this_inj->totalmass;
+    this_inj->frequency = 32000.0 * ( 1.0 - 0.63 * pow( ( 1.0 - this_inj->spin ), 0.3 ) ) / this_inj->mass;
     this_inj->quality = 2.0 * pow( ( 1.0 - this_inj->spin ), -0.45 );
             
     /* spatial distribution */
-    /* compute random right ascension and declination */ 
+    /* compute random longitude and latitude */ 
     LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
-    this_inj->rightascension = LAL_TWOPI * u ;
+    this_inj->longitude = LAL_TWOPI * u ;
     LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
-    this_inj->declination = asin( 2.0 * u - 1.0 ) ;
+    this_inj->latitude = asin( 2.0 * u - 1.0 ) ;
     
     /* uniform distribution in log(distance) */
     LAL_CALL(  LALUniformDeviate(&status,&u,randParams),&status );
@@ -607,8 +607,8 @@ int main( int argc, char *argv[] )
     memset( &detTimeAndSource, 0, sizeof(DetTimeAndASource) );
     memset( &detAndSource, 0, sizeof(LALDetAndSource) );
 
-    skyPos.longitude = this_inj->rightascension;
-    skyPos.latitude  = this_inj->declination;
+    skyPos.longitude = this_inj->longitude;
+    skyPos.latitude  = this_inj->latitude;
     skyPos.system    = COORDINATESYSTEM_EQUATORIAL;
 
     source.equatorialCoords = skyPos;
@@ -625,7 +625,7 @@ int main( int argc, char *argv[] )
     
     /* calculate h0 */
     this_inj->h0 = sqrt( 5.0 / 2.0 * this_inj->epsilon )  
-      * ( LAL_G_SI * this_inj->totalmass * LAL_MSUN_SI / pow( LAL_C_SI, 2) /
+      * ( LAL_G_SI * this_inj->mass * LAL_MSUN_SI / pow( LAL_C_SI, 2) /
            this_inj->distance / LAL_PC_SI /1000000.0 ) 
        * pow( this_inj->quality, -0.5 ) * pow( 1.0 + 7.0 / 
            24.0 / pow( this_inj->quality, 2.0), -0.5 )
@@ -633,7 +633,7 @@ int main( int argc, char *argv[] )
     
     /* calculate hrss */
     this_inj->hrss = this_inj->h0 * pow( ( 2.0 * pow( this_inj->quality, 3.0 ) + this_inj->quality ) / 
-        ( 2.0 * LAL_PI * this_inj->centralfreq * ( 1.0 + 4.0 * pow ( this_inj->quality, 2 ) ) ) , 0.5);
+        ( 2.0 * LAL_PI * this_inj->frequency * ( 1.0 + 4.0 * pow ( this_inj->quality, 2 ) ) ) , 0.5);
       
     /* initialize end times with geocentric value */
     this_inj->h_start_time = this_inj->l_start_time = this_inj->geocent_start_time;
@@ -665,7 +665,7 @@ int main( int argc, char *argv[] )
           (2*pow(this_inj->quality,3)+this_inj->quality ) * splus*splus*resp.plus*resp.plus +
           2*pow(this_inj->quality,2) * splus*scross*resp.plus*resp.cross +
           2*pow(this_inj->quality,3) * scross*scross*resp.cross*resp.cross )
-        / ( 2.0 * LAL_PI * this_inj->centralfreq * ( 1.0 + 4.0 * pow ( this_inj->quality, 2 ) ) ) , 0.5 );
+        / ( 2.0 * LAL_PI * this_inj->frequency * ( 1.0 + 4.0 * pow ( this_inj->quality, 2 ) ) ) , 0.5 );
       
       sqrt(splus*splus*resp.plus*resp.plus + 
         scross*scross*resp.cross*resp.cross);
@@ -692,7 +692,7 @@ int main( int argc, char *argv[] )
           (2*pow(this_inj->quality,3)+this_inj->quality ) * splus*splus*resp.plus*resp.plus +
           2*pow(this_inj->quality,2) * splus*scross*resp.plus*resp.cross +
           2*pow(this_inj->quality,3) * scross*scross*resp.cross*resp.cross )
-          / ( 2.0 * LAL_PI * this_inj->centralfreq * ( 1.0 + 4.0 * pow ( this_inj->quality, 2 ) ) ) , 0.5 );
+          / ( 2.0 * LAL_PI * this_inj->frequency * ( 1.0 + 4.0 * pow ( this_inj->quality, 2 ) ) ) , 0.5 );
         
     /* increment the injection time */
     LAL_CALL( LALAddFloatToGPS( &status, &gpsStartTime, &gpsStartTime, 
@@ -751,19 +751,19 @@ int main( int argc, char *argv[] )
     }
   }
 
-  /* write the sim_ring table */
-  if ( injections.simRingTable )
+  /* write the sim_ringdown table */
+  if ( injections.simRingdownTable )
   {
-    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, sim_ring_table ), 
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, sim_ringdown_table ), 
         &status );
     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, injections, 
-          sim_ring_table ), &status );
+          sim_ringdown_table ), &status );
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
   }
-  while ( injections.simRingTable )
+  while ( injections.simRingdownTable )
   {
-    this_inj = injections.simRingTable;
-    injections.simRingTable = injections.simRingTable->next;
+    this_inj = injections.simRingdownTable;
+    injections.simRingdownTable = injections.simRingdownTable->next;
     LALFree( this_inj );
   }
   /* close the injection file */

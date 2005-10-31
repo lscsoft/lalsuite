@@ -187,12 +187,13 @@ static REAL4TimeSeries *ring_get_data( struct ring_params *params )
           &params->startTime, params->duration, params->strainData );
     if ( params->writeRawData ) /* write raw data */
       write_REAL4TimeSeries( channel );
-
-    /* inject burst signals */
-    if ( params->injectFile )
-      inject_signal( channel, burst_inject, params->injectFile,
+    
+    /* inject ring signals */
+    if ( params->injectFile ) 
+      inject_signal( channel, ring_inject, params->injectFile,
           params->calibCache, 1.0 ); 
-    /*  inject_signal( channel, burst_inject, params->injectFile,
+    
+    /*  inject_signal( channel, ring_inject, params->injectFile,
                     params->calibCache, params->dynRangeFac ); */
     /*  write_REAL4TimeSeries( channel ); */
         

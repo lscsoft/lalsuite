@@ -235,8 +235,8 @@ LALBeginLIGOLwXMLTable (
     case sim_burst_table:
       myfprintf( xml->fp, LIGOLW_XML_SIM_BURST );
       break;
-    case sim_ring_table:
-      myfprintf( xml->fp, LIGOLW_XML_SIM_RING );
+    case sim_ringdown_table:
+      myfprintf( xml->fp, LIGOLW_XML_SIM_RINGDOWN );
       break;
     case summ_value_table:
       myfprintf( xml->fp, LIGOLW_XML_SUMM_VALUE );
@@ -595,38 +595,38 @@ LALWriteLIGOLwXMLTable (
         tablePtr.simBurstTable = tablePtr.simBurstTable->next;
       }
       break;
-    case sim_ring_table:
-      while( tablePtr.simRingTable )
+    case sim_ringdown_table:
+      while( tablePtr.simRingdownTable )
         {
           FIRST_TABLE_ROW
-            fprintf( xml->fp, SIM_RING_ROW,
-                tablePtr.simRingTable->waveform,
-                tablePtr.simRingTable->coordinates,
-                tablePtr.simRingTable->geocent_start_time.gpsSeconds,
-                tablePtr.simRingTable->geocent_start_time.gpsNanoSeconds,
-                tablePtr.simRingTable->h_start_time.gpsSeconds,
-                tablePtr.simRingTable->h_start_time.gpsNanoSeconds,
-                tablePtr.simRingTable->l_start_time.gpsSeconds,
-                tablePtr.simRingTable->l_start_time.gpsNanoSeconds,
-                tablePtr.simRingTable->start_time_gmst,
-                tablePtr.simRingTable->totalmass,
-                tablePtr.simRingTable->rightascension,
-                tablePtr.simRingTable->declination,
-                tablePtr.simRingTable->distance,
-                tablePtr.simRingTable->inclination,
-                tablePtr.simRingTable->polarization,
-                tablePtr.simRingTable->epsilon,
-                tablePtr.simRingTable->spin,
-                tablePtr.simRingTable->centralfreq,
-                tablePtr.simRingTable->quality,
-                tablePtr.simRingTable->eff_dist_h,
-                tablePtr.simRingTable->eff_dist_l,
-                tablePtr.simRingTable->h0,
-                tablePtr.simRingTable->hrss,
-                tablePtr.simRingTable->hrss_h,
-                tablePtr.simRingTable->hrss_l
+            fprintf( xml->fp, SIM_RINGDOWN_ROW,
+                tablePtr.simRingdownTable->waveform,
+                tablePtr.simRingdownTable->coordinates,
+                tablePtr.simRingdownTable->geocent_start_time.gpsSeconds,
+                tablePtr.simRingdownTable->geocent_start_time.gpsNanoSeconds,
+                tablePtr.simRingdownTable->h_start_time.gpsSeconds,
+                tablePtr.simRingdownTable->h_start_time.gpsNanoSeconds,
+                tablePtr.simRingdownTable->l_start_time.gpsSeconds,
+                tablePtr.simRingdownTable->l_start_time.gpsNanoSeconds,
+                tablePtr.simRingdownTable->start_time_gmst,
+                tablePtr.simRingdownTable->mass,
+                tablePtr.simRingdownTable->longitude,
+                tablePtr.simRingdownTable->latitude,
+                tablePtr.simRingdownTable->distance,
+                tablePtr.simRingdownTable->inclination,
+                tablePtr.simRingdownTable->polarization,
+                tablePtr.simRingdownTable->epsilon,
+                tablePtr.simRingdownTable->spin,
+                tablePtr.simRingdownTable->frequency,
+                tablePtr.simRingdownTable->quality,
+                tablePtr.simRingdownTable->eff_dist_h,
+                tablePtr.simRingdownTable->eff_dist_l,
+                tablePtr.simRingdownTable->h0,
+                tablePtr.simRingdownTable->hrss,
+                tablePtr.simRingdownTable->hrss_h,
+                tablePtr.simRingdownTable->hrss_l
                 );
-          tablePtr.simRingTable = tablePtr.simRingTable->next;
+          tablePtr.simRingdownTable = tablePtr.simRingdownTable->next;
           }
       break;
     case summ_value_table:

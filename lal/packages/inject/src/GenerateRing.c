@@ -62,19 +62,17 @@ void
 LALGenerateRing( 
     LALStatus          *stat, 
     CoherentGW         *output,
-    SimRingTable       *simRing,
-    RingParamStruc    *params
+    SimRingdownTable   *simRingdown,
+    RingParamStruc     *params
     )
-/*    REAL8              *deltaT, */
-/*    CoordinateSystem   *system */
     
 { /* </lalVerbatim> */
-  UINT4 n, i;          /* number of and index over samples */
+  UINT4 n, i, T;       /* number of and index over samples */
   REAL8 t, dt;         /* time, interval */
-  REAL8 t0, gtime ;  /* central time, decay time, gaussian time */
-  REAL8 f0, quality/*, phi0*/;      /* initial phase and frequency */
+  REAL8 t0, gtime ;    /* central time, decay time, gaussian time */
+  REAL8 f0, quality;   /* initial phase and frequency */
   REAL8 twopif0;       /* 2*pi*f0 */
-  REAL4 h0;         /* peak strain for burst */
+  REAL4 h0;            /* peak strain for burst */
   REAL4 *fData;        /* pointer to frequency data */
   REAL8 *phiData;      /* pointer to phase data */
   REAL4 *aData;        /* pointer to frequency data */
@@ -101,32 +99,16 @@ LALGenerateRing(
 	  GENERATERINGH_MSGEOUT );
 
   /* Set up some other constants, to avoid repeated dereferencing. */
-  /* duration = (REAL8)(simBurst->dtplus + simBurst->dtminus); */
   dt = params->deltaT; 
-
- #if 0
-  if ( ( n = (INT4) (2.0 * duration / dt) ) == 0 ) 
-  {
-    ABORT(stat, GENERATERINGH_EMEM, GENERATERINGH_MSGEMEM );
-  }
-  /* notice the factor of 2 in the definition of n confusingly makes injections 
-     twice as long as the variable duration */
-#endif
-  
-  /* ???? */
-  /* start time of data is peak time duration */
-/*  TRY( LALFloatToInterval( stat->statusPtr, &dummyInterval, &duration ), stat );*/
-/*  TRY( LALDecrementGPS( stat->statusPtr, &startTime,  */
-/*        &(simRing->geocent_peak_time), &dummyInterval), stat); */
-
-  /* is just this ok? need LALFloatToGPS or something? */
-  startTime = simRing->geocent_start_time;
+  startTime = simRingdown->geocent_start_time;
     
-    /* Generic ring parameters */
-  h0 = simRing->h0;
-  quality = (REAL8)simRing->quality;
-  f0 = (REAL8)simRing->centralfreq;
+  /* Generic ring parameters */
+  h0 = simRingdown->h0;
+  quality = (REAL8)simRingdown->quality;
+  f0 = (REAL8)simRingdown->frequency;
   twopif0 = f0*LAL_TWOPI;
+  n =  16384;
+  /* fprintf( stderr, "n = %d\n", n );*/
 
   /* Allocate output structures. */
   if ( ( output->a = (REAL4TimeVectorSeries *)
@@ -149,12 +131,12 @@ LALGenerateRing(
   memset( output->phi, 0, sizeof(REAL8TimeSeries) );
 
   /* Set output structure metadata fields. */
-  output->position.longitude = simRing->rightascension; /* this doesnt exist, - ra, dec */
-  output->position.latitude = simRing->declination;
+  output->position.longitude = simRingdown->longitude; 
+  output->position.latitude = simRingdown->latitude;
   output->position.system = params->system;
-  output->psi = simRing->polarization;
+  output->psi = simRingdown->polarization;
   output->a->epoch = output->f->epoch = output->phi->epoch = startTime;
-  output->a->deltaT = params->deltaT; /*what is deltaT */
+  output->a->deltaT = params->deltaT; 
   output->f->deltaT = output->phi->deltaT = params->deltaT; 
   output->a->sampleUnits = lalStrainUnit;
   output->f->sampleUnits = lalHertzUnit;
@@ -170,6 +152,7 @@ LALGenerateRing(
     LALFree( output->f );   output->f = NULL;
     LALFree( output->phi ); output->phi = NULL;
   } ENDFAIL( stat );
+  
   LALDCreateVector( stat->statusPtr, &( output->phi->data ), n );
   BEGINFAIL( stat ) {
     TRY( LALSDestroyVector( stat->statusPtr, &( output->f->data ) ),
@@ -201,7 +184,7 @@ LALGenerateRing(
   phiData = output->phi->data->data;
   aData = output->a->data->data; 
 
-  if ( !( strcmp( simRing->waveform, "Ringdown" ) ) )
+  if ( !( strcmp( simRingdown->waveform, "Ringdown" ) ) )
   {
     for ( i = 0; i < n; i++ )
     {
@@ -210,10 +193,10 @@ LALGenerateRing(
       *(fData++)   = f0;
       *(phiData++) = twopif0 * t;
       if ( gtime > 0 )
-        *(aData++) = h0 * ( 1.0 + pow( cos( simRing->inclination ), 2 ) ) * exp( - gtime );
+        *(aData++) = h0 * ( 1.0 + pow( cos( simRingdown->inclination ), 2 ) ) * exp( - gtime );
       else
         *(aData++) = 0;
-      *(aData++) = h0* 2.0 * cos( simRing->inclination ) * exp( - gtime );
+      *(aData++) = h0* 2.0 * cos( simRingdown->inclination ) * exp( - gtime );
     }
   }
   else
@@ -232,7 +215,7 @@ void
 LALRingInjectSignals( 
     LALStatus               *stat, 
     REAL4TimeSeries         *series, 
-    SimRingTable           *injections,
+    SimRingdownTable        *injections,
     COMPLEX8FrequencySeries *resp,
     INT4                     calType
     )
@@ -244,9 +227,9 @@ LALRingInjectSignals(
   DetectorResponse   detector;
   COMPLEX8Vector    *unity = NULL;
   CoherentGW         waveform;
-  RingParamStruc    ringParam;
+  RingParamStruc     ringParam;
   REAL4TimeSeries    signal;
-  SimRingTable     *simRing=NULL;
+  SimRingdownTable  *simRingdown=NULL;
   LALDetector       *tmpDetector=NULL /*,*nullDetector=NULL*/;
   COMPLEX8FrequencySeries    *transfer = NULL;
 
@@ -345,42 +328,42 @@ LALRingInjectSignals(
   CHECKSTATUSPTR( stat );
 
   /* loop over list of waveforms and inject into data stream */
-  simRing = injections;
-  while ( simRing )
+  simRingdown = injections;
+  while ( simRingdown )
   {
     /* only do the work if the ring is in injection zone */
-    if( (injStartTime - simRing->geocent_start_time.gpsSeconds) *
-        (injStopTime - simRing->geocent_start_time.gpsSeconds) > 0 )
+    if( (injStartTime - simRingdown->geocent_start_time.gpsSeconds) *
+        (injStopTime - simRingdown->geocent_start_time.gpsSeconds) > 0 )
     {
-      simRing = simRing->next;
+      simRingdown = simRingdown->next;
       continue;
     }
 
     /* set the ring params */
     ringParam.deltaT = series->deltaT;
-    if( !( strcmp( simRing->coordinates, "HORIZON" ) ) )
+    if( !( strcmp( simRingdown->coordinates, "HORIZON" ) ) )
     {
       ringParam.system = COORDINATESYSTEM_HORIZON;
     }
-    else if ( !( strcmp( simRing->coordinates, "ZENITH" ) ) )
+    else if ( !( strcmp( simRingdown->coordinates, "ZENITH" ) ) )
     {
       /* set coordinate system for completeness */
       ringParam.system = COORDINATESYSTEM_EQUATORIAL;
       detector.site = NULL;
     }
-    else if ( !( strcmp( simRing->coordinates, "GEOGRAPHIC" ) ) )
+    else if ( !( strcmp( simRingdown->coordinates, "GEOGRAPHIC" ) ) )
     {
      ringParam.system = COORDINATESYSTEM_GEOGRAPHIC;
     }
-    else if ( !( strcmp( simRing->coordinates, "EQUATORIAL" ) ) )
+    else if ( !( strcmp( simRingdown->coordinates, "EQUATORIAL" ) ) )
     {
       ringParam.system = COORDINATESYSTEM_EQUATORIAL;
     }
-    else if ( !( strcmp( simRing->coordinates, "ECLIPTIC" ) ) )
+    else if ( !( strcmp( simRingdown->coordinates, "ECLIPTIC" ) ) )
     {
       ringParam.system = COORDINATESYSTEM_ECLIPTIC;
     }
-    else if ( !( strcmp( simRing->coordinates, "GALACTIC" ) ) )
+    else if ( !( strcmp( simRingdown->coordinates, "GALACTIC" ) ) )
     {
       ringParam.system = COORDINATESYSTEM_GALACTIC;
     }
@@ -389,35 +372,36 @@ LALRingInjectSignals(
 
     /* generate the ring */
     memset( &waveform, 0, sizeof(CoherentGW) );
-    LALGenerateRing( stat->statusPtr, &waveform, simRing, &ringParam );
+    LALGenerateRing( stat->statusPtr, &waveform, simRingdown, &ringParam );
     CHECKSTATUSPTR( stat );
 
     /* print the waveform to a file */
     if ( 1 )
-    {
-      FILE *fp;
-      char fname[512];
-      UINT4 jj, kplus, kcross;
-      LALSnprintf( fname, sizeof(fname) / sizeof(*fname), 
-          "waveform-%d-%d-%s.txt", 
-          simRing->geocent_start_time.gpsSeconds,
-          simRing->geocent_start_time.gpsNanoSeconds,
-          simRing->waveform );
-      fp = fopen( fname, "w" );
-
-      for( jj = 0, kplus = 0, kcross = 1; jj < waveform.phi->data->length; 
-          ++jj, kplus += 2, kcross +=2 )
       {
-        fprintf(fp, "%e %e %le %e\n", 
-            waveform.a->data->data[kplus], 
-            waveform.a->data->data[kcross], 
-            waveform.phi->data->data[jj], 
-            waveform.f->data->data[jj]);
-      }
- 
-      fclose( fp );
-    }
+        FILE *fp;
+        char fname[512];
+        UINT4 jj, kplus, kcross;
+        LALSnprintf( fname, sizeof(fname) / sizeof(*fname), 
+            "waveform-%d-%d-%s.txt", 
+            simRingdown->geocent_start_time.gpsSeconds,
+            simRingdown->geocent_start_time.gpsNanoSeconds,
+            simRingdown->waveform );
+        fp = fopen( fname, "w" );
+         
+        for( jj = 0, kplus = 0, kcross = 1; jj < waveform.phi->data->length; 
+            ++jj, kplus += 2, kcross +=2 )
+          {
+            fprintf(fp, "%e %e %le %e\n", 
+                waveform.a->data->data[kplus], 
+                waveform.a->data->data[kcross], 
+                waveform.phi->data->data[jj], 
+                waveform.f->data->data[jj]);
+            }
+        fclose( fp );     
+        }
     /* end */
+
+    
 
     /* must set the epoch of signal since it's used by coherent GW */
     signal.epoch = waveform.a->epoch;
@@ -457,7 +441,7 @@ LALRingInjectSignals(
     detector.site = tmpDetector;
 
     /* move on to next one */
-    simRing = simRing->next;
+    simRingdown = simRingdown->next;
   }
 
   /* destroy the signal */
