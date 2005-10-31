@@ -1,4 +1,4 @@
-/* ***************************************************
+/**
  *  \file Statistics.h
  *  \brief Functions prototypes and structures for calculating statistical properties of Hough maps
  *  \author Krishnan, B.
