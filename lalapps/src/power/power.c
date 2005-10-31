@@ -1219,7 +1219,7 @@ static void add_mdc_injections(
 		series->data->data[i] += mdc->data->data[i];
 
 	/* clean up */
-	LAL_CALL(LALDestroyREAL4TimeSeries(stat, mdc), stat);
+	XLALDestroyREAL4TimeSeries(mdc);
 }
 
 /*
@@ -1322,7 +1322,7 @@ static void add_sim_injections(
 	LAL_CALL(LALCDestroyVector( stat, &unity ),stat);
        	
 	/* Set up a time series to hold signal in ADC counts */
-	LAL_CALL(LALCreateREAL4TimeSeries(stat, &signal, series->name, series->epoch, series->f0, series->deltaT, series->sampleUnits, series->data->length), stat);
+	signal = XLALCreateREAL4TimeSeries(series->name, &series->epoch, series->f0, series->deltaT, &series->sampleUnits, series->data->length);
  	
 	if(options.verbose)
 	  fprintf(stderr, "add_sim_injections(): reading in SimBurst Table\n");
@@ -1436,8 +1436,8 @@ static void add_sim_injections(
 	  LAL_CALL(LALSSInjectTimeSeries( stat, series, signal ),stat);
 
 	  /* Clean up */
-	  LAL_CALL(LALDestroyREAL4TimeSeries(stat, plusseries), stat);
-	  LAL_CALL(LALDestroyREAL4TimeSeries(stat, crossseries), stat);
+	  XLALDestroyREAL4TimeSeries(plusseries);
+	  XLALDestroyREAL4TimeSeries(crossseries);
 	  LAL_CALL(LALSDestroyVectorSequence(stat, &( waveform.a->data ) ),stat);
 	  LAL_CALL(LALSDestroyVector(stat, &( waveform.f->data ) ),stat);
 	  LAL_CALL(LALDDestroyVector(stat, &( waveform.phi->data ) ),stat);
@@ -1452,7 +1452,7 @@ static void add_sim_injections(
 	  simBurst = simBurst->next;
 	}
 	
-	LAL_CALL(LALDestroyREAL4TimeSeries(stat, signal), stat);
+	XLALDestroyREAL4TimeSeries(signal);
 	LAL_CALL(LALCDestroyVector(stat, &( transfer->data )),stat);
 	
 	if ( detector.site ) 
@@ -1676,7 +1676,7 @@ int main( int argc, char *argv[])
 				length = XLALGPSDiff(&epoch, &options.stopEpoch) * options.ResampleRate;
 				if(options.maxSeriesLength)
 					length = min(options.maxSeriesLength, length);
-				LAL_CALL(LALCreateREAL4TimeSeries(&stat, &series, options.channelName, epoch, 0.0, (REAL8) 1.0 / options.ResampleRate, lalADCCountUnit, length), &stat);
+				series = XLALCreateREAL4TimeSeries(options.channelName, &epoch, 0.0, (REAL8) 1.0 / options.ResampleRate, &lalADCCountUnit, length);
 				for(i = 0; i < series->data->length; i++)
 					series->data->data[i] = 1.0;
 			}
@@ -1793,8 +1793,8 @@ int main( int argc, char *argv[])
 		 */
 
 		XLALGPSAdd(&epoch, (series->data->length - overlap) * series->deltaT);
-		LAL_CALL(LALDestroyREAL4TimeSeries(&stat, series), &stat);
-		LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&stat, hrssresponse), &stat);
+		XLALDestroyREAL4TimeSeries(series);
+		XLALDestroyCOMPLEX8FrequencySeries(hrssresponse);
 	}
 
 	/*
