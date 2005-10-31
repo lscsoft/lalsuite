@@ -452,11 +452,11 @@ void LALHOUGHConstructHMT_W  (LALStatus                  *status,
 
 void LALHOUGHWeighSpacePHMD  (LALStatus            *status, 
 			      PHMDVectorSequence   *phmdVS,
-			      REAL4Vector *weightV
+			      REAL8Vector *weightV
 			      ); 
 
 void LALHOUGHInitializeWeights  (LALStatus            *status, 
-				 REAL4Vector *weightV
+				 REAL8Vector *weightV
 				 );
 
 void LALHOUGHNormalizeWeights  (LALStatus            *status, 

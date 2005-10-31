@@ -646,7 +646,7 @@ void LALHOUGHConstructHMT_W (LALStatus                  *status,
 /* *******************************  <lalVerbatim file="DriveHoughD"> */
 void LALHOUGHWeighSpacePHMD  (LALStatus            *status, 
 			      PHMDVectorSequence   *phmdVS, /**< partial hough map derivatives */
-			      REAL4Vector *weightV /**< vector of weights */) 
+			      REAL8Vector *weightV /**< vector of weights */) 
 { /*   *********************************************  </lalVerbatim> */
 
   UINT4    k,j;
@@ -698,7 +698,7 @@ void LALHOUGHWeighSpacePHMD  (LALStatus            *status,
 /** Initializes weight factors to unity */
 /* *******************************  <lalVerbatim file="DriveHoughD"> */
 void LALHOUGHInitializeWeights  (LALStatus  *status, 
-				REAL4Vector *weightV /**< vector of weights */) 
+				REAL8Vector *weightV /**< vector of weights */) 
 { /*   *********************************************  </lalVerbatim> */
 
   UINT4 j, length;
