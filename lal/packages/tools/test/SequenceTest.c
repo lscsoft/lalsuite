@@ -50,11 +50,10 @@ static int cmp(REAL4Sequence *a, REAL4Sequence *b)
 }
 
 
-int main(int argc, char *argv[])
+int main(void)
 {
 	REAL4Sequence *x, *y;
 	INT4Sequence *a;
-	REAL4 z;
 	int i;
 
 	/*
@@ -159,7 +158,7 @@ int main(int argc, char *argv[])
 	/* test resize to subset */
 	a = sequential_sequence(1024);
 	XLALResizeINT4Sequence(a, 256, 512);
-	for(i = 0; i < a->length; i++)
+	for(i = 0; i < (int) a->length; i++)
 		if(a->data[i] != i + 256) {
 			fprintf(stderr, "Resize test 1a failed\n");
 			exit(1);
@@ -172,11 +171,11 @@ int main(int argc, char *argv[])
 
 	/* test resize to superset */
 	a = sequential_sequence(16);
-	for(i = 0; i < a->length; i++)
+	for(i = 0; i < (int) a->length; i++)
 		fprintf(stdout, "%d: %d\n", i, a->data[i]);
 	fprintf(stdout, "\n");
 	XLALResizeINT4Sequence(a, -8, 32);
-	for(i = 0; i < a->length; i++)
+	for(i = 0; i < (int) a->length; i++)
 		fprintf(stdout, "%d: %d\n", i, a->data[i]);
 	if(a->length != 32) {
 		fprintf(stderr, "Resize test 2a failed\n");

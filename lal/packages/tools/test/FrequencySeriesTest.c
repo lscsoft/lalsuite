@@ -51,7 +51,7 @@ static int cmp_real4(REAL4 *a, REAL4 *b, size_t n)
 }
 
 
-int main(int argc, char *argv[])
+int main(void)
 {
 	REAL4FrequencySeries *x, *y;
 	INT4FrequencySeries *a;
