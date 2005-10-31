@@ -55,18 +55,6 @@ SERIESTYPE *`XLALCut'SERIESTYPE (
 );
 /* </lalVerbatim> */
 
-/* <lalLaTeX file="FrequencySeriesCutP">
-\idx{`LALCut'SERIESTYPE ()}
-</lalLaTeX> <lalVerbatim file="FrequencySeriesCutP"> */
-void `LALCut'SERIESTYPE (
-	LALStatus *status,
-	SERIESTYPE **output,
-	const SERIESTYPE *input,
-	size_t first,
-	size_t length
-);
-/* </lalVerbatim> */
-
 /* <lalLaTeX file="FrequencySeriesShrinkP">
 \idx{`XLALShrink'SERIESTYPE ()}
 </lalLaTeX> <lalVerbatim file="FrequencySeriesShrinkP"> */

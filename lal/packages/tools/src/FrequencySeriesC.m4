@@ -108,30 +108,6 @@ SERIESTYPE *`XLALCut'SERIESTYPE (
 }
 
 
-void `LALCut'SERIESTYPE (
-	LALStatus *status,
-	SERIESTYPE **output,
-	const SERIESTYPE *input,
-	size_t first,
-	size_t length
-)
-{
-	INITSTATUS(status, "`LALCut'SERIESTYPE", FREQUENCYSERIESC);
-
-	ASSERT(output != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
-	ASSERT(input != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
-	ASSERT(input->data != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
-	ASSERT(first + length <= input->data->length, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
-	*output = `XLALCut'SERIESTYPE (input, first, length);
-	if(*output == NULL) {
-		XLALClearErrno();
-		ABORT(status, LAL_NOMEM_ERR, LAL_NOMEM_MSG);
-	}
-
-	RETURN(status);
-}
-
-
 size_t `XLALShrink'SERIESTYPE (
 	SERIESTYPE *series,
 	size_t first,
