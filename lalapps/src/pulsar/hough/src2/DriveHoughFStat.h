@@ -174,28 +174,28 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 
   void ComputeFstatStack (LALStatus *status, 
 			  REAL8FrequencySeriesVector *out, 
-			  const SFTVectorSequence *sfts, 
+			  SFTVectorSequence *sfts, 
 			  FstatStackParams *params);
 
   void ComputeFstatHoughMap (LALStatus *status,
 			     HoughCandidates *out,
-			     const HOUGHPeakGramVector *pgV,
+			     HOUGHPeakGramVector *pgV,
 			     HoughParams *params);
 
   void FstatVectToPeakGram (LALStatus *status,
 			    HOUGHPeakGramVector *pgV,
-			    const REAL8FrequencySeriesVector *FstatVect,
+			    REAL8FrequencySeriesVector *FstatVect,
 			    REAL8  thr);
 
   void SetUpStacks1( LALStatus *status,
 		    SFTVectorSequence *out,
-		    const SFTVector *sftVect,
+		    SFTVector *sftVect,
 		    INT4 nStacks);
 
   void SetUpStacks2( LALStatus *status,
 		     SFTVectorSequence *out,
-		     const SFTVector *sftVect,
-		     const LIGOTimeGPSVector *ts,
+		     SFTVector *sftVect,
+		     LIGOTimeGPSVector *ts,
 		     INT4 nStacks);
 
   void PrintFstat( LALStatus *status,
@@ -210,9 +210,9 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 
   void GetHoughCandidates(LALStatus *status,
 			  HoughCandidates *houghCand,
-			  const HOUGHMapTotal *ht,
-			  const HOUGHPatchGrid  *patch,
-			  const HOUGHDemodPar   *parDem,
+			  HOUGHMapTotal *ht,
+			  HOUGHPatchGrid  *patch,
+			  HOUGHDemodPar   *parDem,
 			  REAL8 houghThreshold);
 
   void PrintHoughCandidates(LALStatus *status,
@@ -225,7 +225,7 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 
   void GetFstatCandidates( LALStatus *status,
 			   HoughCandidates *cand,
-			   const REAL8FrequencySeries *in,
+			   REAL8FrequencySeries *in,
 			   REAL8 FstatThr);
 
   void PrintHoughHistogram(LALStatus *status,

@@ -814,7 +814,7 @@ int main( int argc, char *argv[]) {
 */
 void ComputeFstatStack (LALStatus *status, 
 			REAL8FrequencySeriesVector *out, 
-			const SFTVectorSequence *stackSFTs, 
+			SFTVectorSequence *stackSFTs, 
 			FstatStackParams *params)
 {
   /* stuff copied from params */
@@ -1050,7 +1050,7 @@ void SetUpFstatStack (LALStatus *status,
 */
 void ComputeFstatHoughMap(LALStatus *status,
 			  HoughCandidates  *out,   /* output candidates */
-			  const HOUGHPeakGramVector *pgV, /* peakgram vector */
+			  HOUGHPeakGramVector *pgV, /* peakgram vector */
 			  HoughParams *params)
 {
 
@@ -1406,7 +1406,7 @@ void ComputeFstatHoughMap(LALStatus *status,
 */
 void FstatVectToPeakGram (LALStatus *status,
 			  HOUGHPeakGramVector *pgV,
-			  const REAL8FrequencySeriesVector *FstatVect,
+			  REAL8FrequencySeriesVector *FstatVect,
 			  REAL8  thr)
 {
   INT4 j, k;
@@ -1484,7 +1484,7 @@ void FstatVectToPeakGram (LALStatus *status,
 */
 void SetUpStacks1(LALStatus *status, 
 		 SFTVectorSequence  *out,  
-		 const SFTVector  *sftVect,
+		 SFTVector  *sftVect,
 		 INT4 nStacks)
 {
   INT4 k, mCohSft, nSFTs;
@@ -1513,8 +1513,8 @@ void SetUpStacks1(LALStatus *status,
 
 void SetUpStacks2(LALStatus *status, 
 		  SFTVectorSequence  *out,  
-		  const SFTVector  *sftVect,
-		  const LIGOTimeGPSVector *ts,
+		  SFTVector  *sftVect,
+		  LIGOTimeGPSVector *ts,
 		  INT4 nStacks)
 {
   REAL8 tStart, tEnd, tStack, timeBase;
@@ -1640,7 +1640,7 @@ void PrintHmap2file(LALStatus *status,
 
   for(k=ySide-1; k>=0; --k){
     for(i=0;i<xSide;++i){
-      fprintf( fp ," %d", ht->map[k*xSide +i]);
+      fprintf( fp ," %f", ht->map[k*xSide +i]);
       fflush( fp );
     }
     fprintf( fp ," \n");
@@ -1657,9 +1657,9 @@ void PrintHmap2file(LALStatus *status,
 /** Get Hough candidates */
 void GetHoughCandidates(LALStatus *status,
 			HoughCandidates *houghCand,
-			const HOUGHMapTotal *ht,
-			const HOUGHPatchGrid  *patch,
-			const HOUGHDemodPar   *parDem,
+			HOUGHMapTotal *ht,
+			HOUGHPatchGrid  *patch,
+			HOUGHDemodPar   *parDem,
 			REAL8 houghThreshold)
 {
   REAL8UnitPolarCoor sourceLocation;
@@ -1801,7 +1801,7 @@ void GetLoudestFstat(LALStatus *status,
 */
 void GetFstatCandidates( LALStatus *status,
 			 HoughCandidates *cand,
-			 const REAL8FrequencySeries *in,
+			 REAL8FrequencySeries *in,
 			 REAL8 FstatThr)
 {
   INT4 k, length, nCandidates;

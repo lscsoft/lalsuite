@@ -95,7 +95,7 @@ int main(int argc, char *argv[]){
   static REAL8Vector         timeDiffV;
 
   /* vector of weights */
-  REAL4Vector weightsV;
+  REAL8Vector weightsV;
 
   /* ephemeris */
   EphemerisData    *edat=NULL;
@@ -682,7 +682,7 @@ int main(int argc, char *argv[]){
   /* set up weights vector */
   /* *****************/
   weightsV.length = mObsCoh;
-  weightsV.data = (REAL4 *)LALMalloc(mObsCoh*sizeof(REAL4));
+  weightsV.data = (REAL8 *)LALMalloc(mObsCoh*sizeof(REAL8));
 
   
   /* loop over sky patches */
