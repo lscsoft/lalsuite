@@ -1071,7 +1071,7 @@ static COMPLEX8FrequencySeries *generate_response(
 	memset(&calfacts, 0, sizeof(calfacts));
 	calfacts.ifo = ifo;
 
-	LAL_CALL(LALCreateCOMPLEX8FrequencySeries(stat, &response, chname, epoch, 0.0, 1.0 / (length * deltaT), strainPerCount, length / 2 + 1), stat);
+	response = XLALCreateCOMPLEX8FrequencySeries(chname, &epoch, 0.0, 1.0 / (length * deltaT), &strainPerCount, length / 2 + 1);
 
 	if(options.verbose) 
 		fprintf(stderr, "generate_response(): working at GPS time %u.%09u s\n", response->epoch.gpsSeconds, response->epoch.gpsNanoSeconds );
@@ -1717,7 +1717,7 @@ int main( int argc, char *argv[])
 				LALPrintTimeSeries(series, "./injections.dat");
 
 			/*clean up*/
-			LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&stat, response), &stat);
+			XLALDestroyCOMPLEX8FrequencySeries(response);
 		}
 
 		/*
