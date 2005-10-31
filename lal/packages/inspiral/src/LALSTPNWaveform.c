@@ -175,7 +175,7 @@ void LALSTPNderivatives(REAL8Vector *values, REAL8Vector *dvalues, void *mparams
        with the formula above; hopefully the compiler will simplify*/
     
     if(params->wspin20 != 0.0)
-          test += -v  * (dotS1S2 - 3.0 * dotLNS1 * dotLNS2);
+          test += -v3  * (dotS1S2 - 3.0 * dotLNS1 * dotLNS2);
 
     /* dLN, 1.5PN*/
     
