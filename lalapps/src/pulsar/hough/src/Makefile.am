@@ -2,8 +2,8 @@
 # $Id$
 
 # for using lalapps-defines + functions
-#INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
-#LDADD = $(top_builddir)/src/lalapps/liblalapps.la
+INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
+LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 ## not usable before automake-1.6:
 ## AM_LDFLAGS = -all-static

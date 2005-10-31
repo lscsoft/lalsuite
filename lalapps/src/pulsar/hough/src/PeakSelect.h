@@ -1,13 +1,13 @@
-/*-----------------------------------------------------------------------
+/**
  *
- * File Name: PeakSelect.h
- *
- * Authors: Sintes, A.M., 
+ * \file PeakSelect.h
+ * \author Sintes, A.M., and Krishnan, B. 
+ * \brief Header file for  PeakSelect.c
  *
  * Revision: $Id$
  *
  * History:   Created by Sintes May 21, 2003
- *            Modified...
+ *            Modified by Krishnan Oct 2005
  *
  *-----------------------------------------------------------------------
  */
@@ -73,7 +73,7 @@ From periodogram to peakgram
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
 #include <lal/LALRunningMedian.h>
-
+#include <lal/NormalizeSFTRngMed.h>
 #include <lal/PHMD.h>
 #include "./SFTbin.h"
 
@@ -168,6 +168,10 @@ void LALSelectPeakColorNoise(LALStatus  *status,
 	     REAL8                *thr, /* threshold reltive to psd */
              REAL8PeriodoPSD      *in);
 
+void SFTtoUCHARPeakGram(LALStatus        *status,
+			UCHARPeakGram    *pg,
+			SFTtype          *sft,   
+			REAL8            thr);
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

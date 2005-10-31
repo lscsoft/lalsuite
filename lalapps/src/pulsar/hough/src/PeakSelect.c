@@ -1,15 +1,33 @@
-/*-----------------------------------------------------------------------
+/*
+ *  Copyright (C) 2005 Badri Krishnan, Alicia Sintes  
  *
- * File Name: PeakSelect.c
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
  *
- * Authors: Sintes, A.M.,  
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
+ *  You should have received a copy of the GNU General Public License
+ *  along with with program; see the file COPYING. If not, write to the 
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  MA  02111-1307  USA
+ */
+
+/**
+ *
+ * \file PeakSelect.c
+ * \author Sintes, A.M. and Krishnan, B.  
+ * \brief Functions for selecting peaks from SFTs 
  * Revision: $Id$
  *
  * History:   Created by Sintes May 21, 2003
- *            Modified...
+ *            Modified by Krishnan Oct, 2005
  *
- *-----------------------------------------------------------------------
+ *
  */
 
 /************************************ <lalVerbatim file="PeakSelectCV">
@@ -368,3 +386,82 @@ void LALSelectPeakColorNoise(LALStatus  *status,
 }
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 
+
+
+/** Convert a normalized sft into a peakgram by selecting bins in 
+    which power exceeds a threshold.
+*/
+/* *******************************  <lalVerbatim file="PeakSelectD"> */
+void SFTtoUCHARPeakGram(LALStatus        *status,
+			UCHARPeakGram    *pg,
+			SFTtype          *sft,   
+			REAL8            thr)
+{ /*   *********************************************  </lalVerbatim> */ 
+  
+  INT4  length;
+  INT4  nPeaks;
+  REAL8 f0, deltaF;
+  REAL8FrequencySeries periodo;
+
+  /* --------------------------------------------- */
+  INITSTATUS (status, "LALSelectPeakColorNoise", PEAKSELECTC);
+  ATTATCHSTATUSPTR (status);
+  
+  /*   Make sure the arguments are not NULL: */
+  ASSERT (pg,  status, PEAKSELECTH_ENULL, PEAKSELECTH_MSGENULL);
+  ASSERT (sft, status, PEAKSELECTH_ENULL, PEAKSELECTH_MSGENULL);
+  
+
+  pg->epoch.gpsSeconds     = sft->epoch.gpsSeconds; 
+  pg->epoch.gpsNanoSeconds = sft->epoch.gpsNanoSeconds;
+  deltaF = sft->deltaF;
+  f0 = sft->f0;
+  pg->timeBase     = 1.0/deltaF;
+  pg->fminBinIndex = floor( f0 /deltaF + 0.5);
+  length = sft->data->length;
+
+  /* make sure that the length of the peakgram is consistent */
+  ASSERT (length==pg->length,  status, PEAKSELECTH_EVAL, PEAKSELECTH_MSGEVAL);
+
+  /* allocate memory for normalized periodogram */
+  periodo.data = NULL;
+  periodo.data = (REAL8Sequence *)LALMalloc(sizeof(REAL8Sequence));
+  periodo.data->length = length;
+  periodo.data->data = (REAL8 *)LALMalloc( length * sizeof(REAL8));
+
+  TRY( LALSFTtoPeriodogram( status->statusPtr, &periodo, sft), status);
+
+  nPeaks = 0;
+  if (length > 0){
+    UCHAR  *out;
+    REAL8  *peri; 
+    INT4   n;
+    
+    ASSERT (pg->data,   status, PEAKSELECTH_ENULL, PEAKSELECTH_MSGENULL);
+    
+    out = pg->data;
+    peri = periodo.data->data;
+    
+    n = length;
+    
+    while (n-- >0){
+      if ( *peri > thr ){
+        *out = 1 ;
+	nPeaks++ ;
+      } else {
+        *out = 0;
+      }     
+      ++out;
+      ++peri;
+    } /* end loop over n */
+  }/* end if statement */ 
+  
+  pg->nPeaks = nPeaks;
+
+  LALFree(periodo.data->data);
+  LALFree(periodo.data);
+  
+  DETATCHSTATUSPTR (status);
+  /* normal exit */
+  RETURN (status);
+}

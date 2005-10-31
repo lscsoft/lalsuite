@@ -23,14 +23,15 @@
  * \brief Driver code for performing Hough transform search on non-demodulated
    data.
 
- * Revision: $Id$
- *
- * History:   Created by Sintes July 04, 2003
- *    Case: Non demodulated input data. Search with (no?) spin-down, 
- *    Input from SFT data.
- *  This code also outputs a file with the velocity information
- *-----------------------------------------------------------------------
- */
+   Revision: $Id$
+ 
+   History:   Created by Sintes July 04, 2003
+   
+   This is the main driver for the Hough transform routines.
+   It takes as input a set of SFTs and search parameters and
+   outputs the number counts using the Hough transform routines 
+
+*/
 
 
 #include "./DriveHoughColor.h"
@@ -39,14 +40,15 @@
 #include "./timer/cycle_counter/Intel/GCC/cycle_counter.h"
 #endif
 
-NRCSID (DRIVEHOUGH_V3C, "$Id$");
+RCSID( "$Id$");
 
 
 /* ***************************************************************
  * Constant Declarations.  Default parameters.
  *****************************************************************/
 
-INT4 lalDebugLevel=0;
+extern int lalDebugLevel;
+
 #define EARTHEPHEMERIS "./earth00-04.dat"
 #define SUNEPHEMERIS "./sun00-04.dat"
 
@@ -77,11 +79,6 @@ INT4 lalDebugLevel=0;
 /* vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv------------------------------------ */
 int main(int argc, char *argv[]){
 
-  /** This is the main driver for the Hough transform routines.
-      It takes as input a set of SFTs and search parameters and
-      outputs the number counts using the Hough transform routines **/
-
-
   /* LALStatus pointer */
   static LALStatus           status;  
   
@@ -93,6 +90,9 @@ int main(int argc, char *argv[]){
   static REAL8Cart3CoorVector velV;
   /*   static REAL8Cart3CoorVector velVmid; */
   static REAL8Vector         timeDiffV;
+
+  /* standard pulsra sft types */ 
+  SFTVector *inputSFTs=NULL;
 
   /* vector of weights */
   REAL8Vector weightsV;
@@ -139,7 +139,6 @@ int main(int argc, char *argv[]){
   REAL8  normalizeThr, patchSizeX, patchSizeY;
   UINT2  xSide, ySide;
   UINT2  maxNBins, maxNBorders;
-  CHAR   filelist[MAXFILES][MAXFILENAMELENGTH];  
   FILE   *fp1 = NULL;
   FILE   *fpStar = NULL;  
 
@@ -312,7 +311,6 @@ int main(int argc, char *argv[]){
   }
 
 
- 
 
   /*****************************************************************/
   /* read skypatch info */
@@ -353,43 +351,61 @@ int main(int argc, char *argv[]){
     
     fclose(fpsky);     
   }
-  
-  /******************************************************************/
-  /* Looking into the SFT data files */
-  /******************************************************************/
-  { 
-    CHAR     command[256];
-    glob_t   globbuf;
-    UINT4    j;
-     
-    strcpy(command, uvar_sftDir);
-    strcat(command, "/*SFT*.*");
-    
-    globbuf.gl_offs = 1;
-    glob(command, GLOB_ERR, NULL, &globbuf);
-    
-    if(globbuf.gl_pathc==0)
-      {
-	fprintf(stderr,"No SFTs in directory %s ... Exiting.\n", uvar_sftDir);
-	return 1;  /* stop the program */
-      }
-    
-    /* we will read up to a certain number of SFT files, but not all 
-       if there are too many ! */ 
-    mObsCoh = MIN (MAXFILES, globbuf.gl_pathc);
-    
-    /* Remember to do the following: 
-       globfree(&globbuf); after reading the file names. The file names are 
-       globbuf.gl_pathv[fileno]   that one can copy into whatever as:
-       strcpy(filelist[fileno],globbuf.gl_pathv[fileno]);  */
-    
-    for (j=0; j < mObsCoh; j++){
-      strcpy(filelist[j],globbuf.gl_pathv[j]);
+
+
+  /* read sft files */
+  {
+    CHAR *tempDir;
+    REAL8 doppWings, fmin, fmax;
+    INT4 length;
+
+    /* copy pattern to be searched */
+    tempDir = (CHAR *)LALMalloc(512*sizeof(CHAR));
+    strcpy(tempDir, uvar_sftDir);
+    strcat(tempDir, "/*SFT*.*");
+
+    /* add Doppler wings */
+    doppWings = (uvar_f0 + uvar_fSearchBand) * VTOT;    
+    fmin = uvar_f0 - doppWings;
+    fmax = uvar_f0 + uvar_fSearchBand + doppWings;
+
+    /* read sft files making sure to add extra bins for running median */
+    LAL_CALL( LALReadSFTfiles ( &status, &inputSFTs, fmin, fmax, 
+				uvar_blocksRngMed, tempDir), &status); 
+
+    LALFree(tempDir);
+
+    /* normalize sfts */
+    LAL_CALL( LALNormalizeSFTVect (&status, inputSFTs, uvar_blocksRngMed, 0), &status);
+
+
+    /* set other parameters based on sfts */
+    mObsCoh = inputSFTs->length; /* number of sfts */
+    deltaF = inputSFTs->data->deltaF;  /* frequency resolution */
+    timeBase= 1.0/deltaF; /* coherent integration time */
+
+
+    f0Bin = floor( uvar_f0 * timeBase + 0.5); /* initial search frequency */
+    length =  uvar_fSearchBand * timeBase; /* total number of search bins - 1 */
+    fLastBin = f0Bin+length;   /* final frequency bin to be analyzed */
+
+    /* use this value of length to allocate memory for nstar, fstar etc. */
+    nStar = (UINT4 *)LALMalloc((length + 1)*sizeof(UINT4));
+    freqStar = (REAL8 *)LALMalloc((length + 1)*sizeof(REAL8));
+    alphaStar = (REAL8 *)LALMalloc((length + 1)*sizeof(REAL8));
+    deltaStar = (REAL8 *)LALMalloc((length + 1)*sizeof(REAL8));
+    fdotStar = (REAL8 *)LALMalloc((length + 1)*sizeof(REAL8));
+
+    /* initialize nstar values */
+    {
+      INT4 starIndex;
+      for( starIndex = 0; starIndex < length + 1; starIndex++)
+	nStar[starIndex] = 0;
     }
-    globfree(&globbuf);	
+
   }
-
-
+  
+    
   /* ****************************************************************/
   /*  computing the Hough threshold for a given false alarm  */
   /*   HoughThreshold = N*alpha +sqrt(2N alpha (1-alpha))*erfc-1(2 alpha_h) */
@@ -415,21 +431,6 @@ int main(int argc, char *argv[]){
 
 
   /* ****************************************************************/
-  /*  Reading the first headerfile of the first SFT  */
-  /* ****************************************************************/
-  {
-    SFTHeader1    header;
-    CHAR   *fname = NULL;
-    
-    fname = filelist[0];
-    SUB( ReadSFTbinHeader1( &status, &header, fname ), &status );
-   /* SUB( ReadSFTbinHeader1( &status, &header,&(filelist[0]) ), &status ); */
- 
-    timeBase= header.timeBase; /* Coherent integration time */
-    deltaF = 1./timeBase;  /* The frequency resolution */
-  }
- 
-  /* ****************************************************************/
   /* reading from SFT, times and generating peakgrams  */
   /* ****************************************************************/
 
@@ -442,94 +443,39 @@ int main(int argc, char *argv[]){
   pgV.pg = (HOUGHPeakGram *)LALMalloc(mObsCoh*sizeof(HOUGHPeakGram));
 
   { 
-    COMPLEX8SFTData1  sft;
-    REAL8PeriodoPSD   periPSD;
-    /* REAL8Periodogram1 peri;  should disappear */
+    SFTtype  sft;
     UCHARPeakGram     pg1;
-    
-    INT4   length, fWings;
-    /* REAL8  mean; */
-    REAL8  threshold;
-    INT4   nPeaks;
+    INT4   nPeaks, length;
     UINT4  j; 
-    CHAR   *fname = NULL;
   
-    /* bandwith to be read should account for Doppler effects and 
-       possible spin-down-up */
-
-    f0Bin = floor( uvar_f0*timeBase + 0.5);     /* initial frequency to be analyzed */
-
-    length =  uvar_fSearchBand*timeBase; 
-    fLastBin = f0Bin+length;   /* final frequency to be analyzed */
-
-    /* use this value of length to allocate memory for nstar, fstar etc. */
-    nStar = (UINT4 *)LALMalloc((length + 1)*sizeof(UINT4));
-    freqStar = (REAL8 *)LALMalloc((length + 1)*sizeof(REAL8));
-    alphaStar = (REAL8 *)LALMalloc((length + 1)*sizeof(REAL8));
-    deltaStar = (REAL8 *)LALMalloc((length + 1)*sizeof(REAL8));
-    fdotStar = (REAL8 *)LALMalloc((length + 1)*sizeof(REAL8));
-
-    {
-      INT4 starIndex;
-      for( starIndex = 0; starIndex < length + 1; starIndex++)
-	nStar[starIndex] = 0;
-    }
-
-    /* calculate the wings to be added due to doppler shift etc. */
-    fWings =  floor( fLastBin * VTOT +0.5) + nfSizeCylinder + uvar_blocksRngMed;
-    length = 1 + length + 2*fWings;
-
-    sft.length = length;
-    sft.fminBinIndex = f0Bin-fWings;
-    sft.data = NULL;
-    sft.data = (COMPLEX8 *)LALMalloc(length* sizeof(COMPLEX8));
-
-    periPSD.periodogram.length = length;
-    periPSD.periodogram.data = NULL;
-    periPSD.periodogram.data = (REAL8 *)LALMalloc(length* sizeof(REAL8));
-    periPSD.psd.length = length;
-    periPSD.psd.data = NULL;
-    periPSD.psd.data = (REAL8 *)LALMalloc(length* sizeof(REAL8));
-
+    length = inputSFTs->data->data->length;
     pg1.length = length;
     pg1.data = NULL;
     pg1.data = (UCHAR *)LALMalloc(length* sizeof(UCHAR));
 
+    /* loop over sfts and select peaks */
     for (j=0; j < mObsCoh; j++){
-      fname = filelist[j];
-      SUB( ReadCOMPLEX8SFTbinData1( &status, &sft, fname ), &status );
 
-      SUB( COMPLEX8SFT2Periodogram1(&status, &periPSD.periodogram, &sft), &status );
-  
-      SUB( LALPeriodo2PSDrng( &status, &periPSD.psd, &periPSD.periodogram, &uvar_blocksRngMed), &status );
+      sft = inputSFTs->data[j];
 
-      threshold = uvar_peakThreshold/normalizeThr;  
-            
-      SUB( LALSelectPeakColorNoise(&status,&pg1,&threshold,&periPSD), &status);
-/*
- *       SUB( LALComputeMeanPower ( &status, &mean, &peri),  &status );      
- *       threshold = uvar_peakThreshold*mean;
- *       SUB( LALSelectPeakWhiteNoise(&status, &pg1, &threshold, &peri), &status);
- */
-
+      SUB (SFTtoUCHARPeakGram( &status, &pg1, &sft, uvar_peakThreshold), &status);
+      
       nPeaks = pg1.nPeaks;
       timeV.data[j].gpsSeconds = pg1.epoch.gpsSeconds;
       timeV.data[j].gpsNanoSeconds = pg1.epoch.gpsNanoSeconds;
 
+      /* compress peakgram */      
       pgV.pg[j].length = nPeaks;
       pgV.pg[j].peak = NULL;
       pgV.pg[j].peak = (INT4 *)LALMalloc(nPeaks* sizeof(INT4));
-      
+
       SUB( LALUCHAR2HOUGHPeak( &status, &(pgV.pg[j]), &pg1), &status );
-    }
-    
-    LALFree(sft.data);
+    } /* end loop over sfts */
 
-    LALFree(periPSD.periodogram.data);
-    LALFree(periPSD.psd.data);
-    LALFree(pg1.data);
-  }
+    /* we are done with the sfts now */
+    LAL_CALL (LALDestroySFTVector(&status, &inputSFTs), &status );
 
+  }/* end block for selecting peaks */
 
   /******************************************************************/
   /* compute detector velocity for those time stamps  */
@@ -1352,7 +1298,7 @@ void PrintHoughEvents (LALStatus       *status,
   INT4     temp;
   REAL8    f0;
   /* --------------------------------------------- */
-  INITSTATUS (status, "PrintHoughEvents", DRIVEHOUGH_V3C);
+  INITSTATUS (status, "PrintHoughEvents", rcsid);
   ATTATCHSTATUSPTR (status);
   
  /* make sure arguments are not null */

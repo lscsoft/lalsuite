@@ -63,6 +63,9 @@
 #include <lal/Velocity.h>
 #include <lal/Statistics.h>
 #include <lal/UserInput.h>
+#include <lal/SFTfileIO.h>
+#include <lal/NormalizeSFTRngMed.h>
+#include <lalapps.h>
 #include <gsl/gsl_cdf.h>
 #include "./SFTbin.h"
 #include "./PeakSelect.h"
