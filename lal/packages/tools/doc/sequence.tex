@@ -3,14 +3,8 @@
 \label{s:SequenceManipulation}
 
 This is a suite of functions for creating, destroying, and manipulating LAL
-sequences.  One pair of functions (the XLAL version and its LAL
-counterpart) is available for each method and sequence type.  For example
-\texttt{XLALCreateREAL4Sequence()} is available for creating sequences of
-\texttt{REAL4} data, and the LAL-style wrapper
-\texttt{LALCreateREAL4Sequence()} is provided which is equivalent to the
-XLAL version in all respects except that it adheres to the LAL calling
-conventions (eg.\ it takes a \texttt{LALStatus} pointer as its first
-argument, its return type is \texttt{void}, etc.).
+sequences.  For example \texttt{XLALCreateREAL4Sequence()} is available for
+creating sequences of \texttt{REAL4} data.
 
 \subsection{Creation Functions}
 
@@ -29,12 +23,8 @@ argument, its return type is \texttt{void}, etc.).
 \subsubsection{Description}
 
 These functions create LAL sequences.  The parameter \texttt{length}
-specifies the length of the desired sequence.  An XLAL function returns a
-pointer to the newly created sequence or \texttt{NULL} on failure.  The LAL
-counterpart accepts the address of a pointer which it fills with the
-address of the newly created sequence or \texttt{NULL} on failure.
-Additionally, the LAL wrapper provides standard LAL-style error checking
-via a \texttt{LALStatus} pointer.
+specifies the length of the desired sequence.  The return value is a
+pointer to the newly created sequence or \texttt{NULL} on failure.
 
 \subsubsection{Author}
 
@@ -46,7 +36,6 @@ via a \texttt{LALStatus} pointer.
 \subsubsection{Name}
 
 \texttt{XLALDestroy}\textit{sequencetype}\texttt{()},
-\texttt{LALDestroy}\textit{sequencetype}\texttt{()}
 
 \subsubsection{Synopsis}
 
@@ -70,9 +59,7 @@ to pass \texttt{NULL} to these functions.
 \subsubsection{Name}
 
 \texttt{XLALCut}\textit{sequencetype}\texttt{()},
-\texttt{LALCut}\textit{sequencetype}\texttt{()},
 \texttt{XLALCopy}\textit{sequencetype}\texttt{()},
-\texttt{LALCopy}\textit{sequencetype}\texttt{()}
 
 \subsubsection{Synopsis}
 
@@ -96,7 +83,6 @@ existing sequence.
 \subsubsection{Name}
 
 \texttt{XLALShift}\textit{sequencetype}\texttt{()},
-\texttt{LALShift}\textit{sequencetype}\texttt{()}
 
 \subsubsection{Synopsis}
 
@@ -120,9 +106,7 @@ the space that is freed.
 \subsubsection{Name}
 
 \texttt{XLALResize}\textit{sequencetype}\texttt{()},
-\texttt{LALResize}\textit{sequencetype}\texttt{()},
 \texttt{XLALShrink}\textit{sequencetype}\texttt{()},
-\texttt{LALShrink}\textit{sequencetype}\texttt{()}
 
 \subsubsection{Synopsis}
 
@@ -183,10 +167,10 @@ the bounds of the sequence, then the missing values are assumed to be 0.
 
 \subsubsection{Bugs}
 
-Because LAL must conform to the C89 specification, aggregate data types
-cannot be returned from functions so the COMPLEX8 and COMPLEX16 versions of
-the sum functions (not sum-of-squares functions) are commented out at this
-time.
+Because the LAL library must conform to the C89 specification, aggregate
+data types cannot be returned from functions so the COMPLEX8 and COMPLEX16
+versions of the sum functions (not sum-of-squares functions) are commented
+out at this time.
 
 \subsubsection{Author}
 

@@ -10,17 +10,6 @@ void `XLALDestroy'SEQUENCETYPE (
 }
 
 
-void `LALDestroy'SEQUENCETYPE (
-	LALStatus *status,
-	SEQUENCETYPE *sequence
-)
-{
-	INITSTATUS(status, "`LALDestroy'SEQUENCETYPE", SEQUENCEC);
-	`XLALDestroy'SEQUENCETYPE (sequence);
-	RETURN(status);
-}
-
-
 SEQUENCETYPE *`XLALCreate'SEQUENCETYPE (
 	size_t length
 )
@@ -44,23 +33,6 @@ SEQUENCETYPE *`XLALCreate'SEQUENCETYPE (
 }
 
 
-void `LALCreate'SEQUENCETYPE (
-	LALStatus *status,
-	SEQUENCETYPE **output,
-	size_t length
-)
-{
-	INITSTATUS(status, "`LALCreate'SEQUENCETYPE", SEQUENCEC);
-	ASSERT(output != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
-	*output = `XLALCreate'SEQUENCETYPE (length);
-	if(*output == NULL) {
-		XLALClearErrno();
-		ABORT(status, LAL_NOMEM_ERR, LAL_NOMEM_MSG);
-	}
-	RETURN(status);
-}
-
-
 SEQUENCETYPE *`XLALCut'SEQUENCETYPE (
 	SEQUENCETYPE *sequence,
 	size_t first,
@@ -81,50 +53,11 @@ SEQUENCETYPE *`XLALCut'SEQUENCETYPE (
 }
 
 
-void `LALCut'SEQUENCETYPE (
-	LALStatus *status,
-	SEQUENCETYPE **output,
-	SEQUENCETYPE *input,
-	size_t first,
-	size_t length
-)
-{
-	INITSTATUS(status, "`LALCut'SEQUENCETYPE", SEQUENCEC);
-	ASSERT(output != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
-	ASSERT(input != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
-	ASSERT(first + length <= input->length, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
-	*output = `XLALCut'SEQUENCETYPE (input, first, length);
-	if(*output == NULL) {
-		XLALClearErrno();
-		ABORT(status, LAL_NOMEM_ERR, LAL_NOMEM_MSG);
-	}
-	RETURN(status);
-}
-
-
 SEQUENCETYPE *`XLALCopy'SEQUENCETYPE (
 	SEQUENCETYPE *sequence
 )
 {
 	return(`XLALCut'SEQUENCETYPE (sequence, 0, sequence->length));
-}
-
-
-void `LALCopy'SEQUENCETYPE (
-	LALStatus *status,
-	SEQUENCETYPE **output,
-	SEQUENCETYPE *input
-)
-{
-	INITSTATUS(status, "`LALCopy'SEQUENCETYPE", SEQUENCEC);
-	ASSERT(output != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
-	ASSERT(input != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
-	*output = `XLALCopy'SEQUENCETYPE (input);
-	if(*output == NULL) {
-		XLALClearErrno();
-		ABORT(status, LAL_NOMEM_ERR, LAL_NOMEM_MSG);
-	}
-	RETURN(status);
 }
 
 
@@ -143,19 +76,6 @@ void `XLALShift'SEQUENCETYPE (
 		memset(sequence->data, 0, count * sizeof(*sequence->data));
 	else
 		memset(sequence->data + sequence->length + count, 0, -count * sizeof(*sequence->data));
-}
-
-
-void `LALShift'SEQUENCETYPE (
-	LALStatus *status,
-	SEQUENCETYPE *sequence,
-	int count
-)
-{
-	INITSTATUS(status, "`LALShift'SEQUENCETYPE", SEQUENCEC);
-	ASSERT(sequence != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
-	`XLALShift'SEQUENCETYPE (sequence, count);
-	RETURN(status);
 }
 
 
@@ -197,26 +117,6 @@ size_t `XLALResize'SEQUENCETYPE (
 }
 
 
-void `LALResize'SEQUENCETYPE (
-	LALStatus *status,
-	SEQUENCETYPE *sequence,
-	int first,
-	size_t length
-)
-{
-	size_t new_length;
-
-	INITSTATUS(status, "`LALResize'SEQUENCETYPE", SEQUENCEC);
-	ASSERT(sequence != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
-	new_length = `XLALResize'SEQUENCETYPE (sequence, first, length);
-	if(new_length != length) {
-		XLALClearErrno();
-		ABORT(status, LAL_FAIL_ERR, LAL_FAIL_MSG);
-	}
-	RETURN(status);
-}
-
-
 size_t `XLALShrink'SEQUENCETYPE (
 	SEQUENCETYPE *sequence,
 	size_t first,
@@ -224,27 +124,6 @@ size_t `XLALShrink'SEQUENCETYPE (
 )
 {
 	return(`XLALResize'SEQUENCETYPE (sequence, first, length));
-}
-
-
-void `LALShrink'SEQUENCETYPE (
-	LALStatus *status,
-	SEQUENCETYPE *sequence,
-	size_t first,
-	size_t length
-)
-{
-	size_t new_length;
-
-	INITSTATUS(status, "`LALShrink'SEQUENCETYPE", SEQUENCEC);
-	ASSERT(sequence != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
-	ASSERT(first + length <= sequence->length, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
-	new_length = `XLALShrink'SEQUENCETYPE (sequence, first, length);
-	if(new_length != length) {
-		XLALClearErrno();
-		ABORT(status, LAL_FAIL_ERR, LAL_FAIL_MSG);
-	}
-	RETURN(status);
 }
 
 
