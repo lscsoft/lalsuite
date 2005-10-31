@@ -140,7 +140,7 @@ static int _toplist_qsort_function(const void *ppa, const void *ppb) {
     const TOPLISTLINE*a = *pa;
     const TOPLISTLINE*b = *pb;
 
-    if (a->Freq < b->Freq)
+    if      (a->Freq < b->Freq)
 	return -1;
     else if (a->Freq > b->Freq)
 	return 1;
@@ -151,6 +151,10 @@ static int _toplist_qsort_function(const void *ppa, const void *ppb) {
     else if (a->Delta < b->Delta)
 	return -1;
     else if (a->Delta > b->Delta)
+	return 1;
+    else if (a->f1dot < b->f1dot)
+	return -1;
+    else if (a->f1dot > b->f1dot)
 	return 1;
     else
 	return 0;
