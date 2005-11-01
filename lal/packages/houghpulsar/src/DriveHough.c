@@ -885,6 +885,10 @@ void LALHOUGHComputeAMWeights  (LALStatus          *status,
   LALFree(amc.a);
   LALFree(amc.b);
 
+  LALFree(amParams->das->pSource);
+  LALFree(amParams->das);
+  LALFree(amParams);
+
   DETATCHSTATUSPTR (status);
    /* normal exit */
   RETURN (status);
