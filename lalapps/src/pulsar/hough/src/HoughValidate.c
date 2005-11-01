@@ -97,7 +97,7 @@ int main(int argc, char *argv[]){
   CHAR *fnameLog=NULL;
   FILE *fpLog = NULL;
   CHAR *logstr=NULL;
-  REAL8 asq, bsq; /* square of amplitude modulation functions a and b */
+  /*REAL8 asq, bsq;*/ /* square of amplitude modulation functions a and b */
   /******************************************************************/
   /*    Set up the default parameters.      */
   /* ****************************************************************/
@@ -455,15 +455,15 @@ int main(int argc, char *argv[]){
     SUB (LALComputeAM(&status, &amc, timeV.data, amParams), &status); 
 
     /* calculate a^2 and b^2 */
-    for (ii=0, asq=0.0, bsq=0.0; ii<mObsCoh; ii++)
-      {
-	REAL8 *a, *b;
-	a = amc.a + ii;
-	b = amc.b + ii;
-	asq += (*a) * (*a);
-	bsq += (*b) * (*b);
-      }
-
+    /* for (ii=0, asq=0.0, bsq=0.0; ii<mObsCoh; ii++) */
+    /*       { */
+    /* 	REAL8 *a, *b; */
+    /*        	a = amc.a + ii; */
+    /* 	b = amc.b + ii; */
+    /* 	asq += (*a) * (*a); */
+    /* 	bsq += (*b) * (*b); */
+    /*       } */
+    
     /* free amParams */
     LALFree(amParams->das->pSource);
     LALFree(amParams->das);
