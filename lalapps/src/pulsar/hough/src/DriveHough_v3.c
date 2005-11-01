@@ -91,7 +91,7 @@ int main(int argc, char *argv[]){
   /*   static REAL8Cart3CoorVector velVmid; */
   static REAL8Vector         timeDiffV;
 
-  /* standard pulsra sft types */ 
+  /* standard pulsar sft types */ 
   SFTVector *inputSFTs=NULL;
 
   /* vector of weights */
@@ -372,24 +372,32 @@ int main(int argc, char *argv[]){
     /* read sft files making sure to add extra bins for running median */
     LAL_CALL( LALReadSFTfiles ( &status, &inputSFTs, fmin, fmax, 
 				uvar_blocksRngMed, tempDir), &status); 
-
     LALFree(tempDir);
-
-    /* normalize sfts */
-    LAL_CALL( LALNormalizeSFTVect (&status, inputSFTs, uvar_blocksRngMed, 0), &status);
-
 
     /* set other parameters based on sfts */
     mObsCoh = inputSFTs->length; /* number of sfts */
     deltaF = inputSFTs->data->deltaF;  /* frequency resolution */
     timeBase= 1.0/deltaF; /* coherent integration time */
 
-
     f0Bin = floor( uvar_f0 * timeBase + 0.5); /* initial search frequency */
     length =  uvar_fSearchBand * timeBase; /* total number of search bins - 1 */
     fLastBin = f0Bin+length;   /* final frequency bin to be analyzed */
 
-    /* use this value of length to allocate memory for nstar, fstar etc. */
+    /* set up weights -- this should be done before normalizing the sfts */
+    weightsV.length = mObsCoh;
+    weightsV.data = (REAL8 *)LALMalloc(mObsCoh*sizeof(REAL8));
+
+    /* calculate sft noise weights if required by user */
+    SUB( LALHOUGHInitializeWeights( &status, &weightsV), &status);
+    if (uvar_weighNoise ) {
+      SUB( LALHOUGHComputeNoiseWeights( &status, &weightsV, inputSFTs, uvar_blocksRngMed), &status); 
+      SUB( LALHOUGHNormalizeWeights( &status, &weightsV), &status);
+    }
+
+    /* normalize sfts */
+    LAL_CALL( LALNormalizeSFTVect (&status, inputSFTs, uvar_blocksRngMed, 0), &status);
+
+    /* use above value of length to allocate memory for nstar, fstar etc. */
     nStar = (UINT4 *)LALMalloc((length + 1)*sizeof(UINT4));
     freqStar = (REAL8 *)LALMalloc((length + 1)*sizeof(REAL8));
     alphaStar = (REAL8 *)LALMalloc((length + 1)*sizeof(REAL8));
@@ -401,15 +409,12 @@ int main(int argc, char *argv[]){
       INT4 starIndex;
       for( starIndex = 0; starIndex < length + 1; starIndex++)
 	nStar[starIndex] = 0;
-    }
-
-  }
+    } 
+  } /* end of sft reading block */
   
     
-  /* ****************************************************************/
-  /*  computing the Hough threshold for a given false alarm  */
-  /*   HoughThreshold = N*alpha +sqrt(2N alpha (1-alpha))*erfc-1(2 alpha_h) */
-  /* ****************************************************************/
+  /* computing the Hough threshold for a given false alarm  */
+  /* HoughThreshold = N*alpha +sqrt(2N alpha (1-alpha))*erfcinv(2 alpha_h) */
   {
     REAL8  alphaPeak, meanN, sigmaN, erfcInv;
     
@@ -484,9 +489,9 @@ int main(int argc, char *argv[]){
   velV.data = NULL;
   velV.data = (REAL8Cart3Coor *)LALMalloc(mObsCoh*sizeof(REAL8Cart3Coor));
 
-/*   velVmid.length = mObsCoh; */
-/*   velVmid.data = NULL; */
-/*   velVmid.data = (REAL8Cart3Coor *)LALMalloc(mObsCoh*sizeof(REAL8Cart3Coor)); */
+  /*   velVmid.length = mObsCoh; */
+  /*   velVmid.data = NULL; */
+  /*   velVmid.data = (REAL8Cart3Coor *)LALMalloc(mObsCoh*sizeof(REAL8Cart3Coor)); */
 
   {  
     VelocityPar   velPar;
@@ -624,11 +629,6 @@ int main(int argc, char *argv[]){
   
 
 
-  /* *****************/
-  /* set up weights vector */
-  /* *****************/
-  weightsV.length = mObsCoh;
-  weightsV.data = (REAL8 *)LALMalloc(mObsCoh*sizeof(REAL8));
 
   
   /* loop over sky patches */
@@ -641,14 +641,13 @@ int main(int argc, char *argv[]){
       patchSizeY = skySizeAlpha[skyCounter];
 
 
-      /* calculate weights */
-      SUB( LALHOUGHInitializeWeights( &status, &weightsV), &status);
-
+      /* calculate amplitude modulation weights */
       if (uvar_weighAM) {
 	SUB( LALHOUGHComputeAMWeights( &status, &weightsV, &timeV, &detector, 
 				       edat, alpha, delta), &status);
+	SUB( LALHOUGHNormalizeWeights( &status, &weightsV), &status);
       }
-
+      
       /******************************************************************/  
       /* opening the output statistic, and event files */
       /******************************************************************/  
@@ -915,7 +914,7 @@ int main(int argc, char *argv[]){
 	  
 #ifdef PRINTMAPS
 	  
-	  if( PrintHmap2m_file( &ht, fileMaps, iHmap ) ) return 5;
+	  if( PrintHmap2mile_file( &ht, fileMaps, iHmap ) ) return 5;
 #endif 
 	  
  
@@ -952,7 +951,7 @@ int main(int argc, char *argv[]){
 	      ht.spinRes.data[0] =  f1dis*deltaF;
 	      
 	      for (j=0;j< mObsCoh;++j){
-		freqInd.data[j] = fBinSearch +floor(timeDiffV.data[j]*f1dis+0.5);
+		freqInd.data[j] = fBinSearch + floor(timeDiffV.data[j]*f1dis+0.5);
 	      }
 	      
 	      SUB( LALHOUGHConstructHMT_W(&status,&ht, &freqInd, &phmdVS),&status );
@@ -1150,9 +1149,7 @@ int main(int argc, char *argv[]){
   return DRIVEHOUGHCOLOR_ENORM;
 }
 
-/* >>>>>>>>>>>>>>>>>>>>>*************************<<<<<<<<<<<<<<<<<<<< */
-/* >>>>>>>>>>>>>>>>>>>>>*************************<<<<<<<<<<<<<<<<<<<< */
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+
 
   
 /******************************************************************/
@@ -1183,8 +1180,6 @@ int PrintHistogram(UINT4Vector *hist, CHAR *fnameOut){
   return 0;
 }
 
-/* >>>>>>>>>>>>>>>>>>>>>*************************<<<<<<<<<<<<<<<<<<<< */
-/* >>>>>>>>>>>>>>>>>>>>>*************************<<<<<<<<<<<<<<<<<<<< */
 
 
 /******************************************************************/
@@ -1213,7 +1208,7 @@ int PrintHmap2file(HOUGHMapTotal *ht, CHAR *fnameOut, INT4 iHmap){
 
   for(k=ySide-1; k>=0; --k){
     for(i=0;i<xSide;++i){
-      fprintf( fp ," %f", ht->map[k*xSide +i]);
+      fprintf( fp ," %f", (REAL4)ht->map[k*xSide +i]);
       fflush( fp );
     }
     fprintf( fp ," \n");
@@ -1265,7 +1260,7 @@ int PrintHmap2m_file(HOUGHMapTotal *ht, CHAR *fnameOut, INT4 iHmap){
 
   for(k=ySide-1; k>=0; --k){
     for(i=0;i<xSide;++i){
-      fprintf( fp ," %f", ht->map[k*xSide +i]);
+      fprintf( fp ," %f", (REAL4)ht->map[k*xSide +i]);
       fflush( fp );
     }
     fprintf( fp ," \n");

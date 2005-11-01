@@ -32,9 +32,9 @@ for bn=1:Nbands
 totalband(bn) = fmax(bn) - fmin(bn);
 end
 
-  sum(totalband) - 0.02*6*200
+  sum(totalband) - 45
 
-plot((fmin+fmax)/2, upper, '+')
+plot((fmin+fmax)/2, upper, 'r+')
  grid
  xlabel ('Frequency [Hz]');
  ylabel ('h_0 95%');

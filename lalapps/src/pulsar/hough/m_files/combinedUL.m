@@ -8,7 +8,7 @@ fMinL1 = L195UL(:,2);
 fMaxL1 = L195UL(:,3);
 
 
-freq = 200:0.01:399.9;
+freq = 200:0.5:399.9;
 nFreqs = length(freq);
 
 for index = 1:nFreqs
@@ -41,5 +41,11 @@ end
 vetoindices = find(UL < 4.0*10^(-22));
 freqVeto =  freq(vetoindices);
 ULVeto = UL(vetoindices);
-plot(freqVeto, ULVeto);
+plot(freqVeto, ULVeto, '+');
+ grid
+ xlabel ('Frequency [Hz]');
+ ylabel ('h_0 95%');
+ titlestring = strcat('Combined Preliminary Upper Limit');
+ title(titlestring)
+
 length(vetoindices)

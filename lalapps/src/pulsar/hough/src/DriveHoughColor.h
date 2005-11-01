@@ -67,7 +67,7 @@
 #include <lal/NormalizeSFTRngMed.h>
 #include <lalapps.h>
 #include <gsl/gsl_cdf.h>
-#include "./SFTbin.h"
+
 #include "./PeakSelect.h"
 
 /******************************************************

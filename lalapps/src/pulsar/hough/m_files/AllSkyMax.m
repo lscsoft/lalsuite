@@ -6,13 +6,14 @@
 %  It will look into all the different patches
  
 % Remember to add the path where this file is located: 
-% addpath /local_data/sintes/CVSDIR/waves/people/sintes/PULSAR/CODES/m_files/
+% addpath /local_data/badkri/src/pulsar/hough/m_files
 %   To run simply type AllSkyMax
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Directory = '/local_data/badkri/Driver_allsky/';
-%Detector = 'L1';
-Detector = 'H1';
+Directory = '/local_data/badkri/S2-results/';
+Detector = 'L1';
+%Detector = 'H1';
+%Detector = 'H2';
 DirName = '/skypatch_';
 prefix ='/freq_';
 sufix = '_stats';
@@ -75,10 +76,10 @@ for filenumber = 0:Nbands; %the  current frequency band
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  plot(FreqValues, MaxValues, 'b*');
-  xlabel ('Frequency [Hz]');
-  ylabel ( 'Maximum number count');
-  grid
+%  plot(FreqValues, MaxValues, 'b*');
+ % xlabel ('Frequency [Hz]');
+ % ylabel ( 'Maximum number count');
+ % grid
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 save AllSkyMaxResults FreqValues MaxValues
