@@ -3300,6 +3300,16 @@ INT4 main(INT4 argc, CHAR *argv[])
   ifoOne = "G1";
   ifoTwo = "G1";
 
+  /* set fake channels */
+  channelOne = (CHAR*)calloc(3, sizeof(CHAR));
+  channelTwo = (CHAR*)calloc(3, sizeof(CHAR));
+  channelOne = "G1";
+  channelTwo = "G1";
+
+  /* set start and end times */
+  startTime = 0;
+  endTime = totalDuration;
+
   /* get xml file basename */
   if (userTag)
   {
@@ -3349,8 +3359,11 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* inject signal into noise */
   for (i = 0; i < noiseOne->data->length; i++)
   {
-    seriesTwo->data->data[i] = seriesOne->data->data[i] + noiseTwo->data->data[i];
-    seriesOne->data->data[i] += noiseOne->data->data[i];
+    seriesOne->data->data[i] *= 0.1;
+    seriesTwo->data->data[i] = seriesOne->data->data[i] + \
+                               noiseTwo->data->data[i];
+    seriesOne->data->data[i] = seriesOne->data->data[i] + \
+                               noiseOne->data->data[i];
   }
 
 #if 0
