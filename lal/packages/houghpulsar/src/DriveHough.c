@@ -904,7 +904,7 @@ void LALHOUGHComputeNoiseWeights  (LALStatus    *status,
 
   UINT4 lengthVect, lengthSFT, lengthPSD;
   UINT4 j;
-  SFTtype sft;
+  SFTtype *sft;
   REAL8FrequencySeries periodo;
   REAL8Sequence mediansV, inputV;
   LALRunningMedianPar rngMedPar;
@@ -948,14 +948,18 @@ void LALHOUGHComputeNoiseWeights  (LALStatus    *status,
   mediansV.length = lengthPSD;
   mediansV.data = (REAL8 *)LALMalloc(lengthPSD * sizeof(REAL8));
 
+  /* rng med block size */
+  rngMedPar.blocksize = blkSize;
 
   /* loop over sfts and calculate weights */
   for (j=0; j<lengthVect; j++) {
     REAL8 sumMed = 0.0;
     INT4 k;
 
+    sft = sftVect->data + j;
+
     /* calculate the periodogram */
-    TRY (LALSFTtoPeriodogram (status->statusPtr, &periodo, &sft), status);
+    TRY (LALSFTtoPeriodogram (status->statusPtr, &periodo, sft), status);
     
     /* calculate the running median */
     inputV.length = lengthSFT;
