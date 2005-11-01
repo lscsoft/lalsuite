@@ -914,7 +914,7 @@ int main(int argc, char *argv[]){
 	  
 #ifdef PRINTMAPS
 	  
-	  if( PrintHmap2mile_file( &ht, fileMaps, iHmap ) ) return 5;
+	  if( PrintHmap2m_file( &ht, fileMaps, iHmap ) ) return 5;
 #endif 
 	  
  
