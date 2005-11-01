@@ -55,7 +55,7 @@ extern int lalDebugLevel;
 #define ACCURACY 0.00000001 /* of the velocity calculation */
 #define MAXFILES 3000 /* maximum number of files to read in a directory */
 #define MAXFILENAMELENGTH 256 /* maximum # of characters  of a SFT filename */
-#define SFTDIRECTORY "/home/badkri/L1sfts"  
+#define SFTDIRECTORY "/home/badkri/fakesfts"  
 /* #define SFTDIRECTORY "/nfs/morbo/geo600/hannover/sft/S2-LIGO/S2_L1_Funky-v3Calv5DQ30MinSFTs" */
 #define DIROUT "./outHM1/"      /* prefix file output */
 #define BASENAMEOUT "HM1"
@@ -65,8 +65,8 @@ extern int lalDebugLevel;
 #define THRESHOLD 1.6 /* thresold for peak selection, with respect to the
                               the averaged power in the search band */
 #define FALSEALARM 0.00000001 /* Hough false alarm for candidate selection */
-#define SKYFILE "./skypatchfile"      
-#define F0 250.0          /*  frequency to build the LUT and start search */
+#define SKYFILE "./sky1"      
+#define F0 255.0          /*  frequency to build the LUT and start search */
 #define FBAND 0.2          /* search frequency band  (in Hz) */
 #define NFSIZE  21 /* n-freq. span of the cylinder, to account for spin-down
                           search */
@@ -186,8 +186,8 @@ int main(int argc, char *argv[]){
   SUB( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
 
   uvar_help = FALSE;
-  uvar_weighAM = FALSE;
-  uvar_weighNoise = FALSE;
+  uvar_weighAM = TRUE;
+  uvar_weighNoise = TRUE;
   uvar_ifo = IFO;
   uvar_blocksRngMed = BLOCKSRNGMED;
   uvar_f0 = F0;
@@ -477,8 +477,10 @@ int main(int argc, char *argv[]){
       SUB( LALUCHAR2HOUGHPeak( &status, &(pgV.pg[j]), &pg1), &status );
     } /* end loop over sfts */
 
-    /* we are done with the sfts now */
+
+    /* we are done with the sfts and ucharpeakgram now */
     LAL_CALL (LALDestroySFTVector(&status, &inputSFTs), &status );
+    LALFree(pg1.data);
 
   }/* end block for selecting peaks */
 
