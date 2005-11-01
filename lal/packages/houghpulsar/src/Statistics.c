@@ -2,7 +2,8 @@
  *
  *  \file Statistics.c
  *  \author Krishnan, B
- *  \brief Module for calculating statistics and histogram of a total Hough map
+ *  \brief Module for calculating statistics and histogram of a total Hough map.
+ *
  *  $Id$
  *
  *  Bug in variance corrected -- Feb 01, 2004
