@@ -5,21 +5,18 @@
  *  \brief Module for calculating statistics and histogram of a total Hough map
  *  $Id$
  *
- * 
- *
- *  Bug in variance corrected on Feb 01, 2004
- *
+ *  Bug in variance corrected -- Feb 01, 2004
+ *  Generalized to handle REAL4 number counts -- Nov 01, 2005
 
-\par Decsription
+\par Description
 
 The fuction LALHoughStatistics() calculates the maximum number count, minimum
-   number count, average and standard deviation of a given total Hough map.
-The input HOUGHMapTotal *in is  a total Hough map
-and the output is a structure HoughStats *out.
+number count, average and standard deviation of a given total Hough map.
+The input HOUGHMapTotal *in is  a total Hough map and the output is a 
+structure HoughStats *out.
 
 LALHoughHistogram@ produces a histogram of the number counts in a total Hough map. 
 The input is of type HOUGHMapTotal *in and the output UINT4Vector *out.
-
 
 */
 
@@ -84,11 +81,11 @@ void LALHoughStatistics( LALStatus     *status,
 		         HOUGHMapTotal *in)
 { /*-------------------------------------------------</lalVerbatim> */
 
-  INT4   i,j, xSide, ySide, mObsCoh, max, min; 
+  INT4   i,j, xSide, ySide, mObsCoh; 
   INT4   maxIndexX, maxIndexY, minIndexX, minIndexY;
   REAL8  average, nPixel, variance, ep, temp, sum; 
+  HoughTT max, min;
   /*--------------------------------------------------------------- */
-
 	
   INITSTATUS (status, "LALHoughStatistics", STATISTICSC);
   ATTATCHSTATUSPTR (status);
@@ -115,20 +112,20 @@ void LALHoughStatistics( LALStatus     *status,
   for (i = 0; i < ySide; i++){
     for (j = 0; j < xSide; j++){
       /* read the current number count */
-      temp = 1.0 * (in->map[i*xSide + j]);
+      temp = (REAL4) in->map[i*xSide + j];
 
       /* add number count to sum */
       sum += temp;
 
       /* look for maximum */
-      if (temp > 1.0*max){
+      if (temp > (REAL4)max){
 	max = in->map[i*xSide + j];
         maxIndexX = j;
 	maxIndexY = i;
       }
 
       /* look for minimum */
-      if (temp < 1.0*min){
+      if (temp < (REAL4)min){
 	min = in->map[i*xSide + j];
 	minIndexX = j;
 	minIndexY = i;
@@ -145,7 +142,7 @@ void LALHoughStatistics( LALStatus     *status,
   ep = 0.0;
   for (i = 0; i < ySide; i++){
     for (j = 0; j < xSide; j++){
-      temp = 1.0 * (in->map[i*xSide + j]) - average;
+      temp = (REAL4) (in->map[i*xSide + j]) - average;
       ep += temp;
       variance += temp*temp;
     }
@@ -211,8 +208,10 @@ void LALHoughHistogram(LALStatus      *status,
   /* loop over hough map and find histogram */
   for (i = 0; i < ySide; i++){
     for (j = 0; j < xSide; j++){
-      /* read the current number count */
-      temp = in->map[i*xSide + j];
+      /* read the current number count and round it off to the
+         nearest integer -- useful when the number counts are 
+         floats as when we use weights */
+      temp = (INT4)(in->map[i*xSide + j] + 0.5);
 
       /* add to relevant entry in histogram */
       out->data[temp] += 1;
