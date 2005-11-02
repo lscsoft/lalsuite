@@ -428,7 +428,9 @@ LALGenerateInspiralPopulateInspiral(
   inspiralParams->inclination =  thisEvent->inclination;
   inspiralParams->ieta	    =  1;
   inspiralParams->nStartPad =  0;
-  inspiralParams->nEndPad   =  0;
+  /* increased end padding from zero so that longer waveforms do not
+  have errors due to underestimation of number of bins requred */
+  inspiralParams->nEndPad   =  16384;
 
   inspiralParams->massChoice  = m1Andm2;
 
