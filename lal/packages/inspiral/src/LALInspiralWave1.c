@@ -245,9 +245,9 @@ LALInspiralWave1ForInjection(
   if ( (INT4)(p/LAL_TWOPI) < 2 ){
     sprintf(message, "The waveform has only %f cycles; we don't keep waveform with less than 2 cycles.", 
 	       p/(double)LAL_TWOPI );
+    XLALPrintError(message);
     LALWarning(status, message);
   }
-  else {
 
       /*wrap the phase vector*/
       phiC =  phi.data[count-1] ;
@@ -317,7 +317,6 @@ LALInspiralWave1ForInjection(
       ppnParams->termDescription = GENERATEPPNINSPIRALH_MSGEFSTOP;
       
       ppnParams->fStart   = ppnParams->fStartIn;
-    } /*end of coherentGW storage */
 
   /* --- free memory --- */
   LALFree(ff.data);
