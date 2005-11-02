@@ -404,14 +404,23 @@ LALInspiralSetup (
 
 
    /* spinning case */
-   ak->thetahat = 0;   /* might need to be fixed to something different from zero ?*/
+   ak->thetahat = 1039.0/4620.0;  /* value of thetahat set according to
+                         Blanchet et. al, Phys. Rev. Lett. 93, 091101 (2004) */
+
    ak->ST[newtonian] = 1.0;
    ak->ST[oneHalfPN] = 0.0;
    ak->ST[onePN] = ( -(1.0/336.0) * (743.0 + 924.0*eta) );
    ak->ST[onePointFivePN] = ( 4.0 * LAL_PI ); 
-   ak->ST[twoPN] =  ( (34103.0 + 122949.0*eta + 59472.0*eta*eta)/18144.0 );
-   ak->ST[twoPointFivePN] = ( -(1.0/672.0) * LAL_PI * (4159.0 + 14532.0*eta) );
+   ak->ST[twoPN] =  ( (34103.0 + 122949.0*eta + 59472.0*eta*eta)/18144.0 ); 
+
+   ak->ST[twoPointFivePN] = ( -(1.0/672.0) * LAL_PI * (4159.0 + 15876.0*eta) );
+   /* coefficient 15876 corrected (from 14532) according
+      to 2005 erratas for L. Blanchet, Phys. Rev. D 54, 1417 (1996) and
+      L. Blanchet, B. R. Iyer, and B. Joguet, Phys. Rev. D 65, 064005 (2002).
+      Compare with errata for Arun et al., Phys. Rev. D 71, 084008 (2005) */
+
    /* both ak->ST[6] and [7] are stored for the threePN contribution */
+
    ak->ST[threePN] = ( (16447322263.0/139708800.0)
 		- (1712.0/105.0)* ak->EulerC 
 		- (273811877.0/1088640.0)*eta - (88.0/3.0)*ak->thetahat*eta 
@@ -420,8 +429,11 @@ LALInspiralSetup (
 		- (856.0/105.0)*log(16.0) );                          
    ak->ST[threePN+1] = ( -(1712.0/315.0) );     /* extra 3PN component */
    /* sT[8] is the threePointFivePN contribution */
-   ak->ST[8] = (LAL_PI/12096.0) * (-13245.0 + 661775.0*eta + 599156.0*eta*eta); 
-   
+   ak->ST[8] = (LAL_PI/12096.0) * (-13245.0 + 717350.0*eta + 731960.0*eta*eta); 
+   /* coefficients 717350 and 731960 corrected (from 661775 and 599156) according
+      to 2005 erratas for L. Blanchet, Phys. Rev. D 54, 1417 (1996) and
+      L. Blanchet, B. R. Iyer, and B. Joguet, Phys. Rev. D 65, 064005 (2002).
+      Compare with errata for Arun et al., Phys. Rev. D 71, 084008 (2005) */
 
 /*
    taylorcoeffs[0] = 1.;
