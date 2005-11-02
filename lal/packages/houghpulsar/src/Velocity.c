@@ -1,11 +1,31 @@
 /** 
  *
- *  File Name: Velocity.c
- *
+ *  \file Velocity.c
+ *  \author Badri Krishnan and Alicia Sintes
+    \brief Functions for calculating detector velocity and positions at a given
+    time or averaged over a time interval.  This is a wrapper for the 
+    LALBarycenter routines. 
+
  *  $Id$
- *
- *  Authors: Badri Krishnan, Alicia Sintes
- *           May 2003
+    \description 
+
+    The function LALDetectorVel() finds the velocity of a given detector at a
+    given time. It is basically a wrapper for LALBarycenter.
+    The output is of the form REAL8 vector v[3] and the input is a
+    time LIGOTimeGPS , the detector LALDetector, 
+    and the ephemeris EphemerisData from LALInitBarycenter.
+    
+    The function LALAvgDetectorVel() outputs the
+    average velocity REAL8 v[3] of the detector during a time interval. 
+    The input structure is of type VelocityPar
+    containing all the required parmaters.
+
+    The analogous functions for calculating the average position and 
+    position are LALAvgDetectorPos() and LALDetectorPos().  The average 
+    position is calculated by a numerical integration using the 
+    trapezoidal rule with a user-specified fractional accuracy. 
+
+
  *
  *
  */
@@ -39,8 +59,7 @@ and the ephemeris \verb@EphemerisData *edat@ from LALInitBarycenter
 The function \verb@LALAvgDetectorVel@ outputs the
 average velocity \verb@REAL8 v[3]@ of the detector during a time interval by using
 the trapeziodal rule. The input structure is of type \verb@VelocityPar *in@
-containing all the required parmaters. \verb@vTol@ is the fractional accuracy 
-required for velocity. Recomended value $0.01$.
+containing all the required parmaters.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection*{Uses}
@@ -69,10 +88,9 @@ NRCSID (VELOCITYC, "$Id$");
  */
 
 
-/**< Given a detector and a time interval, this function outputs the 
+/** Given a detector and a time interval, this function outputs the 
  *   average velocity of the detector delta x/delta t during the interval 
- */
-   
+ */   
 /* *******************************  <lalVerbatim file="VelocityD"> */   
 void LALAvgDetectorVel( LALStatus *status, 
 		        REAL8 v[3], /**< [out] velocity vector */
@@ -130,12 +148,11 @@ void LALAvgDetectorVel( LALStatus *status,
 }
 
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/**< Given a detector and a time interval, this function outputs the 
+
+/** Given a detector and a time interval, this function outputs the 
  *  average position of the detector during the interval by using 
- *  the trapeziodal rule 
+ *  the trapeziodal rule for a given fractional accuracy. 
  */
-   
 /* *******************************  <lalVerbatim file="VelocityD"> */   
 void LALAvgDetectorPos( LALStatus *status, 
 		        REAL8 x[3], 
@@ -235,7 +252,7 @@ void LALAvgDetectorPos( LALStatus *status,
 
 
 
-/**< This finds velocity of a given detector at a given time 
+/** This finds velocity of a given detector at a given time 
 */
 /* *******************************  <lalVerbatim file="VelocityD"> */
 void LALDetectorVel(LALStatus    *status, 
@@ -295,7 +312,6 @@ void LALDetectorVel(LALStatus    *status,
 
 /**< This finds velocity of a given detector at a given time 
  */
-
 /* *******************************  <lalVerbatim file="VelocityD"> */
 void LALDetectorPos(LALStatus    *status, 
 		    REAL8        x[3], 

@@ -1,7 +1,8 @@
-/* ***************************************************
- *  File Name: Velocity.h
- *
- *  Author: Krishnan, B.
+/**
+ *  \file Velocity.h
+ *  \author Badri Krishnan
+    \brief Header file for velocity and position routines.
+
  *
  *  $Id$ 
  *
@@ -117,7 +118,7 @@ NRCSID( VELOCITYH, "$Id$");
  *   Structure, enum, union, etc., typdefs.
  */
 
-/* parameters required by LALBarycenter to calculate Earth velocity at 
+/** parameters required by LALBarycenter to calculate Earth velocity at 
    a given detector location */
 typedef struct tagVelocityPar {
   LALDetector    detector; /**< the detector */
