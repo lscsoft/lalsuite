@@ -230,4 +230,5 @@ AC_OUTPUT( 				\
 	src/detresponse/Makefile	\
 	src/geoinspiralsearch/Makefile  \
 	src/pulsar/hough/src2/Makefile	\
+	src/pulsar/MakeSFTs/Makefile	\
 )

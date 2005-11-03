@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 # $Id$
 
-SUBDIRS = FDS_isolated Injections FDS_griphyn hough FDS_binary
+SUBDIRS = FDS_isolated Injections FDS_griphyn hough FDS_binary MakeSFTs
 
 if FRAME
 FRAMEPROGS = lalapps_make_job_input_data lalapps_make_sfts lalapps_Calibrate60sSFTs lalapps_Calibrate1800SFTs lalapps_FreqAverager lalapps_psd UTCtoGPS
