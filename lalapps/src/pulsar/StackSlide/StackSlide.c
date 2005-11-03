@@ -31,7 +31,7 @@ $Id$
 /* #define PRINT_STACKSLIDE_BINOFFSETS */
 /* #define PRINT_STACKSLIDE_BINMISMATCH */
 /* #define PRINT_STACKSLIDE_SPECIAL_DEBUGGING_INFO */
-/* #define DEBUG_STACKSLIDECOMPUTESKYBINARY_FNC */
+/* #define DEBUG_STACKSLIDECOMPUTESKYBINARY_FNC*/
 /* #define DEBUG_STACKSLIDECOMPUTESKY_FNC */
 /*********************************************/
 /*                                           */
@@ -115,6 +115,7 @@ void StackSlide(	LALStatus *status,
 
         /* compute frequency */
         f_t = refFreq; /* 12/06/04 gam */ /* 02/21/05 gam */
+	
         for (m=0; m<params->numSpinDown; m++) {
             f_t += params->freqDerivData[m] * pTdotsAndDeltaTs->vecDeltaTs[k][m];
         }
@@ -122,12 +123,20 @@ void StackSlide(	LALStatus *status,
         binoffset = floor(( (f_t - refFreq) * params->tSTK) + 0.5 ); /* 12/06/04 gam */ /* 02/21/05 gam */
         
         #ifdef PRINT_STACKSLIDE_BINOFFSETS
-               fprintf(stdout, "In StackSlide for SFT #%i binoffset = %i \n",k,binoffset);
+               fprintf(stdout, "In StackSlide for SFT #%i  binoffset = %i \n",k,binoffset);
                fflush(stdout);
         #endif
 
         #ifdef PRINT_STACKSLIDE_BINMISMATCH
-           fprintf(stdout, "%i binmismatch = %g \n",STKData[k]->epoch.gpsSeconds,fabs( ((f_t - refFreq) * params->tSTK) - (REAL8)binoffset ));
+	       /*choose one of the following*/
+	       
+ /*! 24/10*/        /*  fprintf(stdout, "%i binmismatch = %g \n",STKData[k]->epoch.gpsSeconds,fabs( ((f_t - refFreq) * params->tSTK) - (REAL8)binoffset ));*/
+	 
+	       /*      fprintf(stdout, "%i %g \n",STKData[k]->epoch.gpsSeconds,fabs( ((f_t - refFreq) * params->tSTK) - (REAL8)binoffset ));*/
+   
+	       fprintf(stdout, "%i %g %g %g %i\n",STKData[k]->epoch.gpsSeconds,fabs( f_t - refFreq),  pTdotsAndDeltaTs->vecTDots[k], refFreq , binoffset);
+
+	       
            fflush(stdout);
         #endif
  
@@ -179,7 +188,11 @@ void StackSlide(	LALStatus *status,
   /* Normalize the SUMs with params->numSTKs*/
       
   /* 12/03/04 gam; added params->divideSUMsByNumSTKs */ /* 02/21/05 gam */
-  if (params->divideSUMsByNumSTKs) {
+  
+  
+
+
+if (params->divideSUMsByNumSTKs) {
      /* Normalize the SUMs with params->numSTKs*/
      for(i=0;i<params->nBinsPerSUM; i++) {
         /* SUMData[kSUM]->data->data[i] =  SUMData[kSUM]->data->data[i]/((REAL4)params->numSTKs); */
@@ -557,6 +570,7 @@ void StackSlideComputeSkyBinary( LALStatus 			*status,
      nP=(INT4)floor(dTbary/(1.0*Period));
      
      #ifdef DEBUG_STACKSLIDECOMPUTESKYBINARY_FNC
+       fprintf(stdout,"dTbary is %f\n",dTbary);
        fprintf(stdout,"dTbarySP is %f\n",dTbarySP);
        fprintf(stdout,"nP is %i\n",nP);
        fflush(stdout);   
@@ -591,9 +605,12 @@ void StackSlideComputeSkyBinary( LALStatus 			*status,
      /* The following quantity is the derivitive of the time coordinate measured in the SSB with */
      /* respect to the time coordinate measured at the chosen detector.  It was calculated via the */
      /* last call to LALBarycenter : dt_(SSB)/dt_(detector)  */
-     Tdotbin = params->emit->tDot*dTcoord; /*=dt_source/dt_detector*/ 
+     Tdotbin = params->emit->tDot*dTcoord; /*=dt_source/dt_detector puts you back into the source*/ 
+
+     /*fprintf(stdout,"%g %g\n", params->emit->tDot, dTcoord);*/
 
      #ifdef DEBUG_STACKSLIDECOMPUTESKYBINARY_FNC
+        fprintf(stdout,"tDot is %f\n",params->emit->tDot); 
        fprintf(stdout,"dTcoord is %f\n",dTcoord);     
        fprintf(stdout,"Tdotbin is %f\n",Tdotbin);
        fflush(stdout);   
@@ -617,6 +634,7 @@ void StackSlideComputeSkyBinary( LALStatus 			*status,
        /* raise the quantity dTperi to the power m */
        basedTperi = pow(dTperi, (REAL8)m+1);
 
+       
        #ifdef DEBUG_STACKSLIDECOMPUTESKYBINARY_FNC
          fprintf(stdout,"basedTperi %f\n",basedTperi);
          fflush(stdout);

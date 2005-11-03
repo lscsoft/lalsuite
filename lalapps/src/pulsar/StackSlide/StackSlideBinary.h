@@ -74,6 +74,15 @@ void FindBinaryLoudest(REAL8 *LoudestEvent, REAL8 *peakFreq, REAL4FrequencySerie
 /*05/08/07 vir: add function to run MC simulation in the binary case */
 void RunStackSlideBinaryMonteCarloSimulation(LALStatus *status, StackSlideSearchParams *params, INT4 nSamples);
 
+void getStackSlideBinaryPriorResults(LALStatus *status,
+                               REAL4 *priorLoudestEvent,
+                               REAL8 *priorStartFreq,
+                               REAL8 *priorBand,
+                               CHAR  *priorResultsFile);
+
+void ComputeConfidence(LALStatus *status, REAL4 priorLoudestEvent, REAL8 *Confidence, REAL8 *conf_err);
+
+void getStackSlideBinarySearchResults(LALStatus *status, StackSlideSearchParams *params, REAL8 *SearchLoudestEvent);
 
 #ifdef __cplusplus
 }
