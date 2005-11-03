@@ -58,10 +58,8 @@ typedef struct {
 /*---------- internal prototypes ----------*/
 static StringVector *find_files (const CHAR *fpattern);
 static void DestroyStringVector (StringVector *strings);
-static void LALCopySFT (LALStatus *status, SFTtype *dest, const SFTtype *src);
-static void endian_swap(CHAR * pdata, size_t dsize, size_t nelements);
 static void SortStringVector (StringVector *strings);
-
+static void endian_swap(CHAR * pdata, size_t dsize, size_t nelements);
 static int amatch(char *str, char *p);	/* glob pattern-matcher (public domain)*/
 
 /* number of bytes in SFT-header v1.0 */
@@ -494,6 +492,11 @@ LALWriteSFTfile (LALStatus  *status,
 
 
 
+/*================================================================================
+ * LOW-level SFT-handling functions, deprecated, and should *NOT* be used outside
+ * this file!
+ *================================================================================*/
+
 /** Lower-level function to read only the SFT-header of a given file. */
 void 
 LALReadSFTheader (LALStatus  *status,
@@ -537,7 +540,7 @@ LALReadSFTheader (LALStatus  *status,
     /* fail if still not true */
     if(memcmp(inVersion,&version,sizeof(version))){
       fclose (fp);
-      if (lalDebugLevel) LALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
+      if (lalDebugLevel) LALPrintError ("\nOnly v1-SFTs supported at the moment!: %s\n\n", fname);
       ABORT (status, SFTFILEIO_EHEADER,  SFTFILEIO_MSGEHEADER);
     }
   }
@@ -764,46 +767,10 @@ LALReadSFTdata(LALStatus *status,
 
 
 
-/** Copy an entire SFT-type into another. 
- * We require the destination to have at least as many frequency-bins
- * as the source, but it can have less..
- */
-void
-LALCopySFT (LALStatus *status, 
-	    SFTtype *dest, 	/**< [out] copied SFT (needs to be allocated already) */
-	    const SFTtype *src)	/**< input-SFT to be copied */
-{
-
-  INITSTATUS( status, "LALDestroySFTVector", SFTFILEIOC);
-
-  ASSERT (dest,  status, SFTFILEIO_ENULL,  SFTFILEIO_MSGENULL);
-  ASSERT (dest->data,  status, SFTFILEIO_ENULL,  SFTFILEIO_MSGENULL);
-  ASSERT (src, status, SFTFILEIO_ENULL,  SFTFILEIO_MSGENULL);
-  ASSERT (src->data, status, SFTFILEIO_ENULL,  SFTFILEIO_MSGENULL);
-
-  /* some hard requirements */
-  if ( dest->data->length < src->data->length ) {
-    ABORT (status, SFTFILEIO_ECOPYSIZE, SFTFILEIO_MSGECOPYSIZE);
-  }
-  
-  /* copy head */
-  strcpy (dest->name, src->name);
-  dest->epoch = src->epoch;
-  dest->f0 = src->f0;
-  dest->deltaF = src->deltaF;
-  dest->sampleUnits = src->sampleUnits;
-  /* copy data */
-  memcpy (dest->data->data, src->data->data, dest->data->length * sizeof (dest->data->data[0]));
-  
-  RETURN (status);
-
-} /* LALCopySFT() */
-
-
-
 /***********************************************************************
  * internal helper functions
  ***********************************************************************/
+
 /* a little endian-swapper needed for SFT reading/writing */
 static void 
 endian_swap(CHAR * pdata, size_t dsize, size_t nelements)
@@ -1053,6 +1020,10 @@ SortStringVector (StringVector *strings)
  *	a[-a-z]c	a-c aac abc ...
  *
  * $Log$
+ * Revision 1.40  2005/11/03 12:31:07  reinhard
+ * - moved a few more general-purpose SFT-handling functions into SFTutils
+ * - some doxygenizing
+ *
  * Revision 1.39  2005/09/09 09:48:56  reinhard
  * new function: LALGetSFTheaders() returns an SFTVect containing only the headers!
  *

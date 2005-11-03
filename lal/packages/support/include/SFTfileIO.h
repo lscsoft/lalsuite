@@ -68,7 +68,6 @@ NRCSID (SFTFILEIOH, "$Id$");
 #define SFTFILEIO_EFREQBAND 	13
 #define SFTFILEIO_EMEM 		14
 #define SFTFILEIO_EGLOB 	15
-#define SFTFILEIO_ECOPYSIZE	16
 #define SFTFILEIO_EDIFFLENGTH 	17
 
 #define SFTFILEIO_MSGENULL 	"Null pointer"
@@ -81,7 +80,6 @@ NRCSID (SFTFILEIOH, "$Id$");
 #define SFTFILEIO_MSGEFREQBAND 	"Required frequency-band is not in SFT"
 #define SFTFILEIO_MSGEMEM 	"Out of memory"
 #define SFTFILEIO_MSGEGLOB 	"Failed to get filelist from directory/pattern"
-#define SFTFILEIO_MSGECOPYSIZE	"Target SFT-struct has not enough frequency-bins for copying"
 #define SFTFILEIO_MSGEDIFFLENGTH "Sorry, can only read SFTs of identical length (currently)"
 /*@}*/
 
