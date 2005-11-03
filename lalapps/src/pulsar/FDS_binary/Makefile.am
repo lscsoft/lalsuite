@@ -33,7 +33,7 @@ lalapps_MakeSubMesh_SOURCES = MakeSubMesh_v1.c ReadWriteBinaryHeader_v1.c \
 	OrbitalParameterConversion_v1.c GenerateBinaryMesh_v1.h
 
 lalapps_GenerateRandomBinaryInput_SOURCES = GenerateRandomBinaryInput_v1.c \
-	ReadWriteBinaryHeader_v1.c
+	GenerateRandomBinaryInput_v1.h ReadWriteBinaryHeader_v1.c
 
 lalapps_GenerateBinaryInput_SOURCES = GenerateBinaryInput_v1.c ReadSourceFile_v1.c
 
