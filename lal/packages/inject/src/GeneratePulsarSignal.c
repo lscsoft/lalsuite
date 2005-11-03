@@ -1,7 +1,22 @@
-/************************************ <lalVerbatim file="GeneratePulsarSignalCV">
-Author: Prix, Reinhard
-$Id$
-************************************* </lalVerbatim> */
+/*
+ * Copyright (C) 2004, 2005 Reinhard Prix
+ * Copyright (C) 2004, 2005 Greg Mendell
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with with program; see the file COPYING. If not, write to the 
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  MA  02111-1307  USA
+ */
 
 /* NOTES: */
 /* 07/14/04 gam; add functions LALComputeSkyAndZeroPsiAMResponse and LALFastGeneratePulsarSFTs */
@@ -9,247 +24,17 @@ $Id$
 /* 10/12/04 gam; When computing fCross and fPlus need to use 2.0*psi. */
 /* 09/07/05 gam; Add Dterms parameter to LALFastGeneratePulsarSFTs; use this to fill in SFT bins with fake data as per LALDemod else fill in bin with zero */
 
-/********************************************************** <lalLaTeX>
-\subsection{Module \texttt{GeneratePulsarSignal.c}}
-\label{ss:GeneratePulsarSignal.c}
-
-Module to generate simulated pulsar-signals.
-
-\subsubsection*{Prototypes}
-\idx{LALGeneratePulsarSignal()}
-\idx{LALSignalToSFTs()}
-\idx{LALComputeSkyAndZeroPsiAMResponse()}
-\idx{LALFastGeneratePulsarSFTs()}
-\idx{LALConvertSSB2GPS()}
-\idx{LALConvertGPS2SSB()}
-\idx{LALCreateSFTtype()}
-\idx{LALCreateSFTVector()}
-\idx{LALDestroySFTtype()}
-\idx{LALDestroySFTVector()}
-\idx{LALDestroyTimestampVector()}
-
-\input{GeneratePulsarSignalCP}
-
-\newpage
-\subsubsection*{Description}
-
-\begin{itemize}
-\item The main function \verb+LALGeneratePulsarSignal()+ generates a fake
-pulsar-signal, either for an isolated or a binary pulsar. It returns a
-time-series with the generated signal as received by the detector. 
-
-\item The time-series can then be turned into a vector of short time-base FFTs
-(so-called "SFTs") by using the function \verb+LALSignalToSFTs()+.
-These SFTs are the data-format used by most frequency-domain pulsar codes,
-therefore these functions can be directly used in a Monte-Carlo
-injection driver. 
-\end{itemize}
-
-
-This module also contains a few more general-purpose helper-functions:
-
-\begin{itemize}
-\item Namely, \verb+LALConvertSSB2GPS()+ and \verb+LALConvertGPS2SSB()+
-which convert arrival times for a given source (not necessarily a
-pulsar!) the detector ("GPS") and the solar-system barycenter ("SSB"). 
-NOTE: only the source-location (\verb+params->pulsar.position+), the
-detector-site (\verb+params->site+) and the ephemeris-data
-(\verb+params->ephemerides+)are used from the
-\verb+PulsarSignalParams+-structure.  
-
-\item The helper functions \verb+LALCreateSFTtype()+,
-\verb+LALDestroySFTtype()+, \verb+LALCreateSFTVector()+
-and\verb+LALDestroySFTVector()+  respectively allocate and free an
-SFT-structs and SFT-vectors. 
-Similarly, \verb+LALCreateTimestampVector()+ and
-\verb+LALDestroyTimestampVector()+ allocate and free a bunch of  
-GPS-timestamps respectively.
-\end{itemize}
-
-\subsubsection*{Algorithm}
-
-\verb+LALGeneratePulsarSignal()+ is basically a wrapper for the two
-LAL-functions \verb+GenerateSpinOrbitCW()+
-(cf.~\ref{ss:GenerateSpinOrbitCW.c}) to produce the source-signal, and
-\verb+LALSimulateCoherentGW()+ (cf.~\ref{ss:SimulateCoherentGW.c}) to
-turn it into a time-series at the detector.
-
-
-\verb+LALSignalToSFTs()+ uses \verb+LALForwardRealFFT()+
-(cf.~\ref{ss:RealFFT.c}) appropriately on the input-timeseries to 
-produce the required output-SFTs. 
-
-\subsubsection*{Uses}
-\begin{verbatim}
-LALGenerateSpinOrbitCW()        LALSimulateCoherentGW()
-LALBarycenterEarth()            LALBarycenter()
-LALAddFloatToGPS()              LALDeltaFloatGPS()
-LALCreateForwardRealFFTPlan()   LALDestroyRealFFTPlan()
-LALForwardRealFFT()
-
-LALCalloc()                     LALFree()
-LALDCreateVector()              LALDDestroyVector()
-LALCCreateVector()              LALCDestroyVector()
-LALCreateVector()               LALSDestroyVector()
-LALSDestroyVectorSequence()     LALPrintError()
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\verb+LALSignalToSFTs()+ currently enforces the constraint of 
-\verb+Tsft * Band+ being an integer, so that the number of
-time-samples per SFT is even. This follows \verb+makefakedata_v2+.
-
-
-Furthermore, if the timestamps for SFT-creation passed to
-\verb+LALSignalToSFTs()+ do not fit exactly on a time-step of the
-input time-series, it will be "nudged" to the closest one.
-If \verb+lalDebugLevel>0+, a warning will be printed about this. 
-The user could also see this effect in the actual timestamps of the
-SFTs returned.
-
-
-The FFTW-"plan" is currently created using the \verb+ESTIMATE+ flag,
-which is fast but only yields an approximate plan. Better results
-might be achieved by using \verb+MEASURE+ and an appropriate buffering
-of the resulting plan (which doesnt change provided the SFT-length is
-the same). Measuring the plan takes longer but might lead to
-substantial speedups for many FFTs, which seems the most likely situation.
-
-\subsubsection*{Use of LALFastGeneratePulsarSFTs()}
-
-The functions \verb+LALComputeSkyAndZeroPsiAMResponse()+ and \verb+LALFastGeneratePulsarSFTs()+ 
-use approximate analytic formulas to generate SFTs.  This should be significantly
-faster than \verb+LALGeneratePulsarSignal()+ and \verb+LALSignalToSFTs()+, which generate the
-time series data and then FFT it.  Simple tests performed by the code in
-\verb+GeneratePulsarSignalTest.c+ indicate that the maximum modulus of the SFTs output
-by the approximate and exact codes differs by less that 10\%.  Since the tests
-are not exhaustive, the user should use caution and conduct their own test
-to compare \verb+LALComputeSkyAndZeroPsiAMResponse()+ and \verb+LALFastGeneratePulsarSFTs()+ with
-\verb+LALGeneratePulsarSignal()+ and \verb+LALSignalToSFTs()+.
-
-The strain of a periodic signal at the detector is given by
-$$
-h(t) = F_+(t) A_+ {\rm cos}\Phi(t) + F_\times(t) A_\times {\rm sin}\Phi(t),
-$$
-where $F_+$ and $F_\times$ are the usual beam pattern response functions, 
-$A_+$ and $A_\times$ are the amplitudes of the gravitational wave for the
-plus and cross polarizations, and $\Phi$ is the phase.  The phase contains modulations
-from doppler shifts due to the relative motion between the source and the
-detector and the spin evolution of the source.  (The functions discussed here
-support both isolated sources and those in binary systems. The binary case
-has not been tested.)
-
-If we Taylor expand the phase out to first order about the time at the midpoint of
-an SFT and approximate $F_+$ and $F_\times$ as constants, for one SFT we can write
-$$
-\Phi(t) \approx \Phi_{1/2} + 2\pi f_{1/2}(t - t_{1/2}).
-$$
-The strain at discrete time $t_j$, measured from the start of the SFT, can 
-thus be approximated as
-$$
-h_j \approx F_{+ 1/2} A_+ {\rm cos} [\Phi_{1/2} + 2\pi f_{1/2}(t_0 + t_j - t_{1/2})]
-+ F_{\times 1/2} A_\times {\rm sin} [\Phi_{1/2} + 2\pi f_{1/2}(t_0 + t_j - t_{1/2})],
-$$
-where $t_0$ is the time as the start of the SFT, and $t_{1/2} - t_0 = T_{\rm sft}/2$,
-where $T_{\rm sft}$ is the duration of one SFT.  This simplifies to
-$$
-h_j \approx F_{+ 1/2} A_+ {\rm cos} (\Phi_0 + 2\pi f_{1/2}t_j)
-+ F_{\times 1/2} A_\times {\rm sin} (\Phi_0 + 2\pi f_{1/2}t_j),
-$$
-where $\Phi_0$ is the phase at the start of the SFT
-(not the initial phase at the start of the observation), i.e.,
-$$
-\Phi_0 = \Phi_{1/2} - 2 \pi f_{1/2} (T_{\rm sft} / 2).
-$$
-Note that these are the same approximations used by LALDemod.
-
-One can show that the Discrete Fourier Transform (DFT) of $h_j$ above is:
-$$
-\tilde{h}_k = e^{i\Phi_0}  { ( F_{+ 1/2} A_+ - i F_{\times 1/2} A_\times) \over 2 } 
-{ 1 - e^{2\pi i (\kappa - k)} \over 1 - e^{2\pi i (\kappa - k)/N} } 
-\\
-+ e^{-i\Phi_0}  { ( F_{+ 1/2} A_+ + i F_{\times 1/2} A_\times) \over 2 }
-{ 1 - e^{-2\pi i (\kappa + k)} \over 1 - e^{-2\pi i (\kappa + k)/N} }
-$$
-where $N$ is the number of time samples used to find the
-DFT (i.e., the sample rate times $T_{\rm sft}$), and
-$$
-\kappa \equiv f_{1/2} T_{\rm sft},
-$$
-is usually not an integer.
-
-Note that the factor $e^{\pm 2\pi i k}$ in the numerators of the equation for $\tilde{h}_k$
-equals 1.  Furthermore, for $0 < \kappa < N/2$ and $|\kappa - k| << N$ the first term
-dominates and can be Taylor expanded to give:
-$$
-\tilde{h}_k = N e^{i\Phi_0} { ( F_{+ 1/2} A_+ - i F_{\times 1/2} A_\times) \over 2 }
-\left [ \, { {\rm sin} (2\pi\kappa) \over 2 \pi (\kappa - k) } \,
-+ \, i { 1 - {\rm cos} (2\pi\kappa) \over 2 \pi (\kappa - k) } \, \right ]
-$$
-Note that the last factor in square brackets is $P_{\alpha k}^*$ and
-$e^{i\Phi_0} = Q_{\alpha}^*$ used by LALDemod.
-
-\subsubsection*{Example pseudocode}
-
-The structs used by LALComputeSkyAndZeroPsiAMResponse and LALFastGeneratePulsarSFTs 
-are given in previous sections, and make use of those used by
-LALGeneratePulsarSignal and LALSignalToSFTs plus a small number of
-additional parameters.  Thus it is fairly easy to change between the above
-approximate routines the exact routines. See GeneratePulsarSignalTest.c for
-an example implementation of the code.
-
-Note that one needs to call LALComputeSkyAndZeroPsiAMResponse once per sky position,
-and then call LALFastGeneratePulsarSFTs for each set of signal parameters at that
-sky position.  Thus, one could perform a Monte Carlo simulation, as shown
-by the pseudo code:
-
-\begin{verbatim}
-
-loop over sky positions {
-   ...
-   LALComputeSkyAndZeroPsiAMResponse();
-   ...
-   loop over spindown {
-      ...
-      loop over frequencies {
-         ...
-         LALFastGeneratePulsarSFTs();
-         ...
-      }
-      ...  
-   }
-   ...
-}
-
-\end{verbatim}
-
-\subsubsection*{Notes on LALFastGeneratePulsarSFTs}
-
-1) If \verb+*outputSFTs+ sent to \verb+LALFastGeneratePulsarSFTs()+ is \verb+NULL+ then
-\verb+LALFastGeneratePulsarSFTs()+ allocates memory for the output SFTs; otherwise it assumes
-memory has already been allocated.  Thus, the user does not have to deallocate
-memory for the SFTs until all calls to \verb+LALFastGeneratePulsarSFTs()+ are completed.
-
-\noindent 2) \verb+fHeterodyne+ and 0.5*\verb+samplingRate+ set in the \verb+PulsarSignalParams+ struct
-give the start frequency and frequency band of the SFTs output from \verb+LALFastGeneratePulsarSFTs+.
-
-\noindent 3) If \verb+resTrig+ is set to zero in the \verb+SFTandSignalParams+ struct, then
-the C math libary \verb+cos+ and \verb+sin+ functions are called, else lookup tables (LUTs) are used
-for calls to trig functions.  There may be a slight speedup in using LUTs.
-
-\noindent 4) To maximize the speed of SFT generations, \verb+LALFastGeneratePulsarSFTs()+ only generates
-values for the bins in the band 2*Dterms centered on the signal frequency in each SFT. Dterms must be
-greater than zero and less than or equal to the number of frequency bins in the output SFTs. Note that
-Dterms is used the same way here as it is in LALDemod. Nothing is done to the other bins, unless
-\verb+*outputSFTs+ is \verb+NULL+; then, since memory is allocates for the output SFTs, the bins
-not in the 2*Dterms band are initialized to zero.
-
-\vfill{\footnotesize\input{GeneratePulsarSignalCV}}
-
-
-******************************************************* </lalLaTeX> */ 
-
+/**
+ * \author Reinhard Prix, Greg Mendell
+ * \date 2005
+ * \file 
+ * \ingroup moduleGeneratePulsarSignal
+ *
+ * \brief Module to generate simulated pulsar-signals.
+ *
+ * $Id$
+ *
+ */
 #include <math.h>
 
 #include <lal/AVFactories.h>
@@ -276,16 +61,13 @@ static LALStatus emptyStatus;
 static SpinOrbitCWParamStruc emptyCWParams;
 static CoherentGW emptySignal;
 
-/***********************************************************************
- * generate a time-series at the detector for a given pulsar
- ***********************************************************************/
-/* <lalVerbatim file="GeneratePulsarSignalCP"> */
-/* --------------- the central functions of this module --------------- */
+/** Generate a time-series at the detector for a given pulsar.
+ */
 void
 LALGeneratePulsarSignal (LALStatus *status, 
-			 REAL4TimeSeries **signal, 	   /* output time-series */
-			 const PulsarSignalParams *params) /* input params */
-{ /* </lalVerbatim> */
+			 REAL4TimeSeries **signal, 	   /**< output time-series */
+			 const PulsarSignalParams *params) /**< input params */
+{ 
   SpinOrbitCWParamStruc sourceParams = emptyCWParams; 
   CoherentGW sourceSignal = emptySignal;
   DetectorResponse detector;
@@ -454,16 +236,14 @@ LALGeneratePulsarSignal (LALStatus *status,
 
 
 
-/*----------------------------------------------------------------------
- * take time-series as input, convert it into SFTs and add noise if given
- *----------------------------------------------------------------------*/
-/* <lalVerbatim file="GeneratePulsarSignalCP"> */
+/** Turn the given time-series into SFTs and add noise if given.
+ */
 void
 LALSignalToSFTs (LALStatus *status, 
-		 SFTVector **outputSFTs,	/* output: SFT-vector */
-		 const REAL4TimeSeries *signal, /* input: time-series */
-		 const SFTParams *params)	/* params for output-SFTs */
-{ /* </lalVerbatim> */
+		 SFTVector **outputSFTs,	/**< [out] SFT-vector */
+		 const REAL4TimeSeries *signal, /**< input time-series */
+		 const SFTParams *params)	/**< params for output-SFTs */
+{
   UINT4 numSFTs;			/* number of SFTs */
   UINT4 numSFTsamples;			/* number of time-samples in an Tsft */
   UINT4 iSFT;
@@ -659,22 +439,21 @@ LALSignalToSFTs (LALStatus *status,
 
 
 /* 07/14/04 gam */
-/*--------------------------------------------------------------------------
- * Wrapper for LALComputeSky and  LALComputeDetAMResponse that finds the sky
- * constants and F_+ and F_x for use with LALFastGeneratePulsarSFTs. Uses
- * the output of LALComputeSkyAndZeroPsiAMResponse and the same inputs as
- * LALGeneratePulsarSignal and LALSignalToSFTs.
- * This function used LALComputeSkyBinary if params->pSigParams->orbit is not
- * NULL, else it uses LALComputeSky to find the skyConsts.
- * NOTE THAT THIS FUNCTION COMPUTES F_+ and F_x for ZERO Psi!!!
- * LALFastGeneratePulsarSFTs used these to find F_+ and F_x for NONZERO Psi.
- *--------------------------------------------------------------------------*/
-/* <lalVerbatim file="GeneratePulsarSignalCP"> */
+/**
+ * Wrapper for LALComputeSky() and  LALComputeDetAMResponse() that finds the sky
+ * constants and \f$F_+\f$ and \f$F_\times\f$ for use with LALFastGeneratePulsarSFTs().
+ *  Uses the output of LALComputeSkyAndZeroPsiAMResponse() and the same inputs as
+ * LALGeneratePulsarSignal() and LALSignalToSFTs().
+ * This function used LALComputeSkyBinary() if params->pSigParams->orbit is not
+ * NULL, else it uses LALComputeSky() to find the skyConsts.
+ * NOTE THAT THIS FUNCTION COMPUTES \f$F_+\f$ and \f$F_x\f$ for ZERO Psi!!!
+ * LALFastGeneratePulsarSFTs() used these to find \f$F_+\f$ and \f$F_x\f$ for NONZERO Psi.
+ */
 void
 LALComputeSkyAndZeroPsiAMResponse (LALStatus *status,
-                                   SkyConstAndZeroPsiAMResponse *output,
-                                   const SFTandSignalParams *params)
-{ /* </lalVerbatim> */
+                                   SkyConstAndZeroPsiAMResponse *output,	/**< output */
+                                   const SFTandSignalParams *params)		/**< params */
+{
   INT4 i;
   INT4 numSFTs;                      /* number of SFTs */
   BarycenterInput baryinput;         /* Stores detector location and other barycentering data */  
@@ -790,20 +569,19 @@ LALComputeSkyAndZeroPsiAMResponse (LALStatus *status,
 } /* LALComputeSkyAndZeroPsiAMResponse */
 
 /* 07/14/04 gam */
-/*--------------------------------------------------------------------------
+/** 
  * Fast generation of Fake SFTs for a pure pulsar signal.
  * Uses the output of LALComputeSkyAndZeroPsiAMResponse and the same inputs
  * as LALGeneratePulsarSignal and LALSignalToSFTs.  The fake signal is
  * Taylor expanded to first order about the midpoint time of each SFT.
  * Analytic expressions are used to find each SFT
- *--------------------------------------------------------------------------*/
-/* <lalVerbatim file="GeneratePulsarSignalCP"> */
+ */
 void 
 LALFastGeneratePulsarSFTs (LALStatus *status,
                            SFTVector **outputSFTs,
                            const SkyConstAndZeroPsiAMResponse *input,
                            const SFTandSignalParams *params)
-{ /* </lalVerbatim> */
+{
   INT4 numSFTs;                 /* number of SFTs */
   REAL4 N;                      /* N = number of time-samples that would have been used to generate SFTs directly */
   INT4 iSFT;                    /* index that gives which SFT in an SFTVector */
@@ -1094,19 +872,18 @@ LALConvertGPS2SSB (LALStatus* status,
 } /* LALConvertGPS2SSB() */
 
 
-/*----------------------------------------------------------------------
- * convert  barycentric frame SSB time into earth-frame GPS time
+/** 
+ * Convert  barycentric frame SSB time into earth-frame GPS time
  *
  * NOTE: this uses simply the inversion-routine used in the original
  *       makefakedata_v2
- *----------------------------------------------------------------------*/
-/* <lalVerbatim file="GeneratePulsarSignalCP"> */
+ */
 void
 LALConvertSSB2GPS (LALStatus *status, 
-		   LIGOTimeGPS *GPSout,		 /* output: GPS-arrival-time at detector */
-		   LIGOTimeGPS SSBin, 		 /* input: signal arrival time at SSB */
-		   const PulsarSignalParams *params) /* params defining source-location and detector */
-{ /* </lalVerbatim> */
+		   LIGOTimeGPS *GPSout,		 /**< [out] GPS-arrival-time at detector */
+		   LIGOTimeGPS SSBin, 		 /**< [in] input: signal arrival time at SSB */
+		   const PulsarSignalParams *params) /**< params defining source-location and detector */
+{ 
 
   LIGOTimeGPS SSBofguess;
   LIGOTimeGPS GPSguess;
@@ -1164,293 +941,6 @@ LALConvertSSB2GPS (LALStatus *status,
   RETURN (status);
 
 } /* LALConvertSSB2GPS() */
-
-
-
-
-/*----------------------------------------------------------------------
- * create one SFT-struct
- *----------------------------------------------------------------------*/
-/* <lalVerbatim file="GeneratePulsarSignalCP"> */
-void
-LALCreateSFTtype (LALStatus *status, 
-		  SFTtype **output, 	/* output: allocated SFT-struct */
-		  UINT4 SFTlen)		/* number of frequency-bins */
-{ /* </lalVerbatim> */
-  SFTtype *sft = NULL;
-
-  INITSTATUS( status, "LALCreateSFTtype", GENERATEPULSARSIGNALC);
-  ATTATCHSTATUSPTR( status );
-
-  ASSERT (output != NULL, status, GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
-  ASSERT (*output == NULL, status, GENERATEPULSARSIGNALH_ENONULL,  GENERATEPULSARSIGNALH_MSGENONULL);
-
-  sft = LALCalloc (1, sizeof(*sft) );
-  if (sft == NULL) {
-    ABORT (status, GENERATEPULSARSIGNALH_EMEM, GENERATEPULSARSIGNALH_MSGEMEM);
-  }
-  LALCCreateVector (status->statusPtr, &(sft->data), SFTlen);
-  BEGINFAIL (status) { 
-    LALFree (sft);
-  } ENDFAIL (status);
-
-  *output = sft;
-
-  DETATCHSTATUSPTR( status );
-  RETURN (status);
-
-} /* LALCreateSFTVector() */
-
-
-/*----------------------------------------------------------------------
- * create a whole vector of <numSFT> SFTs with <SFTlen> frequency-bins 
- *----------------------------------------------------------------------*/
-/* <lalVerbatim file="GeneratePulsarSignalCP"> */
-void
-LALCreateSFTVector (LALStatus *status, 
-		    SFTVector **output, /* output: allocated SFT-vector */
-		    UINT4 numSFTs, 	/* number of SFTs */
-		    UINT4 SFTlen)	/* number of frequency-bins per SFT */
-{ /* </lalVerbatim> */
-  UINT4 iSFT, j;
-  SFTVector *vect;	/* vector to be returned */
-  COMPLEX8Vector *data = NULL;
-
-  INITSTATUS( status, "LALCreateSFTVector", GENERATEPULSARSIGNALC);
-  ATTATCHSTATUSPTR( status );
-
-  ASSERT (output != NULL, status, GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
-  ASSERT (*output == NULL, status, GENERATEPULSARSIGNALH_ENONULL,  GENERATEPULSARSIGNALH_MSGENONULL);
-
-  vect = LALCalloc (1, sizeof(*vect) );
-  if (vect == NULL) {
-    ABORT (status, GENERATEPULSARSIGNALH_EMEM, GENERATEPULSARSIGNALH_MSGEMEM);
-  }
-
-  vect->length = numSFTs;
-
-  vect->data = LALCalloc (1, numSFTs * sizeof ( *vect->data ) );
-  if (vect->data == NULL) {
-    LALFree (vect);
-    ABORT (status, GENERATEPULSARSIGNALH_EMEM, GENERATEPULSARSIGNALH_MSGEMEM);
-  }
-
-  for (iSFT=0; iSFT < numSFTs; iSFT ++)
-    {
-      LALCCreateVector (status->statusPtr, &data , SFTlen);
-      BEGINFAIL (status) { /* crap, we have to de-allocate as far as we got so far... */
-	for (j=0; j<iSFT; j++)
-	  LALCDestroyVector (status->statusPtr, (COMPLEX8Vector**)&(vect->data[j].data) );
-	LALFree (vect->data);
-	LALFree (vect);
-      } ENDFAIL (status);
-
-      vect->data[iSFT].data = data;
-      data = NULL;
-
-    } /* for iSFT < numSFTs */
-
-  *output = vect;
-
-  DETATCHSTATUSPTR( status );
-  RETURN (status);
-
-} /* LALCreateSFTVector() */
-
-/*----------------------------------------------------------------------
- * destroy an SFT-struct
- *----------------------------------------------------------------------*/
-/* <lalVerbatim file="GeneratePulsarSignalCP"> */
-void
-LALDestroySFTtype (LALStatus *status, 
-		   SFTtype **sft)
-{ /* </lalVerbatim> */
-
-  INITSTATUS( status, "LALDestroySFTtype", GENERATEPULSARSIGNALC);
-  ATTATCHSTATUSPTR (status);
-
-  ASSERT (sft != NULL, status, GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
-
-  /* be flexible: if points to null, nothing to do here.. (like 'free()') */
-  if (*sft == NULL) {
-    DETATCHSTATUSPTR( status );
-    RETURN (status);
-  }
-
-  if ( (*sft)->data )
-    {
-      if ( (*sft)->data->data )
-	LALFree ( (*sft)->data->data );
-      LALFree ( (*sft)->data );
-    }
-  
-  LALFree ( (*sft) );
-
-  *sft = NULL;
-
-  DETATCHSTATUSPTR( status );
-  RETURN (status);
-
-} /* LALDestroySFTtype() */
-
-
-/*----------------------------------------------------------------------
- * destroy an SFT-vector
- *----------------------------------------------------------------------*/
-/* <lalVerbatim file="GeneratePulsarSignalCP"> */
-void
-LALDestroySFTVector (LALStatus *status, 
-		     SFTVector **vect)	/* the SFT-vector to free */
-{ /* </lalVerbatim> */
-  UINT4 i;
-  SFTtype *sft;
-
-  INITSTATUS( status, "LALDestroySFTVector", GENERATEPULSARSIGNALC);
-  ATTATCHSTATUSPTR( status );
-
-  ASSERT (vect != NULL, status, GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
-  ASSERT (*vect != NULL, status, GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
-
-  
-  for (i=0; i < (*vect)->length; i++)
-    {
-      sft = &( (*vect)->data[i] );
-      if ( sft->data )
-	{
-	  if ( sft->data->data )
-	    LALFree ( sft->data->data );
-	  LALFree ( sft->data );
-	}
-    }
-
-  LALFree ( (*vect)->data );
-  LALFree ( *vect );
-
-  *vect = NULL;
-
-  DETATCHSTATUSPTR( status );
-  RETURN (status);
-
-} /* LALDestroySFTVector() */
-
-
-
-/*----------------------------------------------------------------------
- * allocate a LIGOTimeGPSVector
- *----------------------------------------------------------------------*/
-/* <lalVerbatim file="GeneratePulsarSignalCP"> */
-void
-LALCreateTimestampVector (LALStatus *status, LIGOTimeGPSVector **vect, UINT4 length)
-{ /* </lalVerbatim> */
-  LIGOTimeGPSVector *out = NULL;
-
-  INITSTATUS( status, "LALCreateTimestampVector", GENERATEPULSARSIGNALC);
-
-  ASSERT (vect != NULL, status, GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
-  ASSERT (*vect == NULL, status, GENERATEPULSARSIGNALH_ENONULL,  GENERATEPULSARSIGNALH_MSGENONULL);
-
-  out = LALCalloc (1, sizeof(LIGOTimeGPSVector));
-  if (out == NULL) {
-    ABORT (status,  GENERATEPULSARSIGNALH_EMEM,  GENERATEPULSARSIGNALH_MSGEMEM);
-  }
-  out->length = length;
-  out->data = LALCalloc (1, length * sizeof(LIGOTimeGPS));
-  if (out->data == NULL) {
-    LALFree (out);
-    ABORT (status,  GENERATEPULSARSIGNALH_EMEM,  GENERATEPULSARSIGNALH_MSGEMEM);
-  }
-
-  *vect = out;
-
-  RETURN (status);
-  
-} /* LALCreateTimestampVector() */
-
-
-
-/*----------------------------------------------------------------------
- * de-allocate a LIGOTimeGPSVector
- *----------------------------------------------------------------------*/
-/* <lalVerbatim file="GeneratePulsarSignalCP"> */
-void
-LALDestroyTimestampVector (LALStatus *status, LIGOTimeGPSVector **vect)
-{ /* </lalVerbatim> */
-  INITSTATUS( status, "LALDestroyTimestampVector", GENERATEPULSARSIGNALC);
-
-  ASSERT (vect != NULL, status, GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
-  ASSERT (*vect != NULL, status, GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
-
-  LALFree ( (*vect)->data);
-  LALFree ( *vect );
-  
-  *vect = NULL;
-
-  RETURN (status);
-  
-} /* LALDestroyTimestampVector() */
-
-
-
-/*----------------------------------------------------------------------
- * given a start-time, duration and Tsft, returns a list of timestamps
- * covering this time-stretch.
- * returns NULL on out-of-memory
- *----------------------------------------------------------------------*/
-void
-LALMakeTimestamps(LALStatus *status,
-		  LIGOTimeGPSVector **timestamps, 
-		  LIGOTimeGPS tStart, 
-		  REAL8 duration, 
-		  REAL8 Tsft)
-{
-  UINT4 i;
-  UINT4 numSFTs;
-  LIGOTimeGPS tt;
-  LIGOTimeGPSVector *ts = NULL;
-
-  INITSTATUS( status, "LALMakeTimestamps", GENERATEPULSARSIGNALC);
-  ATTATCHSTATUSPTR (status);
-
-  ASSERT (timestamps != NULL, status, GENERATEPULSARSIGNALH_ENULL, 
-	  GENERATEPULSARSIGNALH_MSGENULL);
-  ASSERT (*timestamps == NULL,status, GENERATEPULSARSIGNALH_ENONULL, 
-	  GENERATEPULSARSIGNALH_MSGENONULL);
-
-  ASSERT ( duration >= Tsft, status, GENERATEPULSARSIGNALH_EINPUT, GENERATEPULSARSIGNALH_MSGEINPUT);
-
-  numSFTs = (UINT4)( duration / Tsft );			/* floor */
-  if ( (ts = LALCalloc (1, sizeof( *ts )) ) == NULL ) {
-    ABORT (status,  GENERATEPULSARSIGNALH_EMEM,  GENERATEPULSARSIGNALH_MSGEMEM);
-  }
-
-  ts->length = numSFTs;
-  if ( (ts->data = LALCalloc (1, numSFTs * sizeof (*ts->data) )) == NULL) {
-    ABORT (status,  GENERATEPULSARSIGNALH_EMEM,  GENERATEPULSARSIGNALH_MSGEMEM);
-  }
-
-  tt = tStart;	/* initialize to start-time */
-  for (i = 0; i < numSFTs; i++)
-    {
-      ts->data[i] = tt;
-      /* get next time-stamp */
-      /* NOTE: we add the interval Tsft successively instead of
-       * via iSFT*Tsft, because this way we avoid possible ns-rounding problems
-       * with a REAL8 interval, which becomes critial from about 100days on...
-       */
-      LALAddFloatToGPS( status->statusPtr, &tt, &tt, Tsft);
-      BEGINFAIL( status ) {
-	LALFree (ts->data);
-	LALFree (ts);
-      } ENDFAIL(status);
-
-    } /* for i < numSFTs */
-
-  *timestamps = ts;
-
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
-  
-} /* LALMakeTimestamps() */
 
 
 
