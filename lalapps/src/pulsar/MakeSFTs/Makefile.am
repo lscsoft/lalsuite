@@ -6,5 +6,5 @@ LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 if FRAME
   bin_PROGRAMS = lalapps_MakeSFTs
-  lalapps_make_sfts_SOURCES = MakeSFTs.c
+  lalapps_MakeSFTs_SOURCES = MakeSFTs.c
 endif
