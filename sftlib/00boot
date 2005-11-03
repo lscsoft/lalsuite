@@ -28,7 +28,7 @@ AUTOHEADER=autoheader
 AUTOMAKE=automake
 AUTOCONF=autoconf
 
-if $ACLOCAL && $AUTOHEADER && $AUTOMAKE --foreign && $AUTOCONF; then
+if $ACLOCAL && $AUTOHEADER && $AUTOMAKE --foreign --add-missing && $AUTOCONF; then
 
     echo "Done, now you can run ./configure"
     exit 0
