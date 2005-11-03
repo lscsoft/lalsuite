@@ -442,7 +442,8 @@ void
 LALalphaFCutSingleInspiral(
     LALStatus                  *status,
     SnglInspiralTable         **eventHead,
-    REAL4                       alphaFcut
+    REAL4                       alphaFhi,
+    REAL4                       alphaFlo
     );
 
 void

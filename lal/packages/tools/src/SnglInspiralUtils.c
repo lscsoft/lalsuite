@@ -842,7 +842,8 @@ void
 LALalphaFCutSingleInspiral(
     LALStatus                  *status,
     SnglInspiralTable         **eventHead,
-    REAL4                       alphaFcut
+    REAL4                       alphaFhi,
+    REAL4                       alphaFlo
     )
 /* </lalVerbatim> */
 {
@@ -855,9 +856,7 @@ LALalphaFCutSingleInspiral(
   ATTATCHSTATUSPTR( status );
 
 
-
-
-  /* Remove all the triggers with alphaF > alphaFcut */
+  /* Remove all the triggers that are not in alphaFlo <= alphaF <= alphaFhi */
 
   thisEvent = *eventHead;
 
@@ -866,7 +865,8 @@ LALalphaFCutSingleInspiral(
     SnglInspiralTable *tmpEvent = thisEvent;
     thisEvent = thisEvent->next;
 
-    if ( (tmpEvent->alpha * pow(tmpEvent->f_final,(2.0/3.0))) <= alphaFcut )
+    if ( ( (tmpEvent->alpha * pow(tmpEvent->f_final,(2.0/3.0))) <= alphaFhi )
+      && ( (tmpEvent->alpha * pow(tmpEvent->f_final,(2.0/3.0))) >= alphaFlo ) )
     {
       /* keep this template */
       if ( ! inspiralEventList  )
