@@ -1216,7 +1216,7 @@ int main( int argc, char *argv[] )
       if ( vrbflg ) fprintf( stdout, 
           "Discarding triggers with alphaF > %f from ifo %d\n", alphaFcut, j );
       LAL_CALL( LALalphaFCutSingleInspiral( &status, &(inspiralEventList[j]),
-        alphaFcut), &status );
+        alphaFcut,0.0), &status );
     }  
   }
 

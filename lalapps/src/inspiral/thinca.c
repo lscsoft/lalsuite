@@ -61,6 +61,7 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 int haveTrig[LAL_NUM_IFO];
 int checkTimes = 0;
 int multiIfoCoinc = 0;
+int doAlphaFCut = 0;
 
 
 /*
@@ -150,6 +151,14 @@ static void print_usage(char *program)
       "  [--dmchirp-high]      dmchirp    different chirp mass window for high masses\n"\
       "  [--high-mass]         mass       total mass for trigger above which the high mass mchirp is used\n"\
       "\n"\
+      "  [--do-alphaF-cut]                perform cut based on alphaF\n"\
+      "                                   with bounds given below\n"\
+      "                                   (both bounds must be specified)\n"\
+      "  [--alphaF-hi]         alphaFhi   reject BCV triggers with alphaF\n"\
+      "                                   greater than alphaFhi\n"\
+      "  [--alphaF-lo]         alphaFlo   reject BCV triggers with alphaF\n"\
+      "                                   smaller than alphaFlo (< alphaFhi)\n"\
+      "\n"\
       "   --data-type        data_type specify the data type, must be one of\n"\
       "                                (playground_only|exclude_play|all_data)\n"\
       "\n"\
@@ -234,6 +243,9 @@ int main( int argc, char *argv[] )
   INT4                  loopVar;
   INT4                  maximizationInterval = 0;
 
+  REAL4                 alphaFhi = -2.e4;
+  REAL4                 alphaFlo = 9.e4;
+
   const CHAR                   ifoList[LAL_NUM_IFO][LIGOMETA_IFO_MAX] = 
                                    {"G1", "H1", "H2", "L1", "T1", "V1"};
   const CHAR                  *ifoArg[LAL_NUM_IFO] = 
@@ -254,6 +266,7 @@ int main( int argc, char *argv[] )
     {"v1-triggers",         no_argument,   &(haveTrig[LAL_IFO_V1]),   1 },
     {"check-times",         no_argument,   &checkTimes,               1 },
     {"multi-ifo-coinc",     no_argument,   &multiIfoCoinc,            1 },
+    {"do-alphaF-cut",       no_argument,   &doAlphaFCut,              1 },
     {"g1-slide",            required_argument, 0,                    'b'},
     {"h1-slide",            required_argument, 0,                    'c'},
     {"h2-slide",            required_argument, 0,                    'd'},
@@ -301,6 +314,8 @@ int main( int argc, char *argv[] )
     {"gps-start-time",      required_argument, 0,                    's'},
     {"gps-end-time",        required_argument, 0,                    't'},
     {"maximization-interval",required_argument, 0,                   '@'},    
+    {"alphaF-hi",           required_argument, 0,                    'j'},
+    {"alphaF-lo",           required_argument, 0,                    'l'},
     {"data-type",           required_argument, 0,                    'k'},
     {"comment",             required_argument, 0,                    'x'},
     {"user-tag",            required_argument, 0,                    'Z'},
@@ -365,7 +380,7 @@ int main( int argc, char *argv[] )
 
     c = getopt_long_only( argc, argv, 
         "A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:VZ:"
-        "a:b:c:d:e:f:g:hi:k:m:n:o:p:q:r:s:t:x:z:"
+        "a:b:c:d:e:f:g:hi:j:l:k:m:n:o:p:q:r:s:t:x:z:"
         "2:3:4:5:6:7:8:9:!:-:+:=:@:^:&:", 
         long_options, &option_index );
 
@@ -722,6 +737,19 @@ int main( int argc, char *argv[] )
           LALSnprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
         }
         break;
+
+      case 'j':
+        /* upper alphaF cutoff */
+        alphaFhi = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
+      case 'l':
+        /* lower alphaF cutoff */
+        alphaFlo = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
 
       case 'k':
         /* type of data to analyze */
@@ -1139,6 +1167,30 @@ int main( int argc, char *argv[] )
 
   if ( vrbflg ) fprintf( stdout, "Read in a total of %d triggers.\n",
       numTriggers );
+
+  /*
+   * for the case of BCV unconstrained-max, discard the triggers that
+   * have alphaF greater than alphaFhi or lower than alphaFlo,
+   * as those are specified in the command line.
+   * If at least alphaFhi is not specified, do not discard any triggers.
+   */
+
+  if ( doAlphaFCut )
+  {
+    if ( alphaFhi <= alphaFlo )
+    {
+      fprintf( stderr, "Error: alphaFhi must be greater than alphaFlo.\n");
+      exit( 1 );
+    }
+
+    if ( vrbflg ) fprintf( stdout,
+       "Discarding triggers with alphaF > %f OR alphaF < %f \n", 
+       alphaFhi, alphaFlo );
+
+    LAL_CALL( LALalphaFCutSingleInspiral( &status, &(inspiralEventList),
+      alphaFhi, alphaFlo), &status );
+  }
+
 
   /* maximize over a given interval */
   if ( maximizationInterval )
