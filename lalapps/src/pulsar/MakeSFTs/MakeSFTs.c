@@ -10,12 +10,14 @@
 /* REVISIONS: */
 /* 11/02/05 gam; To save memory, change lalDebugLevel to 0; note when this is set to 3 that 3x the memory is used! */
 /* 11/02/05 gam; To save memory, do not save the window function in memory; just recompute this for each SFT. */
+/* 11/02/05 gam; To save memory, do not hold dataSingle.data and vtilde in memory at the same time. */
+/* 11/02/05 gam; Let try removing dependency on config.h to make build more portable */
 
-#include <config.h>
+/* #include <config.h>
 #if !defined HAVE_LIBGSL || !defined HAVE_LIBLALFRAME
 #include <stdio.h>
 int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", stderr);return 1;}
-#else
+#else */ /* 11/02/05 gam */
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -189,20 +191,28 @@ int main(int argc,char *argv[])
 
       /* Window data */
       if(WindowData()) return 5;
-           
+
+      /* 11/02/05 gam; allocate container for SFT data */
+      LALZCreateVector( &status, &vtilde, dataDouble.data->length / 2 + 1 );
+      TESTSTATUS( &status );  
+
       /* compute sft */
       XLALREAL8ForwardFFT( vtilde, dataDouble.data, fplan );
-	  
+
       /* write out sft */
       if(WriteSFT(CommandLineArgs)) return 6;
-      
+
+      /* 11/02/05 gam; deallocate container for SFT data */
+      LALZDestroyVector( &status, &vtilde );
+      TESTSTATUS( &status );/* 11/02/05 gam */
+
     }
 
-  if(!CommandLineArgs.htdata)
+  /* if(!CommandLineArgs.htdata)
     {
       LALDestroyVector(&status,&dataSingle.data);
       TESTSTATUS( &status );
-    } 
+    } */ /* 11/02/05 gam */
    
   if(FreeMem()) return 8;
 
@@ -351,7 +361,9 @@ int ReadData(struct CommandLineArgsTag CLA)
   else
     {
       int k;
-
+      /* 11/02/05 gam; add next two lines */
+      LALCreateVector(&status,&dataSingle.data,(UINT4)(CLA.T/dataSingle.deltaT +0.5));
+      TESTSTATUS( &status );
       chanin.type  = ADCDataChannel;
       LALFrGetREAL4TimeSeries(&status,&dataSingle,&chanin,framestream);
       TESTSTATUS( &status );
@@ -361,6 +373,9 @@ int ReadData(struct CommandLineArgsTag CLA)
 	{
 	  dataDouble.data->data[k] = dataSingle.data->data[k];
 	}
+      /* 11/02/05 gam; add next two lines */
+      LALDestroyVector(&status,&dataSingle.data);
+      TESTSTATUS( &status );
     }
 
   return 0;
@@ -393,8 +408,8 @@ int AllocateData(struct CommandLineArgsTag CLA)
       TESTSTATUS( &status );
       LALFrGetREAL4TimeSeries(&status,&dataSingle,&chanin,framestream);
       TESTSTATUS( &status );
-      LALCreateVector(&status,&dataSingle.data,(UINT4)(CLA.T/dataSingle.deltaT +0.5));
-      TESTSTATUS( &status );
+      /* LALCreateVector(&status,&dataSingle.data,(UINT4)(CLA.T/dataSingle.deltaT +0.5));
+      TESTSTATUS( &status ); */ /* 11/02/05 gam; will allocate/deallocate container for data when reading the data. */
 
       dataDouble.deltaT=dataSingle.deltaT;
       LALDCreateVector(&status,&dataDouble.data,(UINT4)(CLA.T/dataDouble.deltaT +0.5));
@@ -404,8 +419,8 @@ int AllocateData(struct CommandLineArgsTag CLA)
   /* LALDCreateVector(&status,&window,(UINT4)(CLA.T/dataDouble.deltaT +0.5));
   TESTSTATUS( &status ); */ /* 11/02/05 gam */
 
-  LALZCreateVector( &status, &vtilde, dataDouble.data->length / 2 + 1 );
-  TESTSTATUS( &status );
+  /* LALZCreateVector( &status, &vtilde, dataDouble.data->length / 2 + 1 );
+  TESTSTATUS( &status ); */ /* 11/02/05 gam; will allocate/deallocate container for data when reading the data. */
 
   LALCreateForwardREAL8FFTPlan( &status, &fplan, dataDouble.data->length, 0 );
   TESTSTATUS( &status );
@@ -571,8 +586,8 @@ int FreeMem(void)
   /* LALDDestroyVector(&status,&window);
   TESTSTATUS( &status ); */ /* 11/02/05 gam */
 
-  LALZDestroyVector( &status, &vtilde );
-  TESTSTATUS( &status );
+  /* LALZDestroyVector( &status, &vtilde );
+  TESTSTATUS( &status ); */ /* 11/02/05 gam */
 
   LALDestroyREAL8FFTPlan( &status, &fplan );
   TESTSTATUS( &status );
@@ -583,4 +598,4 @@ int FreeMem(void)
 }
 
 /*******************************************************************************/
-#endif
+/* #endif */ /* 11/02/05 gam */
