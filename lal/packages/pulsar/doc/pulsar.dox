@@ -2,10 +2,11 @@
 
 /* ----- defining packages within the pulsar-class of packages ----- */
 
-/** \defgroup pulsarCommon Common Routines
-    \ingroup pulsar	
-    \brief This package provides routines for timing, barycentering, 
-    metric calculation and mesh-generation relevant for pulsar searches.
+/** \defgroup pulsarCommon Common Pulsar APIs
+    \ingroup pulsar     
+    \brief This package provides a common data-types and APIs for
+    pulsar searches (e.g. APIs related to SFT-handling, timing,
+    barycentering, metric calculation, mesh-generation ...)
 */
 
 /** \defgroup houghpulsar The Hough transform
