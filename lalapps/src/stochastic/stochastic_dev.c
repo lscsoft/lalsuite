@@ -3383,6 +3383,10 @@ INT4 main(INT4 argc, CHAR *argv[])
     LALSPrintTimeSeries(seriesTwo, "series2.dat");
   }
 
+  /* free memory from noiseOne/noiseTwo as they are no longer needed */
+  XLALDestroyREAL4TimeSeries(noiseOne);
+  XLALDestroyREAL4TimeSeries(noiseTwo);
+
   /* check that the two series have the same sample rate */
   if (seriesOne->deltaT != seriesTwo->deltaT)
   {
