@@ -26,13 +26,13 @@ lalapps_exc_resp_SOURCES 		= exc_resp.c
 lalapps_ivana_SOURCES 			= ivana.c
 lalapps_inspmultiawg_SOURCES 		= inspmultiawg.c 
 lalapps_chirplen_SOURCES 		= chirplen.c
-lalapps_BankEfficiency_SOURCES		= BankEfficiency.c
+lalapps_BankEfficiency_SOURCES		= BankEfficiency.c BankEfficiency.h
 endif
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
-EXTRA_DIST = 	exc_resp.c ivana.c inspmultiawg.c chirplen.c \
+EXTRA_DIST = 	exc_resp.c ivana.c inspmultiawg.c chirplen.c BankEfficiency.c BankEfficiency.h \
 		BE_create_script.py
 
 CLEANFILES = 	lalapps_BankEfficiency  \
