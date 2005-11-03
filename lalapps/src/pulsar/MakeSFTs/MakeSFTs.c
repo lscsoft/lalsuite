@@ -11,13 +11,12 @@
 /* 11/02/05 gam; To save memory, change lalDebugLevel to 0; note when this is set to 3 that 3x the memory is used! */
 /* 11/02/05 gam; To save memory, do not save the window function in memory; just recompute this for each SFT. */
 /* 11/02/05 gam; To save memory, do not hold dataSingle.data and vtilde in memory at the same time. */
-/* 11/02/05 gam; Let try removing dependency on config.h to make build more portable */
 
-/* #include <config.h>
+#include <config.h>
 #if !defined HAVE_LIBGSL || !defined HAVE_LIBLALFRAME
 #include <stdio.h>
 int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", stderr);return 1;}
-#else */ /* 11/02/05 gam */
+#else
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -598,4 +597,4 @@ int FreeMem(void)
 }
 
 /*******************************************************************************/
-/* #endif */ /* 11/02/05 gam */
+#endif
