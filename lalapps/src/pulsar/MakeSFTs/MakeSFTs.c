@@ -7,6 +7,10 @@
 /* $Id$                     */
 /*********************************************************************************/
 
+/* REVISIONS: */
+/* 11/02/05 gam; To save memory, change lalDebugLevel to 0; note when this is set to 3 that 3x the memory is used! */
+/* 11/02/05 gam; To save memory, do not save the window function in memory; just recompute this for each SFT. */
+
 #include <config.h>
 #if !defined HAVE_LIBGSL || !defined HAVE_LIBLALFRAME
 #include <stdio.h>
@@ -102,8 +106,8 @@ struct headertag {
 /* GLOBAL VARIABLES */
 
 static LALStatus status;
-INT4 lalDebugLevel=3;
-FrCache *framecache;                                           /* frame reading variables */
+INT4 lalDebugLevel=0;        /* 11/02/05 gam; changed from 3 to 0. */
+FrCache *framecache;         /* frame reading variables */
 FrStream *framestream=NULL;
 
 REAL8TimeSeries dataDouble;
@@ -111,7 +115,7 @@ REAL4TimeSeries dataSingle;
 INT4 SegmentDuration;
 LIGOTimeGPS gpsepoch;
 
-REAL8Vector *window;
+/* REAL8Vector *window; */ /* 11/02/05 gam */
 
 REAL8FFTPlan *fplan;           /* fft plan */
 COMPLEX16Vector *vtilde = NULL;
@@ -283,23 +287,25 @@ int WindowData(void)
 
   for(k = 1; k < kl; k++) 
     {
-      window->data[k-1]=0.5*( 1 + cos( LAL_TWOPI/r*(k-1)/(N-1) - LAL_PI));
+      /* window->data[k-1]=0.5*( 1 + cos( LAL_TWOPI/r*(k-1)/(N-1) - LAL_PI)); */ /* 11/02/05 gam */
+      dataDouble.data->data[k-1]=dataDouble.data->data[k-1]*0.5*( 1 + cos( LAL_TWOPI/r*(k-1)/(N-1) - LAL_PI));
     }
 
-  for(k = kl; k < kh; k++) 
+  /* for(k = kl; k < kh; k++) 
     {
       window->data[k-1]=1.0;
-    }
+    } */  /* 11/02/05 gam */
 
   for(k = kh; k <= N; k++) 
     {
-      window->data[k-1]=0.5*( 1 + cos( LAL_TWOPI/r - LAL_TWOPI/r*(k-1)/(N-1) - LAL_PI));
+      /* window->data[k-1]=0.5*( 1 + cos( LAL_TWOPI/r - LAL_TWOPI/r*(k-1)/(N-1) - LAL_PI)); */ /* 11/02/05 gam */
+      dataDouble.data->data[k-1]=dataDouble.data->data[k-1]*0.5*( 1 + cos( LAL_TWOPI/r - LAL_TWOPI/r*(k-1)/(N-1) - LAL_PI));
     }
 
-  for (k = 0; k < N; k++)
+  /* for (k = 0; k < N; k++)
     {
       dataDouble.data->data[k] *= window->data[k];
-    }
+    } */ /* 11/02/05 gam */
 
   return 0;
 }
@@ -395,8 +401,8 @@ int AllocateData(struct CommandLineArgsTag CLA)
       TESTSTATUS( &status );
     }
       
-  LALDCreateVector(&status,&window,(UINT4)(CLA.T/dataDouble.deltaT +0.5));
-  TESTSTATUS( &status );
+  /* LALDCreateVector(&status,&window,(UINT4)(CLA.T/dataDouble.deltaT +0.5));
+  TESTSTATUS( &status ); */ /* 11/02/05 gam */
 
   LALZCreateVector( &status, &vtilde, dataDouble.data->length / 2 + 1 );
   TESTSTATUS( &status );
@@ -562,8 +568,8 @@ int FreeMem(void)
   LALDDestroyVector(&status,&dataDouble.data);
   TESTSTATUS( &status );
   
-  LALDDestroyVector(&status,&window);
-  TESTSTATUS( &status );
+  /* LALDDestroyVector(&status,&window);
+  TESTSTATUS( &status ); */ /* 11/02/05 gam */
 
   LALZDestroyVector( &status, &vtilde );
   TESTSTATUS( &status );
