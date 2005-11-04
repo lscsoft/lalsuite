@@ -104,12 +104,6 @@ LALFindChirpBCVSpinTemplate (
   REAL8                *A3Vec            = NULL;
   REAL4                 deltaT;
   REAL4                 fLow;
- /* REAL4                 A1A1             = 0.0;
-  REAL4                 A2A2             = 0.0;
-  REAL4                 A3A3 		 = 0.0;
-  REAL4                 A1A2 		 = 0.0;
-  REAL4                 A1A3 		 = 0.0;
-  REAL4                 A2A3 		 = 0.0;*/
   REAL4                 rLSOto3by2       = 0.0;
   
   INITSTATUS( status, "LALFindChirpBCVSpinTemplate", FINDCHIRPSBCVTEMPLATEC );
@@ -171,7 +165,6 @@ LALFindChirpBCVSpinTemplate (
   psi10 = 0.0; /*tmplt->psi2;*/   /* -> use if statements to define these? */
   psi15 = tmplt->psi3;            /* & which name convention to use?       */
   psi20 = 0.0; /*tmplt->psi4;*/
-  /* XXX work needed here... */
   
   /* parameters */
   deltaT        = params->deltaT;
@@ -189,9 +182,6 @@ LALFindChirpBCVSpinTemplate (
   
   if (fFinal == 0.0)
   {	  
-  	fprintf (stdout, "BCVSpin bank has not populated fFinal so we shall"); 
-        fprintf (stdout, "estimate its values using psi0 and psi3 \n" );
-        
         rLSOto3by2 = 14.69693846; /* 6 to 3by2) */	 
 
 	fFinal = (-psi00 * 16 * LAL_PI) / (psi15 * rLSOto3by2);
@@ -212,15 +202,12 @@ LALFindChirpBCVSpinTemplate (
     psi20 + (x * x) * ( psi15 + x * ( psi10 + x * ( psi05 + x * ( psi00 ))));
     psi0 = -2 * LAL_PI * ( floor ( 0.5 * psi / LAL_PI ) );
   }
-  /* XXX work needed here... check psi */
 
   /*
    *
    * calculate the stationary phase chirp
    *
    */
-
-   /*fprintf (stdout, "just before loop in template code \n");*/
 
     for ( k = kmin; k < kmax ; ++k )
     {
@@ -229,7 +216,6 @@ LALFindChirpBCVSpinTemplate (
       psi20 + (x * x) * ( psi15 + x * ( psi10 + x * ( psi05 + x * ( psi00 ))));
       REAL4 psi1 = psi + psi0;
 
-      /* XXX work needed here... check psi */
       /* leaving psi calc here, needs to be inside template loop 
        * but not inside loop over data segments 
        */
@@ -308,7 +294,6 @@ LALFindChirpBCVSpinTemplate (
   A2Vec = fcTmplt->A2BCVSpin->data;
   A3Vec = fcTmplt->A3BCVSpin->data;
   
-  /* IMPROVE THIS */
   memset( A1Vec, 0, ((numPoints/2)+1) * sizeof(REAL4) );
   memset( A2Vec, 0, ((numPoints/2)+1) * sizeof(REAL4) );
   memset( A3Vec, 0, ((numPoints/2)+1) * sizeof(REAL4) );
@@ -343,38 +328,6 @@ LALFindChirpBCVSpinTemplate (
                         * rootI;          		
   	 }
   }  
-
-  /* checking orthonormalisation of A vectors */
-
-  /*
-  {	
-	fprintf (stdout, "Checking orthonormalisation of amplitude vectors \n");
-	  
-  	for (k=kmin; k < kmax; ++k)   
-  	{
-
-  		A1A1 += A1Vec[k] * A1Vec[k] * wtilde[k].re;
-		A2A2 += A2Vec[k] * A2Vec[k] * wtilde[k].re;
-        	A3A3 += A3Vec[k] * A3Vec[k] * wtilde[k].re;
-        	A1A2 += A1Vec[k] * A2Vec[k] * wtilde[k].re;  
-        	A1A3 += A1Vec[k] * A3Vec[k] * wtilde[k].re;       
-        	A2A3 += A2Vec[k] * A3Vec[k] * wtilde[k].re;  
-  	}
-
-  	A1A1 *= 4 * deltaF;
-  	A2A2 *= 4 * deltaF;
-  	A3A3 *= 4 * deltaF;
-  	A1A2 *= 4 * deltaF;
-  	A1A3 *= 4 * deltaF;
-  	A2A3 *= 4 * deltaF;
-
-  	fprintf (stdout, "A1hat cross A1hat %e\n", A1A1);  
-  	fprintf (stdout, "A2hat cross A2hat %e\n", A2A2);
-  	fprintf (stdout, "A3hat cross A3hat %e\n", A3A3);
-  	fprintf (stdout, "A1hat cross A2hat %e\n", A1A2);
-  	fprintf (stdout, "A1hat cross A3hat %e\n", A1A3);
-  	fprintf (stdout, "A2hat cross A3hat %e\n\n", A2A3);
-  } */
 
   /* copy the template parameters to the finchirp template structure */
   memcpy( &(fcTmplt->tmplt), tmplt, sizeof(InspiralTemplate) );
