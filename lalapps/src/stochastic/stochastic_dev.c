@@ -2528,7 +2528,7 @@ static void display_usage_fake()
   fprintf(stdout, " --duration N                  duration of fake data to generate\n");
   fprintf(stdout, " --interval-duration N         interval duration\n");
   fprintf(stdout, " --segment-duration N          segment duration\n");
-  fprintf(stdout, " --resample-rate N             resample rate\n");
+  fprintf(stdout, " --sample-rate N               sample rate\n");
   fprintf(stdout, " --f-min N                     minimal frequency\n");
   fprintf(stdout, " --f-max N                     maximal frequency\n");
   fprintf(stdout, " --apply-mask                  apply frequency masking\n");
@@ -2574,7 +2574,7 @@ static void parse_options_fake(INT4 argc, CHAR *argv[])
       {"duration", required_argument, 0, 'g'},
       {"interval-duration", required_argument, 0, 'i'},
       {"segment-duration", required_argument, 0, 'j'},
-      {"resample-rate", required_argument, 0, 'k'},
+      {"sample-rate", required_argument, 0, 'k'},
       {"f-min", required_argument, 0, 'l'},
       {"f-max", required_argument, 0, 'm'},
       {"mask-bin", required_argument, 0, 'w'},
@@ -2722,12 +2722,12 @@ static void parse_options_fake(INT4 argc, CHAR *argv[])
         break;
 
       case 'k':
-        /* resample rate */
+        /* sample rate */
         resampleRate = atoi(optarg);
         if (resampleRate < 2 || resampleRate > 16384 || resampleRate % 2)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
-              "Resample rate must be a power of 2 between 2 and 16384: " \
+              "Sample rate must be a power of 2 between 2 and 16384: " \
               "inclusive: (%d specified)\n", long_options[option_index].name, \
               resampleRate);
           exit(1);
@@ -2918,10 +2918,10 @@ static void parse_options_fake(INT4 argc, CHAR *argv[])
     exit(1);
   }
 
-  /* resample rate */
+  /* sample rate */
   if (resampleRate == 0)
   {
-    fprintf(stderr, "--resample-rate must be specified\n");
+    fprintf(stderr, "--sample-rate must be specified\n");
     exit(1);
   }
 
