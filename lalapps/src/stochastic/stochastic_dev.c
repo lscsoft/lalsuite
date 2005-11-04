@@ -3306,9 +3306,11 @@ INT4 main(INT4 argc, CHAR *argv[])
   channelOne = "G1";
   channelTwo = "G1";
 
-  /* set start and end times */
-  startTime = 0;
-  endTime = totalDuration;
+  /* initialise gps time structures */
+  gpsStartTime.gpsSeconds = 0;
+  gpsStartTime.gpsNanoSeconds = 0;
+  gpsEndTime.gpsSeconds = endTime;
+  gpsEndTime.gpsNanoSeconds = 0;
 
   /* get xml file basename */
   if (userTag)
@@ -3331,12 +3333,6 @@ INT4 main(INT4 argc, CHAR *argv[])
     padData = 1;
   else
     padData = 0;
-
-  /* initialise gps time structures */
-  gpsStartTime.gpsSeconds = 0;
-  gpsStartTime.gpsNanoSeconds = 0;
-  gpsEndTime.gpsSeconds = endTime;
-  gpsEndTime.gpsNanoSeconds = 0;
 
   /* get deltaF for optimal filter */
   deltaF = 1./(REAL8)PSD_WINDOW_DURATION;
