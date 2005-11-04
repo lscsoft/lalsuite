@@ -3327,6 +3327,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   channelTwo = "G1";
 
   /* initialise gps time structures */
+  endTime = startTime + totalDuration;
   gpsStartTime.gpsSeconds = 0;
   gpsStartTime.gpsNanoSeconds = 0;
   gpsEndTime.gpsSeconds = endTime;
