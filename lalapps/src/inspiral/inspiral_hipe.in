@@ -67,7 +67,6 @@ def create_static_pfn_cache(cp):
   """
   pass
 
-
 ##############################################################################
 # some functions to make life easier later
 class AnalyzedIFOData:
@@ -150,7 +149,6 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
     try: type = cp.get('input','ligo-type')
     except: type = None
     channel = cp.get('input','ligo-channel')
-   
   
   tmplt_job.add_ini_opts(cp,data_opts)
   insp_job.add_ini_opts(cp,data_opts)
@@ -203,6 +201,7 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
           bank.set_start(chunk.start())
           bank.set_end(chunk.end())
           bank.set_ifo(ifo_name)
+          bank.set_vds_group(ifo_name[0] + str(chunk.start()))
           if not opts.read_cache: bank.set_cache(df.get_output())
           else: bank.set_cache(cp.get('datafind',ifo_name+"-cache"))
           if not calibrated: bank.calibration()
@@ -216,6 +215,7 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
           insp.set_trig_start(chunk.trig_start())
           insp.set_trig_end(chunk.trig_end())
           insp.set_ifo(ifo_name)
+          insp.set_vds_group(ifo_name[0] + str(chunk.start()))
           if not opts.read_cache: insp.set_cache(df.get_output())
           else:  insp.set_cache(cp.get('datafind',ifo_name+"-cache"))
           if not calibrated: insp.calibration()
@@ -397,6 +397,7 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
             insp.set_trig_end(chunk.trig_end())
             insp.set_ifo(ifo_name)
             insp.set_ifo_tag(coinc_ifos)
+            insp.set_vds_group(ifo_name[0] + str(chunk.start()))
             if not opts.read_cache: 
               insp.set_cache(seg.get_df_node().get_output())
             else: insp.set_cache(cp.get('datafind',ifo_name+'-cache')) 
