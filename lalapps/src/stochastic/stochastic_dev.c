@@ -2516,35 +2516,35 @@ static void parse_options(INT4 argc, CHAR *argv[])
 static void display_usage_fake()
 {
   fprintf(stdout, "Usage: " PROGRAM_NAME " [options]\n");
-  fprintf(stdout, " --help                        print this message\n");
-  fprintf(stdout, " --version                     display version\n");
-  fprintf(stdout, " --verbose                     verbose mode\n");
-  fprintf(stdout, " --debug                       debug mode\n");
-  fprintf(stdout, " --debug-level N               set lalDebugLevel\n");
-  fprintf(stdout, " --user-tag STRING             set the user tag\n"); 
-  fprintf(stdout, " --comment STRING              set the comment\n");
-  fprintf(stdout, " --output-dir DIR              directory for output files\n");
-  fprintf(stdout, " --cc-spectra                  save out cross correlation spectra\n");
-  fprintf(stdout, " --gps-start-time N            GPS start time\n");
-  fprintf(stdout, " --duration N                  duration of fake data to generate\n");
-  fprintf(stdout, " --interval-duration N         interval duration\n");
-  fprintf(stdout, " --segment-duration N          segment duration\n");
-  fprintf(stdout, " --sample-rate N               sample rate\n");
-  fprintf(stdout, " --f-min N                     minimal frequency\n");
-  fprintf(stdout, " --f-max N                     maximal frequency\n");
-  fprintf(stdout, " --apply-mask                  apply frequency masking\n");
-  fprintf(stdout, " --mask-bin N                  number of bins to mask\n");
-  fprintf(stdout, " --overlap-hann                overlaping hann windows\n");
-  fprintf(stdout, " --hann-duration N             hann duration\n");
-  fprintf(stdout, " --high-pass-filter            apply high pass filtering\n");
-  fprintf(stdout, " --hpf-frequency N             high pass filter knee frequency\n");
-  fprintf(stdout, " --hpf-attenuation N           high pass filter attenuation\n");
-  fprintf(stdout, " --hpf-order N                 high pass filter order\n");
-  fprintf(stdout, " --recentre                    recentre jobs\n");
-  fprintf(stdout, " --middle-segment              use middle segment in PSD estimation\n");
-  fprintf(stdout, " --alpha N                     exponent on filter spectrum\n");
-  fprintf(stdout, " --f-ref N                     reference frequency for filter spectrum\n");
-  fprintf(stdout, " --omega0 N                    reference omega_0 for filter spectrum\n");
+  fprintf(stdout, " --help                   print this message\n");
+  fprintf(stdout, " --version                display version\n");
+  fprintf(stdout, " --verbose                verbose mode\n");
+  fprintf(stdout, " --debug                  debug mode\n");
+  fprintf(stdout, " --debug-level N          set lalDebugLevel\n");
+  fprintf(stdout, " --user-tag STRING        set the user tag\n"); 
+  fprintf(stdout, " --comment STRING         set the comment\n");
+  fprintf(stdout, " --output-dir DIR         directory for output files\n");
+  fprintf(stdout, " --cc-spectra             save out cross correlation spectra\n");
+  fprintf(stdout, " --gps-start-time N       GPS start time\n");
+  fprintf(stdout, " --duration N             duration of fake data to generate\n");
+  fprintf(stdout, " --interval-duration N    interval duration\n");
+  fprintf(stdout, " --segment-duration N     segment duration\n");
+  fprintf(stdout, " --sample-rate N          sample rate\n");
+  fprintf(stdout, " --f-min N                minimal frequency\n");
+  fprintf(stdout, " --f-max N                maximal frequency\n");
+  fprintf(stdout, " --apply-mask             apply frequency masking\n");
+  fprintf(stdout, " --mask-bin N             number of bins to mask\n");
+  fprintf(stdout, " --overlap-hann           overlaping hann windows\n");
+  fprintf(stdout, " --hann-duration N        hann duration\n");
+  fprintf(stdout, " --high-pass-filter       apply high pass filtering\n");
+  fprintf(stdout, " --hpf-frequency N        high pass filter knee frequency\n");
+  fprintf(stdout, " --hpf-attenuation N      high pass filter attenuation\n");
+  fprintf(stdout, " --hpf-order N            high pass filter order\n");
+  fprintf(stdout, " --recentre               recentre jobs\n");
+  fprintf(stdout, " --middle-segment         use middle segment in PSD estimation\n");
+  fprintf(stdout, " --alpha N                exponent on filter spectrum\n");
+  fprintf(stdout, " --f-ref N                reference frequency for filter spectrum\n");
+  fprintf(stdout, " --omega0 N               reference omega_0 for filter spectrum\n");
 }
 
 /* parse command line options for fake data */
