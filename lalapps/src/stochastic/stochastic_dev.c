@@ -3254,7 +3254,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   StochasticTable *thisStoch = NULL;
 
   /* counter */
-  INT4 i;
+  UINT4 i;
 
   /* data structures */
   REAL4TimeSeries *seriesOne = NULL;
@@ -3444,7 +3444,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     mask = frequency_mask(&status, fMin, deltaF, filterLength, maskBin);
 
     /* apply mask to omegaGW */
-    for (i = 0; i < filterLength; i++)
+    for (i = 0; i < (UINT4)filterLength; i++)
       omegaGW->data->data[i] *= mask->data->data[i];
 
     /* destroy frequency mask */
