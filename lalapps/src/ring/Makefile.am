@@ -36,7 +36,7 @@ pkgdata_DATA = ring_test.ini
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 CLEANFILES = python_config.sed lalapps_ring_pipe
-EXTRA_DIST = ring.c $(SCRIPTS) $(DATA)
+EXTRA_DIST = ring.c ring_pipe.in $(SCRIPTS) $(DATA)
 
 python_config.sed:
 	-rm -f python_config.sed
