@@ -2525,7 +2525,6 @@ static void display_usage_fake()
   fprintf(stdout, " --comment STRING         set the comment\n");
   fprintf(stdout, " --output-dir DIR         directory for output files\n");
   fprintf(stdout, " --cc-spectra             save out cross correlation spectra\n");
-  fprintf(stdout, " --gps-start-time N       GPS start time\n");
   fprintf(stdout, " --duration N             duration of fake data to generate\n");
   fprintf(stdout, " --interval-duration N    interval duration\n");
   fprintf(stdout, " --segment-duration N     segment duration\n");
@@ -2572,7 +2571,6 @@ static void parse_options_fake(INT4 argc, CHAR *argv[])
       {"user-tag", required_argument, 0, 'd'},
       {"comment", required_argument, 0, 'e'},
       {"output-dir", required_argument, 0, 'f'},
-      {"gps-start-time", required_argument, 0, 'h'},
       {"duration", required_argument, 0, 'g'},
       {"interval-duration", required_argument, 0, 'i'},
       {"segment-duration", required_argument, 0, 'j'},
@@ -2683,17 +2681,6 @@ static void parse_options_fake(INT4 argc, CHAR *argv[])
         }
         ADD_PROCESS_PARAM("string", "%s", outputPath);
         break;
-
-      case 'h':
-        /* start time */
-        startTime = atoi(optarg);
-        if (startTime <= 0)
-        {
-          fprintf(stderr, "Invalid argument to --%s:\n" \
-              "Start time must be greater than 0: (%d specified)\n", \
-              long_options[option_index].name, startTime);
-          exit(1);
-        }
 
       case 'g':
         /* duration */
