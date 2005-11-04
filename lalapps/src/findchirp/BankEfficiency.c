@@ -689,7 +689,7 @@ void InitUserParametersIn(UserParametersIn *userParam)
   userParam->H1.dataFile.S3.calCacheName         =  "/archive/home/cokelaer/inspiralRuns/Calibration/H1-CAL-V03-751651153-757672093.cache";
   userParam->H1.dataFile.S3.frInCacheName        =  "/archive/home/cokelaer/inspiralRuns/cacheFiles/H-S3_RDS_R_L3-751784320-757669742.cache";     
   userParam->H2.dataFile.S3.calCacheName         =  "/archive/home/cokelaer/inspiralRuns/Calibration/H2-CAL-V03-751654453-757699693.cache";
-  userParam->H1.dataFile.S3.frInCacheName        =  "/archive/home/cokelaer/inspiralRuns/cacheFiles/H-S3_RDS_R_L3-751784320-757669742.cache";     
+  userParam->H2.dataFile.S3.frInCacheName        =  "/archive/home/cokelaer/inspiralRuns/cacheFiles/H-S3_RDS_R_L3-751784320-757669742.cache";     
 
   userParam->L1.dataFile.S2.calCacheName         =  "/archive/home/cokelaer/inspiralRuns/Calibrationcache_files/L1-CAL-V03-729273600-734367600.cache";
   userParam->L1.dataFile.S2.frInCacheName        =  "/archive/home/cokelaer/inspiralRuns//cacheFiles/CacheFile_L_S2_RDS_R_L3.txt";     

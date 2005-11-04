@@ -46,6 +46,9 @@ int main (int argc, char **argv)
 	Crms = pow(totalMass,5./6.) * pow(2.*eta/15.,0.5) / (rhorms * pow(pi,2./3.));
 
 	flso = 1.L/ ( pow(lso, 1.5) * pi * totalMass);
+
+        printf("%e %e %e %e \n",totalMass, eta, Crms, flso );
+        
 	integral = 0.;
 	if (scanf("%le %le\n", &freq, &x) == EOF) 
 	{
