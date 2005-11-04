@@ -2918,6 +2918,13 @@ static void parse_options_fake(INT4 argc, CHAR *argv[])
     exit(1);
   }
 
+  /* resample rate */
+  if (resampleRate == 0)
+  {
+    fprintf(stderr, "--resample-rate must be specified\n");
+    exit(1);
+  }
+
   /* mask */
   if (apply_mask_flag)
   {
