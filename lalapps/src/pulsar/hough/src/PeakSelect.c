@@ -21,7 +21,8 @@
  *
  * \file PeakSelect.c
  * \author Sintes, A.M. and Krishnan, B.  
- * \brief Functions for selecting peaks from SFTs 
+ * \brief Functions for selecting peaks from SFTs.
+
  * Revision: $Id$
  *
  * History:   Created by Sintes May 21, 2003
