@@ -2,15 +2,13 @@
 # $Id$
 if LALMETAIO
 LALMETAIOPROGRAMS = lalapps_exc_resp lalapps_ivana lalapps_inspmultiawg \
-                    lalapps_chirplen lalapps_BankNumberOfTemplates \
-		    lalapps_BankEfficiency 
+                    lalapps_chirplen lalapps_BankEfficiency 
 else
 LALMETAIOPROGRAMS = 
 endif
 bin_PROGRAMS = lalapps_inspawgfile $(LALMETAIOPROGRAMS) \
                lalapps_random_bank  lalapps_effdist\
-               lalapps_InspiralOverlap lalapps_inspiralDistance lalapps_DistanceVsMass \
-               lalapps_BankNumberOfTemplates 
+               lalapps_InspiralOverlap lalapps_inspiralDistance lalapps_DistanceVsMass
 
 
 lalapps_DistanceVsMass_SOURCES 		= DistanceVsMass.c
@@ -18,7 +16,6 @@ lalapps_inspiralDistance_SOURCES 	= inspiralDistance.c
 lalapps_inspawgfile_SOURCES 		= inspawgfile.c
 lalapps_random_bank_SOURCES 		= random_bank.c
 lalapps_effdist_SOURCES 		= effdist.c
-lalapps_BankNumberOfTemplates_SOURCES	= BankNumberOfTemplates.c
 lalapps_InspiralOverlap_SOURCES 	= InspiralOverlap.c 
 
 if LALMETAIO
@@ -36,5 +33,5 @@ EXTRA_DIST = 	exc_resp.c ivana.c inspmultiawg.c chirplen.c BankEfficiency.c Bank
 		BE_create_script.py
 
 CLEANFILES = 	lalapps_BankEfficiency  \
-		lalapps_BankNumberOfTemplates  lalapps_InspiralOverlap
+		lalapps_InspiralOverlap
 
