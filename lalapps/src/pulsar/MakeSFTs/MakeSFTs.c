@@ -11,6 +11,7 @@
 /* 11/02/05 gam; To save memory, change lalDebugLevel to 0; note when this is set to 3 that 3x the memory is used! */
 /* 11/02/05 gam; To save memory, do not save the window function in memory; just recompute this for each SFT. */
 /* 11/02/05 gam; To save memory, do not hold dataSingle.data and vtilde in memory at the same time. */
+/* 11/03/05 gam; Add TRACKMEMUSE preprocessor flag and function for tracking memory usage; copied from make_sfts.c */
 
 #include <config.h>
 #if !defined HAVE_LIBGSL || !defined HAVE_LIBLALFRAME
@@ -52,6 +53,9 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 
 extern char *optarg;
 extern int optind, opterr, optopt;
+
+/* track memory usage under linux */
+#define TRACKMEMUSE 0
 
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 100; } else ((void)0)
@@ -145,12 +149,26 @@ int WriteSFT(struct CommandLineArgsTag CLA);
 /* Frees the memory */
 int FreeMem(void);                                        
 
+#if TRACKMEMUSE
+void printmemuse() {
+   pid_t mypid=getpid();
+   char commandline[256];
+   fflush(NULL);
+   sprintf(commandline,"cat /proc/%d/status | /bin/grep Vm | /usr/bin/fmt -140 -u", (int)mypid);
+   system(commandline);
+   fflush(NULL);
+ }
+#endif
 
 /************************************* MAIN PROGRAM *************************************/
 
 int main(int argc,char *argv[])
 {
-  int j; 
+  int j;
+
+  #if TRACKMEMUSE
+    printf("Memory use at startup is:\n"); printmemuse();
+  #endif
 
   if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
   SegmentDuration = CommandLineArgs.GPSEnd - CommandLineArgs.GPSStart ;
@@ -162,6 +180,10 @@ int main(int argc,char *argv[])
   TESTSTATUS( &status );
   LALDestroyFrCache(&status,&framecache);
   TESTSTATUS( &status );
+
+  #if TRACKMEMUSE
+    printf("Memory use after reading command line arguments and reading frame cache:\n"); printmemuse();
+  #endif
 
   if( SegmentDuration < CommandLineArgs.T)
     {
@@ -191,12 +213,20 @@ int main(int argc,char *argv[])
       /* Window data */
       if(WindowData()) return 5;
 
+      #if TRACKMEMUSE
+        printf("Memory use before creating output vector vtilde and calling XLALREAL8ForwardFFT:\n"); printmemuse();
+      #endif
+
       /* 11/02/05 gam; allocate container for SFT data */
       LALZCreateVector( &status, &vtilde, dataDouble.data->length / 2 + 1 );
       TESTSTATUS( &status );  
 
       /* compute sft */
       XLALREAL8ForwardFFT( vtilde, dataDouble.data, fplan );
+
+      #if TRACKMEMUSE
+        printf("Memory use after creating output vector vtilde and calling XLALREAL8ForwardFFT:\n"); printmemuse();
+      #endif
 
       /* write out sft */
       if(WriteSFT(CommandLineArgs)) return 6;
@@ -214,6 +244,10 @@ int main(int argc,char *argv[])
     } */ /* 11/02/05 gam */
    
   if(FreeMem()) return 8;
+
+  #if TRACKMEMUSE
+        printf("Memory use after freeing all allocated memory:\n"); printmemuse();
+  #endif
 
   return 0;
 }
@@ -334,9 +368,18 @@ int HighPass(struct CommandLineArgsTag CLA)
 
   if (CLA.HPf > 0.0 )
     {
+      #if TRACKMEMUSE
+        printf("Memory use before calling LALButterworthREAL8TimeSeries:\n"); printmemuse();
+      #endif
+
       /* High pass the time series */
       LALButterworthREAL8TimeSeries(&status,&dataDouble,&filterpar);
-      TESTSTATUS( &status );  
+      TESTSTATUS( &status );
+
+      #if TRACKMEMUSE
+        printf("Memory use after calling LALButterworthREAL8TimeSeries:\n"); printmemuse();
+      #endif
+
     }
 
   return 0;
@@ -360,14 +403,23 @@ int ReadData(struct CommandLineArgsTag CLA)
   else
     {
       int k;
+
+      #if TRACKMEMUSE
+        printf("Memory use before creating dataSingle and calling LALFrGetREAL4TimeSeries.\n"); printmemuse();
+      #endif
+
       /* 11/02/05 gam; add next two lines */
       LALCreateVector(&status,&dataSingle.data,(UINT4)(CLA.T/dataSingle.deltaT +0.5));
       TESTSTATUS( &status );
       chanin.type  = ADCDataChannel;
       LALFrGetREAL4TimeSeries(&status,&dataSingle,&chanin,framestream);
       TESTSTATUS( &status );
-      /*copy the data into the double precision timeseries */
 
+      #if TRACKMEMUSE
+        printf("Memory use after creating dataSingle and calling LALFrGetREAL4TimeSeries.\n"); printmemuse();
+      #endif
+
+      /*copy the data into the double precision timeseries */
       for (k = 0; k < (int)dataDouble.data->length; k++)
 	{
 	  dataDouble.data->data[k] = dataSingle.data->data[k];
@@ -421,8 +473,16 @@ int AllocateData(struct CommandLineArgsTag CLA)
   /* LALZCreateVector( &status, &vtilde, dataDouble.data->length / 2 + 1 );
   TESTSTATUS( &status ); */ /* 11/02/05 gam; will allocate/deallocate container for data when reading the data. */
 
+  #if TRACKMEMUSE
+     printf("Memory use after creating dataDouble and before calling LALCreateForwardREAL8FFTPlan.\n"); printmemuse();
+  #endif
+
   LALCreateForwardREAL8FFTPlan( &status, &fplan, dataDouble.data->length, 0 );
   TESTSTATUS( &status );
+
+  #if TRACKMEMUSE
+        printf("Memory use after creating dataDouble and before calling LALCreateForwardREAL8FFTPlan.\n"); printmemuse();
+  #endif
 
   return 0;
 }
