@@ -967,7 +967,7 @@ XLALFindChirpBankSimSignalNorm(
   /* compute sigmasq for the injected waveform and store in matchNorm */
   switch ( fcDataParams->approximant )
   {
-    case TaylorF2:
+    case FindChirpSP:
       for ( k = cut; k < fcDataParams->tmpltPowerVec->length; ++k )
       {
         if ( tmpltPower[k] ) matchNorm += ( fcData[k].re * fcData[k].re +

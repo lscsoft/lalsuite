@@ -50,7 +50,7 @@ int main( void )
   initParams.numSegments    = numSegments;
   initParams.numPoints      = numPoints;
   initParams.numChisqBins   = numChisqBins;
-  initParams.approximant    = TaylorF2;
+  initParams.approximant    = FindChirpSP;
   initParams.createRhosqVec = 1;
 
 

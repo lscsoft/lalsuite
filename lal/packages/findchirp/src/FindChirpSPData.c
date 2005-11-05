@@ -145,7 +145,7 @@ LALFindChirpSPData (
 
   /* check that the parameter structure is set */
   /* to the correct waveform approximant       */
-  if ( params->approximant != TaylorF2 )
+  if ( params->approximant != FindChirpSP )
   {
     ABORT( status, FINDCHIRPSPH_EMAPX, FINDCHIRPSPH_MSGEMAPX );
   }

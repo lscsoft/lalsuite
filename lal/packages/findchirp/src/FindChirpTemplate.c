@@ -152,7 +152,7 @@ LALFindChirpTemplateInit (
       ENDFAIL( status );
       break;
       
-    case TaylorF2:
+    case FindChirpSP:
     case BCV:
     case BCVSpin:
       /* freq domain waveforms need xfac vector containing k^(-1/3) */
