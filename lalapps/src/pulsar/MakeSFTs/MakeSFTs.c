@@ -481,7 +481,7 @@ int AllocateData(struct CommandLineArgsTag CLA)
   TESTSTATUS( &status );
 
   #if TRACKMEMUSE
-        printf("Memory use after creating dataDouble and before calling LALCreateForwardREAL8FFTPlan.\n"); printmemuse();
+        printf("Memory use after creating dataDouble and after calling LALCreateForwardREAL8FFTPlan.\n"); printmemuse();
   #endif
 
   return 0;
