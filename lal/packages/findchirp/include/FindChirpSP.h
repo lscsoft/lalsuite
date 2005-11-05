@@ -81,8 +81,8 @@ NRCSID (FINDCHIRPSPH, "$Id$");
 #define FINDCHIRPSPH_MSGEDYNR "Dynamic range scaling is zero or negative"
 #define FINDCHIRPSPH_MSGEISTN "Truncation of inverse power spectrum is negative"
 #define FINDCHIRPSPH_MSGEDIVZ "Attempting to divide by zero"
-#define FINDCHIRPSPH_MSGEMAPX "Mismatch in waveform approximant (BCV/TaylorF2)"
-#define FINDCHIRPSPH_MSGEUAPX "Unknown approximant: must be BCV or TaylorF2"
+#define FINDCHIRPSPH_MSGEMAPX "Mismatch in waveform approximant"
+#define FINDCHIRPSPH_MSGEUAPX "Unknown approximant"
 /* </lalErrTable> */
 
 #if 0

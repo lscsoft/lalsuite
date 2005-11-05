@@ -83,8 +83,8 @@ NRCSID (FINDCHIRPBCVSPINH, "$Id$");
 #define FINDCHIRPBCVSPINH_MSGEDYNR "Dynamic range scaling is zero or negative"
 #define FINDCHIRPBCVSPINH_MSGEISTN "Truncation of inverse power spectrum is negative"
 #define FINDCHIRPBCVSPINH_MSGEDIVZ "Attempting to divide by zero"
-#define FINDCHIRPBCVSPINH_MSGEMAPX "Mismatch in waveform approximant (BCV/TaylorF2)"
-#define FINDCHIRPBCVSPINH_MSGEUAPX "Unknown approximant: must be BCV or TaylorF2"
+#define FINDCHIRPBCVSPINH_MSGEMAPX "Mismatch in waveform approximant"
+#define FINDCHIRPBCVSPINH_MSGEUAPX "Unknown approximant"
 #define FINDCHIRPBCVSPINH_MSGECLUW "Unacceptable max-over-chirp clustering method for BCVSpin"
 
 /* </lalErrTable> */
