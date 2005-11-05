@@ -94,7 +94,7 @@ static SnglBurstTable *XLALTFTilesToSnglBurstTable(SnglBurstTable *head, const T
 	TFTile *tile;
 	size_t i;
 
-	for(i = 0, tile = tiling->tile; (i < tiling->numtiles) && (tile->lnalpha <= params->lnalphaThreshold - tile->lnweight); i++, tile++) {
+	for(i = 0, tile = tiling->tile; (i < tiling->numtiles) && (tile->lnalpha <= params->lnalphaThreshold); i++, tile++) {
 		oldhead = head;
 		head = XLALTFTileToBurstEvent(tile, channelName, epoch, params); 
 		if(!head) {
