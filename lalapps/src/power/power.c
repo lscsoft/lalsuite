@@ -1511,6 +1511,8 @@ static SnglBurstTable **analyze_series(
 			fprintf(stderr, "analyze_series(): analyzing samples %zu -- %zu (%.9lf s -- %.9lf s)\n", start, start + interval->data->length, start * interval->deltaT, (start + interval->data->length) * interval->deltaT);
 
 		*addpoint = XLALEPSearch(hrssresponse, interval, params);
+		if(options.cluster)
+			XLALClusterSnglBurstTable(addpoint, XLALCompareSnglBurstByPeakTime, XLALCompareSnglBurstByPeakTimeAndFreq, XLALSnglBurstCluster);
 		while(*addpoint)
 			addpoint = &(*addpoint)->next;
 		if(xlalErrno) {
