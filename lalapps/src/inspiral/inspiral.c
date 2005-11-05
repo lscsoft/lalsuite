@@ -1653,7 +1653,7 @@ int main( int argc, char *argv[] )
               fcDataParams ), &status );
         break;
 
-      case TaylorF2:
+      case FindChirpSP:
         if ( vrbflg ) 
           fprintf( stdout, "findchirp conditioning data for SP\n" );
         LAL_CALL( LALFindChirpSPData( &status, fcSegVec, dataSegVec, 
@@ -1691,7 +1691,7 @@ int main( int argc, char *argv[] )
     }
     else
     {
-      if ( approximant == TaylorF2 ) 
+      if ( approximant == FindChirpSP ) 
       {
         /* compute the standard candle */
         REAL4 cannonDist = 1.0; /* Mpc */
@@ -1826,7 +1826,7 @@ int main( int argc, char *argv[] )
                 tmpltCurrent->tmpltPtr, fcTmpltParams ), &status );
           break;
 
-        case TaylorF2:
+        case FindChirpSP:
           LAL_CALL( LALFindChirpSPTemplate( &status, fcFilterInput->fcTmplt, 
                 tmpltCurrent->tmpltPtr, fcTmpltParams ), &status );
           break;
@@ -1914,7 +1914,7 @@ int main( int argc, char *argv[] )
                     fcFilterInput->fcTmplt, fcFilterInput->segment, 
                     fcDataParams ), &status );
               /* ...and fall through to FindChirpFilterSegment() */
-            case TaylorF2:
+            case FindChirpSP:
               LAL_CALL( LALFindChirpFilterSegment( &status, 
                     &eventList, fcFilterInput, fcFilterParams ), &status ); 
               break;
@@ -2146,7 +2146,7 @@ int main( int argc, char *argv[] )
         case GeneratePPN:
         case PadeT1:
         case EOB:
-	case TaylorF2:
+	case FindChirpSP:
           /* the chisq bins need to be re-computed for the next template */
           for ( i = 0; i < fcSegVec->length ; ++i )
           {
@@ -2416,7 +2416,7 @@ int main( int argc, char *argv[] )
   /* write the summ_value table with the standard candle distance */
   if ( ! bankSim )
   {
-    if ( approximant == TaylorF2 )
+    if ( approximant == FindChirpSP )
     {
       if ( vrbflg ) fprintf( stdout, "  summ_value table...\n" );
       ADD_SUMM_VALUE( "inspiral_effective_distance", "1.4_1.4_8", 
@@ -2678,7 +2678,7 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "  --dynamic-range-exponent X   set dynamic range scaling to 2^X\n"\
 "\n"\
 "  --approximant APPROX         set approximant of the waveform to APPROX\n"\
-"                                 (TaylorF2|BCV|BCVC|BCVSpin|TaylorT1|TaylorT2|\n"\
+"                                 (FindChirpSP|BCV|BCVC|BCVSpin|TaylorT1|TaylorT2|\n"\
 "                                  TaylorT3|PadeT1|EOB|GeneratePPN)\n"\
 "  --chisq-bins P               set number of chisq veto bins to P\n"\
 "  --snr-threshold RHO          set signal-to-noise threshold to RHO\n"\
@@ -3338,9 +3338,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           approximant = EOB;
         }
-        else if ( ! strcmp( "TaylorF2", optarg ) )
+        else if ( ! strcmp( "FindChirpSP", optarg ) )
         {
-          approximant = TaylorF2;
+          approximant = FindChirpSP;
         }
         else if ( ! strcmp( "BCV", optarg ) )
         {
@@ -3359,7 +3359,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown order specified: "
-              "%s (must be either TaylorF2 or BCV or BCVC or BCVSpin)\n", 
+              "%s (must be either FindChirpSP or BCV or BCVC or BCVSpin)\n", 
               long_options[option_index].name, optarg );
           exit( 1 );
         }
