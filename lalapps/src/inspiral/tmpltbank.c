@@ -124,6 +124,7 @@ REAL4   fUpper          = -1;           /* upper frequency cutoff       */
 Order   order;                          /* post-Newtonian order         */
 Approximant approximant;                /* approximation method         */
 CoordinateSpace space;                  /* coordinate space used        */
+INT4    haveGridSpacing = 0;            /* flag to indicate gridspacing */
 GridSpacing gridSpacing = SquareNotOriented; /* grid spacing (square or hexa)*/
 INT4   	isMaxTotMass    = 0;            /* Use a maximum total mass?	*/
 
@@ -1151,8 +1152,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --space SPACE                grid up template bank with mass parameters SPACE\n"\
 "                                 (Tau0Tau2|Tau0Tau3|Psi0Psi3)\n"\
 "  --grid-spacing GRIDSPACING   grid up template bank with GRIDSPACING\n"\
-"                                 (Square|Hexagonal|SquareNotOriented|\n"\
-"                                 HexagonalNotOriented)\n"\
+"                                 (Hexagonal|SquareNotOriented)\n"\
 "\n"\
 "  --write-raw-data             write raw data to a frame file\n"\
 "  --write-response             write the computed response function to a frame\n"\
@@ -1930,10 +1930,12 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case 'v':
         if ( ! strcmp( "Hexagonal", optarg) )
         {
+          haveGridSpacing = 1;
           gridSpacing = Hexagonal;
         }
         else if ( ! strcmp( "SquareNotOriented", optarg) )
         {
+          haveGridSpacing = 1;
           gridSpacing = SquareNotOriented;
         }
         else
@@ -2317,9 +2319,14 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   }
 
   /* check validity of grid spacing with respect to approximant */
+  if ( ! haveGridSpacing )
+  {
+    fprintf( stderr, "--grid-spacing must be specified\n" );
+    exit( 1 );
+  }
   if (gridSpacing != SquareNotOriented && gridSpacing != Hexagonal)
   {
-    fprintf( stderr, "--grid-spacing  must be either SquareNotOriented or Hexagonal\n" );
+    fprintf( stderr, "--grid-spacing must be either SquareNotOriented or Hexagonal\n" );
     exit( 1 );
   }
   
