@@ -369,7 +369,7 @@ int main(int argc,char *argv[])
       for (i=0; i < numCoincidences; i++) 
 	{
 	  UINT4 k = indicesCCfa[i];  /* print out ordered by joint significance */
-	  fprintf(fpOut,"%1.15le %le %le %le %le %1.15le %le %le %le %le %le\n",
+	  fprintf(fpOut,"%1.15e %e %e %e %e %1.15e %e %e %e %e %e\n",
 		  CC[k].f1, CC[k].Alpha1, CC[k].Delta1,
 		  CC[k].F1, CC[k].fa1,
 		  CC[k].f2, CC[k].Alpha2, CC[k].Delta2,
@@ -411,7 +411,7 @@ int main(int argc,char *argv[])
       for (i=0; i < numCoincidences; i++) 
 	{
 	  UINT4 k = indicesCCfa[i];  /* print out ordered by joint significance */
-	  fprintf(fpOut,"%d %d %le\n",
+	  fprintf(fpOut,"%d %d %e\n",
 		  CList1.CtagCounter[CP[k].c1],CList2.CtagCounter[CP[k].c2],CP[k].fa);
 	}
 

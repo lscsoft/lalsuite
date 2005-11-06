@@ -140,7 +140,7 @@ int ComputePSD(void)
 
     }
 
-  fprintf(stdout,"%15.14le\n",sqrt(1/ShInv));
+  fprintf(stdout,"%15.14e\n",sqrt(1/ShInv));
 
   LALDDestroyVector(&status, &RngMdnSp);
   LALDDestroyVector(&status, &Sp);

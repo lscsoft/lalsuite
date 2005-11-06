@@ -215,10 +215,10 @@ initUserVars (LALStatus *status, UserInput *uvar, int argc, char *argv[])
 void
 initGeneral (LALStatus *status, ConfigVariables *cfg, const UserInput *uvar)
 {
+  static LALDetector nautilus;
 
   INITSTATUS( status, "initGeneral", rcsid );
   ATTATCHSTATUSPTR (status);
-  static LALDetector nautilus;
 
   TRY ( LALFloatToGPS (status->statusPtr, &(cfg->startTimeGPS), &uvar->startTime), status);
 

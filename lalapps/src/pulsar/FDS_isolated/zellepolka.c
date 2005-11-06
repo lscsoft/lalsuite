@@ -269,13 +269,13 @@ typedef struct CellDataTag
 /* Function declarelations */
 void ReadCommandLineArgs( LALStatus *, INT4 argc, CHAR *argv[], PolkaConfigVars *CLA ); 
 void GetFilesListInThisDir(LALStatus *, const CHAR *directory, const CHAR *basename, CHAR ***filelist, UINT4 *nfiles );
-void ReadCandidateFiles( LALStatus *, CandidateList **Clist, PolkaConfigVars *CLA, UINT4 *datalen );
-void ReadOneCandidateFile( LALStatus *, CandidateList **CList, const CHAR *fname, UINT4 *datalen );
-void ReadOneCandidateFileV2( LALStatus *lalStatus, CandidateList **CList, const CHAR *fname, UINT4 *candlen );
+void ReadCandidateFiles( LALStatus *, CandidateList **Clist, PolkaConfigVars *CLA, INT4 *datalen );
+void ReadOneCandidateFile( LALStatus *, CandidateList **CList, const CHAR *fname, INT4 *datalen );
+void ReadOneCandidateFileV2( LALStatus *lalStatus, CandidateList **CList, const CHAR *fname, INT4 *candlen );
 
 
 #ifdef USE_UNZIP
-void ReadCandidateListFromZipFile (LALStatus *, CandidateList **CList, CHAR *fname, UINT4 *candlen, const INT4 *FileID);
+void ReadCandidateListFromZipFile (LALStatus *, CandidateList **CList, CHAR *fname, INT4 *candlen, const INT4 *FileID);
 #endif
 
 void PrepareCells( LALStatus *, CellData **cell, const UINT4 datalen );
@@ -292,7 +292,7 @@ void add_int4_data(LALStatus *, struct int4_linked_list **list_ptr, const INT4 *
 void delete_int4_linked_list( LALStatus *, struct int4_linked_list *list_ptr);
 void get_info_of_the_cell( LALStatus *, CellData *cd, const CandidateList *CList);
 
-void PrintResult( LALStatus *, const PolkaConfigVars *CLA, CellData *cell, const UINT4 *ncell, CandidateList *CList );
+void PrintResult( LALStatus *, const PolkaConfigVars *CLA, CellData *cell, const INT4 *ncell, CandidateList *CList );
 void print_Fstat_of_the_cell( LALStatus *, FILE *fp, const CellData *cd, const CandidateList *CList, const INT4 icell_start, 
 			      const INT4 icell_end, const REAL8 sig_thr, const REAL8 ncand_thr );
 void print_info_of_the_cell( LALStatus *lalStatus, FILE *fp, const CellData *cd, const INT4 icell_start, 
@@ -333,15 +333,16 @@ RCSID ("$Id$");
 int main(INT4 argc,CHAR *argv[]) 
 {
   LALStatus *lalStatus = &global_status;
-  lalDebugLevel = 0 ;  
-  vrbflg = 1;   /* verbose error-messages */
-
-  UINT4  CLength=0;
+  INT4  CLength=0;
   CandidateList *SortedC = NULL;
   CellData *cell = NULL;
-  UINT4 icell, icand, ncell;
+  INT4 icell, icand, ncell;
 
   PolkaConfigVars PCV;
+
+
+  lalDebugLevel = 0 ;  
+  vrbflg = 1;   /* verbose error-messages */
 
   /* Get the debuglevel from command line arg, then set laldebuglevel. */
   LAL_CALL (LALGetDebugLevel(lalStatus, argc, argv, 'v'), lalStatus);
@@ -460,12 +461,13 @@ int main(INT4 argc,CHAR *argv[])
 */
 void PrepareCells( LALStatus *lalStatus, CellData **cell, const UINT4 CLength )
 {
-  INITSTATUS( lalStatus, "InitCode", rcsid );
-  ATTATCHSTATUSPTR (lalStatus);
-  ASSERT( *cell == NULL, lalStatus, POLKAC_ENONULL, POLKAC_MSGENONULL);
-
   UINT4 icell, ncell;
   INT4 errflg = 0;
+
+  INITSTATUS( lalStatus, "InitCode", rcsid );
+  ATTATCHSTATUSPTR (lalStatus);
+
+  ASSERT( *cell == NULL, lalStatus, POLKAC_ENONULL, POLKAC_MSGENONULL);
 
   *cell = (CellData *) LALCalloc( CLength, sizeof(CellData) );
   if( *cell == NULL ) {
@@ -517,16 +519,9 @@ void PrepareCells( LALStatus *lalStatus, CellData **cell, const UINT4 CLength )
   @param[in]     ncell     UINT4* Number of the cells
   @param[in]     CList     CandidateList
 */
-void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cell, const UINT4 *ncell, CandidateList *CList)
+void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cell, const INT4 *ncell, CandidateList *CList)
 {
-  INITSTATUS( lalStatus, "PrintResult", rcsid );
-  ATTATCHSTATUSPTR (lalStatus);
-  ASSERT( cell != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
-  ASSERT( CLA != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
-  ASSERT( CList != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
-
-
-  UINT4 icell;
+  INT4 icell;
   CHAR fnameSigTime[]="polka_significant_outlier_2FofTime"; /* Time variation of 2F of some significant outliers. */
   CHAR fnameSigCell[]="polka_significant_outlier_CellData"; /* Cell information of some significant outliers*/
   CHAR fnameCoiTime[]="polka_coincident_outlier_2FofTime";  /* Time variation of 2F of some coincident outliers. */
@@ -537,6 +532,13 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
   INT4 *count;
   INT4 nc, nmax,idxmax = 0;
   REAL4 Sigmax = 0.0;
+
+  INITSTATUS( lalStatus, "PrintResult", rcsid );
+  ATTATCHSTATUSPTR (lalStatus);
+
+  ASSERT( cell != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
+  ASSERT( CLA != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
+  ASSERT( CList != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
 
   /* ------------------------------------------------------------- */
   /* First Sort arrays of candidates based on number of candidate. */ 
@@ -694,13 +696,15 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
 
   
   {
+    INT4 prev_iFreq = -1;
+
     if( ( fp = fopen(fnameMaxOverSky,"w") ) == NULL ) {
       { 
 	LALPrintError("\n Cannot open file %s or %s\n",fnameCoiCell,fnameCoiTime); 
 	exit(POLKA_EXIT_ERR); 
       }
     }
-    INT4 prev_iFreq = -1;
+
     for( icell=0; icell<(*ncell); icell++ ) {
       if( cell[icell].iFreq != prev_iFreq ) {
 	print_info_of_the_cell( lalStatus->statusPtr, fp, cell, icell, icell+1, 0, 0);
@@ -791,10 +795,10 @@ FreeMemory( LALStatus *lalStatus,
 	    CandidateList *CList, 
 	    const UINT4 CLength)
 {
+  UINT4 icell;
+
   INITSTATUS( lalStatus, "FreeMemory", rcsid );
   ATTATCHSTATUSPTR (lalStatus);
-
-  UINT4 icell;
 
   FreeConfigVars( lalStatus->statusPtr, CLA );
 
@@ -823,9 +827,9 @@ FreeMemory( LALStatus *lalStatus,
 */
 void FreeConfigVars(LALStatus *lalStatus, PolkaConfigVars *CLA )
 {
-  INITSTATUS( lalStatus, "FreeConfigVars", rcsid );
-
   UINT4 k;
+
+  INITSTATUS( lalStatus, "FreeConfigVars", rcsid );
 
   if( CLA->FstatsFile != NULL ) LALFree(CLA->FstatsFile);
   if( CLA->OutputFile != NULL ) LALFree(CLA->OutputFile);
@@ -857,9 +861,10 @@ void FreeConfigVars(LALStatus *lalStatus, PolkaConfigVars *CLA )
 */
 void add_int4_data(LALStatus *lalStatus, struct int4_linked_list **list_ptr, const INT4 *data)
 {
+  struct int4_linked_list *p = NULL;
+
   INITSTATUS( lalStatus, "add_int4_data", rcsid );
 
-  struct int4_linked_list *p = NULL;
   p = (struct int4_linked_list *) LALMalloc(sizeof(struct int4_linked_list));
   if( p == NULL ) {
     LALPrintError("Could not allocate Memory! \n");
@@ -1163,7 +1168,8 @@ int compareNumOfCoincidences(const void *a, const void *b)
   const CellData *jp = b;
   int res;
 
-  UINT4 n1, n2;
+  INT4 n1, n2;
+
   n1=ip->nCand;
   n2=jp->nCand;
   /* I put n1 and n2 inversely, because I would like to get decreasingly-ordered set. */ 
@@ -1259,14 +1265,15 @@ void
 ReadCandidateFiles(LALStatus *lalStatus, 
 		   CandidateList **CList, 
 		   PolkaConfigVars *CLA, 
-		   UINT4 *clen)
+		   INT4 *clen)
 {
+  UINT4 kc;
+
   INITSTATUS( lalStatus, "ReadCandidateFiles", rcsid );
   ATTATCHSTATUSPTR (lalStatus);
+
   ASSERT( CLA != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
   ASSERT( *CList == NULL, lalStatus, POLKAC_ENONULL, POLKAC_MSGENONULL);
-
-  UINT4 kc;
 
   if( (CLA->InputDir != NULL) && (CLA->BaseName != NULL) ) 
     {
@@ -1456,7 +1463,7 @@ void
 ReadCandidateListFromZipFile( LALStatus *lalStatus, 
 			      CandidateList **CList, 
 			      CHAR *fname, 
-			      UINT4 *candlen, 
+			      INT4 *candlen, 
 			      const INT4 *FileID )
 {
   FILE *fp;
@@ -1764,7 +1771,7 @@ void
 ReadOneCandidateFileV2( LALStatus *lalStatus, 
 		      CandidateList **CList, 
 		      const CHAR *fname, 
-		      UINT4 *candlen )
+		      INT4 *candlen )
 {
   UINT4 i;
   UINT4 numlines;
@@ -2035,7 +2042,7 @@ void
 ReadOneCandidateFile( LALStatus *lalStatus, 
 		      CandidateList **CList, 
 		      const CHAR *fname, 
-		      UINT4 *candlen )
+		      INT4 *candlen )
 {
   UINT4 i;
   UINT4 numlines;
@@ -2288,11 +2295,6 @@ ReadCommandLineArgs( LALStatus *lalStatus,
 		     CHAR *argv[], 
 		     PolkaConfigVars *CLA ) 
 {
-  INITSTATUS( lalStatus, "ReadCommandLineArgs", rcsid );
-  ATTATCHSTATUSPTR (lalStatus);
-
-  ASSERT( CLA != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
-
 
   CHAR* uvar_InputData;
   CHAR* uvar_OutputData;
@@ -2313,8 +2315,14 @@ ReadCommandLineArgs( LALStatus *lalStatus,
   BOOLEAN uvar_help;
   BOOLEAN uvar_UseUnzip;
 
-
   const CHAR BNAME[] = "Test";
+
+
+  INITSTATUS( lalStatus, "ReadCommandLineArgs", rcsid );
+  ATTATCHSTATUSPTR (lalStatus);
+
+  ASSERT( CLA != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
+
 
   uvar_AutoOut = 0;
   uvar_help = 0;

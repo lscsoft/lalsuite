@@ -82,18 +82,18 @@ int main(int argc,char *argv[])
      return 1;
    }
 
- fprintf(fp1,"%le ##TSFT\n",Tsft);
+ fprintf(fp1,"%e ##TSFT\n",Tsft);
  fprintf(fp1,"%d ##nSFT\n",nSFT);
- fprintf(fp1,"%le ##fstart\n",fstart);
- fprintf(fp1,"%le ##band\n",band);
+ fprintf(fp1,"%e ##fstart\n",fstart);
+ fprintf(fp1,"%e ##band\n",band);
  fprintf(fp1,"0.0 ##sigma\n");
- fprintf(fp1,"%le ##Ap\n",Ap);
- fprintf(fp1,"%le ##Ac\n",Ac);
- fprintf(fp1,"%le ##psi\n",psi);
- fprintf(fp1,"%le ##phi0\n",phi0);
- fprintf(fp1,"%le ##f0\n",f0);
- fprintf(fp1,"%le ##delta\n",delta);
- fprintf(fp1,"%le ##alpha\n",alpha);
+ fprintf(fp1,"%e ##Ap\n",Ap);
+ fprintf(fp1,"%e ##Ac\n",Ac);
+ fprintf(fp1,"%e ##psi\n",psi);
+ fprintf(fp1,"%e ##phi0\n",phi0);
+ fprintf(fp1,"%e ##f0\n",f0);
+ fprintf(fp1,"%e ##delta\n",delta);
+ fprintf(fp1,"%e ##alpha\n",alpha);
  fprintf(fp1,"0 ##spinorder\n");
  fprintf(fp1,"%s ##timestampsfile\n",tsfile);
 

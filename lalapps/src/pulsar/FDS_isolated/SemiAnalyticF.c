@@ -51,10 +51,10 @@ struct CommandLineArgsTag {
   REAL8 skyalpha;
   REAL8 skydelta;
   REAL8 tsft;
-  UINT4 nTsft;
+  INT4 nTsft;
   CHAR *detector;
   CHAR *timestamps;
-  UINT4 gpsStart;
+  INT4 gpsStart;
   CHAR *efiles;
   REAL8 phi;
   REAL8 psi;
@@ -130,7 +130,7 @@ int main(int argc,char *argv[])
 
 int MakeTimeStamps(struct CommandLineArgsTag CLA) 
 {
-  UINT4 i;
+  INT4 i;
  
   /* allocate memory for timestamps */
   timestamps=(LIGOTimeGPS *)LALMalloc(CLA.nTsft*sizeof(LIGOTimeGPS)); 
@@ -149,7 +149,7 @@ int MakeTimeStamps(struct CommandLineArgsTag CLA)
 int ReadTimeStamps(struct CommandLineArgsTag CLA) 
 {
   FILE *fp;
-  UINT4 i;
+  INT4 i;
   int r;
  
  
@@ -360,7 +360,7 @@ Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
   LIGOTimeGPS *midTS=NULL;           /* Time stamps for amplitude modulation coefficients */
   LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
   LALDetector Detector;              /* Our detector*/
-  UINT4 k;
+  INT4 k;
 
   INITSTATUS (status, "Initialize", rcsid);
   ATTATCHSTATUSPTR (status);
@@ -541,13 +541,14 @@ CreateNautilusDetector (LALStatus *status, LALDetector *detector)
 void
 CheckUserInput (LALStatus *status,  struct CommandLineArgsTag *CLA )
 {
-  INITSTATUS (status, "CheckUserInput", rcsid);
 
   /* set a few abbreviations */
   BOOLEAN have_timestamps= LALUserVarWasSet (&(CLA->timestamps));
   BOOLEAN have_gpsStart = LALUserVarWasSet  (&(CLA->gpsStart));
   BOOLEAN have_duration  = LALUserVarWasSet (&(CLA->duration));
   BOOLEAN have_nTsft     = LALUserVarWasSet (&(CLA->nTsft));
+
+  INITSTATUS (status, "CheckUserInput", rcsid);
   
   if( have_timestamps && (have_gpsStart||have_duration) )
     {
