@@ -465,7 +465,13 @@ int main( int argc, char *argv[]){
   var2 = sumsq * peakprob * (1 - peakprob);
   nth2 = mean2 + sqrt( 2.0 * var2) * erfcInv;
 
-
+  { /* check sum weight = 1 */
+    REAL8 tempSum=0.0;
+    for (j=0; j<mObsCoh; j++) {
+      tempSum += weight->data[j];
+    }
+    fprintf(stdout, "%f\n", tempSum);
+  }
   /* *********************************************************************** */
   /* computing varAM */
   /*   { */
@@ -588,7 +594,8 @@ int main( int argc, char *argv[]){
 	  /* now calculate the number count for the template */
 	  for (j=0; j < mObsCoh; j++)  
 	    {
-	      INT4 index, tempW;
+	      INT4 index;
+	      REAL8 tempW;
 	      /* REAL8 realThrAM; */
 	      
 	      sft1.epoch.gpsSeconds = timeV.data[j].gpsSeconds;
