@@ -986,6 +986,7 @@ buildMetricGrid (LALStatus *status,
   meshNODE *mesh2d = NULL;
   meshPARAMS meshpar = empty_meshpar;
   PtoleMetricIn metricpar = empty_metricpar;
+  DopplerScanInit params = (*init);
 
   INITSTATUS( status, "makeMetricGrid", DOPPLERSCANC );
   ATTATCHSTATUSPTR (status);
@@ -1023,7 +1024,7 @@ buildMetricGrid (LALStatus *status,
   /* and its parameters: simply pass the whole DopplerScanInit struct, which
    * contains all the required information 
    */
-  meshpar.metricParams = (const void *) init;
+  meshpar.metricParams = (void *) (&params);
 
   /* finally: create the mesh! (ONLY 2D for now!) */
 #ifdef USE_HACKED_TWODMESH
