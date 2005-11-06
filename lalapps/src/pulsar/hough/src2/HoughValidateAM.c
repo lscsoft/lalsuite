@@ -71,7 +71,7 @@ int main( int argc, char *argv[]){
   /* the template */
   static HoughTemplate  pulsarTemplate, pulsarTemplate1;
 
-  FILE  *fpOUT = NULL; /* output file pointer */
+  /* FILE  *fpOUT = NULL; */ /* output file pointer */
   FILE  *fpLog = NULL; /* log file pointer */
   CHAR  *logstr=NULL; /* log string containing user input variables */
   CHAR  *fnamelog=NULL; /* name of log file */
