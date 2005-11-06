@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 # $Id$
 
-isolated_DIR = ../FDS_isolated
+isolated_DIR = $(srcdir)/../FDS_isolated
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps  -I$(isolated_DIR)
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la

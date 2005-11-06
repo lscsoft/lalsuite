@@ -17,18 +17,18 @@ LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 EXTRA_DIST = extractSFTband.c GatherLFN.py QueryMetadataLFN.py ClusterComputeF.py QueryMetadataEphemeris.py
 CLEANFILES = lalapps_GatherLFN lalapps_QueryMetadataLFN lalapps_ClusterComputeF lalapps_QueryMetadataEphemeris
 
-lalapps_GatherLFN: GatherLFN.py
-	sed "s+@PYTHONPROG@+@PYTHON@+g" GatherLFN.py > lalapps_GatherLFN
+lalapps_GatherLFN: $(srcdir)/GatherLFN.py
+	sed "s+@PYTHONPROG@+@PYTHON@+g" $(srcdir)/GatherLFN.py > lalapps_GatherLFN
 	chmod +x lalapps_GatherLFN
 
-lalapps_QueryMetadataLFN: QueryMetadataLFN.py
-	sed "s+@PYTHONPROG@+@PYTHON@+g" QueryMetadataLFN.py > lalapps_QueryMetadataLFN
+lalapps_QueryMetadataLFN: $(srcdir)/QueryMetadataLFN.py
+	sed "s+@PYTHONPROG@+@PYTHON@+g" $(srcdir)/QueryMetadataLFN.py > lalapps_QueryMetadataLFN
 	chmod +x lalapps_QueryMetadataLFN
 
-lalapps_ClusterComputeF: ClusterComputeF.py
-	sed "s+@PYTHONPROG@+@PYTHON@+g" ClusterComputeF.py > lalapps_ClusterComputeF
+lalapps_ClusterComputeF: $(srcdir)/ClusterComputeF.py
+	sed "s+@PYTHONPROG@+@PYTHON@+g" $(srcdir)/ClusterComputeF.py > lalapps_ClusterComputeF
 	chmod +x lalapps_ClusterComputeF
 
-lalapps_QueryMetadataEphemeris: QueryMetadataEphemeris.py
-	sed "s+@PYTHONPROG@+@PYTHON@+g" QueryMetadataEphemeris.py > lalapps_QueryMetadataEphemeris
+lalapps_QueryMetadataEphemeris: $(srcdir)/QueryMetadataEphemeris.py
+	sed "s+@PYTHONPROG@+@PYTHON@+g" $(srcdir)/QueryMetadataEphemeris.py > lalapps_QueryMetadataEphemeris
 	chmod +x lalapps_QueryMetadataEphemeris
