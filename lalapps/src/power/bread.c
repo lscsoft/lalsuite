@@ -58,9 +58,6 @@ int gethostname(char *name, int len);
 #define TRUE  1
 #define FALSE 0
 
-/* cluster options */
-enum { undefined, clusterbypeaktimeandfreq, clusterbytimeandfreq, stringcluster } clusterchoice = undefined;
-
 /*
  * Command-line options
  */
@@ -75,6 +72,7 @@ struct options_t {
 	int playground;
 	int noplayground;
 	int sort;
+	enum { undefined, clusterbypeaktimeandfreq, clusterbytimeandfreq, stringcluster } clusterchoice;
 
 	/* confidence threshold */
 	BOOLEAN maxConfidenceFlag;
@@ -132,6 +130,7 @@ static void set_option_defaults(struct options_t *options)
 	options->playground = FALSE;
 	options->noplayground = FALSE;
 	options->sort = FALSE;
+	options->clusterchoice = undefined;
 
 	options->maxConfidenceFlag = FALSE;
 	options->maxConfidence = 0.0;
@@ -316,19 +315,17 @@ static void parse_command_line(int argc, char **argv, struct options_t *options,
 			/*
 			 * set the cluster option
 			 */
-			{
-				if(!strcmp("clusterbypeaktimeandfreq", optarg)) {
-					options->cluster = TRUE;
-					clusterchoice = clusterbypeaktimeandfreq;
-				} else if(!strcmp("clusterbytimeandfreq", optarg)) {
-					options->cluster = TRUE;
-					clusterchoice = clusterbytimeandfreq;
-				} else if(!strcmp("stringcluster", optarg)) {
-					options->cluster = TRUE;
-					clusterchoice = stringcluster;
-				} else {
-					fprintf(stderr, "invalid argument to --cluster\n" "unknown clusterchoice specified;\n" "(must be one of:clusterbypeaktimeandfreq ,clusterbytimeandfreq )\n");
-				}
+			if(!strcmp("clusterbypeaktimeandfreq", optarg)) {
+				options->cluster = TRUE;
+				options->clusterchoice = clusterbypeaktimeandfreq;
+			} else if(!strcmp("clusterbytimeandfreq", optarg)) {
+				options->cluster = TRUE;
+				options->clusterchoice = clusterbytimeandfreq;
+			} else if(!strcmp("stringcluster", optarg)) {
+				options->cluster = TRUE;
+				options->clusterchoice = stringcluster;
+			} else {
+				fprintf(stderr, "invalid argument to --cluster (must be one of \"clusterbypeaktimeandfreq\", \"clusterbytimeandfreq\")\n");
 			}
 			break;
 
@@ -648,9 +645,6 @@ static int path_from_fileurl(CHAR * filepath, FrStat * file)
 }
 
 
-
-
-
 /*
  * Entry Point
  */
@@ -771,11 +765,11 @@ int main(int argc, char **argv)
 	 * Cluster the events
 	 */
 
-	if(options.cluster && clusterchoice == clusterbypeaktimeandfreq)
+	if(options.cluster && (options.clusterchoice == clusterbypeaktimeandfreq))
 		XLALClusterSnglBurstTable(&burstEventList, XLALCompareSnglBurstByPeakTime, XLALCompareSnglBurstByPeakTimeAndFreq, XLALSnglBurstCluster);
-	else if(options.cluster && clusterchoice == clusterbytimeandfreq)
+	else if(options.cluster && (options.clusterchoice == clusterbytimeandfreq))
 		XLALClusterSnglBurstTable(&burstEventList, NULL, XLALCompareSnglBurst, XLALSnglBurstCluster);
-	else if(options.cluster && clusterchoice == stringcluster)
+	else if(options.cluster && (options.clusterchoice == stringcluster))
 		XLALClusterStringBurstTable(&burstEventList, XLALCompareStringBurstByTime, XLALCompareStringBurstByTime);
 
 	/*
