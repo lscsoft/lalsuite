@@ -40,6 +40,8 @@ int mycalls=0;
 int myclears=0;
 void *ptr;
 
+extern char *optarg;
+
 /* For debugging memory allocation */
 #if(0)
 #define LALMalloc(how)  ptr=LALMalloc(how);mycalls++,fprintf(stderr,"Allocating %d bytes with %d calls tp %p\n",(INT4)(how),mycalls,ptr)
@@ -88,9 +90,9 @@ char *lalWatch;
 #define MAXFILENAMELENGTH 256   /* Maximum # of characters of a SFT filename */
 
 /*Default input data file name*/
-char *inDataFilename="InExtract.data";
-char *basefilename="TEST_SFT";
-char *noisedir="./";
+const char *inDataFilename="InExtract.data";
+const char *basefilename="TEST_SFT";
+const char *noisedir="./";
 char filelist[MAXFILES][MAXFILENAMELENGTH];
 
 /* timebaseline of SFT in sec, band SFT in Hz */
@@ -174,9 +176,12 @@ int freemem(LALStatus* status){
 
 int make_filelist(LALStatus* status) {
 
-  INT4 fileno=0;
+  UINT4 fileno=0;
   char command[256];
   glob_t globbuf;
+
+  if ( !status )
+    return 1;
 
   strcpy(command,noisedir);
   strcat(command,"*SFT*");
@@ -298,7 +303,8 @@ int write_SFTS(LALStatus* status, int iSFT){
   FILE *fp;
   REAL4 rpw,ipw;
   char filename[256], filenumber[16];
-  int i,errorcode;
+  UINT4 i;
+  int errorcode;
 
   struct headertag {
     REAL8 endian;
@@ -308,6 +314,9 @@ int write_SFTS(LALStatus* status, int iSFT){
     INT4  firstfreqindex;
     INT4  nsamples;
   } header;
+
+  if ( !status )
+    return 1;
   
   /* Open SFT data file */
   strcpy(filename,basefilename);
@@ -359,12 +368,11 @@ int write_SFTS(LALStatus* status, int iSFT){
 
 int read_file(LALStatus* status, int argc,char *argv[]) {
   
-  char filename[256], dmp[128];
   int c, errflg = 0;
-  int r;
-  FILE *fp;
-  extern char *optarg;
-  
+
+  if ( !status )
+    return 1;
+
   /* scan through the list of arguments on the command line 
      and get the input data filename*/
   
