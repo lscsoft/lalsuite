@@ -41,7 +41,7 @@ struct headertag
 
 int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA);
 int ReadSFTDirectory(struct CommandLineArgsTag CLA);
-int ComputePSD(struct CommandLineArgsTag CLA);
+int ComputePSD(void);
 int Freemem(void);
 
 

@@ -8,7 +8,7 @@
 
 #include "FindSh.h"
 #include "clusters.h"
-INT4 SFTno,RealSFTno;                /* Global variables that keep track of no of SFTs */
+UINT4 SFTno,RealSFTno;                /* Global variables that keep track of no of SFTs */
 INT4 lalDebugLevel=3;
 INT4 ifmin,band;
 REAL4 *p;
@@ -32,7 +32,7 @@ int main(int argc,char *argv[])
   if (ReadSFTDirectory(CommandLineArgs)) return 2;
 
   /* Find the PSD */
-  if (ComputePSD(CommandLineArgs)) return 2;
+  if (ComputePSD()) return 2;
 
   /* Free memory*/
   if (Freemem()) return 8;
@@ -43,14 +43,16 @@ int main(int argc,char *argv[])
 
 /*******************************************************************************/
 
-int ComputePSD(struct CommandLineArgsTag CLA)
+int ComputePSD(void)
 {
   FILE *fp;
-  INT4 i,j=0,offset,ndeltaf;
+  INT4 offset;
+  UINT4 ndeltaf;
+  UINT4 i, j;
   size_t errorcode;
   REAL8 ShAve=0.0,SpAve=0.0,ShInv;
   REAL8Vector *Sp=NULL, *RngMdnSp=NULL;   /* |SFT|^2 and its rngmdn  */
-  ndeltaf=band+1;
+  ndeltaf = band+1;
 
   LALDCreateVector(&status, &Sp, (UINT4) ndeltaf);
   LALDCreateVector(&status, &RngMdnSp, (UINT4) ndeltaf);
@@ -154,7 +156,8 @@ int ReadSFTDirectory(struct CommandLineArgsTag CLA)
   char command[256];
   size_t errorcode;
   FILE *fp;
-  INT4 fileno=0,j;
+  UINT4 fileno=0;
+  UINT4 j;
   glob_t globbuf;
 
 
