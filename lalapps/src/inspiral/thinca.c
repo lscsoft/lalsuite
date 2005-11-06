@@ -61,6 +61,7 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 int haveTrig[LAL_NUM_IFO];
 int checkTimes = 0;
 int multiIfoCoinc = 0;
+int distCut = 0;
 int doAlphaFCut = 0;
 
 
@@ -147,6 +148,12 @@ static void print_usage(char *program)
       "  [--l1-psi3-accuracy]  l1_dpsi3   specify the psi3 accuracy of L1\n"\
       "  [--t1-psi3-accuracy]  t1_dpsi3   specify the psi3 accuracy of T1\n"\
       "  [--v1-psi3-accuracy]  v1_dpsi3   specify the psi3 accuracy of V1\n"\
+      "\n"\
+      "  [--h1-h2-distance-cut]           perform H1-H2 distance cut\n"\
+      "  [--h1-kappa]          h1_kappa   specify H1 kappa for eff dist test\n"\
+      "  [--h2-kappa]          h2_kappa   specify H2 kappa for eff dist test\n"\
+      "  [--h1-epsilon]        h1_epsilon specify H1 epsilon for eff dist test\n"\
+      "  [--h2-epsilon]        h2_epsilon specify H1 epsilon for eff dist test\n"\
       "\n"\
       "  [--dmchirp-high]      dmchirp    different chirp mass window for high masses\n"\
       "  [--high-mass]         mass       total mass for trigger above which the high mass mchirp is used\n"\
@@ -266,6 +273,7 @@ int main( int argc, char *argv[] )
     {"v1-triggers",         no_argument,   &(haveTrig[LAL_IFO_V1]),   1 },
     {"check-times",         no_argument,   &checkTimes,               1 },
     {"multi-ifo-coinc",     no_argument,   &multiIfoCoinc,            1 },
+    {"h1-h2-distance-cut",  no_argument,   &distCut,                  1 },
     {"do-alphaF-cut",       no_argument,   &doAlphaFCut,              1 },
     {"g1-slide",            required_argument, 0,                    'b'},
     {"h1-slide",            required_argument, 0,                    'c'},
@@ -310,6 +318,10 @@ int main( int argc, char *argv[] )
     {"l1-psi3-accuracy",    required_argument, 0,                    '-'},
     {"t1-psi3-accuracy",    required_argument, 0,                    '+'},
     {"v1-psi3-accuracy",    required_argument, 0,                    '='},
+    {"h1-kappa",            required_argument, 0,                    'W'},
+    {"h2-kappa",            required_argument, 0,                    'Y'},
+    {"h1-epsilon",          required_argument, 0,                    'w'},
+    {"h2-epsilon",          required_argument, 0,                    'y'},
     {"parameter-test",      required_argument, 0,                    'a'},
     {"gps-start-time",      required_argument, 0,                    's'},
     {"gps-end-time",        required_argument, 0,                    't'},
@@ -379,8 +391,8 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:VZ:"
-        "a:b:c:d:e:f:g:hi:j:l:k:m:n:o:p:q:r:s:t:x:z:"
+        "A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:VW:Y:Z:"
+        "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:q:r:s:t:w:x:y:z:"
         "2:3:4:5:6:7:8:9:!:-:+:=:@:^:&:", 
         long_options, &option_index );
 
@@ -923,6 +935,30 @@ int main( int argc, char *argv[] )
           accuracyParams.ifoAccuracy[loopVar].highMass = atof( optarg );
         break; 
 
+      case 'W':
+        /* kappa accuracy H1 */
+        accuracyParams.ifoAccuracy[LAL_IFO_H1].kappa = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+        
+      case 'Y':
+        /* kappa accuracy H2 */
+        accuracyParams.ifoAccuracy[LAL_IFO_H2].kappa = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+        
+      case 'w':
+        /* epsilon accuracy H1 */
+        accuracyParams.ifoAccuracy[LAL_IFO_H1].epsilon = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+        
+      case 'y':
+        /* epsilon accuracy H2 */
+        accuracyParams.ifoAccuracy[LAL_IFO_H2].epsilon = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+        
       default:
         fprintf( stderr, "Error: Unknown error while parsing options\n" );
         print_usage(argv[0]);
@@ -1333,6 +1369,12 @@ int main( int argc, char *argv[] )
   {
     LAL_CALL( LALCreateTwoIFOCoincList( &status, &coincInspiralList,
         inspiralEventList, &accuracyParams ), &status );
+
+    if( distCut )
+    {
+      XLALInspiralDistanceCut( &coincInspiralList, &accuracyParams );
+    }
+
   
     if ( multiIfoCoinc )
     {
@@ -1419,6 +1461,11 @@ int main( int argc, char *argv[] )
       {
         LAL_CALL( LALCreateTwoIFOCoincList(&status, &coincInspiralList,
           inspiralEventList, &accuracyParams ), &status);
+
+        if( distCut )
+        {
+          XLALInspiralDistanceCut( &coincInspiralList, &accuracyParams );
+        }
 
         if ( multiIfoCoinc )
         {
