@@ -368,7 +368,7 @@ int main(int argc,char *argv[])
 	    {
 
 	      Fcomponents FaFb;
-	      REAL4 fact;
+	      REAL4 fact = 0;
 	      REAL4 At = 0.0, Bt = 0.0, Ct = 0.0, Dt = 0.0;
 	      REAL4 FaRe = 0.0, FaIm = 0.0, FbRe = 0.0, FbIm = 0.0;
 	      REAL8 Fstat;
