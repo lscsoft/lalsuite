@@ -44,9 +44,17 @@ NRCSID( COINCINSPIRALUTILSC, "$Id$" );
 \vspace{0.1in}
 \input{CoincInspiralUtilsCP}
 \idx{LALCreateTwoIFOCoincList()}
+\idx{LALCreateNIFOCoincList()}
+\idx{LALRemoveRepeatedCoincs()}
+\idx{LALFreeCoincInspiral()}
+\idx{XLALFreeCoincInspiral()}
 \idx{LALAddSnglInspiralToCoinc()}
 \idx{LALSnglInspiralCoincTest()}
-
+\idx{LALExtractSnglInspiralFromCoinc()}
+\idx{XLALRecreateCoincFromSngls()}
+\idx{XLALGenerateCoherentBank()}
+\idx{XLALInspiralDistanceCut()}
+\idx{LALCoincCutSnglInspiral()}
 
 \subsubsection*{Description}
 
@@ -70,10 +78,10 @@ double coincident trigger is also part of an H1-H2-L1 triple coincident
 trigger, the double coincident trigger will be removed.  The head of the list 
 of coincident triggers is passed and returned as \texttt{coincHead}.
 
-\texttt{LALFreeCoincInspiral()} frees the memory associated to the 
-\texttt{CoincInspiralTable} pointed to by \texttt{coincPtr}.  This entails
-freeing the \texttt{CoincInspiralTable} as well as any \texttt{eventId}s
-which point to the coinc.
+\texttt{XLALFreeCoincInspiral()} \texttt{LALFreeCoincInspiral()} and  free the
+memory associated to the \texttt{CoincInspiralTable} pointed to by
+\texttt{coincPtr}.  This entails freeing the \texttt{CoincInspiralTable} as
+well as any \texttt{eventId}s which point to the coinc.
 
 \texttt{LALAddSnglInspiralToCoinc()} adds a pointer to a single inspiral table
 to a coinc inspiral table.  Upon entry, if \texttt{coincPtr} points to a
@@ -118,6 +126,9 @@ of the trigger in the coinc with the highest \texttt{snr}.  If the
 \texttt{ifos} field is not \texttt{NULL}, then a template is generated for
 every ifo in \texttt{ifos}.  If it is \texttt{NULL} then templates are only
 generated for those ifos which have triggers in the coinc.
+
+\texttt{XLALInspiralDistanceCut()} is used to perform a distance cut between 
+the triggers in a coincidence.  The distance cut uses the following algorithm:
 
 \texttt{LALCoincCutSnglInspiral()} extracts all single inspirals from a
 specific ifo which are in coinc inspirals.  The output \texttt{snglPtr} is a
@@ -476,13 +487,27 @@ LALFreeCoincInspiral(
     CoincInspiralTable        **coincPtr
     )
 {
+  INITSTATUS( status, "LALFreeCoincInspiral", COINCINSPIRALUTILSC );
+  ATTATCHSTATUSPTR( status );
+
+  XLALFreeCoincInspiral( coincPtr );
+
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}
+    
+
+void
+XLALFreeCoincInspiral(
+    CoincInspiralTable        **coincPtr
+    )
+{
+  static const char *func = "FreeCoincInspiral";
   InterferometerNumber          ifoNumber  = LAL_UNKNOWN_IFO;
   EventIDColumn                *prevID     = NULL;
   EventIDColumn                *thisID     = NULL;
   SnglInspiralTable            *thisSngl   = NULL;
-
-  INITSTATUS( status, "LALFreeCoincInspiral", COINCINSPIRALUTILSC );
-  ATTATCHSTATUSPTR( status );
 
   for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
@@ -490,7 +515,6 @@ LALFreeCoincInspiral(
     {
       /* loop over the list of eventID's until we get to the one that 
        * points to thisCoinc */
-      
       thisID = thisSngl->event_id;
       prevID = NULL;
 
@@ -519,9 +543,6 @@ LALFreeCoincInspiral(
     }
   }
   LALFree(*coincPtr);
-
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
 }
     
 
@@ -976,7 +997,97 @@ XLALGenerateCoherentBank(
 }
   
 
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+void
+XLALInspiralDistanceCut(
+    CoincInspiralTable        **coincInspiral,
+    InspiralAccuracyList       *accuracyParams
+    )
+/* </lalVerbatim> */
+{
+  static const char *func = "InspiralDistanceCut";
+  InterferometerNumber  ifoA = LAL_UNKNOWN_IFO;  
+  InterferometerNumber  ifoB = LAL_UNKNOWN_IFO;
+  CoincInspiralTable   *thisCoinc = NULL;
+  CoincInspiralTable   *prevCoinc = NULL;
+  CoincInspiralTable   *coincHead = NULL;
+
+  thisCoinc = *coincInspiral;
+  coincHead = NULL;
   
+  while( thisCoinc )
+  {
+    INT4  discardTrigger = 0;
+    REAL4 kappaA = 0, kappaB = 0;
+    REAL4 epsilonA = 0, epsilonB = 0;
+    REAL4 snrA = 0, snrB = 0;
+    REAL4 distA = 0, distB = 0;
+    REAL8 sigmasqA = 0, sigmasqB = 0;
+    REAL4 distError = 0;
+
+    CoincInspiralTable *tmpCoinc = thisCoinc;
+    thisCoinc = thisCoinc->next;
+
+    for ( ifoA = 0; ifoA < LAL_NUM_IFO; ifoA++ )
+    {
+      kappaA = accuracyParams->ifoAccuracy[ifoA].kappa;
+      epsilonA = accuracyParams->ifoAccuracy[ifoA].epsilon;
+      
+      for ( ifoB = ifoA + 1; ifoB < LAL_NUM_IFO; ifoB++ )
+      {
+        kappaB = accuracyParams->ifoAccuracy[ifoB].kappa;
+        epsilonB = accuracyParams->ifoAccuracy[ifoB].epsilon;
+
+        if( tmpCoinc->snglInspiral[ifoA] && ( kappaA || epsilonA ) 
+            && tmpCoinc->snglInspiral[ifoB] && ( kappaB || epsilonB ) )
+        {
+          /* perform the distance consistency test */
+          sigmasqA = tmpCoinc->snglInspiral[ifoA]->sigmasq;
+          sigmasqB = tmpCoinc->snglInspiral[ifoB]->sigmasq;
+          distA = tmpCoinc->snglInspiral[ifoA]->eff_distance;
+          distB = tmpCoinc->snglInspiral[ifoB]->eff_distance;
+          snrA = tmpCoinc->snglInspiral[ifoA]->snr;
+          snrB = tmpCoinc->snglInspiral[ifoB]->snr;
+
+          if( ( sigmasqA > sigmasqB && 
+                fabs(distB - distA)/distA > epsilonB/snrB + kappaB ) ||
+              ( sigmasqB > sigmasqA &&
+                fabs(distA - distB)/distB > epsilonA/snrA + kappaA ) )
+          {
+            discardTrigger = 1;
+            break;
+          }
+        }
+      }
+     
+      if ( discardTrigger )
+      {
+        break;
+      }
+    }
+
+    if( discardTrigger )
+    {
+      XLALFreeCoincInspiral( &tmpCoinc );
+    }
+    else
+    {
+      if ( ! coincHead )
+      {
+        coincHead = tmpCoinc;
+      }
+      else
+      {
+        prevCoinc->next = tmpCoinc;
+      }
+      tmpCoinc->next = NULL;
+      prevCoinc = tmpCoinc;
+    }
+  }
+  *coincInspiral = coincHead;
+}
+
+
 
 /* <lalVerbatim file="CoincInspiralUtilsCP"> */
 void

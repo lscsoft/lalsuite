@@ -546,6 +546,11 @@ LALFreeCoincInspiral(
     CoincInspiralTable        **coincPtr
     );
 
+void
+XLALFreeCoincInspiral(
+    CoincInspiralTable        **coincPtr
+    );
+
 
 void
 LALAddSnglInspiralToCoinc(
@@ -559,6 +564,12 @@ LALSnglInspiralCoincTest(
     LALStatus                  *status,
     CoincInspiralTable         *coincInspiral,
     SnglInspiralTable          *snglInspiral,
+    InspiralAccuracyList       *accuracyParams
+    );
+
+void
+XLALInspiralDistanceCut(
+    CoincInspiralTable        **coincInspiral,
     InspiralAccuracyList       *accuracyParams
     );
 
