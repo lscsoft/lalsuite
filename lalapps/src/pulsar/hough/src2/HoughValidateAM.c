@@ -1,10 +1,12 @@
-/*
+/**
  *
- * Filename:  HoughValidateAM.c
- *
+ * \file  HoughValidateAM.c
+ * \author Badri Krishnan and Alicia Sintes
+   \brief  Checking improvements in Hough if amplitude modulation is considered.
+
  * Revision: $Id$
  * 
- * Checking improvements if amplitude modulation is considered
+ *
  * 
  ****************************************************/
 
@@ -55,7 +57,8 @@ int main( int argc, char *argv[]){
   static PulsarSignalParams  params;
   static SFTParams sftParams;
 
-  static UCHARPeakGram     pg1, pg2;
+  static UCHARPeakGram     pg1; 
+  /*   static UCHARPeakGram     pg2; */
   static COMPLEX8SFTData1  sft1;
   static REAL8PeriodoPSD   periPSD;
 
@@ -76,10 +79,14 @@ int main( int argc, char *argv[]){
   
   EphemerisData   *edat = NULL;
 
-  INT4   mObsCoh, j, numberCount1, numberCount2;
-  REAL8  nth1, nth2, erfcInv, houghFalseAlarm, meanAM, sigmaAM, varAM, mean, sigma;
+  INT4   mObsCoh, j;
+  REAL8  numberCount2, numberCount1;;
+  REAL8  nth1, nth2, erfcInv, houghFalseAlarm;
+  /*   REAl8  meanAM, sigmaAM, varAM, mean, sigma; */
+  REAL8  mean1, mean2, var1, var2, sumsq, peakprob;
   REAL8  sftBand;  
-  REAL8  timeBase, deltaF, normalizeThr, threshold, thresholdAM;
+  REAL8  timeBase, deltaF, normalizeThr, threshold;
+  /*   REAL8  thresholdAM; */
   UINT4  sftlength; 
   INT4   sftFminBin;
   REAL8  fHeterodyne;
@@ -103,6 +110,7 @@ int main( int argc, char *argv[]){
   /* amplitude modulation stuff */
   REAL4Vector *aVec, *bVec;
   REAL8 A, B, C, D, a, b;
+  REAL4Vector *weight;
   AMCoeffs amc; 
   AMCoeffsParams *amParams;
   EarthState earth;
@@ -404,11 +412,13 @@ int main( int argc, char *argv[]){
   amParams->polAngle = amParams->das->pSource->orientation ; /* These two have to be the same!!*/
   amParams->leapAcc = LALLEAPSEC_STRICT;
 
-  /* allocate memory for a[i] and b[i] */
+  /* allocate memory for a[i] and b[i] and weight */
   amc.a = NULL;
   amc.b = NULL;
+  weight = NULL;
   SUB( LALSCreateVector( &status, &(amc.a), mObsCoh), &status);
   SUB( LALSCreateVector( &status, &(amc.b), mObsCoh), &status);
+  SUB( LALSCreateVector( &status, &weight, mObsCoh), &status);
   /*   amc.a->length = mObsCoh; */
   /*   amc.a->data = (REAL4 *)LALMalloc(mObsCoh*sizeof(REAL4)); */
   /*   amc.b->length = mObsCoh; */
@@ -422,29 +432,62 @@ int main( int argc, char *argv[]){
   B = amc.B; /* note B is twice average of b[i]^2 */ 
   C = amc.C;
   D = amc.D;
-  
+
+  for (j=0; j<mObsCoh; j++) {
+    a = aVec->data[j];
+    b = bVec->data[j];
+    /* weight is proportional to a^2 + b^2
+       choose normalization so that sum of weights is mObsCoh */
+    weight->data[j] = 2.0 * (a*a + b*b)/(A+B);
+  }
+
+  /* calculate mean and variances */
+  /* 1 is for the usual hough transform 
+     2 is for weighted hough transform */
+  peakprob = exp(-uvar_peakThreshold); /* probability of peak selection */
+  houghFalseAlarm = 1.0e-10; /* overall false alarm rate */
+  erfcInv = gsl_cdf_ugaussian_Qinv (houghFalseAlarm)/sqrt(2); /* erfcinv(2*houghFalseAlarm */
+
+  /* usual number count threshold */ 
+  mean1 = mObsCoh * peakprob;
+  var1 = mObsCoh * peakprob * (1 - peakprob);
+  nth1 = mean1 + sqrt(2.0 * var1) * erfcInv;
+
+  /* threshold for weighted hough number count */
+  mean2 = mean1; /* this is due to normalization of weights */
+  /* find sum of weights squared */
+  sumsq = 0.0;
+  for (j=0; j<mObsCoh; j++) {
+    REAL8 tempW;
+    tempW = weight->data[j];
+    sumsq += tempW * tempW;
+  }
+  var2 = sumsq * peakprob * (1 - peakprob);
+  nth2 = mean2 + sqrt( 2.0 * var2) * erfcInv;
+
+
   /* *********************************************************************** */
   /* computing varAM */
-  {
-    INT4 j;
-    REAL8  x;
-    /* REAL8  y; */
-    
-    varAM = 0.0;
-    
-    /* y=0.0; */
-    for(j=0; j<mObsCoh; j++){
-      a = aVec->data[j];
-      b = bVec->data[j];
-      x = 2.0*(a*a + b*b)/(A+B) -1.0;
-      varAM += x*x;
-      /* y+=x; */
-    }
-    varAM = varAM/mObsCoh;
-    /* fprintf(stdout, "zero ?= %g\n", y); */
-
-  }
- 
+  /*   { */
+  /*     INT4 j; */
+  /*     REAL8  x; */
+  /*     /\* REAL8  y; *\/ */
+  
+  /*     varAM = 0.0; */
+  
+  /*     /\* y=0.0; *\/ */
+  /*     for(j=0; j<mObsCoh; j++){ */
+  /*       a = aVec->data[j]; */
+  /*       b = bVec->data[j]; */
+  /*       x = 2.0*(a*a + b*b)/(A+B) -1.0; */
+  /*       varAM += x*x; */
+  /*       /\* y+=x; *\/ */
+  /*     } */
+  /*     varAM = varAM/mObsCoh; */
+  /*     /\* fprintf(stdout, "zero ?= %g\n", y); *\/ */
+  
+  /*   } */
+  
   
   
   /* *********************************************************************** */
@@ -478,9 +521,9 @@ int main( int argc, char *argv[]){
   pg1.data = NULL;
   pg1.data = (UCHAR *)LALMalloc(sftlength* sizeof(UCHAR));
 
-  pg2.length = sftlength;
-  pg2.data = NULL;
-  pg2.data = (UCHAR *)LALMalloc(sftlength* sizeof(UCHAR));
+  /*   pg2.length = sftlength; */
+  /*   pg2.data = NULL; */
+  /*   pg2.data = (UCHAR *)LALMalloc(sftlength* sizeof(UCHAR)); */
 
   /* *********************************************************************** */
   /* generate signal and add to input sfts */  
@@ -536,16 +579,17 @@ int main( int argc, char *argv[]){
 	  pulsarTemplate1.latitude = pulsarTemplate.latitude + mmFactor * mmT * deltaTheta;
 	  pulsarTemplate1.longitude = pulsarTemplate.longitude + mmFactor * mmP * deltaTheta;
 	  pulsarTemplate1.spindown.data[0] = pulsarTemplate.spindown.data[0] /*+ mmFactor * mm * deltaFdot*/;
-	  
-	  numberCount1 = 0; /* usual number count */
-	  numberCount2 = 0; /* number count with amplitude modulation */
-	  meanAM = 0.0;  /* mean and variance for new distribution */
-	  sigmaAM = 0.0;
+	 
+	  /* initialize number counts */ 
+	  numberCount1 = 0.0; /* usual number count */
+	  numberCount2 = 0.0; /* number count with amplitude modulation */
+	  /* meanAM = 0.0; */  /* mean and variance for new distribution */
+	  /* sigmaAM = 0.0; */
 	  /* now calculate the number count for the template */
 	  for (j=0; j < mObsCoh; j++)  
 	    {
-	      INT4 index;
-	      REAL8 realThrAM;
+	      INT4 index, tempW;
+	      /* REAL8 realThrAM; */
 	      
 	      sft1.epoch.gpsSeconds = timeV.data[j].gpsSeconds;
 	      sft1.epoch.gpsNanoSeconds = timeV.data[j].gpsNanoSeconds;
@@ -559,45 +603,57 @@ int main( int argc, char *argv[]){
 	   
 	      /* construct peakgram with usual threshold */
 	      SUB( LALSelectPeakColorNoise(&status,&pg1,&threshold,&periPSD), &status); 	 
+	      /*SUB( LALSelectPeakColorNoise(&status,&pg2,&thresholdAM,&periPSD), &status); */
+
 
 	      /*adjust threshold for amplitude modulation */
-	      a = aVec->data[j];
-	      b = bVec->data[j];
-	      thresholdAM = threshold * 0.5 * (A+B) / ( a*a + b*b);
-	      SUB( LALSelectPeakColorNoise(&status,&pg2,&thresholdAM,&periPSD), &status); 	 
+	      /* 	      a = aVec->data[j]; */
+	      /* 	      b = bVec->data[j]; */
+	      /* 	      thresholdAM = threshold * 0.5 * (A+B) / ( a*a + b*b); */
+
 	   
 	      SUB( ComputeFoft(&status, &foft, &pulsarTemplate1, &timeDiffV, &velV, timeBase), &status);
 	      
 	      index = floor( foft.data[j]*timeBase - sftFminBin + 0.5); 
 	      
+	      tempW = weight->data[j];
 	      numberCount1 += pg1.data[index]; 
-	      numberCount2 += pg2.data[index];
+	      numberCount2 += tempW * pg1.data[index];
 	      
-	      realThrAM = thresholdAM * normalizeThr;
-	
-	      meanAM += exp(-realThrAM);	      
-	      sigmaAM += exp(-realThrAM) * (1.0 - exp(-realThrAM));
-	    } 
+	      /* 	      realThrAM = thresholdAM * normalizeThr; */
+	      
+	      /* 	      meanAM += exp(-realThrAM);	       */
+	      /* 	      sigmaAM += exp(-realThrAM) * (1.0 - exp(-realThrAM)); */
+	    } /* end loop over sfts */
 
+	  fprintf(stdout, "%g    %g   %g    %g    %g    %g   %g    %g\n", 
+	          mean1, var1, nth1, numberCount1, mean2, var2, nth2, numberCount2);
+
+	  
 	  /* calculate the number count thresholds */
-	  mean = mObsCoh * exp(-uvar_peakThreshold);
-	  sigma = mean * ( 1.0 - exp(-uvar_peakThreshold));
-
-	  houghFalseAlarm = 1.0e-10;
-	  erfcInv = gsl_cdf_ugaussian_Qinv (houghFalseAlarm)/sqrt(2);    
-	  nth1 = mean + sqrt( 2 * sigma ) * erfcInv; 
-	  /* use mean and variance to get approximate threshold in Gaussian approximation */
-	  nth2 = meanAM + sqrt( 2 * sigmaAM ) * erfcInv; 
-	  /* 	  fprintf(stdout, "%g    %g    %d    %d    %g    %g    %d    %g    %g    %g    %g\n",  */
+	  /* 	  mean = mObsCoh * exp(-uvar_peakThreshold); */
+	  /* 	  sigma = mean * ( 1.0 - exp(-uvar_peakThreshold)); */
+	  
+	  /* 	  houghFalseAlarm = 1.0e-10; */
+	  /* 	  erfcInv = gsl_cdf_ugaussian_Qinv (houghFalseAlarm)/sqrt(2);     */
+	  /* 	  nth1 = mean + sqrt( 2 * sigma ) * erfcInv;  */
+	  /* 	  /\* use mean and variance to get approximate threshold in Gaussian approximation *\/ */
+	  /* 	  nth2 = meanAM + sqrt( 2 * sigmaAM ) * erfcInv;  */
+	  /* 	  /\* 	  fprintf(stdout, "%g    %g    %d    %d    %g    %g    %d    %g    %g    %g    %g\n",  *\/ */
+	  /* 	  /\* 	          uvar_alpha, uvar_delta, numberCount1, numberCount2,  *\/ */
+	  /* 	  /\* 	          nth1, nth2, mObsCoh, uvar_peakThreshold,  *\/ */
+	  /* 	  /\* 	          meanAM, sqrt(sigmaAM), varAM ); *\/ */
+	  /* 	  fprintf(stdout, "%g    %g    %d    %d    %g    %g    %g    %g \n",  */
 	  /* 	          uvar_alpha, uvar_delta, numberCount1, numberCount2,  */
-	  /* 	          nth1, nth2, mObsCoh, uvar_peakThreshold,  */
-	  /* 	          meanAM, sqrt(sigmaAM), varAM ); */
-	  fprintf(stdout, "%g    %g    %d    %d    %g    %g    %g    %g \n", 
-	          uvar_alpha, uvar_delta, numberCount1, numberCount2, 
-	          nth1, nth2, (numberCount1 -mean)/sqrt(sigma), (numberCount2 - meanAM)/sqrt(sigmaAM) );
-	}
-    }
+	  /* 	          nth1, nth2, (numberCount1 -mean)/sqrt(sigma), (numberCount2 - meanAM)/sqrt(sigmaAM) ); */
+
+	  
+
+	}/* end loop over mmP */
+    }/* end loop over mmT */
   
+
+
   /* *********************************************************************** */
   /* free structures created by signal generation routines */
   LALFree(signalTseries->data->data);
@@ -624,7 +680,7 @@ int main( int argc, char *argv[]){
   LALFree(periPSD.psd.data);
 
   LALFree(pg1.data);
-  LALFree(pg2.data);
+  /*   LALFree(pg2.data); */
 
   /* free amParams */
   LALFree(amParams->das->pSource);
@@ -632,7 +688,7 @@ int main( int argc, char *argv[]){
   LALFree(amParams);
   SUB( LALSDestroyVector( &status, &(amc.a)), &status);
   SUB( LALSDestroyVector( &status, &(amc.b)), &status);
-
+  SUB( LALSDestroyVector( &status, &weight), &status);
   /*   LAL(amc.a->data); */
   /*   LALFree(amc.b->data); */
 
