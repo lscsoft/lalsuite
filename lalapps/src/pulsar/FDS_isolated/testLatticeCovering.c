@@ -97,7 +97,8 @@ int testCovering2(void);
 void initUserVars (LALStatus *status);
 static int writeREAL8VectorList (FILE *fp, const REAL8VectorList *list);
 static int print_matrix (const gsl_matrix *m);
-static int print_vector (const gsl_vector *v);
+
+/* static int print_vector (const gsl_vector *v); */
 
 int plot2DCovering (FILE *fp, const REAL8VectorList *list, const REAL8Vector *metric, REAL8 mismatch);
 
@@ -463,7 +464,7 @@ print_matrix (const gsl_matrix *m)
   return 0;
 } /* print_matrix() */
 
-
+#if 0
 int
 print_vector (const gsl_vector *v)
 {
@@ -483,7 +484,7 @@ print_vector (const gsl_vector *v)
 
   return 0;
 } /* print_vector() */
-
+#endif
 
 /* write a REAL8VectorList to a file */
 int
