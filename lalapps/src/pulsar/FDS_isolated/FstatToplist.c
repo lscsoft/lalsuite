@@ -132,13 +132,13 @@ int write_toplist_to_fp(toplist_t*tl, FILE*fp, UINT4*checksum) {
    return(c);
 }
 
-
+typedef TOPLISTLINE* _dummy_t;
 /* ordering function for sorting the list */
 static int _toplist_qsort_function(const void *ppa, const void *ppb) {
-    const TOPLISTLINE**pa = ppa;
-    const TOPLISTLINE**pb = ppb;
-    const TOPLISTLINE*a = *pa;
-    const TOPLISTLINE*b = *pb;
+    const _dummy_t *pa = ppa;
+    const _dummy_t *pb = ppb;
+    const TOPLISTLINE *a = *pa;
+    const TOPLISTLINE *b = *pb;
 
     if      (a->Freq < b->Freq)
 	return -1;
