@@ -7,7 +7,7 @@ LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 ## not useable before automake-1.6
 #AM_LDFLAGS = -all-static
 
-bin_PROGRAMS = makefakedata_v2 lalapps_Makefakedata compareSFTs dumpSFT makefakedatabinary makefakedata_test
+bin_PROGRAMS = makefakedata_v2 lalapps_Makefakedata compareSFTs dumpSFT makefakedatabinary 
 
 EXTRA_PROGRAMS = s3inject
 
@@ -20,8 +20,6 @@ compareSFTs_SOURCES = compareSFTs.c
 dumpSFT_SOURCES = dumpSFT.c sft_extra.c sft_extra.h
 
 makefakedatabinary_SOURCES = makefakedatabinary.c
-
-makefakedata_test_SOURCES = makefakedata_test.c sft_extra.c sft_extra.h
 
 s3inject_SOURCES = s3inject.c
 
