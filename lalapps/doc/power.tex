@@ -1668,12 +1668,10 @@ If a \option{--user-tag} is not specified on the command line, the
 \item[\option{--help}] Print a help message.
 
 \item[\option{--gps-start-time} \parm{tstart}]
-Optional.  Start time of the injection data to be created. Defaults to the
-start of S2, Feb 14 2003 16:00:00 UTC (GPS time 729273613)
+Required.  Start time of the injection data to be created.
 
 \item[\option{--gps-end-time} \parm{tend}]
-Optional. End time of the injection data to be created. Defaults to the end
-of S2, Apr 14 2003 15:00:00 UTC (GPS time 734367613).
+Required.  End time of the injection data to be created.
 
 \item[\option{--time-step} \parm{tstep}]
 Optional. Sets the time step interval between injections. The injections
@@ -1799,6 +1797,8 @@ Optional.  This specifies the maximum number of the simulated waveforms to be in
 \item[Example]
 \begin{verbatim}
 lalapps_binj \
+--gps-start-time 794063160 \
+--gps-end-time 794063610.5 \
 --time-step 1000 \
 --flow 130 \
 --fhigh 600 \
