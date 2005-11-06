@@ -218,6 +218,7 @@ initGeneral (LALStatus *status, ConfigVariables *cfg, const UserInput *uvar)
 
   INITSTATUS( status, "initGeneral", rcsid );
   ATTATCHSTATUSPTR (status);
+  static LALDetector nautilus;
 
   TRY ( LALFloatToGPS (status->statusPtr, &(cfg->startTimeGPS), &uvar->startTime), status);
 
@@ -258,7 +259,8 @@ initGeneral (LALStatus *status, ConfigVariables *cfg, const UserInput *uvar)
   else if ( !strcmp (uvar->IFO, "LHO") || !strcmp (uvar->IFO, "2") )
     cfg->site = &lalCachedDetectors[LALDetectorIndexLHODIFF];
   else if ( !strcmp (uvar->IFO, "NAUTILUS") || !strcmp (uvar->IFO, "3")) {
-    TRY (CreateNautilusDetector (status->statusPtr, cfg->site), status);
+    TRY (CreateNautilusDetector (status->statusPtr, &nautilus), status);
+    cfg->site = &nautilus;
   }
   else if ( !strcmp (uvar->IFO, "VIRGO") || !strcmp (uvar->IFO, "4") )
     cfg->site = &lalCachedDetectors[LALDetectorIndexVIRGODIFF];
@@ -318,6 +320,7 @@ printPulsarMetric(LALStatus *status, const UserInput *uvar, const ConfigVariable
   REAL8Vector *metric = NULL;
   PtoleMetricIn metricpar = empty_metricpar;
   UINT4 dim, a;
+  static LALDetector this_detector;
 
   INITSTATUS (status, "printPulsarMetric", rcsid);
   ATTATCHSTATUSPTR (status);
@@ -333,7 +336,8 @@ printPulsarMetric(LALStatus *status, const UserInput *uvar, const ConfigVariable
   metricpar.duration = (REAL4) uvar->duration;
   metricpar.maxFreq = uvar->Freq;
   
-  metricpar.site = config->site;
+  this_detector = *(config->site);
+  metricpar.site = &this_detector;
   metricpar.ephemeris = config->ephemeris;	/* needed for ephemeris-metrics */
   metricpar.metricType = uvar->metricType;
   

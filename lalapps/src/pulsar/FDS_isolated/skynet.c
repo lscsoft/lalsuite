@@ -78,12 +78,13 @@ int main( int argc, char *argv[] )
   REAL4 max_frequency  = 1e3;        /* maximum frequency of search (Hz) */
 
   /* other useful variables */
-  FILE *fp;                       /* where to write the output */
-  REAL4 f1;
   int option_index = 0;  /* getopt_long option index */
   int opt;               /* Argument for switch statement with getopt_long */
   int detector_argument; /* setting of detector location */
   int j,k;
+  CHAR earth[] = "earth00-04.dat";
+  CHAR sun[] = "sun00-04.dat";
+  LALDetector this_detector;
 
   /* Set getopt_long option arguments */
   static struct option long_options[] = {
@@ -105,8 +106,8 @@ int main( int argc, char *argv[] )
   search.duration = duration;
   search.maxFreq = max_frequency;
   search.ephemeris = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
-  search.ephemeris->ephiles.earthEphemeris = "earth00-04.dat";
-  search.ephemeris->ephiles.sunEphemeris = "sun00-04.dat";
+  search.ephemeris->ephiles.earthEphemeris = earth;
+  search.ephemeris->ephiles.sunEphemeris = sun;
   search.ephemeris->leap = 13; /* not valid for 2005 - must change */
   search.position.system = COORDINATESYSTEM_EQUATORIAL;
 
@@ -195,7 +196,7 @@ printf( "parsed options...\n" );
  printf( "Set metric type\n" );
 
 
- /* Set detector location  */
+ /* set detector location  */
  switch( detector ) {
 
  case hanford:
@@ -225,8 +226,8 @@ printf( "parsed options...\n" );
  }
  printf( "Set detector location\n" );
 
-
- search.site = &lalCachedDetectors[detector_argument];
+ this_detector = lalCachedDetectors[detector_argument];
+ search.site = &this_detector;
 
  LAL_CALL( LALPulsarMetric( &stat, &outputMetric, &search ), &stat );
 
