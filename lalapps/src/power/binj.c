@@ -37,8 +37,8 @@ int snprintf(char *str, size_t size, const  char  *format, ...);
 "lalapps_binj [options]\n"\
 "\nDefaults are shown in brackets\n\n" \
 "  --help                   display this message\n"\
-"  --gps-start-time TIME    start injections at GPS time TIME (729273613)\n"\
-"  --gps-end-time TIME      end injections at GPS time TIME (734367613)\n"\
+"  --gps-start-time TIME    start injections at GPS time TIME\n"\
+"  --gps-end-time TIME      end injections at GPS time TIME\n"\
 "  --time-step STEP         space injections STEP / pi seconds appart (210)\n"\
 "  --coordinates COORDS     coordinate system to use for injections\n"\
 "  --flow FLOW              first frequency of injection (150.0)\n"\
@@ -255,12 +255,10 @@ int ligo_tama_output(FILE *fpout, SimBurstTable *simBursts)
 
 int main( int argc, char *argv[] ){
 
-  const long S2StartTime   = 729273613;  /* Feb 14 2003 16:00:00 UTC */
-  const long S2StopTime    = 734367613;  /* Apr 14 2003 15:00:00 UTC */
-  long gpsStartTime = S2StartTime;
-  long gpsEndTime = S2StopTime;
+  INT8 gpsStartTime = 0;
+  INT8 gpsEndTime = 0;
   double meanTimeStep = 210 / LAL_PI; /* seconds between injections     */
-  long long tinj = 1000000000LL * gpsStartTime;
+  INT8 tinj;
 
   size_t ninj;
   int rand_seed = 1;
@@ -377,7 +375,6 @@ int main( int argc, char *argv[] ){
   {
     /* getopt_long stores long option here */
     int option_index = 0;
-    long int gpsinput;
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
@@ -406,52 +403,31 @@ int main( int argc, char *argv[] ){
         break;
 
       case 'a':
-        gpsinput = atol( optarg );
-        if ( gpsinput < 441417609 )
-        {
-          fprintf( stderr, "invalid argument to --%s:\n"
-              "GPS start time is prior to " 
-              "Jan 01, 1994  00:00:00 UTC:\n"
-              "(%ld specified)\n",
-              long_options[option_index].name, gpsinput );
+	XLALClearErrno();
+	{
+	LIGOTimeGPS tmp;
+	XLALStrToGPS(&tmp, optarg, NULL);
+	gpsStartTime = XLALGPSToINT8NS(&tmp);
+	}
+        if(xlalErrno || (gpsStartTime < LAL_INT8_C(441417609000000000)) || (gpsStartTime > LAL_INT8_C(999999999000000000))) {
+          fprintf( stderr, "invalid --%s (%s specified)\n", long_options[option_index].name, optarg);
           exit( 1 );
         }
-        if ( gpsinput > 999999999 )
-        {
-          fprintf( stderr, "invalid argument to --%s:\n"
-              "GPS start time is after " 
-              "Sep 14, 2011  01:46:26 UTC:\n"
-              "(%ld specified)\n", 
-              long_options[option_index].name, gpsinput );
-          exit( 1 );
-        }
-        gpsStartTime = gpsinput;
-        tinj = 1000000000LL * gpsStartTime;
-        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "int", "%ld", gpsinput );
+        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "string", "%s", optarg );
         break;
 
       case 'b':
-        gpsinput = atol( optarg );
-        if ( gpsinput < 441417609 )
-        {
-          fprintf( stderr, "invalid argument to --%s:\n"
-              "GPS start time is prior to " 
-              "Jan 01, 1994  00:00:00 UTC:\n"
-              "(%ld specified)\n",
-              long_options[option_index].name, gpsinput );
+	XLALClearErrno();
+	{
+	LIGOTimeGPS tmp;
+	XLALStrToGPS(&tmp, optarg, NULL);
+	gpsEndTime = XLALGPSToINT8NS(&tmp);
+	}
+        if(xlalErrno || (gpsEndTime < LAL_INT8_C(441417609000000000)) || (gpsEndTime > LAL_INT8_C(999999999000000000))) {
+          fprintf( stderr, "invalid --%s (%s specified)\n", long_options[option_index].name, optarg);
           exit( 1 );
         }
-        if ( gpsinput > 999999999 )
-        {
-          fprintf( stderr, "invalid argument to --%s:\n"
-              "GPS start time is after " 
-              "Sep 14, 2011  01:46:26 UTC:\n"
-              "(%ld specified)\n", 
-              long_options[option_index].name, gpsinput );
-          exit( 1 );
-        }
-        gpsEndTime = gpsinput;
-        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "int", "%ld", gpsinput );
+        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "string", "%s", optarg );
         break;
 
       case 'd':
@@ -624,7 +600,13 @@ int main( int argc, char *argv[] ){
     }
   }
 
+  tinj = gpsStartTime;
+
   /* check some of the input parameters for consistency */
+  if(!gpsStartTime || !gpsEndTime) {
+    fprintf( stderr, "--gps-start-time and --gps-end-time are both required\n");
+    exit( 1 );
+  }
   if( (useRandomStrain==1) )
   {
         fprintf( stderr, "Must supply upper and lower limits when using"
@@ -701,7 +683,7 @@ int main( int argc, char *argv[] ){
         tau = quality / ( sqrt(2.0) * LAL_PI * freq);
 
       tinj += (long long)( 1e9 * meanTimeStep );
-      if ( tinj > 1000000000LL * gpsEndTime )
+      if ( tinj > gpsEndTime )
       {
         break;
       }
@@ -973,12 +955,12 @@ int main( int argc, char *argv[] ){
     if ( userTag )
     {
       LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%s-%d-%d.xml", 
-          userTag, gpsStartTime, gpsEndTime - gpsStartTime );
+          userTag, (int) (gpsStartTime / LAL_INT8_C(1000000000)), (int) ((gpsEndTime - gpsStartTime) / LAL_INT8_C(1000000000)) );
     }
     else
     {
       LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS-%d-%d.xml", 
-          gpsStartTime, gpsEndTime - gpsStartTime );
+          (int) (gpsStartTime / LAL_INT8_C(1000000000)), (int) ((gpsEndTime - gpsStartTime) / LAL_INT8_C(1000000000)) );
     }
 
     LAL_CALL( LALOpenLIGOLwXMLFile( &status, &xmlfp, fname), &status );
@@ -1017,12 +999,12 @@ int main( int argc, char *argv[] ){
       if ( userTag )
       {
         LALSnprintf( fname, sizeof(fname), "HLT-INJECTIONS_%s-%d-%d.txt", 
-            userTag, gpsStartTime, gpsEndTime - gpsStartTime );
+            userTag, (int) (gpsStartTime / LAL_INT8_C(1000000000)), (int) ((gpsEndTime - gpsStartTime) / LAL_INT8_C(1000000000)) );
       }
       else
       {
         LALSnprintf( fname, sizeof(fname), "HLT-INJECTIONS-%d-%d.txt", 
-            gpsStartTime, gpsEndTime - gpsStartTime );
+            (int) (gpsStartTime / LAL_INT8_C(1000000000)), (int) ((gpsEndTime - gpsStartTime) / LAL_INT8_C(1000000000)) );
       }
       fpout = fopen(fname,"w");
       ligo_tama_output(fpout,injections.simBurstTable);
