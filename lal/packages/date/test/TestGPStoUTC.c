@@ -177,10 +177,11 @@ int main(int argc, char *argv[])
 
   /*
    * UPDATEME
-   * GPS 835747213 == 2006-07-01 00:00:00 (one second past expiry)
+   * GPS 835747214 == 2006-07-01 00:00:00 (one second past expiry)
    * Expect to fail with status code 5
+   * (see the static constant maxtestedGPS in src/GPStoUTC.c)
    */
-  gpsTime.gpsSeconds     = 835747213;
+  gpsTime.gpsSeconds     = 835747214; /* use maxtestedGPS + 1 */
   gpsTime.gpsNanoSeconds = 0;
   
   LALGPStoUTC(&status, &utcDate, &gpsTime, &accuracy);

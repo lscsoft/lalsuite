@@ -116,7 +116,7 @@ char *asctime_r( const struct tm *, char * );
 /* latest time for which this routine will work: 2006-06-30 23:59:59 UTC */
 /* GPS for maxtestedGPS computed using tconvert (part of ligotools) by
    P. Shawhan */
-static const INT4 maxtestedGPS = 835747212;
+static const INT4 maxtestedGPS = 835747213;
 
 /*
  * Convert GPS seconds to UTC date-time contained in LALDate structure
@@ -412,29 +412,29 @@ LALUTCtoGPS (LALStatus                *status,
    */
   static leap_sec_t leap_sec_data[] =
     {
-      {72, 6, 1},
-      {73, 0, 1},
-      {74, 0, 1},
-      {75, 0, 1},
-      {76, 0, 1},
-      {77, 0, 1},
-      {78, 0, 1},
-      {79, 0, 1},
-      {80, 0, 1},
-      {81, 6, 1},
-      {82, 6, 1},
-      {83, 6, 1},
-      {85, 6, 1},
-      {88, 0, 1},
-      {90, 0, 1},
-      {91, 0, 1},
-      {92, 6, 1},
-      {93, 6, 1},
-      {94, 6, 1},
-      {96, 0, 1},
-      {97, 6, 1},
-      {99, 0, 1},
-      {106, 0, 1},
+      {72, LALMONTH_JAN, 1},
+      {73, LALMONTH_JAN, 1},
+      {74, LALMONTH_JAN, 1},
+      {75, LALMONTH_JAN, 1},
+      {76, LALMONTH_JAN, 1},
+      {77, LALMONTH_JAN, 1},
+      {78, LALMONTH_JAN, 1},
+      {79, LALMONTH_JAN, 1},
+      {80, LALMONTH_JAN, 1},
+      {81, LALMONTH_JUL, 1},
+      {82, LALMONTH_JUL, 1},
+      {83, LALMONTH_JUL, 1},
+      {85, LALMONTH_JUL, 1},
+      {88, LALMONTH_JAN, 1},
+      {90, LALMONTH_JAN, 1},
+      {91, LALMONTH_JAN, 1},
+      {92, LALMONTH_JUL, 1},
+      {93, LALMONTH_JUL, 1},
+      {94, LALMONTH_JUL, 1},
+      {96, LALMONTH_JAN, 1},
+      {97, LALMONTH_JUL, 1},
+      {99, LALMONTH_JAN, 1},
+      {106, LALMONTH_JAN, 1},
     };
 
 
@@ -628,6 +628,7 @@ LALUTCtoGPS (LALStatus                *status,
  1996 JAN  1 =JD 2450083.5  TAI-UTC=  30.0       S + (MJD - 41317.) X 0.0      S
  1997 JUL  1 =JD 2450630.5  TAI-UTC=  31.0       S + (MJD - 41317.) X 0.0      S
  1999 JAN  1 =JD 2451179.5  TAI-UTC=  32.0       S + (MJD - 41317.) X 0.0      S
+ 2006 JAN  1 =JD 2453736.5  TAI-UTC=  33.0       S + (MJD - 41317.) X 0.0      S
  */
 
 typedef struct gps_leap_sec {
@@ -667,7 +668,7 @@ LALLeapSecs (LALStatus                    *status,
       {504489611, 30},  /* 1996-Jan-01 */
       {551750412, 31},  /* 1997-Jul-01 */
       {599184013, 32},  /* 1999-Jan-01 */
-      {820108813, 33},  /* 2006-Jan-01 */
+      {820108814, 33},  /* 2006-Jan-01 */
     };
   
   /* number of times leap seconds occur */
