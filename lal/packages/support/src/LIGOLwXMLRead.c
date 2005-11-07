@@ -261,7 +261,7 @@ MetaTableDirectory * XLALCreateMetaTableDir(
           if ( (tmpTableDir[i].pos = 
                 MetaioFindColumn( env, tmpTableDir[i].name )) < 0 )
           {
-	    if ( ! strcmp(tableDir[i].name, "clusterT") )
+	    if ( ! strcmp(tmpTableDir[i].name, "clusterT") )
 	      {
 		fprintf( stderr, "The clusterT column is not populated, continuing anyway\n");
 	      }
