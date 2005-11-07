@@ -237,6 +237,65 @@ void LALPeriodoToPSDRngMed (LALStatus  *status,
 
 
 
+/* *******************************  <lalVerbatim file="NormalizeSFTRngMedD"> */
+/** \brief  Calculates running psd for a single sft using the running median
+    \param  *sft : pointer to COMPLEX8FrequencySeries (the SFT data)
+    \param blockSize : Running median block size
+    \param *psd : pointer to correctly allocated REAL8FrequencySeries containing psd estimate 
+*/
+void LALSFTtoPSDRngMed (LALStatus  *status,
+			REAL8FrequencySeries  *psd,
+			const COMPLEX8FrequencySeries *sft,
+			UINT4                  blockSize)
+{/*   *********************************************  </lalVerbatim> */
+
+  REAL8FrequencySeries periodo;
+  INT4 length;
+
+  INITSTATUS (status, "LALSFTtoPSDRngMed", NORMALIZESFTRNGMEDC);
+  ATTATCHSTATUSPTR (status);
+
+  /* check argments are not NULL */
+  ASSERT (sft, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+  ASSERT (sft->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+  ASSERT (sft->data->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
+  ASSERT (sft->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+  ASSERT (psd, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);  
+  ASSERT (psd->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+  ASSERT (psd->data->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);  
+  ASSERT (psd->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+  ASSERT (blockSize > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
+
+
+  length = sft->data->length;
+  
+  periodo.data = NULL;
+  periodo.data = (REAL8Sequence *)LALMalloc(sizeof(REAL8Sequence));
+  periodo.data->length = length;
+  periodo.data->data = (REAL8 *)LALMalloc( length * sizeof(REAL8));
+
+  /* calculate the periodogram */
+  TRY (LALSFTtoPeriodogram (status->statusPtr, &periodo, sft), status);
+
+  /* calculate the psd */
+  TRY (LALPeriodoToPSDRngMed (status->statusPtr, &psd, &periodo, blockSize), status);
+
+
+  /* free memory */
+  LALFree(periodo.data->data);
+  LALFree(periodo.data);
+
+
+  DETATCHSTATUSPTR (status);
+  /* normal exit */
+  RETURN (status);
+}
+
+
+
+
+
+
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* *******************************  <lalVerbatim file="NormalizeSFTRngMedD"> */
 /** \brief Normalizes a sft based on RngMed 
@@ -249,8 +308,9 @@ void LALNormalizeSFT (LALStatus  *status,
 		      UINT4     blockSize, 
 		      UCHAR    normSwitch)
 {/*   *********************************************  </lalVerbatim> */
+
   INT4 j, length;
-  REAL8FrequencySeries psd, periodo;
+  REAL8FrequencySeries psd;
 
   INITSTATUS (status, "LALNormalizeSFT", NORMALIZESFTRNGMEDC);
   ATTATCHSTATUSPTR (status);
@@ -263,22 +323,15 @@ void LALNormalizeSFT (LALStatus  *status,
   ASSERT (blockSize > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
 
   length = sft->data->length;
-  
+  /* allocate memory for psd */  
   psd.data = NULL;
   psd.data = (REAL8Sequence *)LALMalloc(sizeof(REAL8Sequence));
   psd.data->length = length;
   psd.data->data = (REAL8 *)LALMalloc( length * sizeof(REAL8));
 
-  periodo.data = NULL;
-  periodo.data = (REAL8Sequence *)LALMalloc(sizeof(REAL8Sequence));
-  periodo.data->length = length;
-  periodo.data->data = (REAL8 *)LALMalloc( length * sizeof(REAL8));
-
-  /* calculate the periodogram */
-  TRY (LALSFTtoPeriodogram (status->statusPtr, &periodo, sft), status);
 
   /* calculate the psd */
-  TRY (LALPeriodoToPSDRngMed (status->statusPtr, &psd, &periodo, blockSize), status);
+  TRY (LALSFTtoPSDRngMed (status->statusPtr, &psd, sft, blockSize), status);
 
   /* loop over sft and normalize */
   for (j=0; j<length; j++) {
@@ -296,12 +349,9 @@ void LALNormalizeSFT (LALStatus  *status,
     }
   }
 
+  /* free psd */
   LALFree(psd.data->data);
   LALFree(psd.data);
-
-  LALFree(periodo.data->data);
-  LALFree(periodo.data);
-
 
   DETATCHSTATUSPTR (status);
   /* normal exit */

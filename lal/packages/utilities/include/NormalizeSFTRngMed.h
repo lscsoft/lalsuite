@@ -161,6 +161,11 @@ void LALPeriodoToPSDRngMed (LALStatus  *status,
 			    const REAL8FrequencySeries  *periodo,
 			    UINT4                  blockSize);
 
+void LALSFTtoPSDRngMed (LALStatus  *status,
+			REAL8FrequencySeries  *psd,
+			const COMPLEX8FrequencySeries *SFT,
+			UINT4                  blockSize);
+
 void LALNormalizeSFT (LALStatus  *status,
 		      SFTtype  *sft,
 		      UINT4     blockSize,
@@ -171,6 +176,7 @@ void LALNormalizeSFTVect (LALStatus  *status,
 			  UINT4     blockSize,
 			  UCHAR    normSwitch); /* normSwitch == 0 for frequency domain 
 						   normalization and == 1 for time domain */
+
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */
