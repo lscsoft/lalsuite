@@ -165,6 +165,7 @@ simulated data.
 \item[Synopsis]
 \prog{lalapps\_power} \newline \hspace*{0.5in}
 \option{--bandwidth}~\parm{Hz} \newline \hspace*{0.5in}
+[\option{--burstinjection-file}~\parm{file name}] \newline \hspace*{0.5in}
 [\option{--calibrated-data}~\parm{high pass frequency}] \newline \hspace*{0.5in}
 [\option{--calibration-cache}~\parm{cache file}] \newline \hspace*{0.5in}
 \option{--channel-name}~\parm{string} \newline \hspace*{0.5in}
@@ -177,7 +178,6 @@ simulated data.
 \option{--gps-start-time}~\parm{seconds} \newline \hspace*{0.5in}
 [\option{--help}] \newline \hspace*{0.5in}
 \option{--high-pass}~\parm{Hz} \newline \hspace*{0.5in}
-[\option{--burstinjection-file}~\parm{file name}] \newline \hspace*{0.5in}
 [\option{--inspiralinjection-file}~\parm{file name}] \newline \hspace*{0.5in}
 \option{--lnthreshold}~\parm{threshold} \newline \hspace*{0.5in}
 \option{--low-freq-cutoff}~\parm{Hz} \newline \hspace*{0.5in}
@@ -252,6 +252,14 @@ not include spaces and should use underscores instead.
 \item[\option{--bandwidth} \parm{Hz}]
 Set the bandwidth in which the search is to be performed.  This must be a
 power of 2.
+
+\item[\option{--burstinjection-file} \parm{file name}]
+Use \parm{file name} as a LIGO lightweight XML file containing a list of
+injections to be made.   The file should contain a \verb+sim_burst+ table
+which is used to set information about the types of burst injections to be made.
+This file may be constructed by hand, the
+\verb+lalapps_binj+ program described in Section
+\ref{program:lalapps-binj}.
 
 \item[\option{--calibrated-data} \parm{high pass frequency}]
 When the \option{--calibrated-data} option is supplied, input time series
@@ -338,14 +346,6 @@ conditioning.  This argument sets the cut-off frequency for this filter.
 In older versions of the program, this frequency has hard-coded to be
 \unit{10}{\hertz} below the lower bound of the frequency band being
 searched or \unit{150}{Hz}, which ever was lower.
-
-\item[\option{--burstinjection-file} \parm{file name}]
-Use \parm{file name} as a LIGO lightweight XML file containing a list of
-injections to be made.   The file should contain a \verb+sim_burst+ table
-which is used to set information about the types of burst injections to be made.
-This file may be constructed by hand, the
-\verb+lalapps_binj+ program described in Section
-\ref{program:lalapps-binj}.
 
 \item[\option{--inspiralinjection-file} \parm{file name}]
 Use \parm{file name} as a LIGO lightweight XML file containing a list of inspiral
