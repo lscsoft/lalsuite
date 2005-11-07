@@ -6,9 +6,9 @@ extra_args="$@"
 ##---------- names of codes and input/output files  
 saf_code="lalapps_SemiAnalyticF"
 mfd_code="lalapps_Makefakedata"
-cfs_code="./lalapps_ComputeFStatistic"
-cfsv2_code="./ComputeFStatistic_v2"
-cmp_code="./compareFstats"
+cfs_code="lalapps_ComputeFStatistic"
+cfsv2_code="ComputeFStatistic_v2"
+cmp_code="compareFstats"
 
 SFTdir="./testSFTs"
 
