@@ -261,9 +261,15 @@ MetaTableDirectory * XLALCreateMetaTableDir(
           if ( (tmpTableDir[i].pos = 
                 MetaioFindColumn( env, tmpTableDir[i].name )) < 0 )
           {
-            fprintf( stderr, "unable to find column %s\n", 
-                tmpTableDir[i].name );
-            XLAL_ERROR_NULL( func, XLAL_EFAILED );
+	    if ( ! strcmp(tableDir[i].name, "clusterT") )
+	      {
+		fprintf( stderr, "The clusterT column is not populated, continuing anyway\n");
+	      }
+	    else
+	      {
+		fprintf( stderr, "unable to find column %s\n", tmpTableDir[i].name );
+		XLAL_ERROR_NULL( func, XLAL_EFAILED );
+	      }
           }
         }
 
@@ -1121,9 +1127,17 @@ LALCreateMetaTableDir(
           if ( (tmpTableDir[i].pos = 
                 MetaioFindColumn( env, tmpTableDir[i].name )) < 0 )
           {
-            fprintf( stderr, "unable to find column %s\n", 
-                tmpTableDir[i].name );
-            ABORT(status,LIGOLWXMLREADH_ENCOL,LIGOLWXMLREADH_MSGENCOL);
+	    if ( ! strcmp(tmpTableDir[i].name, "clusterT") )
+	      {
+		fprintf( stderr, 
+			 "The clusterT column is not populated, continuing anyway\n");
+	      }
+	    else
+	      {
+		fprintf( stderr, "unable to find column %s\n", 
+			 tmpTableDir[i].name );
+		ABORT(status,LIGOLWXMLREADH_ENCOL,LIGOLWXMLREADH_MSGENCOL);
+	      }
           }
         }
 
