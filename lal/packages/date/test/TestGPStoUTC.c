@@ -205,7 +205,8 @@ int main(int argc, char *argv[])
     }
 
   /* UPDATEME */
-  sprintf(refstamp, "2006-06-30 23:59:59 UTC Fri");
+  /* the date here should be one second after maxtestedGPS */
+  sprintf(refstamp, "2006-07-01 00:00:00 UTC Sat");
   
   if (lalDebugLevel > 0)
     {
