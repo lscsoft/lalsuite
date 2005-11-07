@@ -36,8 +36,8 @@ Usage: MakeSFTDAG [options]
   -e, --gps-end-time         (optional) GPS end time of data segment (unused except by onasys)
   -a, --analysis-start-time  GPS start time of data from which to generate SFTs (optional and unused if a segment file is given)
   -b, --analysis-end-time    GPS end time of data from which to generate SFTs (optional and unused if a segment file is given)
-  -f, --dag-file             filename for .dag file (excluding the .dag)
-  -t, --aux-path             (optional) path to auxiliary data files (unused except by onasys)
+  -f, --dag-file             filename for .dag file (should end in .dag)
+  -t, --aux-path             (optional) path to datafind.sub, MakeSFTs.sub, and other auxiliary data files (default is .)
   -G, --tag-string           tag string used in names of various files unique to jobs that will run under the DAG
   -d, --input-data-type      input data type for use with the LSCdataFind --type option
   -x, --extra-datafind-time  (optional) extra time to subtract/add from/to start/end time arguments of LSCdataFind (default is 0)
@@ -61,17 +61,17 @@ Usage: MakeSFTDAG [options]
 #
 # FUNCTION THAT WRITE ONE JOB TO DAG FILE
 #
-def writeToDag(dagFID, nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, extraDatafindTime, useHoT, tagString):
+def writeToDag(dagFID, nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, extraDatafindTime, useHoT, tagString, auxPath):
   LSCdataFind = 'LSCdataFind_%i' % nodeCount
   MakeSFTs    = 'MakeSFTs_%i' % nodeCount
   startTimeDatafind = startTimeThisNode - extraDatafindTime
   endTimeDatafind = endTimeThisNode + extraDatafindTime
   tagStringOut = '%s_%i' % (tagString, nodeCount)
   cacheFile   = '%s/%s-%s-%s.cache' % (cachePath, site,startTimeDatafind,endTimeDatafind)
-  dagFID.write('JOB %s datafind.sub\n' % LSCdataFind)
+  dagFID.write('JOB %s %s/datafind.sub\n' % (LSCdataFind,auxPath))
   dagFID.write('RETRY %s 10\n' % LSCdataFind)
   dagFID.write('VARS %s gpsstarttime="%s" gpsendtime="%s" observatory="%s" inputdatatype="%s" tagstring="%s"\n' % (LSCdataFind, startTimeDatafind, endTimeDatafind, site, inputDataType, tagStringOut))
-  dagFID.write('JOB %s MakeSFTs.sub\n' % MakeSFTs)
+  dagFID.write('JOB %s %s/MakeSFTs.sub\n' % (MakeSFTs,auxPath))
   dagFID.write('RETRY %s 1\n' % MakeSFTs)
   argList = '-f %s -t %s -p %s -C %s -s %s -e %s -N %s' %(filterKneeFreq, timeBaseline, outputSFTPath, cacheFile, startTimeThisNode, endTimeThisNode, channelName)
   if useHoT: argList = argList + ' -H'
@@ -123,7 +123,7 @@ gpsEndTime = None
 analysisStartTime = None
 analysisEndTime = None
 dagFileName = None
-auxPath = None
+auxPath = "."
 tagString = None
 inputDataType = None
 extraDatafindTime = 0L
@@ -346,7 +346,7 @@ site = channelName[0]
 nodeCount         = 0L
 
 # create the DAG file with the jobs to run
-dagFileName = dagFileName + '.dag'
+#dagFileName = dagFileName + '.dag'
 dagFID = file(dagFileName,'w')
 
 startTimeAllNodes = None
@@ -385,7 +385,7 @@ for seg in segList:
                # write jobs to dag for this node
                nodeCount = nodeCount + 1
                if (nodeCount == 1): startTimeAllNodes = startTimeThisNode
-               writeToDag(dagFID,nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, extraDatafindTime, useHoT, tagString)
+               writeToDag(dagFID,nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, extraDatafindTime, useHoT, tagString, auxPath)
                # Update for next node
                startTimeThisNode = endTimeThisNode
                numThisNode       = 0L
@@ -395,7 +395,7 @@ for seg in segList:
             # write jobs to dag for this node
             nodeCount = nodeCount + 1
             if (nodeCount == 1): startTimeAllNodes = startTimeThisNode
-            writeToDag(dagFID,nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, extraDatafindTime, useHoT, tagString)
+            writeToDag(dagFID,nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, extraDatafindTime, useHoT, tagString, auxPath)
     # END while (endTimeAllNodes < analysisEndTime)
 # END for seg in segList
 
