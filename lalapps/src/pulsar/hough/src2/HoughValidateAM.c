@@ -39,7 +39,7 @@ INT4 lalDebugLevel;
 #define H0 (1.0e-23)
 
 /* default file and directory names */
-#define SFTDIRECTORY "/home/badkri/fakesfts/"
+#define SFTDIRECTORY "/local_data/badkri/fakesfts/"
 #define FILEOUT "./ValidateAMOut"   
 #define TRUE (1==1)
 #define FALSE (1==0)
@@ -465,13 +465,13 @@ int main( int argc, char *argv[]){
   var2 = sumsq * peakprob * (1 - peakprob);
   nth2 = mean2 + sqrt( 2.0 * var2) * erfcInv;
 
-  { /* check sum weight = 1 */
-    REAL8 tempSum=0.0;
-    for (j=0; j<mObsCoh; j++) {
-      tempSum += weight->data[j];
-    }
-    fprintf(stdout, "%f\n", tempSum);
-  }
+  /*   { /\* check sum weight = 1 *\/ */
+  /*     REAL8 tempSum=0.0; */
+  /*     for (j=0; j<mObsCoh; j++) { */
+  /*       tempSum += weight->data[j]; */
+  /*     } */
+  /*     fprintf(stdout, "%f\n", tempSum); */
+  /*   } */
   /* *********************************************************************** */
   /* computing varAM */
   /*   { */
@@ -633,8 +633,8 @@ int main( int argc, char *argv[]){
 	      /* 	      sigmaAM += exp(-realThrAM) * (1.0 - exp(-realThrAM)); */
 	    } /* end loop over sfts */
 
-	  fprintf(stdout, "%g    %g   %g    %g    %g    %g   %g    %g\n", 
-	          mean1, var1, nth1, numberCount1, mean2, var2, nth2, numberCount2);
+	  fprintf(stdout, "%g   %g   %g  %g    %g   %g    %g    %g    %g   %g    %g\n", 
+	          uvar_alpha, uvar_delta, uvar_cosiota, mean1, var1, nth1, numberCount1, mean2, var2, nth2, numberCount2);
 
 	  
 	  /* calculate the number count thresholds */

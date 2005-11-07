@@ -29,37 +29,49 @@ echo $1 $2 | awk '{print $1/$2}'
 # save initial working directory
 startdir=`pwd`
 
-h0=1.0e-24
-sftdir=/local_data/sintes/fakesfts/
-th=4.0
-outfile=AM_1_test_1.0e-24_${th}
-cosiota=1.0
+h0=3.0e-24
+sftdir=/local_data/badkri/fakesfts/
+#th=4.0
+outfile=AM_1_test_$h0
+#echo $outfile
+#cosiota=1.0
+
+#sleep 10
 
 # choose sky location
-alpha=0.0
-delta=-1.570796327
-pi2=1.570796327
+#alpha=0.0
+#delta=-1.570796327
+#pi2=1.570796327
 # number of times signal is injected
 
-top=50
+top=1000
 j=0
 
 # loop $top times over code
 while [ $j -lt $top ] ; do
+
+        echo $j
         #------------------------------------------------------
         # create random input parameters within chosen ranges
         #------------------------------------------------------
 
         # output of allangles are seven random numbers in these ranges:
-        # (0,2*pi) (-1,1) (0,2*pi) (-1,1) (-1,1) (0,1) (0,1)
+        # (0,2*pi) (-pi/2,pi/2) (0,2*pi) (-1,1) (0,2*pi) (0,1) (0,1)
         # they are used respectively to find random values of
-        # psi, cosiota, phi0, alpha, delta, frequency, spindown
+        # alpha, delta, phi0, cosiota, psi, freq, spindown
         allangles=`./makeangles`
 
         # first create psi, cosiota and phi0
         alpha=`echo $allangles | awk '{print $1}'`
         delta=`echo $allangles | awk '{print $2}'`
-	./HoughValidateAM -E ./earth00-04.dat -S ./sun00-04.dat -D $sftdir -r $alpha -l $delta -t $th -m $h0 -c $cosiota >> $outfile
+	cosiota=`echo $allangles | awk '{print $4}'`
 
+	# if we want cosiota random
+	./HoughValidateAM -E ./earth00-04.dat -S ./sun00-04.dat -D $sftdir -r $alpha -l $delta -m $h0 -c $cosiota >> $outfile
+
+	# if we want cosiota at a fixed value
+	#./HoughValidateAM -E ./earth00-04.dat -S ./sun00-04.dat -D $sftdir -r $alpha -l $delta -m $h0 -c 0.0 >> $outfile
+
+	#sleep 30
         let j+=1
 done

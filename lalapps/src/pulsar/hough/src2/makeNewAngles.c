@@ -46,8 +46,6 @@ main (){
   kkcos = 2.0* randval -1.0;
   printf("%f ", acos(kkcos) -0.5*M_PI);
   
-    
-
   // get random value, print phi0
   randval=drand48();
   printf("%f ", 2.0*M_PI*randval);
@@ -59,14 +57,6 @@ main (){
   // get random value, print psi
   randval=drand48();
   printf("%f ", 2.0*M_PI*randval);
-
-  // get random value, print alpha
-  randval=drand48();
-  printf("%f ", 2.0*randval-1.0);
-
-  // get random value, print delta
-  randval=drand48();
-  printf("%f ", 2.0*randval-1.0);
 
   // get random value, for freq
   randval=drand48();
