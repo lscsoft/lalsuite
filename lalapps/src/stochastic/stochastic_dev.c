@@ -3384,7 +3384,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* inject signal into noise */
   for (i = 0; i < noiseOne->data->length; i++)
   {
-    seriesOne->data->data[i] *= 0.1;
+    seriesOne->data->data[i] *= 0.001;
     seriesTwo->data->data[i] = seriesOne->data->data[i] + \
                                noiseTwo->data->data[i];
     seriesOne->data->data[i] = seriesOne->data->data[i] + \
