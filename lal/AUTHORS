@@ -1,72 +1,69 @@
-Allen, Bruce
-Anderson, Warren G
-Ausmus, Donald
+Allen, B.
+Anderson, W. G.
+Ausmus, D.
 Balasubramanian, R
-Berukoff, S J
-Bose, Sukanta
-Brady, Patrick R
-Brown, Duncan A
-Casquette, Martha
-Charlton, P R
-Chassande-Mottin, Eric
-Chin, David
-Churches, David K
-Cokelaer, Thomas 
-Creighton, Jolien D E
-Creighton, Teviet
-Cutler, Curt
-Daw, E J
-Diaz, Mario C
-Drasco, Steve
-Dupuis, Rejean
-Dwyer, Steven J
-Edlund, Jeffrey
-Essinger-Hileman, Thomas
-Fairhurst, Stephen
-Finn, Lee Samuel
-Flanagan, Eanna E
-Hanna, Chad
-Jones, D I
-Kilmenko, Sergei
-Krishnan, Badri
-Luna, Rosa
-Mercer, Adam
-Mendell, Greg A
-Messaritaki, Eirini
-Messenger, Chris
-Owen, Benjamin J
-Papa, M A
-Prix, Reinhard
-Ray Majumder, Saikat
-Regimbau, Tania
-Romano, Joseph D
-Sathyaprakash, B S
-Sengupta, Anand S
-Shawhan, Peter S
-Siemens, Xavier
-Sintes, Alicia M
-Sorensen, S
-Sylvestre, Julien
-Tibbits, M M
-Torres, Charlie
-Whelan, John T
-Whitbeck, David M
-Williamsen, Mark S
-Wiseman, Alan G
-Yakushin, Igor
+Berukoff, S. J.
+Bose, S.
+Brady, P. R.
+Brown, D. A.
+Cameron, P. B.
+Cannon, K. C.
+Casquette, M.
+Charlton, P. R.
+Chassande-Mottin, E.
+Chin, D.
+Churches, D. K.
+Cokelaer, T.
+Creighton, J. D. E.
+Creighton, T. D.
+Cutler, C. J.
+Daw, E. J.
+Diaz, M. C.
+Dietz, A.
+Drasco, S.
+Dupuis, R. J.
+Dwyer, S. J.
+Edlund, J.
+Essinger-Hileman, T.
+Fairhurst, S.
+Finn, L. S.
+Flanagan, E. E.
+Hanna, C. R.
+Itoh, Y.
+Jones, D. I.
+Jones, G.
+Klimenko, S.
+Krishnan, B.
+Trejo, R.
+Machenschalk, B.
+Mendell, G. A.
+Mercer, A.
+Messaritaki, E.
+Messenger, C. J.
+Mohanty, S. D.
+Noel, J.
+Owen, B. J.
+Papa, M. A.
+Prix, R.
+Rakhmanov, M.
+Ray Majumder, S.
+Read, J. S.
+Regimbau, T.
+Romano, J. D.
+Sathyaprakash, B. S. 
+Seader, S. E.
+Sengupta, A.
+Siemens, X.
+Sintes, A. M. 
+Sorensen, S.
+Sylvestre, J.
+Tibbits, M. M.
+Torres, C. W.
+Vallisneri, M.
+Whelan, J. T.
+Whitbeck, D. M.
+Williamsen, M. S.
+Wiseman, A. G.
+Woods, D.
+Yakushin, I.
 \endinput
-
-
-
-This package also contains code written and copywrited by
-Mark Martinec.  This code is contained in the file
-
-  packages/support/src/LALStdio.c
-
-and the license and readme files for the code are contained
-in the files
-
-  packages/support/src/snprintf_LICENSE.txt
-  packages/support/src/snprintf_README
-
-The snprintf package is available from http://www.ijs.si/software/snprintf.
