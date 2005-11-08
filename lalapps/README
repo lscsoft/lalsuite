@@ -1,432 +1,49 @@
-1. Introduction
+LALApps - LIGO Scientific Collaboration Algorithm Library Applications
 
-Welcome to the LSC Applications Library (LALApps). The LALApps web site:
+Synopsis:
 
-   http://www.lsc-group.phys.uwm.edu/daswg/projects/lalapps.html
+        A collection of programs and other software for gravitational wave data
+        analysis.
 
-contains many useful links for LALApps users and developers. 
 
-There are two LALApps mail lists/archives which are shared with LAL. These are:
+Notice:
 
-  LAL-Announce: general LALApps announcements including release announcements.
-  http://www.lsc-group.phys.uwm.edu/mailman/listinfo.cgi/lal-announce
+        We request that any academic report, publication, or other
+        academic disclosure of results derived from the use of this
+        software acknowledge the use of the software by an appropriate
+        acknowledgment or citation.
 
-  LAL-Discuss: general LALApps discussion forum but not for filing bug reports
-  http://www.lsc-group.phys.uwm.edu/mailman/listinfo.cgi/lal-discuss
 
-This README file explains how to build and install LALApps for use on the
-LSCdatagrid. The sections of this README are:
+Consult:
 
-  2. Get LAL from CVS: instructions for getting LAL from CVS
+        README.bugs             reporting problems with LAL
+        README.contrib          instructions for LAL developers
 
-  3. Get LALApps from CVS: instructions for getting LALApps from CVS
 
-  4. Important notes about required software: descsribes the pre-requisties 
-  for installing LALApps and contains important notes for LIGOTools users
+Installation:
 
-  5. Decide how you want install the required software: lists the options for
-  getting the software required to build LAL and LALApps
+        LALApps requires various pieces of software which can be installed
+        by following these directions:
+        http://www.lsc-group.phys.uwm.edu/daswg/docs/howto/lscsoft-install.html
 
-  6. Installing the required software: install instructions for the required
-  software
+        Binary versions of these software packages, as well as the latest
+        released version of LALApps, can be obtained from:
+        http://www.lsc-group.phys.uwm.edu/daswg/download/repositories.html
 
-  7. Install LAL and LALApps: install instructions for LAL and LALApps
+        Follow these directions to build both LAL and LALApps from source:
+        http://www.lsc-group.phys.uwm.edu/daswg/docs/howto/lal-install.html
 
 
-------------------------------------------------------------------------------
+Other resources:
 
-2. Get LAL from CVS
+        Binary releases of LALApps for various platforms:
+        http://www.lsc-group.phys.uwm.edu/daswg/download/repositories.html
 
-Go to the LAL web page:
+        LAL-Announce: LAL announcements including release announcements.
+        http://www.lsc-group.phys.uwm.edu/mailman/listinfo.cgi/lal-announce
 
-   http://www.lsc-group.phys.uwm.edu/daswg/projects/lal.html
+        LAL-Discuss: general LAL discussion forum (not for bug reports)
+        http://www.lsc-group.phys.uwm.edu/mailman/listinfo.cgi/lal-discuss
 
-and download the README file from the README section of the page. Follow the
-instructions in step 3 of the LAL README to download LAL from CVS and step 4
-of the LAL README to create the various LAL build scripts.
-
-Make sure you have set the LAL_LOCATION environment variable as described in
-the LAL README.
-
-Do NOT follow the LAL README.install. Insted return here and follow the
-instructions below once you have followed steps 3 and 4 of the LAL README.
-
-Do NOT follow step 8 of the LAL README (i.e. do not log out of the lscsoft CVS
-archive.)
-
-
-------------------------------------------------------------------------------
-
-3. Get LALApps from CVS
-
-The source code for LALApps is stored in the same lscsoft CVS archive as LAL.
-You should have followed step 3 in the LAL README to log into the LAL CVS and
-checkout LAL. Now you can checkout LALApps and build the install files by 
-typing:
-
-  cd ${LAL_LOCATION}/src
-  cvs -d :pserver:USERNAME@gravity.phys.uwm.edu:2402/usr/local/cvs/lscsoft checkout lalapps
-  cd lalapps
-  ./00boot
-
-Now follow the steps below to build and install the software required for
-LALApps.
-
-------------------------------------------------------------------------------
-
-4. Important notes about required software
-
-To build LALApps, you must have LAL installed. LAL requires the following
-software to be installed:
-
-	pkgconfig-0.15.0
-	fftw-3.0.1 (both single- and double-precision libraries required)
-	gsl-1.5
-	libframe-6.14
-	libmetaio-5.4
-
-Step 5 below describes the various options for getting the software. If you do
-NOT have LIGOtools installed, you can skip to step 5 now, otherwise read the
-rest of this section.
-
-Note that if you have LIGOtools installed, you must REMOVE the lal and lalapps
-that are installed by LIGOtools since these will cause conflicts with the
-versions you are going to build from CVS. To determine if you have LAL and
-LALApps by LIGOtools, type
-
-   ligotools_list
-
-This will list all your LIGOtools packages, for example
-
-LIGOTOOLS is /home/duncan/projects/ligotools
-  Package      Active     Other installed versions
- ---------    --------   --------------------------
-  Fr           v6r15      
-  FrContrib    v6r15      v6r12a
-  dataflow     5.5        
-  fftw         3.0.1     
-  guild        3.31.0     3.9.3, 3.22.1, 3.20, 3.17.1, 3.14.1
-  lal          3.0        
-  lalapps      3.0        
-  segments     1.5        1.4, 1.2, 1.0
-  tclexe       8.4.7      8.3.4
-
-If you have lal or lalapps listed as active, then type
-
-   ligotools_uninstall lalapps <version>
-
-where <version> is the active version of LALApps that you have installed,
-given by ligotools_list (e.g. 3.0 in the above example). Answer yes to all the
-questions asking if you really want to removed it. Then type
-
-   ligotools_uninstall lal <version>
-
-where <version> is active the version of LAL that you have installed, given by
-ligotools_list. Answer yes to all the questions asking if you really want to
-removed it. You are now ready to continue.
-
-
-------------------------------------------------------------------------------
-
-5. Decide how you want install the required software
-
-You have the following options for installing LALApps, LAL and the 
-required software. Choose the one that suits you best and then follow the
-relevant instruction below. Once you have completed either 6.1, 6.2 or 6.3 you
-are ready to use and develop LAL and LALApps. 
-
-Section 6.4 explains how to install the required software from RPMs or Debian
-packages and is included for administrators of LSCdataGrid clusters. If you
-are installing on your own machine it is recomended that you follow section
-6.1.
-
- -- you have your own desktop or laptop machine without some or all 
-    of the required software		----> follow step 6.1 below
-
- -- you have a LIGOtools distribution (that you control) installed on 
-    your machine and you want to obtain the required software via
-    LIGOtools				----> follow step 6.2 below
-
- -- you are logged into an LSCdatagrid cluster machines (for example 
-    the UWM cluster or one of the LIGO lab ldas-grid machines)
-    					----> follow step 6.3 below
-
- -- you are the system administrator of an LSC cluster machine or you 
-    want to install the required software as RPMs or .deb files on 
-    your machine			----> follow step 6.4 below
-
-
-------------------------------------------------------------------------------
-
-6. Installing the required software.
-
-6.1 Installing from source
-
-Choose a directory in which to install the required software (i.e. the
-software other than LAL and LALApps). 
-
-This may be under your home directory or a system directory if you have root
-access on your machine. For example you may choose ${HOME}/opt/lscsoft or
-/opt/lscsoft
-
-In these instructions, we assume that you choose ${HOME}/opt/lscsoft 
-If you choose another location, change the apropriate lines below.
-
-Add the following to your .profile if you use a bourne shell (e.g. bash):
-        
-  LSCSOFT_LOCATION=${HOME}/opt/lscsoft   # <- change this as appropriate
-  export LSCSOFT_LOCATION
-  if [ -f ${LSCSOFT_LOCATION}/etc/lscsoft-user-env.sh ] ; then
-    . ${LSCSOFT_LOCATION}/etc/lscsoft-user-env.sh
-  fi
-
-If you are using a C shell (e.g., tcsh), instead add these lines to
-your .login:
-
-  setenv LSCSOFT_LOCATION ${HOME}/opt/lscsoft   # <- change this as appropriate
-  if ( -r ${LSCSOFT_LOCATION}/etc/lscsoft-user-env.csh ) then
-    source ${LSCSOFT_LOCATION}/etc/lscsoft-user-env.csh
-  endif
-
-Now log out and log back in to make sure these environment variables are set.
-
-To install the pre-requisite software type:
-
-  cd ${LAL_LOCATION}/src/lal
-  doc/lal-preinstall.sh
-
-This will get, build and install all the necessary software. If you want to
-know what the script doc/lal-preinstall.sh does, you may look at the LAL
-README.install file.
-
-Make sure you have access to the software you just installed. You can either
-log out and log back in (safest) or if you run a bourne shall (e.g. bash)
-type:
-
-  source ${LSCSOFT_LOCATION}/etc/lscsoft-user-env.sh
-
-or if you run a C-shell (e.g. tcsh) type:
-  
-  source ${LSCSOFT_LOCATION}/etc/lscsoft-user-env.csh
-
-
-------------------------------------------------------------------------------
-
-6.2 Installing using LIGOtools. 
-
-NOTE: THE LIGOTOOLS INSTRUCTIONS HERE DO NOT CURRENTLY WORK SINCE GSL AND
-FFTW3 ARE NOT YET IN LIGOTOOLS. AS A TEMPORARY MEASURE PLEASE USE STEP 6.1
-ABOVE. 
-
-Make sure you remove the LIGOtools lal and lalapps as described in step 4.
-
-Type 
-
-  ligotool_list
-  
-and make sure you have the following packages installed and the listed version
-is active. You may have other packages installed as well (but NOT lal and
-lalapps) and can ignore these:
-
-LIGOTOOLS is /home/duncan/projects/ligotools
-  Package      Active     Other installed versions
- ---------    --------   --------------------------
-  Fr           v6r15      
-  dataflow     5.5        
-  fftw         3.0.1
-  gsl          1.5
-  pkgconfig    0.15.0
-
-
-------------------------------------------------------------------------------
-
-6.3 Installing on a LSCdataGrid cluster machine
-
-If you are building LAL and LALApps on an an LSCdataGrid cluster machine, for
-example the UWM cluster or a LIGO lab cluster, then the required pre-requisite
-software should already be installed. 
-
-The following LSC systems have the software installed:
-
-System                  Action needed to access software
-
-hydra.phys.uwm.edu      None: the software is installed in /usr
-contra.phys.uwm.edu     None: the software is installed in /usr
-
-If you are running on an LSCdataGrid system not listed above, contact the
-administrator of the system to find out which scripts and/or environment
-variables need to be set for you to be able to see the requred software.
-
-
-------------------------------------------------------------------------------
-
-6.4 Installing the required software from a repository
-
-6.4.1 Installing binary RPMs
-
-WARNING: These instructions are intended to be helpful for users of RPM who
-wish to install the software required by LAL system-wide.  However, these
-instructions and the provided RPMs are not officially supported, and may not
-work on all systems.
-
-The commands listed below are appropriate for a Bourne-shell (e.g., bash);
-they will need to be modified appropriately for C-shells (e.g., tcsh).
-This is where to get sources:
-        
-  LALRPMURL=http://www.lsc-group.phys.uwm.edu/lal/sources/rpms
-
-get required autoconf, automake, fftw3, gsl, libframe, and libmetaio
-you can use "lynx -dump" or "wget -O-" instead of "curl"
-
-  curl $LALRPMURL/fftw3-3.0.1-2.i386.rpm > fftw-3.0.1-2.i386.rpm
-  curl $LALRPMURL/fftw3-devel-3.0.1-2.i386.rpm > fftw-devel-3.0.1-2.i386.rpm
-  curl $LALRPMURL/gsl-1.5-1.i386.rpm > gsl-1.5-1.i386.rpm
-  curl $LALRPMURL/gsl-devel-1.5-1.i386.rpm > gsl-devel-1.5-1.i386.rpm
-  curl $LALRPMURL/libframe-6.14-1.i386.rpm > libframe-6.14-1.i386.rpm
-  curl $LALRPMURL/libframe-devel-6.14-1.i386.rpm > libframe-devel-6.14-1.i386.rpm
-  curl $LALRPMURL/libframe-utils-6.14-1.i386.rpm > libframe-utils-6.14-1.i386.rpm
-  curl $LALRPMURL/libmetaio-5.4-3.i386.rpm > libmetaio-5.4-3.i386.rpm
-        curl $LALRPMURL/libmetaio-devel-5.4-3.i386.rpm > libmetaio-devel-5.4-3.i386.rpm
-
-now login as root and install the RPMs
-
-  rpm -Uvh fftw-3.0.1-2.i386.rpm fftw-devel-3.0.1-2.i386.rpm
-  rpm -Uvh gsl-1.5-1.i386.rpm gsl-devel-1.5-1.i386.rpm
-  rpm -Uvh libframe-6.14-1.i386.rpm libframe-devel-6.14-1.i386.rpm libframe-utils-6.14-1.i386.rpm
-  rpm -Uvh libmetaio-5.4-3.i386.rpm libmetaio-devel-5.4-3.i386.rpm
-
-
-6.4.2 Building the required software from source RPMs
-
-If you cannot use these binary RPMs and you wish to build from source RPMs,
-follow these instructions.
-
-first download the source RPMs
-
-  curl $LALRPMURL/fftw3-3.0.1-2.src.rpm > fftw3-3.0.1-2.src.rpm
-  curl $LALRPMURL/gsl-1.5-1.src.rpm > gsl-1.5-1.src.rpm
-  curl $LALRPMURL/libframe-6.14-1.src.rpm > libframe-6.14-1.src.rpm
-  curl $LALRPMURL/libmetaio-5.4-3.src.rpm > libmetaio-5.4-3.src.rpm
-
-now login as root and build binary RPMs from the source RPMs (this will
-take a very long time)
-
-  rpmbuild --rebuild fftw3-3.0.1-2.src.rpm
-  rpmbuild --rebuild gsl-1.5-1.src.rpm
-  rpmbuild --rebuild libframe-6.14-1.src.rpm
-  rpmbuild --rebuild libmetaio-5.4-3.src.rpm
-
-finally install the new binary RPMs
-
-  cd /usr/src/redhat/RPMS
-  rpm -Uvh i386/fftw3-3.0.1-2.i386.rpm
-  rpm -Uvh i386/gsl-1.5-1.i386.rpm
-  rpm -Uvh i386/gsl-devel-1.5-1.i386.rpm
-  rpm -Uvh i386/libframe-6.14-1.i386.rpm
-  rpm -Uvh i386/libframe-devel-6.14-1.i386.rpm
-  rpm -Uvh i386/libmetaio-5.4-3.i386.rpm
-  rpm -Uvh i386/libmetaio-devel-5.4-3.i386.rpm
-
-
-6.4.3 Installing from Debian packages
-
-Add the following to your /etc/apt/sources.list:
-
-  deb http://www.lsc-group.phys.uwm.edu/lal/debian/ sarge main contrib non-free
-  deb-src http://www.lsc-group.phys.uwm.edu/lal/debian/ sarge main contrib non-free
-
-This will give you access to the Frame and MetaIO .debs that Kipp Cannon is
-maintaining.
-
-Make sure the following packages are installed. You can do this with dselect,
-first updating the list of available packages and then adding them in the
-"select" stage:
-
-  pkg-config
-  fftw3-dev
-  fftw3
-  libgsl0-dev
-  libgsl0
-
-  libframe-dev
-  libframe0
-  libmetaio-dev
-  libmetaio0
-
-The last four are from Kipp's repository (see above) and the others are a
-regular part of Sarge.
-
-
-------------------------------------------------------------------------------
-
-7. Install LAL and LALApps
-
-7.1 Install LAL
-
-Now build and install LAL by typing:
-
-  cd ${LAL_LOCATION}/src/lal
-  ./configure --prefix=${LAL_LOCATION} --disable-mpi
-  make
-  make install
-
-Add the following to your .profile if you use a bourne shell (e.g. bash):
-        
-  LAL_LOCATION=${HOME}/opt/lal           # <- change this as appropriate
-  export LAL_LOCATION
-  if [ -f ${LAL_LOCATION}/etc/lal-user-env.sh ] ; then
-    . ${LAL_LOCATION}/etc/lal-user-env.sh
-  fi
-        
-If you are using a C shell (e.g., tcsh), instead add these lines to
-your .login:
-
-  setenv LAL_LOCATION ${HOME}/opt/lal           # <- change this as appropriate
-  if ( -r ${LAL_LOCATION}/etc/lal-user-env.csh ) then
-    source ${LAL_LOCATION}/etc/lal-user-env.csh
-  endif
-
-Make sure you have access to the software you just installed. You can either
-log out and log back in (safest) or if you run a bourne shall (e.g. bash)
-type:
-
-  source ${LAL_LOCATION}/etc/lal-user-env.sh
-
-or if you run a C-shell (e.g. tcsh) type:
-  
-  source ${LAL_LOCATION}/etc/lal-user-env.csh
-
-
-7.2 Install LALApps
-
-Now build and install LALApps. If you are planning to run your programs under
-condor, see the note below.
-
-To build and install LALApps type:
-
-  cd ${LAL_LOCATION}/src/lalapps
-  ./configure --prefix=${LAL_LOCATION}
-  make
-  make install
-
-You are now ready to use LALApps! Please see the LALApps README.contrib for
-help on adding code to LALApps and the LALApps README.bugs for information on
-reporting bugs.
-
-Note: If you want to run your LALApps programs in the condor standard universe
-you will need to make sure that the LALApps programs are linked for condor. To
-do this, you must be compiling on a system that has condor_compile installed
-(contact the system administrator to find out if and where condor is
-installed). If you do not link for condor, you can run under the condor
-vanilla universe, but this is discouraged as you code will not be able to
-checkpoint.
-
-To link LALApps for Condor add --enable-condor to the configure options, i.e.
-to build LALApps type:
-  
-  cd ${LAL_LOCATION}/src/lalapps
-  ./configure --prefix=${LAL_LOCATION} --enable-condor
-  make
-  make install
-
-The binaries built will be able to run under the condor standard universe.
+        Please see the LALApps webpage for more information:
+        http://www.lsc-group.phys.uwm.edu/daswg/projects/lalapps.html
