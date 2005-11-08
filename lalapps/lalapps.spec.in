@@ -46,4 +46,4 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %{_libdir}/python/*
 %{_mandir}/man1/*
 %{_datadir}/lalapps/*
-%{_sysconfdir}/lal-user-env.*
+%{_sysconfdir}/lalapps-user-env.*
