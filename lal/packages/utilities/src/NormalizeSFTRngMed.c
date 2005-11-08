@@ -278,7 +278,7 @@ void LALSFTtoPSDRngMed (LALStatus  *status,
   TRY (LALSFTtoPeriodogram (status->statusPtr, &periodo, sft), status);
 
   /* calculate the psd */
-  TRY (LALPeriodoToPSDRngMed (status->statusPtr, &psd, &periodo, blockSize), status);
+  TRY (LALPeriodoToPSDRngMed (status->statusPtr, psd, &periodo, blockSize), status);
 
 
   /* free memory */
