@@ -131,6 +131,7 @@ INT4 maskBin = -1;
 
 /* output file */
 CHAR *outputPath = NULL;
+CHAR *outputFileName = NULL;
 
 /* helper functions */
 
@@ -2524,6 +2525,7 @@ static void display_usage_fake()
   fprintf(stdout, " --user-tag STRING        set the user tag\n"); 
   fprintf(stdout, " --comment STRING         set the comment\n");
   fprintf(stdout, " --output-dir DIR         directory for output files\n");
+  fprintf(stdout, " --output-file FILE       file for output\n");
   fprintf(stdout, " --cc-spectra             save out cross correlation spectra\n");
   fprintf(stdout, " --duration N             duration of fake data to generate\n");
   fprintf(stdout, " --interval-duration N    interval duration\n");
@@ -2571,6 +2573,7 @@ static void parse_options_fake(INT4 argc, CHAR *argv[])
       {"user-tag", required_argument, 0, 'd'},
       {"comment", required_argument, 0, 'e'},
       {"output-dir", required_argument, 0, 'f'},
+      {"output-file", required_argument, 0, 'F'},
       {"duration", required_argument, 0, 'g'},
       {"interval-duration", required_argument, 0, 'i'},
       {"segment-duration", required_argument, 0, 'j'},
@@ -2680,6 +2683,14 @@ static void parse_options_fake(INT4 argc, CHAR *argv[])
           exit(1);
         }
         ADD_PROCESS_PARAM("string", "%s", outputPath);
+        break;
+
+      case 'F':
+        /* filename for output file */
+        optarg_len = strlen(optarg) + 1;
+        outputFileName = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        memcpy(outputFileName, optarg, optarg_len);
+        ADD_PROCESS_PARAM("string", "%s", outputFileName);
         break;
 
       case 'g':
@@ -3321,7 +3332,11 @@ INT4 main(INT4 argc, CHAR *argv[])
   gpsEndTime.gpsNanoSeconds = 0;
 
   /* get xml file basename */
-  if (userTag)
+  if (outputFileName)
+  {
+    memcpy(baseName, outputFileName, strlen(outputFileName) + 1);
+  }
+  else if (userTag)
   {
     LALSnprintf(baseName, FILENAME_MAX, "%s%s-FAKE-STOCHASTIC_%s_%d-%d", \
         ifoOne, ifoTwo, userTag, startTime, (endTime - startTime));
