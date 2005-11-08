@@ -141,6 +141,7 @@ static double myround(double x)
   return(x < 0 ? ceil(x - 0.5): floor(x + 0.5));
 }
 
+#if 0
 /* read a LIGO time series */
 static REAL4TimeSeries *get_ligo_data(LALStatus *status,
     FrStream *stream,
@@ -359,6 +360,7 @@ static REAL4TimeSeries *get_time_series(LALStatus *status,
 
   return(series);
 }
+#endif
 
 /* wrapper function to return the spectrum */
 static REAL4FrequencySeries *omega_gw(LALStatus *status,
@@ -1545,6 +1547,7 @@ static REAL4TimeSeries *generate_random_noise(LALStatus *status,
   return(series);
 }
 
+#if 0
 /* function for generating fake detector output */
 static SSSimStochBGOutput *generate_fake_detector_output(LALStatus *status,
     REAL4TimeSeries *noise_one,
@@ -2514,6 +2517,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
   return;
 }
+#endif
 
 /* display usage information for fake data*/
 static void display_usage_fake()
