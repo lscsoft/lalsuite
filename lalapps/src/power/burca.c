@@ -566,9 +566,37 @@ int main(int argc, char **argv)
        * open output xml file to write coincident triggers
        *****************************************************************/
       if ( dtSlide < 0 )
-	  snprintf(outfileName, sizeof(outfileName)-1, "%s/%s-BURCA_%s%s_M_%lld_%s-%d-%d.xml", outputdir,searchSummary[0]->ifos,searchSummary[0]->ifos,searchSummary[1]->ifos,-dtSlide,comment,searchSummary[0]->in_start_time.gpsSeconds,searchSummary[0]->in_end_time.gpsSeconds - searchSummary[0]->in_start_time.gpsSeconds);	  
+	{
+	  if (startCoincidence.gpsSeconds == 0)
+	    {
+	      snprintf(outfileName, sizeof(outfileName)-1, "%s/%s-BURCA_%s%s_M_%lld_%s-%d-%d.xml", 
+		       outputdir,searchSummary[0]->ifos,searchSummary[0]->ifos,searchSummary[1]->ifos,
+		       -dtSlide,comment,searchSummary[0]->in_start_time.gpsSeconds,
+		       searchSummary[0]->in_end_time.gpsSeconds - searchSummary[0]->in_start_time.gpsSeconds);	  
+	    }
+	  else
+	    {
+	      snprintf(outfileName, sizeof(outfileName)-1, "%s/%s-BURCA_%s%s_M_%lld_%s-%d-%d.xml", 
+		       outputdir,searchSummary[0]->ifos,searchSummary[0]->ifos,searchSummary[1]->ifos,-dtSlide,comment,
+		       startCoincidence.gpsSeconds,endCoincidence.gpsSeconds-startCoincidence.gpsSeconds);
+	    }
+	}
       else
-	  snprintf(outfileName, sizeof(outfileName)-1, "%s/%s-BURCA_%s%s_P_%lld_%s-%d-%d.xml", outputdir,searchSummary[0]->ifos,searchSummary[0]->ifos,searchSummary[1]->ifos,dtSlide,comment,searchSummary[0]->in_start_time.gpsSeconds,searchSummary[0]->in_end_time.gpsSeconds - searchSummary[0]->in_start_time.gpsSeconds);
+	{
+	  if (startCoincidence.gpsSeconds == 0)
+	    {
+	      snprintf(outfileName, sizeof(outfileName)-1, "%s/%s-BURCA_%s%s_P_%lld_%s-%d-%d.xml", 
+		       outputdir,searchSummary[0]->ifos,searchSummary[0]->ifos,searchSummary[1]->ifos,
+		       dtSlide,comment,searchSummary[0]->in_start_time.gpsSeconds,
+		       searchSummary[0]->in_end_time.gpsSeconds - searchSummary[0]->in_start_time.gpsSeconds);
+	    }
+	  else
+	    {
+	      snprintf(outfileName, sizeof(outfileName)-1, "%s/%s-BURCA_%s%s_P_%lld_%s-%d-%d.xml", 
+		       outputdir,searchSummary[0]->ifos,searchSummary[0]->ifos,searchSummary[1]->ifos,dtSlide,comment,
+		       startCoincidence.gpsSeconds,endCoincidence.gpsSeconds-startCoincidence.gpsSeconds);
+	    }
+	}
 
       outfileName[sizeof(outfileName)-1] = '\0';
     
@@ -598,10 +626,38 @@ int main(int argc, char **argv)
       if (noncoincident)
 	{ 
 	  if ( dtSlide < 0 )
-	    snprintf(outnoncfileName, sizeof(outnoncfileName)-1, "%s/%s-NEGBURCA_%s%s_M_%lld_%s-%d-%d.xml", outputdir,searchSummary[0]->ifos,searchSummary[0]->ifos,searchSummary[1]->ifos,-dtSlide,comment,searchSummary[0]->in_start_time.gpsSeconds,searchSummary[0]->in_end_time.gpsSeconds - searchSummary[0]->in_start_time.gpsSeconds);	  
+	    {
+	      if (startCoincidence.gpsSeconds == 0)
+		{
+		  snprintf(outnoncfileName, sizeof(outnoncfileName)-1, "%s/%s-NEGBURCA_%s%s_M_%lld_%s-%d-%d.xml", 
+			   outputdir,searchSummary[0]->ifos,searchSummary[0]->ifos,searchSummary[1]->ifos,
+			   -dtSlide,comment,searchSummary[0]->in_start_time.gpsSeconds,
+			   searchSummary[0]->in_end_time.gpsSeconds - searchSummary[0]->in_start_time.gpsSeconds);
+		}
+	      else
+		{
+		  snprintf(outnoncfileName, sizeof(outnoncfileName)-1, "%s/%s-NEGBURCA_%s%s_M_%lld_%s-%d-%d.xml", 
+			   outputdir,searchSummary[0]->ifos,searchSummary[0]->ifos,searchSummary[1]->ifos,-dtSlide,comment,
+			   startCoincidence.gpsSeconds,endCoincidence.gpsSeconds-startCoincidence.gpsSeconds);
+		}
+	    }	  
 	  else
-	    snprintf(outnoncfileName, sizeof(outnoncfileName)-1, "%s/%s-NEGBURCA_%s%s_P_%lld_%s-%d-%d.xml", outputdir,searchSummary[0]->ifos,searchSummary[0]->ifos,searchSummary[1]->ifos,dtSlide,comment,searchSummary[0]->in_start_time.gpsSeconds,searchSummary[0]->in_end_time.gpsSeconds - searchSummary[0]->in_start_time.gpsSeconds );
-	  
+	    {
+	      if (startCoincidence.gpsSeconds == 0)
+		{
+		  snprintf(outnoncfileName, sizeof(outnoncfileName)-1, "%s/%s-NEGBURCA_%s%s_P_%lld_%s-%d-%d.xml", 
+			   outputdir,searchSummary[0]->ifos,searchSummary[0]->ifos,searchSummary[1]->ifos,
+			   dtSlide,comment,searchSummary[0]->in_start_time.gpsSeconds,
+			   searchSummary[0]->in_end_time.gpsSeconds - searchSummary[0]->in_start_time.gpsSeconds );
+		}
+	      else
+		{
+		  snprintf(outnoncfileName, sizeof(outnoncfileName)-1, "%s/%s-NEGBURCA_%s%s_P_%lld_%s-%d-%d.xml", 
+			   outputdir,searchSummary[0]->ifos,searchSummary[0]->ifos,searchSummary[1]->ifos,dtSlide,comment,
+			   startCoincidence.gpsSeconds,endCoincidence.gpsSeconds-startCoincidence.gpsSeconds);
+		}
+	    }
+
 	  outnoncfileName[sizeof(outnoncfileName)-1] = '\0';
 	
 	  LAL_CALL( LALOpenLIGOLwXMLFile(&stat, &xmlStream, outnoncfileName), &stat);
