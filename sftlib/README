@@ -12,7 +12,7 @@ for instructions about accessing CVS using this.
 
 TO BUILD/INSTALL
 ----------------
-If working from CVS, run ./autogen.sh to make a configure script, then
+If working from CVS, run ./00boot to make a configure script, then
 follow instructions below.  Otherwise, unpack the tarball, then:
 
 ./configure
