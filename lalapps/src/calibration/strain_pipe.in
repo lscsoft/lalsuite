@@ -82,7 +82,7 @@ for o, a in opts:
   elif o in ("-S", "--segment-file"):
     segment_filename = a
   elif o in ("-f", "--dag-file"):
-    basename = a
+    basename = os.path.splitext(a)[0]
   elif o in ("-t", "--aux-path"):
     aux_path = a
   elif o in ("-a", "--trig-start"):
@@ -94,8 +94,8 @@ for o, a in opts:
     usage()
     sys.exit(1)
 
-config_file = aux_path + '/strainDAG.ini'
-log_path = '/usr1/xsiemens/'
+config_file = aux_path + '/strainDAGH2.ini'
+log_path = '/usr1/siemens/'
 
 if not config_file:
   print >> sys.stderr, "No configuration file specified."
@@ -141,7 +141,7 @@ cp.read(config_file)
 
 # create a log file that the Condor jobs will write to
 tempfile.tempdir = log_path
-tempfile.template = basename + '.dag.log.'
+tempfile.template = basename + '.log'
 logfile = tempfile.mktemp()
 fh = open( logfile, "w" )
 fh.close()
@@ -164,7 +164,7 @@ if running_online:
   segment_file=open('strain_segment.txt',mode='w')
   print >> segment_file, '1',GPSStart,' ',GPSEnd,' ',int(GPSEnd)-int(GPSStart)
   segment_file.close()
-  segment_filname='strain_segment.txt'
+  segment_filename='strain_segment.txt'
 
 # get the pad and chunk lengths from the values in the ini file
 length = int(cp.get('pipeline', 'segment-length'))
@@ -187,34 +187,45 @@ datatype = cp.get('input','type')
 
 # create all the LSCdataFind jobs to run in sequence
 prev_df = None
-segment_no = 0
-for seg in data:
+segment_no = -1
+for seg in data: 
+  segment_no = segment_no + 1
   # find all the data for first ifo
   df = pipeline.LSCDataFindNode(df_job)
   df.set_start(seg.start())
   df.set_end(seg.end())
   df.set_observatory(ifo[0])
-  df.add_var_opt('type',datatype)
-
+  df.set_type(datatype)
+  df.set_name("df_"+ifo+"_"+str(segment_no))
+  
   if prev_df: 
     df.add_parent(prev_df)
   dag.add_node(df)
   prev_df = df
 
-  filters_filename = aux_path+'/'+cp.get('input', 'filters-file')+str(segment_no)
-  shutil.copy(aux_path+'/'+cp.get('input', 'filters-file'),filters_filename)
-  segment_no = segment_no + 1
+  if running_online:
+    default_filters_filename = aux_path+'/'+cp.get('input', 'filters-file')
+    filters_filename = aux_path+'/'+ifo[0]+'-'+ifo+'S5Filters'+'-'+str(seg.start())+'-0.fil'
+    if not os.path.exists(filters_filename):
+      shutil.copy(default_filters_filename,filters_filename)
+  
+  if not running_online:
+    filters_filename = aux_path+'/'+cp.get('input', 'filters-file')+str(segment_no)
+    shutil.copy(aux_path+'/'+cp.get('input', 'filters-file'),filters_filename)
 
   # create strain jobs also to run in sequence
   prev_strain = None
   hist = 0
+  chunk_number=-1
   for chunk in seg:
+    chunk_number=chunk_number+1
     #String job for first ifo
     strain1 = strain.StrainNode(strain_job)
     strain1.set_start(chunk.start())
     strain1.set_end(chunk.end())
     strain1.set_cache(df.get_output())
     strain1.add_var_opt('filters-file',filters_filename)
+    strain1.set_name("strain_"+ifo+"_"+str(segment_no)+"_"+str(chunk_number))
     
     # add datafind job as parent
     strain1.add_parent(df)
@@ -228,8 +239,13 @@ for seg in data:
     dag.add_node(strain1)
     prev_strain=strain1
 
-
-
+  if running_online:
+    filters_filename_final = aux_path+'/'+ifo[0]+'-'+ifo+'S5Filters'+'-'+str(int(chunk.end())-2*overlap)+'-0.fil'
+    strain1.set_post_script(aux_path+'/copyfilters.sh')
+    strain1.add_post_script_arg('$RETURN')
+    strain1.add_post_script_arg(filters_filename) 
+    strain1.add_post_script_arg(filters_filename_final)
+    
 # write out the DAG
 dag.write_sub_files()
 dag.write_dag()
@@ -258,7 +274,7 @@ for seg in data:
     endgps=chunk.end()
     
 if running_online:
-  print >> sys.stdout, seg.start(),int(chunk.end())-2*overlap
+  print >> sys.stdout, seg.start()+2*overlap,int(chunk.end())-2*overlap
 
 if not running_online:
   # write a message telling the user that the DAG has been written
