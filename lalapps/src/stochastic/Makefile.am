@@ -13,8 +13,7 @@ METAIOPROGRAMS = lalapps_stopp lalapps_stopp_bayes
 lalapps_stopp_SOURCES = stopp.c
 lalapps_stopp_bayes_SOURCES = stopp_bayes.c
 endif
-bin_SCRIPTS = lalapps_stochastic_pipe lalapps_stochastic_bayes \
-              lalapps_stochastic_pipe_fake
+bin_SCRIPTS = lalapps_stochastic_pipe lalapps_stochastic_bayes
 bin_PROGRAMS = lalapps_olapredfcn ${FRAMEPROGRAMS} ${METAIOPROGRAMS}
 lalapps_olapredfcn_SOURCES = olapredfcn.c olapredfcn.h olapredfcn_args.c \
                              olapredfcn_bars.c
@@ -22,11 +21,10 @@ pythonlibdir = ${prefix}/lib/python
 pythonlib_SCRIPTS = stochastic.py
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
-EXTRA_DIST = stochastic.py stochastic_pipe.in stochastic_bayes.in \
-             stochastic_pipe_fake.in
+EXTRA_DIST = stochastic.py stochastic_pipe.in stochastic_bayes.in
 MOSTLYCLEANFILES = *STOCHASTIC*.xml *CCSPECTRA*.gwf
 CLEANFILES = python_config.sed lalapps_stochastic_pipe \
-             lalapps_stochastic_bayes lalapps_stochastic_pipe_fake
+             lalapps_stochastic_bayes
 
 python_config.sed:
 	-rm -f python_config.sed
@@ -41,8 +39,3 @@ lalapps_stochastic_bayes: stochastic_bayes.in python_config.sed
 	sed -f python_config.sed stochastic_bayes.in > \
 		lalapps_stochastic_bayes
 	chmod +x lalapps_stochastic_bayes
-	
-lalapps_stochastic_pipe_fake: stochastic_pipe_fake.in python_config.sed
-	sed -f python_config.sed stochastic_pipe_fake.in > \
-		lalapps_stochastic_pipe_fake
-	chmod +x lalapps_stochastic_pipe_fake
