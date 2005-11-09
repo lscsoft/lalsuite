@@ -18,19 +18,11 @@
  */
 
 /**
- * \defgroup SFTutils SFT-handling utilities
- * \ingroup pulsarCommon
- *
- * \brief API for SFT-handling functions.
- *
- */
-
-/**
  * \author Reinhard Prix
  * \date 2005
  * \file 
- * \ingroup SFTutils
- * \brief non-IO related functions for handling of SFTtype and SFTVectors
+ * \ingroup SFTfileIO
+ * \brief Utility functions for handling of SFTtype and SFTVectors
  *
  * $Id$
  *
@@ -101,6 +93,12 @@ typedef struct {
   LIGOTimeGPS 	*data;		/**< array of timestamps */
 } LIGOTimeGPSVector;
 
+/* A vector of strings */
+typedef struct {
+  UINT4 length;
+  CHAR **data;
+} LALStringVector;
+
 /*---------- Global variables ----------*/
 
 /*---------- exported prototypes [API] ----------*/
@@ -115,11 +113,16 @@ void LALDestroySFTVector (LALStatus *status, SFTVector **sftvect);
 void LALCopySFT (LALStatus *status, SFTtype *dest, const SFTtype *src);
 
 void LALConcatSFTVectors (LALStatus *, SFTVector **outVect, const SFTVector *inVect1, const SFTVector *inVect2 );
+void LALAppendSFT2Vector (LALStatus *, SFTVector *vect, const SFTtype *sft );
 
 void LALCreateTimestampVector (LALStatus *status, LIGOTimeGPSVector **vect, UINT4 len);
 void LALDestroyTimestampVector (LALStatus *status, LIGOTimeGPSVector **vect);
 
 void LALMakeTimestamps (LALStatus *, LIGOTimeGPSVector **timestamps, const LIGOTimeGPS tStart, REAL8 duration, REAL8 Tsft);
+
+void LALDestroyStringVector ( LALStatus *, LALStringVector **vect );
+void LALAppendString2Vector (LALStatus *, LALStringVector *vect, const CHAR *string );
+
 
 #ifdef  __cplusplus
 }

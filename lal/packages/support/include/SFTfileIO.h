@@ -21,7 +21,90 @@
  * \ingroup support
  * \author R. Prix, B. Machenschalk, A.M. Sintes
  * \date $Date$
- * \brief IO-Module for reading/writing SFTs (Short Fourier transform data-files)
+ * \brief Module for reading/writing/manipulating SFTs (Short Fourier transforms)
+ *
+ <p>
+ <h3>Usage: Reading and writing of SFT-files</h3>
+  
+ The basic operation of <b>reading SFTs</b> from files proceeds in two simple steps:
+
+ 	-# LALSFTdataFind(): get an '::SFTCatalog' of SFTs matching certain requirements
+	-# LALLoadSFTs(): load the desired frequency-band from the SFTs described in the catalogue
+
+ <b>Note 1:</b> currently supported SFT file-formats are (merged or single) SFT-v1 and SFT-v2 files. 
+ This might be extended in the future to support further file-formats (frames?). 
+ None of the following API depends on the details of the underlying file-format. This will ensure that
+ codes using the following functions will NOT have to be changed irrespective of SFT file-format used.
+
+ <b>Note 2:</b> irrespective of the underlying SFT file-format, the returned SFTs (::SFTVector) will 
+ <em>ALWAYS</em> be normalized according the the LAL-specification for frequency-series 
+ (<tt>LIGO-T010095-00</tt>), that is the pure DFT of the time-series \f$x_j\f$ is <em>multiplied</em> 
+ by the time-step \f$\Delta t\f$:
+ \f[
+ \mathrm{data}[k] = X^\mathrm{d}_k = \Delta t \,\sum_{j=0}^{N-1} x_j \,e^{-i2\pi \,k \,j / N}
+ \f]
+
+ <p>
+ For <b>writing SFTs</b> there are two functions, depending on the desired output-format (v1 or v2  SFts):
+ 	- LALWriteSFT2file(): write a single SFT (::SFTtype) into an SFT-file following the specification v2 
+	(<tt>LIGO-T040164-01-Z</tt>).
+
+	- void LALWriteSFTfile(): write an ::SFTtype into an SFT-v1 file. This is <b>obsolete</b> and 
+	deprecated, and should only be used to produce SFT-files for old codes not using the new API.!
+
+ <h4>Details to 1: find matching SFTs and get the SFTCatalog:</h4>
+
+ \code
+ LALSFTdataFind(LALStatus *, SFTCatalog **catalog, const CHAR *file_pattern, SFTConstraints *constraints);
+ \endcode
+
+ This function returns an SFTCatalog of matching SFTs for a given file-pattern 
+ (e.g. "SFT.*", "SFT.000", "/some/path/some_files_[0-9]?.sft", etc ) and additional, optional SFTConstraints. 
+
+ The optional constraints are:
+ - detector-name (e.g. "H1", "H2", "L1", "G1", "V1", etc..)
+ - GPS start-time + end-time
+ - a list of GPS-timestamps
+
+ Any constraint can be specified as \c NULL, all given constraints will be combined by logical \c AND.
+ [ Note: if a timestamps-list is given, *ALL* timestamps within <tt>[startTime, endTime]</tt> MUST be found!]
+
+ The returned SFTCatalog is a vector of 'SFTDescriptor's describing one SFT, with the fields
+ - \c locator:  an opaque data-type describing where to read this SFT from.
+ - \c header:	the SFts header
+ - \c comment: the comment-string found in the SFT, if any
+ - \c numBins: the number of frequency-bins in the SFT
+
+ One can use the following catalog-handling API functions:
+ - LALDestroySFTCatalog(): free up a complete SFT-catalog
+ - LALSFTtimestampsFromCatalog(): extract the list of SFT timestamps found in the ::SFTCatalog
+ - LALDestroyTimestampVector(): free up a timestamps-vector (::LIGOTimeGPSVector)
+ - XLALshowSFTLocator(): [*debugging only*] show a static string describing the 'locator'
+
+ 
+ <b>NOTE:</b> The SFTs in the catalogue are sorted in order of increasing GPS-epoch!
+ 
+
+ <h4>Details to 2: load frequency-band from SFTs described in an SFTCatalog</h4>
+
+ \code
+ LALLoadSFTs ( LALStatus *, SFTVector **sfts, const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
+ \endcode
+
+ This function takes an ::SFTCatalog and reads the smallest frequency-band containing <tt>[fMin, fMax]</tt>
+ from the SFTs, returning the resulting ::SFTVector.
+ 
+ The frequency-bounds are optional and \c -1 can be used to specify an 'open bound', i.e.<br>
+ <tt>[-1, fMax]</tt>: read from first frequency-bin in the SFT up to \c fMax.<br>
+ <tt>[fMin, -1]</tt>: read from \c fMin up to last frequency-bin in the SFTS<br>
+ <tt>[-1, -1]</tt>: read ALL frequency-bins from SFT.
+
+
+ Additional functions for handling ::SFTVector's are:
+ - LALDestroySFTVector(): free up a complete SFT-vector
+ - LALConcatSFTVectors(): concatenate two ::SFTVector's
+ - LALAppendSFT2Vector(): append a single SFT (::SFTtype) to an ::SFTVector
+
  *
  */
  
@@ -69,6 +152,9 @@ NRCSID (SFTFILEIOH, "$Id$");
 #define SFTFILEIO_EMEM 		14
 #define SFTFILEIO_EGLOB 	15
 #define SFTFILEIO_EDIFFLENGTH 	17
+#define SFTFILEIO_ESFTFORMAT	18
+#define SFTFILEIO_ESFTWRITE	19 
+#define SFTFILEIO_ECONSTRAINTS  20
 
 #define SFTFILEIO_MSGENULL 	"Null pointer"
 #define SFTFILEIO_MSGEFILE 	"Error in file-IO"
@@ -81,10 +167,67 @@ NRCSID (SFTFILEIOH, "$Id$");
 #define SFTFILEIO_MSGEMEM 	"Out of memory"
 #define SFTFILEIO_MSGEGLOB 	"Failed to get filelist from directory/pattern"
 #define SFTFILEIO_MSGEDIFFLENGTH "Sorry, can only read SFTs of identical length (currently)"
+#define SFTFILEIO_MSGESFTFORMAT	 "Illegal SFT-format"
+#define SFTFILEIO_MSGESFTWRITE	 "Failed to write SFT to file"
+#define SFTFILEIO_MSGECONSTRAINTS "Could not satisfy the requested SFT-query constraints"
+
 /*@}*/
 
+/** 'Constraints' for SFT-matching: which detector, within which time-stretch and which 
+ * timestamps exactly should be loaded ? 
+ * Any of the entries is optional, and they will be combined by logical AND.
+ * Note however, that *ALL* timestamps within [startTime, endTime] MUST be found if specified.
+ */
+typedef struct
+{
+  CHAR *detector;			/**< 2-char channel-prefix describing the detector (eg 'H1', 'H2', 'L1', 'G1' etc) */
+  LIGOTimeGPS *startTime;		/**< only include SFTs starting >= startTime */
+  LIGOTimeGPS *endTime;			/**< only include SFTs starting <= endTime */
+  LIGOTimeGPSVector *timestamps;	/**< list of timestamps  */
+} SFTConstraints;
 
-/** This structure contains the header-info contained in an SFT-file of specification 
+
+/** A 'descriptor' of an SFT: basically containing the header-info plus an opaque description
+ * of where exactly to load this SFT from.
+ */
+typedef struct 
+{
+  struct tagSFTLocator *locator; 	/**< *internal* description of where to find this SFT [opaque!] */
+  SFTtype header;			/**< SFT-header info */
+  CHAR *comment;			/**< comment-entry in SFT-header (v2 only) */
+  UINT4 numBins;			/**< number of frequency-bins in this SFT */
+} SFTDescriptor;
+
+
+/** An "SFT-catalogue": a vector of SFTdescriptors, as returned by LALSFTdataFind() */
+typedef struct 
+{
+  UINT4 length;
+  SFTDescriptor *data;
+} SFTCatalog;
+
+/*
+ * Functions Declarations (i.e., prototypes).
+ */
+
+/*================================================================================
+ * NEW API: allowing for SFT-v2 
+ *================================================================================*/
+void LALSFTdataFind (LALStatus *, SFTCatalog **catalog, const CHAR *file_pattern, SFTConstraints *constraints);
+
+void LALLoadSFTs ( LALStatus *, SFTVector **sfts, const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
+void LALWriteSFT2file (LALStatus *, const SFTtype *sft, const CHAR *fname, const CHAR *comment ); 
+
+void LALDestroySFTCatalog ( LALStatus *status, SFTCatalog **catalog );
+void LALSFTtimestampsFromCatalog (LALStatus *, LIGOTimeGPSVector **timestamps, const SFTCatalog *catalog );
+const CHAR * XLALshowSFTLocator ( const struct tagSFTLocator *locator );
+
+/*================================================================================
+ * OBSOLETE v1-only API [DEPRECATED!]
+ *================================================================================*/
+
+
+/** [DEPRECATED] This structure contains the header-info contained in an SFT-file of specification 
  * version v1.0.
  */
 typedef struct tagSFTHeader {
@@ -97,9 +240,7 @@ typedef struct tagSFTHeader {
 } SFTHeader;
 
 
-/*
- * Functions Declarations (i.e., prototypes).
- */
+
 void LALReadSFTheader (LALStatus *, SFTHeader *header, const CHAR *fname); 
 void LALReadSFTdata (LALStatus *, SFTtype *sft, const CHAR *fname, INT4 fminBinIndex);
 void LALWriteSFTfile (LALStatus *, const SFTtype *sft, const CHAR *outfname);

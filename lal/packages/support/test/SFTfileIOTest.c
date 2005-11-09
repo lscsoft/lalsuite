@@ -1,57 +1,43 @@
-/*-----------------------------------------------------------------------
+/*
+ * Copyright (C) 2004, 2005 R. Prix, B. Machenschalk, A.M. Sintes
  *
- * File Name: SFTfileIOTest.c
- * Authors: Sintes, A.M., Machenschalk, B.
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
  *
- * Revision: $Id$
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
- * History:   Created by Sintes May 21, 2003
- *            Modified...
- *
- *-----------------------------------------------------------------------
+ *  You should have received a copy of the GNU General Public License
+ *  along with with program; see the file COPYING. If not, write to the 
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  MA  02111-1307  USA
  */
-/************************************ <lalVerbatim file="SFTfileIOTestCV">
-Author: Sintes, A.M., Prix, R., Machenschalk, B.
-$Id$
-************************************* </lalVerbatim> */
-
-/* <lalLaTeX>  *******************************************************
-
-\subsection{Program \texttt{SFTfileIOTest.c}}
-\label{s:SFTfileIOTest.c}
-
-Tests the routines in \verb@SFTfileIO.h@.
-
-\subsubsection*{Usage}
-\begin{verbatim}
-SFTfileIOTest -d debugLevel -i inputSFT
-\end{verbatim}
-
-\subsubsection*{Description}
-
-This program has ugly code for testing the SFT file reading and writing.
-
-\subsubsection*{Exit codes}
-
-\input{SFTFILEIOTESTCErrorTable}
-
-\subsubsection*{Uses}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{SFTfileIOTestCV}}
-
-</lalLaTeX> */
 
 
+/** \file
+ * \ingroup SFTfileIO
+ * \author R. Prix, B. Machenschalk, A.M. Sintes
+ * 
+ * \brief Test-code for SFT-fileIO library 
+ *
+ * $Id$ 
+ *
+ */
+
+/*---------- INCLUDES ----------*/
 #include <config.h>
 #include <lal/SFTfileIO.h>
 
 NRCSID (SFTFILEIOTESTC, "$Id$");
 
-/* Error codes and messages */
+/*---------- DEFINES ----------*/
 
-/************** <lalErrTable file="SFTFILEIOTESTCErrorTable"> */
+/** \name Error codes */
+/*@{*/
 #define SFTFILEIOTESTC_ENORM 	0
 #define SFTFILEIOTESTC_ESUB  	1
 #define SFTFILEIOTESTC_EARG  	2
@@ -65,19 +51,22 @@ NRCSID (SFTFILEIOTESTC, "$Id$");
 #define SFTFILEIOTESTC_MSGEBAD  "Bad argument values"
 #define SFTFILEIOTESTC_MSGEFILE "Could not create output file"
 #define SFTFILEIOTESTC_MSGESFTDIFF "initial and final SFTs differ"
+/*@}*/
 
-/******************************************** </lalErrTable> */
+
+#ifndef SRCDIR
+#define SRCDIR "."
+#endif
+
+#define TESTDIR SRCDIR "/"
 
 
 /* Default parameters. */
-
-INT4 lalDebugLevel=3;
-
 #define MAXFILENAMELENGTH 64
 #define NFSIZE 5
 #define THRESHOLD 2.0
-#define INFILE  "inputsft.0" /* little endian sft */
-#define INFILE2 "inputsft.1" /* big endian sft */
+#define INFILE   	"inputsft.0" /* little endian sft */
+#define INFILE2 	"inputsft.1" /* big endian sft */
 #ifndef _MSC_VER
 #define OUTFILE1 "./TestOutputSFT.0"
 #define OUTFILE2 "./TestOutputSFT.1"
@@ -87,11 +76,6 @@ INT4 lalDebugLevel=3;
 #define OUTFILE2 ".\\TestOutputSFT.1"
 #define FPATTERN ".\\Test*SFT?[0-9]"
 #endif
-
-/* Usage format string. */
-
-#define USAGE "Usage: %s [-d debuglevel] [-i infile] \n"
-
 
 /*********************************************************************/
 /* Macros for printing errors & testing subroutines (from Creighton) */
@@ -122,170 +106,138 @@ do {                                                                 \
     return SFTFILEIOTESTC_ESUB;                                  \
   }                                                                  \
 } while (0)
-/******************************************************************/
 
-/* A global pointer for debugging. */
-#ifndef NDEBUG
-char *lalWatch;
-#endif
 
+#define SHOULD_FAIL( func, statusptr )							\
+do { 											\
+  if ( func, ! (statusptr)->statusCode ) {						\
+    ERROR( SFTFILEIOTESTC_ESUB, SFTFILEIOTESTC_MSGESUB,      				\
+          "Function call '" #func "' should have failed for this SFT but didn't!");	\
+    return SFTFILEIOTESTC_ESUB;   			                               	\
+   }											\
+} while(0)
+
+#define SHOULD_WORK( func, statusptr )							\
+do { 											\
+  if ( func, (statusptr)->statusCode ) {						\
+    ERROR( SFTFILEIOTESTC_ESUB, SFTFILEIOTESTC_MSGESUB,      				\
+          "Function call '" #func "' failed but should have worked for this SFT!");	\
+    return SFTFILEIOTESTC_ESUB;   			                               	\
+   }											\
+} while(0)
+
+
+
+
+/*---------- empty initializers ---------- */
+LALStatus empty_status;
+
+/*---------- Global variables ----------*/
+
+INT4 lalDebugLevel = 3;
 
 /* ----------------------------------------------------------------------*/
-int main(int argc, char *argv[]){ 
-  static LALStatus       status;  /* LALStatus pointer */ 
-  SFTtype *sft1 = NULL;
-  SFTtype *sft2 = NULL;
-  SFTtype *sft3 = NULL;
-  SFTVector *sftvect = NULL;
-  REAL8 fmin, fmax;
+int main(int argc, char *argv[])
+{ 
+  LALStatus status = empty_status;
+
+  SFTCatalog *catalog = NULL;
+  SFTVector *sft_vect = NULL;
+
+  /* band to read from infile.* SFTs */
+  REAL8 fMin = 1008.5;
+  REAL8 fMax = 1009.1;
     
-  const CHAR *fname;              /* The input filename */
-  const CHAR *outfname;           /* output sft file name */
-  INT4 arg;                       /* Argument counter */
- 
-  fname = INFILE;
-  outfname = OUTFILE1;
+  /* check that mal-formated SFTs are properly detected */
+  SHOULD_FAIL( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad1", NULL ), &status );
+  SHOULD_FAIL( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad2", NULL ), &status );
+  SHOULD_FAIL( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad3", NULL ), &status );
+  SHOULD_FAIL( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad4", NULL ), &status );
+  SHOULD_FAIL( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad5", NULL ), &status );
 
-  /**********************************************************/  
-  /* Parse argument list.  arg stores the current position. */
-  /**********************************************************/
-  arg = 1;
-  while ( arg < argc ) {
-    /* Parse debuglevel option. */
-    if ( !strcmp( argv[arg], "-d" ) ) {
-      if ( argc > arg + 1 ) {
-        arg++;
-        lalDebugLevel = atoi( argv[arg++] );
-      } else {
-        ERROR( SFTFILEIOTESTC_EARG, SFTFILEIOTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
-        return SFTFILEIOTESTC_EARG;
-      }
-    }
-    /* Parse input sft file option. */
-    else if ( !strcmp( argv[arg], "-i" ) ) {
-      if ( argc > arg + 1 ) {
-        arg++;
-        fname = argv[arg++];
-      } else {
-        ERROR( SFTFILEIOTESTC_EARG, SFTFILEIOTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
-        return SFTFILEIOTESTC_EARG;
-      }
-    }   
-    /* Unrecognized option. */
-    else {
-      ERROR( SFTFILEIOTESTC_EARG, SFTFILEIOTESTC_MSGEARG, 0 );
-      LALPrintError( USAGE, *argv );
-      return SFTFILEIOTESTC_EARG;
-    }
-  } /* End of argument parsing loop. */
-  /******************************************************************/
+  /* the following (SFT-bad6) has a wrong CRC64 checksum. However, this is 
+   * not checked in LALSFTdataFind, so it should succeed! */
+  SHOULD_WORK( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad6", NULL ), &status );
+  SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
 
-  fmin = 1008.5;
-  fmax = 1009.1;
+  SHOULD_FAIL( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad7", NULL ), &status );
+  SHOULD_FAIL( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad8", NULL ), &status );
+  SHOULD_FAIL( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad9", NULL ), &status );
+  SHOULD_FAIL( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad10", NULL ), &status );
+  SHOULD_FAIL( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad11", NULL ), &status );
+  SHOULD_FAIL( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad12", NULL ), &status );
+  SHOULD_FAIL( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad13", NULL ), &status );
+  SHOULD_FAIL( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad14", NULL ), &status );
 
-  printf ("Testing LALWriteSFTfile() and LALReadSFTfile()\n");
-  /* read SFT from disk into sft1 */
-  /* try to do the same thing with ReadSFTfile() */
-  SUB (LALReadSFTfile (&status, &sft1, fmin, fmax, fname), &status);
+  /* check that proper v2-SFTs are read-in properly */
+  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-test1", NULL ), &status );
+  SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
+  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-test2", NULL ), &status );
+  SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
+  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-test3", NULL ), &status );
+  SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
+  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-test4", NULL ), &status );
+  SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
+  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-test5", NULL ), &status );
+  SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
+  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-test6", NULL ), &status );
+  SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
+  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-test7", NULL ), &status );
+  SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
 
-  /* write SFT to disk */
-  SUB (LALWriteSFTfile (&status, sft1, OUTFILE1), &status);
+  /* now completely read-in a v2 merged-SFT */
+  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-good", NULL ), &status );
+  SHOULD_WORK ( LALLoadSFTs ( &status, &sft_vect, catalog, -1, -1 ), &status );
+  SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
 
-  /* read the written SFT into sft2 */
-  SUB (LALReadSFTfile (&status, &sft2, fmin, fmax, OUTFILE1), &status);
-
-  /* write it out again */
-  SUB (LALWriteSFTfile (&status, sft2, OUTFILE2), &status);
-
-  /* compare sft1 and sft2 */
-  if ( (sft1->epoch.gpsSeconds != sft2->epoch.gpsSeconds)
-       || (sft1->epoch.gpsNanoSeconds != sft2->epoch.gpsNanoSeconds)  )
+  /* 3 SFTs with 4 frequency-bins should have been read */
+  if ( (sft_vect->length != 3) || ( sft_vect->data[0].data->length != 4 ) )
     {
-      ERROR (SFTFILEIOTESTC_ESFTDIFF, SFTFILEIOTESTC_MSGESFTDIFF, 0);
-      return SFTFILEIOTESTC_ESFTDIFF;
-    }
-  if ( (sft1->f0 != sft2->f0) || (sft1->deltaF != sft2->deltaF) ) {
-    ERROR (SFTFILEIOTESTC_ESFTDIFF, SFTFILEIOTESTC_MSGESFTDIFF, 0);
-    return SFTFILEIOTESTC_ESFTDIFF;
-  }
-  if ( sft1->data->length != sft2->data->length) {
-    ERROR (SFTFILEIOTESTC_ESFTDIFF, SFTFILEIOTESTC_MSGESFTDIFF, 0);
-    return SFTFILEIOTESTC_ESFTDIFF;
-  }
-  if ( memcmp (sft1->data->data, sft2->data->data, sft1->data->length) ) {
-    ERROR (SFTFILEIOTESTC_ESFTDIFF, SFTFILEIOTESTC_MSGESFTDIFF, 0);
-    return SFTFILEIOTESTC_ESFTDIFF;
-  }
-
-  /* read the big-endian sft if default input file was used */
-  if (0 == strcmp(INFILE,fname)) {
-    printf ("Testing LALReadSFTfile() with big-endian SFT\n");
-
-    SUB (LALReadSFTfile (&status, &sft3, fmin, fmax, INFILE2), &status);
-
-    /* compare sft3 and sft2 */
-    if ( (sft3->epoch.gpsSeconds != sft2->epoch.gpsSeconds)
-	 || (sft3->epoch.gpsNanoSeconds != sft2->epoch.gpsNanoSeconds)  )
-    {
-      ERROR (SFTFILEIOTESTC_ESFTDIFF, SFTFILEIOTESTC_MSGESFTDIFF, 0);
-      return SFTFILEIOTESTC_ESFTDIFF;
-    }
-    if ( (sft3->f0 != sft2->f0) || (sft3->deltaF != sft2->deltaF) ) {
-      ERROR (SFTFILEIOTESTC_ESFTDIFF, SFTFILEIOTESTC_MSGESFTDIFF, 0);
-      return SFTFILEIOTESTC_ESFTDIFF;
-    }
-    if ( sft3->data->length != sft2->data->length) {
-      ERROR (SFTFILEIOTESTC_ESFTDIFF, SFTFILEIOTESTC_MSGESFTDIFF, 0);
-      return SFTFILEIOTESTC_ESFTDIFF;
-    }
-    if ( memcmp (sft3->data->data, sft2->data->data, sft3->data->length) ) {
-      ERROR (SFTFILEIOTESTC_ESFTDIFF, SFTFILEIOTESTC_MSGESFTDIFF, 0);
-      return SFTFILEIOTESTC_ESFTDIFF;
-    }
-
-    LALDestroySFTtype (&status, &sft3);
-  }
-
-  LALDestroySFTtype (&status, &sft1);
-  LALDestroySFTtype (&status, &sft2);
-
-  /*----------------------------------------------------------------------*/
-  printf ("Testing LALReadSFTfiles()\n");
-
-  /* now re-read OUTFILE1 and OUTFILE2 using a pattern */
-  SUB (LALReadSFTfiles (&status, &sftvect, fmin, fmax, 0, FPATTERN), &status);
-  
-  if(sftvect->length != 2)
-    {
-      LALPrintError ("Exactly TWO SFTs were expected with pattern '%s', but got only %d\n", FPATTERN, sftvect->length);
+      LALPrintError ( "\nFailed to read in 3 SFTs from merged-SFTfile 'SFT-good'!\n\n");
       return SFTFILEIOTESTC_ESUB;
     }
 
-  /* compare sft1 and sft2 */
-  if ( (sftvect->data[0].epoch.gpsSeconds != sftvect->data[1].epoch.gpsSeconds)
-       || (sftvect->data[0].epoch.gpsNanoSeconds != sftvect->data[1].epoch.gpsNanoSeconds)  )
-    {
-      ERROR (SFTFILEIOTESTC_ESFTDIFF, SFTFILEIOTESTC_MSGESFTDIFF, 0);
-      return SFTFILEIOTESTC_ESFTDIFF;
-    }
-  if ( (sftvect->data[0].f0 != sftvect->data[1].f0) || (sftvect->data[0].deltaF != sftvect->data[1].deltaF) ) {
-    ERROR (SFTFILEIOTESTC_ESFTDIFF, SFTFILEIOTESTC_MSGESFTDIFF, 0);
-    return SFTFILEIOTESTC_ESFTDIFF;
-  }
-  if ( sftvect->data[0].data->length != sftvect->data[1].data->length) {
-    ERROR (SFTFILEIOTESTC_ESFTDIFF, SFTFILEIOTESTC_MSGESFTDIFF, 0);
-    return SFTFILEIOTESTC_ESFTDIFF;
-  }
-  if ( memcmp (sftvect->data[0].data->data, sftvect->data[1].data->data, sftvect->data[0].data->length) ) {
-    ERROR (SFTFILEIOTESTC_ESFTDIFF, SFTFILEIOTESTC_MSGESFTDIFF, 0);
-    return SFTFILEIOTESTC_ESFTDIFF;
-  }
+  /* write v1-SFT to disk */
+  SUB (LALWriteSFTfile (&status, &(sft_vect->data[2]), "outputsft_v1.sft"), &status);
+  /* write v2-SFT to disk */
+  SHOULD_WORK (LALWriteSFT2file( &status, &(sft_vect->data[2]), "outputsft_v2.sft", "A v2-SFT file for testing!"), &status );
 
-  LALDestroySFTVector (&status, &sftvect);
+  SUB ( LALDestroySFTVector (&status, &sft_vect ), &status );
+  /* read the previous two SFTs back */
+  SUB ( LALSFTdataFind ( &status, &catalog, "outputsft_*.sft", NULL ), &status );
+  SUB ( LALLoadSFTs ( &status, &sft_vect, catalog, -1, -1 ), &status );
+
+  if ( sft_vect->length != 2 )
+    {
+      if ( lalDebugLevel ) LALPrintError ("\nFailed to read back in 'outputsft_*.sft'\n\n");
+      return SFTFILEIOTESTC_ESUB;
+    }
+  /* try to write one of those v1-SFTs as v2: should fail without detector-info ! */
+  SHOULD_FAIL (LALWriteSFT2file( &status, &(sft_vect->data[0]), "outputsft_v2.sft", "Another v2-SFT file for testing!"), &status );
+  /* put detector there */
+  strcpy ( sft_vect->data[0].name, "H1" );
+  SHOULD_WORK (LALWriteSFT2file( &status, &(sft_vect->data[0]), "outputsft_v2.sft", "Another v2-SFT file for testing!"), &status );
+
+
+  SUB ( LALDestroySFTVector (&status, &sft_vect ), &status );
+  SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
+  /* read v1-SFTs: 'inputsft.0' and 'inputsft.1' (one is big-endian, the other little-endian!) */
+  SUB ( LALSFTdataFind (&status, &catalog, TESTDIR "inputsft.?", NULL ), &status );
+  SUB ( LALLoadSFTs ( &status, &sft_vect, catalog, fMin, fMax ), &status );
+  if ( sft_vect->length != 2 )
+    {
+      if ( lalDebugLevel ) LALPrintError ("\nFailed to read in v1-SFTs 'inputsft.0' and 'inputsft.1'\n\n");
+      return SFTFILEIOTESTC_ESUB;
+    }
+  SUB ( LALDestroySFTVector (&status, &sft_vect ), &status );
+  SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
 
   LALCheckMemoryLeaks(); 
+
+  LALPrintError ("\n\n--------------------------------------------------------------------------------\n");
+  LALPrintError ("\n    OK. All tests passed correctly ! (error-messages above are OK!)\n");
+  LALPrintError ("\n--------------------------------------------------------------------------------\n");
+
 
   INFO( SFTFILEIOTESTC_MSGENORM );
   return SFTFILEIOTESTC_ENORM;

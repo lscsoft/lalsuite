@@ -30,45 +30,765 @@
 
 /*---------- INCLUDES ----------*/
 #include <sys/types.h>
+#include <errno.h>
+#include <string.h>
+#include <strings.h>
+
 #ifndef _MSC_VER
 #include <dirent.h>
 #else
 #include <io.h>
 #endif
 
+#include <lal/LALStdio.h>
 #include <lal/FileIO.h>
-#include <lal/SFTfileIO.h>
+#include "lal/SFTfileIO.h"
 
-/*---------- DEFINES ----------*/
 NRCSID (SFTFILEIOC, "$Id$");
+/*---------- DEFINES ----------*/
+
+#define TRUE    1
+#define FALSE   0
 
 /*----- Macros ----- */
 #define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
 
+/* rounding for positive numbers! */
+#define MYROUND(x) ( floor( (x) + 0.5 ) )
+      
 /*---------- internal types ----------*/
-/* for private use: a vector of 'strings' */
-typedef struct {
-  UINT4 length;
-  CHAR **data;
-} StringVector;
+
+/* NOTE: the locator is implemented as an OPQUE type in order to enforce encapsulation 
+ * of the actual physical storage of SFTs and to ease future extensions of the interface.
+ * DO NOT TRY TO USE THIS TYPE OUTSIDE OF THIS MODULE!!
+ */
+struct tagSFTLocator 
+{
+  CHAR *fname;		/* name of file containing this SFT */
+  long offset;		/* SFT-offset with respect to a merged-SFT */
+};
+
+typedef struct
+{
+  REAL8 version;
+  INT4 gps_sec;
+  INT4 gps_nsec;
+  REAL8 tbase;
+  INT4 first_frequency_index;
+  INT4 nsamples;
+} _SFT_header_v1_t;
+
+typedef struct
+{
+  REAL8 version;
+  INT4 gps_sec;
+  INT4 gps_nsec;
+  REAL8 tbase;
+  INT4 first_frequency_index;
+  INT4 nsamples;
+  UINT8 crc64;
+  CHAR detector[2];
+  CHAR padding[2];
+  INT4 comment_length;
+} _SFT_header_v2_t;
+
 
 /*---------- empty initializers ---------- */
+SFTtype empty_SFTtype;
+SFTDescriptor empty_SFTDescriptor;
+
 /*---------- Global variables ----------*/
 
 /*---------- internal prototypes ----------*/
-static StringVector *find_files (const CHAR *fpattern);
-static void DestroyStringVector (StringVector *strings);
-static void SortStringVector (StringVector *strings);
+static LALStringVector *find_files (const CHAR *fpattern);
+static void DestroyStringVector (LALStringVector *strings);
+static void SortStringVector (LALStringVector *strings);
 static void endian_swap(CHAR * pdata, size_t dsize, size_t nelements);
 static int amatch(char *str, char *p);	/* glob pattern-matcher (public domain)*/
 
-/* number of bytes in SFT-header v1.0 */
-static const size_t header_len_v1 = 32;	
+static BOOLEAN is_valid_detector (const char *channel);
+static BOOLEAN consistent_mSFT_header ( SFTtype header1, UINT4 version1, UINT4 nsamples1, SFTtype header2, UINT4 version2, UINT4 nsamples2 );
+static BOOLEAN timestamp_in_list( LIGOTimeGPS timestamp, LIGOTimeGPSVector *list );
+static long get_file_len ( FILE *fp );
 
+static void read_one_sft_from_fp (  LALStatus *status, SFTtype **sft, REAL8 fMin, REAL8 fMax, FILE *fp );
+static int read_sft_header_from_fp (FILE *fp, SFTtype  *header, UINT4 *version, UINT8 *crc64, BOOLEAN *swapEndian, CHAR **comment, UINT4 *numBins );
+static int read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *crc64, CHAR **comment, BOOLEAN swapEndian);
+static int read_v1_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, BOOLEAN swapEndian);
+static int compareSFTdesc(const void *ptr1, const void *ptr2);
+static UINT8 calc_crc64(const CHAR *data, UINT4 length, UINT8 crc);
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
-/** Function to read and return a list of SFT-headers for given 
+/** Find the list of SFTs matching the \a file_pattern and satisfying the given \a constraints, 
+ * return an \c SFTCatalog of the matching SFTs.
+ * 
+ * The optional \a constraints that can be specified are (type SFTConstraints)
+ * - 'detector':      	which detector
+ * - 'time-span':    	GPS start- and end-times
+ * - 'timestamps':    	list of GPS start-times
+ *
+ * 
+ * ==> The returned SFTCatalog can be used directly as input to LALLoadSFTs() in order
+ * to load the matching SFTs into an SFTVector.
+ *
+ * Except for the 'file_pattern' input, all the other constraints are optional
+ * and can be passed as NULL (either globally constraings==NULL, or individually).
+ *
+ * Note that the constraints are combined by 'AND' and the resulting full constraint 
+ * MUST be satisfied (in particular: if 'timestamps' is given, all timestamps within 
+ * [startTime, endTime] MUST be found!.
+ *
+ * The returned SFTs in the catalogue are sorted by increasing GPS-epochs !
+ * 
+ */
+void
+LALSFTdataFind (LALStatus *status,
+		SFTCatalog **catalog,		/**< [out] SFT-catalogue of matching SFTs */
+		const CHAR *file_pattern,	/**< where to find the SFTs: normally a path+file-pattern */
+		SFTConstraints *constraints	/**< additional constraints for SFT-selection */
+		)
+{
+  LALStringVector *fnames;
+  UINT4 i, numFiles;
+  SFTCatalog *ret = NULL;
+
+  INITSTATUS (status, "LALSFTdataFind", SFTFILEIOC);
+  ATTATCHSTATUSPTR (status); 
+
+  /* ----- check input */
+  ASSERT ( catalog, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
+  ASSERT ( (*catalog) == NULL, status, SFTFILEIO_ENONULL, SFTFILEIO_MSGENONULL );
+
+  ASSERT ( file_pattern, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
+
+  if ( constraints && constraints->detector && ! is_valid_detector(constraints->detector) ) 
+    {
+      if ( lalDebugLevel ) LALPrintError( "\nInvalid detector-constraint '%s'\n\n", constraints->detector );
+      ABORT ( status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL );
+    }
+
+  /* prepare return-catalog */
+  if ( (ret = LALCalloc ( 1, sizeof ( SFTCatalog ))) == NULL ) {
+    ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
+  }
+
+  /* find matching filenames */
+  if ( (fnames = find_files (file_pattern)) == NULL) {
+    if ( lalDebugLevel ) LALPrintError ("\nFailed to get filelist for pattern '%s'.\n\n", file_pattern);
+    ABORT (status, SFTFILEIO_EGLOB, SFTFILEIO_MSGEGLOB);
+  }
+  numFiles = fnames->length;
+
+
+  /* ----- main loop: parse all matching files */
+  for ( i=0; i < numFiles; i ++ )
+    {
+      CHAR *fname = fnames->data[i];
+      
+      FILE *fp;      
+      long file_len;
+
+      /* merged SFTs need to satisfy consistency-constraints across their SFT-blocks: (-> see spec) */
+      BOOLEAN first_block = TRUE;
+      UINT4 prev_version = 0;
+      SFTtype prev_header;
+      REAL8 prev_nsamples = 0;
+
+
+      if ( ( fp = LALFopen( fname, "rb" ) ) == NULL )
+	{
+	  LALPrintError ( "\nFailed to open matched file '%s'\n\n", fname );
+	  LALDestroyStringVector ( status->statusPtr, &fnames );
+	  LALDestroySFTCatalog ( status->statusPtr, &ret );
+	  ABORT( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
+	}
+      if ( (file_len = get_file_len(fp)) == 0 )
+	{
+	  LALPrintError ( "\nGot file-len == 0 for '%s'\n\n", fname );
+	  LALDestroyStringVector ( status->statusPtr, &fnames );
+	  LALDestroySFTCatalog ( status->statusPtr, &ret );
+	  fclose(fp);
+	  ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
+	}
+      /* go through SFT-blocks in fp */
+      while ( ftell(fp) < file_len )
+	{
+	  SFTtype this_header;
+	  UINT4 this_version;
+	  UINT4 this_nsamples;
+	  UINT8 this_crc;
+	  CHAR *this_comment = NULL;
+	  BOOLEAN endian;
+	  BOOLEAN want_this_block = FALSE;
+
+	  long this_filepos;
+	  if ( (this_filepos = ftell(fp)) == -1 )
+	    {
+	      LALPrintError ("\nftell() failed for '%s'\n\n", fname );
+	      LALDestroyStringVector ( status->statusPtr, &fnames );
+	      LALDestroySFTCatalog ( status->statusPtr, &ret );
+	      fclose (fp);
+	      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
+	    }
+
+	  if ( read_sft_header_from_fp (fp, &this_header, &this_version, &this_crc, &endian, &this_comment, &this_nsamples ) != 0 )
+	    {
+	      if ( lalDebugLevel ) 
+		LALPrintError ("\nERROR:File-position %ld in SFT-file '%s' does not start a valid SFT-block and is not EOF!\n\n",
+			       ftell(fp), fname );
+	      LALDestroyStringVector ( status->statusPtr, &fnames );
+	      if ( this_comment ) LALFree ( this_comment );
+	      LALDestroySFTCatalog ( status->statusPtr, &ret );
+	      fclose(fp);
+	      ABORT ( status, SFTFILEIO_EHEADER, SFTFILEIO_MSGEHEADER );
+	    }
+	  
+	  /* if merged-SFT: check consistency constraints */
+	  if ( !first_block )
+	    {
+	      if ( ! consistent_mSFT_header ( prev_header, prev_version, prev_nsamples, this_header, this_version, this_nsamples ) )
+		{
+		  if ( lalDebugLevel ) LALPrintError ("merged SFT-file '%s' contains inconsistent SFT-blocks!\n\n", fname);
+		  if ( this_comment ) LALFree ( this_comment );
+		  LALDestroyStringVector ( status->statusPtr, &fnames );
+		  LALDestroySFTCatalog ( status->statusPtr, &ret );
+		  fclose(fp);
+		  ABORT ( status, SFTFILEIO_EHEADER, SFTFILEIO_MSGEHEADER );
+		}
+	    } /* if !first_block */
+	  
+	  first_block = FALSE;
+	  prev_header = this_header;
+	  prev_version = this_version;
+	  prev_nsamples = this_nsamples;
+
+	  /* seek to end of SFT data-entries in file  */
+	  if ( fseek ( fp, this_nsamples * 8 , SEEK_CUR ) == -1 )
+	    {
+	      if ( lalDebugLevel ) LALPrintError ( "\nFailed to skip DATA field for SFT '%s': %s\n", fname, strerror(errno) );
+	      if ( this_comment ) LALFree ( this_comment );
+	      LALDestroyStringVector ( status->statusPtr, &fnames );
+	      LALDestroySFTCatalog ( status->statusPtr, &ret );
+	      fclose(fp);
+	      ABORT ( status, SFTFILEIO_ESFTFORMAT, SFTFILEIO_MSGESFTFORMAT);
+	    }
+
+	  want_this_block = TRUE;	/* default */
+	  /* but does this SFT-block satisfy the user-constraints ? */
+	  if ( constraints )
+	    {
+	      if ( constraints->detector && strncmp( constraints->detector, this_header.name, 2) )
+		want_this_block = FALSE;
+
+	      if ( constraints->startTime && ( GPS2REAL8(this_header.epoch) < GPS2REAL8( *constraints->startTime) ) )
+		want_this_block = FALSE;
+
+	      if ( constraints->endTime && ( GPS2REAL8(this_header.epoch) > GPS2REAL8( *constraints->endTime ) ) )
+		want_this_block = FALSE;
+
+	      if ( constraints->timestamps && !timestamp_in_list(this_header.epoch, constraints->timestamps) )
+		want_this_block = FALSE;
+
+	    } /* if constraints */
+
+	  if ( want_this_block )
+	    {
+	      UINT4 oldlen = ret->length;
+	      SFTDescriptor *desc;
+
+	      ret->data = LALRealloc ( ret->data, (oldlen+1) * sizeof( *(ret->data) ) );
+
+	      ret->length ++;
+	      if ( ret->data == NULL )
+		{
+		  LALDestroyStringVector ( status->statusPtr, &fnames );
+		  LALDestroySFTCatalog ( status->statusPtr, &ret );
+		  if ( this_comment ) LALFree ( this_comment );
+		  fclose(fp);
+		  ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM);
+		}
+	      desc = &(ret->data[oldlen]);
+
+	      desc->locator = LALCalloc ( 1, sizeof ( *(desc->locator) ) );
+	      if ( desc->locator )
+		desc->locator->fname = LALCalloc( 1, strlen(fname) + 1 );
+	      if ( (desc->locator == NULL) || (desc->locator->fname == NULL ) )
+		{
+		  LALDestroyStringVector ( status->statusPtr, &fnames );
+		  LALDestroySFTCatalog ( status->statusPtr, &ret );
+		  fclose(fp);
+		  ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM);
+		}
+	      strcpy ( desc->locator->fname, fname );
+	      desc->locator->offset = this_filepos;
+
+	      desc->header = this_header;
+	      desc->comment = this_comment;
+
+	    } /* if want_this_block */
+	  else
+	    {
+	      if ( this_comment ) LALFree ( this_comment );
+	    }
+
+	} /* while !feof */
+
+      fclose(fp);
+
+    } /* for i < numFiles */
+
+  /* free matched filenames */
+  LALDestroyStringVector ( status->statusPtr, &fnames );
+
+  /* last consistency-check: did we find exactly the timestamps that lie within [startTime, endTime]? */
+  if ( constraints && constraints->timestamps )
+    {
+      LIGOTimeGPSVector *ts = constraints->timestamps;
+      UINT4 numRequested = 0;
+      REAL8 t0, t1;
+      if ( constraints->startTime )
+	t0 = GPS2REAL8 ( (*constraints->startTime) );
+      else
+	t0 = -1;
+      if ( constraints->endTime )
+	t1 = GPS2REAL8 ( (*constraints->endTime) );
+      else
+	t1 = LAL_REAL4_MAX;	/* large enough */
+      
+      for (i=0; i < ts->length; i ++ )
+	{
+	  REAL8 ti = GPS2REAL8(ts->data[i]);
+	  if ( (t0 <= ti) && ( ti <= t1 ) )
+	    numRequested ++;
+	}
+      if ( numRequested != ret->length )
+	{
+	  if ( lalDebugLevel ) LALPrintError ("\nERROR: found %s SFTs (%d) than given timestamps within [%f, %f] (%d)\n\n",
+					      (ret->length < numRequested )?"fewer":"more", 
+					      ret->length, t0, t1, numRequested );
+	  ABORT ( status, SFTFILEIO_ECONSTRAINTS, SFTFILEIO_MSGECONSTRAINTS );
+	}
+    } /* if constraints->timestamps */
+
+  /* sort catalog in order of increasing GPS-time */
+  qsort( (void*)ret->data, ret->length, sizeof( ret->data[0] ), compareSFTdesc );
+
+
+  /* return result catalog (=sft-vect and locator-vect) */
+  (*catalog) = ret;
+  
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+
+} /* LALSFTdataFind() */
+
+
+
+/** Extract a timstamps-vector from the given SFTCatalog.
+ */
+void
+LALSFTtimestampsFromCatalog (LALStatus *status,
+			     LIGOTimeGPSVector **timestamps,	/**< [out] extracted timestamps */
+			     const SFTCatalog *catalog )	/**< input SFT-catalogue */
+{
+  UINT4 numSFTs;
+  UINT4 i;
+  LIGOTimeGPSVector *ret = NULL;
+
+  INITSTATUS (status, "LALSFTdataFind", SFTFILEIOC);
+  ATTATCHSTATUSPTR (status); 
+
+  ASSERT ( timestamps, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
+  ASSERT ( catalog, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
+  ASSERT ( catalog->length > 0, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
+  ASSERT ( *timestamps == NULL, status, SFTFILEIO_ENONULL, SFTFILEIO_MSGENONULL );
+
+  numSFTs = catalog->length;
+
+  TRY ( LALCreateTimestampVector ( status->statusPtr, &ret, numSFTs ), status );
+
+  for ( i=0; i < numSFTs; i ++ )
+    ret->data[i] = catalog->data[i].header.epoch;
+
+
+  /* done: return Ts-vector */
+  (*timestamps) = ret;
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+} /* LALTimestampsFromSFTCatalog() */
+
+
+
+/** Load the given frequency-band <tt>[fMin, fMax]</tt> (inclusively) from the SFT-files listed in the 
+ * SFT-'catalogue' ( returned by LALSFTdataFind() ).
+ *
+ * Note: \a fMin (or \a fMax) is allowed to be set to \c -1, which means to read in all
+ * Frequency-bins from the lowest (or up to the highest) found in the SFT-file.
+ * 
+ * Note 2: The returned frequency-interval is guaranteed to contain <tt>[fMin, fMax]</tt>, but is allowed 
+ * to be larger, as it must be an interval of discrete frequency-bins as found in the SFT-file.
+ */
+void
+LALLoadSFTs ( LALStatus *status,
+	      SFTVector **sfts,			/**< [out] vector of read-in SFTs */
+	      const SFTCatalog *catalog,	/**< The 'catalogue' of SFTs to load */
+	      REAL8 fMin,			/**< minumum requested frequency (-1 = read from lowest) */
+	      REAL8 fMax			/**< maximum requested frequency (-1 = read up to highest) */
+	      )
+{
+  UINT4 i;
+  UINT4 numSFTs;
+  SFTVector *ret = NULL;
+
+  INITSTATUS (status, "LALLoadSFTs", SFTFILEIOC);
+  ATTATCHSTATUSPTR (status); 
+
+  ASSERT ( sfts, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
+  ASSERT ( *sfts == NULL, status, SFTFILEIO_ENONULL, SFTFILEIO_MSGENONULL );
+  
+  ASSERT ( catalog, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
+
+  numSFTs = catalog -> length;
+
+  if ( ( ret = LALCalloc ( 1, sizeof( *ret ) )) == NULL ) {
+    ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
+  }
+
+  for ( i=0; i < numSFTs; i++ )
+    {
+      FILE *fp;
+      SFTtype *this_sft = NULL;
+
+      CHAR *fname = catalog->data[i].locator->fname;
+      if ( (fp = LALFopen( fname, "rb" )) == NULL )
+	{
+	  LALPrintError ("\nFailed to open SFT '%s' for reading: %s\n\n", fname, strerror(errno) );
+	  LALDestroySFTVector (status->statusPtr, &ret );
+	  ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
+	}
+      
+      if ( fseek( fp, catalog->data[i].locator->offset, SEEK_SET ) == -1 )
+	{
+	  LALPrintError ("\nFailed to set fp-offset to '%ld': %s\n\n", catalog->data[i].locator->offset, strerror(errno) );
+	  LALDestroySFTVector (status->statusPtr, &ret );
+	  fclose(fp);
+	  ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
+	}
+
+      read_one_sft_from_fp ( status->statusPtr,  &this_sft, fMin, fMax, fp );
+      BEGINFAIL ( status ) {
+	LALDestroySFTVector (status->statusPtr, &ret );
+	fclose(fp);
+      } ENDFAIL(status);
+
+      fclose(fp);
+
+      LALAppendSFT2Vector ( status->statusPtr, ret, this_sft );
+      BEGINFAIL ( status ) {
+	LALDestroySFTtype ( status->statusPtr, &this_sft );
+	LALDestroySFTVector (status->statusPtr, &ret );
+	fclose(fp);
+      } ENDFAIL(status);
+
+      LALDestroySFTtype ( status->statusPtr, &this_sft );
+
+    } /* for i < numSFTs */
+
+  /* return final SFT-vector */
+  (*sfts) = ret;
+  
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+
+} /* LALLoadSFTs() */
+
+/** Write the given SFTtype to a v2-SFT file.
+ *  Add the comment to SFT if comment != NULL.
+ *
+ * NOTE: Currently this only supports writing v2-SFTs.
+ * If you need to write a v1-SFT, you should use LALWriteSFTfile() */
+void
+LALWriteSFT2file (LALStatus *status,
+		  const SFTtype *sft,		/**< SFT to write to disk */
+		  const CHAR *fname,		/**< filename */
+		  const CHAR *comment)		/**< optional comment (for v2 only) */
+{
+  FILE  *fp = NULL;
+  UINT4 comment_len = 0;
+  UINT4 pad_len = 0;
+  CHAR pad[] = {0, 0, 0, 0, 0, 0, 0};	/* for comment-padding */
+  _SFT_header_v2_t rawheader;
+
+  INITSTATUS (status, "LALWriteSFTfile", SFTFILEIOC);
+  ATTATCHSTATUSPTR (status);   
+ 
+  /*   Make sure the arguments are not NULL and perform basic checks*/ 
+  ASSERT (sft,   status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL);
+  ASSERT (sft->data,  status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
+  ASSERT (sft->deltaF > 0, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
+  ASSERT (sft->f0 >= 0, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
+  ASSERT ( (sft->epoch.gpsSeconds >= 0) && (sft->epoch.gpsNanoSeconds >= 0), status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
+  ASSERT ( sft->epoch.gpsNanoSeconds < 1000000000, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
+  ASSERT (sft->data->length > 0, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
+
+  ASSERT ( is_valid_detector(sft->name), status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL );
+
+  ASSERT (fname, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL); 
+
+  /* open SFT-file for writing */
+  if ( (fp = LALFopen ( fname, "wb" )) == NULL )
+    {
+      if ( lalDebugLevel ) LALPrintError ("\nFailed to open file '%s' for writing: %s\n\n", fname, strerror(errno));
+      ABORT ( status, SFTFILEIO_ESFTWRITE, SFTFILEIO_MSGESFTWRITE );      
+    }
+  
+  /* comment length including null terminator to string must be an
+   * integer multiple of eight bytes. comment==NULL means 'no
+   * comment'  
+   */
+  if (comment) 
+    {
+      comment_len = strlen(comment) + 1;
+      pad_len = (8 - (comment_len % 8)) % 8;
+    }
+  
+  /* ----- fill out header */
+  rawheader.version        		= 2;
+  rawheader.gps_sec        		= sft->epoch.gpsSeconds;
+  rawheader.gps_nsec       		= sft->epoch.gpsNanoSeconds;
+  rawheader.tbase          		= 1.0 / sft->deltaF;
+  rawheader.first_frequency_index 	= MYROUND( sft->f0 / sft->deltaF );
+  rawheader.nsamples       		= sft->data->length;
+  rawheader.crc64          		= 0;	/* set to 0 for crc-calculation */
+  rawheader.detector[0]    		= sft->name[0];
+  rawheader.detector[1]    		= sft->name[1];
+  rawheader.padding[0]     		= 0;
+  rawheader.padding[1]     		= 0;
+  rawheader.comment_length 		= comment_len + pad_len;
+  
+  /* ----- compute CRC */
+  rawheader.crc64 = calc_crc64((const CHAR*)&rawheader, sizeof(rawheader), ~(0ULL));
+
+  if ( comment )
+    {
+      rawheader.crc64 = calc_crc64((const CHAR*)comment, comment_len, rawheader.crc64);
+      rawheader.crc64 = calc_crc64((const CHAR*)pad, pad_len, rawheader.crc64);
+    }
+  rawheader.crc64 = calc_crc64((const CHAR*) sft->data->data, sft->data->length * sizeof( *sft->data->data ), rawheader.crc64);
+  
+  /* ----- write the header to file */
+  if (1 != fwrite( &rawheader, sizeof(rawheader), 1, fp) ) {
+    ABORT ( status, SFTFILEIO_ESFTWRITE, SFTFILEIO_MSGESFTWRITE );
+  }
+  
+  /* ----- write the comment to file */
+  if ( comment )
+    {
+      if ( comment_len != fwrite( comment, 1, comment_len, fp) ) {
+	ABORT ( status, SFTFILEIO_ESFTWRITE, SFTFILEIO_MSGESFTWRITE );
+      }
+      if (pad_len != fwrite( pad, 1, pad_len, fp) ) {
+	ABORT ( status, SFTFILEIO_ESFTWRITE, SFTFILEIO_MSGESFTWRITE );
+      }
+    } /* if comment */
+
+  /* write the data to the file.  Data must be packed REAL,IMAG,REAL,IMAG,... */
+  if ( sft->data->length != fwrite( sft->data->data, sizeof(*sft->data->data), sft->data->length, fp) ) {
+    ABORT ( status, SFTFILEIO_ESFTWRITE, SFTFILEIO_MSGESFTWRITE );
+  }
+  
+  fclose(fp);
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+
+} /* WriteSFTtoFile() */
+
+
+
+/** [OBSOLETE] Write an SFTtype to a SFT-v1 file. 
+ * 
+ * \note:only SFT-spec v1.0 is supported, use LALWriteSFT2file() to write v2 SFTs !
+ *
+ */
+void
+LALWriteSFTfile (LALStatus  *status,
+		 const SFTtype *sft,		/**< SFT to write to disk */
+		 const CHAR *outfname)		/**< filename */
+{
+  FILE  *fp = NULL;
+  COMPLEX8  *inData;
+  INT4  i;
+  UINT4 datalen;
+  REAL4  *rawdata;
+  CHAR *rawheader, *ptr;
+  SFTHeader header;
+
+  INITSTATUS (status, "LALWriteSFTfile", SFTFILEIOC);
+  ATTATCHSTATUSPTR (status);   
+ 
+  /*   Make sure the arguments are not NULL and perform basic checks*/ 
+  ASSERT (sft,   status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL);
+  ASSERT (sft->data,  status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
+  ASSERT (sft->deltaF > 0, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
+  ASSERT (outfname, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL); 
+
+  /* fill in the header information */
+  header.version = 1.0;
+  header.gpsSeconds = sft->epoch.gpsSeconds;
+  header.gpsNanoSeconds = sft->epoch.gpsNanoSeconds;
+  header.timeBase = 1.0 / sft->deltaF;
+  header.fminBinIndex = (INT4) floor (sft->f0 / sft->deltaF + 0.5);	/* round to closest int! */
+  header.length = sft->data->length; 
+
+  /* build raw header for writing to disk */
+  rawheader = LALCalloc (1, sizeof(_SFT_header_v1_t) );
+  if (rawheader == NULL) {
+    ABORT (status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM);    
+  }
+  ptr = rawheader;
+  *(REAL8*) ptr = header.version;
+  ptr += sizeof (REAL8);
+  *(INT4*) ptr = header.gpsSeconds;
+  ptr += sizeof (INT4);
+  *(INT4*) ptr = header.gpsNanoSeconds;
+  ptr += sizeof (INT4);
+  *(REAL8*) ptr = header.timeBase;
+  ptr += sizeof (REAL8);
+  *(INT4*) ptr = header.fminBinIndex;
+  ptr += sizeof (INT4);
+  *(INT4*) ptr = header.length; 
+
+  /* write data into a contiguous REAL4-array */
+  datalen = 2 * header.length * sizeof(REAL4);	/* amount of bytes for SFT-data */
+
+  rawdata = LALCalloc (1, datalen);
+  if (rawdata == NULL) {
+    LALFree (rawheader);
+    ABORT (status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM);    
+  }
+
+  inData = sft->data->data;
+  for ( i = 0; i < header.length; i++)
+    {
+      rawdata[2 * i]     = inData[i].re;
+      rawdata[2 * i + 1] = inData[i].im;
+    } /* for i < length */
+
+
+  /* open the file for writing */
+  fp = fopen(outfname, "wb");
+  if (fp == NULL) {
+    LALFree (rawheader);
+    LALFree (rawdata);
+    ABORT (status, SFTFILEIO_EFILE,  SFTFILEIO_MSGEFILE);
+  }
+
+  /* write the header*/
+  if( fwrite( rawheader, sizeof(_SFT_header_v1_t), 1, fp) != 1) {
+    LALFree (rawheader);
+    LALFree (rawdata);
+    fclose (fp);
+    ABORT (status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE);
+  }
+  
+  /* write the data */
+  if (fwrite( rawdata, datalen, 1, fp) != 1) {
+    LALFree (rawheader);
+    LALFree (rawdata);
+    fclose (fp);
+    ABORT (status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE);
+  }
+
+  /* done */
+  fclose(fp);
+  LALFree (rawheader);
+  LALFree (rawdata);
+
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+
+} /* WriteSFTtoFile() */
+
+
+
+/** Free an 'SFT-catalogue' */
+void
+LALDestroySFTCatalog ( LALStatus *status,
+		       SFTCatalog **catalog )	/**< the 'catalogue' to free */
+{
+  INITSTATUS (status, "LALDestroySFTcatalog", SFTFILEIOC);
+
+  ASSERT ( catalog, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
+
+  if ( *catalog )
+    {
+      if ( (*catalog) -> data )
+	{
+	  UINT4 i;
+	  for ( i=0; i < (*catalog)->length; i ++ )
+	    {
+	      SFTDescriptor *ptr = &( (*catalog)->data[i] );
+	      if ( ptr->locator ) 
+		{
+		  if ( ptr->locator->fname )
+		    LALFree ( ptr->locator->fname );
+		  LALFree ( ptr->locator );
+		}
+	      if ( ptr->comment ) 
+		LALFree ( ptr->comment );
+	      
+	      /* this should not happen, but just in case: free data-entry in SFT-header */
+	      if ( ptr->header.data )
+		LALFree ( ptr->header.data );
+	    } /* for i < length */
+	
+	  LALFree ( (*catalog)->data );
+
+	} /* if *catalog->data */
+      
+      LALFree ( *catalog );
+
+    } /* if *catalog */
+
+  (*catalog) = NULL;
+
+  RETURN ( status );
+
+} /* LALDestroySFTCatalog() */
+
+
+
+/** Mostly for *debugging* purposes: provide a user-API to allow inspecting the SFT-locator
+ * [which is an OPAQUE entry in the SFTCatalog!]
+ *
+ * NOTE: this returns a STATIC string, so don't try to FREE it, and make a copy if you need
+ * to keep it beyond one call of this function!
+ * 
+ */
+const CHAR *
+XLALshowSFTLocator ( const struct tagSFTLocator *locator )
+{
+  static CHAR ret[512];
+
+  if ( !locator )
+    return NULL;
+
+  LALSnprintf ( ret, sizeof(ret), "%s : %ld", locator->fname, locator->offset );
+  ret[ sizeof(ret) - 1 ] = 0;
+  
+  return ret;
+
+} /* XLALshowSFTLocator() */
+
+/*================================================================================
+ * OBSOLETE and deprecated SFT-v1 API :
+ *================================================================================*/
+
+/** [DEPRECATED] Function to read and return a list of SFT-headers for given 
  * filepattern and start/end times.
  *
  * The \a startTime and \a endTime entries are allowed to be NULL, 
@@ -85,7 +805,7 @@ LALGetSFTheaders (LALStatus *status,
 {
   UINT4 i, numSFTs;
   SFTVector *out = NULL;
-  StringVector *fnames;
+  LALStringVector *fnames;
   REAL8 t0, t1;		/* start- and end-times as reals */
   UINT4 numHeaders;
 
@@ -170,7 +890,7 @@ LALGetSFTheaders (LALStatus *status,
 
 
 
-/** Basic SFT reading-function.
+/** [DEPRECATED] Basic SFT reading-function.
  *  Given a filename \a fname and frequency-limits [\a fMin, \a fMax], 
  *  returns an SFTtype \a sft containing the SFT-data.
  * 
@@ -273,7 +993,7 @@ LALReadSFTfile (LALStatus *status,
 
 
 
-/** Higher-level SFT-reading function to read a whole vector of SFT files 
+/** [DEPRECATED] Higher-level SFT-reading function to read a whole vector of SFT files 
  * and return an SFTvector \a sftvect. The handling of
  * [fMin, fMax] is identical to LALReadSFTfile().
  * 
@@ -302,7 +1022,8 @@ LALReadSFTfiles (LALStatus *status,
   SFTHeader header;
   REAL8 dFreq; 		/* frequency spacing in SFT */
   REAL8 fWing;		/* frequency band to be added as "wings" to the 'physical band' */
-  StringVector *fnames;
+  LALStringVector *fnames;
+  UINT4 firstlen = 0;
 
   INITSTATUS (status, "LALReadSFTfiles", SFTFILEIOC);
   ATTATCHSTATUSPTR (status); 
@@ -316,6 +1037,11 @@ LALReadSFTfiles (LALStatus *status,
    * NOTE: we don't use glob() as it was reported to fail under condor */
   if ( (fnames = find_files (fpattern)) == NULL) {
     ABORT (status, SFTFILEIO_EGLOB, SFTFILEIO_MSGEGLOB);
+  }
+
+  /* allocate head of output SFT-vector */
+  if ( (out = LALCalloc ( 1, sizeof(SFTVector) )) == NULL ) {
+    ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
   }
 
   /* read header of first sft to determine Tsft, and therefore dfreq */
@@ -338,19 +1064,10 @@ LALReadSFTfiles (LALStatus *status,
 	if (out) LALDestroySFTVector (status->statusPtr, &out);
       } ENDFAIL (status);
 
-      /* after the first time we can allocate the output-vector, 
-       * as we now kpnow how many frequency-bins we need */
-      if (out == NULL)
-	{
-	  LALCreateSFTVector(status->statusPtr, &out, numSFTs, oneSFT->data->length);
-	  BEGINFAIL(status) {
-	    DestroyStringVector (fnames);    
-	    LALDestroySFTtype (status->statusPtr, &oneSFT);
-	  } ENDFAIL(status);
-	}
-
+      if ( !firstlen ) 
+	firstlen = oneSFT->data->length;
       /* make sure all SFTs have same length */
-      if ( oneSFT->data->length != out->data->data->length)
+      if ( oneSFT->data->length != firstlen )
 	{
 	  DestroyStringVector (fnames);    
 	  LALDestroySFTtype (status->statusPtr, &oneSFT);
@@ -358,16 +1075,12 @@ LALReadSFTfiles (LALStatus *status,
 	  ABORT (status, SFTFILEIO_EDIFFLENGTH, SFTFILEIO_MSGEDIFFLENGTH);
 	} /* if length(thisSFT) != common length */
 
-      /* transfer the returned SFT into the SFTVector 
-       * this is a bit complicated by the fact that it's a vector
-       * of SFTtypes, not pointers: therefore we need to *COPY* the stuff !
-       */
-      LALCopySFT (status->statusPtr, &(out->data[i]), oneSFT);
-      BEGINFAIL (status) {
+      LALAppendSFT2Vector ( status->statusPtr, out, oneSFT );
+      BEGINFAIL(status) {
 	DestroyStringVector (fnames);    
 	LALDestroySFTtype (status->statusPtr, &oneSFT);
 	LALDestroySFTVector (status->statusPtr, &out);
-      } ENDFAIL (status);
+      } ENDFAIL(status);
 
       LALDestroySFTtype (status->statusPtr, &oneSFT);
       oneSFT = NULL;	/* important for next call of LALReadSFTfile()! */
@@ -385,119 +1098,15 @@ LALReadSFTfiles (LALStatus *status,
 
 
 
-/** Write an entire SFT to a file. 
- * 
- * \note: currently only SFT-spec v1.0 is supported
- *
- */
-void
-LALWriteSFTfile (LALStatus  *status,
-		 const SFTtype *sft,		/**< SFT to write to disk */
-		 const CHAR *outfname)		/**< filename */
-{
-  FILE  *fp = NULL;
-  COMPLEX8  *inData;
-  INT4  i;
-  UINT4 datalen;
-  REAL4  *rawdata;
-  CHAR *rawheader, *ptr;
-  SFTHeader header;
-
-  INITSTATUS (status, "LALWriteSFTfile", SFTFILEIOC);
-  ATTATCHSTATUSPTR (status);   
- 
-  /*   Make sure the arguments are not NULL and perform basic checks*/ 
-  ASSERT (sft,   status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL);
-  ASSERT (sft->data,  status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
-  ASSERT (sft->deltaF > 0, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
-  ASSERT (outfname, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL); 
-
-  /* fill in the header information */
-  header.version = 1.0;
-  header.gpsSeconds = sft->epoch.gpsSeconds;
-  header.gpsNanoSeconds = sft->epoch.gpsNanoSeconds;
-  header.timeBase = 1.0 / sft->deltaF;
-  header.fminBinIndex = (INT4) floor (sft->f0 / sft->deltaF + 0.5);	/* round to closest int! */
-  header.length = sft->data->length; 
-
-  /* build raw header for writing to disk */
-  rawheader = LALCalloc (1, header_len_v1);
-  if (rawheader == NULL) {
-    ABORT (status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM);    
-  }
-  ptr = rawheader;
-  *(REAL8*) ptr = header.version;
-  ptr += sizeof (REAL8);
-  *(INT4*) ptr = header.gpsSeconds;
-  ptr += sizeof (INT4);
-  *(INT4*) ptr = header.gpsNanoSeconds;
-  ptr += sizeof (INT4);
-  *(REAL8*) ptr = header.timeBase;
-  ptr += sizeof (REAL8);
-  *(INT4*) ptr = header.fminBinIndex;
-  ptr += sizeof (INT4);
-  *(INT4*) ptr = header.length; 
-
-  /* write data into a contiguous REAL4-array */
-  datalen = 2 * header.length * sizeof(REAL4);	/* amount of bytes for SFT-data */
-
-  rawdata = LALCalloc (1, datalen);
-  if (rawdata == NULL) {
-    LALFree (rawheader);
-    ABORT (status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM);    
-  }
-
-  inData = sft->data->data;
-  for ( i = 0; i < header.length; i++)
-    {
-      rawdata[2 * i]     = inData[i].re;
-      rawdata[2 * i + 1] = inData[i].im;
-    } /* for i < length */
-
-
-  /* open the file for writing */
-  fp = fopen(outfname, "wb");
-  if (fp == NULL) {
-    LALFree (rawheader);
-    LALFree (rawdata);
-    ABORT (status, SFTFILEIO_EFILE,  SFTFILEIO_MSGEFILE);
-  }
-
-  /* write the header*/
-  if( fwrite( rawheader, header_len_v1, 1, fp) != 1) {
-    LALFree (rawheader);
-    LALFree (rawdata);
-    fclose (fp);
-    ABORT (status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE);
-  }
-  
-  /* write the data */
-  if (fwrite( rawdata, datalen, 1, fp) != 1) {
-    LALFree (rawheader);
-    LALFree (rawdata);
-    fclose (fp);
-    ABORT (status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE);
-  }
-
-  /* done */
-  fclose(fp);
-  LALFree (rawheader);
-  LALFree (rawdata);
-
-
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
-
-} /* WriteSFTtoFile() */
-
-
-
 /*================================================================================
- * LOW-level SFT-handling functions, deprecated, and should *NOT* be used outside
- * this file!
+ * LOW-level internal SFT-handling functions, should *NOT* be used outside this file!
  *================================================================================*/
 
-/** Lower-level function to read only the SFT-header of a given file. */
+/** [DEPRECATED]: Low-level function to read only the SFT-header of a given file. 
+ * 
+ * NOTE: don't use! This function is obsolete and SFT-v1-specific and only kept for 
+ * backwards-compatibility with Hough-codes. 
+ */
 void 
 LALReadSFTheader (LALStatus  *status,
 		  SFTHeader   *header,	/**< [out] returned header */
@@ -546,14 +1155,14 @@ LALReadSFTheader (LALStatus  *status,
   }
 
   /* read the whole header */
-  rawheader = LALCalloc (1, header_len_v1);
+  rawheader = LALCalloc (1, sizeof(_SFT_header_v1_t) );
   if (rawheader == NULL) {
     fclose (fp);
     ABORT (status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM);    
   }
   
   rewind (fp);	/* go back to start */
-  if (fread( rawheader, header_len_v1, 1, fp) != 1) {
+  if (fread( rawheader, sizeof(_SFT_header_v1_t), 1, fp) != 1) {
     fclose (fp);
     LALFree (rawheader);
     if (lalDebugLevel) LALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
@@ -624,7 +1233,7 @@ LALReadSFTheader (LALStatus  *status,
 
 
 
-/** This is a function for low-level SFT data-reading:
+/** [DEPRECATED] This is a function for low-level SFT data-reading:
  * the SFT-data is read starting from fminBinIndex and filled
  * into the pre-allocate vector sft of length N
  *
@@ -714,7 +1323,7 @@ LALReadSFTdata(LALStatus *status,
 
   /* skip SFT-header in file */
   rewind (fp);
-  if (fseek(fp, header_len_v1, SEEK_SET) != 0) {
+  if (fseek(fp, sizeof(_SFT_header_v1_t), SEEK_SET) != 0) {
     fclose (fp);
     ABORT (status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE);
   }
@@ -771,6 +1380,661 @@ LALReadSFTdata(LALStatus *status,
  * internal helper functions
  ***********************************************************************/
 
+static BOOLEAN
+timestamp_in_list( LIGOTimeGPS timestamp, LIGOTimeGPSVector *list )
+{
+  UINT4 i;
+  LIGOTimeGPS *el;
+
+  if ( !list )
+    return FALSE;
+
+  el = &(list->data[0]);
+  for ( i=0; i < list->length; i ++)
+    {
+      if ( (timestamp.gpsSeconds == el->gpsSeconds) && ( timestamp.gpsNanoSeconds == el->gpsNanoSeconds ) )
+	return TRUE;
+    } /* for i < length */
+
+  return FALSE;
+
+} /* timestamp_in_list() */
+
+
+/* check consistency constraints for SFT-blocks within a merged SFT-file,
+ * see SFT-v2 spec */
+static BOOLEAN
+consistent_mSFT_header ( SFTtype header1, UINT4 version1, UINT4 nsamples1, SFTtype header2, UINT4 version2, UINT4 nsamples2 )
+{
+  /* 1) identical detector */
+  if ( (header1.name[0] != header2.name[0]) || (header1.name[1] != header2.name[1]) )
+    {
+      if ( lalDebugLevel ) LALPrintError ("\nInvalid merged SFT: non-identical detectors\n\n");
+      return FALSE;
+    }
+
+  /* 2) identical version-number */
+  if ( version1 != version2 )
+    {
+      if ( lalDebugLevel ) LALPrintError ("\nInvalid merged SFT: non-identical version-numbers\n\n");
+      return FALSE;
+    }
+
+  /* 3) increasing GPS-times */
+  if ( GPS2REAL8 ( header1.epoch ) >= GPS2REAL8 ( header2.epoch ) )
+    {
+      if ( lalDebugLevel ) LALPrintError ("\nInvalid merged SFT: non-increasing GPS epochs \n\n" );
+      return FALSE;
+    }
+
+  /* 4) identical tbase */
+  if ( header1.deltaF != header2.deltaF )
+    {
+      if ( lalDebugLevel ) LALPrintError ("\nInvalid merged SFT: non-identical time baselines\n\n");
+      return FALSE;
+    }
+
+  /* 5) identical start-frequency */
+  if ( header1.f0 != header2.f0 )
+    {
+      if ( lalDebugLevel ) LALPrintError ("\nInvalid merged SFT: non-identical start-frequencies\n\n");
+      return FALSE;
+    }
+
+  /* 6) identical number of frequency-bins */
+  if ( nsamples1 != nsamples2 )
+    {
+      if ( lalDebugLevel ) LALPrintError ("\nInvalid merged SFT: non-identical number of frequency-bins\n\n" );
+      return FALSE;
+    }
+
+  return TRUE;
+
+} /* consistent_mSFT_header() */
+
+/** Read one SFT, leave filepointer at the end of the read SFT if successful, 
+ * leave fp at initial position if failure 
+ *
+ * If fMin == -1: read starting from first bin
+ *    fMax == -1: read until last bin
+ *
+ *
+ * This uses read_sft_header_from_fp() for reading the header, and then reads the data. 
+ * 
+ * NOTE: we DO NOT check the crc64 checksum in here, a separate "check-SFT" function
+ * should be used for that.
+ *
+ * NOTE2:  The returned SFT is always normalized correctly according to SFT-v2 spec
+ * (see LIGO-T040164-01-Z, and LIGO-T010095-00), irrespective of the input-files.
+ *
+ */
+static void
+read_one_sft_from_fp (  LALStatus *status, SFTtype **sft, REAL8 fMin, REAL8 fMax , FILE *fp )
+{
+  SFTtype *ret = NULL;
+  UINT4 version;
+  UINT8 crc64;
+  BOOLEAN swapEndian;
+  UINT4 firstBin2read, lastBin2read, numBins2read;
+  UINT4 firstSFTbin, lastSFTbin, numSFTbins;
+  INT4 offsetBins;
+  long offsetBytes;
+
+  INITSTATUS (status, "read_one_sft_from_fp", SFTFILEIOC);
+  ATTATCHSTATUSPTR ( status );
+
+  ASSERT ( sft, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
+  ASSERT ( *sft == NULL, status, SFTFILEIO_ENONULL, SFTFILEIO_MSGENONULL );
+
+  TRY ( LALCreateSFTtype ( status->statusPtr, &ret, 0 ), status );
+
+  if ( read_sft_header_from_fp (fp, ret, &version, &crc64, &swapEndian, NULL, &numSFTbins ) != 0 )
+    {
+      if ( lalDebugLevel ) LALPrintError ("\nFailed to read SFT-header!\n\n");
+      LALDestroySFTtype ( status->statusPtr, &ret );
+      ABORT ( status, SFTFILEIO_EHEADER, SFTFILEIO_MSGEHEADER ); 
+    }
+
+  firstSFTbin = MYROUND ( ret->f0 / ret->deltaF );
+  lastSFTbin = firstSFTbin + numSFTbins - 1;
+
+  /* figure out frequency-bounds to read in */
+  if ( fMin > 0 )
+    firstBin2read = floor ( fMin / ret->deltaF );	/* round down! to make sure, the requested fMin is contained */
+  else
+    firstBin2read = firstSFTbin;
+
+  if ( fMax > 0 )
+    lastBin2read = ceil ( fMax / ret->deltaF );	/* round up! make sure the requested fMax is contained */
+  else
+    lastBin2read = lastSFTbin;
+
+  if ( firstBin2read > lastBin2read )
+    {
+      if ( lalDebugLevel ) LALPrintError ("\nEmpty frequency-interval requested [%d, %d] bins\n\n", firstBin2read, lastBin2read );
+      ABORT ( status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL );
+    }
+
+  /* check that requested interval is found in SFT */
+  if ( firstBin2read < firstSFTbin )
+    {
+      if ( lalDebugLevel ) LALPrintError ( "\nRequested fMin=%f is not contained in SFT! (%d < %d)\n\n", fMin, firstBin2read, firstSFTbin );
+      LALDestroySFTtype ( status->statusPtr, &ret );
+      ABORT ( status, SFTFILEIO_EFREQBAND, SFTFILEIO_MSGEFREQBAND );
+    }
+  if ( lastBin2read > lastSFTbin )
+    {
+      if ( lalDebugLevel ) LALPrintError ( "\nRequested fMax=%f is not contained in SFT! (%d > %d)\n\n", fMax, lastBin2read, lastSFTbin );
+      LALDestroySFTtype ( status->statusPtr, &ret );
+      ABORT ( status, SFTFILEIO_EFREQBAND, SFTFILEIO_MSGEFREQBAND );
+    }
+  
+  offsetBins = firstBin2read - firstSFTbin;
+  offsetBytes = offsetBins * 2 * sizeof( REAL4 );
+  numBins2read = lastBin2read - firstBin2read + 1;
+
+  if ( fseek ( fp, offsetBytes, SEEK_CUR ) != 0 )
+    {
+      if ( lalDebugLevel ) LALPrintError ( "\nFailed to fseek() to first frequency-bin %d: %s\n\n", firstBin2read, strerror(errno) );
+      LALDestroySFTtype ( status->statusPtr, &ret );
+      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
+    }
+
+  if ( (ret->data = XLALCreateCOMPLEX8Vector ( numBins2read )) == NULL ) {
+    LALDestroySFTtype ( status->statusPtr, &ret );
+    ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
+  }
+
+  if ( numBins2read != fread ( ret->data->data, 2*sizeof( REAL4 ), numBins2read, fp ) )
+    {
+      if (lalDebugLevel) LALPrintError ("\nFailed to read %d bins from SFT!\n\n", numBins2read );
+      LALDestroySFTtype ( status->statusPtr, &ret );
+      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
+    }
+
+  /* correct the start-frequency entry in the SFT-header */
+  ret->f0 = 1.0 * firstBin2read * ret->deltaF;
+
+  /* take care of normalization and endian-swapping */
+  if ( version == 1 || swapEndian )
+    {
+      UINT4 i;
+      REAL8 band = 1.0 * numSFTbins * ret->deltaF;	/* need the TOTAL frequency-band in the SFT-file! */
+      REAL8 fsamp = 2.0 * band;
+      REAL8 dt = 1.0 / fsamp;
+
+      for ( i=0; i < numBins2read; i ++ )
+	{
+	  REAL4 *rep, *imp;
+
+	  rep = &(ret->data->data[i].re);
+	  imp = &(ret->data->data[i].im);
+
+	  if ( swapEndian )
+	    {
+	      endian_swap( (CHAR *) rep, sizeof ( *rep ), 1 );
+	      endian_swap( (CHAR *) imp, sizeof ( *imp ), 1 );
+	    }
+
+	  /* if the SFT-file was in v1-Format: need to renormalize the data now by 'Delta t' 
+	   * in order to follow the correct SFT-normalization (see LIGO-T040164-01-Z, and LIGO-T010095-00)
+	   */ 
+	  if ( version == 1 )
+	    {
+	      (*rep) *= dt;
+	      (*imp) *= dt;
+	    }
+	} /* for i < numBins2read */
+    } /* if SFT-v1 */
+
+  /* return resulting SFT */
+  (*sft) = ret;
+
+  DETATCHSTATUSPTR ( status );
+  RETURN (status);
+} /* read_one_sft_from_fp() */
+
+
+/* Try to read an SFT-header (of ANY VALID SFT-VERSION) at the given FILE-pointer fp,
+ * and return the SFT-header, SFT-version-number and number of frequency-samples in the SFT. 
+ *
+ * Sets the filepointer fp at the end of the header if successful, leaves it at 
+ * initial position if not. 
+ * 
+ * RETURN 0 = OK, -1 on ERROR
+ *
+ * We do basic checking of compliance with the SFT-spec (<tt>LIGO-T04164-01-Z</tt>)
+ * as far as a single header is concerned.
+ *
+ * NOTE: fatal errors will produce a LALPrintError() error-message, but
+ * non-fatal 'SFT-format'-errors will only output error-messages if lalDebugLevel > 0.
+ * --> this function can therefore be used to check if a given file actually contains SFTs
+ * 
+ *
+ */
+static int
+read_sft_header_from_fp (FILE *fp, SFTtype  *header, UINT4 *version, UINT8 *crc64, BOOLEAN *swapEndian, CHAR **comment, UINT4 *numBins )
+{
+  REAL8 ver;
+  SFTtype head = empty_SFTtype;
+  UINT4 nsamples;
+  CHAR *comm = NULL;
+  UINT8 crc = 0;
+
+  UINT4 min_version = 1;
+  UINT4 max_version = 2;
+  BOOLEAN need_swap = FALSE;
+  long save_filepos;
+
+  if ( !header || !version || !numBins || !fp  )
+    {
+      LALPrintError ("\nERROR read_sft_header_from_fp(): called with NULL input\n\n");
+      return -1;
+    }
+  if ( comment && ((*comment) != NULL) )
+    {
+      LALPrintError ("\nERROR: Comment-string passed to read_sft_header_from_fp() is not empty!\n\n");
+      return -1;
+    }
+
+  /* store fileposition for restoring in case of failure */
+  if ( ( save_filepos = ftell(fp) ) == -1 )
+    {
+      LALPrintError ("\nftell() failed: %s\n\n", strerror(errno) );
+      return -1;
+    }
+  /* read version-number */
+  if  ( 1 != fread ( &ver, sizeof( ver ), 1, fp) )
+    {
+      if (lalDebugLevel) LALPrintError ("\nCould not read version-number from file\n\n");
+      goto failed;
+    }
+
+  /* figure out endian-ness and check version-range */
+  if ( ( ver - (UINT4)ver ) || (ver < min_version) || (ver > max_version )  ) 	/* illegal version --> maybe endian-swap? */
+    {
+      REAL8 unswapped = ver;
+      endian_swap ( (CHAR*)(&ver), sizeof(ver), 1);
+      if ( (ver - (UINT4)ver) || (ver < min_version) || (ver > max_version )  ) 	/* still illegal version! */
+	{
+	  if ( lalDebugLevel ) LALPrintError ( "\nERROR: illegal SFT-version '%f|%f', not within [%.0f, %.0f]\n\n", 
+					       unswapped, ver, min_version, max_version );
+	  goto failed;
+	}
+      else	/* ok, endian-swapping required! */
+	need_swap = TRUE;
+	
+    } /* illegal unswapped version */
+
+  
+  /* reset filepointer initial position for full header-reading  */
+  if ( fseek ( fp, save_filepos, SEEK_SET ) == -1 )
+    {
+      LALPrintError ("\nfseek() failed to return to intial fileposition: %s\n\n", strerror(errno) );
+      goto failed;
+    }
+
+  /* read this SFT-header with version-specific code */
+  head = empty_SFTtype;
+
+  switch( (UINT4)ver)
+    {
+    case 1:
+      if ( read_v1_header_from_fp ( fp, &head, &nsamples, need_swap ) != 0 )
+	goto failed;
+      break;
+      
+    case 2:
+      if ( read_v2_header_from_fp ( fp, &head, &nsamples, &crc, &comm, need_swap ) != 0 )
+	goto failed;
+      break;
+      
+    default:
+      LALPrintError ("\nUnsupported SFT-version %d.\n\n", ver);
+      goto failed;
+      break;
+    } /* switch(ver) */
+
+
+  /* ----- some general SFT-header consistency-checks */
+  if ( (head.epoch.gpsSeconds < 0 ) || ( head.epoch.gpsNanoSeconds < 0 ) || ( head.epoch.gpsNanoSeconds >= 1000000000)  )
+    {
+      if ( lalDebugLevel ) LALPrintError ("\nInvalid GPS-epoch in SFT : [%d, %d]!\n\n", 
+					  head.epoch.gpsSeconds, head.epoch.gpsNanoSeconds );
+      goto failed;
+    }
+
+  if ( head.deltaF <= 0 ) 
+    {
+      if ( lalDebugLevel ) LALPrintError ("\nNegative frequency-spacing in SFT!\n\n");
+      goto failed;
+    }
+      
+  if ( head.f0 < 0 )
+    {
+      if ( lalDebugLevel ) LALPrintError ("\nNegative start-frequency in SFT!\n\n");
+      goto failed;
+    }
+      
+  /* ok */
+  (*header) = head;
+  (*version) = ver;
+
+  if ( comment )	  /* return of comment is optional */
+    (*comment) = comm;
+  else
+    if ( comm ) LALFree(comm);
+
+  (*swapEndian) = need_swap;
+  (*crc64) = crc;
+  (*numBins) = nsamples;
+  return 0;
+
+  /* ---------- */
+ failed:
+  /* restore filepointer initial position  */
+  if ( fseek ( fp, save_filepos, SEEK_SET ) == -1 )
+    LALPrintError ("\nfseek() failed to return to intial fileposition: %s\n\n", strerror(errno) );
+  
+  /* free comment  if we allocated one */
+  if ( comm )
+    LALFree ( comm );
+  
+  return -1;
+
+} /* read_sft_header_from_fp() */
+
+
+
+/* ----- SFT v2 -specific header-reading function: 
+ *
+ * return general SFTtype header, place filepointer at the end of the header if it succeeds,
+ * set fp to initial position if it fails.
+ * RETURN: 0 = OK, -1 = ERROR 
+ *
+ * NOTE: fatal errors will produce a LALPrintError() error-message, but
+ * non-fatal 'SFT-format'-errors will only output error-messages if lalDebugLevel > 0.
+ * 
+ */
+static int
+read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *crc64, CHAR **comment, BOOLEAN swapEndian)
+{
+  _SFT_header_v2_t rawheader;
+  long save_filepos;
+  CHAR *comm = NULL;
+
+  /* check input-consistency */
+  if ( !fp || !header || !nsamples || !comment )
+    {
+      LALPrintError ( "\nERROR read_v2_header_from_fp(): called with NULL input!\n\n");
+      return -1;
+    }
+  if ( comment && (*comment != NULL) )
+    {
+      LALPrintError ("\nERROR: Comment-string passed to read_v2_header_from_fp() is not NULL!\n\n");
+      return -1;
+    }
+  
+  /* store fileposition for restoring in case of failure */
+  if ( ( save_filepos = ftell(fp) ) == -1 )
+    {
+      LALPrintError ("\nERROR: ftell() failed: %s\n\n", strerror(errno) );
+      return -1;
+    }
+
+  /* read the whole header */
+  if (fread( &rawheader, sizeof(rawheader), 1, fp) != 1) 
+    {
+      if (lalDebugLevel) LALPrintError ("\nCould not read v2-header. %s\n\n", strerror(errno) );
+      goto failed;
+    }
+
+  if (swapEndian) 
+    {
+      endian_swap((CHAR*)(&rawheader.version), 			sizeof(rawheader.version) 		, 1);
+      endian_swap((CHAR*)(&rawheader.gps_sec), 			sizeof(rawheader.gps_sec) 		, 1);
+      endian_swap((CHAR*)(&rawheader.gps_nsec), 		sizeof(rawheader.gps_nsec) 		, 1);
+      endian_swap((CHAR*)(&rawheader.tbase), 			sizeof(rawheader.tbase) 		, 1);
+      endian_swap((CHAR*)(&rawheader.first_frequency_index), 	sizeof(rawheader.first_frequency_index) , 1);
+      endian_swap((CHAR*)(&rawheader.nsamples), 		sizeof(rawheader.nsamples) 		, 1);
+
+      /* v2-specific */
+      endian_swap((CHAR*)(&rawheader.crc64),			sizeof(rawheader.crc64)			, 1);
+      endian_swap((CHAR*)(&rawheader.comment_length),		sizeof(rawheader.comment_length)	, 1);
+      /* ----- */
+
+    } /* if endian_swap */
+
+  /* double-check version-number */
+  if ( rawheader.version != 2 )
+    {
+      if ( lalDebugLevel ) LALPrintError ("\nWrong SFT-version %d in read_v2_header_from_fp()\n\n", rawheader.version );
+      goto failed;
+    }
+
+  if ( rawheader.nsamples <= 0 )
+    {
+      if ( lalDebugLevel ) LALPrintError ("\nNon-positive number of samples in SFT!\n\n");
+      goto failed;
+    }
+
+  /* ----- v2-specific consistency-checks ----- */
+  if ( rawheader.comment_length < 0 )
+    {
+      if ( lalDebugLevel ) LALPrintError ("\nNegative comment-length in SFT!\n\n");
+      goto failed;
+    }
+
+  if ( rawheader.comment_length % 8 != 0 )
+    {
+      if ( lalDebugLevel ) LALPrintError ("\nComment-length must be multiple of 8 bytes!\n\n");
+      goto failed;
+    }
+
+  if ( ! is_valid_detector ( rawheader.detector ) )
+    {
+      if ( lalDebugLevel ) LALPrintError ("\nIllegal detector-name in SFT: '%c%c'\n\n", 
+					  rawheader.detector[0], rawheader.detector[1] );
+      goto failed;
+    }
+
+  /* ----- Now read comment (if any) ----- */
+  comm = NULL;
+  if ( rawheader.comment_length )
+    {
+      CHAR *ptr;
+      if ( (comm = LALCalloc(1, rawheader.comment_length )) == NULL )
+	{
+	  LALPrintError ("\nFATAL: out of memory ...\n\n");
+	  goto failed;
+	}
+      if ( (size_t)rawheader.comment_length != fread ( comm, 1, rawheader.comment_length, fp ) )
+	{
+	  if ( lalDebugLevel ) LALPrintError ("\nCould not read %d-bytes comment\n\n");
+	  goto failed;
+	}
+
+      /* check that comment is 0-terminated */
+      if ( comm[ rawheader.comment_length - 1] != 0 )
+	{
+	  if ( lalDebugLevel ) LALPrintError ("\nComment is not properly 0-terminated!\n\n");
+	  goto failed;
+	}
+
+      /* check that no NON-NULL bytes after first NULL in comment (->spec) */
+      ptr = index ( comm, 0 );	/* guaranteed to find sth, after previous check */
+      while ( ptr < (comm + rawheader.comment_length - 1) )
+	if ( *ptr++ != 0 )
+	  {
+	    if ( lalDebugLevel ) LALPrintError ("\nNon-NULL bytes found after comment-end!\n\n");
+	    goto failed;
+	  }
+	      
+
+    } /* if comment_length > 0 */
+
+  /*  ok: */
+  memset ( header, 0, sizeof( *header ) );
+
+  header->name[0]		= rawheader.detector[0];
+  header->name[1]		= rawheader.detector[1];
+  header->name[2]		= 0;
+
+  header->epoch.gpsSeconds 	= rawheader.gps_sec;
+  header->epoch.gpsNanoSeconds 	= rawheader.gps_nsec;
+
+  header->f0 			= rawheader.first_frequency_index / rawheader.tbase;
+  header->deltaF 		= 1.0 / rawheader.tbase;
+
+  (*nsamples) = rawheader.nsamples;
+  (*crc64) = rawheader.crc64;
+  (*comment) = comm;
+
+  return 0;
+
+ failed:
+  /* restore filepointer initial position  */
+  if ( fseek ( fp, save_filepos, SEEK_SET ) == -1 )
+    LALPrintError ("\nfseek() failed to return to intial fileposition: %s\n\n", strerror(errno) );
+
+  /* free comment  if we allocated one */
+  if ( comm )
+    LALFree (comm);
+
+  return -1;
+
+} /* read_v2_header_from_fp() */
+
+
+/* ----- SFT v1 -specific header-reading function: 
+ *
+ * return general SFTtype header, place filepointer at the end of the header if it succeeds,
+ * set fp to initial position if it fails.
+ * RETURN: 0 = OK, -1 = ERROR 
+ *
+ * NOTE: fatal errors will produce a LALPrintError() error-message, but
+ * non-fatal 'SFT-format'-errors will only output error-messages if lalDebugLevel > 0.
+ *
+ */
+static int
+read_v1_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, BOOLEAN swapEndian)
+{
+  _SFT_header_v1_t rawheader;
+  long save_filepos;
+
+  if ( !fp || !header || !nsamples)
+    {
+      LALPrintError ( "\nERROR read_v1_header_from_fp(): called with NULL input!\n\n");
+      return -1;
+    }
+  
+  /* store fileposition for restoring in case of failure */
+  if ( ( save_filepos = ftell(fp) ) == -1 )
+    {
+      LALPrintError ("\nftell() failed: %s\n\n", strerror(errno) );
+      return -1;
+    }
+
+  /* read the whole header */
+  if (fread( &rawheader, sizeof(rawheader), 1, fp) != 1) 
+    {
+      if (lalDebugLevel) LALPrintError ("\nCould not read v1-header. %s\n\n", strerror(errno) );
+      goto failed;
+    }
+
+  if (swapEndian) 
+    {
+      endian_swap((CHAR*)(&rawheader.version), 			sizeof(rawheader.version) 		, 1);
+      endian_swap((CHAR*)(&rawheader.gps_sec), 			sizeof(rawheader.gps_sec) 		, 1);
+      endian_swap((CHAR*)(&rawheader.gps_nsec), 		sizeof(rawheader.gps_nsec) 		, 1);
+      endian_swap((CHAR*)(&rawheader.tbase), 			sizeof(rawheader.tbase) 		, 1);
+      endian_swap((CHAR*)(&rawheader.first_frequency_index), 	sizeof(rawheader.first_frequency_index) , 1);
+      endian_swap((CHAR*)(&rawheader.nsamples), 		sizeof(rawheader.nsamples) 		, 1);
+    }
+
+  /* double-check version-number */
+  if ( rawheader.version != 1 )
+    {
+      if ( lalDebugLevel ) LALPrintError ("\nWrong SFT-version %d in read_v1_header_from_fp()\n\n", rawheader.version );
+      goto failed;
+    }
+
+  if ( rawheader.nsamples <= 0 )
+    {
+      if ( lalDebugLevel ) LALPrintError ("\nNon-positive number of samples in SFT!\n\n");
+      goto failed;
+    }
+
+
+  /* ok: */
+  memset ( header, 0, sizeof( *header ) );
+
+  /* NOTE: v1-SFTs don't contain a detector-name, in which case we set it to '??' */
+  strcpy ( header->name, "??" );
+
+  header->epoch.gpsSeconds 	= rawheader.gps_sec;
+  header->epoch.gpsNanoSeconds 	= rawheader.gps_nsec;
+  header->deltaF 		= 1.0 / rawheader.tbase;
+  header->f0 			= rawheader.first_frequency_index / rawheader.tbase;
+  
+  (*nsamples) = rawheader.nsamples;
+
+  return 0;
+
+ failed:
+  /* restore filepointer initial position  */
+  if ( fseek ( fp, save_filepos, SEEK_SET ) == -1 )
+    LALPrintError ("\nfseek() failed to return to intial fileposition: %s\n\n", strerror(errno) );
+
+  return -1;
+
+} /* read_v1_header_from_fp() */
+
+/* check that channel-prefix defines a 'known' detector.  The list of
+ * known detectors implemented here for now follows the list in
+ * Appendix D of LIGO-T970130-F-E:
+ *
+ * returns TRUE if valid, FALSE otherwise */
+static BOOLEAN
+is_valid_detector (const char *channel) 
+{
+  int i;
+  const char *knownDetectors[] = 
+    {
+      "A1",       /* ALLEGRO */
+      "B1",       /* NIOBE */
+      "E1",       /* EXPLORER */
+      "G1",       /* GEO_600 */
+      "H1",       /* LHO_4k */
+      "H2",       /* LHO_2k */
+      "K1",       /* ACIGA */
+      "L1",       /* LLO_4k */
+      "N1",       /* Nautilus */
+      "O1",       /* AURIGA */
+      "P1",       /* CIT_40 */
+      "T1",       /* TAMA_300 */
+      "V1",       /* Virgo_CITF */
+      "V2",       /* Virgo (3km) */
+      NULL
+    };
+  
+  if ( !channel )
+    return FALSE;
+
+  if ( strlen(channel) < 2 )
+    return FALSE;
+
+  for ( i = 0; knownDetectors[i]; i ++ ) 
+    {
+      if ( ( knownDetectors[i][0] == channel[0] ) && ( knownDetectors[i][1] == channel[1] )  )
+	return TRUE;
+    }
+  
+  return FALSE;
+
+} /* is_valid_detector() */
+
+
 /* a little endian-swapper needed for SFT reading/writing */
 static void 
 endian_swap(CHAR * pdata, size_t dsize, size_t nelements)
@@ -807,7 +2071,7 @@ endian_swap(CHAR * pdata, size_t dsize, size_t nelements)
  * NOTE: the list of filenames is returned SORTED ALPHABETICALLY !
  *
  *----------------------------------------------------------------------*/
-static StringVector *
+static LALStringVector *
 find_files (const CHAR *globdir)
 {
 #ifndef _MSC_VER
@@ -822,7 +2086,7 @@ find_files (const CHAR *globdir)
   size_t dirlen;
   CHAR **filelist = NULL; 
   UINT4 numFiles = 0;
-  StringVector *ret = NULL;
+  LALStringVector *ret = NULL;
   UINT4 j;
   UINT4 namelen;
   CHAR *thisFname;
@@ -945,7 +2209,7 @@ find_files (const CHAR *globdir)
   if (numFiles == 0)
     return (NULL);
 
-  if ( (ret = LALCalloc (1, sizeof (StringVector) )) == NULL) 
+  if ( (ret = LALCalloc (1, sizeof (LALStringVector) )) == NULL) 
     {
       for (j=0; j<numFiles; j++)
 	LALFree (filelist[j]);
@@ -964,7 +2228,7 @@ find_files (const CHAR *globdir)
 
 
 static void
-DestroyStringVector (StringVector *strings)
+DestroyStringVector (LALStringVector *strings)
 {
   UINT4 i;
 
@@ -987,10 +2251,105 @@ static int mycomp (const void *p1, const void *p2)
 
 /* sort string-vector alphabetically */
 static void
-SortStringVector (StringVector *strings)
+SortStringVector (LALStringVector *strings)
 {
   qsort ( (void*)(strings->data), (size_t)(strings->length), sizeof(CHAR*), mycomp );
 } /* SortStringVector() */
+
+/* portable file-len function */
+static long get_file_len ( FILE *fp )
+{
+  long save_fp;
+  long len;
+
+  if ( (save_fp = ftell(fp)) == -1 )
+    return 0;
+  
+  if ( fseek ( fp, 0, SEEK_END ) == -1 )
+    return 0;
+
+  len = ftell(fp);
+
+  if ( fseek ( fp, save_fp, SEEK_SET ) == -1 )
+    return 0;
+
+  return len;
+
+} /* get_file_len() */
+
+
+
+
+
+/* ----- the following function crc64() was taken from SFTReferenceLibrary.c
+ * and adapted to LAL .
+ *
+ *  The quantity below is: D800000000000000 (base-16) =
+ *  1101100000000000000000000000000000000000000000000000000000000000
+ *  (base-2).  The primitive polynomial is x^64 + x^4 + x^3 + x + 1.
+ */
+#define POLY64 0xd800000000000000ULL
+#define TABLELEN 256
+#define BLOCKSIZE 65536
+
+/* The crc64 checksum of M bytes of data at address data is returned
+ * by crc64(data, M, ~(0ULL)). Call the function multiple times to
+ * compute the checksum of data made in contiguous chunks, setting
+ * final argument to the previously accumulated checksum value. */
+static UINT8 
+calc_crc64(const CHAR *data, UINT4 length, UINT8 crc) 
+{
+  UINT8 CRCTable[TABLELEN];
+  UINT4 i;
+
+  /* is there is no data, simply return previous checksum value */
+  if (!length || !data )
+    return crc;
+  
+  /* initialize the CRC table for fast computation.  We could keep
+     this table in memory to make the computation faster, but that is
+     not re-entrant for multi-threaded code.
+  */
+  for (i = 0; i < TABLELEN; i++) {
+    UINT4 j;
+    UINT8 part = i;
+    for (j = 0; j < 8; j++) {
+      if (part & 1)
+        part = (part >> 1) ^ POLY64;
+      else
+        part >>= 1;
+    }
+    CRCTable[i] = part;
+  }
+  
+  /* compute the CRC-64 code */
+  for (i=0; i<length; i++) {
+    UINT8 temp1 = crc >> 8;
+    UINT8 temp2 = CRCTable[(crc ^ (UINT8) data[i]) & 0xff];
+    crc = temp1 ^ temp2;
+  }
+  
+  return crc;
+
+} /* calc_crc64() */
+
+
+/* compare two SFT-descriptors by their GPS-epoch */
+static int 
+compareSFTdesc(const void *ptr1, const void *ptr2)
+{
+  const SFTDescriptor *desc1 = ptr1;
+  const SFTDescriptor *desc2 = ptr2;
+
+  if ( GPS2REAL8( desc1->header.epoch ) < GPS2REAL8 ( desc2->header.epoch ) )
+    return -1;
+  else if ( GPS2REAL8( desc1->header.epoch ) > GPS2REAL8 ( desc2->header.epoch ) )
+    return 1;
+  else
+    return 0;
+  
+} /* compareSFTdesc() */
+
 
 
 /*======================================================================*/
@@ -1020,6 +2379,10 @@ SortStringVector (StringVector *strings)
  *	a[-a-z]c	a-c aac abc ...
  *
  * $Log$
+ * Revision 1.41  2005/11/09 14:51:34  reinhard
+ * new SFT-IO API: indepedent of SFT file-format.
+ * The current *implementation* supports v1 and v2 SFTs.
+ *
  * Revision 1.40  2005/11/03 12:31:07  reinhard
  * - moved a few more general-purpose SFT-handling functions into SFTutils
  * - some doxygenizing
@@ -1056,9 +2419,6 @@ SortStringVector (StringVector *strings)
 #ifndef NEGATE
 #define NEGATE	'^'			/* std cset negation char */
 #endif
-
-#define TRUE    1
-#define FALSE   0
 
 static int amatch(char *str, char *p);
 

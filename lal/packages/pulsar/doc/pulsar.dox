@@ -5,8 +5,8 @@
 /** \defgroup pulsarCommon Common Pulsar APIs
     \ingroup pulsar     
     \brief This package provides a common data-types and APIs for
-    pulsar searches (e.g. APIs related to SFT-handling, timing,
-    barycentering, metric calculation, mesh-generation ...)
+    pulsar searches (e.g. APIs related to timing, barycentering,
+    metric calculation, mesh-generation ...)
 */
 
 /** \defgroup houghpulsar The Hough transform

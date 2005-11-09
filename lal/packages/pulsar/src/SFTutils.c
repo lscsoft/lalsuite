@@ -21,6 +21,7 @@
  * \author Reinhard Prix
  * \date 2005
  * \file 
+ * \ingroup SFTfileIO
  * \brief Utility functions for handling of SFTtype and SFTVector's.
  *
  * $Id$
@@ -55,12 +56,12 @@ NRCSID( SFTUTILSC, "$Id$" );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
-/** Create one SFT-struct
+/** Create one SFT-struct. Allows for numBins == 0.
  */
 void
 LALCreateSFTtype (LALStatus *status, 
 		  SFTtype **output, 	/**< [out] allocated SFT-struct */
-		  UINT4 SFTlen)		/**< number of frequency-bins */
+		  UINT4 numBins)	/**< number of frequency-bins */
 {
   SFTtype *sft = NULL;
 
@@ -75,10 +76,15 @@ LALCreateSFTtype (LALStatus *status,
     ABORT (status, SFTUTILS_EMEM, SFTUTILS_MSGEMEM);
   }
 
-  LALCCreateVector (status->statusPtr, &(sft->data), SFTlen);
-  BEGINFAIL (status) { 
-    LALFree (sft);
-  } ENDFAIL (status);
+  if ( numBins )
+    {
+      LALCCreateVector (status->statusPtr, &(sft->data), numBins);
+      BEGINFAIL (status) { 
+	LALFree (sft);
+      } ENDFAIL (status);
+    }
+  else
+    sft->data = NULL;	/* no data, just header */
 
   *output = sft;
 
@@ -94,11 +100,10 @@ void
 LALCreateSFTVector (LALStatus *status, 
 		    SFTVector **output, /**< [out] allocated SFT-vector */
 		    UINT4 numSFTs, 	/**< number of SFTs */
-		    UINT4 SFTlen)	/**< number of frequency-bins per SFT */
+		    UINT4 numBins)	/**< number of frequency-bins per SFT */
 {
   UINT4 iSFT, j;
   SFTVector *vect;	/* vector to be returned */
-  COMPLEX8Vector *data = NULL;
 
   INITSTATUS( status, "LALCreateSFTVector", SFTUTILSC);
   ATTATCHSTATUSPTR( status );
@@ -121,16 +126,22 @@ LALCreateSFTVector (LALStatus *status,
 
   for (iSFT=0; iSFT < numSFTs; iSFT ++)
     {
-      LALCCreateVector (status->statusPtr, &data , SFTlen);
-      BEGINFAIL (status) { /* crap, we have to de-allocate as far as we got so far... */
-	for (j=0; j<iSFT; j++)
-	  LALCDestroyVector (status->statusPtr, (COMPLEX8Vector**)&(vect->data[j].data) );
-	LALFree (vect->data);
-	LALFree (vect);
-      } ENDFAIL (status);
+      COMPLEX8Vector *data = NULL;
 
+      /* allow SFTs with 0 bins: only header */
+      if ( numBins )
+	{
+	  LALCCreateVector (status->statusPtr, &data , numBins);
+	  BEGINFAIL (status)  /* crap, we have to de-allocate as far as we got so far... */
+	    {
+	      for (j=0; j<iSFT; j++)
+		LALCDestroyVector (status->statusPtr, (COMPLEX8Vector**)&(vect->data[j].data) );
+	      LALFree (vect->data);
+	      LALFree (vect);
+	    } ENDFAIL (status);
+	}
+      
       vect->data[iSFT].data = data;
-      data = NULL;
 
     } /* for iSFT < numSFTs */
 
@@ -215,8 +226,11 @@ LALDestroySFTVector (LALStatus *status,
 
 
 /** Copy an entire SFT-type into another. 
- * We require the destination to have at least as many frequency-bins
- * as the source, but it can have less..
+ * We require the destination-SFT to have a NULL data-entry, as the  
+ * corresponding data-vector will be allocated here and copied into
+ *
+ * Note: the source-SFT is allowed to have a NULL data-entry,
+ * in which case only the header is copied.
  */
 void
 LALCopySFT (LALStatus *status, 
@@ -224,42 +238,47 @@ LALCopySFT (LALStatus *status,
 	    const SFTtype *src)	/**< input-SFT to be copied */
 {
 
+
   INITSTATUS( status, "LALCopySFT", SFTUTILSC);
+  ATTATCHSTATUSPTR ( status );
 
   ASSERT (dest,  status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
-  ASSERT (dest->data,  status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
+  ASSERT (dest->data == NULL, status, SFTUTILS_ENONULL, SFTUTILS_MSGENONULL );
   ASSERT (src, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
-  ASSERT (src->data, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
 
-  /* some hard requirements */
-  if ( dest->data->length < src->data->length ) {
-    LALPrintError ("\nERROR: target-SFT has wrong size !\n\n");
-    ABORT (status, SFTUTILS_EINPUT, SFTUTILS_MSGEINPUT);
-  }
-  
-  /* copy head */
-  strcpy (dest->name, src->name);
-  dest->epoch = src->epoch;
-  dest->f0 = src->f0;
-  dest->deltaF = src->deltaF;
-  dest->sampleUnits = src->sampleUnits;
-  /* copy data */
-  memcpy (dest->data->data, src->data->data, dest->data->length * sizeof (dest->data->data[0]));
-  
+  /* copy complete head (including data-pointer, but this will be separately alloc'ed and copied in the next step) */
+  memcpy ( dest, src, sizeof(*dest) );
+
+  /* copy data (if there's any )*/
+  if ( src->data )
+    {
+      UINT4 numBins = src->data->length;      
+      if ( (dest->data = XLALCreateCOMPLEX8Vector ( numBins )) == NULL ) {
+	ABORT ( status, SFTUTILS_EMEM, SFTUTILS_MSGEMEM ); 
+      }
+      memcpy (dest->data->data, src->data->data, numBins * sizeof (src->data->data[0]));
+    }
+
+  DETATCHSTATUSPTR (status);
   RETURN (status);
 
 } /* LALCopySFT() */
 
 
 /** Concatenate two SFT-vectors to a new one.
+ *
+ * Note: the input-vectors are *copied* completely, so they can safely
+ * be free'ed after concatenation. 
  */
 void
 LALConcatSFTVectors (LALStatus *status,
-		     SFTVector **outVect,
-		     const SFTVector *inVect1,
-		     const SFTVector *inVect2 )
+		     SFTVector **outVect,	/**< [out] concatenated SFT-vector */
+		     const SFTVector *inVect1,	/**< input-vector 1 */
+		     const SFTVector *inVect2 ) /**< input-vector 2 */
 {
-  UINT4 newlen;
+  UINT4 numBins1, numBins2;
+  UINT4 numSFTs1, numSFTs2;
+  UINT4 i;
   SFTVector *ret = NULL;
 
   INITSTATUS( status, "LALDestroySFTVector", SFTUTILSC);
@@ -267,19 +286,141 @@ LALConcatSFTVectors (LALStatus *status,
 
   ASSERT (outVect,  status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
   ASSERT ( *outVect == NULL,  status, SFTUTILS_ENONULL,  SFTUTILS_MSGENONULL);
-  ASSERT (inVect1,  status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
-  ASSERT (inVect2,  status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
+  ASSERT (inVect1 && inVect1->data, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
+  ASSERT (inVect2 && inVect2->data, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
 
-  newlen = inVect1 -> length + inVect2 -> length;
-    
+
+  /* NOTE: we allow SFT-entries with NULL data-entries, i.e. carrying only the headers */
+  if ( inVect1->data[0].data )
+    numBins1 = inVect1->data[0].data->length;
+  else
+    numBins1 = 0;
+  if ( inVect2->data[0].data )
+    numBins2 = inVect2->data[0].data->length;
+  else
+    numBins2 = 0;
+
+  if ( numBins1 != numBins2 )
+    {
+      LALPrintError ("\nERROR: the SFT-vectors must have the same number of frequency-bins!\n\n");
+      ABORT ( status, SFTUTILS_EINPUT,  SFTUTILS_MSGEINPUT);
+    }
+  
+  numSFTs1 = inVect1 -> length;
+  numSFTs2 = inVect2 -> length;
+
+  TRY ( LALCreateSFTVector ( status->statusPtr, &ret, numSFTs1 + numSFTs2, numBins1 ), status );
+  
+  /* copy the *complete* SFTs (header+ data !) one-by-one */
+  for (i=0; i < numSFTs1; i ++)
+    {
+      LALCopySFT ( status->statusPtr, &(ret->data[i]), &(inVect1->data[i]) );
+      BEGINFAIL ( status ) {
+	LALDestroySFTVector ( status->statusPtr, &ret );
+      } ENDFAIL(status);
+    } /* for i < numSFTs1 */
+
+  for (i=0; i < numSFTs2; i ++)
+    {
+      LALCopySFT ( status->statusPtr, &(ret->data[numSFTs1 + i]), &(inVect2->data[i]) );
+      BEGINFAIL ( status ) {
+	LALDestroySFTVector ( status->statusPtr, &ret );
+      } ENDFAIL(status);
+    } /* for i < numSFTs1 */
+
   
   DETATCHSTATUSPTR (status); 
   RETURN (status);
 
 } /* LALConcatSFTVectors() */
 
+
 
+/** Append the given SFTtype to the SFT-vector (no SFT-specific checks are done!) */
+void
+LALAppendSFT2Vector (LALStatus *status,
+		     SFTVector *vect,		/**< destinatino SFTVector to append to */
+		     const SFTtype *sft)	/**< the SFT to append */
+{
+  UINT4 oldlen;
+  INITSTATUS( status, "LALAppendSFT2Vector", SFTUTILSC);
+  ATTATCHSTATUSPTR (status); 
 
+  ASSERT ( sft, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL );
+  ASSERT ( vect, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL );
+
+  oldlen = vect->length;
+  
+  if ( (vect->data = LALRealloc ( vect->data, (oldlen + 1)*sizeof( *vect->data ) )) == NULL ) {
+    ABORT ( status, SFTUTILS_EMEM, SFTUTILS_MSGEMEM ); 
+  }
+  memset ( &(vect->data[oldlen]), 0, sizeof( vect->data[0] ) );
+  vect->length ++;
+
+  TRY ( LALCopySFT( status->statusPtr, &vect->data[oldlen], sft ), status);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+
+} /* LALAppendSFT2Vector() */
+
+
+
+/** Append the given string to the string-vector */
+void
+LALAppendString2Vector (LALStatus *status,
+			LALStringVector *vect,	/**< destination vector to append to */
+			const CHAR *string)	/**< string to append */
+{
+  UINT4 oldlen;
+  INITSTATUS( status, "LALAppendString2Vector", SFTUTILSC);
+
+  ASSERT ( string, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL );
+  ASSERT ( vect, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL );
+
+  oldlen = vect->length;
+  
+  if ( (vect->data = LALRealloc ( vect->data, (oldlen + 1)*sizeof( *vect->data ) )) == NULL ) {
+    ABORT ( status, SFTUTILS_EMEM, SFTUTILS_MSGEMEM ); 
+  }
+  vect->length ++;
+
+  if ( (vect->data[oldlen] = LALCalloc(1, strlen(string) + 1 )) == NULL ) {
+    ABORT ( status, SFTUTILS_EMEM, SFTUTILS_MSGEMEM ); 
+  }
+
+  strcpy ( vect->data[oldlen], string );
+  
+  RETURN(status);
+
+} /* LALAppendString2Vector() */
+
+
+
+/** Free a string-vector ;) */
+void
+LALDestroyStringVector ( LALStatus *status,
+			 LALStringVector **vect )
+{
+  UINT4 i;
+  INITSTATUS( status, "LALDestroyStringVector", SFTUTILSC);
+
+  ASSERT ( vect, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL );
+  ASSERT ( *vect, status, SFTUTILS_ENONULL, SFTUTILS_MSGENONULL );
+
+  for ( i=0; i < (*vect)->length; i++ )
+    {
+      if ( (*vect)->data[i] )
+	LALFree ( (*vect)->data[i] );
+    }
+
+  LALFree ( (*vect)->data );
+  LALFree ( (*vect) );
+
+  (*vect) = NULL;
+
+    RETURN(status);
+} /* LALDestroyStringVector() */
 
 
 
