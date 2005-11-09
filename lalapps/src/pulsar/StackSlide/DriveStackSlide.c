@@ -161,6 +161,7 @@
 /* 09/23/05 gam; In addition to maxSpindownFreqShift add maxSpinupFreqShift */
 /* 10/20/05 gam; if ( (params->weightFlag & 8) > 0 ) renorm the BLK (SFT) data up front with the inverse mean absolute value of the BLK data = params->blkRescaleFactor */
 /* 10/20/05 gam; if using running median and params->normalizationParameter > 0, then use to correct the bias. */
+/* 11/09/05 gam; if normalizationFlag & 1 > 0 normalize STKs using mean (but if normalizationFlag & 4 > 0, running median takes precedence) */
 
 /*********************************************/
 /*                                           */
@@ -668,6 +669,7 @@ params->numFDeriv5   =   0;
     	fprintf(stdout,"set nBinsPerNRM        %23d; #44 INT4 number of frequency bins to use when finding norms. \n", params->nBinsPerNRM);
     	fprintf(stdout,"set normalizationParameter %23.16e; #45 REAL4 see uses below. \n", params->normalizationParameter);
     	fprintf(stdout,"#The normalizationFlag rules are: \n");
+    	fprintf(stdout,"# if (normalizationFlag & 1) > 0 normalize STKs using mean, but if (normalizationFlag & 4) > 0, running median takes precedence,\n"); /* 11/09/05 gam */
     	fprintf(stdout,"# if (normalizationFlag & 2) > 0 normalize BLKs else normalize STKs, \n");
     	fprintf(stdout,"# if (normalizationFlag & 4) > 0 normalize STKs using running median (or use medians in weights when weightFlag > 0), \n"); /* 04/14/04 gam; now implemented */ /* 10/28/04 gam */
     	fprintf(stdout,"# The running median block size is given by nBinsPerNRM.\n");
@@ -998,7 +1000,7 @@ params->numFDeriv5   =   0;
     if ( (params->nBinsPerNRM <= 0) || (params->nBinsPerNRM > params->nBinsPerSTK) ) {
        ABORT( status, DRIVESTACKSLIDEH_EBANDNRM, DRIVESTACKSLIDEH_MSGEBANDNRM );
     }
-  } else if ( params->normalizationFlag > 0 ) {
+  } else if ( (params->normalizationFlag & 1) > 0 ) {
     if ( (params->bandNRM <= 0) || (floor(params->bandNRM*params->tEffSTK + 0.5) != params->nBinsPerNRM) ) {
        ABORT( status, DRIVESTACKSLIDEH_EBANDNRM, DRIVESTACKSLIDEH_MSGEBANDNRM );
     }
@@ -2103,7 +2105,9 @@ void StackSlideApplySearch(
         }
 
         /* 03/01/04 gam; Add option to normalizationFlag to normalize STKs rather than BLKs; this should be the default action. */
-        if ( (params->normalizationFlag > 0) && !((params->normalizationFlag & 2) > 0) ) {
+        /* if ( (params->normalizationFlag > 0) && !((params->normalizationFlag & 2) > 0) ) */ /* 11/09/05 gam */
+        if ( ( ((params->normalizationFlag & 1) > 0) || ((params->normalizationFlag & 4) > 0) ) && !((params->normalizationFlag & 2) > 0) ) {
+
          /* INT4  istkNRM = 0;  */ /* 03/03/04 gam; moved above */
          /* REAL4 stkNRM = 0.0; */ /* 03/03/04 gam; moved above */
            

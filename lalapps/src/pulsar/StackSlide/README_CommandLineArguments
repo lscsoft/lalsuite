@@ -100,6 +100,7 @@ set bandNRM             1.7999999999999999e-01; #43 REAL8 frequency band to use 
 set nBinsPerNRM                             50; #44 INT4 number of frequency bins to use when finding norms. 
 set normalizationParameter  0.0000000000000000e+00; #45 REAL4 see uses below. 
 #The normalizationFlag rules are: 
+# if (normalizationFlag & 1) > 0 normalize STKs using mean, but if (normalizationFlag & 4) > 0, running median takes precedence,
 # if (normalizationFlag & 2) > 0 normalize BLKs else normalize STKs, 
 # if (normalizationFlag & 4) > 0 normalize STKs using running median (or use medians in weights when weightFlag > 0), 
 # The running median block size is given by nBinsPerNRM.
