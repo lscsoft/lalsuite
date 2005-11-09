@@ -1,12 +1,31 @@
- /*-----------------------------------------------------------------------
+/*
+ * Copyright (C) 2004, 2005 Reinhard Prix
  *
- * File Name: dumpSFT.c
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
  *
- * Authors: Prix, R.
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
- * Revision: $Id$
- *           
- *-----------------------------------------------------------------------
+ *  You should have received a copy of the GNU General Public License
+ *  along with with program; see the file COPYING. If not, write to the 
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  MA  02111-1307  USA
+ */
+
+
+/**
+ * \author Reinhard Prix
+ * \date 2005
+ * \file 
+ * \brief Code to dump various SFT-info in human-readable form to stdout.
+ *
+ * $Id$
+ *
  */
 
 /* ---------- includes ---------- */
@@ -18,8 +37,8 @@
 
 RCSID ("$Id");
 
-/* Error codes and messages */
-/* <lalErrTable file="MAKEFAKEDATACErrorTable"> */
+/** \name Error codes */
+/*@{*/
 #define MAKEFAKEDATAC_ENORM 	0
 #define MAKEFAKEDATAC_ESUB  	1
 #define MAKEFAKEDATAC_EARG  	2
@@ -34,26 +53,31 @@ RCSID ("$Id");
 #define MAKEFAKEDATAC_MSGEBAD  "Bad argument values"
 #define MAKEFAKEDATAC_MSGEFILE "File IO error"
 #define MAKEFAKEDATAC_MSGENOARG "Missing argument"
+/*@}*/
 
 
-/* </lalErrTable> */
+/*---------- DEFINES ----------*/
 
-/***************************************************/
-#define TRUE (1==1)
-#define FALSE (1==0)
+#define TRUE    (1==1)
+#define FALSE   (1==0)
 
-/* local prototypes */
-/* Prototypes for the functions defined in this file */
+/*----- Macros ----- */
+/*---------- internal types ----------*/
+
+/*---------- empty initializers ---------- */
+static const LALStatus empty_status;
+/*---------- Global variables ----------*/
+
+/* User variables */
+BOOLEAN uvar_help;
+CHAR *uvar_SFTfiles;
+BOOLEAN uvar_headerOnly;
+
+/*---------- internal prototypes ----------*/
 void initUserVars (LALStatus *stat);
 
-/*----------------------------------------------------------------------*/
-static const LALStatus empty_status;
-/*----------------------------------------------------------------------*/
-/* User variables */
-CHAR *uvar_SFTfname;
-CHAR *uvar_SFToutname;
-BOOLEAN uvar_help;
-INT4 uvar_format;
+/*==================== FUNCTION DEFINITIONS ====================*/
+
 /*----------------------------------------------------------------------
  * main function 
  *----------------------------------------------------------------------*/
@@ -61,10 +85,10 @@ int
 main(int argc, char *argv[]) 
 {
   LALStatus status = empty_status;	/* initialize status */
-  SFTtype *sft = NULL;
-  SFTHeader header;
-  REAL8 deltaF, f_min, f_max;
-  FILE *fp;
+  SFTConstraints *constraints = NULL;
+  SFTCatalog *catalog = NULL;
+  SFTVector *sfts = NULL;
+  UINT4 i;
 
   lalDebugLevel = 0;
 
@@ -83,36 +107,51 @@ main(int argc, char *argv[])
   if (uvar_help) 	/* help requested: we're done */
     exit (0);
 
-  /* figure out what frequency-band these SFTs contain */
-  LAL_CALL (LALReadSFTheader (&status, &header, uvar_SFTfname), &status);
+  LAL_CALL ( LALSFTdataFind (&status, &catalog, uvar_SFTfiles, constraints ), &status );
 
-  deltaF = 1.0 / header.timeBase;
-  f_min = header.fminBinIndex * deltaF;
-  f_max = f_min + (header.length - 1) * deltaF;
-
-  /* read in the binary sft-file */
-  LAL_CALL (LALReadSFTfile (&status, &sft, f_min, f_max, uvar_SFTfname), &status);
-
-  /* now dump it into a text-file or to stdout */
-  if ( uvar_SFToutname && LALUserVarWasSet (&uvar_SFToutname) )
+  if ( !catalog )
     {
-      if ( (fp = fopen (uvar_SFToutname, "w")) == NULL) 
-	{
-	  LALPrintError ("Could not open file `%s` for writing.\n", uvar_SFToutname);
-	  exit (-1);
-	}
+      LALPrintError ("\nNo SFTs seemed to have matched your query!\n\n");
+      return 1;
     }
-  else
-    fp = stdout;
-  
-  dump_SFT (fp, sft, uvar_format);
 
-  if (fp != stdout)
-    fclose (fp);
+  if ( !uvar_headerOnly ) {
+    LAL_CALL ( LALLoadSFTs ( &status, &sfts, catalog, -1, -1 ), &status );
+  }
 
+  for ( i=0; i < catalog->length; i ++ )
+    {
+      SFTDescriptor *ptr = &(catalog->data[i]);
+
+      printf ("\n");
+      printf ( "Locator:     '%s'\n", XLALshowSFTLocator ( ptr->locator ) );
+      printf ( "Name:        '%s'\n", ptr->header.name );
+      printf ( "epoch:       [%d, %d]\n", ptr->header.epoch.gpsSeconds, ptr->header.epoch.gpsNanoSeconds ); 
+      printf ( "f0:          %f\n", ptr->header.f0 );
+      printf ( "deltaF:      %f\n", ptr->header.deltaF );
+      printf ( "comment:     %s\n", (ptr->comment)?(ptr->comment) : "<none>" );
+      printf ("\n");
+
+      if ( !uvar_headerOnly )
+	{
+	  UINT4 k;
+	  SFTtype *sft = &(sfts->data[i]);;
+	  printf (" Frequency_Hz     Real           Imaginary \n");
+	  for ( k=0; k < sft->data->length; k ++ )
+	    printf ( "%10f      % 6e  % 6e  \n", sft->f0 + k * sft->deltaF, sft->data->data[k].re, sft->data->data[k].im );
+	  
+	  printf ("\n");
+	  
+	} /* if !headerOnly */
+
+    } /* for i < numSFTs */
+
+  if ( sfts ) {
+    LAL_CALL ( LALDestroySFTVector (&status, &sfts ), &status );
+  }
 
   /* free memory */
-  LAL_CALL (LALDestroySFTtype (&status, &sft), &status);
+  LAL_CALL (LALDestroySFTCatalog (&status, &catalog), &status );
   LAL_CALL (LALDestroyUserVars (&status), &status);
 
   LALCheckMemoryLeaks(); 
@@ -129,17 +168,10 @@ initUserVars (LALStatus *stat)
   INITSTATUS( stat, "initUserVars", rcsid );
   ATTATCHSTATUSPTR (stat);
 
-#define DEFAULT_OUTFILE "stdout"
-  uvar_SFToutname = LALCalloc (strlen(DEFAULT_OUTFILE)+1, 1);
-  strcpy (uvar_SFToutname, DEFAULT_OUTFILE);
-
-  uvar_format = 0;	/* defaults to openDX */
-
   /* now register all our user-variable */
-  LALregSTRINGUserVar(stat, SFTfname,	'i', UVAR_REQUIRED, "Path and filename for binary SFTs-file");
-  LALregSTRINGUserVar(stat, SFToutname,	'o', UVAR_OPTIONAL, "Path and filename for output SFT text-file");
-  LALregINTUserVar(stat,    format,	'F', UVAR_OPTIONAL, "Output format: 0 = openDX, 1 = xmgrace");
   LALregBOOLUserVar(stat,   help,	'h', UVAR_HELP,     "Print this help/usage message");
+  LALregSTRINGUserVar(stat, SFTfiles,	'i', UVAR_REQUIRED, "File-pattern for input SFTs");
+  LALregBOOLUserVar(stat,   headerOnly,	'H', UVAR_OPTIONAL, "Output only header-info");
   
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
