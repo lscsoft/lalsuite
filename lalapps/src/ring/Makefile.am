@@ -44,6 +44,6 @@ python_config.sed:
 	echo "s+@PYTHONPROG@+@PYTHON@+g" >> python_config.sed
 	echo "s+@RINGEXECPATH@+${bindir}+g" >> python_config.sed
 
-lalapps_ring_pipe: ring_pipe.in python_config.sed
-	sed -f python_config.sed ring_pipe.in > lalapps_ring_pipe 
+lalapps_ring_pipe: $(srcdir)/ring_pipe.in python_config.sed
+	sed -f python_config.sed $(srcdir)/ring_pipe.in > lalapps_ring_pipe 
 	chmod +x lalapps_ring_pipe

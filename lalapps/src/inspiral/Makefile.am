@@ -71,23 +71,23 @@ python_config.sed:
 	echo "s+@PYTHONLIBDIR@+${pythonlibdir}+g" > python_config.sed
 	echo "s+@PYTHONPROG@+@PYTHON@+g" >> python_config.sed
 
-lalapps_inspiral_pipe: inspiral_pipe.in python_config.sed
-	sed -f python_config.sed inspiral_pipe.in > lalapps_inspiral_pipe 
+lalapps_inspiral_pipe: $(srcdir)/inspiral_pipe.in python_config.sed
+	sed -f python_config.sed $(srcdir)/inspiral_pipe.in > lalapps_inspiral_pipe 
 	chmod +x lalapps_inspiral_pipe
-lalapps_inspiral_pipe_s2: inspiral_pipe_s2.in python_config.sed
-	sed -f python_config.sed inspiral_pipe_s2.in > lalapps_inspiral_pipe_s2
+lalapps_inspiral_pipe_s2: $(srcdir)/inspiral_pipe_s2.in python_config.sed
+	sed -f python_config.sed $(srcdir)/inspiral_pipe_s2.in > lalapps_inspiral_pipe_s2
 	chmod +x lalapps_inspiral_pipe_s2
-lalapps_inspiral_pipe_tama: inspiral_pipe_tama.in python_config.sed
-	sed -f python_config.sed inspiral_pipe_tama.in > lalapps_inspiral_pipe_tama
+lalapps_inspiral_pipe_tama: $(srcdir)/inspiral_pipe_tama.in python_config.sed
+	sed -f python_config.sed $(srcdir)/inspiral_pipe_tama.in > lalapps_inspiral_pipe_tama
 	chmod +x lalapps_inspiral_pipe_tama
-lalapps_inspiral_pipe_geo: inspiral_pipe_geo.in python_config.sed
-	sed -f python_config.sed inspiral_pipe_geo.in > lalapps_inspiral_pipe_geo
+lalapps_inspiral_pipe_geo: $(srcdir)/inspiral_pipe_geo.in python_config.sed
+	sed -f python_config.sed $(srcdir)/inspiral_pipe_geo.in > lalapps_inspiral_pipe_geo
 	chmod +x lalapps_inspiral_pipe_geo
-lalapps_inspiral_hipe: inspiral_hipe.in python_config.sed
-	sed -f python_config.sed inspiral_hipe.in > lalapps_inspiral_hipe
+lalapps_inspiral_hipe: $(srcdir)/inspiral_hipe.in python_config.sed
+	sed -f python_config.sed $(srcdir)/inspiral_hipe.in > lalapps_inspiral_hipe
 	chmod +x lalapps_inspiral_hipe
-lalapps_inspiral_online_pipe: inspiral_online_pipe.in python_config.sed
-	sed -f python_config.sed inspiral_online_pipe.in > lalapps_inspiral_online_pipe
+lalapps_inspiral_online_pipe: $(srcdir)/inspiral_online_pipe.in python_config.sed
+	sed -f python_config.sed $(srcdir)/inspiral_online_pipe.in > lalapps_inspiral_online_pipe
 	chmod +x lalapps_inspiral_online_pipe
 
 pkgdata_DATA = BNSMasses.dat inspsrcs.dat inspiral_pipe.ini s2_dag.ini s2_tama.ini inspiral_hipe.ini online.ini

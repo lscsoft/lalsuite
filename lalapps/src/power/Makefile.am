@@ -39,8 +39,8 @@ python_config.sed:
 	echo "s+@PYTHONLIBDIR@+${pythonlibdir}+g" > python_config.sed
 	echo "s+@PYTHONPROG@+@PYTHON@+g" >> python_config.sed
 
-lalapps_power_pipe: power_pipe.in python_config.sed
-	sed -f python_config.sed power_pipe.in > lalapps_power_pipe 
+lalapps_power_pipe: $(srcdir)/power_pipe.in python_config.sed
+	sed -f python_config.sed $(srcdir)/power_pipe.in > lalapps_power_pipe 
 	chmod +x lalapps_power_pipe
 
 pkgdata_DATA = power_pipe.ini

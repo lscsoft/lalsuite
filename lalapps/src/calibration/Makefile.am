@@ -38,7 +38,7 @@ python_config.sed:
 	echo "s+@PYTHONPROG@+@PYTHON@+g" >> python_config.sed
 	echo "s+@RINGEXECPATH@+${bindir}+g" >> python_config.sed
 
-lalapps_strain_pipe: strain_pipe.in python_config.sed
-	sed -f python_config.sed strain_pipe.in > lalapps_strain_pipe 
+lalapps_strain_pipe: $(srcdir)/strain_pipe.in python_config.sed
+	sed -f python_config.sed $(srcdir)/strain_pipe.in > lalapps_strain_pipe 
 	chmod +x lalapps_strain_pipe
 

@@ -43,6 +43,6 @@ python_config.sed:
 	echo "s+@PYTHONPROG@+@PYTHON@+g" >> python_config.sed
 	echo "s+@RINGEXECPATH@+${bindir}+g" >> python_config.sed
 
-lalapps_cosmicstring_pipe: cosmicstring_pipe.in python_config.sed
-	sed -f python_config.sed cosmicstring_pipe.in > lalapps_cosmicstring_pipe 
+lalapps_cosmicstring_pipe: $(srcdir)/cosmicstring_pipe.in python_config.sed
+	sed -f python_config.sed $(srcdir)/cosmicstring_pipe.in > lalapps_cosmicstring_pipe 
 	chmod +x lalapps_cosmicstring_pipe
