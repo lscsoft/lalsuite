@@ -105,6 +105,9 @@ INT4 siteTwo;
 REAL8 fMin = -1;
 REAL8 fMax = -1;
 
+/* scale factor */
+REAL4 scaleFactor = 0.1;
+
 /* omegaGW parameters */
 REAL4 alpha = 0;
 REAL4 fRef = 100;
@@ -2549,6 +2552,7 @@ static void display_usage_fake()
   fprintf(stdout, " --hpf-order N            high pass filter order\n");
   fprintf(stdout, " --recentre               recentre jobs\n");
   fprintf(stdout, " --middle-segment         use middle segment in PSD estimation\n");
+  fprintf(stdout, " --signal-scale-factor N  factor to scale signal by\n");
   fprintf(stdout, " --alpha N                exponent on filter spectrum\n");
   fprintf(stdout, " --f-ref N                reference frequency for filter spectrum\n");
   fprintf(stdout, " --omega0 N               reference omega_0 for filter spectrum\n");
@@ -2591,6 +2595,7 @@ static void parse_options_fake(INT4 argc, CHAR *argv[])
       {"hpf-frequency", required_argument, 0, 'y'},
       {"hpf-attenuation", required_argument, 0, 'z'},
       {"hpf-order", required_argument, 0, 'A'},
+      {"signal-scale-factor", required_argument, 0, 'G'},
       {"alpha", required_argument, 0, 'H'},
       {"f-ref", required_argument, 0, 'I'},
       {"omega0", required_argument, 0, 'J'},
@@ -2847,6 +2852,11 @@ static void parse_options_fake(INT4 argc, CHAR *argv[])
         }
         ADD_PROCESS_PARAM("int", "%d", highPassOrder);
         break;
+
+      case 'G':
+        /* signal scale factor */
+        scaleFactor = atof(optarg);
+        ADD_PROCESS_PARAM("float", "%e", scaleFactor);
 
       case 'H':
         /* filter spectrum exponent */
@@ -3384,7 +3394,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* inject signal into noise */
   for (i = 0; i < noiseOne->data->length; i++)
   {
-    seriesOne->data->data[i] *= 0.001;
+    seriesOne->data->data[i] *= scaleFactor;
     seriesTwo->data->data[i] = seriesOne->data->data[i] + \
                                noiseTwo->data->data[i];
     seriesOne->data->data[i] = seriesOne->data->data[i] + \
