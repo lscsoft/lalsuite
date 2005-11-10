@@ -139,8 +139,8 @@ for seg in seg_list:
       tSlide=1e9*slide_time+slide_time_ns
       dirnameM='./slides/slideM'+str(i)
       dirnameP='./slides/slideP'+str(i)
-      os.system('mv ./slides/H1-BURCA_H1L1_M*'+str(int(i*tSlide))+'* '+dirnameM)
-      os.system('mv ./slides/H1-BURCA_H1L1_P*'+str(int(i*tSlide))+'* '+dirnameP)
+      os.system('mv ./slides/H1-BURCA_H1L1_M_'+str(int(i*tSlide))+'_* '+dirnameM)
+      os.system('mv ./slides/H1-BURCA_H1L1_P_'+str(int(i*tSlide))+'_* '+dirnameP)
       i=i+1
 
 # -------------------------------------------------------------------------------- #
