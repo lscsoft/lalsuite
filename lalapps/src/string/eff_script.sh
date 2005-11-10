@@ -2,9 +2,13 @@
 
 #must add a check here for the command line argument
 
-ls -1 coincidences/L1*L1H1* > L1.txt
-ls -1 coincidences/H1*H1L1* > H1.txt
-ls -1 coincidences/H2*H2L1* > H2.txt
+rm -rf L1.txt
+for file in coincidences/L1*L1H1*; do echo $file >> L1.txt  ; done
+rm -rf H1.txt
+for file in  coincidences/H1*H1L1* ; do echo $file >> H1.txt  ; done
+rm -rf H2.txt
+for file in  coincidences/H2*H2L1* ; do echo $file >> H2.txt  ; done
+
 ls -1 HL-* > inj.txt
 
 ~/lscsoft/lalapps/src/power/lalapps_binj_find --input-trig H1.txt --input-burstinj inj.txt \
