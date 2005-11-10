@@ -1,30 +1,56 @@
 ## Process this file with automake to produce Makefile.in
 # $Id$
 
+## sources
+STOCH_SRCS       = stochastic.c
+STOCH_DEV_SRCS   = data_input.c data_input.h \
+                   data_output.c data_output.h \
+                   sgwb.c sgwb.h misc.c misc.h \
+                   stochastic_dev.c
+STOCH_FAKE_SRCS  = fake_data.c fake_data.h \
+                   data_output.c data_output.h \
+                   sgwb.c sgwb.h misc.c misc.h \
+                   stochastic_fake.c
+STOPP_SRCS       = stopp.c
+STOPP_BAYES_SRCS = stopp_bayes.c
+OLAPREDFCN_SRCS  = olapredfcn.c olapredfcn.h \
+                   olapredfcn_args.c olapredfcn_bars.c
+
+## frame library dependant programs
 if FRAME
 if LALFRAME
-FRAMEPROGRAMS = lalapps_stochastic lalapps_stochastic_dev
-lalapps_stochastic_SOURCES = stochastic.c
-lalapps_stochastic_dev_SOURCES = stochastic_dev.c
+FRAMEPROGRAMS = lalapps_stochastic lalapps_stochastic_dev \
+                lalapps_stochastic_fake
+lalapps_stochastic_SOURCES      = $(STOCH_SRCS)
+lalapps_stochastic_dev_SOURCES  = $(STOCH_DEV_SRCS)
+lalapps_stochastic_fake_SOURCES = $(STOCH_FAKE_SRCS)
 endif
 endif
+
+## metaio library dependant programs
 if LALMETAIO
 METAIOPROGRAMS = lalapps_stopp lalapps_stopp_bayes
-lalapps_stopp_SOURCES = stopp.c
-lalapps_stopp_bayes_SOURCES = stopp_bayes.c
+lalapps_stopp_SOURCES           = $(STOPP_SRCS)
+lalapps_stopp_bayes_SOURCES     = $(STOPP_BAYES_SRCS)
 endif
-bin_SCRIPTS = lalapps_stochastic_pipe lalapps_stochastic_bayes
-bin_PROGRAMS = lalapps_olapredfcn ${FRAMEPROGRAMS} ${METAIOPROGRAMS}
-lalapps_olapredfcn_SOURCES = olapredfcn.c olapredfcn.h olapredfcn_args.c \
-                             olapredfcn_bars.c
-pythonlibdir = ${prefix}/lib/python
+
+## other programs
+lalapps_olapredfcn_SOURCES      = $(OLAPREDFCN_SRCS)
+
+bin_SCRIPTS       = lalapps_stochastic_pipe lalapps_stochastic_bayes
+bin_PROGRAMS      = lalapps_olapredfcn ${FRAMEPROGRAMS} ${METAIOPROGRAMS}
+
+pythonlibdir      = ${prefix}/lib/python
 pythonlib_SCRIPTS = stochastic.py
-INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
-LDADD = $(top_builddir)/src/lalapps/liblalapps.la
-EXTRA_DIST = stochastic.py stochastic_pipe.in stochastic_bayes.in
-MOSTLYCLEANFILES = *STOCHASTIC*.xml *CCSPECTRA*.gwf
-CLEANFILES = python_config.sed lalapps_stochastic_pipe \
-             lalapps_stochastic_bayes
+INCLUDES          = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
+LDADD             = $(top_builddir)/src/lalapps/liblalapps.la
+
+EXTRA_DIST        = stochastic.py stochastic_pipe.in stochastic_bayes.in
+MOSTLYCLEANFILES  = *STOCHASTIC*.xml *CCSPECTRA*.gwf
+CLEANFILES        = python_config.sed lalapps_stochastic_pipe \
+                    lalapps_stochastic_bayes
+
+## rules to build python scripts
 
 python_config.sed:
 	-rm -f python_config.sed
