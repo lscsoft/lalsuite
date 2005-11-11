@@ -2,7 +2,9 @@ $Id$
 
 TODO:
 
-stochastic.c:
+stochastic.c/stochastic_fake.c:
+
+* unify stochastic.c and stochastic_fake.c into a single code
 
 * implement software injections for preforming monte carlo simulations
 
@@ -63,3 +65,5 @@ General:
 * XLALify core SGWB routines
 
 * use XLAL functions in precedence of LAL functions
+
+* move as many of the helper functions as possible into LAL
