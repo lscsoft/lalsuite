@@ -1085,11 +1085,11 @@ INT4 main(INT4 argc, CHAR *argv[])
   gpsEndTime.gpsNanoSeconds = 0;
 
   /* read data */
-  seriesOne = get_time_series(&status, ifoOne, frameCacheOne, channelOne, \
+  seriesOne = get_time_series(ifoOne, frameCacheOne, channelOne, \
       gpsStartTime, gpsEndTime, resampleRate, highPassOrder, highPassFreq, \
       highPassAtten, geoHighPassOrder, geoHighPassFreq, geoHighPassAtten, \
       padData);
-  seriesTwo = get_time_series(&status, ifoTwo, frameCacheTwo, channelTwo, \
+  seriesTwo = get_time_series(ifoTwo, frameCacheTwo, channelTwo, \
       gpsStartTime, gpsEndTime, resampleRate, highPassOrder, highPassFreq, \
       highPassAtten, geoHighPassOrder, geoHighPassFreq, geoHighPassAtten, \
       padData);

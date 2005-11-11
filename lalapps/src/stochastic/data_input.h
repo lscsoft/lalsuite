@@ -44,15 +44,13 @@
 #include <lalapps.h>
 
 /* read a LIGO time series */
-REAL4TimeSeries *get_ligo_data(LALStatus *status,
-    FrStream *stream,
+REAL4TimeSeries *get_ligo_data(FrStream *stream,
     CHAR *channel,
     LIGOTimeGPS start,
     LIGOTimeGPS end);
 
 /* read and high pass filter a GEO time series */
-REAL4TimeSeries *get_geo_data(LALStatus *status,
-    FrStream *stream,
+REAL4TimeSeries *get_geo_data(FrStream *stream,
     CHAR *channel,
     LIGOTimeGPS start,
     LIGOTimeGPS end,
@@ -61,8 +59,7 @@ REAL4TimeSeries *get_geo_data(LALStatus *status,
     REAL8 hpf_attenuation);
 
 /* read a time series */
-REAL4TimeSeries *get_time_series(LALStatus *status,
-    CHAR *ifo,
+REAL4TimeSeries *get_time_series(CHAR *ifo,
     CHAR *cache_file,
     CHAR *channel,
     LIGOTimeGPS start,

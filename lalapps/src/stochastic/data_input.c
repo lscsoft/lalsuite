@@ -32,8 +32,7 @@ extern int high_pass_flag;
 extern int vrbflg;
 
 /* read a LIGO time series */
-REAL4TimeSeries *get_ligo_data(LALStatus *status,
-    FrStream *stream,
+REAL4TimeSeries *get_ligo_data(FrStream *stream,
     CHAR *channel,
     LIGOTimeGPS start,
     LIGOTimeGPS end)
@@ -51,8 +50,8 @@ REAL4TimeSeries *get_ligo_data(LALStatus *status,
     fprintf(stdout, "Allocating memory for \"%s\" series...\n", channel);
 
   /* create and initialise time series */
-  LAL_CALL(LALCreateREAL4TimeSeries(status, &series, channel, start, 0, 0, \
-        lalADCCountUnit, 0), status);
+  series = XLALCreateREAL4TimeSeries(channel, &start, 0, 0, \
+      &lalADCCountUnit, 0);
 
   if (vrbflg)
     fprintf(stdout, "Reading \"%s\" series metadata...\n", channel);
@@ -65,7 +64,7 @@ REAL4TimeSeries *get_ligo_data(LALStatus *status,
 
   /* resize series to the correct number of samples */
   length = floor((XLALDeltaFloatGPS(&end, &start) / series->deltaT) + 0.5);
-  LAL_CALL(LALResizeREAL4TimeSeries(status, series, 0, length), status);
+  XLALResizeREAL4TimeSeries(series, 0, length);
 
   if (vrbflg)
     fprintf(stdout, "Reading channel \"%s\"...\n", channel);
@@ -78,8 +77,7 @@ REAL4TimeSeries *get_ligo_data(LALStatus *status,
 }
 
 /* read and high pass filter a GEO time series */
-REAL4TimeSeries *get_geo_data(LALStatus *status,
-    FrStream *stream,
+REAL4TimeSeries *get_geo_data(FrStream *stream,
     CHAR *channel,
     LIGOTimeGPS start,
     LIGOTimeGPS end,
@@ -103,8 +101,8 @@ REAL4TimeSeries *get_geo_data(LALStatus *status,
     fprintf(stdout, "Allocating memory for \"%s\" series...\n", channel);
 
   /* create and initialise time series */
-  LAL_CALL(LALCreateREAL8TimeSeries(status, &geo, channel, start, 0, 0, \
-        lalADCCountUnit, 0), status);
+  geo = XLALCreateREAL8TimeSeries(channel, &start, 0, 0, \
+        &lalADCCountUnit, 0);
 
   if (vrbflg)
     fprintf(stdout, "Reading \"%s\" series metadata...\n", channel);
@@ -116,8 +114,8 @@ REAL4TimeSeries *get_geo_data(LALStatus *status,
     fprintf(stdout, "Resizing \"%s\" series...\n", channel);
 
   /* resize series to the correct number of samples */
-  length = floor((XLALDeltaFloatGPS(&end, &start) / series->deltaT) + 0.5);
-  LAL_CALL(LALResizeREAL8TimeSeries(status, geo, 0, length), status);
+  length = floor((XLALDeltaFloatGPS(&end, &start) / geo->deltaT) + 0.5);
+  XLALResizeREAL8TimeSeries(geo, 0, length);
 
   if (vrbflg)
     fprintf(stdout, "Reading channel \"%s\"...\n", channel);
@@ -141,8 +139,8 @@ REAL4TimeSeries *get_geo_data(LALStatus *status,
     fprintf(stdout, "Casting \"%s\" as a REAL4...\n", channel);
 
   /* cast as a REAL4 */
-  LAL_CALL(LALCreateREAL4TimeSeries(status, &series, geo->name, geo->epoch, \
-        geo->f0, geo->deltaT, geo->sampleUnits, geo->data->length), status);
+  series = XLALCreateREAL4TimeSeries(geo->name, &geo->epoch, geo->f0, \
+      geo->deltaT, &geo->sampleUnits, geo->data->length);
   for (i = 0; i < series->data->length; i++)
     series->data->data[i] = (REAL4)geo->data->data[i];
 
@@ -153,8 +151,7 @@ REAL4TimeSeries *get_geo_data(LALStatus *status,
 }
 
 /* read a time series */
-REAL4TimeSeries *get_time_series(LALStatus *status,
-    CHAR *ifo,
+REAL4TimeSeries *get_time_series(CHAR *ifo,
     CHAR *cache_file,
     CHAR *channel,
     LIGOTimeGPS start,
@@ -197,11 +194,11 @@ REAL4TimeSeries *get_time_series(LALStatus *status,
   /* get the data */
   if (strncmp(ifo, "G1", 2) == 0)
   {
-    series = get_geo_data(status, stream, channel, start, end, \
-        geo_hpf_order, geo_hpf_frequency, geo_hpf_attenuation);
+    series = get_geo_data(stream, channel, start, end, geo_hpf_order, \
+        geo_hpf_frequency, geo_hpf_attenuation);
   }
   else
-    series = get_ligo_data(status, stream, channel, start, end);
+    series = get_ligo_data(stream, channel, start, end);
 
   /* check for missing data */
   if (stream->state & LAL_FR_GAP)
@@ -256,8 +253,7 @@ REAL4TimeSeries *get_time_series(LALStatus *status,
     length = floor((XLALDeltaFloatGPS(&end, &start) / series->deltaT) + 0.5);
 
     /* remove resample buffer */
-    LAL_CALL(LALShrinkREAL4TimeSeries(status, series, \
-          buffer / series->deltaT, length), status);
+    XLALShrinkREAL4TimeSeries(series, buffer / series->deltaT, length);
   }
 
   return(series);
