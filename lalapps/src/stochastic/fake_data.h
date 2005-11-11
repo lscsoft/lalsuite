@@ -22,6 +22,9 @@
  * $Id$
  */
 
+#ifndef FAKE_DATA_H
+#define FAKE_DATA_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -51,6 +54,8 @@ SSSimStochBGOutput *generate_fake_detector_output(LALStatus *status,
     REAL8 deltaF,
     REAL8 f_min,
     REAL8 f_max);
+
+#endif /* FAKE_DATA_H */
 
 /*
  * vim: et

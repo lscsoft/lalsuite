@@ -22,6 +22,9 @@
  * $Id$
  */
 
+#ifndef DATA_OUTPUT_H
+#define DATA_OUTPUT_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -61,6 +64,8 @@ void save_xml_file(LALStatus *status,
     MetadataTable procparams,
     ProcessParamsTable *this_proc_param,
     CHAR comment[LIGOMETA_COMMENT_MAX]);
+
+#endif /* DATA_OUTPUT_H */
 
 /*
  * vim: et

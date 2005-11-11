@@ -22,6 +22,9 @@
  * $Id$
  */
 
+#ifndef DATA_INPUT_H
+#define DATA_INPUT_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -72,6 +75,8 @@ REAL4TimeSeries *get_time_series(LALStatus *status,
     REAL8 geo_hpf_frequency,
     REAL8 geo_hpf_attenuation,
     INT4 buffer);
+
+#endif /* DATA_INPUT_H */
 
 /*
  * vim: et

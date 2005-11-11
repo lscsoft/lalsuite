@@ -23,6 +23,9 @@
  * $Id$
  */
 
+#ifndef SGWB_H
+#define SGWB_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -171,6 +174,8 @@ StochasticTable *stochastic_search(LALStatus *status,
     REAL8 f_min,
     REAL8 f_max,
     REAL8 f_ref);
+
+#endif /* SGWB_H */
 
 /*
  * vim: et

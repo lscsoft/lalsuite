@@ -22,6 +22,9 @@
  * $Id$
  */
 
+#ifndef MISC_H
+#define MISC_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -44,6 +47,8 @@ REAL4TimeSeries *cut_time_series(LALStatus *status,
     REAL4TimeSeries *input,
     LIGOTimeGPS start,
     UINT4 duration);
+
+#endif /* MISC_H */
 
 /*
  * vim: et
