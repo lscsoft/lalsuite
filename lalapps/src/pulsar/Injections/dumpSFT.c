@@ -130,6 +130,7 @@ main(int argc, char *argv[])
       printf ( "f0:          %f\n", ptr->header.f0 );
       printf ( "deltaF:      %f\n", ptr->header.deltaF );
       printf ( "comment:     %s\n", (ptr->comment)?(ptr->comment) : "<none>" );
+      printf ( "numBins:     %d\n", ptr->numBins );
       printf ("\n");
 
       if ( !uvar_headerOnly )
