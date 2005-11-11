@@ -51,7 +51,6 @@ int inject_signal( REAL4TimeSeries *series, int injectSignalType,
       + series->deltaT * series->data->length );
 
   /* call the approprate LAL injection routine */
-  /* FIXME: only bursts done at the moment */
   switch ( injectSignalType )
   {
     case ring_inject:

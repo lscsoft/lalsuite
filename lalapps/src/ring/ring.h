@@ -81,7 +81,7 @@ int ring_params_sanity_check( struct ring_params *params );
 ProcessParamsTable * create_process_params( int argc, char **argv,
     const char *program );
 int ring_output_events(
-    SnglBurstTable     *events,
+    SnglRingdownTable  *events,
     ProcessParamsTable *processParamsTable,
     struct ring_params *params
     );
@@ -92,7 +92,7 @@ int write_COMPLEX8FrequencySeries( COMPLEX8FrequencySeries *series );
 int write_bank( RingTemplateBank *bank );
 
 /* routines in ring_filter */
-SnglBurstTable * ring_filter(
+SnglRingdownTable * ring_filter(
     RingDataSegments         *segments,
     RingTemplateBank         *bank,
     REAL4FrequencySeries     *invSpectrum,

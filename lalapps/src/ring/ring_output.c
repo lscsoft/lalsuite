@@ -36,13 +36,13 @@ RCSID( "$Id$" );
 
 /* routine to output events as ascii */
 static int ring_output_events_asc( 
-    SnglBurstTable     *events,
+    SnglRingdownTable  *events,
     struct ring_params *params
     );
 
 /* routine to output events as LIGOLw XML */
 static int ring_output_events_xml( 
-    SnglBurstTable     *events,
+    SnglRingdownTable     *events,
     ProcessParamsTable *processParamsTable,
     struct ring_params *params
     );
@@ -109,7 +109,7 @@ ProcessParamsTable * create_process_params( int argc, char **argv,
 
 /* routine to output events */
 int ring_output_events( 
-    SnglBurstTable     *events,
+    SnglRingdownTable     *events,
     ProcessParamsTable *processParamsTable,
     struct ring_params *params
     )
@@ -126,11 +126,11 @@ int ring_output_events(
 
 /* routine to output events as an ascii file */
 static int ring_output_events_asc( 
-    SnglBurstTable     *events,
+    SnglRingdownTable     *events,
     struct ring_params *params
     )
 {
-  SnglBurstTable *thisEvent;
+  SnglRingdownTable *thisEvent;
   FILE *fp;
   verbose( "output events to ascii file %s\n", params->outputFile );
   fp = fopen( params->outputFile, "w" );
@@ -141,10 +141,14 @@ static int ring_output_events_asc(
     fprintf( fp, "%9d.%09d\t%e\t%e\t%e\t%e\n",
         (int) thisEvent->start_time.gpsSeconds,
         (int) thisEvent->start_time.gpsNanoSeconds,
+        thisEvent->start_time_gmst,
+        thisEvent->frequency,
+        thisEvent->quality,
+        thisEvent->mass,
+        thisEvent->spin,
         thisEvent->snr,
-        thisEvent->amplitude,
-        thisEvent->central_freq,
-        thisEvent->bandwidth );
+        thisEvent->eff_dist,
+        thisEvent->sigma_sq );
     thisEvent = thisEvent->next;
   }
   fclose( fp );
@@ -154,7 +158,7 @@ static int ring_output_events_asc(
 
 /* routine to output events as LIGOLw XML file */
 static int ring_output_events_xml( 
-    SnglBurstTable     *events,
+    SnglRingdownTable     *events,
     ProcessParamsTable *processParamsTable,
     struct ring_params *params
     )
@@ -178,7 +182,7 @@ static int ring_output_events_xml(
   process.processTable = ring_create_process_table( params );
   processParams.processParamsTable = processParamsTable;
   searchSummary.searchSummaryTable = ring_create_search_summary( params );
-  ringEvents.snglBurstTable = events;
+  ringEvents.snglRingdownTable = events;
 
   /* open results xml file */
   LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, params->outputFile ), &status );
@@ -200,10 +204,10 @@ static int ring_output_events_xml(
   LAL_CALL( LALEndLIGOLwXMLTable( &status, &results ), &status );
 
   /* output the events */
-  if ( ringEvents.snglBurstTable )
+  if ( ringEvents.snglRingdownTable )
   {
-    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, sngl_burst_table ), &status );
-    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, ringEvents, sngl_burst_table ), &status );
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, sngl_ringdown_table ), &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, ringEvents, sngl_ringdown_table ), &status );
     LAL_CALL( LALEndLIGOLwXMLTable( &status, &results ), &status );
   }
 

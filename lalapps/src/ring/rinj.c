@@ -17,6 +17,11 @@
 #include <string.h>
 #include <getopt.h>
 #include <time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <regex.h>
+#include <glob.h>
 #include <lalapps.h>
 #include <processtable.h>
 #include <lal/LALStdio.h>
@@ -31,7 +36,7 @@
 #include <lal/DetectorSite.h>
 #include <lal/DetResponse.h>
 #include <lal/TimeDelay.h>
-
+#include <lal/LALAtomicDatatypes.h>
 /* ??? */
 RCSID( "$Id$" );
 #define CVS_ID_STRING "$Id$"
@@ -45,10 +50,11 @@ RCSID( "$Id$" );
 "lalapps_rinj [options]\n"\
 "\nDefaults are shown in brackets\n\n" \
 "  --help                   display this message\n"\
-"  --verbose                print mass and galactocentic cartesian coordinates\n"\
+"  --verbose                turn verbose flag on\n"\
+"  --playground             consider only playground data\n"\
 "  --gps-start-time TIME    start injections at GPS time TIME (793130413)\n"\
 "  --gps-end-time TIME      end injections at GPS time TIME (795679213)\n"\
-"  --time-step STEP         space injections by ave of STEP sec (2630/PI)\n"\
+"  --time-step STEP         space injections by STEP / pi seconds apart (2630)\n"\
 "  --seed SEED              seed random number generator with SEED (1)\n"\
 "  --user-tag STRING        set the usertag to STRING\n"\
 "  --minimum-mass MIN       set the minimum componenet mass to MIN (13.8)\n"\
@@ -64,7 +70,7 @@ RCSID( "$Id$" );
 /* all units are in kpc since this is what GalacticInspiralParamStruc expects */
 
 extern int vrbflg;
-
+int plygnd=0;
 ProcessParamsTable *next_process_param( const char *name, const char *type,
     const char *fmt, ... )
 {
@@ -88,7 +94,9 @@ ProcessParamsTable *next_process_param( const char *name, const char *type,
   return pp;
 }
 
-
+static int is_outside_playground( LIGOTimeGPS gpsStartTime ); 
+static REAL8 step( LIGOTimeGPS gpsStartTime );
+  
 
 int main( int argc, char *argv[] )
 {
@@ -101,6 +109,7 @@ int main( int argc, char *argv[] )
   LIGOTimeGPS   gpsStartTime = {S4StartTime, 0};
   LIGOTimeGPS   gpsEndTime   = {S4StopTime, 0};
   REAL8         meanTimeStep = 2630 / LAL_PI;
+  REAL8         tstep = 0;
   UINT4         randSeed = 1;
   CHAR         *userTag = NULL;
   REAL4         minMass = 13.8;
@@ -148,6 +157,7 @@ int main( int argc, char *argv[] )
   {
     {"help",                    no_argument,       0,                'h'},
     {"verbose",                 no_argument,       &vrbflg,           1 },
+    {"playground",              no_argument,       0,                'x'},
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-end-time",            required_argument, 0,                'b'},
     {"time-step",               required_argument, 0,                't'},
@@ -288,7 +298,8 @@ int main( int argc, char *argv[] )
         break;
 
       case 't':
-        meanTimeStep = (REAL8) atof( optarg );
+        tstep = (REAL8) atof( optarg );
+        meanTimeStep = tstep / LAL_PI;
         if ( meanTimeStep <= 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -440,7 +451,11 @@ int main( int argc, char *argv[] )
       case 'v':
         vrbflg = 1;
         break;
-
+      
+      case 'x':
+        plygnd = 1;
+        break;
+        
       case 'z':
         set_debug_level( optarg );
         this_proc_param = this_proc_param->next = 
@@ -531,8 +546,31 @@ int main( int argc, char *argv[] )
   /* check that the start time is before the end time */
   LAL_CALL( LALCompareGPS( &status, &compareGPS, &gpsStartTime, &gpsEndTime ),
       &status );
+  
+  /* check if gps_start_time is in playground */
+  /* if it is not then move it to a random place in the next playground
+   * interval */
+  if ( plygnd )
+  {
+    if ( vrbflg )
+             fprintf( stdout, "injecting into playground only\n");
+    if ( is_outside_playground( gpsStartTime ) )
+    {
+      if ( vrbflg )
+        fprintf( stdout, "gps-start-time outside of playground, ... shifting to next playground interval\n");
+/*      REAL8 nextplay;*/
+      REAL8 randstep;
+      LALStatus status = blank_status;
+/*      nextplay = step(gpsStartTime);*/  /*find start of next playground interval*/
+      LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
+      randstep = step(gpsStartTime) + u * 600;  /* find a random time within this 600s */
+      LAL_CALL( LALAddFloatToGPS( &status, &gpsStartTime, &gpsStartTime,
+            randstep ), &status );  /* add this to the old gpsStartTime */
+          
+    }
+  }
 
-
+  
   /*
    *
    * loop over duration of desired output times
@@ -562,18 +600,24 @@ int main( int argc, char *argv[] )
     this_inj->epsilon = epsilon;
     /* set the geocentric start time of the injection */
     /* XXX CHECK XXX */
+
+
+      
+    
+    
     this_inj->geocent_start_time = gpsStartTime;
 
     /* mass distribution */
     LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
     this_inj->mass = minMass + u * deltaM;
-    
+     
     /* generate random spin parameter */  
     LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
     this_inj->spin = minSpin + u * deltaA;
 
     /* calculate central frequency, f0, and quality factor Q */
-    this_inj->frequency = 32000.0 * ( 1.0 - 0.63 * pow( ( 1.0 - this_inj->spin ), 0.3 ) ) / this_inj->mass;
+    this_inj->frequency = pow( LAL_C_SI, 3) / LAL_G_SI / LAL_MSUN_SI / 2.0 / LAL_PI
+      * ( 1.0 - 0.63 * pow( ( 1.0 - this_inj->spin ), 0.3 ) ) / this_inj->mass;
     this_inj->quality = 2.0 * pow( ( 1.0 - this_inj->spin ), -0.45 );
             
     /* spatial distribution */
@@ -667,10 +711,6 @@ int main( int argc, char *argv[] )
           2*pow(this_inj->quality,3) * scross*scross*resp.cross*resp.cross )
         / ( 2.0 * LAL_PI * this_inj->frequency * ( 1.0 + 4.0 * pow ( this_inj->quality, 2 ) ) ) , 0.5 );
       
-      sqrt(splus*splus*resp.plus*resp.plus + 
-        scross*scross*resp.cross*resp.cross);
-    
-    
     /* llo */
     placeAndGPS.p_detector = &llo;
     LAL_CALL( LALTimeDelayFromEarthCenter( &status,  &time_diff_ns,
@@ -695,6 +735,11 @@ int main( int argc, char *argv[] )
           / ( 2.0 * LAL_PI * this_inj->frequency * ( 1.0 + 4.0 * pow ( this_inj->quality, 2 ) ) ) , 0.5 );
         
     /* increment the injection time */
+    if ( plygnd )
+    {
+      LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
+      meanTimeStep = step(gpsStartTime) + u * 600;
+    }
     LAL_CALL( LALAddFloatToGPS( &status, &gpsStartTime, &gpsStartTime, 
           meanTimeStep ), &status );
     LAL_CALL( LALCompareGPS( &status, &compareGPS, &gpsStartTime, 
@@ -706,6 +751,10 @@ int main( int argc, char *argv[] )
   
   /* destroy random parameters */
   LAL_CALL( LALDestroyRandomParams( &status, &randParams ), &status );
+  
+  
+
+
   
   
   /*
@@ -773,4 +822,30 @@ int main( int argc, char *argv[] )
   LALCheckMemoryLeaks();
   return 0;
 
+}
+
+
+/* function to check if time outside playground */
+  static int is_outside_playground(  LIGOTimeGPS gpsStartTime )
+{
+  int ans = 0;
+  INT8 startTime = 0;
+  startTime = XLALGPStoINT8 ( &gpsStartTime ) ;
+  if ( ( ( startTime - 729273613LL * 1000000000LL ) % ( 6370 * 1000000000LL ) ) > ( 600 * 1000000000LL ) )
+    ans = 1;
+  return ans;
+}
+
+
+/* function to calculate the time interval to the start of next 600s of playground data */
+static REAL8 step( LIGOTimeGPS gpsStartTime )
+{
+  INT8 istep;
+  REAL8 fstep;
+  INT8 startTime = 0;
+  startTime = XLALGPStoINT8 ( &gpsStartTime ) ;
+  istep = ( 6370 * 1000000000LL ) - ( ( startTime - 729273613LL * 1000000000LL  ) % ( 6370 * 1000000000LL ) );
+  fstep = (REAL8) istep; /*convert integer to float*/
+  fstep = fstep / 1000000000 ; /*convert ns to s */
+  return fstep;
 }

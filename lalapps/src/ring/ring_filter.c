@@ -11,6 +11,7 @@
 #include <lal/Units.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/Ring.h>
+#include <lal/Date.h>
 
 #include "lalapps.h"
 #include "errutil.h"
@@ -33,8 +34,8 @@ static int filter_segment_template(
     REAL4FFTPlan             *plan
     );
 
-static SnglBurstTable * find_events(
-    SnglBurstTable           *events,
+static SnglRingdownTable * find_events(
+    SnglRingdownTable        *events,
     UINT4                    *numEvents,
     REAL4TimeSeries          *result,
     REAL4                     tmpltSigma,
@@ -44,7 +45,7 @@ static SnglBurstTable * find_events(
     );
 
 
-SnglBurstTable * ring_filter(
+SnglRingdownTable * ring_filter(
     RingDataSegments         *segments,
     RingTemplateBank         *bank,
     REAL4FrequencySeries     *invSpectrum,
@@ -53,7 +54,7 @@ SnglBurstTable * ring_filter(
     struct ring_params       *params
     )
 {
-  SnglBurstTable          *events = NULL; /* head of linked list of events */
+  SnglRingdownTable       *events = NULL; /* head of linked list of events */
   REAL4TimeSeries          signal;
   REAL4TimeSeries          result;
   COMPLEX8FrequencySeries  stilde;
@@ -195,8 +196,8 @@ static int filter_segment_template(
 
 /* NOTE: numEvents must be number of events _FROM_CURRENT_TEMPLATE_ so far. */
 /* It must be set to zero when filtering against a new template is started. */
-static SnglBurstTable * find_events(
-    SnglBurstTable     *events,
+static SnglRingdownTable * find_events(
+    SnglRingdownTable  *events,
     UINT4              *numEvents,
     REAL4TimeSeries    *result,
     REAL4               tmpltSigma,
@@ -206,7 +207,7 @@ static SnglBurstTable * find_events(
     )
 {
   const REAL4 efolds = 10.0; /* number of efolds of ringdown in template */
-  SnglBurstTable *thisEvent = events; /* the current event */
+  SnglRingdownTable *thisEvent = events; /* the current event */
   REAL4 snrFactor; /* factor to convert from filter result to snr */
   REAL4 threshold; /* modified threshold on filter result (rather than snr) */
   REAL4 filterDuration;
@@ -217,13 +218,15 @@ static SnglBurstTable * find_events(
   UINT4 jmin;
   UINT4 jmax;
   UINT4 j;
+  LALStatus             status = blank_status;
+  LALMSTUnitsAndAcc     gmstUnits = { MST_HRS, LALLEAPSEC_STRICT };
 
   /* compute filter duration: sum of rindown duration and spec trunc duration */
   filterDuration  = efolds * tmpltQuality / (LAL_PI * tmpltFrequency);
   filterDuration += params->truncateDuration;
-
+  
   /* gap time: filter duration unless explicitly specified */
-  if ( params->maximizeEventDuration < 0 ) /* maximize based on duration */
+  if ( params->maximizeEventDuration < 0 ) /* maximize based on duration*/
     gapTimeNS = sec_to_ns( filterDuration );
   else /* maximize with specified duration */
     gapTimeNS = sec_to_ns( params->maximizeEventDuration );
@@ -251,6 +254,8 @@ static SnglBurstTable * find_events(
     {
       REAL4 snr;
       INT8  timeNS;
+      REAL4 sigma;
+      REAL4 amp;
 
       snr     = fabs( result->data->data[j] ) * snrFactor;
       timeNS  = epoch_to_ns( &result->epoch );
@@ -267,27 +272,45 @@ static SnglBurstTable * find_events(
         strncpy( thisEvent->ifo, params->ifoName, sizeof( thisEvent->ifo ) );
         strncpy( thisEvent->search, "ring", sizeof( thisEvent->search ) );
         strncpy( thisEvent->channel, params->channel, sizeof( thisEvent->channel ) );
-        thisEvent->duration     = filterDuration;
-        thisEvent->central_freq = tmpltFrequency;
-        thisEvent->bandwidth    = tmpltFrequency / tmpltQuality;
+/*       LAL_CALL( LALGPStoGMST1( &status, &(thisEvent->start_time_gmst), 
+                        &(thisEvent->start_time), &gmstUnits ), &status); */ 
+        /*this isnt working properly, will just leave awhile, as it is not
+         * needed */
 
+        
+        thisEvent->frequency = tmpltFrequency;
+        thisEvent->quality = tmpltQuality;
+        thisEvent->mass = ( 1.0 - 0.63 * pow( (2.0 / thisEvent->quality) , (2.0 / 3.0) ) ) *
+            pow( LAL_C_SI, 3.0) / LAL_G_SI / LAL_TWOPI / LAL_MSUN_SI / thisEvent->frequency; 
+        thisEvent->spin = 1.0 - pow( (2.0 / thisEvent->quality) , (20.0 / 9.0) );
+        
         /* specific information about this threshold crossing */
         ns_to_epoch( &thisEvent->start_time, timeNS );
-        thisEvent->peak_time  = thisEvent->start_time;
-        thisEvent->snr        = snr;
-        thisEvent->amplitude  = snr / tmpltSigma;
-        thisEvent->confidence = 0; /* FIXME */
-
+        thisEvent->snr = snr;
+        
+        amp = 2.415e-21; /* factor given in PRD 022001 (1999) */
+        amp *= sqrt( 2.0 * LAL_PI ); /* convert NEW conventions to OLD conventions */
+        amp *= pow( LAL_C_SI, 3.0) / LAL_G_SI / LAL_MSUN_SI / 2.0 / LAL_PI; 
+        amp *= 1.0 / sqrt( tmpltQuality ) * sqrt( 1 - 0.63 * pow( (tmpltQuality / 2.0), (-2.0/3.0) ) ) / tmpltFrequency ;
+                               /* aplitude for ringdown at a distance of 1Mpc with epsilon=0.01 */
+        
+        sigma=tmpltSigma * amp;
+        thisEvent->sigma_sq = pow(sigma, 2.0);
+        thisEvent->eff_dist = sigma / thisEvent->snr;
+        
         ++eventCount;
       }
       else if ( snr > thisEvent->snr ) /* maximize within a set of crossings */
       {
         /* update to specific information about this threshold crossing */
         ns_to_epoch( &thisEvent->start_time, timeNS );
-        thisEvent->peak_time  = thisEvent->start_time;
         thisEvent->snr        = snr;
-        thisEvent->amplitude  = snr / tmpltSigma;
-        thisEvent->confidence = 0; /* FIXME */
+        amp = 2.415e-21; /* factor given in PRD 022001 (1999) */
+        amp *= sqrt( 2.0 * LAL_PI ); /* convert NEW conventions to OLD conventions */
+        amp *= pow( LAL_C_SI, 3.0) / LAL_G_SI / LAL_MSUN_SI / 2.0 / LAL_PI;
+        amp *= 1.0 / sqrt( tmpltQuality ) * sqrt( 1.0 - 0.63 * pow( (tmpltQuality / 2.0), (-2.0/3.0) ) ) / tmpltFrequency ;
+        sigma=tmpltSigma * amp;
+        thisEvent->eff_dist = sigma / thisEvent->snr;        
       }
 
       /* update last threshold crossing time */

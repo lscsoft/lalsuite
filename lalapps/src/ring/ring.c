@@ -58,7 +58,7 @@ static void ring_cleanup(
     REAL4FrequencySeries    *invspec,
     RingTemplateBank        *bank,
     RingDataSegments        *segments,
-    SnglBurstTable          *events
+    SnglRingdownTable       *events
     );
 
 
@@ -73,7 +73,7 @@ int main( int argc, char **argv )
   REAL4FrequencySeries    *invspec   = NULL;
   RingTemplateBank        *bank      = NULL;
   RingDataSegments        *segments  = NULL;
-  SnglBurstTable          *events    = NULL;
+  SnglRingdownTable       *events    = NULL;
 
   /* set error handlers to abort on error */
   set_abrt_on_error();
@@ -375,12 +375,12 @@ static void ring_cleanup(
     REAL4FrequencySeries    *invspec,
     RingTemplateBank        *bank,
     RingDataSegments        *segments,
-    SnglBurstTable          *events
+    SnglRingdownTable          *events
     )
 {
   while ( events )
   {
-    SnglBurstTable *thisEvent;
+    SnglRingdownTable *thisEvent;
     thisEvent = events;
     events = events->next;
     LALFree( thisEvent );
