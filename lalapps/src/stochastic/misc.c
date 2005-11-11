@@ -34,8 +34,7 @@ double myround(double x)
 }
 
 /* cut a time series between given start and end times */
-REAL4TimeSeries *cut_time_series(LALStatus *status,
-    REAL4TimeSeries *input,
+REAL4TimeSeries *cut_time_series(REAL4TimeSeries *input,
     LIGOTimeGPS start,
     UINT4 duration)
 {
@@ -51,12 +50,11 @@ REAL4TimeSeries *cut_time_series(LALStatus *status,
   first = (INT4)((start.gpsSeconds - input->epoch.gpsSeconds) / input->deltaT);
 
   /* allocate memory */
-  LAL_CALL(LALCreateREAL4TimeSeries(status, &series, input->name, start, \
-        input->f0, input->deltaT, input->sampleUnits, length), status);
+  series = XLALCreateREAL4TimeSeries(input->name, &start, input->f0, \
+      input->deltaT, &input->sampleUnits, length);
 
   /* cut time series */
-  LAL_CALL(LALCutREAL4TimeSeries(status, &series, input, first, length), \
-      status);
+  series = XLALCutREAL4TimeSeries(input, first, length);
 
   return(series);
 }

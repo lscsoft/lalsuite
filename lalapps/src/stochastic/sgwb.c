@@ -672,10 +672,8 @@ StochasticTable *stochastic_search(LALStatus *status,
       }
 
       /* cut segments from series */
-      segment_one = cut_time_series(status, series_one, seg_epoch, \
-          segment_duration);
-      segment_two = cut_time_series(status, series_two, seg_epoch, \
-          segment_duration);
+      segment_one = cut_time_series(series_one, seg_epoch, segment_duration);
+      segment_two = cut_time_series(series_two, seg_epoch, segment_duration);
 
       /* save intermediate products */
       if (debug_flag)
@@ -793,9 +791,9 @@ StochasticTable *stochastic_search(LALStatus *status,
     }
 
     /* cut analysis segment from full series */
-    segment_one = cut_time_series(status, series_one, analysis_epoch, \
+    segment_one = cut_time_series(series_one, analysis_epoch, \
         segment_duration);
-    segment_two = cut_time_series(status, series_two, analysis_epoch, \
+    segment_two = cut_time_series(series_two, analysis_epoch, \
         segment_duration);
 
     /* save intermediate products */

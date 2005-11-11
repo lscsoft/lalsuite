@@ -43,8 +43,7 @@
 double myround(double x);
 
 /* cut a time series between given start and end times */
-REAL4TimeSeries *cut_time_series(LALStatus *status,
-    REAL4TimeSeries *input,
+REAL4TimeSeries *cut_time_series(REAL4TimeSeries *input,
     LIGOTimeGPS start,
     UINT4 duration);
 
