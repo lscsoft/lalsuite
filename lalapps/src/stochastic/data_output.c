@@ -121,9 +121,9 @@ void save_xml_file(LALStatus *status,
     CHAR *program_name,
     CHAR *output_path,
     CHAR *base_name,
-    StochasticTable *stochtable,
-    MetadataTable proctable,
-    MetadataTable procparams,
+    StochasticTable *stoch_table,
+    MetadataTable proc_table,
+    MetadataTable proc_params,
     ProcessParamsTable *this_proc_param,
     CHAR comment[LIGOMETA_COMMENT_MAX])
 {
@@ -214,17 +214,18 @@ void save_xml_file(LALStatus *status,
   /* add the xml comment, if specified */
   if (!*comment)
   {
-    LALSnprintf(proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " ");
+    LALSnprintf(proc_table.processTable->comment, \
+        LIGOMETA_COMMENT_MAX, " ");
   }
   else
   {
-    LALSnprintf(proctable.processTable->comment, LIGOMETA_COMMENT_MAX, "%s", \
-        comment);
+    LALSnprintf(proc_table.processTable->comment, \
+        LIGOMETA_COMMENT_MAX, "%s", comment);
   }
 
   /* delete empty first entry in process params table */
-  this_proc_param = procparams.processParamsTable;
-  procparams.processParamsTable = procparams.processParamsTable->next;
+  this_proc_param = proc_params.processParamsTable;
+  proc_params.processParamsTable = proc_params.processParamsTable->next;
   free(this_proc_param);
 
   /* set xml output file */
@@ -248,26 +249,26 @@ void save_xml_file(LALStatus *status,
   LAL_CALL(LALOpenLIGOLwXMLFile(status, &xml_stream, xml_file_name), status);
 
   /* write out process and process params tables */
-  LAL_CALL(LALGPSTimeNow(status, &(proctable.processTable->end_time), \
+  LAL_CALL(LALGPSTimeNow(status, &(proc_table.processTable->end_time), \
         &accuracy), status);
   LAL_CALL(LALBeginLIGOLwXMLTable(status, &xml_stream, process_table), \
       status);
-  LAL_CALL(LALWriteLIGOLwXMLTable(status, &xml_stream, proctable, \
+  LAL_CALL(LALWriteLIGOLwXMLTable(status, &xml_stream, proc_table, \
         process_table), status);
   LAL_CALL(LALEndLIGOLwXMLTable(status, &xml_stream), status);
-  free(proctable.processTable);
+  free(proc_table.processTable);
 
   /* write the process params table */
   LAL_CALL(LALBeginLIGOLwXMLTable(status, &xml_stream, \
         process_params_table), status);
-  LAL_CALL(LALWriteLIGOLwXMLTable(status, &xml_stream, procparams, \
+  LAL_CALL(LALWriteLIGOLwXMLTable(status, &xml_stream, proc_params, \
         process_params_table), status);
   LAL_CALL(LALEndLIGOLwXMLTable(status, &xml_stream), status);
 
   /* write stochastic table */
-  if (stochtable)
+  if (stoch_table)
   {
-    output_table.stochasticTable = stochtable;
+    output_table.stochasticTable = stoch_table;
     LAL_CALL(LALBeginLIGOLwXMLTable(status, &xml_stream, stochastic_table), \
         status);
     LAL_CALL(LALWriteLIGOLwXMLTable(status, &xml_stream, output_table, \

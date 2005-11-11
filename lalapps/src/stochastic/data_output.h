@@ -59,9 +59,9 @@ void save_xml_file(LALStatus *status,
     CHAR *program_name,
     CHAR *output_path,
     CHAR *base_name,
-    StochasticTable *stochtable,
-    MetadataTable proctable,
-    MetadataTable procparams,
+    StochasticTable *stoch_table,
+    MetadataTable proc_table,
+    MetadataTable proc_params,
     ProcessParamsTable *this_proc_param,
     CHAR comment[LIGOMETA_COMMENT_MAX]);
 
