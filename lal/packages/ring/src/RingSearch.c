@@ -44,12 +44,12 @@ NRCSID( RINGSEARCHC, "$Id$" );
 void
 LALRingSearch(
     LALStatus         *status,
-    SnglBurstTable   **output,
+    SnglRingdownTable **output,
     RingSearchInput   *input,
     RingSearchParams  *params
     )
 { /* </lalVerbatim> */
-  SnglBurstTable          *thisEvent = NULL;
+  SnglRingdownTable       *thisEvent = NULL;
   REAL4TimeSeries          signal;
   REAL4TimeSeries          result;
   COMPLEX8FrequencySeries  stilde;
@@ -222,16 +222,9 @@ LALRingSearch(
                 sizeof( thisEvent->channel ) );
             thisEvent->start_time.gpsSeconds     = timeNS / 1000000000;
             thisEvent->start_time.gpsNanoSeconds = timeNS % 1000000000;
-            thisEvent->peak_time    = thisEvent->start_time;
-            thisEvent->duration     = duration;
-            thisEvent->central_freq =
+            thisEvent->frequency =
               params->templateBank->tmplt[tmplt].frequency;
-            thisEvent->bandwidth    = 
-              params->templateBank->tmplt[tmplt].frequency /
-              params->templateBank->tmplt[tmplt].quality;
             thisEvent->snr          = snr;
-            thisEvent->amplitude    = snr / sigma;
-            thisEvent->confidence   = 0; /* FIXME */
           }
           else /* maximize within existing event */
           {
@@ -239,10 +232,7 @@ LALRingSearch(
             {
               thisEvent->start_time.gpsSeconds     = timeNS / 1000000000;
               thisEvent->start_time.gpsNanoSeconds = timeNS % 1000000000;
-              thisEvent->peak_time  = thisEvent->start_time;
               thisEvent->snr        = snr;
-              thisEvent->amplitude  = snr / sigma;
-              thisEvent->confidence = 0; /* FIXME */
             }
           }
           /* update last event time */

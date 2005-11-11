@@ -166,6 +166,13 @@ LALSimBurstTableFromLIGOLw (
     );
 
 void
+LALSnglRingdownTableFromLIGOLw (
+    LALStatus          *status,
+    SnglRingdownTable    **eventHead,
+    CHAR               *fileName
+    );
+
+void
 LALSimRingdownTableFromLIGOLw (
     LALStatus          *status,
     SimRingdownTable    **eventHead,

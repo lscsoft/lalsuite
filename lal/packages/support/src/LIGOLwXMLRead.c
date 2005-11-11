@@ -39,6 +39,7 @@ files.
 \idx{LALCreateMetaTableDir()}
 \idx{LALSnglBurstTableFromLIGOLw()}
 \idx{LALSimBurstTableFromLIGOLw()}
+\idx{LALSnglRingdownTableFromLIGOLw()}
 \idx{LALSimRingdownTableFromLIGOLw()}
 \idx{LALSnglInspiralTableFromLIGOLw()}
 \idx{InspiralTmpltBankFromLIGOLw()}
@@ -279,6 +280,41 @@ MetaTableDirectory * XLALCreateMetaTableDir(
       }
       break;
     case sngl_inspiral_table:
+      break;
+    case sngl_ringdown_table:
+      {
+        MetaTableDirectory tmpTableDir[] =
+        {
+          {"ifo",                     -1, 0},
+          {"search",                  -1, 1},
+          {"channel",                 -1, 2},
+          {"start_time",      -1, 3},
+          {"start_time_ns",   -1, 4},
+          {"start_time_gmst",         -1, 5},
+          {"frequency",               -1, 6},
+          {"quality",                 -1, 7},
+          {"mass",                    -1, 8},
+          {"spin",                    -1, 9},
+          {"snr",                     -1, 10},
+          {"eff_dist",                -1, 11},
+          {"sigma_sq",                -1, 12},
+          {NULL,                       0, 0}
+        };
+        for ( i=0 ; tmpTableDir[i].name; ++i )
+        {
+          if ( (tmpTableDir[i].pos = 
+                MetaioFindColumn( env, tmpTableDir[i].name )) < 0 )
+          {
+            fprintf( stderr, "unable to find column %s\n", 
+                tmpTableDir[i].name );
+            XLAL_ERROR_NULL( func, XLAL_EFAILED );
+          }
+        }
+     
+        tableDir = (MetaTableDirectory *) LALMalloc( (i+1) * 
+            sizeof(MetaTableDirectory)) ;
+        memcpy(tableDir, tmpTableDir, (i+1)*sizeof(MetaTableDirectory) );
+      }
       break;
     case multi_inspiral_table:
       {
@@ -596,6 +632,143 @@ SnglBurstTable    * XLALSnglBurstTableFromLIGOLw (
   return eventHead;
 }
 
+/* <lalVerbatim file="LIGOLwXMLReadCP"> */
+SnglRingdownTable    * XLALSnglRingdownTableFromLIGOLw (
+    CHAR               *fileName
+    )
+/* </lalVerbatim> */
+{
+  static const char   *func = "XLALSnglRingdownTableFromLIGOLw";
+  int                                   i, j, nrows;
+  int                                   mioStatus=0;
+  SnglRingdownTable                    *thisEvent = NULL;
+  SnglRingdownTable                    *eventHead = NULL;
+  struct MetaioParseEnvironment         parseEnv;
+  const  MetaioParseEnv                 env = &parseEnv;
+  MetaTableDirectory                   *tableDir = NULL;
+
+  /* open the sngl_ringdown XML file */
+  mioStatus = MetaioOpenTable( env, fileName, "sngl_ringdown" );
+  if ( mioStatus )
+    {
+      XLAL_ERROR_NULL( func, XLAL_EIO );
+      }
+  
+  /* create table directory to find columns in file*/
+  tableDir = XLALCreateMetaTableDir(env, sngl_ringdown_table);
+  
+  /* loop over the rows in the file */
+  i = nrows = 0;
+  while ( (mioStatus = MetaioGetRow(env)) == 1 ) 
+    {
+      /* count the rows in the file */
+      i++;
+      
+      /* allocate memory for the template we are about to read in */
+      if ( ! eventHead )
+        {
+          thisEvent = eventHead = (SnglRingdownTable *) 
+            LALCalloc( 1, sizeof(SnglRingdownTable) );
+          }
+      else
+        {
+          thisEvent = thisEvent->next = (SnglRingdownTable *) 
+            LALCalloc( 1, sizeof(SnglRingdownTable) );
+          }
+      if ( ! thisEvent )
+        {
+          fprintf( stderr, "could not allocate ringdown event\n" );
+          XLAL_CLOBBER_EVENTS;
+          MetaioClose( env );
+          XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+          }
+      
+      /* parse the contents of the row into the InspiralTemplate structure */
+      for ( j = 0; tableDir[j].name; ++j )
+        {
+          REAL4 r4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
+          REAL8 r8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_8; 
+          INT4  i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
+          if ( tableDir[j].idx == 0 )
+            {
+              LALSnprintf( thisEvent->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), 
+                  "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+              }
+          else if ( tableDir[j].idx == 1 )
+            {
+              LALSnprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
+                  "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+              }
+          else if ( tableDir[j].idx == 2 )
+            {
+              LALSnprintf( thisEvent->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
+                  "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+              }
+          else if ( tableDir[j].idx == 3 )
+            {
+              thisEvent->start_time.gpsSeconds = i4colData;
+              }
+          else if ( tableDir[j].idx == 4 )
+            {
+              thisEvent->start_time.gpsNanoSeconds = i4colData;
+              }
+          else if ( tableDir[j].idx == 5 )
+            {
+              thisEvent->start_time_gmst = r8colData;
+              }
+          else if ( tableDir[j].idx == 6 )
+            {
+              thisEvent->frequency = r4colData;
+              }
+          else if ( tableDir[j].idx == 7 )
+            {
+              thisEvent->quality = r4colData;
+              }
+          else if ( tableDir[j].idx == 8 )
+            {
+              thisEvent->mass = r4colData;
+              }
+          else if ( tableDir[j].idx == 9 )
+            {
+              thisEvent->spin = r4colData;
+              }
+          else if ( tableDir[j].idx == 10 )
+            {
+              thisEvent->snr = r4colData;
+              }
+          else if ( tableDir[j].idx == 11 )
+            {
+              thisEvent->eff_dist = i4colData;
+              }
+          else if ( tableDir[j].idx == 12 )
+            {
+              thisEvent->sigma_sq = r8colData;
+              }
+          else
+            {
+              XLAL_CLOBBER_EVENTS;
+              XLAL_ERROR_NULL( func, XLAL_EIO);
+              }
+          }
+      /* count the number of triggers parsed */
+      nrows++;
+      }
+
+  if ( mioStatus == -1 )
+    {
+      fprintf( stderr, "error parsing after row %d\n", i );
+      XLAL_CLOBBER_EVENTS;
+      MetaioClose( env );
+      XLAL_ERROR_NULL( func, XLAL_EIO);
+      }
+   
+  /* Normal exit */
+  LALFree( tableDir );
+  MetaioClose( env );
+  
+  return eventHead;
+}
+    
 /* <lalVerbatim file="LIGOLwXMLReadCP"> */
 ProcessTable    * XLALProcessTableFromLIGOLw (
     CHAR               *fileName
@@ -1148,6 +1321,41 @@ LALCreateMetaTableDir(
       break;
     case sngl_inspiral_table:
       break;
+    case sngl_ringdown_table:
+      {
+        MetaTableDirectory tmpTableDir[] =
+        {
+          {"ifo",                     -1, 0},
+          {"search",                  -1, 1},
+          {"channel",                 -1, 2},
+          {"start_time",      -1, 3},
+          {"start_time_ns",   -1, 4},
+          {"start_time_gmst",         -1, 5},
+          {"frequency",               -1, 6},
+          {"quality",                 -1, 7},
+          {"mass",                    -1, 8},
+          {"spin",                    -1, 9},
+          {"snr",                     -1, 10},
+          {"eff_dist",                -1, 11},
+          {"sigma_sq",                -1, 12},
+          {NULL,                       0, 0}
+        };
+        for ( i=0 ; tmpTableDir[i].name; ++i )
+        {
+          if ( (tmpTableDir[i].pos =
+                MetaioFindColumn( env, tmpTableDir[i].name )) < 0 )
+          {
+            fprintf( stderr, "unable to find column %s\n",
+                tmpTableDir[i].name );
+            ABORT(status,LIGOLWXMLREADH_ENCOL,LIGOLWXMLREADH_MSGENCOL);
+          }
+        }
+        
+        *tableDir = (MetaTableDirectory *) LALMalloc( (i+1) *
+            sizeof(MetaTableDirectory)) ;
+        memcpy(*tableDir, tmpTableDir, (i+1)*sizeof(MetaTableDirectory) );
+      }
+      break;                  
     case multi_inspiral_table:
       break;
     case sim_inspiral_table:
@@ -1600,8 +1808,158 @@ LALSimBurstTableFromLIGOLw (
   RETURN( status );
 }
 
+/* <lalVerbatim file="LIGOLwXMLReadCP"> */
+void
+LALSnglRingdownTableFromLIGOLw (
+    LALStatus          *status,
+    SnglRingdownTable **eventHead,
+    CHAR               *fileName
+    )
+/* </lalVerbatim> */
+{
+  int                                   i, j, nrows;
+  int                                   mioStatus=0;
+  SnglRingdownTable                    *thisEvent = NULL;
+  struct MetaioParseEnvironment         parseEnv;
+  const  MetaioParseEnv                 env = &parseEnv;
+  MetaTableDirectory                   *tableDir = NULL;
+   
+  INITSTATUS( status, "LALSnglRingdownTableFromLIGOLw", LIGOLWXMLREADC );
+  ATTATCHSTATUSPTR (status);
 
+  /* check that the event handle and pointer are vaid */
+  if ( ! eventHead )
+    {
+      ABORT(status, LIGOLWXMLREADH_ENULL, LIGOLWXMLREADH_MSGENULL);
+      }
+  if ( *eventHead )
+    {
+      ABORT(status, LIGOLWXMLREADH_ENNUL, LIGOLWXMLREADH_MSGENNUL);
+      }
+   
+  /* open the sngl_ringdown XML file */
+  mioStatus = MetaioOpenTable( env, fileName, "sngl_ringdown" );  
+  if ( mioStatus )
+    {
+      ABORT(status, LIGOLWXMLREADH_ENTAB, LIGOLWXMLREADH_MSGENTAB);
+      }
+   
+  /* create table directory to find columns in file*/
+  LALCreateMetaTableDir(status->statusPtr, &tableDir, env, sngl_ringdown_table);
+  CHECKSTATUSPTR (status);
+  
+  /* loop over the rows in the file */
+  i = nrows = 0;
+  while ( (mioStatus = MetaioGetRow(env)) == 1 ) 
+    {
+      /* count the rows in the file */
+      i++;
+       
+      /* allocate memory for the template we are about to read in */
+      if ( ! *eventHead )
+        {
+          thisEvent = *eventHead = (SnglRingdownTable *) 
+            LALCalloc( 1, sizeof(SnglRingdownTable) );
+          }
+      else
+        {
+          thisEvent = thisEvent->next = (SnglRingdownTable *) 
+            LALCalloc( 1, sizeof(SnglRingdownTable) );
+          }
+      if ( ! thisEvent )
+        {
+          fprintf( stderr, "could not allocate ringdown event\n" );
+          CLOBBER_EVENTS;
+          MetaioClose( env );
+          ABORT(status, LIGOLWXMLREADH_EALOC, LIGOLWXMLREADH_MSGEALOC);
+          }
+      /* parse the contents of the row into the InspiralTemplate structure */
+      for ( j = 0; tableDir[j].name; ++j )
+        {
+          REAL4 r4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
+          REAL8 r8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_8; 
+          INT4  i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
+           
+          if ( tableDir[j].idx == 0 )
+          {
+            LALSnprintf( thisEvent->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), 
+                "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+          }
+          else if ( tableDir[j].idx == 1 )
+          {
+            LALSnprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
+                "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+          }
+          else if ( tableDir[j].idx == 2 )
+          {
+            LALSnprintf( thisEvent->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
+                "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+          }
+          else if ( tableDir[j].idx == 3 )
+          {
+            thisEvent->start_time.gpsSeconds = i4colData;
+          }
+          else if ( tableDir[j].idx == 4 )
+          {
+            thisEvent->start_time.gpsNanoSeconds = i4colData;
+          }
+          else if ( tableDir[j].idx == 5 )
+          {
+            thisEvent->start_time_gmst = r8colData;
+          }
+          else if ( tableDir[j].idx == 6 )
+          {
+            thisEvent->frequency = r4colData;
+          }
+          else if ( tableDir[j].idx == 7 )
+          {
+            thisEvent->quality = r4colData;
+          }
+          else if ( tableDir[j].idx == 8 )
+          {
+            thisEvent->mass = r4colData;
+          }
+          else if ( tableDir[j].idx == 9 )
+          {
+            thisEvent->spin = r4colData;
+          }
+          else if ( tableDir[j].idx == 10 )
+          {
+            thisEvent->snr = r4colData;
+          }
+          else if ( tableDir[j].idx == 11 )
+          {
+            thisEvent->eff_dist = i4colData;
+          }
+          else if ( tableDir[j].idx == 12 )
+          {
+            thisEvent->sigma_sq = r8colData;
+          }
+          else
+            {
+              CLOBBER_EVENTS;
+              ABORT(status, LIGOLWXMLREADH_ENCOL, LIGOLWXMLREADH_MSGENCOL);
+              }
+          }
+      /* count the number of triggers parsed */
+      nrows++;
+      }
+  if ( mioStatus == -1 )
+    {
+      fprintf( stderr, "error parsing after row %d\n", i );
+      CLOBBER_EVENTS;
+      MetaioClose( env );
+      ABORT(status, LIGOLWXMLREADH_EPARS, LIGOLWXMLREADH_MSGEPARS);
+      }
+  
+  /* Normal exit */
+  LALFree( tableDir );
+  MetaioClose( env );
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
+}
 
+  
 /* <lalVerbatim file="LIGOLwXMLReadCP"> */
 void
 LALSimRingdownTableFromLIGOLw (

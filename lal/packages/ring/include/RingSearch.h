@@ -279,7 +279,7 @@ LALRingSearchConditionData(
 void
 LALRingSearch(
     LALStatus         *status,
-    SnglBurstTable   **output,
+    SnglRingdownTable   **output,
     RingSearchInput   *input,
     RingSearchParams  *params
     );

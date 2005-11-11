@@ -226,6 +226,9 @@ LALBeginLIGOLwXMLTable (
     case sngl_inspiral_table:
       myfprintf( xml->fp, LIGOLW_XML_SNGL_INSPIRAL );
       break;
+    case sngl_ringdown_table:
+      myfprintf( xml->fp, LIGOLW_XML_SNGL_RINGDOWN );
+      break;
     case multi_inspiral_table:
       myfprintf( xml->fp, LIGOLW_XML_MULTI_INSPIRAL );
       break;
@@ -462,6 +465,28 @@ LALWriteLIGOLwXMLTable (
               id
                 );
         tablePtr.snglInspiralTable = tablePtr.snglInspiralTable->next;
+      }
+      break;
+    case sngl_ringdown_table:
+      while( tablePtr.snglRingdownTable )
+      {
+        FIRST_TABLE_ROW
+          fprintf( xml->fp, SNGL_RINGDOWN_ROW,
+              tablePtr.snglRingdownTable->ifo,
+              tablePtr.snglRingdownTable->search,
+              tablePtr.snglRingdownTable->channel,
+              tablePtr.snglRingdownTable->start_time.gpsSeconds,
+              tablePtr.snglRingdownTable->start_time.gpsNanoSeconds,
+              tablePtr.snglRingdownTable->start_time_gmst,
+              tablePtr.snglRingdownTable->frequency,
+              tablePtr.snglRingdownTable->quality,
+              tablePtr.snglRingdownTable->mass,
+              tablePtr.snglRingdownTable->spin,
+              tablePtr.snglRingdownTable->snr,
+              tablePtr.snglRingdownTable->eff_dist,
+              tablePtr.snglRingdownTable->sigma_sq
+              );
+        tablePtr.snglRingdownTable = tablePtr.snglRingdownTable->next;
       }
       break;
     case multi_inspiral_table:

@@ -90,6 +90,7 @@ NRCSID( LIGOMETADATATABLESH, "$Id$" );
 \idx[Type]{SearchSummvarsTable}
 \idx[Type]{SnglBurstTable}
 \idx[Type]{SnglInspiralTable}
+\idx[Type]{SnglRingdownTable}
 \idx[Type]{SummValueTable}
 \idx[Type]{CoincInspiralTable}
 \idx[Type]{StochasticTable}
@@ -108,6 +109,7 @@ typedef enum
   search_summvars_table,
   sngl_burst_table,
   sngl_inspiral_table,
+  sngl_ringdown_table,
   sngl_transdata_table,
   multi_inspiral_table,
   sim_inspiral_table,
@@ -259,6 +261,7 @@ tagEventIDColumn
   UCHAR  dbUniqueId[LIGOMETA_DBUNIQUE_MAX];
   struct tagSnglBurstTable      *snglBurstTable;
   struct tagSnglInspiralTable   *snglInspiralTable;
+  struct tagSnglRingdownTable   *snglRingdownTable;
   struct tagSummValueTable      *summValueTable;
   struct tagMultiInspiralTable  *multiInspiralTable;
   struct tagSnglTransdataTable  *snglTransdataTable;
@@ -375,6 +378,28 @@ tagSnglInspiralTable
   EventIDColumn *event_id;
 }
 SnglInspiralTable;
+
+
+typedef struct
+tagSnglRingdownTable
+{
+  struct tagSnglRingdownTable *next;
+  CHAR          ifo[LIGOMETA_IFO_MAX];
+  CHAR          search[LIGOMETA_SEARCH_MAX];
+  CHAR          channel[LIGOMETA_CHANNEL_MAX];
+  LIGOTimeGPS   start_time;
+  REAL8         start_time_gmst;
+  REAL4         frequency;
+  REAL4         quality;
+  REAL4         mass;
+  REAL4         spin;
+  REAL4         snr;
+  REAL4         eff_dist;
+  REAL8         sigma_sq;
+}
+SnglRingdownTable;
+  
+
 /* </lalVerbatim> */
 #if 0
 <lalLaTeX>
@@ -810,6 +835,7 @@ tagMetadataTable
   SearchSummvarsTable   *searchSummvarsTable;
   SnglBurstTable        *snglBurstTable;
   SnglInspiralTable     *snglInspiralTable;
+  SnglRingdownTable     *snglRingdownTable;
   MultiInspiralTable    *multiInspiralTable;
   SimInspiralTable      *simInspiralTable;
   SimBurstTable         *simBurstTable;
