@@ -375,6 +375,7 @@ LALRingInjectSignals(
     LALGenerateRing( stat->statusPtr, &waveform, simRingdown, &ringParam );
     CHECKSTATUSPTR( stat );
 
+#if 0
     /* print the waveform to a file */
     if ( 1 )
       {
@@ -400,7 +401,7 @@ LALRingInjectSignals(
         fclose( fp );     
         }
     /* end */
-
+#endif
     
 
     /* must set the epoch of signal since it's used by coherent GW */
