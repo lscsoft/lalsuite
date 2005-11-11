@@ -325,6 +325,7 @@ LALSFTdataFind (LALStatus *status,
 
 	      desc->header = this_header;
 	      desc->comment = this_comment;
+	      desc->numBins = this_nsamples;
 
 	    } /* if want_this_block */
 	  else
@@ -2379,6 +2380,9 @@ compareSFTdesc(const void *ptr1, const void *ptr2)
  *	a[-a-z]c	a-c aac abc ...
  *
  * $Log$
+ * Revision 1.42  2005/11/11 10:41:51  reinhard
+ * LALSFTdataFind(): fixed missing return of numBins in SFTCatalog
+ *
  * Revision 1.41  2005/11/09 14:51:34  reinhard
  * new SFT-IO API: indepedent of SFT file-format.
  * The current *implementation* supports v1 and v2 SFTs.
