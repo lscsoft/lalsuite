@@ -62,13 +62,13 @@ REAL4FrequencySeries *omega_gw(LALStatus *status,
     REAL4 omega_ref,
     UINT4 length,
     REAL8 f0,
-    REAL8 deltaF);
+    REAL8 delta_f);
 
 /* return the overlap reduction function */
 REAL4FrequencySeries *overlap_reduction_function(LALStatus *status,
     UINT4 length,
     REAL8 f0,
-    REAL8 deltaF,
+    REAL8 delta_f,
     INT4 site_one,
     INT4 site_two);
 
@@ -99,7 +99,7 @@ REAL4FrequencySeries *estimate_psd(LALStatus *status,
 COMPLEX8FrequencySeries *unity_response(LALStatus *status,
     LIGOTimeGPS epoch,
     REAL8 f0,
-    REAL8 deltaF,
+    REAL8 delta_f,
     LALUnit units,
     INT4 length);
 
@@ -109,7 +109,7 @@ COMPLEX8FrequencySeries *ligo_response(LALStatus *status,
     CHAR *cache_file,
     LIGOTimeGPS epoch,
     REAL8 f0,
-    REAL8 deltaF,
+    REAL8 delta_f,
     LALUnit units,
     INT4 length,
     INT4 offset);
@@ -121,7 +121,7 @@ COMPLEX8FrequencySeries *generate_response(LALStatus *status,
     CHAR *cache_file,
     LIGOTimeGPS epoch,
     REAL8 f0,
-    REAL8 deltaF,
+    REAL8 delta_f,
     LALUnit units,
     INT4 length,
     INT4 offset);
@@ -129,14 +129,14 @@ COMPLEX8FrequencySeries *generate_response(LALStatus *status,
 /* return the frequency mask */
 REAL4FrequencySeries *frequency_mask(LALStatus *status,
     REAL8 f0,
-    REAL8 deltaF,
+    REAL8 delta_f,
     INT4 length,
     INT4 bins);
 
 /* zero pad and fft */
 COMPLEX8FrequencySeries *zero_pad_and_fft(LALStatus *status,
     REAL4TimeSeries *series,
-    REAL8 deltaF,
+    REAL8 delta_f,
     INT4 length,
     REAL4Window *window);
 

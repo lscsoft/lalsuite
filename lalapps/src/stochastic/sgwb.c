@@ -91,7 +91,7 @@ REAL4FrequencySeries *omega_gw(LALStatus *status,
     REAL4 omega_ref,
     UINT4 length,
     REAL8 f0,
-    REAL8 deltaF)
+    REAL8 delta_f)
 {
   /* variables */
   REAL4FrequencySeries *series;
@@ -104,7 +104,7 @@ REAL4FrequencySeries *omega_gw(LALStatus *status,
 
   /* create and initialise frequency series */
   LAL_CALL(LALCreateREAL4FrequencySeries(status, &series, "OmegaGW", \
-        epoch, f0, deltaF, lalDimensionlessUnit, length), status);
+        epoch, f0, delta_f, lalDimensionlessUnit, length), status);
 
   /* set parameters */
   omega_params.alpha = exponent;
@@ -112,7 +112,7 @@ REAL4FrequencySeries *omega_gw(LALStatus *status,
   omega_params.omegaRef = omega_ref;
   omega_params.length = length;
   omega_params.f0 = f0;
-  omega_params.deltaF = deltaF;
+  omega_params.deltaF = delta_f;
 
   /* calculate spectrum */
   LAL_CALL(LALStochasticOmegaGW(status, series, &omega_params), status);
@@ -124,7 +124,7 @@ REAL4FrequencySeries *omega_gw(LALStatus *status,
 REAL4FrequencySeries *overlap_reduction_function(LALStatus *status,
     UINT4 length,
     REAL8 f0,
-    REAL8 deltaF,
+    REAL8 delta_f,
     INT4 site_one,
     INT4 site_two)
 {
@@ -140,12 +140,12 @@ REAL4FrequencySeries *overlap_reduction_function(LALStatus *status,
 
   /* create and initialise frequency series */
   LAL_CALL(LALCreateREAL4FrequencySeries(status, &series, "Overlap", \
-        epoch, f0, deltaF, lalDimensionlessUnit, length), status);
+        epoch, f0, delta_f, lalDimensionlessUnit, length), status);
 
   /* set parameters */
   overlap_params.length = length;
   overlap_params.f0 = f0;
-  overlap_params.deltaF = deltaF;
+  overlap_params.deltaF = delta_f;
 
   /* set detectors */
   detectors.detectorOne = lalCachedDetectors[site_one];
@@ -261,18 +261,18 @@ REAL4FrequencySeries *estimate_psd(LALStatus *status,
   RealFFTPlan *plan = NULL;
   UINT4 length;
   UINT4 overlap;
-  REAL8 deltaF;
+  REAL8 delta_f;
   UINT4 psd_length;
 
   /* lengths */
   length = psd_window_duration / series->deltaT;
   overlap = length / 2;
-  deltaF = 1./(REAL8)psd_window_duration;
+  delta_f = 1./(REAL8)psd_window_duration;
   psd_length = (length / 2) + 1;
 
   /* allocate memory */
   LAL_CALL(LALCreateREAL4FrequencySeries(status, &psd, "psd", \
-        series->epoch, series->f0, deltaF, lalDimensionlessUnit, \
+        series->epoch, series->f0, delta_f, lalDimensionlessUnit, \
         psd_length), status);
 
   /* create window for PSD estimation */
@@ -291,7 +291,7 @@ REAL4FrequencySeries *estimate_psd(LALStatus *status,
   XLALDestroyREAL4Window(window);
 
   /* reduce to relevant frequency range */
-  LAL_CALL(LALShrinkREAL4FrequencySeries(status, psd, (INT4)(f0/deltaF), \
+  LAL_CALL(LALShrinkREAL4FrequencySeries(status, psd, (INT4)(f0/delta_f), \
         shrink_length), status);
 
   return(psd);
@@ -301,7 +301,7 @@ REAL4FrequencySeries *estimate_psd(LALStatus *status,
 COMPLEX8FrequencySeries *unity_response(LALStatus *status,
     LIGOTimeGPS epoch,
     REAL8 f0,
-    REAL8 deltaF,
+    REAL8 delta_f,
     LALUnit units,
     INT4 length)
 {
@@ -311,7 +311,7 @@ COMPLEX8FrequencySeries *unity_response(LALStatus *status,
 
   /* allocate memory */
   LAL_CALL(LALCreateCOMPLEX8FrequencySeries(status, &response, "response", \
-        epoch, f0, deltaF, units, length), status);
+        epoch, f0, delta_f, units, length), status);
 
   /* get unity response function */
   for (i = 0; i < length; i++)
@@ -329,7 +329,7 @@ COMPLEX8FrequencySeries *ligo_response(LALStatus *status,
     CHAR *cache_file,
     LIGOTimeGPS epoch,
     REAL8 f0,
-    REAL8 deltaF,
+    REAL8 delta_f,
     LALUnit units,
     INT4 length,
     INT4 offset)
@@ -345,7 +345,7 @@ COMPLEX8FrequencySeries *ligo_response(LALStatus *status,
   /* allocate memory */
   memset(&calib_params, 0, sizeof(CalibrationUpdateParams));
   LAL_CALL(LALCreateCOMPLEX8FrequencySeries(status, &response, "response", \
-        epoch, 0, deltaF, units, length + (INT4)(f0/deltaF)), status);
+        epoch, 0, delta_f, units, length + (INT4)(f0/delta_f)), status);
 
   /* set ifo */
   calib_params.ifo = ifo;
@@ -361,7 +361,7 @@ COMPLEX8FrequencySeries *ligo_response(LALStatus *status,
   XLALFrDestroyCache(cache);
 
   /* reduce to required band */
-  LAL_CALL(LALShrinkCOMPLEX8FrequencySeries(status, response, f0/deltaF, \
+  LAL_CALL(LALShrinkCOMPLEX8FrequencySeries(status, response, f0/delta_f, \
         length), status);
 
   return(response);
@@ -374,7 +374,7 @@ COMPLEX8FrequencySeries *generate_response(LALStatus *status,
     CHAR *cache_file,
     LIGOTimeGPS epoch,
     REAL8 f0,
-    REAL8 deltaF,
+    REAL8 delta_f,
     LALUnit units,
     INT4 length,
     INT4 offset)
@@ -385,12 +385,12 @@ COMPLEX8FrequencySeries *generate_response(LALStatus *status,
   if (strncmp(ifo, "G1", 2) == 0)
   {
     /* generate response for GEO */
-    response = unity_response(status, epoch, f0, deltaF, units, length);
+    response = unity_response(status, epoch, f0, delta_f, units, length);
   }
   else
   {
     /* generate response function for LIGO */
-    response = ligo_response(status, ifo, cache_file, epoch, f0, deltaF, \
+    response = ligo_response(status, ifo, cache_file, epoch, f0, delta_f, \
         units, length, offset);
   }
 
@@ -400,7 +400,7 @@ COMPLEX8FrequencySeries *generate_response(LALStatus *status,
 /* return the frequency mask */
 REAL4FrequencySeries *frequency_mask(LALStatus *status,
     REAL8 f0,
-    REAL8 deltaF,
+    REAL8 delta_f,
     INT4 length,
     INT4 bins)
 {
@@ -420,14 +420,14 @@ REAL4FrequencySeries *frequency_mask(LALStatus *status,
 
   /* extra bins */
   nBins = (bins - 1) / 2;
-  numFMin = (INT4)(f0 / deltaF);
+  numFMin = (INT4)(f0 / delta_f);
 
   /* get length for full frequency band */
   full_length = length + numFMin;
 
   /* allocate memory for frequency mask */
   LAL_CALL(LALCreateREAL4FrequencySeries(status, &mask, \
-        "mask", epoch, 0, deltaF, lalDimensionlessUnit, \
+        "mask", epoch, 0, delta_f, lalDimensionlessUnit, \
         full_length), status);
 
   /* set all values to 1 */
@@ -435,7 +435,7 @@ REAL4FrequencySeries *frequency_mask(LALStatus *status,
     mask->data->data[i] = 1;
 
   /* remove multiples of 16 Hz */
-  for (i = 0; i < full_length; i += (INT4)(16 / deltaF))
+  for (i = 0; i < full_length; i += (INT4)(16 / delta_f))
   {
     mask->data->data[i]= 0;
 
@@ -449,7 +449,7 @@ REAL4FrequencySeries *frequency_mask(LALStatus *status,
   }
 
   /* remove multiples of 60 Hz */
-  for (i = 0; i < full_length; i += (INT4)(60 / deltaF))
+  for (i = 0; i < full_length; i += (INT4)(60 / delta_f))
   {
     mask->data->data[i] = 0;
 
@@ -472,7 +472,7 @@ REAL4FrequencySeries *frequency_mask(LALStatus *status,
 /* zero pad and fft */
 COMPLEX8FrequencySeries *zero_pad_and_fft(LALStatus *status,
     REAL4TimeSeries *series,
-    REAL8 deltaF,
+    REAL8 delta_f,
     INT4 length,
     REAL4Window *window)
 {
@@ -486,7 +486,7 @@ COMPLEX8FrequencySeries *zero_pad_and_fft(LALStatus *status,
 
   /* allocate memory */
   LAL_CALL(LALCreateCOMPLEX8FrequencySeries(status, &zero_pad, "zero_pad", \
-        series->epoch, 0, deltaF, lalDimensionlessUnit, length), status);
+        series->epoch, 0, delta_f, lalDimensionlessUnit, length), status);
 
   /* set zeropad parameters */
   zero_pad_params.fftPlan = plan;
