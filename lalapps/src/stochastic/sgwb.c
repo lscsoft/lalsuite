@@ -24,7 +24,7 @@
  */
 
 #include "sgwb.h"
-#include "data_input.h"
+#include "misc.h"
 #include "data_output.h"
 
 NRCSID(DATAINPUTC, "$Id$");
