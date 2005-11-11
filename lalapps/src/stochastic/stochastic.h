@@ -21,6 +21,9 @@
  * $Id$
  */
 
+#ifndef STOCHASTIC_H
+#define STOCHASTIC_H
+
 /* xml process param table helper */
 #define ADD_PROCESS_PARAM(pptype, format, ppvalue) \
 	  this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
@@ -34,3 +37,5 @@
 
 /* window duration for PSD estimation */
 #define PSD_WINDOW_DURATION 4
+
+#endif /* STOCHASTIC_H */
