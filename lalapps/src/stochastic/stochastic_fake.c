@@ -27,6 +27,7 @@
 #include "misc.h"
 #include "sgwb.h"
 #include "data_output.h"
+#include "stochastic.h"
 
 NRCSID(STOCHASTICC, "$Id$");
 RCSID("$Id$");
@@ -37,20 +38,6 @@ RCSID("$Id$");
 #define CVS_REVISION "$Revision$"
 #define CVS_DATE "$Date$"
 #define CVS_SOURCE "$Source$"
-
-/* xml process param table helper */
-#define ADD_PROCESS_PARAM(pptype, format, ppvalue) \
-  this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
-    calloc(1, sizeof(ProcessParamsTable)); \
-  LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
-      PROGRAM_NAME); \
-  LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
-      long_options[option_index].name); \
-  LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype); \
-  LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue);
-
-/* window duration for PSD estimation */
-#define PSD_WINDOW_DURATION 4
 
 /* flags for getopt_long */
 int middle_segment_flag;
