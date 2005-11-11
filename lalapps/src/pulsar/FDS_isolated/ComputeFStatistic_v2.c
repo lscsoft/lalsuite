@@ -181,7 +181,7 @@ const char *va(const char *format, ...);	/* little var-arg string helper functio
 /*---------- empty initializers ---------- */
 static const PulsarTimesParamStruc empty_PulsarTimesParamStruc;
 static const BarycenterInput empty_BarycenterInput;
-
+static const SFTConstraints empty_SFTConstraints;
 /*----------------------------------------------------------------------*/
 /* CODE starts here */
 /*----------------------------------------------------------------------*/
@@ -866,7 +866,8 @@ InitFStatDetector (LALStatus *status, ConfigVariables *cfg, UINT4 nD)
   /* ---------- load SFT data-files ---------- */
   {
     LALFrequencyInterval fBand1, fBand2, fBandCover;
-    SFTVector *headers = NULL;
+    SFTCatalog *catalog = NULL;
+    SFTConstraints constraints = empty_SFTConstraints;
     UINT4 numSFTs;
     CHAR *fname = NULL;
     UINT4 wings;
@@ -880,22 +881,19 @@ InitFStatDetector (LALStatus *status, ConfigVariables *cfg, UINT4 nD)
     }
 
     /* first read in all SFT-headers in order to get data time-span */
-    TRY ( LALGetSFTheaders (status->statusPtr, &headers, fname, NULL, NULL ), status );
+    TRY ( LALSFTdataFind ( status->statusPtr, &catalog, fname, &constraints ), status );
 
-    numSFTs = headers->length;
+    numSFTs = catalog->length;
 
     /* figure out fmin and fmax at startTime of these SFTs */
     TRY ( LALExtrapolatePulsarSpinRange (status->statusPtr, 
 					 &fBand1, cfg->fkdot, cfg->fkdotBand, cfg->refTime, 
-					 headers->data[0].epoch ), status );
+					 catalog->data[0].header.epoch ), status );
 
     /* get fmin and fmax at endTime of  observation */
     TRY ( LALExtrapolatePulsarSpinRange (status->statusPtr, 
 					 &fBand2, cfg->fkdot, cfg->fkdotBand, cfg->refTime, 
-					 headers->data[numSFTs-1].epoch ), status );
-
-    /* get rid of SFT-headers */
-    TRY ( LALDestroySFTVector (status->statusPtr, &headers), status );
+					 catalog->data[numSFTs-1].header.epoch ), status );
 
     /* get covering frequency-band */
     fBandCover.FreqMax = MYMAX ( fBand1.FreqMax, fBand2.FreqMax );
@@ -907,9 +905,10 @@ InitFStatDetector (LALStatus *status, ConfigVariables *cfg, UINT4 nD)
     
     /* ----- load the SFT-vector ----- */
     wings = MYMAX(uvar_Dterms, uvar_RngMedWindow/2 +1);
+    fBandCover.FreqMax += wings * catalog->data[0].header.deltaF;
+    fBandCover.FreqMin -= wings * catalog->data[0].header.deltaF;
 
-    TRY ( LALReadSFTfiles(status->statusPtr, &(cfg->ifos.sftVects[nD]), 
-			  fBandCover.FreqMin, fBandCover.FreqMax, wings, fname), status);
+    TRY ( LALLoadSFTs ( status->statusPtr, &(cfg->ifos.sftVects[nD]), catalog, fBandCover.FreqMin, fBandCover.FreqMax ), status );
 
     /* Normalized this by 1/sqrt(Sh), where Sh is the median of |X|^2  
      * NOTE: this corresponds to a double-sided PSD, therefore we need to 
