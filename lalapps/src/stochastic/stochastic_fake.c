@@ -394,6 +394,19 @@ static void parse_options(INT4 argc, CHAR *argv[])
         ADD_PROCESS_PARAM("float", "%e", fMax);
         break;
 
+      case 'w':
+        /* number of bins to mask for frequency mask */
+        maskBin = atoi(optarg);
+        if (maskBin <= 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Number of bins to mask must be greater than 0: " \
+              "(%d specified)\n", long_options[option_index].name, maskBin);
+          exit(1);
+        }
+        ADD_PROCESS_PARAM("int", "%d", maskBin);
+        break;
+
       case 'x':
         /* hann window duration */
         hannDuration = atoi(optarg);
