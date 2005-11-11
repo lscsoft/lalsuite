@@ -1,9 +1,21 @@
 """
-Classes needed for the stochastic analysis pipeline.
-This script produces the necessary condor submit and dag files to run
-the standalone stochastic code on LIGO/GEO data.
-"""
+stochastic.py - SGWB Standalone Analysis Pipeline
+              - Pipeline DAG Driver Script Classes
 
+Copyright (C) 2004-2005 Adam Mercer
+ 
+This program is free software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the
+Free Software Foundation; either version 2 of the License, or (at your
+option) any later version.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
+
+$Id$
+"""
 
 __author__ = 'Adam Mercer <ram@star.sr.bham.ac.uk>'
 __date__ = '$Date$'
