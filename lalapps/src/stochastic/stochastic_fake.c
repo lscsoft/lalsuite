@@ -115,8 +115,8 @@ CHAR *outputFileName = NULL;
 
 /* helper functions */
 
-/* display usage information for fake data*/
-static void display_usage_fake()
+/* display usage information */
+static void display_usage()
 {
   fprintf(stdout, "Usage: " PROGRAM_NAME " [options]\n");
   fprintf(stdout, " --help                   print this message\n");
@@ -151,8 +151,8 @@ static void display_usage_fake()
   fprintf(stdout, " --omega0 N               reference omega_0 for filter spectrum\n");
 }
 
-/* parse command line options for fake data */
-static void parse_options_fake(INT4 argc, CHAR *argv[])
+/* parse command line options */
+static void parse_options(INT4 argc, CHAR *argv[])
 {
   int c = -1;
   struct stat fileStatus;
@@ -227,7 +227,7 @@ static void parse_options_fake(INT4 argc, CHAR *argv[])
 
       case 'a':
         /* help */
-        display_usage_fake();
+        display_usage();
         exit(0);
         break;
 
@@ -647,7 +647,7 @@ static void parse_options_fake(INT4 argc, CHAR *argv[])
   return;
 }
 
-/* program entry point for fake data */
+/* program entry point */
 INT4 main(INT4 argc, CHAR *argv[])
 {
   /* lal initialisation variables */
@@ -705,7 +705,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   memset(comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR));
 
   /* parse command line options */
-  parse_options_fake(argc, argv);
+  parse_options(argc, argv);
 
   /* set fake ifos */
   ifoOne = (CHAR*)calloc(3, sizeof(CHAR));
