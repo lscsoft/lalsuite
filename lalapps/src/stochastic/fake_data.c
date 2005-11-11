@@ -128,10 +128,10 @@ SSSimStochBGOutput *generate_fake_detector_output(LALStatus *status,
     fprintf(stdout, "Generating unity response functions...\n");
 
   /* generate unity response functions */
-  response_one = unity_response(status, start, 0, deltaF, \
-      lalDimensionlessUnit, freq_length);
-  response_two = unity_response(status, start, 0, deltaF, \
-      lalDimensionlessUnit, freq_length);
+  response_one = unity_response(start, 0, deltaF, lalDimensionlessUnit, \
+      freq_length);
+  response_two = unity_response(start, 0, deltaF, lalDimensionlessUnit, \
+      freq_length);
 
   /* generate omega */
   if (vrbflg)

@@ -1148,7 +1148,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       fprintf(stdout, "Applying frequency mask to spectrum..\n");
 
     /* generate frequency mask */
-    mask = frequency_mask(&status, fMin, deltaF, filterLength, maskBin);
+    mask = frequency_mask(fMin, deltaF, filterLength, maskBin);
 
     /* apply mask to omegaGW */
     for (i = 0; i < filterLength; i++)

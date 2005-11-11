@@ -89,15 +89,13 @@ REAL4FrequencySeries *optimal_filter(LALStatus *status,
     INT4 segment_duration);
 
 /* estimate the PSD */
-REAL4FrequencySeries *estimate_psd(LALStatus *status,
-    REAL4TimeSeries *series,
+REAL4FrequencySeries *estimate_psd(REAL4TimeSeries *series,
     REAL8 f0,
     INT4 shrink_length,
     INT4 psd_window_duration);
 
 /* return a unity response function, for use with calibrated data */
-COMPLEX8FrequencySeries *unity_response(LALStatus *status,
-    LIGOTimeGPS epoch,
+COMPLEX8FrequencySeries *unity_response(LIGOTimeGPS epoch,
     REAL8 f0,
     REAL8 delta_f,
     LALUnit units,
@@ -114,7 +112,7 @@ COMPLEX8FrequencySeries *ligo_response(LALStatus *status,
     INT4 length,
     INT4 offset);
 
-/* wrapper to unity_response and ligo_response for generating the
+/* wrapper to unity_response() and ligo_response() for generating the
  * appropriate response for the given detector */
 COMPLEX8FrequencySeries *generate_response(LALStatus *status,
     CHAR *ifo,
@@ -127,8 +125,7 @@ COMPLEX8FrequencySeries *generate_response(LALStatus *status,
     INT4 offset);
 
 /* return the frequency mask */
-REAL4FrequencySeries *frequency_mask(LALStatus *status,
-    REAL8 f0,
+REAL4FrequencySeries *frequency_mask(REAL8 f0,
     REAL8 delta_f,
     INT4 length,
     INT4 bins);
