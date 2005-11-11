@@ -51,7 +51,7 @@
 #include <lalapps.h>
 
 /* generate a data window */
-REAL4Window *data_window(REAL8 deltaT,
+REAL4Window *data_window(REAL8 delta_t,
     INT4 length,
     INT4 hann_duration);
 

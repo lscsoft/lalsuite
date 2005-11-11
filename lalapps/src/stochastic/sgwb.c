@@ -38,7 +38,7 @@ extern int middle_segment_flag;
 extern int vrbflg;
 
 /* generate a data window */
-REAL4Window *data_window(REAL8 deltaT,
+REAL4Window *data_window(REAL8 delta_t,
     INT4 length,
     INT4 hann_duration)
 {
@@ -49,7 +49,7 @@ REAL4Window *data_window(REAL8 deltaT,
   INT4 i;
 
   /* get length of hann segment requested */
-  hann_length = (INT4)(hann_duration / deltaT);
+  hann_length = (INT4)(hann_duration / delta_t);
 
   if (hann_length == 0)
   {

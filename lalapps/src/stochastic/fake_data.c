@@ -39,7 +39,7 @@ REAL4TimeSeries *generate_random_noise(LALStatus *status,
   /* variables */
   REAL4TimeSeries *series;
   LIGOTimeGPS start;
-  REAL8 deltaT;
+  REAL8 delta_t;
   RandomParams *noise_params = NULL;
   struct timeval tv;
 #if 0
@@ -51,13 +51,13 @@ REAL4TimeSeries *generate_random_noise(LALStatus *status,
   start.gpsNanoSeconds = 0;
 
   /* get deltaT from sample_rate */
-  deltaT = 1.0/(REAL8)(sample_rate);
+  delta_t = 1.0/(REAL8)(sample_rate);
 
   if (vrbflg)
     fprintf(stdout, "Allocating memory for random noise...\n");
 
   /* create and initialise time series */
-  series = XLALCreateREAL4TimeSeries("noise", &start, 0, deltaT, \
+  series = XLALCreateREAL4TimeSeries("noise", &start, 0, delta_t, \
       &lalADCCountUnit, duration * sample_rate);
 
   /* get current time, for random seed */
