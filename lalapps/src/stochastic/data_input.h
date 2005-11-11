@@ -56,9 +56,9 @@ REAL4TimeSeries *get_geo_data(LALStatus *status,
     CHAR *channel,
     LIGOTimeGPS start,
     LIGOTimeGPS end,
-    INT4 order,
-    REAL8 frequency,
-    REAL8 attenuation);
+    INT4 hpf_order,
+    REAL8 hpf_frequency,
+    REAL8 hpf_attenuation);
 
 /* read a time series */
 REAL4TimeSeries *get_time_series(LALStatus *status,

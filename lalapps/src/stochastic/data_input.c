@@ -83,9 +83,9 @@ REAL4TimeSeries *get_geo_data(LALStatus *status,
     CHAR *channel,
     LIGOTimeGPS start,
     LIGOTimeGPS end,
-    INT4 order,
-    REAL8 frequency,
-    REAL8 attenuation)
+    INT4 hpf_order,
+    REAL8 hpf_frequency,
+    REAL8 hpf_attenuation)
 {
   /* variables */
   PassBandParamStruc high_pass_params;
@@ -130,11 +130,11 @@ REAL4TimeSeries *get_geo_data(LALStatus *status,
     fprintf(stdout, "High pass filtering \"%s\"...\n", channel);
 
   /* high pass filter before casting to a REAL4 */
-  high_pass_params.nMax = order;
+  high_pass_params.nMax = hpf_order;
   high_pass_params.f1 = -1;
-  high_pass_params.f2 = frequency;
+  high_pass_params.f2 = hpf_frequency;
   high_pass_params.a1 = -1;
-  high_pass_params.a2 = attenuation;
+  high_pass_params.a2 = hpf_attenuation;
   XLALButterworthREAL8TimeSeries(geo, &high_pass_params);
 
   if (vrbflg)
