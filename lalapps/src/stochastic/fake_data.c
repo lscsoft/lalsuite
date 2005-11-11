@@ -57,8 +57,8 @@ REAL4TimeSeries *generate_random_noise(LALStatus *status,
     fprintf(stdout, "Allocating memory for random noise...\n");
 
   /* create and initialise time series */
-  LAL_CALL(LALCreateREAL4TimeSeries(status, &series, "noise", start, 0, \
-        deltaT, lalADCCountUnit, duration * sample_rate), status);
+  series = XLALCreateREAL4TimeSeries("noise", &start, 0, deltaT, \
+      &lalADCCountUnit, duration * sample_rate);
 
   /* get current time, for random seed */
   gettimeofday(&tv, NULL);
@@ -117,12 +117,12 @@ SSSimStochBGOutput *generate_fake_detector_output(LALStatus *status,
     fprintf(stdout, "Allocating memory for fake detector output...\n");
 
   /* create and initialise time series' */
-  LAL_CALL(LALCreateREAL4TimeSeries(status, &series_one, "one", \
-        noise_one->epoch, noise_one->f0, noise_one->deltaT, \
-        noise_one->sampleUnits, noise_one->data->length), status);
-  LAL_CALL(LALCreateREAL4TimeSeries(status, &series_two, "two", \
-        noise_two->epoch, noise_two->f0, noise_two->deltaT, \
-        noise_two->sampleUnits, noise_two->data->length), status);
+  series_one = XLALCreateREAL4TimeSeries("one", &noise_one->epoch, \
+      noise_one->f0, noise_one->deltaT, &noise_one->sampleUnits, \
+      noise_one->data->length);
+  series_two = XLALCreateREAL4TimeSeries("two", &noise_two->epoch, \
+      noise_two->f0, noise_two->deltaT, &noise_two->sampleUnits, \
+      noise_two->data->length);
 
   if (vrbflg)
     fprintf(stdout, "Generating unity response functions...\n");
