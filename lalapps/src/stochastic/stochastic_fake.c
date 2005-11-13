@@ -179,22 +179,22 @@ static void parse_options(INT4 argc, CHAR *argv[])
       {"user-tag", required_argument, 0, 'd'},
       {"comment", required_argument, 0, 'e'},
       {"output-dir", required_argument, 0, 'f'},
-      {"output-file", required_argument, 0, 'F'},
-      {"duration", required_argument, 0, 'g'},
+      {"output-file", required_argument, 0, 'g'},
+      {"duration", required_argument, 0, 'h'},
       {"interval-duration", required_argument, 0, 'i'},
       {"segment-duration", required_argument, 0, 'j'},
       {"sample-rate", required_argument, 0, 'k'},
       {"f-min", required_argument, 0, 'l'},
       {"f-max", required_argument, 0, 'm'},
-      {"mask-bin", required_argument, 0, 'w'},
-      {"hann-duration", required_argument, 0, 'x'},
-      {"hpf-frequency", required_argument, 0, 'y'},
-      {"hpf-attenuation", required_argument, 0, 'z'},
-      {"hpf-order", required_argument, 0, 'A'},
-      {"signal-scale-factor", required_argument, 0, 'G'},
-      {"alpha", required_argument, 0, 'H'},
-      {"f-ref", required_argument, 0, 'I'},
-      {"omega0", required_argument, 0, 'J'},
+      {"mask-bin", required_argument, 0, 'n'},
+      {"hann-duration", required_argument, 0, 'o'},
+      {"hpf-frequency", required_argument, 0, 'p'},
+      {"hpf-attenuation", required_argument, 0, 'q'},
+      {"hpf-order", required_argument, 0, 'r'},
+      {"signal-scale-factor", required_argument, 0, 's'},
+      {"alpha", required_argument, 0, 't'},
+      {"f-ref", required_argument, 0, 'u'},
+      {"omega0", required_argument, 0, 'v'},
       {0, 0, 0, 0}
     };
 
@@ -203,8 +203,8 @@ static void parse_options(INT4 argc, CHAR *argv[])
     size_t optarg_len;
 
     c = getopt_long_only(argc, argv, \
-        "abc:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:" \
-        "A:E:F:G:H:I:J:", long_options, &option_index);
+        "abc:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:t:u:v:", long_options, \
+        &option_index);
 
     if (c == -1)
     {
@@ -292,7 +292,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         ADD_PROCESS_PARAM("string", "%s", outputPath);
         break;
 
-      case 'F':
+      case 'g':
         /* filename for output file */
         optarg_len = strlen(optarg) + 1;
         outputFileName = (CHAR*)calloc(optarg_len, sizeof(CHAR));
@@ -300,7 +300,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         ADD_PROCESS_PARAM("string", "%s", outputFileName);
         break;
 
-      case 'g':
+      case 'h':
         /* duration */
         totalDuration = atoi(optarg);
         if (totalDuration <= 0)
@@ -394,7 +394,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         ADD_PROCESS_PARAM("float", "%e", fMax);
         break;
 
-      case 'w':
+      case 'n':
         /* number of bins to mask for frequency mask */
         maskBin = atoi(optarg);
         if (maskBin <= 0)
@@ -407,7 +407,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         ADD_PROCESS_PARAM("int", "%d", maskBin);
         break;
 
-      case 'x':
+      case 'o':
         /* hann window duration */
         hannDuration = atoi(optarg);
         if (hannDuration < 0)
@@ -420,7 +420,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         ADD_PROCESS_PARAM("int", "%d", hannDuration);
         break;
 
-      case 'y':
+      case 'p':
         /* high pass knee filter frequency  */
         highPassFreq = atof(optarg);
         if (highPassFreq < 0)
@@ -434,7 +434,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         ADD_PROCESS_PARAM("float", "%e", highPassFreq);
         break;
 
-      case 'z':
+      case 'q':
         /* high pass filter attenuation  */
         highPassAtten = atof(optarg);
         if ((highPassAtten < 0.0) || (highPassAtten > 1.0))
@@ -448,7 +448,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         ADD_PROCESS_PARAM("float", "%e", highPassAtten);
         break;
 
-      case 'A':
+      case 'r':
         /* high pass filter order  */
         highPassOrder = atoi(optarg);
         if (highPassOrder <= 0)
@@ -462,18 +462,18 @@ static void parse_options(INT4 argc, CHAR *argv[])
         ADD_PROCESS_PARAM("int", "%d", highPassOrder);
         break;
 
-      case 'G':
+      case 's':
         /* signal scale factor */
         scaleFactor = atof(optarg);
         ADD_PROCESS_PARAM("float", "%e", scaleFactor);
 
-      case 'H':
+      case 't':
         /* filter spectrum exponent */
         alpha = atof(optarg);
         ADD_PROCESS_PARAM("float", "%e", alpha);
         break;
 
-      case 'I':
+      case 'u':
         /* filter reference frequency */
         fRef = atof(optarg);
         if (fRef < 0)
@@ -486,7 +486,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         ADD_PROCESS_PARAM("float", "%e", fRef);
         break;
 
-      case 'J':
+      case 'v':
         /* filter reference omega */
         omegaRef = atof(optarg);
         if (omegaRef <= 0)

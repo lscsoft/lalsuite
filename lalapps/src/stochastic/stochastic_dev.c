@@ -211,12 +211,12 @@ static void parse_options(INT4 argc, CHAR *argv[])
       {"hpf-frequency", required_argument, 0, 'y'},
       {"hpf-attenuation", required_argument, 0, 'z'},
       {"hpf-order", required_argument, 0, 'A'},
-      {"geo-hpf-frequency", required_argument, 0, 'E'},
-      {"geo-hpf-attenuation", required_argument, 0, 'F'},
-      {"geo-hpf-order", required_argument, 0, 'G'},
-      {"alpha", required_argument, 0, 'H'},
-      {"f-ref", required_argument, 0, 'I'},
-      {"omega0", required_argument, 0, 'J'},
+      {"geo-hpf-frequency", required_argument, 0, 'B'},
+      {"geo-hpf-attenuation", required_argument, 0, 'C'},
+      {"geo-hpf-order", required_argument, 0, 'D'},
+      {"alpha", required_argument, 0, 'E'},
+      {"f-ref", required_argument, 0, 'F'},
+      {"omega0", required_argument, 0, 'G'},
       {0, 0, 0, 0}
     };
 
@@ -226,7 +226,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
     c = getopt_long_only(argc, argv, \
         "abc:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:" \
-        "A:E:F:G:H:I:J:", long_options, &option_index);
+        "A:B:C:D:E:F:G:", long_options, &option_index);
 
     if (c == -1)
     {
@@ -637,7 +637,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         ADD_PROCESS_PARAM("int", "%d", highPassOrder);
         break;
 
-      case 'E':
+      case 'B':
         /* GEO high pass knee filter frequency */
         geoHighPassFreq = atof(optarg);
         if (geoHighPassFreq < 0)
@@ -651,7 +651,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         ADD_PROCESS_PARAM("float", "%e", geoHighPassFreq);
         break;
 
-      case 'F':
+      case 'C':
         /* GEO high pass filter attenuation */
         geoHighPassAtten = atof(optarg);
         if ((geoHighPassAtten < 0.0) || (geoHighPassAtten > 1.0))
@@ -665,7 +665,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         ADD_PROCESS_PARAM("float", "%e", geoHighPassAtten);
         break;
 
-      case 'G':
+      case 'D':
         /* GEO high pass filter order */
         geoHighPassOrder = atoi(optarg);
         if (geoHighPassOrder <= 0)
@@ -679,13 +679,13 @@ static void parse_options(INT4 argc, CHAR *argv[])
         ADD_PROCESS_PARAM("int", "%d", geoHighPassOrder);
         break;
 
-      case 'H':
+      case 'E':
         /* filter spectrum exponent */
         alpha = atof(optarg);
         ADD_PROCESS_PARAM("float", "%e", alpha);
         break;
 
-      case 'I':
+      case 'F':
         /* filter reference frequency */
         fRef = atof(optarg);
         if (fRef < 0)
@@ -698,7 +698,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         ADD_PROCESS_PARAM("float", "%e", fRef);
         break;
 
-      case 'J':
+      case 'G':
         /* filter reference omega */
         omegaRef = atof(optarg);
         if (omegaRef <= 0)
