@@ -16,6 +16,7 @@ def usage():
 Usage: time_slides.py [options]
   -h, --help               display this message
   -p  --params-file        Search parameter configuration file         
+  -s  --do-slides          perform the slides
 """
   print >> sys.stderr, msg
 
@@ -25,10 +26,11 @@ Usage: time_slides.py [options]
 # initialise command line argument variables
 params_file = None
 
-shortop = "hp:"
+shortop = "hsp:"
 longop = [
    "help",
-   "params-file=",
+   "do-slides",
+   "params-file="
    ]
 
 try:
@@ -36,10 +38,14 @@ try:
 except getopt.GetoptError:
   usage()
   sys.exit(1)
-  
+
+do_slides = 0
+
 for o, a in opts:
   if o in ("-p", "--params-file"):
     params_file = a      
+  elif o in ("-s", "--do-slides"):
+    do_slides = 1       
   elif o in ("-h", "--help"):
     usage()
     sys.exit(0)
@@ -118,29 +124,54 @@ os.system('~/lscsoft/lalapps/src/power/lalapps_burca --output-dir slides/ --ifo-
 
 # ------------------------- Background Computation ------------------------------- # 
 
-seg_file=open('seg.txt',mode='r')
-seg_list=seg_file.readlines()
+if do_slides:
+  seg_file=open('seg.txt',mode='r')
+  seg_list=seg_file.readlines()
+  #do the slides
+  for seg in seg_list:
+    [crap,Tstart,Tend,duration]=seg.split(None,4)
+    if int(duration) > length:
+      Ti=int(Tstart)+pad+short_seg_lenth/4
+      Tf=int(Tend)-pad-short_seg_lenth/4
+      
+      # separate out L1 triggers for this segment first
+      print 'RUNNING: ~/lscsoft/lalapps/src/power/lalapps_bread  --output ./slides/L1.xml \
+      --globtrig L1triggers --cluster stringcluster --trig-start-time '+ str(Ti)+' --trig-stop-time '+str(Tf)
+      os.system('~/lscsoft/lalapps/src/power/lalapps_bread  --output ./slides/L1.xml \
+      --globtrig L1triggers --cluster stringcluster --trig-start-time '+ str(Ti)+' --trig-stop-time '+str(Tf))
 
-for seg in seg_list:
-  [crap,Tstart,Tend,duration]=seg.split(None,4)
-  if int(duration) > length:
-    Ti=int(Tstart)+pad+short_seg_lenth/4
-    Tf=int(Tend)-pad-short_seg_lenth/4
-    print 'RUNNING: ~/lscsoft/lalapps/src/power/lalapps_burca --start-time '+ str(Ti)+' --stop-time '+str(Tf)+\
-    ' --output-dir slides/ --ifo-a slides/H1-BURCA_H1H2_P_0_--1-0.xml --ifo-b L1triggers.xml --ignore-playground \
-    --ignore-tfcomparison --dt '+str(dtHL)+' --no-repeats \
-    --slide-time '+str(slide_time)+' --slide-time-ns '+str(slide_time_ns)+' --number-slides '+str(nslides) 
-    os.system('~/lscsoft/lalapps/src/power/lalapps_burca --start-time '+ str(Ti)+' --stop-time '+str(Tf)+\
-    ' --output-dir slides/ --ifo-a slides/H1-BURCA_H1H2_P_0_--1-0.xml --ifo-b L1triggers.xml --ignore-playground \
-    --ignore-tfcomparison --dt '+str(dtHL)+' --no-repeats \
-    --slide-time '+str(slide_time)+' --slide-time-ns '+str(slide_time_ns)+' --number-slides '+str(nslides))
-    i=1
-    while i< nslides+1:
-      tSlide=1e9*slide_time+slide_time_ns
-      dirnameM='./slides/slideM'+str(i)
-      dirnameP='./slides/slideP'+str(i)
-      os.system('mv ./slides/H1-BURCA_H1L1_M_'+str(int(i*tSlide))+'_* '+dirnameM)
-      os.system('mv ./slides/H1-BURCA_H1L1_P_'+str(int(i*tSlide))+'_* '+dirnameP)
-      i=i+1
+      #now use the separated trigger file in the slides
+      print 'RUNNING: ~/lscsoft/lalapps/src/power/lalapps_burca --start-time '+ str(Ti)+' --stop-time '+str(Tf)+\
+            ' --output-dir slides/ --ifo-a slides/H1-BURCA_H1H2_P_0_--1-0.xml --ifo-b ./slides/L1.xml --ignore-playground \
+            --ignore-tfcomparison --dt '+str(dtHL)+' --no-repeats \
+            --slide-time '+str(slide_time)+' --slide-time-ns '+str(slide_time_ns)+' --number-slides '+str(nslides) 
+      os.system('~/lscsoft/lalapps/src/power/lalapps_burca --start-time '+ str(Ti)+' --stop-time '+str(Tf)+\
+                ' --output-dir slides/ --ifo-a slides/H1-BURCA_H1H2_P_0_--1-0.xml --ifo-b ./slides/L1.xml --ignore-playground \
+                --ignore-tfcomparison --dt '+str(dtHL)+' --no-repeats \
+                --slide-time '+str(slide_time)+' --slide-time-ns '+str(slide_time_ns)+' --number-slides '+str(nslides))
+
+      #move slide files into their slide directory
+      i=1
+      while i < nslides+1:
+        tSlide=1e9*slide_time+slide_time_ns
+        dirnameM='./slides/slideM'+str(i)
+        dirnameP='./slides/slideP'+str(i)
+        os.system('mv ./slides/H1-BURCA_H1L1_M_'+str(int(i*tSlide))+'_* '+dirnameM)
+        os.system('mv ./slides/H1-BURCA_H1L1_P_'+str(int(i*tSlide))+'_* '+dirnameP)
+        i=i+1
+
+#merge resulting triggers into one file per slide
+i=1
+while i< nslides+1:
+  dirnameM='./slides/slideM'+str(i)
+  dirnameP='./slides/slideP'+str(i)
+  os.system('~/lscsoft/lalapps/src/power/lalapps_bread  --output ./slides/H1_M'+str(i)+'.xml \
+  --globtrig '+dirnameM+' --cluster stringcluster')
+  os.system('~/lscsoft/lalapps/src/power/lalapps_bread  --output ./slides/H1_P'+str(i)+'.xml \
+  --globtrig '+dirnameP+' --cluster stringcluster')
+  i=i+1
+
+
 
 # -------------------------------------------------------------------------------- #
+
