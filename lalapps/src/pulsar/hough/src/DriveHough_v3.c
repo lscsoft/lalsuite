@@ -927,7 +927,7 @@ int main(int argc, char *argv[]){
  
 	  fprintf(fp1, "%d %f %f %f %f %f %f %f 0.0 \n",
 		  iHmap, sourceLocation.alpha, sourceLocation.delta,
-		  stats.maxCount, stats.minCount, stats.avgCount,stats.stdDev,
+		  (REAL4)stats.maxCount, (REAL4)stats.minCount, stats.avgCount,stats.stdDev,
 		  (fBinSearch*deltaF) );
           
 #ifdef PRINTEVENTS
