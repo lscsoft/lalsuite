@@ -864,7 +864,9 @@ int main(int argc, char *argv[]){
 	/************* build the set of  PHMD centered around fBin***********/     
 	phmdVS.fBinMin = fBin-floor(nfSizeCylinder/2.);
 	SUB( LALHOUGHConstructSpacePHMD(&status, &phmdVS, &pgV, &lutV), &status );
-	SUB( LALHOUGHWeighSpacePHMD(&status, &phmdVS, &weightsV), &status);
+	if (uvar_weighAM || uvar_weighNoise) {
+	  SUB( LALHOUGHWeighSpacePHMD(&status, &phmdVS, &weightsV), &status);
+	}
 	
 	/* ************ initializing the Total Hough map space *********** */   
 	ht.xSide = xSide;
@@ -1016,8 +1018,9 @@ int main(int argc, char *argv[]){
 	  /* *** shift the search freq. & PHMD structure 1 freq.bin ****** */
 	  ++fBinSearch;
 	  SUB( LALHOUGHupdateSpacePHMDup(&status, &phmdVS, &pgV, &lutV), &status );
-	  SUB( LALHOUGHWeighSpacePHMD( &status, &phmdVS, &weightsV), &status);
-	  
+	  if (uvar_weighAM || uvar_weighNoise) {
+	    SUB( LALHOUGHWeighSpacePHMD( &status, &phmdVS, &weightsV), &status);
+	  }
 	}   /* ********>>>>>>  closing second while  <<<<<<<<**********<  */
 	
 	fBin = fBinSearch;
