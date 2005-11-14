@@ -130,12 +130,12 @@ NRCSID( STATISTICSH, "$Id$");
 
 /** Structure for storing statistical information about a Hough map */
 typedef struct tagHoughStats {
-  UINT4    maxCount;    /**< maximum number count */
-  UINT2    maxIndex[2]; /**< loctaion of maximum number count */
-  UINT4    minCount;    /**< minimum number count */
-  UINT2    minIndex[2]; /**< location of minimum number count */
-  REAL8    avgCount;    /**< average number count */
-  REAL8    stdDev;      /**< standard deviation of number counts */
+  HoughTT    maxCount;    /**< maximum number count */
+  UINT2      maxIndex[2]; /**< loctaion of maximum number count */
+  HoughTT    minCount;    /**< minimum number count */
+  UINT2      minIndex[2]; /**< location of minimum number count */
+  REAL8      avgCount;    /**< average number count */
+  REAL8      stdDev;      /**< standard deviation of number counts */
 } HoughStats;
 
 /*
