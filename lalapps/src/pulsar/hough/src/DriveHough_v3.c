@@ -186,8 +186,8 @@ int main(int argc, char *argv[]){
   SUB( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
 
   uvar_help = FALSE;
-  uvar_weighAM = TRUE;
-  uvar_weighNoise = TRUE;
+  uvar_weighAM = FALSE;
+  uvar_weighNoise = FALSE;
   uvar_ifo = IFO;
   uvar_blocksRngMed = BLOCKSRNGMED;
   uvar_f0 = F0;
@@ -920,7 +920,7 @@ int main(int argc, char *argv[]){
 #endif 
 	  
  
-	  fprintf(fp1, "%d %f %f %d %d %f %f %f 0.0 \n",
+	  fprintf(fp1, "%d %f %f %f %f %f %f %f 0.0 \n",
 		  iHmap, sourceLocation.alpha, sourceLocation.delta,
 		  stats.maxCount, stats.minCount, stats.avgCount,stats.stdDev,
 		  (fBinSearch*deltaF) );
@@ -982,9 +982,9 @@ int main(int argc, char *argv[]){
 	      if( PrintHmap2m_file( &ht, fileMaps, iHmap ) ) return 5;
 #endif
 	      
-	      fprintf(fp1, "%d %f %f %d %d %f %f %f %g\n",
+	      fprintf(fp1, "%d %f %f %f %f %f %f %f %g\n",
 		      iHmap, sourceLocation.alpha, sourceLocation.delta,
-		      stats.maxCount, stats.minCount, stats.avgCount,stats.stdDev,
+		      (REAL4)stats.maxCount, (REAL4)stats.minCount, stats.avgCount,stats.stdDev,
 		      (fBinSearch*deltaF), ht.spinRes.data[0]);
 #ifdef PRINTEVENTS
 	      SUB( PrintHoughEvents (&status, fpEvents, houghThreshold, &ht,
