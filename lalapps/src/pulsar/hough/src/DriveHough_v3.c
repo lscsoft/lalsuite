@@ -893,8 +893,13 @@ int main(int argc, char *argv[]){
 	  ht.spinRes.length =0;
 	  ht.spinRes.data = NULL;
 	  for (j=0;j< mObsCoh;++j){	freqInd.data[j]= fBinSearch; } 
-	  SUB( LALHOUGHConstructHMT_W( &status, &ht, &freqInd, &phmdVS ), &status );
-	  
+	  if (uvar_weighAM || uvar_weighNoise) {
+	    SUB( LALHOUGHConstructHMT_W( &status, &ht, &freqInd, &phmdVS ), &status );
+	  }
+	  else {
+	    SUB( LALHOUGHConstructHMT( &status, &ht, &freqInd, &phmdVS ), &status );	  
+	  }
+
 	  /* ********************* perfom stat. analysis on the maps ****************** */
 	  SUB( LALHoughStatistics ( &status, &stats, &ht), &status );
 	  SUB( LALStereo2SkyLocation (&status, &sourceLocation, 
@@ -956,8 +961,13 @@ int main(int argc, char *argv[]){
 		freqInd.data[j] = fBinSearch + floor(timeDiffV.data[j]*f1dis+0.5);
 	      }
 	      
-	      SUB( LALHOUGHConstructHMT_W(&status,&ht, &freqInd, &phmdVS),&status );
-	      
+	      if (uvar_weighAM || uvar_weighNoise) {
+		SUB( LALHOUGHConstructHMT_W( &status, &ht, &freqInd, &phmdVS ), &status );
+	      }
+	      else {
+		SUB( LALHOUGHConstructHMT( &status, &ht, &freqInd, &phmdVS ), &status );	  
+	      }
+
 	      /* ********************* perfom stat. analysis on the maps ****************** */
 	      SUB( LALHoughStatistics ( &status, &stats, &ht), &status );
 	      SUB( LALStereo2SkyLocation (&status, &sourceLocation, 
