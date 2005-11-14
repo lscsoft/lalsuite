@@ -742,8 +742,6 @@ int main(int argc, char **argv)
 		 */
 
 		timeAnalyzed += read_search_summary_start_end(&stat, line, NULL, NULL, fpout);
-
-
 		populate_search_summary_ifo(line, &searchsumm);
 
 		/*
@@ -751,6 +749,12 @@ int main(int argc, char **argv)
 		 */
 
 		LAL_CALL(LALSnglBurstTableFromLIGOLw(&stat, addpoint, line), &stat);
+
+		/*
+		 * Do any requested cuts (to save RAM)
+		 */
+
+		trim_event_list(addpoint, options);
 
 		/*
 		 * move addpoint to the end of the linked list
@@ -773,7 +777,7 @@ int main(int argc, char **argv)
 		XLALClusterStringBurstTable(&burstEventList, XLALCompareStringBurstByTime, XLALCompareStringBurstByTime);
 
 	/*
-	 * Do any requested cuts
+	 * Do any requested cuts (final)
 	 */
 
 	trim_event_list(&burstEventList, options);
@@ -781,6 +785,7 @@ int main(int argc, char **argv)
 	/*
 	 * print out the total time analysed and the number of triggers found
 	 */
+
 	if(options.printsum) {
 		fprintf(fpout, "# Total time analysed = %lld nanosec.s\n", timeAnalyzed);
 		fprintf(fpout, "# Total no. of triggers = %ld\n", count_events(burstEventList));
