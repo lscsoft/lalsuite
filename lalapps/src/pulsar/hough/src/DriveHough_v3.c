@@ -49,13 +49,13 @@ RCSID( "$Id$");
 
 extern int lalDebugLevel;
 
-#define EARTHEPHEMERIS "./earth00-04.dat"
-#define SUNEPHEMERIS "./sun00-04.dat"
+#define EARTHEPHEMERIS "./earth05-09.dat"
+#define SUNEPHEMERIS "./sun05-09.dat"
 
 #define ACCURACY 0.00000001 /* of the velocity calculation */
 #define MAXFILES 3000 /* maximum number of files to read in a directory */
 #define MAXFILENAMELENGTH 256 /* maximum # of characters  of a SFT filename */
-#define SFTDIRECTORY "/home/badkri/fakesfts"  
+#define SFTDIRECTORY "/local_data/badkri/fakesfts"  
 /* #define SFTDIRECTORY "/nfs/morbo/geo600/hannover/sft/S2-LIGO/S2_L1_Funky-v3Calv5DQ30MinSFTs" */
 #define DIROUT "./outHM1/"      /* prefix file output */
 #define BASENAMEOUT "HM1"
@@ -362,7 +362,7 @@ int main(int argc, char *argv[]){
     /* copy pattern to be searched */
     tempDir = (CHAR *)LALMalloc(512*sizeof(CHAR));
     strcpy(tempDir, uvar_sftDir);
-    strcat(tempDir, "/*SFT*.*");
+    strcat(tempDir, "/*sft*.*");
 
     /* add Doppler wings */
     doppWings = (uvar_f0 + uvar_fSearchBand) * VTOT;    
