@@ -353,9 +353,9 @@ INT4 main(INT4 argc, CHAR *argv[])
   {
     /* pdf for power law spectra */
     min_omega = 0;
-    max_omega = (10 * yOpt)/stochHead->duration.gpsSeconds;
-    min_alpha = -1;
-    max_alpha = 1;
+    max_omega = 10; /*(10 * yOpt)/stochHead->duration.gpsSeconds;*/
+    min_alpha = -4;
+    max_alpha = 0;
 
     /* loop for \Omega_R */
     for (i = 0; i < 100; i++)
