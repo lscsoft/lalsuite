@@ -80,9 +80,9 @@ struct options_t {
 
 	/* time window */
 	BOOLEAN trigStartTimeFlag;
-	INT4 trigStartTime;
+	INT8 trigStartTime;
 	BOOLEAN trigStopTimeFlag;
-	INT4 trigStopTime;
+	INT8 trigStopTime;
 
 	/* duration thresholds */
 	BOOLEAN minDurationFlag;
@@ -325,7 +325,7 @@ static void parse_command_line(int argc, char **argv, struct options_t *options,
 				options->cluster = TRUE;
 				options->clusterchoice = stringcluster;
 			} else {
-				fprintf(stderr, "invalid argument to --cluster (must be one of \"clusterbypeaktimeandfreq\", \"clusterbytimeandfreq\")\n");
+				fprintf(stderr, "invalid argument to --%s \"%s\" (must be one of \"clusterbypeaktimeandfreq\", \"clusterbytimeandfreq\")\n", long_options[option_index].name, optarg);
 			}
 			break;
 
@@ -341,16 +341,30 @@ static void parse_command_line(int argc, char **argv, struct options_t *options,
 			/*
 			 * only events with time after this are selected
 			 */
+			{
+			LIGOTimeGPS tmp;
+			if(XLALStrToGPS(&tmp, optarg, NULL) < 0) {
+				fprintf(stderr, "invalid argument to %s: \"%s\"\n", long_options[option_index].name, optarg);
+				exit(1);
+			}
 			options->trigStartTimeFlag = TRUE;
-			options->trigStartTime = atoi(optarg);
+			options->trigStartTime = XLALGPSToINT8NS(&tmp);
+			}
 			break;
 
 		case 'r':
 			/*
 			 * only events with time before this are selected
 			 */
+			{
+			LIGOTimeGPS tmp;
+			if(XLALStrToGPS(&tmp, optarg, NULL) < 0) {
+				fprintf(stderr, "invalid argument to %s: \"%s\"\n", long_options[option_index].name, optarg);
+				exit(1);
+			}
 			options->trigStopTimeFlag = TRUE;
-			options->trigStopTime = atoi(optarg);
+			options->trigStopTime = XLALGPSToINT8NS(&tmp);
+			}
 			break;
 
 		case 's':
@@ -482,11 +496,11 @@ static int contains_playground(INT4 gpsStart, INT4 gpsEnd)
 static BOOLEAN keep_this_event(SnglBurstTable * event, struct options_t options)
 {
 	/* check if in after specified time window */
-	if(options.trigStartTimeFlag && !(event->start_time.gpsSeconds >= options.trigStartTime))
+	if(options.trigStartTimeFlag && !(XLALGPSToINT8NS(&event->start_time) >= options.trigStartTime))
 		return (FALSE);
 
 	/* check if in before specified end time */
-	if(options.trigStopTimeFlag && !(event->start_time.gpsSeconds <= options.trigStopTime))
+	if(options.trigStopTimeFlag && !(XLALGPSToINT8NS(&event->start_time) <= options.trigStopTime))
 		return (FALSE);
 
 	/* check the confidence */
@@ -682,19 +696,10 @@ int main(int argc, char **argv)
 
 
 	/*
-	 * Store the times between which the triggers are selected in 
-	 * a search summary table
+	 * Create the search summary table
 	 */
-	/* create the search summary table */
+
 	searchsumm.searchSummaryTable = LALCalloc(1, sizeof(SearchSummaryTable));
-	if(!searchsumm.searchSummaryTable->out_start_time.gpsSeconds) {
-		searchsumm.searchSummaryTable->in_start_time.gpsSeconds = options.trigStartTime;
-		searchsumm.searchSummaryTable->out_start_time.gpsSeconds = options.trigStartTime;
-	}
-	if(!searchsumm.searchSummaryTable->out_end_time.gpsSeconds) {
-		searchsumm.searchSummaryTable->in_end_time.gpsSeconds = options.trigStopTime;
-		searchsumm.searchSummaryTable->out_end_time.gpsSeconds = options.trigStopTime;
-	}
 
 
 	/*
@@ -713,8 +718,8 @@ int main(int argc, char **argv)
 		fileCacheSieve.srcRegEx = NULL;
 		fileCacheSieve.dscRegEx = NULL;
 		fileCacheSieve.urlRegEx = NULL;
-		fileCacheSieve.earliestTime = options.trigStartTime;
-		fileCacheSieve.latestTime = options.trigStopTime;
+		fileCacheSieve.earliestTime = options.trigStartTimeFlag ? options.trigStartTime / LAL_INT8_C(1000000000) : -1;
+		fileCacheSieve.latestTime = options.trigStopTimeFlag ? (options.trigStopTime + LAL_INT8_C(999999999)) / LAL_INT8_C(1000000000) : -1;  /* integer ceiling */
 		fileCache = XLALFrSieveCache(fileCache, &fileCacheSieve);
 	}
 
@@ -822,11 +827,13 @@ int main(int argc, char **argv)
 
 	if(burstEventList) {
 		SnglBurstTable *list = burstEventList;
-		searchsumm.searchSummaryTable->out_start_time = burstEventList->start_time;
+		searchsumm.searchSummaryTable->in_start_time = burstEventList->start_time;
 		while(list->next) {
 			list = list->next;
 		}
 		XLALINT8toGPS(&(searchsumm.searchSummaryTable->out_end_time), XLALGPStoINT8(&(list->start_time)) + 1e9 * list->duration);
+		searchsumm.searchSummaryTable->out_start_time = searchsumm.searchSummaryTable->in_start_time;
+		searchsumm.searchSummaryTable->out_end_time = searchsumm.searchSummaryTable->in_end_time;
 	}
 
 	LAL_CALL(LALBeginLIGOLwXMLTable(&stat, &xmlStream, search_summary_table), &stat);
