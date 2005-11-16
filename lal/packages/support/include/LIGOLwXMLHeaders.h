@@ -250,10 +250,11 @@ fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_ringdown:spin\" Type=\"real
 fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_ringdown:snr\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_ringdown:eff_dist\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_ringdown:sigma_sq\" Type=\"real_8\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_ringdown:event_id\" Type=\"int_8s\"/>\n", fp ) == EOF || \
 fputs( "      <Stream Name=\"sngl_inspiralgroup:sngl_ringdown:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF ) 
 
 #define SNGL_RINGDOWN_ROW \
-"         \"process:process_id:0\",\"%s\",\"%s\",\"%s\",%d,%d,%22.16e,%e,%e,%e,%e,%e,%e,%22.16e"    
+"         \"process:process_id:0\",\"%s\",\"%s\",\"%s\",%d,%d,%22.16e,%e,%e,%e,%e,%e,%e,%22.16e,%lld"    
 
 #define PRINT_LIGOLW_XML_MULTI_INSPIRAL(fp) ( \
 fputs( "   <Table Name=\"multi_inspiralgroup:multi_inspiral:table\">\n" , fp ) == EOF || \

@@ -165,14 +165,16 @@ LALSimBurstTableFromLIGOLw (
     INT4                stopTime
     );
 
-void
+/*void*/
+int
 LALSnglRingdownTableFromLIGOLw (
     LALStatus          *status,
     SnglRingdownTable    **eventHead,
     CHAR               *fileName
     );
 
-void
+/*void*/
+int
 LALSimRingdownTableFromLIGOLw (
     LALStatus          *status,
     SimRingdownTable    **eventHead,

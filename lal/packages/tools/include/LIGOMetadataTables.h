@@ -396,6 +396,7 @@ tagSnglRingdownTable
   REAL4         snr;
   REAL4         eff_dist;
   REAL8         sigma_sq;
+  EventIDColumn *event_id;
 }
 SnglRingdownTable;
   

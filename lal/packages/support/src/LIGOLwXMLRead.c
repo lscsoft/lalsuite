@@ -689,6 +689,7 @@ SnglRingdownTable    * XLALSnglRingdownTableFromLIGOLw (
           REAL4 r4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
           REAL8 r8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_8; 
           INT4  i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
+          INT8  i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
           if ( tableDir[j].idx == 0 )
             {
               LALSnprintf( thisEvent->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), 
@@ -744,6 +745,10 @@ SnglRingdownTable    * XLALSnglRingdownTableFromLIGOLw (
             {
               thisEvent->sigma_sq = r8colData;
               }
+          else if ( tableDir[j].idx == 13 )
+          {
+            thisEvent->sigma_sq = i8colData;
+          }
           else
             {
               XLAL_CLOBBER_EVENTS;
@@ -1809,7 +1814,8 @@ LALSimBurstTableFromLIGOLw (
 }
 
 /* <lalVerbatim file="LIGOLwXMLReadCP"> */
-void
+/*void*/
+int
 LALSnglRingdownTableFromLIGOLw (
     LALStatus          *status,
     SnglRingdownTable **eventHead,
@@ -1879,7 +1885,8 @@ LALSnglRingdownTableFromLIGOLw (
           REAL4 r4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
           REAL8 r8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_8; 
           INT4  i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
-           
+          INT4  i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
+          
           if ( tableDir[j].idx == 0 )
           {
             LALSnprintf( thisEvent->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), 
@@ -1935,6 +1942,10 @@ LALSnglRingdownTableFromLIGOLw (
           {
             thisEvent->sigma_sq = r8colData;
           }
+          else if ( tableDir[j].idx == 13 )
+          {
+            thisEvent->sigma_sq = i8colData;
+          }
           else
             {
               CLOBBER_EVENTS;
@@ -1956,12 +1967,14 @@ LALSnglRingdownTableFromLIGOLw (
   LALFree( tableDir );
   MetaioClose( env );
   DETATCHSTATUSPTR( status );
-  RETURN( status );
+/*  RETURN( status );*/
+  return nrows;
 }
 
   
 /* <lalVerbatim file="LIGOLwXMLReadCP"> */
-void
+/* void */
+int
 LALSimRingdownTableFromLIGOLw (
     LALStatus          *status,
     SimRingdownTable   **eventHead,
@@ -2170,7 +2183,8 @@ LALSimRingdownTableFromLIGOLw (
   LALFree( tableDir );
   MetaioClose( env );
   DETATCHSTATUSPTR( status );
-  RETURN( status );
+/*  RETURN( status );*/
+  return nrows;
   }
 
 /* <lalVerbatim file="LIGOLwXMLReadCP"> */

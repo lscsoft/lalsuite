@@ -50,6 +50,7 @@ extern "C" {
 
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LALInspiral.h>
+#include <lal/LALRingDown.h>
 #include <lal/GeneratePPNInspiral.h>
 
 NRCSID( LIGOMETADATAUTILSH, "$Id$" );
@@ -242,6 +243,15 @@ tagSnglBurstAccuracy
 }
 SnglBurstAccuracy;
 /*</lalVerbatim> */
+
+
+
+/*
+ * 
+ *  ringdown specific structures
+ *    
+ *    */
+
 
 
 /*
@@ -850,6 +860,62 @@ XLALTimeSlideSnglBurst (
 	INT8 stopTime,
 	INT8 slideTime
 );
+
+
+
+
+/*
+ *  inspiral specific functions
+ * 
+ *      */
+
+/* sngl ringdown */
+void
+LALFreeSnglRingdown (
+    LALStatus          *status,
+    SnglRingdownTable **eventHead
+    );
+
+int
+XLALFreeSnglRingdown (
+        SnglRingdownTable **eventHead
+            );
+
+void
+LALSortSnglRingdown (
+    LALStatus          *status,
+    SnglRingdownTable **eventHead,
+    int(*comparfunc)    (const void *, const void *)
+    );
+
+int
+LALCompareSnglRingdownByTime (
+    const void *a,
+    const void *b
+    );
+
+void
+LALClusterSnglRingdownTable (
+    LALStatus                  *status,
+    SnglRingdownTable          *ringdownEvent,
+    INT8                        dtimeNS,
+    SnglInspiralClusterChoice   clusterchoice
+    );
+
+void
+LALIfoCutSingleRingdown(
+    LALStatus                  *status,
+    SnglRingdownTable         **eventHead,
+    CHAR                       *ifo
+    );
+
+void
+LALIfoCountSingleRingdown(
+    LALStatus                  *status,
+    UINT4                      *numTrigs,
+    SnglRingdownTable          *input,
+    InterferometerNumber        ifoNumber
+    );
 
 #if 0
 <lalLaTeX>
