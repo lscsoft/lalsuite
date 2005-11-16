@@ -47,7 +47,7 @@ NRCSID( LIGOMETADATATABLESH, "$Id$" );
 /* defines for lengths of database table char arrays       */
 /* one longer than as defined in the SQL tables to allow   */
 /* strage of the terminating null need for the C %s format */
-#define LIGOMETA_PROGRAM_MAX 17
+#define LIGOMETA_PROGRAM_MAX 65
 #define LIGOMETA_VERSION_MAX 65
 #define LIGOMETA_CVS_REPOSITORY_MAX 257
 #define LIGOMETA_COMMENT_MAX 241
