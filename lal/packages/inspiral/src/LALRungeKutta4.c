@@ -34,6 +34,7 @@ None.
 
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_odeiv.h>
+#include <lal/LALGSL.h>
 #include <lal/LALInspiral.h>
 #include <lal/LALStdlib.h>
 
@@ -72,7 +73,7 @@ LALRungeKutta4(
    gsl_odeiv_evolve *evolve;
    gsl_odeiv_system sys; 
   
-   INITSTATUS(status, "LALRungeKutta4Adapt", LALRUNGEKUTTA4ADAPTC);
+   INITSTATUS(status, "LALRungeKutta4", LALRUNGEKUTTA4ADAPTC);
    ATTATCHSTATUSPTR(status);
 
    ASSERT (yout, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -82,7 +83,7 @@ LALRungeKutta4(
 
   /* Initialise GSL integrator */
   step    = gsl_odeiv_step_alloc(type, input->n);
-  control = gsl_odeiv_control_standard_new(0.0, 1.0e-12, 0.5, 0.5);
+  control = gsl_odeiv_control_standard_new(1.0e-5, 1.0e-5, 1.0, 1.0);
   evolve  = gsl_odeiv_evolve_alloc(input->n);
 
 
@@ -102,16 +103,32 @@ LALRungeKutta4(
    /* Evolve the system */
   while (t < input->h)
   {
-    int gslStatus = gsl_odeiv_evolve_apply(evolve, control, step, &sys,
-				&t, input->h, &h, y);
-     /*printf("h = %e, t = %e\n", h, t);*/
-    if (gslStatus != GSL_SUCCESS)
+    REAL8 tOld = t;
+    CALLGSL( gsl_odeiv_evolve_apply(evolve, control, step, &sys,
+				&t, input->h, &h, y), status );
+    /*printf("h = %e, t = %e\n", h, t);*/
+    BEGINFAIL(status)
     {  
   	gsl_odeiv_evolve_free(evolve);
    	gsl_odeiv_control_free(control);
    	gsl_odeiv_step_free(step);
         ABORT(status, LALINSPIRALH_ESTOPPED, LALINSPIRALH_MSGESTOPPED);
-     }  
+    }
+    ENDFAIL(status);
+
+    /* In case integration becomes degenerate */
+    if (t == tOld)
+    {
+         for (i=0; i<input->n; i++)
+         yout->data[i] = 0.0;
+         fprintf(stderr, "Integration become dodgy.\n");
+ 
+         gsl_odeiv_evolve_free(evolve);
+         gsl_odeiv_control_free(control);
+         gsl_odeiv_step_free(step);
+    
+         ABORT(status, LALINSPIRALH_ESTOPPED, LALINSPIRALH_MSGESTOPPED);
+    } 
   }
 
   for (i=0; i<input->n; i++)
