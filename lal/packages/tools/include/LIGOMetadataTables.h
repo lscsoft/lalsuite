@@ -78,6 +78,7 @@ NRCSID( LIGOMETADATATABLESH, "$Id$" );
 #define LIGOMETA_COORDINATES_MAX 16
 #define LIGOMETA_SIMINSTPARAMS_NAME_MAX 25
 #define LIGOMETA_SIMINSTPARAMS_COMM_MAX 65
+#define LIGOMETA_FILTER_NAME_MAX 65
 #define LIGOMETA_STD 100
 
 #if 0
@@ -119,8 +120,9 @@ typedef enum
   sim_inst_params_table,
   coinc_inspiral_table,
   stochastic_table,
-	stoch_summ_table,
-  ext_triggers_table
+  stoch_summ_table,
+  ext_triggers_table,
+  filter_table
 }
 MetadataTableType;
 /*</lalVerbatim> */
@@ -822,6 +824,28 @@ ExtTriggerTable;
 
 Document table.
 
+\subsubsection*{Type \texttt{FilterTable}}
+
+</lalLaTeX>
+#endif
+/* <lalVerbatim> */
+typedef struct
+tagFilterTable
+{
+  struct tagFilterTable *next;
+  CHAR          program[LIGOMETA_PROGRAM_MAX];
+  INT4          start_time;
+  CHAR          filter_name[LIGOMETA_FILTER_NAME_MAX];
+  INT4          param_set;
+  CHAR          comment[LIGOMETA_SUMMVALUE_COMM_MAX];
+}
+FilterTable;
+/* </lalVerbatim> */
+#if 0
+<lalLaTeX>
+
+Document table.
+
 \subsubsection*{Type \texttt{MetadataTable}}
 
 </lalLaTeX>
@@ -847,6 +871,7 @@ tagMetadataTable
   StochasticTable       *stochasticTable;
   StochSummTable        *stochSummTable;
   ExtTriggerTable       *extTriggerTable;
+  FilterTable           *filterTable;
 }
 MetadataTable;
 /* </lalVerbatim> */
