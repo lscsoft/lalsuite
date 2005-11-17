@@ -3257,17 +3257,8 @@ SearchSummaryTableFromLIGOLw (
     if ( (tableDir[i].pos = MetaioFindColumn( env, tableDir[i].name )) < 0 )
     {
       fprintf( stderr, "unable to find column %s\n", tableDir[i].name );
-
-      if ( ! strcmp(tableDir[i].name, "ifos") )
-      {
-        fprintf( stderr, 
-            "The ifos column is not populated, reading from process table\n");
-      }
-      else
-      {
-        MetaioClose(env);
-        return -1;
-      }
+      MetaioClose(env);
+      return -1;
     }
   }
 
@@ -3361,38 +3352,6 @@ SearchSummaryTableFromLIGOLw (
   /* we have sucesfully parsed table */
   MetaioClose( env );
 
-  /* populate the ifos field from the process table if it was not populated */
-  for ( j = 1; tableDir[j].name; ++j )
-  {
-    if ( tableDir[j].idx == 1 && tableDir[j].pos < 0 )
-    {
-      int ifosProcess;
-      mioStatus = MetaioOpenTable( env, fileName, "process" );
-      if ( mioStatus )
-      {
-        fprintf( stderr, "error opening process table from file %s\n", 
-            fileName );
-        return -1;
-      }
-
-      /* figure out where the ifos column is */
-      if ( (ifosProcess = MetaioFindColumn( env, "ifos" )) < 0 )
-      {
-        fprintf( stderr, "unable to find ifos column in process table\n" );
-        MetaioClose(env);
-        return -1;
-      }
-
-      /* write ifos from the process table into the search summary structure*/
-      while ( (mioStatus = MetaioGetRow(env)) == 1 )
-      {
-        LALSnprintf( (*sumHead)->ifos, LIGOMETA_COMMENT_MAX * sizeof(CHAR),
-            "%s", env->ligo_lw.table.elt[ifosProcess].data.lstring.data );
-      }
-      MetaioClose( env );
-      break;
-    }
-  }
   return nrows;  
 }
 
