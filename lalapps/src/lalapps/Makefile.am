@@ -8,9 +8,10 @@ endif
 noinst_LTLIBRARIES = liblalapps.la
 liblalapps_la_SOURCES = lalapps.c lalapps.h getopt.c getopt1.c getopt.h \
                         processtable.c processtable.h $(FRAMESRCS)
-bin_PROGRAMS = lalapps_version
+bin_PROGRAMS = lalapps_version lalapps_tconvert
 lalapps_version_SOURCES = version.c lalapps.h
+lalapps_tconvert_SOURCES = tconvert.c getdate.c getdate.h
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 INCLUDES = -I$(top_srcdir)/src
-EXTRA_DIST = series.c series.h
+EXTRA_DIST = series.c series.h getdate.y
 TESTS = lalapps_version
