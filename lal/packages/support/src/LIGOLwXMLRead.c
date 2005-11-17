@@ -739,7 +739,7 @@ SnglRingdownTable    * XLALSnglRingdownTableFromLIGOLw (
               }
           else if ( tableDir[j].idx == 11 )
             {
-              thisEvent->eff_dist = i4colData;
+              thisEvent->eff_dist = r4colData;
               }
           else if ( tableDir[j].idx == 12 )
             {
@@ -749,6 +749,16 @@ SnglRingdownTable    * XLALSnglRingdownTableFromLIGOLw (
           {
             thisEvent->sigma_sq = i8colData;
           }
+          else if ( tableDir[j].idx == 14 )
+            {
+              if ( tableDir[j].pos > 0 && i8colData )
+                {
+                  thisEvent->event_id = (EventIDColumn *) 
+                    LALCalloc( 1, sizeof(EventIDColumn) );
+                  thisEvent->event_id->id = i8colData;
+                  thisEvent->event_id->snglRingdownTable = thisEvent;
+                  }
+             }
           else
             {
               XLAL_CLOBBER_EVENTS;
@@ -1936,7 +1946,7 @@ LALSnglRingdownTableFromLIGOLw (
           }
           else if ( tableDir[j].idx == 11 )
           {
-            thisEvent->eff_dist = i4colData;
+            thisEvent->eff_dist = r4colData;
           }
           else if ( tableDir[j].idx == 12 )
           {
@@ -1946,6 +1956,16 @@ LALSnglRingdownTableFromLIGOLw (
           {
             thisEvent->sigma_sq = i8colData;
           }
+          else if ( tableDir[j].idx == 14 )
+            {
+              if ( tableDir[j].pos > 0 && i8colData )
+                {
+                  thisEvent->event_id = (EventIDColumn *) 
+                    LALCalloc( 1, sizeof(EventIDColumn) );
+                  thisEvent->event_id->id = i8colData;
+                  thisEvent->event_id->snglRingdownTable = thisEvent;
+                  }
+              }
           else
             {
               CLOBBER_EVENTS;

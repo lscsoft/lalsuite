@@ -360,12 +360,6 @@ LALClusterSnglRingdownTable (
         memcpy( prevEvent, thisEvent, sizeof(SnglRingdownTable) );
         thisEvent->event_id = NULL;
       }
-      else
-      {
-        fprintf( stderr, "cluster choise should be 'snr' or 'none'\n" );
-      }
-      
-
       /* otherwise just dump this event from cluster */
       prevEvent->next = thisEvent->next;
       LALFreeSnglRingdown ( status->statusPtr, &thisEvent );
