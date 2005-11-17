@@ -536,6 +536,17 @@ fputs( "      <Stream Name=\"external_trigger:table\" Type=\"Local\" Delimiter=\
 #define EXT_TRIGGERS_ROW \
 "         \"process:process_id:0\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\",\"%s\",%d, %e, %e, \"%s\",\"%s\", %e , %e, %d, %d, \"%s\",%e, %e, \"%s\",\"%s\",\"%s\",%d, \"%s\",\"%s\",%e, %e,%e,%e, %e, %e, %e, %e, %e, %e, %d, \"%s\" , %d"
 
+#define PRINT_LIGOLW_XML_FILTER(fp) ( \
+fputs( "   <Table Name=\"filtergroup:filter:table\">\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"filtergroup:filter:process_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"filtergroup:filter:program\" Type=\"lstring\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"filtergroup:filter:start_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"filtergroup:filter:filter_name\" Type=\"lstring\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"filtergroup:filter:comment\" Type=\"lstring\"/>\n" , fp ) == EOF || \
+fputs( "      <Stream Name=\"filtergroup:filter:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
+
+#define FILTER_ROW \
+"         \"process:process_id:0\",\"%s\",%d,\"%s\",\"%s\""
 
 #ifdef  __cplusplus
 #pragma {
