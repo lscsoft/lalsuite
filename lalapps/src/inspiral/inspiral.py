@@ -45,6 +45,32 @@ class TmpltBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_sub_file('tmpltbank.sub')
 
 
+class BbhInjJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+  """
+  A lalapps_bbhinj job used by the online inspiral pipeline. The static options
+  are read from the section [bbhinj] in the ini file. The
+  stdout and stderr from the job are directed to the logs directory. The
+  job runs in the universe specified in the ini file. The path to the 
+  executable is determined from the ini file.
+  """
+  def __init__(self,cp,dax=False):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    self.__exexcutable = cp.get('condor','bbhinj')
+    self.__universe = cp.get('condor','universe')
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    pipeline.AnalysisJob.__ini__(self,cp,dax)
+
+    for sec in ['bbhinj']:
+      self.add_ini_opts(cp,sec)
+
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+
+    self.set_stdout_file('logs/bbhinj-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/bbhinj-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
+
+
 class RandomBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
   A lalapps_randombank job used by the inspiral pipeline. The static options
@@ -292,6 +318,74 @@ class ChiaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_stdout_file('logs/chia-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
     self.set_stderr_file('logs/chia-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
     self.set_sub_file('chia.sub')   
+
+class BbhInjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+  """
+  A BbhInjNode runs an instance of the bbhinj generation job in a 
+  Condor DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of lalapps_bbhinj.
+    """
+    pipeline.CondorDAGNode.__init__(self,job)
+    pipeline.AnalysisNode.__init__(self)
+    self.__usertag = job.get_config('pipeline','user-tag')
+
+  def set_start(self,time):
+    """
+    Set the GPS start time of the analysis node by setting a --gps-start-time
+    option to the node when it is executed. We override the default method to
+    cope with the data padding.
+    @param time:GPS start time of analysis segment
+    """
+    self.add_var_opt('gps-start-time',time)
+    pipeline.AnalysisNode.set_start(self,time)
+    pad = int(self.job().get_config('data','pad-data'))
+    pipeline.AnalysisNode.set_data_start(self,time - pad)
+
+  def set_end(self,time):
+    """
+    Set the GPS end time of the analysis node by setting a --gps-end-time
+    option to the node when it is executed. We override the default method to
+    cope with the data padding.
+    @param time: GPS end time of the job.
+    """
+    self.add_var_opt('gps-end-time',time)
+    pipeline.AnalysisNode.set_end(self,time)
+    pad = int(self.job().get_config('data','pad-data'))
+    pipeline.AnalysisNode.set_data_end(self,time + pad)
+
+  def set_seed(self,seed):
+    """
+    Set the seed of the injection file by setting a --seed option to the
+    node when it is executed.
+    @param seed: seed of the job
+    """
+    self.add_var_opt('seed',seed)
+    self.__seed = seed
+
+  def get_output(self):
+    """
+    Returns the file name of output from the injection generation code. This 
+    must be kept synchronized with the name of the output file in bbhinj.c.
+    """
+    if not self.get_start() or not self.get_end():
+      raise InspiralError, "Start time or end time has not been set"
+    if self.__usertag:
+      bbhinject = 'HL-INJECTIONS_' + self.__usertag + '-'
+      bbhinject = bbhinject + str(self.get_start())
+      bbhinject = bbhinject + str(self.get_end()-self.get_start()) + '.xml'
+    else:
+      bbhinject = 'HL-INJECTIONS-' + str(self.get_start()) + '-'
+      bbhinject = bbhinject + str(self.get_end()-self.get_start()) + '.xml'
+
+    self.add_output_file(bbhinject)
+
+    return bbhinject
+
+
+
 
 class TmpltBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
