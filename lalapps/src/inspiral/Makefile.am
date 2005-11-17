@@ -61,7 +61,8 @@ bin_PROGRAMS =
 endif
 bin_SCRIPTS = lalapps_inspiral_pipe lalapps_inspiral_pipe_s2 \
               lalapps_inspiral_pipe_tama lalapps_inspiral_pipe_geo \
-              lalapps_inspiral_hipe lalapps_inspiral_online_pipe
+              lalapps_inspiral_hipe lalapps_inspiral_online_pipe \
+              lalapps_inspiral_online_pipe_inject
 
 pythonlibdir = ${prefix}/lib/python
 pythonlib_SCRIPTS = inspiral.py
@@ -89,8 +90,11 @@ lalapps_inspiral_hipe: $(srcdir)/inspiral_hipe.in python_config.sed
 lalapps_inspiral_online_pipe: $(srcdir)/inspiral_online_pipe.in python_config.sed
 	sed -f python_config.sed $(srcdir)/inspiral_online_pipe.in > lalapps_inspiral_online_pipe
 	chmod +x lalapps_inspiral_online_pipe
+lalapps_inspiral_online_pipe_inject: $(srcdir)/inspiral_online_pipe_inject.in python_config.sed
+	sed -f python_config.sed $(srcdir)/inspiral_online_pipe_inject.in > lalapps_inspiral_online_pipe_inject
+	chmod +x lalapps_inspiral_online_pipe_inject
 
-pkgdata_DATA = BNSMasses.dat inspsrcs.dat inspiral_pipe.ini s2_dag.ini s2_tama.ini inspiral_hipe.ini online.ini
+pkgdata_DATA = BNSMasses.dat inspsrcs.dat inspiral_pipe.ini s2_dag.ini s2_tama.ini inspiral_hipe.ini online.ini online_inject_bbh.ini
 EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
              $(SIRESRC) $(SIVASRC) $(MINJSRC) \
              $(INCASRC) inspiral_pipe.in s2_dag.ini \
@@ -98,7 +102,8 @@ EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
              $(INSPINJSRC) BNSMasses.dat inspsrcs.dat \
              $(SPLITBANKSRC) inspiral.py inspiral_pipe_tama.in \
 	     inspiral_pipe_geo.in inspiral_online_pipe.in \
-	     inspiral_hipe.in s2_tama.ini inspiral_hipe.ini online.ini
+	     inspiral_hipe.in inspiral_online_pipe_inject.in \
+             s2_tama.ini inspiral_hipe.ini online.ini online_inject_bbh.ini
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
@@ -106,7 +111,7 @@ LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 CLEANFILES = lalapps_inspiral_pipe lalapps_inspiral_pipe_s2 \
              lalapps_inspiral_pipe_tama lalapps_inspiral_pipe_geo \
              lalapps_inspiral_hipe lalapps_inspiral_online_pipe \
-             python_config.sed
+             lalapps_inspiral_online_pipe_inject python_config.sed
 
 MOSTLYCLEANFILES = *INSPIRAL*.xml *INSPIRAL*.gwf \
                    *TMPLTBANK*.gwf *TMPLTBANK*.xml
