@@ -836,7 +836,6 @@ tagFilterTable
   CHAR          program[LIGOMETA_PROGRAM_MAX];
   INT4          start_time;
   CHAR          filter_name[LIGOMETA_FILTER_NAME_MAX];
-  INT4          param_set;
   CHAR          comment[LIGOMETA_SUMMVALUE_COMM_MAX];
 }
 FilterTable;
