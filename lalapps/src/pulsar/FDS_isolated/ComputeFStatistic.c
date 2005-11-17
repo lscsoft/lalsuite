@@ -1051,8 +1051,8 @@ int main(int argc,char *argv[])
 	  LogPrintf (LOG_CRITICAL, "Error opening file '%s' for writing..\n\n", uvar_outputLoudest);
 	  return COMPUTEFSTAT_EXIT_OPENFSTAT;
 	}
-      fprintf (fpLoudest, "%8.7f %8.7f %16.12f %.17g %10.6g\n", 
-	       loudest.Alpha, loudest.Delta, loudest.Freq, loudest.f1dot, loudest.Fstat );
+      fprintf (fpLoudest, "%10f %10f %10f %10g %10f\n", 
+	       loudest.Freq, loudest.Alpha, loudest.Delta, loudest.f1dot, loudest.Fstat );
 
       fclose(fpLoudest);
     } /* write loudest candidate to file */
