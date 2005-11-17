@@ -910,6 +910,7 @@ InitFStatDetector (LALStatus *status, ConfigVariables *cfg, UINT4 nD)
 
     TRY ( LALLoadSFTs ( status->statusPtr, &(cfg->ifos.sftVects[nD]), catalog, fBandCover.FreqMin, fBandCover.FreqMax ), status );
 
+    TRY ( LALDestroySFTCatalog ( status->statusPtr, &catalog ), status );
     /* Normalized this by 1/sqrt(Sh), where Sh is the median of |X|^2  
      * NOTE: this corresponds to a double-sided PSD, therefore we need to 
      * divide by another factor of 2 with respect to the JKS formulae.
