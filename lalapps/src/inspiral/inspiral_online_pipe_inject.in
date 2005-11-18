@@ -8,7 +8,7 @@ This script produced the necessary condor submit and dag files to run
 a prototype online analysis in E11
 """
 
-__author__ = 'Duncan Brown <duncan@gravity.phys.uwm.edu>
+__author__ = 'Duncan Brown <duncan@gravity.phys.uwm.edu>'
 __date__ = '$Date$'
 __version__ = '$Revision$'[11:-2]
 
