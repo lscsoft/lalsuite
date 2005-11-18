@@ -60,7 +60,7 @@ class BbhInjJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.__executable = cp.get('condor','bbhinj')
     self.__universe = cp.get('condor','universe')
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-    pipeline.AnalysisJob.__ini__(self,cp,dax)
+    pipeline.AnalysisJob.__init__(self,cp,dax)
 
     for sec in ['bbhinj']:
       self.add_ini_opts(cp,sec)
