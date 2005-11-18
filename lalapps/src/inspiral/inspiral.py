@@ -57,7 +57,7 @@ class BbhInjJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     """
     cp = ConfigParser object from which options are read.
     """
-    self.__exexcutable = cp.get('condor','bbhinj')
+    self.__executable = cp.get('condor','bbhinj')
     self.__universe = cp.get('condor','universe')
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
     pipeline.AnalysisJob.__ini__(self,cp,dax)
