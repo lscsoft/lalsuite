@@ -245,10 +245,10 @@ void output_gmst( int gps_sec )
   ligo_time.gpsSeconds = gps_sec;
   ligo_time.gpsNanoSeconds = 0;
   gmst_rad = XLALGreenwichMeanSiderealTime( &ligo_time );
-  while ( gmst_rad >= 2.0 * M_PI )
-    gmst_rad -= 2.0 * M_PI;
+  while ( gmst_rad >= 2.0 * LAL_PI )
+    gmst_rad -= 2.0 * LAL_PI;
   while ( gmst_rad < 0 )
-    gmst_rad += 2.0 * M_PI;
+    gmst_rad += 2.0 * LAL_PI;
   switch ( sidereal_format )
   {
     case SIDEREAL_HMS:
