@@ -319,6 +319,8 @@ class ChiaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_stderr_file('logs/chia-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
     self.set_sub_file('chia.sub')   
 
+
+
 class BbhInjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
   A BbhInjNode runs an instance of the bbhinj generation job in a 
@@ -383,7 +385,6 @@ class BbhInjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.add_output_file(bbhinject)
 
     return bbhinject
-
 
 
 

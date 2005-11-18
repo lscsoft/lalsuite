@@ -211,7 +211,7 @@ for seg in data:
     bbhinject.set_end(chunk.end())
     bbhinject.set_seed(chunk.start())
     bank.add_parent(split)
-    dag.add_node(bbhinj)
+    dag.add_node(bbhinject)
 
     # create the inspiral job
     i = 0
