@@ -376,11 +376,11 @@ class BbhInjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
       raise InspiralError, "Start time or end time has not been set"
     if self.__usertag:
       bbhinject = 'HL-INJECTIONS_' + self.__usertag + '-'
-      bbhinject = bbhinject + str(self.get_start())
+      bbhinject = bbhinject + str(self.get_start()) + '-'
       bbhinject = bbhinject + str(self.get_end()-self.get_start()) + '.xml'
     elif self.__seed:
       bbhinject = 'HL-INJECTIONS_' + str(self.__seed) + '-'
-      bbhinject = bbhinject + str(self.get_start())
+      bbhinject = bbhinject + str(self.get_start()) + '-'
       bbhinject = bbhinject + str(self.get_end()-self.get_start()) + '.xml'
     else:
       bbhinject = 'HL-INJECTIONS-' + str(self.get_start()) + '-'
