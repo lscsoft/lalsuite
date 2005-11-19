@@ -221,7 +221,7 @@ for seg in data:
       insp.set_start(chunk.start())
       insp.set_end(chunk.end())
       insp.add_var_opt('trig-start-time',chunk.trig_start())
-      insp.add_file_opt('injection-file',bbhinject.get_output())
+      insp.add_file_arg('injection-file',bbhinject.get_output())
       insp.set_ifo(ifo)
       insp.set_cache(df.get_output())
       insp.set_bank(subbank)
