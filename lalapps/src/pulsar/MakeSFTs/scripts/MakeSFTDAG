@@ -54,6 +54,7 @@ Usage: MakeSFTDAG [options]
   -L, --max-length-all-jobs  maximum total amount of data to process, in seconds (optional and unused if a segment file is given)
   -g, --segment-file         alternative file with segments to use, rather than the input times.
   -l, --min-seg-length       (optional) minimum length segments to process in seconds (used only if a segment file is given; default is 0)
+  -S  --use-single           use single precision in MakeSFTs for windowing, plan and fft; filtering is always done in double precision. Use of double precision in MakeSFTs is the default.
   -H  --use-hot              input data is from h(t) calibrated frames (h of t = hot!) (0 or 1).
 """
   print >> sys.stderr, msg
@@ -61,7 +62,7 @@ Usage: MakeSFTDAG [options]
 #
 # FUNCTION THAT WRITE ONE JOB TO DAG FILE
 #
-def writeToDag(dagFID, nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, extraDatafindTime, useHoT, tagString, auxPath):
+def writeToDag(dagFID, nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, extraDatafindTime, useSingle, useHoT, tagString, auxPath):
   LSCdataFind = 'LSCdataFind_%i' % nodeCount
   MakeSFTs    = 'MakeSFTs_%i' % nodeCount
   startTimeDatafind = startTimeThisNode - extraDatafindTime
@@ -74,6 +75,7 @@ def writeToDag(dagFID, nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, c
   dagFID.write('JOB %s %s/MakeSFTs.sub\n' % (MakeSFTs,auxPath))
   dagFID.write('RETRY %s 1\n' % MakeSFTs)
   argList = '-f %s -t %s -p %s -C %s -s %s -e %s -N %s' %(filterKneeFreq, timeBaseline, outputSFTPath, cacheFile, startTimeThisNode, endTimeThisNode, channelName)
+  if useSingle: argList = argList + ' -S'
   if useHoT: argList = argList + ' -H'
   dagFID.write('VARS %s argList="%s" tagstring="%s"\n'%(MakeSFTs,argList, tagStringOut))
   dagFID.write('PARENT %s CHILD %s\n'%(LSCdataFind,MakeSFTs))
@@ -83,7 +85,7 @@ def writeToDag(dagFID, nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, c
 #
 
 # parse the command line options
-shortop = "s:e:a:b:f:t:G:d:x:k:T:p:C:O:N:r:w:v:m:L:g:l:hH"
+shortop = "s:e:a:b:f:t:G:d:x:k:T:p:C:O:N:r:w:v:m:L:g:l:hSH"
 longop = [
   "help",
   "gps-start-time=",
@@ -108,6 +110,7 @@ longop = [
   "max-length-all-jobs=",
   "segment-file=",
   "min-seg-length=",
+  "use-single=",  
   "use-hot",
   ]
 
@@ -140,6 +143,7 @@ maxNumPerNode = None
 maxLengthAllJobs = None
 segmentFile = None
 minSegLength = 0L
+useSingle = False
 useHoT = False
 
 for o, a in opts:
@@ -190,6 +194,8 @@ for o, a in opts:
     segmentFile = a
   elif o in ("-l", "--min-seg-length"):
     minSegLength = long(a)
+  elif o in ("-S", "--use-single"):
+    useSingle = True    
   elif o in ("-H", "--use-hot"):
     useHoT = True
   else:
@@ -385,7 +391,7 @@ for seg in segList:
                # write jobs to dag for this node
                nodeCount = nodeCount + 1
                if (nodeCount == 1): startTimeAllNodes = startTimeThisNode
-               writeToDag(dagFID,nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, extraDatafindTime, useHoT, tagString, auxPath)
+               writeToDag(dagFID,nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, extraDatafindTime, useSingle, useHoT, tagString, auxPath)
                # Update for next node
                startTimeThisNode = endTimeThisNode
                numThisNode       = 0L
@@ -395,7 +401,7 @@ for seg in segList:
             # write jobs to dag for this node
             nodeCount = nodeCount + 1
             if (nodeCount == 1): startTimeAllNodes = startTimeThisNode
-            writeToDag(dagFID,nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, extraDatafindTime, useHoT, tagString, auxPath)
+            writeToDag(dagFID,nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, extraDatafindTime, useSingle, useHoT, tagString, auxPath)
     # END while (endTimeAllNodes < analysisEndTime)
 # END for seg in segList
 
