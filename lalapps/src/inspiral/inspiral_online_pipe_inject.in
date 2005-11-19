@@ -227,7 +227,7 @@ for seg in data:
       insp.set_bank(subbank)
       insp.set_user_tag("%2.2d" % i)
       i = i + 1
-      insp.add_parent(split)
+      insp.add_parent(bbhinject)
       dag.add_node(insp)
       sub_insp.append(insp)
 
