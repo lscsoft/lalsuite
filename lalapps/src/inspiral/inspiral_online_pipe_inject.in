@@ -210,7 +210,7 @@ for seg in data:
     bbhinject.set_start(chunk.start())
     bbhinject.set_end(chunk.end())
     bbhinject.set_seed(chunk.start())
-    bank.add_parent(split)
+    bbhinject.add_parent(split)
     dag.add_node(bbhinject)
 
     # create the inspiral job
@@ -221,10 +221,10 @@ for seg in data:
       insp.set_start(chunk.start())
       insp.set_end(chunk.end())
       insp.add_var_opt('trig-start-time',chunk.trig_start())
-      insp.add_file_arg('injection-file',bbhinject.get_output())
       insp.set_ifo(ifo)
       insp.set_cache(df.get_output())
       insp.set_bank(subbank)
+      insp.set_injections(bbhinject.get_output())
       insp.set_user_tag("%2.2d" % i)
       i = i + 1
       insp.add_parent(bbhinject)

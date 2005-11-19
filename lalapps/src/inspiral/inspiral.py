@@ -378,6 +378,10 @@ class BbhInjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
       bbhinject = 'HL-INJECTIONS_' + self.__usertag + '-'
       bbhinject = bbhinject + str(self.get_start())
       bbhinject = bbhinject + str(self.get_end()-self.get_start()) + '.xml'
+    elif self.__seed:
+      bbhinject = 'HL-INJECTIONS_' + str(self.__seed) + '-'
+      bbhinject = bbhinject + str(self.get_start())
+      bbhinject = bbhinject + str(self.get_end()-self.get_start()) + '.xml'
     else:
       bbhinject = 'HL-INJECTIONS-' + str(self.get_start()) + '-'
       bbhinject = bbhinject + str(self.get_end()-self.get_start()) + '.xml'
@@ -561,6 +565,10 @@ class InspiralNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   def set_bank(self,bank):
     self.add_var_opt('bank-file', bank)
     self.add_input_file(bank)
+
+  def set_injections(self,bbhinjct):
+    self.add_var_opt('injection-file', bbhinjct)
+    self.add_input_file(bbhinjct)
 
   def set_user_tag(self,usertag):
     self.__usertag = usertag
