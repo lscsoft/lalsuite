@@ -63,26 +63,25 @@ Gamma = 50;    %Gravitational back reaction constant
 f=75;          %Lowest high frequency cutoff we can detect
 p=logspace(-4,0,100);        %Probability of reconnection
 
-Gmu=logspace(-3,0, 4); %Vector with values of Gmu
+Gmu=logspace(-8,-5, 4); %Vector with values of Gmu
 
-n=1;                    %power law for Gamma*Gmu (as in my PRD paper)
-epsilon=logspace(-12,0,100);     %smal-scale structure pre-factor (as in Damour and Vilenkin, 2005 PRD)
+n=linspace(1,3,100);                    %power law for Gamma*Gmu (as in my PRD paper)
+epsilon=1;%logspace(-12,0,100);     %smal-scale structure pre-factor (as in Damour and Vilenkin, 2005 PRD)
 
 A=exp(lnA)*10^(-20);  %turn vector of ln(A) into A; and re-scale by 10^-20 factor
 
 T=1364984;
 R90=2.303/T;
 
+figure
+semilogx(1)
+hold on
+
 for i=1:size(Gmu,2)
-  
-  figure
-  loglog(1)
-  hold on
-
   for j=1:size(p,2)
-    for k=1:size(epsilon,2)      
+    for k=1:size(n,2)      
 
-      alpha=epsilon(k)*(Gamma*Gmu(i))^n;   %value of the size of the small-scale structure
+      alpha=epsilon*(Gamma*Gmu(i))^n(k);   %value of the size of the small-scale structure
       a=A./(t0^(-1/3)*Gmu(i)*(alpha^(2/3)));   %Reduced amplitude vector      
       b=10^2 * c * alpha^(-5/3)*(p(j)*Gamma*Gmu(i))^(-1) * t0^(-1) * (f*t0)^(-2/3);
       dRdlnA=b*aeq^(33/40)*a.^(-11/5) .* ((1+1/aeq*a).^(33/40)).*(1+a).^(-13/8); %Rate per logarithmic interval of amplitude 
@@ -98,9 +97,9 @@ for i=1:size(Gmu,2)
     end
   end
   
-  contourf(p,epsilon,ul,[1 1]);    
+  contour(p,n,ul,[1 1]);    
   xlabel('Reconnection  probability p','FontSize',14)
-  ylabel('\epsilon (small-scale structure parameter)','FontSize',14)
-  title(['Exclusion region for G\mu = ',num2str(Gmu(i))],'FontSize',14)
+  ylabel('n (small-scale structure index)','FontSize',14)
+  title(['Exclusion regions',num2str(Gmu(i))],'FontSize',14)
 
 end
