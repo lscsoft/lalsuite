@@ -55,7 +55,7 @@ extern char *optarg;
 extern int optind, opterr, optopt;
 
 /* track memory usage under linux */
-#define TRACKMEMUSE 0
+#define TRACKMEMUSE 0 
 
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 100; } else ((void)0)
@@ -143,6 +143,9 @@ int HighPass(struct CommandLineArgsTag CLA);
 /* Windows data */
 int WindowData();
 
+/* create an SFT */
+int CreateSFT(struct CommandLineArgsTag CLA);
+
 /* writes out an SFT */
 int WriteSFT(struct CommandLineArgsTag CLA);
 
@@ -213,23 +216,11 @@ int main(int argc,char *argv[])
       /* Window data */
       if(WindowData()) return 5;
 
-      #if TRACKMEMUSE
-        printf("Memory use before creating output vector vtilde and calling XLALREAL8ForwardFFT:\n"); printmemuse();
-      #endif
-
-      /* 11/02/05 gam; allocate container for SFT data */
-      LALZCreateVector( &status, &vtilde, dataDouble.data->length / 2 + 1 );
-      TESTSTATUS( &status );  
-
-      /* compute sft */
-      XLALREAL8ForwardFFT( vtilde, dataDouble.data, fplan );
-
-      #if TRACKMEMUSE
-        printf("Memory use after creating output vector vtilde and calling XLALREAL8ForwardFFT:\n"); printmemuse();
-      #endif
+      /* create an SFT */
+      if(CreateSFT(CommandLineArgs)) return 6;
 
       /* write out sft */
-      if(WriteSFT(CommandLineArgs)) return 6;
+      if(WriteSFT(CommandLineArgs)) return 7;
 
       /* 11/02/05 gam; deallocate container for SFT data */
       LALZDestroyVector( &status, &vtilde );
@@ -254,242 +245,10 @@ int main(int argc,char *argv[])
 
 /************************************* MAIN PROGRAM ENDS *************************************/
 
-
-/*  FUNCTIONS */
-
-/*******************************************************************************/
-
-
-int WriteSFT(struct CommandLineArgsTag CLA)
-{
-  char sftname[256];
-  char ifo[2];
-  int firstbin=(INT4)(FMIN*CLA.T+0.5), k;
-  FILE *fpsft;
-  int errorcode1=0,errorcode2=0;
-  char gpstime[10];
-
-  strncpy( ifo, CLA.ChannelName, 2 );
-  strcpy( sftname, CLA.SFTpath );
-
-  strcat(sftname,"/SFT_");
-  strncat(sftname,ifo,2);
-  sprintf(gpstime,".%09d",gpsepoch.gpsSeconds);
-  strcat(sftname,gpstime);
-
-  /* open SFT file for writing */
-  fpsft=tryopen(sftname,"w");
-      
-  /* write header */
-  header.endian=1.0;
-  header.gps_sec=gpsepoch.gpsSeconds;
-  header.gps_nsec=gpsepoch.gpsNanoSeconds;
-  header.tbase=CLA.T;
-  header.firstfreqindex=firstbin;
-  header.nsamples=(INT4)(DF*CLA.T+0.5);
-  if (1!=fwrite((void*)&header,sizeof(header),1,fpsft)){
-    fprintf(stderr,"Error in writing header into file %s!\n",sftname);
-    return 7;
-  }
-  
-  /* Write SFT */
-  for (k=0; k<header.nsamples; k++)
-    {
-      REAL4 rpw=(((double)DF)/(0.5*(double)(1/dataDouble.deltaT))) 
-	* vtilde->data[k+firstbin].re;
-      REAL4 ipw=(((double)DF)/(0.5*(double)(1/dataDouble.deltaT))) 
-	* vtilde->data[k+firstbin].im;
-      errorcode1=fwrite((void*)&rpw, sizeof(REAL4),1,fpsft);
-      errorcode2=fwrite((void*)&ipw, sizeof(REAL4),1,fpsft);
-    }
-
-  /* Check that there were no errors while writing SFTS */
-  if (errorcode1-1 || errorcode2-1)
-    {
-      fprintf(stderr,"Error in writing data into SFT file %s!\n",sftname);
-      return 8;
-    }
-  
-  fclose(fpsft);
-
-  return 0;
-}
+/*** FUNCTIONS ***/
 
 /*******************************************************************************/
-
-
-int WindowData(void)
-{
-  REAL8 r = 0.001;
-  int k;
-  int N=dataDouble.data->length;
-  int kl=r/2*(N-1)+1;
-  int kh=N-r/2*(N-1)+1;
-  /* This implementation of a Tukey window is describes 
-     in the Matlab tukey window documentation */
-
-  for(k = 1; k < kl; k++) 
-    {
-      /* window->data[k-1]=0.5*( 1 + cos( LAL_TWOPI/r*(k-1)/(N-1) - LAL_PI)); */ /* 11/02/05 gam */
-      dataDouble.data->data[k-1]=dataDouble.data->data[k-1]*0.5*( 1 + cos( LAL_TWOPI/r*(k-1)/(N-1) - LAL_PI));
-    }
-
-  /* for(k = kl; k < kh; k++) 
-    {
-      window->data[k-1]=1.0;
-    } */  /* 11/02/05 gam */
-
-  for(k = kh; k <= N; k++) 
-    {
-      /* window->data[k-1]=0.5*( 1 + cos( LAL_TWOPI/r - LAL_TWOPI/r*(k-1)/(N-1) - LAL_PI)); */ /* 11/02/05 gam */
-      dataDouble.data->data[k-1]=dataDouble.data->data[k-1]*0.5*( 1 + cos( LAL_TWOPI/r - LAL_TWOPI/r*(k-1)/(N-1) - LAL_PI));
-    }
-
-  /* for (k = 0; k < N; k++)
-    {
-      dataDouble.data->data[k] *= window->data[k];
-    } */ /* 11/02/05 gam */
-
-  return 0;
-}
-/*******************************************************************************/
-
-
-int HighPass(struct CommandLineArgsTag CLA)
-{
-  PassBandParamStruc filterpar;
-
-  filterpar.name  = "Butterworth High Pass";
-  filterpar.nMax  = 10;
-  filterpar.f2    = CLA.HPf;
-  filterpar.a2    = 0.5;
-  filterpar.f1    = -1.0;
-  filterpar.a1    = -1.0;
-
-  if (CLA.HPf > 0.0 )
-    {
-      #if TRACKMEMUSE
-        printf("Memory use before calling LALButterworthREAL8TimeSeries:\n"); printmemuse();
-      #endif
-
-      /* High pass the time series */
-      LALButterworthREAL8TimeSeries(&status,&dataDouble,&filterpar);
-      TESTSTATUS( &status );
-
-      #if TRACKMEMUSE
-        printf("Memory use after calling LALButterworthREAL8TimeSeries:\n"); printmemuse();
-      #endif
-
-    }
-
-  return 0;
-}
-
-/*******************************************************************************/
-int ReadData(struct CommandLineArgsTag CLA)
-{
-  static FrChanIn chanin;
-
-  chanin.name  = CLA.ChannelName;
-  LALFrSeek(&status,&gpsepoch,framestream);
-  TESTSTATUS( &status );
-
-  if(CLA.htdata)
-    {
-      chanin.type  = ProcDataChannel;
-      LALFrGetREAL8TimeSeries(&status,&dataDouble,&chanin,framestream);
-      TESTSTATUS( &status );
-    }
-  else
-    {
-      int k;
-
-      #if TRACKMEMUSE
-        printf("Memory use before creating dataSingle and calling LALFrGetREAL4TimeSeries.\n"); printmemuse();
-      #endif
-
-      /* 11/02/05 gam; add next two lines */
-      LALCreateVector(&status,&dataSingle.data,(UINT4)(CLA.T/dataSingle.deltaT +0.5));
-      TESTSTATUS( &status );
-      chanin.type  = ADCDataChannel;
-      LALFrGetREAL4TimeSeries(&status,&dataSingle,&chanin,framestream);
-      TESTSTATUS( &status );
-
-      #if TRACKMEMUSE
-        printf("Memory use after creating dataSingle and calling LALFrGetREAL4TimeSeries.\n"); printmemuse();
-      #endif
-
-      /*copy the data into the double precision timeseries */
-      for (k = 0; k < (int)dataDouble.data->length; k++)
-	{
-	  dataDouble.data->data[k] = dataSingle.data->data[k];
-	}
-      /* 11/02/05 gam; add next two lines */
-      LALDestroyVector(&status,&dataSingle.data);
-      TESTSTATUS( &status );
-    }
-
-  return 0;
-}
-
-/*******************************************************************************/
-
-int AllocateData(struct CommandLineArgsTag CLA)
-{
-  static FrChanIn chanin;
-
-  chanin.name  = CLA.ChannelName;
-
-  if(CLA.htdata)
-    {
-      chanin.type  = ProcDataChannel;
-      /* Get channel time step size by calling LALFrGetREAL8TimeSeries */
-      LALFrSeek(&status,&gpsepoch,framestream);
-      TESTSTATUS( &status );
-      LALFrGetREAL8TimeSeries(&status,&dataDouble,&chanin,framestream);
-      TESTSTATUS( &status );
-      LALDCreateVector(&status,&dataDouble.data,(UINT4)(CLA.T/dataDouble.deltaT +0.5));
-      TESTSTATUS( &status );
-    }
-  else
-    {
-      chanin.type  = ADCDataChannel;
-      /* Get channel time step size by calling LALFrGetREAL4TimeSeries */
-      LALFrSeek(&status,&gpsepoch,framestream);
-      TESTSTATUS( &status );
-      LALFrGetREAL4TimeSeries(&status,&dataSingle,&chanin,framestream);
-      TESTSTATUS( &status );
-      /* LALCreateVector(&status,&dataSingle.data,(UINT4)(CLA.T/dataSingle.deltaT +0.5));
-      TESTSTATUS( &status ); */ /* 11/02/05 gam; will allocate/deallocate container for data when reading the data. */
-
-      dataDouble.deltaT=dataSingle.deltaT;
-      LALDCreateVector(&status,&dataDouble.data,(UINT4)(CLA.T/dataDouble.deltaT +0.5));
-      TESTSTATUS( &status );
-    }
-      
-  /* LALDCreateVector(&status,&window,(UINT4)(CLA.T/dataDouble.deltaT +0.5));
-  TESTSTATUS( &status ); */ /* 11/02/05 gam */
-
-  /* LALZCreateVector( &status, &vtilde, dataDouble.data->length / 2 + 1 );
-  TESTSTATUS( &status ); */ /* 11/02/05 gam; will allocate/deallocate container for data when reading the data. */
-
-  #if TRACKMEMUSE
-     printf("Memory use after creating dataDouble and before calling LALCreateForwardREAL8FFTPlan.\n"); printmemuse();
-  #endif
-
-  LALCreateForwardREAL8FFTPlan( &status, &fplan, dataDouble.data->length, 0 );
-  TESTSTATUS( &status );
-
-  #if TRACKMEMUSE
-        printf("Memory use after creating dataDouble and after calling LALCreateForwardREAL8FFTPlan.\n"); printmemuse();
-  #endif
-
-  return 0;
-}
-
-/*******************************************************************************/
-
-int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA) 
+int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 {
   INT4 errflg=0;
   struct option long_options[] = {
@@ -627,12 +386,261 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 
   return errflg;
 }
-
 /*******************************************************************************/
 
+/*******************************************************************************/
+int AllocateData(struct CommandLineArgsTag CLA)
+{
+  static FrChanIn chanin;
 
+  chanin.name  = CLA.ChannelName;
+
+  if(CLA.htdata)
+    {
+      chanin.type  = ProcDataChannel;
+      /* Get channel time step size by calling LALFrGetREAL8TimeSeries */
+      LALFrSeek(&status,&gpsepoch,framestream);
+      TESTSTATUS( &status );
+      LALFrGetREAL8TimeSeries(&status,&dataDouble,&chanin,framestream);
+      TESTSTATUS( &status );
+      LALDCreateVector(&status,&dataDouble.data,(UINT4)(CLA.T/dataDouble.deltaT +0.5));
+      TESTSTATUS( &status );
+    }
+  else
+    {
+      chanin.type  = ADCDataChannel;
+      /* Get channel time step size by calling LALFrGetREAL4TimeSeries */
+      LALFrSeek(&status,&gpsepoch,framestream);
+      TESTSTATUS( &status );
+      LALFrGetREAL4TimeSeries(&status,&dataSingle,&chanin,framestream);
+      TESTSTATUS( &status );
+      /* LALCreateVector(&status,&dataSingle.data,(UINT4)(CLA.T/dataSingle.deltaT +0.5));
+      TESTSTATUS( &status ); */ /* 11/02/05 gam; will allocate/deallocate container for data when reading the data. */
+
+      dataDouble.deltaT=dataSingle.deltaT;
+      LALDCreateVector(&status,&dataDouble.data,(UINT4)(CLA.T/dataDouble.deltaT +0.5));
+      TESTSTATUS( &status );
+    }
+      
+  /* LALDCreateVector(&status,&window,(UINT4)(CLA.T/dataDouble.deltaT +0.5));
+  TESTSTATUS( &status ); */ /* 11/02/05 gam */
+
+  /* LALZCreateVector( &status, &vtilde, dataDouble.data->length / 2 + 1 );
+  TESTSTATUS( &status ); */ /* 11/02/05 gam; will allocate/deallocate container for data when reading the data. */
+
+  #if TRACKMEMUSE
+     printf("Memory use after creating dataDouble and before calling LALCreateForwardREAL8FFTPlan.\n"); printmemuse();
+  #endif
+
+  LALCreateForwardREAL8FFTPlan( &status, &fplan, dataDouble.data->length, 0 );
+  TESTSTATUS( &status );
+
+  #if TRACKMEMUSE
+        printf("Memory use after creating dataDouble and after calling LALCreateForwardREAL8FFTPlan.\n"); printmemuse();
+  #endif
+
+  return 0;
+}
 /*******************************************************************************/
 
+/*******************************************************************************/
+int ReadData(struct CommandLineArgsTag CLA)
+{
+  static FrChanIn chanin;
+
+  chanin.name  = CLA.ChannelName;
+  LALFrSeek(&status,&gpsepoch,framestream);
+  TESTSTATUS( &status );
+
+  if(CLA.htdata)
+    {
+      chanin.type  = ProcDataChannel;
+      LALFrGetREAL8TimeSeries(&status,&dataDouble,&chanin,framestream);
+      TESTSTATUS( &status );
+    }
+  else
+    {
+      int k;
+
+      #if TRACKMEMUSE
+        printf("Memory use before creating dataSingle and calling LALFrGetREAL4TimeSeries.\n"); printmemuse();
+      #endif
+
+      /* 11/02/05 gam; add next two lines */
+      LALCreateVector(&status,&dataSingle.data,(UINT4)(CLA.T/dataSingle.deltaT +0.5));
+      TESTSTATUS( &status );
+      chanin.type  = ADCDataChannel;
+      LALFrGetREAL4TimeSeries(&status,&dataSingle,&chanin,framestream);
+      TESTSTATUS( &status );
+
+      #if TRACKMEMUSE
+        printf("Memory use after creating dataSingle and calling LALFrGetREAL4TimeSeries.\n"); printmemuse();
+      #endif
+
+      /*copy the data into the double precision timeseries */
+      for (k = 0; k < (int)dataDouble.data->length; k++)
+	{
+	  dataDouble.data->data[k] = dataSingle.data->data[k];
+	}
+      /* 11/02/05 gam; add next two lines */
+      LALDestroyVector(&status,&dataSingle.data);
+      TESTSTATUS( &status );
+    }
+
+  return 0;
+}
+/*******************************************************************************/
+
+/*******************************************************************************/
+int HighPass(struct CommandLineArgsTag CLA)
+{
+  PassBandParamStruc filterpar;
+
+  filterpar.name  = "Butterworth High Pass";
+  filterpar.nMax  = 10;
+  filterpar.f2    = CLA.HPf;
+  filterpar.a2    = 0.5;
+  filterpar.f1    = -1.0;
+  filterpar.a1    = -1.0;
+
+  if (CLA.HPf > 0.0 )
+    {
+      #if TRACKMEMUSE
+        printf("Memory use before calling LALButterworthREAL8TimeSeries:\n"); printmemuse();
+      #endif
+
+      /* High pass the time series */
+      LALButterworthREAL8TimeSeries(&status,&dataDouble,&filterpar);
+      TESTSTATUS( &status );
+
+      #if TRACKMEMUSE
+        printf("Memory use after calling LALButterworthREAL8TimeSeries:\n"); printmemuse();
+      #endif
+
+    }
+
+  return 0;
+}
+/*******************************************************************************/
+
+/*******************************************************************************/
+int WindowData(void)
+{
+  REAL8 r = 0.001;
+  int k;
+  int N=dataDouble.data->length;
+  int kl=r/2*(N-1)+1;
+  int kh=N-r/2*(N-1)+1;
+  /* This implementation of a Tukey window is describes 
+     in the Matlab tukey window documentation */
+
+  for(k = 1; k < kl; k++) 
+    {
+      /* window->data[k-1]=0.5*( 1 + cos( LAL_TWOPI/r*(k-1)/(N-1) - LAL_PI)); */ /* 11/02/05 gam */
+      dataDouble.data->data[k-1]=dataDouble.data->data[k-1]*0.5*( 1 + cos( LAL_TWOPI/r*(k-1)/(N-1) - LAL_PI));
+    }
+
+  /* for(k = kl; k < kh; k++) 
+    {
+      window->data[k-1]=1.0;
+    } */  /* 11/02/05 gam */
+
+  for(k = kh; k <= N; k++) 
+    {
+      /* window->data[k-1]=0.5*( 1 + cos( LAL_TWOPI/r - LAL_TWOPI/r*(k-1)/(N-1) - LAL_PI)); */ /* 11/02/05 gam */
+      dataDouble.data->data[k-1]=dataDouble.data->data[k-1]*0.5*( 1 + cos( LAL_TWOPI/r - LAL_TWOPI/r*(k-1)/(N-1) - LAL_PI));
+    }
+
+  /* for (k = 0; k < N; k++)
+    {
+      dataDouble.data->data[k] *= window->data[k];
+    } */ /* 11/02/05 gam */
+
+  return 0;
+}
+/*******************************************************************************/
+
+/*******************************************************************************/
+int CreateSFT(struct CommandLineArgsTag CLA)
+{
+
+      #if TRACKMEMUSE
+        printf("Memory use before creating output vector vtilde and calling XLALREAL8ForwardFFT:\n"); printmemuse();
+      #endif
+
+      /* 11/02/05 gam; allocate container for SFT data */
+      LALZCreateVector( &status, &vtilde, dataDouble.data->length / 2 + 1 );
+      TESTSTATUS( &status );  
+
+      /* compute sft */
+      XLALREAL8ForwardFFT( vtilde, dataDouble.data, fplan );
+
+      #if TRACKMEMUSE
+        printf("Memory use after creating output vector vtilde and calling XLALREAL8ForwardFFT:\n"); printmemuse();
+      #endif
+
+      return 0;
+}
+/*******************************************************************************/
+
+/*******************************************************************************/
+int WriteSFT(struct CommandLineArgsTag CLA)
+{
+  char sftname[256];
+  char ifo[2];
+  int firstbin=(INT4)(FMIN*CLA.T+0.5), k;
+  FILE *fpsft;
+  int errorcode1=0,errorcode2=0;
+  char gpstime[10];
+
+  strncpy( ifo, CLA.ChannelName, 2 );
+  strcpy( sftname, CLA.SFTpath );
+
+  strcat(sftname,"/SFT_");
+  strncat(sftname,ifo,2);
+  sprintf(gpstime,".%09d",gpsepoch.gpsSeconds);
+  strcat(sftname,gpstime);
+
+  /* open SFT file for writing */
+  fpsft=tryopen(sftname,"w");
+      
+  /* write header */
+  header.endian=1.0;
+  header.gps_sec=gpsepoch.gpsSeconds;
+  header.gps_nsec=gpsepoch.gpsNanoSeconds;
+  header.tbase=CLA.T;
+  header.firstfreqindex=firstbin;
+  header.nsamples=(INT4)(DF*CLA.T+0.5);
+  if (1!=fwrite((void*)&header,sizeof(header),1,fpsft)){
+    fprintf(stderr,"Error in writing header into file %s!\n",sftname);
+    return 7;
+  }
+  
+  /* Write SFT */
+  for (k=0; k<header.nsamples; k++)
+    {
+      REAL4 rpw=(((double)DF)/(0.5*(double)(1/dataDouble.deltaT))) 
+	* vtilde->data[k+firstbin].re;
+      REAL4 ipw=(((double)DF)/(0.5*(double)(1/dataDouble.deltaT))) 
+	* vtilde->data[k+firstbin].im;
+      errorcode1=fwrite((void*)&rpw, sizeof(REAL4),1,fpsft);
+      errorcode2=fwrite((void*)&ipw, sizeof(REAL4),1,fpsft);
+    }
+
+  /* Check that there were no errors while writing SFTS */
+  if (errorcode1-1 || errorcode2-1)
+    {
+      fprintf(stderr,"Error in writing data into SFT file %s!\n",sftname);
+      return 8;
+    }
+  
+  fclose(fpsft);
+
+  return 0;
+}
+/*******************************************************************************/
+
+/*******************************************************************************/
 int FreeMem(void)
 {
 
@@ -655,6 +663,6 @@ int FreeMem(void)
  
   return 0;
 }
-
 /*******************************************************************************/
+
 #endif
