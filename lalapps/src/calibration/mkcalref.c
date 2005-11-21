@@ -6,6 +6,18 @@ int isnan(double value);
 #include <FrameL.h>
 #include "series.h"
 
+RCSID( "$Id$" );
+
+#define CVS_ID_STRING "$Id$"
+#define CVS_NAME_STRING "$Name$"
+#define CVS_REVISION "$Revision$"
+#define CVS_ID_STRING "$Id$"
+#define CVS_NAME_STRING "$Name$"
+#define CVS_REVISION "$Revision$"
+#define CVS_SOURCE "$Source$"
+#define CVS_DATE "$Date$"
+#define PROGRAM_NAME "inspiral"
+
 int lalDebugLevel = 0;
 
 char *get_next_line( char *line, size_t size, FILE *fp )
@@ -173,6 +185,14 @@ int main( int argc, char *argv[] )
     {
       USAGE( argv[0] );
     }
+    else if (strstr( argv[arg], "-V" ) )
+      { 
+	/* print version information and exit */
+        fprintf( stdout, "mkcalref\n" 
+            "CVS Version: " CVS_ID_STRING "\n"
+		 "CVS Tag: " CVS_NAME_STRING "\n" );
+	exit(0);
+      }
     else
     {
       struct series R;
