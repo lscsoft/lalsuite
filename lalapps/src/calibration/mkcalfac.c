@@ -6,6 +6,18 @@ int isnan(double value);
 #include <FrameL.h>
 #include <series.h>
 
+RCSID( "$Id$" );
+
+#define CVS_ID_STRING "$Id$"
+#define CVS_NAME_STRING "$Name$"
+#define CVS_REVISION "$Revision$"
+#define CVS_ID_STRING "$Id$"
+#define CVS_NAME_STRING "$Name$"
+#define CVS_REVISION "$Revision$"
+#define CVS_SOURCE "$Source$"
+#define CVS_DATE "$Date$"
+#define PROGRAM_NAME "mkcalfac"
+
 int lalDebugLevel = 0;
 static int sensemon_format;
 static int skip_first_line;
@@ -215,6 +227,13 @@ int main( int argc, char *argv[] )
     {
       skip_first_line = 1;
     }
+    else if (strstr( argv[arg], "-V" ) )
+      { 
+	/* print version information and exit */
+        fprintf( stdout, "CVS Version: " CVS_ID_STRING "\n"
+		 "CVS Tag: " CVS_NAME_STRING "\n" );
+	exit(0);
+      }
     else
     {
       
