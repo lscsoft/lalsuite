@@ -34,13 +34,13 @@ bin_SCRIPTS = lalapps_power_pipe
 pythonlibdir = ${prefix}/lib/python
 pythonlib_SCRIPTS = power.py
 
-lalapps_power_pipe: $(srcdir)/power_pipe.in
-	sed -e "s+@PYTHONLIBDIR@+${pythonlibdir}+g" -e "s+@PYTHONPROG@+@PYTHON@+g" $(srcdir)/power_pipe.in > lalapps_power_pipe 
+lalapps_power_pipe: $(srcdir)/lalapps_power_pipe.in
+	sed -e "s+@PYTHONLIBDIR@+${pythonlibdir}+g" -e "s+@PYTHONPROG@+@PYTHON@+g" $(srcdir)/lalapps_power_pipe.in > lalapps_power_pipe 
 	chmod +x lalapps_power_pipe
 
 pkgdata_DATA = power_pipe.ini
 
-EXTRA_DIST = $(POWERSRCS) power_pipe.in power_pipe.ini \
+EXTRA_DIST = $(POWERSRCS) lalapps_power_pipe.in power_pipe.ini \
 	     power.py
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
