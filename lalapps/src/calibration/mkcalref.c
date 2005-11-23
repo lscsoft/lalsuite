@@ -101,7 +101,7 @@ int read_freq_series( struct series *ser, const char *fname )
 #define R_CHANNEL "CAL-RESPONSE"
 #define USAGE( s ) do { \
   fprintf( stderr, "Usage: %s -run run -time gpssec -ifo 'H1'|'H2'|'L1'", s ); \
-  fprintf( stderr, " -ver VXX R-file C-file \n\t [ [ -ifo" );\
+  fprintf( stderr, " -channel CHAN -ver VXX R-file C-file \n\t [ [ -ifo" );\
   fprintf( stderr, " 'H1'|'H2'|'L1' -ver VXX R-file2 C-file2 ] ...]\n" ); \
   fprintf( stderr, "Calibration files found at URL:\n" CALURL "\n" ); \
   exit( 1 ); } while ( 0 )
@@ -116,8 +116,10 @@ int main( int argc, char *argv[] )
   const char *run = NULL;
   const char *ifo = NULL;
   const char *ver = NULL;
+  const char *channel = NULL;
   int sec = 0;
-  int arg;
+  int arg, arg2;
+  char fname[256];
 
   /* parse arguments */
   if ( argc == 1 )
@@ -180,6 +182,15 @@ int main( int argc, char *argv[] )
         USAGE( argv[0] );
       }
       ver = argv[++arg];
+    }
+    else if ( strstr( argv[arg], "-channel" ) )
+    {
+      if ( !run || !ifo )
+      {
+        fprintf( stderr, "Error: run and/or ifo not specified\n" );
+        USAGE( argv[0] );
+      }
+      channel = argv[++arg];
     }
     else if ( strstr( argv[arg], "-h" ) )
     {
@@ -258,13 +269,17 @@ int main( int argc, char *argv[] )
       {
         fprintf( stderr, "Error: could not write file %s\n", Cilwd );
         return 1;
-      }
+      }      
 #endif
+      if ( !channel ) {
+	fprintf( stderr, "Error: No channel name specified \n" );
+        USAGE( argv[0] );
+      }
       if ( ! frfile )
       {
-        char fname[256];
+        
         int dt = (int)ceil( 1e-9 * R.tbeg.gpsNanoSeconds + 1.0 / R.step );
-        sprintf( fname, "%c-CAL_REF_%s_%s-%d-%d.gwf", *ifo, ver, ifo, 
+        sprintf( fname, "%c-CAL_REF_%s_%s_%s-%d-%d.gwf", *ifo, channel, ver, ifo, 
             R.tbeg.gpsSeconds, dt );
         frfile = FrFileONew( fname, 0 );
       }
@@ -276,6 +291,13 @@ int main( int argc, char *argv[] )
       frame = fr_add_proc_data( frame, &R );
       frame = fr_add_proc_data( frame, &C );
       FrameWrite( frame, frfile );
+
+      /* information output */
+      for ( arg2 = 0; arg2 < argc; ++arg2 ) {
+	printf( "%s ", argv[arg2] );
+      } 
+      printf( "\nVersion used: %s\n", CVS_ID_STRING);
+      printf( "Output filename: %s\n", fname); 
     }
   }
 
