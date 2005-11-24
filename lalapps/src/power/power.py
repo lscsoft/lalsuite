@@ -454,18 +454,31 @@ class BreadJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   the universe specified in the ini file. The path to the executable is
   determined from the ini file.
   """
-  def __init__(self, out_dir, cp):
+  def __init__(self, cache_dir, out_dir, cp):
     """
     cp = ConfigParser object from which options are read.
     """
     self.__executable = cp.get('condor','bread')
     self.__universe = cp.get('condor','universe')
-    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-    pipeline.AnalysisJob.__init__(self,cp)
+    pipeline.CondorDAGJob.__init__(self, self.__universe, self.__executable)
+    pipeline.AnalysisJob.__init__(self, cp)
 
     for sec in ['bread']:
-      self.add_ini_opts(cp,sec)
+      self.add_ini_opts(cp, sec)
 
-    self.set_stdout_file(os.path.join(out_dir, 'bread-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out'))
-    self.set_stderr_file(os.path.join(out_dir, 'bread-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err'))
+    self.add_input_file(os.path.join(cache_dir, '$(macrotriggercache)'))
+    self.set_stdout_file(os.path.join(out_dir, 'bread-$(cluster)-$(process).out'))
+    self.set_stderr_file(os.path.join(out_dir, 'bread-$(cluster)-$(process).err'))
     self.set_sub_file('bread.sub')
+
+
+class BreadNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+  """
+  A BreadNode runs an instance of lalapps_bread in a Condor DAG.
+  """
+  def __init__(self, job):
+    """
+    job = A CondorDAGJob that can run an instance of lalapps_bread.
+    """
+    pipeline.CondorDAGNode.__init__(self, job)
+    pipeline.AnalysisNode.__init__(self)
