@@ -312,7 +312,7 @@ class PowerNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     Returns the file name of output from the power code. This must be kept
     synchronized with the name of the output file in power.c.
     """
-    if not self.get_start() or not self.get_end() or not self.get_ifo():
+    if (self.get_start() == None) or (self.get_end() == None) or (self.get_ifo() == None):
       raise PowerError, "Start time, end time or ifo has not been set"
 
     basename = self.get_ifo()
