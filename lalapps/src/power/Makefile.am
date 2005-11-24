@@ -29,14 +29,13 @@ endif
 else
 bin_PROGRAMS = 
 endif
-bin_SCRIPTS = lalapps_power_pipe 
+bin_SCRIPTS = lalapps_power_pipe
 
 pythonlibdir = ${prefix}/lib/python
 pythonlib_SCRIPTS = power.py
 
 lalapps_power_pipe: $(srcdir)/lalapps_power_pipe.in
-	sed -e "s+@PYTHONLIBDIR@+${pythonlibdir}+g" -e "s+@PYTHONPROG@+@PYTHON@+g" $(srcdir)/lalapps_power_pipe.in > lalapps_power_pipe 
-	chmod +x lalapps_power_pipe
+	sed -e "s+@PYTHONLIBDIR@+${pythonlibdir}+g" -e "s+@PYTHONPROG@+@PYTHON@+g" $(srcdir)/lalapps_power_pipe.in >lalapps_power_pipe 
 
 pkgdata_DATA = power_pipe.ini
 
