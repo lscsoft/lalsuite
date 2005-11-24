@@ -261,7 +261,7 @@ df_job = pipeline.LSCDataFindJob('cache','logs',cp)
 burstinj_job = power.BurstInjJob(cp)
 inspinj_job = power.InspInjJob(cp)
 mdcinj_job = power.MdcDataFindJob(cp)
-pow_job = power.PowerJob(cp)
+pow_job = power.PowerJob("logs", cp)
 burca_job = power.BurcaJob(cp)
 
 # set better submit file names than the default

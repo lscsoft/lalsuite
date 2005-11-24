@@ -6,6 +6,7 @@ __author__ = 'Duncan Brown <duncan@gravity.phys.uwm.edu>'
 __date__ = '$Date$'
 __version__ = '$Revision$'[11:-2]
 
+import os
 import string
 import exceptions
 from glue import pipeline
@@ -92,7 +93,6 @@ class InspInjJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_stdout_file('logs/iinj-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
     self.set_stderr_file('logs/iinj-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
     self.set_sub_file('iinjection.sub')
-    
 
 
 class PowerJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
@@ -103,7 +103,7 @@ class PowerJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   runs in the universe specified in the ini file. The path to the executable
   is determined from the ini file.
   """
-  def __init__(self,cp):
+  def __init__(self, out_dir, cp):
     """
     cp = ConfigParser object from which options are read.
     """
@@ -115,8 +115,8 @@ class PowerJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     for sec in ['data','power']:
       self.add_ini_opts(cp,sec)
 
-    self.set_stdout_file('logs/power-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/power-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
+    self.set_stdout_file(os.path.join(out_dir, 'power-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out'))
+    self.set_stderr_file(os.path.join(out_dir, 'power-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err'))
     self.set_sub_file('power.sub')
 
     
@@ -444,4 +444,3 @@ class VigilNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
     self.__usertag = job.get_config('pipeline','user-tag')
-    
