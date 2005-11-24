@@ -7,9 +7,11 @@ __date__ = '$Date$'
 __version__ = '$Revision$'[11:-2]
 
 import os
+import re
 import string
 import exceptions
 from glue import pipeline
+from glue import segmentsUtils
 
 
 class PowerError(exceptions.Exception):
@@ -458,6 +460,7 @@ class BreadJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     """
     cp = ConfigParser object from which options are read.
     """
+    self.path2cache = cp.get('condor','path2cache')
     self.__executable = cp.get('condor','bread')
     self.__universe = cp.get('condor','universe')
     pipeline.CondorDAGJob.__init__(self, self.__universe, self.__executable)
@@ -466,7 +469,6 @@ class BreadJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     for sec in ['bread']:
       self.add_ini_opts(cp, sec)
 
-    self.add_input_file(os.path.join(cache_dir, '$(macrotriggercache)'))
     self.set_stdout_file(os.path.join(out_dir, 'bread-$(cluster)-$(process).out'))
     self.set_stderr_file(os.path.join(out_dir, 'bread-$(cluster)-$(process).err'))
     self.set_sub_file('bread.sub')
@@ -482,3 +484,16 @@ class BreadNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     pipeline.CondorDAGNode.__init__(self, job)
     pipeline.AnalysisNode.__init__(self)
+
+  def get_output(self):
+    """
+    Returns the output file name.  This must be kept synchronized
+    PowerNode.
+    """
+    if not len(self.get_input_files()):
+      raise PowerError, "BreadNode.get_output(): must set input files first"
+
+    [base] = re.compile(r"(\S*)-[\d.]+-[\d.]+\.[\w_+#]+\Z").findall(self.get_input_files()[0])
+    seg = segmentsUtils.fromfilenames(self.get_input_files()).extent()
+    
+    return base + '-' + str(int(seg[0])) + '-' + str(int(seg[1]) - int(seg[0])) + '.xml'
