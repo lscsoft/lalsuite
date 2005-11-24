@@ -444,3 +444,28 @@ class VigilNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
     self.__usertag = job.get_config('pipeline','user-tag')
+
+
+class BreadJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+  """
+  A lalapps_bread job used by the power pipeline. The static options are
+  read from the sections [data] and [bread] in the ini file. The stdout and
+  stderr from the job are directed to the logs directory. The job runs in
+  the universe specified in the ini file. The path to the executable is
+  determined from the ini file.
+  """
+  def __init__(self, out_dir, cp):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    self.__executable = cp.get('condor','bread')
+    self.__universe = cp.get('condor','universe')
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    pipeline.AnalysisJob.__init__(self,cp)
+
+    for sec in ['bread']:
+      self.add_ini_opts(cp,sec)
+
+    self.set_stdout_file(os.path.join(out_dir, 'bread-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out'))
+    self.set_stderr_file(os.path.join(out_dir, 'bread-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err'))
+    self.set_sub_file('bread.sub')
