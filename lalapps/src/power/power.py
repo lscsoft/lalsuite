@@ -323,8 +323,8 @@ class PowerNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     if self.__usertag:
       basename += '_' + self.__usertag
 
-    return basename + '-' + str(self.get_start()) + '-' + \
-      str(self.get_end() - self.get_start()) + '.xml'
+    return basename + '-' + str(int(self.get_start())) + '-' + \
+      str(int(self.get_end()) - int(self.get_start())) + '.xml'
 
   def set_mdccache(self,file):
     """
