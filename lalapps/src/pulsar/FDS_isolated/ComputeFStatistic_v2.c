@@ -399,32 +399,6 @@ int main(int argc,char *argv[])
 		  /** Caculate F-statistic using XLALComputeFaFb() */
 		  /* prepare quantities to calculate Fstat from Fa and Fb */
 		  
-		  Dt += GV.ifos.amcoe[nD]->D;
-		  M = 1.0f * GV.ifos.sftVects[nD]->length;
-		  fact = 4.0f / (M * Dt);
-		  
-		  /* In the signal-only case (only for testing using fake data),
-		   * we did not apply any normalization to the data, and we need
-		   * the use the correct factor now (taken from CFS_v1)
-		   * [see Xavie's notes on LALDemod() for details]
-		   */
-		  if ( uvar_SignalOnly )
-		    {
-		      REAL8 Ns = 2.0 * GV.ifos.sftVects[0]->data[0].data->length;
-		      REAL8 Tsft = 1.0 / (GV.ifos.sftVects[0]->data[0].deltaF );
-		      REAL8 norm = Tsft / ( Ns * Ns ); 
-		      
-		      fact *= norm;
-		    }
-		  else
-		    {
-		      /* NOTE: we normalized the data by a double-sided PSD, (LALNormalizeSFTVect),
-		       * therefore we apply another factor of 1/2 now with respect to the 
-		       * equations in JKS, which are based on the single-sided PSD:
-		       */
-		      fact *= 0.5f;
-		    }
-		  
 		  At += GV.ifos.amcoe[nD]->A;
 		  Bt += GV.ifos.amcoe[nD]->B;
 		  Ct += GV.ifos.amcoe[nD]->C;
@@ -445,6 +419,32 @@ int main(int argc,char *argv[])
 		  
 		} /* End of loop over detectors */
 	      
+	      Dt = At * Bt - Ct * Ct;
+	      M = 1.0f * GV.ifos.sftVects[nD]->length;
+	      fact = 4.0f / (M * Dt);
+		  
+	      /* In the signal-only case (only for testing using fake data),
+	       * we did not apply any normalization to the data, and we need
+	       * the use the correct factor now (taken from CFS_v1)
+	       * [see Xavie's notes on LALDemod() for details]
+	       */
+	      if ( uvar_SignalOnly )
+		{
+		  REAL8 Ns = 2.0 * GV.ifos.sftVects[0]->data[0].data->length;
+		  REAL8 Tsft = 1.0 / (GV.ifos.sftVects[0]->data[0].deltaF );
+		  REAL8 norm = Tsft / ( Ns * Ns ); 
+		      
+		  fact *= norm;
+		}
+	      else
+		{
+		  /* NOTE: we normalized the data by a double-sided PSD, (LALNormalizeSFTVect),
+		   * therefore we apply another factor of 1/2 now with respect to the 
+		   * equations in JKS, which are based on the single-sided PSD:
+		   */
+		  fact *= 0.5f;
+		}
+		       
 	      /* calculate F-statistic from  Fa and Fb */
 	      Fstat = fact * (Bt * (FaRe*FaRe + FaIm*FaIm) 
 			      + At * (FbRe*FbRe + FbIm*FbIm) 
