@@ -63,6 +63,7 @@ int checkTimes = 0;
 int multiIfoCoinc = 0;
 int distCut = 0;
 int doAlphaFCut = 0;
+int doBCVCVeto = 0;
 
 
 /*
@@ -252,6 +253,8 @@ int main( int argc, char *argv[] )
 
   REAL4                 alphaFhi = -2.e4;
   REAL4                 alphaFlo = 9.e4;
+  REAL4                 thresholdT = 1e6;
+  REAL4  	        lambda   = 1e6;
 
   const CHAR                   ifoList[LAL_NUM_IFO][LIGOMETA_IFO_MAX] = 
                                    {"G1", "H1", "H2", "L1", "T1", "V1"};
@@ -275,6 +278,7 @@ int main( int argc, char *argv[] )
     {"multi-ifo-coinc",     no_argument,   &multiIfoCoinc,            1 },
     {"h1-h2-distance-cut",  no_argument,   &distCut,                  1 },
     {"do-alphaF-cut",       no_argument,   &doAlphaFCut,              1 },
+    {"do-bcvc-veto",       no_argument,    &doBCVCVeto,               1 },
     {"g1-slide",            required_argument, 0,                    'b'},
     {"h1-slide",            required_argument, 0,                    'c'},
     {"h2-slide",            required_argument, 0,                    'd'},
@@ -328,6 +332,8 @@ int main( int argc, char *argv[] )
     {"maximization-interval",required_argument, 0,                   '@'},    
     {"alphaF-hi",           required_argument, 0,                    'j'},
     {"alphaF-lo",           required_argument, 0,                    'l'},
+    {"alphaF-snr",           required_argument, 0,                   'v'},
+    {"snr-max-ratio",       required_argument, 0,                    'u'},
     {"data-type",           required_argument, 0,                    'k'},
     {"comment",             required_argument, 0,                    'x'},
     {"user-tag",            required_argument, 0,                    'Z'},
@@ -392,7 +398,7 @@ int main( int argc, char *argv[] )
 
     c = getopt_long_only( argc, argv, 
         "A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:VW:Y:Z:"
-        "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:q:r:s:t:w:x:y:z:"
+        "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:"
         "2:3:4:5:6:7:8:9:!:-:+:=:@:^:&:", 
         long_options, &option_index );
 
@@ -749,6 +755,11 @@ int main( int argc, char *argv[] )
           LALSnprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
         }
         break;
+      
+      case 'v' :
+        thresholdT = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
 
       case 'j':
         /* upper alphaF cutoff */
@@ -759,6 +770,12 @@ int main( int argc, char *argv[] )
       case 'l':
         /* lower alphaF cutoff */
         alphaFlo = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+      
+      case 'u':
+        /* lambda of the BCVC veto */
+        lambda = atof(optarg);
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
@@ -1227,6 +1244,20 @@ int main( int argc, char *argv[] )
       alphaFhi, alphaFlo), &status );
   }
 
+  if ( doBCVCVeto )
+  {
+    if ( lambda <= 0 )
+    {
+      fprintf( stderr, "Error: snr-max-ratio must be gre greater than zero.\n");
+      exit( 1 );
+    }
+    if ( vrbflg ) fprintf( stdout,
+       "Discarding triggers with alphaF > %f OR alphaF < %f \n and triggers with rhoU/rhoC > %f or |alphaF./snr|>.15%f\n" , 
+       alphaFhi, alphaFlo , lambda , thresholdT);
+	
+    LAL_CALL( LALBCVCVetoSingleInspiral( &status, &(inspiralEventList),lambda,
+      alphaFhi, alphaFlo, thresholdT), &status );
+  }
 
   /* maximize over a given interval */
   if ( maximizationInterval )
@@ -1370,11 +1401,11 @@ int main( int argc, char *argv[] )
     LAL_CALL( LALCreateTwoIFOCoincList( &status, &coincInspiralList,
         inspiralEventList, &accuracyParams ), &status );
 
-    if( distCut )
+/*    if( distCut )
     {
       XLALInspiralDistanceCut( &coincInspiralList, &accuracyParams );
     }
-
+*/
   
     if ( multiIfoCoinc )
     {
@@ -1462,11 +1493,11 @@ int main( int argc, char *argv[] )
         LAL_CALL( LALCreateTwoIFOCoincList(&status, &coincInspiralList,
           inspiralEventList, &accuracyParams ), &status);
 
-        if( distCut )
+/*        if( distCut )
         {
           XLALInspiralDistanceCut( &coincInspiralList, &accuracyParams );
         }
-
+*/
         if ( multiIfoCoinc )
         {
           for( N = 3; N <= numIFO; N++)
