@@ -737,7 +737,6 @@ int main( int argc, char *argv[] )
   {
     for( i = optind; i < argc; ++i )
     {
-      INT4 haveSearchSum = 0;
       INT4 numFileTriggers = 0;
       SnglInspiralTable *inputData = NULL;
       SearchSummaryTable *inputSummary = NULL;
@@ -764,9 +763,9 @@ int main( int argc, char *argv[] )
       if ( vrbflg ) fprintf( stdout, 
           "reading search_summary table from file: %s\n", argv[i] );
 
-      haveSearchSum = SearchSummaryTableFromLIGOLw( &inputSummary, argv[i] );
+      inputSummary = XLALSearchSummaryTableFromLIGOLw( argv[i] );
 
-      if ( haveSearchSum < 1 || ! inputSummary )
+      if ( ! inputSummary )
       {
         if ( vrbflg ) 
           fprintf( stdout, "no valid search_summary table, continuing\n" );

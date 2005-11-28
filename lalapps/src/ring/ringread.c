@@ -800,8 +800,8 @@ int main( int argc, char *argv[] )
     UINT8 outPlayNS, outStartNS, outEndNS, triggerTimeNS;
     INT4 trigStartTimeArg = 0;
 
-    if ( SearchSummaryTableFromLIGOLw( &searchSummaryTable, 
-          inFileNameList[j] ) != 1 )
+    searchSummaryTable = XLALSearchSummaryTableFromLIGOLw( inFileNameList[j] );
+    if ( ( ! searchSummaryTable ) || searchSummaryTable->next )
     {
       fprintf( stderr, 
           "error: zero or multiple search_summary tables in %s\n",

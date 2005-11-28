@@ -324,9 +324,7 @@ int main(int argc, char **argv)
    * READ IN THE SEARCH SUMMARY INFO                              *
    ***************************************************************/
   for(j=0 ; j<2 ; j++)
-    {
-      SearchSummaryTableFromLIGOLw( &searchSummary[j], *(trigFile+j*MAXFILES));
-    }
+    searchSummary[j] = XLALSearchSummaryTableFromLIGOLw(*(trigFile+j*MAXFILES));
 
   /*****************************************************************
    * loop over input files for both ifos

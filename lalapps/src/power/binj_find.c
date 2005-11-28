@@ -743,7 +743,7 @@ static INT8 read_search_summary_start_end(LALStatus *stat, char *filename, INT8 
 	if(!end)
 		end = &local_end;
 
-	SearchSummaryTableFromLIGOLw(&searchSummary, filename);
+	searchSummary = XLALSearchSummaryTableFromLIGOLw(filename);
 
 	LAL_CALL(LALGPStoINT8(stat, start, &searchSummary->out_start_time), stat);
 	LAL_CALL(LALGPStoINT8(stat, end, &searchSummary->out_end_time), stat);

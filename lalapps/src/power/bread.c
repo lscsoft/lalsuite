@@ -1,852 +1,397 @@
-#include <math.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <getopt.h>
-#include <lal/LALStdlib.h>
-#include <lal/Date.h>
-#include <lal/LIGOLwXML.h>
-#include <lal/LIGOLwXMLRead.h>
-#include <lal/LIGOMetadataUtils.h>
+#include <unistd.h>
+
 #include <lal/FrameCache.h>
-#include <lalapps.h>
-#include <lal/BurstUtils.h>
+#include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOMetadataTables.h>
 
-int snprintf(char *str, size_t size, const char *format, ...);
-
-RCSID("$Id$");
-
-#include <unistd.h>
-#ifndef HAVE_GETHOSTNAME_PROTOTYPE
-int gethostname(char *name, int len);
-#endif
-
-#ifndef MAXHOSTNAMELEN
-#define MAXHOSTNAMELEN 256
-#endif
-
-#include <errno.h>
-#include <unistd.h>
-#include <sys/param.h>
-#define STR( x ) #x
-#define XSTR( x ) STR( x )
-#define MAXPROTOCOLLEN 16
-
-#define MAXSTR 2048
-
-/* Usage format string. */
-#define USAGE "Usage: %s --input filename --output filename " \
-	"--trig-start-time time --trig-stop-time time " \
-	"[--outtxt txt filename] " \
-	"[--max-confidence maximum conf] [--noplayground] [--sort] " \
-        "[--cluster clusterchoice(clusterbypeaktimeandfreq/clusterbytimeandfreq/stringcluster)] " \
-	"[--min-duration min dur] [--max-duration max dur] " \
-	"[--min-centralfreq min central_freq] [--max-centralfreq max central_freq] " \
-	"[--max-bandwidth max bw] [--min-bandwidth min bw] " \
-	"[--min-amplitude min amp] [--max-amplitude max amp] " \
-	"[--min-snr min snr] [--max-snr max snr] [--globtrig dirname]" \
-	"[--help] [--printsum]\n"
-
-#define SNGLBURSTREADER_EARG   1
-#define SNGLBURSTREADER_EROW   2
-#define SNGLBURSTREADER_EFILE  3
-
-#define SNGLBURSTREADER_MSGEARG   "Error parsing arguments"
-#define SNGLBURSTREADER_MSGROW    "Error reading row from XML table"
-#define SNGLBURSTREADER_MSGEFILE  "Could not open file"
-
-#define TRUE  1
-#define FALSE 0
 
 /*
- * Command-line options
+ ******************************************************************************
+ *
+ *                            Command-Line Parsing
+ *
+ ******************************************************************************
  */
 
-struct options_t {
+struct options {
+	char *input_cache_name;
 	int verbose;
-	int printsum;
-	int cluster;
-	int globtrig;
-	char *globdir;
-	int outtxt;
-	int playground;
-	int noplayground;
-	int sort;
-	enum { undefined, clusterbypeaktimeandfreq, clusterbytimeandfreq, stringcluster } clusterchoice;
-
-	/* confidence threshold */
-	BOOLEAN maxConfidenceFlag;
-	REAL4 maxConfidence;
-
-	/* time window */
-	BOOLEAN trigStartTimeFlag;
-	INT8 trigStartTime;
-	BOOLEAN trigStopTimeFlag;
-	INT8 trigStopTime;
-
-	/* duration thresholds */
-	BOOLEAN minDurationFlag;
-	REAL4 minDuration;
-	BOOLEAN maxDurationFlag;
-	REAL4 maxDuration;
-
-	/* central_freq threshold */
-	BOOLEAN maxCentralfreqFlag;
-	REAL4 maxCentralfreq;
-	BOOLEAN minCentralfreqFlag;
-	REAL4 minCentralfreq;
-
-	/* bandwidth threshold */
-	BOOLEAN maxBandwidthFlag;
-	REAL4 maxBandwidth;
-
-	/* amplitude threshold */
-	BOOLEAN maxAmplitudeFlag;
-	REAL4 maxAmplitude;
-	BOOLEAN minAmplitudeFlag;
-	REAL4 minAmplitude;
-
-	/* snr threshold */
-	BOOLEAN maxSnrFlag;
-	REAL4 maxSnr;
-	BOOLEAN minSnrFlag;
-	REAL4 minSnr;
 };
 
 
 /*
- * Set defaults for command-line options.
- * (ANSI C structure initialization sucks)
+ * Usage message.
  */
 
-static void set_option_defaults(struct options_t *options)
+static void print_usage(const char *prog)
 {
-	options->verbose = FALSE;
-	options->printsum = FALSE;
-	options->cluster = FALSE;
-	options->globtrig = FALSE;
-	options->globdir = NULL;
-	options->outtxt = FALSE;
-	options->playground = FALSE;
-	options->noplayground = FALSE;
-	options->sort = FALSE;
-	options->clusterchoice = undefined;
-
-	options->maxConfidenceFlag = FALSE;
-	options->maxConfidence = 0.0;
-
-	options->trigStartTimeFlag = FALSE;
-	options->trigStartTime = -1;
-	options->trigStopTimeFlag = FALSE;
-	options->trigStopTime = -1;
-
-	options->minDurationFlag = FALSE;
-	options->minDuration = 0.0;
-	options->maxDurationFlag = FALSE;
-	options->maxDuration = 0.0;
-
-	options->maxCentralfreqFlag = FALSE;
-	options->maxCentralfreq = 0.0;
-	options->minCentralfreqFlag = FALSE;
-	options->minCentralfreq = 0.0;
-
-	options->maxBandwidthFlag = FALSE;
-	options->maxBandwidth = 0.0;
-
-	options->maxAmplitudeFlag = FALSE;
-	options->maxAmplitude = 0.0;
-	options->minAmplitudeFlag = FALSE;
-	options->minAmplitude = 0.0;
-
-	options->maxSnrFlag = FALSE;
-	options->maxSnr = 0.0;
-	options->minSnrFlag = FALSE;
-	options->minSnr = 0.0;
+	fprintf(stderr,
+"Usage:  %s [options ...] [filename ...]\n" \
+"\n" \
+"Valid options:\n" \
+"	-i,--input-cache filename\n" \
+"		Get trigger files from LAL cache file filename.\n",
+		prog
+	);
 }
 
 
 /*
- * Parse command line arguments.
+ * Default values.
  */
 
-static void parse_command_line(int argc, char **argv, struct options_t *options, char **infile, char **outfile, char **outtxt)
+static void options_set_defaults(struct options *options)
 {
+	options->input_cache_name = NULL;
+	options->verbose = 0;
+}
+
+
+/*
+ * Validate the command line options.
+ */
+
+static int options_validate(struct options *options, int argc)
+{
+	int good = 1;
+
+	good &= (options->input_cache_name != NULL) || argc;
+
+	return good;
+}
+
+
+/*
+ * Parse the command line.
+ */
+
+static struct options *options_parse(int *argc, char **argv[])
+{
+	struct options *options = malloc(sizeof(*options));
 	struct option long_options[] = {
-		/* these options set a flag */
-		{"verbose", no_argument, &options->verbose, TRUE},
-		{"printsum", no_argument, &options->printsum, TRUE},
-		/* parameters which determine the output xml file */
-		{"input", required_argument, NULL, 'a'},
-		{"outtxt", required_argument, NULL, 'b'},
-		{"output", required_argument, NULL, 'c'},
-		{"max-confidence", required_argument, NULL, 'd'},
-		{"min-duration", required_argument, NULL, 'e'},
-		{"max-duration", required_argument, NULL, 'f'},
-		{"min-centralfreq", required_argument, NULL, 'g'},
-		{"max-centralfreq", required_argument, NULL, 'h'},
-		{"max-bandwidth", required_argument, NULL, 'i'},
-		{"min-amplitude", required_argument, NULL, 'j'},
-		{"max-amplitude", required_argument, NULL, 'k'},
-		{"min-snr", required_argument, NULL, 'l'},
-		{"max-snr", required_argument, NULL, 'm'},
-		{"cluster", required_argument, NULL, 'n'},
-		{"trig-start-time", required_argument, NULL, 'q'},
-		{"trig-stop-time", required_argument, NULL, 'r'},
-		{"globtrig", required_argument, NULL, 's'},
-		{"playground", no_argument, &options->playground, TRUE},
-		{"noplayground", no_argument, &options->noplayground, TRUE},
-		{"help", no_argument, NULL, 'o'},
-		{"sort", no_argument, &options->sort, TRUE},
+		{"help", no_argument, NULL, 'h'},
+		{"input-cache", required_argument, NULL, 'i'},
+		{"verbose", no_argument, &options->verbose, 1},
 		{NULL, 0, NULL, 0}
 	};
-	int c;
-	int option_index;
+	int c, index;
 
-	*infile = *outfile = *outtxt = NULL;
+	options_set_defaults(options);
 
-	do {
-		switch (c = getopt_long(argc, argv, "a:c:d:e:f:g:h:i:", long_options, &option_index)) {
+	do switch(c = getopt_long(*argc, *argv, "hi:", long_options, &index)) {
+		/* --help */
+		case 'h':
+			print_usage(*argv[0]);
+			exit(0);
+
+		/* --input */
+		case 'i':
+			options->input_cache_name = optarg;
+			break;
+
+		/* end of options */
 		case -1:
+			*argc -= optind;
+			*argv = &(*argv)[optind];
+			break;
+
+		/* option sets a flag */
 		case 0:
 			break;
 
-		case 'a':
-			/*
-			 * file containing list of xml files to use
-			 */
-			*infile = optarg;
-			break;
-
-		case 'b':
-			/*
-			 * output txt file name
-			 */
-			options->outtxt = TRUE;
-			*outtxt = optarg;
-			break;
-
-		case 'c':
-			/*
-			 * output file name
-			 */
-			*outfile = optarg;
-			break;
-
-		case 'd':
-			/*
-			 * the confidence must be smaller than this number
-			 */
-			options->maxConfidenceFlag = TRUE;
-			options->maxConfidence = atof(optarg);
-			break;
-
-		case 'e':
-			/*
-			 * only events with duration greater than this are
-			 * selected
-			 */
-			options->minDurationFlag = TRUE;
-			options->minDuration = atof(optarg);
-			break;
-
-		case 'f':
-			/*
-			 * only events with duration less than this are
-			 * selected
-			 */
-			options->maxDurationFlag = TRUE;
-			options->maxDuration = atof(optarg);
-			break;
-
-		case 'g':
-			/*
-			 * only events with centralfreq greater than this
-			 * are selected
-			 */
-			options->minCentralfreqFlag = TRUE;
-			options->minCentralfreq = atof(optarg);
-			break;
-
-		case 'h':
-			/*
-			 * only events with centralfreq less than this are
-			 * selected
-			 */
-			options->maxCentralfreqFlag = TRUE;
-			options->maxCentralfreq = atof(optarg);
-			break;
-
-		case 'i':
-			/*
-			 * only events with bandwidth less than this are
-			 * selected
-			 */
-			options->maxBandwidthFlag = TRUE;
-			options->maxBandwidth = atof(optarg);
-			break;
-
-		case 'j':
-			/*
-			 * only events with amp. more than this are
-			 * selected
-			 */
-			options->minAmplitudeFlag = TRUE;
-			options->minAmplitude = atof(optarg);
-			break;
-
-		case 'k':
-			/*
-			 * only events with amp. less than this are
-			 * selected
-			 */
-			options->maxAmplitudeFlag = TRUE;
-			options->maxAmplitude = atof(optarg);
-			break;
-
-		case 'l':
-			/*
-			 * only events with snr more than this are selected
-			 */
-			options->minSnrFlag = TRUE;
-			options->minSnr = atof(optarg);
-			break;
-
-		case 'n':
-			/*
-			 * set the cluster option
-			 */
-			if(!strcmp("clusterbypeaktimeandfreq", optarg)) {
-				options->cluster = TRUE;
-				options->clusterchoice = clusterbypeaktimeandfreq;
-			} else if(!strcmp("clusterbytimeandfreq", optarg)) {
-				options->cluster = TRUE;
-				options->clusterchoice = clusterbytimeandfreq;
-			} else if(!strcmp("stringcluster", optarg)) {
-				options->cluster = TRUE;
-				options->clusterchoice = stringcluster;
-			} else {
-				fprintf(stderr, "invalid argument to --%s \"%s\" (must be one of \"clusterbypeaktimeandfreq\", \"clusterbytimeandfreq\")\n", long_options[option_index].name, optarg);
-			}
-			break;
-
-		case 'm':
-			/*
-			 * only events with snr less than this are selected
-			 */
-			options->maxSnrFlag = TRUE;
-			options->maxSnr = atof(optarg);
-			break;
-
-		case 'q':
-			/*
-			 * only events with time after this are selected
-			 */
-			{
-			LIGOTimeGPS tmp;
-			if(XLALStrToGPS(&tmp, optarg, NULL) < 0) {
-				fprintf(stderr, "invalid argument to %s: \"%s\"\n", long_options[option_index].name, optarg);
-				exit(1);
-			}
-			options->trigStartTimeFlag = TRUE;
-			options->trigStartTime = XLALGPSToINT8NS(&tmp);
-			}
-			break;
-
-		case 'r':
-			/*
-			 * only events with time before this are selected
-			 */
-			{
-			LIGOTimeGPS tmp;
-			if(XLALStrToGPS(&tmp, optarg, NULL) < 0) {
-				fprintf(stderr, "invalid argument to %s: \"%s\"\n", long_options[option_index].name, optarg);
-				exit(1);
-			}
-			options->trigStopTimeFlag = TRUE;
-			options->trigStopTime = XLALGPSToINT8NS(&tmp);
-			}
-			break;
-
-		case 's':
-			/*
-			 * only events with time before this are selected
-			 */
-			options->globtrig = TRUE;
-			options->globdir = optarg;
-			break;
-
+		/* missing an argument for an option */
 		case ':':
+			print_usage(*argv[0]);
+			exit(-1);
+
+		/* unrecognized option */
 		case '?':
-		case 'o':
+			print_usage(*argv[0]);
+			exit(-1);
+
+		/* who knows */
 		default:
-			/*
-			 * print usage
-			 */
-			LALPrintError(USAGE, *argv);
-			exit(SNGLBURSTREADER_EARG);
-		}
+			print_usage(*argv[0]);
+			exit(-1);
 	} while(c != -1);
 
-	if(optind < argc) {
-		fprintf(stderr, "extraneous command line arguments:\n");
-		while(optind < argc)
-			fprintf(stderr, "%s\n", argv[optind++]);
-		exit(SNGLBURSTREADER_EARG);
+	return options;
+}
+
+
+/*
+ * Clean up.
+ */
+
+static void options_destroy(struct options *options)
+{
+	free(options);
+}
+
+
+/*
+ ******************************************************************************
+ *
+ *                        Input File List Construction
+ *
+ ******************************************************************************
+ */
+
+struct inputlist {
+	int length;
+	char **file;
+};
+
+
+/*
+ * Append a file to the input list, and assign it a process id string.
+ */
+
+static void inputlist_append(struct inputlist *inputlist, const char *filename)
+{
+	/* allocate new memory */
+	inputlist->file = realloc(inputlist->file, (inputlist->length + 1) * sizeof(*inputlist->file));
+
+	/* copy the file name */
+	inputlist->file[inputlist->length] = malloc(strlen(filename) + 1);
+	strcpy(inputlist->file[inputlist->length], filename);
+
+	/* increment length */
+	inputlist->length++;
+}
+
+
+/*
+ * Use LAL's frame cache code to read a cache of trigger files.
+ */
+
+static void inputlist_append_from_cache(struct inputlist *inputlist, const char *filename)
+{
+	FrCache *cache = XLALFrImportCache(filename);
+	int offset;
+	unsigned i;
+
+	if(!cache)
+		exit(-1);
+
+	for(i = 0; i < cache->numFrameFiles; i++) {
+		/* find path in URL and append to list*/
+		sscanf(cache->frameFiles[i].url, "%*[^:]://%*[^/]%n", &offset);
+		inputlist_append(inputlist, &cache->frameFiles[i].url[offset]);
+	}
+	XLALFrDestroyCache(cache);
+}
+
+
+/*
+ * Build input list from cache file and command line.
+ */
+
+static struct inputlist *inputlist_build(struct options *options, int argc, char *argv[])
+{
+	struct inputlist *inputlist = calloc(1, sizeof(*inputlist));
+
+	/* append file names from cache file */
+	if(options->input_cache_name)
+		inputlist_append_from_cache(inputlist, options->input_cache_name);
+
+	/* append file names from command line */
+	while(argc--)
+		inputlist_append(inputlist, *argv++);
+
+	return inputlist;
+}
+
+
+/*
+ * Clean up.
+ */
+
+static void inputlist_destroy(struct inputlist *inputlist)
+{
+	if(inputlist)
+		while(inputlist->length--)
+			free(inputlist->file[inputlist->length]);
+	free(inputlist);
+}
+
+
+/*
+ ******************************************************************************
+ *
+ *                       Assemble Trigger File Metadata
+ *
+ ******************************************************************************
+ */
+
+struct metadata {
+	int length;
+	ProcessTable *process;
+	ProcessParamsTable *params;
+	SearchSummaryTable *summary;
+	char **new_id;
+};
+
+
+/*
+ * Clean up.
+ */
+
+#define LISTFREE(list) do { __typeof(list) tmp; while(list) { tmp = list; list = list->next; free(tmp); } } while(0)
+
+static void metadata_destroy(struct metadata *metadata)
+{
+	if(metadata) {
+		while(metadata->length--)
+			free(metadata->new_id[metadata->length]);
+		free(metadata->new_id);
+		LISTFREE(metadata->process);
+		LISTFREE(metadata->params);
+		LISTFREE(metadata->summary);
+	}
+	free(metadata);
+}
+
+
+/*
+ * Add a process id string to the new_id array
+ */
+
+static void metadata_append_id(struct metadata *metadata, int id)
+{
+	int length, i;
+
+	/* allocate memory */
+	metadata->new_id = realloc(metadata->new_id, (metadata->length + 1) * sizeof(*metadata->new_id));
+
+	/* compute the length of the process id string */
+	for(length = 1, i = id; i > 9; i /= 10, length++);
+	length += 19 + 1; /* length of "process:process_id:" + \0 */
+
+	/* construct the process id string */
+	metadata->new_id[metadata->length] = malloc(length);
+	sprintf(metadata->new_id[metadata->length], "process:process_id:%d", id);
+}
+
+
+/*
+ * Load the metadata from the tables in one file
+ */
+
+static void metadata_from_file(struct metadata *metadata, char *filename, int id)
+{
+	ProcessTable *process;
+	SearchSummaryTable *summary;
+
+	/* read the metadata tables */
+	metadata->process = XLALProcessTableFromLIGOLw(filename);
+	metadata->params = XLALProcessParamsTableFromLIGOLw(filename);
+	metadata->summary = XLALSearchSummaryTableFromLIGOLw(filename);
+
+	/* loop over rows */
+	metadata->length = 0;
+	process = metadata->process;
+	summary = metadata->summary;
+	while(process && summary) {
+		process = process->next;
+		summary = summary->next;
+		metadata_append_id(metadata, id++);
+		metadata->length++;
 	}
 
-	if(!*infile && (options->globtrig == FALSE)) {
-		LALPrintError("Must supply an xml file to parse\n");
-		exit(SNGLBURSTREADER_EARG);
-	}
-
-	if(!*outtxt && options->outtxt) {
-		LALPrintError("Output txt file name must be specified\n");
-		exit(SNGLBURSTREADER_EARG);
-	}
-
-	if(!*outfile) {
-		LALPrintError("Outfile name must be specified\n");
-		exit(SNGLBURSTREADER_EARG);
+	/* check that the process and search summary tables have the same
+	 * number of rows */
+	if(process || summary) {
+		fprintf(stderr, "error: process and search summary tables different lengths in %s\n", filename);
+		exit(-1);
 	}
 }
 
 
 /*
- * Read and discard the search summary table from a LIGO LW burst trigger
- * file.  Return the time (seconds) encompassed by the file.
+ * Turn list of input files into array of meta data info.
  */
 
-static INT8 read_search_summary_start_end(LALStatus * stat, char *filename, INT8 * start, INT8 * end, FILE * fpout)
+static struct metadata *metadata_from_inputlist(struct inputlist *inputlist)
 {
-	SearchSummaryTable *searchSummary = NULL;
-	SearchSummaryTable *tmp;
-	INT8 local_start, local_end;
+	struct metadata *metadata = malloc(inputlist->length * sizeof(*metadata));
+	int i;
+	int id;
 
-	/* allow for NULL pointers if the calling code doesn't care about these
-	 * results */
-	if(!start)
-		start = &local_start;
-	if(!end)
-		end = &local_end;
-
-	SearchSummaryTableFromLIGOLw(&searchSummary, filename);
-
-	if(!searchSummary)
-		return (0);
-
-	LAL_CALL(LALGPStoINT8(stat, start, &searchSummary->out_start_time), stat);
-	LAL_CALL(LALGPStoINT8(stat, end, &searchSummary->out_end_time), stat);
-
-	if(fpout)
-		fprintf(fpout, "%lld  %lld  %lld\n", *start, *end, *end - *start);
-
-	while(searchSummary) {
-		tmp = searchSummary;
-		searchSummary = searchSummary->next;
-		LALFree(tmp);
+	for(i = id = 0; i < inputlist->length; i++) {
+		metadata_from_file(&metadata[i], inputlist->file[i], id);
+		id += metadata[i].length;
 	}
 
-	return (*end - *start);
-}
-
-
-static void populate_search_summary_ifo(char *filename, MetadataTable * searchsumm)
-{
-	SearchSummaryTable *searchSummary = NULL;
-	SearchSummaryTable *tmp;
-
-	SearchSummaryTableFromLIGOLw(&searchSummary, filename);
-
-	if(!searchSummary) {
-		fprintf(stderr, "No search summary table found in input file\n");
-		exit(1);
-	}
-
-	snprintf(searchsumm->searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, "%s", searchSummary->ifos);
-
-	while(searchSummary) {
-		tmp = searchSummary;
-		searchSummary = searchSummary->next;
-		LALFree(tmp);
-	}
+	return metadata;
 }
 
 
 /*
- * Function tests if the given interval contains any playground data
- * FIXME: check if doing S2 or S3
+ ******************************************************************************
+ *
+ *                                Diagnostics
+ *
+ ******************************************************************************
  */
 
-static int contains_playground(INT4 gpsStart, INT4 gpsEnd)
+static void print_process_id_mapping(struct inputlist *inputlist, struct metadata *metadata)
 {
-	INT4 S2Start = 729273613;
-	INT4 playInterval = 6370;
-	INT4 playLength = 600;
-	INT4 start_offset = gpsStart - S2Start;
-	INT4 end_offset = gpsEnd - S2Start;
+	ProcessTable *process;
+	int i, j;
 
-	return ((start_offset % playInterval < playLength) || (end_offset / playInterval != start_offset / playInterval));
-}
-
-
-/*
- * Trim unwanted events from the event list.
- */
-
-static BOOLEAN keep_this_event(SnglBurstTable * event, struct options_t options)
-{
-	/* check if in after specified time window */
-	if(options.trigStartTimeFlag && !(XLALGPSToINT8NS(&event->start_time) >= options.trigStartTime))
-		return (FALSE);
-
-	/* check if in before specified end time */
-	if(options.trigStopTimeFlag && !(XLALGPSToINT8NS(&event->start_time) <= options.trigStopTime))
-		return (FALSE);
-
-	/* check the confidence */
-	if(options.maxConfidenceFlag && !(event->confidence <= options.maxConfidence))
-		return (FALSE);
-
-	/* check min duration */
-	if(options.minDurationFlag && !(event->duration >= options.minDuration))
-		return (FALSE);
-
-	/* check max duration */
-	if(options.maxDurationFlag && !(event->duration <= options.maxDuration))
-		return (FALSE);
-
-	/* check min centralfreq */
-	if(options.minCentralfreqFlag && !(event->central_freq >= options.minCentralfreq))
-		return (FALSE);
-
-	/* check max centralfreq */
-	if(options.maxCentralfreqFlag && !(event->central_freq <= options.maxCentralfreq))
-		return (FALSE);
-
-	/* check max bandwidth */
-	if(options.maxBandwidthFlag && !(event->bandwidth <= options.maxBandwidth))
-		return (FALSE);
-
-	/* check min amplitude */
-	if(options.minAmplitudeFlag && !(event->amplitude >= options.minAmplitude))
-		return (FALSE);
-
-	/* check max amplitude */
-	if(options.maxAmplitudeFlag && !(event->amplitude <= options.maxAmplitude))
-		return (FALSE);
-
-	/* check min snr */
-	if(options.minSnrFlag && !(event->snr >= options.minSnr))
-		return (FALSE);
-
-	/* check max snr */
-	if(options.maxSnrFlag && !(event->snr <= options.maxSnr))
-		return (FALSE);
-
-	/* check if trigger starts in playground */
-	if(options.playground && !(contains_playground(event->peak_time.gpsSeconds, event->peak_time.gpsSeconds)))
-		return (FALSE);
-
-	if(options.noplayground && (contains_playground(event->peak_time.gpsSeconds, event->peak_time.gpsSeconds)))
-		return (FALSE);
-
-	return (TRUE);
-}
-
-
-static SnglBurstTable *free_this_event(SnglBurstTable * event)
-{
-	SnglBurstTable *next = event ? event->next : NULL;
-#ifdef RUN_REALLY_REALLY_REALLY_SLOWLY
-	LALFree(event);
-#else
-	free(event);
-#endif
-	return (next);
-}
-
-
-static SnglBurstTable **trim_event_list(SnglBurstTable ** list, struct options_t options)
-{
-	SnglBurstTable *event;
-
-	while(*list && !keep_this_event(*list, options))
-		*list = free_this_event(*list);
-
-	if(!*list)
-		return (list);
-
-	for(event = *list; event->next;) {
-		if(keep_this_event(event->next, options))
-			event = event->next;
-		else
-			event->next = free_this_event(event->next);
-	}
-	return (&event->next);
-}
-
-
-/*
- * Count the number of events in a burst event list.
- */
-
-static long int count_events(SnglBurstTable * event)
-{
-	long int count;
-
-	for(count = 0; event; count++)
-		event = event->next;
-
-	return (count);
-}
-
-
-static int output_txt_file(FILE * fpout, SnglBurstTable * snglBursts)
-{
-	SnglBurstTable *thisEvent = NULL;
-
-	thisEvent = snglBursts;
-	/*fprintf(fpout,"# %s\n",thisEvent->ifo);
-	   fprintf(fpout,"# start_time,start_time_ns,peak_time,peak_time_ns,duration,central_freq,bandwidth,snr,confidence\n");
-	   fflush(fpout); */
-
-	while(thisEvent) {
-		fprintf(fpout, "%d %d %d %d %f %f %f %f %e\n", thisEvent->start_time.gpsSeconds, thisEvent->start_time.gpsNanoSeconds, thisEvent->peak_time.gpsSeconds, thisEvent->peak_time.gpsNanoSeconds, thisEvent->duration, thisEvent->central_freq, thisEvent->bandwidth, thisEvent->snr, thisEvent->confidence);
-		thisEvent = thisEvent->next;
-	}
-
-	return 0;
-}
-
-
-static int path_from_fileurl(CHAR * filepath, FrStat * file)
-{
-	char prot[MAXPROTOCOLLEN + 1] = "";
-	char host[MAXHOSTNAMELEN + 1] = "";
-	int n;
-
-	/* get protocol, hostname, and path */
-	if(!file || !file->url) {
-		fprintf(stderr, "No file passed in\n");
-		return 1;
-	}
-	n = sscanf(file->url, "%" XSTR(MAXPROTOCOLLEN) "[^:]://%" XSTR(MAXHOSTNAMELEN) "[^/]%" XSTR(MAXPATHLEN) "s", prot, host, filepath);
-	if(n != 3) {		/* perhaps the hostname has been omitted */
-		n = sscanf(file->url, "%" XSTR(MAXPROTOCOLLEN) "[^:]://%" XSTR(MAXPATHLEN) "s", prot, filepath);
-		if(n == 2)
-			strcpy(host, "localhost");
-		else {
-			strncpy(filepath, file->url, MAXPATHLEN);
-			strcpy(prot, "none");
+	fprintf(stderr, "Process ID mappings:\n");
+	for(i = 0; i < inputlist->length; i++) {
+		fprintf(stderr, "\t%s:\n", inputlist->file[i]);
+		process = metadata->process;
+		for(j = 0; j < metadata->length; j++) {
+			fprintf(stderr, "\t\t%s --> %s\n", process->node, metadata->new_id[j]);
+			process = process->next;
 		}
+		metadata++;
 	}
-
-	if(!strcmp(prot, "file")) {
-		if(strcmp(host, "localhost")) {	/* make sure the host *is* localhost */
-			char localhost[MAXHOSTNAMELEN + 1];
-			gethostname(localhost, MAXHOSTNAMELEN);
-			if(strcmp(host, localhost)) {	/* nope */
-				fprintf(stderr, "Can not read files from remote hosts.\n");
-				return 1;
-			}
-		}
-	} else {
-		fprintf(stderr, "Unsupported protocol %s.", prot);
-		return 1;
-	}
-
-	return 0;
 }
 
 
 /*
- * Entry Point
+ ******************************************************************************
+ *
+ *                                Entry Point
+ *
+ ******************************************************************************
  */
 
-int main(int argc, char **argv)
+int main(int argc, char *argv[])
 {
-	static LALStatus stat;
-	FILE *fpout;
-	INT8 timeAnalyzed;
-	CHAR line[MAXSTR];
-	CHAR *infile, *outfile, *outtxt;
-	SnglBurstTable *burstEventList;
-	SnglBurstTable **addpoint;
-	MetadataTable myTable;
-	MetadataTable searchsumm;
-	LIGOLwXMLStream xmlStream;
-	struct options_t options;
-	FrCache *fileCache = NULL;
-	FrCacheSieve fileCacheSieve;
-	UINT4 j;
+	struct options *options;
+	struct inputlist *inputlist;
+	struct metadata *metadata;
+	char *prog = argv[0];
 
-
-
-	/*
-	 * Initialize things
-	 */
-
-	set_option_defaults(&options);
-	parse_command_line(argc, argv, &options, &infile, &outfile, &outtxt);
-
-	lal_errhandler = LAL_ERR_EXIT;
-	set_debug_level("1");
-	memset(&xmlStream, 0, sizeof(LIGOLwXMLStream));
-	xmlStream.fp = NULL;
-
-
-	/*
-	 * Create the search summary table
-	 */
-
-	searchsumm.searchSummaryTable = LALCalloc(1, sizeof(SearchSummaryTable));
-
-
-	/*
-	 * Loop over the xml input files
-	 */
-
-	/* open the file cache and create an internal cache if the file cache 
-	 * is provided, else
-	 * use glob to get the xml files into an internal cache
-	 */
-	if(options.globtrig)
-		LAL_CALL(LALFrCacheGenerate(&stat, &fileCache, options.globdir, "*.xml"), &stat);
-	else
-		LAL_CALL(LALFrCacheImport(&stat, &fileCache, infile), &stat);
-	if(options.trigStartTimeFlag || options.trigStopTimeFlag) {
-		fileCacheSieve.srcRegEx = NULL;
-		fileCacheSieve.dscRegEx = NULL;
-		fileCacheSieve.urlRegEx = NULL;
-		fileCacheSieve.earliestTime = options.trigStartTimeFlag ? options.trigStartTime / LAL_INT8_C(1000000000) : -1;
-		fileCacheSieve.latestTime = options.trigStopTimeFlag ? (options.trigStopTime + LAL_INT8_C(999999999)) / LAL_INT8_C(1000000000) : -1;  /* integer ceiling */
-		fileCache = XLALFrSieveCache(fileCache, &fileCacheSieve);
+	/* parse and validate the command line */
+	options = options_parse(&argc, &argv);
+	if(!options_validate(options, argc)) {
+		fprintf(stderr, "%s: invalid arguments\n", prog);
+		print_usage(prog);
+		exit(-1);
 	}
 
+	/* construct list of input files */
+	inputlist = inputlist_build(options, argc, argv);
 
-	if(options.printsum) {
-		fpout = fopen("./EPjobstartstop.dat", "w");
-		fprintf(fpout, "# This file contains the start & stop times of all jobs that succeded\n");
-	} else
-		fpout = NULL;
+	/* load all metadata */
+	metadata = metadata_from_inputlist(inputlist);
 
-	burstEventList = NULL;
-	addpoint = &burstEventList;
-	timeAnalyzed = 0;
+	if(options->verbose)
+		print_process_id_mapping(inputlist, metadata);
 
-	for(j = 0; j < fileCache->numFrameFiles; j++) {
-
-		if(path_from_fileurl(line, &(fileCache->frameFiles[j])))
-			exit(1);
-
-		if(options.verbose)
-			fprintf(stderr, "Working on file %s\n", fileCache->frameFiles[j].url);
-
-		/*
-		 * Read the search summary table
-		 */
-
-		timeAnalyzed += read_search_summary_start_end(&stat, line, NULL, NULL, fpout);
-		populate_search_summary_ifo(line, &searchsumm);
-
-		/*
-		 * Read the Sngl_Burst table
-		 */
-
-		LAL_CALL(LALSnglBurstTableFromLIGOLw(&stat, addpoint, line), &stat);
-
-		/*
-		 * Do any requested cuts (to save RAM)
-		 */
-
-		trim_event_list(addpoint, options);
-
-		/*
-		 * move addpoint to the end of the linked list
-		 */
-
-		while(*addpoint)
-			addpoint = &(*addpoint)->next;
-	}
-
-
-	/*
-	 * Cluster the events
-	 */
-
-	if(options.cluster && (options.clusterchoice == clusterbypeaktimeandfreq))
-		XLALClusterSnglBurstTable(&burstEventList, XLALCompareSnglBurstByPeakTime, XLALCompareSnglBurstByPeakTimeAndFreq, XLALSnglBurstCluster);
-	else if(options.cluster && (options.clusterchoice == clusterbytimeandfreq))
-		XLALClusterSnglBurstTable(&burstEventList, NULL, XLALCompareSnglBurst, XLALSnglBurstCluster);
-	else if(options.cluster && (options.clusterchoice == stringcluster))
-		XLALClusterStringBurstTable(&burstEventList, XLALCompareStringBurstByTime, XLALCompareStringBurstByTime);
-
-	/*
-	 * Do any requested cuts (final)
-	 */
-
-	trim_event_list(&burstEventList, options);
-
-	/*
-	 * print out the total time analysed and the number of triggers found
-	 */
-
-	if(options.printsum) {
-		fprintf(fpout, "# Total time analysed = %lld nanosec.s\n", timeAnalyzed);
-		fprintf(fpout, "# Total no. of triggers = %ld\n", count_events(burstEventList));
-		fprintf(fpout, "# Trigger rate = %e Hz\n", count_events(burstEventList) * pow(10, 9) / timeAnalyzed);
-		fclose(fpout);
-	}
-
-
-	/*
-	 * Sort the triggers
-	 */
-
-	XLALSortSnglBurst(&burstEventList, XLALCompareSnglBurstByStartTime);
-
-
-	/*
-	 * Write output txt file if asked for
-	 */
-
-	if(options.outtxt) {
-		fpout = fopen(outtxt, "w");
-		output_txt_file(fpout, burstEventList);
-		fclose(fpout);
-	}
-
-	/*
-	 * Write output xml file
-	 */
-
-	LAL_CALL(LALOpenLIGOLwXMLFile(&stat, &xmlStream, outfile), &stat);
-
-	/* search summary table */
-	searchsumm.searchSummaryTable->nevents = XLALCountSnglBurst(burstEventList);
-
-	if(burstEventList) {
-		SnglBurstTable *list = burstEventList;
-		searchsumm.searchSummaryTable->in_start_time = burstEventList->start_time;
-		while(list->next) {
-			list = list->next;
-		}
-		XLALINT8toGPS(&(searchsumm.searchSummaryTable->out_end_time), XLALGPStoINT8(&(list->start_time)) + 1e9 * list->duration);
-		searchsumm.searchSummaryTable->out_start_time = searchsumm.searchSummaryTable->in_start_time;
-		searchsumm.searchSummaryTable->out_end_time = searchsumm.searchSummaryTable->in_end_time;
-	}
-
-	LAL_CALL(LALBeginLIGOLwXMLTable(&stat, &xmlStream, search_summary_table), &stat);
-	LAL_CALL(LALWriteLIGOLwXMLTable(&stat, &xmlStream, searchsumm, search_summary_table), &stat);
-	LAL_CALL(LALEndLIGOLwXMLTable(&stat, &xmlStream), &stat);
-	LALFree(searchsumm.searchSummaryTable);
-
-	/* sngl_burst_table */
-	LAL_CALL(LALBeginLIGOLwXMLTable(&stat, &xmlStream, sngl_burst_table), &stat);
-	myTable.snglBurstTable = burstEventList;
-	LAL_CALL(LALWriteLIGOLwXMLTable(&stat, &xmlStream, myTable, sngl_burst_table), &stat);
-	LAL_CALL(LALEndLIGOLwXMLTable(&stat, &xmlStream), &stat);
-	LAL_CALL(LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
-
+	/* success */
+	metadata_destroy(metadata);
+	inputlist_destroy(inputlist);
+	options_destroy(options);
 	exit(0);
 }
