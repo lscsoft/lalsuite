@@ -839,6 +839,85 @@ XLALTimeCutSingleInspiral(
 
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
 void
+LALBCVCVetoSingleInspiral(
+    LALStatus                  *status,
+    SnglInspiralTable         **eventHead,
+    REAL4			lambda,
+    REAL4                       alphaFhi,
+    REAL4                       alphaFlo,
+    REAL4                       thresholdT 
+    )
+/* </lalVerbatim> */
+{
+  SnglInspiralTable    *inspiralEventList = NULL;
+  SnglInspiralTable    *thisEvent = NULL;
+  SnglInspiralTable    *prevEvent = NULL;
+
+
+  INITSTATUS( status, "LALBCVCVetoSingleInspiral", SNGLINSPIRALUTILSC );
+  ATTATCHSTATUSPTR( status );
+
+
+
+  thisEvent = *eventHead;
+
+  while ( thisEvent )
+  {
+    SnglInspiralTable *tmpEvent = thisEvent;
+    REAL4 alphaF = 1e3; /* should be far enough*/
+    INT4 veto = 0;
+
+    thisEvent = thisEvent->next;
+    alphaF = tmpEvent->tau5 * pow(tmpEvent->f_final,(2.0/3.0));
+    veto = 0;
+    
+    /* Remove all the triggers that are not in alphaFBox */
+    if ((alphaF / tmpEvent->snr)>thresholdT || (alphaF / tmpEvent->snr)<-thresholdT) 
+    {
+      veto = 1;
+    }
+
+    /* Remove all the triggers that are not in alphaFlo <= alphaF <= alphaFhi */
+    if ((alphaF > alphaFhi) || alphaF < alphaFlo) 
+    {
+      veto = 1;
+    }
+
+    if ( ( tmpEvent->tau4/tmpEvent->snr ) >  lambda )
+    {
+      veto = 1;
+    }
+	
+    if ( veto == 0 )
+    {
+      /* keep this template */
+      if ( ! inspiralEventList  )
+      {
+        inspiralEventList = tmpEvent;
+      }
+      else
+      {
+        prevEvent->next = tmpEvent;
+      }
+      tmpEvent->next = NULL;
+      prevEvent = tmpEvent;
+    }
+    else
+    {
+      /* discard this template */
+      LALFreeSnglInspiral ( status->statusPtr, &tmpEvent );
+    }
+  }
+  *eventHead = inspiralEventList; 
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+
+} 
+
+ 
+/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+void
 LALalphaFCutSingleInspiral(
     LALStatus                  *status,
     SnglInspiralTable         **eventHead,

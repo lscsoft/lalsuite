@@ -449,6 +449,16 @@ XLALTimeCutSingleInspiral(
     );
 
 void
+LALBCVCVetoSingleInspiral(
+    LALStatus                  *status,
+    SnglInspiralTable         **eventHead,
+    REAL4                       lambda,
+    REAL4                       alphaFhi,
+    REAL4                       alphaFlo,
+    REAL4                       thresholdT 
+    );
+
+void
 LALalphaFCutSingleInspiral(
     LALStatus                  *status,
     SnglInspiralTable         **eventHead,
