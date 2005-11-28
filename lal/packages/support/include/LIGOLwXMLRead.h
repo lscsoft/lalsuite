@@ -210,10 +210,9 @@ SimInspiralTableFromLIGOLw (
     INT4                 endTime
     );
 
-int
-SearchSummaryTableFromLIGOLw (
-    SearchSummaryTable **sumHead,
-    CHAR                *fileName
+SearchSummaryTable *
+XLALSearchSummaryTableFromLIGOLw (
+    const CHAR          *fileName
     );
 
 int

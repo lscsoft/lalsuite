@@ -44,7 +44,7 @@ files.
 \idx{LALSnglInspiralTableFromLIGOLw()}
 \idx{InspiralTmpltBankFromLIGOLw()}
 \idx{SimInspiralTableFromLIGOLw()}
-\idx{SearchSummaryTableFromLIGOLw()}
+\idx{XLALSearchSummaryTableFromLIGOLw()}
 \idx{SummValueTableFromLIGOLw()}
 \idx{LALStochasticTableFromLIGOLw()}
 \idx{LALStochSummTableFromLIGOLw()}
@@ -106,10 +106,10 @@ tables, a call is made to \verb+LALCreateMetaTableDir+.  For all other tables,
   occuring between these times are returned.  If the \verb+endTime+ is set to
   zero, then all events are returned.
 
-  The routine \verb+SearchSummaryTableFromLIGOLw+ reads in a \verb+search_summary+
-  table from the LIGOLwXML file specified in \verb+fileName+.  It returns the
-  number of rows read in and \verb+sumHead+ provides a pointer to the head of a
-  linked list of \verb+SearchSummaryTable+s.
+  The routine \verb+XLALSearchSummaryTableFromLIGOLw+ reads in a
+  \verb+search_summary+ table from the LIGOLwXML file specified in
+  \verb+fileName+.  It returns a pointer to the head of a linked list of
+  \verb+SearchSummaryTable+s.
 
   The routine \verb+SummValueTableFromLIGOLw+ reads in a \verb+summ_value+
   table from the LIGOLwXML file specified in \verb+fileName+.  It returns the
@@ -3221,158 +3221,131 @@ SimInspiralTableFromLIGOLw (
 
 #undef CLOBBER_SIM
 
+
 /* <lalVerbatim file="LIGOLwXMLReadCP"> */
-int
-SearchSummaryTableFromLIGOLw (
-    SearchSummaryTable **sumHead,
-    CHAR                *fileName
-    )
+SearchSummaryTable *
+XLALSearchSummaryTableFromLIGOLw (
+    const CHAR *fileName
+)
 /* </lalVerbatim> */
 {
-  int                                   i, j, nrows;
-  int                                   mioStatus;
-  struct MetaioParseEnvironment         parseEnv;
-  const  MetaioParseEnv                 env = &parseEnv;
-  MetaTableDirectory tableDir[] =
-  {
-    {"comment",                 -1, 0},
-    {"ifos",                    -1, 1},
-    {"in_start_time",           -1, 2},
-    {"in_start_time_ns",        -1, 3},
-    {"in_end_time",             -1, 4},
-    {"in_end_time_ns",          -1, 5},
-    {"out_start_time",          -1, 6},
-    {"out_start_time_ns",       -1, 7},
-    {"out_end_time",            -1, 8},
-    {"out_end_time_ns",         -1, 9},
-    {"nevents",                 -1, 10},
-    {"nnodes",                  -1, 11},
-    {NULL,                       0, 0}
+  const char *func = "XLALSearchSummaryTableFromLIGOLw";
+  SearchSummaryTable *head = NULL;
+  SearchSummaryTable *oldhead;
+  struct MetaioParseEnvironment parser;
+  MetaTableDirectory tableDir[] = {
+    {"comment",           -1, 0},
+    {"ifos",              -1, 1},
+    {"in_start_time",     -1, 2},
+    {"in_start_time_ns",  -1, 3},
+    {"in_end_time",       -1, 4},
+    {"in_end_time_ns",    -1, 5},
+    {"out_start_time",    -1, 6},
+    {"out_start_time_ns", -1, 7},
+    {"out_end_time",      -1, 8},
+    {"out_end_time_ns",   -1, 9},
+    {"nevents",           -1, 10},
+    {"nnodes",            -1, 11},
+    {NULL,                 0, 0}
   };
+  int i;
 
-  /* check that the bank handle and pointer are vaid */
-  if ( ! sumHead )
-  {
-    fprintf( stderr, "null pointer passed as handle to search summary" );
-    return -1;
-  }
-  if ( *sumHead )
-  {
-    fprintf( stderr, "non-null pointer passed as pointer to search summary" );
-    return -1;
+  /* open the search_summary table */
+  if(MetaioOpenTable(&parser, fileName, "search_summary")) {
+    XLALPrintError("error opening search_summary table from file %s\n", fileName);
+    XLAL_ERROR_NULL(func, XLAL_EIO);
   }
 
-  /* open the search_summary table in the file file */
-  mioStatus = MetaioOpenTable( env, fileName, "search_summary" );
-  if ( mioStatus )
-  {
-    fprintf( stderr, "error opening search_summary table from file %s\n", 
-        fileName );
-    return -1;
-  }
-
-  /* figure out the column positions */
-  for ( i = 0; tableDir[i].name; ++i )
-  {
-    if ( (tableDir[i].pos = MetaioFindColumn( env, tableDir[i].name )) < 0 )
-    {
-      fprintf( stderr, "unable to find column %s\n", tableDir[i].name );
-      MetaioClose(env);
-      return -1;
-    }
-  }
-
-  /* allocate memory for the table */
-  *sumHead = (SearchSummaryTable *) LALCalloc( 1, sizeof(SearchSummaryTable) );
-
-  /* loop over the rows in the file */
-  i = nrows = 0;
-  while ( (mioStatus = MetaioGetRow(env)) == 1 ) 
-  {
-    /* parse the rows into the SearhSummary structure */
-    for ( j = 1; tableDir[j].name; ++j )
-    {
-      INT4 intData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
-
-      if ( tableDir[j].idx == 0 )
-      {
-        LALSnprintf( (*sumHead)->comment, LIGOMETA_COMMENT_MAX * sizeof(CHAR),
-            "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
-      }
-      else if ( tableDir[j].idx == 1 )
-      {
-        if ( tableDir[j].pos > 0 )
-        {
-          LALSnprintf( (*sumHead)->ifos, 
-              LIGOMETA_COMMENT_MAX * sizeof(CHAR), "%s", 
-              env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
-        }
-      }
-
-      else if ( tableDir[j].idx == 2 )
-      {
-        (*sumHead)->in_start_time.gpsSeconds = intData;
-      }
-      else if ( tableDir[j].idx == 3 )
-      {
-        (*sumHead)->in_start_time.gpsNanoSeconds = intData;
-      }
-      else if ( tableDir[j].idx == 4 )
-      {
-        (*sumHead)->in_end_time.gpsSeconds = intData;
-      }
-      else if ( tableDir[j].idx == 5 )
-      {
-        (*sumHead)->in_end_time.gpsNanoSeconds = intData;
-      }
-      else if ( tableDir[j].idx == 6 )
-      {
-        (*sumHead)->out_start_time.gpsSeconds = intData;
-      }
-      else if ( tableDir[j].idx == 7 )
-      {
-        (*sumHead)->out_start_time.gpsNanoSeconds = intData;
-      }
-      else if ( tableDir[j].idx == 8 )
-      {
-        (*sumHead)->out_end_time.gpsSeconds = intData;
-      }
-      else if ( tableDir[j].idx == 9 )
-      {
-        (*sumHead)->out_end_time.gpsNanoSeconds = intData;
-      }
-      else if ( tableDir[j].idx == 10 )
-      {
-        (*sumHead)->nevents = intData;
-      }
-      else if ( tableDir[j].idx == 11 )
-      {
-        (*sumHead)->nnodes = intData;
-      }
-      else
-      {
-        LALFree( *sumHead );
-        fprintf( stderr, "unknown column while parsing\n" );
-        return -1;
-      }
+  /* determine column positions */
+  for(i = 0; tableDir[i].name; i++)
+    if((tableDir[i].pos = MetaioFindColumn(&parser, tableDir[i].name)) < 0) {
+      /* no optional columns! */
+      XLALPrintError("unable to find column %s\n", tableDir[i].name);
+      MetaioClose(&parser);
+      XLAL_ERROR_NULL(func, XLAL_EIO);
     }
 
-    /* increase the count of rows parsed */
-    ++nrows;
-  }
+  /* loop over rows */
+  do switch(MetaioGetRow(&parser)) {
+  case -1: /* error */
+  default: /* ??? */
+    XLALPrintError("error parsing row\n");
+    while(head) {
+      oldhead = head;
+      head = head->next;
+      LALFree(oldhead);
+    }
+    MetaioClose(&parser);
+    XLAL_ERROR_NULL(func, XLAL_EIO);
 
-  if ( mioStatus == -1 )
-  {
-    fprintf( stderr, "error parsing after row %d\n", i );
-    LALFree( *sumHead );
-    MetaioClose( env );
-    return -1;
-  }
+  case 0: /* end of table */
+    MetaioClose(&parser);
+    return head;
 
-  /* we have sucesfully parsed table */
-  MetaioClose( env );
+  case 1: /* found a row */
+    /* prepend an entry to the linked list */
+    oldhead = head;
+    head = LALCalloc(1, sizeof(*head));
+    head->next = oldhead;
 
-  return nrows;  
+    /* loop over columns */
+    for(i = 0; tableDir[i].name; i++) {
+      /* was column found in table? */
+      if(tableDir[i].pos < 0)
+        continue;
+
+      /* which is it? */
+      switch(tableDir[i].idx) {
+      case 0:
+        LALSnprintf(head->comment, LIGOMETA_COMMENT_MAX * sizeof(CHAR), "%s", parser.ligo_lw.table.elt[tableDir[i].pos].data.lstring.data);
+        break;
+
+      case 1:
+        LALSnprintf(head->ifos, LIGOMETA_COMMENT_MAX * sizeof(CHAR), "%s", parser.ligo_lw.table.elt[tableDir[i].pos].data.lstring.data );
+        break;
+
+      case 2:
+        head->in_start_time.gpsSeconds = parser.ligo_lw.table.elt[tableDir[i].pos].data.int_4s;
+        break;
+
+      case 3:
+        head->in_start_time.gpsNanoSeconds = parser.ligo_lw.table.elt[tableDir[i].pos].data.int_4s;
+        break;
+
+      case 4:
+        head->in_end_time.gpsSeconds = parser.ligo_lw.table.elt[tableDir[i].pos].data.int_4s;
+        break;
+
+      case 5:
+        head->in_end_time.gpsNanoSeconds = parser.ligo_lw.table.elt[tableDir[i].pos].data.int_4s;
+        break;
+
+      case 6:
+        head->out_start_time.gpsSeconds = parser.ligo_lw.table.elt[tableDir[i].pos].data.int_4s;
+        break;
+
+      case 7:
+        head->out_start_time.gpsNanoSeconds = parser.ligo_lw.table.elt[tableDir[i].pos].data.int_4s;
+        break;
+
+      case 8:
+        head->out_end_time.gpsSeconds = parser.ligo_lw.table.elt[tableDir[i].pos].data.int_4s;
+        break;
+
+      case 9:
+        head->out_end_time.gpsNanoSeconds = parser.ligo_lw.table.elt[tableDir[i].pos].data.int_4s;
+        break;
+
+      case 10:
+        head->nevents = parser.ligo_lw.table.elt[tableDir[i].pos].data.int_4s;
+        break;
+
+      case 11:
+        head->nnodes = parser.ligo_lw.table.elt[tableDir[i].pos].data.int_4s;
+        break;
+      }
+    }
+  } while(1);
 }
 
 
@@ -4271,7 +4244,6 @@ XLALReadInspiralTriggerFile (
 /* </lalVerbatim> */
 {
   const char *func = "XLALReadInspiralTriggerFile";
-  INT4 haveSearchSum = 0;
   INT4 numFileTriggers = 0;
   SnglInspiralTable  *inputData = NULL;
   SearchSummaryTable *inputSummary = NULL;
@@ -4306,9 +4278,9 @@ XLALReadInspiralTriggerFile (
   XLALPrintInfo( 
       "XLALReadInspiralTriggerFile(): Reading search_summary table\n");
 
-  haveSearchSum = SearchSummaryTableFromLIGOLw( &inputSummary, fileName );
+  inputSummary = XLALSearchSummaryTableFromLIGOLw(fileName);
 
-  if ( haveSearchSum < 1 || ! inputSummary )
+  if ( ! inputSummary )
   {
     XLALPrintError("No valid search_summary table in %s, exiting\n",
         fileName );
