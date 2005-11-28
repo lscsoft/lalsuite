@@ -252,6 +252,7 @@ int main( int argc, char *argv[] )
       /* output file names */
       sprintf( aname, "%s\\:" A_CHANNEL, ifo );
       sprintf( abname, "%s\\:" AB_CHANNEL, ifo );
+
       /* get a and ab data and metadata */
       a.name  = aname;
       a.unit  = "none";
@@ -287,7 +288,7 @@ int main( int argc, char *argv[] )
       if ( ! frfile )
       {
         dt = (int)ceil( epoch_diff( &a.tend, &a.tbeg ) );
-        sprintf( fname, "%c-CAL_FAC_%s_%s-%d-%d.gwf", *ifo, ver, ifo, 
+        sprintf( fname, "%c-CAL_FAC_%s_%s_%s-%d-%d.gwf", *ifo, run, ver, ifo, 
             a.tbeg.gpsSeconds, dt );
         frfile = FrFileONew( fname, 0 );
       }
