@@ -15,7 +15,7 @@ int finite(double);
 
 /* global variables defined in ComputeFStatistic.c */
 extern INT4 cfsRunNo;	   /**< CFS run-number: 0=run only once, 1=first run, 2=second run */
-extern ConfigVariables GV; /**< global container for various derived configuration settings */
+extern UINT4 maxSFTindex   /**< maximal sftindex, for error-checking */
 
 #define LD_SMALL        (1.0e-9 / LAL_TWOPI)
 #define OOTWOPI         (1.0 / LAL_TWOPI)
@@ -302,10 +302,10 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
           } /* if x cannot be close to 0 */
         
 
-	if(sftIndex-1 > GV.ifmax-GV.ifmin) {
-	  fprintf(stderr,"ERROR! sftIndex = %d > %d in TestLALDemod\nalpha=%d,"
-		  "k1=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
-		  sftIndex-1, GV.ifmax-GV.ifmin, alpha, k1, xTemp, params->Dterms, params->ifmin);
+        if(sftIndex-1 > maxSFTindex) {
+          fprintf(stderr,"ERROR! sftIndex = %d > %d in TestLALDemod\nalpha=%d,"
+                 "k1=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
+                 sftIndex-1, maxSFTindex, alpha, k1, xTemp, params->Dterms, params->ifmin);
 	  ABORT(status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
 	}
 
@@ -699,9 +699,10 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
           } /* if x cannot be close to 0 */
         
 
-	if(sftIndex-1 > GV.ifmax-GV.ifmin){
-	  fprintf(stderr,"ERROR! sftIndex = %d > %d in TestLALDemod\nalpha=%d, k1=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
-		  sftIndex-1, GV.ifmax-GV.ifmin, alpha, k1, xTemp, params->Dterms, params->ifmin);
+        if(sftIndex-1 > maxSFTindex) {
+          fprintf(stderr,"ERROR! sftIndex = %d > %d in TestLALDemod\nalpha=%d,"
+                 "k1=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
+                 sftIndex-1, maxSFTindex, alpha, k1, xTemp, params->Dterms, params->ifmin);
 	  ABORT(status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
 	}
 	
@@ -1122,12 +1123,12 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
           } /* if x cannot be close to 0 */
 #endif
 
-	if(sftIndex-1 > GV.ifmax-GV.ifmin){
-	      fprintf(stderr,"ERROR! sftIndex = %d > %d in TestLALDemod\nalpha=%d, k1=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
-		      sftIndex-1, GV.ifmax-GV.ifmin, alpha, k1, xTemp, params->Dterms, params->ifmin);
-	      ABORT(status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+        if(sftIndex-1 > maxSFTindex) {
+          fprintf(stderr,"ERROR! sftIndex = %d > %d in TestLALDemod\nalpha=%d,"
+                 "k1=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
+                 sftIndex-1, maxSFTindex, alpha, k1, xTemp, params->Dterms, params->ifmin);
+	  ABORT(status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
 	}
-
 
 
         /* implementation of amplitude demodulation */

@@ -275,6 +275,8 @@ char *fstatbuff = NULL;
 
 FstatOutputEntry empty_FstatOutputEntry;
 
+UINT4 maxSFTindex = 0;
+
 /*----------------------------------------------------------------------*/
 /* local prototypes */
 #ifdef __cplusplus
@@ -505,6 +507,7 @@ int main(int argc,char *argv[])
 
     GV.ifmin = (INT4) floor( (1.0-DOPPLERMAX)* f_min * GV.tsft) - MYMAX(uvar_Dterms, uvar_RngMedWindow/2 + 1 );
     GV.ifmax = (INT4) ceil( (1.0+DOPPLERMAX) * f_max * GV.tsft) + MYMAX(uvar_Dterms, uvar_RngMedWindow/2 + 1);
+    maxSFTindex = GV.ifmax - GV.ifmin;
   }
 
   /* allocate F-statistic arrays */
