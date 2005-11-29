@@ -218,11 +218,12 @@ int main( int argc, char *argv[]) {
   BOOLEAN uvar_help; /* true if -h option is given */
   BOOLEAN uvar_log; /* logging done if true */
   REAL8 uvar_alpha, uvar_delta;  /* sky-location angles */
+  REAL8 uvar_dAlpha, uvar_dDelta;  /* sky-patch ranges */
   REAL8 uvar_fdot; /* first spindown value */
   REAL8 uvar_fStart, uvar_fBand;
   REAL8 uvar_FstatThr; /* threshold of Fstat to select peaks */
   REAL8 uvar_houghThr; /* threshold on hough number count to select candidates */
-  INT4 uvar_ifo1, uvar_ifo2, uvar_blocksRngMed, uvar_nStacks, uvar_Dterms;
+  INT4 uvar_ifo1, uvar_ifo2, uvar_blocksRngMed, uvar_nStacks1, uvar_Dterms;
   REAL8 uvar_refTime;
   INT4 uvar_SSBprecision = SSBPREC_RELATIVISTIC;
   INT4 uvar_nfSize;
@@ -246,7 +247,7 @@ int main( int argc, char *argv[]) {
   uvar_log = FALSE;
   uvar_printMaps = FALSE;
   uvar_printStats = FALSE;
-  uvar_nStacks = NSTACKS;
+  uvar_nStacks1 = NSTACKS;
   uvar_Dterms = DTERMS;
   uvar_alpha = ALPHA;
   uvar_delta = DELTA;
@@ -279,7 +280,7 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "log",              0,  UVAR_OPTIONAL, "Write log file",                &uvar_log),             &status);  
   LAL_CALL( LALRegisterINTUserVar(    &status, "ifo",             'i', UVAR_OPTIONAL, "Detector GEO(1) LLO(2) LHO(3)", &uvar_ifo1 ),           &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "ifo2",             0,  UVAR_OPTIONAL, "Detector for follow up stage",  &uvar_ifo2 ),           &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "nStacks",         'N', UVAR_OPTIONAL, "Number of stacks",              &uvar_nStacks ),        &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "nStacks",         'N', UVAR_OPTIONAL, "Number of stacks",              &uvar_nStacks1 ),       &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "Dterms",           0,  UVAR_OPTIONAL, "For Dirichlet Kernel approx.",  &uvar_Dterms ),         &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",    'w', UVAR_OPTIONAL, "RngMed block size",             &uvar_blocksRngMed),    &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris",  'E', UVAR_OPTIONAL, "Earth Ephemeris file",          &uvar_earthEphemeris),  &status);
@@ -289,7 +290,10 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameout",        'o', UVAR_OPTIONAL, "Output basefileneme",           &uvar_fnameout),        &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "alpha",            0,  UVAR_OPTIONAL, "Right ascension",               &uvar_alpha),           &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "delta",            0,  UVAR_OPTIONAL, "Declination",                   &uvar_delta),           &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "dAlpha",           0,  UVAR_OPTIONAL, "Right ascension range",         &uvar_dAlpha),          &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "dDelta",           0,  UVAR_OPTIONAL, "Declination range",             &uvar_dDelta),          &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "fStart",          'f', UVAR_OPTIONAL, "Start search frequency",        &uvar_fStart),          &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "fBand",           'b', UVAR_OPTIONAL, "Search frequency band",         &uvar_fBand),           &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "fdot",             0,  UVAR_OPTIONAL, "Spindown parameter",            &uvar_fdot),            &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "FstatThr",         0,  UVAR_OPTIONAL, "Threshold on Fstatistic",       &uvar_FstatThr),        &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "houghThr",         0,  UVAR_OPTIONAL, "Hough number count threshold",  &uvar_houghThr),        &status);
@@ -307,7 +311,7 @@ int main( int argc, char *argv[]) {
     exit(0); 
 
   /* some very basic sanity checks on user vars */
-  if ( uvar_nStacks < 1) {
+  if ( uvar_nStacks1 < 1) {
     fprintf(stderr, "Invalid number of stacks\n");
     exit(1);
   }
@@ -510,18 +514,19 @@ int main( int argc, char *argv[]) {
 
   /*------------- set up stacks -----------------*/
   
-  if (uvar_nStacks > nSFTs1) {
+  if (uvar_nStacks1 > nSFTs1) {
     fprintf(stderr, "invalid number of stacks...exiting\n");
     exit(1);
   }
 
   /* set up the stacks */
   /* if sfts are to be split evenly among stacks */
-  LAL_CALL( SetUpStacks1( &status, &stackSFTs1, inputSFTVec1, uvar_nStacks), &status);
+  LAL_CALL( SetUpStacks1( &status, &stackSFTs1, inputSFTVec1, uvar_nStacks1), &status);
   /* if time is to be split evenly between stacks */
-  /* LAL_CALL( SetUpStacks2( &status, &stackSFTs1, inputSFTVec1, &startTsft1, uvar_nStacks), &status); */
+  /* LAL_CALL( SetUpStacks2( &status, &stackSFTs1, inputSFTVec1, &startTsft1, uvar_nStacks1), &status); */
 
-  /* set number of stacks -- may be different from uvar_nStacks! */
+  /* set number of stacks -- may be different from uvar_nStacks1
+! */
   nStacks1 = stackSFTs1.length;
 
   /* set up vector of stack durations */
