@@ -153,6 +153,7 @@ CHAR *uvar_outputLabel;
 CHAR *uvar_outputFstat;
 CHAR *uvar_outputBstat;
 CHAR *uvar_outputBeamPattern;
+CHAR *uvar_outputBeamTS;
 CHAR *uvar_outputLoudest;
 CHAR *uvar_skyGridFile;
 CHAR *uvar_outputSkyGrid;
@@ -175,6 +176,7 @@ void Freemem(LALStatus *,  ConfigVariables *cfg);
 
 void WriteFStatLog (LALStatus *, CHAR *argv[]);
 void checkUserInputConsistency (LALStatus *);
+int outputBeamTS( const CHAR *fname, const AMCoeffs *amcoe );
 
 const char *va(const char *format, ...);	/* little var-arg string helper function */
 
@@ -329,9 +331,6 @@ int main(int argc,char *argv[])
 	}
     } /* if outputBeamPattern */
 
-
-
-
   if (lalDebugLevel) printf ("\nStarting main search-loop.. \n");
   
   /*----------------------------------------------------------------------
@@ -379,9 +378,7 @@ int main(int argc,char *argv[])
 	      GV.fkdot->data[0] = uvar_Freq + iFreq * GV.dFreq;	
 	      
 	      for(nD=0; nD < GV.ifos.length; nD++)
-
 		{
-		  
 		  /*----- calculate SSB-times DeltaT_alpha and Tdot_alpha for this skyposition */
 		  LAL_CALL ( LALGetSSBtimes (&status, 
 					     GV.ifos.tSSB[nD],
@@ -395,6 +392,13 @@ int main(int argc,char *argv[])
 					     GV.ifos.amcoe[nD], 
 					     GV.ifos.DetectorStates[nD], 
 					     thisPoint), &status);
+
+		  /* debug-output beam-pattern timeseries for first skyposition */
+		  if ( (loopcounter == 0 ) && (nD == 0) && uvar_outputBeamTS )
+		    {
+		      if ( outputBeamTS( uvar_outputBeamTS, GV.ifos.amcoe[nD] ) != 0 )
+			LALPrintError("\nFailed to write beam-patterns into '%s'\n\n", uvar_outputBeamTS );
+		    }
 		  
 		  /** Caculate F-statistic using XLALComputeFaFb() */
 		  /* prepare quantities to calculate Fstat from Fa and Fb */
@@ -402,7 +406,7 @@ int main(int argc,char *argv[])
 		  At += GV.ifos.amcoe[nD]->A;
 		  Bt += GV.ifos.amcoe[nD]->B;
 		  Ct += GV.ifos.amcoe[nD]->C;
-		  
+
 		  if ( XLALComputeFaFb (&FaFb, GV.ifos.sftVects[nD], GV.fkdot, GV.ifos.tSSB[nD], 
 					GV.ifos.amcoe[nD], uvar_Dterms) != 0)
 		    {
@@ -415,14 +419,14 @@ int main(int argc,char *argv[])
 		  
 		  FbRe += FaFb.Fb.re;
 		  FbIm += FaFb.Fb.im;
-		  
+
 		  
 		} /* End of loop over detectors */
-	      
+
 	      Dt = At * Bt - Ct * Ct;
-	      M = 1.0f * GV.ifos.sftVects[nD]->length;
+	      M = 1.0f * GV.ifos.sftVects[0]->length;
 	      fact = 4.0f / (M * Dt);
-		  
+
 	      /* In the signal-only case (only for testing using fake data),
 	       * we did not apply any normalization to the data, and we need
 	       * the use the correct factor now (taken from CFS_v1)
@@ -430,11 +434,9 @@ int main(int argc,char *argv[])
 	       */
 	      if ( uvar_SignalOnly )
 		{
-		  REAL8 Ns = 2.0 * GV.ifos.sftVects[0]->data[0].data->length;
 		  REAL8 Tsft = 1.0 / (GV.ifos.sftVects[0]->data[0].deltaF );
-		  REAL8 norm = Tsft / ( Ns * Ns ); 
 		      
-		  fact *= norm;
+		  fact /= Tsft;
 		}
 	      else
 		{
@@ -483,22 +485,22 @@ int main(int argc,char *argv[])
 		}
 	      
 	    } /* for i < nBins: loop over frequency-bins */
-	  
-
-	  /* experimental: output beam-pattern over the sky [only 1st detector!] */
-	  if ( fpBeam )
-	    {
-	      fprintf ( fpBeam, "%8.7f %8.7f %g %g %g %g\n", 
-			thisPoint.longitude, thisPoint.latitude, 
-			GV.ifos.amcoe[0]->A,
-			GV.ifos.amcoe[0]->B,
-			GV.ifos.amcoe[0]->C,
-			GV.ifos.amcoe[0]->D );
-	    }
-
 
 	} /* For GV.spinImax: loop over spindowns */
       
+    
+      /* experimental: output beam-pattern over the sky [only 1st detector!] */
+      if ( fpBeam )
+	{
+	  fprintf ( fpBeam, "%8.7f %8.7f %g %g %g %g\n", 
+		    thisPoint.longitude, thisPoint.latitude, 
+		    GV.ifos.amcoe[0]->A,
+		    GV.ifos.amcoe[0]->B,
+		    GV.ifos.amcoe[0]->C,
+		    GV.ifos.amcoe[0]->D );
+	}
+
+
       loopcounter ++;
       if (lalDebugLevel) 
 	printf ("\
@@ -605,6 +607,7 @@ initUserVars (LALStatus *status)
   uvar_outputFstat = NULL;
   uvar_outputBstat = NULL;
   uvar_outputBeamPattern = NULL;
+  uvar_outputBeamTS = 0;
 
   uvar_skyGridFile = NULL;
 
@@ -650,7 +653,8 @@ initUserVars (LALStatus *status)
   LALregSTRINGUserVar(status,	outputBstat,	 0,  UVAR_OPTIONAL, "Output-file for 'B-statistic' field over the parameter-space");
 
   /* more experimental and unofficial stuff follows here */
-  LALregSTRINGUserVar(status,	outputBeamPattern, 0,  UVAR_DEVELOPER, "Output-file beam-pattern [A,B,C,D] over the sky" );
+  LALregSTRINGUserVar(status,	outputBeamPattern, 0,  UVAR_DEVELOPER, "Output beam-pattern [A,B,C,D] over the sky for 1st detector" );
+  LALregSTRINGUserVar(status,	outputBeamTS,    0,  UVAR_DEVELOPER, "Output beam-timeseries [a(t), b(t)] for 1st skyposition and detector");
   LALregINTUserVar (status, 	SSBprecision,	 0,  UVAR_DEVELOPER, "Precision to use for time-transformation to SSB: 0=Newtonian 1=relativistic");
   LALregINTUserVar(status, 	RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");
   LALregINTUserVar(status,	Dterms,		't', UVAR_DEVELOPER, "Number of terms to keep in Dirichlet kernel sum");
@@ -1239,10 +1243,42 @@ checkUserInputConsistency (LALStatus *status)
         ABORT (status, COMPUTEFSTATISTICC_EINPUT, COMPUTEFSTATISTICC_MSGEINPUT);      
       }
 
-  } /* grid-related checks */
+  } /* Grid-related checks */
 
   RETURN (status);
 } /* checkUserInputConsistency() */
+
+/* debug-output a(t) and b(t) into given file.
+ * return 0 = OK, -1 on error
+ */
+int
+outputBeamTS( const CHAR *fname, const AMCoeffs *amcoe )
+{
+  FILE *fp;
+  UINT4 i, len;
+
+  if ( !fname || !amcoe || !amcoe->a || !amcoe->b )
+    return -1;
+  
+  len = amcoe->a->length;
+  if ( len != amcoe->b->length )
+    return -1;
+
+  if ( (fp = fopen(fname, "wb")) == NULL )
+    return -1;
+
+  for (i=0; i < len; i ++ )
+    {
+      if ( 2 != fprintf (fp, "%f %f \n", amcoe->a->data[i], amcoe->b->data[i] ) )
+	{
+	  fclose(fp);
+	  return -1;
+	}
+    }
+
+  fclose(fp);
+  return 0;
+} /* outputBeamTS() */
 
 
 /*
