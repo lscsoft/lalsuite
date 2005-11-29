@@ -29,10 +29,10 @@ echo $1 $2 | awk '{print $1/$2}'
 # save initial working directory
 startdir=`pwd`
 
-h0=3.0e-24
+h0=2.8e-24
 sftdir=/local_data/badkri/fakesfts/
 #th=4.0
-outfile=AM_1_test_$h0
+outfile=AM_2_test_$h0
 #echo $outfile
 #cosiota=1.0
 
@@ -65,12 +65,12 @@ while [ $j -lt $top ] ; do
         alpha=`echo $allangles | awk '{print $1}'`
         delta=`echo $allangles | awk '{print $2}'`
 	cosiota=`echo $allangles | awk '{print $4}'`
-
+	psi=`echo $allangles | awk '{print $5}'`
 	# if we want cosiota random
-	./HoughValidateAM -E ./earth00-04.dat -S ./sun00-04.dat -D $sftdir -r $alpha -l $delta -m $h0 -c $cosiota >> $outfile
+	#./HoughValidateAM -E ./earth00-04.dat -S ./sun00-04.dat -D $sftdir -r $alpha -l $delta -m $h0 -c $cosiota >> $outfile
 
 	# if we want cosiota at a fixed value
-	#./HoughValidateAM -E ./earth00-04.dat -S ./sun00-04.dat -D $sftdir -r $alpha -l $delta -m $h0 -c 0.0 >> $outfile
+	./HoughValidateAM -E ./earth00-04.dat -S ./sun00-04.dat -D $sftdir -r $alpha -l $delta -m $h0 -c 0.5 -p $psi  >> $outfile
 
 	#sleep 30
         let j+=1
