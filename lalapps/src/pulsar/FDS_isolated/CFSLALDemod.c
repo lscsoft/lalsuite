@@ -15,7 +15,7 @@ int finite(double);
 
 /* global variables defined in ComputeFStatistic.c */
 extern INT4 cfsRunNo;	   /**< CFS run-number: 0=run only once, 1=first run, 2=second run */
-extern UINT4 maxSFTindex   /**< maximal sftindex, for error-checking */
+extern UINT4 maxSFTindex;  /**< maximal sftindex, for error-checking */
 
 #define LD_SMALL        (1.0e-9 / LAL_TWOPI)
 #define OOTWOPI         (1.0 / LAL_TWOPI)
