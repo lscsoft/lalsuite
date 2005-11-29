@@ -63,8 +63,9 @@
 #include <lal/ComputeFstat.h>
 #include <lal/Statistics.h>
 
+/* lalapps includes */
 #include <lalapps.h>
-
+#include "../../FDS_isolated/DopplerScan.h"
 /******************************************************
  *   Protection against C++ name mangling
  */

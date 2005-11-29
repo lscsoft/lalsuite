@@ -135,11 +135,13 @@ BOOLEAN uvar_printStats; /**< global variable for calculating Hough map stats */
 #define FSTART 255.0   /**< Default Start search frequency */
 #define FBAND 0.001    /**< Default search band */
 #define FDOT 0.0      /**< Default value of first spindown */
+#define DFDOT 0.0   /**< Default range of first spindown parameter */
 #define ALPHA 1.57    /**< Default sky location -- right ascension */
 #define DELTA  0.0    /**< Default sky location -- declination */
 #define NFSIZE  21    /**< Default size of hough cylinder of look up tables */
 #define DTERMS 8     /**< Default number of dirichlet kernel terms for calculating Fstat */
 #define FSTATTHRESHOLD 2.6  /**< Default threshold on Fstatistic for peak selection */
+#define NCAND1 5000 /**< Default number of candidates to be followed up from first stage */
 #define SFTDIRECTORY "/home/badkri/fakesfts/"  /**< Default directory containing sfts */
 #define FNAMEOUT "./temp/OutHoughFStat"  /**< Default output file basename */
 
@@ -200,7 +202,7 @@ int main( int argc, char *argv[]) {
 
   /* LALdemod related stuff */
   REAL8FrequencySeriesVector FstatVect; /* Fstatistic vectors for each stack */
-  FstatStackParams FstatPar;
+  FstatStackParams FstatPar1, FstatPar2;
 
   /* hough variables */
   HOUGHPeakGramVector pgV;
@@ -220,9 +222,11 @@ int main( int argc, char *argv[]) {
   REAL8 uvar_alpha, uvar_delta;  /* sky-location angles */
   REAL8 uvar_dAlpha, uvar_dDelta;  /* sky-patch ranges */
   REAL8 uvar_fdot; /* first spindown value */
+  REAL8 uvar_dFdot; /* range of first spindown parameter */
   REAL8 uvar_fStart, uvar_fBand;
   REAL8 uvar_FstatThr; /* threshold of Fstat to select peaks */
   REAL8 uvar_houghThr; /* threshold on hough number count to select candidates */
+  INT4 uvar_nCand1; /* number of candidates to be followed up from first stage */
   INT4 uvar_ifo1, uvar_ifo2, uvar_blocksRngMed, uvar_nStacks1, uvar_Dterms;
   REAL8 uvar_refTime;
   INT4 uvar_SSBprecision = SSBPREC_RELATIVISTIC;
@@ -232,6 +236,10 @@ int main( int argc, char *argv[]) {
   CHAR *uvar_sftDir1=NULL;
   CHAR *uvar_sftDir2=NULL;
   CHAR *uvar_fnameout=NULL;
+  INT4  uvar_gridType;
+  INT4  uvar_metricType;
+  REAL8 uvar_metricMismatch;
+
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
@@ -252,6 +260,7 @@ int main( int argc, char *argv[]) {
   uvar_alpha = ALPHA;
   uvar_delta = DELTA;
   uvar_fdot = FDOT;
+  uvar_dFdot = DFDOT;
   uvar_fStart = FSTART;
   uvar_fBand = FBAND;
   uvar_ifo1 = IFO;
@@ -259,6 +268,12 @@ int main( int argc, char *argv[]) {
   uvar_blocksRngMed = BLOCKSRNGMED;
   uvar_nfSize = NFSIZE;
   uvar_FstatThr = FSTATTHRESHOLD;
+  uvar_nCand1 = NCAND1;
+
+  uvar_metricType =  LAL_PMETRIC_NONE;
+  uvar_gridType = GRID_FLAT;
+  uvar_metricMismatch = 0.02;
+
   uvar_earthEphemeris = (CHAR *)LALMalloc(512*sizeof(CHAR));
   strcpy(uvar_earthEphemeris,EARTHEPHEMERIS);
 
@@ -276,32 +291,38 @@ int main( int argc, char *argv[]) {
   strcpy(uvar_fnameout,FNAMEOUT);
 
   /* register user input variables */
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",            'h', UVAR_HELP,     "Print this message",            &uvar_help),            &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "log",              0,  UVAR_OPTIONAL, "Write log file",                &uvar_log),             &status);  
-  LAL_CALL( LALRegisterINTUserVar(    &status, "ifo",             'i', UVAR_OPTIONAL, "Detector GEO(1) LLO(2) LHO(3)", &uvar_ifo1 ),           &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "ifo2",             0,  UVAR_OPTIONAL, "Detector for follow up stage",  &uvar_ifo2 ),           &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "nStacks",         'N', UVAR_OPTIONAL, "Number of stacks",              &uvar_nStacks1 ),       &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "Dterms",           0,  UVAR_OPTIONAL, "For Dirichlet Kernel approx.",  &uvar_Dterms ),         &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",    'w', UVAR_OPTIONAL, "RngMed block size",             &uvar_blocksRngMed),    &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris",  'E', UVAR_OPTIONAL, "Earth Ephemeris file",          &uvar_earthEphemeris),  &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris",    'S', UVAR_OPTIONAL, "Sun Ephemeris file",            &uvar_sunEphemeris),    &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir",           0,  UVAR_OPTIONAL, "SFT Directory",                 &uvar_sftDir1),         &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir2",          0,  UVAR_OPTIONAL, "SFT Directory for follow up",   &uvar_sftDir2),         &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameout",        'o', UVAR_OPTIONAL, "Output basefileneme",           &uvar_fnameout),        &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "alpha",            0,  UVAR_OPTIONAL, "Right ascension",               &uvar_alpha),           &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "delta",            0,  UVAR_OPTIONAL, "Declination",                   &uvar_delta),           &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "dAlpha",           0,  UVAR_OPTIONAL, "Right ascension range",         &uvar_dAlpha),          &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "dDelta",           0,  UVAR_OPTIONAL, "Declination range",             &uvar_dDelta),          &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "fStart",          'f', UVAR_OPTIONAL, "Start search frequency",        &uvar_fStart),          &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "fBand",           'b', UVAR_OPTIONAL, "Search frequency band",         &uvar_fBand),           &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "fdot",             0,  UVAR_OPTIONAL, "Spindown parameter",            &uvar_fdot),            &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "FstatThr",         0,  UVAR_OPTIONAL, "Threshold on Fstatistic",       &uvar_FstatThr),        &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "houghThr",         0,  UVAR_OPTIONAL, "Hough number count threshold",  &uvar_houghThr),        &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "refTime",          0,  UVAR_OPTIONAL, "Reference time for pulsar par", &uvar_refTime),         &status);
-  LAL_CALL( LALRegisterINTUserVar (   &status, "SSBprecision",	   0,  UVAR_DEVELOPER,"Precision for SSB transform.",  &uvar_SSBprecision),    &status);
-  LAL_CALL( LALRegisterINTUserVar (   &status, "nfSize",           0,  UVAR_DEVELOPER,"No.of LUTs to keep in memory",  &uvar_nfSize),          &status);
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printMaps",        0,  UVAR_DEVELOPER,"Print Hough maps",              &uvar_printMaps),       &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printStats",       0,  UVAR_DEVELOPER,"Print Hough map statistics",    &uvar_printStats),      &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",            'h', UVAR_HELP,     "Print this message",                                &uvar_help),            &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "log",              0,  UVAR_OPTIONAL, "Write log file",                                    &uvar_log),             &status);  
+  LAL_CALL( LALRegisterINTUserVar(    &status, "ifo",             'i', UVAR_OPTIONAL, "Detector GEO(1) LLO(2) LHO(3)",                     &uvar_ifo1 ),           &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "ifo2",             0,  UVAR_OPTIONAL, "Detector for follow up stage",                      &uvar_ifo2 ),           &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "nStacks1",        'N', UVAR_OPTIONAL, "Number of stacks",                                  &uvar_nStacks1 ),       &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "Dterms",           0,  UVAR_OPTIONAL, "For Dirichlet Kernel approx.",                      &uvar_Dterms ),         &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",    'w', UVAR_OPTIONAL, "RngMed block size",                                 &uvar_blocksRngMed),    &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris",  'E', UVAR_OPTIONAL, "Earth Ephemeris file",                              &uvar_earthEphemeris),  &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris",    'S', UVAR_OPTIONAL, "Sun Ephemeris file",                                &uvar_sunEphemeris),    &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir",           0,  UVAR_OPTIONAL, "SFT Directory",                                     &uvar_sftDir1),         &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir2",          0,  UVAR_OPTIONAL, "SFT Directory for follow up",                       &uvar_sftDir2),         &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameout",        'o', UVAR_OPTIONAL, "Output basefileneme",                               &uvar_fnameout),        &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "alpha",            0,  UVAR_OPTIONAL, "Right ascension",                                   &uvar_alpha),           &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "delta",            0,  UVAR_OPTIONAL, "Declination",                                       &uvar_delta),           &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "dAlpha",           0,  UVAR_OPTIONAL, "Right ascension range",                             &uvar_dAlpha),          &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "dDelta",           0,  UVAR_OPTIONAL, "Declination range",                                 &uvar_dDelta),          &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "fStart",          'f', UVAR_OPTIONAL, "Start search frequency",                            &uvar_fStart),          &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "fBand",           'b', UVAR_OPTIONAL, "Search frequency band",                             &uvar_fBand),           &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "fdot",             0,  UVAR_OPTIONAL, "Spindown parameter",                                &uvar_fdot),            &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "dFdot",            0,  UVAR_OPTIONAL, "Range of spindown parameter",                       &uvar_dFdot),           &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "FstatThr",         0,  UVAR_OPTIONAL, "Threshold on Fstatistic",                           &uvar_FstatThr),        &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "houghThr",         0,  UVAR_OPTIONAL, "Hough number count threshold",                      &uvar_houghThr),        &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "nCand1",           0,  UVAR_OPTIONAL, "No. of 1st stage candidates",                       &uvar_nCand1),          &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "refTime",          0,  UVAR_OPTIONAL, "Reference time for pulsar par",                     &uvar_refTime),         &status);
+  LAL_CALL( LALRegisterINTUserVar (   &status, "SSBprecision",	   0,  UVAR_DEVELOPER,"Precision for SSB transform.",                      &uvar_SSBprecision),    &status);
+  LAL_CALL( LALRegisterINTUserVar (   &status, "nfSize",           0,  UVAR_DEVELOPER,"No.of LUTs to keep in memory",                      &uvar_nfSize),          &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printMaps",        0,  UVAR_DEVELOPER,"Print Hough maps",                                  &uvar_printMaps),       &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printStats",       0,  UVAR_DEVELOPER,"Print Hough map statistics",                        &uvar_printStats),      &status);  
+  LAL_CALL( LALRegisterINTUserVar (   &status, "gridType",         0,  UVAR_OPTIONAL, "0=flat,1=isotropic,2=metric,3=file",                &uvar_gridType),        &status);
+  LAL_CALL( LALRegisterINTUserVar (   &status, "metricType",       0,  UVAR_OPTIONAL, "0=none,1=Ptole-analytic,2=Ptole-numeric,3=exact",   &uvar_metricType),      &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "metricMismatch",   0,  UVAR_OPTIONAL, "Maximal allowed metric mismatch",                   &uvar_metricMismatch),  &status);
+
 
   /* read all command line variables */
   LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
@@ -437,96 +458,20 @@ int main( int argc, char *argv[]) {
   } /* end of sft reading block */
 
 
-  /*------------------ for follow up stage -----------------------*/
-  /* check if user requested a follow up stage*/
-  if ( LALUserVarWasSet(&uvar_sftDir2)) {
-    
-    /* a friendly warning */
-    if (lalDebugLevel)
-      fprintf(stdout, "Make sure IFOs are set correctly!\n");
-
-    /* read sfts for second stage
-       currently reads entire frequency band because it is probably inefficient to
-       read sfts separately for each candidate, and range of frequencies
-       to be followed up is probably very close to the full range.  However, this
-       might have to be changed if there are a very few candidates to be followed up.
-    */
-    {
-
-      /* new SFT I/O data types */
-      SFTCatalog *catalog2=NULL;
-      SFTConstraints *constraints2=NULL;
-      
-      CHAR *tempDir;
-      REAL8 doppWings, fMin, fMax;
-      
-      /* get sft catalog */
-      tempDir = (CHAR *)LALMalloc(512*sizeof(CHAR));
-      strcpy(tempDir, uvar_sftDir2);
-      strcat(tempDir, "/*SFT*.*");
-      LAL_CALL( LALSFTdataFind( &status, &catalog2, tempDir, constraints2), &status);
-
-      /* set some sft parameters */
-      nSFTs2 = catalog2->length;
-      deltaF2 = catalog2->data->header.deltaF;
-      timebase2 = 1.0/deltaF2;
-
-      /* set wings of sfts to be read */
-      /* the wings must be enough for the Doppler shift and extra bins
-	 for the running median block size and Dterms for Fstat calculation.
-	 In addition, it must also include wings for the spindown correcting 
-	 for the reference time -- this is not done yet */
-      /* calculate Doppler wings at the highest frequency */
-      doppWings = (uvar_fStart + uvar_fBand) * VTOT;    
-      fMin = uvar_fStart - doppWings - (uvar_blocksRngMed + uvar_Dterms)*deltaF2; 
-      fMax = uvar_fStart + uvar_fBand + (doppWings + uvar_blocksRngMed + uvar_Dterms)*deltaF2; 
-      
-      /* get SFT timestamps */
-      LAL_CALL( LALSFTtimestampsFromCatalog(  &status, &startTsft2, catalog2 ), &status);  	
-
-      /* calculate start and end times and tobs */
-      LAL_CALL( LALGPStoFloat ( &status, &tStart2, startTsft2->data), &status);
-      LAL_CALL( LALGPStoFloat ( &status, &tEnd2, startTsft2->data + startTsft2->length - 1), &status);
-      tEnd2 += timebase2;
-      tObs2 = tEnd2 - tStart2;
-      
-      /* read the sfts */
-      LAL_CALL( LALLoadSFTs ( &status, &inputSFTVec2, catalog2, fMin, fMax), &status);
-      
-      /* set other sft parameters */
-      sftlength2 = inputSFTVec2->data->data->length;
-      sftFminBin2 = floor( timebase2 * inputSFTVec2->data->f0 + 0.5);	      
-      
-      /* normalize sfts */
-      LAL_CALL( LALNormalizeSFTVect (&status, inputSFTVec2, uvar_blocksRngMed, 0), &status);
-      
-      /* free memory */
-      LALFree(tempDir);
-      LAL_CALL( LALDestroySFTCatalog( &status, &catalog2 ), &status);  	
-
-    } /* end sft reading block */
-
-  } /* end of sft reading for follow up stage */
-
-
-
-
-
   /*------------- set up stacks -----------------*/
-  
+
   if (uvar_nStacks1 > nSFTs1) {
     fprintf(stderr, "invalid number of stacks...exiting\n");
     exit(1);
   }
 
-  /* set up the stacks */
+  /* set up the stacks for the first stage */
   /* if sfts are to be split evenly among stacks */
   LAL_CALL( SetUpStacks1( &status, &stackSFTs1, inputSFTVec1, uvar_nStacks1), &status);
   /* if time is to be split evenly between stacks */
   /* LAL_CALL( SetUpStacks2( &status, &stackSFTs1, inputSFTVec1, &startTsft1, uvar_nStacks1), &status); */
 
-  /* set number of stacks -- may be different from uvar_nStacks1
-! */
+  /* set number of stacks -- may be different from uvar_nStacks1! */
   nStacks1 = stackSFTs1.length;
 
   /* set up vector of stack durations */
@@ -573,8 +518,9 @@ int main( int argc, char *argv[]) {
   tStackAvg1 /= nStacks1;
   deltaFstack1 = 1.0/tStackAvg1;
 
- 
-  /*------------- calculate velocity and position for each stack ------------*/
+
+  
+  /*------------ calculate velocity and position for each 1st stage stack ------------*/
   /* setting of ephemeris info */ 
   edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
   (*edat).ephiles.earthEphemeris = uvar_earthEphemeris;
@@ -605,125 +551,23 @@ int main( int argc, char *argv[]) {
 
 
 
-  /*------------- calculate F statistic for each stack --------------*/
-
-  /* set up parameters for Fstat calculation */
-  FstatPar.nStacks = nStacks1;
-  FstatPar.tsStack = &midTstack1;
-  FstatPar.tStackAvg = tStackAvg1;
-  FstatPar.fBand = uvar_fBand;
-  FstatPar.fStart = uvar_fStart;
-  FstatPar.nfSizeCylinder = uvar_nfSize;
-  FstatPar.mCohSft = mCohSft1;
-  FstatPar.refTime = refTime;
-  FstatPar.SSBprecision = uvar_SSBprecision;
-  FstatPar.Dterms = uvar_Dterms;
-  FstatPar.detector = detector1;
-  FstatPar.edat = edat;
-  FstatPar.ts = startTsft1;
-  FstatPar.alpha = uvar_alpha;
-  FstatPar.delta = uvar_delta;
-  FstatPar.fdot = NULL;
-  LAL_CALL ( LALDCreateVector( &status, &(FstatPar.fdot), 1), &status);
-  FstatPar.fdot->data[0] = uvar_fdot;
-
-  /* set up memory for Fstat vectors */
-  LAL_CALL(SetUpFstatStack( &status, &FstatVect, &FstatPar), &status);
-
-  /* calculate the Fstatistic */
-  LAL_CALL(ComputeFstatStack( &status, &FstatVect, &stackSFTs1, &FstatPar), &status);
-
-  /* free sfts */
-  LALFree(stackSFTs1.data);
-  LAL_CALL (LALDestroySFTVector(&status, &inputSFTVec1),&status );
-
-  /* print fstat vector -- for debugging */
-  /*   LAL_CALL( PrintFstat ( &status, FstatVect.data, uvar_fnameout, 0 ), &status); */
+  /* set up parameters for first stage Fstat calculation */
+  FstatPar1.nStacks = nStacks1;
+  FstatPar1.tsStack = &midTstack1;
+  FstatPar1.tStackAvg = tStackAvg1;
+  FstatPar1.fBand = uvar_fBand;
+  FstatPar1.fStart = uvar_fStart;
+  FstatPar1.nfSizeCylinder = uvar_nfSize;
+  FstatPar1.mCohSft = mCohSft1;
+  FstatPar1.refTime = refTime;
+  FstatPar1.SSBprecision = uvar_SSBprecision;
+  FstatPar1.Dterms = uvar_Dterms;
+  FstatPar1.detector = detector1;
+  FstatPar1.edat = edat;
+  FstatPar1.ts = startTsft1;
 
 
-
-  /*------------ select peaks ------------*/ 
-
-  LAL_CALL( FstatVectToPeakGram( &status, &pgV, &FstatVect, uvar_FstatThr), &status);
-
-  /* free Fstat */
-  for(k=0; k<nStacks1; k++) {
-    LALFree(FstatVect.data[k].data->data);
-    LALFree(FstatVect.data[k].data);
-  }
-  LALFree(FstatVect.data);
-
-
-  /*--------------- calculate Hough map and get candidates ---------------*/
-  /* start and end bin for calculating hough map */
-  /* these are just what the user specified */
-  binsHough = floor( tStackAvg1 * uvar_fBand );
-  fHoughBinIni = floor( tStackAvg1 * uvar_fStart + 0.5);
-  fHoughBinFin = fHoughBinIni + binsHough - 1;
-
-  /* set up the Hough parameters */
-  if ( ! LALUserVarWasSet(&uvar_houghThr))
-    uvar_houghThr = 0.65 * nStacks1;
-  houghPar.outBaseName = uvar_fnameout;
-  houghPar.houghThr = uvar_houghThr;
-  houghPar.tStart = tStart1;
-  houghPar.fBinIni = fHoughBinIni;
-  houghPar.fBinFin = fHoughBinFin;
-  houghPar.nfSizeCylinder = uvar_nfSize;
-  houghPar.detector = detector1;
-  houghPar.ts = &midTstack1;
-  houghPar.vel = velStack;
-  houghPar.pos = posStack;
-  houghPar.alpha = uvar_alpha;
-  houghPar.delta = uvar_delta;
-  houghPar.fdot = NULL;
-  LAL_CALL ( LALDCreateVector( &status, &(houghPar.fdot), 1), &status);
-  houghPar.fdot->data[0] = uvar_fdot;
-
-  /* allocate memory for candidates structure */
-  houghCand.length = 5000; /* a starting value -- use realloc if this is insufficient */
-  houghCand.nCandidates = 0; /* initialization */
-  houghCand.freq = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
-  houghCand.alpha = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
-  houghCand.delta = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
-  houghCand.dFreq = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
-  houghCand.dAlpha = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
-  houghCand.dDelta = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
-  houghCand.fdot = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
-  houghCand.dFdot = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
-
-  /* get candidates */
-  LAL_CALL ( ComputeFstatHoughMap ( &status, &houghCand, &pgV, &houghPar), &status);
-
-
-  /* free memory */
-  LAL_CALL(LALDestroyTimestampVector ( &status, &startTsft1), &status);  	
-  LALFree(mCohSft1);
-
-  LAL_CALL (LALDDestroyVector (&status, &(houghPar.fdot)), &status);
-
-  /* free peakgrams */
-  for (k=0; k<nStacks1; k++) 
-    LALFree(pgV.pg[k].peak);
-  LALFree(pgV.pg);
-
-  /* free timestamp and Vel/Pos vectors */
-  LALFree(midTstack1.data);
-  LALFree(tStack1);
-  LAL_CALL( LALDDestroyVectorSequence (&status,  &velStack), &status);
-  LAL_CALL( LALDDestroyVectorSequence (&status,  &posStack), &status);
-
-
-  /* print candidates */
-  LAL_CALL ( PrintHoughCandidates ( &status, &houghCand, uvar_fnameout), &status);
-
-
-  /*------------- Follow up candidates --------------*/
-
-  /* this part is more general than it has to be
-     it is meant to be generalized to the case when 
-     the number of follow-up stacks is not necessarily 1 */
-
+  /*------------------ read sfts and set up stacks for follow up stage -----------------------*/
   /* check if user requested a follow up stage*/
   if ( LALUserVarWasSet(&uvar_sftDir2)) {
     
@@ -731,6 +575,69 @@ int main( int argc, char *argv[]) {
     if (lalDebugLevel)
       fprintf(stdout, "Make sure IFOs are set correctly!\n");
 
+    /* read sfts for second stage
+       currently reads entire frequency band because it is probably inefficient to
+       read sfts separately for each candidate, and range of frequencies
+       to be followed up is probably very close to the full range.  However, this
+       might have to be changed if there are a very few candidates to be followed up.
+    */
+    {
+
+      /* new SFT I/O data types */
+      SFTCatalog *catalog2=NULL;
+      SFTConstraints *constraints2=NULL;
+      
+      CHAR *tempDir;
+      REAL8 doppWings, fMin, fMax;
+      
+      /* get sft catalog */
+      tempDir = (CHAR *)LALMalloc(512*sizeof(CHAR));
+      strcpy(tempDir, uvar_sftDir2);
+      strcat(tempDir, "/*SFT*.*");
+      LAL_CALL( LALSFTdataFind( &status, &catalog2, tempDir, constraints2), &status);
+
+      /* set some sft parameters */
+      nSFTs2 = catalog2->length;
+      deltaF2 = catalog2->data->header.deltaF;
+      timebase2 = 1.0/deltaF2;
+
+      /* set wings of sfts to be read */
+      /* the wings must be enough for the Doppler shift and extra bins
+	 for the running median block size and Dterms for Fstat calculation.
+	 In addition, it must also include wings for the spindown correcting 
+	 for the reference time -- this is not done yet */
+      /* calculate Doppler wings at the highest frequency */
+      /* this was already done for the first stage -- probably shouldn't repeat it */ 
+      doppWings = (uvar_fStart + uvar_fBand) * VTOT;    
+      fMin = uvar_fStart - doppWings - (uvar_blocksRngMed + uvar_Dterms)*deltaF2; 
+      fMax = uvar_fStart + uvar_fBand + (doppWings + uvar_blocksRngMed + uvar_Dterms)*deltaF2; 
+      
+      /* get SFT timestamps */
+      LAL_CALL( LALSFTtimestampsFromCatalog(  &status, &startTsft2, catalog2 ), &status);  	
+
+      /* calculate start and end times and tobs */
+      LAL_CALL( LALGPStoFloat ( &status, &tStart2, startTsft2->data), &status);
+      LAL_CALL( LALGPStoFloat ( &status, &tEnd2, startTsft2->data + startTsft2->length - 1), &status);
+      tEnd2 += timebase2;
+      tObs2 = tEnd2 - tStart2;
+      
+      /* read the sfts */
+      LAL_CALL( LALLoadSFTs ( &status, &inputSFTVec2, catalog2, fMin, fMax), &status);
+      
+      /* set other sft parameters */
+      sftlength2 = inputSFTVec2->data->data->length;
+      sftFminBin2 = floor( timebase2 * inputSFTVec2->data->f0 + 0.5);	      
+      
+      /* normalize sfts */
+      LAL_CALL( LALNormalizeSFTVect (&status, inputSFTVec2, uvar_blocksRngMed, 0), &status);
+      
+      /* free memory */
+      LALFree(tempDir);
+      LAL_CALL( LALDestroySFTCatalog( &status, &catalog2 ), &status);  	
+
+    } /* end sft reading block */
+
+    /* set up stacks for follow up stage */
     /* there is just one stack now */
     nStacks2 = 1;
     LAL_CALL( SetUpStacks1( &status, &stackSFTs2, inputSFTVec2, nStacks2), &status);
@@ -780,18 +687,119 @@ int main( int argc, char *argv[]) {
     tStackAvg2 /= nStacks2;
     deltaFstack2 = 1.0/tStackAvg2;
 
-    /* set up parameters for Fstat calculation */
-    FstatPar.nStacks = nStacks2;
-    FstatPar.tsStack = &midTstack2;
-    FstatPar.tStackAvg = tStackAvg2;
-    FstatPar.nfSizeCylinder = uvar_nfSize;
-    FstatPar.mCohSft = mCohSft2;
-    FstatPar.refTime = refTime;
-    FstatPar.SSBprecision = uvar_SSBprecision;
-    FstatPar.Dterms = uvar_Dterms;
-    FstatPar.detector = detector2;
-    FstatPar.edat = edat;
-    FstatPar.ts = startTsft2;
+
+    /* set up some parameters for second stage Fstat calculation */
+    FstatPar2.nStacks = nStacks2;
+    FstatPar2.tsStack = &midTstack2;
+    FstatPar2.tStackAvg = tStackAvg2;
+    FstatPar2.nfSizeCylinder = uvar_nfSize;
+    FstatPar2.mCohSft = mCohSft2;
+    FstatPar2.refTime = refTime;
+    FstatPar2.SSBprecision = uvar_SSBprecision;
+    FstatPar2.Dterms = uvar_Dterms;
+    FstatPar2.detector = detector2;
+    FstatPar2.edat = edat;
+    FstatPar2.ts = startTsft2;
+
+  } /* end of sft reading and setting up stacks for follow up stage */
+
+
+  
+ 
+
+
+  /*------------- calculate F statistic for each stack --------------*/
+
+  /* set template points */
+  FstatPar1.alpha = uvar_alpha;
+  FstatPar1.delta = uvar_delta;
+  FstatPar1.fdot = NULL;
+  LAL_CALL ( LALDCreateVector( &status, &(FstatPar1.fdot), 1), &status);
+  FstatPar1.fdot->data[0] = uvar_fdot;
+
+  /* set up memory for Fstat vectors */
+  LAL_CALL(SetUpFstatStack( &status, &FstatVect, &FstatPar1), &status);
+
+  /* calculate the Fstatistic */
+  LAL_CALL(ComputeFstatStack( &status, &FstatVect, &stackSFTs1, &FstatPar1), &status);
+
+  /* free sfts */
+  LALFree(stackSFTs1.data);
+  LAL_CALL (LALDestroySFTVector(&status, &inputSFTVec1),&status );
+
+  /* print fstat vector -- for debugging */
+  /*   LAL_CALL( PrintFstat ( &status, FstatVect.data, uvar_fnameout, 0 ), &status); */
+
+
+
+  /*------------ select peaks ------------*/ 
+
+  LAL_CALL( FstatVectToPeakGram( &status, &pgV, &FstatVect, uvar_FstatThr), &status);
+
+  /* free Fstat */
+  for(k=0; k<nStacks1; k++) {
+    LALFree(FstatVect.data[k].data->data);
+    LALFree(FstatVect.data[k].data);
+  }
+  LALFree(FstatVect.data);
+
+
+  /*--------------- calculate Hough map and get candidates ---------------*/
+  /* start and end bin for calculating hough map */
+  /* these are just what the user specified */
+  binsHough = floor( tStackAvg1 * uvar_fBand );
+  fHoughBinIni = floor( tStackAvg1 * uvar_fStart + 0.5);
+  fHoughBinFin = fHoughBinIni + binsHough - 1;
+
+  /* set up the Hough parameters */
+  if ( ! LALUserVarWasSet(&uvar_houghThr))
+    uvar_houghThr = 0.65 * nStacks1;
+  houghPar.outBaseName = uvar_fnameout;
+  houghPar.houghThr = uvar_houghThr;
+  houghPar.tStart = tStart1;
+  houghPar.fBinIni = fHoughBinIni;
+  houghPar.fBinFin = fHoughBinFin;
+  houghPar.nfSizeCylinder = uvar_nfSize;
+  houghPar.detector = detector1;
+  houghPar.ts = &midTstack1;
+  houghPar.vel = velStack;
+  houghPar.pos = posStack;
+  houghPar.alpha = uvar_alpha;
+  houghPar.delta = uvar_delta;
+  houghPar.fdot = NULL;
+  LAL_CALL ( LALDCreateVector( &status, &(houghPar.fdot), 1), &status);
+  houghPar.fdot->data[0] = uvar_fdot;
+
+  /* allocate memory for candidates structure */
+  houghCand.length = uvar_nCand1;
+  houghCand.nCandidates = 0; /* initialization */
+  houghCand.freq = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
+  houghCand.alpha = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
+  houghCand.delta = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
+  houghCand.dFreq = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
+  houghCand.dAlpha = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
+  houghCand.dDelta = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
+  houghCand.fdot = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
+  houghCand.dFdot = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
+
+  /* get candidates */
+  LAL_CALL ( ComputeFstatHoughMap ( &status, &houghCand, &pgV, &houghPar), &status);
+
+
+  /* print candidates */
+  LAL_CALL ( PrintHoughCandidates ( &status, &houghCand, uvar_fnameout), &status);
+
+
+  /*------------- Follow up candidates --------------*/
+
+  /* this part is more general than it has to be
+     it is meant to be generalized to the case when 
+     the number of follow-up stacks is not necessarily 1 */
+
+  /* check if user requested a follow up stage*/
+  if ( LALUserVarWasSet(&uvar_sftDir2)) {
+    
+
 
     /*------------- calculate the Fstatistic ---------------*/
     /* loop over candidates */
@@ -799,15 +807,15 @@ int main( int argc, char *argv[]) {
 
       REAL8 tempMax;
       
-      FstatPar.fStart = houghCand.freq[j] - 0.5 * houghCand.dFreq[j];
-      FstatPar.fBand = houghCand.dFreq[j];
-      FstatPar.alpha = houghCand.alpha[j];
-      FstatPar.delta = houghCand.delta[j];
-      FstatPar.fdot->data[0] = houghCand.fdot[j];
+      FstatPar2.fStart = houghCand.freq[j] - 0.5 * houghCand.dFreq[j];
+      FstatPar2.fBand = houghCand.dFreq[j];
+      FstatPar2.alpha = houghCand.alpha[j];
+      FstatPar2.delta = houghCand.delta[j];
+      FstatPar2.fdot->data[0] = houghCand.fdot[j];
 
-      LAL_CALL(SetUpFstatStack( &status, &FstatVect, &FstatPar), &status);
+      LAL_CALL(SetUpFstatStack( &status, &FstatVect, &FstatPar2), &status);
 
-      LAL_CALL(ComputeFstatStack( &status, &FstatVect, &stackSFTs2, &FstatPar), &status);
+      LAL_CALL(ComputeFstatStack( &status, &FstatVect, &stackSFTs2, &FstatPar2), &status);
 
       LAL_CALL ( GetLoudestFstat ( &status, &tempMax, FstatVect.data), &status);
 
@@ -828,21 +836,40 @@ int main( int argc, char *argv[]) {
     /* print loudest event */
     fprintf(stdout, "Loudest Candidate has F = %e\n", fStatMax);
 
-    /* we are done with follow-up */
-    /*free sfts */
-    LAL_CALL(LALDestroyTimestampVector ( &status, &startTsft2), &status);  	
-    LALFree(stackSFTs2.data);
-    LAL_CALL (LALDestroySFTVector(&status, &inputSFTVec2),&status );
-
-    LALFree(midTstack2.data);
-    LALFree(tStack2);
-    LALFree(mCohSft2);
  } /* end block for follow-up stage */ 
 
 
 
 
   /*------------ free all remaining memory -----------*/
+
+  /* free memory */
+  LAL_CALL(LALDestroyTimestampVector ( &status, &startTsft1), &status);  	
+  LALFree(mCohSft1);
+
+  LAL_CALL (LALDDestroyVector (&status, &(houghPar.fdot)), &status);
+
+  /*free sfts */
+  LAL_CALL(LALDestroyTimestampVector ( &status, &startTsft2), &status);  	
+  LALFree(stackSFTs2.data);
+  LAL_CALL (LALDestroySFTVector(&status, &inputSFTVec2),&status );
+  
+  LALFree(midTstack2.data);
+  LALFree(tStack2);
+  LALFree(mCohSft2);
+  
+  /* free peakgrams */
+  for (k=0; k<nStacks1; k++) 
+    LALFree(pgV.pg[k].peak);
+  LALFree(pgV.pg);
+
+  /* free timestamp and Vel/Pos vectors */
+  LALFree(midTstack1.data);
+  LALFree(tStack1);
+  LAL_CALL( LALDDestroyVectorSequence (&status,  &velStack), &status);
+  LAL_CALL( LALDDestroyVectorSequence (&status,  &posStack), &status);
+
+
   /* free candidates */
   LALFree(houghCand.freq);
   LALFree(houghCand.dFreq);
@@ -853,7 +880,8 @@ int main( int argc, char *argv[]) {
   LALFree(houghCand.fdot);
   LALFree(houghCand.dFdot);
   
-  LAL_CALL (LALDDestroyVector (&status, &(FstatPar.fdot)), &status); 
+  LAL_CALL (LALDDestroyVector (&status, &(FstatPar1.fdot)), &status); 
+  LAL_CALL (LALDDestroyVector (&status, &(FstatPar2.fdot)), &status); 
 
   /* free ephemeris */
   LALFree(edat->ephemE);
