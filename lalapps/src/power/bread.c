@@ -429,7 +429,7 @@ static INT8 read_search_summary_start_end(LALStatus * stat, char *filename, INT8
 	if(!end)
 		end = &local_end;
 
-	SearchSummaryTableFromLIGOLw(&searchSummary, filename);
+	searchSummary = XLALSearchSummaryTableFromLIGOLw(filename);
 
 	if(!searchSummary)
 		return (0);
@@ -455,7 +455,7 @@ static void populate_search_summary_ifo(char *filename, MetadataTable * searchsu
 	SearchSummaryTable *searchSummary = NULL;
 	SearchSummaryTable *tmp;
 
-	SearchSummaryTableFromLIGOLw(&searchSummary, filename);
+	searchSummary = XLALSearchSummaryTableFromLIGOLw(filename);
 
 	if(!searchSummary) {
 		fprintf(stderr, "No search summary table found in input file\n");
