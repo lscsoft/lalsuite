@@ -209,6 +209,12 @@ int main( int argc, char *argv[]) {
   HoughParams houghPar;
   HoughCandidates houghCand;
 
+  /* template and grid variables */
+  DopplerScanInit scanInit1;   /* init-structure for DopperScanner */
+  DopplerScanState thisScan1 = empty_DopplerScanState; /* current state of the Doppler-scan */
+  DopplerPosition dopplerpos1;		/* current search-parameters */
+  SkyPosition thisPoint1;
+
   /* variables for logging */
   CHAR *fnamelog=NULL;
   FILE *fpLog = NULL;
@@ -239,7 +245,8 @@ int main( int argc, char *argv[]) {
   INT4  uvar_gridType;
   INT4  uvar_metricType;
   REAL8 uvar_metricMismatch;
-
+  CHAR *uvar_skyGridFile;
+  CHAR *uvar_skyRegion;
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
@@ -273,6 +280,8 @@ int main( int argc, char *argv[]) {
   uvar_metricType =  LAL_PMETRIC_NONE;
   uvar_gridType = GRID_FLAT;
   uvar_metricMismatch = 0.02;
+  uvar_skyGridFile = NULL;
+  uvar_skyRegion = NULL;
 
   uvar_earthEphemeris = (CHAR *)LALMalloc(512*sizeof(CHAR));
   strcpy(uvar_earthEphemeris,EARTHEPHEMERIS);
@@ -322,6 +331,8 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar (   &status, "gridType",         0,  UVAR_OPTIONAL, "0=flat,1=isotropic,2=metric,3=file",                &uvar_gridType),        &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "metricType",       0,  UVAR_OPTIONAL, "0=none,1=Ptole-analytic,2=Ptole-numeric,3=exact",   &uvar_metricType),      &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "metricMismatch",   0,  UVAR_OPTIONAL, "Maximal allowed metric mismatch",                   &uvar_metricMismatch),  &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyGridFile",	   0,  UVAR_OPTIONAL, "Load sky-grid from this file",                      &uvar_skyGridFile),     &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyRegion",	   0,  UVAR_OPTIONAL, "Specify sky-region by polygon (or use 'allsky')",   &uvar_skyRegion),       &status);
 
 
   /* read all command line variables */
@@ -704,141 +715,199 @@ int main( int argc, char *argv[]) {
   } /* end of sft reading and setting up stacks for follow up stage */
 
 
-  
- 
 
+  /*-----------Create template grid for first stage ---------------*/
+  /* prepare initialization of DopplerScanner to step through paramter space */
+  scanInit1.dAlpha = uvar_dAlpha;
+  scanInit1.dDelta = uvar_dDelta;
+  scanInit1.gridType = uvar_gridType;
+  scanInit1.metricType = uvar_metricType;
+  scanInit1.metricMismatch = uvar_metricMismatch;
+  scanInit1.projectMetric = TRUE;
+  scanInit1.obsDuration = tStackAvg1;
 
-  /*------------- calculate F statistic for each stack --------------*/
+  LAL_CALL ( LALFloatToGPS ( & status, &(scanInit1.obsBegin), tStack1 + nStacks1/2), &status);
 
-  /* set template points */
-  FstatPar1.alpha = uvar_alpha;
-  FstatPar1.delta = uvar_delta;
-  FstatPar1.fdot = NULL;
-  LAL_CALL ( LALDCreateVector( &status, &(FstatPar1.fdot), 1), &status);
-  FstatPar1.fdot->data[0] = uvar_fdot;
+  scanInit1.Detector = &detector1;
+  scanInit1.ephemeris = edat;		/* used by Ephemeris-based metric */
+  scanInit1.skyGridFile = uvar_skyGridFile;
 
-  /* set up memory for Fstat vectors */
-  LAL_CALL(SetUpFstatStack( &status, &FstatVect, &FstatPar1), &status);
-
-  /* calculate the Fstatistic */
-  LAL_CALL(ComputeFstatStack( &status, &FstatVect, &stackSFTs1, &FstatPar1), &status);
-
-  /* free sfts */
-  LALFree(stackSFTs1.data);
-  LAL_CALL (LALDestroySFTVector(&status, &inputSFTVec1),&status );
-
-  /* print fstat vector -- for debugging */
-  /*   LAL_CALL( PrintFstat ( &status, FstatVect.data, uvar_fnameout, 0 ), &status); */
-
-
-
-  /*------------ select peaks ------------*/ 
-
-  LAL_CALL( FstatVectToPeakGram( &status, &pgV, &FstatVect, uvar_FstatThr), &status);
-
-  /* free Fstat */
-  for(k=0; k<nStacks1; k++) {
-    LALFree(FstatVect.data[k].data->data);
-    LALFree(FstatVect.data[k].data);
-  }
-  LALFree(FstatVect.data);
-
-
-  /*--------------- calculate Hough map and get candidates ---------------*/
-  /* start and end bin for calculating hough map */
-  /* these are just what the user specified */
-  binsHough = floor( tStackAvg1 * uvar_fBand );
-  fHoughBinIni = floor( tStackAvg1 * uvar_fStart + 0.5);
-  fHoughBinFin = fHoughBinIni + binsHough - 1;
-
-  /* set up the Hough parameters */
-  if ( ! LALUserVarWasSet(&uvar_houghThr))
-    uvar_houghThr = 0.65 * nStacks1;
-  houghPar.outBaseName = uvar_fnameout;
-  houghPar.houghThr = uvar_houghThr;
-  houghPar.tStart = tStart1;
-  houghPar.fBinIni = fHoughBinIni;
-  houghPar.fBinFin = fHoughBinFin;
-  houghPar.nfSizeCylinder = uvar_nfSize;
-  houghPar.detector = detector1;
-  houghPar.ts = &midTstack1;
-  houghPar.vel = velStack;
-  houghPar.pos = posStack;
-  houghPar.alpha = uvar_alpha;
-  houghPar.delta = uvar_delta;
-  houghPar.fdot = NULL;
-  LAL_CALL ( LALDCreateVector( &status, &(houghPar.fdot), 1), &status);
-  houghPar.fdot->data[0] = uvar_fdot;
-
-  /* allocate memory for candidates structure */
-  houghCand.length = uvar_nCand1;
-  houghCand.nCandidates = 0; /* initialization */
-  houghCand.freq = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
-  houghCand.alpha = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
-  houghCand.delta = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
-  houghCand.dFreq = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
-  houghCand.dAlpha = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
-  houghCand.dDelta = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
-  houghCand.fdot = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
-  houghCand.dFdot = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
-
-  /* get candidates */
-  LAL_CALL ( ComputeFstatHoughMap ( &status, &houghCand, &pgV, &houghPar), &status);
-
-
-  /* print candidates */
-  LAL_CALL ( PrintHoughCandidates ( &status, &houghCand, uvar_fnameout), &status);
-
-
-  /*------------- Follow up candidates --------------*/
-
-  /* this part is more general than it has to be
-     it is meant to be generalized to the case when 
-     the number of follow-up stacks is not necessarily 1 */
-
-  /* check if user requested a follow up stage*/
-  if ( LALUserVarWasSet(&uvar_sftDir2)) {
-    
-
-
-    /*------------- calculate the Fstatistic ---------------*/
-    /* loop over candidates */
-    for ( j=0; j < houghCand.nCandidates; j++) {
-
-      REAL8 tempMax;
-      
-      FstatPar2.fStart = houghCand.freq[j] - 0.5 * houghCand.dFreq[j];
-      FstatPar2.fBand = houghCand.dFreq[j];
-      FstatPar2.alpha = houghCand.alpha[j];
-      FstatPar2.delta = houghCand.delta[j];
-      FstatPar2.fdot->data[0] = houghCand.fdot[j];
-
-      LAL_CALL(SetUpFstatStack( &status, &FstatVect, &FstatPar2), &status);
-
-      LAL_CALL(ComputeFstatStack( &status, &FstatVect, &stackSFTs2, &FstatPar2), &status);
-
-      LAL_CALL ( GetLoudestFstat ( &status, &tempMax, FstatVect.data), &status);
-
-      if ( tempMax > fStatMax )
-	fStatMax = tempMax;
-      
-      /*     LAL_CALL( PrintFstat ( &status, FstatVect.data, uvar_fnameout, 0 ), &status);  */
-      
-      /* free Fstat */
-      for(k=0; k<nStacks2; k++) {
-	LALFree(FstatVect.data[k].data->data);
-	LALFree(FstatVect.data[k].data);
+  scanInit1.searchRegion.Freq = uvar_fStart;
+  scanInit1.searchRegion.FreqBand = uvar_fBand;
+  scanInit1.searchRegion.f1dot = uvar_fdot;
+  scanInit1.searchRegion.f1dotBand = uvar_dFdot;
+  /* find sky search region */
+  {
+    BOOLEAN haveAlphaDelta = LALUserVarWasSet(&uvar_alpha) && LALUserVarWasSet(&uvar_delta);
+    if (uvar_skyRegion)
+      {
+	scanInit1.searchRegion.skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
+	if ( scanInit1.searchRegion.skyRegionString == NULL ) {
+	/*   ABORT (&status, DRIVEHOUGHFSTAT_ENULL, DRIVEHOUGHFSTAT_MSGENULL); */
+	}
+	strcpy (scanInit1.searchRegion.skyRegionString, uvar_skyRegion);
       }
-      LALFree(FstatVect.data);
+    else if (haveAlphaDelta)    /* parse this into a sky-region */
+      {
+	LAL_CALL ( SkySquare2String( &status, &(scanInit1.searchRegion.skyRegionString),
+				uvar_alpha, uvar_delta,	uvar_dAlpha , uvar_dDelta ), &status);
+      }
+  } /* end find search-region */
+
+  /* initialize skygrid  */  
+  LAL_CALL ( InitDopplerScan ( &status, &thisScan1, &scanInit1), &status); 
+
+  /* loop over skygrid points */
+  while(1)
+    {
+
+      UINT4 ifdot, nfdot;	/* counter and number of f1dot-bins */
+
+      LAL_CALL (NextDopplerPos( &status, &dopplerpos1, &thisScan1 ), &status);
+      if (thisScan1.state == STATE_FINISHED) /* scanned all DopplerPositions yet? */
+	break;
+
+      /*------------- calculate F statistic for each stack --------------*/
+
+      /* normalize skyposition: correctly map into [0,2pi]x[-pi/2,pi/2] */
+      thisPoint1.longitude = dopplerpos1.Alpha;
+      thisPoint1.latitude = dopplerpos1.Delta;
+      thisPoint1.system = COORDINATESYSTEM_EQUATORIAL;
+      LAL_CALL (LALNormalizeSkyPosition(&status, &thisPoint1, &thisPoint1), &status);
+
+      /* set sky template points */
+      FstatPar1.alpha = thisPoint1.longitude;
+      FstatPar1.delta = thisPoint1.latitude;
+
+      /* allocate memory for fdot value */
+      FstatPar1.fdot = NULL;
+      LAL_CALL ( LALDCreateVector( &status, &(FstatPar1.fdot), 1), &status);
+
+      /* number of fdot values */
+      nfdot = (UINT4)(uvar_dFdot / thisScan1.df1dot + 0.5) + 1; 
+
+      /* loop over fdot values */
+      for ( ifdot=0; ifdot<nfdot; ifdot++)
+	{
+
+	  FstatPar1.fdot->data[0] = uvar_fdot;
       
-    } /* end loop over candidates */
-
-    /* print loudest event */
-    fprintf(stdout, "Loudest Candidate has F = %e\n", fStatMax);
-
- } /* end block for follow-up stage */ 
-
-
+	  /* set up memory for Fstat vectors */
+	  LAL_CALL(SetUpFstatStack( &status, &FstatVect, &FstatPar1), &status);
+	  
+	  /* calculate the Fstatistic */
+	  LAL_CALL(ComputeFstatStack( &status, &FstatVect, &stackSFTs1, &FstatPar1), &status);
+            
+	  /* print fstat vector -- for debugging */
+	  /*   LAL_CALL( PrintFstat ( &status, FstatVect.data, uvar_fnameout, 0 ), &status); */
+	  
+	  
+	  /*------------ select peaks ------------*/ 
+	  
+	  LAL_CALL( FstatVectToPeakGram( &status, &pgV, &FstatVect, uvar_FstatThr), &status);
+	  
+	  /* free Fstat */
+	  for(k=0; k<nStacks1; k++) {
+	    LALFree(FstatVect.data[k].data->data);
+	    LALFree(FstatVect.data[k].data);
+	  }
+	  LALFree(FstatVect.data);
+	  
+	  
+	  /*--------------- calculate Hough map and get candidates ---------------*/
+	  /* start and end bin for calculating hough map */
+	  /* these are just what the user specified */
+	  binsHough = floor( tStackAvg1 * uvar_fBand );
+	  fHoughBinIni = floor( tStackAvg1 * uvar_fStart + 0.5);
+	  fHoughBinFin = fHoughBinIni + binsHough - 1;
+	  
+	  /* set up the Hough parameters */
+	  if ( ! LALUserVarWasSet(&uvar_houghThr))
+	    uvar_houghThr = 0.65 * nStacks1;
+	  houghPar.outBaseName = uvar_fnameout;
+	  houghPar.houghThr = uvar_houghThr;
+	  houghPar.tStart = tStart1;
+	  houghPar.fBinIni = fHoughBinIni;
+	  houghPar.fBinFin = fHoughBinFin;
+	  houghPar.nfSizeCylinder = uvar_nfSize;
+	  houghPar.detector = detector1;
+	  houghPar.ts = &midTstack1;
+	  houghPar.vel = velStack;
+	  houghPar.pos = posStack;
+	  houghPar.alpha = uvar_alpha;
+	  houghPar.delta = uvar_delta;
+	  houghPar.fdot = NULL;
+	  LAL_CALL ( LALDCreateVector( &status, &(houghPar.fdot), 1), &status);
+	  houghPar.fdot->data[0] = uvar_fdot;
+	  
+	  /* allocate memory for candidates structure */
+	  houghCand.length = uvar_nCand1;
+	  houghCand.nCandidates = 0; /* initialization */
+	  houghCand.freq = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
+	  houghCand.alpha = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
+	  houghCand.delta = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
+	  houghCand.dFreq = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
+	  houghCand.dAlpha = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
+	  houghCand.dDelta = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
+	  houghCand.fdot = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
+	  houghCand.dFdot = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
+	  
+	  /* get candidates */
+	  LAL_CALL ( ComputeFstatHoughMap ( &status, &houghCand, &pgV, &houghPar), &status);
+	  
+	  
+	  /* print candidates */
+	  LAL_CALL ( PrintHoughCandidates ( &status, &houghCand, uvar_fnameout), &status);
+	  
+	  
+	  /*------------- Follow up candidates --------------*/
+	  
+	  /* this part is more general than it has to be
+	     it is meant to be generalized to the case when 
+	     the number of follow-up stacks is not necessarily 1 */
+	  
+	  /* check if user requested a follow up stage*/
+	  if ( LALUserVarWasSet(&uvar_sftDir2)) {
+	    
+	    /*------------- calculate the Fstatistic ---------------*/
+	    /* loop over candidates */
+	    for ( j=0; j < houghCand.nCandidates; j++) {
+	      
+	      REAL8 tempMax;
+	      
+	      FstatPar2.fStart = houghCand.freq[j] - 0.5 * houghCand.dFreq[j];
+	      FstatPar2.fBand = houghCand.dFreq[j];
+	      FstatPar2.alpha = houghCand.alpha[j];
+	      FstatPar2.delta = houghCand.delta[j];
+	      FstatPar2.fdot->data[0] = houghCand.fdot[j];
+	      
+	      LAL_CALL(SetUpFstatStack( &status, &FstatVect, &FstatPar2), &status);
+	      
+	      LAL_CALL(ComputeFstatStack( &status, &FstatVect, &stackSFTs2, &FstatPar2), &status);
+	      
+	      LAL_CALL ( GetLoudestFstat ( &status, &tempMax, FstatVect.data), &status);
+	      
+	      if ( tempMax > fStatMax )
+		fStatMax = tempMax;
+	      
+	      /*     LAL_CALL( PrintFstat ( &status, FstatVect.data, uvar_fnameout, 0 ), &status);  */
+	      
+	      /* free Fstat */
+	      for(k=0; k<nStacks2; k++) {
+		LALFree(FstatVect.data[k].data->data);
+		LALFree(FstatVect.data[k].data);
+	      }
+	      LALFree(FstatVect.data);
+	      
+	    } /* end loop over candidates */
+	    
+	    /* print loudest event */
+	    fprintf(stdout, "Loudest Candidate has F = %e\n", fStatMax);
+	    
+	  } /* end block for follow-up stage */ 
+	  
+	} /* end loop over fdot values */
+    } /* end while loop over 1st stage skygrid */
 
 
   /*------------ free all remaining memory -----------*/
@@ -853,10 +922,15 @@ int main( int argc, char *argv[]) {
   LAL_CALL(LALDestroyTimestampVector ( &status, &startTsft2), &status);  	
   LALFree(stackSFTs2.data);
   LAL_CALL (LALDestroySFTVector(&status, &inputSFTVec2),&status );
-  
-  LALFree(midTstack2.data);
+  LALFree(stackSFTs1.data);
+  LAL_CALL (LALDestroySFTVector(&status, &inputSFTVec1),&status );
+ 
+ LALFree(midTstack2.data);
   LALFree(tStack2);
   LALFree(mCohSft2);
+
+  if ( scanInit1.searchRegion.skyRegionString )
+    LALFree ( scanInit1.searchRegion.skyRegionString );
   
   /* free peakgrams */
   for (k=0; k<nStacks1; k++) 
