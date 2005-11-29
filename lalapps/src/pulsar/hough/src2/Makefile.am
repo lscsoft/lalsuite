@@ -10,6 +10,14 @@ LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 bin_PROGRAMS = HoughValidateAM HoughMismatch DriveHoughFStat
 
-HoughValidateAM_SOURCES = HoughValidateAM.c ../src/MCInjectHoughS2.h ../src/SFTbin.h ../src/SFTbin.c ../src/DriveHoughColor.h ../src/PeakSelect.h ../src/PeakSelect.c
-HoughMismatch_SOURCES = HoughMismatch.c ../src/MCInjectHoughS2.h ../src/SFTbin.h ../src/SFTbin.c ../src/DriveHoughColor.h ../src/PeakSelect.h ../src/PeakSelect.c
-DriveHoughFStat_SOURCES = DriveHoughFStat.c DriveHoughFStat.h
+HoughValidateAM_SOURCES = HoughValidateAM.c ../src/MCInjectHoughS2.h \
+	                  ../src/SFTbin.h ../src/SFTbin.c \
+			  ../src/DriveHoughColor.h ../src/PeakSelect.h \
+			  ../src/PeakSelect.c
+HoughMismatch_SOURCES = HoughMismatch.c ../src/MCInjectHoughS2.h \
+			../src/SFTbin.h ../src/SFTbin.c \
+			../src/DriveHoughColor.h ../src/PeakSelect.h \
+			../src/PeakSelect.c
+DriveHoughFStat_SOURCES = DriveHoughFStat.c DriveHoughFStat.h \
+			  ../../FDS_isolated/DopplerScan.c ../../FDS_isolated/DopplerScan.h \
+			  ../../FDS_isolated/LogPrintf.c ../../FDS_isolated/LogPrintf.h	
