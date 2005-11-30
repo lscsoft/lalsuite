@@ -744,6 +744,12 @@ sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x)
   static BOOLEAN firstCall = TRUE;
   static REAL4 sinVal[LUT_RES+1], cosVal[LUT_RES+1];
 
+  /*
+  (*sinx) = sin(x);
+  (*cosx) = cos(x);
+  return 0;
+  */
+
   /* the first time we get called, we set up the lookup-table */
   if ( firstCall )
     {
@@ -770,7 +776,7 @@ sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x)
   
   ind = (UINT4)( kappat * LUT_RES + 0.5 );   /* find closest LUT-entry */
   {
-    REAL8 d = kappat - (REAL8)ind/(REAL8)LUT_RES ;
+    REAL8 d = LAL_TWOPI * ( kappat - (REAL8)ind/(REAL8)LUT_RES );
     REAL8 d2 = 0.5 * d * d;
     REAL8 ts = sinVal[ind];
     REAL8 tc = cosVal[ind];
