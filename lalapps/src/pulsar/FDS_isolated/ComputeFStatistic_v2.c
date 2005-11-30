@@ -237,6 +237,9 @@ int main(int argc,char *argv[])
   LAL_CALL ( InitFStat(&status, &GV), &status);
 
 
+  /* debug: output first SFT  */
+  LAL_CALL ( LALWriteSFTfile (&status, &(GV.ifos.sftVects[0]->data[0]), "debugSFT.sft"), &status );
+
   /* prepare initialization of DopplerScanner to step through paramter space */
   scanInit.dAlpha = uvar_dAlpha;
   scanInit.dDelta = uvar_dDelta;
@@ -396,7 +399,7 @@ int main(int argc,char *argv[])
 		  /* debug-output beam-pattern timeseries for first skyposition */
 		  if ( (loopcounter == 0 ) && (nD == 0) && uvar_outputBeamTS )
 		    {
-		      if ( outputBeamTS( uvar_outputBeamTS, GV.ifos.amcoe[nD] ) != 0 )
+		      if ( outputBeamTS( uvar_outputBeamTS, GV.ifos.amcoe[0] ) != 0 )
 			LALPrintError("\nFailed to write beam-patterns into '%s'\n\n", uvar_outputBeamTS );
 		    }
 		  
@@ -435,7 +438,7 @@ int main(int argc,char *argv[])
 	      if ( uvar_SignalOnly )
 		{
 		  REAL8 Tsft = 1.0 / (GV.ifos.sftVects[0]->data[0].deltaF );
-		      
+ 		      
 		  fact /= Tsft;
 		}
 	      else
@@ -773,29 +776,6 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     TRY ( LALFloatToGPS (status->statusPtr, &(cfg->refTime), &uvar_refTime), status);
   } else
     cfg->refTime = cfg->startTime;
-
-
-  /* ---------- initialize+check  template-grid related parameters ---------- */
-  {
-    BOOLEAN haveSkyRegion, haveAlphaDelta;
-
-    haveSkyRegion  = (uvar_skyRegion != NULL);
-    haveAlphaDelta = (LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta) );
-
-    /* pre-process template-related input */
-    if (haveSkyRegion)
-      {
-	cfg->skyRegionString = LALCalloc(1, strlen(uvar_skyRegion)+1);
-	strcpy (cfg->skyRegionString, uvar_skyRegion);
-      }
-    else if (haveAlphaDelta)	/* parse this into a sky-region */
-      {
-	TRY ( SkySquare2String( status->statusPtr, &(cfg->skyRegionString), 
-				uvar_Alpha, uvar_Delta, 
-				uvar_AlphaBand, uvar_DeltaBand), status);
-      }
-    
-  } /* end: template-grid stuff */
 
   /* ----- count number of detectors */
   if ( LALUserVarWasSet(&uvar_DataFiles2) )
@@ -1269,7 +1249,7 @@ outputBeamTS( const CHAR *fname, const AMCoeffs *amcoe )
 
   for (i=0; i < len; i ++ )
     {
-      if ( 2 != fprintf (fp, "%f %f \n", amcoe->a->data[i], amcoe->b->data[i] ) )
+      if ( fprintf (fp, "%f %f \n", amcoe->a->data[i], amcoe->b->data[i] ) <= 0 )
 	{
 	  fclose(fp);
 	  return -1;
