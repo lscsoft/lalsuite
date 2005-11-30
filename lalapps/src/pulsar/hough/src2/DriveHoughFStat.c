@@ -138,6 +138,7 @@ BOOLEAN uvar_printStats; /**< global variable for calculating Hough map stats */
 #define DFDOT 0.0   /**< Default range of first spindown parameter */
 #define ALPHA 1.57    /**< Default sky location -- right ascension */
 #define DELTA  0.0    /**< Default sky location -- declination */
+#define SKYREGION "(0,0)" /**< default sky region to search over -- just a single point*/
 #define NFSIZE  21    /**< Default size of hough cylinder of look up tables */
 #define DTERMS 8     /**< Default number of dirichlet kernel terms for calculating Fstat */
 #define MISMATCH 0.2 /**< Default for metric grid maximal mismatch value */
@@ -145,7 +146,7 @@ BOOLEAN uvar_printStats; /**< global variable for calculating Hough map stats */
 #define DDELTA 0.001 /**< Default resolution for isotropic or flat grids */
 #define FSTATTHRESHOLD 2.6  /**< Default threshold on Fstatistic for peak selection */
 #define NCAND1 5000 /**< Default number of candidates to be followed up from first stage */
-#define SFTDIRECTORY "/home/badkri/fakesfts/"  /**< Default directory containing sfts */
+#define SFTDIRECTORY "/local_data/badkri/fakesfts/"  /**< Default directory containing sfts */
 #define FNAMEOUT "./temp/OutHoughFStat"  /**< Default output file basename */
 
 int main( int argc, char *argv[]) {
@@ -250,8 +251,8 @@ int main( int argc, char *argv[]) {
   INT4  uvar_gridType;
   INT4  uvar_metricType;
   REAL8 uvar_metricMismatch;
-  CHAR *uvar_skyGridFile;
-  CHAR *uvar_skyRegion;
+  CHAR *uvar_skyGridFile=NULL;
+  CHAR *uvar_skyRegion=NULL;
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
@@ -291,23 +292,25 @@ int main( int argc, char *argv[]) {
   uvar_gridType = GRID_FLAT;
   uvar_metricMismatch = MISMATCH;
   uvar_skyGridFile = NULL;
-  uvar_skyRegion = NULL;
+
+  uvar_skyRegion = (CHAR *)LALMalloc(512*sizeof(CHAR));
+  strcpy(uvar_skyRegion, SKYREGION);
 
   uvar_earthEphemeris = (CHAR *)LALMalloc(512*sizeof(CHAR));
-  strcpy(uvar_earthEphemeris,EARTHEPHEMERIS);
+  strcpy(uvar_earthEphemeris, EARTHEPHEMERIS);
 
   uvar_sunEphemeris = (CHAR *)LALMalloc(512*sizeof(CHAR));
-  strcpy(uvar_sunEphemeris,SUNEPHEMERIS);
+  strcpy(uvar_sunEphemeris, SUNEPHEMERIS);
 
   uvar_sftDir1 = (CHAR *)LALMalloc(512*sizeof(CHAR));
-  strcpy(uvar_sftDir1,SFTDIRECTORY);
+  strcpy(uvar_sftDir1, SFTDIRECTORY);
 
   /* do not set default for sftDir2 -- use only if user specifies */
   uvar_sftDir2 = (CHAR *)LALMalloc(512*sizeof(CHAR));
-  strcpy(uvar_sftDir2,SFTDIRECTORY);
+  strcpy(uvar_sftDir2, SFTDIRECTORY);
 
   uvar_fnameout = (CHAR *)LALMalloc(512*sizeof(CHAR));
-  strcpy(uvar_fnameout,FNAMEOUT);
+  strcpy(uvar_fnameout, FNAMEOUT);
 
   /* register user input variables */
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",            'h', UVAR_HELP,     "Print this message",                                &uvar_help),            &status);  
@@ -319,7 +322,7 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",    'w', UVAR_OPTIONAL, "RngMed block size",                                 &uvar_blocksRngMed),    &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris",  'E', UVAR_OPTIONAL, "Earth Ephemeris file",                              &uvar_earthEphemeris),  &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris",    'S', UVAR_OPTIONAL, "Sun Ephemeris file",                                &uvar_sunEphemeris),    &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir",           0,  UVAR_OPTIONAL, "SFT Directory",                                     &uvar_sftDir1),         &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir1",          0,  UVAR_OPTIONAL, "SFT Directory",                                     &uvar_sftDir1),         &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir2",          0,  UVAR_OPTIONAL, "SFT Directory for follow up",                       &uvar_sftDir2),         &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameout",        'o', UVAR_OPTIONAL, "Output basefileneme",                               &uvar_fnameout),        &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "alpha",            0,  UVAR_OPTIONAL, "Right ascension",                                   &uvar_alpha),           &status);
@@ -737,7 +740,7 @@ int main( int argc, char *argv[]) {
   scanInit1.projectMetric = TRUE;
   scanInit1.obsDuration = tStackAvg1;
 
-  LAL_CALL ( LALFloatToGPS ( & status, &(scanInit1.obsBegin), tStack1 + nStacks1/2), &status);
+  scanInit1.obsBegin = midTstack1.data[ nStacks1/2 ];
 
   scanInit1.Detector = &detector1;
   scanInit1.ephemeris = edat;		/* used by Ephemeris-based metric */
@@ -748,22 +751,19 @@ int main( int argc, char *argv[]) {
   scanInit1.searchRegion.f1dot = uvar_fdot;
   scanInit1.searchRegion.f1dotBand = uvar_fdotBand;
   /* find sky search region */
-  {
-    BOOLEAN haveAlphaDelta = LALUserVarWasSet(&uvar_alpha) && LALUserVarWasSet(&uvar_delta);
-    if (uvar_skyRegion)
-      {
-	scanInit1.searchRegion.skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
-	if ( scanInit1.searchRegion.skyRegionString == NULL ) {
+  if ( LALUserVarWasSet(&uvar_skyRegion))
+    {
+      scanInit1.searchRegion.skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
+      if ( scanInit1.searchRegion.skyRegionString == NULL ) {
 	/*   ABORT (&status, DRIVEHOUGHFSTAT_ENULL, DRIVEHOUGHFSTAT_MSGENULL); */
-	}
-	strcpy (scanInit1.searchRegion.skyRegionString, uvar_skyRegion);
       }
-    else if (haveAlphaDelta)    /* parse this into a sky-region */
-      {
-	LAL_CALL ( SkySquare2String( &status, &(scanInit1.searchRegion.skyRegionString),
-				uvar_alpha, uvar_delta,	uvar_alphaBand , uvar_deltaBand ), &status);
-      }
-  } /* end find search-region */
+      strcpy (scanInit1.searchRegion.skyRegionString, uvar_skyRegion);
+    }
+  else
+    {
+      LAL_CALL ( SkySquare2String( &status, &(scanInit1.searchRegion.skyRegionString),
+				   uvar_alpha, uvar_delta,	uvar_alphaBand , uvar_deltaBand ), &status);
+    }
 
   /* initialize skygrid  */  
   LAL_CALL ( InitDopplerScan ( &status, &thisScan1, &scanInit1), &status); 
@@ -925,21 +925,25 @@ int main( int argc, char *argv[]) {
   /*------------ free all remaining memory -----------*/
   
   /* free memory */
-  LAL_CALL(LALDestroyTimestampVector ( &status, &startTsft1), &status);  	
-  LALFree(mCohSft1);
 
   LAL_CALL (LALDDestroyVector (&status, &(houghPar.fdot)), &status);
 
   /*free sfts */
-  LAL_CALL(LALDestroyTimestampVector ( &status, &startTsft2), &status);  	
-  LALFree(stackSFTs2.data);
-  LAL_CALL (LALDestroySFTVector(&status, &inputSFTVec2),&status );
+  if ( inputSFTVec2 != NULL )
+    {
+      LAL_CALL(LALDestroyTimestampVector ( &status, &startTsft2), &status);  	
+      LALFree(stackSFTs2.data);
+      LAL_CALL (LALDestroySFTVector(&status, &inputSFTVec2),&status );
+      LALFree(tStack2);
+      LALFree(mCohSft2);
+      LAL_CALL (LALDDestroyVector (&status, &(FstatPar2.fdot)), &status); 
+    }
+
+  LAL_CALL(LALDestroyTimestampVector ( &status, &startTsft1), &status);  	  
   LALFree(stackSFTs1.data);
   LAL_CALL (LALDestroySFTVector(&status, &inputSFTVec1),&status );
- 
   LALFree(midTstack2.data);
-  LALFree(tStack2);
-  LALFree(mCohSft2);
+  LALFree(mCohSft1);
 
   if ( scanInit1.searchRegion.skyRegionString )
     LALFree ( scanInit1.searchRegion.skyRegionString );
@@ -967,7 +971,6 @@ int main( int argc, char *argv[]) {
   LALFree(houghCand.dFdot);
   
   LAL_CALL (LALDDestroyVector (&status, &(FstatPar1.fdot)), &status); 
-  LAL_CALL (LALDDestroyVector (&status, &(FstatPar2.fdot)), &status); 
 
   /* free ephemeris */
   LALFree(edat->ephemE);
@@ -1012,6 +1015,7 @@ void ComputeFstatStack (LALStatus *status,
   REAL8 fStart = params->fStart;
   REAL8 tStackAvg = params->tStackAvg;
   REAL8 deltaF = 1.0/tStackAvg;
+  REAL8 fBand = params->fBand;
 
   /* copy timeBase from SFT vector */
   REAL8 timeBase = 1.0 / ( stackSFTs->data->data->deltaF);
@@ -1071,6 +1075,7 @@ void ComputeFstatStack (LALStatus *status,
     TRY ( LALDCreateVector(status->statusPtr, &(tSSB.Tdot), mCohSft[k]), status );
 
     /* loop over frequency bins and get Fstatistic */
+    binsFstat = floor( tStackAvg * fBand );
     for(j=0; j<binsFstat; j++) {
 
       /* increase frequency value */
