@@ -937,14 +937,16 @@ int main( int argc, char *argv[]) {
       LALFree(tStack2);
       LALFree(mCohSft2);
       LAL_CALL (LALDDestroyVector (&status, &(FstatPar2.fdot)), &status); 
+      LALFree(midTstack2.data);
     }
 
   LAL_CALL(LALDestroyTimestampVector ( &status, &startTsft1), &status);  	  
   LALFree(stackSFTs1.data);
   LAL_CALL (LALDestroySFTVector(&status, &inputSFTVec1),&status );
-  LALFree(midTstack2.data);
+
   LALFree(mCohSft1);
 
+  LAL_CALL ( FreeDopplerScan(&status, &thisScan1), &status);
   if ( scanInit1.searchRegion.skyRegionString )
     LALFree ( scanInit1.searchRegion.skyRegionString );
   
