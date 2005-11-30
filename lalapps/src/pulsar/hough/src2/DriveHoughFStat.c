@@ -44,19 +44,18 @@
      divided up equally among the stacks, or the total time spanned by the data is 
      broken up equally
 
-   - The user specifies a region in parameter space to search over.  At present, 
-     only a single sky-location and spindown are allowed, though a frequency range 
-     can be specified.  The F-statistic is calculated for each stack at the chosen
-     sky-position, spindown, and frequency range.  
+   - The user specifies a region in parameter space to search over.  The code 
+     sets up a grid (the "coarse" grid) in this region and calculates the F-statistic 
+     for each stack at each point of the coarse grid.  
 
    - A threshold is set on the F-statistic to convert the 
      F-statistic vector into a vector of 0s and 1s known as a \e peakgram -- there 
-     is one peakgram for each stack.
+     is one peakgram for each stack and for each grid point.
 
-   - The peakgrams are combined using the Hough transform.
+   - The peakgrams are combined using the Hough transform.  
 
-   - The Hough part of the search constructs a grid in a small patch around the 
-     chosen sky-position and spindown and stacks up the different segments in frequency
+   - The Hough part of the search constructs a grid (the "fine" grid) in a small patch 
+     around every coarse grid point, and combines the different stacks
      following the \e master equation 
      \f[
         f(t) - F_0(t) = \xi(t).(\hat{n} - \hat{n}_0)
@@ -86,15 +85,13 @@
 
    - Use average velocity instead of mid-time
 
-   - Do Fstat memory allocation outside Fstat calculation function
-
    \par Longer term
 
    - Should we over-resolve the Fstat calculation to reduce loss in signal power?  We would
      still calculate the peakgrams at the 1/T resolution, but the peak selection would 
      take into account Fstat values over several over-resolved bins.  
    
-   - What is the best grid for calculating the F-statistic grid?  At first glance, the 
+   - What is the best grid for calculating the F-statistic?  At first glance, the 
      Hough patch and the metric F-statistic patch do not seem to be compatible.  If we
      use the Hough patches to break up the sky, it could be far from optimal.  What is 
      the exact connection between the two grids?  
@@ -317,13 +314,13 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "log",              0,  UVAR_OPTIONAL, "Write log file",                                    &uvar_log),             &status);  
   LAL_CALL( LALRegisterINTUserVar(    &status, "ifo",             'i', UVAR_OPTIONAL, "Detector GEO(1) LLO(2) LHO(3)",                     &uvar_ifo1 ),           &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "ifo2",             0,  UVAR_OPTIONAL, "Detector for follow up stage",                      &uvar_ifo2 ),           &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "nStacks1",        'N', UVAR_OPTIONAL, "Number of stacks",                                  &uvar_nStacks1 ),       &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "nStacks2",        'N', UVAR_OPTIONAL, "Number of stacks",                                  &uvar_nStacks2 ),       &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "nStacks1",        'N', UVAR_OPTIONAL, "Number of 1st stage stacks",                        &uvar_nStacks1 ),       &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "nStacks2",         0,  UVAR_OPTIONAL, "Number of 2nd stage stacks",                        &uvar_nStacks2 ),       &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",    'w', UVAR_OPTIONAL, "RngMed block size",                                 &uvar_blocksRngMed),    &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris",  'E', UVAR_OPTIONAL, "Earth Ephemeris file",                              &uvar_earthEphemeris),  &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris",    'S', UVAR_OPTIONAL, "Sun Ephemeris file",                                &uvar_sunEphemeris),    &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir1",          0,  UVAR_OPTIONAL, "SFT Directory",                                     &uvar_sftDir1),         &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir2",          0,  UVAR_OPTIONAL, "SFT Directory for follow up",                       &uvar_sftDir2),         &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir1",          0,  UVAR_OPTIONAL, "SFT Directory for 1st stage",                       &uvar_sftDir1),         &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir2",          0,  UVAR_OPTIONAL, "SFT Directory for 2nd stage",                       &uvar_sftDir2),         &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameout",        'o', UVAR_OPTIONAL, "Output basefileneme",                               &uvar_fnameout),        &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "alpha",            0,  UVAR_OPTIONAL, "Right ascension",                                   &uvar_alpha),           &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "delta",            0,  UVAR_OPTIONAL, "Declination",                                       &uvar_delta),           &status);
