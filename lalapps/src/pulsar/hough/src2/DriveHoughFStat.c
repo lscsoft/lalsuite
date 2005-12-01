@@ -133,7 +133,7 @@ BOOLEAN uvar_printStats; /**< global variable for calculating Hough map stats */
 #define FBAND 0.001    /**< Default search band */
 #define FDOT 0.0      /**< Default value of first spindown */
 #define DFDOT 0.0   /**< Default range of first spindown parameter */
-#define SKYREGION "(1.5,0)" /**< default sky region to search over -- just a single point*/
+#define SKYREGION "(1,1),(1,1.5),(1.5,1.5),(1.5,1)" /**< default sky region to search over -- just a single point*/
 #define NFSIZE  21    /**< Default size of hough cylinder of look up tables */
 #define DTERMS 8     /**< Default number of dirichlet kernel terms for calculating Fstat */
 #define MISMATCH 0.2 /**< Default for metric grid maximal mismatch value */
@@ -141,7 +141,7 @@ BOOLEAN uvar_printStats; /**< global variable for calculating Hough map stats */
 #define DDELTA 0.001 /**< Default resolution for isotropic or flat grids */
 #define FSTATTHRESHOLD 2.6  /**< Default threshold on Fstatistic for peak selection */
 #define NCAND1 5000 /**< Default number of candidates to be followed up from first stage */
-#define SFTDIRECTORY "/local_data/badkri/fakesfts/"  /**< Default directory containing sfts */
+#define SFTDIRECTORY "/home/badkri/fakesfts/"  /**< Default directory containing sfts */
 #define FNAMEOUT "./temp/OutHoughFStat"  /**< Default output file basename */
 
 int main( int argc, char *argv[]) {
@@ -277,8 +277,8 @@ int main( int argc, char *argv[]) {
   uvar_FstatThr = FSTATTHRESHOLD;
   uvar_nCand1 = NCAND1;
   uvar_houghThr = 0;
-  uvar_metricType =  LAL_PMETRIC_NONE;
-  uvar_gridType = GRID_FLAT;
+  uvar_metricType = LAL_PMETRIC_COH_PTOLE_ANALYTIC;
+  uvar_gridType = GRID_METRIC;
   uvar_metricMismatch = MISMATCH;
   uvar_skyGridFile = NULL;
 
