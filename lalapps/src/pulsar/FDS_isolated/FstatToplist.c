@@ -124,11 +124,14 @@ int insert_into_toplist(toplist_t*tl, TOPLISTLINE elem) {
    Returns the number of written charactes
    Returns something <0 on error */
 int write_toplist_to_fp(toplist_t*tl, FILE*fp, UINT4*checksum) {
-   UINT8 i,c=0;
+   UINT8 i,c=0,r;
    if(checksum)
        *checksum = 0;
    for(i=0;i<tl->elems;i++)
-       c += write_toplist_item_to_fp(*(tl->sorted[i]), fp, checksum);
+     if ((r = write_toplist_item_to_fp(*(tl->sorted[i]), fp, checksum)) < 0)
+       return(r);
+     else
+       c += r;
    return(c);
 }
 
@@ -343,6 +346,8 @@ int atomic_write_toplist_to_file(toplist_t *l, char *filename, UINT4*checksum) {
 	return -1;
     length = write_toplist_to_fp(l,fpnew,checksum);
     fclose(fpnew);
+    if (length < 0)
+      return(length);
     if(rename(tempname, filename))
       return -1;
     else
