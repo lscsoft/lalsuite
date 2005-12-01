@@ -15,6 +15,7 @@
 /* 11/19/05 gam; Reorganize code so that function appear in order called */
 /* 11/19/05 gam; Add command line option to use single rather than double precision; will use LALDButterworthREAL4TimeSeries in single precision case. */
 /* 11/19/05 gam; Rename vtilde fftDataDouble; add in fftDatasingle; rename fplan fftPlanDouble; add in fftPlanSingle */
+/* 11/29/05 gam; Add PRINTEXAMPLEDATA to print the first NUMTOPRINT, middle NUMTOPRINT, and last NUMTOPRINT input/ouput data at various stages */
 
 #include <config.h>
 #if !defined HAVE_LIBGSL || !defined HAVE_LIBLALFRAME
@@ -59,6 +60,10 @@ extern int optind, opterr, optopt;
 
 /* track memory usage under linux */
 #define TRACKMEMUSE 0
+
+/* print the first NUMTOPRINT, middle NUMTOPRINT, and last NUMTOPRINT input/ouput data at various stages */
+#define PRINTEXAMPLEDATA 0
+#define NUMTOPRINT       2
 
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 100; } else ((void)0)
@@ -168,6 +173,127 @@ void printmemuse() {
    system(commandline);
    fflush(NULL);
  }
+#endif
+
+#if PRINTEXAMPLEDATA
+void printExampleDataSingle() {
+      INT4 i,dataLength;
+      dataLength = dataSingle.data->length;
+      fprintf(stdout,"dataSingle.deltaT, 1.0/dataSingle.deltaT = %23.16e, %23.16e\n",dataSingle.deltaT,1.0/dataSingle.deltaT);
+      fprintf(stdout,"dataSingle.epoch.gpsSeconds,dataSingle.epoch.gpsNanoSeconds = %i, %i\n",dataSingle.epoch.gpsSeconds,dataSingle.epoch.gpsNanoSeconds);
+      for (i=0;i<NUMTOPRINT;i++) {
+        fprintf(stdout,"%i %23.16e\n",i,dataSingle.data->data[i]);
+      }
+      for (i=dataLength/2;i<dataLength/2+NUMTOPRINT;i++) {
+        fprintf(stdout,"%i %23.16e\n",i,dataSingle.data->data[i]);
+      }
+      for (i=dataLength-NUMTOPRINT;i<dataLength;i++) {
+        fprintf(stdout,"%i %23.16e\n",i,dataSingle.data->data[i]);
+      }
+      fflush(stdout);
+}    
+
+void printExampleDataDouble() {
+      INT4 i,dataLength;
+      dataLength = dataDouble.data->length;
+      fprintf(stdout,"dataDouble.deltaT, 1.0/dataDouble.deltaT = %23.16e, %23.16e\n",dataDouble.deltaT,1.0/dataDouble.deltaT);
+      fprintf(stdout,"dataDouble.epoch.gpsSeconds,dataDouble.epoch.gpsNanoSeconds = %i, %i\n",dataDouble.epoch.gpsSeconds,dataDouble.epoch.gpsNanoSeconds);
+      for (i=0;i<NUMTOPRINT;i++) {
+        fprintf(stdout,"%i %23.16e\n",i,dataDouble.data->data[i]);
+      }
+      for (i=dataLength/2;i<dataLength/2+NUMTOPRINT;i++) {
+        fprintf(stdout,"%i %23.16e\n",i,dataDouble.data->data[i]);
+      }
+      for (i=dataLength-NUMTOPRINT;i<dataLength;i++) {
+        fprintf(stdout,"%i %23.16e\n",i,dataDouble.data->data[i]);
+      }
+      fflush(stdout);
+}
+
+void printExampleFFTData(struct CommandLineArgsTag CLA)
+{
+  int firstbin=(INT4)(FMIN*CLA.T+0.5);
+  int k;
+  INT4 nsamples=(INT4)(DF*CLA.T+0.5);
+
+  if(CLA.useSingle) {
+    for (k=0; k<NUMTOPRINT; k++) {
+      fprintf(stdout,"%i %23.16e %23.16e\n",k,fftDataSingle->data[k+firstbin].re,fftDataSingle->data[k+firstbin].im);
+    }
+    for (k=nsamples/2; k<nsamples/2+NUMTOPRINT; k++) {
+      fprintf(stdout,"%i %23.16e %23.16e\n",k,fftDataSingle->data[k+firstbin].re,fftDataSingle->data[k+firstbin].im);
+    }
+    for (k=nsamples-NUMTOPRINT; k<nsamples; k++) {
+      fprintf(stdout,"%i %23.16e %23.16e\n",k,fftDataSingle->data[k+firstbin].re,fftDataSingle->data[k+firstbin].im);
+    }    
+  } else {
+    for (k=0; k<NUMTOPRINT; k++) {
+      fprintf(stdout,"%i %23.16e %23.16e\n",k,fftDataDouble->data[k+firstbin].re,fftDataDouble->data[k+firstbin].im);
+    }
+    for (k=nsamples/2; k<nsamples/2+NUMTOPRINT; k++) {
+      fprintf(stdout,"%i %23.16e %23.16e\n",k,fftDataDouble->data[k+firstbin].re,fftDataDouble->data[k+firstbin].im);
+    }
+    for (k=nsamples-NUMTOPRINT; k<nsamples; k++) {
+      fprintf(stdout,"%i %23.16e %23.16e\n",k,fftDataDouble->data[k+firstbin].re,fftDataDouble->data[k+firstbin].im);
+    }    
+  }
+  fflush(stdout);
+}
+
+void printExampleSFTDataGoingToFile(struct CommandLineArgsTag CLA)
+{
+  int firstbin=(INT4)(FMIN*CLA.T+0.5);
+  int k;
+  INT4 nsamples=(INT4)(DF*CLA.T+0.5);
+  REAL4 rpw,ipw;
+
+  if(CLA.useSingle) {
+    for (k=0; k<NUMTOPRINT; k++) {
+      rpw=((REAL4)(((REAL8)DF)/(0.5*(REAL8)(1/dataSingle.deltaT))))
+	* fftDataSingle->data[k+firstbin].re;
+      ipw=((REAL4)(((REAL8)DF)/(0.5*(REAL8)(1/dataSingle.deltaT))))
+	* fftDataSingle->data[k+firstbin].im;
+      fprintf(stdout,"%i %23.16e %23.16e\n",k,rpw,ipw);
+    }
+    for (k=nsamples/2; k<nsamples/2+NUMTOPRINT; k++) {
+      rpw=((REAL4)(((REAL8)DF)/(0.5*(REAL8)(1/dataSingle.deltaT))))
+	* fftDataSingle->data[k+firstbin].re;
+      ipw=((REAL4)(((REAL8)DF)/(0.5*(REAL8)(1/dataSingle.deltaT))))
+	* fftDataSingle->data[k+firstbin].im;
+      fprintf(stdout,"%i %23.16e %23.16e\n",k,rpw,ipw);
+    }
+    for (k=nsamples-NUMTOPRINT; k<nsamples; k++) {
+      rpw=((REAL4)(((REAL8)DF)/(0.5*(REAL8)(1/dataSingle.deltaT))))
+	* fftDataSingle->data[k+firstbin].re;
+      ipw=((REAL4)(((REAL8)DF)/(0.5*(REAL8)(1/dataSingle.deltaT))))
+	* fftDataSingle->data[k+firstbin].im;
+      fprintf(stdout,"%i %23.16e %23.16e\n",k,rpw,ipw);
+    }    
+  } else {
+    for (k=0; k<NUMTOPRINT; k++) {
+      rpw=(((REAL8)DF)/(0.5*(REAL8)(1/dataDouble.deltaT))) 
+	* fftDataDouble->data[k+firstbin].re;
+      ipw=(((REAL8)DF)/(0.5*(REAL8)(1/dataDouble.deltaT))) 
+	* fftDataDouble->data[k+firstbin].im;
+      fprintf(stdout,"%i %23.16e %23.16e\n",k,rpw,ipw);
+    }
+    for (k=nsamples/2; k<nsamples/2+NUMTOPRINT; k++) {
+      rpw=(((REAL8)DF)/(0.5*(REAL8)(1/dataDouble.deltaT))) 
+	* fftDataDouble->data[k+firstbin].re;
+      ipw=(((REAL8)DF)/(0.5*(REAL8)(1/dataDouble.deltaT))) 
+	* fftDataDouble->data[k+firstbin].im;
+      fprintf(stdout,"%i %23.16e %23.16e\n",k,rpw,ipw);
+    }
+    for (k=nsamples-NUMTOPRINT; k<nsamples; k++) {
+      rpw=(((REAL8)DF)/(0.5*(REAL8)(1/dataDouble.deltaT))) 
+	* fftDataDouble->data[k+firstbin].re;
+      ipw=(((REAL8)DF)/(0.5*(REAL8)(1/dataDouble.deltaT))) 
+	* fftDataDouble->data[k+firstbin].im;
+      fprintf(stdout,"%i %23.16e %23.16e\n",k,rpw,ipw);
+    }    
+  }
+  fflush(stdout);
+}
 #endif
 
 /************************************* MAIN PROGRAM *************************************/
@@ -517,6 +643,10 @@ int ReadData(struct CommandLineArgsTag CLA)
 
     }
 
+    #if PRINTEXAMPLEDATA
+        printf("\nExample dataSingle values after reading data from frames in ReadData:\n"); printExampleDataSingle();
+    #endif
+
   } else {
 
     if(CLA.htdata)
@@ -567,7 +697,11 @@ int ReadData(struct CommandLineArgsTag CLA)
 
     }
 
-  }
+    #if PRINTEXAMPLEDATA
+        printf("\nExample dataDouble values after reading data from frames in ReadData:\n"); printExampleDataDouble();
+    #endif
+
+  } /* END if(CLA.useSingle) else */
 
   return 0;
 }
@@ -598,7 +732,11 @@ int HighPass(struct CommandLineArgsTag CLA)
 
         #if TRACKMEMUSE
           printf("Memory use after calling LALDButterworthREAL4TimeSeries:\n"); printmemuse();
-        #endif      
+        #endif
+
+        #if PRINTEXAMPLEDATA
+            printf("\nExample dataSingle values after filtering data in HighPass:\n"); printExampleDataSingle();
+        #endif
       } else {
         #if TRACKMEMUSE
           printf("Memory use before calling LALButterworthREAL8TimeSeries:\n"); printmemuse();
@@ -610,6 +748,10 @@ int HighPass(struct CommandLineArgsTag CLA)
 
         #if TRACKMEMUSE
           printf("Memory use after calling LALButterworthREAL8TimeSeries:\n"); printmemuse();
+        #endif
+
+        #if PRINTEXAMPLEDATA
+            printf("\nExample dataDouble values after filtering data in HighPass:\n"); printExampleDataDouble();
         #endif
       }
     }
@@ -638,7 +780,11 @@ int WindowData(struct CommandLineArgsTag CLA)
     for(k = kh; k <= N; k++) 
     {
       dataSingle.data->data[k-1]=dataSingle.data->data[k-1]*0.5*( (REAL4)( 1.0 + cos(LAL_TWOPI/r - LAL_TWOPI/r*(k-1)/(N-1) - LAL_PI) ) );
-    }    
+    }
+
+    #if PRINTEXAMPLEDATA
+        printf("\nExample dataSingle values after windowing data in WindowData:\n"); printExampleDataSingle();
+    #endif
   } else {
     N=dataDouble.data->length;
     kl=r/2*(N-1)+1;
@@ -651,6 +797,9 @@ int WindowData(struct CommandLineArgsTag CLA)
     {
       dataDouble.data->data[k-1]=dataDouble.data->data[k-1]*0.5*( 1.0 + cos(LAL_TWOPI/r - LAL_TWOPI/r*(k-1)/(N-1) - LAL_PI) );
     }
+    #if PRINTEXAMPLEDATA
+        printf("\nExample dataDouble values after windowing data in WindowData:\n"); printExampleDataDouble();
+    #endif    
   }
 
   return 0;
@@ -677,7 +826,11 @@ int CreateSFT(struct CommandLineArgsTag CLA)
 
       #if TRACKMEMUSE
         printf("Memory use after creating output vector fftDataSingle and calling LALForwardRealFFT:\n"); printmemuse();
-      #endif  
+      #endif
+
+      #if PRINTEXAMPLEDATA
+        printf("\nExample real and imaginary value of fftDataSingle from CreateSFT:\n"); printExampleFFTData(CLA);
+      #endif      
   } else {
       #if TRACKMEMUSE
         printf("Memory use before creating output vector fftDataDouble and calling XLALREAL8ForwardFFT:\n"); printmemuse();
@@ -693,6 +846,10 @@ int CreateSFT(struct CommandLineArgsTag CLA)
       #if TRACKMEMUSE
         printf("Memory use after creating output vector fftDataDouble and calling XLALREAL8ForwardFFT:\n"); printmemuse();
       #endif
+
+      #if PRINTEXAMPLEDATA
+        printf("\nExample real and imaginary value of fftDataDouble from CreateSFT:\n"); printExampleFFTData(CLA);
+      #endif      
   }
       return 0;
 }
@@ -743,7 +900,10 @@ int WriteSFT(struct CommandLineArgsTag CLA)
 	* fftDataSingle->data[k+firstbin].im;
       errorcode1=fwrite((void*)&rpw, sizeof(REAL4),1,fpsft);
       errorcode2=fwrite((void*)&ipw, sizeof(REAL4),1,fpsft);
-    } 
+    }
+    #if PRINTEXAMPLEDATA
+        printf("\nExample real and imaginary SFT values going to file from fftDataSingle in WriteSFT:\n"); printExampleSFTDataGoingToFile(CLA);
+    #endif     
     LALCDestroyVector( &status, &fftDataSingle );
     TESTSTATUS( &status );    
   } else {    
@@ -757,7 +917,9 @@ int WriteSFT(struct CommandLineArgsTag CLA)
       errorcode1=fwrite((void*)&rpw, sizeof(REAL4),1,fpsft);
       errorcode2=fwrite((void*)&ipw, sizeof(REAL4),1,fpsft);
     }
-    /* 11/02/05 gam; deallocate container for SFT data */
+    #if PRINTEXAMPLEDATA
+        printf("\nExample real and imaginary SFT values going to file from fftDataDouble in WriteSFT:\n"); printExampleSFTDataGoingToFile(CLA);
+    #endif
     LALZDestroyVector( &status, &fftDataDouble );
     TESTSTATUS( &status );    
   }
