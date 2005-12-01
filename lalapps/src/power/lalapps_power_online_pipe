@@ -138,7 +138,7 @@ lscdatafindjob = pipeline.LSCDataFindJob(cache_dir, out_dir, config_parser)
 powerjob = power.PowerJob(out_dir, config_parser)
 
 # lalapps_bread
-breadjob = power.BreadJob(cache_dir, out_dir, config_parser)
+lladdjob = power.LladdJob(cache_dir, out_dir, config_parser)
 
 # publish
 publishjob = PublishJob(out_dir, config_parser)
@@ -186,9 +186,9 @@ lscdatafindnode.set_end(options.seg[1] + 1)
 lscdatafindnode.set_observatory(observatory)
 dag.add_node(lscdatafindnode)
 
-breadnode = power.BreadNode(breadjob)
-breadnode.set_name("lalapps_bread")
-dag.add_node(breadnode)
+lladdnode = power.LladdNode(lladdjob)
+lladdnode.set_name("lalapps_lladd")
+dag.add_node(lladdnode)
 
 for seg in jobsegs:
 	powernode = power.PowerNode(powerjob)
@@ -198,11 +198,9 @@ for seg in jobsegs:
 	powernode.set_start(seg[0])
 	powernode.set_end(seg[1])
 	powernode.add_parent(lscdatafindnode)
-	breadnode.add_parent(powernode)
-	breadnode.add_input_file(powernode.get_output())
+	lladdnode.add_parent(powernode)
+	lladdnode.add_file_arg(powernode.get_output())
 	dag.add_node(powernode)
-
-breadnode.set_output(breadnode.get_output())
 
 dag.write_sub_files()
 dag.write_dag()

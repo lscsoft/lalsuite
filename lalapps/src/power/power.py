@@ -485,6 +485,11 @@ class BreadNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     pipeline.CondorDAGNode.__init__(self, job)
     pipeline.AnalysisNode.__init__(self)
 
+  def add_input_file(self, filename):
+    # hack to update the output file name each time an input is added.
+    pipeline.CondorDAGNode.add_input_file(self, filename)
+    self.set_output(self.get_output())
+
   def get_output(self):
     """
     Returns the output file name.  This must be kept synchronized
@@ -492,6 +497,61 @@ class BreadNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     if not len(self.get_input_files()):
       raise PowerError, "BreadNode.get_output(): must set input files first"
+
+    [base] = re.compile(r"(\S*)-[\d.]+-[\d.]+\.[\w_+#]+\Z").findall(self.get_input_files()[0])
+    seg = segmentsUtils.fromfilenames(self.get_input_files()).extent()
+    
+    return base + '-' + str(int(seg[0])) + '-' + str(int(seg[1]) - int(seg[0])) + '.xml'
+
+
+class LladdJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+  """
+  A lalapps_lladd job used by the power pipeline. The static options are
+  read from the sections [data] and [lladd] in the ini file. The stdout and
+  stderr from the job are directed to the logs directory. The job runs in
+  the vanilla universe. The path to the executable is determined from the
+  ini file.
+  """
+  def __init__(self, cache_dir, out_dir, cp):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    self.path2cache = cp.get('condor','path2cache')
+    self.__executable = cp.get('condor','lladd')
+    self.__universe = 'vanilla'
+    pipeline.CondorDAGJob.__init__(self, self.__universe, self.__executable)
+    pipeline.AnalysisJob.__init__(self, cp)
+
+    for sec in ['lladd']:
+      self.add_ini_opts(cp, sec)
+
+    self.set_stdout_file(os.path.join(out_dir, 'lladd-$(cluster)-$(process).out'))
+    self.set_stderr_file(os.path.join(out_dir, 'lladd-$(cluster)-$(process).err'))
+    self.set_sub_file('lladd.sub')
+
+
+class LladdNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+  """
+  A LladdNode runs an instance of lalapps_lladd in a Condor DAG.
+  """
+  def __init__(self, job):
+    """
+    job = A CondorDAGJob that can run an instance of lalapps_lladd.
+    """
+    pipeline.CondorDAGNode.__init__(self, job)
+    pipeline.AnalysisNode.__init__(self)
+
+  def add_file_arg(self, filename):
+    pipeline.CondorDAGNode.add_file_arg(self, filename)
+    self.set_output(self.get_output())
+
+  def get_output(self):
+    """
+    Returns the output file name.  This must be kept synchronized
+    PowerNode.
+    """
+    if not len(self.get_input_files()):
+      raise PowerError, "LladdNode.get_output(): must set input files first"
 
     [base] = re.compile(r"(\S*)-[\d.]+-[\d.]+\.[\w_+#]+\Z").findall(self.get_input_files()[0])
     seg = segmentsUtils.fromfilenames(self.get_input_files()).extent()
