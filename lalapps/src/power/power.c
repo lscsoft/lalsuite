@@ -485,7 +485,7 @@ void parse_command_line(
 	XLALINT8NSToGPS(&options.startEpoch, 0);	/* impossible */
 	XLALINT8NSToGPS(&options.stopEpoch, 0);	/* impossible */
 
-	options.simDistance = 10000;    /* default (10 Mpc) */
+	options.simDistance = 10000.0;  /* default (10 Mpc) */
 	options.simCacheFile = NULL;	/* default */
 	options.simdirname = NULL;      /* default */
 
