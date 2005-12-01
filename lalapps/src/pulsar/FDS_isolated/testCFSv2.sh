@@ -25,29 +25,39 @@ if [ -z "$LAL_DATA_PATH" ]; then
 fi
 
 # ---------- fixed parameter of our test-signal
-Tsft=1800
-startTime=714180733
-refTime=714160733  ## $startTime
-duration=180000		## 50 hours
+Tsft=60;
+startTime=711595933
+refTime=$startTime ##710160733  ## $startTime
+duration=100000		## 27.7777 hours
 
-mfd_fmin=300.0
-mfd_FreqBand=0.7
+mfd_FreqBand=2.0;
 
-Alpha=0.8
-Delta=0.5
+Alpha=2.0
+Delta=-0.5
 
 aPlus=1.0
-aCross=0.0
+aCross=0.4
 
 psi=0
 phi0=0
 
-freq=300.4
+freq=100.0
+mfd_fmin=$(echo $freq $mfd_FreqBand | awk '{printf "%g", $1 - $2 / 2.0}');
+
+echo "mfd_fmin = $mfd_fmin"
 
 f1dot=1e-8
 df1dot=0.3e-8	## search about 3 spindown-values
 
-noiseSigma=10
+noiseSigma=2
+
+if [ "$noiseSigma" != 0 ]; then
+    sqrtSh=$(echo $noiseSigma $mfd_FreqBand | awk '{printf "%g", $1 / sqrt($2) }'); ## sqrt(Sh) = sigma/ sqrt(Band)
+    whatNoise=
+else
+    sqrtSh=1;
+    whatNoise="--SignalOnly";
+fi
 
 IFO=LHO
 
@@ -70,7 +80,6 @@ fi
 saf_CL="--latitude=$Delta  --longitude=$Alpha --detector=$IFO --Tsft=$Tsft --startTime=$startTime --duration=$duration --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0"
 # concatenate this with the mfd-specific switches:
 mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --f0=$freq --outSFTbname=$SFTdir/testSFT --f1dot=$f1dot  --refTime=$refTime --noiseSigma=$noiseSigma"
-    
 cmdline="$mfd_code $mfd_CL";
 echo $cmdline;
 if ! eval $cmdline; then
@@ -80,7 +89,6 @@ fi
 
 echo 
 echo -n "Running '$saf_code' ... "
-sqrtSh=`echo $noiseSigma $mfd_FreqBand | awk '{printf "%g", $1 / sqrt($2) }'` ## sqrt(Sh) = sigma/ sqrt(Band)
 cmdline="$saf_code $saf_CL --sqrtSh=$sqrtSh"	
 echo $cmdline
 if ! resF=`eval $cmdline 2> /dev/null`; then
@@ -98,7 +106,7 @@ echo "----------------------------------------------------------------------"
 echo
 
 ## common cmdline-options for v1 and v2    
-cfs_CL="--IFO=$IFO --Freq=$freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --f1dotBand=$f1dot --df1dot=$df1dot --Fthreshold=0 --DataFiles=$SFTdir/testSFT* --refTime=$refTime"
+cfs_CL="--IFO=$IFO --Freq=$freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --f1dotBand=$f1dot --df1dot=$df1dot --Fthreshold=0 --DataFiles=$SFTdir/testSFT* --refTime=$refTime $whatNoise"
     
 cmdline="$cfs_code $cfs_CL  --outputFstat=Fstat_v1.dat --expLALDemod=0";
 echo $cmdline;
