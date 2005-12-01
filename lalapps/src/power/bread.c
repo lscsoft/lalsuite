@@ -68,6 +68,7 @@ struct options_t {
 	int cluster;
 	int globtrig;
 	char *globdir;
+	char *ifoCut;
 	int outtxt;
 	int playground;
 	int noplayground;
@@ -131,6 +132,7 @@ static void set_option_defaults(struct options_t *options)
 	options->noplayground = FALSE;
 	options->sort = FALSE;
 	options->clusterchoice = undefined;
+	options->ifoCut = NULL;
 
 	options->maxConfidenceFlag = FALSE;
 	options->maxConfidence = 0.0;
@@ -193,6 +195,7 @@ static void parse_command_line(int argc, char **argv, struct options_t *options,
 		{"trig-start-time", required_argument, NULL, 'q'},
 		{"trig-stop-time", required_argument, NULL, 'r'},
 		{"globtrig", required_argument, NULL, 's'},
+		{"ifo-cut", required_argument,  NULL,  'p'},
 		{"playground", no_argument, &options->playground, TRUE},
 		{"noplayground", no_argument, &options->noplayground, TRUE},
 		{"help", no_argument, NULL, 'o'},
@@ -205,7 +208,7 @@ static void parse_command_line(int argc, char **argv, struct options_t *options,
 	*infile = *outfile = *outtxt = NULL;
 
 	do {
-		switch (c = getopt_long(argc, argv, "a:c:d:e:f:g:h:i:", long_options, &option_index)) {
+		switch (c = getopt_long(argc, argv, "a:b:c:d:e:f:g:h:i:j:k:l:m:n:q:r:s:p:o", long_options, &option_index)) {
 		case -1:
 		case 0:
 			break;
@@ -373,6 +376,13 @@ static void parse_command_line(int argc, char **argv, struct options_t *options,
 			 */
 			options->globtrig = TRUE;
 			options->globdir = optarg;
+			break;
+
+		case 'p':
+			/*
+			 * only events with this ifo are selected
+			 */
+			options->ifoCut = optarg;
 			break;
 
 		case ':':
@@ -769,6 +779,9 @@ int main(int argc, char **argv)
 			addpoint = &(*addpoint)->next;
 	}
 
+	/* Select the triggers with the ifo asked for */
+	if ( options.ifoCut )
+	  XLALIfoCutSnglBurst(&(burstEventList), options.ifoCut );
 
 	/*
 	 * Cluster the events

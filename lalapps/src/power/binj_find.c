@@ -35,6 +35,7 @@ struct options_t {
 	CHAR *injmadeFile;
 	CHAR *injFoundFile;
 	CHAR *outSnglFile;
+	CHAR *ifoCut;
 
 	int verbose;
 	int printresult;
@@ -44,6 +45,8 @@ struct options_t {
 
 	int best_confidence;
 	int best_peaktime;
+
+	int find_inspirals;
 
 	/* times of comparison */
 	INT4 gpsStartTime;
@@ -94,6 +97,9 @@ static void set_option_defaults(struct options_t *options)
 	options->injmadeFile = NULL;
 	options->injFoundFile = NULL;
 	options->outSnglFile = NULL;
+	options->ifoCut = NULL;
+
+	options->find_inspirals = FALSE;
 
 	options->verbose = FALSE;
 	options->printresult = FALSE;
@@ -155,10 +161,12 @@ static void parse_command_line(int argc, char *argv[], struct options_t *options
 		{"noplayground",     no_argument, &options->noplayground, TRUE},
 		{"best-confidence",  no_argument, &options->best_confidence, TRUE},
 		{"best-peaktime",    no_argument, &options->best_peaktime, TRUE},
+		{"find-inspirals",   no_argument, &options->find_inspirals, TRUE},
 		{"help",             no_argument, NULL, 'o'},
 		{"input-trig",       required_argument, NULL, 'a'},
 		{"input-burstinj",   required_argument, NULL, 'b'},
 		{"input-inspinj",    required_argument, NULL, 'j'},
+		{"ifo-cut",          required_argument, NULL, 'l'},
 		{"output-inj-made",  required_argument, NULL, 'c'},
 		{"max-confidence",   required_argument, NULL, 'd'},
 		{"gps-start-time",   required_argument, NULL, 'e'},
@@ -172,7 +180,7 @@ static void parse_command_line(int argc, char *argv[], struct options_t *options
 	};
 	int c, index;
 
-	do switch(c = getopt_long(argc, argv, "a:b:j:c:d:e:f:g:h:k:i:oq:", long_options, &index)) {
+	do switch(c = getopt_long(argc, argv, "a:b:j:l:c:d:e:f:g:h:k:i:oq:", long_options, &index)) {
 	case 'a':
 		options->inputFile = optarg;
 		break;
@@ -183,6 +191,10 @@ static void parse_command_line(int argc, char *argv[], struct options_t *options
 
 	case 'j':
 		options->inspinjectionFile = optarg;
+		break;
+
+	case 'l':
+		options->ifoCut = optarg;
 		break;
 
 	case 'c':
@@ -678,6 +690,51 @@ static void find_burstinjections(LALStatus *stat, SimBurstTable *injection, Sngl
 }
 
 
+static void find_burstinjections_in_inspirals(SimBurstTable *injection, SnglInspiralTable *triglist, SimBurstTable **detinj, SnglInspiralTable **dettrig, int *ninjected, int *ndetected, struct options_t options)
+{
+	SnglInspiralTable *event, *bestmatch;
+
+	for(; injection; (*ninjected)++, injection = injection->next) {
+		if(options.verbose)
+			fprintf(stderr, "\tSearching for injection at time %d.%09d s\n", injection->geocent_peak_time.gpsSeconds, injection->geocent_peak_time.gpsNanoSeconds);
+
+		bestmatch = NULL;
+		for(event = triglist; event; event = event->next) {
+			int match;
+
+			/* if the injection's time
+			 * don't lie within 10 ms of the  trigger's end time
+			 * move to next event */
+			  match = XLALCompareSimBurstSnglInspiral((const SimBurstTable * const *)&injection, (const SnglInspiralTable * const *)&event);
+
+			if(!match)
+				continue;
+
+			/* compare this trigger to the best so far 
+			   bestmatch = select_burstinj_event(stat, injection, bestmatch, event, options);*/
+		}
+
+		/* if we didn't detect a matching event, continue to next
+		 * injection */
+		if(!bestmatch)
+			continue;
+		(*ndetected)++;
+
+		/* record the detected injection */
+		*detinj = LALMalloc(sizeof(**detinj));
+		**detinj = *injection;
+		detinj = &(*detinj)->next;
+		*detinj = NULL;
+
+		/* record the matching trigger */
+		*dettrig = LALMalloc(sizeof(**dettrig));
+		**dettrig = *bestmatch;
+		dettrig = &(*dettrig)->next;
+		*dettrig = NULL;
+	}
+}
+
+
 static void find_inspinjections(LALStatus *stat, SimInspiralTable *injection, SnglBurstTable *triglist, SimInspiralTable **detinj, SnglBurstTable **dettrig, int *ninjected, int *ndetected, struct options_t options)
 {
 	SnglBurstTable *event, *bestmatch;
@@ -860,10 +917,17 @@ int main(int argc, char **argv)
 	struct options_t options;
 
 	/* triggers */
-	INT8 timeAnalyzed = 0;
+	INT8 timeAnalyzed = 0;	     
+
+	/* burst triggers */
 	SnglBurstTable *trigger_list;
 	SnglBurstTable *detectedTriggers = NULL;
 	SnglBurstTable **dettrigaddpoint = &detectedTriggers;
+
+	/* inspiral triggers */
+	SnglInspiralTable *insp_trigger_list;
+	SnglInspiralTable *detected_insp_Triggers = NULL;
+	SnglInspiralTable **det_insp_trigaddpoint = &detected_insp_Triggers;
 
 	/* injections */
 	INT4 ninjected = 0;
@@ -923,6 +987,7 @@ int main(int argc, char **argv)
 	/* For each trigger file named in the input file... */
 	while(getline(line, MAXSTR, infile)) {
 		trigger_list = NULL;
+		insp_trigger_list = NULL;
 
 		if(options.verbose)
 			fprintf(stderr, "Working on file %s\n", line);
@@ -937,14 +1002,28 @@ int main(int argc, char **argv)
 		  extract_inspiralinjections(&stat, made_inspiraladdpoint, inspinjection_list, SearchStart, SearchEnd);
 
 		/* Read and trim the triggers from this file */
-		LAL_CALL(LALSnglBurstTableFromLIGOLw(&stat, &trigger_list, line), &stat);
-		trim_event_list(&trigger_list, options);
+		if ( options.find_inspirals )
+		  {
+		    LALSnglInspiralTableFromLIGOLw(&insp_trigger_list, line, 0, -1);
+		    if(options.ifoCut)
+		      LAL_CALL( LALIfoCutSingleInspiral(&stat, &insp_trigger_list, options.ifoCut ), &stat);
+		  }
+		else {
+		  LAL_CALL(LALSnglBurstTableFromLIGOLw(&stat, &trigger_list, line), &stat);
+		  if ( options.ifoCut )
+		    XLALIfoCutSnglBurst(&trigger_list, options.ifoCut );
+		  trim_event_list(&trigger_list, options);
+		}
 
 		/* Search the triggers for matches against the selected
 		 * burst/inspiral injections 
 		 */
-		if( burstinjection_list )
-		  find_burstinjections(&stat, *made_burstaddpoint, trigger_list, detburstinjaddpoint, dettrigaddpoint, &ninjected, &ndetected, options);
+		if( burstinjection_list ) {
+		  if ( options.find_inspirals )
+		    find_burstinjections_in_inspirals(*made_burstaddpoint, insp_trigger_list, detburstinjaddpoint, det_insp_trigaddpoint, &ninjected, &ndetected, options);
+		  else
+		    find_burstinjections(&stat, *made_burstaddpoint, trigger_list, detburstinjaddpoint, dettrigaddpoint, &ninjected, &ndetected, options);
+		}
 		else 
 		  find_inspinjections(&stat, *made_inspiraladdpoint, trigger_list, detinspinjaddpoint, dettrigaddpoint, &ninjected, &ndetected, options);
 
@@ -963,6 +1042,9 @@ int main(int argc, char **argv)
 
 		while(*dettrigaddpoint)
 			dettrigaddpoint = &(*dettrigaddpoint)->next;
+
+		while(*det_insp_trigaddpoint)
+			det_insp_trigaddpoint = &(*det_insp_trigaddpoint)->next;
 
 		/* Clean up */
 		free_events(trigger_list);
@@ -1024,11 +1106,21 @@ int main(int argc, char **argv)
 
 	/* List of matching triggers */
 	LAL_CALL(LALOpenLIGOLwXMLFile(&stat, &xmlStream, options.outSnglFile), &stat);
-	LAL_CALL(LALBeginLIGOLwXMLTable(&stat, &xmlStream, sngl_burst_table), &stat);
-	myTable.snglBurstTable = detectedTriggers;
-	LAL_CALL(LALWriteLIGOLwXMLTable(&stat, &xmlStream, myTable, sngl_burst_table), &stat);
-	LAL_CALL(LALEndLIGOLwXMLTable(&stat, &xmlStream), &stat);
-	LAL_CALL(LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
+	if( detectedTriggers ){
+	  LAL_CALL(LALBeginLIGOLwXMLTable(&stat, &xmlStream, sngl_burst_table), &stat);
+	  myTable.snglBurstTable = detectedTriggers;
+	  LAL_CALL(LALWriteLIGOLwXMLTable(&stat, &xmlStream, myTable, sngl_burst_table), &stat);
+	  LAL_CALL(LALEndLIGOLwXMLTable(&stat, &xmlStream), &stat);
+	  LAL_CALL(LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
+	}
+
+	if( detected_insp_Triggers ){
+	  LAL_CALL(LALBeginLIGOLwXMLTable(&stat, &xmlStream, sngl_inspiral_table), &stat);
+	  myTable.snglInspiralTable = detected_insp_Triggers;
+	  LAL_CALL(LALWriteLIGOLwXMLTable(&stat, &xmlStream, myTable, sngl_inspiral_table), &stat);
+	  LAL_CALL(LALEndLIGOLwXMLTable(&stat, &xmlStream), &stat);
+	  LAL_CALL(LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
+	}
 
 	exit(0);
 }
