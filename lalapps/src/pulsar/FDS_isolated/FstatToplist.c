@@ -314,7 +314,7 @@ int write_toplist_item_to_fp(TOPLISTLINE fline, FILE*fp, UINT4*checksum) {
 		   * f1dot:1e-9 
 		   * F:1e-6 
 		   */
-		  "%10f %10f %10f %10g %7f\n", 
+		  "%.10f %.10f %.10f %10g %.7f\n", 
 		  fline.Freq,
 		  fline.Alpha,
 		  fline.Delta,
