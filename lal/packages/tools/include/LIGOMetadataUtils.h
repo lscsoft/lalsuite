@@ -250,7 +250,7 @@ SnglBurstAccuracy;
  * 
  *  ringdown specific structures
  *    
- *    */
+ */
 
 
 
@@ -675,6 +675,11 @@ XLALFreeSimInspiral (
  *
  */
 
+int
+XLALFreeSnglBurst (
+    SnglBurstTable **eventHead
+);
+
 INT4 
 XLALCountSnglBurst( 
     SnglBurstTable *head 
@@ -774,6 +779,24 @@ XLALCompareSnglBurstByPeakTimeAndFreq(
 );
 
 int
+XLALCompareSnglBurstByIFOPeakTimeAndFreq(
+	const SnglBurstTable * const *a,
+	const SnglBurstTable * const *b
+);
+
+int
+XLALCompareSnglBurstByIFOTimeAndFreq(
+	const SnglBurstTable * const *a,
+	const SnglBurstTable * const *b
+);
+
+int
+XLALCompareSnglBurstByIFO(
+	const SnglBurstTable * const *a,
+	const SnglBurstTable * const *b
+);
+
+int
 XLALCompareSnglBurst(
 	const SnglBurstTable * const *a,
 	const SnglBurstTable * const *b
@@ -820,6 +843,22 @@ XLALCompareSimBurstAndSnglBurstByTime(
 	const SnglBurstTable * const *b
 );
 
+int
+XLALCompareCoincBurstByStartTime(
+	const SnglBurstTable * const *a,
+	const SnglBurstTable * const *b,
+	const SnglBurstTable * const *c,
+	const SnglBurstTable * const *d
+);
+
+int
+XLALCompareCoincBurstByPeakTime(
+	const SnglBurstTable * const *a,
+	const SnglBurstTable * const *b,
+	const SnglBurstTable * const *c,
+	const SnglBurstTable * const *d
+);
+
 void
 LALCompareSimBurstAndSnglBurst(
 	LALStatus *status,
@@ -845,12 +884,28 @@ LALCompareSimInspiralAndSnglBurst(
 
 void
 XLALSnglBurstCluster(
-	SnglBurstTable *,
-	const SnglBurstTable *
+	SnglBurstTable *a,
+	const SnglBurstTable *b
+);
+
+int
+XLALCoincBurstCluster(
+	SnglBurstTable *a,
+	SnglBurstTable *b,
+	SnglBurstTable *c,
+	SnglBurstTable *d
 );
 
 void
 XLALClusterSnglBurstTable(
+	SnglBurstTable  **list,
+	int (*bailoutfunc)(const SnglBurstTable * const *, const SnglBurstTable * const *),
+	int (*testfunc)(const SnglBurstTable * const *, const SnglBurstTable * const *),
+	void (*clusterfunc)(SnglBurstTable *, const SnglBurstTable *)
+);
+
+void
+XLALClusterTWOCoincSnglBurstTable(
 	SnglBurstTable  **list,
 	int (*bailoutfunc)(const SnglBurstTable * const *, const SnglBurstTable * const *),
 	int (*testfunc)(const SnglBurstTable * const *, const SnglBurstTable * const *),
@@ -864,11 +919,25 @@ void XLALClusterStringBurstTable(
 );
 
 void
+XLALClusterCoincSnglBurstTable(
+	SnglBurstTable  **list,
+	int (*bailoutfunc)(const SnglBurstTable * const *, const SnglBurstTable * const *),
+	int (*testfunc)(const SnglBurstTable * const *, const SnglBurstTable * const *, const SnglBurstTable * const *, const SnglBurstTable * const * ),
+	int (*clusterfunc)(SnglBurstTable *, SnglBurstTable *, SnglBurstTable *, SnglBurstTable *)
+);
+
+void
 XLALTimeSlideSnglBurst (
 	SnglBurstTable *triggerlist,
 	INT8 startTime,
 	INT8 stopTime,
 	INT8 slideTime
+);
+
+void
+XLALIfoCutSnglBurst (
+	SnglBurstTable  **eventHead,
+	CHAR            *ifo
 );
 
 
