@@ -10,6 +10,7 @@
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataUtils.h>
+#include <lal/Thresholds.h>
 #include <lalapps.h>
 
 int snprintf(char *str, size_t size, const char *format, ...);
@@ -43,9 +44,6 @@ of the two ifos do not match "
 #define MSEC   (1000000LL)
 #define NSEC   (1000000000LL)
 #define MAXSTR 2048
-
-/* cluster options */
-enum { undefined, clusterbypeaktimeandfreq, clusterbytimeandfreq } burstclusterchoice = undefined;
 
 /* Usage format string. */
 #define USAGE "Usage: %s --burst-trig-file input-bursttrigfile \
@@ -107,12 +105,10 @@ struct options_t {
   CHAR *inspiralclusterchoice;
 
   INT4  combineSnr;
-  
+  INT4  bestSnr;  
   INT4  usePlayground;
   INT4  ignorePlayground;
   INT4  verbose;
-  INT4  cluster_burst;
-  INT4  cluster_inspiral;
   INT4  writeInspiral;
   INT4  freeinspmemory;
 
@@ -138,15 +134,12 @@ static void set_option_defaults(struct options_t *options)
   options->inputBurstFiles = NULL;
   options->inputInspiralFiles = NULL;
   options->ifoCut = NULL;
-  options->inspiralclusterchoice = NULL;
 
   options->combineSnr = FALSE;
-
+  options->bestSnr = FALSE;
   options->usePlayground = TRUE;
   options->ignorePlayground = FALSE;
   options->verbose = FALSE;
-  options->cluster_burst = FALSE;
-  options->cluster_inspiral = FALSE;
   options->writeInspiral = FALSE;
   options->freeinspmemory = FALSE;
 
@@ -173,6 +166,7 @@ static void parse_command_line(int argc, char *argv[], struct options_t *options
     {"write-inspiral",          no_argument, &options->writeInspiral,    TRUE},
     {"free-inspmemory",         no_argument, &options->freeinspmemory,   TRUE},
     {"combine-snr",             no_argument, &options->combineSnr,       TRUE},
+    {"keep-best-snr",           no_argument, &options->bestSnr,          TRUE},
     /* sets the values */
     {"burst-list-files",        required_argument, NULL, 'a'},
     {"inspiral-list-files",     required_argument, NULL, 'b'},
@@ -183,17 +177,15 @@ static void parse_command_line(int argc, char *argv[], struct options_t *options
     {"number-slides",           required_argument, NULL, 'g'},
     {"output-burst-dir",        required_argument, NULL, 'h'},
     {"output-insp-dir",         required_argument, NULL, 'i'},
-    {"burst-clusterchoice",     required_argument, NULL, 'j'},
     {"user-tag",                required_argument, NULL, 'k'},
     {"ifo-cut",                 required_argument, NULL, 'l'},
-    {"inspiral-clusterchoice",  required_argument, NULL, 'm'},
     {"inspiral-cluster-dt",     required_argument, NULL, 'n'},
     {"help",                    no_argument,       NULL, 'o'}, 
     {NULL, 0, NULL, 0}
   };
   int c;
 
-  do switch(c = getopt_long( argc, argv, "a:b:c:d:e:f:g:h:i:j:k:l:m:n:o", long_options, &option_index )) {
+  do switch(c = getopt_long( argc, argv, "a:b:c:d:e:f:g:h:i:k:l:m:n:o", long_options, &option_index )) {
   case 'a':
     /* input burst trigger file */
     options->inputBurstFiles = optarg;
@@ -250,31 +242,6 @@ static void parse_command_line(int argc, char *argv[], struct options_t *options
     ADD_PROCESS_PARAM("string");
     break;
 	  
-  case 'j':
-    /*
-     * set the burst cluster option
-     */			
-    {
-      if ( ! strcmp( "clusterbypeaktimeandfreq", optarg ) )
-	{
-	  options->cluster_burst = TRUE;
-	  burstclusterchoice = clusterbypeaktimeandfreq;
-	}
-      else if ( ! strcmp( "clusterbytimeandfreq", optarg ) )
-	{
-	  options->cluster_burst = TRUE;
-	  burstclusterchoice = clusterbytimeandfreq;
-	}
-      else
-	{
-	  fprintf( stderr, "invalid argument to --burst-clusterchoice\n"
-		   "unknown clusterchoice specified;\n"
-		   "(must be one of:clusterbypeaktimeandfreq ,clusterbytimeandfreq )\n");
-	}
-    }
-    ADD_PROCESS_PARAM("string");
-    break;
-
   case 'k':
     /* sets the user-tag */
     options->comment = optarg;
@@ -285,25 +252,6 @@ static void parse_command_line(int argc, char *argv[], struct options_t *options
     /* ifo to be cut out from the inspiral table */
     options->ifoCut = optarg;
     ADD_PROCESS_PARAM("string");
-    break;
-
-  case 'm':
-    /* sets the inspiral cluster choice */
-    {
-      if ( ! strcmp( "snr", optarg ) )
-	{
-	  options->cluster_inspiral = TRUE;
-	  options->inspiralclusterchoice = optarg;
-	}
-      else
-	{
-	  fprintf( stderr, "invalid argument to --inspiral-clusterchoice\n"
-		   "unknown clusterchoice specified;\n"
-		   "(must be one of:snr )\n");
-	}
-    }
-    ADD_PROCESS_PARAM("string");
-    break;
     break;
 
   case 'n':
@@ -370,9 +318,9 @@ static SnglInspiralTable *read_inspiraltriggers(LALStatus *stat, char *filename,
       
       if(*addpoint)
 	{
-	  LAL_CALL( LALClusterSnglInspiralTable(stat, *addpoint, 0, clusterchoice ), stat);
 	  if(options.ifoCut)
 	    LAL_CALL( LALIfoCutSingleInspiral(stat, &(*addpoint), options.ifoCut ), stat);
+	  LAL_CALL( LALClusterSnglInspiralTable(stat, *addpoint, options.cluster_inspiral_dt, clusterchoice ), stat);  
 	}
 
       while(*addpoint != NULL)
@@ -462,7 +410,7 @@ static INT4 adjust_times( INT8 start, INT8 end, struct options_t options)
  * =========================================================================
  */
 
-static SnglInspiralTable *select_inspiral(LALStatus *stat, SnglInspiralTable *a, SnglInspiralTable *b, struct options_t options)
+static SnglInspiralTable *select_bestsnr_inspiral(SnglInspiralTable *a, SnglInspiralTable *b)
 {
   if(!a)
     return(b);
@@ -472,15 +420,27 @@ static SnglInspiralTable *select_inspiral(LALStatus *stat, SnglInspiralTable *a,
   return(b->snr < a->snr ? a : b);
 }
 
+
+/*
+ * ==========================================================================
+ * Combine the conf 
+ * ==========================================================================
+ */
+static void combine_snr(SnglBurstTable *a, SnglInspiralTable *b, SnglBurstTable *c)
+{
+  c->snr = a->snr + pow(b->snr,2);
+  c->confidence = XLALlnOneMinusChisqCdf(c->snr + a->peak_dof, a->peak_dof + 2);
+}
+
 /*
  * ==========================================================================
  * Function to find the coincident burst and inspiral triggers 
  * ==========================================================================
  */
 
-static void find_coincident_events(LALStatus *stat, SnglInspiralTable *inspiraltriggers, SnglBurstTable *bursttriggers, SnglInspiralTable **coincinsp, SnglBurstTable **coincburst, INT4 *ncoincident, INT4 *nbcoincident, INT8 start, INT8 end, struct options_t options)
+static void find_coincident_events(LALStatus *stat, SnglInspiralTable *inspiraltriggers, SnglBurstTable *bursttriggers, SnglInspiralTable **coincinsp, SnglBurstTable **coincburst, INT4 *ncoincident, INT8 start, INT8 end, struct options_t options)
 {
-  SnglInspiralTable *tmpInspiralEvent, *bestsnr;
+  SnglInspiralTable *tmpInspiralEvent=NULL, *bestsnr=NULL;
 
   /*****************************************************************
    * First sort the burst and inspiral triggers
@@ -525,7 +485,7 @@ static void find_coincident_events(LALStatus *stat, SnglInspiralTable *inspiralt
       INT8 burststart, burstend, burstpeak, inspiralend;
       INT4 isPlay = 0;
       LIGOTimeGPS burstendgps={0,0};
-      INT4 match = 0;
+      INT4 match = FALSE;
 
       /* Convert the start time of the burst trigger to nanoseconds(ns.) */ 
       LAL_CALL( LALGPStoINT8(stat, &burststart, &(bursttriggers->start_time)), stat);
@@ -596,9 +556,32 @@ static void find_coincident_events(LALStatus *stat, SnglInspiralTable *inspiralt
 	      if (inspiralend > burstpeak + options.deltaT)
 		break;
 
-
 	      /* compare the trigger for the maximum snr */
-	      bestsnr = select_inspiral(stat, bestsnr, tmpInspiralEvent, options);
+	      if ( options.bestSnr )
+		bestsnr = select_bestsnr_inspiral(bestsnr, tmpInspiralEvent);
+	      else
+		{
+		  (*ncoincident)++;
+		  match = TRUE;
+		  *coincinsp = LALMalloc(sizeof(**coincinsp));
+		  **coincinsp = *tmpInspiralEvent;
+		  (*coincinsp)->event_id = (EventIDColumn *) LALCalloc( 1, sizeof(EventIDColumn) );
+		  (*coincinsp)->event_id->id = start + (INT8)(*ncoincident);
+		  
+		  coincinsp = &(*coincinsp)->next;
+		  *coincinsp = NULL;
+
+		  *coincburst = LALMalloc(sizeof(**coincburst));
+		  **coincburst = *bursttriggers;
+		  (*coincburst)->event_id = (EventIDColumn *) LALCalloc( 1, sizeof(EventIDColumn) );
+		  (*coincburst)->event_id->id = start + (INT8)(*ncoincident);
+		  
+		  if (options.combineSnr)
+		    combine_snr( bursttriggers, tmpInspiralEvent, *coincburst );
+ 
+		  coincburst = &(*coincburst)->next;
+		  *coincburst = NULL;
+		}
 
 	      /* Move on to the next inspiral trigger */  
 	      tmpInspiralEvent = tmpInspiralEvent->next;
@@ -611,12 +594,15 @@ static void find_coincident_events(LALStatus *stat, SnglInspiralTable *inspiralt
 	       * end of the burst trigger, we consider that to 
 	       * be coincident.  
 	       */
-	  if(bestsnr)
+	  if( options.bestSnr && bestsnr )
 	    {
 	      (*ncoincident)++;
-	      match = 1;
+	      match = TRUE;
 	      *coincinsp = LALMalloc(sizeof(**coincinsp));
 	      **coincinsp = *bestsnr;
+	      (*coincinsp)->event_id = (EventIDColumn *) LALCalloc( 1, sizeof(EventIDColumn) );
+	      (*coincinsp)->event_id->id = start + (INT8)(*ncoincident);
+	      
 	      coincinsp = &(*coincinsp)->next;
 	      *coincinsp = NULL;
 	    }
@@ -626,25 +612,18 @@ static void find_coincident_events(LALStatus *stat, SnglInspiralTable *inspiralt
        * record the burst trigger as a coincident one 
        */
 
-      if (match)
+      if ( options.bestSnr && match )
 	{
-	  REAL4 tmpsnr = 0.0;
-
-	  (*nbcoincident)++;
-
-	  if (options.combineSnr)
-	    {
-	      tmpsnr = bursttriggers->snr;
-	      bursttriggers->snr = bursttriggers->snr + pow(bestsnr->snr,2);
-	    }
-
 	  *coincburst = LALMalloc(sizeof(**coincburst));
 	  **coincburst = *bursttriggers;
+	  (*coincburst)->event_id = (EventIDColumn *) LALCalloc( 1, sizeof(EventIDColumn) );
+	  (*coincburst)->event_id->id = start + (INT8)(*ncoincident);
+	  
+	  if (options.combineSnr)
+	    combine_snr( bursttriggers, bestsnr, *coincburst );
+
 	  coincburst = &(*coincburst)->next;
 	  *coincburst = NULL;
-
-	  if (options.combineSnr)
-	    bursttriggers->snr = tmpsnr;
 	}
 
       /* Move on to the next burst trigger */
@@ -684,8 +663,6 @@ static void free_inspiral_events(SnglInspiralTable *list)
     list = free_this_inspiral_event(list);
 }
 
-
-
 /*
  * ==========================================================================
  *
@@ -699,13 +676,11 @@ int main(int argc, char **argv)
   static LALStatus       stat;
   struct options_t       options;
   LALLeapSecAccuracy     accuracy = LALLEAPSEC_LOOSE;
-  SnglInspiralClusterChoice clusterchoice = snr;
 
   INT8                   timeAnalyzed = 0;
   INT8                   SearchStart;
   INT8                   SearchEnd;
   INT4                   ncoincident;
-  INT4                   nbcoincident;
 
   CHAR                   outfileName[512];
   CHAR                   line[MAXSTR];
@@ -716,8 +691,6 @@ int main(int argc, char **argv)
   SnglBurstTable         **coinc_burstaddpoint=&coincidentBurstEvents;
 
   SnglInspiralTable      *inspiral_trigger_list=NULL;
-  SnglInspiralTable      *inspiral_list=NULL;
-  SnglInspiralTable     **inspiral_trimmed_trigger_list=&inspiral_list;
   SnglInspiralTable      *coincidentInspiralEvents=NULL;
   SnglInspiralTable     **coinc_inspiraladdpoint=&coincidentInspiralEvents;
 
@@ -778,7 +751,6 @@ int main(int argc, char **argv)
     {
       burst_trigger_list = NULL;
       ncoincident = 0;
-      nbcoincident = 0;
 
       if (options.verbose)
 	fprintf(stderr, "Working on burst file %s\n", line);
@@ -789,13 +761,6 @@ int main(int argc, char **argv)
        * =================================================================
        */
       read_search_summary_start_end(&stat, line, &SearchStart, &SearchEnd, NULL, ifo);
-
-      /* Check if the burst and inspiral ifo.s match */
-      if(options.ifoCut && (strcmp(ifo, options.ifoCut) != 0 ))
-	{
-	  fprintf(stderr,"Error:burst trigger ifo and inspiral trigger ifo do not match\n");
-	  exit(1);
-	}
 
       /* ================================================================
        * Check the times with the requested startcoincidence 
@@ -827,6 +792,8 @@ int main(int argc, char **argv)
        * =================================================================
        */
       LAL_CALL(LALSnglBurstTableFromLIGOLw(&stat, &burst_trigger_list, line), &stat); 
+      if ( options.ifoCut )
+	XLALIfoCutSnglBurst(&(burst_trigger_list), options.ifoCut );
 
       if(!burst_trigger_list && options.verbose)
 	fprintf(stderr," No burst trigger in this file, moving on to the next\n");
@@ -842,10 +809,10 @@ int main(int argc, char **argv)
 	  /*
 	   * Find the coincident inspiral and burst triggers 
 	   */
-	  find_coincident_events(&stat, inspiral_trigger_list, burst_trigger_list, coinc_inspiraladdpoint, coinc_burstaddpoint, &ncoincident, &nbcoincident, SearchStart, SearchEnd, options);
+	  find_coincident_events(&stat, inspiral_trigger_list, burst_trigger_list, coinc_inspiraladdpoint, coinc_burstaddpoint, &ncoincident, SearchStart, SearchEnd, options);
 
 	  if (options.verbose)
-	    fprintf(stderr,"%d burst and %d insp triggers have been found in times %lld - %lld\n", nbcoincident, ncoincident, SearchStart, SearchEnd);
+	    fprintf(stderr,"%d burst and insp triggers have been found in times %lld - %lld\n", ncoincident, SearchStart, SearchEnd);
 
 	  /* 
 	   * Sort the triggers before output
@@ -856,13 +823,6 @@ int main(int argc, char **argv)
 	  if(coincidentBurstEvents)
 	    LAL_CALL( LALSortSnglBurst(&stat, &coincidentBurstEvents, XLALCompareSnglBurstByStartTime ), &stat);
 
-	  /* 
-	   * Cluster the burst triggers if asked for 
-	   */
-	  if(options.cluster_burst && burstclusterchoice == clusterbypeaktimeandfreq && coincidentBurstEvents)
-	    XLALClusterSnglBurstTable(&coincidentBurstEvents, XLALCompareSnglBurstByPeakTime, XLALCompareSnglBurstByPeakTimeAndFreq, XLALSnglBurstCluster);
-	  else if (options.cluster_burst && burstclusterchoice == clusterbytimeandfreq && coincidentBurstEvents)
-	    XLALClusterSnglBurstTable(&coincidentBurstEvents,  NULL, XLALCompareSnglBurst, XLALSnglBurstCluster);
 	}
 
       /* ================================================================
@@ -917,7 +877,11 @@ int main(int argc, char **argv)
       while(coincidentBurstEvents)
 	{
 	  SnglBurstTable *tmp;
+	  EventIDColumn  *eventId;
+
 	  tmp = coincidentBurstEvents->next;
+	  eventId = coincidentBurstEvents->event_id;
+	  LALFree(eventId);
 	  LALFree(coincidentBurstEvents);
 	  coincidentBurstEvents = tmp;
 	}
@@ -925,7 +889,11 @@ int main(int argc, char **argv)
       while(coincidentInspiralEvents)
 	{
 	  SnglInspiralTable *tmp;
+	  EventIDColumn  *eventId;
+
 	  tmp = coincidentInspiralEvents->next;
+	  eventId = coincidentInspiralEvents->event_id;
+	  LALFree(eventId);
 	  LALFree(coincidentInspiralEvents);
 	  coincidentInspiralEvents = tmp;
 	}
