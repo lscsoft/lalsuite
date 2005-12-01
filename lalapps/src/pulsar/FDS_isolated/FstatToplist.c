@@ -120,22 +120,6 @@ int insert_into_toplist(toplist_t*tl, TOPLISTLINE elem) {
 }
 
 
-/* Writes the toplist to an (already open) filepointer
-   Returns the number of written charactes
-   Returns something <0 on error */
-int write_toplist_to_fp(toplist_t*tl, FILE*fp, UINT4*checksum) {
-   UINT8 c=0;
-   INT4 i,r;
-   if(checksum)
-       *checksum = 0;
-   for(i=0;i<tl->elems;i++)
-     if ((r = write_toplist_item_to_fp(*(tl->sorted[i]), fp, checksum)) < 0)
-       return(r);
-     else
-       c += r;
-   return(c);
-}
-
 typedef TOPLISTLINE* _dummy_t;
 /* ordering function for sorting the list */
 static int _toplist_qsort_function(const void *ppa, const void *ppb) {
@@ -314,7 +298,7 @@ int write_toplist_item_to_fp(TOPLISTLINE fline, FILE*fp, UINT4*checksum) {
 		   * f1dot:1e-9 
 		   * F:1e-6 
 		   */
-		  "%.10f %.10f %.10f %10g %.7f\n", 
+		  "%10f %10f %10f %10g %7f\n", 
 		  fline.Freq,
 		  fline.Alpha,
 		  fline.Delta,
@@ -329,6 +313,36 @@ int write_toplist_item_to_fp(TOPLISTLINE fline, FILE*fp, UINT4*checksum) {
 	    *checksum += linebuf[i];
 
     return(fprintf(fp,"%s",linebuf));
+}
+
+
+/* Reduces the precision of all elements in the toplist which influence the sorting order.
+   To be called before sorting and finally writing out the list */
+void reduce_toplist_precision(toplist_t *l) {
+  UINT8 i;
+  for(i=0; i < l->elems; i++) {
+    l->data[i].Freq  = round(l->data[i].Freq  * 1e9) / 1e9;
+    l->data[i].Alpha = round(l->data[i].Alpha * 1e9) / 1e9;
+    l->data[i].Delta = round(l->data[i].Delta * 1e9) / 1e9;
+    l->data[i].f1dot = round(l->data[i].f1dot * 1e9) / 1e9;
+  }
+}
+
+
+/* Writes the toplist to an (already open) filepointer
+   Returns the number of written charactes
+   Returns something <0 on error */
+int write_toplist_to_fp(toplist_t*tl, FILE*fp, UINT4*checksum) {
+   UINT8 c=0,i;
+   INT8 r;
+   if(checksum)
+       *checksum = 0;
+   for(i=0;i<tl->elems;i++)
+     if ((r = write_toplist_item_to_fp(*(tl->sorted[i]), fp, checksum)) < 0)
+       return(r);
+     else
+       c += r;
+   return(c);
 }
 
 /* writes the given toplitst to a temporary file, then renames the
