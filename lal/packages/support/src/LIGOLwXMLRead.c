@@ -255,6 +255,8 @@ MetaTableDirectory * XLALCreateMetaTableDir(
           {"peak_time",               -1, 11},
           {"peak_time_ns",            -1, 12},
           {"clusterT",                -1, 13},
+	  {"peak_dof",                -1, 14},
+	  {"event_id",                -1, 15},
           {NULL,                       0, 0}
         };
         for ( i=0 ; tmpTableDir[i].name; ++i )
@@ -547,6 +549,7 @@ SnglBurstTable    * XLALSnglBurstTableFromLIGOLw (
       REAL4 r4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
       /* REAL8 r8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_8; */
       INT4  i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
+      UINT8 i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
 
       if ( tableDir[j].idx == 0 )
       {
@@ -607,6 +610,21 @@ SnglBurstTable    * XLALSnglBurstTableFromLIGOLw (
       {
         thisEvent->clusterT = r4colData;
       }
+      else if ( tableDir[j].idx == 14 )
+      {
+        thisEvent->peak_dof = r4colData;
+      }
+      else if ( tableDir[j].idx == 15 )
+      {
+	if ( tableDir[j].pos > 0 && i8colData )
+	{
+	  thisEvent->event_id = (EventIDColumn *) 
+	    LALCalloc( 1, sizeof(EventIDColumn) );
+	  thisEvent->event_id->id = i8colData;
+	  thisEvent->event_id->snglBurstTable = thisEvent;
+	}
+      }
+
       else
       {
         XLAL_CLOBBER_EVENTS;
@@ -1308,6 +1326,8 @@ LALCreateMetaTableDir(
           {"peak_time",               -1, 11},
           {"peak_time_ns",            -1, 12},
           {"clusterT",                -1, 13},
+	  {"peak_dof",                -1, 14},
+	  {"event_id",                -1, 15},
           {NULL,                       0, 0}
         };
         for ( i=0 ; tmpTableDir[i].name; ++i )
@@ -1315,10 +1335,10 @@ LALCreateMetaTableDir(
           if ( (tmpTableDir[i].pos = 
                 MetaioFindColumn( env, tmpTableDir[i].name )) < 0 )
           {
-	    if ( ! strcmp(tmpTableDir[i].name, "clusterT") )
+	    if ( ! strcmp(tmpTableDir[i].name, "clusterT") || ! strcmp(tmpTableDir[i].name, "peak_dof") || ! strcmp(tmpTableDir[i].name, "event_id") )
 	      {
 		fprintf( stderr, 
-			 "The clusterT column is not populated, continuing anyway\n");
+			 "The clusterT/peak_dof/event_id column is not populated, continuing anyway\n");
 	      }
 	    else
 	      {
@@ -1547,6 +1567,7 @@ LALSnglBurstTableFromLIGOLw (
       REAL4 r4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
       /* REAL8 r8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_8; */
       INT4  i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
+      UINT8 i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
 
       if ( tableDir[j].idx == 0 )
       {
@@ -1606,6 +1627,20 @@ LALSnglBurstTableFromLIGOLw (
       else if ( tableDir[j].idx == 13 )
       {
         thisEvent->clusterT = r4colData;
+      }
+      else if ( tableDir[j].idx == 14 )
+      {
+        thisEvent->peak_dof = r4colData;
+      }
+      else if ( tableDir[j].idx == 15 )
+      {
+	if ( tableDir[j].pos > 0 && i8colData )
+	{
+	  thisEvent->event_id = (EventIDColumn *) 
+	    LALCalloc( 1, sizeof(EventIDColumn) );
+	  thisEvent->event_id->id = i8colData;
+	  thisEvent->event_id->snglBurstTable = thisEvent;
+	}
       }
       else
       {
