@@ -1014,8 +1014,7 @@ int main(int argc,char *argv[])
       /* final compactification */
       if ( uvar_NumCandidatesToKeep > 0 )
 	{
-	  sort_toplist(toplist);
-	  if( atomic_write_toplist_to_file ( toplist, FstatFilename, &fstat_checksum ) < 0 ) 
+	  if( final_write_toplist_to_file ( toplist, FstatFilename, &fstat_checksum ) < 0 ) 
 	    {
 	      LogPrintf (LOG_CRITICAL, "Couldn't write compacted toplist in '%s'\n", FstatFilename);
 	      return (COMPUTEFSTAT_EXIT_OPENFSTAT);

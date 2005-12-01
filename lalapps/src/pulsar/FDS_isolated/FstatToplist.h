@@ -56,4 +56,10 @@ extern int write_toplist_item_to_fp(TOPLISTLINE line, FILE*fp, UINT4*checksum);
    of chars written or -1 if the temp file could not be opened. */
 extern int atomic_write_toplist_to_file(toplist_t*list, char*filename, UINT4*checksum);
 
+/* meant for the final writing of the toplist
+   - reduces toplist precision
+   - sorts the toplist
+   - the calls atomic_write_toplist_to_file() */
+extern int final_write_toplist_to_file(toplist_t*list, char*filename, UINT4*checksum);
+
 #endif /* FSTATTOPLIST_H */

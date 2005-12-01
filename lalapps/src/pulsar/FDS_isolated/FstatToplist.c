@@ -157,10 +157,11 @@ void sort_toplist(toplist_t*l) {
 	  _toplist_qsort_function);
 }
 
+
 /* reads a (created!) toplist from an open filepointer
    returns the number of bytes read,
-   -1 if the file contained a syntax error, -2 if given an improper toplist
-*/
+   -1 if the file contained a syntax error,
+   -2 if given an improper toplist */
 int read_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxbytes) {
     CHAR line[256];       /* buffer for reading a line */
     UINT4 items, lines;   /* number of items read from a line, linecounter */
@@ -283,6 +284,7 @@ int read_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxbytes) {
 
 } /* read_toplist_from_fp() */
 
+
 /* writes an TOPLISTLINE line to an open filepointer.
    Returns the number of chars written, -1 if in error
    Updates checksum if given */
@@ -345,6 +347,7 @@ int write_toplist_to_fp(toplist_t*tl, FILE*fp, UINT4*checksum) {
    return(c);
 }
 
+
 /* writes the given toplitst to a temporary file, then renames the
    temporary file to filename. The name of the temporary file is
    derived from the filename by appending ".tmp". Returns the number
@@ -367,4 +370,15 @@ int atomic_write_toplist_to_file(toplist_t *l, char *filename, UINT4*checksum) {
       return -1;
     else
       return length;
+}
+
+
+/* meant for the final writing of the toplist
+   - reduces toplist precision
+   - sorts the toplist
+   - the calls atomic_write_toplist_to_file() */
+int final_write_toplist_to_file(toplist_t *l, char *filename, UINT4*checksum) {
+  reduce_toplist_precision(l);
+  sort_toplist(l);
+  return(atomic_write_toplist_to_file(l,filename,checksum));
 }
