@@ -133,9 +133,7 @@ BOOLEAN uvar_printStats; /**< global variable for calculating Hough map stats */
 #define FBAND 0.001    /**< Default search band */
 #define FDOT 0.0      /**< Default value of first spindown */
 #define DFDOT 0.0   /**< Default range of first spindown parameter */
-#define ALPHA 1.57    /**< Default sky location -- right ascension */
-#define DELTA  0.0    /**< Default sky location -- declination */
-#define SKYREGION "(0,0)" /**< default sky region to search over -- just a single point*/
+#define SKYREGION "(1.5,0)" /**< default sky region to search over -- just a single point*/
 #define NFSIZE  21    /**< Default size of hough cylinder of look up tables */
 #define DTERMS 8     /**< Default number of dirichlet kernel terms for calculating Fstat */
 #define MISMATCH 0.2 /**< Default for metric grid maximal mismatch value */
@@ -226,8 +224,6 @@ int main( int argc, char *argv[]) {
   /* user variables */
   BOOLEAN uvar_help; /* true if -h option is given */
   BOOLEAN uvar_log; /* logging done if true */
-  REAL8 uvar_alpha, uvar_delta;  /* sky-location angles */
-  REAL8 uvar_alphaBand, uvar_deltaBand;  /* sky-patch ranges */
   REAL8 uvar_dAlpha, uvar_dDelta; /* resolution for flat or isotropic grids */
   REAL8 uvar_fdot; /* first spindown value */
   REAL8 uvar_fdotBand; /* range of first spindown parameter */
@@ -268,10 +264,6 @@ int main( int argc, char *argv[]) {
   uvar_nStacks1 = NSTACKS;
   uvar_nStacks2 = 1;
   uvar_Dterms = DTERMS;
-  uvar_alpha = ALPHA;
-  uvar_delta = DELTA;
-  uvar_alphaBand = 0;
-  uvar_deltaBand = 0;
   uvar_dAlpha = DALPHA;
   uvar_dDelta = DDELTA;
   uvar_fdot = FDOT;
@@ -322,10 +314,7 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir1",          0,  UVAR_OPTIONAL, "SFT Directory for 1st stage",                       &uvar_sftDir1),         &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir2",          0,  UVAR_OPTIONAL, "SFT Directory for 2nd stage",                       &uvar_sftDir2),         &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameout",        'o', UVAR_OPTIONAL, "Output basefileneme",                               &uvar_fnameout),        &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "alpha",            0,  UVAR_OPTIONAL, "Right ascension",                                   &uvar_alpha),           &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "delta",            0,  UVAR_OPTIONAL, "Declination",                                       &uvar_delta),           &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "alphaBand",        0,  UVAR_OPTIONAL, "Right ascension range",                             &uvar_alphaBand),       &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "deltaBand",        0,  UVAR_OPTIONAL, "Declination range",                                 &uvar_deltaBand),       &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyRegion",	   0,  UVAR_OPTIONAL, "Specify sky-region by polygon (or use 'allsky')",   &uvar_skyRegion),       &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "fStart",          'f', UVAR_OPTIONAL, "Start search frequency",                            &uvar_fStart),          &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "fBand",           'b', UVAR_OPTIONAL, "Search frequency band",                             &uvar_fBand),           &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "fdot",             0,  UVAR_OPTIONAL, "Spindown parameter",                                &uvar_fdot),            &status);
@@ -338,7 +327,6 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar (   &status, "metricType",       0,  UVAR_OPTIONAL, "0=none,1=Ptole-analytic,2=Ptole-numeric,3=exact",   &uvar_metricType),      &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "metricMismatch",   0,  UVAR_OPTIONAL, "Maximal allowed metric mismatch",                   &uvar_metricMismatch),  &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyGridFile",	   0,  UVAR_OPTIONAL, "Load sky-grid from this file",                      &uvar_skyGridFile),     &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyRegion",	   0,  UVAR_OPTIONAL, "Specify sky-region by polygon (or use 'allsky')",   &uvar_skyRegion),       &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "dAlpha",           0,  UVAR_OPTIONAL, "Resolution for flat or isotropic grids",            &uvar_dAlpha),          &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "dDelta",           0,  UVAR_OPTIONAL, "Resolution for flat or isotropic grids",            &uvar_dDelta),          &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "SSBprecision",	   0,  UVAR_DEVELOPER,"Precision for SSB transform.",                      &uvar_SSBprecision),    &status);
@@ -578,8 +566,6 @@ int main( int argc, char *argv[]) {
 
 
 
-
-
   /*------------------ read sfts and set up stacks for follow up stage -----------------------*/
   /* check if user requested a follow up stage*/
   if ( LALUserVarWasSet(&uvar_sftDir2)) {
@@ -793,21 +779,10 @@ int main( int argc, char *argv[]) {
   scanInit1.searchRegion.FreqBand = uvar_fBand;
   scanInit1.searchRegion.f1dot = uvar_fdot;
   scanInit1.searchRegion.f1dotBand = uvar_fdotBand;
+  scanInit1.searchRegion.skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
+  strcpy (scanInit1.searchRegion.skyRegionString, uvar_skyRegion);
 
-  /* find sky search region */
-  if ( LALUserVarWasSet(&uvar_skyRegion))
-    {
-      scanInit1.searchRegion.skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
-      if ( scanInit1.searchRegion.skyRegionString == NULL ) {
-	/*   ABORT (&status, DRIVEHOUGHFSTAT_ENULL, DRIVEHOUGHFSTAT_MSGENULL); */
-      }
-      strcpy (scanInit1.searchRegion.skyRegionString, uvar_skyRegion);
-    }
-  else
-    {
-      LAL_CALL ( SkySquare2String( &status, &(scanInit1.searchRegion.skyRegionString),
-				   uvar_alpha, uvar_delta,	uvar_alphaBand , uvar_deltaBand ), &status);
-    }
+
 
   /* initialize skygrid  */  
   LAL_CALL ( InitDopplerScan ( &status, &thisScan1, &scanInit1), &status); 
