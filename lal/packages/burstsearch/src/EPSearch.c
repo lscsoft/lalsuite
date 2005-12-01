@@ -80,7 +80,7 @@ static SnglBurstTable *XLALTFTileToBurstEvent(
 	event->amplitude = tile->hrss;
 	event->snr = tile->excessPower;
 	event->confidence =  tile->lnalpha;
-
+	event->peak_dof = XLALTFTileDegreesOfFreedom(tile);
 	event->event_id = NULL;
 
 	return(event);
