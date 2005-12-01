@@ -124,7 +124,8 @@ int insert_into_toplist(toplist_t*tl, TOPLISTLINE elem) {
    Returns the number of written charactes
    Returns something <0 on error */
 int write_toplist_to_fp(toplist_t*tl, FILE*fp, UINT4*checksum) {
-   UINT8 i,c=0,r;
+   UINT8 c=0;
+   INT4 i,r;
    if(checksum)
        *checksum = 0;
    for(i=0;i<tl->elems;i++)
@@ -336,7 +337,7 @@ int write_toplist_item_to_fp(TOPLISTLINE fline, FILE*fp, UINT4*checksum) {
    of chars written or -1 if the temp file could not be opened. */
 int atomic_write_toplist_to_file(toplist_t *l, char *filename, UINT4*checksum) {
     char tempname[MAXFILENAMELENGTH];
-    UINT4 length;
+    INT4 length;
     FILE * fpnew;
 
     strncpy(tempname,filename,sizeof(tempname)-4);
