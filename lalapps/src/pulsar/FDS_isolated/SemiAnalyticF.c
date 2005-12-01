@@ -181,10 +181,9 @@ void
 ComputeF( LALStatus *status, struct CommandLineArgsTag CLA)
 {
 
-  REAL8 A,B,C,D,alpha,beta,delta,kappa,A1,A2,A3,A4,h0,cosi, To,Sh,F;
+  REAL8 A,B,C,D, A1,A2,A3,A4,h0,cosi, To,Sh,F;
   REAL8 aPlus, aCross;
   REAL8 twopsi, twophi;
-  REAL8 lambda;
 
   INITSTATUS (status, "ComputeF", rcsid );
   ATTATCHSTATUSPTR ( status);
@@ -216,28 +215,17 @@ ComputeF( LALStatus *status, struct CommandLineArgsTag CLA)
   A3 =-aPlus * cos(twopsi) * sin(twophi) - aCross * sin(twopsi) * cos(twophi);
   A4 =-aPlus * sin(twopsi) * sin(twophi) + aCross * cos(twopsi) * cos(twophi);
   
-  alpha = 0.5 * A * A1 + 0.5 * C * A2;
-  beta  = 0.5 * B * A2 + 0.5 * C * A1;
-  delta = 0.5 * A * A3 + 0.5 * C * A4;
-  kappa = 0.5 * B * A4 + 0.5 * C * A3;
-  
   To = CLA.nTsft * CLA.tsft;
   
   Sh=pow(CLA.sqrtSh,2);
-  
-  F = (B*pow(alpha,2) + A*pow(beta,2) - 2*C*alpha*beta) 
-    + (B*pow(delta,2) + A*pow(kappa,2)- 2*C*delta*kappa);
-  F *= To / (D * Sh);
+
+  F = A * ( SQ(A1) + SQ(A3) ) + 2.0 * C * (A1 * A2 + A3 * A4 ) + B * ( SQ(A2) + SQ(A4) );
+  F *= To / (4.0 * Sh);
 
   /* Note: the expectation-value of 2F is 4 + lambda ==> add 2 to Fstat*/
   F += 2.0;
-
-  lambda = SQ(A1) * A + 2.0 * C * A1 * A2 + SQ(A2) * B + SQ(A3) * A + 2.0 * C * A3 * A4 + SQ(A4) * B;
-  lambda *= 0.5 * To / Sh;
   
   fprintf( stdout, "%g\n", F );
-  /*    fprintf(stdout,"\nSNR = %e\n",sqrt(F)); */
-
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
