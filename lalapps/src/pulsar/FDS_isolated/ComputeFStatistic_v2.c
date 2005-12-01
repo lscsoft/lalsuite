@@ -105,8 +105,6 @@ typedef struct {
  * These are 'pre-processed' settings, which have been derived from the user-input.
  */
 typedef struct {
-  REAL8 dFreq;			/**< frequency resolution */
-  REAL8 df1dot;			/**< spindown resolution (f1 = df/dt!!) */
   LIGOTimeGPS startTime;	/**< start time of observation */
   LIGOTimeGPS refTime;		/**< reference-time for pulsar-parameters in SBB frame */
   REAL8Vector *fkdot;		/**< vector of frequency + derivatives ("spins")*/
@@ -152,8 +150,6 @@ BOOLEAN uvar_help;
 CHAR *uvar_outputLabel;
 CHAR *uvar_outputFstat;
 CHAR *uvar_outputBstat;
-CHAR *uvar_outputBeamPattern;
-CHAR *uvar_outputBeamTS;
 CHAR *uvar_outputLoudest;
 CHAR *uvar_skyGridFile;
 CHAR *uvar_outputSkyGrid;
@@ -176,7 +172,7 @@ void Freemem(LALStatus *,  ConfigVariables *cfg);
 
 void WriteFStatLog (LALStatus *, CHAR *argv[]);
 void checkUserInputConsistency (LALStatus *);
-int outputBeamTS( const CHAR *fname, const AMCoeffs *amcoe );
+int outputBeamTS( const CHAR *fname, const AMCoeffs *amcoe, const DetectorStateSeries *detStates );
 
 const char *va(const char *format, ...);	/* little var-arg string helper function */
 
@@ -274,19 +270,14 @@ int main(int argc,char *argv[])
   LAL_CALL ( InitDopplerScan ( &status, &thisScan, &scanInit), &status); 
   
   /* ---------- set Frequency- and spindown-resolution if not input by user ----------*/
-  if ( !LALUserVarWasSet( &uvar_dFreq ) )
-    GV.dFreq = thisScan.dFreq;
-  else
-    GV.dFreq = uvar_dFreq;
+  if ( LALUserVarWasSet( &uvar_dFreq ) )
+    thisScan.dFreq = uvar_dFreq;
   
-  if( !LALUserVarWasSet( &uvar_df1dot) ) 
-    GV.df1dot = thisScan.df1dot;
-  else
-    GV.df1dot = uvar_df1dot;
+  if( LALUserVarWasSet( &uvar_df1dot) ) 
+    thisScan.df1dot = uvar_df1dot;
   
   if ( lalDebugLevel ) {
-    printf ("\nDEBUG: actual grid-spacings: dFreq = %g, df1dot = %g\n\n",
-	    GV.dFreq, GV.df1dot);
+    printf ("\nDEBUG: actual grid-spacings: dFreq = %g, df1dot = %g\n\n", thisScan.dFreq, thisScan.df1dot );
   }
   /*----------------------------------------------------------------------*/
   if (lalDebugLevel) printf ("done.\n");
@@ -325,14 +316,14 @@ int main(int argc,char *argv[])
 	}
     } /* if outputBstat */
 
-  if (uvar_outputBeamPattern)
+  if ( lalDebugLevel >= 3 )
     {
-      if ( (fpBeam = fopen (uvar_outputBeamPattern, "wb")) == NULL)
+      if ( (fpBeam = fopen ("debug_beamPattern.dat", "wb")) == NULL)
 	{
-	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputBeamPattern);
+	  LALPrintError ("\nError opening file 'debug_BeamPattern' for writing..\n\n");
 	  return (COMPUTEFSTATISTICC_ESYS);
 	}
-    } /* if outputBeamPattern */
+    } /* output Beam-pattern over sky? */
 
   if (lalDebugLevel) printf ("\nStarting main search-loop.. \n");
   
@@ -357,13 +348,13 @@ int main(int argc,char *argv[])
       LAL_CALL (LALNormalizeSkyPosition(&status, &thisPoint, &thisPoint), &status);
 
 
-      nFreq =  (UINT4)(uvar_FreqBand  / GV.dFreq + 0.5) + 1;  
-      nf1dot = (UINT4)(uvar_f1dotBand / GV.df1dot+ 0.5) + 1; 
+      nFreq =  (UINT4)(GV.searchRegion.FreqBand  / thisScan.dFreq  + 0.5) + 1;  
+      nf1dot = (UINT4)(GV.searchRegion.f1dotBand / thisScan.df1dot + 0.5) + 1; 
 
       /*----- loop over first-order spindown values */
       for (if1dot = 0; if1dot < nf1dot; if1dot ++)
 	{
-	  GV.fkdot->data[1] = uvar_f1dot + if1dot * GV.df1dot;
+	  GV.fkdot->data[1] = GV.searchRegion.f1dot + if1dot * thisScan.df1dot;
 	  
 	  /* Loop over frequencies to be demodulated */
 	  for ( iFreq = 0 ; iFreq < nFreq ; iFreq ++ )
@@ -377,8 +368,7 @@ int main(int argc,char *argv[])
 	      REAL8 Bstat;
 	      UINT4 M;
 	
-
-	      GV.fkdot->data[0] = uvar_Freq + iFreq * GV.dFreq;	
+	      GV.fkdot->data[0] = GV.searchRegion.Freq + iFreq * thisScan.dFreq;
 	      
 	      for(nD=0; nD < GV.ifos.length; nD++)
 		{
@@ -397,10 +387,10 @@ int main(int argc,char *argv[])
 					     thisPoint), &status);
 
 		  /* debug-output beam-pattern timeseries for first skyposition */
-		  if ( (loopcounter == 0 ) && (nD == 0) && uvar_outputBeamTS )
+		  if ( (lalDebugLevel >=3 ) && (loopcounter == 0 ) && (nD == 0) )
 		    {
-		      if ( outputBeamTS( uvar_outputBeamTS, GV.ifos.amcoe[0] ) != 0 )
-			LALPrintError("\nFailed to write beam-patterns into '%s'\n\n", uvar_outputBeamTS );
+		      if ( outputBeamTS( "debug_beamTS.dat", GV.ifos.amcoe[0], GV.ifos.DetectorStates[0] ) != 0 )
+			LALPrintError("\nFailed to write beam-patterns into 'debug_beamTS.dat'\n\n");
 		    }
 		  
 		  /** Caculate F-statistic using XLALComputeFaFb() */
@@ -609,8 +599,6 @@ initUserVars (LALStatus *status)
 
   uvar_outputFstat = NULL;
   uvar_outputBstat = NULL;
-  uvar_outputBeamPattern = NULL;
-  uvar_outputBeamTS = 0;
 
   uvar_skyGridFile = NULL;
 
@@ -656,8 +644,6 @@ initUserVars (LALStatus *status)
   LALregSTRINGUserVar(status,	outputBstat,	 0,  UVAR_OPTIONAL, "Output-file for 'B-statistic' field over the parameter-space");
 
   /* more experimental and unofficial stuff follows here */
-  LALregSTRINGUserVar(status,	outputBeamPattern, 0,  UVAR_DEVELOPER, "Output beam-pattern [A,B,C,D] over the sky for 1st detector" );
-  LALregSTRINGUserVar(status,	outputBeamTS,    0,  UVAR_DEVELOPER, "Output beam-timeseries [a(t), b(t)] for 1st skyposition and detector");
   LALregINTUserVar (status, 	SSBprecision,	 0,  UVAR_DEVELOPER, "Precision to use for time-transformation to SSB: 0=Newtonian 1=relativistic");
   LALregINTUserVar(status, 	RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");
   LALregINTUserVar(status,	Dterms,		't', UVAR_DEVELOPER, "Number of terms to keep in Dirichlet kernel sum");
@@ -1232,16 +1218,16 @@ checkUserInputConsistency (LALStatus *status)
  * return 0 = OK, -1 on error
  */
 int
-outputBeamTS( const CHAR *fname, const AMCoeffs *amcoe )
+outputBeamTS( const CHAR *fname, const AMCoeffs *amcoe, const DetectorStateSeries *detStates )
 {
   FILE *fp;
   UINT4 i, len;
 
-  if ( !fname || !amcoe || !amcoe->a || !amcoe->b )
+  if ( !fname || !amcoe || !amcoe->a || !amcoe->b || !detStates)
     return -1;
   
   len = amcoe->a->length;
-  if ( len != amcoe->b->length )
+  if ( (len != amcoe->b->length) || ( len != detStates->length ) )
     return -1;
 
   if ( (fp = fopen(fname, "wb")) == NULL )
@@ -1249,8 +1235,12 @@ outputBeamTS( const CHAR *fname, const AMCoeffs *amcoe )
 
   for (i=0; i < len; i ++ )
     {
-      if ( fprintf (fp, "%f %f \n", amcoe->a->data[i], amcoe->b->data[i] ) <= 0 )
+      INT4 ret;
+      ret = fprintf (fp, "%9d %f %f %f \n", 
+		     detStates->data[i].tGPS.gpsSeconds, detStates->data[i].LMST, amcoe->a->data[i], amcoe->b->data[i] );
+      if ( ret < 0 )
 	{
+	  fprintf (fp, "ERROR\n");
 	  fclose(fp);
 	  return -1;
 	}
