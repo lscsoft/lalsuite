@@ -321,6 +321,7 @@ tagSnglBurstTable
   REAL4         snr;
   REAL4         confidence;
   REAL4         clusterT;
+  REAL4         peak_dof;
   EventIDColumn *event_id;
 }
 SnglBurstTable;
