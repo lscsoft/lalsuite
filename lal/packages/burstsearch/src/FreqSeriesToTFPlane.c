@@ -31,6 +31,7 @@ static COMPLEX8Sequence *generate_filter(size_t length, INT4 fseglength, REAL8 d
 	RealFFTPlan *plan;
 	REAL8 twopiOverNumpts;
 	INT4 firstzero;
+	REAL4 filternorm = 0.0;
 	int j;
 
 	tdfilter = XLALCreateREAL4Sequence(2 * (length - 1));
@@ -53,6 +54,14 @@ static COMPLEX8Sequence *generate_filter(size_t length, INT4 fseglength, REAL8 d
 	tdfilter->data[0] = twopiOverNumpts * fseglength / (LAL_PI * dt);
 	for(j = 1; j < firstzero; j++)
 		tdfilter->data[j] = tdfilter->data[tdfilter->length - j] = (sin(twopiOverNumpts * j * (flow + fseglength)) - sin(twopiOverNumpts * j * flow)) / (LAL_PI * j * dt);
+
+	/* calculate the normalisation */
+	for(j = 0; j < tdfilter->length; j++)
+		filternorm += tdfilter->data[j] * tdfilter->data[j];
+
+	/* apply the normalisation */
+	for(j = 0; j < tdfilter->length; j++)
+		tdfilter->data[j] /= sqrt(filternorm);
 
 	if(XLALREAL4ForwardFFT(fdfilter, tdfilter, plan)) {
 		XLALDestroyREAL4Sequence(tdfilter);
