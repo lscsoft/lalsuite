@@ -171,6 +171,20 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
   } HoughCandidates;
 
 
+  /** structure for storing candidates produced from Fstat vector */
+  typedef struct tagFstatCandidates {
+    INT4 length;        /**< maximum allowed length of vectors */
+    INT4 nCandidates;   /**< number of candidates -- must be less than length */
+    REAL8 *freq;        /**< frequency */
+    REAL8 *alpha;       /**< right ascension */
+    REAL8 *delta;       /**< declination */
+    REAL8 *fdot;        /**< spindown vector */
+    REAL8 *Fstat;       /**< significance -- Fstat value */
+    INT4 minFstatIndex;   /**< index of least significant candidate */ 
+  } FstatCandidates;
+
+
+
   void SetUpFstatStack (LALStatus *status, 
 			REAL8FrequencySeriesVector *out,  
 			FstatStackParams *params);
@@ -183,7 +197,8 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
   void ComputeFstatHoughMap (LALStatus *status,
 			     HoughCandidates *out,
 			     HOUGHPeakGramVector *pgV,
-			     HoughParams *params);
+			     HoughParams *params,
+			     BOOLEAN selectCandThr);
 
   void FstatVectToPeakGram (LALStatus *status,
 			    HOUGHPeakGramVector *pgV,
@@ -201,10 +216,9 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 		     LIGOTimeGPSVector *ts,
 		     INT4 nStacks);
 
-  void PrintFstat( LALStatus *status,
-		   REAL8FrequencySeries *Fstat, 
-		   CHAR *fname,
-		   INT4 stackIndex);
+  void PrintFstatCandidates( LALStatus *status,
+			     FstatCandidates *cand, 
+			     CHAR *fname);
 
   void PrintHmap2file(LALStatus *status,
 		      HOUGHMapTotal *ht, 
@@ -224,6 +238,22 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 				  HOUGHPatchGrid  *patch,
 				  HOUGHDemodPar   *parDem);
 
+  void GetFstatCandidates( LALStatus *status,
+			   FstatCandidates *cand,
+			   REAL8FrequencySeries *in,
+			   REAL8 FstatThr);
+
+  void GetFstatCandidates_toplist(LALStatus *status,
+				  FstatCandidates *fStatCand,
+				  REAL8FrequencySeries   *FstatVec,
+				  REAL8 alpha,
+				  REAL8 delta,
+				  REAL8 fdot);
+
+  void GetMinFstatIndex_toplist(LALStatus *status,
+				INT4 *minFstatIndex,
+				FstatCandidates *cand);
+
   void GetMinSigIndex_toplist(LALStatus *status,
 			      INT4 *minSigIndex,
 			      HoughCandidates *houghCand);
@@ -231,15 +261,6 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
   void PrintHoughCandidates(LALStatus *status,
 			    HoughCandidates *in,
 			    CHAR *fname);
-
-  void GetLoudestFstat(LALStatus *status,
-		       REAL8 *max,
-		       REAL8FrequencySeries *Fstat);
-
-  void GetFstatCandidates( LALStatus *status,
-			   HoughCandidates *cand,
-			   REAL8FrequencySeries *in,
-			   REAL8 FstatThr);
 
   void PrintHoughHistogram(LALStatus *status,
 			   UINT4Vector *hist, 
