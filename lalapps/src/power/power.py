@@ -10,6 +10,7 @@ import os
 import re
 import string
 import exceptions
+import ConfigParser
 from glue import pipeline
 from glue import segmentsUtils
 
@@ -516,14 +517,16 @@ class LladdJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     """
     cp = ConfigParser object from which options are read.
     """
-    self.path2cache = cp.get('condor','path2cache')
     self.__executable = cp.get('condor','lladd')
     self.__universe = 'vanilla'
     pipeline.CondorDAGJob.__init__(self, self.__universe, self.__executable)
     pipeline.AnalysisJob.__init__(self, cp)
 
-    for sec in ['lladd']:
-      self.add_ini_opts(cp, sec)
+    try:
+      for sec in ['lladd']:
+        self.add_ini_opts(cp, sec)
+    except ConfigParser.NoSectionError:
+      pass
 
     self.set_stdout_file(os.path.join(out_dir, 'lladd-$(cluster)-$(process).out'))
     self.set_stderr_file(os.path.join(out_dir, 'lladd-$(cluster)-$(process).err'))
@@ -547,7 +550,7 @@ class LladdNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 
   def get_output(self):
     """
-    Returns the output file name.  This must be kept synchronized
+    Returns the output file name.  This must be kept synchronized with
     PowerNode.
     """
     if not len(self.get_input_files()):

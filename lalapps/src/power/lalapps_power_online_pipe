@@ -43,6 +43,8 @@ parser.add_option("-t", metavar = "PATH", dest = "aux_dir", help = "set auxiliar
 parser.add_option("--condor-log-dir", metavar = "PATH", help = "set directory for Condor log")
 parser.add_option("--config-file", metavar = "FILENAME", default = "online_power.ini", help = "set .ini config file name")
 parser.add_option("--instrument", metavar = "INSTRUMENT", help = "set instrument name (default = value of instrument variable in [pipeline] section of .ini file)")
+parser.add_option("--publish-dest", metavar = "PATH", help = "set directory for output triggers")
+parser.add_option("--gsiscp-dest", metavar = "PATH", help = "set destination for gsiscp")
 options, args = parser.parse_args()
 del parser, args
 
@@ -57,6 +59,8 @@ try:
 	options.trig_seg = segments.segment(lal.LIGOTimeGPS(options.trig_start), lal.LIGOTimeGPS(options.trig_end))
 except:
 	raise Exception, "failure parsing -a and/or -b; try --help"
+if options.trig_seg not in options.seg:
+	raise Exception, "trigger segment not contained in data segment!"
 
 # .dag name
 try:
@@ -87,6 +91,24 @@ try:
 except:
 	raise Exception, "must either provide --instrument, or instrument variable in [pipeline] section of .ini"
 
+# publish location
+try:
+	if options.publish_dest:
+		config_parser.set('publish', 'destination', options.publish_dest)
+	else:
+		options.publish_dest = config_parser.get('publish','destination')
+except:
+	raise Exception, "must either provide --publish-dest, or destination variable in [publish] section of .ini"
+
+# gsiscp location
+try:
+	if options.gsiscp_dest:
+		config_parser.set('gsiscp', 'destination', options.gsiscp_dest)
+	else:
+		options.publish_dest = config_parser.get('gsiscp', 'destination')
+except:
+	raise Exception, "must either provide --gsiscp-dest, or destination variable in [gsiscp] section of .ini"
+
 
 #
 # Some stuff used in DAG layout and construction
@@ -97,6 +119,7 @@ cache_dir = "itchy/"
 out_dir = "scratchy/"
 psds_per_job = 2
 observatory = options.instrument[0]
+overlap = 0.25
 
 
 #
@@ -107,12 +130,30 @@ class PublishJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 	def __init__(self, out_dir, config_parser):
 		pipeline.CondorDAGJob.__init__(self, "scheduler", "/bin/cp")
 		pipeline.AnalysisJob.__init__(self, config_parser)
+		self.destination = config_parser.get("publish", "destination")
+		self.set_stdout_file(os.path.join(out_dir, "publish-$(cluster)-$(process).out"))
+		self.set_stderr_file(os.path.join(out_dir, "publish-$(cluster)-$(process).err"))
+		self.set_sub_file("publish.sub")
+
+	def write_sub_file(self):
+		# this is a hack, but I can't be bothered...
+		self.add_file_arg(self.destination)
+		pipeline.CondorDAGJob.write_sub_file(self)
 
 
 class GsiScpJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 	def __init__(self, out_dir, config_parser):
 		pipeline.CondorDAGJob.__init__(self, "scheduler", "/ldcg/stow_pkgs/ldg-3.5/ldg/globus/bin/gsiscp")
 		pipeline.AnalysisJob.__init__(self, config_parser)
+		self.destination = config_parser.get("gsiscp", "destination")
+		self.set_stdout_file(os.path.join(out_dir, "gsiscp-$(cluster)-$(process).out"))
+		self.set_stderr_file(os.path.join(out_dir, "gsiscp-$(cluster)-$(process).err"))
+		self.set_sub_file("gsiscp.sub")
+
+	def write_sub_file(self):
+		# this is a hack, but I can't be bothered...
+		self.add_file_arg(self.destination)
+		pipeline.CondorDAGJob.write_sub_file(self)
 
 
 #
@@ -120,7 +161,9 @@ class GsiScpJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 #
 
 class PublishNode(pipeline.CondorDAGNode):
-	pass
+	def __init__(self, job):
+		pipeline.CondorDAGNode.__init__(self, job)
+		#self._CondorDAGNode__arguments.append(job.destination)
 
 
 class GsiScpNode(pipeline.CondorDAGNode):
@@ -162,7 +205,7 @@ psd_overlap = window_length - window_shift
 joblength = psds_per_job * (psd_length - psd_overlap) + psd_overlap + 2 * filter_corruption
 joboverlap = 2 * filter_corruption + psd_overlap
 
-# can't use range()
+# can't use range() with non-integers
 jobsegs = segments.segmentlist()
 t = options.seg[0]
 while t < options.seg[1] - joboverlap:
@@ -202,5 +245,19 @@ for seg in jobsegs:
 	lladdnode.add_file_arg(powernode.get_output())
 	dag.add_node(powernode)
 
+publishnode = PublishNode(publishjob)
+publishnode.set_name("publish")
+publishnode.add_parent(lladdnode)
+publishnode.add_file_arg(lladdnode.get_output())
+dag.add_node(publishnode)
+
+gsiscpnode = GsiScpNode(gsiscpjob)
+gsiscpnode.set_name("gsiscp")
+gsiscpnode.add_parent(lladdnode)
+gsiscpnode.add_file_arg(lladdnode.get_output())
+dag.add_node(gsiscpnode)
+
 dag.write_sub_files()
 dag.write_dag()
+
+print options.trig_seg[0] + overlap, options.trig_seg[1] - overlap
