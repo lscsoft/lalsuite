@@ -139,7 +139,7 @@ BOOLEAN uvar_printStats; /**< global variable for calculating Hough map stats */
 #define DALPHA 0.001 /**< Default resolution for isotropic or flat grids */
 #define DDELTA 0.001 /**< Default resolution for isotropic or flat grids */
 #define FSTATTHRESHOLD 2.6  /**< Default threshold on Fstatistic for peak selection */
-#define NCAND1 5000 /**< Default number of candidates to be followed up from first stage */
+#define NCAND1 5 /**< Default number of candidates to be followed up from first stage */
 #define SFTDIRECTORY "/home/badkri/fakesfts/"  /**< Default directory containing sfts */
 #define FNAMEOUT "./temp/OutHoughFStat"  /**< Default output file basename */
 
@@ -294,8 +294,7 @@ int main( int argc, char *argv[]) {
   strcpy(uvar_sftDir1, SFTDIRECTORY);
 
   /* do not set default for sftDir2 -- use only if user specifies */
-  uvar_sftDir2 = (CHAR *)LALMalloc(512*sizeof(CHAR));
-  strcpy(uvar_sftDir2, SFTDIRECTORY);
+  /*   uvar_sftDir2 = (CHAR *)LALMalloc(512*sizeof(CHAR)); */
 
   uvar_fnameout = (CHAR *)LALMalloc(512*sizeof(CHAR));
   strcpy(uvar_fnameout, FNAMEOUT);
@@ -752,6 +751,7 @@ int main( int argc, char *argv[]) {
   /* allocate memory for Hough candidates */
   houghCand.length = uvar_nCand1;
   houghCand.nCandidates = 0; /* initialization */
+  houghCand.minSigIndex = 0;
   houghCand.freq = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
   houghCand.alpha = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
   houghCand.delta = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
@@ -1928,10 +1928,10 @@ void GetHoughCandidates_toplist(LALStatus *status,
 {
   REAL8UnitPolarCoor sourceLocation;
   REAL8 deltaF, f0, fdot, dFdot, patchSizeX, patchSizeY;
-  REAL8 minSig, mean, std;
+  REAL8 mean, std;
   INT8 f0Bin;  
   INT4 nCandidates, maxCandidates; 
-  INT4 i,j, k, xSide, ySide, minSigIndex;
+  INT4 i,j, xSide, ySide, minSigIndex;
   HoughStats stats;
 
   INITSTATUS( status, "GetHoughCandidates_toplist", rcsid );
@@ -1961,6 +1961,8 @@ void GetHoughCandidates_toplist(LALStatus *status,
     {
       for (j = 0; j < xSide; j++)
 	{ 
+	  REAL8 tempSig = (ht->map[i*xSide + j] - mean)/std;
+
 	  if ( nCandidates < maxCandidates )
 	    {
 	      houghCand->freq[nCandidates] = f0;
@@ -1975,53 +1977,42 @@ void GetHoughCandidates_toplist(LALStatus *status,
 
 	      houghCand->alpha[nCandidates] = sourceLocation.alpha;
 	      houghCand->delta[nCandidates] = sourceLocation.delta;
-	      
 	      houghCand->dAlpha[nCandidates] = patchSizeX / ((REAL8)xSide);
 	      houghCand->dDelta[nCandidates] = patchSizeY / ((REAL8)ySide);
+	      houghCand->significance[nCandidates] = tempSig;
+
+	      TRY ( GetMinSigIndex_toplist ( status->statusPtr, &minSigIndex, houghCand), status);		
+	      houghCand->minSigIndex = minSigIndex;
 
 	      /* increment candidate count */
 	      houghCand->nCandidates += 1;
 	      nCandidates = houghCand->nCandidates;
+
 	    }
 	  else 
 	    {
 	      /* if event is more significant than least significant 
 		 event stored in toplist then replace it */
 	      minSigIndex = houghCand->minSigIndex;
-	      if ( (ht->map[i*xSide + j] - mean)/std > houghCand->significance[minSigIndex] ) 
+	      if ( tempSig > houghCand->significance[minSigIndex] ) 
 		{
 		  houghCand->freq[minSigIndex] = f0;
 		  houghCand->dFreq[minSigIndex] = deltaF;
-	      
 		  houghCand->fdot[minSigIndex] = fdot;
 		  houghCand->dFdot[minSigIndex] = dFdot;
-		  
+	  
 		  /* get sky location of pixel */
 		  TRY( LALStereo2SkyLocation (status->statusPtr, &sourceLocation, 
 					      j, i, patch, parDem), status);
 		  
 		  houghCand->alpha[minSigIndex] = sourceLocation.alpha;
-		  houghCand->delta[minSigIndex] = sourceLocation.delta;
-		  
+		  houghCand->delta[minSigIndex] = sourceLocation.delta;  
 		  houghCand->dAlpha[minSigIndex] = patchSizeX / ((REAL8)xSide);
 		  houghCand->dDelta[minSigIndex] = patchSizeY / ((REAL8)ySide);
-		  
-		  /* having replaced the least significant event, 
-		     loop over candidates in list and find index 
-		     of new least significant event */
-		  minSigIndex = 0;
-		  minSig = (houghCand->significance[0] - mean)/std;
-		  for (k = 1; k < nCandidates; k++)
-		    {
-		      REAL8 tempSig = (houghCand->significance[k] - mean)/std;
-		      if ( minSig > tempSig)
-			{
-			  minSigIndex = k;
-			  minSig = tempSig;
-			}
-		    } /* end loop over candidates */
-		  
-		  /* set minSigIndex  */
+		  houghCand->significance[minSigIndex] = tempSig;
+
+		  /* find index of new least significant event */
+		  TRY ( GetMinSigIndex_toplist ( status->statusPtr, &minSigIndex, houghCand), status);
 		  houghCand->minSigIndex = minSigIndex;
 
 		} /* end if statement for replacing least significant candidate */
@@ -2035,6 +2026,45 @@ void GetHoughCandidates_toplist(LALStatus *status,
   DETATCHSTATUSPTR (status);
   RETURN(status);
 }
+
+
+
+
+
+
+/** Get least significant Hough candidate index */
+void GetMinSigIndex_toplist(LALStatus *status,
+			    INT4 *minSigIndex,
+			    HoughCandidates *houghCand)
+{
+
+  REAL8 minSig;
+  INT4 k, nCandidates = houghCand->nCandidates;
+
+  INITSTATUS( status, "GetHoughCandidates_toplist", rcsid );
+  ATTATCHSTATUSPTR (status);
+
+
+  *minSigIndex = 0;
+  minSig = houghCand->significance[0];
+  for (k = 1; k < nCandidates; k++)
+    {
+      REAL8 tempSig = houghCand->significance[k];
+      if ( tempSig < minSig )
+	{
+	  *minSigIndex = k;
+	  minSig = tempSig;
+	}
+    } /* end loop over candidates */
+  
+
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+}
+
+
+
+
 
 
 /** Print Hough candidates */

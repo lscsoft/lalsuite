@@ -224,6 +224,10 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 				  HOUGHPatchGrid  *patch,
 				  HOUGHDemodPar   *parDem);
 
+  void GetMinSigIndex_toplist(LALStatus *status,
+			      INT4 *minSigIndex,
+			      HoughCandidates *houghCand);
+
   void PrintHoughCandidates(LALStatus *status,
 			    HoughCandidates *in,
 			    CHAR *fname);
