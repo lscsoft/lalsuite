@@ -631,6 +631,18 @@ LALFindChirpSetAnalyseTemplate (
       } /* End of loop over injections */
 
     } /* End of if (approximant is in the OK list) */
+    else 
+    { 
+        LALWarning (status, "Requested --fast option for unsupported family of waveforms"); 
+        LALWarning (status, "Tagging all templates to be analysed"); 
+        
+        for ( tmpltCurrent = tmpltHead, kj = 0; tmpltCurrent; 
+                tmpltCurrent = tmpltCurrent->next, kj++) 
+        { 
+            analyseThisTmplt[kj] = pow(2.0, (double)(numInjections)) - 1 ; 
+        } 
+    }
+
 
   } /* End of if (mmFast >= 0.0 && injections) */
 
