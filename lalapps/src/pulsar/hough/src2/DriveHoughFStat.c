@@ -231,6 +231,7 @@ int main( int argc, char *argv[]) {
   REAL8 uvar_fStart, uvar_fBand;
   REAL8 uvar_FstatPeakSelect; /* threshold of Fstat to select peaks */
   REAL8 uvar_houghThr; /* threshold on hough number count to select candidates */
+  REAL8 uvar_fstatThr; /* threshold for selecting candidates from Fstat vector */
   INT4 uvar_nCand1; /* number of candidates to be followed up from first stage */
   INT4 uvar_nCand2; /* number of candidates from second stage */
   BOOLEAN uvar_printCand1, uvar_printCand2; /* if 1st or 2nd stage candidates are to be printed */
@@ -284,6 +285,7 @@ int main( int argc, char *argv[]) {
   uvar_FstatPeakSelect = FSTATTHRESHOLD;
   uvar_nCand1 = uvar_nCand2 = NCAND1;
   uvar_houghThr = 0;
+  uvar_fstatThr = FSTATTHRESHOLD;
   uvar_metricType = LAL_PMETRIC_COH_PTOLE_ANALYTIC;
   uvar_gridType = GRID_METRIC;
   uvar_metricMismatch1 = uvar_metricMismatch2 = MISMATCH;
@@ -333,6 +335,7 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar(    &status, "nCand1",           0,  UVAR_OPTIONAL, "No. of 1st stage candidates to be followed up",     &uvar_nCand1),          &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "nCand2",           0,  UVAR_OPTIONAL, "No. of 2nd stage candidates to be followed up",     &uvar_nCand2),          &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "houghThr",         0,  UVAR_OPTIONAL, "Hough number count threshold (default --nCand1)",   &uvar_houghThr),        &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "fstatThr",         0,  UVAR_OPTIONAL, "Fstat threshold (default --nCand2)",                &uvar_fstatThr),        &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printCand1",       0,  UVAR_OPTIONAL, "Print 1st stage candidates",                        &uvar_printCand1),      &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printCand2",       0,  UVAR_OPTIONAL, "Print 2nd stage candidates",                        &uvar_printCand2),      &status);  
   LAL_CALL( LALRegisterREALUserVar(   &status, "refTime",          0,  UVAR_OPTIONAL, "Ref. time for pulsar pars (default = start time)",  &uvar_refTime),         &status);
@@ -913,9 +916,15 @@ int main( int argc, char *argv[]) {
 
 		  for (k=0; k<nStacks2; k++) 
 		    {
-		      LAL_CALL( GetFstatCandidates_toplist( &status, &fStatCand, FstatVect2.data + k, 
-							    FstatPar2.alpha, FstatPar2.delta, 
-							    FstatPar2.fdot->data[0] ), &status);
+		      
+		      if ( LALUserVarWasSet(&uvar_fstatThr))
+			LAL_CALL( GetFstatCandidates( &status, &fStatCand, FstatVect2.data + k, uvar_fstatThr,
+						      FstatPar2.alpha, FstatPar2.delta, 
+						      FstatPar2.fdot->data[0] ), &status);
+		      else
+			LAL_CALL( GetFstatCandidates_toplist( &status, &fStatCand, FstatVect2.data + k, 
+							      FstatPar2.alpha, FstatPar2.delta, 
+							      FstatPar2.fdot->data[0] ), &status);
 		      
 		      /* free Fstat vector */
 		      LALFree(FstatVect2.data[k].data->data);
@@ -2134,7 +2143,10 @@ void PrintHoughCandidates(LALStatus *status,
 void GetFstatCandidates( LALStatus *status,
 			 FstatCandidates *cand,
 			 REAL8FrequencySeries *in,
-			 REAL8 FstatThr)
+			 REAL8 FstatThr,
+			 REAL8 alpha,
+			 REAL8 delta,
+			 REAL8 fdot)
 {
   INT4 k, length, nCandidates;
   REAL8 deltaF, f0;
@@ -2169,7 +2181,10 @@ void GetFstatCandidates( LALStatus *status,
 	if ( in->data->data[k] > FstatThr ) {
 
 	  cand->freq[nCandidates] = f0 + k*deltaF;
-
+	  cand->alpha[nCandidates] = alpha;
+	  cand->delta[nCandidates] = delta;
+	  cand->fdot[nCandidates] = fdot;
+	  cand->Fstat[nCandidates] = in->data->data[k];
 	  cand->nCandidates += 1;
 	}
   }

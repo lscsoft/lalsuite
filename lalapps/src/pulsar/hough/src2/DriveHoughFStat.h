@@ -241,7 +241,10 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
   void GetFstatCandidates( LALStatus *status,
 			   FstatCandidates *cand,
 			   REAL8FrequencySeries *in,
-			   REAL8 FstatThr);
+			   REAL8 FstatThr,
+			   REAL8 alpha,
+			   REAL8 delta,
+			   REAL8 fdot);
 
   void GetFstatCandidates_toplist(LALStatus *status,
 				  FstatCandidates *fStatCand,
