@@ -166,6 +166,8 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
     REAL8 *dAlpha;      /**< alpha error */
     REAL8 *dDelta ;     /**< delta error */
     REAL8 *dFdot;       /**< fdot error */
+    REAL8 *significance;/**< significance */
+    INT4 minSigIndex;   /**< index of least significant candidate */ 
   } HoughCandidates;
 
 
@@ -216,6 +218,12 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 			  HOUGHDemodPar   *parDem,
 			  REAL8 houghThreshold);
 
+  void GetHoughCandidates_toplist(LALStatus *status,
+				  HoughCandidates *houghCand,
+				  HOUGHMapTotal *ht,
+				  HOUGHPatchGrid  *patch,
+				  HOUGHDemodPar   *parDem);
+
   void PrintHoughCandidates(LALStatus *status,
 			    HoughCandidates *in,
 			    CHAR *fname);
@@ -230,8 +238,8 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 			   REAL8 FstatThr);
 
   void PrintHoughHistogram(LALStatus *status,
-		      UINT4Vector *hist, 
-		      CHAR *fnameOut);
+			   UINT4Vector *hist, 
+			   CHAR *fnameOut);
   
 #ifdef  __cplusplus
 }                /* Close C++ protection */

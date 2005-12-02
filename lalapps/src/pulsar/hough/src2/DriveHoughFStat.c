@@ -117,7 +117,6 @@ RCSID( "$Id$");
 #define TRUE (1==1)
 #define FALSE (1==0)
 
-
 extern int lalDebugLevel;
 
 BOOLEAN uvar_printMaps; /**< global variable for printing Hough maps */
@@ -761,7 +760,8 @@ int main( int argc, char *argv[]) {
   houghCand.dDelta = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
   houghCand.fdot = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
   houghCand.dFdot = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));
-  
+  houghCand.significance = (REAL8 *)LALMalloc( houghCand.length * sizeof(REAL8));  
+
   /*-----------Create template grid for first stage ---------------*/
   /* prepare initialization of DopplerScanner to step through paramter space */
   scanInit1.dAlpha = uvar_dAlpha;
@@ -964,12 +964,13 @@ int main( int argc, char *argv[]) {
   LALFree(houghCand.dDelta);
   LALFree(houghCand.fdot);
   LALFree(houghCand.dFdot);
-  
+  LALFree(houghCand.significance);  
+
   LAL_CALL (LALDestroyUserVars(&status), &status);  
 
   LALCheckMemoryLeaks();
 
-  return 0;
+  return DRIVEHOUGHFSTAT_ENORM;
 }
 
 
@@ -1484,9 +1485,10 @@ void ComputeFstatHoughMap(LALStatus *status,
 	  TRY( LALHOUGHConstructHMT(status->statusPtr, &ht, &freqInd, &phmdVS),status );
 
 	  /* get candidates */
-	  TRY(GetHoughCandidates( status->statusPtr, out, &ht, &patch, 
-				  &parDem, houghThr), status);
-
+	  /* TRY(GetHoughCandidates( status->statusPtr, out, &ht, &patch, 
+	     &parDem, houghThr), status);*/
+	  TRY(GetHoughCandidates_toplist( status->statusPtr, out, &ht, &patch, 
+					  &parDem), status);
 
 	  /* calculate statistics and histogram */
 	  if ( uvar_printStats ) {
@@ -1916,6 +1918,123 @@ void GetHoughCandidates(LALStatus *status,
   RETURN(status);
 }
 
+
+/** Get Hough candidates */
+void GetHoughCandidates_toplist(LALStatus *status,
+				HoughCandidates *houghCand,
+				HOUGHMapTotal *ht,
+				HOUGHPatchGrid  *patch,
+				HOUGHDemodPar   *parDem)
+{
+  REAL8UnitPolarCoor sourceLocation;
+  REAL8 deltaF, f0, fdot, dFdot, patchSizeX, patchSizeY;
+  REAL8 minSig, mean, std;
+  INT8 f0Bin;  
+  INT4 nCandidates, maxCandidates; 
+  INT4 i,j, k, xSide, ySide, minSigIndex;
+  HoughStats stats;
+
+  INITSTATUS( status, "GetHoughCandidates_toplist", rcsid );
+  ATTATCHSTATUSPTR (status);
+
+  deltaF = ht->deltaF;
+  f0Bin = ht->f0Bin;
+  f0 = f0Bin * deltaF;
+
+  nCandidates = houghCand->nCandidates;
+  maxCandidates = houghCand->length;
+
+  fdot = ht->spinDem.data[0] + ht->spinRes.data[0];
+  dFdot = ht->dFdot.data[0];
+
+  xSide = ht->xSide;
+  ySide = ht->ySide;
+
+  patchSizeX = ht->patchSizeX;
+  patchSizeY = ht->patchSizeY;
+
+  TRY( LALHoughStatistics ( status->statusPtr, &stats, ht), status );
+  mean = stats.avgCount;
+  std = stats.stdDev;
+
+  for (i = 0; i < ySide; i++)
+    {
+      for (j = 0; j < xSide; j++)
+	{ 
+	  if ( nCandidates < maxCandidates )
+	    {
+	      houghCand->freq[nCandidates] = f0;
+	      houghCand->dFreq[nCandidates] = deltaF;
+	      
+	      houghCand->fdot[nCandidates] = fdot;
+	      houghCand->dFdot[nCandidates] = dFdot;
+	      
+	      /* get sky location of pixel */
+	      TRY( LALStereo2SkyLocation (status->statusPtr, &sourceLocation, 
+					  j, i, patch, parDem), status);
+
+	      houghCand->alpha[nCandidates] = sourceLocation.alpha;
+	      houghCand->delta[nCandidates] = sourceLocation.delta;
+	      
+	      houghCand->dAlpha[nCandidates] = patchSizeX / ((REAL8)xSide);
+	      houghCand->dDelta[nCandidates] = patchSizeY / ((REAL8)ySide);
+
+	      /* increment candidate count */
+	      houghCand->nCandidates += 1;
+	      nCandidates = houghCand->nCandidates;
+	    }
+	  else 
+	    {
+	      /* if event is more significant than least significant 
+		 event stored in toplist then replace it */
+	      minSigIndex = houghCand->minSigIndex;
+	      if ( (ht->map[i*xSide + j] - mean)/std > houghCand->significance[minSigIndex] ) 
+		{
+		  houghCand->freq[minSigIndex] = f0;
+		  houghCand->dFreq[minSigIndex] = deltaF;
+	      
+		  houghCand->fdot[minSigIndex] = fdot;
+		  houghCand->dFdot[minSigIndex] = dFdot;
+		  
+		  /* get sky location of pixel */
+		  TRY( LALStereo2SkyLocation (status->statusPtr, &sourceLocation, 
+					      j, i, patch, parDem), status);
+		  
+		  houghCand->alpha[minSigIndex] = sourceLocation.alpha;
+		  houghCand->delta[minSigIndex] = sourceLocation.delta;
+		  
+		  houghCand->dAlpha[minSigIndex] = patchSizeX / ((REAL8)xSide);
+		  houghCand->dDelta[minSigIndex] = patchSizeY / ((REAL8)ySide);
+		  
+		  /* having replaced the least significant event, 
+		     loop over candidates in list and find index 
+		     of new least significant event */
+		  minSigIndex = 0;
+		  minSig = (houghCand->significance[0] - mean)/std;
+		  for (k = 1; k < nCandidates; k++)
+		    {
+		      REAL8 tempSig = (houghCand->significance[k] - mean)/std;
+		      if ( minSig > tempSig)
+			{
+			  minSigIndex = k;
+			  minSig = tempSig;
+			}
+		    } /* end loop over candidates */
+		  
+		  /* set minSigIndex  */
+		  houghCand->minSigIndex = minSigIndex;
+
+		} /* end if statement for replacing least significant candidate */
+
+	    } /* end else part of main if statement */
+
+	} /* end loop over xSide */
+
+    } /* end loop over ySide */
+
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+}
 
 
 /** Print Hough candidates */
