@@ -285,15 +285,10 @@ int read_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxbytes) {
 } /* read_toplist_from_fp() */
 
 
-/* writes an TOPLISTLINE line to an open filepointer.
-   Returns the number of chars written, -1 if in error
-   Updates checksum if given */
-int write_toplist_item_to_fp(TOPLISTLINE fline, FILE*fp, UINT4*checksum) {
-    char linebuf[256];
-    UINT4 i;
-
-    UINT4 length =
-      LALSnprintf(linebuf, sizeof(linebuf),
+/* Prints a Tooplist line to a string buffer.
+   Separate function to force consistency of output and reduced precision for sorting */
+int print_toplist_item_to_str(TOPLISTLINE fline, char* buf, int buflen) {
+      return(LALSnprintf(buf, buflen,
 		  /* output precision: choose by following (generous!) relative-error constraints:
 		   * Freq:1e-9 
 		   * Alpha,Delta:1e-9 
@@ -305,7 +300,18 @@ int write_toplist_item_to_fp(TOPLISTLINE fline, FILE*fp, UINT4*checksum) {
 		  fline.Alpha,
 		  fline.Delta,
 		  fline.f1dot,
-		  fline.Fstat);
+		  fline.Fstat));
+}
+
+
+/* writes an TOPLISTLINE line to an open filepointer.
+   Returns the number of chars written, -1 if in error
+   Updates checksum if given */
+int write_toplist_item_to_fp(TOPLISTLINE fline, FILE*fp, UINT4*checksum) {
+    char linebuf[256];
+    UINT4 i;
+
+    UINT4 length = print_toplist_item_to_str(fline, linebuf, sizeof(linebuf));
     
     if(length>sizeof(linebuf))
 	return -1;
@@ -321,12 +327,20 @@ int write_toplist_item_to_fp(TOPLISTLINE fline, FILE*fp, UINT4*checksum) {
 /* Reduces the precision of all elements in the toplist which influence the sorting order.
    To be called before sorting and finally writing out the list */
 void reduce_toplist_precision(toplist_t *l) {
+  char linebuf[256];
   UINT8 i;
   for(i=0; i < l->elems; i++) {
-    l->data[i].Freq  = round(l->data[i].Freq  * 1e9) / 1e9;
-    l->data[i].Alpha = round(l->data[i].Alpha * 1e9) / 1e9;
-    l->data[i].Delta = round(l->data[i].Delta * 1e9) / 1e9;
-    l->data[i].f1dot = round(l->data[i].f1dot * 1e9) / 1e9;
+    print_toplist_item_to_str(l->data[i], linebuf, sizeof(linebuf));
+    sscanf(linebuf,
+	   "%" LAL_REAL8_FORMAT
+	   " %" LAL_REAL8_FORMAT
+	   " %" LAL_REAL8_FORMAT
+	   " %" LAL_REAL8_FORMAT
+	   "%*s\n",
+	   &(l->data[i].Freq),
+	   &(l->data[i].Alpha),
+	   &(l->data[i].Delta),
+	   &(l->data[i].f1dot));
   }
 }
 
