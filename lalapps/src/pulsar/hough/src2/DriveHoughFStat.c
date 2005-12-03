@@ -235,7 +235,7 @@ int main( int argc, char *argv[]) {
   REAL8 uvar_fstatThr; /* threshold for selecting candidates from Fstat vector */
   INT4 uvar_nCand1; /* number of candidates to be followed up from first stage */
   INT4 uvar_nCand2; /* number of candidates from second stage */
-  BOOLEAN uvar_printCand1, uvar_printCand2; /* if 1st or 2nd stage candidates are to be printed */
+  BOOLEAN uvar_printCand1; /* if 1st stage candidates are to be printed */
   INT4 uvar_ifo1, uvar_ifo2; 
   INT4 uvar_blocksRngMed;
   INT4 uvar_nStacks1, uvar_nStacks2;
@@ -269,7 +269,6 @@ int main( int argc, char *argv[]) {
   uvar_log = FALSE;
   uvar_printMaps = FALSE;
   uvar_printStats = FALSE;
-  uvar_printCand1 = uvar_printCand2 = FALSE;
   uvar_nStacks1 = NSTACKS;
   uvar_nStacks2 = 1;
   uvar_Dterms = DTERMS;
@@ -338,7 +337,6 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterREALUserVar(   &status, "houghThr",         0,  UVAR_OPTIONAL, "Hough number count threshold (default --nCand1)",   &uvar_houghThr),        &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "fstatThr",         0,  UVAR_OPTIONAL, "Fstat threshold (default --nCand2)",                &uvar_fstatThr),        &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printCand1",       0,  UVAR_OPTIONAL, "Print 1st stage candidates",                        &uvar_printCand1),      &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printCand2",       0,  UVAR_OPTIONAL, "Print 2nd stage candidates",                        &uvar_printCand2),      &status);  
   LAL_CALL( LALRegisterREALUserVar(   &status, "refTime",          0,  UVAR_OPTIONAL, "Ref. time for pulsar pars (default = start time)",  &uvar_refTime),         &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",    'w', UVAR_OPTIONAL, "RngMed block size",                                 &uvar_blocksRngMed),    &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris",  'E', UVAR_OPTIONAL, "Earth Ephemeris file",                              &uvar_earthEphemeris),  &status);
@@ -1031,7 +1029,7 @@ int main( int argc, char *argv[]) {
   
   
   /* print final candidates */
-  if ( uvar_printCand2 )
+  if ( LALUserVarWasSet(&uvar_sftDir2)) 
     LAL_CALL( PrintFstatCandidates( &status, &fStatCand, uvar_fnameout), &status);
   
   
