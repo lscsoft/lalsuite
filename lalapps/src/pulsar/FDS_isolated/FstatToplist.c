@@ -295,7 +295,7 @@ int print_toplist_item_to_str(TOPLISTLINE fline, char* buf, int buflen) {
 		   * f1dot:1e-9 
 		   * F:1e-6 
 		   */
-		  "%10f %10f %10f %10g %7f\n", 
+		  "%.9g %.9g %.9g %.9g %.6g\n",
 		  fline.Freq,
 		  fline.Alpha,
 		  fline.Delta,
