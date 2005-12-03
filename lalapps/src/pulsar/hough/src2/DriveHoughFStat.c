@@ -1015,6 +1015,12 @@ int main( int argc, char *argv[]) {
 
 		    } /* end while loop over second stage refined sky grid */
 		    
+		  /* destroy dopplerscan2 variables */ 
+		  LAL_CALL ( FreeDopplerScan(&status, &thisScan2), &status);
+		  if ( scanInit2.searchRegion.skyRegionString )
+		    LALFree ( scanInit2.searchRegion.skyRegionString );
+		  
+
 		} /* end loop over candidates from 1st stage */
 	     
 	    } /* end block for follow-up stage */ 
@@ -1061,7 +1067,6 @@ int main( int argc, char *argv[]) {
       LALFree(mCohSft2);
       LAL_CALL (LALDDestroyVector (&status, &(FstatPar2.fdot)), &status); 
       LALFree(midTstack2.data);
-      LAL_CALL (LALDDestroyVector (&status, &(FstatPar1.fdot)), &status); 
       
       LALFree(fStatCand.freq);
       LALFree(fStatCand.alpha);
@@ -1069,9 +1074,6 @@ int main( int argc, char *argv[]) {
       LALFree(fStatCand.fdot);
       LALFree(fStatCand.Fstat);
 
-      LAL_CALL ( FreeDopplerScan(&status, &thisScan2), &status);
-      if ( scanInit2.searchRegion.skyRegionString )
-	LALFree ( scanInit2.searchRegion.skyRegionString );
     }
 
 
