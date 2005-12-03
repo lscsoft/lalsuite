@@ -142,7 +142,7 @@ BOOLEAN uvar_printStats; /**< global variable for calculating Hough map stats */
 #define FSTATTHRESHOLD 2.6  /**< Default threshold on Fstatistic for peak selection */
 #define NCAND1 5 /**< Default number of candidates to be followed up from first stage */
 #define SFTDIRECTORY "/home/badkri/fakesfts/"  /**< Default directory containing sfts */
-#define FNAMEOUT "./OutHoughFStat"  /**< Default output file basename */
+#define FNAMEOUT "./Candidates"  /**< Default output file basename */
 
 int main( int argc, char *argv[]) {
 
@@ -223,9 +223,14 @@ int main( int argc, char *argv[]) {
   FILE *fpLog = NULL;
   CHAR *logstr=NULL; 
 
+  /* output candidate file */
+  CHAR *fnameFstatCand=NULL;
+
   /* user variables */
   BOOLEAN uvar_help; /* true if -h option is given */
   BOOLEAN uvar_log; /* logging done if true */
+  BOOLEAN uvar_printCand1; /* if 1st stage candidates are to be printed */
+  BOOLEAN uvar_chkPoint;
   REAL8 uvar_dAlpha, uvar_dDelta; /* resolution for flat or isotropic grids */
   REAL8 uvar_fdot; /* first spindown value */
   REAL8 uvar_fdotBand; /* range of first spindown parameter */
@@ -233,25 +238,24 @@ int main( int argc, char *argv[]) {
   REAL8 uvar_FstatPeakSelect; /* threshold of Fstat to select peaks */
   REAL8 uvar_houghThr; /* threshold on hough number count to select candidates */
   REAL8 uvar_fstatThr; /* threshold for selecting candidates from Fstat vector */
+  REAL8 uvar_metricMismatch1;
+  REAL8 uvar_metricMismatch2;
+  REAL8 uvar_refTime;
   INT4 uvar_nCand1; /* number of candidates to be followed up from first stage */
   INT4 uvar_nCand2; /* number of candidates from second stage */
-  BOOLEAN uvar_printCand1; /* if 1st stage candidates are to be printed */
   INT4 uvar_ifo1, uvar_ifo2; 
   INT4 uvar_blocksRngMed;
   INT4 uvar_nStacks1, uvar_nStacks2;
   INT4 uvar_Dterms;
-  REAL8 uvar_refTime;
   INT4 uvar_SSBprecision = SSBPREC_RELATIVISTIC;
   INT4 uvar_nfSize;
+  INT4 uvar_gridType;
+  INT4 uvar_metricType;
   CHAR *uvar_earthEphemeris=NULL;
   CHAR *uvar_sunEphemeris=NULL;
   CHAR *uvar_sftDir1=NULL;
   CHAR *uvar_sftDir2=NULL;
   CHAR *uvar_fnameout=NULL;
-  INT4  uvar_gridType;
-  INT4  uvar_metricType;
-  REAL8 uvar_metricMismatch1;
-  REAL8 uvar_metricMismatch2;
   CHAR *uvar_skyGridFile=NULL;
   CHAR *uvar_skyRegion=NULL;
 
@@ -269,6 +273,8 @@ int main( int argc, char *argv[]) {
   uvar_log = FALSE;
   uvar_printMaps = FALSE;
   uvar_printStats = FALSE;
+  uvar_printCand1 = FALSE;
+  uvar_chkPoint = FALSE;
   uvar_nStacks1 = NSTACKS;
   uvar_nStacks2 = 1;
   uvar_Dterms = DTERMS;
@@ -289,6 +295,7 @@ int main( int argc, char *argv[]) {
   uvar_metricType = LAL_PMETRIC_COH_PTOLE_ANALYTIC;
   uvar_gridType = GRID_METRIC;
   uvar_metricMismatch1 = uvar_metricMismatch2 = MISMATCH;
+
   uvar_skyGridFile = NULL;
 
   uvar_skyRegion = (CHAR *)LALMalloc(512*sizeof(CHAR));
@@ -312,6 +319,7 @@ int main( int argc, char *argv[]) {
   /* register user input variables */
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",            'h', UVAR_HELP,     "Print this message",                                &uvar_help),            &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "log",              0,  UVAR_OPTIONAL, "Write log file",                                    &uvar_log),             &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "chkPoint",         0,  UVAR_OPTIONAL, "For checkpointing",                                 &uvar_chkPoint),        &status);  
   LAL_CALL( LALRegisterINTUserVar(    &status, "ifo1",            'i', UVAR_OPTIONAL, "Detector GEO(1) LLO(2) LHO(3)",                     &uvar_ifo1 ),           &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "ifo2",             0,  UVAR_OPTIONAL, "Detector for follow up stage",                      &uvar_ifo2 ),           &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir1",          0,  UVAR_OPTIONAL, "SFT Directory for 1st stage",                       &uvar_sftDir1),         &status);
@@ -377,6 +385,11 @@ int main( int argc, char *argv[]) {
   if (uvar_ifo2 ==1) detector2 = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
   if (uvar_ifo2 ==2) detector2 = lalCachedDetectors[LALDetectorIndexLLODIFF];
   if (uvar_ifo2 ==3) detector2 = lalCachedDetectors[LALDetectorIndexLHODIFF];
+
+  /* create output file name */
+  fnameFstatCand = (CHAR *)LALMalloc( 512*sizeof(CHAR));
+  strcpy(fnameFstatCand, uvar_fnameout);
+  strcat(fnameFstatCand, "_fstat.txt");
 
   /* write the log file */
   if ( LALUserVarWasSet(&uvar_log) ) 
@@ -1030,13 +1043,13 @@ int main( int argc, char *argv[]) {
   
   /* print final candidates */
   if ( LALUserVarWasSet(&uvar_sftDir2)) 
-    LAL_CALL( PrintFstatCandidates( &status, &fStatCand, uvar_fnameout), &status);
+    LAL_CALL( AppendFstatCandidates( &status, &fStatCand, fnameFstatCand), &status);
   
   
   /*------------ free all remaining memory -----------*/
   
   /* free memory */
-
+  LALFree(fnameFstatCand);
 
   /* free first stage memory */
   LAL_CALL(LALDestroyTimestampVector ( &status, &startTsft1), &status);  	  
@@ -1882,24 +1895,20 @@ void SetUpStacks2(LALStatus *status,
 
 
 /** Prints Fstatistic values as a function of frequency to a specified output file */ 
-void PrintFstatCandidates( LALStatus *status,
+void AppendFstatCandidates( LALStatus *status,
 			   FstatCandidates *cand, 
 			   CHAR *fname)
 {
 
   FILE *fp=NULL;
   INT4 k, nCandidates;
-  CHAR filename[256]; 
 
-  INITSTATUS( status, "PrintFstatCandidates", rcsid );
+  INITSTATUS( status, "AppendFstatCandidates", rcsid );
   ATTATCHSTATUSPTR (status);
 
   nCandidates = cand->nCandidates;
-
-  strcpy ( filename, fname);
-  strcat ( filename, "_fstat.cand");
   
-  fp = fopen(filename, "a");
+  fp = fopen(fname, "a");
 
   for (k=0; k<nCandidates; k++) {
     fprintf(fp, "%e   %e   %e   %e   %e\n", cand->freq[k], cand->alpha[k], 
@@ -2201,7 +2210,7 @@ void PrintHoughCandidates(LALStatus *status,
   ATTATCHSTATUSPTR (status);
 
   strcpy(filename, fname);
-  strcat(filename, "_hough.cand");
+  strcat(filename, "_hough.txt");
   
   fp = fopen(filename, "a");
 

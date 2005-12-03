@@ -216,7 +216,7 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 		     LIGOTimeGPSVector *ts,
 		     INT4 nStacks);
 
-  void PrintFstatCandidates( LALStatus *status,
+  void AppendFstatCandidates( LALStatus *status,
 			     FstatCandidates *cand, 
 			     CHAR *fname);
 
