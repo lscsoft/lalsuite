@@ -12,6 +12,8 @@ __author__ = 'Greg Mendell<gmendell@ligo-wa.caltech.edu>'
 __date__ = '$Date$'
 __version__ = '$Revision$'[11:-2]
 
+# REVISIONS:
+# 12/02/05 gam; generate datafind.sub and MakeSFTs.sub as well as dag file in PWD, with log files based subLogPath and dag filename.
 
 # import standard modules and append the lalapps prefix to the python path
 import sys, os
@@ -29,6 +31,11 @@ import tempfile
 #
 def usage():
   msg = """\
+
+This script creates datafind.sub, MakeSFTs.sub, and a dag file that generates SFTs based on the options given. 
+
+The script can be used to create dag files for stand-alone use with condor_submit_dag, or as a dag generator with onasys.
+  
 Usage: MakeSFTDAG [options]
 
   -h, --help                 display this message
@@ -37,7 +44,7 @@ Usage: MakeSFTDAG [options]
   -a, --analysis-start-time  GPS start time of data from which to generate SFTs (optional and unused if a segment file is given)
   -b, --analysis-end-time    GPS end time of data from which to generate SFTs (optional and unused if a segment file is given)
   -f, --dag-file             filename for .dag file (should end in .dag)
-  -t, --aux-path             (optional) path to datafind.sub, MakeSFTs.sub, and other auxiliary data files (default is .)
+  -t, --aux-path             (optional) path to auxiliary data files (unused except by onasys)
   -G, --tag-string           tag string used in names of various files unique to jobs that will run under the DAG
   -d, --input-data-type      input data type for use with the LSCdataFind --type option
   -x, --extra-datafind-time  (optional) extra time to subtract/add from/to start/end time arguments of LSCdataFind (default is 0)
@@ -45,7 +52,8 @@ Usage: MakeSFTDAG [options]
   -T  --time-baseline        time baseline of SFTs  (e.g., 60 or 1800 seconds)
   -p  --output-sft-path      path to output SFTs
   -C  --cache-path           (optional) path to cache files that will be produced by LSCdataFind (default is $PWD/cache; this directory is created if it does not exist and must agree with that given in .sub files)
-  -O  --log-path             (optional) path to some log and error files (default is $PWD/logs; this directory is created if it does not exist and should agree with that given in .sub files)
+  -O  --log-path             (optional) path to some log, output, and error files (default is $PWD/logs; this directory is created if it does not exist and should agree with that given in .sub files)
+  -o  --sub-log-path         (optional) path to log file to give in datafind.sub and MakeSFTs.sub (default is $PWD/logs; this directory must exist and usually should be under a local file system.)
   -N  --channel-name         name of input time-domain channel to read from frames
   -r  --sample-rate          (optional) sample rate of input time-domain channel (default is 16384; currently unused)
   -w  --window-type          (optional) type of windowing of time-domain to do before generating SFTs (1 = Tukey, 2 = Hann; default is 1; currently MakeSFT code defaults to option 1 regardless)
@@ -62,17 +70,17 @@ Usage: MakeSFTDAG [options]
 #
 # FUNCTION THAT WRITE ONE JOB TO DAG FILE
 #
-def writeToDag(dagFID, nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, extraDatafindTime, useSingle, useHoT, tagString, auxPath):
+def writeToDag(dagFID, nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, extraDatafindTime, useSingle, useHoT, tagString):
   LSCdataFind = 'LSCdataFind_%i' % nodeCount
   MakeSFTs    = 'MakeSFTs_%i' % nodeCount
   startTimeDatafind = startTimeThisNode - extraDatafindTime
   endTimeDatafind = endTimeThisNode + extraDatafindTime
   tagStringOut = '%s_%i' % (tagString, nodeCount)
   cacheFile   = '%s/%s-%s-%s.cache' % (cachePath, site,startTimeDatafind,endTimeDatafind)
-  dagFID.write('JOB %s %s/datafind.sub\n' % (LSCdataFind,auxPath))
+  dagFID.write('JOB %s datafind.sub\n' % LSCdataFind)
   dagFID.write('RETRY %s 10\n' % LSCdataFind)
   dagFID.write('VARS %s gpsstarttime="%s" gpsendtime="%s" observatory="%s" inputdatatype="%s" tagstring="%s"\n' % (LSCdataFind, startTimeDatafind, endTimeDatafind, site, inputDataType, tagStringOut))
-  dagFID.write('JOB %s %s/MakeSFTs.sub\n' % (MakeSFTs,auxPath))
+  dagFID.write('JOB %s MakeSFTs.sub\n' % MakeSFTs)
   dagFID.write('RETRY %s 1\n' % MakeSFTs)
   argList = '-f %s -t %s -p %s -C %s -s %s -e %s -N %s' %(filterKneeFreq, timeBaseline, outputSFTPath, cacheFile, startTimeThisNode, endTimeThisNode, channelName)
   if useSingle: argList = argList + ' -S'
@@ -85,7 +93,7 @@ def writeToDag(dagFID, nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, c
 #
 
 # parse the command line options
-shortop = "s:e:a:b:f:t:G:d:x:k:T:p:C:O:N:r:w:v:m:L:g:l:hSH"
+shortop = "s:e:a:b:f:t:G:d:x:k:T:p:C:O:o:N:r:w:v:m:L:g:l:hSH"
 longop = [
   "help",
   "gps-start-time=",
@@ -102,6 +110,7 @@ longop = [
   "output-sft-path=",
   "cache-path=",
   "log-path=",
+  "sub-log-path=",
   "channel-name=",
   "sample-rate=",
   "window-type=",
@@ -135,6 +144,7 @@ timeBaseline = None
 outputSFTPath = None
 cachePath = "cache"
 logPath = "logs"
+subLogPath = "logs"
 channelName = None
 sampleRate = 16384
 windowType = 1
@@ -178,6 +188,8 @@ for o, a in opts:
     cachePath = a
   elif o in ("-O", "--log-path"):
     logPath = a
+  elif o in ("-o", "--sub-log-path"):
+    subLogPath = a
   elif o in ("-N", "--channel-name"):
     channelName = a
   elif o in ("-r", "--sample-rate"):
@@ -245,6 +257,11 @@ if not cachePath:
 
 if not logPath:
   print >> sys.stderr, "No log path specified."
+  print >> sys.stderr, "Use --help for usage details."
+  sys.exit(1)
+
+if not subLogPath:
+  print >> sys.stderr, "No sub log path specified."
   print >> sys.stderr, "Use --help for usage details."
   sys.exit(1)
 
@@ -351,6 +368,33 @@ site = channelName[0]
 # initialize count of nodes
 nodeCount         = 0L
 
+# create datafind.sub
+datafindFID = file('datafind.sub','w')
+datafindLogFile = subLogPath + '/' + 'datafind_' + dagFileName + '.log'
+datafindFID.write('universe = scheduler\n')
+datafindFID.write('executable = $ENV(LSC_DATAFIND_PATH)/LSCdataFind\n')
+datafindFID.write('arguments = --observatory $(observatory) --url-type file --gps-start-time $(gpsstarttime) --gps-end-time $(gpsendtime) --lal-cache --type $(inputdatatype) --match localhost\n')
+datafindFID.write('getenv = True\n')
+datafindFID.write('log = %s\n' % datafindLogFile)
+datafindFID.write('error = %s/datafind_$(tagstring).err\n' % logPath)
+datafindFID.write('output = %s/$(observatory)-$(gpsstarttime)-$(gpsendtime).cache\n' % cachePath)
+datafindFID.write('notification = never\n')
+datafindFID.write('queue 1\n')
+datafindFID.close
+
+# create MakeSFTs.sub
+MakeSFTsFID = file('MakeSFTs.sub','w')
+MakeSFTsLogFile = subLogPath + '/' + 'MakeSFTs_' + dagFileName + '.log'
+MakeSFTsFID.write('universe = vanilla\n')
+MakeSFTsFID.write('executable = $ENV(MAKESFTS_PATH)/lalapps_MakeSFTs\n')
+MakeSFTsFID.write('arguments = $(argList)\n')
+MakeSFTsFID.write('log = %s\n' % MakeSFTsLogFile)
+MakeSFTsFID.write('error = %s/MakeSFTs_$(tagstring).err\n' % logPath)
+MakeSFTsFID.write('output = %s/MakeSFTs_$(tagstring).out\n' % logPath)
+MakeSFTsFID.write('notification = never\n')
+MakeSFTsFID.write('queue 1\n')
+MakeSFTsFID.close
+
 # create the DAG file with the jobs to run
 #dagFileName = dagFileName + '.dag'
 dagFID = file(dagFileName,'w')
@@ -391,7 +435,7 @@ for seg in segList:
                # write jobs to dag for this node
                nodeCount = nodeCount + 1
                if (nodeCount == 1): startTimeAllNodes = startTimeThisNode
-               writeToDag(dagFID,nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, extraDatafindTime, useSingle, useHoT, tagString, auxPath)
+               writeToDag(dagFID,nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, extraDatafindTime, useSingle, useHoT, tagString)
                # Update for next node
                startTimeThisNode = endTimeThisNode
                numThisNode       = 0L
@@ -401,7 +445,7 @@ for seg in segList:
             # write jobs to dag for this node
             nodeCount = nodeCount + 1
             if (nodeCount == 1): startTimeAllNodes = startTimeThisNode
-            writeToDag(dagFID,nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, extraDatafindTime, useSingle, useHoT, tagString, auxPath)
+            writeToDag(dagFID,nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, extraDatafindTime, useSingle, useHoT, tagString)
     # END while (endTimeAllNodes < analysisEndTime)
 # END for seg in segList
 
