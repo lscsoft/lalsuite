@@ -118,10 +118,10 @@ except:
 datafind_pad = 512
 cache_dir = "cache/"
 out_dir = "logs/"
-psds_per_job = 2
+psds_per_job = 4
 observatory = options.instrument[0]
 overlap = 0.25
-lladdcachename = "triggers.cache"
+lladdcachename = os.path.join(cache_dir, "triggers.cache")
 
 
 #
@@ -222,6 +222,9 @@ print >>sys.stderr, "Segment split: " + str(jobsegs)
 # Construct the DAG
 #
 
+os.mkdir(cache_dir)
+os.mkdir(out_dir)
+
 dag = pipeline.CondorDAG(condor_log)
 dag.set_dag_file(options.dag_name)
 
@@ -272,8 +275,5 @@ dag.add_node(gsiscpnode)
 
 dag.write_sub_files()
 dag.write_dag()
-
-os.mkdir(cache_dir)
-os.mkdir(out_dir)
 
 print options.trig_seg[0] + overlap, options.trig_seg[1] - overlap
