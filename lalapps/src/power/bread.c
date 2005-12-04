@@ -567,11 +567,7 @@ static BOOLEAN keep_this_event(SnglBurstTable * event, struct options_t options)
 static SnglBurstTable *free_this_event(SnglBurstTable * event)
 {
 	SnglBurstTable *next = event ? event->next : NULL;
-#ifdef RUN_REALLY_REALLY_REALLY_SLOWLY
 	LALFree(event);
-#else
-	free(event);
-#endif
 	return (next);
 }
 
