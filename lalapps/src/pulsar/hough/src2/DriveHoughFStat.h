@@ -174,7 +174,7 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
   /** structure for storing candidates produced from Fstat vector */
   typedef struct tagFstatCandidates {
     INT4 length;        /**< maximum allowed length of vectors */
-    INT4 nCandidates;   /**< number of candidates -- must be less than length */
+    INT4 nCandidates;   /**< number of candidates -- must be <= length */
     REAL8 *freq;        /**< frequency */
     REAL8 *alpha;       /**< right ascension */
     REAL8 *delta;       /**< declination */
@@ -218,7 +218,11 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 
   void AppendFstatCandidates( LALStatus *status,
 			     FstatCandidates *cand, 
-			     CHAR *fname);
+			     FILE *fp);
+
+  void ReadFstatCandidates( LALStatus *status,
+			     FstatCandidates *cand, 
+			     FILE *fp);
 
   void PrintHmap2file(LALStatus *status,
 		      HOUGHMapTotal *ht, 
@@ -263,11 +267,16 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 
   void PrintHoughCandidates(LALStatus *status,
 			    HoughCandidates *in,
-			    CHAR *fname);
+			    FILE *fp);
 
   void PrintHoughHistogram(LALStatus *status,
 			   UINT4Vector *hist, 
 			   CHAR *fnameOut);
+
+  void GetChkPointIndex( LALStatus *status,
+			 INT4 *loopindex, 
+			 CHAR *fnameChkPoint);
+
   
 #ifdef  __cplusplus
 }                /* Close C++ protection */

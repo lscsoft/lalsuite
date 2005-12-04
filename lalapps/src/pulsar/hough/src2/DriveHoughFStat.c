@@ -220,12 +220,20 @@ int main( int argc, char *argv[]) {
 
   /* variables for logging */
   CHAR *fnamelog=NULL;
-  FILE *fpLog = NULL;
+  FILE *fpLog=NULL;
   CHAR *logstr=NULL; 
 
-  /* output candidate file */
+  /* output candidate files and file pointers */
   CHAR *fnameFstatCand=NULL;
+  CHAR *fnameHoughCand=NULL;
+  FILE *fpFstat=NULL;
+  FILE *fpHough=NULL;
 
+  /* checkpoint filename and index of loop over skypoints */
+  CHAR *fnameChkPoint=NULL;
+  FILE *fpChkPoint=NULL;
+  UINT4 loopindex, loopcounter;
+  
   /* user variables */
   BOOLEAN uvar_help; /* true if -h option is given */
   BOOLEAN uvar_log; /* logging done if true */
@@ -362,37 +370,30 @@ int main( int argc, char *argv[]) {
   if (uvar_help)
     exit(0); 
 
-  /* some very basic sanity checks on user vars */
+  /* some basic sanity checks on user vars */
   if ( uvar_nStacks1 < 1) {
     fprintf(stderr, "Invalid number of stacks\n");
-    exit(1);
+    exit( DRIVEHOUGHFSTAT_EBAD );
   }
+
+  if ( uvar_nStacks2 < 1) {
+    fprintf(stderr, "Invalid number of stacks\n");
+    exit( DRIVEHOUGHFSTAT_EBAD );
+  }
+
   if ( uvar_blocksRngMed < 1 ) {
     fprintf(stderr, "Invalid Running Median block size\n");
-    exit(1);
+    exit( DRIVEHOUGHFSTAT_EBAD );
   }
 
   if ( uvar_FstatPeakSelect < 0 ) {
     fprintf(stderr, "Invalid value of Fstatistic threshold\n");
-    exit(1);
+    exit( DRIVEHOUGHFSTAT_EBAD );
   }
 
-  /* set detector */
-  if (uvar_ifo1 ==1) detector1 = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
-  if (uvar_ifo1 ==2) detector1 = lalCachedDetectors[LALDetectorIndexLLODIFF];
-  if (uvar_ifo1 ==3) detector1 = lalCachedDetectors[LALDetectorIndexLHODIFF];
-
-  if (uvar_ifo2 ==1) detector2 = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
-  if (uvar_ifo2 ==2) detector2 = lalCachedDetectors[LALDetectorIndexLLODIFF];
-  if (uvar_ifo2 ==3) detector2 = lalCachedDetectors[LALDetectorIndexLHODIFF];
-
-  /* create output file name */
-  fnameFstatCand = (CHAR *)LALMalloc( 512*sizeof(CHAR));
-  strcpy(fnameFstatCand, uvar_fnameout);
-  strcat(fnameFstatCand, "_fstat.txt");
 
   /* write the log file */
-  if ( LALUserVarWasSet(&uvar_log) ) 
+  if ( uvar_log ) 
     {
 
       fnamelog = (CHAR *)LALMalloc( 512*sizeof(CHAR));
@@ -432,6 +433,30 @@ int main( int argc, char *argv[]) {
       
     } /* end of logging */
   
+
+  /* set detector */
+  if (uvar_ifo1 == 1) detector1 = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
+  if (uvar_ifo1 == 2) detector1 = lalCachedDetectors[LALDetectorIndexLLODIFF];
+  if (uvar_ifo1 == 3) detector1 = lalCachedDetectors[LALDetectorIndexLHODIFF];
+
+  if (uvar_ifo2 == 1) detector2 = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
+  if (uvar_ifo2 == 2) detector2 = lalCachedDetectors[LALDetectorIndexLLODIFF];
+  if (uvar_ifo2 == 3) detector2 = lalCachedDetectors[LALDetectorIndexLHODIFF];
+
+
+
+  /* create output Hough file for writing if requested by user */
+  if ( uvar_printCand1 )
+    {
+      fnameHoughCand = (CHAR *)LALMalloc( 512*sizeof(CHAR));
+      strcpy(fnameHoughCand, uvar_fnameout);
+      strcat(fnameHoughCand, "_hough.txt");
+      if (!(fpHough = fopen(fnameHoughCand, "w"))) 
+	{
+	  fprintf ( stderr, "Unable to open Hough file '%s' for writing.\n", fnameFstatCand);
+	  return DRIVEHOUGHFSTAT_EFILE;
+	}
+    }
 
 
   /*------------- read sfts and set up sft timestamp vector ----------*/
@@ -838,54 +863,113 @@ int main( int argc, char *argv[]) {
     }
 
 
+  /* open output fstat file for writing */
+  /* create output Fstat file name and open it for writing */
+  fnameFstatCand = (CHAR *)LALMalloc( 512*sizeof(CHAR));
+  strcpy(fnameFstatCand, uvar_fnameout);
+  strcat(fnameFstatCand, "_fstat.txt");
+
+  loopindex = 0; /* initialization */
+  /* check if user wanted to do checkpointing */
+  if ( uvar_chkPoint )
+    {
+      fnameChkPoint = (CHAR *)LALMalloc( 512*sizeof(CHAR));
+      /* get the loop index if any */
+      LAL_CALL( GetChkPointIndex( &status, &loopindex, fnameChkPoint), &status);
+
+      /* now read the Fstat candidates */
+      
+      if (!(fpFstat = fopen(fnameFstatCand, "rb"))) 
+	{
+	  if( lalDebugLevel )
+	    fprintf ( stderr, "Unable to open Fstat file '%s' for reading.\n", fnameFstatCand);
+	  /* something is wrong with the file -- do not checkpoint */
+	  loopindex = 0;
+	}
+
+      /* file opened successfully -- read candidate list */
+      LAL_CALL ( ReadFstatCandidates ( &status, &fStatCand, fpFstat), &status); 
+
+      /* close reading and reopen in write mode */
+      fclose(fpFstat);
+      fpFstat=NULL;
+    }
+  
+  /* Even if we are check pointing, since the candidates 
+     have been read, we can destroy the existing candidates 
+     file and start writing to it from the beginning */
+  if ( LALUserVarWasSet(&uvar_sftDir2) ) 
+    {
+      /* can probably be combined with first if conditional above
+	 but we just want to be sure that fpFstat is not opened 
+	 if sftDir2 was not set */
+      if  (!(fpFstat = fopen(fnameFstatCand, "w")))
+	{
+	  fprintf ( stderr, "Unable to open Fstat file '%s' for writing.\n", fnameFstatCand);
+	  return DRIVEHOUGHFSTAT_EFILE;
+	}
+    }
+ 
+ 
   /* initialize skygrid  */  
   LAL_CALL ( InitDopplerScan ( &status, &thisScan1, &scanInit1), &status); 
+
+  /* initialize loop counter */
+  loopcounter = 0;
   
+  for (loopcounter=0; loopcounter<loopindex; loopcounter++)
+    {
+      LAL_CALL (NextDopplerPos( &status, &dopplerpos1, &thisScan1 ), &status);
+      if (thisScan1.state == STATE_FINISHED) /* scanned all DopplerPositions yet? */
+	break;
+    }
+
+
   /* loop over skygrid points */
   while(1)
     {
       UINT4 ifdot, nfdot;  /* counter and number of spindown values */
       REAL8 dfDot;  /* resolution in spindown */
-
+      
       LAL_CALL (NextDopplerPos( &status, &dopplerpos1, &thisScan1 ), &status);
       if (thisScan1.state == STATE_FINISHED) /* scanned all DopplerPositions yet? */
 	break;
-
+      
       /*------------- calculate F statistic for each stack --------------*/
-
+      
       /* normalize skyposition: correctly map into [0,2pi]x[-pi/2,pi/2] */
       thisPoint1.longitude = dopplerpos1.Alpha;
       thisPoint1.latitude = dopplerpos1.Delta;
       thisPoint1.system = COORDINATESYSTEM_EQUATORIAL;
       LAL_CALL (LALNormalizeSkyPosition(&status, &thisPoint1, &thisPoint1), &status);
-
+      
       /* set sky template points */
       FstatPar1.alpha = thisPoint1.longitude;
       FstatPar1.delta = thisPoint1.latitude;
-
+      
       /* number of fdot values */
       dfDot = thisScan1.df1dot;
       nfdot = (UINT4)(uvar_fdotBand / dfDot + 0.5) + 1; 
-
+      
       /* loop over fdot values */
       for ( ifdot=0; ifdot<nfdot; ifdot++)
 	{
-
+	  
 	  /* set spindown value for Fstat calculation */
 	  FstatPar1.fdot->data[0] = uvar_fdot + ifdot * dfDot;
-      
+	  
 	  /* set up memory for Fstat vectors */
 	  LAL_CALL(SetUpFstatStack( &status, &FstatVect1, &FstatPar1), &status);
 	  
 	  /* calculate the Fstatistic */
 	  LAL_CALL(ComputeFstatStack( &status, &FstatVect1, &stackSFTs1, &FstatPar1), &status);
-            
+	  
 	  /* print fstat vector -- for debugging */
 	  /*   LAL_CALL( PrintFstat ( &status, FstatVect1.data, uvar_fnameout, 0 ), &status); */
 	  
 	  
 	  /*------------ select peaks ------------*/ 
-	  
+	      
 	  LAL_CALL( FstatVectToPeakGram( &status, &pgV, &FstatVect1, uvar_FstatPeakSelect), &status);
 	  
 	  /* free Fstat vectors -- we don't need them now because we have the peakgrams */
@@ -897,7 +981,7 @@ int main( int argc, char *argv[]) {
 	  
 	  
 	  /*--------------- calculate Hough map and get candidates ---------------*/
-
+	  
 	  /* set sky location and spindown for Hough grid -- same as for Fstat calculation */	  
 	  houghPar.alpha = FstatPar1.alpha;
 	  houghPar.delta = FstatPar1.delta;
@@ -905,7 +989,7 @@ int main( int argc, char *argv[]) {
 	  
 	  /* get candidates */
 	  LAL_CALL ( ComputeFstatHoughMap ( &status, &houghCand1, &pgV, &houghPar, LALUserVarWasSet(&uvar_houghThr) ), &status);
-
+	  
 	  /* free peakgrams -- we don't need them now because we have the Hough maps */
 	  for (k=0; k<nStacks1; k++) 
 	    LALFree(pgV.pg[k].peak);
@@ -913,9 +997,9 @@ int main( int argc, char *argv[]) {
 	  
 	  /* print candidates */
 	  if ( uvar_printCand1 )
-	    LAL_CALL ( PrintHoughCandidates ( &status, &houghCand1, uvar_fnameout), &status);
+	    LAL_CALL ( PrintHoughCandidates ( &status, &houghCand1, fpHough), &status);
 	  
-      
+	  
 	  /*------------- Follow up candidates --------------*/
 	  
 	  /* this part is more general than it has to be
@@ -934,35 +1018,35 @@ int main( int argc, char *argv[]) {
 		     first stage which is why they have the subscript 1 */
 		  REAL8 fStart1, freqBand1, fdot1, fdotBand1;
 		  REAL8 alpha1, delta1, alphaBand1, deltaBand1;
-
+		  
 		  /* set frequency and spindown ranges */
 		  fStart1 = houghCand1.freq[j] - 0.5 * houghCand1.dFreq[j];;
 		  freqBand1 = houghCand1.dFreq[j];
 		  fdot1 = houghCand1.fdot[j] - 0.5 * houghCand1.dFdot[j];
 		  fdotBand1 = houghCand1.dFdot[j];
-
+		  
 		  /* set frequency range */
 		  FstatPar2.fStart = fStart1;
 		  FstatPar2.fBand = freqBand1;
-
+		  
 		  /* set sky region to be refined */
 		  alpha1 = houghCand1.alpha[j] - 0.5 * houghCand1.dAlpha[j];
 		  delta1 = houghCand1.delta[j] - 0.5 * houghCand1.dDelta[j];
 		  alphaBand1 = houghCand1.dAlpha[j];
 		  deltaBand1 = houghCand1.dDelta[j];
 		  LAL_CALL (SkySquare2String( &status, &(scanInit2.searchRegion.skyRegionString),
-				alpha1, delta1, alphaBand1, deltaBand1), &status);
-
+					      alpha1, delta1, alphaBand1, deltaBand1), &status);
+		  
 		  /* set second doppler scan variables */
 		  scanInit2.searchRegion.Freq = fStart1;
 		  scanInit2.searchRegion.FreqBand = freqBand1;
 		  scanInit2.searchRegion.f1dot = fdot1;
 		  scanInit2.searchRegion.f1dotBand = fdotBand1;
-
+		  
 		  /* initialize skygrid  */  
 		  LAL_CALL ( InitDopplerScan ( &status, &thisScan2, &scanInit2), &status); 
-
-
+		  
+		  
 		  /* loop over fine skygrid points */
 		  while(1)
 		    {
@@ -992,7 +1076,7 @@ int main( int argc, char *argv[]) {
 		      /* loop over fdot values */
 		      for ( ifdot2=0; ifdot2<nfdot2; ifdot2++)
 			{
-
+			  
 			  /* set spindown value for Fstat calculation */
 			  FstatPar2.fdot->data[0] = fdot1 + ifdot2 * dfDot2;
 			  
@@ -1014,42 +1098,67 @@ int main( int argc, char *argv[]) {
 				LAL_CALL( GetFstatCandidates_toplist( &status, &fStatCand, FstatVect2.data + k, 
 								      FstatPar2.alpha, FstatPar2.delta, 
 								      FstatPar2.fdot->data[0] ), &status);
-		      
+			      
 			      /* free Fstat vector */
 			      LALFree(FstatVect2.data[k].data->data);
 			      LALFree(FstatVect2.data[k].data);
 			    } /* end loop over nstacks2 for selecting candidates */
-
+			  
 			  LALFree(FstatVect2.data);
 			  
 			} /* end loop over refined spindown parameters */
-
+		      
 		    } /* end while loop over second stage refined sky grid */
-		    
-		  /* destroy dopplerscan2 variables */ 
+		  
+		      /* destroy dopplerscan2 variables */ 
 		  LAL_CALL ( FreeDopplerScan(&status, &thisScan2), &status);
 		  if ( scanInit2.searchRegion.skyRegionString )
 		    LALFree ( scanInit2.searchRegion.skyRegionString );
 		  
-
+		  
 		} /* end loop over candidates from 1st stage */
-	     
+	      
 	    } /* end block for follow-up stage */ 
 	  
 	} /* end loop over coarse grid fdot values */
       
+      loopcounter++;
+      /* write to checkpointfile if required */
+      if ( uvar_chkPoint )
+	{
+
+	  if  (!(fpChkPoint = fopen(fnameChkPoint, "w")))
+	    {
+	      fprintf ( stderr, "Unable to open Fstat file '%s' for writing.\n", fnameFstatCand);
+	      return DRIVEHOUGHFSTAT_EFILE;
+	    }
+	  fprintf(fpChkPoint, "%d\n", loopcounter);
+	  fprintf(fpChkPoint,"DONE\n");
+	  fclose(fpChkPoint);
+	}
     } /* end while loop over 1st stage coarse skygrid */
-  
-  
-  /* print final candidates */
+      
+
+  /* print fstat candidates */  
   if ( LALUserVarWasSet(&uvar_sftDir2)) 
-    LAL_CALL( AppendFstatCandidates( &status, &fStatCand, fnameFstatCand), &status);
-  
-  
+    LAL_CALL( AppendFstatCandidates( &status, &fStatCand, fpFstat), &status);
+  /*****still need to take care of writing in case checkpointing is being done */      
+      
   /*------------ free all remaining memory -----------*/
   
   /* free memory */
   LALFree(fnameFstatCand);
+  if ( LALUserVarWasSet(&uvar_sftDir2)) 
+      fclose(fpFstat);
+
+  if ( uvar_printCand1 )
+    {
+      LALFree(fnameHoughCand);
+      fclose(fpHough);
+    }
+
+  if ( uvar_chkPoint )
+      LALFree(fnameChkPoint);
 
   /* free first stage memory */
   LAL_CALL(LALDestroyTimestampVector ( &status, &startTsft1), &status);  	  
@@ -1897,10 +2006,9 @@ void SetUpStacks2(LALStatus *status,
 /** Prints Fstatistic values as a function of frequency to a specified output file */ 
 void AppendFstatCandidates( LALStatus *status,
 			   FstatCandidates *cand, 
-			   CHAR *fname)
+			   FILE *fp)
 {
 
-  FILE *fp=NULL;
   INT4 k, nCandidates;
 
   INITSTATUS( status, "AppendFstatCandidates", rcsid );
@@ -1908,18 +2016,64 @@ void AppendFstatCandidates( LALStatus *status,
 
   nCandidates = cand->nCandidates;
   
-  fp = fopen(fname, "a");
-
   for (k=0; k<nCandidates; k++) {
     fprintf(fp, "%e   %e   %e   %e   %e\n", cand->freq[k], cand->alpha[k], 
 	    cand->delta[k], cand->fdot[k], cand->Fstat[k]);
   }
 
-  fclose(fp);
 
   DETATCHSTATUSPTR (status);
   RETURN(status);
 }
+
+
+/** Read fstat candidate list from candidates file */ 
+void ReadFstatCandidates( LALStatus *status,
+			  FstatCandidates *cand, 
+			  FILE *fp)
+{
+
+  INT4 nCandidates = 0;
+  INT4 r, minFstatIndex;
+  REAL8 tempFreq, tempAlpha, tempDelta, tempFdot, tempFstat;
+
+  INITSTATUS( status, "ReadFstatCandidates", rcsid );
+  ATTATCHSTATUSPTR (status);
+
+  do 
+    {
+      r=fscanf(fp,"%lf%lf%lf%lf%lf\n", &tempFreq, &tempAlpha, 
+	       &tempDelta, &tempFdot, &tempFstat);
+      /* make sure the line has the right number of entries or is EOF */
+      if ( (r==5) && ( nCandidates < cand->length ) )
+	{
+	  cand->freq[nCandidates] = tempFreq;
+	  cand->alpha[nCandidates] = tempAlpha;
+	  cand->delta[nCandidates] = tempDelta;
+	  cand->fdot[nCandidates] = tempFdot;
+	  cand->Fstat[nCandidates] = tempFstat;
+	  
+	  nCandidates++;
+	}
+      
+    } while ( (r != EOF) && (r==5));
+
+  /* if r!=5 without being EOF, then something is wrong
+     with the file and we should in principle not do 
+     any checkpointing and start from scratch.  But for now
+     just exit normally -- to be fixed! */
+  
+  cand->nCandidates = nCandidates;
+
+  TRY ( GetMinFstatIndex_toplist ( status->statusPtr, &minFstatIndex, cand), status);		
+  cand->minFstatIndex = minFstatIndex;
+
+  rewind(fp);
+
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+}
+
 
 /** Print single Hough map to a specified output file */
 void PrintHmap2file(LALStatus *status,
@@ -2200,26 +2354,19 @@ void GetMinSigIndex_toplist(LALStatus *status,
 /** Print Hough candidates */
 void PrintHoughCandidates(LALStatus *status,
 			  HoughCandidates *in,
-			  CHAR *fname)
+			  FILE *fp)
 {
-  FILE  *fp=NULL;   /* Output file */
-  CHAR filename[256]; 
   INT4 k;
 
   INITSTATUS( status, "GetHoughCandidates", rcsid );
   ATTATCHSTATUSPTR (status);
 
-  strcpy(filename, fname);
-  strcat(filename, "_hough.txt");
-  
-  fp = fopen(filename, "a");
-
+ 
   for (k=0; k < in->nCandidates; k++)
     fprintf(fp, "%e   %e   %g   %g   %g   %g   %e   %e\n", in->freq[k], 
 	    in->dFreq[k], in->alpha[k], in->dAlpha[k], in->delta[k], in->dDelta[k],
 	    in->fdot[k], in->dFdot[k]);
-  
-  fclose(fp);
+
 
   DETATCHSTATUSPTR (status);
   RETURN(status);
@@ -2358,7 +2505,6 @@ void GetFstatCandidates_toplist( LALStatus *status,
 
 
 
-
 /** Get least significant Hough candidate index */
 void GetMinFstatIndex_toplist(LALStatus *status,
 			    INT4 *minFstatIndex,
@@ -2411,6 +2557,60 @@ void PrintHoughHistogram( LALStatus *status,
   for (i=0; i < hist->length; i++)
     fprintf(fp,"%d  %d\n", i, hist->data[i]);
   
+  fclose( fp );  
+  
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+
+}
+
+
+/** Read checkpointing file 
+    This does not (yet) check any consistency of 
+    the existing results file */
+void GetChkPointIndex( LALStatus *status,
+		       INT4 *loopindex, 
+		       CHAR *fnameChkPoint)
+{
+
+  FILE  *fp=NULL;
+  UINT4 tmpIndex;
+  CHAR lastnewline='\0';
+ 
+  INITSTATUS( status, "GetChkPointIndex", rcsid );
+  ATTATCHSTATUSPTR (status);
+
+  /* if something goes wrong later then lopindex will be 0 */
+  *loopindex = 0;
+
+  /* try to open checkpoint file */
+  if (!(fp = fopen(fnameChkPoint, "rb"))) 
+    {
+      if ( lalDebugLevel )
+	fprintf (stdout, "Checkpoint-file '%s' not found.\n", fnameChkPoint);
+
+      DETATCHSTATUSPTR (status);
+      RETURN(status);
+    }
+
+  /* if we are here then checkpoint file has been found */
+  if ( lalDebugLevel )
+    fprintf ( stdout, "Found checkpoint-file '%s' \n", fnameChkPoint);
+
+  /* check the checkpointfile -- it should just have one integer 
+     and a DONE on the next line */
+  if ( ( 2 != fscanf (fp, "%" LAL_UINT4_FORMAT "\nDONE%c", &tmpIndex, &lastnewline) ) || ( lastnewline!='\n' ) ) 
+    {
+      fprintf ( stdout, "Failed to read checkpoint index from '%s'!\n", fnameChkPoint);
+      fclose(fp);
+
+      DETATCHSTATUSPTR (status);
+      RETURN(status);
+    }
+  
+  /* everything seems ok -- set loop index */
+  *loopindex = tmpIndex;
+
   fclose( fp );  
   
   DETATCHSTATUSPTR (status);
