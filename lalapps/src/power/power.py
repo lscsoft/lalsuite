@@ -510,7 +510,7 @@ class LladdJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   A lalapps_lladd job used by the power pipeline. The static options are
   read from the sections [data] and [lladd] in the ini file. The stdout and
   stderr from the job are directed to the logs directory. The job runs in
-  the vanilla universe. The path to the executable is determined from the
+  the scheduler universe. The path to the executable is determined from the
   ini file.
   """
   def __init__(self, cache_dir, out_dir, cp):
@@ -518,7 +518,7 @@ class LladdJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     cp = ConfigParser object from which options are read.
     """
     self.__executable = cp.get('condor','lladd')
-    self.__universe = 'vanilla'
+    self.__universe = 'scheduler'
     pipeline.CondorDAGJob.__init__(self, self.__universe, self.__executable)
     pipeline.AnalysisJob.__init__(self, cp)
     self.add_condor_cmd("getenv", "True")
