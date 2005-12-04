@@ -521,6 +521,7 @@ class LladdJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.__universe = 'vanilla'
     pipeline.CondorDAGJob.__init__(self, self.__universe, self.__executable)
     pipeline.AnalysisJob.__init__(self, cp)
+    self.add_condor_cmd("getenv", "True")
 
     try:
       for sec in ['lladd']:
