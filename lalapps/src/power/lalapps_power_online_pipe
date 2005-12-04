@@ -149,6 +149,7 @@ class GsiScpJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 		self.set_stdout_file(os.path.join(out_dir, "gsiscp-$(cluster)-$(process).out"))
 		self.set_stderr_file(os.path.join(out_dir, "gsiscp-$(cluster)-$(process).err"))
 		self.set_sub_file("gsiscp.sub")
+		self.add_condor_cmd("getenv", "True")
 
 	def write_sub_file(self):
 		# this is a hack, but I can't be bothered...
