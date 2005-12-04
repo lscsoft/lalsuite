@@ -19,13 +19,14 @@ __version__ = "$Revision$"
 
 import ConfigParser
 from optparse import OptionParser
-import os.path
+import os
 import sys
 import tempfile
 
 from glue import lal
 from glue import pipeline
 from glue import segments
+from pylal import lalcache
 import power
 
 
@@ -115,11 +116,12 @@ except:
 #
 
 datafind_pad = 512
-cache_dir = "itchy/"
-out_dir = "scratchy/"
+cache_dir = "cache/"
+out_dir = "logs/"
 psds_per_job = 2
 observatory = options.instrument[0]
 overlap = 0.25
+lladdcachename = "triggers.cache"
 
 
 #
@@ -181,7 +183,7 @@ lscdatafindjob = pipeline.LSCDataFindJob(cache_dir, out_dir, config_parser)
 # lalapps_power
 powerjob = power.PowerJob(out_dir, config_parser)
 
-# lalapps_bread
+# lalapps_lladd
 lladdjob = power.LladdJob(cache_dir, out_dir, config_parser)
 
 # publish
@@ -232,8 +234,10 @@ dag.add_node(lscdatafindnode)
 
 lladdnode = power.LladdNode(lladdjob)
 lladdnode.set_name("lalapps_lladd")
+lladdnode.add_var_opt("input-cache", lladdcachename)
 dag.add_node(lladdnode)
 
+lladdcache = file(lladdcachename, "w")
 for seg in jobsegs:
 	powernode = power.PowerNode(powerjob)
 	powernode.set_name("lalapps_power-" + str(seg[0]) + "-" + str(seg.duration()))
@@ -243,7 +247,15 @@ for seg in jobsegs:
 	powernode.set_end(seg[1])
 	powernode.add_parent(lscdatafindnode)
 	lladdnode.add_parent(powernode)
-	lladdnode.add_file_arg(powernode.get_output())
+	lladdnode.add_input_file(powernode.get_output())
+
+	cache = lalcache.CacheEntry()
+	cache.observatory = observatory
+	cache.description = lladdnode.basename
+	cache.segment = seg
+	cache.url = "file://localhost" + os.path.join(os.getcwd(), powernode.get_output())
+	print >>lladdcache, str(cache)
+
 	dag.add_node(powernode)
 
 publishnode = PublishNode(publishjob)
@@ -260,5 +272,8 @@ dag.add_node(gsiscpnode)
 
 dag.write_sub_files()
 dag.write_dag()
+
+os.mkdir(cache_dir)
+os.mkdir(out_dir)
 
 print options.trig_seg[0] + overlap, options.trig_seg[1] - overlap

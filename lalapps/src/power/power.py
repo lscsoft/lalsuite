@@ -543,9 +543,10 @@ class LladdNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     pipeline.CondorDAGNode.__init__(self, job)
     pipeline.AnalysisNode.__init__(self)
+    self.basename = None
 
-  def add_file_arg(self, filename):
-    pipeline.CondorDAGNode.add_file_arg(self, filename)
+  def add_input_file(self, filename):
+    pipeline.CondorDAGNode.add_input_file(self, filename)
     self.set_output(self.get_output())
 
   def get_output(self):
@@ -556,7 +557,9 @@ class LladdNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     if not len(self.get_input_files()):
       raise PowerError, "LladdNode.get_output(): must set input files first"
 
-    [base] = re.compile(r"(\S*)-[\d.]+-[\d.]+\.[\w_+#]+\Z").findall(self.get_input_files()[0])
+    if not self.basename:
+      [self.basename] = re.compile(r"(\S*)-[\d.]+-[\d.]+\.[\w_+#]+\Z").findall(self.get_input_files()[0])
+
     seg = segmentsUtils.fromfilenames(self.get_input_files()).extent()
     
-    return base + '-' + str(int(seg[0])) + '-' + str(int(seg[1]) - int(seg[0])) + '.xml'
+    return self.basename + '-' + str(int(seg[0])) + '-' + str(int(seg[1]) - int(seg[0])) + '.xml'
