@@ -199,7 +199,7 @@ int main( int argc, char *argv[] )
     {
       USAGE( argv[0] );
     }
-    else if (strstr( argv[arg], "-V" ) )
+    else if (strstr( argv[arg], "-VER" ) )
       { 
 	/* print version information and exit */
         fprintf( stdout, "mkcalref\n" 
