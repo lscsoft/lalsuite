@@ -142,6 +142,7 @@ void usage ( char *s )
   fprintf( stdout, "  --help                print this message\n");
   fprintf( stdout, "  --ifo IFO             set the frame ifo name to IFO (L1, H1, etc.)\n" );
   fprintf( stdout, "  --run RUN             set the frame run name to RUN (E11, S2, etc.)\n" );
+  fprintf( stdout, "  --time TIME           set the used time spacing (001, 060 etc.)\n" );
   fprintf( stdout, "  --version VER         set the frame version name to to RUN (V01, V02, etc.)\n" );
   fprintf( stdout, "  --sensemon-format     read the text file in sensemon format\n" );
   fprintf( stdout, "  --skip-first-line     skip the first line of the file\n" );
@@ -175,6 +176,7 @@ int main( int argc, char *argv[] )
   const char *run = NULL;
   const char *ver = NULL;
   const char *ifo = NULL;
+  const char *timeSpace = NULL;
   int arg;
   int done = 0;
   char aname[64];
@@ -204,6 +206,10 @@ int main( int argc, char *argv[] )
     {
       ifo = argv[++arg];
       site = *ifo;
+    }
+    else if ( strstr( argv[arg], "--time" ) )
+    {
+      timeSpace= argv[++arg];
     }
     else if ( strstr( argv[arg], "--version" ) )
     {
@@ -288,7 +294,7 @@ int main( int argc, char *argv[] )
       if ( ! frfile )
       {
         dt = (int)ceil( epoch_diff( &a.tend, &a.tbeg ) );
-        sprintf( fname, "%c-CAL_FAC_%s_%s_%s-%d-%d.gwf", *ifo, run, ver, ifo, 
+        sprintf( fname, "%c-%s_CAL_FAC_%s_%s_%s-%d-%d.gwf", *ifo, ifo, run, ver, timeSpace, 
             a.tbeg.gpsSeconds, dt );
         frfile = FrFileONew( fname, 0 );
       }

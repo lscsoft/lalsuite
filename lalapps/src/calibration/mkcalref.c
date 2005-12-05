@@ -38,6 +38,8 @@ int read_freq_series( struct series *ser, const char *fname )
   fp = fopen( fname, "r" );
   n = 0;
 
+  printf("filename: %s\n", fname);
+  
   ser->dom = Trans;
   ser->type = FR_VECT_8C;
   
@@ -81,11 +83,12 @@ int read_freq_series( struct series *ser, const char *fname )
     sscanf( line, "%*e %e %e\n", &a, &b );
     if ( isnan( a ) || isnan( b ) )
     {
+      printf("isnan\n");
       ser->data[2*n]   = 1;
       ser->data[2*n+1] = 1;
     }
     else
-    {
+    {      
       ser->data[2*n]   = a * cos( b );
       ser->data[2*n+1] = a * sin( b );
     }
@@ -227,6 +230,7 @@ int main( int argc, char *argv[] )
       R.tbeg.gpsSeconds = C.tbeg.gpsSeconds = sec;
       R.tbeg.gpsNanoSeconds = C.tbeg.gpsNanoSeconds = 0;
       code = read_freq_series( &R, argv[arg] );
+
       if ( ! code )
       {
         fprintf( stderr, "Error: could not read file %s\n", argv[arg] );
@@ -279,7 +283,7 @@ int main( int argc, char *argv[] )
       {
         
         int dt = (int)ceil( 1e-9 * R.tbeg.gpsNanoSeconds + 1.0 / R.step );
-        sprintf( fname, "%c-CAL_REF_%s_%s_%s-%d-%d.gwf", *ifo, channel, ver, ifo, 
+        sprintf( fname, "%c-%s_CAL_REF_%s_%s_%s-%d-%d.gwf", *ifo, ifo, channel, run, ver,
             R.tbeg.gpsSeconds, dt );
         frfile = FrFileONew( fname, 0 );
       }
