@@ -183,7 +183,7 @@ int main(int argc, char *argv[]){
 
   lalDebugLevel = 0;
   /* LALDebugLevel must be called before anything else */
-  SUB( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
+  LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
 
   uvar_help = FALSE;
   uvar_weighAM = FALSE;
@@ -214,27 +214,27 @@ int main(int argc, char *argv[]){
   strcpy(uvar_skyfile,SKYFILE);
 
   /* register user input variables */
-  SUB( LALRegisterBOOLUserVar(   &status, "help",            'h', UVAR_HELP,     "Print this message",            &uvar_help),            &status);  
-  SUB( LALRegisterBOOLUserVar(   &status, "weighAM",          0,  UVAR_OPTIONAL, "Print this message",            &uvar_weighAM),         &status);  
-  SUB( LALRegisterBOOLUserVar(   &status, "weighNoise",       0,  UVAR_OPTIONAL, "Print this message",            &uvar_weighNoise),      &status);  
-  SUB( LALRegisterINTUserVar(    &status, "ifo",             'i', UVAR_OPTIONAL, "Detector GEO(1) LLO(2) LHO(3)", &uvar_ifo ),            &status);
-  SUB( LALRegisterINTUserVar(    &status, "blocksRngMed",    'w', UVAR_OPTIONAL, "RngMed block size",             &uvar_blocksRngMed),    &status);
-  SUB( LALRegisterREALUserVar(   &status, "f0",              'f', UVAR_OPTIONAL, "Start search frequency",        &uvar_f0),              &status);
-  SUB( LALRegisterREALUserVar(   &status, "fSearchBand",     'b', UVAR_OPTIONAL, "Search frequency band",         &uvar_fSearchBand),     &status);
-  SUB( LALRegisterREALUserVar(   &status, "peakThreshold",   't', UVAR_OPTIONAL, "Peak selection threshold",      &uvar_peakThreshold),   &status);
-  SUB( LALRegisterREALUserVar(   &status, "houghFalseAlarm", 'a', UVAR_OPTIONAL, "Hough false alarm",             &uvar_houghFalseAlarm), &status);
-  SUB( LALRegisterSTRINGUserVar( &status, "earthEphemeris",  'E', UVAR_OPTIONAL, "Earth Ephemeris file",          &uvar_earthEphemeris),  &status);
-  SUB( LALRegisterSTRINGUserVar( &status, "sunEphemeris",    'S', UVAR_OPTIONAL, "Sun Ephemeris file",            &uvar_sunEphemeris),    &status);
-  SUB( LALRegisterSTRINGUserVar( &status, "sftDir",          'D', UVAR_OPTIONAL, "SFT Directory",                 &uvar_sftDir),          &status);
-  SUB( LALRegisterSTRINGUserVar( &status, "dirnameOut",      'o', UVAR_OPTIONAL, "Output directory",              &uvar_dirnameOut),      &status);
-  SUB( LALRegisterSTRINGUserVar( &status, "fbasenameOut",    'B', UVAR_OPTIONAL, "Output file basename",          &uvar_fbasenameOut),    &status);
-  SUB( LALRegisterSTRINGUserVar( &status, "skyfile",         'P', UVAR_OPTIONAL, "Input skypatch file",           &uvar_skyfile),         &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",            'h', UVAR_HELP,     "Print this message",            &uvar_help),            &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighAM",          0,  UVAR_OPTIONAL, "Print this message",            &uvar_weighAM),         &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighNoise",       0,  UVAR_OPTIONAL, "Print this message",            &uvar_weighNoise),      &status);  
+  LAL_CALL( LALRegisterINTUserVar(    &status, "ifo",             'i', UVAR_OPTIONAL, "Detector GEO(1) LLO(2) LHO(3)", &uvar_ifo ),            &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",    'w', UVAR_OPTIONAL, "RngMed block size",             &uvar_blocksRngMed),    &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "f0",              'f', UVAR_OPTIONAL, "Start search frequency",        &uvar_f0),              &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "fSearchBand",     'b', UVAR_OPTIONAL, "Search frequency band",         &uvar_fSearchBand),     &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "peakThreshold",   't', UVAR_OPTIONAL, "Peak selection threshold",      &uvar_peakThreshold),   &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "houghFalseAlarm", 'a', UVAR_OPTIONAL, "Hough false alarm",             &uvar_houghFalseAlarm), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris",  'E', UVAR_OPTIONAL, "Earth Ephemeris file",          &uvar_earthEphemeris),  &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris",    'S', UVAR_OPTIONAL, "Sun Ephemeris file",            &uvar_sunEphemeris),    &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir",          'D', UVAR_OPTIONAL, "SFT Directory",                 &uvar_sftDir),          &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "dirnameOut",      'o', UVAR_OPTIONAL, "Output directory",              &uvar_dirnameOut),      &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "fbasenameOut",    'B', UVAR_OPTIONAL, "Output file basename",          &uvar_fbasenameOut),    &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyfile",         'P', UVAR_OPTIONAL, "Input skypatch file",           &uvar_skyfile),         &status);
 
   /* read all command line variables */
-  SUB( LALUserVarReadAllInput(&status, argc, argv), &status);
+  LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
 
   /* set value of bias which might have been changed from default */  
-  SUB( LALRngMedBias( &status, &normalizeThr, uvar_blocksRngMed ), &status ); 
+  LAL_CALL( LALRngMedBias( &status, &normalizeThr, uvar_blocksRngMed ), &status ); 
   
   /* set value of nfsizecylinder */
   nfSizeCylinder = NFSIZE;
@@ -277,7 +277,7 @@ int main(int argc, char *argv[]){
   }
   
   /* get the log string */
-  SUB( LALUserVarGetLog(&status, &logstr, UVAR_LOGFMT_CFGFILE), &status);  
+  LAL_CALL( LALUserVarGetLog(&status, &logstr, UVAR_LOGFMT_CFGFILE), &status);  
 
   fprintf( fpLog, "## LOG FILE FOR Hough Driver\n\n");
   fprintf( fpLog, "# User Input:\n");
@@ -388,10 +388,10 @@ int main(int argc, char *argv[]){
     weightsV.data = (REAL8 *)LALMalloc(mObsCoh*sizeof(REAL8));
 
     /* calculate sft noise weights if required by user */
-    SUB( LALHOUGHInitializeWeights( &status, &weightsV), &status);
+    LAL_CALL( LALHOUGHInitializeWeights( &status, &weightsV), &status);
     if (uvar_weighNoise ) {
-      SUB( LALHOUGHComputeNoiseWeights( &status, &weightsV, inputSFTs, uvar_blocksRngMed), &status); 
-      SUB( LALHOUGHNormalizeWeights( &status, &weightsV), &status);
+      LAL_CALL( LALHOUGHComputeNoiseWeights( &status, &weightsV, inputSFTs, uvar_blocksRngMed), &status); 
+      LAL_CALL( LALHOUGHNormalizeWeights( &status, &weightsV), &status);
     }
 
     /* normalize sfts */
@@ -463,7 +463,7 @@ int main(int argc, char *argv[]){
 
       sft = inputSFTs->data[j];
 
-      SUB (SFTtoUCHARPeakGram( &status, &pg1, &sft, uvar_peakThreshold), &status);
+      LAL_CALL (SFTtoUCHARPeakGram( &status, &pg1, &sft, uvar_peakThreshold), &status);
       
       nPeaks = pg1.nPeaks;
       timeV.data[j].gpsSeconds = pg1.epoch.gpsSeconds;
@@ -474,7 +474,7 @@ int main(int argc, char *argv[]){
       pgV.pg[j].peak = NULL;
       pgV.pg[j].peak = (INT4 *)LALMalloc(nPeaks* sizeof(INT4));
 
-      SUB( LALUCHAR2HOUGHPeak( &status, &(pgV.pg[j]), &pg1), &status );
+      LAL_CALL( LALUCHAR2HOUGHPeak( &status, &(pgV.pg[j]), &pg1), &status );
     } /* end loop over sfts */
 
 
@@ -517,19 +517,19 @@ int main(int argc, char *argv[]){
    (*edat).ephiles.sunEphemeris = uvar_sunEphemeris;
 
     /* Leap seconds for the start time of the run */
-    SUB( LALLeapSecs(&status, &tmpLeap, &(timeV.data[0]), &lsfas), &status);
+    LAL_CALL( LALLeapSecs(&status, &tmpLeap, &(timeV.data[0]), &lsfas), &status);
     (*edat).leap = (INT2)tmpLeap;
     /* (*edat).leap = 13;   <<<<<<< Correct this */
 
     /* read in ephemeris data */
-    SUB( LALInitBarycenter( &status, edat), &status);
+    LAL_CALL( LALInitBarycenter( &status, edat), &status);
     velPar.edat = edat;
     
     for(j=0; j< velV.length; ++j){
       velPar.startTime.gpsSeconds     = timeV.data[j].gpsSeconds;
       velPar.startTime.gpsNanoSeconds = timeV.data[j].gpsNanoSeconds;
       
-      SUB( LALAvgDetectorVel ( &status, vel, &velPar), &status ); 
+      LAL_CALL( LALAvgDetectorVel ( &status, vel, &velPar), &status ); 
       
       {
 	REAL8  midTimeBase; 
@@ -537,7 +537,7 @@ int main(int argc, char *argv[]){
 
 	/* convert half of timebase to GPS structure */	
         midTimeBase = 0.5 * timeBase; 
-        SUB( LALFloatToGPS ( &status, &midTimeBaseGPS, &midTimeBase), &status); 
+        LAL_CALL( LALFloatToGPS ( &status, &midTimeBaseGPS, &midTimeBase), &status); 
 
 	/* in case time to calculate velocity i smid time of sft */
 	/* add mid time base to start time of sft */
@@ -548,7 +548,7 @@ int main(int argc, char *argv[]){
 	/*      in case time to calculate velocity is start time */
 	/* 	tempGPS.gpsSeconds = timeV.data[j].gpsSeconds;  */
 	/* 	tempGPS.gpsNanoSeconds = timeV.data[j].gpsNanoSeconds;  */
-        SUB( LALDetectorVel ( &status, tempVel, &tempGPS, detector, edat), &status ); 
+        LAL_CALL( LALDetectorVel ( &status, tempVel, &tempGPS, detector, edat), &status ); 
       }
 
       /*       velV.data[j].x= vel[0]; */
@@ -645,9 +645,9 @@ int main(int argc, char *argv[]){
 
       /* calculate amplitude modulation weights */
       if (uvar_weighAM) {
-	SUB( LALHOUGHComputeAMWeights( &status, &weightsV, &timeV, &detector, 
+	LAL_CALL( LALHOUGHComputeAMWeights( &status, &weightsV, &timeV, &detector, 
 				       edat, alpha, delta), &status);
-	SUB( LALHOUGHNormalizeWeights( &status, &weightsV), &status);
+	LAL_CALL( LALHOUGHNormalizeWeights( &status, &weightsV), &status);
       }
       
       /******************************************************************/  
@@ -809,7 +809,7 @@ int main(int argc, char *argv[]){
 	
 	
 	parRes.f0Bin =  fBin;      
-	SUB( LALHOUGHComputeNDSizePar( &status, &parSize, &parRes ),  &status );
+	LAL_CALL( LALHOUGHComputeNDSizePar( &status, &parSize, &parRes ),  &status );
 	xSide = parSize.xSide;
 	ySide = parSize.ySide;
 	maxNBins = parSize.maxNBins;
@@ -822,7 +822,7 @@ int main(int argc, char *argv[]){
 	patch.yCoor = NULL;
 	patch.xCoor = (REAL8 *)LALMalloc(xSide*sizeof(REAL8));
 	patch.yCoor = (REAL8 *)LALMalloc(ySide*sizeof(REAL8));
-	SUB( LALHOUGHFillPatchGrid( &status, &patch, &parSize ), &status );
+	LAL_CALL( LALHOUGHFillPatchGrid( &status, &patch, &parSize ), &status );
 	
 	/*************** other memory allocation and settings************ */
 	for(j=0; j<lutV.length; ++j){
@@ -855,17 +855,17 @@ int main(int argc, char *argv[]){
 	  parDem.veloC.y = velV.data[j].y;
 	  parDem.veloC.z = velV.data[j].z;      
 	  /* calculate parameters needed for buiding the LUT */
-	  SUB( LALNDHOUGHParamPLUT( &status, &parLut, &parSize, &parDem),&status );
+	  LAL_CALL( LALNDHOUGHParamPLUT( &status, &parLut, &parSize, &parDem),&status );
 	  /* build the LUT */
-	  SUB( LALHOUGHConstructPLUT( &status, &(lutV.lut[j]), &patch, &parLut ),
+	  LAL_CALL( LALHOUGHConstructPLUT( &status, &(lutV.lut[j]), &patch, &parLut ),
 	       &status );
 	}
         
 	/************* build the set of  PHMD centered around fBin***********/     
 	phmdVS.fBinMin = fBin-floor(nfSizeCylinder/2.);
-	SUB( LALHOUGHConstructSpacePHMD(&status, &phmdVS, &pgV, &lutV), &status );
+	LAL_CALL( LALHOUGHConstructSpacePHMD(&status, &phmdVS, &pgV, &lutV), &status );
 	if (uvar_weighAM || uvar_weighNoise) {
-	  SUB( LALHOUGHWeighSpacePHMD(&status, &phmdVS, &weightsV), &status);
+	  LAL_CALL( LALHOUGHWeighSpacePHMD(&status, &phmdVS, &weightsV), &status);
 	}
 	
 	/* ************ initializing the Total Hough map space *********** */   
@@ -875,7 +875,7 @@ int main(int argc, char *argv[]){
 	ht.deltaF = deltaF;
 	ht.map   = NULL;
 	ht.map   = (HoughTT *)LALMalloc(xSide*ySide*sizeof(HoughTT));
-	SUB( LALHOUGHInitializeHT( &status, &ht, &patch), &status); /*not needed */
+	LAL_CALL( LALHOUGHInitializeHT( &status, &ht, &patch), &status); /*not needed */
 	
 	/******************************************************************/
 	/*  Search frequency interval possible using the same LUTs */
@@ -896,18 +896,18 @@ int main(int argc, char *argv[]){
 	  ht.spinRes.data = NULL;
 	  for (j=0;j< mObsCoh;++j){	freqInd.data[j]= fBinSearch; } 
 	  if (uvar_weighAM || uvar_weighNoise) {
-	    SUB( LALHOUGHConstructHMT_W( &status, &ht, &freqInd, &phmdVS ), &status );
+	    LAL_CALL( LALHOUGHConstructHMT_W( &status, &ht, &freqInd, &phmdVS ), &status );
 	  }
 	  else {
-	    SUB( LALHOUGHConstructHMT( &status, &ht, &freqInd, &phmdVS ), &status );	  
+	    LAL_CALL( LALHOUGHConstructHMT( &status, &ht, &freqInd, &phmdVS ), &status );	  
 	  }
 
 	  /* ********************* perfom stat. analysis on the maps ****************** */
-	  SUB( LALHoughStatistics ( &status, &stats, &ht), &status );
-	  SUB( LALStereo2SkyLocation (&status, &sourceLocation, 
+	  LAL_CALL( LALHoughStatistics ( &status, &stats, &ht), &status );
+	  LAL_CALL( LALStereo2SkyLocation (&status, &sourceLocation, 
 				   stats.maxIndex[0], stats.maxIndex[1], 
 				   &patch, &parDem), &status);
-	  SUB( LALHoughHistogram ( &status, &hist, &ht), &status);
+	  LAL_CALL( LALHoughHistogram ( &status, &hist, &ht), &status);
 	  for(j=0; j< histTotal.length; ++j){ histTotal.data[j]+=hist.data[j]; }
 
 	  if (stats.maxCount > nStar[fBinSearch-f0Bin])
@@ -933,12 +933,12 @@ int main(int argc, char *argv[]){
 		  (fBinSearch*deltaF) );
           
 #ifdef PRINTEVENTS
-	  SUB( PrintHoughEvents (&status, fpEvents, houghThreshold, &ht,
+	  LAL_CALL( PrintHoughEvents (&status, fpEvents, houghThreshold, &ht,
 				 &patch, &parDem), &status );
 #endif      
 
 #ifdef PRINTTEMPLATES
-	  SUB( PrintHoughEvents (&status, fpTemplates, 0.0, &ht, &patch, &parDem), &status);
+	  LAL_CALL( PrintHoughEvents (&status, fpTemplates, 0.0, &ht, &patch, &parDem), &status);
 #endif
 
 	  ++iHmap;
@@ -964,17 +964,17 @@ int main(int argc, char *argv[]){
 	      }
 	      
 	      if (uvar_weighAM || uvar_weighNoise) {
-		SUB( LALHOUGHConstructHMT_W( &status, &ht, &freqInd, &phmdVS ), &status );
+		LAL_CALL( LALHOUGHConstructHMT_W( &status, &ht, &freqInd, &phmdVS ), &status );
 	      }
 	      else {
-		SUB( LALHOUGHConstructHMT( &status, &ht, &freqInd, &phmdVS ), &status );	  
+		LAL_CALL( LALHOUGHConstructHMT( &status, &ht, &freqInd, &phmdVS ), &status );	  
 	      }
 
 	      /* ********************* perfom stat. analysis on the maps ****************** */
-	      SUB( LALHoughStatistics ( &status, &stats, &ht), &status );
-	      SUB( LALStereo2SkyLocation (&status, &sourceLocation, 
+	      LAL_CALL( LALHoughStatistics ( &status, &stats, &ht), &status );
+	      LAL_CALL( LALStereo2SkyLocation (&status, &sourceLocation, 
 				       stats.maxIndex[0], stats.maxIndex[1], &patch, &parDem), &status);
-	      SUB( LALHoughHistogram ( &status, &hist, &ht), &status);
+	      LAL_CALL( LALHoughHistogram ( &status, &hist, &ht), &status);
 	      for(j=0; j< histTotal.length; ++j){ histTotal.data[j]+=hist.data[j]; }
 	      
 
@@ -999,12 +999,12 @@ int main(int argc, char *argv[]){
 		      (REAL4)stats.maxCount, (REAL4)stats.minCount, stats.avgCount,stats.stdDev,
 		      (fBinSearch*deltaF), ht.spinRes.data[0]);
 #ifdef PRINTEVENTS
-	      SUB( PrintHoughEvents (&status, fpEvents, houghThreshold, &ht,
+	      LAL_CALL( PrintHoughEvents (&status, fpEvents, houghThreshold, &ht,
 				     &patch, &parDem), &status );
 #endif    
 
 #ifdef PRINTTEMPLATES
-	  SUB( PrintHoughEvents (&status, fpTemplates, 0.0, &ht, &patch, &parDem), &status);
+	  LAL_CALL( PrintHoughEvents (&status, fpTemplates, 0.0, &ht, &patch, &parDem), &status);
 #endif
 
 	      ++iHmap;
@@ -1017,9 +1017,9 @@ int main(int argc, char *argv[]){
 	  /********************************************/
 	  /* *** shift the search freq. & PHMD structure 1 freq.bin ****** */
 	  ++fBinSearch;
-	  SUB( LALHOUGHupdateSpacePHMDup(&status, &phmdVS, &pgV, &lutV), &status );
+	  LAL_CALL( LALHOUGHupdateSpacePHMDup(&status, &phmdVS, &pgV, &lutV), &status );
 	  if (uvar_weighAM || uvar_weighNoise) {
-	    SUB( LALHOUGHWeighSpacePHMD( &status, &phmdVS, &weightsV), &status);
+	    LAL_CALL( LALHOUGHWeighSpacePHMD( &status, &phmdVS, &weightsV), &status);
 	  }
 	}   /* ********>>>>>>  closing second while  <<<<<<<<**********<  */
 	
@@ -1156,7 +1156,7 @@ int main(int argc, char *argv[]){
   LALFree(freqStar);
   LALFree(fdotStar);
 
-  SUB (LALDestroyUserVars(&status), &status);
+  LAL_CALL (LALDestroyUserVars(&status), &status);
 	
   LALCheckMemoryLeaks();
   
