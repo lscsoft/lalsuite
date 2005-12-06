@@ -14,10 +14,10 @@ define(`STYPE',`format(`%sFrequencySeries',TYPE)') dnl
 define(`VTYPE',`format(`%sSequence',TYPE)') dnl
 define(`FUNC',`format(`LAL%sPrintFrequencySeries',TYPECODE)') dnl
 define(`FMT',`"%g %i\n"') dnl
-ifelse(TYPECODE,`Z',`define(`FMT',`"%g\t%g\t%g\n"')') dnl
-ifelse(TYPECODE,`C',`define(`FMT',`"%g\t%g\t%g\n"')') dnl
-ifelse(TYPECODE,`D',`define(`FMT',`"%g\t%g\n"')') dnl
-ifelse(TYPECODE,`S',`define(`FMT',`"%g\t%g\n"')') dnl
+ifelse(TYPECODE,`Z',`define(`FMT',`"%e\t%le\t%le\n"')') dnl
+ifelse(TYPECODE,`C',`define(`FMT',`"%e\t%e\t%e\n"')') dnl
+ifelse(TYPECODE,`D',`define(`FMT',`"%e\t%le\n"')') dnl
+ifelse(TYPECODE,`S',`define(`FMT',`"%e\t%e\n"')') dnl
 ifelse(TYPECODE,`I8',`define(`FMT',`"%g\t%0.0f\n"')') dnl
 ifelse(TYPECODE,`U8',`define(`FMT',`"%g\t%0.0f\n"')') dnl
 ifelse(TYPECODE,`',`define(`FMT',`"%g\t%f\n"')') dnl
