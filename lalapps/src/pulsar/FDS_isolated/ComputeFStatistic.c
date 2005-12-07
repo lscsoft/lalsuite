@@ -768,6 +768,10 @@ int main(int argc,char *argv[])
 	    LogPrintf (LOG_CRITICAL, "Couldn't write compacted toplist to '%s'\n", FstatFilename);
 	    return (COMPUTEFSTAT_EXIT_OPENFSTAT);
 	  }
+	  if (howmany >= uvar_MaxFileSizeKB * 1024) {
+	    LogPrintf (LOG_CRITICAL, "Size of compacted list exceeds MaxFileSize - reduce candidates to keep\n", FstatFilename);
+	    return (COMPUTEFSTATC_EINPUT);
+	  }
 	  fstat_bytecounter = howmany;
 	  
 	  if ( (fpFstat = fopen(FstatFilename, "ab")) == NULL )
