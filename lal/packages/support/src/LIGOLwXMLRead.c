@@ -255,8 +255,8 @@ MetaTableDirectory * XLALCreateMetaTableDir(
           {"peak_time",               -1, 11},
           {"peak_time_ns",            -1, 12},
           {"clusterT",                -1, 13},
-	  {"peak_dof",                -1, 14},
-	  {"event_id",                -1, 15},
+          {"peak_dof",                -1, 14},
+          {"event_id",                -1, 15},
           {NULL,                       0, 0}
         };
         for ( i=0 ; tmpTableDir[i].name; ++i )
@@ -1326,8 +1326,8 @@ LALCreateMetaTableDir(
           {"peak_time",               -1, 11},
           {"peak_time_ns",            -1, 12},
           {"clusterT",                -1, 13},
-	  {"peak_dof",                -1, 14},
-	  {"event_id",                -1, 15},
+          {"peak_dof",                -1, 14},
+          {"event_id",                -1, 15},
           {NULL,                       0, 0}
         };
         for ( i=0 ; tmpTableDir[i].name; ++i )
