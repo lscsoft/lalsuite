@@ -62,7 +62,7 @@ int p, NWingsR,NWingsC;
 REAL8IIRFilter LPFIR;
 REAL8IIRFilter HPFIR;
 REAL8IIRFilter ALPHASLPFIR;
-REAL8IIRFilter *CinvWings=NULL, *AAWings=NULL, *AXWings=NULL, *AYWings=NULL;
+REAL8IIRFilter *CinvWings=NULL, *DWings=NULL, *AAWings=NULL, *AXWings=NULL, *AYWings=NULL;
 
 
  INITSTATUS( status, "LALComputeStrain", COMPUTESTRAINC );
@@ -92,10 +92,10 @@ REAL8IIRFilter *CinvWings=NULL, *AAWings=NULL, *AXWings=NULL, *AYWings=NULL;
     output->hR.data->data[p]=input->DARM_ERR.data->data[p];
    }
 
- /* copy DARM_CTRL input into control strain as double */  
+ /* copy DARM_ERR input into control strain as double */  
  for (p=0; p<(int)output->hC.data->length; p++) 
    {
-     output->hC.data->data[p]=input->DARM.data->data[p];
+     output->hC.data->data[p]=input->DARM_ERR.data->data[p];
    }
 
  /* unit impulse */
@@ -135,7 +135,7 @@ REAL8IIRFilter *CinvWings=NULL, *AAWings=NULL, *AXWings=NULL, *AYWings=NULL;
    uphR.data->data[p]=uphR.data->data[p-input->CinvDelay];
  }
 
- /* An odd filtere with N points introduces an (N-1)/2 delay */
+ /* An odd filter with N points introduces an (N-1)/2 delay */
  /* apply advance to compensate for FIR delay */
  for (p=0; p<(int)uphR.data->length-(2*N_FIR_LP); p++){
    uphR.data->data[p]=uphR.data->data[p+(2*N_FIR_LP)];
@@ -169,7 +169,6 @@ REAL8IIRFilter *CinvWings=NULL, *AAWings=NULL, *AXWings=NULL, *AYWings=NULL;
  LALFreeFilter(status->statusPtr,CinvWings,input->NCinv);
  CHECKSTATUSPTR( status );
  /* ===================== */
-
 
  /* apply advance to compensate for Low Pass FIR delay */
  for (p=0; p<(int)uphR.data->length-(2*N_FIR_LP); p++){
@@ -265,7 +264,7 @@ REAL8IIRFilter *CinvWings=NULL, *AAWings=NULL, *AXWings=NULL, *AYWings=NULL;
  for (p=0; p<(int)output->hC.data->length-(2*N_FIR_HP); p++){
    output->hC.data->data[p]=output->hC.data->data[p+(2*N_FIR_HP)];
  }
- /* then high pass filter DARM_CTRL */
+ /* then high pass filter DARM_ERR */
  if (input->fftconv)
    {
      LALFIRFilter(status->statusPtr,&(output->hC),&(HPFIR));
@@ -279,6 +278,47 @@ REAL8IIRFilter *CinvWings=NULL, *AAWings=NULL, *AXWings=NULL, *AYWings=NULL;
      CHECKSTATUSPTR( status );
    }
 
+ /* Filter through digital servo */
+ /* ===================== */
+ /* CAREFUL FILTERING: FILTER UP TO WINGS, THEN COPY FILTERS THEN CONTINUE UNTIL END*/
+ /* we filter but only up until the wings */
+ for(p = 0; p < input->ND; p++){
+   int k;
+   for(k = NWingsC/2; k < (int)output->hC.data->length-3*NWingsC/2; k++){
+     output->hC.data->data[k]=LALDIIRFilter(output->hC.data->data[k], &(input->D[p]));
+   }
+ }
+ /* Here what I need to record filter histories */
+ LALCopyFilter(status->statusPtr, &DWings, input->D, input->ND);
+ CHECKSTATUSPTR( status );
+ /* then we filter wings as well */
+ for(p = 0; p < input->ND; p++){
+   int k;
+   for(k = output->hC.data->length-3*NWingsC/2; k < (int)output->hC.data->length-NWingsC/2; k++){
+     output->hC.data->data[k]=LALDIIRFilter(output->hC.data->data[k], &DWings[p]);
+   }
+ }
+ /* Then we need to destroy the filter */
+ LALFreeFilter(status->statusPtr,DWings,input->ND);
+ CHECKSTATUSPTR( status );
+ /* ===================== */
+
+ /* At this point I have something very similar to darm_ctrl in hC */
+ /* add the calibration lines */
+ if (!input->delta && (input->DARM_ERR.deltaT == input->EXC.deltaT))
+   {
+     int k;
+     for(k = 0; k < (int)output->hC.data->length; k++){
+       output->hC.data->data[k] += input->EXC.data->data[k];
+     }
+   }
+ else
+   {
+     fprintf(stdout, "Warning: Not adding calibration lines to control signal.\n");
+   }
+
+
+ /* Filter through analog actuation */
  /* ===================== */
  /* CAREFUL FILTERING: FILTER UP TO WINGS, THEN COPY FILTERS THEN CONTINUE UNTIL END */
  /* we filter but only up until the wings */
@@ -362,7 +402,7 @@ REAL8IIRFilter *CinvWings=NULL, *AAWings=NULL, *AXWings=NULL, *AYWings=NULL;
 
  /* add them together to make the total control signal */
  for (p=0; p < (INT4)output-> h.data->length; p++) {
-    output->hC.data->data[p]=(hCX.data->data[p]+hCY.data->data[p])/2; 
+    output->hC.data->data[p]=(hCX.data->data[p]-hCY.data->data[p]); 
  }
 
 
