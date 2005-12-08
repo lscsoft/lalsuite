@@ -162,6 +162,7 @@
 /* 10/20/05 gam; if ( (params->weightFlag & 8) > 0 ) renorm the BLK (SFT) data up front with the inverse mean absolute value of the BLK data = params->blkRescaleFactor */
 /* 10/20/05 gam; if using running median and params->normalizationParameter > 0, then use to correct the bias. */
 /* 11/09/05 gam; if normalizationFlag & 1 > 0 normalize STKs using mean (but if normalizationFlag & 4 > 0, running median takes precedence) */
+/* 12/07/05 gam; fix bug in StackSlideCleanSFTs: need to initialize nBinsPerBLK before allocating memory. */
 
 /*********************************************/
 /*                                           */
@@ -4101,13 +4102,13 @@ void StackSlideCleanSFTs(LALStatus *status, FFT **BLKData, LineNoiseInfo *infoLi
 
   INITSTATUS( status, "StackSlideCleanSFTs", DRIVESTACKSLIDEC );
   ATTATCHSTATUSPTR (status);
-  
+
+  nBinsPerBLK = BLKData[0]->fft->data->length; /* 12/07/05 gam; moved here */
+
   oneSFT = NULL;
   LALCreateSFTtype (status->statusPtr, &oneSFT, ((UINT4)nBinsPerBLK));
   CHECKSTATUSPTR (status);
-  
-  nBinsPerBLK = BLKData[0]->fft->data->length;
-  
+
   for(i=0;i<numBLKs;i++) {
       /* copy the data for this BLK to oneSFT */
       oneSFT->epoch = BLKData[i]->fft->epoch;
