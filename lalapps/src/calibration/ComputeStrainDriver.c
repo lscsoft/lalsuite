@@ -222,8 +222,6 @@ static FrChanIn chanin_exc;
   LALFrGetREAL4TimeSeries(&status,&InputData.DARM_ERR,&chanin_darmerr,framestream);
   TESTSTATUS( &status );
 
-
-
   /* Allocate space for data vectors */
   LALSCreateVector(&status,&InputData.AS_Q.data,(UINT4)(duration/InputData.AS_Q.deltaT +0.5));
   TESTSTATUS( &status );
@@ -316,7 +314,8 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
   CHAR *thisline;
   char gpsstr[3],sensingstr[7],usfstr[17], delaystr[5];
   char aastr[16],axstr[11],aystr[11];
-  int Corders[MAXFORDER], AAorders[MAXFORDER], AXorders[MAXFORDER], AYorders[MAXFORDER];
+  char servostr[5];
+  int Corders[MAXFORDER], AAorders[MAXFORDER], AXorders[MAXFORDER], AYorders[MAXFORDER], Dorders[MAXFORDER];
   int historyflag=0;
 
   LALParseDataFile (&status, &Filters, CLA.filterfile);
@@ -475,6 +474,82 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
 	  for (j=0; j < (int) InputData.Cinv[n].history->length; j++)
 	    {
 	      InputData.Cinv[n].history->data[j]=strtod(thisline, &thisline);
+	    }
+	}
+    }
+  /**-----------------------------------------------------------------------**/
+  /* Read in digital servo filters */
+  i++; /*advance one line */
+  thisline = Filters->lines->tokens[i];	/* get line i */
+  sscanf (thisline,"%s", servostr);
+  if ( strcmp(servostr, "SERVO" ) ) 
+    {
+      fprintf(stderr,"ERROR: Line (%s) of file %s is not properly terminated by '%s' marker!\n\n", thisline, CLA.filterfile, "SERVO");
+      LALDestroyParsedDataFile ( &status, &Filters ); TESTSTATUS( &status );
+      return 1;
+    }
+
+  /* Read number of servo filters and their orders */
+  i++;/*advance one line */
+  thisline = Filters->lines->tokens[i];	/* get line i */
+  InputData.ND=strtol(thisline, &thisline,10);
+  /* FIXME: Check that InputData.NCinv < 100 */
+  for(j=0; j < InputData.ND; j++)
+    {
+      Dorders[j]=strtol(thisline, &thisline,10);
+    }  
+  if ( strcmp(thisline, " FILTERS_ORDERS" ) ) 
+    {
+      fprintf(stderr,"ERROR: Line (%s) of file %s is not properly terminated by '%s' marker!\n\n", thisline, CLA.filterfile, "FILTERS_ORDERS");
+      LALDestroyParsedDataFile ( &status, &Filters ); TESTSTATUS( &status );
+      return 1;      
+    }
+   
+  /* Allocate inverse sensing funtion filters */
+  InputData.D=(REAL8IIRFilter *)LALMalloc(sizeof(REAL8IIRFilter) * InputData.ND); 
+
+  /* Allocate inverse sensing function filter */
+  for(n = 0; n < InputData.ND; n++)
+    {
+      int l;
+      InputData.D[n].directCoef=NULL;
+      InputData.D[n].recursCoef=NULL;
+      InputData.D[n].history=NULL;
+
+      LALDCreateVector(&status,&(InputData.D[n].directCoef),Dorders[n]);
+      LALDCreateVector(&status,&(InputData.D[n].recursCoef),Dorders[n]);
+      LALDCreateVector(&status,&(InputData.D[n].history),Dorders[n]-1);
+
+      for(l=0;l<Dorders[n];l++) InputData.D[n].directCoef->data[l]=0.0;
+      for(l=0;l<Dorders[n];l++) InputData.D[n].recursCoef->data[l]=0.0;
+      for(l=0;l<Dorders[n]-1;l++) InputData.D[n].history->data[l]=0.0;
+    }
+  for(n = 0; n < InputData.ND; n++)
+    {
+      /* read direct coeffs */
+      i++;/*advance one line */
+      thisline = Filters->lines->tokens[i];	/* get line i */
+      
+      for (j=0; j < (int) InputData.D[n].directCoef->length; j++)
+	{
+	  InputData.D[n].directCoef->data[j]=strtod(thisline, &thisline);
+	}      
+      /* read recursive coeffs */
+      i++;/*advance one line */
+      thisline = Filters->lines->tokens[i];	/* get line i */
+      for (j=0; j < (int) InputData.D[n].recursCoef->length; j++)
+	{
+	  InputData.D[n].recursCoef->data[j]=-strtod(thisline, &thisline);
+	}
+      /* read histories; if this is the correct file */
+      i++;/*advance one line */
+      thisline = Filters->lines->tokens[i];	/* get line i */
+      if (historyflag)
+	{
+	  
+	  for (j=0; j < (int) InputData.D[n].history->length; j++)
+	    {
+	      InputData.D[n].history->data[j]=strtod(thisline, &thisline);
 	    }
 	}
     }
@@ -737,7 +812,7 @@ int WriteFiltersFile(struct CommandLineArgsTag CLA)
   /* write GPS string */
   fprintf(FiltersFile,"%d GPS\n", (int)(InputData.AS_Q.epoch.gpsSeconds
 					+InputData.AS_Q.data->length*InputData.AS_Q.deltaT-3*InputData.wings/2));
-  /* sengsing section */
+  /* sensing section */
   fprintf(FiltersFile,"SENSING\n");
   fprintf(FiltersFile,"%d UPSAMPLING_FACTOR\n",InputData.CinvUSF);
   fprintf(FiltersFile,"%d DELAY\n",InputData.CinvDelay);
@@ -771,6 +846,42 @@ int WriteFiltersFile(struct CommandLineArgsTag CLA)
       for (j=0; j < (int)InputData.Cinv[n].history->length; j++)
 	{
 	  fprintf(FiltersFile,"%1.16e ", InputData.Cinv[n].history->data[j]);
+	} 
+      fprintf(FiltersFile,"\n");
+    }
+
+  /* servo section */
+  fprintf(FiltersFile,"SERVO\n");
+
+  fprintf(FiltersFile,"%d ",InputData.ND);
+  n=0;
+  while (n < InputData.ND) 
+    { 
+      fprintf(FiltersFile,"%d ",InputData.D[n].directCoef->length);
+      n++;
+    }
+  fprintf(FiltersFile,"FILTERS_ORDERS\n");
+  
+  for(n = 0; n < InputData.ND; n++)
+    {
+      /* write direct coeffs */
+      for(j=0; j < (int)InputData.D[n].directCoef->length; j++)
+	{
+	  fprintf(FiltersFile,"%1.16e ", InputData.D[n].directCoef->data[j]);
+	}
+      fprintf(FiltersFile,"\n");
+      
+      /* write recursive coeffs */
+      for (j=0; j < (int)InputData.D[n].recursCoef->length; j++)
+	{
+	  fprintf(FiltersFile,"%1.16e ", -InputData.D[n].recursCoef->data[j]);
+	}
+      fprintf(FiltersFile,"\n");
+
+      /* write histories */
+      for (j=0; j < (int)InputData.D[n].history->length; j++)
+	{
+	  fprintf(FiltersFile,"%1.16e ", InputData.D[n].history->data[j]);
 	} 
       fprintf(FiltersFile,"\n");
     }
@@ -1246,6 +1357,16 @@ int FreeMem(void)
     TESTSTATUS( &status );
   }
   LALFree(InputData.Cinv);
+
+  for(p=0;p<InputData.ND;p++){
+    LALDDestroyVector(&status,&InputData.D[p].directCoef);
+    TESTSTATUS( &status );
+    LALDDestroyVector(&status,&InputData.D[p].recursCoef);
+    TESTSTATUS( &status );
+    LALDDestroyVector(&status,&InputData.D[p].history);   
+    TESTSTATUS( &status );
+  }
+  LALFree(InputData.D);
 
   for(p=0;p<InputData.NAA;p++){
     LALDDestroyVector(&status,&InputData.AA[p].directCoef);
