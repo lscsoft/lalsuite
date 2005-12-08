@@ -221,11 +221,13 @@ struct StrainInTag {
   REAL8IIRFilter *Cinv;    /* Filters for inverse of sensing function */
   INT4 CinvUSF;            /* Upsampling factor for sensing function */
   INT4 CinvDelay;          /* Overall inverse sensing function delay */
+  REAL8IIRFilter *D;       /* Digital servo filters */
   REAL8IIRFilter *AA;      /* Filters for analog actuation function */
   INT4 AADelay;            /* Overall analog actuation function delay */
   REAL8IIRFilter *AX;      /* Digital filters for x arm actuation function */
   REAL8IIRFilter *AY;      /* Digital filters for y arm actuation function */
   INT4 NCinv;              /* Numbers of filters of each type */
+  INT4 ND;
   INT4 NAA;
   INT4 NAX;
   INT4 NAY;
