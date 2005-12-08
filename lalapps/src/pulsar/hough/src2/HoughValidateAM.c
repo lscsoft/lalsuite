@@ -83,8 +83,8 @@ int main( int argc, char *argv[]){
   EphemerisData   *edat = NULL;
 
   INT4   mObsCoh, j;
-  REAL8  numberCount2, numberCount1;;
-  REAL8  nth1, nth2, erfcInv, houghFalseAlarm;
+  REAL8  numberCount2, numberCount1;
+  REAL8  nth1, nth2, erfcInv;
   /*   REAl8  meanAM, sigmaAM, varAM, mean, sigma; */
   REAL8  mean1, mean2, var1, var2, sumsq, peakprob;
   REAL8  sftBand;  
@@ -102,6 +102,7 @@ int main( int argc, char *argv[]){
   /* user input variables */
   BOOLEAN uvar_help;
   INT4 uvar_ifo, uvar_blocksRngMed;
+  REAL8 uvar_houghFalseAlarm;
   REAL8 uvar_peakThreshold;
   REAL8 uvar_alpha, uvar_delta, uvar_h0, uvar_f0;
   REAL8 uvar_psi, uvar_phi0, uvar_fdot, uvar_cosiota;
@@ -128,7 +129,8 @@ int main( int argc, char *argv[]){
   uvar_peakThreshold = THRESHOLD;
   uvar_ifo = IFO;
   uvar_blocksRngMed = BLOCKSRNGMED;
-  uvar_mismatchW = 0;
+  uvar_mismatchW = 0.0;
+  uvar_houghFalseAlarm = 1.0e-10;
 
   /* set default pulsar parameters */
   uvar_h0 = H0;
@@ -159,6 +161,7 @@ int main( int argc, char *argv[]){
   LAL_CALL( LALRegisterINTUserVar(    &status, "ifo",             'i', UVAR_OPTIONAL, "Detector GEO(1) LLO(2) LHO(3)",  &uvar_ifo ),            &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",    'w', UVAR_OPTIONAL, "RngMed block size",              &uvar_blocksRngMed),    &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "peakThreshold",   't', UVAR_OPTIONAL, "Peak selection threshold",       &uvar_peakThreshold),   &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "houghFalseAlarm",  0,  UVAR_OPTIONAL, "Overall Hough False alarm",      &uvar_houghFalseAlarm), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris",  'E', UVAR_OPTIONAL, "Earth Ephemeris file",           &uvar_earthEphemeris),  &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris",    'S', UVAR_OPTIONAL, "Sun Ephemeris file",             &uvar_sunEphemeris),    &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir",          'D', UVAR_OPTIONAL, "SFT Directory",                  &uvar_sftDir),          &status);
@@ -279,6 +282,8 @@ int main( int argc, char *argv[]){
   deltaF = inputSFTs->data->deltaF;
   timeBase = 1.0/deltaF;
   sftFminBin = floor( timeBase * inputSFTs->data->f0 + 0.5);
+
+  /* signal generation parameters */
   fHeterodyne = sftFminBin*deltaF;
   tSamplingRate = 2.0*deltaF*(sftlength -1.);
 
@@ -374,10 +379,8 @@ int main( int argc, char *argv[]){
   }
 
 
-  /* *********************************************************************** */
 
-  /* *********************************************************************** */
-  /* amplitude modulation stuff */
+  /* calculate weights based on amplitude modulation functions */
 
   /* allocate memory for weight */
   weight = NULL;
@@ -385,20 +388,19 @@ int main( int argc, char *argv[]){
 
   /* calculate amplitude modulation weights */
   LAL_CALL( LALHOUGHInitializeWeights( &status, weight), &status);
-  LAL_CALL( LALHOUGHComputeAMWeights( &status, weight, &timeV, &detector, 
-                                 edat, uvar_alpha + uvar_mismatchW, 
-				 uvar_delta + uvar_mismatchW), &status);
+  LAL_CALL( LALHOUGHComputeAMWeights( &status, weight, &timeV, &detector, edat, 
+				      uvar_alpha + uvar_mismatchW, 
+				      uvar_delta + uvar_mismatchW), &status);
   LAL_CALL( LALHOUGHNormalizeWeights( &status, weight), &status);
   
 
   /* calculate mean and variances */
-  /* 1 is for the usual hough transform 
-     2 is for weighted hough transform */
   peakprob = exp(-uvar_peakThreshold); /* probability of peak selection */
-  houghFalseAlarm = 1.0e-10; /* overall false alarm rate */
-  erfcInv = gsl_cdf_ugaussian_Qinv (houghFalseAlarm)/sqrt(2); /* erfcinv(2*houghFalseAlarm */
+  erfcInv = gsl_cdf_ugaussian_Qinv (uvar_houghFalseAlarm)/sqrt(2); /* erfcinv(2*uvar_houghFalseAlarm */
 
-  /* usual number count threshold */ 
+  /* usual number count threshold */
+  /* 1 is for the usual hough transform 
+     2 is for weighted hough transform */ 
   mean1 = mObsCoh * peakprob;
   var1 = mObsCoh * peakprob * (1 - peakprob);
   nth1 = mean1 + sqrt(2.0 * var1) * erfcInv;
@@ -530,10 +532,10 @@ int main( int argc, char *argv[]){
 	  INT4 mmFactor;
 	  
 	  /* displace the template */
-	  mmFactor = 1.0;
+	  mmFactor = 0;
 	  pulsarTemplate1.f0 = pulsarTemplate.f0 /*+ mmFactor * mm * deltaF*/; 
-	  pulsarTemplate1.latitude += mmFactor * mmT * deltaTheta;
-	  pulsarTemplate1.longitude += mmFactor * mmP * deltaTheta;
+	  pulsarTemplate1.latitude = pulsarTemplate.latitude + mmFactor * mmT * deltaTheta;
+	  pulsarTemplate1.longitude = pulsarTemplate.longitude + mmFactor * mmP * deltaTheta;
 	  pulsarTemplate1.spindown.data[0] = pulsarTemplate.spindown.data[0] /*+ mmFactor * mm * deltaFdot*/;
 	 
 	  /* initialize number counts */ 
@@ -591,8 +593,8 @@ int main( int argc, char *argv[]){
 	  /* 	  mean = mObsCoh * exp(-uvar_peakThreshold); */
 	  /* 	  sigma = mean * ( 1.0 - exp(-uvar_peakThreshold)); */
 	  
-	  /* 	  houghFalseAlarm = 1.0e-10; */
-	  /* 	  erfcInv = gsl_cdf_ugaussian_Qinv (houghFalseAlarm)/sqrt(2);     */
+	  /* 	  uvar_houghFalseAlarm = 1.0e-10; */
+	  /* 	  erfcInv = gsl_cdf_ugaussian_Qinv (uvar_houghFalseAlarm)/sqrt(2);     */
 	  /* 	  nth1 = mean + sqrt( 2 * sigma ) * erfcInv;  */
 	  /* 	  /\* use mean and variance to get approximate threshold in Gaussian approximation *\/ */
 	  /* 	  nth2 = meanAM + sqrt( 2 * sigmaAM ) * erfcInv;  */
