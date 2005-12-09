@@ -141,7 +141,7 @@ BOOLEAN uvar_printStats; /**< global variable for calculating Hough map stats */
 #define DDELTA 0.001 /**< Default resolution for isotropic or flat grids */
 #define FSTATTHRESHOLD 2.6  /**< Default threshold on Fstatistic for peak selection */
 #define NCAND1 5 /**< Default number of candidates to be followed up from first stage */
-#define SFTDIRECTORY "/home/badkri/fakesfts/"  /**< Default directory containing sfts */
+#define SFTDIRECTORY "/local_data/badkri/fakesfts/"  /**< Default directory containing sfts */
 #define FNAMEOUT "./candidates"  /**< Default output file basename */
 
 int main( int argc, char *argv[]) {
@@ -239,6 +239,7 @@ int main( int argc, char *argv[]) {
   BOOLEAN uvar_log; /* logging done if true */
   BOOLEAN uvar_printCand1; /* if 1st stage candidates are to be printed */
   BOOLEAN uvar_chkPoint;
+  BOOLEAN uvar_followUp;
   REAL8 uvar_dAlpha, uvar_dDelta; /* resolution for flat or isotropic grids */
   REAL8 uvar_fdot; /* first spindown value */
   REAL8 uvar_fdotBand; /* range of first spindown parameter */
@@ -280,6 +281,7 @@ int main( int argc, char *argv[]) {
   /* now set the defaults */
   uvar_help = FALSE;
   uvar_log = FALSE;
+  uvar_followUp = TRUE;
   uvar_printMaps = FALSE;
   uvar_printStats = FALSE;
   uvar_printCand1 = FALSE;
@@ -331,6 +333,7 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",            'h', UVAR_HELP,     "Print this message",                                &uvar_help),            &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "log",              0,  UVAR_OPTIONAL, "Write log file",                                    &uvar_log),             &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "chkPoint",         0,  UVAR_OPTIONAL, "For checkpointing (disabled)",                      &uvar_chkPoint),        &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "followUp",         0,  UVAR_OPTIONAL, "Follow up 1st stage candidates?",                   &uvar_followUp),        &status);  
   LAL_CALL( LALRegisterINTUserVar(    &status, "ifo1",            'i', UVAR_OPTIONAL, "Detector GEO(1) LLO(2) LHO(3)",                     &uvar_ifo1 ),           &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "ifo2",             0,  UVAR_OPTIONAL, "Detector for follow up stage",                      &uvar_ifo2 ),           &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir1",          0,  UVAR_OPTIONAL, "SFT Directory for 1st stage",                       &uvar_sftDir1),         &status);
@@ -622,7 +625,7 @@ int main( int argc, char *argv[]) {
 
   /*------------------ read sfts and set up stacks for follow up stage -----------------------*/
   /* check if user requested a follow up stage*/
-  if ( LALUserVarWasSet(&uvar_sftDir2)) {
+  if ( uvar_followUp ) {
     
     /* a friendly warning */
     if (lalDebugLevel)
@@ -634,61 +637,88 @@ int main( int argc, char *argv[]) {
        to be followed up is probably very close to the full range.  However, this
        might have to be changed if there are a very few candidates to be followed up.
     */
-    {
+    if ( LALUserVarWasSet(&uvar_sftDir2))     
+      {
+	/* new SFT I/O data types */
+	SFTCatalog *catalog2=NULL;
+	SFTConstraints *constraints2=NULL;
+	
+	CHAR *tempDir;
+	REAL8 doppWings, fMin, fMax;
+	
+	/* get sft catalog */
+	tempDir = (CHAR *)LALMalloc(512*sizeof(CHAR));
+	strcpy(tempDir, uvar_sftDir2);
+	strcat(tempDir, "/*SFT*.*");
+	LAL_CALL( LALSFTdataFind( &status, &catalog2, tempDir, constraints2), &status);
+	
+	/* set some sft parameters */
+	nSFTs2 = catalog2->length;
+	deltaF2 = catalog2->data->header.deltaF;
+	timebase2 = 1.0/deltaF2;
+	
+	/* set wings of sfts to be read */
+	/* the wings must be enough for the Doppler shift and extra bins
+	   for the running median block size and Dterms for Fstat calculation.
+	   In addition, it must also include wings for the spindown correcting 
+	   for the reference time -- this is not done yet */
+	/* calculate Doppler wings at the highest frequency */
+	/* this was already done for the first stage -- probably shouldn't repeat it */ 
+	doppWings = (uvar_fStart + uvar_fBand) * VTOT;    
+	fMin = uvar_fStart - doppWings - (uvar_blocksRngMed + uvar_Dterms)*deltaF2; 
+	fMax = uvar_fStart + uvar_fBand + (doppWings + uvar_blocksRngMed + uvar_Dterms)*deltaF2; 
+	
+	/* get SFT timestamps */
+	LAL_CALL( LALSFTtimestampsFromCatalog(  &status, &startTsft2, catalog2 ), &status);  	
+	
+	/* calculate start and end times and tobs */
+	LAL_CALL( LALGPStoFloat ( &status, &tStart2, startTsft2->data), &status);
+	LAL_CALL( LALGPStoFloat ( &status, &tEnd2, startTsft2->data + startTsft2->length - 1), &status);
+	tEnd2 += timebase2;
+	tObs2 = tEnd2 - tStart2;
+	
+	/* read the sfts */
+	LAL_CALL( LALLoadSFTs ( &status, &inputSFTVec2, catalog2, fMin, fMax), &status);
+	
+	/* set other sft parameters */
+	sftlength2 = inputSFTVec2->data->data->length;
+	sftFminBin2 = floor( timebase2 * inputSFTVec2->data->f0 + 0.5);	      
+	
+	/* normalize sfts */
+	LAL_CALL( LALNormalizeSFTVect (&status, inputSFTVec2, uvar_blocksRngMed, 0), &status);
+      
+	/* free memory */
+	LALFree(tempDir);
+	LAL_CALL( LALDestroySFTCatalog( &status, &catalog2 ), &status);  	
+	
+      } /* end sftdir2 if statement */
+    else 
+      {
+	/* reuse 1st stage sfts */
+	
+	/* set some sft parameters */
+	nSFTs2 = nSFTs1;
+	deltaF2 = deltaF1;
+	timebase2 = 1.0/deltaF2;
 
-      /* new SFT I/O data types */
-      SFTCatalog *catalog2=NULL;
-      SFTConstraints *constraints2=NULL;
-      
-      CHAR *tempDir;
-      REAL8 doppWings, fMin, fMax;
-      
-      /* get sft catalog */
-      tempDir = (CHAR *)LALMalloc(512*sizeof(CHAR));
-      strcpy(tempDir, uvar_sftDir2);
-      strcat(tempDir, "/*SFT*.*");
-      LAL_CALL( LALSFTdataFind( &status, &catalog2, tempDir, constraints2), &status);
+	/* time stamps are the same */
+	startTsft2 = startTsft1;	
+		
+	/* calculate start and end times and tobs */
+	LAL_CALL( LALGPStoFloat ( &status, &tStart2, startTsft2->data), &status);
+	LAL_CALL( LALGPStoFloat ( &status, &tEnd2, startTsft2->data + startTsft2->length - 1), &status);
+	tEnd2 += timebase2;
+	tObs2 = tEnd2 - tStart2;
+	
+	/* set sftvec2 equal to 1st stage sft vector -- these are already normalized*/
+	inputSFTVec2 = inputSFTVec1;
+	
+	/* set other sft parameters */
+	sftlength2 = inputSFTVec2->data->data->length;
+	sftFminBin2 = floor( timebase2 * inputSFTVec2->data->f0 + 0.5);	      
+	
 
-      /* set some sft parameters */
-      nSFTs2 = catalog2->length;
-      deltaF2 = catalog2->data->header.deltaF;
-      timebase2 = 1.0/deltaF2;
-
-      /* set wings of sfts to be read */
-      /* the wings must be enough for the Doppler shift and extra bins
-	 for the running median block size and Dterms for Fstat calculation.
-	 In addition, it must also include wings for the spindown correcting 
-	 for the reference time -- this is not done yet */
-      /* calculate Doppler wings at the highest frequency */
-      /* this was already done for the first stage -- probably shouldn't repeat it */ 
-      doppWings = (uvar_fStart + uvar_fBand) * VTOT;    
-      fMin = uvar_fStart - doppWings - (uvar_blocksRngMed + uvar_Dterms)*deltaF2; 
-      fMax = uvar_fStart + uvar_fBand + (doppWings + uvar_blocksRngMed + uvar_Dterms)*deltaF2; 
-      
-      /* get SFT timestamps */
-      LAL_CALL( LALSFTtimestampsFromCatalog(  &status, &startTsft2, catalog2 ), &status);  	
-
-      /* calculate start and end times and tobs */
-      LAL_CALL( LALGPStoFloat ( &status, &tStart2, startTsft2->data), &status);
-      LAL_CALL( LALGPStoFloat ( &status, &tEnd2, startTsft2->data + startTsft2->length - 1), &status);
-      tEnd2 += timebase2;
-      tObs2 = tEnd2 - tStart2;
-      
-      /* read the sfts */
-      LAL_CALL( LALLoadSFTs ( &status, &inputSFTVec2, catalog2, fMin, fMax), &status);
-      
-      /* set other sft parameters */
-      sftlength2 = inputSFTVec2->data->data->length;
-      sftFminBin2 = floor( timebase2 * inputSFTVec2->data->f0 + 0.5);	      
-      
-      /* normalize sfts */
-      LAL_CALL( LALNormalizeSFTVect (&status, inputSFTVec2, uvar_blocksRngMed, 0), &status);
-      
-      /* free memory */
-      LALFree(tempDir);
-      LAL_CALL( LALDestroySFTCatalog( &status, &catalog2 ), &status);  	
-
-    } /* end sft reading block */
+      } /* end 2nd stage sft reading */ 
 
     /* set up stacks for follow up stage */
     /* there is just one stack now */
@@ -789,15 +819,8 @@ int main( int argc, char *argv[]) {
   houghCand1.length = uvar_nCand1;
   houghCand1.nCandidates = 0; /* initialization */
   houghCand1.minSigIndex = 0;
-  houghCand1.freq = (REAL8 *)LALMalloc( houghCand1.length * sizeof(REAL8));
-  houghCand1.alpha = (REAL8 *)LALMalloc( houghCand1.length * sizeof(REAL8));
-  houghCand1.delta = (REAL8 *)LALMalloc( houghCand1.length * sizeof(REAL8));
-  houghCand1.dFreq = (REAL8 *)LALMalloc( houghCand1.length * sizeof(REAL8));
-  houghCand1.dAlpha = (REAL8 *)LALMalloc( houghCand1.length * sizeof(REAL8));
-  houghCand1.dDelta = (REAL8 *)LALMalloc( houghCand1.length * sizeof(REAL8));
-  houghCand1.fdot = (REAL8 *)LALMalloc( houghCand1.length * sizeof(REAL8));
-  houghCand1.dFdot = (REAL8 *)LALMalloc( houghCand1.length * sizeof(REAL8));
-  houghCand1.significance = (REAL8 *)LALMalloc( houghCand1.length * sizeof(REAL8));  
+  houghCand1.list = (HoughList *)LALMalloc( houghCand1.length * sizeof(HoughList));
+
 
   /*-----------Create template grid for first stage ---------------*/
   /* prepare initialization of DopplerScanner to step through paramter space */
@@ -824,7 +847,7 @@ int main( int argc, char *argv[]) {
   /* set up parameters for second stage Fstat calculation */
   /* same as for FstatPar1 except we don't set frequency
      and frequency band -- these depend on candidates to be followed up */
-  if ( LALUserVarWasSet(&uvar_sftDir2)) 
+  if ( uvar_followUp ) 
     {
       /* fill up parameters for Fstat calculation */
       FstatPar2.nStacks = nStacks2;
@@ -866,7 +889,7 @@ int main( int argc, char *argv[]) {
 
   /* open output fstat file for writing */
   /* create output Fstat file name and open it for writing */
-  if ( LALUserVarWasSet( &uvar_sftDir2 ) ) 
+  if ( uvar_followUp ) 
     {
       
       fnameFstatCand = (CHAR *)LALMalloc( 512*sizeof(CHAR));
@@ -966,7 +989,7 @@ int main( int argc, char *argv[]) {
 	     the number of follow-up stacks is not necessarily 1 */
 	  
 	  /* check if user requested a follow up stage*/
-	  if ( LALUserVarWasSet(&uvar_sftDir2)) 
+	  if ( uvar_followUp ) 
 	    {
 	      
 	      /* loop over candidates surviving 1st stage  */
@@ -979,20 +1002,20 @@ int main( int argc, char *argv[]) {
 		  REAL8 alpha1, delta1, alphaBand1, deltaBand1;
 		  
 		  /* set frequency and spindown ranges */
-		  fStart1 = houghCand1.freq[j] - 0.5 * houghCand1.dFreq[j];;
-		  freqBand1 = houghCand1.dFreq[j];
-		  fdot1 = houghCand1.fdot[j] - 0.5 * houghCand1.dFdot[j];
-		  fdotBand1 = houghCand1.dFdot[j];
+		  fStart1 = houghCand1.list[j].freq - 0.5 * houghCand1.list[j].dFreq;
+		  freqBand1 = houghCand1.list[j].dFreq;
+		  fdot1 = houghCand1.list[j].fdot - 0.5 * houghCand1.list[j].dFdot;
+		  fdotBand1 = houghCand1.list[j].dFdot;
 		  
 		  /* set frequency range */
 		  FstatPar2.fStart = fStart1;
 		  FstatPar2.fBand = freqBand1;
 		  
 		  /* set sky region to be refined */
-		  alpha1 = houghCand1.alpha[j] - 0.5 * houghCand1.dAlpha[j];
-		  delta1 = houghCand1.delta[j] - 0.5 * houghCand1.dDelta[j];
-		  alphaBand1 = houghCand1.dAlpha[j];
-		  deltaBand1 = houghCand1.dDelta[j];
+		  alpha1 = houghCand1.list[j].alpha - 0.5 * houghCand1.list[j].dAlpha;
+		  delta1 = houghCand1.list[j].delta - 0.5 * houghCand1.list[j].dDelta;
+		  alphaBand1 = houghCand1.list[j].dAlpha;
+		  deltaBand1 = houghCand1.list[j].dDelta;
 		  LAL_CALL (SkySquare2String( &status, &(scanInit2.searchRegion.skyRegionString),
 					      alpha1, delta1, alphaBand1, deltaBand1), &status);
 		  
@@ -1086,7 +1109,7 @@ int main( int argc, char *argv[]) {
   /* print fstat candidates */  
   {
     UINT4 checksum;
-    if ( LALUserVarWasSet(&uvar_sftDir2) ) 
+    if ( uvar_followUp ) 
       if ( write_toplist_to_fp( fstatToplist, fpFstat, &checksum) < 0)
 	 fprintf( stderr, "Error in writing toplist to file\n");
     /*    LAL_CALL( AppendFstatCandidates( &status, &fStatCand, fpFstat), &status); */
@@ -1096,8 +1119,17 @@ int main( int argc, char *argv[]) {
   
   /* free memory */
 
-  if ( LALUserVarWasSet(&uvar_sftDir2)) 
+  if ( uvar_followUp )
     {
+      LALFree(tStack2);
+      LALFree(mCohSft2);
+      LAL_CALL (LALDDestroyVector (&status, &(FstatPar2.fdot)), &status); 
+      LALFree(midTstack2.data);
+      LALFree(stackSFTs2.data);
+     
+      if ( fstatToplist ) 
+	free_toplist(&fstatToplist);
+      
       fclose(fpFstat);
       LALFree(fnameFstatCand);
     }
@@ -1125,37 +1157,20 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALDDestroyVectorSequence (&status,  &velStack), &status);
   LAL_CALL( LALDDestroyVectorSequence (&status,  &posStack), &status);
   
-  /* free second stage memory if required */
-  if ( LALUserVarWasSet(&uvar_sftDir2)) 
-    {
-      LAL_CALL(LALDestroyTimestampVector ( &status, &startTsft2), &status);  	
-      LALFree(stackSFTs2.data);
-      LAL_CALL (LALDestroySFTVector(&status, &inputSFTVec2),&status );
-      LALFree(tStack2);
-      LALFree(mCohSft2);
-      LAL_CALL (LALDDestroyVector (&status, &(FstatPar2.fdot)), &status); 
-      LALFree(midTstack2.data);
-      
-      if ( fstatToplist ) 
-	free_toplist(&fstatToplist);
-    }
-
-
   /* free dopplerscan stuff */
   LAL_CALL ( FreeDopplerScan(&status, &thisScan1), &status);
   if ( scanInit1.searchRegion.skyRegionString )
     LALFree ( scanInit1.searchRegion.skyRegionString );
-  
+
+  /* free second stage memory if required */
+  if ( ( LALUserVarWasSet(&uvar_sftDir2)) )
+    {     
+      LAL_CALL (LALDestroySFTVector(&status, &inputSFTVec2),&status );
+      LAL_CALL(LALDestroyTimestampVector ( &status, &startTsft2), &status);  	
+    }
+ 
   /* free candidates */
-  LALFree(houghCand1.freq);
-  LALFree(houghCand1.dFreq);
-  LALFree(houghCand1.alpha);
-  LALFree(houghCand1.dAlpha);
-  LALFree(houghCand1.delta);
-  LALFree(houghCand1.dDelta);
-  LALFree(houghCand1.fdot);
-  LALFree(houghCand1.dFdot);
-  LALFree(houghCand1.significance);  
+  LALFree(houghCand1.list);
 
   LAL_CALL (LALDestroyUserVars(&status), &status);  
 
@@ -2042,39 +2057,25 @@ void GetHoughCandidates(LALStatus *status,
 	/* if there isn't enough memory then realloc */
 	if ( nCandidates >= houghCand->length ) {
 	  houghCand->length += 5000;
-	  houghCand->freq = (REAL8 *)LALRealloc( houghCand->freq, 
-						 houghCand->length * sizeof(REAL8));
-	  houghCand->alpha = (REAL8 *)LALRealloc( houghCand->alpha, 
-						 houghCand->length * sizeof(REAL8));
-	  houghCand->delta = (REAL8 *)LALRealloc( houghCand->delta, 
-						 houghCand->length * sizeof(REAL8));
-	  houghCand->dFreq = (REAL8 *)LALRealloc( houghCand->dFreq, 
-						 houghCand->length * sizeof(REAL8));
-	  houghCand->dAlpha = (REAL8 *)LALRealloc( houghCand->dAlpha, 
-						 houghCand->length * sizeof(REAL8));
-	  houghCand->dDelta = (REAL8 *)LALRealloc( houghCand->dDelta, 
-						 houghCand->length * sizeof(REAL8));
-	  houghCand->fdot = (REAL8 *)LALRealloc( houghCand->fdot, 
-						 houghCand->length * sizeof(REAL8));
-	  houghCand->dFdot = (REAL8 *)LALRealloc( houghCand->dFdot, 
-						  houghCand->length * sizeof(REAL8));
+	  houghCand->list = (HoughList *)LALRealloc( houghCand->list,
+						     houghCand->length * sizeof(HoughList));
 	} /* end of reallocs */
 
-	houghCand->freq[nCandidates] = f0;
-	houghCand->dFreq[nCandidates] = deltaF;
+	houghCand->list[nCandidates].freq = f0;
+	houghCand->list[nCandidates].dFreq = deltaF;
 	
-	houghCand->fdot[nCandidates] = fdot;
-	houghCand->dFdot[nCandidates] = dFdot;
+	houghCand->list[nCandidates].fdot = fdot;
+	houghCand->list[nCandidates].dFdot = dFdot;
 
 	/* get sky location of pixel */
 	TRY( LALStereo2SkyLocation (status->statusPtr, &sourceLocation, 
 				    j, i, patch, parDem), status);
 
-	houghCand->alpha[nCandidates] = sourceLocation.alpha;
-	houghCand->delta[nCandidates] = sourceLocation.delta;
+	houghCand->list[nCandidates].alpha = sourceLocation.alpha;
+	houghCand->list[nCandidates].delta = sourceLocation.delta;
 
-	houghCand->dAlpha[nCandidates] = patchSizeX / ((REAL8)xSide);
-	houghCand->dDelta[nCandidates] = patchSizeY / ((REAL8)ySide);
+	houghCand->list[nCandidates].dAlpha = patchSizeX / ((REAL8)xSide);
+	houghCand->list[nCandidates].dDelta = patchSizeY / ((REAL8)ySide);
 
 	/* increment candidate count */
 	houghCand->nCandidates += 1;
@@ -2133,21 +2134,21 @@ void GetHoughCandidates_toplist(LALStatus *status,
 
 	  if ( nCandidates < maxCandidates )
 	    {
-	      houghCand->freq[nCandidates] = f0;
-	      houghCand->dFreq[nCandidates] = deltaF;
+	      houghCand->list[nCandidates].freq = f0;
+	      houghCand->list[nCandidates].dFreq = deltaF;
 	      
-	      houghCand->fdot[nCandidates] = fdot;
-	      houghCand->dFdot[nCandidates] = dFdot;
+	      houghCand->list[nCandidates].fdot = fdot;
+	      houghCand->list[nCandidates].dFdot = dFdot;
 	      
 	      /* get sky location of pixel */
 	      TRY( LALStereo2SkyLocation (status->statusPtr, &sourceLocation, 
 					  j, i, patch, parDem), status);
 
-	      houghCand->alpha[nCandidates] = sourceLocation.alpha;
-	      houghCand->delta[nCandidates] = sourceLocation.delta;
-	      houghCand->dAlpha[nCandidates] = patchSizeX / ((REAL8)xSide);
-	      houghCand->dDelta[nCandidates] = patchSizeY / ((REAL8)ySide);
-	      houghCand->significance[nCandidates] = tempSig;
+	      houghCand->list[nCandidates].alpha = sourceLocation.alpha;
+	      houghCand->list[nCandidates].delta = sourceLocation.delta;
+	      houghCand->list[nCandidates].dAlpha = patchSizeX / ((REAL8)xSide);
+	      houghCand->list[nCandidates].dDelta = patchSizeY / ((REAL8)ySide);
+	      houghCand->list[nCandidates].significance = tempSig;
 
 	      TRY ( GetMinSigIndex_toplist ( status->statusPtr, &minSigIndex, houghCand), status);		
 	      houghCand->minSigIndex = minSigIndex;
@@ -2162,22 +2163,22 @@ void GetHoughCandidates_toplist(LALStatus *status,
 	      /* if event is more significant than least significant 
 		 event stored in toplist then replace it */
 	      minSigIndex = houghCand->minSigIndex;
-	      if ( tempSig > houghCand->significance[minSigIndex] ) 
+	      if ( tempSig > houghCand->list[minSigIndex].significance ) 
 		{
-		  houghCand->freq[minSigIndex] = f0;
-		  houghCand->dFreq[minSigIndex] = deltaF;
-		  houghCand->fdot[minSigIndex] = fdot;
-		  houghCand->dFdot[minSigIndex] = dFdot;
+		  houghCand->list[minSigIndex].freq = f0;
+		  houghCand->list[minSigIndex].dFreq = deltaF;
+		  houghCand->list[minSigIndex].fdot = fdot;
+		  houghCand->list[minSigIndex].dFdot = dFdot;
 	  
 		  /* get sky location of pixel */
 		  TRY( LALStereo2SkyLocation (status->statusPtr, &sourceLocation, 
 					      j, i, patch, parDem), status);
 		  
-		  houghCand->alpha[minSigIndex] = sourceLocation.alpha;
-		  houghCand->delta[minSigIndex] = sourceLocation.delta;  
-		  houghCand->dAlpha[minSigIndex] = patchSizeX / ((REAL8)xSide);
-		  houghCand->dDelta[minSigIndex] = patchSizeY / ((REAL8)ySide);
-		  houghCand->significance[minSigIndex] = tempSig;
+		  houghCand->list[minSigIndex].alpha = sourceLocation.alpha;
+		  houghCand->list[minSigIndex].delta = sourceLocation.delta;  
+		  houghCand->list[minSigIndex].dAlpha = patchSizeX / ((REAL8)xSide);
+		  houghCand->list[minSigIndex].dDelta = patchSizeY / ((REAL8)ySide);
+		  houghCand->list[minSigIndex].significance = tempSig;
 
 		  /* find index of new least significant event */
 		  TRY ( GetMinSigIndex_toplist ( status->statusPtr, &minSigIndex, houghCand), status);
@@ -2214,10 +2215,10 @@ void GetMinSigIndex_toplist(LALStatus *status,
 
 
   *minSigIndex = 0;
-  minSig = houghCand->significance[0];
+  minSig = houghCand->list[0].significance;
   for (k = 1; k < nCandidates; k++)
     {
-      REAL8 tempSig = houghCand->significance[k];
+      REAL8 tempSig = houghCand->list[k].significance;
       if ( tempSig < minSig )
 	{
 	  *minSigIndex = k;
@@ -2247,9 +2248,9 @@ void PrintHoughCandidates(LALStatus *status,
 
  
   for (k=0; k < in->nCandidates; k++)
-    fprintf(fp, "%e   %e   %g   %g   %g   %g   %e   %e\n", in->freq[k], 
-	    in->dFreq[k], in->alpha[k], in->dAlpha[k], in->delta[k], in->dDelta[k],
-	    in->fdot[k], in->dFdot[k]);
+    fprintf(fp, "%e   %e   %g   %g   %g   %g   %e   %e\n", in->list[k].freq, 
+	    in->list[k].dFreq, in->list[k].alpha, in->list[k].dAlpha, in->list[k].delta, in->list[k].dDelta,
+	    in->list[k].fdot, in->list[k].dFdot);
 
 
   DETATCHSTATUSPTR (status);
@@ -2358,12 +2359,6 @@ void GetFstatCandidates_toplist( LALStatus *status,
   DETATCHSTATUSPTR (status);
   RETURN(status);
 }
-
-
-
-
-
-
 
 
 /** Print hough histogram to a file */

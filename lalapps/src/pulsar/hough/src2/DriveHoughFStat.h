@@ -154,26 +154,33 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
     REAL8Vector *fdot;         /**< spindown parameters */
     CHAR *outBaseName;         /**< file for writing output -- if chosen */
   } HoughParams;
-  
+
+  /** one hough candidate */
+  typedef struct tagHoughList {
+    REAL8 freq;        /**< frequency */
+    REAL8 alpha;       /**< right ascension */
+    REAL8 delta;       /**< declination */
+    REAL8 fdot;        /**< spindown vector */
+    REAL8 dFreq;       /**< frequency error */
+    REAL8 dAlpha;      /**< alpha error */
+    REAL8 dDelta ;     /**< delta error */
+    REAL8 dFdot;       /**< fdot error */
+    REAL8 significance;/**< significance */
+  } HoughList;  
 
   /** structure for storing candidates produced by Hough search */
   typedef struct tagHoughCandidates {
     INT4 length;        /**< maximum allowed length of vectors */
     INT4 nCandidates;   /**< number of candidates -- must be less than length */
-    REAL8 *freq;        /**< frequency */
-    REAL8 *alpha;       /**< right ascension */
-    REAL8 *delta;       /**< declination */
-    REAL8 *fdot;        /**< spindown vector */
-    REAL8 *dFreq;       /**< frequency error */
-    REAL8 *dAlpha;      /**< alpha error */
-    REAL8 *dDelta ;     /**< delta error */
-    REAL8 *dFdot;       /**< fdot error */
-    REAL8 *significance;/**< significance */
     INT4 minSigIndex;   /**< index of least significant candidate */ 
+    HoughList *list;    /**> list of candidates */
   } HoughCandidates;
 
 
 
+
+
+  /* function prototypes */
 
   void SetUpFstatStack (LALStatus *status, 
 			REAL8FrequencySeriesVector *out,  
