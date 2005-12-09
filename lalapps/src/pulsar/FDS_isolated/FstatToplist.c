@@ -289,13 +289,13 @@ int read_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxbytes) {
    Separate function to force consistency of output and reduced precision for sorting */
 int print_toplist_item_to_str(TOPLISTLINE fline, char* buf, int buflen) {
       return(LALSnprintf(buf, buflen,
-		  /* output precision: choose by following (generous!) relative-error constraints:
-		   * Freq:1e-9 
-		   * Alpha,Delta:1e-9 
-		   * f1dot:1e-9 
+		  /* output precision: choose by following (generous!) significant-digit constraints:
+		   * Freq:1e-13 
+		   * Alpha,Delta:1e-7 
+		   * f1dot:1e-5
 		   * F:1e-6 
 		   */
-		  "%.9g %.9g %.9g %.9g %.6g\n",
+		  "%.13g %.7g %.7g %.5g %.6g\n",
 		  fline.Freq,
 		  fline.Alpha,
 		  fline.Delta,
