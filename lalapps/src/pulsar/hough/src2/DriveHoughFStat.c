@@ -142,7 +142,7 @@ BOOLEAN uvar_printStats; /**< global variable for calculating Hough map stats */
 #define FSTATTHRESHOLD 2.6  /**< Default threshold on Fstatistic for peak selection */
 #define NCAND1 5 /**< Default number of candidates to be followed up from first stage */
 #define SFTDIRECTORY "/home/badkri/fakesfts/"  /**< Default directory containing sfts */
-#define FNAMEOUT "./Candidates"  /**< Default output file basename */
+#define FNAMEOUT "./candidates"  /**< Default output file basename */
 
 int main( int argc, char *argv[]) {
 
@@ -1953,76 +1953,6 @@ void SetUpStacks2(LALStatus *status,
 }
 
 
-/** Prints Fstatistic values as a function of frequency to a specified output file */ 
-void AppendFstatCandidates( LALStatus *status,
-			   FstatCandidates *cand, 
-			   FILE *fp)
-{
-
-  INT4 k, nCandidates;
-
-  INITSTATUS( status, "AppendFstatCandidates", rcsid );
-  ATTATCHSTATUSPTR (status);
-
-  nCandidates = cand->nCandidates;
-  
-  for (k=0; k<nCandidates; k++) {
-    fprintf(fp, "%e   %e   %e   %e   %e\n", cand->freq[k], cand->alpha[k], 
-	    cand->delta[k], cand->fdot[k], cand->Fstat[k]);
-  }
-
-
-  DETATCHSTATUSPTR (status);
-  RETURN(status);
-}
-
-
-/** Read fstat candidate list from candidates file */ 
-void ReadFstatCandidates( LALStatus *status,
-			  FstatCandidates *cand, 
-			  FILE *fp)
-{
-
-  INT4 nCandidates = 0;
-  INT4 r, minFstatIndex;
-  REAL8 tempFreq, tempAlpha, tempDelta, tempFdot, tempFstat;
-
-  INITSTATUS( status, "ReadFstatCandidates", rcsid );
-  ATTATCHSTATUSPTR (status);
-
-  do 
-    {
-      r=fscanf(fp,"%lf%lf%lf%lf%lf\n", &tempFreq, &tempAlpha, 
-	       &tempDelta, &tempFdot, &tempFstat);
-      /* make sure the line has the right number of entries or is EOF */
-      if ( (r==5) && ( nCandidates < cand->length ) )
-	{
-	  cand->freq[nCandidates] = tempFreq;
-	  cand->alpha[nCandidates] = tempAlpha;
-	  cand->delta[nCandidates] = tempDelta;
-	  cand->fdot[nCandidates] = tempFdot;
-	  cand->Fstat[nCandidates] = tempFstat;
-	  
-	  nCandidates++;
-	}
-      
-    } while ( (r != EOF) && (r==5));
-
-  /* if r!=5 without being EOF, then something is wrong
-     with the file and we should in principle not do 
-     any checkpointing and start from scratch.  But for now
-     just exit normally -- to be fixed! */
-  
-  cand->nCandidates = nCandidates;
-
-  TRY ( GetMinFstatIndex_toplist ( status->statusPtr, &minFstatIndex, cand), status);		
-  cand->minFstatIndex = minFstatIndex;
-
-  rewind(fp);
-
-  DETATCHSTATUSPTR (status);
-  RETURN(status);
-}
 
 
 /** Print single Hough map to a specified output file */
@@ -2431,34 +2361,7 @@ void GetFstatCandidates_toplist( LALStatus *status,
 
 
 
-/** Get least significant Hough candidate index */
-void GetMinFstatIndex_toplist(LALStatus *status,
-			    INT4 *minFstatIndex,
-			    FstatCandidates *cand)
-{
 
-  REAL8 minFstat;
-  INT4 k, nCandidates = cand->nCandidates;
-
-  INITSTATUS( status, "GetMinFstatIndex_toplist", rcsid );
-  ATTATCHSTATUSPTR (status);
-
-  *minFstatIndex = 0;
-  minFstat = cand->Fstat[0];
-  for (k = 1; k < nCandidates; k++)
-    {
-      REAL8 tempFstat = cand->Fstat[k];
-      if ( tempFstat < minFstat )
-	{
-	  *minFstatIndex = k;
-	  minFstat = tempFstat;
-	}
-    } /* end loop over frequency bins */
-  
-
-  DETATCHSTATUSPTR (status);
-  RETURN(status);
-}
 
 
 

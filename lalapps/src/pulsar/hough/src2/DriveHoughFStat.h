@@ -173,18 +173,6 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
   } HoughCandidates;
 
 
-  /** structure for storing candidates produced from Fstat vector */
-  typedef struct tagFstatCandidates {
-    INT4 length;        /**< maximum allowed length of vectors */
-    INT4 nCandidates;   /**< number of candidates -- must be <= length */
-    REAL8 *freq;        /**< frequency */
-    REAL8 *alpha;       /**< right ascension */
-    REAL8 *delta;       /**< declination */
-    REAL8 *fdot;        /**< spindown vector */
-    REAL8 *Fstat;       /**< significance -- Fstat value */
-    INT4 minFstatIndex;   /**< index of least significant candidate */ 
-  } FstatCandidates;
-
 
 
   void SetUpFstatStack (LALStatus *status, 
@@ -217,14 +205,6 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 		     SFTVector *sftVect,
 		     LIGOTimeGPSVector *ts,
 		     INT4 nStacks);
-
-  void AppendFstatCandidates( LALStatus *status,
-			     FstatCandidates *cand, 
-			     FILE *fp);
-
-  void ReadFstatCandidates( LALStatus *status,
-			     FstatCandidates *cand, 
-			     FILE *fp);
 
   void PrintHmap2file(LALStatus *status,
 		      HOUGHMapTotal *ht, 
@@ -259,10 +239,6 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 				  REAL8 alpha,
 				  REAL8 delta,
 				  REAL8 fdot);
-
-  void GetMinFstatIndex_toplist(LALStatus *status,
-				INT4 *minFstatIndex,
-				FstatCandidates *cand);
 
   void GetMinSigIndex_toplist(LALStatus *status,
 			      INT4 *minSigIndex,
