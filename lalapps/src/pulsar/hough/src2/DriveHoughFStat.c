@@ -1601,8 +1601,14 @@ void ComputeFstatHoughMap(LALStatus *status,
     fileStats = (CHAR *)LALMalloc( 256 * sizeof(CHAR));
     strcpy( fileStats, params->outBaseName);
     strcat( fileStats, "stats");
-    fpStats = fopen(fileStats, "w");
+    if ( !(fpStats = fopen(fileStats, "w")))
+      {
+	fprintf(stderr, "Unable to open file '%s' for writing\n", fileStats);
+	exit(1);
+      }
   }
+
+
 
   /* calculate time differences from start of observation time */
   timeDiffV.length = nStacks;
@@ -2092,7 +2098,11 @@ void PrintHmap2file(LALStatus *status,
   strcpy(  filename, fnameOut);
   sprintf( filenumber, ".%06d",iHmap); 
   strcat(  filename, filenumber);
-  fp=fopen(filename,"w");
+  if ( !(fp=fopen(filename,"w"))) 
+    { 
+      fprintf(stderr, "Unable to open file '%s' for writing\n", filename);
+      exit(1);
+    }
 
   /* replace this by an assert */
   /*   if ( !fp ){   */
@@ -2552,7 +2562,11 @@ void PrintHoughHistogram( LALStatus *status,
 
   strcpy(  filename, fnameOut);
   strcat(  filename, "histo");
-  fp=fopen(filename,"w");
+  if ( !(fp=fopen(filename,"w")))
+    {
+      fprintf(stderr, "Unable to open file '%s' for writing\n", filename);
+      exit(1);
+    }
 
   for (i=0; i < hist->length; i++)
     fprintf(fp,"%d  %d\n", i, hist->data[i]);
