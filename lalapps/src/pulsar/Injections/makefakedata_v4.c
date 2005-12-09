@@ -494,15 +494,6 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 	  }
       } /* ----- if hardware-injection ----- */
     
-
-    if ( uvar_duration < uvar_Tsft )
-      {
-	LALPrintError ("\nERROR: requested duration of %d sec is less than minimal "
-		       "chunk-size of Tsft =%.0f sec.\n\n",
-		       uvar_duration, uvar_Tsft);
-	ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-      }
-
     if ( ! ( haveStart || haveTimestamps ) )
       {
 	LALPrintError ("\nCould not infer start of observation-period (need either"
@@ -550,6 +541,16 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 	TRY(LALMakeTimestamps(status->statusPtr, &(cfg->timestamps), cfg->startTimeGPS, 
 			      uvar_duration, uvar_Tsft ), status);
       } /* !haveTimestamps */
+
+
+    if ( cfg->duration < uvar_Tsft )
+      {
+	LALPrintError ("\nERROR: requested duration of %d sec is less than minimal "
+		       "chunk-size of Tsft =%.0f sec.\n\n",
+		       uvar_duration, uvar_Tsft);
+	ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+      }
+
  
   } /* END: setup signal start + duration */
 
