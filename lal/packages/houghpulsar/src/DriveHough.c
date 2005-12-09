@@ -878,6 +878,9 @@ void LALHOUGHComputeAMWeights  (LALStatus          *status,
     weightV->data[j] *= 2.0*(a*a + b*b)/(A+B);
   }
 
+  /* normalize weights */
+  TRY( LALHOUGHNormalizeWeights( status->statusPtr, weightV ), status); 
+
   /*   TRY( LALSDestroyVector( status, &(amc.a)), status); */
   /*   TRY( LALSDestroyVector( status, &(amc.b)), status); */
   LALFree(amc.a->data);
