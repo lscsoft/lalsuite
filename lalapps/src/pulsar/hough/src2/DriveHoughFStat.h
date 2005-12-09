@@ -66,6 +66,8 @@
 /* lalapps includes */
 #include <lalapps.h>
 #include "../../FDS_isolated/DopplerScan.h"
+#include "../../FDS_isolated/FstatToplist.h"
+
 /******************************************************
  *   Protection against C++ name mangling
  */
@@ -243,15 +245,16 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 				  HOUGHDemodPar   *parDem);
 
   void GetFstatCandidates( LALStatus *status,
-			   FstatCandidates *cand,
+			   toplist_t *list,
 			   REAL8FrequencySeries *in,
 			   REAL8 FstatThr,
 			   REAL8 alpha,
 			   REAL8 delta,
-			   REAL8 fdot);
+			   REAL8 fdot,
+			   INT4 blockRealloc);
 
   void GetFstatCandidates_toplist(LALStatus *status,
-				  FstatCandidates *fStatCand,
+				  toplist_t *list,
 				  REAL8FrequencySeries   *FstatVec,
 				  REAL8 alpha,
 				  REAL8 delta,

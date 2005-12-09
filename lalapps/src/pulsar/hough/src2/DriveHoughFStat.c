@@ -209,7 +209,7 @@ int main( int argc, char *argv[]) {
   HoughCandidates houghCand1;
 
   /* fstat candidate structure */
-  FstatCandidates fStatCand;
+  toplist_t *fstatToplist=NULL;
 
   /* template and grid variables */
   DopplerScanInit scanInit1, scanInit2;   /* init-structure for DopperScanner */
@@ -230,9 +230,9 @@ int main( int argc, char *argv[]) {
   FILE *fpHough=NULL;
 
   /* checkpoint filename and index of loop over skypoints */
-  CHAR *fnameChkPoint=NULL;
-  FILE *fpChkPoint=NULL;
-  UINT4 loopindex, loopcounter;
+  /*   CHAR *fnameChkPoint=NULL; */
+  /*   FILE *fpChkPoint=NULL; */
+  /*   UINT4 loopindex, loopcounter; */
   
   /* user variables */
   BOOLEAN uvar_help; /* true if -h option is given */
@@ -255,10 +255,11 @@ int main( int argc, char *argv[]) {
   INT4 uvar_blocksRngMed;
   INT4 uvar_nStacks1, uvar_nStacks2;
   INT4 uvar_Dterms;
-  INT4 uvar_SSBprecision = SSBPREC_RELATIVISTIC;
+  INT4 uvar_SSBprecision;
   INT4 uvar_nfSize;
   INT4 uvar_gridType;
   INT4 uvar_metricType;
+  INT4 uvar_reallocBlock;
   CHAR *uvar_earthEphemeris=NULL;
   CHAR *uvar_sunEphemeris=NULL;
   CHAR *uvar_sftDir1=NULL;
@@ -300,9 +301,11 @@ int main( int argc, char *argv[]) {
   uvar_nCand1 = uvar_nCand2 = NCAND1;
   uvar_houghThr = 0;
   uvar_fstatThr = FSTATTHRESHOLD;
+  uvar_SSBprecision = SSBPREC_RELATIVISTIC;
   uvar_metricType = LAL_PMETRIC_COH_PTOLE_ANALYTIC;
   uvar_gridType = GRID_METRIC;
   uvar_metricMismatch1 = uvar_metricMismatch2 = MISMATCH;
+  uvar_reallocBlock = 5000;
 
   uvar_skyGridFile = NULL;
 
@@ -327,7 +330,7 @@ int main( int argc, char *argv[]) {
   /* register user input variables */
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",            'h', UVAR_HELP,     "Print this message",                                &uvar_help),            &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "log",              0,  UVAR_OPTIONAL, "Write log file",                                    &uvar_log),             &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "chkPoint",         0,  UVAR_OPTIONAL, "For checkpointing",                                 &uvar_chkPoint),        &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "chkPoint",         0,  UVAR_OPTIONAL, "For checkpointing (disabled)",                      &uvar_chkPoint),        &status);  
   LAL_CALL( LALRegisterINTUserVar(    &status, "ifo1",            'i', UVAR_OPTIONAL, "Detector GEO(1) LLO(2) LHO(3)",                     &uvar_ifo1 ),           &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "ifo2",             0,  UVAR_OPTIONAL, "Detector for follow up stage",                      &uvar_ifo2 ),           &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir1",          0,  UVAR_OPTIONAL, "SFT Directory for 1st stage",                       &uvar_sftDir1),         &status);
@@ -357,6 +360,7 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",    'w', UVAR_OPTIONAL, "RngMed block size",                                 &uvar_blocksRngMed),    &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris",  'E', UVAR_OPTIONAL, "Earth Ephemeris file",                              &uvar_earthEphemeris),  &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris",    'S', UVAR_OPTIONAL, "Sun Ephemeris file",                                &uvar_sunEphemeris),    &status);
+  LAL_CALL( LALRegisterINTUserVar (   &status, "reallocBlock",     0,  UVAR_DEVELOPER,"Blocks to realloc for Fstat output if necessary",   &uvar_reallocBlock),    &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "SSBprecision",	   0,  UVAR_DEVELOPER,"Precision for SSB transform.",                      &uvar_SSBprecision),    &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "nfSize",           0,  UVAR_DEVELOPER,"No.of LUTs to keep in memory",                      &uvar_nfSize),          &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printMaps",        0,  UVAR_DEVELOPER,"Print Hough maps",                                  &uvar_printMaps),       &status);  
@@ -453,7 +457,7 @@ int main( int argc, char *argv[]) {
       strcat(fnameHoughCand, "_hough.txt");
       if (!(fpHough = fopen(fnameHoughCand, "w"))) 
 	{
-	  fprintf ( stderr, "Unable to open Hough file '%s' for writing.\n", fnameFstatCand);
+	  fprintf ( stderr, "Unable to open Hough file '%s' for writing.\n", fnameHoughCand);
 	  return DRIVEHOUGHFSTAT_EFILE;
 	}
     }
@@ -839,16 +843,13 @@ int main( int argc, char *argv[]) {
 
 
       /* allocate memory for Fstat candidates */
-      fStatCand.length = uvar_nCand2;
-      fStatCand.nCandidates = 0; /* initialization */
-      fStatCand.minFstatIndex = 0;
-      fStatCand.freq = (REAL8 *)LALMalloc( fStatCand.length * sizeof(REAL8));
-      fStatCand.alpha = (REAL8 *)LALMalloc( fStatCand.length * sizeof(REAL8));
-      fStatCand.delta = (REAL8 *)LALMalloc( fStatCand.length * sizeof(REAL8));
-      fStatCand.fdot = (REAL8 *)LALMalloc( fStatCand.length * sizeof(REAL8));
-      fStatCand.Fstat = (REAL8 *)LALMalloc( fStatCand.length * sizeof(REAL8));  
+      if ( LALUserVarWasSet(&uvar_fstatThr))
+	  create_toplist(&fstatToplist, uvar_reallocBlock); 
+      else if ( uvar_nCand2 > 0 )
+	create_toplist(&fstatToplist, uvar_nCand2); 
 
-      /* prepare initialization of DopplerScanner to step through paramter space */
+
+     /* prepare initialization of DopplerScanner to step through paramter space */
       scanInit2.dAlpha = uvar_dAlpha;
       scanInit2.dDelta = uvar_dDelta;
       scanInit2.gridType = uvar_gridType;
@@ -865,64 +866,22 @@ int main( int argc, char *argv[]) {
 
   /* open output fstat file for writing */
   /* create output Fstat file name and open it for writing */
-  fnameFstatCand = (CHAR *)LALMalloc( 512*sizeof(CHAR));
-  strcpy(fnameFstatCand, uvar_fnameout);
-  strcat(fnameFstatCand, "_fstat.txt");
-
-  loopindex = 0; /* initialization */
-  /* check if user wanted to do checkpointing */
-  if ( uvar_chkPoint )
+  if ( LALUserVarWasSet( &uvar_sftDir2 ) ) 
     {
-      fnameChkPoint = (CHAR *)LALMalloc( 512*sizeof(CHAR));
-      /* get the loop index if any */
-      LAL_CALL( GetChkPointIndex( &status, &loopindex, fnameChkPoint), &status);
-
-      /* now read the Fstat candidates */
       
-      if (!(fpFstat = fopen(fnameFstatCand, "rb"))) 
-	{
-	  if( lalDebugLevel )
-	    fprintf ( stderr, "Unable to open Fstat file '%s' for reading.\n", fnameFstatCand);
-	  /* something is wrong with the file -- do not checkpoint */
-	  loopindex = 0;
-	}
+      fnameFstatCand = (CHAR *)LALMalloc( 512*sizeof(CHAR));
+      strcpy(fnameFstatCand, uvar_fnameout);
+      strcat(fnameFstatCand, "_fstat.txt");
 
-      /* file opened successfully -- read candidate list */
-      LAL_CALL ( ReadFstatCandidates ( &status, &fStatCand, fpFstat), &status); 
-
-      /* close reading and reopen in write mode */
-      fclose(fpFstat);
-      fpFstat=NULL;
-    }
-  
-  /* Even if we are check pointing, since the candidates 
-     have been read, we can destroy the existing candidates 
-     file and start writing to it from the beginning */
-  if ( LALUserVarWasSet(&uvar_sftDir2) ) 
-    {
-      /* can probably be combined with first if conditional above
-	 but we just want to be sure that fpFstat is not opened 
-	 if sftDir2 was not set */
       if  (!(fpFstat = fopen(fnameFstatCand, "w")))
 	{
 	  fprintf ( stderr, "Unable to open Fstat file '%s' for writing.\n", fnameFstatCand);
 	  return DRIVEHOUGHFSTAT_EFILE;
 	}
-    }
- 
+    } 
  
   /* initialize skygrid  */  
   LAL_CALL ( InitDopplerScan ( &status, &thisScan1, &scanInit1), &status); 
-
-  /* initialize loop counter */
-  loopcounter = 0;
-  
-  for (loopcounter=0; loopcounter<loopindex; loopcounter++)
-    {
-      LAL_CALL (NextDopplerPos( &status, &dopplerpos1, &thisScan1 ), &status);
-      if (thisScan1.state == STATE_FINISHED) /* scanned all DopplerPositions yet? */
-	break;
-    }
 
 
   /* loop over skygrid points */
@@ -1089,13 +1048,12 @@ int main( int argc, char *argv[]) {
 			  /* select candidates from 2nd stage */
 			  for (k=0; k<nStacks2; k++) 
 			    {
-			      
 			      if ( LALUserVarWasSet(&uvar_fstatThr))
-				LAL_CALL( GetFstatCandidates( &status, &fStatCand, FstatVect2.data + k, uvar_fstatThr,
+				LAL_CALL( GetFstatCandidates( &status, fstatToplist, FstatVect2.data + k, uvar_fstatThr,
 							      FstatPar2.alpha, FstatPar2.delta, 
-							      FstatPar2.fdot->data[0] ), &status);
+							      FstatPar2.fdot->data[0], uvar_reallocBlock ), &status);
 			      else
-				LAL_CALL( GetFstatCandidates_toplist( &status, &fStatCand, FstatVect2.data + k, 
+				LAL_CALL( GetFstatCandidates_toplist( &status, fstatToplist, FstatVect2.data + k, 
 								      FstatPar2.alpha, FstatPar2.delta, 
 								      FstatPar2.fdot->data[0] ), &status);
 			      
@@ -1122,43 +1080,33 @@ int main( int argc, char *argv[]) {
 	  
 	} /* end loop over coarse grid fdot values */
       
-      loopcounter++;
-      /* write to checkpointfile if required */
-      if ( uvar_chkPoint )
-	{
-
-	  if  (!(fpChkPoint = fopen(fnameChkPoint, "w")))
-	    {
-	      fprintf ( stderr, "Unable to open Fstat file '%s' for writing.\n", fnameFstatCand);
-	      return DRIVEHOUGHFSTAT_EFILE;
-	    }
-	  fprintf(fpChkPoint, "%d\n", loopcounter);
-	  fprintf(fpChkPoint,"DONE\n");
-	  fclose(fpChkPoint);
-	}
     } /* end while loop over 1st stage coarse skygrid */
       
 
   /* print fstat candidates */  
-  if ( LALUserVarWasSet(&uvar_sftDir2)) 
-    LAL_CALL( AppendFstatCandidates( &status, &fStatCand, fpFstat), &status);
-  /*****still need to take care of writing in case checkpointing is being done */      
-      
+  {
+    UINT4 checksum;
+    if ( LALUserVarWasSet(&uvar_sftDir2) ) 
+      if ( write_toplist_to_fp( fstatToplist, fpFstat, &checksum) < 0)
+	 fprintf( stderr, "Error in writing toplist to file\n");
+    /*    LAL_CALL( AppendFstatCandidates( &status, &fStatCand, fpFstat), &status); */
+  }
+	 
   /*------------ free all remaining memory -----------*/
   
   /* free memory */
-  LALFree(fnameFstatCand);
+
   if ( LALUserVarWasSet(&uvar_sftDir2)) 
+    {
       fclose(fpFstat);
+      LALFree(fnameFstatCand);
+    }
 
   if ( uvar_printCand1 )
     {
       LALFree(fnameHoughCand);
       fclose(fpHough);
     }
-
-  if ( uvar_chkPoint )
-      LALFree(fnameChkPoint);
 
   /* free first stage memory */
   LAL_CALL(LALDestroyTimestampVector ( &status, &startTsft1), &status);  	  
@@ -1188,12 +1136,8 @@ int main( int argc, char *argv[]) {
       LAL_CALL (LALDDestroyVector (&status, &(FstatPar2.fdot)), &status); 
       LALFree(midTstack2.data);
       
-      LALFree(fStatCand.freq);
-      LALFree(fStatCand.alpha);
-      LALFree(fStatCand.delta);
-      LALFree(fStatCand.fdot);
-      LALFree(fStatCand.Fstat);
-
+      if ( fstatToplist ) 
+	free_toplist(&fstatToplist);
     }
 
 
@@ -2392,18 +2336,22 @@ void PrintHoughCandidates(LALStatus *status,
     is to be fixed as soon as possible!
 */
 void GetFstatCandidates( LALStatus *status,
-			 FstatCandidates *cand,
+			 toplist_t *list,
 			 REAL8FrequencySeries *in,
 			 REAL8 FstatThr,
 			 REAL8 alpha,
 			 REAL8 delta,
-			 REAL8 fdot)
+			 REAL8 fdot,
+			 INT4 blockRealloc)
 {
-  INT4 k, length, nCandidates;
+  INT4 k, length, nCandidates, maxCandidates;
   REAL8 deltaF, f0;
 
   INITSTATUS( status, "GetFstatCandidates", rcsid );
   ATTATCHSTATUSPTR (status);
+
+  if (list == NULL)
+    create_toplist( &list, blockRealloc); 
 
   length = in->data->length;
   deltaF = in->deltaF;
@@ -2412,31 +2360,27 @@ void GetFstatCandidates( LALStatus *status,
 
   for ( k=0; k<length; k++) {
     
-	nCandidates = cand->nCandidates;
-	
-	/* if there isn't enough memory then realloc */
-	if ( nCandidates >= cand->length ) {
-	  cand->length += 5000;
-	  cand->freq = (REAL8 *)LALRealloc( cand->freq, 
-					    cand->length * sizeof(REAL8));
-	  cand->alpha = (REAL8 *)LALRealloc( cand->alpha, 
-					     cand->length * sizeof(REAL8));
-	  cand->delta = (REAL8 *)LALRealloc( cand->delta, 
-					     cand->length * sizeof(REAL8));
-	  cand->fdot = (REAL8 *)LALRealloc( cand->fdot, 
-					    cand->length * sizeof(REAL8));
+	nCandidates = list->elems;
+	maxCandidates = list->length;
 
-	} /* end of reallocs */
+	/* if there isn't enough memory then realloc */
+	if ( nCandidates >= maxCandidates ) 
+	  {
+	    list->length += blockRealloc;
+	    list->data = (TOPLISTLINE *)LALRealloc( list->data, 
+						    maxCandidates*sizeof(TOPLISTLINE));
+
+	  } /* end of realloc */
 
 
 	if ( in->data->data[k] > FstatThr ) {
 
-	  cand->freq[nCandidates] = f0 + k*deltaF;
-	  cand->alpha[nCandidates] = alpha;
-	  cand->delta[nCandidates] = delta;
-	  cand->fdot[nCandidates] = fdot;
-	  cand->Fstat[nCandidates] = in->data->data[k];
-	  cand->nCandidates += 1;
+	  list->data[nCandidates].Freq = f0 + k*deltaF;
+	  list->data[nCandidates].Alpha = alpha;
+	  list->data[nCandidates].Delta = delta;
+	  list->data[nCandidates].f1dot = fdot;
+	  list->data[nCandidates].Fstat = in->data->data[k];
+	  list->elems += 1;
 	}
   }
   
@@ -2448,66 +2392,38 @@ void GetFstatCandidates( LALStatus *status,
 
 
 void GetFstatCandidates_toplist( LALStatus *status,
-				 FstatCandidates *cand,
+				 toplist_t *list,
 				 REAL8FrequencySeries *in,
 				 REAL8 alpha,
 				 REAL8 delta,
 				 REAL8 fdot)
 {
-  INT4 k, length;
+  INT4 k, length, debug;
   REAL8 deltaF, f0;
-  INT4 nCandidates, maxCand, minFstatIndex;
+  TOPLISTLINE line;
 
   INITSTATUS( status, "GetFstatCandidates_toplist", rcsid );
   ATTATCHSTATUSPTR (status);
+
+  /* fill up alpha, delta and fdot in fstatline */
+  line.f1dot = fdot;
+  line.Alpha = alpha;
+  line.Delta = delta;
 
   length = in->data->length;
   deltaF = in->deltaF;
   f0 = in->f0;
 
-  nCandidates = cand->nCandidates;
-  maxCand = cand->length;
+  /* loop over Fstat vector and fill up toplist */
+  for ( k=0; k<length; k++) 
+    {
+      
+      line.Fstat = in->data->data[k];
+      line.Freq = f0 + k*deltaF;
+      
+      debug = insert_into_toplist( list, line);
 
-  for ( k=0; k<length; k++) {
-
-    REAL8 thisFstatValue = in->data->data[k];
-
-    if ( nCandidates < maxCand )
-      {
-	cand->freq[nCandidates] = f0 + k*deltaF;
-	cand->fdot[nCandidates] = fdot;
-	cand->alpha[nCandidates] = alpha;
-	cand->delta[nCandidates] = delta;
-	cand->Fstat[nCandidates] = thisFstatValue;
-	
-	TRY ( GetMinFstatIndex_toplist ( status->statusPtr, &minFstatIndex, cand), status);		
-	cand->minFstatIndex = minFstatIndex;
-	
-	/* increment candidate count */
-	cand->nCandidates += 1;
-	nCandidates = cand->nCandidates;
-      }
-    else
-      {
-	/* if event is more significant than least significant 
-	   event stored in toplist then replace it */
-	minFstatIndex = cand->minFstatIndex;
-	if ( thisFstatValue > cand->Fstat[minFstatIndex] ) 
-	  {
-	    cand->freq[minFstatIndex] = f0 + k*deltaF;
-	    cand->fdot[minFstatIndex] = fdot;
-	    cand->alpha[minFstatIndex] = alpha;
-	    cand->delta[minFstatIndex] = delta;  
-	    cand->Fstat[minFstatIndex] = thisFstatValue;
-	    
-	    /* find index of new least significant event */
-	    TRY ( GetMinFstatIndex_toplist ( status->statusPtr, &minFstatIndex, cand), status);
-	    cand->minFstatIndex = minFstatIndex;
-	  }
-      }
-
-
-  }
+    }
 
   DETATCHSTATUSPTR (status);
   RETURN(status);

@@ -29,11 +29,11 @@ echo $1 $2 | awk '{print $1/$2}'
 # save initial working directory
 startdir=`pwd`
 
-h0=6.5e-24
-mismatch=0.0
+h0=3.5e-24
+mismatch=0.4
 sftdir=/local_data/badkri/fakesfts/
 #th=4.0
-outfile=AM_0_test_$h0
+outfile=AM_4_test_$h0
 #echo $outfile
 #cosiota=1.0
 
@@ -71,7 +71,7 @@ while [ $j -lt $top ] ; do
 	./HoughValidateAM -E ./earth00-04.dat -S ./sun00-04.dat -D $sftdir -r $alpha -l $delta -m $h0 -c $cosiota -M $mismatch >> $outfile
 
 	# if we want cosiota at a fixed value
-	#./HoughValidateAM -E ./earth00-04.dat -S ./sun00-04.dat -D $sftdir -r $alpha -l $delta -m $h0 -c 0.5 -p $psi  >> $outfile
+	#./HoughValidateAM -E ./earth00-04.dat -S ./sun00-04.dat -D $sftdir -r $alpha -l $delta -m $h0 -c 0.5 -p $psi -M $mismatch >> $outfile
 
 	#sleep 30
         let j+=1
