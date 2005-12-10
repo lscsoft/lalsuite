@@ -518,7 +518,7 @@ class LladdJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     cp = ConfigParser object from which options are read.
     """
     self.__executable = cp.get('condor','lladd')
-    self.__universe = 'scheduler'
+    self.__universe = 'vanilla'
     pipeline.CondorDAGJob.__init__(self, self.__universe, self.__executable)
     pipeline.AnalysisJob.__init__(self, cp)
     self.add_condor_cmd("getenv", "True")
