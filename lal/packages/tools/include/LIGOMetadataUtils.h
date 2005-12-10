@@ -30,7 +30,7 @@ to the LIGO metadata database tables defined in \texttt{LIGOMetadataTables.h}.
 on the LAL structures that correspond to the LIGO metadata database tables
 defined in \texttt{LIGOMetadataTables.h}, such as sorting and eliminating 
 duplictaes. The functions specific to a particular metadata table (e.g. 
-\texttt{sngl\_inspiral}, \texttt{sngl\_burst}, etc.) are all prototyped in
+\texttt{sngl\_inspiral}, \texttt{sngl\_burst}, etc.) are all prototyped in 
 this header.
 
 \subsection*{Types}
@@ -888,7 +888,7 @@ XLALSnglBurstCluster(
 	const SnglBurstTable *b
 );
 
-int
+void
 XLALCoincBurstCluster(
 	SnglBurstTable *a,
 	SnglBurstTable *b,
@@ -923,7 +923,7 @@ XLALClusterCoincSnglBurstTable(
 	SnglBurstTable  **list,
 	int (*bailoutfunc)(const SnglBurstTable * const *, const SnglBurstTable * const *),
 	int (*testfunc)(const SnglBurstTable * const *, const SnglBurstTable * const *, const SnglBurstTable * const *, const SnglBurstTable * const * ),
-	int (*clusterfunc)(SnglBurstTable *, SnglBurstTable *, SnglBurstTable *, SnglBurstTable *)
+	void (*clusterfunc)(SnglBurstTable *, SnglBurstTable *, SnglBurstTable *, SnglBurstTable *)
 );
 
 void

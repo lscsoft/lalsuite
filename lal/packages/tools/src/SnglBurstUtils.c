@@ -694,7 +694,7 @@ XLALCompareSimBurstSnglInspiral(
 )
 /* </lalVerbatim> */
 {
-	INT8 ta;
+	INT8 ta = 0;
 	INT8 inspwindow = 1000000000; /* insp window = 10 ms */
 
 	if(! strcmp("ZENITH",(*a)->coordinates))
@@ -726,7 +726,7 @@ XLALCompareSimBurstAndSnglBurstByTimeandFreq(
 )
 /* </lalVerbatim> */
 {
-	INT8 ta;
+	INT8 ta = 0;
 
 	if(! strcmp("ZENITH",(*a)->coordinates))
 		ta = XLALGPStoINT8(&(*a)->geocent_peak_time);
@@ -750,7 +750,7 @@ XLALCompareSimBurstAndSnglBurstByTime(
 )
 /* </lalVerbatim> */
 {
-	INT8 ta;
+	INT8 ta = 0;
 
 	if(! strcmp("ZENITH",(*a)->coordinates))
 		ta = XLALGPStoINT8(&(*a)->geocent_peak_time);
@@ -790,7 +790,7 @@ XLALCompareSimInspiralAndSnglBurst(
 )
 /* </lalVerbatim> */
 {
-	INT8 ta;
+	INT8 ta = 0;
 
 	if(! strcmp("H1",(*b)->ifo))
 		ta = XLALGPStoINT8(&(*a)->h_end_time);
@@ -926,7 +926,7 @@ void XLALSnglBurstCluster(SnglBurstTable *a, const SnglBurstTable *b)
 }
 
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
-int XLALCoincBurstCluster(SnglBurstTable *a, SnglBurstTable *b, SnglBurstTable *c, SnglBurstTable *d)
+void XLALCoincBurstCluster(SnglBurstTable *a, SnglBurstTable *b, SnglBurstTable *c, SnglBurstTable *d)
 /* </lalVerbatim> */
 {
 	REAL4 sumconf_x, sumconf_y;
@@ -943,37 +943,27 @@ int XLALCoincBurstCluster(SnglBurstTable *a, SnglBurstTable *b, SnglBurstTable *
 
 	if (sumconf_x < sumconf_y)
 	  {	
-	    if(! strcmp(a->ifo, c->ifo))
-	      {
-		a->central_freq =  c->central_freq;
-		a->bandwidth = c->bandwidth; 
-		a->start_time = c->start_time;
-		a->duration = c->duration;
-		a->amplitude = c->amplitude;
-		a->snr = c->snr;
-		a->confidence = c->confidence;
-		a->peak_time = c->peak_time;
-		a->peak_dof = c->peak_dof;
-		a->clusterT = c->clusterT;
-	      }
-	    else
-	      exit(1);
+	    a->central_freq =  c->central_freq;
+	    a->bandwidth = c->bandwidth; 
+	    a->start_time = c->start_time;
+	    a->duration = c->duration;
+	    a->amplitude = c->amplitude;
+	    a->snr = c->snr;
+	    a->confidence = c->confidence;
+	    a->peak_time = c->peak_time;
+	    a->peak_dof = c->peak_dof;
+	    a->clusterT = c->clusterT;
 
-	    if(! strcmp(b->ifo, d->ifo))
-	      {
-		b->central_freq =  d->central_freq;
-		b->bandwidth = d->bandwidth; 
-		b->start_time = d->start_time;
-		b->duration = d->duration;
-		b->amplitude = d->amplitude;
-		b->snr = d->snr;
-		b->confidence = d->confidence;
-		b->peak_time = d->peak_time;
-		b->peak_dof = d->peak_dof;
-		b->clusterT = d->clusterT;
-	      }
-	    else
-	      exit(1);
+	    b->central_freq =  d->central_freq;
+	    b->bandwidth = d->bandwidth; 
+	    b->start_time = d->start_time;
+	    b->duration = d->duration;
+	    b->amplitude = d->amplitude;
+	    b->snr = d->snr;
+	    b->confidence = d->confidence;
+	    b->peak_time = d->peak_time;
+	    b->peak_dof = d->peak_dof;
+	    b->clusterT = d->clusterT;
 	  }
 }
 
@@ -1101,7 +1091,7 @@ XLALClusterCoincSnglBurstTable (
 				SnglBurstTable **list,
 				int (*bailoutfunc)(const SnglBurstTable * const *, const SnglBurstTable * const *),
 				int (*testfunc)(const SnglBurstTable * const *, const SnglBurstTable * const *, const SnglBurstTable * const *, const SnglBurstTable * const * ),
-				int (*clusterfunc)(SnglBurstTable *, SnglBurstTable *, SnglBurstTable *, SnglBurstTable *)
+				void (*clusterfunc)(SnglBurstTable *, SnglBurstTable *, SnglBurstTable *, SnglBurstTable *)
 				)
      /* </lalVerbatim> */
 {
