@@ -57,13 +57,11 @@ void LALComputeStrain(
 {
 /* Inverse sensing, servo, analog actuation, digital x 
 actuation  digital y actuation */
-static REAL8TimeSeries uphR,hCX,hCY,ALPHAS,upALPHAS;
-int p, NWingsR,NWingsC;
+static REAL8TimeSeries uphR,ALPHAS,upALPHAS;
+int p,l;
 REAL8IIRFilter LPFIR;
 REAL8IIRFilter HPFIR;
 REAL8IIRFilter ALPHASLPFIR;
-REAL8IIRFilter *CinvWings=NULL, *DWings=NULL, *AAWings=NULL, *AXWings=NULL, *AYWings=NULL;
-
 
  INITSTATUS( status, "LALComputeStrain", COMPUTESTRAINC );
  ATTATCHSTATUSPTR( status );
@@ -77,22 +75,13 @@ REAL8IIRFilter *CinvWings=NULL, *DWings=NULL, *AAWings=NULL, *AXWings=NULL, *AYW
  LALMakeFIRHP(status->statusPtr, &HPFIR);
  CHECKSTATUSPTR( status );
 
- /* Create vectors that will hold the residual, control and net strain signals */
- LALDCreateVector(status->statusPtr,&hCX.data,input->AS_Q.data->length);
- CHECKSTATUSPTR( status );
- LALDCreateVector(status->statusPtr,&hCY.data,input->AS_Q.data->length);
- CHECKSTATUSPTR( status );
-
- NWingsR = (int)(input->wings/input->AS_Q.deltaT + 0.5) * input->CinvUSF;
- NWingsC = (int)(input->wings/input->AS_Q.deltaT + 0.5);
-
  /* copy AS_Q input into residual strain as double */  
  for (p=0; p<(int)output->hR.data->length; p++) 
    {
     output->hR.data->data[p]=input->DARM_ERR.data->data[p];
    }
 
- /* copy DARM_ERR input into control strain as double */  
+ /* copy DARM_CTRL input into control strain as double */  
  for (p=0; p<(int)output->hC.data->length; p++) 
    {
      output->hC.data->data[p]=input->DARM_ERR.data->data[p];
@@ -140,60 +129,36 @@ REAL8IIRFilter *CinvWings=NULL, *DWings=NULL, *AAWings=NULL, *AXWings=NULL, *AYW
  for (p=0; p<(int)uphR.data->length-(2*N_FIR_LP); p++){
    uphR.data->data[p]=uphR.data->data[p+(2*N_FIR_LP)];
  }
- /* Low pass filter twice to smooth time series */
- LALIIRFilterREAL8Vector(status->statusPtr,uphR.data,&(LPFIR));
- CHECKSTATUSPTR( status );
- LALIIRFilterREAL8Vector(status->statusPtr,uphR.data,&(LPFIR));
- CHECKSTATUSPTR( status );
 
- /* ===================== */
- /* CAREFUL FILTERING: FILTER UP TO WINGS, THEN COPY FILTERS THEN CONTINUE UNTIL END */
- /* filter only up until the wings */
- for(p = 0; p < input->NCinv; p++){
-   int k;
-   for(k = NWingsR/2; k < (int)uphR.data->length-3*NWingsR/2; k++){
-     uphR.data->data[k]=LALDIIRFilter(uphR.data->data[k], &(input->Cinv[p]));
-   }
- }
- /* Here what I need to record filter histories */
- LALCopyFilter(status->statusPtr, &CinvWings, input->Cinv, input->NCinv);
- CHECKSTATUSPTR( status );
- /* then we filter wings as well */
- for(p = 0; p < input->NCinv; p++){
-   int k;
-   for(k = uphR.data->length-3*NWingsR/2; k < (int)uphR.data->length-NWingsR/2; k++){
-     uphR.data->data[k]=LALDIIRFilter(uphR.data->data[k], &CinvWings[p]);
-   }
- }
- /* Then we need to destroy the filter */
- LALFreeFilter(status->statusPtr,CinvWings,input->NCinv);
- CHECKSTATUSPTR( status );
- /* ===================== */
+ /* Low pass filter twice to smooth time series */
+ XLALFIRFilter(&uphR,&LPFIR);
+ XLALFIRFilter(&uphR,&LPFIR);
+ 
+ /* Filter through inverse of sensing function */
+ XLALFIRFilter(&uphR, input->Cinv);
 
  /* apply advance to compensate for Low Pass FIR delay */
  for (p=0; p<(int)uphR.data->length-(2*N_FIR_LP); p++){
    uphR.data->data[p]=uphR.data->data[p+(2*N_FIR_LP)];
  }
- /* Low pass filter twice to smooth time series */
- LALIIRFilterREAL8Vector(status->statusPtr,uphR.data,&(LPFIR));
- CHECKSTATUSPTR( status );
- LALIIRFilterREAL8Vector(status->statusPtr,uphR.data,&(LPFIR));
- CHECKSTATUSPTR( status );
- 
+
+ /* Low pass filter twice to smooth time series (again) */
+ XLALFIRFilter(&uphR,&LPFIR);
+ XLALFIRFilter(&uphR,&LPFIR);
+  
  /* then we downsample and voila' */
  for (p=0; p<(int)output->hR.data->length; p++) {
    output->hR.data->data[p]=uphR.data->data[p*input->CinvUSF];
  }
-
  LALDDestroyVector(status->statusPtr,&uphR.data);
  CHECKSTATUSPTR( status );
 
  /* Create time series that hold alpha time series and upsampled alpha time-series */
  LALDCreateVector(status->statusPtr,&ALPHAS.data,output->alpha.data->length);
  CHECKSTATUSPTR( status );
- LALDCreateVector(status->statusPtr,&upALPHAS.data,input->AS_Q.data->length);
+ LALDCreateVector(status->statusPtr,&upALPHAS.data,input->DARM_ERR.data->length);
  CHECKSTATUSPTR( status );
- upALPHAS.deltaT=input->AS_Q.deltaT;
+ upALPHAS.deltaT=input->DARM_ERR.deltaT;
  
  /* copy factors into time series */
  for (p=0; p<(int)ALPHAS.data->length; p++) 
@@ -215,13 +180,14 @@ REAL8IIRFilter *CinvWings=NULL, *DWings=NULL, *AAWings=NULL, *AXWings=NULL, *AYW
     if factors are computed every second then everything is fine */
  if (input->fftconv)
    {
-     LALFIRFilter(status->statusPtr,&upALPHAS,&ALPHASLPFIR);
-     CHECKSTATUSPTR( status );
-   }else{
-     LALIIRFilterREAL8Vector(status->statusPtr,upALPHAS.data,&(ALPHASLPFIR));
+     LALFFTFIRFilter(status->statusPtr,&upALPHAS,&(ALPHASLPFIR));
      CHECKSTATUSPTR( status );
    }
- 
+ else
+   {
+     XLALFIRFilter(&upALPHAS,&(ALPHASLPFIR));   
+   }
+   
  /* finally we divide by alpha*beta */
  if (input->usefactors)
    {
@@ -254,54 +220,35 @@ REAL8IIRFilter *CinvWings=NULL, *DWings=NULL, *AAWings=NULL, *AXWings=NULL, *AYW
  CHECKSTATUSPTR( status );
 
  /* ---------- Compute Control Strain -------------*/
-
- /* first implement the time delay filter; start at end to avoid overwriting */
- for (p = (int)output->hC.data->length-1; p >= input->AADelay; p--){
-   output->hC.data->data[p]=output->hC.data->data[p-input->AADelay];
- }
-
- /* then apply advance to compensate for FIR delay */
+ /* apply advance to compensate for FIR delay */
  for (p=0; p<(int)output->hC.data->length-(2*N_FIR_HP); p++){
    output->hC.data->data[p]=output->hC.data->data[p+(2*N_FIR_HP)];
  }
- /* then high pass filter DARM_ERR */
+
+ /* then high-pass filter DARM_CTRL */
  if (input->fftconv)
    {
-     LALFIRFilter(status->statusPtr,&(output->hC),&(HPFIR));
+     LALFFTFIRFilter(status->statusPtr,&(output->hC),&(HPFIR));
      CHECKSTATUSPTR( status );
-     LALFIRFilter(status->statusPtr,&(output->hC),&(HPFIR));
+     LALFFTFIRFilter(status->statusPtr,&(output->hC),&(HPFIR));
      CHECKSTATUSPTR( status );
-   }else{
-     LALIIRFilterREAL8Vector(status->statusPtr,output->hC.data,&(HPFIR));
-     CHECKSTATUSPTR( status );
-     LALIIRFilterREAL8Vector(status->statusPtr,output->hC.data,&(HPFIR));
-     CHECKSTATUSPTR( status );
+   }
+ else
+   {
+     XLALFIRFilter(&(output->hC),&(HPFIR));
+     XLALFIRFilter(&(output->hC),&(HPFIR));
    }
 
- /* Filter through digital servo */
- /* ===================== */
- /* CAREFUL FILTERING: FILTER UP TO WINGS, THEN COPY FILTERS THEN CONTINUE UNTIL END*/
- /* we filter but only up until the wings */
- for(p = 0; p < input->ND; p++){
-   int k;
-   for(k = NWingsC/2; k < (int)output->hC.data->length-3*NWingsC/2; k++){
-     output->hC.data->data[k]=LALDIIRFilter(output->hC.data->data[k], &(input->D[p]));
+ /* Filter through servo */
+ if (input->fftconv)
+   {
+     LALFFTFIRFilter(status->statusPtr,&(output->hC), input->D);
+     CHECKSTATUSPTR( status );
    }
- }
- /* Here what I need to record filter histories */
- LALCopyFilter(status->statusPtr, &DWings, input->D, input->ND);
- CHECKSTATUSPTR( status );
- /* then we filter wings as well */
- for(p = 0; p < input->ND; p++){
-   int k;
-   for(k = output->hC.data->length-3*NWingsC/2; k < (int)output->hC.data->length-NWingsC/2; k++){
-     output->hC.data->data[k]=LALDIIRFilter(output->hC.data->data[k], &DWings[p]);
+ else
+   {
+     XLALFIRFilter(&(output->hC), input->D);
    }
- }
- /* Then we need to destroy the filter */
- LALFreeFilter(status->statusPtr,DWings,input->ND);
- CHECKSTATUSPTR( status );
- /* ===================== */
 
  /* At this point I have something very similar to darm_ctrl in hC */
  /* add the calibration lines */
@@ -317,109 +264,23 @@ REAL8IIRFilter *CinvWings=NULL, *DWings=NULL, *AAWings=NULL, *AXWings=NULL, *AYW
      fprintf(stdout, "Warning: Not adding calibration lines to control signal.\n");
    }
 
-
  /* Filter through analog actuation */
- /* ===================== */
- /* CAREFUL FILTERING: FILTER UP TO WINGS, THEN COPY FILTERS THEN CONTINUE UNTIL END */
- /* we filter but only up until the wings */
- for(p = 0; p < input->NAA; p++){
-   int k;
-   for(k = NWingsC/2; k < (int)output->hC.data->length-3*NWingsC/2; k++){
-     output->hC.data->data[k]=LALDIIRFilter(output->hC.data->data[k], &(input->AA[p]));
+ if (input->fftconv)
+   {
+     LALFFTFIRFilter(status->statusPtr,&(output->hC), input->A);
+     CHECKSTATUSPTR( status );
    }
- }
- /* Here what I need to record filter histories */
- LALCopyFilter(status->statusPtr, &AAWings, input->AA, input->NAA);
- CHECKSTATUSPTR( status );
- /* then we filter wings as well */
- for(p = 0; p < input->NAA; p++){
-   int k;
-   for(k = output->hC.data->length-3*NWingsC/2; k < (int)output->hC.data->length-NWingsC/2; k++){
-     output->hC.data->data[k]=LALDIIRFilter(output->hC.data->data[k], &AAWings[p]);
+ else
+   {
+     XLALFIRFilter(&(output->hC), input->A);
    }
- }
- /* Then we need to destroy the filter */
- LALFreeFilter(status->statusPtr,AAWings,input->NAA);
- CHECKSTATUSPTR( status );
- /* ===================== */
-
- /* Copy data into x and y time series for parallel filtering */
- for (p=0; p < (int)output->hC.data->length; p++){
-   hCX.data->data[p] = output->hC.data->data[p];
-   hCY.data->data[p] = output->hC.data->data[p];
- }
-
- /* Filter x-arm */
- /* ===================== */
- /* CAREFUL FILTERING: FILTER UP TO WINGS, THEN COPY FILTERS THEN CONTINUE UNTIL END */
- /* we filter only up until the wings */
- for(p = 0; p < input->NAX; p++){
-   int k;
-   for(k = NWingsC/2; k < (int)hCX.data->length-3*NWingsC/2; k++){
-     hCX.data->data[k]=LALDIIRFilter(hCX.data->data[k], &(input->AX[p]));
-   }
- }
- /* Here what I need to record filter histories */
- LALCopyFilter(status->statusPtr, &AXWings, input->AX, input->NAX);
- CHECKSTATUSPTR( status );
- /* then we filter wings as well */
- for(p = 0; p < input->NAX; p++){
-   int k;
-   for(k = hCX.data->length-3*NWingsC/2; k < (int)hCX.data->length-NWingsC/2; k++){
-     hCX.data->data[k]=LALDIIRFilter(hCX.data->data[k], &AXWings[p]);
-   }
- }
- /* Then we need to destroy the filter */
- LALFreeFilter(status->statusPtr,AXWings,input->NAX);
- CHECKSTATUSPTR( status );
- /* ===================== */
-
-
- /* Filter y-arm */
- /* ===================== */
- /* CAREFUL FILTERING: FILTER UP TO WINGS, THEN COPY FILTERS THEN CONTINUE UNTIL END */
- /* we filter only up until the wings */
- for(p = 0; p < input->NAY; p++){
-   int k;
-   for(k = NWingsC/2; k < (int)hCY.data->length-3*NWingsC/2; k++){
-     hCY.data->data[k]=LALDIIRFilter(hCY.data->data[k], &(input->AY[p]));
-   }
- }
- /* Here what I need to record filter histories */
- LALCopyFilter(status->statusPtr, &AYWings, input->AY, input->NAY);
- CHECKSTATUSPTR( status );
- /* then we filter wings as well */
- for(p = 0; p < input->NAY; p++){
-   int k;
-   for(k = hCY.data->length-3*NWingsC/2; k < (int)hCY.data->length-NWingsC/2; k++){
-     hCY.data->data[k]=LALDIIRFilter(hCY.data->data[k], &AYWings[p]);
-   }
- }
- /* Then we need to destroy the filter */
- LALFreeFilter(status->statusPtr,AYWings,input->NAY);
- CHECKSTATUSPTR( status );
- /* ===================== */
-
- /* add them together to make the total control signal */
- for (p=0; p < (INT4)output-> h.data->length; p++) {
-    output->hC.data->data[p]=(hCX.data->data[p]-hCY.data->data[p]); 
- }
-
 
  /* ---------- Compute Net Strain -------------*/
-
- /* add x-arm and y-arm and voila' */
+ /* add control and residual signals and voila' */
  for (p=0; p< (int)output->h.data->length; p++){
    output->h.data->data[p] = output->hC.data->data[p]+output->hR.data->data[p];
  }
-
  /* ------------------------------------------*/
-
- /* destroy vectors that hold the data */
- LALDDestroyVector(status->statusPtr,&hCX.data);
- CHECKSTATUSPTR( status );
- LALDDestroyVector(status->statusPtr,&hCY.data);
- CHECKSTATUSPTR( status );
 
  /* destroy low and high pass filters */ 
  LALDDestroyVector(status->statusPtr,&(LPFIR.directCoef));
@@ -440,67 +301,8 @@ REAL8IIRFilter *CinvWings=NULL, *DWings=NULL, *AAWings=NULL, *AXWings=NULL, *AYW
 
 }
 
-
-/*******************************************************************************/
-void LALFreeFilter(LALStatus *status, REAL8IIRFilter *F2, int ORDER)
-{
-  int n;
-  INITSTATUS( status, "LALCopyFilter", COMPUTESTRAINC );
-  ATTATCHSTATUSPTR( status );
-
-  for(n=0;n<ORDER;n++){
-    LALDDestroyVector(status->statusPtr,&(F2[n].directCoef));
-    CHECKSTATUSPTR( status );
-    LALDDestroyVector(status->statusPtr, &(F2[n].recursCoef));
-    CHECKSTATUSPTR( status );
-    LALDDestroyVector(status->statusPtr,&(F2[n].history));   
-    CHECKSTATUSPTR( status );
-  }
-  LALFree(F2);
-
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
-}
-
 /*******************************************************************************/
 
-void LALCopyFilter(LALStatus *status, REAL8IIRFilter **F2, REAL8IIRFilter *F1, int ORDER)
-{
-  REAL8IIRFilter *F2Array;
-  int n;
-  INITSTATUS( status, "LALCopyFilter", COMPUTESTRAINC );
-  ATTATCHSTATUSPTR( status );
-
-  /* Allocate inverse sensing funtion filters */
-  *F2=F2Array=(REAL8IIRFilter *)LALMalloc(sizeof(REAL8IIRFilter) * ORDER); 
-
-  for(n = 0; n < ORDER; n++)
-    {
-      int l;
-      F2Array[n].directCoef=NULL;
-      F2Array[n].recursCoef=NULL;
-      F2Array[n].history=NULL;
-
-      LALDCreateVector(status->statusPtr,&(F2Array[n].directCoef),F1[n].directCoef->length);
-      CHECKSTATUSPTR( status );
-      LALDCreateVector(status->statusPtr,&(F2Array[n].recursCoef),F1[n].recursCoef->length);
-      CHECKSTATUSPTR( status );
-      LALDCreateVector(status->statusPtr,&(F2Array[n].history),F1[n].history->length);
-      CHECKSTATUSPTR( status );
-
-      for(l=0;l<(int)F1[n].directCoef->length;l++) 
-	F2Array[n].directCoef->data[l] = F1[n].directCoef->data[l];
-      for(l=0;l<(int)F1[n].recursCoef->length;l++) 
-	F2Array[n].recursCoef->data[l] = F1[n].recursCoef->data[l];
-      for(l=0;l<(int)F1[n].history->length;l++) 
-	F2Array[n].history->data[l] = F1[n].history->data[l];
-    }
-
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
-}
-
-/*******************************************************************************/
 void LALMakeFIRLP(LALStatus *status, REAL8IIRFilter *LPFIR, int USF)
 {
   int N=2*N_FIR_LP+1,l;
@@ -545,6 +347,7 @@ void LALMakeFIRLP(LALStatus *status, REAL8IIRFilter *LPFIR, int USF)
 }
 
 /*******************************************************************************/
+
 void LALMakeFIRLPALPHAS(LALStatus *status, REAL8IIRFilter *LPFIR)
 {
   int N=2*N_FIR_LP_ALPHAS+1,l;
@@ -864,8 +667,42 @@ INT4 localtime = input->AS_Q.epoch.gpsSeconds;
 
 /*******************************************************************************/
 
-void LALFIRFilter(LALStatus *status, REAL8TimeSeries *tseries, REAL8IIRFilter *FIR)
+int XLALFIRFilter(REAL8TimeSeries *tseries, REAL8IIRFilter *FIR)
 {
+  int n,m;
+  REAL8 sum;
+  int Nfir,Ntseries;
+  REAL8 *x, *b;
+
+  x=tseries->data->data;
+  b=FIR->directCoef->data;
+
+  Nfir=FIR->directCoef->length;
+  Ntseries=tseries->data->length;
+
+  /* initialise values in FIR time series */
+  for (n = Ntseries-1; n >= Nfir-1; n--) 
+    {
+      sum = 0; 
+      for (m = Nfir-1; m >= 0; m--) 
+	{
+	  sum += b[m] * x[n-m];
+	}
+      x[n]=sum;
+    }
+  /* set to zero values at the start */
+  for (n = 0; n < (int)FIR->directCoef->length-1; n++) 
+    {
+      x[n]=0;
+    }
+  return 0;
+}
+
+/*******************************************************************************/
+
+void LALFFTFIRFilter(LALStatus *status, REAL8TimeSeries *tseries, REAL8IIRFilter *FIR)
+{
+
   REAL8TimeSeries *tseriesFIR=NULL;
   REAL8TimeSeries *tseriesDATA=NULL;
   COMPLEX16FrequencySeries *vtilde=NULL, *vtildeFIR=NULL;
@@ -895,15 +732,6 @@ void LALFIRFilter(LALStatus *status, REAL8TimeSeries *tseries, REAL8IIRFilter *F
       tseriesDATA->data->data[n]=0.0;
     }
   /* set first few to values in FIR filter */
-  /* Here I want to make sure the FIR filter in in wrap-around order */
-/*   for (n = 0; n <= (int)(FIR->directCoef->length-1)/2; n++)  */
-/*     { */
-/*       tseriesFIR->data->data[n]=FIR->directCoef->data[n+(FIR->directCoef->length-1)/2]; */
-/*     } */
-/*   for (n = 0; n < (int) (FIR->directCoef->length-1)/2; n++)  */
-/*     { */
-/*       tseriesFIR->data->data[(tseriesFIR->data->length-1)-n]=FIR->directCoef->data[((FIR->directCoef->length-1)/2-1)-n]; */
-/*     } */
   for (n = 0; n < (int)FIR->directCoef->length; n++) 
     {
       tseriesFIR->data->data[n]=FIR->directCoef->data[n];
@@ -989,3 +817,4 @@ void LALFIRFilter(LALStatus *status, REAL8TimeSeries *tseries, REAL8IIRFilter *F
   RETURN( status );
 
 }
+
