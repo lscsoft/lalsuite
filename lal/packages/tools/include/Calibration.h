@@ -221,16 +221,8 @@ struct StrainInTag {
   REAL8IIRFilter *Cinv;    /* Filters for inverse of sensing function */
   INT4 CinvUSF;            /* Upsampling factor for sensing function */
   INT4 CinvDelay;          /* Overall inverse sensing function delay */
-  REAL8IIRFilter *D;       /* Digital servo filters */
-  REAL8IIRFilter *AA;      /* Filters for analog actuation function */
-  INT4 AADelay;            /* Overall analog actuation function delay */
-  REAL8IIRFilter *AX;      /* Digital filters for x arm actuation function */
-  REAL8IIRFilter *AY;      /* Digital filters for y arm actuation function */
-  INT4 NCinv;              /* Numbers of filters of each type */
-  INT4 ND;
-  INT4 NAA;
-  INT4 NAX;
-  INT4 NAY;
+  REAL8IIRFilter *A;      /* Filters for analog actuation function */
+  REAL8IIRFilter *D;      /* Filters for analog actuation function */
   INT4 delta;
   INT4 usefactors;
   INT4 wings;               /* size of wings in seconds */
@@ -292,9 +284,6 @@ void LALGetFactors(
     StrainIn               *input
     );
 
-void LALFIRFilter(LALStatus *status, 
-		   REAL8TimeSeries *tseries, 
-		   REAL8IIRFilter *FIR);
 
 void LALMakeFIRLP(LALStatus *status, 
 		  REAL8IIRFilter *G, 
@@ -306,14 +295,12 @@ void LALMakeFIRLPALPHAS(LALStatus *status,
 void LALMakeFIRHP(LALStatus *status, 
 		  REAL8IIRFilter *G);
 
-void LALCopyFilter(LALStatus *status, 
-		   REAL8IIRFilter **F2, 
-		   REAL8IIRFilter *F1, 
-		   int ORDER);
+int XALFIRFilter(REAL8TimeSeries *tseries, 
+		  REAL8IIRFilter *FIR);
 
-void LALFreeFilter(LALStatus *status, 
-		   REAL8IIRFilter *F2, 
-		   int ORDER);
+void LALFFTFIRFilter(LALStatus *status, 
+		     REAL8TimeSeries *tseries, 
+		     REAL8IIRFilter *FIR);
 
 int XLALDivideTimeSeries(REAL8TimeSeries *hR, REAL8TimeSeries *ALPHAS);
 int XLALUpsample(REAL8TimeSeries *uphR, REAL8TimeSeries *hR, int up_factor);
