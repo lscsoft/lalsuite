@@ -1401,11 +1401,11 @@ int main( int argc, char *argv[] )
     LAL_CALL( LALCreateTwoIFOCoincList( &status, &coincInspiralList,
         inspiralEventList, &accuracyParams ), &status );
 
-/*    if( distCut )
+    if( distCut )
     {
       XLALInspiralDistanceCut( &coincInspiralList, &accuracyParams );
     }
-*/
+
   
     if ( multiIfoCoinc )
     {
@@ -1493,11 +1493,11 @@ int main( int argc, char *argv[] )
         LAL_CALL( LALCreateTwoIFOCoincList(&status, &coincInspiralList,
           inspiralEventList, &accuracyParams ), &status);
 
-/*        if( distCut )
+        if( distCut )
         {
           XLALInspiralDistanceCut( &coincInspiralList, &accuracyParams );
         }
-*/
+
         if ( multiIfoCoinc )
         {
           for( N = 3; N <= numIFO; N++)
