@@ -42,7 +42,8 @@ None
 #define fhigh_FIRLP_ALPHAS 0.00001220703125
 
 #define N_FIR_LP 100
-#define fhigh_FIRLP .6103515625
+/* #define fhigh_FIRLP .6103515625 */
+#define fhigh_FIRLP .9
 
 #define N_FIR_HP 2000
 #define fhigh_FIRHP 0.00244140625
