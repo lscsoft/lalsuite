@@ -184,6 +184,7 @@ if not running_online:
 # get the ifo to filter
 ifo = cp.get('pipeline','ifo')
 datatype = cp.get('input','type') 
+base_data_dir = cp.get('pipeline','data-dir')
 
 # create all the LSCdataFind jobs to run in sequence
 prev_df = None
@@ -207,12 +208,22 @@ for seg in data:
   chunk_number=-1
   for chunk in seg:
     chunk_number=chunk_number+1
-    #String job for first ifo
+
+    #make the directory where the data's going to go
+    gps_str=str(chunk.start())
+    gps_time_first_four=gps_str[0]+gps_str[1]+gps_str[2]+gps_str[3]
+    try: os.mkdir(base_data_dir+'/'+gps_time_first_four)
+    except OSError, err:
+      import errno
+      print "Warning:", err
+      
+    #Strain job for first ifo  
     strain1 = strain.StrainNode(strain_job)
     strain1.set_start(chunk.start())
     strain1.set_end(chunk.end())
     strain1.set_cache(df.get_output())
     strain1.set_name("strain_"+ifo+"_"+str(segment_no)+"_"+str(chunk_number))
+    strain1.add_var_opt('data-dir',base_data_dir+'/'+gps_time_first_four+'/'+ifo[0])
     dag.add_node(strain1)
     
 # write out the DAG
