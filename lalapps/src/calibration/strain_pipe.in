@@ -176,11 +176,10 @@ data.read(segment_filename,0)
 
 # create the chunks from the science segments
 data.make_chunks(length+2*overlap,2*overlap,0,0,0)
-
-if not running_online:
-  #make chunk with whatever's left over
-  data.make_short_chunks_from_unused(1,2*overlap,0,0,0)
+data.make_short_chunks_from_unused(0,2*overlap,0,0,0)
 #make_short_chunks_from_unused(self, min_length, overlap=0, play=0, sl=0, excl_play=0)
+#I don't really know why the min length needs to be set to 0 but it does.
+
 # get the ifo to filter
 ifo = cp.get('pipeline','ifo')
 datatype = cp.get('input','type') 
@@ -215,7 +214,7 @@ for seg in data:
     try: os.mkdir(base_data_dir+'/'+gps_time_first_four)
     except OSError, err:
       import errno
-      print "Warning:", err
+      #print "Warning:", err
       
     #Strain job for first ifo  
     strain1 = strain.StrainNode(strain_job)
@@ -254,7 +253,7 @@ for seg in data:
     endgps=chunk.end()
     
 if running_online:
-  print >> sys.stdout, seg.start()+2*overlap,int(chunk.end())-2*overlap
+  print >> sys.stdout, seg.start()+overlap,int(chunk.end())-overlap
 
 if not running_online:
   # write a message telling the user that the DAG has been written
