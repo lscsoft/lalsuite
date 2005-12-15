@@ -1536,7 +1536,7 @@ int main( int argc, char *argv[] )
           {
             thisCoinc = coincInspiralList;
             coincInspiralList = coincInspiralList->next;
-            LALFree( thisCoinc );
+            XLALFreeCoincInspiral( &thisCoinc );
           }
 
         }
@@ -1731,7 +1731,7 @@ cleanexit:
   {
     thisCoinc = coincInspiralList;
     coincInspiralList = coincInspiralList->next;
-    LALFree( thisCoinc );
+    XLALFreeCoincInspiral( &thisCoinc );
   }
 
 
