@@ -25,6 +25,7 @@ Determines if a given time (or segment) is playground data.
 \vspace{0.1in}
 \input{PlaygroundCP}
 \idx{LALINT8NanoSecIsPlayground()}
+\idx{XLALINT8NanoSecIsPlayground()}
 \idx{LALGPSIsPlayground()}
 \idx{LALSegmentIsPlayground()}
 
@@ -58,6 +59,31 @@ t - 729273613 \% 6370 < 600.
 NRCSID( PLAYGROUNDC, "$Id$" );
 
 /* <lalVerbatim file="PlaygroundCP"> */
+int
+XLALINT8NanoSecIsPlayground (
+    INT8               *ns
+    )
+/* </lalVerbatim> */
+{
+  const INT8 start = 729273613 * LAL_INT8_C(1000000000);
+  const INT8 interval = 6370 * LAL_INT8_C(1000000000);
+  const INT8 length = 600 * LAL_INT8_C(1000000000);
+  int playground;
+
+  if ( (*ns - start) % interval < length )
+  {
+    playground = 1;
+  }
+  else
+  {
+    playground = 0;
+  }
+
+  return( playground );
+}
+
+
+/* <lalVerbatim file="PlaygroundCP"> */
 void
 LALINT8NanoSecIsPlayground (
     LALStatus          *status,
@@ -66,21 +92,10 @@ LALINT8NanoSecIsPlayground (
     )
 /* </lalVerbatim> */
 {
-  const INT8 start = 729273613 * LAL_INT8_C(1000000000);
-  const INT8 interval = 6370 * LAL_INT8_C(1000000000);
-  const INT8 length = 600 * LAL_INT8_C(1000000000);
-
   INITSTATUS( status, "LALINT8NanoSecIsPlayground", PLAYGROUNDC );
 
-  if ( (*ns - start) % interval < length )
-  {
-    *playground = 1;
-  }
-  else
-  {
-    *playground = 0;
-  }
-
+  *playground = XLALINT8NanoSecIsPlayground ( ns );
+  
   RETURN( status );
 }
 

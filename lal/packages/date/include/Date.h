@@ -754,6 +754,11 @@ LALGPSTimeNow (
 /* <lalLaTeX>
 \newpage\input{PlaygroundC}
 </lalLaTeX> */
+int
+XLALINT8NanoSecIsPlayground ( 
+    INT8               *ns
+    );
+
 void
 LALINT8NanoSecIsPlayground (
     LALStatus          *status,
