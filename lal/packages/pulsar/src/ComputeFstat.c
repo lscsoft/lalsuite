@@ -486,6 +486,7 @@ LALGetSSBtimes (LALStatus *status,
   UINT4 numSteps, i;
   REAL8 vn[3];		/* unit-vector pointing to source in Cart. coord. */
   REAL8 alpha, delta;	/* source position */
+  REAL8 refTimeREAL8;
 
   INITSTATUS( status, "LALGetSSBtimes", COMPUTEFSTATC);
   ATTATCHSTATUSPTR (status);
@@ -504,18 +505,21 @@ LALGetSSBtimes (LALStatus *status,
   ASSERT ( pos.system == COORDINATESYSTEM_EQUATORIAL, status,
 	   COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
   
-  /*----- get the cartesian source unit-vector */
+
+  /* convenience variables */
   alpha = pos.longitude;
   delta = pos.latitude;
-  vn[0] = cos(alpha) * cos(delta);
-  vn[1] = sin(alpha) * cos(delta);
-  vn[2] = sin(delta);
+  refTimeREAL8 = GPS2REAL8(refTime);
 
   /*----- now calculate the SSB transformation in the precision required */
   switch (precision)
     {
     case SSBPREC_NEWTONIAN:	/* use simple vr.vn to calculate time-delay */
-      /*----- first figure out reference-time in SSB */
+
+      /*----- get the cartesian source unit-vector */
+      vn[0] = cos(alpha) * cos(delta);
+      vn[1] = sin(alpha) * cos(delta);
+      vn[2] = sin(delta);
 
       for (i=0; i < numSteps; i++ )
 	{
@@ -523,7 +527,7 @@ LALGetSSBtimes (LALStatus *status,
 	  /* DeltaT_alpha */
 	  tSSB->DeltaT->data[i]  = GPS2REAL8 ( (*ti) );
 	  tSSB->DeltaT->data[i] += SCALAR(vn, DetectorStates->data[i].rDetector);
-	  tSSB->DeltaT->data[i] -= GPS2REAL8 ( refTime );
+	  tSSB->DeltaT->data[i] -= refTimeREAL8;
 
 	  /* Tdot_alpha */
 	  tSSB->Tdot->data[i] = 1.0 + SCALAR(vn, DetectorStates->data[i].vDetector);
@@ -552,7 +556,7 @@ LALGetSSBtimes (LALStatus *status,
 
 	  TRY ( LALBarycenter(status->statusPtr, &emit, &baryinput, &(state->earthState)), status);
 
-	  tSSB->DeltaT->data[i] = GPS2REAL8 ( emit.te ) - GPS2REAL8 ( refTime );
+	  tSSB->DeltaT->data[i] = GPS2REAL8 ( emit.te ) - refTimeREAL8;
 	  tSSB->Tdot->data[i] = emit.tDot;
 
 	} /* for i < numSteps */
