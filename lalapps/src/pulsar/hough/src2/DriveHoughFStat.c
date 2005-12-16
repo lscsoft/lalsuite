@@ -1376,7 +1376,14 @@ void SetUpFstatStack (LALStatus *status,
   /* other variables */
   INT4 k;
   INT8 binsFstat;
+  REAL8 f0;
 
+  INT4 extraBins; /* the extra number of bins for which the Fstat must be calculated */
+  HOUGHResolutionPar resPar;
+  HOUGHSizePar sizePar;
+  INT8 tempBin, fBinIni, fBinFin;
+  REAL8 patchSize;
+  
   INITSTATUS( status, "ComputeFstatStack", rcsid );
   ATTATCHSTATUSPTR (status);
 
@@ -1385,26 +1392,23 @@ void SetUpFstatStack (LALStatus *status,
 
   /* number of bins for calculating Fstat */
   /* add extraBins on either side*/
-  {
-    /* extraBins = nfSizeCylinder/2 + maxNBins/2 
-       nfSizeCylinder is parameter, but maxNBins must 
-       be calculated from Hough routines.  It is the 
-       largest number of bins affected by the skypatch */
 
-    INT4 extraBins; /* the extra number of bins for which the Fstat must be calculated */
-    HOUGHResolutionPar resPar;
-    HOUGHSizePar sizePar;
-    INT8 tempBin, fBinIni, fBinFin;
-    REAL8 patchSize;
+  /* extraBins = nfSizeCylinder/2 + maxNBins/2 
+     nfSizeCylinder is parameter, but maxNBins must 
+     be calculated from Hough routines.  It is the 
+     largest number of bins affected by the skypatch */
+  
 
-    /* extraBins required only if there is a hough follow up 
-       which happens only if nStacks is more than 1 */
-    if (nStacks > 1) {
+
+  /* extraBins required only if there is a hough follow up 
+     which happens only if nStacks is more than 1 */
+  if (nStacks > 1) 
+    {
       
       /* calculate sizePar for fStart */
       tempBin = (INT8) ( tStackAvg * fStart );    
       patchSize = 0.5 / ( tempBin * VEPI ); 
-
+      
       resPar.f0Bin = tempBin;
       resPar.deltaF = deltaF;
       resPar.patchSkySizeX = patchSize;
@@ -1413,31 +1417,34 @@ void SetUpFstatStack (LALStatus *status,
       resPar.pixErr = PIXERR;
       resPar.linErr = LINERR;
       resPar.vTotC = VTOT;
-      
+	
       TRY ( LALHOUGHComputeSizePar ( status->statusPtr, &sizePar, &resPar ), status);
       extraBins = nfSizeCylinder/2 + sizePar.maxNBins/2;
     }
-    else
-      extraBins = 0;
+  else
+    extraBins = 0;
+  
+  /* now we can calculate required span of Fstat vector */
+  binsFstat = floor( tStackAvg * fBand ) + 2*extraBins;
+  fBinIni = floor( tStackAvg * fStart + 0.5) - extraBins;
+  fBinFin = fBinIni + binsFstat - 1;
+  f0 = deltaF * fBinIni;
+  
+  out->length = nStacks;
+  out->data = NULL;
+  out->data = (REAL8FrequencySeries *)LALMalloc(nStacks * sizeof(REAL8FrequencySeries));
+  for (k=0; k<nStacks; k++) {
+    out->data[k].epoch = params->tsStack->data[k];
+    out->data[k].deltaF = deltaF;
+    out->data[k].f0 = f0;
+    out->data[k].data = (REAL8Sequence *)LALMalloc(sizeof(REAL8Sequence));
+    out->data[k].data->length = binsFstat;
+    out->data[k].data->data = (REAL8 *)LALMalloc( binsFstat * sizeof(REAL8));
+  }
 
-    /* now we can calculate required span of Fstat vector */
-    binsFstat = floor( tStackAvg * fBand ) + 2*extraBins;
-    fBinIni = floor( tStackAvg * fStart + 0.5) - extraBins;
-    fBinFin = fBinIni + binsFstat - 1;
+  params->fStart = f0;
+  params->fBand = deltaF * binsFstat;
 
-    out->length = nStacks;
-    out->data = NULL;
-    out->data = (REAL8FrequencySeries *)LALMalloc(nStacks * sizeof(REAL8FrequencySeries));
-    for (k=0; k<nStacks; k++) {
-      out->data[k].epoch = params->tsStack->data[k];
-      out->data[k].deltaF = deltaF;
-      out->data[k].f0 = deltaF * fBinIni;
-      out->data[k].data = (REAL8Sequence *)LALMalloc(sizeof(REAL8Sequence));
-      out->data[k].data->length = binsFstat;
-      out->data[k].data->data = (REAL8 *)LALMalloc( binsFstat * sizeof(REAL8));
-    }
-  } /* end of Fstat memory allocation */
-   
   DETATCHSTATUSPTR (status);
   RETURN(status); 
 }
