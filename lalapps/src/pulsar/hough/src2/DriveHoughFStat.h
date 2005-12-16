@@ -191,6 +191,13 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 			  SFTVectorSequence *sfts, 
 			  FstatStackParams *params);
 
+  void PrintFstatVec_fp (LALStatus *status,
+			 REAL8FrequencySeries *in,
+			 FILE *fp,
+			 REAL8 alpha,
+			 REAL8 delta,
+			 REAL8 fdot);
+
   void ComputeFstatHoughMap (LALStatus *status,
 			     HoughCandidates *out,
 			     HOUGHPeakGramVector *pgV,

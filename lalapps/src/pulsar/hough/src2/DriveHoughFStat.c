@@ -228,6 +228,7 @@ int main( int argc, char *argv[]) {
   CHAR *fnameHoughCand=NULL;
   FILE *fpFstat=NULL;
   FILE *fpHough=NULL;
+  FILE *fpFstat1=NULL;
 
   /* checkpoint filename and index of loop over skypoints */
   /*   CHAR *fnameChkPoint=NULL; */
@@ -240,6 +241,7 @@ int main( int argc, char *argv[]) {
   BOOLEAN uvar_printCand1; /* if 1st stage candidates are to be printed */
   BOOLEAN uvar_chkPoint;
   BOOLEAN uvar_followUp;
+  BOOLEAN uvar_printFstat1;
   REAL8 uvar_dAlpha, uvar_dDelta; /* resolution for flat or isotropic grids */
   REAL8 uvar_fdot; /* first spindown value */
   REAL8 uvar_fdotBand; /* range of first spindown parameter */
@@ -285,6 +287,7 @@ int main( int argc, char *argv[]) {
   uvar_printMaps = FALSE;
   uvar_printStats = FALSE;
   uvar_printCand1 = FALSE;
+  uvar_printFstat1 = FALSE;
   uvar_chkPoint = FALSE;
   uvar_nStacks1 = NSTACKS;
   uvar_nStacks2 = 1;
@@ -368,6 +371,7 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar (   &status, "nfSize",           0,  UVAR_DEVELOPER,"No.of LUTs to keep in memory",                      &uvar_nfSize),          &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printMaps",        0,  UVAR_DEVELOPER,"Print Hough maps",                                  &uvar_printMaps),       &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printStats",       0,  UVAR_DEVELOPER,"Print Hough map statistics",                        &uvar_printStats),      &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printFstat1",      0,  UVAR_DEVELOPER,"Print 1st stage Fstat vectors ",                    &uvar_printFstat1),     &status);  
   LAL_CALL( LALRegisterINTUserVar(    &status, "Dterms",           0,  UVAR_DEVELOPER,"For Dirichlet Kernel approx.",                      &uvar_Dterms ),         &status);
 
   /* read all command line variables */
@@ -902,6 +906,16 @@ int main( int argc, char *argv[]) {
 	  return DRIVEHOUGHFSTAT_EFILE;
 	}
     } 
+
+  if ( uvar_printFstat1 )
+    {
+      if ( !(fpFstat1 = fopen( "./fstatvec1.out", "w")))
+	{
+	  fprintf ( stderr, "Unable to open Fstat file fstatvec1.out for writing.\n");
+	  return DRIVEHOUGHFSTAT_EFILE;
+	}
+    }
+
  
   /* initialize skygrid  */  
   LAL_CALL ( InitDopplerScan ( &status, &thisScan1, &scanInit1), &status); 
@@ -936,7 +950,6 @@ int main( int argc, char *argv[]) {
       /* loop over fdot values */
       for ( ifdot=0; ifdot<nfdot; ifdot++)
 	{
-	  
 	  /* set spindown value for Fstat calculation */
 	  FstatPar1.fdot->data[0] = uvar_fdot + ifdot * dfDot;
 	  
@@ -946,9 +959,15 @@ int main( int argc, char *argv[]) {
 	  /* calculate the Fstatistic */
 	  LAL_CALL(ComputeFstatStack( &status, &FstatVect1, &stackSFTs1, &FstatPar1), &status);
 	  
-	  /* print fstat vector -- for debugging */
-	  /*   LAL_CALL( PrintFstat ( &status, FstatVect1.data, uvar_fnameout, 0 ), &status); */
-	  
+	  /* print fstat vector if required -- mostly for debugging */
+	  if ( uvar_printFstat1 )
+	    {
+	      for (k=0; k<nStacks1; k++)
+		LAL_CALL( PrintFstatVec_fp ( &status, FstatVect1.data + k, fpFstat1, FstatPar1.alpha, 
+					     FstatPar1.delta, FstatPar1.fdot->data[0]), &status); 
+	    }
+
+
 	  
 	  /*------------ select peaks ------------*/ 
 	      
@@ -1139,6 +1158,9 @@ int main( int argc, char *argv[]) {
       LALFree(fnameHoughCand);
       fclose(fpHough);
     }
+
+  if ( uvar_printFstat1 )
+    fclose(fpFstat1);
 
   /* free first stage memory */
   LAL_CALL(LALDestroyTimestampVector ( &status, &startTsft1), &status);  	  
@@ -2258,8 +2280,35 @@ void PrintHoughCandidates(LALStatus *status,
 }
 
 
+/** Print Fstat vectors -- mostly for debugging purposes */
+  void PrintFstatVec_fp (LALStatus *status,
+			 REAL8FrequencySeries *in,
+			 FILE *fp,
+			 REAL8 alpha,
+			 REAL8 delta,
+			 REAL8 fdot)
+{
+  INT4 length, k;
+  REAL8 f0, deltaF, freq;
+
+  INITSTATUS( status, "PrintFstatVec_fp", rcsid );
+  ATTATCHSTATUSPTR (status);
 
 
+  length = in->data->length;
+  deltaF = in->deltaF;
+  f0 = in->f0;
+
+  for (k=0; k<length; k++)
+    {
+      freq = f0 + k*deltaF;
+      fprintf(fp, "%.13g %.7g %.7g %.5g %.6g\n", freq, alpha, delta, fdot, in->data->data[k]);
+    }
+
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+
+}
 
 /** Sets threshold on Fstat vector and fills up frequency and deltaF values in candidate list. 
     Important -- Currently this function does not get the sky-loctaion and spindown
