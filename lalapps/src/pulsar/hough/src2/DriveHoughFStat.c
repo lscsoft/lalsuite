@@ -1229,10 +1229,8 @@ void ComputeFstatStack (LALStatus *status,
   REAL8 refTime = params->refTime;
   INT4 *mCohSft = params->mCohSft;
   REAL8Vector *fdot = params->fdot;
-  REAL8 fStart = params->fStart;
-  REAL8 tStackAvg = params->tStackAvg;
-  REAL8 deltaF = 1.0/tStackAvg;
-  REAL8 fBand = params->fBand;
+
+  REAL8 deltaF, fStart;
 
   /* copy timeBase from SFT vector */
   REAL8 timeBase = 1.0 / ( stackSFTs->data->data->deltaF);
@@ -1292,7 +1290,10 @@ void ComputeFstatStack (LALStatus *status,
     TRY ( LALDCreateVector(status->statusPtr, &(tSSB.Tdot), mCohSft[k]), status );
 
     /* loop over frequency bins and get Fstatistic */
-    binsFstat = floor( tStackAvg * fBand );
+    binsFstat = out->data[k].data->length;
+    fStart = out->data[k].f0;
+    deltaF = out->data[k].deltaF;
+
     for(j=0; j<binsFstat; j++) {
 
       /* increase frequency value */
