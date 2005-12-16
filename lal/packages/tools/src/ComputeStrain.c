@@ -717,13 +717,13 @@ void LALFFTFIRFilter(LALStatus *status, REAL8TimeSeries *tseries, REAL8IIRFilter
   /* create time series that will hold FIR filter (with room for zero padding) */
   LALCreateREAL8TimeSeries(status->statusPtr, &tseriesFIR, tseries->name, 
 			   tseries->epoch, 0.0, tseries->deltaT, tseries->sampleUnits, 
-			   tseries->data->length+FIR->directCoef->length);
+			   2*tseries->data->length);
   CHECKSTATUSPTR( status );
 
   /* create time series that will hold data  (with room for zero padding) */
   LALCreateREAL8TimeSeries(status->statusPtr, &tseriesDATA, tseries->name, 
 			   tseries->epoch, 0.0, tseries->deltaT, tseries->sampleUnits, 
-			   tseries->data->length+FIR->directCoef->length);
+			   2*tseries->data->length);
   CHECKSTATUSPTR( status );
 
   /* initialise values in FIR time series */
