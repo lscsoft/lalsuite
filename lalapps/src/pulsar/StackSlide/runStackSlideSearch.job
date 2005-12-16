@@ -39,6 +39,7 @@
 # 07/17/05 gam; Change ...Deriv5 command line arguments to ones that control new Monte Carlo (MC) options
 # 09/07/05 gam; Change searchMaxMCfracErr to absolute error searchMaxMCErr
 # 09/08/05 gam; Add searchDterms with default equal to 32, which gives Dterms used with MC fast SFT generation and LALDemod.
+# 12/15/05 gam; set nBinsPerNRM to $searchRunningMedianBlockSize unless $searchNormalizationFlag & 1 indicate using mean as norm.
 
 set maxEarthOrbVelOverC 1.1e-4; # Should be overestimate by 10%.
 
@@ -186,12 +187,16 @@ set normalizationFlag $searchNormalizationFlag;  # -1 = BLKs already normalized;
 set f0NRM $f0BLK;             # Start frequency of the input SFTs
 set bandNRM $bandBLK;         # Band width of the input SFTs.
 set doRunningMedian [expr $searchNormalizationFlag & 4]; # 04/14/04 gam;
+set useMeanForNorm [expr $searchNormalizationFlag & 1]; # 12/15/04 gam;
 set useCutOff [expr $searchNormalizationFlag & 8]; # 05/05/04 gam;
 #puts "doRunningMedian = $doRunningMedian";
-if {$doRunningMedian > 0} {
-  set nBinsPerNRM $searchRunningMedianBlockSize; # 04/14/04 gam; This is the blocksize to use with the running median code.
+#puts "useMeanForNorm = $useMeanForNorm";
+if { ($useMeanForNorm > 0) && !($doRunningMedian > 0) } {
+  # 12/15/05 gam; use the entire band iff not using running median and using mean is specified:
+  set nBinsPerNRM $nBinsPerBLK; # Number of input frequency bins in one NRM  
 } else {
-  set nBinsPerNRM $nBinsPerBLK; # Number of input frequency bins in one NRM
+  # 12/15/05 gam; this is the default:
+  set nBinsPerNRM $searchRunningMedianBlockSize; # 04/14/04 gam; This is the blocksize to use with the running median code.
 }
 set normalizationParameter $searchNormalizationParameter; # 12/06/04 gam; # 03/03/04 gam; # 05/05/04 gam; moved here from below.
 #set normalizationThreshold $searchNormalizationThreshold; # 05/05/04 gam;

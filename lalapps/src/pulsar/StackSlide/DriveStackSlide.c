@@ -187,6 +187,7 @@
 /* #define DEBUG_INPUTBLK_CODE */
 /* #define DEBUG_NORMALIZEBLKS */
 /* #define DEBUG_CLEANLINESANDHARMONICS */
+/* #define DEBUG_CLEANED_SFTS */
 /* #define DEBUG_SUMBINMASK */
 /* #define DEBUG_CALIBRATEBLKS */
 /* #define DEBUG_TESTCASE */
@@ -4122,6 +4123,16 @@ void StackSlideCleanSFTs(LALStatus *status, FFT **BLKData, LineNoiseInfo *infoLi
       /* CleanCOMPLEX8SFT(status->statusPtr, oneSFT, maxBins, nBinsPerNRM, infoLines, randPar); */ /* 09/09/05 gam */
       LALCleanCOMPLEX8SFT(status->statusPtr, oneSFT, maxBins, nBinsPerNRM, infoLines, randPar); /* clean this SFT */
       CHECKSTATUSPTR (status);
+
+      #ifdef DEBUG_CLEANED_SFTS
+        /* debug which bins get cleaned */
+        for(j=0;j<nBinsPerBLK;j++) {
+           if ( (BLKData[i]->fft->data->data[j].re != oneSFT->data->data[j].re) || (BLKData[i]->fft->data->data[j].im != oneSFT->data->data[j].im) ) {
+              fprintf(stdout,"%23.16e %23.16e %23.16e %23.16e %23.16e \n",BLKData[i]->fft->f0 + ((REAL8)j)*BLKData[i]->fft->deltaF,BLKData[i]->fft->data->data[j].re,BLKData[i]->fft->data->data[j].im, oneSFT->data->data[j].re,oneSFT->data->data[j].im);
+           }
+        }
+      #endif
+
       /* copy the clean SFT data back to this BLK */
       for(j=0;j<nBinsPerBLK;j++) {
            BLKData[i]->fft->data->data[j].re = oneSFT->data->data[j].re;
