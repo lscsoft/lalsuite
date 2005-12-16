@@ -87,7 +87,11 @@ void GetOrbitalParams (LALStatus *, BinaryOrbitParams *orbit);
 void WriteMFDlog (LALStatus *, char *argv[], const char *logfile);
 
 
-void LoadTransferFunctionFromActuation(LALStatus *, COMPLEX8FrequencySeries **transfer, const CHAR *fname);
+void LoadTransferFunctionFromActuation(LALStatus *, 
+				       COMPLEX8FrequencySeries **transfer, 
+				       REAL8 actuationScale,
+				       const CHAR *fname);
+
 void CreateNautilusDetector (LALStatus *, LALDetector *Detector);
 
 extern void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
@@ -139,6 +143,7 @@ REAL8 uvar_noiseSigma;		/**< Gaussian noise with standard-deviation sigma */
 /* Detector and ephemeris */
 CHAR *uvar_detector;		/**< Detector: LHO, LLO, VIRGO, GEO, TAMA, CIT, ROME */
 CHAR *uvar_actuation;		/**< filename containg detector actuation function */
+REAL8 uvar_actuationScale;	/**< Scale-factor to be applied to actuation-function */
 CHAR *uvar_ephemDir;		/**< Directory path for ephemeris files (optional), use LAL_DATA_PATH if unset. */
 CHAR *uvar_ephemYear;		/**< Year (or range of years) of ephemeris files to be used */
 
@@ -730,11 +735,17 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 	  ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
 	}
       else {
-	TRY ( LoadTransferFunctionFromActuation( status->statusPtr, &(cfg->transfer), uvar_actuation), 
-	      status);
+	TRY ( LoadTransferFunctionFromActuation( status->statusPtr, &(cfg->transfer), 
+						 uvar_actuationScale, uvar_actuation), status);
       }
 
     } /* if uvar_actuation */
+  
+  if ( !uvar_actuation && LALUserVarWasSet(&uvar_actuationScale) )
+    {
+      LALPrintError ("\nActuation-scale was specified without actuation-function file!\n\n");
+      ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+    }
 
 
   DETATCHSTATUSPTR (status);
@@ -784,6 +795,9 @@ InitUserVars (LALStatus *status)
 
   uvar_refTime = 0.0;
 
+  uvar_actuation = NULL;
+  uvar_actuationScale = - 1.0;	/* seems to be the LIGO-default */
+
   /* ---------- register all our user-variable ---------- */
 
   /* output options */
@@ -799,6 +813,8 @@ InitUserVars (LALStatus *status)
 		      "Detector: GEO(0),LLO(1),LHO(2),NAUTILUS(3),VIRGO(4),TAMA(5),CIT(6)");
 
   LALregSTRINGUserVar(status, actuation,   0,  UVAR_OPTIONAL, "Filname containing actuation function of this detector");
+  LALregREALUserVar(status,   actuationScale, 0, UVAR_OPTIONAL, 
+		    "(Signed) scale-factor to apply to the actuation-function.");
 
   LALregSTRINGUserVar(status, ephemDir,	'E', UVAR_OPTIONAL, "Directory path for ephemeris files");
   LALregSTRINGUserVar(status, ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
@@ -1132,7 +1148,10 @@ WriteMFDlog (LALStatus *status, char *argv[], const char *logfile)
  * The transfer-function T is simply the inverse of the actuation A, so T=A^-1.
  */
 void
-LoadTransferFunctionFromActuation(LALStatus *status, COMPLEX8FrequencySeries **transfer, const CHAR *fname)
+LoadTransferFunctionFromActuation(LALStatus *status, 
+				  COMPLEX8FrequencySeries **transfer, /**< [out] transfer-function */
+				  REAL8 actuationScale, 	/**< overall scale-factor to actuation*/
+				  const CHAR *fname)		/**< file containing actuation-function*/
 {
   LALParsedDataFile *fileContents = NULL;
   CHAR *thisline;
@@ -1208,8 +1227,8 @@ LoadTransferFunctionFromActuation(LALStatus *status, COMPLEX8FrequencySeries **t
 	}
 
       /* now convert into transfer-function and (Re,Im): T = A^-1 */
-      data->data[i-startline].re = (REAL4)( cos(phi) / amp );
-      data->data[i-startline].im = (REAL4)(-sin(phi) / amp );
+      data->data[i-startline].re = (REAL4)( cos(phi) / ( amp * actuationScale) );
+      data->data[i-startline].im = (REAL4)(-sin(phi) / ( amp * actuationScale) );
       
     } /* for i < numlines */
 
