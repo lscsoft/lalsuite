@@ -33,39 +33,58 @@ veto, currently it is used primarily for testing. The function itself tests the
 consistency of the triggers that survive the bns and macho inspiral search pipeline 
 by monitoring the behavior of the $r^2$ time series which is calculated for each 
 segment of data (256 seconds). 
+
+\subsubsection*{Thresholds for Searches}
+Two thresholds are currently employed in the binary neutron star and primordial
+black hole inspiral searches: a signal to noise ratio threshold 
+($\rho^*$(\emph{t$_j$}), ($^*$ denoting the threshold), and a threshold on the 
+consistency of the template chirp waveform with the data ($r^{2*}$). At a given instant
+in time, \emph{t$_j$}. $r^2$(\emph{t$_j$}) is defined as:
 \\
-\\
-Two thresholds are currently employed in the bns and macho inspiral searches: a 
-signal to noise ($\rho$) threshold and a threshold on the consistency of the 
-template chirp waveform with the data ($r^2$). The search code calculates 
-$\rho$(\emph{t$_j$}) and $r^2$(\emph{t$_j$}) for a given segment of data and looks 
-for $\rho(\emph{t$_j$})$ $>$ $\rho^*(\emph{t$_j$})$ and $r^2(\emph{t$_j$})$ $<$ 
-$r^{2*}(\emph{t$_j$})$, where $^*$ denotes the threshold used in the search. If 
-both these criteria are met at a given \emph{t$_j$}, an inspiral "trigger" is 
-recorded. 
-\\
-\\
-$r^2$(\emph{t$_j$}) is defined as:
 \begin{equation}
-{r^2(\emph{t$_j$})} = \frac{\chi^2(\emph{t$_j$})}{p + \delta^2\rho^2(\emph{t$_j$})}  
+{r^2(t_j)} = \frac{\chi^2(t_j)}{p}
 \end{equation}
-\\  
+\\
 where:
 \\
 \\
-p = number of $\chi^2$ bins\\
-$\delta$ = mismatch parameter between the template and data\\ 
-$\rho$ = signal to noise ratio
+p = number of $\chi^2$ bins
+\\
+\\
+The search code calculates 
+$\rho$(\emph{t$_j$}) and $r^2$(\emph{t$_j$}) for a given segment of data and looks 
+for: 
+\\
+\begin{equation}
+\rho (t_j) > \rho^*(t_j)
+\end{equation}
+and 
+\begin{equation}
+r^2(t_j) < r^{2*}(t_j) * (1 + \frac{\rho^2(t_j)  \delta^2}{p})
+\end{equation}
+\\
+where:
+\\
+$^*$ = threshold used in the search\\
+$\rho$ = signal to noise ratio\\
+$\delta$ = mismatch between your data and template waveform\\
+p = number of $\chi^2$ bins
+\\
+\\
+If both these criteria are met at a given \emph{t$_j$}, an inspiral "trigger" is 
+recorded.
 
 \subsubsection*{Algorithm}
 The algorithm inputs the the vector \texttt{chisqVec} (which is actually $r^2$) 
 for the whole data segment and searches a time window (\texttt{rsqvetoWindow}) 
 prior to the inferred coalescence time of the trigger up to the trigger time 
-and counts the number of time samples above a given $r^2$ threshold 
-(\texttt{rsqvetoThresh}), looser than the search pipeline employs. The value 
-is currently stored under the \texttt{rsqveto\_duration} field in the 
-\texttt{sngl\_inspiral} xml table. Future implementation of this function will 
-have it take the calculated value and decide whether or not to store the trigger 
+and counts the number of time samples above a given $r^{2**}$ threshold 
+(\texttt{rsqvetoThresh}) different than the search pipeline employs. Note as well 
+that the threshold we impose does not get multiplied by the factor:  
+(1 + {$\rho^2$(t$_j$)$\delta^2$$/p$). The outputted value from this test is 
+stored in the \texttt{rsqveto\_duration} field in the \texttt{sngl\_inspiral} 
+xml table. Future implementation of this function will have it take the 
+calculated value and decide whether or not to store the trigger 
 for future analysis.
 
 \subsubsection*{Uses}
@@ -149,7 +168,7 @@ LALFindChirpFilterOutputVeto(
   /* make sure that the segment structure contains some input */
   ASSERT( segment->data->epoch.gpsSeconds, status, 
       FINDCHIRPFILTEROUTPUTVETOH_ENULL, FINDCHIRPFILTEROUTPUTVETOH_MSGENULL );
-	
+
   /* If an event exists, begin the r^2 veto calculations */  
   while ( event )
   {
