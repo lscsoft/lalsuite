@@ -223,6 +223,7 @@ for seg in data:
     strain1.set_cache(df.get_output())
     strain1.set_name("strain_"+ifo+"_"+str(segment_no)+"_"+str(chunk_number))
     strain1.add_var_opt('data-dir',base_data_dir+'/'+gps_time_first_four+'/'+ifo[0])
+    strain1.add_parent(df)
     dag.add_node(strain1)
     
 # write out the DAG
