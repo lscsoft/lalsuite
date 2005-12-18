@@ -475,18 +475,21 @@ int main(int argc,char *argv[])
   GV.SpinImax = (INT4)(GV.searchRegion.f1dotBand/ thisScan.df1dot + 1e-6) + 1;  
 
   /* debug output about search-parameters */
-  LogPrintf (LOG_DEBUG, "Total number of templates (sky x f x fdot) = %d x %d x %d = %g\n",
-	     thisScan.numGridPoints, GV.FreqImax, GV.SpinImax, 
-	     1.0 * thisScan.numGridPoints * GV.FreqImax * GV.SpinImax );
+  {
+    const CHAR *str;
+    LogPrintf (LOG_DEBUG, "Total number of templates (sky x f x fdot) = %d x %d x %d = %g\n",
+	       thisScan.numGridPoints, GV.FreqImax, GV.SpinImax, 
+	       1.0 * thisScan.numGridPoints * GV.FreqImax * GV.SpinImax );
 
-  LogPrintf (LOG_DETAIL, "skyRegion = '%s'\n", GV.searchRegion.skyRegionString);
-  LogPrintf (LOG_DETAIL, "Frequency-range [%.16g, %.16g]\n", 
-	     GV.searchRegion.Freq, GV.searchRegion.Freq + GV.searchRegion.FreqBand);
-  LogPrintf (LOG_DETAIL, "Spindown-range [%.16g, %.16g]\n", 
-	     GV.searchRegion.f1dot, GV.searchRegion.f1dot + GV.searchRegion.f1dotBand);
-  LogPrintf (LOG_DETAIL, "Grid-spacings: dFreq = %g, df1dot = %g\n\n",
-	     thisScan.dFreq, thisScan.df1dot);
-  
+    str = GV.searchRegion.skyRegionString;
+    LogPrintf (LOG_DETAIL, "skyRegion = '%s'\n", str ? str : "NULL" );
+    LogPrintf (LOG_DETAIL, "Frequency-range [%.16g, %.16g]\n", 
+	       GV.searchRegion.Freq, GV.searchRegion.Freq + GV.searchRegion.FreqBand);
+    LogPrintf (LOG_DETAIL, "Spindown-range [%.16g, %.16g]\n", 
+	       GV.searchRegion.f1dot, GV.searchRegion.f1dot + GV.searchRegion.f1dotBand);
+    LogPrintf (LOG_DETAIL, "Grid-spacings: dFreq = %g, df1dot = %g\n\n",
+	       thisScan.dFreq, thisScan.df1dot);
+  }
 
   /* determine smallest required band of frequency-bins for the search-parameters */
   {
