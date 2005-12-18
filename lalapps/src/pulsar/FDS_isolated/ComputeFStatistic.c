@@ -311,6 +311,7 @@ extern "C" {
   
   int debug_dump_commandline (int argc,  char *argv[]);
   int is_zip_file ( const char *fname );
+  void ourREPORTSTATUS( LALStatus * );
 
 #ifdef FILE_AMCOEFFS
   void PrintAMCoeffs (REAL8 Alpha, REAL8 Delta, AMCoeffs* amc);
@@ -355,6 +356,34 @@ LALStatus global_status;
 /*----------------------------------------------------------------------*/
 
 
+/* freaking LAL's REPORTSTATUS just won't work with any of NDEBUG or 
+ * LAL_NDEBUG set, so it's time to use our own...
+ */
+void
+ourREPORTSTATUS( LALStatus *status )
+{ /* </lalVerbatim> */
+  LALStatus *ptr;                                                    
+  for ( ptr = status; ptr ; ptr = ptr->statusPtr )                  
+  {                                                           
+    LogPrintf ( LOG_NORMAL, "\nLevel %i: %s\n", ptr->level, ptr->Id );    
+    if ( ptr->statusCode )                                    
+    {                                                      
+      LogPrintf ( LOG_NORMAL, "\tStatus code %i: %s\n", ptr->statusCode,      
+                     ptr->statusDescription );                      
+    }                                                            
+    else                                                        
+    {                                                          
+      LogPrintf ( LOG_NORMAL, "\tStatus code 0: Nominal\n" );            
+    }                                                        
+    LogPrintf ( LOG_NORMAL, "\tfunction %s, file %s, line %i\n",      
+                   ptr->function, ptr->file, ptr->line );      
+  }                                                       
+  return;
+
+} /* ourREPORTSTATUS() */
+
+
+
 #if USE_BOINC
 int BOINC_ERR_EXIT(LALStatus  *stat, const char *func, const char *file, const int line, volatile const char *id) {
   if (stat->statusCode) {
@@ -363,7 +392,7 @@ int BOINC_ERR_EXIT(LALStatus  *stat, const char *func, const char *file, const i
             "\tFunction call `%s' failed.\n"
             "\tfile %s, line %d\n",
             id, func, file, line );
-    REPORTSTATUS(stat);
+    ourREPORTSTATUS(stat);
     LogPrintf (LOG_CRITICAL, "BOINC_ERR_EXIT(): now calling boinc_finish()\n");
     boinc_finish( COMPUTEFSTAT_EXIT_LALCALLERROR+stat->statusCode );
   }
