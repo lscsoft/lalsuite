@@ -436,7 +436,11 @@ int main(int argc,char *argv[])
   CHAR resfname[MAXFILENAMELENGTH]; /* buffer for boinc-resolving config-file name */
 
   /* to avoid unwanted filename resolution in LALOpenDataFile() */
+#ifdef _MSC_VER
+  _putenv("LAL_DATA_PATH=");
+#else
   unsetenv("LAL_DATA_PATH");
+#endif
 
   /* set LAL error-handler */
   lal_errhandler = BOINC_ERR_EXIT;
