@@ -2491,7 +2491,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 	    if ( (outdir = LALCalloc (1, strlen ( cfg->skyGridFile ) + 1 )) == NULL ) {
  	      ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
  	    }
- 	    strcpy ( outdir, uvar_skyGridFile ); 
+ 	    strcpy ( outdir, cfg->skyGridFile ); 
  	    /* simply truncate at last '/' */
  	    if ( (ptr = strrchr ( outdir, '/' )) == NULL ) /* no  path? -> local dir */
  	      strcpy ( outdir, "./" );
@@ -4033,7 +4033,7 @@ InitSearchGrid ( LALStatus *status,
   scanInit.projectMetric = uvar_projectMetric;
   scanInit.Detector = &cfg->Detector;
   scanInit.ephemeris = cfg->edat;         /* used by Ephemeris-based metric */
-  scanInit.skyGridFile = uvar_skyGridFile;      /* if applicable */
+  scanInit.skyGridFile = cfg->skyGridFile;      /* if applicable */
 
   scanInit.searchRegion = cfg->searchRegion;
 
