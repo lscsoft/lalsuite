@@ -96,6 +96,7 @@ typedef struct {
   INT4 FreqImax;		/**< number of frequency-bins to run LALDemod for */
   INT4 SpinImax;		/**< number of spindown-values */
   REAL8 DeltaFreqRef;		/**< difference f(tRef) - f(tStart) */
+  CHAR *skyGridFile;		/**< filename of skygrid-file */
 } ConfigVariables;
 
 

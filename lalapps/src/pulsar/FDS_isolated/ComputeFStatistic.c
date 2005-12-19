@@ -2393,17 +2393,34 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }
 
+  /* ----- handle skygrid-file ----- */
+  cfg->skyGridFile = NULL;
+  if (uvar_skyGridFile)  
+    {
+      UINT4 len = strlen (uvar_skyGridFile);
+
+      /* +3 to allow prepending of './' if no path was given */
+      if ( ( cfg->skyGridFile = LALCalloc (1, len + 3)) == NULL ) {
+	ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+      }
+
+      /* does it contain a path? */
+      if ( strchr(uvar_skyGridFile, '/') == NULL )
+	sprintf ( cfg->skyGridFile, "./%s", uvar_skyGridFile );
+      else
+	strcpy ( cfg->skyGridFile, uvar_skyGridFile );
+    }
 
 #if USE_BOINC
-    if (uvar_skyGridFile)
+  if ( uvar_skyGridFile )
       {
 	char resolved_name[MAXFILENAMELENGTH];
 	int is_zipped;
 	/* get physical file-name for sky-grid file */
-	LogPrintf (LOG_DEBUG, "boinc-resolving sky-grid file '%s' ... ", uvar_skyGridFile );
-	if ( boinc_resolve_filename ( uvar_skyGridFile, resolved_name, sizeof(resolved_name)) )
+	LogPrintf (LOG_DEBUG, "boinc-resolving sky-grid file '%s' ... ", cfg->skyGridFile );
+	if ( boinc_resolve_filename ( cfg->skyGridFile, resolved_name, sizeof(resolved_name)) )
 	  {
-	    LogPrintf (LOG_CRITICAL,  "Can't resolve file '%s'\n", uvar_skyGridFile );
+	    LogPrintf (LOG_CRITICAL,  "Can't resolve file '%s'\n", cfg->skyGridFile );
 	    ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
 	  }
 	LogPrintfVerbatim ( LOG_DEBUG, "resolved to '%s'.\n", resolved_name );
@@ -2418,16 +2435,16 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 	if ( !is_zipped )
 	  {
 	    LogPrintf ( LOG_DEBUG, "Skygrid file is not zip-compressed. Using boinc-resolved file.\n");
-	    LALFree ( uvar_skyGridFile );
-	    if ( (uvar_skyGridFile = LALCalloc ( 1, strlen ( resolved_name ) + 1 )) == NULL ) {
+	    LALFree ( cfg->skyGridFile );
+	    if ( (cfg->skyGridFile = LALCalloc ( 1, strlen ( resolved_name ) + 1 )) == NULL ) {
 	      ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
 	    }
-	    strcpy ( uvar_skyGridFile, resolved_name );	/* done */
+	    strcpy ( cfg->skyGridFile, resolved_name );	/* done */
 	  }
 	/* ELSE, if physical skyGrid-file is zipped ==> unzip it *locally*:
 	 * NOTE: a-priori we don't know the output-file(s) of the unzipping-process.
 	 * we rely here on the unzipped skygrid-files ALWAYS having the same name
-	 * as the original uvar_skyGridFile (i.e. BEFORE boinc-resolving!)
+	 * as the original skyGridFile (i.e. BEFORE boinc-resolving!)
 	 **/
 	else 	
 	  {
@@ -2439,15 +2456,15 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 
 	    LogPrintf (LOG_DEBUG, "Sky-grid file is zip-compressed.\n");
 
-	    /* unzip the resolved-name locally: first make sure to remove the uvar_skyGridFile,
+	    /* unzip the resolved-name locally: first make sure to remove the original skyGridFile,
 	     * as the unzipped file is expected to replace it
 	     */
-	    if ( strcmp ( uvar_skyGridFile, resolved_name )  ) /* only if different files! */
+	    if ( strcmp ( cfg->skyGridFile, resolved_name )  ) /* only if different files! */
 	      {
-		LogPrintf (LOG_DEBUG, "Removing boinc-link file '%s' ... ", uvar_skyGridFile );
-		if ( (ret = boinc_delete_file ( uvar_skyGridFile ) ) != 0 )
+		LogPrintf (LOG_DEBUG, "Removing boinc-link file '%s' ... ", cfg->skyGridFile );
+		if ( (ret = boinc_delete_file ( cfg->skyGridFile ) ) != 0 )
 		  {
-		    LogPrintf (LOG_CRITICAL,  "Error removing '%s'. Return value: %d\n", uvar_skyGridFile, ret);
+		    LogPrintf (LOG_CRITICAL,  "Error removing '%s'. Return value: %d\n", cfg->skyGridFile, ret);
 		    LogPrintf (LOG_CRITICAL, "System says: %s\n", strerror (errno) );
 		    ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
 		  }
@@ -2471,7 +2488,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 	      } /* if boinc-link == physical file */
 
 	    /* find directory of boinc-link file */
-	    if ( (outdir = LALCalloc (1, strlen ( uvar_skyGridFile ) + 1 )) == NULL ) {
+	    if ( (outdir = LALCalloc (1, strlen ( cfg->skyGridFile ) + 1 )) == NULL ) {
  	      ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
  	    }
  	    strcpy ( outdir, uvar_skyGridFile ); 
@@ -2492,7 +2509,8 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 
 	    LALFree(outdir);
 
-	    /* the original 'uvar_skyGridfile' should now point to the correct locally unzipped skygrid-file */
+	    /* the original 'cfg->skyGridfile' should now point to the correct 
+	     * locally unzipped skygrid-file */
 	    LogPrintfVerbatim ( LOG_DEBUG, " done.\n");
 	    
 	  } /* if is_zipped */
