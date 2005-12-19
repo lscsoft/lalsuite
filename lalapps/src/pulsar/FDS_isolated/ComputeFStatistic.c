@@ -2878,6 +2878,8 @@ void Freemem(LALStatus *status)
     highFLines->NclustPoints = NULL;
   }
 
+  if ( GV.skyGridFile )
+    LALFree ( GV.skyGridFile );
 
   /* Free ephemeris data */
   LALFree(GV.edat->ephemE);
