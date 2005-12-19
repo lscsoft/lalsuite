@@ -12,6 +12,9 @@
 
 /* System includes */
 #include <stdio.h>
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -431,6 +434,9 @@ int main(int argc,char *argv[])
 
 #if USE_BOINC
   CHAR resfname[MAXFILENAMELENGTH]; /* buffer for boinc-resolving config-file name */
+
+  /* to avoid unwanted filename resolution in LALOpenDataFile() */
+  unsetenv("LAL_DATA_PATH");
 
   /* set LAL error-handler */
   lal_errhandler = BOINC_ERR_EXIT;
