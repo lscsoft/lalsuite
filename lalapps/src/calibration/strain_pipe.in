@@ -96,6 +96,7 @@ for o, a in opts:
 
 config_file = aux_path + '/strainDAGH1.ini'
 log_path = '/usr1/siemens/'
+df_pad=128
 
 if not config_file:
   print >> sys.stderr, "No configuration file specified."
@@ -192,8 +193,8 @@ for seg in data:
   segment_no = segment_no + 1
   # find all the data for first ifo
   df = pipeline.LSCDataFindNode(df_job)
-  df.set_start(seg.start())
-  df.set_end(seg.end())
+  df.set_start(str( int(seg.start())-df_pad ) )
+  df.set_end(str( int(seg.end())+df_pad )  )
   df.set_observatory(ifo[0])
   df.set_type(datatype)
   df.set_name("df_"+ifo+"_"+str(segment_no))
