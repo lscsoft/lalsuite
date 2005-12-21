@@ -452,7 +452,6 @@ void
 LALBCVCVetoSingleInspiral(
     LALStatus                  *status,
     SnglInspiralTable         **eventHead,
-    REAL4                       lambda,
     REAL4                       alphaFhi,
     REAL4                       alphaFlo,
     REAL4                       thresholdT 
@@ -584,6 +583,12 @@ LALSnglInspiralCoincTest(
     LALStatus                  *status,
     CoincInspiralTable         *coincInspiral,
     SnglInspiralTable          *snglInspiral,
+    InspiralAccuracyList       *accuracyParams
+    );
+
+void
+XLALInspiralDistanceCutBCVC(
+    CoincInspiralTable        **coincInspiral,
     InspiralAccuracyList       *accuracyParams
     );
 
@@ -949,6 +954,7 @@ XLALIfoCutSnglBurst (
  *      */
 
 /* sngl ringdown */
+
 void
 LALFreeSnglRingdown (
     LALStatus          *status,

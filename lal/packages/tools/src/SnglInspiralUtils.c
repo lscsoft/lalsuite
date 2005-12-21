@@ -842,7 +842,6 @@ void
 LALBCVCVetoSingleInspiral(
     LALStatus                  *status,
     SnglInspiralTable         **eventHead,
-    REAL4			lambda,
     REAL4                       alphaFhi,
     REAL4                       alphaFlo,
     REAL4                       thresholdT 
@@ -857,8 +856,6 @@ LALBCVCVetoSingleInspiral(
   INITSTATUS( status, "LALBCVCVetoSingleInspiral", SNGLINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
 
-
-
   thisEvent = *eventHead;
 
   while ( thisEvent )
@@ -871,7 +868,7 @@ LALBCVCVetoSingleInspiral(
     alphaF = tmpEvent->tau5 * pow(tmpEvent->f_final,(2.0/3.0));
     veto = 0;
     
-    /* Remove all the triggers that are not in alphaFBox */
+    /* Remove all the triggers that are not in (alphaF/SNR) Box */
     if ((alphaF / tmpEvent->snr)>thresholdT || (alphaF / tmpEvent->snr)<-thresholdT) 
     {
       veto = 1;
@@ -883,10 +880,6 @@ LALBCVCVetoSingleInspiral(
       veto = 1;
     }
 
-    if ( ( tmpEvent->tau4/tmpEvent->snr ) >  lambda )
-    {
-      veto = 1;
-    }
 	
     if ( veto == 0 )
     {

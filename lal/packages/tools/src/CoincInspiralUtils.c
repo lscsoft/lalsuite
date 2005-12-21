@@ -997,6 +997,91 @@ XLALGenerateCoherentBank(
 }
   
 
+
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+void
+XLALInspiralDistanceCutBCVC(
+    CoincInspiralTable        **coincInspiral,
+    InspiralAccuracyList       *accuracyParams
+    )
+/* </lalVerbatim> */
+{
+  static const char *func = "InspiralDistanceCutBCVC";
+  InterferometerNumber  ifoA = LAL_UNKNOWN_IFO;  
+  InterferometerNumber  ifoB = LAL_UNKNOWN_IFO;
+  CoincInspiralTable   *thisCoinc = NULL;
+  CoincInspiralTable   *prevCoinc = NULL;
+  CoincInspiralTable   *coincHead = NULL;
+
+  thisCoinc = *coincInspiral;
+  coincHead = NULL;
+  
+  while( thisCoinc )
+  {
+    INT4  discardTrigger = 0;
+    REAL4 distA = 0, distB = 0;
+    REAL4 kappa = 4, epsilon=0.5;
+
+    CoincInspiralTable *tmpCoinc = thisCoinc;
+    thisCoinc = thisCoinc->next;
+
+    for ( ifoA = 0; ifoA < LAL_NUM_IFO; ifoA++ )
+    {
+      for ( ifoB = ifoA + 1; ifoB < LAL_NUM_IFO; ifoB++ )
+      {
+        /*epsilonB = accuracyParams->ifoAccuracy[ifoB].epsilon;*/
+
+        if( tmpCoinc->snglInspiral[ifoA] 
+            && tmpCoinc->snglInspiral[ifoB]  )
+        {
+          /* perform the distance consistency test */
+          distA = tmpCoinc->snglInspiral[ifoA]->eff_distance;
+          distB = tmpCoinc->snglInspiral[ifoB]->eff_distance;
+	  /* I am using those two parameters independantly of the ifoA; 
+	     we could have use the information stored in ifoB */
+      	  kappa = accuracyParams->ifoAccuracy[ifoA].kappa;
+          epsilon = accuracyParams->ifoAccuracy[ifoA].epsilon;
+ 	  /* Thomas : I found that cut to be acceptable for H1-H2 in S3 
+	     by using kappa = 4 and epsilon = 0.5 */
+          if ( ( kappa*distA - epsilon > distB )  
+	    && ( ifoA==LAL_IFO_H1 && ifoB==LAL_IFO_H2) )
+          {
+            discardTrigger = 1;
+            break;
+          }
+
+      }
+     }
+      if ( discardTrigger )
+      {
+        break;
+      }
+   } 
+
+    if( discardTrigger )
+    {
+      XLALFreeCoincInspiral( &tmpCoinc );
+    }
+    else
+    {
+      if ( ! coincHead )
+      {
+        coincHead = tmpCoinc;
+      }
+      else
+      {
+        prevCoinc->next = tmpCoinc;
+      }
+      tmpCoinc->next = NULL;
+      prevCoinc = tmpCoinc;
+    }
+  }
+  *coincInspiral = coincHead;
+}
+
+
+
+
 /* <lalVerbatim file="CoincInspiralUtilsCP"> */
 void
 XLALInspiralDistanceCut(
