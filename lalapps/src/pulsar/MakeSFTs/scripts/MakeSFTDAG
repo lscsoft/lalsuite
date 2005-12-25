@@ -48,24 +48,25 @@ Usage: MakeSFTDAG [options]
   -G, --tag-string           tag string used in names of various files unique to jobs that will run under the DAG
   -d, --input-data-type      input data type for use with the LSCdataFind --type option
   -x, --extra-datafind-time  (optional) extra time to subtract/add from/to start/end time arguments of LSCdataFind (default is 0)
-  -k  --filter-knee-freq     high pass filter knee frequency used on time domain data before generating SFTs
-  -T  --time-baseline        time baseline of SFTs  (e.g., 60 or 1800 seconds)
-  -p  --output-sft-path      path to output SFTs
-  -C  --cache-path           (optional) path to cache files that will be produced by LSCdataFind (default is $PWD/cache; this directory is created if it does not exist and must agree with that given in .sub files)
-  -O  --log-path             (optional) path to some log, output, and error files (default is $PWD/logs; this directory is created if it does not exist and should agree with that given in .sub files)
-  -o  --sub-log-path         (optional) path to log file to give in datafind.sub and MakeSFTs.sub (default is $PWD/logs; this directory must exist and usually should be under a local file system.)
-  -N  --channel-name         name of input time-domain channel to read from frames
-  -r  --sample-rate          (optional) sample rate of input time-domain channel (default is 16384; currently unused)
-  -w  --window-type          (optional) type of windowing of time-domain to do before generating SFTs (1 = Tukey, 2 = Hann; default is 1; currently MakeSFT code defaults to option 1 regardless)
+  -M, --datafind-match       (optional) string to use with the LSCdataFind --match option
+  -k, --filter-knee-freq     high pass filter knee frequency used on time domain data before generating SFTs
+  -T, --time-baseline        time baseline of SFTs  (e.g., 60 or 1800 seconds)
+  -p, --output-sft-path      path to output SFTs
+  -C, --cache-path           (optional) path to cache files that will be produced by LSCdataFind (default is $PWD/cache; this directory is created if it does not exist and must agree with that given in .sub files)
+  -O, --log-path             (optional) path to some log, output, and error files (default is $PWD/logs; this directory is created if it does not exist and should agree with that given in .sub files)
+  -o, --sub-log-path         (optional) path to log file to give in datafind.sub and MakeSFTs.sub (default is $PWD/logs; this directory must exist and usually should be under a local file system.)
+  -N, --channel-name         name of input time-domain channel to read from frames
+  -r, --sample-rate          (optional) sample rate of input time-domain channel (default is 16384; currently unused)
+  -w, --window-type          (optional) type of windowing of time-domain to do before generating SFTs (1 = Tukey, 2 = Hann; default is 1; currently MakeSFT code defaults to option 1 regardless)
   -v, --sft-ver              (optional) sft version to output (1 or 2; default is 1; currently MakeSFT code defaults to option 1 regardless)
   -m, --max-num-per-node     maximum number of SFTs to generate on one node
   -L, --max-length-all-jobs  maximum total amount of data to process, in seconds (optional and unused if a segment file is given)
   -g, --segment-file         alternative file with segments to use, rather than the input times.
   -l, --min-seg-length       (optional) minimum length segments to process in seconds (used only if a segment file is given; default is 0)
-  -S  --use-single           use single precision in MakeSFTs for windowing, plan and fft; filtering is always done in double precision. Use of double precision in MakeSFTs is the default.
-  -H  --use-hot              input data is from h(t) calibrated frames (h of t = hot!) (0 or 1).
+  -S, --use-single           use single precision in MakeSFTs for windowing, plan and fft; filtering is always done in double precision. Use of double precision in MakeSFTs is the default.
+  -H, --use-hot              input data is from h(t) calibrated frames (h of t = hot!) (0 or 1).
 """
-  print >> sys.stderr, msg
+  print >> sys.stdout, msg
 
 #
 # FUNCTION THAT WRITE ONE JOB TO DAG FILE
@@ -93,7 +94,7 @@ def writeToDag(dagFID, nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, c
 #
 
 # parse the command line options
-shortop = "s:e:a:b:f:t:G:d:x:k:T:p:C:O:o:N:r:w:v:m:L:g:l:hSH"
+shortop = "s:e:a:b:f:t:G:d:x:M:k:T:p:C:O:o:N:r:w:v:m:L:g:l:hSH"
 longop = [
   "help",
   "gps-start-time=",
@@ -105,6 +106,7 @@ longop = [
   "tag-string=",
   "input-data-type=",
   "extra-datafind-time=",
+  "datafind-match=",
   "filter-knee-freq=",
   "time-baseline=",
   "output-sft-path=",
@@ -139,6 +141,7 @@ auxPath = "."
 tagString = None
 inputDataType = None
 extraDatafindTime = 0L
+datafindMatch = None
 filterKneeFreq = -1
 timeBaseline = None
 outputSFTPath = None
@@ -178,6 +181,8 @@ for o, a in opts:
     inputDataType = a
   elif o in ("-x", "--extra-datafind-time"):
     extraDatafindTime = long(a)
+  elif o in ("-M", "--datafind-match"):
+    datafindMatch = a
   elif o in ("-k", "--filter-knee-freq"):
     filterKneeFreq = int(a)
   elif o in ("-T", "--time-baseline"):
@@ -373,7 +378,12 @@ datafindFID = file('datafind.sub','w')
 datafindLogFile = subLogPath + '/' + 'datafind_' + dagFileName + '.log'
 datafindFID.write('universe = scheduler\n')
 datafindFID.write('executable = $ENV(LSC_DATAFIND_PATH)/LSCdataFind\n')
-datafindFID.write('arguments = --observatory $(observatory) --url-type file --gps-start-time $(gpsstarttime) --gps-end-time $(gpsendtime) --lal-cache --type $(inputdatatype) --match localhost\n')
+
+if not datafindMatch:
+   dataFindMatchString = ''
+else:
+   dataFindMatchString = '--match ' + datafindMatch
+datafindFID.write('arguments = --observatory $(observatory) --url-type file --gps-start-time $(gpsstarttime) --gps-end-time $(gpsendtime) --lal-cache --type $(inputdatatype) %s\n' % dataFindMatchString)
 datafindFID.write('getenv = True\n')
 datafindFID.write('log = %s\n' % datafindLogFile)
 datafindFID.write('error = %s/datafind_$(tagstring).err\n' % logPath)
