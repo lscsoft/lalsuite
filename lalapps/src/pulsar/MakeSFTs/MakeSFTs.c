@@ -16,6 +16,7 @@
 /* 11/19/05 gam; Add command line option to use single rather than double precision; will use LALDButterworthREAL4TimeSeries in single precision case. */
 /* 11/19/05 gam; Rename vtilde fftDataDouble; add in fftDatasingle; rename fplan fftPlanDouble; add in fftPlanSingle */
 /* 11/29/05 gam; Add PRINTEXAMPLEDATA to print the first NUMTOPRINT, middle NUMTOPRINT, and last NUMTOPRINT input/ouput data at various stages */
+/* 12/27/05 gam; Add option make-gps-dirs, -D <num>, to make directory based on this many GPS digits. */
 
 #include <config.h>
 #if !defined HAVE_LIBGSL || !defined HAVE_LIBLALFRAME
@@ -89,15 +90,16 @@ FILE* tryopen(char *name, char *mode){
   return fp;
 }
 
-
 /***************************************************************************/
 
 /* STRUCTURES */
 struct CommandLineArgsTag {
   REAL8 HPf;              /* High pass filtering frequency */
   INT4 T;                 /* SFT duration */
+  char *stringT;          /* 12/27/05 gam; string with SFT duration */
   INT4 GPSStart;
   INT4 GPSEnd;
+  INT4 makeGPSDirs;        /* 12/27/05 gam; add option to make directories based on gps time */
   BOOLEAN htdata;          /* flag that indicates we're doing h(t) data */
   char *FrCacheFile;       /* Frame cache file */
   char *ChannelName;
@@ -163,6 +165,35 @@ int WriteSFT(struct CommandLineArgsTag CLA);
 
 /* Frees the memory */
 int FreeMem(struct CommandLineArgsTag CLA);
+
+/* 12/27/05 gam; function to create sftDescField for output directory or filename. */
+void getSFTDescField(CHAR *sftDescField, CHAR *numSFTs, CHAR *ifo, CHAR *stringT, CHAR *typeMisc) {
+       strcpy(sftDescField,numSFTs);
+       strcat(sftDescField, "_");
+       strcat(sftDescField,ifo);
+       strcat(sftDescField, "_");
+       strcat(sftDescField,stringT);
+       strcat(sftDescField, "SFT");
+       if (typeMisc != NULL) {
+          strcat(sftDescField, "_");
+          strcat(sftDescField, typeMisc);
+       }
+}
+
+/* 12/27/05 gam; concat to the sftPath the directory name based on GPS time; make this directory if it does not already exist */
+void mkSFTDir(CHAR *sftPath, CHAR *site, CHAR *numSFTs, CHAR *ifo, CHAR *stringT, CHAR *typeMisc,CHAR *gpstime, INT4 numGPSdigits) {
+     CHAR sftDescField[256];
+     CHAR mkdirCommand[256];
+     strcat(sftPath,"/");
+     strcat(sftPath,site);
+     strcat(sftPath,"-");
+     getSFTDescField(sftDescField, numSFTs, ifo, stringT, typeMisc);
+     strcat(sftPath,sftDescField);
+     strcat(sftPath,"-");
+     strncat(sftPath,gpstime,numGPSdigits);
+     sprintf(mkdirCommand,"mkdir -p %s",sftPath);
+     system(mkdirCommand);
+}
 
 #if TRACKMEMUSE
 void printmemuse() {
@@ -382,24 +413,27 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"channel-name",         required_argument, NULL,          'N'},
     {"gps-start-time",       required_argument, NULL,          's'},
     {"gps-end-time",         required_argument, NULL,          'e'},
+    {"make-gps-dirs",        optional_argument, NULL,          'D'},
     {"ht-data",              no_argument,       NULL,          'H'},
-    {"use-single",           no_argument,       NULL,          'S'},    
+    {"use-single",           no_argument,       NULL,          'S'},
     {"help",                 no_argument,       NULL,          'h'},
     {0, 0, 0, 0}
   };
-  char args[] = "hHSf:t:C:N:s:e:p:";
-  
+  char args[] = "hHSf:t:C:N:s:e:D:p:";
+
   /* Initialize default values */
   CLA->HPf=-1.0;
   CLA->T=0.0;
+  CLA->stringT=NULL;  /* 12/27/05 gam */
   CLA->FrCacheFile=NULL;
   CLA->GPSStart=0;
   CLA->GPSEnd=0;
+  CLA->makeGPSDirs=0; /* 12/27/05 gam; add option to make directories based on gps time */
   CLA->ChannelName=NULL;
   CLA->SFTpath=NULL;
   CLA->htdata = 0;
   CLA->useSingle = 0; /* 11/19/05 gam; default is to use double precision, not single. */
-  
+
   /* Scan through list of command line arguments */
   while ( 1 )
   {
@@ -426,6 +460,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       break;
     case 't':
       /* SFT time */
+      CLA->stringT = optarg;  /* 12/27/05 gam; keep pointer to string that gives the SFT duration */
       CLA->T=atoi(optarg);
       break;
     case 'C':
@@ -440,6 +475,10 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       /* GPS end */
       CLA->GPSEnd=atof(optarg);
       break;
+    case 'D':
+      /* 12/27/05 gam; make directories based on GPS time */
+      CLA->makeGPSDirs=atof(optarg);
+      break;        
     case 'N':
       CLA->ChannelName=optarg;       
       break;
@@ -451,10 +490,12 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"Arguments are:\n");
       fprintf(stdout,"\thigh-pass-freq (-f)\tFLOAT\t High pass filtering frequency in Hz.\n");
       fprintf(stdout,"\tsft-duration (-t)\tFLOAT\t SFT duration in seconds.\n");
-      fprintf(stdout,"\tsft-write-path (-p)\tFLOAT\t Location of ouput SFTs.\n");
+      fprintf(stdout,"\tsft-write-path (-p)\tFLOAT\t Location of output SFTs.\n");
       fprintf(stdout,"\tframe-cache (-C)\tSTRING\t Path to frame cache file (including the filename).\n");
       fprintf(stdout,"\tgps-start-time (-s)\tINT\t GPS start time of segment.\n");
       fprintf(stdout,"\tgps-end-time (-e)\tINT\t GPS end time of segment.\n");
+      fprintf(stdout,"\tgps-end-time (-e)\tINT\t GPS end time of segment.\n");
+      fprintf(stdout,"\tmake-gps-dirs (-D)\tINT\t (optional) make directories for output SFTs based on this many digits of the GPS time.\n");
       fprintf(stdout,"\tchannel-name (-N)\tSTRING\t Name of channel to read within a frame.\n");
       fprintf(stdout,"\tht-data (-H)\t\tFLAG\t This is h(t) data (use Real8's; Procdata ).\n");
       fprintf(stdout,"\tuse-single (-S)\t\tFLAG\t Use single precision for window, plan, and fft; double precision filtering is always done.\n");
@@ -492,6 +533,13 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   if(CLA->GPSEnd == 0)
     {
       fprintf(stderr,"No GPS end time specified.\n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
+      return 1;
+    }
+    
+  if(CLA->makeGPSDirs < 0)
+    {
+      fprintf(stderr,"Illegal make-gps-dirs option given.\n");
       fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }
@@ -859,19 +907,36 @@ int CreateSFT(struct CommandLineArgsTag CLA)
 int WriteSFT(struct CommandLineArgsTag CLA)
 {
   char sftname[256];
-  char ifo[2];
+  char numSFTs[2]; /* 12/27/05 gam */
+  char site[2];    /* 12/27/05 gam */
+  char ifo[3];     /* 12/27/05 gam; allow 3rd charactor for null termination */
   int firstbin=(INT4)(FMIN*CLA.T+0.5), k;
   FILE *fpsft;
   int errorcode1=0,errorcode2=0;
-  char gpstime[10];
+  char gpstime[11]; /* 12/27/05 gam; allow for 10 digit GPS times and null termination */
   REAL4 rpw,ipw;
-  
+
+  /* 12/27/05 gam; set up the number of SFTs, site, and ifo as null terminated strings */
+  numSFTs[0] = '1';
+  numSFTs[1] = '\0'; /* null terminate */
+  strncpy( site, CLA.ChannelName, 1 );
+  site[1] = '\0'; /* null terminate */
   strncpy( ifo, CLA.ChannelName, 2 );
+  ifo[2] = '\0'; /* null terminate */
+  sprintf(gpstime,"%09d",gpsepoch.gpsSeconds);
+
   strcpy( sftname, CLA.SFTpath );
+  /* 12/27/05 gam; add option to make directories based on gps time */
+  if (CLA.makeGPSDirs > 0) {
+     CHAR *typeMisc= NULL;
+     /* 12/27/05 gam; concat to the sftname the directory name based on GPS time; make this directory if it does not already exist */
+     mkSFTDir(sftname, site, numSFTs, ifo, CLA.stringT, typeMisc, gpstime, CLA.makeGPSDirs);
+  }
 
   strcat(sftname,"/SFT_");
   strncat(sftname,ifo,2);
-  sprintf(gpstime,".%09d",gpsepoch.gpsSeconds);
+  /* sprintf(gpstime,".%09d",gpsepoch.gpsSeconds); */ /* 12/27/05 gam; moved above */
+  strcat(sftname,".");
   strcat(sftname,gpstime);
 
   /* open SFT file for writing */
