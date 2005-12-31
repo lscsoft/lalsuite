@@ -62,6 +62,7 @@
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/ComputeFstat.h>
 #include <lal/Statistics.h>
+#include <lal/GeneratePulsarSignal.h> 
 
 /* lalapps includes */
 #include <lalapps.h>
@@ -269,6 +270,11 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
   void GetChkPointIndex( LALStatus *status,
 			 INT4 *loopindex, 
 			 CHAR *fnameChkPoint);
+
+  void AddSignalToSFTVec( LALStatus *status,
+			  SFTVector *sftvec, 
+			  PulsarSignalParams *injectParams,
+			  SFTParams *sftParams);
 
   
 #ifdef  __cplusplus

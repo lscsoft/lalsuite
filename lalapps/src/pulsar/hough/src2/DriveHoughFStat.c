@@ -130,6 +130,7 @@ BOOLEAN uvar_printStats; /**< global variable for calculating Hough map stats */
 #define IFO 2         /**<  Default detector, 1:GEO, 2:LLO, 3:LHO  */
 #define BLOCKSRNGMED 101 /**< Default running median window size */
 #define FSTART 255.0   /**< Default Start search frequency */
+#define FINJECT 255.0 /**< frequency of injected signal if necessary */
 #define FBAND 0.001    /**< Default search band */
 #define FDOT 0.0      /**< Default value of first spindown */
 #define DFDOT 0.0   /**< Default range of first spindown parameter */
@@ -141,7 +142,7 @@ BOOLEAN uvar_printStats; /**< global variable for calculating Hough map stats */
 #define DDELTA 0.001 /**< Default resolution for isotropic or flat grids */
 #define FSTATTHRESHOLD 2.6  /**< Default threshold on Fstatistic for peak selection */
 #define NCAND1 5 /**< Default number of candidates to be followed up from first stage */
-#define SFTDIRECTORY "/local_data/badkri/fakesfts/"  /**< Default directory containing sfts */
+#define SFTDIRECTORY "/home/badkri/fakesfts/"  /**< Default directory containing sfts */
 #define FNAMEOUT "./candidates"  /**< Default output file basename */
 
 int main( int argc, char *argv[]) {
@@ -165,6 +166,7 @@ int main( int argc, char *argv[]) {
   LIGOTimeGPSVector *startTsft1=NULL; 
   LIGOTimeGPSVector *startTsft2=NULL; 
   REAL8 refTime;
+  LIGOTimeGPS refTimeGPS;
 
   /* velocities and positions at midTstack */
   REAL8VectorSequence *velStack=NULL;
@@ -230,6 +232,10 @@ int main( int argc, char *argv[]) {
   FILE *fpHough=NULL;
   FILE *fpFstat1=NULL;
 
+  /* signal injection variables */
+  PulsarSignalParams  injectParams1, injectParams2;
+  SFTParams sftParams1, sftParams2;
+
   /* checkpoint filename and index of loop over skypoints */
   /*   CHAR *fnameChkPoint=NULL; */
   /*   FILE *fpChkPoint=NULL; */
@@ -242,6 +248,7 @@ int main( int argc, char *argv[]) {
   BOOLEAN uvar_chkPoint;
   BOOLEAN uvar_followUp;
   BOOLEAN uvar_printFstat1;
+  BOOLEAN uvar_injectSignal; /* if signal is to be injected */
   REAL8 uvar_dAlpha, uvar_dDelta; /* resolution for flat or isotropic grids */
   REAL8 uvar_fdot; /* first spindown value */
   REAL8 uvar_fdotBand; /* range of first spindown parameter */
@@ -252,6 +259,9 @@ int main( int argc, char *argv[]) {
   REAL8 uvar_metricMismatch1;
   REAL8 uvar_metricMismatch2;
   REAL8 uvar_refTime;
+  REAL8 uvar_injectAplus, uvar_injectAcross; 
+  REAL8 uvar_injectF0, uvar_injectAlpha, uvar_injectDelta, uvar_injectFdot;
+  REAL8 uvar_injectPhi0, uvar_injectPsi;
   INT4 uvar_nCand1; /* number of candidates to be followed up from first stage */
   INT4 uvar_nCand2; /* number of candidates from second stage */
   INT4 uvar_ifo1, uvar_ifo2; 
@@ -312,6 +322,16 @@ int main( int argc, char *argv[]) {
   uvar_metricMismatch1 = uvar_metricMismatch2 = MISMATCH;
   uvar_reallocBlock = 5000;
 
+  uvar_injectSignal = FALSE;
+  uvar_injectAplus = 0.0;
+  uvar_injectAcross = 0.0;  
+  uvar_injectF0 = FINJECT;
+  uvar_injectAlpha = LAL_PI;
+  uvar_injectDelta = 0.0;
+  uvar_injectFdot = 0.0;
+  uvar_injectPhi0 = 0.0;
+  uvar_injectPsi = 0.0;
+
   uvar_skyGridFile = NULL;
 
   uvar_skyRegion = (CHAR *)LALMalloc(512*sizeof(CHAR));
@@ -357,13 +377,13 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterREALUserVar(   &status, "dDelta",           0,  UVAR_OPTIONAL, "Resolution for flat or isotropic grids",            &uvar_dDelta),          &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameout",        'o', UVAR_OPTIONAL, "Output basefileneme",                               &uvar_fnameout),        &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "FstatPeakSelect",  0,  UVAR_OPTIONAL, "Threshold on Fstatistic for peak selection",        &uvar_FstatPeakSelect), &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "nCand1",           0,  UVAR_OPTIONAL, "No. of 1st stage candidates to be followed up",     &uvar_nCand1),          &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "nCand2",           0,  UVAR_OPTIONAL, "No. of 2nd stage candidates to be followed up",     &uvar_nCand2),          &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "nCand1",           0,  UVAR_OPTIONAL, "No.of 1st stage candidates to be followed up",      &uvar_nCand1),          &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "nCand2",           0,  UVAR_OPTIONAL, "No.of 2nd stage candidates to be saved/followed up",&uvar_nCand2),          &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "houghThr",         0,  UVAR_OPTIONAL, "Hough number count threshold (default --nCand1)",   &uvar_houghThr),        &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "fstatThr",         0,  UVAR_OPTIONAL, "Fstat threshold (default --nCand2)",                &uvar_fstatThr),        &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printCand1",       0,  UVAR_OPTIONAL, "Print 1st stage candidates",                        &uvar_printCand1),      &status);  
   LAL_CALL( LALRegisterREALUserVar(   &status, "refTime",          0,  UVAR_OPTIONAL, "Ref. time for pulsar pars (default = start time)",  &uvar_refTime),         &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",    'w', UVAR_OPTIONAL, "RngMed block size",                                 &uvar_blocksRngMed),    &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",     0,  UVAR_OPTIONAL, "RngMed block size",                                 &uvar_blocksRngMed),    &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris",  'E', UVAR_OPTIONAL, "Earth Ephemeris file",                              &uvar_earthEphemeris),  &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris",    'S', UVAR_OPTIONAL, "Sun Ephemeris file",                                &uvar_sunEphemeris),    &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "reallocBlock",     0,  UVAR_DEVELOPER,"Blocks to realloc for Fstat output if necessary",   &uvar_reallocBlock),    &status);
@@ -373,6 +393,18 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printStats",       0,  UVAR_DEVELOPER,"Print Hough map statistics",                        &uvar_printStats),      &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printFstat1",      0,  UVAR_DEVELOPER,"Print 1st stage Fstat vectors ",                    &uvar_printFstat1),     &status);  
   LAL_CALL( LALRegisterINTUserVar(    &status, "Dterms",           0,  UVAR_DEVELOPER,"For Dirichlet Kernel approx.",                      &uvar_Dterms ),         &status);
+
+  /* signal injection parameters */
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "injectSignal",     0,  UVAR_OPTIONAL, "If signal is to be injected",                       &uvar_injectSignal),    &status);  
+  LAL_CALL( LALRegisterREALUserVar(   &status, "injectF0",         0,  UVAR_OPTIONAL, "Frequency of injected signal",                      &uvar_injectF0),        &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "injectFdot",       0,  UVAR_OPTIONAL, "Spindown of injected signal",                       &uvar_injectFdot),      &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "injectAlpha",      0,  UVAR_OPTIONAL, "Right ascension of injected signal",                &uvar_injectAlpha),     &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "injectDelta",      0,  UVAR_OPTIONAL, "Declination of injected signal",                    &uvar_injectDelta),     &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "injectPhi0",       0,  UVAR_OPTIONAL, "Initial phase of injected signal",                  &uvar_injectPhi0),      &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "injectPsi",        0,  UVAR_OPTIONAL, "Polarization angle of injected signal",             &uvar_injectPsi),       &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "injectAplus",      0,  UVAR_OPTIONAL, "Amplitude of injected signal (plus polarization)",  &uvar_injectAplus),     &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "injectAcross",     0,  UVAR_OPTIONAL, "Amplitude of injected signal (cross polarization)", &uvar_injectAcross),    &status);
+
 
   /* read all command line variables */
   LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
@@ -402,6 +434,13 @@ int main( int argc, char *argv[]) {
     exit( DRIVEHOUGHFSTAT_EBAD );
   }
 
+  /* no need to follow up zero 1st stage candidates */
+  if ( uvar_nCand1 <= 0 )
+    uvar_followUp = FALSE;
+
+  /* no need to follow up if no candidates are to be saved */
+  if ( uvar_nCand2 <= 0 )
+    uvar_followUp = FALSE;
 
   /* write the log file */
   if ( uvar_log ) 
@@ -420,7 +459,7 @@ int main( int argc, char *argv[]) {
       /* get the log string */
       LAL_CALL( LALUserVarGetLog(&status, &logstr, UVAR_LOGFMT_CFGFILE), &status);  
       
-      fprintf( fpLog, "## Log file for MCInjectHoughS2\n\n");
+      fprintf( fpLog, "## Log file for DriveHoughFStat\n\n");
       fprintf( fpLog, "# User Input:\n");
       fprintf( fpLog, "#-------------------------------------------\n");
       fprintf( fpLog, logstr);
@@ -455,7 +494,6 @@ int main( int argc, char *argv[]) {
   if (uvar_ifo2 == 3) detector2 = lalCachedDetectors[LALDetectorIndexLHODIFF];
 
 
-
   /* create output Hough file for writing if requested by user */
   if ( uvar_printCand1 )
     {
@@ -473,7 +511,6 @@ int main( int argc, char *argv[]) {
   /*------------- read sfts and set up sft timestamp vector ----------*/
   /* for first stage */
   {
-
     /* new SFT I/O data types */
     SFTCatalog *catalog1=NULL;
     SFTConstraints *constraints1=NULL;
@@ -517,6 +554,9 @@ int main( int argc, char *argv[]) {
     else
       refTime = tStart1;
 
+    LAL_CALL ( LALFloatToGPS ( &status, &refTimeGPS, &refTime), &status);
+
+
     /* read the sfts */
     LAL_CALL( LALLoadSFTs ( &status, &inputSFTVec1, catalog1, fMin, fMax), &status);
 
@@ -524,15 +564,77 @@ int main( int argc, char *argv[]) {
     sftlength1 = inputSFTVec1->data->data->length;
     sftFminBin1 = floor( timebase1 * inputSFTVec1->data->f0 + 0.5);	      
 
-    /* normalize sfts */
-    LAL_CALL( LALNormalizeSFTVect (&status, inputSFTVec1, uvar_blocksRngMed, 0), &status);
-
     /* free memory */
     LALFree(tempDir);
     LAL_CALL( LALDestroySFTCatalog( &status, &catalog1 ), &status);  	
 
   } /* end of 1st stage sft reading block */
 
+
+  /* initialize ephemeris info */ 
+  edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
+  (*edat).ephiles.earthEphemeris = uvar_earthEphemeris;
+  (*edat).ephiles.sunEphemeris = uvar_sunEphemeris;
+
+  /* Leap seconds for the first timestamp */   
+  LAL_CALL( LALLeapSecs(&status, &tmpLeap, startTsft1->data, &lsfas), &status);
+  (*edat).leap = (INT2)tmpLeap;
+  
+  /* read in ephemeris data */
+  LAL_CALL( LALInitBarycenter( &status, edat), &status);
+
+
+
+  /*-------------- inject signal to sft if requested by user -----------*/
+  if ( uvar_injectSignal ) 
+    {
+      REAL8Vector spindownVec;
+
+      /* set up pulsar injection parameters */
+      injectParams1.orbit = NULL;
+      /* params.transferFunction = NULL; */
+      injectParams1.site = &(detector1);
+      injectParams1.ephemerides = edat;
+      injectParams1.startTimeGPS.gpsSeconds = startTsft1->data[0].gpsSeconds;   /* start time of output time series */
+      injectParams1.startTimeGPS.gpsNanoSeconds = startTsft1->data[0].gpsNanoSeconds;   /* start time of output time series */
+      injectParams1.duration = tObs1; /* length of time series in seconds */
+      
+      injectParams1.samplingRate = 2.0 * deltaF1*(sftlength1 - 1.);
+      injectParams1.fHeterodyne = inputSFTVec1->data->f0;  
+      
+      injectParams1.pulsar.tRef.gpsSeconds = refTimeGPS.gpsSeconds; 
+      injectParams1.pulsar.tRef.gpsNanoSeconds = refTimeGPS.gpsNanoSeconds; 
+
+      injectParams1.pulsar.position.longitude = uvar_injectAlpha;
+      injectParams1.pulsar.position.latitude = uvar_injectDelta;
+      injectParams1.pulsar.position.system = COORDINATESYSTEM_EQUATORIAL; 
+      injectParams1.pulsar.psi = uvar_injectPsi;
+      injectParams1.pulsar.aPlus = uvar_injectAplus;
+      injectParams1.pulsar.aCross = uvar_injectAcross;
+      injectParams1.pulsar.phi0 = uvar_injectPhi0;
+      injectParams1.pulsar.f0 = uvar_injectF0;
+
+      spindownVec.length = 1;
+      spindownVec.data = NULL; 
+      spindownVec.data = (REAL8 *)LALMalloc( sizeof(REAL8) );
+      spindownVec.data[0] = uvar_injectFdot;
+      injectParams1.pulsar.spindown = &spindownVec;
+
+      sftParams1.Tsft = timebase1;
+      sftParams1.timestamps = startTsft1;
+      sftParams1.noiseSFTs = NULL;       /* or =inputSFTs; */
+
+      LAL_CALL( AddSignalToSFTVec( &status, inputSFTVec1, &injectParams1, 
+				   &sftParams1), &status);    
+
+      LALFree(spindownVec.data);
+
+    }
+
+
+  /* normalize sfts */
+  LAL_CALL( LALNormalizeSFTVect (&status, inputSFTVec1, uvar_blocksRngMed, 0), &status);
+  
 
   /*------------- set up 1st stage stacks -----------------*/
 
@@ -598,9 +700,6 @@ int main( int argc, char *argv[]) {
   
   /*------------ calculate velocity and position for each 1st stage stack ------------*/
   /* setting of ephemeris info */ 
-  edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
-  (*edat).ephiles.earthEphemeris = uvar_earthEphemeris;
-  (*edat).ephiles.sunEphemeris = uvar_sunEphemeris;
 
   /* create velocity and position vectors */
   {
@@ -610,20 +709,14 @@ int main( int argc, char *argv[]) {
     LAL_CALL( LALDCreateVectorSequence ( &status,  &velStack, &createPar), &status);
     LAL_CALL( LALDCreateVectorSequence ( &status,  &posStack, &createPar), &status);
   }
-    
-  /* Leap seconds for the first timestamp */   
-  LAL_CALL( LALLeapSecs(&status, &tmpLeap, midTstack1.data, &lsfas), &status);
-  (*edat).leap = (INT2)tmpLeap;
-  
-  /* read in ephemeris data */
-  LAL_CALL( LALInitBarycenter( &status, edat), &status);
   
   /* calculate detector velocity and position at mid time of stacks*/
   /* maybe calculate average over stack as well? */
-  for (k=0; k<nStacks1; k++){
-    LAL_CALL (LALDetectorVel ( &status, velStack->data + 3*k, midTstack1.data + k, detector1, edat), &status);
-    LAL_CALL (LALDetectorPos ( &status, posStack->data + 3*k, midTstack1.data + k, detector1, edat), &status);
-  }
+  for (k=0; k<nStacks1; k++)
+    {
+      LAL_CALL (LALDetectorVel ( &status, velStack->data + 3*k, midTstack1.data + k, detector1, edat), &status);
+      LAL_CALL (LALDetectorPos ( &status, posStack->data + 3*k, midTstack1.data + k, detector1, edat), &status);
+    }
 
 
 
@@ -687,14 +780,61 @@ int main( int argc, char *argv[]) {
 	/* set other sft parameters */
 	sftlength2 = inputSFTVec2->data->data->length;
 	sftFminBin2 = floor( timebase2 * inputSFTVec2->data->f0 + 0.5);	      
-	
-	/* normalize sfts */
-	LAL_CALL( LALNormalizeSFTVect (&status, inputSFTVec2, uvar_blocksRngMed, 0), &status);
-      
+	     
 	/* free memory */
 	LALFree(tempDir);
 	LAL_CALL( LALDestroySFTCatalog( &status, &catalog2 ), &status);  	
+
+
+	/*-------------- inject signal to sfts if requested by user -----------*/
+	if ( uvar_injectSignal ) 
+	  {
+	    REAL8Vector spindownVec;
+	    
+	    /* set up pulsar injection parameters */
+	    injectParams2.orbit = NULL;
+	    /* params.transferFunction = NULL; */
+	    injectParams2.site = &(detector2);
+	    injectParams2.ephemerides = edat;
+	    injectParams2.startTimeGPS.gpsSeconds = startTsft2->data[0].gpsSeconds;   /* start time of output time series */
+	    injectParams2.startTimeGPS.gpsNanoSeconds = startTsft2->data[0].gpsNanoSeconds;   /* start time of output time series */
+	    injectParams2.duration = tObs1; /* length of time series in seconds */
+	    
+	    injectParams2.samplingRate = 2.0 * deltaF2*(sftlength2 - 1.);
+	    injectParams2.fHeterodyne = inputSFTVec2->data->f0;  
+	    
+	    injectParams2.pulsar.tRef.gpsSeconds = refTimeGPS.gpsSeconds; 
+	    injectParams2.pulsar.tRef.gpsNanoSeconds = refTimeGPS.gpsNanoSeconds; 
+	    
+	    injectParams2.pulsar.position.longitude = uvar_injectAlpha;
+	    injectParams2.pulsar.position.latitude = uvar_injectDelta;
+	    injectParams2.pulsar.position.system = COORDINATESYSTEM_EQUATORIAL; 
+	    injectParams2.pulsar.psi = uvar_injectPsi;
+	    injectParams2.pulsar.aPlus = uvar_injectAplus;
+	    injectParams2.pulsar.aCross = uvar_injectAcross;
+	    injectParams2.pulsar.phi0 = uvar_injectPhi0;
+	    injectParams2.pulsar.f0 = uvar_injectF0;
+	    
+	    spindownVec.length = 1;
+	    spindownVec.data = NULL; 
+	    spindownVec.data = (REAL8 *)LALMalloc( sizeof(REAL8) );
+	    spindownVec.data[0] = uvar_injectFdot;
+	    injectParams2.pulsar.spindown = &spindownVec;
+	    
+	    sftParams2.Tsft = timebase2;
+	    sftParams2.timestamps = startTsft2;
+	    sftParams2.noiseSFTs = NULL;       /* or =inputSFTs; */
+	    
+	    LAL_CALL( AddSignalToSFTVec( &status, inputSFTVec2, &injectParams2, 
+					 &sftParams2), &status);    
+	    
+	    LALFree(spindownVec.data);
+	    
+	  } /* end signal injection into follow-up sfts */	
 	
+	/* normalize sfts */
+	LAL_CALL( LALNormalizeSFTVect (&status, inputSFTVec2, uvar_blocksRngMed, 0), &status);
+
       } /* end sftdir2 if statement */
     else 
       {
@@ -2502,3 +2642,61 @@ void GetChkPointIndex( LALStatus *status,
   RETURN(status);
 
 }
+
+
+
+/** Add signal to sft */
+void AddSignalToSFTVec( LALStatus *status,
+			SFTVector *sftvec, 
+			PulsarSignalParams *injectParams,
+			SFTParams *sftParams)
+{ 
+  INITSTATUS( status, "AddSignalToSFTVec", rcsid );
+  ATTATCHSTATUSPTR (status);
+
+  REAL4TimeSeries *signalTseries = NULL;
+  INT4 k,j, nSFTs, sftlength;
+  SFTVector *signalSFTs = NULL;
+  SFTtype *sft1, *sft2;
+  COMPLEX8 *sftData1, *sftData2;
+    
+  TRY( LALGeneratePulsarSignal(status->statusPtr, &signalTseries, injectParams ), status);
+  TRY( LALSignalToSFTs(status->statusPtr, &signalSFTs, signalTseries, sftParams ), status);
+  
+  nSFTs = sftvec->length;
+  sftlength = sftvec->data->data->length;
+
+  /* add the signal sfts to the input sfts */
+  for (k=0; k<nSFTs; k++)
+    {
+      sft1 = sftvec->data + k;
+      sft2 = signalSFTs->data + k;
+      sftData1 = sft1->data->data;
+      sftData2 = sft2->data->data;
+      
+      for (j=0; j<sftlength; j++)  
+	{
+	  sftData1->re += sftData2->re;
+	  sftData1->im += sftData2->im;
+	  sftData1++;
+	  sftData2++;
+	}
+    }
+  
+  LALFree(signalTseries->data->data);
+  LALFree(signalTseries->data);
+  LALFree(signalTseries);
+  signalTseries = NULL;
+  
+  TRY( LALDestroySFTVector(status->statusPtr, &signalSFTs), status );
+  signalSFTs = NULL;
+  
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+}
+
+
+
+
+
+

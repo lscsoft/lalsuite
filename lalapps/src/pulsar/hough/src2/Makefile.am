@@ -13,7 +13,7 @@ bin_PROGRAMS = HoughValidateAM HoughMismatch DriveHoughFStat
 HoughValidateAM_SOURCES = HoughValidateAM.c ../src/MCInjectHoughS2.h \
 	                  ../src/SFTbin.h ../src/SFTbin.c \
 			  ../src/DriveHoughColor.h ../src/PeakSelect.h \
-			  ../src/PeakSelect.c
+				  ../src/PeakSelect.c
 HoughMismatch_SOURCES = HoughMismatch.c ../src/MCInjectHoughS2.h \
 			../src/SFTbin.h ../src/SFTbin.c \
 			../src/DriveHoughColor.h ../src/PeakSelect.h \
@@ -23,3 +23,4 @@ DriveHoughFStat_SOURCES = DriveHoughFStat.c DriveHoughFStat.h \
 			  ../../FDS_isolated/LogPrintf.c ../../FDS_isolated/LogPrintf.h	\
 			  ../../FDS_isolated/FstatToplist.c ../../FDS_isolated/FstatToplist.h \
 			  ../../FDS_isolated/ComputeFstatistic.h
+
