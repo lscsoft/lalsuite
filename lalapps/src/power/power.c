@@ -702,7 +702,7 @@ void parse_command_line(
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		ADD_PROCESS_PARAM("int");
+		ADD_PROCESS_PARAM("float");
 		break;
 
 		case 'g':
