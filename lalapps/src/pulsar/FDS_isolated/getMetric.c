@@ -357,8 +357,10 @@ printPulsarMetric(LALStatus *status, const UserInput *uvar, const ConfigVariable
 	metric->data [ PMETRIC_INDEX(3,a) ] /= uvar->Freq;
     }
 
-  printf ("\n %s Metric: (f, alpha, delta, f1dot) \n", 
-	  uvar->projectMetric ? "Projected":"Unprojected");
+  if ( lalDebugLevel )
+    printf ("\n %s Metric: (f, alpha, delta, f1dot) \n", 
+	    uvar->projectMetric ? "Projected":"Unprojected");
+
   TRY ( printMetric(status->statusPtr, metric ), status);
 
   TRY( LALDDestroyVector (status->statusPtr, &metric), status);
@@ -425,7 +427,7 @@ printFlatPulsarMetric (LALStatus *status, const UserInput *uvar, const ConfigVar
 void
 printMetric (LALStatus *status, const REAL8Vector *metric ) 
 {
-  UINT4 a, b, dim;
+  UINT4 row, col, dim;
 
   INITSTATUS (status, "printMetric", rcsid);
 
@@ -436,18 +438,18 @@ printMetric (LALStatus *status, const REAL8Vector *metric )
 
   /* print metric components (in octave/matlab format) */
   printf  ("[ ");
-  for ( a=0; a < dim; a++ )
+  for ( row = 0; row < dim; row ++ )
     {
-      if ( a > 0 ) printf ("  ");
-      for ( b = 0; b < dim; b ++ )
+      if ( row > 0 ) printf ("  ");
+      for ( col = 0; col < dim; col ++ )
 	{
-	  if ( b > 0 ) printf (",");
-	  printf (" %16g", metric->data[ PMETRIC_INDEX(a,b) ] );
+	  if ( col > 0 ) printf (",");
+	  printf (" %16g", metric->data[ PMETRIC_INDEX(row,col) ] );
 	}
-      if ( a == dim - 1 ) printf (";\n");
+      if ( row < dim - 1 ) 
+	printf (";\n");
       else printf("];\n");
     }
-
 
   RETURN(status);
 
