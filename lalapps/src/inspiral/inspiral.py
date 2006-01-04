@@ -655,9 +655,6 @@ class TrigToTmpltNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     ifo_tag = string to tag source interferometers, overrides the source_ifo
     for naming files
     """
-    for infile in self.get_args():
-      self.add_input_file(infile)
-    
     if chunk.trig_start():
       self.set_start(chunk.trig_start() - max_slide)
     else:
