@@ -38,12 +38,11 @@ information on \prog{lalapps\_stopp}.
 
 \subsection{Creating the DAG}
 
-In order to create the DAG, a configuration file is required, an example
-of which can be found in\\
-\texttt{\$LALAPPS\_PREFIX\$/share/lalapps/stochastic\_S3\_H1L1.ini}.
-This configuration specfies the parameters to use for each step of the
-pipeline. See Section~\ref{program:lalapps-stochastic-pipe} for details
-regarding the layout of the configuration file.
+In order to create the DAG, a configuration file is required, examples
+of which can be found in the \texttt{lalapps/src/stochastic/example}
+directory. This configuration specfies the parameters to use for each
+step of the pipeline. See Section~\ref{program:lalapps-stochastic-pipe}
+for details regarding the layout of the configuration file.
 
 Any combination of nodes, see above, can be present in the DAG, assuming
 that the dependancies for each node are satisfied. The datafine node has
