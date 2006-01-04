@@ -67,3 +67,7 @@ General:
 * use XLAL functions in precedence of LAL functions
 
 * move as many of the helper functions as possible into LAL
+
+* need to fully update documentation, out of date as it refers to
+  needing to set the LSC DataFind Server which is now specified within
+  the config file
