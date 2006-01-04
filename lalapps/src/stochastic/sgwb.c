@@ -2,7 +2,7 @@
  * sgwb.c - SGWB Standalone Analysis Pipeline
  *        - Main Stochastic Search Functions
  * 
- * Copyright (C) 2002-2005 Adam Mercer
+ * Copyright (C) 2002-2006 Adam Mercer
  * Copyright (C) 2003-2004 Tania Regimbau
  * 
  * This program is free software; you can redistribute it and/or modify
