@@ -23,6 +23,7 @@
 /* 12/28/05 gam; Add option --overlap-fraction -P (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 0.0) */
 /* 12/28/05 gam; Add sft-version, -v option to select output SFT version (1 = default is version 1 SFTs; 2 = version 2 SFTs */
 /* 12/28/05 gam; Add comment-field, -c option, for comment for version 2 SFTs */
+/* 01/05/06 gam; Add in version 2 normalization; add function to print example version 2 SFT data; add memory checking */
 
 #include <config.h>
 #if !defined HAVE_LIBGSL || !defined HAVE_LIBLALFRAME
@@ -352,6 +353,22 @@ void printExampleSFTDataGoingToFile(struct CommandLineArgsTag CLA)
     }    
   }
   fflush(stdout);
+}
+
+void printExampleVersion2SFTDataGoingToFile(struct CommandLineArgsTag CLA, SFTtype *oneSFT)
+{
+  int k;
+  INT4 nsamples=(INT4)(DF*CLA.T+0.5);
+
+  for (k=0; k<NUMTOPRINT; k++) {  
+    fprintf(stdout,"%i %23.16e %23.16e\n",k,oneSFT->data->data[k].re,oneSFT->data->data[k].im);
+  }
+  for (k=nsamples/2; k<nsamples/2+NUMTOPRINT; k++) {
+    fprintf(stdout,"%i %23.16e %23.16e\n",k,oneSFT->data->data[k].re,oneSFT->data->data[k].im);
+  }
+  for (k=nsamples-NUMTOPRINT; k<nsamples; k++) {
+    fprintf(stdout,"%i %23.16e %23.16e\n",k,oneSFT->data->data[k].re,oneSFT->data->data[k].im);
+  }    
 }
 #endif
 
@@ -1168,7 +1185,10 @@ int WriteSFT(struct CommandLineArgsTag CLA)
         printf("\nExample real and imaginary SFT values going to file from fftDataSingle in WriteSFT:\n"); printExampleSFTDataGoingToFile(CLA);
     #endif     
     LALCDestroyVector( &status, &fftDataSingle );
-    TESTSTATUS( &status );    
+    TESTSTATUS( &status );
+    #if TRACKMEMUSE
+      printf("Memory use after destroying fftDataSingle in WriteSFT:\n"); printmemuse();
+    #endif
   } else {    
     /* Write SFT */
     for (k=0; k<header.nsamples; k++)
@@ -1184,7 +1204,10 @@ int WriteSFT(struct CommandLineArgsTag CLA)
         printf("\nExample real and imaginary SFT values going to file from fftDataDouble in WriteSFT:\n"); printExampleSFTDataGoingToFile(CLA);
     #endif
     LALZDestroyVector( &status, &fftDataDouble );
-    TESTSTATUS( &status );    
+    TESTSTATUS( &status );
+    #if TRACKMEMUSE
+      printf("Memory use after destroying fftDataDouble in WriteSFT:\n"); printmemuse();
+    #endif
   }
 
   /* Check that there were no errors while writing SFTS */
@@ -1214,6 +1237,8 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
   char gpstime[11]; /* 12/27/05 gam; allow for 10 digit GPS times and null termination */
   SFTtype *oneSFT = NULL;
   INT4 nBins = (INT4)(DF*CLA.T+0.5);
+  REAL4 singleDeltaT = 0.0; /* 01/05/06 gam */
+  REAL8 doubleDeltaT = 0.0; /* 01/05/06 gam */
 
   /* 12/27/05 gam; set up the number of SFTs, site, and ifo as null terminated strings */
   numSFTs[0] = '1';
@@ -1237,6 +1262,9 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
   /* make container to store the SFT data */
   LALCreateSFTtype (&status, &oneSFT, ((UINT4)nBins));
   TESTSTATUS( &status );
+  #if TRACKMEMUSE
+      printf("Memory use after creating oneSFT and calling LALCreateSFTtype in WriteVersion2SFT:\n"); printmemuse();
+  #endif
   
   /* copy the data to oneSFT */
   strcpy(oneSFT->name,ifo);
@@ -1247,27 +1275,35 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
   oneSFT->data->length=nBins;
   
   if(CLA.useSingle) {
+    singleDeltaT = ((REAL4)dataSingle.deltaT); /* 01/05/06 gam; and normalize SFTs using this below */
     for (k=0; k<nBins; k++)
     {
-      oneSFT->data->data[k].re = fftDataSingle->data[k+firstbin].re;
-      oneSFT->data->data[k].im = fftDataSingle->data[k+firstbin].im;
+      oneSFT->data->data[k].re = singleDeltaT*fftDataSingle->data[k+firstbin].re;
+      oneSFT->data->data[k].im = singleDeltaT*fftDataSingle->data[k+firstbin].im;
     }
     #if PRINTEXAMPLEDATA
-        printf("\nExample real and imaginary SFT values going to file from fftDataSingle in WriteVersion2SFT:\n"); printExampleSFTDataGoingToFile(CLA);
+        printf("\nExample real and imaginary SFT values going to file from fftDataSingle in WriteVersion2SFT:\n"); printExampleVersion2SFTDataGoingToFile(CLA,oneSFT);
     #endif
     LALCDestroyVector( &status, &fftDataSingle );
     TESTSTATUS( &status );
-  } else {    
+    #if TRACKMEMUSE
+      printf("Memory use after destroying fftDataSingle in WriteVersion2SFT:\n"); printmemuse();
+    #endif
+  } else {
+    doubleDeltaT = ((REAL8)dataDouble.deltaT); /* 01/05/06 gam; and normalize SFTs using this below */
     for (k=0; k<nBins; k++)
     {
-      oneSFT->data->data[k].re = fftDataDouble->data[k+firstbin].re;
-      oneSFT->data->data[k].im = fftDataDouble->data[k+firstbin].im;
+      oneSFT->data->data[k].re = doubleDeltaT*fftDataDouble->data[k+firstbin].re;
+      oneSFT->data->data[k].im = doubleDeltaT*fftDataDouble->data[k+firstbin].im;
     }
     #if PRINTEXAMPLEDATA
-        printf("\nExample real and imaginary SFT values going to file from fftDataDouble in WriteVersion2SFT:\n"); printExampleSFTDataGoingToFile(CLA);
+        printf("\nExample real and imaginary SFT values going to file from fftDataDouble in WriteVersion2SFT:\n"); printExampleVersion2SFTDataGoingToFile(CLA,oneSFT);
     #endif
     LALZDestroyVector( &status, &fftDataDouble );
     TESTSTATUS( &status );
+    #if TRACKMEMUSE
+      printf("Memory use after destroying fftDataDouble in WriteVersion2SFT:\n"); printmemuse();
+    #endif
   }  
 
   /* write the SFT */
@@ -1276,6 +1312,9 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
 
   LALDestroySFTtype (&status,&oneSFT);
   TESTSTATUS( &status );
+  #if TRACKMEMUSE
+      printf("Memory use after destroying oneSFT and calling LALDestroySFTtype in WriteVersion2SFT:\n"); printmemuse();
+  #endif
 
   return 0;
 }
