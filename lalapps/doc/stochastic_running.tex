@@ -114,22 +114,6 @@ valid is 12 hours, if a longer duration is required it can be increased
 by appending ``\option{-hours}~\parm{HOURS}'' to the call to
 \prog{grid-proxy-init}.
 
-So that LSCdataFind knows what datafind server to query the
-\texttt{LSC\_DATAFIND\_SERVER} environment variable must be set to the
-address of the datafind server to use. For example, if the pipeline is
-being run on the UWM Medusa cluster the relevant datafind server is
-shown below, for bash:
-
-\begin{verbatim}
-> export LSC_DATAFIND_SERVER=dataserver.phys.uwm.edu
-\end{verbatim}
-
-\noindent or for csh:
-
-\begin{verbatim}
-> setenv LSC_DATAFIND_SERVER dataserver.phys.uwm.edu
-\end{verbatim}
-
 Now that everything is setup, the DAG is ready to be submitted to condor
 for execution. This is achieved with the following command.
 
