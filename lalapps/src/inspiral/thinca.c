@@ -1256,7 +1256,7 @@ int main( int argc, char *argv[] )
        alphaFhi, alphaFlo , lambda , thresholdT);
 	
     LAL_CALL( LALBCVCVetoSingleInspiral( &status, &(inspiralEventList),lambda,
-      alphaFhi, alphaFlo, thresholdT), &status );
+      alphaFhi, alphaFlo), &status );
   }
 
   /* maximize over a given interval */
