@@ -24,6 +24,7 @@
 /* 12/28/05 gam; Add sft-version, -v option to select output SFT version (1 = default is version 1 SFTs; 2 = version 2 SFTs */
 /* 12/28/05 gam; Add comment-field, -c option, for comment for version 2 SFTs */
 /* 01/05/06 gam; Add in version 2 normalization; add function to print example version 2 SFT data; add memory checking */
+/* 01/09/06 gam; Add make-tmp-file, -Z option; write SFT to .*.tmp file, then move to final file name. */
 
 #include <config.h>
 #if !defined HAVE_LIBGSL || !defined HAVE_LIBLALFRAME
@@ -108,6 +109,7 @@ struct CommandLineArgsTag {
   INT4 sftVersion;         /* 12/28/05 gam; output SFT version */
   char *commentField;      /* 12/28/05 gam; string comment for version 2 SFTs */
   BOOLEAN htdata;          /* flag that indicates we're doing h(t) data */
+  BOOLEAN makeTmpFile;     /* 01/09/06 gam */
   char *FrCacheFile;       /* Frame cache file */
   char *ChannelName;
   char *SFTpath;           /* path to SFT file location */
@@ -222,6 +224,13 @@ void mkSFTFilename(CHAR *sftFilename, CHAR *site, CHAR *numSFTs, CHAR *ifo, CHAR
      strcat(sftFilename,"-");
      strcat(sftFilename,stringT);
      strcat(sftFilename,".sft");
+}
+
+/* 01/09/06 gam; move filename1 to filename2 */
+void mvFilenames(CHAR *filename1, CHAR *filename2) {
+     CHAR mvFilenamesCommand[512];
+     sprintf(mvFilenamesCommand,"mv %s %s",filename1,filename2);
+     system(mvFilenamesCommand);
 }
 
 #if TRACKMEMUSE
@@ -478,6 +487,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"start-freq",           optional_argument, NULL,          'F'},
     {"band",                 optional_argument, NULL,          'B'},
     {"make-gps-dirs",        optional_argument, NULL,          'D'},
+    {"make-tmp-file",        optional_argument, NULL,          'Z'},
     {"misc-desc",            optional_argument, NULL,          'X'},
     {"window-type",          optional_argument, NULL,          'w'},
     {"overlap-fraction",     optional_argument, NULL,          'P'},
@@ -486,7 +496,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"help",                 no_argument,       NULL,          'h'},
     {0, 0, 0, 0}
   };
-  char args[] = "hHSf:t:C:N:s:e:v:c:F:B:D:X:w:P:p:";
+  char args[] = "hHZSf:t:C:N:s:e:v:c:F:B:D:X:w:P:p:";
 
   /* Initialize default values */
   CLA->HPf=-1.0;
@@ -504,6 +514,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->windowOption=1;  /* 12/28/05 gam; window options; 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window */
   CLA->overlapFraction=0.0; /* 12/28/05 gam; overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 0.0). */
   CLA->htdata = 0;
+  CLA->makeTmpFile = 0; /* 01/09/06 gam */  
   CLA->useSingle = 0; /* 11/19/05 gam; default is to use double precision, not single. */
 
   /* Scan through list of command line arguments */
@@ -521,6 +532,10 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     case 'H':
       /* high pass frequency */
       CLA->htdata=1;
+      break;
+    case 'Z':
+      /* make tmp file */
+      CLA->makeTmpFile=1;
       break;
     case 'S':
       /* use single precision */
@@ -600,6 +615,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\tstart-freq (-F) \tFLOAT\t (optional) start frequency of the SFTs (default is 48 Hz).\n");
       fprintf(stdout,"\tband (-B)       \tFLOAT\t (optional) frequency band of the SFTs (default is 2000 Hz).\n");
       fprintf(stdout,"\tmake-gps-dirs (-D)\tINT\t (optional) make directories for output SFTs based on this many digits of the GPS time.\n");
+      fprintf(stdout,"\tmake-tmp-file (-Z)\tINT\t (optional) write SFT to .*.tmp file, then move to final filename.\n");
       fprintf(stdout,"\tmisc-desc (-X)   \tSTRING\t (optional) misc. part of the SFT description field in the filename (also used if make-gps-dirs, -D option, is > 0)\n");
       fprintf(stdout,"\twindow-type (-w)\tINT\t (optional) 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window\n");
       fprintf(stdout,"\toverlap-fraction (-P)\tFLOAT\t (optional) overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 0.0).\n");
@@ -1123,6 +1139,7 @@ int CreateSFT(struct CommandLineArgsTag CLA)
 int WriteSFT(struct CommandLineArgsTag CLA)
 {
   char sftname[256];
+  char sftnameFinal[256]; /* 01/09/06 gam */
   char numSFTs[2]; /* 12/27/05 gam */
   char site[2];    /* 12/27/05 gam */
   char ifo[3];     /* 12/27/05 gam; allow 3rd charactor for null termination */
@@ -1148,15 +1165,30 @@ int WriteSFT(struct CommandLineArgsTag CLA)
      mkSFTDir(sftname, site, numSFTs, ifo, CLA.stringT, CLA.miscDesc, gpstime, CLA.makeGPSDirs);
   }
 
-  strcat(sftname,"/SFT_");
-  strncat(sftname,ifo,2);
-  /* sprintf(gpstime,".%09d",gpsepoch.gpsSeconds); */ /* 12/27/05 gam; moved above */
-  strcat(sftname,".");
-  strcat(sftname,gpstime);
+  /* 01/09/06 gam; sftname will be temporary; will move to sftnameFinal. */
+  if(CLA.makeTmpFile) {
+    /* set up sftnameFinal with usual SFT name */
+    strcpy(sftnameFinal,sftname);
+    strcat(sftnameFinal,"/SFT_");
+    strncat(sftnameFinal,ifo,2);
+    strcat(sftnameFinal,".");
+    strcat(sftnameFinal,gpstime);
+    /* sftname begins with . and ends in .tmp */
+    strcat(sftname,"/.SFT_");
+    strncat(sftname,ifo,2);
+    strcat(sftname,".");
+    strcat(sftname,gpstime);
+    strcat(sftname,".tmp");
+  } else {     
+    strcat(sftname,"/SFT_");
+    strncat(sftname,ifo,2);
+    strcat(sftname,".");
+    strcat(sftname,gpstime);
+  }  
 
   /* open SFT file for writing */
   fpsft=tryopen(sftname,"w");
-      
+
   /* write header */
   header.endian=1.0;
   header.gps_sec=gpsepoch.gpsSeconds;
@@ -1219,6 +1251,10 @@ int WriteSFT(struct CommandLineArgsTag CLA)
   
   fclose(fpsft);
 
+  /* 01/09/06 gam; sftname is temporary; move to sftnameFinal. */
+  if(CLA.makeTmpFile) {  
+    mvFilenames(sftname,sftnameFinal);
+  }
 
   return 0;
 }
@@ -1230,6 +1266,7 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
 {
   char sftname[256];
   char sftFilename[256];
+  char sftnameFinal[256]; /* 01/09/06 gam */
   char numSFTs[2]; /* 12/27/05 gam */
   char site[2];    /* 12/27/05 gam */
   char ifo[3];     /* 12/27/05 gam; allow 3rd charactor for null termination */
@@ -1255,9 +1292,21 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
      /* 12/27/05 gam; concat to the sftname the directory name based on GPS time; make this directory if it does not already exist */
      mkSFTDir(sftname, site, numSFTs, ifo, CLA.stringT, CLA.miscDesc, gpstime, CLA.makeGPSDirs);
   }
+
   strcat(sftname,"/");
   mkSFTFilename(sftFilename, site, numSFTs, ifo, CLA.stringT, CLA.miscDesc, gpstime);
-  strcat(sftname,sftFilename);
+  /* 01/09/06 gam; sftname will be temporary; will move to sftnameFinal. */
+  if(CLA.makeTmpFile) {
+    /* set up sftnameFinal with usual SFT name */
+    strcpy(sftnameFinal,sftname);
+    strcat(sftnameFinal,sftFilename);
+    /* sftname begins with . and ends in .tmp */
+    strcat(sftname,".");
+    strcat(sftname,sftFilename);
+    strcat(sftname,".tmp");
+  } else {
+    strcat(sftname,sftFilename);
+  }  
 
   /* make container to store the SFT data */
   LALCreateSFTtype (&status, &oneSFT, ((UINT4)nBins));
@@ -1309,6 +1358,11 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
   /* write the SFT */
   LALWriteSFT2file(&status, oneSFT, sftname, CLA.commentField);
   TESTSTATUS( &status );
+
+  /* 01/09/06 gam; sftname is temporary; move to sftnameFinal. */
+  if(CLA.makeTmpFile) {  
+    mvFilenames(sftname,sftnameFinal);
+  }
 
   LALDestroySFTtype (&status,&oneSFT);
   TESTSTATUS( &status );
