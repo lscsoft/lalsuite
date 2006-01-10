@@ -436,10 +436,13 @@ int main(int argc,char *argv[])
   CHAR resfname[MAXFILENAMELENGTH]; /* buffer for boinc-resolving config-file name */
 
   /* to avoid unwanted filename resolution in LALOpenDataFile() */
-#ifdef _MSC_VER
+#ifdef _MSC_VER /* for MSC */
   _putenv("LAL_DATA_PATH=");
-#else
+#elif HAVE_UNSETENV /* should have been checked in configure */
   unsetenv("LAL_DATA_PATH");
+#else
+  /* hope that this does the right thing on Systems that don't have unsetenv... */
+  putenv("LAL_DATA_PATH");
 #endif
 
   /* set LAL error-handler */
