@@ -195,17 +195,8 @@ LALFreeSnglInspiral (
     )
 /* </lalVerbatim> */
 {
-  EventIDColumn        *eventId;
-
   INITSTATUS( status, "LALFreeSnglInspiral", SNGLINSPIRALUTILSC );
-  while ( (*eventHead)->event_id )
-  {
-    /* free any associated event_id's */
-    eventId = (*eventHead)->event_id;
-    (*eventHead)->event_id = (*eventHead)->event_id->next;
-    LALFree( eventId );
-  }
-  LALFree( *eventHead );
+  XLALFreeSnglInspiral( eventHead );
   RETURN( status );
 }
 
@@ -217,12 +208,25 @@ XLALFreeSnglInspiral (
 /* </lalVerbatim> */
 {
   EventIDColumn        *eventId;
+  CoincInspiralTable   *thisCoinc;
+  InterferometerNumber  ifoNumber;
 
-  while ( (*eventHead)->event_id )
+  while ( (eventId = (*eventHead)->event_id) )
   {
     /* free any associated event_id's */
-    eventId = (*eventHead)->event_id;
     (*eventHead)->event_id = (*eventHead)->event_id->next;
+    
+    if( (thisCoinc = eventId->coincInspiralTable) )
+    {
+      /* this Sngl is still part of a coinc, set pointer to NULL */
+      for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+      {
+        if ( *eventHead == thisCoinc->snglInspiral[ifoNumber] )
+        {
+          thisCoinc->snglInspiral[ifoNumber] = NULL;
+        }
+      }
+    }
     LALFree( eventId );
   }
   LALFree( *eventHead );
