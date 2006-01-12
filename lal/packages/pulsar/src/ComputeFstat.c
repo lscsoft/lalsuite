@@ -130,7 +130,8 @@ XLALComputeFaFb ( Fcomponents *FaFb,
       REAL4 b = amcoe->b->data[alpha];
 
       REAL8 xhat_alpha, y_alpha;	/* xhat(alpha), y(alpha): need to be REAL8 !! */
-      REAL4 x0;
+      REAL8 x0;
+      REAL4 x0_remainder;
       UINT4 k;			/* loop index over frequency-bins */
       UINT4 kstar;		/* central frequency-bin k* = round(xhat_alpha) */
 
@@ -141,7 +142,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,
       REAL4 realQ, imagQ;	/* Re and Im of Q = e^{-i y} */
       REAL4 realQXP, imagQXP;	/* Re/Im of Q_alpha XP_alpha */
       UINT4 k0, k1;
-      REAL4 x0_remainder;
+
 
       /* ----- calculate x(alpha,0) and y(alpha) */
       {
@@ -214,7 +215,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,
        */
 
       Xalpha_k = Xalpha + k0 - freqIndex0;  /* first frequency-bin in sum */
-      x0 = (REAL4)(xhat_alpha - (REAL8)k0);	/* first xhat-value in the loop */
+      x0 = (xhat_alpha - (REAL8)k0);	/* first xhat-value in the loop */
 
       /* we branch now (instead of inside the central loop)
        * depending on wether x0 can ever become SMALL in the loop or not, 
@@ -229,7 +230,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 	    {
 	      REAL4 realP, imagP;	/* real and imaginary parts of Dirichlet-kernel P_alpha_k */
 	      COMPLEX8 Xa = *Xalpha_k;
-	      REAL4 xinv;
+	      REAL8 xinv;
 	      
 	      /* calculate Dirichlet-kernel: P_alpha_k */
 	      if( fabs(x0) <  LD_SMALL4 ) /* If x0 is small: correct x->0 limit : P_apha_k = 1 */
@@ -239,7 +240,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 		} /* x0 too near zero */      
 	      else 	
 		{ /* safe to invert x0 */
-		  xinv = OOTWOPI_FLOAT / x0;
+		  xinv = LAL_TWOPI / x0;
 		  realP = sinx * xinv;
 		  imagP = cosxm1 * xinv;
 		  
@@ -249,7 +250,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 		} /* x0 not near zero */
 	      
 	      Xalpha_k ++;	/* point to next frequency-bin */
-	      x0 -- ;	/* x0-value for next iteration */
+	      x0 -= 1.0 ;	/* x0-value for next iteration */
 	      
 	    } /* for k=kstar-Dterms to kstar+Dterms */
 	  
@@ -262,7 +263,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 	    {
 	      REAL4 realP, imagP;	/* real and imaginary parts of Dirichlet-kernel P_alpha_k */
 	      COMPLEX8 Xa = *Xalpha_k;
-	      REAL4 xinv = OOTWOPI_FLOAT / x0;
+	      REAL8 xinv = LAL_TWOPI / x0;
 	      
 	      /* calculate P_alpha_k */
 	      realP = sinx * xinv;
@@ -273,7 +274,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 	      imagXP += imagP * Xa.re + realP * Xa.im;
 	      
 	      Xalpha_k ++;	/* point to next frequency-bin */
-	      x0 -- ;	/* x0-value for next iteration */
+	      x0 -= 1.0 ;	/* x0-value for next iteration */
 	      
 	    } /* for k=kstar-Dterms to kstar+Dterms */
 	  
