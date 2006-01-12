@@ -240,7 +240,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 		} /* x0 too near zero */      
 	      else 	
 		{ /* safe to invert x0 */
-		  xinv = LAL_TWOPI / x0;
+		  xinv = OOTWOPI / x0;
 		  realP = sinx * xinv;
 		  imagP = cosxm1 * xinv;
 		  
@@ -263,7 +263,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 	    {
 	      REAL4 realP, imagP;	/* real and imaginary parts of Dirichlet-kernel P_alpha_k */
 	      COMPLEX8 Xa = *Xalpha_k;
-	      REAL8 xinv = LAL_TWOPI / x0;
+	      REAL8 xinv = OOTWOPI / x0;
 	      
 	      /* calculate P_alpha_k */
 	      realP = sinx * xinv;
