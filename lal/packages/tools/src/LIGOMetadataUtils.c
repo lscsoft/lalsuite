@@ -360,49 +360,57 @@ LALPlaygroundInSearchSummary (
     )
 /* </lalVerbatim> */
 {
-  INT8 startNS, endNS, lengthNS, playNS;
-
+  INT4 playCheck = 0;
   INITSTATUS( status, "LALPlaygroundInSearchSummary", LIGOMETADATAUTILSC );
   ATTATCHSTATUSPTR( status );
 
-  ASSERT( ssTable, status,
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
-  ASSERT( ssTable, status,
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
-  ASSERT( ssTable, status,
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+  playCheck = XLALPlaygroundInSearchSummary ( ssTable, inPlayTime, 
+      outPlayTime );
 
-  LALGPStoINT8( status->statusPtr, &startNS, &(ssTable->in_start_time) );
-  CHECKSTATUSPTR( status );
-  LALGPStoINT8( status->statusPtr, &endNS, &(ssTable->in_end_time) );
-  CHECKSTATUSPTR( status );
-  lengthNS = endNS - startNS;
-  playNS = PlaygroundOverlap( endNS, lengthNS );
-  if ( playNS < 0 )
+  if ( playCheck < 0 )
   {
     ABORT( status, LIGOMETADATAUTILSH_ETIME, LIGOMETADATAUTILSH_MSGETIME );
   }
-  LALINT8toGPS( status->statusPtr, inPlayTime, &playNS );
-  CHECKSTATUSPTR( status );
-
-  LALGPStoINT8( status->statusPtr, &startNS, &(ssTable->out_start_time) );
-  CHECKSTATUSPTR( status );
-  LALGPStoINT8( status->statusPtr, &endNS, &(ssTable->out_end_time) );
-  CHECKSTATUSPTR( status );
-  lengthNS = endNS - startNS;
-
-  playNS = PlaygroundOverlap( endNS, lengthNS );
-  if ( playNS < 0 )
-  {
-    ABORT( status, LIGOMETADATAUTILSH_ETIME, LIGOMETADATAUTILSH_MSGETIME );
-  }
-  LALINT8toGPS( status->statusPtr, outPlayTime, &playNS );
-  CHECKSTATUSPTR( status );
 
   DETATCHSTATUSPTR( status );
   RETURN( status );
 }
 
+/* <lalVerbatim file="LIGOMetadataUtilsCP"> */
+int
+XLALPlaygroundInSearchSummary (
+    SearchSummaryTable *ssTable,
+    LIGOTimeGPS        *inPlayTime,
+    LIGOTimeGPS        *outPlayTime
+    )
+/* </lalVerbatim> */
+{
+  static const char *func = "PlaygroundInSearchSummary";
+  INT8 startNS, endNS, lengthNS, playNS;
+
+  startNS = XLALGPStoINT8( &(ssTable->in_start_time) );
+  endNS = XLALGPStoINT8( &(ssTable->in_end_time) );
+  lengthNS = endNS - startNS;
+  playNS = PlaygroundOverlap( endNS, lengthNS );
+  if ( playNS < 0 )
+  {
+    XLAL_ERROR(func,XLAL_EIO);
+  }
+  inPlayTime = XLALINT8toGPS( inPlayTime, playNS );
+
+  startNS = XLALGPStoINT8( &(ssTable->out_start_time) );
+  endNS = XLALGPStoINT8( &(ssTable->out_end_time) );
+  lengthNS = endNS - startNS;
+
+  playNS = PlaygroundOverlap( endNS, lengthNS );
+  if ( playNS < 0 )
+  {
+    XLAL_ERROR(func,XLAL_EIO);
+  }
+  outPlayTime = XLALINT8toGPS( outPlayTime, playNS );
+
+  return( 0 );
+}
 
 
 /* <lalVerbatim file="LIGOMetadataUtilsCP"> */
@@ -509,24 +517,24 @@ LALCompareSearchSummaryByOutTime (
 }
 
 /* <lalVerbatim file="LIGOMetadataUtilsCP"> */
-void
-LALTimeSortSearchSummary (
-    LALStatus            *status,
+int
+XLALTimeSortSearchSummary(
     SearchSummaryTable  **summHead,
     int(*comparfunc)    (const void *, const void *)
     )
 /* </lalVerbatim> */
 {
+  static const char *func = "TimeSortSearchSummary";
   INT4                  i;
   INT4                  numSumms = 0;
   SearchSummaryTable    *thisSearchSumm = NULL;
   SearchSummaryTable   **summHandle = NULL;
 
-  INITSTATUS( status, "LALTimeSortSearchSummary", LIGOMETADATAUTILSC );
-  ATTATCHSTATUSPTR( status );
+  if ( !summHead )
+  {
+    XLAL_ERROR(func,XLAL_EIO);
+  }
 
-  ASSERT( summHead, status, 
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
 
   /* count the number of summs in the linked list */
   for ( thisSearchSumm = *summHead; thisSearchSumm; 
@@ -536,9 +544,7 @@ LALTimeSortSearchSummary (
   }
   if ( ! numSumms )
   {
-    LALWarning( status, "No summs in list to sort" );
-    DETATCHSTATUSPTR (status);
-    RETURN( status );
+    return( 0 );
   }
 
   /* allocate memory for an array of ptrs to sort and populate array */
@@ -564,9 +570,89 @@ LALTimeSortSearchSummary (
   /* free the internal memory */
   LALFree( summHandle );
 
+  return( 0 );
+}
+
+
+
+/* <lalVerbatim file="LIGOMetadataUtilsCP"> */
+void
+LALTimeSortSearchSummary (
+    LALStatus            *status,
+    SearchSummaryTable  **summHead,
+    int(*comparfunc)    (const void *, const void *)
+    )
+/* </lalVerbatim> */
+{
+  INITSTATUS( status, "LALTimeSortSearchSummary", LIGOMETADATAUTILSC );
+  ATTATCHSTATUSPTR( status );
+
+  ASSERT( summHead, status, 
+      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+
+  XLALTimeSortSearchSummary( summHead, comparfunc );
+
   DETATCHSTATUSPTR (status);
   RETURN( status );
 }
+
+
+/* <lalVerbatim file="LIGOMetadataUtilsCP"> */
+SearchSummaryTable *
+XLALIfoScanSearchSummary(
+    SearchSummaryTable         *input,
+    CHAR                       *ifos
+    )
+/* </lalVerbatim> */
+{
+  static const char *func = "IfoScanSearchSummary";
+  SearchSummaryTable    *output = NULL;
+  SearchSummaryTable    *thisSearchSumm = NULL;
+  SearchSummaryTable    *keptSumm = NULL;
+
+
+  if ( !input )
+  {
+    XLAL_ERROR_NULL(func,XLAL_EIO);
+  }
+    
+  /* Scan through a linked list of search_summary tables and return a
+     pointer to the head of a linked list of tables for a specific IFO */
+
+  for( thisSearchSumm = input; thisSearchSumm; 
+      thisSearchSumm = thisSearchSumm->next )
+  {
+
+    if ( !strcmp(thisSearchSumm->ifos, ifos) ) 
+    {
+      /* IFOs match so write this entry to the output table */
+      if ( ! output  )
+      {
+        output = keptSumm = (SearchSummaryTable *) 
+          LALMalloc( sizeof(SearchSummaryTable) );
+      }
+      else
+      {
+        keptSumm = keptSumm->next = (SearchSummaryTable *) 
+          LALMalloc( sizeof(SearchSummaryTable) );
+      }
+      if ( !keptSumm )
+      {  
+        while ( output )
+        {
+          thisSearchSumm = output;
+          output = (output)->next;
+          LALFree( thisSearchSumm );
+        }
+        XLAL_ERROR_NULL(func,XLAL_ENOMEM);
+      }
+      memcpy(keptSumm, thisSearchSumm, sizeof(SearchSummaryTable));
+      keptSumm->next = NULL;
+    }
+  }
+  return( output);
+}  
+
 
 
 /* <lalVerbatim file="LIGOMetadataUtilsCP"> */
@@ -579,42 +665,10 @@ LALIfoScanSearchSummary(
     )
 /* </lalVerbatim> */
 {
-  SearchSummaryTable    *thisSearchSumm = NULL;
-  SearchSummaryTable    *keptSumm = NULL;
-
   INITSTATUS( status, "LALIfoScanSearchSummary", LIGOMETADATAUTILSC );
   ATTATCHSTATUSPTR( status );
 
-  /* check that output is null and input non-null */
-  ASSERT( !(*output), status, 
-      LIGOMETADATAUTILSH_ENNUL, LIGOMETADATAUTILSH_MSGENNUL );
-  ASSERT( input, status, 
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
-
-  /* Scan through a linked list of search_summary tables and return a
-     pointer to the head of a linked list of tables for a specific IFO */
-
-  for( thisSearchSumm = input; thisSearchSumm; 
-      thisSearchSumm = thisSearchSumm->next )
-  {
-
-    if ( !strcmp(thisSearchSumm->ifos, ifos) ) 
-    {
-      /* IFOs match so write this entry to the output table */
-      if ( ! *output  )
-      {
-        *output = keptSumm = (SearchSummaryTable *) 
-          LALMalloc( sizeof(SearchSummaryTable) );
-      }
-      else
-      {
-        keptSumm = keptSumm->next = (SearchSummaryTable *) 
-          LALMalloc( sizeof(SearchSummaryTable) );
-      }
-      memcpy(keptSumm, thisSearchSumm, sizeof(SearchSummaryTable));
-      keptSumm->next = NULL;
-    }
-  }
+  *output = XLALIfoScanSearchSummary( input, ifos );
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -834,24 +888,23 @@ LALCompareSummValueByTime (
 }
 
 /* <lalVerbatim file="LIGOMetadataUtilsCP"> */
-void
-LALTimeSortSummValue (
-    LALStatus            *status,
+int
+XLALTimeSortSummValue(
     SummValueTable      **summHead,
     int(*comparfunc)    (const void *, const void *)
     )
 /* </lalVerbatim> */
 {
+  static const char *func = "TimeSortSummValue";
   INT4                  i;
   INT4                  numSumms = 0;
   SummValueTable    *thisSummValue = NULL;
   SummValueTable   **summHandle = NULL;
 
-  INITSTATUS( status, "LALTimeSortSummValue", LIGOMETADATAUTILSC );
-  ATTATCHSTATUSPTR( status );
-
-  ASSERT( summHead, status, 
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+  if ( !summHead )
+  {
+    XLAL_ERROR(func,XLAL_EIO);
+  }
 
   /* count the number of summs in the linked list */
   for ( thisSummValue = *summHead; thisSummValue; 
@@ -861,14 +914,17 @@ LALTimeSortSummValue (
   }
   if ( ! numSumms )
   {
-    LALWarning( status, "No summs in list to sort" );
-    DETATCHSTATUSPTR (status);
-    RETURN( status );
+    return(0);
   }
 
   /* allocate memory for an array of ptrs to sort and populate array */
   summHandle = (SummValueTable **) 
     LALCalloc( numSumms, sizeof(SummValueTable *) );
+  if ( !summHandle )
+  {
+    XLAL_ERROR(func,XLAL_ENOMEM);
+  }
+
   for ( i = 0, thisSummValue = *summHead; i < numSumms; 
       ++i, thisSummValue = thisSummValue->next )
   {
@@ -888,6 +944,27 @@ LALTimeSortSummValue (
 
   /* free the internal memory */
   LALFree( summHandle );
+
+  return(0);
+}
+
+
+/* <lalVerbatim file="LIGOMetadataUtilsCP"> */
+void
+LALTimeSortSummValue (
+    LALStatus            *status,
+    SummValueTable      **summHead,
+    int(*comparfunc)    (const void *, const void *)
+    )
+/* </lalVerbatim> */
+{
+  INITSTATUS( status, "LALTimeSortSummValue", LIGOMETADATAUTILSC );
+  ATTATCHSTATUSPTR( status );
+
+  ASSERT( summHead, status, 
+       LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+  
+  XLALTimeSortSummValue( summHead, comparfunc );
 
   DETATCHSTATUSPTR (status);
   RETURN( status );

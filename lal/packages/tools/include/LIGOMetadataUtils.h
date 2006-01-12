@@ -292,6 +292,14 @@ XLALReturnDetector(
     InterferometerNumber   IFONumber 
     );
 
+
+int
+XLALPlaygroundInSearchSummary (
+    SearchSummaryTable *ssTable,
+    LIGOTimeGPS        *inPlayTime,
+    LIGOTimeGPS        *outPlayTime
+    );
+
 void
 LALPlaygroundInSearchSummary (
     LALStatus          *status,
@@ -321,6 +329,12 @@ LALCompareSearchSummaryByOutTime (
     const void *b
     );
 
+int
+XLALTimeSortSearchSummary(
+    SearchSummaryTable  **summHead,
+    int(*comparfunc)    (const void *, const void *)
+    );
+
 void
 LALTimeSortSearchSummary (
     LALStatus            *status,
@@ -345,6 +359,12 @@ LALCheckOutTimeFromSearchSummary (
     LIGOTimeGPS          *endTime
     );
 
+SearchSummaryTable *
+XLALIfoScanSearchSummary(
+    SearchSummaryTable         *input,
+    CHAR                       *ifos
+    );
+
 void
 LALIfoScanSummValue(
     LALStatus                  *status,
@@ -357,6 +377,12 @@ int
 LALCompareSummValueByTime (
     const void *a,
     const void *b
+    );
+
+int
+XLALTimeSortSummValue (
+    SummValueTable      **summHead,
+    int(*comparfunc)    (const void *, const void *)
     );
 
 void
