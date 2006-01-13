@@ -1053,7 +1053,7 @@ REAL8 LALDegsToRads(CHAR *degs, CHAR *coord){
 	return radians;
 }
 
-/* function for converting times given in Terrestrial time (TT) or TDB in MJD to
+/* functions for converting times given in Terrestrial time TT or TDB in MJD to
 times in GPS - this is important for epochs given in .par files which are in
 TDB. TT and GPS are different by a factor of 51.184 secs, this is just the
 historical factor of 32.184 secs between TT and TAI (International Atomic Time)
@@ -1063,8 +1063,7 @@ http://www.stjarnhimlen.se/comp/time.html for details) */
 REAL8 LALTTtoGPS(REAL8 TT){
 	REAL8 GPS;
 
-	/* find the MJD closest to the input TT to get conversion factor */
-	/* maybe interpolate in the future */
+	/* Check not before the start of GPS time (MJD 44222) */
 	if(TT < 44244.){
 		fprintf(stderr, "Input time is not in range.\n");
 		exit(0);
@@ -1073,6 +1072,30 @@ REAL8 LALTTtoGPS(REAL8 TT){
 	/* there is the magical number factor of 32.184 + 19 leap seconds to the
 start of GPS time */
 	GPS = (TT-44244.)*86400. - 51.184;
+
+	return GPS;
+}
+
+REAL8 LALTDBtoGPS(REAL8 TDB){
+	REAL8 GPS;
+	REAL8 Tdiff, meanAnomaly, TDBtoTT;
+	
+	/* Check not before the start of GPS time (MJD 44222) */
+	if(TDB < 44244.){
+		fprintf(stderr, "Input time is not in range.\n");
+		exit(0);
+	} 
+	
+	Tdiff = TDB + (2400000.5-2451545.0);
+	meanAnomaly = 357.53 + 0.98560028*Tdiff; /* mean anomaly in degrees */
+	meanAnomaly *= LAL_PI_180; /* mean anomaly in rads */
+	
+	TDBtoTT = 0.001658*sin(meanAnomaly) + 0.000014*sin(meanAnomaly); /* time diff in seconds */
+	
+	/* convert TDB to TT (TDB-TDBtoTT) and then convert TT to GPS */
+	/* there is the magical number factor of 32.184 + 19 leap seconds to the
+start of GPS time */
+	GPS = (TDB-44244.)*86400. - 51.184 - TDBtoTT;
 
 	return GPS;
 }
