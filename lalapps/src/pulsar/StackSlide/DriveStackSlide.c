@@ -163,6 +163,8 @@
 /* 10/20/05 gam; if using running median and params->normalizationParameter > 0, then use to correct the bias. */
 /* 11/09/05 gam; if normalizationFlag & 1 > 0 normalize STKs using mean (but if normalizationFlag & 4 > 0, running median takes precedence) */
 /* 12/07/05 gam; fix bug in StackSlideCleanSFTs: need to initialize nBinsPerBLK before allocating memory. */
+/* 01/12/06 gam; Add function WriteStackSlideLEsToPriorResultsFile; if ( (outputEventFlag & 8) > 0 ) && !( (params->testFlag & 2) > 0 ) write loudest events to params->priorResultsFile */
+/* 01/12/06 gam; Always set maxMC = params->maxMCinterations; if NOT ( (params->testFlag & 32) > 0 ) then run MC maxMCinterations times; linearly interpolate to get final result */
 
 /*********************************************/
 /*                                           */
@@ -571,7 +573,7 @@ params->numFDeriv5   =   0;
     	fprintf(stdout,"#SUMs: The STKs are slid and then summed to produce SUMs; \n");
     	fprintf(stdout,"\n");
     	fprintf(stdout,"#For historical reasons, parameters for controlling Monte Carlo Simulations occur in several places.\n");
-    	fprintf(stdout,"#See: maxMCinterations, maxMCErr, orientationAngle, cosInclinationAngle, weightFlag, testFlag, numMCInjections, numMCRescalings, rescaleMCFraction, parameterMC, and debugOptionFlag.\n");
+    	fprintf(stdout,"#See: maxMCinterations, maxMCErr, orientationAngle, cosInclinationAngle, weightFlag, testFlag, outputEventFlag, numMCInjections, numMCRescalings, rescaleMCFraction, parameterMC, and debugOptionFlag.\n");
     	fprintf(stdout,"\n");
     	fprintf(stdout,"#Example command line arguments for ComputeStackSlide: \n");
     	fprintf(stdout,"\n");
@@ -617,7 +619,7 @@ params->numFDeriv5   =   0;
     	fprintf(stdout,"set IFO                                    %s; #22 CHAR* LHO, LLO, or GEO. \n", params->IFO);
     	fprintf(stdout,"set patchName                       %s; #23 CHAR* a name to identify this search (e.g., S2 Galactic Center).\n", params->patchName);
     	fprintf(stdout,"\n");
-    	fprintf(stdout,"set maxMCinterations   %23d; #24 INT4 maximum number of times to iterate entire Monte Carlo Simulation when converging on desired confidence. \n", params->maxMCinterations);
+    	fprintf(stdout,"set maxMCinterations   %23d; #24 INT4 maximum number of times to iterate entire Monte Carlo Simulation. \n", params->maxMCinterations);
     	fprintf(stdout,"\n");
     	fprintf(stdout,"set priorResultsFile     %s; #25 CHAR* file with the loudest event and estimated UL from a prior step in the pipeline. \n", params->priorResultsFile);
     	fprintf(stdout,"set parameterSpaceFile   %s; #26 CHAR* file with parameter space data \n", params->parameterSpaceFile);
@@ -689,7 +691,8 @@ params->numFDeriv5   =   0;
     	fprintf(stdout,"# if ((testFlag & 4) > 0) use LALComputeSkyAndZeroPsiAMResponse and LALFastGeneratePulsarSFTs instead of LALGeneratePulsarSignal and LALSignalToSFTs during Monte Carlo Simulations. See LAL inject package.\n"); /* 08/02/04 gam */
     	fprintf(stdout,"# if ((testFlag & 8) > 0) use fixed orientationAngle and cosInclinationAngle set above during Monte Carlo Simulations.\n"); /* 12/06/04 gam */
     	fprintf(stdout,"# if ((testFlag & 16) > 0) use results from prior jobs in the pipeline and report on current Monte Carlo results.\n");
-    	fprintf(stdout,"# if ((testFlag & 32) > 0) iterate entire Monte Carlo Simulation to converge on desired confidence.\n");
+    	fprintf(stdout,"# if ((testFlag & 32) > 0) break out of iterated Monte Carlo Simulation if desired confidence found;\n");
+    	fprintf(stdout,"#  else will run all iterations using rescaleMCFraction to rescale injected amplitudes and linearly interpolate to find UL.\n");
     	fprintf(stdout,"# if ((testFlag & 64) > 0) search surrounding parameters space pts during Monte Carlo Simulations; else search nearest only.\n");
     	fprintf(stdout,"# if ((testFlag & 128) > 0) speed up Monte Carlo Simulations by injecting into middle of a band with nBinsPerBLK - nBinsPerSUM bins only.\n");
     	fprintf(stdout,"# The prior results must be given in the priorResultsFile set above.\n");
@@ -715,6 +718,8 @@ params->numFDeriv5   =   0;
     	fprintf(stdout,"#  keep the loudest event for every nBinsPerOutputEvent = nBinsPerSUM/keepThisNumber; \n");
     	fprintf(stdout,"#  thus if keepThisNumber == 1 then we only output the loudest event; if keepThisNumber == nBinsPerSUM we output the loudest event for every bin.\n");
     	fprintf(stdout,"# if ((outputEventFlag & 4) > 0) the loudest event from each template (i.e., each sky position and set of spindown parameters) is output. \n"); /* 08/30/04 gam */
+    	fprintf(stdout,"# if ((outputEventFlag & 8) > 0) and not running a Monte Carlo Simulation, write the loudest event to the priorResultsFile for use by later Monte Carlo Simulation; \n"); /* 01/12/06 gam */
+    	fprintf(stdout,"#  in this case the parameterMC must be set to the desired confidence, threshold4 to the first guess for the UL, and rescaleMCFraction will be used as the initial uncertainty in the UL.\n"); /* 01/12/06 gam */
     	fprintf(stdout,"\n");
     	fprintf(stdout,"set startRA            %23.16e; #51 REAL8 start right ascension in radians. \n", params->stksldSkyPatchData->startRA);
     	fprintf(stdout,"set stopRA             %23.16e; #52 REAL8 end right ascension in radians. \n", params->stksldSkyPatchData->stopRA);
@@ -760,7 +765,7 @@ params->numFDeriv5   =   0;
     	fprintf(stdout,"set numMCInjections    %23d; #76 INT4 number of Monte Carlo injections to do when (testFlag & 2) > 0.\n", params->numMCInjections);
     	fprintf(stdout,"set numMCRescalings    %23d; #77 INT4 number of times to rescale signal injection to run multiple Monte Carlo simulations in parallel. \n", params->numMCRescalings);
     	fprintf(stdout,"set rescaleMCFraction  %23.16e; #78 REAL8 fraction to change injected amplitude by with each rescaling. \n", params->rescaleMCFraction);
-	fprintf(stdout,"set parameterMC        %23.16e; #79 REAL8 unused Monte Carlo parameter. \n", params->parameterMC);
+	fprintf(stdout,"set parameterMC        %23.16e; #79 REAL8 if (outputEventFlag & 8) > 0 the parameterMC must be set to the desired confidence. \n", params->parameterMC);
     	fprintf(stdout,"\n");
     	fprintf(stdout,"set sunEdatFile        %s; #80 CHAR* name of ascii file with sun ephemeris data. \n", params->sunEdatFile);
     	fprintf(stdout,"set earthEdatFile      %s; #81 CHAR* name of ascii file with earth ephemeris data. \n", params->earthEdatFile);

@@ -13,6 +13,8 @@ $Id$
 /*               search surrounding parameters space pts; else search nearest only */
 /* 09/01/05 gam; If params->numMCRescalings > 0 use this and params->rescaleMCFractionSFTs to */
 /*               rescale SFTs to run numMCRescalings Monte Carlo simulations in parallel.     */
+/* 01/12/06 gam; Add function WriteStackSlideLEsToPriorResultsFile; if ((outputEventFlag & 8) > 0) write loudest events to params->priorResultsFile */
+/* 01/12/06 gam; if ( (outputEventFlag & 8) > 0 ) and running MC, produce estimated UL based on loudest event from priorResultsFile */
 
 #ifndef _STACKSLIDEISOLATED_H
 #define _STACKSLIDEISOLATED_H
@@ -36,6 +38,7 @@ $Id$
 /* 04/12/05 gam; next two are needed to inject signals for Monte Carlo simulations. */
 #include <lal/GeneratePulsarSignal.h>
 #include <lal/Random.h>
+#include <gsl/gsl_sort.h>
 #include "DriveStackSlide.h"
 #include "StackSlide.h"
 /* #include <lal/LALStackSlide.h> Will need to switch to this version when StackSlide is in LAL. */
@@ -67,6 +70,7 @@ NRCSID (STACKSLIDEISOLATEDH, "$Id$");
 #define STACKSLIDEISOLATEDH_E2NUMMCRESCALINGS 9
 #define STACKSLIDEISOLATEDH_EMAXMC 10
 #define STACKSLIDEISOLATEDH_EMAXMCERR 11
+#define STACKSLIDEISOLATEDH_EESTUL 12
 #define STACKSLIDEISOLATEDH_MSGENULL "Null Pointer"
 #define STACKSLIDEISOLATEDH_MSGENNUL "Non-Null Pointer"
 #define STACKSLIDEISOLATEDH_MSGENEGA "Bad Negative Value"
@@ -78,6 +82,7 @@ NRCSID (STACKSLIDEISOLATEDH, "$Id$");
 #define STACKSLIDEISOLATEDH_MSGE2NUMMCRESCALINGS "The command parameter numMCRescalings cannot be > 0 if not reporting MC results."
 #define STACKSLIDEISOLATEDH_MSGEMAXMC "The number of MC iterations must be at least 1."
 #define STACKSLIDEISOLATEDH_MSGEMAXMCERR "The absolute maximum MC error must be a positive number."
+#define STACKSLIDEISOLATEDH_MSGEESTUL "Finding estimated UL failed because d2 for false dismisal bin or LE was less than 1"
 /*********************************************/
 /*                                           */
 /* END SECTION: define constants             */
@@ -97,6 +102,32 @@ void StackSlideIsolated (
 
 /* 07/15/05 gam; rewrite to choose random points in the parameter space */
 void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSearchParams *params, INT4 nSamples);
+
+/* 01/12/06 gam; use the powers from the first MC to generate an estimated UL. */
+void FindStackSlideEstimatedUL(
+                LALStatus *status,
+                REAL8 *h0UpperLimit, 
+                REAL8 *uncertainty, 
+                REAL8 *power, 
+                INT4 powerLength,
+                REAL8 confidence,
+                REAL8 loudestEvent,
+                REAL8 injectedH0, 
+                INT4 numBLKs);
+
+/* 01/12/06 gam; Add function WriteStackSlideLEsToPriorResultsFile; write loudest events to params->priorResultsFile */
+void WriteStackSlideLEsToPriorResultsFile(
+     LALStatus *status, 
+     CHAR *priorResultsFile, 
+     SnglStackSlidePeriodicTable *loudestPeaksArray, 
+     INT4 keepThisNumber,
+     CHAR *IFO, 
+     REAL8 startFreq, 
+     REAL8 searchBand,
+     REAL8 confidence,
+     REAL8 h0UpperLimit,
+     REAL8 uncertainty
+);
 
 /* 05/24/05 gam; Function that reads results from previous jobs in the pipeline */
 void getStackSlidePriorResults(LALStatus *status,
