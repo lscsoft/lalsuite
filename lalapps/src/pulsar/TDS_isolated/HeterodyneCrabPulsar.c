@@ -34,7 +34,8 @@
 	 
 	 The first function will read the data from a file containing the Crab
 	 pulsar ephemeris (\texttt{crab_ephemeris.txt}) which has four columns with
-	 the Modified Julian Date (MJD), the arrival time of the first pulse after 
+	 the Modified Julian Date (MJD) in Barycentre Dynamical Time (TDB), 
+	 the arrival time of the first pulse after 
 	 midnight on the given MJD in seconds, the frequency $f$ (Hz) at that time 
 	 and $\dot{f}$ ($10^{-10}\,{\rm Hz}^2$) \cite{CrabEphem}. The ephemeris values
 	 are given on a roughly monthly basis. The function converts the MJD
@@ -276,7 +277,7 @@ LALGetCrabEphemeris	( LALStatus			*status,
   
   /* convert time in TDB to GPS time */
   for(i=0;i<j;i++){
-   	GPStemp = LALTTtoGPS(MJDVec[i]);
+   	GPStemp = LALTDBtoGPS(MJDVec[i]);
 		
 		MJDVec[i] = GPStemp + tArrVec[i];
 		    
