@@ -203,14 +203,14 @@ main( int argc, char *argv[])
 		b0[counter] = pb0;
 		sprintf(model[counter], "%s", pmodel);
 		
-		/* use LALTTtoGPS to convert T0 and Tasc to GPS times */
+		/* use LALTDBtoGPS to convert T0 and Tasc to GPS times */
 		if(strcmp(model[counter],"*")!=0){
 			if(T0[counter] > 0.0){
-				T0[counter] = LALTTtoGPS(T0[counter]);
+				T0[counter] = LALTDBtoGPS(T0[counter]);
 				fprintf(stderr, "T0 = %.9f\n", T0[counter]); 
 			}
 			if(Tasc[counter] > 0.0){
-				Tasc[counter] = LALTTtoGPS(Tasc[counter]);
+				Tasc[counter] = LALTDBtoGPS(Tasc[counter]);
 				fprintf(stderr, "Tacs = %.9f\n", Tasc[counter]);
 			}
 		}
@@ -285,7 +285,8 @@ main( int argc, char *argv[])
 		}
  
     posepoch = REF_MJD;
-    if (ffepoch != 0.0) fepoch_gps = (-REF_MJD + ffepoch)*86400.0 + REF_GPS_SECS; 
+    /*if (ffepoch != 0.0) fepoch_gps = (-REF_MJD + ffepoch)*86400.0 + REF_GPS_SECS;*/
+		if (ffepoch != 0.0) fepoch_gps = LALTDBtoGPS(ffepoch);
     else fepoch_gps = REF_GPS_SECS;
    
     fepoch[counter].gpsSeconds = (INT4)floor(fepoch_gps);
