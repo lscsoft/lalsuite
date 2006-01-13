@@ -475,6 +475,13 @@ XLALTimeCutSingleInspiral(
     );
 
 void
+LALSNRCutSingleInspiral(
+    LALStatus                  *status,
+    SnglInspiralTable         **eventHead,
+    REAL4                       snrCut
+    );
+
+void
 LALBCVCVetoSingleInspiral(
     LALStatus                  *status,
     SnglInspiralTable         **eventHead,

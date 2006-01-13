@@ -102,6 +102,15 @@ window is returned.
 tables and returns only those which occur after the given \texttt{startTime}
 and before the \texttt{endTime}.
 
+\texttt{LALSNRCutSingleInspiral()} takes in a linked list of single
+inspiral tables and returns only those triggers which have snr values above
+a specific snrCut. 
+
+\texttt{LALBCVCVetoSingleInspiral()} takes in a linked list of single
+inspiral tables and returns only those triggers which have alphaF/SNR values below
+a specific threshold and alphaF value between alphaF-hi and alphaF-lo values.
+ It is relevant for the BCVC or BCVU search only.
+
 \texttt{LALalphaFCutSingleInspiral()} takes in a linked list of single
 inspiral tables and returns only those triggers which have alphaF values below
 a specific alphaFcut. It is relevant for the BCV search only.
@@ -842,6 +851,54 @@ XLALTimeCutSingleInspiral(
 
 
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
+void LALSNRCutSingleInspiral (
+    LALStatus                  *status,
+    SnglInspiralTable         **eventHead,
+    REAL4                       snrCut
+    )
+/* </lalVerbatim> */
+{
+  SnglInspiralTable    *inspiralEventList = NULL;
+  SnglInspiralTable    *thisEvent = NULL;
+  SnglInspiralTable    *prevEvent = NULL;
+
+
+  INITSTATUS( status, "LALSNRCutSingleInspiral", SNGLINSPIRALUTILSC );
+  ATTATCHSTATUSPTR( status );
+  thisEvent = *eventHead;
+
+  while ( thisEvent )
+  {
+    SnglInspiralTable *tmpEvent = thisEvent;
+    thisEvent = thisEvent->next;
+    
+    if ( tmpEvent->snr >= snrCut )
+    {
+      /* keep this template */
+      if ( ! inspiralEventList  )
+      {
+        inspiralEventList = tmpEvent;
+      }
+      else
+      {
+        prevEvent->next = tmpEvent;
+      }
+      tmpEvent->next = NULL;
+      prevEvent = tmpEvent;
+    }
+    else
+    {
+      /* discard this template */
+      LALFreeSnglInspiral ( status->statusPtr, &tmpEvent );
+    }
+  }
+  
+  *eventHead = inspiralEventList; 
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);   
+}
+
 void
 LALBCVCVetoSingleInspiral(
     LALStatus                  *status,
