@@ -9,8 +9,200 @@
 /* Matt Pitkin 26/03/04 */
 /* The function's inputs params have be swithced about to conform to 
 	 the LAL Spec */
-/*
-$Id$
+
+/* <lalVerbatim file="HeterodyneCrabPulsarCV">
+	 Author: Pitkin, M. D.
+	 $Id$
+	 </lalVerbatim>
+
+	 <lalLaTeX>
+	 \subsection{Module \texttt{HeterodyneCrabPulsar.c}}
+	 \label{ss:HeterodyneCrabPulsar.c}
+
+	 Functions for reading the Crab Ephemeris, interpolating between these values and
+	 heterodyning the timing noise phase difference.
+	 
+	 \subsubsection*{Prototypes}
+	 \vspace{0.1in}
+	 \input{HeterodyneCrabPulsarCP}
+	 \idx{LALGetCrabEphemeris()}
+	 \idx{LALComputeFreqDerivatives()}
+	 \idx{LALSetSpindownParams()}
+	 \idx{LALTimingNoiseHeterodyne()}
+	 
+	 \subsubsection*{Description}
+	 
+	 The first function will read the data from a file containing the Crab
+	 pulsar ephemeris (\texttt{crab_ephemeris.txt}) which has four columns with
+	 the Modified Julian Date (MJD), the arrival time of the first pulse after 
+	 midnight on the given MJD in seconds, the frequency $f$ (Hz) at that time 
+	 and $\dot{f}$ ($10^{-10}\,{\rm Hz}^2$) \cite{CrabEphem}. The ephemeris values
+	 are given on a roughly monthly basis. The function converts the MJD
+	 times into GPS seconds including adding leap seconds. The ephemeris values
+	 are available from 15 February 1982 so all leap seconds from that point are
+	 added at the correct times - this is overkill as there is no data to be
+	 analysed prior 2001, but I've included it just for completeness.
+	 
+	 The second function will use the ephemeris values and create a fourth order 
+	 spline interpolation between consecutive monthly points. The simple phase
+	 evolution of a pulsar signal can be described by the truncated Talyor series
+	 
+	 \begin{equation}
+	 \phi(t) = \phi_0 + f_0(t-t_0) + frac{\dot{f_0}(t-t_0)^2}{2} + \dots,
+	 \end{equation}
+	 
+	 To completely model the phase evolution of the Crab pulsar the higher order 
+	 frequency derivatives of the spin down model ($\ddot{f}$, $\dddot{f}$, 
+	 and eventually $\ddddot{f}$) need to be calculated for each point in the
+	 ephemeris. This is done by fitting the spin-down model between consecutive 
+	 points using the known values of $f$,$\dot{f}$ and the phase $\phi$ at 
+	 either point as boundary conditions. The evolution of the phase, frequency 
+	 and higher order derivatives are given by the following matrix:
+	 
+	 \begin{equation}\label{numatrix}
+	 \left( \begin{array}{c} \phi \\ f \\ \dot{f} \\ \ddot{f} \\ 
+	 \dddot{f} \\ \ddddot{f}
+	 \end{array} \right) =
+	 \left( \begin{array}{cccccc} 1 & t & \frac{1}{2}t^2 & \frac{1}{6}t^3 & 
+	 \frac{1}{24}t^4 & \frac{1}{120}t^5 \\
+	 0 & 1 & t & \frac{1}{2}t^2 & \frac{1}{6}t^3 & \frac{1}{24}t^4 \\
+	 0 & 0 & 1 & t & \frac{1}{2}t^2 & \frac{1}{6}t^3 \\
+	 0 & 0 & 0 & 1 & t & \frac{1}{2}t^2 \\
+	 0 & 0 & 0 & 0 & 1 & t \\
+	 0 & 0 & 0 & 0 & 0 & 1 \\
+	 \end{array} \right)
+	 \left( \begin{array}{c} \phi_0 \\ f_0 \\ \dot{f_0} \\ \ddot{f_0} \\ 
+	 \dddot{f_0} \\ \ddddot{f_0}
+	 \end{array} \right)
+	 \end{equation}
+
+	 Using the relation $\vec{a} = \mathbf{X}\vec{b}$, where $\vec{a}$ and 
+	 $\vec{b}$ are the vectors of $\phi$ and $\phi_0$ derivatives respectively 
+	 and $\mathbf{X}$ is the matrix of coefficients, it follows that $\vec{b} = 
+	 \mathbf{X}^{-1}\vec{a}$. The inverse matrix $\mathbf{X}^{-1}$ is
+
+	 \begin{equation}\label{nu2matrix}
+	 \mathbf{X}^{-1} =
+	 \left( \begin{array}{cccccc} 1 & -t & \frac{1}{2}t^2 & -\frac{1}{6}t^3 & 
+	 \frac{1}{24}t^4 & -\frac{1}{120}t^5 \\
+	 0 & 1 & -t & \frac{1}{2}t^2 & -\frac{1}{6}t^3 & \frac{1}{24}t^4 \\
+	 0 & 0 & 1 & -t & \frac{1}{2}t^2 & -\frac{1}{6}t^3 \\
+	 0 & 0 & 0 & 1 & -t & \frac{1}{2}t^2 \\
+	 0 & 0 & 0 & 0 & 1 & -t \\
+	 0 & 0 & 0 & 0 & 0 & 1 \\
+	 \end{array} \right).
+	 \end{equation}
+
+	 The values of $\phi$ and $\phi_0$ are unknown at each data point, but it is
+	 known that they must be integer values. The phase at the first point 
+	 can be set to zero with the consecutive points having phases with integer 
+	 values. The exact number of then needs to be calculated. To get a constraint
+	 on the phase at each data point, the boundary conditions for the known 
+	 parameters can be used to calculate the values of the unknowns $\ddot{f}$,
+	 $\ddot{f_0}$, $\dddot{f}$, and $\dddot{f_0}. Taking the $4\times 4$ 
+	 matrices in the centres of (\ref{numatrix}) and (\ref{nu2matrix}) and vectors
+	 of $f$ and its first three derivatives, one can then construct 4 equations
+	 containing the 4 unknowns by equating the equations, when worked out at a 
+	 time $t$ halfway between consecutive points and solving them
+	 simultaneously using the boundary conditions (by inverting the matrix in 
+	 (\ref{simult1}) to give (\ref{inverse1}) and solving as above). The values 
+	 could then be used to calculate a value of $\phi$ from (\ref{phi}).
+
+	 \begin{equation}\label{simult1}
+	 \left( \begin{array}{c} f_0 + \dot{f_0}t - f + \dot{f}t \\ 
+	 \dot{f_0} - \dot{f} \\ 0 \\ 0 \end{array} \right) = \left( 
+	 \begin{array}{cccc}
+	 -\frac{1}{2}t^2 & -\frac{1}{6}t^3 & \frac{1}{2}t^2 & -\frac{1}{6}t^3 \\
+	 -t & -\frac{1}{2}t^2 & -t & \frac{1}{2}t^2 \\
+	 -1 & -t & 1 & -t \\
+	 0 & -1 & 0 & 1 \end{array} \right) \left( \begin{array}{c}
+	 \ddot{f_0} \\ \dddot{f_0} \\ \ddot{f} \\ \dddot{f}
+	 \end{array} \right).
+	 \end{equation}
+
+	 \begin{equation}\label{inverse1}
+	 \mathbf{X}^{-1}
+	 \left( \begin{array}{cccc}
+	 -\frac{1}{2}t^2 & -\frac{1}{6}t^3 & \frac{1}{2}t^2 & -\frac{1}{6}t^3 \\
+	 -t & -\frac{1}{2}t^2 & -t & \frac{1}{2}t^2 \\
+	 -1 & -t & 1 & -t \\
+	 0 & -1 & 0 & 1 \end{array} \right)
+	 \end{equation}
+	 
+	 Equating the whole of equations (\ref{numatrix}) and (\ref{nu2matrix}) at a 
+	 point halfway inbetween consecutive points, gave the six equations necessary 
+	 to work out the six unknowns, which are shown in matrix form in equation 
+	 (\ref{simult2}).
+
+	 \begin{equation}\label{simult2}
+	 \left( \begin{array}{c} \phi_0 + f_0 t + \frac{\dot{f_0}}{2}t^2 - \phi + f t - \frac{\dot{f}}{2} \\ f_0 + \dot{f_0}t - f + \dot{f}t \\ \dot{f_0} - \dot{f} \\ 0 \\ 0 \\ 0 \end{array} \right) = \left( \begin{array}{cccccc}
+	 -\frac{1}{6}t^3 & -\frac{1}{24}t^4 & -\frac{1}{120}t^5 & -\frac{1}{6}t^3 & \frac{1}{24}t^4 & \frac{1}{120}t^5 \\
+	 -\frac{1}{2}t^2 & -\frac{1}{6}t^3 & -\frac{1}{24}t^4 & \frac{1}{2}t^2 & -\frac{1}{6}t^3 & \frac{1}{24}t^4 \\
+	 -t & -\frac{1}{2}t^2 & -\frac{1}{6}t^3 & -t & \frac{1}{2}t^2 & -\frac{1}{6}t^3 \\
+	 -1 & -t & -\frac{1}{2}t^2 & 1 & -t & \frac{1}{2}t^2 \\
+	 0 & -1 & -t & 0 & 1 & -t \\
+	 0 & 0 & -1 & 0 & 0 & 1 \end{array} \right) \left( \begin{array}{c}
+	 \ddot{f_0} \\ \dddot{f_0} \\ \ddddot{f_0} \\ \ddot{f} \\ \dddot{f} \\ \ddddot{f}
+	 \end{array} \right).
+	 \end{equation}
+
+	 The matrix has an inverse,
+
+	 \begin{equation}\label{inverse2}
+	 \mathbf{X}^{-1} =
+	 \left( \begin{array}{cccccc}
+	 -\frac{15}{2}\frac{1}{t^3} & -\frac{3}{2}\frac{1}{t^2} & 
+	 \frac{3}{4}\frac{1}{t} & \frac{1}{4}& -\frac{1}{16}t & -\frac{1}{16}t^2 \\
+	 \frac{45}{2}\frac{1}{t^4} & \frac{3}{2}\frac{1}{t^3} & 
+	 -\frac{15}{4}\frac{1}{t^2} & -\frac{3}{4}\frac{1}{t} & \frac{7}{16} & 
+	 \frac{5}{16}t \\
+	 -\frac{42}{2}\frac{1}{t^5} & 0 & \frac{15}{4}\frac{1}{t^3} & 0 & 
+	 -\frac{15}{16}\frac{1}{t} & -\frac{1}{2} \\
+	 -\frac{15}{2}\frac{3}{2} & \frac{3}{2}\frac{1}{t} & \frac{3}{4}\frac{1}{t} & 
+	 -\frac{1}{4} & -\frac{1}{16}t & \frac{1}{16}t^2 \\
+	 -\frac{45}{2}\frac{1}{t^4} & \frac{3}{2}\frac{1}{t^3} & 
+	 \frac{15}{4}\frac{1}{t^2} & -\frac{3}{4}\frac{1}{t} & -\frac{7}{16} & 
+	 \frac{5}{16}t \\
+	 -\frac{45}{2}\frac{1}{t^5} & 0 & \frac{15}{4}\frac{1}{t^3} & 0 & 
+	 -\frac{15}{16}\frac{1}{t} & \frac{1}{2} \end{array} \right)
+	 \end{equation}
+	 
+	 This leaves three equations for the values of the unknowns $\ddot{f_0}$,
+	 $\dddot{f_0}$ and $\ddddot{f_0}$,
+	 
+	 \begin{equation}
+	 \ddot{f_0} =  -\frac{15}{2t^3}a - \frac{3}{2t^2}b + \frac{3}{4t}c,
+	 \end{equation}
+	 
+	 \begin{equation}
+	 \dddot{f_0} = \frac{45}{2t^4}a + \frac{3}{2t^3}b - \frac{15}{4t^2}c,
+	 \end{equation}
+	 
+	 \begin{equation}
+	 \ddddot{f_0} = -\frac{45}{2t^5}a + \frac{15}{4t^3}c,
+	 \end{equation}
+	 where $a = \phi_0 + f_0 t + \frac{\dot{f_0}}{2}t^2 - \phi + f t - 
+	 \frac{\dot{f}}{2}$, $b = f_0 + \dot{f_0}t - f + \dot{f}t$, $c = 
+	 \dot{f_0} - \dot{f}$ and $t$ is the time halfway between ephemeris points.
+	 
+	 The third function sets the values of the Crab pulsar spin-down to be used
+	 to heterodyne a particular data point. The values are set to those that are
+	 the first values prior to the time of the data point.
+	 
+	 The fourth function calculates the phase difference between that used to
+	 initially heterodyne the data and the phase including timing noise as
+	 calculated using the interpolated ephemeris values. It then
+	 removes this phase difference via another complex heterodyne,
+	 
+	 \begin{equation}
+	 B_{\rm k final} = B_{\rm k initial}e^{-i\Delta\phi}.
+	 \end{equation}
+	 
+	 \subsubsection*{Notes}
+	 
+	 \vfill{\footnotesize\input{HeterodyneCrabPulsarCV}}
+	 
+	 </lalLaTeX>
 */
 
 #include <math.h>
@@ -18,8 +210,6 @@ $Id$
 
 #include <lal/LALConstants.h>
 #include "HeterodyneCrabPulsar.h"
-
-#define LAL_DAYS_PER_SECOND 1.1574074074074074074074074074074074e-5L /* 1 second as a fraction of a day */
 
 /* DEFINE RCS ID STRING */
 NRCSID( HETERODYNECRABPULSARC, "$Id$"); 
@@ -33,6 +223,7 @@ LALGetCrabEphemeris	( LALStatus			*status,
   
   REAL8 MJD;
   REAL8 MJDVec[1000];
+	REAL8 GPStemp;
   
   /* array of the time of the pulse from the ephemeris  */
   /* minus the time of the first ephemeris data point */
@@ -83,37 +274,14 @@ LALGetCrabEphemeris	( LALStatus			*status,
     exit(1);
   }*/
   
-  /* convert time in MJD to GPS time */
+  /* convert time in TDB to GPS time */
   for(i=0;i<j;i++){
-    /* add leap seconds */
-    if (MJDVec[i] >= 44786) MJDVec[i] += LAL_DAYS_PER_SECOND;
-    
-    if (MJDVec[i] >= 45151) MJDVec[i] += LAL_DAYS_PER_SECOND;
-
-    if (MJDVec[i] >= 45516) MJDVec[i] += LAL_DAYS_PER_SECOND;
-
-    if (MJDVec[i] >= 46247) MJDVec[i] += LAL_DAYS_PER_SECOND;
-
-    if (MJDVec[i] >= 47161) MJDVec[i] += LAL_DAYS_PER_SECOND;
-
-    if (MJDVec[i] >= 47892) MJDVec[i] += LAL_DAYS_PER_SECOND;
-
-    if (MJDVec[i] >= 48257) MJDVec[i] += LAL_DAYS_PER_SECOND;
-
-    if (MJDVec[i] >= 48804) MJDVec[i] += LAL_DAYS_PER_SECOND;
-
-    if (MJDVec[i] >= 49169) MJDVec[i] += LAL_DAYS_PER_SECOND;
-
-    if (MJDVec[i] >= 49534) MJDVec[i] += LAL_DAYS_PER_SECOND;
-  
-    if (MJDVec[i] >= 50083) MJDVec[i] += LAL_DAYS_PER_SECOND;
-                                   
-    if (MJDVec[i] >= 50630) MJDVec[i] += LAL_DAYS_PER_SECOND;
-                                     
-    if (MJDVec[i] >= 51179) MJDVec[i] += LAL_DAYS_PER_SECOND;
-    /* need to add extra as leap seconds are added */
+   	GPStemp = LALTTtoGPS(MJDVec[i]);
+		
+		MJDVec[i] = GPStemp + tArrVec[i];
+		    
     /*printf("%lf\n",fmod(MJDVec[i],50000));*/ 
-    output->tArr->data[i] = (MJDVec[i] - 44244.0)*24.0*60.0*60.0 + tArrVec[i];   
+    output->tArr->data[i] = MJDVec[i];   
   }
   
   /* LALCheckMemoryLeaks();*/
