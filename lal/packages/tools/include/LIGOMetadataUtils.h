@@ -459,6 +459,13 @@ LALClusterSnglInspiralTable (
     SnglInspiralClusterChoice   clusterchoice
     );
 
+SnglInspiralTable *
+XLALTimeCutSingleInspiral(
+    SnglInspiralTable          *eventList,
+    LIGOTimeGPS                *startTime,
+    LIGOTimeGPS                *endTime
+    );
+
 void
 LALTimeCutSingleInspiral(
     LALStatus                  *status,
@@ -467,12 +474,6 @@ LALTimeCutSingleInspiral(
     LIGOTimeGPS                *endTime
     );
 
-int
-XLALTimeCutSingleInspiral(
-    SnglInspiralTable         **eventHead,
-    INT8                        startTimeNS,
-    INT8                        endTimeNS
-    );
 
 void
 LALSNRCutSingleInspiral(
@@ -520,6 +521,12 @@ LALTimeSlideSingleInspiral(
     LIGOTimeGPS                *startTime,
     LIGOTimeGPS                *endTime,
     LIGOTimeGPS                 slideTimes[]
+    );
+
+SnglInspiralTable *
+XLALPlayTestSingleInspiral(
+    SnglInspiralTable          *eventHead,
+    LALPlaygroundDataMask      *dataType
     );
 
 void

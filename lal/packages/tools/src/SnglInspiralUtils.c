@@ -751,49 +751,10 @@ LALTimeCutSingleInspiral(
     )
 /* </lalVerbatim> */
 {
-  SnglInspiralTable    *inspiralEventList = NULL;
-  SnglInspiralTable    *thisEvent = NULL;
-  SnglInspiralTable    *prevEvent = NULL;
-
-
   INITSTATUS( status, "LALTimeCutSingleInspiral", SNGLINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
 
-
-
-
-  /* Remove all the triggers before and after the requested */
-  /* gps start and end times */
-
-  thisEvent = *eventHead;
-
-  while ( thisEvent )
-  {
-    SnglInspiralTable *tmpEvent = thisEvent;
-    thisEvent = thisEvent->next;
-
-    if ( tmpEvent->end_time.gpsSeconds >= startTime->gpsSeconds &&
-        tmpEvent->end_time.gpsSeconds < endTime->gpsSeconds )
-    {
-      /* keep this template */
-      if ( ! inspiralEventList  )
-      {
-        inspiralEventList = tmpEvent;
-      }
-      else
-      {
-        prevEvent->next = tmpEvent;
-      }
-      tmpEvent->next = NULL;
-      prevEvent = tmpEvent;
-    }
-    else
-    {
-      /* discard this template */
-      LALFreeSnglInspiral ( status->statusPtr, &tmpEvent );
-    }
-  }
-  *eventHead = inspiralEventList; 
+  *eventHead = XLALTimeCutSingleInspiral( *eventHead, startTime, endTime );
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -801,22 +762,25 @@ LALTimeCutSingleInspiral(
 }  
 
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
-int
+SnglInspiralTable *
 XLALTimeCutSingleInspiral(
-    SnglInspiralTable         **eventHead,
-    INT8                        startTimeNS,
-    INT8                        endTimeNS
+    SnglInspiralTable          *eventHead,
+    LIGOTimeGPS                *startTime,
+    LIGOTimeGPS                *endTime
     )
 /* </lalVerbatim> */
 {
   SnglInspiralTable    *inspiralEventList = NULL;
   SnglInspiralTable    *thisEvent = NULL;
   SnglInspiralTable    *prevEvent = NULL;
+  INT8                  startTimeNS = XLALGPStoINT8( startTime );
+  INT8                  endTimeNS = XLALGPStoINT8( endTime );
 
+  
   /* Remove all the triggers before and after the requested */
   /* gps start and end times */
 
-  thisEvent = *eventHead;
+  thisEvent = eventHead;
 
   while ( thisEvent )
   {
@@ -844,9 +808,9 @@ XLALTimeCutSingleInspiral(
       XLALFreeSnglInspiral ( &tmpEvent );
     }
   }
-  *eventHead = inspiralEventList; 
+  eventHead = inspiralEventList; 
 
-  return (0);
+  return (eventHead);
 }  
 
 
@@ -1189,13 +1153,10 @@ LALTimeSlideSingleInspiral(
 }  
 
 
-
-
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
-void
-LALPlayTestSingleInspiral(
-    LALStatus                  *status,
-    SnglInspiralTable         **eventHead,
+SnglInspiralTable *
+XLALPlayTestSingleInspiral(
+    SnglInspiralTable          *eventHead,
     LALPlaygroundDataMask      *dataType
     )
 /* </lalVerbatim> */
@@ -1208,13 +1169,10 @@ LALPlayTestSingleInspiral(
   INT4 isPlay = 0;
   INT4 numTriggers;
 
-  INITSTATUS( status, "LALPlayTestSingleInspiral", SNGLINSPIRALUTILSC );
-  ATTATCHSTATUSPTR( status );
-
   /* Remove all the triggers which are not of the desired type */
 
   numTriggers = 0;
-  thisEvent = *eventHead;
+  thisEvent = eventHead;
 
   if ( (*dataType == playground_only) || (*dataType == exclude_play) )
   {
@@ -1223,8 +1181,8 @@ LALPlayTestSingleInspiral(
       SnglInspiralTable *tmpEvent = thisEvent;
       thisEvent = thisEvent->next;
 
-      LALGPStoINT8( status->statusPtr, &triggerTime, &(tmpEvent->end_time) );
-      LALINT8NanoSecIsPlayground( status->statusPtr, &isPlay, &triggerTime );
+      triggerTime = XLALGPStoINT8( &(tmpEvent->end_time) );
+      isPlay = XLALINT8NanoSecIsPlayground( &triggerTime );
 
       if ( ( (*dataType == playground_only)  && isPlay ) || 
           ( (*dataType == exclude_play) && ! isPlay) )
@@ -1245,29 +1203,47 @@ LALPlayTestSingleInspiral(
       else
       {
         /* discard this template */
-        LALFreeSnglInspiral ( status->statusPtr, &tmpEvent );
+        XLALFreeSnglInspiral ( &tmpEvent );
       }
     }
-    *eventHead = inspiralEventList; 
+    eventHead = inspiralEventList; 
     if ( *dataType == playground_only )
     {
-      /*LALInfo( status, "Kept %d playground triggers \n", numTriggers );*/
+      XLALPrintInfo( "Kept %d playground triggers \n", numTriggers );
     }
     else if ( *dataType == exclude_play )
     {
-      /*LALInfo( status, "Kept %d non-playground triggers \n", numTriggers );*/
+      XLALPrintInfo( "Kept %d non-playground triggers \n", numTriggers );
     }
   }
   else if ( *dataType == all_data )
   {
-    LALInfo( status, "Keeping all triggers since all_data specified\n" );
+    XLALPrintInfo( "Keeping all triggers since all_data specified\n" );
   }
   else
   {
-    LALInfo( status, "Unknown data type, returning no triggers\n" );
-    *eventHead = NULL;
+    XLALPrintInfo( "Unknown data type, returning no triggers\n" );
+    eventHead = NULL;
   }
 
+  return(eventHead);
+}  
+
+
+/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+void
+LALPlayTestSingleInspiral(
+    LALStatus                  *status,
+    SnglInspiralTable         **eventHead,
+    LALPlaygroundDataMask      *dataType
+    )
+/* </lalVerbatim> */
+{
+  INITSTATUS( status, "LALPlayTestSingleInspiral", SNGLINSPIRALUTILSC );
+  ATTATCHSTATUSPTR( status );
+
+  *eventHead = XLALPlayTestSingleInspiral(*eventHead, dataType);
+   
   DETATCHSTATUSPTR (status);
   RETURN (status);
 }  
