@@ -1,10 +1,30 @@
+/* <lalVerbatim file="HeterodyneCrabPulsarHV">
+	 Author: Pitkin, M. D.
+	 $Id$
+	 </lalVerbatim> */
+	 
+/* <lalLaTeX>
+	 \section{Header \texttt{HeterodyneCrabPulsar.h}}
+	 label{ss:HeterodyneCrabPulsar.h}
+	
+	 Calculates and heterodynes the timing noise component of the Crab pulsar
+	 phase.
+	 
+	 \subsection*{Synopsis}
+	 \begin{verabtim}
+	 #include <lal/HeterodyneCrabPulsar.h>
+	 \end{verbatim}
+	 
+	 \noindent This header covers routines for reading in the Crab pulsar
+	 ephemeris, calculating the spline interpolation of the phase between
+	 ephemeris points and heterodyning data to remove the phase difference caused
+	 by timing noise.
+	 </lalLaTeX> */
+	 
 /* Matt Pitkin 10/03/04 - TNHeterodyne struct changed */
 
 /* Matt Pitkin 26/03/04 - function arguments have been changed to conform to the
    LAL Spec */
-/*
-$Id$
-*/
 
 #ifndef _HETERODYNECRABPULSAR_H
 #define _HETERODYNECRABPULSAR_H
@@ -16,6 +36,8 @@ $Id$
 #include <lal/SkyCoordinates.h>
 #include <lal/AVFactories.h>
 
+#include "BinaryPulsarTiming.h" /* included for the function LALTTtoGPS */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -23,23 +45,81 @@ extern "C" {
 /* DEFINE RCS ID STRING */
 NRCSID (HETERODYNECRABPULSARH, "$Id$"); 
 
-/* <lalErrTable file="GetCrabParamsErrorTable"> */
+/* <lalLaTeX>
+	 \subsection*{Error conditions}
+	 </lalLaTeX> */
+
+/* <lalErrTable> */
 #define HETERODYNECRABPULSARH_ENULLINPUT 1
 #define HETERODYNECRABPULSARH_ENULLOUTPUT 2
-#define HETERODYNECRABPULSARH_ENULLVALUES 3
-#define HETERODYNECRABPULSARH_EEPHEMERISFILENAME 4
-#define HETERODYNECRABPULSARH_ENUMEPHEMERISDATA 5
-#define HETERODYNECRABPULSARH_ELENGTHINPUTOUTPUT 6
-#define HETERODYNECRABPULSARH_EINVALIDF0 7
+#define HETERODYNECRABPULSARH_EEPHEMERISFILENAME 3
+#define HETERODYNECRABPULSARH_ENUMEPHEMERISDATA 4
+#define HETERODYNECRABPULSARH_EINVALIDF0 5
 
 #define HETERODYNECRABPULSARH_MSGENULLINPUT "Input was Null"
 #define HETERODYNECRABPULSARH_MSGENULLOUTPUT "Output was Null"
-#define HETERODYNECRABPULSARH_MSGENULLVALUES "Values was Null"
 #define HETERODYNECRABPULSARH_MSGEEPHEMERISFILENAME "No ephemeris filename given"
 #define HETERODYNECRABPULSARH_MSGENUMEPHEMERISDATA "Number of ephemeris data points must be greater than zero"
-#define HETERODYNECRABPULSARH_MSGELENGTHINPUTOUTPUT "Input and output vectors are not the right lengths"
-#define HETERODYNECRABPULSARH_MSGEINVALIDF0 "Input value of F0 is invalid, must be greater than 0"
+#define HETERODYNECRABPULSARH_MSGEINVALIDF0 "F0 must be greater than 0"
 /* </lalErrTable> */
+
+/* <lalLaTex>
+	 \subsection*{Structures}
+	 \idx[Type]{GetCrabEphemerisInput}
+	 \idx[Type]{CrabSpindownParamsInput}
+	 \idx[Type]{CrabSpindownParamsOutput}
+	 \idx[Type]{ParamsForHeterodyne}
+	 \idx[Type]{TNHeterodyneInput}
+	 \idx[Type]{TNHeterodyneOutput}
+	 
+	 \begin{verbatim}
+	 typedef struct tagGetCrabEphemerisInput GetCrabEphemerisInput;
+	 \end{verbatim}
+	 
+	 This structure contains the file name of the Crab ephemeris, nominally
+	 \verb+crab_ephemeris.txt+.
+	 
+	 \begin{verbatim}
+	 typedef struct tagCrabSpindownParamsInput CrabSpindownParamsInput;
+	 \end{verbatim}
+	 
+	 This structure contains vectors of the values of time of arrival, $f_0$ (Hz)
+	 and $\dot{f_0}$ ($10^{-10}$\,{\rm Hz}^2) extracted from the Crab ephemeris 
+	 file.
+	 
+	 \begin{verbatim}
+	 typedef struct tagCrabSpindownParamsOutput CrabSpindownParamsOutput;
+	 \end{verbatim}
+	 
+	 This structure contains vectors of the values of time of arrival, $f_0$ (Hz)
+	 and $\dot{f_0}$ (${\rm Hz}^2$) from the ephemeris file and values 
+	 of $f$ time derivatives up to fourth order interpolated from the ephemeris 
+	 values.
+	 
+	 \begin{verbatim}
+	 typedef struct tagParamsForHeterodyne ParamsForHeterodyne;
+	 \end{verbatim}
+	 
+	 This structure contains the single values of $f$ and its time derivative up 
+	 to fourth order and their epoch.
+	 
+	 \begin{verbatim}
+	 typedef struct tagTNHeterodyneInput TNHeterodyneInput;
+	 \end{verbatim}
+	 
+	 This structure contains values of $f$, $\dot{f}$ and $\ddot{f}$ used in the
+	 initial Crab heterodyne, the complex heterodyned data point, the epoch of the
+	 intial heterodyne parameters $t_0$, and the \verb+LIGOTimeGPS+ time of the
+	 data point.
+	 
+	 \begin{verbatim}
+	 typedef struct tagTNHeterodyneOutput TNHeterodyneOutput;
+	 \end{verbatim}
+
+	 This structure contains the final complex heterodyned output and the phase
+	 difference between the initial heterodyne and the timing noise heterodyne.
+	 
+	 </lalLaTeX> */
 
 /* define new structures and type for crab ephemeris reading - to be put in header file later */
 typedef struct
@@ -111,12 +191,13 @@ tagTNHeterodyneInput
 typedef struct
 tagTNHeterodyneInput
 {
-  REAL8			f0;
-  REAL8			f1;
-  REAL8			f2;
-  COMPLEX16 Vh;
-	REAL8			t0;
-	LIGOTimeGPS epoch;  
+  REAL8			f0;		/* the *initial* (i.e. that performed prior to the timing
+	noise heterodyne) heterodyne frequency */
+  REAL8			f1;		/* the initial heterdyne f1 */
+  REAL8			f2;		/* the initial heterodyne f2 */
+  COMPLEX16 Vh;		/* the complex output of the initial heterodyne */
+	REAL8			t0;		/* the epoch of the initial heterodyne frequency */
+	LIGOTimeGPS epoch;  /* the time of the data point Vh */
 } TNHeterodyneInput; 
 
 typedef struct
@@ -127,6 +208,10 @@ tagTNHeterodyneOutput
 } TNHeterodyneOutput;
 
 /* function definitions */
+
+/* <lalLaTeX>
+	 \newpage\input{HeterodyneCrabPulsarC}
+	 </lalLaTeX> */
 
 void 
 LALGetCrabEphemeris	( LALStatus			*status,
