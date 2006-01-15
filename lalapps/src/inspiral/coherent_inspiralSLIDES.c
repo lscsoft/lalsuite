@@ -336,8 +336,17 @@ int main( int argc, char *argv[] )
 
       /*CHECK: Initialize tempTime to account for time-slides */
       for( l=0; l<5; l++)
-	tempTime[l] -= slideStep[l]*slideNumber*slideSign*sampleRate;
-
+	{
+	  /* CHECK: slideSign=0 is the same as a positive time slide */
+	  if(slideSign != 0)
+	    {
+	      tempTime[l] = slideStep[l]*slideNumber*slideSign;
+	    }
+	  else
+	    {
+	      tempTime[l] -= slideStep[l]*slideNumber*slideSign;
+	    }
+	}
       if( i != numTmplts - 1 )
         {
           bankTemp2 = bankTemp;
