@@ -17,11 +17,6 @@
  *  MA  02111-1307  USA
  */
 
-/************************************ <lalVerbatim file="SimulatePulsarSignalCV">
-Author: Prix, Reinhard
-$Id$
-************************************* </lalVerbatim> */
-
 /**
  * \author Reinhard Prix
  * \date 2005
@@ -107,139 +102,189 @@ and and LALBarycenter() to calculate \f$\tau(t)\f$.
  *
  */
 
-/********************************************************** <lalLaTeX>
-\subsection{Module \texttt{SimulatePulsarSignal.c}}
-\label{ss:SimulatePulsarSignal.c}
-
-Routines to simulate pulsar-signals "exactly".
-UNDER CONSTRUCTION. NOT USEABLE YET!
-
-for the documentation, see doxygen:
-\verb+http://www.lsc-group.phys.uwm.edu/lal/slug/nightly/doxygen/html/+
-
-\subsubsection*{Uses}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{SimulatePulsarSignalCV}}
-
-******************************************************* </lalLaTeX> */
-
-#include "AVFactories.h"
+#include <lal/AVFactories.h>
+#include <lal/TimeSeries.h>
 #include <lal/GeneratePulsarSignal.h>
+#include <lal/ComputeFstat.h>
 
 NRCSID( SIMULATEPULSARSIGNALC, "$Id$");
 
 extern INT4 lalDebugLevel;
+
+
+/*----- Macros ----- */
+
+#define SQ(x) ((x) * (x))
+
+/** convert GPS-time to REAL8 */
+#define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
+
+/** copy 3 components of Euklidean vector */
+#define COPY_VECT(dst,src) do { (dst)[0] = (src)[0]; (dst)[1] = (src)[1]; (dst)[2] = (src)[2]; } while(0)
+
+/** Simple Euklidean scalar product for two 3-dim vectors in cartesian coords */
+#define SCALAR(u,v) ((u)[0]*(v)[0] + (u)[1]*(v)[1] + (u)[2]*(v)[2])
 
 #define TRUE  (1==1)
 #define FALSE (1==0)
 
 #define oneBillion 1000000000L
 
+/* error-codes */
+#define SIMULATEPULSARSIGNAL_ENULL 		1
+#define SIMULATEPULSARSIGNAL_ENONULL		2
+#define SIMULATEPULSARSIGNAL_EMEM		3
+#define SIMULATEPULSARSIGNAL_ESYS		4
+#define SIMULATEPULSARSIGNAL_EINPUT		5
+
+
+#define SIMULATEPULSARSIGNAL_MSGENULL 		"Arguments contained an unexpected null pointer"
+#define SIMULATEPULSARSIGNAL_MSGENONULL		"Output pointer is not NULL"
+#define SIMULATEPULSARSIGNAL_MSGEMEM		"Out of memory"
+#define SIMULATEPULSARSIGNAL_MSGESYS		"System error, probably while File I/O"
+#define SIMULATEPULSARSIGNAL_MSGEINPUT		"Invalid input-arguments to function"
+
+static LALUnit emptyUnit;
+
+
 
 
-/* Unfinished work in progress: deactivate to avoid warnings */
-#if 0 
-/*--------------------------------------------------------------------------------
- * Simulate a pulsar signal to best accuracy possible
- *--------------------------------------------------------------------------------*/
-/* <lalVerbatim file="SimulatePulsarSignalCP"> */
+/** Simulate a pulsar signal to best accuracy possible 
+ */
 void
-LALSimulatePulsarSignal (LALStatus *stat, 
-			 REAL8TimeSeries **timeSeries, 
-			 const PulsarSignalParams *params)
-{ /* </lalVerbatim> */
-  REAL8 LMST;		/* local mean sidereal time */
-  LALPlaceAndGPS place_and_gps;
-  LALMSTUnitsAndAcc units_and_acc;
-  LALDate date;
-  CHARVector *dateString = NULL;
-  REAL8 a1, a2, a3, a4, a5;
-  REAL8 b1, b2, b3, b4;
-  REAL8 Zeta;
-  REAL8 SinZetaCos2Psi, SinZetaSin2Psi;
-  REAL8 gamma, alphaBi, alphaEast, xAzi, yAzi;
+LALSimulateExactPulsarSignal (LALStatus *status, 
+			      REAL4TimeSeries **timeSeries, 
+			      const PulsarSignalParams *params)
+{
   LALFrDetector *det = &(params->site->frDetector);
-  REAL8 lambda, delta, alpha;
-  UINT4 i, Nsteps;	/* time-counter, number of steps */
-  INT4 step_ns;	/* stepsize delta t in nanoseconds */
-  LIGOTimeGPS t_i; /* time-step t_i */
+  REAL8 Delta, Alpha;
+  UINT4 numSteps, i;
 
-  INITSTATUS( stat, "LALSimulatePulsarSignal", SIMULATEPULSARSIGNALC );
-  ATTATCHSTATUSPTR(stat);
+  REAL8 refTime;
+  DetectorStateSeries *detStates = NULL;
+  LIGOTimeGPSVector *timestamps = NULL;
+  REAL8 dt = 1.0 / params->samplingRate;
+  REAL8 vn[3];
+  REAL8 A1, A2, A3, A4;
+  REAL8 f0, f1dot;
+  AMCoeffs *amcoe;
+  REAL8 xAzi, yAzi;
+  REAL8 Zeta, sinZeta;
+
+  const CHAR *name = "LALSimulatePulsarSignal() simulated pulsar signal";
+
+  INITSTATUS( status, "LALSimulatePulsarSignal", SIMULATEPULSARSIGNALC );
+  ATTATCHSTATUSPTR(status);
+
+  ASSERT ( timeSeries, status, SIMULATEPULSARSIGNAL_ENULL, SIMULATEPULSARSIGNAL_MSGENULL);
+  ASSERT ( (*timeSeries)==NULL, status, SIMULATEPULSARSIGNAL_ENONULL, SIMULATEPULSARSIGNAL_MSGENONULL);
 
   /* orientation of detector arms */
   xAzi = det->xArmAzimuthRadians;
   yAzi = det->yArmAzimuthRadians;
-
-  /* first calculate all quantities that don't depend on time */
-
-  /* prefactor: angle between detector arms and polarization */
   Zeta =  xAzi - yAzi;
   if (Zeta < 0) Zeta = -Zeta;
   if(params->site->type == LALDETECTORTYPE_CYLBAR) Zeta = LAL_PI_2;
+  sinZeta = sin(Zeta);
 
-  SinZetaCos2Psi = sin(Zeta)*cos(2.0 * params->pulsar.psi);
-  SinZetaSin2Psi = sin(Zeta)*sin(2.0 * params->pulsar.psi);
+  /* get source skyposition */
+  Alpha = params->pulsar.position.longitude;
+  Delta = params->pulsar.position.latitude;
+  
+  vn[0] = cos(Delta) * cos(Alpha);
+  vn[1] = cos(Delta) * sin(Alpha);
+  vn[2] = sin(Delta);
 
-  /* get detector orientation gamma */
-  gamma = atan2 ( cos(xAzi) + cos(yAzi), sin(xAzi)+sin(yAzi) );
-  if (gamma < 0) gamma += LAL_TWOPI;	/* make sure it's positive (?do we need that?) */
+  /* get 4 amplitudes A_\mu */
+  {
+    REAL8 aPlus  = sinZeta * params->pulsar.aPlus;
+    REAL8 aCross = sinZeta * params->pulsar.aCross;
+    REAL8 phi0 = params->pulsar.phi0;
+    REAL8 twopsi = 2.0 * params->pulsar.psi;
+  
+    A1 =  aPlus * cos(phi0) * cos(twopsi) - aCross * sin(phi0) * sin(twopsi);
+    A2 =  aPlus * cos(phi0) * sin(twopsi) + aCross * sin(phi0) * cos(twopsi);
+    A3 = -aPlus * sin(phi0) * cos(twopsi) - aCross * cos(phi0) * sin(twopsi);
+    A4 = -aPlus * sin(phi0) * sin(twopsi) + aCross * cos(phi0) * cos(twopsi);
+  }
 
-  /*  printf ("\nDEBUG: gamma = %f deg\n", gamma * (REAL8)LAL_180_PI ); */
+  /* get timestamps of timeseries plus detector-states */
+  TRY ( LALMakeTimestamps(status->statusPtr, &timestamps, params->startTimeGPS, params->duration, dt), 
+	status);
 
-  /* the factors a_i and b_i */
-  a1 = (1.0/16.0) * sin(2.0 * gamma) * (3.0 - cos(2.0*lambda)) * (3.0 - cos(2.0*delta));
-  a2 = -(1.0/4.0) * cos(2.0 * gamma) * sin(lambda) * (3.0 - cos(2.0*delta));
-  a3 = (1.0/4.0)  * sin(2.0 * gamma) * sin(2.0*lambda) * sin(2.0*delta);
-  a4 = -(1.0/2.0) * cos(2.0 * gamma) * cos(lambda) * sin(2.0*delta);
-  a5 = (3.0/4.0)  * sin(2.0 * gamma) * cos(lambda)*cos(lambda) * cos(delta)*cos(delta);
+  numSteps = timestamps->length;
 
+  TRY(LALGetDetectorStates(status->statusPtr, &detStates,timestamps,params->site,params->ephemerides, 0),
+      status );
+  
+  TRY ( LALDestroyTimestampVector (status->statusPtr, &timestamps), status );
+  timestamps = NULL;
 
-  b1 =            cos(2.0*gamma) * sin(lambda) * sin(delta);
-  b2 = (1.0/4.0)* sin(2.0*gamma) * (3.0- cos(2.0*lambda)) * sin(delta);
-  b3 =            cos(2.0*gamma) * cos(lambda) * cos(delta);
-  b4 = (1.0/2.0)* sin(2.0*gamma) * sin(2.0*lambda) * cos(delta);
+  amcoe = LALCalloc ( 1,  sizeof( *(amcoe)));
+  amcoe->a = XLALCreateREAL4Vector ( numSteps );
+  amcoe->b = XLALCreateREAL4Vector ( numSteps );
+  
 
+  /* create output timeseries */
+  if ( NULL == ((*timeSeries) = XLALCreateREAL4TimeSeries( name, &(detStates->data[0].tGPS), 
+				   params->fHeterodyne, dt, &emptyUnit, numSteps) ) )
+    {
+      ABORT ( status, SIMULATEPULSARSIGNAL_EMEM, SIMULATEPULSARSIGNAL_MSGEMEM );
+    }
 
-  /* get stepsize delta t */
-  step_ns = (INT4)( (1.0/params->samplingRate) * oneBillion + 0.5 );	/* round to ns */
+  /* get spin-parameters (restricted to maximally 2 right now) */
+  f0 = params->pulsar.f0;
+  if ( params->pulsar.spindown && (params->pulsar.spindown->length >= 2) )
+    {
+      LALPrintError ("Sorry, SimulatePulsarSignal() only supports up to 1 spindown right now!\n");
+      ABORT (status,  SIMULATEPULSARSIGNAL_EINPUT,  SIMULATEPULSARSIGNAL_MSGEINPUT);
+    }
+  if ( params->pulsar.spindown && (params->pulsar.spindown->length == 1 ) )
+    f1dot = params->pulsar.spindown->data[0];
+  else
+    f1dot = 0;
 
-  Nsteps = (UINT4)( 1.0 * params->duration * params->samplingRate);
-  t_i = params->startTimeGPS;
+  TRY ( LALGetAMCoeffs (status->statusPtr, amcoe, detStates, params->pulsar.position ), status );
 
-  place_and_gps.p_detector = params->site;
-  units_and_acc.accuracy = LALLEAPSEC_STRICT;
-  units_and_acc.units =   MST_RAD;	/* return LMST in radians */
-
+  if ( params->pulsar.tRef.gpsSeconds != 0 )
+    refTime = GPS2REAL8(params->pulsar.tRef);
+  else /* if not given: use startTime -> SSB */
+    refTime = GPS2REAL8(detStates->data[0].tGPS) + SCALAR(vn, detStates->data[0].rDetector );
 
   /* main loop: generate time-series */
-  for (i=0; i < Nsteps; i++)
+  for (i=0; i < detStates->length; i++)
     {
-      REAL8 AlphaMinusT;
-      REAL8 cos2amT, sin2amT, cosamT, sinamT;
+      REAL8 ai, bi;
+      LIGOTimeGPS *tiGPS = &(detStates->data[i].tGPS);
+      REAL8 ti, dT, taui;
+      REAL8 phi_i, cosphi_i, sinphi_i;
+      REAL8 hi;
 
-      place_and_gps.p_gps = &t_i;
+      ti = GPS2REAL8 ( (*tiGPS) ) - refTime;
+      dT = SCALAR(vn, detStates->data[i].rDetector );
+      taui = ti + dT;
 
-      TRY (LALGPStoLMST1(stat->statusPtr, &LMST, &place_and_gps, &units_and_acc), stat);
+      phi_i = LAL_TWOPI * ( f0 * taui + 0.5 * f1dot * SQ( taui ) );
+      cosphi_i = cos(phi_i);
+      sinphi_i = sin(phi_i);
 
-      AlphaMinusT = params->pulsar.position.longitude - LMST;
-      cos2amT = cos (2.0*AlphaMinusT);
-      sin2amT = sin (2.0*AlphaMinusT);
-      cosamT =  cos (AlphaMinusT);
-      sinamT =  sin (AlphaMinusT);
+      ai = amcoe->a->data[i];
+      bi = amcoe->b->data[i];
+      
+      hi = A1 * ai * cosphi_i 
+	+  A2 * bi * cosphi_i 
+	+  A3 * ai * sinphi_i 
+	+  A4 * bi * sinphi_i;
 
+      (*timeSeries)->data->data[i] = (REAL4)hi;
 
     } /* for i < Nsteps */
 
+  TRY ( LALDestroyDetectorStateSeries(status->statusPtr, &detStates ), status );
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+
+} /* LALSimulateExactPulsarSignal() */
 
 
-  
-
-  DETATCHSTATUSPTR(stat);
-  RETURN(stat);
-
-} /* LALSimulatePulsarSignal() */
-
-#endif
