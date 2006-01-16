@@ -460,30 +460,6 @@ MultiInspiralTable;
 
 Document table.
 
-\subsubsection*{Type \texttt{CoincInspiralTable}}
-
-</lalLaTeX>
-#endif
-/* <lalVerbatim> */
-typedef struct
-tagCoincInspiralTable
-{
-  struct tagCoincInspiralTable *next;
-  CHAR                ifos[LIGOMETA_IFOS_MAX];
-  INT4                numIfos;
-  SnglInspiralTable  *snglInspiral[LAL_NUM_IFO];
-}
-CoincInspiralTable;/* </lalVerbatim> */
-#if 0
-<lalLaTeX>
-The \texttt{CoincInspiralTable} contains a set of pointers to SnglInspiral
-tables.  The length of the array is set to \texttt{LAL\_NUM\_IFO} which is a
-value of the enum \texttt{InterferometerNumber} described above.  This enum
-also provides an easy way to access the \texttt{SnglInspiral} corresponding to
-each ifo.  In addition the table, it contains a field in which to store the
-number and names of the IFOs which have non-null SnglInspiralTables.  This
-table is meant to provide a simple way to manipulate coincident triggers.
-
 
 \subsubsection*{Type \texttt{SimInspiralTable}}
 
@@ -546,6 +522,33 @@ SimInspiralTable;
 <lalLaTeX>
 
 Document table.
+
+\subsubsection*{Type \texttt{CoincInspiralTable}}
+
+</lalLaTeX>
+#endif
+/* <lalVerbatim> */
+typedef struct
+tagCoincInspiralTable
+{
+  struct tagCoincInspiralTable *next;
+  CHAR                ifos[LIGOMETA_IFOS_MAX];
+  INT4                numIfos;
+  SnglInspiralTable  *snglInspiral[LAL_NUM_IFO];
+  SimInspiralTable   *simInspiral;
+}
+CoincInspiralTable;/* </lalVerbatim> */
+#if 0
+<lalLaTeX>
+The \texttt{CoincInspiralTable} contains a set of pointers to SnglInspiral
+tables.  The length of the array is set to \texttt{LAL\_NUM\_IFO} which is a
+value of the enum \texttt{InterferometerNumber} described above.  This enum
+also provides an easy way to access the \texttt{SnglInspiral} corresponding to
+each ifo.  In addition the table, it contains a field in which to store the
+number and names of the IFOs which have non-null SnglInspiralTables.  Finally, 
+it contains a pointer to an associated \texttt{SimInspiral}.  This table is 
+meant to provide a simple way to manipulate coincident triggers.
+
 
 \subsubsection*{Type \texttt{SimBurstTable}}
 
