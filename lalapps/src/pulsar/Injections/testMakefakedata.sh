@@ -2,17 +2,14 @@
 
 testDIR="./mfd_TEST"
   
-oldcode=./makefakedata_test
-newcodeDEFAULT=./lalapps_Makefakedata
-compCode=./compareSFTs
+oldcode=makefakedata_test
+newcodeDEFAULT=lalapps_Makefakedata
+compCode=compareSFTs
 
-# test if LAL_DATA_PATH has been set ... needed to locate ephemeris-files
-if [ -z "$LAL_DATA_PATH" ]; then
+# test if LAL_PREFIX ... needed to locate ephemeris-files
+if [ -z "$LAL_PREFIX" ]; then
     echo
-    echo "Need environment-variable LAL_DATA_PATH to point to your ephemeris-directory (e.g. /usr/local/share/lal)"
-    if [ -n "$LAL_PREFIX" ]; then
-	echo "You have LAL_PREFIX set, I suggest setting 'LAL_DATA_PATH=\$LAL_PREFIX/share/lal'"
-    fi
+    echo "Need environment-variable LAL_PREFIX to point to your LAL-installation directory!"
     echo
     exit 1
 fi
@@ -30,21 +27,14 @@ if [ ! -d "$testDIR" ]; then
     mkdir $testDIR
 else
 ## cleanup: remove previous output-SFTs
-    rm $testDIR/SFTtest_v2.00* || true
-    rm $testDIR/SFTtest_v4.00* || true
+    rm -f $testDIR/SFTtest_v2.00* || true
+    rm -f $testDIR/SFTtest_v4.00* || true
 fi
 
-if [ ! -x "$oldcode" ]; then
-    echo "Cannot run reference-code $oldcode!"
-    exit -1;
-elif [ ! -x "$newcode" ]; then
-    echo "Cannot run test-code $newcode!"
-    exit -1;
-fi
 
 # input parameters
 ## FIXED
-ephemdir=${LAL_PREFIX}/share/lal
+ephemdir=$LAL_PREFIX/share/lal
 Tsft=1800
 nTsft=20
 timestamps=./testT8_1800
@@ -68,7 +58,7 @@ f2dot="1e-13"
 
 dataTMP=In.data-test
 oldCL="-i $dataTMP  -I $IFO -E $ephemdir -S $refTime -n ${testDIR}/SFTtest_v2" ## -D $noiseDir"
-newCL="--Tsft=$Tsft --fmin=$fmin --Band=$Band --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0 --f0=$f0 --latitude=$delta  --longitude=$alpha --detector=$IFO --outSFTbname=${testDIR}/SFTtest_v4 --timestampsFile=$timestamps --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot $@" ## -D$noiseSFTs -v1"
+newCL="-E $ephemdir --Tsft=$Tsft --fmin=$fmin --Band=$Band --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0 --f0=$f0 --latitude=$delta  --longitude=$alpha --detector=$IFO --outSFTbname=${testDIR}/SFTtest_v4 --timestampsFile=$timestamps --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot $@" ## -D$noiseSFTs -v1"
 
 ## produce In.data file for makefakedata_v2
 echo "$Tsft	%Tsft_in_sec
