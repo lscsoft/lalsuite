@@ -170,6 +170,9 @@ INT4  uvar_orbitTperiSSBns;	/**< 'observed' (SSB) time of periapsis passage. Nan
 REAL8 uvar_orbitPeriod;		/**< Orbital period (seconds) */
 REAL8 uvar_orbitArgPeriapse;	/**< Argument of periapsis (radians) */
 
+/* precision-level of signal-generation */
+BOOLEAN uvar_exactSignal;	/**< generate signal timeseries as exactly as possible (slow) */
+
 /*----------------------------------------------------------------------*/
 
 extern int vrbflg;
@@ -267,7 +270,11 @@ main(int argc, char *argv[])
       /*----------------------------------------
        * generate the (heterodyned) time-series 
        *----------------------------------------*/
-      LAL_CALL (LALGeneratePulsarSignal(&status, &Tseries, &params), &status );
+      if ( uvar_exactSignal ) {
+	LAL_CALL ( LALSimulateExactPulsarSignal (&status, &Tseries, &params), &status );
+      } else {
+	LAL_CALL (LALGeneratePulsarSignal(&status, &Tseries, &params), &status );
+      }
 
       /* for HARDWARE-INJECTION: 
        * before the first chunk we send magic number and chunk-length to stdout 
@@ -798,7 +805,10 @@ InitUserVars (LALStatus *status)
   uvar_actuation = NULL;
   uvar_actuationScale = - 1.0;	/* seems to be the LIGO-default */
 
+  uvar_exactSignal = FALSE;
+
   /* ---------- register all our user-variable ---------- */
+  LALregBOOLUserVar(status,   help,	'h', UVAR_HELP    , "Print this help/usage message");
 
   /* output options */
   LALregSTRINGUserVar(status, outSFTbname,'n', UVAR_OPTIONAL, "Path and basefilename of output SFT files");
@@ -859,7 +869,8 @@ InitUserVars (LALStatus *status)
   LALregREALUserVar(status,   noiseSigma,	 0 , UVAR_OPTIONAL, "Gaussian noise with standard-deviation sigma");
   LALregSTRINGUserVar(status, noiseSFTs,	'D', UVAR_OPTIONAL, "Glob-like pattern specifying noise-SFTs to be added to signal");  
 
-  LALregBOOLUserVar(status,   help,	'h', UVAR_HELP    , "Print this help/usage message");
+  /* signal precision-level */
+  LALregBOOLUserVar(status,  exactSignal,	 0, UVAR_DEVELOPER, "Generate signal time-series as exactly as possible (slow).");
   
   DETATCHSTATUSPTR (status);
   RETURN (status);
