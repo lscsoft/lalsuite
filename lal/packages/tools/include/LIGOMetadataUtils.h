@@ -417,6 +417,12 @@ LALSortSnglInspiral (
     int(*comparfunc)    (const void *, const void *)
     );
 
+SnglInspiralTable *
+XLALSortSnglInspiral (
+    SnglInspiralTable  *eventHead,
+    int(*comparfunc)    (const void *, const void *)
+    );
+
 int
 LALCompareSnglInspiralByMass (
     const void *a,

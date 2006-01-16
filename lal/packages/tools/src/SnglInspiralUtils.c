@@ -41,7 +41,10 @@ Provides a set of utilities for manipulating \texttt{snglInspiralTable}s.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{SnglInspiralUtilsCP}
+\idx{LALFreeSnglInspiral()}
+\idx{XLALFreeSnglInspiral()}
 \idx{LALSortSnglInspiral()}
+\idx{XLALSortSnglInspiral()}
 \idx{LALCompareSnglInspiralByMass()}
 \idx{LALCompareSnglInspiralByPsi()}
 \idx{LALCompareSnglInspiralByTime()}
@@ -49,37 +52,42 @@ Provides a set of utilities for manipulating \texttt{snglInspiralTable}s.
 \idx{LALCompareInspirals()}
 \idx{LALClusterSnglInspiralTable()}
 \idx{LALTimeCutSingleInspiral()}
+\idx{XLALTimeCutSingleInspiral()}
+\idx{LALSNRCutSingleInspiral()}
+\idx{LALBCVCVetoSingleInspiral()}
 \idx{LALalphaFCutSingleInspiral()}
 \idx{LALIfoCutSingleInspiral()}
 \idx{LALIfoCountSingleInspiral()}
 \idx{LALTimeSlideSingleInspiral()} 
 \idx{LALPlayTestSingleInspiral()}
+\idx{XLALPlayTestSingleInspiral()}
 \idx{LALCreateTrigBank()}
 \idx{LALIncaCoincidenceTest()}
 \idx{LALTamaCoincidenceTest()}
-
+\idx{XLALMaxSnglInspiralOverIntervals(()}
+\idx{XLALCountSnglInspiral()}
 
 \subsubsection*{Description}
 
-The function \texttt{LALFreeSnglInspiral()} frees the memory associated to a
-single inspiral table.  The single inspiral table may point to a linked list
-of EventIDColumns.  Thus, it is necessary to free all event ids associated
-with the single inspiral.
+The function \texttt{LALFreeSnglInspiral()} and \idx{XLALFreeSnglInspiral()}
+free the memory associated to a single inspiral table.  The single inspiral
+table may point to a linked list of EventIDColumns.  Thus, it is necessary to
+free all event ids associated with the single inspiral.
 
-The function \texttt{LALSortSnglInspiral()} sorts a list of single inspiral
-tables.  The function simply calls qsort with the appropriate comparison
-function, \texttt{comparfunc}.  It then ensures that the head of the sorted
-list is returned.  There then follow several comparison functions for single
-inspiral tables.  \texttt{LALCompareSnglInspiralByMass ()} first compares the
-\texttt{mass1} entry of the two inspiral tables, returning 1 if the first mass
-is larger and -1 if the second is larger.  In the case that the \texttt{mass1}
-fields are equal, a similar comparsion is performed on \texttt{mass2}.  If
-these also agree, 0 is returned.  \texttt{LALCompareSnglInspiralByPsi()}
-compares the \texttt{Psi0} and \texttt{Psi3} fields in two single inspiral
-tables.  The function is analogous to the mass comparison described above.
-\texttt{LALCompareSnglInspiralByTime} compares the end times of two single
-inspiral tables, returnng 1 if the first time is larger, 0 if equal and -1 if
-the second time is larger.
+The function \texttt{LALSortSnglInspiral()} and \texttt{XLALSortSnglInspiral()}
+sorts a list of single inspiral tables.  The function simply calls qsort with
+the appropriate comparison function, \texttt{comparfunc}.  It then ensures that
+the head of the sorted list is returned.  There then follow several comparison
+functions for single inspiral tables.  \texttt{LALCompareSnglInspiralByMass ()}
+first compares the \texttt{mass1} entry of the two inspiral tables, returning 1
+if the first mass is larger and -1 if the second is larger.  In the case that
+the \texttt{mass1} fields are equal, a similar comparsion is performed on
+\texttt{mass2}.  If these also agree, 0 is returned.
+\texttt{LALCompareSnglInspiralByPsi()} compares the \texttt{Psi0} and
+\texttt{Psi3} fields in two single inspiral tables.  The function is analogous
+to the mass comparison described above.  \texttt{LALCompareSnglInspiralByTime}
+compares the end times of two single inspiral tables, returnng 1 if the first
+time is larger, 0 if equal and -1 if the second time is larger.
 
 \texttt{LALCompareSnglInspiral()} tests whether two single inspiral tables
 pass a coincidence test.  The coincidence parameters are given by
@@ -98,7 +106,8 @@ within a time window \texttt{dtimeNS}.  The triggers are compared either by
 "loudest" trigger, as determined by the selected algorithm, within each time
 window is returned.
 
-\texttt{LALTimeCutSingleInspiral()} takes in a linked list of single inspiral
+\texttt{LALTimeCutSingleInspiral()} and
+\texttt{XLALTimeCutSingleInspiral()}takes in a linked list of single inspiral
 tables and returns only those which occur after the given \texttt{startTime}
 and before the \texttt{endTime}.
 
@@ -106,10 +115,10 @@ and before the \texttt{endTime}.
 inspiral tables and returns only those triggers which have snr values above
 a specific snrCut. 
 
-\texttt{LALBCVCVetoSingleInspiral()} takes in a linked list of single
-inspiral tables and returns only those triggers which have alphaF/SNR values below
-a specific threshold and alphaF value between alphaF-hi and alphaF-lo values.
- It is relevant for the BCVC or BCVU search only.
+\texttt{LALBCVCVetoSingleInspiral()} takes in a linked list of single inspiral
+tables and returns only those triggers which have alphaF/SNR values below a
+specific threshold and alphaF value between alphaF-hi and alphaF-lo values.  It
+is relevant for the BCVC or BCVU search only.
 
 \texttt{LALalphaFCutSingleInspiral()} takes in a linked list of single
 inspiral tables and returns only those triggers which have alphaF values below
@@ -133,11 +142,11 @@ the slide takes any trigger outside of the window
 \texttt{[startTime,endTime]}, then the trigger is wrapped to be in
 this time window.
 
-\texttt{LALPlayTestSingleInspiral()} tests whether single inspiral events
-occured in playground or non-playground times.  It then returns the requested
-subset of events which occurred in the times specified by \texttt{dataType}
-which must be one of \texttt{playground\_only}, \texttt{exclude\_play} or
-\texttt{all\_data}.  
+\texttt{LALPlayTestSingleInspiral()} and \idx{XLALPlayTestSingleInspiral()}
+test whether single inspiral events occured in playground or non-playground
+times.  It then returns the requested subset of events which occurred in the
+times specified by \texttt{dataType} which must be one of
+\texttt{playground\_only}, \texttt{exclude\_play} or \texttt{all\_data}.  
 
 \texttt{LALCreateTrigBank()} takes in a list of single inspiral tables and
 returns a template bank.  The function tests whether a given template produced
@@ -252,28 +261,42 @@ LALSortSnglInspiral (
     )
 /* </lalVerbatim> */
 {
+  INITSTATUS( status, "LALSortSnglInspiral", SNGLINSPIRALUTILSC );
+
+  *eventHead = XLALSortSnglInspiral ( *eventHead, comparfunc );
+
+  RETURN( status );
+}
+
+/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+SnglInspiralTable *
+XLALSortSnglInspiral (
+    SnglInspiralTable *eventHead,
+    int(*comparfunc)   (const void *, const void *)
+    )
+/* </lalVerbatim> */
+{
   INT4                  i;
   INT4                  numEvents = 0;
   SnglInspiralTable    *thisEvent = NULL;
   SnglInspiralTable   **eventHandle = NULL;
 
-  INITSTATUS( status, "LALSortSnglInspiral", SNGLINSPIRALUTILSC );
-
   /* count the number of events in the linked list */
-  for ( thisEvent = *eventHead; thisEvent; thisEvent = thisEvent->next )
+  for ( thisEvent = eventHead; thisEvent; thisEvent = thisEvent->next )
   {
     ++numEvents;
   }
   if ( ! numEvents )
   {
-    LALWarning( status, "No events in list to sort" );
-    RETURN( status );
+    XLALPrintInfo( 
+      "XLALSortSnglInspiral: Empty SnglInspiralTable passed as input" );
+    return( eventHead );
   }
 
   /* allocate memory for an array of pts to sort and populate array */
   eventHandle = (SnglInspiralTable **) 
     LALCalloc( numEvents, sizeof(SnglInspiralTable *) );
-  for ( i = 0, thisEvent = *eventHead; i < numEvents; 
+  for ( i = 0, thisEvent = eventHead; i < numEvents; 
       ++i, thisEvent = thisEvent->next )
   {
     eventHandle[i] = thisEvent;
@@ -283,7 +306,7 @@ LALSortSnglInspiral (
   qsort( eventHandle, numEvents, sizeof(eventHandle[0]), comparfunc );
 
   /* re-link the linked list in the right order */
-  thisEvent = *eventHead = eventHandle[0];
+  thisEvent = eventHead = eventHandle[0];
   for ( i = 1; i < numEvents; ++i )
   {
     thisEvent = thisEvent->next = eventHandle[i];
@@ -293,8 +316,9 @@ LALSortSnglInspiral (
   /* free the internal memory */
   LALFree( eventHandle );
 
-  RETURN( status );
+  return( eventHead );
 }
+
 
 
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
@@ -572,9 +596,6 @@ LALCompareInspirals (
   aAcc = params->ifoAccuracy[ifoaNum];
   bAcc = params->ifoAccuracy[ifobNum];
 
-  
-
-  /* XXX Need to add light travel time between sites XXX */
   if ( labs( ta - tb ) < (aAcc.dt + bAcc.dt)
       + params->lightTravelTime[ifoaNum][ifobNum])
   {
