@@ -45,7 +45,7 @@ Provides a set of utilities for manipulating \texttt{simInspiralTable}s.
 \idx{LALGalacticInspiralParamsToSimInspiralTable()}
 \idx{LALInspiralSiteTimeAndDist()}
 \idx{LALPopulateSimInspiralSiteInfo()}
-  
+
 \subsubsection*{Description}
 
 The function \texttt{LALInspiralSiteTimeAndDist()} calculates detector end
@@ -62,8 +62,8 @@ and effective distance for each of the interferometer sites.  The sky location
 \texttt{SimInspiralTable}.  The end time and effective distance for each site
 is calculated by calling \texttt{LALInspiralSiteTimeAndDist()} once for each
 of the detectors, and setting the \texttt{detector} appropriately.
-    
-    
+
+
 
 \subsubsection*{Algorithm}
 
@@ -74,20 +74,173 @@ of the detectors, and setting the \texttt{detector} appropriately.
 \noindent LALGetInspiralParams, LALGPStoGMST1, LALTimeDelayFromEarthCenter, 
   LALAddFloatToGPS, LALComputeDetAMResponse.
 
-\subsubsection*{Notes}
-%% Any relevant notes.
+  \subsubsection*{Notes}
+  %% Any relevant notes.
 
-\vfill{\footnotesize\input{SimInspiralUtilsCV}}
+  \vfill{\footnotesize\input{SimInspiralUtilsCV}}
 
-</lalLaTeX>
+  </lalLaTeX>
 #endif
 
-/* a few useful static functions */
+  /* a few useful static functions */
 static INT8 geocent_end_time(const SimInspiralTable *x)
 {
-	return(XLALGPStoINT8(&x->geocent_end_time));
+  return(XLALGPStoINT8(&x->geocent_end_time));
 }
 
+
+/* <lalVerbatim file="SimInspiralUtilsCP"> */
+void
+XLALPlayTestSimInspiral(
+    SimInspiralTable         **eventHead,
+    LALPlaygroundDataMask      *dataType
+    )
+/* </lalVerbatim> */
+{
+  SimInspiralTable    *inspiralEventList = NULL;
+  SimInspiralTable    *thisEvent = NULL;
+  SimInspiralTable    *prevEvent = NULL;
+
+  INT8 triggerTime = 0;
+  INT4 isPlay = 0;
+  INT4 numTriggers;
+
+  /* Remove all the triggers which are not of the desired type */
+
+  numTriggers = 0;
+  thisEvent = *eventHead;
+
+  if ( (*dataType == playground_only) || (*dataType == exclude_play) )
+  {
+    while ( thisEvent )
+    {
+      SimInspiralTable *tmpEvent = thisEvent;
+      thisEvent = thisEvent->next;
+
+      triggerTime = XLALGPStoINT8( &(tmpEvent->geocent_end_time) );
+      isPlay = XLALINT8NanoSecIsPlayground( &triggerTime );
+
+      if ( ( (*dataType == playground_only)  && isPlay ) || 
+          ( (*dataType == exclude_play) && ! isPlay) )
+      {
+        /* keep this trigger */
+        if ( ! inspiralEventList  )
+        {
+          inspiralEventList = tmpEvent;
+        }
+        else
+        {
+          prevEvent->next = tmpEvent;
+        }
+        tmpEvent->next = NULL;
+        prevEvent = tmpEvent;
+        ++numTriggers;
+      }
+      else
+      {
+        /* discard this template */
+        XLALFreeSimInspiral ( &tmpEvent );
+      }
+    }
+    *eventHead = inspiralEventList; 
+    if ( *dataType == playground_only )
+    {
+      XLALPrintInfo( "Kept %d playground triggers \n", numTriggers );
+    }
+    else if ( *dataType == exclude_play )
+    {
+      XLALPrintInfo( "Kept %d non-playground triggers \n", numTriggers );
+    }
+  }
+  else if ( *dataType == all_data )
+  {
+    XLALPrintInfo( 
+        "XLALPlayTestSimInspiral: Keeping all triggers\n" );
+  }
+  else
+  {
+    XLALPrintInfo( 
+        "XLALPlayTestSimInspiral: Unknown data type, returning no triggers\n" 
+        );
+    *eventHead = NULL;
+  }
+
+}  
+
+
+/* <lalVerbatim file="SimInspiralUtilsCP"> */
+int
+XLALSimInspiralInSearchedData(
+    SimInspiralTable         **eventHead,
+    SearchSummaryTable        *summList
+    )
+{
+  SearchSummaryTable   *thisSearchSumm = NULL;
+
+  SimInspiralTable *eventList = NULL;
+  SimInspiralTable *prevEvent = NULL;
+  SimInspiralTable *thisEvent = NULL;
+
+  int numInj = 0;
+
+  XLALTimeSortSearchSummary( &summList, LALCompareSearchSummaryByOutTime );
+
+  thisEvent = *eventHead;
+  thisSearchSumm = summList;
+
+
+  while ( thisEvent )
+  {
+    SimInspiralTable *tmpEvent = thisEvent;
+    thisEvent = thisEvent->next;
+
+    while ( thisSearchSumm )
+    {
+      if ( geocent_end_time(tmpEvent) < 
+          XLALGPStoINT8( &(thisSearchSumm->out_start_time) ))
+      {
+        XLALPrintInfo( 
+            "XLALSimInspiralInSearchedData: Discarding injection\n" );
+        LALFree( tmpEvent );
+        break;
+      }
+      else
+      {
+        if ( geocent_end_time(tmpEvent) < 
+            XLALGPStoINT8( &(thisSearchSumm->out_end_time) ))
+        {
+          XLALPrintInfo( 
+              "XLALSimInspiralInSearchedData: Keeping injection\n" );
+          numInj++;
+          if ( ! eventList )
+          {
+            eventList = tmpEvent;
+          }
+          else
+          {
+            prevEvent->next = tmpEvent;
+          }
+          tmpEvent->next = NULL;
+          prevEvent = tmpEvent;
+          break;
+        }
+      }
+
+      thisSearchSumm = thisSearchSumm->next;
+    }
+
+    if ( !thisSearchSumm )
+    {
+      XLALPrintInfo( 
+          "XLALSimInspiralInSearchedData: Discarding injection\n" );
+      LALFree( tmpEvent );
+    }
+  }
+
+  *eventHead = eventList; 
+
+  return(numInj);
+}  
 
 
 
@@ -467,22 +620,22 @@ XLALSortSimInspiral(
 /* <lalVerbatim file="SimInspiralUtilsCP"> */
 int
 XLALCompareSimInspiralByGeocentEndTime(
-	const SimInspiralTable * const *a,
-	const SimInspiralTable * const *b
-)
+    const SimInspiralTable * const *a,
+    const SimInspiralTable * const *b
+    )
 /* </lalVerbatim> */
 {
-	INT8 ta, tb;
-	INT8 epsilon = 10;	/* nanoseconds */
+  INT8 ta, tb;
+  INT8 epsilon = 10;	/* nanoseconds */
 
-	ta = geocent_end_time(*a);
-	tb = geocent_end_time(*b);
+  ta = geocent_end_time(*a);
+  tb = geocent_end_time(*b);
 
-	if(ta > tb + epsilon)
-		return(1);
-	if(ta < tb - epsilon)
-		return(-1);
-	return(0);
+  if(ta > tb + epsilon)
+    return(1);
+  if(ta < tb - epsilon)
+    return(-1);
+  return(0);
 }
 
 
@@ -508,7 +661,418 @@ XLALFreeSimInspiral (
 }
 
 
+/* <lalVerbatim file="SimInspiralUtilsCP"> */
+INT8
+XLALReturnSimInspiralEndTime (
+    SimInspiralTable *event,
+    CHAR             *ifo
+    )
+/* </lalVerbatim> */
+{
+  static const char *func = "ReturnSimInspiralEndTime";
+  if ( ! strcmp( "L1", ifo ) )
+  {
+    return( XLALGPStoINT8(&(event->l_end_time) ) );
+  }
+  else if ( ! strcmp( "H1", ifo ) || 
+      ! strcmp( "H2", ifo ) )
+  {
+    return( XLALGPStoINT8(&(event->l_end_time) ) );
+  }
+  else if ( ! strcmp( "G1", ifo ) )
+  {
+    return(XLALGPStoINT8(&(event->l_end_time) ) );
+  }
+  else if ( ! strcmp( "T1", ifo ) )
+  {
+    return( XLALGPStoINT8(&(event->l_end_time) ) );
+  }
+  else if ( ! strcmp( "V1", ifo ) )
+  {
+    return( XLALGPStoINT8(&(event->l_end_time) ) );
+  }
+  else
+  {
+    XLAL_ERROR(func,XLAL_EIO);
+  }
+
+}
+
+/* <lalVerbatim file="SimInspiralUtilsCP"> */
+int
+XLALSnglSimInspiralTest (
+    SimInspiralTable  **simHead,
+    SnglInspiralTable **eventHead,
+    SimInspiralTable  **missedSimHead,
+    SnglInspiralTable **missedSnglHead,
+    INT8                injectWindowNS
+    )
+/* </lalVerbatim> */
+{
+
+  /* Note: we are assuming that both the inspiral and */
+  /* injection events are time sorted                 */
+  SimInspiralTable *thisSimEvent = *simHead;
+  SimInspiralTable *thisMissedSim= NULL;
+  SimInspiralTable *prevSimEvent = NULL;
+  SnglInspiralTable *thisEvent   = *eventHead;
+  SnglInspiralTable *prevEvent   = NULL;
+  SnglInspiralTable *thisMissed  = NULL;
+  EventIDColumn     *thisId      = NULL;
+
+  int numSimFound  = 0;
+  int coincidence = 0;
+
+  INT8 simGeocentTime, simSiteTime, inspiralTime;
+  INT8 earthRadiusNS = (INT8) ( 1e9 * 2 * LAL_REARTH_SI / LAL_C_SI );
+
+  *simHead     = NULL;
+  *eventHead   = NULL;
 
 
+  if ( ! thisEvent )
+  {
+    XLALPrintInfo( "No triggers in input data, all injections missed\n" );
 
+    *missedSimHead = thisSimEvent;
+    return(0);
+  }
+  else
+  {
+
+    /* begin loop over the sim_inspiral events */
+    while ( thisSimEvent )
+    {
+      coincidence = 0;
+      /* find the end time of the SimEvent */
+      simGeocentTime = geocent_end_time( thisSimEvent );
+
+      /* find the first inspiral event after the current sim event */
+      while ( thisEvent )
+      {
+        /* compute the time in nanosec for thisEvent */
+        inspiralTime = XLALGPStoINT8( &(thisEvent->end_time) );
+
+        if( inspiralTime < (simGeocentTime - earthRadiusNS - injectWindowNS ) )
+        {
+          /* discard this event and move on to the next one */
+          if ( ! *missedSnglHead )
+          {
+            *missedSnglHead = thisMissed = thisEvent;
+          }
+          else
+          {
+            thisMissed = thisMissed->next = thisEvent;
+          }
+          if ( prevEvent ) prevEvent->next = thisEvent->next;
+          thisEvent = thisEvent->next;
+          thisMissed->next = NULL;
+          XLALPrintInfo( "-" );
+        }
+        else
+        {
+          /* we have reached the negative coincincidence window */
+          break;
+        }
+      }
+
+      while ( thisEvent )
+      {
+
+        /* compute the time in nanosec for thisEvent */
+        inspiralTime = XLALGPStoINT8( &(thisEvent->end_time) );
+
+        if( inspiralTime < (simGeocentTime + earthRadiusNS + injectWindowNS ) )
+        {
+          /* this event may be in coincidence window, need to check site
+           * end time */
+          simSiteTime = XLALReturnSimInspiralEndTime( thisSimEvent, 
+              thisEvent->ifo );
+
+          if ( (inspiralTime > (simSiteTime - injectWindowNS)) &&
+              (inspiralTime < (simSiteTime + injectWindowNS)) )
+          {
+            /* this event is within the coincidence window  */
+           
+            /* store the sim inspiral in the event_id's for this sngl */
+            thisId = thisEvent->event_id; 
+            while ( thisId )
+            {
+              thisId->simInspiralTable = thisSimEvent;
+              thisId = thisId->next;
+            }
+
+            /* store this event and move on to the next one */
+            if ( ! *eventHead ) *eventHead = thisEvent;
+            prevEvent = thisEvent;
+            thisEvent = thisEvent->next;
+            coincidence = 1;
+            XLALPrintInfo( "+" );
+          }
+          else
+          {
+            /* discard this event and move on to the next one */
+            if ( ! *missedSnglHead )
+            {
+              *missedSnglHead = thisMissed = thisEvent;
+            }
+            else
+            {
+              thisMissed = thisMissed->next = thisEvent;
+            }
+
+            if ( prevEvent ) prevEvent->next = thisEvent->next;
+            thisEvent = thisEvent->next;
+            thisMissed->next = NULL;
+            XLALPrintInfo( "-" );
+          }
+        }
+        else
+        {
+          /* we have reached the end of the positive coincincidence window */
+          break;
+        }
+      }
+
+      if ( coincidence )
+      {
+        /* keep this sim event in the list and move to the next sim event */
+        if ( ! *simHead ) *simHead = thisSimEvent;
+        prevSimEvent = thisSimEvent;
+        ++numSimFound;
+        thisSimEvent = thisSimEvent->next;
+        XLALPrintInfo( "F" );
+      }
+      else
+      {
+        /* save this sim event in the list of missed events... */
+        if ( ! *missedSimHead )
+        {
+          *missedSimHead = thisMissedSim = thisSimEvent;
+        }
+        else
+        {
+          thisMissedSim = thisMissedSim->next = thisSimEvent;
+        }
+
+        /* ...and remove it from the list of found events */
+        if ( prevSimEvent ) prevSimEvent->next = thisSimEvent->next;
+        XLALPrintInfo( "M" );
+
+        /* move to the next sim in the list */
+        thisSimEvent = thisSimEvent->next;
+
+        /* make sure the missed sim list is terminated */
+        thisMissedSim->next = NULL;
+      }
+
+      if ( ! thisEvent )
+      {
+        /* these are no more events to process so all the rest of the */
+        /* injections must be put in the missed injections list       */
+        if ( ! *missedSimHead )
+        {
+          /* this and any subsequent events are in the missed sim list */
+          if ( thisSimEvent ) thisMissedSim = *missedSimHead = thisSimEvent;
+        }
+        else
+        {
+          if ( thisSimEvent )
+          {
+            /* append the rest of the list to the list of missed injections */
+            thisMissedSim = thisMissedSim->next = thisSimEvent;
+          }
+          else
+          {
+            /* there are no injections after this one */
+            thisMissedSim = thisMissedSim->next = NULL;
+          }
+        }
+
+        /* terminate the list of found injections correctly */
+        if ( prevSimEvent ) prevSimEvent->next = NULL;
+
+        while ( thisMissedSim )
+        {
+          /* count the number of injections just stuck in the missed list */
+          XLALPrintInfo( "M" );
+          thisMissedSim = thisMissedSim->next;
+        }
+        thisSimEvent = NULL;
+        break;
+      }
+    }
+
+    if ( thisEvent )
+    {
+      while( thisEvent )
+      {
+        /* discard this event and move on to the next one */
+        if ( ! *missedSnglHead )
+        {
+          *missedSnglHead = thisMissed = thisEvent;
+        }
+        else
+        {
+          thisMissed = thisMissed->next = thisEvent;
+        }
+        if ( prevEvent ) prevEvent->next = thisEvent->next;
+        thisEvent = thisEvent->next;
+        thisMissed->next = NULL;
+        XLALPrintInfo( "-" );
+      }
+    }
+  }
+  XLALPrintInfo( "\n" );
+  return( numSimFound );
+}
+
+
+/* <lalVerbatim file="SimInspiralUtilsCP"> */
+int
+XLALCoincSimInspiralTest (
+    SimInspiralTable   **simHead,
+    CoincInspiralTable **coincHead,
+    SimInspiralTable   **missedSimHead,
+    CoincInspiralTable **missedCoincHead
+    )
+/* </lalVerbatim> */
+{
+  CoincInspiralTable    *thisCoinc       = *coincHead;
+  CoincInspiralTable    *prevCoinc       = NULL;
+  CoincInspiralTable    *thisMissedCoinc = NULL;
+  SimInspiralTable      *thisSim         = NULL;
+  SimInspiralTable      *prevSim         = NULL;
+  SimInspiralTable      *thisMissedSim   = NULL;
+  SnglInspiralTable     *thisSngl        = NULL;
+  EventIDColumn         *thisId          = NULL;
+
+  InterferometerNumber   ifoInCoinc = LAL_UNKNOWN_IFO;
+  int                    numSimFound = 0;
+
+  if ( !*coincHead )
+  {
+    XLALPrintInfo( 
+        "XLALCoincSimInspiral: Empty coincInspiral passed as input" );
+    *missedSimHead = *simHead;
+    *simHead = NULL;
+    return( 0 );
+  }
+
+  *coincHead = NULL;
+
+  while( thisCoinc )
+  {
+    thisSim = NULL;
+    /* loop over the interferometers to get the event_id*/
+
+    for ( ifoInCoinc = 0; ifoInCoinc < LAL_NUM_IFO; ifoInCoinc++)
+    {
+      if ( (thisSngl = thisCoinc->snglInspiral[ifoInCoinc]) )
+      {
+        thisSim = thisSngl->event_id->simInspiralTable;
+        break;
+      }
+    }
+
+    for ( ; ifoInCoinc < LAL_NUM_IFO; ifoInCoinc++)
+    {
+      if ( (thisSngl = thisCoinc->snglInspiral[ifoInCoinc]) &&
+          (thisSim != thisSngl->event_id->simInspiralTable) )
+      {
+        thisSim = NULL;
+        break;
+      }
+    }
+
+    if ( thisSim )
+    {
+      /* thisCoinc is coincident with a thisSim */
+      thisCoinc->simInspiral = thisSim;
+      
+      /* set the event_id's */
+      if ( !thisSim->event_id )
+      {
+        thisId = thisSim->event_id = LALCalloc( 1, sizeof(EventIDColumn) );
+      }
+      else
+      {
+        for ( thisId = thisSim->event_id; thisId->next; thisId = thisId->next);
+        thisId = thisId->next = LALCalloc( 1, sizeof(EventIDColumn) );
+      }
+      thisId->simInspiralTable = thisSim;
+      thisId->coincInspiralTable = thisCoinc;
+
+      if ( ! *coincHead )
+      {
+        *coincHead = thisCoinc;
+      }
+      
+      XLALPrintInfo( "+" );
+      /* move on to next coinc */
+      thisCoinc = thisCoinc->next;
+    }
+    else
+    {
+      /* discard this event and move on to the next one */
+      if ( ! *missedCoincHead )
+      {
+        *missedCoincHead = thisMissedCoinc = thisCoinc;
+      }
+      else
+      {
+        thisMissedCoinc = thisMissedCoinc->next = thisCoinc;
+      }
+      
+      if ( prevCoinc ) prevCoinc->next = thisCoinc->next;
+      thisCoinc = thisCoinc->next;
+      XLALPrintInfo( "-" );
+      
+      /* terminate the missed list */
+      thisMissedCoinc->next = NULL;
+    }
+  }
+
+  /* run through simInspirals, keeping only those in coincs */
+
+  thisSim = *simHead;
+  *simHead = NULL;
+  
+  while( thisSim )
+  {
+    if( thisSim->event_id )
+    {
+      /* keep this event in the list and move to the next sim event */
+      if ( ! *simHead ) *simHead = thisSim;
+      prevSim = thisSim;
+      ++numSimFound;
+      thisSim = thisSim->next;
+      XLALPrintInfo( "F" );
+    }
+    else
+    {
+      /* save this sim event in the list of missed events... */
+      if ( ! *missedSimHead )
+      {
+        *missedSimHead = thisMissedSim = thisSim;
+      }
+      else
+      {
+        thisMissedSim = thisMissedSim->next = thisSim;
+      }
+
+      /* ...and remove it from the list of found events */
+      if ( prevSim ) prevSim->next = thisSim->next;
+      XLALPrintInfo( "M" );
+
+      /* move to the next sim in the list */
+      thisSim = thisSim->next;
+
+      /* make sure the missed sim list is terminated */
+      thisMissedSim->next = NULL;
+    }
+  }
+  XLALPrintInfo( "\n" );
+  return( numSimFound );
+}
 

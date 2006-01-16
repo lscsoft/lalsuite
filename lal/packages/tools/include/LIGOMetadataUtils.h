@@ -219,6 +219,24 @@ a smaller chi squared value; \texttt{snrsq\_over\_chisq} selects the trigger
 with the largest value of snr squared divided by the chi squared.
 </lalLaTeX>
 #endif
+/* <lalVerbatim> */
+typedef enum 
+{ 
+  no_stat,
+  snrsq, 
+  s3_snr_chi_stat 
+} 
+CoincInspiralStatistic;
+/*</lalVerbatim> */
+#if 0
+<lalLaTeX>
+The \texttt{CoincInspiralStatistic} provides two choices for clustering
+a single inspiral table.  The\texttt{snrsq} clustering returns the trigger
+with the greatest summed snr^{2} from all instruments.  The 
+\texttt{snr\_chi\_stat} replaces selects the trigger
+with the largest value of the snr and chisq statistic.
+</lalLaTeX>
+#endif
 
 /*
  *
@@ -611,7 +629,7 @@ LALFreeCoincInspiral(
     CoincInspiralTable        **coincPtr
     );
 
-void
+int
 XLALFreeCoincInspiral(
     CoincInspiralTable        **coincPtr
     );
@@ -644,6 +662,13 @@ XLALInspiralDistanceCut(
     InspiralAccuracyList       *accuracyParams
     );
 
+SnglInspiralTable *
+XLALExtractSnglInspiralFromCoinc(
+    CoincInspiralTable         *coincInspiral,
+    LIGOTimeGPS                *gpsStartTime,
+    INT4                        slideNum
+    );
+
 void
 LALExtractSnglInspiralFromCoinc(
     LALStatus                  *status,
@@ -671,6 +696,49 @@ XLALGenerateCoherentBank(
     CoincInspiralTable         *coincInput,
     CHAR                       *ifos
     );
+
+INT8 
+XLALCoincInspiralTimeNS (
+    CoincInspiralTable         *coincInspiral
+    );
+
+REAL4
+XLALCoincInspiralStat(
+    CoincInspiralTable         *coincInspiral,
+    CoincInspiralStatistic      coincStat
+    );
+
+int 
+XLALClusterCoincInspiralTable (
+    CoincInspiralTable        **coincList,
+    INT8                        dtimeNS,
+    CoincInspiralStatistic      coincStat
+    );
+
+int
+XLALCompareCoincInspiralByTime (
+    const void *a,
+    const void *b
+    );
+
+CoincInspiralTable *
+XLALSortCoincInspiral (
+    CoincInspiralTable  *eventHead,
+    int(*comparfunc)    (const void *, const void *)
+    );
+
+int
+XLALCoincInspiralIfos (
+    CoincInspiralTable  *coincInspiral,
+    char                *ifos    
+    );
+
+int
+XLALCoincInspiralIfosCut(
+    CoincInspiralTable **coincHead,
+    char                *ifos    
+    );
+
 
 /* sim inspiral */
 
@@ -716,8 +784,40 @@ XLALFreeSimInspiral (
     SimInspiralTable **eventHead
     );
 
+void
+XLALPlayTestSimInspiral(
+    SimInspiralTable          **eventHead,
+    LALPlaygroundDataMask      *dataType
+    );
 
+int
+XLALSimInspiralInSearchedData(
+    SimInspiralTable         **eventHead,
+    SearchSummaryTable        *summList
+    );
 
+INT8
+XLALReturnSimInspiralEndTime (
+    SimInspiralTable *event,
+    CHAR             *ifo
+    );
+
+int
+XLALSnglSimInspiralTest (
+    SimInspiralTable  **simHead,
+    SnglInspiralTable **eventHead,
+    SimInspiralTable  **missedSimHead,
+    SnglInspiralTable **missedSnglHead,
+    INT8                injectWindowNS
+    );
+
+int
+XLALCoincSimInspiralTest (
+    SimInspiralTable   **simHead,
+    CoincInspiralTable **coincHead,
+    SimInspiralTable   **missedSimHead,
+    CoincInspiralTable **missedCoincHead
+   );
 
 
 /*
