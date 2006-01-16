@@ -8,6 +8,7 @@ INCASRC 	= inca.c
 THINCASRC 	= thinca.c
 LTINCASRC 	= lt_inca.c
 SIRESRC 	= sire.c
+COIRESRC 	= coire.c
 SIVASRC 	= siva.c
 INSPINJSRC 	= inspinj.c
 MINJSRC 	= minj.c
@@ -23,7 +24,7 @@ RANDOMBANKSRC 	= randombank.c
 if LALFRAME
 if LALMETAIO
 bin_PROGRAMS = lalapps_inspiral lalapps_tmpltbank \
-               lalapps_inca lalapps_sire lalapps_siva \
+               lalapps_inca lalapps_sire lalapps_coire lalapps_siva \
                lalapps_inspinj lalapps_splitbank \
                lalapps_minj lalapps_bbhinj \
 	       lalapps_tama2ligolw lalapps_inspfrinj \
@@ -31,7 +32,7 @@ bin_PROGRAMS = lalapps_inspiral lalapps_tmpltbank \
 	       lalapps_thinca lalapps_trigbank \
 	       lalapps_spininj lalapps_coherent_inspiral \
                lalapps_coherentbank lalapps_coinext \
-               lalapps_randombank
+               lalapps_randombank 
 
 lalapps_inspiral_SOURCES 	= $(INSPIRALSRC)
 lalapps_coherent_inspiral_SOURCES = $(COHERESRC)
@@ -41,6 +42,7 @@ lalapps_inca_SOURCES 		= $(INCASRC)
 lalapps_thinca_SOURCES 		= $(THINCASRC)
 lalapps_lt_inca_SOURCES 	= $(LTINCASRC)
 lalapps_sire_SOURCES 		= $(SIRESRC)
+lalapps_coire_SOURCES 		= $(COIRESRC)
 lalapps_siva_SOURCES 		= $(SIVASRC)
 lalapps_inspinj_SOURCES 	= $(INSPINJSRC)
 lalapps_minj_SOURCES 		= $(MINJSRC)
@@ -96,7 +98,7 @@ lalapps_inspiral_online_pipe_inject: $(srcdir)/inspiral_online_pipe_inject.in py
 
 pkgdata_DATA = BNSMasses.dat inspsrcs.dat inspiral_pipe.ini s2_dag.ini s2_tama.ini inspiral_hipe.ini online.ini online_inject_bbh.ini
 EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
-             $(SIRESRC) $(SIVASRC) $(MINJSRC) \
+             $(SIRESRC) $(COIRESRC) $(SIVASRC) $(MINJSRC) \
              $(INCASRC) inspiral_pipe.in s2_dag.ini \
              $(COHERESRC) inspiral_pipe_s2.in inspiral_pipe.ini \
              $(INSPINJSRC) BNSMasses.dat inspsrcs.dat \
