@@ -141,8 +141,6 @@ int main( int argc, char *argv[] )
   int                   numSimEvents = 0;
   int                   numSimInData = 0;
 
-  int                   i = 0;
-
   SearchSummvarsTable  *inputFiles = NULL;
   SearchSummvarsTable  *thisInputFile = NULL;
   SearchSummaryTable   *searchSummList = NULL;
@@ -614,24 +612,87 @@ int main( int argc, char *argv[] )
   for( j = 0; j < numInFiles; ++j )
   {
     INT4 numFileTriggers = 0;
-
-    numFileTriggers = XLALReadInspiralTriggerFile( &inspiralEventList,
-        &thisInspiralTrigger, &searchSummList, &inputFiles, inFileNameList[j]
+    INT4 numFileCoincs   = 0;
+    SnglInspiralTable   *inspiralFileList = NULL;
+    SnglInspiralTable   *thisFileTrigger  = NULL;
+    CoincInspiralTable  *coincFileHead    = NULL;
+    
+    numFileTriggers = XLALReadInspiralTriggerFile( &inspiralFileList,
+        &thisFileTrigger, &searchSummList, &inputFiles, inFileNameList[j]
         );
     if (numFileTriggers < 0)
     {
-      fprintf(stderr, "Error reading triggers from file %s",
-          argv[i]);
+      fprintf(stderr, "Error reading triggers from file %s\n",
+          inFileNameList[j]);
       exit( 1 );
     }
+    else
+    {
+      if ( vrbflg )
+      {
+        fprintf(stderr, "Read %d reading triggers from file %s\n",
+            numFileTriggers, inFileNameList[j]);
+      }
+    }
 
+    inspiralFileList = XLALPlayTestSingleInspiral( inspiralFileList, 
+        &dataType );
+    if ( dataType != all_data && inspiralFileList )
+    {
+      /* count the triggers, scroll to end of list */
+      for ( thisFileTrigger=inspiralFileList, numFileTriggers = 0; 
+          thisFileTrigger->next;
+          thisFileTrigger = thisFileTrigger->next, numFileTriggers++);
+      /* add last trigger */
+      ++numFileTriggers;
+    }
+    
+    /* add inspirals to list */
+    if ( thisInspiralTrigger )
+    {
+      thisInspiralTrigger->next = inspiralFileList;
+    }
+    else
+    {
+      inspiralEventList = inspiralFileList;
+    }
+    thisInspiralTrigger = thisFileTrigger;
     numTriggers += numFileTriggers;
+    
+    
+    /* reconstruct the coincs */
+    numFileCoincs = XLALRecreateCoincFromSngls( &coincFileHead, 
+        inspiralFileList );
+    if( numFileCoincs < 0 )
+    {
+      fprintf(stderr, "Unable to reconstruct coincs from single ifo triggers");
+      exit( 1 );
+    }
+    else if ( vrbflg )
+    {
+      fprintf( stdout,
+          "Recreated %d coincs from the %d triggers in file %s\n", 
+          numFileCoincs, numFileTriggers, inFileNameList[j] );
+    }
+
+    /* add coincs to list */
+    if ( thisCoinc )
+    {
+      thisCoinc->next = coincFileHead;
+    }
+    else
+    {
+      coincHead = thisCoinc = coincFileHead;
+    }
+    for ( ; thisCoinc->next; thisCoinc = thisCoinc->next );
+    numCoincs += numFileCoincs;
   }
 
+        
   if ( vrbflg )
   {
-    fprintf( stdout,
-        "Read in %d triggers\n", numTriggers );
+    fprintf( stdout, "Read in %d triggers\n", numTriggers );
+    fprintf( stdout, "Recreated %d coincs\n", numCoincs );
   }
 
   for ( thisSearchSumm = searchSummList; thisSearchSumm; 
@@ -669,19 +730,6 @@ int main( int argc, char *argv[] )
   }
 
 
-  /* reconstruct the coincs */
-  numCoincs = XLALRecreateCoincFromSngls( &coincHead, inspiralEventList );
-  if( numCoincs < 0 )
-  {
-    fprintf(stderr, "Unable to reconstruct coincs from single ifo triggers");
-    exit( 1 );
-  }
-  else if ( vrbflg )
-  {
-    fprintf( stdout,
-        "Recreated %d coincs from the %d triggers\n", numCoincs, 
-        numTriggers );
-  }
 
   /* keep only the requested coincs */
   if( ifos )
@@ -754,9 +802,9 @@ int main( int argc, char *argv[] )
     
     if ( vrbflg ) fprintf( stdout, 
         "Sorting single inspiral triggers before injection coinc test\n" );
-    inspiralEventList = XLALSortSnglInspiral( inspiralEventList, 
+    /*inspiralEventList = XLALSortSnglInspiral( inspiralEventList, 
         *LALCompareSnglInspiralByTime );
-    
+    */
     /* first find singles which are coincident with injections */
     numSnglFound = XLALSnglSimInspiralTest ( &simEventHead, 
         &inspiralEventList, &missedSimHead, &missedSnglHead, injectWindowNS );
