@@ -149,14 +149,17 @@ LALGeneratePulsarSignal (LALStatus *status,
   sourceParams.epoch = t0; 
   sourceParams.length = (UINT4) ceil( SSBduration / sourceParams.deltaT );
 
-  /* we use frequency-spindowns, but GenerateSpinOrbitCW wants it f0-normalized,
-     so we have to do that here: */
+  /* we use frequency-spindowns, but GenerateSpinOrbitCW wants f_k = fkdot / (f0 * k!) */
   sourceParams.f = NULL;
   if (params->pulsar.spindown)
     {
+      UINT4 kFact = 1;
       TRY ( LALDCreateVector(status->statusPtr, &(sourceParams.f), params->pulsar.spindown->length), status);
-      for (i=0; i < sourceParams.f->length; i++)
-	sourceParams.f->data[i] = params->pulsar.spindown->data[i] / params->pulsar.f0;
+      for (i=0; i < sourceParams.f->length; i++ )
+	{
+	  sourceParams.f->data[i] = params->pulsar.spindown->data[i] / (kFact * params->pulsar.f0);
+	  kFact *= i + 2;
+	}
     }
 
   /* finally, call the function to generate the source waveform */
