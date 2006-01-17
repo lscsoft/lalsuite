@@ -254,7 +254,7 @@ int main( int argc, char *argv[] )
   REAL4                 alphaFhi = -2.e4;
   REAL4                 alphaFlo = 9.e4;
   REAL4                 thresholdT = 1e6;
-  REAL4  	        lambda   = 1e6;
+  REAL4                 snrCut = 0.;
 
   const CHAR                   ifoList[LAL_NUM_IFO][LIGOMETA_IFO_MAX] = 
                                    {"G1", "H1", "H2", "L1", "T1", "V1"};
@@ -332,8 +332,8 @@ int main( int argc, char *argv[] )
     {"maximization-interval",required_argument, 0,                   '@'},    
     {"alphaF-hi",           required_argument, 0,                    'j'},
     {"alphaF-lo",           required_argument, 0,                    'l'},
-    {"alphaF-snr",           required_argument, 0,                   'v'},
-    {"snr-max-ratio",       required_argument, 0,                    'u'},
+    {"alphaf-snr",          required_argument, 0,                    'v'},
+    {"snr-threshold",       required_argument, 0,                    '*'},
     {"data-type",           required_argument, 0,                    'k'},
     {"comment",             required_argument, 0,                    'x'},
     {"user-tag",            required_argument, 0,                    'Z'},
@@ -399,7 +399,7 @@ int main( int argc, char *argv[] )
     c = getopt_long_only( argc, argv, 
         "A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:VW:Y:Z:"
         "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:"
-        "2:3:4:5:6:7:8:9:!:-:+:=:@:^:&:", 
+        "2:3:4:5:6:7:8:9:!:-:+:=:@:^:&:*", 
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -760,6 +760,11 @@ int main( int argc, char *argv[] )
         thresholdT = atof(optarg);
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
+      
+      case '*' :
+        snrCut = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
 
       case 'j':
         /* upper alphaF cutoff */
@@ -773,12 +778,6 @@ int main( int argc, char *argv[] )
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
       
-      case 'u':
-        /* lambda of the BCVC veto */
-        lambda = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
-        break;
-
 
       case 'k':
         /* type of data to analyze */
@@ -1244,20 +1243,28 @@ int main( int argc, char *argv[] )
       alphaFhi, alphaFlo), &status );
   }
 
+  /*
+   * for the case of BCVC, discard the triggers that
+   * have alphaF/SNR greater than thresholdT and alphaF greater than 
+   * alphaFhi or lower than alphaFlo,
+   * as those are specified in the command line.
+   */
   if ( doBCVCVeto )
   {
-    if ( lambda <= 0 )
-    {
-      fprintf( stderr, "Error: snr-max-ratio must be gre greater than zero.\n");
-      exit( 1 );
-    }
+
     if ( vrbflg ) fprintf( stdout,
-       "Discarding triggers with alphaF > %f OR alphaF < %f \n and triggers with rhoU/rhoC > %f or |alphaF./snr|>.15%f\n" , 
-       alphaFhi, alphaFlo , lambda , thresholdT);
-	
-    LAL_CALL( LALBCVCVetoSingleInspiral( &status, &(inspiralEventList),lambda,
-      alphaFhi, alphaFlo), &status );
+       "Discarding triggers with snr < %f \n",    
+	snrCut);
+    LAL_CALL( LALSNRCutSingleInspiral( &status, &(inspiralEventList), 
+	snrCut), &status);
+    
+    if ( vrbflg ) fprintf( stdout,
+       "Discarding triggers with alphaF > %f OR alphaF < %f \n and triggers with |alphaF/snr| >%f\n" , 
+       alphaFhi, alphaFlo , thresholdT);
+    LAL_CALL( LALBCVCVetoSingleInspiral( &status, &(inspiralEventList),
+      alphaFhi, alphaFlo, thresholdT), &status );
   }
+ 
 
   /* maximize over a given interval */
   if ( maximizationInterval )
@@ -1401,9 +1408,20 @@ int main( int argc, char *argv[] )
     LAL_CALL( LALCreateTwoIFOCoincList( &status, &coincInspiralList,
         inspiralEventList, &accuracyParams ), &status );
 
-    if( distCut )
+    if( distCut  )
     {
-      XLALInspiralDistanceCut( &coincInspiralList, &accuracyParams );
+      if (!doBCVCVeto)
+      {
+        XLALInspiralDistanceCut( &coincInspiralList, &accuracyParams );
+      }
+      else
+      {
+  	    if ( vrbflg ) fprintf( stdout, 
+	      "Discarding triggers h1-h2-distance-cut using kappa=%f and epsilon = %f\n", 
+	        accuracyParams.ifoAccuracy[LAL_IFO_H1].kappa,
+	        accuracyParams.ifoAccuracy[LAL_IFO_H1].epsilon);
+        XLALInspiralDistanceCutBCVC( &coincInspiralList, &accuracyParams );
+      }
     }
 
   
@@ -1493,10 +1511,21 @@ int main( int argc, char *argv[] )
         LAL_CALL( LALCreateTwoIFOCoincList(&status, &coincInspiralList,
           inspiralEventList, &accuracyParams ), &status);
 
-        if( distCut )
+        if( distCut  )
         {
-          XLALInspiralDistanceCut( &coincInspiralList, &accuracyParams );
-        }
+          if (!doBCVCVeto)
+          {
+            XLALInspiralDistanceCut( &coincInspiralList, &accuracyParams );
+          }
+          else
+          {
+  	    if ( vrbflg ) fprintf( stdout, 
+	      "Discarding triggers h1-h2-distance-cut using kappa=%f and epsilon = %f\n", 
+	        accuracyParams.ifoAccuracy[LAL_IFO_H1].kappa,
+	        accuracyParams.ifoAccuracy[LAL_IFO_H1].epsilon);
+            XLALInspiralDistanceCutBCVC( &coincInspiralList, &accuracyParams );
+          }
+	}
 
         if ( multiIfoCoinc )
         {
