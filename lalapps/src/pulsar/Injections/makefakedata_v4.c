@@ -1347,7 +1347,7 @@ LALExtractSFTBand ( LALStatus *status, SFTVector **outSFTs, const SFTVector *inS
     }
 
   firstBin = floor ( fmin / df + 0.5 );
-  numBins =  floor ( Band / df + 0.5 );
+  numBins =  floor ( Band / df + 0.5 ) + 1;
 
   TRY ( LALCreateSFTVector ( status->statusPtr, &ret, numSFTs, numBins ), status );
 
