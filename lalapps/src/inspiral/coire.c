@@ -630,27 +630,40 @@ int main( int argc, char *argv[] )
     {
       if ( vrbflg )
       {
-        fprintf(stderr, "Read %d reading triggers from file %s\n",
+        fprintf(stdout, "Read %d reading triggers from file %s\n",
             numFileTriggers, inFileNameList[j]);
       }
     }
 
-    inspiralFileList = XLALPlayTestSingleInspiral( inspiralFileList, 
-        &dataType );
-    
-    /* If there are any remaining triggers ... */
-    if ( inspiralFileList )
+    /* Do playground_only or exclude_play cut */
+    if ( dataType != all_data )
     {
-      if ( dataType != all_data )
+      inspiralFileList = XLALPlayTestSingleInspiral( inspiralFileList, 
+          &dataType );
+      /* count the triggers, scroll to end of list */
+      if ( inspiralFileList )
       {
-        /* count the triggers, scroll to end of list */
         for ( thisFileTrigger=inspiralFileList, numFileTriggers = 0; 
             thisFileTrigger->next;
             thisFileTrigger = thisFileTrigger->next, numFileTriggers++);
         /* add last trigger */
         ++numFileTriggers;
       }
+      else
+      {
+        numFileTriggers = 0;
+      }
+      
+      if ( dataType == playground_only && vrbflg ) fprintf( stdout, 
+        "Have %d playground triggers\n", numFileTriggers );
+      else if ( dataType == exclude_play && vrbflg ) fprintf( stdout, 
+        "Have %d non-playground triggers\n", numFileTriggers );
+    }
+
     
+    /* If there are any remaining triggers ... */
+    if ( inspiralFileList )
+    {
       /* add inspirals to list */
       if ( thisInspiralTrigger )
       {
@@ -790,7 +803,7 @@ int main( int argc, char *argv[] )
 
     /* keep play/non-play/all injections */
     if ( dataType == playground_only && vrbflg ) fprintf( stdout, 
-        "Keeping only playground triggers\n" );
+        "Keeping only playground injections\n" );
     else if ( dataType == exclude_play && vrbflg ) fprintf( stdout, 
         "Keeping only non-playground injections\n" );
     else if ( dataType == all_data && vrbflg ) fprintf( stdout, 
