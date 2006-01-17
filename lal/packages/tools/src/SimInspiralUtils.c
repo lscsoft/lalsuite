@@ -778,7 +778,6 @@ XLALSnglSimInspiralTest (
 
       while ( thisEvent )
       {
-
         /* compute the time in nanosec for thisEvent */
         inspiralTime = XLALGPStoINT8( &(thisEvent->end_time) );
 
@@ -1010,6 +1009,7 @@ XLALCoincSimInspiralTest (
       
       XLALPrintInfo( "+" );
       /* move on to next coinc */
+      prevCoinc = thisCoinc;
       thisCoinc = thisCoinc->next;
     }
     else
