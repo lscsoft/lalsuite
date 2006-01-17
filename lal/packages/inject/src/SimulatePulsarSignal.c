@@ -160,9 +160,10 @@ static LALUnit emptyUnit;
  * NOTE2: we don't really use the highest possible accuracy right now,
  *   as we blatently neglect all relativistic timing effects (i.e. using dT=v.n/c)
  *
- * NOTE3: the same 'idealized heterodyning' is performed as in Teviet's
- * LALSimulateCoherentGW(), and the heterodyning-epoch is set to the reference-time
- * cast to seconds (as done in LALGeneratePulsarSignal()).
+ * NOTE3: no heterodyning is performed here, the time-series is generated and sampled
+ * at the given rate, that's all! ==> the caller needs to make sure about the 
+ * right sampling rate to use (->aliasing) and do the proper post-treatment...
+ *
  */
 void
 LALSimulateExactPulsarSignal (LALStatus *status, 
@@ -174,7 +175,6 @@ LALSimulateExactPulsarSignal (LALStatus *status,
   UINT4 numSteps, i;
 
   REAL8 refTime, startTimeSSB;
-  REAL8 fHet, hetEpoch;	/* heterodyning variables */
   DetectorStateSeries *detStates = NULL;
   LIGOTimeGPSVector *timestamps = NULL;
   REAL8 dt;
@@ -192,7 +192,8 @@ LALSimulateExactPulsarSignal (LALStatus *status,
 
   ASSERT ( timeSeries, status, SIMULATEPULSARSIGNAL_ENULL, SIMULATEPULSARSIGNAL_MSGENULL);
   ASSERT ( (*timeSeries)==NULL, status, SIMULATEPULSARSIGNAL_ENONULL, SIMULATEPULSARSIGNAL_MSGENONULL);
-
+  /* don't accept heterodyning frequency */
+  ASSERT ( params->fHeterodyne == 0, status, SIMULATEPULSARSIGNAL_EINPUT, SIMULATEPULSARSIGNAL_MSGEINPUT);
 
   /* get timestamps of timeseries plus detector-states */
   dt = 1.0 / params->samplingRate;
@@ -214,7 +215,7 @@ LALSimulateExactPulsarSignal (LALStatus *status,
 
   /* create output timeseries */
   if ( NULL == ((*timeSeries) = XLALCreateREAL4TimeSeries( name, &(detStates->data[0].tGPS), 
-				   params->fHeterodyne, dt, &emptyUnit, numSteps) ) )
+				   0, dt, &emptyUnit, numSteps) ) )
     {
       ABORT ( status, SIMULATEPULSARSIGNAL_EMEM, SIMULATEPULSARSIGNAL_MSGEMEM );
     }
@@ -269,9 +270,10 @@ LALSimulateExactPulsarSignal (LALStatus *status,
       REAL8 refTime0 = GPS2REAL8(params->pulsar.tRef);
       REAL8 deltaRef = startTimeSSB - refTime0; 
       LIGOTimeGPS newEpoch;
+      REAL8Vector *fkdotOld, *fkdotNew;
       
       XLALFloatToGPS( &newEpoch, startTimeSSB );
-      REAL8Vector *fkdotOld, *fkdotNew;
+
       fkdotOld = XLALCreateREAL8Vector ( 1 + NUM_SPINDOWNS ); 
       fkdotNew = XLALCreateREAL8Vector ( 1 + NUM_SPINDOWNS ); 
       if ( (fkdotNew == NULL ) || ( fkdotOld == NULL ) ) {
@@ -307,10 +309,6 @@ LALSimulateExactPulsarSignal (LALStatus *status,
   else /* if not given: use startTime -> SSB */
     refTime = startTimeSSB;
 
-  /* heterodyning epoch = reftime cast to seconds */
-  hetEpoch = (INT4)refTime;
-  fHet = params->fHeterodyne;
-
   /* get 4 amplitudes A_\mu */
   {
     REAL8 aPlus  = sinZeta * params->pulsar.aPlus;
@@ -342,9 +340,6 @@ LALSimulateExactPulsarSignal (LALStatus *status,
 			    + (1.0/6.0) * f2dot * taui*taui*taui
 			    + (1.0/24.0)* f3dot * taui*taui*taui*taui
 			    );
-
-      /* apply idealized heterodyning wrt heterodyning-epoch */
-      phi_i -= LAL_TWOPI * fHet * ( ti - hetEpoch );
 
       cosphi_i = cos(phi_i);
       sinphi_i = sin(phi_i);
