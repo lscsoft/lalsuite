@@ -72,6 +72,7 @@ static const LALStatus empty_status;
 BOOLEAN uvar_help;
 CHAR *uvar_SFTfiles;
 BOOLEAN uvar_headerOnly;
+BOOLEAN uvar_noHeader;
 
 /*---------- internal prototypes ----------*/
 void initUserVars (LALStatus *stat);
@@ -123,21 +124,24 @@ main(int argc, char *argv[])
     {
       SFTDescriptor *ptr = &(catalog->data[i]);
 
-      printf ("\n");
-      printf ( "Locator:     '%s'\n", XLALshowSFTLocator ( ptr->locator ) );
-      printf ( "Name:        '%s'\n", ptr->header.name );
-      printf ( "epoch:       [%d, %d]\n", ptr->header.epoch.gpsSeconds, ptr->header.epoch.gpsNanoSeconds ); 
-      printf ( "f0:          %f\n", ptr->header.f0 );
-      printf ( "deltaF:      %f\n", ptr->header.deltaF );
-      printf ( "comment:     %s\n", (ptr->comment)?(ptr->comment) : "<none>" );
-      printf ( "numBins:     %d\n", ptr->numBins );
-      printf ("\n");
+      if ( ! uvar_noHeader )
+	{
+	  printf ("\n");
+	  printf ( "Locator:     '%s'\n", XLALshowSFTLocator ( ptr->locator ) );
+	  printf ( "Name:        '%s'\n", ptr->header.name );
+	  printf ( "epoch:       [%d, %d]\n", ptr->header.epoch.gpsSeconds, ptr->header.epoch.gpsNanoSeconds ); 
+	  printf ( "f0:          %f\n", ptr->header.f0 );
+	  printf ( "deltaF:      %f\n", ptr->header.deltaF );
+	  printf ( "comment:     %s\n", (ptr->comment)?(ptr->comment) : "<none>" );
+	  printf ( "numBins:     %d\n", ptr->numBins );
+	  printf ("\n");
+	}
 
       if ( !uvar_headerOnly )
 	{
 	  UINT4 k;
 	  SFTtype *sft = &(sfts->data[i]);;
-	  printf (" Frequency_Hz     Real           Imaginary \n");
+	  if ( ! uvar_noHeader ) printf (" Frequency_Hz     Real           Imaginary \n");
 	  for ( k=0; k < sft->data->length; k ++ )
 	    printf ( "%10f      % 6e  % 6e  \n", sft->f0 + k * sft->deltaF, sft->data->data[k].re, sft->data->data[k].im );
 	  
@@ -173,6 +177,7 @@ initUserVars (LALStatus *stat)
   LALregBOOLUserVar(stat,   help,	'h', UVAR_HELP,     "Print this help/usage message");
   LALregSTRINGUserVar(stat, SFTfiles,	'i', UVAR_REQUIRED, "File-pattern for input SFTs");
   LALregBOOLUserVar(stat,   headerOnly,	'H', UVAR_OPTIONAL, "Output only header-info");
+  LALregBOOLUserVar(stat,   noHeader,	'n', UVAR_OPTIONAL, "Output only data, no header");
   
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
