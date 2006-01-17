@@ -505,6 +505,65 @@ LALLoadSFTs ( LALStatus *status,
 
 } /* LALLoadSFTs() */
 
+
+/** Read timestamps file and returns timestamps vector (alloc'ed in here!).
+ */
+void
+LALReadTimestampsFile (LALStatus* status, LIGOTimeGPSVector **timestamps, const CHAR *fname)
+{  
+  FILE *fp;
+  LIGOTimeGPSVector *ts = NULL;
+
+  INITSTATUS( status, "LALReadTimestampsFile", SFTFILEIOC );
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT (fname, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
+  ASSERT (timestamps, status, SFTFILEIO_ENULL,  SFTFILEIO_MSGENULL);
+  ASSERT (*timestamps == NULL, status, SFTFILEIO_ENONULL,  SFTFILEIO_MSGENONULL);
+
+  if ( (fp = fopen( fname, "r")) == NULL) {
+    LALPrintError("\nUnable to open timestampsname file %s\n\n", fname);
+    ABORT (status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE);
+  }
+
+  /* initialize empty timestamps-vector*/
+  if ( (ts = LALCalloc(1, sizeof(LIGOTimeGPSVector))) == NULL) {
+    ABORT (status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM);
+  }
+
+  while(1)
+    {
+      INT4 secs, ns;
+      if (fscanf ( fp, "%d  %d\n", &secs, &ns ) != 2)
+	break;
+
+      if ( ( secs < 0 ) || ( ns < 0 ) ) {
+	LALPrintError ("\nERROR: timestamps-file contained negative time-entry in line %d \n\n",
+		       ts->length);
+	ABORT ( status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
+      }
+
+      /* make space for the new entry */
+      ts->length ++;
+      if ( (ts->data = LALRealloc(ts->data, ts->length * sizeof(ts->data[0])) ) == NULL) {
+	ABORT (status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM);
+      }
+      
+      ts->data[ts->length - 1].gpsSeconds = (UINT4) secs;
+      ts->data[ts->length - 1].gpsNanoSeconds = (UINT4) ns;
+
+    } /* while entries found */
+  fclose(fp);
+
+  /* hand over timestamps vector */
+  (*timestamps) = ts;
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+
+} /* LALReadTimestampsFile() */
+
+
 /** Write the given SFTtype to a v2-SFT file.
  *  Add the comment to SFT if comment != NULL.
  *
@@ -2380,6 +2439,9 @@ compareSFTdesc(const void *ptr1, const void *ptr2)
  *	a[-a-z]c	a-c aac abc ...
  *
  * $Log$
+ * Revision 1.43  2006/01/17 13:57:57  reinhard
+ * new function: LALReadTimestampsFile(): read timestamps-file and return LIGOTimeGPSVector of timestamps.
+ *
  * Revision 1.42  2005/11/11 10:41:51  reinhard
  * LALSFTdataFind(): fixed missing return of numBins in SFTCatalog
  *
