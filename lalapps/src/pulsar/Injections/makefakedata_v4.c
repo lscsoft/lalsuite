@@ -52,6 +52,7 @@ RCSID ("$Id$");
 #define TRUE (1==1)
 #define FALSE (1==0)
 
+#define myMax(x,y) ( (x) > (y) ? (x) : (y) )
 /*----------------------------------------------------------------------*/
 /** configuration-variables derived from user-variables */
 typedef struct 
@@ -91,6 +92,8 @@ void LoadTransferFunctionFromActuation(LALStatus *,
 				       COMPLEX8FrequencySeries **transfer, 
 				       REAL8 actuationScale,
 				       const CHAR *fname);
+
+void LALExtractSFTBand ( LALStatus *, SFTVector **outSFTs, const SFTVector *inSFTs, REAL8 fmin, REAL8 Band );
 
 void CreateNautilusDetector (LALStatus *, LALDetector *Detector);
 
@@ -239,8 +242,16 @@ main(int argc, char *argv[])
   params.ephemerides = &(GV.edat);
 
   /* characterize the output time-series */
-  params.samplingRate 	= 2.0 * GV.fBand_eff;	/* sampling rate of time-series (=2*frequency-Band) */
-  params.fHeterodyne  	= GV.fmin_eff;		/* heterodyning frequency for output time-series */
+  if ( ! uvar_exactSignal )	/* GeneratePulsarSignal() uses 'idealized heterodyning' */
+    {
+      params.samplingRate 	= 2.0 * GV.fBand_eff;	/* sampling rate of time-series (=2*frequency-Band) */
+      params.fHeterodyne  	= GV.fmin_eff;		/* heterodyning frequency for output time-series */
+    }
+  else	/* in the exact-signal case: don't do heterodyning, sample at least twice highest frequency */
+    {
+      params.samplingRate 	= myMax( 2.0 * (params.pulsar.f0 + 2 ), 2*(GV.fmin_eff + GV.fBand_eff ) );
+      params.fHeterodyne 	= 0;
+    }
 
   /* set-up main-loop according to 'generation-mode' (all-at-once' or 'per-sft') */
   switch ( uvar_generationMode )
@@ -370,9 +381,18 @@ main(int argc, char *argv[])
 	      return MAKEFAKEDATAC_EBAD;
 	      break;
 	    }
-	  
+	  /* get SFTs from timeseries */
 	  LAL_CALL ( LALSignalToSFTs(&status, &SFTs, Tseries, &sftParams), &status);
 	  
+	  /* extract requested band if necessary (eg in the exact-signal case) */
+	  if ( uvar_exactSignal )
+	    {
+	      SFTVector *outSFTs = NULL;
+	      LAL_CALL ( LALExtractSFTBand ( &status, &outSFTs, SFTs, GV.fmin_eff, GV.fBand_eff ), &status );
+	      LAL_CALL ( LALDestroySFTVector ( &status, &SFTs ), &status );
+	      SFTs = outSFTs;
+	    }
+
 	  fname = LALCalloc (1, strlen (uvar_outSFTbname) + 10);
 	  for (i=0; i < SFTs->length; i++)
 	    {
@@ -1294,3 +1314,65 @@ CreateNautilusDetector (LALStatus *status, LALDetector *Detector)
   RETURN (status);
   
 } /* CreateNautilusDetector() */
+
+/** Return a vector of SFTs containg only the bins in [fmin, fmin+Band].
+ */ 
+void
+LALExtractSFTBand ( LALStatus *status, SFTVector **outSFTs, const SFTVector *inSFTs, REAL8 fmin, REAL8 Band )
+{
+  UINT4 firstBin, numBins, numSFTs;
+  UINT4 i;
+  REAL8 SFTf0, SFTBand, df;
+  SFTVector *ret = NULL;
+
+  INITSTATUS (status, "LALExtractSFTBand", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT ( inSFTs, status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD );
+  ASSERT ( inSFTs->data[0].data , status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD );
+
+  ASSERT ( outSFTs, status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD );
+  ASSERT ( *outSFTs == NULL, status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD );
+
+  numSFTs = inSFTs->length;
+  SFTf0 = inSFTs->data[0].f0;
+  df = inSFTs->data[0].deltaF;
+  SFTBand = df * inSFTs->data[0].data->length;
+
+
+  if ( (fmin < SFTf0) || ( fmin + Band > SFTf0 + SFTBand ) )
+    {
+      LALPrintError ( "ERROR: requested frequency-band is not contained in the given SFTs.");
+      ABORT ( status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD );
+    }
+
+  firstBin = floor ( fmin / df + 0.5 );
+  numBins =  floor ( Band / df + 0.5 );
+
+  TRY ( LALCreateSFTVector ( status->statusPtr, &ret, numSFTs, numBins ), status );
+
+  for (i=0; i < numSFTs; i ++ )
+    {
+      SFTtype *dest = &(ret->data[i]);
+      SFTtype *src =  &(inSFTs->data[i]);
+      COMPLEX8Vector *ptr = dest->data;
+
+      /* copy complete header first */
+      memcpy ( dest, src, sizeof(*dest) );
+      /* restore data-pointer */
+      dest->data = ptr;
+      /* set correct fmin */
+      dest->f0 = firstBin * df ;
+
+      /* copy the relevant part of the data */
+      memcpy ( dest->data->data, src->data->data + firstBin, numBins * sizeof( dest->data->data[0] ) );
+
+    } /* for i < numSFTs */
+
+  /* return final SFT-vector */
+  (*outSFTs) = ret;
+
+  DETATCHSTATUSPTR ( status );
+  RETURN ( status );
+
+} /* LALExtractSFTBand() */
