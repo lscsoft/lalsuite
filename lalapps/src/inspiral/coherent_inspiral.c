@@ -113,6 +113,9 @@ INT4 GEOfile = 0;
 INT4 TAMAfile = 0;
 INT4 VIRGOfile = 0;
                                 
+/* input time-slide parameters */
+REAL8  slideStep[6]     = {0.0,0.0,0.0,0.0,0.0,0.0};
+
 CHAR   bankFileName[FILENAME_MAX]; /* name of input template bank  */
 UINT4  cohSNROut            = 0;    /* default is not to write frame */
 UINT4  eventsOut            = 0;    /* default is not to write events */
@@ -179,6 +182,11 @@ int main( int argc, char *argv[] )
   REAL4  m1               = 0.0;
   REAL4  m2               = 0.0;
   REAL4  dynRange         = 0.0;
+
+  /* variables for initializing tempTime to account for time-slides */
+  UINT8  triggerNumber    = 0;
+  UINT8  slideNumber      = 0;
+  UINT8  slideSign        = 0;
 
   /* counters and other variables */
   INT4   i,j,k,l,w,p;
@@ -319,6 +327,25 @@ int main( int argc, char *argv[] )
       if( verbose ) fprintf(stdout,"caseIDChars = %s %s %s %s\n",caseIDChars[0],caseIDChars[1],caseIDChars[2],caseIDChars[3] );
       eventID = bankTemp->event_id->id;
       if( verbose ) fprintf(stdout,"eventID = %Ld\n",eventID );
+
+      /* Parse eventID to get the slide number */
+      triggerNumber = eventID % 100000;
+      slideNumber = ((eventID % 100000000) - triggerNumber)/100000;
+      slideSign = (eventID % 1000000000) - slideNumber*100000 - triggerNumber;
+
+      /* Initialize tempTime to account for time-slides */
+      for( l=0; l<5; l++)
+	{
+	  /* slideSign=0 is the same as a positive time slide */
+	  if(slideSign != 0)
+	    {
+	      tempTime[l] = slideStep[l]*slideNumber*slideSign;
+	    }
+	  else
+	    {
+	      tempTime[l] -= slideStep[l]*slideNumber*slideSign;
+	    }
+	}
       if( i != numTmplts - 1 )
         {
           bankTemp2 = bankTemp;
@@ -911,7 +938,8 @@ int main( int argc, char *argv[] )
 			}
 		      frChan.name = namearray3[j];
 		      LAL_CALL( LALFrGetCOMPLEX8TimeSeries( &status, &(cohInspCVec->cData[l]), &frChan, frStream), &status);
-		      tempTime[l] = cohInspCVec->cData[l].epoch.gpsSeconds + cohInspCVec->cData[l].epoch.gpsNanoSeconds * 1e-9;
+		      /* tempTime is the start time of cData plus -(time slide)*/
+		      tempTime[l] += cohInspCVec->cData[l].epoch.gpsSeconds + cohInspCVec->cData[l].epoch.gpsNanoSeconds * 1e-9;
 		      if( verbose ) fprintf(stdout,"tempTime = %f\n",tempTime[l]);
 		      LAL_CALL( LALFrClose( &status, &frStream ), &status );
 		      l++;
@@ -1518,6 +1546,13 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --sample-rate N              set data sample rate to N\n"\
 "  --segment-length N           set N to same value used in inspiral.c\n"\
 "  --dynamic-range-exponent N   set N to same value used in inspiral.c\n"\
+"  [--g1-slide]      g1_slide    Slide G1 data by multiples of g1_slide\n"\
+"  [--h1-slide]      h1_slide    Slide H1 data by multiples of h1_slide\n"\
+"  [--h2-slide]      h2_slide    Slide H2 data by multiples of h2_slide\n"\
+"  [--l1-slide]      l1_slide    Slide L1 data by multiples of l1_slide\n"\
+"  [--t1-slide]      t1_slide    Slide T1 data by multiples of t1_slide\n"\
+"  [--v1-slide]      v1_slide    Slide V1 data by multiples of v1_slide\n"\
+"  --cohsnr-threshold RHO       set signal-to-noise threshold to RHO\n"\
 "  --cohsnr-threshold RHO       set signal-to-noise threshold to RHO\n"\
 "  --maximize-over-chirp        do clustering\n"\
 "  --glob-frame-data            glob files in the pwd to obtain frame data\n"\
@@ -1551,6 +1586,12 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
      {"sample-rate",              required_argument, 0,                 'r'},
      {"segment-length",           required_argument, 0,                 'l'},
      {"dynamic-range-exponent",   required_argument, 0,                 'e'}, 
+     {"g1-slide",                 required_argument, 0,                 'g'},
+     {"h1-slide",                 required_argument, 0,                 'W'},
+     {"h2-slide",                 required_argument, 0,                 'X'},
+     {"l1-slide",                 required_argument, 0,                 'Y'},
+     {"t1-slide",                 required_argument, 0,                 't'},
+     {"v1-slide",                 required_argument, 0,                 'w'},
      {"cohsnr-threshold",         required_argument, 0,                 'p'},
      {"maximize-over-chirp",      no_argument,       &maximizeOverChirp, 1 },
      {"glob-frame-data",          no_argument,       &globFrameData,     1 },
@@ -1578,9 +1619,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
        size_t optarg_len;
 
        c = getopt_long_only( argc, argv,
-	   "A:B:a:b:G:I:L:l:e:P:T:V:Z:d:f:h:p:r:u:v:",
+	   "A:B:a:b:G:I:L:l:e:g:W:X:Y:t:w:P:T:V:Z:d:f:h:p:r:u:v:",
 	   long_options, &option_index );
-
+s
        if ( c == -1 )
 	 {
 	   break;
@@ -1703,6 +1744,43 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 	   memcpy( bankFileName, optarg, optarg_len );*/
 	   strcpy(bankFileName, optarg);
 	   ADD_PROCESS_PARAM( "string", "%s", bankFileName );
+	   break;
+
+	   /* Read in time-slide steps for all detectors */
+	   /* Read in time-slide step for G1 */
+	 case 'g': 
+	   slideStep[0] = atof(optarg);
+	   ADD_PROCESS_PARAM("float", "%e", slideStep[0] );
+	   break;
+
+	   /* Read in time-slide step for H1 */
+	 case 'W': 
+	   slideStep[1] = atof(optarg);
+	   ADD_PROCESS_PARAM("float", "%e", slideStep[1]);
+	   break;
+
+	   /* Read in time-slide step for H2 */
+	 case 'X': 
+	   slideStep[2] = atof(optarg);
+	   ADD_PROCESS_PARAM("float", "%e", slideStep[2]);
+	   break;
+
+	   /* Read in time-slide step for L1 */
+	 case 'Y': 
+	   slideStep[3] = atof(optarg);
+	   ADD_PROCESS_PARAM("float", "%e", slideStep[3]);
+	   break;
+
+	   /* Read in time-slide step for T1 */
+	 case 't': 
+	   slideStep[4] = atof(optarg);
+	   ADD_PROCESS_PARAM("float", "%e", slideStep[4]);
+	   break;
+
+	   /* Read in time-slide step for V1 */
+	 case 'w': 
+	   slideStep[5] = atof(optarg);
+	   ADD_PROCESS_PARAM("float", "%e", slideStep[5]);
 	   break;
 
 	 case 'v':
