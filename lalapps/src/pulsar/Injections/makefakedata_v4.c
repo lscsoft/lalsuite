@@ -81,7 +81,6 @@ typedef struct
 /* ---------- local prototypes ---------- */
 void FreeMem (LALStatus *, ConfigVars_t *cfg);
 void InitUserVars (LALStatus *);
-void ReadTimestamps (LALStatus*, LIGOTimeGPSVector **timestamps, const CHAR *fname);
 void InitMakefakedata (LALStatus *, ConfigVars_t *cfg, int argc, char *argv[]);
 void AddGaussianNoise (LALStatus *, REAL4TimeSeries *outSeries, REAL4TimeSeries *inSeries, REAL4 sigma);
 void GetOrbitalParams (LALStatus *, BinaryOrbitParams *orbit);
@@ -552,7 +551,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 	LIGOTimeGPS t1, t0;
 	REAL8 duration;
 
-	TRY (ReadTimestamps(status->statusPtr, &timestamps, uvar_timestampsFile), status);
+	TRY (LALReadTimestampsFile(status->statusPtr, &timestamps, uvar_timestampsFile), status);
 
 	t1 = timestamps->data[timestamps->length - 1 ];
 	t0 = timestamps->data[0];
@@ -940,65 +939,6 @@ void FreeMem (LALStatus* status, ConfigVars_t *cfg)
   RETURN (status);
 
 } /* FreeMem() */
-
-
-/**
- * reads timestamps file and fills-in timestamps vector
- **/
-void
-ReadTimestamps (LALStatus* status, LIGOTimeGPSVector **timestamps, const CHAR *fname)
-{  
-  FILE *fp;
-  LIGOTimeGPSVector *ts = NULL;
-
-  INITSTATUS( status, "ReadTimestamps", rcsid );
-  ATTATCHSTATUSPTR (status);
-
-  ASSERT (fname, status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD );
-  ASSERT (timestamps, status, MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-  ASSERT (*timestamps == NULL, status, MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-
-  if ( (fp = fopen( fname, "r")) == NULL) {
-    LALPrintError("\nUnable to open timestampsname file %s\n\n", fname);
-    ABORT (status, MAKEFAKEDATAC_EFILE, MAKEFAKEDATAC_MSGEFILE);
-  }
-
-  /* initialize empty timestamps-vector*/
-  if ( (ts = LALCalloc(1, sizeof(LIGOTimeGPSVector))) == NULL) {
-    ABORT (status, MAKEFAKEDATAC_EMEM, MAKEFAKEDATAC_MSGEMEM);
-  }
-
-  while(1)
-    {
-      INT4 secs, ns;
-      if (fscanf ( fp, "%d  %d\n", &secs, &ns ) != 2)
-	break;
-
-      if ( ( secs < 0 ) || ( ns < 0 ) ) {
-	LALPrintError ("\nERROR: timestamps-file contained negative time-entry in line %d \n\n",
-		       ts->length);
-	ABORT ( status, MAKEFAKEDATAC_EREADFILE, MAKEFAKEDATAC_MSGEREADFILE);
-      }
-
-      /* make space for the new entry */
-      ts->length ++;
-      if ( (ts->data = LALRealloc(ts->data, ts->length * sizeof(ts->data[0])) ) == NULL) {
-	ABORT (status, MAKEFAKEDATAC_EMEM, MAKEFAKEDATAC_MSGEMEM);
-      }
-      
-      ts->data[ts->length - 1].gpsSeconds = (UINT4) secs;
-      ts->data[ts->length - 1].gpsNanoSeconds = (UINT4) ns;
-
-    } /* while entries found */
-  fclose(fp);
-
-  /* hand over timestamps vector */
-  (*timestamps) = ts;
-
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
-
-} /* ReadTimestamps() */
 
 /**
  * Generate Gaussian noise with standard-deviation sigma, add it to inSeries.
