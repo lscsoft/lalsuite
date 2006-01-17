@@ -856,7 +856,7 @@ LALUserVarWasSet (const void *cvar)
   }
   
   /* we found it: has it been set by user? */
-  return (ptr->state & UVAR_WAS_SET);
+  return ( (ptr->state & UVAR_WAS_SET) != 0 );
 
 } /* LALUserVarWasSet() */
 
