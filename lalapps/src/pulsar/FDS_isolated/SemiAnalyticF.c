@@ -15,6 +15,8 @@
 #include <lal/LALInitBarycenter.h>
 #include <lal/LALComputeAM.h>
 
+#include <lal/SFTutils.h>
+#include <lal/SFTfileIO.h>
 
 #include <lalapps.h>
 
@@ -69,7 +71,7 @@ struct CommandLineArgsTag {
 } CommandLineArgs;
 
 /*---------- global variables ---------- */
-LIGOTimeGPS *timestamps = NULL;       /* Time stamps from SFT data */
+LIGOTimeGPSVector *timestamps = NULL;
 AMCoeffs amc;
 
 extern int vrbflg;
@@ -82,8 +84,6 @@ void CreateNautilusDetector (LALStatus *, LALDetector *detector);
 void Initialize (LALStatus *status, struct CommandLineArgsTag *CLA);
 void ComputeF(LALStatus *, struct CommandLineArgsTag CLA);
 
-int ReadTimeStamps(struct CommandLineArgsTag CLA);
-int MakeTimeStamps(struct CommandLineArgsTag CLA);
 void CheckUserInput (LALStatus *,  struct CommandLineArgsTag *CLA );
 
 /*---------- function definitions ---------- */
@@ -126,56 +126,6 @@ int main(int argc,char *argv[])
 
 } /* main() */
 
-/*******************************************************************************/
-
-int MakeTimeStamps(struct CommandLineArgsTag CLA) 
-{
-  INT4 i;
- 
-  /* allocate memory for timestamps */
-  timestamps=(LIGOTimeGPS *)LALMalloc(CLA.nTsft*sizeof(LIGOTimeGPS)); 
-      
-  /* generate timetamps */
-  for (i=0;i<CLA.nTsft;i++){
-    timestamps[i].gpsSeconds=CLA.gpsStart+(int)(i*CLA.tsft);
-    timestamps[i].gpsNanoSeconds=0;
-  } 
-  
-  return 0;
-  
-}
-/*******************************************************************************/
-
-int ReadTimeStamps(struct CommandLineArgsTag CLA) 
-{
-  FILE *fp;
-  INT4 i;
-  int r;
- 
- 
-  /*   %strcpy(filename,inDataFilename); */
-  fp=fopen(CLA.timestamps,"r");
-  if (fp==NULL) {
-    fprintf(stderr,"Unable to find file %s\n",CLA.timestamps);
-    return 1;
-  }
-  timestamps=(LIGOTimeGPS *)LALMalloc(CLA.nTsft*sizeof(LIGOTimeGPS)); 
-      
-  
-  for (i=0;i<CLA.nTsft;i++){
-    r=fscanf(fp,"%d  %d\n", &timestamps[i].gpsSeconds, &timestamps[i].gpsNanoSeconds);
-    if ( r !=2 ) {
-      fprintf(stderr,"Unable to read datum # %d\n",i);
-      fprintf(stderr,"from file %s\n",CLA.timestamps);
-      return 1; 
-    } 
-  } 
-  
-  fclose(fp);
-  return 0;
-  
-}
-/*******************************************************************************/
 
 void 
 ComputeF( LALStatus *status, struct CommandLineArgsTag CLA)
@@ -354,19 +304,28 @@ Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
   ATTATCHSTATUSPTR (status);
 
 
-  if ( LALUserVarWasSet (&(CLA->duration) ) )
-    CLA->nTsft = (UINT4) (CLA->duration / CLA->tsft + 0.5);	  /* we're cheating here */
+  if ( LALUserVarWasSet ( &(CLA->nTsft) ) )
+    CLA->duration = 1.0 * CLA->nTsft * CLA->tsft;
 
   /* read or generate SFT timestamps */
-  if ( LALUserVarWasSet(&(CLA->timestamps)) ) {
-    if (ReadTimeStamps(*CLA)) {
-      ABORT ( status,  SEMIANALYTIC_ESUB,  SEMIANALYTIC_MSGESUB);
-    }
-  } else {
-    if (MakeTimeStamps(*CLA)) {
-      ABORT ( status,  SEMIANALYTIC_ESUB,  SEMIANALYTIC_MSGESUB);
-    }
-  }
+  if ( LALUserVarWasSet(&(CLA->timestamps)) ) 
+    { 
+      TRY ( LALReadTimestampsFile (status->statusPtr, &timestamps, CLA->timestamps ), status );
+      if ( (CLA->nTsft > 0) && ( (UINT4)CLA->nTsft < timestamps->length ) )	/* truncate if required */
+	timestamps->length = CLA->nTsft;
+      
+      CLA->nTsft = timestamps->length;
+    } /* if have_timestamps */
+  else 
+    {
+      LIGOTimeGPS tStart;
+      tStart.gpsSeconds = CLA->gpsStart;
+      tStart.gpsNanoSeconds = 0;
+
+      TRY ( LALMakeTimestamps(status->statusPtr, &timestamps, tStart, CLA->duration, CLA->tsft ), status );
+      CLA->nTsft = timestamps->length;
+
+    } /* no timestamps */
 
 
   /*---------- initialize detector ---------- */
@@ -418,7 +377,7 @@ Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
     (*edat).ephiles.earthEphemeris = filenameE;     
     (*edat).ephiles.sunEphemeris = filenameS;         
 
-    TRY ( LALLeapSecs(status->statusPtr,&leap,&timestamps[0],&formatAndAcc), status);
+    TRY ( LALLeapSecs(status->statusPtr, &leap, &(timestamps->data[0]), &formatAndAcc), status);
     (*edat).leap=leap; 
 
     /* Reads in ephemeris files */
@@ -464,10 +423,10 @@ Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
   
   /* Mid point of each SFT */
   midTS = (LIGOTimeGPS *)LALCalloc(CLA->nTsft,sizeof(LIGOTimeGPS));
-  for(k=0; k<CLA->nTsft; k++)
+  for(k=0; k < CLA->nTsft; k++)
     {
       REAL8 teemp=0.0;
-      TRY ( LALGPStoFloat(status->statusPtr, &teemp, &(timestamps[k])), status);
+      TRY ( LALGPStoFloat(status->statusPtr, &teemp, &(timestamps->data[k])), status);
       teemp += 0.5*CLA->tsft;
       TRY ( LALFloatToGPS(status->statusPtr, &(midTS[k]), &teemp), status);
     }
@@ -475,7 +434,8 @@ Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
   TRY ( LALComputeAM(status->statusPtr, &amc, midTS, amParams), status);
 
   /* Free memory */
-  LALFree(timestamps);
+  TRY ( LALDestroyTimestampVector (status->statusPtr, &timestamps), status );
+
   LALFree(midTS);
 
   LALFree(edat->ephemE);
