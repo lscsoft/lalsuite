@@ -637,35 +637,40 @@ int main( int argc, char *argv[] )
 
     inspiralFileList = XLALPlayTestSingleInspiral( inspiralFileList, 
         &dataType );
-    if ( dataType != all_data && inspiralFileList )
-    {
-      /* count the triggers, scroll to end of list */
-      for ( thisFileTrigger=inspiralFileList, numFileTriggers = 0; 
-          thisFileTrigger->next;
-          thisFileTrigger = thisFileTrigger->next, numFileTriggers++);
-      /* add last trigger */
-      ++numFileTriggers;
-    }
     
-    /* add inspirals to list */
-    if ( thisInspiralTrigger )
+    /* If there are any remaining triggers ... */
+    if ( inspiralFileList )
     {
-      thisInspiralTrigger->next = inspiralFileList;
-    }
-    else
-    {
-      inspiralEventList = inspiralFileList;
-    }
-    thisInspiralTrigger = thisFileTrigger;
-    numTriggers += numFileTriggers;
+      if ( dataType != all_data )
+      {
+        /* count the triggers, scroll to end of list */
+        for ( thisFileTrigger=inspiralFileList, numFileTriggers = 0; 
+            thisFileTrigger->next;
+            thisFileTrigger = thisFileTrigger->next, numFileTriggers++);
+        /* add last trigger */
+        ++numFileTriggers;
+      }
     
+      /* add inspirals to list */
+      if ( thisInspiralTrigger )
+      {
+        thisInspiralTrigger->next = inspiralFileList;
+      }
+      else
+      {
+        inspiralEventList = inspiralFileList;
+      }
+      thisInspiralTrigger = thisFileTrigger;
+      numTriggers += numFileTriggers;
+    }
     
     /* reconstruct the coincs */
     numFileCoincs = XLALRecreateCoincFromSngls( &coincFileHead, 
         inspiralFileList );
     if( numFileCoincs < 0 )
     {
-      fprintf(stderr, "Unable to reconstruct coincs from single ifo triggers");
+      fprintf(stderr, 
+          "Unable to reconstruct coincs from single ifo triggers");
       exit( 1 );
     }
     else if ( vrbflg )
@@ -675,19 +680,22 @@ int main( int argc, char *argv[] )
           numFileCoincs, numFileTriggers, inFileNameList[j] );
     }
 
-    /* add coincs to list */
-    if ( thisCoinc )
+      /* add coincs to list */
+    if( numFileCoincs )
     {
-      thisCoinc->next = coincFileHead;
+      if ( thisCoinc )
+      {
+        thisCoinc->next = coincFileHead;
+      }
+      else
+      {
+        coincHead = thisCoinc = coincFileHead;
+      }
+      for ( ; thisCoinc->next; thisCoinc = thisCoinc->next );
+      numCoincs += numFileCoincs;
     }
-    else
-    {
-      coincHead = thisCoinc = coincFileHead;
-    }
-    for ( ; thisCoinc->next; thisCoinc = thisCoinc->next );
-    numCoincs += numFileCoincs;
+    
   }
-
         
   if ( vrbflg )
   {
@@ -802,9 +810,9 @@ int main( int argc, char *argv[] )
     
     if ( vrbflg ) fprintf( stdout, 
         "Sorting single inspiral triggers before injection coinc test\n" );
-    /*inspiralEventList = XLALSortSnglInspiral( inspiralEventList, 
+    inspiralEventList = XLALSortSnglInspiral( inspiralEventList, 
         *LALCompareSnglInspiralByTime );
-    */
+    
     /* first find singles which are coincident with injections */
     numSnglFound = XLALSnglSimInspiralTest ( &simEventHead, 
         &inspiralEventList, &missedSimHead, &missedSnglHead, injectWindowNS );
