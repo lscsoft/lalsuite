@@ -374,9 +374,10 @@ LALSFTdataFind (LALStatus *status,
 	}
       if ( numRequested != ret->length )
 	{
-	  if ( lalDebugLevel ) LALPrintError ("\nERROR: found %s SFTs (%d) than given timestamps within [%f, %f] (%d)\n\n",
-					      (ret->length < numRequested )?"fewer":"more", 
-					      ret->length, t0, t1, numRequested );
+	  if ( lalDebugLevel ) 
+	    LALPrintError ("\nERROR: found %s SFTs (%d) than given timestamps within [%f, %f] (%d)\n\n",
+			   (ret->length < numRequested )?"fewer":"more", 
+			   ret->length, t0, t1, numRequested );
 	  ABORT ( status, SFTFILEIO_ECONSTRAINTS, SFTFILEIO_MSGECONSTRAINTS );
 	}
     } /* if constraints->timestamps */
@@ -437,15 +438,16 @@ LALSFTtimestampsFromCatalog (LALStatus *status,
  * Note: \a fMin (or \a fMax) is allowed to be set to \c -1, which means to read in all
  * Frequency-bins from the lowest (or up to the highest) found in the SFT-file.
  * 
- * Note 2: The returned frequency-interval is guaranteed to contain <tt>[fMin, fMax]</tt>, but is allowed 
- * to be larger, as it must be an interval of discrete frequency-bins as found in the SFT-file.
+ * Note 2: The returned frequency-interval is guaranteed to contain <tt>[fMin, fMax]</tt>, 
+ * but is allowed to be larger, as it must be an interval of discrete frequency-bins as found 
+ * in the SFT-file. 
  */
 void
 LALLoadSFTs ( LALStatus *status,
 	      SFTVector **sfts,			/**< [out] vector of read-in SFTs */
 	      const SFTCatalog *catalog,	/**< The 'catalogue' of SFTs to load */
-	      REAL8 fMin,			/**< minumum requested frequency (-1 = read from lowest) */
-	      REAL8 fMax			/**< maximum requested frequency (-1 = read up to highest) */
+	      REAL8 fMin,		  /**< minumum requested frequency (-1 = read from lowest) */
+	      REAL8 fMax		  /**< maximum requested frequency (-1 = read up to highest) */
 	      )
 {
   UINT4 i;
@@ -522,13 +524,13 @@ LALLoadSFTs ( LALStatus *status,
 void
 LALCheckSFTs ( LALStatus *status, 
 	       INT4 *check_result, 		/**< LAL-status of SFT-operations */
-	       const CHAR *file_pattern,	/**< where to find the SFTs: normally a path+file-pattern */
+	       const CHAR *file_pattern,     /**< where to find the SFTs: normally a path+file-pattern */
 	       SFTConstraints *constraints	/**< additional constraints for SFT-selection */
 	       )
 {
   LALStatus sft_status = empty_status;
   SFTCatalog *catalog = NULL;
-  UINT4 i, numSFTs;
+  UINT4 i;
 
   INITSTATUS (status, "LALCheckSFTs", SFTFILEIOC);
   ATTATCHSTATUSPTR (status); 
@@ -548,7 +550,7 @@ LALCheckSFTs ( LALStatus *status,
     goto sft_failed;
 
   /* Step 2: step through SFTs and check CRC64 */
-  for ( i=0; i < numSFTs; i ++ )
+  for ( i=0; i < catalog->length; i ++ )
     {
       FILE *fp;
 
@@ -559,13 +561,15 @@ LALCheckSFTs ( LALStatus *status,
 	case 2:
 	  if ( (fp = fopen_SFTLocator ( catalog->data[i].locator )) == NULL )
 	    {
-	      LALPrintError ( "Failed to open locator '%s'\n", XLALshowSFTLocator ( catalog->data[i].locator ) );
+	      LALPrintError ( "Failed to open locator '%s'\n", 
+			      XLALshowSFTLocator ( catalog->data[i].locator ) );
 	      (*check_result) = SFTFILEIO_EFILE;
 	      goto sft_failed;
 	    }
 	  if ( ! has_valid_v2_crc64 ( fp ) != 0 )
 	    {
-	      LALPrintError ( "CRC64 checksum failure for SFT '%s'\n", XLALshowSFTLocator ( catalog->data[i].locator ) );
+	      LALPrintError ( "CRC64 checksum failure for SFT '%s'\n", 
+			      XLALshowSFTLocator ( catalog->data[i].locator ) );
 	      (*check_result) = SFTFILEIO_ECRC64;
 	      goto sft_failed;
 	    }
@@ -2705,6 +2709,9 @@ compareSFTdesc(const void *ptr1, const void *ptr2)
  *	a[-a-z]c	a-c aac abc ...
  *
  * $Log$
+ * Revision 1.45  2006/01/18 15:31:46  reinhard
+ * fixed bug in LALCheckSFTs() (uninitialized SFT-counter)
+ *
  * Revision 1.44  2006/01/18 15:13:15  reinhard
  * - added SFT-writing function LALWrite_v2SFT_to_v1file(): write SFT to v1-file
  * - added SFT-checking function LALCheckSFTs() (checks CRC64)
