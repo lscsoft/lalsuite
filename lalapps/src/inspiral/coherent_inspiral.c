@@ -1621,7 +1621,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
        c = getopt_long_only( argc, argv,
 	   "A:B:a:b:G:I:L:l:e:g:W:X:Y:t:w:P:T:V:Z:d:f:h:p:r:u:v:",
 	   long_options, &option_index );
-s
+
        if ( c == -1 )
 	 {
 	   break;
