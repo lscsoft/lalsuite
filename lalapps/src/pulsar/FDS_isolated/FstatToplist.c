@@ -2,6 +2,7 @@
 #include <lal/StringInput.h> /* for LAL_REAL8_FORMAT etc. */
 
 #include <lal/LALStdio.h>
+#include "LogPrintf.h"
 
 #ifdef USE_BOINC
 #include "filesys.h"
@@ -10,6 +11,9 @@
 #endif
 
 #include "LogPrintf.h"
+
+/* also works on Win32 this way */
+extern int errno;
 
 RCSID("$Id$");
 
@@ -313,8 +317,9 @@ int write_toplist_item_to_fp(TOPLISTLINE fline, FILE*fp, UINT4*checksum) {
 
     UINT4 length = print_toplist_item_to_str(fline, linebuf, sizeof(linebuf));
     
-    if(length>sizeof(linebuf))
-	return -1;
+    if(length>sizeof(linebuf)) {
+       return -1;
+    }
 
     if (checksum)
 	for(i=0;i<length;i++)
@@ -354,9 +359,10 @@ int write_toplist_to_fp(toplist_t*tl, FILE*fp, UINT4*checksum) {
    if(checksum)
        *checksum = 0;
    for(i=0;i<tl->elems;i++)
-     if ((r = write_toplist_item_to_fp(*(tl->sorted[i]), fp, checksum)) < 0)
-       return(r);
-     else
+     if ((r = write_toplist_item_to_fp(*(tl->sorted[i]), fp, checksum)) < 0) {
+       LogPrintf (LOG_CRITICAL, "Failed to write toplistitem to output fp: %d\n",errno);
+      return(r);
+     } else
        c += r;
    return(c);
 }
@@ -374,15 +380,23 @@ int atomic_write_toplist_to_file(toplist_t *l, char *filename, UINT4*checksum) {
     strncpy(tempname,filename,sizeof(tempname)-4);
     strcat(tempname,".tmp");
     fpnew=fopen(tempname, "wb");
-    if(!fpnew)
-	return -1;
+    if(!fpnew) {
+      LogPrintf (LOG_CRITICAL, "Failed to open temp Fstat file \"%s\" for writing: %d\n",
+		 tempname,errno);
+      return -1;
+    }
     length = write_toplist_to_fp(l,fpnew,checksum);
     fclose(fpnew);
-    if (length < 0)
+    if (length < 0) {
+      LogPrintf (LOG_CRITICAL, "Failed to write temp Fstat file \"%s\": %d\n",
+		 tempname,errno);
       return(length);
-    if(rename(tempname, filename))
+    }
+    if(rename(tempname, filename)) {
+      LogPrintf (LOG_CRITICAL, "Failed to rename Fstat file to \"%s\": %d\n",
+		 filename,errno);
       return -1;
-    else
+    } else
       return length;
 }
 
