@@ -23,8 +23,17 @@
  * $Date$
  * \brief Module for reading/writing/manipulating SFTs (Short Fourier transforms)
  *
+ <p> <h3> Overview:</h3>
+ - SFT-reading: LALSFTdataFind(), LALLoadSFTs()
+ - SFT-writing: LALWriteSFT2file(), LALWrite_v2SFT_to_v1file()
+ - SFT-checking: LALCheckSFTs(): complete check of SFT-validity including CRC64 checksum
+ - general manipulation of SFTVectors: 
+ 	- LALDestroySFTVector(): free up a complete SFT-vector
+	- LALConcatSFTVectors(): concatenate two ::SFTVector's
+	- LALAppendSFT2Vector(): append a single SFT (::SFTtype) to an ::SFTVector
+
  <p>
- <h3>Usage: Reading and writing of SFT-files</h3>
+ <h2>Usage: Reading of SFT-files</h2>
   
  The basic operation of <b>reading SFTs</b> from files proceeds in two simple steps:
 
@@ -43,14 +52,6 @@
  \f[
  \mathrm{data}[k] = X^\mathrm{d}_k = \Delta t \,\sum_{j=0}^{N-1} x_j \,e^{-i2\pi \,k \,j / N}
  \f]
-
- <p>
- For <b>writing SFTs</b> there are two functions, depending on the desired output-format (v1 or v2  SFts):
- 	- LALWriteSFT2file(): write a single SFT (::SFTtype) into an SFT-file following the specification v2 
-	(<tt>LIGO-T040164-01-Z</tt>).
-
-	- void LALWriteSFTfile(): write an ::SFTtype into an SFT-v1 file. This is <b>obsolete</b> and 
-	deprecated, and should only be used to produce SFT-files for old codes not using the new API.!
 
  <h4>Details to 1: find matching SFTs and get the SFTCatalog:</h4>
 
@@ -100,10 +101,20 @@
  <tt>[-1, -1]</tt>: read ALL frequency-bins from SFT.
 
 
- Additional functions for handling ::SFTVector's are:
- - LALDestroySFTVector(): free up a complete SFT-vector
- - LALConcatSFTVectors(): concatenate two ::SFTVector's
- - LALAppendSFT2Vector(): append a single SFT (::SFTtype) to an ::SFTVector
+ <p><h2>Usage: Writing of SFT-files</h2>
+
+ For <b>writing SFTs</b> there are two functions, depending on the desired output-format (v1 or v2  SFTs):
+ 	- LALWriteSFT2file(): write a single SFT (::SFTtype) into an SFT-file following the specification v2 
+	(<tt>LIGO-T040164-01-Z</tt>).
+
+	- LALWrite_v2SFT_to_v1file(): write a single ::SFTtype into an SFT-v1 file. Note: this is provided
+	for backwards-compatibility, and assumes the input SFT-data in memory to be correctly normalized
+	according to the v2-specification (i.e. data = dt x DFT).
+
+
+Note: in addition to these two function which take properly normalized SFTs as input, there is a DEPRECATED
+legacy-function, LALWriteSFTfile(), which writes an v1-SFT file, but *without* changing the data-normalization,
+i.e. this will only be correct for v1-normalized data (i.e. data = DFT)
 
  *
  */
@@ -155,6 +166,8 @@ NRCSID (SFTFILEIOH, "$Id$");
 #define SFTFILEIO_ESFTFORMAT	18
 #define SFTFILEIO_ESFTWRITE	19 
 #define SFTFILEIO_ECONSTRAINTS  20
+#define SFTFILEIO_EMERGEDSFT  	21
+#define SFTFILEIO_ECRC64  	22
 
 #define SFTFILEIO_MSGENULL 	"Null pointer"
 #define SFTFILEIO_MSGEFILE 	"Error in file-IO"
@@ -170,7 +183,8 @@ NRCSID (SFTFILEIOH, "$Id$");
 #define SFTFILEIO_MSGESFTFORMAT	 "Illegal SFT-format"
 #define SFTFILEIO_MSGESFTWRITE	 "Failed to write SFT to file"
 #define SFTFILEIO_MSGECONSTRAINTS "Could not satisfy the requested SFT-query constraints"
-
+#define SFTFILEIO_MSGEMERGEDSFT   "Inconsistent blocks in merged SFT"
+#define SFTFILEIO_MSGECRC64	"Invalid CRC64 checksum in SFT"
 /*@}*/
 
 /** 'Constraints' for SFT-matching: which detector, within which time-stretch and which 
@@ -196,6 +210,8 @@ typedef struct
   SFTtype header;			/**< SFT-header info */
   CHAR *comment;			/**< comment-entry in SFT-header (v2 only) */
   UINT4 numBins;			/**< number of frequency-bins in this SFT */
+  UINT4 version;			/**< SFT-specification version */
+  UINT8 crc64;				/**< crc64 checksum */
 } SFTDescriptor;
 
 
@@ -217,6 +233,8 @@ void LALSFTdataFind (LALStatus *, SFTCatalog **catalog, const CHAR *file_pattern
 
 void LALLoadSFTs ( LALStatus *, SFTVector **sfts, const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
 void LALWriteSFT2file (LALStatus *, const SFTtype *sft, const CHAR *fname, const CHAR *comment ); 
+void LALWrite_v2SFT_to_v1file (LALStatus *, const SFTtype *sft, const CHAR *fname);
+void LALCheckSFTs ( LALStatus *, INT4 *check_result, const CHAR *file_pattern, SFTConstraints *constraints);
 
 void LALReadTimestampsFile (LALStatus* , LIGOTimeGPSVector **timestamps, const CHAR *fname);
 

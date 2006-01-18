@@ -62,20 +62,6 @@ NRCSID (SFTFILEIOTESTC, "$Id$");
 
 
 /* Default parameters. */
-#define MAXFILENAMELENGTH 64
-#define NFSIZE 5
-#define THRESHOLD 2.0
-#define INFILE   	"inputsft.0" /* little endian sft */
-#define INFILE2 	"inputsft.1" /* big endian sft */
-#ifndef _MSC_VER
-#define OUTFILE1 "./TestOutputSFT.0"
-#define OUTFILE2 "./TestOutputSFT.1"
-#define FPATTERN "./Test*SFT?[0-9]"
-#else
-#define OUTFILE1 ".\\TestOutputSFT.0"
-#define OUTFILE2 ".\\TestOutputSFT.1"
-#define FPATTERN ".\\Test*SFT?[0-9]"
-#endif
 
 /*********************************************************************/
 /* Macros for printing errors & testing subroutines (from Creighton) */
@@ -112,10 +98,20 @@ do {                                                                 \
 do { 											\
   if ( func, ! (statusptr)->statusCode ) {						\
     ERROR( SFTFILEIOTESTC_ESUB, SFTFILEIOTESTC_MSGESUB,      				\
-          "Function call '" #func "' should have failed for this SFT but didn't!");	\
+          "Function call '" #func "' should have failed for this SFT but didn't!\n");	\
     return SFTFILEIOTESTC_ESUB;   			                               	\
    }											\
 } while(0)
+
+#define SHOULD_FAIL_WITH_CODE( func, statusptr, code )					\
+do { 											\
+  if ( func, (statusptr)->statusCode != code) {						\
+    LALPrintError( "Function call '" #func "' should have failed with code " #code ", but returned %d instead.\n",	\
+		   (statusptr)->statusCode );						\
+    return SFTFILEIOTESTC_ESUB;   			                               	\
+   }											\
+} while(0)
+
 
 #define SHOULD_WORK( func, statusptr )							\
 do { 											\
@@ -143,32 +139,63 @@ int main(int argc, char *argv[])
 
   SFTCatalog *catalog = NULL;
   SFTVector *sft_vect = NULL;
+  INT4 crc_check;
 
   /* band to read from infile.* SFTs */
   REAL8 fMin = 1008.5;
   REAL8 fMax = 1009.1;
     
+#define SFTFILEIO_ENULL 	1
+#define SFTFILEIO_EFILE 	2
+#define SFTFILEIO_EHEADER 	3
+#define SFTFILEIO_EVERSION 	4
+#define SFTFILEIO_EVAL 		5
+#define SFTFILEIO_EENDIAN 	6
+#define SFTFILEIO_ENONULL 	12
+#define SFTFILEIO_EFREQBAND 	13
+#define SFTFILEIO_EMEM 		14
+#define SFTFILEIO_EGLOB 	15
+#define SFTFILEIO_EDIFFLENGTH 	17
+#define SFTFILEIO_ESFTFORMAT	18
+#define SFTFILEIO_ESFTWRITE	19 
+#define SFTFILEIO_ECONSTRAINTS  20
+
+
   /* check that mal-formated SFTs are properly detected */
-  SHOULD_FAIL( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad1", NULL ), &status );
-  SHOULD_FAIL( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad2", NULL ), &status );
-  SHOULD_FAIL( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad3", NULL ), &status );
-  SHOULD_FAIL( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad4", NULL ), &status );
-  SHOULD_FAIL( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad5", NULL ), &status );
+  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad1", NULL ), &status, SFTFILEIO_EMERGEDSFT );
+  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad2", NULL ), &status, SFTFILEIO_EMERGEDSFT );
+  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad3", NULL ), &status, SFTFILEIO_EMERGEDSFT );
+  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad4", NULL ), &status, SFTFILEIO_EMERGEDSFT );
+  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad5", NULL ), &status, SFTFILEIO_EMERGEDSFT );
 
   /* the following (SFT-bad6) has a wrong CRC64 checksum. However, this is 
    * not checked in LALSFTdataFind, so it should succeed! */
   SHOULD_WORK( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad6", NULL ), &status );
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
 
-  SHOULD_FAIL( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad7", NULL ), &status );
-  SHOULD_FAIL( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad8", NULL ), &status );
-  SHOULD_FAIL( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad9", NULL ), &status );
-  SHOULD_FAIL( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad10", NULL ), &status );
-  SHOULD_FAIL( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad11", NULL ), &status );
-  SHOULD_FAIL( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad12", NULL ), &status );
-  SHOULD_FAIL( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad13", NULL ), &status );
-  SHOULD_FAIL( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad14", NULL ), &status );
+  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad7", NULL ), &status, SFTFILEIO_EHEADER );
+  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad8", NULL ), &status, SFTFILEIO_EHEADER );
+  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad9", NULL ), &status, SFTFILEIO_EHEADER );
+  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad10", NULL ), &status, SFTFILEIO_EHEADER );
+  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad11", NULL ), &status, SFTFILEIO_EHEADER );
+  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad12", NULL ), &status, SFTFILEIO_EHEADER );
+  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad13", NULL ), &status, SFTFILEIO_EHEADER );
+  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad14", NULL ), &status, SFTFILEIO_EHEADER );
 
+  /* now check some crc-checksums */
+  SHOULD_WORK( LALCheckSFTs ( &status, &crc_check, TESTDIR "SFT-test1", NULL ), &status );
+  if ( crc_check != 0 )
+    {
+      LALPrintError ("\nLALCheckSFTs(): SFT-test1 has correct checksum but LALCheckSFTs claimed it hasn't.\n\n");
+      return crc_check;
+    }
+  SHOULD_WORK( LALCheckSFTs ( &status, &crc_check, TESTDIR "SFT-bad6", NULL ), &status );
+  if ( crc_check != SFTFILEIO_ECRC64 )
+    {
+      LALPrintError ( "\nLALCheckSFTs() failed to catch invalid CRC checksum in SFT-bad6 \n\n");
+      return SFTFILEIOTESTC_ESUB;
+    }
+  
   /* check that proper v2-SFTs are read-in properly */
   SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-test1", NULL ), &status );
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
@@ -197,30 +224,46 @@ int main(int argc, char *argv[])
       return SFTFILEIOTESTC_ESUB;
     }
 
-  /* write v1-SFT to disk */
-  SUB (LALWriteSFTfile (&status, &(sft_vect->data[2]), "outputsft_v1.sft"), &status);
+  /* ----- v2 SFT writing ----- */
   /* write v2-SFT to disk */
-  SHOULD_WORK (LALWriteSFT2file( &status, &(sft_vect->data[2]), "outputsft_v2.sft", "A v2-SFT file for testing!"), &status );
+  SHOULD_WORK ( LALWriteSFT2file( &status, &(sft_vect->data[2]), "outputsftv2_v2.sft", "A v2-SFT file for testing!"), &status );
+
+  /* write v2-SFt as a v1-SFT to disk (correct normalization) */
+  SHOULD_WORK ( LALWrite_v2SFT_to_v1file( &status, &(sft_vect->data[2]), "outputsftv2_v1.sft"), &status );
 
   SUB ( LALDestroySFTVector (&status, &sft_vect ), &status );
   /* read the previous two SFTs back */
-  SUB ( LALSFTdataFind ( &status, &catalog, "outputsft_*.sft", NULL ), &status );
+  SUB ( LALSFTdataFind ( &status, &catalog, "outputsftv2_*.sft", NULL ), &status );
   SUB ( LALLoadSFTs ( &status, &sft_vect, catalog, -1, -1 ), &status );
 
   if ( sft_vect->length != 2 )
     {
-      if ( lalDebugLevel ) LALPrintError ("\nFailed to read back in 'outputsft_*.sft'\n\n");
+      if ( lalDebugLevel ) LALPrintError ("\nFailed to read back in 'outputsftv2_*.sft'\n\n");
       return SFTFILEIOTESTC_ESUB;
     }
-  /* try to write one of those v1-SFTs as v2: should fail without detector-info ! */
-  SHOULD_FAIL (LALWriteSFT2file( &status, &(sft_vect->data[0]), "outputsft_v2.sft", "Another v2-SFT file for testing!"), &status );
-  /* put detector there */
-  strcpy ( sft_vect->data[0].name, "H1" );
-  SHOULD_WORK (LALWriteSFT2file( &status, &(sft_vect->data[0]), "outputsft_v2.sft", "Another v2-SFT file for testing!"), &status );
+  /* the data of 'outputsftv2_v2.sft' and 'outputsftv2_v1.sft' should agree, as the normalization
+   * should be corrected again when reading-in
+   */
+  {
+    UINT4 i;
+    UINT4 numBins = sft_vect->data[0].data->length;
+    for ( i=0; i < numBins; i++)
+      {
+	COMPLEX8 *data1 = &(sft_vect->data[0].data->data[i]);
+	COMPLEX8 *data2 = &(sft_vect->data[1].data->data[i]);
 
-
+	if ( (data1->re != data2->re) || (data1->im != data2->im) )
+	  {
+	    LALPrintError ("\nv1- and v2- SFT differ after writing/reading\n\n");
+	    return SFTFILEIOTESTC_ESFTDIFF;
+	  }
+      } /* for i < numBins */
+  }
   SUB ( LALDestroySFTVector (&status, &sft_vect ), &status );
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
+
+  /* `----- v1 SFT writing */
+
   /* read v1-SFTs: 'inputsft.0' and 'inputsft.1' (one is big-endian, the other little-endian!) */
   SUB ( LALSFTdataFind (&status, &catalog, TESTDIR "inputsft.?", NULL ), &status );
   SUB ( LALLoadSFTs ( &status, &sft_vect, catalog, fMin, fMax ), &status );
@@ -229,6 +272,15 @@ int main(int argc, char *argv[])
       if ( lalDebugLevel ) LALPrintError ("\nFailed to read in v1-SFTs 'inputsft.0' and 'inputsft.1'\n\n");
       return SFTFILEIOTESTC_ESUB;
     }
+
+  /* write v1-SFT to disk */
+  SUB ( LALWriteSFTfile (&status, &(sft_vect->data[0]), "outputsft_v1.sft"), &status);
+  /* try to write this v1-SFTs as v2: should fail without detector-info ! */
+  SHOULD_FAIL (LALWriteSFT2file( &status, &(sft_vect->data[0]), "outputsft_v2.sft", "Another v2-SFT file for testing!"), &status );
+  /* put detector there */
+  strcpy ( sft_vect->data[0].name, "H1" );
+  SHOULD_WORK (LALWriteSFT2file( &status, &(sft_vect->data[0]), "outputsft_v2.sft", "Another v2-SFT file for testing!"), &status );
+
   SUB ( LALDestroySFTVector (&status, &sft_vect ), &status );
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
 
