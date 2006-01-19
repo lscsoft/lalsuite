@@ -74,6 +74,7 @@ main(int argc, char *argv[])
   LALStatus status = empty_status;	/* initialize status */
   SFTVector *SFTs1 = NULL, *SFTs2 = NULL;
   SFTVector *diffs = NULL;
+  SFTCatalog *catalog = NULL;
   UINT4 i;
 
   lalDebugLevel = 0;
@@ -93,8 +94,14 @@ main(int argc, char *argv[])
     exit (0);
 
   /* now read in the two complete sft-vectors */
-  LAL_CALL (LALReadSFTfiles (&status, &SFTs1, 0, 0, 0, uvar_sftBname1), &status);
-  LAL_CALL (LALReadSFTfiles (&status, &SFTs2, 0, 0, 0, uvar_sftBname2), &status);
+  LAL_CALL (LALSFTdataFind (&status, &catalog, uvar_sftBname1, NULL ), &status );
+  LAL_CALL (LALLoadSFTs(&status, &SFTs1, catalog, -1, -1 ), &status );
+  LAL_CALL (LALDestroySFTCatalog(&status, &catalog), &status );
+  catalog = NULL;
+
+  LAL_CALL (LALSFTdataFind (&status, &catalog, uvar_sftBname2, NULL ), &status );
+  LAL_CALL (LALLoadSFTs(&status, &SFTs2, catalog, -1, -1 ), &status );
+  LAL_CALL (LALDestroySFTCatalog(&status, &catalog), &status );
 
   /* ---------- do some sanity checks of consistency of SFTs ----------*/
   if (SFTs1->length != SFTs2->length) {
@@ -107,6 +114,12 @@ main(int argc, char *argv[])
       SFTtype *sft1, *sft2;
       sft1 = &(SFTs1->data[i]);
       sft2 = &(SFTs2->data[i]);
+
+      if( strcmp( sft1->name, sft2->name ) )
+	{
+	  if ( lalDebugLevel ) LALPrintError("WARNING SFT %d: detector-prefix differ! '%s' != '%s'\n", sft1->name, sft2->name );
+	  /* exit (1); */  /* can't be too strict here, as we also allow v1-SFTs, which don't have detector-name */
+	}
 
       if (sft1->data->length != sft2->data->length) 
 	{
