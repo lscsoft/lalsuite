@@ -27,6 +27,7 @@
  - SFT-reading: LALSFTdataFind(), LALLoadSFTs()
  - SFT-writing: LALWriteSFT2file(), LALWrite_v2SFT_to_v1file()
  - SFT-checking: LALCheckSFTs(): complete check of SFT-validity including CRC64 checksum
+ - free SFT-catalog: LALDestroySFTCatalog()
  - general manipulation of SFTVectors: 
  	- LALDestroySFTVector(): free up a complete SFT-vector
 	- LALConcatSFTVectors(): concatenate two ::SFTVector's
@@ -37,7 +38,7 @@
   
  The basic operation of <b>reading SFTs</b> from files proceeds in two simple steps:
 
- 	-# LALSFTdataFind(): get an '::SFTCatalog' of SFTs matching certain requirements
+ 	-# LALSFTdataFind(): get an '::SFTCatalog' of SFTs matching certain requirements (free with LALDestroySFTCatalog())
 	-# LALLoadSFTs(): load the desired frequency-band from the SFTs described in the catalogue
 
  <b>Note 1:</b> currently supported SFT file-formats are (merged or single) SFT-v1 and SFT-v2 files. 
