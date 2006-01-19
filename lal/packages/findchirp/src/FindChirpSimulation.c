@@ -357,7 +357,8 @@ LALFindChirpInjectSignals (
 INT4
 XLALFindChirpSetAnalyzeSegment (
     DataSegmentVector          *dataSegVec,
-    SimInspiralTable           *injections
+    SimInspiralTable           *injections,
+    BOOLEAN                     isTdFollowUp
     )
 /* </lalVerbatim> */
 {  
@@ -400,7 +401,10 @@ XLALFindChirpSetAnalyzeSegment (
 
       if ( ta > chanStartTime && ta <= chanEndTime )
       {
-        currentSegment->analyzeSegment += (UINT4)(pow(2.0,(double)(k)));
+        if (isTdFollowUp) 
+          currentSegment->analyzeSegment += 1;
+        else
+          currentSegment->analyzeSegment += (UINT4)(pow(2.0,(double)(k)));
       }
 
       if (ta > chanEndTime)
