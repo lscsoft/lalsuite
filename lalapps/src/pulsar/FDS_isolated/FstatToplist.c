@@ -12,13 +12,16 @@
 
 #include "LogPrintf.h"
 
-/* also works on Win32 this way */
-extern int errno;
-
 RCSID("$Id$");
+
+
 
 /* MSC specifics */
 #ifdef _MSC_VER
+
+/* errno */
+extern int errno;
+extern int _doserrno;
 
 /* snprintf */
 #define LALSnprintf _snprintf
@@ -29,20 +32,29 @@ RCSID("$Id$");
 
 #else /* MSC */
 
+/* errno */
+#include <errno.h>
+
 /* this is defined in C99 and *should* be in math.h. Long term
    protect this with a HAVE_FINITE */
 int finite(double);
 
 #endif  /* MSC */
 
+
+
 /* define min macro if not already defined */
 #ifndef min
 #define min(a,b) ((a)<(b)?(a):(b))
 #endif
 
+
+
 /* local prototypes */
 void reduce_toplist_precision(toplist_t *l);
 int print_toplist_item_to_str(TOPLISTLINE fline, char* buf, int buflen);
+
+
 
 /* creates a toplist with length elements,
    returns -1 on error (usually out of memory), else 0 */
@@ -367,6 +379,9 @@ int write_toplist_to_fp(toplist_t*tl, FILE*fp, UINT4*checksum) {
      if ((r = write_toplist_item_to_fp(*(tl->sorted[i]), fp, checksum)) < 0) {
        LogPrintf (LOG_CRITICAL, "Failed to write toplistitem to output fp: %d: %s\n",
 		  errno,strerror(errno));
+#ifdef _MSC_VER
+       LogPrintf (LOG_CRITICAL, "Windows system call returned: %d\n", _doserrno);
+#endif
       return(r);
      } else
        c += r;
@@ -389,6 +404,9 @@ int atomic_write_toplist_to_file(toplist_t *l, char *filename, UINT4*checksum) {
     if(!fpnew) {
       LogPrintf (LOG_CRITICAL, "Failed to open temp Fstat file \"%s\" for writing: %d: %s\n",
 		 tempname,errno,strerror(errno));
+#ifdef _MSC_VER
+      LogPrintf (LOG_CRITICAL, "Windows system call returned: %d\n", _doserrno);
+#endif
       return -1;
     }
     length = write_toplist_to_fp(l,fpnew,checksum);
@@ -396,11 +414,17 @@ int atomic_write_toplist_to_file(toplist_t *l, char *filename, UINT4*checksum) {
     if (length < 0) {
       LogPrintf (LOG_CRITICAL, "Failed to write temp Fstat file \"%s\": %d: %s\n",
 		 tempname,errno,strerror(errno));
+#ifdef _MSC_VER
+      LogPrintf (LOG_CRITICAL, "Windows system call returned: %d\n", _doserrno);
+#endif
       return(length);
     }
     if(rename(tempname, filename)) {
       LogPrintf (LOG_CRITICAL, "Failed to rename Fstat file to \"%s\": %d: %s\n",
 		 filename,errno,strerror(errno));
+#ifdef _MSC_VER
+      LogPrintf (LOG_CRITICAL, "Windows system call returned: %d\n", _doserrno);
+#endif
       return -1;
     } else
       return length;
