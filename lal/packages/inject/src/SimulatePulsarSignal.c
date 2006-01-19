@@ -131,6 +131,8 @@ extern INT4 lalDebugLevel;
 
 #define oneBillion 1000000000L
 
+#define NUM_SPINDOWNS 	3
+
 /* error-codes */
 #define SIMULATEPULSARSIGNAL_ENULL 		1
 #define SIMULATEPULSARSIGNAL_ENONULL		2
@@ -149,7 +151,10 @@ extern INT4 lalDebugLevel;
 
 static LALUnit emptyUnit;
 
-#define NUM_SPINDOWNS 	3
+
+extern const CHAR *getChannelPrefix ( const LALFrDetector *frDet );
+
+
 
 
 
@@ -185,7 +190,7 @@ LALSimulateExactPulsarSignal (LALStatus *status,
   REAL8 xAzi, yAzi;
   REAL8 Zeta, sinZeta;
 
-  const CHAR *name = "LALSimulatePulsarSignal() simulated pulsar signal";
+  const CHAR *name;
 
   INITSTATUS( status, "LALSimulatePulsarSignal", SIMULATEPULSARSIGNALC );
   ATTATCHSTATUSPTR(status);
@@ -214,6 +219,12 @@ LALSimulateExactPulsarSignal (LALStatus *status,
   TRY ( LALGetAMCoeffs (status->statusPtr, amcoe, detStates, params->pulsar.position ), status );
 
   /* create output timeseries */
+  if ( (name = getChannelPrefix ( det )) == NULL )
+    {
+      LALPrintError ("\ngetChannelPrefix() Failed to extract channel-prefix from detector-name '%s'\n\n", det->name );
+      ABORT (status, GENERATEPULSARSIGNALH_EDETECTOR, GENERATEPULSARSIGNALH_MSGEDETECTOR );
+    }
+
   if ( NULL == ((*timeSeries) = XLALCreateREAL4TimeSeries( name, &(detStates->data[0].tGPS), 
 				   0, dt, &emptyUnit, numSteps) ) )
     {

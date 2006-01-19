@@ -364,7 +364,8 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
   pSFTParams = (SFTParams *)LALMalloc(sizeof(SFTParams));
   pSFTParams->Tsft = tSFT;
   pSFTParams->timestamps = timeStamps;
-  pSFTParams->noiseSFTs = NULL;    
+  pSFTParams->noiseSFTs = NULL; 
+  pSFTParams->make_v2SFTs = 1;
 
   #ifdef INCLUDE_RANDVAL_MISMATCH
     /* Initial seed and randPar to use LALUniformDeviate to generate random mismatch during Monte Carlo. */

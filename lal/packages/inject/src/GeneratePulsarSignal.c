@@ -48,6 +48,8 @@
 static int check_timestamp_bounds (const LIGOTimeGPSVector *timestamps, LIGOTimeGPS t0, LIGOTimeGPS t1);
 static void checkNoiseSFTs (LALStatus *, const SFTVector *sfts, REAL8 f0, REAL8 f1, REAL8 deltaF);
 static void correct_phase (LALStatus *, SFTtype *sft, LIGOTimeGPS tHeterodyne);
+
+const CHAR *getChannelPrefix ( const LALFrDetector *frDet );
 /*----------------------------------------------------------------------*/
 
 NRCSID( GENERATEPULSARSIGNALC, "$Id$");
@@ -220,6 +222,17 @@ LALGeneratePulsarSignal (LALStatus *status,
   
   TRY ( LALSimulateCoherentGW(status->statusPtr, output, &sourceSignal, &detector ), status );
 
+  /* set 'name'-field of timeseries to contain the right "channel prefix" for the detector */
+  {
+    const CHAR *name = getChannelPrefix ( &(params->site->frDetector) );
+    if ( name == NULL )
+      {
+	LALPrintError ("\ngetChannelPrefix() Failed to extract channel-prefix from detector-name '%s'\n\n",
+		       params->site->frDetector.name );
+	ABORT (status, GENERATEPULSARSIGNALH_EDETECTOR, GENERATEPULSARSIGNALH_MSGEDETECTOR );
+      }
+    strcpy ( output->name, name );
+  }
 			       
   /*----------------------------------------------------------------------*/
   /* Free all allocated memory that is not returned */
@@ -239,7 +252,7 @@ LALGeneratePulsarSignal (LALStatus *status,
 
 
 
-/** Turn the given time-series into SFTs and add noise if given.
+/** Turn the given time-series into (v2-)SFTs and add noise if given.
  */
 void
 LALSignalToSFTs (LALStatus *status, 
@@ -248,19 +261,18 @@ LALSignalToSFTs (LALStatus *status,
 		 const SFTParams *params)	/**< params for output-SFTs */
 {
   UINT4 numSFTs;			/* number of SFTs */
-  UINT4 numSFTsamples;			/* number of time-samples in an Tsft */
+  UINT4 numTimesteps;			/* number of time-samples in an Tsft */
+  UINT4 numBins;			/* number of frequency-bins in SFT */
   UINT4 iSFT;
-  REAL8 Band, SFTsamples, f0, deltaF;
+  REAL8 Band, f0, deltaF, dt;
   LIGOTimeGPSVector *timestamps = NULL;
   REAL4Vector timeStretch = {0,0};
   LIGOTimeGPS tStart;			/* start time of input time-series */
   LIGOTimeGPS tLast;			/* start-time of last _possible_ SFT */
   LIGOTimeGPS tmpTime;
   REAL8 duration, delay;
-  UINT4 SFTlen;				/* number of frequency-bins in an SFT */
   UINT4 index0n;			/* first frequency-bin to use from noise-SFT */
   SFTtype *thisSFT, *thisNoiseSFT;	/* SFT-pointers */
-  REAL4 renorm;				/* renormalization-factor of taking only part of an SFT */
   SFTVector *sftvect = NULL;		/* return value. For better readability */
   UINT4 j;
   RealFFTPlan *pfwd = NULL;		/* FFTW plan */
@@ -280,8 +292,21 @@ LALSignalToSFTs (LALStatus *status,
 	     GENERATEPULSARSIGNALH_ENUMSFTS,  GENERATEPULSARSIGNALH_MSGENUMSFTS);
   }
 
+  /* UPGRADING switch: complain loudly if user didn't set 'make_v2SFTs' to encourage upgrading */
+  if (  params-> make_v2SFTs != 1 )
+    {
+      fprintf (stderr, "\n********************************************************************************\n\n");
+      fprintf (stderr, "     WARNING: LALSignalToSFTs() now returns properly *v2-normalized* SFTs\n");
+      fprintf (stderr, "    (see  http://www.lsc-group.phys.uwm.edu/lal/slug/nightly/doxygen/html/group__SFTfileIO.html \n");
+      fprintf (stderr, "    for more details on what that means).\n\n");
+      fprintf (stderr, "    Please adapt your code correspondingly and set SFTParams.make_v2SFTs=1 to acknowledge this.\n");
+      fprintf (stderr, "    This parameter and warning will be removed once the transition is complete.\n\n");
+      fprintf (stderr, "********************************************************************************\n\n");
+    }
+
   f0 = signal->f0;				/* lowest frequency */
-  Band = 1.0 / (2.0 * signal->deltaT);		/* NOTE: frequency-band is determined by sampling-rate! */
+  dt = signal->deltaT;		/* timeseries timestep */
+  Band = 1.0 / (2.0 * dt);		/* NOTE: frequency-band is determined by sampling-rate! */
   deltaF = 1.0 / params->Tsft;			/* frequency-resolution */
 
   /* if noiseSFTs are given: check they are consistent with signal! */
@@ -289,20 +314,21 @@ LALSignalToSFTs (LALStatus *status,
     TRY (checkNoiseSFTs(status->statusPtr, params->noiseSFTs, f0, f0 + Band, deltaF), status);
   }
     
-  /* make sure that number of timesamples/SFT is an integer (up to possible rounding errors */
-  SFTsamples = params->Tsft / signal->deltaT;		/* this is a float!*/
-  numSFTsamples = (UINT4) (SFTsamples + 0.5);		/* round to closest int */
-  ASSERT ( fabs(SFTsamples - numSFTsamples)/SFTsamples < eps, status, 
-	   GENERATEPULSARSIGNALH_EINCONSBAND, GENERATEPULSARSIGNALH_MSGEINCONSBAND);
-  
+  /* make sure that number of timesamples/SFT is an integer (up to possible rounding errors) */
+  {
+    REAL8 timesteps = params->Tsft / dt;		/* this is a float!*/
+    numTimesteps = (UINT4) (timesteps + 0.5);		/* round to closest int */
+    ASSERT ( fabs(timesteps - numTimesteps)/timesteps < eps, status, 
+	     GENERATEPULSARSIGNALH_EINCONSBAND, GENERATEPULSARSIGNALH_MSGEINCONSBAND);
+  }
   /* Prepare FFT: compute plan for FFTW */
-  TRY (LALCreateForwardRealFFTPlan(status->statusPtr, &pfwd, numSFTsamples, 0), status); 	
+  TRY (LALCreateForwardRealFFTPlan(status->statusPtr, &pfwd, numTimesteps, 0), status); 	
 
   /* get some info about time-series */
   tStart = signal->epoch;					/* start-time of time-series */
 
   /* get last possible start-time for an SFT */
-  duration =  (UINT4) (1.0* signal->data->length * signal->deltaT +0.5); /* total duration rounded to seconds */
+  duration =  (UINT4) (1.0* signal->data->length * dt + 0.5); /* total duration rounded to seconds */
   TRY ( LALAddFloatToGPS(status->statusPtr, &tLast, &tStart, duration - params->Tsft), status);
 
   /* for simplicity we _always_ work with timestamps. 
@@ -322,9 +348,9 @@ LALSignalToSFTs (LALStatus *status,
 
   /* prepare SFT-vector for return */
   numSFTs = timestamps->length;			/* number of SFTs to produce */
-  SFTlen = (UINT4)(numSFTsamples/2) + 1;	/* number of frequency-bins per SFT */
+  numBins = (UINT4)(numTimesteps/2) + 1;		/* number of frequency-bins per SFT */
 
-  LALCreateSFTVector (status->statusPtr, &sftvect, numSFTs, SFTlen);
+  LALCreateSFTVector (status->statusPtr, &sftvect, numSFTs, numBins);
   BEGINFAIL (status) {
     if (params->timestamps == NULL)
       LALDestroyTimestampVector(status->statusPtr, &timestamps);
@@ -346,12 +372,14 @@ LALSignalToSFTs (LALStatus *status,
       relIndexShift = (INT4) (delay / signal->deltaT + 0.5);	
       totalIndex += relIndexShift;
 
-      timeStretch.length = numSFTsamples;    
+      timeStretch.length = numTimesteps;
       timeStretch.data = signal->data->data + totalIndex; /* point to the right sample-bin */
 
       /* fill the header of the i'th output SFT */
       realDelay = (REAL4)(relIndexShift * signal->deltaT);  /* avoid rounding-errors*/
       TRY (LALAddFloatToGPS(status->statusPtr, &tmpTime,&tPrev, realDelay),status);
+
+      strcpy ( thisSFT->name, signal->name );
       /* set the ACTUAL timestamp! (can be different from requested one ==> "nudging") */
       thisSFT->epoch = tmpTime;			
       thisSFT->f0 = signal->f0;			/* minimum frequency */
@@ -385,6 +413,18 @@ LALSignalToSFTs (LALStatus *status,
       } ENDFAIL(status);
 
 
+      /* normalize DFT-data to conform to v2 ( ie. COMPLEX8FrequencySeries ) specification ==> multiply DFT by dt */
+      {
+	UINT4 i;
+	COMPLEX8 *data = &( thisSFT->data->data[0] );
+	for ( i=0; i < numBins ; i ++ )
+	{
+	  data->re *= dt;
+	  data->im *= dt;
+	  data ++;
+	} /* for i < numBins */
+      } /* normalize data */
+      
       /* correct heterodyning-phase, IF NECESSARY */
       if ( ( (INT4)signal->f0 != signal->f0  )
 	   || (signal->epoch.gpsNanoSeconds != 0)
@@ -404,18 +444,15 @@ LALSignalToSFTs (LALStatus *status,
 	  thisNoiseSFT = &(params->noiseSFTs->data[iSFT]);
 	  index0n = (UINT4) ((thisSFT->f0 - thisNoiseSFT->f0) / thisSFT->deltaF);
 
-	  /* The renormalization follows strictly makefakedata_v2. */
-	  renorm = 1.0*SFTlen/(thisNoiseSFT->data->length);
-
 	  data = &(thisSFT->data->data[0]);
 	  noise = &(thisNoiseSFT->data->data[index0n]);
-	  for (j=0; j < SFTlen; j++)
+	  for (j=0; j < numBins; j++)
 	    {
-	      data->re += renorm * noise->re;
-	      data->im += renorm * noise->im;
+	      data->re += noise->re;
+	      data->im += noise->im;
 	      data++;
 	      noise++;
-	    } /* for j < SFTlen */
+	    } /* for j < numBins */
 	
 	} /* if noiseSFTs */
 
@@ -951,6 +988,56 @@ LALConvertSSB2GPS (LALStatus *status,
  * the following are INTERNAL FUNCTIONS not to be called outside of this 
  * module 
  ************************************************************************/
+
+
+/* extract/construct the unique 2-character "channel prefix" for the given FrDetector struct,
+ * which unfortunately does not follow any of the official detector-naming conventions given 
+ * in the Frames-Spec. This function therefore does some creative guessing...
+ *
+ * NOTE: channel-number is ALWAYS set to '1', as the FrDetector-info only specifies the 
+ * 'geometrical' detector, not the channel.
+ */
+const CHAR *getChannelPrefix ( const LALFrDetector *frDet )
+{
+  static CHAR channel[3] = {0,0,0};  /* 2 chars + \0 */
+  const CHAR *name;
+ 
+  if ( !frDet )
+    return NULL;
+
+  name = frDet->name;
+
+  if ( strstr( name, "ALLEGRO") || strstr ( name, "A1") )
+    strcpy ( channel, "A1");
+  else if ( strstr(name, "NIOBE") || strstr( name, "B1") )
+    strcpy ( channel, "B1");
+  else if ( strstr(name, "EXPLORER") || strstr( name, "E1") )
+    strcpy ( channel, "E1");
+  else if ( strstr(name, "GEO") || strstr(name, "G1") )
+    strcpy ( channel, "G1" );
+  else if ( strstr(name, "LHO") || strstr(name, "Hanford") || strstr(name, "H1") || strstr(name, "H2") )
+    strcpy ( channel, "H1" );
+  else if ( strstr(name, "ACIGA") || strstr (name, "K1") )
+    strcpy ( channel, "K1" );
+  else if ( strstr(name, "LLO") || strstr(name, "Livingston") || strstr(name, "L1") )
+    strcpy ( channel, "L1" );
+  else if ( strstr(name, "Nautilus") || strstr(name, "N1") )
+    strcpy ( channel, "N1" );
+  else if ( strstr(name, "AURIGA") || strstr(name,"O1") )
+    strcpy ( channel, "O1" );
+  else if ( strstr(name, "CIT") || strstr(name, "P1") )
+    strcpy ( channel, "P1" );
+  else if ( strstr(name, "TAMA") || strstr(name, "T1") )
+    strcpy (channel, "T1" );
+  else if ( strstr(name, "Virgo") || strstr(name, "V1") || strstr(name, "V2") )
+    strcpy ( channel, "V1" );
+    
+  if ( channel[0] == 0 )
+    return NULL;
+  else
+    return channel;
+
+} /* getChannelPrefix() */
 
 #define oneBillion 1000000000;
 /*----------------------------------------------------------------------
