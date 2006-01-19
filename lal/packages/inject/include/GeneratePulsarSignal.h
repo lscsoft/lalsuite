@@ -55,7 +55,7 @@
  * and LALSimulateCoherentGW() to turn it into a time-series at the detector.
  * 
  * LALSignalToSFTs() uses LALForwardRealFFT() appropriately on the input-timeseries to 
- * produce the required output-SFTs. 
+ * produce the required output-SFTs ( v2-normalization! ).
  *
  *
  * \note
@@ -265,7 +265,7 @@ NRCSID( GENERATEPULSARSIGNALH, "$Id$");
 #define GENERATEPULSARSIGNALH_ELUTS		14
 #define GENERATEPULSARSIGNALH_EDTERMS		15
 #define GENERATEPULSARSIGNALH_EINPUT		16
-
+#define GENERATEPULSARSIGNALH_EDETECTOR		17
 
 #define GENERATEPULSARSIGNALH_MSGENULL 		"Arguments contained an unexpected null pointer"
 #define GENERATEPULSARSIGNALH_MSGENONULL	"Output pointer is not NULL"
@@ -283,6 +283,7 @@ NRCSID( GENERATEPULSARSIGNALH, "$Id$");
 #define GENERATEPULSARSIGNALH_MSGELUTS		"Lookup tables (LUTs) for trig functions must be defined on domain -2pi to 2pi inclusive"
 #define GENERATEPULSARSIGNALH_MSGEDTERMS	"Dterms must be greater than zero and less than or equal to half the number of SFT bins"
 #define GENERATEPULSARSIGNALH_MSGEINPUT		"Invalid input-arguments to function"
+#define GENERATEPULSARSIGNALH_MSGEDETECTOR	"Unknown detector-name"
 /*@}*/
 
 
@@ -311,6 +312,7 @@ typedef struct {
   REAL8 Tsft;			 /**< length of each SFT in seconds */
   LIGOTimeGPSVector *timestamps; /**< timestamps to produce SFTs for (can be NULL) */
   SFTVector *noiseSFTs;		 /**< noise SFTs to be added (can be NULL) */
+  INT4 make_v2SFTs;		 /**< UPGRADING switch: should be set to 1 to avoid verbose complaints */
 } SFTParams;
 
 /** Parameters defining the pulsar signal and SFTs used by LALFastGeneratePulsarSFTs().  Lookup tables (LUTs) are
