@@ -171,6 +171,7 @@ CHAR  *calCacheName     = NULL;         /* location of calibration data */
 INT4   globCalData      = 0;            /* glob for calibration frames  */
 INT4   pointCal         = 0;            /* don't average cal over chunk */
 CHAR  *injectionFile    = NULL;         /* name of file containing injs */
+CHAR  *tdFollowUpFile   = NULL;         /* name of file containing td f */
 int    injectOverhead   = 0;            /* inject h+ into detector      */
 REAL4  mmFast           = -1.0;         /* match for the --fast option  */
 
@@ -353,6 +354,10 @@ int main( int argc, char *argv[] )
   int                  numInjections = 0;
   SimInspiralTable    *injections = NULL;
   SimInspiralTable    *thisInj = NULL;
+
+  /* Time domain follow-up fake injections */
+  int                  numTDFollowUpInjections = 0;
+  SimInspiralTable    *tdFollowUpInjections = NULL;
 
   /* --fast option related variables */
   UINT4  *analyseThisTmplt = NULL;
@@ -987,6 +992,16 @@ int main( int argc, char *argv[] )
   chan.epoch.gpsNanoSeconds += slideData.gpsNanoSeconds;
 
 
+  if ( tdFollowUpFile )
+  {
+    INT4 injSafety = 10;
+
+    /* read in the time domain follow-up data from XML */
+    numTDFollowUpInjections = SimInspiralTableFromLIGOLw( &tdFollowUpInjections,
+            tdFollowUpFile, gpsStartTime.gpsSeconds - injSafety,
+            gpsEndTime.gpsSeconds + injSafety );
+  }
+
   /*
    *
    * inject signals into the raw, unresampled data
@@ -1536,11 +1551,24 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALInitializeDataSegmentVector( &status, &dataSegVec,
         &chan, &spec, &resp, fcInitParams ), &status );
 
-  if ( injectionFile )
+  /************************************************************************/
+  if ( tdFollowUpFile || injectionFile )
   {
-    /* set the analyzeSegment flag only on segments with injections */
-    XLALFindChirpSetAnalyzeSegment (dataSegVec, injections);
+     BOOLEAN isTdFollowUp = 0;
+
+     if (tdFollowUpFile)
+     {
+      /* Only analyze segments containing coincident BCV triggers */
+      isTdFollowUp = 1;
+      XLALFindChirpSetAnalyzeSegment (dataSegVec, tdFollowUpInjections, isTdFollowUp);
+     }
+     else
+     {
+      /* set the analyzeSegment flag only on segments with injections */
+      XLALFindChirpSetAnalyzeSegment (dataSegVec, injections, isTdFollowUp);
+     }
   }
+  /************************************************************************/
 
   /* create the findchirp data storage */
   LAL_CALL( LALCreateFindChirpSegmentVector( &status, &fcSegVec, 
@@ -1777,18 +1805,31 @@ int main( int argc, char *argv[] )
       }  
     }
 
-    if ( injectionFile ) 
+    /************************************************************************/
+    if ( tdFollowUpFile || injectionFile )
     {
       /* Make space for analyseThisTmplt */
       analyseThisTmplt = (UINT4 *) LALCalloc (numTmplts, sizeof(UINT4));
 
+      if ( injectionFile )
+      {
       /* set the analyseThisTmplt flag on templates     */
       /* that are 'close' to the injections             */
-      LAL_CALL( LALFindChirpSetAnalyseTemplate( &status, analyseThisTmplt, 
+      LAL_CALL( LALFindChirpSetAnalyseTemplate( &status, analyseThisTmplt,
             mmFast, fcSegVec->data[0].data->deltaF, sampleRate, fcDataParams,
-            numTmplts, tmpltHead, numInjections, injections ), &status ); 
-    }
+            numTmplts, tmpltHead, numInjections, injections ), &status );
 
+      }
+      else
+      {
+
+      LAL_CALL( LALFindChirpSetAnalyseTemplate( &status, analyseThisTmplt,
+            -1.0, fcSegVec->data[0].data->deltaF, sampleRate, fcDataParams,
+            numTmplts, tmpltHead, 1, tdFollowUpInjections ), &status );
+
+      }
+    }
+    /************************************************************************/
 
     /*
      *
@@ -1802,14 +1843,14 @@ int main( int argc, char *argv[] )
         tmpltCurrent = tmpltCurrent->next, inserted = 0, thisTemplateIndex++ )
     {
 
-      /* If we are injecting and the analyseThisTmpltFlag is down -
+      /* If we are injecting / in td-follow-up mode and the analyseThisTmpltFlag is down -
        * look no further - simply continue to the next template */
-      if ( numInjections > 0 ) 
+      if ( tdFollowUpFile || injectionFile )
       {
         if ( ! analyseThisTmplt[thisTemplateIndex] )
           continue;
-        else 
-          if ( vrbflg ) fprintf( stdout, 
+        else
+          if ( vrbflg ) fprintf( stdout,
               "\n\n === Template %d going through \n\n", thisTemplateIndex );
       }
 
@@ -1876,13 +1917,26 @@ int main( int argc, char *argv[] )
         /* segment with the template (analyseTag = 1)           */
         analyseTag = 1;
 
-        /* If injections are being done - check if for any      */
+        /* If injections are being done or if in td follow-up mode, - check if for any      */
         /* reason the analyseTag flag needs to be brought down. */
-        if ( injectionFile && flagFilterInjOnly ) 
+        if ( ( tdFollowUpFile || injectionFile ) && flagFilterInjOnly )
         {
-          analyseTag = XLALCmprSgmntTmpltFlags( numInjections, 
-              analyseThisTmplt[thisTemplateIndex], 
-              fcSegVec->data[i].analyzeSegment );
+            if ( tdFollowUpFile )
+            {
+                /*analyseTag = XLALCmprSgmntTmpltFlags( numTDFollowUpInjections,           */
+                /*analyseThisTmplt[thisTemplateIndex], fcSegVec->data[i].analyzeSegment ); */
+                if ( !fcSegVec->data[i].analyzeSegment )
+                {
+                    analyseTag = 0;
+                }
+
+            }
+            else
+            {
+                analyseTag = XLALCmprSgmntTmpltFlags( numInjections,
+                          analyseThisTmplt[thisTemplateIndex],
+                          fcSegVec->data[i].analyzeSegment );
+            }
         }
 
         /* filter data segment */ 
@@ -2576,6 +2630,17 @@ int main( int argc, char *argv[] )
   if ( vrbflg ) fprintf( stdout, "done. XML file closed\n" );
 
   /* free the rest of the memory, check for memory leaks and exit */
+  if ( tdFollowUpFile )
+  {
+    free ( tdFollowUpFile );
+    while ( tdFollowUpInjections )
+    {
+      thisInj = tdFollowUpInjections;
+      tdFollowUpInjections = tdFollowUpInjections->next;
+      LALFree( thisInj );
+    }
+  }
+
   if ( injectionFile ) 
   {
     free ( injectionFile );     
@@ -2654,6 +2719,7 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "  --disable-filter-inj-only    filter all segments when doing injections\n"\
 "                               All segments are filtered.\n"\
 "\n"\
+"  --td-follow-up FILE 		Follow up coincident BCV events in FILE\n"\
 "  --bank-file FILE             read template bank parameters from FILE\n"\
 "  --minimal-match M            override bank minimal match with M (sets delta)\n"\
 "  --start-template N           start filtering at template number N in bank\n"\
@@ -2810,6 +2876,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"disable-bank-sim-max",    no_argument,       0,                '6'},  
     {"sim-frame-file",          required_argument, 0,                '7'},
     {"sim-frame-channel",       required_argument, 0,                '8'},
+    {"td-follow-up",            required_argument, 0,                '9'},
     /* frame writing options */
     {"write-raw-data",          no_argument,       &writeRawData,     1 },
     {"write-filter-data",       no_argument,       &writeFilterData,  1 },
@@ -3830,6 +3897,14 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         memcpy( bankSimParams.frameChan, optarg, optarg_len );
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;  
+
+      case '9':
+        /* create storage for the injection file name */
+        optarg_len = strlen( optarg ) + 1;
+        tdFollowUpFile = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( tdFollowUpFile, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
 
       case '?':
         exit( 1 );
