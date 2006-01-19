@@ -111,6 +111,7 @@ BOOLEAN uvar_help;		/**< Print this help/usage message */
 
 /* output */
 CHAR *uvar_outSFTbname;		/**< Path and basefilename of output SFT files */
+BOOLEAN uvar_outSFTv1;		/**< use v1-spec for output-SFTs */
 
 CHAR *uvar_TDDfile;		/**< Filename for ASCII output time-series */
 BOOLEAN uvar_hardwareTDD;	/**< Binary output timeseries in chunks of Tsft for hardware injections. */
@@ -174,6 +175,7 @@ REAL8 uvar_orbitArgPeriapse;	/**< Argument of periapsis (radians) */
 
 /* precision-level of signal-generation */
 BOOLEAN uvar_exactSignal;	/**< generate signal timeseries as exactly as possible (slow) */
+
 
 /*----------------------------------------------------------------------*/
 
@@ -278,13 +280,16 @@ main(int argc, char *argv[])
       params.startTimeGPS = GV.timestamps->data[i_chunk];
       
       /*----------------------------------------
-       * generate the (heterodyned) time-series 
+       * generate the signal time-series 
        *----------------------------------------*/
-      if ( uvar_exactSignal ) {
-	LAL_CALL ( LALSimulateExactPulsarSignal (&status, &Tseries, &params), &status );
-      } else {
-	LAL_CALL (LALGeneratePulsarSignal(&status, &Tseries, &params), &status );
-      }
+      if ( uvar_exactSignal ) 
+	{
+	  LAL_CALL ( LALSimulateExactPulsarSignal (&status, &Tseries, &params), &status );
+	} 
+      else 
+	{
+	  LAL_CALL ( LALGeneratePulsarSignal(&status, &Tseries, &params), &status );
+	}
 
       /* for HARDWARE-INJECTION: 
        * before the first chunk we send magic number and chunk-length to stdout 
@@ -354,6 +359,7 @@ main(int argc, char *argv[])
 	  SFTVector noise;
 	  
 	  sftParams.Tsft = uvar_Tsft;
+	  sftParams.make_v2SFTs = 1;
 
 	  switch (uvar_generationMode)
 	    {
@@ -366,6 +372,7 @@ main(int argc, char *argv[])
 	      ts.data = &(GV.timestamps->data[i_chunk]);
 	      sftParams.timestamps = &(ts);
 	      sftParams.noiseSFTs = NULL;
+
 	      if ( GV.noiseSFTs )
 		{
 		  noise.length = 1;
@@ -395,11 +402,27 @@ main(int argc, char *argv[])
 	  fname = LALCalloc (1, strlen (uvar_outSFTbname) + 10);
 	  for (i=0; i < SFTs->length; i++)
 	    {
+	      CHAR comment[512];
+	      CHAR *logstr = NULL;
 	      sprintf (fname, "%s.%05d", uvar_outSFTbname, i_chunk*SFTs->length + i);
-	      LAL_CALL (LALWriteSFTfile(&status, &(SFTs->data[i]), fname), &status);
+
+	      if ( uvar_outSFTv1 ) {	/* write output-SFTs using the SFT-v1 format */
+		LAL_CALL ( LALWrite_v2SFT_to_v1file ( &status, &(SFTs->data[i]), fname ), &status );
+	      } 
+	      else 
+		{
+		  LAL_CALL ( LALUserVarGetLog ( &status, &logstr,  UVAR_LOGFMT_CMDLINE ), &status );
+		  LALSnprintf ( comment, sizeof(comment),  "rcsid: %s\n makefakedata_v4 %s", "$Id$", logstr );
+		  comment[sizeof(comment)-1] = 0;
+		  LALFree ( logstr );
+
+		  LAL_CALL (LALWriteSFT2file(&status, &(SFTs->data[i]), fname, comment), &status);
+		} /* write normal v2-SFTs */
+
 	    } /* for i < nSFTs */
+
 	  LALFree (fname);
-	} /* if SFTbname */
+	} /* if outSFTbname */
 
       /* free memory */
       if (Tseries) 
@@ -735,13 +758,17 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
       }
 
     /* if real noise-SFTs: load them in now */
-    if ( uvar_noiseSFTs && LALUserVarWasSet(&uvar_noiseSFTs))
+    if ( uvar_noiseSFTs )
       {
 	REAL8 fMin, fMax;
+	SFTCatalog *catalog = NULL;
+
+	TRY ( LALSFTdataFind( status->statusPtr, &catalog, uvar_noiseSFTs, NULL ), status );
 	fMin = cfg->fmin_eff;
 	fMax = fMin + cfg->fBand_eff;
-	TRY ( LALReadSFTfiles(status->statusPtr, &(cfg->noiseSFTs), fMin, fMax, 0, uvar_noiseSFTs), 
-	      status);
+	TRY ( LALLoadSFTs( status->statusPtr, &(cfg->noiseSFTs), catalog, fMin, fMax ), status );
+	TRY ( LALDestroySFTCatalog ( status->statusPtr, &catalog ), status );
+
       } /* if uvar_noiseSFTs */
 
   } /* END: Noise params */
@@ -826,6 +853,9 @@ InitUserVars (LALStatus *status)
 
   uvar_exactSignal = FALSE;
 
+  uvar_outSFTv1 = FALSE;
+
+
   /* ---------- register all our user-variable ---------- */
   LALregBOOLUserVar(status,   help,	'h', UVAR_HELP    , "Print this help/usage message");
 
@@ -890,6 +920,8 @@ InitUserVars (LALStatus *status)
 
   /* signal precision-level */
   LALregBOOLUserVar(status,  exactSignal,	 0, UVAR_DEVELOPER, "Generate signal time-series as exactly as possible (slow).");
+
+  LALregBOOLUserVar(status,  outSFTv1,	 	 0, UVAR_OPTIONAL, "Write output-SFTs in obsolete SFT-v1 format." );
   
   DETATCHSTATUSPTR (status);
   RETURN (status);
