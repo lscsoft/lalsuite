@@ -8,9 +8,9 @@ UWM, and the observatory clusters at LHO and LLO.
 
 The pipeline is constructed as a directed acyclic graph (DAG) run under
 Condor. A DAG represents a set of programs where the input, output, or
-execution of one or more programs is dependant upon one or more other
+execution of one or more programs is dependent upon one or more other
 programs. The programs are represented by nodes (verticies) in the
-graph, and the edges (arcs) identifies the dependancies. There are three
+graph, and the edges (arcs) identifies the dependencies. There are three
 different nodes that make up the Stochastic analysis DAG - datafind,
 stochastic and stopp. A short description of the nodes that make up the
 stochastic DAG follows:
@@ -45,8 +45,8 @@ step of the pipeline. See Section~\ref{program:lalapps-stochastic-pipe}
 for details regarding the layout of the configuration file.
 
 Any combination of nodes, see above, can be present in the DAG, assuming
-that the dependancies for each node are satisfied. The datafine node has
-no dependancies, the stochastic node requires cache files to be
+that the dependencies for each node are satisfied. The datafine node has
+no dependencies, the stochastic node requires cache files to be
 available, so if cache have already been generated and the location of
 the data on the cluster has not changed then there is no read for the
 datafind node to be run, and finally the stopp node requires that the
@@ -67,7 +67,7 @@ files can be found below,
 \begin{description}
 \item[\texttt{example\_S3\_H1L1.dag}]
 This is main dag file that includes all the required information for
-running the pipeline. This includes the dependancy information for each
+running the pipeline. This includes the dependency information for each
 job within the DAG along with all the dynamic command line arguments for
 each job.
 \item[\texttt{example\_S3\_H1L1.datafind.sub}]
@@ -125,7 +125,7 @@ The progress of the DAG can be monitored by studying the DAGman output
 file, \texttt{example\_S3\_H1L1.dag.dagman.out}. This contains
 information regarding the current state of the search, what jobs have
 been completed sucessfully, those that have failed, and those that fail
-to run due to unsatisfied dependancies. Once the DAG has completed, if
+to run due to unsatisfied dependencies. Once the DAG has completed, if
 and jobs have failed, a rescue DAG will be written out. This can be then
 submitted to the cluster in the same way as before, the difference is
 that this will only attempt to run jobs that previously failed.
