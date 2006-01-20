@@ -64,7 +64,7 @@
  (e.g. "SFT.*", "SFT.000", "/some/path/some_files_[0-9]?.sft", etc ) and additional, optional SFTConstraints. 
 
  The optional constraints are:
- - detector-name (e.g. "H1", "H2", "L1", "G1", "V1", etc..)
+ - detector-prefix (e.g. "H1", "H2", "L1", "G1", "V1", etc..)
  - GPS start-time + end-time
  - a list of GPS-timestamps
 
@@ -76,6 +76,9 @@
  - \c header:	the SFts header
  - \c comment: the comment-string found in the SFT, if any
  - \c numBins: the number of frequency-bins in the SFT
+ - \c version: version-number of SFT file-format
+ - \c crc64: the crc64 checksum reported by this SFT
+ 
 
  One can use the following catalog-handling API functions:
  - LALDestroySFTCatalog(): free up a complete SFT-catalog
