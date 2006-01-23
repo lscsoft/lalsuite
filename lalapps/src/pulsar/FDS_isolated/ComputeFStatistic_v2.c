@@ -111,7 +111,6 @@ typedef struct {
   REAL8Vector *fkdotBand;	/**< vector of spin-bands */
   DopplerRegion searchRegion;	/**< parameter-space region to search over */
   EphemerisData *edat;		/**< ephemeris data (from LALInitBarycenter()) */
-  CHAR *skyRegionString;	/**< sky-region to search (polygon defined by list of points) */
   IFOspecifics ifos;		/**< IFO-specific configuration data  */
 } ConfigVariables;
 
@@ -539,9 +538,6 @@ Search progress: %5.1f%%", (100.0* loopcounter / thisScan.numGridPoints));
   
   /* Free memory */
   LAL_CALL ( FreeDopplerScan(&status, &thisScan), &status);
-  
-  if ( GV.searchRegion.skyRegionString )
-    LALFree ( GV.searchRegion.skyRegionString );
 
   LAL_CALL ( Freemem(&status, &GV), &status);
   
@@ -1090,8 +1086,9 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
   
   /* Free config-Variables and userInput stuff */
   TRY (LALDestroyUserVars (status->statusPtr), status);
-  
-  LALFree ( cfg->skyRegionString );
+
+  if ( GV.searchRegion.skyRegionString )
+    LALFree ( GV.searchRegion.skyRegionString );
   
   /* Free ephemeris data */
   LALFree(cfg->edat->ephemE);
