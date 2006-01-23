@@ -174,19 +174,28 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
         xTemp= f * skyConst[ tempInt1[ alpha ] ] + xSum[ alpha ];       /* >= 0 !! */
         
         /* this will now be assumed positive, but we double-check this to be sure */
-        if ((xTemp < 0) || (!finite(xTemp)))
-          {
-            fprintf (stderr, "The assumption xTemp >= 0 failed ... that should not be possible!!\n");
-	    if (!finite(xTemp)) 
-	      fprintf (stderr, "xTemp has been calculated as infinite.\n");
+	if  (!finite(xTemp)) {
+            fprintf (stderr, "xTemp is not finite\n");
             fprintf (stderr, "DEBUG: loop=%d, xTemp=%f, f=%f, alpha=%d, tempInt1[alpha]=%d\n", 
                      i, xTemp, f, alpha, tempInt1[alpha]);
             fprintf (stderr, "DEBUG: skyConst[ tempInt1[ alpha ] ] = %f, xSum[ alpha ]=%f\n",
                      skyConst[ tempInt1[ alpha ] ], xSum[ alpha ]);
+#ifndef USE_BOINC
             fprintf (stderr, "\n*** PLEASE report this bug to pulgroup@gravity.phys.uwm.edu *** \n\n");
-
+#endif
             exit (COMPUTEFSTAT_EXIT_DEMOD);
-          }
+	}
+        if (xTemp < 0) {
+            fprintf (stderr, "xTemp >= 0 failed\n");
+            fprintf (stderr, "DEBUG: loop=%d, xTemp=%f, f=%f, alpha=%d, tempInt1[alpha]=%d\n", 
+                     i, xTemp, f, alpha, tempInt1[alpha]);
+            fprintf (stderr, "DEBUG: skyConst[ tempInt1[ alpha ] ] = %f, xSum[ alpha ]=%f\n",
+                     skyConst[ tempInt1[ alpha ] ], xSum[ alpha ]);
+#ifndef USE_BOINC
+            fprintf (stderr, "\n*** PLEASE report this bug to pulgroup@gravity.phys.uwm.edu *** \n\n");
+#endif
+            exit (COMPUTEFSTAT_EXIT_DEMOD);
+	}
 
         /* find correct index into LUT -- pick closest point */
         tempFreq0 = xTemp - (UINT4)xTemp;  /* lies in [0, +1) by definition */
@@ -456,19 +465,28 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
         xTemp= f * skyConst[ tempInt1[ alpha ] ] + xSum[ alpha ];       /* >= 0 !! */
         
         /* this will now be assumed positive, but we double-check this to be sure */
-        if ((xTemp < 0) || (!finite(xTemp)))
-          {
-            fprintf (stderr, "The assumption xTemp >= 0 failed ... that should not be possible!!\n");
-	    if (!finite(xTemp)) 
-	      fprintf (stderr, "xTemp has been calculated as infinite.\n");
+	if  (!finite(xTemp)) {
+            fprintf (stderr, "xTemp is not finite\n");
             fprintf (stderr, "DEBUG: loop=%d, xTemp=%f, f=%f, alpha=%d, tempInt1[alpha]=%d\n", 
                      i, xTemp, f, alpha, tempInt1[alpha]);
             fprintf (stderr, "DEBUG: skyConst[ tempInt1[ alpha ] ] = %f, xSum[ alpha ]=%f\n",
                      skyConst[ tempInt1[ alpha ] ], xSum[ alpha ]);
+#ifndef USE_BOINC
             fprintf (stderr, "\n*** PLEASE report this bug to pulgroup@gravity.phys.uwm.edu *** \n\n");
-
+#endif
             exit (COMPUTEFSTAT_EXIT_DEMOD);
-          }
+	}
+        if (xTemp < 0) {
+            fprintf (stderr, "xTemp >= 0 failed\n");
+            fprintf (stderr, "DEBUG: loop=%d, xTemp=%f, f=%f, alpha=%d, tempInt1[alpha]=%d\n", 
+                     i, xTemp, f, alpha, tempInt1[alpha]);
+            fprintf (stderr, "DEBUG: skyConst[ tempInt1[ alpha ] ] = %f, xSum[ alpha ]=%f\n",
+                     skyConst[ tempInt1[ alpha ] ], xSum[ alpha ]);
+#ifndef USE_BOINC
+            fprintf (stderr, "\n*** PLEASE report this bug to pulgroup@gravity.phys.uwm.edu *** \n\n");
+#endif
+            exit (COMPUTEFSTAT_EXIT_DEMOD);
+	}
 
         /* find correct index into LUT -- pick closest point */
         tempFreq0 = xTemp - (UINT4)xTemp;  /* lies in [0, +1) by definition */
@@ -850,19 +868,28 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
         xTemp= f * skyConst[ tempInt1[ alpha ] ] + xSum[ alpha ];       /* >= 0 !! */
         
         /* this will now be assumed positive, but we double-check this to be sure */
-        if ((xTemp < 0) || (!finite(xTemp)))
-          {
-            fprintf (stderr, "The assumption xTemp >= 0 failed ... that should not be possible!!\n");
-	    if (!finite(xTemp)) 
-	      fprintf (stderr, "xTemp has been calculated as infinite.\n");
+	if  (!finite(xTemp)) {
+            fprintf (stderr, "xTemp is not finite\n");
             fprintf (stderr, "DEBUG: loop=%d, xTemp=%f, f=%f, alpha=%d, tempInt1[alpha]=%d\n", 
                      i, xTemp, f, alpha, tempInt1[alpha]);
             fprintf (stderr, "DEBUG: skyConst[ tempInt1[ alpha ] ] = %f, xSum[ alpha ]=%f\n",
                      skyConst[ tempInt1[ alpha ] ], xSum[ alpha ]);
+#ifndef USE_BOINC
             fprintf (stderr, "\n*** PLEASE report this bug to pulgroup@gravity.phys.uwm.edu *** \n\n");
-
+#endif
             exit (COMPUTEFSTAT_EXIT_DEMOD);
-          }
+	}
+        if (xTemp < 0) {
+            fprintf (stderr, "xTemp >= 0 failed\n");
+            fprintf (stderr, "DEBUG: loop=%d, xTemp=%f, f=%f, alpha=%d, tempInt1[alpha]=%d\n", 
+                     i, xTemp, f, alpha, tempInt1[alpha]);
+            fprintf (stderr, "DEBUG: skyConst[ tempInt1[ alpha ] ] = %f, xSum[ alpha ]=%f\n",
+                     skyConst[ tempInt1[ alpha ] ], xSum[ alpha ]);
+#ifndef USE_BOINC
+            fprintf (stderr, "\n*** PLEASE report this bug to pulgroup@gravity.phys.uwm.edu *** \n\n");
+#endif
+            exit (COMPUTEFSTAT_EXIT_DEMOD);
+	}
 
         /* find correct index into LUT -- pick closest point */
         tempFreq0 = xTemp - (UINT4)xTemp;  /* lies in [0, +1) by definition */
