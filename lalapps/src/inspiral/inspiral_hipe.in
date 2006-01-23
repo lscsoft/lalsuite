@@ -1377,7 +1377,7 @@ for ifo in ifo_list:
   total_time = 0
   for ifo_done in chunks_analyzed[ifo]:
     print >> log_fh, ifo_done.get_chunk()
-    total_time += ifo_done.get_chunk().analyzed(overlap/2)
+    total_time += len(ifo_done.get_chunk())
   print >> log_fh, "\n total time", total_time, "seconds"
 
 for ifo in ifo_list:
