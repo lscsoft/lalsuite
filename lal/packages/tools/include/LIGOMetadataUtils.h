@@ -232,7 +232,7 @@ CoincInspiralStatistic;
 <lalLaTeX>
 The \texttt{CoincInspiralStatistic} provides two choices for clustering
 a single inspiral table.  The\texttt{snrsq} clustering returns the trigger
-with the greatest summed snr^{2} from all instruments.  The 
+with the greatest summed snr$^{2}$ from all instruments.  The 
 \texttt{snr\_chi\_stat} replaces selects the trigger
 with the largest value of the snr and chisq statistic.
 </lalLaTeX>
