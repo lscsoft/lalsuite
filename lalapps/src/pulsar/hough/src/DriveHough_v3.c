@@ -49,6 +49,9 @@ RCSID( "$Id$");
 
 extern int lalDebugLevel;
 
+/* boolean global variables for controlling output */
+BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps;
+
 #define EARTHEPHEMERIS "./earth05-09.dat"
 #define SUNEPHEMERIS "./sun05-09.dat"
 
@@ -153,20 +156,13 @@ int main(int argc, char *argv[]){
   CHAR *uvar_fbasenameOut=NULL;
   CHAR *uvar_skyfile=NULL;
 
-  /* variables for various preprocessor flags */
-#ifdef PRINTEVENTS
   FILE   *fpEvents = NULL;
   CHAR   fileEvents[256];
-#endif
 
-#ifdef PRINTTEMPLATES
   FILE *fpTemplates=NULL;
   CHAR fileTemplates[256];
-#endif
 
-#ifdef PRINTMAPS
   CHAR fileMaps[256];
-#endif
 
 #ifdef TIMING
   unsigned long long start, stop;
@@ -194,7 +190,9 @@ int main(int argc, char *argv[]){
   uvar_fSearchBand = FBAND;
   uvar_peakThreshold = THRESHOLD;
   uvar_houghFalseAlarm = FALSEALARM;
-  
+  uvar_printEvents = FALSE;
+  uvar_printTemplates = FALSE;
+  uvar_printMaps = FALSE;
   uvar_earthEphemeris = (CHAR *)LALMalloc(512*sizeof(CHAR));
   strcpy(uvar_earthEphemeris,EARTHEPHEMERIS);
 
@@ -229,6 +227,9 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "dirnameOut",      'o', UVAR_OPTIONAL, "Output directory",              &uvar_dirnameOut),      &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "fbasenameOut",    'B', UVAR_OPTIONAL, "Output file basename",          &uvar_fbasenameOut),    &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyfile",         'P', UVAR_OPTIONAL, "Input skypatch file",           &uvar_skyfile),         &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printMaps",        0,  UVAR_OPTIONAL, "For printing Hough maps",       &uvar_printMaps),       &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printTemplates",   0,  UVAR_OPTIONAL, "For printing templates file",   &uvar_printTemplates),  &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printEvents",      0,  UVAR_OPTIONAL, "For printing loudest events",   &uvar_printEvents),     &status);  
 
   /* read all command line variables */
   LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
@@ -683,17 +684,14 @@ int main(int argc, char *argv[]){
       strcat( filestats, uvar_fbasenameOut);
       strcpy( filehisto, filestats);
 
-#ifdef PRINTEVENTS
-      strcpy( fileEvents, filestats);
-#endif
+      if ( uvar_printEvents )
+	strcpy( fileEvents, filestats);
 
-#ifdef PRINTTEMPLATES
-      strcpy(fileTemplates, filestats);
-#endif
+      if ( uvar_printTemplates )
+	strcpy(fileTemplates, filestats);
 
-#ifdef PRINTMAPS
-      strcpy(fileMaps, filestats);
-#endif
+      if ( uvar_printMaps )
+	strcpy(fileMaps, filestats);
 
       /* create and open the stats file for writing */
       strcat(  filestats, "stats");
@@ -706,30 +704,31 @@ int main(int argc, char *argv[]){
       setvbuf(fp1, (char *)NULL, _IOLBF, 0);      
 
 
-#ifdef PRINTEVENTS
-      /* create and open the events list file */
-      strcat(  fileEvents, "events");
-      fpEvents=fopen(fileEvents,"w");
-      if ( !fpEvents ){
-	fprintf(stderr,"Unable to find file %s\n", fileEvents);
-	return DRIVEHOUGHCOLOR_EFILE;
-      }
-      setvbuf(fp1, (char *)NULL, _IOLBF, 0);      
-      /*setlinebuf(fpEvents);*/ /*line buffered on */  
-#endif
+      if ( uvar_printEvents )
+	{
+	  /* create and open the events list file */
+	  strcat(  fileEvents, "events");
+	  fpEvents=fopen(fileEvents,"w");
+	  if ( !fpEvents ){
+	    fprintf(stderr,"Unable to find file %s\n", fileEvents);
+	    return DRIVEHOUGHCOLOR_EFILE;
+	  }
+	  setvbuf(fp1, (char *)NULL, _IOLBF, 0);      
+	  /*setlinebuf(fpEvents);*/ /*line buffered on */  
+	}
 
-
-#ifdef PRINTTEMPLATES
-      /* create and open templates file */
-      strcat( fileTemplates, "templates");
-      fpTemplates = fopen(fileTemplates, "w");
-      if ( !fpTemplates ){
-	fprintf(stderr, "Unable to create file %s\n", fileTemplates);
-	return DRIVEHOUGHCOLOR_EFILE;
-      }
-      setvbuf(fp1, (char *)NULL, _IOLBF, 0);      
-      /*setlinebuf(fpTemplates);*/ /*line buffered on */   
-#endif 
+      if ( uvar_printTemplates )
+	{
+	  /* create and open templates file */
+	  strcat( fileTemplates, "templates");
+	  fpTemplates = fopen(fileTemplates, "w");
+	  if ( !fpTemplates ){
+	    fprintf(stderr, "Unable to create file %s\n", fileTemplates);
+	    return DRIVEHOUGHCOLOR_EFILE;
+	  }
+	  setvbuf(fp1, (char *)NULL, _IOLBF, 0);      
+	  /*setlinebuf(fpTemplates);*/ /*line buffered on */   
+	}
 
       /* ****************************************************************/
       /*  general parameter settings and 1st memory allocation */
@@ -920,26 +919,23 @@ int main(int argc, char *argv[]){
 	    }
        	  
 	  /* ********************* print results *********************** */
-	  
-#ifdef PRINTMAPS
-	  
-	  if( PrintHmap2m_file( &ht, fileMaps, iHmap ) ) return 5;
-#endif 
+	
+
+	  if ( uvar_printMaps )  
+	    if( PrintHmap2m_file( &ht, fileMaps, iHmap ) ) return 5;
 	  
  
 	  fprintf(fp1, "%d %f %f %f %f %f %f %f 0.0 \n",
 		  iHmap, sourceLocation.alpha, sourceLocation.delta,
 		  (REAL4)stats.maxCount, (REAL4)stats.minCount, stats.avgCount,stats.stdDev,
 		  (fBinSearch*deltaF) );
-          
-#ifdef PRINTEVENTS
-	  LAL_CALL( PrintHoughEvents (&status, fpEvents, houghThreshold, &ht,
-				 &patch, &parDem), &status );
-#endif      
 
-#ifdef PRINTTEMPLATES
-	  LAL_CALL( PrintHoughEvents (&status, fpTemplates, 0.0, &ht, &patch, &parDem), &status);
-#endif
+	  if ( uvar_printEvents )          
+	    LAL_CALL( PrintHoughEvents (&status, fpEvents, houghThreshold, &ht,
+					&patch, &parDem), &status );
+
+	  if ( uvar_printTemplates )
+	    LAL_CALL( PrintHoughEvents (&status, fpTemplates, 0.0, &ht, &patch, &parDem), &status);
 
 	  ++iHmap;
 	  
@@ -989,23 +985,24 @@ int main(int argc, char *argv[]){
 
 
 	      /* ***** print results *********************** */
-	      
-#ifdef PRINTMAPS
-	      if( PrintHmap2m_file( &ht, fileMaps, iHmap ) ) return 5;
-#endif
-	      
+
+	      if( uvar_printMaps )
+		{
+		  if( PrintHmap2m_file( &ht, fileMaps, iHmap ) ) return 5;
+		}
+
 	      fprintf(fp1, "%d %f %f %f %f %f %f %f %g\n",
 		      iHmap, sourceLocation.alpha, sourceLocation.delta,
 		      (REAL4)stats.maxCount, (REAL4)stats.minCount, stats.avgCount,stats.stdDev,
 		      (fBinSearch*deltaF), ht.spinRes.data[0]);
-#ifdef PRINTEVENTS
-	      LAL_CALL( PrintHoughEvents (&status, fpEvents, houghThreshold, &ht,
-				     &patch, &parDem), &status );
-#endif    
 
-#ifdef PRINTTEMPLATES
-	  LAL_CALL( PrintHoughEvents (&status, fpTemplates, 0.0, &ht, &patch, &parDem), &status);
-#endif
+
+	      if ( uvar_printEvents )
+		LAL_CALL( PrintHoughEvents (&status, fpEvents, houghThreshold, &ht,
+					    &patch, &parDem), &status );
+
+	      if ( uvar_printTemplates )
+		LAL_CALL( PrintHoughEvents (&status, fpTemplates, 0.0, &ht, &patch, &parDem), &status);
 
 	      ++iHmap;
 	      
@@ -1054,13 +1051,12 @@ int main(int argc, char *argv[]){
       /* closing files with statistics results and events */
       /******************************************************************/  
       fclose(fp1);
-#ifdef PRINTEVENTS
-      fclose(fpEvents);
-#endif
 
-#ifdef PRINTTEMPLATES
-      fclose(fpTemplates);
-#endif
+      if ( uvar_printEvents )
+	fclose(fpEvents);
+
+      if ( uvar_printTemplates )
+	fclose(fpTemplates);
      
 
       /******************************************************************/
