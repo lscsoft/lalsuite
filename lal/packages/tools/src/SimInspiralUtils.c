@@ -174,6 +174,7 @@ XLALSimInspiralInSearchedData(
     SimInspiralTable         **eventHead,
     SearchSummaryTable        *summList
     )
+/* </lalVerbatim> */
 {
   SearchSummaryTable   *thisSearchSumm = NULL;
 
