@@ -50,10 +50,10 @@ RCSID( "$Id$");
 extern int lalDebugLevel;
 
 /* boolean global variables for controlling output */
-BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps;
+BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps, uvar_printStats;
 
-#define EARTHEPHEMERIS "./earth05-09.dat"
-#define SUNEPHEMERIS "./sun05-09.dat"
+#define EARTHEPHEMERIS "./earth00-04.dat"
+#define SUNEPHEMERIS "./sun00-04.dat"
 
 #define ACCURACY 0.00000001 /* of the velocity calculation */
 #define MAXFILES 3000 /* maximum number of files to read in a directory */
@@ -133,7 +133,8 @@ int main(int argc, char *argv[]){
   /* miscellaneous */
   INT4   houghThreshold, nfSizeCylinder, iHmap, nSpin1Max;
   /* the maximum number count */
-  UINT4  *nStar = NULL; 
+  REAL8  *nStar = NULL;
+  REAL8  *nStarSignificance = NULL;
   /* where the max occurs */
   REAL8  *freqStar=NULL, *alphaStar=NULL, *deltaStar=NULL, *fdotStar=NULL; 
   UINT4  mObsCoh;
@@ -193,6 +194,7 @@ int main(int argc, char *argv[]){
   uvar_printEvents = FALSE;
   uvar_printTemplates = FALSE;
   uvar_printMaps = FALSE;
+  uvar_printStats = FALSE;
   uvar_earthEphemeris = (CHAR *)LALMalloc(512*sizeof(CHAR));
   strcpy(uvar_earthEphemeris,EARTHEPHEMERIS);
 
@@ -230,6 +232,7 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printMaps",        0,  UVAR_OPTIONAL, "For printing Hough maps",       &uvar_printMaps),       &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printTemplates",   0,  UVAR_OPTIONAL, "For printing templates file",   &uvar_printTemplates),  &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printEvents",      0,  UVAR_OPTIONAL, "For printing loudest events",   &uvar_printEvents),     &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printStats",       0,  UVAR_OPTIONAL, "For printing Hough statistics", &uvar_printStats),      &status);  
 
   /* read all command line variables */
   LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
@@ -363,7 +366,7 @@ int main(int argc, char *argv[]){
     /* copy pattern to be searched */
     tempDir = (CHAR *)LALMalloc(512*sizeof(CHAR));
     strcpy(tempDir, uvar_sftDir);
-    strcat(tempDir, "/*sft*.*");
+    strcat(tempDir, "/*SFT*.*");
 
     /* add Doppler wings */
     doppWings = (uvar_f0 + uvar_fSearchBand) * VTOT;    
@@ -399,7 +402,8 @@ int main(int argc, char *argv[]){
     LAL_CALL( LALNormalizeSFTVect (&status, inputSFTs, uvar_blocksRngMed, 0), &status);
 
     /* use above value of length to allocate memory for nstar, fstar etc. */
-    nStar = (UINT4 *)LALMalloc((length + 1)*sizeof(UINT4));
+    nStar = (REAL8 *)LALMalloc((length + 1)*sizeof(REAL8));
+    nStarSignificance =  (REAL8 *)LALMalloc((length + 1)*sizeof(REAL8));
     freqStar = (REAL8 *)LALMalloc((length + 1)*sizeof(REAL8));
     alphaStar = (REAL8 *)LALMalloc((length + 1)*sizeof(REAL8));
     deltaStar = (REAL8 *)LALMalloc((length + 1)*sizeof(REAL8));
@@ -408,8 +412,10 @@ int main(int argc, char *argv[]){
     /* initialize nstar values */
     {
       INT4 starIndex;
-      for( starIndex = 0; starIndex < length + 1; starIndex++)
-	nStar[starIndex] = 0;
+      for( starIndex = 0; starIndex < length + 1; starIndex++) {
+	nStar[starIndex] = 0.0;
+	nStarSignificance[starIndex] = 0.0;
+      }
     } 
   } /* end of sft reading block */
   
@@ -665,21 +671,23 @@ int main(int argc, char *argv[]){
       }
       strcat( filestats, "/");
 
-      /* now create directory fnameout/skypatch_$j using mkdir */
-      errno = 0;
-      {
-	/* check whether file can be created or if it exists already 
-	   if not then exit */
-	INT4 mkdir_result;
-	mkdir_result = mkdir(filestats, S_IRWXU | S_IRWXG | S_IRWXO);
-	if ( (mkdir_result == -1) && (errno != EEXIST) )
+      /*  create directory fnameout/skypatch_$j using mkdir if required */
+      if ( uvar_printStats || uvar_printEvents || uvar_printTemplates || uvar_printMaps )
+	{
+	  errno = 0;
 	  {
-	    fprintf(stderr, "unable to create skypatch directory %d\n", skyCounter);
-	    return 1;  /* stop the program */
+	    /* check whether file can be created or if it exists already 
+	       if not then exit */
+	    INT4 mkdir_result;
+	    mkdir_result = mkdir(filestats, S_IRWXU | S_IRWXG | S_IRWXO);
+	    if ( (mkdir_result == -1) && (errno != EEXIST) )
+	      {
+		fprintf(stderr, "unable to create skypatch directory %d\n", skyCounter);
+		return 1;  /* stop the program */
+	      }
 	  }
-      }
-
-
+	}
+      
       /* create the base filenames for the stats, histo and event files and template files*/
       strcat( filestats, uvar_fbasenameOut);
       strcpy( filehisto, filestats);
@@ -694,15 +702,17 @@ int main(int argc, char *argv[]){
 	strcpy(fileMaps, filestats);
 
       /* create and open the stats file for writing */
-      strcat(  filestats, "stats");
-      fp1=fopen(filestats,"w");
-      if ( !fp1 ){
-	fprintf(stderr,"Unable to find file %s for writing\n", filestats);
-	return DRIVEHOUGHCOLOR_EFILE;
-      }
-      /*setlinebuf(fp1);*/ /*line buffered on */  
-      setvbuf(fp1, (char *)NULL, _IOLBF, 0);      
-
+      if ( uvar_printStats )
+	{
+	  strcat(  filestats, "stats");
+	  fp1=fopen(filestats,"w");
+	  if ( !fp1 ){
+	    fprintf(stderr,"Unable to find file %s for writing\n", filestats);
+	    return DRIVEHOUGHCOLOR_EFILE;
+	  }
+	  /*setlinebuf(fp1);*/ /*line buffered on */  
+	  setvbuf(fp1, (char *)NULL, _IOLBF, 0);      
+	}
 
       if ( uvar_printEvents )
 	{
@@ -713,7 +723,7 @@ int main(int argc, char *argv[]){
 	    fprintf(stderr,"Unable to find file %s\n", fileEvents);
 	    return DRIVEHOUGHCOLOR_EFILE;
 	  }
-	  setvbuf(fp1, (char *)NULL, _IOLBF, 0);      
+	  setvbuf(fpEvents, (char *)NULL, _IOLBF, 0);      
 	  /*setlinebuf(fpEvents);*/ /*line buffered on */  
 	}
 
@@ -726,7 +736,7 @@ int main(int argc, char *argv[]){
 	    fprintf(stderr, "Unable to create file %s\n", fileTemplates);
 	    return DRIVEHOUGHCOLOR_EFILE;
 	  }
-	  setvbuf(fp1, (char *)NULL, _IOLBF, 0);      
+	  setvbuf(fpTemplates, (char *)NULL, _IOLBF, 0);      
 	  /*setlinebuf(fpTemplates);*/ /*line buffered on */   
 	}
 
@@ -887,6 +897,8 @@ int main(int argc, char *argv[]){
 	
 	while ( (fBinSearch <= fLastBin) && (fBinSearch < fBinSearchMax) )  { 
 	  
+	  REAL8 significance;
+
 	  /**********************************************/
 	  /* Case: No spin-down.  Study the fBinSearch */
 	  /**********************************************/
@@ -909,9 +921,12 @@ int main(int argc, char *argv[]){
 	  LAL_CALL( LALHoughHistogram ( &status, &hist, &ht), &status);
 	  for(j=0; j< histTotal.length; ++j){ histTotal.data[j]+=hist.data[j]; }
 
-	  if (stats.maxCount > nStar[fBinSearch-f0Bin])
+	  /* calculate significance of loudest event in hough map */
+	  significance =  (stats.maxCount - stats.avgCount)/stats.stdDev;	      
+	  if ( significance > nStarSignificance[fBinSearch-f0Bin])
 	    {
 	      nStar[fBinSearch-f0Bin] = stats.maxCount;
+	      nStarSignificance[fBinSearch-f0Bin] = significance;
 	      freqStar[fBinSearch-f0Bin] = fBinSearch*deltaF;
 	      alphaStar[fBinSearch-f0Bin] = sourceLocation.alpha;
 	      deltaStar[fBinSearch-f0Bin] = sourceLocation.delta;
@@ -920,15 +935,15 @@ int main(int argc, char *argv[]){
        	  
 	  /* ********************* print results *********************** */
 	
-
 	  if ( uvar_printMaps )  
 	    if( PrintHmap2m_file( &ht, fileMaps, iHmap ) ) return 5;
 	  
- 
-	  fprintf(fp1, "%d %f %f %f %f %f %f %f 0.0 \n",
-		  iHmap, sourceLocation.alpha, sourceLocation.delta,
-		  (REAL4)stats.maxCount, (REAL4)stats.minCount, stats.avgCount,stats.stdDev,
-		  (fBinSearch*deltaF) );
+	  if ( uvar_printStats ) {
+	    fprintf(fp1, "%d %f %f %f %f %f %f %f 0.0 \n",
+		    iHmap, sourceLocation.alpha, sourceLocation.delta,
+		    (REAL4)stats.maxCount, (REAL4)stats.minCount, stats.avgCount,stats.stdDev,
+		    (fBinSearch*deltaF) );
+	  }	  
 
 	  if ( uvar_printEvents )          
 	    LAL_CALL( PrintHoughEvents (&status, fpEvents, houghThreshold, &ht,
@@ -973,10 +988,11 @@ int main(int argc, char *argv[]){
 	      LAL_CALL( LALHoughHistogram ( &status, &hist, &ht), &status);
 	      for(j=0; j< histTotal.length; ++j){ histTotal.data[j]+=hist.data[j]; }
 	      
-
-	      if (stats.maxCount > nStar[fBinSearch-f0Bin])
+	      significance =  (stats.maxCount - stats.avgCount)/stats.stdDev;	      
+	      if ( significance > nStarSignificance[fBinSearch-f0Bin])
 		{
 		  nStar[fBinSearch-f0Bin] = stats.maxCount;
+		  nStarSignificance[fBinSearch-f0Bin] = significance;
 		  freqStar[fBinSearch-f0Bin] = fBinSearch*deltaF;
 		  alphaStar[fBinSearch-f0Bin] = sourceLocation.alpha;
 		  deltaStar[fBinSearch-f0Bin] = sourceLocation.delta;
@@ -987,15 +1003,13 @@ int main(int argc, char *argv[]){
 	      /* ***** print results *********************** */
 
 	      if( uvar_printMaps )
-		{
 		  if( PrintHmap2m_file( &ht, fileMaps, iHmap ) ) return 5;
-		}
 
-	      fprintf(fp1, "%d %f %f %f %f %f %f %f %g\n",
-		      iHmap, sourceLocation.alpha, sourceLocation.delta,
-		      (REAL4)stats.maxCount, (REAL4)stats.minCount, stats.avgCount,stats.stdDev,
-		      (fBinSearch*deltaF), ht.spinRes.data[0]);
-
+	      if ( uvar_printStats )
+		fprintf(fp1, "%d %f %f %f %f %f %f %f %g\n",
+			iHmap, sourceLocation.alpha, sourceLocation.delta,
+			(REAL4)stats.maxCount, (REAL4)stats.minCount, stats.avgCount,stats.stdDev,
+			(fBinSearch*deltaF), ht.spinRes.data[0]);
 
 	      if ( uvar_printEvents )
 		LAL_CALL( PrintHoughEvents (&status, fpEvents, houghThreshold, &ht,
@@ -1045,12 +1059,14 @@ int main(int argc, char *argv[]){
       /******************************************************************/
       /* printing total histogram */
       /******************************************************************/
-      if( PrintHistogram( &histTotal, filehisto) ) return 7;
+      if ( uvar_printStats )
+	if( PrintHistogram( &histTotal, filehisto) ) return 7;
       
       /******************************************************************/
       /* closing files with statistics results and events */
       /******************************************************************/  
-      fclose(fp1);
+      if ( uvar_printStats )
+	fclose(fp1);
 
       if ( uvar_printEvents )
 	fclose(fpEvents);
@@ -1064,7 +1080,6 @@ int main(int argc, char *argv[]){
       /******************************************************************/
       
       LALFree(lutV.lut);  
-
       
       LALFree(phmdVS.phmd);
       LALFree(freqInd.data);
@@ -1115,7 +1130,7 @@ int main(int argc, char *argv[]){
     /* we don't record the nstar for the last bin */
     for(starIndex = 0; starIndex < fLastBin - f0Bin; starIndex++)
       {
-	fprintf(fpStar, "%d %f %f %f %g \n", nStar[starIndex], freqStar[starIndex], 
+	fprintf(fpStar, "%f %f %f %f %g \n", nStar[starIndex], freqStar[starIndex], 
 		alphaStar[starIndex], deltaStar[starIndex], fdotStar[starIndex] );
       }
   }
@@ -1147,6 +1162,7 @@ int main(int argc, char *argv[]){
   LALFree(skySizeDelta);
 
   LALFree(nStar);
+  LALFree(nStarSignificance);
   LALFree(alphaStar);
   LALFree(deltaStar);
   LALFree(freqStar);
@@ -1301,7 +1317,7 @@ void PrintHoughEvents (LALStatus       *status,
 
   REAL8UnitPolarCoor sourceLocation;
   UINT2    xPos, yPos, xSide, ySide;
-  INT4     temp;
+  REAL8    temp;
   REAL8    f0;
   /* --------------------------------------------- */
   INITSTATUS (status, "PrintHoughEvents", rcsid);
@@ -1330,12 +1346,12 @@ void PrintHoughEvents (LALStatus       *status,
         TRY( LALStereo2SkyLocation(status->statusPtr, 
 				&sourceLocation,xPos,yPos,patch, parDem), status);
 	if (ht->spinRes.length) {
-	  fprintf(fpEvents, "%d %g %g %g %g \n", 
+	  fprintf(fpEvents, "%g %g %g %g %g \n", 
 		  temp, sourceLocation.alpha, sourceLocation.delta, 
 		  f0, ht->spinRes.data[0]);
 	}
 	else {
-	  fprintf(fpEvents, "%d %g %g %g %g \n", 
+	  fprintf(fpEvents, "%g %g %g %g %g \n", 
 		  temp, sourceLocation.alpha, sourceLocation.delta, 
 		  f0,0.00);
 	}
