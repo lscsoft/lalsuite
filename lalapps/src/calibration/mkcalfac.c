@@ -21,6 +21,7 @@ RCSID( "$Id$" );
 int lalDebugLevel = 0;
 static int sensemon_format;
 static int skip_first_line;
+int deltaT =0;
 
 char *get_next_line( char *line, size_t size, FILE *fp )
 {
@@ -58,9 +59,7 @@ int read_time_series( struct series *aser, struct series *abser,
 
   get_next_line( line, sizeof( line ), fp );
   sscanf( line, "%d", &t0 );
-  get_next_line( line, sizeof( line ), fp );
-  sscanf( line, "%d", &dt );
-  dt -= t0;
+  dt=deltaT;
 
   aser->tbeg.gpsSeconds  = t0;
   aser->tbeg.gpsNanoSeconds  = 0;
@@ -77,7 +76,8 @@ int read_time_series( struct series *aser, struct series *abser,
     if ( ( (tmp_t1 - t0) % dt ) == 0 )
     {
       t1 = tmp_t1;
-    }
+    } 
+
   }
   rewind( fp );
   aser->tend.gpsSeconds  = t1 - dt;
@@ -113,7 +113,7 @@ int read_time_series( struct series *aser, struct series *abser,
       sscanf( line, "%d %f %f", &t, &ab, &a );
     }
     
-    if ( (t - t0) % dt )
+    if ( (t - t0) % deltaT )
     {
       fprintf( stderr, "warning: skipping line\n\t%s\n", line );
     }
@@ -210,6 +210,7 @@ int main( int argc, char *argv[] )
     else if ( strstr( argv[arg], "--time" ) )
     {
       timeSpace= argv[++arg];
+      deltaT = atoi ( timeSpace );
     }
     else if ( strstr( argv[arg], "--version" ) )
     {
