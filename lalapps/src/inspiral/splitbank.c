@@ -425,7 +425,7 @@ int main ( int argc, char *argv[] )
       LAL_CALL( LALBeginLIGOLwXMLTable( &status ,&xmlStream, 
             sngl_inspiral_table), &status );
 
-      for ( j = 0; j < numPerFile && thisTmplt->next; ++j )
+      for ( j = 0; j < numPerFile - 1 && thisTmplt->next; ++j )
       {
         thisTmplt = thisTmplt->next;
       }
