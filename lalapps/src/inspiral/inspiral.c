@@ -4385,14 +4385,19 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     }
   }
 
-  if ( enableRsqVeto < 0 )
+  /* check rsq veto flags */
+  if ( enableRsqVeto == 0 )
   {
-    fprintf( stderr, 
-        "one of --enable-rsq-veto or --disable-rsq-veto must be specified\n" );
-    exit( 1 );
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+        "%s", PROGRAM_NAME );
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+        "--disable-rsq-veto" );
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
-
-  if ( enableRsqVeto )
+  else if ( enableRsqVeto == 1 )
   {
     if ( ( rsqVetoWindow < 0 ) || ( rsqVetoThresh < 0 ) )
     {
@@ -4400,6 +4405,21 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           "be specified if the --enable-rsq-veto argument is given\n" );
       exit( 1 );
     }
+
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+        "%s", PROGRAM_NAME );
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+        "--enable-rsq-veto" );
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+  }
+  else
+  {
+    fprintf( stderr, 
+        "one of --enable-rsq-veto or --disable-rsq-veto must be specified\n" );
+    exit( 1 );
   }
 
   /* check to filter injection segments only */
