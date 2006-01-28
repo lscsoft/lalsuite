@@ -97,6 +97,7 @@ void
 LALGenerateRing( 
     LALStatus          *status, 
     CoherentGW         *output, 
+    REAL4TimeSeries    *series,
     SimRingdownTable   *simRingdown,
     RingParamStruc     *params
     );
