@@ -24,6 +24,7 @@ $Id$
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLHeaders.h>
+#include <lal/LIGOLwXMLInspiralHeaders.h>
 
 NRCSID( LIGOLWXMLC, "$Id$" );
 

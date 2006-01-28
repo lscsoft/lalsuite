@@ -1,0 +1,210 @@
+/*----------------------------------------------------------------------- 
+ * 
+ * File Name: LIGOLwXMLInspiralHeaders.h
+ *
+ * Author: Brown, D. A.
+ * 
+ * Revision: $Id$
+ * 
+ *-----------------------------------------------------------------------
+ */
+
+#include <stdio.h>
+#include <lal/LALStdlib.h>
+
+#if 0
+<lalVerbatim file="LIGOLwXMLInspiralHeadersHV">
+Author: Brown, D. A.
+$Id$
+</lalVerbatim> 
+<lalLaTeX>
+\section{Header \texttt{LIGOLwXMLInspiralHeaders.h}}
+\subsection*{Synopsis}
+\begin{verbatim}
+#include <lal/LIGOLwXMLInspiralHeaders.h>
+\end{verbatim}
+
+This header provides provides \verb|#define|s for the inspiral related
+tables of LIGO light weight XML files.  It will need to be kept up to date
+with changes in the LIGO database table definitions.  The quantities which are
+defined in this file are 
+
+\begin{itemize}
+\item LIGOLW\_XML\_SNGL\_INSPIRAL 
+\item SNGL\_INSPIRAL\_ROW 
+\item LIGOLW\_XML\_MULTI\_INSPIRAL 
+\item MULTI\_INSPIRAL\_ROW
+\item LIGOLW\_XML\_SIM\_INSPIRAL
+\item SIM\_INSPIRAL\_ROW 
+\end{itemize}
+
+\vfill{\footnotesize\input{LIGOLwXMLInspiralHeadersHV}}
+</lalLaTeX>
+#endif
+
+#ifndef _LIGOLWXMLINSPIRALHEADERS_H
+#define _LIGOLWXMLINSPIRALHEADERS_H
+
+NRCSID( LIFOLWXMLINSPIRALHEADERSH, "$Id$" );
+
+#ifdef  __cplusplus
+extern "C" {
+#pragma }
+#endif
+
+#define PRINT_LIGOLW_XML_SNGL_INSPIRAL(fp) ( \
+fputs( "   <Table Name=\"sngl_inspiralgroup:sngl_inspiral:table\">\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:ifo\" Type=\"lstring\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:search\" Type=\"lstring\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:channel\" Type=\"lstring\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:end_time\" Type=\"int_4s\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:end_time_ns\" Type=\"int_4s\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:end_time_gmst\" Type=\"real_8\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:impulse_time\" Type=\"int_4s\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:impulse_time_ns\" Type=\"int_4s\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:template_duration\" Type=\"real_8\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:event_duration\" Type=\"real_8\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:amplitude\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:eff_distance\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:coa_phase\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:mass1\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:mass2\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:mchirp\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:mtotal\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:eta\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:tau0\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:tau2\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:tau3\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:tau4\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:tau5\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:ttotal\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:psi0\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:psi3\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:alpha\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:alpha1\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:alpha2\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:alpha3\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:alpha4\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:alpha5\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:alpha6\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:beta\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:f_final\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:snr\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:chisq\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:chisq_dof\" Type=\"int_4s\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:sigmasq\" Type=\"real_8\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:rsqveto_duration\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:event_id\" Type=\"int_8s\"/>\n", fp ) == EOF || \
+fputs( "      <Stream Name=\"sngl_inspiralgroup:sngl_inspiral:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
+
+#define SNGL_INSPIRAL_ROW \
+"         \"process:process_id:0\",\"%s\",\"%s\",\"%s\",%d,%d,%22.16e,%d,%d,%22.16e,%22.16e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%d,%22.16e,%e,%lld"
+
+#define PRINT_LIGOLW_XML_MULTI_INSPIRAL(fp) ( \
+fputs( "   <Table Name=\"multi_inspiralgroup:multi_inspiral:table\">\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:process_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:ifos\" Type=\"lstring\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:search\" Type=\"lstring\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:end_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:end_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:end_time_gmst\" Type=\"real_8\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:impulse_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:impulse_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:amplitude\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:ifo1_eff_distance\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:ifo2_eff_distance\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:eff_distance\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:coa_phase\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:mass1\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:mass2\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:mchirp\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:eta\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:tau0\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:tau2\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:tau3\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:tau4\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:tau5\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:ttotal\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:ifo1_snr\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:ifo2_snr\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:snr\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:chisq\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:chisq_dof\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:sigmasq\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:ligo_axis_ra\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:ligo_axis_dec\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:ligo_angle\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:ligo_angle_sig\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:inclination\"  Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:polarization\"  Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Stream Name=\"multi_inspiralgroup:multi_inspiral:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
+
+#define MULTI_INSPIRAL_ROW \
+"         \"process:process_id:0\",\"%s\",\"%s\",%d,%d,%22.16e,%d,%d,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%d,%e,%e,%e,%e,%e,%e,%e"
+
+#define PRINT_LIGOLW_XML_SIM_INSPIRAL(fp) ( \
+fputs( "   <Table Name=\"sim_inspiralgroup:sim_inspiral:table\">\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF ||  \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:waveform\" Type=\"lstring\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:geocent_end_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:geocent_end_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:h_end_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:h_end_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:l_end_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:l_end_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:g_end_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:g_end_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:t_end_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:t_end_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:v_end_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:v_end_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:end_time_gmst\" Type=\"real_8\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:source\" Type=\"lstring\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:mass1\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:mass2\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:mchirp\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:eta\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:distance\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:longitude\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:latitude\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:inclination\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:coa_phase\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:polarization\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:psi0\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:psi3\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:alpha\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:alpha1\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:alpha2\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:alpha3\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:alpha4\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:alpha5\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:alpha6\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:beta\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:spin1x\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:spin1y\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:spin1z\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:spin2x\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:spin2y\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:spin2z\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:theta0\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:phi0\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:f_lower\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:f_final\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:eff_dist_h\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:eff_dist_l\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:eff_dist_g\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:eff_dist_t\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:eff_dist_v\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:simulation_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
+fputs( "      <Stream Name=\"sim_inspiralgroup:sim_inspiral:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
+
+#define SIM_INSPIRAL_ROW \
+"         \"process:process_id:0\",\"%s\",%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%22.16e,\"%s\",%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,\"sim_inspiral:simulation_id:0\""
+
+#ifdef  __cplusplus
+#pragma {
+}
+#endif
+
+#endif /* _LIGOLWXMLINSPIRALHEADERS_H */
