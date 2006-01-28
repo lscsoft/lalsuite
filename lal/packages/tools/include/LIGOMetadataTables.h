@@ -168,7 +168,7 @@ ProcessIDColumn;
 /*</lalVerbatim> */
 #if 0
 <lalLaTeX>
-The \texttt{ProcessIDColumn} contains the process_id for a given row in a
+The \texttt{ProcessIDColumn} contains the process\_id for a given row in a
 table.
 
 \subsubsection*{Type \texttt{EventIDColumn}}
