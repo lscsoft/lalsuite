@@ -1,5 +1,5 @@
-/************************** <lalVerbatim file="GenerateBurstCV">
-Author: Brady, P. B.
+/************************** 
+Author: Goggin, L. M., based on GenerateBurst.c by Brady, P. B.
 $Id$
 **************************************************** </lalVerbatim> */
 
@@ -7,22 +7,21 @@ $Id$
 
 \providecommand{\lessim}{\stackrel{<}{\scriptstyle\sim}}
 
-\subsection{Module \texttt{GenerateBurst.c}}
-\label{ss:GenerateBurst.c}
+\subsection{Module \texttt{GenerateRing.c}}
+\label{ss:GenerateRing.c}
 
-Computes one of the standard burst waveforms with specified $h_{rss}$.
+Computes the ringdown waveform with specified $h_{rss}$.
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
-\input{GenerateBurstCP}
-\idx{LALGenerateBurst()}
+\input{GenerateRingCP}
+\idx{LALGenerateRing()}
 
 \subsubsection*{Description}
 
-This function computes one of the following burst waveforms:
+This function the following burst waveforms:
 \begin{description}
-\item[Sine-Gaussian]:  a linearly polarized sine-Gaussian with the specified
-frequency and decay constant.
+\item[Sine-Gaussian]:  exponentially decaying sinusoid with specified frequency and decay constant.
 \end{description}
 
 \subsubsection*{Uses}
@@ -36,7 +35,7 @@ LALSnprintf()
 
 \subsubsection*{Notes}
 
-\vfill{\footnotesize\input{GenerateBurstCV}}
+\vfill{\footnotesize\input{GenerateRingCV}}
 
 ******************************************************* </lalLaTeX> */
 
@@ -62,23 +61,31 @@ void
 LALGenerateRing( 
     LALStatus          *stat, 
     CoherentGW         *output,
+    REAL4TimeSeries    *series,
     SimRingdownTable   *simRingdown,
     RingParamStruc     *params
     )
     
 { /* </lalVerbatim> */
-  UINT4 n, i, T;       /* number of and index over samples */
+  UINT4 n, i;      /* number of and index over samples */
   REAL8 t, dt;         /* time, interval */
-  REAL8 t0, gtime ;    /* central time, decay time, gaussian time */
-  REAL8 f0, quality;   /* initial phase and frequency */
+  REAL8 t0, gtime ;    /* central time, decay time */
+  REAL8 f0, quality;   /* frequency and quality factor */
   REAL8 twopif0;       /* 2*pi*f0 */
-  REAL4 h0;            /* peak strain for burst */
+  REAL4 h0;            /* peak strain for ringdown */
   REAL4 *fData;        /* pointer to frequency data */
   REAL8 *phiData;      /* pointer to phase data */
   REAL4 *aData;        /* pointer to frequency data */
   LIGOTimeGPS startTime;  /* start time of injection */
+  REAL4TimeSeries signal; /* start time of block that injection is injected into */
+  UINT4 N_point_block; /* number of data points in a block */
+  UINT4 start_i, bb;   /* index at which to start injection, debugging const */
+  INT8 geoc_tns;       /* geocentric_start_time of the injection in ns */
+  INT8 block_tns;      /* start time of block in ns */
+  INT8 deltaTns;        /* deltaT in ns */
   LALTimeInterval dummyInterval;
-
+/* REAL8  deltaTns; */
+  
   INITSTATUS( stat, "LALGenerateRing", GENERATERINGC );
   ATTATCHSTATUSPTR( stat );
 
@@ -101,13 +108,14 @@ LALGenerateRing(
   /* Set up some other constants, to avoid repeated dereferencing. */
   dt = params->deltaT; 
   startTime = simRingdown->geocent_start_time;
-    
+  N_point_block = series->data->length;
+  
   /* Generic ring parameters */
   h0 = simRingdown->h0;
   quality = (REAL8)simRingdown->quality;
   f0 = (REAL8)simRingdown->frequency;
   twopif0 = f0*LAL_TWOPI;
-  n =  16384;
+  
   /* fprintf( stderr, "n = %d\n", n );*/
 
   /* Allocate output structures. */
@@ -135,7 +143,8 @@ LALGenerateRing(
   output->position.latitude = simRingdown->latitude;
   output->position.system = params->system;
   output->psi = simRingdown->polarization;
-  output->a->epoch = output->f->epoch = output->phi->epoch = startTime;
+   /* set epoch of output time series to that of the block */
+  output->a->epoch = output->f->epoch = output->phi->epoch = series->epoch;
   output->a->deltaT = params->deltaT; 
   output->f->deltaT = output->phi->deltaT = params->deltaT; 
   output->a->sampleUnits = lalStrainUnit;
@@ -146,14 +155,14 @@ LALGenerateRing(
   LALSnprintf( output->phi->name, LALNameLength, "Ring phase" );
 
   /* Allocate phase and frequency arrays. */
-  LALSCreateVector( stat->statusPtr, &( output->f->data ), n );
+  LALSCreateVector( stat->statusPtr, &( output->f->data ), N_point_block );
   BEGINFAIL( stat ) {
     LALFree( output->a );   output->a = NULL;
     LALFree( output->f );   output->f = NULL;
     LALFree( output->phi ); output->phi = NULL;
   } ENDFAIL( stat );
   
-  LALDCreateVector( stat->statusPtr, &( output->phi->data ), n );
+  LALDCreateVector( stat->statusPtr, &( output->phi->data ), N_point_block );
   BEGINFAIL( stat ) {
     TRY( LALSDestroyVector( stat->statusPtr, &( output->f->data ) ),
 	 stat );
@@ -165,7 +174,7 @@ LALGenerateRing(
   /* Allocate amplitude array. */
   {
     CreateVectorSequenceIn in; /* input to create output->a */
-    in.length = n;
+    in.length = N_point_block;
     in.vectorLength = 2;
     LALSCreateVectorSequence( stat->statusPtr, &(output->a->data), &in );
     BEGINFAIL( stat ) {
@@ -178,25 +187,68 @@ LALGenerateRing(
       LALFree( output->phi ); output->phi = NULL;
     } ENDFAIL( stat );
   }
+  
+  /*  set arrays to zero */
+  memset( output->f->data->data, 0, sizeof( REAL4 ) *  output->f->data->length );
+  memset( output->phi->data->data, 0, sizeof( REAL8 ) * output->phi->data->length );
+  memset( output->a->data->data, 0, sizeof( REAL4 ) * 
+      output->a->data->length * output->a->data->vectorLength );
+  
+    
+  geoc_tns = XLALGPStoINT8( &startTime );
+  block_tns =  XLALGPStoINT8( &series->epoch );
 
-  /* Fill frequency and phase arrays. */
-  fData = output->f->data->data;
-  phiData = output->phi->data->data;
-  aData = output->a->data->data; 
+  
+  
+  /* Find starting index, three options, 3rd way gives exactly the same result
+   * for start_time in the sngl_ringdown table for found inject F as before any 
+   * changes were made to the code.   */
+  
+  /* 1. This is what we coded on Wednesday, start_time in the sgnl_r table now
+   * differs by 3ms*/
+  deltaTns = (INT8) floor( 0.5 + 1e9 * series->deltaT ); 
+  start_i =( geoc_tns - block_tns ) / deltaTns;   /* but the result of this does not 
+                                                     necessarily give an integer, right? */
+  
+  /* 2. Perhaps its better to leave the rounding off until the end. (Change
+   * declaration of deltaTns to REAL8)  */
+/* deltaTns = 1e9 * series->deltaT;*/
+/* start_i =(INT8) floor( 0.5 + ( ( geoc_tns - block_tns ) / deltaTns ));*/
 
+  /* 3. this way seems to be best */
+/* start_i=floor(0.5 + ( ( geoc_tns-block_tns )*16384/1e9)); */
+
+
+  
+   
+  /* Fill frequency and phase arrays starting at time of injection NOT start
+   * of block. */
+  fData = output->f->data->data + start_i;
+  phiData = output->phi->data->data + start_i;
+  aData = output->a->data->data + start_i + start_i; 
+  
   if ( !( strcmp( simRingdown->waveform, "Ringdown" ) ) )
   {
-    for ( i = 0; i < n; i++ )
+    
+    for ( i = start_i; i < N_point_block; i++ )
     {
-      t = i * dt;
+      /* bb = i - start_i; */
+      t = (i - start_i) * dt;
+      /* if ( bb <20 ) */
+      /*  fprintf( stdout, "i = %d, bb = %d, t = %22.16e,",i,bb,t); */
       gtime = twopif0 / 2 / quality * t ;
       *(fData++)   = f0;
       *(phiData++) = twopif0 * t;
-      if ( gtime > 0 )
-        *(aData++) = h0 * ( 1.0 + pow( cos( simRingdown->inclination ), 2 ) ) * exp( - gtime );
-      else
-        *(aData++) = 0;
+      /* if ( bb <20 ) */
+      /*  fprintf( stdout, " phi = %22.16e,",*(phiData)); */
+      *(aData++) = h0 * ( 1.0 + pow( cos( simRingdown->inclination ), 2 ) ) * 
+        exp( - gtime );
+      /* if ( bb <20 ) */
+      /*  fprintf( stdout, " Aplus = %e,",*(aData)); */
       *(aData++) = h0* 2.0 * cos( simRingdown->inclination ) * exp( - gtime );
+      /* if ( bb <20 ) */
+      /*  fprintf( stdout, " Across = %e \n",*(aData)); */
+      
     }
   }
   else
@@ -372,10 +424,10 @@ LALRingInjectSignals(
 
     /* generate the ring */
     memset( &waveform, 0, sizeof(CoherentGW) );
-    LALGenerateRing( stat->statusPtr, &waveform, simRingdown, &ringParam );
+    LALGenerateRing( stat->statusPtr, &waveform, series, simRingdown, &ringParam );
     CHECKSTATUSPTR( stat );
 
-#if 0
+ 
     /* print the waveform to a file */
     if ( 1 )
       {
@@ -401,7 +453,7 @@ LALRingInjectSignals(
         fclose( fp );     
         }
     /* end */
-#endif
+
     
 
     /* must set the epoch of signal since it's used by coherent GW */
