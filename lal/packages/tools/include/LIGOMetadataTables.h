@@ -110,6 +110,8 @@ typedef enum
   search_summvars_table,
   sngl_burst_table,
   sngl_inspiral_table,
+  sngl_inspiral_table_bns,
+  sngl_inspiral_table_bcv,
   sngl_ringdown_table,
   sngl_transdata_table,
   multi_inspiral_table,

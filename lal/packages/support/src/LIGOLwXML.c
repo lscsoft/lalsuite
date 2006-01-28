@@ -227,6 +227,12 @@ LALBeginLIGOLwXMLTable (
     case sngl_inspiral_table:
       myfprintf( xml->fp, LIGOLW_XML_SNGL_INSPIRAL );
       break;
+    case sngl_inspiral_table_bns:
+      myfprintf( xml->fp, LIGOLW_XML_SNGL_INSPIRAL_BNS );
+      break;
+    case sngl_inspiral_table_bcv:
+      myfprintf( xml->fp, LIGOLW_XML_SNGL_INSPIRAL_BCV );
+      break;
     case sngl_ringdown_table:
       myfprintf( xml->fp, LIGOLW_XML_SNGL_RINGDOWN );
       break;
@@ -473,8 +479,78 @@ LALWriteLIGOLwXMLTable (
               tablePtr.snglInspiralTable->chisq_dof,
               tablePtr.snglInspiralTable->sigmasq,
 	      tablePtr.snglInspiralTable->rsqveto_duration,
-              id
-                );
+              id );
+        tablePtr.snglInspiralTable = tablePtr.snglInspiralTable->next;
+      }
+      break;
+    case sngl_inspiral_table_bns:
+      while( tablePtr.snglInspiralTable )
+      {
+        UINT8 id = 0;
+        if ( tablePtr.snglInspiralTable->event_id )
+        {
+          id = tablePtr.snglInspiralTable->event_id->id;
+        }
+        FIRST_TABLE_ROW
+          fprintf( xml->fp, SNGL_INSPIRAL_ROW_BNS,
+              tablePtr.snglInspiralTable->ifo,
+              tablePtr.snglInspiralTable->search,
+              tablePtr.snglInspiralTable->channel,
+              tablePtr.snglInspiralTable->end_time.gpsSeconds,
+              tablePtr.snglInspiralTable->end_time.gpsNanoSeconds,
+              tablePtr.snglInspiralTable->end_time_gmst,
+              tablePtr.snglInspiralTable->template_duration,
+              tablePtr.snglInspiralTable->eff_distance,
+              tablePtr.snglInspiralTable->coa_phase,
+              tablePtr.snglInspiralTable->mass1,
+              tablePtr.snglInspiralTable->mass2,
+              tablePtr.snglInspiralTable->mchirp,
+              tablePtr.snglInspiralTable->mtotal,
+              tablePtr.snglInspiralTable->eta,
+              tablePtr.snglInspiralTable->tau0,
+              tablePtr.snglInspiralTable->tau3,
+              tablePtr.snglInspiralTable->ttotal,
+              tablePtr.snglInspiralTable->f_final,
+              tablePtr.snglInspiralTable->snr,
+              tablePtr.snglInspiralTable->chisq,
+              tablePtr.snglInspiralTable->chisq_dof,
+              tablePtr.snglInspiralTable->sigmasq,
+	      tablePtr.snglInspiralTable->rsqveto_duration,
+              id );
+        tablePtr.snglInspiralTable = tablePtr.snglInspiralTable->next;
+      }
+      break;
+    case sngl_inspiral_table_bcv:
+      while( tablePtr.snglInspiralTable )
+      {
+        UINT8 id = 0;
+        if ( tablePtr.snglInspiralTable->event_id )
+        {
+          id = tablePtr.snglInspiralTable->event_id->id;
+        }
+        FIRST_TABLE_ROW
+          fprintf( xml->fp, SNGL_INSPIRAL_ROW_BCV,
+              tablePtr.snglInspiralTable->ifo,
+              tablePtr.snglInspiralTable->search,
+              tablePtr.snglInspiralTable->channel,
+              tablePtr.snglInspiralTable->end_time.gpsSeconds,
+              tablePtr.snglInspiralTable->end_time.gpsNanoSeconds,
+              tablePtr.snglInspiralTable->end_time_gmst,
+              tablePtr.snglInspiralTable->template_duration,
+              tablePtr.snglInspiralTable->eff_distance,
+              tablePtr.snglInspiralTable->coa_phase,
+              tablePtr.snglInspiralTable->mchirp,
+              tablePtr.snglInspiralTable->eta,
+              tablePtr.snglInspiralTable->psi0,
+              tablePtr.snglInspiralTable->psi3,
+              tablePtr.snglInspiralTable->alpha,
+              tablePtr.snglInspiralTable->f_final,
+              tablePtr.snglInspiralTable->snr,
+              tablePtr.snglInspiralTable->chisq,
+              tablePtr.snglInspiralTable->chisq_dof,
+              tablePtr.snglInspiralTable->sigmasq,
+	      tablePtr.snglInspiralTable->rsqveto_duration,
+              id );
         tablePtr.snglInspiralTable = tablePtr.snglInspiralTable->next;
       }
       break;
