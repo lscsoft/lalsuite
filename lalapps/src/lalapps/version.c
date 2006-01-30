@@ -10,7 +10,7 @@ extern int vrbflg;
 int main( void )
 {
   LALStatus status = blank_status;
-  char msg[1024];
+  char msg[16384];
 
   vrbflg = 1;
   set_debug_level( "LALMSGLVL3" ); 
