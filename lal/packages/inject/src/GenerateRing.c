@@ -1,4 +1,4 @@
-/************************** 
+/************************** <lalVerbatim file="GenerateRingCV">
 Author: Goggin, L. M., based on GenerateBurst.c by Brady, P. B.
 $Id$
 **************************************************** </lalVerbatim> */
