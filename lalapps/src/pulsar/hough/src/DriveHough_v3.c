@@ -52,8 +52,8 @@ extern int lalDebugLevel;
 /* boolean global variables for controlling output */
 BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps, uvar_printStats;
 
-#define EARTHEPHEMERIS "./earth00-04.dat"
-#define SUNEPHEMERIS "./sun00-04.dat"
+#define EARTHEPHEMERIS "./earth05-09.dat"
+#define SUNEPHEMERIS "./sun05-09.dat"
 
 #define ACCURACY 0.00000001 /* of the velocity calculation */
 #define MAXFILES 3000 /* maximum number of files to read in a directory */
@@ -357,35 +357,44 @@ int main(int argc, char *argv[]){
   }
 
 
-  /* read sft files */
+  /* read sft files and set up weights and nstar vector */
   {
+    /* new SFT I/O data types */
+    SFTCatalog *catalog = NULL;
+    SFTConstraints *constraints = NULL;
+
     CHAR *tempDir;
     REAL8 doppWings, fmin, fmax;
     INT4 length;
 
-    /* copy pattern to be searched */
+    /* get sft catalog */
     tempDir = (CHAR *)LALMalloc(512*sizeof(CHAR));
     strcpy(tempDir, uvar_sftDir);
     strcat(tempDir, "/*SFT*.*");
 
-    /* add Doppler wings */
-    doppWings = (uvar_f0 + uvar_fSearchBand) * VTOT;    
-    fmin = uvar_f0 - doppWings;
-    fmax = uvar_f0 + uvar_fSearchBand + doppWings;
+    LAL_CALL( LALSFTdataFind( &status, &catalog, tempDir, constraints), &status);
 
-    /* read sft files making sure to add extra bins for running median */
-    LAL_CALL( LALReadSFTfiles ( &status, &inputSFTs, fmin, fmax, 
-				uvar_blocksRngMed, tempDir), &status); 
-    LALFree(tempDir);
-
-    /* set other parameters based on sfts */
-    mObsCoh = inputSFTs->length; /* number of sfts */
-    deltaF = inputSFTs->data->deltaF;  /* frequency resolution */
+    /* get some sft parameters */
+    mObsCoh = catalog->length; /* number of sfts */
+    deltaF = catalog->data->header.deltaF;  /* frequency resolution */
     timeBase= 1.0/deltaF; /* coherent integration time */
 
     f0Bin = floor( uvar_f0 * timeBase + 0.5); /* initial search frequency */
     length =  uvar_fSearchBand * timeBase; /* total number of search bins - 1 */
-    fLastBin = f0Bin+length;   /* final frequency bin to be analyzed */
+    fLastBin = f0Bin + length;   /* final frequency bin to be analyzed */
+
+    /* add wings for Doppler modulation and running median block size*/
+    doppWings = (uvar_f0 + uvar_fSearchBand) * VTOT;    
+    fmin = uvar_f0 - doppWings - uvar_blocksRngMed * deltaF;
+    fmax = uvar_f0 + uvar_fSearchBand + doppWings + uvar_blocksRngMed * deltaF;
+
+    /* read sft files making sure to add extra bins for running median */
+    /* read the sfts */
+    LAL_CALL( LALLoadSFTs ( &status, &inputSFTs, catalog, fmin, fmax), &status);
+
+    /* free memory */
+    LALFree(tempDir);
+    LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);  	
 
     /* set up weights -- this should be done before normalizing the sfts */
     weightsV.length = mObsCoh;
