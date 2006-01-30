@@ -58,8 +58,8 @@ BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps, uvar_printStats;
 #define ACCURACY 0.00000001 /* of the velocity calculation */
 #define MAXFILES 3000 /* maximum number of files to read in a directory */
 #define MAXFILENAMELENGTH 256 /* maximum # of characters  of a SFT filename */
-#define SFTDIRECTORY "/local_data/badkri/fakesfts"  
-/* #define SFTDIRECTORY "/nfs/morbo/geo600/hannover/sft/S2-LIGO/S2_L1_Funky-v3Calv5DQ30MinSFTs" */
+/* #define SFTDIRECTORY "/local_data/badkri/fakesfts"   */
+#define SFTDIRECTORY "/nfs/morbo/geo600/hannover/sft/S4-LIGO/sft_1800.20050512.S4/S4-L1.1800-sft" 
 #define DIROUT "./outHM1/"      /* prefix file output */
 #define BASENAMEOUT "HM1"
 #define FILEVELOCITY "./velocity.data"  /* name: file with time-velocity info */
@@ -98,7 +98,7 @@ int main(int argc, char *argv[]){
   SFTVector *inputSFTs=NULL;
 
   /* vector of weights */
-  REAL8Vector weightsV;
+  REAL8Vector weightsV, weightsNoise;
 
   /* ephemeris */
   EphemerisData    *edat=NULL;
@@ -400,11 +400,14 @@ int main(int argc, char *argv[]){
     weightsV.length = mObsCoh;
     weightsV.data = (REAL8 *)LALMalloc(mObsCoh*sizeof(REAL8));
 
+    weightsNoise.length = mObsCoh;
+    weightsNoise.data = (REAL8 *)LALMalloc(mObsCoh*sizeof(REAL8));
+
     /* calculate sft noise weights if required by user */
-    LAL_CALL( LALHOUGHInitializeWeights( &status, &weightsV), &status);
+    LAL_CALL( LALHOUGHInitializeWeights( &status, &weightsNoise), &status);
     if (uvar_weighNoise ) {
-      LAL_CALL( LALHOUGHComputeNoiseWeights( &status, &weightsV, inputSFTs, uvar_blocksRngMed), &status); 
-      LAL_CALL( LALHOUGHNormalizeWeights( &status, &weightsV), &status);
+      LAL_CALL( LALHOUGHComputeNoiseWeights( &status, &weightsNoise, inputSFTs, uvar_blocksRngMed), &status); 
+      LAL_CALL( LALHOUGHNormalizeWeights( &status, &weightsNoise), &status);
     }
 
     /* normalize sfts */
@@ -652,12 +655,17 @@ int main(int argc, char *argv[]){
   /* loop over sky patches */
   for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++)
     {
+      INT4 k;
+
       /* set sky positions and skypatch sizes */
       alpha = skyAlpha[skyCounter];
       delta = skyDelta[skyCounter];
       patchSizeX = skySizeDelta[skyCounter];
       patchSizeY = skySizeAlpha[skyCounter];
 
+
+      for ( k = 0; k < mObsCoh; k++)
+	weightsV.data[k] = weightsNoise.data[k];
 
       /* calculate amplitude modulation weights */
       if (uvar_weighAM) {
@@ -1160,7 +1168,8 @@ int main(int argc, char *argv[]){
   LALFree(velV.data);
 
   LALFree(weightsV.data);
-  
+  LALFree(weightsNoise.data);  
+
   LALFree(edat->ephemE);
   LALFree(edat->ephemS);
   LALFree(edat);
