@@ -10,7 +10,6 @@
  */
 
 
-#include <math.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <assert.h>
@@ -18,6 +17,7 @@
 #include <string.h>
 #include <getopt.h>
 #include <time.h>
+#include <math.h>
 #include <lal/LALStdio.h>
 #include <lal/LALConstants.h>
 #include <lal/Date.h>
@@ -148,8 +148,9 @@ int main( int argc, char *argv[] )
   double totalLUM = 0;
   double sumDIST =0;
   double sumRA = 0;
-  double sumDEC =0;
+  double sumcosDEC =0;
   
+ 
   char   NAME[16];
   double RA = 0;
   double DEC = 0;
@@ -349,7 +350,7 @@ int main( int argc, char *argv[] )
   totalLUM = bin_source_data[0].LUM;
   sumDIST = bin_source_data[0].DIST * bin_source_data[0].LUM;
   sumRA = bin_source_data[0].RA * bin_source_data[0].LUM;
-  sumDEC = bin_source_data[0].DEC * bin_source_data[0].LUM;
+  sumcosDEC = bin_source_data[0].cosDEC * bin_source_data[0].LUM;
   memcpy(bigNAME, bin_source_data[0].NAME,sizeof(bin_source_data[0].NAME));
   
   for(n=1; n<num_source; n++){
@@ -357,7 +358,11 @@ int main( int argc, char *argv[] )
         num_c++;
         cLUM = totalLUM;
         cRA = sumRA/totalLUM;
-        cDEC = sumDEC/totalLUM;
+        /*Check Sign and bin over cos(DEC)*/
+        if( sumcosDEC < 0)
+          cDEC = -acos(sumcosDEC/totalLUM);
+        else
+          cDEC = acos(sumcosDEC/totalLUM);
         cDIST = sumDIST/totalLUM;
         memcpy(cNAME, bigNAME,sizeof(bigNAME));
         fprintf(CFP, "c%-10s\t %+02d:%0.2f\t %+02d:%0.2f\t %8.1f\t %8.3f\t %.2f\n", 
@@ -372,7 +377,7 @@ int main( int argc, char *argv[] )
         totalLUM = bin_source_data[n].LUM;
         sumDIST = bin_source_data[n].DIST*bin_source_data[n].LUM;
         sumRA = bin_source_data[n].RA*bin_source_data[n].LUM;
-        sumDEC = bin_source_data[n].DEC*bin_source_data[n].LUM;
+        sumcosDEC = bin_source_data[n].cosDEC*bin_source_data[n].LUM;
       }
       else
         { 
@@ -381,7 +386,7 @@ int main( int argc, char *argv[] )
         totalLUM += bin_source_data[n].LUM;
         sumDIST += bin_source_data[n].DIST*bin_source_data[n].LUM;
         sumRA += bin_source_data[n].RA*bin_source_data[n].LUM;
-        sumDEC += bin_source_data[n].DEC*bin_source_data[n].LUM;
+        sumcosDEC += bin_source_data[n].cosDEC*bin_source_data[n].LUM;
       }
   }
 
