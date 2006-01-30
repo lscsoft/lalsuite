@@ -50,7 +50,7 @@ int lalDebugLevel = 0;
 int main( void )
 {
   static LALStatus status;
-  char msg[1024];
+  char msg[16384];
   int verbose = 1;
 
   if ( strcmp( LAL_VERSION, lalVersion ) ||
