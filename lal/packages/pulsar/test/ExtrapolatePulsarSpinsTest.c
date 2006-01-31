@@ -28,14 +28,59 @@
 
 #include <lal/AVFactories.h>
 #include <lal/PulsarDataTypes.h>
+#include <lal/ExtrapolatePulsarSpins.h>
+
+NRCSID (PULSARSPINTESTC, "$Id$");
+
+/** \name Error codes */
+/*@{*/
+#define PULSARSPINTESTC_ENORM 	0
+#define PULSARSPINTESTC_ESUB  	1
+
+#define PULSARSPINTESTC_MSGENORM    "Normal exit"
+#define PULSARSPINTESTC_MSGESUB     "Subroutine failed"
+/*@}*/
+
 
 #define RELERROR(x, y) fabs( 2.0 * ((x) - (y)) / ( (x) + (y) ) )
+
+
+/*********************************************************************/
+/* Macros for printing errors & testing subroutines (from Creighton) */
+/*********************************************************************/
+
+#define ERROR( code, msg, statement )                                \
+do {                                                                 \
+  if ( lalDebugLevel & LALERROR )                                    \
+    LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n" \
+                   "        %s %s\n", (code), *argv, __FILE__,       \
+              __LINE__, PULSARSPINTESTC, statement ? statement :  \
+                   "", (msg) );                                      \
+} while (0)
+
+#define INFO( statement )                                            \
+do {                                                                 \
+  if ( lalDebugLevel & LALINFO )                                     \
+    LALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"     \
+                   "        %s\n", *argv, __FILE__, __LINE__,        \
+              PULSARSPINTESTC, (statement) );                     \
+} while (0)
+
+#define SUB( func, statusptr )                                       \
+do {                                                                 \
+  if ( (func), (statusptr)->statusCode ) {                           \
+    ERROR( PULSARSPINTESTC_ESUB, PULSARSPINTESTC_MSGESUB,      	     \
+           "Function call \"" #func "\" failed:" );                  \
+    return PULSARSPINTESTC_ESUB;                                     \
+  }                                                                  \
+} while (0)
+
 
 static LALStatus empty_status;
 /** Very simple test: given spin-params at \f$\tau_0\f$, extrapolate them to
  *  \f$\tau_1\f$ and compare to reference-result...
  */
-int main(void)
+int main(int argc, char *argv[])
 {
   LALStatus status = empty_status;
   REAL8 result[] = {347.6632471314574, 2.36975876347904E-6, 8.104593663999999E-14, 1.79216E-21, 2.0E-29};
@@ -55,12 +100,7 @@ int main(void)
   fkdot0->data[3] = -1e-22;
   fkdot0->data[4] = 2e-29;
 
-  if ( XLALExtrapolatePulsarSpins (fkdot1, epoch1, fkdot0, epoch0) )
-    {
-      int code = xlalErrno;
-      LALPrintError ("\nXLALExtrapolatePulsarSpins() failed (xlalErrno = %d)!\n\n", code);
-      return -1;
-    }
+  SUB ( LALExtrapolatePulsarSpins (&status, fkdot1, epoch1, fkdot0, epoch0), &status );
 
   printf("Input spin-params: (%.10g, %.10g, %.10g, %.10g, %.10g)\n", 
 	 fkdot0->data[0], fkdot0->data[1], fkdot0->data[2], fkdot0->data[3], fkdot0->data[4]);

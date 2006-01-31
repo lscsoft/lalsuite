@@ -21,29 +21,40 @@
  *  \ingroup pulsarCommon
  *  \author Reinhard Prix
  *  \date $Date$
- *  \brief  Extrapolate the Pulsar spin-paramters \f$\{f, \stackrel{.}{f},\ddot{f},...\}\f$
- *  from one SSB epoch to another.
+ *  \brief  Extrapolate the Pulsar spin-paramters 
+ *  \f$\{f^{(k)}\}\equiv\{f, \stackrel{.}{f},\ddot{f},...\}\f$, and "spin-ranges" 
+ * \f$\{ f^{(k)}, \Delta f^{(k)} \}\f$ from one SSB epoch to another.
  * 
+ * The central function of this module is LALExtrapolatePulsarSpinRange(), which extrapolates 
+ * a complete "spin range" (defined as LALPulsarSpinRange) from one epoch to another.  
+ * A "spin-range" contains an epoch, and \em two vectors, \f$f^{(k)}\f$ and \f$\Delta f^{(k)}\f$
+ * (where "canonical" ordering refers to \f$\Delta f^{(k)} >= 0\f$ for all k.
  *
  *
- * The extrapolation method used is simply the canonical pulsar spindown-model:
+ * The extrapolation is defined by the pulsar spindown-model:
  * \f[ f(\tau_1) = f(\tau_0) + {\stackrel{.}{f}(\tau_0) \over 1!} \,\Delta\tau 
- *     + {\ddot{f}(\tau_0) \over 2!} \,\Delta\tau^2 + ...\f]
- * where \f$\Delta\tau \equiv \tau_1 - \tau_0\f$, and therefore
- * \f[
- * f^{(1)}(\tau_1) = f^{(1)}(\tau_0) + {f^{(2)}(\tau_0) \over 1!}\,\Delta\tau 
- * + {f^{(3)}(\tau_0)\over 2!}\,\Delta\tau^2 +... 
+ *     + {\ddot{f}(\tau_0) \over 2!} \,\Delta\tau^2 + ...
+ *  = \sum_{k=0}^s {f^{(k)}(\tau_0) \over k!}\, \Delta\tau^k\,,
  * \f]
+ * where \f[\Delta\tau \equiv \tau_1 - \tau_0\f\,,\f] 
+ * and therefore generally
+ *
  * \f[
- * f^{(2)}(\tau_1) = f^{(2)}(\tau_0) + {f^{(3)}(\tau_0) \over 1!}\,\Delta\tau 
- *  + {f^{(4)}(\tau_0) \over 2!}\, \Delta\tau^2 + ..
+ * f^{(l)}(\tau_1) = \sum_{k=0}^{s - l} { f^{(k+l)}(\tau_0) \over k! }\, \Delta\tau^k\,.
  * \f]
  *
- * so generally:
+ * This expression is used to extrapolate a whole "spin-range", namely at each spindown-order \f$(l)\f$ 
+ * the extrapolated range is given by 
  * \f[
- * f^{(s)}(\tau_1) = \sum_{j=0} { f^{(j+s)}(\tau_0) \over j! }\, \Delta\tau^j
+ * \min\left[ f^{(l)}(\tau_1) \right] = \sum_{k=0}^{s - l} {1\over k!} \min\left[ f^{(k+l)}(\tau_0) \, \Delta\tau^k \right]\,.
  * \f]
  *
+ * \f[
+ * \max\left[ f^{(l)}(\tau_1) \right] = \sum_{k=0}^{s - l} {1\over k!} \max\left[ f^{(k+l)}(\tau_0) \, \Delta\tau^k \right]\,.
+ * \f]
+ * 
+ * This ensures that the range will be correctly extrapolated even if \f$\tau_1 < \tau_0\f$, i.e. \f$\Delta\tau < 0\f$.
+ * 
  */
 
 /** \file 
@@ -76,42 +87,42 @@ NRCSID( EXTRAPOLATEPULSARSPINSH, "$Id$");
 #define EXTRAPOLATEPULSARSPINS_EINPUT		4
 #define EXTRAPOLATEPULSARSPINS_ELIST		5
 #define EXTRAPOLATEPULSARSPINS_EXLAL		6
+#define EXTRAPOLATEPULSARSPINS_ENUMSPINS	7
 
 #define EXTRAPOLATEPULSARSPINS_MSGENULL 	"Arguments contained an unexpected null pointer"
 #define EXTRAPOLATEPULSARSPINS_MSGENONULL	"Output pointer is not NULL"
 #define EXTRAPOLATEPULSARSPINS_MSGEMEM		"Out of memory"
 #define EXTRAPOLATEPULSARSPINS_MSGEINPUT	"Invald input parameter"
 #define EXTRAPOLATEPULSARSPINS_MSGELIST		"Error occurred in list-handling ..."
-#define EXTRAPOLATEPULSARSPINS_MSGEXLAL		"XLAL sub-routine failed"
+#define EXTRAPOLATEPULSARSPINS_MSGEXLAL		"(X)LAL sub-routine failed"
+#define EXTRAPOLATEPULSARSPINS_MSGENUMSPINS	"Inconsistent number of spins"
 
 /*---------- exported TYPES ----------*/
 
-/** Simple frequency-interval [fmin, fmax] */
+/** Contains a "spin-range", ie spins \f$f^{(k)}\f$ and corresponding bands \f$\Delta f^{(k)}\f$
+ *  at a given (SSB) reference GPS-time \f$\tau\f$. 
+ * "Canonical" ordering refers to \f$\Delta f^{(k)} >= 0\f$ for all k.
+ */
 typedef struct
 {
-  REAL8 FreqMin;	/**< lower bound on frequency */
-  REAL8 FreqMax;	/**< upper bound */
-} LALFrequencyInterval;
+  LIGOTimeGPS epoch;		/**< SSB reference GPS-time at which spin-range is defined */
+  REAL8Vector *fkdot;		/**< Vector of spin-values \f$f^{(k)}\f$ */
+  REAL8Vector *fkdotBand;	/**< Vector of spin-bands \f$\Delta f^{(k)}\f$, MUST be same length as fkdot */
+} LALPulsarSpinRange;
+  
+
 
 
 /*---------- exported Global variables ----------*/
 
 /*---------- exported prototypes [API] ----------*/
+LALPulsarSpinRange *XLALCreatePulsarSpinRange ( UINT4 numSpins );
+void XLALDestroyPulsarSpinRange ( LALPulsarSpinRange *range );
 
-int XLALExtrapolatePulsarSpins (REAL8Vector *fkdotNew, LIGOTimeGPS epochNew,
-				const REAL8Vector *fkdotOld, LIGOTimeGPS epochOld);
+void LALExtrapolatePulsarSpinRange( LALStatus *, LALPulsarSpinRange *range1, LIGOTimeGPS epoch1, const LALPulsarSpinRange *range0 );
 
-void LALExtrapolatePulsarSpins (LALStatus *, REAL8Vector *fkdotNew, LIGOTimeGPS epochNew,
-				const REAL8Vector *fkdotOld, LIGOTimeGPS epochOld);
-
-void
-LALExtrapolatePulsarSpinRange (LALStatus *,
-			       LALFrequencyInterval *spinRange,
-			       const REAL8Vector *fkdotRef,
-			       const REAL8Vector *fkdotBand,
-			       LIGOTimeGPS tRef,
-			       LIGOTimeGPS t0 );
-
+void LALExtrapolatePulsarSpins (LALStatus *, REAL8Vector *fkdot1, LIGOTimeGPS epoch1,
+				const REAL8Vector *fkdot0, LIGOTimeGPS epoch0);
 
 #ifdef  __cplusplus
 }

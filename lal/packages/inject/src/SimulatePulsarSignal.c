@@ -295,11 +295,8 @@ LALSimulateExactPulsarSignal (LALStatus *status,
       fkdotOld->data[2] = f2dot;
       fkdotOld->data[3] = f3dot;
 
-      if(XLALExtrapolatePulsarSpins(fkdotNew, newEpoch, fkdotOld, params->pulsar.tRef ) != XLAL_SUCCESS)
-	{
-	  LALPrintError ("Something failed in XLALExtrapolatePulsarSpins().");
-	  ABORT ( status, SIMULATEPULSARSIGNAL_EFUN, SIMULATEPULSARSIGNAL_MSGEFUN );
-	}
+      TRY ( LALExtrapolatePulsarSpins( status->statusPtr, fkdotNew, newEpoch, fkdotOld, params->pulsar.tRef ), status );
+
       /* Finally, need to propagate phase */
       phi0 += LAL_TWOPI * (               f0    * deltaRef 
 			    + (1.0/2.0) * f1dot * deltaRef * deltaRef 
