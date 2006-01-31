@@ -2325,13 +2325,8 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
       fkdotRef->data[1] = uvar_f1dot;	    /* currently not more spindowns implemented... */
     
     /* now translate spin-params to internal reference-time (ie. startTime) */
-    if ( XLALExtrapolatePulsarSpins ( fkdot0, starttime, fkdotRef, refTime) ) 
-      {
-	int code = xlalErrno;
-	XLALClearErrno(); 
-	LogPrintf (LOG_CRITICAL, "XLALExtrapolatePulsarSpins() failed (xlalErrno = %d)!\n\n", code);
-	ABORT (status,  COMPUTEFSTATC_EXLAL,  COMPUTEFSTATC_MSGEXLAL);
-      }
+    TRY ( LALExtrapolatePulsarSpins ( status->statusPtr, fkdot0, starttime, fkdotRef, refTime), status );
+
     /* we assume for now that we only have 1 spindown, which is therefore
      * constant over time, and we only need to correct frequencies by a constant
      * accounting for the difference between reference-time and data start-time,
