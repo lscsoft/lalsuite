@@ -16,12 +16,12 @@ endif
 
 bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnalyticF \
 	lalapps_polka lalapps_uberpolka lalapps_FstatShapeTestLAL compareFstats\
-	ComputeFStatistic_v2 lalapps_makeInvetofile lalapps_extractSFTband lalapps_FindSh \
+	lalapps_makeInvetofile lalapps_extractSFTband lalapps_FindSh \
 	lalapps_monteint lalapps_skynet getMetric lalapps_zellepolka	\
 	testLatticeCovering testFlatPulsarMetric matchGrids	\
 	getMesh 
 
-EXTRA_PROGRAMS = $(FRAMEPROGRAMS)
+EXTRA_PROGRAMS = $(FRAMEPROGRAMS) ComputeFStatistic_v2 
 
 
 lalapps_zellepolka_SOURCES = zellepolka.c
@@ -59,7 +59,7 @@ lalapps_skynet_SOURCES = skynet.c
 
 compareFstats_SOURCES = compareFstats.c
 
-ComputeFStatistic_v2_SOURCES = ComputeFStatistic_v2.c  DopplerScan.c DopplerScan.h LogPrintf.c
+ComputeFStatistic_v2_SOURCES = ComputeFStatistic_v2.c  DopplerScan.c DopplerScan.h LogPrintf.c 
 
 TESTS = testFStat.sh
 
