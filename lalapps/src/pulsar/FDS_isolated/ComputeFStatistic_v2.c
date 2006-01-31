@@ -107,8 +107,8 @@ typedef struct {
 typedef struct {
   LIGOTimeGPS startTime;	/**< start time of observation */
   LIGOTimeGPS refTime;		/**< reference-time for pulsar-parameters in SBB frame */
-  REAL8Vector *fkdot;		/**< vector of frequency + derivatives ("spins")*/
-  REAL8Vector *fkdotBand;	/**< vector of spin-bands */
+  LALPulsarSpinRange *spinRangeRef; /**< pulsar spin-range at reference-time tRef */
+  REAL8Vector *fkdot;		/**< FIXME: should go */
   DopplerRegion searchRegion;	/**< parameter-space region to search over */
   EphemerisData *edat;		/**< ephemeris data (from LALInitBarycenter()) */
   IFOspecifics ifos;		/**< IFO-specific configuration data  */
@@ -198,7 +198,6 @@ int main(int argc,char *argv[])
   SkyPosition thisPoint;
   FILE *fpFstat = NULL;
   FILE *fpBstat = NULL;
-  FILE *fpBeam = NULL;
   UINT4 loopcounter;
   CHAR loudestEntry[512];
   CHAR buf[512];
@@ -315,14 +314,6 @@ int main(int argc,char *argv[])
 	}
     } /* if outputBstat */
 
-  if ( lalDebugLevel >= 3 )
-    {
-      if ( (fpBeam = fopen ("debug_beamPattern.dat", "wb")) == NULL)
-	{
-	  LALPrintError ("\nError opening file 'debug_BeamPattern' for writing..\n\n");
-	  return (COMPUTEFSTATISTICC_ESYS);
-	}
-    } /* output Beam-pattern over sky? */
 
   if (lalDebugLevel) printf ("\nStarting main search-loop.. \n");
   
@@ -335,7 +326,7 @@ int main(int argc,char *argv[])
     {
       UINT4 nFreq, nf1dot;	/* number of frequency- and f1dot-bins */
       UINT4 iFreq, if1dot;  	/* counters over freq- and f1dot- bins */
-
+      
       LAL_CALL (NextDopplerPos( &status, &dopplerpos, &thisScan ), &status);
       if (thisScan.state == STATE_FINISHED) /* scanned all DopplerPositions yet? */
 	break;
@@ -480,18 +471,6 @@ int main(int argc,char *argv[])
 
 	} /* For GV.spinImax: loop over spindowns */
       
-    
-      /* experimental: output beam-pattern over the sky [only 1st detector!] */
-      if ( fpBeam )
-	{
-	  fprintf ( fpBeam, "%8.7f %8.7f %g %g %g %g\n", 
-		    thisPoint.longitude, thisPoint.latitude, 
-		    GV.ifos.amcoe[0]->A,
-		    GV.ifos.amcoe[0]->B,
-		    GV.ifos.amcoe[0]->C,
-		    GV.ifos.amcoe[0]->D );
-	}
-
 
       loopcounter ++;
       if (lalDebugLevel) 
@@ -511,12 +490,6 @@ Search progress: %5.1f%%", (100.0* loopcounter / thisScan.numGridPoints));
       fprintf (fpBstat, "%%DONE\n");
       fclose (fpBstat);
       fpBstat = NULL;
-    }
-
-  if ( fpBeam )
-    {
-      fclose(fpBeam);
-      fpBeam = NULL;
     }
 
   /* now write loudest canidate into separate file ".loudest" */
@@ -706,6 +679,12 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   } /* end: init ephemeris data */
 
 
+  /*---------- Set reference-time: ----------*/
+  if ( LALUserVarWasSet(&uvar_refTime)) {
+    TRY ( LALFloatToGPS (status->statusPtr, &(cfg->refTime), &uvar_refTime), status);
+  } else
+    cfg->refTime = cfg->startTime;
+
   /* ----- get search region (from user-input) ----- */
   {
     BOOLEAN haveAlphaDelta = LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta);
@@ -722,17 +701,18 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 
     /* ALTERNATIVE: store those in vectors */
 #define NUM_SPINS 2
-    if ( (cfg->fkdot = XLALCreateREAL8Vector ( NUM_SPINS )) == NULL ) {
+    if ( (cfg->fkdot = XLALCreateREAL8Vector ( NUM_SPINS ) ) == NULL ) {
       ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
     }
-    if ( (cfg->fkdotBand = XLALCreateREAL8Vector ( NUM_SPINS )) == NULL ) {
+    if ( (cfg->spinRangeRef = XLALCreatePulsarSpinRange ( NUM_SPINS )) == NULL ) {
       ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
     }
-    cfg->fkdot->data[0] = fMin;
-    cfg->fkdot->data[1] = f1dotMin;
-    cfg->fkdotBand->data[0] = fMax - fMin;
-    cfg->fkdotBand->data[1] = f1dotMax - f1dotMin;
 
+    cfg->spinRangeRef->epoch = cfg->refTime;
+    cfg->spinRangeRef->fkdot->data[0] = fMin;
+    cfg->spinRangeRef->fkdot->data[1] = f1dotMin;
+    cfg->spinRangeRef->fkdotBand->data[0] = fMax - fMin;
+    cfg->spinRangeRef->fkdotBand->data[1] = f1dotMax - f1dotMin;
 
     /* get sky-region */
     if (uvar_skyRegion)
@@ -753,12 +733,6 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   } /* find search-region */
 
 
-  /*---------- Set reference-time: ----------*/
-  if ( LALUserVarWasSet(&uvar_refTime)) {
-    TRY ( LALFloatToGPS (status->statusPtr, &(cfg->refTime), &uvar_refTime), status);
-  } else
-    cfg->refTime = cfg->startTime;
-
   /* ----- count number of detectors */
   if ( LALUserVarWasSet(&uvar_DataFiles2) )
     nDet = 2;
@@ -774,7 +748,6 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   cfg->ifos.DetectorStates =  LALCalloc ( nDet,  sizeof( *(cfg->ifos.DetectorStates) ) );
   cfg->ifos.tSSB = LALCalloc( nDet, sizeof( *(cfg->ifos.tSSB) ) );
   cfg->ifos.amcoe = LALCalloc ( nDet,  sizeof( *(cfg->ifos.amcoe) ) );
-/*   TRY ( LALDCreateVector (status->statusPtr, &(cfg->fkdot), 2), status); */
 
 
   /**---------------------------------------------------------**/
@@ -831,12 +804,25 @@ InitFStatDetector (LALStatus *status, ConfigVariables *cfg, UINT4 nD)
 
   /* ---------- load SFT data-files ---------- */
   {
-    LALFrequencyInterval fBand1, fBand2, fBandCover;
+    LALPulsarSpinRange *rangeStart, *rangeEnd;
+    UINT4 numSpins;
+    REAL8 fCoverMax, fCoverMin;
     SFTCatalog *catalog = NULL;
     SFTConstraints constraints = empty_SFTConstraints;
     UINT4 numSFTs;
     CHAR *fname = NULL;
     UINT4 wings;
+    LIGOTimeGPS startTime, endTime;
+    REAL8 Tsft;
+
+    numSpins = cfg->spinRangeRef->fkdot->length;
+
+    if ( ( rangeStart = XLALCreatePulsarSpinRange ( numSpins )) == NULL ) {
+      ABORT (status, COMPUTEFSTATISTICC_EMEM, COMPUTEFSTATISTICC_MSGEMEM);
+    }
+    if ( ( rangeEnd = XLALCreatePulsarSpinRange ( numSpins )) == NULL ) {
+      ABORT (status, COMPUTEFSTATISTICC_EMEM, COMPUTEFSTATISTICC_MSGEMEM);
+    }
 
     /* determine which DataFiles to read */
     if ( nD == 0 ) fname = uvar_DataFiles;
@@ -850,33 +836,46 @@ InitFStatDetector (LALStatus *status, ConfigVariables *cfg, UINT4 nD)
     TRY ( LALSFTdataFind ( status->statusPtr, &catalog, fname, &constraints ), status );
 
     numSFTs = catalog->length;
+    Tsft = 1.0 / catalog->data[0].header.deltaF;
+    startTime = catalog->data[0].header.epoch;
+    endTime   = catalog->data[numSFTs-1].header.epoch;
+    TRY ( LALAddFloatToGPS(status->statusPtr, &endTime, &endTime, Tsft ), status );
 
-    /* figure out fmin and fmax at startTime of these SFTs */
+    /* compute spin-range at startTime of these SFTs */
     TRY ( LALExtrapolatePulsarSpinRange (status->statusPtr, 
-					 &fBand1, cfg->fkdot, cfg->fkdotBand, cfg->refTime, 
-					 catalog->data[0].header.epoch ), status );
-
-    /* get fmin and fmax at endTime of  observation */
+					 rangeStart, startTime, cfg->spinRangeRef ), status );
+    
+    /* compute spin-range at endTime of these SFTs */
     TRY ( LALExtrapolatePulsarSpinRange (status->statusPtr, 
-					 &fBand2, cfg->fkdot, cfg->fkdotBand, cfg->refTime, 
-					 catalog->data[numSFTs-1].header.epoch ), status );
+					 rangeEnd, endTime, cfg->spinRangeRef ), status );
 
     /* get covering frequency-band */
-    fBandCover.FreqMax = MYMAX ( fBand1.FreqMax, fBand2.FreqMax );
-    fBandCover.FreqMin = MYMIN ( fBand1.FreqMin, fBand2.FreqMin );
+    {
+      REAL8 fmaxStart, fmaxEnd, fminStart, fminEnd;
+      fminStart = rangeStart->fkdot->data[0];
+      fmaxStart = fminStart + rangeStart->fkdotBand->data[0];
+      fminEnd   = rangeEnd->fkdot->data[0];
+      fmaxEnd   = fminEnd + rangeEnd->fkdotBand->data[0];
 
+      fCoverMax = MYMAX ( fmaxStart, fmaxEnd );
+      fCoverMin = MYMIN ( fminStart, fminEnd );
+    }
     /* ----- correct for maximal doppler-shift due to earth's motion */
-    fBandCover.FreqMax *= (1.0 + uvar_dopplermax);
-    fBandCover.FreqMin *= (1.0 - uvar_dopplermax);
+    fCoverMax *= (1.0 + uvar_dopplermax);
+    fCoverMin *= (1.0 - uvar_dopplermax);
     
     /* ----- load the SFT-vector ----- */
     wings = MYMAX(uvar_Dterms, uvar_RngMedWindow/2 +1);
-    fBandCover.FreqMax += wings * catalog->data[0].header.deltaF;
-    fBandCover.FreqMin -= wings * catalog->data[0].header.deltaF;
+    fCoverMax += wings * catalog->data[0].header.deltaF;
+    fCoverMin -= wings * catalog->data[0].header.deltaF;
 
-    TRY ( LALLoadSFTs ( status->statusPtr, &(cfg->ifos.sftVects[nD]), catalog, fBandCover.FreqMin, fBandCover.FreqMax ), status );
+    TRY ( LALLoadSFTs ( status->statusPtr, &(cfg->ifos.sftVects[nD]), catalog, fCoverMin, fCoverMax ), 
+	  status );
 
     TRY ( LALDestroySFTCatalog ( status->statusPtr, &catalog ), status );
+    XLALDestroyPulsarSpinRange ( rangeStart );
+    XLALDestroyPulsarSpinRange ( rangeEnd );
+
     /* Normalized this by 1/sqrt(Sh), where Sh is the median of |X|^2  
      * NOTE: this corresponds to a double-sided PSD, therefore we need to 
      * divide by another factor of 2 with respect to the JKS formulae.
@@ -1096,8 +1095,8 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
   LALFree(cfg->edat);
     
   XLALDestroyREAL8Vector ( cfg->fkdot );
-  XLALDestroyREAL8Vector ( cfg->fkdotBand );
-    
+  XLALDestroyPulsarSpinRange ( cfg->spinRangeRef );
+
   DETATCHSTATUSPTR (status);
   RETURN (status);
 
