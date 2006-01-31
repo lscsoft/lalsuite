@@ -19,9 +19,9 @@ bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnal
 	lalapps_makeInvetofile lalapps_extractSFTband lalapps_FindSh \
 	lalapps_monteint lalapps_skynet getMetric lalapps_zellepolka	\
 	testLatticeCovering testFlatPulsarMetric matchGrids	\
-	getMesh 
+	getMesh ComputeFStatistic_v2 
 
-EXTRA_PROGRAMS = $(FRAMEPROGRAMS) ComputeFStatistic_v2 
+EXTRA_PROGRAMS = $(FRAMEPROGRAMS) 
 
 
 lalapps_zellepolka_SOURCES = zellepolka.c
