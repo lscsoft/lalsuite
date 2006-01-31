@@ -67,15 +67,15 @@ RCSID( "$Id$" );
 "                           Default is SPININJ_logDistance \n"\
 "  --distance-min           set minimal value of simulated sources distance in kpc \n"\
 "  --distance-max           set maximal value of simulated sources distance in kpc \n\n"\
-"  --theta0-min             set minimal value of the initial orbital angle theta0  (0.1)\n"\
-"  --theta0-max             set maximal value of the initial orbital angle theta0  (1)\n"\
-"  --theta0-range           set range of the initial orbital angle theta0  (0.1 -  1)\n\n"\
+"  --theta0-min             set minimal value of the initial orbital angle theta0  (0.01)\n"\
+"  --theta0-max             set maximal value of the initial orbital angle theta0  (pi-0.01)\n"\
+"  --theta0-range           set range of the initial orbital angle theta0 (0.01 -  (pi-0.01))\n\n"\
 "  --phi0-min               set minimal value of the initial orbital angle phi0  (0)\n"\
-"  --phi0-max               set maximal value of the initial orbital angle phi0  (1)\n"\
-"  --phi0-range             set range of the initial orbital angle phi0  (0 -  1)\n\n"\
+"  --phi0-max               set maximal value of the initial orbital angle phi0  (2 pi)\n"\
+"  --phi0-range             set range of the initial orbital angle phi0  (0 -  2 pi)\n\n"\
 "  --coa-phase-min          set minimal value of the initial orbital angle coa-phase  (0)\n"\
-"  --coa-phase-max          set maximal value of the initial orbital angle coa-phase  (2*Pi)\n"\
-"  --coa-phase-range        set range of the initial orbital angle coa-pahse  (0 -  2*pi)\n\n"\
+"  --coa-phase-max          set maximal value of the initial orbital angle coa-phase  (2 pi)\n"\
+"  --coa-phase-range        set range of the initial orbital angle coa-phase  (0 -  2 pi)\n\n"\
 "  --spin1-min              set minimal value of the initial spin  (>=0)\n"\
 "  --spin1-max              set maximal value of the initial spin  (<=1)\n"\
 "  --spin1-range            set range of the initial spin (0 -  1)\n\n"\
@@ -437,10 +437,16 @@ void LALSetOrbit(LALStatus                   *status,
 		 SimInspiralTable            *this_inj  )
 {       
   REAL4 u; 
+  REAL4 cosTheta0Max;
+  REAL4 cosTheta0Min;
   
   LAL_CALL( LALUniformDeviate( status, &u, randParams ), status );
-  this_inj->theta0 = params.theta0.min + u * (params.theta0.max - params.theta0.min);
-  
+
+  cosTheta0Max = cos(params.theta0.min);
+  cosTheta0Min = cos(params.theta0.max);
+
+  this_inj->theta0 = acos(cosTheta0Min + u * (cosTheta0Max - cosTheta0Min) );
+
   LAL_CALL( LALUniformDeviate( status, &u, randParams ), status );
   this_inj->phi0 = params.phi0.min + u * (params.phi0.max - params.phi0.min);
 
@@ -687,10 +693,10 @@ void LALParserInspiralInjection(LALStatus *status,
   memset( params->waveform, 0, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR) );
   
   /* Default values */
-  params->theta0.min                      = 0.1; /* can not be set to zero */
-  params->theta0.max                      = 1; /* can not be set to zero */
+  params->theta0.min                      = 0.01; /* can not be set to zero */
+  params->theta0.max                      = LAL_PI - 0.01; /* can not be set to pi */
   params->phi0.min                        = 0.0;
-  params->phi0.max                        = 1.0;
+  params->phi0.max                        = LAL_TWOPI;
   params->spin1.min                       = 0.;
   params->spin2.min                       = 0.;
   params->spin1.max                       = 1.;
@@ -1075,31 +1081,48 @@ void LALCheckInspiralInjectionParameters(LALStatus *status,
 	       "gps-end-time", params.gpsEndTime.gpsSeconds );
       exit( 1 );
     } 
-  if ( params.theta0.min == 0   )
+  if ( params.theta0.min < 0.01   )
     {
       fprintf( stderr, "invalid argument to --%s:\n"
-	       "theta0 can not be set to zero\n",
-	       "theta0");
+	       "theta0-min can not be set to zero (less than 0.01)\n",
+	       "theta0-min");
       exit( 1 );
     }
+  if ( params.theta0.max > LAL_PI -0.01)
+    {
+      fprintf( stderr, "invalid argument to --%s:\n"
+	       "theta0-max can not be greater than (pi - 0.01) )\n",
+	       "theta0-max");
+      exit( 1 );
+    } 
   if (  params.theta0.min > params.theta0.max   )
     {
       fprintf( stderr, "invalid argument to --%s:\n"
-	       "theta0 (%f) min can not be less than theta0 max (%f)\n",
+	       "theta0-min (%f) can not be less than theta0-max (%f)\n",
 	       "theta0", params.theta0.min, params.theta0.max);
       exit( 1 );
     }
-
+  if ( params.phi0.min < 0 )
+    {
+      fprintf( stderr, "invalid argument to --%s:\n"
+	       "phi0-min can not be less than 0 )\n",
+	       "phi0-min");
+      exit( 1 );
+    } 
+  if ( params.phi0.max > LAL_TWOPI )
+    {
+      fprintf( stderr, "invalid argument to --%s:\n"
+	       "phi0-max can not be greater than 2 pi )\n",
+	       "phi0-max");
+      exit( 1 );
+    } 
   if (  params.phi0.min > params.phi0.max   )
     {
       fprintf( stderr, "invalid argument to --%s:\n"
-	       "phi0 (%f) min can not be less than phi0 max (%f)\n",
+	       "phi0-min (%f) can not be less than phi0-max (%f)\n",
 	       "phi0", params.phi0.min, params.phi0.max);
       exit( 1 );
     }
-  
-  
-  
   if ( params.meanTimeStep <= 0 )
     {
       fprintf( stderr, "invalid argument to --%s:\n"
