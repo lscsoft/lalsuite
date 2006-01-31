@@ -169,7 +169,7 @@ int main( int argc, char *argv[]){
   LAL_CALL( LALRegisterREALUserVar(   &status, "alpha",           'r', UVAR_OPTIONAL, "Right ascension",                &uvar_alpha),           &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "delta",           'l', UVAR_OPTIONAL, "Declination",                    &uvar_delta),           &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "h0",              'm', UVAR_OPTIONAL, "h0 to inject",                   &uvar_h0),              &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "f0",              'f', UVAR_OPTIONAL, "Start search frequency",         &uvar_f0),              &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "f0",              'f', UVAR_OPTIONAL, "Signal frequency",               &uvar_f0),              &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "psi",             'p', UVAR_OPTIONAL, "Polarization angle",             &uvar_psi),             &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "phi0",            'P', UVAR_OPTIONAL, "Initial phase",                  &uvar_phi0),            &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "cosiota",         'c', UVAR_OPTIONAL, "Cosine of iota",                 &uvar_cosiota),         &status);
@@ -264,6 +264,7 @@ int main( int argc, char *argv[]){
 
   /* *********************************************************************** */
   /* read sfts */
+  /* note that sft must be long enough -- at least 1Hz */
   {
     CHAR *tempDir;
     tempDir = (CHAR *)LALMalloc(512*sizeof(CHAR));
@@ -489,7 +490,8 @@ int main( int argc, char *argv[]){
   sftParams.Tsft = timeBase;
   sftParams.timestamps = &(timeV);
   sftParams.noiseSFTs = inputSFTs;  
-  
+  sftParams.make_v2SFTs = 1; /* switch to tell Reinhard that we know SFTs are v2 */
+
   /* signal generation parameters */
   params.orbit = NULL;
   /* params.transferFunction = NULL; */
