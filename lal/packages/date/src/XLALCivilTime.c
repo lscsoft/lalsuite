@@ -199,7 +199,7 @@ REAL8 XLALJulianDay( const struct tm *utc /**< [In] UTC time in a broken down ti
   static const char * func = "XLALJulianDay";
   const int sec_per_day = 60 * 60 * 24; /* seconds in a day */
   int year, month, day, sec;
-  int jd;
+  REAL8 jd;
 
   /* this routine only works for dates after 1900 */
   if ( utc->tm_year <= 0 )
