@@ -493,7 +493,6 @@ int main( int argc, char *argv[]) {
   if (uvar_ifo2 == 2) detector2 = lalCachedDetectors[LALDetectorIndexLLODIFF];
   if (uvar_ifo2 == 3) detector2 = lalCachedDetectors[LALDetectorIndexLHODIFF];
 
-
   /* create output Hough file for writing if requested by user */
   if ( uvar_printCand1 )
     {
@@ -555,7 +554,6 @@ int main( int argc, char *argv[]) {
       refTime = tStart1;
 
     LAL_CALL ( LALFloatToGPS ( &status, &refTimeGPS, &refTime), &status);
-
 
     /* read the sfts */
     LAL_CALL( LALLoadSFTs ( &status, &inputSFTVec1, catalog1, fMin, fMax), &status);
@@ -623,6 +621,7 @@ int main( int argc, char *argv[]) {
       sftParams1.Tsft = timebase1;
       sftParams1.timestamps = startTsft1;
       sftParams1.noiseSFTs = NULL;       /* or =inputSFTs; */
+      sftParams1.make_v2SFTs = 1; /* switch to tell Reinhard that we know SFTs are v2 */
 
       LAL_CALL( AddSignalToSFTVec( &status, inputSFTVec1, &injectParams1, 
 				   &sftParams1), &status);    
@@ -824,7 +823,8 @@ int main( int argc, char *argv[]) {
 	    sftParams2.Tsft = timebase2;
 	    sftParams2.timestamps = startTsft2;
 	    sftParams2.noiseSFTs = NULL;       /* or =inputSFTs; */
-	    
+	    sftParams2.make_v2SFTs = 1; /* switch to tell Reinhard that we know SFTs are v2 */	    
+
 	    LAL_CALL( AddSignalToSFTVec( &status, inputSFTVec2, &injectParams2, 
 					 &sftParams2), &status);    
 	    
