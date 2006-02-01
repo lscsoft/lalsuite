@@ -655,7 +655,8 @@ int main(int argc, char *argv[]){
   /* loop over sky patches */
   for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++)
     {
-      INT4 k;
+      UINT4 k;
+      REAL8 sumWeightSquare;
 
       /* set sky positions and skypatch sizes */
       alpha = skyAlpha[skyCounter];
@@ -673,6 +674,11 @@ int main(int argc, char *argv[]){
 				       edat, alpha, delta), &status);
 	LAL_CALL( LALHOUGHNormalizeWeights( &status, &weightsV), &status);
       }
+
+      /* calculate the sum of the weights squared */
+      sumWeightSquare = 0.0;
+      for ( k = 0; k < mObsCoh; k++)
+	sumWeightSquare += weightsV.data[k] * weightsV.data[k];
       
       /******************************************************************/  
       /* opening the output statistic, and event files */
