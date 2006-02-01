@@ -18,8 +18,8 @@
 #define MAX_DATE_STRING_LENGTH 256
 
 /* Longitudes of LHO and LLO taken from LIGO-T980044-08 */
-#define LHO_LONGITUDE_RAD_E (M_PI*(-119.0+(24.0+27.5657/60.0)/60.0)/180.0)
-#define LLO_LONGITUDE_RAD_E (M_PI*(-90.0+(46.0+27.2654/60.0)/60.0)/180.0)
+#define LHO_LONGITUDE_RAD_E (LAL_PI*(-119.0+(24.0+27.5657/60.0)/60.0)/180.0)
+#define LLO_LONGITUDE_RAD_E (LAL_PI*(-90.0+(46.0+27.2654/60.0)/60.0)/180.0)
 
 const char * skip_space( const char *s )
 {
