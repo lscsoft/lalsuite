@@ -49,7 +49,7 @@ echo "mfd_fmin = $mfd_fmin"
 f1dot=1e-8
 df1dot=0.3e-8	## search about 3 spindown-values
 
-noiseSigma=0
+noiseSigma=3
 
 if [ "$noiseSigma" != 0 ]; then
     sqrtSh=$(echo $noiseSigma $mfd_FreqBand | awk '{printf "%g", $1 / sqrt($2) }'); ## sqrt(Sh) = sigma/ sqrt(Band)
