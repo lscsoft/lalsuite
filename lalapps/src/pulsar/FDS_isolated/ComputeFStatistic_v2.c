@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005 Reinhard Prix, Iraj Gholami
+ * Copyright (C) 2005, 2006 Reinhard Prix, Iraj Gholami
  * Copyright (C) 2004 Reinhard Prix
  * Copyright (C) 2002, 2003, 2004 M.A. Papa, X. Siemens, Y. Itoh
  *
@@ -20,7 +20,7 @@
  */
 
 /*********************************************************************************/
-/** \author R. Prix, Y. Ioth, Papa, X. Siemens 
+/** \author R. Prix, Y. Ioth, Papa, X. Siemens, I. Gholami
  * \file 
  * \brief
  * Calculate the F-statistic for a given parameter-space of pulsar GW signals.
@@ -172,6 +172,8 @@ void Freemem(LALStatus *,  ConfigVariables *cfg);
 void WriteFStatLog (LALStatus *, CHAR *argv[]);
 void checkUserInputConsistency (LALStatus *);
 int outputBeamTS( const CHAR *fname, const AMCoeffs *amcoe, const DetectorStateSeries *detStates );
+void InitEphemeris (LALStatus *, EphemerisData *edat, const CHAR *ephemDir, const CHAR *ephemYear, LIGOTimeGPS epoch);
+
 
 const char *va(const char *format, ...);	/* little var-arg string helper function */
 
@@ -622,6 +624,56 @@ initUserVars (LALStatus *status)
   RETURN (status);
 } /* initUserVars() */
 
+/** Load Ephemeris from ephemeris data-files  */
+void
+InitEphemeris (LALStatus * status,   
+	       EphemerisData *edat,	/**< [out] the ephemeris-data */
+	       const CHAR *ephemDir,	/**< directory containing ephems */
+	       const CHAR *ephemYear,	/**< which years do we need? */
+	       LIGOTimeGPS epoch	/**< epoch of observation */
+	       )
+{
+#define FNAME_LENGTH 1024
+  CHAR EphemEarth[FNAME_LENGTH];	/* filename of earth-ephemeris data */
+  CHAR EphemSun[FNAME_LENGTH];	/* filename of sun-ephemeris data */
+  LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
+  INT4 leap;
+
+  INITSTATUS( status, "InitEphemeris", rcsid );
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT ( edat, status, COMPUTEFSTATISTICC_ENULL, COMPUTEFSTATISTICC_MSGENULL );
+  ASSERT ( ephemYear, status, COMPUTEFSTATISTICC_ENULL, COMPUTEFSTATISTICC_MSGENULL );
+
+  if ( ephemDir )
+    {
+      LALSnprintf(EphemEarth, FNAME_LENGTH, "%s/earth%s.dat", ephemDir, ephemYear);
+      LALSnprintf(EphemSun, FNAME_LENGTH, "%s/sun%s.dat", ephemDir, ephemYear);
+    }
+  else
+    {
+      LALSnprintf(EphemEarth, FNAME_LENGTH, "earth%s.dat", ephemYear);
+      LALSnprintf(EphemSun, FNAME_LENGTH, "sun%s.dat",  ephemYear);
+    }
+  EphemEarth[FNAME_LENGTH-1]=0;
+  EphemSun[FNAME_LENGTH-1]=0;
+  
+  /* NOTE: the 'ephiles' are ONLY ever used in LALInitBarycenter, which is
+   * why we can use local variables (EphemEarth, EphemSun) to initialize them.
+   */
+  edat->ephiles.earthEphemeris = EphemEarth;
+  edat->ephiles.sunEphemeris = EphemSun;
+    
+  TRY (LALLeapSecs (status->statusPtr, &leap, &epoch, &formatAndAcc), status);
+  edat->leap = (INT2) leap;
+
+  TRY (LALInitBarycenter(status->statusPtr, edat), status);
+
+  DETATCHSTATUSPTR ( status );
+  RETURN ( status );
+
+} /* InitEphemeris() */
+
 
 /** Do some basic initializations of the F-statistic code before starting the main-loop.
  * Things we do in this function: 
@@ -635,45 +687,20 @@ void
 InitFStat (LALStatus *status, ConfigVariables *cfg)
 {
   UINT4 nDet;
-  UINT4 nD, j;
+  UINT4 nD;
+  CHAR *ephemDir;
+
   INITSTATUS (status, "InitFStat", rcsid);
   ATTATCHSTATUSPTR (status);
 
-  /*---------- Initialize Ephemeris-data ---------- */
-  {
-#define FNAME_LENGTH 1024
-    CHAR EphemEarth[FNAME_LENGTH];	/* filename of earth-ephemeris data */
-    CHAR EphemSun[FNAME_LENGTH];	/* filename of sun-ephemeris data */
-    LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
-    INT4 leap;
+  cfg->edat = LALCalloc(1, sizeof(EphemerisData));
 
-    if (LALUserVarWasSet (&uvar_ephemDir) )
-      {
-	LALSnprintf(EphemEarth, FNAME_LENGTH, "%s/earth%s.dat", uvar_ephemDir, uvar_ephemYear);
-	LALSnprintf(EphemSun, FNAME_LENGTH, "%s/sun%s.dat", uvar_ephemDir, uvar_ephemYear);
-      }
-    else
-      {
-	LALSnprintf(EphemEarth, FNAME_LENGTH, "earth%s.dat", uvar_ephemYear);
-	LALSnprintf(EphemSun, FNAME_LENGTH, "sun%s.dat",  uvar_ephemYear);
-      }
-    EphemEarth[FNAME_LENGTH-1]=0;
-    EphemSun[FNAME_LENGTH-1]=0;
-    
-    cfg->edat = LALCalloc(1, sizeof(EphemerisData));
-    /* NOTE: the 'ephiles' are ONLY ever used in LALInitBarycenter, which is
-     * why we could use local variables (EphemEarth, EphemSun) to initialize them.
-     */
-    cfg->edat->ephiles.earthEphemeris = EphemEarth;
-    cfg->edat->ephiles.sunEphemeris = EphemSun;
-    
-    TRY (LALLeapSecs (status->statusPtr, &leap, &(cfg->startTime), &formatAndAcc), status);
-    cfg->edat->leap = (INT2) leap;
-
-    TRY (LALInitBarycenter(status->statusPtr, cfg->edat), status);               
-
-  } /* end: init ephemeris data */
-
+  /* ----- load ephemeris-data ----- */
+  if ( LALUserVarWasSet ( &uvar_ephemDir ) )
+    ephemDir = uvar_ephemDir;
+  else
+    ephemDir = NULL;
+  TRY ( InitEphemeris (status->statusPtr, cfg->edat, ephemDir, uvar_ephemYear, cfg->startTime ), status );
 
   /*---------- Set reference-time: ----------*/
   if ( LALUserVarWasSet(&uvar_refTime)) {
@@ -681,9 +708,28 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   } else
     cfg->refTime = cfg->startTime;
 
-  /* ----- get search region (from user-input) ----- */
-  {
+
+  { /* ----- get sky-region to search ----- */
     BOOLEAN haveAlphaDelta = LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta);
+    if (uvar_skyRegion)
+      {
+	cfg->searchRegion.skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
+	if ( cfg->searchRegion.skyRegionString == NULL ) {
+	  ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+	}
+	strcpy (cfg->searchRegion.skyRegionString, uvar_skyRegion);
+      }
+    else if (haveAlphaDelta)    /* parse this into a sky-region */
+      {
+	REAL8 eps = 1e-9;	/* hack for backwards compatbility */
+	TRY ( SkySquare2String( status->statusPtr, &(cfg->searchRegion.skyRegionString),
+				uvar_Alpha, uvar_Delta,
+				uvar_AlphaBand + eps, uvar_DeltaBand + eps), status);
+      }
+  } /* get sky-region */
+
+  
+  { /* ----- get spin-range to search ----- */
     REAL8 fMin = MYMIN ( uvar_Freq, uvar_Freq + uvar_FreqBand );
     REAL8 fMax = MYMAX ( uvar_Freq, uvar_Freq + uvar_FreqBand );
     REAL8 f1dotMin = MYMIN ( uvar_f1dot, uvar_f1dot + uvar_f1dotBand );
@@ -710,22 +756,6 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     cfg->spinRangeRef->fkdotBand->data[0] = fMax - fMin;
     cfg->spinRangeRef->fkdotBand->data[1] = f1dotMax - f1dotMin;
 
-    /* get sky-region */
-    if (uvar_skyRegion)
-      {
-	cfg->searchRegion.skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
-	if ( cfg->searchRegion.skyRegionString == NULL ) {
-	  ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
-	}
-	strcpy (cfg->searchRegion.skyRegionString, uvar_skyRegion);
-      }
-    else if (haveAlphaDelta)    /* parse this into a sky-region */
-      {
-	REAL8 eps = 1e-9;	/* hack for backwards compatbility */
-	TRY ( SkySquare2String( status->statusPtr, &(cfg->searchRegion.skyRegionString),
-				uvar_Alpha, uvar_Delta,
-				uvar_AlphaBand + eps, uvar_DeltaBand + eps), status);
-      }
   } /* find search-region */
 
 
