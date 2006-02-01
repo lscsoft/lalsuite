@@ -486,11 +486,6 @@ LALWriteLIGOLwXMLTable (
     case sngl_inspiral_table_bns:
       while( tablePtr.snglInspiralTable )
       {
-        UINT8 id = 0;
-        if ( tablePtr.snglInspiralTable->event_id )
-        {
-          id = tablePtr.snglInspiralTable->event_id->id;
-        }
         FIRST_TABLE_ROW
           fprintf( xml->fp, SNGL_INSPIRAL_ROW_BNS,
               tablePtr.snglInspiralTable->ifo,
@@ -515,19 +510,13 @@ LALWriteLIGOLwXMLTable (
               tablePtr.snglInspiralTable->chisq,
               tablePtr.snglInspiralTable->chisq_dof,
               tablePtr.snglInspiralTable->sigmasq,
-	      tablePtr.snglInspiralTable->rsqveto_duration,
-              id );
+	      tablePtr.snglInspiralTable->rsqveto_duration );
         tablePtr.snglInspiralTable = tablePtr.snglInspiralTable->next;
       }
       break;
     case sngl_inspiral_table_bcv:
       while( tablePtr.snglInspiralTable )
       {
-        UINT8 id = 0;
-        if ( tablePtr.snglInspiralTable->event_id )
-        {
-          id = tablePtr.snglInspiralTable->event_id->id;
-        }
         FIRST_TABLE_ROW
           fprintf( xml->fp, SNGL_INSPIRAL_ROW_BCV,
               tablePtr.snglInspiralTable->ifo,
@@ -549,8 +538,7 @@ LALWriteLIGOLwXMLTable (
               tablePtr.snglInspiralTable->chisq,
               tablePtr.snglInspiralTable->chisq_dof,
               tablePtr.snglInspiralTable->sigmasq,
-	      tablePtr.snglInspiralTable->rsqveto_duration,
-              id );
+	      tablePtr.snglInspiralTable->rsqveto_duration );
         tablePtr.snglInspiralTable = tablePtr.snglInspiralTable->next;
       }
       break;
