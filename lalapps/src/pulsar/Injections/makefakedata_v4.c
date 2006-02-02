@@ -853,8 +853,7 @@ InitUserVars (LALStatus *status)
   LALregSTRINGUserVar(status, logfile,	'l', UVAR_OPTIONAL, "Filename for log-output");
 
   /* detector and ephemeris */
-  LALregSTRINGUserVar(status, detector,  	'I', UVAR_REQUIRED, 
-		      "Detector: GEO(0),LLO(1),LHO(2),NAUTILUS(3),VIRGO(4),TAMA(5),CIT(6)");
+  LALregSTRINGUserVar(status, detector,  'I', UVAR_REQUIRED, "Detector: 'G1','L1','H1,'H2',...");
 
   LALregSTRINGUserVar(status, actuation,   0,  UVAR_OPTIONAL, "Filname containing actuation function of this detector");
   LALregREALUserVar(status,   actuationScale, 0, UVAR_OPTIONAL, 
