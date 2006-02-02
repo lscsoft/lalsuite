@@ -537,3 +537,75 @@ LALMakeTimestamps(LALStatus *status,
   RETURN( status );
   
 } /* LALMakeTimestamps() */
+
+
+/** Extract/construct the unique 2-character "channel prefix" from the given 
+ * "detector-name", which unfortunately will not always follow any of the 
+ * official detector-naming conventions given in the Frames-Spec LIGO-T970130-F-E
+ * This function therefore sometime has to do some creative guessing:
+ *
+ * NOTE: in case the channel-number can not be deduced from the name, 
+ * it is set to '1', and a warning will be printed if lalDebugLevel > 0.
+ *
+ */
+const CHAR *
+XLALgetChannelPrefix ( const CHAR *name )
+{
+  static CHAR channel[3] = {0,0,0};  /* 2 chars + \0 */
+ 
+  if ( !name ) {
+    XLAL_ERROR_NULL ( "XLALgetChannelPrefix", XLAL_EINVAL );
+  }
+
+  /* first handle (currently) unambiguous ones */
+  if ( strstr( name, "ALLEGRO") || strstr ( name, "A1") )
+    strcpy ( channel, "A1");
+  else if ( strstr(name, "NIOBE") || strstr( name, "B1") )
+    strcpy ( channel, "B1");
+  else if ( strstr(name, "EXPLORER") || strstr( name, "E1") )
+    strcpy ( channel, "E1");
+  else if ( strstr(name, "GEO") || strstr(name, "G1") )
+    strcpy ( channel, "G1" );
+  else if ( strstr(name, "ACIGA") || strstr (name, "K1") )
+    strcpy ( channel, "K1" );
+  else if ( strstr(name, "LLO") || strstr(name, "Livingston") || strstr(name, "L1") )
+    strcpy ( channel, "L1" );
+  else if ( strstr(name, "Nautilus") || strstr(name, "N1") )
+    strcpy ( channel, "N1" );
+  else if ( strstr(name, "AURIGA") || strstr(name,"O1") )
+    strcpy ( channel, "O1" );
+  else if ( strstr(name, "CIT") || strstr(name, "P1") )
+    strcpy ( channel, "P1" );
+  else if ( strstr(name, "TAMA") || strstr(name, "T1") )
+    strcpy (channel, "T1" );
+  else if ( strstr(name, "Virgo") || strstr(name, "V1") || strstr(name, "V2") )
+    {
+      if ( strstr(name, "Virgo_CITF") || strstr(name, "V2") )
+	strcpy ( channel, "V2" );
+      else if ( strstr(name, "Virgo") || strstr(name, "V1") )
+	strcpy ( channel, "V1" );
+    } /* if Virgo */
+  /* currently the only real ambiguity arises with H1 vs H2 */
+  else if ( strstr(name, "LHO") || strstr(name, "Hanford") || strstr(name, "H1") || strstr(name, "H2") )
+    {
+      if ( strstr(name, "LHO_2k") ||  strstr(name, "H2") )
+	strcpy ( channel, "H2" );
+      else if ( strstr(name, "LHO_4k") ||  strstr(name, "H1") )
+	strcpy ( channel, "H1" );
+      else /* otherwise: guess */
+	{
+	  strcpy ( channel, "H1" );
+	  if ( lalDebugLevel ) 
+	    LALPrintError("WARNING: Detector-name '%s' not unique, guessing '%s'\n", name, channel );
+	} 
+    } /* if LHO */
+    
+  if ( channel[0] == 0 )
+    {
+      if ( lalDebugLevel ) LALPrintError ( "\nERROR: unknown detector-name '%s'\n\n", name );
+      XLAL_ERROR_NULL ( "XLALgetChannelPrefix", XLAL_EINVAL );
+    }
+  else
+    return channel;
+
+} /* XLALgetChannelPrefix() */

@@ -123,6 +123,7 @@ void LALMakeTimestamps (LALStatus *, LIGOTimeGPSVector **timestamps, const LIGOT
 void LALDestroyStringVector ( LALStatus *, LALStringVector **vect );
 void LALAppendString2Vector (LALStatus *, LALStringVector *vect, const CHAR *string );
 
+const CHAR *XLALgetChannelPrefix ( const CHAR *detector );
 
 #ifdef  __cplusplus
 }

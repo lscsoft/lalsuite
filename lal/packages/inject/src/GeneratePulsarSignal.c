@@ -40,6 +40,7 @@
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
 #include <lal/RealFFT.h>
+#include <lal/SFTutils.h>
 
 #include <lal/GeneratePulsarSignal.h>
 
@@ -49,7 +50,6 @@ static int check_timestamp_bounds (const LIGOTimeGPSVector *timestamps, LIGOTime
 static void checkNoiseSFTs (LALStatus *, const SFTVector *sfts, REAL8 f0, REAL8 f1, REAL8 deltaF);
 static void correct_phase (LALStatus *, SFTtype *sft, LIGOTimeGPS tHeterodyne);
 
-const CHAR *getChannelPrefix ( const LALFrDetector *frDet );
 /*----------------------------------------------------------------------*/
 
 NRCSID( GENERATEPULSARSIGNALC, "$Id$");
@@ -224,13 +224,10 @@ LALGeneratePulsarSignal (LALStatus *status,
 
   /* set 'name'-field of timeseries to contain the right "channel prefix" for the detector */
   {
-    const CHAR *name = getChannelPrefix ( &(params->site->frDetector) );
-    if ( name == NULL )
-      {
-	LALPrintError ("\ngetChannelPrefix() Failed to extract channel-prefix from detector-name '%s'\n\n",
-		       params->site->frDetector.name );
-	ABORT (status, GENERATEPULSARSIGNALH_EDETECTOR, GENERATEPULSARSIGNALH_MSGEDETECTOR );
-      }
+    const CHAR *name = XLALgetChannelPrefix ( params->site->frDetector.name );
+    if ( name == NULL ) {
+      ABORT (status, GENERATEPULSARSIGNALH_EDETECTOR, GENERATEPULSARSIGNALH_MSGEDETECTOR );
+    }
     strcpy ( output->name, name );
   }
 			       
@@ -988,56 +985,6 @@ LALConvertSSB2GPS (LALStatus *status,
  * the following are INTERNAL FUNCTIONS not to be called outside of this 
  * module 
  ************************************************************************/
-
-
-/* extract/construct the unique 2-character "channel prefix" for the given FrDetector struct,
- * which unfortunately does not follow any of the official detector-naming conventions given 
- * in the Frames-Spec. This function therefore does some creative guessing...
- *
- * NOTE: channel-number is ALWAYS set to '1', as the FrDetector-info only specifies the 
- * 'geometrical' detector, not the channel.
- */
-const CHAR *getChannelPrefix ( const LALFrDetector *frDet )
-{
-  static CHAR channel[3] = {0,0,0};  /* 2 chars + \0 */
-  const CHAR *name;
- 
-  if ( !frDet )
-    return NULL;
-
-  name = frDet->name;
-
-  if ( strstr( name, "ALLEGRO") || strstr ( name, "A1") )
-    strcpy ( channel, "A1");
-  else if ( strstr(name, "NIOBE") || strstr( name, "B1") )
-    strcpy ( channel, "B1");
-  else if ( strstr(name, "EXPLORER") || strstr( name, "E1") )
-    strcpy ( channel, "E1");
-  else if ( strstr(name, "GEO") || strstr(name, "G1") )
-    strcpy ( channel, "G1" );
-  else if ( strstr(name, "LHO") || strstr(name, "Hanford") || strstr(name, "H1") || strstr(name, "H2") )
-    strcpy ( channel, "H1" );
-  else if ( strstr(name, "ACIGA") || strstr (name, "K1") )
-    strcpy ( channel, "K1" );
-  else if ( strstr(name, "LLO") || strstr(name, "Livingston") || strstr(name, "L1") )
-    strcpy ( channel, "L1" );
-  else if ( strstr(name, "Nautilus") || strstr(name, "N1") )
-    strcpy ( channel, "N1" );
-  else if ( strstr(name, "AURIGA") || strstr(name,"O1") )
-    strcpy ( channel, "O1" );
-  else if ( strstr(name, "CIT") || strstr(name, "P1") )
-    strcpy ( channel, "P1" );
-  else if ( strstr(name, "TAMA") || strstr(name, "T1") )
-    strcpy (channel, "T1" );
-  else if ( strstr(name, "Virgo") || strstr(name, "V1") || strstr(name, "V2") )
-    strcpy ( channel, "V1" );
-    
-  if ( channel[0] == 0 )
-    return NULL;
-  else
-    return channel;
-
-} /* getChannelPrefix() */
 
 #define oneBillion 1000000000;
 /*----------------------------------------------------------------------
