@@ -239,7 +239,7 @@ main(int argc, char *argv[])
 
   /* detector params */
   params.transfer = GV.transfer;	/* detector transfer function (NULL if not used) */	
-  params.site = &(GV.Detector);	
+  params.site = &(GV.site);	
   params.ephemerides = &(GV.edat);
 
   /* characterize the output time-series */
