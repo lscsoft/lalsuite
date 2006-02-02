@@ -169,11 +169,12 @@ LALSFTdataFind (LALStatus *status,
 
   ASSERT ( file_pattern, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
 
-  if ( constraints && constraints->detector && ! is_valid_detector(constraints->detector) ) 
-    {
-      if ( lalDebugLevel ) LALPrintError( "\nInvalid detector-constraint '%s'\n\n", constraints->detector );
-      ABORT ( status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL );
-    }
+  if ( constraints && constraints->detector )
+    if ( !strncmp(constraints->detector, "??",2) || ! is_valid_detector(constraints->detector) ) 
+      {
+	if ( lalDebugLevel ) LALPrintError( "\nInvalid detector-constraint '%s'\n\n", constraints->detector );
+	ABORT ( status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL );
+      }
 
   /* prepare return-catalog */
   if ( (ret = LALCalloc ( 1, sizeof ( SFTCatalog ))) == NULL ) {
@@ -288,7 +289,7 @@ LALSFTdataFind (LALStatus *status,
 	  /* but does this SFT-block satisfy the user-constraints ? */
 	  if ( constraints )
 	    {
-	      if ( constraints->detector ) 
+	      if ( constraints->detector && strncmp(constraints->detector, "??", 2) ) 
 		{
 		  /* v1-SFTs have '??' as detector-name */
 		  if ( ! strncmp (this_header.name, "??", 2 ) )
@@ -404,15 +405,18 @@ LALSFTdataFind (LALStatus *status,
       if ( i == 0 )
 	first_header = this_header;
 
-      /* dont give out v1-SFTs without detector-entry! */
-      if ( !strncmp ( this_header.name, "??", 2 ) )
+      /* dont give out v1-SFTs without detector-entry, except if constraint->detector="??" ! */
+      if ( !constraints || !constraints->detector || strncmp(constraints->detector, "??", 2) )
 	{
-	  LALDestroySFTCatalog ( status->statusPtr, &ret );
-	  if ( lalDebugLevel ) 
-	    LALPrintError ("\nERROR: '%s' matched v1-SFTs but no detector-constraint given!\n\n",
-			   file_pattern);
-	  ABORT ( status, SFTFILEIO_EDETECTOR, SFTFILEIO_MSGEDETECTOR );
-	}
+	  if ( !strncmp ( this_header.name, "??", 2 ) )
+	    {
+	      LALDestroySFTCatalog ( status->statusPtr, &ret );
+	      if ( lalDebugLevel ) 
+		LALPrintError ("\nERROR: '%s' matched v1-SFTs but no detector-constraint given!\n\n",
+			       file_pattern);
+	      ABORT ( status, SFTFILEIO_EDETECTOR, SFTFILEIO_MSGEDETECTOR );
+	    }
+	} /* if detector-constraint was not '??' */
 
       if ( strncmp ( this_header.name, first_header.name, 2 ) ) 
 	{
@@ -2766,6 +2770,9 @@ compareSFTdesc(const void *ptr1, const void *ptr2)
  *	a[-a-z]c	a-c aac abc ...
  *
  * $Log$
+ * Revision 1.47  2006/02/02 14:12:14  reinhard
+ * - admit special constraints->detector "??" : allow returning v1-SFTs without detector-entry
+ *
  * Revision 1.46  2006/02/02 13:24:57  reinhard
  * stricter consistency-requirements for LALSFTdataFind():
  * - all matched SFTs much have identical detector and Tsft

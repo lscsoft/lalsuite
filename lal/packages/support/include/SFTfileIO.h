@@ -68,8 +68,20 @@
  - GPS start-time + end-time
  - a list of GPS-timestamps
 
- Any constraint can be specified as \c NULL, all given constraints will be combined by logical \c AND.
- [ Note: if a timestamps-list is given, *ALL* timestamps within <tt>[startTime, endTime]</tt> MUST be found!]
+ <b>Note 1:</b> Any constraint can be specified as \c NULL, all given constraints will be 
+ combined by logical \c AND. 
+
+ <b>Note 2:</b> if a timestamps-list is given, *ALL* timestamps within 
+ <tt>[startTime, endTime]</tt> MUST be found!]
+
+ <b>Note 3:</b> LALSFTdataFind() will refuse to return any SFTs without their detector-name 
+ properly set. This applies only to v1-SFTs, for which you have to use constraints->detector, 
+ so that the detector-name gets properly set. 
+
+ <b>Note 4:</b> One special constraint->detector is "??", which acts as if 
+ constraints->detector==NULL, except that it allows v1-SFTs to be returned with 
+ detector-name set to "??"'.
+
 
  The returned SFTCatalog is a vector of 'SFTDescriptor's describing one SFT, with the fields
  - \c locator:  an opaque data-type describing where to read this SFT from.
@@ -87,7 +99,10 @@
  - XLALshowSFTLocator(): [*debugging only*] show a static string describing the 'locator'
 
  
- <b>NOTE:</b> The SFTs in the catalogue are sorted in order of increasing GPS-epoch!
+ <b>NOTE:</b> The SFTs in the returned catalogue are \em guaranteed to 
+ - be sorted in order of increasing GPS-epoch
+ - contain identical detector-names and Tsft 
+ - contain a valid detector-name, except if constraints->detector=="??"
  
 
  <h4>Details to 2: load frequency-band from SFTs described in an SFTCatalog</h4>
