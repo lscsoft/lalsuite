@@ -75,6 +75,7 @@ LALGenerateRing(
   REAL4 h0;            /* peak strain for ringdown */
   REAL4 *fData;        /* pointer to frequency data */
   REAL8 *phiData;      /* pointer to phase data */
+  REAL8 init_phase;
   REAL4 *aData;        /* pointer to frequency data */
   LIGOTimeGPS startTime;  /* start time of injection */
   REAL4TimeSeries signal; /* start time of block that injection is injected into */
@@ -82,7 +83,9 @@ LALGenerateRing(
   UINT4 start_i, bb;   /* index at which to start injection, debugging const */
   INT8 geoc_tns;       /* geocentric_start_time of the injection in ns */
   INT8 block_tns;      /* start time of block in ns */
-  INT8 deltaTns;        /* deltaT in ns */
+/*  INT8 deltaTns;  */     /* deltaT in ns */
+  REAL8 deltaTns;
+  INT8 inj_diff;       /* time between start of segment and injection */
   LALTimeInterval dummyInterval;
 /* REAL8  deltaTns; */
   
@@ -109,6 +112,10 @@ LALGenerateRing(
   dt = params->deltaT; 
   startTime = simRingdown->geocent_start_time;
   N_point_block = series->data->length;
+  /*  init_phase = 2.3456;*/
+  /*  init_phase = 5.132;*/
+  /*  init_phase =5.999;*/
+  init_phase =0.3;
   
   /* Generic ring parameters */
   h0 = simRingdown->h0;
@@ -197,23 +204,28 @@ LALGenerateRing(
     
   geoc_tns = XLALGPStoINT8( &startTime );
   block_tns =  XLALGPStoINT8( &series->epoch );
-
-  
-  
+  if (geoc_tns < block_tns )
+  {
+     fprintf( stderr, "Injection before segment start time\n" );
+     exit( 1 );
+  }
+ 
   /* Find starting index, three options, 3rd way gives exactly the same result
    * for start_time in the sngl_ringdown table for found inject F as before any 
    * changes were made to the code.   */
   
-  /* 1. This is what we coded on Wednesday, start_time in the sgnl_r table now
-   * differs by 3ms*/
-  deltaTns = (INT8) floor( 0.5 + 1e9 * series->deltaT ); 
-  start_i =( geoc_tns - block_tns ) / deltaTns;   /* but the result of this does not 
-                                                     necessarily give an integer, right? */
   
   /* 2. Perhaps its better to leave the rounding off until the end. (Change
    * declaration of deltaTns to REAL8)  */
-/* deltaTns = 1e9 * series->deltaT;*/
-/* start_i =(INT8) floor( 0.5 + ( ( geoc_tns - block_tns ) / deltaTns ));*/
+ deltaTns = 1e9 * series->deltaT;
+ inj_diff = geoc_tns - block_tns;
+ start_i = (UINT4) floor( 0.5 + ( (REAL8) inj_diff /  deltaTns ) );
+
+  if (start_i >= N_point_block )
+  {
+     fprintf( stderr, "Injection after segment end time\n" );
+     exit( 1 );
+  }
 
   /* 3. this way seems to be best */
 /* start_i=floor(0.5 + ( ( geoc_tns-block_tns )*16384/1e9)); */
@@ -232,22 +244,22 @@ LALGenerateRing(
     
     for ( i = start_i; i < N_point_block; i++ )
     {
-      /* bb = i - start_i; */
+       bb = i - start_i; 
       t = (i - start_i) * dt;
-      /* if ( bb <20 ) */
-      /*  fprintf( stdout, "i = %d, bb = %d, t = %22.16e,",i,bb,t); */
+       if ( bb <20 ) 
+        fprintf( stdout, "i = %d, bb = %d, t = %22.16e,",i,bb,t); 
       gtime = twopif0 / 2 / quality * t ;
       *(fData++)   = f0;
-      *(phiData++) = twopif0 * t;
-      /* if ( bb <20 ) */
-      /*  fprintf( stdout, " phi = %22.16e,",*(phiData)); */
+      *(phiData++) = twopif0 * t+init_phase;
+       if ( bb <20 ) 
+        fprintf( stdout, " phi = %22.16e,",*(phiData)); 
       *(aData++) = h0 * ( 1.0 + pow( cos( simRingdown->inclination ), 2 ) ) * 
         exp( - gtime );
-      /* if ( bb <20 ) */
-      /*  fprintf( stdout, " Aplus = %e,",*(aData)); */
+     if ( bb <20 ) 
+        fprintf( stdout, " Aplus = %e,",*(aData)); 
       *(aData++) = h0* 2.0 * cos( simRingdown->inclination ) * exp( - gtime );
-      /* if ( bb <20 ) */
-      /*  fprintf( stdout, " Across = %e \n",*(aData)); */
+       if ( bb <20 ) 
+        fprintf( stdout, " Across = %e \n",*(aData)); 
       
     }
   }
