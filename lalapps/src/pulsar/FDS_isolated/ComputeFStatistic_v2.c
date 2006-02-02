@@ -165,8 +165,6 @@ void initUserVars (LALStatus *);
 
 void InitFStat (LALStatus *, ConfigVariables *cfg);
 void InitFStatDetector (LALStatus *, ConfigVariables *cfg, UINT4 nD);
-
-void CreateNautilusDetector (LALStatus *, LALDetector *Detector);
 void Freemem(LALStatus *,  ConfigVariables *cfg);
 
 void WriteFStatLog (LALStatus *, CHAR *argv[]);
@@ -844,6 +842,11 @@ InitFStatDetector (LALStatus *status, ConfigVariables *cfg, UINT4 nD)
       ABORT (status, COMPUTEFSTATISTICC_EMEM, COMPUTEFSTATISTICC_MSGEMEM);
     }
 
+    if(nD == 0)
+      IFO=uvar_IFO;
+    else 
+      IFO=uvar_IFO2;
+
     /* determine which DataFiles to read */
     if ( nD == 0 ) fname = uvar_DataFiles;
     if ( nD == 1 ) fname = uvar_DataFiles2;
@@ -853,7 +856,10 @@ InitFStatDetector (LALStatus *status, ConfigVariables *cfg, UINT4 nD)
     }
 
     /* first read in all SFT-headers in order to get data time-span */
+    constraints.detector = XLALGetChannelPrefix ( IFO );
     TRY ( LALSFTdataFind ( status->statusPtr, &catalog, fname, &constraints ), status );
+    LALFree ( constraints.detector );
+    constraints.detector = NULL;
 
     numSFTs = catalog->length;
     Tsft = 1.0 / catalog->data[0].header.deltaF;
@@ -908,35 +914,18 @@ InitFStatDetector (LALStatus *status, ConfigVariables *cfg, UINT4 nD)
   /*----------------------------------------------------------------------
    * initialize detector 
    */
-
-  if(nD == 0)
-    IFO=uvar_IFO;
-  else 
-    IFO=uvar_IFO2;
-
-  if ( !strcmp (IFO, "GEO") || !strcmp (IFO, "0") ) 
-    cfg->ifos[nD].Detectors = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
-  else if ( !strcmp (IFO, "LLO") || ! strcmp (IFO, "1") ) 
-    cfg->ifos[nD].Detectors = lalCachedDetectors[LALDetectorIndexLLODIFF];
-  else if ( !strcmp (IFO, "LHO") || !strcmp (IFO, "2") )
-    cfg->ifos[nD].Detectors = lalCachedDetectors[LALDetectorIndexLHODIFF];
-  else if ( !strcmp (IFO, "NAUTILUS") || !strcmp (IFO, "3"))
-    {
-      TRY (CreateNautilusDetector (status->statusPtr, &(cfg->ifos[nD].Detectors)), status);
-    }
-  else if ( !strcmp (IFO, "VIRGO") || !strcmp (IFO, "4") )
-    cfg->ifos[nD].Detectors = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
-  else if ( !strcmp (IFO, "TAMA") || !strcmp (IFO, "5") )
-    cfg->ifos[nD].Detectors = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
-  else if ( !strcmp (IFO, "CIT") || !strcmp (IFO, "6") )
-    cfg->ifos[nD].Detectors = lalCachedDetectors[LALDetectorIndexCIT40DIFF];
-  else
-    {
-      LALPrintError ("\nUnknown detector. Currently allowed are "
-		     " 'GEO', 'LLO', 'LHO', 'NAUTILUS', 'VIRGO', 'TAMA', 'CIT' or '0'-'6'\n\n");
-      ABORT (status, COMPUTEFSTATISTICC_EINPUT, COMPUTEFSTATISTICC_MSGEINPUT);
-    }
-
+  {
+    LALDetector *site;
+    if ( ( site = XLALGetSiteInfo ( IFO ) ) == NULL ) 
+      {
+	LALFree (site );
+	LALPrintError ("\nUnknown detector. '%s'\n\n", IFO );
+	ABORT (status, COMPUTEFSTATISTICC_EINPUT, COMPUTEFSTATISTICC_MSGEINPUT);
+      }
+    cfg->ifos[nD].Detectors = (*site);
+    LALFree ( site );
+  }
+  
   /* ----------------------------------------------------------------------
    * initialize + allocate space for AM-coefficients and SSB-times 
    */
@@ -1035,39 +1024,6 @@ WriteFStatLog (LALStatus *status, char *argv[])
 } /* WriteFStatLog() */
 
 
-/*******************************************************************************/
-/** Set up the \em LALDetector struct representing the NAUTILUS detector */
-void
-CreateNautilusDetector (LALStatus *status, LALDetector *Detector)
-{
-  /*   LALDetector Detector;  */
-  LALFrDetector detector_params;
-  LALDetectorType bar;
-  LALDetector Detector1;
-
-  INITSTATUS (status, "CreateNautilusDetector", rcsid);
-  ATTATCHSTATUSPTR (status);
-
-/*   detector_params=(LALFrDetector )LALMalloc(sizeof(LALFrDetector)); */
- 
-  bar=LALDETECTORTYPE_CYLBAR;
-  strcpy(detector_params.name, "NAUTILUS");
-  detector_params.vertexLongitudeRadians=12.67*LAL_PI/180.0;
-  detector_params.vertexLatitudeRadians=41.82*LAL_PI/180.0;
-  detector_params.vertexElevation=300.0;
-  detector_params.xArmAltitudeRadians=0.0;
-  detector_params.xArmAzimuthRadians=44.0*LAL_PI/180.0;
-
-  TRY (LALCreateDetector(status->statusPtr, &Detector1, &detector_params, bar), status);
-  
-  *Detector=Detector1;
-
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
-  
-} /* CreateNautilusDetector() */
-
-/*******************************************************************************/
 /** Free all globally allocated memory. */
 void
 Freemem(LALStatus *status,  ConfigVariables *cfg) 
