@@ -170,7 +170,7 @@ LALSFTdataFind (LALStatus *status,
   ASSERT ( file_pattern, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
 
   if ( constraints && constraints->detector )
-    if ( !strncmp(constraints->detector, "??",2) || ! is_valid_detector(constraints->detector) ) 
+    if ( strncmp(constraints->detector, "??", 2) && !is_valid_detector(constraints->detector) ) 
       {
 	if ( lalDebugLevel ) LALPrintError( "\nInvalid detector-constraint '%s'\n\n", constraints->detector );
 	ABORT ( status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL );
@@ -2770,6 +2770,9 @@ compareSFTdesc(const void *ptr1, const void *ptr2)
  *	a[-a-z]c	a-c aac abc ...
  *
  * $Log$
+ * Revision 1.48  2006/02/02 14:28:40  reinhard
+ * fixe small bug in previous commit
+ *
  * Revision 1.47  2006/02/02 14:12:14  reinhard
  * - admit special constraints->detector "??" : allow returning v1-SFTs without detector-entry
  *
