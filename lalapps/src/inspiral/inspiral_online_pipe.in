@@ -138,6 +138,10 @@ except: pass
 try: os.mkdir('logs')
 except: pass
 
+# create the config parser object and read in the ini file
+cp = ConfigParser.ConfigParser()
+cp.read(config_file)
+
 # get the usertag from the config file
 try:
   usertag = string.strip(cp.get('pipeline','user-tag'))
@@ -145,10 +149,6 @@ try:
 except:
   usertag = None
   inspstr = 'INSPIRAL'
-
-# create the config parser object and read in the ini file
-cp = ConfigParser.ConfigParser()
-cp.read(config_file)
 
 # create a log file that the Condor jobs will write to
 basename = re.sub(r'\.dag',r'',dag_file_name)
@@ -295,8 +295,8 @@ dag.write_dag()
 # write out a log file for this script
 log_fh.write("gps_start_time + pad = %d\n" % gps_start_time)
 log_fh.write("gps_end_time - pad = %d\n" % gps_end_time)
-log_fh.write("trig_start_time = %d\n" % gps_start_time)
-log_fh.write("trig_end_time = %d\n" % gps_end_time)
+log_fh.write("trig_start_time = %d\n" % trig_start_time)
+log_fh.write("trig_end_time = %d\n" % trig_end_time)
 log_fh.close()
   
 # return the analysis start and end time to onasys
