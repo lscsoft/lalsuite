@@ -164,6 +164,8 @@ end
 % Open file for output
 if length(outputFile > 0)
   fid = fopen(outputFile,'w');
+  outputFileNbrs = strcat(outputFile,'.nbrs');
+  fidNbrs = fopen(outputFileNbrs,'w');
 else
   fid =  0
 end
@@ -205,7 +207,11 @@ if (fid > 0)
  for i=1:mcFileListLength
    fprintf(fid,'%10.4f %9.6f %9.6f %12.6f %14.6e %12.4e %4i %7.4f   %8.2e  %8.2e  %5.2f  %6.3f\n',start_freq(i),leRA(i),leDEC(i),leFREQ(i),leFDOT(i),leS(i),leSBins(i),lePWR(i),best_upper_limit(i),delta_upper_limit(i),best_confidence(i),delta_confidence(i));
  end
- 
+ % Just print out the number for later use
+ for i=1:mcFileListLength
+   fprintf(fidNbrs,'%10.4f %9.6f %9.6f %12.6f %14.6e %12.4e %4i %7.4f   %8.2e  %8.2e  %5.2f  %6.3f\n',start_freq(i),leRA(i),leDEC(i),leFREQ(i),leFDOT(i),leS(i),leSBins(i),lePWR(i),best_upper_limit(i),delta_upper_limit(i),best_confidence(i),delta_confidence(i));
+ end
+
  [maxdiff, imax] = max( abs(best_upper_limit - upper_limit_est)./best_upper_limit );
  fprintf(fid,'\nMax fractional difference between ULs and estimated ULs is %15.6f for %15.4f Hz\n',maxdiff,start_freq(imax));
 
@@ -216,6 +222,7 @@ if (fid > 0)
  fprintf(fid,'Worst ULs is %20.10e for %15.4f Hz\n',maxUL,start_freq(imax));
 
  fclose(fid);
+ fclose(fidNbrs);
 end
 
 if graphOption > 0
