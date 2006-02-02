@@ -52,14 +52,18 @@ extern int lalDebugLevel;
 /* boolean global variables for controlling output */
 BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps, uvar_printStats;
 
-#define EARTHEPHEMERIS "./earth05-09.dat"
-#define SUNEPHEMERIS "./sun05-09.dat"
+/*#define EARTHEPHEMERIS "./earth05-09.dat"
+  #define SUNEPHEMERIS "./sun05-09.dat" */
+
+#define EARTHEPHEMERIS "./earth00-04.dat"
+#define SUNEPHEMERIS "./sun00-04.dat"
+
 
 #define ACCURACY 0.00000001 /* of the velocity calculation */
 #define MAXFILES 3000 /* maximum number of files to read in a directory */
 #define MAXFILENAMELENGTH 256 /* maximum # of characters  of a SFT filename */
-/* #define SFTDIRECTORY "/local_data/badkri/fakesfts"   */
-#define SFTDIRECTORY "/nfs/morbo/geo600/hannover/sft/S4-LIGO/sft_1800.20050512.S4/S4-L1.1800-sft" 
+#define SFTDIRECTORY "/home/badkri/fakesfts"  
+/*#define SFTDIRECTORY "/nfs/morbo/geo600/hannover/sft/S4-LIGO/sft_1800.20050512.S4/S4-L1.1800-sft" */
 #define DIROUT "./outHM1/"      /* prefix file output */
 #define BASENAMEOUT "HM1"
 #define FILEVELOCITY "./velocity.data"  /* name: file with time-velocity info */
@@ -91,7 +95,6 @@ int main(int argc, char *argv[]){
   /* time and velocity vectors and files*/
   static LIGOTimeGPSVector   timeV;
   static REAL8Cart3CoorVector velV;
-  /*   static REAL8Cart3CoorVector velVmid; */
   static REAL8Vector         timeDiffV;
 
   /* standard pulsar sft types */ 
@@ -183,8 +186,8 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
 
   uvar_help = FALSE;
-  uvar_weighAM = FALSE;
-  uvar_weighNoise = FALSE;
+  uvar_weighAM = TRUE;
+  uvar_weighNoise = TRUE;
   uvar_ifo = IFO;
   uvar_blocksRngMed = BLOCKSRNGMED;
   uvar_f0 = F0;
@@ -195,22 +198,22 @@ int main(int argc, char *argv[]){
   uvar_printTemplates = FALSE;
   uvar_printMaps = FALSE;
   uvar_printStats = FALSE;
-  uvar_earthEphemeris = (CHAR *)LALMalloc(512*sizeof(CHAR));
+  uvar_earthEphemeris = (CHAR *)LALCalloc(512, sizeof(CHAR));
   strcpy(uvar_earthEphemeris,EARTHEPHEMERIS);
 
-  uvar_sunEphemeris = (CHAR *)LALMalloc(512*sizeof(CHAR));
+  uvar_sunEphemeris = (CHAR *)LALCalloc(512, sizeof(CHAR));
   strcpy(uvar_sunEphemeris,SUNEPHEMERIS);
 
-  uvar_sftDir = (CHAR *)LALMalloc(512*sizeof(CHAR));
+  uvar_sftDir = (CHAR *)LALCalloc(512, sizeof(CHAR));
   strcpy(uvar_sftDir,SFTDIRECTORY);
 
-  uvar_dirnameOut = (CHAR *)LALMalloc(512*sizeof(CHAR));
+  uvar_dirnameOut = (CHAR *)LALCalloc(512, sizeof(CHAR));
   strcpy(uvar_dirnameOut,DIROUT);
 
-  uvar_fbasenameOut = (CHAR *)LALMalloc(512*sizeof(CHAR));
+  uvar_fbasenameOut = (CHAR *)LALCalloc(512, sizeof(CHAR));
   strcpy(uvar_fbasenameOut,BASENAMEOUT);
 
-  uvar_skyfile = (CHAR *)LALMalloc(512*sizeof(CHAR));
+  uvar_skyfile = (CHAR *)LALCalloc(512, sizeof(CHAR));
   strcpy(uvar_skyfile,SKYFILE);
 
   /* register user input variables */
@@ -253,7 +256,7 @@ int main(int argc, char *argv[]){
     exit(0); 
  
   /* open log file for writing */
-  fnameLog = (CHAR *)LALMalloc( 512*sizeof(CHAR));
+  fnameLog = (CHAR *)LALCalloc( 512, sizeof(CHAR));
   strcpy(fnameLog,uvar_dirnameOut);
   strcat(fnameLog, "/logfiles/");
   /* now create directory fdirOut/logfiles using mkdir */
@@ -341,10 +344,10 @@ int main(int argc, char *argv[]){
       } while ( r != EOF);
     rewind(fpsky);
     
-    skyAlpha = (REAL8 *)LALMalloc(nSkyPatches*sizeof(REAL8));
-    skyDelta = (REAL8 *)LALMalloc(nSkyPatches*sizeof(REAL8));     
-    skySizeAlpha = (REAL8 *)LALMalloc(nSkyPatches*sizeof(REAL8));
-    skySizeDelta = (REAL8 *)LALMalloc(nSkyPatches*sizeof(REAL8));     
+    skyAlpha = (REAL8 *)LALCalloc(nSkyPatches, sizeof(REAL8));
+    skyDelta = (REAL8 *)LALCalloc(nSkyPatches, sizeof(REAL8));     
+    skySizeAlpha = (REAL8 *)LALCalloc(nSkyPatches, sizeof(REAL8));
+    skySizeDelta = (REAL8 *)LALCalloc(nSkyPatches, sizeof(REAL8));     
     
     
     for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++)
@@ -368,7 +371,7 @@ int main(int argc, char *argv[]){
     INT4 length;
 
     /* get sft catalog */
-    tempDir = (CHAR *)LALMalloc(512*sizeof(CHAR));
+    tempDir = (CHAR *)LALCalloc(512, sizeof(CHAR));
     strcpy(tempDir, uvar_sftDir);
     strcat(tempDir, "/*SFT*.*");
 
@@ -398,13 +401,16 @@ int main(int argc, char *argv[]){
 
     /* set up weights -- this should be done before normalizing the sfts */
     weightsV.length = mObsCoh;
-    weightsV.data = (REAL8 *)LALMalloc(mObsCoh*sizeof(REAL8));
+    weightsV.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
 
     weightsNoise.length = mObsCoh;
-    weightsNoise.data = (REAL8 *)LALMalloc(mObsCoh*sizeof(REAL8));
+    weightsNoise.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
+
+    /* initialize all weights to unity */
+    LAL_CALL( LALHOUGHInitializeWeights( &status, &weightsNoise), &status);
+    LAL_CALL( LALHOUGHInitializeWeights( &status, &weightsV), &status);
 
     /* calculate sft noise weights if required by user */
-    LAL_CALL( LALHOUGHInitializeWeights( &status, &weightsNoise), &status);
     if (uvar_weighNoise ) {
       LAL_CALL( LALHOUGHComputeNoiseWeights( &status, &weightsNoise, inputSFTs, uvar_blocksRngMed), &status); 
       LAL_CALL( LALHOUGHNormalizeWeights( &status, &weightsNoise), &status);
@@ -414,12 +420,12 @@ int main(int argc, char *argv[]){
     LAL_CALL( LALNormalizeSFTVect (&status, inputSFTs, uvar_blocksRngMed, 0), &status);
 
     /* use above value of length to allocate memory for nstar, fstar etc. */
-    nStar = (REAL8 *)LALMalloc((length + 1)*sizeof(REAL8));
-    nStarSignificance =  (REAL8 *)LALMalloc((length + 1)*sizeof(REAL8));
-    freqStar = (REAL8 *)LALMalloc((length + 1)*sizeof(REAL8));
-    alphaStar = (REAL8 *)LALMalloc((length + 1)*sizeof(REAL8));
-    deltaStar = (REAL8 *)LALMalloc((length + 1)*sizeof(REAL8));
-    fdotStar = (REAL8 *)LALMalloc((length + 1)*sizeof(REAL8));
+    nStar = (REAL8 *)LALCalloc((length + 1), sizeof(REAL8));
+    nStarSignificance =  (REAL8 *)LALCalloc((length + 1), sizeof(REAL8));
+    freqStar = (REAL8 *)LALCalloc((length + 1), sizeof(REAL8));
+    alphaStar = (REAL8 *)LALCalloc((length + 1), sizeof(REAL8));
+    deltaStar = (REAL8 *)LALCalloc((length + 1), sizeof(REAL8));
+    fdotStar = (REAL8 *)LALCalloc((length + 1), sizeof(REAL8));
 
     /* initialize nstar values */
     {
@@ -440,11 +446,11 @@ int main(int argc, char *argv[]){
 
   timeV.length = mObsCoh;
   timeV.data = NULL;  
-  timeV.data = (LIGOTimeGPS *)LALMalloc(mObsCoh*sizeof(LIGOTimeGPS));
+  timeV.data = (LIGOTimeGPS *)LALCalloc(mObsCoh, sizeof(LIGOTimeGPS));
   
   pgV.length = mObsCoh;
   pgV.pg = NULL;
-  pgV.pg = (HOUGHPeakGram *)LALMalloc(mObsCoh*sizeof(HOUGHPeakGram));
+  pgV.pg = (HOUGHPeakGram *)LALCalloc(mObsCoh, sizeof(HOUGHPeakGram));
 
   { 
     SFTtype  sft;
@@ -455,7 +461,7 @@ int main(int argc, char *argv[]){
     length = inputSFTs->data->data->length;
     pg1.length = length;
     pg1.data = NULL;
-    pg1.data = (UCHAR *)LALMalloc(length* sizeof(UCHAR));
+    pg1.data = (UCHAR *)LALCalloc(length, sizeof(UCHAR));
 
     /* loop over sfts and select peaks */
     for (j=0; j < mObsCoh; j++){
@@ -471,7 +477,7 @@ int main(int argc, char *argv[]){
       /* compress peakgram */      
       pgV.pg[j].length = nPeaks;
       pgV.pg[j].peak = NULL;
-      pgV.pg[j].peak = (INT4 *)LALMalloc(nPeaks* sizeof(INT4));
+      pgV.pg[j].peak = (INT4 *)LALCalloc(nPeaks, sizeof(INT4));
 
       LAL_CALL( LALUCHAR2HOUGHPeak( &status, &(pgV.pg[j]), &pg1), &status );
     } /* end loop over sfts */
@@ -483,20 +489,17 @@ int main(int argc, char *argv[]){
 
   }/* end block for selecting peaks */
 
-  /******************************************************************/
-  /* compute detector velocity for those time stamps  */
-  /******************************************************************/
+
+
+  /* compute detector velocity for SFT timestamps  */
   velV.length = mObsCoh;
   velV.data = NULL;
-  velV.data = (REAL8Cart3Coor *)LALMalloc(mObsCoh*sizeof(REAL8Cart3Coor));
+  velV.data = (REAL8Cart3Coor *)LALCalloc(mObsCoh, sizeof(REAL8Cart3Coor));
 
-  /*   velVmid.length = mObsCoh; */
-  /*   velVmid.data = NULL; */
-  /*   velVmid.data = (REAL8Cart3Coor *)LALMalloc(mObsCoh*sizeof(REAL8Cart3Coor)); */
 
   {  
     VelocityPar   velPar;
-    REAL8     vel[3], tempVel[3]; 
+    REAL8     vel[3];
     UINT4     j; 
     
     LALLeapSecFormatAndAcc lsfas = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
@@ -507,11 +510,11 @@ int main(int argc, char *argv[]){
 
     velPar.detector = detector;
     velPar.tBase = timeBase;
-    velPar.vTol = ACCURACY;
+    velPar.vTol = ACCURACY; /* irrelevant */
     velPar.edat = NULL; 
 
     /*  ephemeris info */
-    edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
+    edat = (EphemerisData *)LALCalloc(1, sizeof(EphemerisData));
    (*edat).ephiles.earthEphemeris = uvar_earthEphemeris;
    (*edat).ephiles.sunEphemeris = uvar_sunEphemeris;
 
@@ -523,54 +526,25 @@ int main(int argc, char *argv[]){
     /* read in ephemeris data */
     LAL_CALL( LALInitBarycenter( &status, edat), &status);
     velPar.edat = edat;
-    
-    for(j=0; j< velV.length; ++j){
+
+    /* calculate average velocity for each SFT duration */    
+    for(j=0; j< mObsCoh; ++j){
       velPar.startTime.gpsSeconds     = timeV.data[j].gpsSeconds;
       velPar.startTime.gpsNanoSeconds = timeV.data[j].gpsNanoSeconds;
       
       LAL_CALL( LALAvgDetectorVel ( &status, vel, &velPar), &status ); 
       
-      {
-	REAL8  midTimeBase; 
-	LIGOTimeGPS midTimeBaseGPS, tempGPS; 
-
-	/* convert half of timebase to GPS structure */	
-        midTimeBase = 0.5 * timeBase; 
-        LAL_CALL( LALFloatToGPS ( &status, &midTimeBaseGPS, &midTimeBase), &status); 
-
-	/* in case time to calculate velocity i smid time of sft */
-	/* add mid time base to start time of sft */
- 	tempGPS.gpsSeconds = midTimeBaseGPS.gpsSeconds + timeV.data[j].gpsSeconds; 
- 	tempGPS.gpsNanoSeconds = midTimeBaseGPS.gpsNanoSeconds + timeV.data[j].gpsNanoSeconds;  
-	
-	/* for debugging purposes */
-	/*      in case time to calculate velocity is start time */
-	/* 	tempGPS.gpsSeconds = timeV.data[j].gpsSeconds;  */
-	/* 	tempGPS.gpsNanoSeconds = timeV.data[j].gpsNanoSeconds;  */
-        LAL_CALL( LALDetectorVel ( &status, tempVel, &tempGPS, detector, edat), &status ); 
-      }
-
-      /*       velV.data[j].x= vel[0]; */
-      /*       velV.data[j].y= vel[1]; */
-      /*       velV.data[j].z= vel[2];    */
-
-      /* for debugging purposes */
-      velV.data[j].x= tempVel[0];
-      velV.data[j].y= tempVel[1];
-      velV.data[j].z= tempVel[2];   
-
-      /*       velVmid.data[j].x = tempVel[0]; */
-      /*       velVmid.data[j].y = tempVel[1]; */
-      /*       velVmid.data[j].z = tempVel[2]; */
+      velV.data[j].x= vel[0];
+      velV.data[j].y= vel[1];
+      velV.data[j].z= vel[2];  
     }
-  }
+  } /* end velocity calculation block */
 
-  /******************************************************************/
+
   /* compute the time difference relative to startTime for all SFT */
-  /******************************************************************/
   timeDiffV.length = mObsCoh;
   timeDiffV.data = NULL; 
-  timeDiffV.data = (REAL8 *)LALMalloc(mObsCoh*sizeof(REAL8));
+  timeDiffV.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
 
   {
     REAL8   t0, ts, tn, midTimeBase;
@@ -579,57 +553,15 @@ int main(int argc, char *argv[]){
     midTimeBase=0.5*timeBase;
     ts = timeV.data[0].gpsSeconds;
     tn = timeV.data[0].gpsNanoSeconds * 1.00E-9;
-    t0=ts+tn;
+    t0 = ts + tn;
     timeDiffV.data[0] = midTimeBase;
 
-    for(j=1; j< velV.length; ++j){
+    for(j=1; j < mObsCoh; ++j){
       ts = timeV.data[j].gpsSeconds;
       tn = timeV.data[j].gpsNanoSeconds * 1.00E-9;  
-      timeDiffV.data[j] = ts+tn - t0 + midTimeBase; 
+      timeDiffV.data[j] = ts + tn - t0 + midTimeBase; 
     }  
   }
-
-  /* ****************************************************************/
-  /*  Writing the time & detector-velocity corresponding to each SFT  */
-  /* ****************************************************************/
-  
-  /*     {  */
-  /*       UINT4   j;  */
-  /*       FILE   *fp = NULL;  */
-  
-  /*       fp = fopen( "velocityOut.c", "w");  */
-  /*       if (fp==NULL){  */
-  /* 	fprintf(stderr,"Unable to open velocity file for writing\n");  */
-  /* 	return 1;  */
-  /*       }  */
-  /*       /\*     read data format:  INT4 INT4  REAL8 REAL8 REAL8 *\/ */
-  /*       for (j=0; j<mObsCoh;++j){  */
-  /* 	fprintf(fp, "%d %d %g %g %g %g %g %g\n",  */
-  /* 		timeV.data[j].gpsSeconds, timeV.data[j].gpsNanoSeconds, velV.data[j].x, velV.data[j].y,  */
-  /* 		velV.data[j].z, velVmid.data[j].x, velVmid.data[j].y, velVmid.data[j].z );  */
-  
-  /* 	fflush(fp);  */
-  /*       }  */
-  /*       fclose(fp);  */
-  
-  /*     fp = fopen( fnameTime, "w");  */
-  /*       if (fp==NULL){  */
-  /* 	fprintf(stderr,"Unable to open file %s\n for writing",fnameTime);  */
-  /*         return 1; /\* stop the program *\/ */
-  /*       }  */
-  /*       /\* read data format:  INT4 INT4 *\/ */
-  /*       for (j=0; j<mObsCoh;++j){  */
-  /* 	fprintf(fp, "%d %d \n",  */
-  /* 		(timeV.data[j].gpsSeconds),  */
-  /* 		(timeV.data[j].gpsNanoSeconds) );  */
-  
-  /* 	fflush(fp);  */
-  /*       }  */
-  /*       fclose(fp);  */
-  /*  }  */
-  
-
-
 
   
   /* loop over sky patches */
@@ -645,13 +577,16 @@ int main(int argc, char *argv[]){
       patchSizeX = skySizeDelta[skyCounter];
       patchSizeY = skySizeAlpha[skyCounter];
 
-      for ( k = 0; k < mObsCoh; k++)
-	weightsV.data[k] = weightsNoise.data[k];
-
       /* calculate amplitude modulation weights */
       if (uvar_weighAM) {
+
+	memcpy(weightsV.data, weightsNoise.data, mObsCoh * sizeof(REAL8));
+	
+	/*for ( k = 0; k < mObsCoh; k++)
+	  weightsV.data[k] = weightsNoise.data[k]; */
+	
 	LAL_CALL( LALHOUGHComputeAMWeights( &status, &weightsV, &timeV, &detector, 
-				       edat, alpha, delta), &status);
+					    edat, alpha, delta), &status);
 	LAL_CALL( LALHOUGHNormalizeWeights( &status, &weightsV), &status);
       }
 
@@ -770,18 +705,18 @@ int main(int argc, char *argv[]){
       
       lutV.length    = mObsCoh;
       lutV.lut = NULL;
-      lutV.lut = (HOUGHptfLUT *)LALMalloc(mObsCoh*sizeof(HOUGHptfLUT));
+      lutV.lut = (HOUGHptfLUT *)LALCalloc(mObsCoh, sizeof(HOUGHptfLUT));
       
       phmdVS.length  = mObsCoh;
       phmdVS.nfSize  = nfSizeCylinder;
       phmdVS.deltaF  = deltaF;
       phmdVS.phmd = NULL;
-      phmdVS.phmd=(HOUGHphmd *)LALMalloc(mObsCoh*nfSizeCylinder*sizeof(HOUGHphmd));
+      phmdVS.phmd=(HOUGHphmd *)LALCalloc(mObsCoh*nfSizeCylinder, sizeof(HOUGHphmd));
       
       freqInd.deltaF = deltaF;
       freqInd.length = mObsCoh;
       freqInd.data = NULL;
-      freqInd.data =  ( UINT8 *)LALMalloc(mObsCoh*sizeof(UINT8));
+      freqInd.data =  ( UINT8 *)LALCalloc(mObsCoh, sizeof(UINT8));
       
       /* ****************************************************************/
       /* Case: no spins-demodulaton  or Non demodulation (SFT input)*/
@@ -809,8 +744,8 @@ int main(int argc, char *argv[]){
       histTotal.length = mObsCoh+1;
       hist.data = NULL;
       histTotal.data = NULL;
-      hist.data = (UINT4 *)LALMalloc((mObsCoh+1)*sizeof(UINT4));
-      histTotal.data = (UINT4 *)LALMalloc((mObsCoh+1)*sizeof(UINT4));
+      hist.data = (UINT4 *)LALCalloc((mObsCoh+1), sizeof(UINT4));
+      histTotal.data = (UINT4 *)LALCalloc((mObsCoh+1), sizeof(UINT4));
       { 
 	UINT4   j;
 	for(j=0; j< histTotal.length; ++j){ histTotal.data[j]=0; }
@@ -853,8 +788,8 @@ int main(int argc, char *argv[]){
 	patch.ySide = ySide;
 	patch.xCoor = NULL;
 	patch.yCoor = NULL;
-	patch.xCoor = (REAL8 *)LALMalloc(xSide*sizeof(REAL8));
-	patch.yCoor = (REAL8 *)LALMalloc(ySide*sizeof(REAL8));
+	patch.xCoor = (REAL8 *)LALCalloc(xSide, sizeof(REAL8));
+	patch.yCoor = (REAL8 *)LALCalloc(ySide, sizeof(REAL8));
 	LAL_CALL( LALHOUGHFillPatchGrid( &status, &patch, &parSize ), &status );
 	
 	/*************** other memory allocation and settings************ */
@@ -862,24 +797,24 @@ int main(int argc, char *argv[]){
 	  lutV.lut[j].maxNBins = maxNBins;
 	  lutV.lut[j].maxNBorders = maxNBorders;
 	  lutV.lut[j].border =
-	    (HOUGHBorder *)LALMalloc(maxNBorders*sizeof(HOUGHBorder));
+	    (HOUGHBorder *)LALCalloc(maxNBorders, sizeof(HOUGHBorder));
 	  lutV.lut[j].bin =
-	    (HOUGHBin2Border *)LALMalloc(maxNBins*sizeof(HOUGHBin2Border));
+	    (HOUGHBin2Border *)LALCalloc(maxNBins, sizeof(HOUGHBin2Border));
 	  for (i=0; i<maxNBorders; ++i){
 	    lutV.lut[j].border[i].ySide = ySide;
 	    lutV.lut[j].border[i].xPixel =
-	      (COORType *)LALMalloc(ySide*sizeof(COORType));
+	      (COORType *)LALCalloc(ySide, sizeof(COORType));
 	  }
 	}
 	for(j=0; j<phmdVS.length * phmdVS.nfSize; ++j){
 	  phmdVS.phmd[j].maxNBorders = maxNBorders;
 	  phmdVS.phmd[j].leftBorderP =
-	    (HOUGHBorder **)LALMalloc(maxNBorders*sizeof(HOUGHBorder *));
+	    (HOUGHBorder **)LALCalloc(maxNBorders, sizeof(HOUGHBorder *));
 	  phmdVS.phmd[j].rightBorderP =
-	    (HOUGHBorder **)LALMalloc(maxNBorders*sizeof(HOUGHBorder *));
+	    (HOUGHBorder **)LALCalloc(maxNBorders, sizeof(HOUGHBorder *));
 	  phmdVS.phmd[j].ySide = ySide;
 	  phmdVS.phmd[j].firstColumn = NULL;
-	  phmdVS.phmd[j].firstColumn = (UCHAR *)LALMalloc(ySide*sizeof(UCHAR));
+	  phmdVS.phmd[j].firstColumn = (UCHAR *)LALCalloc(ySide, sizeof(UCHAR));
 	}
 	
 	/* ************* create all the LUTs at fBin ********************  */  
@@ -907,7 +842,7 @@ int main(int argc, char *argv[]){
 	ht.mObsCoh = mObsCoh;
 	ht.deltaF = deltaF;
 	ht.map   = NULL;
-	ht.map   = (HoughTT *)LALMalloc(xSide*ySide*sizeof(HoughTT));
+	ht.map   = (HoughTT *)LALCalloc(xSide*ySide, sizeof(HoughTT));
 	LAL_CALL( LALHOUGHInitializeHT( &status, &ht, &patch), &status); /*not needed */
 	
 	/******************************************************************/
@@ -988,7 +923,7 @@ int main(int argc, char *argv[]){
 	    
 	    ht.spinRes.length = 1;
 	    ht.spinRes.data = NULL;
-	    ht.spinRes.data = (REAL8 *)LALMalloc(ht.spinRes.length*sizeof(REAL8));
+	    ht.spinRes.data = (REAL8 *)LALCalloc(ht.spinRes.length, sizeof(REAL8));
 	    
 	    for( n=1; n<= nSpin1Max; ++n){ /*loop over all values of f1 */
 	      f1dis = - n*f1jump;
