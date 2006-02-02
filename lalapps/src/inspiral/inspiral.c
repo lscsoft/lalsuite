@@ -217,6 +217,7 @@ INT8   trigStartTimeNS  = 0;            /* write triggers only after    */
 INT8   trigEndTimeNS    = 0;            /* write triggers only before   */
 INT8   outTimeNS        = 0;            /* search summ out time         */
 int    enableOutput     = -1;           /* write out inspiral events    */
+MetadataTableType outputMask = sngl_inspiral_table; /* default to all   */
 int    writeRawData     = 0;            /* write the raw data to a file */
 int    writeFilterData  = 0;            /* write post injection data    */
 int    writeResponse    = 0;            /* write response function used */
@@ -2577,9 +2578,9 @@ int main( int argc, char *argv[] )
     {
       if ( vrbflg ) fprintf( stdout, "  sngl_inspiral table...\n" );
       LAL_CALL( LALBeginLIGOLwXMLTable( &status, 
-            &results, sngl_inspiral_table ), &status );
+            &results, outputMask ), &status );
       LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, savedEvents, 
-            sngl_inspiral_table ), &status );
+            outputMask ), &status );
       LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
     }
   }
@@ -2760,6 +2761,8 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "  --maximization-interval msec set length of maximization interval\n"\
 "\n"\
 "  --enable-output              write the results to a LIGO LW XML file\n"\
+"  --output-mask MASK           write the output sngl_inspiral table\n"\
+"                                 with optional MASK (bns|bcv)\n"\
 "  --disable-output             do not write LIGO LW XML output file\n"\
 "  --trig-start-time SEC        only output triggers after GPS time SEC\n"\
 "  --trig-end-time SEC          only output triggers before GPS time SEC\n"\
@@ -2866,9 +2869,10 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"userTag",                 required_argument, 0,                'Z'},
     {"ifo-tag",                 required_argument, 0,                'I'},
     {"version",                 no_argument,       0,                'V'},
-    {"cluster-method",          required_argument, 0,                '*'},  
-    {"cluster-window",          required_argument, 0,                '#'},  
     {"maximization-interval",   required_argument, 0,                '@'},  
+    {"cluster-window",          required_argument, 0,                '#'},  
+    {"cluster-method",          required_argument, 0,                '0'},  
+    {"output-mask",             required_argument, 0,                '1'},  
     {"fast",                    required_argument, 0,                '2'},  
     {"rsq-veto-window",         required_argument, 0,                '3'},   
     {"rsq-veto-threshold",      required_argument, 0,                '4'},  
@@ -2910,8 +2914,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:V:W:X:Y:Z:"
-        "a:b:c:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:",
+        "-A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:VW:X:Y:Z:"
+        "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:"
+        "0:1::2:3:4:567:8:9:",
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -3773,31 +3778,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         exit( 0 );
         break;
 
-      case '*':
-        if ( ! strcmp( "none", optarg ) )
-        {
-          clusterMethod = noClustering;
-        }
-        else if ( ! strcmp( "template", optarg ) )
-        {
-          clusterMethod = tmplt;
-        } 
-        else if ( ! strcmp( "window", optarg ) )
-        {
-          clusterMethod = window;
-        } 
-        else
-        {
-          fprintf( stderr, "invalid argument to --%s:\n"
-              "unknown clustering method: "
-              "%s (must be 'none', 'template' or 'window')\n", 
-              long_options[option_index].name, optarg );
-          exit( 1 );
-        }
-        haveClusterMethod = 1;
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
-        break;
-
       case '#':
         clusterWindow = (REAL4) atof( optarg );
         if ( clusterWindow <= 0 )
@@ -3829,6 +3809,50 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           maximizationInterval = (INT4) maxms * 1000000;
           ADD_PROCESS_PARAM( "int", "%ld", maxms );
         }
+        break;
+
+      case '0':
+        if ( ! strcmp( "none", optarg ) )
+        {
+          clusterMethod = noClustering;
+        }
+        else if ( ! strcmp( "template", optarg ) )
+        {
+          clusterMethod = tmplt;
+        } 
+        else if ( ! strcmp( "window", optarg ) )
+        {
+          clusterMethod = window;
+        } 
+        else
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "unknown clustering method: "
+              "%s (must be 'none', 'template' or 'window')\n", 
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
+        haveClusterMethod = 1;
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+
+      case '1':
+        if ( ! strcmp( "bns", optarg ) )
+        {
+          outputMask = sngl_inspiral_table_bns;
+        }
+        else if ( ! strcmp( "bcv", optarg ) )
+        {
+          outputMask = sngl_inspiral_table_bcv;
+        }
+        else
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "must be either bns or bcv: (%s specified)\n",
+              long_options[option_index].name, optarg);
+          exit (1);
+        }
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case '2':
@@ -3911,7 +3935,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       default:
-        fprintf( stderr, "unknown error while parsing options\n" );
+        fprintf( stderr, "unknown error while parsing options (%d)\n", c );
         exit( 1 );
     }
   }
@@ -3936,7 +3960,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     LALSnprintf( procparams.processParamsTable->type, 
         LIGOMETA_TYPE_MAX, "string" );
     LALSnprintf( procparams.processParamsTable->value, 
-        LIGOMETA_TYPE_MAX, " " );
+        LIGOMETA_VALUE_MAX, " " );
   }
   else if ( enableOutput == 0 )
   {
@@ -3947,7 +3971,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     LALSnprintf( procparams.processParamsTable->type, 
         LIGOMETA_TYPE_MAX, "string" );
     LALSnprintf( procparams.processParamsTable->value, 
-        LIGOMETA_TYPE_MAX, " " );
+        LIGOMETA_VALUE_MAX, " " );
   }
   else
   {
@@ -3966,7 +3990,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
         "--inject-overhead" );
     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+    LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
   }
 
   /* store point calibration option */
@@ -3979,7 +4003,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX,
         "--point-calibration" );
     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+    LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
   }
 
 
@@ -4074,7 +4098,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
         "--disable-high-pass" );
     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+    LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
   }
   else
   {
@@ -4266,7 +4290,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
         "--glob-frame-data" );
     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+    LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
   }
 
   /* check we can calibrate the data if it's not h(t) */
@@ -4305,7 +4329,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
         "--glob-calibration-data" );
     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+    LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
   }
 
   /* check that a template bank has been specified */
@@ -4395,7 +4419,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
         "--disable-rsq-veto" );
     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+    LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
   }
   else if ( enableRsqVeto == 1 )
   {
@@ -4413,7 +4437,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
         "--enable-rsq-veto" );
     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+    LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
   }
   else
   {
@@ -4432,7 +4456,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
         "--enable-filter-inj-only" );
     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+    LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
   }
   else if ( flagFilterInjOnly == 0 )
   {
@@ -4443,7 +4467,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
         "--disable-filter-inj-only" );
     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+    LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
   } 
   else if ( flagFilterInjOnly == -1 && injectionFile ) 
   {
