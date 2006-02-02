@@ -151,11 +151,6 @@ extern INT4 lalDebugLevel;
 
 static LALUnit emptyUnit;
 
-
-extern const CHAR *getChannelPrefix ( const LALFrDetector *frDet );
-
-
-
 
 
 /** Simulate a pulsar signal to best accuracy possible.
@@ -175,7 +170,7 @@ LALSimulateExactPulsarSignal (LALStatus *status,
 			      REAL4TimeSeries **timeSeries, 
 			      const PulsarSignalParams *params)
 {
-  LALFrDetector *det = &(params->site->frDetector);
+  LALFrDetector *site = &(params->site->frDetector);
   REAL8 Delta, Alpha;
   UINT4 numSteps, i;
 
@@ -190,7 +185,7 @@ LALSimulateExactPulsarSignal (LALStatus *status,
   REAL8 xAzi, yAzi;
   REAL8 Zeta, sinZeta;
 
-  const CHAR *name;
+  CHAR *channel;
 
   INITSTATUS( status, "LALSimulatePulsarSignal", SIMULATEPULSARSIGNALC );
   ATTATCHSTATUSPTR(status);
@@ -218,23 +213,24 @@ LALSimulateExactPulsarSignal (LALStatus *status,
   amcoe->b = XLALCreateREAL4Vector ( numSteps );
   TRY ( LALGetAMCoeffs (status->statusPtr, amcoe, detStates, params->pulsar.position ), status );
 
-  /* create output timeseries */
-  if ( (name = getChannelPrefix ( det )) == NULL )
+  /* create output timeseries (FIXME: should really know *detector* here, not just site!!) */
+  if ( (channel = XLALgetChannelPrefix ( site->name )) == NULL )
     {
-      LALPrintError ("\ngetChannelPrefix() Failed to extract channel-prefix from detector-name '%s'\n\n", det->name );
+      LALPrintError ("\ngetChannelPrefix() Failed to extract channel-prefix from site-name '%s'\n\n", 
+		     site->name );
       ABORT (status, GENERATEPULSARSIGNALH_EDETECTOR, GENERATEPULSARSIGNALH_MSGEDETECTOR );
     }
 
-  if ( NULL == ((*timeSeries) = XLALCreateREAL4TimeSeries( name, &(detStates->data[0].tGPS), 
-				   0, dt, &emptyUnit, numSteps) ) )
+  if ( NULL == ((*timeSeries) = XLALCreateREAL4TimeSeries( channel, &(detStates->data[0].tGPS), 
+							   0, dt, &emptyUnit, numSteps) ) )
     {
       ABORT ( status, SIMULATEPULSARSIGNAL_EMEM, SIMULATEPULSARSIGNAL_MSGEMEM );
     }
-
+  LALFree ( site );
 
   /* orientation of detector arms */
-  xAzi = det->xArmAzimuthRadians;
-  yAzi = det->yArmAzimuthRadians;
+  xAzi = site->xArmAzimuthRadians;
+  yAzi = site->yArmAzimuthRadians;
   Zeta =  xAzi - yAzi;
   if (Zeta < 0) Zeta = -Zeta;
   if(params->site->type == LALDETECTORTYPE_CYLBAR) Zeta = LAL_PI_2;

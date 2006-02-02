@@ -547,13 +547,18 @@ LALMakeTimestamps(LALStatus *status,
  * NOTE: in case the channel-number can not be deduced from the name, 
  * it is set to '1', and a warning will be printed if lalDebugLevel > 0.
  *
+ * NOTE2: the returned string is allocated here!
  */
-const CHAR *
+CHAR *
 XLALgetChannelPrefix ( const CHAR *name )
 {
-  static CHAR channel[3] = {0,0,0};  /* 2 chars + \0 */
- 
+  CHAR *channel = LALCalloc( 3, sizeof(CHAR) );  /* 2 chars + \0 */
+
+  if ( !channel ) {
+    XLAL_ERROR_NULL ( "XLALgetChannelPrefix", XLAL_ENOMEM );
+  }
   if ( !name ) {
+    LALFree ( channel );
     XLAL_ERROR_NULL ( "XLALgetChannelPrefix", XLAL_EINVAL );
   }
 
@@ -609,3 +614,4 @@ XLALgetChannelPrefix ( const CHAR *name )
     return channel;
 
 } /* XLALgetChannelPrefix() */
+

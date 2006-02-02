@@ -224,11 +224,12 @@ LALGeneratePulsarSignal (LALStatus *status,
 
   /* set 'name'-field of timeseries to contain the right "channel prefix" for the detector */
   {
-    const CHAR *name = XLALgetChannelPrefix ( params->site->frDetector.name );
+    CHAR *name = XLALgetChannelPrefix ( params->site->frDetector.name );
     if ( name == NULL ) {
       ABORT (status, GENERATEPULSARSIGNALH_EDETECTOR, GENERATEPULSARSIGNALH_MSGEDETECTOR );
     }
     strcpy ( output->name, name );
+    LALFree ( name );
   }
 			       
   /*----------------------------------------------------------------------*/
