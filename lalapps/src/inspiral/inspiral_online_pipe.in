@@ -287,6 +287,7 @@ dag.add_node(lwadd)
 ldbdc = pipeline.LDBDCNode( ldbdc_job )
 ldbdc.set_server( cp.get('publish','ldbdserver') )
 ldbdc.set_insert( lwadd.get_output() )
+ldbdc.add_parent(lwadd)
 dag.add_node(ldbdc)
 
 # write the dag
