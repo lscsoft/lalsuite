@@ -57,6 +57,7 @@ extern int vrbflg;
 
 /*----------------------------------------------------------------------*/
 static const LALStatus empty_status;
+static const SFTConstraints empty_constraints;
 /*----------------------------------------------------------------------*/
 /* User variables */
 CHAR *uvar_sftBname1;
@@ -72,6 +73,8 @@ int
 main(int argc, char *argv[]) 
 {
   LALStatus status = empty_status;	/* initialize status */
+  SFTConstraints constraints = empty_constraints;
+  CHAR detector[2] = "??";	/* allow reading v1-SFTs without detector-info */
   SFTVector *SFTs1 = NULL, *SFTs2 = NULL;
   SFTVector *diffs = NULL;
   SFTCatalog *catalog = NULL;
@@ -94,12 +97,14 @@ main(int argc, char *argv[])
     exit (0);
 
   /* now read in the two complete sft-vectors */
-  LAL_CALL (LALSFTdataFind (&status, &catalog, uvar_sftBname1, NULL ), &status );
+  constraints.detector = detector;	
+
+  LAL_CALL (LALSFTdataFind (&status, &catalog, uvar_sftBname1, &constraints ), &status );
   LAL_CALL (LALLoadSFTs(&status, &SFTs1, catalog, -1, -1 ), &status );
   LAL_CALL (LALDestroySFTCatalog(&status, &catalog), &status );
   catalog = NULL;
 
-  LAL_CALL (LALSFTdataFind (&status, &catalog, uvar_sftBname2, NULL ), &status );
+  LAL_CALL (LALSFTdataFind (&status, &catalog, uvar_sftBname2, &constraints ), &status );
   LAL_CALL (LALLoadSFTs(&status, &SFTs2, catalog, -1, -1 ), &status );
   LAL_CALL (LALDestroySFTCatalog(&status, &catalog), &status );
 
