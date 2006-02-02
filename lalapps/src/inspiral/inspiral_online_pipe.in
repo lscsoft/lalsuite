@@ -266,12 +266,13 @@ for subbank in split.get_output():
 # create a cache file name to hold the input to ligolw_add
 out_basename = ifo + '-' + inspstr + '-' + str(trig_start_time) + '-'
 out_basename += str(trig_end_time - trig_start_time)
-insp_cache_file = open(out_basename + '.cache', 'w')
+insp_cache_file_name = out_basename + '.cache'
+insp_cache_file = open(insp_cache_file_name, 'w')
 path = 'file://localhost' + os.getcwd()
 
 # use ligolw_add to join everything back together
 lwadd = pipeline.LigolwAddNode(lwadd_job)
-lwadd.add_var_opt('input-cache',insp_cache_file)
+lwadd.add_var_opt('input-cache',insp_cache_file_name)
 lwadd.set_output(out_basename + '.xml')
 for insp in sub_insp:
   file = insp.get_output()
