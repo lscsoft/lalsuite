@@ -193,7 +193,7 @@ LALSimulateExactPulsarSignal (LALStatus *status,
   ASSERT ( timeSeries, status, SIMULATEPULSARSIGNAL_ENULL, SIMULATEPULSARSIGNAL_MSGENULL);
   ASSERT ( (*timeSeries)==NULL, status, SIMULATEPULSARSIGNAL_ENONULL, SIMULATEPULSARSIGNAL_MSGENONULL);
   /* don't accept heterodyning frequency */
-  ASSERT ( params->fHeterodyne == 0, status, SIMULATEPULSARSIGNAL_EINPUT, SIMULATEPULSARSIGNAL_MSGEINPUT);
+  ASSERT ( params->fHeterodyne==0, status, SIMULATEPULSARSIGNAL_EINPUT, SIMULATEPULSARSIGNAL_MSGEINPUT);
 
   /* get timestamps of timeseries plus detector-states */
   dt = 1.0 / params->samplingRate;
@@ -202,7 +202,7 @@ LALSimulateExactPulsarSignal (LALStatus *status,
 
   numSteps = timestamps->length;
 
-  TRY(LALGetDetectorStates(status->statusPtr, &detStates,timestamps,params->site,params->ephemerides, 0),
+  TRY(LALGetDetectorStates(status->statusPtr, &detStates,timestamps,params->site,params->ephemerides,0),
       status );
   
   TRY ( LALDestroyTimestampVector (status->statusPtr, &timestamps), status );
@@ -214,9 +214,9 @@ LALSimulateExactPulsarSignal (LALStatus *status,
   TRY ( LALGetAMCoeffs (status->statusPtr, amcoe, detStates, params->pulsar.position ), status );
 
   /* create output timeseries (FIXME: should really know *detector* here, not just site!!) */
-  if ( (channel = XLALgetChannelPrefix ( site->name )) == NULL )
+  if ( (channel = XLALGetChannelPrefix ( site->name )) == NULL )
     {
-      LALPrintError ("\ngetChannelPrefix() Failed to extract channel-prefix from site-name '%s'\n\n", 
+      LALPrintError ("\nXLALGetChannelPrefix() Failed to extract channel-prefix from site '%s'\n\n", 
 		     site->name );
       ABORT (status, GENERATEPULSARSIGNALH_EDETECTOR, GENERATEPULSARSIGNALH_MSGEDETECTOR );
     }
@@ -226,7 +226,7 @@ LALSimulateExactPulsarSignal (LALStatus *status,
     {
       ABORT ( status, SIMULATEPULSARSIGNAL_EMEM, SIMULATEPULSARSIGNAL_MSGEMEM );
     }
-  LALFree ( site );
+  LALFree ( channel );
 
   /* orientation of detector arms */
   xAzi = site->xArmAzimuthRadians;
@@ -361,6 +361,9 @@ LALSimulateExactPulsarSignal (LALStatus *status,
     } /* for i < Nsteps */
 
   TRY ( LALDestroyDetectorStateSeries(status->statusPtr, &detStates ), status );
+  XLALDestroyREAL4Vector(  amcoe->a );
+  XLALDestroyREAL4Vector(  amcoe->b );
+  LALFree ( amcoe );
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
