@@ -127,7 +127,7 @@ do { 											\
 
 /*---------- empty initializers ---------- */
 LALStatus empty_status;
-
+SFTConstraints empty_constraints;
 /*---------- Global variables ----------*/
 
 INT4 lalDebugLevel = 3;
@@ -138,28 +138,17 @@ int main(int argc, char *argv[])
   LALStatus status = empty_status;
 
   SFTCatalog *catalog = NULL;
+  SFTConstraints constraints = empty_constraints;
   SFTVector *sft_vect = NULL;
+  CHAR detector[2] = "H1";
   INT4 crc_check;
-
+  
   /* band to read from infile.* SFTs */
   REAL8 fMin = 1008.5;
   REAL8 fMax = 1009.1;
-    
-#define SFTFILEIO_ENULL 	1
-#define SFTFILEIO_EFILE 	2
-#define SFTFILEIO_EHEADER 	3
-#define SFTFILEIO_EVERSION 	4
-#define SFTFILEIO_EVAL 		5
-#define SFTFILEIO_EENDIAN 	6
-#define SFTFILEIO_ENONULL 	12
-#define SFTFILEIO_EFREQBAND 	13
-#define SFTFILEIO_EMEM 		14
-#define SFTFILEIO_EGLOB 	15
-#define SFTFILEIO_EDIFFLENGTH 	17
-#define SFTFILEIO_ESFTFORMAT	18
-#define SFTFILEIO_ESFTWRITE	19 
-#define SFTFILEIO_ECONSTRAINTS  20
-
+  
+  if ( argc == 1)	/* avoid warning */
+    argc = 1;
 
   /* check that mal-formated SFTs are properly detected */
   SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad1", NULL ), &status, SFTFILEIO_EMERGEDSFT );
@@ -232,8 +221,11 @@ int main(int argc, char *argv[])
   SHOULD_WORK ( LALWrite_v2SFT_to_v1file( &status, &(sft_vect->data[2]), "outputsftv2_v1.sft"), &status );
 
   SUB ( LALDestroySFTVector (&status, &sft_vect ), &status );
-  /* read the previous two SFTs back */
-  SUB ( LALSFTdataFind ( &status, &catalog, "outputsftv2_*.sft", NULL ), &status );
+  /* ----- read the previous two SFTs back */
+  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, "outputsftv2_*.sft", NULL ), &status, SFTFILEIO_EDETECTOR );
+  /* need to set proper detector! */
+  constraints.detector = detector;
+  SUB ( LALSFTdataFind ( &status, &catalog, "outputsftv2_*.sft", &constraints ), &status);
   SUB ( LALLoadSFTs ( &status, &sft_vect, catalog, -1, -1 ), &status );
 
   if ( sft_vect->length != 2 )
@@ -265,7 +257,7 @@ int main(int argc, char *argv[])
   /* `----- v1 SFT writing */
 
   /* read v1-SFTs: 'inputsft.0' and 'inputsft.1' (one is big-endian, the other little-endian!) */
-  SUB ( LALSFTdataFind (&status, &catalog, TESTDIR "inputsft.?", NULL ), &status );
+  SUB ( LALSFTdataFind (&status, &catalog, TESTDIR "inputsft.?", &constraints ), &status );
   SUB ( LALLoadSFTs ( &status, &sft_vect, catalog, fMin, fMax ), &status );
   if ( sft_vect->length != 2 )
     {
@@ -276,6 +268,7 @@ int main(int argc, char *argv[])
   /* write v1-SFT to disk */
   SUB ( LALWriteSFTfile (&status, &(sft_vect->data[0]), "outputsft_v1.sft"), &status);
   /* try to write this v1-SFTs as v2: should fail without detector-info ! */
+  strncpy( sft_vect->data[0].name, "??", 2 );
   SHOULD_FAIL (LALWriteSFT2file( &status, &(sft_vect->data[0]), "outputsft_v2.sft", "Another v2-SFT file for testing!"), &status );
   /* put detector there */
   strcpy ( sft_vect->data[0].name, "H1" );

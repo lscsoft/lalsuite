@@ -152,7 +152,7 @@ static UINT8 calc_crc64(const CHAR *data, UINT4 length, UINT8 crc);
 void
 LALSFTdataFind (LALStatus *status,
 		SFTCatalog **catalog,		/**< [out] SFT-catalogue of matching SFTs */
-		const CHAR *file_pattern,	/**< where to find the SFTs: normally a path+file-pattern */
+		const CHAR *file_pattern,	/**< which SFT-files */
 		SFTConstraints *constraints	/**< additional constraints for SFT-selection */
 		)
 {
@@ -189,18 +189,18 @@ LALSFTdataFind (LALStatus *status,
 
 
   /* ----- main loop: parse all matching files */
-  for ( i=0; i < numFiles; i ++ )
+  for ( i = 0; i < numFiles; i ++ )
     {
       CHAR *fname = fnames->data[i];
       
       FILE *fp;      
       long file_len;
 
-      /* merged SFTs need to satisfy consistency-constraints across their SFT-blocks: (-> see spec) */
-      BOOLEAN first_block = TRUE;
-      UINT4 prev_version = 0;
-      SFTtype prev_header;
-      REAL8 prev_nsamples = 0;
+      /* merged SFTs need to satisfy stronger consistency-constraints (-> see spec) */
+      BOOLEAN mfirst_block = TRUE;
+      UINT4   mprev_version = 0;
+      SFTtype mprev_header;
+      REAL8   mprev_nsamples = 0;
 
 
       if ( ( fp = LALFopen( fname, "rb" ) ) == NULL )
@@ -239,10 +239,11 @@ LALSFTdataFind (LALStatus *status,
 	      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
 	    }
 
-	  if ( read_sft_header_from_fp (fp, &this_header, &this_version, &this_crc, &endian, &this_comment, &this_nsamples ) != 0 )
+	  if ( read_sft_header_from_fp (fp, &this_header, &this_version, &this_crc, 
+					&endian, &this_comment, &this_nsamples ) != 0 )
 	    {
 	      if ( lalDebugLevel ) 
-		LALPrintError ("\nERROR:File-position %ld in SFT-file '%s' does not start a valid SFT-block and is not EOF!\n\n",
+		LALPrintError ("\nERROR:Filepos %ld < EOF in file '%s' does not start a valid SFT-block!\n\n",
 			       ftell(fp), fname );
 	      LALDestroyStringVector ( status->statusPtr, &fnames );
 	      if ( this_comment ) LALFree ( this_comment );
@@ -252,28 +253,30 @@ LALSFTdataFind (LALStatus *status,
 	    }
 	  
 	  /* if merged-SFT: check consistency constraints */
-	  if ( !first_block )
+	  if ( !mfirst_block )
 	    {
-	      if ( ! consistent_mSFT_header ( prev_header, prev_version, prev_nsamples, this_header, this_version, this_nsamples ) )
+	      if ( ! consistent_mSFT_header ( mprev_header, mprev_version, mprev_nsamples, 
+					      this_header, this_version, this_nsamples ) )
 		{
-		  if ( lalDebugLevel ) LALPrintError ("merged SFT-file '%s' contains inconsistent SFT-blocks!\n\n", fname);
+		  if ( lalDebugLevel ) 
+		    LALPrintError ("merged SFT-file '%s' contains inconsistent SFT-blocks!\n\n", fname);
 		  if ( this_comment ) LALFree ( this_comment );
 		  LALDestroyStringVector ( status->statusPtr, &fnames );
 		  LALDestroySFTCatalog ( status->statusPtr, &ret );
 		  fclose(fp);
 		  ABORT ( status, SFTFILEIO_EMERGEDSFT, SFTFILEIO_MSGEMERGEDSFT );
 		}
-	    } /* if !first_block */
-	  
-	  first_block = FALSE;
-	  prev_header = this_header;
-	  prev_version = this_version;
-	  prev_nsamples = this_nsamples;
+	    } /* if !mfirst_block */
+
+	  mprev_header = this_header;
+	  mprev_version = this_version;
+	  mprev_nsamples = this_nsamples;
 
 	  /* seek to end of SFT data-entries in file  */
 	  if ( fseek ( fp, this_nsamples * 8 , SEEK_CUR ) == -1 )
 	    {
-	      if ( lalDebugLevel ) LALPrintError ( "\nFailed to skip DATA field for SFT '%s': %s\n", fname, strerror(errno) );
+	      if ( lalDebugLevel ) 
+		LALPrintError ( "\nFailed to skip DATA field for SFT '%s': %s\n", fname, strerror(errno) );
 	      if ( this_comment ) LALFree ( this_comment );
 	      LALDestroyStringVector ( status->statusPtr, &fnames );
 	      LALDestroySFTCatalog ( status->statusPtr, &ret );
@@ -285,10 +288,16 @@ LALSFTdataFind (LALStatus *status,
 	  /* but does this SFT-block satisfy the user-constraints ? */
 	  if ( constraints )
 	    {
-	      if ( constraints->detector && strncmp( constraints->detector, this_header.name, 2) )
-		want_this_block = FALSE;
+	      if ( constraints->detector ) 
+		{
+		  /* v1-SFTs have '??' as detector-name */
+		  if ( ! strncmp (this_header.name, "??", 2 ) )
+		    strncpy ( this_header.name, constraints->detector, 2 );	/* SET to constraint! */
+		  else if ( strncmp( constraints->detector, this_header.name, 2) )
+		    want_this_block = FALSE;
+		}
 
-	      if ( constraints->startTime && ( GPS2REAL8(this_header.epoch) < GPS2REAL8( *constraints->startTime) ) )
+	      if ( constraints->startTime && ( GPS2REAL8(this_header.epoch) < GPS2REAL8( *constraints->startTime)))
 		want_this_block = FALSE;
 
 	      if ( constraints->endTime && ( GPS2REAL8(this_header.epoch) > GPS2REAL8( *constraints->endTime ) ) )
@@ -303,7 +312,7 @@ LALSFTdataFind (LALStatus *status,
 	    {
 	      UINT4 oldlen = ret->length;
 	      SFTDescriptor *desc;
-
+	      
 	      ret->data = LALRealloc ( ret->data, (oldlen+1) * sizeof( *(ret->data) ) );
 
 	      ret->length ++;
@@ -342,6 +351,8 @@ LALSFTdataFind (LALStatus *status,
 	      if ( this_comment ) LALFree ( this_comment );
 	    }
 
+	  mfirst_block = FALSE;
+
 	} /* while !feof */
 
       fclose(fp);
@@ -351,7 +362,9 @@ LALSFTdataFind (LALStatus *status,
   /* free matched filenames */
   LALDestroyStringVector ( status->statusPtr, &fnames );
 
-  /* last consistency-check: did we find exactly the timestamps that lie within [startTime, endTime]? */
+  /* ----- final consistency-checks: ----- */
+
+  /* did we find exactly the timestamps that lie within [startTime, endTime]? */
   if ( constraints && constraints->timestamps )
     {
       LIGOTimeGPSVector *ts = constraints->timestamps;
@@ -381,6 +394,45 @@ LALSFTdataFind (LALStatus *status,
 	  ABORT ( status, SFTFILEIO_ECONSTRAINTS, SFTFILEIO_MSGECONSTRAINTS );
 	}
     } /* if constraints->timestamps */
+
+  /* have all matched SFTs consistent detector and dFreq values ? */
+  for ( i = 0; i < ret->length; i ++ )
+    {
+      SFTtype first_header;
+      SFTtype this_header = ret->data[i].header;
+
+      if ( i == 0 )
+	first_header = this_header;
+
+      /* dont give out v1-SFTs without detector-entry! */
+      if ( !strncmp ( this_header.name, "??", 2 ) )
+	{
+	  LALDestroySFTCatalog ( status->statusPtr, &ret );
+	  if ( lalDebugLevel ) 
+	    LALPrintError ("\nERROR: '%s' matched v1-SFTs but no detector-constraint given!\n\n",
+			   file_pattern);
+	  ABORT ( status, SFTFILEIO_EDETECTOR, SFTFILEIO_MSGEDETECTOR );
+	}
+
+      if ( strncmp ( this_header.name, first_header.name, 2 ) ) 
+	{
+	  LALDestroySFTCatalog ( status->statusPtr, &ret );
+	  if ( lalDebugLevel )
+	    LALPrintError("\nERROR: file-pattern '%s' matched SFTs with inconsistent detectors!\n\n",
+			  file_pattern);
+	  ABORT ( status, SFTFILEIO_EDIFFDET, SFTFILEIO_MSGEDIFFDET );
+	}
+	
+      if ( this_header.deltaF != first_header.deltaF ) 
+	{
+	  LALDestroySFTCatalog ( status->statusPtr, &ret );
+	  LALPrintError("\nERROR: file-pattern '%s' matched SFTs with inconsistent Tsft!\n\n",
+			file_pattern);
+	  ABORT ( status, SFTFILEIO_EDIFFTSFT, SFTFILEIO_MSGEDIFFTSFT );	  
+	}
+
+    } /* for i < numSFTs */
+
 
   /* sort catalog in order of increasing GPS-time */
   qsort( (void*)ret->data, ret->length, sizeof( ret->data[0] ), compareSFTdesc );
@@ -487,6 +539,11 @@ LALLoadSFTs ( LALStatus *status,
       } ENDFAIL(status);
 
       fclose(fp);
+
+      /* NOTE: LALSFTdataFind() requires overriding v1 detector-name ('??')
+       * by a proper detector-name using the constraint-entry.
+       * This is field therefore updated here from the catalog */
+      strncpy ( this_sft->name, catalog->data[i].header.name, 2 );
 
       LALAppendSFT2Vector ( status->statusPtr, ret, this_sft );
       BEGINFAIL ( status ) {
@@ -2709,6 +2766,11 @@ compareSFTdesc(const void *ptr1, const void *ptr2)
  *	a[-a-z]c	a-c aac abc ...
  *
  * $Log$
+ * Revision 1.46  2006/02/02 13:24:57  reinhard
+ * stricter consistency-requirements for LALSFTdataFind():
+ * - all matched SFTs much have identical detector and Tsft
+ * - v1-SFTfile *require* a detector-constraint, which will get set in the returned SFTs
+ *
  * Revision 1.45  2006/01/18 15:31:46  reinhard
  * fixed bug in LALCheckSFTs() (uninitialized SFT-counter)
  *

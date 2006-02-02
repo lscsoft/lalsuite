@@ -64,7 +64,7 @@
  (e.g. "SFT.*", "SFT.000", "/some/path/some_files_[0-9]?.sft", etc ) and additional, optional SFTConstraints. 
 
  The optional constraints are:
- - detector-prefix (e.g. "H1", "H2", "L1", "G1", "V1", etc..)
+ - detector-prefix (e.g. "H1", "H2", "L1", "G1", "V1", etc..)  [\em required for v1-SFTs!]
  - GPS start-time + end-time
  - a list of GPS-timestamps
 
@@ -161,7 +161,11 @@ NRCSID (SFTFILEIOH, "$Id$");
 #define SFTFILEIO_EHEADER 	3
 #define SFTFILEIO_EVERSION 	4
 #define SFTFILEIO_EVAL 		5
-#define SFTFILEIO_EENDIAN 	6
+
+#define SFTFILEIO_EDIFFTSFT	6
+#define SFTFILEIO_EDIFFDET	7
+#define SFTFILEIO_EDETECTOR	8
+
 #define SFTFILEIO_ENONULL 	12
 #define SFTFILEIO_EFREQBAND 	13
 #define SFTFILEIO_EMEM 		14
@@ -178,7 +182,11 @@ NRCSID (SFTFILEIOH, "$Id$");
 #define SFTFILEIO_MSGEHEADER 	"Incorrect header in file"
 #define SFTFILEIO_MSGEVERSION 	"This SFT-version is not currently supported"
 #define SFTFILEIO_MSGEVAL  	"Invalid value"
-#define SFTFILEIO_MSGEENDIAN 	"Wrong endian encoding of SFT (not supported yet"
+
+#define SFTFILEIO_MSGEDIFFTSFT	"Inconsistent values of Tsft for matched SFTs"
+#define SFTFILEIO_MSGEDIFFDET	"Inconsistent detector-values for matched SFTs"
+#define SFTFILEIO_MSGEDETECTOR	"Illegal detector name"
+
 #define SFTFILEIO_MSGENONULL  	"Output pointer not NULL"
 #define SFTFILEIO_MSGEFREQBAND 	"Required frequency-band is not in SFT"
 #define SFTFILEIO_MSGEMEM 	"Out of memory"
