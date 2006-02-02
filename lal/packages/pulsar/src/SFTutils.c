@@ -49,10 +49,12 @@ NRCSID( SFTUTILSC, "$Id$" );
 /*---------- internal types ----------*/
 
 /*---------- empty initializers ---------- */
+LALStatus empty_status;
 
 /*---------- Global variables ----------*/
 
 /*---------- internal prototypes ----------*/
+static int create_nautilus_site ( LALDetector *Detector );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -550,16 +552,16 @@ LALMakeTimestamps(LALStatus *status,
  * NOTE2: the returned string is allocated here!
  */
 CHAR *
-XLALgetChannelPrefix ( const CHAR *name )
+XLALGetChannelPrefix ( const CHAR *name )
 {
   CHAR *channel = LALCalloc( 3, sizeof(CHAR) );  /* 2 chars + \0 */
 
   if ( !channel ) {
-    XLAL_ERROR_NULL ( "XLALgetChannelPrefix", XLAL_ENOMEM );
+    XLAL_ERROR_NULL ( "XLALGetChannelPrefix", XLAL_ENOMEM );
   }
   if ( !name ) {
     LALFree ( channel );
-    XLAL_ERROR_NULL ( "XLALgetChannelPrefix", XLAL_EINVAL );
+    XLAL_ERROR_NULL ( "XLALGetChannelPrefix", XLAL_EINVAL );
   }
 
   /* first handle (currently) unambiguous ones */
@@ -579,7 +581,7 @@ XLALgetChannelPrefix ( const CHAR *name )
     strcpy ( channel, "N1" );
   else if ( strstr(name, "AURIGA") || strstr(name,"O1") )
     strcpy ( channel, "O1" );
-  else if ( strstr(name, "CIT") || strstr(name, "P1") )
+  else if ( strstr(name, "CIT_40") || strstr(name, "Caltech-40") || strstr(name, "P1") )
     strcpy ( channel, "P1" );
   else if ( strstr(name, "TAMA") || strstr(name, "T1") )
     strcpy (channel, "T1" );
@@ -608,10 +610,106 @@ XLALgetChannelPrefix ( const CHAR *name )
   if ( channel[0] == 0 )
     {
       if ( lalDebugLevel ) LALPrintError ( "\nERROR: unknown detector-name '%s'\n\n", name );
-      XLAL_ERROR_NULL ( "XLALgetChannelPrefix", XLAL_EINVAL );
+      XLAL_ERROR_NULL ( "XLALGetChannelPrefix", XLAL_EINVAL );
     }
   else
     return channel;
 
-} /* XLALgetChannelPrefix() */
+} /* XLALGetChannelPrefix() */
+
+
+/** Find the site geometry-information 'LALDetector' (mis-nomer!) given a detector-name.
+ * The LALDetector struct is allocated here.
+ */
+LALDetector * 
+XLALGetSiteInfo ( const CHAR *name )
+{
+  CHAR *channel;
+  LALDetector *site;
+
+  /* first turn the free-form 'detector-name' into a well-defined channel-prefix */
+  if ( ( channel = XLALGetChannelPrefix ( name ) ) == NULL ) {
+    XLAL_ERROR_NULL ( "XLALGetSiteInfo()", XLAL_EINVAL );
+  }
+
+  if ( ( site = LALCalloc ( 1, sizeof( *site) )) == NULL ) {
+    XLAL_ERROR_NULL ( "XLALGetSiteInfo()", XLAL_ENOMEM );
+  }
+  
+  switch ( channel[0] )
+    {
+    case 'T':
+      (*site) = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
+      break;
+    case 'V':
+      (*site) = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
+      break;
+    case 'G':
+      (*site) = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
+      break;
+    case 'H':
+      (*site) = lalCachedDetectors[LALDetectorIndexLHODIFF];
+      break;
+    case 'L':
+      (*site) = lalCachedDetectors[LALDetectorIndexLLODIFF];
+      break;
+    case 'P':
+      (*site) = lalCachedDetectors[LALDetectorIndexCIT40DIFF];
+      break;
+    case 'N':
+      if ( 0 != create_nautilus_site ( site ) ) 
+	{
+	  if ( lalDebugLevel ) LALPrintError("\nFailed to created Nautilus detector-site info\n\n");
+	  LALFree ( site );
+	  LALFree ( channel );
+	  XLAL_ERROR_NULL ( "XLALGetSiteInfo()", XLAL_EFUNC );
+	}
+      break;
+
+    default:
+      if ( lalDebugLevel ) 
+	LALPrintError ( "\nSorry, I don't have the site-info for '%c%c'\n\n", channel[0], channel[1]);
+      LALFree(site);
+      LALFree(channel);
+      XLAL_ERROR_NULL ( "XLALGetSiteInfo()", XLAL_EINVAL );
+      break;
+    } /* switch channel[0] */
+
+  LALFree ( channel );
+
+  return site;
+  
+} /* XLALGetSiteInfo() */
+
+
+/* Set up the \em LALDetector struct representing the NAUTILUS detector-site 
+ * return -1 on ERROR, 0 if OK
+ */
+static int 
+create_nautilus_site ( LALDetector *Detector )
+{
+  LALFrDetector detector_params;
+  LALDetector Detector1;
+  LALStatus status = empty_status;
+
+  if ( !Detector )
+    return -1;
+
+  strcpy ( detector_params.name, "NAUTILUS" );
+  detector_params.vertexLongitudeRadians = 12.67 * LAL_PI / 180.0;
+  detector_params.vertexLatitudeRadians = 41.82 * LAL_PI / 180.0;
+  detector_params.vertexElevation = 300.0;
+  detector_params.xArmAltitudeRadians = 0.0;
+  detector_params.xArmAzimuthRadians = 44.0 * LAL_PI / 180.0;
+
+  LALCreateDetector(&status, &Detector1, &detector_params, LALDETECTORTYPE_CYLBAR );
+  if ( status.statusCode != 0 )
+    return -1;
+
+  (*Detector) = Detector1;
+
+  return 0;
+  
+} /* CreateNautilusDetector() */
+
 
