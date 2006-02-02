@@ -58,7 +58,7 @@ RCSID ("$Id$");
 typedef struct 
 {
   EphemerisData edat;		/**< ephemeris-data */
-  LALDetector Detector;  	/**< detector */
+  LALDetector site;  		/**< detector-site info */
 
   LIGOTimeGPS startTimeGPS;	/**< start-time of observation */
   UINT4 duration;		/**< total duration of observation in seconds */
@@ -501,29 +501,14 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
   } /* END: prepare spindown parameters */
 
   /* ---------- prepare detector ---------- */
-  if ( !strcmp (uvar_detector, "GEO") || !strcmp (uvar_detector, "0") ) 
-    cfg->Detector = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
-  else if ( !strcmp (uvar_detector, "LLO") || ! strcmp (uvar_detector, "1") ) 
-    cfg->Detector = lalCachedDetectors[LALDetectorIndexLLODIFF];
-  else if ( !strcmp (uvar_detector, "LHO") || !strcmp (uvar_detector, "2") )
-    cfg->Detector = lalCachedDetectors[LALDetectorIndexLHODIFF];
-  else if ( !strcmp (uvar_detector, "NAUTILUS") || !strcmp (uvar_detector, "3"))
-    {
-      TRY (CreateNautilusDetector (status->statusPtr, &(cfg->Detector)), status);
-    }
-  else if ( !strcmp (uvar_detector, "VIRGO") || !strcmp (uvar_detector, "4") )
-    cfg->Detector = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
-  else if ( !strcmp (uvar_detector, "TAMA") || !strcmp (uvar_detector, "5") )
-    cfg->Detector = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
-  else if ( !strcmp (uvar_detector, "CIT") || !strcmp (uvar_detector, "6") )
-    cfg->Detector = lalCachedDetectors[LALDetectorIndexCIT40DIFF];
-  else
-    {
-      LALPrintError ("\nUnknown detector. Currently allowed are 'GEO', 'LLO', 'LHO',"
-		     " 'NAUTILUS', 'VIRGO', 'TAMA', 'CIT' or '0'-'6'\n\n");
+  {
+    LALDetector *site;
+    if ( ( site = XLALGetSiteInfo ( uvar_detector ) ) == NULL ) {
       ABORT (status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
     }
-
+    cfg->site = (*site);
+    LALFree ( site );
+  }
   /* ---------- determine requested signal- start + duration ---------- */
   {
     /* check input consistency: *uvar_timestampsFile, uvar_startTime, uvar_duration */
