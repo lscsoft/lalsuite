@@ -84,11 +84,11 @@ for o, a in opts:
     sys.exit(0)
   elif o in ("-s", "--gps-start-time"):
     gps_start_time = int(a)
-  elif o in ("-s", "--gps-end-time"):
+  elif o in ("-e", "--gps-end-time"):
     gps_end_time = int(a)
-  elif o in ("-s", "--trig-start-time"):
+  elif o in ("-a", "--trig-start-time"):
     trig_start_time = int(a)
-  elif o in ("-s", "--trig-end-time"):
+  elif o in ("-b", "--trig-end-time"):
     trig_end_time = int(a)
   elif o in ("-f", "--dag-file-name"):
     dag_file_name = a
