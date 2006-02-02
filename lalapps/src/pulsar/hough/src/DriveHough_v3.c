@@ -432,26 +432,6 @@ int main(int argc, char *argv[]){
   } /* end of sft reading block */
   
     
-  /* computing the Hough threshold for a given false alarm  */
-  /* HoughThreshold = N*alpha +sqrt(2N alpha (1-alpha))*erfcinv(2 alpha_h) */
-  {
-    REAL8  alphaPeak, meanN, sigmaN, erfcInv;
-    
-    alphaPeak = exp(- uvar_peakThreshold);
-    
-    meanN = mObsCoh* alphaPeak;
-    sigmaN = sqrt(meanN *(1.0 - alphaPeak));
-    /* this should be  erfcInv =erfcinv(2.0 *uvar_houghFalseAlarm) */
-    /* the function used is basically the inverse of the CDF for the 
-       Gaussian distribution with unit variance and
-       erfcinv(x) = gsl_cdf_ugaussian_Qinv (0.5*x)/sqrt(2) */
-    /* First check that false alarm is within bounds 
-       and set it to something reasonable if not */
-    if ( (uvar_houghFalseAlarm > 0.999)&&(uvar_houghFalseAlarm < 0.0) ) 
-      uvar_houghFalseAlarm =  FALSEALARM;
-    erfcInv = gsl_cdf_ugaussian_Qinv (uvar_houghFalseAlarm)/sqrt(2);    
-    houghThreshold = meanN + sigmaN*sqrt(2.0)*erfcInv;    
-  }
 
 
   /* ****************************************************************/
@@ -657,13 +637,13 @@ int main(int argc, char *argv[]){
     {
       UINT4 k;
       REAL8 sumWeightSquare;
+      REAL8  alphaPeak, meanN, sigmaN, erfcInv;
 
       /* set sky positions and skypatch sizes */
       alpha = skyAlpha[skyCounter];
       delta = skyDelta[skyCounter];
       patchSizeX = skySizeDelta[skyCounter];
       patchSizeY = skySizeAlpha[skyCounter];
-
 
       for ( k = 0; k < mObsCoh; k++)
 	weightsV.data[k] = weightsNoise.data[k];
@@ -679,6 +659,27 @@ int main(int argc, char *argv[]){
       sumWeightSquare = 0.0;
       for ( k = 0; k < mObsCoh; k++)
 	sumWeightSquare += weightsV.data[k] * weightsV.data[k];
+
+
+      /* computing the Hough threshold for a given false alarm  */
+      /* HoughThreshold = N*alpha +sqrt(2 ||w||^2 * alpha *(1-alpha))*erfcinv(2 alpha_h) */      
+
+      alphaPeak = exp( -uvar_peakThreshold);
+      
+      /* expected mean and standard deviation for noise only */
+      meanN = mObsCoh* alphaPeak; 
+      sigmaN = sqrt(sumWeightSquare * alphaPeak * (1.0 - alphaPeak));
+      /* this should be  erfcInv =erfcinv(2.0 *uvar_houghFalseAlarm) */
+      /* the function used is basically the inverse of the CDF for the 
+	 Gaussian distribution with unit variance and
+	 erfcinv(x) = gsl_cdf_ugaussian_Qinv (0.5*x)/sqrt(2) */
+      /* First check that false alarm is within bounds 
+	 and set it to something reasonable if not */
+      if ( (uvar_houghFalseAlarm > 0.999)&&(uvar_houghFalseAlarm < 0.0) ) 
+	uvar_houghFalseAlarm =  FALSEALARM;
+      erfcInv = gsl_cdf_ugaussian_Qinv (uvar_houghFalseAlarm)/sqrt(2);    
+      houghThreshold = meanN + sigmaN*sqrt(2.0)*erfcInv;    
+
       
       /******************************************************************/  
       /* opening the output statistic, and event files */
@@ -945,7 +946,7 @@ int main(int argc, char *argv[]){
 	  for(j=0; j< histTotal.length; ++j){ histTotal.data[j]+=hist.data[j]; }
 
 	  /* calculate significance of loudest event in hough map */
-	  significance =  (stats.maxCount - stats.avgCount)/stats.stdDev;	      
+	  significance =  (stats.maxCount - meanN)/sigmaN;	      
 	  if ( significance > nStarSignificance[fBinSearch-f0Bin])
 	    {
 	      nStar[fBinSearch-f0Bin] = stats.maxCount;
@@ -1011,7 +1012,7 @@ int main(int argc, char *argv[]){
 	      LAL_CALL( LALHoughHistogram ( &status, &hist, &ht), &status);
 	      for(j=0; j< histTotal.length; ++j){ histTotal.data[j]+=hist.data[j]; }
 	      
-	      significance =  (stats.maxCount - stats.avgCount)/stats.stdDev;	      
+	      significance =  (stats.maxCount - meanN)/sigmaN;	      
 	      if ( significance > nStarSignificance[fBinSearch-f0Bin])
 		{
 		  nStar[fBinSearch-f0Bin] = stats.maxCount;
