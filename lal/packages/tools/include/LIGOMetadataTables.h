@@ -626,6 +626,7 @@ tagSimRingdownTable
   REAL4          mass;
   REAL4          longitude;
   REAL4          latitude;
+  REAL4          init_phase;
   REAL4          distance;
   REAL4          inclination;
   REAL4          polarization;
