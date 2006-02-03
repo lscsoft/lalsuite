@@ -39,7 +39,7 @@ endfunction
 function ret = ExtrapolatePulsarSpinRange ( range0, epoch1 )
   ## extrapolate the pulsar-spin range 'range0' from epoch0 to epoch1
 
-  dtau = epoch1 - range0.epoch
+  dtau = epoch1 - range0.epoch;
   
   numSpins = length( range0.fkdot );
   if ( numSpins != length ( range0.fkdotBand ) )
@@ -50,8 +50,8 @@ function ret = ExtrapolatePulsarSpinRange ( range0, epoch1 )
   fkdotIntervals1 = zeros ( 2, numSpins);	## hold result-vector
 
   s = numSpins - 1;
-  ks = [ 0 : s ]
-  dtaukfact = (dtau .^ ks) ./ fact(ks)
+  ks = [ 0 : s ];
+  dtaukfact = (dtau .^ ks) ./ fact(ks);
 
   for l = 0 : s
     for k = 0 : (s - l)
@@ -65,3 +65,17 @@ function ret = ExtrapolatePulsarSpinRange ( range0, epoch1 )
   ret.fkdotBand = fkdotIntervals1(2,:) .- fkdotIntervals1(1,:);
   
 endfunction
+
+
+
+range0.epoch = 714180733;
+range0.fkdot = [ 300,  -1.0000e-07, 1.0000e-15, -1.0000e-22, 2.0000e-29 ];
+range0.fkdotBand = [0, -1.0e-7,  1.0e-15, -1.0e-22, -1.0e-30 ];
+
+epoch1 = 714180733 + 94608000;
+
+save_prec = output_precision;
+output_precision = 16;
+rangeResult = ExtrapolatePulsarSpinRange( range0, epoch1 )
+
+output_precision = save_prec;
