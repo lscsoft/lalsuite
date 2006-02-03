@@ -247,6 +247,7 @@ fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:start_time_gmst\" Ty
 fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:mass\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:longitude\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:latitude\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:init_phase\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:distance\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:inclination\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:polarization\" Type=\"real_4\"/>\n" , fp ) == EOF || \
@@ -264,7 +265,7 @@ fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:simulation_id\" Type
 fputs( "      <Stream Name=\"sim_ringdowngroup:sim_ringdown:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 #define SIM_RINGDOWN_ROW \
-  "         \"process:process_id:0\",\"%s\",\"%s\",%d,%d,%d,%d,%d,%d,%22.16e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,\"sim_ring:simulation_id:0\""
+  "         \"process:process_id:0\",\"%s\",\"%s\",%d,%d,%d,%d,%d,%d,%22.16e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,\"sim_ring:simulation_id:0\""
 
 #define PRINT_LIGOLW_XML_SUMM_VALUE(fp) ( \
 fputs( "   <Table Name=\"summ_valuegroup:summ_value:table\">\n" , fp ) == EOF || \

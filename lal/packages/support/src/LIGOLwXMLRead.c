@@ -432,19 +432,20 @@ MetaTableDirectory * XLALCreateMetaTableDir(
           {"mass",                         -1, 9},
           {"longitude",                    -1, 10},
           {"latitude",                     -1, 11},
-          {"distance",                     -1, 12},
-          {"inclination",                  -1, 13},
-          {"polarization",                 -1, 14},
-          {"epsilon",                      -1, 15},
-          {"spin",                         -1, 16},
-          {"frequency",                    -1, 17},
-          {"quality",                      -1, 18},
-          {"eff_dist_h",                   -1, 19},
-          {"eff_dist_l",                   -1, 20},
-          {"h0",                           -1, 21},
-          {"hrss",                         -1, 22},
-          {"hrss_h",                       -1, 23},
-          {"hrss_l",                       -1, 24},
+          {"init_phase",                   -1, 12},
+          {"distance",                     -1, 13},
+          {"inclination",                  -1, 14},
+          {"polarization",                 -1, 15},
+          {"epsilon",                      -1, 16},
+          {"spin",                         -1, 17},
+          {"frequency",                    -1, 18},
+          {"quality",                      -1, 19},
+          {"eff_dist_h",                   -1, 20},
+          {"eff_dist_l",                   -1, 21},
+          {"h0",                           -1, 22},
+          {"hrss",                         -1, 23},
+          {"hrss_h",                       -1, 24},
+          {"hrss_l",                       -1, 25},
           {NULL,                            0, 0}
         };
         for ( i=0 ; tmpTableDir[i].name; ++i )
@@ -763,10 +764,6 @@ SnglRingdownTable    * XLALSnglRingdownTableFromLIGOLw (
               thisEvent->sigma_sq = r8colData;
               }
           else if ( tableDir[j].idx == 13 )
-          {
-            thisEvent->sigma_sq = i8colData;
-          }
-          else if ( tableDir[j].idx == 14 )
             {
               if ( tableDir[j].pos > 0 && i8colData )
                 {
@@ -1452,19 +1449,20 @@ LALCreateMetaTableDir(
           {"mass",                         -1, 9},
           {"longitude",                    -1, 10},
           {"latitude",                     -1, 11},
-          {"distance",                     -1, 12},
-          {"inclination",                  -1, 13},
-          {"polarization",                 -1, 14},
-          {"epsilon",                      -1, 15},
-          {"spin",                         -1, 16},
-          {"frequency",                    -1, 17},
-          {"quality",                      -1, 18},
-          {"eff_dist_h",                   -1, 19},
-          {"eff_dist_l",                   -1, 20},
-          {"h0",                           -1, 21},
-          {"hrss",                         -1, 22},
-          {"hrss_h",                       -1, 23},
-          {"hrss_l",                       -1, 24},
+          {"init_phase",                   -1, 12},
+          {"distance",                     -1, 13},
+          {"inclination",                  -1, 14},
+          {"polarization",                 -1, 15},
+          {"epsilon",                      -1, 16},
+          {"spin",                         -1, 17},
+          {"frequency",                    -1, 18},
+          {"quality",                      -1, 19},
+          {"eff_dist_h",                   -1, 20},
+          {"eff_dist_l",                   -1, 21},
+          {"h0",                           -1, 22},
+          {"hrss",                         -1, 23},
+          {"hrss_h",                       -1, 24},
+          {"hrss_l",                       -1, 25},
           {NULL,                            0, 0}
         };
         for ( i=0 ; tmpTableDir[i].name; ++i )
@@ -1987,10 +1985,6 @@ LALSnglRingdownTableFromLIGOLw (
             thisEvent->sigma_sq = r8colData;
           }
           else if ( tableDir[j].idx == 13 )
-          {
-            thisEvent->sigma_sq = i8colData;
-          }
-          else if ( tableDir[j].idx == 14 )
             {
               if ( tableDir[j].pos > 0 && i8colData )
                 {
@@ -2164,53 +2158,61 @@ LALSimRingdownTableFromLIGOLw (
                   }
               else if ( tableDir[j].idx == 12 )
                 {
-                  thisEvent->distance = r4colData;
+                  thisEvent->latitude = r4colData;
                   }
               else if ( tableDir[j].idx == 13 )
                 {
-                  thisEvent->inclination = r4colData;
+                  thisEvent->init_phase = r4colData;
                   }
               else if ( tableDir[j].idx == 14 )
                 {
-                  thisEvent->polarization = r4colData;
+                  thisEvent->distance = r4colData;
                   }
               else if ( tableDir[j].idx == 15 )
                 {
-                  thisEvent->epsilon = r4colData;
+                  thisEvent->inclination = r4colData;
                   }
               else if ( tableDir[j].idx == 16 )
+                {
+                  thisEvent->polarization = r4colData;
+                  }
+              else if ( tableDir[j].idx == 17 )
+                {
+                  thisEvent->epsilon = r4colData;
+                  }
+              else if ( tableDir[j].idx == 18 )
               {
                 thisEvent->spin = r4colData;
               }
-              else if ( tableDir[j].idx == 17 )
+              else if ( tableDir[j].idx == 19 )
               {
                 thisEvent->frequency = r4colData;
               }
-              else if ( tableDir[j].idx == 18 )
+              else if ( tableDir[j].idx == 20 )
               {
                 thisEvent->quality = r4colData;
               }
-              else if ( tableDir[j].idx == 19 )
+              else if ( tableDir[j].idx == 21 )
               {
                 thisEvent->eff_dist_h = r4colData;
               }
-              else if ( tableDir[j].idx == 20 )
+              else if ( tableDir[j].idx == 22 )
               {
                 thisEvent->eff_dist_l = r4colData;
               }
-              else if ( tableDir[j].idx == 21 )
+              else if ( tableDir[j].idx == 23 )
               {
                 thisEvent->h0 = r4colData;
               }
-              else if ( tableDir[j].idx == 22 )
+              else if ( tableDir[j].idx == 24 )
               {
                 thisEvent->hrss = r4colData;
               }
-              else if ( tableDir[j].idx == 23 )
+              else if ( tableDir[j].idx == 25 )
               {
                 thisEvent->hrss_h = r4colData;
               }
-              else if ( tableDir[j].idx == 24 )
+              else if ( tableDir[j].idx == 26 )
               {
                 thisEvent->hrss_l = r4colData;
               }

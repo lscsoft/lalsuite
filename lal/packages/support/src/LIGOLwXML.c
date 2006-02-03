@@ -712,6 +712,7 @@ LALWriteLIGOLwXMLTable (
                 tablePtr.simRingdownTable->mass,
                 tablePtr.simRingdownTable->longitude,
                 tablePtr.simRingdownTable->latitude,
+                tablePtr.simRingdownTable->init_phase,
                 tablePtr.simRingdownTable->distance,
                 tablePtr.simRingdownTable->inclination,
                 tablePtr.simRingdownTable->polarization,
