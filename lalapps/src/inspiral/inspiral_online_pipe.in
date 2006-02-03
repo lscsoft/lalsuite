@@ -201,8 +201,8 @@ ifo = cp.get('pipeline','ifo')
 run = cp.get('pipeline','run')
 
 # create a shell script to copy the output data to the desired locations
-output_location = os.path.join(cp.get('publish','outputdir'), '${1}')
-dmt_location = os.path.join(cp.get('publish','dmtdir'), '${1}')
+output_location = os.path.join(cp.get('publish','outputdir'), '${2}')
+dmt_location = os.path.join(cp.get('publish','dmtdir'), '${2}')
 output_script = open('output.sh','w')
 output_script.write("""#!/bin/bash
 if [ ${1} -ne 0 ] ; then
