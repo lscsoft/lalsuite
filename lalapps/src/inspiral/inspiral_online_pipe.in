@@ -23,25 +23,26 @@ sys.path.append('@PYTHONLIBDIR@')
 
 # import the modules we need to build the pipeline
 from glue import pipeline
+from glue import segments
 import inspiral
 
 def usage():
   msg = """\
 Usage: lalapps_inspiral_online_pipe [options]
 
-  -h, --help                 display this message
-  -v, --version              print version information and exit
+  -h, --help                     display this message
+  -v, --version                  print version information and exit
 
-  -s, --gps-start-time SEC   start time of segment to be analyzed
-  -e, --gps-end-time SEC     end time of segment to be analyzed
-  -a, --trig-start-time SEC  only output triggers after GPS time
-  -b, --trig-end-time SEC    only output triggers before GPS time SEC
+  -s, --gps-start-time SEC       start time of segment to be analyzed
+  -e, --gps-end-time SEC         end time of segment to be analyzed
+  -a, --analysis-start-time SEC  only output triggers after GPS time
+  -b, --analysis-end-time SEC    only output triggers before GPS time SEC
 
-  -f, --dag-file-name NAME   output dag file name
-  -t, --aux-data-path PATH   path to auxillary data
+  -f, --dag-file-name NAME       output dag file name
+  -t, --aux-data-path PATH       path to auxillary data
 
-  -c, --config-file FILE     use configuration file FILE
-  -l, --log-path PATH        directory to write condor log file
+  -c, --config-file FILE         use configuration file FILE
+  -l, --log-path PATH            directory to write condor log file
 """
   print >> sys.stderr, msg
 
@@ -52,8 +53,8 @@ longop = [
   "version",
   "gps-start-time=",
   "gps-end-time=",
-  "trig-start-time=",
-  "trig-end-time=",
+  "analysis-start-time=",
+  "analysis-end-time=",
   "dag-file-name=",
   "aux-data-path=",
   "config-file=",
@@ -68,8 +69,8 @@ except getopt.GetoptError:
 
 gps_start_time = None
 gps_end_time = None
-trig_start_time = None
-trig_end_time = None
+analysis_start_time = None
+analysis_end_time = None
 dag_file_name = None
 aux_data_path = None
 config_file = None
@@ -86,10 +87,10 @@ for o, a in opts:
     gps_start_time = int(a)
   elif o in ("-e", "--gps-end-time"):
     gps_end_time = int(a)
-  elif o in ("-a", "--trig-start-time"):
-    trig_start_time = int(a)
-  elif o in ("-b", "--trig-end-time"):
-    trig_end_time = int(a)
+  elif o in ("-a", "--analysis-start-time"):
+    analysis_start_time = int(a)
+  elif o in ("-b", "--analysis-end-time"):
+    analysis_end_time = int(a)
   elif o in ("-f", "--dag-file-name"):
     dag_file_name = a
   elif o in ("-t", "--aux-data-path"):
@@ -193,6 +194,7 @@ r = int(cp.get('data', 'sample-rate'))
 o = int(cp.get('inspiral', 'segment-overlap'))
 length = ( n * s - ( s - 1 ) * o ) / r
 overlap = o / r
+job_analysis_time = length - overlap
 
 # get the order of the ifos to filter
 ifo = cp.get('pipeline','ifo')
@@ -225,83 +227,122 @@ log_fh.write("gps_start_time = %d\n" % gps_start_time)
 log_fh.write("gps_end_time = %d\n" % gps_end_time)
 gps_start_time += pad
 gps_end_time -= pad
+log_fh.write("gps_start_time + pad = %d\n" % gps_start_time)
+log_fh.write("gps_end_time - pad = %d\n" % gps_end_time)
 
-# create the template bank job
-bank = inspiral.TmpltBankNode(tmplt_job)
-bank.set_start(gps_start_time)
-bank.set_end(gps_end_time)
-bank.set_ifo(ifo)
-bank.set_cache(df.get_output())
-bank.add_parent(df)
-dag.add_node(bank)
+# decide if we need to segment the data
+total_analysis_time = analysis_end_time - analysis_start_time
+jobsegs = segments.segmentlist()
+if total_analysis_time > job_analysis_time:
+  t = gps_start_time
+  while t + length < gps_end_time:
+    jobsegs.append( segments.segment(t, t + length) )
+    t += length - overlap
+  trig_start_time = None
+  trig_end_time = None
+  ret_start_time = jobsegs[0][0] + (overlap / 2)
+  ret_end_time = jobsegs[-1][1] - (overlap / 2)
+else:
+  jobsegs.append( segments.segment(gps_start_time, gps_end_time) )
+  ret_start_time = trig_start_time = analysis_start_time
+  ret_end_time = trig_end_time = analysis_end_time
+  
+# write out a log file for this script
+log_fh.write("analysis_start_time = %d\n" % analysis_start_time)
+log_fh.write("analysis_end_time = %d\n" % analysis_end_time)
+log_fh.write("total_analysis_time = %d\n" % total_analysis_time)
+log_fh.write("job_analysis_time = %d\n" % job_analysis_time)
+log_fh.write(str(jobsegs) + '\n')
+if trig_start_time:
+  log_fh.write("trig_start_time = %d\n" % trig_start_time)
+if trig_end_time:
+  log_fh.write("trig_end_time = %d\n" % trig_end_time)
+log_fh.write("ret_start_time = %d\n" % ret_start_time)
+log_fh.write("ret_end_time = %d\n" % ret_end_time)
+log_fh.write("total analyzed time = %d\n" % (ret_end_time - ret_start_time))
+
+for seg in jobsegs:
+  # create the template bank job
+  bank = inspiral.TmpltBankNode(tmplt_job)
+  bank.set_start(seg[0])
+  bank.set_end(seg[1])
+  bank.set_ifo(ifo)
+  bank.set_cache(df.get_output())
+  bank.add_parent(df)
+  dag.add_node(bank)
     
-# split the template bank up into smaller banks
-split = inspiral.SplitBankNode(split_job)
-split.set_bank(bank.get_output())
-split.set_num_banks(cp.get('pipeline','numbanks'))
-split.add_parent(bank)
-dag.add_node(split)
+  # split the template bank up into smaller banks
+  split = inspiral.SplitBankNode(split_job)
+  split.set_bank(bank.get_output())
+  split.set_num_banks(cp.get('pipeline','numbanks'))
+  split.add_parent(bank)
+  dag.add_node(split)
 
-# create the inspiral jobs to do the analysis
-i = 0
-sub_insp = []
-for subbank in split.get_output():
-  insp = inspiral.InspiralNode(insp_job)
-  insp.set_start(gps_start_time)
-  insp.set_end(gps_end_time)
-  insp.add_var_opt('trig-start-time',trig_start_time)
-  insp.add_var_opt('trig-end-time',trig_end_time)
-  insp.set_ifo(ifo)
-  insp.set_cache(df.get_output())
-  insp.set_bank(subbank)
-  if usertag:
-    insp.set_user_tag(usertag + "_%2.2d" % i)
+  # create the inspiral jobs to do the analysis
+  i = 0
+  sub_insp = []
+  for subbank in split.get_output():
+    insp = inspiral.InspiralNode(insp_job)
+    insp.set_start(seg[0])
+    insp.set_end(seg[1])
+    if trig_start_time:
+      insp.add_var_opt('trig-start-time',trig_start_time)
+    if trig_end_time:
+      insp.add_var_opt('trig-end-time',trig_end_time)
+    insp.set_ifo(ifo)
+    insp.set_cache(df.get_output())
+    insp.set_bank(subbank)
+    if usertag:
+      insp.set_user_tag(usertag + "_%2.2d" % i)
+    else:
+      insp.set_user_tag("%2.2d" % i)
+    insp.add_parent(split)
+    dag.add_node(insp)
+    sub_insp.append(insp)
+    i = i + 1
+
+  # create a cache file name to hold the input to ligolw_add
+  if trig_start_time:
+    out_start = trig_start_time
   else:
-    insp.set_user_tag("%2.2d" % i)
-  insp.add_parent(split)
-  dag.add_node(insp)
-  sub_insp.append(insp)
-  i = i + 1
+    out_start = seg[0] + overlap / 2
+  if trig_end_time:
+    out_end = trig_end_time
+  else:
+    out_end = seg[1] - overlap / 2
+  out_basename = ifo + '-' + inspstr + '-' + str(out_start) + '-'
+  out_basename += str(out_end - out_start)
+  insp_cache_file_name = out_basename + '.cache'
+  insp_cache_file = open(insp_cache_file_name, 'w')
+  path = 'file://localhost' + os.getcwd()
 
-# create a cache file name to hold the input to ligolw_add
-out_basename = ifo + '-' + inspstr + '-' + str(trig_start_time) + '-'
-out_basename += str(trig_end_time - trig_start_time)
-insp_cache_file_name = out_basename + '.cache'
-insp_cache_file = open(insp_cache_file_name, 'w')
-path = 'file://localhost' + os.getcwd()
+  # use ligolw_add to join everything back together
+  lwadd = pipeline.LigolwAddNode(lwadd_job)
+  lwadd.add_var_opt('input-cache',insp_cache_file_name)
+  lwadd.set_output(out_basename + '.xml')
+  for insp in sub_insp:
+    file = insp.get_output()
+    [instrument, type, start, duration, extension] = re.split("[.-]", file)
+    print >> insp_cache_file, instrument[0], type, start, duration, \
+      os.path.join(path , file)
+    lwadd.add_parent(insp)
+  lwadd.set_post_script("output.sh $RETURN %s" % lwadd.get_output())
+  dag.add_node(lwadd)
 
-# use ligolw_add to join everything back together
-lwadd = pipeline.LigolwAddNode(lwadd_job)
-lwadd.add_var_opt('input-cache',insp_cache_file_name)
-lwadd.set_output(out_basename + '.xml')
-for insp in sub_insp:
-  file = insp.get_output()
-  [instrument, type, start, duration, extension] = re.split("[.-]", file)
-  print >> insp_cache_file, instrument[0], type, start, duration, \
-    os.path.join(path , file)
-  lwadd.add_parent(insp)
-lwadd.set_post_script("output.sh $RETURN %s" % lwadd.get_output())
-dag.add_node(lwadd)
-
-# add a ldbdc node to publish the data
-ldbdc = pipeline.LDBDCNode( ldbdc_job )
-ldbdc.set_server( cp.get('publish','ldbdserver') )
-ldbdc.set_insert( lwadd.get_output() )
-ldbdc.set_retry(3)
-ldbdc.add_parent(lwadd)
-dag.add_node(ldbdc)
+  # add a ldbdc node to publish the data
+  ldbdc = pipeline.LDBDCNode( ldbdc_job )
+  ldbdc.set_server( cp.get('publish','ldbdserver') )
+  ldbdc.set_insert( lwadd.get_output() )
+  ldbdc.set_retry(3)
+  ldbdc.add_parent(lwadd)
+  dag.add_node(ldbdc)
 
 # write the dag
 dag.write_sub_files()
 dag.write_dag()
 
-# write out a log file for this script
-log_fh.write("gps_start_time + pad = %d\n" % gps_start_time)
-log_fh.write("gps_end_time - pad = %d\n" % gps_end_time)
-log_fh.write("trig_start_time = %d\n" % trig_start_time)
-log_fh.write("trig_end_time = %d\n" % trig_end_time)
 log_fh.close()
   
 # return the analysis start and end time to onasys
-print >> sys.stdout, "%d %d" % (trig_start_time, trig_end_time)
+print >> sys.stdout, "%d %d" % (ret_start_time, ret_end_time)
 sys.exit(0)
