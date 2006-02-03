@@ -185,6 +185,7 @@ REAL4 chisqThresh       = -1;           /* chisq veto thresholds        */
 Clustering clusterMethod;               /* chosen clustering algorithm  */  
 REAL4 clusterWindow     = -1;           /* cluster over time window     */  
 Approximant approximant;                /* waveform approximant         */
+CHAR *approximantName   = NULL;         /* waveform approximant name    */
 INT4 bcvConstraint      = 0;            /* constraint BCV filter        */
 INT4 flagFilterInjOnly  = -1;            /* flag for filtering inj. only */ 
 
@@ -408,16 +409,18 @@ int main( int argc, char *argv[] )
   if ( ! *comment )
   {
     LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
-    LALSnprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX, 
-        " " );
   } 
   else 
   {
     LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX,
         "%s", comment );
-    LALSnprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX,
-        "%s", comment );
   }
+
+  /* put the name of the search in the search_summary comment */ 
+  /* XXX note twoPN is hardwires and should be changed if we modify the    */
+  /* code to allow different PN orders to be specified on the command line */
+  LALSnprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX,
+      "%stwoPN", approximantName );
 
   /* set the name of the output file */
   if ( userTag && ifoTag )
@@ -3386,6 +3389,10 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       case 'F':
+        /* create storage for the approximant name */
+        optarg_len = strlen( optarg ) + 1;
+        approximantName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( approximantName, optarg, optarg_len );
         if ( ! strcmp( "TaylorT1", optarg ) )
         {
           approximant = TaylorT1;
