@@ -305,6 +305,7 @@ int main( int argc, char *argv[] )
   MetadataTable         siminspiral;
   MetadataTable         siminstparams;
   MetadataTable         summvalue;
+  MetadataTable         filtertable;
   SearchSummvarsTable  *this_search_summvar = NULL;
   SummValueTable       *this_summ_value = NULL;
   ProcessParamsTable   *this_proc_param = NULL;
@@ -392,6 +393,10 @@ int main( int argc, char *argv[] )
     calloc( 1, sizeof(SearchSummaryTable) );
   searchsummvars.searchSummvarsTable = NULL;
 
+  /* create the filter table */
+  filtertable.filterTable = (FilterTable *)
+    calloc( 1, sizeof(FilterTable) );
+
   /* zero out the checkpoint and output paths */
   memset( ckptPath, 0, FILENAME_MAX * sizeof(CHAR) );
   memset( outputPath, 0, FILENAME_MAX * sizeof(CHAR) );
@@ -405,14 +410,24 @@ int main( int argc, char *argv[] )
 
   /* can use LALMalloc() and LALCalloc() from here onwards */
 
+  /* populate the filter table */
+  LALSnprintf( filtertable.filterTable->program, LIGOMETA_PROGRAM_MAX, "%s", 
+      PROGRAM_NAME );
+  filtertable.filterTable->start_time = gpsStartTime.gpsSeconds;
+  LALSnprintf( filtertable.filterTable->filter_name, LIGOMETA_COMMENT_MAX,
+      "%stwoPN", approximantName );
+
   /* fill the comment, if a user has specified on, or leave it blank */
   if ( ! *comment )
   {
     LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
+    LALSnprintf( filtertable.filterTable->comment, LIGOMETA_COMMENT_MAX, " " );
   } 
   else 
   {
     LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX,
+        "%s", comment );
+    LALSnprintf( filtertable.filterTable->comment, LIGOMETA_COMMENT_MAX,
         "%s", comment );
   }
 
@@ -2453,6 +2468,16 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchsumm, 
         search_summary_table ), &status );
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+  free( searchsumm.searchSummaryTable );
+
+  /* write the filter table */
+  if ( vrbflg ) fprintf( stdout, "  filter table...\n" );
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, 
+        filter_table ), &status );
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, filtertable, 
+        filter_table ), &status );
+  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+  free( filtertable.filterTable );
 
   /* write the search summvars table */
   if ( numTmplts )
@@ -2502,16 +2527,12 @@ int main( int argc, char *argv[] )
         summ_value_table ), &status );
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
 
-
   while ( summvalue.summValueTable )
   {
     this_summ_value = summvalue.summValueTable;
     summvalue.summValueTable = summvalue.summValueTable->next;
     LALFree( this_summ_value );
   }
-
-  /* free the search summary table */
-  free( searchsumm.searchSummaryTable );
 
   /* write the sngl_inspiral triggers to the output xml */
   if ( savedEvents.snglInspiralTable )
@@ -2655,6 +2676,7 @@ int main( int argc, char *argv[] )
       LALFree( thisInj );
     }
   }
+  if ( approximantName) free( approximantName );
   if ( calCacheName )  free( calCacheName );
   if ( frInCacheName ) free( frInCacheName );
   if ( frInType )      free( frInType );
