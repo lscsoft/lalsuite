@@ -172,7 +172,7 @@ ldbdc_job = pipeline.LDBDCJob('logs',cp)
 
 # make the lwadd job a priority so results get reported quickly
 lwadd_job.add_condor_cmd('priority', '20')
-lwadd_job.add_opt('add-lfn-table')
+lwadd_job.add_opt('add-lfn-table',None)
 
 # set the usertag in the template bank
 if usertag:
