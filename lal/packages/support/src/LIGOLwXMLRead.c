@@ -2158,61 +2158,57 @@ LALSimRingdownTableFromLIGOLw (
                   }
               else if ( tableDir[j].idx == 12 )
                 {
-                  thisEvent->latitude = r4colData;
+                  thisEvent->init_phase = r4colData;
                   }
               else if ( tableDir[j].idx == 13 )
                 {
-                  thisEvent->init_phase = r4colData;
+                  thisEvent->distance = r4colData;
                   }
               else if ( tableDir[j].idx == 14 )
                 {
-                  thisEvent->distance = r4colData;
+                  thisEvent->inclination = r4colData;
                   }
               else if ( tableDir[j].idx == 15 )
                 {
-                  thisEvent->inclination = r4colData;
+                  thisEvent->polarization = r4colData;
                   }
               else if ( tableDir[j].idx == 16 )
                 {
-                  thisEvent->polarization = r4colData;
-                  }
-              else if ( tableDir[j].idx == 17 )
-                {
                   thisEvent->epsilon = r4colData;
                   }
-              else if ( tableDir[j].idx == 18 )
+              else if ( tableDir[j].idx == 17 )
               {
                 thisEvent->spin = r4colData;
               }
-              else if ( tableDir[j].idx == 19 )
+              else if ( tableDir[j].idx == 18 )
               {
                 thisEvent->frequency = r4colData;
               }
-              else if ( tableDir[j].idx == 20 )
+              else if ( tableDir[j].idx == 19 )
               {
                 thisEvent->quality = r4colData;
               }
-              else if ( tableDir[j].idx == 21 )
+              else if ( tableDir[j].idx == 20 )
               {
                 thisEvent->eff_dist_h = r4colData;
               }
-              else if ( tableDir[j].idx == 22 )
+              else if ( tableDir[j].idx == 21 )
               {
                 thisEvent->eff_dist_l = r4colData;
               }
-              else if ( tableDir[j].idx == 23 )
+              else if ( tableDir[j].idx == 22 )
               {
                 thisEvent->h0 = r4colData;
               }
-              else if ( tableDir[j].idx == 24 )
+              else if ( tableDir[j].idx == 23 )
               {
                 thisEvent->hrss = r4colData;
               }
-              else if ( tableDir[j].idx == 25 )
+              else if ( tableDir[j].idx == 24 )
               {
                 thisEvent->hrss_h = r4colData;
               }
-              else if ( tableDir[j].idx == 26 )
+              else if ( tableDir[j].idx == 25 )
               {
                 thisEvent->hrss_l = r4colData;
               }
