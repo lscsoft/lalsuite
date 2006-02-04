@@ -201,17 +201,21 @@ ifo = cp.get('pipeline','ifo')
 run = cp.get('pipeline','run')
 
 # create a shell script to copy the output data to the desired locations
-output_location = os.path.join(cp.get('publish','outputdir'), '${2}')
-dmt_location = os.path.join(cp.get('publish','dmtdir'), '${2}')
+output_location = cp.get('publish','outputdir')
+dmt_location = cp.get('publish','dmtdir')
 output_script = open('output.sh','w')
 output_script.write("""#!/bin/bash
 if [ ${1} -ne 0 ] ; then
   exit 1
 else
-  cp -f ${1} %s
-  ln -sf %s %s
+  OUTPUTPATH=""" + output_location + """/${2}
+  if [ ! -d ${OUTPUTPATH} ]; then
+    mkdir -p ${OUTPUTPATH}
+  fi
+  cp ${3} ${OUTPUTPATH}
+  ln -sf ${OUTPUTPATH}/${3} """ + dmt_location + """/${3}
 fi
-""" % (output_location, output_location, dmt_location) )
+"""
 output_script.close()
 os.chmod('output.sh',0755)
 
@@ -326,7 +330,11 @@ for seg in jobsegs:
     print >> insp_cache_file, instrument[0], type, start, duration, \
       os.path.join(path , file)
     lwadd.add_parent(insp)
-  lwadd.set_post_script("output.sh $RETURN %s" % lwadd.get_output())
+  output_file = lwadd.get_output()
+  [instrument, type, start, duration, extension] = re.split("[.-]", output_file)
+  start_str = str(start)
+  lwadd.set_post_script("output.sh $RETURN %s-%s-%s %s" % 
+    (instrument, type, start_str[0:3], output_file))
   dag.add_node(lwadd)
 
   # add a ldbdc node to publish the data
