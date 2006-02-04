@@ -172,6 +172,7 @@ ldbdc_job = pipeline.LDBDCJob('logs',cp)
 
 # make the lwadd job a priority so results get reported quickly
 lwadd_job.add_condor_cmd('priority', '20')
+lwadd_job.add_opt('add-lfn-table')
 
 # set the usertag in the template bank
 if usertag:
@@ -324,6 +325,8 @@ for seg in jobsegs:
   lwadd = pipeline.LigolwAddNode(lwadd_job)
   lwadd.add_var_opt('input-cache',insp_cache_file_name)
   lwadd.set_output(out_basename + '.xml')
+  lwadd.add_var_opt('lfn-start-time',out_start)
+  lwadd.add_var_opt('lfn-end-time',out_end)
   for insp in sub_insp:
     file = insp.get_output()
     [instrument, type, start, duration, extension] = re.split("[.-]", file)
@@ -332,6 +335,7 @@ for seg in jobsegs:
     lwadd.add_parent(insp)
   output_file = lwadd.get_output()
   [instrument, type, start, duration, extension] = re.split("[.-]", output_file)
+  lwadd.add_var_opt('lfn-comment',type)
   start_str = str(start)
   lwadd.set_post_script("output.sh $RETURN %s-%s-%s %s" % 
     (instrument, type, start_str[0:4], output_file))
