@@ -215,7 +215,7 @@ else
   cp ${3} ${OUTPUTPATH}
   ln -sf ${OUTPUTPATH}/${3} """ + dmt_location + """/${3}
 fi
-"""
+""")
 output_script.close()
 os.chmod('output.sh',0755)
 
