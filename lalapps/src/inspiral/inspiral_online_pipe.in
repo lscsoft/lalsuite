@@ -334,7 +334,7 @@ for seg in jobsegs:
   [instrument, type, start, duration, extension] = re.split("[.-]", output_file)
   start_str = str(start)
   lwadd.set_post_script("output.sh $RETURN %s-%s-%s %s" % 
-    (instrument, type, start_str[0:3], output_file))
+    (instrument, type, start_str[0:4], output_file))
   dag.add_node(lwadd)
 
   # add a ldbdc node to publish the data
