@@ -266,6 +266,8 @@ log_fh.write("ret_start_time = %d\n" % ret_start_time)
 log_fh.write("ret_end_time = %d\n" % ret_end_time)
 log_fh.write("total analyzed time = %d\n" % (ret_end_time - ret_start_time))
 
+prev_ldbdc = None
+
 for seg in jobsegs:
   # create the template bank job
   bank = inspiral.TmpltBankNode(tmplt_job)
@@ -347,6 +349,9 @@ for seg in jobsegs:
   ldbdc.set_insert( lwadd.get_output() )
   ldbdc.set_retry(3)
   ldbdc.add_parent(lwadd)
+  if prev_ldbdc:
+    ldbdc.add_parent(prev_ldbdc)
+    prev_ldbdc = ldbdc
   dag.add_node(ldbdc)
 
 # write the dag
