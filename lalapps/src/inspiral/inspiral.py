@@ -110,7 +110,7 @@ class SplitBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     cp = ConfigParser object from which options are read.
     """
     self.__executable = cp.get('condor','splitbank')
-    self.__universe = cp.get('condor','universe')
+    self.__universe = 'scheduler'
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
     pipeline.AnalysisJob.__init__(self,cp,dax)
 
