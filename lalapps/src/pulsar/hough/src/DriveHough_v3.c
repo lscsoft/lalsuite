@@ -52,18 +52,18 @@ extern int lalDebugLevel;
 /* boolean global variables for controlling output */
 BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps, uvar_printStats;
 
-#define EARTHEPHEMERIS "./earth05-09.dat"
-#define SUNEPHEMERIS "./sun05-09.dat" 
+/* #define EARTHEPHEMERIS "./earth05-09.dat" */
+/* #define SUNEPHEMERIS "./sun05-09.dat"  */
 
-/* #define EARTHEPHEMERIS "./earth00-04.dat" */
-/* #define SUNEPHEMERIS "./sun00-04.dat" */
+#define EARTHEPHEMERIS "./earth00-04.dat"
+#define SUNEPHEMERIS "./sun00-04.dat" 
 
 
 #define ACCURACY 0.00000001 /* of the velocity calculation */
 #define MAXFILES 3000 /* maximum number of files to read in a directory */
 #define MAXFILENAMELENGTH 256 /* maximum # of characters  of a SFT filename */
-/* #define SFTDIRECTORY "/home/badkri/fakesfts"  */
-#define SFTDIRECTORY "/nfs/morbo/geo600/hannover/sft/S4-LIGO/sft_1800.20050512.S4/S4-L1.1800-sft"
+#define SFTDIRECTORY "/home/badkri/fakesfts"  
+/* #define SFTDIRECTORY "/nfs/morbo/geo600/hannover/sft/S4-LIGO/sft_1800.20050512.S4/S4-L1.1800-sft" */
 #define DIROUT "./outHM1/"      /* prefix file output */
 #define BASENAMEOUT "HM1"
 
@@ -92,7 +92,7 @@ int main(int argc, char *argv[]){
   static LALDetector         detector;
 
   /* time and velocity vectors and files*/
-  static LIGOTimeGPSVector   timeV;
+  static LIGOTimeGPSVector   *timeV=NULL;
   static REAL8Cart3CoorVector velV;
   static REAL8Vector         timeDiffV;
 
@@ -312,7 +312,7 @@ int main(int argc, char *argv[]){
   }
 
   /* append an ident-string defining the exact CVS-version of the code used */
-  if ((fpLog = fopen(fnameLog, "a")) == NULL) 
+  if ((fpLog = fopen(fnameLog, "a")) != NULL) 
     {
       CHAR command[1024] = "";
       fprintf (fpLog, "\n\n# CVS-versions of executable:\n");
@@ -322,12 +322,10 @@ int main(int argc, char *argv[]){
       sprintf (command, "ident %s | sort -u >> %s", argv[0], fnameLog);
       system (command);	/* we don't check this. If it fails, we assume that */
     			/* one of the system-commands was not available, and */
-    			/* therefore the CVS-versions will not be logged */
-      
-      LALFree(fnameLog); 
+    			/* therefore the CVS-versions will not be logged */ 
     }
-  
 
+  LALFree(fnameLog); 
 
   /*****************************************************************/
   /* read skypatch info */
@@ -372,19 +370,19 @@ int main(int argc, char *argv[]){
   {
     /* new SFT I/O data types */
     SFTCatalog *catalog = NULL;
-    static  SFTConstraints constraints;
+    static SFTConstraints constraints;
 
     CHAR *tempDir;
     REAL8 doppWings, fmin, fmax;
     INT4 length;
 
     /* set detector constraint */
-    /*     constraints.detector = NULL; */
-    /*     constraints.detector = (CHAR *)LALCalloc(2, sizeof(CHAR)); */
+    constraints.detector = NULL;
+    constraints.detector = (CHAR *)LALCalloc(20, sizeof(CHAR));
     
-    /*     if (uvar_ifo == 1) strcpy( constraints.detector, "G1"); */
-    /*     if (uvar_ifo == 2) strcpy( constraints.detector, "L1"); */
-    /*     if (uvar_ifo == 3) strcpy( constraints.detector, "H1"); */
+    if (uvar_ifo == 1) strcpy( constraints.detector, "G1"); 
+    if (uvar_ifo == 2) strcpy( constraints.detector, "L1"); 
+    if (uvar_ifo == 3) strcpy( constraints.detector, "H1"); 
     
     /* get sft catalog */
     tempDir = (CHAR *)LALCalloc(512, sizeof(CHAR));
@@ -402,6 +400,9 @@ int main(int argc, char *argv[]){
     length =  uvar_fSearchBand * timeBase; /* total number of search bins - 1 */
     fLastBin = f0Bin + length;   /* final frequency bin to be analyzed */
 
+    /* get SFT timestamps */
+    LAL_CALL( LALSFTtimestampsFromCatalog(  &status, &timeV, catalog ), &status);  	
+
     /* add wings for Doppler modulation and running median block size*/
     doppWings = (uvar_f0 + uvar_fSearchBand) * VTOT;    
     fmin = uvar_f0 - doppWings - uvar_blocksRngMed * deltaF;
@@ -412,7 +413,7 @@ int main(int argc, char *argv[]){
     LAL_CALL( LALLoadSFTs ( &status, &inputSFTs, catalog, fmin, fmax), &status);
 
     /* free memory */
-    /* LALFree( constraints.detector ); */
+    LALFree( constraints.detector );
     LALFree( tempDir);
     LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);  	
 
@@ -454,12 +455,8 @@ int main(int argc, char *argv[]){
 
 
   /* ****************************************************************/
-  /* reading from SFT, times and generating peakgrams  */
+  /* generating peakgrams  */
   /* ****************************************************************/
-
-  timeV.length = mObsCoh;
-  timeV.data = NULL;  
-  timeV.data = (LIGOTimeGPS *)LALCalloc(mObsCoh, sizeof(LIGOTimeGPS));
   
   pgV.length = mObsCoh;
   pgV.pg = NULL;
@@ -484,8 +481,6 @@ int main(int argc, char *argv[]){
       LAL_CALL (SFTtoUCHARPeakGram( &status, &pg1, &sft, uvar_peakThreshold), &status);
       
       nPeaks = pg1.nPeaks;
-      timeV.data[j].gpsSeconds = pg1.epoch.gpsSeconds;
-      timeV.data[j].gpsNanoSeconds = pg1.epoch.gpsNanoSeconds;
 
       /* compress peakgram */      
       pgV.pg[j].length = nPeaks;
@@ -531,7 +526,7 @@ int main(int argc, char *argv[]){
    (*edat).ephiles.sunEphemeris = uvar_sunEphemeris;
 
     /* Leap seconds for the start time of the run */
-    LAL_CALL( LALLeapSecs(&status, &tmpLeap, &(timeV.data[0]), &lsfas), &status);
+    LAL_CALL( LALLeapSecs(&status, &tmpLeap, &(timeV->data[0]), &lsfas), &status);
     (*edat).leap = (INT2)tmpLeap;
     /* (*edat).leap = 13;   <<<<<<< Correct this */
 
@@ -541,8 +536,8 @@ int main(int argc, char *argv[]){
 
     /* calculate average velocity for each SFT duration */    
     for(j=0; j< mObsCoh; ++j){
-      velPar.startTime.gpsSeconds     = timeV.data[j].gpsSeconds;
-      velPar.startTime.gpsNanoSeconds = timeV.data[j].gpsNanoSeconds;
+      velPar.startTime.gpsSeconds     = timeV->data[j].gpsSeconds;
+      velPar.startTime.gpsNanoSeconds = timeV->data[j].gpsNanoSeconds;
       
       LAL_CALL( LALAvgDetectorVel ( &status, vel, &velPar), &status ); 
       
@@ -563,14 +558,14 @@ int main(int argc, char *argv[]){
     UINT4   j; 
 
     midTimeBase=0.5*timeBase;
-    ts = timeV.data[0].gpsSeconds;
-    tn = timeV.data[0].gpsNanoSeconds * 1.00E-9;
+    ts = timeV->data[0].gpsSeconds;
+    tn = timeV->data[0].gpsNanoSeconds * 1.00E-9;
     t0 = ts + tn;
     timeDiffV.data[0] = midTimeBase;
 
     for(j=1; j < mObsCoh; ++j){
-      ts = timeV.data[j].gpsSeconds;
-      tn = timeV.data[j].gpsNanoSeconds * 1.00E-9;  
+      ts = timeV->data[j].gpsSeconds;
+      tn = timeV->data[j].gpsNanoSeconds * 1.00E-9;  
       timeDiffV.data[j] = ts + tn - t0 + midTimeBase; 
     }  
   }
@@ -597,7 +592,7 @@ int main(int argc, char *argv[]){
 	/*for ( k = 0; k < mObsCoh; k++)
 	  weightsV.data[k] = weightsNoise.data[k]; */
 	
-	LAL_CALL( LALHOUGHComputeAMWeights( &status, &weightsV, &timeV, &detector, 
+	LAL_CALL( LALHOUGHComputeAMWeights( &status, &weightsV, timeV, &detector, 
 					    edat, alpha, delta), &status);
 	LAL_CALL( LALHOUGHNormalizeWeights( &status, &weightsV), &status);
       }
@@ -1116,9 +1111,11 @@ int main(int argc, char *argv[]){
     for (j=0;j< mObsCoh;++j) LALFree( pgV.pg[j].peak); 
   }
   LALFree(pgV.pg);
+
+  LAL_CALL(LALDestroyTimestampVector ( &status, &timeV), &status); 
   
   LALFree(timeDiffV.data);
-  LALFree(timeV.data);
+
   LALFree(velV.data);
 
   LALFree(weightsV.data);
