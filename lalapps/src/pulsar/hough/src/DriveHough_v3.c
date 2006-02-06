@@ -52,18 +52,17 @@ extern int lalDebugLevel;
 /* boolean global variables for controlling output */
 BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps, uvar_printStats;
 
-/* #define EARTHEPHEMERIS "./earth05-09.dat" */
-/* #define SUNEPHEMERIS "./sun05-09.dat"  */
+#define EARTHEPHEMERIS "./earth05-09.dat"
+#define SUNEPHEMERIS "./sun05-09.dat" 
 
-#define EARTHEPHEMERIS "./earth00-04.dat"
-#define SUNEPHEMERIS "./sun00-04.dat" 
-
+/* #define EARTHEPHEMERIS "./earth00-04.dat" */
+/* #define SUNEPHEMERIS "./sun00-04.dat"  */
 
 #define ACCURACY 0.00000001 /* of the velocity calculation */
 #define MAXFILES 3000 /* maximum number of files to read in a directory */
 #define MAXFILENAMELENGTH 256 /* maximum # of characters  of a SFT filename */
-#define SFTDIRECTORY "/home/badkri/fakesfts"  
-/* #define SFTDIRECTORY "/nfs/morbo/geo600/hannover/sft/S4-LIGO/sft_1800.20050512.S4/S4-L1.1800-sft" */
+/* #define SFTDIRECTORY "/home/badkri/fakesfts"   */
+#define SFTDIRECTORY "/nfs/morbo/geo600/hannover/sft/S4-LIGO/sft_1800.20050512.S4/S4-L1.1800-sft"
 #define DIROUT "./outHM1/"      /* prefix file output */
 #define BASENAMEOUT "HM1"
 
@@ -378,7 +377,7 @@ int main(int argc, char *argv[]){
 
     /* set detector constraint */
     constraints.detector = NULL;
-    constraints.detector = (CHAR *)LALCalloc(20, sizeof(CHAR));
+    constraints.detector = (CHAR *)LALCalloc(3, sizeof(CHAR));
     
     if (uvar_ifo == 1) strcpy( constraints.detector, "G1"); 
     if (uvar_ifo == 2) strcpy( constraints.detector, "L1"); 
@@ -1140,8 +1139,9 @@ int main(int argc, char *argv[]){
   LAL_CALL (LALDestroyUserVars(&status), &status);
 	
   LALCheckMemoryLeaks();
-  
-  INFO( DRIVEHOUGHCOLOR_MSGENORM );
+
+  LALInfo( &status, DRIVEHOUGHCOLOR_MSGENORM );
+
   return DRIVEHOUGHCOLOR_ENORM;
 }
 
