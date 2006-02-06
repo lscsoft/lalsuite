@@ -22,6 +22,7 @@ int lalDebugLevel = 0;
 static int sensemon_format;
 static int skip_first_line;
 int deltaT =0;
+const char *run = NULL;
 
 char *get_next_line( char *line, size_t size, FILE *fp )
 {
@@ -109,8 +110,13 @@ int read_time_series( struct series *aser, struct series *abser,
     }
     else
     {
-      /* gaby format is: Time alpha*beta alpha beta */
-      sscanf( line, "%d %f %f", &t, &ab, &a );
+      if ( !strcmp(run, "S3")) {
+	/* gaby format is: Time alpha*beta alpha beta */
+	sscanf( line, "%d %f %f", &t, &ab, &a );
+      } else {
+	sscanf( line, "%d %f %f", &t, &a, &ab );
+      }
+
     }
     
     if ( (t - t0) % deltaT )
@@ -173,7 +179,6 @@ int main( int argc, char *argv[] )
   static char   site;
   struct FrFile *frfile = NULL;
   struct FrameH *frame  = NULL;
-  const char *run = NULL;
   const char *ver = NULL;
   const char *ifo = NULL;
   const char *timeSpace = NULL;
