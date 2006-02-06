@@ -52,17 +52,17 @@ extern int lalDebugLevel;
 /* boolean global variables for controlling output */
 BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps, uvar_printStats;
 
-#define EARTHEPHEMERIS "./earth05-09.dat"
-#define SUNEPHEMERIS "./sun05-09.dat" 
+/* #define EARTHEPHEMERIS "./earth05-09.dat" */
+/* #define SUNEPHEMERIS "./sun05-09.dat"  */
 
-/* #define EARTHEPHEMERIS "./earth00-04.dat" */
-/* #define SUNEPHEMERIS "./sun00-04.dat"  */
+#define EARTHEPHEMERIS "./earth00-04.dat" 
+#define SUNEPHEMERIS "./sun00-04.dat"  
 
 #define ACCURACY 0.00000001 /* of the velocity calculation */
 #define MAXFILES 3000 /* maximum number of files to read in a directory */
 #define MAXFILENAMELENGTH 256 /* maximum # of characters  of a SFT filename */
-/* #define SFTDIRECTORY "/home/badkri/fakesfts"   */
-#define SFTDIRECTORY "/nfs/morbo/geo600/hannover/sft/S4-LIGO/sft_1800.20050512.S4/S4-L1.1800-sft"
+#define SFTDIRECTORY "/home/badkri/fakesfts"  
+/* #define SFTDIRECTORY "/nfs/morbo/geo600/hannover/sft/S4-LIGO/sft_1800.20050512.S4/S4-L1.1800-sft" */
 #define DIROUT "./outHM1/"      /* prefix file output */
 #define BASENAMEOUT "HM1"
 
@@ -123,10 +123,6 @@ int main(int argc, char *argv[]){
   REAL8  *skyAlpha, *skyDelta, *skySizeAlpha, *skySizeDelta; 
   INT4   nSkyPatches, skyCounter=0; 
 
-  /* log file and strings */
-  FILE   *fpLog=NULL;
-  CHAR   *fnameLog=NULL; 
-  CHAR   *logstr=NULL; 
   CHAR   filehisto[256]; 
   CHAR   filestats[256]; 
   CHAR   filestar[256];
@@ -263,72 +259,11 @@ int main(int argc, char *argv[]){
   }
 
  
-  /* open log file for writing */
-  fnameLog = (CHAR *)LALCalloc( 512, sizeof(CHAR));
-  strcpy(fnameLog,uvar_dirnameOut);
-  strcat(fnameLog, "/logfiles/");
-  /* now create directory fdirOut/logfiles using mkdir */
-  errno = 0;
-  {
-    /* check whether file can be created or if it exists already 
-       if not then exit */
-    INT4 mkdir_result;
-    mkdir_result = mkdir(fnameLog, S_IRWXU | S_IRWXG | S_IRWXO);
-    if ( (mkdir_result == -1) && (errno != EEXIST) )
-      {
-	fprintf(stderr, "unable to create logfiles directory %d\n", skyCounter);
-        LALFree(fnameLog);
-	exit(1);  /* stop the program */
-      }
-  }
+  /* write log file with command line arguments, cvs tags, and contents of skypatch file */
+  LAL_CALL( PrintLogFile( &status, uvar_dirnameOut, uvar_fbasenameOut, uvar_skyfile, argv[0]), &status);
 
-  /* create the logfilename in the logdirectory */
-  strcat(fnameLog, uvar_fbasenameOut);
-  strcat(fnameLog,".log");
-  /* open the log file for writing */
-  if ((fpLog = fopen(fnameLog, "w")) == NULL) {
-    fprintf(stderr, "Unable to open file %s for writing\n", fnameLog);
-    LALFree(fnameLog);
-    exit(1);
-  }
-  
-  /* get the log string */
-  LAL_CALL( LALUserVarGetLog(&status, &logstr, UVAR_LOGFMT_CFGFILE), &status);  
 
-  fprintf( fpLog, "## LOG FILE FOR Hough Driver\n\n");
-  fprintf( fpLog, "# User Input:\n");
-  fprintf( fpLog, "#-------------------------------------------\n");
-  fprintf( fpLog, logstr);
-  LALFree(logstr);
-
-  /* copy contents of skypatch file into logfile */
-  fprintf(fpLog, "\n\n# Contents of skypatch file:\n");
-  fclose(fpLog);
-  {
-    CHAR command[1024] = "";
-    sprintf(command, "cat %s >> %s", uvar_skyfile, fnameLog);
-    system(command);
-  }
-
-  /* append an ident-string defining the exact CVS-version of the code used */
-  if ((fpLog = fopen(fnameLog, "a")) != NULL) 
-    {
-      CHAR command[1024] = "";
-      fprintf (fpLog, "\n\n# CVS-versions of executable:\n");
-      fprintf (fpLog, "# -----------------------------------------\n");
-      fclose (fpLog);
-      
-      sprintf (command, "ident %s | sort -u >> %s", argv[0], fnameLog);
-      system (command);	/* we don't check this. If it fails, we assume that */
-    			/* one of the system-commands was not available, and */
-    			/* therefore the CVS-versions will not be logged */ 
-    }
-
-  LALFree(fnameLog); 
-
-  /*****************************************************************/
-  /* read skypatch info */
-  /*****************************************************************/
+  /** read skypatch info **/
   {
     FILE   *fpsky = NULL; 
     INT4   r;
@@ -399,6 +334,18 @@ int main(int argc, char *argv[]){
     length =  uvar_fSearchBand * timeBase; /* total number of search bins - 1 */
     fLastBin = f0Bin + length;   /* final frequency bin to be analyzed */
 
+    /* using value of length, allocate memory for most significant event nstar, fstar etc. */
+    nStar = (REAL8 *)LALCalloc((length + 1), sizeof(REAL8));
+    nStarSignificance =  (REAL8 *)LALCalloc((length + 1), sizeof(REAL8));
+    freqStar = (REAL8 *)LALCalloc((length + 1), sizeof(REAL8));
+    alphaStar = (REAL8 *)LALCalloc((length + 1), sizeof(REAL8));
+    deltaStar = (REAL8 *)LALCalloc((length + 1), sizeof(REAL8));
+    fdotStar = (REAL8 *)LALCalloc((length + 1), sizeof(REAL8));
+    
+    /* initialize nstar values -- really unnecessary */
+    memset( nStar, 0, length+1);
+    memset( nStarSignificance, 0, length+1);
+    
     /* get SFT timestamps */
     LAL_CALL( LALSFTtimestampsFromCatalog(  &status, &timeV, catalog ), &status);  	
 
@@ -435,18 +382,6 @@ int main(int argc, char *argv[]){
 
     /* normalize sfts */
     LAL_CALL( LALNormalizeSFTVect (&status, inputSFTs, uvar_blocksRngMed, 0), &status);
-
-    /* use above value of length to allocate memory for nstar, fstar etc. */
-    nStar = (REAL8 *)LALCalloc((length + 1), sizeof(REAL8));
-    nStarSignificance =  (REAL8 *)LALCalloc((length + 1), sizeof(REAL8));
-    freqStar = (REAL8 *)LALCalloc((length + 1), sizeof(REAL8));
-    alphaStar = (REAL8 *)LALCalloc((length + 1), sizeof(REAL8));
-    deltaStar = (REAL8 *)LALCalloc((length + 1), sizeof(REAL8));
-    fdotStar = (REAL8 *)LALCalloc((length + 1), sizeof(REAL8));
-
-    /* initialize nstar values -- really unnecessary */
-    memset( nStar, 0, length+1);
-    memset( nStarSignificance, 0, length+1);
 
   } /* end of sft reading block */
   
@@ -568,7 +503,6 @@ int main(int argc, char *argv[]){
       timeDiffV.data[j] = ts + tn - t0 + midTimeBase; 
     }  
   }
-
   
   /* loop over sky patches */
   for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++)
@@ -622,23 +556,23 @@ int main(int argc, char *argv[]){
       houghThreshold = meanN + sigmaN*sqrt(2.0)*erfcInv;    
 
       
-      /******************************************************************/  
+
       /* opening the output statistic, and event files */
-      /******************************************************************/  
-      
-      /* create the directory name uvar_dirnameOut/skypatch_$j */
-      strcpy(  filestats, uvar_dirnameOut);
-      strcat( filestats, "/skypatch_");
-      {
-	CHAR tempstr[16];
-	sprintf(tempstr, "%d", skyCounter+1);
-	strcat( filestats, tempstr);
-      }
-      strcat( filestats, "/");
 
       /*  create directory fnameout/skypatch_$j using mkdir if required */
       if ( uvar_printStats || uvar_printEvents || uvar_printTemplates || uvar_printMaps )
 	{
+
+	  /* create the directory name uvar_dirnameOut/skypatch_$j */
+	  strcpy(  filestats, uvar_dirnameOut);
+	  strcat( filestats, "/skypatch_");
+	  {
+	    CHAR tempstr[16];
+	    sprintf(tempstr, "%d", skyCounter+1);
+	    strcat( filestats, tempstr);
+	  }
+	  strcat( filestats, "/");
+	  
 	  errno = 0;
 	  {
 	    /* check whether file can be created or if it exists already 
@@ -862,76 +796,18 @@ int main(int argc, char *argv[]){
 	
 	while ( (fBinSearch <= fLastBin) && (fBinSearch < fBinSearchMax) )  { 
 	  
-	  REAL8 significance;
-
-	  /**********************************************/
-	  /* Case: No spin-down.  Study the fBinSearch */
-	  /**********************************************/
-	  ht.f0Bin = fBinSearch;
-	  ht.spinRes.length =0;
-	  ht.spinRes.data = NULL;
-	  for (j=0;j< mObsCoh;++j){	freqInd.data[j]= fBinSearch; } 
-	  if (uvar_weighAM || uvar_weighNoise) {
-	    LAL_CALL( LALHOUGHConstructHMT_W( &status, &ht, &freqInd, &phmdVS ), &status );
-	  }
-	  else {
-	    LAL_CALL( LALHOUGHConstructHMT( &status, &ht, &freqInd, &phmdVS ), &status );	  
-	  }
-
-	  /* ********************* perfom stat. analysis on the maps ****************** */
-	  LAL_CALL( LALHoughStatistics ( &status, &stats, &ht), &status );
-	  LAL_CALL( LALStereo2SkyLocation (&status, &sourceLocation, 
-				   stats.maxIndex[0], stats.maxIndex[1], 
-				   &patch, &parDem), &status);
-	  LAL_CALL( LALHoughHistogram ( &status, &hist, &ht), &status);
-	  for(j=0; j< histTotal.length; ++j){ histTotal.data[j]+=hist.data[j]; }
-
-	  /* calculate significance of loudest event in hough map */
-	  significance =  (stats.maxCount - meanN)/sigmaN;	      
-	  if ( significance > nStarSignificance[fBinSearch-f0Bin])
-	    {
-	      nStar[fBinSearch-f0Bin] = stats.maxCount;
-	      nStarSignificance[fBinSearch-f0Bin] = significance;
-	      freqStar[fBinSearch-f0Bin] = fBinSearch*deltaF;
-	      alphaStar[fBinSearch-f0Bin] = sourceLocation.alpha;
-	      deltaStar[fBinSearch-f0Bin] = sourceLocation.delta;
-	      fdotStar[fBinSearch-f0Bin] = 0;
-	    }
-       	  
-	  /* ********************* print results *********************** */
-	
-	  if ( uvar_printMaps )  
-	    if( PrintHmap2m_file( &ht, fileMaps, iHmap ) ) return 5;
-	  
-	  if ( uvar_printStats ) {
-	    fprintf(fp1, "%d %f %f %f %f %f %f %f 0.0 \n",
-		    iHmap, sourceLocation.alpha, sourceLocation.delta,
-		    (REAL4)stats.maxCount, (REAL4)stats.minCount, stats.avgCount,stats.stdDev,
-		    (fBinSearch*deltaF) );
-	  }	  
-
-	  if ( uvar_printEvents )          
-	    LAL_CALL( PrintHoughEvents (&status, fpEvents, houghThreshold, &ht,
-					&patch, &parDem), &status );
-
-	  if ( uvar_printTemplates )
-	    LAL_CALL( PrintHoughEvents (&status, fpTemplates, 0.0, &ht, &patch, &parDem), &status);
-
-	  ++iHmap;
-	  
-	  
-	  /********************************************/
-	  /* Case: 1 spin-down. at  fBinSearch */
-	  /********************************************/
+	  /**** study 1 spin-down. at  fBinSearch ****/
 	  {
 	    INT4   n;
 	    REAL8  f1dis;
-	    
+	    REAL8 significance;
+
+	    ht.f0Bin = fBinSearch;
 	    ht.spinRes.length = 1;
 	    ht.spinRes.data = NULL;
 	    ht.spinRes.data = (REAL8 *)LALCalloc(ht.spinRes.length, sizeof(REAL8));
 	    
-	    for( n=1; n<= nSpin1Max; ++n){ /*loop over all values of f1 */
+	    for( n=0; n<= nSpin1Max; ++n){ /*loop over all values of f1 */
 	      f1dis = - n*f1jump;
 	      ht.spinRes.data[0] =  f1dis*deltaF;
 	      
@@ -990,12 +866,14 @@ int main(int argc, char *argv[]){
 	    LALFree(ht.spinRes.data);
 	  }
 	  
-	  /********************************************/
-	  /* *** shift the search freq. & PHMD structure 1 freq.bin ****** */
+	  /***** shift the search freq. & PHMD structure 1 freq.bin ****** */
 	  ++fBinSearch;
+
 	  LAL_CALL( LALHOUGHupdateSpacePHMDup(&status, &phmdVS, &pgV, &lutV), &status );
+
 	  if (uvar_weighAM || uvar_weighNoise) {
 	    LAL_CALL( LALHOUGHWeighSpacePHMD( &status, &phmdVS, &weightsV), &status);
+
 	  }
 	}   /* ********>>>>>>  closing second while  <<<<<<<<**********<  */
 	
@@ -1338,9 +1216,83 @@ void PrintHoughEvents (LALStatus       *status,
 
 
 
+void PrintLogFile (LALStatus       *status,
+		   CHAR            *dir,
+		   CHAR            *basename,
+		   CHAR            *skyfile,
+		   CHAR            *executable )
+{
+  CHAR *fnameLog=NULL; 
+  FILE *fpLog=NULL;
+  CHAR *logstr=NULL; 
 
+  INITSTATUS (status, "PrintLogFile", rcsid);
+  ATTATCHSTATUSPTR (status);
+  
+  /* open log file for writing */
+  fnameLog = (CHAR *)LALCalloc( 512, sizeof(CHAR));
+  strcpy(fnameLog,dir);
+  strcat(fnameLog, "/logfiles/");
+  /* now create directory fdirOut/logfiles using mkdir */
+  errno = 0;
+  {
+    /* check whether file can be created or if it exists already 
+       if not then exit */
+    INT4 mkdir_result;
+    mkdir_result = mkdir(fnameLog, S_IRWXU | S_IRWXG | S_IRWXO);
+    if ( (mkdir_result == -1) && (errno != EEXIST) )
+      {
+	fprintf(stderr, "unable to create logfiles directory %s\n", fnameLog);
+        LALFree(fnameLog);
+	exit(1);  /* stop the program */
+      }
+  }
 
+  /* create the logfilename in the logdirectory */
+  strcat(fnameLog, basename);
+  strcat(fnameLog,".log");
+  /* open the log file for writing */
+  if ((fpLog = fopen(fnameLog, "w")) == NULL) {
+    fprintf(stderr, "Unable to open file %s for writing\n", fnameLog);
+    LALFree(fnameLog);
+    exit(1);
+  }
+  
+  /* get the log string */
+  TRY( LALUserVarGetLog(status->statusPtr, &logstr, UVAR_LOGFMT_CFGFILE), status);  
 
+  fprintf( fpLog, "## LOG FILE FOR Hough Driver\n\n");
+  fprintf( fpLog, "# User Input:\n");
+  fprintf( fpLog, "#-------------------------------------------\n");
+  fprintf( fpLog, logstr);
+  LALFree(logstr);
 
+  /* copy contents of skypatch file into logfile */
+  fprintf(fpLog, "\n\n# Contents of skypatch file:\n");
+  fclose(fpLog);
+  {
+    CHAR command[1024] = "";
+    sprintf(command, "cat %s >> %s", skyfile, fnameLog);
+    system(command);
+  }
 
+  /* append an ident-string defining the exact CVS-version of the code used */
+  if ((fpLog = fopen(fnameLog, "a")) != NULL) 
+    {
+      CHAR command[1024] = "";
+      fprintf (fpLog, "\n\n# CVS-versions of executable:\n");
+      fprintf (fpLog, "# -----------------------------------------\n");
+      fclose (fpLog);
+      
+      sprintf (command, "ident %s | sort -u >> %s", executable, fnameLog);
+      system (command);	/* we don't check this. If it fails, we assume that */
+    			/* one of the system-commands was not available, and */
+    			/* therefore the CVS-versions will not be logged */ 
+    }
 
+  LALFree(fnameLog); 
+  	 
+  DETATCHSTATUSPTR (status);
+  /* normal exit */
+  RETURN (status);
+}    
