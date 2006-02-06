@@ -465,7 +465,6 @@ int read_source_data( void )
       c = sscanf( line, "%s %c%le:%le %c%le:%le %le %le %le",
           source_data[i].name, &ra_sgn, &ra_h, &ra_m, &dec_sgn, &dec_d, &dec_m,
           &source_data[i].dist, &source_data[i].lum, &source_data[i].fudge );
-
       if ( c != 10 )
       {
         fprintf( stderr, "error parsing source datafile %s\n", sourceFileName );
@@ -535,7 +534,7 @@ int sky_position( double *dist, double *alpha, double *delta, char *source )
   for ( i = 0; i < num_source; ++i )
     if ( u < frac[i] )
     {
-      LALSnprintf( source, sizeof(source)/sizeof(*source), 
+      LALSnprintf( source, 16.*sizeof(char), 
           "%s", source_data[i].name );
       *dist  = source_data[i].dist;
       *alpha = source_data[i].ra;
