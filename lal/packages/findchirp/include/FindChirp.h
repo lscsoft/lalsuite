@@ -868,8 +868,13 @@ LALFindChirpInjectSignals (
 INT4
 XLALFindChirpSetAnalyzeSegment (
     DataSegmentVector          *dataSegVec,
-    SimInspiralTable           *injections,
-    BOOLEAN                     isTdFollowUp
+    SimInspiralTable           *injections
+    );
+
+INT4
+XLALFindChirpSetFollowUpSegment (
+    DataSegmentVector          *dataSegVec,
+    SnglInspiralTable          **events
     );
 
 void

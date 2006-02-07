@@ -357,8 +357,7 @@ LALFindChirpInjectSignals (
 INT4
 XLALFindChirpSetAnalyzeSegment (
     DataSegmentVector          *dataSegVec,
-    SimInspiralTable           *injections,
-    BOOLEAN                     isTdFollowUp
+    SimInspiralTable           *injections
     )
 /* </lalVerbatim> */
 {  
@@ -401,10 +400,7 @@ XLALFindChirpSetAnalyzeSegment (
 
       if ( ta > chanStartTime && ta <= chanEndTime )
       {
-        if (isTdFollowUp) 
-          currentSegment->analyzeSegment += 1;
-        else
-          currentSegment->analyzeSegment += (UINT4)(pow(2.0,(double)(k)));
+        currentSegment->analyzeSegment += (UINT4)(pow(2.0,(double)(k)));
       }
 
       if (ta > chanEndTime)
@@ -418,6 +414,67 @@ XLALFindChirpSetAnalyzeSegment (
   return 0;
 }
 
+
+/* <lalVerbatim file="FindChirpSimulationCP"> */
+INT4
+XLALFindChirpSetFollowUpSegment (
+    DataSegmentVector          *dataSegVec,
+    SnglInspiralTable          **events
+    )
+/* </lalVerbatim> */
+{
+  DataSegment       *currentSegment;
+  SnglInspiralTable *thisEvent;
+  INT8               chanStartTime;
+  INT8               chanEndTime;
+  UINT4              i;
+  UINT4              k;
+
+  /* set all segments not to be analyzed by default */
+  for ( i = 0; i < dataSegVec->length; ++i )
+  {
+    /* point to current segment */
+    currentSegment = dataSegVec->data + i;
+    currentSegment->analyzeSegment = 0;
+  }
+
+  /* make sure the sngl inspirals are time ordered */
+  *events = XLALSortSnglInspiral(*events, LALCompareSnglInspiralByTime);
+
+  /* loop over segments checking for injections into each */
+  for ( i = 0; i < dataSegVec->length; ++i )
+  {
+    /* point to current segment */
+    currentSegment = dataSegVec->data + i;
+
+    /* compute the start and end of segment */
+    chanStartTime = XLALGPStoINT8( &currentSegment->chan->epoch );
+    chanEndTime = chanStartTime +
+      (INT8) (1e9 * currentSegment->chan->data->length *
+              currentSegment->chan->deltaT);
+
+    /* look for event into segment */
+    k = 0;
+    thisEvent = *events;
+    while (thisEvent)
+    {
+      INT8 ta = XLALGPStoINT8( &thisEvent->end_time );
+
+      if ( ta > chanStartTime && ta <= chanEndTime )
+      {
+        currentSegment->analyzeSegment += 1;
+      }
+
+      if (ta > chanEndTime)
+        break;
+
+      thisEvent=thisEvent->next;
+      k = k + 1;
+    }
+  }
+
+  return 0;
+}
 
 /* <lalVerbatim file="FindChirpSimulationCP"> */
 void

@@ -358,9 +358,10 @@ int main( int argc, char *argv[] )
   SimInspiralTable    *injections = NULL;
   SimInspiralTable    *thisInj = NULL;
 
-  /* Time domain follow-up fake injections */
-  int                  numTDFollowUpInjections = 0;
-  SimInspiralTable    *tdFollowUpInjections = NULL;
+  /* Time domain follow-up events */
+  int                  numTDFollowUpEvents = 0;
+  SnglInspiralTable    *tdFollowUpEvents = NULL;
+  SnglInspiralTable    *thisFollowUpEvent  = NULL;
 
   /* --fast option related variables */
   UINT4  *analyseThisTmplt = NULL;
@@ -1014,11 +1015,17 @@ int main( int argc, char *argv[] )
   if ( tdFollowUpFile )
   {
     INT4 injSafety = 10;
+    LIGOTimeGPS startKeep = gpsStartTime;
+    LIGOTimeGPS endKeep   = gpsEndTime;
+
+    startKeep.gpsSeconds -= injSafety;
+    endKeep.gpsSeconds   += injSafety;
 
     /* read in the time domain follow-up data from XML */
-    numTDFollowUpInjections = SimInspiralTableFromLIGOLw( &tdFollowUpInjections,
-            tdFollowUpFile, gpsStartTime.gpsSeconds - injSafety,
-            gpsEndTime.gpsSeconds + injSafety );
+    numTDFollowUpEvents = LALSnglInspiralTableFromLIGOLw( &tdFollowUpEvents,
+            tdFollowUpFile, 0, -1);
+    tdFollowUpEvents = XLALTimeCutSingleInspiral( tdFollowUpEvents,
+        &startKeep, &endKeep);
   }
 
   /*
@@ -1573,19 +1580,18 @@ int main( int argc, char *argv[] )
   /************************************************************************/
   if ( tdFollowUpFile || injectionFile )
   {
-     BOOLEAN isTdFollowUp = 0;
-
+  {
      if (tdFollowUpFile)
      {
       /* Only analyze segments containing coincident BCV triggers */
-      isTdFollowUp = 1;
-      XLALFindChirpSetAnalyzeSegment (dataSegVec, tdFollowUpInjections, isTdFollowUp);
+      XLALFindChirpSetFollowUpSegment (dataSegVec, &tdFollowUpEvents);
      }
      else
      {
       /* set the analyzeSegment flag only on segments with injections */
-      XLALFindChirpSetAnalyzeSegment (dataSegVec, injections, isTdFollowUp);
+      XLALFindChirpSetAnalyzeSegment (dataSegVec, injections);
      }
+  }
   }
   /************************************************************************/
 
@@ -1825,28 +1831,17 @@ int main( int argc, char *argv[] )
     }
 
     /************************************************************************/
-    if ( tdFollowUpFile || injectionFile )
+    if ( injectionFile )
     {
       /* Make space for analyseThisTmplt */
       analyseThisTmplt = (UINT4 *) LALCalloc (numTmplts, sizeof(UINT4));
 
-      if ( injectionFile )
-      {
       /* set the analyseThisTmplt flag on templates     */
       /* that are 'close' to the injections             */
       LAL_CALL( LALFindChirpSetAnalyseTemplate( &status, analyseThisTmplt,
             mmFast, fcSegVec->data[0].data->deltaF, sampleRate, fcDataParams,
             numTmplts, tmpltHead, numInjections, injections ), &status );
 
-      }
-      else
-      {
-
-      LAL_CALL( LALFindChirpSetAnalyseTemplate( &status, analyseThisTmplt,
-            -1.0, fcSegVec->data[0].data->deltaF, sampleRate, fcDataParams,
-            numTmplts, tmpltHead, 1, tdFollowUpInjections ), &status );
-
-      }
     }
     /************************************************************************/
 
@@ -1864,7 +1859,7 @@ int main( int argc, char *argv[] )
 
       /* If we are injecting / in td-follow-up mode and the analyseThisTmpltFlag is down -
        * look no further - simply continue to the next template */
-      if ( tdFollowUpFile || injectionFile )
+      if ( injectionFile )
       {
         if ( ! analyseThisTmplt[thisTemplateIndex] )
           continue;
@@ -1938,11 +1933,11 @@ int main( int argc, char *argv[] )
 
         /* If injections are being done or if in td follow-up mode, - check if for any      */
         /* reason the analyseTag flag needs to be brought down. */
-        if ( ( tdFollowUpFile || injectionFile ) && flagFilterInjOnly )
+        if ( tdFollowUpFile || ( injectionFile  && flagFilterInjOnly ))
         {
             if ( tdFollowUpFile )
             {
-                /*analyseTag = XLALCmprSgmntTmpltFlags( numTDFollowUpInjections,           */
+                /*analyseTag = XLALCmprSgmntTmpltFlags( numTDFollowUpEvents,           */
                 /*analyseThisTmplt[thisTemplateIndex], fcSegVec->data[i].analyzeSegment ); */
                 if ( !fcSegVec->data[i].analyzeSegment )
                 {
@@ -2658,11 +2653,11 @@ int main( int argc, char *argv[] )
   if ( tdFollowUpFile )
   {
     free ( tdFollowUpFile );
-    while ( tdFollowUpInjections )
+    while ( tdFollowUpEvents )
     {
-      thisInj = tdFollowUpInjections;
-      tdFollowUpInjections = tdFollowUpInjections->next;
-      LALFree( thisInj );
+      thisFollowUpEvent = tdFollowUpEvents;
+      tdFollowUpEvents = tdFollowUpEvents->next;
+      XLALFreeSnglInspiral( &thisFollowUpEvent );
     }
   }
 
