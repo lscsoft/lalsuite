@@ -52,21 +52,20 @@ extern int lalDebugLevel;
 /* boolean global variables for controlling output */
 BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps, uvar_printStats;
 
-/* #define EARTHEPHEMERIS "./earth05-09.dat" */
-/* #define SUNEPHEMERIS "./sun05-09.dat"  */
+#define EARTHEPHEMERIS "./earth05-09.dat"
+#define SUNEPHEMERIS "./sun05-09.dat"  
 
-#define EARTHEPHEMERIS "./earth00-04.dat" 
-#define SUNEPHEMERIS "./sun00-04.dat"  
+/* #define EARTHEPHEMERIS "./earth00-04.dat"  */
+/* #define SUNEPHEMERIS "./sun00-04.dat"   */
 
 #define ACCURACY 0.00000001 /* of the velocity calculation */
 #define MAXFILES 3000 /* maximum number of files to read in a directory */
 #define MAXFILENAMELENGTH 256 /* maximum # of characters  of a SFT filename */
-#define SFTDIRECTORY "/home/badkri/fakesfts"  
-/* #define SFTDIRECTORY "/nfs/morbo/geo600/hannover/sft/S4-LIGO/sft_1800.20050512.S4/S4-L1.1800-sft" */
+/* #define SFTDIRECTORY "/home/badkri/fakesfts"   */
+#define SFTDIRECTORY "/nfs/morbo/geo600/hannover/sft/S4-LIGO/sft_1800.20050512.S4/S4-L1.1800-sft"
 #define DIROUT "./outHM1/"      /* prefix file output */
 #define BASENAMEOUT "HM1"
 
-#define IFO 2         /*  detector, 1:GEO, 2:LLO, 3:LHO */
 #define THRESHOLD 1.6 /* thresold for peak selection, with respect to the
                               the averaged power in the search band */
 #define FALSEALARM 1.0e-9 /* Hough false alarm for candidate selection */
@@ -85,12 +84,12 @@ BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps, uvar_printStats;
 int main(int argc, char *argv[]){
 
   /* LALStatus pointer */
-  static LALStatus           status;  
+  static LALStatus  status;  
   
   /* detector */
-  static LALDetector         detector;
+  static LALDetector  *detector;
 
-  /* time and velocity vectors and files*/
+  /* time and velocity vectors */
   static LIGOTimeGPSVector   *timeV=NULL;
   static REAL8Cart3CoorVector velV;
   static REAL8Vector         timeDiffV;
@@ -123,44 +122,47 @@ int main(int argc, char *argv[]){
   REAL8  *skyAlpha, *skyDelta, *skySizeAlpha, *skySizeDelta; 
   INT4   nSkyPatches, skyCounter=0; 
 
+  /* output filenames and filepointers */
   CHAR   filehisto[256]; 
   CHAR   filestats[256]; 
   CHAR   filestar[256];
+  FILE   *fpEvents = NULL;
+  CHAR   fileEvents[256];
+  FILE   *fpTemplates=NULL;
+  CHAR   fileTemplates[256];
+  CHAR   fileMaps[256];
+  FILE   *fp1 = NULL;
+  FILE   *fpStar = NULL;  
 
-  /* miscellaneous */
-  INT4   houghThreshold, iHmap, nSpin1Max;
   /* the maximum number count */
   REAL8  *nStar = NULL;
   REAL8  *nStarSignificance = NULL;
+
   /* where the max occurs */
   REAL8  *freqStar=NULL, *alphaStar=NULL, *deltaStar=NULL, *fdotStar=NULL; 
+
+  /* miscellaneous */
+  INT4   houghThreshold, iHmap, nSpin1Max;
   UINT4  mObsCoh;
   INT8   f0Bin, fLastBin, fBin;
   REAL8  alpha, delta, timeBase, deltaF, f1jump;
   REAL8  normalizeThr, patchSizeX, patchSizeY;
   UINT2  xSide, ySide;
   UINT2  maxNBins, maxNBorders;
-  FILE   *fp1 = NULL;
-  FILE   *fpStar = NULL;  
+
 
   /* user input variables */
-  BOOLEAN uvar_help, uvar_weighAM, uvar_weighNoise;
-  INT4 uvar_ifo, uvar_blocksRngMed, uvar_nfSizeCylinder;
-  REAL8 uvar_f0, uvar_peakThreshold, uvar_houghFalseAlarm, uvar_fSearchBand;
-  CHAR *uvar_earthEphemeris=NULL;
-  CHAR *uvar_sunEphemeris=NULL;
-  CHAR *uvar_sftDir=NULL;
-  CHAR *uvar_dirnameOut=NULL;
-  CHAR *uvar_fbasenameOut=NULL;
-  CHAR *uvar_skyfile=NULL;
+  BOOLEAN  uvar_help, uvar_weighAM, uvar_weighNoise;
+  INT4     uvar_blocksRngMed, uvar_nfSizeCylinder;
+  REAL8    uvar_f0, uvar_peakThreshold, uvar_houghFalseAlarm, uvar_fSearchBand;
+  CHAR     *uvar_earthEphemeris=NULL;
+  CHAR     *uvar_sunEphemeris=NULL;
+  CHAR     *uvar_sftDir=NULL;
+  CHAR     *uvar_dirnameOut=NULL;
+  CHAR     *uvar_fbasenameOut=NULL;
+  CHAR     *uvar_skyfile=NULL;
+  CHAR     *uvar_ifo=NULL;
 
-  FILE   *fpEvents = NULL;
-  CHAR   fileEvents[256];
-
-  FILE *fpTemplates=NULL;
-  CHAR fileTemplates[256];
-
-  CHAR fileMaps[256];
 
 #ifdef TIMING
   unsigned long long start, stop;
@@ -180,7 +182,6 @@ int main(int argc, char *argv[]){
   uvar_help = FALSE;
   uvar_weighAM = TRUE;
   uvar_weighNoise = TRUE;
-  uvar_ifo = IFO;
   uvar_blocksRngMed = BLOCKSRNGMED;
   uvar_nfSizeCylinder = NFSIZE;
   uvar_f0 = F0;
@@ -209,11 +210,13 @@ int main(int argc, char *argv[]){
   uvar_skyfile = (CHAR *)LALCalloc(512, sizeof(CHAR));
   strcpy(uvar_skyfile,SKYFILE);
 
+  uvar_ifo = (CHAR *)LALCalloc(512, sizeof(CHAR));
+
   /* register user input variables */
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",            'h', UVAR_HELP,     "Print this message",                  &uvar_help),            &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighAM",          0,  UVAR_OPTIONAL, "Use amplitude modulation weights",    &uvar_weighAM),         &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighNoise",       0,  UVAR_OPTIONAL, "Use SFT noise weights",               &uvar_weighNoise),      &status);  
-  LAL_CALL( LALRegisterINTUserVar(    &status, "ifo",             'i', UVAR_OPTIONAL, "Detector GEO(1), L1(2), H1 or H2(3)", &uvar_ifo ),            &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "ifo",             'i', UVAR_OPTIONAL, "Detector G1, L1, H1 or H2",           &uvar_ifo ),            &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "f0",              'f', UVAR_OPTIONAL, "Start search frequency",              &uvar_f0),              &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "fSearchBand",     'b', UVAR_OPTIONAL, "Search frequency band",               &uvar_fSearchBand),     &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "peakThreshold",    0,  UVAR_OPTIONAL, "Peak selection threshold",            &uvar_peakThreshold),   &status);
@@ -228,42 +231,27 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printTemplates",   0,  UVAR_OPTIONAL, "Print templates file",                &uvar_printTemplates),  &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printEvents",      0,  UVAR_OPTIONAL, "Print loudest events",                &uvar_printEvents),     &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printStats",       0,  UVAR_OPTIONAL, "Print Hough statistics",              &uvar_printStats),      &status);  
-
+  /* developer input variables */
   LAL_CALL( LALRegisterINTUserVar(    &status, "nfSizeCylinder",   0, UVAR_DEVELOPER, "Size of cylinder of PHMDs",           &uvar_nfSizeCylinder),  &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",     0, UVAR_DEVELOPER, "Running Median block size",           &uvar_blocksRngMed),    &status);
 
   /* read all command line variables */
   LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
 
-  /* set value of bias which might have been changed from default */  
-  LAL_CALL( LALRngMedBias( &status, &normalizeThr, uvar_blocksRngMed ), &status ); 
-
   /* exit if help was required */
   if (uvar_help)
     exit(0); 
-    
-  /* set detector */
-  switch ( uvar_ifo ) {
-  case 1 : 
-    detector = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
-    break;
-  case 2 : 
-    detector = lalCachedDetectors[LALDetectorIndexLLODIFF];
-    break;
-  case 3 : 
-    detector = lalCachedDetectors[LALDetectorIndexLHODIFF];
-    break;
-  default : 
-    fprintf( stderr, "Invalid detector\n");
-    exit(1);
-  }
-
- 
+     
   /* write log file with command line arguments, cvs tags, and contents of skypatch file */
   LAL_CALL( PrintLogFile( &status, uvar_dirnameOut, uvar_fbasenameOut, uvar_skyfile, argv[0]), &status);
 
 
-  /** read skypatch info **/
+
+
+  /* set value of running median bias factor */  
+  LAL_CALL( LALRngMedBias( &status, &normalizeThr, uvar_blocksRngMed ), &status ); 
+
+  /* read skypatch info */
   {
     FILE   *fpsky = NULL; 
     INT4   r;
@@ -312,24 +300,22 @@ int main(int argc, char *argv[]){
 
     /* set detector constraint */
     constraints.detector = NULL;
-    constraints.detector = (CHAR *)LALCalloc(3, sizeof(CHAR));
-    
-    if (uvar_ifo == 1) strcpy( constraints.detector, "G1"); 
-    if (uvar_ifo == 2) strcpy( constraints.detector, "L1"); 
-    if (uvar_ifo == 3) strcpy( constraints.detector, "H1"); 
-    
+    if ( LALUserVarWasSet( &uvar_ifo ) )    
+      constraints.detector = XLALGetChannelPrefix ( uvar_ifo );
+
     /* get sft catalog */
     tempDir = (CHAR *)LALCalloc(512, sizeof(CHAR));
     strcpy(tempDir, uvar_sftDir);
     strcat(tempDir, "/*SFT*.*");
-
     LAL_CALL( LALSFTdataFind( &status, &catalog, tempDir, &constraints), &status);
+
+    /* set detector */
+    detector = XLALGetSiteInfo ( catalog->data[0].header.name );
 
     /* get some sft parameters */
     mObsCoh = catalog->length; /* number of sfts */
     deltaF = catalog->data->header.deltaF;  /* frequency resolution */
     timeBase= 1.0/deltaF; /* coherent integration time */
-
     f0Bin = floor( uvar_f0 * timeBase + 0.5); /* initial search frequency */
     length =  uvar_fSearchBand * timeBase; /* total number of search bins - 1 */
     fLastBin = f0Bin + length;   /* final frequency bin to be analyzed */
@@ -359,7 +345,8 @@ int main(int argc, char *argv[]){
     LAL_CALL( LALLoadSFTs ( &status, &inputSFTs, catalog, fmin, fmax), &status);
 
     /* free memory */
-    LALFree( constraints.detector );
+    if ( LALUserVarWasSet( &uvar_ifo ) )    
+      LALFree( constraints.detector );
     LALFree( tempDir);
     LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);  	
 
@@ -449,7 +436,7 @@ int main(int argc, char *argv[]){
                    cause problems before, oh, I don't know, the Earth has been
                    destroyed in nuclear holocaust. -- dwchin 2004-02-29 */
 
-    velPar.detector = detector;
+    velPar.detector = *detector;
     velPar.tBase = timeBase;
     velPar.vTol = ACCURACY; /* irrelevant */
     velPar.edat = NULL; 
@@ -525,7 +512,7 @@ int main(int argc, char *argv[]){
 	/*for ( k = 0; k < mObsCoh; k++)
 	  weightsV.data[k] = weightsNoise.data[k]; */
 	
-	LAL_CALL( LALHOUGHComputeAMWeights( &status, &weightsV, timeV, &detector, 
+	LAL_CALL( LALHOUGHComputeAMWeights( &status, &weightsV, timeV, detector, 
 					    edat, alpha, delta), &status);
 	LAL_CALL( LALHOUGHNormalizeWeights( &status, &weightsV), &status);
       }
@@ -983,6 +970,8 @@ int main(int argc, char *argv[]){
   fclose(fpStar);
 
   /* free memory allocated outside skypatches loop */ 
+  LALFree( detector);
+
   {
     UINT4 j;
     for (j=0;j< mObsCoh;++j) LALFree( pgV.pg[j].peak); 
