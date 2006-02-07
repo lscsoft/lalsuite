@@ -43,6 +43,7 @@
 #include <lal/ResampleTimeSeries.h>
 #include <lal/BandPassTimeSeries.h>
 #include <lal/LIGOMetadataTables.h>
+#include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/Date.h>
@@ -137,8 +138,12 @@ REAL4   candleSnr = -1;                 /* candle signal to noise ratio */
 REAL4   candleMass1 = -1;               /* standard candle mass (solar) */
 REAL4   candleMass2 = -1;               /* standard candle mass (solar) */
 
+/* TD follow up filename */
+CHAR tdFileName[256] = "";
+
 /* output parameters */
 CHAR  *userTag          = NULL;
+CHAR  *ifoTag           = NULL;
 int    writeRawData     = 0;            /* write the raw data to a file */
 int    writeResponse    = 0;            /* write response function used */
 int    writeSpectrum    = 0;            /* write computed psd to file   */
@@ -210,6 +215,9 @@ int main ( int argc, char *argv[] )
   CalibrationUpdateParams calfacts;
   REAL8 dynRange = 0;
 
+  /* TD follow-up variables */
+  int numTdFollow;           /* Number of events to follow up in this time */
+  SnglInspiralTable *tdFollowUp = NULL;
 
   /*
    *
@@ -263,6 +271,53 @@ int main ( int argc, char *argv[] )
 
   /* the number of nodes for a standalone job is always 1 */
   searchsumm.searchSummaryTable->nnodes = 1;
+
+
+  /* If we're doing a td follow-up we dont want to generate a bank
+   * if there was no BCV trigger in this time
+   */
+  if (strcmp(tdFileName, ""))
+  {
+    if (vrbflg)
+      fprintf( stdout, "We are doing a TD follow-up" );
+
+    numTdFollow = LALSnglInspiralTableFromLIGOLw(&tdFollowUp, tdFileName,
+			0, -1);
+
+    if (numTdFollow <= 0) goto cleanExit;
+    else
+    {
+      BOOLEAN genBank = 0;    /* Variable to determine whether to generate the bank */
+      SnglInspiralTable *thisTdFollow = NULL;
+
+      tdFollowUp  = XLALSortSnglInspiral(tdFollowUp, LALCompareSnglInspiralByTime);
+
+      while (tdFollowUp && (tdFollowUp->end_time.gpsSeconds < gpsEndTime.gpsSeconds))
+      {
+
+        thisTdFollow = tdFollowUp;
+        tdFollowUp = tdFollowUp->next;
+
+
+        if (thisTdFollow->end_time.gpsSeconds >= gpsStartTime.gpsSeconds)
+          genBank = 1;
+
+        XLALFreeSnglInspiral( &thisTdFollow );
+
+        if (genBank) break;
+      }
+
+      while (tdFollowUp)
+      {
+        thisTdFollow = tdFollowUp;
+        tdFollowUp = tdFollowUp->next;
+        XLALFreeSnglInspiral(&thisTdFollow);
+      }
+
+      if (!genBank) goto cleanExit;
+    }
+  }
+
 
   if ( dynRangeExponent )
   {
@@ -959,12 +1014,25 @@ int main ( int argc, char *argv[] )
     FrFileOEnd( frOutFile );
   }
 
+cleanExit:
   /* open the output xml file */
   memset( &results, 0, sizeof(LIGOLwXMLStream) );
-  if ( userTag )
+  if ( userTag && ifoTag )
+  {
+    LALSnprintf( fname, sizeof(fname), "%s-TMPLTBANK_%s_%s-%d-%d.xml",
+        ifo, ifoTag, userTag, gpsStartTime.gpsSeconds,
+        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+  }
+  else if (userTag && !ifoTag)
   {
     LALSnprintf( fname, sizeof(fname), "%s-TMPLTBANK_%s-%d-%d.xml",
         ifo, userTag, gpsStartTime.gpsSeconds,
+        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+  }
+  else if (!userTag && ifoTag)
+  {
+    LALSnprintf( fname, sizeof(fname), "%s-TMPLTBANK_%s-%d-%d.xml",
+        ifo, ifoTag, gpsStartTime.gpsSeconds,
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
   else
@@ -1088,6 +1156,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --version                    print version information and exit\n"\
 "  --debug-level LEVEL          set the LAL debug level to LEVEL\n"\
 "  --user-tag STRING            set the process_params usertag to STRING\n"\
+"  --ifo-tag STRING             set the ifotag to STRING - for file naming\n"\
 "  --comment STRING             set the process table comment to STRING\n"\
 "\n"\
 "  --gps-start-time SEC         GPS second of data start time\n"\
@@ -1119,6 +1188,8 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "\n"\
 "  --segment-length N           set data segment length to N points\n"\
 "  --number-of-segments N       set number of data segments to N\n"\
+"\n"\
+"  --td-follow-up FILE          follow up BCV events contained in FILE\n"\
 "\n"\
 "  --standard-candle            compute a standard candle from the PSD\n"\
 "  --candle-snr SNR             signal-to-noise ration of standard candle\n"\
@@ -1198,6 +1269,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"debug-level",             required_argument, 0,                'z'},
     {"user-tag",                required_argument, 0,                'Z'},
     {"userTag",                 required_argument, 0,                'Z'},
+    {"ifo-tag",                 required_argument, 0,                'Y'},
     {"version",                 no_argument,       0,                'V'},    
     {"resample-filter",         required_argument, 0,                'r'},
     /* template bank generation parameters */
@@ -1227,6 +1299,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"write-response",          no_argument,       &writeResponse,    1 },
     {"write-spectrum",          no_argument,       &writeSpectrum,    1 },
     {"write-strain-spectrum",   no_argument,       &writeStrainSpec,  1 },
+    /* td follow up file */
+    {"td-follow-up",            required_argument, 0,                'w'},
     {0, 0, 0, 0}
   };
   int c;
@@ -1991,6 +2065,19 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           exit( 1 );
         }
         ADD_PROCESS_PARAM( "float", "%e", candleMass2 );
+        break;
+
+      case 'w':
+        LALSnprintf(tdFileName, sizeof(tdFileName), "%s", optarg);
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+	break;
+
+      case 'Y':   
+        /* create storaged for the ifo-tag */
+        optarg_len = strlen( optarg ) + 1;
+        ifoTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+        memcpy( ifoTag, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'V':
