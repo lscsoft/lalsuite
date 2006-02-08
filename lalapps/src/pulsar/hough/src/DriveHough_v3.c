@@ -52,17 +52,20 @@ extern int lalDebugLevel;
 /* boolean global variables for controlling output */
 BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps, uvar_printStats;
 
-/* #define EARTHEPHEMERIS "./earth05-09.dat" */
-/* #define SUNEPHEMERIS "./sun05-09.dat"   */
+#define EARTHEPHEMERIS "./earth05-09.dat"
+#define SUNEPHEMERIS "./sun05-09.dat"   
 
-#define EARTHEPHEMERIS "./earth00-04.dat" 
-#define SUNEPHEMERIS "./sun00-04.dat"  
+/* #define EARTHEPHEMERIS "./earth00-04.dat"  */
+/* #define SUNEPHEMERIS "./sun00-04.dat"   */
 
-#define ACCURACY 0.00000001 /* of the velocity calculation */
+#define ACCURACY 0.00000001 /* of the velocity calculation -- irrelevant */
+
 #define MAXFILES 3000 /* maximum number of files to read in a directory */
 #define MAXFILENAMELENGTH 256 /* maximum # of characters  of a SFT filename */
-#define SFTDIRECTORY "/home/badkri/fakesfts" 
-/* #define SFTDIRECTORY "/nfs/morbo/geo600/hannover/sft/S4-LIGO/sft_1800.20050512.S4/S4-L1.1800-sft" */
+
+/* #define SFTDIRECTORY "/home/badkri/fakesfts"  */
+#define SFTDIRECTORY "/nfs/morbo/geo600/hannover/sft/S4-LIGO/sft_1800.20050512.S4/S4-L1.1800-sft"
+
 #define DIROUT "./outHM1/"      /* prefix file output */
 #define BASENAMEOUT "HM1"
 
@@ -98,7 +101,7 @@ int main(int argc, char *argv[]){
   static REAL8Vector         timeDiffV;
 
   /* standard pulsar sft types */ 
-  SFTVector *inputSFTs=NULL;
+  SFTVector *inputSFTs = NULL;
 
   /* vector of weights */
   REAL8Vector weightsV, weightsNoise;
@@ -149,10 +152,9 @@ int main(int argc, char *argv[]){
   UINT4  mObsCoh;
   INT8   f0Bin, fLastBin, fBin;
   REAL8  alpha, delta, timeBase, deltaF, f1jump;
-  REAL8  normalizeThr, patchSizeX, patchSizeY;
+  REAL8  patchSizeX, patchSizeY;
   UINT2  xSide, ySide;
   UINT2  maxNBins, maxNBorders;
-
 
   /* user input variables */
   BOOLEAN  uvar_help, uvar_weighAM, uvar_weighNoise;
@@ -178,10 +180,10 @@ int main(int argc, char *argv[]){
   
 
   /* Set up the default parameters */
-
+  
   lalDebugLevel = 0;  /* LALDebugLevel must be called before anything else */
   LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
-
+  
   uvar_help = FALSE;
   uvar_weighAM = TRUE;
   uvar_weighNoise = TRUE;
@@ -217,22 +219,22 @@ int main(int argc, char *argv[]){
 
   /* register user input variables */
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",            'h', UVAR_HELP,     "Print this message",                  &uvar_help),            &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighAM",          0,  UVAR_OPTIONAL, "Use amplitude modulation weights",    &uvar_weighAM),         &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighNoise",       0,  UVAR_OPTIONAL, "Use SFT noise weights",               &uvar_weighNoise),      &status);  
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "ifo",             'i', UVAR_OPTIONAL, "Detector G1, L1, H1 or H2",           &uvar_ifo ),            &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "ifo",             'i', UVAR_OPTIONAL, "Detector L1, H1, H2, G1",             &uvar_ifo ),            &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "f0",              'f', UVAR_OPTIONAL, "Start search frequency",              &uvar_f0),              &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "fSearchBand",     'b', UVAR_OPTIONAL, "Search frequency band",               &uvar_fSearchBand),     &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyfile",          0,  UVAR_OPTIONAL, "Input skypatch file",                 &uvar_skyfile),         &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "peakThreshold",    0,  UVAR_OPTIONAL, "Peak selection threshold",            &uvar_peakThreshold),   &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "houghFalseAlarm",  0,  UVAR_OPTIONAL, "Hough false alarm",                   &uvar_houghFalseAlarm), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighAM",          0,  UVAR_OPTIONAL, "Use amplitude modulation weights",    &uvar_weighAM),         &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighNoise",       0,  UVAR_OPTIONAL, "Use SFT noise weights",               &uvar_weighNoise),      &status);  
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris",  'E', UVAR_OPTIONAL, "Earth Ephemeris file",                &uvar_earthEphemeris),  &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris",    'S', UVAR_OPTIONAL, "Sun Ephemeris file",                  &uvar_sunEphemeris),    &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir",          'D', UVAR_OPTIONAL, "SFT Directory",                       &uvar_sftDir),          &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "dirnameOut",      'o', UVAR_OPTIONAL, "Output directory",                    &uvar_dirnameOut),      &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "fbasenameOut",     0,  UVAR_OPTIONAL, "Output file basename",                &uvar_fbasenameOut),    &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyfile",          0,  UVAR_OPTIONAL, "Input skypatch file",                 &uvar_skyfile),         &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printMaps",        0,  UVAR_OPTIONAL, "Print Hough maps",                    &uvar_printMaps),       &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printTemplates",   0,  UVAR_OPTIONAL, "Print templates file",                &uvar_printTemplates),  &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printEvents",      0,  UVAR_OPTIONAL, "Print loudest events",                &uvar_printEvents),     &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printTemplates",   0,  UVAR_OPTIONAL, "Print templates file",                &uvar_printTemplates),  &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "houghFalseAlarm",  0,  UVAR_OPTIONAL, "Hough false alarm to set threshold",  &uvar_houghFalseAlarm), &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printEvents",      0,  UVAR_OPTIONAL, "Print events above threshold",        &uvar_printEvents),     &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printStats",       0,  UVAR_OPTIONAL, "Print Hough statistics",              &uvar_printStats),      &status);  
   /* developer input variables */
   LAL_CALL( LALRegisterINTUserVar(    &status, "nfSizeCylinder",   0, UVAR_DEVELOPER, "Size of cylinder of PHMDs",           &uvar_nfSizeCylinder),  &status);
@@ -244,15 +246,18 @@ int main(int argc, char *argv[]){
   /* exit if help was required */
   if (uvar_help)
     exit(0); 
-     
+
+  if ( uvar_printEvents ) {
+    if ((uvar_houghFalseAlarm > 1.0 ) || (uvar_houghFalseAlarm < 0.0) )  {
+      fprintf(stderr, "false alarm must be between 0 and 1\n");
+      exit(1);
+    }
+  }
   /* write log file with command line arguments, cvs tags, and contents of skypatch file */
   LAL_CALL( PrintLogFile( &status, uvar_dirnameOut, uvar_fbasenameOut, uvar_skyfile, argv[0]), &status);
 
 
-
-
-  /* set value of running median bias factor */  
-  LAL_CALL( LALRngMedBias( &status, &normalizeThr, uvar_blocksRngMed ), &status ); 
+  /***** start main calculations *****/
 
   /* read skypatch info */
   {
@@ -260,8 +265,7 @@ int main(int argc, char *argv[]){
     INT4   r;
     REAL8  temp1, temp2, temp3, temp4;
     
-    fpsky = fopen(uvar_skyfile, "r");
-    if ( !fpsky )
+    if ( (fpsky = fopen(uvar_skyfile, "r")) == NULL)
       {
 	fprintf(stderr, "Unable to find skyfile %s\n", uvar_skyfile);
 	return DRIVEHOUGHCOLOR_EFILE;
@@ -270,7 +274,7 @@ int main(int argc, char *argv[]){
     nSkyPatches = 0;
     do 
       {
-	r=fscanf(fpsky,"%lf%lf%lf%lf\n", &temp1, &temp2, &temp3, &temp4);
+	r = fscanf(fpsky,"%lf%lf%lf%lf\n", &temp1, &temp2, &temp3, &temp4);
 	/* make sure the line has the right number of entries or is EOF */
 	if (r==4) nSkyPatches++;
       } while ( r != EOF);
@@ -376,12 +380,7 @@ int main(int argc, char *argv[]){
   } /* end of sft reading block */
   
     
-
-
-  /* ****************************************************************/
-  /* generating peakgrams  */
-  /* ****************************************************************/
-  
+  /* generating peakgrams  */  
   pgV.length = mObsCoh;
   pgV.pg = NULL;
   pgV.pg = (HOUGHPeakGram *)LALCalloc(mObsCoh, sizeof(HOUGHPeakGram));
@@ -529,22 +528,21 @@ int main(int argc, char *argv[]){
       /* computing the Hough threshold for a given false alarm  */
       /* HoughThreshold = N*alpha +sqrt(2 ||w||^2 * alpha *(1-alpha))*erfcinv(2 alpha_h) */      
 
-      alphaPeak = exp( -uvar_peakThreshold);
-      
-      /* expected mean and standard deviation for noise only */
+      /* probability of selecting a peak expected mean and standard deviation for noise only */
+      alphaPeak = exp( - uvar_peakThreshold);
       meanN = mObsCoh* alphaPeak; 
       sigmaN = sqrt(sumWeightSquare * alphaPeak * (1.0 - alphaPeak));
+
       /* this should be  erfcInv =erfcinv(2.0 *uvar_houghFalseAlarm) */
       /* the function used is basically the inverse of the CDF for the 
 	 Gaussian distribution with unit variance and
 	 erfcinv(x) = gsl_cdf_ugaussian_Qinv (0.5*x)/sqrt(2) */
       /* First check that false alarm is within bounds 
 	 and set it to something reasonable if not */
-      if ( (uvar_houghFalseAlarm > 0.999)&&(uvar_houghFalseAlarm < 0.0) ) 
-	uvar_houghFalseAlarm =  FALSEALARM;
-      erfcInv = gsl_cdf_ugaussian_Qinv (uvar_houghFalseAlarm)/sqrt(2);    
-      houghThreshold = meanN + sigmaN*sqrt(2.0)*erfcInv;    
-
+      if ( uvar_printEvents ) {
+	erfcInv = gsl_cdf_ugaussian_Qinv (uvar_houghFalseAlarm)/sqrt(2);    
+	houghThreshold = meanN + sigmaN*sqrt(2.0)*erfcInv;    
+      }
       
 
       /* opening the output statistic, and event files */
@@ -594,11 +592,11 @@ int main(int argc, char *argv[]){
       if ( uvar_printStats )
 	{
 	  strcat(  filestats, "stats");
-	  fp1=fopen(filestats,"w");
-	  if ( !fp1 ){
-	    fprintf(stderr,"Unable to find file %s for writing\n", filestats);
-	    return DRIVEHOUGHCOLOR_EFILE;
-	  }
+	  if ( (fp1 = fopen(filestats,"w")) == NULL)
+	    {
+	      fprintf(stderr,"Unable to find file %s for writing\n", filestats);
+	      return DRIVEHOUGHCOLOR_EFILE;
+	    }
 	  /*setlinebuf(fp1);*/ /*line buffered on */  
 	  setvbuf(fp1, (char *)NULL, _IOLBF, 0);      
 	}
@@ -607,11 +605,11 @@ int main(int argc, char *argv[]){
 	{
 	  /* create and open the events list file */
 	  strcat(  fileEvents, "events");
-	  fpEvents=fopen(fileEvents,"w");
-	  if ( !fpEvents ){
-	    fprintf(stderr,"Unable to find file %s\n", fileEvents);
-	    return DRIVEHOUGHCOLOR_EFILE;
-	  }
+	  if ( (fpEvents=fopen(fileEvents,"w")) == NULL ) 
+	    {
+	      fprintf(stderr,"Unable to find file %s\n", fileEvents);
+	      return DRIVEHOUGHCOLOR_EFILE;
+	    }
 	  setvbuf(fpEvents, (char *)NULL, _IOLBF, 0);      
 	  /*setlinebuf(fpEvents);*/ /*line buffered on */  
 	}
@@ -620,11 +618,11 @@ int main(int argc, char *argv[]){
 	{
 	  /* create and open templates file */
 	  strcat( fileTemplates, "templates");
-	  fpTemplates = fopen(fileTemplates, "w");
-	  if ( !fpTemplates ){
-	    fprintf(stderr, "Unable to create file %s\n", fileTemplates);
-	    return DRIVEHOUGHCOLOR_EFILE;
-	  }
+	  if ( (fpTemplates = fopen(fileTemplates, "w")) == NULL)
+	    {
+	      fprintf(stderr, "Unable to create file %s\n", fileTemplates);
+	      return DRIVEHOUGHCOLOR_EFILE;
+	    }
 	  setvbuf(fpTemplates, (char *)NULL, _IOLBF, 0);      
 	  /*setlinebuf(fpTemplates);*/ /*line buffered on */   
 	}
@@ -946,13 +944,12 @@ int main(int argc, char *argv[]){
   strcat( filestar, uvar_fbasenameOut);
   strcat( filestar, "nstar");
 
-
   /* open the nstar file for writing */
-  fpStar=fopen(filestar,"w");
-  if ( !fpStar ){
-    fprintf(stderr,"Unable to find file %s for writing\n", filestar);
-    return DRIVEHOUGHCOLOR_EFILE;
-  }
+  if ( (fpStar = fopen(filestar,"w")) == NULL)
+    {
+      fprintf(stderr,"Unable to find file %s for writing\n", filestar);
+      return DRIVEHOUGHCOLOR_EFILE;
+    }
   /*setlinebuf(fp1);*/ /*line buffered on */  
   setvbuf(fpStar, (char *)NULL, _IOLBF, 0);      
 
@@ -977,7 +974,7 @@ int main(int argc, char *argv[]){
 
   {
     UINT4 j;
-    for (j=0;j< mObsCoh;++j) LALFree( pgV.pg[j].peak); 
+    for (j = 0; j < mObsCoh; ++j) LALFree( pgV.pg[j].peak); 
   }
   LALFree(pgV.pg);
 
@@ -1007,12 +1004,13 @@ int main(int argc, char *argv[]){
   LALFree(fdotStar);
 
   LAL_CALL (LALDestroyUserVars(&status), &status);
-	
+
   LALCheckMemoryLeaks();
 
-  LALInfo( &status, DRIVEHOUGHCOLOR_MSGENORM );
+  if ( lalDebugLevel )
+    REPORTSTATUS ( &status);
 
-  return DRIVEHOUGHCOLOR_ENORM;
+  return status.statusCode;
 }
 
 
@@ -1030,9 +1028,8 @@ int PrintHistogram(UINT4Vector *hist, CHAR *fnameOut){
  
   strcpy(  filename, fnameOut);
   strcat(  filename, "histo");
-  fp=fopen(filename,"w");
-
-  if ( !fp )
+  
+  if ( (fp = fopen(filename,"w")) == NULL)
     {  
       fprintf(stderr,"Unable to find file %s\n",filename);
       return DRIVEHOUGHCOLOR_EFILE; 
@@ -1062,12 +1059,12 @@ int PrintHmap2file(HOUGHMapTotal *ht, CHAR *fnameOut, INT4 iHmap){
   strcpy(  filename, fnameOut);
   sprintf( filenumber, ".%06d",iHmap); 
   strcat(  filename, filenumber);
-  fp=fopen(filename,"w");
 
-  if ( !fp ){  
-    fprintf(stderr,"Unable to find file %s\n",filename);
-    return DRIVEHOUGHCOLOR_EFILE; 
-  }
+  if ( (fp = fopen(filename,"w")) == NULL)
+    {  
+      fprintf(stderr,"Unable to find file %s\n",filename);
+      return DRIVEHOUGHCOLOR_EFILE; 
+    }
 
   ySide= ht->ySide;
   xSide= ht->xSide;
@@ -1085,8 +1082,6 @@ int PrintHmap2file(HOUGHMapTotal *ht, CHAR *fnameOut, INT4 iHmap){
   return 0;
 }
 
-/* >>>>>>>>>>>>>>>>>>>>>*************************<<<<<<<<<<<<<<<<<<<< */
-/* >>>>>>>>>>>>>>>>>>>>>*************************<<<<<<<<<<<<<<<<<<<< */
 
 /******************************************************************/
 /* printing the HM into a m_file                    */
@@ -1138,11 +1133,7 @@ int PrintHmap2m_file(HOUGHMapTotal *ht, CHAR *fnameOut, INT4 iHmap){
   return 0;
 }
 
-/* >>>>>>>>>>>>>>>>>>>>>*************************<<<<<<<<<<<<<<<<<<<< */
-/* >>>>>>>>>>>>>>>>>>>>>*************************<<<<<<<<<<<<<<<<<<<< */
 
-
-/* >>>>>>>>>>>>>>>>>>>>>*************************<<<<<<<<<<<<<<<<<<<< */
 /******************************************************************/
 /*  Find and print events to a given open file */
 /******************************************************************/
