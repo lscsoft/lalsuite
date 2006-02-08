@@ -45,6 +45,7 @@
 
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/ComputeFstat.h>
+#include <lal/LALHough.h>
 
 #include <lalapps.h>
 
@@ -97,6 +98,7 @@ typedef struct {
   DetectorStateSeries *DetectorStates;	/**< pos, vel and LMSTs for detector at times t_i */
   SSBtimes *tSSB;			/**< SSB-times DeltaT_alpha and Tdot_alpha */
   AMCoeffs *amcoe;         		/**< Amplitude Modulation coefficients */
+  REAL8Vector *weightsNoise;             /**< vector of weights */
 } IFOspecifics;
 
 /** Configuration settings required for and defining a coherent pulsar search.
@@ -201,7 +203,8 @@ int main(int argc,char *argv[])
   CHAR buf[512];
   REAL8 loudestF = 0;
   REAL8Vector *fkdot = NULL;
-
+  
+  
   UINT4 nD;         /** index over number of Detectors**/
   lalDebugLevel = 0;  
   vrbflg = 1;	/* verbose error-messages */
@@ -877,14 +880,25 @@ NewInitFStat ( LALStatus *status, ConfigVariables *cfg )
   {/* ----- load the SFT-vectors ----- */
     UINT4 wings = MYMAX(uvar_Dterms, uvar_RngMedWindow/2 +1);
     
+ 
     for ( X = 0; X < cfg->numDetectors; X ++ )
       {
 	REAL8 dFreq = catalogs[X]->data[0].header.deltaF;
 	REAL8 fMax = fCoverMax + wings * dFreq;
 	REAL8 fMin = fCoverMin - wings * dFreq;
+	UINT4 numSFTs;
 
-	TRY ( LALLoadSFTs ( status->statusPtr, &(cfg->ifos[X].sftVect), catalogs[X], fMin, fMax ), 
-	      status );
+	numSFTs = catalogs[X]->length;
+	cfg->ifos[X].weightsNoise->length = numSFTs;
+	cfg->ifos[X].weightsNoise->data = (REAL8 *)LALCalloc(numSFTs, sizeof(REAL8));
+	
+	TRY(LALDCreateVector(status->statusPtr, &(cfg->ifos[X].weightsNoise), numSFTs),status);
+
+
+	TRY ( LALLoadSFTs ( status->statusPtr, &(cfg->ifos[X].sftVect), catalogs[X], fMin, fMax ), status );
+
+	TRY( LALHOUGHInitializeWeights( status->statusPtr, (cfg->ifos[X].weightsNoise) ), status);
+	TRY( LALHOUGHComputeNoiseWeights( status->statusPtr, (cfg->ifos[X].weightsNoise), cfg->ifos[X].sftVect, uvar_RngMedWindow), status); 
 
 	/* Normalize this by 1/sqrt(Sh), where Sh is the median of |X|^2  
 	 * NOTE: this corresponds to a double-sided PSD, therefore we need to 
@@ -1036,6 +1050,8 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
       
       /* Free SFT data */
       TRY (LALDestroySFTVector (status->statusPtr, &(cfg->ifos[i].sftVect) ), status);	 /* the new way*/
+
+      LALFree(cfg->ifos[i].weightsNoise->data); 
                   
       /* Free AM-coefficients */
       TRY (LALSDestroyVector(status->statusPtr, &(cfg->ifos[i].amcoe->a)), status);
@@ -1062,7 +1078,8 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
   LALFree(cfg->edat->ephemE);
   LALFree(cfg->edat->ephemS);
   LALFree(cfg->edat);
-    
+
+
   XLALDestroyPulsarSpinRange ( cfg->spinRangeRef );
 
   DETATCHSTATUSPTR (status);
