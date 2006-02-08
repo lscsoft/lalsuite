@@ -982,8 +982,7 @@ void LALHOUGHComputeNoiseWeights  (LALStatus    *status,
     
   } /* end of loop over sfts */
 
-  /* normalize weights */
-  TRY( LALHOUGHNormalizeWeights( status->statusPtr, weightV ), status); 
+  /* remember to normalize weights immediately after leaving this function */
 
   /* free memory */
   LALFree(mediansV.data);
