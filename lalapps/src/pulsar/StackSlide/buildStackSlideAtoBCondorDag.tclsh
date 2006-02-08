@@ -149,7 +149,7 @@ for {set j 0} {$j<$num_sub_bands} {incr j} {
    puts $dagFid "JOB $nodeName $submitFileNodeA";
    puts $dagFid "VARS $nodeName JobID=\"$j\" argList=\"$argList\"";
    append outputFileName ".xml";
-   puts $pListFid "A$j $dagWorkingDir/$outputFileName";
+   puts $pListFid "A$j $outputFileName";
    puts $pListFid "";
    puts $dagFid "";
 
@@ -170,7 +170,7 @@ for {set j 0} {$j<$num_sub_bands} {incr j} {
    puts $dagFid "JOB $nodeName $submitFileNodeB";
    puts $dagFid "VARS $nodeName JobID=\"$j\" argList=\"$argList\"";
    append outputFileName ".xml";
-   puts $pListFid "B$j $dagWorkingDir/$outputFileName";
+   puts $pListFid "B$j $outputFileName";
    puts $pListFid "";
    puts $dagFid "";
 

@@ -14,10 +14,16 @@ function ReportOnULsFromAtoBCondorDag(commentString,fileList,outputFile,confiden
 %           etc...
 %
 % mcFileList is found by matching files in fileList that are B jobs.
-% confidence: desired confidence of ULs
+% confidence: desired confidence of ULs.
 % outputFile: name of output file (give [] if no output file)
-% if ((outputOption & 1) > 0) will compute the S and SBins values for the loudest event
-% graphOption: if > 0 then display plots; for i=graphOption will get a plot of ULs vs Confidence for band(i).
+% if (bitand(outputOption,1) > 0) will compute the S and SBins values for the loudest event.
+% if (bitand(outputOption,2) > 0)
+%     When reading in Monte Carlo results to find the linear least squares fit to h_0 vs C,
+%     start at j=2 below; this skip the first row of the searchresults_stackslidemontecarlo
+%     which is redundant under some options. Note that if the first row of the
+%     searchresults_stackslidemontecarlo is estimated UL it will be skipped in any case.
+% if (bitand(outputOption,4) > 0) and (graphOption > 0) show estimated UL and conf on ULs vs Conf graph.
+% graphOption: if > 0 then display plots, including a plot of ULs vs Confidence for band(i) for i=graphOption
 
 if (ischar(confidence))
     confidence=str2num(confidence);
@@ -110,7 +116,7 @@ for i=1:leFileListLength;
   leFREQ = [leFREQ; tbl.frequency(imax)];
   leFDOT = [leFDOT; tbl.fderiv_1(imax)];
 
-  if ((outputOption & 1) > 0)
+  if (bitand(outputOption,1) > 0)
       [S, SHz, Sbins] = FindSkyPosAndFDotSValue(xAccOverc,yAccOverc,zAccOverc,tbl.sky_ra(imax),tbl.sky_dec(imax),tbl.frequency(imax),tbl.fderiv_1(imax),duration,sft_baseline);
   else
       S = 0.0;
@@ -133,7 +139,16 @@ for i=1:leFileListLength;
   [mindiff, imin] = min(  abs(tbl.confidence - confidence)  );   % find row closest to desired confidence
   uls = [];
   confs = [];
-  for j=1:length(tbl.upper_limit)
+  if (bitand(outputOption,2) > 0)
+    jstart = 2;
+    % When reading in Monte Carlo results to find the linear least squares fit to h_0 vs C,
+    % start at j=2 below; this skip the first row of the searchresults_stackslidemontecarlo
+    % which is redundant under some options. Note that if the first row of the
+    % searchresults_stackslidemontecarlo is estimated UL it will be skipped in any case.
+  else
+    jstart = 1;
+  end
+  for j=jstart:length(tbl.upper_limit)
       if ((tbl.confidence(j) > -1.0) && (tbl.converged(j) > -1))
          uls = [uls; tbl.upper_limit(j)];
          confs = [confs; tbl.confidence(j)];
@@ -145,8 +160,12 @@ for i=1:leFileListLength;
     y = polyval(P,confs,S);
     figure(4)
     [ySorted,isort] = sort(y);
-    confsSorted = confs(isort);    
-    plot(uls,confs,'*',ySorted,confsSorted,'k');
+    confsSorted = confs(isort);
+    if (bitand(outputOption,4) > 0)    
+      plot(uls,confs,'+',ySorted,confsSorted,'k',thisUL,confidence,'b*',tbl.upper_limit(2),tbl.confidence(2),'o');
+    else
+      plot(uls,confs,'+',ySorted,confsSorted,'k',thisUL,confidence,'b*');
+    end
     xlabel('h_0');
     ylabel('confidence');
     titleString = sprintf('StackSlide %s h_0 vs. conf. from MC simulation, and best fit. %s',IFO,commentString);
@@ -179,9 +198,9 @@ if (printToStdOut > 0)
  end
   
  fprintf('\n                    Loudest Event Parameters                                              Upper Limit        Confidence');
- fprintf('\n Start_freq    RA      DEC         FREQ        FDOT             S       SBins  PWR       UL   +/-   Unc     Conf +/- Unc\n\n');
+ fprintf('\n Start_freq    RA      DEC         FREQ        FDOT             S       SBins  PWR        UL    +/-    Unc    Conf  +/-  Unc\n\n');
  for i=1:mcFileListLength
-   fprintf('%10.4f %9.6f %9.6f %12.6f %14.6e %12.4e %4i %7.4f   %8.2e  %8.2e  %5.2f  %6.3f\n',start_freq(i),leRA(i),leDEC(i),leFREQ(i),leFDOT(i),leS(i),leSBins(i),lePWR(i),best_upper_limit(i),delta_upper_limit(i),best_confidence(i),delta_confidence(i));
+   fprintf('%10.4f %9.6f %9.6f %12.6f %14.6e %12.4e %4i %7.4f   %8.2e +/- %8.2e  %5.2f +/- %6.3f\n',start_freq(i),leRA(i),leDEC(i),leFREQ(i),leFDOT(i),leS(i),leSBins(i),lePWR(i),best_upper_limit(i),delta_upper_limit(i),best_confidence(i),delta_confidence(i));
  end
  
  [maxdiff, imax] = max( abs(best_upper_limit - upper_limit_est)./best_upper_limit );
@@ -203,10 +222,10 @@ if (fid > 0)
  end
   
  fprintf(fid,'\n                    Loudest Event Parameters                                              Upper Limit        Confidence');
- fprintf(fid,'\n Start_freq    RA      DEC         FREQ        FDOT             S       SBins  PWR       UL   +/-   Unc     Conf +/- Unc\n\n');
+ fprintf(fid,'\n Start_freq    RA      DEC         FREQ        FDOT             S       SBins  PWR        UL    +/-    Unc    Conf  +/-  Unc\n\n');
  for i=1:mcFileListLength
-   fprintf(fid,'%10.4f %9.6f %9.6f %12.6f %14.6e %12.4e %4i %7.4f   %8.2e  %8.2e  %5.2f  %6.3f\n',start_freq(i),leRA(i),leDEC(i),leFREQ(i),leFDOT(i),leS(i),leSBins(i),lePWR(i),best_upper_limit(i),delta_upper_limit(i),best_confidence(i),delta_confidence(i));
- end
+   fprintf(fid,'%10.4f %9.6f %9.6f %12.6f %14.6e %12.4e %4i %7.4f   %8.2e +/- %8.2e  %5.2f +/- %6.3f\n',start_freq(i),leRA(i),leDEC(i),leFREQ(i),leFDOT(i),leS(i),leSBins(i),lePWR(i),best_upper_limit(i),delta_upper_limit(i),best_confidence(i),delta_confidence(i));
+ end 
  % Just print out the number for later use
  for i=1:mcFileListLength
    fprintf(fidNbrs,'%10.4f %9.6f %9.6f %12.6f %14.6e %12.4e %4i %7.4f   %8.2e  %8.2e  %5.2f  %6.3f\n',start_freq(i),leRA(i),leDEC(i),leFREQ(i),leFDOT(i),leS(i),leSBins(i),lePWR(i),best_upper_limit(i),delta_upper_limit(i),best_confidence(i),delta_confidence(i));
