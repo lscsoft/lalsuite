@@ -627,10 +627,8 @@ int main(int argc, char *argv[]){
 	  /*setlinebuf(fpTemplates);*/ /*line buffered on */   
 	}
 
-      /* ****************************************************************/
-      /*  general parameter settings and 1st memory allocation */
-      /* ****************************************************************/
-      
+
+      /****  general parameter settings and 1st memory allocation ****/      
       lutV.length    = mObsCoh;
       lutV.lut = NULL;
       lutV.lut = (HOUGHptfLUT *)LALCalloc(mObsCoh, sizeof(HOUGHptfLUT));
@@ -646,8 +644,8 @@ int main(int argc, char *argv[]){
       freqInd.data = NULL;
       freqInd.data =  ( UINT8 *)LALCalloc(mObsCoh, sizeof(UINT8));
       
-      /* ****************************************************************/
-      /* Case: no spins-demodulaton  or Non demodulation (SFT input)*/
+
+      /* for non-demodulated data (SFT input)*/
       parDem.deltaF = deltaF;
       parDem.skyPatch.alpha = alpha;
       parDem.skyPatch.delta = delta;
@@ -658,7 +656,7 @@ int main(int argc, char *argv[]){
       parDem.positC.y = 0.0;
       parDem.positC.z = 0.0;
       
-      /*****************************************************************/
+      /* sky-resolution parameters **/
       parRes.deltaF = deltaF;
       parRes.patchSkySizeX  = patchSizeX;
       parRes.patchSkySizeY  = patchSizeY;
@@ -666,8 +664,8 @@ int main(int argc, char *argv[]){
       parRes.pixErr = PIXERR;
       parRes.linErr = LINERR;
       parRes.vTotC = VTOT;
-      /******************************************************************/  
-      /* ************* histogram of the number-counts in the Hough maps */
+
+      /* allocating histogram of the number-counts in the Hough maps */
       hist.length = mObsCoh+1;
       histTotal.length = mObsCoh+1;
       hist.data = NULL;
@@ -676,11 +674,10 @@ int main(int argc, char *argv[]){
       histTotal.data = (UINT4 *)LALCalloc((mObsCoh+1), sizeof(UINT4));
       { 
 	UINT4   j;
-	for(j=0; j< histTotal.length; ++j){ histTotal.data[j]=0; }
+	for(j=0; j< histTotal.length; ++j)
+	  histTotal.data[j]=0;
       }
       
-      /******************************************************************/  
-      /******************************************************************/  
       
       fBin= f0Bin;
       iHmap = 0;
@@ -689,15 +686,12 @@ int main(int argc, char *argv[]){
       nSpin1Max = floor(uvar_nfSizeCylinder/2.0);
       f1jump = 1./timeDiffV.data[mObsCoh- 1];
       
-      /******************************************************************/
-      /******************************************************************/
-      /* starting the search f0-fLastBin.
-	 Note one set LUT might not cover all the interval.
-	 This is taken into account.
-	 Memory allocation changes */
-      /******************************************************************/
-      /******************************************************************/
-      
+
+      /* start of main loop over search frequency bins */
+      /********** starting the search from f0Bin to fLastBin.
+		  Note one set LUT might not cover all the interval.
+		  This is taken into account *******************/
+
       while( fBin <= fLastBin){
 	INT8 fBinSearch, fBinSearchMax;
 	UINT4 i,j; 
@@ -773,19 +767,19 @@ int main(int argc, char *argv[]){
 	ht.map   = (HoughTT *)LALCalloc(xSide*ySide, sizeof(HoughTT));
 	LAL_CALL( LALHOUGHInitializeHT( &status, &ht, &patch), &status); /*not needed */
 	
-	/******************************************************************/
+
 	/*  Search frequency interval possible using the same LUTs */
 	fBinSearch = fBin;
 	fBinSearchMax= fBin + parSize.nFreqValid - 1 - floor( (uvar_nfSizeCylinder - 1)/2.);
 	
-	/** >>>>>>>>>>>>>>>>>>>>>>>>>>>>> * <<<<<<<<<<<<<<<<<<<<<<<<<<<< **/
-	/* Study all possible frequencies with one set of LUT */
-	/** >>>>>>>>>>>>>>>>>>>>>>>>>>>>> * <<<<<<<<<<<<<<<<<<<<<<<<<<<< **/
-	
-	while ( (fBinSearch <= fLastBin) && (fBinSearch < fBinSearchMax) )  { 
-	  
-	  /**** study 1 spin-down. at  fBinSearch ****/
+
+	/* Study all possible frequencies with one set of LUT */	
+
+	while ( (fBinSearch <= fLastBin) && (fBinSearch < fBinSearchMax) ) 
 	  {
+	    
+	    /**** study 1 spin-down. at  fBinSearch ****/
+
 	    INT4   n;
 	    REAL8  f1dis;
 	    REAL8 significance;
@@ -850,9 +844,8 @@ int main(int argc, char *argv[]){
 	      ++iHmap;
 	      
 	      /* what else with output, equal to non-spin case */
+	      LALFree(ht.spinRes.data);
 	    }
-	    LALFree(ht.spinRes.data);
-	  }
 	  
 	  /***** shift the search freq. & PHMD structure 1 freq.bin ****** */
 	  ++fBinSearch;
