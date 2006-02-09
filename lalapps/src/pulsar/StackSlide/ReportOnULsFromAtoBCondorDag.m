@@ -92,7 +92,7 @@ leSHz = [];
 leSBins = [];
 
 start_freq = [];
-%band = [];
+band = [];
 % First row of searchresults_stackslidemontecarlo contains estimated ULs
 upper_limit_est = [];
 confidence_est = [];
@@ -132,6 +132,7 @@ for i=1:leFileListLength;
   tbl = readMeta(fileName,'searchresults_stackslidemontecarlo');
   tbl.loudest_event(1);                                     % same for all rows per job
   start_freq = [start_freq; tbl.start_freq(1)];             % same for all rows per job
+  band = [band; tbl.band(1)];                               % same for all rows per job
   upper_limit_est = [upper_limit_est; tbl.upper_limit(1)];  % estimates are in the first row
   confidence_est = [confidence_est; tbl.confidence(1)];     % estimates are in the first row
   converged_est = [converged_est; tbl.converged(1)];        % estimates are in the first row    
@@ -156,23 +157,25 @@ for i=1:leFileListLength;
   end
   [P,S] = polyfit(confs,uls,1);
   [thisUL,deltaUL] = polyval(P,confidence,S);
+  [P,S] = polyfit(uls/mean(uls),confs,1);  % run the fit with uls and conf reversed to get an error estimate on the conf.
+  [Y,deltaConf] = polyval(P,thisUL/mean(uls),S);
   if i==graphOption
-    y = polyval(P,confs,S);
-    figure(4)
+    figure(4);
+    y = polyval(P,uls/mean(uls),S);
     [ySorted,isort] = sort(y);
-    confsSorted = confs(isort);
-    if (bitand(outputOption,4) > 0)    
-      plot(uls,confs,'+',ySorted,confsSorted,'k',thisUL,confidence,'b*',tbl.upper_limit(2),tbl.confidence(2),'o');
+    ulsSorted = uls(isort);    
+    if (bitand(outputOption,4) > 0)
+      plot(uls,confs,'+',ulsSorted,ySorted,'k',thisUL,confidence,'b*',tbl.upper_limit(2),tbl.confidence(2),'o');
+      legend('measurements','best fit line','best fit UL','estimated UL');
     else
-      plot(uls,confs,'+',ySorted,confsSorted,'k',thisUL,confidence,'b*');
+      plot(uls,confs,'+',ulsSorted,ySorted,'k',thisUL,confidence,'b*');
+      legend('measurements','best fit line','best fit UL');
     end
     xlabel('h_0');
     ylabel('confidence');
-    titleString = sprintf('StackSlide %s h_0 vs. conf. from MC simulation, and best fit. %s',IFO,commentString);
+    titleString = sprintf('StackSlide %s h_0 vs. conf. from MC simulation, and best fit. %s Band: %g-%g Hz.',IFO,commentString,start_freq(i),start_freq(i)+band(i));
     title(titleString);
   end  
-  [P,S] = polyfit(uls/mean(uls),confs,1);  % run the fit with uls and conf reversed to get an error estimate on the conf.
-  [Y,deltaConf] = polyval(P,thisUL/mean(uls),S);
   best_upper_limit = [best_upper_limit; thisUL];  
   delta_upper_limit = [delta_upper_limit; deltaUL];
   best_confidence = [best_confidence; confidence];
