@@ -38,7 +38,7 @@ Usage: lalapps_power_pipe [options]
   -L, --ifo_l              run on L1
 
   -c, --makeinjfiles       create the xml files with inj parameters
-  -j, --injections TYPE    add simulated injections of type specified(burst/inspiral/burstandinspiral/sim)
+  -j, --injections TYPE    add simulated injections of type specified(burst/inspiral/burstandinspiral/sim/inj_in_one_file)
   -m, --mdcinjections      add mdc injections 
 
   -b, --coincidence        do coincidence analysis
@@ -102,6 +102,7 @@ do_burstinj = None
 do_siminj = None
 do_inspinj = None
 do_mdcinj = None
+do_addinjfromonefile = None
 usertag = None
 do_timeslides = None
 do_estimatehrss = None
@@ -185,8 +186,10 @@ if inj_type:
   elif inj_type == "sim":
     do_burstinj = 1
     do_siminj = 1
+  elif inj_type == "inj_in_one_file":
+    do_addinjfromonefile = 1
   else:
-    print >> sys.stderr, "Injection type not recognised. Valid types are burst/inspiral/burstandinspiral"
+    print >> sys.stderr, "Injection type not recognised. Valid types are burst/inspiral/burstandinspiral/sim/inj_in_one_file"
     sys.exit(1)
 
 # coin type 
@@ -297,8 +300,9 @@ overlap = int(cp.get('chunks', 'chunk-overlap'))
 # read science segs that are >= to min duration from the input file
 data = pipeline.ScienceData()
 data.read(cp.get('input','segments'),minduration)
-data.make_chunks(length,overlap,playground_only,0,overlap/2)
-data.make_short_chunks_from_unused(minduration,overlap,playground_only,0,overlap/2)
+data.make_chunks(length,overlap,playground_only,0,overlap/2,pad)
+#add the unused data to the end of the last chunk
+data.make_extended_chunks_from_unused(overlap,pad)
 
 #get the order of ifos to filter
 if do_H1:
@@ -346,55 +350,55 @@ burst_nodes = []
 
 for seg in data:
 
-  for chunk in seg:
+  ######### find all the data ##########
+  if do_H1 or do_H2: 
+    df1 = pipeline.LSCDataFindNode(df_job)
+    df1.set_start(seg.start() - pad)
+    df1.set_end(seg.end() + pad)
+    if do_H1:
+      df1.set_observatory(ifo1[0])
+    else:
+      df1.set_observatory(ifo2[0])    
+    if prev_df1: 
+      df1.add_parent(prev_df1)
 
-    ######### find all the data ##########
-    if do_H1 or do_H2: 
-      df1 = pipeline.LSCDataFindNode(df_job)
-      df1.set_start(seg.start() - pad)
-      df1.set_end(seg.end() + pad)
-      if do_H1:
-        df1.set_observatory(ifo1[0])
-      else:
-        df1.set_observatory(ifo2[0])    
-      if prev_df1: 
-        df1.add_parent(prev_df1)
+    if do_datafind:
+      dag.add_node(df1)
 
-      if do_datafind:
-        dag.add_node(df1)
-
-      prev_df1 = df1
+    prev_df1 = df1
   
-    if do_L1:
-      df2 = pipeline.LSCDataFindNode(df_job)
-      df2.set_start(seg.start() - pad)
-      df2.set_end(seg.end() + pad)
-      df2.set_observatory(ifo3[0])
-      if prev_df2: 
-        df2.add_parent(prev_df2)
+  if do_L1:
+    df2 = pipeline.LSCDataFindNode(df_job)
+    df2.set_start(seg.start() - pad)
+    df2.set_end(seg.end() + pad)
+    df2.set_observatory(ifo3[0])
+    if prev_df2: 
+      df2.add_parent(prev_df2)
 
-      if do_datafind:
-        dag.add_node(df2)
+    if do_datafind:
+      dag.add_node(df2)
 
-      prev_df2 = df2
+    prev_df2 = df2
 
-    ####### find all the mdc data ###########
-    mdcdf1 = power.MdcDataFindNode(mdcinj_job)
-    mdcdf1.set_start(seg.start() - pad)
-    mdcdf1.set_end(seg.end() + pad)
+  ####### find all the mdc data ###########
+  mdcdf1 = power.MdcDataFindNode(mdcinj_job)
+  mdcdf1.set_start(seg.start() - pad)
+  mdcdf1.set_end(seg.end() + pad)
 
-    if do_datafind: 
-      mdcdf1.add_parent(df1)
-    if do_mdcinj:
-      dag.add_node(mdcdf1)
+  if do_datafind: 
+    mdcdf1.add_parent(df1)
+  if do_mdcinj:
+    dag.add_node(mdcdf1)
+
+  for chunk in seg:
 
     ####### set the burst injecton jobs #########
     if do_burstinj:
       binj = power.BurstInjNode(burstinj_job)
       bseed = int(10 * random.uniform(0.0,1.0))
       binj.add_var_opt('seed',bseed)
-      binj.set_start(seg.start())
-      binj.set_end(seg.end())
+      binj.set_start(chunk.start())
+      binj.set_end(chunk.end())
 
  
       if do_datafind: 
@@ -410,8 +414,8 @@ for seg in data:
       iinj = power.InspInjNode(inspinj_job)
       iseed = int(10 * random.uniform(0.0,1.0))
       iinj.add_var_opt('seed',iseed)
-      iinj.set_start(seg.start())
-      iinj.set_end(seg.end())
+      iinj.set_start(chunk.start())
+      iinj.set_end(chunk.end())
 
  
       if do_datafind: 
@@ -441,6 +445,8 @@ for seg in data:
       if do_siminj:
         pow1.set_siminj(binj.get_output(bseed))
         pow1.add_var_opt('sim-cache',simcache)	
+      if do_addinjfromonefile:
+        pow1.add_var_opt('calibration-cache',ifo1_calibration)
       pow1.add_var_opt('lnthreshold',ifo1_snr)
 
       if do_datafind: 
@@ -472,6 +478,8 @@ for seg in data:
       if do_siminj:
         pow2.set_siminj(binj.get_output(bseed))
         pow2.add_var_opt('sim-cache',simcache)
+      if do_addinjfromonefile:
+        pow2.add_var_opt('calibration-cache',ifo2_calibration)
       pow2.add_var_opt('lnthreshold',ifo2_snr)
 
       if do_datafind: 
@@ -503,6 +511,8 @@ for seg in data:
       if do_siminj:
         pow3.set_siminj(binj.get_output(bseed))
         pow3.add_var_opt('sim-cache',simcache)
+      if do_addinjfromonefile:
+        pow3.add_var_opt('calibration-cache',ifo3_calibration)
       pow3.add_var_opt('lnthreshold',ifo3_snr)
 
       if do_datafind: 
@@ -643,8 +653,11 @@ log_fh.write( "\n" )
 log_fh.write( "Parsed " + str(len(data)) + " science segments\n" )
 total_data = 0
 for seg in data:
+  no_chunk = 0	
   for chunk in seg:
+    no_chunk += 1	
     total_data += len(chunk)
+  total_data -= (no_chunk -1)*overlap
 print >> log_fh, "total data =", total_data
 
 print >> log_fh, "\n===========================================\n"
