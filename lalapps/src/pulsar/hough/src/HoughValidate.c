@@ -420,7 +420,6 @@ int main(int argc, char *argv[]){
     AMCoeffs amc; 
     AMCoeffsParams *amParams;
     EarthState earth;
-    UINT4 ii;
     BarycenterInput baryinput;  /* Stores detector location and other barycentering data */
 
     /* detector location */

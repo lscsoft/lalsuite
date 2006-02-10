@@ -65,6 +65,7 @@
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
 #include <lal/NormalizeSFTRngMed.h>
+#include <lal/LALInitBarycenter.h>
 #include <lalapps.h>
 #include <gsl/gsl_cdf.h>
 
