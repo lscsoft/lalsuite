@@ -95,6 +95,7 @@ NRCSID (DRIVEHOUGHCOLORH, "$Id$");
 #define DRIVEHOUGHCOLOR_EARG  2
 #define DRIVEHOUGHCOLOR_EBAD  3
 #define DRIVEHOUGHCOLOR_EFILE 4
+#define DRIVEHOUGHCOLOR_EDIR 4
 #define DRIVEHOUGHCOLOR_ENULL 5
 
 #define DRIVEHOUGHCOLOR_MSGENORM "Normal exit"
@@ -102,6 +103,7 @@ NRCSID (DRIVEHOUGHCOLORH, "$Id$");
 #define DRIVEHOUGHCOLOR_MSGEARG  "Error parsing arguments"
 #define DRIVEHOUGHCOLOR_MSGEBAD  "Bad argument values"
 #define DRIVEHOUGHCOLOR_MSGEFILE "Could not create output file"
+#define DRIVEHOUGHCOLOR_MSGEDIR  "Could not create directory"
 #define DRIVEHOUGHCOLOR_MSGENULL "Null pointer"
 
 /*********************************************************************/
@@ -145,11 +147,25 @@ char *lalWatch;
  *  Structure, enum, union, etc., typdefs.
  */
 
-typedef struct tagREAL8Cart3CoorVector{
-  UINT4   	  length; /* number of elements */
-  REAL8Cart3Coor  *data; /* x.y.z */
-} REAL8Cart3CoorVector;
+  typedef struct tagREAL8Cart3CoorVector{
+    UINT4   	  length; /**< number of elements */
+    REAL8Cart3Coor  *data; /**< x.y.z */
+  } REAL8Cart3CoorVector;
+  
+  typedef struct tagHoughSignificantEvent{
+    REAL8  nStar;  /**< most significant number count in a skypatch*/
+    REAL8  nStarSignificance; /**< significance of number count nStar */
+    REAL8  freqStar;  /**< frequency of nStar */
+    REAL8  alphaStar; /**< right-ascension of nStar */
+    REAL8  deltaStar; /**< declination of nStar */
+    REAL8  fdotStar; /**< value of first spindown parameter */
+  } HoughSignificantEvent;
 
+  typedef struct tagHoughSignificantEventVector{
+    INT4  length;
+    HoughSignificantEvent *event;
+  } HoughSignificantEventVector;
+  
 /*
  *  Functions Declarations (i.e., prototypes).
  */
@@ -182,6 +198,11 @@ void PrintLogFile (LALStatus       *status,
 		   CHAR            *basename,
 		   CHAR            *skyfile,
 		   CHAR            *executable);
+
+void PrintnStarFile (LALStatus                   *status,
+		     HoughSignificantEventVector *eventVec,
+		     CHAR                        *dirname,
+		     CHAR                        *basename);
 
 
 /* ****************************************************** */

@@ -122,7 +122,7 @@ int main(int argc, char *argv[]){
   static HOUGHMapTotal   ht;   /* the total Hough map */
   static UINT4Vector     hist; /* histogram of number counts for a single map */
   static UINT4Vector     histTotal; /* number count histogram for all maps */
-  HoughStats      stats;
+  static HoughStats      stats;
 
   /* skypatch info */
   REAL8  *skyAlpha, *skyDelta, *skySizeAlpha, *skySizeDelta; 
@@ -131,21 +131,15 @@ int main(int argc, char *argv[]){
   /* output filenames and filepointers */
   CHAR   filehisto[256]; 
   CHAR   filestats[256]; 
-  CHAR   filestar[256];
-  FILE   *fpEvents = NULL;
   CHAR   fileEvents[256];
-  FILE   *fpTemplates=NULL;
   CHAR   fileTemplates[256];
   CHAR   fileMaps[256];
+  FILE   *fpTemplates = NULL;
+  FILE   *fpEvents = NULL;
   FILE   *fp1 = NULL;
-  FILE   *fpStar = NULL;  
 
   /* the maximum number count */
-  REAL8  *nStar = NULL;
-  REAL8  *nStarSignificance = NULL;
-
-  /* where the max occurs */
-  REAL8  *freqStar=NULL, *alphaStar=NULL, *deltaStar=NULL, *fdotStar=NULL; 
+  static HoughSignificantEventVector nStarEventVec;
 
   /* miscellaneous */
   INT4   houghThreshold, iHmap, nSpin1Max;
@@ -247,12 +241,29 @@ int main(int argc, char *argv[]){
   if (uvar_help)
     exit(0); 
 
+  /* very basic consistency checks on user input */
+  if ( uvar_f0 < 0 ) {
+    fprintf(stderr, "start frequency must be positive\n");
+    exit(1);
+  }
+
+  if ( uvar_fSearchBand < 0 ) {
+    fprintf(stderr, "search frequency band must be positive\n");
+    exit(1);
+  }
+ 
+  if ( uvar_peakThreshold < 0 ) {
+    fprintf(stderr, "peak selection threshold must be positive\n");
+    exit(1);
+  }
+
   if ( uvar_printEvents ) {
     if ((uvar_houghFalseAlarm > 1.0 ) || (uvar_houghFalseAlarm < 0.0) )  {
-      fprintf(stderr, "false alarm must be between 0 and 1\n");
+      fprintf(stderr, "hough false alarm must be between 0 and 1\n");
       exit(1);
     }
   }
+
   /* write log file with command line arguments, cvs tags, and contents of skypatch file */
   LAL_CALL( PrintLogFile( &status, uvar_dirnameOut, uvar_fbasenameOut, uvar_skyfile, argv[0]), &status);
 
@@ -292,7 +303,7 @@ int main(int argc, char *argv[]){
       }
     
     fclose(fpsky);     
-  }
+  } /* end skyfile reading block */
 
 
   /* read sft files and set up weights and nstar vector */
@@ -328,16 +339,11 @@ int main(int argc, char *argv[]){
     fLastBin = f0Bin + length;   /* final frequency bin to be analyzed */
 
     /* using value of length, allocate memory for most significant event nstar, fstar etc. */
-    nStar = (REAL8 *)LALCalloc((length + 1), sizeof(REAL8));
-    nStarSignificance =  (REAL8 *)LALCalloc((length + 1), sizeof(REAL8));
-    freqStar = (REAL8 *)LALCalloc((length + 1), sizeof(REAL8));
-    alphaStar = (REAL8 *)LALCalloc((length + 1), sizeof(REAL8));
-    deltaStar = (REAL8 *)LALCalloc((length + 1), sizeof(REAL8));
-    fdotStar = (REAL8 *)LALCalloc((length + 1), sizeof(REAL8));
-    
+    nStarEventVec.length = length + 1;
+    nStarEventVec.event = NULL;
+    nStarEventVec.event = (HoughSignificantEvent *)LALCalloc( length+1, sizeof(HoughSignificantEvent));
     /* initialize nstar values -- really unnecessary */
-    memset( nStar, 0, length+1);
-    memset( nStarSignificance, 0, length+1);
+    memset( nStarEventVec.event, 0, length+1);
     
     /* get SFT timestamps */
     LAL_CALL( LALSFTtimestampsFromCatalog(  &status, &timeV, catalog ), &status);  	
@@ -789,7 +795,9 @@ int main(int argc, char *argv[]){
 	    ht.spinRes.data = NULL;
 	    ht.spinRes.data = (REAL8 *)LALCalloc(ht.spinRes.length, sizeof(REAL8));
 	    
-	    for( n=0; n<= nSpin1Max; ++n){ /*loop over all values of f1 */
+	    for( n=0; n<= nSpin1Max; ++n){ 
+	      /*loop over all spindown values */
+
 	      f1dis = - n*f1jump;
 	      ht.spinRes.data[0] =  f1dis*deltaF;
 	      
@@ -809,17 +817,20 @@ int main(int argc, char *argv[]){
 	      LAL_CALL( LALStereo2SkyLocation (&status, &sourceLocation, 
 				       stats.maxIndex[0], stats.maxIndex[1], &patch, &parDem), &status);
 	      LAL_CALL( LALHoughHistogram ( &status, &hist, &ht), &status);
-	      for(j=0; j< histTotal.length; ++j){ histTotal.data[j]+=hist.data[j]; }
-	      
+
+	      for(j=0; j< histTotal.length; ++j){ 
+		histTotal.data[j]+=hist.data[j]; 
+	      }	      
+
 	      significance =  (stats.maxCount - meanN)/sigmaN;	      
-	      if ( significance > nStarSignificance[fBinSearch-f0Bin])
+	      if ( significance > nStarEventVec.event[fBinSearch-f0Bin].nStarSignificance )
 		{
-		  nStar[fBinSearch-f0Bin] = stats.maxCount;
-		  nStarSignificance[fBinSearch-f0Bin] = significance;
-		  freqStar[fBinSearch-f0Bin] = fBinSearch*deltaF;
-		  alphaStar[fBinSearch-f0Bin] = sourceLocation.alpha;
-		  deltaStar[fBinSearch-f0Bin] = sourceLocation.delta;
-		  fdotStar[fBinSearch-f0Bin] = ht.spinRes.data[0];
+		  nStarEventVec.event[fBinSearch-f0Bin].nStar = stats.maxCount;
+		  nStarEventVec.event[fBinSearch-f0Bin].nStarSignificance = significance;
+		  nStarEventVec.event[fBinSearch-f0Bin].freqStar = fBinSearch * deltaF;
+		  nStarEventVec.event[fBinSearch-f0Bin].alphaStar = sourceLocation.alpha;
+		  nStarEventVec.event[fBinSearch-f0Bin].deltaStar = sourceLocation.delta;
+		  nStarEventVec.event[fBinSearch-f0Bin].fdotStar = ht.spinRes.data[0];
 		}
 
 
@@ -842,21 +853,21 @@ int main(int argc, char *argv[]){
 		LAL_CALL( PrintHoughEvents (&status, fpTemplates, 0.0, &ht, &patch, &parDem), &status);
 
 	      ++iHmap;
-	      
-	      /* what else with output, equal to non-spin case */
-	      LALFree(ht.spinRes.data);
-	    }
-	  
-	  /***** shift the search freq. & PHMD structure 1 freq.bin ****** */
-	  ++fBinSearch;
-
-	  LAL_CALL( LALHOUGHupdateSpacePHMDup(&status, &phmdVS, &pgV, &lutV), &status );
-
-	  if (uvar_weighAM || uvar_weighNoise) {
+	    } /* end loop over spindown values */ 
+	    
+	    LALFree(ht.spinRes.data);
+	    
+	    
+	    /***** shift the search freq. & PHMD structure 1 freq.bin ****** */
+	    ++fBinSearch;
+	    
+	    LAL_CALL( LALHOUGHupdateSpacePHMDup(&status, &phmdVS, &pgV, &lutV), &status );
+	    
+	    if (uvar_weighAM || uvar_weighNoise) {
 	    LAL_CALL( LALHOUGHWeighSpacePHMD( &status, &phmdVS, &weightsV), &status);
-
-	  }
-	}   /* ********>>>>>>  closing second while  <<<<<<<<**********<  */
+	    
+	    }
+	  }   /* ********>>>>>>  closing second while  <<<<<<<<**********<  */
 	
 	fBin = fBinSearch;
 	
@@ -919,48 +930,10 @@ int main(int argc, char *argv[]){
     } /* finish loop over skypatches */
 
 
-  /* create the directory for writing nstar */
-  strcpy( filestar, uvar_dirnameOut);
-  strcat( filestar, "/nstarfiles/");
-  errno = 0;
-  {
-    /* check whether file can be created or if it exists already 
-       if not then exit */
-    INT4 mkdir_result;
-    mkdir_result = mkdir(filestar, S_IRWXU | S_IRWXG | S_IRWXO);
-    if ( (mkdir_result == -1) && (errno != EEXIST) )
-      {
-	fprintf(stderr, "unable to create nstar directory\n");
-	return 1;  /* stop the program */
-      }
-  }
-  strcat( filestar, uvar_fbasenameOut);
-  strcat( filestar, "nstar");
+  /* print most significant events */
+  LAL_CALL( PrintnStarFile( &status, &nStarEventVec, uvar_dirnameOut, 
+			    uvar_fbasenameOut), &status);
 
-  /* open the nstar file for writing */
-  if ( (fpStar = fopen(filestar,"w")) == NULL)
-    {
-      fprintf(stderr,"Unable to find file %s for writing\n", filestar);
-      return DRIVEHOUGHCOLOR_EFILE;
-    }
-  /*setlinebuf(fp1);*/ /*line buffered on */  
-  setvbuf(fpStar, (char *)NULL, _IOLBF, 0);      
-
-
-  /* write the nstar resulta */
-  {
-    INT4 starIndex;
-    /* we don't record the nstar for the last bin */
-    for(starIndex = 0; starIndex < fLastBin - f0Bin; starIndex++)
-      {
-	fprintf(fpStar, "%f %f %f %f %g \n", nStar[starIndex], freqStar[starIndex], 
-		alphaStar[starIndex], deltaStar[starIndex], fdotStar[starIndex] );
-      }
-  }
-
-
-  /* close nstar file */
-  fclose(fpStar);
 
   /* free memory allocated outside skypatches loop */ 
   LALFree( detector);
@@ -989,12 +962,7 @@ int main(int argc, char *argv[]){
   LALFree(skySizeAlpha);
   LALFree(skySizeDelta);
 
-  LALFree(nStar);
-  LALFree(nStarSignificance);
-  LALFree(alphaStar);
-  LALFree(deltaStar);
-  LALFree(freqStar);
-  LALFree(fdotStar);
+  LALFree( nStarEventVec.event );
 
   LAL_CALL (LALDestroyUserVars(&status), &status);
 
@@ -1267,6 +1235,69 @@ void PrintLogFile (LALStatus       *status,
     }
 
   LALFree(fnameLog); 
+  	 
+  DETATCHSTATUSPTR (status);
+  /* normal exit */
+  RETURN (status);
+}    
+
+
+/* print most significant events */
+void PrintnStarFile (LALStatus                   *status,
+		     HoughSignificantEventVector *eventVec,
+		     CHAR                        *dirname,
+		     CHAR                        *basename)
+{
+  CHAR *filestar = NULL; 
+  FILE *fpStar = NULL; 
+  INT4 length, starIndex;
+  HoughSignificantEvent *event;
+  INT4 mkdir_result;
+
+  INITSTATUS (status, "PrintnStarFile", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT(eventVec, status, DRIVEHOUGHCOLOR_ENULL,DRIVEHOUGHCOLOR_MSGENULL); 
+  ASSERT(eventVec->event, status, DRIVEHOUGHCOLOR_ENULL,DRIVEHOUGHCOLOR_MSGENULL); 
+  ASSERT(dirname, status, DRIVEHOUGHCOLOR_ENULL,DRIVEHOUGHCOLOR_MSGENULL); 
+  ASSERT(basename, status, DRIVEHOUGHCOLOR_ENULL,DRIVEHOUGHCOLOR_MSGENULL); 
+
+  /* create the directory for writing nstar */
+  filestar = (CHAR *)LALCalloc( 512, sizeof(CHAR));
+  strcpy( filestar, dirname);
+  strcat( filestar, "/nstarfiles/");
+  errno = 0;
+  /* check whether file can be created or if it exists already 
+     if not then exit */
+  mkdir_result = mkdir(filestar, S_IRWXU | S_IRWXG | S_IRWXO);
+  if ( (mkdir_result == -1) && (errno != EEXIST) ) {
+    ABORT( status, DRIVEHOUGHCOLOR_EDIR, DRIVEHOUGHCOLOR_MSGEDIR);
+  }
+  
+  strcat( filestar, basename );
+  strcat( filestar, "nstar");
+
+  /* open the nstar file for writing */
+  if ( (fpStar = fopen(filestar,"w")) == NULL) {
+    ABORT( status, DRIVEHOUGHCOLOR_EFILE, DRIVEHOUGHCOLOR_MSGEFILE);
+  }
+  
+  /*line buffering */  
+  setvbuf(fpStar, (char *)NULL, _IOLBF, 0);      
+
+  /* write the nstar results */
+  length = eventVec->length;
+  event = eventVec->event;
+  for(starIndex = 0; starIndex < length; starIndex++)
+    {
+      fprintf(fpStar, "%f %f %f %f %g \n", event->nStar, event->freqStar, 
+	      event->alphaStar, event->deltaStar, event->fdotStar );
+      event++;
+    }
+
+  /* close nstar file */
+  fclose(fpStar);
+  LALFree(filestar); 
   	 
   DETATCHSTATUSPTR (status);
   /* normal exit */
