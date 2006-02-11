@@ -20,10 +20,12 @@
 
 /**
  * \author Alicia Sintes, Badri Krishnan 
-   \file DriveHough.c 
-   \brief Routines for building and updating the space of partial Hough map
-   derivatives and related functions needed for the
-   construction of total Hough maps
+ * \defgroup houghPulsar
+ * \ingroup pulsarHough
+ * \file DriveHough.c 
+ * \brief Routines for building and updating the space of partial Hough map
+ *  derivatives and related functions needed for the
+ *  construction of total Hough maps
  */
 
 /************************************ <lalVerbatim file="DriveHoughCV">
