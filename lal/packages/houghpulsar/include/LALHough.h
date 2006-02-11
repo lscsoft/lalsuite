@@ -20,9 +20,10 @@
 
 /**
  * 
- * \file LALHough.h
+ * \file 
+   \defgroup moduleHoughPulsar Hough Pulsar
    \author Alicia Sintes, Badri Krishnan  
-   \ingroup pulsarHough
+
    \brief Routines for building and updating the space of partial 
    Hough map derivatives and related functions needed for the construction 
    of  total Hough maps at different frequencies and 

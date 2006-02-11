@@ -17,8 +17,8 @@
  *  MA  02111-1307  USA
  */
 
-/** \file LUT.h
- * \ingroup pulsarHough 
+/** \file 
+ * \addtogroup moduleHoughPulsar 
  * \date $Date$
  * \brief Provides structures and function prototypes required for the construction of look up tables
    that are the core for building the Hough maps.

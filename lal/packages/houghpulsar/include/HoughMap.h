@@ -20,10 +20,10 @@
 
 /**
  *
- * \file HoughMap.h
- *
+ * \file 
+ * \ingroup moduleHoughPulsar
  * \author Alicia M. Sintes and Badri Krishnan 
- * \ingroup pulsarHough
+ *
  * \brief Provides subroutines for initialization and construction of Hough-map derivatives and total Hough-maps.
  * 
  * Revision: $Id$

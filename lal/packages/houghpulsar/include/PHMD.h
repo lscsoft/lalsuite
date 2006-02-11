@@ -17,8 +17,8 @@
  *  MA  02111-1307  USA
  */
 
-/** \file PHMD.h
- *  \ingroup pulsarHough
+/** \file 
+ *  \ingroup modukeHoughPulsar
  *  \author Sintes, A. M.
  *  \date $Date$
  *  \brief Conversion from peaks in a spectrum into a partial Hough map derivative
