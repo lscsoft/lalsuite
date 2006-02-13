@@ -530,6 +530,12 @@ LALIfoCutSingleInspiral(
     CHAR                       *ifo
     );
 
+SnglInspiralTable *
+XLALIfoCutSingleInspiral(
+    SnglInspiralTable         **eventHead,
+    char                       *ifo
+    );
+
 void
 LALIfoCountSingleInspiral(
     LALStatus                  *status,
@@ -738,6 +744,18 @@ XLALCoincInspiralIfosCut(
     CoincInspiralTable **coincHead,
     char                *ifos    
     );
+
+UINT8
+XLALCoincInspiralIdNumber (
+    CoincInspiralTable  *coincInspiral
+    );
+
+CoincInspiralTable *
+XLALCoincInspiralSlideCut(
+    CoincInspiralTable **coincHead,
+    int                  slideNum    
+    );
+
 
 
 /* sim inspiral */
