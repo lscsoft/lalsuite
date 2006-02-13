@@ -128,7 +128,10 @@ a specific alphaFcut. It is relevant for the BCV search only.
 inspiral tables and returns those which are from the requested \texttt{ifo}.
 On input, \texttt{eventHead} is a pointer to the head of a linked list of
 single inspiral tables.  On output, this list contains only single inspirals
-from the requested \texttt{ifo}.
+from the requested \texttt{ifo}.  \texttt{XLALIfoCutSingleInspiral()} works
+similarly, although slightly differently.  This function returns the list of
+events from the specified \texttt{ifo}, while on completion,
+\texttt{eventHead} contains the list of events from \textit{other} ifos.
 
 \texttt{LALIfoCountSingleInspiral()} scans through a linked list of single
 inspiral tables and counts the number which are from the requested IFO.  
@@ -1022,52 +1025,93 @@ LALIfoCutSingleInspiral(
     )
 /* </lalVerbatim> */
 {
-  SnglInspiralTable    *eventList = NULL;
-  SnglInspiralTable    *prevEvent = NULL;
+  SnglInspiralTable    *ifoHead   = NULL;
   SnglInspiralTable    *thisEvent = NULL;
 
-  INITSTATUS( status, "LALIfoScanSingleInspiral", SNGLINSPIRALUTILSC );
+  INITSTATUS( status, "LALIfoCutSingleInspiral", SNGLINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
 
+  ifoHead = XLALIfoCutSingleInspiral( eventHead, ifo );
+ 
+  /* free events from other ifos */
+  while ( *eventHead )
+  {
+    thisEvent = *eventHead;
+    *eventHead = (*eventHead)->next;
+
+    XLALFreeSnglInspiral( &thisEvent );
+  }
+  
+  *eventHead = ifoHead; 
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}  
+
+/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+SnglInspiralTable *
+XLALIfoCutSingleInspiral(
+    SnglInspiralTable         **eventHead,
+    char                       *ifo
+    )
+/* </lalVerbatim> */
+{
+  static const char *func = "IfoCutSingleInspiral";
+  SnglInspiralTable    *prevEvent   = NULL;
+  SnglInspiralTable    *thisEvent   = NULL;
+  SnglInspiralTable    *ifoHead     = NULL;
+  SnglInspiralTable    *thisIfoTrig = NULL;
+
   /* check that eventHead is non-null */
-  ASSERT( eventHead, status, 
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+  if ( ! eventHead )
+  {
+    XLAL_ERROR_NULL(func,XLAL_EIO);
+  }
 
   /* Scan through a linked list of sngl_inspiral tables and return a
      pointer to the head of a linked list of tables for a specific IFO */
 
-  thisEvent = *eventHead;
+  thisEvent  = *eventHead;
+  *eventHead = NULL;
   
   while ( thisEvent )
   {
-    SnglInspiralTable *tmpEvent = thisEvent;
-    thisEvent = thisEvent->next;
-
-    if ( ! strcmp( tmpEvent->ifo, ifo ) )
+    if ( ! strcmp( thisEvent->ifo, ifo ) )
     {
       /* ifos match so keep this event */
-      if ( ! eventList  )
+      if (  ifoHead  )
       {
-        eventList = tmpEvent;
+        thisIfoTrig = thisIfoTrig->next = thisEvent;
       }
       else
       {
-        prevEvent->next = tmpEvent;
+        ifoHead = thisIfoTrig = thisEvent;
       }
-      tmpEvent->next = NULL;
-      prevEvent = tmpEvent;
+
+      /* remove from eventHead list */
+      if ( prevEvent )
+      {
+        prevEvent->next = thisEvent->next;
+      }
+
+      /* move to next event */
+      thisEvent = thisEvent->next;
+      /* terminate ifo list */
+      thisIfoTrig->next = NULL;
     }
     else
     {
-      /* discard this template */
-      LALFreeSnglInspiral ( status->statusPtr, &tmpEvent );
+      /* move along the list */
+      if ( ! *eventHead )
+      {
+        *eventHead = thisEvent;
+      }
+
+      prevEvent = thisEvent;
+      thisEvent = thisEvent->next;
     }
   }
-  *eventHead = eventList; 
 
-
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
+  return( ifoHead );
 }  
 
 
@@ -1731,7 +1775,12 @@ INT4 XLALCountSnglInspiral( SnglInspiralTable *head )
 {
   INT4 length;
   SnglInspiralTable *event;
-  
+ 
+  if ( !head )
+  {
+    return( 0 );
+  }
+
   /* count the number of events in the list */
   for(length = 0, event = head; event; event = event->next)
     length++;
