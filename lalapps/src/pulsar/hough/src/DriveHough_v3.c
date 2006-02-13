@@ -50,7 +50,7 @@ RCSID( "$Id$");
 extern int lalDebugLevel;
 
 /* boolean global variables for controlling output */
-BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps, uvar_printStats;
+BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps, uvar_printStats, uvar_printSigma;
 
 #define EARTHEPHEMERIS "./earth05-09.dat"
 #define SUNEPHEMERIS "./sun05-09.dat"   
@@ -134,9 +134,11 @@ int main(int argc, char *argv[]){
   CHAR   fileEvents[256];
   CHAR   fileTemplates[256];
   CHAR   fileMaps[256];
+  CHAR   fileSigma[256];
   FILE   *fpTemplates = NULL;
   FILE   *fpEvents = NULL;
   FILE   *fp1 = NULL;
+  FILE   *fpSigma = NULL;
 
   /* the maximum number count */
   static HoughSignificantEventVector nStarEventVec;
@@ -191,6 +193,7 @@ int main(int argc, char *argv[]){
   uvar_printTemplates = FALSE;
   uvar_printMaps = FALSE;
   uvar_printStats = FALSE;
+  uvar_printSigma = FALSE;
   uvar_earthEphemeris = (CHAR *)LALCalloc(512, sizeof(CHAR));
   strcpy(uvar_earthEphemeris,EARTHEPHEMERIS);
 
@@ -230,6 +233,7 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterREALUserVar(   &status, "houghFalseAlarm",  0,  UVAR_OPTIONAL, "Hough false alarm to set threshold",  &uvar_houghFalseAlarm), &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printEvents",      0,  UVAR_OPTIONAL, "Print events above threshold",        &uvar_printEvents),     &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printStats",       0,  UVAR_OPTIONAL, "Print Hough statistics",              &uvar_printStats),      &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printSigma",       0,  UVAR_OPTIONAL, "Print expected number count stdev.",  &uvar_printSigma),      &status);  
   /* developer input variables */
   LAL_CALL( LALRegisterINTUserVar(    &status, "nfSizeCylinder",   0, UVAR_DEVELOPER, "Size of cylinder of PHMDs",           &uvar_nfSizeCylinder),  &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",     0, UVAR_DEVELOPER, "Running Median block size",           &uvar_blocksRngMed),    &status);
@@ -350,8 +354,8 @@ int main(int argc, char *argv[]){
 
     /* add wings for Doppler modulation and running median block size*/
     doppWings = (uvar_f0 + uvar_fSearchBand) * VTOT;    
-    fmin = uvar_f0 - doppWings - uvar_blocksRngMed * deltaF;
-    fmax = uvar_f0 + uvar_fSearchBand + doppWings + uvar_blocksRngMed * deltaF;
+    fmin = uvar_f0 - doppWings - (uvar_blocksRngMed + uvar_nfSizeCylinder) * deltaF;
+    fmax = uvar_f0 + uvar_fSearchBand + doppWings + (uvar_blocksRngMed + uvar_nfSizeCylinder) * deltaF;
 
     /* read sft files making sure to add extra bins for running median */
     /* read the sfts */
@@ -432,7 +436,6 @@ int main(int argc, char *argv[]){
   velV.data = NULL;
   velV.data = (REAL8Cart3Coor *)LALCalloc(mObsCoh, sizeof(REAL8Cart3Coor));
 
-
   {  
     VelocityPar   velPar;
     REAL8     vel[3];
@@ -498,6 +501,21 @@ int main(int argc, char *argv[]){
       timeDiffV.data[j] = ts + tn - t0 + midTimeBase; 
     }  
   }
+
+
+  /* if we want to print expected sigma for each skypatch */
+  if ( uvar_printSigma ) 
+    {
+      strcpy ( fileSigma, uvar_dirnameOut);
+      strcat ( fileSigma, "/sigma_values");
+      
+      if ( (fpSigma = fopen(fileSigma,"w")) == NULL)
+	{
+	  fprintf(stderr,"Unable to find file %s for writing\n", fileSigma);
+	  return DRIVEHOUGHCOLOR_EFILE;
+	}
+    }
+  
   
   /* loop over sky patches */
   for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++)
@@ -539,6 +557,9 @@ int main(int argc, char *argv[]){
       meanN = mObsCoh* alphaPeak; 
       sigmaN = sqrt(sumWeightSquare * alphaPeak * (1.0 - alphaPeak));
 
+      if ( uvar_printSigma )
+	fprintf(fpSigma, "%f \n", sigmaN);
+
       /* this should be  erfcInv =erfcinv(2.0 *uvar_houghFalseAlarm) */
       /* the function used is basically the inverse of the CDF for the 
 	 Gaussian distribution with unit variance and
@@ -551,7 +572,7 @@ int main(int argc, char *argv[]){
       }
       
 
-      /* opening the output statistic, and event files */
+      /* opening the output statistics and event files */
 
       /*  create directory fnameout/skypatch_$j using mkdir if required */
       if ( uvar_printStats || uvar_printEvents || uvar_printTemplates || uvar_printMaps )
@@ -864,9 +885,9 @@ int main(int argc, char *argv[]){
 	    LAL_CALL( LALHOUGHupdateSpacePHMDup(&status, &phmdVS, &pgV, &lutV), &status );
 	    
 	    if (uvar_weighAM || uvar_weighNoise) {
-	    LAL_CALL( LALHOUGHWeighSpacePHMD( &status, &phmdVS, &weightsV), &status);
-	    
+	      LAL_CALL( LALHOUGHWeighSpacePHMD( &status, &phmdVS, &weightsV), &status);	    
 	    }
+
 	  }   /* ********>>>>>>  closing second while  <<<<<<<<**********<  */
 	
 	fBin = fBinSearch;
@@ -929,6 +950,9 @@ int main(int argc, char *argv[]){
   
     } /* finish loop over skypatches */
 
+  /* close sigma file */
+  if ( uvar_printSigma )
+    fclose(fpSigma);
 
   /* print most significant events */
   LAL_CALL( PrintnStarFile( &status, &nStarEventVec, uvar_dirnameOut, 
@@ -1290,7 +1314,7 @@ void PrintnStarFile (LALStatus                   *status,
   event = eventVec->event;
   for(starIndex = 0; starIndex < length; starIndex++)
     {
-      fprintf(fpStar, "%f %f %f %f %g \n", event->nStar, event->freqStar, 
+      fprintf(fpStar, "%f %f %f %f %f %g \n", event->nStar, event->nStarSignificance, event->freqStar, 
 	      event->alphaStar, event->deltaStar, event->fdotStar );
       event++;
     }
