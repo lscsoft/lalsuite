@@ -747,14 +747,25 @@ int main( int argc, char *argv[] )
           "Unable to reconstruct coincs from single ifo triggers");
       exit( 1 );
     }
-    else if ( vrbflg )
+    
+    if ( vrbflg )
     {
       fprintf( stdout,
           "Recreated %d coincs from the %d triggers in file %s\n", 
           numFileCoincs, numFileTriggers, inFileNameList[j] );
     }
+    numCoincs += numFileCoincs;
 
-      /* add coincs to list */
+    /* keep only the requested coincs */
+    if( ifos )
+    {
+      numFileCoincs = XLALCoincInspiralIfosCut( &coincFileHead, ifos );
+      if ( vrbflg ) fprintf( stdout,
+          "Kept %d coincs from %s instruments\n", numFileCoincs, ifos );
+      numEventsInIfos += numFileCoincs;
+    }
+
+    /* add coincs to list */
     if( numFileCoincs )
     {
       if ( thisCoinc )
@@ -766,7 +777,6 @@ int main( int argc, char *argv[] )
         coincHead = thisCoinc = coincFileHead;
       }
       for ( ; thisCoinc->next; thisCoinc = thisCoinc->next );
-      numCoincs += numFileCoincs;
     }
     
   }
@@ -812,14 +822,6 @@ int main( int argc, char *argv[] )
   }
 
 
-
-  /* keep only the requested coincs */
-  if( ifos )
-  {
-    numEventsInIfos = XLALCoincInspiralIfosCut( &coincHead, ifos );
-    if ( vrbflg ) fprintf( stdout,
-        "Kept %d coincs from %s instruments\n", numEventsInIfos, ifos );
-  }
 
 
   /*
@@ -1171,7 +1173,7 @@ int main( int argc, char *argv[] )
     fprintf( fp, "number of reconstructed coincidences: %d \n", numCoincs );
     if ( ifos )
     {
-      fprintf( fp, "number of triggers from %s ifos %d \n", ifos, 
+      fprintf( fp, "number of triggers from %s ifos: %d \n", ifos, 
           numEventsInIfos );
     }
     XLALINT8toGPS( &triggerTime, triggerInputTimeNS );
