@@ -877,23 +877,29 @@ NewInitFStat ( LALStatus *status, ConfigVariables *cfg )
   fCoverMax *= (1.0 + uvar_dopplermax);
   fCoverMin *= (1.0 - uvar_dopplermax);
     
+
+  /* ----- initialize + allocate space for Noise Weight ----- */
+  {
+    for ( X = 0; X < cfg->numDetectors; X ++ )
+      {
+	/* allocate memory of the Noise Weight Data */
+	/* 	cfg->ifos[X].weightsNoise->length = cfg->ifos[X].sftVect->length;  */
+	/* 	cfg->ifos[X].weightsNoise->data = LALCalloc(cfg->ifos[X].sftVect->length, sizeof(REAL8));  */
+	
+	TRY(LALDCreateVector(status->statusPtr, &(cfg->ifos[X].weightsNoise), catalogs[X]->length),status); 
+	
+      } /* for X < numDetectors */
+    
+  } /* init Noise Weight */
+  
   {/* ----- load the SFT-vectors ----- */
     UINT4 wings = MYMAX(uvar_Dterms, uvar_RngMedWindow/2 +1);
     
- 
     for ( X = 0; X < cfg->numDetectors; X ++ )
       {
 	REAL8 dFreq = catalogs[X]->data[0].header.deltaF;
 	REAL8 fMax = fCoverMax + wings * dFreq;
 	REAL8 fMin = fCoverMin - wings * dFreq;
-	UINT4 numSFTs;
-
-	numSFTs = catalogs[X]->length;
-	cfg->ifos[X].weightsNoise->length = numSFTs;
-	cfg->ifos[X].weightsNoise->data = (REAL8 *)LALCalloc(numSFTs, sizeof(REAL8));
-	
-	TRY(LALDCreateVector(status->statusPtr, &(cfg->ifos[X].weightsNoise), numSFTs),status);
-
 
 	TRY ( LALLoadSFTs ( status->statusPtr, &(cfg->ifos[X].sftVect), catalogs[X], fMin, fMax ), status );
 
@@ -1050,8 +1056,9 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
       
       /* Free SFT data */
       TRY (LALDestroySFTVector (status->statusPtr, &(cfg->ifos[i].sftVect) ), status);	 /* the new way*/
-
-      LALFree(cfg->ifos[i].weightsNoise->data); 
+    
+      /* Free Noise Weight */
+      TRY (LALDDestroyVector(status->statusPtr, &(cfg->ifos[i].weightsNoise)), status); 
                   
       /* Free AM-coefficients */
       TRY (LALSDestroyVector(status->statusPtr, &(cfg->ifos[i].amcoe->a)), status);
