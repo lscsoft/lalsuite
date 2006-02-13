@@ -426,8 +426,30 @@ LALDestroyStringVector ( LALStatus *status,
 
 
 
-/** Allocate a LIGOTimeGPSVector
- */
+/** Allocate a LIGOTimeGPSVector */
+LIGOTimeGPSVector *
+XLALCreateTimestampVector (UINT4 length)
+{
+  LIGOTimeGPSVector *out = NULL;
+
+  out = LALCalloc (1, sizeof(LIGOTimeGPSVector));
+  if (out == NULL) 
+    XLAL_ERROR_NULL ( "XLALCreateTimestampVector", XLAL_ENOMEM );
+
+  out->length = length;
+  out->data = LALCalloc (1, length * sizeof(LIGOTimeGPS));
+  if (out->data == NULL) {
+    LALFree (out);
+    XLAL_ERROR_NULL ( "XLALCreateTimestampVector", XLAL_ENOMEM );
+  }
+
+  return out;
+
+} /* XLALCreateTimestampVector() */
+
+
+
+/** LAL-interface: Allocate a LIGOTimeGPSVector */
 void
 LALCreateTimestampVector (LALStatus *status, 
 			  LIGOTimeGPSVector **vect, 	/**< [out] allocated timestamp-vector  */
@@ -440,14 +462,8 @@ LALCreateTimestampVector (LALStatus *status,
   ASSERT (vect != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
   ASSERT (*vect == NULL, status, SFTUTILS_ENONULL,  SFTUTILS_MSGENONULL);
 
-  out = LALCalloc (1, sizeof(LIGOTimeGPSVector));
-  if (out == NULL) {
-    ABORT (status,  SFTUTILS_EMEM,  SFTUTILS_MSGEMEM);
-  }
-  out->length = length;
-  out->data = LALCalloc (1, length * sizeof(LIGOTimeGPS));
-  if (out->data == NULL) {
-    LALFree (out);
+  if ( (out = XLALCreateTimestampVector( length )) == NULL ) {
+    XLALClearErrno();
     ABORT (status,  SFTUTILS_EMEM,  SFTUTILS_MSGEMEM);
   }
 
@@ -456,6 +472,21 @@ LALCreateTimestampVector (LALStatus *status,
   RETURN (status);
   
 } /* LALCreateTimestampVector() */
+
+
+/** De-allocate a LIGOTimeGPSVector */
+void
+XLALDestroyTimestampVector ( LIGOTimeGPSVector *vect)
+{
+  if ( !vect )
+    return;
+
+  LALFree ( vect->data );
+  LALFree ( vect );
+  
+  return;
+  
+} /* XLALDestroyTimestampVector() */
 
 
 /** De-allocate a LIGOTimeGPSVector
@@ -469,10 +500,9 @@ LALDestroyTimestampVector (LALStatus *status,
   ASSERT (vect != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
   ASSERT (*vect != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
 
-  LALFree ( (*vect)->data);
-  LALFree ( *vect );
+  XLALDestroyTimestampVector ( (*vect) );
   
-  *vect = NULL;
+  (*vect) = NULL;
 
   RETURN (status);
   

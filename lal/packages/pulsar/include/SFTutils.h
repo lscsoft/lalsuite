@@ -115,6 +115,10 @@ void LALCopySFT (LALStatus *status, SFTtype *dest, const SFTtype *src);
 void LALConcatSFTVectors (LALStatus *, SFTVector **outVect, const SFTVector *inVect1, const SFTVector *inVect2 );
 void LALAppendSFT2Vector (LALStatus *, SFTVector *vect, const SFTtype *sft );
 
+
+LIGOTimeGPSVector *XLALCreateTimestampVector (UINT4 len);
+void XLALDestroyTimestampVector (LIGOTimeGPSVector *vect);
+
 void LALCreateTimestampVector (LALStatus *status, LIGOTimeGPSVector **vect, UINT4 len);
 void LALDestroyTimestampVector (LALStatus *status, LIGOTimeGPSVector **vect);
 
