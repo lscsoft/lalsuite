@@ -542,7 +542,7 @@ XLALFreeCoincInspiral(
       }
     }
   }
-  if ( thisSim = (*coincPtr)->simInspiral )
+  if ( (thisSim = (*coincPtr)->simInspiral) )
   {
     /* loop over the list of eventID's until we get to the one that 
      * points to thisCoinc */
@@ -1068,7 +1068,6 @@ XLALInspiralDistanceCutBCVC(
     )
 /* </lalVerbatim> */
 {
-  static const char *func = "InspiralDistanceCutBCVC";
   InterferometerNumber  ifoA = LAL_UNKNOWN_IFO;  
   InterferometerNumber  ifoB = LAL_UNKNOWN_IFO;
   CoincInspiralTable   *thisCoinc = NULL;
@@ -1391,6 +1390,13 @@ XLALClusterCoincInspiralTable (
     XLAL_ERROR(func,XLAL_EIO);
   }
 
+  if ( ! *coincList )
+  {
+    XLALPrintInfo( 
+      "XLALClusterCoincInspiralTable: Empty coincList passed as input" );
+    return( 0 );
+  }
+    
   thisCoinc = (*coincList);
   nextCoinc = (*coincList)->next;
   *coincList = NULL;
@@ -1606,5 +1612,110 @@ XLALCoincInspiralIfosCut(
   
   return( numCoinc );
 }
+
+
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+UINT8
+XLALCoincInspiralIdNumber (
+    CoincInspiralTable  *coincInspiral
+    )
+/* </lalVerbatim> */
+{
+  static const char *func = "CoincInspiralIdNumber";
+  SnglInspiralTable    *thisSngl = NULL;
+  InterferometerNumber  ifoNumber  = LAL_UNKNOWN_IFO;
+
+  if ( !coincInspiral )
+  {
+    XLAL_ERROR(func,XLAL_EIO);
+  }
+  
+  for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+  {
+    EventIDColumn *thisID = NULL;
+    if ( (thisSngl = coincInspiral->snglInspiral[ifoNumber]) )
+    {
+      /* loop over the list of eventID's until we get to the one that 
+       * points to thisCoinc */
+      thisID = thisSngl->event_id;
+
+      while ( thisID )
+      {
+        /* test if thisID points to our coinc */ 
+        if ( thisID->coincInspiralTable == coincInspiral )
+        {
+          return( thisID->id );
+          break;
+        }
+      }
+    }
+  }
+  /* should never get here */
+  XLALPrintError( "Unable to find id associated to this event" );
+  XLAL_ERROR(func,XLAL_EIO);
+}
+
+
+CoincInspiralTable *
+XLALCoincInspiralSlideCut(
+    CoincInspiralTable **coincHead,
+    int                  slideNum    
+    )
+{
+  CoincInspiralTable    *prevCoinc      = NULL;
+  CoincInspiralTable    *thisCoinc      = NULL;
+  CoincInspiralTable    *slideHead      = NULL;
+  CoincInspiralTable    *thisSlideCoinc = NULL;
+  
+  UINT8 idNumber = 0;
+  
+  if( slideNum < 0 )
+  {
+    slideNum = 5000 - slideNum;
+  }
+  
+  thisCoinc = *coincHead; 
+  *coincHead = NULL;
+  
+  while ( thisCoinc )
+  {
+    idNumber = XLALCoincInspiralIdNumber( thisCoinc );
+
+    if ( (int) ((idNumber % 1000000000) / 100000) == slideNum )
+    {
+      /* add thisCoinc to the slideCoinc list */
+      if ( slideHead )
+      {
+        thisSlideCoinc = thisSlideCoinc->next = thisCoinc;
+      }
+      else
+      {
+        slideHead = thisSlideCoinc = thisCoinc;
+      }
+
+      /* remove from coincHead list */
+      if ( prevCoinc )
+      {
+        prevCoinc->next = thisCoinc->next;
+      }
+
+      thisCoinc = thisCoinc->next;
+      thisSlideCoinc->next = NULL;
+    }
+    else
+    {
+      /* move along the list */
+      if( ! *coincHead )
+      {
+        *coincHead = thisCoinc;
+      }
+      
+      prevCoinc = thisCoinc;
+      thisCoinc = thisCoinc->next;
+    }
+  }
+  return( slideHead );
+}
+
 
 
