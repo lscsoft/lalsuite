@@ -80,8 +80,11 @@ static void print_usage(char *program)
       "  --data-type          datatype specify the data type, must be one of\n"\
       "                                (playground_only|exclude_play|all_data)\n"\
       "\n"\
+      " [--discard-ifo]       ifo      discard all triggers from ifo\n"\
       " [--coinc-cut]         ifos     only keep triggers from IFOS\n"\
+      " [--extract-slides]    slide    only keep triggers from specified slide\n"\
       "\n"\
+      " [--num-slides]        slides   number of time slides performed (used in clustering\n"\
       " [--cluster-algorithm] alg      use trigger clustering algorithm alg\n"\
       "                                [ snrsq | s3_snr_chi_stat ]\n"\
       " [--cluster-time]      time     cluster triggers with time ms window\n"\
@@ -116,6 +119,7 @@ int main( int argc, char *argv[] )
   CHAR *userTag = NULL;
   CHAR comment[LIGOMETA_COMMENT_MAX];
   char *ifos = NULL;
+  char *ifo  = NULL;
   char *inputGlob = NULL;
   char *inputFileName = NULL;
   char *outputFileName = NULL;
@@ -152,6 +156,8 @@ int main( int argc, char *argv[] )
   SimInspiralTable     *missedSimCoincHead = NULL;
   SimInspiralTable     *tmpSimEvent = NULL;
 
+  int                   extractSlide = 0;
+  int                   numSlides = 0;
   int                   numTriggers = 0;
   int                   numCoincs = 0;
   int                   numEventsInIfos = 0;
@@ -222,9 +228,12 @@ int main( int argc, char *argv[] )
       {"input",                   required_argument,      0,              'i'},
       {"output",                  required_argument,      0,              'o'},
       {"summary-file",            required_argument,      0,              'S'},
+      {"extract-slide",           required_argument,      0,              'e'},
+      {"num-slides",              required_argument,      0,              'N'},
       {"cluster-algorithm",       required_argument,      0,              'C'},
       {"cluster-time",            required_argument,      0,              't'},
-      {"coinc-cut",               required_argument,      0,              'd'},
+      {"discard-ifo",             required_argument,      0,              'd'},
+      {"coinc-cut",               required_argument,      0,              'D'},
       {"injection-file",          required_argument,      0,              'I'},
       {"injection-window",        required_argument,      0,              'T'},
       {"missed-injections",       required_argument,      0,              'm'},
@@ -236,7 +245,7 @@ int main( int argc, char *argv[] )
     int option_index = 0;
     size_t optarg_len;
 
-    c = getopt_long_only ( argc, argv, "hzZ:c:Vk:g:i:o:S:C:t:d:I:T:m", 
+    c = getopt_long_only ( argc, argv, "hzZ:c:Vk:g:i:o:S:e:N:C:t:d:D;I:T:m", 
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -330,6 +339,34 @@ int main( int argc, char *argv[] )
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
+      case 'e':
+        /* store the number of slides */
+        extractSlide = atoi( optarg );
+        if ( extractSlide == 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "extractSlide must be non-zero: "
+              "(%d specified)\n",
+              long_options[option_index].name, extractSlide );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "int", "%d", extractSlide );
+        break;
+        
+      case 'N':
+        /* store the number of slides */
+        numSlides = atoi( optarg );
+        if ( numSlides <= 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "numSlides >= 0: "
+              "(%d specified)\n",
+              long_options[option_index].name, numSlides );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "int", "%d", numSlides );
+        break;
+        
       case 'S':
         /* create storage for the summ file name */
         optarg_len = strlen( optarg ) + 1;
@@ -411,6 +448,14 @@ int main( int argc, char *argv[] )
         break;
 
       case 'd':
+        /* discard all triggers from ifo */
+        optarg_len = strlen( optarg ) + 1;
+        ifo = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( ifo, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+
+      case 'D':
         /* keep only coincs found in ifos */
         optarg_len = strlen( optarg ) + 1;
         ifos = (CHAR *) calloc( optarg_len, sizeof(CHAR));
@@ -532,6 +577,13 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
+  if ( numSlides && extractSlide )
+  {
+    fprintf( stderr, "--num-slides and --extract-slide both specified\n"
+        "this doesn't make sense\n" );
+    exit( 1 );
+  }
+  
   /* save the sort triggers flag */
   if ( sortTriggers )
   {
@@ -618,8 +670,7 @@ int main( int argc, char *argv[] )
     CoincInspiralTable  *coincFileHead    = NULL;
     
     numFileTriggers = XLALReadInspiralTriggerFile( &inspiralFileList,
-        &thisFileTrigger, &searchSummList, &inputFiles, inFileNameList[j]
-        );
+        &thisFileTrigger, &searchSummList, &inputFiles, inFileNameList[j] );
     if (numFileTriggers < 0)
     {
       fprintf(stderr, "Error reading triggers from file %s\n",
@@ -635,24 +686,33 @@ int main( int argc, char *argv[] )
       }
     }
 
+    /* Discard triggers from requested ifo */
+    if ( ifo )
+    {
+      SnglInspiralTable *ifoTrigList = NULL;
+
+      ifoTrigList = XLALIfoCutSingleInspiral( &inspiralFileList, ifo );
+
+      /* discard events from ifo */
+      while ( ifoTrigList )
+      {
+        thisSngl = ifoTrigList;
+        ifoTrigList = ifoTrigList->next;
+        XLALFreeSnglInspiral( &thisSngl );
+      }
+      numFileTriggers = XLALCountSnglInspiral( inspiralFileList );
+      if ( vrbflg ) fprintf( stdout, 
+          "Have %d triggers after discarding those from ifo %s\n",
+          numFileTriggers, ifo );
+    }
+
     /* Do playground_only or exclude_play cut */
     if ( dataType != all_data )
     {
       inspiralFileList = XLALPlayTestSingleInspiral( inspiralFileList, 
           &dataType );
       /* count the triggers, scroll to end of list */
-      if ( inspiralFileList )
-      {
-        for ( thisFileTrigger=inspiralFileList, numFileTriggers = 0; 
-            thisFileTrigger->next;
-            thisFileTrigger = thisFileTrigger->next, numFileTriggers++);
-        /* add last trigger */
-        ++numFileTriggers;
-      }
-      else
-      {
-        numFileTriggers = 0;
-      }
+      numFileTriggers = XLALCountSnglInspiral( inspiralFileList );
       
       if ( dataType == playground_only && vrbflg ) fprintf( stdout, 
         "Have %d playground triggers\n", numFileTriggers );
@@ -671,9 +731,10 @@ int main( int argc, char *argv[] )
       }
       else
       {
-        inspiralEventList = inspiralFileList;
+        inspiralEventList = thisInspiralTrigger = inspiralFileList;
       }
-      thisInspiralTrigger = thisFileTrigger;
+      for( ; thisInspiralTrigger->next; 
+          thisInspiralTrigger = thisInspiralTrigger->next);
       numTriggers += numFileTriggers;
     }
     
@@ -883,6 +944,31 @@ int main( int argc, char *argv[] )
 
   /*
    *
+   * extract specified slide
+   *
+   */
+
+  if ( extractSlide )
+  {
+    CoincInspiralTable *slideCoinc = NULL;
+    slideCoinc = XLALCoincInspiralSlideCut( &coincHead, extractSlide );
+    /* free events from other slides */
+    while ( coincHead )
+    {
+      thisCoinc = coincHead;
+      coincHead = coincHead->next;
+      XLALFreeCoincInspiral( &thisCoinc );
+    }
+
+    /* move events to coincHead */
+    coincHead = slideCoinc;
+    slideCoinc = NULL;
+  }
+    
+
+  
+  /*
+   *
    * cluster the remaining events
    *
    */
@@ -891,8 +977,63 @@ int main( int argc, char *argv[] )
   if ( coincHead && clusterchoice )
   {
     if ( vrbflg ) fprintf( stdout, "clustering remaining triggers... " );
-    numClusteredEvents = XLALClusterCoincInspiralTable( &coincHead, cluster_dt, 
-        clusterchoice );
+
+    if ( !numSlides )
+    {
+      numClusteredEvents = XLALClusterCoincInspiralTable( &coincHead, 
+          cluster_dt, clusterchoice );
+    }
+    else
+    { 
+      int slide = 0;
+      int numClusteredSlide = 0;
+      CoincInspiralTable *slideCoinc = NULL;
+      CoincInspiralTable *slideClust = NULL;
+      
+      if ( vrbflg ) fprintf( stdout, "splitting events by slide\n" );
+
+      for( slide = -numSlides; slide < (numSlides + 1); slide++)
+      {
+        if ( vrbflg ) fprintf( stdout, "slide number %d; ", slide );
+        /* extract the slide */
+        slideCoinc = XLALCoincInspiralSlideCut( &coincHead, slide );
+        /* run clustering */
+        numClusteredSlide = XLALClusterCoincInspiralTable( &slideCoinc, 
+          cluster_dt, clusterchoice );
+        
+        if ( vrbflg ) fprintf( stdout, "%d clustered events \n", 
+          numClusteredSlide );
+        numClusteredEvents += numClusteredSlide;
+
+        /* add clustered triggers */
+        if( slideCoinc )
+        {
+          if( slideClust )
+          {
+            thisCoinc = thisCoinc->next = slideCoinc;
+          }
+          else
+          {
+            slideClust = thisCoinc = slideCoinc;
+          }
+          /* scroll to end of list */
+          for( ; thisCoinc->next; thisCoinc = thisCoinc->next);
+        }
+      }
+
+      /* free coincHead -- although we expect it to be empty */
+      while ( coincHead )
+      {
+        thisCoinc = coincHead;
+        coincHead = coincHead->next;
+        XLALFreeCoincInspiral( &thisCoinc );
+      }
+
+      /* move events to coincHead */
+      coincHead = slideClust;
+      slideClust = NULL;
+    }
+    
     if ( vrbflg ) fprintf( stdout, "done\n" );
     if ( vrbflg ) fprintf( stdout, "%d clustered events \n", 
         numClusteredEvents );
@@ -927,6 +1068,13 @@ int main( int argc, char *argv[] )
         process_table ), &status );
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
   free( proctable.processTable );
+
+  /* erase the first empty process params entry */
+  {
+    ProcessParamsTable *emptyPPtable = procparams.processParamsTable;
+    procparams.processParamsTable = procparams.processParamsTable->next;
+    free( emptyPPtable );
+  }
 
   /* write the process params table */
   if ( vrbflg ) fprintf( stdout, "process_params... " );
