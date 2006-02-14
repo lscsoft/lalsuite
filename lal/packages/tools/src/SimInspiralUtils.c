@@ -678,19 +678,19 @@ XLALReturnSimInspiralEndTime (
   else if ( ! strcmp( "H1", ifo ) || 
       ! strcmp( "H2", ifo ) )
   {
-    return( XLALGPStoINT8(&(event->l_end_time) ) );
+    return( XLALGPStoINT8(&(event->h_end_time) ) );
   }
   else if ( ! strcmp( "G1", ifo ) )
   {
-    return(XLALGPStoINT8(&(event->l_end_time) ) );
+    return(XLALGPStoINT8(&(event->g_end_time) ) );
   }
   else if ( ! strcmp( "T1", ifo ) )
   {
-    return( XLALGPStoINT8(&(event->l_end_time) ) );
+    return( XLALGPStoINT8(&(event->t_end_time) ) );
   }
   else if ( ! strcmp( "V1", ifo ) )
   {
-    return( XLALGPStoINT8(&(event->l_end_time) ) );
+    return( XLALGPStoINT8(&(event->v_end_time) ) );
   }
   else
   {
@@ -788,6 +788,7 @@ XLALSnglSimInspiralTest (
            * end time */
           simSiteTime = XLALReturnSimInspiralEndTime( thisSimEvent, 
               thisEvent->ifo );
+
 
           if ( (inspiralTime > (simSiteTime - injectWindowNS)) &&
               (inspiralTime < (simSiteTime + injectWindowNS)) )
