@@ -705,6 +705,9 @@ XLALGetSiteInfo ( const CHAR *name )
       break;
     } /* switch channel[0] */
 
+  /* "hack" the returned LALDetector-structure, to contain a proper detector-unique 'name'-entry */
+  strcpy ( site->frDetector.name , channel );
+
   LALFree ( channel );
 
   return site;
