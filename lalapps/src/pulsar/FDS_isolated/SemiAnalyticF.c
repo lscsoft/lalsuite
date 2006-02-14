@@ -80,7 +80,6 @@ extern int vrbflg;
 void InitUserVars (LALStatus *status, struct CommandLineArgsTag *CLA);
 void ReadUserInput (LALStatus *, struct CommandLineArgsTag *CLA, int argc,char *argv[]);
 void Freemem( LALStatus *);
-void CreateNautilusDetector (LALStatus *, LALDetector *detector);
 void Initialize (LALStatus *status, struct CommandLineArgsTag *CLA);
 void ComputeF(LALStatus *, struct CommandLineArgsTag CLA);
 
@@ -260,7 +259,7 @@ InitUserVars (LALStatus *status, struct CommandLineArgsTag *CLA)
 				&(CLA->efiles)), status);
   
   TRY( LALRegisterSTRINGUserVar(status->statusPtr, "detector", 'D', UVAR_REQUIRED, 
-				"Detector: GEO(0),LLO(1),LHO(2),NAUTILUS(3),VIRGO(4),TAMA(5),CIT(6)",
+				"Detector: H1, H2, L1, G1, ... ",
 				&(CLA->detector)), status);
   
   /* ----- added for mfd_v4 compatibility ---------- */
@@ -297,7 +296,7 @@ Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
   AMCoeffsParams *amParams;
   LIGOTimeGPS *midTS=NULL;           /* Time stamps for amplitude modulation coefficients */
   LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
-  LALDetector Detector;              /* Our detector*/
+  LALDetector *Detector;              /* Our detector*/
   INT4 k;
 
   INITSTATUS (status, "Initialize", rcsid);
@@ -329,28 +328,9 @@ Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
 
 
   /*---------- initialize detector ---------- */
-  if ( !strcmp (CLA->detector, "GEO") || !strcmp (CLA->detector, "0") ) 
-    Detector = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
-  else if ( !strcmp (CLA->detector, "LLO") || ! strcmp (CLA->detector, "1") ) 
-    Detector = lalCachedDetectors[LALDetectorIndexLLODIFF];
-  else if ( !strcmp (CLA->detector, "LHO") || !strcmp (CLA->detector, "2") )
-    Detector = lalCachedDetectors[LALDetectorIndexLHODIFF];
-  else if ( !strcmp (CLA->detector, "NAUTILUS") || !strcmp (CLA->detector, "3"))
-    {
-      TRY (CreateNautilusDetector (status->statusPtr, &(Detector)), status);
-    }
-  else if ( !strcmp (CLA->detector, "VIRGO") || !strcmp (CLA->detector, "4") )
-    Detector = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
-  else if ( !strcmp (CLA->detector, "TAMA") || !strcmp (CLA->detector, "5") )
-    Detector = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
-  else if ( !strcmp (CLA->detector, "CIT") || !strcmp (CLA->detector, "6") )
-    Detector = lalCachedDetectors[LALDetectorIndexCIT40DIFF];
-  else
-    {
-      LALPrintError ("\nUnknown detector. Currently allowed are 'GEO', 'LLO', 'LHO',"
-		     " 'NAUTILUS', 'VIRGO', 'TAMA', 'CIT' or '0'-'6'\n\n");
-      ABORT (status, SEMIANALYTIC_EINPUT, SEMIANALYTIC_MSGEINPUT);
-    }
+  if ( ( Detector = XLALGetSiteInfo ( CLA->detector ) ) == NULL ) {
+    ABORT (status, SEMIANALYTIC_EINPUT, SEMIANALYTIC_MSGEINPUT);
+  }
 
   /* ---------- load ephemeris-files ---------- */
 #define MAXFILENAME 256
@@ -389,9 +369,9 @@ Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
   /* ---------- calculate AM-coefficients ---------- */
 
   /* prepare call to barycentering routing */
-  baryinput.site.location[0] = Detector.location[0]/LAL_C_SI;
-  baryinput.site.location[1] = Detector.location[1]/LAL_C_SI;
-  baryinput.site.location[2] = Detector.location[2]/LAL_C_SI;
+  baryinput.site.location[0] = Detector->location[0]/LAL_C_SI;
+  baryinput.site.location[1] = Detector->location[1]/LAL_C_SI;
+  baryinput.site.location[2] = Detector->location[2]/LAL_C_SI;
   baryinput.alpha = CLA->skyalpha;
   baryinput.delta = CLA->skydelta;
   baryinput.dInv = 0.e0;
@@ -407,7 +387,7 @@ Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
   amParams->baryinput = &baryinput;
   amParams->earth = &earth; 
   amParams->edat = edat;
-  amParams->das->pDetector = &Detector; 
+  amParams->das->pDetector = Detector; 
   amParams->das->pSource->equatorialCoords.latitude = CLA->skydelta;
   amParams->das->pSource->equatorialCoords.longitude = CLA->skyalpha;
   amParams->das->pSource->orientation = 0.0;
@@ -437,7 +417,7 @@ Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
   TRY ( LALDestroyTimestampVector (status->statusPtr, &timestamps), status );
 
   LALFree(midTS);
-
+  LALFree(Detector);
   LALFree(edat->ephemE);
   LALFree(edat->ephemS);
   LALFree(edat);
@@ -452,36 +432,6 @@ Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
 
 } /* ParseUserInput() */
 
-
-/*******************************************************************************/
-/** Set up the \em LALDetector struct representing the NAUTILUS detector */
-void
-CreateNautilusDetector (LALStatus *status, LALDetector *detector)
-{
-  /*   LALDetector Detector;  */
-  LALFrDetector detector_params;
-  LALDetectorType bar;
-  LALDetector Detector1;
-
-  INITSTATUS (status, "CreateNautilusDetector", rcsid);
-  ATTATCHSTATUSPTR (status);
-
-  bar=LALDETECTORTYPE_CYLBAR;
-  strcpy(detector_params.name, "NAUTILUS");
-  detector_params.vertexLongitudeRadians=12.67*LAL_PI/180.0;
-  detector_params.vertexLatitudeRadians=41.82*LAL_PI/180.0;
-  detector_params.vertexElevation=300.0;
-  detector_params.xArmAltitudeRadians=0.0;
-  detector_params.xArmAzimuthRadians=44.0*LAL_PI/180.0;
-
-  TRY (LALCreateDetector(status->statusPtr, &Detector1, &detector_params, bar), status);
-  
-  *detector=Detector1;
-
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
-  
-} /* CreateNautilusDetector() */
 
 /** 
  * Check validity of user-input

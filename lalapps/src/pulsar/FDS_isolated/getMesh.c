@@ -24,6 +24,7 @@
 #include <lal/Date.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/AVFactories.h>
+#include <lal/SFTutils.h>
 
 #include "DopplerScan.h"
 
@@ -58,7 +59,7 @@ RCSID ("$Id$");
 typedef struct {
   CHAR EphemEarth[512];		/**< filename of earth-ephemeris data */
   CHAR EphemSun[512];		/**< filename of sun-ephemeris data */
-  LALDetector Detector;         /**< detector of data to be searched */
+  LALDetector *Detector;        /**< detector of data to be searched */
   EphemerisData *ephemeris;	/**< ephemeris data (from LALInitBarycenter()) */
   LIGOTimeGPS startTimeGPS;	/**< starttime of observation */
   REAL8 duration;		/**< total observation-time spanned */
@@ -71,7 +72,6 @@ static const PtoleMetricIn empty_metricpar;
 /* ---------- local prototypes ---------- */
 void initUserVars (LALStatus *);
 void initGeneral (LALStatus *, ConfigVariables *cfg);
-void CreateNautilusDetector (LALStatus *, LALDetector *Detector);
 void checkUserInputConsistency (LALStatus *);
 void getSearchRegion (LALStatus *, DopplerRegion *searchRegion, const DopplerScanInit *params);
 void setTrueRandomSeed(void);
@@ -161,7 +161,7 @@ main(int argc, char *argv[])
   scanInit.obsBegin = config.startTimeGPS;
   scanInit.obsDuration = config.duration;
   scanInit.projectMetric = uvar_projectMetric;
-  scanInit.Detector = &(config.Detector);
+  scanInit.Detector = config.Detector;
   scanInit.ephemeris = config.ephemeris;       /* used by Ephemeris-based metric */
   scanInit.skyGridFile = uvar_skyGridFile;      /* if applicable */
   
@@ -268,6 +268,8 @@ main(int argc, char *argv[])
   if ( scanInit.searchRegion.skyRegionString )
     LALFree ( scanInit.searchRegion.skyRegionString );
 
+  LALFree ( config.Detector );
+
   LALCheckMemoryLeaks(); 
 
   return 0;
@@ -324,7 +326,7 @@ initUserVars (LALStatus *stat)
   LALregBOOLUserVar(stat,	help,		'h', UVAR_HELP,     
 		    "Print this help/usage message");
   LALregSTRINGUserVar(stat,	IFO,		'I', UVAR_REQUIRED, 
-		      "Detector: GEO(0),LLO(1),LHO(2),NAUTILUS(3),VIRGO(4),TAMA(5),CIT(6)");
+		      "Detector: H1, H2, L1, G1, ... ");
 
   LALregREALUserVar(stat,	Alpha,		'a', UVAR_OPTIONAL,
 		    "skyposition Alpha in radians, equatorial coords.");
@@ -428,63 +430,14 @@ initGeneral (LALStatus *status, ConfigVariables *cfg)
 
 
   /* ---------- initialize detector ---------- */
-  if ( !strcmp (uvar_IFO, "GEO") || !strcmp (uvar_IFO, "0") ) 
-    cfg->Detector = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
-  else if ( !strcmp (uvar_IFO, "LLO") || ! strcmp (uvar_IFO, "1") ) 
-    cfg->Detector = lalCachedDetectors[LALDetectorIndexLLODIFF];
-  else if ( !strcmp (uvar_IFO, "LHO") || !strcmp (uvar_IFO, "2") )
-    cfg->Detector = lalCachedDetectors[LALDetectorIndexLHODIFF];
-  else if ( !strcmp (uvar_IFO, "NAUTILUS") || !strcmp (uvar_IFO, "3")) {
-    TRY (CreateNautilusDetector (status->statusPtr, &(cfg->Detector)), status);
+  if ( (cfg->Detector = XLALGetSiteInfo ( uvar_IFO )) == NULL ) {
+    ABORT (status, GETMESH_EINPUT, GETMESH_MSGEINPUT);
   }
-  else if ( !strcmp (uvar_IFO, "VIRGO") || !strcmp (uvar_IFO, "4") )
-    cfg->Detector = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
-  else if ( !strcmp (uvar_IFO, "TAMA") || !strcmp (uvar_IFO, "5") )
-    cfg->Detector = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
-  else if ( !strcmp (uvar_IFO, "CIT") || !strcmp (uvar_IFO, "6") )
-    cfg->Detector = lalCachedDetectors[LALDetectorIndexCIT40DIFF];
-  else
-    {
-      LALPrintError ("\nUnknown detector. Currently allowed are 'GEO', 'LLO', 'LHO',"
-		     " 'NAUTILUS', 'VIRGO', 'TAMA', 'CIT' or '0'-'6'\n\n");
-      ABORT (status, GETMESH_EINPUT, GETMESH_MSGEINPUT);
-    }
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
 
 } /* initGeneral() */
-
-/*----------------------------------------------------------------------*/
-/** Set up the \em LALDetector struct representing the NAUTILUS detector */
-void
-CreateNautilusDetector (LALStatus *status, LALDetector *Detector)
-{
-  /*   LALDetector Detector;  */
-  LALFrDetector detector_params;
-  LALDetectorType bar;
-  LALDetector Detector1;
-
-  INITSTATUS (status, "CreateNautilusDetector", rcsid);
-  ATTATCHSTATUSPTR (status);
-
-  bar=LALDETECTORTYPE_CYLBAR;
-  strcpy(detector_params.name, "NAUTILUS");
-  detector_params.vertexLongitudeRadians=12.67*LAL_PI/180.0;
-  detector_params.vertexLatitudeRadians=41.82*LAL_PI/180.0;
-  detector_params.vertexElevation=300.0;
-  detector_params.xArmAltitudeRadians=0.0;
-  detector_params.xArmAzimuthRadians=44.0*LAL_PI/180.0;
-
-  TRY (LALCreateDetector(status->statusPtr, &Detector1, &detector_params, bar), status);
-  
-  *Detector=Detector1;
-
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
-  
-} /* CreateNautilusDetector() */
-
 
 /*----------------------------------------------------------------------*/
 /** Some general consistency-checks on user-input.

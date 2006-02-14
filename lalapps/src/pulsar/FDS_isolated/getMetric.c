@@ -20,6 +20,7 @@
 #include <lal/Date.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/AVFactories.h>
+#include <lal/SFTutils.h>
 
 #include "FlatPulsarMetric.h"
 
@@ -72,7 +73,7 @@ typedef struct {
 typedef struct {
   CHAR EphemEarth[512];		/**< filename of earth-ephemeris data */
   CHAR EphemSun[512];		/**< filename of sun-ephemeris data */
-  const LALDetector *site;     	/**< detector of data to be searched */
+  LALDetector *site;     	/**< detector of data to be searched */
   EphemerisData *ephemeris;/**< ephemeris data (from LALInitBarycenter()) */
   LIGOTimeGPS startTimeGPS;	/**< starttime of observation */
 } ConfigVariables;
@@ -85,7 +86,6 @@ static const UserInput empty_UserInput;
 /* ---------- local prototypes ---------- */
 void initUserVars (LALStatus *, UserInput *uvar, int argc, char *argv[] );
 void initGeneral (LALStatus *status, ConfigVariables *cfg, const UserInput *uvar);
-void CreateNautilusDetector (LALStatus *, LALDetector *Detector);
 void printPulsarMetric(LALStatus *, const UserInput *uvar, const ConfigVariables *config);
 void printFlatPulsarMetric (LALStatus *, const UserInput *uvar, const ConfigVariables *config);
 void printMetric (LALStatus *status, const REAL8Vector *metric );
@@ -134,7 +134,7 @@ main(int argc, char *argv[])
       LALFree(config.ephemeris->ephemS);
       LALFree(config.ephemeris);
     }
-
+  LALFree ( config.site );
 
   LALCheckMemoryLeaks(); 
 
@@ -172,34 +172,33 @@ initUserVars (LALStatus *status, UserInput *uvar, int argc, char *argv[])
   /* ----- register all our user-variable ----- */
 
   LALRegisterBOOLUserVar(status->statusPtr,	"help",		'h', UVAR_HELP,     
-		    "Print this help/usage message", &(uvar->help));
+			 "Print this help/usage message", &(uvar->help));
   LALRegisterSTRINGUserVar(status->statusPtr,	"IFO",		'I', UVAR_REQUIRED, 
-		      "Detector: GEO(0),LLO(1),LHO(2),NAUTILUS(3),VIRGO(4),TAMA(5),CIT(6)",
-			   &(uvar->IFO));
+			   "Detector: H1, H2, L1, G1, ...", &(uvar->IFO));
 
   LALRegisterREALUserVar(status->statusPtr,	"Alpha",		'a', UVAR_REQUIRED,
-		    "skyposition Alpha in radians, equatorial coords.", &(uvar->Alpha));
+			 "skyposition Alpha in radians, equatorial coords.", &(uvar->Alpha));
   LALRegisterREALUserVar(status->statusPtr,	"Delta", 		'd', UVAR_REQUIRED,
-		    "skyposition Delta in radians, equatorial coords.", &(uvar->Delta));
+			 "skyposition Delta in radians, equatorial coords.", &(uvar->Delta));
   LALRegisterREALUserVar(status->statusPtr,	"Freq", 		'f', UVAR_REQUIRED, 
-		    "target frequency", &(uvar->Freq) );
+			 "target frequency", &(uvar->Freq) );
   LALRegisterREALUserVar(status->statusPtr,	"f1dot", 		's', UVAR_OPTIONAL, 
-		    "first spindown-value df/dt", &(uvar->f1dot));
+			 "first spindown-value df/dt", &(uvar->f1dot));
   LALRegisterINTUserVar(status->statusPtr,        "metricType",     'M', UVAR_OPTIONAL, 
-		   "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact, 4=FLAT", 
+			"Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact, 4=FLAT", 
 			&(uvar->metricType));
   LALRegisterBOOLUserVar(status->statusPtr,	"projectMetric",	 0,  UVAR_OPTIONAL,
-		    "Project metric onto frequency-surface", &(uvar->projectMetric));
+			 "Project metric onto frequency-surface", &(uvar->projectMetric));
   LALRegisterREALUserVar(status->statusPtr,       "startTime",      't', UVAR_OPTIONAL, 
-		    "GPS start time of observation", &(uvar->startTime));
+			 "GPS start time of observation", &(uvar->startTime));
   LALRegisterREALUserVar(status->statusPtr,	"duration",	'T', UVAR_REQUIRED, 
-		    "Duration of observation in seconds", &(uvar->duration));
-
+			 "Duration of observation in seconds", &(uvar->duration));
+  
   LALRegisterSTRINGUserVar(status->statusPtr,     "ephemDir",       'E', UVAR_OPTIONAL, 
-		      "Directory where Ephemeris files are located", &(uvar->ephemDir) );
+			   "Directory where Ephemeris files are located", &(uvar->ephemDir) );
   LALRegisterSTRINGUserVar(status->statusPtr,     "ephemYear",      'y', UVAR_OPTIONAL, 
-		      "Year (or range of years) of ephemeris files to be used", &(uvar->ephemYear));
-
+			   "Year (or range of years) of ephemeris files to be used", &(uvar->ephemYear));
+  
   /* read cmdline & cfgfile  */	
   TRY (LALUserVarReadAllInput (status->statusPtr, argc, argv), status);  
 
@@ -215,8 +214,6 @@ initUserVars (LALStatus *status, UserInput *uvar, int argc, char *argv[])
 void
 initGeneral (LALStatus *status, ConfigVariables *cfg, const UserInput *uvar)
 {
-  static LALDetector nautilus;
-
   INITSTATUS( status, "initGeneral", rcsid );
   ATTATCHSTATUSPTR (status);
 
@@ -252,64 +249,14 @@ initGeneral (LALStatus *status, ConfigVariables *cfg, const UserInput *uvar)
 
 
   /* ---------- initialize detector ---------- */
-  if ( !strcmp (uvar->IFO, "GEO") || !strcmp (uvar->IFO, "0") ) 
-    cfg->site = &lalCachedDetectors[LALDetectorIndexGEO600DIFF];
-  else if ( !strcmp (uvar->IFO, "LLO") || ! strcmp (uvar->IFO, "1") ) 
-    cfg->site = &lalCachedDetectors[LALDetectorIndexLLODIFF];
-  else if ( !strcmp (uvar->IFO, "LHO") || !strcmp (uvar->IFO, "2") )
-    cfg->site = &lalCachedDetectors[LALDetectorIndexLHODIFF];
-  else if ( !strcmp (uvar->IFO, "NAUTILUS") || !strcmp (uvar->IFO, "3")) {
-    TRY (CreateNautilusDetector (status->statusPtr, &nautilus), status);
-    cfg->site = &nautilus;
+  if ( (cfg->site = XLALGetSiteInfo ( uvar->IFO )) == NULL ) {
+    ABORT (status, GETMETRIC_EINPUT, GETMETRIC_MSGEINPUT);
   }
-  else if ( !strcmp (uvar->IFO, "VIRGO") || !strcmp (uvar->IFO, "4") )
-    cfg->site = &lalCachedDetectors[LALDetectorIndexVIRGODIFF];
-  else if ( !strcmp (uvar->IFO, "TAMA") || !strcmp (uvar->IFO, "5") )
-    cfg->site = &lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
-  else if ( !strcmp (uvar->IFO, "CIT") || !strcmp (uvar->IFO, "6") )
-    cfg->site = &lalCachedDetectors[LALDetectorIndexCIT40DIFF];
-  else
-    {
-      LALPrintError ("\nUnknown detector. Currently allowed are 'GEO', 'LLO', 'LHO',"
-		     " 'NAUTILUS', 'VIRGO', 'TAMA', 'CIT' or '0'-'6'\n\n");
-      ABORT (status, GETMETRIC_EINPUT, GETMETRIC_MSGEINPUT);
-    }
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
 
 } /* initGeneral() */
-
-/*----------------------------------------------------------------------*/
-/** Set up the \em LALDetector struct representing the NAUTILUS detector */
-void
-CreateNautilusDetector (LALStatus *status, LALDetector *Detector)
-{
-  /*   LALDetector Detector;  */
-  LALFrDetector detector_params;
-  LALDetectorType bar;
-  LALDetector Detector1;
-
-  INITSTATUS (status, "CreateNautilusDetector", rcsid);
-  ATTATCHSTATUSPTR (status);
-
-  bar=LALDETECTORTYPE_CYLBAR;
-  strcpy(detector_params.name, "NAUTILUS");
-  detector_params.vertexLongitudeRadians=12.67*LAL_PI/180.0;
-  detector_params.vertexLatitudeRadians=41.82*LAL_PI/180.0;
-  detector_params.vertexElevation=300.0;
-  detector_params.xArmAltitudeRadians=0.0;
-  detector_params.xArmAzimuthRadians=44.0*LAL_PI/180.0;
-
-  TRY (LALCreateDetector(status->statusPtr, &Detector1, &detector_params, bar), status);
-  
-  *Detector=Detector1;
-
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
-  
-} /* CreateNautilusDetector() */
-
 
 /** Call LALPulsarMetric(), which is in {f, alpha, delta, f1dot, ...} coordinates
  * and has non-constant coefficients.
