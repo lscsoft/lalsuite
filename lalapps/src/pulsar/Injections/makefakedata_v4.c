@@ -94,7 +94,6 @@ void LoadTransferFunctionFromActuation(LALStatus *,
 
 void LALExtractSFTBand ( LALStatus *, SFTVector **outSFTs, const SFTVector *inSFTs, REAL8 fmin, REAL8 Band );
 
-void CreateNautilusDetector (LALStatus *, LALDetector *Detector);
 
 extern void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
 extern void write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series);
@@ -1238,38 +1237,6 @@ LoadTransferFunctionFromActuation(LALStatus *status,
   RETURN(status);
 
 } /* ReadActuationFunction() */
-
-
-/** Set up the \em LALDetector struct representing the NAUTILUS detector */
-void
-CreateNautilusDetector (LALStatus *status, LALDetector *Detector)
-{
-  /*   LALDetector Detector;  */
-  LALFrDetector detector_params;
-  LALDetectorType bar;
-  LALDetector Detector1;
-
-  INITSTATUS (status, "CreateNautilusDetector", rcsid);
-  ATTATCHSTATUSPTR (status);
-
-/*   detector_params=(LALFrDetector )LALMalloc(sizeof(LALFrDetector)); */
- 
-  bar=LALDETECTORTYPE_CYLBAR;
-  strcpy(detector_params.name, "NAUTILUS");
-  detector_params.vertexLongitudeRadians=12.67*LAL_PI/180.0;
-  detector_params.vertexLatitudeRadians=41.82*LAL_PI/180.0;
-  detector_params.vertexElevation=300.0;
-  detector_params.xArmAltitudeRadians=0.0;
-  detector_params.xArmAzimuthRadians=44.0*LAL_PI/180.0;
-
-  TRY (LALCreateDetector(status->statusPtr, &Detector1, &detector_params, bar), status);
-  
-  *Detector=Detector1;
-
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
-  
-} /* CreateNautilusDetector() */
 
 /** Return a vector of SFTs containg only the bins in [fmin, fmin+Band].
  */ 
