@@ -256,9 +256,9 @@ int main( int argc, char *argv[] )
       }
     else
     {
-      if ( !ifo || ! run || ! ver )
+      if ( !ifo || ! run || ! ver || !channel )
       {
-        fprintf( stderr, "Error: ifo, run or version not specified\n" );
+        fprintf( stderr, "Error: ifo, run, channel or version not specified\n" );
         exit( 1 );
       }
       if ( done )
