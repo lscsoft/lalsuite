@@ -23,6 +23,7 @@ static int sensemon_format;
 static int skip_first_line;
 int deltaT =0;
 const char *run = NULL;
+const char *channel = NULL;
 
 char *get_next_line( char *line, size_t size, FILE *fp )
 {
@@ -148,6 +149,7 @@ void usage ( char *s )
   fprintf( stdout, "  --help                print this message\n");
   fprintf( stdout, "  --ifo IFO             set the frame ifo name to IFO (L1, H1, etc.)\n" );
   fprintf( stdout, "  --run RUN             set the frame run name to RUN (E11, S2, etc.)\n" );
+  fprintf( stdout, "  --channel CHANNEL     set the channel name to CHANNEL\n");
   fprintf( stdout, "  --time TIME           set the used time spacing (001, 060 etc.)\n" );
   fprintf( stdout, "  --version VER         set the frame version name to to RUN (V01, V02, etc.)\n" );
   fprintf( stdout, "  --sensemon-format     read the text file in sensemon format\n" );
@@ -190,6 +192,8 @@ int main( int argc, char *argv[] )
   struct series ab;
   int code;
   char fname[256];
+  char achannel[256];
+  char bchannel[256];
   int dt;
 
   sensemon_format = 0;
@@ -206,6 +210,10 @@ int main( int argc, char *argv[] )
     if ( strstr( argv[arg], "--run" ) )
     {
       run = argv[++arg];
+    } 
+    else if ( strstr( argv[arg], "--channel" ) )
+    {
+      channel = argv[++arg];
     }
     else if ( strstr( argv[arg], "--ifo" ) )
     {
@@ -248,8 +256,7 @@ int main( int argc, char *argv[] )
       }
     else
     {
-      
-      if ( ! ifo || ! run || ! ver )
+      if ( !ifo || ! run || ! ver )
       {
         fprintf( stderr, "Error: ifo, run or version not specified\n" );
         exit( 1 );
@@ -300,16 +307,28 @@ int main( int argc, char *argv[] )
       if ( ! frfile )
       {
         dt = (int)ceil( epoch_diff( &a.tend, &a.tbeg ) );
-        sprintf( fname, "%c-%s_CAL_FAC_%s_%s_%s-%d-%d.gwf", *ifo, ifo, run, ver, timeSpace, 
-            a.tbeg.gpsSeconds, dt );
+        sprintf( fname, "%c-%s_CAL_FAC_%s_%s_%s_%s-%d-%d.gwf", 
+		 *ifo, ifo, channel, 
+		 run, ver, timeSpace, 
+		 a.tbeg.gpsSeconds, dt );
         frfile = FrFileONew( fname, 0 );
       }
+
+      /* set the correct channel names */
+      if (strstr(run, "S5")) {
+	sprintf( achannel,  A_CHANNEL "_%s", channel );
+	sprintf( bchannel, AB_CHANNEL "_%s", channel ); 
+      } else {
+	sprintf( achannel,  A_CHANNEL  );
+	sprintf( bchannel, AB_CHANNEL  ); 
+      }
+
 
       /* don't mangle the channel names for frames */
       a.name  = aname;
       ab.name = abname;
-      sprintf( aname, "%s:" A_CHANNEL, ifo );
-      sprintf( abname, "%s:" AB_CHANNEL, ifo );
+      sprintf( aname, "%s:%s", ifo, achannel );
+      sprintf( abname, "%s:%s",ifo, bchannel );
       frame = fr_add_proc_data( frame, &a );
       frame = fr_add_proc_data( frame, &ab );
     }
