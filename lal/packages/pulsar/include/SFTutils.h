@@ -84,8 +84,17 @@ typedef struct {
 /** A so-called 'SFT' (short-Fourier-transform) will be stored in a COMPLEX8FrequencySeries */
 typedef COMPLEX8FrequencySeries 	SFTtype;	
 
+
 /** The corresponding vector-type to hold a vector of 'SFTs' */
 typedef COMPLEX8FrequencySeriesVector 	SFTVector;
+
+
+/** A collection of SFT vectors -- one for each IFO in a multi-IFO search */
+typedef struct tagMultiSFTVector {
+  UINT4      length;  /**< number of ifos */
+  SFTVector  *data; /**< sftvector for each ifo */
+} MultiSFTVector;
+
 
 /** A vector of 'timestamps' of type LIGOTimeGPS */
 typedef struct {
@@ -107,8 +116,11 @@ typedef struct {
  *----------------------------------------------------------------------*/
 void LALCreateSFTtype (LALStatus *status, SFTtype **sft, UINT4 SFTlen);	
 void LALCreateSFTVector (LALStatus *status, SFTVector **sftvect, UINT4 numSFTs, UINT4 SFTlen);
+void LALCreateMultiSFTVector(LALStatus *status, MultiSFTVector  **out, UINT4Vector *numSFTs, UINT4 numBins);
+
 void LALDestroySFTtype (LALStatus *status, SFTtype **sft);
 void LALDestroySFTVector (LALStatus *status, SFTVector **sftvect);
+void LALDestroyMultiSFTVector( LALStatus *status, MultiSFTVector **in);
 
 void LALCopySFT (LALStatus *status, SFTtype *dest, const SFTtype *src);
 
