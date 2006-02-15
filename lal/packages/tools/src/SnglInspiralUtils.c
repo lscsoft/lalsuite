@@ -51,12 +51,16 @@ Provides a set of utilities for manipulating \texttt{snglInspiralTable}s.
 \idx{LALCompareSnglInspiral()}
 \idx{LALCompareInspirals()}
 \idx{LALClusterSnglInspiralTable()}
+\idx{XLALClusterSnglInspiralTable()}
 \idx{LALTimeCutSingleInspiral()}
 \idx{XLALTimeCutSingleInspiral()}
 \idx{LALSNRCutSingleInspiral()}
+\idx{XLALSNRCutSingleInspiral()}
+\idx{XLALRsqCutSingleInspiral()}
 \idx{LALBCVCVetoSingleInspiral()}
 \idx{LALalphaFCutSingleInspiral()}
 \idx{LALIfoCutSingleInspiral()}
+\idx{XLALIfoCutSingleInspiral()}
 \idx{LALIfoCountSingleInspiral()}
 \idx{LALTimeSlideSingleInspiral()} 
 \idx{LALPlayTestSingleInspiral()}
@@ -111,9 +115,18 @@ window is returned.
 tables and returns only those which occur after the given \texttt{startTime}
 and before the \texttt{endTime}.
 
-\texttt{LALSNRCutSingleInspiral()} takes in a linked list of single
-inspiral tables and returns only those triggers which have snr values above
-a specific snrCut. 
+\texttt{LALSNRCutSingleInspiral()} and \texttt{XLALSNRCutSingleInspiral()}
+take in a linked list of single inspiral tables and returns only those
+triggers which have snr values above a specific snrCut. 
+
+\texttt{XLALRsqCutSingleInspiral()} performs the R-squared veto on a linked
+list of single inspiral tables.  Triggers whose snr is less than
+\texttt{rsqSnrMax} and whose rsqveto_duration is less than
+\texttt{rsqVetoThresh} are removed.
+
+\texttt{XLALVetoSingleInspiral()} takes in a linked list of single inspiral
+tables and a list of segments and returns only those triggers which do not lie
+in within the \texttt{vetoSegs}.
 
 \texttt{LALBCVCVetoSingleInspiral()} takes in a linked list of single inspiral
 tables and returns only those triggers which have alphaF/SNR values below a
@@ -693,76 +706,135 @@ exit:
 void
 LALClusterSnglInspiralTable (
     LALStatus                  *status,
-    SnglInspiralTable          *inspiralEvent,
+    SnglInspiralTable         **inspiralEvent,
     INT8                        dtimeNS,
     SnglInspiralClusterChoice   clusterchoice
     )
 /* </lalVerbatim> */
 {
-  SnglInspiralTable     *thisEvent=NULL;
-  SnglInspiralTable     *prevEvent=NULL;
-
   INITSTATUS( status, "LALClusterSnglInspiralTable", SNGLINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
 
   ASSERT( inspiralEvent, status, 
       LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
 
-  thisEvent = inspiralEvent->next;
-  prevEvent = inspiralEvent;
-
-  while ( thisEvent )
-  {
-    INT8 currTime;
-    INT8 prevTime;
-
-    /* compute the time in nanosec for each event trigger */
-    LALGPStoINT8(status->statusPtr, &currTime, &(thisEvent->end_time));
-    CHECKSTATUSPTR(status);
-
-    LALGPStoINT8(status->statusPtr, &prevTime, &(prevEvent->end_time));
-    CHECKSTATUSPTR(status);
-
-    /* find events within the cluster window */
-    if ( (currTime - prevTime) < dtimeNS )
-    {
-      /* displace previous event in cluster */
-      if ( 
-          (
-           (clusterchoice == snr_and_chisq) && 
-           (thisEvent->snr > prevEvent->snr) && 
-           (thisEvent->chisq < prevEvent->chisq)
-          ) || (
-            (clusterchoice == snrsq_over_chisq) &&
-            (thisEvent->snr)*(thisEvent->snr)/(thisEvent->chisq) > 
-            (prevEvent->snr)*(prevEvent->snr)/(prevEvent->chisq)
-            ) || (
-              (clusterchoice == snr) && (thisEvent->snr > prevEvent->snr)
-              )
-         )
-      {
-        memcpy( prevEvent, thisEvent, sizeof(SnglInspiralTable) );
-        thisEvent->event_id = NULL;
-      }
-
-      /* otherwise just dump this event from cluster */
-      prevEvent->next = thisEvent->next;
-      LALFreeSnglInspiral ( status->statusPtr, &thisEvent );
-      thisEvent = prevEvent->next;
-    }
-    else 
-    {
-      /* otherwise we keep this unique event trigger */
-      prevEvent = thisEvent;
-      thisEvent = thisEvent->next;
-    }
-  }
+  XLALClusterSnglInspiralTable ( inspiralEvent, dtimeNS, clusterchoice );
 
   /* normal exit */
   DETATCHSTATUSPTR (status);
   RETURN (status);
 }
 
+REAL4 
+XLALSnglInspiralStat(
+    SnglInspiralTable         *snglInspiral,
+    SnglInspiralClusterChoice  snglStat
+    )
+{
+  REAL4 statValue = 0;
+  
+  if ( snglStat == snr )
+  {
+    statValue = snglInspiral->snr;
+  }
+  else if ( snglStat == snrsq_over_chisq )
+  {
+    statValue = snglInspiral->snr * snglInspiral->snr / snglInspiral->chisq;
+  }
+  else
+  {
+    statValue = 0;
+  }
+  return( statValue );
+}
+
+
+/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+int
+XLALClusterSnglInspiralTable (
+    SnglInspiralTable         **inspiralList,
+    INT8                        dtimeNS,
+    SnglInspiralClusterChoice   clusterchoice
+    )
+/* </lalVerbatim> */
+{
+  static const char *func = "XLALClusterSnglInspiralTable";
+  SnglInspiralTable     *thisEvent=NULL;
+  SnglInspiralTable     *prevEvent=NULL;
+  SnglInspiralTable     *nextEvent=NULL;
+  int                    numSnglClust = 0;
+  
+  if ( !inspiralList )
+  {
+    XLAL_ERROR(func,XLAL_EIO);
+  }
+  
+  if ( ! *inspiralList )
+  {
+    XLALPrintInfo( 
+      "XLALClusterSnglInspiralTable: Empty coincList passed as input" );
+    return( 0 );
+  }
+
+
+  
+  thisEvent = *inspiralList;
+  nextEvent = (*inspiralList)->next;
+  *inspiralList = NULL;
+
+  while ( nextEvent )
+  {
+    INT8 thisTime = XLALGPStoINT8( &(thisEvent->end_time) );
+    INT8 nextTime = XLALGPStoINT8( &(nextEvent->end_time) );;
+
+    /* find events within the cluster window */
+    if ( (nextTime - thisTime) < dtimeNS )
+    {
+      REAL4 thisStat = XLALSnglInspiralStat( thisEvent, clusterchoice );
+      REAL4 nextStat = XLALSnglInspiralStat( nextEvent, clusterchoice );
+
+      if ( nextStat > thisStat )
+      {
+        /* displace previous event in cluster */
+        if( prevEvent )
+        {
+          prevEvent->next = nextEvent;
+        }
+        XLALFreeSnglInspiral( &thisEvent );
+        thisEvent = nextEvent;
+        nextEvent = thisEvent->next;
+      }
+      else
+      {
+        /* otherwise just dump next event from cluster */
+        thisEvent->next = nextEvent->next;
+        XLALFreeSnglInspiral ( &nextEvent );
+        nextEvent = thisEvent->next;
+      }
+    }
+    else 
+    {
+      /* otherwise we keep this unique event trigger */
+      if ( ! *inspiralList )
+      {
+        *inspiralList = thisEvent;
+      }
+      prevEvent = thisEvent;
+      thisEvent = thisEvent->next;
+      nextEvent = thisEvent->next;
+      ++numSnglClust;
+    }
+  }
+
+    /* store the last event */
+  if ( ! (*inspiralList) )
+  {
+    *inspiralList = thisEvent;
+  }
+  ++numSnglClust;
+  
+  return(numSnglClust);
+}
 
 
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
@@ -846,15 +918,30 @@ void LALSNRCutSingleInspiral (
     )
 /* </lalVerbatim> */
 {
-  SnglInspiralTable    *inspiralEventList = NULL;
+  INITSTATUS( status, "LALSNRCutSingleInspiral", SNGLINSPIRALUTILSC );
+  ATTATCHSTATUSPTR( status );
+ 
+  *eventHead = XLALSNRCutSingleInspiral( *eventHead, snrCut );
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);   
+}
+
+/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+SnglInspiralTable *
+XLALSNRCutSingleInspiral (
+    SnglInspiralTable          *eventHead,
+    REAL4                       snrCut
+    )
+/* </lalVerbatim> */
+{
   SnglInspiralTable    *thisEvent = NULL;
   SnglInspiralTable    *prevEvent = NULL;
 
 
-  INITSTATUS( status, "LALSNRCutSingleInspiral", SNGLINSPIRALUTILSC );
-  ATTATCHSTATUSPTR( status );
-  thisEvent = *eventHead;
-
+  thisEvent = eventHead;
+  eventHead = NULL;
+  
   while ( thisEvent )
   {
     SnglInspiralTable *tmpEvent = thisEvent;
@@ -863,9 +950,9 @@ void LALSNRCutSingleInspiral (
     if ( tmpEvent->snr >= snrCut )
     {
       /* keep this template */
-      if ( ! inspiralEventList  )
+      if ( ! eventHead  )
       {
-        inspiralEventList = tmpEvent;
+        eventHead = tmpEvent;
       }
       else
       {
@@ -877,15 +964,101 @@ void LALSNRCutSingleInspiral (
     else
     {
       /* discard this template */
-      LALFreeSnglInspiral ( status->statusPtr, &tmpEvent );
+      XLALFreeSnglInspiral ( &tmpEvent );
     }
   }
-  
-  *eventHead = inspiralEventList; 
-
-  DETATCHSTATUSPTR (status);
-  RETURN (status);   
+  return( eventHead );
 }
+
+
+
+/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+SnglInspiralTable *
+XLALRsqCutSingleInspiral (
+    SnglInspiralTable          *eventHead,
+    REAL4                       rsqVetoThresh,
+    REAL4                       rsqMaxSnr
+    )
+/* </lalVerbatim> */
+{
+  SnglInspiralTable    *thisEvent = NULL;
+  SnglInspiralTable    *prevEvent = NULL;
+  int                   numTriggers = 0;
+
+
+  thisEvent = eventHead;
+  eventHead = NULL;
+  
+  while ( thisEvent )
+  {
+    SnglInspiralTable *tmpEvent = thisEvent;
+    thisEvent = thisEvent->next;
+    
+    if ( (tmpEvent->snr < rsqMaxSnr) && 
+         (tmpEvent->rsqveto_duration >= rsqVetoThresh) )
+    {
+      /* discard this event */
+      XLALFreeSnglInspiral ( &tmpEvent );
+    }
+    else
+    {
+      /* keep this event */
+      if ( ! eventHead  )
+      {
+        eventHead = tmpEvent;
+      }
+      else
+      {
+        prevEvent->next = tmpEvent;
+      }
+      tmpEvent->next = NULL;
+      prevEvent = tmpEvent;
+      numTriggers++;
+    }
+  }
+  return( eventHead );
+}
+
+/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+SnglInspiralTable *
+XLALVetoSingleInspiral (
+    SnglInspiralTable          *eventHead,
+    LALSegList                 *vetoSegs 
+    )
+/* </lalVerbatim> */
+{
+  SnglInspiralTable    *thisEvent = NULL;
+  SnglInspiralTable    *prevEvent = NULL;
+
+  thisEvent = eventHead;
+  eventHead = NULL;
+  
+  while ( thisEvent )
+  {
+    /*-- Check the time of this event against the veto segment list --*/
+    if ( XLALSegListSearch( vetoSegs, &(thisEvent->end_time) )  ) 
+    {
+      /* This inspiral trigger does not fall within any veto segment */
+      /* keep the trigger and increment the count of triggers */
+      if ( ! eventHead ) eventHead = thisEvent;
+      prevEvent = thisEvent;
+      thisEvent = thisEvent->next;
+    } 
+    else 
+    {
+      /*-- This event's end_time falls within one of the veto segments --*/
+      /* discard the trigger and move to the next one */
+      SnglInspiralTable    *tmpEvent = NULL;
+      if ( prevEvent ) prevEvent->next = thisEvent->next;
+      tmpEvent = thisEvent;
+      thisEvent = thisEvent->next;
+      XLALFreeSnglInspiral ( &tmpEvent );
+
+    }
+  }
+  return( eventHead );
+}
+
 
 void
 LALBCVCVetoSingleInspiral(
@@ -1656,7 +1829,7 @@ LALTamaCoincidenceTest(
     /* take the loudest time coincident trigger and compare other params */
     if ( timeCoincHead )
     {
-      LALClusterSnglInspiralTable ( status->statusPtr, timeCoincHead, 
+      LALClusterSnglInspiralTable ( status->statusPtr, &timeCoincHead, 
           2 * errorParams->dt, clusterchoice);
 
       currentTrigger[1] = timeCoincHead;

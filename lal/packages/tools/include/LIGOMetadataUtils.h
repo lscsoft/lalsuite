@@ -52,6 +52,7 @@ extern "C" {
 #include <lal/LALInspiral.h>
 #include <lal/LALRingDown.h>
 #include <lal/GeneratePPNInspiral.h>
+#include <lal/Segments.h>
 
 NRCSID( LIGOMETADATAUTILSH, "$Id$" );
 
@@ -478,7 +479,20 @@ LALCompareInspirals (
 void
 LALClusterSnglInspiralTable (
     LALStatus                  *status,
-    SnglInspiralTable          *inspiralEvent,
+    SnglInspiralTable         **inspiralEvent,
+    INT8                        dtimeNS,
+    SnglInspiralClusterChoice   clusterchoice
+    );
+
+REAL4 
+XLALSnglInspiralStat(
+    SnglInspiralTable         *snglInspiral,
+    SnglInspiralClusterChoice  snglStat
+    );
+
+int
+XLALClusterSnglInspiralTable (
+    SnglInspiralTable         **inspiralList,
     INT8                        dtimeNS,
     SnglInspiralClusterChoice   clusterchoice
     );
@@ -504,6 +518,25 @@ LALSNRCutSingleInspiral(
     LALStatus                  *status,
     SnglInspiralTable         **eventHead,
     REAL4                       snrCut
+    );
+
+SnglInspiralTable *
+XLALSNRCutSingleInspiral(
+    SnglInspiralTable          *eventHead,
+    REAL4                       snrCut
+    );
+
+SnglInspiralTable *
+XLALRsqCutSingleInspiral (
+    SnglInspiralTable          *eventHead,
+    REAL4                       rsqVetoThresh,
+    REAL4                       rsqMaxSnr
+    );
+
+SnglInspiralTable *
+XLALVetoSingleInspiral (
+    SnglInspiralTable          *eventHead,
+    LALSegList                 *vetoSegs 
     );
 
 void
