@@ -568,6 +568,42 @@ LALLoadSFTs ( LALStatus *status,
 
 } /* LALLoadSFTs() */
 
+
+/** Function to load a catalog of SFTs from possibly different detectors */
+void LALLoadMultiSFTs ( LALStatus *status,
+			MultiSFTVector **multisfts,  /**< [out] vector of read-in SFTs -- one sft vector for each ifo found in catalog*/
+			const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load */
+			REAL8 fMin,		     /**< minumum requested frequency (-1 = read from lowest) */
+			REAL8 fMax		     /**< maximum requested frequency (-1 = read up to highest) */
+			)
+     
+{
+  INT4 k, length;
+
+  INITSTATUS (status, "LALLoadMultiSFTs", SFTFILEIOC);
+  ATTATCHSTATUSPTR (status); 
+
+  ASSERT ( multisfts, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
+  ASSERT ( *multisfts == NULL, status, SFTFILEIO_ENONULL, SFTFILEIO_MSGENONULL );  
+  ASSERT ( catalog, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
+
+  /* look at ifo names in catalog and find number of different ifos and number of sfts for each ifo*/
+  
+
+
+  /* create multi sft  vector */
+
+
+
+  /* fill in elements of this multisft vector */
+
+
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+
+} /* LALLoadMultiSFTs() */
+
+
 /** Function to check validity of SFTs listed in catalog. 
  * This function simply reads in those SFTs and checks their CRC64 checksum, which
  * is the only check that has not yet be done by the operations up to this point.
@@ -2770,6 +2806,9 @@ compareSFTdesc(const void *ptr1, const void *ptr2)
  *	a[-a-z]c	a-c aac abc ...
  *
  * $Log$
+ * Revision 1.49  2006/02/15 16:33:27  badri
+ * skeleton of function for loading sfts from a multi-ifo catalog of sfts
+ *
  * Revision 1.48  2006/02/02 14:28:40  reinhard
  * fixe small bug in previous commit
  *
