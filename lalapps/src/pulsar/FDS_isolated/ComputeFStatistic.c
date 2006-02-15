@@ -458,7 +458,11 @@ int main(int argc,char *argv[])
   LAL_CALL (initUserVars(status), status);  
 
   /* we use lalDebugLevel for our logging */
+#if USE_BOINC
   LogSetLevel ( lalDebugLevel );
+#else
+  LogSetLevel ( lalDebugLevel - 1 );
+#endif
 
   LogPrintf (LOG_NORMAL, "Started search at lalDebugLevel = %d\n", lalDebugLevel);
 
