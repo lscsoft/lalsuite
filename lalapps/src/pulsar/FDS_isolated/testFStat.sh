@@ -9,8 +9,8 @@ sftdir="${srcdir}/.."
 
 sftbase="SFT.0000"
 IFO="LHO"
-FCOMPARE="./compareFstats"
-CFS_DEFAULT="./lalapps_ComputeFStatistic"
+FCOMPARE="compareFstats"
+CFS_DEFAULT="lalapps_ComputeFStatistic"
 
 CFSparams1="--IFO=$IFO --DataDir=$sftdir --BaseName=$sftbase --Freq=300.1 \
 --FreqBand=0.2 --Alpha=2.2 --AlphaBand=0.012 --Delta=0.8 --DeltaBand=0.018 --gridType=0"
@@ -52,16 +52,6 @@ if [ -z "$LAL_DATA_PATH" ]; then
     echo
     exit 1
 fi
-# check if compareFstats code is found
-if [ ! -x "$FCOMPARE" ] ; then
-    echo 
-    echo "F-stat Comparison code not found: $FCOMPARE"
-    echo
-    echo "I suggest you try: 'make $FCOMPARE'"
-    echo
-    exit 1
-fi
-
 
 ## Tests start here 
 ## --------------------
@@ -74,10 +64,6 @@ echo
 echo "----------------------------------------------------------------------"
 echo "Test 1) uniform sky-grid:"
 echo "----------------------------------------------------------------------"
-if [ ! -x "$prog" ]; then
-    echo "Cannot execute '$prog' ... exiting"
-    exit 1
-fi
 
 cmdline="$prog $CFSparams1 $extra_args";
 echo $cmdline
