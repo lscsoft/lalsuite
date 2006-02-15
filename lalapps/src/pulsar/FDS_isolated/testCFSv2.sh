@@ -35,8 +35,8 @@ mfd_FreqBand=2.0;
 Alpha=2.0
 Delta=-0.5
 
-aPlus=1.0
-aCross=0.4
+aPlus=1.0e-20
+aCross=0.4e-20
 
 psi=0
 phi0=0
@@ -49,7 +49,7 @@ echo "mfd_fmin = $mfd_fmin"
 f1dot=1e-8
 df1dot=0.3e-8	## search about 3 spindown-values
 
-noiseSigma=3
+noiseSigma=3e-20
 
 if [ "$noiseSigma" != 0 ]; then
     sqrtSh=$(echo $noiseSigma $mfd_FreqBand | awk '{printf "%g", $1 / sqrt($2) }'); ## sqrt(Sh) = sigma/ sqrt(Band)
