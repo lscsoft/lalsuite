@@ -175,9 +175,6 @@ InitDopplerScan( LALStatus *status,
       ABORT (status,  DOPPLERSCANH_ENULL ,  DOPPLERSCANH_MSGENULL );
     }
 
-  /* FIXME: for now we enforce setting the log-level to lalDebugLevel! */
-  LogSetLevel ( lalDebugLevel );
-
   /* general initializations */
   scan->grid = NULL;  
   scan->gridNode = NULL;
