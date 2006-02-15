@@ -25,7 +25,8 @@
 
    Revision: $Id$
  
-   History:   Created by Sintes July 04, 2003
+   History:   Created by Sintes and Krishnan July 04, 2003
+              Modifications for S4 January 2006
 
    \par Description
    
