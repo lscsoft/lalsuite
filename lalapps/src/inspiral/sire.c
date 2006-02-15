@@ -1334,7 +1334,7 @@ int main( int argc, char *argv[] )
   if ( eventHead && clusterchoice )
   {
     if ( vrbflg ) fprintf( stdout, "clustering remaining triggers... " );
-    LAL_CALL( LALClusterSnglInspiralTable( &stat, eventHead,
+    LAL_CALL( LALClusterSnglInspiralTable( &stat, &eventHead,
           cluster_dt, clusterchoice ), &stat );
     if ( vrbflg ) fprintf( stdout, "done\n" );
 
