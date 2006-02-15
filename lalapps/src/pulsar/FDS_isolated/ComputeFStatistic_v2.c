@@ -343,8 +343,7 @@ int main(int argc,char *argv[])
 	      REAL4 FaRe = 0.0, FaIm = 0.0, FbRe = 0.0, FbIm = 0.0;
 	      REAL8 Fstat;
 	      REAL8 Bstat;
-	      UINT4 M, j;
-	      REAL4 norm;
+	      UINT4 M, alpha;
 	      	 
 	      fkdot->data[0] = GV.spinRangeStart->fkdot->data[0] + iFreq * thisScan.dFreq;
 	      
@@ -368,13 +367,16 @@ int main(int argc,char *argv[])
 
 		  M = 1.0f * GV.ifos[nD].sftVect->length;
 		  
-		  for(j=0; j<M; j++)
+		  for(alpha = 0; alpha < M; alpha++)
 		    {
 		      REAL4 ahat;
 		      REAL4 bhat;
 		      
-		      ahat = GV.ifos[nD].amcoe->a->data[j];
-		      bhat = GV.ifos[nD].amcoe->b->data[j];
+		      ahat = (GV.ifos[nD].amcoe->a->data[alpha]) * sqrt(GV.ifos[nD].weightsNoise->data[alpha]);
+		      bhat = (GV.ifos[nD].amcoe->b->data[alpha]) * sqrt(GV.ifos[nD].weightsNoise->data[alpha]);
+		      
+		      GV.ifos[nD].amcoe->a->data[alpha] = ahat;
+		      GV.ifos[nD].amcoe->b->data[alpha] = bhat;
 		      
 		      /* sum A, B, C on the fly */
 		      GV.ifos[nD].amcoe->A += ahat * ahat;
@@ -382,15 +384,10 @@ int main(int argc,char *argv[])
 		      GV.ifos[nD].amcoe->C += ahat * bhat;
 		    }
 		  
-		  norm = 2.0f; /* by simplifying the formula, the factor M vanishes, look at the Iraj's note */
-		  GV.ifos[nD].amcoe->A *= norm;
-		  GV.ifos[nD].amcoe->B *= norm;
-		  GV.ifos[nD].amcoe->C *= norm;
-
 		  At += GV.ifos[nD].amcoe->A;
 		  Bt += GV.ifos[nD].amcoe->B;
 		  Ct += GV.ifos[nD].amcoe->C;
-
+		  
 		  /** Caculate F-statistic using XLALComputeFaFb() */
 		  /* prepare quantities to calculate Fstat from Fa and Fb */
 		  
@@ -411,7 +408,7 @@ int main(int argc,char *argv[])
 		}/* End of loop over detectors */
 
 	      Dt = At * Bt - Ct * Ct;
-	      fact = 4.0f / Dt; /* by simplifying the formula, the factor M vanishes, look at the Iraj's note */
+	      fact = 2.0f / Dt; /* by simplifying the formula, the factor M vanishes, look at the Iraj's note */
 
 	      /* In the signal-only case (only for testing using fake data),
 	       * we did not apply any normalization to the data, and we need
