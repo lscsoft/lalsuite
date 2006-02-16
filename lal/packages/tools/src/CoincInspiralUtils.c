@@ -1111,7 +1111,7 @@ XLALInspiralDistanceCutBCVC(
 	     then, epsilon =0 and kappa=0.7 */	        
 
 	  iota = fabs(sigA*sigA/snrA-sigB*sigB/snrB)/(sigA*sigA/snrA+sigB*sigB/snrB);
-          if (  (iota > epsilon/(snrA)+ kappa);
+          if (  (iota > epsilonA/(snrA)+ kappaA)
                 &&( ifoA==LAL_IFO_H1 && ifoB==LAL_IFO_H2) )
           {
             discardTrigger = 1;
