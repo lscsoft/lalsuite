@@ -1091,16 +1091,18 @@ LALBCVCVetoSingleInspiral(
     veto = 0;
     
     /* Remove all the triggers that are not in (alphaF/SNR) Box */
-    if ((alphaF / tmpEvent->snr)>thresholdT || (alphaF / tmpEvent->snr)<-thresholdT) 
+    /*    if ((alphaF / tmpEvent->snr)>thresholdT || (alphaF / tmpEvent->snr)<-thresholdT) 
+    {
+      veto = 1;
+    }
+    */
+    /* Remove all the triggers that are not in alphaFlo <= alphaF <= alphaFhi */
+    if ( ((alphaF > alphaFhi) || (alphaF < alphaFlo ) ))
     {
       veto = 1;
     }
 
-    /* Remove all the triggers that are not in alphaFlo <= alphaF <= alphaFhi */
-    if ((alphaF > alphaFhi) || alphaF < alphaFlo) 
-    {
-      veto = 1;
-    }
+
 
 	
     if ( veto == 0 )
