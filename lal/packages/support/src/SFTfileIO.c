@@ -671,6 +671,8 @@ void LALLoadMultiSFTs ( LALStatus *status,
   if ( (multSFTVec = (MultiSFTVector *)LALCalloc(1, sizeof(MultiSFTVector))) == NULL)
     ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
 
+  multSFTVec->length = numifo;
+
   if ( (multSFTVec->data = (SFTVector **)LALCalloc(numifo, sizeof(SFTVector *))) == NULL)
     ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
 
@@ -2932,6 +2934,9 @@ compareSFTdesc(const void *ptr1, const void *ptr2)
  *	a[-a-z]c	a-c aac abc ...
  *
  * $Log$
+ * Revision 1.54  2006/02/16 15:11:43  badri
+ * fixed bug in setting length of output multisftvector in LALLoadMultiSFTVector
+ *
  * Revision 1.53  2006/02/16 13:02:53  badri
  * fixed bug LALCAlloc -> LALCalloc
  *
