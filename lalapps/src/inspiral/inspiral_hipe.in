@@ -151,6 +151,7 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
     channel = cp.get('input','ligo-channel')
   
   tmplt_job.add_ini_opts(cp,data_opts)
+  tmplt_job.add_ini_opts(cp, 'tmpltbank-1')
   insp_job.add_ini_opts(cp,data_opts)
 
   tmplt_job.set_channel(channel)
@@ -417,6 +418,110 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
   return trig_chunks_analyzed
 
 ##############################################################################
+# function to TD follow-up tmpltbank and inspiral jobs for an ifo  
+def follow_up(ifo_data,ifo_name,coinc_data,coinc_ifos,tmplt_follow_job,\
+                  insp_veto_job,dag,usertag=None):
+
+  """
+  Perform the tmpltbank and second inspiral steps for the single ifo data.  
+  Since the way we treat all this data is the same, this function is the same 
+  for all interferometers. Returns the chunks analyzed.
+
+  ifo_data = the master science segs for the IFO
+  ifo_name = the name of the ifo
+  coinc_data = the coincident science segments and thinca jobs
+  coinc_ifos  = the list of ifos in the coincident times
+  trig_job = the triggered bank job we should use 
+  insp_veto_job = the condor job that we should use to analyze data
+  dag = the DAG to attach the nodes to
+  usertag = the usertag to add to the job names
+  """
+
+  # add the veto option
+  insp_veto_job.add_ini_opts(cp,'veto-inspiral')
+  # add ifo specific options
+  insp_veto_job.add_ini_opts(cp,ifo_name.lower() + '-inspiral')
+  
+  if ifo == 'G1':
+    data_opts = 'geo-data'
+    channel = cp.get('input','geo-channel')
+  else:
+    data_opts = 'ligo-data'
+    channel = cp.get('input','ligo-channel')
+ 
+  insp_veto_job.add_ini_opts(cp,data_opts)
+  tmplt_follow_job.add_ini_opts(cp, data_opts)
+  tmplt_follow_job.add_ini_opts(cp, 'tmpltbank-2')
+  insp_veto_job.set_channel(channel)
+  tmplt_follow_job.set_channel(channel)
+  
+     
+  calibrated = False
+  for opt in cp.options(data_opts):
+    if (opt.find('calibrated') >-1):
+      calibrated = True
+  
+
+  follow_chunks_analyzed = []
+  # loop over the master science segments
+  for seg in ifo_data:
+
+    # loop over the master analysis chunks in the science segment
+    for chunk in seg:
+      done_this_chunk = 0
+
+      # now loop over all the data that we need to filter
+      for coinc_done in coinc_data:
+
+        # if the current chunk is in one of the segments we need to filter
+        if (inspiral.overlap_test(chunk,coinc_done.get_chunk()) ):
+
+          if not done_this_chunk:
+            # make sure we only filter the master chunk once
+            done_this_chunk = 1
+
+            # make a template bank job for the master chunk
+            bank = inspiral.TmpltBankNode(tmplt_follow_job)
+            bank.set_start(chunk.start())
+            bank.set_end(chunk.end())
+            bank.set_ifo(ifo_name)
+            bank.set_ifo_tag(coinc_ifos)
+            bank.set_vds_group(ifo_name[0] + str(chunk.start()))
+            if not opts.read_cache: bank.set_cache(seg.get_df_node().get_output())
+            else: bank.set_cache(cp.get('datafind',ifo_name+"-cache"))
+            if not calibrated: bank.calibration()
+            if opts.datafind: bank.add_parent(seg.get_df_node())
+            if opts.td_follow_bank: dag.add_node(bank)
+
+            # make an inspiral job for the master chunk
+            insp = inspiral.InspiralNode(insp_veto_job)
+            insp.set_start(chunk.start())
+            insp.set_end(chunk.end())
+            insp.set_trig_start(chunk.trig_start())
+            insp.set_trig_end(chunk.trig_end())
+            insp.set_ifo(ifo_name)
+            insp.set_ifo_tag(coinc_ifos)
+            insp.set_vds_group(ifo_name[0] + str(chunk.start()))
+            if not opts.read_cache: 
+              insp.set_cache(seg.get_df_node().get_output())
+            else: insp.set_cache(cp.get('datafind',ifo_name+'-cache')) 
+            if not calibrated: insp.calibration()
+            insp.set_bank(bank.get_output())
+            insp.add_var_opt('td-follow-up', coinc_done.get_dag_node().get_output())
+            if opts.datafind: insp.add_parent(seg.get_df_node())
+            if opts.td_follow_bank: insp.add_parent(bank)
+            if opts.td_follow_inspiral: dag.add_node(insp)
+
+            # store this chunk in the list of filtered data
+            follow_chunks_analyzed.append(AnalyzedIFOData(chunk,insp))
+
+            # jobs already set up, just add the var_arg and parent to trigbank
+          bank.add_var_opt('td-follow-up', coinc_done.get_dag_node().get_output())
+          if opts.coincidence: bank.add_parent(coinc_done.get_dag_node())
+
+  return follow_chunks_analyzed
+
+##############################################################################
 # function to sweep up data using sire  
 def sire_segs(segments,output,file_name,sire_job,dag,do_input,usertag=None,
   cluster=None,ifo_cut=None):
@@ -613,10 +718,14 @@ parser.add_option("-i", "--inspiral" ,action="store_true",default=False,\
     help="run lalapps_inspiral to generate triggers")
 parser.add_option("-c", "--coincidence",action="store_true",default=False,\
     help="run lalapps_thinca to test for coincidence")
+parser.add_option("-U", "--td-follow-bank", action="store_true",default=False,\
+    help="Run tmpltbank for TD follow-up")
 parser.add_option("-B", "--trigbank",action="store_true",default=False,\
     help="run lalapps_trigbank for banks of coinc triggers")
 parser.add_option("-V", "--inspiral-veto",action="store_true",default=False,\
     help="run lalapps_inspiral with vetos")
+parser.add_option("-W", "--td-follow-inspiral",action="store_true",default=False,\
+    help="run lalapps_inspiral for TD follow-up")
 parser.add_option("-C", "--second-coinc" ,action="store_true",default=False,\
     help="run lalapps_thinca on the inspiral veto triggers")
 parser.add_option("-j", "--coherent-bank",action="store_true",default=False,\
@@ -682,16 +791,22 @@ if not opts.one_ifo and not opts.two_ifo and not opts.three_ifo and \
   print >> sys.stderr, "--one-ifo, --two-ifo, --three-ifo, --four-ifo"
   print >> sys.stderr, "or use --analyze-all to analyze all ifos all data"
   sys.exit(1)
-  
+ 
+if opts.inspiral_veto and opts.td_follow_inspiral:
+  print >> sys.stderr, "Please specify only one of"
+  print >> sys.stderr, "--inspiral-veto, --td-follow-inspiral."
+ 
 if not opts.datafind and not opts.template_bank and \
      not opts.inspiral and not opts.coincidence and \
      not opts.trigbank and not opts.inspiral_veto and \
+     not opts.td_follow_bank and not opts.td_follow_inspiral and \
      not opts.second_coinc and not opts.coherent_bank and \
      not opts.coherent_inspiral:
   print >> sys.stderr, "No steps of the pipeline specified."
   print >> sys.stderr, "Please specify at least one of"
   print >> sys.stderr, "--datafind, --template-bank, --inspiral,"
   print >> sys.stderr, "--coincidence, --trigbank, --inspiral-veto,"
+  print >> sys.stderr, "--td-follow-bank, --td-follow-inspiral,"
   print >> sys.stderr, "--second-coinc, --coherent-bank or --coherent-inspiral"
   sys.exit(1)
    
@@ -849,6 +964,13 @@ for ifos in ifo_coincs:
   thinca_slide_jobs[ifos].set_sub_file(basename + '.thinca_slides_' + 
       ifos + subsuffix )
 
+# td follow-up tmpltbank
+tmplt_follow_jobs = {}
+
+for ifo in ifo_list:
+  tmplt_follow_jobs[ifo] = inspiral.TmpltBankJob(cp,opts.dax)
+  tmplt_follow_jobs[ifo].set_sub_file( basename + '.followup_tmpltbank' + subsuffix )
+
 # trigbank:
 trig_job = inspiral.TrigToTmpltJob(cp)
 trig_job.set_sub_file( basename + '.trigbank' + subsuffix )
@@ -915,6 +1037,7 @@ all_jobs.extend(tmplt_jobs.values())
 all_jobs.extend(insp_jobs.values())
 all_jobs.extend(thinca_jobs.values())
 all_jobs.extend(thinca_slide_jobs.values())
+all_jobs.extend(tmplt_follow_jobs.values())
 all_jobs.extend(insp_veto_jobs.values())
 all_jobs.extend(thinca2_jobs.values())
 all_jobs.extend(thinca2_slide_jobs.values())
@@ -1201,12 +1324,14 @@ for ifos in ifo_coincs:
   print "setting up thinca jobs on " + ifos + " data...",
   sys.stdout.flush()
 
+  thinca_jobs[ifos].add_ini_opts(cp, 'thinca-1')
   coinc_nodes[ifos] = thinca_coinc(ifos,chunks_analyzed,analyzed_data[ifos],
       thinca_jobs[ifos],dag,opts.coincidence,opts.inspiral,usertag)
 
   # Step 6 slide: Time slides 
   coinc_slide_nodes[ifos] = []
   if num_slides:
+    thinca_slide_jobs[ifos].add_ini_opts(cp, 'thinca-1')
     coinc_slide_nodes[ifos] = thinca_coinc(ifos,chunks_analyzed,
         analyzed_data[ifos],thinca_slide_jobs[ifos],dag,opts.coincidence,
         opts.inspiral,usertag,ifotag,num_slides)
@@ -1230,6 +1355,7 @@ for ifos in ifo_coincs:
 
 ##############################################################################
 # Step 7: Run trigbank and inspiral on each instrument in two ifo times
+#         or run the TD follow-up
 
 analyzed_coinc_data = {}
 
@@ -1242,8 +1368,12 @@ for ifos in ifo_coincs:
         " data with coinc trigs from " + ifos + " times ...",
       sys.stdout.flush()
 
-      analyzed_coinc_data[ifos][ifo] = trig_inspiral(data[ifo],ifo,
-          coinc_nodes[ifos],ifos,trig_job,insp_veto_jobs[ifo],dag,usertag)
+      if opts.td_follow_bank or opts.td_follow_inspiral:
+        analyzed_coinc_data[ifos][ifo] = follow_up(data[ifo],ifo,
+            coinc_nodes[ifos],ifos,tmplt_follow_jobs[ifo],insp_veto_jobs[ifo],dag,usertag)
+      else:
+        analyzed_coinc_data[ifos][ifo] = trig_inspiral(data[ifo],ifo,
+            coinc_nodes[ifos],ifos,trig_job,insp_veto_jobs[ifo],dag,usertag)
 
       print "done"
 
@@ -1258,13 +1388,26 @@ for ifos in ifo_coincs:
   print "setting up second thinca jobs on " + ifos + " data...",
   sys.stdout.flush()
 
-  coinc2_nodes[ifos] = thinca_coinc(ifos,analyzed_coinc_data[ifos],
+  thinca2_jobs[ifos].add_ini_opts(cp, 'thinca-2')
+  if opts.td_follow_inspiral:
+    coinc2_nodes[ifos] = thinca_coinc(ifos,analyzed_coinc_data[ifos],
+        analyzed_data[ifos],thinca2_jobs[ifos],dag,opts.second_coinc,
+        opts.td_follow_inspiral,usertag,ifos)
+  else:
+    coinc2_nodes[ifos] = thinca_coinc(ifos,analyzed_coinc_data[ifos],
       analyzed_data[ifos],thinca2_jobs[ifos],dag,opts.second_coinc,
       opts.inspiral_veto,usertag,ifos)
 
   # Step 8slide: Time slides on the data
   if num_slides:
-    coinc2_slide_nodes[ifos] = thinca_coinc(ifos,
+    thinca2_slide_jobs[ifos].add_ini_opts(cp, 'thinca-2')
+    
+    if opts.td_follow_inspiral:
+      coinc2_slide_nodes[ifos] = thinca_coinc(ifos,
+        analyzed_coinc_data[ifos],analyzed_data[ifos],thinca2_slide_jobs[ifos],
+        dag,opts.second_coinc,opts.inspiral_veto,usertag,ifos,num_slides)
+    else:
+      coinc2_slide_nodes[ifos] = thinca_coinc(ifos,
         analyzed_coinc_data[ifos],analyzed_data[ifos],thinca2_slide_jobs[ifos],
         dag,opts.second_coinc,opts.inspiral_veto,usertag,ifos,num_slides)
   

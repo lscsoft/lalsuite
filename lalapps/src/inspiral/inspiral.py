@@ -227,6 +227,7 @@ class ThincaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_stderr_file('logs/thinca-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
     self.set_sub_file('thinca.sub')
 
+
 class SireJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
   A lalapps_sire job used by the inspiral pipeline. The stdout and stderr from
@@ -436,8 +437,14 @@ class TmpltBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     if not self.get_start() or not self.get_end() or not self.get_ifo():
       raise InspiralError, "Start time, end time or ifo has not been set"
-    if self.__usertag:
-      bank = self.get_ifo() + '-TMPLTBANK_' + self.__usertag + '-' 
+    if self.__usertag and self.get_ifo_tag():
+      bank = self.get_ifo() + '-TMPLTBANK_' + self.get_ifo_tag() + "_" + self.__usertag + '-' 
+      bank = bank + str(self.get_start())
+    elif self.__usertag:
+      bank = self.get_ifo() + '-TMPLTBANK_' + self.__usertag + '-'  
+      bank = bank + str(self.get_start())
+    elif self.get_ifo_tag():
+      bank = self.get_ifo() + '-TMPLTBANK_' + self.get_ifo_tag() + '-'  
       bank = bank + str(self.get_start())
     else:
       bank = self.get_ifo() + '-TMPLTBANK-' + str(self.get_start())
