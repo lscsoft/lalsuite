@@ -529,7 +529,7 @@ XLALSNRCutSingleInspiral(
 SnglInspiralTable *
 XLALRsqCutSingleInspiral (
     SnglInspiralTable          *eventHead,
-    REAL4                       rsqVetoThresh,
+    REAL4                       rsqVetoTimeThresh,
     REAL4                       rsqMaxSnr
     );
 

@@ -121,7 +121,7 @@ triggers which have snr values above a specific snrCut.
 
 \texttt{XLALRsqCutSingleInspiral()} performs the R-squared veto on a linked
 list of single inspiral tables.  Triggers whose snr is less than
-\texttt{rsqSnrMax} and whose rsqveto_duration is less than
+\texttt{rsqSnrMax} and whose rsqveto_duration is greater than
 \texttt{rsqVetoThresh} are removed.
 
 \texttt{XLALVetoSingleInspiral()} takes in a linked list of single inspiral
@@ -976,7 +976,7 @@ XLALSNRCutSingleInspiral (
 SnglInspiralTable *
 XLALRsqCutSingleInspiral (
     SnglInspiralTable          *eventHead,
-    REAL4                       rsqVetoThresh,
+    REAL4                       rsqVetoTimeThresh,
     REAL4                       rsqMaxSnr
     )
 /* </lalVerbatim> */
@@ -994,8 +994,8 @@ XLALRsqCutSingleInspiral (
     SnglInspiralTable *tmpEvent = thisEvent;
     thisEvent = thisEvent->next;
     
-    if ( (tmpEvent->snr < rsqMaxSnr) && 
-         (tmpEvent->rsqveto_duration >= rsqVetoThresh) )
+    if ( (tmpEvent->snr <= rsqMaxSnr) && 
+         (tmpEvent->rsqveto_duration >= rsqVetoTimeThresh) )
     {
       /* discard this event */
       XLALFreeSnglInspiral ( &tmpEvent );
@@ -1038,14 +1038,6 @@ XLALVetoSingleInspiral (
     /*-- Check the time of this event against the veto segment list --*/
     if ( XLALSegListSearch( vetoSegs, &(thisEvent->end_time) )  ) 
     {
-      /* This inspiral trigger does not fall within any veto segment */
-      /* keep the trigger and increment the count of triggers */
-      if ( ! eventHead ) eventHead = thisEvent;
-      prevEvent = thisEvent;
-      thisEvent = thisEvent->next;
-    } 
-    else 
-    {
       /*-- This event's end_time falls within one of the veto segments --*/
       /* discard the trigger and move to the next one */
       SnglInspiralTable    *tmpEvent = NULL;
@@ -1053,7 +1045,14 @@ XLALVetoSingleInspiral (
       tmpEvent = thisEvent;
       thisEvent = thisEvent->next;
       XLALFreeSnglInspiral ( &tmpEvent );
-
+    } 
+    else 
+    {
+      /* This inspiral trigger does not fall within any veto segment */
+      /* keep the trigger and increment the count of triggers */
+      if ( ! eventHead ) eventHead = thisEvent;
+      prevEvent = thisEvent;
+      thisEvent = thisEvent->next;
     }
   }
   return( eventHead );
