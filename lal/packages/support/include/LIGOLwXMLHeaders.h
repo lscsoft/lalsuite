@@ -205,7 +205,7 @@ fputs( "      <Stream Name=\"sngl_ringdowngroup:sngl_ringdown:table\" Type=\"Loc
 
 #define PRINT_LIGOLW_XML_SIM_BURST(fp) ( \
 fputs( "   <Table Name=\"sim_burstgroup:sim_burst:table\">\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_burstgroup:sim_burst:process_id\" Type=\"ilwd:char\"/>\n", fp ) &&  \
+fputs( "      <Column Name=\"sim_burstgroup:sim_burst:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"sim_burstgroup:sim_burst:waveform\" Type=\"lstring\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_burstgroup:sim_burst:geocent_peak_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_burstgroup:sim_burst:geocent_peak_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
