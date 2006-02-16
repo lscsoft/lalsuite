@@ -532,6 +532,8 @@ LALLoadSFTs ( LALStatus *status,
 	  ABORT ( status, SFTFILEIO_EDIFFDET, SFTFILEIO_MSGEDIFFDET );
 	} /* if different detectors */
 
+      strncpy ( prev_det, catalog->data[i].header.name, 2 );
+
       if ( (fp = fopen_SFTLocator ( catalog->data[i].locator )) == NULL )
 	{
 	  LALDestroySFTVector (status->statusPtr, &ret );
@@ -2945,6 +2947,9 @@ compareSFTdesc(const void *ptr1, const void *ptr2)
  *	a[-a-z]c	a-c aac abc ...
  *
  * $Log$
+ * Revision 1.58  2006/02/16 19:56:35  reinhard
+ * forgot essential step in detector-equality check
+ *
  * Revision 1.57  2006/02/16 17:09:19  reinhard
  * - move requirement of identical detectors from LALSFTdataFind() into LALLoadSFTs()
  * 	==> this allows one to obtain multi-IFO Catalogs with LALSFTdataFind() and use
