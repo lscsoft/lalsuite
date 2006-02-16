@@ -1081,10 +1081,16 @@ XLALInspiralDistanceCutBCVC(
   {
     INT4  discardTrigger = 0;
     REAL4 distA = 0, distB = 0;
-    REAL4 kappa = 4, epsilon=0.5;
+    REAL4 sigA, sigB;
+    REAL4 snrA, snrB, dpsi3,dpsi0;
+    REAL4 iota; 
+    REAL4 kappaA = 0.7, epsilonA=0.;
 
     CoincInspiralTable *tmpCoinc = thisCoinc;
     thisCoinc = thisCoinc->next;
+      
+    kappaA = accuracyParams->ifoAccuracy[ifoA].kappa;
+    epsilonA = accuracyParams->ifoAccuracy[ifoA].epsilon;
 
     for ( ifoA = 0; ifoA < LAL_NUM_IFO; ifoA++ )
     {
@@ -1096,22 +1102,24 @@ XLALInspiralDistanceCutBCVC(
             && tmpCoinc->snglInspiral[ifoB]  )
         {
           /* perform the distance consistency test */
-          distA = tmpCoinc->snglInspiral[ifoA]->eff_distance;
-          distB = tmpCoinc->snglInspiral[ifoB]->eff_distance;
-	  /* I am using those two parameters independantly of the ifoA; 
-	     we could have use the information stored in ifoB */
-      	  kappa = accuracyParams->ifoAccuracy[ifoA].kappa;
-          epsilon = accuracyParams->ifoAccuracy[ifoA].epsilon;
- 	  /* Thomas : I found that cut to be acceptable for H1-H2 in S3 
-	     by using kappa = 4 and epsilon = 0.5 */
-          if ( ( kappa*distA - epsilon > distB )  
-	    && ( ifoA==LAL_IFO_H1 && ifoB==LAL_IFO_H2) )
+	  sigA = tmpCoinc->snglInspiral[ifoA]->sigmasq;
+          sigB = tmpCoinc->snglInspiral[ifoB]->sigmasq;
+          snrA = tmpCoinc->snglInspiral[ifoA]->snr;
+          snrB = tmpCoinc->snglInspiral[ifoB]->snr;
+
+	  /* first we were using epsilon = -4 and kappa = 0.65 
+	     then, epsilon =0 and kappa=0.7 */	        
+
+	  iota = fabs(sigA*sigA/snrA-sigB*sigB/snrB)/(sigA*sigA/snrA+sigB*sigB/snrB);
+          if (  (iota > epsilon/(snrA)+ kappa);
+                &&( ifoA==LAL_IFO_H1 && ifoB==LAL_IFO_H2) )
           {
             discardTrigger = 1;
             break;
           }
 
-      }
+      
+ }
      }
       if ( discardTrigger )
       {
