@@ -140,6 +140,7 @@ int main(int argc, char *argv[])
   SFTCatalog *catalog = NULL;
   SFTConstraints constraints = empty_constraints;
   SFTVector *sft_vect = NULL;
+  MultiSFTVector *multsft_vect = NULL;
   CHAR detector[2] = "H1";
   INT4 crc_check;
   
@@ -204,6 +205,7 @@ int main(int argc, char *argv[])
   /* now completely read-in a v2 merged-SFT */
   SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-good", NULL ), &status );
   SHOULD_WORK ( LALLoadSFTs ( &status, &sft_vect, catalog, -1, -1 ), &status );
+  SHOULD_WORK ( LALLoadMultiSFTs ( &status, &multsft_vect, catalog, -1, -1 ), &status );
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
 
   /* 3 SFTs with 4 frequency-bins should have been read */
@@ -221,6 +223,7 @@ int main(int argc, char *argv[])
   SHOULD_WORK ( LALWrite_v2SFT_to_v1file( &status, &(sft_vect->data[2]), "outputsftv2_v1.sft"), &status );
 
   SUB ( LALDestroySFTVector (&status, &sft_vect ), &status );
+  SUB ( LALDestroyMultiSFTVector (&status, &multsft_vect ), &status );
   /* ----- read the previous two SFTs back */
   SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, "outputsftv2_*.sft", NULL ), &status, SFTFILEIO_EDETECTOR );
   /* need to set proper detector! */
