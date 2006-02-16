@@ -203,15 +203,18 @@ int main(int argc, char *argv[])
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
 
   /* now completely read-in a v2 merged-SFT */
-  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-good", NULL ), &status );
-  SHOULD_WORK ( LALLoadSFTs ( &status, &sft_vect, catalog, -1, -1 ), &status );
+  SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-test*", NULL ), &status,  SFTFILEIO_EDIFFTSFT );
+  /* skip sft nr 4 with has Tsft=50 instead of Tsft=60 */
+  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-test[123567]*", NULL ), &status );
+  SHOULD_FAIL_WITH_CODE ( LALLoadSFTs ( &status, &sft_vect, catalog, -1, -1 ), &status, SFTFILEIO_EDIFFDET );
+  LALPrintError ( "Now calling LALLoadMultiSFTs() ... \n");
   SHOULD_WORK ( LALLoadMultiSFTs ( &status, &multsft_vect, catalog, -1, -1 ), &status );
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
 
-  /* 3 SFTs with 4 frequency-bins should have been read */
-  if ( (sft_vect->length != 3) || ( sft_vect->data[0].data->length != 4 ) )
-    {
-      LALPrintError ( "\nFailed to read in 3 SFTs from merged-SFTfile 'SFT-good'!\n\n");
+  /* 6 SFTs from 2 IFOs should have been read */
+  if ( (multsft_vect->length != 2) || (multsft_vect->data[0]->length != 5) || ( multsft_vect->data[1]->length != 1 ) )
+  {
+      LALPrintError ( "\nFailed to read in multi-SFT from 2 IFOs 'SFT-test*'!\n\n");
       return SFTFILEIOTESTC_ESUB;
     }
 
