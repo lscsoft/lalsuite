@@ -578,7 +578,7 @@ void LALLoadMultiSFTs ( LALStatus *status,
 			)
      
 {
-  UINT4 k, j, length;
+  UINT4 k, j, i, length;
   UINT4 numifo=0; /* number of ifos */
   CHAR  *name=NULL; 
   CHAR  **ifolist=NULL; /* list of ifo names */
@@ -597,17 +597,27 @@ void LALLoadMultiSFTs ( LALStatus *status,
   ASSERT ( inputCatalog->length, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL );
 
   length = inputCatalog->length; 
-  name = (CHAR *)LALCalloc(3, sizeof(CHAR));
+  if ( (name = (CHAR *)LALCalloc(3, sizeof(CHAR))) == NULL )
+    ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
+
 
   /* the number of ifos can be at most equal to length */
   /* each ifo name is 2 characters + \0 */
-  ifolist = (CHAR **)LALCalloc( length, sizeof(CHAR *)); 
-  sftLocationInCatalog = (UINT4 **)LALCalloc( length, sizeof(UINT4 *));
-  numsfts = (UINT4 *)LALCalloc( length, sizeof(UINT4));
+  if ( (ifolist = (CHAR **)LALCalloc( length, sizeof(CHAR *))) == NULL)
+    ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
+
+  if ( (sftLocationInCatalog = (UINT4 **)LALCalloc( length, sizeof(UINT4 *))) == NULL)
+    ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
+
+  if ( (numsfts = (UINT4 *)LALCalloc( length, sizeof(UINT4))) == NULL)
+    ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
 
   for ( k = 0; k < length; k++) {
-    ifolist[k] = (CHAR *)LALCalloc( 3, sizeof(CHAR));
-    sftLocationInCatalog[k] = (UINT4 *)LALCalloc( length, sizeof(UINT4));
+    if ( (ifolist[k] = (CHAR *)LALCalloc( 3, sizeof(CHAR))) == NULL)
+      ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
+
+    if ( (sftLocationInCatalog[k] = (UINT4 *)LALCalloc( length, sizeof(UINT4))) == NULL)
+      ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
   }
 
   /* loop over sfts in catalog and look at ifo names and
@@ -638,12 +648,18 @@ void LALLoadMultiSFTs ( LALStatus *status,
     }
 
   /* now we can create the catalogs */
-  catalog = (SFTCatalog **)LALCAlloc( numifo, sizeof(SFTCatalog *));
+  if ( (catalog = (SFTCatalog **)LALCAlloc( numifo, sizeof(SFTCatalog *))) == NULL)
+    ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
+
   for ( j = 0; j < numifo; j++)
     {
-      catalog[j] = (SFTCatalog *)LALCalloc(1, sizeof(SFTCatalog));
+      if ( (catalog[j] = (SFTCatalog *)LALCalloc(1, sizeof(SFTCatalog))) == NULL)
+	ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
+
       catalog[j]->length = numsfts[j];
-      catalog[j]->data = (SFTDescriptor *)LALCalloc( numsfts[j], sizeof(SFTDescriptor));
+      if ( (catalog[j]->data = (SFTDescriptor *)LALCalloc( numsfts[j], sizeof(SFTDescriptor))) == NULL)
+	ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
+
       for ( k = 0; k < numsfts[j]; k++)
 	{
 	  UINT4 location = sftLocationInCatalog[j][k]; 
@@ -652,10 +668,42 @@ void LALLoadMultiSFTs ( LALStatus *status,
     }
 
   /* create multi sft vector */
-  multSFTVec = (MultiSFTVector *)LALCalloc(1, sizeof(MultiSFTVector));
-  multSFTVec->data = (SFTVector **)LALCalloc(numifo, sizeof(SFTVector *));
-  for ( j = 0; j < numifo; j++)
-    TRY ( LALLoadSFTs ( status->statusPtr, multSFTVec->data + j, catalog[j], fMin, fMax ), status );    
+  if ( (multSFTVec = (MultiSFTVector *)LALCalloc(1, sizeof(MultiSFTVector))) == NULL)
+    ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
+
+  if ( (multSFTVec->data = (SFTVector **)LALCalloc(numifo, sizeof(SFTVector *))) == NULL)
+    ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
+
+  for ( j = 0; j < numifo; j++) {
+    LALLoadSFTs ( status->statusPtr, multSFTVec->data + j, catalog[j], fMin, fMax );    
+    BEGINFAIL ( status ) {
+      /* free sf vectors created previously in loop */ 
+      for ( i = 0; i < j-1; i++)
+	LALDestroySFTVector ( status->statusPtr, multSFTVec->data + i);
+      LALFree(multSFTVec->data);
+      LALFree(multSFTVec);
+
+      /* also free catalog and other memory allocated earlier */
+      for ( i = 0; i < numifo; i++) {
+	LALFree(catalog[i]->data);
+	LALFree(catalog[i]);
+      }
+      LALFree( catalog);
+      
+      for ( i = 0; i < length; i++) {
+	LALFree(ifolist[i]);
+	LALFree(sftLocationInCatalog[i]);
+      }
+      LALFree(ifolist);
+      LALFree(sftLocationInCatalog);
+      
+      LALFree(numsfts);
+      LALFree(name);
+      
+    } ENDFAIL(status);
+  }
+
+
 
   /* free memory and exit */
   for ( j = 0; j < numifo; j++) {
@@ -2884,6 +2932,10 @@ compareSFTdesc(const void *ptr1, const void *ptr2)
  *	a[-a-z]c	a-c aac abc ...
  *
  * $Log$
+ * Revision 1.52  2006/02/16 12:56:30  badri
+ * in LALLoadMultiSFTVector : added error checking after mallocs and also adder beginfail/endfail
+ * after lal function call
+ *
  * Revision 1.51  2006/02/16 12:40:18  badri
  * small bug fixed -- begin(fail)/end(fail) still needs to be added
  *
