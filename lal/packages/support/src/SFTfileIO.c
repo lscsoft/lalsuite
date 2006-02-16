@@ -674,6 +674,8 @@ void LALLoadMultiSFTs ( LALStatus *status,
   LALFree(numsfts);
   LALFree(name);
 
+  *multisfts = multSFTVec;
+
   DETATCHSTATUSPTR (status);
   RETURN(status);
 
@@ -2882,6 +2884,9 @@ compareSFTdesc(const void *ptr1, const void *ptr2)
  *	a[-a-z]c	a-c aac abc ...
  *
  * $Log$
+ * Revision 1.51  2006/02/16 12:40:18  badri
+ * small bug fixed -- begin(fail)/end(fail) still needs to be added
+ *
  * Revision 1.50  2006/02/16 12:33:01  badri
  * -- changed type of sftmultivector to contain **SFTVect instead of *SFTVect
  * -- because of the above change, the function LALCreateMultiSFTVector is redundant and it is removed, and function LALDestroyMultiSFTVector is simplified
