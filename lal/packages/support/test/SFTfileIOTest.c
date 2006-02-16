@@ -207,8 +207,9 @@ int main(int argc, char *argv[])
   /* skip sft nr 4 with has Tsft=50 instead of Tsft=60 */
   SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-test[123567]*", NULL ), &status );
   SHOULD_FAIL_WITH_CODE ( LALLoadSFTs ( &status, &sft_vect, catalog, -1, -1 ), &status, SFTFILEIO_EDIFFDET );
-  LALPrintError ( "Now calling LALLoadMultiSFTs() ... \n");
+  LALPrintError ( "Now calling LALLoadMultiSFTs() ... ");
   SHOULD_WORK ( LALLoadMultiSFTs ( &status, &multsft_vect, catalog, -1, -1 ), &status );
+  LALPrintError ( " survived.\n");
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
 
   /* 6 SFTs from 2 IFOs should have been read */
@@ -220,12 +221,11 @@ int main(int argc, char *argv[])
 
   /* ----- v2 SFT writing ----- */
   /* write v2-SFT to disk */
-  SHOULD_WORK ( LALWriteSFT2file( &status, &(sft_vect->data[2]), "outputsftv2_v2.sft", "A v2-SFT file for testing!"), &status );
+  SHOULD_WORK ( LALWriteSFT2file( &status, &(multsft_vect->data[0]->data[0]), "outputsftv2_v2.sft", "A v2-SFT file for testing!"), &status );
 
   /* write v2-SFt as a v1-SFT to disk (correct normalization) */
-  SHOULD_WORK ( LALWrite_v2SFT_to_v1file( &status, &(sft_vect->data[2]), "outputsftv2_v1.sft"), &status );
+  SHOULD_WORK ( LALWrite_v2SFT_to_v1file( &status, &(multsft_vect->data[0]->data[0]), "outputsftv2_v1.sft"), &status );
 
-  SUB ( LALDestroySFTVector (&status, &sft_vect ), &status );
   SUB ( LALDestroyMultiSFTVector (&status, &multsft_vect ), &status );
   /* ----- read the previous two SFTs back */
   SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, "outputsftv2_*.sft", NULL ), &status, SFTFILEIO_EDETECTOR );
