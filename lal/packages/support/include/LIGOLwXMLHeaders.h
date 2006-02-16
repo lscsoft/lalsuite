@@ -230,7 +230,7 @@ fputs( "      <Column Name=\"sim_burstgroup:sim_burst:simulation_id\" Type=\"ilw
 fputs( "      <Stream Name=\"sim_burstgroup:sim_burst:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 #define SIM_BURST_ROW \
-"         \"process:process_id:0\",\"%s\",%d,%d,%d,%d,%d,%d,%22.16e,%e,%e,%e,%e,\"%s\",%e,%e,%e,%e,%e,%e,%d,\"sim_burst:simulation_id:0\""
+"         \"process:process_id:0\",\"%s\",%d,%d,%d,%d,%d,%d,%22.16e,%e,%e,%e,%e,\"%s\",%e,%e,%e,%e,%e,%e,%d,\"sim_burst:simulation_id:%d\""
 
 #define PRINT_LIGOLW_XML_SIM_RINGDOWN(fp) ( \
 fputs( "   <Table Name=\"sim_ringdowngroup:sim_ringdown:table\">\n" , fp ) == EOF || \

@@ -667,32 +667,36 @@ LALWriteLIGOLwXMLTable (
       }
       break;
     case sim_burst_table:
-      while( tablePtr.simBurstTable )
       {
-        FIRST_TABLE_ROW
-          fprintf( xml->fp, SIM_BURST_ROW,
-              tablePtr.simBurstTable->waveform,
-              tablePtr.simBurstTable->geocent_peak_time.gpsSeconds,
-              tablePtr.simBurstTable->geocent_peak_time.gpsNanoSeconds,
-              tablePtr.simBurstTable->h_peak_time.gpsSeconds,
-              tablePtr.simBurstTable->h_peak_time.gpsNanoSeconds,
-              tablePtr.simBurstTable->l_peak_time.gpsSeconds,
-              tablePtr.simBurstTable->l_peak_time.gpsNanoSeconds,
-              tablePtr.simBurstTable->peak_time_gmst,
-              tablePtr.simBurstTable->dtminus,
-              tablePtr.simBurstTable->dtplus,
-              tablePtr.simBurstTable->longitude,
-              tablePtr.simBurstTable->latitude,
-              tablePtr.simBurstTable->coordinates,
-              tablePtr.simBurstTable->polarization,
-              tablePtr.simBurstTable->hrss,
-              tablePtr.simBurstTable->hpeak,
-              tablePtr.simBurstTable->distance,
-              tablePtr.simBurstTable->freq,
-              tablePtr.simBurstTable->tau,
-              tablePtr.simBurstTable->zm_number
-              );
-        tablePtr.simBurstTable = tablePtr.simBurstTable->next;
+        int id = 0;
+        while( tablePtr.simBurstTable )
+        {
+          FIRST_TABLE_ROW
+            fprintf( xml->fp, SIM_BURST_ROW,
+                tablePtr.simBurstTable->waveform,
+                tablePtr.simBurstTable->geocent_peak_time.gpsSeconds,
+                tablePtr.simBurstTable->geocent_peak_time.gpsNanoSeconds,
+                tablePtr.simBurstTable->h_peak_time.gpsSeconds,
+                tablePtr.simBurstTable->h_peak_time.gpsNanoSeconds,
+                tablePtr.simBurstTable->l_peak_time.gpsSeconds,
+                tablePtr.simBurstTable->l_peak_time.gpsNanoSeconds,
+                tablePtr.simBurstTable->peak_time_gmst,
+                tablePtr.simBurstTable->dtminus,
+                tablePtr.simBurstTable->dtplus,
+                tablePtr.simBurstTable->longitude,
+                tablePtr.simBurstTable->latitude,
+                tablePtr.simBurstTable->coordinates,
+                tablePtr.simBurstTable->polarization,
+                tablePtr.simBurstTable->hrss,
+                tablePtr.simBurstTable->hpeak,
+                tablePtr.simBurstTable->distance,
+                tablePtr.simBurstTable->freq,
+                tablePtr.simBurstTable->tau,
+                tablePtr.simBurstTable->zm_number,
+                id++
+                );
+          tablePtr.simBurstTable = tablePtr.simBurstTable->next;
+        }
       }
       break;
     case sim_ringdown_table:
