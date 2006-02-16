@@ -363,6 +363,11 @@ int main(int argc,char *argv[])
 					     GV.ifos[nD].DetectorStates, 
 					     thisPoint), &status);
 
+		      /* initilizing the A, B and C to be set at zero */
+		      GV.ifos[nD].amcoe->A = 0.0;
+		      GV.ifos[nD].amcoe->B = 0.0;
+		      GV.ifos[nD].amcoe->C = 0.0;
+
 		  /* Calculate the Coefficients a(t) and b(t) */
 
 		  M = 1.0f * GV.ifos[nD].sftVect->length;
@@ -889,7 +894,6 @@ NewInitFStat ( LALStatus *status, ConfigVariables *cfg )
 	TRY(LALDCreateVector(status->statusPtr, &(cfg->ifos[X].weightsNoise), catalogs[X]->length),status); 
 
 	TRY( LALHOUGHInitializeWeights( status->statusPtr, (cfg->ifos[X].weightsNoise) ), status);
-	TRY( LALHOUGHComputeNoiseWeights( status->statusPtr, (cfg->ifos[X].weightsNoise), cfg->ifos[X].sftVect, uvar_RngMedWindow), status); 
 
 	/* Normalize this by 1/sqrt(Sh), where Sh is the median of |X|^2  
 	 * NOTE: this corresponds to a double-sided PSD, therefore we need to 
@@ -897,10 +901,32 @@ NewInitFStat ( LALStatus *status, ConfigVariables *cfg )
 	 */
 	if ( ! uvar_SignalOnly ) 
 	  {
-	    TRY(LALNormalizeSFTVect (status->statusPtr, cfg->ifos[X].sftVect, uvar_RngMedWindow, 0),
-		status );
+	    TRY( LALHOUGHComputeNoiseWeights( status->statusPtr, (cfg->ifos[X].weightsNoise), cfg->ifos[X].sftVect, uvar_RngMedWindow), status); 
+	    TRY(LALNormalizeSFTVect (status->statusPtr, cfg->ifos[X].sftVect, uvar_RngMedWindow, 0), status );
 	  }
-
+	
+	/* Normalyzing the Noise Weight. Sum of weighwNoise over the all detectors is going to be 1.0 */
+	{
+	  UINT4 alpha, M, X;
+	  REAL4 norm = 0.0;
+	  REAL8 W = 0.0;
+	  
+	  for( X = 0; X < cfg->numDetectors; X ++ )
+	    {
+	      M = catalogs[X]->length;
+	      
+	      for (alpha = 0; alpha < M; alpha++)
+		{
+		  W += cfg->ifos[X].weightsNoise->data[alpha]; 
+		}
+	      norm += W / M;
+	    }
+	  for (alpha = 0; alpha < M; alpha++)
+	    {
+	      cfg->ifos[X].weightsNoise->data[alpha] /= (1.0f * norm);
+	    }
+	}
+	
 	TRY ( LALDestroySFTCatalog ( status->statusPtr, &(catalogs[X]) ), status );
       } /* for X < numDetectors */
 
