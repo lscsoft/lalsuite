@@ -1076,15 +1076,18 @@ XLALInspiralDistanceCutBCVC(
 
   thisCoinc = *coincInspiral;
   coincHead = NULL;
-  
+   
+  INT4  discardTrigger = 0;
+  REAL4 distA = 0, distB = 0;
+  REAL4 sigA, sigB;
+  REAL4 snrA, snrB, dpsi3,dpsi0;
+  REAL4 iota; 
+  REAL4 kappaA = 0.7, epsilonA=0.;
+
+  /* loop over the coincindent triggers */
   while( thisCoinc )
   {
-    INT4  discardTrigger = 0;
-    REAL4 distA = 0, distB = 0;
-    REAL4 sigA, sigB;
-    REAL4 snrA, snrB, dpsi3,dpsi0;
-    REAL4 iota; 
-    REAL4 kappaA = 0.7, epsilonA=0.;
+    discardTrigger=0;
 
     CoincInspiralTable *tmpCoinc = thisCoinc;
     thisCoinc = thisCoinc->next;
@@ -1092,6 +1095,7 @@ XLALInspiralDistanceCutBCVC(
     kappaA = accuracyParams->ifoAccuracy[ifoA].kappa;
     epsilonA = accuracyParams->ifoAccuracy[ifoA].epsilon;
 
+    /* loop over all IFO combinations */
     for ( ifoA = 0; ifoA < LAL_NUM_IFO; ifoA++ )
     {
       for ( ifoB = ifoA + 1; ifoB < LAL_NUM_IFO; ifoB++ )
@@ -1117,29 +1121,29 @@ XLALInspiralDistanceCutBCVC(
             discardTrigger = 1;
             break;
           }
-
-      
- }
-     }
+	  
+	  
+	}
+      }
       if ( discardTrigger )
       {
-        break;
+	  break;
       }
-   } 
-
+    } 
+    
     if( discardTrigger )
     {
-      XLALFreeCoincInspiral( &tmpCoinc );
+	XLALFreeCoincInspiral( &tmpCoinc );
     }
     else
     {
       if ( ! coincHead )
       {
-        coincHead = tmpCoinc;
+	  coincHead = tmpCoinc;
       }
       else
-      {
-        prevCoinc->next = tmpCoinc;
+	{
+	  prevCoinc->next = tmpCoinc;
       }
       tmpCoinc->next = NULL;
       prevCoinc = tmpCoinc;
