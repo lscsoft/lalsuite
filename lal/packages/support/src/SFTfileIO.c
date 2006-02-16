@@ -136,8 +136,9 @@ static UINT8 calc_crc64(const CHAR *data, UINT4 length, UINT8 crc);
  * - 'timestamps':    	list of GPS start-times
  *
  * 
- * ==> The returned SFTCatalog can be used directly as input to LALLoadSFTs() in order
- * to load the matching SFTs into an SFTVector.
+ * ==> The returned SFTCatalog can be used directly as input to LALLoadSFTs() 
+ * to load a single-IFO SFTVector, or LALLoadMultiSFTs() to load a 
+ * multi-IFO vector of SFTVectors 
  *
  * Except for the 'file_pattern' input, all the other constraints are optional
  * and can be passed as NULL (either globally constraings==NULL, or individually).
@@ -396,7 +397,7 @@ LALSFTdataFind (LALStatus *status,
 	}
     } /* if constraints->timestamps */
 
-  /* have all matched SFTs consistent detector and dFreq values ? */
+  /* have all matched SFTs identical dFreq values ? */
   for ( i = 0; i < ret->length; i ++ )
     {
       SFTtype first_header;
@@ -418,15 +419,6 @@ LALSFTdataFind (LALStatus *status,
 	    }
 	} /* if detector-constraint was not '??' */
 
-      if ( strncmp ( this_header.name, first_header.name, 2 ) ) 
-	{
-	  LALDestroySFTCatalog ( status->statusPtr, &ret );
-	  if ( lalDebugLevel )
-	    LALPrintError("\nERROR: file-pattern '%s' matched SFTs with inconsistent detectors!\n\n",
-			  file_pattern);
-	  ABORT ( status, SFTFILEIO_EDIFFDET, SFTFILEIO_MSGEDIFFDET );
-	}
-	
       if ( this_header.deltaF != first_header.deltaF ) 
 	{
 	  LALDestroySFTCatalog ( status->statusPtr, &ret );
@@ -509,6 +501,7 @@ LALLoadSFTs ( LALStatus *status,
   UINT4 i;
   UINT4 numSFTs;
   SFTVector *ret = NULL;
+  CHAR prev_det[3] = {0,0,0};
 
   INITSTATUS (status, "LALLoadSFTs", SFTFILEIOC);
   ATTATCHSTATUSPTR (status); 
@@ -529,6 +522,15 @@ LALLoadSFTs ( LALStatus *status,
     {
       FILE *fp;
       SFTtype *this_sft = NULL;
+
+      /* check that detector is identical for all SFTs !*/
+      if ( prev_det[0] && strncmp ( catalog->data[i].header.name, prev_det, 2 ) )
+	{
+	  LALDestroySFTVector (status->statusPtr, &ret );
+	  if ( lalDebugLevel )
+	    LALPrintError("\nERROR: SFTCatalog contains SFTs with different detectors!\n\n" );
+	  ABORT ( status, SFTFILEIO_EDIFFDET, SFTFILEIO_MSGEDIFFDET );
+	} /* if different detectors */
 
       if ( (fp = fopen_SFTLocator ( catalog->data[i].locator )) == NULL )
 	{
@@ -591,7 +593,6 @@ void LALLoadMultiSFTs ( LALStatus *status,
   CHAR  **ifolist=NULL; /* list of ifo names */
   UINT4  *numsfts=NULL; /* number of sfts for each ifo */
   UINT4 **sftLocationInCatalog=NULL; /* location of sfts in catalog for each ifo */
-  INT4   match;
   SFTCatalog **catalog=NULL;
   MultiSFTVector *multSFTVec=NULL;
 
@@ -604,27 +605,28 @@ void LALLoadMultiSFTs ( LALStatus *status,
   ASSERT ( inputCatalog->length, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL );
 
   length = inputCatalog->length; 
-  if ( (name = (CHAR *)LALCalloc(3, sizeof(CHAR))) == NULL )
+  if ( (name = (CHAR *)LALCalloc(3, sizeof(CHAR))) == NULL ) {
     ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
-
+  }
 
   /* the number of ifos can be at most equal to length */
   /* each ifo name is 2 characters + \0 */
-  if ( (ifolist = (CHAR **)LALCalloc( length, sizeof(CHAR *))) == NULL)
+  if ( (ifolist = (CHAR **)LALCalloc( length, sizeof(CHAR *))) == NULL) {
     ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
-
-  if ( (sftLocationInCatalog = (UINT4 **)LALCalloc( length, sizeof(UINT4 *))) == NULL)
+  }
+  if ( (sftLocationInCatalog = (UINT4 **)LALCalloc( length, sizeof(UINT4 *))) == NULL) {
     ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
-
-  if ( (numsfts = (UINT4 *)LALCalloc( length, sizeof(UINT4))) == NULL)
+  }
+  if ( (numsfts = (UINT4 *)LALCalloc( length, sizeof(UINT4))) == NULL) {
     ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
-
+  }
   for ( k = 0; k < length; k++) {
-    if ( (ifolist[k] = (CHAR *)LALCalloc( 3, sizeof(CHAR))) == NULL)
+    if ( (ifolist[k] = (CHAR *)LALCalloc( 3, sizeof(CHAR))) == NULL) {
       ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
-
-    if ( (sftLocationInCatalog[k] = (UINT4 *)LALCalloc( length, sizeof(UINT4))) == NULL)
+    }
+    if ( (sftLocationInCatalog[k] = (UINT4 *)LALCalloc( length, sizeof(UINT4))) == NULL) {
       ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
+    }
   }
 
   /* loop over sfts in catalog and look at ifo names and
@@ -655,17 +657,19 @@ void LALLoadMultiSFTs ( LALStatus *status,
     }
 
   /* now we can create the catalogs */
-  if ( (catalog = (SFTCatalog **)LALCalloc( numifo, sizeof(SFTCatalog *))) == NULL)
+  if ( (catalog = (SFTCatalog **)LALCalloc( numifo, sizeof(SFTCatalog *))) == NULL) {
     ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
+  }
 
   for ( j = 0; j < numifo; j++)
     {
-      if ( (catalog[j] = (SFTCatalog *)LALCalloc(1, sizeof(SFTCatalog))) == NULL)
+      if ( (catalog[j] = (SFTCatalog *)LALCalloc(1, sizeof(SFTCatalog))) == NULL) {
 	ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
-
+      }
       catalog[j]->length = numsfts[j];
-      if ( (catalog[j]->data = (SFTDescriptor *)LALCalloc( numsfts[j], sizeof(SFTDescriptor))) == NULL)
+      if ( (catalog[j]->data = (SFTDescriptor *)LALCalloc( numsfts[j], sizeof(SFTDescriptor))) == NULL) {
 	ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
+      }
 
       for ( k = 0; k < numsfts[j]; k++)
 	{
@@ -675,14 +679,14 @@ void LALLoadMultiSFTs ( LALStatus *status,
     }
 
   /* create multi sft vector */
-  if ( (multSFTVec = (MultiSFTVector *)LALCalloc(1, sizeof(MultiSFTVector))) == NULL)
+  if ( (multSFTVec = (MultiSFTVector *)LALCalloc(1, sizeof(MultiSFTVector))) == NULL){
     ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
-
+  }
   multSFTVec->length = numifo;
 
-  if ( (multSFTVec->data = (SFTVector **)LALCalloc(numifo, sizeof(SFTVector *))) == NULL)
+  if ( (multSFTVec->data = (SFTVector **)LALCalloc(numifo, sizeof(SFTVector *))) == NULL) {
     ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
-
+  }
   for ( j = 0; j < numifo; j++) {
     LALLoadSFTs ( status->statusPtr, multSFTVec->data + j, catalog[j], fMin, fMax );    
     BEGINFAIL ( status ) {
@@ -2941,6 +2945,12 @@ compareSFTdesc(const void *ptr1, const void *ptr2)
  *	a[-a-z]c	a-c aac abc ...
  *
  * $Log$
+ * Revision 1.57  2006/02/16 17:09:19  reinhard
+ * - move requirement of identical detectors from LALSFTdataFind() into LALLoadSFTs()
+ * 	==> this allows one to obtain multi-IFO Catalogs with LALSFTdataFind() and use
+ * 	them on LALLoadMultiSFTs(). For LALLoadSFTs() they must be single-IFO.
+ * - updated doxygen documentation a bit for new Multi-IFO function
+ *
  * Revision 1.56  2006/02/16 16:01:00  badri
  * added some doxygen documentation to LALLoadMultiSFTs
  *

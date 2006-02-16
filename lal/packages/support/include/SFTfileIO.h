@@ -24,12 +24,13 @@
  * \brief Module for reading/writing/manipulating SFTs (Short Fourier transforms)
  *
  <p> <h3> Overview:</h3>
- - SFT-reading: LALSFTdataFind(), LALLoadSFTs()
+ - SFT-reading: LALSFTdataFind(), LALLoadSFTs(), LALLoadMultiSFTs()
  - SFT-writing: LALWriteSFT2file(), LALWrite_v2SFT_to_v1file()
  - SFT-checking: LALCheckSFTs(): complete check of SFT-validity including CRC64 checksum
  - free SFT-catalog: LALDestroySFTCatalog()
  - general manipulation of SFTVectors: 
  	- LALDestroySFTVector(): free up a complete SFT-vector
+	- LALDestroyMultiSFTVector(): free a multi-IFO vector of SFT-vectors
 	- LALConcatSFTVectors(): concatenate two ::SFTVector's
 	- LALAppendSFT2Vector(): append a single SFT (::SFTtype) to an ::SFTVector
 
@@ -39,7 +40,8 @@
  The basic operation of <b>reading SFTs</b> from files proceeds in two simple steps:
 
  	-# LALSFTdataFind(): get an '::SFTCatalog' of SFTs matching certain requirements (free with LALDestroySFTCatalog())
-	-# LALLoadSFTs(): load the desired frequency-band from the SFTs described in the catalogue
+	-# LALLoadSFTs(): load a frequency-band into a single-IFO SFTVector defined by the catalogue, OR <br>
+	LALLoadMultiSFTs(): load a frequency-band into a multi-IFO vector of SFTVectors defined by the catalogue
 
  <b>Note 1:</b> currently supported SFT file-formats are (merged or single) SFT-v1 and SFT-v2 files. 
  This might be extended in the future to support further file-formats (frames?). 
@@ -101,7 +103,6 @@
  
  <b>NOTE:</b> The SFTs in the returned catalogue are \em guaranteed to 
  - be sorted in order of increasing GPS-epoch
- - contain identical detector-names and Tsft 
  - contain a valid detector-name, except if constraints->detector=="??"
  
 
@@ -112,13 +113,20 @@
  \endcode
 
  This function takes an ::SFTCatalog and reads the smallest frequency-band containing <tt>[fMin, fMax]</tt>
- from the SFTs, returning the resulting ::SFTVector.
+ from the SFTs, returning the resulting ::SFTVector. Note that this function will return an error if the 
+ SFTCatalog contains SFTs from different detectors, for which LALLoadMultiSFTs() must be used.
  
  The frequency-bounds are optional and \c -1 can be used to specify an 'open bound', i.e.<br>
  <tt>[-1, fMax]</tt>: read from first frequency-bin in the SFT up to \c fMax.<br>
  <tt>[fMin, -1]</tt>: read from \c fMin up to last frequency-bin in the SFTS<br>
  <tt>[-1, -1]</tt>: read ALL frequency-bins from SFT.
 
+ \code
+ LALLoadMultiSFTs ( LALStatus *, MultiSFTVector **sfts, const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
+ \endcode
+ 
+ This function is similar to the above, except that it accepts an ::SFTCatalog with different detectors, 
+ and returns corresponding multi-IFO vector of SFTVectors. 
 
  <p><h2>Usage: Writing of SFT-files</h2>
 
