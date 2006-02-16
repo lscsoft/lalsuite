@@ -648,7 +648,7 @@ void LALLoadMultiSFTs ( LALStatus *status,
     }
 
   /* now we can create the catalogs */
-  if ( (catalog = (SFTCatalog **)LALCAlloc( numifo, sizeof(SFTCatalog *))) == NULL)
+  if ( (catalog = (SFTCatalog **)LALCalloc( numifo, sizeof(SFTCatalog *))) == NULL)
     ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
 
   for ( j = 0; j < numifo; j++)
@@ -2932,6 +2932,9 @@ compareSFTdesc(const void *ptr1, const void *ptr2)
  *	a[-a-z]c	a-c aac abc ...
  *
  * $Log$
+ * Revision 1.53  2006/02/16 13:02:53  badri
+ * fixed bug LALCAlloc -> LALCalloc
+ *
  * Revision 1.52  2006/02/16 12:56:30  badri
  * in LALLoadMultiSFTVector : added error checking after mallocs and also adder beginfail/endfail
  * after lal function call
