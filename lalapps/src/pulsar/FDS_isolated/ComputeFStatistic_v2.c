@@ -891,7 +891,9 @@ NewInitFStat ( LALStatus *status, ConfigVariables *cfg )
 	REAL8 fMin = fCoverMin - wings * dFreq;
 
 	TRY ( LALLoadSFTs ( status->statusPtr, &(cfg->ifos[X].sftVect), catalogs[X], fMin, fMax ), status );
-	TRY(LALDCreateVector(status->statusPtr, &(cfg->ifos[X].weightsNoise), catalogs[X]->length),status); 
+	TRY ( LALDestroySFTCatalog ( status->statusPtr, &(catalogs[X]) ), status );
+
+	TRY ( LALDCreateVector(status->statusPtr, &(cfg->ifos[X].weightsNoise), catalogs[X]->length),status); 
 
 	TRY( LALHOUGHInitializeWeights( status->statusPtr, (cfg->ifos[X].weightsNoise) ), status);
 
@@ -904,34 +906,35 @@ NewInitFStat ( LALStatus *status, ConfigVariables *cfg )
 	    TRY( LALHOUGHComputeNoiseWeights( status->statusPtr, (cfg->ifos[X].weightsNoise), cfg->ifos[X].sftVect, uvar_RngMedWindow), status); 
 	    TRY(LALNormalizeSFTVect (status->statusPtr, cfg->ifos[X].sftVect, uvar_RngMedWindow, 0), status );
 	  }
-	
-	/* Normalyzing the Noise Weight. Sum of weighwNoise over the all detectors is going to be 1.0 */
-	{
-	  UINT4 alpha, M, X;
-	  REAL4 norm = 0.0;
-	  REAL8 W = 0.0;
-	  
-	  for( X = 0; X < cfg->numDetectors; X ++ )
-	    {
-	      M = catalogs[X]->length;
-	      
-	      for (alpha = 0; alpha < M; alpha++)
-		{
-		  W += cfg->ifos[X].weightsNoise->data[alpha]; 
-		}
-	      norm += W / M;
-	    }
-	  for (alpha = 0; alpha < M; alpha++)
-	    {
-	      cfg->ifos[X].weightsNoise->data[alpha] /= (1.0f * norm);
-	    }
-	}
-	
-	TRY ( LALDestroySFTCatalog ( status->statusPtr, &(catalogs[X]) ), status );
       } /* for X < numDetectors */
 
   } /* load all SFTs */
   LALFree ( catalogs );
+
+  /* Normalyzing the Noise Weight. Sum of weighwNoise over the all detectors is going to be 1.0 */
+  {
+    UINT4 alpha;
+    REAL8 norm = 0.0;
+    
+    for( X = 0; X < cfg->numDetectors; X ++ )
+      {
+	UINT4 M;
+	REAL8 W = 0.0;
+	
+	M = cfg->ifos[X].weightsNoise->length;
+	
+	for (alpha = 0; alpha < M; alpha++)
+	  {
+	    W += cfg->ifos[X].weightsNoise->data[alpha]; 
+	  }
+	norm += W / M;
+      } /* for X < numDetector */
+
+    for ( X = 0; X < cfg->numDetectors; X++ )
+      for (alpha = 0; alpha < cfg->ifos[X].weightsNoise->length; alpha++ )
+	cfg->ifos[X].weightsNoise->data[alpha] /= norm;
+    
+  } /* normalize noise-weights */
 
   /* ----- initialize + allocate space for AM-coefficients and SSB-times ----- */
   {
