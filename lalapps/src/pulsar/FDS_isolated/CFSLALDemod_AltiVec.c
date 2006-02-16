@@ -6,7 +6,6 @@ static inline vector float vec_div( vector float a, vector float b ) {
 	estimate = vec_madd( vec_nmsub( estimate, b, (vector float) (1.0) ), estimate, estimate );
 	return vec_madd( a, estimate, (vector float)(0) );
 }
-#endif
 
 /* special AltiVec Version of TestLALDemod */
 
@@ -14,7 +13,6 @@ static inline vector float vec_div( vector float a, vector float b ) {
 void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params) 
 /* </lalVerbatim> */
 { 
-
   INT4 alpha,i;                 /* loop indices */
   REAL8 *xSum=NULL, *ySum=NULL; /* temp variables for computation of fs*as and fs*bs */
   INT4 s;                       /* local variable for spinDwn calcs. */
@@ -47,7 +45,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 
   UINT4 M=params->SFTno;
 
-/* APPLE - we need a buffer of tempFreq1 values calculated in double precision, but stored in single precision */
+  /* APPLE - we need a buffer of tempFreq1 values calculated in double precision, but stored in single precision */
   REAL4 *tempf = malloc(sizeof(REAL4)*64);
   unsigned int tempF_size = 64;
 
