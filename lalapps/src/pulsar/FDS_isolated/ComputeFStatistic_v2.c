@@ -891,8 +891,6 @@ NewInitFStat ( LALStatus *status, ConfigVariables *cfg )
 	REAL8 fMin = fCoverMin - wings * dFreq;
 
 	TRY ( LALLoadSFTs ( status->statusPtr, &(cfg->ifos[X].sftVect), catalogs[X], fMin, fMax ), status );
-	TRY ( LALDestroySFTCatalog ( status->statusPtr, &(catalogs[X]) ), status );
-
 	TRY ( LALDCreateVector(status->statusPtr, &(cfg->ifos[X].weightsNoise), catalogs[X]->length),status); 
 
 	TRY( LALHOUGHInitializeWeights( status->statusPtr, (cfg->ifos[X].weightsNoise) ), status);
@@ -906,6 +904,9 @@ NewInitFStat ( LALStatus *status, ConfigVariables *cfg )
 	    TRY( LALHOUGHComputeNoiseWeights( status->statusPtr, (cfg->ifos[X].weightsNoise), cfg->ifos[X].sftVect, uvar_RngMedWindow), status); 
 	    TRY(LALNormalizeSFTVect (status->statusPtr, cfg->ifos[X].sftVect, uvar_RngMedWindow, 0), status );
 	  }
+
+	TRY ( LALDestroySFTCatalog ( status->statusPtr, &(catalogs[X]) ), status );
+
       } /* for X < numDetectors */
 
   } /* load all SFTs */
