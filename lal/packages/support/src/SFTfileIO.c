@@ -571,7 +571,7 @@ LALLoadSFTs ( LALStatus *status,
 
 /** Function to load a catalog of SFTs from possibly different detectors */
 void LALLoadMultiSFTs ( LALStatus *status,
-			MultiSFTVector **multisfts,       /**< [out] vector of read-in SFTs -- one sft vector for each ifo found in catalog*/
+			MultiSFTVector **out,             /**< [out] vector of read-in SFTs -- one sft vector for each ifo found in catalog*/
 			const SFTCatalog *inputCatalog,   /**< The 'catalogue' of SFTs to load */
 			REAL8 fMin,		          /**< minumum requested frequency (-1 = read from lowest) */
 			REAL8 fMax		          /**< maximum requested frequency (-1 = read up to highest) */
@@ -591,8 +591,8 @@ void LALLoadMultiSFTs ( LALStatus *status,
   INITSTATUS (status, "LALLoadMultiSFTs", SFTFILEIOC);
   ATTATCHSTATUSPTR (status); 
 
-  ASSERT ( multisfts, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
-  ASSERT ( *multisfts == NULL, status, SFTFILEIO_ENONULL, SFTFILEIO_MSGENONULL );  
+  ASSERT ( out, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
+  ASSERT ( *out == NULL, status, SFTFILEIO_ENONULL, SFTFILEIO_MSGENONULL );  
   ASSERT ( inputCatalog, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
   ASSERT ( inputCatalog->length, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL );
 
@@ -724,7 +724,7 @@ void LALLoadMultiSFTs ( LALStatus *status,
   LALFree(numsfts);
   LALFree(name);
 
-  *multisfts = multSFTVec;
+  *out = multSFTVec;
 
   DETATCHSTATUSPTR (status);
   RETURN(status);
@@ -2934,6 +2934,10 @@ compareSFTdesc(const void *ptr1, const void *ptr2)
  *	a[-a-z]c	a-c aac abc ...
  *
  * $Log$
+ * Revision 1.55  2006/02/16 15:16:12  badri
+ * renamed output of LALLoadMultiSFTVector from "multisfts" to "out" to
+ * improve readability
+ *
  * Revision 1.54  2006/02/16 15:11:43  badri
  * fixed bug in setting length of output multisftvector in LALLoadMultiSFTVector
  *
