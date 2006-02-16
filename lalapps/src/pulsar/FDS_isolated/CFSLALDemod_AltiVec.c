@@ -1,36 +1,14 @@
-/* LALDemod variants put out of ComputeFStatistic.c for separate compilation
- * Authors see ComputeFStatistic.c
-                                                         Bernd Machenschalk */
-#include "ComputeFStatistic.h"
-
-RCSID( "$Id$");
-
-#if defined(USE_BOINC) && defined(_WIN32)
-#include "win_lib.h"
+/* ADAPTED FROM http://developer.apple.com/hardware/ve/algorithms.html , author: Ian Ollmann*/
+static inline vector float vec_div( vector float a, vector float b ) {
+	//Get the reciprocal estimate
+	vector float estimate = vec_re( b );
+	//One round of Newton-Raphson refinement
+	estimate = vec_madd( vec_nmsub( estimate, b, (vector float) (1.0) ), estimate, estimate );
+	return vec_madd( a, estimate, (vector float)(0) );
+}
 #endif
 
-/* this is defined in C99 and *should* be in math.h.  Long term
-   protect this with a HAVE_FINITE */
-int finite(double);
-
-/* global variables defined in ComputeFStatistic.c */
-extern INT4 cfsRunNo;	   /**< CFS run-number: 0=run only once, 1=first run, 2=second run */
-extern UINT4 maxSFTindex;  /**< maximal sftindex, for error-checking */
-
-#define LD_SMALL        (1.0e-9 / LAL_TWOPI)
-#define OOTWOPI         (1.0 / LAL_TWOPI)
-#define LUT_RES         64      /* resolution of lookup-table */
-
-#define TWOPI_FLOAT     6.28318530717958f  /* 2*pi */
-#define OOTWOPI_FLOAT   (1.0f / TWOPI_FLOAT)	/* 1 / (2pi) */ 
-
-
-/* in special cases (macros) don't use the generic version of TestLALDemod() below, but the ones from external files */
-#if defined(USE_ALTIVEC)
-#include "CFSLALDemod_AltiVec.c"
-#elif defined(USE_EXP_LALDEMOD)
-#include "CFSLALDemod_Experimental.c"
-#else /* USE_R4LALDEMOD, USE_ALTIVEC */
+/* special AltiVec Version of TestLALDemod */
 
 /* <lalVerbatim file="LALDemodCP"> */
 void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params) 
@@ -68,6 +46,10 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
   REAL8 D=params->amcoe->D;
 
   UINT4 M=params->SFTno;
+
+/* APPLE - we need a buffer of tempFreq1 values calculated in double precision, but stored in single precision */
+  REAL4 *tempf = malloc(sizeof(REAL4)*64);
+  unsigned int tempF_size = 64;
 
   INITSTATUS( status, "TestLALDemod", rcsid );
 
@@ -110,7 +92,6 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
       ySum[alpha] += spinDwn[s] * skyConst[tempInt1[alpha]+1+2*s];
     }
   }
-
 
   /* Loop over frequencies to be demodulated */
   for(i=0 ; i< params->imax  ; i++ )
@@ -258,25 +239,139 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
             realXP=0.0;
             imagXP=0.0;
 
-            /* Loop over terms in Dirichlet Kernel */
+	    /* VERSION 6 - Altivec/scalar hybrid unrolled */
+	    {
 
+	      vector float tsin_v, tcos_v;
+	      vector float realXP_v0 = (vector float)(0.0f);
+	      vector float imagXP_v0 = (vector float)(0.0f);
+	      vector float realXP_v1 = (vector float)(0.0f);
+	      vector float imagXP_v1 = (vector float)(0.0f);
+	      
+	      if (klim > tempF_size) {
+		tempf = realloc(tempf, sizeof(REAL4)*klim);
+		tempF_size = klim;
+	      }
+	      
+	      REAL8 tempf1 = tempFreq1;
+	      for (k=0; k+3<klim; k+=4) {
+		tempf[k+0] = tempf1 - 0.0;
+		tempf[k+1] = tempf1 - 1.0;
+		tempf[k+2] = tempf1 - 2.0;
+		tempf[k+3] = tempf1 - 3.0;
+		tempf1-=4;
+	      }
+	      for (; k<klim; k++) {
+		tempf[k] = tempf1;
+		tempf1--;
+	      }
+	      
+	      tsin_v = vec_ld( 0, &tsin );
+	      tsin_v = vec_perm( tsin_v, tsin_v, vec_lvsl( 0, &tsin ) );
+	      tsin_v = vec_splat( tsin_v, 0 );
+	      
+	      tcos_v = vec_ld( 0, &tcos );
+	      tcos_v = vec_perm( tcos_v, tcos_v, vec_lvsl( 0, &tcos ) );
+	      tcos_v = vec_splat( tcos_v, 0 );
+	      
+	      vector unsigned char permute_v = vec_lvsl( 0, (float *) Xalpha_k );
+	      
+	      /* Loop over terms in dirichlet Kernel */
+	      for(k=0; k+7 < klim ; k+=8)
+		{
+		  vector float realP_v0, imagP_v0;
+		  vector float realP_v1, imagP_v1;
+		  vector float xinv_v0, xinv_v1;
+		  vector float Xa_re_v0, Xa_im_v0;
+		  vector float Xa_re_v1, Xa_im_v1;
+		  vector float temp1, temp2, temp3, temp4, temp5, temp6;
+		  vector float tempFreq1_v0 = vec_ld( 0, &tempf[k] );
+		  vector float tempFreq1_v1 = vec_ld( 16, &tempf[k] );
+		  
+		  //Get the reciprocal estimate
+		  vector float estimate0 = vec_re( tempFreq1_v0 );
+		  vector float estimate1 = vec_re( tempFreq1_v1 );
+		  //One round of Newton-Raphson refinement
+		  estimate0 = vec_madd( vec_nmsub( estimate0, tempFreq1_v0, (vector float) (1.0) ), estimate0, estimate0 );
+		  estimate1 = vec_madd( vec_nmsub( estimate1, tempFreq1_v1, (vector float) (1.0) ), estimate1, estimate1 );
+		  xinv_v0 = vec_madd( (vector float)(OOTWOPI), estimate0, (vector float)(0) );
+		  xinv_v1 = vec_madd( (vector float)(OOTWOPI), estimate1, (vector float)(0) );
+		  //xinv_v0 = vec_div( (vector float)(OOTWOPI), tempFreq1_v0 );
+		  //xinv_v1 = vec_div( (vector float)(OOTWOPI), tempFreq1_v1 );
+		  
+		  temp1 = vec_ld( 0, (float *) Xalpha_k );
+		  temp2 = vec_ld( 16, (float *) Xalpha_k );
+		  temp3 = vec_ld( 32, (float *) Xalpha_k );
+		  temp4 = vec_ld( 48, (float *) Xalpha_k );
+		  temp5 = vec_ld( 63, (float *) Xalpha_k );
+		  
+		  temp1 = vec_perm( temp1, temp2, permute_v );
+		  temp2 = vec_perm( temp2, temp3, permute_v );
+		  temp3 = vec_perm( temp3, temp4, permute_v );
+		  temp4 = vec_perm( temp4, temp5, permute_v );
+		  
+		  temp5 = vec_mergeh( temp1, temp2 );
+		  temp6 = vec_mergel( temp1, temp2 );
+		  Xa_re_v0 = vec_mergeh( temp5, temp6 );
+		  Xa_im_v0 = vec_mergel( temp5, temp6 );
+		  
+		  temp5 = vec_mergeh( temp3, temp4 );
+		  temp6 = vec_mergel( temp3, temp4 );
+		  Xa_re_v1 = vec_mergeh( temp5, temp6 );
+		  Xa_im_v1 = vec_mergel( temp5, temp6 );
+		  
+		  Xalpha_k += 8;
+               
+		  realP_v0 = vec_madd( tsin_v, xinv_v0, (vector float)(0.0f) );
+		  imagP_v0 = vec_madd( tcos_v, xinv_v0, (vector float)(0.0f) );
+		  realP_v1 = vec_madd( tsin_v, xinv_v1, (vector float)(0.0f) );
+		  imagP_v1 = vec_madd( tcos_v, xinv_v1, (vector float)(0.0f) );
+		  
+		  /* realXP_v = real_XP_v + Xa_re_v * realP_v - Xa_im_v * imagP_v; */
+		  realXP_v0 = vec_madd( Xa_re_v0, realP_v0, realXP_v0 );
+		  realXP_v0 = vec_nmsub( Xa_im_v0, imagP_v0, realXP_v0 );
+		  imagXP_v0 = vec_madd( Xa_re_v0, imagP_v0, imagXP_v0 );
+		  imagXP_v0 = vec_madd( Xa_im_v0, realP_v0, imagXP_v0 );				
+		  
+		  realXP_v1 = vec_madd( Xa_re_v1, realP_v1, realXP_v1 );
+		  realXP_v1 = vec_nmsub( Xa_im_v1, imagP_v1, realXP_v1 );
+		  imagXP_v1 = vec_madd( Xa_re_v1, imagP_v1, imagXP_v1 );
+		  imagXP_v1 = vec_madd( Xa_im_v1, realP_v1, imagXP_v1 );				
+		} /* for k < klim */
+	      {
+		float realXP_float, imagXP_float;
+		vector float re_sum = vec_add( realXP_v0, realXP_v1 );
+		vector float im_sum = vec_add( imagXP_v0, imagXP_v1 );
+		re_sum = vec_add( re_sum, vec_sld( re_sum, re_sum, 8 ) );
+		im_sum = vec_add( im_sum, vec_sld( im_sum, im_sum, 8 ) );
+		re_sum = vec_add( re_sum, vec_sld( re_sum, re_sum, 4 ) );
+		im_sum = vec_add( im_sum, vec_sld( im_sum, im_sum, 4 ) );
+		vec_ste( re_sum, 0, &realXP_float);
+		vec_ste( im_sum, 0, &imagXP_float);
+		realXP = realXP_float;
+		imagXP = imagXP_float;
+	      }
+	      tempFreq1 = tempFreq1 - k;
 
-            for(k=0; k < klim ; k++)
-              {
-                REAL4 xinv = (REAL4)OOTWOPI / (REAL4)tempFreq1;
-                COMPLEX8 Xa = *Xalpha_k;
-                Xalpha_k ++;
-                tempFreq1 --;
-                
-                realP = tsin * xinv;
-                imagP = tcos * xinv;
-                /* these lines compute P*xtilde */
-                realXP += Xa.re * realP - Xa.im * imagP;
-                imagXP += Xa.re * imagP + Xa.im * realP;
-
-              } /* for k < klim */
-
+	      for(; k < klim ; k++)
+		{
+		  REAL4 xinv = (REAL4)OOTWOPI / (REAL4)tempFreq1;
+		  REAL4 Xa_re = Xalpha_k->re;
+		  REAL4 Xa_im = Xalpha_k->im;
+		  Xalpha_k ++;
+		  tempFreq1 --;
+		  
+		  realP = tsin * xinv;
+		  imagP = tcos * xinv;
+		  /* compute P*xtilde */
+		  realXP += Xa_re * realP - Xa_im * imagP;
+		  imagXP += Xa_re * imagP + Xa_im * realP;
+		  
+		} /* for k < klim */
+	    }
+	    
           } /* if x cannot be close to 0 */
+        
 
         if(sftIndex-1 > maxSFTindex) {
           fprintf(stderr,"ERROR! sftIndex = %d > %d in TestLALDemod\nalpha=%d,"
@@ -284,8 +379,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
                  sftIndex-1, maxSFTindex, alpha, k1, xTemp, params->Dterms, params->ifmin);
 	  ABORT(status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
 	}
-
-
+	
         /* implementation of amplitude demodulation */
         {
           REAL8 realQXP = realXP*realQ-imagXP*imagQ;
@@ -296,27 +390,26 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
           Fb.im += b*imagQXP;
         }
       }      
-
+    
     FaSq = Fa.re*Fa.re+Fa.im*Fa.im;
     FbSq = Fb.re*Fb.re+Fb.im*Fb.im;
     FaFb = Fa.re*Fb.re+Fa.im*Fb.im;
-                        
+    
     Fs->F[i] = (4.0/(M*D))*(B*FaSq + A*FbSq - 2.0*C*FaFb);
     if (params->returnFaFb)
       {
         Fs->Fa[i] = Fa;
         Fs->Fb[i] = Fb;
       }
-
-
+    
+    
   }
   /* Clean up */
   LALFree(tempInt1);
   LALFree(xSum);
   LALFree(ySum);
+  /* APPLE - free the temporary buffer that was alloc'd in the vector loop */
+  free(tempf);
   
   RETURN( status );
-
 }
-
-#endif /* USE_R4LALDEMOD, USE_ALTIVEC */
