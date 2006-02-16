@@ -92,7 +92,7 @@ typedef COMPLEX8FrequencySeriesVector 	SFTVector;
 /** A collection of SFT vectors -- one for each IFO in a multi-IFO search */
 typedef struct tagMultiSFTVector {
   UINT4      length;  /**< number of ifos */
-  SFTVector  *data; /**< sftvector for each ifo */
+  SFTVector  **data; /**< sftvector for each ifo */
 } MultiSFTVector;
 
 
@@ -116,11 +116,10 @@ typedef struct {
  *----------------------------------------------------------------------*/
 void LALCreateSFTtype (LALStatus *status, SFTtype **sft, UINT4 SFTlen);	
 void LALCreateSFTVector (LALStatus *status, SFTVector **sftvect, UINT4 numSFTs, UINT4 SFTlen);
-void LALCreateMultiSFTVector(LALStatus *status, MultiSFTVector  **out, UINT4Vector *numSFTs, UINT4 numBins);
 
 void LALDestroySFTtype (LALStatus *status, SFTtype **sft);
 void LALDestroySFTVector (LALStatus *status, SFTVector **sftvect);
-void LALDestroyMultiSFTVector( LALStatus *status, MultiSFTVector **in);
+void LALDestroyMultiSFTVector (LALStatus *status, MultiSFTVector **multvect);
 
 void LALCopySFT (LALStatus *status, SFTtype *dest, const SFTtype *src);
 

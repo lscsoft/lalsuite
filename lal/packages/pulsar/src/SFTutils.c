@@ -156,89 +156,6 @@ LALCreateSFTVector (LALStatus *status,
 
 
 
-/** Creates a collection of sft vectors, one for each ifo in a multi-ifo search */
-void LALCreateMultiSFTVector(LALStatus       *status, 
-			     MultiSFTVector  **out,      /**< [out] allocated Multi-SFT-vector */
-			     UINT4Vector     *numSFTs,    /**< [in] number of IFOs and number of SFTs for each IFO -- can be different for different IFOs*/
-			     UINT4           numBins)	 /**< [in] number of frequency-bins per SFT -- must be same for all SFTs */
-{
-  UINT4  iSFT, iSFTVect, numIFOs;
-  MultiSFTVector *multVect = NULL;
-  SFTVector      *singleSftVect;
-
-  INITSTATUS( status, "LALCreateMultiSFTVector", SFTUTILSC);
-  ATTATCHSTATUSPTR( status );
-  
-  ASSERT (out != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
-  ASSERT (*out == NULL, status, SFTUTILS_ENONULL,  SFTUTILS_MSGENONULL);
-  ASSERT (numSFTs != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
-  ASSERT (numSFTs->length > 0, status, SFTUTILS_EINPUT,  SFTUTILS_MSGEINPUT);
-  ASSERT (numSFTs->data != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
-
-  /* number of ifos */ 
-  multVect->length = numIFOs = numSFTs->length;
-
-
-  /* allocate memory for vector of sft vectors */
-  multVect = (MultiSFTVector *)LALCalloc(1, sizeof(MultiSFTVector) );
-  if ( !multVect ) {
-    ABORT (status, SFTUTILS_EMEM, SFTUTILS_MSGEMEM);
-  }
-
-  multVect->data = (SFTVector *)LALCalloc( numIFOs, sizeof(SFTVector) );
-  if ( multVect->data == NULL ) {
-    ABORT (status, SFTUTILS_EMEM, SFTUTILS_MSGEMEM);
-  }
-
-  /* loop over ifos -- iSFTVect is index over ifos */
-  for ( singleSftVect = multVect->data, iSFTVect = 0; iSFTVect < numIFOs; singleSftVect++, iSFTVect++) {
-
-    UINT4 length; /* number of SFT for this ifo */
-
-    singleSftVect->length = length = numSFTs->data[iSFTVect];
-    
-    singleSftVect->data = (SFTtype *) LALCalloc ( length, sizeof(SFTtype) );
-    if ( singleSftVect->data == NULL ) 
-      ABORT (status, SFTUTILS_EMEM, SFTUTILS_MSGEMEM);
-
-    for ( iSFT = 0; iSFT < length; iSFT++) {
-      
-      COMPLEX8Vector *sftdata = NULL;
-      UINT4 i, k;
-
-      /* do we want to allow for numBins=0 ? -- right now it doesn't */
-      LALCCreateVector (status->statusPtr, &sftdata , numBins);
-      BEGINFAIL (status) {
-	/* this is a mess because of the nested loops */
-	for ( i = 0; i < iSFT; i++)
-	  LALCDestroyVector (status->statusPtr, (COMPLEX8Vector**)&(singleSftVect->data[i].data) );
-	LALFree (singleSftVect->data);
-	/* we still need to free the sftvects allocated earlier */
-	/* triple check this! */
-	for (k = 0; k < iSFTVect-1; k++) 
-	  {
-	    for ( i = 0; i < numSFTs->data[k]; i++) 
-	      {
-		LALCDestroyVector (status->statusPtr, (COMPLEX8Vector**)&(multVect->data[k].data[i].data) );
-	      }
-	    LALFree( multVect->data[k].data );
-	  }
-	LALFree(multVect->data);
-	LALFree(multVect);
-      } ENDFAIL (status);
-
-      singleSftVect->data[iSFT].data = sftdata;
-    } /* end for loop over iSFT < numSFTs */
-
-  } /* end for loop over iSFTVect < numIFOs */
-  
-  *out = multVect;
-
-  DETATCHSTATUSPTR( status );
-  RETURN (status);
-
-} /* LALCreateMultiSFTVector() */
-
 
 
 /** Destroy an SFT-struct.
@@ -314,44 +231,32 @@ LALDestroySFTVector (LALStatus *status,
 } /* LALDestroySFTVector() */
 
 
-/** Functioon for destroying a collection of sft vectors */
-void LALDestroyMultiSFTVector( LALStatus *status,
-			       MultiSFTVector **in)
+/** Destroy a multi SFT-vector
+ */
+void
+LALDestroyMultiSFTVector (LALStatus *status, 
+		          MultiSFTVector **multvect)	/**< the SFT-vector to free */
 {
-  UINT4 i, j;
-  SFTtype *sft;
-  SFTVector *vec;
+  UINT4 i;
 
   INITSTATUS( status, "LALDestroyMultiSFTVector", SFTUTILSC);
   ATTATCHSTATUSPTR( status );
 
-  ASSERT ( in != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
-  ASSERT ( *in != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
+  ASSERT (multvect != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
+  ASSERT (*multvect != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
 
-  /* needs to be double checked */
-  for ( i = 0; i < (*in)->length; i++) /* loop over sft vectors */
-    {
-      vec = (*in)->data + i;
-      for( j = 0; j < vec->length; j++) /* loop over sfts in a sft-vector */
-	{
-	  sft = vec->data + j;
-	  LALFree( sft->data->data );
-	  LALFree( sft->data );
-	}
-      LALFree ( vec->data );
-    }
+  for ( i = 0; i < (*multvect)->length; i++)
+      LALDestroySFTVector( status->statusPtr, (*multvect)->data + i);
   
-  LALFree ( (*in)->data );
-  LALFree ( *in );
-  *in = NULL;
+  LALFree( (*multvect)->data );
+  LALFree( *multvect );
+  
+  *multvect = NULL;
 
   DETATCHSTATUSPTR( status );
   RETURN (status);
 
-} /* LALDestroyMultiSFTVector() */
-
-
-
+} /* LALDestroySFTVector() */
 
 
 /** Copy an entire SFT-type into another. 

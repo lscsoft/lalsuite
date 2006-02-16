@@ -571,32 +571,108 @@ LALLoadSFTs ( LALStatus *status,
 
 /** Function to load a catalog of SFTs from possibly different detectors */
 void LALLoadMultiSFTs ( LALStatus *status,
-			MultiSFTVector **multisfts,  /**< [out] vector of read-in SFTs -- one sft vector for each ifo found in catalog*/
-			const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load */
-			REAL8 fMin,		     /**< minumum requested frequency (-1 = read from lowest) */
-			REAL8 fMax		     /**< maximum requested frequency (-1 = read up to highest) */
+			MultiSFTVector **multisfts,       /**< [out] vector of read-in SFTs -- one sft vector for each ifo found in catalog*/
+			const SFTCatalog *inputCatalog,   /**< The 'catalogue' of SFTs to load */
+			REAL8 fMin,		          /**< minumum requested frequency (-1 = read from lowest) */
+			REAL8 fMax		          /**< maximum requested frequency (-1 = read up to highest) */
 			)
      
 {
-  INT4 k, length;
+  UINT4 k, j, length;
+  UINT4 numifo=0; /* number of ifos */
+  CHAR  *name=NULL; 
+  CHAR  **ifolist=NULL; /* list of ifo names */
+  UINT4  *numsfts=NULL; /* number of sfts for each ifo */
+  UINT4 **sftLocationInCatalog=NULL; /* location of sfts in catalog for each ifo */
+  INT4   match;
+  SFTCatalog **catalog=NULL;
+  MultiSFTVector *multSFTVec=NULL;
 
   INITSTATUS (status, "LALLoadMultiSFTs", SFTFILEIOC);
   ATTATCHSTATUSPTR (status); 
 
   ASSERT ( multisfts, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
   ASSERT ( *multisfts == NULL, status, SFTFILEIO_ENONULL, SFTFILEIO_MSGENONULL );  
-  ASSERT ( catalog, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
+  ASSERT ( inputCatalog, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
+  ASSERT ( inputCatalog->length, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL );
 
-  /* look at ifo names in catalog and find number of different ifos and number of sfts for each ifo*/
-  
+  length = inputCatalog->length; 
+  name = (CHAR *)LALCalloc(3, sizeof(CHAR));
 
+  /* the number of ifos can be at most equal to length */
+  /* each ifo name is 2 characters + \0 */
+  ifolist = (CHAR **)LALCalloc( length, sizeof(CHAR *)); 
+  sftLocationInCatalog = (UINT4 **)LALCalloc( length, sizeof(UINT4 *));
+  numsfts = (UINT4 *)LALCalloc( length, sizeof(UINT4));
 
-  /* create multi sft  vector */
+  for ( k = 0; k < length; k++) {
+    ifolist[k] = (CHAR *)LALCalloc( 3, sizeof(CHAR));
+    sftLocationInCatalog[k] = (UINT4 *)LALCalloc( length, sizeof(UINT4));
+  }
 
+  /* loop over sfts in catalog and look at ifo names and
+     find number of different ifos and number of sfts for each ifo
+     Also find location of sft in catalog  */
+  for ( k = 0; k < length; k++)
+    { 
+      strncpy( name, inputCatalog->data[k].header.name, 3 );
 
+      /* go through list of ifos till a match is found or list is exhausted */      
+      for ( j = 0; ( j < numifo ) && strncmp( name, ifolist[j], 3); j++ ) 
+	;
 
-  /* fill in elements of this multisft vector */
+      if ( j < numifo ) 
+	{
+	  /* match found with jth existing ifo */
+	  sftLocationInCatalog[j][ numsfts[j] ] = k;
+	  numsfts[j]++;
+	}      
+      else
+	{
+	  /* add ifo to list of ifos */
+	  strncpy( ifolist[numifo], name, 3);
+	  sftLocationInCatalog[j][0] = k;
+	  numsfts[numifo] = 1;
+	  numifo++;
+	}
+    }
 
+  /* now we can create the catalogs */
+  catalog = (SFTCatalog **)LALCAlloc( numifo, sizeof(SFTCatalog *));
+  for ( j = 0; j < numifo; j++)
+    {
+      catalog[j] = (SFTCatalog *)LALCalloc(1, sizeof(SFTCatalog));
+      catalog[j]->length = numsfts[j];
+      catalog[j]->data = (SFTDescriptor *)LALCalloc( numsfts[j], sizeof(SFTDescriptor));
+      for ( k = 0; k < numsfts[j]; k++)
+	{
+	  UINT4 location = sftLocationInCatalog[j][k]; 
+	  catalog[j]->data[k] = inputCatalog->data[location];
+	}
+    }
+
+  /* create multi sft vector */
+  multSFTVec = (MultiSFTVector *)LALCalloc(1, sizeof(MultiSFTVector));
+  multSFTVec->data = (SFTVector **)LALCalloc(numifo, sizeof(SFTVector *));
+  for ( j = 0; j < numifo; j++)
+    TRY ( LALLoadSFTs ( status->statusPtr, multSFTVec->data + j, catalog[j], fMin, fMax ), status );    
+
+  /* free memory and exit */
+  for ( j = 0; j < numifo; j++) {
+    LALFree(catalog[j]->data);
+    LALFree(catalog[j]);
+  }
+  LALFree( catalog);
+
+  for ( k = 0; k < length; k++) {
+    LALFree(ifolist[k]);
+    LALFree(sftLocationInCatalog[k]);
+  }
+  LALFree(ifolist);
+  LALFree(sftLocationInCatalog);
+
+  LALFree(numsfts);
+  LALFree(name);
 
   DETATCHSTATUSPTR (status);
   RETURN(status);
@@ -2806,6 +2882,11 @@ compareSFTdesc(const void *ptr1, const void *ptr2)
  *	a[-a-z]c	a-c aac abc ...
  *
  * $Log$
+ * Revision 1.50  2006/02/16 12:33:01  badri
+ * -- changed type of sftmultivector to contain **SFTVect instead of *SFTVect
+ * -- because of the above change, the function LALCreateMultiSFTVector is redundant and it is removed, and function LALDestroyMultiSFTVector is simplified
+ * -- added function LALLoadMultiSFTVector in SFTFileIO
+ *
  * Revision 1.49  2006/02/15 16:33:27  badri
  * skeleton of function for loading sfts from a multi-ifo catalog of sfts
  *
