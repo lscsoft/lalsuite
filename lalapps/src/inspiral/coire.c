@@ -82,9 +82,10 @@ static void print_usage(char *program)
       "\n"\
       " [--discard-ifo]       ifo      discard all triggers from ifo\n"\
       " [--coinc-cut]         ifos     only keep triggers from IFOS\n"\
-      " [--extract-slides]    slide    only keep triggers from specified slide\n"\
+      " [--extract-slide]     slide    only keep triggers from specified slide\n"\
       "\n"\
       " [--num-slides]        slides   number of time slides performed (used in clustering\n"\
+      " [--sort-triggers]              time sort the coincident triggers\n"\
       " [--cluster-algorithm] alg      use trigger clustering algorithm alg\n"\
       "                                [ snrsq | s3_snr_chi_stat ]\n"\
       " [--cluster-time]      time     cluster triggers with time ms window\n"\
@@ -831,7 +832,7 @@ int main( int argc, char *argv[] )
    */
 
 
-  if ( sortTriggers )
+  if ( sortTriggers || clusterchoice )
   {
     if ( vrbflg ) fprintf( stdout, "sorting coinc inspiral trigger list..." );
     coincHead = XLALSortCoincInspiral( coincHead, 
@@ -890,7 +891,7 @@ int main( int argc, char *argv[] )
         *LALCompareSnglInspiralByTime );
     
     /* first find singles which are coincident with injections */
-    numSnglFound = XLALSnglSimInspiralTest ( &simEventHead, 
+    numSnglFound = XLALSnglSimInspiralTest( &simEventHead, 
         &inspiralEventList, &missedSimHead, &missedSnglHead, injectWindowNS );
 
     if ( vrbflg ) fprintf( stdout, "%d injections found in single ifo\n", 
@@ -1196,8 +1197,18 @@ int main( int argc, char *argv[] )
           (REAL4) numCoincFound / (REAL4) numSimInData );
     }
 
+    if ( extractSlide )
+    {
+      fprintf( fp, "kept only triggers from slide %d\n", extractSlide );
+    }
+
     if ( clusterchoice )
     {
+      if ( numSlides )
+      {
+        fprintf( fp, "clustering triggers from %d slides separately\n",
+            numSlides );
+      }
       fprintf( fp, "number of event clusters with %lld msec window: %d\n",
           cluster_dt/ 1000000LL, numClusteredEvents ); 
     }
