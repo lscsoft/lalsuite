@@ -51,12 +51,10 @@ Provides a set of utilities for manipulating \texttt{snglRingdownTable}s.
 \idx{LALTimeCutSingleRingdown()}
 \idx{LALalphaFCutSingleInspiral()}
 \idx{LALIfoCutSingleInspiral()}
-\idx{LALIfoCountSingleInspiral()}
-\idx{LALTimeSlideSingleInspiral()} 
-\idx{LALPlayTestSingleInspiral()}
+\idx{LALIfoCountSingleRingdown()}
+\idx{LALTimeSlideSingleRingdown()} 
+\idx{LALPlayTestSingleRingdown()}
 \idx{LALCreateTrigBank()}
-\idx{LALIncaCoincidenceTest()}
-\idx{LALTamaCoincidenceTest()}
 
 
 \subsubsection*{Description}
@@ -135,20 +133,6 @@ returns a template bank.  The function tests whether a given template produced
 multiple triggers.  If it did, only one copy of the template is retained.
 Triggers are tested for coincidence in \texttt{m1\_and\_m2} or
 \texttt{psi0\_and\_psi3}. 
-
-\texttt{LALIncaCoincidenceTest()} performs a coincidence test between triggers
-from two interferometers.  It tests pairs of events for both time and mass
-coincidence and returns two equal length lists of coincident events.  Note
-that if an event in one detector is coincident with several events in the
-other detector, the output lists will contain several copies of this event.
-
-\texttt{LALTamaCoincidenceTest()} also performs a coincidence test between
-triggers from two interferometers, but with a slightly different coincidence
-test.  First, it locates all triggers in the second instrument which are
-coincident with triggers in the first instrument.  Then, it clusters these
-triggers using the appropriate \texttt{clusterchioce}.  Finally, it tests for
-mass coincidence between the first trigger and the clustered trigger from the
-second instrument.
 
 
 \subsubsection*{Algorithm}
@@ -436,6 +420,79 @@ LALIfoCutSingleRingdown(
   RETURN (status);
 }  
 
+/* <lalVerbatim file="SnglRingdownUtilsCP"> */
+void
+LALTimeCutSingleRingdown(
+    LALStatus                  *status,
+    SnglRingdownTable         **eventHead,
+    LIGOTimeGPS                *startTime,
+    LIGOTimeGPS                *endTime
+    )
+/* </lalVerbatim> */
+{
+  INITSTATUS( status, "LALTimeCutSingleRingdown", SNGLRINGDOWNUTILSC );
+  ATTATCHSTATUSPTR( status );
+  
+  *eventHead = XLALTimeCutSingleRingdown( *eventHead, startTime, endTime );
+  
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+  
+}  
+
+/* <lalVerbatim file="SnglRingdownUtilsCP"> */
+
+SnglRingdownTable *
+XLALTimeCutSingleRingdown(
+    SnglRingdownTable          *eventHead,
+    LIGOTimeGPS                *startTime,
+    LIGOTimeGPS                *endTime
+    )
+/* </lalVerbatim> */
+{
+  SnglRingdownTable    *ringdownEventList = NULL;
+  SnglRingdownTable    *thisEvent = NULL;
+  SnglRingdownTable    *prevEvent = NULL;
+  INT8                  startTimeNS = XLALGPStoINT8( startTime );
+  INT8                  endTimeNS = XLALGPStoINT8( endTime );
+  
+  
+  /* Remove all the triggers before and after the requested */
+  /* gps start and end times */
+  
+  thisEvent = eventHead;
+  
+  while ( thisEvent )
+  {
+    SnglRingdownTable *tmpEvent = thisEvent;
+    thisEvent = thisEvent->next;
+     
+     if ( start_time(tmpEvent) >= startTimeNS &&
+         start_time(tmpEvent) < endTimeNS )
+       {
+         /* keep this template */
+         if ( ! ringdownEventList  )
+         {
+           ringdownEventList = tmpEvent;
+         }
+         else
+         {
+           prevEvent->next = tmpEvent;
+         }
+         tmpEvent->next = NULL;
+         prevEvent = tmpEvent;
+         }
+     else
+       {
+         /* discard this template */
+         XLALFreeSnglRingdown ( &tmpEvent );
+         }
+     }
+  eventHead = ringdownEventList; 
+   
+  return (eventHead);
+}  
+
 
 /* <lalVerbatim file="SnglRingdownUtilsCP"> */
 void
@@ -473,5 +530,232 @@ LALIfoCountSingleRingdown(
   RETURN (status);
 }  
 
+/* <lalVerbatim file="SnglRingdownUtilsCP"> */
+void
+LALTimeSlideSingleRingdown(
+    LALStatus                  *status,
+    SnglRingdownTable          *triggerList,
+    LIGOTimeGPS                *startTime,
+    LIGOTimeGPS                *endTime,
+    LIGOTimeGPS                 slideTimes[LAL_NUM_IFO]
+    )
+/* </lalVerbatim> */
+{
+  SnglRingdownTable    *thisEvent   = NULL;
+  INT8                  startTimeNS = 0;
+  INT8                  endTimeNS   = 0;
+  INT8                  slideNS     = 0;
+  INT8                  trigTimeNS  = 0;
+  INITSTATUS( status, "LALTimeSlideSingleRingdown", SNGLRINGDOWNUTILSC );
+  ATTATCHSTATUSPTR( status );
+  
+  /* time slide triggers by a time = slideTime, except those from the
+   * instrument skipIfo which are left untouched. If you want to slide
+   * all triggers, simply set skipIfo = LAL_UNKNOWN_IFO */
+  
+  
+  /* check that input non-null */
+  ASSERT( triggerList, status,
+      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+  
+  if ( startTime )
+  {
+    LALGPStoINT8( status->statusPtr, &startTimeNS, startTime );
+  }
+  
+  if ( endTime )
+  {
+    LALGPStoINT8( status->statusPtr, &endTimeNS, endTime );
+  }
+  
+  for( thisEvent = triggerList; thisEvent; thisEvent = thisEvent->next )
+  {
+    /* calculate the slide time in nanoseconds */
+    LALGPStoINT8( status->statusPtr, &slideNS,
+        &(slideTimes[XLALIFONumber(thisEvent->ifo)]) );
+    /* and trig time in nanoseconds */
+    LALGPStoINT8( status->statusPtr, &trigTimeNS, &(thisEvent->start_time));
+    trigTimeNS += slideNS;
+    
+    if ( startTimeNS && trigTimeNS < startTimeNS )
+    {
+      /* if before startTime, then wrap trigger time */
+      trigTimeNS += endTimeNS - startTimeNS;
+    }
+    else if ( endTimeNS && trigTimeNS > endTimeNS )
+    {
+      /* if after endTime, then wrap trigger time */
+      trigTimeNS -= endTimeNS - startTimeNS;
+    }
+    
+    /* convert back to LIGOTimeGPS */
+    LALINT8toGPS( status->statusPtr, &(thisEvent->start_time), &trigTimeNS );
+  }
+  
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}
 
 
+
+/* <lalVerbatim file="SnglRingdownUtilsCP"> */
+SnglRingdownTable *
+XLALPlayTestSingleRingdown(
+    SnglRingdownTable          *eventHead,
+    LALPlaygroundDataMask      *dataType
+    )
+/* </lalVerbatim> */
+{
+  SnglRingdownTable    *ringdownEventList = NULL;
+  SnglRingdownTable    *thisEvent = NULL;
+  SnglRingdownTable    *prevEvent = NULL;
+   
+  INT8 triggerTime = 0;
+  INT4 isPlay = 0;
+  INT4 numTriggers;
+   
+  /* Remove all the triggers which are not of the desired type */
+   
+  numTriggers = 0;
+  thisEvent = eventHead;
+   
+  if ( (*dataType == playground_only) || (*dataType == exclude_play) )
+  {
+    while ( thisEvent )
+      {
+        SnglRingdownTable *tmpEvent = thisEvent;
+        thisEvent = thisEvent->next;
+         
+        triggerTime = XLALGPStoINT8( &(tmpEvent->start_time) );
+        isPlay = XLALINT8NanoSecIsPlayground( &triggerTime );
+         
+        if ( ( (*dataType == playground_only)  && isPlay ) || 
+            ( (*dataType == exclude_play) && ! isPlay) )
+        {
+          /* keep this trigger */
+          if ( ! ringdownEventList  )
+          {
+            ringdownEventList = tmpEvent;
+          }
+          else
+          {
+            prevEvent->next = tmpEvent;
+          }
+          tmpEvent->next = NULL;
+          prevEvent = tmpEvent;
+          ++numTriggers;
+          }
+        else
+          {
+            /* discard this template */
+            XLALFreeSnglRingdown ( &tmpEvent );
+            }
+        }
+    eventHead = ringdownEventList; 
+    if ( *dataType == playground_only )
+    {
+      XLALPrintInfo( "Kept %d playground triggers \n", numTriggers );
+    }
+    else if ( *dataType == exclude_play )
+    {
+      XLALPrintInfo( "Kept %d non-playground triggers \n", numTriggers );
+    }
+  }
+  else if ( *dataType == all_data )
+  {
+    XLALPrintInfo( "Keeping all triggers since all_data specified\n" );
+  }
+  else
+  { 
+    XLALPrintInfo( "Unknown data type, returning no triggers\n" );
+    eventHead = NULL;
+   }
+  
+  return(eventHead);
+}  
+
+/* <lalVerbatim file="SnglRingdownUtilsCP"> */
+void
+LALPlayTestSingleRingdown(
+    LALStatus                  *status,
+    SnglRingdownTable         **eventHead,
+    LALPlaygroundDataMask      *dataType
+    )
+/* </lalVerbatim> */
+{
+  INITSTATUS( status, "LALPlayTestSingleRingdown", SNGLRINGDOWNUTILSC );
+  ATTATCHSTATUSPTR( status );
+   
+  *eventHead = XLALPlayTestSingleRingdown(*eventHead, dataType);
+      
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}  
+
+/* <lalVerbatim file="SnglRingdownUtilsCP"> */
+int
+XLALMaxSnglRingdownOverIntervals(
+    SnglRingdownTable         **eventHead,
+    INT4                       deltaT
+    )
+/* </lalVerbatim> */
+{
+  SnglRingdownTable    *ringdownEventList = NULL;
+  SnglRingdownTable    *thisEvent = NULL;
+  SnglRingdownTable    *nextEvent = NULL;
+  SnglRingdownTable    *prevEvent = NULL;
+  
+  /* if there are no events, then no-op */
+  if ( ! *eventHead )
+    return (0);
+  
+  ringdownEventList = *eventHead;
+  thisEvent = *eventHead;
+  nextEvent = thisEvent->next;
+  
+  while ( nextEvent )
+  {
+    if ( start_time_sec(nextEvent) == start_time_sec(thisEvent) &&
+        start_time_nsec(nextEvent)/deltaT == start_time_nsec(thisEvent)/deltaT )
+    {
+      if ( nextEvent->snr > thisEvent->snr )
+      {
+        /* replace thisEvent with nextEvent */
+        XLALFreeSnglRingdown ( &thisEvent );
+        
+        /* deal with start of the list */
+        if (prevEvent)
+          prevEvent->next = nextEvent;
+        else
+          ringdownEventList = nextEvent;
+        
+        /* standard stuff */
+        thisEvent = nextEvent;
+        nextEvent = thisEvent->next;
+      }
+      else
+      {
+        /* get rid of nextEvent */
+        thisEvent->next = nextEvent->next;
+        XLALFreeSnglRingdown ( &nextEvent );
+        nextEvent = thisEvent->next;
+      }
+    }
+    else
+    {
+      /* step to next set of events */
+      prevEvent=thisEvent;
+      thisEvent=nextEvent;
+      nextEvent = thisEvent->next;
+      }
+    }
+  
+  *eventHead = ringdownEventList; 
+  
+  return (0);
+}  
+      
+      
+      
+      
+      
