@@ -501,7 +501,7 @@ LALLoadSFTs ( LALStatus *status,
   UINT4 i;
   UINT4 numSFTs;
   SFTVector *ret = NULL;
-  CHAR prev_det[3] = {0,0,0};
+  /* CHAR prev_det[3] = {0,0,0}; */  /* equal-detector constraint dropped */
 
   INITSTATUS (status, "LALLoadSFTs", SFTFILEIOC);
   ATTATCHSTATUSPTR (status); 
@@ -523,6 +523,9 @@ LALLoadSFTs ( LALStatus *status,
       FILE *fp;
       SFTtype *this_sft = NULL;
 
+
+      /* equal-detector constraint dropped */
+#if 0	      
       /* check that detector is identical for all SFTs !*/
       if ( prev_det[0] && strncmp ( catalog->data[i].header.name, prev_det, 2 ) )
 	{
@@ -533,7 +536,7 @@ LALLoadSFTs ( LALStatus *status,
 	} /* if different detectors */
 
       strncpy ( prev_det, catalog->data[i].header.name, 2 );
-
+#endif 
       if ( (fp = fopen_SFTLocator ( catalog->data[i].locator )) == NULL )
 	{
 	  LALDestroySFTVector (status->statusPtr, &ret );
@@ -2947,6 +2950,11 @@ compareSFTdesc(const void *ptr1, const void *ptr2)
  *	a[-a-z]c	a-c aac abc ...
  *
  * $Log$
+ * Revision 1.59  2006/02/17 14:02:31  reinhard
+ * removed equal-detector constraint from LALLoadSFTs() [useful for Hough].
+ * 	==> use LALLoadMultiSFTs() if you want to make sure you have
+ * 	'detector-pure' SFTVectors.
+ *
  * Revision 1.58  2006/02/16 19:56:35  reinhard
  * forgot essential step in detector-equality check
  *

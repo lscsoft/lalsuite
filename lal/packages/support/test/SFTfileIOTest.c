@@ -206,15 +206,17 @@ int main(int argc, char *argv[])
   SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-test*", NULL ), &status,  SFTFILEIO_EDIFFTSFT );
   /* skip sft nr 4 with has Tsft=50 instead of Tsft=60 */
   SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-test[123567]*", NULL ), &status );
-  SHOULD_FAIL_WITH_CODE ( LALLoadSFTs ( &status, &sft_vect, catalog, -1, -1 ), &status, SFTFILEIO_EDIFFDET );
-  LALPrintError ( "Now calling LALLoadMultiSFTs() ... ");
+  /* load once as a single SFT-vector (mix of detectors) */
+  SHOULD_WORK ( LALLoadSFTs ( &status, &sft_vect, catalog, -1, -1 ), &status );
+  /* load once as a multi-SFT vector */
   SHOULD_WORK ( LALLoadMultiSFTs ( &status, &multsft_vect, catalog, -1, -1 ), &status );
-  LALPrintError ( " survived.\n");
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
 
   /* 6 SFTs from 2 IFOs should have been read */
-  if ( (multsft_vect->length != 2) || (multsft_vect->data[0]->length != 5) || ( multsft_vect->data[1]->length != 1 ) )
-  {
+  if ( (sft_vect->length != 6) 	/* either as a single SFTVector */
+       || (multsft_vect->length != 2) 	/* or separated by detector */
+       || (multsft_vect->data[0]->length != 5) || ( multsft_vect->data[1]->length != 1 ) )
+    {
       LALPrintError ( "\nFailed to read in multi-SFT from 2 IFOs 'SFT-test*'!\n\n");
       return SFTFILEIOTESTC_ESUB;
     }
@@ -226,6 +228,7 @@ int main(int argc, char *argv[])
   /* write v2-SFt as a v1-SFT to disk (correct normalization) */
   SHOULD_WORK ( LALWrite_v2SFT_to_v1file( &status, &(multsft_vect->data[0]->data[0]), "outputsftv2_v1.sft"), &status );
 
+  SUB ( LALDestroySFTVector ( &status, &sft_vect ), &status );
   SUB ( LALDestroyMultiSFTVector (&status, &multsft_vect ), &status );
   /* ----- read the previous two SFTs back */
   SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, "outputsftv2_*.sft", NULL ), &status, SFTFILEIO_EDETECTOR );
