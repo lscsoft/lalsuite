@@ -1,8 +1,8 @@
-
 /*----------------------------------------------------------------------- 
  * 
  * File Name: LALTrackSearch.h
  * 
+ * New Maintainer: Torres, C.  (Univ TX at Browsville)
  * Origin: Balasubramanian, R. (Cardiff University, UK)
  * 
  * Revision: $Id$ 
@@ -87,9 +87,12 @@ NRCSID (TRACKSEARCHH, "$Id$");
 typedef struct tagCurve
 {
   INT4 n; /* number of points in the curve */
-  CHAR junction; /* =1 if the curve has a junction and =0 if no junction */ 
+  CHAR junction; /* =1 if the curve has a junction */ 
+  CHAR trash; /* Linked list postprocessing K-keep D-drop */
   INT4 *row; /* the row coordinates of the n points */
   INT4 *col; /* the column coordinates of the n points */
+  LIGOTimeGPS *gpsStamp;  /* real gps timestate variable*/
+  REAL4 *fBinHz; /* frequency value not bin label */
   REAL4 *depth; /* the "height" of the pixel in the TF map corresponding 
 		  to (col[i],row[i]) */
   REAL4 totalPower; /* resulting numerical intergration along ridge */
@@ -111,15 +114,33 @@ typedef struct tagTrackSearchStore  /* Structure for storage space for the algor
 } TrackSearchStore;
 
 
-typedef struct tagTrackSearchOut /* Output Structure for the Track Search algorithm */
+/*
+ * Output structure for the tracksearch algorithm
+ */
+typedef struct tagTrackSearchOut
 {
-  INT4 numberOfCurves;           /* the number of curves found*/
-  Curve *curves;                 /* a pointer to a array of numberOfCurves curves */
-  TrackSearchStore store;       /* a pointer to the temporary storage space */
+  INT4 numberOfCurves;    /* the number of curves found*/
+  Curve *curves;          /* a pointer to a array of numberOfCurves curves */
+  TrackSearchStore store; /* a pointer to the temporary storage space */
 } TrackSearchOut;
 
-   
-typedef struct tagTrackSearchParams /* Parameter structure for the Track search algorithm*/
+/*
+ * Structure to help determine the correlation of integer map indices
+ * and real gps times and frequencies
+ */
+typedef struct tagTrackSearchMapMarkingParams
+{
+  REAL4 deltaT;
+  LIGOTimeGPS mapStartGPS;
+  LIGOTimeGPS mapStopGPS;
+  INT4 mapTimeBins;
+  INT4 mapFreqBins;
+} TrackSearchMapMarkingParams;
+
+/*
+ * Structure with params specific to the LAL library function
+ */   
+typedef struct tagTrackSearchParams 
 {  
   INT4  height;   /* height of Map */
   INT4  width;    /* width of map */
@@ -135,11 +156,20 @@ typedef struct tagTrackSearchParams /* Parameter structure for the Track search 
 } TrackSearchParams;
 
 
-/* function Prototypes */
-
+/*
+ * Function Prototypes
+ */
 void 
-LALSignalTrackSearch(LALStatus *, TrackSearchOut *, const TimeFreqRep *, TrackSearchParams *);
+LALSignalTrackSearch(LALStatus *, 
+		     TrackSearchOut *, 
+		     const TimeFreqRep *, 
+		     TrackSearchParams *);
 
+void
+LALTrackSearchInsertMarkers(LALStatus *, 
+			    TrackSearchOut *,
+			    TrackSearchMapMarkingParams *);
+				
 #ifdef  __cplusplus
 }
 #endif  /* C++ protection. */

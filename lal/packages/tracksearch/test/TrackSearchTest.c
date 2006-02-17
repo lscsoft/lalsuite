@@ -1,6 +1,8 @@
 /*
-   Example program for the use of the the "TrackSearch() routine;
-   */
+ *  Example program for the use of the the "TrackSearch() routine;
+ *  New Maintainer: Torres, C (Univ TX at Browsville)
+ *  Original Author:  R. Balasubramanian
+ */
 
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
