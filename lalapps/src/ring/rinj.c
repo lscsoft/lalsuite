@@ -626,6 +626,8 @@ int main( int argc, char *argv[] )
     this_inj->longitude = LAL_TWOPI * u ;
     LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
     this_inj->latitude = asin( 2.0 * u - 1.0 ) ;
+    LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
+        this_inj->init_phase = LAL_TWOPI * u ;
     
     /* uniform distribution in log(distance) */
     LAL_CALL(  LALUniformDeviate(&status,&u,randParams),&status );
