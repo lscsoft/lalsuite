@@ -5,7 +5,7 @@ libtools_la_SOURCES = \
   CreateDetector.c DetResponse.c ComputeTransfer.c CoherentEstimation.c \
   ResampleTimeSeries.c SnglInspiralUtils.c SnglBurstUtils.c \
   SnglRingdownUtils.c \
-  BurstUtils.c CoincInspiralUtils.c SimInspiralUtils.c \
+  BurstUtils.c CoincInspiralUtils.c CoincRingdownUtils.c SimInspiralUtils.c \
   ComputeCalibrationFactors.c LIGOMetadataUtils.c \
   NDTemplateBank.c ComputeStrain.c \
   Sequence.c TimeSeries.c FrequencySeries.c \
