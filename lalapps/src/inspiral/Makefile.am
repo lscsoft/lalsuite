@@ -8,7 +8,6 @@ INCASRC 	= inca.c
 THINCASRC 	= thinca.c
 LTINCASRC 	= lt_inca.c
 SIRESRC 	= sire.c
-NEW_SIRESRC 	= new_sire.c
 COIRESRC 	= coire.c
 SIVASRC 	= siva.c
 INSPINJSRC 	= inspinj.c
@@ -25,7 +24,7 @@ RANDOMBANKSRC 	= randombank.c
 if LALFRAME
 if LALMETAIO
 bin_PROGRAMS = lalapps_inspiral lalapps_tmpltbank \
-               lalapps_inca lalapps_sire lalapps_new_sire lalapps_coire lalapps_siva \
+               lalapps_inca lalapps_sire lalapps_coire lalapps_siva \
                lalapps_inspinj lalapps_splitbank \
                lalapps_minj lalapps_bbhinj \
 	       lalapps_tama2ligolw lalapps_inspfrinj \
@@ -43,7 +42,6 @@ lalapps_inca_SOURCES 		= $(INCASRC)
 lalapps_thinca_SOURCES 		= $(THINCASRC)
 lalapps_lt_inca_SOURCES 	= $(LTINCASRC)
 lalapps_sire_SOURCES 		= $(SIRESRC)
-lalapps_new_sire_SOURCES 		= $(NEW_SIRESRC)
 lalapps_coire_SOURCES 		= $(COIRESRC)
 lalapps_siva_SOURCES 		= $(SIVASRC)
 lalapps_inspinj_SOURCES 	= $(INSPINJSRC)
@@ -100,7 +98,7 @@ lalapps_inspiral_online_pipe_inject: $(srcdir)/inspiral_online_pipe_inject.in py
 
 pkgdata_DATA = BNSMasses.dat inspsrcs.dat inspiral_pipe.ini s2_dag.ini s2_tama.ini inspiral_hipe.ini online.ini online_inject_bbh.ini
 EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
-             $(SIRESRC) $(NEW_SIRESRC) $(COIRESRC) $(SIVASRC) $(MINJSRC) \
+             $(SIRESRC) $(COIRESRC) $(SIVASRC) $(MINJSRC) \
              $(INCASRC) inspiral_pipe.in s2_dag.ini \
              $(COHERESRC) inspiral_pipe_s2.in inspiral_pipe.ini \
              $(INSPINJSRC) BNSMasses.dat inspsrcs.dat \
