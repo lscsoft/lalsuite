@@ -121,7 +121,7 @@ triggers which have snr values above a specific snrCut.
 
 \texttt{XLALRsqCutSingleInspiral()} performs the R-squared veto on a linked
 list of single inspiral tables.  Triggers whose snr is less than
-\texttt{rsqSnrMax} and whose rsqveto_duration is greater than
+\texttt{rsqSnrMax} and whose \texttt{rsqveto\_duration} is greater than
 \texttt{rsqVetoThresh} are removed.
 
 \texttt{XLALVetoSingleInspiral()} takes in a linked list of single inspiral
