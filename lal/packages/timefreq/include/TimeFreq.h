@@ -2,7 +2,8 @@
  *
  * File Name: TimeFreq.h
  *
- * Author: 
+ * New Maintainer: Torres, C (Univ TX at Browsville)
+ * Author: E.C. Mottin
  *
  * Revision: $Id$
  *

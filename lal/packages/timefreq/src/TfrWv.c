@@ -3,6 +3,7 @@
  * File Name: TfrWv.c
  * 
  * Author: Chassande-Mottin, E.
+ * Maintainer: Torres, C (Univ TX at Browsville)
  * 
  * Revision: $Id: 
  * 
@@ -87,10 +88,7 @@ void LALTfrWv (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPara
 	  ASSERT (tfr->timeInstant[column] < (INT4)sig->length, stat, TFR_EBADT, TFR_MSGEBADT);
 	}
     }
-  /* ??TRY(LALEstimateFwdRealFFTPlan(stat->statusPtr, &plan, tfr->fRow), stat);*/
-    /*??*/TRY(LALCreateForwardRealFFTPlan(stat->statusPtr, &plan,(UINT4)tfr->fRow,0),stat);
-  /* ??TRY(LALDestroyRealFFTPlan(stat->statusPtr, &plan), stat);*/
-  /* ??TRY(LALMeasureFwdRealFFTPlan(stat->statusPtr, &plan, tfr->fRow), stat);*/
+    TRY(LALCreateForwardRealFFTPlan(stat->statusPtr, &plan,(UINT4)tfr->fRow,0),stat);
 
   TRY(LALSCreateVector(stat->statusPtr, &lacf, tfr->fRow), stat);
   TRY(LALCCreateVector(stat->statusPtr, &vtmp, tfr->fRow/2+1), stat);
@@ -121,14 +119,14 @@ void LALTfrWv (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPara
 	tfr->map[column][row] = vtmp->data[row].re;
 
     }
-
+  /* Reflecting frequency halfing in WV distrob so multiply by 1/2 */
   for (row = 0; row < (tfr->fRow/2+1) ; row++)
-    tfr->freqBin[row] = (REAL4) row / tfr->fRow;
+    tfr->freqBin[row] = (REAL4) row / (2 *tfr->fRow);
   
   TRY(LALSDestroyVector(stat->statusPtr, &lacf), stat);
   TRY(LALCDestroyVector(stat->statusPtr, &vtmp), stat);
 
-  /* ??TRY(LALDestroyRealFFTPlan(stat->statusPtr, &plan), stat);*/
+  TRY(LALDestroyRealFFTPlan(stat->statusPtr, &plan), stat);
 
   DETATCHSTATUSPTR (stat);
 

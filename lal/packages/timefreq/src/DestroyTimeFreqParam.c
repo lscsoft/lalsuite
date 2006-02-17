@@ -2,6 +2,7 @@
  * 
  * File Name: DestroyTimeFreqParam.c
  * 
+ * Maintainer: Torres, C (Univ TX at Browsville)
  * Author: Chassande-Mottin, E.
  * 
  * Revision: $Id: 

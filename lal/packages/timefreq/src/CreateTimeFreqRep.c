@@ -2,6 +2,7 @@
  * 
  * File Name: CreateTimeFreqRep.c
  * 
+ * Maintainer: Torres, C (Univ TX at Browsville)
  * Author: Chassande-Mottin, E.
  * 
  * Revision: 
@@ -47,7 +48,11 @@ void LALCreateTimeFreqRep (LALStatus *status,
   /* Check sequence length: report error if 0 or negative */
    ASSERT (in->fRow > 0, status, CREATETFR_EFROW, CREATETFR_MSGEFROW);
 
-  /* Check sequence length: report error if not a power of 2 */
+  /* 
+   * Check sequence length: report error if not a power of 2 
+   * This check is ignore by CTorres, I believe it is present for
+   * calculation efficiency and may not be needed
+   */
    /*   ASSERT (in->fRow ??, status, CREATETFR_EFROW, CREATETFR_MSGEFROW); */
   
   /* Check vector length: report error if 0 or negative*/

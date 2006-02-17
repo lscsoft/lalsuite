@@ -3,6 +3,7 @@
  * File Name: TfrSp.c
  * 
  * Author: Chassande-Mottin, E.
+ * Maintainer: Torres C,  (Univ TX at Browsville)
  * 
  * Revision: $Id: 
  * 
@@ -54,7 +55,7 @@ void LALTfrSp (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPara
 
   INITSTATUS (stat, "LALTfrSp", TFRSPC);
   ATTATCHSTATUSPTR (stat);
-  
+
   /* Make sure the arguments are not NULL: */
   ASSERT (sig, stat, TFR_ENULL, TFR_MSGENULL);
   ASSERT (tfr, stat, TFR_ENULL, TFR_MSGENULL);
@@ -96,17 +97,13 @@ void LALTfrSp (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPara
 	  ASSERT (tfr->timeInstant[column] < (INT4)sig->length, stat, TFR_EBADT, TFR_MSGEBADT);
 	}
     }
-  
-  /* ??TRY(LALEstimateFwdRealFFTPlan(stat->statusPtr, &plan, tfr->fRow), stat);*/
-  /*??*/TRY(LALCreateForwardRealFFTPlan(stat->statusPtr, &plan,(UINT4)tfr->fRow,0),stat);
-  /*TRY(LALDestroyRealFFTPlan(stat->statusPtr, &plan), stat);*/
-  /* ??TRY(LALMeasureFwdRealFFTPlan(stat->statusPtr, &plan, tfr->fRow), stat);*/
+  TRY(LALCreateForwardRealFFTPlan(stat->statusPtr, &plan,(UINT4)tfr->fRow,0),stat);
 
   TRY(LALSCreateVector(stat->statusPtr, &ptmp, tfr->fRow/2 + 1), stat);
   TRY(LALSCreateVector(stat->statusPtr, &windSig, tfr->fRow), stat);
 
   hwl = (param->windowT->length - 1) / 2.0;
-  
+
   for (column = 0; column < tfr->tCol; column++)
     {
       for (row = 0; row < tfr->fRow; row++)
@@ -121,6 +118,7 @@ void LALTfrSp (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPara
       taumax = MIN (taumax, (sig->length - 1.0 - time));
       
       normh = 0.0;
+
       for (row = -taumin; row <= taumax; row++)
 	{
 	  win = param->windowT->data[hwl + row];  
@@ -135,23 +133,11 @@ void LALTfrSp (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPara
 	                      * param->windowT->data[hwl + tau]/normh;
 	}
 
-      /*       printf("%d\n",column); */
       LALRealPowerSpectrum (stat->statusPtr, ptmp, windSig, plan);
-      /* CHANGE BACK TO ORIGINAL NORMALIZATION -- JC */
-      {
-        REAL4Vector *myvector = ptmp;
-        UINT4 mybin;
-        for ( mybin = 1; mybin < myvector->length - 1; ++mybin )
-          myvector->data[mybin] *= 0.5;
-      }
 
-
-      
       for (row = 0; row < (tfr->fRow/2 +1); ++row)
 	tfr->map[column][row] =  ptmp->data[row];
       
-      /*       for (row = 0; row < tfr->fRow; row++) */
-      /*  	tfr->map[column][row] = windSig->data[row]; */
     }
   
   for (row = 0; row < tfr->fRow/2+1; row++)

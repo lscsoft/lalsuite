@@ -2,6 +2,7 @@
  * 
  * File Name: TfrSpTest.c
  * 
+ * Maintainer: Torres C. (Univ of TX at Brownsville)
  * Author: Chassande-Mottin, E.
  * 
  * Revision: $Id: 
@@ -53,12 +54,8 @@ int main(void)
 
   LALSCreateVector(&status, &signal, Nsignal);
 
-  /*   signal->data[0]=1.0; */
   for (column = 0; column < (INT4)signal->length; column++)
     signal->data[column]=(rand() % 10) / 2.0;
-
-  /*     signal->data[column] = 1.0; */
-  /*     signal->data[column] = 1.0 - signal->data[column-1]; */
 
   /*--------------------------------------------------------------------*/
 
@@ -79,9 +76,6 @@ int main(void)
 
   for (column = 0; column < (INT4)param->windowT->length; column++)
     param->windowT->data[column]=1.0;    
-
-/*   for (column = 0; column < param->windowF->length; column++) */
-/*     param->windowF->data[column]=1.0;     */
 
   /*--------------------------------------------------------------------*/
 

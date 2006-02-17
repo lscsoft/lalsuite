@@ -2,6 +2,7 @@
  * 
  * File Name: TfrWvTest.c
  * 
+ * Maintainer: Torres C,  (Univ of TX at Brownsville)
  * Author: Chassande-Mottin, E.
  * 
  * Revision: $Id: 
@@ -51,15 +52,9 @@ int main(void)
 
   LALSCreateVector(&status, &signal, Nsignal);
 
-  /*   signal->data[0]=1.0; */
   for (column = 0; column < (INT4)signal->length; column++)
-       signal->data[column]=(rand() % 10) / 2.0;
+    signal->data[column]=(rand() % 10) / 2.0;
  
-  /*    signal->data[column] = 1.0 - signal->data[column-1];  */
-  /*    signal->data[column] = 1.0; */
-
-
-
   /*--------------------------------------------------------------------*/
 
   tfrIn.type=WignerVille;
@@ -77,11 +72,11 @@ int main(void)
 
   LALCreateTimeFreqParam(&status, &param, &tfrIn);
 
-/*   for (column = 0; column < param->windowT->length; column++) */
-/*     param->windowT->data[column]=1.0;     */
+  /*   for (column = 0; column < param->windowT->length; column++) */
+  /*     param->windowT->data[column]=1.0;     */
 
-/*   for (column = 0; column < param->windowF->length; column++) */
-/*     param->windowF->data[column]=1.0;     */
+  /*   for (column = 0; column < param->windowF->length; column++) */
+  /*     param->windowF->data[column]=1.0;     */
 
   /*--------------------------------------------------------------------*/
 
@@ -98,9 +93,9 @@ int main(void)
   printf("TFR:\n");
   for (row= 0; row < (tfr->fRow/2+1); row++)
     {
-    for (column= 0; column < tfr->tCol; column++)
-      printf("%2.2f ",tfr->map[column][row]);
-    printf("\n");
+      for (column= 0; column < tfr->tCol; column++)
+	printf("%2.2f ",tfr->map[column][row]);
+      printf("\n");
     }
 
   /*--------------------------------------------------------------------*/

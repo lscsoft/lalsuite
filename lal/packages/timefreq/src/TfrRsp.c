@@ -3,6 +3,7 @@
  * File Name: TfrRsp.c
  * 
  * Author: Chassande-Mottin, E.
+ * Maintainer: Torres, C (Univ of TX at Brownsville)
  * 
  * Revision: $Id: 
  * 
@@ -112,11 +113,7 @@ void LALTfrRsp (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPar
 	  ASSERT (tfr->timeInstant[column] < (INT4)sig->length, stat, TFR_EBADT, TFR_MSGEBADT);
 	}
     }
-  
-  /* ??TRY(LALEstimateFwdRealFFTPlan(stat->statusPtr, &plan, tfr->fRow), stat);*/
-    /*??*/TRY(LALCreateForwardRealFFTPlan(stat->statusPtr, &plan,(UINT4)tfr->fRow,0),stat);
-  /* ??TRY(LALDestroyRealFFTPlan(stat->statusPtr, &plan), stat);*/
-  /* ??TRY(LALMeasureFwdRealFFTPlan(stat->statusPtr, &plan, tfr->fRow), stat);*/
+      TRY(LALCreateForwardRealFFTPlan(stat->statusPtr, &plan,(UINT4)tfr->fRow,0),stat);
 
   TRY(LALSCreateVector(stat->statusPtr, &windowT, param->windowT->length), stat);
   TRY(LALSCreateVector(stat->statusPtr, &windowD, param->windowT->length), stat);
@@ -214,7 +211,6 @@ void LALTfrRsp (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPar
 		  tfr->map[indext][indexf] = tfr->map[indext][indexf] + 2.0 * modulus;
 		else
 		  tfr->map[indext][indexf] = tfr->map[indext][indexf] + modulus;
-	      /* 	      tfr->map[column][row] = hatt; */
 	    }
 	}
     }
@@ -230,7 +226,7 @@ void LALTfrRsp (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPar
   TRY(LALSDestroyVector(stat->statusPtr, &windSigH), stat);
   TRY(LALSDestroyVector(stat->statusPtr, &windSigT), stat);
   TRY(LALSDestroyVector(stat->statusPtr, &windSigD), stat);
-  /* ??TRY(LALDestroyRealFFTPlan(stat->statusPtr, &plan), stat);*/
+  TRY(LALDestroyRealFFTPlan(stat->statusPtr, &plan), stat);
 
   DETATCHSTATUSPTR (stat);
 
