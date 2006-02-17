@@ -46,7 +46,6 @@ Provides a set of utilities for manipulating \texttt{snglRingdownTable}s.
 \idx{LALCompareSnglRingdownByPsi()}
 \idx{LALCompareSnglRingdownByTime()}
 \idx{LALCompareSnglRingdown()}
-\idx{LALCompareRingdowns()}
 \idx{LALClusterSnglRingdownTable()}
 \idx{LALTimeCutSingleRingdown()}
 \idx{LALalphaFCutSingleInspiral()}
