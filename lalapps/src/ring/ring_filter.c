@@ -287,13 +287,18 @@ static SnglRingdownTable * find_events(
         /* specific information about this threshold crossing */
         ns_to_epoch( &thisEvent->start_time, timeNS );
         thisEvent->snr = snr;
-        
+#if 0        
         amp = 2.415e-21; /* factor given in PRD 022001 (1999) */
         amp *= sqrt( 2.0 * LAL_PI ); /* convert NEW conventions to OLD conventions */
         amp *= pow( LAL_C_SI, 3.0) / LAL_G_SI / LAL_MSUN_SI / 2.0 / LAL_PI; 
         amp *= 1.0 / sqrt( tmpltQuality ) * sqrt( 1 - 0.63 * pow( (tmpltQuality / 2.0), (-2.0/3.0) ) ) / tmpltFrequency ;
+#endif
                                /* aplitude for ringdown at a distance of 1Mpc with epsilon=0.01 */
         
+        amp = sqrt(5.0*0.01 / 2.0) / LAL_TWOPI * LAL_C_SI * 
+          sqrt( 1.0-0.63*pow( (tmpltQuality / 2.0), (-2.0/3.0) )) / tmpltFrequency /
+          1e6 / LAL_PC_SI / sqrt( tmpltQuality ) * pow (1+7/24/pow(tmpltQuality,2),-0.5);
+          
         sigma=tmpltSigma * amp;
         thisEvent->sigma_sq = pow(sigma, 2.0);
         thisEvent->eff_dist = sigma / thisEvent->snr;
@@ -305,10 +310,17 @@ static SnglRingdownTable * find_events(
         /* update to specific information about this threshold crossing */
         ns_to_epoch( &thisEvent->start_time, timeNS );
         thisEvent->snr        = snr;
+
+#if 0        
         amp = 2.415e-21; /* factor given in PRD 022001 (1999) */
         amp *= sqrt( 2.0 * LAL_PI ); /* convert NEW conventions to OLD conventions */
         amp *= pow( LAL_C_SI, 3.0) / LAL_G_SI / LAL_MSUN_SI / 2.0 / LAL_PI;
         amp *= 1.0 / sqrt( tmpltQuality ) * sqrt( 1.0 - 0.63 * pow( (tmpltQuality / 2.0), (-2.0/3.0) ) ) / tmpltFrequency ;
+#endif
+        amp = sqrt(5.0*0.01 / 2.0) / LAL_TWOPI * LAL_C_SI *
+          sqrt( 1.0-0.63*pow( (tmpltQuality / 2.0), (-2.0/3.0) )) / tmpltFrequency /
+          1e6 / LAL_PC_SI / sqrt( tmpltQuality ) * pow (1+7/24/pow(tmpltQuality,2),-0.5);
+        
         sigma=tmpltSigma * amp;
         thisEvent->eff_dist = sigma / thisEvent->snr;        
       }
