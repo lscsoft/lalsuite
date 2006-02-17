@@ -4372,3 +4372,122 @@ XLALReadInspiralTriggerFile (
   return( numFileTriggers );
 }
 
+
+
+/* <lalVerbatim file="LIGOLwXMLReadCP"> */
+int
+XLALReadRingdownTriggerFile (
+    LALStatus             *status,
+    SnglRingdownTable    **ringdownEventList,
+    SnglRingdownTable    **lastTrigger,
+    SearchSummaryTable   **searchSummList,
+    SearchSummvarsTable  **inputFileList,
+    CHAR                  *fileName
+    )
+/* </lalVerbatim> */
+{
+  const char *func = "XLALReadRingdownTriggerFile";
+  INT4 numFileTriggers = 0;
+  SnglRingdownTable  *inputData = NULL;
+  SearchSummaryTable *inputSummary = NULL;
+  SearchSummaryTable *thisSearchSumm = NULL;
+  SearchSummvarsTable  *thisInputFile = NULL;
+  
+  
+  /* store the file name in search summvars */
+  XLALPrintInfo(
+      "XLALReadRingdownTriggerFile(): storing input file name %s\n"
+      "in search summvars table\n", fileName );
+  
+  if ( ! *inputFileList )
+  {
+    *inputFileList = thisInputFile = (SearchSummvarsTable *)
+      LALCalloc( 1, sizeof(SearchSummvarsTable) );
+  }
+  else
+  {
+    for ( thisInputFile = *inputFileList; thisInputFile->next;
+        thisInputFile = thisInputFile->next );
+    thisInputFile = thisInputFile->next = (SearchSummvarsTable *)
+      LALCalloc( 1, sizeof(SearchSummvarsTable) );
+  }
+  LALSnprintf( thisInputFile->name, LIGOMETA_NAME_MAX,
+      "input_file" );
+  LALSnprintf( thisInputFile->string, LIGOMETA_NAME_MAX,
+      "%s", fileName );
+  
+  
+  /* read in the search summary and store */
+  XLALPrintInfo(
+      "XLALReadRingdownTriggerFile(): Reading search_summary table\n");
+  
+  
+  inputSummary = XLALSearchSummaryTableFromLIGOLw(fileName);
+  
+  if ( ! inputSummary )
+    
+  {
+    XLALPrintError("No valid search_summary table in %s, exiting\n",
+        fileName );
+    LALFree(thisInputFile);
+    XLAL_ERROR(func, XLAL_EIO);
+  }
+  else
+  {
+    /* store the search summary table in searchSummList list
+     * *                        * */
+    if ( ! *searchSummList )
+    {
+      *searchSummList = thisSearchSumm = inputSummary;
+    }
+    else
+    {
+      for ( thisSearchSumm = *searchSummList; thisSearchSumm->next;
+          thisSearchSumm = thisSearchSumm->next);
+      thisSearchSumm = thisSearchSumm->next = inputSummary;
+    }
+  }
+  
+  /* read in the triggers */
+  numFileTriggers =
+    LALSnglRingdownTableFromLIGOLw( &status, inputData, fileName );
+  
+  if ( numFileTriggers < 0 )
+  {
+    XLALPrintError("Unable to read sngl_ringdown table from %s\n",
+        fileName );
+    LALFree(thisInputFile);
+    XLAL_ERROR(func, XLAL_EIO);
+  }
+  else if ( numFileTriggers > 0 )
+  {
+    
+    XLALPrintInfo(
+        "XLALReadRingdownTriggerFile(): Got %d sngl_ringdown rows from %s\n",
+        numFileTriggers, fileName );
+    
+    /* store the triggers */
+    if ( ! *ringdownEventList )
+    {
+      /* store the head of the linked list */
+      *ringdownEventList = *lastTrigger = inputData;
+    }
+    else
+    {
+      /* append to the end of the linked
+       * * list and set current    */
+      /* trigger to the first trigger of the
+       * * list being appended */
+      *lastTrigger = (*lastTrigger)->next = inputData;
+    }
+    
+    /* scroll to the end of the linked list of
+     * * triggers */
+    for ( ; (*lastTrigger)->next; *lastTrigger = (*lastTrigger)->next );
+  }
+  
+  
+  return( numFileTriggers );
+  
+}
+

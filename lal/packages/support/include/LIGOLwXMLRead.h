@@ -249,6 +249,17 @@ XLALReadInspiralTriggerFile (
     CHAR                  *fileName
     );
 
+int
+XLALReadRingdownTriggerFile (
+    LALStatus             *status,
+    SnglRingdownTable    **ringdownEventList,
+    SnglRingdownTable    **lastTrigger,
+    SearchSummaryTable   **searchSummList,
+    SearchSummvarsTable  **inputFileList,
+    CHAR                  *fileName
+    );
+
+
 #ifdef  __cplusplus
 }
 #endif
