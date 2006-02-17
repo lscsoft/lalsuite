@@ -94,6 +94,7 @@ NRCSID( LIGOMETADATATABLESH, "$Id$" );
 \idx[Type]{SnglRingdownTable}
 \idx[Type]{SummValueTable}
 \idx[Type]{CoincInspiralTable}
+\idx[Type]{CoincRingdownTable}
 \idx[Type]{StochasticTable}
 \idx[Type]{StochSummTable}
 
@@ -121,6 +122,7 @@ typedef enum
   summ_value_table,
   sim_inst_params_table,
   coinc_inspiral_table,
+  coinc_ringdown_table,
   stochastic_table,
   stoch_summ_table,
   ext_triggers_table,
@@ -195,6 +197,7 @@ tagEventIDColumn
   struct tagSimBurstTable       *simBurstTable;
   struct tagSimRingdownTable    *simRingdownTable;
   struct tagCoincInspiralTable  *coincInspiralTable;
+  struct tagCoincRingdownTable  *coincRingdownTable;
   struct tagInspiralTemplate    *inspiralTemplate;
 }
 EventIDColumn;
@@ -320,7 +323,6 @@ SearchSummvarsTable;
 <lalLaTeX>
 
 Document table.
-
 
 \subsubsection*{Type \texttt{SnglBurstTable}}
 
@@ -575,6 +577,8 @@ meant to provide a simple way to manipulate coincident triggers.
 
 </lalLaTeX>
 #endif
+
+
 /* <lalVerbatim> */
 typedef struct
 tagSimBurstTable
@@ -644,6 +648,17 @@ tagSimRingdownTable
 }
 SimRingdownTable;
                               
+
+typedef struct
+tagCoincRingdownTable
+{
+  struct tagCoincRingdownTable *next;
+  CHAR                ifos[LIGOMETA_IFOS_MAX];
+  INT4                numIfos;
+  SnglRingdownTable  *snglRingdown[LAL_NUM_IFO];
+  SimRingdownTable   *simRingdown;
+}
+CoincRingdownTable;/* </lalVerbatim> */
 
 
 
