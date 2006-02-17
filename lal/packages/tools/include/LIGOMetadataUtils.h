@@ -271,6 +271,32 @@ SnglBurstAccuracy;
  *    
  */
 
+typedef struct
+tagSnglRingdownAccuracy
+{  
+  INT4        match;
+  REAL4       epsilon;
+  REAL4       kappa;
+  INT8        dt;
+  REAL4       dm;
+  REAL4       deta;
+  REAL4       dmchirp;
+  REAL4       dmchirpHi;
+  REAL4       highMass;
+  REAL4       dpsi0;
+  REAL4       dpsi3;
+}
+SnglRingdownAccuracy;
+  
+typedef struct
+tagRingdownAccuracyList
+{
+  INT4                      match;
+  SnglRingdownAccuracy      ifoAccuracy[LAL_NUM_IFO];
+  INT8                      lightTravelTime[LAL_NUM_IFO][LAL_NUM_IFO];
+}
+RingdownAccuracyList;
+  
 
 
 /*
@@ -1146,7 +1172,7 @@ XLALIfoCutSnglBurst (
 
 
 /*
- *  inspiral specific functions
+ *  ringdown specific functions
  * 
  *      */
 
@@ -1191,6 +1217,21 @@ LALIfoCutSingleRingdown(
     CHAR                       *ifo
     );
 
+SnglRingdownTable *
+XLALTimeCutSingleRingdown(
+    SnglRingdownTable          *eventList,
+    LIGOTimeGPS                *startTime,
+    LIGOTimeGPS                *endTime
+    );
+ 
+void
+LALTimeCutSingleRingdown(
+    LALStatus                  *status,
+    SnglRingdownTable         **eventHead,
+    LIGOTimeGPS                *startTime,
+    LIGOTimeGPS                *endTime
+    );
+
 void
 LALIfoCountSingleRingdown(
     LALStatus                  *status,
@@ -1198,6 +1239,60 @@ LALIfoCountSingleRingdown(
     SnglRingdownTable          *input,
     InterferometerNumber        ifoNumber
     );
+
+void
+LALTimeSlideSingleRingdown(
+    LALStatus                  *status,
+    SnglRingdownTable          *triggerList,
+    LIGOTimeGPS                *startTime,
+    LIGOTimeGPS                *endTime,
+    LIGOTimeGPS                 slideTimes[LAL_NUM_IFO]
+    );
+
+SnglRingdownTable *
+XLALPlayTestSingleRingdown(
+    SnglRingdownTable          *eventHead,
+    LALPlaygroundDataMask      *dataType
+    );
+
+void
+LALPlayTestSingleRingdown(
+    LALStatus                  *status,
+    SnglRingdownTable         **eventHead,
+    LALPlaygroundDataMask      *dataType
+    );
+
+int
+XLALMaxSnglRingdownOverIntervals(
+    SnglRingdownTable         **eventHead,
+    INT4                       deltaT
+    );
+
+/* coinc ringdown */
+void
+LALCreateTwoIFORingdownCoincList(
+    LALStatus                  *status,
+    CoincRingdownTable        **coincOutput,
+    SnglRingdownTable          *snglInput,
+    RingdownAccuracyList       *accuracyParams
+    );
+
+void
+LALAddSnglRingdownToCoinc(
+    LALStatus                  *status,
+    CoincRingdownTable        **coincPtr,
+    SnglRingdownTable          *snglRingdown
+    );
+
+void
+LALExtractSnglRingdownFromCoinc(
+    LALStatus                  *status,
+    SnglRingdownTable         **snglPtr,
+    CoincRingdownTable         *coincRingdown,
+    LIGOTimeGPS                *gpsStartTime,
+    INT4                        slideNum
+    );
+
 
 #if 0
 <lalLaTeX>
