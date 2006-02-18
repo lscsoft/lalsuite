@@ -42,8 +42,6 @@ Provides a set of utilities for manipulating \texttt{snglRingdownTable}s.
 \vspace{0.1in}
 \input{SnglRingdownUtilsCP}
 \idx{LALSortSnglRingdown()}
-\idx{LALCompareSnglRingdownByMass()}
-\idx{LALCompareSnglRingdownByPsi()}
 \idx{LALCompareSnglRingdownByTime()}
 \idx{LALCompareSnglRingdown()}
 \idx{LALClusterSnglRingdownTable()}
@@ -296,6 +294,96 @@ LALCompareSnglRingdownByTime (
   {
     return 0;
   }
+}
+
+
+
+/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+void
+LALCompareRingdowns (
+    LALStatus                *status,
+    SnglRingdownTable        *aPtr,
+    SnglRingdownTable        *bPtr,
+    RingdownAccuracyList     *params
+    )
+/* </lalVerbatim> */
+{
+  INT8    ta,  tb;
+  REAL4   df, dQ;
+  InterferometerNumber ifoaNum,  ifobNum;
+  SnglRingdownAccuracy aAcc, bAcc;
+  
+  INITSTATUS( status, "LALCompareRingdowns", SNGLRINGDOWNUTILSC );
+  ATTATCHSTATUSPTR( status );
+  
+  
+  params->match = 1;
+  
+  /* check that triggers come from different IFOs */
+  if( strcmp(aPtr->ifo, bPtr->ifo) )
+  {
+    LALInfo( status, "Triggers from different IFOs");
+    params->match = 1;
+  }
+  else
+  {
+    LALInfo( status, "Triggers from same IFO");
+    params->match = 0;
+    goto exit;
+  }
+  
+  ifoaNum = XLALIFONumber( aPtr->ifo );
+  ifobNum = XLALIFONumber( bPtr->ifo );
+  
+  LALGPStoINT8( status->statusPtr, &ta, &(aPtr->start_time) );
+  LALGPStoINT8( status->statusPtr, &tb, &(bPtr->start_time) );
+  
+  /* compare on trigger time coincidence */
+  aAcc = params->ifoAccuracy[ifoaNum];
+  bAcc = params->ifoAccuracy[ifobNum];
+  
+  if ( labs( ta - tb ) < (aAcc.dt + bAcc.dt)
+      + params->lightTravelTime[ifoaNum][ifobNum])
+  {
+    LALInfo( status, "Triggers pass time coincidence test");
+    params->match = 1;
+  }
+  else
+  {
+    LALInfo( status, "Triggers fail time coincidence test" );
+    params->match = 0;
+    goto exit;
+  }
+  
+  /* compare f and Q parameters */
+  if ( params->test == f_and_Q )
+  {
+    df = fabs( aPtr->frequency - bPtr->frequency );
+    dQ = fabs( aPtr->quality - bPtr->quality );
+    
+    if ( ( df <= (aAcc.df + bAcc.df) )
+        && ( dQ <= (aAcc.dQ + bAcc.dQ) ))
+    {
+      LALInfo( status, "Triggers are coincident in f and Q" );
+      params->match = 1;
+    }
+    else
+    {
+      LALInfo( status, "Triggers are not coincident in f and Q" );
+      params->match = 0;
+      goto exit;
+    }
+  }
+  else
+  {
+    LALInfo( status, "error: unknown test\n" );
+    params->match = 0;
+    goto exit;
+  }
+  
+exit:
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
 }
 
 
