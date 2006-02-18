@@ -270,21 +270,21 @@ SnglBurstAccuracy;
  *  ringdown specific structures
  *    
  */
+typedef enum
+{
+  unknown_test,
+  f_and_Q
+}
+SnglRingdownParameterTest;
 
 typedef struct
 tagSnglRingdownAccuracy
 {  
   INT4        match;
-  REAL4       epsilon;
-  REAL4       kappa;
   INT8        dt;
-  REAL4       dm;
-  REAL4       deta;
-  REAL4       dmchirp;
-  REAL4       dmchirpHi;
-  REAL4       highMass;
-  REAL4       dpsi0;
-  REAL4       dpsi3;
+  REAL4       df;
+  REAL4       dQ;
+  SnglRingdownParameterTest test;
 }
 SnglRingdownAccuracy;
   
@@ -292,6 +292,7 @@ typedef struct
 tagRingdownAccuracyList
 {
   INT4                      match;
+  SnglInspiralParameterTest test;
   SnglRingdownAccuracy      ifoAccuracy[LAL_NUM_IFO];
   INT8                      lightTravelTime[LAL_NUM_IFO][LAL_NUM_IFO];
 }
