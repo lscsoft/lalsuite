@@ -997,8 +997,8 @@ void LALComputeMultiNoiseWeights  (LALStatus         *status,
 				   MultiNoiseWeights **out,
 				   MultiPSDVector    *multipsd) 
 {
-  REAL8 Sn;
-  INT4 k, j, numifos, numsfts;
+  REAL8 Sn=0.0, sumSn=0.0;
+  INT4 i, k, j, numifos, numsfts, lengthsft;
   MultiNoiseWeights *weights;
 
   INITSTATUS (status, "LALComputeMultiNoiseWeights", SFTUTILSC);
@@ -1013,13 +1013,79 @@ void LALComputeMultiNoiseWeights  (LALStatus         *status,
 
   numifos = multipsd->length;
 
-  weights = (MultiNoiseWeights *)LALCalloc(1, sizeof(MultiNoiseWeights));
+  if ( (weights = (MultiNoiseWeights *)LALCalloc(1, sizeof(MultiNoiseWeights))) == NULL ){
+    ABORT (status,  SFTUTILS_EMEM,  SFTUTILS_MSGEMEM);
+  }
 
   weights->length = numifos;
+  if ( (weights->data = (REAL8Vector **)LALCalloc( numifos, sizeof(REAL8Vector *))) == NULL) {
+    ABORT (status,  SFTUTILS_EMEM,  SFTUTILS_MSGEMEM);      
+  }
 
+
+  for ( k = 0; k < numifos; k++) 
+    {
+      numsfts = multipsd->data[k]->length;
+
+      /* create k^th weights vector */
+      LALDCreateVector ( status->statusPtr, weights->data + k, numsfts);
+      BEGINFAIL( status ) {
+	for ( i = 0; i < k-1; i++)
+	  LALDDestroyVector (status->statusPtr, weights->data + i);
+	LALFree (weights->data);
+	LALFree (weights);
+      } ENDFAIL(status);
       
+      /* loop over psds and calculate weights -- one for each sft */
+      for ( j = 0; j < numsfts; j++) 
+	{
+	  REAL8FrequencySeries *psd;
+
+	  
+	  psd = multipsd->data[k]->data + j;
+	  
+	  lengthsft = psd->data->length;
+	  for ( Sn = 0.0, i = 0; i < lengthsft; i++)
+	    Sn += psd->data->data[i];
+	  sumSn += Sn/lengthsft; /* sumSn is just a normalization factor */
+
+	  weights->data[k]->data[j] = 1.0/Sn;
+	} /* end loop over sfts for each ifo */
+
+    } /* end loop over ifos */
 
 
+  /* make weights of order unity by myltiplying by sumSn*/
+  for ( k = 0; k < numifos; k++) {
+    numsfts = weights->data[k]->length;    
+    for ( j = 0; j < numsfts; j++) 
+      weights->data[k]->data[j] *= sumSn;
+  }
+
+  *out = weights;
+  
+  DETATCHSTATUSPTR (status);
+   /* normal exit */
+  RETURN (status);
+}
+
+
+void LALDestroyMultiNoiseWeights  (LALStatus         *status, 
+				   MultiNoiseWeights **weights) 
+{
+
+  UINT4 k, j;
+
+  INITSTATUS (status, "LALDestroyMultiNoiseWeights", SFTUTILSC);
+  ATTATCHSTATUSPTR (status); 
+
+  for ( k = 0; k < (*weights)->length; k++)
+      LALDDestroyVector (status->statusPtr, (*weights)->data + k);      
+
+  LALFree( (*weights)->data );
+  LALFree(*weights);
+  
+  *weights = NULL;
 
   DETATCHSTATUSPTR (status);
    /* normal exit */
