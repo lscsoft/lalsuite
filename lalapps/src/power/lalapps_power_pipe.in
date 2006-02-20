@@ -301,8 +301,9 @@ overlap = int(cp.get('chunks', 'chunk-overlap'))
 data = pipeline.ScienceData()
 data.read(cp.get('input','segments'),minduration)
 data.make_chunks(length,overlap,playground_only,0,overlap/2,pad)
+data.make_short_chunks_from_unused(minduration,overlap,playground_only,0,overlap/2)
 #add the unused data to the end of the last chunk
-data.make_extended_chunks_from_unused(overlap,pad)
+data.make_extended_chunks_from_unused(minduration,overlap,pad)
 
 #get the order of ifos to filter
 if do_H1:
