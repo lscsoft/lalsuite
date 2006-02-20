@@ -94,8 +94,6 @@ RCSID( "$Id$");
 
 /** struct holding all quantities that are 'detector-specific' */
 typedef struct {
-  SFTVector *sftVect;			/**< SFT-vector */
-  DetectorStateSeries *DetectorStates;	/**< pos, vel and LMSTs for detector at times t_i */
   SSBtimes *tSSB;			/**< SSB-times DeltaT_alpha and Tdot_alpha */
   AMCoeffs *amcoe;         		/**< Amplitude Modulation coefficients */
   REAL8Vector *weightsNoise;             /**< vector of weights */
@@ -114,6 +112,8 @@ typedef struct {
   EphemerisData *edat;			/**< ephemeris data (from LALInitBarycenter()) */
   UINT4 numDetectors;			/**< number of detectors */
   IFOspecifics *ifos;			/**< IFO-specific configuration data  */
+  MultiSFTVector *multiSFTs;		/**< multi-IFO SFT-vectors */
+  MultiDetectorStateSeries *multiDetStates; /**< pos, vel and LMSTs for detector at times t_i */
 } ConfigVariables;
 
 /*---------- Global variables ----------*/
@@ -124,7 +124,6 @@ ConfigVariables GV;		/**< global container for various derived configuration set
 /* ----- User-variables: can be set from config-file or command-line */
 INT4 uvar_Dterms;
 CHAR *uvar_IFO;
-CHAR *uvar_IFO2;
 BOOLEAN uvar_SignalOnly;
 REAL8 uvar_Freq;
 REAL8 uvar_FreqBand;
@@ -146,7 +145,6 @@ INT4  uvar_metricType;
 REAL8 uvar_metricMismatch;
 CHAR *uvar_skyRegion;
 CHAR *uvar_DataFiles;
-CHAR *uvar_DataFiles2;
 BOOLEAN uvar_help;
 CHAR *uvar_outputLabel;
 CHAR *uvar_outputFstat;
@@ -163,7 +161,7 @@ INT4 uvar_SSBprecision;
 /* ---------- local prototypes ---------- */
 int main(int argc,char *argv[]);
 void initUserVars (LALStatus *);
-void NewInitFStat ( LALStatus *, ConfigVariables *cfg );
+void InitFStat ( LALStatus *, ConfigVariables *cfg );
 
 void Freemem(LALStatus *,  ConfigVariables *cfg);
 
@@ -230,7 +228,7 @@ int main(int argc,char *argv[])
 
   /* Initialization the common variables of the code, */
   /* like ephemeries data and template grids: */
-  LAL_CALL ( NewInitFStat(&status, &GV), &status);
+  LAL_CALL ( InitFStat(&status, &GV), &status);
 
   /* prepare initialization of DopplerScanner to step through paramter space */
   scanInit.dAlpha = uvar_dAlpha;
@@ -241,7 +239,7 @@ int main(int argc,char *argv[])
   scanInit.projectMetric = TRUE;
   scanInit.obsDuration = GV.duration;
   scanInit.obsBegin = GV.startTime;
-  scanInit.Detector = &(GV.ifos[0].DetectorStates->detector);
+  scanInit.Detector = &(GV.multiDetStates->data[0]->detector);	/* FIXME: need multi-IFO metric */
   scanInit.ephemeris = GV.edat;		/* used by Ephemeris-based metric */
   scanInit.skyGridFile = uvar_skyGridFile;
 
@@ -352,7 +350,7 @@ int main(int argc,char *argv[])
 		  /*----- calculate SSB-times DeltaT_alpha and Tdot_alpha for this skyposition */
 		  LAL_CALL ( LALGetSSBtimes (&status, 
 					     GV.ifos[nD].tSSB,
-					     GV.ifos[nD].DetectorStates, 
+					     GV.multiDetStates->data[nD], 
 					     thisPoint, 
 					     GV.startTime,
 					     uvar_SSBprecision), &status);
@@ -360,17 +358,17 @@ int main(int argc,char *argv[])
 		  /*----- calculate skypos-specific coefficients a_i, b_i, A, B, C, D */
 		  LAL_CALL ( LALGetAMCoeffs (&status, 
 					     GV.ifos[nD].amcoe, 
-					     GV.ifos[nD].DetectorStates, 
+					     GV.multiDetStates->data[nD],
 					     thisPoint), &status);
 
-		      /* initilizing the A, B and C to be set at zero */
-		      GV.ifos[nD].amcoe->A = 0.0;
-		      GV.ifos[nD].amcoe->B = 0.0;
-		      GV.ifos[nD].amcoe->C = 0.0;
-
+		  /* initilizing the A, B and C to be set at zero */
+		  GV.ifos[nD].amcoe->A = 0.0;
+		  GV.ifos[nD].amcoe->B = 0.0;
+		  GV.ifos[nD].amcoe->C = 0.0;
+		  
 		  /* Calculate the Coefficients a(t) and b(t) */
-
-		  M = 1.0f * GV.ifos[nD].sftVect->length;
+		  
+		  M = 1.0f * GV.multiSFTs->data[nD]->length;
 		  
 		  for(alpha = 0; alpha < M; alpha++)
 		    {
@@ -396,7 +394,7 @@ int main(int argc,char *argv[])
 		  /** Caculate F-statistic using XLALComputeFaFb() */
 		  /* prepare quantities to calculate Fstat from Fa and Fb */
 		  
-		  if ( XLALComputeFaFb (&FaFb, GV.ifos[nD].sftVect, fkdot, GV.ifos[nD].tSSB, 
+		  if ( XLALComputeFaFb (&FaFb, GV.multiSFTs->data[nD], fkdot, GV.ifos[nD].tSSB, 
 					GV.ifos[nD].amcoe, uvar_Dterms) != 0)
 		    {
 		      LALPrintError ("\nXALNewLALDemod() failed\n");
@@ -422,7 +420,7 @@ int main(int argc,char *argv[])
 	       */
 	      if ( uvar_SignalOnly )
 		{
-		  REAL8 Tsft = 1.0 / (GV.ifos[0].sftVect->data[0].deltaF );
+		  REAL8 Tsft = 1.0 / (GV.multiSFTs->data[0]->data[0].deltaF );
  		      
 		  fact /= Tsft;
 		}
@@ -601,10 +599,9 @@ initUserVars (LALStatus *status)
   LALregREALUserVar(status, 	DeltaBand, 	'c', UVAR_OPTIONAL, "Band in delta (equatorial coordinates) in radians");
   LALregREALUserVar(status, 	dDelta, 	'g', UVAR_OPTIONAL, "Resolution in delta (equatorial coordinates) in radians");
   LALregSTRINGUserVar(status,	skyRegion, 	'R', UVAR_OPTIONAL, "ALTERNATIVE: Specify sky-region by polygon (or use 'allsky')");
-  LALregSTRINGUserVar(status,	DataFiles, 	'D', UVAR_REQUIRED, "File-pattern specifying (first) set of data SFT-files"); 
-  LALregSTRINGUserVar(status, 	IFO, 		'I', UVAR_OPTIONAL, "Detector: 'G1', 'L1', 'H1', 'H2' ...");
-  LALregSTRINGUserVar(status,	DataFiles2, 	 0,  UVAR_OPTIONAL, "File-pattern specifying second set of data SFT-files");
-  LALregSTRINGUserVar(status, 	IFO2, 		 0,  UVAR_OPTIONAL, "Detector corresponding to second data-set (--DataFiles2)"); 
+  LALregSTRINGUserVar(status,	DataFiles, 	'D', UVAR_REQUIRED, "File-pattern specifying (multi-IFO) input SFT-files"); 
+  LALregSTRINGUserVar(status, 	IFO, 		'I', UVAR_OPTIONAL, 
+		      "Detector-constraint: 'G1', 'L1', 'H1', 'H2' ...(useful for single-IFO v1-SFTs only!)");
   LALregSTRINGUserVar(status,	ephemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
   LALregSTRINGUserVar(status,	ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
   LALregBOOLUserVar(status, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
@@ -687,150 +684,54 @@ InitEphemeris (LALStatus * status,
  * NOTE: the logical *order* of things in here is very important, so be careful
  */
 void
-NewInitFStat ( LALStatus *status, ConfigVariables *cfg )
+InitFStat ( LALStatus *status, ConfigVariables *cfg )
 {
   REAL8 fCoverMin, fCoverMax;	/* covering frequency-band to read from SFTs */
-  UINT4 X;			/* index over different detectors */
-  SFTCatalog **catalogs;	/* array of SFT-catalogs */
-  CHAR **detectors;		/* array of user-input detector-names */
+  UINT4 X;		/* index over different detectors */
+  SFTCatalog *catalog = NULL;
   SFTConstraints constraints = empty_SFTConstraints;
-  LIGOTimeGPS firstStartTime, lastEndTime;
 
-  INITSTATUS (status, "NewInitFStat", rcsid);
+  UINT4 numSFTs;
+  REAL8 Tsft;
+  LIGOTimeGPS endTime;
+
+
+  INITSTATUS (status, "InitFStat", rcsid);
   ATTATCHSTATUSPTR (status);
 
-  /* ----- how many data-streams are we dealing with ? (currently either 1 or 2 )*/
-  if ( LALUserVarWasSet ( &uvar_DataFiles2 ) )
-    cfg->numDetectors = 2;
-  else
-    cfg->numDetectors = 1;
-
-  /* ----- allocate array of ifo-specific configuration data ----- */
-  if ( ( cfg->ifos = LALCalloc ( cfg->numDetectors, sizeof( *(cfg->ifos) ) )) == NULL ) {
-    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
-  }
-  
-  /* ----- allocate array of SFT-catalogs ----- */
-  if ( ( catalogs = LALCalloc ( cfg->numDetectors, sizeof( *catalogs ) )) == NULL ) {
-    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
-  }
-  if ( ( detectors = LALCalloc ( cfg->numDetectors, sizeof( *detectors ) )) == NULL ) {
-    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
-  }
-
-  /* FIXME: this needs to be generalized */
+  /* use IFO-contraint if one given by the user */
   if ( LALUserVarWasSet ( &uvar_IFO ) )
-    detectors[0] = uvar_IFO;
-  if ( LALUserVarWasSet ( &uvar_IFO2 ) )
-    detectors[1] = uvar_IFO2;
-
-  { /* ----- get catalogues of matching SFTs and spanned observation time  ----- */
-    CHAR **fpatterns;		/* array of file-patterns to load SFTs from */
-
-    /* allocate array of file-patterns */
-    if ( ( fpatterns = LALCalloc ( cfg->numDetectors, sizeof( *fpatterns ) )) == NULL ) {
-      ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+    if ( (constraints.detector = XLALGetChannelPrefix ( uvar_IFO )) == NULL ) {
+      ABORT ( status,  COMPUTEFSTATISTICC_EINPUT,  COMPUTEFSTATISTICC_MSGEINPUT);
     }
 
-    fpatterns[0] = uvar_DataFiles;
-    if ( cfg->numDetectors >= 2 ) 
-      fpatterns[1] = uvar_DataFiles2;
+  /* get full SFT-catalog of all matching (multi-IFO) SFTs */
+  TRY ( LALSFTdataFind ( status->statusPtr, &catalog, uvar_DataFiles, &constraints ), status);    
+  if ( constraints.detector ) 
+    LALFree ( constraints.detector );
 
-
-    for ( X=0; X < cfg->numDetectors; X ++ )
-      {
-	UINT4 numSFTs;
-	REAL8 Tsft;
-	LIGOTimeGPS startTime, endTime;
-	
-	if ( detectors[X] && ( constraints.detector = XLALGetChannelPrefix ( detectors[X] )) == NULL ) {
-	  ABORT ( status,  COMPUTEFSTATISTICC_EINPUT,  COMPUTEFSTATISTICC_MSGEINPUT);
-	}
-	
-	TRY ( LALSFTdataFind ( status->statusPtr, &(catalogs[X]), fpatterns[X], &constraints ), status);
-	LALFree ( constraints.detector );
-	constraints.detector = NULL;
-	
-	numSFTs = catalogs[X]->length;
-	if ( numSFTs == 0 ) 
-	  {
-	    LALPrintError ( "\nERROR: no SFTs matched pattern '%s'\n\n", fpatterns[X] );
-	    ABORT ( status,  COMPUTEFSTATISTICC_EINPUT,  COMPUTEFSTATISTICC_MSGEINPUT);	    
-	  }
-
-	Tsft = 1.0 / catalogs[X]->data[0].header.deltaF;
-	startTime = catalogs[X]->data[0].header.epoch;
-	endTime   = catalogs[X]->data[numSFTs-1].header.epoch;
-	LALAddFloatToGPS(status->statusPtr, &endTime, &endTime, Tsft );	/* can't fail */
-	
-	if ( X == 0 )
-	  {
-	    firstStartTime = startTime;
-	    lastEndTime = endTime;
-	  }
-	else
-	  {
-	    if ( GPS2REAL8(startTime) < GPS2REAL8(firstStartTime) )
-	      firstStartTime = startTime;
-	    if ( GPS2REAL8(endTime) > GPS2REAL8(lastEndTime) )
-	      lastEndTime = endTime;
-	  }
-	
-      } /* for X < numDetectors */
-    LALFree ( fpatterns );
-    LALFree ( detectors );
-
-  } /* get catalogs of matching SFTs */
-    
-  /* now we can deduce the total time-span covered by the data */
-  cfg->startTime = firstStartTime;
-  cfg->duration = GPS2REAL8(lastEndTime) - GPS2REAL8 (firstStartTime);
-
-  { /* ----- load ephemeris-data ----- */
-    CHAR *ephemDir;
-
-    cfg->edat = LALCalloc(1, sizeof(EphemerisData));
-    if ( LALUserVarWasSet ( &uvar_ephemDir ) )
-      ephemDir = uvar_ephemDir;
-    else
-      ephemDir = NULL;
-    TRY(InitEphemeris (status->statusPtr, cfg->edat, ephemDir, uvar_ephemYear, cfg->startTime ),status);
-  }
-
-  /* ----- obtain the 'detector-state series' for each set of SFTs (from catalog) ----- */
-  for ( X = 0; X < cfg->numDetectors; X ++ )
+  if ( catalog->length == 0 ) 
     {
-      LALDetector *site;
-      LIGOTimeGPSVector *timestamps = NULL;
-      REAL8 Tsft; 
+      LALPrintError ("\nSorry, didn't find any matching SFTs with pattern '%s'!\n\n", uvar_DataFiles );
+      ABORT ( status,  COMPUTEFSTATISTICC_EINPUT,  COMPUTEFSTATISTICC_MSGEINPUT);
+    }
 
-      /* extract vector of timestamps from SFT-catalog */
-      TRY ( LALSFTtimestampsFromCatalog ( status->statusPtr, &timestamps, catalogs[X] ), status );
-      
-      /* obtain detector positions and velocities, together with LMSTs for the SFT midpoints 
-       * (i.e. shifted by Tsft/2) */
-      Tsft = 1.0 / catalogs[X]->data[0].header.deltaF;
-      
-      /* get site-info */
-      if ( ( site = XLALGetSiteInfo ( catalogs[X]->data[0].header.name ) ) == NULL ) {
-	ABORT ( status,  COMPUTEFSTATISTICC_EXLAL,  COMPUTEFSTATISTICC_MSGEXLAL );
-      }
-      /* get detector-state series */
-      TRY (LALGetDetectorStates(status->statusPtr, &(cfg->ifos[X].DetectorStates), timestamps, 
-				site, cfg->edat, 0.5 * Tsft ), status);
-      
-      LALFree ( site );
-      TRY ( LALDestroyTimestampVector (status->statusPtr, &timestamps), status );
-      
-    } /* for X < numDetectors */
+  /* deduce start- and end-time of the observation spanned by the data */
+  numSFTs = catalog->length;
+  Tsft = 1.0 / catalog->data[0].header.deltaF;
+  cfg->startTime = catalog->data[0].header.epoch;
+  endTime   = catalog->data[numSFTs-1].header.epoch;
+  LALAddFloatToGPS(status->statusPtr, &endTime, &endTime, Tsft );	/* can't fail */
+  cfg->duration = GPS2REAL8(endTime) - GPS2REAL8 (cfg->startTime);
 
   /* ----- get reference-time (from user if given, use startTime otherwise): ----- */
   if ( LALUserVarWasSet(&uvar_refTime)) {
     TRY ( LALFloatToGPS (status->statusPtr, &(cfg->refTime), &uvar_refTime), status);
   } else
     cfg->refTime = cfg->startTime;
-  
-  { /* ----- get spin-range at refTime (in 'canonical format': Bands >= 0) ----- */
+
+
+  { /* ----- prepare spin-range at refTime (in 'canonical format': Bands >= 0) ----- */
     REAL8 fMin = MYMIN ( uvar_Freq, uvar_Freq + uvar_FreqBand );
     REAL8 fMax = MYMAX ( uvar_Freq, uvar_Freq + uvar_FreqBand );
     REAL8 f1dotMin = MYMIN ( uvar_f1dot, uvar_f1dot + uvar_f1dotBand );
@@ -846,8 +747,8 @@ NewInitFStat ( LALStatus *status, ConfigVariables *cfg )
     cfg->spinRangeRef->fkdotBand->data[1] = f1dotMax - f1dotMin;
   }
 
-  { /* ----- propage spin-range to start and end of observation ----- */
-    LALPulsarSpinRange *spinRangeEnd;	/* we don't need to keep this one */
+  { /* ----- propage spin-range from refTime to startTime and endTime of observation ----- */
+    LALPulsarSpinRange *spinRangeEnd;	/* temporary only */
     REAL8 fmaxStart, fmaxEnd, fminStart, fminEnd;
 
     if ( ( cfg->spinRangeStart = XLALCreatePulsarSpinRange ( NUM_SPINS )) == NULL ) {
@@ -859,11 +760,10 @@ NewInitFStat ( LALStatus *status, ConfigVariables *cfg )
 
     /* compute spin-range at startTime of observation */
     TRY ( LALExtrapolatePulsarSpinRange (status->statusPtr, 
-					 cfg->spinRangeStart, cfg->startTime, cfg->spinRangeRef ), 
-	  status );
+					 cfg->spinRangeStart, cfg->startTime, cfg->spinRangeRef ), status );
     /* compute spin-range at endTime of these SFTs */
     TRY ( LALExtrapolatePulsarSpinRange (status->statusPtr, 
-					 spinRangeEnd, lastEndTime, cfg->spinRangeRef ), status );
+					 spinRangeEnd, endTime, cfg->spinRangeRef ), status );
 
     fminStart = cfg->spinRangeStart->fkdot->data[0];
     /* ranges are in canonical format! */
@@ -875,44 +775,65 @@ NewInitFStat ( LALStatus *status, ConfigVariables *cfg )
     /*  get covering frequency-band  */
     fCoverMax = MYMAX ( fmaxStart, fmaxEnd );
     fCoverMin = MYMIN ( fminStart, fminEnd );
-  }
+
+  } /* extrapolate spin-range */
+
   /* ----- correct for maximal doppler-shift due to earth's motion */
-  fCoverMax *= (1.0 + uvar_dopplermax);
-  fCoverMin *= (1.0 - uvar_dopplermax);
-    
+ 
   
-  {/* ----- load the SFT-vectors ----- */
-    UINT4 wings = MYMAX(uvar_Dterms, uvar_RngMedWindow/2 +1);
-    
-    for ( X = 0; X < cfg->numDetectors; X ++ )
-      {
-	REAL8 dFreq = catalogs[X]->data[0].header.deltaF;
-	REAL8 fMax = fCoverMax + wings * dFreq;
-	REAL8 fMin = fCoverMin - wings * dFreq;
+  {/* ----- load the multi-IFO SFT-vectors ----- */
+    UINT4 wings = MYMAX(uvar_Dterms, uvar_RngMedWindow/2 +1);	/* extra frequency-bins needed for rngmed, and Dterms */
+    REAL8 fMax = (1.0 + uvar_dopplermax) * fCoverMax + wings / Tsft;	/* correct for doppler-shift and wings */
+    REAL8 fMin = (1.0 - uvar_dopplermax) * fCoverMin - wings / Tsft;
 
-	TRY ( LALLoadSFTs ( status->statusPtr, &(cfg->ifos[X].sftVect), catalogs[X], fMin, fMax ), status );
-	TRY ( LALDCreateVector(status->statusPtr, &(cfg->ifos[X].weightsNoise), catalogs[X]->length),status); 
+    TRY ( LALLoadMultiSFTs ( status->statusPtr, &(cfg->multiSFTs), catalog, fMin, fMax ), status );
+  }
+  TRY ( LALDestroySFTCatalog ( status->statusPtr, &catalog ), status );
 
-	TRY( LALHOUGHInitializeWeights( status->statusPtr, (cfg->ifos[X].weightsNoise) ), status);
+  cfg->numDetectors = cfg->multiSFTs->length;
 
-	/* Normalize this by 1/sqrt(Sh), where Sh is the median of |X|^2  
-	 * NOTE: this corresponds to a double-sided PSD, therefore we need to 
-	 * divide by another factor of 2 with respect to the JKS formulae.
-	 */
-	if ( ! uvar_SignalOnly ) 
-	  {
-	    TRY( LALHOUGHComputeNoiseWeights( status->statusPtr, (cfg->ifos[X].weightsNoise), cfg->ifos[X].sftVect, uvar_RngMedWindow), status); 
-	    TRY(LALNormalizeSFTVect (status->statusPtr, cfg->ifos[X].sftVect, uvar_RngMedWindow), status );
-	  }
+  /*============================== FIXME: the rest is just adapted to keep things working for now: */
 
-	TRY ( LALDestroySFTCatalog ( status->statusPtr, &(catalogs[X]) ), status );
+  /* ----- allocate array of ifo-specific configuration data ----- */
+  if ( ( cfg->ifos = LALCalloc ( cfg->numDetectors, sizeof( *(cfg->ifos) ) )) == NULL ) {
+    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+  }
+  
+  for ( X=0; X < cfg->numDetectors; X ++ )
+    {
+      if ( (cfg->ifos[X].weightsNoise  = XLALCreateREAL8Vector ( cfg->multiSFTs->data[X]->length )) == NULL ) {
+	ABORT (status, COMPUTEFSTATISTICC_EMEM, COMPUTEFSTATISTICC_MSGEMEM);
+      }
+      TRY( LALHOUGHInitializeWeights( status->statusPtr, (cfg->ifos[X].weightsNoise) ), status);
+      
+      /* Normalize this by 1/sqrt(Tsft * Sh), where Tsft*Sh is the median of |X|^2  
+       * NOTE: this corresponds to a double-sided PSD, therefore we need to 
+       * divide by another factor of 2 with respect to the JKS formulae.
+       */
+      if ( ! uvar_SignalOnly ) 
+	{
+	  TRY( LALHOUGHComputeNoiseWeights( status->statusPtr, (cfg->ifos[X].weightsNoise), cfg->multiSFTs->data[X], uvar_RngMedWindow), status); 
+	  TRY( LALNormalizeSFTVect (status->statusPtr, cfg->multiSFTs->data[X], uvar_RngMedWindow), status );
+	}
+    } /* for X < numDetectors */
 
-      } /* for X < numDetectors */
 
-  } /* load all SFTs */
-  LALFree ( catalogs );
+  { /* ----- load ephemeris-data ----- */
+    CHAR *ephemDir;
 
-  /* Normalyzing the Noise Weight. Sum of weighwNoise over the all detectors is going to be 1.0 */
+    cfg->edat = LALCalloc(1, sizeof(EphemerisData));
+    if ( LALUserVarWasSet ( &uvar_ephemDir ) )
+      ephemDir = uvar_ephemDir;
+    else
+      ephemDir = NULL;
+    TRY( InitEphemeris (status->statusPtr, cfg->edat, ephemDir, uvar_ephemYear, cfg->startTime ),status);
+  }
+  
+  /* ----- obtain the (multi-IFO) 'detector-state series' for all SFTs ----- */
+  TRY ( LALGetMultiDetectorStates ( status->statusPtr, &(cfg->multiDetStates), cfg->multiSFTs, cfg->edat ), status );
+
+
+  /* Normalyzing the Noise Weights. Sum of weighwNoise over the all detectors is going to be 1.0 */
   {
     UINT4 alpha;
     REAL8 norm = 0.0;
@@ -948,8 +869,8 @@ NewInitFStat ( LALStatus *status, ConfigVariables *cfg )
 	if ( (amc = LALCalloc(1, sizeof(AMCoeffs))) == NULL) {
 	  ABORT (status, COMPUTEFSTATISTICC_EMEM, COMPUTEFSTATISTICC_MSGEMEM);
 	}
-	TRY (LALSCreateVector(status->statusPtr, &(amc->a), cfg->ifos[X].sftVect->length), status);
-	TRY (LALSCreateVector(status->statusPtr, &(amc->b), cfg->ifos[X].sftVect->length), status);
+	TRY (LALSCreateVector(status->statusPtr, &(amc->a), cfg->multiSFTs->data[X]->length ), status);
+	TRY (LALSCreateVector(status->statusPtr, &(amc->b), cfg->multiSFTs->data[X]->length ), status);
     
 	cfg->ifos[X].amcoe = amc;
 	amc = NULL;
@@ -958,8 +879,8 @@ NewInitFStat ( LALStatus *status, ConfigVariables *cfg )
 	if ( (tSSB = LALCalloc(1, sizeof(SSBtimes))) == NULL) {
 	  ABORT (status, COMPUTEFSTATISTICC_EMEM, COMPUTEFSTATISTICC_MSGEMEM);
 	}
-	TRY(LALDCreateVector(status->statusPtr, &(tSSB->DeltaT), cfg->ifos[X].sftVect->length),status);
-	TRY(LALDCreateVector(status->statusPtr, &(tSSB->Tdot),  cfg->ifos[X].sftVect->length), status );
+	TRY(LALDCreateVector(status->statusPtr, &(tSSB->DeltaT), cfg->multiSFTs->data[X]->length),status);
+	TRY(LALDCreateVector(status->statusPtr, &(tSSB->Tdot),  cfg->multiSFTs->data[X]->length), status );
 
 	cfg->ifos[X].tSSB = tSSB;
 	tSSB = NULL;
@@ -990,7 +911,7 @@ NewInitFStat ( LALStatus *status, ConfigVariables *cfg )
   DETATCHSTATUSPTR (status);
   RETURN (status);
 
-} /* NewInitFStat() */
+} /* InitFStat() */
 
 
 /***********************************************************************/
@@ -1062,31 +983,32 @@ WriteFStatLog (LALStatus *status, char *argv[])
 void
 Freemem(LALStatus *status,  ConfigVariables *cfg) 
 {
-  UINT4 i;
+  UINT4 X;
   INITSTATUS (status, "Freemem", rcsid);
   ATTATCHSTATUSPTR (status);
 
-  for(i=0; i< cfg->numDetectors; i++)
+
+  /* Free SFT data */
+  TRY (LALDestroyMultiSFTVector (status->statusPtr, &(cfg->multiSFTs) ), status );
+
+  for ( X=0; X < cfg->numDetectors; X++)
     {
-      
-      /* Free SFT data */
-      TRY (LALDestroySFTVector (status->statusPtr, &(cfg->ifos[i].sftVect) ), status);	 /* the new way*/
-    
       /* Free Noise Weight */
-      TRY (LALDDestroyVector(status->statusPtr, &(cfg->ifos[i].weightsNoise)), status); 
+      TRY (LALDDestroyVector(status->statusPtr, &(cfg->ifos[X].weightsNoise)), status); 
                   
       /* Free AM-coefficients */
-      TRY (LALSDestroyVector(status->statusPtr, &(cfg->ifos[i].amcoe->a)), status);
-      TRY (LALSDestroyVector(status->statusPtr, &(cfg->ifos[i].amcoe->b)), status);
-      LALFree ( cfg->ifos[i].amcoe);
+      TRY (LALSDestroyVector(status->statusPtr, &(cfg->ifos[X].amcoe->a)), status);
+      TRY (LALSDestroyVector(status->statusPtr, &(cfg->ifos[X].amcoe->b)), status);
+      LALFree ( cfg->ifos[X].amcoe);
       /* Free SSB-times */
-      TRY (LALDDestroyVector(status->statusPtr, &(cfg->ifos[i].tSSB->DeltaT)), status);
-      TRY (LALDDestroyVector(status->statusPtr, &(cfg->ifos[i].tSSB->Tdot)), status);
-      LALFree ( cfg->ifos[i].tSSB );
+      TRY (LALDDestroyVector(status->statusPtr, &(cfg->ifos[X].tSSB->DeltaT)), status);
+      TRY (LALDDestroyVector(status->statusPtr, &(cfg->ifos[X].tSSB->Tdot)), status);
+      LALFree ( cfg->ifos[X].tSSB );
 
       /* destroy DetectorStateSeries */
-      TRY ( LALDestroyDetectorStateSeries (status->statusPtr, &(cfg->ifos[i].DetectorStates) ), status);
     }  
+
+  XLALDestroyMultiDetectorStateSeries ( cfg->multiDetStates );
 
   LALFree ( cfg->ifos );
 
