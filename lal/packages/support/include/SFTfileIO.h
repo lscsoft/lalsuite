@@ -253,8 +253,8 @@ typedef struct
 /** An "SFT-catalogue": a vector of SFTdescriptors, as returned by LALSFTdataFind() */
 typedef struct 
 {
-  UINT4 length;
-  SFTDescriptor *data;
+  UINT4 length;			/**< number of SFTs in catalog */
+  SFTDescriptor *data;		/**< array of data-entries describing matched SFTs */
 } SFTCatalog;
 
 /*
