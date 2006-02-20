@@ -340,9 +340,6 @@ LALDestroyMultiPSDVector (LALStatus *status,
 
 
 
-
-
-
 /** Copy an entire SFT-type into another. 
  * We require the destination-SFT to have a NULL data-entry, as the  
  * corresponding data-vector will be allocated here and copied into
@@ -897,4 +894,99 @@ create_nautilus_site ( LALDetector *Detector )
   return 0;
   
 } /* CreateNautilusDetector() */
+
+
+
+/** Computes weight factors arising from SFTs with different noise 
+    floors -- it multiplies an existing weight vector */
+void LALComputeNoiseWeights  (LALStatus    *status, 
+			      REAL8Vector  *weightV,
+			      SFTVector    *sftVect,
+			      INT4         blkSize) 
+{
+
+  UINT4 lengthVect, lengthSFT, lengthPSD;
+  UINT4 j;
+  SFTtype *sft;
+  REAL8FrequencySeries periodo;
+  REAL8Sequence mediansV, inputV;
+  LALRunningMedianPar rngMedPar;
+
+  /* --------------------------------------------- */
+  INITSTATUS (status, "LALComputeNoiseWeights", SFTUTILSC);
+  ATTATCHSTATUSPTR (status); 
+
+  /*   Make sure the arguments are not NULL: */ 
+  ASSERT (weightV, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL);
+  ASSERT (sftVect, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL);
+  ASSERT (blkSize > 0, status,  SFTUTILS_EINPUT, SFTUTILS_MSGEINPUT);
+  ASSERT (weightV->data,status, SFTUTILS_ENULL, SFTUTILS_MSGENULL);
+  ASSERT (sftVect->data,status, SFTUTILS_ENULL, SFTUTILS_MSGENULL);
+  /* -------------------------------------------   */
+
+  /* Make sure there is no size mismatch */
+  ASSERT (weightV->length == sftVect->length, status, 
+	  SFTUTILS_EINPUT, SFTUTILS_MSGEINPUT);
+  /* -------------------------------------------   */
+
+  /* Make sure there are elements to be computed*/
+  ASSERT (sftVect->length, status, SFTUTILS_EINPUT, SFTUTILS_MSGEINPUT);
+  
+
+  /* set various lengths */
+  lengthVect = sftVect->length;
+  lengthSFT = sftVect->data->data->length;
+  ASSERT( lengthSFT > 0, status,  SFTUTILS_EINPUT, SFTUTILS_MSGEINPUT);
+  lengthPSD = lengthSFT - blkSize + 1;
+  /* make sure blksize is not too big */
+  ASSERT(lengthPSD > 0, status, SFTUTILS_EINPUT, SFTUTILS_MSGEINPUT);
+
+  /* allocate memory for periodogram */
+  periodo.data = NULL;
+  periodo.data = (REAL8Sequence *)LALMalloc(sizeof(REAL8Sequence));
+  periodo.data->length = lengthSFT;
+  periodo.data->data = (REAL8 *)LALMalloc( lengthSFT * sizeof(REAL8));
+
+  /* allocate memory for vector of medians */
+  mediansV.length = lengthPSD;
+  mediansV.data = (REAL8 *)LALMalloc(lengthPSD * sizeof(REAL8));
+
+  /* rng med block size */
+  rngMedPar.blocksize = blkSize;
+
+  /* loop over sfts and calculate weights */
+  for (j=0; j<lengthVect; j++) {
+    REAL8 sumMed = 0.0;
+    INT4 k;
+
+    sft = sftVect->data + j;
+
+    /* calculate the periodogram */
+    TRY (LALSFTtoPeriodogram (status->statusPtr, &periodo, sft), status);
+    
+    /* calculate the running median */
+    inputV.length = lengthSFT;
+    inputV.data = periodo.data->data;
+    TRY( LALDRunningMedian2(status->statusPtr, &mediansV, &inputV, rngMedPar), status);
+
+    for (k=0; k<lengthPSD; k++) {
+      sumMed += mediansV.data[k];
+    }
+
+    /* weight is proportional to 1/sumMed */    
+    weightV->data[j] /= sumMed;
+    
+  } /* end of loop over sfts */
+
+  /* remember to normalize weights immediately after leaving this function */
+
+  /* free memory */
+  LALFree(mediansV.data);
+  LALFree(periodo.data->data);
+  LALFree(periodo.data);
+
+  DETATCHSTATUSPTR (status);
+   /* normal exit */
+  RETURN (status);
+}
 

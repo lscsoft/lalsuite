@@ -48,7 +48,8 @@ NRCSID( SFTUTILSH, "$Id$" );
 #include <lal/DetectorSite.h>
 #include <lal/Date.h>
 #include <lal/SkyCoordinates.h>
-
+#include <lal/RngMedBias.h>
+#include <lal/LALRunningMedian.h>
 
 /*---------- DEFINES ----------*/
 
@@ -158,6 +159,9 @@ void LALAppendString2Vector (LALStatus *, LALStringVector *vect, const CHAR *str
 
 CHAR *XLALGetChannelPrefix ( const CHAR *name );
 LALDetector *XLALGetSiteInfo ( const CHAR *name );
+
+void LALComputeNoiseWeights  (LALStatus *status, REAL8Vector *weightV, SFTVector *sftVect, INT4 blkSize);
+
 
 
 #ifdef  __cplusplus

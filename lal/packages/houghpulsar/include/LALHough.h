@@ -482,12 +482,6 @@ void LALHOUGHComputeMultiIFOAMWeights  (LALStatus          *status,
 					REAL8              delta
 					);
 
-void LALHOUGHComputeNoiseWeights  (LALStatus    *status, 
-				   REAL8Vector  *weightV,
-				   SFTVector    *sftVect,
-				   INT4         blkSize
-				   );
-
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */
