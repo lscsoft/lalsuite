@@ -299,18 +299,17 @@ void LALSFTtoPSDRngMed (LALStatus  *status,
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* *******************************  <lalVerbatim file="NormalizeSFTRngMedD"> */
 /** \brief Normalizes a sft based on RngMed 
+    \param [out] psd estimate from sft using running median
     \param *sft : pointer to a SFT which will be normalized
     \param blockSize : Running median block size
-    \param normSwitch : Switch for normalization -- 0 for frequency domain and 1 for time domain
 */
 void LALNormalizeSFT (LALStatus            *status,
- 		      REAL8FrequencySeries **out,     /**< [out] psd estimate from sft using running median */
+ 		      REAL8FrequencySeries *psd,     /**< [out] psd estimate from sft using running median */
 		      SFTtype              *sft,      /**< SFT to be normalized */
 		      UINT4                blockSize) /**< Running median block size for psd calculation */ 
 {/*   *********************************************  </lalVerbatim> */
 
   INT4 j, length;
-  REAL8FrequencySeries *psd = NULL;
 
   INITSTATUS (status, "LALNormalizeSFT", NORMALIZESFTRNGMEDC);
   ATTATCHSTATUSPTR (status);
@@ -321,20 +320,10 @@ void LALNormalizeSFT (LALStatus            *status,
   ASSERT (sft->data->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
   ASSERT (sft->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
   ASSERT (blockSize > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
-  ASSERT (out, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-
-
-  length = sft->data->length;
-  /* allocate memory for psd -- actually we need not do this every time  */  
-  psd = (REAL8FrequencySeries *)LALCalloc(1, sizeof(REAL8FrequencySeries));
-  psd->data = NULL;
-  psd->data = (REAL8Sequence *)LALMalloc(sizeof(REAL8Sequence));
-  psd->data->length = length;
-  psd->data->data = (REAL8 *)LALMalloc( length * sizeof(REAL8));
+  ASSERT (psd, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
   
   /* calculate the psd */
   TRY (LALSFTtoPSDRngMed (status->statusPtr, psd, sft, blockSize), status);
-  *out = psd;
 
   /* loop over sft and normalize */
   for (j=0; j<length; j++) {
@@ -350,7 +339,7 @@ void LALNormalizeSFT (LALStatus            *status,
   DETATCHSTATUSPTR (status);
   /* normal exit */
   RETURN (status);
-}
+} /* end LALNormalizeSFT() */
 
 
 
@@ -359,14 +348,13 @@ void LALNormalizeSFT (LALStatus            *status,
 /** \brief Function for normalizing a vector of SFTs
     \param *sftVect  pointer to a vector of SFTs which will be normalized
     \param blockSize : Running median window size
-    \param normSwitch : 0 for frequency domain normalization and 1 for time domain 
 */
 void LALNormalizeSFTVect (LALStatus  *status,
 			  SFTVector  *sftVect,
 			  UINT4     blockSize)
 {/*   *********************************************  </lalVerbatim> */
   /* normalizes a sft vector using RngMed */
-  INT4 j, length;
+  INT4 j, length, lengthsft;
   REAL8FrequencySeries *psd = NULL;
 
   INITSTATUS (status, "LALNormalizeSFT", NORMALIZESFTRNGMEDC);
@@ -378,9 +366,18 @@ void LALNormalizeSFTVect (LALStatus  *status,
   ASSERT (sftVect->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
   ASSERT (blockSize > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
 
-  length = sftVect->length;
+
+  /* first memory allocation of psd */
+  lengthsft = sftVect->data->data->length;
+  psd = (REAL8FrequencySeries *)LALCalloc(1, sizeof(REAL8FrequencySeries));
+  psd->data = NULL;
+  psd->data = (REAL8Sequence *)LALCalloc(1, sizeof(REAL8Sequence));
+  psd->data->length = length;
+  psd->data->data = (REAL8 *)LALCalloc( lengthsft, sizeof(REAL8));
+  
   /* loop over sfts and normalize them */
-  for (j=0; j<length; j++) {
+  length = sftVect->length;
+  for (j = 0; j < length; j++) {
     SFTtype *sft;
     
     ASSERT (sftVect->data + j, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
@@ -388,20 +385,98 @@ void LALNormalizeSFTVect (LALStatus  *status,
     ASSERT (sft->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
     ASSERT (sft->data->length>0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
     ASSERT (sft->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-    TRY (LALNormalizeSFT (status->statusPtr, &psd, sft, blockSize), status);
 
-    /* free psd -- move this outside the loop for efficiency? */
-    LALFree(psd->data->data);
-    LALFree(psd->data); 
-    LALFree(psd); 
+    /* call sft normalization function */    
+    TRY (LALNormalizeSFT (status->statusPtr, psd, sft, blockSize), status);
 
   }
 
+  /* free memory for psd */
+  LALFree(psd->data->data);
+  LALFree(psd->data); 
+  LALFree(psd); 
 
   DETATCHSTATUSPTR (status);
   /* normal exit */
   RETURN (status);
 }
+
+
+
+/** \brief Function for normalizing a multi vector of SFTs in a multi IFO search an calculates the PSDs
+    \param [out] **psdvect multi vector of PSD estimates of input SFTs
+    \param *MultiSFTVect  pointer to a vector of SFTs which will be normalized
+    \param [in] blockSize : Running median window size
+*/
+void LALNormalizeMultiSFTVect (LALStatus      *status,
+			       MultiPSDVector **out,
+			       MultiSFTVector *multsft,
+			       UINT4          blockSize)
+{
+
+  UINT4 k, j; /* k loops over IFOs and j over SFTs for each IFO */
+  UINT4 numifo, numsft;
+  PSDVector *psdvec = NULL;
+  REAL8FrequencySeries *singlepsd;
+  MultiPSDVector *multpsd = NULL;
+
+  INITSTATUS (status, "LALNormalizeMultiSFT", NORMALIZESFTRNGMEDC);
+  ATTATCHSTATUSPTR (status);
+
+  /* check argments are not NULL and other sanity checks*/
+  ASSERT (multsft, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+  ASSERT (multsft->length, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);
+  ASSERT (multsft->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);
+
+  ASSERT (out, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+  ASSERT ( *out == NULL, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+
+  ASSERT (blockSize > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
+
+  /* first memory allocation for multipsd structure */
+  multpsd = (MultiPSDVector *)LALCalloc(1, sizeof(MultiPSDVector));
+  multpsd->length = numifo = multsft->length;
+  multpsd->data = (PSDVector **)LALCalloc( numifo, sizeof(PSDVector *));
+
+  /* loop over ifos */
+  for ( k = 0; k < numifo; k++) {
+   
+    /* second memory allocation for psd vector */
+    multpsd->data[k] = (PSDVector *)LALCalloc(1, sizeof(PSDVector));
+    multpsd->data[k]->length = numsft = multsft->data[k]->length;
+    multpsd->data[k]->data = NULL;
+    multpsd->data[k]->data = (REAL8FrequencySeries *)LALCalloc(numsft, sizeof(REAL8FrequencySeries));
+
+    /* loop over sfts for each ofo */
+    for (j = 0; j < numsft; j++) {
+
+      SFTtype *sft;
+      UINT4 lengthsft;
+    
+      ASSERT (multsft->data[k]->data + j, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+
+      sft = multsft->data[k]->data + j;
+      ASSERT (sft->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+      ASSERT (sft->data->length>0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
+      ASSERT (sft->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+
+      /* final memory allocation for psd */
+      multpsd->data[k]->data[j].data = NULL;
+      multpsd->data[k]->data[j].data = (REAL8Sequence *)LALCalloc(1, sizeof(REAL8Sequence));
+      multpsd->data[k]->data[j].data->length = lengthsft = sft->data->length;
+      multpsd->data[k]->data[j].data->data = (REAL8 *)LALCalloc( lengthsft, sizeof(REAL8));
+
+      TRY (LALNormalizeSFT (status->statusPtr, multpsd->data[k]->data + j, sft, blockSize), status);
+          
+    }
+  }
+
+  *out = multpsd;
+
+  DETATCHSTATUSPTR (status);
+  /* normal exit */
+  RETURN (status);
+} /* LALNormalizeMultiSFTVect() */
 
 
 

@@ -168,12 +168,18 @@ void LALSFTtoPSDRngMed (LALStatus  *status,
 			UINT4                  blockSize);
 
 void LALNormalizeSFT (LALStatus            *status,
-		      REAL8FrequencySeries **out,		      SFTtype              *sft,
+		      REAL8FrequencySeries *out,		      
+		      SFTtype              *sft,
 		      UINT4                blockSize);
 
 void LALNormalizeSFTVect (LALStatus  *status,
 			  SFTVector  *sftVect,
 			  UINT4     blockSize);
+
+void LALNormalizeMultiSFTVect (LALStatus  *status,
+			       MultiPSDVector **mult,
+			       MultiSFTVector *multsft,
+			       UINT4     blockSize);
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */
