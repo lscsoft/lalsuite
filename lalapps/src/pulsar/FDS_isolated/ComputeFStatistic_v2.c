@@ -799,6 +799,8 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
   }
   
+
+
   for ( X=0; X < cfg->numDetectors; X ++ )
     {
       if ( (cfg->ifos[X].weightsNoise  = XLALCreateREAL8Vector ( cfg->multiSFTs->data[X]->length )) == NULL ) {
@@ -812,10 +814,11 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
        */
       if ( ! uvar_SignalOnly ) 
 	{
-	  TRY( LALHOUGHComputeNoiseWeights( status->statusPtr, (cfg->ifos[X].weightsNoise), cfg->multiSFTs->data[X], uvar_RngMedWindow), status); 
+	  TRY( LALComputeNoiseWeights( status->statusPtr, (cfg->ifos[X].weightsNoise), cfg->multiSFTs->data[X], uvar_RngMedWindow), status); 
 	  TRY( LALNormalizeSFTVect (status->statusPtr, cfg->multiSFTs->data[X], uvar_RngMedWindow), status );
 	}
     } /* for X < numDetectors */
+
 
 
   { /* ----- load ephemeris-data ----- */

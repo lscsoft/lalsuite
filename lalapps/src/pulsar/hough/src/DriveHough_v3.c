@@ -427,7 +427,7 @@ int main(int argc, char *argv[]){
 
     /* calculate sft noise weights if required by user */
     if (uvar_weighNoise ) {
-      LAL_CALL( LALHOUGHComputeNoiseWeights( &status, &weightsNoise, inputSFTs, uvar_blocksRngMed), &status); 
+      LAL_CALL( LALComputeNoiseWeights( &status, &weightsNoise, inputSFTs, uvar_blocksRngMed), &status); 
       LAL_CALL( LALHOUGHNormalizeWeights( &status, &weightsNoise), &status);
     }
 
