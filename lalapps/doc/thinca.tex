@@ -11,14 +11,20 @@
 [\option{--help}] \newline \hspace*{0.5in} 
 [\option{--verbose}] \newline \hspace*{0.5in} 
 [\option{--version}] \newline \hspace*{0.5in}
-\option{--debug-level}~\parm{level} \newline \hspace*{0.5in} 
+[\option{--debug-level}~\parm{level}] \newline \hspace*{0.5in} 
 [\option{--user-tag}~\parm{usertag}] \newline \hspace*{0.5in} 
 [\option{--ifo-tag}~\parm{ifotag}] \newline \hspace*{0.5in} 
+[\option{--comment}~\parm{string}] \newline \hspace*{0.5in} 
 \option{--gps-start-time}~\parm{start\_time} \newline \hspace*{0.5in}           
 \option{--gps-end-time}~\parm{end\_time} \newline \hspace*{0.5in} 
 [\option{--check-times}] \newline \hspace*{0.5in}
 [\option{--multi-ifo-coinc}] \newline \hspace*{0.5in}
-[\option{--maximization-interval}~parm{max\_dt}] \newline \hspace*{0.5in}
+[\option{--maximization-interval}~\parm{max\_dt}] \newline \hspace*{0.5in}
+\option{--parameter-test}
+\parm{(m1\_and\_m2 $\mid$ psi0\_and\_psi3 $\mid$ mchirp\_and\_eta)}
+\newline \hspace*{0.5in}
+\option{--data-type}~\parm{(playground\_only $\mid$ exclude\_play $\mid$ 
+all\_data)} \newline \hspace*{0.5in}
 [\option{--g1-triggers}]  \newline \hspace*{0.5in}
 [\option{--h1-triggers}]  \newline \hspace*{0.5in}
 [\option{--h2-triggers}]  \newline \hspace*{0.5in}
@@ -67,12 +73,17 @@
 [\option{--h2-psi3-accuracy}~\parm{h2\_dpsi3}]  \newline \hspace*{0.5in}
 [\option{--l1-psi3-accuracy}~\parm{l1\_dpsi3}]  \newline \hspace*{0.5in}
 [\option{--t1-psi3-accuracy}~\parm{t1\_dpsi3}]  \newline \hspace*{0.5in}
-[\option{--v1-psi3-accuracy}~\parm{v1\_dpsi3}]  \newline \hspace*{0.5in}
-\option{--parameter-test}
-\parm{(m1\_and\_m2 $\mid$ psi0\_and\_psi3 $\mid$ mchirp\_and\_eta)}
-\newline \hspace*{0.5in}
-\option{--data-type}~\parm{(playground\_only $\mid$ exclude\_play $\mid$ 
-all\_data)} 
+[\option{--v1-psi3-accuracy}~\parm{v1\_dpsi3}]  \newline \hspace*{0.5in} 
+[\option{--h1-h2-distance-cut}]  \newline \hspace*{0.5in}
+[\option{--h1-kappa} ~\parm{h1\_kappa}]  \newline \hspace*{0.5in} 
+[\option{--h2-kappa}~\parm{h2\_kappa}]  \newline \hspace*{0.5in}  
+[\option{--h1-epsilon}~\parm{h1\_epsilon}] \newline \hspace*{0.5in}
+[\option{--h2-epsilon}~\parm{h2\_epsilon}] \newline \hspace*{0.5in}
+[\option{--dmchirp-high}~\parm{dmchirp}]  \newline \hspace*{0.5in}
+[\option{--high-mass}~\parm{mass}] \newline \hspace*{0.5in}  
+[\option{--do-alphaF-cut}]  \newline \hspace*{0.5in}
+[\option{--alphaF-hi}~\parm{alphaFhi}] \newline \hspace*{0.5in}
+[\option{--alphaF-lo}~\parm{alphaFlo}]  \newline \hspace*{0.5in}
 \newline \hspace*{0.5in}
 \option{LIGOLW XML input files} 
 
@@ -88,17 +99,21 @@ The user specifies which instruments there will be triggers input from with
 the \texttt{g1-triggers}, \texttt{h1-triggers} etc. options (if less than two
 of these are specified, the program exits as there cannot be coincidence).
 The triggers are then read in from the list of LIGO Lightweight XML files
-given after the last command line argument.  If the
-\texttt{maximization-interval} is specified, then only the loudest trigger in
-each \textsc{max\_dt} ms is retained. The code only keeps triggers which occur
-between the \textsc{start\_time} and the \textsc{end\_time}.  If the
-\texttt{check-times} option is specified, then the input search summary tables
-are checked to ensure that we have searched all data between the
-\textsc{start\_time} and \textsc{end\_time} in all relevant ifos.  Following
-this, we discard the non-playground triggers if \textsc{playground\_only} was
-specified and any playground triggers if \textsc{exclude\_play} was specified.
-At this stage, we check that there are triggers from at least two instruments,
-if not, the code exits without testing for coincidences. 
+given after the last command line argument.  The code performs some
+pre-processing of the triggers before searching for coincidences.  If the
+\texttt{do-alphaF-cut} option is given, then only triggers with an alphaF
+value between \textsc{alphaFlo} and \textsc{alphaFhi} are kept.  If the
+\texttt{maximization-interval} is specified, then only the loudest trigger
+(per IFO) in each \textsc{max\_dt} ms is retained.  The code only keeps
+triggers which occur between the \textsc{start\_time} and the
+\textsc{end\_time}.  If the \texttt{check-times} option is specified, then the
+input search summary tables are checked to ensure that we have searched all
+data between the \textsc{start\_time} and \textsc{end\_time} in all relevant
+ifos.  Following this, we discard the non-playground triggers if
+\textsc{playground\_only} was specified and any playground triggers if
+\textsc{exclude\_play} was specified.  At this stage, we check that there are
+triggers from at least two instruments, if not, the code exits without testing
+for coincidences. 
 
 The code now tests for any pairs of coincident triggers from different
 instruments.  This is done in the function
@@ -111,7 +126,20 @@ coincidence, the end times must differ by less than (\textsc{ifoa\_dt} $+$
 \textsc{ifob\_dt} $+$ light travel time).  Similarly, we require that the mass
 parameters agree within (\textsc{ifoa\_dm} $+$ \textsc{ifob\_dm}).  At the end
 of the process, we have a list of pairs of triggers from different instruments
-which pass the time and mass coincidence tests. 
+which pass the time and mass coincidence tests.  For coincident triggers from
+the two Hanford detectors, it is also possible to perform a distance cut by
+specifying \texttt{h1-h2-distance-cut}.  In this case, values of
+\textsc{h1\_kappa}, \textsc{h2\_kappa}, \textsc{h1\_epsilon} and
+\textsc{h2\_epsilon} must also be specified.  The function
+\texttt{XLALInspiralDistanceCut()} is used to perform the distance cut.  It
+discards any triggers for which 
+%
+\begin{equation}
+\frac{|distB - distA|}{distA} > \frac{epsilonB}{snrB} + kappaB   
+\end{equation}
+%
+where ifo A is the ifo with the greater range at the time (as given by the
+\texttt{sigmasq} values of the triggers).
 
 The list of double coincident triggers is then searched for higher ifo
 coincidences.  This is done in the function \texttt{LALCreateNIFOCoincList()}.
@@ -197,6 +225,17 @@ requested interferometers was analyzed once and only once between the
 \textsc{start\_time} and \textsc{end\_time}.  By default, the code will not
 perform this check.
 
+\item[\texttt{--maximization interval} \textsc{max\_dt}] Optional.  Keep only
+one trigger per ifo in each \textsc{max\_dt} ms window.  This is the trigger
+with the highest snr.  If this maximization has not been performed in the
+inspiral code, it is useful to do so at the start of thinca, otherwise the
+code may become swamped by the number of coincidences.
+
+\item[\texttt{--multi-ifo-coinc}] Optional.  If this flag is set, the code
+searches for triple and quadruple coincidences.  If a triple coincidence is 
+found, then the double coincidences which form a subset of this triple are
+removed from the list.
+
 \item[\texttt{--parameter-test}
 (m1\_and\_m2 $\mid$ psi0\_and\_psi3 $\mid$ mchirp\_and\_eta)]
 Required. Choose which parameters to use when testing for coincidenc.
@@ -232,6 +271,10 @@ $\psi_{3}$of a signal.
 number of time slides to perform. Note that if time slides are performed, 
 then the zero lag coincidences are \textit{not} found. Also, the output file 
 is named \texttt{THINCA\_SLIDE}.
+
+\item[\texttt{--ifo-slide} \textsc{ifo\_slide}] Optional.  Slide the data from 
+this ifo by multiples of \textsc{ifo\_slide} seconds when doing time slides.  
+The values chosen for the time slides must be different for all ifos.
 
 \item[\texttt{--comment} \textsc{string}] Optional. Add \textsc{string}
 to the comment field in the process table. If not specified, no comment
