@@ -28,7 +28,7 @@ fi
 Tsft=60;
 startTime=711595933
 refTime=$startTime ##710160733  ## $startTime
-duration=100000		## 27.7777 hours
+duration=144000		## 40 hours
 
 mfd_FreqBand=2.0;
 
