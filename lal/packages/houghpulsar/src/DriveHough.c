@@ -205,7 +205,6 @@ void LALHOUGHConstructSpacePHMD  (LALStatus            *status,
 }
 
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /** Function for shifting the cylindrical buffer of PHMDs up by one
     frequency bin -- the lowest frequency bin is dropped and an 
     extra frequency bin is added at the highest frequency */
@@ -291,7 +290,7 @@ void LALHOUGHupdateSpacePHMDup  (LALStatus            *status,
   RETURN (status);
 }
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+
 /** Function for shifting the cylindrical buffer of PHMDs down by one
     frequency bin -- the highest frequency bin is dropped and an 
     extra frequency bin is added at the lowest frequency */
@@ -377,7 +376,7 @@ void LALHOUGHupdateSpacePHMDdn  (LALStatus            *status,
   RETURN (status);
 }
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+
 /** Calculates the total hough map for a given trajectory in the 
     time-frequency plane and a set of partial hough map derivatives 
     -- this is the top level function to be called for constructing
@@ -480,7 +479,7 @@ void LALHOUGHConstructHMT  (LALStatus                  *status,
 }
 
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+
 /* *******************************  <lalVerbatim file="DriveHoughD"> */
 void LALHOUGHComputeFBinMap (LALStatus             *status, 
 			     UINT8                 *fBinMap, 
@@ -540,7 +539,7 @@ void LALHOUGHComputeFBinMap (LALStatus             *status,
 
 
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+
 /** Calculates the total hough map for a given trajectory in the 
     time-frequency plane and a set of partial hough map derivatives allowing 
     each PHMD to have a different weight factor to account for varying
@@ -642,7 +641,7 @@ void LALHOUGHConstructHMT_W (LALStatus                  *status,
 }
 
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+
 /** Adds weight factors for set of partial hough map derivatives -- the 
     weights must be calculated outside this function.  */
 /* *******************************  <lalVerbatim file="DriveHoughD"> */
@@ -696,7 +695,7 @@ void LALHOUGHWeighSpacePHMD  (LALStatus            *status,
 }
 
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+
 /** Initializes weight factors to unity */
 /* *******************************  <lalVerbatim file="DriveHoughD"> */
 void LALHOUGHInitializeWeights  (LALStatus  *status, 
@@ -731,7 +730,7 @@ void LALHOUGHInitializeWeights  (LALStatus  *status,
 
 
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+
 /** Normalizes weight factors so that their sum is N */
 /* *******************************  <lalVerbatim file="DriveHoughD"> */
 void LALHOUGHNormalizeWeights  (LALStatus  *status, 
@@ -812,8 +811,7 @@ void LALHOUGHComputeAMWeights  (LALStatus          *status,
   /* -------------------------------------------   */
 
   /* Make sure there is no size mismatch */
-  ASSERT (weightV->length == timeV->length, status, 
-	  LALHOUGHH_ESZMM, LALHOUGHH_MSGESZMM);
+  ASSERT (weightV->length == timeV->length, status, LALHOUGHH_ESZMM, LALHOUGHH_MSGESZMM);
   /* -------------------------------------------   */
 
   /* Make sure there are elements to be computed*/
@@ -901,7 +899,41 @@ void LALHOUGHComputeAMWeights  (LALStatus          *status,
 
 
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+
+/** Computes weight factors arising from amplitude modulation -- it multiplies 
+    an existing weight vector */
+/* *******************************  <lalVerbatim file="DriveHoughD"> */
+void LALHOUGHComputeMultiIFOAMWeights  (LALStatus          *status, 
+					REAL8Vector        *weightV,
+					SFTCatalog         *catalog,
+					EphemerisData      *edat,
+					REAL8              alpha,
+					REAL8              delta) 
+{ /*   *********************************************  </lalVerbatim> */
+  
+  UINT4 k; 
+
+   /* --------------------------------------------- */
+  INITSTATUS (status, "LALHOUGHComputeAMWeights", DRIVEHOUGHC);
+  ATTATCHSTATUSPTR (status); 
+ 
+  ASSERT (weightV, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
+  ASSERT (catalog, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
+  ASSERT (edat, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
+
+  ASSERT (weightV->data,status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
+  ASSERT (catalog->data,status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
+
+  /* Make sure there is no size mismatch */
+  ASSERT (weightV->length == catalog->length, status, LALHOUGHH_ESZMM, LALHOUGHH_MSGESZMM);
+
+  DETATCHSTATUSPTR (status);
+   /* normal exit */
+  RETURN (status);
+}
+
+
+
 /** Computes weight factors arising from SFTs with different noise 
     floors -- it multiplies an existing weight vector */
 /* *******************************  <lalVerbatim file="DriveHoughD"> */

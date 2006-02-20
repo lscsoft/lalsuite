@@ -283,7 +283,7 @@ spin-down parameter,
 #include <lal/SeqFactories.h>
 #include <lal/LALComputeAM.h>
 #include <lal/ComputeSky.h>
-
+#include <lal/SFTfileIO.h>
 #include <lal/LUT.h>
 #include <lal/PHMD.h>
 #include <lal/HoughMap.h>
@@ -473,6 +473,14 @@ void LALHOUGHComputeAMWeights  (LALStatus         *status,
 				REAL8             alpha,
 				REAL8             delta
 				);
+
+void LALHOUGHComputeMultiIFOAMWeights  (LALStatus          *status, 
+					REAL8Vector        *weightV,
+					SFTCatalog         *catalog,
+					EphemerisData      *edat,
+					REAL8              alpha,
+					REAL8              delta
+					);
 
 void LALHOUGHComputeNoiseWeights  (LALStatus    *status, 
 				   REAL8Vector  *weightV,
