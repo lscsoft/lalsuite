@@ -419,8 +419,6 @@ void LALNormalizeMultiSFTVect (LALStatus      *status,
 
   UINT4 k, j; /* k loops over IFOs and j over SFTs for each IFO */
   UINT4 numifo, numsft;
-  PSDVector *psdvec = NULL;
-  REAL8FrequencySeries *singlepsd;
   MultiPSDVector *multpsd = NULL;
 
   INITSTATUS (status, "LALNormalizeMultiSFT", NORMALIZESFTRNGMEDC);
