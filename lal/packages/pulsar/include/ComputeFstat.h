@@ -82,6 +82,14 @@ typedef struct
   LALDetector detector;		/**< detector-info corresponding to this timeseries */
 } DetectorStateSeries;
 
+/** Multi-IFO time-series of DetectorStates */
+typedef struct
+{
+  UINT4 length;			/**< number of detectors */
+  DetectorStateSeries **data;	/**< vector of pointers to DetectorStateSeries */
+} MultiDetectorStateSeries;
+
+
 /** Simple container for two REAL8-vectors, namely the SSB-timings DeltaT_alpha  and Tdot_alpha,
  * with one entry per SFT-timestamp. These are required input for XLALNewDemod().
  * We also store the SSB reference-time tau0.
@@ -140,6 +148,12 @@ LALGetDetectorStates (LALStatus *,
 		      const LALDetector *detector,
 		      const EphemerisData *edat,
 		      REAL8 tOffset);
+
+void 
+LALGetMultiDetectorStates( LALStatus *, 
+			   MultiDetectorStateSeries **mdetStates, 
+			   const MultiSFTVector *multiSFTs, 
+			   const EphemerisData *edat );
 
 
 void LALCreateDetectorStateSeries (LALStatus *, DetectorStateSeries **vect, UINT4 length );

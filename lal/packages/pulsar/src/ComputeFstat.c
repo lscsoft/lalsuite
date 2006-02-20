@@ -598,7 +598,7 @@ LALGetDetectorStates (LALStatus *status,
 		      DetectorStateSeries **DetectorStates,	/**< [out] series of DetectorStates */
 		      const LIGOTimeGPSVector *timestamps,	/**< array of GPS timestamps t_i */
 		      const LALDetector *detector,		/**< detector info */
-		      const EphemerisData *edat,		/**< ephemeris-files */	
+		      const EphemerisData *edat,		/**< ephemeris file data */	
 		      REAL8 tOffset
 		      )
 {
@@ -676,6 +676,103 @@ LALGetDetectorStates (LALStatus *status,
   RETURN (status);
 
 } /* LALGetDetectorStates() */
+
+/** Get the detector-time series for the given MultiSFTVector. 
+ * (see LALGetDetectorStates for more comments).
+ */
+void
+LALGetMultiDetectorStates( LALStatus *status, 
+			   MultiDetectorStateSeries **mdetStates, 	/**< [out] multi-IFO detector-states */
+			   const MultiSFTVector *multiSFTs, 		/**< [in] multi-IFO SFTs */
+			   const EphemerisData *edat )			/**< ephemeris files data */				   
+{
+  UINT4 X, numDetectors;
+  MultiDetectorStateSeries *ret = NULL;
+
+  INITSTATUS (status, "LALGetMultiDetectorStates", COMPUTEFSTATC );
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT ( mdetStates, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT ( multiSFTs, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT ( *mdetStates == NULL, status, COMPUTEFSTATC_ENONULL, COMPUTEFSTATC_MSGENONULL);
+
+  numDetectors = multiSFTs->length;
+
+  /* prepare return-structure */
+  if ( ( ret = LALCalloc ( 1, sizeof( *ret ) )) == NULL ) {
+    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+  }
+  if ( ( ret->data = LALCalloc ( numDetectors, sizeof( *(ret->data) ) )) == NULL ) {
+    LALFree ( ret );
+    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+  }
+
+  /* loop over detectors */
+  for ( X=0; X < numDetectors; X ++ )
+    {
+      LIGOTimeGPSVector *ts = NULL;
+      LALDetector *det = NULL;
+
+      SFTVector *this_sftvect = multiSFTs->data[X];
+      REAL8 tOffs = 0.5 / this_sftvect->data[0].deltaF;	/* Tsft / 2 */
+
+      /* timestamps from SFTVector  of detector X */
+      LALGetSFTtimestamps ( status->statusPtr, &ts, this_sftvect );
+      if ( status->statusPtr->statusCode ) 
+	{
+	  LALPrintError ( "\nCall to LALGetSFTtimestamps() has failed ... \n\n");
+	  goto failed;
+	}
+      /* LALDetector struct for this detector */
+      if ( (det = XLALGetSiteInfo ( this_sftvect->data[0].name )) == NULL ) 
+	{
+	  LALPrintError ("\nCall to XLALGetSiteInfo() has failed ... \n\n");
+	  XLALDestroyTimestampVector ( ts );
+	  goto failed;
+	}
+      /* fill in the detector-state series for this detector */
+      LALGetDetectorStates (status->statusPtr, &(ret->data[X]), ts, det, edat, tOffs );
+      if ( status->statusPtr->statusCode ) 
+	{
+	  LALPrintError ( "\nCall to LALGetDetectorStates() has failed ... \n\n");
+	  XLALDestroyTimestampVector ( ts );
+	  LALFree ( det );
+	  goto failed;
+	}
+
+      /* free temporary mem */
+      XLALDestroyTimestampVector ( ts );
+      ts = NULL;
+      LALFree ( det );
+
+    } /* for X < numDetectors */
+
+  goto success;
+
+ failed:
+  /* free complete MultiDetectorStateSeries built up so far */
+  BEGINFAIL(status) {
+    if ( ret ) {
+      if ( ret->data ) {
+	for ( X=0; X < numDetectors; X ++ ) {
+	  if ( ret->data[X] ) {
+	    TRY ( LALDestroyDetectorStateSeries ( status->statusPtr, &(ret->data[X]) ), status );
+	  }
+	} /* for X < numDetectors */
+	LALFree ( ret->data );
+      } /* if ret->data */
+      LALFree ( ret );
+    } /* if ret */
+  } ENDFAIL(status);
+  
+ success:
+
+  (*mdetStates) = ret;
+  
+  DETATCHSTATUSPTR (status);
+  RETURN ( status );
+
+} /* LALGetMultiDetectorStates() */
  
 
 /** Create a DetectorStateSeries */
