@@ -21,7 +21,7 @@
 #include <lalapps.h>
 
 
-RCSID( "$Id$");
+RCSID("$Id$");
 
 /*---------- error-codes ---------- */
 #define SEMIANALYTIC_ENORM 		0
