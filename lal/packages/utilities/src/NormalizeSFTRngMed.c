@@ -372,7 +372,7 @@ void LALNormalizeSFTVect (LALStatus  *status,
   psd = (REAL8FrequencySeries *)LALCalloc(1, sizeof(REAL8FrequencySeries));
   psd->data = NULL;
   psd->data = (REAL8Sequence *)LALCalloc(1, sizeof(REAL8Sequence));
-  psd->data->length = length;
+  psd->data->length = lengthsft;
   psd->data->data = (REAL8 *)LALCalloc( lengthsft, sizeof(REAL8));
   
   /* loop over sfts and normalize them */
