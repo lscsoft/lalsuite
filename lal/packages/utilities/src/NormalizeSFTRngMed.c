@@ -270,9 +270,13 @@ void LALSFTtoPSDRngMed (LALStatus  *status,
   length = sft->data->length;
   
   periodo.data = NULL;
-  periodo.data = (REAL8Sequence *)LALMalloc(sizeof(REAL8Sequence));
+  if ( (periodo.data = (REAL8Sequence *)LALCalloc(1, sizeof(REAL8Sequence))) == NULL) {
+    ABORT( status, NORMALIZESFTRNGMEDH_EMEM, NORMALIZESFTRNGMEDH_MSGEMEM);
+  }
   periodo.data->length = length;
-  periodo.data->data = (REAL8 *)LALMalloc( length * sizeof(REAL8));
+  if ( (periodo.data->data = (REAL8 *)LALCalloc( length,  sizeof(REAL8))) == NULL) {
+    ABORT( status, NORMALIZESFTRNGMEDH_EMEM, NORMALIZESFTRNGMEDH_MSGEMEM);
+  }
 
   /* calculate the periodogram */
   TRY (LALSFTtoPeriodogram (status->statusPtr, &periodo, sft), status);
@@ -371,11 +375,20 @@ void LALNormalizeSFTVect (LALStatus  *status,
 
   /* first memory allocation of psd */
   lengthsft = sftVect->data->data->length;
-  psd = (REAL8FrequencySeries *)LALCalloc(1, sizeof(REAL8FrequencySeries));
+
+  if ( (psd = (REAL8FrequencySeries *)LALCalloc(1, sizeof(REAL8FrequencySeries))) == NULL){
+    ABORT( status, NORMALIZESFTRNGMEDH_EMEM, NORMALIZESFTRNGMEDH_MSGEMEM);
+  }
+
   psd->data = NULL;
-  psd->data = (REAL8Sequence *)LALCalloc(1, sizeof(REAL8Sequence));
+  if ( (psd->data = (REAL8Sequence *)LALCalloc(1, sizeof(REAL8Sequence))) == NULL) {
+    ABORT( status, NORMALIZESFTRNGMEDH_EMEM, NORMALIZESFTRNGMEDH_MSGEMEM);
+  }
+
   psd->data->length = lengthsft;
-  psd->data->data = (REAL8 *)LALCalloc( lengthsft, sizeof(REAL8));
+  if ( (psd->data->data = (REAL8 *)LALCalloc( lengthsft, sizeof(REAL8))) == NULL) {
+    ABORT( status, NORMALIZESFTRNGMEDH_EMEM, NORMALIZESFTRNGMEDH_MSGEMEM);
+  }
   
   /* loop over sfts and normalize them */
   length = sftVect->length;
@@ -436,18 +449,26 @@ void LALNormalizeMultiSFTVect (LALStatus      *status,
   ASSERT (blockSize > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
 
   /* first memory allocation for multipsd structure */
-  multpsd = (MultiPSDVector *)LALCalloc(1, sizeof(MultiPSDVector));
+  if ( (multpsd = (MultiPSDVector *)LALCalloc(1, sizeof(MultiPSDVector))) == NULL) {
+    ABORT( status, NORMALIZESFTRNGMEDH_EMEM, NORMALIZESFTRNGMEDH_MSGEMEM);
+  }
   multpsd->length = numifo = multsft->length;
-  multpsd->data = (PSDVector **)LALCalloc( numifo, sizeof(PSDVector *));
+  if ( (multpsd->data = (PSDVector **)LALCalloc( numifo, sizeof(PSDVector *))) == NULL) {
+    ABORT( status, NORMALIZESFTRNGMEDH_EMEM, NORMALIZESFTRNGMEDH_MSGEMEM);
+  }
 
   /* loop over ifos */
   for ( k = 0; k < numifo; k++) {
    
     /* second memory allocation for psd vector */
-    multpsd->data[k] = (PSDVector *)LALCalloc(1, sizeof(PSDVector));
+    if ( (multpsd->data[k] = (PSDVector *)LALCalloc(1, sizeof(PSDVector))) == NULL) {
+      ABORT( status, NORMALIZESFTRNGMEDH_EMEM, NORMALIZESFTRNGMEDH_MSGEMEM);
+    }
     multpsd->data[k]->length = numsft = multsft->data[k]->length;
     multpsd->data[k]->data = NULL;
-    multpsd->data[k]->data = (REAL8FrequencySeries *)LALCalloc(numsft, sizeof(REAL8FrequencySeries));
+    if ( (multpsd->data[k]->data = (REAL8FrequencySeries *)LALCalloc(numsft, sizeof(REAL8FrequencySeries))) == NULL) {
+      ABORT( status, NORMALIZESFTRNGMEDH_EMEM, NORMALIZESFTRNGMEDH_MSGEMEM);
+    }
 
     /* loop over sfts for each ofo */
     for (j = 0; j < numsft; j++) {
@@ -464,10 +485,13 @@ void LALNormalizeMultiSFTVect (LALStatus      *status,
 
       /* final memory allocation for psd */
       multpsd->data[k]->data[j].data = NULL;
-      multpsd->data[k]->data[j].data = (REAL8Sequence *)LALCalloc(1, sizeof(REAL8Sequence));
+      if ( (multpsd->data[k]->data[j].data = (REAL8Sequence *)LALCalloc(1, sizeof(REAL8Sequence))) == NULL) {
+	ABORT( status, NORMALIZESFTRNGMEDH_EMEM, NORMALIZESFTRNGMEDH_MSGEMEM);
+      }
       multpsd->data[k]->data[j].data->length = lengthsft = sft->data->length;
-      multpsd->data[k]->data[j].data->data = (REAL8 *)LALCalloc( lengthsft, sizeof(REAL8));
-
+      if ( (multpsd->data[k]->data[j].data->data = (REAL8 *)LALCalloc( lengthsft, sizeof(REAL8))) == NULL) {
+	ABORT( status, NORMALIZESFTRNGMEDH_EMEM, NORMALIZESFTRNGMEDH_MSGEMEM);
+      }
       TRY (LALNormalizeSFT (status->statusPtr, multpsd->data[k]->data + j, sft, blockSize), status);
           
     }
