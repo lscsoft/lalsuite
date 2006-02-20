@@ -88,12 +88,27 @@ typedef COMPLEX8FrequencySeries 	SFTtype;
 /** The corresponding vector-type to hold a vector of 'SFTs' */
 typedef COMPLEX8FrequencySeriesVector 	SFTVector;
 
+/** Special type for holding a PSD vector (over several SFTs) */
+typedef REAL8FrequencySeriesVector PSDVector;
 
 /** A collection of SFT vectors -- one for each IFO in a multi-IFO search */
 typedef struct tagMultiSFTVector {
-  UINT4      length;  /**< number of ifos */
-  SFTVector  **data; /**< sftvector for each ifo */
+  UINT4      length;  	/**< number of ifos */
+  SFTVector  **data; 	/**< sftvector for each ifo */
 } MultiSFTVector;
+
+
+/** A collection of PSD vectors -- one for each IFO in a multi-IFO search */
+typedef struct {
+  UINT4      length;  	/**< number of ifos */
+  PSDVector  **data; 	/**< sftvector for each ifo */
+} MultiPSDVector;
+
+/** One noise-weight (number) per SFT (therefore indexed over IFOs and SFTs */
+typedef struct {
+  UINT4 length;		/**< number of ifos */
+  REAL8Vector **data;	/**< weights-vector for each SFTs */
+} MultiNoiseWeights;
 
 
 /** A vector of 'timestamps' of type LIGOTimeGPS */
