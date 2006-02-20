@@ -31,7 +31,7 @@
 /*---------- INCLUDES ----------*/
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
-
+#include <lal/NormalizeSFTRngMed.h>
 
 #include "SFTutils.h"
 

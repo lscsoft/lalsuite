@@ -92,15 +92,7 @@ LALHO()
 
 NRCSID (NORMALIZESFTRNGMEDC, "$Id$");
 
-/*
- * The functions that make up the guts of this module
- */
 
-
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-
-
-/*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<*/
 /********************************* <lalVerbatim file="NormalizeSFTRngMedD"> */
 /** \brief Calculate the modulus square of a single SFT 
     \param *SFT : pointer to a SFT
@@ -159,7 +151,6 @@ void LALSFTtoPeriodogram (LALStatus    *status,
 
 
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* *******************************  <lalVerbatim file="NormalizeSFTRngMedD"> */
 /** \brief  Calculates running psd for a single periodogram using the running median
     \param  *periodo : pointer to REAL8FrequencySeries containing square modulus of a SFT
@@ -298,9 +289,6 @@ void LALSFTtoPSDRngMed (LALStatus  *status,
 
 
 
-
-
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* *******************************  <lalVerbatim file="NormalizeSFTRngMedD"> */
 /** \brief Normalizes a sft based on RngMed 
     \param [out] psd estimate from sft using running median

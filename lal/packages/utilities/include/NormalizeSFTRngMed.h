@@ -85,10 +85,8 @@ them to clean SFT data
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
 #include <lal/SFTfileIO.h>
-#include <lal/Random.h>
 #include <lal/PulsarDataTypes.h>
 #include <lal/UserInput.h>
-#include <lal/LUT.h>
 #include <lal/SFTutils.h>
 #include <lal/RngMedBias.h>
 #include <lal/LALRunningMedian.h>
