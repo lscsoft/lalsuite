@@ -161,7 +161,7 @@ CHAR *XLALGetChannelPrefix ( const CHAR *name );
 LALDetector *XLALGetSiteInfo ( const CHAR *name );
 
 void LALComputeNoiseWeights  (LALStatus *status, REAL8Vector *weightV, SFTVector *sftVect, INT4 blkSize);
-
+void LALComputeMultiNoiseWeights  (LALStatus    *status, MultiNoiseWeights **weightsV, MultiPSDVector  *multipsd);
 
 
 #ifdef  __cplusplus

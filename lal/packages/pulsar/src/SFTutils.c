@@ -990,3 +990,38 @@ void LALComputeNoiseWeights  (LALStatus    *status,
   RETURN (status);
 }
 
+
+/** Computes weight factors arising from MultiSFTs with different noise 
+    floors -- it multiplies an existing weight vector */
+void LALComputeMultiNoiseWeights  (LALStatus         *status, 
+				   MultiNoiseWeights **out,
+				   MultiPSDVector    *multipsd) 
+{
+  REAL8 Sn;
+  INT4 k, j, numifos, numsfts;
+  MultiNoiseWeights *weights;
+
+  INITSTATUS (status, "LALComputeMultiNoiseWeights", SFTUTILSC);
+  ATTATCHSTATUSPTR (status); 
+
+  ASSERT ( multipsd, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL);
+  ASSERT ( multipsd->data, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL);
+  ASSERT ( multipsd->length, status, SFTUTILS_EINPUT, SFTUTILS_MSGEINPUT);
+
+  ASSERT ( out, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL);
+  ASSERT ( *out = NULL, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL);
+
+  numifos = multipsd->length;
+
+  weights = (MultiNoiseWeights *)LALCalloc(1, sizeof(MultiNoiseWeights));
+
+  weights->length = numifos;
+
+      
+
+
+
+  DETATCHSTATUSPTR (status);
+   /* normal exit */
+  RETURN (status);
+}
