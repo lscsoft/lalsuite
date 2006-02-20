@@ -35,10 +35,10 @@ LALNormalizeSFTVect ()
 \endcode				      
 
 
-The function LALNormalizeSFTVect takes as input a vector of SFTs and normalizes
-them.  This function calls the functions LALNormalizeSFT (which normalizes a
-single SFT), LALSFTtoPeriodogram (which calculates the \f$ |\tilde{x}|^2 \f$) and 
-LALPeriodoToPSDRngMed which applies the running median algorithm to find a vector
+The function LALNormalizeSFTVect() takes as input a vector of SFTs and normalizes
+them.  This function calls the functions LALNormalizeSFT() which normalizes a
+single SFT, LALSFTtoPeriodogram() which calculates the \f$ |\tilde{x}|^2 \f$ and 
+LALPeriodoToPSDRngMed() which applies the running median algorithm to find a vector
 of medians. 
 
 */
@@ -303,14 +303,14 @@ void LALSFTtoPSDRngMed (LALStatus  *status,
     \param blockSize : Running median block size
     \param normSwitch : Switch for normalization -- 0 for frequency domain and 1 for time domain
 */
-void LALNormalizeSFT (LALStatus  *status,
-		      SFTtype  *sft,
-		      UINT4     blockSize, 
-		      UCHAR    normSwitch)
+void LALNormalizeSFT (LALStatus            *status,
+ 		      REAL8FrequencySeries **out,     /**< [out] psd estimate from sft using running median */
+		      SFTtype              *sft,      /**< SFT to be normalized */
+		      UINT4                blockSize) /**< Running median block size for psd calculation */ 
 {/*   *********************************************  </lalVerbatim> */
 
   INT4 j, length;
-  REAL8FrequencySeries psd;
+  REAL8FrequencySeries *psd = NULL;
 
   INITSTATUS (status, "LALNormalizeSFT", NORMALIZESFTRNGMEDC);
   ATTATCHSTATUSPTR (status);
@@ -321,37 +321,31 @@ void LALNormalizeSFT (LALStatus  *status,
   ASSERT (sft->data->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
   ASSERT (sft->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
   ASSERT (blockSize > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
+  ASSERT (out, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+
 
   length = sft->data->length;
-  /* allocate memory for psd */  
-  psd.data = NULL;
-  psd.data = (REAL8Sequence *)LALMalloc(sizeof(REAL8Sequence));
-  psd.data->length = length;
-  psd.data->data = (REAL8 *)LALMalloc( length * sizeof(REAL8));
-
-
+  /* allocate memory for psd -- actually we need not do this every time  */  
+  psd = (REAL8FrequencySeries *)LALCalloc(1, sizeof(REAL8FrequencySeries));
+  psd->data = NULL;
+  psd->data = (REAL8Sequence *)LALMalloc(sizeof(REAL8Sequence));
+  psd->data->length = length;
+  psd->data->data = (REAL8 *)LALMalloc( length * sizeof(REAL8));
+  
   /* calculate the psd */
-  TRY (LALSFTtoPSDRngMed (status->statusPtr, &psd, sft, blockSize), status);
+  TRY (LALSFTtoPSDRngMed (status->statusPtr, psd, sft, blockSize), status);
+  *out = psd;
 
   /* loop over sft and normalize */
   for (j=0; j<length; j++) {
     REAL8 Sn;
-    Sn = psd.data->data[j]; 
-    if ( normSwitch == 0 ) {
-      /* frequency domain normalization */
-      sft->data->data[j].re /= sqrt(Sn);
-      sft->data->data[j].im /= sqrt(Sn);
-    }
-    if ( normSwitch == 1 ) {
-      /* time domain normalization */
-      sft->data->data[j].re *= sqrt(2.0 * length / Sn);
-      sft->data->data[j].im *= sqrt(2.0 * length / Sn);
-    }
+    Sn = psd->data->data[j]; 
+    
+    /* frequency domain normalization */
+    sft->data->data[j].re /= sqrt(Sn);
+    sft->data->data[j].im /= sqrt(Sn);
   }
 
-  /* free psd */
-  LALFree(psd.data->data);
-  LALFree(psd.data);
 
   DETATCHSTATUSPTR (status);
   /* normal exit */
@@ -360,7 +354,7 @@ void LALNormalizeSFT (LALStatus  *status,
 
 
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+
 /* *******************************  <lalVerbatim file="NormalizeSFTRngMedD"> */
 /** \brief Function for normalizing a vector of SFTs
     \param *sftVect  pointer to a vector of SFTs which will be normalized
@@ -369,11 +363,11 @@ void LALNormalizeSFT (LALStatus  *status,
 */
 void LALNormalizeSFTVect (LALStatus  *status,
 			  SFTVector  *sftVect,
-			  UINT4     blockSize,
-			  UCHAR    normSwitch)
+			  UINT4     blockSize)
 {/*   *********************************************  </lalVerbatim> */
   /* normalizes a sft vector using RngMed */
   INT4 j, length;
+  REAL8FrequencySeries *psd = NULL;
 
   INITSTATUS (status, "LALNormalizeSFT", NORMALIZESFTRNGMEDC);
   ATTATCHSTATUSPTR (status);
@@ -383,7 +377,6 @@ void LALNormalizeSFTVect (LALStatus  *status,
   ASSERT (sftVect->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
   ASSERT (sftVect->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
   ASSERT (blockSize > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
-
 
   length = sftVect->length;
   /* loop over sfts and normalize them */
@@ -395,8 +388,15 @@ void LALNormalizeSFTVect (LALStatus  *status,
     ASSERT (sft->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
     ASSERT (sft->data->length>0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
     ASSERT (sft->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-    TRY (LALNormalizeSFT (status->statusPtr, sft, blockSize, normSwitch), status);
+    TRY (LALNormalizeSFT (status->statusPtr, &psd, sft, blockSize), status);
+
+    /* free psd -- move this outside the loop for efficiency? */
+    LALFree(psd->data->data);
+    LALFree(psd->data); 
+    LALFree(psd); 
+
   }
+
 
   DETATCHSTATUSPTR (status);
   /* normal exit */

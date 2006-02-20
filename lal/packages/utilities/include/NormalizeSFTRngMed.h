@@ -89,6 +89,7 @@ them to clean SFT data
 #include <lal/PulsarDataTypes.h>
 #include <lal/UserInput.h>
 #include <lal/LUT.h>
+#include <lal/SFTutils.h>
 #include <lal/RngMedBias.h>
 #include <lal/LALRunningMedian.h>
 
@@ -166,17 +167,13 @@ void LALSFTtoPSDRngMed (LALStatus  *status,
 			const COMPLEX8FrequencySeries *SFT,
 			UINT4                  blockSize);
 
-void LALNormalizeSFT (LALStatus  *status,
-		      SFTtype  *sft,
-		      UINT4     blockSize,
-		      UCHAR    normSwitch);
+void LALNormalizeSFT (LALStatus            *status,
+		      REAL8FrequencySeries **out,		      SFTtype              *sft,
+		      UINT4                blockSize);
 
 void LALNormalizeSFTVect (LALStatus  *status,
 			  SFTVector  *sftVect,
-			  UINT4     blockSize,
-			  UCHAR    normSwitch); /* normSwitch == 0 for frequency domain 
-						   normalization and == 1 for time domain */
-
+			  UINT4     blockSize);
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */
