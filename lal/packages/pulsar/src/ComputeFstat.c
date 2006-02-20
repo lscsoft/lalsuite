@@ -706,6 +706,7 @@ LALGetMultiDetectorStates( LALStatus *status,
     LALFree ( ret );
     ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
   }
+  ret->length = numDetectors;
 
   /* loop over detectors */
   for ( X=0; X < numDetectors; X ++ )
