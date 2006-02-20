@@ -155,6 +155,8 @@ LALGetMultiDetectorStates( LALStatus *,
 			   const MultiSFTVector *multiSFTs, 
 			   const EphemerisData *edat );
 
+void XLALDestroyDetectorStateSeries ( DetectorStateSeries *detStates );
+void XLALDestroyMultiDetectorStateSeries ( MultiDetectorStateSeries *mdetStates );
 
 void LALCreateDetectorStateSeries (LALStatus *, DetectorStateSeries **vect, UINT4 length );
 void LALDestroyDetectorStateSeries(LALStatus *, DetectorStateSeries **vect );

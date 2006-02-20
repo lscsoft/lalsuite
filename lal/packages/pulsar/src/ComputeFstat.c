@@ -806,25 +806,60 @@ LALCreateDetectorStateSeries (LALStatus *status,
 
 } /* LALCreateDetectorStateSeries() */
 
+/* Get rid of a DetectorStateSeries */
+void
+XLALDestroyDetectorStateSeries ( DetectorStateSeries *detStates )
+{
+  if ( !detStates )
+    return;
+
+  if ( detStates->data ) LALFree ( detStates->data );
+  LALFree ( detStates );
+
+  return;
+
+} /* XLALDestroyDetectorStateSeries() */
 
 /** Destroy a DetectorStateSeries (and set it to NULL) */
 void
 LALDestroyDetectorStateSeries (LALStatus *status, 
-			       DetectorStateSeries **vect ) /**< pointer to vector to be destroyed */
+			       DetectorStateSeries **detStates ) /**< pointer to vector to be destroyed */
 {
   INITSTATUS (status, "LALDestroyDetectorStateSeries", COMPUTEFSTATC );
 
-  ASSERT ( vect, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT ( detStates, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
 
-  if ( *vect != NULL ) 
-    {
-      LALFree ( (*vect)->data );
-      LALFree ( *vect );
-      *vect = NULL;
-    }
+  XLALDestroyDetectorStateSeries ( (*detStates) );
+
+  (*detStates) = NULL;
 
   RETURN (status);
 } /* LALDestroyDetectorStateSeries() */
+
+/** Helper function to get rid of a multi-IFO DetectorStateSeries */
+void
+XLALDestroyMultiDetectorStateSeries ( MultiDetectorStateSeries *mdetStates )
+{
+  UINT4 X, numDet;
+
+  if ( !mdetStates )
+    return;
+
+  numDet = mdetStates->length;
+  if ( mdetStates->data )
+    {
+      for ( X=0; X < numDet ; X ++ )
+	XLALDestroyDetectorStateSeries ( mdetStates->data[X] );
+
+      LALFree ( mdetStates->data );
+    }
+
+  LALFree ( mdetStates );
+
+  return;
+
+} /* XLALDestroyMultiDetectorStateSeries() */
+
 
 
 /** Calculate sin(x) and cos(x) to roughly 1e-7 precision using 
