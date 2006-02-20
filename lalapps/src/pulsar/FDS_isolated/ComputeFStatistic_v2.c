@@ -902,7 +902,7 @@ NewInitFStat ( LALStatus *status, ConfigVariables *cfg )
 	if ( ! uvar_SignalOnly ) 
 	  {
 	    TRY( LALHOUGHComputeNoiseWeights( status->statusPtr, (cfg->ifos[X].weightsNoise), cfg->ifos[X].sftVect, uvar_RngMedWindow), status); 
-	    TRY(LALNormalizeSFTVect (status->statusPtr, cfg->ifos[X].sftVect, uvar_RngMedWindow, 0), status );
+	    TRY(LALNormalizeSFTVect (status->statusPtr, cfg->ifos[X].sftVect, uvar_RngMedWindow), status );
 	  }
 
 	TRY ( LALDestroySFTCatalog ( status->statusPtr, &(catalogs[X]) ), status );

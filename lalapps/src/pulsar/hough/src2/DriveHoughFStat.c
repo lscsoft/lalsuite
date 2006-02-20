@@ -632,7 +632,7 @@ int main( int argc, char *argv[]) {
 
 
   /* normalize sfts */
-  LAL_CALL( LALNormalizeSFTVect (&status, inputSFTVec1, uvar_blocksRngMed, 0), &status);
+  LAL_CALL( LALNormalizeSFTVect (&status, inputSFTVec1, uvar_blocksRngMed), &status);
   
 
   /*------------- set up 1st stage stacks -----------------*/
@@ -833,7 +833,7 @@ int main( int argc, char *argv[]) {
 	  } /* end signal injection into follow-up sfts */	
 	
 	/* normalize sfts */
-	LAL_CALL( LALNormalizeSFTVect (&status, inputSFTVec2, uvar_blocksRngMed, 0), &status);
+	LAL_CALL( LALNormalizeSFTVect (&status, inputSFTVec2, uvar_blocksRngMed), &status);
 
       } /* end sftdir2 if statement */
     else 

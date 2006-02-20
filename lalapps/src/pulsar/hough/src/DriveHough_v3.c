@@ -432,7 +432,7 @@ int main(int argc, char *argv[]){
     }
 
     /* normalize sfts */
-    LAL_CALL( LALNormalizeSFTVect (&status, inputSFTs, uvar_blocksRngMed, 0), &status);
+    LAL_CALL( LALNormalizeSFTVect (&status, inputSFTs, uvar_blocksRngMed), &status);
 
   } /* end of sft reading block */
   
