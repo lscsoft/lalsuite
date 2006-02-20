@@ -231,6 +231,49 @@ LALDestroySFTVector (LALStatus *status,
 } /* LALDestroySFTVector() */
 
 
+
+
+/** Destroy a PSD-vector
+ */
+void
+LALDestroyPSDVector (LALStatus *status, 
+		     PSDVector **vect)	/**< the SFT-vector to free */
+{
+  UINT4 i;
+  REAL8FrequencySeries *psd;
+
+  INITSTATUS( status, "LALDestroyPSDVector", SFTUTILSC);
+  ATTATCHSTATUSPTR( status );
+
+  ASSERT (vect != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
+  ASSERT (*vect != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
+
+  
+  for (i=0; i < (*vect)->length; i++)
+    {
+      psd = &( (*vect)->data[i] );
+      if ( psd->data )
+	{
+	  if ( psd->data->data )
+	    LALFree ( psd->data->data );
+	  LALFree ( psd->data );
+	}
+    }
+
+  LALFree ( (*vect)->data );
+  LALFree ( *vect );
+
+  *vect = NULL;
+
+  DETATCHSTATUSPTR( status );
+  RETURN (status);
+
+} /* LALDestroyPSDVector() */
+
+
+
+
+
 /** Destroy a multi SFT-vector
  */
 void
@@ -256,7 +299,48 @@ LALDestroyMultiSFTVector (LALStatus *status,
   DETATCHSTATUSPTR( status );
   RETURN (status);
 
+} /* LALDestroyMultiSFTVector() */
+
+
+
+
+
+
+/** Destroy a multi PSD-vector
+ */
+void
+LALDestroyMultiPSDVector (LALStatus *status, 
+		          MultiPSDVector **multvect)	/**< the SFT-vector to free */
+{
+  UINT4 i;
+
+  INITSTATUS( status, "LALDestroyMultiPSDVector", SFTUTILSC);
+  ATTATCHSTATUSPTR( status );
+
+  ASSERT (multvect != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
+  ASSERT (*multvect != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
+
+  for ( i = 0; i < (*multvect)->length; i++) {    
+    LALDestroyPSDVector( status->statusPtr, (*multvect)->data + i);
+  }
+
+
+  LALFree( (*multvect)->data );
+  LALFree( *multvect );
+  
+  *multvect = NULL;
+
+  DETATCHSTATUSPTR( status );
+  RETURN (status);
+
 } /* LALDestroySFTVector() */
+
+
+
+
+
+
+
 
 
 /** Copy an entire SFT-type into another. 

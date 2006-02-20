@@ -134,7 +134,10 @@ void LALCreateSFTVector (LALStatus *status, SFTVector **sftvect, UINT4 numSFTs, 
 
 void LALDestroySFTtype (LALStatus *status, SFTtype **sft);
 void LALDestroySFTVector (LALStatus *status, SFTVector **sftvect);
+void LALDestroyPSDVector (LALStatus *status, PSDVector **vect);
+
 void LALDestroyMultiSFTVector (LALStatus *status, MultiSFTVector **multvect);
+void LALDestroyMultiPSDVector (LALStatus *status, MultiPSDVector **multvect);
 
 void LALCopySFT (LALStatus *status, SFTtype *dest, const SFTtype *src);
 
