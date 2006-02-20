@@ -1074,7 +1074,7 @@ void LALDestroyMultiNoiseWeights  (LALStatus         *status,
 				   MultiNoiseWeights **weights) 
 {
 
-  UINT4 k, j;
+  UINT4 k;
 
   INITSTATUS (status, "LALDestroyMultiNoiseWeights", SFTUTILSC);
   ATTATCHSTATUSPTR (status); 
