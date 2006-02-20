@@ -603,6 +603,43 @@ LALMakeTimestamps(LALStatus *status,
 } /* LALMakeTimestamps() */
 
 
+/** Extract timstamps-vector from the given SFTVector.
+ */
+void
+LALGetSFTtimestamps (LALStatus *status,
+		     LIGOTimeGPSVector **timestamps,	/**< [out] extracted timestamps */
+		     const SFTVector *sfts )		/**< input SFT-vector  */
+{
+  UINT4 numSFTs;
+  UINT4 i;
+  LIGOTimeGPSVector *ret = NULL;
+
+  INITSTATUS (status, "LALGetSFTtimestamps", SFTUTILSC );
+  ATTATCHSTATUSPTR (status); 
+
+  ASSERT ( timestamps, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL );
+  ASSERT ( sfts, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL );
+  ASSERT ( sfts->length > 0, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL );
+  ASSERT ( *timestamps == NULL, status, SFTUTILS_ENONULL, SFTUTILS_MSGENONULL );
+
+  numSFTs = sfts->length;
+
+  TRY ( LALCreateTimestampVector ( status->statusPtr, &ret, numSFTs ), status );
+
+  for ( i=0; i < numSFTs; i ++ )
+    ret->data[i] = sfts->data[i].epoch;
+
+  /* done: return Ts-vector */
+  (*timestamps) = ret;
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+
+} /* LALGetSFTtimestamps() */
+
+
+
+
 /** Extract/construct the unique 2-character "channel prefix" from the given 
  * "detector-name", which unfortunately will not always follow any of the 
  * official detector-naming conventions given in the Frames-Spec LIGO-T970130-F-E
