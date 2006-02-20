@@ -325,8 +325,10 @@ void LALNormalizeSFT (LALStatus            *status,
   /* calculate the psd */
   TRY (LALSFTtoPSDRngMed (status->statusPtr, psd, sft, blockSize), status);
 
+  length = sft->data->length;
+
   /* loop over sft and normalize */
-  for (j=0; j<length; j++) {
+  for (j = 0; j < length; j++) {
     REAL8 Sn;
     Sn = psd->data->data[j]; 
     
