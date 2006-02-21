@@ -1009,7 +1009,7 @@ void LALComputeMultiNoiseWeights  (LALStatus         *status,
   ASSERT ( multipsd->length, status, SFTUTILS_EINPUT, SFTUTILS_MSGEINPUT);
 
   ASSERT ( out, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL);
-  ASSERT ( *out = NULL, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL);
+  ASSERT ( *out == NULL, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL);
 
   numifos = multipsd->length;
 
