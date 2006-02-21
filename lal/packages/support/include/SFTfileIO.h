@@ -19,7 +19,7 @@
 
 /** \defgroup SFTfileIO
  * \ingroup support
- * \author R. Prix, B. Machenschalk, A.M. Sintes
+ * \author R. Prix, B. Machenschalk, A.M. Sintes, B. Krishnan
  * $Date$
  * \brief Module for reading/writing/manipulating SFTs (Short Fourier transforms)
  *

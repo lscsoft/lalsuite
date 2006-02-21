@@ -18,7 +18,7 @@
  */
 
 /**
- * \author Reinhard Prix
+ * \author Reinhard Prix, Badri Krishnan
  * \date 2005
  * \file 
  * \ingroup SFTfileIO
@@ -899,10 +899,10 @@ create_nautilus_site ( LALDetector *Detector )
 
 /** Computes weight factors arising from SFTs with different noise 
     floors -- it multiplies an existing weight vector */
-void LALComputeNoiseWeights  (LALStatus    *status, 
-			      REAL8Vector  *weightV,
-			      SFTVector    *sftVect,
-			      INT4         blkSize) 
+void LALComputeNoiseWeights  (LALStatus        *status, 
+			      REAL8Vector      *weightV,
+			      const SFTVector  *sftVect,
+			      INT4             blkSize) 
 {
 
   UINT4 lengthVect, lengthSFT, lengthPSD;
@@ -995,7 +995,7 @@ void LALComputeNoiseWeights  (LALStatus    *status,
     floors -- it multiplies an existing weight vector */
 void LALComputeMultiNoiseWeights  (LALStatus         *status, 
 				   MultiNoiseWeights **out,
-				   MultiPSDVector    *multipsd) 
+				   const MultiPSDVector    *multipsd) 
 {
   REAL8 Sn=0.0, sumSn=0.0;
   INT4 i, k, j, numifos, numsfts, lengthsft;

@@ -19,7 +19,7 @@
 
 /** \file
  * \ingroup SFTfileIO
- * \author R. Prix, B. Machenschalk, A.M. Sintes
+ * \author R. Prix, B. Machenschalk, A.M. Sintes, B. Krishnan
  * 
  * \brief IO library for reading/writing "Short Fourier transform" (SFT) data files.
  *
