@@ -510,7 +510,7 @@ void LALNormalizeMultiSFTVect (LALStatus      *status,
 	ABORT( status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
       }
       
-      if (sft->data->length = 0) {
+      if (sft->data->length == 0) {
 	ABORT( status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
       }
       
