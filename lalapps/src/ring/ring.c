@@ -195,7 +195,8 @@ static REAL4TimeSeries *ring_get_data( struct ring_params *params )
     
     /*  inject_signal( channel, ring_inject, params->injectFile,
                     params->calibCache, params->dynRangeFac ); */
-    /*  write_REAL4TimeSeries( channel ); */
+    if ( params->writeRawData )
+       write_REAL4TimeSeries( channel );  
         
     /* condition the data: resample and highpass */
     resample_REAL4TimeSeries( channel, params->sampleRate );
