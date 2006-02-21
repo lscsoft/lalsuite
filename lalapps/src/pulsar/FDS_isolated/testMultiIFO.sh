@@ -28,15 +28,15 @@ fi
 Tsft=60;
 startTime=711595933
 refTime=$startTime ##710160733  ## $startTime
-duration=100000		## 27.7777 hours
+duration=144000		## 27.7777 hours
 
 mfd_FreqBand=2.0;
 
 Alpha=2.0
 Delta=-0.5
 
-aPlus=1.0
-aCross=0.4
+aPlus=1.0e-20
+aCross=0.4e-20
 
 psi=0
 phi0=0
@@ -49,7 +49,7 @@ echo "mfd_fmin = $mfd_fmin"
 f1dot=1e-8
 df1dot=0.3e-8	## search about 3 spindown-values
 
-noiseSigma=3
+noiseSigma=3e-20
 
 if [ "$noiseSigma" != 0 ]; then
     sqrtSh=$(echo $noiseSigma $mfd_FreqBand | awk '{printf "%g", $1 / sqrt($2) }'); ## sqrt(Sh) = sigma/ sqrt(Band)
@@ -60,7 +60,6 @@ else
 fi
 
 IFO=LHO
-IFO2=LHO
 
 ##--------------------------------------------------
 ## test starts here
@@ -125,7 +124,7 @@ echo "----------------------------------------------------------------------"
 echo
 
 ## cmdline-options for v2, two detectors  
-cfs2_CL="--IFO=$IFO --IFO2=$IFO2 --Freq=$freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --f1dotBand=$f1dot --df1dot=$df1dot --Fthreshold=0 --DataFiles='$SFTdir/testSFT*' --DataFiles2='$SFTdir/testSFT*' --refTime=$refTime $whatNoise"
+cfs2_CL="--IFO=$IFO --Freq=$freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --f1dotBand=$f1dot --df1dot=$df1dot --Fthreshold=0 --DataFiles='$SFTdir/testSFT*' --refTime=$refTime $whatNoise"
 
 cmdline="$cfsv2_code $cfs2_CL --outputFstat=Fstat_v2_2.dat $extra_args";
 echo $cmdline;
@@ -140,9 +139,9 @@ echo "----------------------------------------"
 echo " STEP 4: Comparing results: "
 echo "----------------------------------------"
 echo
-echo "Fstat_v1.dat: "
+echo "Fstat_v2_1.dat: "
 cat Fstat_v2_1.dat
-echo "Fstat_v2.dat: "
+echo "Fstat_v2_2.dat: "
 cat Fstat_v2_2.dat
 
 echo
