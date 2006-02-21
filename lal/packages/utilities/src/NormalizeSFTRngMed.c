@@ -531,15 +531,15 @@ void LALNormalizeMultiSFTVect (LALStatus      *status,
 
       LALNormalizeSFT (status->statusPtr, multpsd->data[k]->data + j, sft, blockSize);
       BEGINFAIL (status) { 
-        /* clean up for this value of k */
-	for ( jCleanUp = 0; jCleanUp < j; jCleanUp++) {
+        /* clean up for this value of k -- note that j and k have not been incremented at this stage*/
+	for ( jCleanUp = 0; jCleanUp < j+1; jCleanUp++) {
 	  LALFree( multpsd->data[k]->data[jCleanUp].data->data);
 	  LALFree( multpsd->data[k]->data[jCleanUp].data);
 	}
 	LALFree( multpsd->data[k]->data);
 	LALFree( multpsd->data[k]);
 	/* clean up for previous values of k */
-	for ( kCleanUp = 0; kCleanUp < k-1; kCleanUp++) {
+	for ( kCleanUp = 0; kCleanUp < k; kCleanUp++) {
 	  for ( jCleanUp = 0; jCleanUp < multsft->data[kCleanUp]->length; jCleanUp++) {
 	    LALFree( multpsd->data[kCleanUp]->data[jCleanUp].data->data);
 	    LALFree( multpsd->data[kCleanUp]->data[jCleanUp].data);
@@ -551,8 +551,8 @@ void LALNormalizeMultiSFTVect (LALStatus      *status,
 	LALFree(multpsd->data);
 	LALFree(multpsd);
       } ENDFAIL (status);          
-    }
-  }
+    } /* loop over sfts ++j */
+  } /* loop over ifos ++k */
 
   *out = multpsd;
 
