@@ -96,7 +96,6 @@ RCSID( "$Id$");
 typedef struct {
   SSBtimes *tSSB;			/**< SSB-times DeltaT_alpha and Tdot_alpha */
   AMCoeffs *amcoe;         		/**< Amplitude Modulation coefficients */
-  REAL8Vector *weightsNoise;             /**< vector of weights */
 } IFOspecifics;
 
 /** Configuration settings required for and defining a coherent pulsar search.
@@ -114,6 +113,7 @@ typedef struct {
   IFOspecifics *ifos;			/**< IFO-specific configuration data  */
   MultiSFTVector *multiSFTs;		/**< multi-IFO SFT-vectors */
   MultiDetectorStateSeries *multiDetStates; /**< pos, vel and LMSTs for detector at times t_i */
+  MultiNoiseWeights *multiNoiseWeights;	/**< normalized noise-weights of those SFTs */
 } ConfigVariables;
 
 /*---------- Global variables ----------*/
@@ -169,6 +169,7 @@ void WriteFStatLog (LALStatus *, CHAR *argv[]);
 void checkUserInputConsistency (LALStatus *);
 int outputBeamTS( const CHAR *fname, const AMCoeffs *amcoe, const DetectorStateSeries *detStates );
 void InitEphemeris (LALStatus *, EphemerisData *edat, const CHAR *ephemDir, const CHAR *ephemYear, LIGOTimeGPS epoch);
+void getUnitWeights ( LALStatus *, MultiNoiseWeights **multiWeights, const MultiSFTVector *multiSFTs );
 
 const char *va(const char *format, ...);	/* little var-arg string helper function */
 
@@ -341,7 +342,7 @@ int main(int argc,char *argv[])
 	      REAL4 FaRe = 0.0, FaIm = 0.0, FbRe = 0.0, FbIm = 0.0;
 	      REAL8 Fstat;
 	      REAL8 Bstat;
-	      UINT4 M, alpha;
+	      UINT4 MX, alpha;
 	      	 
 	      fkdot->data[0] = GV.spinRangeStart->fkdot->data[0] + iFreq * thisScan.dFreq;
 	      
@@ -360,36 +361,25 @@ int main(int argc,char *argv[])
 					     GV.ifos[nD].amcoe, 
 					     GV.multiDetStates->data[nD],
 					     thisPoint), &status);
-
-		  /* initilizing the A, B and C to be set at zero */
-		  GV.ifos[nD].amcoe->A = 0.0;
-		  GV.ifos[nD].amcoe->B = 0.0;
-		  GV.ifos[nD].amcoe->C = 0.0;
 		  
 		  /* Calculate the Coefficients a(t) and b(t) */
 		  
-		  M = 1.0f * GV.multiSFTs->data[nD]->length;
+		  MX = 1.0f * GV.multiSFTs->data[nD]->length;
 		  
-		  for(alpha = 0; alpha < M; alpha++)
+		  for(alpha = 0; alpha < MX; alpha++)
 		    {
-		      REAL4 ahat;
-		      REAL4 bhat;
-		      
-		      ahat = (GV.ifos[nD].amcoe->a->data[alpha]) * sqrt(GV.ifos[nD].weightsNoise->data[alpha]);
-		      bhat = (GV.ifos[nD].amcoe->b->data[alpha]) * sqrt(GV.ifos[nD].weightsNoise->data[alpha]);
+		      REAL8 Sqwi = sqrt ( GV.multiNoiseWeights->data[nD]->data[alpha] );
+		      REAL8 ahat = GV.ifos[nD].amcoe->a->data[alpha] * Sqwi;
+		      REAL8 bhat = GV.ifos[nD].amcoe->b->data[alpha] * Sqwi;
 		      
 		      GV.ifos[nD].amcoe->a->data[alpha] = ahat;
 		      GV.ifos[nD].amcoe->b->data[alpha] = bhat;
-		      
+
 		      /* sum A, B, C on the fly */
-		      GV.ifos[nD].amcoe->A += ahat * ahat;
-		      GV.ifos[nD].amcoe->B += bhat * bhat;
-		      GV.ifos[nD].amcoe->C += ahat * bhat;
-		    }
-		  
-		  At += GV.ifos[nD].amcoe->A;
-		  Bt += GV.ifos[nD].amcoe->B;
-		  Ct += GV.ifos[nD].amcoe->C;
+		      At += ahat * ahat;
+		      Bt += bhat * bhat;
+		      Ct += ahat * bhat;
+		    } /* for alpha < MX */
 		  
 		  /** Caculate F-statistic using XLALComputeFaFb() */
 		  /* prepare quantities to calculate Fstat from Fa and Fb */
@@ -792,33 +782,27 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
 
   cfg->numDetectors = cfg->multiSFTs->length;
 
-  /*============================== FIXME: the rest is just adapted to keep things working for now: */
-
   /* ----- allocate array of ifo-specific configuration data ----- */
   if ( ( cfg->ifos = LALCalloc ( cfg->numDetectors, sizeof( *(cfg->ifos) ) )) == NULL ) {
     ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
   }
   
-
-
-  for ( X=0; X < cfg->numDetectors; X ++ )
+  /* ----- normalize SFTs and calculate noise-weights ----- */
+  if ( uvar_SignalOnly )
     {
-      if ( (cfg->ifos[X].weightsNoise  = XLALCreateREAL8Vector ( cfg->multiSFTs->data[X]->length )) == NULL ) {
-	ABORT (status, COMPUTEFSTATISTICC_EMEM, COMPUTEFSTATISTICC_MSGEMEM);
-      }
-      TRY( LALHOUGHInitializeWeights( status->statusPtr, (cfg->ifos[X].weightsNoise) ), status);
+      TRY ( getUnitWeights ( status->statusPtr, &(cfg->multiNoiseWeights), cfg->multiSFTs ), status );
+    }
+  else
+    {
+      MultiPSDVector *psds = NULL;
+      TRY ( LALNormalizeMultiSFTVect (status->statusPtr, &psds, cfg->multiSFTs, uvar_RngMedWindow ), status );
       
-      /* Normalize this by 1/sqrt(Tsft * Sh), where Tsft*Sh is the median of |X|^2  
-       * NOTE: this corresponds to a double-sided PSD, therefore we need to 
-       * divide by another factor of 2 with respect to the JKS formulae.
-       */
-      if ( ! uvar_SignalOnly ) 
-	{
-	  TRY( LALComputeNoiseWeights( status->statusPtr, (cfg->ifos[X].weightsNoise), cfg->multiSFTs->data[X], uvar_RngMedWindow), status); 
-	  TRY( LALNormalizeSFTVect (status->statusPtr, cfg->multiSFTs->data[X], uvar_RngMedWindow), status );
-	}
-    } /* for X < numDetectors */
+      TRY ( LALComputeMultiNoiseWeights  (status->statusPtr, &(cfg->multiNoiseWeights), psds ), status );
 
+      TRY ( LALDestroyMultiPSDVector (status->statusPtr, &psds ), status );
+
+    } /* if ! SignalOnly */
+  
 
 
   { /* ----- load ephemeris-data ----- */
@@ -834,32 +818,6 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   
   /* ----- obtain the (multi-IFO) 'detector-state series' for all SFTs ----- */
   TRY ( LALGetMultiDetectorStates ( status->statusPtr, &(cfg->multiDetStates), cfg->multiSFTs, cfg->edat ), status );
-
-
-  /* Normalyzing the Noise Weights. Sum of weighwNoise over the all detectors is going to be 1.0 */
-  {
-    UINT4 alpha;
-    REAL8 norm = 0.0;
-    
-    for( X = 0; X < cfg->numDetectors; X ++ )
-      {
-	UINT4 M;
-	REAL8 W = 0.0;
-	
-	M = cfg->ifos[X].weightsNoise->length;
-	
-	for (alpha = 0; alpha < M; alpha++)
-	  {
-	    W += cfg->ifos[X].weightsNoise->data[alpha]; 
-	  }
-	norm += W / M;
-      } /* for X < numDetector */
-
-    for ( X = 0; X < cfg->numDetectors; X++ )
-      for (alpha = 0; alpha < cfg->ifos[X].weightsNoise->length; alpha++ )
-	cfg->ifos[X].weightsNoise->data[alpha] /= norm;
-    
-  } /* normalize noise-weights */
 
   /* ----- initialize + allocate space for AM-coefficients and SSB-times ----- */
   {
@@ -992,13 +950,12 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
 
 
   /* Free SFT data */
-  TRY (LALDestroyMultiSFTVector (status->statusPtr, &(cfg->multiSFTs) ), status );
+  TRY ( LALDestroyMultiSFTVector (status->statusPtr, &(cfg->multiSFTs) ), status );
+  /* and corresponding noise-weights */
+  TRY ( LALDestroyMultiNoiseWeights (status->statusPtr, &(cfg->multiNoiseWeights) ), status );
 
   for ( X=0; X < cfg->numDetectors; X++)
     {
-      /* Free Noise Weight */
-      TRY (LALDDestroyVector(status->statusPtr, &(cfg->ifos[X].weightsNoise)), status); 
-                  
       /* Free AM-coefficients */
       TRY (LALSDestroyVector(status->statusPtr, &(cfg->ifos[X].amcoe->a)), status);
       TRY (LALSDestroyVector(status->statusPtr, &(cfg->ifos[X].amcoe->b)), status);
@@ -1007,10 +964,9 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
       TRY (LALDDestroyVector(status->statusPtr, &(cfg->ifos[X].tSSB->DeltaT)), status);
       TRY (LALDDestroyVector(status->statusPtr, &(cfg->ifos[X].tSSB->Tdot)), status);
       LALFree ( cfg->ifos[X].tSSB );
+    }   /* for X < numDetectors */
 
-      /* destroy DetectorStateSeries */
-    }  
-
+  /* destroy DetectorStateSeries */
   XLALDestroyMultiDetectorStateSeries ( cfg->multiDetStates );
 
   LALFree ( cfg->ifos );
@@ -1177,6 +1133,59 @@ outputBeamTS( const CHAR *fname, const AMCoeffs *amcoe, const DetectorStateSerie
   fclose(fp);
   return 0;
 } /* outputBeamTS() */
+
+/** Helper-function to generate unity noise-weights for given multiSFT-vector */
+void
+getUnitWeights ( LALStatus *status, MultiNoiseWeights **multiWeights, const MultiSFTVector *multiSFTs )
+{
+  MultiNoiseWeights *ret = NULL;
+  UINT4 X, numDet;
+
+  INITSTATUS (status, "getUnitWeights", rcsid);
+  ATTATCHSTATUSPTR (status); 
+
+  ASSERT ( multiSFTs, status, COMPUTEFSTATISTICC_ENULL, COMPUTEFSTATISTICC_MSGENULL);
+  ASSERT ( multiSFTs->data, status, COMPUTEFSTATISTICC_ENULL, COMPUTEFSTATISTICC_MSGENULL);
+  ASSERT ( multiSFTs->length, status, COMPUTEFSTATISTICC_EINPUT, COMPUTEFSTATISTICC_MSGEINPUT);
+
+  ASSERT ( multiWeights, status, COMPUTEFSTATISTICC_ENULL, COMPUTEFSTATISTICC_MSGENULL);
+  ASSERT ( (*multiWeights) == NULL, status, COMPUTEFSTATISTICC_ENULL, COMPUTEFSTATISTICC_MSGENULL);
+
+  numDet = multiSFTs->length;
+
+  if ( (ret = LALCalloc(1, sizeof(MultiNoiseWeights))) == NULL ){
+    ABORT (status,  COMPUTEFSTATISTICC_EMEM,  COMPUTEFSTATISTICC_MSGEMEM);
+  }
+  ret->length = numDet;
+
+  if ( (ret->data = LALCalloc( numDet, sizeof(REAL8Vector *))) == NULL) {
+    ABORT (status,  COMPUTEFSTATISTICC_EMEM,  COMPUTEFSTATISTICC_MSGEMEM);      
+  }
+
+
+  for ( X = 0; X < numDet; X ++) 
+    {
+      UINT4 numsfts = multiSFTs->data[X]->length;
+      UINT4 alpha;
+
+      /* create k^th weights vector */
+      if ( (ret->data[X] = XLALCreateREAL8Vector ( numsfts )) == NULL ) {
+	ABORT (status,  COMPUTEFSTATISTICC_EMEM,  COMPUTEFSTATISTICC_MSGEMEM);      
+      }
+
+      /* set all weights to unity */
+      for ( alpha = 0; alpha < numsfts; alpha ++ ) 
+	ret->data[X]->data[alpha] = 1.0;
+      
+    } /* for X < numDet */
+
+
+  (*multiWeights) = ret;
+  
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+
+} /* getUnitWeights() */
 
 
 /*
