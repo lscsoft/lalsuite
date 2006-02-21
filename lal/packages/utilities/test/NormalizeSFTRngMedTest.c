@@ -101,7 +101,12 @@ int main(int argc, char *argv[]){
 
   static SFTVector  *sft=NULL;
 
+  static MultiSFTVector *multsftvect=NULL;
+  static MultiPSDVector *multpsdvect=NULL;
+
   CHAR *fname=NULL;
+
+  SFTCatalog *catalog = NULL;
 
   /* user input variables */
   BOOLEAN uvar_help;
@@ -117,9 +122,6 @@ int main(int argc, char *argv[]){
 
   uvar_help = FALSE;
 
-  uvar_fmin = FMIN;
-  uvar_fmax = FMAX;
-
   uvar_blockSize = BLKSIZE;
   
   uvar_inputSFTDir = (CHAR *)LALMalloc(256 * sizeof(CHAR));
@@ -132,8 +134,6 @@ int main(int argc, char *argv[]){
   SUB( LALRegisterBOOLUserVar(   &status, "help",         'h', UVAR_HELP,     "Print this message",    &uvar_help),         &status);  
   SUB( LALRegisterSTRINGUserVar( &status, "inputSFTDir",  'i', UVAR_OPTIONAL, "Input SFT Directory",   &uvar_inputSFTDir),  &status);
   SUB( LALRegisterSTRINGUserVar( &status, "outputSFTDir", 'o', UVAR_OPTIONAL, "Output SFT Directory",  &uvar_outputSFTDir), &status);
-  SUB( LALRegisterREALUserVar(   &status, "fmin",         'm', UVAR_OPTIONAL, "Minimum Frequency",     &uvar_fmin),         &status);
-  SUB( LALRegisterREALUserVar(   &status, "fmax",         'M', UVAR_OPTIONAL, "Maximum Frequency",     &uvar_fmax),         &status);
   SUB( LALRegisterINTUserVar(    &status, "blockSize",    'b', UVAR_OPTIONAL, "Rng Med block size",    &uvar_blockSize),    &status);
 
   /* read all command line variables */
@@ -145,18 +145,24 @@ int main(int argc, char *argv[]){
 
   fname = (CHAR *)LALMalloc(256*sizeof(CHAR));
   strcpy(fname, uvar_inputSFTDir);
-  strcat(fname, "/*SFT*");
-  SUB ( LALReadSFTfiles( &status, &sft, uvar_fmin, uvar_fmax,0, fname), &status);
+  strcat(fname, "/*SFT-test*");
 
-  SUB ( LALNormalizeSFTVect(&status, sft, uvar_blockSize), &status);
+  SUB ( LALSFTdataFind ( &status, &catalog, fname, NULL), &status);
 
-  SUB ( LALWriteSFTfile ( &status,  sft->data,  "./outSFT.0001"), &status);
+  SUB ( LALLoadMultiSFTs ( &status, &multsftvect, catalog, -1, -1 ), &status );
 
-  SUB ( LALDestroySFTVector (&status, &sft), &status);
+  SUB ( LALNormalizeMultiSFTVect(&status, &multpsdvect, multsftvect, uvar_blockSize), &status);
 
-  SUB (LALDestroyUserVars(&status), &status);
+  SUB ( LALNormalizeSFTVect(&status, multsftvect->data[0], uvar_blockSize), &status);
+
+  /* free memory */
+  SUB ( LALDestroyMultiPSDVector ( &status, &multpsdvect), &status);
+  SUB ( LALDestroyMultiSFTVector ( &status, &multsftvect), &status);
+  SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
 
   LALFree(fname);
+
+  SUB (LALDestroyUserVars(&status), &status);
 
   LALCheckMemoryLeaks(); 
 
