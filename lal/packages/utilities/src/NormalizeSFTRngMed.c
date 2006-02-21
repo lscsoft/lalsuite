@@ -146,7 +146,8 @@ void LALSFTtoPeriodogram (LALStatus    *status,
   DETATCHSTATUSPTR (status);
   /* normal exit */
   RETURN (status);
-}
+
+} /* end LALSFTtoPeriodogram() */
 
 
 
@@ -223,7 +224,8 @@ void LALPeriodoToPSDRngMed (LALStatus  *status,
   DETATCHSTATUSPTR (status);
   /* normal exit */
   RETURN (status);
-}
+
+} /* end LALPeriodoToPSDRngMed() */
 
 
 
@@ -257,7 +259,6 @@ void LALSFTtoPSDRngMed (LALStatus  *status,
   ASSERT (psd->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
   ASSERT (blockSize > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
 
-
   length = sft->data->length;
   
   periodo.data = NULL;
@@ -266,25 +267,33 @@ void LALSFTtoPSDRngMed (LALStatus  *status,
   }
   periodo.data->length = length;
   if ( (periodo.data->data = (REAL8 *)LALCalloc( length,  sizeof(REAL8))) == NULL) {
+    LALFree(periodo.data);
     ABORT( status, NORMALIZESFTRNGMEDH_EMEM, NORMALIZESFTRNGMEDH_MSGEMEM);
   }
 
   /* calculate the periodogram */
-  TRY (LALSFTtoPeriodogram (status->statusPtr, &periodo, sft), status);
+  LALSFTtoPeriodogram (status->statusPtr, &periodo, sft);
+  BEGINFAIL (status) { 
+    LALFree (periodo.data->data);
+    LALFree (periodo.data);
+  } ENDFAIL (status);
 
   /* calculate the psd */
-  TRY (LALPeriodoToPSDRngMed (status->statusPtr, psd, &periodo, blockSize), status);
-
-
+  LALPeriodoToPSDRngMed (status->statusPtr, psd, &periodo, blockSize);
+  BEGINFAIL (status) { 
+    LALFree (periodo.data->data);
+    LALFree (periodo.data);
+  } ENDFAIL (status);
+  
   /* free memory */
   LALFree(periodo.data->data);
   LALFree(periodo.data);
 
-
   DETATCHSTATUSPTR (status);
   /* normal exit */
   RETURN (status);
-}
+
+} /* end LALSFTtoPSDRngMed() */
 
 
 
@@ -301,7 +310,8 @@ void LALNormalizeSFT (LALStatus            *status,
 		      UINT4                blockSize) /**< Running median block size for psd calculation */ 
 {/*   *********************************************  </lalVerbatim> */
 
-  INT4 j, length;
+  UINT4 j;
+  REAL8 Sn;
 
   INITSTATUS (status, "LALNormalizeSFT", NORMALIZESFTRNGMEDC);
   ATTATCHSTATUSPTR (status);
@@ -311,17 +321,25 @@ void LALNormalizeSFT (LALStatus            *status,
   ASSERT (sft->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
   ASSERT (sft->data->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
   ASSERT (sft->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-  ASSERT (blockSize > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
+
   ASSERT (psd, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+  ASSERT (psd->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+  ASSERT (psd->data->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
+  ASSERT (psd->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+
+  ASSERT (blockSize > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
+
+  /* make sure there is no size mismatch */
+  if ( psd->data->length != sft->data->length ) {
+    ABORT ( status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
+  }
   
   /* calculate the psd */
   TRY (LALSFTtoPSDRngMed (status->statusPtr, psd, sft, blockSize), status);
 
-  length = sft->data->length;
-
   /* loop over sft and normalize */
-  for (j = 0; j < length; j++) {
-    REAL8 Sn;
+  for (j = 0; j < sft->data->length; j++) {
+  
     Sn = psd->data->data[j]; 
     
     /* frequency domain normalization */
@@ -348,7 +366,7 @@ void LALNormalizeSFTVect (LALStatus  *status,
 			  UINT4     blockSize)
 {/*   *********************************************  </lalVerbatim> */
   /* normalizes a sft vector using RngMed */
-  INT4 j, length, lengthsft;
+  INT4 j, lengthsft;
   REAL8FrequencySeries *psd = NULL;
 
   INITSTATUS (status, "LALNormalizeSFT", NORMALIZESFTRNGMEDC);
@@ -360,10 +378,11 @@ void LALNormalizeSFTVect (LALStatus  *status,
   ASSERT (sftVect->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
   ASSERT (blockSize > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
 
-
-  /* first memory allocation of psd */
+  /* memory allocation of psd using length of first sft 
+     -- assume all sfts have the same length*/
   lengthsft = sftVect->data->data->length;
 
+  /* allocate memory for a single psd */
   if ( (psd = (REAL8FrequencySeries *)LALCalloc(1, sizeof(REAL8FrequencySeries))) == NULL){
     ABORT( status, NORMALIZESFTRNGMEDH_EMEM, NORMALIZESFTRNGMEDH_MSGEMEM);
   }
@@ -379,20 +398,35 @@ void LALNormalizeSFTVect (LALStatus  *status,
   }
   
   /* loop over sfts and normalize them */
-  length = sftVect->length;
-  for (j = 0; j < length; j++) {
+  for (j = 0; j < sftVect->length; j++) {
     SFTtype *sft;
     
-    ASSERT (sftVect->data + j, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-    sft = sftVect->data + j;
-    ASSERT (sft->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-    ASSERT (sft->data->length>0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
-    ASSERT (sft->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+    if ( (sft = sftVect->data + j) == NULL) {
+      ABORT( status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+    }
+
+    if (sft->data == NULL) {
+      ABORT( status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+    }
+
+    /* check there is no mismatch in length of sft */
+    if (sft->data->length != lengthsft) {
+      ABORT ( status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
+    }
+
+    if (sft->data->data == NULL) {
+      ABORT (status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+    }
 
     /* call sft normalization function */    
-    TRY (LALNormalizeSFT (status->statusPtr, psd, sft, blockSize), status);
+    LALNormalizeSFT (status->statusPtr, psd, sft, blockSize);
+    BEGINFAIL (status) { 
+      LALFree (psd->data->data);
+      LALFree (psd->data);
+      LALFree (psd);
+    } ENDFAIL (status);
 
-  }
+  } /* for loop over sfts */
 
   /* free memory for psd */
   LALFree(psd->data->data);
@@ -402,12 +436,13 @@ void LALNormalizeSFTVect (LALStatus  *status,
   DETATCHSTATUSPTR (status);
   /* normal exit */
   RETURN (status);
-}
+
+} /* end LALNormalizeSFTVect() */
 
 
 
-/** \brief Function for normalizing a multi vector of SFTs in a multi IFO search an calculates the PSDs
-    \param [out] **psdvect multi vector of PSD estimates of input SFTs
+/** \brief Function for normalizing a multi vector of SFTs in a multi IFO search and also  calculates the PSDs
+    \param [out] **psdvect multi vector of PSD estimates of input SFTs using the running median
     \param *MultiSFTVect  pointer to a vector of SFTs which will be normalized
     \param [in] blockSize : Running median window size
 */
@@ -418,6 +453,7 @@ void LALNormalizeMultiSFTVect (LALStatus      *status,
 {
 
   UINT4 k, j; /* k loops over IFOs and j over SFTs for each IFO */
+  UINT4 jCleanUp, kCleanUp;
   UINT4 numifo, numsft;
   MultiPSDVector *multpsd = NULL;
 
@@ -478,8 +514,29 @@ void LALNormalizeMultiSFTVect (LALStatus      *status,
       if ( (multpsd->data[k]->data[j].data->data = (REAL8 *)LALCalloc( lengthsft, sizeof(REAL8))) == NULL) {
 	ABORT( status, NORMALIZESFTRNGMEDH_EMEM, NORMALIZESFTRNGMEDH_MSGEMEM);
       }
-      TRY (LALNormalizeSFT (status->statusPtr, multpsd->data[k]->data + j, sft, blockSize), status);
-          
+
+      LALNormalizeSFT (status->statusPtr, multpsd->data[k]->data + j, sft, blockSize);
+      BEGINFAIL (status) { 
+        /* clean up for this value of k */
+	for ( jCleanUp = 0; jCleanUp < j; jCleanUp++) {
+	  LALFree( multpsd->data[k]->data[jCleanUp].data->data);
+	  LALFree( multpsd->data[k]->data[jCleanUp].data);
+	}
+	LALFree( multpsd->data[k]->data);
+	LALFree( multpsd->data[k]);
+	/* clean up for previous values of k */
+	for ( kCleanUp = 0; kCleanUp < k-1; kCleanUp++) {
+	  for ( jCleanUp = 0; jCleanUp < multsft->data[kCleanUp]->length; jCleanUp++) {
+	    LALFree( multpsd->data[kCleanUp]->data[jCleanUp].data->data);
+	    LALFree( multpsd->data[kCleanUp]->data[jCleanUp].data);
+	  }
+	  LALFree( multpsd->data[kCleanUp]->data);
+	  LALFree( multpsd->data[kCleanUp]);
+	}
+	/* clean up memory allocated outside loop */
+	LALFree(multpsd->data);
+	LALFree(multpsd);
+      } ENDFAIL (status);          
     }
   }
 
