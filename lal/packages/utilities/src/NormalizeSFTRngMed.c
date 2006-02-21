@@ -453,7 +453,7 @@ void LALNormalizeMultiSFTVect (LALStatus      *status,
 {
 
   UINT4 k, j; /* k loops over IFOs and j over SFTs for each IFO */
-  UINT4 jCleanUp, kCleanUp;
+  UINT4 jCleanUp, kCleanUp; /* indices used in clean-up loops */
   UINT4 numifo, numsft;
   MultiPSDVector *multpsd = NULL;
 
@@ -474,6 +474,7 @@ void LALNormalizeMultiSFTVect (LALStatus      *status,
   if ( (multpsd = (MultiPSDVector *)LALCalloc(1, sizeof(MultiPSDVector))) == NULL) {
     ABORT( status, NORMALIZESFTRNGMEDH_EMEM, NORMALIZESFTRNGMEDH_MSGEMEM);
   }
+
   multpsd->length = numifo = multsft->length;
   if ( (multpsd->data = (PSDVector **)LALCalloc( numifo, sizeof(PSDVector *))) == NULL) {
     ABORT( status, NORMALIZESFTRNGMEDH_EMEM, NORMALIZESFTRNGMEDH_MSGEMEM);
@@ -486,8 +487,8 @@ void LALNormalizeMultiSFTVect (LALStatus      *status,
     if ( (multpsd->data[k] = (PSDVector *)LALCalloc(1, sizeof(PSDVector))) == NULL) {
       ABORT( status, NORMALIZESFTRNGMEDH_EMEM, NORMALIZESFTRNGMEDH_MSGEMEM);
     }
+
     multpsd->data[k]->length = numsft = multsft->data[k]->length;
-    multpsd->data[k]->data = NULL;
     if ( (multpsd->data[k]->data = (REAL8FrequencySeries *)LALCalloc(numsft, sizeof(REAL8FrequencySeries))) == NULL) {
       ABORT( status, NORMALIZESFTRNGMEDH_EMEM, NORMALIZESFTRNGMEDH_MSGEMEM);
     }
@@ -498,18 +499,28 @@ void LALNormalizeMultiSFTVect (LALStatus      *status,
       SFTtype *sft;
       UINT4 lengthsft;
     
-      ASSERT (multsft->data[k]->data + j, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+      if ( (sft = multsft->data[k]->data + j) == NULL) {
+	ABORT( status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+      }
 
-      sft = multsft->data[k]->data + j;
-      ASSERT (sft->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-      ASSERT (sft->data->length>0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
-      ASSERT (sft->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-
+      if (sft->data == NULL) {
+	ABORT( status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+      }
+      
+      if (sft->data->length = 0) {
+	ABORT( status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
+      }
+      
+      if (sft->data->data == NULL) {
+	ABORT( status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+      }
+      
       /* final memory allocation for psd */
       multpsd->data[k]->data[j].data = NULL;
       if ( (multpsd->data[k]->data[j].data = (REAL8Sequence *)LALCalloc(1, sizeof(REAL8Sequence))) == NULL) {
 	ABORT( status, NORMALIZESFTRNGMEDH_EMEM, NORMALIZESFTRNGMEDH_MSGEMEM);
       }
+
       multpsd->data[k]->data[j].data->length = lengthsft = sft->data->length;
       if ( (multpsd->data[k]->data[j].data->data = (REAL8 *)LALCalloc( lengthsft, sizeof(REAL8))) == NULL) {
 	ABORT( status, NORMALIZESFTRNGMEDH_EMEM, NORMALIZESFTRNGMEDH_MSGEMEM);
