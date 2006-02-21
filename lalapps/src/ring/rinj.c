@@ -678,8 +678,9 @@ int main( int argc, char *argv[] )
        * pow(  1.0 - 0.63 * pow( 1.0 - this_inj->spin,0.3 ), -0.5);
     
     /* calculate hrss */
-    this_inj->hrss = this_inj->h0 * pow( ( 2.0 * pow( this_inj->quality, 3.0 ) + this_inj->quality ) / 
-        ( 2.0 * LAL_PI * this_inj->frequency * ( 1.0 + 4.0 * pow ( this_inj->quality, 2 ) ) ) , 0.5);
+    this_inj->hrss = this_inj->h0 * sqrt( 2 / LAL_PI / this_inj->frequency ) * 
+      pow( ( 2.0 * pow( this_inj->quality, 3.0 ) + this_inj->quality ) / 
+          ( 1.0 + 4.0 * pow ( this_inj->quality, 2 ) ) , 0.5);
       
     /* initialize end times with geocentric value */
     this_inj->h_start_time = this_inj->l_start_time = this_inj->geocent_start_time;
@@ -711,7 +712,7 @@ int main( int argc, char *argv[] )
           (2*pow(this_inj->quality,3)+this_inj->quality ) * splus*splus*resp.plus*resp.plus +
           2*pow(this_inj->quality,2) * splus*scross*resp.plus*resp.cross +
           2*pow(this_inj->quality,3) * scross*scross*resp.cross*resp.cross )
-        / ( 2.0 * LAL_PI * this_inj->frequency * ( 1.0 + 4.0 * pow ( this_inj->quality, 2 ) ) ) , 0.5 );
+        *  2.0 / LAL_PI / this_inj->frequency / ( 1.0 + 4.0 * pow ( this_inj->quality, 2 ) ) , 0.5 );
       
     /* llo */
     placeAndGPS.p_detector = &llo;
@@ -734,7 +735,7 @@ int main( int argc, char *argv[] )
           (2*pow(this_inj->quality,3)+this_inj->quality ) * splus*splus*resp.plus*resp.plus +
           2*pow(this_inj->quality,2) * splus*scross*resp.plus*resp.cross +
           2*pow(this_inj->quality,3) * scross*scross*resp.cross*resp.cross )
-          / ( 2.0 * LAL_PI * this_inj->frequency * ( 1.0 + 4.0 * pow ( this_inj->quality, 2 ) ) ) , 0.5 );
+          *  2.0 / LAL_PI / this_inj->frequency / ( 1.0 + 4.0 * pow ( this_inj->quality, 2 ) ) , 0.5 );
         
     /* increment the injection time */
     if ( plygnd )
