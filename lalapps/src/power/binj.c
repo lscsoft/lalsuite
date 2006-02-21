@@ -43,7 +43,8 @@ int snprintf(char *str, size_t size, const  char  *format, ...);
 "  --coordinates COORDS     coordinate system to use for injections\n"\
 "  --flow FLOW              first frequency of injection (150.0)\n"\
 "  --fhigh FHIGH            only inject frequencies smaller than FHIGH (1000.0)\n"\
-"  --deltaf DELF            spacing of injections frequencies (0.0)\n"\
+"  --fratio FACTOR          exponential spacing of injection frequencies (0.0)\n"\
+"  --deltaf DELF            linear spacing of injection frequencies (0.0)\n"\
 "  --quality Q              quality factor for SG waveforms TAU=Q/(sqrt(2) pi F)\n"\
 "  --tau TAU                duration of SG waveforms.  Q overrides TAU setting\n"\
 "  --hpeak HPEAK            amplitude of SG injection in strain units\n"\
@@ -273,6 +274,7 @@ int main( int argc, char *argv[] ){
   REAL4  freq=150.0;
   REAL4  flow=150.0;
   REAL4  fhigh=1000.0;
+  REAL4  fratio=0.0;
   REAL4  deltaf=0.0;
   REAL4  hpeak=1.0e-20;
   INT4   useRandomStrain=0;
@@ -327,6 +329,7 @@ int main( int argc, char *argv[] ){
     {"coordinates",             required_argument, 0,                'c'},
     {"flow",                    required_argument, 0,                'd'},
     {"fhigh",                   required_argument, 0,                'e'},
+    {"fratio",                  required_argument, 0,                'o'},
     {"deltaf",                  required_argument, 0,                'f'},
     {"quality",                 required_argument, 0,                'g'},
     {"log-hpeak-min",           required_argument, 0,                'j'},
@@ -439,6 +442,11 @@ int main( int argc, char *argv[] ){
 
       case 'f':
         deltaf = atof( optarg );
+        if ( fratio != 0.0 )
+          {
+          fprintf(stderr, "error:  cannot specify both --deltaf and --fratio\n");
+          exit(1);
+          }
         this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "float", "%e", deltaf );
         break;
 
@@ -498,6 +506,16 @@ int main( int argc, char *argv[] ){
       case 'n':
         dmin = atof( optarg );
         this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "float", "%e", dmin );
+        break;
+
+      case 'o':
+        fratio = atof( optarg );
+        if ( deltaf != 0.0 )
+          {
+          fprintf(stderr, "error:  cannot specify both --deltaf and --fratio\n");
+          exit(1);
+          }
+        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "float", "%e", fratio );
         break;
 
       case 'p':
@@ -786,7 +804,15 @@ int main( int argc, char *argv[] ){
             &site_time ), &status );
 
       /* increment to next frequency and test it's still in band */
-      freq += deltaf;
+      if((deltaf == 0.0) && (fratio != 0.0))
+        freq *= fratio;
+      else if((deltaf != 0.0) && (fratio == 0.0))
+        freq += deltaf;
+      else
+        {
+        fprintf(stderr, "error: something wrong with --deltaf and -fratio\n");
+        exit(1);
+        }
       if ( freq > fhigh ) freq=flow;
       
       /* if we are doing string cusps; we want to inject the correct
