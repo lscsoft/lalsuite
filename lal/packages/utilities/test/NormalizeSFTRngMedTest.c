@@ -148,7 +148,7 @@ int main(int argc, char *argv[]){
   strcat(fname, "/*SFT*");
   SUB ( LALReadSFTfiles( &status, &sft, uvar_fmin, uvar_fmax,0, fname), &status);
 
-  SUB ( LALNormalizeSFTVect(&status, sft, uvar_blockSize, 0), &status);
+  SUB ( LALNormalizeSFTVect(&status, sft, uvar_blockSize), &status);
 
   SUB ( LALWriteSFTfile ( &status,  sft->data,  "./outSFT.0001"), &status);
 
