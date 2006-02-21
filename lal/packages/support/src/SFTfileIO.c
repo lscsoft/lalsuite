@@ -1233,6 +1233,42 @@ XLALshowSFTLocator ( const struct tagSFTLocator *locator )
 
 } /* XLALshowSFTLocator() */
 
+
+INT4 XLALCountIFOsInCatalog( const SFTCatalog *catalog)
+{
+  
+  UINT4 k, j, numifo;
+  CHAR  *name=NULL; 
+  CHAR  **ifolist=NULL; /* list of ifo names */
+
+  name = (CHAR *)LALCalloc(3, sizeof(CHAR));
+  
+  for ( k = 0; k < catalog->length; k++)
+    { 
+      strncpy( name, catalog->data[k].header.name, 3 );
+
+      /* go through list of ifos till a match is found or list is exhausted */      
+      for ( j = 0; ( j < numifo ) && strncmp( name, ifolist[j], 3); j++ ) 
+	;
+
+      if ( j > numifo ) 
+	{
+	  /* add ifo to list of ifos */
+	  strncpy( ifolist[numifo], name, 3);
+	  numifo++;
+	}
+   
+
+      LALFree(name);
+      for ( j = 0; j < catalog->length; j++) 
+	LALFree(ifolist[j]);
+      LALFree(ifolist);
+      
+      return numifo;
+    }
+
+}
+
 /*================================================================================
  * OBSOLETE and deprecated SFT-v1 API :
  *================================================================================*/

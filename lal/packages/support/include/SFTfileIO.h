@@ -277,6 +277,8 @@ void LALReadTimestampsFile (LALStatus* , LIGOTimeGPSVector **timestamps, const C
 
 void LALDestroySFTCatalog ( LALStatus *status, SFTCatalog **catalog );
 void LALSFTtimestampsFromCatalog (LALStatus *, LIGOTimeGPSVector **timestamps, const SFTCatalog *catalog );
+
+INT4 XLALCountIFOsInCatalog( const SFTCatalog *catalog);
 const CHAR * XLALshowSFTLocator ( const struct tagSFTLocator *locator );
 
 /*================================================================================
