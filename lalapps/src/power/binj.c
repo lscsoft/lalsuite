@@ -375,7 +375,6 @@ int main( int argc, char *argv[] ){
   {
     /* getopt_long stores long option here */
     int option_index = 0;
-    size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
         "ha:b:t:s:w:i:d:e:f:g:j:k:m:n:p:q:l:x:y:z:c:Z:", long_options, &option_index );
@@ -391,9 +390,7 @@ int main( int argc, char *argv[] ){
       case 0:
         /* if this option set a flag, do nothing else now */
         if ( long_options[option_index].flag != 0 )
-        {
           break;
-        }
         else
         {
           fprintf( stderr, "error parsing option %s with argument %s\n",
@@ -472,68 +469,50 @@ int main( int argc, char *argv[] ){
 
 
       case 'x':
-        {
-          tau = atof( optarg );
-          this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "float", "%e", tau );
-        }
+        tau = atof( optarg );
+        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "float", "%e", tau );
         break;
 
       case 'y':
-        {
-          freq = atof( optarg );
-          this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "float", "%e", freq );
-        }
+        freq = atof( optarg );
+        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "float", "%e", freq );
         break;
 
       case 'j':
-        {
-          useRandomStrain+=1;
-          log_hpeakMin = atof( optarg );
-          this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "float", "%e", log_hpeakMin );
-        }
+        useRandomStrain+=1;
+        log_hpeakMin = atof( optarg );
+        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "float", "%e", log_hpeakMin );
         break;
 
       case 'k':
-        {
-          useRandomStrain+=1;
-          log_hpeakMax = atof( optarg );
-          this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "float", "%e", log_hpeakMax );
-        }
+        useRandomStrain+=1;
+        log_hpeakMax = atof( optarg );
+        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "float", "%e", log_hpeakMax );
         break;
 
       case 'm':
-        {
-          dmax = atof( optarg );
-          this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "float", "%e", dmax );
-        }
+        dmax = atof( optarg );
+        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "float", "%e", dmax );
         break;
 
       case 'n':
-        {
-          dmin = atof( optarg );
-          this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "float", "%e", dmin );
-        }
+        dmin = atof( optarg );
+        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "float", "%e", dmin );
         break;
 
       case 'p':
-        {
-          ddistr = atoi( optarg );
-	  if ( ddistr != 0 )
-	    {
-	      fprintf( stderr, "invalid argument to --d-distr:\n"
-		       "ddistr must be 0 as of now\n"
-		       );
-	      exit(1);
-	    }
-          this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "int", "%d", ddistr );
-        }
+        ddistr = atoi( optarg );
+        if ( ddistr != 0 )
+          {
+	  fprintf(stderr, "invalid argument to --d-distr:\nddistr must be 0 as of now\n");
+          exit(1);
+          }
+        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "int", "%d", ddistr );
         break;
 
       case 'z':
-        {
-          hpeak = atof( optarg );
-          this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "float", "%e", hpeak );
-        }
+        hpeak = atof( optarg );
+        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "float", "%e", hpeak );
         break;
 
       case 'c':
@@ -547,40 +526,23 @@ int main( int argc, char *argv[] ){
         break;
 
       case 'Z':
-        /* create storage for the usertag */
-        optarg_len = strlen( optarg ) + 1;
-        userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
-        memcpy( userTag, optarg, optarg_len );
-
-        this_proc_param = this_proc_param->next = (ProcessParamsTable *)
-          calloc( 1, sizeof(ProcessParamsTable) );
-        LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
-            PROGRAM_NAME );
-        LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
-        LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-        LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
-            optarg );
+        userTag = optarg;
+        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "string", "%s", optarg );
         break;
 
       case 'i':
-        {
-          simwavedur = atof( optarg );
-          this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "float", "%e", simwavedur );
-        }
+        simwavedur = atof( optarg );
+        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "float", "%e", simwavedur );
         break;
 
       case 'l':
-        {
-          minsimnumber = atoi( optarg );
-          this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "int", "%d", minsimnumber );
-        }
+        minsimnumber = atoi( optarg );
+        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "int", "%d", minsimnumber );
         break;
 
       case 'q':
-        {
-          maxsimnumber = atoi( optarg );
-          this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "int", "%d", maxsimnumber );
-        }
+        maxsimnumber = atoi( optarg );
+        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "int", "%d", maxsimnumber );
         break;
 
       case 'h':
