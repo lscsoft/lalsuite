@@ -253,7 +253,7 @@ class BurstInjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     pipeline.AnalysisNode.__init__(self)
     self.__usertag = job.get_config('binjection','user-tag')
     
-  def get_output(self,seed):
+  def get_output(self):
     """
     Returns the file name of output from the power code. This must be kept
     synchronized with the name of the output file in power.c.
