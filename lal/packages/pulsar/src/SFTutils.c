@@ -998,7 +998,7 @@ void LALComputeMultiNoiseWeights  (LALStatus         *status,
 				   const MultiPSDVector    *multipsd) 
 {
   REAL8 Sn=0.0, sumSn=0.0;
-  INT4 i, k, j, numifos, numsfts, lengthsft;
+  INT4 i, k, j, numifos, numsfts, lengthsft, numsftsTot;
   MultiNoiseWeights *weights;
 
   INITSTATUS (status, "LALComputeMultiNoiseWeights", SFTUTILSC);
@@ -1046,8 +1046,9 @@ void LALComputeMultiNoiseWeights  (LALStatus         *status,
 	  
 	  lengthsft = psd->data->length;
 	  for ( Sn = 0.0, i = 0; i < lengthsft; i++)
-	    Sn += psd->data->data[i];
-	  sumSn += Sn/lengthsft; /* sumSn is just a normalization factor */
+	    Sn += psd->data->data[i]/lengthsft;
+
+	  sumSn += Sn; /* sumSn is just a normalization factor */
 
 	  weights->data[k]->data[j] = 1.0/Sn;
 	} /* end loop over sfts for each ifo */
@@ -1055,11 +1056,14 @@ void LALComputeMultiNoiseWeights  (LALStatus         *status,
     } /* end loop over ifos */
 
 
-  /* make weights of order unity by myltiplying by sumSn*/
+  /* make weights of order unity by myltiplying by sumSn/total number of sfts */
+  for (numsftsTot = 0, k = 0; k < numifos; k++)
+    numsftsTot += multipsd->data[k]->length;
+
   for ( k = 0; k < numifos; k++) {
     numsfts = weights->data[k]->length;    
     for ( j = 0; j < numsfts; j++) 
-      weights->data[k]->data[j] *= sumSn;
+      weights->data[k]->data[j] *= sumSn/numsftsTot;
   }
 
   *out = weights;
