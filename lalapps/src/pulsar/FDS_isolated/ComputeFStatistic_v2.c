@@ -198,6 +198,7 @@ int main(int argc,char *argv[])
   REAL8 loudestF = 0;
   REAL8Vector *fkdotStart = NULL;	/* temporary storage for fkdots */
   REAL8Vector *fkdotRef = NULL;
+  ComputeFBuffer cfBuffer = empty_ComputeFBuffer;
   
   lalDebugLevel = 0;  
   vrbflg = 1;	/* verbose error-messages */
@@ -335,7 +336,6 @@ int main(int argc,char *argv[])
 	  for ( iFreq = 0 ; iFreq < nFreq ; iFreq ++ )
 	    {
 	      Fcomponents Fstat;
-	      ComputeFBuffer cfBuffer = empty_ComputeFBuffer;
 
  	      fkdotStart->data[0] = GV.spinRangeStart->fkdot->data[0] + iFreq * thisScan.dFreq;
 	      /* set parameter-space point */
@@ -390,7 +390,8 @@ int main(int argc,char *argv[])
 Search progress: %5.1f%%", (100.0* loopcounter / thisScan.numGridPoints));
       
     } /*  while SkyPos : loop over skypositions */
-  
+
+ 
   if ( fpFstat )
     {
       fprintf (fpFstat, "%%DONE\n");
@@ -423,6 +424,9 @@ Search progress: %5.1f%%", (100.0* loopcounter / thisScan.numGridPoints));
   
   /* Free memory */
   LAL_CALL ( FreeDopplerScan(&status, &thisScan), &status);
+
+  XLALEmptyComputeFBuffer ( cfBuffer );
+
   
   XLALDestroyREAL8Vector ( fkdotStart );
   XLALDestroyREAL8Vector ( fkdotRef );
