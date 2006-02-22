@@ -340,6 +340,7 @@ int main(int argc,char *argv[])
  	      fkdotStart->data[0] = GV.spinRangeStart->fkdot->data[0] + iFreq * thisScan.dFreq;
 	      /* set parameter-space point */
 	      psPoint.skypos = thisPoint;
+	      psPoint.refTime = GV.startTime;	/* we compute at startTime, not refTime right now */
 	      psPoint.fkdot = fkdotStart;
 	      psPoint.binary = NULL;
 
