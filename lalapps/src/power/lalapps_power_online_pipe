@@ -226,7 +226,7 @@ class GsiScpNode(pipeline.CondorDAGNode):
 
 class FixPowerJob(pipeline.CondorDAGJob):
 	def __init__(self, out_dir):
-		pipeline.CondorDAGJob.__init__(self, "vanilla", os.path.join(options.aux_dir, "fix_sngl_burst"))
+		pipeline.CondorDAGJob.__init__(self, "scheduler", os.path.join(options.aux_dir, "fix_sngl_burst"))
 		self.set_sub_file("fix_sngl_burst.sub")
 		self.set_stdout_file("$(macrooutput)")
 		self.set_stderr_file(os.path.join(out_dir, "fix_sngl_burst-$(cluster)-$(process).err"))
@@ -496,11 +496,19 @@ def make_publish_fragment(dag, tag, parent, destination):
 #
 
 def make_burst2mon_fragment(dag, parent, seg, tag, dest):
+	cluster = BuclusterNode(buclusterjob)
+	cluster.set_name("ligolw_bucluster-POWERMON")
+	cluster.add_parent(parent)
+	cluster.set_input(parent.get_output())
+	cluster.set_output("%s-POWERMON_%s-%s-%s.xml" % (options.instrument, tag, int(seg[0]), int(seg.duration())))
+	cluster.add_macro("macrotag", tag)
+	dag.add_node(cluster)
+
 	node = Burst2MonNode(llb2mjob)
-	node.add_parent(parent)
+	node.add_parent(cluster)
 	node.set_name("ligolw_burst2mon")
 	node.set_input(parent.get_output())
-	node.set_output("%s-POWERMON_%s-%s-%s.xml" % (options.instrument, tag, int(seg[0]), int(seg.duration())))
+	node.set_output(parent.get_output())
 	node.add_macro("macrotag", tag)
 	dag.add_node(node)
 
@@ -594,7 +602,7 @@ def make_multibinj_fragment(dag, tag, seg):
 
 def make_binjfind_fragment(dag, tag, parent):
 	cluster = BuclusterNode(buclusterjob)
-	cluster.set_name("ligolw_bucluster")
+	cluster.set_name("ligolw_bucluster-INJECTIONS")
 	cluster.add_parent(parent)
 	cluster.set_input(parent.get_output())
 	cluster.set_output(parent.get_output())
