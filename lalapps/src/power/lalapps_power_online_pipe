@@ -31,6 +31,7 @@ Pipeline generation script for the excess power online analysis.
 """
 
 import ConfigParser
+import math
 from optparse import OptionParser
 import os
 import stat
@@ -166,6 +167,8 @@ out_dir = "logs/"
 psds_per_job = 4
 psds_per_injection = 4
 overlap = 0.25
+# try to do this many simultaneous injections beteen flow and fhigh
+num_injections = 11
 
 
 #
@@ -558,7 +561,19 @@ def make_binj_fragment(dag, tag, seg, offset, flow, fhigh, fratio):
 def make_multibinj_fragment(dag, tag, seg):
 	flow = float(powerjob.get_opts()["low-freq-cutoff"])
 	fhigh = flow + float(powerjob.get_opts()["bandwidth"])
-	fratio = (fhigh / flow) ** (1.0/10.0)
+
+	# smallest allowed neighbouring frequency ratio based on Q of
+	# injections
+	min_fratio = (1.0 + 1.0/float(binjjob.get_opts()["quality"])) ** 2.0
+
+	# maximum number of simultaneous injections based on min separation
+	injections = num_injections
+	max_injections = int(math.log(fhigh/flow) / math.log(min_fratio)) + 1
+	if injections > max_injections:
+		injections = max_injections
+
+	# finally, determine frequency ratio
+	fratio = (fhigh / flow) ** (1.0/(injections - 1.0))
 
 	binj1 = make_binj_fragment(dag, tag, seg, 0.0, flow, fhigh, fratio)
 	binj2 = make_binj_fragment(dag, tag, seg, 0.5, flow * fratio**0.5, fhigh, fratio)
