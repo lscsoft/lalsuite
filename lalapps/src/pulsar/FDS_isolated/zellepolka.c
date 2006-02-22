@@ -1,5 +1,5 @@
 /********************************************************************************************/
-/*       zellepolka - the pulsar koinzidenz analysis code for einstein at home postprocess  */
+/*      zellepolka - the pulsar coincidence analysis code for einstein at home postprocess  */
 /*                                                                                          */
 /*               Xavier Siemens,  Bruce Allen,  Bernd Machenschalk,  Yousuke Itoh           */
 /*                                                                                          */
@@ -11,16 +11,16 @@
 
 /*! 
    @file
-   @brief the pulsar koinzidenz analysis code for einstein at home postprocess --- count numbers of events in cells construcetd in parameters space.
+   @brief the pulsar coincidence analysis code for einstein at home postprocess --- count numbers of events in cells construcetd in parameters space.
 
 <li>Inputs and outputs
 <ul>   
-<li> This code takes either a directory where Einstein at Home results (zipped files) or a one single file 
-generated from those zipped files by a python code combiner.py in Flalapps/src/pulsar/FDS_isolated.
+<li> This code takes one single file generated from the EaH zipped result files by a python code combiner_v2.py in 
+lalapps/src/pulsar/FDS_isolated.
 <li> This code outputs one output file whose name is specified by user, five files with default names, and 
 some information on stderr.
 <ol>
-<li> The one output file contains all the information (f,a,d,ncandidate,sig) in all the cells. This can be huge.
+<li> The one output file contains all the information (f,a,d,f1dot,ncandidate,sig) in all the cells. This can be huge.
 <li> One file outputs time variation of 2F of some significant outliers.
 <li> One file outputs cell information of some significant outliers
 <li> One file outputs time variation of 2F of some coincident outliers.
@@ -32,7 +32,7 @@ some information on stderr.
 
 <li>Algorithm
 <ol>
-<li> First construct a grid in the parameters space (frequency, right ascension, and declination).
+<li> First construct a grid in four dimensional parameters space (frequency, right ascension, declination and f1dot).
    We take the isotropic grid in the sky location, a uniform grid in the frequency.
    We can change the grid spacing of the each parameter, and shift the grid as a whole for 
   each parameter.  <br> 
@@ -44,7 +44,7 @@ some information on stderr.
 
 
 
-  @author Xavier Siemens,  Bruce Allen,  Bernd Machenschalk,  Yousuke Itoh  
+  @author Xavier Siemens,  Bruce Allen,  Bernd Machenschalk,  Yousuke Itoh , Holger Pletsch
   $Id$ 
 */
 
@@ -84,8 +84,6 @@ some information on stderr.
    and readzipfile_util.h and .c. from yousuke. 
 #define USE_UNZIP  
 */
-
-
 
 
 
@@ -159,9 +157,11 @@ Cell parameters: Define dimensions of cells and center of the cells.
 @param Deltaf     REAL8 Size of coincidence window in Hz (= Size of cell in frequency)
 @param DeltaAlpha REAL8 Size of coincidence window in radians (= Size of cell in delta)
 @param DeltaDelta REAL8 Size of coincidence window in radians (= Size of cell in alpha)
+@param DeltaF1dot REAL8 Size of coincidence window of spindown d/dt f (= Size of cell in f1dot)
 @param Shiftf     REAL8 Parallel shift of frequency in Hz of cell 
 @param ShiftAlpha REAL8 Parallel shift of Alpha in Hz of cell
 @param ShiftDelta REAL8 Parallel shift of Delta in Hz of cell 
+@param ShiftF1dot REAL8 Parallel shift of F1dot of cell
 
 Input: Control the way to read a file or files in a directory
 @param *FstatsFile CHAR Names of Fstat files to be read in.
@@ -190,9 +190,11 @@ typedef struct PolkaConfigVarsTag
   REAL8 Deltaf;      /*  Size of coincidence window in Hz */
   REAL8 DeltaAlpha;  /*  Size of coincidence window in radians */
   REAL8 DeltaDelta;  /*  Size of coincidence window in radians */
+  REAL8 DeltaF1dot;  /*  Size of coincidence window of spindown */
   REAL8 Shiftf;      /*  Parallel shift of frequency in Hz of cell */
   REAL8 ShiftAlpha;  /*  Parallel shift of Alpha in Hz of cell */
   REAL8 ShiftDelta;  /*  Parallel shift of Delta in Hz of cell */
+  REAL8 ShiftF1dot;  /*  Parallel shift of F1dot spindown of cell */
   BOOLEAN UseUnzip;
 } PolkaConfigVars;
 
@@ -206,11 +208,13 @@ CandidateList
 @param f             Frequency of the candidate 
 @param Alpha         right ascension of the candidate
 @param Delta         declination  of the candidate 
+@param F1dot         spindown (d/dt f) of the candidate
 @param TwoF          2F of this candidate event
 @param FileID        File ID to specify from which file the candidate under consideration originaly comes. 
 @param iFreq         Frequency index of this candidate event
 @param iDelta        Declination index. This can be negative. 
 @param iAlpha        Right ascension index of this candidate event
+@param iF1dot        Spindwon index of this candidate event
 */
 typedef struct CandidateListTag
 {
@@ -218,11 +222,13 @@ typedef struct CandidateListTag
   REAL8 f;           /*  Frequency of the candidate */
   REAL8 Alpha;       /*  right ascension of the candidate */
   REAL8 Delta;       /*  declination  of the candidate */
+  REAL8 F1dot;       /*  spindown (d/dt f) of the candidate */
   REAL8 TwoF;        /*  Maximum value of F for the cluster */
   INT4 FileID;       /*  File ID to specify from which file the candidate under consideration originaly comes. */
   INT4 iFreq;        /*  Frequency index */
   INT4 iDelta;       /*  Declination index. This can be negative. */
   INT4 iAlpha;       /*  Right ascension index */
+  INT4 iF1dot;       /*  Spindown index */
 } CandidateList;     /*   Fstat lines */ 
 
 
@@ -243,22 +249,26 @@ Structure containg data in cells
 
 @param Freq          REAL8 Frequency index of the cell 
 @param Alpha         REAL8 Right ascension index of the cell
-@param Delta         REAL8 Declination index of the cell 
+@param Delta         REAL8 Declination index of the cell
+@param F1dot         REAL8 Spindown index of the cell 
 @param iFreq         INT4 Frequency index of this candidate event
 @param iDelta        INT4 Declination index. This can be negative. 
 @param iAlpha        INT4 Right ascension index of this candidate event
+@param iF1dot        INT4 Spindown index of this candidate event
 @param significance  REAL8 minus log of joint false alarm of the candidates in this cell
 @param nCand;        INT4 number of the events in this cell
 @param CandID        int4_linked_list* linked structure that has candidate id-s of the candidates in this cell
 */
 typedef struct CellDataTag
 {
-  INT4 iFreq;          /*  Frequency index of the cell */
-  INT4 iDelta;         /*  Declination index of the cell */
-  INT4 iAlpha;         /*  Right ascension index of the cell */
+  INT4 iFreq;          /*  Frequency index of this candidate event */
+  INT4 iDelta;         /*  Declination index of this candidate event */
+  INT4 iAlpha;         /*  Right ascension index of this candidate event */
+  INT4 iF1dot;         /*  Spindown index of this candidate event */
   REAL8 Freq;          /*  Frequency index of the cell */
   REAL8 Alpha;         /*  Right ascension index of the cell */
   REAL8 Delta;         /*  Declination index of the cell */
+  REAL8 F1dot;          /*  Spindown index of the cell */
   INT4 nCand;          /*  number of the events in this cell. */
   REAL8 significance;  /*  minus log of joint false alarm of the candidates in this cell. */
   struct int4_linked_list *CandID;  /* linked structure that has candidate id-s of the candidates in this cell. */
@@ -366,6 +376,7 @@ int main(INT4 argc,CHAR *argv[])
       SortedC[icand].iFreq=(INT4) (SortedC[icand].f/(PCV.Deltaf) + PCV.Shiftf  );
       SortedC[icand].iDelta=(INT4)(SortedC[icand].Delta/(PCV.DeltaDelta)  + PCV.ShiftDelta );
       SortedC[icand].iAlpha=(INT4)(SortedC[icand].Alpha*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha)  + PCV.ShiftAlpha  );
+      SortedC[icand].iF1dot=(INT4)(SortedC[icand].F1dot/(PCV.DeltaF1dot)  + PCV.ShiftF1dot );
       SortedC[icand].iCand=icand; /* Keep the original ordering before sort to refer the orignal data later. */
     }
 
@@ -379,6 +390,7 @@ int main(INT4 argc,CHAR *argv[])
   cell[icell].iFreq = SortedC[icand].iFreq;
   cell[icell].iDelta = SortedC[icand].iDelta;
   cell[icell].iAlpha = SortedC[icand].iAlpha;
+  cell[icell].iF1dot = SortedC[icand].iF1dot;
   cell[icell].CandID->data = icand; 
   cell[icell].nCand = 1;
 
@@ -390,7 +402,8 @@ int main(INT4 argc,CHAR *argv[])
 
       if( SortedC[icand].iFreq  == cell[icell].iFreq  && 
 	  SortedC[icand].iDelta == cell[icell].iDelta &&
-	  SortedC[icand].iAlpha == cell[icell].iAlpha ) 
+	  SortedC[icand].iAlpha == cell[icell].iAlpha &&
+	  SortedC[icand].iF1dot == cell[icell].iF1dot ) 
 	{ 
 	  /* This candidate is in this cell. */
 	  INT4 lastFileIDinThisCell = SortedC[cell[icell].CandID->data].FileID;
@@ -414,6 +427,7 @@ int main(INT4 argc,CHAR *argv[])
 	  cell[icell].iFreq = SortedC[icand].iFreq;
 	  cell[icell].iDelta = SortedC[icand].iDelta;
 	  cell[icell].iAlpha = SortedC[icand].iAlpha;
+	  cell[icell].iF1dot = SortedC[icand].iF1dot;
 	  cell[icell].CandID->data = icand;
 	  cell[icell].nCand = 1;
 	} /*  if( SortedC[icand].iFreq  == cell[icell].iFreq  && .. ) */ 
@@ -485,10 +499,12 @@ void PrepareCells( LALStatus *lalStatus, CellData **cell, const UINT4 CLength )
     (*cell)[icell].iFreq = 0;
     (*cell)[icell].iDelta = 0;
     (*cell)[icell].iAlpha = 0;
+    (*cell)[icell].iF1dot = 0;
     (*cell)[icell].nCand = 0;
     (*cell)[icell].Freq = 0.0;
     (*cell)[icell].Delta = 0.0;
     (*cell)[icell].Alpha = 0.0;
+    (*cell)[icell].F1dot = 0.0;
     (*cell)[icell].significance = 0;
   }
 
@@ -580,10 +596,10 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
   /* ------------------------------------------------------------- */
   /* output summary table. */
   if(lalDebugLevel < 3 ) {
-    fprintf(stderr,"%% Maximly significant cell : freq [Hz]\tdec [rad]\tra [rad]  # [events]   Sig" "\n");
+    fprintf(stderr,"%% Maximly significant cell : freq [Hz]\tdec [rad]\tra [rad]  \tF1dot \t\t   #[events]\tSig" "\n");
     fprintf(stderr, "%%\t\t\t     ");
     TRY( print_info_of_the_cell( lalStatus->statusPtr, stderr, cell, idxmax,idxmax+1,0,0), lalStatus);
-    fprintf(stderr,"%% Maximly coincident cell  : freq [Hz]\tdec [rad]\tra [rad]  # [events]   Sig" "\n");
+    fprintf(stderr,"%% Maximly coincident cell  : freq [Hz]\tdec [rad]\tra [rad]  \tF1dot \t\t   #[events]\tSig" "\n");
     fprintf(stderr, "%%\t\t\t     ");
     TRY( print_info_of_the_cell( lalStatus->statusPtr, stderr, cell, 0,1,0,0), lalStatus);
 
@@ -761,11 +777,7 @@ void print_info_of_the_cell( LALStatus *lalStatus,
 	 cd[icell].significance > sig_thr && 
 	 cd[icell].nCand > ncand_thr ) 
     {
-      fprintf(fp,"%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t" 
-	      "%" LAL_INT4_FORMAT "\t" "%" LAL_REAL4_FORMAT "\n",
-	      cd[icell].Freq, cd[icell].Delta, cd[icell].Alpha,
-	      cd[icell].nCand,
-	      cd[icell].significance);
+      fprintf(fp,"%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t% g" " \t\t%" LAL_INT4_FORMAT "\t%" LAL_REAL4_FORMAT "\n", cd[icell].Freq, cd[icell].Delta, cd[icell].Alpha, cd[icell].F1dot, cd[icell].nCand, cd[icell].significance);
       icell++;
     }
 
@@ -938,6 +950,7 @@ void get_info_of_the_cell( LALStatus *lalStatus, CellData *cd, const CandidateLi
     idx = p->data;
     lfa = CList[idx].TwoF/2.0 - log(1.0 + CList[idx].TwoF/2.0);
     cd->significance += lfa;
+    cd->F1dot += CList[idx].F1dot;
     cd->Alpha += CList[idx].Alpha;
     cd->Delta += CList[idx].Delta;
     cd->Freq += CList[idx].f;
@@ -950,6 +963,7 @@ void get_info_of_the_cell( LALStatus *lalStatus, CellData *cd, const CandidateLi
     exit(POLKA_EXIT_ERR);
   }
 
+  cd->F1dot /= cd->nCand;
   cd->Alpha /= cd->nCand;
   cd->Delta /= cd->nCand;
   cd->Freq  /= cd->nCand;
@@ -1041,19 +1055,21 @@ int compareCandidates(const void *a, const void *b)
   const CandidateList *ip = a;
   const CandidateList *jp = b;
   int res;
-  INT4 ap[4],bp[4];
+  INT4 ap[5],bp[5];
 
   ap[0]=ip->iFreq;
   ap[1]=ip->iDelta;
   ap[2]=ip->iAlpha;
-  ap[3]=ip->FileID;
+  ap[3]=ip->iF1dot;
+  ap[4]=ip->FileID;
 
   bp[0]=jp->iFreq;
   bp[1]=jp->iDelta;
   bp[2]=jp->iAlpha;
-  bp[3]=jp->FileID;
+  bp[3]=jp->iF1dot;
+  bp[4]=jp->FileID;
 
-  res = compareINT4arrays( ap,  bp, 4);
+  res = compareINT4arrays( ap,  bp, 5);
   if( res == 0 ) {
     REAL8 F1, F2;
     F1=ip->TwoF;
@@ -1900,21 +1916,22 @@ ReadOneCandidateFileV2( LALStatus *lalStatus,
       
       nread = sscanf (line1, 
                      "%" LAL_INT4_FORMAT "%" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT 
-                     "%c", 
-                     &(cl->FileID), &(cl->f), &(cl->Alpha), &(cl->Delta), &(cl->TwoF), &newline );
+                     " %" LAL_REAL8_FORMAT "%c", 
+                     &(cl->FileID), &(cl->f), &(cl->Alpha), &(cl->Delta), &(cl->F1dot), &(cl->TwoF), &newline );
 
       /* check that values that are read in are sensible */
       if (
-          cl->FileID < 0                        ||
+          cl->FileID < 0                     ||
           cl->f < 0.0                        ||
-          cl->TwoF < 0.0                        ||
+          cl->TwoF < 0.0                     ||
           cl->Alpha <         0.0 - epsilon  ||
           cl->Alpha >   LAL_TWOPI + epsilon  ||
           cl->Delta < -0.5*LAL_PI - epsilon  ||
           cl->Delta >  0.5*LAL_PI + epsilon  ||
-	  !finite(cl->FileID)                     ||                                                                 
+	  !finite(cl->FileID)                ||                                                                 
           !finite(cl->f)                     ||
           !finite(cl->Alpha)                 ||
+	  !finite(cl->F1dot)                 ||
           !finite(cl->Delta)                 ||
           !finite(cl->TwoF)
           ) {
@@ -1948,12 +1965,12 @@ ReadOneCandidateFileV2( LALStatus *lalStatus,
 	ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
       }
 
-      /* check that we read 6 quantities with exactly the right format */
-      if ( nread != 6 )
+      /* check that we read 7 quantities with exactly the right format */
+      if ( nread != 7 )
         {
           LALPrintError ("Found %d not %d values on line %d in file '%s'\n"
                          "Line in question is\n%s",
-                         nread, 6, i+1, fname, line1);               
+                         nread, 7, i+1, fname, line1);               
           LALFree ((*CList));
           fclose(fp);
 	  ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
@@ -2158,22 +2175,23 @@ ReadOneCandidateFile( LALStatus *lalStatus,
       
       nread = sscanf (line1, 
                      "%" LAL_INT4_FORMAT "%" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT 
-                     "%c", 
-                     &(cl->FileID), &(cl->f), &(cl->Alpha), &(cl->Delta), &(cl->TwoF), &newline );
+                     " %" LAL_REAL8_FORMAT "%c", 
+                     &(cl->FileID), &(cl->f), &(cl->Alpha), &(cl->Delta), &(cl->F1dot), &(cl->TwoF), &newline );
 
       /* check that values that are read in are sensible */
       if (
-          cl->FileID < 0                        ||
+          cl->FileID < 0                     ||
           cl->f < 0.0                        ||
-          cl->TwoF < 0.0                        ||
+          cl->TwoF < 0.0                     ||
           cl->Alpha <         0.0 - epsilon  ||
           cl->Alpha >   LAL_TWOPI + epsilon  ||
           cl->Delta < -0.5*LAL_PI - epsilon  ||
           cl->Delta >  0.5*LAL_PI + epsilon  ||
-	  !finite(cl->FileID)                     ||                                                                 
+	  !finite(cl->FileID)                ||                                                                 
           !finite(cl->f)                     ||
           !finite(cl->Alpha)                 ||
           !finite(cl->Delta)                 ||
+	  !finite(cl->F1dot)                 ||
           !finite(cl->TwoF)
           ) {
           LALPrintError(
@@ -2206,12 +2224,12 @@ ReadOneCandidateFile( LALStatus *lalStatus,
 	ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
       }
 
-      /* check that we read 6 quantities with exactly the right format */
-      if ( nread != 6 )
+      /* check that we read 7 quantities with exactly the right format */
+      if ( nread != 7 )
         {
           LALPrintError ("Found %d not %d values on line %d in file '%s'\n"
                          "Line in question is\n%s",
-                         nread, 6, i+1, fname, line1);               
+                         nread, 7, i+1, fname, line1);               
           LALFree ((*CList));
           fclose(fp);
 	  ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
@@ -2309,9 +2327,11 @@ ReadCommandLineArgs( LALStatus *lalStatus,
   REAL8 uvar_FreqWindow;
   REAL8 uvar_AlphaWindow;
   REAL8 uvar_DeltaWindow;
+  REAL8 uvar_F1dotWindow;
   REAL8 uvar_FreqShift;
   REAL8 uvar_AlphaShift;
   REAL8 uvar_DeltaShift;
+  REAL8 uvar_F1dotShift;
   BOOLEAN uvar_help;
   BOOLEAN uvar_UseUnzip;
 
@@ -2341,10 +2361,13 @@ ReadCommandLineArgs( LALStatus *lalStatus,
   uvar_FreqWindow = 0.0;
   uvar_AlphaWindow = 0.0;
   uvar_DeltaWindow = 0.0;
+  uvar_F1dotWindow = 0.0;
 
   uvar_FreqShift = 0.0;
   uvar_AlphaShift = 0.0;
   uvar_DeltaShift = 0.0;
+  uvar_F1dotShift = 0.0;
+
   uvar_UseUnzip = 0;
 
 
@@ -2365,9 +2388,12 @@ ReadCommandLineArgs( LALStatus *lalStatus,
   LALregREALUserVar(lalStatus,       FreqWindow,     'f', UVAR_REQUIRED, "Frequency window in Hz");
   LALregREALUserVar(lalStatus,       AlphaWindow,    'a', UVAR_REQUIRED, "Right ascension window in radians");
   LALregREALUserVar(lalStatus,       DeltaWindow,    'd', UVAR_REQUIRED, "Declination window in radians");
+  LALregREALUserVar(lalStatus,       F1dotWindow,    's', UVAR_REQUIRED, "First Spindown parameter window");
+
   LALregREALUserVar(lalStatus,       FreqShift,      'F', UVAR_OPTIONAL, "Frequency shift in FreqWindow");
   LALregREALUserVar(lalStatus,       AlphaShift,     'A', UVAR_OPTIONAL, "Right ascension shift in AlphaWindow");
   LALregREALUserVar(lalStatus,       DeltaShift,     'D', UVAR_OPTIONAL, "Declination shift in DeltaWindow");
+  LALregREALUserVar(lalStatus,       F1dotShift,     'S', UVAR_OPTIONAL, "First Spindown shift in F1dotWindow");
 
   TRY (LALUserVarReadAllInput(lalStatus->statusPtr,argc,argv),lalStatus); 
 
@@ -2461,10 +2487,12 @@ ReadCommandLineArgs( LALStatus *lalStatus,
   CLA->Deltaf = uvar_FreqWindow;
   CLA->DeltaAlpha = uvar_AlphaWindow;
   CLA->DeltaDelta = uvar_DeltaWindow;
+  CLA->DeltaF1dot = uvar_F1dotWindow;
 
   CLA->Shiftf = uvar_FreqShift;
   CLA->ShiftAlpha = uvar_AlphaShift;
   CLA->ShiftDelta = uvar_DeltaShift;
+  CLA->ShiftF1dot = uvar_F1dotShift;
 
   LALDestroyUserVars(lalStatus->statusPtr);
   BEGINFAIL(lalStatus) {
