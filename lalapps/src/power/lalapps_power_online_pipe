@@ -37,6 +37,7 @@ import os
 import stat
 import sys
 import tempfile
+import time
 
 from glue import lal
 from glue import pipeline
@@ -70,6 +71,7 @@ parser.add_option("--publish-dest", metavar = "PATH", help = "set directory for 
 parser.add_option("--dmtmon-dest", metavar = "PATH", help = "set directory for DMT monitor output")
 parser.add_option("--gsiscp-dest", metavar = "PATH", help = "set destination for gsiscp")
 parser.add_option("--user-tag", metavar = "TAG", help = "set user tag on jobs that need it")
+parser.add_option("--calibration-cache", metavar = "FILENAME", help = "set name of calibration cache relative to auxiliary data directory")
 options, args = parser.parse_args()
 del parser, args
 
@@ -152,6 +154,16 @@ try:
 		options.user_tag = config_parser.get('pipeline', 'user-tag')
 except Exception, e:
 	raise Exception, "must either provide --user-tag, or user-tag variable in [pipeline] section of .ini: %s" % str(e)
+
+# calibration cache
+try:
+	if options.calibration_cache:
+		config_parser.set('pipeline', 'calibration-cache', options.calibration_cache)
+	else:
+		options.calibration_cache = config_parser.get('pipeline', 'calibration-cache')
+except Exception, e:
+	raise Exception, "must either provide --calibration-cache, or calibration-cache variable in [pipeline] section of .ini: %s" % str(e)
+options.calibration_cache = os.path.join(options.aux_dir, options.calibration_cache)
 
 
 #
@@ -398,7 +410,7 @@ def make_datafind_fragment(dag, observatory, seg):
 # =============================================================================
 #
 
-def make_power_fragment(dag, parents, framecache, seg, tag):
+def make_power_fragment(dag, parents, framecache, seg, tag, injargs = {}):
 	suffix = "%s-%s-%s" % (tag, int(seg[0]), int(seg.duration()))
 
 	powernode = power.PowerNode(powerjob)
@@ -409,6 +421,9 @@ def make_power_fragment(dag, parents, framecache, seg, tag):
 	powernode.set_start(seg[0])
 	powernode.set_end(seg[1])
 	powernode.set_user_tag(tag)
+	for arg, value in injargs.iteritems():
+		# this is a hack, but I can't be bothered
+		powernode.add_var_arg("--%s %s" % (arg, value))
 	dag.add_node(powernode)
 
 	fixpowernode = FixPowerNode(fixpowerjob)
@@ -457,13 +472,13 @@ def make_lladd_fragment(dag, parents, seg, tag):
 # =============================================================================
 #
 
-def make_multipower_fragment(dag, powerparents, lladdparents, framecache, seglist, tag):
+def make_multipower_fragment(dag, powerparents, lladdparents, framecache, seglist, tag, injargs = {}):
 	# we need to run lladd even if there's only one job so that the output
 	# file gets the right name (skipping lladd in the case of a single job
 	# leaves file named .xml.fixed).  this can be changed when the
 	# sngl_burst table produced by LAL is fixed, and we don't need the
 	# fix_sngl_burst nodes in this DAG any more.
-	node = make_lladd_fragment(dag, [make_power_fragment(dag, powerparents, framecache, seg, tag) for seg in seglist] + lladdparents, seglist.extent(), "POWER_%s" % tag)
+	node = make_lladd_fragment(dag, [make_power_fragment(dag, powerparents, framecache, seg, tag, injargs) for seg in seglist] + lladdparents, seglist.extent(), "POWER_%s" % tag)
 	node.set_output("%s-POWER_%s-%s-%s.xml" % (options.instrument, tag, int(seglist.extent()[0]), int(seglist.extent().duration())))
 	return node
 
@@ -552,7 +567,7 @@ def make_binj_fragment(dag, tag, seg, offset, flow, fhigh, fratio):
 	node.add_macro("macroflow", flow)
 	node.add_macro("macrofhigh", fhigh)
 	node.add_macro("macrofratio", fratio)
-	node.add_macro("macroseed", 0)	# FIXME
+	node.add_macro("macroseed", int(time.time()))
 	dag.add_node(node)
 
 	return node
@@ -580,7 +595,7 @@ def make_multibinj_fragment(dag, tag, seg):
 	if injections > max_injections:
 		injections = max_injections
 
-	# finally, determine frequency ratio
+	# determine frequency ratio from number of simultaneous injections
 	fratio = (fhigh / flow) ** (1.0/(injections - 1.0))
 
 	binj1 = make_binj_fragment(dag, tag, seg, 0.0, flow, fhigh, fratio)
@@ -642,7 +657,7 @@ make_burst2mon_fragment(dag, darmpowerfrag, jobsegs.extent(), options.user_tag, 
 make_publish_fragment(dag, "POWER", darmpowerfrag, options.publish_dest)
 
 binjfrag = make_multibinj_fragment(dag, options.user_tag, injsegs.extent())
-injpowerfrag = make_multipower_fragment(dag, [lscdatafindnode], [binjfrag], lscdatafindnode.get_output(), injsegs, "INJECTIONS_%s" % options.user_tag)	# FIXME: need to add --burstinjection-file and --calibration-cache to these power jobs
+injpowerfrag = make_multipower_fragment(dag, [lscdatafindnode], [binjfrag], lscdatafindnode.get_output(), injsegs, "INJECTIONS_%s" % options.user_tag, injargs = {"burstinjection-file": binjfrag.get_output(), "calibration-cache": options.calibration_cache})
 binjfindfrag = make_binjfind_fragment(dag, options.user_tag, injpowerfrag)
 
 make_gsiscp_fragment(dag, [darmpowerfrag, binjfindfrag], options.gsiscp_dest)
