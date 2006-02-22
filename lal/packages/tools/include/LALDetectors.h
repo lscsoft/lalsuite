@@ -1,6 +1,7 @@
 #ifndef _LALDETECTORS_H
 #define _LALDETECTORS_H
 
+#include <lal/LALDatatypes.h>
 #include <lal/LALAtomicDatatypes.h>
 
 #ifdef __cplusplus
@@ -114,7 +115,7 @@ typedef enum {
 	LALDETECTORTYPE_IFOXARM,	/**< IFO in one-armed mode (X arm) */
 	LALDETECTORTYPE_IFOYARM,	/**< IFO in one-armed mode (Y arm) */
 	LALDETECTORTYPE_IFOCOMM,	/**< IFO in common mode */
-	LALDETECTORTYPE_CYLBAR,	/**< Cylindrical bar */
+	LALDETECTORTYPE_CYLBAR	/**< Cylindrical bar */
 }
 LALDetectorType;
 
