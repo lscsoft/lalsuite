@@ -112,12 +112,12 @@ typedef struct {
   AMCoeffs **data;	/**< array of amcoeffs (pointers) */
 } MultiAMCoeffs;
 
-/** Simple collection of two COMPLEX16: Fa and Fb, for easy return from XLALNewDemod()
- */
+/** Type containing F-statistic proper plus the two complex amplitudes Fa and Fb (for ML-estimators) */
 typedef struct {
-  COMPLEX16 Fa;
-  COMPLEX16 Fb;
-} Fcomponents;
+  REAL8 F;		/**< F-statistic value */
+  COMPLEX16 Fa;		/**< complex amplitude Fa */
+  COMPLEX16 Fb;		/**< complex amplitude Fb */
+} Fcomponents; 
 
 /** The precision in calculating the barycentric transformation */
 typedef enum {
