@@ -1,37 +1,58 @@
 #!/usr/bin/python
+#
+# $Id$
+#
+# Copyright (C) 2005  Kipp C. Cannon
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #
-# File info
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
 #
 
 """
 Pipeline generation script for the excess power online analysis.
 """
 
-__author__ = "Kipp Cannon <kipp@gravity.phys.uwm.edu>"
-__date__ = "$Date$"
-__version__ = "$Revision$"
-
-
-#
-# Preamble
-#
-
 import ConfigParser
 from optparse import OptionParser
 import os
+import stat
 import sys
 import tempfile
 
 from glue import lal
 from glue import pipeline
 from glue import segments
-from pylal import lalcache
 import power
+
+__author__ = "Kipp Cannon <kipp@gravity.phys.uwm.edu>"
+__date__ = "$Date$"[11:-2]
+__version__ = "$Revision$"[7:-2]
 
 
 #
-# Parse command line
+# =============================================================================
+#
+#                                 Command Line
+#
+# =============================================================================
 #
 
 parser = OptionParser(version="%prog CVS $Id$")
@@ -45,6 +66,7 @@ parser.add_option("--condor-log-dir", metavar = "PATH", help = "set directory fo
 parser.add_option("--config-file", metavar = "FILENAME", default = "online_power.ini", help = "set .ini config file name")
 parser.add_option("--instrument", metavar = "INSTRUMENT", help = "set instrument name (default = value of instrument variable in [pipeline] section of .ini file)")
 parser.add_option("--publish-dest", metavar = "PATH", help = "set directory for output triggers")
+parser.add_option("--dmtmon-dest", metavar = "PATH", help = "set directory for DMT monitor output")
 parser.add_option("--gsiscp-dest", metavar = "PATH", help = "set destination for gsiscp")
 options, args = parser.parse_args()
 del parser, args
@@ -70,9 +92,10 @@ except:
 	raise Exception, "failure parsing -f; try --help"
 
 # .ini file config parser
+options.config_file = os.path.join(options.aux_dir, options.config_file)
 try:
 	config_parser = ConfigParser.SafeConfigParser()
-	config_parser.read(os.path.join(options.aux_dir, options.config_file))
+	config_parser.read(options.config_file)
 except:
 	raise Exception, "failure parsing -t and/or --config-file; try --help"
 
@@ -88,66 +111,88 @@ try:
 	if options.instrument:
 		config_parser.set('pipeline', 'instrument', options.instrument)
 	else:
-		options.instrument = config_parser.get('pipeline','instrument')
-except:
-	raise Exception, "must either provide --instrument, or instrument variable in [pipeline] section of .ini"
+		options.instrument = config_parser.get('pipeline', 'instrument')
+except Exception, e:
+	raise Exception, "must either provide --instrument, or instrument variable in [pipeline] section of .ini: %s" % str(e)
 
 # publish location
 try:
 	if options.publish_dest:
 		config_parser.set('publish', 'destination', options.publish_dest)
 	else:
-		options.publish_dest = config_parser.get('publish','destination')
-except:
-	raise Exception, "must either provide --publish-dest, or destination variable in [publish] section of .ini"
+		options.publish_dest = config_parser.get('publish', 'destination')
+except Exception, e:
+	raise Exception, "must either provide --publish-dest, or destination variable in [publish] section of .ini: %s" % str(e)
+
+# dmtmon location
+try:
+	if options.dmtmon_dest:
+		config_parser.set('dmtmon', 'destination', options.dmtmon_dest)
+	else:
+		options.dmtmon_dest = config_parser.get('dmtmon', 'destination')
+except Exception, e:
+	raise Exception, "must either provide --dmtmon-dest, or destination variable in [dmtmon] section of .ini: %s" % str(e)
 
 # gsiscp location
 try:
 	if options.gsiscp_dest:
 		config_parser.set('gsiscp', 'destination', options.gsiscp_dest)
 	else:
-		options.publish_dest = config_parser.get('gsiscp', 'destination')
-except:
-	raise Exception, "must either provide --gsiscp-dest, or destination variable in [gsiscp] section of .ini"
+		options.gsiscp_dest = config_parser.get('gsiscp', 'destination')
+except Exception, e:
+	raise Exception, "must either provide --gsiscp-dest, or destination variable in [gsiscp] section of .ini: %s" % str(e)
 
 
 #
-# Some stuff used in DAG layout and construction
+# =============================================================================
+#
+#                              Static Parameters
+#
+# =============================================================================
 #
 
-datafind_pad = 512
 cache_dir = "cache/"
 out_dir = "logs/"
 psds_per_job = 4
-observatory = options.instrument[0]
+psds_per_injection = 4
 overlap = 0.25
-lladdcachename = os.path.join(cache_dir, "triggers.cache")
 
 
 #
-# Define Condor job types (some are also found in pipeline.py and power.py)
+# =============================================================================
+#
+#                               Custom Job Types
+#
+# =============================================================================
 #
 
 class PublishJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 	def __init__(self, out_dir, config_parser):
 		pipeline.CondorDAGJob.__init__(self, "scheduler", "/bin/cp")
 		pipeline.AnalysisJob.__init__(self, config_parser)
-		self.destination = config_parser.get("publish", "destination")
 		self.set_stdout_file(os.path.join(out_dir, "publish-$(cluster)-$(process).out"))
 		self.set_stderr_file(os.path.join(out_dir, "publish-$(cluster)-$(process).err"))
 		self.set_sub_file("publish.sub")
 
 	def write_sub_file(self):
 		# this is a hack, but I can't be bothered...
-		self.add_file_arg(self.destination)
+		self.add_file_arg("$(macrodestination)")
 		pipeline.CondorDAGJob.write_sub_file(self)
+
+
+class PublishNode(pipeline.CondorDAGNode):
+	def set_output(self, destination):
+		self.__output = destination
+		self.add_macro("macrodestination", destination)
+
+	def get_output(self):
+		return self.__output
 
 
 class GsiScpJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 	def __init__(self, out_dir, config_parser):
 		pipeline.CondorDAGJob.__init__(self, "scheduler", "/ldcg/stow_pkgs/ldg-3.5/ldg/globus/bin/gsiscp")
 		pipeline.AnalysisJob.__init__(self, config_parser)
-		self.destination = config_parser.get("gsiscp", "destination")
 		self.set_stdout_file(os.path.join(out_dir, "gsiscp-$(cluster)-$(process).out"))
 		self.set_stderr_file(os.path.join(out_dir, "gsiscp-$(cluster)-$(process).err"))
 		self.set_sub_file("gsiscp.sub")
@@ -155,36 +200,99 @@ class GsiScpJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 
 	def write_sub_file(self):
 		# this is a hack, but I can't be bothered...
-		self.add_file_arg(self.destination)
+		self.add_file_arg("$(macrodestination)")
 		pipeline.CondorDAGJob.write_sub_file(self)
 
 
-#
-# Define DAG node types (some are also found in pipeline.py and power.py)
-#
-
-class PublishNode(pipeline.CondorDAGNode):
-	def __init__(self, job):
-		pipeline.CondorDAGNode.__init__(self, job)
-		#self._CondorDAGNode__arguments.append(job.destination)
-
-
 class GsiScpNode(pipeline.CondorDAGNode):
+	def set_output(self, destination):
+		self.__output = destination
+		self.add_macro("macrodestination", destination)
+
+	def get_output(self):
+		return self.__output
+
+
+class FixPowerJob(pipeline.CondorDAGJob):
+	def __init__(self, out_dir):
+		pipeline.CondorDAGJob.__init__(self, "vanilla", os.path.join(options.aux_dir, "fix_sngl_burst"))
+		self.set_sub_file("fix_sngl_burst.sub")
+		self.set_stdout_file("$(macrooutput)")
+		self.set_stderr_file(os.path.join(out_dir, "fix_sngl_burst-$(cluster)-$(process).err"))
+		self.add_condor_cmd("getenv", "True")
+		self.add_condor_cmd("input", "$(macroinput)")
+		self.add_arg(os.path.join(options.aux_dir, "fix_sngl_burst_add_event_id"))
+
+
+class FixPowerNode(pipeline.CondorDAGNode):
+	def set_input(self, filename):
+		self.__input = filename
+		self.add_macro("macroinput", filename)
+
+	def set_output(self, filename):
+		self.__output = filename
+		self.add_macro("macrooutput", filename)
+
+	def get_input(self):
+		return self.__input
+
+	def get_output(self):
+		return self.__output
+
+
+class Burst2MonJob(pipeline.CondorDAGJob):
+	def __init__(self, out_dir, config_parser):
+		pipeline.CondorDAGJob.__init__(self, "vanilla", config_parser.get("condor", "ligolw_burst2mon"))
+		self.set_sub_file("ligolw_burst2mon.sub")
+		self.set_stdout_file(os.path.join(out_dir, "ligolw_burst2mon-$(cluster)-$(process).out"))
+		self.set_stderr_file(os.path.join(out_dir, "ligolw_burst2mon-$(cluster)-$(process).err"))
+		self.add_condor_cmd("getenv", "True")
+
+
+class Burst2MonNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+	pass
+
+
+class BinjfindJob(pipeline.CondorDAGJob):
+	def __init__(self, out_dir, config_parser):
+		pipeline.CondorDAGJob.__init__(self, "vanilla", config_parser.get("condor", "ligolw_binjfind"))
+		self.set_sub_file("ligolw_binjfind.sub")
+		self.set_stdout_file(os.path.join(out_dir, "ligolw_binjfind-$(cluster)-$(process).out"))
+		self.set_stderr_file(os.path.join(out_dir, "ligolw_binjfind-$(cluster)-$(process).err"))
+		self.add_condor_cmd("getenv", "True")
+		self.add_ini_opts(config_parser, "ligolw_binjfind")
+
+
+class BinjfindNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 	pass
 
 
 #
-# Create Condor job types (define the .sub files)
+# =============================================================================
+#
+#                              Define .sub Files
+#
+# =============================================================================
 #
 
 # LSCdataFind
 lscdatafindjob = pipeline.LSCDataFindJob(cache_dir, out_dir, config_parser)
 
+# lalapps_binj
+binjjob = power.BurstInjJob(config_parser)
+
 # lalapps_power
 powerjob = power.PowerJob(out_dir, config_parser)
+fixpowerjob = FixPowerJob(out_dir)
 
-# lalapps_lladd
-lladdjob = power.LladdJob(cache_dir, out_dir, config_parser)
+# ligolw_add
+lladdjob = pipeline.LigolwAddJob(out_dir, config_parser)
+
+# ligolw_binjfind
+binjfindjob = BinjfindJob(out_dir, config_parser)
+
+# ligolw_burst2mon
+llb2mjob = Burst2MonJob(out_dir, config_parser)
 
 # publish
 publishjob = PublishJob(out_dir, config_parser)
@@ -194,32 +302,262 @@ gsiscpjob = GsiScpJob(out_dir, config_parser)
 
 
 #
-# Split the data segment.  We try to split the data segment into jobs of
-# length joblength, but with a short one if needed.
+# =============================================================================
+#
+#                                 Segmentation
+#
+# =============================================================================
 #
 
-psd_length = float(powerjob.get_opts()["psd-average-points"]) / float(powerjob.get_opts()["resample-rate"])
-window_length = float(powerjob.get_opts()["window-length"]) / float(powerjob.get_opts()["resample-rate"])
-window_shift = float(powerjob.get_opts()["window-shift"]) / float(powerjob.get_opts()["resample-rate"])
-filter_corruption = float(powerjob.get_opts()["filter-corruption"]) / float(powerjob.get_opts()["resample-rate"])
+def split_segment(psds):
+	"""
+	Split the data segment into correctly-overlaping segments.  We try
+	to have the numbers of PSDs in each segment be equal to psds, but
+	with a short segment at the end if needed.
+	"""
+	psd_length = float(powerjob.get_opts()["psd-average-points"]) / float(powerjob.get_opts()["resample-rate"])
+	window_length = float(powerjob.get_opts()["window-length"]) / float(powerjob.get_opts()["resample-rate"])
+	window_shift = float(powerjob.get_opts()["window-shift"]) / float(powerjob.get_opts()["resample-rate"])
+	filter_corruption = float(powerjob.get_opts()["filter-corruption"]) / float(powerjob.get_opts()["resample-rate"])
 
-psd_overlap = window_length - window_shift
+	psd_overlap = window_length - window_shift
 
-joblength = psds_per_job * (psd_length - psd_overlap) + psd_overlap + 2 * filter_corruption
-joboverlap = 2 * filter_corruption + psd_overlap
+	joblength = psds * (psd_length - psd_overlap) + psd_overlap + 2 * filter_corruption
+	joboverlap = 2 * filter_corruption + psd_overlap
 
-# can't use range() with non-integers
-jobsegs = segments.segmentlist()
-t = options.seg[0]
-while t < options.seg[1] - joboverlap:
-	jobsegs.append(segments.segment(t, t + joblength) & options.seg)
-	t += joblength - joboverlap
+	# can't use range() with non-integers
+	segs = segments.segmentlist()
+	t = options.seg[0]
+	while t < options.seg[1] - joboverlap:
+		segs.append(segments.segment(t, t + joblength) & options.seg)
+		t += joblength - joboverlap
+	return segs
+
+jobsegs = split_segment(psds_per_job)
+injsegs = split_segment(psds_per_injection)
 
 print >>sys.stderr, "Segment split: " + str(jobsegs)
+print >>sys.stderr, "Injections split: " + str(injsegs)
 
 
 #
-# Construct the DAG
+# =============================================================================
+#
+#                           LSCdataFind DAG Fragment
+#
+# =============================================================================
+#
+
+def make_datafind_fragment(dag, observatory, seg):
+	datafind_pad = 512
+
+	node = pipeline.LSCDataFindNode(lscdatafindjob)
+	node.set_name("LSCdataFind")
+	node.set_start(options.seg[0] - datafind_pad)
+	node.set_end(options.seg[1] + 1)
+	node.set_observatory(observatory)
+	dag.add_node(node)
+	return node
+
+
+#
+# =============================================================================
+#
+#                          lalapps_power DAG Fragment
+#
+# =============================================================================
+#
+
+def make_power_fragment(dag, parents, framecache, seg, tag):
+	suffix = "%s-%s-%s" % (tag, int(seg[0]), int(seg.duration()))
+
+	powernode = power.PowerNode(powerjob)
+	powernode.set_name("lalapps_power-%s" % suffix)
+	powernode.set_cache(framecache)
+	powernode.set_ifo(options.instrument)
+	powernode.set_start(seg[0])
+	powernode.set_end(seg[1])
+	map(powernode.add_parent, parents)
+	dag.add_node(powernode)
+
+	fixpowernode = FixPowerNode(fixpowerjob)
+	fixpowernode.set_name("fix_sngl_burst-%s" % suffix)
+	fixpowernode.set_input(powernode.get_output())
+	fixpowernode.set_output(powernode.get_output() + ".fixed")
+	fixpowernode.add_parent(powernode)
+	dag.add_node(fixpowernode)
+
+	return fixpowernode
+
+
+#
+# =============================================================================
+#
+#                           ligolw_add DAG Fragment
+#
+# =============================================================================
+#
+
+def make_lladd_fragment(dag, parents, seg, tag):
+	suffix = "%s-%s-%s" % (tag, int(seg[0]), int(seg.duration()))
+	cache_name = os.path.join(cache_dir, "lladd-%s.cache" % suffix)
+	cachefile = file(cache_name, "w")
+
+	node = pipeline.LigolwAddNode(lladdjob)
+	node.set_name("lladd-%s" % suffix)
+	node.add_var_opt("input-cache", cache_name)
+	node.set_output("%s-POWER_%s-%s-%s.xml" % (options.instrument, "S5", int(seg[0]), int(seg.duration()))) # FIXME
+
+	for parent in parents:
+		node.add_parent(parent)
+
+		cache = lal.CacheEntry()
+		cache.observatory = "ANY"
+		cache.description = "EMPTY"
+		cache.segment = seg
+		cache.url = "file://localhost" + os.path.join(os.getcwd(), parent.get_output())
+		print >>cachefile, str(cache)
+
+	dag.add_node(node)
+
+	return node
+
+
+#
+# =============================================================================
+#
+#        DAG Fragment Combining Multiple lalapps_power With ligolw_add
+#
+# =============================================================================
+#
+
+def make_multipower_fragment(dag, powerparents, lladdparents, framecache, seglist, tag):
+	return make_lladd_fragment(dag, [make_power_fragment(dag, powerparents, framecache, seg, tag) for seg in seglist] + lladdparents, seglist.extent(), tag)
+
+
+#
+# =============================================================================
+#
+#                             Publish DAG Fragment
+#
+# =============================================================================
+#
+
+def make_publish_fragment(dag, parent, destination):
+	node = PublishNode(publishjob)
+	node.set_name("publish-%s" % parent.get_output())
+	node.add_parent(parent)
+	node.add_file_arg(parent.get_output())
+	node.set_output(destination)
+	dag.add_node(node)
+	return node
+
+
+#
+# =============================================================================
+#
+#                       DMT Monitor Output DAG Fragment
+#
+# =============================================================================
+#
+
+def make_burst2mon_fragment(dag, parent, seg, tag, dest):
+	suffix = "%s-%s-%s" % (tag, int(seg[0]), int(seg.duration()))
+
+	node = Burst2MonNode(llb2mjob)
+	node.set_name("ligolw_burst2mon-%s" % parent.get_output())
+	node.set_input(parent.get_output())
+	node.set_output("%s-POWER_BURST2MON_%s.xml" % (options.instrument, suffix))
+	node.add_parent(parent)
+	dag.add_node(node)
+
+	return make_publish_fragment(dag, node, dest)
+
+
+#
+# =============================================================================
+#
+#                             GSISCP DAG Fragment
+#
+# =============================================================================
+#
+
+def make_gsiscp_fragment(dag, parents, destination):
+	node = GsiScpNode(gsiscpjob)
+	node.set_name("gsiscp-%s" % parents[0].get_output())	# FIXME
+	for parent in parents:
+		node.add_parent(parent)
+		node.add_file_arg(parent.get_output())
+	node.set_output(destination)
+	dag.add_node(node)
+	return node
+
+
+#
+# =============================================================================
+#
+#                          lalapps_binj DAG Fragment
+#
+# =============================================================================
+#
+
+def make_binj_fragment(dag, seg, offset, flow, fhigh, fratio):
+	node = power.BurstInjNode(binjjob)
+	node.set_name("lalapps_binj")	# FIXME
+	node.set_output("blah.xml")	# FIXME
+	node.set_start(str(seg[0] + float(binjjob.get_opts()["time-step"]) * offset))
+	node.set_end(seg[1])
+	node.add_macro("macroflow", flow)
+	node.add_macro("macrofhigh", fhigh)
+	node.add_macro("macrofratio", fratio)
+	node.add_macro("macroseed", 0)	# FIXME
+	dag.add_node(node)
+
+	return node
+
+
+#
+# =============================================================================
+#
+#         DAG Fragment Combining Multiple lalapps_binj With ligolw_add
+#
+# =============================================================================
+#
+
+def make_multibinj_fragment(dag, seg):
+	flow = float(powerjob.get_opts()["low-freq-cutoff"])
+	fhigh = flow + float(powerjob.get_opts()["bandwidth"])
+	fratio = (fhigh / flow) ** (1.0/10.0)
+
+	binj1 = make_binj_fragment(dag, seg, 0.0, flow, fhigh, fratio)
+	binj2 = make_binj_fragment(dag, seg, 0.5, flow * fratio**0.5, fhigh, fratio)
+
+	return make_lladd_fragment(dag, [binj1, binj2], seg, "INJECTIONS")
+
+
+#
+# =============================================================================
+#
+#                         ligolw_binjfind DAG Fragment
+#
+# =============================================================================
+#
+
+def make_binjfind_fragment(dag, parent):
+	node = BinjfindNode(binjfindjob)
+	node.set_name("ligolw_binjfind-%s" % parent.get_output())
+	node.set_input(parent.get_output())
+	node.set_output(parent.get_output())
+	dag.add_node(node)
+	return node
+
+
+#
+# =============================================================================
+#
+#                               DAG Construction
+#
+# =============================================================================
 #
 
 os.mkdir(cache_dir)
@@ -228,50 +566,18 @@ os.mkdir(out_dir)
 dag = pipeline.CondorDAG(condor_log)
 dag.set_dag_file(options.dag_name)
 
-lscdatafindnode = pipeline.LSCDataFindNode(lscdatafindjob)
-lscdatafindnode.set_name("LSCdataFind")
-lscdatafindnode.set_start(options.seg[0] - datafind_pad)
-lscdatafindnode.set_end(options.seg[1] + 1)
-lscdatafindnode.set_observatory(observatory)
-dag.add_node(lscdatafindnode)
+lscdatafindnode = make_datafind_fragment(dag, options.instrument[0], options.seg)
 
-lladdnode = power.LladdNode(lladdjob)
-lladdnode.set_name("lalapps_lladd")
-lladdnode.add_var_opt("input-cache", lladdcachename)
-dag.add_node(lladdnode)
+darmpowerfrag = make_multipower_fragment(dag, [lscdatafindnode], [], lscdatafindnode.get_output(), jobsegs, "DARM_ERR")
 
-lladdcache = file(lladdcachename, "w")
-for seg in jobsegs:
-	powernode = power.PowerNode(powerjob)
-	powernode.set_name("lalapps_power-" + str(seg[0]) + "-" + str(seg.duration()))
-	powernode.set_cache(lscdatafindnode.get_output())
-	powernode.set_ifo(options.instrument)
-	powernode.set_start(seg[0])
-	powernode.set_end(seg[1])
-	powernode.add_parent(lscdatafindnode)
-	lladdnode.add_parent(powernode)
-	lladdnode.add_input_file(powernode.get_output())
+make_burst2mon_fragment(dag, darmpowerfrag, jobsegs.extent(), "S5", options.dmtmon_dest)	# FIXME: tag
 
-	cache = lalcache.CacheEntry()
-	cache.observatory = observatory
-	cache.description = lladdnode.basename
-	cache.segment = seg
-	cache.url = "file://localhost" + os.path.join(os.getcwd(), powernode.get_output())
-	print >>lladdcache, str(cache)
+binjfrag = make_multibinj_fragment(dag, injsegs.extent())
+injpowerfrag = make_multipower_fragment(dag, [lscdatafindnode], [binjfrag], lscdatafindnode.get_output(), injsegs, "DARM_ERR_INJECTIONS")	# FIXME: need to add --burstinjection-file and --calibration-cache to these power jobs
+binjfindfrag = make_binjfind_fragment(dag, injpowerfrag)
 
-	dag.add_node(powernode)
-
-publishnode = PublishNode(publishjob)
-publishnode.set_name("publish")
-publishnode.add_parent(lladdnode)
-publishnode.add_file_arg(lladdnode.get_output())
-dag.add_node(publishnode)
-
-gsiscpnode = GsiScpNode(gsiscpjob)
-gsiscpnode.set_name("gsiscp")
-gsiscpnode.add_parent(lladdnode)
-gsiscpnode.add_file_arg(lladdnode.get_output())
-dag.add_node(gsiscpnode)
+make_publish_fragment(dag, darmpowerfrag, options.publish_dest)
+make_gsiscp_fragment(dag, [darmpowerfrag, binjfindfrag], options.gsiscp_dest)
 
 dag.write_sub_files()
 dag.write_dag()
