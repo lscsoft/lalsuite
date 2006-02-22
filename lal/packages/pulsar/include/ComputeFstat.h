@@ -119,6 +119,7 @@ typedef struct {
   REAL8 F;		/**< F-statistic value */
   COMPLEX16 Fa;		/**< complex amplitude Fa */
   COMPLEX16 Fb;		/**< complex amplitude Fb */
+  REAL8 Bstat;		/**< experimental: 'B-statistic' */
 } Fcomponents; 
 
 /** The precision in calculating the barycentric transformation */
