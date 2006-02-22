@@ -2,7 +2,6 @@
 #define _LALDETECTORS_H
 
 #include <lal/LALDatatypes.h>
-#include <lal/LALAtomicDatatypes.h>
 
 #ifdef __cplusplus
 extern "C" {
