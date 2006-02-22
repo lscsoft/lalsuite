@@ -995,6 +995,7 @@ void LALComputeNoiseWeights  (LALStatus        *status,
     floors -- it multiplies an existing weight vector */
 void LALComputeMultiNoiseWeights  (LALStatus         *status, 
 				   MultiNoiseWeights **out,
+				   REAL8             *normalization,
 				   const MultiPSDVector    *multipsd) 
 {
   REAL8 Sn=0.0, sumSn=0.0;
@@ -1067,6 +1068,7 @@ void LALComputeMultiNoiseWeights  (LALStatus         *status,
   }
 
   *out = weights;
+  *normalization = sumSn/numsftsTot;
   
   DETATCHSTATUSPTR (status);
    /* normal exit */
