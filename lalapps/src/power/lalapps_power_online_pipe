@@ -408,7 +408,7 @@ def make_power_fragment(dag, parents, framecache, seg, tag):
 	powernode.set_ifo(options.instrument)
 	powernode.set_start(seg[0])
 	powernode.set_end(seg[1])
-	powernode.add_macro("macrotag", tag)
+	powernode.set_user_tag(tag)
 	dag.add_node(powernode)
 
 	fixpowernode = FixPowerNode(fixpowerjob)
@@ -639,12 +639,12 @@ lscdatafindnode = make_datafind_fragment(dag, options.instrument[0], options.seg
 darmpowerfrag = make_multipower_fragment(dag, [lscdatafindnode], [], lscdatafindnode.get_output(), jobsegs, options.user_tag)
 
 make_burst2mon_fragment(dag, darmpowerfrag, jobsegs.extent(), options.user_tag, options.dmtmon_dest)
+make_publish_fragment(dag, "POWER", darmpowerfrag, options.publish_dest)
 
 binjfrag = make_multibinj_fragment(dag, options.user_tag, injsegs.extent())
 injpowerfrag = make_multipower_fragment(dag, [lscdatafindnode], [binjfrag], lscdatafindnode.get_output(), injsegs, "INJECTIONS_%s" % options.user_tag)	# FIXME: need to add --burstinjection-file and --calibration-cache to these power jobs
 binjfindfrag = make_binjfind_fragment(dag, options.user_tag, injpowerfrag)
 
-make_publish_fragment(dag, "POWER", darmpowerfrag, options.publish_dest)
 make_gsiscp_fragment(dag, [darmpowerfrag, binjfindfrag], options.gsiscp_dest)
 
 dag.write_sub_files()
