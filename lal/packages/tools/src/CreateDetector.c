@@ -558,7 +558,6 @@ const LALDetector lalCachedDetectors[LALNumCachedDetectors]
       }
     }
 };
-#endif
 
 const LALDetector lalCachedDetectors[LALNumCachedDetectors] =
 {
@@ -701,6 +700,180 @@ const LALDetector lalCachedDetectors[LALNumCachedDetectors] =
     },
   }
 };
+#endif
+
+
+/* New method for creating cached detectors:
+ *
+ * Construct the detector structures from the macros describing the
+ * detectors.
+ *
+ * Use a bit of macro magic to do this.
+ */
+
+#define LAL_CAT(x,y) x ## y
+#define LAL_XCAT(x,y) LAL_CAT(x,y)
+
+/* expands to constant c of detector d */
+#define LAL_DETECTOR_CONSTANT(d,c) LAL_XCAT(LAL_XCAT(LAL_,d),LAL_XCAT(_,c))
+
+/* initializer for detector location vector */
+#define LAL_DETECTOR_LOCATION(d) \
+{ \
+  LAL_DETECTOR_CONSTANT(d,VERTEX_LOCATION_X_SI),\
+  LAL_DETECTOR_CONSTANT(d,VERTEX_LOCATION_Y_SI),\
+  LAL_DETECTOR_CONSTANT(d,VERTEX_LOCATION_Z_SI) \
+}
+
+/* expands to component c (X,Y,Z) of arm X of detector d */
+#define LAL_ARM_X(d,c) LAL_DETECTOR_CONSTANT(d,LAL_XCAT(ARM_X_DIRECTION_,c))
+
+/* expands to component c (X,Y,Z) of arm Y of detector d */
+#define LAL_ARM_Y(d,c) LAL_DETECTOR_CONSTANT(d,LAL_XCAT(ARM_Y_DIRECTION_,c))
+
+/* expands to component c (X,Y,Z) of axis of detector d */
+#define LAL_AXIS(d,c) LAL_DETECTOR_CONSTANT(d,LAL_XCAT(AXIS_DIRECTION_,c))
+
+/* expands to a 3x3 matix initializer for the response for IFODIFF detector d */
+#define LAL_DETECTOR_RESPONSE_IFODIFF(d) \
+{ \
+  { \
+    0.5*( LAL_ARM_X(d,X) * LAL_ARM_X(d,X) - LAL_ARM_Y(d,X) * LAL_ARM_Y(d,X) ), \
+    0.5*( LAL_ARM_X(d,X) * LAL_ARM_X(d,Y) - LAL_ARM_Y(d,X) * LAL_ARM_Y(d,Y) ), \
+    0.5*( LAL_ARM_X(d,X) * LAL_ARM_X(d,Z) - LAL_ARM_Y(d,X) * LAL_ARM_Y(d,Z) )  \
+  }, \
+  { \
+    0.5*( LAL_ARM_X(d,Y) * LAL_ARM_X(d,X) - LAL_ARM_Y(d,Y) * LAL_ARM_Y(d,X) ), \
+    0.5*( LAL_ARM_X(d,Y) * LAL_ARM_X(d,Y) - LAL_ARM_Y(d,Y) * LAL_ARM_Y(d,Y) ), \
+    0.5*( LAL_ARM_X(d,Y) * LAL_ARM_X(d,Z) - LAL_ARM_Y(d,Y) * LAL_ARM_Y(d,Z) )  \
+  }, \
+  { \
+    0.5*( LAL_ARM_X(d,Z) * LAL_ARM_X(d,X) - LAL_ARM_Y(d,Z) * LAL_ARM_Y(d,X) ), \
+    0.5*( LAL_ARM_X(d,Z) * LAL_ARM_X(d,Y) - LAL_ARM_Y(d,Z) * LAL_ARM_Y(d,Y) ), \
+    0.5*( LAL_ARM_X(d,Z) * LAL_ARM_X(d,Z) - LAL_ARM_Y(d,Z) * LAL_ARM_Y(d,Z) )  \
+  } \
+}
+
+/* expands to a 3x3 matix initializer for the response for IFOCOMM detector d */
+#define LAL_DETECTOR_RESPONSE_IFOCOMM(d) \
+{ \
+  { \
+    0.5*( LAL_ARM_X(d,X) * LAL_ARM_X(d,X) + LAL_ARM_Y(d,X) * LAL_ARM_Y(d,X) ), \
+    0.5*( LAL_ARM_X(d,X) * LAL_ARM_X(d,Y) + LAL_ARM_Y(d,X) * LAL_ARM_Y(d,Y) ), \
+    0.5*( LAL_ARM_X(d,X) * LAL_ARM_X(d,Z) + LAL_ARM_Y(d,X) * LAL_ARM_Y(d,Z) )  \
+  }, \
+  { \
+    0.5*( LAL_ARM_X(d,Y) * LAL_ARM_X(d,X) + LAL_ARM_Y(d,Y) * LAL_ARM_Y(d,X) ), \
+    0.5*( LAL_ARM_X(d,Y) * LAL_ARM_X(d,Y) + LAL_ARM_Y(d,Y) * LAL_ARM_Y(d,Y) ), \
+    0.5*( LAL_ARM_X(d,Y) * LAL_ARM_X(d,Z) + LAL_ARM_Y(d,Y) * LAL_ARM_Y(d,Z) )  \
+  }, \
+  { \
+    0.5*( LAL_ARM_X(d,Z) * LAL_ARM_X(d,X) + LAL_ARM_Y(d,Z) * LAL_ARM_Y(d,X) ), \
+    0.5*( LAL_ARM_X(d,Z) * LAL_ARM_X(d,Y) + LAL_ARM_Y(d,Z) * LAL_ARM_Y(d,Y) ), \
+    0.5*( LAL_ARM_X(d,Z) * LAL_ARM_X(d,Z) + LAL_ARM_Y(d,Z) * LAL_ARM_Y(d,Z) )  \
+  } \
+}
+
+/* expands to a 3x3 matix initializer for the response for IFOXARM detector d */
+#define LAL_DETECTOR_RESPONSE_IFOXARM(d) \
+{ \
+  { \
+    0.5 * LAL_ARM_X(d,X) * LAL_ARM_X(d,X), \
+    0.5 * LAL_ARM_X(d,X) * LAL_ARM_X(d,Y), \
+    0.5 * LAL_ARM_X(d,X) * LAL_ARM_X(d,Z)  \
+  }, \
+  { \
+    0.5 * LAL_ARM_X(d,Y) * LAL_ARM_X(d,X), \
+    0.5 * LAL_ARM_X(d,Y) * LAL_ARM_X(d,Y), \
+    0.5 * LAL_ARM_X(d,Y) * LAL_ARM_X(d,Z)  \
+  }, \
+  { \
+    0.5 * LAL_ARM_X(d,Z) * LAL_ARM_X(d,X), \
+    0.5 * LAL_ARM_X(d,Z) * LAL_ARM_X(d,Y), \
+    0.5 * LAL_ARM_X(d,Z) * LAL_ARM_X(d,Z)  \
+  } \
+}
+
+/* expands to a 3x3 matix initializer for the response for IFOYARM detector d */
+#define LAL_DETECTOR_RESPONSE_IFOYARM(d) \
+{ \
+  { \
+    0.5 * LAL_ARM_Y(d,X) * LAL_ARM_Y(d,X), \
+    0.5 * LAL_ARM_Y(d,X) * LAL_ARM_Y(d,Y), \
+    0.5 * LAL_ARM_Y(d,X) * LAL_ARM_Y(d,Z)  \
+  }, \
+  { \
+    0.5 * LAL_ARM_Y(d,Y) * LAL_ARM_Y(d,X), \
+    0.5 * LAL_ARM_Y(d,Y) * LAL_ARM_Y(d,Y), \
+    0.5 * LAL_ARM_Y(d,Y) * LAL_ARM_Y(d,Z)  \
+  }, \
+  { \
+    0.5 * LAL_ARM_Y(d,Z) * LAL_ARM_Y(d,X), \
+    0.5 * LAL_ARM_Y(d,Z) * LAL_ARM_Y(d,Y), \
+    0.5 * LAL_ARM_Y(d,Z) * LAL_ARM_Y(d,Z)  \
+  } \
+}
+
+/* expands to a 3x3 matix initializer for the response for CYLBAR detector d */
+#define LAL_DETECTOR_RESPONSE_CYLBAR(d) \
+{ \
+  { \
+    LAL_AXIS(d,X) * LAL_AXIS(d,X), \
+    LAL_AXIS(d,X) * LAL_AXIS(d,Y), \
+    LAL_AXIS(d,X) * LAL_AXIS(d,Z)  \
+  }, \
+  { \
+    LAL_AXIS(d,Y) * LAL_AXIS(d,X), \
+    LAL_AXIS(d,Y) * LAL_AXIS(d,Y), \
+    LAL_AXIS(d,Y) * LAL_AXIS(d,Z)  \
+  }, \
+  { \
+    LAL_AXIS(d,Z) * LAL_AXIS(d,X), \
+    LAL_AXIS(d,Z) * LAL_AXIS(d,Y), \
+    LAL_AXIS(d,Z) * LAL_AXIS(d,Z)  \
+  } \
+}
+
+#define LAL_FR_DETECTOR_STRUCT(d) \
+{ \
+  LAL_DETECTOR_CONSTANT(d,DETECTOR_NAME), \
+  LAL_DETECTOR_CONSTANT(d,DETECTOR_LONGITUDE_RAD), \
+  LAL_DETECTOR_CONSTANT(d,DETECTOR_LATITUDE_RAD), \
+  LAL_DETECTOR_CONSTANT(d,DETECTOR_ELEVATION_SI), \
+  LAL_DETECTOR_CONSTANT(d,DETECTOR_ARM_X_ALTITUDE_RAD), \
+  LAL_DETECTOR_CONSTANT(d,DETECTOR_ARM_X_AZIMUTH_RAD), \
+  LAL_DETECTOR_CONSTANT(d,DETECTOR_ARM_Y_ALTITUDE_RAD), \
+  LAL_DETECTOR_CONSTANT(d,DETECTOR_ARM_Y_AZIMUTH_RAD), \
+  LAL_DETECTOR_CONSTANT(d,DETECTOR_ARM_X_MIDPOINT_SI), \
+  LAL_DETECTOR_CONSTANT(d,DETECTOR_ARM_Y_MIDPOINT_SI) \
+}
+
+#define LAL_DETECTOR_RESPONSE(d,t) \
+  LAL_XCAT( LAL_DETECTOR_RESPONSE_, t )(d)
+
+#define LAL_DETECTOR_STRUCT(d,t) \
+{ \
+  LAL_DETECTOR_LOCATION(d),      \
+  LAL_DETECTOR_RESPONSE(d,t),    \
+  LAL_XCAT(LALDETECTORTYPE_,t),  \
+  LAL_FR_DETECTOR_STRUCT(d)      \
+}
+
+/** Pre-existing detectors. */
+const LALDetector lalCachedDetectors[LAL_NUM_DETECTORS] = {
+  LAL_DETECTOR_STRUCT( TAMA_300, IFODIFF ),
+  LAL_DETECTOR_STRUCT( VIRGO, IFODIFF ),
+  LAL_DETECTOR_STRUCT( GEO_600, IFODIFF ),
+  LAL_DETECTOR_STRUCT( LHO_2K, IFODIFF ),
+  LAL_DETECTOR_STRUCT( LHO_4K, IFODIFF ),
+  LAL_DETECTOR_STRUCT( LLO_4K, IFODIFF ),
+  LAL_DETECTOR_STRUCT( CIT_40, IFODIFF ),
+  LAL_DETECTOR_STRUCT( ALLEGRO_320, CYLBAR ),
+  LAL_DETECTOR_STRUCT( AURIGA, CYLBAR ),
+  LAL_DETECTOR_STRUCT( EXPLORER, CYLBAR ),
+  LAL_DETECTOR_STRUCT( NIOBE, CYLBAR ),
+  LAL_DETECTOR_STRUCT( NAUTILUS, CYLBAR )
+};
 
 
 static
@@ -730,13 +903,11 @@ void getCartesianComponents( REAL4 u[3],
   return;
 }
 
-/* <lalVerbatim file="CreateDetectorCP"> */
-void LALCreateDetector( LALStatus             *status,
-                        LALDetector           *output,
-                        const LALFrDetector   *input,
-                        const LALDetectorType  type )
-/* </lalVerbatim> */
+
+LALDetector * XLALCreateDetector( LALDetector *detector, 
+    const LALFrDetector *frDetector, LALDetectorType type )
 {
+  static const char *func = "XLALCreateDetector";
   INT2                i, j;
   REAL8               latRad, lonRad;
   REAL8               cosLat, sinLat, cosLon, sinLon;
@@ -744,36 +915,42 @@ void LALCreateDetector( LALStatus             *status,
   REAL4               xArm[3], yArm[3];
   const LALDetector  *detectorPtr, *detectorStopPtr;
 
-  INITSTATUS( status, "LALCreateDetector", CREATEDETECTORC );
+  /* if detector is NULL, we are to allocate memory for it */
+  if ( ! detector )
+    detector = LALCalloc( 1, sizeof( *detector ) );
 
-  ASSERT( input != NULL, status, DETECTORSITEH_ENULLP,
-          DETECTORSITEH_MSGENULLP );
+  if ( ! detector )
+    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
 
-  ASSERT( output != NULL, status, DETECTORSITEH_ENULLP,
-          DETECTORSITEH_MSGENULLP );
+  /* if frDetector is NULL, just return a blank detector structure,
+   * but set the type */
+  if ( ! frDetector )
+  {
+    detector->type = type;
+    return detector;
+  }
 
   /* Check to see if this is a cached detector */
-
-  detectorStopPtr = lalCachedDetectors + LALNumCachedDetectors;
+  detectorStopPtr = lalCachedDetectors + LAL_NUM_DETECTORS;
 
   for ( detectorPtr = lalCachedDetectors;
         detectorPtr < detectorStopPtr;
         ++detectorPtr )
   {
     if (  type == detectorPtr->type
-          && !strncmp(detectorPtr->frDetector.name, input->name,
+          && !strncmp(detectorPtr->frDetector.name, frDetector->name,
                   LALNameLength)
           )
       {
-        *output = *detectorPtr;
-        RETURN(status);
+        *detector = *detectorPtr;
+        return detector;
       }
   }
 
   /* If it's not, construct Cartesian position vector and response tensor */
 
-  latRad = input->vertexLatitudeRadians;
-  lonRad = input->vertexLongitudeRadians;
+  latRad = frDetector->vertexLatitudeRadians;
+  lonRad = frDetector->vertexLongitudeRadians;
 
 #if DETECTORSITEH_PRINTF
   printf("LAT = %g radians, LON = %g radians\n", latRad, lonRad);
@@ -795,12 +972,12 @@ void LALCreateDetector( LALStatus             *status,
 
   locationRho
     = cosLat * ( (LAL_AWGS84_SI * LAL_AWGS84_SI) / ellipsoidalDenominator
-                 + (REAL8) input->vertexElevation );
-  output->location[0] = locationRho * cosLon;
-  output->location[1] = locationRho * sinLon;
-  output->location[2]
+                 + (REAL8) frDetector->vertexElevation );
+  detector->location[0] = locationRho * cosLon;
+  detector->location[1] = locationRho * sinLon;
+  detector->location[2]
     = sinLat * ( (LAL_BWGS84_SI * LAL_BWGS84_SI) / ellipsoidalDenominator
-                 + (REAL8) input->vertexElevation );
+                 + (REAL8) frDetector->vertexElevation );
 
 #if DETECTORSITEH_PRINTF
   printf("%d %d\n", type, LALDETECTORTYPE_IFODIFF);
@@ -809,10 +986,10 @@ void LALCreateDetector( LALStatus             *status,
   if (type != LALDETECTORTYPE_IFOYARM)
   {
     getCartesianComponents ( xArm,
-                             cos(input->xArmAltitudeRadians),
-                             sin(input->xArmAltitudeRadians),
-                             cos(input->xArmAzimuthRadians),
-                             sin(input->xArmAzimuthRadians),
+                             cos(frDetector->xArmAltitudeRadians),
+                             sin(frDetector->xArmAltitudeRadians),
+                             cos(frDetector->xArmAzimuthRadians),
+                             sin(frDetector->xArmAzimuthRadians),
                              cosLat, sinLat, cosLon, sinLon );
 
 #if DETECTORSITEH_PRINTF
@@ -823,10 +1000,10 @@ void LALCreateDetector( LALStatus             *status,
   if (type != LALDETECTORTYPE_IFOXARM && type != LALDETECTORTYPE_CYLBAR)
   {
     getCartesianComponents ( yArm,
-                             cos(input->yArmAltitudeRadians),
-                             sin(input->yArmAltitudeRadians),
-                             cos(input->yArmAzimuthRadians),
-                             sin(input->yArmAzimuthRadians),
+                             cos(frDetector->yArmAltitudeRadians),
+                             sin(frDetector->yArmAltitudeRadians),
+                             cos(frDetector->yArmAzimuthRadians),
+                             sin(frDetector->yArmAzimuthRadians),
                              cosLat, sinLat, cosLon, sinLon );
 
 #if DETECTORSITEH_PRINTF
@@ -840,11 +1017,11 @@ void LALCreateDetector( LALStatus             *status,
     case LALDETECTORTYPE_IFODIFF:
       for ( i=0; i<3; ++i )
       {
-        output->response[i][i]
+        detector->response[i][i]
           = ( xArm[i] * xArm[i] - yArm[i] * yArm[i] ) / 2;
         for ( j=i+1; j<3; ++j )
         {
-          output->response[i][j] = output->response[j][i]
+          detector->response[i][j] = detector->response[j][i]
             = ( xArm[i] * xArm[j] - yArm[i] * yArm[j] ) / 2;
         }
       }
@@ -852,11 +1029,11 @@ void LALCreateDetector( LALStatus             *status,
     case LALDETECTORTYPE_IFOXARM:
       for ( i=0; i<3; ++i )
       {
-        output->response[i][i]
+        detector->response[i][i]
           = ( xArm[i] * xArm[i] ) / 2;
         for ( j=i+1; j<3; ++j )
         {
-          output->response[i][j] = output->response[j][i]
+          detector->response[i][j] = detector->response[j][i]
             = ( xArm[i] * xArm[j] ) / 2;
         }
       }
@@ -864,11 +1041,11 @@ void LALCreateDetector( LALStatus             *status,
     case LALDETECTORTYPE_IFOYARM:
       for ( i=0; i<3; ++i )
       {
-        output->response[i][i]
+        detector->response[i][i]
           = ( yArm[i] * yArm[i] ) / 2;
         for ( j=i+1; j<3; ++j )
         {
-          output->response[i][j] = output->response[j][i]
+          detector->response[i][j] = detector->response[j][i]
             = ( yArm[i] * yArm[j] ) / 2;
         }
       }
@@ -876,11 +1053,11 @@ void LALCreateDetector( LALStatus             *status,
     case LALDETECTORTYPE_IFOCOMM:
       for ( i=0; i<3; ++i )
       {
-        output->response[i][i]
+        detector->response[i][i]
           = ( xArm[i] * xArm[i] + yArm[i] * yArm[i] ) / 2;
         for ( j=i+1; j<3; ++j )
         {
-          output->response[i][j] = output->response[j][i]
+          detector->response[i][j] = detector->response[j][i]
             = ( xArm[i] * xArm[j] + yArm[i] * yArm[j] ) / 2;
         }
       }
@@ -888,26 +1065,50 @@ void LALCreateDetector( LALStatus             *status,
     case LALDETECTORTYPE_CYLBAR:
       for ( i=0; i<3; ++i )
       {
-        output->response[i][i]
+        detector->response[i][i]
           = xArm[i] * xArm[i];
         for ( j=i+1; j<3; ++j )
         {
-          output->response[i][j] = output->response[j][i]
+          detector->response[i][j] = detector->response[j][i]
             = xArm[i] * xArm[j];
         }
       }
       break;
     default:
-      ABORT( status, DETECTORSITEH_ETYPE, DETECTORSITEH_MSGETYPE );
+      XLAL_ERROR_NULL( func, XLAL_EINVAL );
   } /* switch (type) */
 
-  output->frDetector = *input;
-  output->type = type;
-
-  RETURN(status);
+  detector->frDetector = *frDetector;
+  detector->type = type;
+  return detector;
 }
 
 
+/* <lalVerbatim file="CreateDetectorCP"> */
+void LALCreateDetector( LALStatus             *status,
+                        LALDetector           *output,
+                        const LALFrDetector   *input,
+                        const LALDetectorType  type )
+/* </lalVerbatim> */
+{
+  INITSTATUS( status, "LALCreateDetector", CREATEDETECTORC );
 
+  ASSERT( input != NULL, status, DETECTORSITEH_ENULLP,
+          DETECTORSITEH_MSGENULLP );
 
+  ASSERT( output != NULL, status, DETECTORSITEH_ENULLP,
+          DETECTORSITEH_MSGENULLP );
 
+  output = XLALCreateDetector( output, input, type );
+  if ( ! output )
+    switch ( XLALClearErrno() )
+    {
+      case XLAL_EINVAL:
+        ABORT( status, DETECTORSITEH_ETYPE, DETECTORSITEH_MSGETYPE );
+        break;
+      default:
+        ABORT_XLAL( status );
+    }
+
+  RETURN(status);
+}

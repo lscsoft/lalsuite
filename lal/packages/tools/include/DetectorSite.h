@@ -135,7 +135,9 @@ Technical Note
 #ifndef _DETECTORSITE_H
 #define _DETECTORSITE_H
 
-#include <lal/LALStdlib.h>
+/* NOTICE: This file is being replaced with LALDetectors.h */
+
+#include <lal/LALDetectors.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -201,6 +203,7 @@ The possible values are (each value is prefaced by
 
 ********************************** </lalLaTeX> */
 
+#if 0 /* This type is now in LALDetectors.h */
 typedef enum {
   LALDETECTORTYPE_ABSENT,       /* No FrDetector associated with the structure */
   LALDETECTORTYPE_IFODIFF,      /* IFO in differential mode */
@@ -216,6 +219,7 @@ typedef enum {
   /* SPHEREQUAD2C,  Resonant sphere in l=2, m=+/-2 (cosine) mode */
   /* etc */
 } LALDetectorType;
+#endif
 
 /********************************* <lalLaTeX> 
 
@@ -248,15 +252,16 @@ indices of the known detectors:
 ********************************** </lalLaTeX> */
 
 /********************************** <lalVerbatim> */
+/* Legacy code: should now use data in LALDetectors.h */
 enum
 {
-  LALDetectorIndexLHODIFF,
-  LALDetectorIndexLLODIFF,
-  LALDetectorIndexVIRGODIFF,
-  LALDetectorIndexGEO600DIFF,
-  LALDetectorIndexTAMA300DIFF,
-  LALDetectorIndexCIT40DIFF,
-  LALNumCachedDetectors
+  LALDetectorIndexLHODIFF = LAL_LHO_4K_DETECTOR,
+  LALDetectorIndexLLODIFF = LAL_LLO_4K_DETECTOR,
+  LALDetectorIndexVIRGODIFF = LAL_VIRGO_DETECTOR,
+  LALDetectorIndexGEO600DIFF = LAL_GEO_600_DETECTOR,
+  LALDetectorIndexTAMA300DIFF = LAL_TAMA_300_DETECTOR,
+  LALDetectorIndexCIT40DIFF = LAL_CIT_40_DETECTOR,
+  LALNumCachedDetectors = LAL_NUM_DETECTORS
 };
 /********************************** </lalVerbatim> */
 
@@ -301,6 +306,7 @@ $\beta$ of the vertex, in radians.
 ********************************** </lalLaTeX> */
 
 
+#if 0 /* This structure is now in LALDetectors.h */
 typedef struct tagLALFrDetector
 {
   CHAR             name[LALNameLength];
@@ -312,6 +318,7 @@ typedef struct tagLALFrDetector
   REAL4            yArmAltitudeRadians;
   REAL4            yArmAzimuthRadians;
 } LALFrDetector; 
+#endif
 
 /********************************* <lalLaTeX> 
 
@@ -337,6 +344,7 @@ the type of detector.  The fields are:
 
 ********************************** </lalLaTeX> */
 
+#if 0 /* these are now in LALDetector.h */
 typedef struct tagLALDetector
 {
   REAL8            location[3];
@@ -351,6 +359,7 @@ void LALCreateDetector( LALStatus             *status,
 			const LALDetectorType  type );
 
 extern const LALDetector lalCachedDetectors[LALNumCachedDetectors];
+#endif
 
 /********************************* <lalLaTeX> 
 

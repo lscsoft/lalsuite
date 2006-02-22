@@ -138,7 +138,7 @@ CheckDetector(LALStatus *status, LALDetector *cachedDetector)
 
   printf("  Name is \"%s\",\n", frDetector.name);
 
-  frDetector.name[1] -= 4;
+  frDetector.name[1] = '?';
 
   printf("  Changing to \"%s\",\n", frDetector.name);
 
