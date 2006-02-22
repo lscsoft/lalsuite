@@ -128,11 +128,11 @@ except Exception, e:
 # dmtmon location
 try:
 	if options.dmtmon_dest:
-		config_parser.set('dmtmon', 'destination', options.dmtmon_dest)
+		config_parser.set('ligolw_burst2mon', 'destination', options.dmtmon_dest)
 	else:
-		options.dmtmon_dest = config_parser.get('dmtmon', 'destination')
+		options.dmtmon_dest = config_parser.get('ligolw_burst2mon', 'destination')
 except Exception, e:
-	raise Exception, "must either provide --dmtmon-dest, or destination variable in [dmtmon] section of .ini: %s" % str(e)
+	raise Exception, "must either provide --dmtmon-dest, or destination variable in [ligolw_burst2mon] section of .ini: %s" % str(e)
 
 # gsiscp location
 try:
@@ -255,9 +255,24 @@ class Burst2MonJob(pipeline.CondorDAGJob):
 		self.set_stdout_file(os.path.join(out_dir, "ligolw_burst2mon-$(cluster)-$(process).out"))
 		self.set_stderr_file(os.path.join(out_dir, "ligolw_burst2mon-$(cluster)-$(process).err"))
 		self.add_condor_cmd("getenv", "True")
+		self.add_ini_opts(config_parser, "ligolw_burst2mon")
 
 
 class Burst2MonNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+	pass
+
+
+class BuclusterJob(pipeline.CondorDAGJob):
+	def __init__(self, out_dir, config_parser):
+		pipeline.CondorDAGJob.__init__(self, "vanilla", config_parser.get("condor", "ligolw_bucluster"))
+		self.set_sub_file("ligolw_bucluster.sub")
+		self.set_stdout_file(os.path.join(out_dir, "ligolw_bucluster-$(cluster)-$(process).out"))
+		self.set_stderr_file(os.path.join(out_dir, "ligolw_bucluster-$(cluster)-$(process).err"))
+		self.add_condor_cmd("getenv", "True")
+		self.add_ini_opts(config_parser, "ligolw_bucluster")
+
+
+class BuclusterNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 	pass
 
 
@@ -298,6 +313,9 @@ lladdjob = pipeline.LigolwAddJob(out_dir, config_parser)
 
 # ligolw_binjfind
 binjfindjob = BinjfindJob(out_dir, config_parser)
+
+# ligolw_bucluster
+buclusterjob = BuclusterJob(out_dir, config_parser)
 
 # ligolw_burst2mon
 llb2mjob = Burst2MonJob(out_dir, config_parser)
@@ -365,6 +383,7 @@ def make_datafind_fragment(dag, observatory, seg):
 	node.set_end(options.seg[1] + 1)
 	node.set_observatory(observatory)
 	dag.add_node(node)
+
 	return node
 
 
@@ -381,19 +400,19 @@ def make_power_fragment(dag, parents, framecache, seg, tag):
 
 	powernode = power.PowerNode(powerjob)
 	powernode.set_name("lalapps_power-%s" % suffix)
+	map(powernode.add_parent, parents)
 	powernode.set_cache(framecache)
 	powernode.set_ifo(options.instrument)
 	powernode.set_start(seg[0])
 	powernode.set_end(seg[1])
 	powernode.add_macro("macrotag", tag)
-	map(powernode.add_parent, parents)
 	dag.add_node(powernode)
 
 	fixpowernode = FixPowerNode(fixpowerjob)
 	fixpowernode.set_name("fix_sngl_burst-%s" % suffix)
+	fixpowernode.add_parent(powernode)
 	fixpowernode.set_input(powernode.get_output())
 	fixpowernode.set_output(powernode.get_output() + ".fixed")
-	fixpowernode.add_parent(powernode)
 	dag.add_node(fixpowernode)
 
 	return fixpowernode
@@ -413,18 +432,15 @@ def make_lladd_fragment(dag, parents, seg, tag):
 
 	node = pipeline.LigolwAddNode(lladdjob)
 	node.set_name("lladd-%s" % tag)
-	node.add_var_opt("input-cache", cache_name)
-
 	for parent in parents:
 		node.add_parent(parent)
-
 		cache = lal.CacheEntry()
 		cache.observatory = "ANY"
 		cache.description = "EMPTY"
 		cache.segment = seg
 		cache.url = "file://localhost" + os.path.join(os.getcwd(), parent.get_output())
 		print >>cachefile, str(cache)
-
+	node.add_var_opt("input-cache", cache_name)
 	dag.add_node(node)
 
 	return node
@@ -464,6 +480,7 @@ def make_publish_fragment(dag, tag, parent, destination):
 	node.add_file_arg(parent.get_output())
 	node.set_output(destination)
 	dag.add_node(node)
+
 	return node
 
 
@@ -477,10 +494,11 @@ def make_publish_fragment(dag, tag, parent, destination):
 
 def make_burst2mon_fragment(dag, parent, seg, tag, dest):
 	node = Burst2MonNode(llb2mjob)
+	node.add_parent(parent)
 	node.set_name("ligolw_burst2mon")
 	node.set_input(parent.get_output())
 	node.set_output("%s-POWERMON_%s-%s-%s.xml" % (options.instrument, tag, int(seg[0]), int(seg.duration())))
-	node.add_parent(parent)
+	node.add_macro("macrotag", tag)
 	dag.add_node(node)
 
 	return make_publish_fragment(dag, "POWERMON", node, dest)
@@ -502,6 +520,7 @@ def make_gsiscp_fragment(dag, parents, destination):
 		node.add_file_arg(parent.get_output())
 	node.set_output(destination)
 	dag.add_node(node)
+
 	return node
 
 
@@ -516,8 +535,8 @@ def make_gsiscp_fragment(dag, parents, destination):
 def make_binj_fragment(dag, tag, seg, offset, flow, fhigh, fratio):
 	node = power.BurstInjNode(binjjob)
 	node.set_start(str(seg[0] + float(binjjob.get_opts()["time-step"]) * offset))
-	node.set_name("lalapps_binj-%s-%s" % (node.get_start(), int(flow)))
 	node.set_end(seg[1])
+	node.set_name("lalapps_binj-%s-%s" % (node.get_start(), int(flow)))
 	node.add_macro("macrotag", tag)
 	node.add_macro("macroflow", flow)
 	node.add_macro("macrofhigh", fhigh)
@@ -559,13 +578,23 @@ def make_multibinj_fragment(dag, tag, seg):
 #
 
 def make_binjfind_fragment(dag, tag, parent):
-	node = BinjfindNode(binjfindjob)
-	node.set_name("ligolw_binjfind")
-	node.set_input(parent.get_output())
-	node.set_output(parent.get_output())
-	node.add_macro("macrotag", tag)
-	dag.add_node(node)
-	return node
+	cluster = BuclusterNode(buclusterjob)
+	cluster.set_name("ligolw_bucluster")
+	cluster.add_parent(parent)
+	cluster.set_input(parent.get_output())
+	cluster.set_output(parent.get_output())
+	cluster.add_macro("macrotag", tag)
+	dag.add_node(cluster)
+
+	binjfind = BinjfindNode(binjfindjob)
+	binjfind.set_name("ligolw_binjfind")
+	binjfind.add_parent(cluster)
+	binjfind.set_input(cluster.get_output())
+	binjfind.set_output(cluster.get_output())
+	binjfind.add_macro("macrotag", tag)
+	dag.add_node(binjfind)
+
+	return binjfind
 
 
 #
