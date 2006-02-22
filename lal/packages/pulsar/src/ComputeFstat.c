@@ -38,6 +38,14 @@ NRCSID( COMPUTEFSTATC, "$Id$");
 #define TRUE (1==1)
 #define FALSE (1==0)
 
+
+#define LD_SMALL4       (1.0e-6)		/**< "small" number for REAL4*/
+#define OOTWOPI         (1.0 / LAL_TWOPI)	/**< 1/2pi */
+
+#define TWOPI_FLOAT     6.28318530717958f  	/**< single-precision 2*pi */
+#define OOTWOPI_FLOAT   (1.0f / TWOPI_FLOAT)	/**< single-precision 1 / (2pi) */ 
+
+
 /*----- Macros ----- */
 /** convert GPS-time to REAL8 */
 #define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
@@ -45,6 +53,7 @@ NRCSID( COMPUTEFSTATC, "$Id$");
 /** Simple Euklidean scalar product for two 3-dim vectors in cartesian coords */
 #define SCALAR(u,v) ((u)[0]*(v)[0] + (u)[1]*(v)[1] + (u)[2]*(v)[2])
 
+#define SQ(x) ( (x) * (x) )
 
 /*----- SWITCHES -----*/
 
@@ -53,23 +62,154 @@ NRCSID( COMPUTEFSTATC, "$Id$");
 /*---------- empty initializers ---------- */
 static const BarycenterInput empty_BarycenterInput;
 static const LALStatus empty_status;
+static const Fcomponents empty_Fcomponents;
 
 /*---------- Global variables ----------*/
-
 
 /*---------- internal prototypes ----------*/
 int sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x); /* LUT-calculation of sin/cos */
 
-
-
 /*==================== FUNCTION DEFINITIONS ====================*/
 
+/** Function to compute (multi-IFO) F-statistic for given parameter-space point ::psPoint,
+ *  normalized SFT-data (normalized by <em>double-sided</em> PSD Sn), noise-weights
+ *  and detector state-series 
+ *
+ * NOTE: for better efficiency some quantities that need to be recomputed only for different 
+ * sky-positions are buffered in ::cfBuffer, to destroy this (at the end) use XLALDestroyComputeFBuffer()
+ * (not yet implemented)
+ *
+ * NOTE2: there's a spaceholder for binary-pulsar parameters in ::psPoint, but this it not functional yet.
+ *
+ */
+void
+ComputeFStat ( LALStatus *status, 
+	       Fcomponents *Fstat, 		/**< [out] Fstatistic + Fa, Fb */
+	       const CWParamSpacePoint *psPoint,/**< parameter-space point to compute F for */
+	       const MultiSFTVector *multiSFTs, /**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
+	       const MultiNoiseWeights *multiWeights,	/**< noise-weights of all SFTs */
+	       const MultiDetectorStateSeries *multiDetStates,/**< 'trajectories' of the different IFOs */
+	       const ComputeFParams *params,	/**< addition computational params */
+	       ComputeFBuffer *cfBuffer		/**< CF-internal buffering structure */
+	       )
+{
+  Fcomponents retF = empty_Fcomponents;
+  UINT4 X, numDetectors;	
+  MultiSSBtimes *multiSSB = NULL;
+  MultiAMCoeffs *multiAMcoef = NULL;
+  REAL8 At, Bt, Ct, Dt;
 
-#define LD_SMALL4       (1.0e-6)		/**< "small" number for REAL4*/
-#define OOTWOPI         (1.0 / LAL_TWOPI)	/**< 1/2pi */
+  INITSTATUS( status, "ComputeFStat", COMPUTEFSTATC );
+  ATTATCHSTATUSPTR (status);
 
-#define TWOPI_FLOAT     6.28318530717958f  	/**< single-precision 2*pi */
-#define OOTWOPI_FLOAT   (1.0f / TWOPI_FLOAT)	/**< single-precision 1 / (2pi) */ 
+  /* check input */
+  ASSERT ( Fstat, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
+  ASSERT ( multiSFTs, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
+  ASSERT ( multiWeights, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
+  ASSERT ( psPoint, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
+  ASSERT ( psPoint->fkdot, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
+  ASSERT ( multiDetStates, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
+  ASSERT ( params, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
+
+  numDetectors = multiSFTs->length;
+  ASSERT ( multiDetStates->length == numDetectors, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
+  ASSERT ( multiWeights->length == numDetectors , status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
+
+  if ( psPoint->binary ) {
+    LALPrintError ("\nSorry, binary-pulsar search not yet implemented in LALComputeFStat()\n\n");
+    ABORT ( status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
+  }
+
+  /* FIXME: for now, we don't yet use the Fbuffer */
+  if ( cfBuffer )
+    {
+      if ( cfBuffer->multiSSB ) 
+	XLALDestroyMultiSSBtimes ( cfBuffer->multiSSB );
+
+      if ( cfBuffer->multiAMcoef )
+	XLALDestroyMultiAMCoeffs ( cfBuffer->multiAMcoef ); 
+
+      cfBuffer -> multiSSB = NULL;	
+      cfBuffer -> multiAMcoef = NULL;
+    } /* if cfBuffer */
+
+  /* ----- allocate and initialize AM-coefficients and SSB-times ----- */
+  /* FIXME: (TODO) we'll need buffering of these quantities to regain efficiency for  
+   * repeated searches at the same sky-position  
+   */
+  TRY ( LALGetMultiSSBtimes ( status->statusPtr, &multiSSB, multiDetStates, psPoint->skypos, psPoint->refTime, params->SSBprec ), status );
+
+  LALGetMultiAMCoeffs ( status->statusPtr, &multiAMcoef, multiDetStates, psPoint->skypos );
+  BEGINFAIL ( status ) {
+    XLALDestroyMultiSSBtimes ( multiSSB );
+  } ENDFAIL (status);
+
+
+  /* ----- loop over detectors and compute all detector-specific quantities ----- */
+  At = Bt = Ct = Dt = 0.0;
+
+  for ( X=0; X < numDetectors; X ++)
+    {
+      UINT4 alpha;
+      UINT4 numSFTsX = multiSFTs->data[X]->length;
+      AMCoeffs *amcoeX = multiAMcoef->data[X];
+      REAL8Vector *weightsX = multiWeights->data[X];
+      Fcomponents FcX = empty_Fcomponents;	/* for detector-specific FaX, FbX */
+
+      for(alpha = 0; alpha < numSFTsX; alpha++)
+	{
+	  REAL8 Sqwi = sqrt ( weightsX->data[alpha] );
+	  REAL8 ahat = Sqwi * amcoeX->a->data[alpha] ;
+	  REAL8 bhat = Sqwi * amcoeX->b->data[alpha] ;
+	  
+	  /* *replace* original a(t), b(t) by noise-weighed version! */
+	  amcoeX->a->data[alpha] = ahat;
+	  amcoeX->b->data[alpha] = bhat;
+ 
+	  /* sum A, B, C on the fly */
+	  At += ahat * ahat;
+	  Bt += bhat * bhat;
+	  Ct += ahat * bhat;
+	} /* for alpha < numSFTsX */
+ 		  
+      /* Caculate FaX, FbX using XLALComputeFaFb() */
+      if ( XLALComputeFaFb (&FcX, multiSFTs->data[X], psPoint->fkdot, multiSSB->data[X], multiAMcoef->data[X], params->Dterms) != 0)
+	{
+	  LALPrintError ("\nXALNewLALDemod() failed\n");
+	  ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
+	}
+ 		  
+      retF.Fa.re += FcX.Fa.re;
+      retF.Fa.im += FcX.Fa.im;
+ 		  
+      retF.Fb.re += FcX.Fb.re;
+      retF.Fb.im += FcX.Fb.im;
+  		  
+    } /* for  X < numDetectors */
+ 
+  /* ----- compute final Fstatistic-value ----- */
+  Dt = At * Bt - Ct * Ct;
+
+  /* NOTE: the data MUST be normalized by the DOUBLE-SIDED PSD (using LALNormalizeMultiSFTVect),
+   * therefore there is a factor of 2 difference with respect to the equations in JKS, which 
+   * where based on the single-sided PSD.
+   */ 
+ 		       
+  retF.F = (1.0/Dt) * (Bt * (SQ(retF.Fa.re) + SQ(retF.Fa.im) ) 
+		       + At * ( SQ(retF.Fb.re) + SQ(retF.Fb.im) )
+		       - 2.0 * Ct *( retF.Fa.re * retF.Fb.re + retF.Fa.im * retF.Fb.im )  
+		       );
+
+
+  (*Fstat) = retF;
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+
+} /* ComputeFStat() */
+
+
+
 
 /** Revamped version of LALDemod() (based on TestLALDemod() in CFS).
  * Compute JKS's Fa and Fb, which are ingredients for calculating the F-statistic.
@@ -1081,6 +1221,23 @@ XLALDestroyMultiAMCoeffs ( MultiAMCoeffs *multiAMcoef )
   return;
 
 } /* XLALDestroyMultiAMCoeffs() */
+
+
+/** Destruction of a ComputeFBuffer */
+void
+XLALDestroyComputeFBuffer ( ComputeFBuffer *cfb )
+{
+  if ( !cfb )
+    return;
+
+  XLALDestroyMultiSSBtimes ( cfb->multiSSB );
+  cfb->multiSSB = NULL;
+  XLALDestroyMultiAMCoeffs ( cfb->multiAMcoef );
+  cfb->multiAMcoef = NULL;
+
+  return;
+} /* XLALDestroyComputeFBuffer() */
+
 
 
 

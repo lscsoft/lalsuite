@@ -130,6 +130,29 @@ typedef enum {
 } SSBprecision;
 
 
+/** One point in the general continuous-waves parameters-space */
+typedef struct {
+  LIGOTimeGPS refTime;		/**< reference-time for these parameters */
+  SkyPosition skypos;		/**< skyposition longitude/latitude [in equatorial-coordinates!!] */
+  REAL8Vector *fkdot;		/**< *intrinsic* pulsar frequency + spindowns */
+  BinaryOrbitParams *binary; 	/**< PLACEHOLDER for future extension: binary-pulsar params */
+} CWParamSpacePoint;
+
+/** Extra parameters controlling the actual computation of F */
+typedef struct {
+  UINT4 Dterms;		/**< how many terms to keep in the Dirichlet kernel (~16 is usually fine) */
+  SSBprecision SSBprec; /**< wether to use full relativist SSB-timing, or just simple Newtonian */
+} ComputeFParams;
+
+/** Struct holding buffered ComputeFStat()-internal quantities to avoid unnecessarily 
+ * recomputing things. For the first call of ComputeFStat() the pointer-entries should all be NULL.
+ */
+typedef struct {
+  SkyPosition prev_skypos;
+  MultiSSBtimes *multiSSB;
+  MultiAMCoeffs *multiAMcoef;
+} ComputeFBuffer;
+
 /*---------- exported Global variables ----------*/
 
 /*---------- exported prototypes [API] ----------*/
@@ -175,25 +198,33 @@ LALGetMultiSSBtimes (LALStatus *,
 		     const MultiDetectorStateSeries *multiDetStates,
 		     SkyPosition pos,
 		     LIGOTimeGPS refTime,
-		     SSBprecision precision
-		     );
+		     SSBprecision precision );
 
 void
 LALGetMultiAMCoeffs (LALStatus *, 
 		     MultiAMCoeffs **multiAMcoef,
 		     const MultiDetectorStateSeries *multiDetStates,
-		     SkyPosition pos
-		     );
+		     SkyPosition pos );
+
+
+void ComputeFStat ( LALStatus *, Fcomponents *Fstat, 
+		    const CWParamSpacePoint *psPoint,
+		    const MultiSFTVector *multiSFTs,
+		    const MultiNoiseWeights *multiWeights,
+		    const MultiDetectorStateSeries *multiDetStates,
+		    const ComputeFParams *params,
+		    ComputeFBuffer *cfBuffer );
 
 
 void LALCreateDetectorStateSeries (LALStatus *, DetectorStateSeries **vect, UINT4 length );
 
+/* destructors */
 void XLALDestroyDetectorStateSeries ( DetectorStateSeries *detStates );
 void LALDestroyDetectorStateSeries(LALStatus *, DetectorStateSeries **vect );
 void XLALDestroyMultiDetectorStateSeries ( MultiDetectorStateSeries *mdetStates );
 void XLALDestroyMultiSSBtimes ( MultiSSBtimes *multiSSB );
 void XLALDestroyMultiAMCoeffs ( MultiAMCoeffs *multiAMcoef );
-
+void XLALDestroyComputeFBuffer ( ComputeFBuffer *cfb );
 
 #ifdef  __cplusplus
 }
