@@ -437,7 +437,11 @@ LALTimingNoiseHeterodyne	( LALStatus		*status,
   REAL8 phi, phi0; /* phases with and without timing noise */
   INT8 length;
   
-  INITSTATUS( status, "LALTimingNoiseHeterodyne", HETERODYNECRABPULSARC);
+	BarycenterInput baryinput; /* barycentring variables */
+  EarthState earth;
+  EmissionTime  emit;
+	
+	INITSTATUS( status, "LALTimingNoiseHeterodyne", HETERODYNECRABPULSARC);
   ATTATCHSTATUSPTR (status);
   
   /* Check Input Arguments */ 
@@ -452,19 +456,34 @@ LALTimingNoiseHeterodyne	( LALStatus		*status,
 
   t = (REAL8)input->epoch.gpsSeconds+(REAL8)input->epoch.gpsNanoSeconds/1.e9;
 
-  /* Dt between time of data point and the epoch of the FIRST data point */
+	/* set up location of detector */
+  baryinput.site.location[0] = params->detector.location[0]/LAL_C_SI;
+  baryinput.site.location[1] = params->detector.location[1]/LAL_C_SI;
+  baryinput.site.location[2] = params->detector.location[2]/LAL_C_SI;
+ 
+	/* set up epoch, RA, DEC, and distance variables for LALBarycenter*/
+  baryinput.tgps = input->epoch;
+	baryinput.alpha = params->alpha;
+  baryinput.delta = params->delta;
+  baryinput.dInv = 0.0;
+  
+	/* work out time delay */ 
+	LALBarycenterEarth(status->statusPtr, &earth, &baryinput.tgps, params->edat); 
+	LALBarycenter(status->statusPtr, &emit, &baryinput, &earth);
+	
+	/* Dt between time of data point and the epoch of the FIRST data point */
   /* epoch of the FIRST data point is always the GPS time of that point  */
-  t -= (REAL8)input->t0;    
+  t = t - (REAL8)input->t0 + emit.deltaT;    
     
   /* Dt between time of data point and the epoch of that data point */
-  t1 = ((REAL8)input->epoch.gpsSeconds+(REAL8)input->epoch.gpsNanoSeconds/1.e9)-(REAL8)params->epoch;
+  t1 = t + (REAL8)input->t0 - (REAL8)params->epoch;
 		
   /* calculate phase difference between signal with timing noise and one without */
   /* phi - phi0 */
   /* phi0 = (input->f0*t + 0.5*input->f1*t*t + (1.0/6.0)*input->f2*t*t*t);/*-(input->f0*t0 + 0.5*input->f1*t0*t0);*/
   /* input f0 is already at GW freq (i.e. spin freq * 2) */
 	phi0 = input->f0*t + 0.5*input->f1*t*t + (1.0/6.0)*input->f2*t*t*t;
-    
+
   phi = 2.0*(params->f0*t1 + 0.5*params->f1*t1*t1 + (params->f2/6.0)*t1*t1*t1 +
     (params->f3/24.0)*t1*t1*t1*t1 +
     (params->f4/120.0)*t1*t1*t1*t1*t1);
@@ -474,12 +493,12 @@ LALTimingNoiseHeterodyne	( LALStatus		*status,
   DPhi = 2.0*(REAL8)LAL_PI*fmod(DPhi,1.0);
 	
 	output->Dphase = DPhi;
+	output->phi0 = 2.*LAL_PI*fmod(phi0,1.0);
+	output->phi1 = 2.*LAL_PI*fmod(phi,1.0);
 	    
   /* Heterodyne to remove timing noise */
-  output->Vh.re = (REAL8)input->Vh.re*cos(-DPhi)
-    			    -(REAL8)input->Vh.im*sin(-DPhi);
-  output->Vh.im = (REAL8)input->Vh.re*sin(-DPhi)
-              +(REAL8)input->Vh.im*cos(-DPhi);
+  output->Vh.re = (REAL8)input->Vh.re*cos(-DPhi) - (REAL8)input->Vh.im*sin(-DPhi);
+  output->Vh.im = (REAL8)input->Vh.re*sin(-DPhi) + (REAL8)input->Vh.im*cos(-DPhi);
     
   DETATCHSTATUSPTR(status);
   RETURN(status);

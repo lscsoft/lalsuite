@@ -173,6 +173,11 @@ tagParamsForHeterodyne
   REAL8 f3;
   REAL8 f4;
   REAL8 epoch;
+	REAL8 alpha; /* RA and dec for barycentring */
+	REAL8 delta;
+	LALDetector detector;
+	EphemerisData *edat;
+	
 } ParamsForHeterodyne;
 
 /*typedef struct
@@ -205,6 +210,8 @@ tagTNHeterodyneOutput
 {
   COMPLEX16	Vh;
 	REAL8 Dphase;
+	REAL8 phi0;
+	REAL8 phi1;
 } TNHeterodyneOutput;
 
 /* function definitions */

@@ -3,9 +3,11 @@
 	 No calibration or noise estimation is needed or performed */
 	 
 /* Matt Pitkin (26/03/04) CrabTNHeterodyne.c v0.1 */
+
 /*
 $Id$
 */
+
 /* headers */
 #include <stdio.h>
 #include <string.h>
@@ -23,8 +25,10 @@ INT4 lalDebugLevel = 1;
 
 #define EPHEMFILE "crab_ephemeris.txt"
 #define MAXLENGTH 200000
-#define NUM 1000 
-/* max num of lines in crab ephem file (ok for next 61 years file contains 266 lines as of 15 Jan 2004) */
+#define NUM 1000 /* max num of lines in crab ephem file (ok for next 61 years
+										file contains 266 lines as of 15 Jan 2004) */
+#define EFILE "/archive/home/matthew/lscsoft/lal/packages/pulsar/test/earth03-06.dat"
+#define SFILE "/archive/home/matthew/lscsoft/lal/packages/pulsar/test/sun03-06.dat"
 
 int main(int argc, char *argv[]){
 	static LALStatus status;
@@ -58,17 +62,34 @@ int main(int argc, char *argv[]){
 	
 	LIGOTimeGPS dataEpoch;
 	
+	EphemerisData *edat = NULL;
+	CHAR det[5];
+	
 	/* check command line inputs */
-	if(argc!=3){
-		fprintf(stderr, "Wrong number of input params:\n\tinputfile outputfile\n");
+	if(argc!=4){
+		fprintf(stderr, "Wrong number of input params:\n\tinputfile outputfile detector\n");
 		return 0;
 	}
 	
 	sprintf(inputFile, "%s", argv[1]);
 	sprintf(outputFile, "%s", argv[2]); 
+	sprintf(det, "%s", argv[3]);
 	
+	/* set detector */
+	if (!strcmp(det,"H1") || !strcmp(det,"H2")) 
+    hetParams.detector = lalCachedDetectors[LALDetectorIndexLHODIFF];      
+  else if (   !strcmp(det,"L1"))
+   	hetParams.detector = lalCachedDetectors[LALDetectorIndexLLODIFF];
+  else if (   !strcmp(det,"GEO"))
+   	hetParams.detector = lalCachedDetectors[LALDetectorIndexGEO600DIFF];             
+  else
+  {
+    fprintf(stderr,"Error DETECTOR must be either H1, H1, L1, or GEO\n");
+    return 2;
+  }
+	 
 	/* read in Crab pulsar parameters used in heterodyning */
-	sprintf(psrInput, "B0531+21");
+	sprintf(psrInput, "J0534+2200");
 	psrfp = fopen(psrInput, "r");
 	
 	while (2==fscanf(psrfp,"%s %lf", &txt, &val))
@@ -85,6 +106,12 @@ int main(int argc, char *argv[]){
     else if( !strcmp(txt,"fepoch") || !strcmp(txt,"FEPOCH")) {
       fepoch = val;
     }
+		else if (!strcmp(txt,"RA") || !strcmp(txt,"ra")){
+			hetParams.alpha = val;
+		}
+		else if (!strcmp(txt,"DEC") || !strcmp(txt,"dec")){
+			hetParams.delta = val;
+		}
   }
 	
 	fclose(psrfp);
@@ -149,10 +176,18 @@ int main(int argc, char *argv[]){
 	TNInput.f0 = 2.0*f0;
 	TNInput.f1 = 2.0*f1;
 	TNInput.f2 = 2.0*f2;
-	TNInput.t0 = fepoch;
+	TNInput.t0 = LALTDBtoGPS(fepoch); /* convert from TDB (in MJD) to GPS time */
 	
 	fpout = fopen(outputFile, "w");
 	phifp = fopen("DPhase.txt", "w");
+	
+	/* set up LALBarycenter */
+  edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));    
+  (*edat).leap = 13;
+  (*edat).ephiles.earthEphemeris = EFILE;
+  (*edat).ephiles.sunEphemeris = SFILE;	 
+  LALInitBarycenter(&status, edat);
+  hetParams.edat = edat;
 	
 	/* perform timing noise heterodyne */
 	for(j=0;j<i-1;j++){
@@ -183,11 +218,15 @@ int main(int argc, char *argv[]){
 		fprintf(fpout, "%lf\t%e\t%e\n", time->data[j], TNOutput.Vh.re,
 		TNOutput.Vh.im);
 		
-		fprintf(phifp, "%f\n", TNOutput.Dphase);
+		fprintf(phifp, "%f\t%f\t%f\n", TNOutput.phi0, TNOutput.phi1, TNOutput.Dphase);
 	}
 	
 	fclose(fpout);
 	fclose(phifp);
+	
+	LALFree(edat->ephemE);
+  LALFree(edat->ephemS);
+  LALFree(edat);
 	
 	/* destroy vectors */
 	LALZDestroyVector(&status, &B);
