@@ -201,7 +201,8 @@ int main(int argc,char *argv[])
   CHAR loudestEntry[512];
   CHAR buf[512];
   REAL8 loudestF = 0;
-  REAL8Vector *fkdot = NULL;
+  REAL8Vector *fkdotStart = NULL;	/* temporary storage for fkdots */
+  REAL8Vector *fkdotRef = NULL;
   
   
   UINT4 nD;         /** index over number of Detectors**/
@@ -301,7 +302,10 @@ int main(int argc,char *argv[])
 
   if (lalDebugLevel) printf ("\nStarting main search-loop.. \n");
   
-  if ( ( fkdot = XLALCreateREAL8Vector ( NUM_SPINS ) ) == NULL ) {
+  if ( ( fkdotStart = XLALCreateREAL8Vector ( NUM_SPINS ) ) == NULL ) {
+    return COMPUTEFSTATISTICC_EMEM;
+  }
+  if ( ( fkdotRef = XLALCreateREAL8Vector ( NUM_SPINS ) ) == NULL ) {
     return COMPUTEFSTATISTICC_EMEM;
   }
   /*----------------------------------------------------------------------
@@ -324,14 +328,13 @@ int main(int argc,char *argv[])
       thisPoint.system = COORDINATESYSTEM_EQUATORIAL;
       LAL_CALL (LALNormalizeSkyPosition(&status, &thisPoint, &thisPoint), &status);
 
-
       nFreq =  (UINT4)(GV.spinRangeStart->fkdotBand->data[0] / thisScan.dFreq  + 0.5) + 1;  
       nf1dot = (UINT4)(GV.spinRangeStart->fkdotBand->data[1] / thisScan.df1dot + 0.5) + 1; 
 
       /*----- loop over first-order spindown values */
       for (if1dot = 0; if1dot < nf1dot; if1dot ++)
 	{
-	  fkdot->data[1] = GV.spinRangeStart->fkdot->data[1] + if1dot * thisScan.df1dot;
+	  fkdotStart->data[1] = GV.spinRangeStart->fkdot->data[1] + if1dot * thisScan.df1dot;
 	  
 	  /* Loop over frequencies to be demodulated */
 	  for ( iFreq = 0 ; iFreq < nFreq ; iFreq ++ )
@@ -344,7 +347,7 @@ int main(int argc,char *argv[])
 	      REAL8 Bstat;
 	      UINT4 MX, alpha;
 	      	 
-	      fkdot->data[0] = GV.spinRangeStart->fkdot->data[0] + iFreq * thisScan.dFreq;
+	      fkdotStart->data[0] = GV.spinRangeStart->fkdot->data[0] + iFreq * thisScan.dFreq;
 	      
 	      for(nD=0; nD < GV.numDetectors; nD++)
 		{
@@ -384,7 +387,7 @@ int main(int argc,char *argv[])
 		  /** Caculate F-statistic using XLALComputeFaFb() */
 		  /* prepare quantities to calculate Fstat from Fa and Fb */
 		  
-		  if ( XLALComputeFaFb (&FaFb, GV.multiSFTs->data[nD], fkdot, GV.ifos[nD].tSSB, 
+		  if ( XLALComputeFaFb (&FaFb, GV.multiSFTs->data[nD], fkdotStart, GV.ifos[nD].tSSB, 
 					GV.ifos[nD].amcoe, uvar_Dterms) != 0)
 		    {
 		      LALPrintError ("\nXALNewLALDemod() failed\n");
@@ -428,26 +431,27 @@ int main(int argc,char *argv[])
 			      + At * (FbRe*FbRe + FbIm*FbIm) 
 			      - 2.0f * Ct *(FaRe*FbRe + FaIm*FbIm) );
 
+	      /* propagate fkdot back to reference-time for outputting results */
+	      LAL_CALL(LALExtrapolatePulsarSpins(&status, fkdotRef, GV.refTime, fkdotStart, GV.startTime ), &status );
 
 	      /* calculate the baysian-marginalized 'B-statistic' */
 	      if ( fpBstat )
 		{
 		  Bstat = exp( Fstat ) / Dt ;
 		  fprintf (fpBstat, "%16.12f %8.7f %8.7f %.17g %10.6g\n", 
-			   fkdot->data[0], dopplerpos.Alpha, dopplerpos.Delta, fkdot->data[1], 
+			   fkdotRef->data[0], dopplerpos.Alpha, dopplerpos.Delta, fkdotRef->data[1], 
 			   Bstat );
 		}
 	      
 	      /* now, if user requested it, we output ALL F-statistic results above threshold */
 	      if ( uvar_outputFstat || uvar_outputLoudest )
 		{
-		  REAL8 freq = fkdot->data[0];
 		  
 		  if ( Fstat > uvar_Fthreshold )
 		    {
+		      /* propagate fkdots back to ref-time */
 		      LALSnprintf (buf, 511, "%16.12f %8.7f %8.7f %.17g %10.6g\n", 
-				   freq, dopplerpos.Alpha, dopplerpos.Delta, 
-				   fkdot->data[1], 2.0 * Fstat);
+				   fkdotRef->data[0], dopplerpos.Alpha, dopplerpos.Delta, fkdotRef->data[1], 2.0 * Fstat);
 		      buf[511] = 0;
 		      if ( fpFstat )
 			fprintf (fpFstat, buf );
@@ -505,7 +509,8 @@ Search progress: %5.1f%%", (100.0* loopcounter / thisScan.numGridPoints));
   /* Free memory */
   LAL_CALL ( FreeDopplerScan(&status, &thisScan), &status);
   
-  XLALDestroyREAL8Vector ( fkdot );
+  XLALDestroyREAL8Vector ( fkdotStart );
+  XLALDestroyREAL8Vector ( fkdotRef );
 
   LAL_CALL ( Freemem(&status, &GV), &status);
   
@@ -737,7 +742,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     cfg->spinRangeRef->fkdotBand->data[1] = f1dotMax - f1dotMin;
   }
 
-  { /* ----- propage spin-range from refTime to startTime and endTime of observation ----- */
+  { /* ----- propagate spin-range from refTime to startTime and endTime of observation ----- */
     LALPulsarSpinRange *spinRangeEnd;	/* temporary only */
     REAL8 fmaxStart, fmaxEnd, fminStart, fminEnd;
 
