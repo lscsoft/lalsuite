@@ -308,26 +308,30 @@ class PowerNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
-    self.__usertag = job.get_config('pipeline','user-tag')
+    try:
+      self.__usertag = job.get_config('pipeline','user-tag')
+      self.add_var_opt("user-tag", self.__usertag)
+    except:
+      self.__usertag = None
+
+  def set_user_tag(self, tag):
+    self.__usertag = tag
+    self.add_var_opt("user-tag", self.__usertag)
+
+  def get_user_tag(self):
+    return self.__usertag
 
   def get_output(self):
     """
     Returns the file name of output from the power code. This must be kept
-    synchronized with the name of the output file in power.c.
+    synchronized with the name of the output file in power.c.  Note in
+    particular the calculation of the "start" and "duration" parts of the
+    name.
     """
-    if (self.get_start() == None) or (self.get_end() == None) or (self.get_ifo() == None):
-      raise PowerError, "Start time, end time or ifo has not been set"
+    if None in [self.get_start(), self.get_end(), self.get_ifo(), self.__usertag]:
+      raise PowerError, "Start time, end time, ifo, or user tag has not been set"
 
-    basename = self.get_ifo()
-    basename += '-' + 'POWER'
-
-    if self.get_ifo_tag():
-      basename += '_' + self.get_ifo_tag()
-    if self.__usertag:
-      basename += '_' + self.__usertag
-
-    return basename + '-' + str(int(self.get_start())) + '-' + \
-      str(int(self.get_end()) - int(self.get_start())) + '.xml'
+    return "%s-POWER_%s-%d-%d.xml" % (self.get_ifo(), self.__usertag, int(self.get_start()), int(self.get_end()) - int(self.get_start()))
 
   def set_mdccache(self,file):
     """
