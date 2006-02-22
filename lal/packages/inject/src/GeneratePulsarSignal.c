@@ -285,10 +285,6 @@ LALSignalToSFTs (LALStatus *status,
   ASSERT (*outputSFTs == NULL, status,  GENERATEPULSARSIGNALH_ENONULL,  GENERATEPULSARSIGNALH_MSGENONULL);
   ASSERT (signal != NULL, status, GENERATEPULSARSIGNALH_ENULL, GENERATEPULSARSIGNALH_MSGENULL);
   ASSERT (params != NULL, status, GENERATEPULSARSIGNALH_ENULL, GENERATEPULSARSIGNALH_MSGENULL);
-  if ( params->timestamps && params->noiseSFTs) {
-    ASSERT ( params->timestamps->length == params->noiseSFTs->length, status,  
-	     GENERATEPULSARSIGNALH_ENUMSFTS,  GENERATEPULSARSIGNALH_MSGENUMSFTS);
-  }
 
   /* UPGRADING switch: complain loudly if user didn't set 'make_v2SFTs' to encourage upgrading */
   if (  params-> make_v2SFTs != 1 )
@@ -343,6 +339,11 @@ LALSignalToSFTs (LALStatus *status,
 	ABORT (status, GENERATEPULSARSIGNALH_ETIMEBOUND, GENERATEPULSARSIGNALH_MSGETIMEBOUND);
       }
     }
+
+  /* check that we have the right number of noise-SFTs */
+  if (  params->noiseSFTs && ( params->noiseSFTs->length != timestamps->length)  ) {
+    ABORT ( status, GENERATEPULSARSIGNALH_ENUMSFTS,  GENERATEPULSARSIGNALH_MSGENUMSFTS );
+  }
 
   /* prepare SFT-vector for return */
   numSFTs = timestamps->length;			/* number of SFTs to produce */
