@@ -76,10 +76,12 @@ int sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x); /* LUT-calculation of sin/c
  *  and detector state-series 
  *
  * NOTE: for better efficiency some quantities that need to be recomputed only for different 
- * sky-positions are buffered in ::cfBuffer, to destroy this (at the end) use XLALDestroyComputeFBuffer()
- * (not yet implemented)
+ * sky-positions are buffered in \a cfBuffer if given. 
+ * - In order to 'empty' this buffer (at the end) use XLALEmptyComputeFBuffer()
+ * - You CAN pass NULL for the \a cfBuffer if you don't want to use buffering (slower).
  *
- * NOTE2: there's a spaceholder for binary-pulsar parameters in ::psPoint, but this it not functional yet.
+ * NOTE2: there's a spaceholder for binary-pulsar parameters in \a psPoint, but this 
+ * it not implemented yet.
  *
  */
 void
@@ -144,6 +146,12 @@ ComputeFStat ( LALStatus *status,
     XLALDestroyMultiSSBtimes ( multiSSB );
   } ENDFAIL (status);
 
+  /* store these in buffer if available */
+  if ( cfBuffer )
+    {
+      cfBuffer->multiSSB = multiSSB;
+      cfBuffer->multiAMcoef = multiAMcoef;
+    } /* if cfBuffer */
 
   /* ----- loop over detectors and compute all detector-specific quantities ----- */
   At = Bt = Ct = Dt = 0.0;
@@ -1223,17 +1231,17 @@ XLALDestroyMultiAMCoeffs ( MultiAMCoeffs *multiAMcoef )
 } /* XLALDestroyMultiAMCoeffs() */
 
 
-/** Destruction of a ComputeFBuffer */
+/** Destruction of a ComputeFBuffer *contents*, 
+ * i.e. the multiSSB and multiAMcoeff, while the 
+ * buffer-container is not freed (which is why it's passed
+ * by value and not by reference...) */
 void
-XLALDestroyComputeFBuffer ( ComputeFBuffer *cfb )
+XLALEmptyComputeFBuffer ( ComputeFBuffer cfb )
 {
-  if ( !cfb )
-    return;
-
-  XLALDestroyMultiSSBtimes ( cfb->multiSSB );
-  cfb->multiSSB = NULL;
-  XLALDestroyMultiAMCoeffs ( cfb->multiAMcoef );
-  cfb->multiAMcoef = NULL;
+  XLALDestroyMultiSSBtimes ( cfb.multiSSB );
+  cfb.multiSSB = NULL;
+  XLALDestroyMultiAMCoeffs ( cfb.multiAMcoef );
+  cfb.multiAMcoef = NULL;
 
   return;
 } /* XLALDestroyComputeFBuffer() */
