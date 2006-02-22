@@ -1107,7 +1107,7 @@ void LALCreateDetector( LALStatus             *status,
         ABORT( status, DETECTORSITEH_ETYPE, DETECTORSITEH_MSGETYPE );
         break;
       default:
-        ABORT_XLAL( status );
+        ABORTXLAL( status );
     }
 
   RETURN(status);
