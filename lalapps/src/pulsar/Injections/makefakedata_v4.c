@@ -103,6 +103,7 @@ static const PulsarSignalParams empty_params;
 static const SFTParams empty_sftParams;
 static const EphemerisData empty_edat;
 static const ConfigVars_t empty_GV;
+static const SFTConstraints empty_SFTConstraints;
 /*----------------------------------------------------------------------*/
 /* User variables */
 /*----------------------------------------------------------------------*/
@@ -746,8 +747,15 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
       {
 	REAL8 fMin, fMax;
 	SFTCatalog *catalog = NULL;
+	SFTConstraints constraints = empty_SFTConstraints;
 
-	TRY ( LALSFTdataFind( status->statusPtr, &catalog, uvar_noiseSFTs, NULL ), status );
+	if ( (constraints.detector = XLALGetChannelPrefix ( uvar_detector )) == NULL ) {
+	  ABORT ( status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD );
+	}
+
+	TRY ( LALSFTdataFind( status->statusPtr, &catalog, uvar_noiseSFTs, &constraints ), status );
+	LALFree ( constraints.detector );
+
 	fMin = cfg->fmin_eff;
 	fMax = fMin + cfg->fBand_eff;
 	TRY ( LALLoadSFTs( status->statusPtr, &(cfg->noiseSFTs), catalog, fMin, fMax ), status );
