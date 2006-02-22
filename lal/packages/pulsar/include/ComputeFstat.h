@@ -148,9 +148,13 @@ typedef struct {
  * recomputing things. For the first call of ComputeFStat() the pointer-entries should all be NULL.
  */
 typedef struct {
-  SkyPosition prev_skypos;
+  SkyPosition skypos;
   MultiSSBtimes *multiSSB;
   MultiAMCoeffs *multiAMcoef;
+  REAL8 A;
+  REAL8 B;
+  REAL8 C;
+  REAL8 Dinv;
 } ComputeFBuffer;
 
 /*---------- exported Global variables ----------*/
@@ -224,7 +228,8 @@ void LALDestroyDetectorStateSeries(LALStatus *, DetectorStateSeries **vect );
 void XLALDestroyMultiDetectorStateSeries ( MultiDetectorStateSeries *mdetStates );
 void XLALDestroyMultiSSBtimes ( MultiSSBtimes *multiSSB );
 void XLALDestroyMultiAMCoeffs ( MultiAMCoeffs *multiAMcoef );
-void XLALDestroyComputeFBuffer ( ComputeFBuffer *cfb );
+
+void XLALEmptyComputeFBuffer ( ComputeFBuffer cfb );
 
 #ifdef  __cplusplus
 }

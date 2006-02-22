@@ -99,7 +99,7 @@ ComputeFStat ( LALStatus *status,
   UINT4 X, numDetectors;	
   MultiSSBtimes *multiSSB = NULL;
   MultiAMCoeffs *multiAMcoef = NULL;
-  REAL8 At, Bt, Ct, Dt;
+  REAL8 A, B, C, Dinv;
 
   INITSTATUS( status, "ComputeFStat", COMPUTEFSTATC );
   ATTATCHSTATUSPTR (status);
@@ -122,65 +122,77 @@ ComputeFStat ( LALStatus *status,
     ABORT ( status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
   }
 
-  /* FIXME: for now, we don't yet use the Fbuffer */
-  if ( cfBuffer )
+  /* check if that skyposition SSB+AMcoef were already buffered */
+  if ( cfBuffer 
+       && ( cfBuffer->skypos.longitude == psPoint->skypos.longitude)
+       && ( cfBuffer->skypos.latitude == psPoint->skypos.latitude) 
+       && cfBuffer->multiSSB
+       && cfBuffer->multiAMcoef )
+    { /* yes ==> reuse */
+      multiSSB = cfBuffer->multiSSB;
+      multiAMcoef = cfBuffer -> multiAMcoef;
+      A = cfBuffer->A;
+      B = cfBuffer->B;
+      C = cfBuffer->C;
+      Dinv = cfBuffer->Dinv;
+    }
+  else 
     {
-      if ( cfBuffer->multiSSB ) 
-	XLALDestroyMultiSSBtimes ( cfBuffer->multiSSB );
+      /* compute new AM-coefficients and SSB-times */
+      TRY ( LALGetMultiSSBtimes ( status->statusPtr, &multiSSB, multiDetStates, psPoint->skypos, psPoint->refTime, params->SSBprec ), status );
 
-      if ( cfBuffer->multiAMcoef )
-	XLALDestroyMultiAMCoeffs ( cfBuffer->multiAMcoef ); 
+      LALGetMultiAMCoeffs ( status->statusPtr, &multiAMcoef, multiDetStates, psPoint->skypos );
+      BEGINFAIL ( status ) {
+	XLALDestroyMultiSSBtimes ( multiSSB );
+      } ENDFAIL (status);
 
-      cfBuffer -> multiSSB = NULL;	
-      cfBuffer -> multiAMcoef = NULL;
-    } /* if cfBuffer */
+      /* noise-weight Antenna-patterns and compute A,B,C */
+      A = B = C = Dinv = 0.0;
+      for ( X=0; X < numDetectors; X ++)
+	{
+	  UINT4 alpha;
+	  UINT4 numSFTsX = multiSFTs->data[X]->length;
+	  AMCoeffs *amcoeX = multiAMcoef->data[X];
+	  REAL8Vector *weightsX = multiWeights->data[X];
 
-  /* ----- allocate and initialize AM-coefficients and SSB-times ----- */
-  /* FIXME: (TODO) we'll need buffering of these quantities to regain efficiency for  
-   * repeated searches at the same sky-position  
-   */
-  TRY ( LALGetMultiSSBtimes ( status->statusPtr, &multiSSB, multiDetStates, psPoint->skypos, psPoint->refTime, params->SSBprec ), status );
+	  for(alpha = 0; alpha < numSFTsX; alpha++)
+	    {
+	      REAL8 Sqwi = sqrt ( weightsX->data[alpha] );
+	      REAL8 ahat = Sqwi * amcoeX->a->data[alpha] ;
+	      REAL8 bhat = Sqwi * amcoeX->b->data[alpha] ;
+	  
+	      /* *replace* original a(t), b(t) by noise-weighed version! */
+	      amcoeX->a->data[alpha] = ahat;
+	      amcoeX->b->data[alpha] = bhat;
+ 
+	      /* sum A, B, C on the fly */
+	      A += ahat * ahat;
+	      B += bhat * bhat;
+	      C += ahat * bhat;
+	    } /* for alpha < numSFTsX */
+	} /* for X < numDetectors */
+      Dinv = 1.0 / (A * B - C * C );
 
-  LALGetMultiAMCoeffs ( status->statusPtr, &multiAMcoef, multiDetStates, psPoint->skypos );
-  BEGINFAIL ( status ) {
-    XLALDestroyMultiSSBtimes ( multiSSB );
-  } ENDFAIL (status);
+      /* store these in buffer if available */
+      if ( cfBuffer )
+	{
+	  XLALEmptyComputeFBuffer ( *cfBuffer );
+	  cfBuffer->multiSSB = multiSSB;
+	  cfBuffer->multiAMcoef = multiAMcoef;
+	  cfBuffer->skypos = psPoint->skypos;
+	  cfBuffer->A = A;
+	  cfBuffer->B = B;
+	  cfBuffer->C = C;
+	  cfBuffer->Dinv = Dinv;
+	} /* if cfBuffer */
 
-  /* store these in buffer if available */
-  if ( cfBuffer )
-    {
-      cfBuffer->multiSSB = multiSSB;
-      cfBuffer->multiAMcoef = multiAMcoef;
-    } /* if cfBuffer */
+    } /* if no buffer or different skypos */
 
   /* ----- loop over detectors and compute all detector-specific quantities ----- */
-  At = Bt = Ct = Dt = 0.0;
-
   for ( X=0; X < numDetectors; X ++)
     {
-      UINT4 alpha;
-      UINT4 numSFTsX = multiSFTs->data[X]->length;
-      AMCoeffs *amcoeX = multiAMcoef->data[X];
-      REAL8Vector *weightsX = multiWeights->data[X];
       Fcomponents FcX = empty_Fcomponents;	/* for detector-specific FaX, FbX */
-
-      for(alpha = 0; alpha < numSFTsX; alpha++)
-	{
-	  REAL8 Sqwi = sqrt ( weightsX->data[alpha] );
-	  REAL8 ahat = Sqwi * amcoeX->a->data[alpha] ;
-	  REAL8 bhat = Sqwi * amcoeX->b->data[alpha] ;
-	  
-	  /* *replace* original a(t), b(t) by noise-weighed version! */
-	  amcoeX->a->data[alpha] = ahat;
-	  amcoeX->b->data[alpha] = bhat;
- 
-	  /* sum A, B, C on the fly */
-	  At += ahat * ahat;
-	  Bt += bhat * bhat;
-	  Ct += ahat * bhat;
-	} /* for alpha < numSFTsX */
  		  
-      /* Caculate FaX, FbX using XLALComputeFaFb() */
       if ( XLALComputeFaFb (&FcX, multiSFTs->data[X], psPoint->fkdot, multiSSB->data[X], multiAMcoef->data[X], params->Dterms) != 0)
 	{
 	  LALPrintError ("\nXALNewLALDemod() failed\n");
@@ -196,20 +208,25 @@ ComputeFStat ( LALStatus *status,
     } /* for  X < numDetectors */
  
   /* ----- compute final Fstatistic-value ----- */
-  Dt = At * Bt - Ct * Ct;
 
   /* NOTE: the data MUST be normalized by the DOUBLE-SIDED PSD (using LALNormalizeMultiSFTVect),
    * therefore there is a factor of 2 difference with respect to the equations in JKS, which 
    * where based on the single-sided PSD.
    */ 
  		       
-  retF.F = (1.0/Dt) * (Bt * (SQ(retF.Fa.re) + SQ(retF.Fa.im) ) 
-		       + At * ( SQ(retF.Fb.re) + SQ(retF.Fb.im) )
-		       - 2.0 * Ct *( retF.Fa.re * retF.Fb.re + retF.Fa.im * retF.Fb.im )  
-		       );
-
+  retF.F = Dinv * (B * (SQ(retF.Fa.re) + SQ(retF.Fa.im) ) 
+		   + A * ( SQ(retF.Fb.re) + SQ(retF.Fb.im) )
+		   - 2.0 * C *( retF.Fa.re * retF.Fb.re + retF.Fa.im * retF.Fb.im )  
+		   );
 
   (*Fstat) = retF;
+
+  /* free memory if no buffer was available */
+  if ( !cfBuffer )
+    {
+      XLALDestroyMultiSSBtimes ( multiSSB );
+      XLALDestroyMultiAMCoeffs ( multiAMcoef );
+    } /* if !cfBuffer */
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
