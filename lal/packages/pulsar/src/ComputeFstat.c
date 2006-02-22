@@ -29,6 +29,7 @@
 #define __USE_ISOC99 1
 #include <math.h>
 
+#include <lal/AVFactories.h>
 #include "ComputeFstat.h"
 
 NRCSID( COMPUTEFSTATC, "$Id$");
@@ -51,6 +52,7 @@ NRCSID( COMPUTEFSTATC, "$Id$");
 
 /*---------- empty initializers ---------- */
 static const BarycenterInput empty_BarycenterInput;
+static const LALStatus empty_status;
 
 /*---------- Global variables ----------*/
 
@@ -467,7 +469,7 @@ LALGetAMCoeffs(LALStatus *status,
 } /* LALGetAMCoeffs() */
 
 
-/** For a given vector of GPS-times, calculate the time-differences
+/** For a given DetectorStateSeries, calculate the time-differences
  *  \f$\Delta T_\alpha\equiv T(t_\alpha) - T_0\f$, and their
  *  derivatives \f$Tdot_\alpha \equiv d T / d t (t_\alpha)\f$.
  * 
@@ -577,7 +579,6 @@ LALGetSSBtimes (LALStatus *status,
 
 } /* LALGetSSBtimes() */
 
-
 /** Get the 'detector state' (ie position, velocity, etc) for the given
  * vector of timestamps, shifted by a common time-shift \a tOffset.
  *
@@ -677,6 +678,9 @@ LALGetDetectorStates (LALStatus *status,
 
 } /* LALGetDetectorStates() */
 
+
+/* ===== Multi-IFO versions of some of the above functions ===== */
+
 /** Get the detector-time series for the given MultiSFTVector. 
  * (see LALGetDetectorStates for more comments).
  */
@@ -752,19 +756,8 @@ LALGetMultiDetectorStates( LALStatus *status,
 
  failed:
   /* free complete MultiDetectorStateSeries built up so far */
-  BEGINFAIL(status) {
-    if ( ret ) {
-      if ( ret->data ) {
-	for ( X=0; X < numDetectors; X ++ ) {
-	  if ( ret->data[X] ) {
-	    TRY ( LALDestroyDetectorStateSeries ( status->statusPtr, &(ret->data[X]) ), status );
-	  }
-	} /* for X < numDetectors */
-	LALFree ( ret->data );
-      } /* if ret->data */
-      LALFree ( ret );
-    } /* if ret */
-  } ENDFAIL(status);
+  XLALDestroyMultiDetectorStateSeries ( ret );	/* NOTE: this function is "NULL-robust" */
+  ABORT ( status, -1, "LALGetMultiDetectorStates failed" );
   
  success:
 
@@ -774,7 +767,161 @@ LALGetMultiDetectorStates( LALStatus *status,
   RETURN ( status );
 
 } /* LALGetMultiDetectorStates() */
+
+
+/** Multi-IFO version of LALGetSSBtimes(). 
+ * Get all SSB-timings for all input detector-series.
+ *
+ * NOTE: contrary to LALGetSSBtimes(), this functions *allocates* the output-vector,
+ * use XLALDestroyMultiSSBtimes() to free this.
+ */
+void
+LALGetMultiSSBtimes (LALStatus *status, 
+		     MultiSSBtimes **multiSSB,		/**< [out] SSB-timings for all input detector-state series */
+		     const MultiDetectorStateSeries *multiDetStates, /**< [in] detector-states at timestamps t_i */
+		     SkyPosition skypos,		/**< source sky-position [in equatorial coords!] */
+		     LIGOTimeGPS refTime,		/**< SSB reference-time T_0 for SSB-timing */
+		     SSBprecision precision		/**< use relativistic or Newtonian SSB timing?  */
+		     )
+{
+  UINT4 X, numDetectors;
+  MultiSSBtimes *ret = NULL;
+
+  INITSTATUS( status, "LALGetMultiSSBtimes", COMPUTEFSTATC);
+  ATTATCHSTATUSPTR (status);
+
+  /* check input */
+  ASSERT (multiDetStates, status,COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT (multiDetStates->length, status,COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT (multiSSB, status,COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT ( *multiSSB == NULL, status,COMPUTEFSTATC_ENONULL, COMPUTEFSTATC_MSGENONULL);
+  ASSERT ( skypos.system == COORDINATESYSTEM_EQUATORIAL, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
+
+  numDetectors = multiDetStates->length;
+
+  if ( ( ret = LALCalloc( 1, sizeof( *ret ) )) == NULL ) {
+    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);    
+  }
+  ret->length = numDetectors;
+  if ( ( ret->data = LALCalloc ( numDetectors, sizeof ( *ret->data ) )) == NULL ) {
+    LALFree ( ret );
+    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+  }
+
+  for ( X=0; X < numDetectors; X ++ )
+    {
+      SSBtimes *SSBtimesX = NULL;
+      UINT4 numStepsX = multiDetStates->data[X]->length;
+
+      ret->data[X] = LALCalloc ( 1, sizeof ( *(ret->data[X]) ) );
+      SSBtimesX = ret->data[X];
+      SSBtimesX->DeltaT = XLALCreateREAL8Vector ( numStepsX );
+      if ( (SSBtimesX->Tdot = XLALCreateREAL8Vector ( numStepsX )) == NULL ) {
+	LALPrintError ("\nOut of memory!\n\n");
+	goto failed;
+      }
+
+      LALGetSSBtimes (status->statusPtr, SSBtimesX, multiDetStates->data[X], skypos, refTime, precision );
+      if ( status->statusPtr->statusCode ) 
+	{
+	  LALPrintError ( "\nCall to LALGetSSBtimes() has failed ... \n\n");
+	  goto failed;
+	}
  
+    } /* for X < numDet */
+
+  goto success;
+
+ failed:
+  /* free all memory allocated so far */
+  XLALDestroyMultiSSBtimes ( ret );
+  ABORT ( status, -1, "LALGetMultiSSBtimes failed" );
+
+ success:
+  (*multiSSB) = ret;
+
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+
+} /* LALGetMultiSSBtimes() */
+
+/** Multi-IFO version of LALGetAMCoeffs(). 
+ * Get all antenna-pattern coefficients for all input detector-series.
+ *
+ * NOTE: contrary to LALGetAMCoeffs(), this functions *allocates* the output-vector,
+ * use XLALDestroyMultiAMCoeffs() to free this.
+ */
+void
+LALGetMultiAMCoeffs (LALStatus *status, 
+		     MultiAMCoeffs **multiAMcoef,	/**< [out] AM-coefficients for all input detector-state series */
+		     const MultiDetectorStateSeries *multiDetStates, /**< [in] detector-states at timestamps t_i */
+		     SkyPosition skypos			/**< source sky-position [in equatorial coords!] */
+		     )
+{
+  UINT4 X, numDetectors;
+  MultiAMCoeffs *ret = NULL;
+
+  INITSTATUS( status, "LALGetMultiAMCoeffs", COMPUTEFSTATC);
+  ATTATCHSTATUSPTR (status);
+
+  /* check input */
+  ASSERT (multiDetStates, status,COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT (multiDetStates->length, status,COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT (multiAMcoef, status,COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT ( *multiAMcoef == NULL, status,COMPUTEFSTATC_ENONULL, COMPUTEFSTATC_MSGENONULL);
+  ASSERT ( skypos.system == COORDINATESYSTEM_EQUATORIAL, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
+
+  numDetectors = multiDetStates->length;
+
+  if ( ( ret = LALCalloc( 1, sizeof( *ret ) )) == NULL ) {
+    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);    
+  }
+  ret->length = numDetectors;
+  if ( ( ret->data = LALCalloc ( numDetectors, sizeof ( *ret->data ) )) == NULL ) {
+    LALFree ( ret );
+    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+  }
+
+  for ( X=0; X < numDetectors; X ++ )
+    {
+      AMCoeffs *amcoeX = NULL;
+      UINT4 numStepsX = multiDetStates->data[X]->length;
+
+      ret->data[X] = LALCalloc ( 1, sizeof ( *(ret->data[X]) ) );
+      amcoeX = ret->data[X];
+      amcoeX->a = XLALCreateREAL4Vector ( numStepsX );
+      if ( (amcoeX->b = XLALCreateREAL4Vector ( numStepsX )) == NULL ) {
+	LALPrintError ("\nOut of memory!\n\n");
+	goto failed;
+      }
+
+      LALGetAMCoeffs (status->statusPtr, amcoeX, multiDetStates->data[X], skypos );
+      if ( status->statusPtr->statusCode ) 
+	{
+	  LALPrintError ( "\nCall to LALGetAMCoeffs() has failed ... \n\n");
+	  goto failed;
+	}
+ 
+    } /* for X < numDetectors */
+
+  goto success;
+
+ failed:
+  /* free all memory allocated so far */
+  XLALDestroyMultiAMCoeffs ( ret );
+  ABORT ( status, -1, "LALGetMultiSSBtimes failed" );
+
+ success:
+  (*multiAMcoef) = ret;
+
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+
+} /* LALGetMultiAMCoeffs() */
+
+
+
+/* ===== Object creation/destruction functions ===== */
 
 /** Create a DetectorStateSeries */
 void
@@ -837,7 +984,11 @@ LALDestroyDetectorStateSeries (LALStatus *status,
   RETURN (status);
 } /* LALDestroyDetectorStateSeries() */
 
-/** Helper function to get rid of a multi-IFO DetectorStateSeries */
+/** Helper function to get rid of a multi-IFO DetectorStateSeries 
+ * Note, this is "NULL-robust" in the sense that it will not crash 
+ * on NULL-entries anywhere in this struct, so it can be used
+ * for failure-cleanup even on incomplete structs.
+ */
 void
 XLALDestroyMultiDetectorStateSeries ( MultiDetectorStateSeries *mdetStates )
 {
@@ -861,7 +1012,80 @@ XLALDestroyMultiDetectorStateSeries ( MultiDetectorStateSeries *mdetStates )
 
 } /* XLALDestroyMultiDetectorStateSeries() */
 
+/** Destroy a MultiSSBtimes structure. 
+ * Note, this is "NULL-robust" in the sense that it will not crash 
+ * on NULL-entries anywhere in this struct, so it can be used
+ * for failure-cleanup even on incomplete structs 
+ */
+void
+XLALDestroyMultiSSBtimes ( MultiSSBtimes *multiSSB )
+{
+  UINT4 X;
+  SSBtimes *tmp;
 
+  if ( ! multiSSB )
+    return;
+
+  if ( multiSSB->data )
+    {
+      for ( X=0; X < multiSSB->length; X ++ ) 
+	{
+	  if ( (tmp = multiSSB->data[X]) != NULL )
+	    {
+	      if ( tmp->DeltaT )
+		XLALDestroyREAL8Vector ( tmp->DeltaT );
+	      if ( tmp->Tdot )
+		XLALDestroyREAL8Vector ( tmp->Tdot );
+	      LALFree ( tmp );
+	    } /* if multiSSB->data[X] */
+	} /* for X < numDetectors */
+      LALFree ( multiSSB->data );
+    }
+  LALFree ( multiSSB );
+
+  return;
+
+} /* XLALDestroyMultiSSBtimes() */
+
+/** Destroy a MultiAMCoeffs structure. 
+ * Note, this is "NULL-robust" in the sense that it will not crash 
+ * on NULL-entries anywhere in this struct, so it can be used
+ * for failure-cleanup even on incomplete structs 
+ */
+void
+XLALDestroyMultiAMCoeffs ( MultiAMCoeffs *multiAMcoef )
+{
+  UINT4 X;
+  AMCoeffs *tmp;
+
+  if ( ! multiAMcoef )
+    return;
+
+  if ( multiAMcoef->data )
+    {
+      for ( X=0; X < multiAMcoef->length; X ++ ) 
+	{
+	  if ( (tmp = multiAMcoef->data[X]) != NULL )
+	    {
+	      if ( tmp->a )
+		XLALDestroyREAL4Vector ( tmp->a );
+	      if ( tmp->b )
+		XLALDestroyREAL4Vector ( tmp->b );
+	      LALFree ( tmp );
+	    } /* if multiAMcoef->data[X] */
+	} /* for X < numDetectors */
+      LALFree ( multiAMcoef->data );
+    }
+  LALFree ( multiAMcoef );
+
+  return;
+
+} /* XLALDestroyMultiAMCoeffs() */
+
+
+
+
+/* ===== General internal helper functions ===== */
 
 /** Calculate sin(x) and cos(x) to roughly 1e-7 precision using 
  * a lookup-table and Tayler-expansion.

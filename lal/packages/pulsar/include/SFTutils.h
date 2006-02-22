@@ -112,7 +112,9 @@ typedef struct {
 typedef struct {
   UINT4 length;		/**< number of ifos */
   REAL8Vector **data;	/**< weights-vector for each SFTs */
-} MultiNoiseWeights;
+} MultiREAL8Vector;
+
+typedef MultiREAL8Vector MultiNoiseWeights;
 
 
 /** A vector of 'timestamps' of type LIGOTimeGPS */

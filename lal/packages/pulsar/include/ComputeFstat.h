@@ -100,6 +100,17 @@ typedef struct {
   REAL8Vector *Tdot;		/**< dT/dt : time-derivative of SSB-time wrt local time for SFT-alpha */
 } SSBtimes;
 
+/** Multi-IFO container for SSB timings */
+typedef struct {
+  UINT4 length;		/**< number of IFOs */
+  SSBtimes **data;	/**< array of SSBtimes (pointers) */
+} MultiSSBtimes;
+
+/** Multi-IFO container for antenna-pattern coefficients a^X(t), b^X(t) */
+typedef struct {
+  UINT4 length;		/**< number of IFOs */
+  AMCoeffs **data;	/**< array of amcoeffs (pointers) */
+} MultiAMCoeffs;
 
 /** Simple collection of two COMPLEX16: Fa and Fb, for easy return from XLALNewDemod()
  */
@@ -136,7 +147,7 @@ LALGetSSBtimes (LALStatus *,
 		SSBprecision precision);
 
 void
-LALGetAMCoeffs(LALStatus *status,
+LALGetAMCoeffs(LALStatus *,
 	       AMCoeffs *coeffs, 
 	       const DetectorStateSeries *DetectorStates,
 	       SkyPosition skypos);
@@ -155,11 +166,30 @@ LALGetMultiDetectorStates( LALStatus *,
 			   const MultiSFTVector *multiSFTs, 
 			   const EphemerisData *edat );
 
-void XLALDestroyDetectorStateSeries ( DetectorStateSeries *detStates );
-void XLALDestroyMultiDetectorStateSeries ( MultiDetectorStateSeries *mdetStates );
+void
+LALGetMultiSSBtimes (LALStatus *, 
+		     MultiSSBtimes **multiSSB,
+		     const MultiDetectorStateSeries *multiDetStates,
+		     SkyPosition pos,
+		     LIGOTimeGPS refTime,
+		     SSBprecision precision
+		     );
+
+void
+LALGetMultiAMCoeffs (LALStatus *, 
+		     MultiAMCoeffs **multiAMcoef,
+		     const MultiDetectorStateSeries *multiDetStates,
+		     SkyPosition pos
+		     );
+
 
 void LALCreateDetectorStateSeries (LALStatus *, DetectorStateSeries **vect, UINT4 length );
+
+void XLALDestroyDetectorStateSeries ( DetectorStateSeries *detStates );
 void LALDestroyDetectorStateSeries(LALStatus *, DetectorStateSeries **vect );
+void XLALDestroyMultiDetectorStateSeries ( MultiDetectorStateSeries *mdetStates );
+void XLALDestroyMultiSSBtimes ( MultiSSBtimes *multiSSB );
+void XLALDestroyMultiAMCoeffs ( MultiAMCoeffs *multiAMcoef );
 
 
 #ifdef  __cplusplus
