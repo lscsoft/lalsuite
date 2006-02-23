@@ -1262,7 +1262,7 @@ INT4 XLALCountIFOsInCatalog( const SFTCatalog *catalog)
       for ( j = 0; ( j < numifo ) && strncmp( name, ifolist[j], 3); j++ ) 
 	;
 
-      if ( j > numifo ) 
+      if ( j >= numifo ) 
 	{
 	  /* add ifo to list of ifos */
 	  strncpy( ifolist[numifo], name, 3);
