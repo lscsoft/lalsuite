@@ -77,8 +77,7 @@ extern "C" {
 #define PRINT_LIGOLW_XML_HEADER(fp) ( \
 fputs( "<?xml version='1.0' encoding='utf-8' ?>\n", fp) == EOF || \
 fputs( "<!DOCTYPE LIGO_LW SYSTEM \"http://ldas-sw.ligo.caltech.edu/doc/ligolwAPI/html/ligolw_dtd.txt\">", fp ) == EOF || \
-fputs( "<LIGO_LW>\n", fp ) == EOF || \
-fputs( "   <Comment>metadata</Comment>\n", fp ) == EOF )
+fputs( "<LIGO_LW>\n", fp ) == EOF )
 
 
 #define PRINT_LIGOLW_XML_FOOTER(fp) \
@@ -265,7 +264,7 @@ fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:simulation_id\" Type
 fputs( "      <Stream Name=\"sim_ringdowngroup:sim_ringdown:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 #define SIM_RINGDOWN_ROW \
-  "         \"process:process_id:0\",\"%s\",\"%s\",%d,%d,%d,%d,%d,%d,%22.16e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,\"sim_ring:simulation_id:0\""
+  "         \"process:process_id:0\",\"%s\",\"%s\",%d,%d,%d,%d,%d,%d,%22.16e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,\"sim_ringdown:simulation_id:0\""
 
 #define PRINT_LIGOLW_XML_SUMM_VALUE(fp) ( \
 fputs( "   <Table Name=\"summ_valuegroup:summ_value:table\">\n" , fp ) == EOF || \
