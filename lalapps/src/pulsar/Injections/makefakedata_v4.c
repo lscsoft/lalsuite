@@ -71,6 +71,7 @@ typedef struct
   REAL8Vector *spindown;	/**< vector of frequency-derivatives of GW signal */
 
   SFTVector *noiseSFTs;		/**< vector of noise-SFTs to be added to signal */
+  REAL8 noiseSigma;		/**< sigma for Gaussian noise to be added */
   BOOLEAN binaryPulsar;		/**< are we dealing with a binary pulsar? */
   COMPLEX8FrequencySeries *transfer;  /**< detector's transfer function for use in hardware-injection */
 } ConfigVars_t;
@@ -142,6 +143,7 @@ REAL8 uvar_Tsft;		/**< SFT time baseline Tsft */
 /* noise to add [OPTIONAL] */
 CHAR *uvar_noiseSFTs;		/**< Glob-like pattern specifying noise-SFTs to be added to signal */
 REAL8 uvar_noiseSigma;		/**< Gaussian noise with standard-deviation sigma */
+REAL8 uvar_noiseSqrtSh;		/**< ALTERNATIVE: single-sided sqrt(Sh) for Gaussian noise */
 
 /* Detector and ephemeris */
 CHAR *uvar_detector;		/**< Detector: LHO, LLO, VIRGO, GEO, TAMA, CIT, ROME */
@@ -308,8 +310,8 @@ main(int argc, char *argv[])
 
 
       /* add Gaussian noise if requested */
-      if ( (REAL4)uvar_noiseSigma > 0) {
-	LAL_CALL ( AddGaussianNoise(&status, Tseries, Tseries, (REAL4)uvar_noiseSigma), &status);
+      if ( GV.noiseSigma > 0) {
+	LAL_CALL ( AddGaussianNoise(&status, Tseries, Tseries, (REAL4)(GV.noiseSigma) ), &status);
       }
 
       /* output ASCII time-series if requested */
@@ -735,13 +737,6 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 
   /* -------------------- handle NOISE params -------------------- */
   {
-    /* EITHER add Gaussian noise OR real noise-sft's */
-    if ( LALUserVarWasSet(&uvar_noiseSFTs) && LALUserVarWasSet(&uvar_noiseSigma) )
-      {
-	LALPrintError("\nERROR: only one of 'noiseSFTs' or 'noiseSigma' can be specified!\n\n");
-	ABORT (status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
-      }
-
     /* if real noise-SFTs: load them in now */
     if ( uvar_noiseSFTs )
       {
@@ -763,6 +758,18 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 
       } /* if uvar_noiseSFTs */
 
+    if ( LALUserVarWasSet ( &uvar_noiseSigma ) && LALUserVarWasSet ( &uvar_noiseSqrtSh ) )
+      {
+	LALPrintError ( "\nUse only one of '--noiseSigma' and '--noiseSqrtSh' to specify Gaussian noise!\n\n");
+	ABORT ( status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD );
+      }
+    if ( LALUserVarWasSet ( &uvar_noiseSigma ) )
+      cfg->noiseSigma = uvar_noiseSigma;
+    else if ( LALUserVarWasSet ( &uvar_noiseSqrtSh ) )	/* convert Sh -> sigma */
+      cfg->noiseSigma = uvar_noiseSqrtSh * sqrt ( cfg->fBand_eff );
+    else
+      cfg->noiseSigma = 0;
+    
   } /* END: Noise params */
 
 
@@ -824,6 +831,7 @@ InitUserVars (LALStatus *status)
   uvar_f3dot = 0.0;
 
   uvar_noiseSigma = 0;
+  uvar_noiseSqrtSh = 0;
   uvar_noiseSFTs = NULL;
 
   uvar_hardwareTDD = FALSE;
@@ -906,8 +914,9 @@ InitUserVars (LALStatus *status)
   LALregREALUserVar(status,   orbitArgPeriapse,   0, UVAR_OPTIONAL, "Argument of periapsis (radians)");                            
 
   /* noise */
-  LALregREALUserVar(status,   noiseSigma,	 0 , UVAR_OPTIONAL, "Gaussian noise with standard-deviation sigma");
   LALregSTRINGUserVar(status, noiseSFTs,	'D', UVAR_OPTIONAL, "Glob-like pattern specifying noise-SFTs to be added to signal");  
+  LALregREALUserVar(status,   noiseSigma,	 0 , UVAR_OPTIONAL, "Gaussian noise with standard-deviation sigma");
+  LALregREALUserVar(status,   noiseSqrtSh,	 0 , UVAR_OPTIONAL, "ALTERNATIVE: Gaussian noise with single-sided PSD sqrt(Sh)");
 
   /* signal precision-level */
   LALregBOOLUserVar(status,  exactSignal,	 0, UVAR_DEVELOPER, "Generate signal time-series as exactly as possible (slow).");
