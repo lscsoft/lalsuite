@@ -27,8 +27,8 @@ fi
 # ---------- fixed parameter of our test-signal
 Tsft=60;
 startTime=711595933
-refTime=$startTime ##710160733  ## $startTime
-duration=144000		## 27.7777 hours
+refTime=711595933     ##$startTime 
+duration=144000	      ## 27.7777 hours
 
 mfd_FreqBand=2.0;
 
@@ -49,10 +49,10 @@ echo "mfd_fmin = $mfd_fmin"
 f1dot=1e-8
 df1dot=0.3e-8	## search about 3 spindown-values
 
-noiseSigma=3e-20
+noiseSqrtSh=3e-20
 
-if [ "$noiseSigma" != 0 ]; then
-    sqrtSh=$(echo $noiseSigma $mfd_FreqBand | awk '{printf "%g", $1 / sqrt($2) }'); ## sqrt(Sh) = sigma/ sqrt(Band)
+if [ "$noiseSqrtSh" != 0 ]; then
+    sqrtSh=$noiseSqrtSh
     whatNoise=
 else
     sqrtSh=1;
@@ -80,7 +80,7 @@ fi
 saf_CL="--latitude=$Delta  --longitude=$Alpha --detector=$IFO --Tsft=$Tsft --startTime=$startTime --duration=$duration --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0"
 
 # concatenate this with the mfd-specific switches:
-mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --f0=$freq --outSFTbname=$SFTdir/testSFT --f1dot=$f1dot  --refTime=$refTime --noiseSigma=$noiseSigma --outSFTv1"
+mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --f0=$freq --outSFTbname=$SFTdir/testSFT --f1dot=$f1dot  --refTime=$refTime --noiseSqrtSh=$sqrtSh --outSFTv1"
 cmdline="$mfd_code $mfd_CL";
 echo $cmdline;
 if ! eval $cmdline; then
