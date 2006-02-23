@@ -1241,13 +1241,20 @@ XLALshowSFTLocator ( const struct tagSFTLocator *locator )
 INT4 XLALCountIFOsInCatalog( const SFTCatalog *catalog)
 {
   
-  UINT4 k, j, numifo;
+  UINT4 k, j, numifo, length;
   CHAR  *name=NULL; 
   CHAR  **ifolist=NULL; /* list of ifo names */
 
+  length = catalog->length;
+
   name = (CHAR *)LALCalloc(3, sizeof(CHAR));
-  
-  for ( k = 0; k < catalog->length; k++)
+
+  ifolist = (CHAR **)LALCalloc( length, sizeof(CHAR *));
+  for ( k = 0; k < length; k++) 
+    ifolist[k] = (CHAR *)LALCalloc( 3, sizeof(CHAR));
+
+  /* go through catalog and look at each ifo name */  
+  for ( k = 0; k < length; k++)
     { 
       strncpy( name, catalog->data[k].header.name, 3 );
 
@@ -1262,14 +1269,14 @@ INT4 XLALCountIFOsInCatalog( const SFTCatalog *catalog)
 	  numifo++;
 	}
    
-
-      LALFree(name);
-      for ( j = 0; j < catalog->length; j++) 
-	LALFree(ifolist[j]);
-      LALFree(ifolist);
-      
-      return numifo;
     }
+
+  LALFree(name);
+  for ( j = 0; j < catalog->length; j++) 
+    LALFree(ifolist[j]);
+  LALFree(ifolist);
+  
+  return numifo;
 
 }
 
