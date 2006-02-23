@@ -395,7 +395,7 @@ void LALSelectPeakColorNoise(LALStatus  *status,
 /* *******************************  <lalVerbatim file="PeakSelectD"> */
 void SFTtoUCHARPeakGram(LALStatus        *status,
 			UCHARPeakGram    *pg,
-			SFTtype          *sft,   
+			const SFTtype          *sft,   
 			REAL8            thr)
 { /*   *********************************************  </lalVerbatim> */ 
   

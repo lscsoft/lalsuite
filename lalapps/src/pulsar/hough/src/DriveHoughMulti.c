@@ -21,7 +21,7 @@
  * \file DriveHough_v3.c
  * \author Badri Krishnan, Alicia Sintes 
  * \brief Driver code for performing Hough transform search on non-demodulated
-   data.
+   data using SFTs from possible multiple IFOs
 
    Revision: $Id$
  
@@ -143,12 +143,17 @@ int main(int argc, char *argv[]){
   static LALDetector  *detector;
 
   /* time and velocity vectors */
-  static LIGOTimeGPSVector   *timeV=NULL;
+  static LIGOTimeGPSVector   timeV;
   static REAL8Cart3CoorVector velV;
   static REAL8Vector         timeDiffV;
 
   /* standard pulsar sft types */ 
-  SFTVector *inputSFTs = NULL;
+  MultiSFTVector *inputSFTs = NULL;
+  UINT4 binsSFT;
+  
+  /* information about all the ifos */
+  MultiDetectorStateSeries *mdetStates = NULL;
+  UINT4 numifo;
 
   /* vector of weights */
   REAL8Vector weightsV, weightsNoise;
@@ -357,33 +362,6 @@ int main(int argc, char *argv[]){
   } /* end skyfile reading block */
 
 
-  {
-    
-    /* for debugging non-hough related stuff */
-    MultiNoiseWeights *multweight = NULL;
-    MultiPSDVector *multpsd = NULL;
-    MultiSFTVector *multsft = NULL;
-    REAL8 normalization;
-    SFTCatalog *catalog = NULL;
-    UINT4 dj, ntemp;
-    static SFTConstraints constraints;
-    constraints.detector = NULL;  
-
-    LAL_CALL ( LALSFTdataFind ( &status, &catalog, "/local_data/badkri/fakesfts-multi/*SFT*", &constraints), &status);   
- 
-    LAL_CALL ( LALLoadMultiSFTs ( &status, &multsft, catalog, 205.0, 208.0), &status);
-
-    
-    
-    LAL_CALL ( LALNormalizeMultiSFTVect ( &status, &multpsd, multsft, 101), &status);
-    
-    
-    LAL_CALL ( LALComputeMultiNoiseWeights ( &status, &multweight, &normalization, multpsd), &status);
-    LAL_CALL ( LALDestroyMultiNoiseWeights ( &status, &multweight), &status);
-    LAL_CALL ( LALDestroyMultiSFTVector  ( &status, &multsft), &status);
-    LAL_CALL ( LALDestroyMultiPSDVector  ( &status, &multpsd), &status);
-    LAL_CALL( LALDestroySFTCatalog ( &status, &catalog ), &status);
-  }
   
 
   /* read sft Files and set up weights and nstar vector */
@@ -407,9 +385,6 @@ int main(int argc, char *argv[]){
     strcat(tempDir, "/*SFT*.*");
     LAL_CALL( LALSFTdataFind( &status, &catalog, tempDir, &constraints), &status);
 
-    /* set detector */
-    detector = XLALGetSiteInfo ( catalog->data[0].header.name );
-
     /* get some sft parameters */
     mObsCoh = catalog->length; /* number of sfts */
     deltaF = catalog->data->header.deltaF;  /* frequency resolution */
@@ -424,9 +399,16 @@ int main(int argc, char *argv[]){
     nStarEventVec.event = (HoughSignificantEvent *)LALCalloc( length+1, sizeof(HoughSignificantEvent));
     /* initialize nstar values -- really unnecessary */
     memset( nStarEventVec.event, 0, length+1);
-    
-    /* get SFT timestamps */
-    LAL_CALL( LALSFTtimestampsFromCatalog(  &status, &timeV, catalog ), &status);  	
+
+    /* allocate memory for velocity vector */
+    velV.length = mObsCoh;
+    velV.data = NULL;
+    velV.data = (REAL8Cart3Coor *)LALCalloc(mObsCoh, sizeof(REAL8Cart3Coor));
+
+    /* allocate memory for timestamps vector */
+    timeV.length = mObsCoh;
+    timeV.data = NULL;
+    timeV.data = (LIGOTimeGPS *)LALCalloc( mObsCoh, sizeof(LIGOTimeGPS));
 
     /* add wings for Doppler modulation and running median block size*/
     doppWings = (uvar_f0 + uvar_fSearchBand) * VTOT;    
@@ -435,7 +417,11 @@ int main(int argc, char *argv[]){
 
     /* read sft files making sure to add extra bins for running median */
     /* read the sfts */
-    LAL_CALL( LALLoadSFTs ( &status, &inputSFTs, catalog, fmin, fmax), &status);
+    LAL_CALL( LALLoadMultiSFTs ( &status, &inputSFTs, catalog, fmin, fmax), &status);
+
+    /* SFT info -- assume all SFTs have same length */
+    numifo = inputSFTs->length;
+    binsSFT = inputSFTs->data[0]->data->data->length;
 
     /* free memory */
     if ( LALUserVarWasSet( &uvar_ifo ) )    
@@ -454,40 +440,96 @@ int main(int argc, char *argv[]){
     LAL_CALL( LALHOUGHInitializeWeights( &status, &weightsNoise), &status);
     LAL_CALL( LALHOUGHInitializeWeights( &status, &weightsV), &status);
 
-    /* calculate sft noise weights if required by user */
-    if (uvar_weighNoise ) {
-      LAL_CALL( LALComputeNoiseWeights( &status, &weightsNoise, inputSFTs, uvar_blocksRngMed), &status); 
-      LAL_CALL( LALHOUGHNormalizeWeights( &status, &weightsNoise), &status);
-    }
+  } /* end of sft reading block */
+
+
+
+  /* get detector velocities weights vector, and timestamps */
+  { 
+    MultiNoiseWeights *multweight = NULL;    
+    MultiPSDVector *multPSD = NULL;  
+    REAL8 dmpNormalization;
+    INT4 tmpLeap;
+    UINT4 iIFO, iSFT, numsft, j;
+    LALLeapSecFormatAndAcc lsfas = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
+    LIGOTimeGPS firstTimeStamp = inputSFTs->data[0]->data->epoch;
+
+
+    /*  get ephemeris  */
+    edat = (EphemerisData *)LALCalloc(1, sizeof(EphemerisData));
+    (*edat).ephiles.earthEphemeris = uvar_earthEphemeris;
+    (*edat).ephiles.sunEphemeris = uvar_sunEphemeris;
+    LAL_CALL( LALLeapSecs(&status, &tmpLeap, &firstTimeStamp, &lsfas), &status);
+    (*edat).leap = (INT2)tmpLeap;
+    LAL_CALL( LALInitBarycenter( &status, edat), &status);
+
 
     /* normalize sfts */
-    LAL_CALL( LALNormalizeSFTVect (&status, inputSFTs, uvar_blocksRngMed), &status);
+    LAL_CALL( LALNormalizeMultiSFTVect (&status, &multPSD, inputSFTs, uvar_blocksRngMed), &status);
+   
+    /* compute multi noise weights */
+    LAL_CALL ( LALComputeMultiNoiseWeights ( &status, &multweight, &dmpNormalization, multPSD), &status);
 
-  } /* end of sft reading block */
-  
-    
+    /* we are now done with the psd */
+    LAL_CALL ( LALDestroyMultiPSDVector  ( &status, &multPSD), &status);
+
+    /* get information about all detectors including velocity and timestamps */
+    /* note that this function returns the velocity at the 
+       mid-time of the SFTs -- should not make any difference */
+    LAL_CALL ( LALGetMultiDetectorStates ( &status, &mdetStates, inputSFTs, edat), &status);
+
+
+    /* copy the timestamps, weights, and velocity vector */
+    for (j = 0, iIFO = 0; iIFO < numifo; iIFO++ ) {
+
+      numsft = mdetStates->data[iIFO]->length;
+      
+      for ( iSFT = 0; iSFT < numsft; iSFT++, j++) {
+
+	velV.data[j].x = mdetStates->data[iIFO]->data[iSFT].vDetector[0];
+	velV.data[j].y = mdetStates->data[iIFO]->data[iSFT].vDetector[1];
+	velV.data[j].z = mdetStates->data[iIFO]->data[iSFT].vDetector[2];
+
+	weightsNoise.data[j] = multweight->data[iIFO]->data[iSFT];
+
+	timeV.data[j] = mdetStates->data[iIFO]->data[iSFT].tGPS;
+
+      } /* loop over SFTs */
+
+    } /* loop over IFOs */
+
+    LAL_CALL ( LALDestroyMultiNoiseWeights ( &status, &multweight), &status);
+
+  }
+
+
+ 
   /* generating peakgrams  */  
   pgV.length = mObsCoh;
   pgV.pg = NULL;
   pgV.pg = (HOUGHPeakGram *)LALCalloc(mObsCoh, sizeof(HOUGHPeakGram));
 
   { 
-    SFTtype  sft;
+    SFTtype  *sft;
     UCHARPeakGram     pg1;
-    INT4   nPeaks, length;
-    UINT4  j; 
+    INT4   nPeaks;
+    UINT4  iIFO, iSFT, numsft, j; 
   
-    length = inputSFTs->data->data->length;
-    pg1.length = length;
+
+    pg1.length = binsSFT;
     pg1.data = NULL;
-    pg1.data = (UCHAR *)LALCalloc(length, sizeof(UCHAR));
+    pg1.data = (UCHAR *)LALCalloc( binsSFT, sizeof(UCHAR));
 
     /* loop over sfts and select peaks */
-    for (j=0; j < mObsCoh; j++){
+    for ( j = 0, iIFO = 0; iIFO < numifo; iIFO++){
 
-      sft = inputSFTs->data[j];
+      numsft = mdetStates->data[iIFO]->length;
+      
+      for ( iSFT = 0; iSFT < numsft; iSFT++, j++) {
 
-      LAL_CALL (SFTtoUCHARPeakGram( &status, &pg1, &sft, uvar_peakThreshold), &status);
+      sft = inputSFTs->data[iIFO]->data + iSFT;
+
+      LAL_CALL (SFTtoUCHARPeakGram( &status, &pg1, sft, uvar_peakThreshold), &status);
       
       nPeaks = pg1.nPeaks;
 
@@ -497,63 +539,18 @@ int main(int argc, char *argv[]){
       pgV.pg[j].peak = (INT4 *)LALCalloc(nPeaks, sizeof(INT4));
 
       LAL_CALL( LALUCHAR2HOUGHPeak( &status, &(pgV.pg[j]), &pg1), &status );
-    } /* end loop over sfts */
+    
+      } /* loop over SFTs */
+
+    } /* loop over IFOs */
 
     /* we are done with the sfts and ucharpeakgram now */
-    LAL_CALL (LALDestroySFTVector(&status, &inputSFTs), &status );
+    LAL_CALL (LALDestroyMultiSFTVector(&status, &inputSFTs), &status );
     LALFree(pg1.data);
 
   }/* end block for selecting peaks */
 
 
-
-  /* compute detector velocity for SFT timestamps  */
-  velV.length = mObsCoh;
-  velV.data = NULL;
-  velV.data = (REAL8Cart3Coor *)LALCalloc(mObsCoh, sizeof(REAL8Cart3Coor));
-
-  {  
-    VelocityPar   velPar;
-    REAL8     vel[3];
-    UINT4     j; 
-    
-    LALLeapSecFormatAndAcc lsfas = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
-    INT4 tmpLeap; /* need this because Date pkg defines leap seconds as
-                   INT4, while EphemerisData defines it to be INT2. This won't
-                   cause problems before, oh, I don't know, the Earth has been
-                   destroyed in nuclear holocaust. -- dwchin 2004-02-29 */
-
-    velPar.detector = *detector;
-    velPar.tBase = timeBase;
-    velPar.vTol = ACCURACY; /* irrelevant */
-    velPar.edat = NULL; 
-
-    /*  ephemeris info */
-    edat = (EphemerisData *)LALCalloc(1, sizeof(EphemerisData));
-   (*edat).ephiles.earthEphemeris = uvar_earthEphemeris;
-   (*edat).ephiles.sunEphemeris = uvar_sunEphemeris;
-
-    /* Leap seconds for the start time of the run */
-    LAL_CALL( LALLeapSecs(&status, &tmpLeap, &(timeV->data[0]), &lsfas), &status);
-    (*edat).leap = (INT2)tmpLeap;
-    /* (*edat).leap = 13;   <<<<<<< Correct this */
-
-    /* read in ephemeris data */
-    LAL_CALL( LALInitBarycenter( &status, edat), &status);
-    velPar.edat = edat;
-
-    /* calculate average velocity for each SFT duration */    
-    for(j=0; j< mObsCoh; ++j){
-      velPar.startTime.gpsSeconds     = timeV->data[j].gpsSeconds;
-      velPar.startTime.gpsNanoSeconds = timeV->data[j].gpsNanoSeconds;
-      
-      LAL_CALL( LALAvgDetectorVel ( &status, vel, &velPar), &status ); 
-      
-      velV.data[j].x= vel[0];
-      velV.data[j].y= vel[1];
-      velV.data[j].z= vel[2];  
-    }
-  } /* end velocity calculation block */
 
 
   /* compute the time difference relative to startTime for all SFT */
@@ -566,14 +563,14 @@ int main(int argc, char *argv[]){
     UINT4   j; 
 
     midTimeBase=0.5*timeBase;
-    ts = timeV->data[0].gpsSeconds;
-    tn = timeV->data[0].gpsNanoSeconds * 1.00E-9;
+    ts = timeV.data[0].gpsSeconds;
+    tn = timeV.data[0].gpsNanoSeconds * 1.00E-9;
     t0 = ts + tn;
     timeDiffV.data[0] = midTimeBase;
 
     for(j=1; j < mObsCoh; ++j){
-      ts = timeV->data[j].gpsSeconds;
-      tn = timeV->data[j].gpsNanoSeconds * 1.00E-9;  
+      ts = timeV.data[j].gpsSeconds;
+      tn = timeV.data[j].gpsNanoSeconds * 1.00E-9;  
       timeDiffV.data[j] = ts + tn - t0 + midTimeBase; 
     }  
   }
@@ -596,9 +593,10 @@ int main(int argc, char *argv[]){
   /* loop over sky patches */
   for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++)
     {
-      UINT4 k;
+      UINT4 k, numsft;
       REAL8 sumWeightSquare;
       REAL8  alphaPeak, meanN, sigmaN, erfcInv;
+      SkyPosition skypos;
 
       /* set sky positions and skypatch sizes */
       alpha = skyAlpha[skyCounter];
@@ -609,13 +607,32 @@ int main(int argc, char *argv[]){
       /* calculate amplitude modulation weights */
       if (uvar_weighAM) {
 
+	MultiAMCoeffs *multiAMcoef = NULL;
+	UINT4 iIFO, iSFT;
+
 	memcpy(weightsV.data, weightsNoise.data, mObsCoh * sizeof(REAL8));
+
+	/* get the amplitude modulation coefficients */
+	skypos.longitude = alpha;
+	skypos.latitude = delta;
+	LAL_CALL ( LALGetMultiAMCoeffs ( &status, &multiAMcoef, mdetStates, skypos), &status);
+
+	/* loop over the weights and multiply them by the appropriate
+	   AM coefficients */
+	for ( k = 0, iIFO = 0; iIFO < numifo; iIFO++) {
+	  
+	  numsft = mdetStates->data[iIFO]->length;
 	
-	/*for ( k = 0; k < mObsCoh; k++)
-	  weightsV.data[k] = weightsNoise.data[k]; */
-	
-	LAL_CALL( LALHOUGHComputeAMWeights( &status, &weightsV, timeV, detector, 
-					    edat, alpha, delta), &status);
+	  for ( iSFT = 0; iSFT < numsft; iSFT++, k++) {	  
+
+	    REAL8 a, b;
+	    
+	    a = multiAMcoef->data[iIFO]->a->data[iSFT];
+	    b = multiAMcoef->data[iIFO]->b->data[iSFT];    
+	    weightsV.data[k] *= (a*a + b*b);
+	  } /* loop over SFTs */
+	} /* loop over IFOs */
+	  
 	LAL_CALL( LALHOUGHNormalizeWeights( &status, &weightsV), &status);
       }
 
@@ -1043,15 +1060,16 @@ int main(int argc, char *argv[]){
     for (j = 0; j < mObsCoh; ++j) LALFree( pgV.pg[j].peak); 
   }
   LALFree(pgV.pg);
-
-  LAL_CALL(LALDestroyTimestampVector ( &status, &timeV), &status); 
   
+  LALFree(timeV.data);
   LALFree(timeDiffV.data);
 
   LALFree(velV.data);
 
   LALFree(weightsV.data);
   LALFree(weightsNoise.data);  
+
+  XLALDestroyMultiDetectorStateSeries ( mdetStates );
 
   LALFree(edat->ephemE);
   LALFree(edat->ephemS);

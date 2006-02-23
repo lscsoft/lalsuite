@@ -182,7 +182,7 @@ void LALSelectPeakColorNoise(LALStatus  *status,
 /** Constructs peakgram from a normalized SFT -- uses standard pulsar data types */
 void SFTtoUCHARPeakGram(LALStatus        *status,
 			UCHARPeakGram    *pg, /**< output peakgram */
-			SFTtype          *sft, /**< standard pulsar sft type */  
+			const SFTtype          *sft, /**< standard pulsar sft type */  
 			REAL8            thr /**< sft power threshold for peak selection */
 			);
 
