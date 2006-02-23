@@ -55,7 +55,7 @@ LIGOTimeGPS * XLALGPSAdd( LIGOTimeGPS *epoch, REAL8 dt )
 }
 
 /** Difference between two GPS times. */
-REAL8 XLALGPSDiff( const LIGOTimeGPS *t0, const LIGOTimeGPS *t1 )
+REAL8 XLALGPSDiff( const LIGOTimeGPS *t1, const LIGOTimeGPS *t0 )
 {
   REAL8 dt;
   INT8  ns;

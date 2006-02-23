@@ -94,7 +94,7 @@ int main(void)
 	/* check metadata */
 	x = random_timeseries(1024);
 	y = XLALCutREAL4TimeSeries(x, 256, 512);
-	if((y->deltaT != x->deltaT) || (y->f0 != x->f0) || cmp_real4(x->data->data + 256, y->data->data, 512) || (XLALGPSDiff(&x->epoch, &y->epoch) != 256 * x->deltaT)) {
+	if((y->deltaT != x->deltaT) || (y->f0 != x->f0) || cmp_real4(x->data->data + 256, y->data->data, 512) || (XLALGPSDiff(&y->epoch, &x->epoch) != 256 * x->deltaT)) {
 		fprintf(stderr, "Cut test 1 failed\n");
 		exit(1);
 	}
@@ -113,7 +113,7 @@ int main(void)
 			fprintf(stderr, "Resize test 1a failed\n");
 			exit(1);
 		}
-	if((a->data->length != 512) || (XLALGPSDiff(&gps_zero, &a->epoch) != 256 * a->deltaT)) {
+	if((a->data->length != 512) || (XLALGPSDiff(&a->epoch, &gps_zero) != 256 * a->deltaT)) {
 		fprintf(stderr, "Resize test 1b failed\n");
 		exit(1);
 	}
