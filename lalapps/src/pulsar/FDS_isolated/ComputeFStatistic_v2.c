@@ -20,7 +20,7 @@
  */
 
 /*********************************************************************************/
-/** \author R. Prix, Y. Ioth, Papa, X. Siemens, I. Gholami
+/** \author R. Prix, I. Gholami, Y. Ioth, Papa, X. Siemens
  * \file 
  * \brief
  * Calculate the F-statistic for a given parameter-space of pulsar GW signals.
@@ -68,19 +68,19 @@ RCSID( "$Id$");
 #define NUM_SPINS 4		/* number of spin-values to consider: {f, fdot, f2dot, ... } */ 
 
 /*----- Error-codes -----*/
-#define COMPUTEFSTATISTIC_ENULL 		1
-#define COMPUTEFSTATISTIC_ESYS     		2
-#define COMPUTEFSTATISTIC_EINPUT   		3
-#define COMPUTEFSTATISTIC_EMEM   		4
-#define COMPUTEFSTATISTIC_ENONULL 		5
+#define COMPUTEFSTATISTIC_ENULL 	1
+#define COMPUTEFSTATISTIC_ESYS     	2
+#define COMPUTEFSTATISTIC_EINPUT   	3
+#define COMPUTEFSTATISTIC_EMEM   	4
+#define COMPUTEFSTATISTIC_ENONULL 	5
 #define COMPUTEFSTATISTIC_EXLAL		6
 
-#define COMPUTEFSTATISTIC_MSGENULL 		"Arguments contained an unexpected null pointer"
-#define COMPUTEFSTATISTIC_MSGESYS		"System call failed (probably file IO)"
-#define COMPUTEFSTATISTIC_MSGEINPUT   		"Invalid input"
-#define COMPUTEFSTATISTIC_MSGEMEM   		"Out of memory. Bad."
-#define COMPUTEFSTATISTIC_MSGENONULL 		"Output pointer is non-NULL"
-#define COMPUTEFSTATISTIC_MSGEXLAL		"XLALFunction-call failed"
+#define COMPUTEFSTATISTIC_MSGENULL 	"Arguments contained an unexpected null pointer"
+#define COMPUTEFSTATISTIC_MSGESYS	"System call failed (probably file IO)"
+#define COMPUTEFSTATISTIC_MSGEINPUT   	"Invalid input"
+#define COMPUTEFSTATISTIC_MSGEMEM   	"Out of memory. Bad."
+#define COMPUTEFSTATISTIC_MSGENONULL 	"Output pointer is non-NULL"
+#define COMPUTEFSTATISTIC_MSGEXLAL	"XLALFunction-call failed"
 
 /*----- Macros -----*/
 
@@ -96,18 +96,18 @@ RCSID( "$Id$");
  * These are 'pre-processed' settings, which have been derived from the user-input.
  */
 typedef struct {
-  LIGOTimeGPS startTime;		/**< start time of observation */
-  REAL8 duration;			/**< total time-span of the data (all streams) in seconds */
-  LIGOTimeGPS refTime;			/**< reference-time for pulsar-parameters in SBB frame */
-  LALPulsarSpinRange *spinRangeRef; 	/**< pulsar spin-range at reference-time 'refTime' */
-  LALPulsarSpinRange *spinRangeStart; 	/**< pulsar spin-range at start of observation 'startTime; */
-  DopplerRegion searchRegion;		/**< parameter-space region to search over (FIXME) */
-  EphemerisData *edat;			/**< ephemeris data (from LALInitBarycenter()) */
-  UINT4 numDetectors;			/**< number of detectors */
-  MultiSFTVector *multiSFTs;		/**< multi-IFO SFT-vectors */
+  LIGOTimeGPS startTime;		    /**< start time of observation */
+  REAL8 duration;			    /**< total time-span of the data (all streams) in seconds */
+  LIGOTimeGPS refTime;			    /**< reference-time for pulsar-parameters in SBB frame */
+  LALPulsarSpinRange *spinRangeRef; 	    /**< pulsar spin-range at reference-time 'refTime' */
+  LALPulsarSpinRange *spinRangeStart; 	    /**< pulsar spin-range at start of observation 'startTime; */
+  DopplerRegion searchRegion;		    /**< parameter-space region to search over (FIXME) */
+  EphemerisData *edat;			    /**< ephemeris data (from LALInitBarycenter()) */
+  UINT4 numDetectors;			    /**< number of detectors */
+  MultiSFTVector *multiSFTs;		    /**< multi-IFO SFT-vectors */
   MultiDetectorStateSeries *multiDetStates; /**< pos, vel and LMSTs for detector at times t_i */
-  MultiNoiseWeights *multiNoiseWeights;	/**< normalized noise-weights of those SFTs */
-  ComputeFParams CFparams;		/**< parameters for the computation of Fstat (e.g Dterms, SSB-precision,...) */
+  MultiNoiseWeights *multiNoiseWeights;	    /**< normalized noise-weights of those SFTs */
+  ComputeFParams CFparams;		    /**< parameters for the computation of Fstat (e.g Dterms, SSB-precision,...) */
 } ConfigVariables;
 
 /*---------- Global variables ----------*/
@@ -370,7 +370,7 @@ int main(int argc,char *argv[])
 		      /* set parameter-space point: spin-vector fkdot */
 		      psPoint.fkdot = fkdotStart;
 		      
-		      LAL_CALL(ComputeFStat(&status,&Fstat,&psPoint,GV.multiSFTs,GV.multiNoiseWeights, GV.multiDetStates, &GV.CFparams, &cfBuffer ),
+		      LAL_CALL(ComputeFStat(&status, &Fstat, &psPoint, GV.multiSFTs, GV.multiNoiseWeights, GV.multiDetStates, &GV.CFparams, &cfBuffer ),
 			       &status );
 		      
 		      /* propagate fkdot back to reference-time for outputting results */
@@ -463,7 +463,6 @@ Search progress: %5.1f%%", (100.0* loopcounter / thisScan.numGridPoints));
 
   XLALEmptyComputeFBuffer ( cfBuffer );
 
-  
   XLALDestroyREAL8Vector ( fkdotStart );
   XLALDestroyREAL8Vector ( fkdotRef );
 
@@ -1098,7 +1097,6 @@ getUnitWeights ( LALStatus *status, MultiNoiseWeights **multiWeights, const Mult
   if ( (ret->data = LALCalloc( numDet, sizeof(REAL8Vector *))) == NULL) {
     ABORT (status,  COMPUTEFSTATISTIC_EMEM,  COMPUTEFSTATISTIC_MSGEMEM);      
   }
-
 
   for ( X = 0; X < numDet; X ++) 
     {
