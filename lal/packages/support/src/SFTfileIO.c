@@ -47,11 +47,14 @@
 NRCSID (SFTFILEIOC, "$Id$");
 /*---------- DEFINES ----------*/
 
+#define MIN_SFT_VERSION 1
+#define MAX_SFT_VERSION 2
+
 #define TRUE    1
 #define FALSE   0
 
-/** blocksize used in SFT-reading for the CRC-checksum computation */
-#define BLOCKSIZE 65536
+/** blocksize used in SFT-reading for the CRC-checksum computation (has to be multiple of 8 !!) */
+#define BLOCKSIZE 8192 * 8
 
 /*----- Macros ----- */
 #define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
@@ -124,6 +127,7 @@ static int read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, 
 static int read_v1_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, BOOLEAN swapEndian);
 static int compareSFTdesc(const void *ptr1, const void *ptr2);
 static UINT8 calc_crc64(const CHAR *data, UINT4 length, UINT8 crc);
+int read_SFTversion_from_fp ( UINT4 *version, BOOLEAN *need_swap, FILE *fp );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -750,7 +754,7 @@ void LALLoadMultiSFTs ( LALStatus *status,
 
 /** Function to check validity of SFTs listed in catalog. 
  * This function simply reads in those SFTs and checks their CRC64 checksum, which
- * is the only check that has not yet be done by the operations up to this point.
+ * is the only check that has not yet been done by the operations up to this point.
  * 
  * Returns the LAL-return code of a failure (or 0 on success) in 'check_result'.
  *
@@ -1630,7 +1634,7 @@ fopen_SFTLocator ( const struct tagSFTLocator *locator )
  *  Restores filepointer before leaving.
  */
 BOOLEAN
-has_valid_v2_crc64 (FILE *fp )
+has_valid_v2_crc64 ( FILE *fp )
 {
   long save_filepos;
   UINT8 computed_crc, ref_crc;
@@ -1639,6 +1643,8 @@ has_valid_v2_crc64 (FILE *fp )
   CHAR *comment = NULL;
   UINT4 data_len;
   char block[BLOCKSIZE];
+  UINT4 version;
+  BOOLEAN need_swap;
 
   /* input consistency */
   if ( !fp ) 
@@ -1654,9 +1660,18 @@ has_valid_v2_crc64 (FILE *fp )
       return -1;
     }
 
+  if ( read_SFTversion_from_fp ( &version, &need_swap, fp ) != 0 )
+    return -1;
+
+  if ( version != 2 ) 
+    {
+      LALPrintError ("\nhas_valid_v2_crc64() was called on non-v2 SFT.\n\n");
+      return -1;
+    }
+
   /* ----- compute CRC ----- */
   /* read the header, unswapped, only to obtain it's crc64 checksum */
-  if ( read_v2_header_from_fp ( fp, &header, &numBins, &computed_crc, &ref_crc, &comment, FALSE ) != 0 )
+  if ( read_v2_header_from_fp ( fp, &header, &numBins, &computed_crc, &ref_crc, &comment, need_swap ) != 0 )
     {
       if ( comment ) LALFree ( comment );
       return FALSE;
@@ -1675,6 +1690,9 @@ has_valid_v2_crc64 (FILE *fp )
 	  return FALSE;
 	}
       data_len -= toread;
+
+      /* swap endianness if necessary */
+      if ( need_swap ) endian_swap( block, sizeof(REAL4), BLOCKSIZE / 4 );
       computed_crc = calc_crc64( (const CHAR*)block, toread, computed_crc );
     } /* while data */
      
@@ -2197,16 +2215,14 @@ read_one_sft_from_fp (  LALStatus *status, SFTtype **sft, REAL8 fMin, REAL8 fMax
 static int
 read_sft_header_from_fp (FILE *fp, SFTtype  *header, UINT4 *version, UINT8 *crc64, BOOLEAN *swapEndian, CHAR **comment, UINT4 *numBins )
 {
-  REAL8 ver;
   SFTtype head = empty_SFTtype;
   UINT4 nsamples;
   CHAR *comm = NULL;
   UINT8 ref_crc = 0;
   UINT8 header_crc;
 
-  UINT4 min_version = 1;
-  UINT4 max_version = 2;
-  BOOLEAN need_swap = FALSE;
+  UINT4 ver;
+  BOOLEAN need_swap;
   long save_filepos;
 
   if ( !header || !version || !numBins || !fp  )
@@ -2226,41 +2242,15 @@ read_sft_header_from_fp (FILE *fp, SFTtype  *header, UINT4 *version, UINT8 *crc6
       LALPrintError ("\nftell() failed: %s\n\n", strerror(errno) );
       return -1;
     }
-  /* read version-number */
-  if  ( 1 != fread ( &ver, sizeof( ver ), 1, fp) )
-    {
-      if (lalDebugLevel) LALPrintError ("\nCould not read version-number from file\n\n");
-      goto failed;
-    }
 
-  /* figure out endian-ness and check version-range */
-  if ( ( ver - (UINT4)ver ) || (ver < min_version) || (ver > max_version )  ) 	/* illegal version --> maybe endian-swap? */
-    {
-      REAL8 unswapped = ver;
-      endian_swap ( (CHAR*)(&ver), sizeof(ver), 1);
-      if ( (ver - (UINT4)ver) || (ver < min_version) || (ver > max_version )  ) 	/* still illegal version! */
-	{
-	  if ( lalDebugLevel ) LALPrintError ( "\nERROR: illegal SFT-version '%f|%f', not within [%.0f, %.0f]\n\n", 
-					       unswapped, ver, min_version, max_version );
-	  goto failed;
-	}
-      else	/* ok, endian-swapping required! */
-	need_swap = TRUE;
-	
-    } /* illegal unswapped version */
+  if ( read_SFTversion_from_fp ( &ver, &need_swap, fp ) != 0 ) 
+    return -1;
 
-  
-  /* reset filepointer initial position for full header-reading  */
-  if ( fseek ( fp, save_filepos, SEEK_SET ) == -1 )
-    {
-      LALPrintError ("\nfseek() failed to return to intial fileposition: %s\n\n", strerror(errno) );
-      goto failed;
-    }
 
   /* read this SFT-header with version-specific code */
   head = empty_SFTtype;
 
-  switch( (UINT4)ver)
+  switch( ver )
     {
     case 1:
       if ( read_v1_header_from_fp ( fp, &head, &nsamples, need_swap ) != 0 )
@@ -2897,7 +2887,6 @@ static long get_file_len ( FILE *fp )
  */
 #define POLY64 0xd800000000000000ULL
 #define TABLELEN 256
-#define BLOCKSIZE 65536
 
 /* The crc64 checksum of M bytes of data at address data is returned
  * by crc64(data, M, ~(0ULL)). Call the function multiple times to
@@ -2957,6 +2946,67 @@ compareSFTdesc(const void *ptr1, const void *ptr2)
   
 } /* compareSFTdesc() */
 
+/** Read valid SFT version-number at position fp, and determine if we need to 
+ * endian-swap the data.
+ * Restores filepointer to original position before returning.
+ * 
+ * RETURN: 0 = OK, -1 = ERROR
+ */
+int
+read_SFTversion_from_fp ( UINT4 *version, BOOLEAN *need_swap, FILE *fp )
+{
+  long save_filepos;
+  REAL8 ver;
+  BOOLEAN swap;
+
+  /* store fileposition for restoring in case of failure */
+  if ( ( save_filepos = ftell(fp) ) == -1 )
+    {
+      LALPrintError ("\nftell() failed: %s\n\n", strerror(errno) );
+      return -1;
+    }
+
+  /* read version-number */
+  if  ( 1 != fread ( &ver, sizeof( ver ), 1, fp) )
+    {
+      if (lalDebugLevel) LALPrintError ("\nCould not read version-number from file\n\n");
+      goto failed;
+    }
+
+  /* figure out endian-ness and check version-range */
+  swap = FALSE;
+  if ( ( ver - (UINT4)ver ) || (ver < MIN_SFT_VERSION) || (ver > MAX_SFT_VERSION )  ) 	/* illegal version --> maybe endian-swap? */
+    {
+      REAL8 unswapped = ver;
+      endian_swap ( (CHAR*)(&ver), sizeof(ver), 1);
+      if ( (ver - (UINT4)ver) || (ver < MIN_SFT_VERSION) || (ver > MAX_SFT_VERSION )  ) 	/* still illegal version! */
+	{
+	  if ( lalDebugLevel ) LALPrintError ( "\nERROR: illegal SFT-version '%f|%f', not within [%.0f, %.0f]\n\n", 
+					       unswapped, ver, MIN_SFT_VERSION, MAX_SFT_VERSION );
+	  goto failed;
+	}
+      else	/* ok, endian-swapping required! */
+	swap = TRUE;
+	
+    } /* invalid unswapped version */
+
+  /* restore initial filepointer position */
+  if ( fseek ( fp, save_filepos, SEEK_SET ) == -1 )
+    {
+      LALPrintError ("\nfseek() failed to return to intial fileposition: %s\n\n", strerror(errno) );
+      goto failed;
+    }
+
+  /* success: */
+  (*version) = (UINT4) ver;
+  (*need_swap) = swap;
+  return 0;
+
+ failed:
+  fseek ( fp, save_filepos, SEEK_SET );
+  return -1;
+
+} /* read_SFTversion_from_fp() */
 
 
 /*======================================================================*/
