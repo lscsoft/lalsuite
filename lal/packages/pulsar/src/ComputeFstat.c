@@ -1282,6 +1282,8 @@ int
 sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x)
 {
 #define LUT_RES         64      /* resolution of lookup-table */
+#define OO_LUT_RES	(1.0 / LUT_RES)
+
   UINT4 ind; 
   REAL8 kappa, kappat;
 
@@ -1300,13 +1302,13 @@ sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x)
       UINT4 k;
       for (k=0; k <= LUT_RES; k++)
         {
-          sinVal[k] = sin( LAL_TWOPI * k / LUT_RES );
-          cosVal[k] = cos( LAL_TWOPI * k / LUT_RES );
+          sinVal[k] = sin( LAL_TWOPI * k * OO_LUT_RES );
+          cosVal[k] = cos( LAL_TWOPI * k * OO_LUT_RES );
         }
       firstCall = FALSE;
     }
 
-  kappa = x / LAL_TWOPI;
+  kappa = x * OOTWOPI;			/* x / 2pi */
   kappat = kappa - (INT8)kappa;		/* lies in (-1, 1) */
   if ( kappat < 0 )
     kappat += 1.0;	/* equiv. adding 2pi to x ==> kappat lies in (0, 1) */
@@ -1320,7 +1322,7 @@ sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x)
   
   ind = (UINT4)( kappat * LUT_RES + 0.5 );   /* find closest LUT-entry */
   {
-    REAL8 d = LAL_TWOPI * ( kappat - (REAL8)ind/(REAL8)LUT_RES );
+    REAL8 d = LAL_TWOPI * ( kappat - (REAL8)ind * OO_LUT_RES );
     REAL8 d2 = 0.5 * d * d;
     REAL8 ts = sinVal[ind];
     REAL8 tc = cosVal[ind];
