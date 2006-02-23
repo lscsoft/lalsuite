@@ -1241,7 +1241,7 @@ XLALshowSFTLocator ( const struct tagSFTLocator *locator )
 INT4 XLALCountIFOsInCatalog( const SFTCatalog *catalog)
 {
   
-  UINT4 k, j, numifo, length;
+  UINT4 k, j, numifo=0, length;
   CHAR  *name=NULL; 
   CHAR  **ifolist=NULL; /* list of ifo names */
 
