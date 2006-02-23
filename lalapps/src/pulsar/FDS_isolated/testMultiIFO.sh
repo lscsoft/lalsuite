@@ -60,6 +60,8 @@ else
 fi
 
 IFO=LHO
+nDet1=1
+nDet2=2
 
 ##--------------------------------------------------
 ## test starts here
@@ -77,9 +79,14 @@ else
 fi
 
 # this part of the command-line is compatible with SemiAnalyticF:
-saf_CL="--latitude=$Delta  --longitude=$Alpha --detector=$IFO --Tsft=$Tsft --startTime=$startTime --duration=$duration --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0"
+saf1_CL="--latitude=$Delta  --longitude=$Alpha --detector=$IFO --Tsft=$Tsft --startTime=$startTime --duration=$duration --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0"
+
+# this part of the command-line is compatible with SemiAnalyticF:
+saf2_CL="--latitude=$Delta  --longitude=$Alpha --detector=$IFO --Tsft=$Tsft --startTime=$startTime --duration=$duration --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0"
+
+
 # concatenate this with the mfd-specific switches:
-mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --f0=$freq --outSFTbname=$SFTdir/testSFT --f1dot=$f1dot  --refTime=$refTime --noiseSigma=$noiseSigma --outSFTv1"
+mfd_CL="${saf1_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --f0=$freq --outSFTbname=$SFTdir/testSFT --f1dot=$f1dot  --refTime=$refTime --noiseSigma=$noiseSigma --outSFTv1"
 cmdline="$mfd_code $mfd_CL";
 echo $cmdline;
 if ! eval $cmdline; then
@@ -89,7 +96,7 @@ fi
 
 echo 
 echo -n "Running '$saf_code' ... "
-cmdline="$saf_code $saf_CL --sqrtSh=$sqrtSh"	
+cmdline="$saf_code $saf1_CL --sqrtSh=$sqrtSh --numDetector=$nDet1"	
 echo $cmdline
 if ! resF=`eval $cmdline 2> /dev/null`; then
     echo "Error ... something failed running '$saf_code' ..."
@@ -99,7 +106,29 @@ echo  "ok."
 res2F=`echo $resF | awk '{printf "%g", 2.0 * $1}'`
 echo
 echo "The SemiAnalyticF calculations for single detector, predicts: 2F = $res2F"
-  
+echo 
+
+mfd_CL="${saf2_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --f0=$freq --outSFTbname=$SFTdir/testSFT --f1dot=$f1dot  --refTime=$refTime --noiseSigma=$noiseSigma --outSFTv1"
+cmdline="$mfd_code $mfd_CL";
+echo $cmdline;
+if ! eval $cmdline; then
+    echo "Error.. something failed when running '$mfd_code' ..."
+    exit 1
+fi
+
+echo 
+echo -n "Running '$saf_code' ... "
+cmdline="$saf_code $saf2_CL --sqrtSh=$sqrtSh --numDetector=$nDet2"	
+echo $cmdline
+if ! resF=`eval $cmdline 2> /dev/null`; then
+    echo "Error ... something failed running '$saf_code' ..."
+    exit 1;
+fi
+echo  "ok."
+res2F=`echo $resF | awk '{printf "%g", 2.0 * $1}'`
+echo
+echo "The SemiAnalyticF calculations for two detectors, predicts: 2F = $res2F"
+
 echo 
 echo "----------------------------------------------------------------------"
 echo "STEP 2: run CFS_v2 with perfect match, for single detector"

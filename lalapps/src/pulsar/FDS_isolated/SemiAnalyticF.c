@@ -55,6 +55,7 @@ struct CommandLineArgsTag {
   REAL8 tsft;
   INT4 nTsft;
   CHAR *detector;
+  INT4 numDetector;
   CHAR *timestamps;
   INT4 gpsStart;
   CHAR *efiles;
@@ -130,17 +131,33 @@ void
 ComputeF( LALStatus *status, struct CommandLineArgsTag CLA)
 {
 
-  REAL8 A,B,C,D, A1,A2,A3,A4,h0,cosi, To,Sh,F;
+  REAL8 A = 0.0, B = 0.0 ,C = 0.0, At = 0.0 ,Bt = 0.0 ,Ct = 0.0 ,Dt = 0.0; 
+  REAL8 A1,A2,A3,A4, h0,cosi, Sh, F;
   REAL8 aPlus, aCross;
   REAL8 twopsi, twophi;
 
+  INT4 alpha, X; /* alpha is the counter for SFTs and X for detectors */
+
   INITSTATUS (status, "ComputeF", rcsid );
   ATTATCHSTATUSPTR ( status);
+ 
+
+  for ( X = 0; X < CLA.numDetector; X++ )
+    {
+      for ( alpha = 0; alpha < CLA.nTsft; alpha++ )
+	{
+	  A += amc.a->data[alpha] * amc.a->data[alpha];
+	  B += amc.b->data[alpha] * amc.b->data[alpha];
+	  C += amc.a->data[alpha] * amc.b->data[alpha];
+	} 
+    }
   
-  A = amc.A;
-  B = amc.B;
-  C = amc.C;
-  D = amc.D; 
+  Sh = SQ(CLA.sqrtSh);
+
+  At = (CLA.tsft / (2*Sh)) * A;
+  Bt = (CLA.tsft / (2*Sh)) * B;
+  Ct = (CLA.tsft / (2*Sh)) * C;
+  Dt = A * B - C * C; 
 
   twophi = 2.0 * CLA.phi;
   twopsi = 2.0 * CLA.psi;
@@ -164,12 +181,7 @@ ComputeF( LALStatus *status, struct CommandLineArgsTag CLA)
   A3 =-aPlus * cos(twopsi) * sin(twophi) - aCross * sin(twopsi) * cos(twophi);
   A4 =-aPlus * sin(twopsi) * sin(twophi) + aCross * cos(twopsi) * cos(twophi);
   
-  To = CLA.nTsft * CLA.tsft;
-  
-  Sh=pow(CLA.sqrtSh,2);
-
-  F = A * ( SQ(A1) + SQ(A3) ) + 2.0 * C * (A1 * A2 + A3 * A4 ) + B * ( SQ(A2) + SQ(A4) );
-  F *= To / (4.0 * Sh);
+  F = At * ( SQ(A1) + SQ(A3) ) + Bt * ( SQ(A2) + SQ(A4) )+ 2.0 * Ct * (A1 * A2 + A3 * A4 );
 
   /* Note: the expectation-value of 2F is 4 + lambda ==> add 2 to Fstat*/
   F += 2.0;
@@ -196,7 +208,8 @@ InitUserVars (LALStatus *status, struct CommandLineArgsTag *CLA)
   CLA->skyalpha=0.0;
   CLA->skydelta=0.0;
   CLA->tsft=1800;
-  CLA->detector=0;               
+  CLA->detector=0;
+  CLA->numDetector=1;           
   CLA->nTsft=0;            
   CLA->timestamps=NULL;
   CLA->gpsStart=-1;
@@ -261,6 +274,9 @@ InitUserVars (LALStatus *status, struct CommandLineArgsTag *CLA)
   TRY( LALRegisterSTRINGUserVar(status->statusPtr, "detector", 'D', UVAR_REQUIRED, 
 				"Detector: H1, H2, L1, G1, ... ",
 				&(CLA->detector)), status);
+   TRY( LALRegisterINTUserVar(status->statusPtr, "numDetector", 0, UVAR_OPTIONAL, 
+				"Number of Detector ",
+				&(CLA->numDetector)), status);
   
   /* ----- added for mfd_v4 compatibility ---------- */
   TRY ( LALRegisterREALUserVar(status->statusPtr, "duration", 0, UVAR_OPTIONAL,
