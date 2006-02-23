@@ -62,7 +62,7 @@
 #include <lal/LALRunningMedian.h>
 #include <lal/Velocity.h>
 #include <lal/Statistics.h>
-#include <ComputeFstat.h>
+#include <lal/ComputeFstat.h>
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
 #include <lal/NormalizeSFTRngMed.h>
