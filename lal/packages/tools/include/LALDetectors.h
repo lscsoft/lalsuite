@@ -127,6 +127,7 @@ LALDetectorType;
 typedef struct tagLALFrDetector
 {
 	CHAR	name[LALNameLength];	/**< A unique identifying string. */
+	CHAR	prefix[3];		/**< Two-letter prefix for detector's channel names. */
 	REAL8	vertexLongitudeRadians;	/**< The geodetic longitude \f$\lambda\f$ of the vertex in radians. */
 	REAL8	vertexLatitudeRadians;	/**< The geodetic latitude \f$\beta\f$ of the vertex in radians. */
 	REAL4	vertexElevation;	/**< The height of the vertex above the reference ellipsoid in meters. */
