@@ -700,7 +700,7 @@ void LALLoadMultiSFTs ( LALStatus *status,
     LALLoadSFTs ( status->statusPtr, multSFTVec->data + j, catalog[j], fMin, fMax );    
     BEGINFAIL ( status ) {
       /* free sf vectors created previously in loop */ 
-      for ( i = 0; i < j-1; i++)
+      for ( i = 0; (INT4)i < (INT4)j-1; i++)
 	LALDestroySFTVector ( status->statusPtr, multSFTVec->data + i);
       LALFree(multSFTVec->data);
       LALFree(multSFTVec);
