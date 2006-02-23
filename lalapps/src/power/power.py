@@ -251,23 +251,33 @@ class BurstInjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
-    self.__usertag = job.get_config('binjection','user-tag')
+    try:
+      self.__usertag = job.get_config('binjection','user-tag')
+      self.add_var_opt("user-tag", self.__usertag)
+    except:
+      self.__usertag = None
+
+  def set_user_tag(self, tag):
+    self.__usertag = tag
+    self.add_var_opt("user-tag", self.__usertag)
+
+  def get_user_tag(self):
+    return self.__usertag
     
   def get_output(self):
     """
     Returns the file name of output from the power code. This must be kept
-    synchronized with the name of the output file in power.c.
+    synchronized with the name of the output file in binj.c.  Note in
+    particular the calculation of the "start" and "duration" parts of the
+    name.
     """
     if not self.get_start() or not self.get_end():
       raise InjError, "Start time or end time has not been set"
 
-    basename = 'HL' + '-INJECTIONS'
-
     if self.__usertag:
-      basename += '_' + str(self.__usertag) 
-
-    return basename + '-' + str(self.get_start()) + '-' + \
-      str(self.get_end() - self.get_start()) + '.xml'
+      return "HL-INJECTIONS_%s-%d-%d.xml" % (self.__usertag, int(self.get_start()), int(self.get_end() - self.get_start()))
+    else:
+      return "HL-INJECTIONS-%d-%d.xml" % (int(self.get_start()), int(self.get_end() - self.get_start()))
 
 class InspInjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
