@@ -972,7 +972,7 @@ static REAL4TimeSeries *get_time_series(
 	REAL4TimeSeries *series;
 	FrStream *stream = NULL;
 	FrCache *frameCache = NULL;
-	double duration = XLALGPSDiff(&start, &end);
+	double duration = XLALGPSDiff(&end, &start);
 
 	/* Open frame stream */
 	if(cachefile && dirname && options.verbose)
@@ -1675,7 +1675,7 @@ int main( int argc, char *argv[])
 		if(options.noiseAmpl > 0.0) {
 			if(!series) {
 				size_t i, length;
-				length = XLALGPSDiff(&epoch, &options.stopEpoch) * options.ResampleRate;
+				length = XLALGPSDiff(&options.stopEpoch, &epoch) * options.ResampleRate;
 				if(options.maxSeriesLength)
 					length = min(options.maxSeriesLength, length);
 				series = XLALCreateREAL4TimeSeries(options.channelName, &epoch, 0.0, (REAL8) 1.0 / options.ResampleRate, &lalADCCountUnit, length);
@@ -1811,7 +1811,7 @@ int main( int argc, char *argv[])
 	 * Check event rate limit.
 	 */
 
-	if((options.max_event_rate > 0) && (SnglBurstTableLength(burstEvent) > XLALGPSDiff(&searchsumm.searchSummaryTable->out_start_time, &searchsumm.searchSummaryTable->out_end_time) * options.max_event_rate)) {
+	if((options.max_event_rate > 0) && (SnglBurstTableLength(burstEvent) > XLALGPSDiff(&searchsumm.searchSummaryTable->out_end_time, &searchsumm.searchSummaryTable->out_start_time) * options.max_event_rate)) {
 		XLALPrintError("%s: event rate limit exceeded!", argv[0]);
 		exit(1);
 	}
