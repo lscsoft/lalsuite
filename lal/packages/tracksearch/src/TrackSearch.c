@@ -144,7 +144,7 @@ LALSignalTrackSearch(LALStatus *status,
    * rather than in the function call itself 
    * Dumping original map also
    */
-  if (0)
+  if (1==0)
     {
       DumpTFImage(tfMap->map,"DumpMap0",params->height,params->width,1);
       DumpTFImage(out->store.k[0],"DumpVar0",params->height,params->width,0);
@@ -154,9 +154,12 @@ LALSignalTrackSearch(LALStatus *status,
       DumpTFImage(out->store.k[4],"DumpVar4",params->height,params->width,0);
       /* Dumping Out Kernels Collectivly */
       tempmaskcount=ceil(4*params->sigma);
-      DumpREAL8KernelMask(out->store.gaussMask[0],"DumpVarKernel_0",((2*tempmaskcount)+1));
-      DumpREAL8KernelMask(out->store.gaussMask[1],"DumpVarKernel_1",((2*tempmaskcount)+1));
-  DumpREAL8KernelMask(out->store.gaussMask[2],"DumpVarKernel_2",((2*tempmaskcount)+1));
+      DumpREAL8KernelMask(out->store.gaussMask[0],"DumpVarKernel_0",
+			  ((2*tempmaskcount)+1));
+      DumpREAL8KernelMask(out->store.gaussMask[1],"DumpVarKernel_1",
+			  ((2*tempmaskcount)+1));
+      DumpREAL8KernelMask(out->store.gaussMask[2],"DumpVarKernel_2",
+			  ((2*tempmaskcount)+1));
     }
   /*
    * End diagnotics temporary code
