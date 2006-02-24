@@ -1,4 +1,9 @@
 #!/bin/sh
+## A simple test script to compare the F-Statistic of a single and two detectors.
+## This uses ComputeFStatistic_v2 to calcultae the F-Statistic and the makefakedata 
+## to generate v2 version of SFT.
+
+## Author: Iraj Gholami
 
 ## take user-arguments for CFS-v2:
 extra_args="$@"
@@ -25,7 +30,8 @@ if [ -z "$LAL_DATA_PATH" ]; then
 fi
 
 # ---------- fixed parameter of our test-signal
-Tsft=60;
+##Tsft=60;
+Tsft=1800;
 startTime=711595933
 refTime=711595933     ##$startTime 
 duration=144000	      ## 27.7777 hours
@@ -37,6 +43,8 @@ Delta=-0.5
 
 aPlus=1.0e-20
 aCross=0.4e-20
+##aPlus=0
+##aCross=0
 
 psi=0
 phi0=0
@@ -49,6 +57,7 @@ echo "mfd_fmin = $mfd_fmin"
 f1dot=1e-8
 df1dot=0.3e-8	## search about 3 spindown-values
 
+##noiseSqrtSh=3e-23
 noiseSqrtSh=3e-20
 
 if [ "$noiseSqrtSh" != 0 ]; then
@@ -59,7 +68,8 @@ else
     whatNoise="--SignalOnly";
 fi
 
-IFO=LHO
+IFO1=H1
+IFO2=H2
 
 ##--------------------------------------------------
 ## test starts here
@@ -77,11 +87,27 @@ else
 fi
 
 # this part of the command-line is compatible with SemiAnalyticF:
-saf_CL="--latitude=$Delta  --longitude=$Alpha --detector=$IFO --Tsft=$Tsft --startTime=$startTime --duration=$duration --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0"
-
+saf_CL="--latitude=$Delta  --longitude=$Alpha --detector=$IFO1 --Tsft=$Tsft --startTime=$startTime --duration=$duration --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0"
 # concatenate this with the mfd-specific switches:
-mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --f0=$freq --outSFTbname=$SFTdir/testSFT --f1dot=$f1dot  --refTime=$refTime --noiseSqrtSh=$sqrtSh --outSFTv1"
+mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --f0=$freq --outSFTbname=$SFTdir/testSFTH1 --f1dot=$f1dot  --refTime=$refTime --noiseSqrtSh=$sqrtSh"
+## --outSFTv1"
+
+# this part of the command-line is compatible with SemiAnalyticF:
+saf2_CL="--latitude=$Delta  --longitude=$Alpha --detector=$IFO2 --Tsft=$Tsft --startTime=$startTime --duration=$duration --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0"
+# concatenate this with the mfd-specific switches:
+mfd2_CL="${saf2_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --f0=$freq --outSFTbname=$SFTdir/testSFTH2 --f1dot=$f1dot  --refTime=$refTime --noiseSqrtSh=$sqrtSh"
+## --outSFTv1"
+
 cmdline="$mfd_code $mfd_CL";
+echo $cmdline;
+if ! eval $cmdline; then
+    echo "Error.. something failed when running '$mfd_code' ..."
+    exit 1
+fi
+
+echo
+echo
+cmdline="$mfd_code $mfd2_CL";
 echo $cmdline;
 if ! eval $cmdline; then
     echo "Error.. something failed when running '$mfd_code' ..."
@@ -109,7 +135,7 @@ echo "----------------------------------------------------------------------"
 echo
 
 ## cmdline-options for v2, single detector   
-cfs1_CL="--IFO=$IFO --Freq=$freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --f1dotBand=$f1dot --df1dot=$df1dot --Fthreshold=0 --DataFiles='$SFTdir/testSFT*' --refTime=$refTime $whatNoise"
+cfs1_CL="--Freq=$freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --f1dotBand=$f1dot --df1dot=$df1dot --Fthreshold=0 --DataFiles='$SFTdir/testSFTH1*' --refTime=$refTime $whatNoise"
     
 cmdline="$cfsv2_code $cfs1_CL --outputFstat=Fstat_v2_1.dat";
 echo $cmdline;
@@ -126,7 +152,7 @@ echo "----------------------------------------------------------------------"
 echo
 
 ## cmdline-options for v2, two detectors  
-cfs2_CL="--IFO=$IFO --Freq=$freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --f1dotBand=$f1dot --df1dot=$df1dot --Fthreshold=0 --DataFiles='$SFTdir/testSFT*' --refTime=$refTime $whatNoise"
+cfs2_CL="--Freq=$freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --f1dotBand=$f1dot --df1dot=$df1dot --Fthreshold=0 --DataFiles='$SFTdir/testSFTH*' --refTime=$refTime $whatNoise"
 
 cmdline="$cfsv2_code $cfs2_CL --outputFstat=Fstat_v2_2.dat $extra_args";
 echo $cmdline;
