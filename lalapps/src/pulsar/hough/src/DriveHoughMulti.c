@@ -134,9 +134,6 @@ int main(int argc, char *argv[]){
   /* LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
   
-  /* detector */
-  static LALDetector  *detector;
-
   /* time and velocity  */
   static LIGOTimeGPSVector    timeV;
   static REAL8Cart3CoorVector velV;
@@ -615,6 +612,8 @@ int main(int argc, char *argv[]){
 	} /* loop over IFOs */
 	  
 	LAL_CALL( LALHOUGHNormalizeWeights( &status, &weightsV), &status);
+
+	XLALDestroyMultiAMCoeffs ( multiAMcoef );
       }
 
       /* calculate the sum of the weights squared */
@@ -1027,9 +1026,6 @@ int main(int argc, char *argv[]){
   LAL_CALL( PrintnStarFile( &status, &nStarEventVec, uvar_dirnameOut, 
 			    uvar_fbasenameOut), &status);
 
-
-  /* free memory allocated outside skypatches loop */ 
-  LALFree( detector);
 
   {
     UINT4 j;
