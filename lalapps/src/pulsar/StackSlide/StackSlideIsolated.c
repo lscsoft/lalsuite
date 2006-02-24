@@ -52,6 +52,7 @@ $Id$
 /* 01/12/06 gam; Add function WriteStackSlideLEsToPriorResultsFile; if ( (outputEventFlag & 8) > 0 ) && !( (params->testFlag & 2) > 0 ) write loudest events to params->priorResultsFile */
 /* 01/12/06 gam; Always set maxMC = params->maxMCinterations; if NOT ( (params->testFlag & 32) > 0 ) then run MC maxMCinterations times; linearly interpolate to get final result */
 /* 01/12/06 gam; if ( (outputEventFlag & 8) > 0 ) and running MC, produce estimated UL based on loudest event from priorResultsFile */
+/* 02/23/06 gam; add function EstimateStackSlidePower */
 
 /*********************************************/
 /*                                           */
@@ -78,6 +79,7 @@ $Id$
 /* #define PRINT_ONEMONTECARLO_OUTPUTSFT */
 /* #define PRINT_MAXPOWERANDBINEACHSFT */
 #define PRINT_SLIDINGTURNEDOFF_WARNING
+#define PRINT_ESTIMATEDSTACKSLIDEPOWER_WARNING
 /*********************************************/
 /*                                           */
 /* END SECTION: define preprocessor flags    */
@@ -211,6 +213,12 @@ void StackSlideIsolated (
         fflush(stdout);
       #endif
       SumStacks(status->statusPtr,params->SUMData,params->STKData,stksldParams);
+    } else if ((params->debugOptionFlag & 64) > 0 ) {
+      #ifdef PRINT_ESTIMATEDSTACKSLIDEPOWER_WARNING
+        fprintf(stdout,"\n\n !!! WARNING: FINDING ESTIMATED STACKSLIDE POWER !!! \n\n");
+        fflush(stdout);
+      #endif    
+      EstimateStackSlidePower(status->statusPtr,params->SUMData,params->STKData,pTdotsAndDeltaTs,params,cachedDetector,iSky,stksldParams);
     } else {
       StackSlide(status->statusPtr,params->SUMData,params->STKData,pTdotsAndDeltaTs,stksldParams);
     }
@@ -2105,3 +2113,130 @@ void StackSlideULLeastSquaresLinFit(REAL8 *interpolatedUL, const REAL8 *arrayULs
        return;
      }
 } /* END INT4 StackSlideULLeastSquaresLinFit */
+
+/*********************************************************************************/
+/*              START function: EstimateStackSlidePower                          */
+/*********************************************************************************/
+void EstimateStackSlidePower(LALStatus *status,
+			REAL4FrequencySeries **SUMData,
+			REAL4FrequencySeries **STKData,
+			TdotsAndDeltaTs *pTdotsAndDeltaTs,
+			StackSlideSearchParams *searchParams,
+			LALDetector          *cachedDetector,
+			INT4 iSky,
+			StackSlideParams *params)
+{
+
+  INT4 kSUM = 0; /* index gives which SUM */ /* HARD CODED TO 0; This function only returns one SUM! */
+  INT4 iSUM = 0; /* index gives which SUM bin */  
+  REAL8 f_t;
+
+  REAL4 invNumSTKs = 1.0/((REAL4)params->numSTKs); /* 12/03/04 gam */ /* 02/21/05 gam */
+
+  INT4 i,k,m;  
+  INT4 binoffset = 0;  
+  REAL8 deltaKappa;
+  REAL8 piDeltaKappa;
+  
+  INT4 iMinSTK = floor((params->f0SUM-params->f0STK)*params->tSTK + 0.5); /* Index of mimimum frequency to include when making SUMs from STKs */
+  INT4 iMaxSTK = iMinSTK + params->nBinsPerSUM - 1;                       /* Index of maximum frequency to include when making SUMs from STKs */
+
+  REAL8 refFreq = params->f0SUM + ((REAL8)(params->nBinsPerSUM/2))*params->dfSUM; /* 12/06/04 gam */ /* 02/21/05 gam */
+
+  REAL4Vector *fPlus;
+  REAL4Vector *fCross;
+  REAL4 nrmFactor = searchParams->threshold3;
+  REAL4 Aplus = searchParams->threshold4/searchParams->blkRescaleFactor;
+  REAL4 Across = searchParams->threshold5;
+  REAL4 invSqrtSn;  
+  REAL4 d2;
+  REAL8 smallFactor = 1.e-3;
+
+  INITSTATUS (status, "EstimateStackSlidePower", STACKSLIDEISOLATEDC);
+  ATTATCHSTATUSPTR(status);
+
+  /* Compute F_+ and F_x at the midpoint time of each SFT */
+  fPlus=(REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
+  fPlus->data=(REAL4 *)LALMalloc(searchParams->numSTKs*sizeof(REAL4));
+  fCross=(REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
+  fCross->data=(REAL4 *)LALMalloc(searchParams->numSTKs*sizeof(REAL4));  
+  GetDetResponseTStampMidPts(status->statusPtr, fPlus, searchParams->timeStamps, searchParams->numSTKs, searchParams->tSTK,
+             cachedDetector, searchParams->skyPosData[iSky], searchParams->orientationAngle, COORDINATESYSTEM_EQUATORIAL, 1);
+  CHECKSTATUSPTR (status);	     
+  GetDetResponseTStampMidPts(status->statusPtr, fCross, searchParams->timeStamps, searchParams->numSTKs, searchParams->tSTK,
+             cachedDetector, searchParams->skyPosData[iSky], searchParams->orientationAngle, COORDINATESYSTEM_EQUATORIAL, 0);
+  CHECKSTATUSPTR (status);	     
+
+  for(k=0;k<params->numSTKs;k++) {
+
+        /* compute the frequency */
+        f_t = refFreq;
+
+        for (m=0; m<params->numSpinDown; m++) {
+            f_t += params->freqDerivData[m] * pTdotsAndDeltaTs->vecDeltaTs[k][m];
+        }
+        f_t *= pTdotsAndDeltaTs->vecTDots[k];
+        binoffset = floor(( (f_t - refFreq) * params->tSTK) + 0.5 );
+
+        /* deltaKappa = kappa - k = mismatch in bins between actual frequency and freqency used. */
+        deltaKappa = fabs( ((f_t - refFreq) * params->tSTK) - (REAL8)binoffset );
+        piDeltaKappa = ((REAL8)LAL_PI)*deltaKappa;
+
+        for (i=iMinSTK;i<=iMaxSTK; i++) {
+            iSUM = i - iMinSTK;
+            
+            /* properly normalized inverse amplitude spectral density in 1/strain/Hz^{1/2} */
+            invSqrtSn = sqrt(searchParams->inverseMedians[k]->data[i+binoffset])/sqrt(nrmFactor);
+
+            /* optimal signal to noise ratio, d2 */
+            d2 = ( (Aplus*searchParams->blkRescaleFactor*invSqrtSn)*(Aplus*searchParams->blkRescaleFactor*invSqrtSn)*fPlus->data[k]*fPlus->data[k] +
+                 (Across*searchParams->blkRescaleFactor*invSqrtSn)*(Across*searchParams->blkRescaleFactor*invSqrtSn)*fCross->data[k]*fCross->data[k] )*((REAL4)searchParams->tBLK);
+            /* include frequency mismatch factor if not basically equal to 1 */           
+            if (piDeltaKappa > smallFactor) {
+                d2 *= ((REAL4)(sin(piDeltaKappa)*sin(piDeltaKappa)/(piDeltaKappa*piDeltaKappa)));
+            }
+            
+            /* Print out info about the beam pattern, noise amplitude spectral density, mismatch (deltaKappa), SNR, and binoffset (doppler modulation) */
+            if ((searchParams->debugOptionFlag & 2) > 0 ) {
+               if (i == (iMinSTK + iMaxSTK)/2) {
+                  if (k == 0) {
+                     fprintf(stdout,"\n   gpsSeconds     A_+         F_+       A_x        F_x      sqrt(Sn)  deltaKappa   d2   binoffset\n\n");
+                     fflush(stdout);
+                  }
+                  fprintf(stdout,"%12i %12.4e %8.4f %12.4e %8.4f %12.4e %8.4f %8.4f %5i\n",searchParams->timeStamps[k].gpsSeconds,Aplus,fPlus->data[k],Across,fCross->data[k],1.0/(searchParams->blkRescaleFactor*invSqrtSn),deltaKappa,d2,binoffset);
+                  fflush(stdout);
+               }
+            }
+
+            if (k==0) {
+               /* Starting a new SUM: initialize */
+               SUMData[kSUM]->data->data[iSUM] = d2;
+               SUMData[kSUM]->epoch.gpsSeconds = params->gpsStartTimeSec;
+               SUMData[kSUM]->epoch.gpsNanoSeconds = params->gpsStartTimeNan;
+               SUMData[kSUM]->f0=params->f0SUM;
+               SUMData[kSUM]->deltaF=params->dfSUM;
+               SUMData[kSUM]->data->length=params->nBinsPerSUM;
+            } else {
+               SUMData[kSUM]->data->data[iSUM] += d2;
+            }
+        }/*end of for iMinSTK*/
+
+  } /* END for(k=0;k<params->numSTKs;k++) */
+
+  /* Find average d2 and then estimate of StackSlide Power */  
+  for(i=0;i<params->nBinsPerSUM; i++) {
+        SUMData[kSUM]->data->data[i] = SUMData[kSUM]->data->data[i]*invNumSTKs;
+        SUMData[kSUM]->data->data[i] = 1.0 + 0.5*SUMData[kSUM]->data->data[i];
+  }
+
+  LALFree(fPlus->data);
+  LALFree(fPlus);
+  LALFree(fCross->data);
+  LALFree(fCross);
+
+  CHECKSTATUSPTR (status);
+  DETATCHSTATUSPTR (status);
+ }   /*end of void StackSlide*/
+/*********************************************************************************/
+/*              END function: EstimateStackSlidePower                            */
+/*********************************************************************************/

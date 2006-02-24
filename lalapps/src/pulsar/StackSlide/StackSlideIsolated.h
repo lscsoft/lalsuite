@@ -15,6 +15,7 @@ $Id$
 /*               rescale SFTs to run numMCRescalings Monte Carlo simulations in parallel.     */
 /* 01/12/06 gam; Add function WriteStackSlideLEsToPriorResultsFile; if ((outputEventFlag & 8) > 0) write loudest events to params->priorResultsFile */
 /* 01/12/06 gam; if ( (outputEventFlag & 8) > 0 ) and running MC, produce estimated UL based on loudest event from priorResultsFile */
+/* 02/23/06 gam; add function EstimateStackSlidePower */
 
 #ifndef _STACKSLIDEISOLATED_H
 #define _STACKSLIDEISOLATED_H
@@ -144,6 +145,15 @@ void StackSlideGetUniformDeviate(LALStatus *status, REAL8 *returnVal, REAL8 star
 
 /* 09/01/05 gam */
 void StackSlideULLeastSquaresLinFit(REAL8 *interpolatedUL, const REAL8 *arrayULs, const REAL8 *arrayConfs, REAL8 desiredConf, INT4 startIndex, INT4 numVals);
+
+void EstimateStackSlidePower(LALStatus *status,
+			REAL4FrequencySeries **SUMData,
+			REAL4FrequencySeries **STKData,
+			TdotsAndDeltaTs *pTdotsAndDeltaTs,
+			StackSlideSearchParams *searchParams,
+			LALDetector          *cachedDetector,
+			INT4 iSky,
+			StackSlideParams *params);
 
 #ifdef __cplusplus
 }

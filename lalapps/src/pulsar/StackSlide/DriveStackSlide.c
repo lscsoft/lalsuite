@@ -165,6 +165,7 @@
 /* 12/07/05 gam; fix bug in StackSlideCleanSFTs: need to initialize nBinsPerBLK before allocating memory. */
 /* 01/12/06 gam; Add function WriteStackSlideLEsToPriorResultsFile; if ( (outputEventFlag & 8) > 0 ) && !( (params->testFlag & 2) > 0 ) write loudest events to params->priorResultsFile */
 /* 01/12/06 gam; Always set maxMC = params->maxMCinterations; if NOT ( (params->testFlag & 32) > 0 ) then run MC maxMCinterations times; linearly interpolate to get final result */
+/* 02/20/06 gam; if (debugOptionFlag & 64) > 0 generated SUMs with an estimate of StackSlide Power for a given source; also get F_+, F_x, sqrt(Sn) the bin mismatch, and binoffset if (debugOptionFlag & 2) > 0 */
 
 /*********************************************/
 /*                                           */
@@ -642,6 +643,7 @@ params->numFDeriv5   =   0;
     	fprintf(stdout,"set threshold3         %23.16e; #34 REAL4 ratio peak height to valley depth that indicates a new peak rather than subpeak in a cluster. \n", params->threshold3); /* 01/20/04 gam */
     	fprintf(stdout,"set threshold4         %23.16e; #35 REAL4 unused (except when testFlag & 2 > 0; see below).\n", params->threshold4); /* 05/11/04 gam */ /* 01/27/04 gam */
     	fprintf(stdout,"set threshold5         %23.16e; #36 REAL4 unused (except when testFlag & 1 > 0).\n", params->threshold5); /* 05/11/04 gam */ /* 01/27/04 gam */ /* 11/01/04 gam */ /* 10/20/05 gam */
+    	fprintf(stdout,"#Also see below how threshold3, threhold4, and threshold5 are used when (debugOptionFlag & 64) > 0 \n");
     	fprintf(stdout,"set maxWidthBins       %23d; #37 REAL4 maximum width in bins. \n", params->maxWidthBins); /* 02/20/04 gam */ /* 02/23/04 gam */
     	fprintf(stdout,"#The thresholdFlag rules are: \n");
     	fprintf(stdout,"# if (thresholdFlag <= 0) do not analyze SUMs for peaks about threshold,\n");
@@ -782,6 +784,12 @@ params->numFDeriv5   =   0;
     	fprintf(stdout,"# if (debugOptionFlag & 8) > 0 then the STK bin with max power is set to 1, all other to 0.\n");
     	fprintf(stdout,"# if (debugOptionFlag & 16) > 0 also set to 1 one bin to either side of the bin with maxPwr.\n");
     	fprintf(stdout,"# if (debugOptionFlag & 32) > 0 print Monte Carlo Simulation results to stdout.\n");
+    	fprintf(stdout,"# if (debugOptionFlag & 64) > 0 generated SUMs with an estimate of StackSlide Power for a given source.\n");
+    	fprintf(stdout,"#Must also use the (weightFlag & 16) > 0 option; the (weightFlag & 8) > 0 option is recommended.\n");
+    	fprintf(stdout,"#Must set threshold3 to the value of 2.0/(f_s*f_s*tBLK), where f_s is the effective sample rate of the input data.\n");
+    	fprintf(stdout,"#Must set threshold4 = A_+, threhold5 = A_x, and orientationAngle = polarization angle of the source for which to estimate the power.\n");
+    	fprintf(stdout,"#In addition, if (debugOptionFlag & 2) > 0, these are output to stdout for the time stamps of the input BLKs: A_+, F_+(midpoint time), A_x, F_x(midpoint time), sqrt(Sn) estimated from the running median, the bin mismatch, the SNR squared d2, and the binoffset.\n");
+    	fprintf(stdout,"#The estimated power is output for each template based on the other options for sky position, spindown values, and frequency.\n");
     	fprintf(stdout,"# if (debugOptionFlag & 128) > 0 creates SUMs from the STKs without sliding (isolated case only).\n");
     	fprintf(stdout,"# if (debugOptionFlag & 256) > 0 then print the factor used to rescale BLKs to prevent dynamic range issues; see discussion of weightFlag & 8 > 0 above.\n");
     	fprintf(stdout,"# Use of the debugOptionFlag provides an easy way to validate the StackSlide code! \n");

@@ -74,6 +74,7 @@ set threshold2          1.0700000524520874e+00; #33 REAL4 peak ends if power dro
 set threshold3          2.0000000298023224e-01; #34 REAL4 ratio peak height to valley depth that indicates a new peak rather than subpeak in a cluster. 
 set threshold4          0.0000000000000000e+00; #35 REAL4 unused (except when testFlag & 2 > 0; see below).
 set threshold5          0.0000000000000000e+00; #36 REAL4 unused (except when testFlag & 1 > 0).
+#Also see below how threshold3, threhold4, and threshold5 are used when (debugOptionFlag & 64) > 0 
 set maxWidthBins                             3; #37 REAL4 maximum width in bins. 
 #The thresholdFlag rules are: 
 # if (thresholdFlag <= 0) do not analyze SUMs for peaks about threshold,
@@ -209,6 +210,12 @@ set debugOptionFlag                          1; #84 INT2 debugging information t
 # if (debugOptionFlag & 8) > 0 then the STK bin with max power is set to 1, all other to 0.
 # if (debugOptionFlag & 16) > 0 also set to 1 one bin to either side of the bin with maxPwr.
 # if (debugOptionFlag & 32) > 0 print Monte Carlo Simulation results to stdout.
+# if (debugOptionFlag & 64) > 0 generated SUMs with an estimate of StackSlide Power for a given source.
+#Must also use the (weightFlag & 16) > 0 option; the (weightFlag & 8) > 0 option is recommended.
+#Must set threshold3 to the value of 2.0/(f_s*f_s*tBLK), where f_s is the effective sample rate of the input data.
+#Must set threshold4 = A_+, threhold5 = A_x, and orientationAngle = polarization angle of the source for which to estimate the power.
+#In addition, if (debugOptionFlag & 2) > 0, these are output to stdout for the time stamps of the input BLKs: A_+, F_+(midpoint time), A_x, F_x(midpoint time), sqrt(Sn) estimated from the running median, the bin mismatch, the SNR squared d2, and the binoffset.
+#The estimated power is output for each template based on the other options for sky position, spindown values, and frequency.
 # if (debugOptionFlag & 128) > 0 creates SUMs from the STKs without sliding (isolated case only).
 # if (debugOptionFlag & 256) > 0 then print the factor used to rescale BLKs to prevent dynamic range issues; see discussion of weightFlag & 8 > 0 above.
 # Use of the debugOptionFlag provides an easy way to validate the StackSlide code! 
