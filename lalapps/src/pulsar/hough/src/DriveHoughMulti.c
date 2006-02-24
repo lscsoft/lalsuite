@@ -30,9 +30,10 @@
 
    \par Description
    
-   This is the main driver for the Hough transform routines.
-   It takes as input a set of SFTs and search parameters and
-   outputs the number counts using the Hough transform.  
+   This is the main driver for the Hough transform routines. It takes as input 
+   a set of SFTs from possibly more than one IFO and outputs the number counts 
+   using the Hough transform.  For a single IFO, this should be essentially equivalent 
+   to DriveHough_v3.  
 
    \par User input
 
@@ -83,54 +84,48 @@
 
 #include "./DriveHoughColor.h"
 
-#ifdef TIMING
-#include "./timer/cycle_counter/Intel/GCC/cycle_counter.h"
-#endif
 
 RCSID( "$Id$");
 
 
-/* ***************************************************************
- * Constant Declarations.  Default parameters.
- *****************************************************************/
+
+/* globals, constants and defaults */
+
 
 extern int lalDebugLevel;
 
 /* boolean global variables for controlling output */
 BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps, uvar_printStats, uvar_printSigma;
 
-#define EARTHEPHEMERIS "./earth05-09.dat"
-#define SUNEPHEMERIS "./sun05-09.dat"   
+/* #define EARTHEPHEMERIS "./earth05-09.dat" */
+/* #define SUNEPHEMERIS "./sun05-09.dat"    */
 
-/* #define EARTHEPHEMERIS "./earth00-04.dat"  */
-/* #define SUNEPHEMERIS "./sun00-04.dat"   */
+#define EARTHEPHEMERIS "./earth00-04.dat"
+#define SUNEPHEMERIS "./sun00-04.dat"
 
-#define ACCURACY 0.00000001 /* of the velocity calculation -- irrelevant */
+#define MAXFILENAMELENGTH 512 /* maximum # of characters  of a filename */
 
-#define MAXFILES 3000 /* maximum number of files to read in a directory */
-#define MAXFILENAMELENGTH 256 /* maximum # of characters  of a SFT filename */
+#define SFTDIRECTORY "/local_data/badkri/fakesfts-multi" 
+/* #define SFTDIRECTORY "/nfs/morbo/geo600/hannover/sft/S4-LIGO/sft_1800.20050512.S4/S4-L1.1800-sft" */
 
-/* #define SFTDIRECTORY "/home/badkri/fakesfts"  */
-#define SFTDIRECTORY "/nfs/morbo/geo600/hannover/sft/S4-LIGO/sft_1800.20050512.S4/S4-L1.1800-sft"
-
-#define DIROUT "./outHM1/"      /* prefix file output */
-#define BASENAMEOUT "HM1"
+#define DIROUT "./outMulti"   /* output directory */
+#define BASENAMEOUT "HM"    /* prefix file output */
 
 #define THRESHOLD 1.6 /* thresold for peak selection, with respect to the
                               the averaged power in the search band */
 #define FALSEALARM 1.0e-9 /* Hough false alarm for candidate selection */
 #define SKYFILE "./sky1"      
-#define F0 255.0          /*  frequency to build the LUT and start search */
-#define FBAND 0.2          /* search frequency band  (in Hz) */
-#define NFSIZE  21 /* n-freq. span of the cylinder, to account for spin-down
-                          search */
+#define F0 205.0   /*  frequency to build the LUT and start search */
+#define FBAND 0.2   /* search frequency band  (in Hz) */
+#define NFSIZE  21   /* n-freq. span of the cylinder, to account for spin-down search */
 #define BLOCKSRNGMED 101 /* Running median window size */
 
 #define TRUE (1==1)
 #define FALSE (1==0)
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/* vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv------------------------------------ */
+
+/******************************************/
+
 int main(int argc, char *argv[]){
 
   /* LALStatus pointer */
@@ -142,10 +137,12 @@ int main(int argc, char *argv[]){
   /* detector */
   static LALDetector  *detector;
 
-  /* time and velocity vectors */
-  static LIGOTimeGPSVector   timeV;
+  /* time and velocity  */
+  static LIGOTimeGPSVector    timeV;
   static REAL8Cart3CoorVector velV;
-  static REAL8Vector         timeDiffV;
+  static REAL8Vector          timeDiffV;
+  LIGOTimeGPS firstTimeStamp, lastTimeStamp;
+  REAL8 tObs;
 
   /* standard pulsar sft types */ 
   MultiSFTVector *inputSFTs = NULL;
@@ -174,19 +171,19 @@ int main(int argc, char *argv[]){
   static HOUGHMapTotal   ht;   /* the total Hough map */
   static UINT4Vector     hist; /* histogram of number counts for a single map */
   static UINT4Vector     histTotal; /* number count histogram for all maps */
-  static HoughStats      stats;
+  static HoughStats      stats;  /* statistical information about a Hough map */
 
   /* skypatch info */
   REAL8  *skyAlpha, *skyDelta, *skySizeAlpha, *skySizeDelta; 
   INT4   nSkyPatches, skyCounter=0; 
 
   /* output filenames and filepointers */
-  CHAR   filehisto[256]; 
-  CHAR   filestats[256]; 
-  CHAR   fileEvents[256];
-  CHAR   fileTemplates[256];
-  CHAR   fileMaps[256];
-  CHAR   fileSigma[256];
+  CHAR   filehisto[ MAXFILENAMELENGTH ]; 
+  CHAR   filestats[ MAXFILENAMELENGTH ]; 
+  CHAR   fileEvents[ MAXFILENAMELENGTH ];
+  CHAR   fileTemplates[ MAXFILENAMELENGTH ];
+  CHAR   fileMaps[ MAXFILENAMELENGTH ];
+  CHAR   fileSigma[ MAXFILENAMELENGTH ];
   FILE   *fpTemplates = NULL;
   FILE   *fpEvents = NULL;
   FILE   *fp1 = NULL;
@@ -217,15 +214,6 @@ int main(int argc, char *argv[]){
   CHAR     *uvar_ifo=NULL;
 
 
-#ifdef TIMING
-  unsigned long long start, stop;
-#endif
-  
-#ifdef TIMING
-  start = realcc();
-#endif
-
-  
 
   /* Set up the default parameters */
   
@@ -246,25 +234,25 @@ int main(int argc, char *argv[]){
   uvar_printMaps = FALSE;
   uvar_printStats = FALSE;
   uvar_printSigma = FALSE;
-  uvar_earthEphemeris = (CHAR *)LALCalloc(512, sizeof(CHAR));
+  uvar_earthEphemeris = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_earthEphemeris,EARTHEPHEMERIS);
 
-  uvar_sunEphemeris = (CHAR *)LALCalloc(512, sizeof(CHAR));
+  uvar_sunEphemeris = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_sunEphemeris,SUNEPHEMERIS);
 
-  uvar_sftDir = (CHAR *)LALCalloc(512, sizeof(CHAR));
+  uvar_sftDir = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_sftDir,SFTDIRECTORY);
 
-  uvar_dirnameOut = (CHAR *)LALCalloc(512, sizeof(CHAR));
+  uvar_dirnameOut = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_dirnameOut,DIROUT);
 
-  uvar_fbasenameOut = (CHAR *)LALCalloc(512, sizeof(CHAR));
+  uvar_fbasenameOut = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_fbasenameOut,BASENAMEOUT);
 
-  uvar_skyfile = (CHAR *)LALCalloc(512, sizeof(CHAR));
+  uvar_skyfile = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_skyfile,SKYFILE);
 
-  uvar_ifo = (CHAR *)LALCalloc(512, sizeof(CHAR));
+  uvar_ifo = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
 
   /* register user input variables */
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",            'h', UVAR_HELP,     "Print this message",                  &uvar_help),            &status);  
@@ -380,7 +368,7 @@ int main(int argc, char *argv[]){
       constraints.detector = XLALGetChannelPrefix ( uvar_ifo );
 
     /* get sft catalog */
-    tempDir = (CHAR *)LALCalloc(512, sizeof(CHAR));
+    tempDir = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
     strcpy(tempDir, uvar_sftDir);
     strcat(tempDir, "/*SFT*.*");
     LAL_CALL( LALSFTdataFind( &status, &catalog, tempDir, &constraints), &status);
@@ -392,6 +380,11 @@ int main(int argc, char *argv[]){
     f0Bin = floor( uvar_f0 * timeBase + 0.5); /* initial search frequency */
     length =  uvar_fSearchBand * timeBase; /* total number of search bins - 1 */
     fLastBin = f0Bin + length;   /* final frequency bin to be analyzed */
+    
+    /* catalog is ordered in time so we can get start and end time */
+    firstTimeStamp = catalog->data[0].header.epoch;
+    lastTimeStamp = catalog->data[mObsCoh - 1].header.epoch;
+    tObs = XLALGPSDiff( &lastTimeStamp, &firstTimeStamp ) + timeBase;
 
     /* using value of length, allocate memory for most significant event nstar, fstar etc. */
     nStarEventVec.length = length + 1;
@@ -410,6 +403,11 @@ int main(int argc, char *argv[]){
     timeV.data = NULL;
     timeV.data = (LIGOTimeGPS *)LALCalloc( mObsCoh, sizeof(LIGOTimeGPS));
 
+    /* allocate memory for vector of time differences from start */
+    timeDiffV.length = mObsCoh;
+    timeDiffV.data = NULL; 
+    timeDiffV.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
+  
     /* add wings for Doppler modulation and running median block size*/
     doppWings = (uvar_f0 + uvar_fSearchBand) * VTOT;    
     fmin = uvar_f0 - doppWings - (uvar_blocksRngMed + uvar_nfSizeCylinder) * deltaF;
@@ -452,8 +450,6 @@ int main(int argc, char *argv[]){
     INT4 tmpLeap;
     UINT4 iIFO, iSFT, numsft, j;
     LALLeapSecFormatAndAcc lsfas = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
-    LIGOTimeGPS firstTimeStamp = inputSFTs->data[0]->data->epoch;
-
 
     /*  get ephemeris  */
     edat = (EphemerisData *)LALCalloc(1, sizeof(EphemerisData));
@@ -498,8 +494,13 @@ int main(int argc, char *argv[]){
 
     } /* loop over IFOs */
 
+    /* compute the time difference relative to startTime for all SFT */
+    for(j = 0; j < mObsCoh; j++)
+      timeDiffV.data[j] = XLALGPSDiff( &firstTimeStamp, timeV.data + j ) + 0.5*timeBase;
+    
+    
     LAL_CALL ( LALDestroyMultiNoiseWeights ( &status, &multweight), &status);
-
+    
   }
 
 
@@ -553,27 +554,6 @@ int main(int argc, char *argv[]){
 
 
 
-  /* compute the time difference relative to startTime for all SFT */
-  timeDiffV.length = mObsCoh;
-  timeDiffV.data = NULL; 
-  timeDiffV.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
-
-  {
-    REAL8   t0, ts, tn, midTimeBase;
-    UINT4   j; 
-
-    midTimeBase=0.5*timeBase;
-    ts = timeV.data[0].gpsSeconds;
-    tn = timeV.data[0].gpsNanoSeconds * 1.00E-9;
-    t0 = ts + tn;
-    timeDiffV.data[0] = midTimeBase;
-
-    for(j=1; j < mObsCoh; ++j){
-      ts = timeV.data[j].gpsSeconds;
-      tn = timeV.data[j].gpsNanoSeconds * 1.00E-9;  
-      timeDiffV.data[j] = ts + tn - t0 + midTimeBase; 
-    }  
-  }
 
 
   /* if we want to print expected sigma for each skypatch */
@@ -615,6 +595,7 @@ int main(int argc, char *argv[]){
 	/* get the amplitude modulation coefficients */
 	skypos.longitude = alpha;
 	skypos.latitude = delta;
+	skypos.system = COORDINATESYSTEM_EQUATORIAL;
 	LAL_CALL ( LALGetMultiAMCoeffs ( &status, &multiAMcoef, mdetStates, skypos), &status);
 
 	/* loop over the weights and multiply them by the appropriate
@@ -804,7 +785,7 @@ int main(int argc, char *argv[]){
       
       /* ***** for spin-down case ****/
       nSpin1Max = floor(uvar_nfSizeCylinder/2.0);
-      f1jump = 1./timeDiffV.data[mObsCoh- 1];
+      f1jump = 1./tObs;
       
 
       /* start of main loop over search frequency bins */
@@ -890,7 +871,7 @@ int main(int argc, char *argv[]){
 
 	/*  Search frequency interval possible using the same LUTs */
 	fBinSearch = fBin;
-	fBinSearchMax= fBin + parSize.nFreqValid - 1 - floor( (uvar_nfSizeCylinder - 1)/2.);
+	fBinSearchMax = fBin + parSize.nFreqValid - 1 - floor( (uvar_nfSizeCylinder - 1)/2.0);
 	
 
 	/* Study all possible frequencies with one set of LUT */	
@@ -909,14 +890,15 @@ int main(int argc, char *argv[]){
 	    ht.spinRes.data = NULL;
 	    ht.spinRes.data = (REAL8 *)LALCalloc(ht.spinRes.length, sizeof(REAL8));
 	    
-	    for( n=0; n<= nSpin1Max; ++n){ 
+	    for ( n = 0; n <= nSpin1Max; ++n) { 
 	      /*loop over all spindown values */
 
-	      f1dis = - n*f1jump;
-	      ht.spinRes.data[0] =  f1dis*deltaF;
-	      
+	      f1dis = - n * f1jump;
+	      ht.spinRes.data[0] =  f1dis * deltaF;
+
+	      /* construct path in time-freq plane */	      
 	      for (j=0;j< mObsCoh;++j){
-		freqInd.data[j] = fBinSearch + floor(timeDiffV.data[j]*f1dis+0.5);
+		freqInd.data[j] = fBinSearch + floor(timeDiffV.data[j]*f1dis + 0.5);
 	      }
 	      
 	      if (uvar_weighAM || uvar_weighNoise) {
@@ -1034,12 +1016,6 @@ int main(int argc, char *argv[]){
       LALFree(freqInd.data);
       LALFree(hist.data);
       LALFree(histTotal.data);
-    
-      
-#ifdef TIMING
-      stop = realcc();
-      printf(" All: %llu\n", stop-start);
-#endif
   
     } /* finish loop over skypatches */
 
@@ -1102,7 +1078,7 @@ int main(int argc, char *argv[]){
 int PrintHistogram(UINT4Vector *hist, CHAR *fnameOut){
 
   FILE  *fp=NULL;   /* Output file */
-  char filename[256];
+  char filename[ MAXFILENAMELENGTH ];
   UINT4  i ;
  
   strcpy(  filename, fnameOut);
@@ -1131,7 +1107,7 @@ int PrintHistogram(UINT4Vector *hist, CHAR *fnameOut){
 int PrintHmap2file(HOUGHMapTotal *ht, CHAR *fnameOut, INT4 iHmap){
 
   FILE  *fp=NULL;   /* Output file */
-  char filename[256], filenumber[16]; 
+  char filename[ MAXFILENAMELENGTH ], filenumber[16]; 
   INT4  k, i ;
   UINT2 xSide, ySide;
    
@@ -1169,7 +1145,7 @@ int PrintHmap2file(HOUGHMapTotal *ht, CHAR *fnameOut, INT4 iHmap){
 int PrintHmap2m_file(HOUGHMapTotal *ht, CHAR *fnameOut, INT4 iHmap){
 
   FILE  *fp=NULL;   /* Output file */
-  char filename[256], filenumber[16]; 
+  char filename[ MAXFILENAMELENGTH ], filenumber[16]; 
   INT4  k, i ;
   UINT2 xSide, ySide;
   INT4 mObsCoh;
@@ -1292,7 +1268,7 @@ void PrintLogFile (LALStatus       *status,
   ATTATCHSTATUSPTR (status);
   
   /* open log file for writing */
-  fnameLog = (CHAR *)LALCalloc( 512, sizeof(CHAR));
+  fnameLog = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(fnameLog,dir);
   strcat(fnameLog, "/logfiles/");
   /* now create directory fdirOut/logfiles using mkdir */
@@ -1381,7 +1357,7 @@ void PrintnStarFile (LALStatus                   *status,
   ASSERT(basename, status, DRIVEHOUGHCOLOR_ENULL,DRIVEHOUGHCOLOR_MSGENULL); 
 
   /* create the directory for writing nstar */
-  filestar = (CHAR *)LALCalloc( 512, sizeof(CHAR));
+  filestar = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
   strcpy( filestar, dirname);
   strcat( filestar, "/nstarfiles/");
   errno = 0;
