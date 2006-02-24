@@ -1,37 +1,3 @@
-/* LALDemod variants put out of ComputeFStatistic.c for separate compilation
- * Authors see ComputeFStatistic.c
-                                                         Bernd Machenschalk */
-#include "ComputeFStatistic.h"
-
-RCSID( "$Id$");
-
-#if defined(USE_BOINC) && defined(_WIN32)
-#include "win_lib.h"
-#endif
-
-/* this is defined in C99 and *should* be in math.h.  Long term
-   protect this with a HAVE_FINITE */
-int finite(double);
-
-/* global variables defined in ComputeFStatistic.c */
-extern INT4 cfsRunNo;	   /**< CFS run-number: 0=run only once, 1=first run, 2=second run */
-extern UINT4 maxSFTindex;  /**< maximal sftindex, for error-checking */
-
-#define LD_SMALL        (1.0e-9 / LAL_TWOPI)
-#define OOTWOPI         (1.0 / LAL_TWOPI)
-#define LUT_RES         64      /* resolution of lookup-table */
-
-#define TWOPI_FLOAT     6.28318530717958f  /* 2*pi */
-#define OOTWOPI_FLOAT   (1.0f / TWOPI_FLOAT)	/* 1 / (2pi) */ 
-
-
-/* in special cases (macros) don't use the generic version of TestLALDemod() below, but the ones from external files */
-#if defined(USE_ALTIVEC)
-#include "CFSLALDemod_AltiVec.c"
-#elif defined(USE_EXP_LALDEMOD)
-#include "CFSLALDemod_Experimental.c"
-#else /* USE_R4LALDEMOD, USE_ALTIVEC */
-
 /* <lalVerbatim file="LALDemodCP"> */
 void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params) 
 /* </lalVerbatim> */
@@ -324,4 +290,3 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 
 }
 
-#endif /* USE_R4LALDEMOD, USE_ALTIVEC */
