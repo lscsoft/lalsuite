@@ -550,9 +550,6 @@ int main(int argc, char *argv[]){
 
 
 
-
-
-
   /* if we want to print expected sigma for each skypatch */
   if ( uvar_printSigma ) 
     {
