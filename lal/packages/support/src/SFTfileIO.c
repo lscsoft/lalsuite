@@ -1698,9 +1698,9 @@ has_valid_v2_crc64 ( FILE *fp )
 	}
       data_len -= toread;
 
-      /* swap endianness if necessary */
-      if ( need_swap ) endian_swap( block, sizeof(REAL4), BLOCKSIZE / 4 );
+      /* compute CRC64: don't endian-swap for that! */
       computed_crc = calc_crc64( (const CHAR*)block, toread, computed_crc );
+
     } /* while data */
      
   /* check that checksum is consistent */
@@ -2339,10 +2339,11 @@ read_sft_header_from_fp (FILE *fp, SFTtype  *header, UINT4 *version, UINT8 *crc6
 static int
 read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *header_crc64, UINT8 *ref_crc64, CHAR **comment, BOOLEAN swapEndian)
 {
-  UINT8 crc;
   _SFT_header_v2_t rawheader;
   long save_filepos;
   CHAR *comm = NULL;
+  UINT8 crc;
+
 
   /* check input-consistency */
   if ( !fp || !header || !nsamples || !comment )
@@ -2370,6 +2371,23 @@ read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *head
       goto failed;
     }
 
+  /* ----- compute CRC for the header:
+   * NOTE: the CRC checksum is computed on the *bytes*, not the numbers, 
+   * so this must be computed before any endian-swapping.
+   */
+  {
+    UINT8 save_crc = rawheader.crc64;
+    rawheader.crc64 = 0;
+
+    crc = calc_crc64((const CHAR*)&rawheader, sizeof(rawheader), ~(0ULL));
+
+    rawheader.crc64 = save_crc;
+    /* NOTE: we're not done with crc yet, because we also need to 
+     * include the comment's CRC , see below
+     */
+  }/* compute crc64 checksum */
+
+  /* ----- swap endian-ness if required ----- */
   if (swapEndian) 
     {
       endian_swap((CHAR*)(&rawheader.version), 			sizeof(rawheader.version) 		, 1);
@@ -2450,8 +2468,21 @@ read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *head
 	    if ( lalDebugLevel ) LALPrintError ("\nNon-NULL bytes found after comment-end!\n\n");
 	    goto failed;
 	  }
-	      
 
+      /* comment length including null terminator to string must be an
+       * integer multiple of eight bytes. comment==NULL means 'no
+       * comment'  
+       */
+      if (comment) 
+	{
+	  CHAR pad[] = {0, 0, 0, 0, 0, 0, 0};	/* for comment-padding */
+	  UINT4 comment_len = strlen(comm) + 1;
+	  UINT4 pad_len = (8 - (comment_len % 8)) % 8;
+	  
+	  crc = calc_crc64((const CHAR*)comm, comment_len, crc);
+	  crc = calc_crc64((const CHAR*)pad, pad_len, crc);
+	}
+	      
     } /* if comment_length > 0 */
 
   /*  ok: */
@@ -2470,29 +2501,8 @@ read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *head
   (*nsamples) = rawheader.nsamples;
   (*ref_crc64) = rawheader.crc64;
   (*comment) = comm;
-
-  /* ----- compute CRC for the header */
-  {
-    CHAR pad[] = {0, 0, 0, 0, 0, 0, 0};	/* for comment-padding */
-
-    rawheader.crc64 = 0;
-
-    crc = calc_crc64((const CHAR*)&rawheader, sizeof(rawheader), ~(0ULL));
-
-    /* comment length including null terminator to string must be an
-     * integer multiple of eight bytes. comment==NULL means 'no
-     * comment'  
-     */
-    if (comment) 
-      {
-	UINT4 comment_len = strlen(comm) + 1;
-	UINT4 pad_len = (8 - (comment_len % 8)) % 8;
-
-	crc = calc_crc64((const CHAR*)comm, comment_len, crc);
-	crc = calc_crc64((const CHAR*)pad, pad_len, crc);
-      }
-  }
   (*header_crc64) = crc;
+
 
   return 0;
 
