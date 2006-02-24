@@ -608,6 +608,8 @@ LALWriteLIGOLwXMLTable (
       }
       break;
     case sim_inspiral_table:
+      {
+      int id = 0;
       while( tablePtr.simInspiralTable )
       {
         FIRST_TABLE_ROW
@@ -661,9 +663,11 @@ LALWriteLIGOLwXMLTable (
               tablePtr.simInspiralTable->eff_dist_l,
               tablePtr.simInspiralTable->eff_dist_g,
               tablePtr.simInspiralTable->eff_dist_t,
-              tablePtr.simInspiralTable->eff_dist_v
-                );
+              tablePtr.simInspiralTable->eff_dist_v,
+              id++
+              );
         tablePtr.simInspiralTable = tablePtr.simInspiralTable->next;
+        }
       }
       break;
     case sim_burst_table:
