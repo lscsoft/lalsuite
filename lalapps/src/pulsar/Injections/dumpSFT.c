@@ -66,6 +66,7 @@ RCSID ("$Id");
 
 /*---------- empty initializers ---------- */
 static const LALStatus empty_status;
+static const SFTConstraints empty_constraints;
 /*---------- Global variables ----------*/
 
 /* User variables */
@@ -86,7 +87,8 @@ int
 main(int argc, char *argv[]) 
 {
   LALStatus status = empty_status;	/* initialize status */
-  SFTConstraints *constraints = NULL;
+  SFTConstraints constraints = empty_constraints;
+  CHAR detector[2] = "??";	/* allow reading v1-SFTs without detector-info */
   SFTCatalog *catalog = NULL;
   SFTVector *sfts = NULL;
   UINT4 i;
@@ -108,7 +110,9 @@ main(int argc, char *argv[])
   if (uvar_help) 	/* help requested: we're done */
     exit (0);
 
-  LAL_CALL ( LALSFTdataFind (&status, &catalog, uvar_SFTfiles, constraints ), &status );
+
+  constraints.detector = detector;  /* set '??' detector-constraint, as we don't care about detector-info */
+  LAL_CALL ( LALSFTdataFind (&status, &catalog, uvar_SFTfiles, &constraints ), &status );
 
   if ( !catalog )
     {
