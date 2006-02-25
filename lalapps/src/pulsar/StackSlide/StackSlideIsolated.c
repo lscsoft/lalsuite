@@ -2143,8 +2143,8 @@ void EstimateStackSlidePower(LALStatus *status,
 
   REAL8 refFreq = params->f0SUM + ((REAL8)(params->nBinsPerSUM/2))*params->dfSUM; /* 12/06/04 gam */ /* 02/21/05 gam */
 
-  REAL4Vector *fPlus;
-  REAL4Vector *fCross;
+  REAL4Vector *fPlus2;  /* square of F_+ */
+  REAL4Vector *fCross2; /* square of F_+ */
   REAL4 nrmFactor = searchParams->threshold3;
   REAL4 Aplus = searchParams->threshold4/searchParams->blkRescaleFactor;
   REAL4 Across = searchParams->threshold5;
@@ -2156,14 +2156,14 @@ void EstimateStackSlidePower(LALStatus *status,
   ATTATCHSTATUSPTR(status);
 
   /* Compute F_+ and F_x at the midpoint time of each SFT */
-  fPlus=(REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
-  fPlus->data=(REAL4 *)LALMalloc(searchParams->numSTKs*sizeof(REAL4));
-  fCross=(REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
-  fCross->data=(REAL4 *)LALMalloc(searchParams->numSTKs*sizeof(REAL4));  
-  GetDetResponseTStampMidPts(status->statusPtr, fPlus, searchParams->timeStamps, searchParams->numSTKs, searchParams->tSTK,
+  fPlus2=(REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
+  fPlus2->data=(REAL4 *)LALMalloc(searchParams->numSTKs*sizeof(REAL4));
+  fCross2=(REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
+  fCross2->data=(REAL4 *)LALMalloc(searchParams->numSTKs*sizeof(REAL4));  
+  GetDetResponseTStampMidPts(status->statusPtr, fPlus2, searchParams->timeStamps, searchParams->numSTKs, searchParams->tSTK,
              cachedDetector, searchParams->skyPosData[iSky], searchParams->orientationAngle, COORDINATESYSTEM_EQUATORIAL, 1);
   CHECKSTATUSPTR (status);	     
-  GetDetResponseTStampMidPts(status->statusPtr, fCross, searchParams->timeStamps, searchParams->numSTKs, searchParams->tSTK,
+  GetDetResponseTStampMidPts(status->statusPtr, fCross2, searchParams->timeStamps, searchParams->numSTKs, searchParams->tSTK,
              cachedDetector, searchParams->skyPosData[iSky], searchParams->orientationAngle, COORDINATESYSTEM_EQUATORIAL, 0);
   CHECKSTATUSPTR (status);	     
 
@@ -2189,8 +2189,8 @@ void EstimateStackSlidePower(LALStatus *status,
             invSqrtSn = sqrt(searchParams->inverseMedians[k]->data[i+binoffset])/sqrt(nrmFactor);
 
             /* optimal signal to noise ratio, d2 */
-            d2 = ( (Aplus*searchParams->blkRescaleFactor*invSqrtSn)*(Aplus*searchParams->blkRescaleFactor*invSqrtSn)*fPlus->data[k]*fPlus->data[k] +
-                 (Across*searchParams->blkRescaleFactor*invSqrtSn)*(Across*searchParams->blkRescaleFactor*invSqrtSn)*fCross->data[k]*fCross->data[k] )*((REAL4)searchParams->tBLK);
+            d2 = ( (Aplus*searchParams->blkRescaleFactor*invSqrtSn)*(Aplus*searchParams->blkRescaleFactor*invSqrtSn)*fPlus2->data[k] +
+                 (Across*searchParams->blkRescaleFactor*invSqrtSn)*(Across*searchParams->blkRescaleFactor*invSqrtSn)*fCross2->data[k] )*((REAL4)searchParams->tBLK);
             /* include frequency mismatch factor if not basically equal to 1 */           
             if (piDeltaKappa > smallFactor) {
                 d2 *= ((REAL4)(sin(piDeltaKappa)*sin(piDeltaKappa)/(piDeltaKappa*piDeltaKappa)));
@@ -2200,10 +2200,10 @@ void EstimateStackSlidePower(LALStatus *status,
             if ((searchParams->debugOptionFlag & 2) > 0 ) {
                if (i == (iMinSTK + iMaxSTK)/2) {
                   if (k == 0) {
-                     fprintf(stdout,"\n   gpsSeconds     A_+         F_+       A_x        F_x      sqrt(Sn)  deltaKappa   d2   binoffset\n\n");
+                     fprintf(stdout,"\n   gpsSeconds     A_+        |F_+|      A_x       |F_x|     sqrt(Sn)  deltaKappa   d2   binoffset\n\n");
                      fflush(stdout);
                   }
-                  fprintf(stdout,"%12i %12.4e %8.4f %12.4e %8.4f %12.4e %8.4f %8.4f %5i\n",searchParams->timeStamps[k].gpsSeconds,Aplus,fPlus->data[k],Across,fCross->data[k],1.0/(searchParams->blkRescaleFactor*invSqrtSn),deltaKappa,d2,binoffset);
+                  fprintf(stdout,"%12i %12.4e %8.4f %12.4e %8.4f %12.4e %8.4f %8.4f %5i\n",searchParams->timeStamps[k].gpsSeconds,Aplus,sqrt(fPlus2->data[k]),Across,sqrt(fCross2->data[k]),1.0/(searchParams->blkRescaleFactor*invSqrtSn),deltaKappa,d2,binoffset);
                   fflush(stdout);
                }
             }
@@ -2229,10 +2229,10 @@ void EstimateStackSlidePower(LALStatus *status,
         SUMData[kSUM]->data->data[i] = 1.0 + 0.5*SUMData[kSUM]->data->data[i];
   }
 
-  LALFree(fPlus->data);
-  LALFree(fPlus);
-  LALFree(fCross->data);
-  LALFree(fCross);
+  LALFree(fPlus2->data);
+  LALFree(fPlus2);
+  LALFree(fCross2->data);
+  LALFree(fCross2);
 
   CHECKSTATUSPTR (status);
   DETATCHSTATUSPTR (status);
