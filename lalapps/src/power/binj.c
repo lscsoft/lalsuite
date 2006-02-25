@@ -606,6 +606,9 @@ int main( int argc, char *argv[] ){
 
   deltasim = maxsimnumber - minsimnumber;
 
+  /* fill the comment */
+  snprintf(proctable.processTable->comment, LIGOMETA_COMMENT_MAX, "%s", userTag);
+
   /* initialize random number generator */
   LAL_CALL( LALCreateRandomParams( &status, &randParams, rand_seed ), &status);
 
