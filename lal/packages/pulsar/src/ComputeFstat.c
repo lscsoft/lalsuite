@@ -65,6 +65,8 @@ static const LALStatus empty_status;
 static const Fcomponents empty_Fcomponents;
 
 /*---------- Global variables ----------*/
+#define NUM_FACT 6
+static const REAL8 inv_fact[NUM_FACT] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0), (1.0/24.0), (1.0/120.0) };
 
 /*---------- internal prototypes ----------*/
 int sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x); /* LUT-calculation of sin/cos */
@@ -249,11 +251,11 @@ XLALComputeFaFb ( Fcomponents *FaFb,
   UINT4 alpha;                 	/* loop index over SFTs */
   UINT4 spdnOrder;		/* maximal spindown-orders */
   UINT4 numSFTs;		/* number of SFTs (M in the Notes) */
-  UINT4 freqIndex0;		/* index of first frequency-bin in SFTs */
-  UINT4 freqIndex1;		/* index of last frequency-bin in SFTs */
   COMPLEX16 Fa, Fb;
   REAL8 f;		/* !! MUST be REAL8, or precision breaks down !! */
   REAL8 Tsft; 			/* length of SFTs in seconds */
+  INT4 freqIndex0;		/* index of first frequency-bin in SFTs */
+  INT4 freqIndex1;		/* index of last frequency-bin in SFTs */
 
   /* ----- check validity of input */
   if ( !FaFb ) {
@@ -269,6 +271,13 @@ XLALComputeFaFb ( Fcomponents *FaFb,
   if ( !fkdot || !tSSB || !tSSB->DeltaT || !tSSB->Tdot || !amcoe || !amcoe->a || !amcoe->b )
     {
       LALPrintError ("\nIllegal NULL in input !\n\n");
+      XLAL_ERROR ( "XLALComputeFaFb", XLAL_EINVAL);
+    }
+
+  if ( fkdot->length >= NUM_FACT )
+    {
+      LALPrintError ("\nInverse factorials table only up to order s=%d, can't handle %d spin-order\n\n",
+		     NUM_FACT, fkdot->length );
       XLAL_ERROR ( "XLALComputeFaFb", XLAL_EINVAL);
     }
 
@@ -294,8 +303,8 @@ XLALComputeFaFb ( Fcomponents *FaFb,
       REAL4 a_alpha = amcoe->a->data[alpha];
       REAL4 b_alpha = amcoe->b->data[alpha];
 
-      UINT4 kstar;		/* central frequency-bin k* = round(xhat_alpha) */
-      UINT4 k0, k1;
+      INT4 kstar;		/* central frequency-bin k* = round(xhat_alpha) */
+      INT4 k0, k1;
 
       COMPLEX8 *Xalpha = sfts->data[alpha].data->data; /* pointer to current SFT-data */
       COMPLEX8 *Xalpha_l; 	/* pointer to frequency-bin k in current SFT */
@@ -312,19 +321,19 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 	UINT4 s; 		/* loop-index over spindown-order */
 	REAL8 DeltaT_alpha = tSSB->DeltaT->data[alpha];
 	REAL8 phi_alpha, Dphi_alpha;
-	REAL8 TasOfact;	/* temporary variable to calculate (DeltaT_alpha)^s/s! */
+	REAL8 Tas;	/* temporary variable to calculate (DeltaT_alpha)^s */
 	
 	/* init for s=0 */
-	phi_alpha = 0;
-	Dphi_alpha = 0;
-	TasOfact = 1;
+	phi_alpha = 0.0;
+	Dphi_alpha = 0.0;
+	Tas = 1.0;
 
 	for (s=0; s <= spdnOrder; s++)
 	  {
 	    REAL8 fsdot = fkdot->data[s];
-	    Dphi_alpha += fsdot * TasOfact; 	/* here: DT^s/s! */
-	    TasOfact *= DeltaT_alpha / (s+1.0);	/* now: DT^(s+1)/ (s+1)! */
-	    phi_alpha += fsdot * TasOfact;
+	    Dphi_alpha += fsdot * Tas * inv_fact[s]; 	/* here: DT^s/s! */
+	    Tas *= DeltaT_alpha;			/* now: DT^(s+1) */
+	    phi_alpha += fsdot * Tas * inv_fact[s+1];
 	  } /* for s <= spdnOrder */
 
 	/* Step 3: apply global factors to complete Dphi_alpha */
@@ -337,7 +346,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 	  XLAL_ERROR ( "XLALComputeFaFb", XLAL_EFUNC);
 	}
 
-	kstar = (UINT4) (Dphi_alpha + 0.5);	/* k* = round(Dphi_alpha) for positive Dphi */
+	kstar = (INT4) (Dphi_alpha + 0.5);	/* k* = round(Dphi_alpha) for positive Dphi */
 	remainder = (Dphi_alpha - kstar);
 	kappa_alpha = remainder + Dterms;
 
