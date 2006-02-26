@@ -382,10 +382,10 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 	 * plus use extra cleverness to compute the nominator efficiently...
 	 */
 	COMPLEX8 Xal = *Xalpha_l;
-	REAL8 Sn = Xal.re;
-	REAL8 Tn = Xal.im;
-	REAL8 pn = kappa_alpha;
-	REAL8 qn = pn;
+	REAL4 Sn = Xal.re;
+	REAL4 Tn = Xal.im;
+	REAL4 pn = kappa_alpha;
+	REAL4 qn = pn;
 	REAL4 U_alpha, V_alpha;
 	
 	/* recursion with 2*Dterms steps */
@@ -395,7 +395,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 	    Xalpha_l ++;
 	    Xal = *Xalpha_l;
 	    
-	    pn = pn - 1.0;			/* p_(n+1) */
+	    pn = pn - 1.0f;			/* p_(n+1) */
 	    Sn = pn * Sn + qn * Xal.re;		/* S_(n+1) */
 	    Tn = pn * Tn + qn * Xal.im;		/* T_(n+1) */
 	    qn *= pn;				/* q_(n+1) */
