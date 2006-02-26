@@ -68,6 +68,7 @@ static const Fcomponents empty_Fcomponents;
 
 /*---------- internal prototypes ----------*/
 int sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x); /* LUT-calculation of sin/cos */
+int sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x);
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -339,7 +340,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 	y_alpha -= 0.5 * xhat_alpha;
 	
 	/* real- and imaginary part of e^{-i 2 pi y } */
-	if ( sin_cos_LUT ( &imagQ, &realQ, - LAL_TWOPI * y_alpha ) ) {
+	if ( sin_cos_2PI_LUT ( &imagQ, &realQ, - y_alpha ) ) {
 	  XLAL_ERROR ( "XLALComputeFaFb", XLAL_EFUNC);
 	}
       }
@@ -355,7 +356,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,
        */
 
       /*-------------------- calculate sin(x), cos(x) */
-      sin_cos_LUT ( &sinx, &cosxm1, LAL_TWOPI * xhat_alpha );
+      sin_cos_2PI_LUT ( &sinx, &cosxm1, xhat_alpha );
       cosxm1 -= 1.0f; 
       /*-------------------- */
 
@@ -1271,30 +1272,34 @@ XLALEmptyComputeFBuffer ( ComputeFBuffer cfb )
 
 /** Calculate sin(x) and cos(x) to roughly 1e-7 precision using 
  * a lookup-table and Tayler-expansion.
- * This is meant to be fast, so we don't even check the input-pointers...
  *
- * However, for numerical sanity&safty, we *DO* check if the resulting
- * index is within bounds, which can fail in case the argument x is too large..
+ * NOTE: this function will fail for arguments larger than
+ * |x| > INT4_MAX = 2147483647 ~ 2e9 !
  *
  * return = 0: OK, nonzero=ERROR
  */
 int
 sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x)
 {
+  return sin_cos_2PI_LUT ( sinx, cosx, x * OOTWOPI );
+} /* sin_cos_LUT() */
+
 #define LUT_RES         64      /* resolution of lookup-table */
+#define LUT_RES_F	(1.0 * LUT_RES)
 #define OO_LUT_RES	(1.0 / LUT_RES)
 
-  UINT4 ind; 
-  REAL8 kappa, kappat;
+#define X_TO_IND	(1.0 * LUT_RES * OOTWOPI )
+#define IND_TO_X	(LAL_TWOPI * OO_LUT_RES)
+int
+sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
+{
+  REAL8 xt;
+  INT4 i0;
+  REAL8 d, d2;
+  REAL8 ts, tc;
 
   static BOOLEAN firstCall = TRUE;
   static REAL4 sinVal[LUT_RES+1], cosVal[LUT_RES+1];
-
-  /*
-  (*sinx) = sin(x);
-  (*cosx) = cos(x);
-  return 0;
-  */
 
   /* the first time we get called, we set up the lookup-table */
   if ( firstCall )
@@ -1308,30 +1313,28 @@ sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x)
       firstCall = FALSE;
     }
 
-  kappa = x * OOTWOPI;			/* x / 2pi */
-  kappat = kappa - (INT8)kappa;		/* lies in (-1, 1) */
-  if ( kappat < 0 )
-    kappat += 1.0;	/* equiv. adding 2pi to x ==> kappat lies in (0, 1) */
-
-  /* security check if we didn't overstretch the numerics here (can happen for x too large) */
-  if ( (kappat < 0) || (kappat > 1) )
+  xt = x - (INT4)x;		/* xt in (-1, 1) */
+  if ( xt < 0.0 )
+    xt += 1.0;			/* xt in [0, 1 ) */
+#ifndef LAL_NDEBUG
+  if ( xt < 0.0 || xt > 1.0 )
     {
-      LALPrintError ("\nLUT-index out of bounds. Input argument was probably too large!\n\n");
-      XLAL_ERROR ( "sin_cos_LUT", XLAL_EDOM);
+      LALPrintError("\nFailed numerica in sin_cos_2PI_LUT(): xt = %f not in [0,1)\n\n", xt );
+      return XLAL_FAILURE;
     }
-  
-  ind = (UINT4)( kappat * LUT_RES + 0.5 );   /* find closest LUT-entry */
-  {
-    REAL8 d = LAL_TWOPI * ( kappat - (REAL8)ind * OO_LUT_RES );
-    REAL8 d2 = 0.5 * d * d;
-    REAL8 ts = sinVal[ind];
-    REAL8 tc = cosVal[ind];
+#endif
+
+  i0 = (INT4)( xt * LUT_RES_F + 0.5 );	/* i0 in [0, LUT_RES ] */
+  d = d2 = LAL_TWOPI * (xt - OO_LUT_RES * i0);
+  d2 *= 0.5 * d;
+
+  ts = sinVal[i0];
+  tc = cosVal[i0];
    
-    /* use Taylor-expansions for sin/cos around LUT-points */
-    (*sinx) = ts + d * tc - d2 * ts;
-    (*cosx) = tc - d * ts - d2 * tc;
-  }
-  
+  /* use Taylor-expansions for sin/cos around LUT-points */
+  (*sin2pix) = ts + d * tc - d2 * ts;
+  (*cos2pix) = tc - d * ts - d2 * tc;
+
   return XLAL_SUCCESS;
-} /* sin_cos_LUT() */
+} /* sin_cos_2PI_LUT() */
 
