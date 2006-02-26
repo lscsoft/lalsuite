@@ -235,8 +235,6 @@ ComputeFStat ( LALStatus *status,
 } /* ComputeFStat() */
 
 
-
-
 /** Revamped version of LALDemod() (based on TestLALDemod() in CFS).
  * Compute JKS's Fa and Fb, which are ingredients for calculating the F-statistic.
  */
@@ -285,91 +283,82 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 
   f = fkdot->data[0];
 
-  Fa.re = 0.0;
-  Fa.im = 0.0;
-  Fb.re = 0.0;
-  Fb.im = 0.0;
-
+  Fa.re = 0.0f;
+  Fa.im = 0.0f;
+  Fb.re = 0.0f;
+  Fb.im = 0.0f;
 
   /* Loop over all SFTs  */
   for ( alpha = 0; alpha < numSFTs; alpha++ )
     {
-      REAL4 a = amcoe->a->data[alpha];
-      REAL4 b = amcoe->b->data[alpha];
+      REAL4 a_alpha = amcoe->a->data[alpha];
+      REAL4 b_alpha = amcoe->b->data[alpha];
 
-      REAL8 xhat_alpha, y_alpha;	/* xhat(alpha), y(alpha): need to be REAL8 !! */
-      REAL8 x0;
-      REAL4 x0_remainder;
-      UINT4 k;			/* loop index over frequency-bins */
       UINT4 kstar;		/* central frequency-bin k* = round(xhat_alpha) */
-
-      COMPLEX8 *Xalpha = sfts->data[alpha].data->data; /* pointer to current SFT-data */
-      COMPLEX8 *Xalpha_k; 	/* pointer to frequency-bin k in current SFT */
-      REAL4 sinx, cosxm1;	/* sin(x_alpha) and (cos(x_alpha)-1) */
-      REAL4 realXP, imagXP;	/* the sum_k X_alpha_k P_alpha_k */
-      REAL4 realQ, imagQ;	/* Re and Im of Q = e^{-i y} */
-      REAL4 realQXP, imagQXP;	/* Re/Im of Q_alpha XP_alpha */
       UINT4 k0, k1;
 
+      COMPLEX8 *Xalpha = sfts->data[alpha].data->data; /* pointer to current SFT-data */
+      COMPLEX8 *Xalpha_l; 	/* pointer to frequency-bin k in current SFT */
+      REAL4 s_alpha, c_alpha;	/* sin(2pi kappa_alpha) and (cos(2pi kappa_alpha)-1) */
+      REAL4 realQ, imagQ;	/* Re and Im of Q = e^{-i 2 pi lambda_alpha} */
+      REAL4 realXP, imagXP;	/* Re/Im of sum_k X_ak * P_ak */
+      REAL4 realQXP, imagQXP;	/* Re/Im of Q_alpha R_alpha */
 
-      /* ----- calculate x(alpha,0) and y(alpha) */
+      REAL8 lambda_alpha, kappa_alpha;
+      REAL8 remainder;
+
+      /* ----- calculate kappa_alpha and lambda_alpha */
       {
 	UINT4 s; 		/* loop-index over spindown-order */
-	REAL8 Tas; 		/* temporary variable to calculate (DeltaT_alpha)^2 */
-	UINT4 sfact = 1;	/* store for s! */
-	REAL8 DeltaTalpha = tSSB->DeltaT->data[alpha];
-	Tas = 1.0; 	/* DeltaT_alpha = T^1 */
+	REAL8 DeltaT_alpha = tSSB->DeltaT->data[alpha];
+	REAL8 phi_alpha, Dphi_alpha;
+	REAL8 TasOfact;	/* temporary variable to calculate (DeltaT_alpha)^s/s! */
+	
+	/* init for s=0 */
+	phi_alpha = 0;
+	Dphi_alpha = 0;
+	TasOfact = 1;
 
-	/* Step 1: s = 0 */
-	xhat_alpha = f * Tas;	/* f^{0) T^0 / 0! */
-	Tas *= DeltaTalpha;
-	y_alpha = f * Tas;	/* f^{0} T^1 / 1! */
-
-	/* Step 2: sum s >= 1 */
-	for (s=1; s <= spdnOrder; s++)
+	for (s=0; s <= spdnOrder; s++)
 	  {
 	    REAL8 fsdot = fkdot->data[s];
-	    xhat_alpha += fsdot * Tas / sfact; 	/* Tas = T^s here, sfact=s! */
-	    Tas *= DeltaTalpha; 		/* T^(s+1) */
-	    sfact *= (s+1);			/* (s+1)! */	  
-	    y_alpha += fsdot * Tas / sfact; 
+	    Dphi_alpha += fsdot * TasOfact; 	/* here: DT^s/s! */
+	    TasOfact *= DeltaT_alpha / (s+1.0);	/* now: DT^(s+1)/ (s+1)! */
+	    phi_alpha += fsdot * TasOfact;
 	  } /* for s <= spdnOrder */
 
-	/* Step 3: apply global factors and complete y_alpha */
-	xhat_alpha *= Tsft * tSSB->Tdot->data[alpha];	/* guaranteed > 0 ! */
-	y_alpha -= 0.5 * xhat_alpha;
+	/* Step 3: apply global factors to complete Dphi_alpha */
+	Dphi_alpha *= Tsft * tSSB->Tdot->data[alpha];	/* guaranteed > 0 ! */
+
+	lambda_alpha = phi_alpha - 0.5 * Dphi_alpha;
 	
-	/* real- and imaginary part of e^{-i 2 pi y } */
-	if ( sin_cos_2PI_LUT ( &imagQ, &realQ, - y_alpha ) ) {
+	/* real- and imaginary part of e^{-i 2 pi lambda_alpha } */
+	if ( sin_cos_2PI_LUT ( &imagQ, &realQ, - lambda_alpha ) ) {
 	  XLAL_ERROR ( "XLALComputeFaFb", XLAL_EFUNC);
 	}
-      }
-      /* ---------------------------------------- */
 
-      /* xhat_alpha determines the 'central' frequency-bin k* in the sum */
-      kstar = (UINT4) (xhat_alpha + 0.5);	/* k* = round(xhat_alpha) */
+	kstar = (UINT4) (Dphi_alpha + 0.5);	/* k* = round(Dphi_alpha) for positive Dphi */
+	remainder = (Dphi_alpha - kstar);
+	kappa_alpha = remainder + Dterms;
 
-      /* Trick: sin[ 2pi (xhat - k) ] = sin [ 2pi xhat ], therefore
+	k0 = kstar - Dterms;	
+	k1 = k0 + 2 * Dterms;
+	if ( (k0 < freqIndex0) || (k1 > freqIndex1) ) 
+	  {
+	    LALPrintError ("Required frequency-bins [%d, %d] not covered by SFT-interval [%d, %d]\n\n",
+			   k0, k1, freqIndex0, freqIndex1 );
+	    XLAL_ERROR("XLALComputeFaFb", XLAL_EDOM);
+	  }
+
+      } /* compute kappa_alpha, lambda_alpha */
+
+      /* NOTE: sin[ 2pi (Dphi_alpha - k) ] = sin [ 2pi Dphi_alpha ], therefore
        * the trig-functions need to be calculated only once!
-       * We choose the value sin[ 2pi(xhat - kstar) ] because it is the 
-       * smallest and will pose no numerical difficulties !
+       * We choose the value sin[ 2pi(Dphi_alpha - kstar) ] because it is the 
+       * closest to zero and will pose no numerical difficulties !
        */
-
-      /*-------------------- calculate sin(x), cos(x) */
-      sin_cos_2PI_LUT ( &sinx, &cosxm1, xhat_alpha );
-      cosxm1 -= 1.0f; 
-      /*-------------------- */
-
-      realXP = 0;
-      imagXP = 0;
-
-      k0 = kstar - Dterms;
-      k1 = k0 + 2 * Dterms;
-      if ( (k0 < freqIndex0) || (k1 > freqIndex1) ) {
-	LALPrintError ("Required frequency-bins [%d, %d] not covered by SFT-interval [%d, %d]\n\n",
-		       k0, k1, freqIndex0, freqIndex1 );
-	XLAL_ERROR("XLALComputeFaFb", XLAL_EDOM);
-      }
+      sin_cos_2PI_LUT ( &s_alpha, &c_alpha, remainder );
+      c_alpha -= 1.0f; 
 
       /* ---------- calculate the (truncated to Dterms) sum over k ---------- */
 
@@ -382,81 +371,53 @@ XLALComputeFaFb ( Fcomponents *FaFb,
        *------------------------------------------------------------
        */
 
-      Xalpha_k = Xalpha + k0 - freqIndex0;  /* first frequency-bin in sum */
-      x0 = (xhat_alpha - (REAL8)k0);	/* first xhat-value in the loop */
+      Xalpha_l = Xalpha + k0 - freqIndex0;  /* first frequency-bin in sum */
 
-      /* we branch now (instead of inside the central loop)
-       * depending on wether x0 can ever become SMALL in the loop or not, 
-       * because it requires special treatment in the Dirichlet kernel
-       * [We use that fact here that xhat_alpha > 0 ! (see above)] 
-       */
-      x0_remainder = (REAL4)( xhat_alpha - kstar );
-      if ( x0_remainder < LD_SMALL4 ) /* too close to an integer? */
-	{
-	  /* count down 2*Dterms values */
-	  for ( k = 2 * Dterms; k != 0;  k -- )
-	    {
-	      REAL4 realP, imagP;	/* real and imaginary parts of Dirichlet-kernel P_alpha_k */
-	      COMPLEX8 Xa = *Xalpha_k;
-	      REAL8 xinv;
-	      
-	      /* calculate Dirichlet-kernel: P_alpha_k */
-	      if( fabs(x0) <  LD_SMALL4 ) /* If x0 is small: correct x->0 limit : P_apha_k = 1 */
-		{
-		  realXP += Xa.re;
-		  imagXP += Xa.im;
-		} /* x0 too near zero */      
-	      else 	
-		{ /* safe to invert x0 */
-		  xinv = OOTWOPI / x0;
-		  realP = sinx * xinv;
-		  imagP = cosxm1 * xinv;
-		  
-		  /* calculate P_alpha_k * X_alpha_k */
-		  realXP += realP * Xa.re - imagP * Xa.im;
-		  imagXP += imagP * Xa.re + realP * Xa.im;
-		} /* x0 not near zero */
-	      
-	      Xalpha_k ++;	/* point to next frequency-bin */
-	      x0 -= 1.0 ;	/* x0-value for next iteration */
-	      
-	    } /* for k=kstar-Dterms to kstar+Dterms */
-	  
-	} /* if x could become close to 0 */
-      else
-	{ /* normal loop: no danger of x0 becoming zero.. */
-	  
-	  /* count down 2*Dterms values */
-	  for ( k = 2 * Dterms; k != 0;  k -- )
-	    {
-	      REAL4 realP, imagP;	/* real and imaginary parts of Dirichlet-kernel P_alpha_k */
-	      COMPLEX8 Xa = *Xalpha_k;
-	      REAL8 xinv = OOTWOPI / x0;
-	      
-	      /* calculate P_alpha_k */
-	      realP = sinx * xinv;
-	      imagP = cosxm1 * xinv;
-	      
-	      /* calculate P_alpha_k * X_alpha_k */
-	      realXP += realP * Xa.re - imagP * Xa.im;
-	      imagXP += imagP * Xa.re + realP * Xa.im;
-	      
-	      Xalpha_k ++;	/* point to next frequency-bin */
-	      x0 -= 1.0 ;	/* x0-value for next iteration */
-	      
-	    } /* for k=kstar-Dterms to kstar+Dterms */
-	  
-	} /* normal loop: no danger of x0 becoming zero */
+      realXP = 0;
+      imagXP = 0;
 
+      { 
+	/* improved hotloop algorithm by Fekete Akos: 
+	 * take out repeated divisions into a single common denominator,
+	 * plus use extra cleverness to compute the nominator efficiently...
+	 */
+	COMPLEX8 Xal = *Xalpha_l;
+	REAL8 Sn = Xal.re;
+	REAL8 Tn = Xal.im;
+	REAL8 pn = kappa_alpha;
+	REAL8 qn = pn;
+	REAL4 U_alpha, V_alpha;
+	
+	/* recursion with 2*Dterms steps */
+	UINT4 l;
+	for ( l = 1; l <= 2*Dterms; l ++ )
+	  {
+	    Xalpha_l ++;
+	    Xal = *Xalpha_l;
+	    
+	    pn = pn - 1.0;			/* p_(n+1) */
+	    Sn = pn * Sn + qn * Xal.re;		/* S_(n+1) */
+	    Tn = pn * Tn + qn * Xal.im;		/* T_(n+1) */
+	    qn *= pn;				/* q_(n+1) */
+	  } /* for l <= 2*Dterms */
+
+	U_alpha = Sn / qn;
+	V_alpha = Tn / qn;
+	
+	realXP = s_alpha * U_alpha - c_alpha * V_alpha;
+	imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
+	
+      } /* if remainder > SMALL */
+      
       realQXP = realQ * realXP - imagQ * imagXP;
       imagQXP = realQ * imagXP + imagQ * realXP;
       
       /* we're done: ==> combine these into Fa and Fb */
-      Fa.re += a * realQXP;
-      Fa.im += a * imagQXP;
+      Fa.re += a_alpha * realQXP;
+      Fa.im += a_alpha * imagQXP;
       
-      Fb.re += b * realQXP;
-      Fb.im += b * imagQXP;
+      Fb.re += b_alpha * realQXP;
+      Fb.im += b_alpha * imagQXP;
       
 #ifdef HAVE_ISFINITE
       if ( !isfinite(Fa.re) || !isfinite(Fa.im) || !isfinite(Fb.re) || !isfinite(Fb.im) )
@@ -466,17 +427,18 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 	  XLAL_ERROR("XLALComputeFaFb", XLAL_ERANGE);
 	}
 #endif
-
+      
     } /* for alpha < numSFTs */
       
   /* return result */
-  FaFb->Fa = Fa;
-  FaFb->Fb = Fb;
+  FaFb->Fa.re = Fa.re * OOTWOPI;
+  FaFb->Fa.im = Fa.im * OOTWOPI;
+  FaFb->Fb.re = Fb.re * OOTWOPI;
+  FaFb->Fb.im = Fb.im * OOTWOPI;
 
   return XLAL_SUCCESS;
 
 } /* XLALComputeFaFb() */
-
 
 /** Compute the 'amplitude coefficients' \f$a(t), b(t)\f$ as defined in 
  * \ref JKS98 for a series of timestamps.
