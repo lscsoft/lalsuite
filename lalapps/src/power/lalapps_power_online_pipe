@@ -546,8 +546,12 @@ def make_gsiscp_fragment(dag, parents, destination):
 
 def make_binj_fragment(dag, tag, seg, offset, flow, fhigh, fratio):
 	time_step = float(binjjob.get_opts()["time-step"])
+	start = seg[0] - seg[0] % time_step + time_step * offset
+	if start < seg[0]:
+		start += time_step
+
 	node = power.BurstInjNode(binjjob)
-	node.set_start(seg[0] - seg[0] % time_step + time_step * offset)
+	node.set_start(start)
 	node.set_end(seg[1])
 	node.set_name("lalapps_binj-%d-%d" % (int(node.get_start()), int(flow)))
 	node.set_user_tag(tag)
