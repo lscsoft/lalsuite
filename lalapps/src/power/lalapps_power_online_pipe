@@ -186,7 +186,7 @@ injection_steps = 2
 
 class PublishJob(pipeline.CondorDAGJob):
 	def __init__(self, out_dir):
-		pipeline.CondorDAGJob.__init__(self, "scheduler", "/bin/cp")
+		pipeline.CondorDAGJob.__init__(self, "vanilla", config_parser.get("condor", "publish"))
 		self.set_stdout_file(os.path.join(out_dir, "publish-$(cluster)-$(process).out"))
 		self.set_stderr_file(os.path.join(out_dir, "publish-$(cluster)-$(process).err"))
 		self.set_sub_file("publish.sub")
@@ -198,6 +198,12 @@ class PublishJob(pipeline.CondorDAGJob):
 
 
 class PublishNode(pipeline.CondorDAGNode):
+	def set_input(self, source):
+		self.add_file_arg(source)
+
+	def get_input(self):
+		return self.get_input_files()
+
 	def set_output(self, destination):
 		self.__output = destination
 		self.add_macro("macrodestination", destination)
@@ -481,7 +487,7 @@ def make_publish_fragment(dag, tag, parent, destination):
 	node = PublishNode(publishjob)
 	node.set_name("publish-%s" % tag)
 	node.add_parent(parent)
-	node.add_file_arg(parent.get_output())
+	node.set_input(parent.get_output())
 	node.set_output(destination)
 	dag.add_node(node)
 
@@ -593,8 +599,8 @@ def make_multibinj_fragment(dag, tag, seg):
 	for n in range(1, injection_steps):
 		binjnodes.append(make_binj_fragment(dag, tag, seg, float(n)/float(injection_steps), flow * fratio**(float(n)/float(injection_steps)), fhigh, fratio))
 
-	node = make_lladd_fragment(dag, binjnodes, seg, "INJECTIONS_%s" % tag)
-	node.set_output("HL-INJECTIONS_%s-%d-%d.xml" % (tag, int(seg[0]), int(seg.duration())))
+	node = make_lladd_fragment(dag, binjnodes, seg, tag)
+	node.set_output("HL-%s-%d-%d.xml" % (tag, int(seg[0]), int(seg.duration())))
 
 	return node
 
@@ -667,7 +673,7 @@ make_publish_fragment(dag, "POWER", darmpowerfrag, options.publish_dest)
 if options.dmtmon_dest:
 	make_burst2mon_fragment(dag, darmpowerfrag, jobsegs.extent(), options.user_tag)
 
-binjfrag = make_multibinj_fragment(dag, options.user_tag, injsegs.extent())
+binjfrag = make_multibinj_fragment(dag, "INJECTIONS_%s" % options.user_tag, injsegs.extent())
 tisifrag = make_tisi_fragment(dag, "INJECTIONS_%s" % options.user_tag)
 injpowerfrag = make_multipower_fragment(dag, [lscdatafindnode, binjfrag], [binjfrag, tisifrag], lscdatafindnode.get_output(), injsegs, "INJECTIONS_%s" % options.user_tag, injargs = {"burstinjection-file": binjfrag.get_output(), "calibration-cache": options.calibration_cache})
 binjfindfrag = make_binjfind_fragment(dag, injpowerfrag, "INJECTIONS_%s" % options.user_tag)
