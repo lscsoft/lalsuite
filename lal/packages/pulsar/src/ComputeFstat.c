@@ -434,9 +434,9 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 	  
 	} /* if |remainder| > LD_SMALL4 */
       else
-	{ /* otherwise: correct lim_{rem->0}P_alpha,k  = 2pi delta_{k,kstar} */
-	  realXP = TWOPI_FLOAT;
-	  imagXP = 0.0f;
+	{ /* otherwise: lim_{rem->0}P_alpha,k  = 2pi delta_{k,kstar} */
+	  realXP = TWOPI_FLOAT * Xalpha_l[Dterms].re;
+	  imagXP = TWOPI_FLOAT * Xalpha_l[Dterms].im;
 	} /* if |remainder| <= LD_SMALL4 */
       
       realQXP = realQ * realXP - imagQ * imagXP;
