@@ -463,7 +463,7 @@ int main(int argc, char *argv[]){
     LAL_CALL( LALNormalizeMultiSFTVect (&status, &multPSD, inputSFTs, uvar_blocksRngMed), &status);
    
     /* compute multi noise weights */
-    LAL_CALL ( LALComputeMultiNoiseWeights ( &status, &multweight, &dmpNormalization, multPSD), &status);
+    LAL_CALL ( LALComputeMultiNoiseWeights ( &status, &multweight, &dmpNormalization, multPSD, uvar_blocksRngMed), &status);
 
     /* we are now done with the psd */
     LAL_CALL ( LALDestroyMultiPSDVector  ( &status, &multPSD), &status);
