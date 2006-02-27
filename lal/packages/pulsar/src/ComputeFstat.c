@@ -252,12 +252,17 @@ XLALComputeFaFb ( Fcomponents *FaFb,
   UINT4 spdnOrder;		/* maximal spindown-orders */
   UINT4 numSFTs;		/* number of SFTs (M in the Notes) */
   COMPLEX16 Fa, Fb;
-  REAL8 f;		/* !! MUST be REAL8, or precision breaks down !! */
+  REAL8 f;			/* !! MUST be REAL8, or precision breaks down !! */
   REAL8 Tsft; 			/* length of SFTs in seconds */
   INT4 freqIndex0;		/* index of first frequency-bin in SFTs */
   INT4 freqIndex1;		/* index of last frequency-bin in SFTs */
 
+  REAL4 *a_al, *b_al;		/* pointer to alpha-arrays over a and b */
+  REAL8 *DeltaT_al, *Tdot_al;	/* pointer to alpha-arrays of SSB-timings */
+  SFTtype *SFT_al;		/* SFT alpha  */
+
   /* ----- check validity of input */
+#ifndef LAL_NDEBUG
   if ( !FaFb ) {
     LALPrintError ("\nOutput-pointer is NULL !\n\n");
     XLAL_ERROR ( "XLALComputeFaFb", XLAL_EINVAL);
@@ -280,6 +285,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 		     NUM_FACT, fkdot->length );
       XLAL_ERROR ( "XLALComputeFaFb", XLAL_EINVAL);
     }
+#endif
 
   /* ----- prepare convenience variables */
   numSFTs = sfts->length;
@@ -288,7 +294,10 @@ XLALComputeFaFb ( Fcomponents *FaFb,
   freqIndex0 = (UINT4) ( sfts->data[0].f0 / sfts->data[0].deltaF + 0.5); /* lowest freqency-index */
   freqIndex1 = freqIndex0 + sfts->data[0].data->length;
 
-  spdnOrder = fkdot->length - 1;
+  /* find highest non-zero spindown-entry */
+  for ( spdnOrder = fkdot->length - 1;  spdnOrder > 0 ; spdnOrder --  )
+    if ( fkdot->data[spdnOrder] )
+      break;
 
   f = fkdot->data[0];
 
@@ -297,16 +306,21 @@ XLALComputeFaFb ( Fcomponents *FaFb,
   Fb.re = 0.0f;
   Fb.im = 0.0f;
 
+  a_al = amcoe->a->data;	/* point to beginning of alpha-arrays */
+  b_al = amcoe->b->data;
+  DeltaT_al = tSSB->DeltaT->data;
+  Tdot_al = tSSB->Tdot->data;
+  SFT_al = sfts->data;
+
   /* Loop over all SFTs  */
   for ( alpha = 0; alpha < numSFTs; alpha++ )
     {
-      REAL4 a_alpha = amcoe->a->data[alpha];
-      REAL4 b_alpha = amcoe->b->data[alpha];
+      REAL4 a_alpha, b_alpha;
 
       INT4 kstar;		/* central frequency-bin k* = round(xhat_alpha) */
       INT4 k0, k1;
 
-      COMPLEX8 *Xalpha = sfts->data[alpha].data->data; /* pointer to current SFT-data */
+      COMPLEX8 *Xalpha = SFT_al->data->data; /* pointer to current SFT-data */
       COMPLEX8 *Xalpha_l; 	/* pointer to frequency-bin k in current SFT */
       REAL4 s_alpha, c_alpha;	/* sin(2pi kappa_alpha) and (cos(2pi kappa_alpha)-1) */
       REAL4 realQ, imagQ;	/* Re and Im of Q = e^{-i 2 pi lambda_alpha} */
@@ -319,25 +333,25 @@ XLALComputeFaFb ( Fcomponents *FaFb,
       /* ----- calculate kappa_alpha and lambda_alpha */
       {
 	UINT4 s; 		/* loop-index over spindown-order */
-	REAL8 DeltaT_alpha = tSSB->DeltaT->data[alpha];
-	REAL8 phi_alpha, Dphi_alpha;
+	REAL8 phi_alpha, Dphi_alpha, DT_al;
 	REAL8 Tas;	/* temporary variable to calculate (DeltaT_alpha)^s */
 	
 	/* init for s=0 */
 	phi_alpha = 0.0;
 	Dphi_alpha = 0.0;
-	Tas = 1.0;
+	DT_al = (*DeltaT_al);
+	Tas = 1.0;		/* DeltaT_alpha ^ 0 */
 
 	for (s=0; s <= spdnOrder; s++)
 	  {
 	    REAL8 fsdot = fkdot->data[s];
 	    Dphi_alpha += fsdot * Tas * inv_fact[s]; 	/* here: DT^s/s! */
-	    Tas *= DeltaT_alpha;			/* now: DT^(s+1) */
+	    Tas *= DT_al;				/* now: DT^(s+1) */
 	    phi_alpha += fsdot * Tas * inv_fact[s+1];
 	  } /* for s <= spdnOrder */
 
 	/* Step 3: apply global factors to complete Dphi_alpha */
-	Dphi_alpha *= Tsft * tSSB->Tdot->data[alpha];	/* guaranteed > 0 ! */
+	Dphi_alpha *= Tsft * (*Tdot_al);		/* guaranteed > 0 ! */
 
 	lambda_alpha = phi_alpha - 0.5 * Dphi_alpha;
 	
@@ -386,7 +400,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,
       imagXP = 0;
 
       /* if no danger of denominator -> 0 */
-      if ( (remainder < -LD_SMALL4) || ( remainder > LD_SMALL4 ) )	
+      if ( ( remainder > LD_SMALL4 ) || (remainder < -LD_SMALL4) )	
 	{ 
 	  /* improved hotloop algorithm by Fekete Akos: 
 	   * take out repeated divisions into a single common denominator,
@@ -429,12 +443,22 @@ XLALComputeFaFb ( Fcomponents *FaFb,
       imagQXP = realQ * imagXP + imagQ * realXP;
       
       /* we're done: ==> combine these into Fa and Fb */
+      a_alpha = (*a_al);
+      b_alpha = (*b_al);
+
       Fa.re += a_alpha * realQXP;
       Fa.im += a_alpha * imagQXP;
       
       Fb.re += b_alpha * realQXP;
       Fb.im += b_alpha * imagQXP;
-      
+
+      /* advance pointers over alpha */
+      a_al ++;
+      b_al ++;
+      DeltaT_al ++;
+      Tdot_al ++;
+      SFT_al ++;
+
     } /* for alpha < numSFTs */
       
   /* return result */
