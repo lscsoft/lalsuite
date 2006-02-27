@@ -957,7 +957,7 @@ void LALComputeNoiseWeights  (LALStatus        *status,
   /* loop over sfts and calculate weights */
   for (j=0; j<lengthVect; j++) {
     REAL8 sumMed = 0.0;
-    INT4 k;
+    UINT4 k;
 
     sft = sftVect->data + j;
 
@@ -988,7 +988,8 @@ void LALComputeNoiseWeights  (LALStatus        *status,
   DETATCHSTATUSPTR (status);
    /* normal exit */
   RETURN (status);
-}
+
+} /* LALComputeNoiseWeights() */
 
 
 /** Computes weight factors arising from MultiSFTs with different noise 
