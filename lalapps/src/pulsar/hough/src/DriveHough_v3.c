@@ -90,28 +90,27 @@
 RCSID( "$Id$");
 
 
-/* ***************************************************************
- * Constant Declarations.  Default parameters.
- *****************************************************************/
+
+/* globals, constants and defaults */
 
 extern int lalDebugLevel;
 
 /* boolean global variables for controlling output */
 BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps, uvar_printStats, uvar_printSigma;
 
-#define EARTHEPHEMERIS "./earth05-09.dat"
-#define SUNEPHEMERIS "./sun05-09.dat"   
+/* #define EARTHEPHEMERIS "./earth05-09.dat" */
+/* #define SUNEPHEMERIS "./sun05-09.dat"    */
 
-/* #define EARTHEPHEMERIS "./earth00-04.dat"  */
-/* #define SUNEPHEMERIS "./sun00-04.dat"   */
+#define EARTHEPHEMERIS "./earth00-04.dat"
+#define SUNEPHEMERIS "./sun00-04.dat"
 
 #define ACCURACY 0.00000001 /* of the velocity calculation -- irrelevant */
 
 #define MAXFILES 3000 /* maximum number of files to read in a directory */
 #define MAXFILENAMELENGTH 256 /* maximum # of characters  of a SFT filename */
 
-/* #define SFTDIRECTORY "/home/badkri/fakesfts"  */
-#define SFTDIRECTORY "/nfs/morbo/geo600/hannover/sft/S4-LIGO/sft_1800.20050512.S4/S4-L1.1800-sft"
+#define SFTDIRECTORY "/local_data/badkri/fakesfts-multi"
+/* #define SFTDIRECTORY "/nfs/morbo/geo600/hannover/sft/S4-LIGO/sft_1800.20050512.S4/S4-L1.1800-sft" */
 
 #define DIROUT "./outHM1/"      /* prefix file output */
 #define BASENAMEOUT "HM1"
@@ -120,17 +119,17 @@ BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps, uvar_printStats, 
                               the averaged power in the search band */
 #define FALSEALARM 1.0e-9 /* Hough false alarm for candidate selection */
 #define SKYFILE "./sky1"      
-#define F0 255.0          /*  frequency to build the LUT and start search */
+#define F0 205.0          /*  frequency to build the LUT and start search */
 #define FBAND 0.2          /* search frequency band  (in Hz) */
-#define NFSIZE  21 /* n-freq. span of the cylinder, to account for spin-down
-                          search */
+#define NFSIZE  21 /* n-freq. span of the cylinder, to account for spin-down search */
 #define BLOCKSRNGMED 101 /* Running median window size */
 
 #define TRUE (1==1)
 #define FALSE (1==0)
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/* vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv------------------------------------ */
+
+/***********************************************/
+
 int main(int argc, char *argv[]){
 
   /* LALStatus pointer */
@@ -228,8 +227,8 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
   
   uvar_help = FALSE;
-  uvar_weighAM = TRUE;
-  uvar_weighNoise = TRUE;
+  uvar_weighAM = FALSE;
+  uvar_weighNoise = FALSE;
   uvar_blocksRngMed = BLOCKSRNGMED;
   uvar_nfSizeCylinder = NFSIZE;
   uvar_f0 = F0;
@@ -377,6 +376,12 @@ int main(int argc, char *argv[]){
     strcpy(tempDir, uvar_sftDir);
     strcat(tempDir, "/*SFT*.*");
     LAL_CALL( LALSFTdataFind( &status, &catalog, tempDir, &constraints), &status);
+
+    /* exit if catalog has multi ifos and no detector constraint has been set */
+    if ( ( XLALCountIFOsInCatalog(catalog) > 1) && !(LALUserVarWasSet( &uvar_ifo ))) {
+      fprintf(stderr, "sft catalog contains more than one ifo and no ifo has been specified...exiting\n");
+      exit(1);
+    }
 
     /* set detector */
     detector = XLALGetSiteInfo ( catalog->data[0].header.name );
