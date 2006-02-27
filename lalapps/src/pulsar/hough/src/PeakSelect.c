@@ -395,7 +395,7 @@ void LALSelectPeakColorNoise(LALStatus  *status,
 /* *******************************  <lalVerbatim file="PeakSelectD"> */
 void SFTtoUCHARPeakGram(LALStatus        *status,
 			UCHARPeakGram    *pg,
-			const SFTtype          *sft,   
+			const SFTtype    *sft,   
 			REAL8            thr)
 { /*   *********************************************  </lalVerbatim> */ 
   
@@ -405,7 +405,7 @@ void SFTtoUCHARPeakGram(LALStatus        *status,
   REAL8FrequencySeries periodo;
 
   /* --------------------------------------------- */
-  INITSTATUS (status, "LALSelectPeakColorNoise", PEAKSELECTC);
+  INITSTATUS (status, "SFTtoUCHARPeakGram", PEAKSELECTC);
   ATTATCHSTATUSPTR (status);
   
   /*   Make sure the arguments are not NULL: */
