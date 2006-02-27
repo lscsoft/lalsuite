@@ -994,10 +994,11 @@ void LALComputeNoiseWeights  (LALStatus        *status,
 
 /** Computes weight factors arising from MultiSFTs with different noise 
     floors -- it multiplies an existing weight vector */
-void LALComputeMultiNoiseWeights  (LALStatus         *status, 
-				   MultiNoiseWeights **out,
-				   REAL8             *normalization,
-				   const MultiPSDVector    *multipsd) 
+void LALComputeMultiNoiseWeights  (LALStatus             *status, 
+				   MultiNoiseWeights     **out,
+				   REAL8                 *normalization,
+				   const MultiPSDVector  *multipsd,
+				   UINT4                 blocksRngMed) 
 {
   REAL8 Sn=0.0, sumSn=0.0;
   INT4 i, k, j, numifos, numsfts, lengthsft, numsftsTot;
@@ -1042,12 +1043,16 @@ void LALComputeMultiNoiseWeights  (LALStatus         *status,
       for ( j = 0; j < numsfts; j++) 
 	{
 	  REAL8FrequencySeries *psd;
-
+	  UINT4 halfBlock = blocksRngMed/2;
 	  
 	  psd = multipsd->data[k]->data + j;
 	  
 	  lengthsft = psd->data->length;
-	  for ( Sn = 0.0, i = 0; i < lengthsft; i++)
+	  if ( lengthsft > blocksRngMed ) {
+	    ABORT ( status, SFTUTILS_EINPUT, SFTUTILS_MSGEINPUT);
+	  }
+
+	  for ( Sn = 0.0, i = halfBlock; i < lengthsft - halfBlock; i++)
 	    Sn += psd->data->data[i]/lengthsft;
 
 	  sumSn += Sn; /* sumSn is just a normalization factor */
