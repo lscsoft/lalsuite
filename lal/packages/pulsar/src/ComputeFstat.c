@@ -39,7 +39,7 @@ NRCSID( COMPUTEFSTATC, "$Id$");
 #define FALSE (1==0)
 
 
-#define LD_SMALL4       (1.0e-6)		/**< "small" number for REAL4*/
+#define LD_SMALL4       (1.0e-9)		/**< "small" number for REAL4*/
 #define OOTWOPI         (1.0 / LAL_TWOPI)	/**< 1/2pi */
 
 #define TWOPI_FLOAT     6.28318530717958f  	/**< single-precision 2*pi */
@@ -347,7 +347,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 	}
 
 	kstar = (INT4) (Dphi_alpha + 0.5);	/* k* = round(Dphi_alpha) for positive Dphi */
-	remainder = (Dphi_alpha - kstar);
+	remainder = (Dphi_alpha - kstar);	/* rem(Dphi_alpha) */
 	kappa_alpha = remainder + Dterms;
 
 	k0 = kstar - Dterms;	
@@ -385,38 +385,45 @@ XLALComputeFaFb ( Fcomponents *FaFb,
       realXP = 0;
       imagXP = 0;
 
-      { 
-	/* improved hotloop algorithm by Fekete Akos: 
-	 * take out repeated divisions into a single common denominator,
-	 * plus use extra cleverness to compute the nominator efficiently...
-	 */
-	COMPLEX8 Xal = *Xalpha_l;
-	REAL4 Sn = Xal.re;
-	REAL4 Tn = Xal.im;
-	REAL4 pn = kappa_alpha;
-	REAL4 qn = pn;
-	REAL4 U_alpha, V_alpha;
-	
-	/* recursion with 2*Dterms steps */
-	UINT4 l;
-	for ( l = 1; l <= 2*Dterms; l ++ )
-	  {
-	    Xalpha_l ++;
-	    Xal = *Xalpha_l;
-	    
-	    pn = pn - 1.0f;			/* p_(n+1) */
-	    Sn = pn * Sn + qn * Xal.re;		/* S_(n+1) */
-	    Tn = pn * Tn + qn * Xal.im;		/* T_(n+1) */
-	    qn *= pn;				/* q_(n+1) */
-	  } /* for l <= 2*Dterms */
-
-	U_alpha = Sn / qn;
-	V_alpha = Tn / qn;
-	
-	realXP = s_alpha * U_alpha - c_alpha * V_alpha;
-	imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
-	
-      } /* if remainder > SMALL */
+      /* if no danger of denominator -> 0 */
+      if ( (remainder < -LD_SMALL4) || ( remainder > LD_SMALL4 ) )	
+	{ 
+	  /* improved hotloop algorithm by Fekete Akos: 
+	   * take out repeated divisions into a single common denominator,
+	   * plus use extra cleverness to compute the nominator efficiently...
+	   */
+	  COMPLEX8 Xal = *Xalpha_l;
+	  REAL4 Sn = Xal.re;
+	  REAL4 Tn = Xal.im;
+	  REAL4 pn = kappa_alpha;
+	  REAL4 qn = pn;
+	  REAL4 U_alpha, V_alpha;
+	  
+	  /* recursion with 2*Dterms steps */
+	  UINT4 l;
+	  for ( l = 1; l <= 2*Dterms; l ++ )
+	    {
+	      Xalpha_l ++;
+	      Xal = *Xalpha_l;
+	      
+	      pn = pn - 1.0f;			/* p_(n+1) */
+	      Sn = pn * Sn + qn * Xal.re;	/* S_(n+1) */
+	      Tn = pn * Tn + qn * Xal.im;	/* T_(n+1) */
+	      qn *= pn;				/* q_(n+1) */
+	    } /* for l <= 2*Dterms */
+	  
+	  U_alpha = Sn / qn;
+	  V_alpha = Tn / qn;
+	  
+	  realXP = s_alpha * U_alpha - c_alpha * V_alpha;
+	  imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
+	  
+	} /* if |remainder| > LD_SMALL4 */
+      else
+	{ /* otherwise: correct lim_{rem->0}P_alpha,k  = 2pi delta_{k,kstar} */
+	  realXP = TWOPI_FLOAT;
+	  imagXP = 0.0f;
+	} /* if |remainder| <= LD_SMALL4 */
       
       realQXP = realQ * realXP - imagQ * imagXP;
       imagQXP = realQ * imagXP + imagQ * realXP;
@@ -427,15 +434,6 @@ XLALComputeFaFb ( Fcomponents *FaFb,
       
       Fb.re += b_alpha * realQXP;
       Fb.im += b_alpha * imagQXP;
-      
-#ifdef HAVE_ISFINITE
-      if ( !isfinite(Fa.re) || !isfinite(Fa.im) || !isfinite(Fb.re) || !isfinite(Fb.im) )
-	{
-	  LALPrintError("\nnon-normal number encountered in SFT-loop alpha=%d!\n", alpha );
-	  LALPrintError("Fa = %f + i %f, Fb = %f + i %f\n\n", Fa.re, Fa.im, Fb.re, Fb.im );
-	  XLAL_ERROR("XLALComputeFaFb", XLAL_ERANGE);
-	}
-#endif
       
     } /* for alpha < numSFTs */
       
