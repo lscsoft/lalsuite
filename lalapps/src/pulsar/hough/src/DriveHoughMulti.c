@@ -218,8 +218,8 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
   
   uvar_help = FALSE;
-  uvar_weighAM = TRUE;
-  uvar_weighNoise = TRUE;
+  uvar_weighAM = FALSE;
+  uvar_weighNoise = FALSE;
   uvar_blocksRngMed = BLOCKSRNGMED;
   uvar_nfSizeCylinder = NFSIZE;
   uvar_f0 = F0;
@@ -381,7 +381,9 @@ int main(int argc, char *argv[]){
     /* catalog is ordered in time so we can get start and end time */
     firstTimeStamp = catalog->data[0].header.epoch;
     lastTimeStamp = catalog->data[mObsCoh - 1].header.epoch;
-    tObs = XLALGPSDiff( &lastTimeStamp, &firstTimeStamp ) + timeBase;
+    /* set tobs -- it is 0.4 * timebase instead of the more natural timebase
+       just to agree with DriveHough_v3 */
+    tObs = XLALGPSDiff( &lastTimeStamp, &firstTimeStamp ) + 0.5*timeBase;
 
     /* using value of length, allocate memory for most significant event nstar, fstar etc. */
     nStarEventVec.length = length + 1;
@@ -493,9 +495,8 @@ int main(int argc, char *argv[]){
 
     /* compute the time difference relative to startTime for all SFT */
     for(j = 0; j < mObsCoh; j++)
-      timeDiffV.data[j] = XLALGPSDiff( &firstTimeStamp, timeV.data + j ) + 0.5*timeBase;
-    
-    
+      timeDiffV.data[j] = XLALGPSDiff( timeV.data + j, &firstTimeStamp );
+        
     LAL_CALL ( LALDestroyMultiNoiseWeights ( &status, &multweight), &status);
     
   }
