@@ -2,7 +2,9 @@
  * 
  * File Name: binj.c
  *
- * Author: Brady, P. R., Brown, D. A., Crieghton, J. D. E. and Ray Majumder S
+ * Author: Brady, P. R., Brown, D. A., Crieghton, J. D. E., Ray Majumder S.,
+ * and Cannon, K. C.
+ *
  * 
  * Revision: $Id$
  * 
@@ -104,120 +106,6 @@ ProcessParamsTable *next_process_param(const char *name, const char *type, const
 	return pp;
 }
 
-const int randm = 2147483647;
-struct {
-	int i;
-	int y;
-	int v[32];
-} randpar;
-
-
-/*
- *
- * Random number generators based on Numerical Recipes.
- *
- */
-
-
-int basic_random(int i)
-{
-	const int a = 16807;
-	const int q = 127773;
-	const int r = 2836;
-	int k;
-	k = i / q;
-	i = a * (i - k * q) - r * k;
-	if(i < 0)
-		i += randm;
-	return i;
-}
-
-void seed_random(int seed)
-{
-	int n;
-	while(seed == 0)
-		seed = time(NULL);
-
-	seed = abs(seed);
-	randpar.i = seed;
-	for(n = 0; n < 8; ++n)
-		randpar.i = basic_random(randpar.i);
-	for(n = 0; n < (int) (sizeof(randpar.v) / sizeof(*randpar.v)); ++n)
-		randpar.v[n] = randpar.i = basic_random(randpar.i);
-	randpar.y = randpar.v[0];
-	return;
-}
-
-int my_random(void)
-{
-	int ans;
-	int ndiv;
-	int n;
-
-	ndiv = 1 + (randm - 1) / (sizeof(randpar.v) / sizeof(*randpar.v));
-	n = randpar.y / ndiv;
-	ans = randpar.y = randpar.v[n];
-	randpar.v[n] = randpar.i = basic_random(randpar.i);
-
-	return ans;
-}
-
-double my_urandom(void)
-{
-	double u;
-	int i;
-	i = my_random();
-	u = (double) (i) / (double) (randm + 1.0);
-	return u;
-}
-
-
-/* 
- *
- * computes Greenwich mean sidereal time in radians (2pi rad per day) 
- *
- */
-
-
-double greenwich_mean_sidereal_time(int gpssec, int gpsnan, int taiutc)
-{
-	/* cf. S. Aoki et al., A&A 105, 359 (1982) eqs. 13 & 19 */
-	/* also cf. http://aa.usno.navy.mil */
-	/* Note: 00h UT 01 Jan 2000 has JD=2451544.5 and GPS=630720013 */
-	const double JD_12h_01_Jan_2000 = 2451545.0;
-	const double JD_00h_01_Jan_2000 = 2451544.5;
-	const double GPS_00h_01_Jan_2000 = 630720013;
-	const double TAIUTC_00h_01_Jan_2000 = 32;	/* leap seconds: TAI - UTC */
-
-	double t;
-	double dpU;
-	double TpU;
-	double gmst;
-
-	/* compute number of seconds since 00h UT 01 Jan 2000 */
-	t = gpssec - GPS_00h_01_Jan_2000;
-	t += 1e-9 * gpsnan;
-	t += taiutc - TAIUTC_00h_01_Jan_2000;
-
-	/* compute number of days since 12h UT 01 Jan 2000 */
-	dpU = floor(t / (24.0 * 3600.0));	/* full days since 0h UT 01 Jan 2000 */
-	dpU += JD_00h_01_Jan_2000 - JD_12h_01_Jan_2000;	/* i.e., -0.5 */
-
-	/* compute number of centuries since 12h UT 31 Dec 1899 */
-	TpU = dpU / 36525.0;
-
-	/* compute the gmst at 0h of the current day */
-	gmst = 24110.54841 + TpU * (8640184.812866 + TpU * (0.093104 - TpU * 6.2e-6));	/* seconds */
-
-	/* add the sidereal time since the start of the day */
-	t = fmod(t, 24.0 * 3600.0);	/* seconds since start of day */
-	gmst += t * 1.002737909350795;	/* corrections omitted */
-
-	/* convert to fractions of a day and to radians */
-	gmst = fmod(gmst / (24.0 * 3600.0), 1.0);	/* fraction of day */
-	gmst *= 2.0 * LAL_PI;	/* radians */
-	return gmst;
-}
 
 /* output format for LIGO-TAMA simulations */
 int ligo_tama_output(FILE * fpout, SimBurstTable * simBursts)
@@ -620,10 +508,6 @@ int main(int argc, char *argv[])
 	}
 
 	while(1) {
-		long tsec;
-		long tnan;
-		double gmst;
-
 		/* compute tau if quality was specified */
 		if(use_quality)
 			tau = quality / (sqrt(2.0) * LAL_PI * freq);
@@ -645,14 +529,10 @@ int main(int argc, char *argv[])
 		++ninj;
 
 		/* GPS time of burst */
-		tsec = this_sim_burst->geocent_peak_time.gpsSeconds = (long) (tinj / 1000000000LL);
-		tnan = this_sim_burst->geocent_peak_time.gpsNanoSeconds = (long) (tinj % 1000000000LL);
-
-		/* get gmst (radians) */
-		gmst = greenwich_mean_sidereal_time(tsec, tnan, 32);
+		XLALINT8NSToGPS(&this_sim_burst->geocent_peak_time, tinj);
 
 		/* save gmst (hours) in sim_burst table */
-		this_sim_burst->peak_time_gmst = gmst * 12.0 / LAL_PI;
+		this_sim_burst->peak_time_gmst = XLALGreenwichMeanSiderealTime(&this_sim_burst->geocent_peak_time) * 12.0 / LAL_PI;
 
 		/* populate the sim burst table */
 		memcpy(this_sim_burst->waveform, waveform, sizeof(CHAR) * LIGOMETA_WAVEFORM_MAX);
