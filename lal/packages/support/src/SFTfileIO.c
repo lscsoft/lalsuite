@@ -1003,6 +1003,65 @@ LALWriteSFT2file (LALStatus *status,
 } /* WriteSFTtoFile() */
 
 
+
+/** Write the given *v2-normalized* (i.e. dt x DFT) SFTVector to a directory. 
+ *  Add the comment to SFT if comment != NULL.
+ *
+ * NOTE: Currently this only supports writing v2-SFTs.
+ * If you need to write a v1-SFT, you should use LALWriteSFTfile() 
+ */
+void
+LALWriteSFTVector2Dir (LALStatus *status,
+		       const SFTVector *sftVect,	/**< SFT vector to write to disk */
+		       const CHAR *basename,		/**< base filename (including directory path)*/
+		       const CHAR *comment)		/**< optional comment (for v2 only) */
+{
+  UINT4 length, k;
+  CHAR *filename = NULL;
+  CHAR *filenumber = NULL;
+
+  INITSTATUS (status, "LALWriteSFTVector2Dir", SFTFILEIOC);
+  ATTATCHSTATUSPTR (status);   
+
+  ASSERT (sftVect, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL);
+  ASSERT (sftVect->data, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL);
+  ASSERT (sftVect->length > 0, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
+  ASSERT (basename, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL);
+
+  length = sftVect->length;
+
+  if ( (filename = (CHAR *)LALCalloc( 512, sizeof(CHAR))) == NULL) {
+    ABORT( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM);
+  }
+
+  if ( (filenumber = (CHAR *)LALCalloc( 16, sizeof(CHAR))) == NULL) {
+    ABORT( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM);
+  }
+
+  for ( k = 0; k < length; k++) {
+
+    /* create the k^th filename */
+    sprintf( filenumber, "06d", k);    
+    strcpy( filename, basename);
+    strcat( filename, ".");
+    strcat( filename, filenumber);
+
+    /* write the k^th sft */
+    TRY ( LALWriteSFT2file ( status->statusPtr, sftVect->data + k, filename, comment), status);
+  }
+
+  LALFree(filenumber);
+  LALFree(filename);
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+
+} /* WriteSFTVector2Dir() */
+
+
+
+
+
 /** For backwards-compatibility: write a *v2-normalized* (ie dt x DFT) SFTtype
  * to a v1-SFT file.
  *
