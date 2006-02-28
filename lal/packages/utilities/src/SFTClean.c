@@ -798,12 +798,12 @@ void LALCleanCOMPLEX8SFT (LALStatus          *status,
 
 /** Function to clean a sft vector -- calls LALCleanCOMPLEX8SFT repeatedly for each 
     sft in vector */
-void LALCleanSFTVect (LALStatus       *status,
-		      SFTVector       *sftVect,  /**< SFTVector to be cleaned */
-		      INT4            width,     /**< maximum width to be cleaned -- set sufficiently large if all bins in each line are to be cleaned*/      
-		      INT4            window,    /**< window size for noise floor estimation in vicinity of a line */
-		      LineNoiseInfo   *lineInfo, /**< list of lines */ 
-		      RandomParams    *randPar   /**< parameters for generating random noise */)
+void LALCleanSFTVector (LALStatus       *status,
+			SFTVector       *sftVect,  /**< SFTVector to be cleaned */
+			INT4            width,     /**< maximum width to be cleaned -- set sufficiently large if all bins in each line are to be cleaned*/      
+			INT4            window,    /**< window size for noise floor estimation in vicinity of a line */
+			LineNoiseInfo   *lineInfo, /**< list of lines */ 
+			RandomParams    *randPar   /**< parameters for generating random noise */)
 {
 
   UINT4 k;

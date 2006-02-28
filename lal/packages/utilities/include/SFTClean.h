@@ -249,13 +249,13 @@ void LALCleanCOMPLEX8SFT (LALStatus          *status,
 		       RandomParams       *randPar);
 
 
-void LALCleanSFTVect (LALStatus          *status,
-		      SFTVector          *sftVect,
-		      INT4               width,       
-		      INT4               window,
-		      LineNoiseInfo      *lineInfo,
-		      RandomParams       *randPar);
-
+void LALCleanSFTVector (LALStatus          *status,
+			SFTVector          *sftVect,
+			INT4               width,       
+			INT4               window,
+			LineNoiseInfo      *lineInfo,
+			RandomParams       *randPar);
+  
 void LALCleanMultiSFTVect (LALStatus          *status,
 			   MultiSFTVector     *multVect,
 			   INT4               width,       
