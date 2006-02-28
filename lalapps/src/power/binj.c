@@ -440,8 +440,6 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	tinj = gpsStartTime;
-
 	/* check some of the input parameters for consistency */
 	if(!gpsStartTime || !gpsEndTime) {
 		fprintf(stderr, "--gps-start-time and --gps-end-time are both required\n");
@@ -507,12 +505,13 @@ int main(int argc, char *argv[])
 		freq = pow(thetasq, -3. / 2.);
 	}
 
+	tinj = gpsStartTime;
+
 	while(1) {
 		/* compute tau if quality was specified */
 		if(use_quality)
 			tau = quality / (sqrt(2.0) * LAL_PI * freq);
 
-		tinj += (long long) (1e9 * meanTimeStep);
 		if(tinj > gpsEndTime) {
 			break;
 		}
@@ -530,6 +529,7 @@ int main(int argc, char *argv[])
 
 		/* GPS time of burst */
 		XLALINT8NSToGPS(&this_sim_burst->geocent_peak_time, tinj);
+		tinj += (long long) (1e9 * meanTimeStep);
 
 		/* save gmst (hours) in sim_burst table */
 		this_sim_burst->peak_time_gmst = XLALGreenwichMeanSiderealTime(&this_sim_burst->geocent_peak_time) * 12.0 / LAL_PI;
