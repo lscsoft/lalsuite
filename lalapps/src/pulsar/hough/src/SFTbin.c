@@ -12,6 +12,8 @@
  *-----------------------------------------------------------------------
  */
 
+/** OBSOLETE -- Use LAL functions from SFTfileIO.c instead */
+
 /************************************ <lalVerbatim file="SFTbinCV">
 Author: Sintes, A.M., Krishnan, B.
 $Id$

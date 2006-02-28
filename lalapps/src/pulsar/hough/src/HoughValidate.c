@@ -39,7 +39,13 @@ Input shoud be from
    signals. 
 */
 
+
+
 #include "./MCInjectComputeHough.h" /* proper path*/
+
+RCSID ( "$Id$");
+
+extern int lalDebugLevel;
 
 #define VALIDATEOUT "./outHM1/skypatch_1/HM1validate"
 #define VALIDATEIN  "./outHM1/skypatch_1/HM1templates"
@@ -47,48 +53,45 @@ Input shoud be from
 #define TRUE (1==1)
 #define FALSE (1==0)
 
+/*************************************/
 
-
-/******************************************************
- *  Assignment of Id string using NRCSID()
- */
-
-NRCSID (MCINJECTVALIDATEC, "$Id$");
-
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/* vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv------------------------------------ */
 int main(int argc, char *argv[]){
 
-  static LALStatus            status;  
-  static LALDetector          detector;
+  static LALStatus  status;  
+
+  /* LAL error-handler */
+  lal_errhandler = LAL_ERR_EXIT;
+
+
+  static LALDetector          *detector;
   static LIGOTimeGPSVector    timeV;
   static REAL8Cart3CoorVector velV;
   static REAL8Vector          timeDiffV;
   static REAL8                foft;
   static HoughPulsarTemplate  pulsarTemplate;
-  SFTVector  *inputSFTs  = NULL;  
+
   EphemerisData   *edat = NULL;
   CHAR  *uvar_earthEphemeris = NULL; 
   CHAR  *uvar_sunEphemeris = NULL;
+  SFTVector  *inputSFTs  = NULL;  
   REAL8 *alphaVec=NULL;
   REAL8 *deltaVec=NULL;
   REAL8 *freqVec=NULL;
   REAL8 *spndnVec=NULL;
-  static REAL8PeriodoPSD   periPSD;
+
   /* pgV is vector of peakgrams and pg1 is onepeakgram */
   static UCHARPeakGram    *pg1, **pgV; 
   UINT4  msp; /*number of spin-down parameters */
-  INT4   uvar_ifo;
-  CHAR   *uvar_SFTdir = NULL; /* the directory where the SFT  could be */
+  CHAR   *uvar_ifo = NULL;
+  CHAR   *uvar_sftDir = NULL; /* the directory where the SFT  could be */
   CHAR   *uvar_fnameOut = NULL;               /* The output prefix filename */
   CHAR   *uvar_fnameIn = NULL;  
   INT4   numberCount, index;
   UINT8  nTemplates;   
   UINT4   mObsCoh, nfSizeCylinder;
-  REAL8  uvar_peakThreshold, normalizeThr;
+  REAL8  uvar_peakThreshold;
   REAL8  fmin, fmax, fWings, timeBase;
   INT4  uvar_blocksRngMed;
-  REAL8  threshold;
   UINT4  sftlength; 
   INT4   sftFminBin;
   UINT4 loopId, tempLoopId;
@@ -103,8 +106,8 @@ int main(int argc, char *argv[]){
   /* ****************************************************************/
   
   lalDebugLevel = 0;
-  /* LALDebigLevel must be called before anything else */
-  SUB( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
+  /* LALDebugLevel must be called before anything else */
+  LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
 
   msp = 1; /*only one spin-down */
   nfSizeCylinder = NFSIZE;
@@ -114,12 +117,6 @@ int main(int argc, char *argv[]){
   pulsarTemplate.spindown.data = NULL;
   pulsarTemplate.spindown.data = (REAL8 *)LALMalloc(msp*sizeof(REAL8));
  
-
-  detector = lalCachedDetectors[LALDetectorIndexGEO600DIFF]; /* default */
-  uvar_ifo = IFO;
-  if (uvar_ifo ==1) detector=lalCachedDetectors[LALDetectorIndexGEO600DIFF];
-  if (uvar_ifo ==2) detector=lalCachedDetectors[LALDetectorIndexLLODIFF];
-  if (uvar_ifo ==3) detector=lalCachedDetectors[LALDetectorIndexLHODIFF];
  
   uvar_help = FALSE;
   uvar_peakThreshold = THRESHOLD;
@@ -130,8 +127,8 @@ int main(int argc, char *argv[]){
   uvar_sunEphemeris = (CHAR *)LALMalloc(1024*sizeof(CHAR));
   strcpy(uvar_sunEphemeris,SUNEPHEMERIS);
 
-  uvar_SFTdir = (CHAR *)LALMalloc(1024*sizeof(CHAR));
-  strcpy(uvar_SFTdir,SFTDIRECTORY);
+  uvar_sftDir = (CHAR *)LALMalloc(1024*sizeof(CHAR));
+  strcpy(uvar_sftDir,SFTDIRECTORY);
 
   uvar_fnameOut = (CHAR *)LALMalloc(1024*sizeof(CHAR));
   strcpy(uvar_fnameOut,VALIDATEOUT);
@@ -140,24 +137,22 @@ int main(int argc, char *argv[]){
   strcpy(uvar_fnameIn,VALIDATEIN);
 
   uvar_blocksRngMed = BLOCKSRNGMED;
-  SUB( LALRngMedBias( &status, &normalizeThr, uvar_blocksRngMed ), &status ); 
 
   /* register user input variables */
-  SUB( LALRegisterBOOLUserVar( &status, "help", 'h', UVAR_HELP, "Print this message", &uvar_help), &status);  
-  SUB( LALRegisterINTUserVar( &status, "ifo", 'i', UVAR_OPTIONAL, "Detector GEO(1) LLO(2) LHO(3)", &uvar_ifo ), &status);
-  SUB( LALRegisterSTRINGUserVar( &status, "earthEphemeris", 'E', UVAR_OPTIONAL, "Earth Ephemeris file", &uvar_earthEphemeris), &status);
-  SUB( LALRegisterSTRINGUserVar( &status, "sunEphemeris", 'S', UVAR_OPTIONAL, "Sun Ephemeris file", &uvar_sunEphemeris), &status);
-  SUB( LALRegisterSTRINGUserVar( &status, "SFTdir", 'D', UVAR_OPTIONAL, "SFT Directory", &uvar_SFTdir), &status);
-  SUB( LALRegisterSTRINGUserVar( &status, "fnameIn", 'T', UVAR_OPTIONAL, "Input template file", &uvar_fnameIn), &status);
-  SUB( LALRegisterSTRINGUserVar( &status, "fnameOut", 'o', UVAR_OPTIONAL, "Output filename", &uvar_fnameOut), &status);
-  SUB( LALRegisterINTUserVar( &status, "blocksRngMed", 'w', UVAR_OPTIONAL, "RngMed block size", &uvar_blocksRngMed), &status);
-  SUB( LALRegisterREALUserVar( &status, "peakThreshold", 't', UVAR_OPTIONAL, "Peak selection threshold", &uvar_peakThreshold), &status);
+  LAL_CALL( LALRegisterBOOLUserVar( &status, "help", 'h', UVAR_HELP, "Print this message", &uvar_help), &status);  
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "ifo", 'i', UVAR_OPTIONAL, "Detector GEO(1) LLO(2) LHO(3)", &uvar_ifo ), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris", 'E', UVAR_OPTIONAL, "Earth Ephemeris file", &uvar_earthEphemeris), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris", 'S', UVAR_OPTIONAL, "Sun Ephemeris file", &uvar_sunEphemeris), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir", 'D', UVAR_OPTIONAL, "SFT Directory", &uvar_sftDir), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameIn", 'T', UVAR_OPTIONAL, "Input template file", &uvar_fnameIn), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameOut", 'o', UVAR_OPTIONAL, "Output filename", &uvar_fnameOut), &status);
+  LAL_CALL( LALRegisterINTUserVar( &status, "blocksRngMed", 'w', UVAR_OPTIONAL, "RngMed block size", &uvar_blocksRngMed), &status);
+  LAL_CALL( LALRegisterREALUserVar( &status, "peakThreshold", 't', UVAR_OPTIONAL, "Peak selection threshold", &uvar_peakThreshold), &status);
 
   /* read all command line variables */
-  SUB( LALUserVarReadAllInput(&status, argc, argv), &status);
+  LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
 
-  /* set value of bias which might have been changed from default */  
-  SUB( LALRngMedBias( &status, &normalizeThr, uvar_blocksRngMed ), &status ); 
+
   
   /* exit if help was required */
   if (uvar_help)
@@ -174,7 +169,7 @@ int main(int argc, char *argv[]){
   }
   
   /* get the log string */
-  SUB( LALUserVarGetLog(&status, &logstr, UVAR_LOGFMT_CFGFILE), &status);  
+  LAL_CALL( LALUserVarGetLog(&status, &logstr, UVAR_LOGFMT_CFGFILE), &status);  
 
   fprintf( fpLog, "## Log file for HoughValidate\n\n");
   fprintf( fpLog, "# User Input:\n");
@@ -261,13 +256,42 @@ int main(int argc, char *argv[]){
   fmax += fWings; 
   
   /* create pattern to look for in SFT directory */   
-  strcat(uvar_SFTdir, "/*SFT*.*");
-   
-  /* now read all the sfts */
-  SUB (LALReadSFTfiles (&status, &inputSFTs, fmin, fmax, nfSizeCylinder + uvar_blocksRngMed, uvar_SFTdir), &status);
-  mObsCoh = inputSFTs->length; 
+
+  {
+    CHAR *tempDir = NULL;
+    SFTCatalog *catalog = NULL;
+    static SFTConstraints constraints;
+
+    /* set detector constraint */
+    constraints.detector = NULL;
+    if ( LALUserVarWasSet( &uvar_ifo ) )    
+      constraints.detector = XLALGetChannelPrefix ( uvar_ifo );
+
+    /* get sft catalog */
+    tempDir = (CHAR *)LALCalloc(512, sizeof(CHAR));
+    strcpy(tempDir, uvar_sftDir);
+    strcat(tempDir, "/*SFT*.*");
+    LAL_CALL( LALSFTdataFind( &status, &catalog, tempDir, &constraints), &status);
+    
+    detector = XLALGetSiteInfo( catalog->data[0].header.name);
+
+    mObsCoh = catalog->length;
+    timeBase = 1.0 / catalog->data->header.deltaF;
+
+    LAL_CALL( LALLoadSFTs ( &status, &inputSFTs, catalog, fmin, fmax), &status);
+
+    LAL_CALL( LALNormalizeSFTVect (&status, inputSFTs, uvar_blocksRngMed), &status);
+
+    if ( LALUserVarWasSet( &uvar_ifo ) )    
+      LALFree( constraints.detector );
+    LALFree( tempDir);
+    LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);  	
+
+  }
+
+
+
   sftlength = inputSFTs->data->data->length;
-  timeBase = 1.0/inputSFTs->data->deltaF;
   {
     INT4 tempFbin;
     sftFminBin = floor( (REAL4)(timeBase * inputSFTs->data->f0) + (REAL4)(0.5));
@@ -292,36 +316,14 @@ int main(int argc, char *argv[]){
       pgV[tempLoopId]->length = sftlength; 
       pgV[tempLoopId]->data = NULL; 
       pgV[tempLoopId]->data = (UCHAR *)LALMalloc(sftlength* sizeof(UCHAR));
+   
+      LAL_CALL (SFTtoUCHARPeakGram( &status, pgV[tempLoopId], inputSFTs->data + tempLoopId, uvar_peakThreshold), &status);
     }
 
-  /* memory for periodogram and psd */ 
-  periPSD.periodogram.length = sftlength;
-  periPSD.periodogram.data = NULL;
-  periPSD.periodogram.data = (REAL8 *)LALMalloc(sftlength* sizeof(REAL8));
-  periPSD.psd.length = sftlength;
-  periPSD.psd.data = NULL;
-  periPSD.psd.data = (REAL8 *)LALMalloc(sftlength* sizeof(REAL8));
-
-
-  for (tempLoopId=0; tempLoopId < mObsCoh; tempLoopId++){
-
-    /* calculate the periodogram */
-    SUB( SFT2Periodogram(&status, &periPSD.periodogram, inputSFTs->data + tempLoopId ), &status );	
-    
-    /* calculate psd using running median */
-    SUB( LALPeriodo2PSDrng( &status, &periPSD.psd, &periPSD.periodogram, &uvar_blocksRngMed), &status );	
-    
-    /* select sft bins to get peakgrams using threshold */
-    threshold = uvar_peakThreshold/normalizeThr;      
-    SUB( LALSelectPeakColorNoise(&status, pgV[tempLoopId], &threshold,&periPSD), &status); 	
-    
-  } /* end of loop over sfts */
 
   /* having calculated the peakgrams we don't need the sfts anymore */
-  SUB(LALDestroySFTVector(&status, &inputSFTs),&status );
-  /* we don't need the periodogram either */
-  LALFree(periPSD.periodogram.data);
-  LALFree(periPSD.psd.data);
+  LAL_CALL(LALDestroySFTVector(&status, &inputSFTs),&status );
+
 
   
   /* ****************************************************************/
@@ -388,17 +390,17 @@ int main(int argc, char *argv[]){
                    cause problems before, oh, I don't know, the Earth has been 
                    destroyed in nuclear holocaust. -- dwchin 2004-02-29 */    
     
-    velPar.detector = detector;
+    velPar.detector = *detector;
     velPar.tBase = timeBase;
     velPar.vTol = ACCURACY;
     velPar.edat = NULL;
     
     /* Leap seconds for the start time of the run */   
-    SUB( LALLeapSecs(&status, &tmpLeap, &(timeV.data[0]), &lsfas), &status);
+    LAL_CALL( LALLeapSecs(&status, &tmpLeap, &(timeV.data[0]), &lsfas), &status);
     (*edat).leap = (INT2)tmpLeap;
     
     /* read in ephemeris data */
-    SUB( LALInitBarycenter( &status, edat), &status);
+    LAL_CALL( LALInitBarycenter( &status, edat), &status);
     velPar.edat = edat;
 
     /* now calculate average velocity */    
@@ -406,7 +408,7 @@ int main(int argc, char *argv[]){
       velPar.startTime.gpsSeconds     = timeV.data[j].gpsSeconds;
       velPar.startTime.gpsNanoSeconds = timeV.data[j].gpsNanoSeconds;
       
-      SUB( LALAvgDetectorVel ( &status, vel, &velPar), &status );
+      LAL_CALL( LALAvgDetectorVel ( &status, vel, &velPar), &status );
       velV.data[j].x= vel[0];
       velV.data[j].y= vel[1];
       velV.data[j].z= vel[2];   
@@ -423,9 +425,9 @@ int main(int argc, char *argv[]){
     BarycenterInput baryinput;  /* Stores detector location and other barycentering data */
 
     /* detector location */
-    baryinput.site.location[0] = detector.location[0]/LAL_C_SI;
-    baryinput.site.location[1] = detector.location[1]/LAL_C_SI;
-    baryinput.site.location[2] = detector.location[2]/LAL_C_SI;
+    baryinput.site.location[0] = detector->location[0]/LAL_C_SI;
+    baryinput.site.location[1] = detector->location[1]/LAL_C_SI;
+    baryinput.site.location[2] = detector->location[2]/LAL_C_SI;
     baryinput.dInv = 0.e0;
     /* alpha and delta must come from the skypatch */
     /* for now set it to something arbitrary */
@@ -441,7 +443,7 @@ int main(int argc, char *argv[]){
     amParams->baryinput = &baryinput;
     amParams->earth = &earth; 
     amParams->edat = edat;
-    amParams->das->pDetector = &detector; 
+    amParams->das->pDetector = detector; 
     /* make sure alpha and delta are correct */
     amParams->das->pSource->equatorialCoords.latitude = baryinput.delta;
     amParams->das->pSource->equatorialCoords.longitude = baryinput.alpha;
@@ -451,7 +453,7 @@ int main(int argc, char *argv[]){
     amParams->leapAcc = LALLEAPSEC_STRICT;
 
     /* timeV is start time ---> change to mid time */    
-    SUB (LALComputeAM(&status, &amc, timeV.data, amParams), &status); 
+    LAL_CALL (LALComputeAM(&status, &amc, timeV.data, amParams), &status); 
 
     /* calculate a^2 and b^2 */
     /* for (ii=0, asq=0.0, bsq=0.0; ii<mObsCoh; ii++) */
@@ -574,12 +576,10 @@ int main(int argc, char *argv[]){
   LALFree(edat->ephemS);
   LALFree(edat);
   
-  SUB (LALDestroyUserVars(&status), &status);
+  LAL_CALL (LALDestroyUserVars(&status), &status);
 
   LALCheckMemoryLeaks();
-  
-  
-  INFO( DRIVEHOUGHCOLOR_MSGENORM );
+    
   return DRIVEHOUGHCOLOR_ENORM;
 }
 
