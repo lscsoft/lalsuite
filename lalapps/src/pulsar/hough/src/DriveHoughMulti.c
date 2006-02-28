@@ -105,7 +105,8 @@ BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps, uvar_printStats, 
 
 #define MAXFILENAMELENGTH 512 /* maximum # of characters  of a filename */
 
-#define SFTDIRECTORY "/local_data/badkri/fakesfts-multi" 
+/* #define SFTDIRECTORY "/local_data/badkri/fakesfts-multi"  */
+#define SFTDIRECTORY "/home/badkri/fakesfts"
 /* #define SFTDIRECTORY "/nfs/morbo/geo600/hannover/sft/S4-LIGO/sft_1800.20050512.S4/S4-L1.1800-sft" */
 
 #define DIROUT "./outMulti"   /* output directory */
@@ -115,8 +116,8 @@ BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps, uvar_printStats, 
                               the averaged power in the search band */
 #define FALSEALARM 1.0e-9 /* Hough false alarm for candidate selection */
 #define SKYFILE "./sky1"      
-#define F0 205.0   /*  frequency to build the LUT and start search */
-#define FBAND 0.2   /* search frequency band  (in Hz) */
+#define F0 505.0   /*  frequency to build the LUT and start search */
+#define FBAND 0.05   /* search frequency band  (in Hz) */
 #define NFSIZE  21   /* n-freq. span of the cylinder, to account for spin-down search */
 #define BLOCKSRNGMED 101 /* Running median window size */
 
@@ -378,11 +379,9 @@ int main(int argc, char *argv[]){
     length =  uvar_fSearchBand * timeBase; /* total number of search bins - 1 */
     fLastBin = f0Bin + length;   /* final frequency bin to be analyzed */
     
-    /* catalog is ordered in time so we can get start and end time */
+    /* catalog is ordered in time so we can get start, end time and tObs*/
     firstTimeStamp = catalog->data[0].header.epoch;
     lastTimeStamp = catalog->data[mObsCoh - 1].header.epoch;
-    /* set tobs -- it is 0.4 * timebase instead of the more natural timebase
-       just to agree with DriveHough_v3 */
     tObs = XLALGPSDiff( &lastTimeStamp, &firstTimeStamp ) + timeBase;
 
     /* using value of length, allocate memory for most significant event nstar, fstar etc. */
@@ -487,6 +486,7 @@ int main(int argc, char *argv[]){
 
 	weightsNoise.data[j] = multweight->data[iIFO]->data[iSFT];
 
+	/* mid time of sfts */
 	timeV.data[j] = mdetStates->data[iIFO]->data[iSFT].tGPS;
 
       } /* loop over SFTs */
