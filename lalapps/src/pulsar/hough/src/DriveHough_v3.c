@@ -545,7 +545,7 @@ int main(int argc, char *argv[]){
     UINT4   j; 
 
     for(j=0; j < mObsCoh; ++j)
-      timeDiffV.data[j] = XLALGPSDiff( timeV.data + j, timeV.data ) + 0.5*timeBase;
+      timeDiffV.data[j] = XLALGPSDiff( timeV->data + j, timeV->data ) + 0.5*timeBase;
   }
 
 
