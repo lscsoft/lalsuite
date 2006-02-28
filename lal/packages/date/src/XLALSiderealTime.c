@@ -34,7 +34,7 @@ REAL8 XLALGreenwichMeanSiderealTime(
   /* compute current number of leap seconds */
   taiutc = XLALLeapSeconds( epoch->gpsSeconds );
   if ( taiutc < 0 )
-    XLAL_ERROR_REAL4( func, XLAL_EFUNC );
+    XLAL_ERROR_REAL8( func, XLAL_EFUNC );
 
   t_J2000  = epoch->gpsSeconds - XLAL_EPOCH_J2000_0_GPS;
   t_J2000 += 1e-9 * epoch->gpsNanoSeconds;
