@@ -3,7 +3,7 @@
 if FRAME
 if LALFRAME
 if LALMETAIO
-RINGPROG = lalapps_ring lalapps_rinj lalapps_ringread
+RINGPROG = lalapps_ring lalapps_rinj lalapps_ringread lalapps_rinca
 else
 RINGPROG =
 endif
@@ -27,7 +27,8 @@ lalapps_ring_SOURCES = ring.c ring.h ring_option.c ring_filter.c ring_output.c \
 	 spectrm.c spectrm.h \
 	 segment.c segment.h 
 lalapps_rinj_SOURCES = rinj.c
-lalapps_ringread_SOURCES = ringread.c 
+lalapps_ringread_SOURCES = ringread.c
+lalapps_rinca_SOURCES = rinca.c
 endif
 endif
 endif
