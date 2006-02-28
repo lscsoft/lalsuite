@@ -2,8 +2,8 @@
  * 
  * File Name: binj.c
  *
- * Author: Brady, P. R., Brown, D. A., Crieghton, J. D. E., Ray Majumder S.,
- * and Cannon, K. C.
+ * Author: Brady, P. R., Brown, D. A., Crieghton, J. D. E., Ray Majumder S,
+ * Cannon K. C.
  *
  * 
  * Revision: $Id$
@@ -35,8 +35,92 @@
 
 int snprintf(char *str, size_t size, const char *format, ...);
 
-#define USAGE \
-"lalapps_binj [options]\n"\
+RCSID("$Id$");
+
+#define KPC ( 1e3 * LAL_PC_SI )
+#define MPC ( 1e6 * LAL_PC_SI )
+#define GPC ( 1e9 * LAL_PC_SI )
+
+#define CVS_REVISION "$Revision$"
+#define CVS_SOURCE "$Source$"
+#define CVS_DATE "$Date$"
+#define PROGRAM_NAME "binj"
+
+#define TRUE      1
+#define FALSE     0
+
+
+/*
+ * ============================================================================
+ *                                Command Line
+ * ============================================================================
+ */
+
+struct options {
+	INT8 gps_start_time;
+	INT8 gps_end_time;
+	char *coordinates;
+	float flow;
+	float fhigh;
+	float fratio;
+	float deltaf;
+	float quality;
+	float log_hpeak_min;
+	float log_hpeak_max;
+	int use_random_strain;
+	float log_max_distance;
+	float log_min_distance;
+	int seed;
+	INT8 time_step;	/* nanoseconds between injections */
+	char *waveform;
+	float simwaveform_duration;
+	int simwaveform_min_number;
+	int simwaveform_max_number;
+	float tau;
+	float freq;
+	float hpeak;
+	char *user_tag;
+	int mdc;	/* Need to set this to true if one wants to use MDC signals */
+};
+
+
+static struct options options_defaults(void)
+{
+	struct options defaults = {
+		.gps_start_time = 0,
+		.gps_end_time = 0,
+		.coordinates = "EQUATORIAL",
+		.flow = 150.0,
+		.fhigh = 1000.0,
+		.fratio = 0.0,
+		.deltaf = 0.0,
+		.quality = -1.0,
+		.log_hpeak_min = 0.0,
+		.log_hpeak_max = 0.0,
+		.use_random_strain = 0,
+		.log_max_distance = log10(10000.0),
+		.log_min_distance = log10(100.0),
+		.seed = 1,
+		.time_step = 210.0 / LAL_PI * 1e9,
+		.waveform = "SineGaussian",
+		.simwaveform_duration = 0.0,
+		.simwaveform_min_number = 0,
+		.simwaveform_max_number = 10,
+		.tau = 0.1,
+		.freq = 150.0,
+		.hpeak = 1.0e-20,
+		.user_tag = NULL,
+		.mdc = FALSE
+	};
+
+	return defaults;
+}
+
+
+static void print_usage(const char *prog)
+{
+	fprintf(stderr, 
+"%s [options]\n"\
 "\nDefaults are shown in brackets\n\n" \
 "  --help                   display this message\n"\
 "  --gps-start-time TIME    start injections at GPS time TIME\n"\
@@ -54,61 +138,285 @@ int snprintf(char *str, size_t size, const char *format, ...);
 "  --log-hpeak-max LOGHMAX  max amplitude of SG injection in strain units\n"\
 "  --min-distance           min distance of source in Kpc(default 100Kpc) \n"\
 "  --max-distance           max distance of source in Kpc(default 10000Kpc) \n"\
-"  --d-distr                distance distribution ( 0 = logarithmic(only one as of now!! ) \n"\
 "  --simwaveform-duration   duration of th esimulated waveform (Warren/Ott/ZM)\n"\
 "  --simwaveform-min-number min # of the simulated waveform \n"\
 "  --simwaveform-max-number max # of the simulated waveform \n"\
 "  --seed SEED              seed random number generator with SEED (1)\n"\
 "  --waveform NAME          set waveform type to NAME (SineGaussian)\n"\
-"  --user-tag STRING        set the usertag to STRING\n"\
-"\n"
-
-RCSID("$Id$");
-
-#define KPC ( 1e3 * LAL_PC_SI )
-#define MPC ( 1e6 * LAL_PC_SI )
-#define GPC ( 1e9 * LAL_PC_SI )
-
-#define CVS_REVISION "$Revision$"
-#define CVS_SOURCE "$Source$"
-#define CVS_DATE "$Date$"
-#define PROGRAM_NAME "binj"
-
-#define TRUE      1
-#define FALSE     0
-
-
-#define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
-this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
-  calloc( 1, sizeof(ProcessParamsTable) ); \
-  LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
-   PROGRAM_NAME ); \
-   LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
-     long_options[option_index].name ); \
-     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
-     LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
-
-ProcessParamsTable *next_process_param(const char *name, const char *type, const char *fmt, ...)
-{
-	ProcessParamsTable *pp;
-	va_list ap;
-	pp = calloc(1, sizeof(*pp));
-	if(!pp) {
-		perror("next_process_param");
-		exit(1);
-	}
-	strncpy(pp->program, PROGRAM_NAME, LIGOMETA_PROGRAM_MAX);
-	LALSnprintf(pp->param, LIGOMETA_PARAM_MAX, "--%s", name);
-	strncpy(pp->type, type, LIGOMETA_TYPE_MAX);
-	va_start(ap, fmt);
-	LALVsnprintf(pp->value, LIGOMETA_VALUE_MAX, fmt, ap);
-	va_end(ap);
-	return pp;
+"  --user-tag STRING        set the usertag to STRING\n\n", prog);
 }
 
 
-/* output format for LIGO-TAMA simulations */
-int ligo_tama_output(FILE * fpout, SimBurstTable * simBursts)
+static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param, const char *type, const char *param, const char *value)
+{
+	*proc_param = LALCalloc(1, sizeof(**proc_param));
+	(*proc_param)->next = NULL;
+	snprintf((*proc_param)->program, LIGOMETA_PROGRAM_MAX, PROGRAM_NAME);
+	snprintf((*proc_param)->type, LIGOMETA_TYPE_MAX, type);
+	snprintf((*proc_param)->param, LIGOMETA_PARAM_MAX, "--%s", param);
+	snprintf((*proc_param)->value, LIGOMETA_VALUE_MAX, value);
+
+	return(&(*proc_param)->next);
+}
+
+	
+#define ADD_PROCESS_PARAM(type) \
+	do { paramaddpoint = add_process_param(paramaddpoint, type, long_options[option_index].name, optarg); } while(0)
+
+
+static struct options parse_command_line(int *argc, char **argv[], MetadataTable *procparams)
+{
+	ProcessParamsTable **paramaddpoint = &procparams->processParamsTable;
+	struct options options = options_defaults();
+	int c;
+	int option_index;
+	struct option long_options[] = {
+		{"mdc", no_argument, &options.mdc, TRUE},
+		{"coordinates", required_argument, NULL, 'A'},
+		{"deltaf", required_argument, NULL, 'B'},
+		{"fhigh", required_argument, NULL, 'C'},
+		{"flow", required_argument, NULL, 'D'},
+		{"fratio", required_argument, NULL, 'E'},
+		{"freq", required_argument, NULL, 'F'},
+		{"gps-end-time", required_argument, NULL, 'G'},
+		{"gps-start-time", required_argument, NULL, 'H'},
+		{"help", no_argument, NULL, 'I'},
+		{"hpeak", required_argument, NULL, 'J'},
+		{"log-hpeak-max", required_argument, NULL, 'K'},
+		{"log-hpeak-min", required_argument, NULL, 'L'},
+		{"max-distance", required_argument, NULL, 'M'},
+		{"min-distance", required_argument, NULL, 'N'},
+		{"quality", required_argument, NULL, 'O'},
+		{"seed", required_argument, NULL, 'P'},
+		{"simwaveform-duration", required_argument, NULL, 'Q'},
+		{"simwaveform-max-number", required_argument, NULL, 'R'},
+		{"simwaveform-min-number", required_argument, NULL, 'S'},
+		{"tau", required_argument, NULL, 'T'},
+		{"time-step", required_argument, NULL, 'U'},
+		{"user-tag", required_argument, NULL, 'V'},
+		{"waveform", required_argument, NULL, 'W'},
+		{NULL, 0, NULL, 0}
+	};
+
+	do switch(c = getopt_long(*argc, *argv, "", long_options, &option_index)) {
+	case 'A':
+		options.coordinates = optarg;
+		ADD_PROCESS_PARAM("string");
+		break;
+
+	case 'B':
+		options.deltaf = atof(optarg);
+		ADD_PROCESS_PARAM("float");
+		break;
+
+	case 'C':
+		options.fhigh = atof(optarg);
+		ADD_PROCESS_PARAM("float");
+		break;
+
+	case 'D':
+		options.flow = atof(optarg);
+		ADD_PROCESS_PARAM("float");
+		break;
+
+	case 'E':
+		options.fratio = atof(optarg);
+		ADD_PROCESS_PARAM("float");
+		break;
+
+	case 'F':
+		options.freq = atof(optarg);
+		ADD_PROCESS_PARAM("float");
+		break;
+
+	case 'G':
+		XLALClearErrno();
+		{
+			LIGOTimeGPS tmp;
+			XLALStrToGPS(&tmp, optarg, NULL);
+			options.gps_end_time = XLALGPSToINT8NS(&tmp);
+		}
+		if(xlalErrno || (options.gps_end_time < LAL_INT8_C(441417609000000000)) || (options.gps_end_time > LAL_INT8_C(999999999000000000))) {
+			fprintf(stderr, "invalid --%s (%s specified)\n", long_options[option_index].name, optarg);
+			exit(1);
+		}
+		ADD_PROCESS_PARAM("string");
+		break;
+
+	case 'H':
+		XLALClearErrno();
+		{
+			LIGOTimeGPS tmp;
+			XLALStrToGPS(&tmp, optarg, NULL);
+			options.gps_start_time = XLALGPSToINT8NS(&tmp);
+		}
+		if(xlalErrno || (options.gps_start_time < LAL_INT8_C(441417609000000000)) || (options.gps_start_time > LAL_INT8_C(999999999000000000))) {
+			fprintf(stderr, "invalid --%s (%s specified)\n", long_options[option_index].name, optarg);
+			exit(1);
+		}
+		ADD_PROCESS_PARAM("string");
+		break;
+
+	case 'I':
+		print_usage((*argv)[0]);
+		exit(0);
+
+	case 'J':
+		options.hpeak = atof(optarg);
+		ADD_PROCESS_PARAM("float");
+		break;
+
+	case 'K':
+		options.use_random_strain += 1;
+		options.log_hpeak_max = atof(optarg);
+		ADD_PROCESS_PARAM("float");
+		break;
+
+	case 'L':
+		options.use_random_strain += 1;
+		options.log_hpeak_min = atof(optarg);
+		ADD_PROCESS_PARAM("float");
+		break;
+
+	case 'M':
+		options.log_max_distance = log10(atof(optarg));
+		ADD_PROCESS_PARAM("float");
+		break;
+
+	case 'N':
+		options.log_min_distance = log10(atof(optarg));
+		ADD_PROCESS_PARAM("float");
+		break;
+
+	case 'O':
+		options.quality = atof(optarg);
+		ADD_PROCESS_PARAM("float");
+		break;
+
+	case 'P':
+		options.seed = atoi(optarg);
+		ADD_PROCESS_PARAM("int");
+		break;
+
+	case 'Q':
+		options.simwaveform_duration = atof(optarg);
+		ADD_PROCESS_PARAM("float");
+		break;
+
+	case 'R':
+		options.simwaveform_max_number = atoi(optarg);
+		ADD_PROCESS_PARAM("int");
+		break;
+
+	case 'S':
+		options.simwaveform_min_number = atoi(optarg);
+		ADD_PROCESS_PARAM("int");
+		break;
+
+	case 'T':
+		options.tau = atof(optarg);
+		ADD_PROCESS_PARAM("float");
+		break;
+
+	case 'U':
+		options.time_step = atof(optarg) / LAL_PI * 1e9;
+		ADD_PROCESS_PARAM("float");
+		break;
+
+	case 'V':
+		options.user_tag = optarg;
+		ADD_PROCESS_PARAM("string");
+		break;
+
+	case 'W':
+		options.waveform = optarg;
+		ADD_PROCESS_PARAM("string");
+		break;
+
+	case 0:
+		/* option sets a flag */
+		break;
+
+	case -1:
+		/* end of arguments */
+		break;
+
+	case '?':
+		/* unrecognized option */
+		print_usage((*argv)[0]);
+		exit(1);
+
+	case ':':
+		/* missing argument for an option */
+		print_usage((*argv)[0]);
+		exit(1);
+	} while(c != -1);
+
+
+	/* check some of the input parameters for consistency */
+	if(strlen(options.coordinates) > LIGOMETA_COORDINATES_MAX) {
+		fprintf(stderr, "error: --coordinates %s exceeds max length of %d\n", options.waveform, LIGOMETA_COORDINATES_MAX);
+		exit(1);
+	}
+	if(strlen(options.waveform) > LIGOMETA_WAVEFORM_MAX) {
+		fprintf(stderr, "error: --waveform %s exceeds max length of %d\n", options.waveform, LIGOMETA_WAVEFORM_MAX);
+		exit(1);
+	}
+	if(options.use_random_strain && (options.use_random_strain != 2)) {
+		fprintf(stderr, "Must supply upper and lower limits when using random strain\n");
+		exit(1);
+	}
+	if(!options.gps_start_time || !options.gps_end_time) {
+		fprintf(stderr, "--gps-start-time and --gps-end-time are both required\n");
+		exit(1);
+	}
+	if((options.fratio != 0.0) && (options.deltaf != 0.0)) {
+		fprintf(stderr, "error:  cannot specify both --deltaf and --fratio\n");
+		exit(1);
+	}
+
+	return options;
+}
+
+
+/* 
+ * ============================================================================
+ *                          Arrival Time Calculation
+ * ============================================================================
+ */
+
+static LIGOTimeGPS arrival_time(LALDetector detector, LIGOTimeGPS geocent_peak_time, double latitude, double longitude)
+{
+	LALStatus status = blank_status;
+	LALPlaceAndGPS place_and_gps = {
+		.p_detector = &detector,
+		.p_gps = &geocent_peak_time
+	};
+	SkyPosition sky_pos = {
+		.longitude = longitude,
+		.latitude = latitude,
+		.system = COORDINATESYSTEM_EQUATORIAL
+	};
+	DetTimeAndASource det_time_and_source = {
+		.p_det_and_time = &place_and_gps,
+		.p_source = &sky_pos
+	};
+	REAL8 dt;
+
+	LAL_CALL(LALTimeDelayFromEarthCenter(&status, &dt, &det_time_and_source), &status);
+
+	return *XLALGPSAdd(&geocent_peak_time, dt);
+}
+
+
+/* 
+ * ============================================================================
+ *                                   Output
+ * ============================================================================
+ */
+
+/* output for LIGO-TAMA simulations */
+static void ligo_tama_output(FILE * fpout, SimBurstTable * simBursts)
 {
 	SimBurstTable *thisEvent = NULL;
 
@@ -122,424 +430,174 @@ int ligo_tama_output(FILE * fpout, SimBurstTable * simBursts)
 		fprintf(fpout, "%0d\t%0d\t%f\t%f\t%f\t%f\t%f\t%s\t%e\t%e\t%f\t%f\n", thisEvent->geocent_peak_time.gpsSeconds, thisEvent->geocent_peak_time.gpsNanoSeconds, thisEvent->dtminus, thisEvent->dtplus, thisEvent->longitude, thisEvent->latitude, thisEvent->polarization, thisEvent->coordinates, thisEvent->hrss, thisEvent->hpeak, thisEvent->freq, thisEvent->tau);
 		thisEvent = thisEvent->next;
 	}
-	fprintf(fpout, "# $I" "d$\n");
 
-	return 0;
+	fprintf(fpout, "# $I" "d$\n");
+}
+
+static void write_tamma(MetadataTable injections, struct options options)
+{
+	FILE *fpout;
+	char fname[256];
+
+	if(options.user_tag) {
+		LALSnprintf(fname, sizeof(fname), "HLT-INJECTIONS_%s-%d-%d.txt", options.user_tag, (int) (options.gps_start_time / LAL_INT8_C(1000000000)), (int) ((options.gps_end_time - options.gps_start_time) / LAL_INT8_C(1000000000)));
+	} else {
+		LALSnprintf(fname, sizeof(fname), "HLT-INJECTIONS-%d-%d.txt", (int) (options.gps_start_time / LAL_INT8_C(1000000000)), (int) ((options.gps_end_time - options.gps_start_time) / LAL_INT8_C(1000000000)));
+	}
+	fpout = fopen(fname, "w");
+	ligo_tama_output(fpout, injections.simBurstTable);
+	fclose(fpout);
 }
 
 
+/* LIGO LW XML of MDC injections */
+static void write_mdc_xml(MetadataTable mdcinjections)
+{
+	LALStatus status = blank_status;
+	CHAR fname[256];
+	LIGOLwXMLStream xmlfp;
+
+	memset(&xmlfp, 0, sizeof(xmlfp));
+
+	LALSnprintf(fname, sizeof(fname), "HL-MDCSG10_%d.xml", 1);
+
+	LAL_CALL(LALOpenLIGOLwXMLFile(&status, &xmlfp, fname), &status);
+	LAL_CALL(LALBeginLIGOLwXMLTable(&status, &xmlfp, sim_burst_table), &status);
+	LAL_CALL(LALWriteLIGOLwXMLTable(&status, &xmlfp, mdcinjections, sim_burst_table), &status);
+	LAL_CALL(LALEndLIGOLwXMLTable(&status, &xmlfp), &status);
+	LAL_CALL(LALCloseLIGOLwXMLFile(&status, &xmlfp), &status);
+}
+
+
+/* LIGO LW XML */
+static void write_xml(MetadataTable proctable, MetadataTable procparams, MetadataTable injections, struct options options)
+{
+	LALStatus status = blank_status;
+	char fname[256];
+	LALLeapSecAccuracy accuracy = LALLEAPSEC_LOOSE;
+	LIGOLwXMLStream xmlfp;
+
+	memset(&xmlfp, 0, sizeof(xmlfp));
+
+	if(options.user_tag)
+		snprintf(fname, sizeof(fname), "HL-INJECTIONS_%s-%d-%d.xml", options.user_tag, (int) (options.gps_start_time / LAL_INT8_C(1000000000)), (int) ((options.gps_end_time - options.gps_start_time) / LAL_INT8_C(1000000000)));
+	else
+		snprintf(fname, sizeof(fname), "HL-INJECTIONS-%d-%d.xml", (int) (options.gps_start_time / LAL_INT8_C(1000000000)), (int) ((options.gps_end_time - options.gps_start_time) / LAL_INT8_C(1000000000)));
+
+
+	LAL_CALL(LALOpenLIGOLwXMLFile(&status, &xmlfp, fname), &status);
+
+	LAL_CALL(LALGPSTimeNow(&status, &proctable.processTable->end_time, &accuracy), &status);
+	LAL_CALL(LALBeginLIGOLwXMLTable(&status, &xmlfp, process_table), &status);
+	LAL_CALL(LALWriteLIGOLwXMLTable(&status, &xmlfp, proctable, process_table), &status);
+	LAL_CALL(LALEndLIGOLwXMLTable(&status, &xmlfp), &status);
+
+	if(procparams.processParamsTable) {
+		LAL_CALL(LALBeginLIGOLwXMLTable(&status, &xmlfp, process_params_table), &status);
+		LAL_CALL(LALWriteLIGOLwXMLTable(&status, &xmlfp, procparams, process_params_table), &status);
+		LAL_CALL(LALEndLIGOLwXMLTable(&status, &xmlfp), &status);
+	}
+
+	if(injections.simBurstTable) {
+		LAL_CALL(LALBeginLIGOLwXMLTable(&status, &xmlfp, sim_burst_table), &status);
+		LAL_CALL(LALWriteLIGOLwXMLTable(&status, &xmlfp, injections, sim_burst_table), &status);
+		LAL_CALL(LALEndLIGOLwXMLTable(&status, &xmlfp), &status);
+	}
+
+	LAL_CALL(LALCloseLIGOLwXMLFile(&status, &xmlfp), &status);
+}
+
+
+/* 
+ * ============================================================================
+ *                                Entry Point
+ * ============================================================================
+ */
+
 int main(int argc, char *argv[])
 {
-
-	INT8 gpsStartTime = 0;
-	INT8 gpsEndTime = 0;
-	double meanTimeStep = 210 / LAL_PI;	/* seconds between injections     */
+	struct options options;
 	INT8 tinj;
-
-	size_t ninj;
-	int rand_seed = 1;
 	RandomParams *randParams = NULL;
 	REAL4 deviate = 0.0;
-	REAL4 iamp;
-	/* waveform */
-	CHAR waveform[LIGOMETA_WAVEFORM_MAX];
-	INT4 use_quality = 0;
-	REAL4 tau = 0.1;
-	REAL4 quality = 0;
-	REAL4 freq = 150.0;
-	REAL4 flow = 150.0;
-	REAL4 fhigh = 1000.0;
-	REAL4 fratio = 0.0;
-	REAL4 deltaf = 0.0;
-	REAL4 hpeak = 1.0e-20;
-	INT4 useRandomStrain = 0;
-	REAL4 log_hpeakMin = 0.0;
-	REAL4 log_hpeakMax = 0.0;
-	REAL4 logAmpRange = 0.0;
-	REAL4 simwavedur = 0.0;
-	INT4 minsimnumber = 0;
-	INT4 maxsimnumber = 10;
-	INT4 deltasim = 0;
-	REAL4 dmin = 100;
-	REAL4 dmax = 10000;
-	REAL4 deltaL = 0;
-	REAL4 logdmin = 0;
-	int ddistr = 0;
-
-	/* Need to set this to true if one wants to use MDC signals */
-	INT4 mdcFlag = FALSE;
-
-	/* site end time */
-	CHAR coordinates[LIGOMETA_COORDINATES_MAX];
-	INT4 useZenith = 0;
-	LALPlaceAndGPS *place_and_gps;
+	int iamp = 1;
+	/* observatory information */
 	LALDetector lho = lalCachedDetectors[LALDetectorIndexLHODIFF];
 	LALDetector llo = lalCachedDetectors[LALDetectorIndexLLODIFF];
-	SkyPosition *sky_pos;
-	DetTimeAndASource *det_time_and_source;
-	REAL8 time_diff;
-
 	/* xml output data */
-	CHAR fname[256];
-	CHAR *userTag = NULL;
 	LALStatus status = blank_status;
 	LALLeapSecAccuracy accuracy = LALLEAPSEC_LOOSE;
+	/* tables */
 	MetadataTable proctable;
 	MetadataTable procparams;
 	MetadataTable injections;
 	MetadataTable mdcinjections;
-	ProcessParamsTable *this_proc_param = NULL;
-	LIGOLwXMLStream xmlfp;
-
 	SimBurstTable *this_sim_burst = NULL;
-
-
-	/* getopt arguments */
-	struct option long_options[] = {
-		{"help", no_argument, 0, 'h'},
-		{"gps-start-time", required_argument, 0, 'a'},
-		{"gps-end-time", required_argument, 0, 'b'},
-		{"coordinates", required_argument, 0, 'c'},
-		{"flow", required_argument, 0, 'd'},
-		{"fhigh", required_argument, 0, 'e'},
-		{"fratio", required_argument, 0, 'o'},
-		{"deltaf", required_argument, 0, 'f'},
-		{"quality", required_argument, 0, 'g'},
-		{"log-hpeak-min", required_argument, 0, 'j'},
-		{"log-hpeak-max", required_argument, 0, 'k'},
-		{"max-distance", required_argument, 0, 'm'},
-		{"min-distance", required_argument, 0, 'n'},
-		{"d-distr", required_argument, 0, 'p'},
-		{"seed", required_argument, 0, 's'},
-		{"time-step", required_argument, 0, 't'},
-		{"waveform", required_argument, 0, 'w'},
-		{"simwaveform-duration", required_argument, 0, 'i'},
-		{"simwaveform-min-number", required_argument, 0, 'l'},
-		{"simwaveform-max-number", required_argument, 0, 'q'},
-		{"tau", required_argument, 0, 'x'},
-		{"freq", required_argument, 0, 'y'},
-		{"hpeak", required_argument, 0, 'z'},
-		{"user-tag", required_argument, 0, 'Z'},
-		{"mdcFlag", no_argument, &mdcFlag, TRUE},
-		{0, 0, 0, 0}
-	};
-	int c;
 
 	/* set up inital debugging values */
 	lal_errhandler = LAL_ERR_EXIT;
 	set_debug_level("LALMSGLVL2");
 
 	/* create the process and process params tables */
-	proctable.processTable = (ProcessTable *)
-	    calloc(1, sizeof(ProcessTable));
+	proctable.processTable = calloc(1, sizeof(ProcessTable));
 	LAL_CALL(LALGPSTimeNow(&status, &(proctable.processTable->start_time), &accuracy), &status);
 	LAL_CALL(populate_process_table(&status, proctable.processTable, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE), &status);
 	LALSnprintf(proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " ");
-	this_proc_param = procparams.processParamsTable = (ProcessParamsTable *)
-	    calloc(1, sizeof(ProcessParamsTable));
+	procparams.processParamsTable = NULL;
 
-	/* clear the waveform field and set the coordinates */
-	memset(waveform, 0, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR));
-	memset(coordinates, 0, LIGOMETA_COORDINATES_MAX * sizeof(CHAR));
-	LALSnprintf(coordinates, LIGOMETA_COORDINATES_MAX * sizeof(CHAR), "EQUATORIAL");
-
-	/* parse the arguments */
-	while(1) {
-		/* getopt_long stores long option here */
-		int option_index = 0;
-
-		c = getopt_long_only(argc, argv, "ha:b:t:s:w:i:d:e:f:g:j:k:m:n:p:q:l:x:y:z:c:Z:", long_options, &option_index);
-
-		/* detect the end of the options */
-		if(c == -1) {
-			break;
-		}
-
-		switch (c) {
-		case 0:
-			/* if this option set a flag, do nothing else now */
-			if(long_options[option_index].flag != 0)
-				break;
-			else {
-				fprintf(stderr, "error parsing option %s with argument %s\n", long_options[option_index].name, optarg);
-				exit(1);
-			}
-			break;
-
-		case 'a':
-			XLALClearErrno();
-			{
-				LIGOTimeGPS tmp;
-				XLALStrToGPS(&tmp, optarg, NULL);
-				gpsStartTime = XLALGPSToINT8NS(&tmp);
-			}
-			if(xlalErrno || (gpsStartTime < LAL_INT8_C(441417609000000000)) || (gpsStartTime > LAL_INT8_C(999999999000000000))) {
-				fprintf(stderr, "invalid --%s (%s specified)\n", long_options[option_index].name, optarg);
-				exit(1);
-			}
-			this_proc_param = this_proc_param->next = next_process_param(long_options[option_index].name, "string", "%s", optarg);
-			break;
-
-		case 'b':
-			XLALClearErrno();
-			{
-				LIGOTimeGPS tmp;
-				XLALStrToGPS(&tmp, optarg, NULL);
-				gpsEndTime = XLALGPSToINT8NS(&tmp);
-			}
-			if(xlalErrno || (gpsEndTime < LAL_INT8_C(441417609000000000)) || (gpsEndTime > LAL_INT8_C(999999999000000000))) {
-				fprintf(stderr, "invalid --%s (%s specified)\n", long_options[option_index].name, optarg);
-				exit(1);
-			}
-			this_proc_param = this_proc_param->next = next_process_param(long_options[option_index].name, "string", "%s", optarg);
-			break;
-
-		case 'd':
-			flow = atof(optarg);
-			this_proc_param = this_proc_param->next = next_process_param(long_options[option_index].name, "float", "%e", flow);
-			break;
-
-		case 'e':
-			fhigh = atof(optarg);
-			this_proc_param = this_proc_param->next = next_process_param(long_options[option_index].name, "float", "%e", fhigh);
-			break;
-
-		case 'f':
-			deltaf = atof(optarg);
-			if(fratio != 0.0) {
-				fprintf(stderr, "error:  cannot specify both --deltaf and --fratio\n");
-				exit(1);
-			}
-			this_proc_param = this_proc_param->next = next_process_param(long_options[option_index].name, "float", "%e", deltaf);
-			break;
-
-		case 'g':
-			quality = atof(optarg);
-			use_quality = 1;
-			this_proc_param = this_proc_param->next = next_process_param(long_options[option_index].name, "float", "%e", quality);
-			break;
-
-		case 's':
-			rand_seed = atoi(optarg);
-			this_proc_param = this_proc_param->next = next_process_param(long_options[option_index].name, "int", "%d", rand_seed);
-			break;
-
-		case 't':
-			{
-				double tstep = atof(optarg);
-				meanTimeStep = tstep / LAL_PI;
-				this_proc_param = this_proc_param->next = next_process_param(long_options[option_index].name, "float", "%le", tstep);
-			}
-			break;
-
-		case 'w':
-			LALSnprintf(waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), "%s", optarg);
-			this_proc_param = this_proc_param->next = next_process_param(long_options[option_index].name, "string", "%s", optarg);
-			break;
-
-
-		case 'x':
-			tau = atof(optarg);
-			this_proc_param = this_proc_param->next = next_process_param(long_options[option_index].name, "float", "%e", tau);
-			break;
-
-		case 'y':
-			freq = atof(optarg);
-			this_proc_param = this_proc_param->next = next_process_param(long_options[option_index].name, "float", "%e", freq);
-			break;
-
-		case 'j':
-			useRandomStrain += 1;
-			log_hpeakMin = atof(optarg);
-			this_proc_param = this_proc_param->next = next_process_param(long_options[option_index].name, "float", "%e", log_hpeakMin);
-			break;
-
-		case 'k':
-			useRandomStrain += 1;
-			log_hpeakMax = atof(optarg);
-			this_proc_param = this_proc_param->next = next_process_param(long_options[option_index].name, "float", "%e", log_hpeakMax);
-			break;
-
-		case 'm':
-			dmax = atof(optarg);
-			this_proc_param = this_proc_param->next = next_process_param(long_options[option_index].name, "float", "%e", dmax);
-			break;
-
-		case 'n':
-			dmin = atof(optarg);
-			this_proc_param = this_proc_param->next = next_process_param(long_options[option_index].name, "float", "%e", dmin);
-			break;
-
-		case 'o':
-			fratio = atof(optarg);
-			if(deltaf != 0.0) {
-				fprintf(stderr, "error:  cannot specify both --deltaf and --fratio\n");
-				exit(1);
-			}
-			this_proc_param = this_proc_param->next = next_process_param(long_options[option_index].name, "float", "%e", fratio);
-			break;
-
-		case 'p':
-			ddistr = atoi(optarg);
-			if(ddistr != 0) {
-				fprintf(stderr, "invalid argument to --d-distr:\nddistr must be 0 as of now\n");
-				exit(1);
-			}
-			this_proc_param = this_proc_param->next = next_process_param(long_options[option_index].name, "int", "%d", ddistr);
-			break;
-
-		case 'z':
-			hpeak = atof(optarg);
-			this_proc_param = this_proc_param->next = next_process_param(long_options[option_index].name, "float", "%e", hpeak);
-			break;
-
-		case 'c':
-			LALSnprintf(coordinates, LIGOMETA_COORDINATES_MAX * sizeof(CHAR), "%s", optarg);
-
-			if(!(strcmp(coordinates, "ZENITH")))
-				useZenith = 1;
-
-			this_proc_param = this_proc_param->next = next_process_param(long_options[option_index].name, "string", "%s", optarg);
-			break;
-
-		case 'Z':
-			userTag = optarg;
-			this_proc_param = this_proc_param->next = next_process_param(long_options[option_index].name, "string", "%s", optarg);
-			break;
-
-		case 'i':
-			simwavedur = atof(optarg);
-			this_proc_param = this_proc_param->next = next_process_param(long_options[option_index].name, "float", "%e", simwavedur);
-			break;
-
-		case 'l':
-			minsimnumber = atoi(optarg);
-			this_proc_param = this_proc_param->next = next_process_param(long_options[option_index].name, "int", "%d", minsimnumber);
-			break;
-
-		case 'q':
-			maxsimnumber = atoi(optarg);
-			this_proc_param = this_proc_param->next = next_process_param(long_options[option_index].name, "int", "%d", maxsimnumber);
-			break;
-
-		case 'h':
-			fprintf(stderr, USAGE);
-			exit(0);
-			break;
-
-		case '?':
-			fprintf(stderr, USAGE);
-			exit(1);
-			break;
-
-		default:
-			fprintf(stderr, "unknown error while parsing options\n");
-			fprintf(stderr, USAGE);
-			exit(1);
-		}
-	}
-
-	/* check some of the input parameters for consistency */
-	if(!gpsStartTime || !gpsEndTime) {
-		fprintf(stderr, "--gps-start-time and --gps-end-time are both required\n");
-		exit(1);
-	}
-	if((useRandomStrain == 1)) {
-		fprintf(stderr, "Must supply upper and lower limits when using" "random strain\n");
-		exit(1);
-	} else if((useRandomStrain == 2)) {
-		logAmpRange = (log_hpeakMax - log_hpeakMin);
-	}
-
-	if(ddistr == 0) {
-		logdmin = log10(dmin);
-		deltaL = log10(dmax) - logdmin;
-	}
-
-	deltasim = maxsimnumber - minsimnumber;
+	/* parse command line */
+	options = parse_command_line(&argc, &argv, &procparams);
+	options.freq = options.flow;
 
 	/* fill the comment */
-	snprintf(proctable.processTable->comment, LIGOMETA_COMMENT_MAX, "%s", userTag);
+	if(options.user_tag)
+		snprintf(proctable.processTable->comment, LIGOMETA_COMMENT_MAX, "%s", options.user_tag);
+	else
+		snprintf(proctable.processTable->comment, LIGOMETA_COMMENT_MAX, "");
 
 	/* initialize random number generator */
-	LAL_CALL(LALCreateRandomParams(&status, &randParams, rand_seed), &status);
-
-	if(!*waveform) {
-		/* default to SineGaussian */
-		LALSnprintf(waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), "SineGaussian");
-	}
-
-	this_proc_param = procparams.processParamsTable;
-	procparams.processParamsTable = procparams.processParamsTable->next;
-	free(this_proc_param);
-
-	/* create the detector time map structures */
-	place_and_gps = (LALPlaceAndGPS *) calloc(1, sizeof(LALPlaceAndGPS));
-	sky_pos = (SkyPosition *) calloc(1, sizeof(SkyPosition));
-	det_time_and_source = (DetTimeAndASource *) calloc(1, sizeof(DetTimeAndASource));
-	sky_pos->system = COORDINATESYSTEM_EQUATORIAL;
-
-	/* create the first injection */
-	this_sim_burst = injections.simBurstTable = (SimBurstTable *)
-	    calloc(1, sizeof(SimBurstTable));
-
-	/* make injection times at intervals of 100/pi seconds */
-	ninj = 1;
-	iamp = 1.0;
-
-	freq = flow;
+	LAL_CALL(LALCreateRandomParams(&status, &randParams, options.seed), &status);
 
 	/* if we are doing string cusps; we want to inject the correct
 	   population of frequencies; what's distributed uniformly is
 	   theta^2 (the square of the angle the line of sight makes
 	   with direction of the cusp) */
-
-	if(!strcmp(waveform, "StringCusp")) {
-		REAL4 thetasqmin = pow(fhigh, -2. / 3.), thetasqmax = pow(flow, -2. / 3.), thetasq;
+	if(!strcmp(options.waveform, "StringCusp")) {
+		REAL4 thetasqmin = pow(options.fhigh, -2. / 3.), thetasqmax = pow(options.flow, -2. / 3.), thetasq;
 
 		fprintf(stdout, "Generating cusp population\n");
 
-		srand(rand_seed);
+		srand(options.seed);
 		thetasq = (thetasqmax - thetasqmin) * ((float) rand() / (float) RAND_MAX) + thetasqmin;
-		freq = pow(thetasq, -3. / 2.);
+		options.freq = pow(thetasq, -3. / 2.);
 	}
 
-	tinj = gpsStartTime;
-
-	while(1) {
+	for(tinj = options.gps_start_time; tinj <= options.gps_end_time; tinj += options.time_step) {
 		/* compute tau if quality was specified */
-		if(use_quality)
-			tau = quality / (sqrt(2.0) * LAL_PI * freq);
+		if(options.quality > 0.0)
+			options.tau = options.quality / (sqrt(2.0) * LAL_PI * options.freq);
 
-		if(tinj > gpsEndTime) {
-			break;
+		/* allocate the injection */
+		if(!this_sim_burst)
+			this_sim_burst = injections.simBurstTable = calloc(1, sizeof(SimBurstTable));
+		else {
+			this_sim_burst->next = calloc(1, sizeof(SimBurstTable));
+			this_sim_burst = this_sim_burst->next;
 		}
-
-		if(ninj == 1) {
-			/* create the first injection */
-			this_sim_burst = injections.simBurstTable = (SimBurstTable *)
-			    calloc(1, sizeof(SimBurstTable));
-		} else {
-			this_sim_burst = this_sim_burst->next = (SimBurstTable *)
-			    calloc(1, sizeof(SimBurstTable));
-		}
-
-		++ninj;
 
 		/* GPS time of burst */
 		XLALINT8NSToGPS(&this_sim_burst->geocent_peak_time, tinj);
-		tinj += (long long) (1e9 * meanTimeStep);
 
-		/* save gmst (hours) in sim_burst table */
+		/* GMST of burst in hours */
 		this_sim_burst->peak_time_gmst = XLALGreenwichMeanSiderealTime(&this_sim_burst->geocent_peak_time) * 12.0 / LAL_PI;
 
 		/* populate the sim burst table */
-		memcpy(this_sim_burst->waveform, waveform, sizeof(CHAR) * LIGOMETA_WAVEFORM_MAX);
-		memcpy(this_sim_burst->coordinates, coordinates, sizeof(CHAR) * LIGOMETA_COORDINATES_MAX);
-
+		snprintf(this_sim_burst->waveform, LIGOMETA_WAVEFORM_MAX, "%s", options.waveform);
+		snprintf(this_sim_burst->coordinates, LIGOMETA_COORDINATES_MAX, "%s", options.coordinates);
 
 		/* sky location and polarizatoin angle */
-		if(useZenith) {
+		if(!strcmp(options.coordinates, "ZENITH")) {
+			/* zenith */
 			this_sim_burst->longitude = 0.0;
 			this_sim_burst->latitude = 0.0;
 			this_sim_burst->polarization = 0.0;
@@ -555,97 +613,81 @@ int main(int argc, char *argv[])
 		}
 
 		/* compute amplitude information */
-		if(useRandomStrain) {
+		if(options.use_random_strain) {
+#if 1
 			LAL_CALL(LALUniformDeviate(&status, &deviate, randParams), &status);
-			hpeak = pow(10, logAmpRange * deviate + log_hpeakMin);
-			/*Uncomment the lines below and comment the above two line
-			 *if want to inject uniformly spaced amplitude waveforms
+			options.hpeak = pow(10, (options.log_hpeak_max - options.log_hpeak_min) * deviate + options.log_hpeak_min);
+
+			/*
+			 * Uncomment the lines below and comment the above
+			 * if want to inject uniformly spaced amplitude
+			 * waveforms
 			 */
-			/*if (iamp == 1.0 ){
-			   hpeak = pow(10,-19);
-			   iamp++;
-			   }
-			   else if( iamp == 2.0 ){
-			   hpeak = (REAL4)2.0*pow(10,-19);
-			   iamp++;
-			   }
-			   else if (iamp == 3.0 ){
-			   hpeak = (REAL4)3.0*pow(10,-19);
-			   iamp++;
-			   }
-			   else if (iamp == 4.0 ){
-			   hpeak = (REAL4)3.3*pow(10,-18);
-			   iamp++;
-			   }
-			   else if (iamp == 5.0 ){
-			   hpeak = (REAL4)5.3*pow(10,-17);
-			   iamp = 1.0;
-			   } */
+#else
+			if(iamp == 1) {
+				hpeak = pow(10, -19);
+				iamp++;
+			} else if(iamp == 2) {
+				hpeak = 2.0 * pow(10, -19);
+				iamp++;
+			} else if(iamp == 3) {
+				hpeak = 3.0 * pow(10, -19);
+				iamp++;
+			} else if(iamp == 4) {
+				hpeak = 3.3 * pow(10, -18);
+				iamp++;
+			} else if(iamp == 5) {
+				hpeak = 5.3 * pow(10, -17);
+				iamp = 1;
+			}
+#endif
 		}
 
-		if(ddistr == 0)
-			/* uniform distribution in log(distance) */
-		{
-			LAL_CALL(LALUniformDeviate(&status, &deviate, randParams), &status);
-			this_sim_burst->distance = pow(10.0, (REAL4) (logdmin + deltaL * deviate));
-		}
+		/* uniform distribution in log(distance) */
+		LAL_CALL(LALUniformDeviate(&status, &deviate, randParams), &status);
+		this_sim_burst->distance = pow(10.0, options.log_min_distance + (options.log_max_distance - options.log_min_distance) * deviate);
 
 
 		/* deal with the intrinsic signal parameters */
-		this_sim_burst->hrss = sqrt(sqrt(2.0 * LAL_PI) * tau / 4.0) * hpeak;
-		this_sim_burst->hpeak = hpeak;
-		this_sim_burst->freq = freq;
-		this_sim_burst->tau = tau;
-		if(simwavedur) {
-			this_sim_burst->dtplus = simwavedur / 2.0;
-			this_sim_burst->dtminus = simwavedur / 2.0;
+		this_sim_burst->hrss = sqrt(sqrt(2.0 * LAL_PI) * options.tau / 4.0) * options.hpeak;
+		this_sim_burst->hpeak = options.hpeak;
+		this_sim_burst->freq = options.freq;
+		this_sim_burst->tau = options.tau;
+		if(options.simwaveform_duration) {
+			this_sim_burst->dtplus = options.simwaveform_duration / 2.0;
+			this_sim_burst->dtminus = options.simwaveform_duration / 2.0;
 		} else {
-			this_sim_burst->dtplus = 4.0 * tau;
-			this_sim_burst->dtminus = 4.0 * tau;
+			this_sim_burst->dtplus = 4.0 * options.tau;
+			this_sim_burst->dtminus = 4.0 * options.tau;
 		}
 
 		/* set the simulated wavenumber */
 		LAL_CALL(LALUniformDeviate(&status, &deviate, randParams), &status);
-		this_sim_burst->zm_number = (INT4) (minsimnumber + deltasim * deviate);
+		this_sim_burst->zm_number = options.simwaveform_min_number + (options.simwaveform_max_number - options.simwaveform_min_number) * deviate;
 
-		/* set up for site arrival time calculation */
-		place_and_gps->p_gps = &(this_sim_burst->geocent_peak_time);
-		det_time_and_source->p_det_and_time = place_and_gps;
-		sky_pos->longitude = this_sim_burst->longitude;
-		sky_pos->latitude = this_sim_burst->latitude;
-		det_time_and_source->p_source = sky_pos;
-
-		/* compute site arrival time for lho */
-		place_and_gps->p_detector = &lho;
-		LAL_CALL(LALTimeDelayFromEarthCenter(&status, &time_diff, det_time_and_source), &status);
-		this_sim_burst->h_peak_time = this_sim_burst->geocent_peak_time;
-		XLALGPSAdd(&this_sim_burst->h_peak_time, time_diff);
-
-		/* compute site arrival time for llo */
-		place_and_gps->p_detector = &llo;
-		LAL_CALL(LALTimeDelayFromEarthCenter(&status, &time_diff, det_time_and_source), &status);
-		this_sim_burst->l_peak_time = this_sim_burst->geocent_peak_time;
-		XLALGPSAdd(&this_sim_burst->l_peak_time, time_diff);
+		/* arrival times */
+		this_sim_burst->h_peak_time = arrival_time(lho, this_sim_burst->geocent_peak_time, this_sim_burst->latitude, this_sim_burst->longitude);
+		this_sim_burst->l_peak_time = arrival_time(llo, this_sim_burst->geocent_peak_time, this_sim_burst->latitude, this_sim_burst->longitude);
 
 		/* increment to next frequency and test it's still in band */
-		if((deltaf == 0.0) && (fratio != 0.0))
-			freq *= fratio;
-		else if((deltaf != 0.0) && (fratio == 0.0))
-			freq += deltaf;
+		if((options.deltaf == 0.0) && (options.fratio != 0.0))
+			options.freq *= options.fratio;
+		else if((options.deltaf != 0.0) && (options.fratio == 0.0))
+			options.freq += options.deltaf;
 		else {
-			fprintf(stderr, "error: something wrong with --deltaf and -fratio\n");
+			fprintf(stderr, "error: something wrong with --deltaf and --fratio\n");
 			exit(1);
 		}
-		if(freq > fhigh)
-			freq = flow;
+		if(options.freq > options.fhigh)
+			options.freq = options.flow;
 
 		/* if we are doing string cusps; we want to inject the correct
 		   population of frequencies */
-		if(!strcmp(waveform, "StringCusp")) {
-			REAL4 thetasqmin = pow(fhigh, -2. / 3.), thetasqmax = pow(flow, -2. / 3.), thetasq;
+		if(!strcmp(options.waveform, "StringCusp")) {
+			REAL4 thetasqmin = pow(options.fhigh, -2. / 3.), thetasqmax = pow(options.flow, -2. / 3.), thetasq;
 
 			thetasq = (thetasqmax - thetasqmin) * ((float) rand() / (float) RAND_MAX) + thetasqmin;
-			freq = pow(thetasq, -3. / 2.);
+			options.freq = pow(thetasq, -3. / 2.);
 		}
 	}
 
@@ -654,7 +696,7 @@ int main(int argc, char *argv[])
 	 * and write a sim burst table out of that. However
 	 * currently all the fields are not filled.[20040430: SKRM]
 	 */
-	if(mdcFlag) {
+	if(options.mdc) {
 		INT4 n = 0;
 		INT4 nn, x, rc;
 		CHAR mdcSimfile[20];
@@ -753,60 +795,15 @@ int main(int argc, char *argv[])
 		free(hrss);
 	}
 
-
-
-	memset(&xmlfp, 0, sizeof(LIGOLwXMLStream));
-
-	if(!mdcFlag) {		/* these tables are written when mdc signals are not used */
-		if(userTag) {
-			LALSnprintf(fname, sizeof(fname), "HL-INJECTIONS_%s-%d-%d.xml", userTag, (int) (gpsStartTime / LAL_INT8_C(1000000000)), (int) ((gpsEndTime - gpsStartTime) / LAL_INT8_C(1000000000)));
-		} else {
-			LALSnprintf(fname, sizeof(fname), "HL-INJECTIONS-%d-%d.xml", (int) (gpsStartTime / LAL_INT8_C(1000000000)), (int) ((gpsEndTime - gpsStartTime) / LAL_INT8_C(1000000000)));
-		}
-
-		LAL_CALL(LALOpenLIGOLwXMLFile(&status, &xmlfp, fname), &status);
-
-		LAL_CALL(LALGPSTimeNow(&status, &(proctable.processTable->end_time), &accuracy), &status);
-		LAL_CALL(LALBeginLIGOLwXMLTable(&status, &xmlfp, process_table), &status);
-		LAL_CALL(LALWriteLIGOLwXMLTable(&status, &xmlfp, proctable, process_table), &status);
-		LAL_CALL(LALEndLIGOLwXMLTable(&status, &xmlfp), &status);
-
-		if(procparams.processParamsTable) {
-			LAL_CALL(LALBeginLIGOLwXMLTable(&status, &xmlfp, process_params_table), &status);
-			LAL_CALL(LALWriteLIGOLwXMLTable(&status, &xmlfp, procparams, process_params_table), &status);
-			LAL_CALL(LALEndLIGOLwXMLTable(&status, &xmlfp), &status);
-		}
-
-		if(injections.simBurstTable) {
-			LAL_CALL(LALBeginLIGOLwXMLTable(&status, &xmlfp, sim_burst_table), &status);
-			LAL_CALL(LALWriteLIGOLwXMLTable(&status, &xmlfp, injections, sim_burst_table), &status);
-			LAL_CALL(LALEndLIGOLwXMLTable(&status, &xmlfp), &status);
-		}
-
-		LAL_CALL(LALCloseLIGOLwXMLFile(&status, &xmlfp), &status);
-
-		{
-			FILE *fpout = NULL;
-
-			if(userTag) {
-				LALSnprintf(fname, sizeof(fname), "HLT-INJECTIONS_%s-%d-%d.txt", userTag, (int) (gpsStartTime / LAL_INT8_C(1000000000)), (int) ((gpsEndTime - gpsStartTime) / LAL_INT8_C(1000000000)));
-			} else {
-				LALSnprintf(fname, sizeof(fname), "HLT-INJECTIONS-%d-%d.txt", (int) (gpsStartTime / LAL_INT8_C(1000000000)), (int) ((gpsEndTime - gpsStartTime) / LAL_INT8_C(1000000000)));
-			}
-			fpout = fopen(fname, "w");
-			ligo_tama_output(fpout, injections.simBurstTable);
-			fclose(fpout);
-		}
-	}
-	/* this is used when mdc frames are used */
-	if(mdcFlag) {
-		LALSnprintf(fname, sizeof(fname), "HL-MDCSG10_%d.xml", 1);
-		LAL_CALL(LALOpenLIGOLwXMLFile(&status, &xmlfp, fname), &status);
-		LAL_CALL(LALBeginLIGOLwXMLTable(&status, &xmlfp, sim_burst_table), &status);
-		LAL_CALL(LALWriteLIGOLwXMLTable(&status, &xmlfp, mdcinjections, sim_burst_table), &status);
-		LAL_CALL(LALEndLIGOLwXMLTable(&status, &xmlfp), &status);
-		LAL_CALL(LALCloseLIGOLwXMLFile(&status, &xmlfp), &status);
+	/* output */
+	if(options.mdc) {
+		/* this is used when mdc frames are used */
+		write_mdc_xml(mdcinjections);
+	} else {
+		/* non-mdc XML output */
+		write_xml(proctable, procparams, injections, options);
+		write_tamma(injections, options);
 	}
 
-	return 0;
+	exit(0);
 }
