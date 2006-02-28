@@ -542,20 +542,10 @@ int main(int argc, char *argv[]){
   timeDiffV.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
 
   {
-    REAL8   t0, ts, tn, midTimeBase;
     UINT4   j; 
 
-    midTimeBase=0.5*timeBase;
-    ts = timeV->data[0].gpsSeconds;
-    tn = timeV->data[0].gpsNanoSeconds * 1.00E-9;
-    t0 = ts + tn;
-    timeDiffV.data[0] = midTimeBase;
-
-    for(j=1; j < mObsCoh; ++j){
-      ts = timeV->data[j].gpsSeconds;
-      tn = timeV->data[j].gpsNanoSeconds * 1.00E-9;  
-      timeDiffV.data[j] = ts + tn - t0 + midTimeBase; 
-    }  
+    for(j=0; j < mObsCoh; ++j)
+      timeDiffV.data[j] = XLALGPSDiff( timeV.data + j, timeV.data ) + 0.5*timeBase;
   }
 
 
