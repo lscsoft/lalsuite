@@ -178,7 +178,6 @@ static struct FrVect *loadFrVect( FrStream *stream, const char *channel )
         return NULL;
       adc->next = NULL;
       vect = FrVectReadNext( stream->file, tstart, chan );
-      vect = FrVectCopy( vect );
       FrAdcDataFree( adc );
       break;
     case LAL_SIM_CHAN:
@@ -187,7 +186,6 @@ static struct FrVect *loadFrVect( FrStream *stream, const char *channel )
         return NULL;
       sim->next = NULL;
       vect = FrVectReadNext( stream->file, tstart, chan );
-      vect = FrVectCopy( vect );
       FrSimDataFree( sim );
       break;
     case LAL_PROC_CHAN:
@@ -196,7 +194,6 @@ static struct FrVect *loadFrVect( FrStream *stream, const char *channel )
         return NULL;
       proc->next = NULL;
       vect = FrVectReadNext( stream->file, tstart, chan );
-      vect = FrVectCopy( vect );
       FrProcDataFree( proc );
       break;
     default:
