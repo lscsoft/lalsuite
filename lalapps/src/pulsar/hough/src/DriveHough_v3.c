@@ -145,6 +145,7 @@ int main(int argc, char *argv[]){
   static LIGOTimeGPSVector   *timeV=NULL;
   static REAL8Cart3CoorVector velV;
   static REAL8Vector         timeDiffV;
+  REAL8  tObs;
 
   /* standard pulsar sft types */ 
   SFTVector *inputSFTs = NULL;
@@ -403,6 +404,9 @@ int main(int argc, char *argv[]){
     
     /* get SFT timestamps */
     LAL_CALL( LALSFTtimestampsFromCatalog(  &status, &timeV, catalog ), &status);  	
+
+    /* total observation time = last timestamp - first timestamp + timeBase*/
+    tObs = XLALGPSDiff( timeV->data + mObsCoh - 1, timeV->data ) + timeBase;
 
     /* add wings for Doppler modulation and running median block size*/
     doppWings = (uvar_f0 + uvar_fSearchBand) * VTOT;    
@@ -763,7 +767,7 @@ int main(int argc, char *argv[]){
       
       /* ***** for spin-down case ****/
       nSpin1Max = floor(uvar_nfSizeCylinder/2.0);
-      f1jump = 1./timeDiffV.data[mObsCoh- 1];
+      f1jump = 1.0 / tObs;
       
 
       /* start of main loop over search frequency bins */

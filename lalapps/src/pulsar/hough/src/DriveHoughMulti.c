@@ -383,7 +383,7 @@ int main(int argc, char *argv[]){
     lastTimeStamp = catalog->data[mObsCoh - 1].header.epoch;
     /* set tobs -- it is 0.4 * timebase instead of the more natural timebase
        just to agree with DriveHough_v3 */
-    tObs = XLALGPSDiff( &lastTimeStamp, &firstTimeStamp ) + 0.5*timeBase;
+    tObs = XLALGPSDiff( &lastTimeStamp, &firstTimeStamp ) + timeBase;
 
     /* using value of length, allocate memory for most significant event nstar, fstar etc. */
     nStarEventVec.length = length + 1;
