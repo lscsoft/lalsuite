@@ -1,41 +1,3 @@
-/* LALDemod variants put out of ComputeFStatistic.c for separate compilation
- * Authors see ComputeFStatistic.c
-                                                         Bernd Machenschalk */
-#include "ComputeFStatistic.h"
-
-RCSID( "$Id$");
-
-#if defined(USE_BOINC) && defined(_WIN32)
-#include "win_lib.h"
-#endif
-
-/* this is defined in C99 and *should* be in math.h.  Long term
-   protect this with a HAVE_FINITE */
-int finite(double);
-
-/* global variables defined in ComputeFStatistic.c */
-extern INT4 cfsRunNo;	   /**< CFS run-number: 0=run only once, 1=first run, 2=second run */
-extern UINT4 maxSFTindex;  /**< maximal sftindex, for error-checking */
-
-#define LD_SMALL        (1.0e-9 / LAL_TWOPI)
-#define OOTWOPI         (1.0 / LAL_TWOPI)
-#define LUT_RES         64      /* resolution of lookup-table */
-
-#define TWOPI_FLOAT     6.28318530717958f  /* 2*pi */
-#define OOTWOPI_FLOAT   (1.0f / TWOPI_FLOAT)	/* 1 / (2pi) */ 
-
-
-/* in special cases (macros) don't use the generic version of TestLALDemod() below, but the ones from external files */
-#if defined(USE_ALTIVEC)
-#include "CFSLALDemod_AltiVec.c"
-#elif defined(USE_NEW_DIV)
-#include "CFSLALDemod_new_div.c"
-#elif defined(USE_NEW_DIV_PART)
-#include "CFSLALDemod_new_div_part.c"
-#elif defined(USE_EXP_LALDEMOD)
-#include "CFSLALDemod_Experimental.c"
-#else /* USE_R4LALDEMOD, USE_ALTIVEC */
-
 /* <lalVerbatim file="LALDemodCP"> */
 void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params) 
 /* </lalVerbatim> */
@@ -181,11 +143,13 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
           tcos = tc-d*ts-d2*tc-1.0;
         }
 
+	/* use LUT here, too */
+	/*
         y = - LAL_TWOPI * ( f * skyConst[ tempInt1[ alpha ]-1 ] + ySum[ alpha ] );
         realQ = cos(y);
         imagQ = sin(y);
+	*/
 
-        /*
         REAL8 yTemp = f * skyConst[ tempInt1[ alpha ]-1 ] + ySum[ alpha ];
         REAL8 yRem = yTemp - (UINT4)yTemp;
 
@@ -200,7 +164,6 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
           imagQ = -imagQ;
           realQ = tc - d * ts - d2 * tc;
         }
-        */
 
         k1 = (UINT4)xTemp - params->Dterms + 1;
 
@@ -256,30 +219,37 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 
           } /* if x could become close to 0 */
         else
-          {
-            COMPLEX8 *Xalpha_k = Xalpha + sftIndex;
+	  {
+	    REAL4 tsin2pi = tsin * (REAL4)OOTWOPI; /* to get TWOPI out of the loop */
+	    REAL4 tcos2pi = tcos * (REAL4)OOTWOPI;
 
-            realXP=0.0;
-            imagXP=0.0;
+	    COMPLEX8 *Xalpha_k = Xalpha + sftIndex;
+	    COMPLEX8 Xa = *Xalpha_k;
 
-            /* Loop over terms in Dirichlet Kernel */
+	    REAL4 Sn = Xal.re; /* partial sums */
+	    REAL4 Tn = Xal.im;
 
-
-            for(k=0; k < klim ; k++)
-              {
-                REAL4 xinv = (REAL4)OOTWOPI / (REAL4)tempFreq1;
-                COMPLEX8 Xa = *Xalpha_k;
-                Xalpha_k ++;
-                tempFreq1 --;
-                
-                realP = tsin * xinv;
-                imagP = tcos * xinv;
-                /* these lines compute P*xtilde */
-                realXP += Xa.re * realP - Xa.im * imagP;
-                imagXP += Xa.re * imagP + Xa.im * realP;
-
-              } /* for k < klim */
-
+	    REAL4 pn = tempFreq1;
+	    REAL4 qn = pn;
+	    REAL4 U_alpha, V_alpha;
+	  
+	    for(k=0; k < klim ; k++)
+	      {
+		Xalpha_k ++;
+		Xal = *Xalpha_k;
+	      
+		pn = pn - 1.0f;			/* p_(n+1) */
+		Sn = pn * Sn + qn * Xal.re;	/* S_(n+1) */
+		Tn = pn * Tn + qn * Xal.im;	/* T_(n+1) */
+		qn *= pn;			/* q_(n+1) */
+	      }
+	  
+	    U_alpha = Sn / qn;
+	    V_alpha = Tn / qn;
+	  
+	    realXP = tsin2pi * U_alpha - tcos2pi * V_alpha;
+	    imagXP = tcos2pi * U_alpha + tsin2pi * V_alpha;
+	  
           } /* if x cannot be close to 0 */
 
         if(sftIndex-1 > maxSFTindex) {
@@ -323,4 +293,3 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 
 }
 
-#endif /* USE_R4LALDEMOD, USE_ALTIVEC */
