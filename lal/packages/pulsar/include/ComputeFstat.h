@@ -231,6 +231,12 @@ void XLALDestroyMultiAMCoeffs ( MultiAMCoeffs *multiAMcoef );
 
 void XLALEmptyComputeFBuffer ( ComputeFBuffer cfb );
 
+
+/* helpers */
+int sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x); 
+int sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x);
+
+
 #ifdef  __cplusplus
 }
 #endif  

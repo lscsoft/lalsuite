@@ -69,8 +69,6 @@ static const Fcomponents empty_Fcomponents;
 static const REAL8 inv_fact[NUM_FACT] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0), (1.0/24.0), (1.0/120.0) };
 
 /*---------- internal prototypes ----------*/
-int sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x); /* LUT-calculation of sin/cos */
-int sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x);
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -1257,17 +1255,13 @@ XLALEmptyComputeFBuffer ( ComputeFBuffer cfb )
   return;
 } /* XLALDestroyComputeFBuffer() */
 
-
-
-
-
 /* ===== General internal helper functions ===== */
 
 /** Calculate sin(x) and cos(x) to roughly 1e-7 precision using 
  * a lookup-table and Tayler-expansion.
  *
  * NOTE: this function will fail for arguments larger than
- * |x| > INT4_MAX = 2147483647 ~ 2e9 !
+ * |x| > INT4_MAX = 2147483647 ~ 2e9 !!!
  *
  * return = 0: OK, nonzero=ERROR
  */
