@@ -17,6 +17,7 @@ $Id$
  #define PRINT_INJECTION_VALUES
 /* #define DEBUG_LALFASTGENERATEPULSARSFTS*/
  #define DEBUG_LALGENERATEPULSARSFTS
+/*#define DEBUG_CONFIDENCE*/
 /* #define PRINT_MAXPOWERANDBINEACHSFT*/
 /*********************************************/
 /*                                           */
@@ -77,6 +78,7 @@ void StackSlideBinary(  LALStatus *status,
     REAL8 SemiMajorAxis;  /* orbital radius of binary (in sec) */
     REAL8 LoudestEvent;
     REAL8 peakFreq;
+    REAL4 SNR;
     
     printf("Start function StackSlideBinary\n");
 
@@ -132,7 +134,7 @@ void StackSlideBinary(  LALStatus *status,
         csParams->baryinput->delta=params->skyPosData[iSky][1];
         
         /*ADD HERE BINARY PARAMETERS to be input by means of greg's command line arg.*/
-          csParams->OrbitalPeriod=66960; /*no need to go into the commandline*/
+          csParams->OrbitalPeriod=68023; /*66960 no need to go into the commandline*/
           csParams->OrbitalEccentricity=params->OrbitalEccentricity; /*remember: params must be the comm line variable*/
           csParams->ArgPeriapse=params->ArgPeriapse;
           csParams->TperiapseSSB.gpsSeconds=params->TperiapseSSBSec;
@@ -155,22 +157,33 @@ void StackSlideBinary(  LALStatus *status,
   /*!*/          /*SemiMajorAxis=params->SMAcentral+((REAL8)randval-0.5)*(params->deltaSMA);*/
 	    SemiMajorAxis=params->SMAcentral + (iSMA - 2.0 )*(params->deltaSMA); /*05/09/05 vir */
             
+                 /*this is so because in a multiple filter search we need at most 4/5 filters to*/
+	         /*cover >1 sigma parameter space, these filters will range between 1.24 to 1.54/1.64 at deltaSMA=0.1*/
+	    
+
             #ifdef DEBUG_BINARY_CODE  
 	    fprintf(stdout,"SMA is %f\n",SemiMajorAxis);
-            fflush(stdout);
+            /*fflush(stdout);*/
             #endif
             
+	      
 	    csParams->SemiMajorAxis=SemiMajorAxis;
             /*params->TperiapseSSBsec=params->Tpericentral+((REAL8)randval-0.5)*(params->deltaTperi); */
             /*05/02/18 vir: csParams->TperiapseSSBsec=params->TperiapseSSBsec; this is now assigned in CL*/
 
+	    
+	    
             /* Call STACKSLIDECOMPUTESKYBINARY() */
             StackSlideComputeSkyBinary(status->statusPtr, pTdotsAndDeltaTs, iSkyCoh, csParams);
             CHECKSTATUSPTR (status);
 
-            /* Call STACKSLIDE() for every point in spindown and SMA parameter space*/
+	    
 
-            /* for all spindowns, loop */
+            /* Call STACKSLIDE() for every point in spindown and SMA parameter space*/
+	    
+         /*printf("numFreqDerivIncludingNoSpinDown %i\n", params->numFreqDerivIncludingNoSpinDown);*/
+            
+          /* for all spindowns, loop */
             for(iFreqDeriv=0;iFreqDeriv<params->numFreqDerivIncludingNoSpinDown;iFreqDeriv++) {
 
                if (params->numSpinDown>0) {
@@ -178,22 +191,33 @@ void StackSlideBinary(  LALStatus *status,
                }
 
                kSUM++; /* increment which SUM we are computing */
-               StackSlide(status->statusPtr,params->SUMData,params->STKData,pTdotsAndDeltaTs,stksldParams);
-               CHECKSTATUSPTR (status);
                
+	      
+	       StackSlide(status->statusPtr,params->SUMData,params->STKData,pTdotsAndDeltaTs,stksldParams);
+               CHECKSTATUSPTR (status);
+                
+	       
                ParamsSMA[kSUM]=SemiMajorAxis; /*05/02/18 vir:*/ /* 04/12/05 gam; moved out of StackSlide function */
-       
+                
                if((params->nMaxSMA ==1)&&(params->nMaxTperi ==1)) {
                   binaryfp=fopen(filename, "w+");
                   for (k=0; k< params->nBinsPerSUM ; k++) {
                       fprintf(binaryfp,"%f %g\n", params->f0SUM + (REAL8)k*params->dfSUM, params->SUMData[0]->data->data[k]);
                   }
                   fclose(binaryfp);
-                  
+                 
 		  /*Look for loudest also in this case ....*/
 
 		  FindBinaryLoudest(&LoudestEvent, &peakFreq, params->SUMData, stksldParams, SemiMajorAxis, fpSavedEvents);                    fprintf(binaryLE,"%f %f %f\n", peakFreq, LoudestEvent, ParamsSMA[kSUM]);
 		  
+        
+        	 /*05/11/17 add calculation of standard deviation only if MC active*/
+                   if( (params->testFlag & 2) > 0 ){  
+	           ValidateMCResults(status->statusPtr, params->SUMData[0], params, &SNR);
+                   CHECKSTATUSPTR (status);
+                   		   
+		   }
+		 
 		  /* 05/02/17 vir: write sum on the file only for no mismatch*/
                } else {
                   /*Look for loudest event in SUMData*/
@@ -202,10 +226,11 @@ void StackSlideBinary(  LALStatus *status,
                      fprintf(stdout,"the SemiMajorAxis is %f\n", SemiMajorAxis);
                      fflush(stdout);
                   #endif
-		     
-	            FindBinaryLoudest(&LoudestEvent, &peakFreq, params->SUMData, stksldParams, SemiMajorAxis, fpSavedEvents);       		  
+                    /* this finds the peaks above threshold*/ 
+	            FindBinaryLoudest(&LoudestEvent, &peakFreq, params->SUMData, stksldParams, SemiMajorAxis, fpSavedEvents);       		  /*the file outLE created by this function contains the loudest for each filter and corr. freq. */
                     fprintf(binaryLE,"%f %f %f\n", peakFreq, LoudestEvent, ParamsSMA[kSUM]);
-               
+
+		   
 	       }/*end of else nMaxSMA == 1 */
           
 	       /*Allocate here space for xml table*/
@@ -214,13 +239,15 @@ void StackSlideBinary(  LALStatus *status,
 
             LALDestroyRandomParams(status->statusPtr, &randPar );
 
+	   
          /*}end of for iT*/
         }/*end of for iSMA 05/02/17 vir*/
         fclose(binaryLE);    
        fclose(fpSavedEvents);
-   
+
+        
 }/*end of for iSky*/
-           
+
     /* Deallocate space for ComputeSky parameters */
     LALFree(csParams->skyPos);
     LALFree(csParams);
@@ -237,7 +264,9 @@ void StackSlideBinary(  LALStatus *status,
    LALFree(pTdotsAndDeltaTs);
         
    LALFree(ParamsSMA);
-   
+                   fprintf(stdout,"end function StackSlideBinary\n");
+		   fflush(stdout);
+
    CHECKSTATUSPTR (status);
    DETATCHSTATUSPTR (status);
 
@@ -305,20 +334,20 @@ void FindBinaryLoudest(REAL8 *LoudestEvent, REAL8 *peakFreq, REAL4FrequencySerie
 /**********************************************************************************/
 void RunStackSlideBinaryMonteCarloSimulation(LALStatus *status, StackSlideSearchParams *params, INT4 nSamples)
 {
-   /*define variables...*/
   
-  INT4    i = 0; /* all purpose index */
-  INT4    j = 0; /* all purpose index */
-  INT4    k = 0; /* all purpose index */
+  
+  INT4    i = 0; 
+  INT4    j = 0; 
+  INT4    k = 0; 
   
   INT4 kSUM = 0;    
   
   FILE *outfp;
   
-  INT4 iFreq = 0;                           /* 05/26/04 gam */  
+  INT4 iFreq = 0;                           
 
-  REAL8 cosIota;                    /* cosine of inclination angle iota of the source */
-  REAL8 h_0 = params->threshold4;   /* Source amplitude: not sure if threshold 4*/
+  REAL8 cosIota;                    
+  REAL8 h_0 = 0;  /* params->threshold4;    Source amplitude: not sure if threshold 4*/
   
   REAL4 renorm;                 /* Need to renormalize SFTs to account for different sample rates */  
   LIGOTimeGPS GPSin;            /* reference-time for pulsar parameters at the detector; will convert to SSB! */
@@ -332,9 +361,9 @@ void RunStackSlideBinaryMonteCarloSimulation(LALStatus *status, StackSlideSearch
         LIGOTimeGPSVector timestamps;
 	SFTVector *outputSFTs = NULL;  /*pointer to SFTs generated by LALFastgeneratePulsarSignal*/
         FFT **savBLKData = NULL; 
-        INT4  *savSumBinMask;          /* 07/15/2005 gam */
+        INT4  *savSumBinMask;          
 
-	/* 07/14/04 gam; next two are needed by LALComputeSkyAndZeroPsiAMResponse and LALFastGeneratePulsarSFTs */
+   /* 07/14/04 gam; next two are needed by LALComputeSkyAndZeroPsiAMResponse and LALFastGeneratePulsarSFTs */
   SkyConstAndZeroPsiAMResponse *pSkyConstAndZeroPsiAMResponse;
   SFTandSignalParams *pSFTandSignalParams;
 
@@ -343,8 +372,8 @@ void RunStackSlideBinaryMonteCarloSimulation(LALStatus *status, StackSlideSearch
   BOOLEAN searchSurroundingOrbitalPts = 0;
   /*use results from a previous job in the pipeline*/
   BOOLEAN reportMCResults = 0;
-  REAL4 priorLoudestEvent = 0.0;
- /* REAL8 priorStartFreq = 0.0;
+ /* REAL4 priorLoudestEvent = 0.0;
+  REAL8 priorStartFreq = 0.0;
   REAL8 priorBand = 0.0;*/
   REAL8 tmp_Confidence = 0.0;
   REAL8 tmp_conf_err = 0.0;
@@ -369,33 +398,42 @@ void RunStackSlideBinaryMonteCarloSimulation(LALStatus *status, StackSlideSearch
   REAL8 ClosestSMATemplate;
   UINT4 ClosestTperiTemplate;
 
-  REAL8 f0SUM = 0.0;                        /* 05/26/04 gam */
-  REAL8 bandSUM = 0.0;                      /* 05/26/04 gam */
-  INT4 nBinsPerSUM = 0;                     /* 05/26/04 gam */
-  INT4 nBinsPerSUMm1 = -1;                  /* 05/26/04 gam */  
-  REAL8 real8NBinsPerSUM;                   /* 07/15/05 gam */
-  INT4 firstNonExcludedBin = -1;            /* 05/19/05 gam */
-  INT4 lastNonExcludedBin  = -1;            /* 05/19/05 gam */
+  REAL8 f0SUM = 0.0;                        
+  REAL8 bandSUM = 0.0;                      
+  INT4 nBinsPerSUM = 0;                     
+  INT4 nBinsPerSUMm1 = -1;                    
+  REAL8 real8NBinsPerSUM;                   
+  INT4 firstNonExcludedBin = -1;            
+  INT4 lastNonExcludedBin  = -1;            
   INT4 InjFreqBin = 0;
   
   REAL4 randval;
   REAL8 real8RandVal;
   RandomParams *randPar=NULL;
 
-  INT4  *arrayAvailableFreqBins; /* 07/15/2005 gam */
-  INT4  nAvailableBins;          /* 07/15/2005 gam */
-  REAL8 real8NAvailableBins;     /* 07/15/2005 gam */
+  INT4  *arrayAvailableFreqBins; 
+  INT4  nAvailableBins;          
+  REAL8 real8NAvailableBins;     
 
   REAL8 *nAboveLE = NULL;
   REAL8 *nTrials = NULL;
 
   
-  INT4 onePlusNumMCRescalings = 1 + params->numMCRescalings; /* 09/01/05 gam; one plus number of times to rescale fake SFTs */
-  REAL8 *h_0Rescaled = NULL;  
   
- /* INT4 iRescale = 0;
+ INT4 onePlusNumMCRescalings = 1 + params->numMCRescalings; /* 09/01/05 gam; one plus number of times to rescale fake SFTs */
+ INT4 twoPlusNumMCRescalings = 2 + params->numMCRescalings; 
+
+ 
+  FILE *fph0;
+/*  CHAR h0file[256];*/
+  INT4 Nh0;
+  REAL8 *h0data;
+
+   REAL8 *h_0Rescaled = NULL; 
+   
+   INT4 iRescale = 0;
     INT4 jStart = 0;
-    INT4 jSavedBLK = 0;*/
+    INT4 jSavedBLK = 0;
 
   BOOLEAN breakOutOfLoop;
   REAL8 maxMCErr = params->maxMCErr;
@@ -404,11 +442,9 @@ void RunStackSlideBinaryMonteCarloSimulation(LALStatus *status, StackSlideSearch
   REAL8 lastMCErr = 1;
   INT4 iMC = 0;             /* which entire MC simulation is currently running */
   INT4 countMC = 0;         /* count of number of completed MC simulations, including rescalings */
-  INT4 maxMC = 1;           /* default number of MC iterations to perform; set equal to params->maxMCinterations when interating MC */
-
-  printf("maxMCErr %f\n",maxMCErr);
-
-/*05/10/03 vir: open file storing data from all the MC injections*/
+  INT4 maxMC = 1;  /* default number of MC iterations to perform; set equal to params->maxMCinterations when interating MC */
+  REAL8 minh_0 = 0; 
+ 
 
         FILE *fpMCInjections; /*modify this into a name containing which injection we are working on*/
         FILE *fpReadFromMCInjectionFile;
@@ -417,39 +453,77 @@ void RunStackSlideBinaryMonteCarloSimulation(LALStatus *status, StackSlideSearch
 	REAL8 OrbRadius;
         REAL8 Conf = 0.95;        
 
+	/*store final results*/
+        FILE *fpMonteCarloResults = NULL;
+	CHAR MonteCarloResults[256];
+	
   
    INITSTATUS( status, "RunStackSlideBinaryMonteCarloSimulation", STACKSLIDEBINARYC );
    ATTATCHSTATUSPTR(status);
 
 printf("!!!!!!!!!start function MC!!!!!!!!!!!!!!!\n");
 
-/*Insert here sanity checks*/
+
+if (maxMC < 1) {
+      ABORT( status, STACKSLIDEBINARYH_EMAXMC, STACKSLIDEBINARYH_MSGEMAXMC);
+  }
+
+if ( (params->deltaSMA > 0) && (params->nMaxSMA == 1) ){
+     ABORT (status, STACKSLIDEBINARYH_EDELTASMAnSMA, STACKSLIDEBINARYH_MSGDELTASMAnSMA);
+  }
+
+
 if ( (params->testFlag & 16) > 0 ) {
-    /* 05/24/05 gam; use results from prior jobs in the pipeline and report on current MC results */
-    reportMCResults = 1;
+    
+	reportMCResults = 1;
 
     /* 09/01/05 gam; allocate memory dependent on the number of rescalings */
-    nAboveLE = (REAL8 *)LALMalloc(onePlusNumMCRescalings*sizeof(REAL8));
+    nAboveLE = (REAL8 *)LALMalloc(onePlusNumMCRescalings*sizeof(REAL8)); /*REMOVE!!!!!!!!!!!!!!!!!!!!!!!!*/
     nTrials  = (REAL8 *)LALMalloc(onePlusNumMCRescalings*sizeof(REAL8));
 
-/*HERE INSERT A CALL TO GETPRIORRESULTS...*/
+
 }
+
+    /*open MonteCarloResults file*/
+     strcpy(MonteCarloResults, params->priorResultsFile);
+     fpMonteCarloResults=fopen(MonteCarloResults, "w+");
+     
+    /*open h0File if you don't want injection from command line*/
+             if( params->threshold4 == 0 ){
+       Readh0File(status->statusPtr, fph0, &Nh0, &h0data);
+       CHECKSTATUSPTR (status);
+	     }else{
+	     h_0=params->threshold4;
+	     }
 
 if ( (params->testFlag & 32) > 0 ) {
       /* 05/24/05 gam; iterate MC to converge on desired confidence */
       maxMC = params->maxMCinterations;
   }
 
+
+
+   if( (params->threshold4) == 0){
+    maxMC = Nh0;     /*05/11/27 I want as many iterations as the number of h_0 values*/
+    printf("MaxMC %i\n", maxMC);
+   }
+
+if (params->numMCRescalings > 0) {
+      arrayULs   = (REAL8 *)LALMalloc((twoPlusNumMCRescalings*maxMC)*sizeof(REAL8));
+      arrayConfs = (REAL8 *)LALMalloc((twoPlusNumMCRescalings*maxMC)*sizeof(REAL8));
+      arrayConverged = (INT4 *)LALMalloc((twoPlusNumMCRescalings*maxMC)*sizeof(INT4));
+    } else {
+
       arrayULs   = (REAL8 *)LALMalloc(maxMC*sizeof(REAL8));
       arrayConfs = (REAL8 *)LALMalloc(maxMC*sizeof(REAL8));
       arrayConverged = (INT4 *)LALMalloc(maxMC*sizeof(INT4));
-
+    }
 
 /*  if ( (params->numMCRescalings > 0) && (reportMCResults != 1)) {
       ABORT( status, STACKSLIDEBINARYH_E2NUMMCRESCALINGS, STACKSLIDEBINARYH_MSGE2NUMMCRESCALINGS);
   }*/
 
-/*remove: not needed*/
+
 h_0Rescaled = (REAL8 *)LALMalloc(onePlusNumMCRescalings*sizeof(REAL8));
 
 
@@ -629,6 +703,8 @@ fflush(stdout);
  /*                                                         */
  /***********************************************************/
 
+printf("!!!!!!!!!!! MaxMC %i\n\n", maxMC);
+
 
 for(iMC=0;iMC<maxMC;iMC++) {
 
@@ -636,24 +712,33 @@ for(iMC=0;iMC<maxMC;iMC++) {
 
 
 /*05/10/18 vir: commented out*/
-   /* if (reportMCResults) {  
+    if (reportMCResults) {  
         for(iRescale=0;iRescale<onePlusNumMCRescalings;iRescale++) {
         nAboveLE[iRescale] = 0.0;
         nTrials[iRescale] = 0.0;
        }
      }
-*/
+
 
     /*05/10/03 vir: open file that will store the MCInjectionresults for every set of injections*/  
     fpMCInjections=fopen("MCInjectionResults.txt", "w+");
 
-    
+   
+   if (iMC > Nh0) break; 
+   
+   if ( params->threshold4 == 0 )
+   {
+	  
+	       h_0 = h0data[iMC];
+	    printf("xxxxxxxxxxxxx h_0 = %g\n\n", h0data[iMC]);
 
-    
-    /*start loop over points in par space kSUM */	
-    
-    /* 07/15/05 gam; change Monte Carlo Simulation to inject random signals from the parameter space */
-  
+	    
+      }else{
+     h_0=params->threshold4 ;
+      }
+ 
+   /*  printf("h_0 %g\n", h_0);*/
+      
   /**********************************************/
   /*                                            */
   /* START SECTION: MONTE CARLO INJECTIONS LOOP */
@@ -665,24 +750,24 @@ for(iMC=0;iMC<maxMC;iMC++) {
 	  
     params->whichMCSUM = kSUM; /* kSUM is which injection we are working on */  
 
-if (MCInjectRandomSMA) { /*then generate a random SMA for injection*/
-  LALCreateRandomParams(status->statusPtr, &randPar, seed); 
-  LALUniformDeviate(status->statusPtr, &randval, randPar); 
-  SemiMajorAxis=params->SMAcentral+((REAL8)randval-0.5)*(HalfAmplSMAParSpace);
-  }else{
- /* SemiMajorAxis=params->SMAcentral;  */
-    SemiMajorAxis = 1.44;
-  }
+    if (MCInjectRandomSMA) { /*then generate a random SMA for injection*/
+      LALCreateRandomParams(status->statusPtr, &randPar, seed); 
+      LALUniformDeviate(status->statusPtr, &randval, randPar); 
+      SemiMajorAxis=params->SMAcentral+((REAL8)randval-0.5)*(HalfAmplSMAParSpace);
+    }else{
+       /* SemiMajorAxis=params->SMAcentral;  */
+       SemiMajorAxis = 1.44;
+    }
  
 
-if (MCInjectRandomTperi ) {
+    if (MCInjectRandomTperi ) {
 	  LALCreateRandomParams(status->statusPtr, &randPar, seed); 
           LALUniformDeviate(status->statusPtr, &randval, randPar); 
           TperiLIGO.gpsSeconds=params->TperiapseSSBSec+((REAL8)randval-0.5)*(HalfAmplTperiParSpace);
-  }else{
+    }else{
        /* TperiLIGO.gpsSeconds=params->TperiapseSSBSec;*/
 	  TperiLIGO.gpsSeconds = 731163327;
-  }
+    }
 	/*..............................*/
     pPulsarSignalParams->pulsar.tRef.gpsSeconds = GPSin.gpsSeconds;
     pPulsarSignalParams->pulsar.tRef.gpsNanoSeconds = GPSin.gpsNanoSeconds;
@@ -697,7 +782,8 @@ if (MCInjectRandomTperi ) {
         CHECKSTATUSPTR (status);
     }    
     
-/*FROM HERE...............................................*/
+
+
     
     if(BinsCanBeExcluded){
  /* FIND RANDOM FREQUENCY THAT IS NOT EXCLUDED */
@@ -769,7 +855,7 @@ if (MCInjectRandomTperi ) {
 
 
 	 
-    /*nuisance parameters*/
+                               /*nuisance parameters*/
 
 	 if ( (params->testFlag & 8) > 0 || (MCInjectRandomSignalPars == 0) ) {
          pPulsarSignalParams->pulsar.psi = params->orientationAngle;
@@ -785,9 +871,9 @@ if (MCInjectRandomTperi ) {
           cosIota = 2.0*((REAL8)randval) - 1.0;
          
     }
-    /* h_0 is fixed equal to 1.0 above; get A_+ and A_x from h_0 and random cosIota */
-    pPulsarSignalParams->pulsar.aPlus = (REAL4)(0.5*h_0*(1.0 + cosIota*cosIota));
-    pPulsarSignalParams->pulsar.aCross = (REAL4)(h_0*cosIota);
+    
+	 pPulsarSignalParams->pulsar.aPlus = (REAL4)(0.5*h_0*(1.0 + cosIota*cosIota));
+         pPulsarSignalParams->pulsar.aCross = (REAL4)(h_0*cosIota);
 
  
  
@@ -808,7 +894,7 @@ if (MCInjectRandomTperi ) {
                   pPulsarSignalParams->orbit->omega = 0.0;
                   pPulsarSignalParams->orbit->orbitEpoch = TperiLIGO;
                   pPulsarSignalParams->orbit->oneMinusEcc = 1.0;
-                  pPulsarSignalParams->orbit->angularSpeed = 0.00001;
+                  pPulsarSignalParams->orbit->angularSpeed = 9.2368E-5; /*06/02/27 changed*/ 
                   pPulsarSignalParams->orbit->rPeriNorm = SemiMajorAxis;
     #ifdef PRINT_INJECTION_VALUES
 		  fprintf(stdout,"inj pars are omega %f, Tperi %i, ecc %f, angspeed %f, rPeriNorm %f, phi0 %f\n", pPulsarSignalParams->orbit->omega,pPulsarSignalParams->orbit->orbitEpoch.gpsSeconds , pPulsarSignalParams->orbit->oneMinusEcc,  pPulsarSignalParams->orbit->angularSpeed , pPulsarSignalParams->orbit->rPeriNorm,  pPulsarSignalParams->pulsar.phi0 );
@@ -822,7 +908,8 @@ if (MCInjectRandomTperi ) {
           fprintf(stdout,"About to call LALFastGeneratePulsarSFTs \n");
           fflush(stdout);
         #endif
-        /* 07/14/04 gam; use SkyConstAndZeroPsiAMResponse from LALComputeSkyAndZeroPsiAMResponse and SFTandSignalParams to generate SFTs fast. */
+        /* 07/14/04 gam; use SkyConstAndZeroPsiAMResponse from LALComputeSkyAndZeroPsiAMResponse 
+	 * and SFTandSignalParams to generate SFTs fast. */
         LALFastGeneratePulsarSFTs(status->statusPtr, &outputSFTs, pSkyConstAndZeroPsiAMResponse, pSFTandSignalParams);
         CHECKSTATUSPTR (status);
 	
@@ -855,8 +942,12 @@ if (MCInjectRandomTperi ) {
 /*        for(i=0;i<params->numBLKs;i++) {
           for(j=0;j<params->nBinsPerBLK;j++) {
              #ifdef PRINTCOMPARISON_INPUTVSMONTECARLOSFT_DATA
-               fprintf(stdout,"savBLKData[%i]->fft->data->data[%i].re, outputSFTs->data[%i].data->data[%i].re = %g, %g\n",i,j,i,j,savBLKData[i]->fft->data->data[j].re,outputSFTs->data[i].data->data[j].re);
-               fprintf(stdout,"savBLKData[%i]->fft->data->data[%i].im, outputSFTs->data[%i].data->data[%i].im = %g, %g\n",i,j,i,j,savBLKData[i]->fft->data->data[j].im,outputSFTs->data[i].data->data[j].im);
+               fprintf(stdout,"savBLKData[%i]->fft->data->data[%i].re, 
+	       outputSFTs->data[%i].data->data[%i].re = %g, %g\n",i,j,i,j,
+	       savBLKData[i]->fft->data->data[j].re,outputSFTs->data[i].data->data[j].re);
+               fprintf(stdout,"savBLKData[%i]->fft->data->data[%i].im,
+	       outputSFTs->data[%i].data->data[%i].im = %g, %g\n",i,j,i,j,
+	       savBLKData[i]->fft->data->data[j].im,outputSFTs->data[i].data->data[j].im);
                fflush(stdout);
              #endif
              params->BLKData[i]->fft->data->data[j].re = savBLKData[i]->fft->data->data[j].re + outputSFTs->data[i].data->data[j].re;
@@ -892,10 +983,12 @@ if (MCInjectRandomTperi ) {
 
               #ifdef PRINT_INJECTION_VALUES
               fprintf(stdout,"iFreq = %i, inject h_0 = %23.10e \n",InjFreqBin,h_0);
-              fprintf(stdout,"iFreq = %i, inject cosIota = %23.10e, A_+ = %23.10e, A_x = %23.10e \n",InjFreqBin,cosIota,pPulsarSignalParams->pulsar.aPlus,pPulsarSignalParams->pulsar.aCross);
+              fprintf(stdout,"iFreq = %i, inject cosIota = %23.10e, A_+ = %23.10e, A_x = %23.10e \n",
+			      InjFreqBin,cosIota,pPulsarSignalParams->pulsar.aPlus,pPulsarSignalParams->pulsar.aCross);
               fprintf(stdout,"iFreq = %i, inject psi = %23.10e \n",InjFreqBin,pPulsarSignalParams->pulsar.psi);
               fprintf(stdout,"iFreq = %i, inject phi0 = %23.10e \n",InjFreqBin,pPulsarSignalParams->pulsar.phi0);
-              fprintf(stdout,"iFreq = %i, search f0 = %23.10e, inject f0 = %23.10e \n",InjFreqBin,f0SUM + 0*InjFreqBin*params->dfSUM,pPulsarSignalParams->pulsar.f0);
+              fprintf(stdout,"iFreq = %i, search f0 = %23.10e, inject f0 = %23.10e \n",
+			      InjFreqBin,f0SUM + InjFreqBin*params->dfSUM,pPulsarSignalParams->pulsar.f0);
              fprintf(stdout,"outputSFTs->data[0].data->length = %i \n",outputSFTs->data[0].data->length);
                #endif
 
@@ -906,7 +999,7 @@ if (MCInjectRandomTperi ) {
              printf("renorm %g\n", renorm);
 	     
 
-#ifdef PRINT_MAXPOWERANDBINEACHSFT
+       #ifdef PRINT_MAXPOWERANDBINEACHSFT
          {
            INT4 jMaxPwr;
            REAL4 maxPwr;
@@ -948,18 +1041,25 @@ if (MCInjectRandomTperi ) {
 fprintf(stdout,"nBinsPerBLK %i, deltaF %f, f0 %g\n",params->nBinsPerBLK, params->BLKData[0]->fft->deltaF, params->BLKData[0]->fft->f0 );
 	  
 	  /* if only 1 MC sum {*/
-#ifdef PRINT_RES   
+  
+    #ifdef PRINT_RES   
    outfp=fopen("OutputBLKplusInj.txt", "w+");
 
     for (j=0;j<params->nBinsPerBLK;j++){
-/*fprintf(outfp,"%g %g\n",params->BLKData[0]->fft->f0+j*params->BLKData[0]->fft->deltaF, params->BLKData[0]->fft->data->data[j].re * params->BLKData[0]->fft->data->data[j].re + params->BLKData[0]->fft->data->data[j].im * params->BLKData[0]->fft->data->data[j].im);*/
-/*fprintf(outfp,"%g %g\n",savBLKData[0]->fft->f0+j*savBLKData[0]->fft->deltaF, savBLKData[0]->fft->data->data[j].re * savBLKData[0]->fft->data->data[j].re + savBLKData[0]->fft->data->data[j].im * savBLKData[0]->fft->data->data[j].im);*/
-fprintf(outfp,"%g %g\n",savBLKData[0]->fft->f0+j*savBLKData[0]->fft->deltaF, outputSFTs->data[0].data->data[j].re * outputSFTs->data[0].data->data[j].re + outputSFTs->data[0].data->data[j].im * outputSFTs->data[0].data->data[j].im);		  
+/*fprintf(outfp,"%g %g\n",params->BLKData[0]->fft->f0+j*params->BLKData[0]->fft->deltaF,
+ * params->BLKData[0]->fft->data->data[j].re * params->BLKData[0]->fft->data->data[j].re + params->BLKData[0]->fft->data->data[j].im * params->BLKData[0]->fft->data->data[j].im);*/
+/*fprintf(outfp,"%g %g\n",savBLKData[0]->fft->f0+j*savBLKData[0]->fft->deltaF,
+ * savBLKData[0]->fft->data->data[j].re * savBLKData[0]->fft->data->data[j].re + savBLKData[0]->fft->data->data[j].im * savBLKData[0]->fft->data->data[j].im);*/
+
+	    fprintf(outfp,"%g %g\n",savBLKData[0]->fft->f0+j*savBLKData[0]->fft->deltaF, 
+		outputSFTs->data[0].data->data[j].re * outputSFTs->data[0].data->data[j].re + outputSFTs->data[0].data->data[j].im * outputSFTs->data[0].data->data[j].im);		  
     }
 
     fclose(outfp);
-#endif
-	  /*}*/
+ 
+    #endif
+
+    /*}*/
       
     
     if (pPulsarSignalParams->orbit != NULL) {
@@ -973,9 +1073,7 @@ fprintf(outfp,"%g %g\n",savBLKData[0]->fft->f0+j*savBLKData[0]->fft->deltaF, out
 	} /* END if ( (params->testFlag & 4) > 0 ) else */
 
     
-/*
- Search will be done using nearest template or the nearest neighbours?
-  */
+/* ~~~~ Search will be done using nearest template or the nearest neighbours? ~~~ */
     
 
 if(searchSurroundingOrbitalPts){
@@ -986,26 +1084,34 @@ fprintf(stdout,"will search only for the nearest neighbour in orbital par space\
 /*05/09/13 vir: open the orbital parameter file and estimate which is the closest template*/
 
 FILE *fpOrbParamsTemplates;
-fpOrbParamsTemplates = fopen("OrbParamsTemplates.txt","r");
 
-float col1 ;
-UINT4 col2 ;
+CHAR filename[256];
+strcpy(filename, params->parameterSpaceFile);
+fpOrbParamsTemplates = fopen(filename,"r");
+
+if (fpOrbParamsTemplates == NULL){
+fprintf(stdout,"Could not find file %s\n", filename);
+fflush(stdout);
+}
+
+float col1 = 0.0;
+UINT4 col2 = 0 ;
 
 INT4 numParams = 0 ;
 
 
-while( fscanf(fpOrbParamsTemplates, "%g %i", &col1, &col2)!= EOF){
- numParams = numParams +1;
-  }
- printf("numPars %i\n", numParams);
-fclose(fpOrbParamsTemplates);
+  while( fscanf(fpOrbParamsTemplates, "%g %i", &col1, &col2)!= EOF){
+   numParams = numParams +1;
+    }
+   printf("numPars %i\n", numParams);
+   fclose(fpOrbParamsTemplates);
  
 
-REAL8 *TemplateSMA = NULL;
-UINT4 *TemplateTperi = NULL;
+   REAL8 *TemplateSMA = NULL;
+   UINT4 *TemplateTperi = NULL;
 
-TemplateSMA = (REAL8 *)LALMalloc(numParams*sizeof(REAL8));
-TemplateTperi = (UINT4 *)LALMalloc(numParams*sizeof(UINT4));
+   TemplateSMA = (REAL8 *)LALMalloc(numParams*sizeof(REAL8));
+   TemplateTperi = (UINT4 *)LALMalloc(numParams*sizeof(UINT4));
 
 	      fpOrbParamsTemplates = fopen("OrbParamsTemplates.txt","r");
                   INT4 k=0;
@@ -1025,12 +1131,6 @@ TemplateTperi = (UINT4 *)LALMalloc(numParams*sizeof(UINT4));
   
 		Diff=fabs(TemplateSMA[k] - SemiMajorAxis);
 
-	/*	if( (TemplateSMA[k] - SemiMajorAxis) < 0){
-                         Diff=(TemplateSMA[k] - SemiMajorAxis)*(-1.0);
-		}else{
-		Diff=(TemplateSMA[k] - SemiMajorAxis);
-		}*/
-
 
 		if(Diff < minDiff){	
 		ClosestSMATemplate=TemplateSMA[k];
@@ -1038,7 +1138,7 @@ TemplateTperi = (UINT4 *)LALMalloc(numParams*sizeof(UINT4));
 			}
 			
            }
-	INT4 minDiffT = 1.0E5;
+	INT4 minDiffT = 10000;
 	INT4 DiffT = 0;
         for(k=0; k<numParams; k++){
          
@@ -1057,7 +1157,7 @@ TemplateTperi = (UINT4 *)LALMalloc(numParams*sizeof(UINT4));
 
 params->SMAcentral = ClosestSMATemplate;
 params->TperiapseSSBSec = ClosestTperiTemplate;
-
+/*remember: when running MonteCarlo, deltaSMA must be set = 0*/
 
 
 
@@ -1066,12 +1166,13 @@ LALFree(TemplateTperi);
 
 	
 	}/*end of if(nearestneighbours) else...*/
+
 /*...end if (SearchSurroundingPoints)*/
     
 
 /*!*/
 /*05/10/18 vir: commented out*/
-/*
+/**/
     for(iRescale=0;iRescale<onePlusNumMCRescalings;iRescale++) {
 
       
@@ -1084,8 +1185,13 @@ LALFree(TemplateTperi);
       } else {
         h_0Rescaled[iRescale] = h_0 - ((REAL8)(iRescale/2))*params->rescaleMCFraction*h_0;
       }      
-      params->threshold4 = h_0Rescaled[iRescale];
       
+      if(params->numMCRescalings > 0){
+      params->threshold4 = h_0Rescaled[iRescale];
+      }
+         /*printf("h_0Rescaled %g\n", h_0Rescaled[iRescale]);*/
+      
+              
       if (iRescale > 0) {
          
          REAL4 rescaleFactor = ((REAL4)(h_0Rescaled[iRescale]/h_0));
@@ -1102,8 +1208,9 @@ LALFree(TemplateTperi);
                 params->BLKData[i]->fft->data->data[j].im = savBLKData[i]->fft->data->data[jSavedBLK].im + rescaleFactor*outputSFTs->data[i].data->data[j].im;
            }
          }
-      }*/ /* END if (iRescale > 0) */
+      } /* END if (iRescale > 0) */
 
+ /*}end of for iRescale < onePlusnumMCRescalings */
 
 /*!*/
 
@@ -1116,24 +1223,42 @@ LALFree(TemplateTperi);
       params->maxPower = 0.0; /* 05/24/05 gam; need to reinitialize */
       StackSlideApplySearch(status->statusPtr,params);
       CHECKSTATUSPTR (status);
-
+  
+     
       
-      /*05/10/03 may go into a function*/  
+                /*05/10/03 may go into a function*/  
          fpReadFromMCInjectionFile=fopen("outLE.txt", "r");
 	 fscanf(fpReadFromMCInjectionFile,"%lf%f%lf\n", &StartFreq, &LEvent, &OrbRadius );
 	 fprintf(fpMCInjections, "%lf %f %lf %lf %le\n", StartFreq, LEvent, pPulsarSignalParams->pulsar.f0, SemiMajorAxis, h_0);
     
-      
-      
-      
-/*05/10/18 vir:commented out*/
-	 /*    if (reportMCResults) {
-         nTrials[iRescale] += 1.0;  
-	 if (params->maxPower >= priorLoudestEvent) {
-            nAboveLE[iRescale] += 1.0;           }
-      }*/
+	 /*06/01/09 vir: this should go up, before this loop starts */
+         if (params->numMCRescalings){  
+	 getStackSlideBinarySearchResults(status->statusPtr, params, &SearchLoudestEvent);
+         CHECKSTATUSPTR (status);
+         }
 
-    /*}*/   /* END for(iRescale=0;iRescale<onePlusNumMCRescalings;iRescale++) */ /* 09/01/05 gam */
+    	     if ( (reportMCResults) && (params->numMCRescalings) > 0) {
+             nTrials[iRescale] += 1.0;  
+	       if (LEvent >= SearchLoudestEvent) {
+                 nAboveLE[iRescale] += 1.0;           
+	        }
+             	/* fprintf(fpMonteCarloResults,"%g %f %f %f %f\n", h_0Rescaled[iRescale], params->f0SUM, SearchLoudestEvent, LEvent, nAboveLE[iRescale]/nTrials[iRescale] );*/
+    
+	     }
+    fprintf(stdout,"Test3 \n\n");
+
+/*else if(reportMCResults)
+                  {
+      		ComputeConfidence(status->statusPtr, SearchLoudestEvent, &tmp_Confidence, &tmp_conf_err);
+                CHECKSTATUSPTR (status);
+             fprintf(fpMonteCarloResults,"%g %f %f %f %f\n", h0data[countMC], params->f0SUM, SearchLoudestEvent, tmp_Confidence, tmp_conf_err);
+
+		     }*/
+
+          if (params->numMCRescalings){  
+          printf("confidence at rescaling %g is %f\n", h_0Rescaled[iRescale], nAboveLE[iRescale]/nTrials[iRescale]);
+	  }
+	    }   /* END for(iRescale=0;iRescale<onePlusNumMCRescalings;iRescale++) */ /* 09/01/05 gam */
 
       
 	    if ( !((params->testFlag & 4) > 0) ) {
@@ -1145,8 +1270,9 @@ LALFree(TemplateTperi);
         LALFree(signal);
     }
 
+      printf("kSUM %i \n\n", kSUM);
 
-  } /*end of for kSUM = 0 to numSUMsTotal*/
+  } /*end of for kSUM = 0 to numInjectionsTotal*/
 
 /*05/10/03 vir*/
   fclose(fpMCInjections);
@@ -1166,8 +1292,8 @@ LALFree(TemplateTperi);
       /* 3) set a desired confidence Conf=0.95 */
       /* 4) compare each confidence with the desired one and choose the closest points to spot to which signal Conf corresponds*/
       
-      if(reportMCResults){ /*this is true for testFlag & 16 > 0 !!*/
-       
+      if ((reportMCResults) && (params->numMCRescalings) == 0){ /*the first one is true for testFlag & 16 > 0 !!*/
+      
 	      breakOutOfLoop = 0;
        
      /* getStackSlideBinaryPriorResults(status->statusPtr,
@@ -1177,53 +1303,117 @@ LALFree(TemplateTperi);
                                params->priorResultsFile);
       CHECKSTATUSPTR (status);
       */
-                  fprintf(stdout,"prior loudest event %lf\n", priorLoudestEvent);
-      
+                    
       getStackSlideBinarySearchResults(status->statusPtr, params, &SearchLoudestEvent);
       CHECKSTATUSPTR (status);
 
-                 fprintf(stdout,"search loudest event %lf\n", SearchLoudestEvent);
+                /*fprintf(stdout,"search loudest event %lf\n", SearchLoudestEvent);
+                  fflush(stdout);*/
 
-		  
+      		 	  
       ComputeConfidence(status->statusPtr, SearchLoudestEvent, &tmp_Confidence, &tmp_conf_err);
       CHECKSTATUSPTR (status);
 
-                  printf("Confidence %f, conf_err %f\n", tmp_Confidence, tmp_conf_err);
-		  /*save confidences into an array*/
-
-		  arrayConfs[countMC] = tmp_Confidence;
-                  thisMCErr = fabs(Conf - arrayConfs[countMC]);
-                   
-		   printf("thisMCErr %f\n", thisMCErr);
+                   /*copy final results into a file*/
+      
+                  fprintf(fpMonteCarloResults,"%g %f %f %f %f\n", h0data[iMC], params->f0SUM, SearchLoudestEvent, tmp_Confidence, tmp_conf_err);
 		  
+/*! 06/10/01 !*/          }
+
+/*! 06/10/01! */ if(reportMCResults){
+		  
+		  
+	          for(iRescale = 0; iRescale < onePlusNumMCRescalings; iRescale++){
+		  arrayULs[countMC] = h_0Rescaled[iRescale];
+
+		  if (nTrials[iRescale] > 0.0) {
+                      arrayConfs[countMC] = nAboveLE[iRescale]/nTrials[iRescale];
+                      thisMCErr = fabs(Conf - arrayConfs[countMC]);
+		  }
+		  
+	printf("*** arrayULs[countMC] %g, h_0Rescaled[iRescale] %g arrayConfs[countMC] %f\n\n ",  arrayULs[countMC], h_0Rescaled[iRescale], arrayConfs[countMC] );
+
+	if (nTrials[iRescale] > 0.0) {
+
+	fprintf(fpMonteCarloResults,"%g %f %f %f %f\n", h_0Rescaled[iRescale], params->f0SUM, SearchLoudestEvent, LEvent, nAboveLE[iRescale]/nTrials[iRescale] );
+	
+	}
+	
+	/*arrayConfs[countMC] = tmp_Confidence;  this contains the confidences for all h_0 
+                  thisMCErr = fabs(Conf - arrayConfs[countMC]);
+                  
+		    
+		   fprintf(stdout, "countMC %i thisMCErr %f tmp_Confidence %f \n", countMC, thisMCErr, tmp_Confidence);
+		   fflush(stdout);*/
+		
 		   /*check: if converged ok, else run another set of MCInjections*/
    
-	 if ( thisMCErr < lastMCErr ) {
-            /*iRescaleBest = iRescale;*/
-            lastMCErr = thisMCErr;
-         }
-         /* Check, are we done? */
-         if ( thisMCErr <= maxMCErr ) {
-            arrayConverged[countMC] = 1;  /* converged on desired confidence */
-            breakOutOfLoop = 1; /* We are within maxMCErr; break out of the iMC loop */
-	    printf("Converged in confidence\n");
-         } else {
-            arrayConverged[countMC] = 0; /* not converged on desired confidence */
-         printf("not converged\n");
-	 }       
+                if ( thisMCErr <= maxMCErr ) {
+                      arrayConverged[countMC] = 1; 
+		   breakOutOfLoop = 1; 
+
+		  	 /*if ( thisMCErr < lastMCErr ) {
+                           lastMCErr = thisMCErr;
+                           minh_0=h0data[countMC]; 
+         	                 arrayULs[countMC]=minh_0;
+
+			   printf("last MCErr %f minh_0 %g\n", lastMCErr , minh_0);
+			 }*/
+		}else {
+                    arrayConverged[countMC] = 0; 
+		    arrayULs[countMC] = 0;
        
-     
+	       }       
+	 
+			 
+         /* Check, are we done? if none of the injections has produced a good confidence break loop*/
+                  
+				
+         /*if ( thisMCErr <= maxMCErr ) {
+            arrayConverged[countMC] = 1;  
+            breakOutOfLoop = 1; 
+                    
+	    
+                   arrayULs[countMC]=h_0;
+		   printf("h0 %g\n", arrayULs[countMC]);
+		   printf("Converged in confidence at first set of iteration...now rescale\n");
+         } else {
+            arrayConverged[countMC] = 0; 
+            arrayULs[countMC] = 0;
+	    printf("not converged\n");
+           
+	 } */      
+        
       countMC++; /* Initialized to 0 above; count how many MC simulations have been completed */
+      }/* END for(iRescale=0;iRescale<onePlusNumMCRescalings;iRescale++) */
 
       if (breakOutOfLoop) {
          break; /* MC converged or not producing any trials so break out of iMC loop. */
      }
 
-     /* ComputeUpperLimit()*/
+      if (params->numMCRescalings > 0) {
+
+      /*ComputeUpperLimit(status->statusPtr);
+      CHECKSTATUSPTR (status);*/
+      }
      /*recombine the sums and look for triggering event...*/
+   
+
+      
       }/*end of if (reportMCResults)*/
 
+
   }/* end of for iMC =0 to maxMC*/
+
+fclose(fpMonteCarloResults);
+
+/*if( minh_0 == 0 ){
+printf("not converged: confidences are too low. Must run another set of injections\n\n");
+}else{
+	h_0 = minh_0;
+        params->threshold4 = minh_0;
+
+	}*/
 
  /***********************************************************/
  /*                                                         */
@@ -1292,6 +1482,7 @@ void ComputeConfidence(LALStatus *status, REAL4 priorLoudestEvent, REAL8 *Confid
   REAL4 LE;
   REAL8 OrbRadius;
   REAL8 a;
+  REAL8 b;
   
   INT4 count = 0;
   INT4 tot = 0;
@@ -1301,26 +1492,38 @@ void ComputeConfidence(LALStatus *status, REAL4 priorLoudestEvent, REAL8 *Confid
   /*there should be an option to open many files containes in a result directory*/
   FILE *fpMCInjectionResults;
   
-  printf("Compute confidence\n");
- 
-  fpMCInjectionResults = fopen("MCInjectionResults.txt", "r");
+  fprintf(stdout, "Compute confidence\n");
+  fflush(stdout);
 
-  while( fscanf(fpMCInjectionResults, "%lf%f%lf%lf\n", &freq, &LE, &OrbRadius, &a) != EOF){
+ 
+
+  fpMCInjectionResults = fopen("MCInjectionResults.txt", "r");
+  
+  if (fpMCInjectionResults == NULL){
+  fprintf(stdout, "cannot open file MCInjectionResults.txt \n\n" );
+  fflush(stdout);
+  }
+	  
+  /*LE has to be the loudest of all */
+    while( fscanf(fpMCInjectionResults, "%lf%f%lf%lf%lf\n", &freq, &LE, &OrbRadius, &a, &b) != EOF){
   
 	 	  if (LE >= priorLoudestEvent) count++;
            	  tot++;
 
-#ifdef DEBUG_CONFIDENCE
+                #ifdef DEBUG_CONFIDENCE
 		  printf("MCLE %f tot %i count %i SearchLE %f\n", LE, tot, count, priorLoudestEvent);
-#endif
+                #endif
 
   }
- 
+
   fclose(fpMCInjectionResults);
   
   *Confidence=(REAL8)((REAL8)count/(REAL8)tot);
   *conf_err=(REAL8)(1.0/sqrt((REAL8)tot));
-	  
+
+  fprintf(stdout,"end function ComputeConfidence \n\n");
+  fflush(stdout);
+
   
   CHECKSTATUSPTR (status);
   DETATCHSTATUSPTR (status);
@@ -1341,25 +1544,68 @@ void getStackSlideBinarySearchResults(LALStatus *status, StackSlideSearchParams 
 	INITSTATUS( status, "getStackSlideBinarySearchResults", STACKSLIDEBINARYC );
         ATTATCHSTATUSPTR (status);
         
+       #define TEST_MODE
+	
+       /* the purpose of this function is to open a previous file in the pipeline containg the results af the search on */
+       /* that particular frequency band and for each of the filters in the grid*/
+	
         FILE *fpSearch;
 	REAL8 a;
-
+        REAL8 b;
 	REAL8 c;
+	REAL8 MinLoudest = 0.0 ;
 	
-	printf("start function getStackSlideBinarySearchResults\n ");
-  
+	fprintf(stdout,"start function getStackSlideBinarySearchResults\n ");
+        fflush(stdout);
+
+     /*	printf("params->NormalizationParam %f\n", params->normalizationParameter);*/
+        		
         char filename[512];
-	sprintf(filename,"PriorResultsFile_%.3f-%.2f-%i.txt", params->f0SUM, params->SMAcentral, params->TperiapseSSBSec);
- 
-	printf("filename %s\n", filename);
+     /*sprintf(filename,"PriorResultsFile_%.3f-%.2f-%i.txt", params->f0SUM, params->SMAcentral, params->TperiapseSSBSec);*/
+        
+	sprintf(filename,"PriorResultsFile_%.3f.txt", params->f0SUM);
+        
+        #ifdef DEBUG_GETSTACKSLIDEBINARYSEARCHRESULTS
+	fprintf(stdout,"filename %s\n", filename);
+	fflush(stdout);
+        #endif
+        
+	fpSearch=fopen(filename,"r");
+	if ( fpSearch == NULL ) 
+	{
+		fprintf(stdout,"The search file %s doesn't exist!!\n\n", filename);
+	        fflush(stdout);
+        #ifdef TEST_MODE
+        fprintf(stdout, "WARNING: we are opening an archive file for compiling purposes only!!\n\n");
+	fflush(stdout);
 	
-   
-        fpSearch=fopen(filename,"r");
-	if ( fpSearch == NULL ) printf("The search file %s doesn't exist!!\n", filename);
+		fpSearch=fopen("PriorResultsFile_599.000-1.26-731163327.txt","r");
+        
+        #endif	
+	}
 	
-	fscanf(fpSearch, "%lf %lf %lf", &a, SearchLoudestEvent, &c) ;
-         
 	
+	
+	/*fscanf(fpSearch, "%lf %lf %lf", &a, SearchLoudestEvent, &c) ;*/
+	 
+        /* determine the loudest of all here and call THAT SearchLoudestEvent....do that when the condor script is set*/
+	  
+	while ( (fscanf(fpSearch, "%lf %lf %lf", &a, &b, &c)) != EOF ){
+	 
+		if (b >= MinLoudest){
+		MinLoudest = b;
+		}
+	
+	}
+  
+	*SearchLoudestEvent = MinLoudest;
+	printf("SearchLoudestEvent %f \n\n", *SearchLoudestEvent);
+
+	fprintf(stdout,"end function getStackSlideBinarySearchResults\n ");
+        fflush(stdout);
+
+
+	fclose(fpSearch);
 	 
 	
 
@@ -1368,3 +1614,131 @@ void getStackSlideBinarySearchResults(LALStatus *status, StackSlideSearchParams 
 
 }
 
+void ValidateMCResults(LALStatus *status, const REAL4FrequencySeries *oneSUM, StackSlideSearchParams *params, REAL4 *SNR){
+	INITSTATUS( status, "ValidateMCResults", STACKSLIDEBINARYC );
+        ATTATCHSTATUSPTR (status);
+
+/*        #define PRINT_VALIDATEMC */
+ 
+	fprintf(stdout,"start function ValidateMCResults\n ");
+        fflush(stdout);
+
+	
+	INT4 i=0;
+        INT4 iPwrMax = 0;
+	REAL4 pwrStdDev = 0.0;
+	REAL4 pwrMax = 0.0;
+        REAL4 pwrSNR = 0.0;
+	
+	REAL4 pwrSum= 0.0;    /* sum of power */
+        REAL4 pwrSum2 = 0.0;  /* sum of power squared = sum of power*/
+        REAL4 pwrMean = 0.0;
+      
+        
+
+	for(i=0;i<oneSUM->data->length;i++) {
+
+       	pwrSum += oneSUM->data->data[i];
+        pwrSum2 += oneSUM->data->data[i]*oneSUM->data->data[i];
+	}
+
+        for(i=0; i<oneSUM->data->length; i++){
+        	if (oneSUM->data->data[i] > pwrMax) {
+                     pwrMax = oneSUM->data->data[i];
+                     iPwrMax = i;
+                  }
+	} 
+        
+	pwrSNR = pwrMax*sqrt(params->numBLKs);
+
+	printf("pwrMax %f iPwrMax %d pwrSNR %f \n", pwrMax, iPwrMax, pwrSNR);
+
+	pwrMean = pwrSum/(oneSUM->data->length); /* Mean pwr */
+        pwrStdDev = pwrSum2/(oneSUM->data->length) - pwrMean*pwrMean;   
+
+	if ( pwrStdDev > 0.0 ) {
+             pwrStdDev = sqrt( pwrStdDev );
+           } else {
+            pwrStdDev = -1.0; /* greg: Should not happen except due to round off error in test data */
+           }
+
+        
+	pwrMax=pwrMax/pwrStdDev;
+        
+	*SNR = pwrMax;
+    
+        #ifdef PRINT_VALIDATEMC
+	fprintf(stdout,"length %d pwrStdDev %f\n", oneSUM->data->length, pwrStdDev);
+        fflush(stdout);
+        #endif
+	
+	CHECKSTATUSPTR (status);
+        DETATCHSTATUSPTR (status);
+
+	
+}
+
+void ComputeUpperLimit(LALStatus *status, const REAL8 *arrayULs, const REAL8 *arrayConfs, REAL8 desiredConf){
+	INITSTATUS( status, "ComputeUL", STACKSLIDEBINARYC );
+        ATTATCHSTATUSPTR (status);
+        
+        #define DEBUG_COMPUTEUPPERLIMIT
+	
+        #ifdef DEBUG_COMPUTEUPPERLIMIT
+        printf("Start function ComputeUL\n");
+        #endif
+
+ 
+	
+        #ifdef DEBUG_COMPUTEUPPERLIMIT
+	printf("End function ComputeUL\n");
+        #endif
+        CHECKSTATUSPTR (status);
+        DETATCHSTATUSPTR (status);
+
+
+}
+
+
+void Readh0File(LALStatus *status, FILE *fph0, INT4 *N, REAL8 **h0){
+
+        INITSTATUS( status, "Readh0File", STACKSLIDEBINARYC );
+        ATTATCHSTATUSPTR (status);
+	
+      	printf("Readh0File\n");
+        INT4 i=0;
+	REAL8 dummy = 0.0;
+        char filename[]="h0File.txt";
+	fph0=fopen(filename,"r");
+
+	 if (fph0==NULL) {
+         printf("ERROR : cannot open file %s\n",filename);
+         exit(1);
+        }
+      
+      
+	 while(fscanf( fph0,"%lf\n",&dummy)!=EOF) {
+		 i++;
+		 
+	 }
+        	 fclose(fph0);
+               
+         (*N)=i;
+
+        (*h0)=(REAL8 *)LALMalloc((i)*sizeof(REAL8));
+
+         i=0;
+         fph0=fopen(filename,"r");
+         while (fscanf(fph0,"%lf\n",&dummy)!=EOF) {
+         (*h0)[i]=dummy;
+         i++;
+	     }
+
+        fclose(fph0);
+
+
+	 
+        CHECKSTATUSPTR (status);
+        DETATCHSTATUSPTR (status);
+
+}

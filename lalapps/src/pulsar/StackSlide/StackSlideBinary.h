@@ -14,10 +14,12 @@ $Id$
 #define STACKSLIDEBINARY_DEBUG 1
 #define STACKSLIDEBINARYH_EIFO 6
 #define STACKSLIDEBINARYH_ENOFREQBINS 7
+#define STACKSLIDEBINARYH_EMAXMC 8
+#define STACKSLIDEBINARYH_EDELTASMAnSMA 9
 #define STACKSLIDEBINARYH_MSGEIFO "Invalid or null IFO"
 #define STACKSLIDEBINARYH_MSGENOFREQBINS "Avoiding or cleaning all freq bins! Monte Carlo cannot inject any signals!"
-
-
+#define STACKSLIDEBINARYH_MSGEMAXMC "The number of MC iterations must be at least 1."
+#define STACKSLIDEBINARYH_MSGDELTASMAnSMA "If params->deltaSMA > 0 you need nMaxSMA > 1"
 /*********************************************/
 /*                                           */
 /* START SECTION: include header files       */
@@ -83,6 +85,13 @@ void getStackSlideBinaryPriorResults(LALStatus *status,
 void ComputeConfidence(LALStatus *status, REAL4 priorLoudestEvent, REAL8 *Confidence, REAL8 *conf_err);
 
 void getStackSlideBinarySearchResults(LALStatus *status, StackSlideSearchParams *params, REAL8 *SearchLoudestEvent);
+
+void ValidateMCResults(LALStatus *status, const REAL4FrequencySeries *oneSUM, StackSlideSearchParams *params, REAL4 *SNR);
+
+/*void ComputeUpperLimit(LALStatus *status, REAL8 *interpolatedUL, const REAL8 *arrayULs, const REAL8 *arrayConfs, REAL8 desiredConf, INT4 startIndex, INT4 numVals);*/
+void ComputeUpperLimit(LALStatus *status, const REAL8 *arrayULs, const REAL8 *arrayConfs, REAL8 desiredConf);
+
+void Readh0File(LALStatus *status, FILE *fph0, INT4 *N, REAL8 **h0);
 
 #ifdef __cplusplus
 }
