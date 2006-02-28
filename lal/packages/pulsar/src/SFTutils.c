@@ -1048,7 +1048,7 @@ void LALComputeMultiNoiseWeights  (LALStatus             *status,
 	  psd = multipsd->data[k]->data + j;
 	  
 	  lengthsft = psd->data->length;
-	  if ( lengthsft > blocksRngMed ) {
+	  if ( lengthsft < blocksRngMed ) {
 	    ABORT ( status, SFTUTILS_EINPUT, SFTUTILS_MSGEINPUT);
 	  }
 
