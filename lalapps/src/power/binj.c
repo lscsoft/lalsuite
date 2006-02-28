@@ -178,7 +178,6 @@ int main(int argc, char *argv[])
 	SkyPosition *sky_pos;
 	DetTimeAndASource *det_time_and_source;
 	REAL8 time_diff;
-	REAL8 site_time;
 
 	/* xml output data */
 	CHAR fname[256];
@@ -619,16 +618,14 @@ int main(int argc, char *argv[])
 		/* compute site arrival time for lho */
 		place_and_gps->p_detector = &lho;
 		LAL_CALL(LALTimeDelayFromEarthCenter(&status, &time_diff, det_time_and_source), &status);
-		LAL_CALL(LALGPStoFloat(&status, &site_time, &(this_sim_burst->geocent_peak_time)), &status);
-		site_time += time_diff;
-		LAL_CALL(LALFloatToGPS(&status, &(this_sim_burst->h_peak_time), &site_time), &status);
+		this_sim_burst->h_peak_time = this_sim_burst->geocent_peak_time;
+		XLALGPSAdd(&this_sim_burst->h_peak_time, time_diff);
 
 		/* compute site arrival time for llo */
 		place_and_gps->p_detector = &llo;
 		LAL_CALL(LALTimeDelayFromEarthCenter(&status, &time_diff, det_time_and_source), &status);
-		LAL_CALL(LALGPStoFloat(&status, &site_time, &(this_sim_burst->geocent_peak_time)), &status);
-		site_time += time_diff;
-		LAL_CALL(LALFloatToGPS(&status, &(this_sim_burst->l_peak_time), &site_time), &status);
+		this_sim_burst->l_peak_time = this_sim_burst->geocent_peak_time;
+		XLALGPSAdd(&this_sim_burst->l_peak_time, time_diff);
 
 		/* increment to next frequency and test it's still in band */
 		if((deltaf == 0.0) && (fratio != 0.0))
