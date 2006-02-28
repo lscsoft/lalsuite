@@ -22,9 +22,9 @@ $Id$
 
 #include <lal/SFTClean.h>
 #include <glob.h> 
+#include <lalapps.h>
 
-
-NRCSID (SFTCLEANC, "$Id$");
+RCSID ( "$Id$");
 
 /* Error codes and messages */
 
@@ -45,7 +45,7 @@ NRCSID (SFTCLEANC, "$Id$");
 
 /* Default parameters. */
 
-INT4 lalDebugLevel=0;
+extern int lalDebugLevel;
 
 
 #define MAXFILENAMELENGTH 256
@@ -105,16 +105,17 @@ char *lalWatch;
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv------------------------------------ */
 int main(int argc, char *argv[]){ 
+
   static LALStatus       status;  /* LALStatus pointer */ 
-  static SFTtype         *sft;
+
+  static SFTVector       *inputSFTs;
+  static SFTCatalog *catalog = NULL;
+  static SFTConstraints constraints;
+
   static LineNoiseInfo   lines, lines2;
   static LineHarmonicsInfo harmonics; 
   
-  INT4 j; 
   INT4 nLines=0, count1, nHarmonicSets;
-  INT4 mObsCoh;  
-  CHAR filelist[MAXFILES][MAXFILENAMELENGTH];
-  CHAR tempstr1[256], tempstr2[256]; 
 
   /* log file and strings */
   FILE   *fpLog=NULL;
@@ -138,7 +139,7 @@ int main(int argc, char *argv[]){
 
   lalDebugLevel = 0;
   /* LALDebugLevel must be called before anything else */
-  SUB( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
+  LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
 
   uvar_help = FALSE;
 
@@ -157,17 +158,17 @@ int main(int argc, char *argv[]){
   uvar_maxBins = MAXBINS;
 
   /* register user input variables */
-  SUB( LALRegisterBOOLUserVar(   &status, "help",            'h', UVAR_HELP,     "Print this message",                          &uvar_help),            &status);  
-  SUB( LALRegisterSTRINGUserVar( &status, "inputSFTDir",     'i', UVAR_OPTIONAL, "Input SFT Directory",                         &uvar_inputSFTDir),     &status);
-  SUB( LALRegisterSTRINGUserVar( &status, "outputSFTDir",    'o', UVAR_OPTIONAL, "Output SFT Directory",                        &uvar_outputSFTDir),    &status);
-  SUB( LALRegisterSTRINGUserVar( &status, "harmonicfname",   'H', UVAR_OPTIONAL, "File with list of lines",                     &uvar_harmonicfname),   &status);
-  SUB( LALRegisterREALUserVar(   &status, "fStart",          'f', UVAR_OPTIONAL, "Frequency to start cleaning",                 &uvar_fStart),          &status);
-  SUB( LALRegisterREALUserVar(   &status, "fBand",           'b', UVAR_OPTIONAL, "Frequency Band",                              &uvar_fBand),           &status);
-  SUB( LALRegisterINTUserVar(    &status, "window",          'w', UVAR_OPTIONAL, "No. of bins for generating random numbers",   &uvar_window),          &status);
-  SUB( LALRegisterINTUserVar(    &status, "maxBins",         'm', UVAR_OPTIONAL, "Max. No. of bins to clean",                   &uvar_maxBins),         &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",            'h', UVAR_HELP,     "Print this message",                          &uvar_help),            &status);  
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "inputSFTDir",     'i', UVAR_OPTIONAL, "Input SFT Directory",                         &uvar_inputSFTDir),     &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "outputSFTDir",    'o', UVAR_OPTIONAL, "Output SFT Directory",                        &uvar_outputSFTDir),    &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "harmonicfname",   'H', UVAR_OPTIONAL, "File with list of lines",                     &uvar_harmonicfname),   &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "fStart",          'f', UVAR_OPTIONAL, "Frequency to start cleaning",                 &uvar_fStart),          &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "fBand",           'b', UVAR_OPTIONAL, "Frequency Band",                              &uvar_fBand),           &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "window",          'w', UVAR_OPTIONAL, "No. of bins for generating random numbers",   &uvar_window),          &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "maxBins",         'm', UVAR_OPTIONAL, "Max. No. of bins to clean",                   &uvar_maxBins),         &status);
 
   /* read all command line variables */
-  SUB( LALUserVarReadAllInput(&status, argc, argv), &status);
+  LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
 
   /* exit if help was required */
   if (uvar_help)
@@ -185,7 +186,7 @@ int main(int argc, char *argv[]){
   }
 
   /* get the log string */
-  SUB( LALUserVarGetLog(&status, &logstr, UVAR_LOGFMT_CFGFILE), &status);  
+  LAL_CALL( LALUserVarGetLog(&status, &logstr, UVAR_LOGFMT_CFGFILE), &status);  
 
   fprintf( fpLog, "## LOG FILE FOR SFT Cleaning\n\n");
   fprintf( fpLog, "# User Input:\n");
@@ -207,7 +208,7 @@ int main(int argc, char *argv[]){
   /*      exit(1); */
   /*   } */
   fclose(fp);
-  SUB ( LALCreateRandomParams (&status, &randPar, seed), &status );
+  LAL_CALL ( LALCreateRandomParams (&status, &randPar, seed), &status );
 
   /* copy contents of harmonics file into logfile */
   fprintf(fpLog, "\n\n# Contents of harmonics file:\n");
@@ -238,7 +239,7 @@ int main(int argc, char *argv[]){
 
 
  
-  SUB( LALFindNumberHarmonics (&status, &harmonics, uvar_harmonicfname), &status); 
+  LAL_CALL( LALFindNumberHarmonics (&status, &harmonics, uvar_harmonicfname), &status); 
   nHarmonicSets = harmonics.nHarmonicSets; 
 
   if (nHarmonicSets > 0)
@@ -250,7 +251,7 @@ int main(int argc, char *argv[]){
       harmonics.rightWing = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
     
 
-      SUB( LALReadHarmonicsInfo( &status, &harmonics, uvar_harmonicfname ), &status);
+      LAL_CALL( LALReadHarmonicsInfo( &status, &harmonics, uvar_harmonicfname ), &status);
       
       nLines = 0;
       for (count1=0; count1 < nHarmonicSets; count1++)
@@ -263,7 +264,7 @@ int main(int argc, char *argv[]){
       lines.leftWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
       lines.rightWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
 
-      SUB( LALHarmonics2Lines( &status, &lines, &harmonics), &status);
+      LAL_CALL( LALHarmonics2Lines( &status, &lines, &harmonics), &status);
 
 
       lines2.nLines = nLines;
@@ -271,68 +272,68 @@ int main(int argc, char *argv[]){
       lines2.leftWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
       lines2.rightWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
 
-      SUB( LALChooseLines( &status, &lines2, &lines, uvar_fStart, uvar_fStart + uvar_fBand), &status);
+      LAL_CALL( LALChooseLines( &status, &lines2, &lines, uvar_fStart, uvar_fStart + uvar_fBand), &status);
       nLines = lines2.nLines;
     }
 
 
-{ 
-    CHAR     command[256];
-    glob_t   globbuf;
-    INT4    jj;
-     
-    strcpy(command, uvar_inputSFTDir);
-    strcat(command, "/*SFT*.*");
+  /* read the sfts */
+  {
+    CHAR *tempDir = NULL;
+
+    constraints.detector = NULL;
     
-    globbuf.gl_offs = 1;
-    glob(command, GLOB_ERR, NULL, &globbuf);
-    
-    if(globbuf.gl_pathc==0)
-      {
-	fprintf(stderr,"No SFTs in directory %s ... Exiting.\n", uvar_inputSFTDir);
-	return 1;  /* stop the program */
-      }
-    
-    /* we will read up to a certain number of SFT files, but not all 
-       if there are too many ! */ 
-    mObsCoh = (MAXFILES < globbuf.gl_pathc) ? MAXFILES : globbuf.gl_pathc ;
-    
-    /* Remember to do the following: 
-       globfree(&globbuf); after reading the file names. The file names are 
-       globbuf.gl_pathv[fileno]   that one can copy into whatever as:
-       strcpy(filelist[fileno],globbuf.gl_pathv[fileno]);  */
-    
-    for (jj=0; jj < mObsCoh; jj++){
-      strcpy(filelist[jj],globbuf.gl_pathv[jj]);
-    }
-    globfree(&globbuf);	
+    tempDir = (CHAR *)LALCalloc( 512, sizeof(CHAR));
+    strcpy( tempDir, uvar_inputSFTDir);
+    strcat( tempDir, "/*SFT*.*");
+
+    LAL_CALL( LALSFTdataFind( &status, &catalog, tempDir, &constraints), &status);
+
+    LAL_CALL( LALLoadSFTs ( &status, &inputSFTs, catalog, uvar_fStart, uvar_fStart + uvar_fBand), &status);
+
+    LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);  	
+    LALFree(tempDir);
   }
 
 
-  for (j=0; j < mObsCoh; j++)
-    { 
-      sft=NULL;
-      SUB (LALReadSFTfile (&status, &sft, uvar_fStart, uvar_fStart + uvar_fBand, filelist[j]), &status);
+  /* clean the sft vector */
+  LAL_CALL ( LALCleanSFTVector( &status, inputSFTs, uvar_maxBins, uvar_window, &lines2, randPar), &status);
 
-      /* clean the sft */
-      if (nLines > 0)
-	SUB( LALCleanCOMPLEX8SFT( &status, sft, uvar_maxBins, uvar_window, &lines2, randPar), &status);
+  /* write the sft vector */  
+  LAL_CALL (LALWriteSFTVector2Dir ( &status, inputSFTs, uvar_outputSFTDir, "Cleaned SFT"), &status);
 
-      
-      /* make the output sft filename */
-      sprintf(tempstr1, "%d", sft->epoch.gpsSeconds);
-      strcpy(tempstr2,uvar_outputSFTDir);
-      strcat(tempstr2, "/CLEAN_SFT.");
-      strcat(tempstr2, tempstr1);
+  /* write the sft */
+  /*   LAL_CALL ( LALWriteSFTfile( &status, sft, tempstr2),  &status ); */
 
-      /* write the sft */
-      SUB( LALWriteSFTfile( &status, sft, tempstr2),  &status );
+  
 
-      LALDestroySFTtype (&status, &sft);
-    }
+  /*   for (j=0; j < mObsCoh; j++) */
+  /*     {  */
+  /*       sft=NULL; */
+  /*       LAL_CALL (LALReadSFTfile (&status, &sft, uvar_fStart, uvar_fStart + uvar_fBand, filelist[j]), &status); */
+  
+  /*       /\* clean the sft *\/ */
+  /*       if (nLines > 0) */
+  /* 	LAL_CALL( LALCleanCOMPLEX8SFT( &status, sft, uvar_maxBins, uvar_window, &lines2, randPar), &status); */
+  
+  
+  /*       /\* make the output sft filename *\/ */
+  /*       sprintf(tempstr1, "%d", sft->epoch.gpsSeconds); */
+  /*       strcpy(tempstr2,uvar_outputSFTDir); */
+  /*       strcat(tempstr2, "/CLEAN_SFT."); */
+  /*       strcat(tempstr2, tempstr1); */
+  
+  /*       /\* write the sft *\/ */
+  /*       LAL_CALL( LALWriteSFTfile( &status, sft, tempstr2),  &status ); */
+  
+  /*       LALDestroySFTtype (&status, &sft); */
+  /*     } */
 
 
   /* Free memory */
+
+  LAL_CALL ( LALDestroySFTVector( &status, &inputSFTs), &status);
+
   if (nLines > 0)
     {
       LALFree(lines.lineFreq);
@@ -354,14 +355,13 @@ int main(int argc, char *argv[]){
       LALFree(harmonics.rightWing);
     }
 
-  SUB (LALDestroyUserVars(&status), &status);
+  LAL_CALL (LALDestroyUserVars(&status), &status);
 
   /* 09/09/05 gam; randPar now a parameter for LALCleanCOMPLEX8SFT */
-  SUB ( LALDestroyRandomParams (&status, &randPar), &status);
+  LAL_CALL ( LALDestroyRandomParams (&status, &randPar), &status);
 
   LALCheckMemoryLeaks(); 
 
-  INFO( SFTCLEANC_MSGENORM );
   return SFTCLEANC_ENORM;
 }
 
