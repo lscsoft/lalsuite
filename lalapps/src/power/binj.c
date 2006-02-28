@@ -60,25 +60,25 @@ struct options {
 	INT8 gps_start_time;
 	INT8 gps_end_time;
 	char *coordinates;
-	float flow;
-	float fhigh;
-	float fratio;
-	float deltaf;
-	float quality;
-	float log_hpeak_min;
-	float log_hpeak_max;
+	double flow;
+	double fhigh;
+	double fratio;
+	double deltaf;
+	double quality;
+	double log_hpeak_min;
+	double log_hpeak_max;
 	int use_random_strain;
-	float log_max_distance;
-	float log_min_distance;
+	double log_max_distance;
+	double log_min_distance;
 	int seed;
 	INT8 time_step;	/* nanoseconds between injections */
 	char *waveform;
-	float simwaveform_duration;
+	double simwaveform_duration;
 	int simwaveform_min_number;
 	int simwaveform_max_number;
-	float tau;
-	float freq;
-	float hpeak;
+	double tau;
+	double freq;
+	double hpeak;
 	char *user_tag;
 	int mdc;	/* Need to set this to true if one wants to use MDC signals */
 };
@@ -206,27 +206,27 @@ static struct options parse_command_line(int *argc, char **argv[], MetadataTable
 
 	case 'B':
 		options.deltaf = atof(optarg);
-		ADD_PROCESS_PARAM("float");
+		ADD_PROCESS_PARAM("double");
 		break;
 
 	case 'C':
 		options.fhigh = atof(optarg);
-		ADD_PROCESS_PARAM("float");
+		ADD_PROCESS_PARAM("double");
 		break;
 
 	case 'D':
 		options.flow = atof(optarg);
-		ADD_PROCESS_PARAM("float");
+		ADD_PROCESS_PARAM("double");
 		break;
 
 	case 'E':
 		options.fratio = atof(optarg);
-		ADD_PROCESS_PARAM("float");
+		ADD_PROCESS_PARAM("double");
 		break;
 
 	case 'F':
 		options.freq = atof(optarg);
-		ADD_PROCESS_PARAM("float");
+		ADD_PROCESS_PARAM("double");
 		break;
 
 	case 'G':
@@ -263,34 +263,34 @@ static struct options parse_command_line(int *argc, char **argv[], MetadataTable
 
 	case 'J':
 		options.hpeak = atof(optarg);
-		ADD_PROCESS_PARAM("float");
+		ADD_PROCESS_PARAM("double");
 		break;
 
 	case 'K':
 		options.use_random_strain += 1;
 		options.log_hpeak_max = atof(optarg);
-		ADD_PROCESS_PARAM("float");
+		ADD_PROCESS_PARAM("double");
 		break;
 
 	case 'L':
 		options.use_random_strain += 1;
 		options.log_hpeak_min = atof(optarg);
-		ADD_PROCESS_PARAM("float");
+		ADD_PROCESS_PARAM("double");
 		break;
 
 	case 'M':
 		options.log_max_distance = log10(atof(optarg));
-		ADD_PROCESS_PARAM("float");
+		ADD_PROCESS_PARAM("double");
 		break;
 
 	case 'N':
 		options.log_min_distance = log10(atof(optarg));
-		ADD_PROCESS_PARAM("float");
+		ADD_PROCESS_PARAM("double");
 		break;
 
 	case 'O':
 		options.quality = atof(optarg);
-		ADD_PROCESS_PARAM("float");
+		ADD_PROCESS_PARAM("double");
 		break;
 
 	case 'P':
@@ -300,7 +300,7 @@ static struct options parse_command_line(int *argc, char **argv[], MetadataTable
 
 	case 'Q':
 		options.simwaveform_duration = atof(optarg);
-		ADD_PROCESS_PARAM("float");
+		ADD_PROCESS_PARAM("double");
 		break;
 
 	case 'R':
@@ -315,12 +315,12 @@ static struct options parse_command_line(int *argc, char **argv[], MetadataTable
 
 	case 'T':
 		options.tau = atof(optarg);
-		ADD_PROCESS_PARAM("float");
+		ADD_PROCESS_PARAM("double");
 		break;
 
 	case 'U':
 		options.time_step = atof(optarg) / LAL_PI * 1e9;
-		ADD_PROCESS_PARAM("float");
+		ADD_PROCESS_PARAM("double");
 		break;
 
 	case 'V':
