@@ -744,6 +744,11 @@ LALDeltaFloatGPS (LALStatus    *status,
 /* <lalLaTeX>
 \newpage\input{GPSTimeNowC}
 </lalLaTeX> */
+LIGOTimeGPS *
+XLALGPSTimeNow (
+    LIGOTimeGPS *gpstime
+    );
+
 void
 LALGPSTimeNow (
     LALStatus           *status,

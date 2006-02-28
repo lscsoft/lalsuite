@@ -1,7 +1,7 @@
 /*
  * File Name: GPSTimeNow.c
  *
- * Author: Brown, D. A.
+ * Author: Brown, D. A., Cannon, K. C.
  *
  * Revision: $Id$
  *
@@ -44,10 +44,32 @@ wrong by the same amount.
 </lalLaTeX>
 #endif
 
-#include <lal/LALStdlib.h>
+#include <time.h>
 #include <lal/Date.h>
 
 NRCSID( GPSTIMENOWC, "$Id$" );
+
+/* <lalVerbatim file="GPSTimeNowCP"> */
+LIGOTimeGPS *
+XLALGPSTimeNow (
+    LIGOTimeGPS *gpstime
+    )
+/* </lalVerbatim> */
+{
+  static const char *func = "XLALGPSTimeNow";
+  time_t ticks = time(NULL);
+
+  gpstime->gpsSeconds = XLALUTCToGPS(gmtime(&ticks));
+  gpstime->gpsNanoSeconds = 0;
+
+  /* XLALUTCToGPS returns < 0 on error, even though of course time did not
+   * begin at GPS 0 */
+  if(gpstime->gpsSeconds < 0)
+    XLAL_ERROR_NULL(func, XLAL_EFUNC);
+
+  return gpstime;
+}
+
 
 /* <lalVerbatim file="GPSTimeNowCP"> */
 void
@@ -58,18 +80,12 @@ LALGPSTimeNow (
     )
 /* </lalVerbatim> */
 {
-  time_t ticks;
-  LALDate laldate;
   INITSTATUS( status, "LALGPSTimeNow", GPSTIMENOWC );
   ATTATCHSTATUSPTR( status );
   ASSERT( gpstime, status, DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT );
   ASSERT( accuracy, status, DATEH_ENULLINPUT, DATEH_MSGENULLINPUT );
   
-  ticks = time( NULL );
-  gmtime_r( &ticks, &(laldate.unixDate) );
-  laldate.residualNanoSeconds = 0;
-  LALUTCtoGPS( status->statusPtr, gpstime, &laldate, accuracy );
-  CHECKSTATUSPTR( status );
+  ASSERT( XLALGPSTimeNow(gpstime), status, DATEH_EDATETOOEARLY, DATEH_MSGEDATETOOEARLY );
   
   DETATCHSTATUSPTR( status );
   RETURN( status );
