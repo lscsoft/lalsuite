@@ -796,8 +796,74 @@ void LALCleanCOMPLEX8SFT (LALStatus          *status,
 
 
 
+/** Function to clean a sft vector -- calls LALCleanCOMPLEX8SFT repeatedly for each 
+    sft in vector */
+void LALCleanSFTVect (LALStatus       *status,
+		      SFTVector       *sftVect,  /**< SFTVector to be cleaned */
+		      INT4            width,     /**< maximum width to be cleaned -- set sufficiently large if all bins in each line are to be cleaned*/      
+		      INT4            window,    /**< window size for noise floor estimation in vicinity of a line */
+		      LineNoiseInfo   *lineInfo, /**< list of lines */ 
+		      RandomParams    *randPar   /**< parameters for generating random noise */)
+{
+
+  UINT4 k;
+
+  INITSTATUS (status, "LALCleanSFTVector", SFTCLEANC);
+  ATTATCHSTATUSPTR (status);   
+  
+  ASSERT (sftVect, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);  
+  ASSERT (sftVect->data, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);  
+  ASSERT (sftVect->length > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);  
+  ASSERT (lineInfo, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
+  ASSERT (lineInfo->nLines, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);
+  ASSERT (lineInfo->lineFreq, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL); 
+  ASSERT (lineInfo->leftWing, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL); 
+  ASSERT (lineInfo->rightWing, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL); 
+  ASSERT (window > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);
+  ASSERT (width >= 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);
+
+  for ( k = 0; k < sftVect->length; k++) {
+    TRY (LALCleanCOMPLEX8SFT (status->statusPtr, sftVect->data + k, width, window, lineInfo, randPar), status);    
+  }
+
+  DETATCHSTATUSPTR (status);
+  /* normal exit */
+  RETURN (status);
+}
 
 
+/** Function to clean a sft vector -- calls LALCleanCOMPLEX8SFT repeatedly for each 
+    sft in vector */
+void LALCleanMultiSFTVect (LALStatus       *status,
+			   MultiSFTVector  *multVect, /**< SFTVector to be cleaned */
+			   INT4            width,     /**< maximum width to be cleaned -- set sufficiently large if all bins in each line are to be cleaned*/      
+			   INT4            window,    /**< window size for noise floor estimation in vicinity of a line */
+			   LineNoiseInfo   *lineInfo, /**< list of lines */ 
+			   RandomParams    *randPar   /**< parameters for generating random noise */)
+{
+
+  UINT4 k;
+
+  INITSTATUS (status, "LALCleanMultiSFTVector", SFTCLEANC);
+  ATTATCHSTATUSPTR (status);   
+  
+  ASSERT (multVect, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);  
+  ASSERT (multVect->data, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);  
+  ASSERT (multVect->length > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);  
+  ASSERT (lineInfo, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
+  ASSERT (lineInfo->nLines, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);
+  ASSERT (lineInfo->lineFreq, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL); 
+  ASSERT (lineInfo->leftWing, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL); 
+  ASSERT (lineInfo->rightWing, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL); 
+  ASSERT (window > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);
+  ASSERT (width >= 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);
 
 
+  for ( k = 0; k < multVect->length; k++) {
+    TRY (LALCleanSFTVector (status->statusPtr, multVect->data[k], width, window, lineInfo, randPar), status);    
+  }
 
+  DETATCHSTATUSPTR (status);
+  /* normal exit */
+  RETURN (status);
+}

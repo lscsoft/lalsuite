@@ -248,6 +248,22 @@ void LALCleanCOMPLEX8SFT (LALStatus          *status,
 		       LineNoiseInfo      *lineInfo,
 		       RandomParams       *randPar);
 
+
+void LALCleanSFTVect (LALStatus          *status,
+		      SFTVector          *sftVect,
+		      INT4               width,       
+		      INT4               window,
+		      LineNoiseInfo      *lineInfo,
+		      RandomParams       *randPar);
+
+void LALCleanMultiSFTVect (LALStatus          *status,
+			   MultiSFTVector     *multVect,
+			   INT4               width,       
+			   INT4               window,
+			   LineNoiseInfo      *lineInfo,
+			   RandomParams       *randPar);
+
+
 #ifdef  __cplusplus
 }                /* Close C++ protection */
 #endif
