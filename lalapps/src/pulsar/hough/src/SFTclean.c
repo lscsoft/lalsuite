@@ -300,7 +300,7 @@ int main(int argc, char *argv[]){
   LAL_CALL ( LALCleanSFTVector( &status, inputSFTs, uvar_maxBins, uvar_window, &lines2, randPar), &status);
 
   /* write the sft vector */  
-  LAL_CALL (LALWriteSFTVector2Dir ( &status, inputSFTs, uvar_outputSFTDir, "Cleaned SFT"), &status);
+  LAL_CALL (LALWriteSFTVector2Dir ( &status, inputSFTs, uvar_outputSFTDir, "Cleaned SFT", "clean"), &status);
 
   /* write the sft */
   /*   LAL_CALL ( LALWriteSFTfile( &status, sft, tempstr2),  &status ); */
