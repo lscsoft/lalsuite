@@ -39,36 +39,72 @@ REAL8 XLALGreenwichSiderealTime(
 )
 {
 	static const char *func = "XLALGreenwichSiderealTime";
+	struct tm utc;
+	double julian_day;
+	double t_hi, t_lo;
+	double t, t_squared, t_cubed;
+	double sidereal_time;
 
-	/* Most significant and least significant part of time since the
-	 * Julian epoch in units of centuries (= 36525.0 days).  Original
-	 * code in NOVAS-C determined t_hi and t_lo from Julian days.  LAL
-	 * lacks a high-precision Julian day routine, so we do this
-	 * directly from a GPS time.  Note that the "hi" and "lo"
-	 * components have the same units and so the split can be done
-	 * anywhere.  The original code recommends putting the integer days
-	 * in "hi" and the fractional part in "lo".  For convenience, and
-	 * because it involves fewer arithmetic operations, here we make
-	 * the split at integer and fractional seconds. */
-	double t_hi = (gpstime->gpsSeconds - XLAL_EPOCH_J2000_0_GPS) / (36525.0 * 86400.0);
-	double t_lo = gpstime->gpsNanoSeconds / (1e9 * 36525.0 * 86400.0);
+	/*
+	 * Convert GPS seconds to UTC.  This is where we pick up knowledge
+	 * of leap seconds which are required for the mapping of atomic
+	 * time scales to celestial time scales.  We deal only with integer
+	 * seconds.
+	 */
 
-	double t = t_hi + t_lo;
-	double t_squared = t * t;
-	double t_cubed = t_squared * t;
+	XLALGPSToUTC(&utc, gpstime->gpsSeconds);
 
-	double sidereal_time = equation_of_equinoxes - 6.2e-6 * t_cubed + 0.093104 * t_squared + 67310.54841
+	/*
+	 * And now to Julian day number.  Again, only accurate to integer
+	 * seconds.
+	 */
+
+	julian_day = XLALJulianDay(&utc);
+
+	/*
+	 * Convert Julian day number to the number of centuries since the
+	 * Julian epoch (1 century = 36525.0 days).  Here, we incorporate
+	 * the fractional part of the seconds.  For precision, we keep
+	 * track of the most significant and least significant parts of the
+	 * time separately.  The original code in NOVAS-C determined t_hi
+	 * and t_lo from Julian days, with t_hi receiving the integer part
+	 * and t_lo the fractional part.  Because LAL's Julian day routine
+	 * is accurate to the second, here the hi/lo split is most
+	 * naturally done at the integer seconds boundary.  Note that the
+	 * "hi" and "lo" components have the same units and so the split
+	 * can be done anywhere.
+	 */
+
+	t_hi = (julian_day - XLAL_EPOCH_J2000_0_JD) / 36525.0;
+	t_lo = gpstime->gpsNanoSeconds / (1e9 * 36525.0 * 86400.0);
+
+	/*
+	 * Compute sidereal time in seconds.  (magic)
+	 */
+
+	t = t_hi + t_lo;
+	t_squared = t * t;
+	t_cubed = t_squared * t;
+
+	sidereal_time = equation_of_equinoxes - 6.2e-6 * t_cubed + 0.093104 * t_squared + 67310.54841
 		+ 8640184.812866 * t_lo
 		+ 3155760000.0 * t_lo
 		+ 8640184.812866 * t_hi
 		+ 3155760000.0 * t_hi;
 
-	/* convert from seconds to fraction of 2 pi */
-	sidereal_time = fmod(sidereal_time * (2.0 * LAL_PI) / (24.0 * 3600.0), 2.0 * LAL_PI);
+	/*
+	 * Convert from seconds to fraction of day.
+	 */
+
+	sidereal_time = fmod(sidereal_time / 86400.0, 1.0);
 	if(sidereal_time < 0.0)
-		sidereal_time += 2.0 * LAL_PI;
+		sidereal_time += 1.0;
   
-	return sidereal_time;
+	/*
+	 * Return radians
+	 */
+
+	return sidereal_time * 2.0 * LAL_PI;
 }
 
 
