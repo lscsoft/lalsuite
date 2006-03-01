@@ -35,7 +35,7 @@
 #include <lal/SFTfileIO.h>
 #include "sft_extra.h"
 
-RCSID ("$Id");
+RCSID ("$Id$");
 
 /** \name Error codes */
 /*@{*/
