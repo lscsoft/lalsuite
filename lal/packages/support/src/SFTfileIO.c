@@ -1038,7 +1038,7 @@ LALWriteSFTVector2Dir (LALStatus *status,
 
   filenamelen = 128 + strlen(dirname);
   if ( description ) 
-    filenamelen += strlen ( description )
+    filenamelen += strlen ( description );
 
   if ( (filename = (CHAR *)LALCalloc(1, filenamelen )) == NULL) {
     ABORT( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM);
