@@ -211,10 +211,7 @@ NRCSID (LMST1C, "$Id$");
 #define INFOSTR_LEN 256
 
 /*
- * Compute GMST1 in requested units given date UTC.
- * Use algorithm as coded in NOVAS-C Version 2.0.1 (10 Dec 99)
- *   Naval Observatory Vector Astrometry Subroutines C Version:
- *   void sidereal_time()
+ * Compute GMST in requested units given date UTC.
  */
 
 /* <lalVerbatim file="LMST1CP"> */
@@ -224,18 +221,8 @@ LALGMST1 (LALStatus     *status,
           const LALDate *p_date,     /* input  - date and time */
           LALMSTUnits    outunits)   /* GMST1 units */
 { /* </lalVerbatim> */
-  REAL8 jdate;
-  REAL8 jd_hi, jd_lo;
-  INT4  tmp;
-  REAL8 st;
-  REAL8 tu;
-  REAL8 tu2;
-  const REAL8      a =         -6.2e-6;
-  const REAL8      b =          0.093104;
-  const REAL8      c =      67310.54841;
-  const REAL8      d =    8640184.812866;
-  const REAL8      e = 3155760000.0;
-
+  LIGOTimeGPS gps;
+  LALMSTUnitsAndAcc UnitsAndAcc;
   char infostr[INFOSTR_LEN];
 
   INITSTATUS (status, "LALGMST1", LMST1C);
@@ -254,64 +241,14 @@ LALGMST1 (LALStatus     *status,
           DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
 
   /*
-   * Compute GMST1 for UT1 on given date in seconds 
-   */
-  TRY( LALJulianDate( status->statusPtr, &jdate, p_date ), status );
-  jdate -= J2000_0;
-  tmp    = (INT4)jdate;  /* get the integral part of jdate */
-  jd_hi  = (REAL8)tmp;
-  jd_lo  = jdate - jd_hi;  /* the fractional part of jdate */
-
-  tu     = jdate / JDAYS_PER_CENT;
-  tu2    = tu * tu;
-
-  jd_hi /= JDAYS_PER_CENT;
-  jd_lo /= JDAYS_PER_CENT;
-
-  /*
-   * The "raw" formula is:
-   *
-   *   st = 24110.54841 + 8640184.812866 * tu
-   *        + 0.093104 * tu^2 - 6.2e-6 * tu^3
-   *
-   *      = 24110.54841 + (d * tu) + (b * tu^2) + (a * tu^3)
-   *      = (c - 43200) + (d * tu) + (b * tu^2) + (a * tu^3)
-   *
-   * i.e. there seems to be a 43200 sec = 12 hr offset.
+   * Compute GMST for UTC on given date in seconds 
    */
 
-  /* sidereal time in seconds */
-  st = a*tu2*tu
-    + b*tu2
-    + c
-    + d*jd_lo + e*jd_lo
-    + d*jd_hi + e*jd_hi;
+  UnitsAndAcc.accuracy = LALLEAPSEC_STRICT;
+  UnitsAndAcc.units = outunits;
 
-  *p_gmst = fmod(st, (REAL8)SECS_PER_DAY);
-
-  if (*p_gmst < 0.)
-    *p_gmst += (REAL8)SECS_PER_DAY;
-
-  /*
-   * Convert GMST to requested units
-   */
-  switch (outunits)
-    {
-    case MST_SEC:
-      break;
-    case MST_HRS:
-      *p_gmst /= (REAL8)SECS_PER_HOUR;
-      break;
-    case MST_DEG:
-      *p_gmst /= (REAL8)SECS_PER_HOUR / (REAL8)DEGS_PER_HOUR;
-      break;
-    case MST_RAD:
-      *p_gmst /= (REAL8)SECS_PER_HOUR / (REAL8)DEGS_PER_HOUR * 180. /
-        (REAL8)LAL_PI;
-      break;
-    default:
-      break;
-    }
+  TRY( LALUTCtoGPS( status->statusPtr, &gps, p_date, &UnitsAndAcc.accuracy ), status );
+  TRY( LALGPStoGMST1( status->statusPtr, p_gmst, &gps, &UnitsAndAcc ), status );
 
   if (lalDebugLevel & LALINFO)
   {
@@ -335,8 +272,6 @@ LALGPStoGMST1( LALStatus         *status,
                const LIGOTimeGPS *p_gps,    /* input - GPS time */
                const LALMSTUnitsAndAcc *pUnitsAndAcc) /* GMST1 units and accuracy */
 { /* </lalVerbatim> */
-  LALDate         date;
-
   INITSTATUS (status, "LALGPStoGMST1", LMST1C);
   ATTATCHSTATUSPTR(status);
     
@@ -355,13 +290,30 @@ LALGPStoGMST1( LALStatus         *status,
           DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
 
   /*
-   * Convert GPS to date-time structure
+   * Compute GMST for GPS on given date in seconds 
    */
-  TRY( LALGPStoUTC(status->statusPtr, &date, p_gps,
-                   &(pUnitsAndAcc->accuracy)), status );
+  *p_gmst = XLALGreenwichMeanSiderealTime(p_gps) / (2.0 * LAL_PI) * SECS_PER_DAY;
 
-  TRY( LALGMST1(status->statusPtr, p_gmst, &date, pUnitsAndAcc->units),
-       status );
+  /*
+   * Convert GMST to requested units
+   */
+  switch (pUnitsAndAcc->units)
+    {
+    case MST_SEC:
+      break;
+    case MST_HRS:
+      *p_gmst /= (REAL8)SECS_PER_HOUR;
+      break;
+    case MST_DEG:
+      *p_gmst /= (REAL8)SECS_PER_HOUR / (REAL8)DEGS_PER_HOUR;
+      break;
+    case MST_RAD:
+      *p_gmst /= (REAL8)SECS_PER_HOUR / (REAL8)DEGS_PER_HOUR * 180. /
+        (REAL8)LAL_PI;
+      break;
+    default:
+      break;
+    }
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
@@ -495,6 +447,3 @@ LALGPStoLMST1( LALStatus             *status,
   DETATCHSTATUSPTR(status);
   RETURN(status);
 } /* END: LALGPStoLMST1() */
-
-
-              
