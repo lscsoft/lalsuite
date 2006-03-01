@@ -144,6 +144,11 @@ XLALLightTravelTime ( const LALDetector *aDet,
 \newpage\input{TimeDelayFromEarthCenterC}
 </lalLaTeX> */
 
+REAL8
+XLALTimeDelayFromEarthCenter(
+	const DetTimeAndASource *p_det_time_and_source
+);
+
 void
 LALTimeDelayFromEarthCenter( LALStatus               *status,
                              REAL8                   *p_delay,

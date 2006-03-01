@@ -61,11 +61,50 @@ difference.
 NRCSID( TIMEDELAYFROMEARTHCENTERC, "$ID$" );
 
 /* scalar product of two 3-vectors */
-static REAL8 dotprod(REAL8 vec1[3], REAL8 vec2[3])
+static double dotprod(const double vec1[3], const double vec2[3])
 {
   return (vec1[0] * vec2[0] +
           vec1[1] * vec2[1] +
           vec1[2] * vec2[2]);
+}
+
+
+/* <lalVerbatim file="TimeDelayFromEarthCenterCP"> */
+REAL8
+XLALTimeDelayFromEarthCenter(
+	const DetTimeAndASource *p_det_time_and_source
+)
+{ /* </lalVerbatim> */
+  const char *func = "XLALTimeDelayFromEarthCenter";
+
+  /*
+   * convert src location in equatorial coordinates to Earth-fixed polar
+   * coordinates
+   *
+   * NOTE: all source location params are in Earth-fixed frame
+   */
+
+  const double latitude = LAL_PI_2 - p_det_time_and_source->p_source->latitude;
+  const double longitude = p_det_time_and_source->p_source->longitude - XLALGreenwichMeanSiderealTime(p_det_time_and_source->p_det_and_time->p_gps);
+
+  /*
+   * compute the unit vector of the source direction
+   */
+
+  double ehat_src[3];
+
+  ehat_src[0] = sin(latitude) * cos(longitude);
+  ehat_src[1] = sin(latitude) * sin(longitude);
+  ehat_src[2] = cos(latitude);
+
+  /*
+   * time difference: time taken for light to travel the distance between
+   * Earth center and detector along direction to source.  See
+   * LALTimeDelay(), and put in Earth-center for detector 1 to see how the
+   * -ve sign arises.
+   */
+
+  return -dotprod(ehat_src, p_det_time_and_source->p_det_and_time->p_detector->location) / LAL_C_SI;
 }
 
 
@@ -163,3 +202,5 @@ LALTimeDelayFromEarthCenter( LALStatus               *stat,
   DETATCHSTATUSPTR( stat );
   RETURN( stat );
 } /* END: LALTimeDelayFromEarthCenter */
+
+
