@@ -1092,7 +1092,7 @@ LALWriteSFTVector2Dir (LALStatus *status,
     sprintf( filenumber, "%09d", sft->epoch.gpsSeconds);
     strncat( filename, filenumber, 9);
     strcat( filename, "-");
-    sprintf( filenumber, "%d", timeBase);
+    sprintf( filenumber, "%d", duration);
     strcat( filename, filenumber);
     strcat( filename, ".sft");
     
