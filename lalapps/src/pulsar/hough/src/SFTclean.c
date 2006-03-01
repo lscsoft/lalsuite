@@ -277,62 +277,49 @@ int main(int argc, char *argv[]){
     }
 
 
-  /* read the sfts */
   {
     CHAR *tempDir = NULL;
-
+    UINT4 k;
+    /* catalog containing single sft -- since here we loop over sfts */
+    SFTCatalog catalog1;
+    
+    catalog1.length = 1;
+    
     constraints.detector = NULL;
     
     tempDir = (CHAR *)LALCalloc( 512, sizeof(CHAR));
     strcpy( tempDir, uvar_inputSFTDir);
     strcat( tempDir, "/*SFT*.*");
-
+    
     LAL_CALL( LALSFTdataFind( &status, &catalog, tempDir, &constraints), &status);
-
-    LAL_CALL( LALLoadSFTs ( &status, &inputSFTs, catalog, uvar_fStart, uvar_fStart + uvar_fBand), &status);
-
-    LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);  	
+    
+    /* loop over sfts and clean and write them */
+    for ( k = 1; k < catalog->length; k++) {
+      
+      catalog1.data = catalog->data + k;
+      
+      LAL_CALL( LALLoadSFTs ( &status, &inputSFTs, &catalog1, uvar_fStart, uvar_fStart + uvar_fBand), &status);
+      
+      /* clean the sft vector -- in this case vector contains just a single sft */
+      LAL_CALL ( LALCleanSFTVector( &status, inputSFTs, uvar_maxBins, uvar_window, &lines2, randPar), &status);
+      
+      /* write the sft vector */  
+      LAL_CALL (LALWriteSFTVector2Dir ( &status, inputSFTs, uvar_outputSFTDir, "Cleaned SFT", "clean"), &status);
+      
+      /* destroy input sft */
+      LAL_CALL ( LALDestroySFTVector( &status, &inputSFTs), &status);
+      
+    } /* loop over sfts */
+    
     LALFree(tempDir);
   }
-
-
-  /* clean the sft vector */
-  LAL_CALL ( LALCleanSFTVector( &status, inputSFTs, uvar_maxBins, uvar_window, &lines2, randPar), &status);
-
-  /* write the sft vector */  
-  LAL_CALL (LALWriteSFTVector2Dir ( &status, inputSFTs, uvar_outputSFTDir, "Cleaned SFT", "clean"), &status);
-
-  /* write the sft */
-  /*   LAL_CALL ( LALWriteSFTfile( &status, sft, tempstr2),  &status ); */
-
+ 
+ 
   
-
-  /*   for (j=0; j < mObsCoh; j++) */
-  /*     {  */
-  /*       sft=NULL; */
-  /*       LAL_CALL (LALReadSFTfile (&status, &sft, uvar_fStart, uvar_fStart + uvar_fBand, filelist[j]), &status); */
-  
-  /*       /\* clean the sft *\/ */
-  /*       if (nLines > 0) */
-  /* 	LAL_CALL( LALCleanCOMPLEX8SFT( &status, sft, uvar_maxBins, uvar_window, &lines2, randPar), &status); */
-  
-  
-  /*       /\* make the output sft filename *\/ */
-  /*       sprintf(tempstr1, "%d", sft->epoch.gpsSeconds); */
-  /*       strcpy(tempstr2,uvar_outputSFTDir); */
-  /*       strcat(tempstr2, "/CLEAN_SFT."); */
-  /*       strcat(tempstr2, tempstr1); */
-  
-  /*       /\* write the sft *\/ */
-  /*       LAL_CALL( LALWriteSFTfile( &status, sft, tempstr2),  &status ); */
-  
-  /*       LALDestroySFTtype (&status, &sft); */
-  /*     } */
-
 
   /* Free memory */
 
-  LAL_CALL ( LALDestroySFTVector( &status, &inputSFTs), &status);
+  LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);
 
   if (nLines > 0)
     {
