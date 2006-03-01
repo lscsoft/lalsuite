@@ -4474,15 +4474,12 @@ XLALReadRingdownTriggerFile (
     }
     else
     {
-      /* append to the end of the linked
-       * * list and set current    */
-      /* trigger to the first trigger of the
-       * * list being appended */
+      /* append to the end of the linked list and set current    */
+      /* trigger to the first trigger of the list being appended */
       *lastTrigger = (*lastTrigger)->next = inputData;
     }
     
-    /* scroll to the end of the linked list of
-     * * triggers */
+    /* scroll to the end of the linked list of triggers */
     for ( ; (*lastTrigger)->next; *lastTrigger = (*lastTrigger)->next );
   }
   

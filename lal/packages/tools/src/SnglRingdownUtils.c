@@ -2,7 +2,7 @@
  * 
  * File Name: SnglRingdownUtils.c
  *
- * Author: Brady, P. R., Brown, D. A., Fairhurst, S. and Messaritaki, E.
+ * Author: Goggin, L. M based on  SnglInspiralUtils by Brady, P. R., Brown, D. A., Fairhurst, S. and Messaritaki, E.
  * 
  * Revision: $Id$
  * 
@@ -46,8 +46,6 @@ Provides a set of utilities for manipulating \texttt{snglRingdownTable}s.
 \idx{LALCompareSnglRingdown()}
 \idx{LALClusterSnglRingdownTable()}
 \idx{LALTimeCutSingleRingdown()}
-\idx{LALalphaFCutSingleInspiral()}
-\idx{LALIfoCutSingleInspiral()}
 \idx{LALIfoCountSingleRingdown()}
 \idx{LALTimeSlideSingleRingdown()} 
 \idx{LALPlayTestSingleRingdown()}
@@ -167,8 +165,7 @@ static INT4 start_time_nsec(const SnglRingdownTable *x)
 	return(x->start_time.gpsNanoSeconds);
 }
 
-
-/* <lalVerbatim file="SnglRingdownutilsCP"> */
+/* <lalVerbatim file="SnglRingdownUtilsCP"> */
 void
 LALFreeSnglRingdown (
     LALStatus          *status,
@@ -176,17 +173,8 @@ LALFreeSnglRingdown (
     )
 /* </lalVerbatim> */
 {
-  EventIDColumn        *eventId;
-
   INITSTATUS( status, "LALFreeSnglRingdown", SNGLRINGDOWNUTILSC );
-  while ( (*eventHead)->event_id )
-  {
-    /* free any associated event_id's */
-    eventId = (*eventHead)->event_id;
-    (*eventHead)->event_id = (*eventHead)->event_id->next;
-    LALFree( eventId );
-  }
-  LALFree( *eventHead );
+  XLALFreeSnglRingdown( eventHead );
   RETURN( status );
 }
 
@@ -198,18 +186,32 @@ XLALFreeSnglRingdown (
 /* </lalVerbatim> */
 {
   EventIDColumn        *eventId;
-
-  while ( (*eventHead)->event_id )
+  CoincRingdownTable   *thisCoinc;
+  InterferometerNumber  ifoNumber;
+  
+  while ( (eventId = (*eventHead)->event_id) )
   {
     /* free any associated event_id's */
-    eventId = (*eventHead)->event_id;
     (*eventHead)->event_id = (*eventHead)->event_id->next;
+    
+    if( (thisCoinc = eventId->coincRingdownTable) )
+    {
+      /* this Sngl is still part of a coinc, set pointer to NULL */
+      for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+      {
+        if ( *eventHead == thisCoinc->snglRingdown[ifoNumber] )
+        {
+          thisCoinc->snglRingdown[ifoNumber] = NULL;
+        }
+      }
+    }
     LALFree( eventId );
   }
   LALFree( *eventHead );
-
+  
   return (0);
 }
+
 
 /* <lalVerbatim file="SnglRingdownUtilsCP"> */
 void
