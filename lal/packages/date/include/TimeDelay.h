@@ -129,6 +129,15 @@ DetTimeAndASource;
 \newpage\input{TimeDelayC}
 </lalLaTeX> */
 
+double
+XLALTimeDelay(
+	const double detector1_earthfixed_xyz_metres[3],
+	const double detector2_earthfixed_xyz_metres[3],
+	double source_right_ascension_radians,
+	double source_declination_radians,
+	const LIGOTimeGPS *gpstime
+);
+
 void
 LALTimeDelay( LALStatus                   *status,
               REAL8                       *p_delay,
@@ -147,8 +156,8 @@ XLALLightTravelTime ( const LALDetector *aDet,
 REAL8
 XLALTimeDelayFromEarthCenter(
 	const double detector_earthfixed_xyz_metres[3],
-	double source_declination_radians,
 	double source_right_ascension_radians,
+	double source_declination_radians,
 	const LIGOTimeGPS *gpstime
 );
 

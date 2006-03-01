@@ -1,6 +1,6 @@
 /* <lalVerbatim file="TimeDelayCV">
 
-Author: Chin, David <dwchin@umich.edu> +1-734-709-9119
+Author: Chin, David <dwchin@umich.edu> +1-734-709-9119, Kipp Cannon <kipp@gravity.phys.uwm.edu>
 $Id$
 
 </lalVerbatim> */
@@ -62,120 +62,94 @@ a GMST which gives us the orientation of the Earth.
 NRCSID( TIMEDELAYC, "$Id$" );
 
 /* scalar product of two 3-vectors */
-static REAL8 dotprod(REAL8 vec1[3], REAL8 vec2[3])
+static double dotprod(const double vec1[3], const double vec2[3])
 {
-  return (vec1[0] * vec2[0] +
-          vec1[1] * vec2[1] +
-          vec1[2] * vec2[2]);
+	return vec1[0] * vec2[0] + vec1[1] * vec2[1] + vec1[2] * vec2[2];
 }
+
+
+/* <lalVerbatim file="TimeDelayCP"> */
+double
+XLALTimeDelay(
+	const double detector1_earthfixed_xyz_metres[3],
+	const double detector2_earthfixed_xyz_metres[3],
+	double source_right_ascension_radians,
+	double source_declination_radians,
+	const LIGOTimeGPS *gpstime
+)
+{ /* </lalVerbatim> */
+	static const char *func = "XLALTimeDelay";
+	double delta_xyz[3];
+	double ehat_src[3];
+	const double colatitude = LAL_PI_2 - source_declination_radians;
+	const double greenwich_hour_angle = XLALGreenwichMeanSiderealTime(gpstime) - source_right_ascension_radians;
+
+	if(XLAL_IS_REAL8_FAIL_NAN(greenwich_hour_angle))
+		XLAL_ERROR_REAL8(func, XLAL_EFUNC);
+
+	/*
+	 * compute the unit vector pointing from the geocenter to the
+	 * source
+	 */
+
+	ehat_src[0] = sin(colatitude) * cos(greenwich_hour_angle);
+	ehat_src[1] = sin(colatitude) * -sin(greenwich_hour_angle);
+	ehat_src[2] = cos(colatitude);
+
+	/*
+	 * displacement of detector 1 from detector 2
+	 */
+
+	delta_xyz[0] = detector1_earthfixed_xyz_metres[0] - detector2_earthfixed_xyz_metres[0];
+	delta_xyz[1] = detector1_earthfixed_xyz_metres[1] - detector2_earthfixed_xyz_metres[1];
+	delta_xyz[2] = detector1_earthfixed_xyz_metres[1] - detector2_earthfixed_xyz_metres[2];
+
+	/*
+	 * Time difference: time taken for light to travel the intervening
+	 * distance along the direction to the source.  If (detLoc1 -
+	 * detLoc2) \cdot ehat_src is positive, then detector 1 is closer
+	 * to the source and hence the time delay is positive.
+	 */
+
+	return dotprod(ehat_src, delta_xyz) / LAL_C_SI;
+}
+
 
 /* <lalVerbatim file="TimeDelayCP"> */
 void
-LALTimeDelay( LALStatus                    *stat,
-              REAL8                        *p_time_diff,
-              const TwoDetsTimeAndASource  *p_dets_time_and_source )
+LALTimeDelay(
+	LALStatus *stat,
+	REAL8 *p_time_diff,
+	const TwoDetsTimeAndASource *p_dets_time_and_source
+)
 { /* </lalVerbatim> */
-  LALLeapSecAccuracy accuracy = LALLEAPSEC_STRICT;
-  
-  /* GMST of first detector, in radians */
-  REAL8        gmst1;
-  
-  LALDate      date;
+	INITSTATUS(stat, "LALTimeDelay", TIMEDELAYC);
+	ATTATCHSTATUSPTR(stat);
+	ASSERT(p_time_diff, stat, TIMEDELAYH_ENUL, TIMEDELAYH_MSGENUL);
+	ASSERT(p_dets_time_and_source, stat, TIMEDELAYH_ENUL, TIMEDELAYH_MSGENUL);
 
+	*p_time_diff = XLALTimeDelay(p_dets_time_and_source->p_det_and_time1->p_detector->location, p_dets_time_and_source->p_det_and_time2->p_detector->location, p_dets_time_and_source->p_source->longitude, p_dets_time_and_source->p_source->latitude, p_dets_time_and_source->p_det_and_time1->p_gps);
 
-  /* NOTE: all source location params are in Earth-fixed frame */
-  SkyPosition src_polar;      /* Earth-fixed polar (lon, polar angle) */
-  REAL8       sin_pol_angle;  /* sine of src polar angle */
-  REAL8       ehat_src[3];    /* unit vector of source location */
+	ASSERT(!XLAL_IS_REAL8_FAIL_NAN(*p_time_diff), stat, DATEH_ERANGEGPSABS, DATEH_MSGERANGEGPSABS);
 
-  /* displacement vector between the two detectors in Earth-fixed frame */
-  REAL8 deltaLoc[3];
-
-  /* loop counter */
-  INT4  i;
-
-
-  INITSTATUS( stat, "LALTimeDelay", TIMEDELAYC );
-  /* bloody mis-spelling */
-  ATTATCHSTATUSPTR( stat );
-
-  /* Ensure non-NULL structures are passed */
-  ASSERT( p_time_diff, stat, TIMEDELAYH_ENUL, TIMEDELAYH_MSGENUL );
-  ASSERT( p_dets_time_and_source, stat, TIMEDELAYH_ENUL, TIMEDELAYH_MSGENUL );
-
-
-  /*
-   * convert src location in equatorial coordinates to Earth-fixed
-   * polar coordinates
-   *
-   * don't use LALEquatorialToGeographic() since it modifies the input
-   * structure
-   */
-  
-  /* need GMST in radians */
-  TRY( LALGPStoUTC( stat->statusPtr, &date,
-                    p_dets_time_and_source->p_det_and_time1->p_gps,
-                    &accuracy ), stat );
-  TRY( LALGMST1( stat->statusPtr, &gmst1, &date, MST_RAD ), stat );
-
-  /* polar angle, theta */
-  src_polar.latitude = LAL_PI_2 - p_dets_time_and_source->p_source->latitude;
-
-  /* azimuthal angle, phi */
-  src_polar.longitude = p_dets_time_and_source->p_source->longitude - gmst1;
-
-  /*
-   * compute the unit vector of the source direction
-   */
-  sin_pol_angle = sin(src_polar.latitude);
-  
-  ehat_src[0]   = sin_pol_angle * cos(src_polar.longitude);
-  ehat_src[1]   = sin_pol_angle * sin(src_polar.longitude);
-  ehat_src[2]   = cos(src_polar.latitude);
-
-
-  /*
-   * displacement of detector 1 from detector 2
-   */
-  for (i = 0; i < 3; ++i)
-    deltaLoc[i] =
-      p_dets_time_and_source->p_det_and_time1->p_detector->location[i] -
-      p_dets_time_and_source->p_det_and_time2->p_detector->location[i];
-
-  /*
-   * Time difference: time taken for light to travel the intervening
-   * distance along the direction to the source.
-   * If (detLoc1 - detLoc2) &. ehat_src is positive, then detector 1
-   * is closer to the source and hence the time delay is positive.
-   */
-  *p_time_diff = dotprod(ehat_src, deltaLoc) / LAL_C_SI;
-
-
-  /*
-   * House keeping
-   */
-  DETATCHSTATUSPTR( stat );
-  RETURN( stat );
-} /* END: LALTimeDelay() */
-
+	DETATCHSTATUSPTR(stat);
+	RETURN(stat);
+}
 
 
 /* <lalVerbatim file="TimeDelayCP"> */
 INT8
-XLALLightTravelTime ( const LALDetector *aDet,
-                      const LALDetector *bDet 
-                     )
+XLALLightTravelTime(
+	const LALDetector *aDet,
+	const LALDetector *bDet
+)
 /* </lalVerbatim> */
 {
-  
-  REAL8  deltaLoc[3];     /* displacement vector between the two detectors */
-  INT4   i;               /* loop counter */
+	double deltaLoc[3];
 
-  for (i = 0; i < 3; ++i)
-  {
-    deltaLoc[i] = aDet->location[i] - bDet->location[i];
-  }
+	deltaLoc[0] = aDet->location[0] - bDet->location[0];
+	deltaLoc[1] = aDet->location[1] - bDet->location[1];
+	deltaLoc[2] = aDet->location[2] - bDet->location[2];
 
-  return ( (INT8) ( 1e9 * sqrt( dotprod(deltaLoc, deltaLoc)) / LAL_C_SI ) );
+	return (INT8) (1e9 * sqrt(dotprod(deltaLoc, deltaLoc)) / LAL_C_SI);
 }
-
