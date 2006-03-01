@@ -1010,19 +1010,14 @@ LALWriteSFT2file (LALStatus *status,
  * NOTE: Currently this only supports writing v2-SFTs.
  * If you need to write a v1-SFT, you should use LALWriteSFTfile() 
  *
- * Output SFTs have naming convention similar to the naming convention used for
- * frame-files described in LIGO-T010150-00.  The relevant type here is the 
- * "type 3" data file described in the document, and the SFT name will be 
- * detector-SFTversion-GPSSecond-timebase.data.  As an example, 1800s v2-SFTs for H1 
- * starting at GPS second 700000000 will be called H1-SFTv2-700000000-1800.data.  It is 
- * assumed that the first two characters of the name field of the SFT contains 
- * the detector information (maybe relax this requirement?). 
+ * Output SFTs have naming convention following LIGO-T040164-01
  */
 void
 LALWriteSFTVector2Dir (LALStatus *status,
 		       const SFTVector *sftVect,	/**< SFT vector to write to disk */
 		       const CHAR *dirname,		/**< base filename (including directory path)*/
-		       const CHAR *comment)		/**< optional comment (for v2 only) */
+		       const CHAR *comment,		/**< optional comment (for v2 only) */
+		       const CHAR *description)         /**< optional sft description to go in the filename */
 {
   UINT4 length, k;
   CHAR *filename = NULL;
@@ -1054,17 +1049,28 @@ LALWriteSFTVector2Dir (LALStatus *status,
 
     sft = sftVect->data + k;
 
-    /* create the k^th filename -- try to simplify this*/
+    /* create the k^th filename following naming convention 
+       -- try to simplify this*/
     strcpy( filename, dirname);
     strcat( filename, "/");
-    strncat( filename, sft->name, 2);
-    strcat( filename, "-SFTv2-");    
+    strncat( filename, sft->name, 1);
+    strcat( filename, "-1_"); /* single (not merged) sft */
+    strncat( filename, sft->name, 2); /* full detector name */
+    strcat( filename, "_");
+    sprintf( filenumber, "%d", timeBase); /* sft timebase */
+    strcat( filename, filenumber);
+    strcat( filename, "SFTv2");
+    if ( description ) {
+      strcat( filename, "_");
+      strcat( filename, description);
+    }
+    strcat( filename, "-");
     sprintf( filenumber, "%09d", sft->epoch.gpsSeconds);
     strncat( filename, filenumber, 9);
     strcat( filename, "-");
     sprintf( filenumber, "%d", timeBase);
     strcat( filename, filenumber);
-    strcat( filename, ".data");
+    strcat( filename, ".sft");
     
     /* write the k^th sft */
     TRY ( LALWriteSFT2file ( status->statusPtr, sft, filename, comment), status);

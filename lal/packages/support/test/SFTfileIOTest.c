@@ -225,6 +225,8 @@ int main(int argc, char *argv[])
   /* write v2-SFT to disk */
   SHOULD_WORK ( LALWriteSFT2file( &status, &(multsft_vect->data[0]->data[0]), "outputsftv2_v2.sft", "A v2-SFT file for testing!"), &status );
 
+  SHOULD_WORK ( LALWriteSFTVector2Dir( &status, multsft_vect->data[0], ".", "A v2-SFT file for testing!", "test"), &status);
+
   /* write v2-SFt as a v1-SFT to disk (correct normalization) */
   SHOULD_WORK ( LALWrite_v2SFT_to_v1file( &status, &(multsft_vect->data[0]->data[0]), "outputsftv2_v1.sft"), &status );
 
