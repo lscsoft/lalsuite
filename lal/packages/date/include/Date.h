@@ -194,12 +194,19 @@ REAL8 XLALJulianDay( const struct tm *utc /**< [In] UTC time in a broken down ti
  * #define XLAL_MODIFIED_JULIAN_DAY(utc) (XLALJulianDay(utc)-XLAL_MJD_REF)
  */
 INT4 XLALModifiedJulianDay( const struct tm *utc /**< [In] UTC time in a broken down time structure. */ );
-  
+
+/** Returns the Greenwich mean or aparent sideral time in radians.
+ */
+REAL8 XLALGreenwichSiderealTime(
+	const LIGOTimeGPS *gpstime,
+	REAL8 equation_of_equinoxes
+);
+
 /** Returns the Greenwich Mean Sidereal Time in RADIANS for a specified GPS
- * epoch. */
+ * time. */
 REAL8 XLALGreenwichMeanSiderealTime(
-    const LIGOTimeGPS *epoch /**< [In] GPS time. */
-    );
+	const LIGOTimeGPS *gpstime
+);
 
 
 /* <lalLaTeX>

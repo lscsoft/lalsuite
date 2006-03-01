@@ -1,70 +1,80 @@
 /** \file
  * \ingroup std
- * \author Chin, D. W. and Creighton, J. D. E.
+ * \author Cannon, K. C.
  * \brief XLAL routines for computing the sidereal time.
- *
  */
+
 
 #include <math.h>
-#include <time.h>
-#include <lal/LALStdlib.h>
-#include <lal/LALConstants.h>
 #include <lal/Date.h>
 
-/** Returns the Greenwich Mean Sidereal Time IN RADIANS corresponding to a
- * specified GPS time.
+
+/*
+ * Returns the Greenwich Sidereal Time IN RADIANS corresponding to a
+ * specified GPS time.  Aparent sidereal time is computed by providing the
+ * equation of equinoxes in units of seconds.  For mean sidereal time, set
+ * this parameter to 0.
  *
- * Note: result is in RADIANS in the range [0,2pi).
+ * The output of this code is in radians in the range [0,2pi).
  *
- * Reference: S. Aoki et al., A&A 105, 359 (1982) eqs. 13 & 19.
- * Also cf. http://aa.usno.navy.mil.
+ * Inspired by the function sidereal_time() in the NOVAS-C library, version
+ * 2.0.1, which is dated December 10th, 1999, and carries the following
+ * references:
+ *
+ * Aoki, et al. (1982) Astronomy and Astrophysics 105, 359-361.
+ * Kaplan, G. H. "NOVAS: Naval Observatory Vector Astrometry
+ *   Subroutines"; USNO internal document dated 20 Oct 1988;
+ *   revised 15 Mar 1990.
+ *
+ * See http://aa.usno.navy.mil/software/novas for more information.
+ *
+ * Note:  rather than maintaining this code separately, it would be a good
+ * idea for LAL to simply link to the NOVAS-C library directly.  Something
+ * to do when we have some spare time.
  */
-REAL8 XLALGreenwichMeanSiderealTime(
-    const LIGOTimeGPS *epoch /**< [In] GPS time. */
-    )
+
+REAL8 XLALGreenwichSiderealTime(
+	const LIGOTimeGPS *gpstime,
+	REAL8 equation_of_equinoxes
+)
 {
-  static const char * func = "XLALGreenwichMeanSiderealTime";
-  REAL8 t_J2000; /* time since the J2000.0 epoch (2000 JAN 1 12h UTC) */
-  REAL8 t;       /* time since 2000 JAN 1 0h UTC */
-  REAL8 dpU;     /* days since J2000.0 */
-  REAL8 TpU;     /* centuries since 1899 DEC 31 12h UT */
-  REAL8 gmst;    /* greenwich mean sidereal time (radians) */
-  int taiutc;    /* leap seconds */
+	static const char *func = "XLALGreenwichSiderealTime";
 
-  /* compute current number of leap seconds */
-  taiutc = XLALLeapSeconds( epoch->gpsSeconds );
-  if ( taiutc < 0 )
-    XLAL_ERROR_REAL8( func, XLAL_EFUNC );
+	/* Most significant and least significant part of time since the
+	 * Julian epoch in units of centuries (= 36525.0 days).  Original
+	 * code in NOVAS-C determined t_hi and t_lo from Julian days.  LAL
+	 * lacks a high-precision Julian day routine, so we do this
+	 * directly from a GPS time.  Note that the "hi" and "lo"
+	 * components have the same units and so the split can be done
+	 * anywhere.  The original code recommends putting the integer days
+	 * in "hi" and the fractional part in "lo".  For convenience, and
+	 * because it involves fewer arithmetic operations, here we make
+	 * the split at integer and fractional seconds. */
+	double t_hi = (gpstime->gpsSeconds - XLAL_EPOCH_J2000_0_GPS) / (36525.0 * 86400.0);
+	double t_lo = gpstime->gpsNanoSeconds / (1e9 * 36525.0 * 86400.0);
 
-  t_J2000  = epoch->gpsSeconds - XLAL_EPOCH_J2000_0_GPS;
-  t_J2000 += 1e-9 * epoch->gpsNanoSeconds;
-  t_J2000 += taiutc - XLAL_EPOCH_J2000_0_TAI_UTC;
+	double t = t_hi + t_lo;
+	double t_squared = t * t;
+	double t_cubed = t_squared * t;
 
-  /* 2000 JAN 1 0h UTC is twelve hours earlier than the J2000.0 epoch */
-  t = t_J2000 + 12 * 3600;
+	double sidereal_time = equation_of_equinoxes - 6.2e-6 * t_cubed + 0.093104 * t_squared + 67310.54841
+		+ 8640184.812866 * t_lo
+		+ 3155760000.0 * t_lo
+		+ 8640184.812866 * t_hi
+		+ 3155760000.0 * t_hi;
 
-  /* compute number of days since J2000.0
-   * note: this must be an integer-plus-one-half
-   * it is really the number of full days since half a day before J2000.0
-   * minus one half. */
-  dpU  = floor( t / ( 24.0 * 3600.0 ) ); /* full days since 0h UT 01 Jan 2000 */
-  dpU -= 0.5; /* recall t is half a day before J2000.0 */
+	/* convert from seconds to fraction of 2 pi */
+	sidereal_time = fmod(sidereal_time * (2.0 * LAL_PI) / (24.0 * 3600.0), 2.0 * LAL_PI);
+	if(sidereal_time < 0.0)
+		sidereal_time += 2.0 * LAL_PI;
+  
+	return sidereal_time;
+}
 
-  /* compute number of centuries since 12h UT 31 Dec 1899 */
-  TpU = dpU / 36525.0;
 
-  /* compute the gmst at 0h of the current day */
-  gmst = 24110.54841
-    + TpU * ( 8640184.812866
-        + TpU * ( 0.093104
-          - TpU * 6.2e-6 ) ); /* seconds */
-
-  /* add the sidereal time since the start of the day */
-  t = fmod( t, 24.0 * 3600.0 ); /* seconds since start of day */
-  gmst += t * 1.002737909350795; /* corrections omitted */
-
-  /* convert to fractions of a day and to radians */
-  gmst = fmod( gmst / ( 24.0 * 3600.0 ), 1.0 ); /* fraction of day */
-  gmst *= 2.0 * LAL_PI; /* radians */
-  return gmst;
+REAL8 XLALGreenwichMeanSiderealTime(
+	const LIGOTimeGPS *gpstime
+)
+{
+	return XLALGreenwichSiderealTime(gpstime, 0.0);
 }
