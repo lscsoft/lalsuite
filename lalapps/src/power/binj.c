@@ -65,11 +65,11 @@ struct options {
 	double fratio;
 	double deltaf;
 	double quality;
-	double log_hpeak_min;
-	double log_hpeak_max;
+	double log10_hpeak_min;
+	double log10_hpeak_max;
 	int use_random_strain;
-	double log_max_distance;
-	double log_min_distance;
+	double log10_max_distance;
+	double log10_min_distance;
 	int seed;
 	INT8 time_step;	/* nanoseconds between injections */
 	char *waveform;
@@ -95,11 +95,11 @@ static struct options options_defaults(void)
 		.fratio = 0.0,
 		.deltaf = 0.0,
 		.quality = -1.0,
-		.log_hpeak_min = 0.0,
-		.log_hpeak_max = 0.0,
+		.log10_hpeak_min = 0.0,
+		.log10_hpeak_max = 0.0,
 		.use_random_strain = 0,
-		.log_max_distance = log10(10000.0),
-		.log_min_distance = log10(100.0),
+		.log10_max_distance = log10(10000.0),
+		.log10_min_distance = log10(100.0),
 		.seed = 1,
 		.time_step = 210.0 / LAL_PI * 1e9,
 		.waveform = "SineGaussian",
@@ -268,23 +268,23 @@ static struct options parse_command_line(int *argc, char **argv[], MetadataTable
 
 	case 'K':
 		options.use_random_strain += 1;
-		options.log_hpeak_max = atof(optarg);
+		options.log10_hpeak_max = atof(optarg);
 		ADD_PROCESS_PARAM("double");
 		break;
 
 	case 'L':
 		options.use_random_strain += 1;
-		options.log_hpeak_min = atof(optarg);
+		options.log10_hpeak_min = atof(optarg);
 		ADD_PROCESS_PARAM("double");
 		break;
 
 	case 'M':
-		options.log_max_distance = log10(atof(optarg));
+		options.log10_max_distance = log10(atof(optarg));
 		ADD_PROCESS_PARAM("double");
 		break;
 
 	case 'N':
-		options.log_min_distance = log10(atof(optarg));
+		options.log10_min_distance = log10(atof(optarg));
 		ADD_PROCESS_PARAM("double");
 		break;
 
@@ -385,29 +385,47 @@ static struct options parse_command_line(int *argc, char **argv[], MetadataTable
  * ============================================================================
  */
 
-static LIGOTimeGPS arrival_time(LALDetector detector, LIGOTimeGPS geocent_peak_time, double latitude, double longitude)
+static LIGOTimeGPS arrival_time(LALDetector detector, LIGOTimeGPS geocent_peak_time, double right_ascension, double declination)
 {
-	LALStatus status = blank_status;
-	LALPlaceAndGPS place_and_gps = {
-		.p_detector = &detector,
-		.p_gps = &geocent_peak_time
-	};
-	SkyPosition sky_pos = {
-		.longitude = longitude,
-		.latitude = latitude,
-		.system = COORDINATESYSTEM_EQUATORIAL
-	};
-	DetTimeAndASource det_time_and_source = {
-		.p_det_and_time = &place_and_gps,
-		.p_source = &sky_pos
-	};
-	REAL8 dt;
-
-	LAL_CALL(LALTimeDelayFromEarthCenter(&status, &dt, &det_time_and_source), &status);
-
-	return *XLALGPSAdd(&geocent_peak_time, dt);
+	return *XLALGPSAdd(&geocent_peak_time, XLALTimeDelayFromEarthCenter(detector.location, right_ascension, declination, &geocent_peak_time));
 }
 
+
+/* 
+ * ============================================================================
+ *                Logarithmically-Distributed Random Variable
+ * ============================================================================
+ */
+
+static double Log10Deviate(RandomParams *params, double log10_min, double log10_max)
+{
+	return pow(10.0, log10_min + (log10_max -log10_min) * XLALUniformDeviate(params));
+}
+
+
+/* 
+ * ============================================================================
+ *                            Solving For Unknowns
+ * ============================================================================
+ */
+
+static double tau_from_q_and_f(double Q, double f)
+{
+	/* compute duration from Q and frequency */
+	return Q / (sqrt(2.0) * LAL_PI * f);
+}
+
+static double hrss_from_tau_and_hpeak(double tau, double hpeak)
+{
+	/* compute root-sum-square strain from duration and peak strain */
+	return sqrt(sqrt(2.0 * LAL_PI) * tau / 4.0) * hpeak;
+}
+
+static double hpeak_from_tau_and_hrss(double tau, double hrss)
+{
+	/* compute peak strain from duration and root-sum-square strain */
+	return hrss / sqrt(sqrt(2.0 * LAL_PI) * tau / 4.0);
+}
 
 /* 
  * ============================================================================
@@ -416,21 +434,13 @@ static LIGOTimeGPS arrival_time(LALDetector detector, LIGOTimeGPS geocent_peak_t
  */
 
 /* output for LIGO-TAMA simulations */
-static void ligo_tama_output(FILE * fpout, SimBurstTable * simBursts)
+static void ligo_tama_output(FILE *fpout, SimBurstTable *simBursts)
 {
-	SimBurstTable *thisEvent = NULL;
-
-	thisEvent = simBursts;
 	fprintf(fpout, "# $I" "d$\n");
-	fprintf(fpout, "# %s\n", thisEvent->waveform);
+	fprintf(fpout, "# %s\n", simBursts->waveform);
 	fprintf(fpout, "# geocent_peak_time\tnSec\tdtminus\t\tdtplus\t\tlongitude\tlatitude\tpolarization\tcoordinates\thrss\thpeak\tfreq\ttau\n");
-	fflush(fpout);
-
-	while(thisEvent) {
-		fprintf(fpout, "%0d\t%0d\t%f\t%f\t%f\t%f\t%f\t%s\t%e\t%e\t%f\t%f\n", thisEvent->geocent_peak_time.gpsSeconds, thisEvent->geocent_peak_time.gpsNanoSeconds, thisEvent->dtminus, thisEvent->dtplus, thisEvent->longitude, thisEvent->latitude, thisEvent->polarization, thisEvent->coordinates, thisEvent->hrss, thisEvent->hpeak, thisEvent->freq, thisEvent->tau);
-		thisEvent = thisEvent->next;
-	}
-
+	for(; simBursts; simBursts = simBursts->next)
+		fprintf(fpout, "%0d\t%0d\t%f\t%f\t%f\t%f\t%f\t%s\t%e\t%e\t%f\t%f\n", simBursts->geocent_peak_time.gpsSeconds, simBursts->geocent_peak_time.gpsNanoSeconds, simBursts->dtminus, simBursts->dtplus, simBursts->longitude, simBursts->latitude, simBursts->polarization, simBursts->coordinates, simBursts->hrss, simBursts->hpeak, simBursts->freq, simBursts->tau);
 	fprintf(fpout, "# $I" "d$\n");
 }
 
@@ -439,11 +449,10 @@ static void write_tamma(MetadataTable injections, struct options options)
 	FILE *fpout;
 	char fname[256];
 
-	if(options.user_tag) {
-		LALSnprintf(fname, sizeof(fname), "HLT-INJECTIONS_%s-%d-%d.txt", options.user_tag, (int) (options.gps_start_time / LAL_INT8_C(1000000000)), (int) ((options.gps_end_time - options.gps_start_time) / LAL_INT8_C(1000000000)));
-	} else {
-		LALSnprintf(fname, sizeof(fname), "HLT-INJECTIONS-%d-%d.txt", (int) (options.gps_start_time / LAL_INT8_C(1000000000)), (int) ((options.gps_end_time - options.gps_start_time) / LAL_INT8_C(1000000000)));
-	}
+	if(options.user_tag)
+		snprintf(fname, sizeof(fname), "HLT-INJECTIONS_%s-%d-%d.txt", options.user_tag, (int) (options.gps_start_time / LAL_INT8_C(1000000000)), (int) ((options.gps_end_time - options.gps_start_time) / LAL_INT8_C(1000000000)));
+	else
+		snprintf(fname, sizeof(fname), "HLT-INJECTIONS-%d-%d.txt", (int) (options.gps_start_time / LAL_INT8_C(1000000000)), (int) ((options.gps_end_time - options.gps_start_time) / LAL_INT8_C(1000000000)));
 	fpout = fopen(fname, "w");
 	ligo_tama_output(fpout, injections.simBurstTable);
 	fclose(fpout);
@@ -459,7 +468,7 @@ static void write_mdc_xml(MetadataTable mdcinjections)
 
 	memset(&xmlfp, 0, sizeof(xmlfp));
 
-	LALSnprintf(fname, sizeof(fname), "HL-MDCSG10_%d.xml", 1);
+	snprintf(fname, sizeof(fname), "HL-MDCSG10_%d.xml", 1);
 
 	LAL_CALL(LALOpenLIGOLwXMLFile(&status, &xmlfp, fname), &status);
 	LAL_CALL(LALBeginLIGOLwXMLTable(&status, &xmlfp, sim_burst_table), &status);
@@ -474,7 +483,6 @@ static void write_xml(MetadataTable proctable, MetadataTable procparams, Metadat
 {
 	LALStatus status = blank_status;
 	char fname[256];
-	LALLeapSecAccuracy accuracy = LALLEAPSEC_LOOSE;
 	LIGOLwXMLStream xmlfp;
 
 	memset(&xmlfp, 0, sizeof(xmlfp));
@@ -487,7 +495,7 @@ static void write_xml(MetadataTable proctable, MetadataTable procparams, Metadat
 
 	LAL_CALL(LALOpenLIGOLwXMLFile(&status, &xmlfp, fname), &status);
 
-	LAL_CALL(LALGPSTimeNow(&status, &proctable.processTable->end_time, &accuracy), &status);
+	XLALGPSTimeNow(&proctable.processTable->end_time);
 	LAL_CALL(LALBeginLIGOLwXMLTable(&status, &xmlfp, process_table), &status);
 	LAL_CALL(LALWriteLIGOLwXMLTable(&status, &xmlfp, proctable, process_table), &status);
 	LAL_CALL(LALEndLIGOLwXMLTable(&status, &xmlfp), &status);
@@ -519,14 +527,12 @@ int main(int argc, char *argv[])
 	struct options options;
 	INT8 tinj;
 	RandomParams *randParams = NULL;
-	REAL4 deviate = 0.0;
 	int iamp = 1;
 	/* observatory information */
 	LALDetector lho = lalCachedDetectors[LALDetectorIndexLHODIFF];
 	LALDetector llo = lalCachedDetectors[LALDetectorIndexLLODIFF];
 	/* xml output data */
 	LALStatus status = blank_status;
-	LALLeapSecAccuracy accuracy = LALLEAPSEC_LOOSE;
 	/* tables */
 	MetadataTable proctable;
 	MetadataTable procparams;
@@ -540,9 +546,9 @@ int main(int argc, char *argv[])
 
 	/* create the process and process params tables */
 	proctable.processTable = calloc(1, sizeof(ProcessTable));
-	LAL_CALL(LALGPSTimeNow(&status, &(proctable.processTable->start_time), &accuracy), &status);
+	XLALGPSTimeNow(&proctable.processTable->start_time);
 	LAL_CALL(populate_process_table(&status, proctable.processTable, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE), &status);
-	LALSnprintf(proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " ");
+	snprintf(proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " ");
 	procparams.processParamsTable = NULL;
 
 	/* parse command line */
@@ -556,7 +562,7 @@ int main(int argc, char *argv[])
 		snprintf(proctable.processTable->comment, LIGOMETA_COMMENT_MAX, "");
 
 	/* initialize random number generator */
-	LAL_CALL(LALCreateRandomParams(&status, &randParams, options.seed), &status);
+	randParams = XLALCreateRandomParams(options.seed);
 
 	/* if we are doing string cusps; we want to inject the correct
 	   population of frequencies; what's distributed uniformly is
@@ -575,7 +581,7 @@ int main(int argc, char *argv[])
 	for(tinj = options.gps_start_time; tinj <= options.gps_end_time; tinj += options.time_step) {
 		/* compute tau if quality was specified */
 		if(options.quality > 0.0)
-			options.tau = options.quality / (sqrt(2.0) * LAL_PI * options.freq);
+			options.tau = tau_from_q_and_f(options.quality, options.freq);
 
 		/* allocate the injection */
 		if(!this_sim_burst)
@@ -602,21 +608,17 @@ int main(int argc, char *argv[])
 			this_sim_burst->latitude = 0.0;
 			this_sim_burst->polarization = 0.0;
 		} else {
-			LAL_CALL(LALUniformDeviate(&status, &deviate, randParams), &status);
-			this_sim_burst->longitude = 2.0 * LAL_PI * deviate;
+			this_sim_burst->longitude = 2.0 * LAL_PI * XLALUniformDeviate(randParams);
 
-			LAL_CALL(LALUniformDeviate(&status, &deviate, randParams), &status);
-			this_sim_burst->latitude = LAL_PI / 2.0 - acos(2.0 * deviate - 1.0);
+			this_sim_burst->latitude = LAL_PI / 2.0 - acos(2.0 * XLALUniformDeviate(randParams) - 1.0);
 
-			LAL_CALL(LALUniformDeviate(&status, &deviate, randParams), &status);
-			this_sim_burst->polarization = 2.0 * LAL_PI * deviate;
+			this_sim_burst->polarization = 2.0 * LAL_PI * XLALUniformDeviate(randParams);
 		}
 
 		/* compute amplitude information */
 		if(options.use_random_strain) {
 #if 1
-			LAL_CALL(LALUniformDeviate(&status, &deviate, randParams), &status);
-			options.hpeak = pow(10, (options.log_hpeak_max - options.log_hpeak_min) * deviate + options.log_hpeak_min);
+			options.hpeak = Log10Deviate(randParams, options.log10_hpeak_min, options.log10_hpeak_max);
 
 			/*
 			 * Uncomment the lines below and comment the above
@@ -644,12 +646,11 @@ int main(int argc, char *argv[])
 		}
 
 		/* uniform distribution in log(distance) */
-		LAL_CALL(LALUniformDeviate(&status, &deviate, randParams), &status);
-		this_sim_burst->distance = pow(10.0, options.log_min_distance + (options.log_max_distance - options.log_min_distance) * deviate);
+		this_sim_burst->distance = Log10Deviate(randParams, options.log10_min_distance, options.log10_max_distance);
 
 
 		/* deal with the intrinsic signal parameters */
-		this_sim_burst->hrss = sqrt(sqrt(2.0 * LAL_PI) * options.tau / 4.0) * options.hpeak;
+		this_sim_burst->hrss = hrss_from_tau_and_hpeak(options.tau, options.hpeak);
 		this_sim_burst->hpeak = options.hpeak;
 		this_sim_burst->freq = options.freq;
 		this_sim_burst->tau = options.tau;
@@ -662,12 +663,11 @@ int main(int argc, char *argv[])
 		}
 
 		/* set the simulated wavenumber */
-		LAL_CALL(LALUniformDeviate(&status, &deviate, randParams), &status);
-		this_sim_burst->zm_number = options.simwaveform_min_number + (options.simwaveform_max_number - options.simwaveform_min_number) * deviate;
+		this_sim_burst->zm_number = options.simwaveform_min_number + (options.simwaveform_max_number - options.simwaveform_min_number) * XLALUniformDeviate(randParams);
 
 		/* arrival times */
-		this_sim_burst->h_peak_time = arrival_time(lho, this_sim_burst->geocent_peak_time, this_sim_burst->latitude, this_sim_burst->longitude);
-		this_sim_burst->l_peak_time = arrival_time(llo, this_sim_burst->geocent_peak_time, this_sim_burst->latitude, this_sim_burst->longitude);
+		this_sim_burst->h_peak_time = arrival_time(lho, this_sim_burst->geocent_peak_time, this_sim_burst->longitude, this_sim_burst->latitude);
+		this_sim_burst->l_peak_time = arrival_time(llo, this_sim_burst->geocent_peak_time, this_sim_burst->longitude, this_sim_burst->latitude);
 
 		/* increment to next frequency and test it's still in band */
 		if((options.deltaf == 0.0) && (options.fratio != 0.0))
