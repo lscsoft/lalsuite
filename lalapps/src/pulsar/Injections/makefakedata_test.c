@@ -1775,20 +1775,26 @@ int read_commandline_and_file(LALStatus* status, int argc,char *argv[]) {
 
   /* if there are spin down parameters read them in */
   if (msp > 0){
+    REAL8 kfact = 1;
+    UINT4 k;
     LALDCreateVector(status, &(genTayParams.f), msp); 
     genTayParams.f->length=msp;
-    for (i=0;i<msp;i++){
-      REAL8 *fi=&(genTayParams.f->data[i]);
-      char name[128];
-      sprintf(name,"spin down parameter f_%d", i+1);
-      if (parseR8(fp, name, fi))
-	return 1;
-      /*Redefine spin-down parameters to make them consistent with
-	what Teviet's routine wants */
-      *fi /= genTayParams.f0;
-    }
-  }
-  
+    for ( k=1; k <= msp; k++)
+      {
+	REAL8 *fk = &(genTayParams.f->data[k-1]);
+	kfact *= 1.0 * k;	/* now k! */
+	char name[128];
+	sprintf(name, "spin down parameter f_%d", k );
+	if (parseR8(fp, name, fk))
+	  return 1;
+	/* Redefine spin-down parameters to make them consistent with
+	 * what Teviet's routine wants */
+	*fk /= ( kfact * genTayParams.f0 );
+
+      } /* for k <= msp */
+
+  } /* if msp */
+
   /* timestamps file name */
   r=fscanf(fp, "%s %[^\n]",timestampsname,dmp);
   if (r==2 && GPStime != -1.0) {
