@@ -70,6 +70,8 @@ CHAR *uvar_outputDir;
 CHAR *uvar_extraComment;
 CHAR *uvar_descriptionMisc;
 CHAR *uvar_IFO;
+REAL8 uvar_fmin;
+REAL8 uvar_fmax;
 
 /*---------- internal prototypes ----------*/
 void initUserVars (LALStatus *stat);
@@ -87,6 +89,7 @@ main(int argc, char *argv[])
   SFTCatalog *FullCatalog = NULL;
   CHAR *add_comment = NULL;
   UINT4 i;
+  REAL8 fMin, fMax;
 
   lalDebugLevel = 0;
 
@@ -140,7 +143,15 @@ main(int argc, char *argv[])
 	strcat ( add_comment, "\n");
 	strcat ( add_comment, uvar_extraComment );
       }
-  }
+  } /* construct comment-string */
+
+  /* which frequency-band to extract? */
+  fMin = -1;	/* default: all */
+  fMax = -1;
+  if ( LALUserVarWasSet ( &uvar_fmin ) )
+    fMin = uvar_fmin;
+  if ( LALUserVarWasSet ( &uvar_fmax ) )
+    fMax = uvar_fmax;
 
   /* loop over all SFTs in SFTCatalog */
   for ( i=0; i < FullCatalog->length; i ++ )
@@ -170,7 +181,7 @@ main(int argc, char *argv[])
       }
       strcat ( new_comment, add_comment );
 
-      LAL_CALL ( LALLoadSFTs ( &status, &thisSFT, &oneSFTCatalog, -1, -1 ), &status );
+      LAL_CALL ( LALLoadSFTs ( &status, &thisSFT, &oneSFTCatalog, fMin, fMax ), &status );
 
       LAL_CALL ( LALWriteSFTVector2Dir (&status, thisSFT, uvar_outputDir, new_comment, uvar_descriptionMisc ), &status );
 
@@ -216,6 +227,9 @@ initUserVars (LALStatus *stat)
   LALregSTRINGUserVar(stat, extraComment,	'C', UVAR_OPTIONAL, "Additional comment to be added to output-SFTs");
 
   LALregSTRINGUserVar(stat, descriptionMisc,	'D', UVAR_OPTIONAL, "'Misc' entry in the SFT filename description-field (see SFTv2 naming convention)");
+  LALregREALUserVar(stat,   fmin,		'f', UVAR_OPTIONAL, "Lowest frequency to extract from SFTs. [Default: lowest in inputSFTs]");
+  LALregREALUserVar(stat,   fmax,		'F', UVAR_OPTIONAL, "Highest frequency to extract from SFTs. [Default: highest in inputSFTs]");
+
   LALregBOOLUserVar(stat,   help,		'h', UVAR_HELP,     "Print this help/usage message");
   
   DETATCHSTATUSPTR (stat);
