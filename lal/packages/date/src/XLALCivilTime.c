@@ -205,7 +205,7 @@ REAL8 XLALJulianDay( const struct tm *utc /**< [In] UTC time in a broken down ti
   if ( utc->tm_year <= 0 )
   {
     XLALPrintError( "XLAL Error - Year must be after 1900\n" );
-    XLAL_ERROR( func, XLAL_EDOM );
+    XLAL_ERROR_REAL8( func, XLAL_EDOM );
   }
 
   year  = utc->tm_year + 1900; 
