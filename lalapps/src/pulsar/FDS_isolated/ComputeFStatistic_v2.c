@@ -669,7 +669,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   if ( constraints.detector ) 
     LALFree ( constraints.detector );
 
-  if ( catalog->length == 0 ) 
+  if ( !catalog || catalog->length == 0 ) 
     {
       LALPrintError ("\nSorry, didn't find any matching SFTs with pattern '%s'!\n\n", uvar_DataFiles );
       ABORT ( status,  COMPUTEFSTATISTIC_EINPUT,  COMPUTEFSTATISTIC_MSGEINPUT);
