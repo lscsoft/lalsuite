@@ -903,7 +903,7 @@ LALReadTimestampsFile (LALStatus* status, LIGOTimeGPSVector **timestamps, const 
  *  Add the comment to SFT if comment != NULL.
  *
  * NOTE: Currently this only supports writing v2-SFTs.
- * If you need to write a v1-SFT, you should use LALWriteSFTfile() 
+ * If you need to write a v1-SFT, you should use LALWrite_v2SFT_to_v1file() 
  */
 void
 LALWriteSFT2file (LALStatus *status,
@@ -1024,6 +1024,7 @@ LALWriteSFTVector2Dir (LALStatus *status,
   CHAR *filenumber = NULL;
   SFTtype *sft;
   UINT4 timeBase;
+  UINT4 filenamelen;
 
   INITSTATUS (status, "LALWriteSFTVector2Dir", SFTFILEIOC);
   ATTATCHSTATUSPTR (status);   
@@ -1035,7 +1036,11 @@ LALWriteSFTVector2Dir (LALStatus *status,
 
   length = sftVect->length;
 
-  if ( (filename = (CHAR *)LALCalloc( 512, sizeof(CHAR))) == NULL) {
+  filenamelen = 128 + strlen(dirname);
+  if ( description ) 
+    filenamelen += strlen ( description )
+
+  if ( (filename = (CHAR *)LALCalloc(1, filenamelen )) == NULL) {
     ABORT( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM);
   }
 
@@ -1043,7 +1048,7 @@ LALWriteSFTVector2Dir (LALStatus *status,
     ABORT( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM);
   }
 
-  timeBase = (UINT4)(1.0/sftVect->data[0].deltaF);
+  timeBase = ceil(1.0/sftVect->data[0].deltaF);
 
   for ( k = 0; k < length; k++) {
 
