@@ -1021,10 +1021,11 @@ LALWriteSFTVector2Dir (LALStatus *status,
 {
   UINT4 length, k;
   CHAR *filename = NULL;
-  CHAR *filenumber = NULL;
+  CHAR filenumber[16];
   SFTtype *sft;
-  UINT4 timeBase;
+  UINT4 timeBase, duration;
   UINT4 filenamelen;
+  LIGOTimeGPS time;
 
   INITSTATUS (status, "LALWriteSFTVector2Dir", SFTFILEIOC);
   ATTATCHSTATUSPTR (status);   
@@ -1044,16 +1045,34 @@ LALWriteSFTVector2Dir (LALStatus *status,
     ABORT( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM);
   }
 
-  if ( (filenumber = (CHAR *)LALCalloc( 16, sizeof(CHAR))) == NULL) {
-    ABORT( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM);
-  }
-
+  /* will not be same as actual sft timebase if it is not
+     an integer number of seconds */
   timeBase = ceil(1.0/sftVect->data[0].deltaF);
 
   for ( k = 0; k < length; k++) {
 
     sft = sftVect->data + k;
+    if ( sft == NULL ) {
+      ABORT( status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL);
+    }
 
+    if ( sft->name == NULL ) {
+      ABORT( status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL);
+    }
+
+
+    time = sft->epoch;
+
+    /* calculate sft duration -- may be different from timebase if nanosecond  
+       of sft-epoch is non-zero or is timebase is not an integer number of seconds */ 
+    XLALGPSAdd( &time, timeBase);
+    if ( time.gpsNanoSeconds > 0) {
+      duration = time.gpsSeconds - sft->epoch.gpsSeconds + 1;
+    }
+    else {
+      duration = time.gpsSeconds - sft->epoch.gpsSeconds;
+    }
+    
     /* create the k^th filename following naming convention 
        -- try to simplify this*/
     strcpy( filename, dirname);
@@ -1081,7 +1100,6 @@ LALWriteSFTVector2Dir (LALStatus *status,
     TRY ( LALWriteSFT2file ( status->statusPtr, sft, filename, comment), status);
   }
 
-  LALFree(filenumber);
   LALFree(filename);
 
   DETATCHSTATUSPTR (status);
