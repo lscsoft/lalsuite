@@ -176,6 +176,8 @@ main(int argc, char *argv[])
 
       LAL_CALL ( LALDestroySFTVector ( &status, &thisSFT ), &status );
       
+      LALFree ( new_comment );
+
     } /* for i < numSFTs */
 
   /* free memory */
