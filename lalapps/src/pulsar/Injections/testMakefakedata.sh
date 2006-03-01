@@ -27,8 +27,7 @@ if [ ! -d "$testDIR" ]; then
     mkdir $testDIR
 else
 ## cleanup: remove previous output-SFTs
-    rm -f $testDIR/SFTtest_v2.00* || true
-    rm -f $testDIR/SFTtest_v4.00* || true
+    rm -f $testDIR/*SFT* || true
 fi
 
 
@@ -57,8 +56,8 @@ f1dot="-1.e-6"
 f2dot="1e-13"
 
 dataTMP=In.data-test
-oldCL="-i $dataTMP  -I $IFO -E $ephemdir -S $refTime -n ${testDIR}/SFTtest_v2" ## -D $noiseDir"
-newCL="-E $ephemdir --Tsft=$Tsft --fmin=$fmin --Band=$Band --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0 --f0=$f0 --latitude=$delta  --longitude=$alpha --detector=$IFO --outSFTbname=${testDIR}/SFTtest_v4 --timestampsFile=$timestamps --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot $@" ## -D$noiseSFTs -v1"
+oldCL="-i $dataTMP  -I $IFO -E $ephemdir -S $refTime" ## -D $noiseDir"
+newCL="-E $ephemdir --Tsft=$Tsft --fmin=$fmin --Band=$Band --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0 --f0=$f0 --latitude=$delta  --longitude=$alpha --detector=$IFO --timestampsFile=$timestamps --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot $@" ## -D$noiseSFTs -v1"
 
 ## produce In.data file for makefakedata_v2
 echo "$Tsft	%Tsft_in_sec
@@ -82,21 +81,32 @@ $timestamps 	%name_of_time-stamps_file
 echo "1) Testing isolated pulsar-signal without noise"
 echo
 echo "Running 'reference-code':"
-echo "$oldcode $oldCL"
+thisCL="$oldCL  -n ${testDIR}/mfdv2_SFTv1"
+echo "$oldcode $thisCL"
+time $oldcode $thisCL
 
-time $oldcode $oldCL
-
-# remove temporary In.data - file
-#rm $dataTMP
 echo
-echo "Running new Makefakedata code:"
-echo "$newcode $newCL"
-time $newcode $newCL
+echo "Running makefakedata_v4, writing v1-SFTs"
+thisCL="$newCL --outSFTv1 --outSFTbname=${testDIR}/mfdv4_SFTv1"
+echo "$newcode $thisCL"
+time $newcode $thisCL
+
+echo
+echo "Running makefakedata_v4, writing v2-SFTs"
+thisCL="$newCL --outSFTbname=${testDIR}/"
+echo "$newcode $thisCL"
+time $newcode $thisCL
+
 
 echo
 echo "comparison of resulting SFTs:"
 
-cmdline="$compCode -v -1 '${testDIR}/SFTtest_v2*' -2 '${testDIR}/SFTtest_v4*'"
+cmdline="$compCode -v -1 '${testDIR}/mfdv2_SFTv1.*' -2 '${testDIR}/mfdv4_SFTv1.*'"
+echo ${cmdline}
+eval ${cmdline}
+
+echo
+cmdline="$compCode -v -1 '${testDIR}/mfdv4_SFTv1.*' -2 '${testDIR}/*SFTv2*.sft'"
 echo ${cmdline}
 eval ${cmdline}
 
