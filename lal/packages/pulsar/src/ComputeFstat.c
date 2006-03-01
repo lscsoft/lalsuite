@@ -72,6 +72,73 @@ static const REAL8 inv_fact[NUM_FACT] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0), (1.0/2
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
+
+/** Function to compute a vector of Fstatistic values for a number of frequency bins.
+    This function is simply a wrapper for ComputeFstat() which is called repeatedly for
+    every frequency value.  The output, i.e. fstatVector must be properly allocated
+    before this function is called.  The values of the start frequency, the step size
+    in the frequency and the number of frequency values for which the Fstatistic is 
+    to be calculated are read from fstatVector.  The other parameters are not checked and 
+    they must be correctly set outside this function. 
+*/
+void ComputeFStatFreqBand ( LALStatus *status, 
+			    REAL8FrequencySeries *fstatVector, /**< [out] Vector of Fstat values */
+			    const CWParamSpacePoint *psPoint,/**< parameter-space point to compute F for */
+			    const MultiSFTVector *multiSFTs, /**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
+			    const MultiNoiseWeights *multiWeights,	/**< noise-weights of all SFTs */
+			    const MultiDetectorStateSeries *multiDetStates,/**< 'trajectories' of the different IFOs */
+			    const ComputeFParams *params,	/**< addition computational params */
+			    ComputeFBuffer *cfBuffer	/**< CF-internal buffering structure */
+			    )
+{
+
+  UINT4 numDetectors, numBins, k;	
+  REAL8 startFreq, deltaF;
+  Fcomponents Fstat;
+
+  INITSTATUS( status, "ComputeFStatFreqBand", COMPUTEFSTATC );
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT ( multiSFTs, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
+  ASSERT ( multiWeights, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
+  ASSERT ( psPoint, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
+  ASSERT ( psPoint->fkdot, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
+  ASSERT ( multiDetStates, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
+  ASSERT ( params, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
+
+  numDetectors = multiSFTs->length;
+  ASSERT ( multiDetStates->length == numDetectors, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
+  ASSERT ( multiWeights->length == numDetectors , status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
+
+  ASSERT ( fstatVector, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
+  ASSERT ( fstatVector->data, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
+  ASSERT ( fstatVector->data->data, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
+  ASSERT ( fstatVector->data->length > 0, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
+
+  numBins = fstatVector->data->length;
+  startFreq = fstatVector->f0;
+  deltaF = fstatVector->deltaF;
+
+  /* loop over frequency values and fill up values in fstatVector */
+  for ( k = 0; k < numBins; k++) {
+    
+    psPoint->fkdot->data[0] = startFreq + k * deltaF;
+ 
+    TRY (ComputeFStat ( status->statusPtr, &Fstat, psPoint, multiSFTs, multiWeights, 
+			multiDetStates, params, cfBuffer ), status);
+
+    fstatVector->data->data[k] = Fstat.F;
+      
+  }
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+
+} /* ComputeFStatFreqBand() */
+
+
+
+
 /** Function to compute (multi-IFO) F-statistic for given parameter-space point ::psPoint,
  *  normalized SFT-data (normalized by <em>double-sided</em> PSD Sn), noise-weights
  *  and detector state-series 

@@ -220,6 +220,16 @@ void ComputeFStat ( LALStatus *, Fcomponents *Fstat,
 		    ComputeFBuffer *cfBuffer );
 
 
+
+void ComputeFStatFreqBand ( LALStatus *status, 
+			    REAL8FrequencySeries *FstatVector,
+			    const CWParamSpacePoint *psPoint,
+			    const MultiSFTVector *multiSFTs, 
+			    const MultiNoiseWeights *multiWeights,
+			    const MultiDetectorStateSeries *multiDetStates,
+			    const ComputeFParams *params,
+			    ComputeFBuffer *cfBuffer);
+
 void LALCreateDetectorStateSeries (LALStatus *, DetectorStateSeries **vect, UINT4 length );
 
 /* destructors */
