@@ -284,6 +284,7 @@ tagSnglRingdownAccuracy
   INT8        dt;
   REAL4       df;
   REAL4       dQ;
+  REAL4       ddeff;
   SnglRingdownParameterTest test;
 }
 SnglRingdownAccuracy;
