@@ -89,13 +89,13 @@ fi
 # this part of the command-line is compatible with SemiAnalyticF:
 saf_CL="--latitude=$Delta  --longitude=$Alpha --detector=$IFO1 --Tsft=$Tsft --startTime=$startTime --duration=$duration --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0"
 # concatenate this with the mfd-specific switches:
-mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --f0=$freq --outSFTbname=$SFTdir/testSFTH1 --f1dot=$f1dot  --refTime=$refTime --noiseSqrtSh=$sqrtSh"
+mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --f0=$freq --outSFTbname=$SFTdir/ --f1dot=$f1dot  --refTime=$refTime --noiseSqrtSh=$sqrtSh"
 ## --outSFTv1"
 
 # this part of the command-line is compatible with SemiAnalyticF:
 saf2_CL="--latitude=$Delta  --longitude=$Alpha --detector=$IFO2 --Tsft=$Tsft --startTime=$startTime --duration=$duration --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0"
 # concatenate this with the mfd-specific switches:
-mfd2_CL="${saf2_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --f0=$freq --outSFTbname=$SFTdir/testSFTH2 --f1dot=$f1dot  --refTime=$refTime --noiseSqrtSh=$sqrtSh"
+mfd2_CL="${saf2_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --f0=$freq --outSFTbname=$SFTdir/ --f1dot=$f1dot  --refTime=$refTime --noiseSqrtSh=$sqrtSh"
 ## --outSFTv1"
 
 cmdline="$mfd_code $mfd_CL";
@@ -135,7 +135,7 @@ echo "----------------------------------------------------------------------"
 echo
 
 ## cmdline-options for v2, single detector   
-cfs1_CL="--Freq=$freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --f1dotBand=$f1dot --df1dot=$df1dot --Fthreshold=0 --DataFiles='$SFTdir/testSFTH1*' --refTime=$refTime $whatNoise"
+cfs1_CL="--Freq=$freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --f1dotBand=$f1dot --df1dot=$df1dot --Fthreshold=0 --DataFiles='$SFTdir/H-1_H1*' --refTime=$refTime $whatNoise"
     
 cmdline="$cfsv2_code $cfs1_CL --outputFstat=Fstat_v2_1.dat";
 echo $cmdline;
@@ -152,7 +152,7 @@ echo "----------------------------------------------------------------------"
 echo
 
 ## cmdline-options for v2, two detectors  
-cfs2_CL="--Freq=$freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --f1dotBand=$f1dot --df1dot=$df1dot --Fthreshold=0 --DataFiles='$SFTdir/testSFTH*' --refTime=$refTime $whatNoise"
+cfs2_CL="--Freq=$freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --f1dotBand=$f1dot --df1dot=$df1dot --Fthreshold=0 --DataFiles='$SFTdir/H-1_H*' --refTime=$refTime $whatNoise"
 
 cmdline="$cfsv2_code $cfs2_CL --outputFstat=Fstat_v2_2.dat $extra_args";
 echo $cmdline;
