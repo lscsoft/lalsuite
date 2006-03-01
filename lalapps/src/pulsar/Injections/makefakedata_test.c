@@ -1572,7 +1572,7 @@ int read_commandline_and_file(LALStatus* status, int argc,char *argv[]) {
   
   char dmp[128];
   int c, errflg = 0;
-  int r,i,msp;
+  int r,msp;
   UINT4 imin, nsamples;  
   FILE *fp;
   char *endptr;
@@ -1779,11 +1779,12 @@ int read_commandline_and_file(LALStatus* status, int argc,char *argv[]) {
     UINT4 k;
     LALDCreateVector(status, &(genTayParams.f), msp); 
     genTayParams.f->length=msp;
-    for ( k=1; k <= msp; k++)
+    for ( k=1; k <= (UINT4)msp; k++)
       {
+	char name[128];
 	REAL8 *fk = &(genTayParams.f->data[k-1]);
 	kfact *= 1.0 * k;	/* now k! */
-	char name[128];
+
 	sprintf(name, "spin down parameter f_%d", k );
 	if (parseR8(fp, name, fk))
 	  return 1;
