@@ -146,7 +146,10 @@ XLALLightTravelTime ( const LALDetector *aDet,
 
 REAL8
 XLALTimeDelayFromEarthCenter(
-	const DetTimeAndASource *p_det_time_and_source
+	const double detector_earthfixed_xyz_metres[3],
+	double source_declination_radians,
+	double source_right_ascension_radians,
+	const LIGOTimeGPS *gpstime
 );
 
 void

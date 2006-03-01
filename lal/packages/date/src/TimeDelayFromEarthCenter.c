@@ -58,149 +58,65 @@ difference.
 #include <lal/SkyCoordinates.h>
 #include <lal/TimeDelay.h>
 
-NRCSID( TIMEDELAYFROMEARTHCENTERC, "$ID$" );
+NRCSID(TIMEDELAYFROMEARTHCENTERC, "$ID$");
 
 /* scalar product of two 3-vectors */
 static double dotprod(const double vec1[3], const double vec2[3])
 {
-  return (vec1[0] * vec2[0] +
-          vec1[1] * vec2[1] +
-          vec1[2] * vec2[2]);
+	return vec1[0] * vec2[0] + vec1[1] * vec2[1] + vec1[2] * vec2[2];
 }
 
 
 /* <lalVerbatim file="TimeDelayFromEarthCenterCP"> */
-REAL8
-XLALTimeDelayFromEarthCenter(
+double XLALTimeDelayFromEarthCenter(
+	const double detector_earthfixed_xyz_metres[3],
+	double source_declination_radians,
+	double source_right_ascension_radians,
+	const LIGOTimeGPS *gpstime
+)
+{/* </lalVerbatim> */
+	static const char *func = "XLALTimeDelayFromEarthCenter";
+	double ehat_src[3];
+	const double colatitude = LAL_PI_2 - source_declination_radians;
+	const double greenwich_hour_angle = XLALGreenwichMeanSiderealTime(gpstime) - source_right_ascension_radians;
+
+	if(XLAL_IS_REAL8_FAIL_NAN(greenwich_hour_angle))
+		XLAL_ERROR_REAL8(func, XLAL_EFUNC);
+
+	/*
+	 * compute the unit vector pointing from the geocenter to the
+	 * source
+	 */
+
+	ehat_src[0] = sin(colatitude) * cos(greenwich_hour_angle);
+	ehat_src[1] = sin(colatitude) * -sin(greenwich_hour_angle);
+	ehat_src[2] = cos(colatitude);
+
+	/*
+	 * time difference: time taken for light to travel the distance
+	 * between Earth center and detector along direction to source.
+	 * See LALTimeDelay(), and put in Earth-center for detector 1 to
+	 * see how the sign arises.
+	 */
+
+	return -dotprod(ehat_src, detector_earthfixed_xyz_metres) / LAL_C_SI;
+}
+
+
+/* <lalVerbatim file="TimeDelayFromEarthCenterCP"> */
+void LALTimeDelayFromEarthCenter(
+	LALStatus *stat,
+	REAL8 *p_time_diff,
 	const DetTimeAndASource *p_det_time_and_source
 )
-{ /* </lalVerbatim> */
-  const char *func = "XLALTimeDelayFromEarthCenter";
+{/* </lalVerbatim> */
+	INITSTATUS(stat, "LALTimeDelayFromEarthCenter", TIMEDELAYFROMEARTHCENTERC);
+	ATTATCHSTATUSPTR(stat);
+	ASSERT(p_time_diff, stat, TIMEDELAYH_ENUL, TIMEDELAYH_MSGENUL);
+	ASSERT(p_det_time_and_source, stat, TIMEDELAYH_ENUL, TIMEDELAYH_MSGENUL);
 
-  /*
-   * convert src location in equatorial coordinates to Earth-fixed polar
-   * coordinates
-   *
-   * NOTE: all source location params are in Earth-fixed frame
-   */
+	*p_time_diff = XLALTimeDelayFromEarthCenter(p_det_time_and_source->p_det_and_time->p_detector->location, p_det_time_and_source->p_source->latitude, p_det_time_and_source->p_source->longitude, p_det_time_and_source->p_det_and_time->p_gps);
 
-  const double latitude = LAL_PI_2 - p_det_time_and_source->p_source->latitude;
-  const double longitude = p_det_time_and_source->p_source->longitude - XLALGreenwichMeanSiderealTime(p_det_time_and_source->p_det_and_time->p_gps);
-
-  /*
-   * compute the unit vector of the source direction
-   */
-
-  double ehat_src[3];
-
-  ehat_src[0] = sin(latitude) * cos(longitude);
-  ehat_src[1] = sin(latitude) * sin(longitude);
-  ehat_src[2] = cos(latitude);
-
-  /*
-   * time difference: time taken for light to travel the distance between
-   * Earth center and detector along direction to source.  See
-   * LALTimeDelay(), and put in Earth-center for detector 1 to see how the
-   * -ve sign arises.
-   */
-
-  return -dotprod(ehat_src, p_det_time_and_source->p_det_and_time->p_detector->location) / LAL_C_SI;
+	DETATCHSTATUSPTR(stat);
+	RETURN(stat);
 }
-
-
-/* <lalVerbatim file="TimeDelayFromEarthCenterCP"> */
-void
-LALTimeDelayFromEarthCenter( LALStatus               *stat,
-                             REAL8                   *p_time_diff,
-                             const DetTimeAndASource *p_det_time_and_source )
-{ /* </lalVerbatim> */
-  LALLeapSecAccuracy accuracy = LALLEAPSEC_STRICT;
-
-  /* latitude and longitude for detector */
-  /* REAL8 lat, lon; */
-
-  /* cos(lat) and sin(lat) for detector */
-  /* REAL8 cosLat, sinLat; */
-
-  /* local radius of curvature at detector */
-  /* REAL8 R; */
-
-  /* radius of curvature plus height above ellipsoid for detector */
-  /* REAL8 Rh; */
-
-  /* GMST of time of arrival at detector, in radians */
-  REAL8 gmst1;
-  
-  LALDate      date;
-
-
-  /* NOTE: all source location params are in Earth-fixed frame */
-  SkyPosition src_polar;      /* Earth-fixed polar (lon, polar angle) */
-  REAL8       sin_pol_angle;  /* sine of src polar angle */
-  REAL8       ehat_src[3];    /* unit vector of source location */
-
-  /* location vector for the detector in Earth-fixed frame */
-  /* REAL8 detLoc[3]; */
-  REAL8 *p_detLoc;
-
-
-  INITSTATUS( stat, "LALTimeDelayFromEarthCenter", TIMEDELAYFROMEARTHCENTERC );
-  /* bloody mis-spelling */
-  ATTATCHSTATUSPTR( stat );
-
-  /* Ensure non-NULL structures are passed */
-  ASSERT( p_time_diff, stat, TIMEDELAYH_ENUL, TIMEDELAYH_MSGENUL );
-  ASSERT( p_det_time_and_source, stat, TIMEDELAYH_ENUL, TIMEDELAYH_MSGENUL );
-
-  /*
-   * convert src location in equatorial coordinates to Earth-fixed
-   * polar coordinates
-   *
-   * don't use LALEquatorialToGeographic() since it modifies the input
-   * structure
-   */
-  /* need GMST in radians */
-  TRY( LALGPStoUTC( stat->statusPtr, &date,
-                    p_det_time_and_source->p_det_and_time->p_gps,
-                    &accuracy), stat );
-  TRY( LALGMST1( stat->statusPtr, &gmst1, &date, MST_RAD ), stat );
-
-  /* polar angle, theta */
-  src_polar.latitude = LAL_PI_2 - p_det_time_and_source->p_source->latitude;
-
-  /* azimuthal angle, phi */
-  src_polar.longitude = p_det_time_and_source->p_source->longitude - gmst1;
-
-
-  /*
-   * compute the unit vector of the source direction
-   */
-  sin_pol_angle = sin(src_polar.latitude);
-  
-  ehat_src[0]   = sin_pol_angle * cos(src_polar.longitude);
-  ehat_src[1]   = sin_pol_angle * sin(src_polar.longitude);
-  ehat_src[2]   = cos(src_polar.latitude);
-
-
-  /*
-   * location vector of detector 1 
-   */
-  p_detLoc = p_det_time_and_source->p_det_and_time->p_detector->location;
-
-  /*
-   * time difference: time taken for light to travel the distance
-   * between Earth center and detector along direction to source.
-   * See LALTimeDelay(), and put in Earth-center for detector 1 to see
-   * how the -ve sign arises.
-   */
-  *p_time_diff = -dotprod(ehat_src, p_detLoc) / LAL_C_SI;
-
-  
-  /*
-   * House keeping
-   */
-  DETATCHSTATUSPTR( stat );
-  RETURN( stat );
-} /* END: LALTimeDelayFromEarthCenter */
-
-
