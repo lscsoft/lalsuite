@@ -38,7 +38,6 @@ None.
 #include <lal/LALInspiral.h>
 #include <lal/LALStdlib.h>
 
-
 struct RungeGSLParams {
   rk4In *input;
   void  *params;
@@ -51,25 +50,7 @@ static int derivativeGSLWrapper(
                                 void *params);
 
 
-/* Variables for initializing the GSL integrator */
-static const gsl_odeiv_step_type * type = gsl_odeiv_step_rk4;
-static gsl_odeiv_step *step       = NULL;
-static gsl_odeiv_control *control = NULL;
-static gsl_odeiv_evolve *evolve   = NULL;
-
-
 NRCSID (LALRUNGEKUTTA4ADAPTC, "$Id$");
-
-/* <lalVerbatim file="LALRungeKutta4AdaptCP"> */
-void LALRungeKutta4Init()
-{ /* </lalVerbatim>  */
-
-  /* Initialise GSL integrator */
-  step    = gsl_odeiv_step_alloc(type, input->n);
-  control = gsl_odeiv_control_standard_new(1.0e-5, 1.0e-5, 1.0, 1.0);
-  evolve  = gsl_odeiv_evolve_alloc(input->n);
-}  
-
 
 /*  <lalVerbatim file="LALRungeKutta4AdaptCP"> */
 void 
@@ -77,7 +58,6 @@ LALRungeKutta4(
    LALStatus   *status,
    REAL8Vector *yout,
    rk4In       *input,
-B
    void        *params
    )
 { /* </lalVerbatim>  */
