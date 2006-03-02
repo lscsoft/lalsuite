@@ -53,6 +53,8 @@ $Id$
 /* 01/12/06 gam; Always set maxMC = params->maxMCinterations; if NOT ( (params->testFlag & 32) > 0 ) then run MC maxMCinterations times; linearly interpolate to get final result */
 /* 01/12/06 gam; if ( (outputEventFlag & 8) > 0 ) and running MC, produce estimated UL based on loudest event from priorResultsFile */
 /* 02/23/06 gam; add function EstimateStackSlidePower */
+/* 03/01/06 gam; A seg fault problem can occur during a MC simulation if narrowBLKandSTKband is true. */
+/*               The fix is to compute the extraBins separately to the left and right of the SUM band.*/
 
 /*********************************************/
 /*                                           */
@@ -644,11 +646,23 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
   f0STK = params->f0STK;
   bandBLK = params->bandBLK;
   bandSTK = params->bandSTK;
-  if ( (params->testFlag & 128) > 0 ) {    
-     extraBins = params->nBinsPerBLK - params->nBinsPerSUM;  /* The difference should be twice the maximum bandwidth of a signal during a run */
-     extraBins = extraBins/2 + 1;  /* Want half the extra number of bins plus 1 for safety. */
+  if ( (params->testFlag & 128) > 0 ) {
+
+     /* 03/01/06 gam; replace next 4 lines with those below. */
+     /* extraBins = params->nBinsPerBLK - params->nBinsPerSUM; */ /* The difference should be twice the maximum bandwidth of a signal during a run */
+     /* extraBins = extraBins/2 + 1; */ /* Want half the extra number of bins plus 1 for safety. */
+     /* deltaBLKf0 = ((REAL8)(extraBins))/params->tEffBLK; */ /* Shift start frequency of BLKs and STKs from injected frequency by this much. */
+     /* params->nBinsPerBLK = 2*extraBins; */
+
+     /* 03/01/06 gam; A seg fault problem can occur during a MC simulation if narrowBLKandSTKband is true. */
+     /*               The fix is to compute the extraBins separately to the left and right of the SUM band.*/
+     /* First find the number of extra bins to the left: */
+     extraBins = floor( (params->f0SUM - f0BLK)*params->tEffBLK ); /* the floor is because it is better to make this one bin too small than too large to prevent going off the start of the BLK data array */
      deltaBLKf0 = ((REAL8)(extraBins))/params->tEffBLK; /* Shift start frequency of BLKs and STKs from injected frequency by this much. */
-     params->nBinsPerBLK = 2*extraBins;
+     /* Second ADD on the number of extra bins to the right: */
+     extraBins = extraBins + floor( (f0BLK + bandBLK - params->f0SUM - params->bandSUM)*params->tEffBLK ); /* the floor is because it is better too make this one bin to small than too large to prevent going off the start of the BLK data array */
+     params->nBinsPerBLK = extraBins;  /* The injections will be into a band this wide */
+
      if ( (extraBins < 1) || (params->nBinsPerBLK > nBinsPerBLK) ) {
         params->nBinsPerBLK = nBinsPerBLK; /* reset this and just continue; should add ABORT */
         narrowBLKandSTKband = 0;
