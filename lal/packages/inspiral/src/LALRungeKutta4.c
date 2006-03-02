@@ -38,6 +38,7 @@ None.
 #include <lal/LALInspiral.h>
 #include <lal/LALStdlib.h>
 
+
 struct RungeGSLParams {
   rk4In *input;
   void  *params;
@@ -50,7 +51,25 @@ static int derivativeGSLWrapper(
                                 void *params);
 
 
+/* Variables for initializing the GSL integrator */
+static const gsl_odeiv_step_type * type = gsl_odeiv_step_rk4;
+static gsl_odeiv_step *step       = NULL;
+static gsl_odeiv_control *control = NULL;
+static gsl_odeiv_evolve *evolve   = NULL;
+
+
 NRCSID (LALRUNGEKUTTA4ADAPTC, "$Id$");
+
+/* <lalVerbatim file="LALRungeKutta4AdaptCP"> */
+void LALRungeKutta4Init()
+{ /* </lalVerbatim>  */
+
+  /* Initialise GSL integrator */
+  step    = gsl_odeiv_step_alloc(type, input->n);
+  control = gsl_odeiv_control_standard_new(1.0e-5, 1.0e-5, 1.0, 1.0);
+  evolve  = gsl_odeiv_evolve_alloc(input->n);
+}  
+
 
 /*  <lalVerbatim file="LALRungeKutta4AdaptCP"> */
 void 
@@ -58,6 +77,7 @@ LALRungeKutta4(
    LALStatus   *status,
    REAL8Vector *yout,
    rk4In       *input,
+B
    void        *params
    )
 { /* </lalVerbatim>  */
@@ -65,7 +85,7 @@ LALRungeKutta4(
    INT4 i;
    REAL8 t = 0.0;
    struct RungeGSLParams gslParams;
-   REAL8 y[input->n];
+   REAL8 *y;
    REAL8 h = input->h;
    const gsl_odeiv_step_type * type = gsl_odeiv_step_rk4;
    gsl_odeiv_step *step;
@@ -86,7 +106,13 @@ LALRungeKutta4(
   control = gsl_odeiv_control_standard_new(1.0e-5, 1.0e-5, 1.0, 1.0);
   evolve  = gsl_odeiv_evolve_alloc(input->n);
 
-
+  if ( !(y = (REAL8 *) LALMalloc( input->n * sizeof(REAL8))))
+  {
+    gsl_odeiv_evolve_free(evolve);
+    gsl_odeiv_control_free(control);
+    gsl_odeiv_step_free(step);
+    ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
+  }
 
   gslParams.input = input;
   gslParams.params = params;
@@ -97,8 +123,7 @@ LALRungeKutta4(
   sys.params    = &gslParams;
 
 
-  for (i = 0; i < input->n; i++)
-    y[i] = input->y->data[i];
+  memcpy( y, input->y->data, input->n * sizeof(REAL8));
 
    /* Evolve the system */
   while (t < input->h)
@@ -112,6 +137,7 @@ LALRungeKutta4(
   	gsl_odeiv_evolve_free(evolve);
    	gsl_odeiv_control_free(control);
    	gsl_odeiv_step_free(step);
+	LALFree(y);
         ABORT(status, LALINSPIRALH_ESTOPPED, LALINSPIRALH_MSGESTOPPED);
     }
     ENDFAIL(status);
@@ -126,17 +152,18 @@ LALRungeKutta4(
          gsl_odeiv_evolve_free(evolve);
          gsl_odeiv_control_free(control);
          gsl_odeiv_step_free(step);
+	 LALFree(y);
     
          ABORT(status, LALINSPIRALH_ESTOPPED, LALINSPIRALH_MSGESTOPPED);
     } 
   }
 
-  for (i=0; i<input->n; i++)
-     yout->data[i] = y[i];
+  memcpy( yout->data, y, input->n * sizeof(REAL8));
 
   gsl_odeiv_evolve_free(evolve);
   gsl_odeiv_control_free(control);
   gsl_odeiv_step_free(step);
+  LALFree(y);
    
   DETATCHSTATUSPTR(status);
   RETURN (status);
