@@ -420,7 +420,7 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
 ##############################################################################
 # function to TD follow-up tmpltbank and inspiral jobs for an ifo  
 def follow_up(ifo_data,ifo_name,coinc_data,coinc_ifos,tmplt_follow_job,\
-                  insp_veto_job,dag,usertag=None):
+                  insp_veto_job,dag,approximant=None,usertag=None,banks=None):
 
   """
   Perform the tmpltbank and second inspiral steps for the single ifo data.  
@@ -436,6 +436,9 @@ def follow_up(ifo_data,ifo_name,coinc_data,coinc_ifos,tmplt_follow_job,\
   dag = the DAG to attach the nodes to
   usertag = the usertag to add to the job names
   """
+
+  # Store the template bank jobs
+  bankList = {} 
 
   # add the veto option
   insp_veto_job.add_ini_opts(cp,'veto-inspiral')
@@ -480,18 +483,27 @@ def follow_up(ifo_data,ifo_name,coinc_data,coinc_ifos,tmplt_follow_job,\
             # make sure we only filter the master chunk once
             done_this_chunk = 1
 
-            # make a template bank job for the master chunk
-            bank = inspiral.TmpltBankNode(tmplt_follow_job)
-            bank.set_start(chunk.start())
-            bank.set_end(chunk.end())
-            bank.set_ifo(ifo_name)
-            bank.set_ifo_tag(coinc_ifos)
-            bank.set_vds_group(ifo_name[0] + str(chunk.start()))
-            if not opts.read_cache: bank.set_cache(seg.get_df_node().get_output())
-            else: bank.set_cache(cp.get('datafind',ifo_name+"-cache"))
-            if not calibrated: bank.calibration()
-            if opts.datafind: bank.add_parent(seg.get_df_node())
-            if opts.td_follow_bank: dag.add_node(bank)
+            bank = None
+            # We only need to run the template bank for 1 approximant
+            if not banks:
+              # make a template bank job for the master chunk
+              bank = inspiral.TmpltBankNode(tmplt_follow_job)
+              bank.set_start(chunk.start())
+              bank.set_end(chunk.end())
+              bank.set_ifo(ifo_name)
+              bank.set_ifo_tag(coinc_ifos)
+              bank.set_vds_group(ifo_name[0] + str(chunk.start()))
+              if not opts.read_cache: bank.set_cache(seg.get_df_node().get_output())
+              else: bank.set_cache(cp.get('datafind',ifo_name+"-cache"))
+              if not calibrated: bank.calibration()
+              if opts.datafind: bank.add_parent(seg.get_df_node())
+              if opts.td_follow_bank: dag.add_node(bank)
+
+            else:
+              # Use the bank generated for a previous approximant
+              bank = banks[chunk.start()]
+
+            bankList[chunk.start()] = bank
 
             # make an inspiral job for the master chunk
             insp = inspiral.InspiralNode(insp_veto_job)
@@ -500,13 +512,14 @@ def follow_up(ifo_data,ifo_name,coinc_data,coinc_ifos,tmplt_follow_job,\
             insp.set_trig_start(chunk.trig_start())
             insp.set_trig_end(chunk.trig_end())
             insp.set_ifo(ifo_name)
-            insp.set_ifo_tag(coinc_ifos)
+            insp.set_ifo_tag(coinc_ifos+"_"+approximant)
             insp.set_vds_group(ifo_name[0] + str(chunk.start()))
             if not opts.read_cache: 
               insp.set_cache(seg.get_df_node().get_output())
             else: insp.set_cache(cp.get('datafind',ifo_name+'-cache')) 
             if not calibrated: insp.calibration()
             insp.set_bank(bank.get_output())
+            if approximant: insp.add_var_opt('approximant', approximant)
             insp.add_var_opt('td-follow-up', coinc_done.get_dag_node().get_output())
             if opts.datafind: insp.add_parent(seg.get_df_node())
             if opts.td_follow_bank: insp.add_parent(bank)
@@ -516,10 +529,11 @@ def follow_up(ifo_data,ifo_name,coinc_data,coinc_ifos,tmplt_follow_job,\
             follow_chunks_analyzed.append(AnalyzedIFOData(chunk,insp))
 
             # jobs already set up, just add the var_arg and parent to trigbank
-          bank.add_var_opt('td-follow-up', coinc_done.get_dag_node().get_output())
-          if opts.coincidence: bank.add_parent(coinc_done.get_dag_node())
+          if not banks: 
+            bank.add_var_opt('td-follow-up', coinc_done.get_dag_node().get_output())
+            if opts.coincidence: bank.add_parent(coinc_done.get_dag_node())
 
-  return follow_chunks_analyzed
+  return follow_chunks_analyzed, bankList
 
 ##############################################################################
 # function to sweep up data using sire  
@@ -1357,72 +1371,98 @@ for ifos in ifo_coincs:
 # Step 7: Run trigbank and inspiral on each instrument in two ifo times
 #         or run the TD follow-up
 
-analyzed_coinc_data = {}
+
+# For following up several approximants, we get the list here...
+try:
+  approximants = cp.get('veto-inspiral', 'approximant')
+  cp.remove_option('veto-inspiral', 'approximant')
+except ConfigParser.NoOptionError:
+  print "No approximant in veto-inspiral - using the main one..."
+  approximants = cp.get('inspiral', 'approximant')
+
+# Initialise the banks
+banks = {}
 
 for ifos in ifo_coincs:
-  analyzed_coinc_data[ifos] = {}
-  
+  banks[ifos] = {}
+
   for ifo in ifo_list:
     if ifo in ifos:
-      print "setting up jobs to filter " + ifo + \
-        " data with coinc trigs from " + ifos + " times ...",
-      sys.stdout.flush()
+      banks[ifos][ifo] = None
 
-      if opts.td_follow_bank or opts.td_follow_inspiral:
-        analyzed_coinc_data[ifos][ifo] = follow_up(data[ifo],ifo,
-            coinc_nodes[ifos],ifos,tmplt_follow_jobs[ifo],insp_veto_jobs[ifo],dag,usertag)
-      else:
-        analyzed_coinc_data[ifos][ifo] = trig_inspiral(data[ifo],ifo,
-            coinc_nodes[ifos],ifos,trig_job,insp_veto_jobs[ifo],dag,usertag)
+# Loop over the approximants
+approximants = approximants.split(',')
 
-      print "done"
+for this_approx in approximants:
+  this_approx.strip()
+
+  analyzed_coinc_data = {}
+
+  for ifos in ifo_coincs:
+    analyzed_coinc_data[ifos] = {}
+  
+    for ifo in ifo_list:
+      if ifo in ifos:
+        print "setting up jobs to filter " + ifo + \
+          " data with coinc trigs from " + ifos + " times ...",
+        sys.stdout.flush()
+
+        if opts.td_follow_bank or opts.td_follow_inspiral:
+          analyzed_coinc_data[ifos][ifo], banks[ifos][ifo] = follow_up(data[ifo],ifo,
+              coinc_nodes[ifos],ifos,tmplt_follow_jobs[ifo],insp_veto_jobs[ifo],dag,this_approx,usertag,
+              banks[ifos][ifo])
+        else:
+          analyzed_coinc_data[ifos][ifo] = trig_inspiral(data[ifo],ifo,
+              coinc_nodes[ifos],ifos,trig_job,insp_veto_jobs[ifo],dag,usertag)
+
+        print "done"
 
 
 ##############################################################################
 # Step 8: Run thinca2 on each of the disjoint sets of coincident data
 
-coinc2_nodes = {}
-coinc2_slide_nodes = {}
+  coinc2_nodes = {}
+  coinc2_slide_nodes = {}
 
-for ifos in ifo_coincs:
-  print "setting up second thinca jobs on " + ifos + " data...",
-  sys.stdout.flush()
+  for ifos in ifo_coincs:
+    print "setting up second thinca jobs on " + ifos + " data...",
+    sys.stdout.flush()
 
-  thinca2_jobs[ifos].add_ini_opts(cp, 'thinca-2')
-  if opts.td_follow_inspiral:
-    coinc2_nodes[ifos] = thinca_coinc(ifos,analyzed_coinc_data[ifos],
+    thinca2_jobs[ifos].add_ini_opts(cp, 'thinca-2')
+    if opts.td_follow_inspiral:
+      coinc2_nodes[ifos] = thinca_coinc(ifos,analyzed_coinc_data[ifos],
+          analyzed_data[ifos],thinca2_jobs[ifos],dag,opts.second_coinc,
+          opts.td_follow_inspiral,usertag,ifos+"_"+this_approx)
+    else:
+      coinc2_nodes[ifos] = thinca_coinc(ifos,analyzed_coinc_data[ifos],
         analyzed_data[ifos],thinca2_jobs[ifos],dag,opts.second_coinc,
-        opts.td_follow_inspiral,usertag,ifos)
-  else:
-    coinc2_nodes[ifos] = thinca_coinc(ifos,analyzed_coinc_data[ifos],
-      analyzed_data[ifos],thinca2_jobs[ifos],dag,opts.second_coinc,
-      opts.inspiral_veto,usertag,ifos)
+        opts.inspiral_veto,usertag,ifos)
 
   # Step 8slide: Time slides on the data
-  if num_slides:
-    thinca2_slide_jobs[ifos].add_ini_opts(cp, 'thinca-2')
+    if num_slides:
+      thinca2_slide_jobs[ifos].add_ini_opts(cp, 'thinca-2')
     
-    if opts.td_follow_inspiral:
-      coinc2_slide_nodes[ifos] = thinca_coinc(ifos,
-        analyzed_coinc_data[ifos],analyzed_data[ifos],thinca2_slide_jobs[ifos],
-        dag,opts.second_coinc,opts.inspiral_veto,usertag,ifos,num_slides)
-    else:
-      coinc2_slide_nodes[ifos] = thinca_coinc(ifos,
-        analyzed_coinc_data[ifos],analyzed_data[ifos],thinca2_slide_jobs[ifos],
-        dag,opts.second_coinc,opts.inspiral_veto,usertag,ifos,num_slides)
+      if opts.td_follow_inspiral:
+        coinc2_slide_nodes[ifos] = thinca_coinc(ifos,
+          analyzed_coinc_data[ifos],analyzed_data[ifos],thinca2_slide_jobs[ifos],
+          dag,opts.second_coinc,opts.inspiral_veto,usertag,ifos+'_'+this_approx,num_slides)
+      else:
+        coinc2_slide_nodes[ifos] = thinca_coinc(ifos,
+          analyzed_coinc_data[ifos],analyzed_data[ifos],thinca2_slide_jobs[ifos],
+          dag,opts.second_coinc,opts.inspiral_veto,usertag,ifos,num_slides)
   
-  # Step 8 sire: Run sire triggers
-  # Do sire with all coincidenct triggers, and clustered sires for each ifo
-  if opts.sire and len(analyzed_data[ifos]):
-    sire_segs(coinc_nodes[ifos],'output',ifos + '-SIRE_VETO_',sire_job,dag,
-    opts.second_coinc,usertag)
+    # Step 8 sire: Run sire triggers
+    # Do sire with all coincidenct triggers, and clustered sires for each ifo
+    if opts.sire and len(analyzed_data[ifos]):
+      sire_segs(coinc_nodes[ifos],'output',ifos + '-SIRE_VETO_',sire_job,dag,
+      opts.second_coinc,usertag)
     
-    for ifo in ifo_list: 
-      if ifo in ifos:
-        sire_segs(coinc_nodes[ifos],'output',ifo + '-SIRE_VETO_' + ifos,
-            sire_job,dag,opts.second_coinc,usertag,ifo)
+      for ifo in ifo_list: 
+        if ifo in ifos:
+          sire_segs(coinc_nodes[ifos],'output',ifo + '-SIRE_VETO_' + ifos,
+              sire_job,dag,opts.second_coinc,usertag,ifo)
     
-  print "done"
+    print "done"
 
 
 ##############################################################################
