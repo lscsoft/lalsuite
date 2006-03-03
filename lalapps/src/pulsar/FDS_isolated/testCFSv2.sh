@@ -51,12 +51,14 @@ df1dot=0.3e-8	## search about 3 spindown-values
 
 noiseSqrtSh=3e-20
 
+## ------------------------------------------------------------
+
 if [ "$noiseSqrtSh" != 0 ]; then
     sqrtSh=$noiseSqrtSh
-    whatNoise=
+    haveNoise=true;
 else
-    sqrtSh=1;
-    whatNoise="--SignalOnly";
+    sqrtSh=1;	## for SemiAnalyticF signal-only case
+    haveNoise=false;
 fi
 
 IFO=LHO
@@ -79,7 +81,11 @@ fi
 # this part of the command-line is compatible with SemiAnalyticF:
 saf_CL="--latitude=$Delta  --longitude=$Alpha --detector=$IFO --Tsft=$Tsft --startTime=$startTime --duration=$duration --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0"
 # concatenate this with the mfd-specific switches:
-mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --f0=$freq --outSFTbname=$SFTdir/testSFT --f1dot=$f1dot  --refTime=$refTime --noiseSqrtSh=$sqrtSh --outSFTv1"
+mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --f0=$freq --outSFTbname=$SFTdir/testSFT --f1dot=$f1dot  --refTime=$refTime --outSFTv1"
+if [ "$haveNoise" = true ]; then
+    mfd_CL="$mfd_CL --noiseSqrtSh=$sqrtSh";
+fi
+
 cmdline="$mfd_code $mfd_CL";
 echo $cmdline;
 if ! eval $cmdline; then
@@ -106,7 +112,10 @@ echo "----------------------------------------------------------------------"
 echo
 
 ## common cmdline-options for v1 and v2    
-cfs_CL="--IFO=$IFO --Freq=$freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --f1dotBand=$f1dot --df1dot=$df1dot --Fthreshold=0 --DataFiles='$SFTdir/testSFT*' --refTime=$refTime $whatNoise"
+cfs_CL="--IFO=$IFO --Freq=$freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --f1dotBand=$f1dot --df1dot=$df1dot --Fthreshold=0 --DataFiles='$SFTdir/testSFT*' --refTime=$refTime"
+if [ "$haveNoise" = false ]; then
+    cfs_CL="$cfs_CL --SignalOnly"
+fi
     
 cmdline="$cfs_code $cfs_CL  --outputFstat=Fstat_v1.dat --expLALDemod=0";
 echo $cmdline;
