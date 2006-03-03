@@ -626,7 +626,7 @@ seconds in TDB */
 			
 		}
 		else if( !strcmp(val[i],"posepoch") || !strcmp(val[i],"POSEPOCH")){
-			output->posepoch = (atof(val[i+1]))-44244.)*DAYSTOSECS;
+			output->posepoch = (atof(val[i+1])-44244.)*DAYSTOSECS;
 			j++;
 			/* position epoch in secs in TDB */
 		}
@@ -771,7 +771,7 @@ seconds in TDB */
 			}
     }
 		else if( !strcmp(val[i], "T0")){
-			output->T0 = (atof(val[i+1])-44244.)*DAYSTOSECS.;
+			output->T0 = (atof(val[i+1]-44244.)*DAYSTOSECS.;
 			j++;
 			
 			if(atoi(val[i+2])==1 && i+2<k){
