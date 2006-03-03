@@ -97,6 +97,7 @@ RCSID( "$Id$");
  */
 typedef struct {
   LIGOTimeGPS startTime;		    /**< start time of observation */
+  REAL8 Tsft;                               /**< length of one SFT in seconds */
   REAL8 duration;			    /**< total time-span of the data (all streams) in seconds */
   LIGOTimeGPS refTime;			    /**< reference-time for pulsar-parameters in SBB frame */
   LALPulsarSpinRange *spinRangeRef; 	    /**< pulsar spin-range at reference-time 'refTime' */
@@ -372,6 +373,22 @@ int main(int argc,char *argv[])
 		      
 		      LAL_CALL(ComputeFStat(&status, &Fstat, &psPoint, GV.multiSFTs, GV.multiNoiseWeights, GV.multiDetStates, &GV.CFparams, &cfBuffer ),
 			       &status );
+
+		      /* correct results in --SignalOnly case:
+		       * this means we didn't normalize data by 1/sqrt(Tsft * 0.5 * Sh) in terms of 
+		       * the single-sided PSD Sh: the SignalOnly case is characterized by
+		       * setting Sh->1, so we need to divide Fa,Fb by sqrt(0.5*Tsft)
+		       * and F by (0.5*Tsft)
+		       */
+		      if ( uvar_SignalOnly )
+			{
+			  REAL8 norm = 1.0 / sqrt( 0.5 * GV.Tsft );
+			  Fstat.Fa.re *= norm;
+			  Fstat.Fa.im *= norm;
+			  Fstat.Fb.re *= norm;
+			  Fstat.Fb.im *= norm;
+			  Fstat.F *= norm * norm;
+			} /* if SignalOnly */
 		      
 		      /* propagate fkdot back to reference-time for outputting results */
 		      LAL_CALL ( LALExtrapolatePulsarSpins(&status, fkdotRef, GV.refTime, fkdotStart, GV.startTime ), &status );
@@ -652,7 +669,6 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   SFTConstraints constraints = empty_SFTConstraints;
 
   UINT4 numSFTs;
-  REAL8 Tsft;
   LIGOTimeGPS endTime;
 
   INITSTATUS (status, "InitFStat", rcsid);
@@ -677,10 +693,10 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
 
   /* deduce start- and end-time of the observation spanned by the data */
   numSFTs = catalog->length;
-  Tsft = 1.0 / catalog->data[0].header.deltaF;
+  cfg->Tsft = 1.0 / catalog->data[0].header.deltaF;
   cfg->startTime = catalog->data[0].header.epoch;
   endTime   = catalog->data[numSFTs-1].header.epoch;
-  LALAddFloatToGPS(status->statusPtr, &endTime, &endTime, Tsft );	/* can't fail */
+  LALAddFloatToGPS(status->statusPtr, &endTime, &endTime, cfg->Tsft );	/* can't fail */
   cfg->duration = GPS2REAL8(endTime) - GPS2REAL8 (cfg->startTime);
 
   /* ----- get reference-time (from user if given, use startTime otherwise): ----- */
@@ -773,8 +789,8 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   
   {/* ----- load the multi-IFO SFT-vectors ----- */
     UINT4 wings = MYMAX(uvar_Dterms, uvar_RngMedWindow/2 +1);	/* extra frequency-bins needed for rngmed, and Dterms */
-    REAL8 fMax = (1.0 + uvar_dopplermax) * fCoverMax + wings / Tsft;	/* correct for doppler-shift and wings */
-    REAL8 fMin = (1.0 - uvar_dopplermax) * fCoverMin - wings / Tsft;
+    REAL8 fMax = (1.0 + uvar_dopplermax) * fCoverMax + wings / cfg->Tsft; /* correct for doppler-shift and wings */
+    REAL8 fMin = (1.0 - uvar_dopplermax) * fCoverMin - wings / cfg->Tsft;
 
     TRY ( LALLoadMultiSFTs ( status->statusPtr, &(cfg->multiSFTs), catalog, fMin, fMax ), status );
     TRY ( LALDestroySFTCatalog ( status->statusPtr, &catalog ), status );
