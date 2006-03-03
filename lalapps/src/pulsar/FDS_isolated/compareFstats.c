@@ -45,12 +45,16 @@ RCSID ("$Id$");
 
 #define DONE_MARKER "%DONE"
 
-/* local prototypes */
-/* Prototypes for the functions defined in this file */
-void initUserVars (LALStatus *);
-void compareClusterFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALParsedDataFile *f2 );
-void compareFstatFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALParsedDataFile *f2,
-			REAL8 Ftol);
+/* (possible) fields of the output Fstat-file */ 
+typedef struct {
+  REAL8 Freq;
+  REAL8 Alpha;
+  REAL8 Delta;
+  REAL8 f1dot;
+  REAL8 f2dot;
+  REAL8 f3dot;
+  REAL8 TwoF;
+} FstatLine_t;
 
 /*----------------------------------------------------------------------*/
 static const LALStatus empty_status;
@@ -63,7 +67,15 @@ BOOLEAN uvar_clusterFiles;
 REAL8 uvar_Ftolerance;
 
 #define max(x,y) ( (x) > (y) ? (x) : (y) )
-#define relError(x,y) (fabs( (x)-(y) )/ (max(fabs(x), fabs(y))))
+
+/* local prototypes */
+/* Prototypes for the functions defined in this file */
+void initUserVars (LALStatus *);
+void compareClusterFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALParsedDataFile *f2 );
+void compareFstatFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALParsedDataFile *f2,
+			REAL8 Ftol);
+int parse_Fstat_line ( const CHAR *line, FstatLine_t *FstatLine );
+REAL8 relError(REAL8 x, REAL8 y);
 
 /*----------------------------------------------------------------------
  * main function 
@@ -223,22 +235,22 @@ compareClusterFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALP
 	}
       
       /* now compare all 7 entries */
-      if ( (relErr = relError( freq1, freq2)) > eps8 )
+      if ( fabs(relErr = relError( freq1, freq2)) > eps8 )
 	{
 	  LALPrintError ("Relative frequency-error %g ecceeds %g in line %d\n", relErr, eps8, i+1);
 	  (*diff) ++;
 	} 
-      if ( (relErr = relError( a1, a2)) > eps8 )
+      if ( fabs(relErr = relError( a1, a2)) > eps8 )
 	{
 	  LALPrintError ("Relative error %g in alpha ecceeds %g in line %d\n", relErr, eps8, i+1);
 	  (*diff) ++;
 	} 
-      if ( (relErr = relError( d1, d2)) > eps8 )
+      if ( fabs(relErr = relError( d1, d2)) > eps8 )
 	{
 	  LALPrintError ("Relative error %g in delta ecceeds %g in line %d\n", relErr, eps8, i+1);
 	  (*diff) ++;
 	} 
-      if ( (relErr = relError( Fstat1, Fstat2)) > eps4 )
+      if ( fabs(relErr = relError( Fstat1, Fstat2)) > eps4 )
 	{
 	  LALPrintError ("Relative error %g in F ecceeds %g in line %d\n", relErr, eps4, i+1);
 	  (*diff) ++;
@@ -248,12 +260,12 @@ compareClusterFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALP
 	  LALPrintError ("Different cluster-sizes in line %d\n", i+1);
 	  (*diff) ++;
 	} 
-      if ( (relErr = relError( mean1, mean2)) > eps4 )
+      if ( fabs(relErr = relError( mean1, mean2)) > eps4 )
 	{
 	  LALPrintError ("Relative error %g in mean ecceeds %g in line %d\n", relErr, eps4, i+1);
 	  (*diff) ++;
 	}
-      if ( (relErr = relError( std1, std2)) > eps4 )
+      if ( fabs(relErr = relError( std1, std2)) > eps4 )
 	{
 	  LALPrintError ("Relative error %g in std-deviation ecceeds %g in line %d\n", 
 			 relErr, eps4, i+1);
@@ -275,11 +287,9 @@ compareFstatFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALPar
   const CHAR *line1, *line2;
   UINT4 nlines1, nlines2, minlines;
   UINT4 i;
-  REAL8 freq1, freq2, a1, a2, d1, d2;
-  REAL4 Fstat1, Fstat2;
   REAL8 relErr;
-  REAL4 f1dot1, f1dot2;
   REAL4 eps4 = 100.0 * LAL_REAL4_EPS;
+  FstatLine_t parsed1, parsed2;
 
   INITSTATUS (status, "compareFstatFiles", rcsid );
 
@@ -317,46 +327,47 @@ compareFstatFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALPar
       line2 = f2->lines->tokens[i];
 
       /* read pure Fstats files */
-      if ( 5 != sscanf (line1, "%" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT 
-			" %" LAL_REAL4_FORMAT " %" LAL_REAL4_FORMAT, 
-			&freq1, &a1, &d1, &f1dot1, &Fstat1) ) 
-	{
-	  LALPrintError ("Failed to parse line %d in file 1\n", i+1);
-	  ABORT (status, MAKEFAKEDATAC_EFORMAT, MAKEFAKEDATAC_MSGEFORMAT);
-	}
+      if ( parse_Fstat_line ( line1, &parsed1 ) ) {
+	ABORT (status, MAKEFAKEDATAC_EFORMAT, MAKEFAKEDATAC_MSGEFORMAT);
+      }
+      if ( parse_Fstat_line ( line2, &parsed2 ) ) {
+	ABORT (status, MAKEFAKEDATAC_EFORMAT, MAKEFAKEDATAC_MSGEFORMAT);
+      }
 
-      if ( 5 != sscanf (line2, "%" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT 
-			" %" LAL_REAL4_FORMAT " %" LAL_REAL4_FORMAT, 
-			&freq2, &a2, &d2, &f1dot2, &Fstat2) ) 
-	{
-	  LALPrintError ("Failed to parse line %d in file 2\n", i+1);
-	  ABORT (status, MAKEFAKEDATAC_EFORMAT, MAKEFAKEDATAC_MSGEFORMAT);
-	}
-
-      /* now compare all 5 entries */
-      if ( (relErr = relError( freq1, freq2)) > eps4 )
+      /* now compare all entries */
+      if ( fabs(relErr = relError( parsed1.Freq, parsed2.Freq)) > eps4 )
 	{
 	  LALPrintError ("Relative frequency-error %g ecceeds %g in line %d\n", relErr, eps4, i+1);
 	  (*diff) ++;
 	} 
-      if ( (relErr = relError( a1, a2)) > eps4 )
+      if ( fabs(relErr = relError( parsed1.Alpha, parsed2.Alpha)) > eps4 )
 	{
 	  LALPrintError ("Relative error %g in alpha ecceeds %g in line %d\n", relErr, eps4, i+1);
 	  (*diff) ++;
 	} 
-      if ( (relErr = relError( d1, d2)) > eps4 )
+      if ( fabs(relErr = relError( parsed1.Delta, parsed2.Delta)) > eps4 )
 	{
 	  LALPrintError ("Relative error %g in delta ecceeds %g in line %d\n", relErr, eps4, i+1);
 	  (*diff) ++;
 	}
-      if ( (relErr = relError( f1dot1, f1dot2)) > eps4 )
+      if ( fabs(relErr = relError( parsed1.f1dot, parsed2.f1dot)) > eps4 )
 	{
 	  LALPrintError ("Relative error %g in f1dot ecceeds %g in line %d\n", relErr, eps4, i+1);
 	  (*diff) ++;
 	} 
-      if ( (relErr = relError( Fstat1, Fstat2)) > Ftol )
+      if ( fabs(relErr = relError( parsed1.f2dot, parsed2.f2dot)) > eps4 )
 	{
-	  LALPrintError ("Relative error %g in F ecceeds %g in line %d\n", relErr, Ftol, i+1);
+	  LALPrintError ("Relative error %g in f2dot ecceeds %g in line %d\n", relErr, eps4, i+1);
+	  (*diff) ++;
+	} 
+      if ( fabs(relErr = relError( parsed1.f3dot, parsed2.f3dot)) > eps4 )
+	{
+	  LALPrintError ("Relative error %g in f3dot ecceeds %g in line %d\n", relErr, eps4, i+1);
+	  (*diff) ++;
+	} 
+      if ( (relErr = relError( parsed1.TwoF, parsed2.TwoF)) > Ftol )
+	{
+	  LALPrintError ("Relative error %g in 2F ecceeds %g in line %d\n", relErr, Ftol, i+1);
 	  (*diff) ++;
 	}
 
@@ -366,4 +377,68 @@ compareFstatFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALPar
 
 } /* compareFstatFiles() */
 
+/* parse one Fstat-line into the FstatLine_t struct
+ *  This function is flexible concerning the number of spindown-entries found
+ *  as CFS_v2 now returns second and third spindown also, while CFS_v1 only 
+ * has one spindown.
+ *
+ * return: -1 error, 0 = OK
+ */
+#define MAX_ENTRIES 7
+int 
+parse_Fstat_line ( const CHAR *line, FstatLine_t *FstatLine )
+{
+  int ret;
+  REAL8 e[MAX_ENTRIES];
 
+  ret = sscanf ( line, "%lf %lf %lf %lf %lf %lf %lf", 
+		 &e[0], &e[1], &e[2], &e[3], &e[4], &e[5], &e[6] );
+
+  if ( ret < 5 )
+    {
+      LALPrintError("\nFailed to parse Fstat-line (less than 5 entries):\n'%s'\n\n", line );
+      return -1;
+    }
+  
+  if ( ret > 7 )
+    { 
+      LALPrintError("\nFailed to parse Fstat-line (more than 7 entries):\n'%s'\n\n", line );
+      return -1;
+    }
+
+  FstatLine->Freq = e[0];
+  FstatLine->Alpha = e[1];
+  FstatLine->Delta = e[2];
+  FstatLine->f1dot = e[3];
+  
+  FstatLine->f2dot = 0;
+  FstatLine->f3dot = 0;
+
+  switch ( ret )
+    {
+    case 5:
+      FstatLine->TwoF = e[4];
+      break;
+    case 6:
+      FstatLine->f2dot = e[4];
+      FstatLine->TwoF = e[5];
+      break;
+    case 7:
+      FstatLine->f2dot = e[4];
+      FstatLine->f3dot = e[5];
+      FstatLine->TwoF = e[6];
+      break;
+    } /* switch(ret) */
+
+  return 0;
+
+} /* parse_Fstat_line() */
+
+REAL8 
+relError(REAL8 x, REAL8 y)
+{
+  if ( x == y )
+    return 0;
+
+  return ( (x - y )/ (0.5 * ( fabs(x) + fabs(y) ) ) );
+} /* relError() */
