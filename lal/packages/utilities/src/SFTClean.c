@@ -867,3 +867,110 @@ void LALCleanMultiSFTVect (LALStatus       *status,
   /* normal exit */
   RETURN (status);
 }
+
+
+/** top level function to remove lines from a sft vector given a file 
+    containing list of lines */
+void LALRemoveKnownLinesInSFTVect (LALStatus   *status,
+				   SFTVector   *sftVect,  /**< SFTVector to be cleaned */
+				   INT4        width,     /**< maximum width to be cleaned -- set sufficiently large if all bins in each line are to be cleaned*/      
+				   INT4        window,    /**< window size for noise floor estimation in vicinity of a line */
+				   CHAR        *linefile) /**< file with list of lines */
+{
+
+  FILE *fp=NULL;   
+  INT4 seed, ranCount;  
+  RandomParams *randPar=NULL; 
+
+  static LineNoiseInfo   lines, lines2;
+  static LineHarmonicsInfo harmonics; 
+  INT4 nLines=0, count1, nHarmonicSets;
+
+  REAL8 fmin, fmax, deltaF;
+  UINT4 numBins;
+
+  INITSTATUS (status, "LALRemoveKnownLinesInSFTVector", SFTCLEANC);
+  ATTATCHSTATUSPTR (status);   
+
+
+  ASSERT (sftVect, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);  
+  ASSERT (sftVect->data, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);  
+  ASSERT (sftVect->length > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);  
+  ASSERT (linefile, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);  
+  ASSERT (width > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);  
+  ASSERT (window > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);  
+
+  fmin = sftVect->data[0].f0;
+  deltaF = sftVect->data->deltaF;
+  numBins = sftVect->data->data->length;
+  fmax = fmin + deltaF * numBins;
+
+  TRY( LALFindNumberHarmonics (status->statusPtr, &harmonics, linefile), status); 
+  nHarmonicSets = harmonics.nHarmonicSets; 
+
+  if (nHarmonicSets > 0)
+    {
+      harmonics.startFreq = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
+      harmonics.gapFreq = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
+      harmonics.numHarmonics = (INT4 *)LALMalloc(harmonics.nHarmonicSets * sizeof(INT4));
+      harmonics.leftWing = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
+      harmonics.rightWing = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
+    
+
+      TRY( LALReadHarmonicsInfo( status->statusPtr, &harmonics, linefile ), status);
+      
+      nLines = 0;
+      for (count1=0; count1 < nHarmonicSets; count1++)
+	{
+	  nLines += *(harmonics.numHarmonics + count1);
+	}
+      
+      lines.nLines = nLines;
+      lines.lineFreq = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+      lines.leftWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+      lines.rightWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+
+      TRY( LALHarmonics2Lines( status->statusPtr, &lines, &harmonics), status);
+
+
+      lines2.nLines = nLines;
+      lines2.lineFreq = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+      lines2.leftWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+      lines2.rightWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+
+      TRY( LALChooseLines( status->statusPtr, &lines2, &lines, fmin, fmax), status);
+      nLines = lines2.nLines;
+      
+      /* clean the sft vector -- in this case vector contains just a single sft */
+      TRY ( LALCleanSFTVector( status->statusPtr, sftVect, width, window, &lines2, randPar), status);
+    }
+  
+  /* free memory */    
+  if (nLines > 0)
+    {
+      LALFree(lines.lineFreq);
+      LALFree(lines.leftWing);
+      LALFree(lines.rightWing);
+
+      LALFree(lines2.lineFreq);
+      LALFree(lines2.leftWing);
+      LALFree(lines2.rightWing);
+
+    }
+ 
+  if (nHarmonicSets > 0)
+    {
+      LALFree(harmonics.startFreq);
+      LALFree(harmonics.gapFreq);
+      LALFree(harmonics.numHarmonics);
+      LALFree(harmonics.leftWing);
+      LALFree(harmonics.rightWing);
+    }
+
+  TRY( LALDestroyRandomParams (status->statusPtr, &randPar), status);
+
+  DETATCHSTATUSPTR (status);
+  /* normal exit */
+  RETURN (status);
+}
+

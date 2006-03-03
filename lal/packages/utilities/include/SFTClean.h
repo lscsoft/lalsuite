@@ -263,6 +263,12 @@ void LALCleanMultiSFTVect (LALStatus          *status,
 			   LineNoiseInfo      *lineInfo,
 			   RandomParams       *randPar);
 
+void LALRemoveKnownLinesInSFTVect (LALStatus   *status,
+				   SFTVector   *sftVect, 
+				   INT4        width,    
+				   INT4        window,   
+				   CHAR        *linefile);
+
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */
