@@ -149,10 +149,6 @@ XLALLightTravelTime ( const LALDetector *aDet,
                      );
 
 
-/* <lalLaTeX>
-\newpage\input{TimeDelayFromEarthCenterC}
-</lalLaTeX> */
-
 REAL8
 XLALTimeDelayFromEarthCenter(
 	const double detector_earthfixed_xyz_metres[3],

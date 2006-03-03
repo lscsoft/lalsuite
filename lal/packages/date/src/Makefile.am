@@ -4,8 +4,7 @@ libdate_la_SOURCES = Julian.c \
                      GPStoUTC.c \
                      DateString.c LMST1.c \
                      SecsToLALDate.c date_value.h TimeDelay.c \
-                     TimeDelayFromEarthCenter.c GPStoFloat.c \
-                     GPStoINT8.c IncrementGPS.c GPSTimeNow.c \
+                     GPStoFloat.c GPStoINT8.c IncrementGPS.c GPSTimeNow.c \
                      Playground.c SkyAnnulus.c StrToGPS.c \
 		     XLALTime.c XLALCivilTime.c XLALSiderealTime.c XLALLeapSeconds.h
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include

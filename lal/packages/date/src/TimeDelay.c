@@ -28,6 +28,10 @@ defined to be $\delta t = t_2 - t_1$ where $t_1$ is the time the signal arrives
 at the first detector and $t_2$ is the time the signal arrives at the second
 detector.
 
+The function LALTimeDelayFromEarthCenter() Computes difference in arrival time
+of the same signal at detector and at center of Earth-fixed frame.  Equivalent
+to LALTimeDelay() with detector 1 set to the geocenter.
+
 The function XLALLightTravelTime() computes the light travel time between two detectors and returns the answer in \texttt{INT8} nanoseconds.
 
 \subsubsection*{Algorithm}
@@ -129,6 +133,41 @@ LALTimeDelay(
 	ASSERT(p_dets_time_and_source, stat, TIMEDELAYH_ENUL, TIMEDELAYH_MSGENUL);
 
 	*p_time_diff = XLALTimeDelay(p_dets_time_and_source->p_det_and_time1->p_detector->location, p_dets_time_and_source->p_det_and_time2->p_detector->location, p_dets_time_and_source->p_source->longitude, p_dets_time_and_source->p_source->latitude, p_dets_time_and_source->p_det_and_time1->p_gps);
+
+	ASSERT(!XLAL_IS_REAL8_FAIL_NAN(*p_time_diff), stat, DATEH_ERANGEGPSABS, DATEH_MSGERANGEGPSABS);
+
+	DETATCHSTATUSPTR(stat);
+	RETURN(stat);
+}
+
+
+/* <lalVerbatim file="TimeDelayFromEarthCenterCP"> */
+double XLALTimeDelayFromEarthCenter(
+	const double detector_earthfixed_xyz_metres[3],
+	double source_right_ascension_radians,
+	double source_declination_radians,
+	const LIGOTimeGPS *gpstime
+)
+{/* </lalVerbatim> */
+	const double earth_center[3] = {0.0, 0.0, 0.0};
+
+	return XLALTimeDelay(earth_center, detector_earthfixed_xyz_metres, source_right_ascension_radians, source_declination_radians, gpstime);
+}
+
+
+/* <lalVerbatim file="TimeDelayFromEarthCenterCP"> */
+void LALTimeDelayFromEarthCenter(
+	LALStatus *stat,
+	REAL8 *p_time_diff,
+	const DetTimeAndASource *p_det_time_and_source
+)
+{/* </lalVerbatim> */
+	INITSTATUS(stat, "LALTimeDelayFromEarthCenter", TIMEDELAYC);
+	ATTATCHSTATUSPTR(stat);
+	ASSERT(p_time_diff, stat, TIMEDELAYH_ENUL, TIMEDELAYH_MSGENUL);
+	ASSERT(p_det_time_and_source, stat, TIMEDELAYH_ENUL, TIMEDELAYH_MSGENUL);
+
+	*p_time_diff = XLALTimeDelayFromEarthCenter(p_det_time_and_source->p_det_and_time->p_detector->location, p_det_time_and_source->p_source->longitude, p_det_time_and_source->p_source->latitude, p_det_time_and_source->p_det_and_time->p_gps);
 
 	ASSERT(!XLAL_IS_REAL8_FAIL_NAN(*p_time_diff), stat, DATEH_ERANGEGPSABS, DATEH_MSGERANGEGPSABS);
 
