@@ -162,13 +162,20 @@ static void print_usage(char *program)
       "  [--do-alphaF-cut]                perform cut based on alphaF\n"\
       "                                   with bounds given below\n"\
       "                                   (both bounds must be specified)\n"\
-      "  [--alphaF-hi]         alphaFhi   reject BCV triggers with alphaF\n"\
-      "                                   greater than alphaFhi\n"\
-      "  [--alphaF-lo]         alphaFlo   reject BCV triggers with alphaF\n"\
-      "                                   smaller than alphaFlo (< alphaFhi)\n"\
-      "\n"\
-      "   --data-type        data_type specify the data type, must be one of\n"\
-      "                                (playground_only|exclude_play|all_data)\n"\
+      "  [--alphaf-hi]         alphaFhi   reject BCV triggers with alphaF\n"\
+      "                                   greater than alphaFhi (if --do-alphaF-cut used)\n"\
+      "  [--alphaf-lo]         alphaFlo   reject BCV triggers with alphaF\n"\
+      "                                   smaller than alphaFlo (< alphaFhi) (if --do-alphaF-cut used)\n"\
+      "  [--do-bcvc-veto]                 perform cut based on alphaF\n"\
+      "                                   with individual bounds given below.\n"\
+      "  [--h1-alphaf-hi]      alphaFhi   reject BCV triggers outside the specified \n"\
+      "  [--h1-alphaf-lo]      alphaFlo   alphaF area for H1 (if \n"\
+      "  [--h2-alphaf-hi]      alphaFhi   reject BCV triggers outside the specified \n"\
+      "  [--h2-alphaf-lo]      alphaFlo   alphaF area for H2\n"\
+      "  [--l1-alphaf-hi]      alphaFhi   reject BCV triggers outside the specified \n"\
+      "  [--l1-alphaf-lo]      alphaFlo   alphaF area for L1\n"\
+      "   --data-type          data_type  specify the data type, must be one of\n"\
+      "                                   (playground_only|exclude_play|all_data)\n"\
       "\n"\
       "[LIGOLW XML input files] list of the input trigger files.\n"\
       "\n", program);
@@ -235,7 +242,7 @@ int main( int argc, char *argv[] )
   SearchSummaryTable   *searchSummList = NULL;
   SearchSummaryTable   *thisSearchSumm = NULL;
 
-  SummValueTable       *thisSummValue = NULL;
+  /* SummValueTable       *thisSummValue = NULL;*/
 
   MetadataTable         proctable;
   MetadataTable         processParamsTable;
@@ -250,6 +257,14 @@ int main( int argc, char *argv[] )
   INT4                  i;
   INT4                  loopVar;
   INT4                  maximizationInterval = 0;
+
+  SnglInspiralBCVCalphafCut  alphafParams;
+  alphafParams.h1_lo=-1e10;
+  alphafParams.h1_hi=+1e10;
+  alphafParams.h2_lo=-1e10;
+  alphafParams.h2_hi=+1e10;
+  alphafParams.l1_lo=-1e10;
+  alphafParams.l1_hi=+1e10;
 
   REAL4                 alphaFhi = -2.e4;
   REAL4                 alphaFlo = 9.e4;
@@ -330,8 +345,6 @@ int main( int argc, char *argv[] )
     {"gps-start-time",      required_argument, 0,                    's'},
     {"gps-end-time",        required_argument, 0,                    't'},
     {"maximization-interval",required_argument, 0,                   '@'},    
-    {"alphaF-hi",           required_argument, 0,                    'j'},
-    {"alphaF-lo",           required_argument, 0,                    'l'},
     {"alphaf-snr",          required_argument, 0,                    'v'},
     {"snr-threshold",       required_argument, 0,                    '*'},
     {"data-type",           required_argument, 0,                    'k'},
@@ -344,10 +357,18 @@ int main( int argc, char *argv[] )
     {"version",             no_argument,       0,                    'V'},
     {"dmchirp-high",        required_argument, 0,                    '^'},
     {"high-mass",           required_argument, 0,                    '&'},
+    {"h1-alphaf-lo",        required_argument, 0,                    'l'},
+    {"h1-alphaf-hi",        required_argument, 0,                    'j'},
+    {"h2-alphaf-lo",        required_argument, 0,                    'u'},
+    {"h2-alphaf-hi",        required_argument, 0,                    'S'},
+    {"l1-alphaf-lo",        required_argument, 0,                    'U'},
+    {"l1-alphaf-hi",        required_argument, 0,                    'X'},
+    {"alphaf-lo",           required_argument, 0,                    '#'},
+    {"alphaf-hi",           required_argument, 0,                    '%'},
     {0, 0, 0, 0}
   };
   int c;
-
+  /* INFO: Remaining characters: * ( ) _ { } [ ]  (or even more...)*/
 
   /*
    * 
@@ -766,18 +787,54 @@ int main( int argc, char *argv[] )
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
-      case 'j':
-        /* upper alphaF cutoff */
-        alphaFhi = atof(optarg);
+     case 'l':
+        /* lower H1 alphaF cutoff */
+        alphafParams.h1_lo = atof(optarg);
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
-      case 'l':
-        /* lower alphaF cutoff */
+      case 'j':
+        /* upper H1 alphaF cutoff */
+        alphafParams.h1_hi = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
+      case 'u':
+        /* lower H2 alphaF cutoff */
+        alphafParams.h2_lo = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
+      case 'S':
+        /* upper H2 alphaF cutoff */
+        alphafParams.h2_hi = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
+      case 'U':
+        /* lower L1 alphaF cutoff */
+        alphafParams.l1_lo = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
+      case 'X':
+        /* upper L1 alphaF cutoff */
+        alphafParams.l1_hi = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
+
+     case '#':
+        /* lower general alphaF cutoff */
         alphaFlo = atof(optarg);
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
-      
+
+      case '%':
+        /* upper general alphaF cutoff */
+        alphaFhi = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
 
       case 'k':
         /* type of data to analyze */
@@ -1262,7 +1319,7 @@ int main( int argc, char *argv[] )
        "Discarding triggers with alphaF > %f OR alphaF < %f \n and triggers with |alphaF/snr| >%f\n" , 
        alphaFhi, alphaFlo , thresholdT);
     LAL_CALL( LALBCVCVetoSingleInspiral( &status, &(inspiralEventList),
-      alphaFhi, alphaFlo, thresholdT), &status );
+      alphafParams ), &status );
   }
  
 
@@ -1285,7 +1342,7 @@ int main( int argc, char *argv[] )
   {
     if ( vrbflg ) fprintf( stdout, 
         "Checking that we have data for all times from all IFOs\n");
-    for ( ifoNumber = 0; ifoNumber < numIFO; ++ifoNumber )
+    for ( ifoNumber = 0; ifoNumber < (int)numIFO; ++ifoNumber )
     {
       LAL_CALL( LALCheckOutTimeFromSearchSummary ( &status, searchSummList, 
             ifoName[ifoNumber], &startCoinc, &endCoinc ), &status);
