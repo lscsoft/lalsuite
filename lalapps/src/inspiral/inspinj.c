@@ -28,6 +28,9 @@
 #include <lal/LIGOLwXML.h>
 #include <lal/Date.h>
 #include <lal/TimeDelay.h>
+#include <lal/Random.h>
+#include <lal/AVFactories.h>
+
 
 #define USAGE \
   "lalapps_inspinj [options]\n"\
@@ -46,6 +49,22 @@
 "  --tama-output            generate a text file for tama\n"\
 "  --write-eff-dist         output the effective distances in tama file\n"\
 "  --ilwd                   generate an ILWD file for LDAS\n"\
+"  --enable-milkyway        enables Milky Way injections\n"\
+"  --disable-milkyway       disables Milky Way injections\n"\
+"  --incl-peak PEAK         peaks the inclination angle with width PEAK. \n"\
+"                           Random in cos(i) if not specified\n"\
+"  --min-distance DMIN      set the minimum distance to DMIN kpc (1)\n"\
+"  --max-distance DMAX      set the maximum distance to DMAX kpc (20000)\n"\
+"  --d-distr DDISTR         distribute injections uniformly over\n"\
+"                           d (DDISTR = 0), or over log10(d) (DDISTR = 1)\n"\
+"                           or over volume (DDISTR = 2)\n"\
+"                           (default: DDISTR = -1, using sorce list)\n"\
+"  --min-mass MIN           set the minimum component mass to MIN (3.0)\n"\
+"  --max-mass MAX           set the maximum component mass to MAX (20.0)\n"\
+"  --m-distr MDISTR         distribute injections uniformly over\n"\
+"                           total mass (MDISTR = 0), or over mass1 and\n"\
+"                           over mass2 (MDISTR = 1) (default: MDISTR=-1, using mass file)\n"\
+"                           if not given the mass-file will be used\n"\
 "\n"
 
 RCSID( "$Id$" );
@@ -101,6 +120,21 @@ struct { int i; int y; int v[32]; } randpar;
 
 char *massFileName = NULL;
 char *sourceFileName = NULL;
+
+int allowMW=-1;
+
+int ddistr;
+float dmin= 1;
+float dmax=20000;
+int mdistr=-1;
+float minMass=3;
+float maxMass=20;
+float inclPeak=1;
+int flagInclPeak=0;
+
+static LALStatus status;
+static RandomParams* randParams;
+static REAL4Vector* vector;
 
 int num_source;
 struct {
@@ -508,7 +542,11 @@ int sky_position( double *dist, double *alpha, double *delta, char *source )
   if ( ! init )
   {
     init = 1;
-    norm = 1; /* milky way */
+    if (allowMW) {
+      norm=1; /* milky way */
+    } else {
+      norm = 0; /* do not use the milky way as sourec, only the source list */
+    } 
     num_source = read_source_data();
     ratio = calloc( num_source, sizeof( *ratio ) );
     if ( ! ratio )
@@ -561,23 +599,108 @@ int inj_params( double *injPar, char *source )
   static double *m2arr;
   static size_t n;
   size_t i;
-  double m1;
-  double m2;
+  double m1=0;
+  double m2=0;
   double alpha;
   double delta;
   double dist;
+  double u;
+  double deltaM;
+  double mtotal;
 
-  if ( ! n )
-    n = read_source_mass_data( &m1arr, &m2arr );
-
+  /* get sky position */
   sky_position( &dist, &alpha, &delta, source );
-  i = (size_t)( n * my_urandom() );
 
-  injPar[m1Elem] = m1 = m1arr[i];
-  injPar[m2Elem] = m2 = m2arr[i];
+  if (massFileName) {
+    /* get random mass from mass file */
+    if ( ! n )
+      n = read_source_mass_data( &m1arr, &m2arr );
+    
+    /* choose masses from the mass-list */
+    i = (size_t)( n * my_urandom() );
+    m1 = m1arr[i];
+    m2 = m2arr[i];
+  }
+
+  /* use the user-specified parameters to calculate the masses */
+  if (mdistr>=0) {
+    
+    /* mass range, per component */
+    deltaM = maxMass - minMass;
+    
+    if (mdistr == 1) {
+
+      /* uniformly distributed mass1 and uniformly distributed mass2 */
+      u=my_urandom();
+      m1 = minMass + u * deltaM;
+      u=my_urandom();
+      m2 = minMass + u * deltaM;
+      
+    } else if (mdistr == 0) {
+      /*uniformly distributed total mass */
+      
+      u=my_urandom();
+      mtotal = 2.0 * minMass + u * 2.0 *deltaM ;	
+      u=my_urandom();
+      m1 = minMass + u * deltaM;
+      m2 = mtotal - m1;
+      
+      while (m1 >= mtotal || 
+	     m2 >= maxMass || m2 <= minMass ) {
+	u=my_urandom();
+	m1 = minMass + u * deltaM;
+	m2 = mtotal - m1;
+      }
+    }
+  }
+
+  /* use the user-specified parameters to calculate the distance */
+  if (ddistr>=0) {
+
+    if (ddistr == 0)
+      /* uniform distribution in distance */
+      {
+	REAL4 deltaD = dmax - dmin ;
+	u=my_urandom();
+	dist = (dmin + deltaD * u) * KPC;
+      }
+    else if (ddistr == 1)
+      /* uniform distribution in log(distance) */
+      {
+        REAL4 lmin = log10(dmin);
+        REAL4 lmax = log10(dmax);
+        REAL4 deltaL = lmax - lmin;
+	REAL4 exponent;
+	u=my_urandom();
+        exponent = lmin + deltaL * u;
+        dist = pow(10.0,(REAL4) exponent) * KPC;
+      }
+    else if (ddistr == 2)
+      /* uniform volume distribution */
+      {
+	REAL4 d2min = dmin * dmin ;
+	REAL4 d2max = dmax * dmax ;
+	REAL4 deltad2 = d2max - d2min ;
+	REAL4 d2;
+	u=my_urandom();
+	d2 = d2min + u * deltad2 ;
+	dist = sqrt(d2) * KPC;
+      }    
+  } 
+
+  /* set the masses and other parameters */
+  injPar[m1Elem] = m1;
+  injPar[m2Elem] = m2;
   injPar[mTotElem] = m1 + m2;
   injPar[etaElem]  = m1 * m2 / ( ( m1 + m2 ) * ( m1 + m2 ) );
-  injPar[incElem]  = acos( -1.0 + 2.0 * my_urandom() );
+
+  if (flagInclPeak) {
+    LALNormalDeviates( &status, vector, randParams );
+    injPar[incElem] = inclPeak*(double)(vector->data[0]);
+
+  } else {
+    injPar[incElem]  = acos( -1.0 + 2.0 * my_urandom() );
+  }
   injPar[phiElem]  = 2 * LAL_PI * my_urandom();
   injPar[psiElem]  = 2 * LAL_PI * my_urandom();
   injPar[distElem] = dist;
@@ -650,10 +773,19 @@ int main( int argc, char *argv[] )
     {"waveform",                required_argument, 0,                'w'},
     {"user-tag",                required_argument, 0,                'Z'},
     {"userTag",                 required_argument, 0,                'Z'},
+    {"m-distr",                 required_argument, 0,                'd'},
+    {"min-mass",                required_argument, 0,                'j'},
+    {"max-mass",                required_argument, 0,                'k'},
+    {"incl-peak",               required_argument, 0,                'c'},
+    {"min-distance",            required_argument, 0,                'p'},
+    {"max-distance",            required_argument, 0,                'r'},
+    {"d-distr",                 required_argument, 0,                'e'},
     {"tama-output",                   no_argument, &tamaOutput,       1 },
     {"write-eff-dist",                no_argument, &writeDeff,        1 },
     {"lal-eff-dist",                  no_argument, &lalEffDist,       1 },
     {"ilwd",                          no_argument, &ilwd,             1 },
+    {"enable-milkyway",               no_argument, &allowMW,          1 },
+    {"disable-milkyway",              no_argument, &allowMW,          0 },
     {0, 0, 0, 0}
   };
   int c;
@@ -828,6 +960,82 @@ int main( int argc, char *argv[] )
             optarg );
         break;
 
+      case 'd':
+        mdistr = atoi( optarg );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, 
+              "int", "%d", mdistr );
+        break;
+
+      case 'j':
+        minMass = atof( optarg );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, 
+              "float", "%le", minMass );
+        break; 
+
+      case 'k':
+        maxMass = atof( optarg );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, 
+              "float", "%le", maxMass );
+        break;
+    
+      case 'c':
+	flagInclPeak=1;
+        inclPeak = atof( optarg );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, 
+              "float", "%le", inclPeak );
+        break;
+
+      case 'p':
+        /* minimum distance from earth */
+        dmin = (REAL4) atof( optarg );
+        if ( dmin <= 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "minimum distance must be > 0: "
+              "(%f kpc specified)\n",
+              long_options[option_index].name, dmin );
+          exit( 1 );
+        }
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, 
+              "float", "%e", dmin );
+        break;
+
+      case 'r':
+        /* max distance from earth */
+        dmax = (REAL4) atof( optarg );
+        if ( dmax <= 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "maximum distance must be greater than 0: "
+              "(%f kpc specified)\n",
+              long_options[option_index].name, dmax );
+          exit( 1 );
+        }
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, 
+              "float", "%e", dmax );
+        break;
+
+      case 'e':
+        ddistr = (UINT4) atoi( optarg );
+        if ( ddistr != 0 && ddistr != 1 && ddistr != 2)
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "DDISTR must be either 0 or 1 or 2\n",
+              long_options[option_index].name);
+          exit(1);
+        }
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, 
+              "int", "%d", ddistr );
+
+        break;
+
       case 'h':
         fprintf( stderr, USAGE );
         exit( 0 );
@@ -843,6 +1051,20 @@ int main( int argc, char *argv[] )
         fprintf( stderr, USAGE );
         exit( 1 );
     }
+  }
+
+  /* check if proper GRB mode is selected */
+  if (allowMW==-1) {
+    fprintf( stderr, "Must specify either --enable-milkyway or --disable-milkyway\n" );
+    fprintf( stderr, USAGE );
+    exit( 1 );
+  }
+
+  /* check selection of masses */
+  if (!massFileName && mdistr==-1) {
+    fprintf( stderr, "Must specify either a mass-file or a mass range with the distribution parameter\n" );
+    fprintf( stderr, USAGE );
+    exit( 1 );
   }
 
   seed_random( rand_seed );
@@ -914,6 +1136,21 @@ int main( int argc, char *argv[] )
     free( this_proc_param );
   }
 
+  /* store the milkyway-injection flag */
+  LALSnprintf( procparams.processParamsTable->program, 
+	       LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
+  if (allowMW) {
+    LALSnprintf( procparams.processParamsTable->param,
+		 LIGOMETA_PARAM_MAX, "--enable-milkyway" );
+  } else {
+    LALSnprintf( procparams.processParamsTable->param,
+		 LIGOMETA_PARAM_MAX, "--disable-milkyway" );
+  }
+  LALSnprintf( procparams.processParamsTable->type, 
+	       LIGOMETA_TYPE_MAX, "string" );
+  LALSnprintf( procparams.processParamsTable->value, 
+	       LIGOMETA_TYPE_MAX, " " );
+  
   /* create the first injection */
   this_sim_insp = injections.simInspiralTable = (SimInspiralTable *)
     calloc( 1, sizeof(SimInspiralTable) );
@@ -1017,6 +1254,10 @@ int main( int argc, char *argv[] )
         numElem, (int) ninj );
   }
 
+  if (flagInclPeak) {
+    LALCreateRandomParams( &status, &randParams, rand_seed );
+    LALCreateVector( &status, &vector, 1 );
+  }
   tlistelem = &tlisthead;
 
   for ( inj = 0; inj < ninj; ++inj )
@@ -1093,6 +1334,11 @@ int main( int argc, char *argv[] )
       this_sim_insp = this_sim_insp->next = (SimInspiralTable *)
         calloc( 1, sizeof(SimInspiralTable) );
     }
+  }
+
+  if (flagInclPeak) {
+    LALDestroyRandomParams( &status, &randParams );
+    LALDestroyVector( &status, &vector );
   }
 
   if ( ilwd )
