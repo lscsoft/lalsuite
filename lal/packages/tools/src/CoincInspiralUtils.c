@@ -1092,15 +1092,16 @@ XLALInspiralDistanceCutBCVC(
     CoincInspiralTable *tmpCoinc = thisCoinc;
     thisCoinc = thisCoinc->next;
       
-    kappaA = accuracyParams->ifoAccuracy[ifoA].kappa;
-    epsilonA = accuracyParams->ifoAccuracy[ifoA].epsilon;
-
     /* loop over all IFO combinations */
     for ( ifoA = 0; ifoA < LAL_NUM_IFO; ifoA++ )
     {
+
+      /* extract the needed parameters from the structure */
+      kappaA = accuracyParams->ifoAccuracy[ifoA].kappa;
+      epsilonA = accuracyParams->ifoAccuracy[ifoA].epsilon;
+
       for ( ifoB = ifoA + 1; ifoB < LAL_NUM_IFO; ifoB++ )
       {
-        /*epsilonB = accuracyParams->ifoAccuracy[ifoB].epsilon;*/
 
         if( tmpCoinc->snglInspiral[ifoA] 
             && tmpCoinc->snglInspiral[ifoB]  )
@@ -1111,6 +1112,7 @@ XLALInspiralDistanceCutBCVC(
           snrA = tmpCoinc->snglInspiral[ifoA]->snr;
           snrB = tmpCoinc->snglInspiral[ifoB]->snr;
 
+	  
 	  /* first we were using epsilon = -4 and kappa = 0.65 
 	     then, epsilon =0 and kappa=0.7 */	        
 
@@ -1121,7 +1123,6 @@ XLALInspiralDistanceCutBCVC(
             discardTrigger = 1;
             break;
           }
-	  
 	  
 	}
       }

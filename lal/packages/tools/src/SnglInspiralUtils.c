@@ -1063,16 +1063,15 @@ void
 LALBCVCVetoSingleInspiral(
     LALStatus                  *status,
     SnglInspiralTable         **eventHead,
-    REAL4                       alphaFhi,
-    REAL4                       alphaFlo,
-    REAL4                       thresholdT 
+    SnglInspiralBCVCalphafCut   alphafParams
     )
 /* </lalVerbatim> */
 {
   SnglInspiralTable    *inspiralEventList = NULL;
   SnglInspiralTable    *thisEvent = NULL;
   SnglInspiralTable    *prevEvent = NULL;
-
+  REAL4 alphaF;
+  INT4 veto;
 
   INITSTATUS( status, "LALBCVCVetoSingleInspiral", SNGLINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
@@ -1082,27 +1081,28 @@ LALBCVCVetoSingleInspiral(
   while ( thisEvent )
   {
     SnglInspiralTable *tmpEvent = thisEvent;
-    REAL4 alphaF = 1e3; /* should be far enough*/
-    INT4 veto = 0;
 
+    /* calculate the alphaf-value for this trigger */
     thisEvent = thisEvent->next;
-    alphaF = tmpEvent->tau5 * pow(tmpEvent->f_final,(2.0/3.0));
+    alphaF = tmpEvent->tau5 * pow( tmpEvent->f_final,(2.0/3.0) );
     veto = 0;
     
-    /* Remove all the triggers that are not in (alphaF/SNR) Box */
-    /*    if ((alphaF / tmpEvent->snr)>thresholdT || (alphaF / tmpEvent->snr)<-thresholdT) 
+    /* check the alphaf-range for each trigger */
+    if (strstr(tmpEvent->ifo, "H1") && 
+	( (alphaF < alphafParams.h1_lo) || (alphaF > alphafParams.h1_hi ) ) )
+    {
+      veto = 1;
+    } 
+    else if (strstr(tmpEvent->ifo, "H2") && 
+	( (alphaF < alphafParams.h2_lo) || (alphaF > alphafParams.h2_hi ) ) )
     {
       veto = 1;
     }
-    */
-    /* Remove all the triggers that are not in alphaFlo <= alphaF <= alphaFhi */
-    if ( ((alphaF > alphaFhi) || (alphaF < alphaFlo ) ))
+    else if (strstr(tmpEvent->ifo, "L1") && 
+	( (alphaF < alphafParams.l1_lo) || (alphaF > alphafParams.l1_hi ) ) )
     {
       veto = 1;
     }
-
-
-
 	
     if ( veto == 0 )
     {
