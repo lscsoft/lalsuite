@@ -36,8 +36,6 @@
 #include <lal/SkyCoordinates.h>
 #include <lal/AVFactories.h>
 
-#include "BinaryPulsarTiming.h" /* included for the function LALTTtoGPS */
-
 #ifdef __cplusplus
 extern "C" {
 #endif

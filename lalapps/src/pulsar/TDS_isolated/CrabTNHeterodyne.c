@@ -27,8 +27,8 @@ INT4 lalDebugLevel = 1;
 #define MAXLENGTH 200000
 #define NUM 1000 /* max num of lines in crab ephem file (ok for next 61 years
 										file contains 266 lines as of 15 Jan 2004) */
-#define EFILE "/archive/home/matthew/lscsoft/lal/packages/pulsar/test/earth03-06.dat"
-#define SFILE "/archive/home/matthew/lscsoft/lal/packages/pulsar/test/sun03-06.dat"
+#define EFILE "/home/matthew/lscsoft/lal/packages/pulsar/test/earth03-06.dat"
+#define SFILE "/home/matthew/lscsoft/lal/packages/pulsar/test/sun03-06.dat"
 
 int main(int argc, char *argv[]){
 	static LALStatus status;
@@ -176,7 +176,7 @@ int main(int argc, char *argv[]){
 	TNInput.f0 = 2.0*f0;
 	TNInput.f1 = 2.0*f1;
 	TNInput.f2 = 2.0*f2;
-	TNInput.t0 = LALTDBtoGPS(fepoch); /* convert from TDB (in MJD) to GPS time */
+	TNInput.t0 = (fepoch-44244.)*86400.; /* convert from time in MJD to secs in TDB */
 	
 	fpout = fopen(outputFile, "w");
 	phifp = fopen("DPhase.txt", "w");
