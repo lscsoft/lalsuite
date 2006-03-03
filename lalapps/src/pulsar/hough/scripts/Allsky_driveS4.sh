@@ -44,9 +44,8 @@ det=L1
 #det=H1
 #det=H2
 
-
-sftdir=/scratch/tmp/badkri/${det}sfts
-#sftdir=/sft/S2-LIGO/S2_${det}_Funky-v3Calv5DQ30MinSFTs
+# needs to be changed
+sftdir=/sft/S4-LIGO/sft_1800.20060227.S4_v4/S4-${det}.1800-sft
 
 
 # temporary scratch directory where we work in
