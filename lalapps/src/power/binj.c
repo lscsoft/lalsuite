@@ -616,7 +616,7 @@ int main(int argc, char *argv[])
 
 			/* right ascension, declination, and polarization */
 			this_sim_burst->longitude = 2.0 * LAL_PI * XLALUniformDeviate(randParams);
-			this_sim_burst->latitude = LAL_PI / 2.0 - acos(2.0 * XLALUniformDeviate(randParams) - 1.0);
+			this_sim_burst->latitude = asin(2.0 * XLALUniformDeviate(randParams) - 1.0);
 			this_sim_burst->polarization = 2.0 * LAL_PI * XLALUniformDeviate(randParams);
 
 			/* arrival times */
