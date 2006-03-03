@@ -154,18 +154,6 @@ MJD 44244)  */
 input */
 	Tasc = params->Tasc;	
 
-	if(strstr(input->tbflag, "MJD") != NULL){
-		tb = (input->tb - 44244.0)*DAYSTOSECS + (double)input->leapSecs;
-	}
-	else if(strstr(input->tbflag, "GPS") != NULL){
-		tb = input->tb; /* - (double)input->leapSecs; */
-	}
-	else{
-		ASSERT((strstr(input->tbflag, "GPS") != NULL) || 
-		(strstr(input->tbflag, "MJD") != NULL), status, 
-		BINARYPULSARTIMINGH_ENULLTBFLAG, BINARYPULSARTIMINGH_MSGENULLTBFLAG);
-	}
-	 
 	e = params->e;
 	edot = params->edot*1.0e-12;
 	eps1 = params->eps1;
@@ -581,6 +569,8 @@ LALReadTEMPOParFile(	LALStatus *status,
 		 if third is defined it will be an integer to tell TEMPO whether to fit
 		 the param or not (don't need this), fourth will be the error on the 
 		 param (in same units as the param) */
+		 
+	// convert all epochs given in MJD in .par files to secs in TDB
 	while(1){
 		j=i;
 		if(!strcmp(val[i], "NAME") || !strcmp(val[i], "name")){
@@ -630,14 +620,15 @@ LALReadTEMPOParFile(	LALStatus *status,
 			}
 		}
 		else if(!strcmp(val[i],"pepoch") || !strcmp(val[i],"PEPOCH")) {
-			output->pepoch = atof(val[i+1]);
+			output->pepoch = (atof(val[i+1])-44244.)*DAYSTOSECS; /* convert all epochs to from MJD to
+seconds in TDB */
 			j++;
 			
 		}
 		else if( !strcmp(val[i],"posepoch") || !strcmp(val[i],"POSEPOCH")){
-			output->posepoch = atof(val[i+1]);
+			output->posepoch = (atof(val[i+1]))-44244.)*DAYSTOSECS;
 			j++;
-			/* position epoch in MJD */
+			/* position epoch in secs in TDB */
 		}
 		else if( !strcmp(val[i],"f0") || !strcmp(val[i],"F0")) {
 			/* in .par files exponents sometimes shown as D/d rather than e/E
@@ -780,20 +771,20 @@ LALReadTEMPOParFile(	LALStatus *status,
 			}
     }
 		else if( !strcmp(val[i], "T0")){
-			output->T0 = atof(val[i+1]);
+			output->T0 = (atof(val[i+1])-44244.)*DAYSTOSECS.;
 			j++;
 			
 			if(atoi(val[i+2])==1 && i+2<k){
-				output->T0Err = atof(val[i+3]);
+				output->T0Err = atof(val[i+3])*DAYSTOSECS; // convert to seconds
 				j+=2;
 			}
 		}
 		else if( !strcmp(val[i], "Tasc") || !strcmp(val[i], "TASC")){
-			output->Tasc = atof(val[i+1]);
+			output->Tasc = (atof(val[i+1])-44244.)*DAYSTOSECS;
 			j++;
 			
 			if(atoi(val[i+2])==1 && i+2<k){
-				output->TascErr = atof(val[i+3]);
+				output->TascErr = atof(val[i+3])*DAYSTOSECS; // convert to seconds;
 				j+=2;
 			}
 		}
