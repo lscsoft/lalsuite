@@ -67,6 +67,7 @@
 #include <lal/SFTfileIO.h>
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/LALInitBarycenter.h>
+#include <lal/SFTClean.h>
 #include <lalapps.h>
 #include <gsl/gsl_cdf.h>
 
