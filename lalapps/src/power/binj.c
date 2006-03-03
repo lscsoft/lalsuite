@@ -56,10 +56,15 @@ RCSID("$Id$");
  * ============================================================================
  */
 
+enum population {
+	POPULATION_UNIFORM_SKY,
+	POPULATION_ZENITH
+};
+
 struct options {
 	INT8 gps_start_time;
 	INT8 gps_end_time;
-	char *coordinates;
+	enum population population;
 	double flow;
 	double fhigh;
 	double fratio;
@@ -77,7 +82,6 @@ struct options {
 	int simwaveform_min_number;
 	int simwaveform_max_number;
 	double tau;
-	double freq;
 	double hpeak;
 	char *user_tag;
 	int mdc;	/* Need to set this to true if one wants to use MDC signals */
@@ -89,7 +93,7 @@ static struct options options_defaults(void)
 	struct options defaults = {
 		.gps_start_time = 0,
 		.gps_end_time = 0,
-		.coordinates = "EQUATORIAL",
+		.population = POPULATION_UNIFORM_SKY,
 		.flow = 150.0,
 		.fhigh = 1000.0,
 		.fratio = 0.0,
@@ -107,7 +111,6 @@ static struct options options_defaults(void)
 		.simwaveform_min_number = 0,
 		.simwaveform_max_number = 10,
 		.tau = 0.1,
-		.freq = 150.0,
 		.hpeak = 1.0e-20,
 		.user_tag = NULL,
 		.mdc = FALSE
@@ -126,7 +129,7 @@ static void print_usage(const char *prog)
 "  --gps-start-time TIME    start injections at GPS time TIME\n"\
 "  --gps-end-time TIME      end injections at GPS time TIME\n"\
 "  --time-step STEP         space injections STEP / pi seconds appart (210)\n"\
-"  --coordinates COORDS     coordinate system to use for injections\n"\
+"  --population [uniform_sky|zenith] select the population to synthesize\n"\
 "  --flow FLOW              first frequency of injection (150.0)\n"\
 "  --fhigh FHIGH            only inject frequencies smaller than FHIGH (1000.0)\n"\
 "  --fratio FACTOR          exponential spacing of injection frequencies (0.0)\n"\
@@ -172,12 +175,11 @@ static struct options parse_command_line(int *argc, char **argv[], MetadataTable
 	int option_index;
 	struct option long_options[] = {
 		{"mdc", no_argument, &options.mdc, TRUE},
-		{"coordinates", required_argument, NULL, 'A'},
+		{"population", required_argument, NULL, 'A'},
 		{"deltaf", required_argument, NULL, 'B'},
 		{"fhigh", required_argument, NULL, 'C'},
 		{"flow", required_argument, NULL, 'D'},
 		{"fratio", required_argument, NULL, 'E'},
-		{"freq", required_argument, NULL, 'F'},
 		{"gps-end-time", required_argument, NULL, 'G'},
 		{"gps-start-time", required_argument, NULL, 'H'},
 		{"help", no_argument, NULL, 'I'},
@@ -200,7 +202,14 @@ static struct options parse_command_line(int *argc, char **argv[], MetadataTable
 
 	do switch(c = getopt_long(*argc, *argv, "", long_options, &option_index)) {
 	case 'A':
-		options.coordinates = optarg;
+		if(!strcmp(optarg, "uniform_sky"))
+			options.population = POPULATION_UNIFORM_SKY;
+		else if(!strcmp(optarg, "zenith"))
+			options.population = POPULATION_ZENITH;
+		else {
+			fprintf(stderr, "error: unrecognized population \"%s\"", optarg);
+			exit(1);
+		}
 		ADD_PROCESS_PARAM("string");
 		break;
 
@@ -221,11 +230,6 @@ static struct options parse_command_line(int *argc, char **argv[], MetadataTable
 
 	case 'E':
 		options.fratio = atof(optarg);
-		ADD_PROCESS_PARAM("double");
-		break;
-
-	case 'F':
-		options.freq = atof(optarg);
 		ADD_PROCESS_PARAM("double");
 		break;
 
@@ -354,10 +358,6 @@ static struct options parse_command_line(int *argc, char **argv[], MetadataTable
 
 
 	/* check some of the input parameters for consistency */
-	if(strlen(options.coordinates) > LIGOMETA_COORDINATES_MAX) {
-		fprintf(stderr, "error: --coordinates %s exceeds max length of %d\n", options.waveform, LIGOMETA_COORDINATES_MAX);
-		exit(1);
-	}
 	if(strlen(options.waveform) > LIGOMETA_WAVEFORM_MAX) {
 		fprintf(stderr, "error: --waveform %s exceeds max length of %d\n", options.waveform, LIGOMETA_WAVEFORM_MAX);
 		exit(1);
@@ -385,9 +385,17 @@ static struct options parse_command_line(int *argc, char **argv[], MetadataTable
  * ============================================================================
  */
 
-static LIGOTimeGPS arrival_time(LALDetector detector, LIGOTimeGPS geocent_peak_time, double right_ascension, double declination)
+static LIGOTimeGPS equatorial_arrival_time(LALDetector detector, LIGOTimeGPS geocent_peak_time, double right_ascension, double declination)
 {
 	return *XLALGPSAdd(&geocent_peak_time, XLALTimeDelayFromEarthCenter(detector.location, right_ascension, declination, &geocent_peak_time));
+}
+
+
+static LIGOTimeGPS horizon_arrival_time(LALDetector detector, LIGOTimeGPS geocent_peak_time)
+{
+	const double r = sqrt(detector.location[0] * detector.location[0] + detector.location[1] * detector.location[1] + detector.location[2] * detector.location[2]);
+
+	return *XLALGPSAdd(&geocent_peak_time, -r / LAL_C_SI);
 }
 
 
@@ -526,6 +534,7 @@ int main(int argc, char *argv[])
 {
 	struct options options;
 	INT8 tinj;
+	double freq;
 	RandomParams *randParams = NULL;
 	int iamp = 1;
 	/* observatory information */
@@ -553,7 +562,6 @@ int main(int argc, char *argv[])
 
 	/* parse command line */
 	options = parse_command_line(&argc, &argv, &procparams);
-	options.freq = options.flow;
 
 	/* fill the comment */
 	if(options.user_tag)
@@ -575,13 +583,14 @@ int main(int argc, char *argv[])
 
 		srand(options.seed);
 		thetasq = (thetasqmax - thetasqmin) * ((float) rand() / (float) RAND_MAX) + thetasqmin;
-		options.freq = pow(thetasq, -3. / 2.);
+		freq = pow(thetasq, -3. / 2.);
 	}
 
+	freq = options.flow;
 	for(tinj = options.gps_start_time; tinj <= options.gps_end_time; tinj += options.time_step) {
 		/* compute tau if quality was specified */
 		if(options.quality > 0.0)
-			options.tau = tau_from_q_and_f(options.quality, options.freq);
+			options.tau = tau_from_q_and_f(options.quality, freq);
 
 		/* allocate the injection */
 		if(!this_sim_burst)
@@ -599,20 +608,35 @@ int main(int argc, char *argv[])
 
 		/* populate the sim burst table */
 		snprintf(this_sim_burst->waveform, LIGOMETA_WAVEFORM_MAX, "%s", options.waveform);
-		snprintf(this_sim_burst->coordinates, LIGOMETA_COORDINATES_MAX, "%s", options.coordinates);
 
-		/* sky location and polarizatoin angle */
-		if(!strcmp(options.coordinates, "ZENITH")) {
-			/* zenith */
+		switch(options.population) {
+		case POPULATION_UNIFORM_SKY:
+			/* co-ordinates */
+			sprintf(this_sim_burst->coordinates, "EQUATORIAL");
+
+			/* right ascension, declination, and polarization */
+			this_sim_burst->longitude = 2.0 * LAL_PI * XLALUniformDeviate(randParams);
+			this_sim_burst->latitude = LAL_PI / 2.0 - acos(2.0 * XLALUniformDeviate(randParams) - 1.0);
+			this_sim_burst->polarization = 2.0 * LAL_PI * XLALUniformDeviate(randParams);
+
+			/* arrival times */
+			this_sim_burst->h_peak_time = equatorial_arrival_time(lho, this_sim_burst->geocent_peak_time, this_sim_burst->longitude, this_sim_burst->latitude);
+			this_sim_burst->l_peak_time = equatorial_arrival_time(llo, this_sim_burst->geocent_peak_time, this_sim_burst->longitude, this_sim_burst->latitude);
+			break;
+
+		case POPULATION_ZENITH:
+			/* co-ordinates */
+			sprintf(this_sim_burst->coordinates, "ZENITH");
+
+			/* optimally oriented overhead */
 			this_sim_burst->longitude = 0.0;
 			this_sim_burst->latitude = 0.0;
 			this_sim_burst->polarization = 0.0;
-		} else {
-			this_sim_burst->longitude = 2.0 * LAL_PI * XLALUniformDeviate(randParams);
 
-			this_sim_burst->latitude = LAL_PI / 2.0 - acos(2.0 * XLALUniformDeviate(randParams) - 1.0);
-
-			this_sim_burst->polarization = 2.0 * LAL_PI * XLALUniformDeviate(randParams);
+			/* arrival times */
+			this_sim_burst->h_peak_time = horizon_arrival_time(lho, this_sim_burst->geocent_peak_time);
+			this_sim_burst->l_peak_time = horizon_arrival_time(llo, this_sim_burst->geocent_peak_time);
+			break;
 		}
 
 		/* compute amplitude information */
@@ -648,11 +672,10 @@ int main(int argc, char *argv[])
 		/* uniform distribution in log(distance) */
 		this_sim_burst->distance = Log10Deviate(randParams, options.log10_min_distance, options.log10_max_distance);
 
-
 		/* deal with the intrinsic signal parameters */
 		this_sim_burst->hrss = hrss_from_tau_and_hpeak(options.tau, options.hpeak);
 		this_sim_burst->hpeak = options.hpeak;
-		this_sim_burst->freq = options.freq;
+		this_sim_burst->freq = freq;
 		this_sim_burst->tau = options.tau;
 		if(options.simwaveform_duration) {
 			this_sim_burst->dtplus = options.simwaveform_duration / 2.0;
@@ -665,21 +688,17 @@ int main(int argc, char *argv[])
 		/* set the simulated wavenumber */
 		this_sim_burst->zm_number = options.simwaveform_min_number + (options.simwaveform_max_number - options.simwaveform_min_number) * XLALUniformDeviate(randParams);
 
-		/* arrival times */
-		this_sim_burst->h_peak_time = arrival_time(lho, this_sim_burst->geocent_peak_time, this_sim_burst->longitude, this_sim_burst->latitude);
-		this_sim_burst->l_peak_time = arrival_time(llo, this_sim_burst->geocent_peak_time, this_sim_burst->longitude, this_sim_burst->latitude);
-
 		/* increment to next frequency and test it's still in band */
 		if((options.deltaf == 0.0) && (options.fratio != 0.0))
-			options.freq *= options.fratio;
+			freq *= options.fratio;
 		else if((options.deltaf != 0.0) && (options.fratio == 0.0))
-			options.freq += options.deltaf;
+			freq += options.deltaf;
 		else {
 			fprintf(stderr, "error: something wrong with --deltaf and --fratio\n");
 			exit(1);
 		}
-		if(options.freq > options.fhigh)
-			options.freq = options.flow;
+		if(freq > options.fhigh)
+			freq = options.flow;
 
 		/* if we are doing string cusps; we want to inject the correct
 		   population of frequencies */
@@ -687,7 +706,7 @@ int main(int argc, char *argv[])
 			REAL4 thetasqmin = pow(options.fhigh, -2. / 3.), thetasqmax = pow(options.flow, -2. / 3.), thetasq;
 
 			thetasq = (thetasqmax - thetasqmin) * ((float) rand() / (float) RAND_MAX) + thetasqmin;
-			options.freq = pow(thetasq, -3. / 2.);
+			freq = pow(thetasq, -3. / 2.);
 		}
 	}
 

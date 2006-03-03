@@ -1602,8 +1602,7 @@ Patrick Brady and Saikat Ray-Majumder
 [\option{--time-step}~\parm{tstep}] \newline \hspace*{0.5in}
 [\option{--seed}~\parm{seed}] \newline \hspace*{0.5in}
 [\option{--waveform}~\parm{wave}] \newline \hspace*{0.5in}
-[\option{--coordinates}~\parm{coordinates}] \newline \hspace*{0.5in}
-[\option{--freq}~\parm{freq}] \newline \hspace*{0.5in}
+[\option{--population}~\parm{name}] \newline \hspace*{0.5in}
 [\option{--flow}~\parm{flow}] \newline \hspace*{0.5in}
 [\option{--fhigh}~\parm{fhigh}] \newline \hspace*{0.5in}
 [\option{--deltaf}~\parm{deltaf}] \newline \hspace*{0.5in}
@@ -1681,21 +1680,19 @@ will occour at \parm{tstep}$/\pi$ second intervals. Defaults to $2630/\pi$.
 Optional. Seed the random number generator with the integer \parm{seed}.
 Defaults to $1$.
 
-\item[\option{--coordinates} \parm{coordinates}] 
-Optional.  The coordinate system to specify for the injections.  Use one
-of:
+\item[\option{--population} \parm{name}]
+The population of injections to synthesize.  Select one of:
 \begin{itemize}
-\item \texttt{GEOGRAPHIC}
-\item \texttt{EQUATORIAL}
-\item \texttt{ECLIPTIC}
-\item \texttt{GALACTIC}
-\item \texttt{ZENITH}
+\item \texttt{uniform\_sky}
+\item \texttt{zenith}
 \end{itemize}
-The default is \texttt{EQUATORIAL}.   Use \texttt{ZENITH} to describe an
-injection from directly above the detector with linear polarization with
-respect to the detector.  Note:  this is different than using
-\texttt{HORIZON} coordinates since the polarization angle is usually
-defined with respect to geo-centric coordinates.
+The default is \texttt{uniform\_sky}, which produces a set of point-source
+injections uniformly distributed over the sky with uniformly distributed
+linear polarization.  \texttt{zenith} produces a set of injections incident
+from directly above each observatory and optimially-oriented for each
+(think of this as a burst in the form of an inwardly-directed spherical
+shell centred on the geocenter, with optimal polarization at each
+observatory).
 
 \item[\option{--flow} \parm{flow}]
 Optional.  The code can generate injections at multiple frequencies.  This
@@ -1742,10 +1739,6 @@ $$
 \tau = \frac{\textsc{quality} }{ \sqrt{2} \pi f_0 }
 $$
 where $f_0$ is the frequency of the injection.
-
-\item[\option{--freq} \parm{freq}]
-Optional.  The central frequency $f_0$ for sine-gaussian,  ringdown and
-ring-up waveforms.
 
 \item[\option{--hpeak} \parm{hpeak}]
 Optional.  The peak dimensionless strain $h_0$ for sine-gaussian,
