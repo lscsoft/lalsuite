@@ -238,7 +238,24 @@ with the greatest summed snr$^{2}$ from all instruments.  The
 with the largest value of the snr and chisq statistic.
 </lalLaTeX>
 #endif
-
+/* <lalVerbatim> */
+typedef struct
+tagSnglInspiralBCVCalphafCut
+{ 
+  REAL4       h1_lo;
+  REAL4       h1_hi;
+  REAL4       h2_lo;
+  REAL4       h2_hi;
+  REAL4       l1_lo;
+  REAL4       l1_hi;
+} 
+SnglInspiralBCVCalphafCut;
+/*</lalVerbatim> */
+#if 0
+<lalLaTeX>
+The \texttt{SnglInspiralBCVCalphafCut} provides entries for cutting single IFO triggers generated with the BCVC code. For each LSC IFO there is a field \texttt{lo} and \texttt{hi} which corresponds to the area allowing triggers.
+</lalLaTeX>
+#endif
 /*
  *
  * burst specific structures 
@@ -571,9 +588,7 @@ void
 LALBCVCVetoSingleInspiral(
     LALStatus                  *status,
     SnglInspiralTable         **eventHead,
-    REAL4                       alphaFhi,
-    REAL4                       alphaFlo,
-    REAL4                       thresholdT 
+    SnglInspiralBCVCalphafCut   alphafParams
     );
 
 void
