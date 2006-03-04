@@ -45,8 +45,8 @@ det=L1
 #det=H2
 
 # needs to be changed
-sftdir=/sft/S4-LIGO/sft_1800.20060227.S4_v4/S4-${det}.1800-sft
-
+#sftdir=/sft/S4-LIGO/sft_1800.20060227.S4_v4/S4-${det}.1800-sft
+sftdir=/home/badkri/S4/SFTv2/
 
 # temporary scratch directory where we work in
 tempoutdir=/scratch/tmp/$iam/$1.run
@@ -57,7 +57,7 @@ trap "/bin/rm -rf ${tempoutdir}; exit 0" 0 1 2 9 15
 # make the temporary directory where we work 
 mkdir -p $tempoutdir
 
-# make the temporary output directory
+# make the temporary output directory where results are stored
 mkdir -p $tempoutdir/$det
 
 # change to temporary working dir
