@@ -289,7 +289,7 @@ int main(int argc, char *argv[]){
   /* developer input variables */
   LAL_CALL( LALRegisterINTUserVar(    &status, "nfSizeCylinder",    0, UVAR_DEVELOPER, "Size of cylinder of PHMDs",           &uvar_nfSizeCylinder),  &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",      0, UVAR_DEVELOPER, "Running Median block size",           &uvar_blocksRngMed),    &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "uvar_maxBinsClean", 0, UVAR_DEVELOPER, "Maximum number of bins in cleaning",  &uvar_maxBinsClean),    &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "maxBinsClean", 0, UVAR_DEVELOPER, "Maximum number of bins in cleaning",  &uvar_maxBinsClean),    &status);
 
   /* read all command line variables */
   LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
