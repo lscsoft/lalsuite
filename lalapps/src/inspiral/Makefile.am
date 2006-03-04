@@ -64,7 +64,8 @@ endif
 bin_SCRIPTS = lalapps_inspiral_pipe lalapps_inspiral_pipe_s2 \
               lalapps_inspiral_pipe_tama lalapps_inspiral_pipe_geo \
               lalapps_inspiral_hipe lalapps_inspiral_online_pipe \
-              lalapps_inspiral_online_pipe_inject
+              lalapps_inspiral_online_pipe_inject \
+	      lalapps_check_hipe_times
 
 pythonlibdir = ${prefix}/lib/python
 pythonlib_SCRIPTS = inspiral.py
@@ -89,6 +90,9 @@ lalapps_inspiral_pipe_geo: $(srcdir)/inspiral_pipe_geo.in python_config.sed
 lalapps_inspiral_hipe: $(srcdir)/inspiral_hipe.in python_config.sed
 	sed -f python_config.sed $(srcdir)/inspiral_hipe.in > lalapps_inspiral_hipe
 	chmod +x lalapps_inspiral_hipe
+lalapps_check_hipe_times: $(srcdir)/check_hipe_times.in python_config.sed
+	sed -f python_config.sed $(srcdir)/check_hipe_times.in > lalapps_check_hipe_times
+	chmod +x lalapps_check_hipe_times
 lalapps_inspiral_online_pipe: $(srcdir)/inspiral_online_pipe.in python_config.sed
 	sed -f python_config.sed $(srcdir)/inspiral_online_pipe.in > lalapps_inspiral_online_pipe
 	chmod +x lalapps_inspiral_online_pipe
@@ -105,7 +109,8 @@ EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
              $(SPLITBANKSRC) inspiral.py inspiral_pipe_tama.in \
 	     inspiral_pipe_geo.in inspiral_online_pipe.in \
 	     inspiral_hipe.in inspiral_online_pipe_inject.in \
-             s2_tama.ini inspiral_hipe.ini online.ini online_inject_bbh.ini
+             s2_tama.ini inspiral_hipe.ini online.ini online_inject_bbh.ini \
+	     check_hipe_times.in
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
@@ -113,7 +118,8 @@ LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 CLEANFILES = lalapps_inspiral_pipe lalapps_inspiral_pipe_s2 \
              lalapps_inspiral_pipe_tama lalapps_inspiral_pipe_geo \
              lalapps_inspiral_hipe lalapps_inspiral_online_pipe \
-             lalapps_inspiral_online_pipe_inject python_config.sed
+             lalapps_inspiral_online_pipe_inject python_config.sed \
+	     lalapps_check_hipe_times
 
 MOSTLYCLEANFILES = *INSPIRAL*.xml *INSPIRAL*.gwf \
                    *TMPLTBANK*.gwf *TMPLTBANK*.xml
