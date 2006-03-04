@@ -555,7 +555,7 @@ int main(int argc, char *argv[]){
   if ( uvar_printSigma ) 
     {
       strcpy ( fileSigma, uvar_dirnameOut);
-      strcpy ( fileSigma, "/");
+      strcat ( fileSigma, "/");
       strcat ( fileSigma, uvar_fbasenameOut);
       strcat ( fileSigma, "sigma_values");
       
