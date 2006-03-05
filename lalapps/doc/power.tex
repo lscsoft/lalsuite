@@ -1608,9 +1608,9 @@ Patrick Brady and Saikat Ray-Majumder
 [\option{--deltaf}~\parm{deltaf}] \newline \hspace*{0.5in}
 [\option{--quality}~\parm{quality}] \newline \hspace*{0.5in}
 [\option{--tau}~\parm{tau}] \newline \hspace*{0.5in}
-[\option{--hpeak}~\parm{hpeak}] \newline \hspace*{0.5in}
-[\option{--log-hpeak-min}~\parm{log-hpeak-min}] \newline \hspace*{0.5in}
-[\option{--log-hpeak-max}~\parm{log-hpeak-max}] \newline \hspace*{0.5in}
+[\option{--strain-dist}~\parm{name}] \newline \hspace*{0.5in}
+[\option{--strain-scale-min}~\parm{value}] \newline \hspace*{0.5in}
+[\option{--strain-scale-max}~\parm{value}] \newline \hspace*{0.5in}
 [\option{--max-distance}~\parm{max-distance}] \newline \hspace*{0.5in}
 [\option{--min-distance}~\parm{min-distance}] \newline \hspace*{0.5in}
 [\option{--simwaveform-duration}~\parm{simwaveform-duration}] \newline \hspace*{0.5in}
@@ -1619,20 +1619,44 @@ Patrick Brady and Saikat Ray-Majumder
 [\option{--usertag}~\parm{tag}]
 
 \item[Description] 
-\prog{lalapps\_binj} generates a number of burst  parameters suitable  for
+\prog{lalapps\_binj} generates a number of burst parameters suitable for
 using in a Monte Carlo injection to test the efficiency of a burst search.
-The  various parameters (detailed  below)  are specified on the command
-line or can be randomly chosen in a manner appropriate for an burst upper
-limit search.
+The various parameters (detailed below) are specified on the command line
+or can be randomly chosen in a manner appropriate for an burst upper limit
+search.
 
-The longitude $\alpha$ of the source is uniformly distributed in the range
-$[0,2\pi]$, the latitude $\delta$ is defined so that $\cos(\pi/2 - \delta)$
-is uniformly distributed in the range $[-1,1]$,  and the polarization angle
-$\psi$  is uniformly distributed in the range $[0,2\pi]$.
+\prog{lalapps\_binj} produces an injection set following one of two sky
+disitributions:  a set of injections from point sources
+uniformly-distributed over the sky with uniformly-distributed linear
+polarizations, or a set of injections located directly above each
+observatory with optimally-oriented linear polarizations.  Which set is
+produced is selected by the \option{--population} option.
 
-The output of this program  is  a  list  of  the  injected events,
-starting at  the specified start time, ending at the specified end time,
-and containing one set  of burst parameters every specified time step.  The
+Injections are produced with various strains, and one of several strain
+distributions can be selected with the \option{--strain-dist} parameter.
+Some strain distributions require a ``min'' and or a ``max'' parameter, for
+example in the case of logarithmically-distributed \(h_{\mathrm{rss}}\) one
+needs to specify the smallest and largest values of \(\log
+h_{\mathrm{rss}}\).  These parameters are set using the
+\option{--strain-scale-min} and \option{--strain-scale-max} parameters.
+The following table lists the strain distributions, and the meaning of the
+``min'' and ``max'' parameters for each.
+\begin{center}\begin{tabular}{p{3cm}ccc}
+\hline\hline
+Description & \option{--strain-dist} & \option{--strain-scale-min} &
+\option{--strain-scale-max} \\
+\hline
+Constant \(h_{\mathrm{peak}}\) & \texttt{consthpeak} & \(\log_{10} h_{\mathrm{peak}}\) & n/a \\
+Constant \(h_{\mathrm{rss}}\) & \texttt{consthrss} & \(\log_{10} h_{\mathrm{rss}}\) & n/a \\
+Randomly select one of several preset values of \(h_{\mathrm{peak}}\) & \texttt{hpeakpresets} & n/a & n/a \\
+Uniformly-distributed \(\log_{10} h_{\mathrm{peak}}\) & \texttt{loghpeak} & \(\min \log_{10} h_{\mathrm{peak}}\) & \(\max \log_{10} h_{\mathrm{peak}}\) \\
+Uniformly-distributed \(\log_{10} h_{\mathrm{rss}}\) & \texttt{loghrss} & \(\min \log_{10} h_{\mathrm{rss}}\) & \(\max \log_{10} h_{\mathrm{rss}}\) \\
+\hline\hline
+\end{tabular}\end{center}
+
+The output of this program  is  a  list  of  the  injected events, starting
+at  the specified start time, ending at the specified end time, and
+containing one set  of burst parameters every specified time step.  The
 output is written to a file name in the standard burst pipeline format:
 \begin{center}
 \begin{verbatim}
@@ -1740,21 +1764,19 @@ $$
 $$
 where $f_0$ is the frequency of the injection.
 
-\item[\option{--hpeak} \parm{hpeak}]
-Optional.  The peak dimensionless strain $h_0$ for sine-gaussian,
-gaussian,  ringdown and ring-up waveforms.
+\item[\option{--strain-dist} \parm{name}]
+Required.  Select the strain amplitude distribution.  See the table in the
+Description section above for more information.
 
-\item[\option{--log-hpeak-min} \parm{log-hpeak-min}]
-Optional.  When this option is invoked,  a range of values of $h_0$ such
-that $\log_{10}(h_0)$ is uniformly distributed in the range
-$[$\parm{log-hpeak-min}$, $\parm{log-hpeak-max}$]$.  If this option is
-used, then \option{--log-hpeak-max} is required.
+\item[\option{--strain-scale-min} \parm{value}]
+Optional.  Used to set the minimum of the distribution selected with
+\option{--strain-scale}.  The meaning of the value set with this parameter
+depends on the distribution chosen.
 
-\item[\option{--log-hpeak-max} \parm{log-hpeak-max}]
-Optional.  When this option is invoked,  a range of values of $h_0$ such
-that $\log_{10}(h_0)$ is uniformly distributed in the range
-$[$\parm{log-hpeak-min}$, $\parm{log-hpeak-max}$]$.  If this option is
-used, then \option{--log-hpeak-min} is required.
+\item[\option{--strain-scale-max} \parm{value}]
+Optional.  Used to set the maximum of the distribution selected with
+\option{--strain-scale}.  The meaning of the value set with this parameter
+depends on the distribution chosen.
 
 \item[\option{--user-tag} \parm{string}]
 Optional. Set the user tag for this job to be \parm{string}. May also be
@@ -1792,17 +1814,19 @@ Optional.  This specifies the maximum number of the simulated waveforms to be in
 lalapps_binj \
 --gps-start-time 794063160 \
 --gps-end-time 794063610.5 \
---time-step 1000 \
---flow 130 \
---fhigh 600 \
---deltaf 90 \
+--time-step 200 \
+--flow 70.0 \
+--fhigh 2118.0 \
+--fratio 1.17629327749 \
 --quality 8.89 \
---hpeak 6.0e-20 \
+--strain-dist consthpeak
+--strain-scale-min 6.0e-20 \
 --seed 45
 \end{verbatim}
 
 \item[Author] 
-Jolien Creighton, Patrick Brady, Duncan Brown, Saikat Ray-Majumder
+Jolien Creighton, Patrick Brady, Duncan Brown, Saikat Ray-Majumder, Kipp
+Cannon
 \end{entry}
 \clearpage
 

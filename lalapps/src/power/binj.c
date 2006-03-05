@@ -61,6 +61,15 @@ enum population {
 	POPULATION_ZENITH
 };
 
+enum strain_dist {
+	STRAIN_DIST_NONE,
+	STRAIN_DIST_CONST_HPEAK,
+	STRAIN_DIST_CONST_HRSS,
+	STRAIN_DIST_LOG_HPEAK,
+	STRAIN_DIST_LOG_HRSS,
+	STRAIN_DIST_PRESET_HPEAK
+};
+
 struct options {
 	INT8 gps_start_time;
 	INT8 gps_end_time;
@@ -70,9 +79,9 @@ struct options {
 	double fratio;
 	double deltaf;
 	double quality;
-	double log10_hpeak_min;
-	double log10_hpeak_max;
-	int use_random_strain;
+	enum strain_dist strain_dist;
+	double strain_scale_min;
+	double strain_scale_max;
 	double log10_max_distance;
 	double log10_min_distance;
 	int seed;
@@ -82,7 +91,6 @@ struct options {
 	int simwaveform_min_number;
 	int simwaveform_max_number;
 	double tau;
-	double hpeak;
 	char *user_tag;
 	int mdc;	/* Need to set this to true if one wants to use MDC signals */
 };
@@ -99,9 +107,9 @@ static struct options options_defaults(void)
 		.fratio = 0.0,
 		.deltaf = 0.0,
 		.quality = -1.0,
-		.log10_hpeak_min = 0.0,
-		.log10_hpeak_max = 0.0,
-		.use_random_strain = 0,
+		.strain_dist = STRAIN_DIST_NONE,
+		.strain_scale_min = 0.0,
+		.strain_scale_max = 0.0,
 		.log10_max_distance = log10(10000.0),
 		.log10_min_distance = log10(100.0),
 		.seed = 1,
@@ -111,7 +119,6 @@ static struct options options_defaults(void)
 		.simwaveform_min_number = 0,
 		.simwaveform_max_number = 10,
 		.tau = 0.1,
-		.hpeak = 1.0e-20,
 		.user_tag = NULL,
 		.mdc = FALSE
 	};
@@ -136,9 +143,9 @@ static void print_usage(const char *prog)
 "  --deltaf DELF            linear spacing of injection frequencies (0.0)\n"\
 "  --quality Q              quality factor for SG waveforms TAU=Q/(sqrt(2) pi F)\n"\
 "  --tau TAU                duration of SG waveforms.  Q overrides TAU setting\n"\
-"  --hpeak HPEAK            amplitude of SG injection in strain units\n"\
-"  --log-hpeak-min LOGHMIN  min amplitude of SG injection in strain units\n"\
-"  --log-hpeak-max LOGHMAX  max amplitude of SG injection in strain units\n"\
+"  --strain-dist [consthpeak|consthrss|hpeakpresets|loghpeak|loghrss] select the strain distribution\n" \
+"  --strain-scale-min VALUE  mininum of the strain distribution\n"\
+"  --strain-scale-max VALUE  maximum of the strain distribution\n"\
 "  --min-distance           min distance of source in Kpc(default 100Kpc) \n"\
 "  --max-distance           max distance of source in Kpc(default 10000Kpc) \n"\
 "  --simwaveform-duration   duration of th esimulated waveform (Warren/Ott/ZM)\n"\
@@ -183,9 +190,9 @@ static struct options parse_command_line(int *argc, char **argv[], MetadataTable
 		{"gps-end-time", required_argument, NULL, 'G'},
 		{"gps-start-time", required_argument, NULL, 'H'},
 		{"help", no_argument, NULL, 'I'},
-		{"hpeak", required_argument, NULL, 'J'},
-		{"log-hpeak-max", required_argument, NULL, 'K'},
-		{"log-hpeak-min", required_argument, NULL, 'L'},
+		{"strain-dist", required_argument, NULL, 'J'},
+		{"strain-scale-max", required_argument, NULL, 'K'},
+		{"strain-scale-min", required_argument, NULL, 'L'},
 		{"max-distance", required_argument, NULL, 'M'},
 		{"min-distance", required_argument, NULL, 'N'},
 		{"quality", required_argument, NULL, 'O'},
@@ -266,19 +273,30 @@ static struct options parse_command_line(int *argc, char **argv[], MetadataTable
 		exit(0);
 
 	case 'J':
-		options.hpeak = atof(optarg);
-		ADD_PROCESS_PARAM("double");
+		if(!strcmp(optarg, "consthpeak"))
+			options.strain_dist = STRAIN_DIST_CONST_HPEAK;
+		else if(!strcmp(optarg, "consthrss"))
+			options.strain_dist = STRAIN_DIST_CONST_HRSS;
+		else if(!strcmp(optarg, "hpeakpresets"))
+			options.strain_dist = STRAIN_DIST_PRESET_HPEAK;
+		else if(!strcmp(optarg, "loghpeak"))
+			options.strain_dist = STRAIN_DIST_LOG_HPEAK;
+		else if(!strcmp(optarg, "loghrss"))
+			options.strain_dist = STRAIN_DIST_LOG_HRSS;
+		else {
+			fprintf(stderr, "error: unrecognized strain distribution \"%s\"", optarg);
+			exit(1);
+		}
+		ADD_PROCESS_PARAM("string");
 		break;
 
 	case 'K':
-		options.use_random_strain += 1;
-		options.log10_hpeak_max = atof(optarg);
+		options.strain_scale_max = atof(optarg);
 		ADD_PROCESS_PARAM("double");
 		break;
 
 	case 'L':
-		options.use_random_strain += 1;
-		options.log10_hpeak_min = atof(optarg);
+		options.strain_scale_min = atof(optarg);
 		ADD_PROCESS_PARAM("double");
 		break;
 
@@ -359,17 +377,56 @@ static struct options parse_command_line(int *argc, char **argv[], MetadataTable
 
 	/* check some of the input parameters for consistency */
 	if(strlen(options.waveform) > LIGOMETA_WAVEFORM_MAX) {
-		fprintf(stderr, "error: --waveform %s exceeds max length of %d\n", options.waveform, LIGOMETA_WAVEFORM_MAX);
+		fprintf(stderr, "error: --waveform %s exceeds max length of %d characters\n", options.waveform, LIGOMETA_WAVEFORM_MAX);
 		exit(1);
 	}
-	if(options.use_random_strain && (options.use_random_strain != 2)) {
-		fprintf(stderr, "Must supply upper and lower limits when using random strain\n");
+
+	switch(options.strain_dist) {
+	case STRAIN_DIST_NONE:
+		fprintf(stderr, "error: must select a strain distribution\n");
 		exit(1);
+
+	case STRAIN_DIST_CONST_HPEAK:
+	case STRAIN_DIST_CONST_HRSS:
+		if(options.strain_scale_min == 0.0) {
+			fprintf(stderr, "error: must set --strain-scale-min\n");
+			exit(1);
+		}
+		break;
+
+	case STRAIN_DIST_LOG_HPEAK:
+		if(options.strain_scale_min == 0.0) {
+			fprintf(stderr, "error: must set --strain-scale-min\n");
+			exit(1);
+		}
+		if(options.strain_scale_max == 0.0) {
+			fprintf(stderr, "error: must set --strain-scale-max\n");
+			exit(1);
+		}
+		break;
+
+	case STRAIN_DIST_LOG_HRSS:
+		if(options.strain_scale_min == 0.0) {
+			fprintf(stderr, "error: must set --strain-scale-min\n");
+			exit(1);
+		}
+		if(options.strain_scale_max == 0.0) {
+			fprintf(stderr, "error: must set --strain-scale-max\n");
+			exit(1);
+		}
+		break;
+
+	case STRAIN_DIST_PRESET_HPEAK:
+		if(options.strain_scale_min != 0.0 || options.strain_scale_max != 0.0)
+			fprintf(stderr, "warning: --strain-scale-min and/or --strain-scale-max provided but ignored\n");
+		break;
 	}
+
 	if(!options.gps_start_time || !options.gps_end_time) {
 		fprintf(stderr, "--gps-start-time and --gps-end-time are both required\n");
 		exit(1);
 	}
+
 	if((options.fratio != 0.0) && (options.deltaf != 0.0)) {
 		fprintf(stderr, "error:  cannot specify both --deltaf and --fratio\n");
 		exit(1);
@@ -407,7 +464,64 @@ static LIGOTimeGPS horizon_arrival_time(LALDetector detector, LIGOTimeGPS geocen
 
 static double Log10Deviate(RandomParams *params, double log10_min, double log10_max)
 {
-	return pow(10.0, log10_min + (log10_max -log10_min) * XLALUniformDeviate(params));
+	return pow(10.0, log10_min + (log10_max - log10_min) * XLALUniformDeviate(params));
+}
+
+
+/* 
+ * ============================================================================
+ *                           Frequency Distribution
+ * ============================================================================
+ */
+
+static double string_freq_next(struct options options)
+{
+	/*
+	 * what's distributed uniformly is theta^2, the square of the angle
+	 * the line of sight makes with direction of the cusp.
+	 */
+	const double thetasqmin = pow(options.fhigh, -2.0 / 3.0);
+	const double thetasqmax = pow(options.flow, -2.0 / 3.0);
+	const double thetasq = (thetasqmax - thetasqmin) * ((float) rand() / (float) RAND_MAX) + thetasqmin;
+
+	return pow(thetasq, -3.0 / 2.0);
+}
+
+
+static double freq_next(double freq, struct options options)
+{
+	if((options.deltaf == 0.0) && (options.fratio != 0.0))
+		freq *= options.fratio;
+	else if((options.deltaf != 0.0) && (options.fratio == 0.0))
+		freq += options.deltaf;
+	else {
+		fprintf(stderr, "error: internal error\n");
+		exit(1);
+	}
+	if(freq > options.fhigh)
+		freq = options.flow;
+	return freq;
+}
+
+
+/* 
+ * ============================================================================
+ *                               h_peak Presets
+ * ============================================================================
+ */
+
+static double hpeak_preset_next(RandomParams *params)
+{
+	double presets[] = {
+		1e-19,
+		2.0e-19,
+		3.0e-19,
+		3.3e-18,
+		5.3e-17
+	};
+	int i = XLALUniformDeviate(params) * sizeof(presets)/sizeof(*presets);
+
+	return presets[i];
 }
 
 
@@ -536,7 +650,6 @@ int main(int argc, char *argv[])
 	INT8 tinj;
 	double freq;
 	RandomParams *randParams = NULL;
-	int iamp = 1;
 	/* observatory information */
 	LALDetector lho = lalCachedDetectors[LALDetectorIndexLHODIFF];
 	LALDetector llo = lalCachedDetectors[LALDetectorIndexLLODIFF];
@@ -549,49 +662,50 @@ int main(int argc, char *argv[])
 	MetadataTable mdcinjections;
 	SimBurstTable *this_sim_burst = NULL;
 
-	/* set up inital debugging values */
+	/*
+	 * Initialize debug handler
+	 */
+
 	lal_errhandler = LAL_ERR_EXIT;
 	set_debug_level("LALMSGLVL2");
 
-	/* create the process and process params tables */
+	/*
+	 * Process params table and command line.
+	 */
+
+	procparams.processParamsTable = NULL;
+	options = parse_command_line(&argc, &argv, &procparams);
+
+	/*
+	 * Process table
+	 */
+
 	proctable.processTable = calloc(1, sizeof(ProcessTable));
 	XLALGPSTimeNow(&proctable.processTable->start_time);
 	LAL_CALL(populate_process_table(&status, proctable.processTable, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE), &status);
-	snprintf(proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " ");
-	procparams.processParamsTable = NULL;
-
-	/* parse command line */
-	options = parse_command_line(&argc, &argv, &procparams);
-
-	/* fill the comment */
 	if(options.user_tag)
 		snprintf(proctable.processTable->comment, LIGOMETA_COMMENT_MAX, "%s", options.user_tag);
-	else
-		snprintf(proctable.processTable->comment, LIGOMETA_COMMENT_MAX, "");
 
-	/* initialize random number generator */
+	/*
+	 * Initialize random number generator
+	 */
+
 	randParams = XLALCreateRandomParams(options.seed);
 
-	/* if we are doing string cusps; we want to inject the correct
-	   population of frequencies; what's distributed uniformly is
-	   theta^2 (the square of the angle the line of sight makes
-	   with direction of the cusp) */
-	if(!strcmp(options.waveform, "StringCusp")) {
-		REAL4 thetasqmin = pow(options.fhigh, -2. / 3.), thetasqmax = pow(options.flow, -2. / 3.), thetasq;
+	/*
+	 * Initial frequency
+	 */
 
-		fprintf(stdout, "Generating cusp population\n");
+	if(!strcmp(options.waveform, "StringCusp"))
+		freq = string_freq_next(options);
+	else
+		freq = options.flow;
 
-		srand(options.seed);
-		thetasq = (thetasqmax - thetasqmin) * ((float) rand() / (float) RAND_MAX) + thetasqmin;
-		freq = pow(thetasq, -3. / 2.);
-	}
+	/*
+	 * Main loop
+	 */
 
-	freq = options.flow;
 	for(tinj = options.gps_start_time; tinj <= options.gps_end_time; tinj += options.time_step) {
-		/* compute tau if quality was specified */
-		if(options.quality > 0.0)
-			options.tau = tau_from_q_and_f(options.quality, freq);
-
 		/* allocate the injection */
 		if(!this_sim_burst)
 			this_sim_burst = injections.simBurstTable = calloc(1, sizeof(SimBurstTable));
@@ -600,18 +714,28 @@ int main(int argc, char *argv[])
 			this_sim_burst = this_sim_burst->next;
 		}
 
-		/* GPS time of burst */
-		XLALINT8NSToGPS(&this_sim_burst->geocent_peak_time, tinj);
+		/* frequency */
+		this_sim_burst->freq = freq;
 
-		/* GMST of burst in hours */
-		this_sim_burst->peak_time_gmst = XLALGreenwichMeanSiderealTime(&this_sim_burst->geocent_peak_time) * 12.0 / LAL_PI;
+		/* tau */
+		if(options.quality > 0.0)
+			this_sim_burst->tau = tau_from_q_and_f(options.quality, this_sim_burst->freq);
+		else
+			this_sim_burst->tau = options.tau;
 
-		/* populate the sim burst table */
+		/* waveform */
 		snprintf(this_sim_burst->waveform, LIGOMETA_WAVEFORM_MAX, "%s", options.waveform);
 
+		/* peak time at geocentre in GPS seconds */
+		XLALINT8NSToGPS(&this_sim_burst->geocent_peak_time, tinj);
+
+		/* peak time at geocentre in Greenwich sidereal hours */
+		this_sim_burst->peak_time_gmst = XLALGreenwichMeanSiderealTime(&this_sim_burst->geocent_peak_time) * 12.0 / LAL_PI;
+
+		/* sky location and observatory peak times */
 		switch(options.population) {
 		case POPULATION_UNIFORM_SKY:
-			/* co-ordinates */
+			/* co-ordinate system */
 			sprintf(this_sim_burst->coordinates, "EQUATORIAL");
 
 			/* right ascension, declination, and polarization */
@@ -619,13 +743,13 @@ int main(int argc, char *argv[])
 			this_sim_burst->latitude = asin(2.0 * XLALUniformDeviate(randParams) - 1.0);
 			this_sim_burst->polarization = 2.0 * LAL_PI * XLALUniformDeviate(randParams);
 
-			/* arrival times */
+			/* observatory peak times in GPS seconds */
 			this_sim_burst->h_peak_time = equatorial_arrival_time(lho, this_sim_burst->geocent_peak_time, this_sim_burst->longitude, this_sim_burst->latitude);
 			this_sim_burst->l_peak_time = equatorial_arrival_time(llo, this_sim_burst->geocent_peak_time, this_sim_burst->longitude, this_sim_burst->latitude);
 			break;
 
 		case POPULATION_ZENITH:
-			/* co-ordinates */
+			/* co-ordinate system */
 			sprintf(this_sim_burst->coordinates, "ZENITH");
 
 			/* optimally oriented overhead */
@@ -633,81 +757,61 @@ int main(int argc, char *argv[])
 			this_sim_burst->latitude = 0.0;
 			this_sim_burst->polarization = 0.0;
 
-			/* arrival times */
+			/* observatory peak times in GPS seconds */
 			this_sim_burst->h_peak_time = horizon_arrival_time(lho, this_sim_burst->geocent_peak_time);
 			this_sim_burst->l_peak_time = horizon_arrival_time(llo, this_sim_burst->geocent_peak_time);
 			break;
 		}
 
-		/* compute amplitude information */
-		if(options.use_random_strain) {
-#if 1
-			options.hpeak = Log10Deviate(randParams, options.log10_hpeak_min, options.log10_hpeak_max);
+		/* strain */
+		switch(options.strain_dist) {
+		case STRAIN_DIST_NONE:
+			/* silence compiler warning */
+			break;
 
-			/*
-			 * Uncomment the lines below and comment the above
-			 * if want to inject uniformly spaced amplitude
-			 * waveforms
-			 */
-#else
-			if(iamp == 1) {
-				hpeak = pow(10, -19);
-				iamp++;
-			} else if(iamp == 2) {
-				hpeak = 2.0 * pow(10, -19);
-				iamp++;
-			} else if(iamp == 3) {
-				hpeak = 3.0 * pow(10, -19);
-				iamp++;
-			} else if(iamp == 4) {
-				hpeak = 3.3 * pow(10, -18);
-				iamp++;
-			} else if(iamp == 5) {
-				hpeak = 5.3 * pow(10, -17);
-				iamp = 1;
-			}
-#endif
+		case STRAIN_DIST_CONST_HPEAK:
+			this_sim_burst->hpeak = options.strain_scale_min;
+			this_sim_burst->hrss = hrss_from_tau_and_hpeak(this_sim_burst->tau, this_sim_burst->hpeak);
+			break;
+
+		case STRAIN_DIST_CONST_HRSS:
+			this_sim_burst->hrss = options.strain_scale_min;
+			this_sim_burst->hpeak = hpeak_from_tau_and_hrss(this_sim_burst->tau, this_sim_burst->hrss);
+			break;
+
+		case STRAIN_DIST_LOG_HPEAK:
+			this_sim_burst->hpeak = Log10Deviate(randParams, options.strain_scale_min, options.strain_scale_max);
+			this_sim_burst->hrss = hrss_from_tau_and_hpeak(this_sim_burst->tau, this_sim_burst->hpeak);
+			break;
+
+		case STRAIN_DIST_LOG_HRSS:
+			this_sim_burst->hrss = Log10Deviate(randParams, options.strain_scale_min, options.strain_scale_max);
+			this_sim_burst->hpeak = hpeak_from_tau_and_hrss(this_sim_burst->tau, this_sim_burst->hrss);
+			break;
+
+		case STRAIN_DIST_PRESET_HPEAK:
+			this_sim_burst->hpeak = hpeak_preset_next(randParams);
+			this_sim_burst->hrss = hrss_from_tau_and_hpeak(this_sim_burst->tau, this_sim_burst->hpeak);
+			break;
 		}
 
 		/* uniform distribution in log(distance) */
 		this_sim_burst->distance = Log10Deviate(randParams, options.log10_min_distance, options.log10_max_distance);
 
-		/* deal with the intrinsic signal parameters */
-		this_sim_burst->hrss = hrss_from_tau_and_hpeak(options.tau, options.hpeak);
-		this_sim_burst->hpeak = options.hpeak;
-		this_sim_burst->freq = freq;
-		this_sim_burst->tau = options.tau;
-		if(options.simwaveform_duration) {
-			this_sim_burst->dtplus = options.simwaveform_duration / 2.0;
-			this_sim_burst->dtminus = options.simwaveform_duration / 2.0;
-		} else {
-			this_sim_burst->dtplus = 4.0 * options.tau;
-			this_sim_burst->dtminus = 4.0 * options.tau;
-		}
+		/* dt */
+		if(options.simwaveform_duration)
+			this_sim_burst->dtplus = this_sim_burst->dtminus = options.simwaveform_duration / 2.0;
+		else
+			this_sim_burst->dtplus = this_sim_burst->dtminus = 4.0 * this_sim_burst->tau;
 
 		/* set the simulated wavenumber */
 		this_sim_burst->zm_number = options.simwaveform_min_number + (options.simwaveform_max_number - options.simwaveform_min_number) * XLALUniformDeviate(randParams);
 
-		/* increment to next frequency and test it's still in band */
-		if((options.deltaf == 0.0) && (options.fratio != 0.0))
-			freq *= options.fratio;
-		else if((options.deltaf != 0.0) && (options.fratio == 0.0))
-			freq += options.deltaf;
-		else {
-			fprintf(stderr, "error: something wrong with --deltaf and --fratio\n");
-			exit(1);
-		}
-		if(freq > options.fhigh)
-			freq = options.flow;
-
-		/* if we are doing string cusps; we want to inject the correct
-		   population of frequencies */
-		if(!strcmp(options.waveform, "StringCusp")) {
-			REAL4 thetasqmin = pow(options.fhigh, -2. / 3.), thetasqmax = pow(options.flow, -2. / 3.), thetasq;
-
-			thetasq = (thetasqmax - thetasqmin) * ((float) rand() / (float) RAND_MAX) + thetasqmin;
-			freq = pow(thetasq, -3. / 2.);
-		}
+		/* next frequency */
+		if(!strcmp(options.waveform, "StringCusp"))
+			freq = string_freq_next(options);
+		else
+			freq = freq_next(freq, options);
 	}
 
 	/* if using the MDC signal frames for injections:
