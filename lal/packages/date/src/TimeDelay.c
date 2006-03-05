@@ -85,7 +85,6 @@ XLALTimeDelay(
 	static const char *func = "XLALTimeDelay";
 	double delta_xyz[3];
 	double ehat_src[3];
-	const double colatitude = LAL_PI_2 - source_declination_radians;
 	const double greenwich_hour_angle = XLALGreenwichMeanSiderealTime(gpstime) - source_right_ascension_radians;
 
 	if(XLAL_IS_REAL8_FAIL_NAN(greenwich_hour_angle))
@@ -96,9 +95,9 @@ XLALTimeDelay(
 	 * source
 	 */
 
-	ehat_src[0] = sin(colatitude) * cos(greenwich_hour_angle);
-	ehat_src[1] = sin(colatitude) * -sin(greenwich_hour_angle);
-	ehat_src[2] = cos(colatitude);
+	ehat_src[0] = cos(source_declination_radians) * cos(greenwich_hour_angle);
+	ehat_src[1] = cos(source_declination_radians) * -sin(greenwich_hour_angle);
+	ehat_src[2] = sin(source_declination_radians);
 
 	/*
 	 * displacement of detector 1 from detector 2
