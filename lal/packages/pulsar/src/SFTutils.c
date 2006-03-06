@@ -623,16 +623,15 @@ LALDestroyTimestampVector (LALStatus *status,
 
 
 
-/** Given a start-time, duration and Tsft, returns a list of timestamps
+/** Given a start-time, duration and 'stepsize' tStep, returns a list of timestamps
  * covering this time-stretch.
- * returns NULL on out-of-memory
  */
 void
 LALMakeTimestamps(LALStatus *status,
 		  LIGOTimeGPSVector **timestamps, 	/**< [out] timestamps-vector */
 		  LIGOTimeGPS tStart, 			/**< GPS start-time */
 		  REAL8 duration, 			/**< duration in seconds */
-		  REAL8 Tsft)				/**< length of one (SFT) timestretch in seconds */
+		  REAL8 tStep)				/**< length of one (SFT) timestretch in seconds */
 {
   UINT4 i;
   UINT4 numSFTs;
@@ -647,9 +646,7 @@ LALMakeTimestamps(LALStatus *status,
   ASSERT (*timestamps == NULL,status, SFTUTILS_ENONULL, 
 	  SFTUTILS_MSGENONULL);
 
-  ASSERT ( duration >= Tsft, status, SFTUTILS_EINPUT, SFTUTILS_MSGEINPUT);
-
-  numSFTs = (UINT4)( duration / Tsft );			/* floor */
+  numSFTs = ceil( duration / tStep );			/* >= 1 !*/
   if ( (ts = LALCalloc (1, sizeof( *ts )) ) == NULL ) {
     ABORT (status,  SFTUTILS_EMEM,  SFTUTILS_MSGEMEM);
   }
@@ -664,15 +661,11 @@ LALMakeTimestamps(LALStatus *status,
     {
       ts->data[i] = tt;
       /* get next time-stamp */
-      /* NOTE: we add the interval Tsft successively instead of
-       * via iSFT*Tsft, because this way we avoid possible ns-rounding problems
-       * with a REAL8 interval, which becomes critial from about 100days on...
+      /* NOTE: we add the interval tStep successively (rounded correctly to ns each time!)
+       * instead of using iSFT*Tsft, in order to avoid possible ns-rounding problems
+       * with REAL8 intervals, which becomes critial from about 100days on...
        */
-      LALAddFloatToGPS( status->statusPtr, &tt, &tt, Tsft);
-      BEGINFAIL( status ) {
-	LALFree (ts->data);
-	LALFree (ts);
-      } ENDFAIL(status);
+      LALAddFloatToGPS( status->statusPtr, &tt, &tt, tStep);	/* can't fail */
 
     } /* for i < numSFTs */
 
