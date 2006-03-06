@@ -392,6 +392,8 @@ static struct options parse_command_line(int *argc, char **argv[], MetadataTable
 			fprintf(stderr, "error: must set --strain-scale-min\n");
 			exit(1);
 		}
+		if(options.strain_scale_max != 0.0)
+			fprintf(stderr, "warning: --strain-scale-max provided but ignored\n");
 		break;
 
 	case STRAIN_DIST_LOG_HPEAK:
@@ -417,8 +419,10 @@ static struct options parse_command_line(int *argc, char **argv[], MetadataTable
 		break;
 
 	case STRAIN_DIST_PRESET_HPEAK:
-		if(options.strain_scale_min != 0.0 || options.strain_scale_max != 0.0)
-			fprintf(stderr, "warning: --strain-scale-min and/or --strain-scale-max provided but ignored\n");
+		if(options.strain_scale_min != 0.0)
+			fprintf(stderr, "warning: --strain-scale-min provided but ignored\n");
+		if(options.strain_scale_max != 0.0)
+			fprintf(stderr, "warning: --strain-scale-max provided but ignored\n");
 		break;
 	}
 
@@ -488,8 +492,10 @@ static double string_freq_next(struct options options)
 }
 
 
-static double freq_next(double freq, struct options options)
+static double freq_next(struct options options)
 {
+	static double freq = 1e6;	/* force wrap around: 1 MHz > options.fhigh */
+
 	if((options.deltaf == 0.0) && (options.fratio != 0.0))
 		freq *= options.fratio;
 	else if((options.deltaf != 0.0) && (options.fratio == 0.0))
@@ -500,6 +506,7 @@ static double freq_next(double freq, struct options options)
 	}
 	if(freq > options.fhigh)
 		freq = options.flow;
+
 	return freq;
 }
 
@@ -648,14 +655,10 @@ int main(int argc, char *argv[])
 {
 	struct options options;
 	INT8 tinj;
-	double freq;
 	RandomParams *randParams = NULL;
-	/* observatory information */
+	LALStatus status = blank_status;
 	LALDetector lho = lalCachedDetectors[LALDetectorIndexLHODIFF];
 	LALDetector llo = lalCachedDetectors[LALDetectorIndexLLODIFF];
-	/* xml output data */
-	LALStatus status = blank_status;
-	/* tables */
 	MetadataTable proctable;
 	MetadataTable procparams;
 	MetadataTable injections;
@@ -693,29 +696,22 @@ int main(int argc, char *argv[])
 	randParams = XLALCreateRandomParams(options.seed);
 
 	/*
-	 * Initial frequency
-	 */
-
-	if(!strcmp(options.waveform, "StringCusp"))
-		freq = string_freq_next(options);
-	else
-		freq = options.flow;
-
-	/*
 	 * Main loop
 	 */
 
 	for(tinj = options.gps_start_time; tinj <= options.gps_end_time; tinj += options.time_step) {
 		/* allocate the injection */
-		if(!this_sim_burst)
-			this_sim_burst = injections.simBurstTable = calloc(1, sizeof(SimBurstTable));
-		else {
+		if(this_sim_burst) {
 			this_sim_burst->next = calloc(1, sizeof(SimBurstTable));
 			this_sim_burst = this_sim_burst->next;
-		}
+		} else
+			this_sim_burst = injections.simBurstTable = calloc(1, sizeof(SimBurstTable));
 
 		/* frequency */
-		this_sim_burst->freq = freq;
+		if(!strcmp(options.waveform, "StringCusp"))
+			this_sim_burst->freq = string_freq_next(options);
+		else
+			this_sim_burst->freq = freq_next(options);
 
 		/* tau */
 		if(options.quality > 0.0)
@@ -806,12 +802,6 @@ int main(int argc, char *argv[])
 
 		/* set the simulated wavenumber */
 		this_sim_burst->zm_number = options.simwaveform_min_number + (options.simwaveform_max_number - options.simwaveform_min_number) * XLALUniformDeviate(randParams);
-
-		/* next frequency */
-		if(!strcmp(options.waveform, "StringCusp"))
-			freq = string_freq_next(options);
-		else
-			freq = freq_next(freq, options);
 	}
 
 	/* if using the MDC signal frames for injections:
