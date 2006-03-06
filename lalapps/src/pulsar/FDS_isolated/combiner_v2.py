@@ -4,7 +4,9 @@
 ## combiner_v2.py based on combiner.py
 ## -adapted to new result file format, incl. f1dot values
 ## -produces input file for zellepolka from *ZIPPED* EaH result files
-
+## -optional inclusion of each result filename to each row of data
+##  for later frequency shifting to fixed fiducial time
+ 
 ## Import standard modules to the python path
 import string, os,sys, shutil, time, os.path, zipfile
 from optparse import OptionParser
@@ -25,12 +27,19 @@ parser.add_option("-i", "--tmpdir", dest="tmpdir",
 parser.add_option("-r", "--resultfile", dest="resultfile",
                   help="Name of the result file.",
 		  default="Combined")
+parser.add_option("-n", "--includefnames", dest="includefnames",
+                  help="Ask your intention whether to include each result filenames.",
+		  default=1)
 parser.add_option("-v", "--verbose", dest="vrbflg",
                   help="Ask your intention for safety.",
 		  default=1)
 (options, args) = parser.parse_args()
 
+inclfnames=options.includefnames
 vrbflg=options.vrbflg
+
+if inclfnames:
+    print "'Einstein at Home' - result filenames will be included into combined file."
 
 ## set-up and normalize directory names.
 workdir=os.path.abspath(options.workdir)+"/"
@@ -104,7 +113,7 @@ def addinfoToEachRaw(targetfile="",info=""):
     __tmpfilename=targetfile+"_tmp_addfilename"
     shutil.move(targetfile,__tmpfilename)
     __command=["sed -e 's/^/",
-               info, "    /' < ", __tmpfilename,
+               info, " /' < ", __tmpfilename,
                " > ", targetfile]
     __comexe=string.join(__command,"")
     os.system(__comexe)
@@ -193,6 +202,7 @@ for parentdir, childdirs, files in os.walk(targetdir):
            shutil.move(copiedfile, tmpdir)  
            
 ## This loop add various information to files.
+
 fileid=1
 for parentdir, childdirs, files in os.walk(tmpdir):
     for file in files:              # For each file under the targetdir,
@@ -200,7 +210,9 @@ for parentdir, childdirs, files in os.walk(tmpdir):
 	   targetfile=os.path.join(parentdir,file)
 	   deleteinfo(targetfile=targetfile,label="%")
            addinfoToEachRaw(targetfile=targetfile,info=str(fileid))
+           if inclfnames == 1:
+               addinfoToEachRaw(targetfile=targetfile,info=str(file))
            fileid+=1           
 	   appendfile(fromfile=targetfile,tofile=resultfile)
-addfooterinfo(targetfile=resultfile,info="%DONE")
+addfooterinfo(targetfile=resultfile,info="%DONE") 
 os.system("rm -rf "+tmpdir)
