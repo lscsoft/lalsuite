@@ -168,12 +168,14 @@ options.calibration_cache = os.path.join(options.aux_dir, options.calibration_ca
 
 cache_dir = "cache/"
 out_dir = "logs/"
-psds_per_job = 4
-psds_per_injection = 4
-overlap = 0.25
-# try to do this many simultaneous injections beteen flow and fhigh
-num_injections = 11
-injection_steps = 2
+if options.seg.duration() < 3600:
+	psds_per_job = 4
+	psds_per_injection = 4
+else:
+	psds_per_job = 16
+	psds_per_injection = 16
+# do this injections beteen flow and fhigh
+num_injections = 22
 
 
 #
@@ -457,11 +459,6 @@ def make_lladd_fragment(dag, parents, seg, tag):
 #
 
 def make_multipower_fragment(dag, powerparents, lladdparents, framecache, seglist, tag, injargs = {}):
-	# we need to run lladd even if there's only one job so that the output
-	# file gets the right name (skipping lladd in the case of a single job
-	# leaves file named .xml.fixed).  this can be changed when the
-	# sngl_burst table produced by LAL is fixed, and we don't need the
-	# fix_sngl_burst nodes in this DAG any more.
 	node = make_lladd_fragment(dag, [make_power_fragment(dag, powerparents, framecache, seg, tag, injargs) for seg in seglist] + lladdparents, seglist.extent(), "POWER_%s" % tag)
 	node.set_output("%s-POWER_%s-%s-%s.xml" % (options.instrument, tag, int(seglist.extent()[0]), int(seglist.extent().duration())))
 	return node
@@ -551,10 +548,9 @@ def make_gsiscp_fragment(dag, parents, destination):
 #
 
 def make_binj_fragment(dag, tag, seg, offset, flow, fhigh, fratio):
-	time_step = float(binjjob.get_opts()["time-step"])
-	start = seg[0] - seg[0] % time_step + time_step * offset
-	if start < seg[0]:
-		start += time_step
+	# one injection every time-step / pi seconds
+	period = num_injections * float(binjjob.get_opts()["time-step"]) / math.pi
+	start = seg[0] - seg[0] % period + period * offset
 
 	node = power.BurstInjNode(binjjob)
 	node.set_start(start)
@@ -582,22 +578,10 @@ def make_multibinj_fragment(dag, tag, seg):
 	flow = float(powerjob.get_opts()["low-freq-cutoff"])
 	fhigh = flow + float(powerjob.get_opts()["bandwidth"])
 
-	# smallest allowed neighbouring frequency ratio based on Q of
-	# injections
-	min_fratio = (1.0 + 1.0/float(binjjob.get_opts()["quality"])) ** 2.0
-
-	# maximum number of simultaneous injections based on min separation
-	injections = num_injections
-	max_injections = int(math.log(fhigh/flow) / math.log(min_fratio)) + 1
-	if injections > max_injections:
-		injections = max_injections
-
-	# determine frequency ratio from number of simultaneous injections
-	fratio = (fhigh / flow) ** (1.0/(injections - 1.0))
+	# determine frequency ratio from number of injections across band
+	fratio = (fhigh / flow) ** (1.0/(num_injections - 1.0))
 
 	binjnodes = [make_binj_fragment(dag, tag, seg, 0.0, flow, fhigh, fratio)]
-	for n in range(1, injection_steps):
-		binjnodes.append(make_binj_fragment(dag, tag, seg, float(n)/float(injection_steps), flow * fratio**(float(n)/float(injection_steps)), fhigh, fratio))
 
 	node = make_lladd_fragment(dag, binjnodes, seg, tag)
 	node.set_output("HL-%s-%d-%d.xml" % (tag, int(seg[0]), int(seg.duration())))
@@ -684,4 +668,4 @@ make_gsiscp_fragment(dag, [darmpowerfrag, binjfindfrag], options.gsiscp_dest)
 dag.write_sub_files()
 dag.write_dag()
 
-print options.trig_seg[0] + overlap, options.trig_seg[1] - overlap
+print options.trig_seg[0], options.trig_seg[1]
