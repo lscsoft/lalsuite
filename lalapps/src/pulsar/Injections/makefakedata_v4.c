@@ -141,6 +141,7 @@ REAL8 uvar_Band;		/**< bandwidth of output SFT in Hz (= 1/2 sampling frequency) 
 
 /* SFT params */
 REAL8 uvar_Tsft;		/**< SFT time baseline Tsft */
+REAL8 uvar_SFToverlap;		/**< overlap SFTs by this many seconds */
 
 /* noise to add [OPTIONAL] */
 CHAR *uvar_noiseSFTs;		/**< Glob-like pattern specifying noise-SFTs to be added to signal */
@@ -493,6 +494,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
     else if (uvar_f1dot != 0)	msp = 1;
     else 				msp = 0;
     if (msp) {
+      /* memory not initialized, but ALL alloc'ed entries will be set below! */
       TRY (LALDCreateVector(status->statusPtr, &(cfg->spindown), msp), status);
     }
     switch (msp) 
@@ -525,10 +527,11 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
   /* ---------- determine requested signal- start + duration ---------- */
   {
     /* check input consistency: *uvar_timestampsFile, uvar_startTime, uvar_duration */
-    BOOLEAN haveStart, haveDuration, haveTimestamps;
+    BOOLEAN haveStart, haveDuration, haveTimestamps, haveOverlap;
     haveStart = LALUserVarWasSet(&uvar_startTime);
     haveDuration = LALUserVarWasSet(&uvar_duration);
     haveTimestamps = LALUserVarWasSet(&uvar_timestampsFile);
+    haveOverlap = LALUserVarWasSet ( &uvar_SFToverlap );
 
     /*-------------------- special case: Hardware injection ---------- */
     /* don't allow timestamps-file and SFT-output */
@@ -544,56 +547,53 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 	    LALPrintError ("\nHardware injection mode is incompatible with producing SFTs\n\n");
 	    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
 	  }
-      } /* ----- if hardware-injection ----- */
+      } /* if hardware-injection */
     
-    if ( ! ( haveStart || haveTimestamps ) )
-      {
-	LALPrintError ("\nCould not infer start of observation-period (need either"
-		       "'startTime' or 'timestampsFile')\n\n");
-	ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-      }
-    if ( (haveStart || haveDuration) && haveTimestamps )
-      {
-	LALPrintError ("\nOverdetermined observation-period (both 'startTime'/'duration'"
-		       "and 'timestampsFile' given)\n\n");
-	ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-      }
-
-    if ( haveStart && !haveDuration )
-      {
-	LALPrintError ("\nCould not infer duration of observation-period (need 'duration')\n\n");
-	ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-      }
-
-    /* determine observation period (start + duration) */
+    /* ----- determine timestamps covering the observation period */
     if ( haveTimestamps )
       {
 	LIGOTimeGPSVector *timestamps = NULL;
-	LIGOTimeGPS t1, t0;
-	REAL8 duration;
-
+	if ( haveStart || haveDuration || haveOverlap )
+	  {
+	    LALPrintError ( "\nUsing --timestampsFile is incompatible with either of --startTime, --duration or --SFToverlap\n\n");
+	    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+	  }
 	TRY (LALReadTimestampsFile(status->statusPtr, &timestamps, uvar_timestampsFile), status);
-
-	t1 = timestamps->data[timestamps->length - 1 ];
-	t0 = timestamps->data[0];
-	TRY (LALDeltaFloatGPS(status->statusPtr, &duration, &t1, &t0), status);
-	duration += uvar_Tsft;
-
-	cfg->startTimeGPS = timestamps->data[0];
-	cfg->duration = (UINT4)ceil(duration+0.5);
 	cfg->timestamps = timestamps;
       } /* haveTimestamps */
     else
       {
-	cfg->startTimeGPS.gpsSeconds = uvar_startTime;
-	cfg->startTimeGPS.gpsNanoSeconds = 0;
-	cfg->duration = (UINT4)uvar_duration;
+	REAL8 tStep = uvar_Tsft - uvar_SFToverlap;
+	LIGOTimeGPS tStart;
+	if ( !haveStart || !haveDuration )
+	  {
+	    LALPrintError ( "\nYou need to specify either --timestampsFile OR --startTime and --duration \n\n");
+	    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+	  }
+	if ( uvar_SFToverlap > uvar_Tsft )
+	  {
+	    LALPrintError ("\nERROR: --SFToverlap cannot be larger than --Tsft!\n\n");
+	    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);	    
+	  }
 	/* for simplicity we *ALWAYS* use timestamps, 
 	 * so we generate them now as the user didnt' specify them */
-	TRY(LALMakeTimestamps(status->statusPtr, &(cfg->timestamps), cfg->startTimeGPS, 
-			      uvar_duration, uvar_Tsft ), status);
+	XLALFloatToGPS ( &tStart, uvar_startTime );
+	TRY(LALMakeTimestamps(status->statusPtr, &(cfg->timestamps), tStart, uvar_duration, tStep ), status);
       } /* !haveTimestamps */
 
+    /* ----- figure out start-time and duration ----- */
+    {
+      LIGOTimeGPS t1, t0;
+      REAL8 duration;
+      
+      t0 = cfg->timestamps->data[0];
+      t1 = cfg->timestamps->data[cfg->timestamps->length - 1 ];
+      TRY (LALDeltaFloatGPS(status->statusPtr, &duration, &t1, &t0), status);
+      duration += uvar_Tsft;
+      
+      cfg->startTimeGPS = cfg->timestamps->data[0];
+      cfg->duration = (UINT4)ceil ( duration );	/* round up to seconds */
+    }
 
     if ( cfg->duration < uvar_Tsft )
       {
@@ -901,7 +901,8 @@ InitUserVars (LALStatus *status)
   LALregREALUserVar(status,   Band,	 0 , UVAR_OPTIONAL, "bandwidth of output SFT in Hz (= 1/2 sampling frequency)");
 
   /* SFT properties */
-  LALregREALUserVar(status,   Tsft, 	 0 , UVAR_OPTIONAL, "Time baseline Tsft in seconds");
+  LALregREALUserVar(status,   Tsft, 	 0 , UVAR_OPTIONAL, "Time baseline of one SFT in seconds");
+  LALregREALUserVar(status,   SFToverlap,0 , UVAR_OPTIONAL, "Overlap between successive SFTs in seconds");
 
   /* pulsar params */
   LALregREALUserVar(status,   refTime, 	'S', UVAR_OPTIONAL, "Pulsar reference time tRef in SSB (if 0: use startTime -> SSB)");
