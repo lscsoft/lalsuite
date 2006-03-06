@@ -1038,7 +1038,7 @@ UvarValue2String (LALStatus *status, CHAR **outstr, LALUserVariable *uvar)
       if (*(REAL8*)(uvar->varp) == 0)
 	strcpy (buf, "0.0");	/* makes it more explicit that's it a REAL */
       else
-	sprintf (buf, "%g", *(REAL8*)(uvar->varp) );
+	sprintf (buf, "%.16g", *(REAL8*)(uvar->varp) );
       break;
     case UVAR_STRING:
       ptr = *(CHAR**)(uvar->varp);
