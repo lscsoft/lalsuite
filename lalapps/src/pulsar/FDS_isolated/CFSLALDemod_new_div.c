@@ -143,13 +143,8 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
           tcos = tc-d*ts-d2*tc-1.0;
         }
 
+#ifdef USE_LUT_Y
 	/* use LUT here, too */
-	/*
-        y = - LAL_TWOPI * ( f * skyConst[ tempInt1[ alpha ]-1 ] + ySum[ alpha ] );
-        realQ = cos(y);
-        imagQ = sin(y);
-	*/
-
         REAL8 yTemp = f * skyConst[ tempInt1[ alpha ]-1 ] + ySum[ alpha ];
         REAL8 yRem = yTemp - (UINT4)yTemp;
 
@@ -164,6 +159,11 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
           imagQ = -imagQ;
           realQ = tc - d * ts - d2 * tc;
         }
+#else
+        y = - LAL_TWOPI * ( f * skyConst[ tempInt1[ alpha ]-1 ] + ySum[ alpha ] );
+        realQ = cos(y);
+        imagQ = sin(y);
+#endif
 
         k1 = (UINT4)xTemp - params->Dterms + 1;
 
