@@ -1,3 +1,5 @@
+RCSID( "$Id$");
+
 /* <lalVerbatim file="LALDemodCP"> */
 void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params) 
 /* </lalVerbatim> */

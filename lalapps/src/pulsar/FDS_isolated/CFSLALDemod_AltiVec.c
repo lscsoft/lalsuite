@@ -1,3 +1,5 @@
+RCSID( "$Id$");
+
 /* ADAPTED FROM http://developer.apple.com/hardware/ve/algorithms.html , author: Ian Ollmann*/
 static inline vector float vec_div( vector float a, vector float b ) {
 	//Get the reciprocal estimate

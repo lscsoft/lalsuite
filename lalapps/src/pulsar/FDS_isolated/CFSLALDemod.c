@@ -3,8 +3,6 @@
                                                          Bernd Machenschalk */
 #include "ComputeFStatistic.h"
 
-RCSID( "$Id$");
-
 #if defined(USE_BOINC) && defined(_WIN32)
 #include "win_lib.h"
 #endif
@@ -35,6 +33,8 @@ extern UINT4 maxSFTindex;  /**< maximal sftindex, for error-checking */
 #elif defined(USE_EXP_LALDEMOD)
 #include "CFSLALDemod_Experimental.c"
 #else /* USE_R4LALDEMOD, USE_ALTIVEC */
+
+RCSID( "$Id$");
 
 /* <lalVerbatim file="LALDemodCP"> */
 void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params) 
