@@ -105,7 +105,7 @@ XLALTimeDelay(
 
 	delta_xyz[0] = detector1_earthfixed_xyz_metres[0] - detector2_earthfixed_xyz_metres[0];
 	delta_xyz[1] = detector1_earthfixed_xyz_metres[1] - detector2_earthfixed_xyz_metres[1];
-	delta_xyz[2] = detector1_earthfixed_xyz_metres[1] - detector2_earthfixed_xyz_metres[2];
+	delta_xyz[2] = detector1_earthfixed_xyz_metres[2] - detector2_earthfixed_xyz_metres[2];
 
 	/*
 	 * Time difference: time taken for light to travel the intervening
