@@ -267,7 +267,8 @@ void LALRemoveKnownLinesInSFTVect (LALStatus   *status,
 				   SFTVector   *sftVect, 
 				   INT4        width,    
 				   INT4        window,   
-				   CHAR        *linefile);
+				   CHAR        *linefile,
+				   RandomParams *randPar);
 
 
 #ifdef  __cplusplus

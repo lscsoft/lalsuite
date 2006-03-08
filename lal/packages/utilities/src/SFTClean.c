@@ -875,12 +875,12 @@ void LALRemoveKnownLinesInSFTVect (LALStatus   *status,
 				   SFTVector   *sftVect,  /**< SFTVector to be cleaned */
 				   INT4        width,     /**< maximum width to be cleaned -- set sufficiently large if all bins in each line are to be cleaned*/      
 				   INT4        window,    /**< window size for noise floor estimation in vicinity of a line */
-				   CHAR        *linefile) /**< file with list of lines */
+				   CHAR        *linefile, /**< file with list of lines */
+				   RandomParams *randPar) /**< for creating random numbers */ 
 {
 
   FILE *fp=NULL;   
   INT4 seed, ranCount;  
-  RandomParams *randPar=NULL; 
 
   static LineNoiseInfo   lines, lines2;
   static LineHarmonicsInfo harmonics; 
