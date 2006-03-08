@@ -426,9 +426,29 @@ int main(int argc, char *argv[]){
     /* clean sfts if required */
     if ( LALUserVarWasSet( &uvar_linefile ) )
       {
+	RandomParams *randPar=NULL;
+	FILE *fpRand=NULL;
+	INT4 seed, ranCount;  
+
+	if ( (fpRand = fopen("/dev/urandom", "r")) == NULL ) {
+	  fprintf(stderr,"Error in opening /dev/urandom" ); 
+	  exit(1);
+	} 
+
+	if ( (ranCount = fread(&seed, sizeof(seed), 1, fpRand)) != 1 ) {
+	  fprintf(stderr,"Error in getting random seed" );
+	  exit(1);
+	}
+
+	LAL_CALL ( LALCreateRandomParams (&status, &randPar, seed), &status );
+
 	/* maxBinsClean is set to 100 by default -- should be large enough */
-	LAL_CALL( LALRemoveKnownLinesInSFTVect ( &status, inputSFTs, uvar_maxBinsClean, uvar_blocksRngMed/2, uvar_linefile), &status);
-      } 
+	LAL_CALL( LALRemoveKnownLinesInSFTVect ( &status, inputSFTs, uvar_maxBinsClean, uvar_blocksRngMed/2, uvar_linefile, randPar), &status);
+
+	fclose(fpRand);
+	LAL_CALL ( LALDestroyRandomParams (&status, &randPar), &status);
+
+      } /* end cleaning */
 
     /* free memory */
     if ( LALUserVarWasSet( &uvar_ifo ) )    
