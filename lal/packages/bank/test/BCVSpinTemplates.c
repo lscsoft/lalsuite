@@ -83,7 +83,7 @@ main(int argc, char **argv)
   coarseIn.alpha = 0.L;
   coarseIn.numFcutTemplates = 4;
   coarseIn.betaMin = 0.0;
-  coarseIn.betaMax = 100.;
+  coarseIn.betaMax = 400.;
   coarseIn.gridSpacing = Hexagonal;
 
   memset( &(coarseIn.shf), 0, sizeof(REAL8FrequencySeries) );
