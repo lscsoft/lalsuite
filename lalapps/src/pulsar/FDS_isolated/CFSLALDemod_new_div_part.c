@@ -145,28 +145,30 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
           tcos = tc-d*ts-d2*tc-1.0;
         }
 
+#ifdef USE_LUT_Y
 	/* use LUT here, too */
-
+	{
+	  REAL8 yTemp = f * skyConst[ tempInt1[ alpha ]-1 ] + ySum[ alpha ];
+	  REAL8 yRem = yTemp - (INT4)yTemp;
+	  if (yRem < 0) { yRem += 1.0f; }
+	  index = (UINT4)( yRem * LUT_RES + 0.5 );
+	  {
+	    REAL8 d = LAL_TWOPI*(yRem - (REAL8)index/(REAL8)LUT_RES);
+	    REAL8 d2=0.5*d*d;
+	    REAL8 ts = sinVal[index];
+	    REAL8 tc = cosVal[index];
+	    
+	    imagQ = ts + d * tc - d2 * ts;
+	    imagQ = -imagQ;
+	    realQ = tc - d * ts - d2 * tc;
+	  }
+	}
+#else
         y = - LAL_TWOPI * ( f * skyConst[ tempInt1[ alpha ]-1 ] + ySum[ alpha ] );
         realQ = cos(y);
         imagQ = sin(y);
+#endif
 
-	/*
-        REAL8 yTemp = f * skyConst[ tempInt1[ alpha ]-1 ] + ySum[ alpha ];
-        REAL8 yRem = yTemp - (UINT4)yTemp;
-
-        index = (UINT4)( yRem * LUT_RES + 0.5 );
-        {
-          REAL8 d = LAL_TWOPI*(yRem - (REAL8)index/(REAL8)LUT_RES);
-          REAL8 d2=0.5*d*d;
-          REAL8 ts = sinVal[index];
-          REAL8 tc = cosVal[index];
-                
-          imagQ = ts + d * tc - d2 * ts;
-          imagQ = -imagQ;
-          realQ = tc - d * ts - d2 * tc;
-        }
-	*/
         k1 = (UINT4)xTemp - params->Dterms + 1;
 
         sftIndex = k1 - params->ifmin;
@@ -219,48 +221,39 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
                 
               } /* for k < klim */
 
+	    if(sftIndex-1 > maxSFTindex) {
+	      fprintf(stderr,"ERROR! sftIndex = %d > %d in TestLALDemod\nalpha=%d,"
+		      "k1=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
+		      sftIndex-1, maxSFTindex, alpha, k1, xTemp, params->Dterms, params->ifmin);
+	      ABORT(status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+	    }
+
           } /* if x could become close to 0 */
         else
-	  {
-	    REAL4 tsin2pi = tsin * (REAL4)OOTWOPI; /* to get TWOPI out of the loop */
+          {
+            COMPLEX8 *Xalpha_k = Xalpha + sftIndex;
+	    REAL4 accFreq = 1.0; /* accumulating frequency factor, becomes common denominator */
+	    REAL4 tsin2pi = tsin * (REAL4)OOTWOPI;
 	    REAL4 tcos2pi = tcos * (REAL4)OOTWOPI;
+	    REAL4 XRes=0.0, XIms=0.0; /* sums of Xa.re and Xa.im */
 
-	    COMPLEX8 *Xalpha_k = Xalpha + sftIndex;
-	    COMPLEX8 Xal = *Xalpha_k;
-
-	    REAL4 Sn = Xal.re; /* partial sums */
-	    REAL4 Tn = Xal.im;
-
-	    REAL4 pn = tempFreq1;
-	    REAL4 qn = pn;
-	    REAL4 U_alpha, V_alpha;
-	  
-	    for(k=0; k < klim ; k++)
+            for(k=0; k < klim ; k++)
 	      {
-		Xalpha_k ++;
-		Xal = *Xalpha_k;
-	      
-		pn = pn - 1.0f;			/* p_(n+1) */
-		Sn = pn * Sn + qn * Xal.re;	/* S_(n+1) */
-		Tn = pn * Tn + qn * Xal.im;	/* T_(n+1) */
-		qn *= pn;			/* q_(n+1) */
-	      }
-	  
-	    U_alpha = Sn / qn;
-	    V_alpha = Tn / qn;
-	  
-	    realXP = tsin2pi * U_alpha - tcos2pi * V_alpha;
-	    imagXP = tcos2pi * U_alpha + tsin2pi * V_alpha;
-	  
+                Xalpha_k ++;
+
+                XRes = tempFreq1 * XRes + (*Xalpha_k).re * accFreq;
+                XIms = tempFreq1 * XIms + (*Xalpha_k).im * accFreq;
+
+		accFreq *= (REAL4)tempFreq1;
+                tempFreq1 --;
+              } /* for k < klim */
+
+	    XRes /= accFreq;
+	    XIms /= accFreq;
+
+            realXP = tsin2pi * XRes - tcos2pi * XIms;
+            imagXP = tcos2pi * XRes + tsin2pi * XIms;
           } /* if x cannot be close to 0 */
-
-        if(sftIndex-1 > maxSFTindex) {
-          fprintf(stderr,"ERROR! sftIndex = %d > %d in TestLALDemod\nalpha=%d,"
-                 "k1=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
-                 sftIndex-1, maxSFTindex, alpha, k1, xTemp, params->Dterms, params->ifmin);
-	  ABORT(status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-	}
-
 
         /* implementation of amplitude demodulation */
         {
