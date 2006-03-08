@@ -47,35 +47,49 @@ LALInspiralBCVSpinBank(
 /* </lalVerbatim> */
 
 {
-   /* Ntmp is the maximum number of beta values we are allowed to have */
-  INT4 N, i, k, Ntmp=1000, nbeta;
+  /* Nmax is the maximum number of beta values we are allowed to have */
+  INT4 Nmax=1000;
+  INT4 N, i, k, nbeta, totTemps=0;
   REAL8 *Sn, MM, beta, betaMin, betaMax;
-  REAL8 fmin, fmax, beta_list[Ntmp+1];
-  REAL8 effmetric_list[3][3][Ntmp+1];
+  REAL8 fmin, fmax, beta_list[Nmax+1];
+  REAL8 effmetric_list[3][3][Nmax+1];
   INT4 nlist; 
+  /* Let us declare the metric, bank parameters and vector sequences that will
+   * hold the psi0-psi3 values at the location of the templates 
+   */
   static InspiralMetric metric;
-
-  InspiralBankParams bankParams;
+  static InspiralBankParams bankParams;
   static CreateVectorSequenceIn in; 
   static REAL4VectorSequence *list=NULL;
+  static REAL4VectorSequence *totList=NULL;
+  SnglInspiralTable *bank=NULL, *tmpBank=NULL;
 	
   INITSTATUS(status, "LALInspiralBCVSpinBank", LALINSPIRALBCVSPINBANKC );
   ATTATCHSTATUSPTR( status );
 
+  ASSERT( coarseIn != NULL, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
+  ASSERT( *tiles == NULL, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
 	
   /*
    * Create the structure necessary for vector sequence to
-   * temporarily store the template points.
+   * temporarily store the values of psi0-psi3-beta.
+   * list will store the values of psi0-psi3 at each beta level.
+   * totList will store the values of psi0-psi3-beta which will
+   * be used to fill the output structure tiles.
    */
   in.length = 1;
   in.vectorLength = 2;
+	  
   LALSCreateVectorSequence( status->statusPtr, &list, &in );
   CHECKSTATUSPTR( status );
 
+  LALSCreateVectorSequence( status->statusPtr, &totList, &in );
+  CHECKSTATUSPTR( status );
+
   /* 
-   * coarseIn structure knows about the range of (1)beta, (2)psi0,
-   * and (3) psi3. It also provides the power spectrum of noise,
-   * minimal match (in mmCoarse), etc.
+   * coarseIn structure knows about the range of beta, psi0,
+   * and psi3. It also provides the power spectrum of noise,
+   * minimal match (in mmCoarse), upper and lower freq cutoffs.
    */
 
   MM = coarseIn->mmCoarse;
@@ -95,7 +109,8 @@ LALInspiralBCVSpinBank(
   bankParams.metric = &metric;
 
   /*
-  noisespec(N, Sn, fmin, fmax);
+   * Instead of noisespec(N, Sn, fmin, fmax) let us use the noise
+   * PSD provided by coarseIn.
    */
   Sn = coarseIn->shf.data->data;
   N = coarseIn->shf.data->length-1;
@@ -103,22 +118,33 @@ LALInspiralBCVSpinBank(
   printf("Num beta steps=%d Sn[0]=%e, Sn[N/2]=%e\n", N, Sn[0], Sn[N/2]);
    */
 
+  /* Use Tagoshi's code to get values of beta b/w betaMin and betaMax at
+   * the given minimal match MM and the effective metric at the corresponding
+   * points.
+   */
   BCVspin_beta_placement_effmetric(MM, betaMin, betaMax, N, Sn, fmin, fmax,
 		  effmetric_list, beta_list, &nbeta);
 	
+  /*
   printf("Num beta steps=%d\n", nbeta);
+  */
+  /*
+   * There are nbeta levels of beta.
+   * Next, obtain the psi0-psi3 bank at each value of beta
+   */
 	
   for(k=1; k<=nbeta; k++)
   {
 	  double a, b, c, det, q;
-	  printf("k=%d beta=%f\n", k, beta_list[k]);
-	  printf("Effective metric\n");
-		  
+	  int j, ndx;
+  
+	  /* a, b, c are the three independent values of the metric
+	   */
 	  a = metric.G00 = effmetric_list[1][1][k];
 	  b = metric.G01 = effmetric_list[1][2][k];
 	  c = metric.G11 = effmetric_list[2][2][k];
 
-	  /* Diagonalize the metric. */
+	  /* Diagonalize the metric and store the diagonalized values in the metric */
   
 	  det = a * c - b * b;
 	  q = sqrt( (a-c)*(a-c) + 4. * b*b );
@@ -130,13 +156,16 @@ LALInspiralBCVSpinBank(
 	  }
 	  else
 	  {
-	/* metric->theta = 0.5 * atan(2.*b/(a-c));                  */
-	/* We want to always measure the angle from the             */
-	/* semi-major axis to the tau0 axis which is given by       */
-	/* the following line as opposed to the line above          */
-		  
+	  /* metric->theta = 0.5 * atan(2.*b/(a-c)); We want to always 
+	   * measure the angle from the semi-major axis to the tau0 axis 
+	   * which is given by the following line as opposed to the line above
+	   */
 		  metric.theta = atan( b / (metric.g00 - c) );
 	  }
+
+	  /* Now we are ready to call Thomas' BCV template bank code
+	   * to compute the psi0-psi3 values depending on the value of LowGM.
+	   */
 
 	  if (coarseIn->LowGM == -4 || coarseIn->LowGM == -2)
 	  {
@@ -147,8 +176,72 @@ LALInspiralBCVSpinBank(
 		  LALInspiralCreateFlatBank (status->statusPtr, list, &bankParams);
 	  }
 	  CHECKSTATUSPTR( status );
-	  printf("g00=%e g11=%e theta=%e Nf=%d\n", metric.g00, metric.g11, metric.theta, list->length);
+
+	  /* Optionally output the metric on the screen
+	   */
+	  fprintf(stderr, "k=%d beta=%e g00=%e g11=%e theta=%e Nf=%d\n", 
+			  k, beta_list[k], metric.g00, metric.g11, metric.theta, list->length);
+
+	  /* Create additional memory to add the psi0-psi3 values at the current 
+	   * value of beta to the psi0-psi3 values stored from previous values of beta.
+	   */
+	  ndx = list->length;
+	  totTemps += ndx;
+	  totList->data = (REAL4 *) LALRealloc( totList->data, (3*totTemps) * sizeof(REAL4) );
+                      
+	  if ( !totList->data )
+	  {
+		  ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
+	  }
+	  for (j=0; j<ndx; j++)
+	  {
+		  int m1 = 2*j;
+		  int m2 = 3*j + 3*totTemps-3*ndx;
+		  totList->data[m2+0] = list->data[m1+0];
+		  totList->data[m2+1] = list->data[m1+1];
+		  totList->data[m2+2] = (float) (beta_list[k]);
+		  /*
+		  printf("%e %e %e %e\n", 
+		  totList->data[m2], totList->data[m2+1], totList->data[m2+2], x); 
+		  */
+	  }
   }
+  for (k=0; k<totTemps; k++)
+  {
+	  printf("%e %e %e\n", totList->data[3*k], totList->data[3*k+1], totList->data[3*k+2]); 
+  }
+    
+  /* Convert output data structure. */
+ 
+  tmpBank = bank = (SnglInspiralTable *) LALCalloc(1, sizeof(SnglInspiralTable));
+  if (bank == NULL){
+	  ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
+  }
+  *tiles = bank;
+  for( k = 0; k < totTemps; k++ )
+  {
+	  bank = bank->next = (SnglInspiralTable *) LALCalloc( 1, sizeof( SnglInspiralTable ) );
+	  if (bank == NULL)
+	  {
+		  ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
+	  }
+	  bank->psi0 = totList->data[3*k+0];
+	  bank->psi3 = totList->data[3*k+1];
+	  bank->beta = totList->data[3*k+2];
+	  bank->f_final = fmax;
+  }
+    
+  /* Free tiles template, which is blank. */
+    
+  *ntiles = totTemps;
+  bank = (*tiles)->next;
+  LALFree( *tiles );
+  *tiles = bank;
+
+  LALFree (totList->data);
+  LALFree (list->data);
+  LALFree (totList);
+  LALFree (list);
   DETATCHSTATUSPTR(status);
   RETURN (status);
 }
@@ -1289,8 +1382,8 @@ int BCVspin_beta_placement(double MinMatch,double beta_min,double beta_max,
 			   int N,double *Sn,double fmin,double fmax,
 			   double *beta_list,int *nbeta)
 {
-  int i,j,k,nn=100,Ntmp=1000;
-  double bcv2metric[4][4],a[4][4],deltax[4],tmplist[Ntmp+1],tmp;
+  int i,j,k,nn=100,Nmax=1000;
+  double bcv2metric[4][4],a[4][4],deltax[4],tmplist[Nmax+1],tmp;
 
 
   tmp=beta_min;
@@ -1338,7 +1431,7 @@ int BCVspin_beta_placement(double MinMatch,double beta_min,double beta_max,
 	while (status == GSL_CONTINUE && iter < max_iter);
     gsl_root_fsolver_free (s);
 	
-  for(i=2;i<=Ntmp;i++){
+  for(i=2;i<=Nmax;i++){
     BCVspin_metric(MinMatch,N,Sn,fmin,fmax,tmplist[i-1],bcv2metric,0);
     BCVspin_spacing(MinMatch,bcv2metric,a,deltax);
 		
@@ -1376,10 +1469,10 @@ int BCVspin_beta_placement(double MinMatch,double beta_min,double beta_max,
 		gsl_root_fsolver_free (s);
 	}
   *nbeta=i-1;
-  if(i>Ntmp){
+  if(i>Nmax){
     fprintf(stderr,"Something is wrong in BCVspin_beta_placement.\n");
     fprintf(stderr,"The number of beta points exceeds the limit.\n");
-    fprintf(stderr,"i=%d Ntmp=%d\n",i,Ntmp);
+    fprintf(stderr,"i=%d Nmax=%d\n",i,Nmax);
     exit(1);
   }
   
