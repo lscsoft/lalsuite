@@ -445,9 +445,8 @@ int main(int argc, char *argv[]){
 	/* maxBinsClean is set to 100 by default -- should be large enough */
 	LAL_CALL( LALRemoveKnownLinesInSFTVect ( &status, inputSFTs, uvar_maxBinsClean, uvar_blocksRngMed/2, uvar_linefile, randPar), &status);
 
+	/* 	LAL_CALL ( LALDestroyRandomParams (&status, &randPar), &status); */
 	fclose(fpRand);
-	LAL_CALL ( LALDestroyRandomParams (&status, &randPar), &status);
-
       } /* end cleaning */
 
     /* free memory */
