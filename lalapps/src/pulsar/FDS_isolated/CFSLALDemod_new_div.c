@@ -221,6 +221,13 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
                 
               } /* for k < klim */
 
+	    if(sftIndex-1 > maxSFTindex) {
+	      fprintf(stderr,"ERROR! sftIndex = %d > %d in TestLALDemod\nalpha=%d,"
+		      "k1=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
+		      sftIndex-1, maxSFTindex, alpha, k1, xTemp, params->Dterms, params->ifmin);
+	      ABORT(status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+	    }
+
           } /* if x could become close to 0 */
         else
           {
@@ -252,14 +259,6 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 	    imagXP /= accFreq;
 
           } /* if x cannot be close to 0 */
-
-        if(sftIndex-1 > maxSFTindex) {
-          fprintf(stderr,"ERROR! sftIndex = %d > %d in TestLALDemod\nalpha=%d,"
-                 "k1=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
-                 sftIndex-1, maxSFTindex, alpha, k1, xTemp, params->Dterms, params->ifmin);
-	  ABORT(status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-	}
-
 
         /* implementation of amplitude demodulation */
         {
