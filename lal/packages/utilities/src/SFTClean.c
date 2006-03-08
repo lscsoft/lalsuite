@@ -812,6 +812,7 @@ void LALCleanSFTVector (LALStatus       *status,
   ATTATCHSTATUSPTR (status);   
   
   ASSERT (sftVect, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);  
+  ASSERT (randPar, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);  
   ASSERT (sftVect->data, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);  
   ASSERT (sftVect->length > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);  
   ASSERT (lineInfo, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
@@ -967,7 +968,6 @@ void LALRemoveKnownLinesInSFTVect (LALStatus   *status,
       LALFree(harmonics.rightWing);
     }
 
-  TRY( LALDestroyRandomParams (status->statusPtr, &randPar), status);
 
   DETATCHSTATUSPTR (status);
   /* normal exit */
