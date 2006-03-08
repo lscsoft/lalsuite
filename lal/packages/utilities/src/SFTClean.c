@@ -909,7 +909,7 @@ void LALRemoveKnownLinesInSFTVect (LALStatus   *status,
   TRY( LALFindNumberHarmonics (status->statusPtr, &harmonics, linefile), status); 
   nHarmonicSets = harmonics.nHarmonicSets; 
 
-  if (nHarmonicSets > 0)
+  if (nHarmonicSets > 0) /* nothing to do otherwise */
     {
       harmonics.startFreq = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
       harmonics.gapFreq = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
@@ -942,31 +942,29 @@ void LALRemoveKnownLinesInSFTVect (LALStatus   *status,
       TRY( LALChooseLines( status->statusPtr, &lines2, &lines, fmin, fmax), status);
       nLines = lines2.nLines;
       
-      /* clean the sft vector -- in this case vector contains just a single sft */
-      TRY ( LALCleanSFTVector( status->statusPtr, sftVect, width, window, &lines2, randPar), status);
-    }
-  
-  /* free memory */    
-  if (nLines > 0)
-    {
+      /* clean the sft vector if there were any lines between fmin and fmax*/
+      if ( nLines > 0 ) {
+	TRY ( LALCleanSFTVector( status->statusPtr, sftVect, width, window, &lines2, randPar), status);
+
+	/* if nLines2 == 0 then it is freed inside LALChooseLines -- change this? */
+	LALFree(lines2.lineFreq);
+	LALFree(lines2.leftWing);
+	LALFree(lines2.rightWing);
+
+      }
+      
+      /* free memory */
       LALFree(lines.lineFreq);
       LALFree(lines.leftWing);
       LALFree(lines.rightWing);
 
-      LALFree(lines2.lineFreq);
-      LALFree(lines2.leftWing);
-      LALFree(lines2.rightWing);
-
-    }
- 
-  if (nHarmonicSets > 0)
-    {
       LALFree(harmonics.startFreq);
       LALFree(harmonics.gapFreq);
       LALFree(harmonics.numHarmonics);
       LALFree(harmonics.leftWing);
       LALFree(harmonics.rightWing);
-    }
+
+    } /* if nHarmonicSets > 0 */
 
 
   DETATCHSTATUSPTR (status);
