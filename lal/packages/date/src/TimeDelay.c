@@ -74,15 +74,15 @@ static double dotprod(const double vec1[3], const double vec2[3])
 
 /* <lalVerbatim file="TimeDelayCP"> */
 double
-XLALTimeDelay(
+XLALArrivalTimeDiff(
 	const double detector1_earthfixed_xyz_metres[3],
 	const double detector2_earthfixed_xyz_metres[3],
-	double source_right_ascension_radians,
-	double source_declination_radians,
+	const double source_right_ascension_radians,
+	const double source_declination_radians,
 	const LIGOTimeGPS *gpstime
 )
 { /* </lalVerbatim> */
-	static const char *func = "XLALTimeDelay";
+	static const char *func = "XLALArrivalTimeDiff";
 	double delta_xyz[3];
 	double ehat_src[3];
 	const double greenwich_hour_angle = XLALGreenwichMeanSiderealTime(gpstime) - source_right_ascension_radians;
@@ -100,18 +100,18 @@ XLALTimeDelay(
 	ehat_src[2] = sin(source_declination_radians);
 
 	/*
-	 * displacement of detector 1 from detector 2
+	 * position of detector 2 with respect to detector 1
 	 */
 
-	delta_xyz[0] = detector1_earthfixed_xyz_metres[0] - detector2_earthfixed_xyz_metres[0];
-	delta_xyz[1] = detector1_earthfixed_xyz_metres[1] - detector2_earthfixed_xyz_metres[1];
-	delta_xyz[2] = detector1_earthfixed_xyz_metres[2] - detector2_earthfixed_xyz_metres[2];
+	delta_xyz[0] = detector2_earthfixed_xyz_metres[0] - detector1_earthfixed_xyz_metres[0];
+	delta_xyz[1] = detector2_earthfixed_xyz_metres[1] - detector1_earthfixed_xyz_metres[1];
+	delta_xyz[2] = detector2_earthfixed_xyz_metres[2] - detector1_earthfixed_xyz_metres[2];
 
 	/*
-	 * Time difference: time taken for light to travel the intervening
-	 * distance along the direction to the source.  If (detLoc1 -
-	 * detLoc2) \cdot ehat_src is positive, then detector 1 is closer
-	 * to the source and hence the time delay is positive.
+	 * Arrival time at detector 1 - arrival time at detector 2.  This
+	 * is positive when the wavefront arrives at detector 1 after
+	 * detector 2 (and so t at detector 1 is greater than t at detector
+	 * 2).
 	 */
 
 	return dotprod(ehat_src, delta_xyz) / LAL_C_SI;
@@ -131,7 +131,7 @@ LALTimeDelay(
 	ASSERT(p_time_diff, stat, TIMEDELAYH_ENUL, TIMEDELAYH_MSGENUL);
 	ASSERT(p_dets_time_and_source, stat, TIMEDELAYH_ENUL, TIMEDELAYH_MSGENUL);
 
-	*p_time_diff = XLALTimeDelay(p_dets_time_and_source->p_det_and_time1->p_detector->location, p_dets_time_and_source->p_det_and_time2->p_detector->location, p_dets_time_and_source->p_source->longitude, p_dets_time_and_source->p_source->latitude, p_dets_time_and_source->p_det_and_time1->p_gps);
+	*p_time_diff = -XLALArrivalTimeDiff(p_dets_time_and_source->p_det_and_time1->p_detector->location, p_dets_time_and_source->p_det_and_time2->p_detector->location, p_dets_time_and_source->p_source->longitude, p_dets_time_and_source->p_source->latitude, p_dets_time_and_source->p_det_and_time1->p_gps);
 
 	ASSERT(!XLAL_IS_REAL8_FAIL_NAN(*p_time_diff), stat, DATEH_ERANGEGPSABS, DATEH_MSGERANGEGPSABS);
 
@@ -150,7 +150,7 @@ double XLALTimeDelayFromEarthCenter(
 {/* </lalVerbatim> */
 	const double earth_center[3] = {0.0, 0.0, 0.0};
 
-	return XLALTimeDelay(earth_center, detector_earthfixed_xyz_metres, source_right_ascension_radians, source_declination_radians, gpstime);
+	return XLALArrivalTimeDiff(detector_earthfixed_xyz_metres, earth_center, source_right_ascension_radians, source_declination_radians, gpstime);
 }
 
 

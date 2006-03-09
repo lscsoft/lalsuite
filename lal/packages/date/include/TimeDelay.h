@@ -130,11 +130,11 @@ DetTimeAndASource;
 </lalLaTeX> */
 
 double
-XLALTimeDelay(
+XLALArrivalTimeDiff(
 	const double detector1_earthfixed_xyz_metres[3],
 	const double detector2_earthfixed_xyz_metres[3],
-	double source_right_ascension_radians,
-	double source_declination_radians,
+	const double source_right_ascension_radians,
+	const double source_declination_radians,
 	const LIGOTimeGPS *gpstime
 );
 
