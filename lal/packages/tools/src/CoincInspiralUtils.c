@@ -1058,7 +1058,26 @@ XLALGenerateCoherentBank(
   
 }
   
-
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+void
+XLALInspiralDistanceCutPsi0Psi3BCVC(
+    CoincInspiralTable        **coincInspiral,
+    InspiralAccuracyList       *accuracyParams
+    )
+/* </lalVerbatim> */
+{
+}
+    
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+void
+XLALInspiralDistanceCutPsi0BCVC(
+    CoincInspiralTable        **coincInspiral,
+    InspiralAccuracyList       *accuracyParams
+    )
+/* </lalVerbatim> */
+{
+}
+    
 
 /* <lalVerbatim file="CoincInspiralUtilsCP"> */
 void
@@ -1092,11 +1111,13 @@ XLALInspiralDistanceCutBCVC(
     CoincInspiralTable *tmpCoinc = thisCoinc;
     thisCoinc = thisCoinc->next;
       
+    kappaA = accuracyParams->ifoAccuracy[ifoA].kappa;
+    epsilonA = accuracyParams->ifoAccuracy[ifoA].epsilon;
+
     /* loop over all IFO combinations */
     for ( ifoA = 0; ifoA < LAL_NUM_IFO; ifoA++ )
     {
-
-      /* extract the needed parameters from the structure */
+      /* extract needed parameters */
       kappaA = accuracyParams->ifoAccuracy[ifoA].kappa;
       epsilonA = accuracyParams->ifoAccuracy[ifoA].epsilon;
 
@@ -1112,7 +1133,6 @@ XLALInspiralDistanceCutBCVC(
           snrA = tmpCoinc->snglInspiral[ifoA]->snr;
           snrB = tmpCoinc->snglInspiral[ifoB]->snr;
 
-	  
 	  /* first we were using epsilon = -4 and kappa = 0.65 
 	     then, epsilon =0 and kappa=0.7 */	        
 
@@ -1123,6 +1143,7 @@ XLALInspiralDistanceCutBCVC(
             discardTrigger = 1;
             break;
           }
+	  
 	  
 	}
       }
@@ -1347,27 +1368,45 @@ XLALCoincInspiralTimeNS (
 
 REAL4 
 XLALCoincInspiralStat(
-    CoincInspiralTable     *coincInspiral,
-    CoincInspiralStatistic  coincStat
+    CoincInspiralTable     	*coincInspiral,
+    CoincInspiralStatistic  	coincStat,
+    CoincInspiralBittenLParams *bittenLParams
     )
 {
   InterferometerNumber  ifoNumber;
   SnglInspiralTable     *snglInspiral;
-
+  REAL4 		statValues[LAL_NUM_IFO];
   REAL4 statValue = 0;
+  INT4  i;
   
   if( coincStat == no_stat )
   {
     return(0);
   }
+
+  /* for bittenL only*/
+  if( coincStat == bitten_l)
+  {
+    for ( i = 0; i < LAL_NUM_IFO ; i++)
+    {
+      statValues[i] = 1e9; /* sufficiently high values */
+    }
+  }
  
+
   for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
   {
     if ( (snglInspiral = coincInspiral->snglInspiral[ifoNumber]) )
     {
       if ( coincStat == snrsq )
-      {
+      {        
         statValue += snglInspiral->snr * snglInspiral->snr;
+      }
+      if ( coincStat == bitten_l )
+      {
+        statValues[ifoNumber] = bittenLParams->param_a[ifoNumber] * snglInspiral->snr 
+		- bittenLParams->param_b[ifoNumber];
+	statValue += snglInspiral->snr * snglInspiral->snr ;          
       }
       else if ( coincStat == s3_snr_chi_stat )
       {
@@ -1379,6 +1418,25 @@ XLALCoincInspiralStat(
       }
     }
   }
+
+  /*    for the bitten L case only , we need to compare different 
+	values and keep the minimum one */
+  if ( coincStat == bitten_l )
+  {
+    statValue = sqrt(statValue);
+    
+    for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+    {
+      if ( (snglInspiral = coincInspiral->snglInspiral[ifoNumber]) )
+      {
+	if (statValues[ifoNumber] < statValue)
+	{
+	 statValue = statValues[ifoNumber];
+	}
+      }
+    }
+  }
+
   return( statValue );
 }
 
@@ -1388,7 +1446,8 @@ int
 XLALClusterCoincInspiralTable (
     CoincInspiralTable        **coincList,
     INT8                        dtimeNS,
-    CoincInspiralStatistic      coincStat
+    CoincInspiralStatistic      coincStat,
+    CoincInspiralBittenLParams *bittenLParams
     )
 /* </lalVerbatim> */
 {
@@ -1422,8 +1481,8 @@ XLALClusterCoincInspiralTable (
     /* find events within the cluster window */
     if ( (nextTime - thisTime) < dtimeNS )
     {
-      REAL4 thisStat = XLALCoincInspiralStat( thisCoinc, coincStat );
-      REAL4 nextStat = XLALCoincInspiralStat( nextCoinc, coincStat );
+      REAL4 thisStat = XLALCoincInspiralStat( thisCoinc, coincStat, bittenLParams);
+      REAL4 nextStat = XLALCoincInspiralStat( nextCoinc, coincStat, bittenLParams );
       
       if ( nextStat > thisStat )
       {
