@@ -42,6 +42,12 @@ LIGOTimeGPS * XLALGPSSetREAL8( LIGOTimeGPS *epoch, REAL8 t )
   return epoch;
 }
 
+/** Returns the GPS time as a REAL8. */
+REAL8 XLALGPSGetREAL8( const LIGOTimeGPS *epoch )
+{
+  return XLALGPSToINT8NS( epoch ) / XLAL_BILLION_REAL8;
+}
+
 /* general purpose functions */
 
 /** Adds dt to a GPS time. */
