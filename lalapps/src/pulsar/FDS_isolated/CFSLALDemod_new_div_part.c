@@ -239,13 +239,12 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 
             for(k=0; k < klim ; k++)
 	      {
-                Xalpha_k ++;
-
                 XRes = tempFreq1 * XRes + (*Xalpha_k).re * accFreq;
                 XIms = tempFreq1 * XIms + (*Xalpha_k).im * accFreq;
 
 		accFreq *= (REAL4)tempFreq1;
                 tempFreq1 --;
+                Xalpha_k ++;
               } /* for k < klim */
 
 	    XRes /= accFreq;
