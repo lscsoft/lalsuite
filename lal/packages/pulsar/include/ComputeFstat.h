@@ -111,7 +111,11 @@ typedef struct {
 /** Multi-IFO container for antenna-pattern coefficients a^X(t), b^X(t) */
 typedef struct {
   UINT4 length;		/**< number of IFOs */
-  AMCoeffs **data;	/**< array of amcoeffs (pointers) */
+  AMCoeffs **data;	/**< array of (weighed) amcoeffs (pointers) */
+  REAL8 A;		/**< multi-IFO weighed antenna-pattern coefficient A */
+  REAL8 B;
+  REAL8 C;
+  REAL8 D;		/**< determinant D = A*B - C^2 */
 } MultiAMCoeffs;
 
 /** Type containing F-statistic proper plus the two complex amplitudes Fa and Fb (for ML-estimators) */
