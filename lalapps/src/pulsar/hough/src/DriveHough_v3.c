@@ -128,6 +128,9 @@ BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps, uvar_printStats, 
 #define FALSE (1==0)
 
 
+void PrintLogFile (LALStatus *status, CHAR *dir, CHAR *basename, CHAR *skyfile, CHAR *linefile, CHAR *executable );
+
+
 /***********************************************/
 
 int main(int argc, char *argv[]){
@@ -321,8 +324,13 @@ int main(int argc, char *argv[]){
     }
   }
 
-  /* write log file with command line arguments, cvs tags, and contents of skypatch file */
-  LAL_CALL( PrintLogFile( &status, uvar_dirnameOut, uvar_fbasenameOut, uvar_skyfile, argv[0]), &status);
+
+  /* write log file with command line arguments, cvs tags, contents of skypatch file and, if required, contents of linefile*/
+  if ( LALUserVarWasSet( &uvar_linefile ) )    
+    LAL_CALL( PrintLogFile( &status, uvar_dirnameOut, uvar_fbasenameOut, uvar_skyfile, uvar_linefile, argv[0]), &status);
+  else
+    LAL_CALL( PrintLogFile( &status, uvar_dirnameOut, uvar_fbasenameOut, uvar_skyfile, NULL, argv[0]), &status);
+
 
 
   /***** start main calculations *****/
@@ -1268,6 +1276,7 @@ void PrintLogFile (LALStatus       *status,
 		   CHAR            *dir,
 		   CHAR            *basename,
 		   CHAR            *skyfile,
+		   CHAR            *linefile,
 		   CHAR            *executable )
 {
   CHAR *fnameLog=NULL; 
@@ -1321,7 +1330,21 @@ void PrintLogFile (LALStatus       *status,
   {
     CHAR command[1024] = "";
     sprintf(command, "cat %s >> %s", skyfile, fnameLog);
-    system(command);
+    system(command);    
+
+  }
+
+  /* copy contents of linefile if necessary */
+  if ( linefile ) {
+    if ((fpLog = fopen(fnameLog, "a")) != NULL) 
+      {
+	CHAR command[1024] = "";
+	fprintf (fpLog, "\n\n# Contents of linefile:\n");
+	fprintf (fpLog, "# -----------------------------------------\n");
+	fclose (fpLog);
+	sprintf(command, "cat %s >> %s", linefile, fnameLog);      
+	system (command);	 
+      } 
   }
 
   /* append an ident-string defining the exact CVS-version of the code used */

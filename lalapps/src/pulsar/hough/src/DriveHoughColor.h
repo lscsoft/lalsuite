@@ -191,15 +191,10 @@ void PrintHoughTemplates (LALStatus       *status,
 	 	      HOUGHDemodPar   *parDem);	     
 
 void Periodo2PSDrng (LALStatus  *status,
-           REAL8Periodogram1    *psd,
-           REAL8Periodogram1    *peri,
-	   UINT2                *blocksRNG);
+		     REAL8Periodogram1    *psd,
+		     REAL8Periodogram1    *peri,
+		     UINT2                *blocksRNG);
 
-void PrintLogFile (LALStatus       *status,
-		   CHAR            *dir,
-		   CHAR            *basename,
-		   CHAR            *skyfile,
-		   CHAR            *executable);
 
 void PrintnStarFile (LALStatus                   *status,
 		     HoughSignificantEventVector *eventVec,
