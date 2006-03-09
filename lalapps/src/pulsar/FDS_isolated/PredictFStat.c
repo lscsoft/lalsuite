@@ -127,7 +127,6 @@ REAL8 uvar_psi;
 REAL8 uvar_h0;
 REAL8 uvar_cosiota;
 REAL8 uvar_sqrtSh;
-REAL8 uvar_duration;
 
 REAL8 uvar_fmin;
 REAL8 uvar_fmax;
@@ -287,7 +286,7 @@ int main(int argc,char *argv[])
     REAL8 A1, A2, A3, A4, h0, cosi, F = 0.0;
     REAL8 aPlus, aCross;
     REAL8 twopsi, twophi;
-    REAL8 tSFT;
+    REAL8 Tsft;
     UINT4 X;  
 
     MultiAMCoeffs *multiAMcoef = NULL;
@@ -323,10 +322,10 @@ int main(int argc,char *argv[])
 	  } /* for alpha < numSFTsX */
       } /* for X < numDetectors */
     
-    tSFT = 1 / (GV.multiSFTs->data[X]->data[0].deltaF);
-    At = (tSFT ) * A;
-    Bt = (tSFT ) * B;
-    Ct = (tSFT ) * C;
+    Tsft = 1 / (GV.multiSFTs->data[X]->data[0].deltaF);
+    At = (Tsft ) * A;
+    Bt = (Tsft ) * B;
+    Ct = (Tsft ) * C;
     Dt = A * B - C * C; 
     
     twophi = 2.0 * uvar_phi;
@@ -399,7 +398,6 @@ ATTATCHSTATUSPTR (status);
  uvar_h0 = 0.0;
  uvar_cosiota = 0.0;
  uvar_sqrtSh = 1.0;
- uvar_duration = 0.0;
  
  uvar_FreqBand = 0.0;
  uvar_Alpha 	= 0.0;
@@ -626,7 +624,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
       MultiPSDVector *psds = NULL;
       REAL8 S_hat;
 
- /*      TRY ( LALNormalizeMultiSFTVect (status->statusPtr, &psds, cfg->multiSFTs, uvar_RngMedWindow ), status ); */
+       TRY ( LALNormalizeMultiSFTVect (status->statusPtr, &psds, cfg->multiSFTs, uvar_RngMedWindow ), status ); 
       /* note: the normalization S_hat would be required to compute the ML-estimator for A^\mu */
        TRY ( LALComputeMultiNoiseWeights  (status->statusPtr, &(cfg->multiNoiseWeights), &S_hat, psds, uvar_RngMedWindow ), status );
    
