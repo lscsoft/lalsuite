@@ -1103,6 +1103,11 @@ LALBCVCVetoSingleInspiral(
     {
       veto = 1;
     }
+
+  if (  (tmpEvent->psi0 < alphafParams.psi0cut))
+  {
+  veto =0;
+  }
 	
     if ( veto == 0 )
     {
