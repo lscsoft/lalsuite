@@ -494,20 +494,28 @@ static double string_freq_next(struct options options)
 
 static double freq_next(struct options options)
 {
-	static double freq = 1e6;	/* force wrap around: 1 MHz > options.fhigh */
+	static int i = 0;
+	double freq;
 
-	if((options.deltaf == 0.0) && (options.fratio != 0.0))
-		freq *= options.fratio;
-	else if((options.deltaf != 0.0) && (options.fratio == 0.0))
-		freq += options.deltaf;
-	else {
-		fprintf(stderr, "error: internal error\n");
-		exit(1);
+	while(1) {
+		if((options.deltaf == 0.0) && (options.fratio != 0.0))
+			freq = options.flow * pow(options.fratio, i++);
+		else if((options.deltaf != 0.0) && (options.fratio == 0.0))
+			freq = options.flow + options.deltaf * i++;
+		else {
+			fprintf(stderr, "error: internal error\n");
+			exit(1);
+		}
+		if(freq <= options.fhigh)
+			return freq;
+		if(i == 1) {
+			/* catch infinite loop */
+			fprintf(stderr, "error: internal error\n");
+			exit(1);
+		}
+		/* reset i and recompute */
+		i = 0;
 	}
-	if(freq > options.fhigh)
-		freq = options.flow;
-
-	return freq;
 }
 
 
