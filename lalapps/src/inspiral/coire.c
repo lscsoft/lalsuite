@@ -177,6 +177,7 @@ int main( int argc, char *argv[] )
   CoincInspiralTable   *thisCoinc = NULL;
   CoincInspiralTable   *missedCoincHead = NULL;
 
+  CoincInspiralBittenLParams bittenLParams;
 
   LIGOLwXMLStream       xmlStream;
   MetadataTable         outputTable;
@@ -203,6 +204,8 @@ int main( int argc, char *argv[] )
     calloc( 1, sizeof(ProcessParamsTable) );
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
 
+  memset( &bittenLParams, 0, sizeof(CoincInspiralBittenLParams) );
+  
 
   /*
    *
@@ -237,6 +240,12 @@ int main( int argc, char *argv[] )
       {"coinc-cut",               required_argument,      0,              'D'},
       {"injection-file",          required_argument,      0,              'I'},
       {"injection-window",        required_argument,      0,              'T'},
+      {"h1-bittenl-a",            required_argument,      0,              'a'},
+      {"h1-bittenl-b",            required_argument,      0,              'b'},
+      {"h2-bittenl-a",            required_argument,      0,              'j'},
+      {"h2-bittenl-a",            required_argument,      0,              'n'},
+      {"l1-bittenl-a",            required_argument,      0,              'l'},
+      {"l1-bittenl-b",            required_argument,      0,              'p'},
       {"missed-injections",       required_argument,      0,              'm'},
       {0, 0, 0, 0}
     };
@@ -246,7 +255,7 @@ int main( int argc, char *argv[] )
     int option_index = 0;
     size_t optarg_len;
 
-    c = getopt_long_only ( argc, argv, "hzZ:c:Vk:g:i:o:S:e:N:C:t:d:D;I:T:m", 
+    c = getopt_long_only ( argc, argv, "a:b:c:d:e:f:hd:nzZ:Vk:g:i:o:S:N:C:t:d:D;I:T:m", 
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -267,6 +276,36 @@ int main( int argc, char *argv[] )
               long_options[option_index].name, optarg );
           exit( 1 );
         }
+        break;
+	
+      case 'a':
+        bittenLParams.param_a[LAL_IFO_H1] = atof(optarg);
+	ADD_PROCESS_PARAM( "float", "%s", optarg);
+        break;
+      
+      case 'b':
+        bittenLParams.param_b[LAL_IFO_H1] = atof(optarg);
+	ADD_PROCESS_PARAM( "float", "%s", optarg);
+        break;
+
+      case 'j':
+        bittenLParams.param_a[LAL_IFO_H2] = atof(optarg);
+	ADD_PROCESS_PARAM( "float", "%s", optarg);
+        break;
+
+      case 'n':
+        bittenLParams.param_b[LAL_IFO_H2] = atof(optarg);
+	ADD_PROCESS_PARAM( "float", "%s", optarg);
+        break;
+
+      case 'l':
+        bittenLParams.param_a[LAL_IFO_L1] = atof(optarg);
+	ADD_PROCESS_PARAM( "float", "%s", optarg);
+        break;
+
+      case 'p':
+        bittenLParams.param_b[LAL_IFO_L1] = atof(optarg);
+	ADD_PROCESS_PARAM( "float", "%s", optarg);
         break;
 
       case 'h':
@@ -407,6 +446,10 @@ int main( int argc, char *argv[] )
           if ( ! strcmp( "snrsq", optarg ) )
           {
             clusterchoice = snrsq;
+          }
+          else if ( ! strcmp( "bitten_l", optarg ) )
+          {
+	      clusterchoice = bitten_l;
           }
           else if ( ! strcmp( "s3_snr_chi_stat", optarg) )
           {
@@ -984,7 +1027,7 @@ int main( int argc, char *argv[] )
     if ( !numSlides )
     {
       numClusteredEvents = XLALClusterCoincInspiralTable( &coincHead, 
-          cluster_dt, clusterchoice );
+          cluster_dt, clusterchoice , &bittenLParams);
     }
     else
     { 
@@ -1002,7 +1045,7 @@ int main( int argc, char *argv[] )
         slideCoinc = XLALCoincInspiralSlideCut( &coincHead, slide );
         /* run clustering */
         numClusteredSlide = XLALClusterCoincInspiralTable( &slideCoinc, 
-          cluster_dt, clusterchoice );
+          cluster_dt, clusterchoice, &bittenLParams);
         
         if ( vrbflg ) fprintf( stdout, "%d clustered events \n", 
           numClusteredSlide );
