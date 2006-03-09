@@ -113,36 +113,22 @@ typedef struct {
 
 #define SQ(x) ((x)*(x))
 
-/*---------- local types ---------- */
-typedef struct {
-  REAL8 skyalpha;
-  REAL8 skydelta;
-  REAL8 tsft;
-  INT4 nTsft;
-  CHAR *detector;
-  INT4 numDetector;
-  CHAR *timestamps;
-  INT4 gpsStart;
-  CHAR *efiles;
-  REAL8 phi;
-  REAL8 psi;
-  REAL8 h0;
-  REAL8 cosiota;
-  REAL8 sqrtSh;
-  REAL8 duration;
-  CHAR *ephemYear;
-  REAL8 aPlus;
-  REAL8 aCross;
-  BOOLEAN help;
-} CommandLineArgs;
-
 /*---------- Global variables ----------*/
 extern int vrbflg;		/**< defined in lalapps.c */
 
 ConfigVariables GV;		/**< global container for various derived configuration settings */
-CommandLineArgs CLA;
 
 /* ----- User-variables: can be set from config-file or command-line */
+REAL8 uvar_aPlus;
+REAL8 uvar_aCross;
+INT4 uvar_gpsStart;
+REAL8 uvar_phi;
+REAL8 uvar_psi;
+REAL8 uvar_h0;
+REAL8 uvar_cosiota;
+REAL8 uvar_sqrtSh;
+REAL8 uvar_duration;
+
 REAL8 uvar_fmin;
 REAL8 uvar_fmax;
 CHAR *uvar_IFO;
@@ -164,7 +150,6 @@ CHAR *uvar_DataFiles;
 BOOLEAN uvar_help;
 CHAR *uvar_outputLabel;
 CHAR *uvar_outputFstat;
-CHAR *uvar_outputBstat;
 CHAR *uvar_outputLoudest;
 CHAR *uvar_skyGridFile;
 CHAR *uvar_outputSkyGrid;
@@ -214,7 +199,6 @@ int main(int argc,char *argv[])
   SkyPosition thisPoint;
   
   FILE *fpFstat = NULL;
-  FILE *fpBstat = NULL;
   CWParamSpacePoint psPoint;		/* parameter-space point to compute Fstat for */
    
 
@@ -281,25 +265,6 @@ int main(int argc,char *argv[])
 	}
     } /* if outputFstat */
   
-  if (uvar_outputBstat)
-    {
-      if ( (fpBstat = fopen (uvar_outputBstat, "wb")) == NULL)
-	{
-	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputBstat);
-	  return (COMPUTEFSTATISTIC_ESYS);
-	}
-    } /* if outputFstat */
-
-  if (uvar_outputBstat)
-    {
-      if ( (fpBstat = fopen (uvar_outputBstat, "wb")) == NULL)
-	{
-	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputBstat);
-	  return (COMPUTEFSTATISTIC_ESYS);
-	}
-    } /* if outputBstat */
-
-
   if (lalDebugLevel) printf ("\nStarting main search-loop.. \n");
   
   /*----------------------------------------------------------------------
@@ -322,6 +287,7 @@ int main(int argc,char *argv[])
     REAL8 A1, A2, A3, A4, h0, cosi, F = 0.0;
     REAL8 aPlus, aCross;
     REAL8 twopsi, twophi;
+    REAL8 tSFT;
     UINT4 X;  
 
     MultiAMCoeffs *multiAMcoef = NULL;
@@ -357,17 +323,17 @@ int main(int argc,char *argv[])
 	  } /* for alpha < numSFTsX */
       } /* for X < numDetectors */
     
-    
-    At = (CLA.tsft ) * A;
-    Bt = (CLA.tsft ) * B;
-    Ct = (CLA.tsft ) * C;
+    tSFT = 1 / (GV.multiSFTs->data[X]->data[0].deltaF);
+    At = (tSFT ) * A;
+    Bt = (tSFT ) * B;
+    Ct = (tSFT ) * C;
     Dt = A * B - C * C; 
     
-    twophi = 2.0 * CLA.phi;
-    twopsi = 2.0 * CLA.psi;
+    twophi = 2.0 * uvar_phi;
+    twopsi = 2.0 * uvar_psi;
     
-    h0 = CLA.h0;
-    cosi = CLA.cosiota;
+    h0 = uvar_h0;
+    cosi = uvar_cosiota;
     
     if ( h0 != 0 ) 
       {
@@ -376,8 +342,8 @@ int main(int argc,char *argv[])
       } 
     else   /* alternative way to specify amplitude (compatible with mfd_v4) */
       {
-	aPlus = CLA.aPlus;
-	aCross = CLA.aCross;
+	aPlus = uvar_aPlus;
+	aCross = uvar_aCross;
       }
     
     A1 = aPlus * cos(twopsi) * cos(twophi) - aCross * sin(twopsi) * sin(twophi);
@@ -401,14 +367,6 @@ int main(int argc,char *argv[])
       fclose (fpFstat);
       fpFstat = NULL;
     }
-  if ( fpBstat )
-    {
-      fprintf (fpBstat, "%%DONE\n");
-      fclose (fpBstat);
-      fpBstat = NULL;
-    }
-  
- 
   
   if (lalDebugLevel) printf ("\nSearch finished.\n");
   
@@ -436,97 +394,106 @@ INITSTATUS( status, "initUserVars", rcsid );
 ATTATCHSTATUSPTR (status);
 
 /* set a few defaults */
-uvar_FreqBand = 0.0;
-uvar_Alpha 	= 0.0;
-uvar_Delta 	= 0.0;
-uvar_AlphaBand = 0;
-uvar_DeltaBand = 0;
-uvar_dAlpha 	= 0.001;
-uvar_dDelta 	= 0.001;
-uvar_Freq       = 100.0;
-uvar_fmin       = 99.0;
-uvar_fmax       = 101.0;
-uvar_skyRegion = NULL;
-
-uvar_ephemYear = LALCalloc (1, strlen(EPHEM_YEARS)+1);
-strcpy (uvar_ephemYear, EPHEM_YEARS);
-
-#define DEFAULT_EPHEMDIR "env LAL_DATA_PATH"
-uvar_ephemDir = LALCalloc (1, strlen(DEFAULT_EPHEMDIR)+1);
-strcpy (uvar_ephemDir, DEFAULT_EPHEMDIR);
-
-uvar_SignalOnly = FALSE;
+ uvar_phi = 0.0;
+ uvar_psi = 0.0;
+ uvar_h0 = 0.0;
+ uvar_cosiota = 0.0;
+ uvar_sqrtSh = 1.0;
+ uvar_duration = 0.0;
  
-uvar_Fthreshold = 10.0;
-
-uvar_help = FALSE;
-uvar_outputLabel = NULL;
-
-uvar_outputFstat = NULL;
-uvar_outputBstat = NULL;
-
-uvar_skyGridFile = NULL;
-
-uvar_workingDir = LALMalloc(512);
-strcpy(uvar_workingDir, ".");
-
-uvar_RngMedWindow = 50;	/* for running-median */
-
-uvar_SSBprecision = SSBPREC_RELATIVISTIC;
-
-/* register all our user-variables */
-LALregBOOLUserVar(status, 	help, 		'h', UVAR_HELP,     "Print this message"); 
-
-LALregREALUserVar(status, 	Alpha, 		'a', UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in radians");
-LALregREALUserVar(status, 	Delta, 		'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians");
-
-
-
-LALregREALUserVar(status, 	AlphaBand, 	'z', UVAR_OPTIONAL, "Band in alpha (equatorial coordinates) in radians");
-LALregREALUserVar(status, 	DeltaBand, 	'c', UVAR_OPTIONAL, "Band in delta (equatorial coordinates) in radians");
-
-LALregREALUserVar(status, 	dAlpha, 	'l', UVAR_OPTIONAL, "Resolution in alpha (equatorial coordinates) in radians");
-LALregREALUserVar(status, 	dDelta, 	'g', UVAR_OPTIONAL, "Resolution in delta (equatorial coordinates) in radians");
-LALregREALUserVar(status,       Freq, 	        'F', UVAR_OPTIONAL, "Search Frequency");
-LALregREALUserVar(status,       FreqBand, 	'B', UVAR_OPTIONAL, "Search Frequency Band");
-LALregREALUserVar(status,       fmin,   	  0, UVAR_OPTIONAL, "Minimum Search Frequency");
-LALregREALUserVar(status,       fmax,   	  0, UVAR_OPTIONAL, "Maximum Search Frequency Band");
-
-LALregSTRINGUserVar(status,	skyRegion, 	'R', UVAR_OPTIONAL, "ALTERNATIVE: Specify sky-region by polygon (or use 'allsky')");
-LALregSTRINGUserVar(status,	DataFiles, 	'D', UVAR_REQUIRED, "File-pattern specifying (multi-IFO) input SFT-files"); 
-LALregSTRINGUserVar(status, 	IFO, 		'I', UVAR_OPTIONAL, 
-  "Detector-constraint: 'G1', 'L1', 'H1', 'H2' ...(useful for single-IFO v1-SFTs only!)");
-LALregSTRINGUserVar(status,	ephemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
-LALregSTRINGUserVar(status,	ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
-LALregBOOLUserVar(status, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
-LALregREALUserVar(status, 	Fthreshold,	'F', UVAR_OPTIONAL, "Signal Set the threshold for selection of 2F");
-LALregSTRINGUserVar(status,	outputLabel,	'o', UVAR_OPTIONAL, "Label to be appended to all output file-names");
-LALregSTRINGUserVar(status,	skyGridFile,	 0,  UVAR_OPTIONAL, "Load sky-grid from this file.");
-LALregREALUserVar(status,	refTime,	 0,  UVAR_OPTIONAL, "SSB reference time for pulsar-paramters");
-LALregSTRINGUserVar(status,	outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for F-statistic field over the parameter-space");
-LALregSTRINGUserVar(status,	outputBstat,	 0,  UVAR_OPTIONAL, "Output-file for 'B-statistic' field over the parameter-space");
-
-/* more experimental and unofficial stuff follows here */
-LALregINTUserVar (status, 	SSBprecision,	 0,  UVAR_DEVELOPER, "Precision to use for time-transformation to SSB: 0=Newtonian 1=relativistic");
-LALregINTUserVar(status, 	RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");
-LALregSTRINGUserVar(status,   workingDir,     'w', UVAR_DEVELOPER, "Directory to be made the working directory, . is default");
-LALregSTRINGUserVar(status,	outputSkyGrid,	 0,  UVAR_DEVELOPER, "Write sky-grid into this file.");
-LALregSTRINGUserVar(status,   outputLoudest,	 0,  UVAR_DEVELOPER, 
-  "Output-file for the loudest F-statistic candidate in this search");
-
-
-DETATCHSTATUSPTR (status);
-RETURN (status);
+ uvar_FreqBand = 0.0;
+ uvar_Alpha 	= 0.0;
+ uvar_Delta 	= 0.0;
+ uvar_AlphaBand = 0;
+ uvar_DeltaBand = 0;
+ uvar_dAlpha 	= 0.001;
+ uvar_dDelta 	= 0.001;
+ uvar_Freq       = 100.0;
+ uvar_fmin       = 99.0;
+ uvar_fmax       = 101.0;
+ uvar_skyRegion = NULL;
+ 
+ uvar_ephemYear = LALCalloc (1, strlen(EPHEM_YEARS)+1);
+ strcpy (uvar_ephemYear, EPHEM_YEARS);
+ 
+#define DEFAULT_EPHEMDIR "env LAL_DATA_PATH"
+ uvar_ephemDir = LALCalloc (1, strlen(DEFAULT_EPHEMDIR)+1);
+ strcpy (uvar_ephemDir, DEFAULT_EPHEMDIR);
+ 
+ uvar_SignalOnly = FALSE;
+ 
+ uvar_Fthreshold = 10.0;
+ 
+ uvar_help = FALSE;
+ uvar_outputLabel = NULL;
+ 
+ uvar_outputFstat = NULL;
+  
+ uvar_skyGridFile = NULL;
+ 
+ uvar_workingDir = LALMalloc(512);
+ strcpy(uvar_workingDir, ".");
+ 
+ uvar_RngMedWindow = 50;	/* for running-median */
+ 
+ uvar_SSBprecision = SSBPREC_RELATIVISTIC;
+ 
+ /* register all our user-variables */
+ LALregBOOLUserVar(status, 	help, 		'h', UVAR_HELP,     "Print this message"); 
+ 
+ LALregREALUserVar(status,      phi,            'Q', UVAR_OPTIONAL, "Phi_0: Initial phase in radians");
+ LALregREALUserVar(status,      psi,            'Y', UVAR_OPTIONAL, "Polarisation in radians");
+ LALregREALUserVar(status,      cosiota,        'i', UVAR_OPTIONAL, "Cos(iota)");
+ LALregREALUserVar(status,      h0,             's', UVAR_OPTIONAL, "Strain amplitude h_0");
+ LALregREALUserVar(status,      sqrtSh,         'N', UVAR_OPTIONAL, "Noise floor: one-sided sqrt(Sh) in 1/sqrt(Hz)");
+ LALregREALUserVar(status,      aPlus,            0, UVAR_OPTIONAL, "Strain amplitude h_0");
+ LALregREALUserVar(status,      aCross,           0, UVAR_OPTIONAL, "Noise floor: one-sided sqrt(Sh) in 1/sqrt(Hz)");
+	   
+ LALregREALUserVar(status, 	Alpha, 		'a', UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in radians");
+ LALregREALUserVar(status, 	Delta, 		'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians");
+ LALregREALUserVar(status, 	AlphaBand, 	'z', UVAR_OPTIONAL, "Band in alpha (equatorial coordinates) in radians");
+ LALregREALUserVar(status, 	DeltaBand, 	'c', UVAR_OPTIONAL, "Band in delta (equatorial coordinates) in radians");
+ LALregREALUserVar(status, 	dAlpha, 	'l', UVAR_OPTIONAL, "Resolution in alpha (equatorial coordinates) in radians");
+ LALregREALUserVar(status, 	dDelta, 	'g', UVAR_OPTIONAL, "Resolution in delta (equatorial coordinates) in radians");
+ LALregREALUserVar(status,      Freq, 	        'F', UVAR_OPTIONAL, "Search Frequency");
+ LALregREALUserVar(status,      FreqBand, 	'B', UVAR_OPTIONAL, "Search Frequency Band");
+ LALregREALUserVar(status,      fmin,   	  0, UVAR_OPTIONAL, "Minimum Search Frequency");
+ LALregREALUserVar(status,      fmax,   	  0, UVAR_OPTIONAL, "Maximum Search Frequency Band");
+ 
+ LALregSTRINGUserVar(status,	skyRegion, 	'R', UVAR_OPTIONAL, "ALTERNATIVE: Specify sky-region by polygon (or use 'allsky')");
+ LALregSTRINGUserVar(status,	DataFiles, 	'D', UVAR_REQUIRED, "File-pattern specifying (multi-IFO) input SFT-files"); 
+ LALregSTRINGUserVar(status, 	IFO, 		'I', UVAR_OPTIONAL, 
+		     "Detector-constraint: 'G1', 'L1', 'H1', 'H2' ...(useful for single-IFO v1-SFTs only!)");
+ LALregSTRINGUserVar(status,	ephemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
+ LALregSTRINGUserVar(status,	ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
+ LALregBOOLUserVar(status, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
+ LALregREALUserVar(status, 	Fthreshold,	'F', UVAR_OPTIONAL, "Signal Set the threshold for selection of 2F");
+ LALregSTRINGUserVar(status,	outputLabel,	'o', UVAR_OPTIONAL, "Label to be appended to all output file-names");
+ LALregSTRINGUserVar(status,	skyGridFile,	 0,  UVAR_OPTIONAL, "Load sky-grid from this file.");
+ LALregREALUserVar(status,	refTime,	 0,  UVAR_OPTIONAL, "SSB reference time for pulsar-paramters");
+ LALregSTRINGUserVar(status,	outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for F-statistic field over the parameter-space");
+  
+ /* more experimental and unofficial stuff follows here */
+ LALregINTUserVar (status, 	SSBprecision,	 0,  UVAR_DEVELOPER, "Precision to use for time-transformation to SSB: 0=Newtonian 1=relativistic");
+ LALregINTUserVar(status, 	RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");
+ LALregSTRINGUserVar(status,    workingDir,     'w', UVAR_DEVELOPER, "Directory to be made the working directory, . is default");
+ LALregSTRINGUserVar(status,	outputSkyGrid,	 0,  UVAR_DEVELOPER, "Write sky-grid into this file.");
+ LALregSTRINGUserVar(status,    outputLoudest,	 0,  UVAR_DEVELOPER, 
+		     "Output-file for the loudest F-statistic candidate in this search");
+ 
+ 
+ DETATCHSTATUSPTR (status);
+ RETURN (status);
 } /* initUserVars() */
 
 /** Load Ephemeris from ephemeris data-files  */
 void
 InitEphemeris (LALStatus * status,   
   EphemerisData *edat,	/**< [out] the ephemeris-data */
-  const CHAR *ephemDir,	/**< directory containing ephems */
-  const CHAR *ephemYear,	/**< which years do we need? */
-  LIGOTimeGPS epoch	/**< epoch of observation */
-  )
+	       const CHAR *ephemDir,	/**< directory containing ephems */
+	       const CHAR *ephemYear,	/**< which years do we need? */
+	       LIGOTimeGPS epoch	/**< epoch of observation */
+	       )
 {
 #define FNAME_LENGTH 1024
   CHAR EphemEarth[FNAME_LENGTH];	/* filename of earth-ephemeris data */
@@ -536,10 +503,10 @@ InitEphemeris (LALStatus * status,
 
   INITSTATUS( status, "InitEphemeris", rcsid );
   ATTATCHSTATUSPTR (status);
-
+  
   ASSERT ( edat, status, COMPUTEFSTATISTIC_ENULL, COMPUTEFSTATISTIC_MSGENULL );
   ASSERT ( ephemYear, status, COMPUTEFSTATISTIC_ENULL, COMPUTEFSTATISTIC_MSGENULL );
-
+  
   if ( ephemDir )
     {
       LALSnprintf(EphemEarth, FNAME_LENGTH, "%s/earth%s.dat", ephemDir, ephemYear);
@@ -558,15 +525,15 @@ InitEphemeris (LALStatus * status,
    */
   edat->ephiles.earthEphemeris = EphemEarth;
   edat->ephiles.sunEphemeris = EphemSun;
-    
+  
   TRY (LALLeapSecs (status->statusPtr, &leap, &epoch, &formatAndAcc), status);
   edat->leap = (INT2) leap;
-
+  
   TRY (LALInitBarycenter(status->statusPtr, edat), status);
-
+  
   DETATCHSTATUSPTR ( status );
   RETURN ( status );
-
+  
 } /* InitEphemeris() */
 
 
