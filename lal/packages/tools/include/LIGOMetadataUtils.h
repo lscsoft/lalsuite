@@ -200,6 +200,24 @@ criteria are satisfied and 0 otherwise.  Finally, the
 \subsubsection*{Type \texttt{SnglInspiralClusterChoice}}
 </lalLaTeX>
 #endif
+
+/* <lalVerbatim> */
+typedef struct
+tagCoincInspiralBittenLParams
+{
+  REAL4    param_a[LAL_NUM_IFO];
+  REAL4    param_b[LAL_NUM_IFO];
+}
+CoincInspiralBittenLParams;
+/*</lalVerbatim> */
+#if 0
+<lalLaTeX>
+The \texttt{CoincInspiralBittenLParams} structure contains the bitten L parameter for
+each of the six global interferometers.  These are stored in the
+\textttt{param\_a} and \texttt{param\_b} structure. 
+</lalLaTeX>
+#endif
+
 /* <lalVerbatim> */
 typedef enum 
 { 
@@ -225,7 +243,8 @@ typedef enum
 { 
   no_stat,
   snrsq, 
-  s3_snr_chi_stat 
+  s3_snr_chi_stat,
+  bitten_l 
 } 
 CoincInspiralStatistic;
 /*</lalVerbatim> */
@@ -235,7 +254,10 @@ The \texttt{CoincInspiralStatistic} provides two choices for clustering
 a single inspiral table.  The\texttt{snrsq} clustering returns the trigger
 with the greatest summed snr$^{2}$ from all instruments.  The 
 \texttt{snr\_chi\_stat} replaces selects the trigger
-with the largest value of the snr and chisq statistic.
+with the largest value of the snr and chisq statistic and the \texttt{bitten\_l}
+returns the minimum among the summed snr$^{2}$ from all instruments and the 
+$a\times snr_i - b$ in each detector. The parameters  $a$ and $b£ must be provided
+by the user.
 </lalLaTeX>
 #endif
 /* <lalVerbatim> */
@@ -248,6 +270,7 @@ tagSnglInspiralBCVCalphafCut
   REAL4       h2_hi;
   REAL4       l1_lo;
   REAL4       l1_hi;
+  REAL4       psi0cut;
 } 
 SnglInspiralBCVCalphafCut;
 /*</lalVerbatim> */
@@ -733,6 +756,18 @@ LALSnglInspiralCoincTest(
     );
 
 void
+XLALInspiralDistanceCutPsi0Psi3BCVC(
+    CoincInspiralTable        **coincInspiral,
+    InspiralAccuracyList       *accuracyParams
+    );
+void
+XLALInspiralDistanceCutPsi0BCVC(
+    CoincInspiralTable        **coincInspiral,
+    InspiralAccuracyList       *accuracyParams
+    );
+
+
+void
 XLALInspiralDistanceCutBCVC(
     CoincInspiralTable        **coincInspiral,
     InspiralAccuracyList       *accuracyParams
@@ -787,14 +822,16 @@ XLALCoincInspiralTimeNS (
 REAL4
 XLALCoincInspiralStat(
     CoincInspiralTable         *coincInspiral,
-    CoincInspiralStatistic      coincStat
+    CoincInspiralStatistic      coincStat,
+    CoincInspiralBittenLParams *bittenLParams
     );
 
 int 
 XLALClusterCoincInspiralTable (
     CoincInspiralTable        **coincList,
     INT8                        dtimeNS,
-    CoincInspiralStatistic      coincStat
+    CoincInspiralStatistic      coincStat,
+    CoincInspiralBittenLParams *bittenLParams
     );
 
 int
