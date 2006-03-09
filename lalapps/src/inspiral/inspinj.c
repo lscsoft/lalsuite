@@ -123,7 +123,7 @@ char *sourceFileName = NULL;
 
 int allowMW=-1;
 
-int ddistr;
+int ddistr=-1;
 float dmin= 1;
 float dmax=20000;
 int mdistr=-1;
