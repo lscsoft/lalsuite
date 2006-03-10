@@ -1603,6 +1603,7 @@ Patrick Brady and Saikat Ray-Majumder
 [\option{--seed}~\parm{seed}] \newline \hspace*{0.5in}
 [\option{--waveform}~\parm{wave}] \newline \hspace*{0.5in}
 [\option{--population}~\parm{name}] \newline \hspace*{0.5in}
+[\option{--freq-dist}~\parm{name}] \newline \hspace*{0.5in}
 [\option{--flow}~\parm{flow}] \newline \hspace*{0.5in}
 [\option{--fhigh}~\parm{fhigh}] \newline \hspace*{0.5in}
 [\option{--deltaf}~\parm{deltaf}] \newline \hspace*{0.5in}
@@ -1653,6 +1654,12 @@ Uniformly-distributed \(\log_{10} h_{\mathrm{peak}}\) & \texttt{loghpeak} & \(\m
 Uniformly-distributed \(\log_{10} h_{\mathrm{rss}}\) & \texttt{loghrss} & \(\min \log_{10} h_{\mathrm{rss}}\) & \(\max \log_{10} h_{\mathrm{rss}}\) \\
 \hline\hline
 \end{tabular}\end{center}
+
+One of several frequency distributions can be chosen.  If the waveform is
+set to \textt{StringCusp}, then a frequency distribution appropriate for
+that source is selected.  Otherwise the user can choose an arithmetic
+frequency progression, a geometric frequency progression, or a
+logarithmically-uniform random frequency distribution.
 
 The output of this program  is  a  list  of  the  injected events, starting
 at  the specified start time, ending at the specified end time, and
@@ -1717,6 +1724,19 @@ from directly above each observatory and optimially-oriented for each
 (think of this as a burst in the form of an inwardly-directed spherical
 shell centred on the geocenter, with optimal polarization at each
 observatory).
+
+\item[\option{--freq-dist} \parm{name}]
+Optional.  If not doing string injections (by setting
+\option{--waveform=StringCusp}), use this to select a frequency
+distribution.  Allowed values are \option{monoarithmetic} for a
+monotonically increasing arithmetic progression, \option{monogeometric} for
+a monotonically increasing geometric progression, or \option{randgeometric}
+for a sequence of logarithmically-distributed random frequencies.
+\emph{Note}:  the \option{randgeometric} sequence is a variant of the
+\option{monogeometric} sequence with each injection displaced from the
+nominal frequency by a random amount.  To avoid biasing the noise estimate
+by having two injections occur at nearly the same frequency, a larger
+\optin{--fratio} should be used with this sequence.
 
 \item[\option{--flow} \parm{flow}]
 Optional.  The code can generate injections at multiple frequencies.  This

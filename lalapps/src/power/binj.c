@@ -70,10 +70,19 @@ enum strain_dist {
 	STRAIN_DIST_PRESET_HPEAK
 };
 
+enum freq_dist {
+	FREQ_DIST_NONE,
+	FREQ_DIST_STRING_CUSP,
+	FREQ_DIST_MONO_ARITHMETIC,
+	FREQ_DIST_MONO_GEOMETRIC,
+	FREQ_DIST_RANDOM_GEOMETRIC
+};
+
 struct options {
 	INT8 gps_start_time;
 	INT8 gps_end_time;
 	enum population population;
+	enum freq_dist freq_dist;
 	double flow;
 	double fhigh;
 	double fratio;
@@ -102,6 +111,7 @@ static struct options options_defaults(void)
 		.gps_start_time = 0,
 		.gps_end_time = 0,
 		.population = POPULATION_UNIFORM_SKY,
+		.freq_dist = FREQ_DIST_NONE,
 		.flow = 150.0,
 		.fhigh = 1000.0,
 		.fratio = 0.0,
@@ -137,6 +147,7 @@ static void print_usage(const char *prog)
 "  --gps-end-time TIME      end injections at GPS time TIME\n"\
 "  --time-step STEP         space injections STEP / pi seconds appart (210)\n"\
 "  --population [uniform_sky|zenith] select the population to synthesize\n"\
+"  --freq-dist [monoarithmetic|monogeometric|randgeometric] select the frequency distribution\n"\
 "  --flow FLOW              first frequency of injection (150.0)\n"\
 "  --fhigh FHIGH            only inject frequencies smaller than FHIGH (1000.0)\n"\
 "  --fratio FACTOR          exponential spacing of injection frequencies (0.0)\n"\
@@ -183,6 +194,7 @@ static struct options parse_command_line(int *argc, char **argv[], MetadataTable
 	struct option long_options[] = {
 		{"mdc", no_argument, &options.mdc, TRUE},
 		{"population", required_argument, NULL, 'A'},
+		{"freq-dist", required_argument, NULL, 'F'},
 		{"deltaf", required_argument, NULL, 'B'},
 		{"fhigh", required_argument, NULL, 'C'},
 		{"flow", required_argument, NULL, 'D'},
@@ -215,6 +227,20 @@ static struct options parse_command_line(int *argc, char **argv[], MetadataTable
 			options.population = POPULATION_ZENITH;
 		else {
 			fprintf(stderr, "error: unrecognized population \"%s\"", optarg);
+			exit(1);
+		}
+		ADD_PROCESS_PARAM("string");
+		break;
+
+	case 'F':
+		if(!strcmp(optarg, "monoarithmetic"))
+			options.freq_dist = FREQ_DIST_MONO_ARITHMETIC;
+		else if(!strcmp(optarg, "monogeometric"))
+			options.freq_dist = FREQ_DIST_MONO_GEOMETRIC;
+		else if(!strcmp(optarg, "randgeometric"))
+			options.freq_dist = FREQ_DIST_RANDOM_GEOMETRIC;
+		else {
+			fprintf(stderr, "error: unrecognized frequency distribution \"%s\"", optarg);
 			exit(1);
 		}
 		ADD_PROCESS_PARAM("string");
@@ -352,6 +378,12 @@ static struct options parse_command_line(int *argc, char **argv[], MetadataTable
 
 	case 'W':
 		options.waveform = optarg;
+		if(strlen(options.waveform) > LIGOMETA_WAVEFORM_MAX) {
+			fprintf(stderr, "error: --waveform %s exceeds max length of %d characters\n", options.waveform, LIGOMETA_WAVEFORM_MAX);
+			exit(1);
+		}
+		if(!strcmp(options.waveform, "StringCusp"))
+			options.freq_dist = FREQ_DIST_STRING_CUSP;
 		ADD_PROCESS_PARAM("string");
 		break;
 
@@ -376,9 +408,43 @@ static struct options parse_command_line(int *argc, char **argv[], MetadataTable
 
 
 	/* check some of the input parameters for consistency */
-	if(strlen(options.waveform) > LIGOMETA_WAVEFORM_MAX) {
-		fprintf(stderr, "error: --waveform %s exceeds max length of %d characters\n", options.waveform, LIGOMETA_WAVEFORM_MAX);
+	if(options.fhigh < options.flow) {
+		fprintf(stderr, "error: --fhigh < --flow\n");
 		exit(1);
+	}
+
+	switch(options.freq_dist) {
+	case FREQ_DIST_NONE:
+		fprintf(stderr, "error: must select a frequency distribution\n");
+		exit(1);
+
+	case FREQ_DIST_STRING_CUSP:
+		if(options.freq_dist != FREQ_DIST_STRING_CUSP) {
+			fprintf(stderr, "error: cannot choose frequency distribution with --waveform=StringCusp\n");
+			exit(1);
+		}
+		break;
+
+	case FREQ_DIST_MONO_ARITHMETIC:
+		if((options.deltaf <= 0.0) || (options.fratio != 0.0)) {
+			fprintf(stderr, "error: invalid frequency distribution parameters\n");
+			exit(1);
+		}
+		break;
+
+	case FREQ_DIST_MONO_GEOMETRIC:
+		if((options.deltaf != 0.0) || (options.fratio <= 0.0)) {
+			fprintf(stderr, "error: invalid frequency distribution parameters\n");
+			exit(1);
+		}
+		break;
+
+	case FREQ_DIST_RANDOM_GEOMETRIC:
+		if((options.deltaf != 0.0) || (options.fratio != 0.0)) {
+			fprintf(stderr, "error: invalid frequency distribution parameters\n");
+			exit(1);
+		}
+		break;
 	}
 
 	switch(options.strain_dist) {
@@ -442,6 +508,31 @@ static struct options parse_command_line(int *argc, char **argv[], MetadataTable
 
 /* 
  * ============================================================================
+ *                            Solving For Unknowns
+ * ============================================================================
+ */
+
+static double tau_from_q_and_f(double Q, double f)
+{
+	/* compute duration from Q and frequency */
+	return Q / (sqrt(2.0) * LAL_PI * f);
+}
+
+static double hrss_from_tau_and_hpeak(double tau, double hpeak)
+{
+	/* compute root-sum-square strain from duration and peak strain */
+	return sqrt(sqrt(2.0 * LAL_PI) * tau / 4.0) * hpeak;
+}
+
+static double hpeak_from_tau_and_hrss(double tau, double hrss)
+{
+	/* compute peak strain from duration and root-sum-square strain */
+	return hrss / sqrt(sqrt(2.0 * LAL_PI) * tau / 4.0);
+}
+
+
+/* 
+ * ============================================================================
  *                          Arrival Time Calculation
  * ============================================================================
  */
@@ -474,16 +565,17 @@ static double Log10Deviate(RandomParams *params, double log10_min, double log10_
 
 /* 
  * ============================================================================
- *                           Frequency Distribution
+ *                          Frequency Distributions
  * ============================================================================
  */
 
-static double string_freq_next(struct options options)
+/*
+ * String cusps.  What's distributed uniformly is theta^2, the square of
+ * the angle the line of sight makes with direction of the cusp.
+ */
+
+static double freq_dist_string_cusp_next(struct options options)
 {
-	/*
-	 * what's distributed uniformly is theta^2, the square of the angle
-	 * the line of sight makes with direction of the cusp.
-	 */
 	const double thetasqmin = pow(options.fhigh, -2.0 / 3.0);
 	const double thetasqmax = pow(options.flow, -2.0 / 3.0);
 	const double thetasq = (thetasqmax - thetasqmin) * ((float) rand() / (float) RAND_MAX) + thetasqmin;
@@ -492,30 +584,45 @@ static double string_freq_next(struct options options)
 }
 
 
-static double freq_next(struct options options)
+/*
+ * Monotonically increasing arithmetic sequence.
+ */
+
+static double freq_dist_monotonic_arithmetic_next(struct options options)
 {
 	static int i = 0;
-	double freq;
+	const double freq = options.flow + options.deltaf * i++;
 
-	while(1) {
-		if((options.deltaf == 0.0) && (options.fratio != 0.0))
-			freq = options.flow * pow(options.fratio, i++);
-		else if((options.deltaf != 0.0) && (options.fratio == 0.0))
-			freq = options.flow + options.deltaf * i++;
-		else {
-			fprintf(stderr, "error: internal error\n");
-			exit(1);
-		}
-		if(freq <= options.fhigh)
-			return freq;
-		if(i == 1) {
-			/* catch infinite loop */
-			fprintf(stderr, "error: internal error\n");
-			exit(1);
-		}
-		/* reset i and recompute */
-		i = 0;
-	}
+	if(freq <= options.fhigh)
+		return freq;
+	i = 1;
+	return options.flow;
+}
+
+
+/*
+ * Monotonically increasing geometric sequence.
+ */
+
+static double freq_dist_monotonic_geometric_next(struct options options)
+{
+	static int i = 0;
+	const double freq = options.flow * pow(options.fratio, i++);
+
+	if(freq <= options.fhigh)
+		return freq;
+	i = 1;
+	return options.flow;
+}
+
+
+/*
+ * Logarithmically-distributed random sequence.
+ */
+
+static double freq_dist_random_geometric_next(RandomParams *randparams, struct options options)
+{
+	return freq_dist_monotonic_geometric_next(options) * Log10Deviate(randparams, -log10(options.fratio) / 2.0, log10(options.fratio) / 2.0);
 }
 
 
@@ -527,7 +634,7 @@ static double freq_next(struct options options)
 
 static double hpeak_preset_next(RandomParams *params)
 {
-	double presets[] = {
+	static const double presets[] = {
 		1e-19,
 		2.0e-19,
 		3.0e-19,
@@ -537,31 +644,6 @@ static double hpeak_preset_next(RandomParams *params)
 	int i = XLALUniformDeviate(params) * sizeof(presets)/sizeof(*presets);
 
 	return presets[i];
-}
-
-
-/* 
- * ============================================================================
- *                            Solving For Unknowns
- * ============================================================================
- */
-
-static double tau_from_q_and_f(double Q, double f)
-{
-	/* compute duration from Q and frequency */
-	return Q / (sqrt(2.0) * LAL_PI * f);
-}
-
-static double hrss_from_tau_and_hpeak(double tau, double hpeak)
-{
-	/* compute root-sum-square strain from duration and peak strain */
-	return sqrt(sqrt(2.0 * LAL_PI) * tau / 4.0) * hpeak;
-}
-
-static double hpeak_from_tau_and_hrss(double tau, double hrss)
-{
-	/* compute peak strain from duration and root-sum-square strain */
-	return hrss / sqrt(sqrt(2.0 * LAL_PI) * tau / 4.0);
 }
 
 /* 
@@ -716,10 +798,27 @@ int main(int argc, char *argv[])
 			this_sim_burst = injections.simBurstTable = calloc(1, sizeof(SimBurstTable));
 
 		/* frequency */
-		if(!strcmp(options.waveform, "StringCusp"))
-			this_sim_burst->freq = string_freq_next(options);
-		else
-			this_sim_burst->freq = freq_next(options);
+		switch(options.freq_dist) {
+		case FREQ_DIST_NONE:
+			fprintf(stderr, "error: internal error\n");
+			exit(1);
+
+		case FREQ_DIST_STRING_CUSP:
+			this_sim_burst->freq = freq_dist_string_cusp_next(options);
+			break;
+
+		case FREQ_DIST_MONO_ARITHMETIC:
+			this_sim_burst->freq = freq_dist_monotonic_arithmetic_next(options);
+			break;
+
+		case FREQ_DIST_MONO_GEOMETRIC:
+			this_sim_burst->freq = freq_dist_monotonic_geometric_next(options);
+			break;
+
+		case FREQ_DIST_RANDOM_GEOMETRIC:
+			this_sim_burst->freq = freq_dist_random_geometric_next(randParams, options);
+			break;
+		}
 
 		/* tau */
 		if(options.quality > 0.0)
@@ -770,8 +869,8 @@ int main(int argc, char *argv[])
 		/* strain */
 		switch(options.strain_dist) {
 		case STRAIN_DIST_NONE:
-			/* silence compiler warning */
-			break;
+			fprintf(stderr, "error: internal error\n");
+			exit(1);
 
 		case STRAIN_DIST_CONST_HPEAK:
 			this_sim_burst->hpeak = options.strain_scale_min;
