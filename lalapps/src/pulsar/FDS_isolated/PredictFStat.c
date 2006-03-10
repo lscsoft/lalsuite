@@ -102,7 +102,6 @@ typedef struct {
   UINT4 numDetectors;			    /**< number of detectors */
   MultiSFTVector *multiSFTs;		    /**< multi-IFO SFT-vectors */
   MultiDetectorStateSeries *multiDetStates; /**< pos, vel and LMSTs for detector at times t_i */
-  MultiNoiseWeights *multiNoiseWeights;	    /**< normalized noise-weights of those SFTs */
   ComputeFParams CFparams;		    /**< parameters for the computation of Fstat (e.g Dterms, SSB-precision,...) */
 } ConfigVariables;
 
@@ -123,20 +122,15 @@ REAL8 uvar_h0;
 REAL8 uvar_cosiota;
 REAL8 uvar_sqrtSh;
 
-REAL8 uvar_fmin;
-REAL8 uvar_fmax;
 CHAR *uvar_IFO;
 BOOLEAN uvar_SignalOnly;
 REAL8 uvar_Freq;
 REAL8 uvar_FreqBand;
 REAL8 uvar_Alpha;
-REAL8 uvar_dAlpha;
 REAL8 uvar_AlphaBand;
 REAL8 uvar_Delta;
-REAL8 uvar_dDelta;
 REAL8 uvar_DeltaBand;
 /* --- */
-REAL8 uvar_Fthreshold;
 CHAR *uvar_ephemDir;
 CHAR *uvar_ephemYear;
 CHAR *uvar_skyRegion;
@@ -145,7 +139,6 @@ BOOLEAN uvar_help;
 CHAR *uvar_outputLabel;
 CHAR *uvar_outputFstat;
 CHAR *uvar_outputLoudest;
-CHAR *uvar_skyGridFile;
 CHAR *uvar_outputSkyGrid;
 CHAR *uvar_workingDir;
 INT4 uvar_RngMedWindow;
@@ -164,7 +157,6 @@ void WriteFStatLog (LALStatus *, CHAR *argv[]);
 void checkUserInputConsistency (LALStatus *);
 int outputBeamTS( const CHAR *fname, const AMCoeffs *amcoe, const DetectorStateSeries *detStates );
 void InitEphemeris (LALStatus *, EphemerisData *edat, const CHAR *ephemDir, const CHAR *ephemYear, LIGOTimeGPS epoch);
-void getUnitWeights ( LALStatus *, MultiNoiseWeights **multiWeights, const MultiSFTVector *multiSFTs );
 
 const char *va(const char *format, ...);	/* little var-arg string helper function */
 
@@ -185,6 +177,8 @@ static const ComputeFBuffer empty_ComputeFBuffer;
  */
 int main(int argc,char *argv[]) 
 {
+  REAL8 F = 0.0;
+
   LALStatus status = blank_status;	/* initialize status */
 
   SkyPosition thisPoint;
@@ -233,11 +227,6 @@ int main(int argc,char *argv[])
   
   if (lalDebugLevel) printf ("\nStarting main search-loop.. \n");
   
-  /*----------------------------------------------------------------------
-   * main loop: demodulate data for each point in the sky-position grid
-   * and for each value of the frequency-spindown
-   */
-  
    /* normalize skyposition: correctly map into [0,2pi]x[-pi/2,pi/2] */
   thisPoint.longitude = uvar_Alpha;
   thisPoint.latitude = uvar_Delta;
@@ -246,11 +235,14 @@ int main(int argc,char *argv[])
   
   /* set parameter-space point: sky-position */
   psPoint.skypos = thisPoint;
-  
+  psPoint.refTime = GV.refTime;
+
   { /* Calculating the F-Statistic */
     
-    REAL8 A = 0.0, B = 0.0 ,C = 0.0, At = 0.0 ,Bt = 0.0 ,Ct = 0.0 ,Dt = 0.0; 
-    REAL8 A1, A2, A3, A4, h0, cosi, F = 0.0;
+    REAL8 A = 0.0, B = 0.0 ,C = 0.0, At = 0.0 ,Bt = 0.0 ,Ct = 0.0; 
+    REAL8 A1, A2, A3, A4;
+    REAL8 h0, cosi; 
+    REAL8 Sh;
     REAL8 aPlus, aCross;
     REAL8 twopsi, twophi;
     REAL8 Tsft;
@@ -262,23 +254,22 @@ int main(int argc,char *argv[])
     LAL_CALL ( LALGetMultiSSBtimes ( &status, &multiSSB, GV.multiDetStates, psPoint.skypos, psPoint.refTime, GV.CFparams.SSBprec ), &status );
     LAL_CALL ( LALGetMultiAMCoeffs ( &status, &multiAMcoef, GV.multiDetStates, psPoint.skypos ), &status);
 
+    /* Free SSB */
     XLALDestroyMultiSSBtimes ( multiSSB );
 
-    /* noise-weight Antenna-patterns and compute A,B,C */
+    /* Antenna-patterns and compute A,B,C */
     for ( X=0; X < GV.numDetectors; X ++)
       {
 	UINT4 alpha;
 	UINT4 numSFTsX = GV.multiSFTs->data[X]->length;
 	AMCoeffs *amcoeX = multiAMcoef->data[X];
-	REAL8Vector *weightsX = GV.multiNoiseWeights->data[X];
 
 	Tsft = 1 / (GV.multiSFTs->data[X]->data[0].deltaF);	
 
 	for(alpha = 0; alpha < numSFTsX; alpha++)
 	  {
-	    REAL8 SqWN = sqrt ( weightsX->data[alpha] );
-	    REAL8 ahat = SqWN * amcoeX->a->data[alpha] ;
-	    REAL8 bhat = SqWN * amcoeX->b->data[alpha] ;
+	    REAL8 ahat = amcoeX->a->data[alpha] ;
+	    REAL8 bhat = amcoeX->b->data[alpha] ;
 	    
 	    /* sum A, B, C on the fly */
 	    A += ahat * ahat;
@@ -287,13 +278,17 @@ int main(int argc,char *argv[])
 	    
 	  } /* for alpha < numSFTsX */
 
-	At += (Tsft ) * A;
-	Bt += (Tsft ) * B;
-	Ct += (Tsft ) * C;
-	Dt += A * B - C * C; 
+	Sh = SQ(uvar_sqrtSh); 
+
+	At += (Tsft / (2*Sh)) * A;
+	Bt += (Tsft / (2*Sh)) * B;
+	Ct += (Tsft / (2*Sh)) * C;
 	
       } /* for X < numDetectors */
-        
+
+    /* Free AM Coefficients */
+    XLALDestroyMultiAMCoeffs ( multiAMcoef );
+       
     twophi = 2.0 * uvar_phi;
     twopsi = 2.0 * uvar_psi;
     
@@ -321,17 +316,16 @@ int main(int argc,char *argv[])
     /* Note: the expectation-value of 2F is 4 + lambda ==> add 2 to Fstat*/
     F += 2.0;
     
-    fprintf( stdout, "%g\n", F );
+    fprintf( stdout, "%g\n", 2 * F );
+    
+    if ( fpFstat )
+      {
+	fprintf (fpFstat, "%g \n%%DONE\n", 2 * F);
+	fclose (fpFstat);
+	fpFstat = NULL;
+      }
     
   }/* Compute FStat */ 
-  
-  
-  if ( fpFstat )
-    {
-      fprintf (fpFstat, "%%DONE\n");
-      fclose (fpFstat);
-      fpFstat = NULL;
-    }
   
   if (lalDebugLevel) printf ("\nSearch finished.\n");
   
@@ -356,22 +350,17 @@ INITSTATUS( status, "initUserVars", rcsid );
 ATTATCHSTATUSPTR (status);
 
 /* set a few defaults */
- uvar_phi = 0.0;
- uvar_psi = 0.0;
- uvar_h0 = 0.0;
- uvar_cosiota = 0.0;
- uvar_sqrtSh = 1.0;
- 
- uvar_FreqBand = 0.0;
+ uvar_phi       = 0.0;
+ uvar_psi       = 0.0;
+ uvar_h0        = 0.0;
+ uvar_cosiota   = 0.0;
+ uvar_sqrtSh    = 1.0;
+ uvar_Freq      = 100.0; 
+ uvar_FreqBand  = 1.0;
  uvar_Alpha 	= 0.0;
  uvar_Delta 	= 0.0;
  uvar_AlphaBand = 0;
  uvar_DeltaBand = 0;
- uvar_dAlpha 	= 0.001;
- uvar_dDelta 	= 0.001;
- uvar_Freq       = 100.0;
- uvar_fmin       = 99.0;
- uvar_fmax       = 101.0;
  uvar_skyRegion = NULL;
  
  uvar_ephemYear = LALCalloc (1, strlen(EPHEM_YEARS)+1);
@@ -380,18 +369,12 @@ ATTATCHSTATUSPTR (status);
 #define DEFAULT_EPHEMDIR "env LAL_DATA_PATH"
  uvar_ephemDir = LALCalloc (1, strlen(DEFAULT_EPHEMDIR)+1);
  strcpy (uvar_ephemDir, DEFAULT_EPHEMDIR);
- 
- uvar_SignalOnly = FALSE;
- 
- uvar_Fthreshold = 10.0;
- 
+
  uvar_help = FALSE;
  uvar_outputLabel = NULL;
  
  uvar_outputFstat = NULL;
   
- uvar_skyGridFile = NULL;
- 
  uvar_workingDir = LALMalloc(512);
  strcpy(uvar_workingDir, ".");
  
@@ -414,12 +397,8 @@ ATTATCHSTATUSPTR (status);
  LALregREALUserVar(status, 	Delta, 		'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians");
  LALregREALUserVar(status, 	AlphaBand, 	'z', UVAR_OPTIONAL, "Band in alpha (equatorial coordinates) in radians");
  LALregREALUserVar(status, 	DeltaBand, 	'c', UVAR_OPTIONAL, "Band in delta (equatorial coordinates) in radians");
- LALregREALUserVar(status, 	dAlpha, 	'l', UVAR_OPTIONAL, "Resolution in alpha (equatorial coordinates) in radians");
- LALregREALUserVar(status, 	dDelta, 	'g', UVAR_OPTIONAL, "Resolution in delta (equatorial coordinates) in radians");
  LALregREALUserVar(status,      Freq, 	        'F', UVAR_OPTIONAL, "Search Frequency");
  LALregREALUserVar(status,      FreqBand, 	'B', UVAR_OPTIONAL, "Search Frequency Band");
- LALregREALUserVar(status,      fmin,   	  0, UVAR_OPTIONAL, "Minimum Search Frequency");
- LALregREALUserVar(status,      fmax,   	  0, UVAR_OPTIONAL, "Maximum Search Frequency Band");
  
  LALregSTRINGUserVar(status,	skyRegion, 	'R', UVAR_OPTIONAL, "ALTERNATIVE: Specify sky-region by polygon (or use 'allsky')");
  LALregSTRINGUserVar(status,	DataFiles, 	'D', UVAR_REQUIRED, "File-pattern specifying (multi-IFO) input SFT-files"); 
@@ -428,9 +407,7 @@ ATTATCHSTATUSPTR (status);
  LALregSTRINGUserVar(status,	ephemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
  LALregSTRINGUserVar(status,	ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
  LALregBOOLUserVar(status, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
- LALregREALUserVar(status, 	Fthreshold,	'F', UVAR_OPTIONAL, "Signal Set the threshold for selection of 2F");
  LALregSTRINGUserVar(status,	outputLabel,	'o', UVAR_OPTIONAL, "Label to be appended to all output file-names");
- LALregSTRINGUserVar(status,	skyGridFile,	 0,  UVAR_OPTIONAL, "Load sky-grid from this file.");
  LALregREALUserVar(status,	refTime,	 0,  UVAR_OPTIONAL, "SSB reference time for pulsar-paramters");
  LALregSTRINGUserVar(status,	outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for F-statistic field over the parameter-space");
   
@@ -568,8 +545,8 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
 
   {/* ----- load the multi-IFO SFT-vectors ----- */
  
-    REAL8 fMax = uvar_fmax;
-    REAL8 fMin = uvar_fmin;
+    REAL8 fMin = MYMIN ( uvar_Freq, uvar_Freq + uvar_FreqBand );
+    REAL8 fMax = MYMAX ( uvar_Freq, uvar_Freq + uvar_FreqBand );
 
     TRY ( LALLoadMultiSFTs ( status->statusPtr, &(cfg->multiSFTs), catalog, fMin, fMax ), status );
     TRY ( LALDestroySFTCatalog ( status->statusPtr, &catalog ), status );
@@ -577,24 +554,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
 
   cfg->numDetectors = cfg->multiSFTs->length;
   
-  /* ----- normalize SFTs and calculate noise-weights ----- */
-  if ( uvar_SignalOnly )
-    {
-      TRY ( getUnitWeights ( status->statusPtr, &(cfg->multiNoiseWeights), cfg->multiSFTs ), status );
-    }
-  else
-    {
-      MultiPSDVector *psds = NULL;
-      REAL8 S_hat;
-
-       TRY ( LALNormalizeMultiSFTVect (status->statusPtr, &psds, cfg->multiSFTs, uvar_RngMedWindow ), status ); 
-      /* note: the normalization S_hat would be required to compute the ML-estimator for A^\mu */
-       TRY ( LALComputeMultiNoiseWeights  (status->statusPtr, &(cfg->multiNoiseWeights), &S_hat, psds, uvar_RngMedWindow ), status );
-   
-      TRY ( LALDestroyMultiPSDVector (status->statusPtr, &psds ), status );
-      
-    } /* if ! SignalOnly */
-
+ 
   { /* ----- load ephemeris-data ----- */
     CHAR *ephemDir;
 
@@ -687,16 +647,12 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
   INITSTATUS (status, "Freemem", rcsid);
   ATTATCHSTATUSPTR (status);
 
-
   /* Free SFT data */
   TRY ( LALDestroyMultiSFTVector (status->statusPtr, &(cfg->multiSFTs) ), status );
-  /* and corresponding noise-weights */
-  TRY ( LALDestroyMultiNoiseWeights (status->statusPtr, &(cfg->multiNoiseWeights) ), status );
-
+ 
   /* destroy DetectorStateSeries */
   XLALDestroyMultiDetectorStateSeries ( cfg->multiDetStates );
-
-
+  
   /* Free config-Variables and userInput stuff */
   TRY (LALDestroyUserVars (status->statusPtr), status);
 
@@ -736,18 +692,6 @@ checkUserInputConsistency (LALStatus *status)
       LALPrintError ("\nNegative value of sky-bands not allowed (alpha or delta)!\n\n");
       ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
     }
-  /* check for negative stepsizes in Freq, Alpha, Delta */
-  if ( LALUserVarWasSet(&uvar_dAlpha) && (uvar_dAlpha < 0) )
-    {
-      LALPrintError ("\nNegative value of stepsize dAlpha not allowed!\n\n");
-      ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
-    }
-  if ( LALUserVarWasSet(&uvar_dDelta) && (uvar_dDelta < 0) )
-    {
-      LALPrintError ("\nNegative value of stepsize dDelta not allowed!\n\n");
-      ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
-    }
-
   /* grid-related checks */
   {
     BOOLEAN haveAlphaBand = LALUserVarWasSet( &uvar_AlphaBand );
@@ -809,58 +753,6 @@ outputBeamTS( const CHAR *fname, const AMCoeffs *amcoe, const DetectorStateSerie
   fclose(fp);
   return 0;
 } /* outputBeamTS() */
-
-/** Helper-function to generate unity noise-weights for given multiSFT-vector */
-void
-getUnitWeights ( LALStatus *status, MultiNoiseWeights **multiWeights, const MultiSFTVector *multiSFTs )
-{
-  MultiNoiseWeights *ret = NULL;
-  UINT4 X, numDet;
-
-  INITSTATUS (status, "getUnitWeights", rcsid);
-  ATTATCHSTATUSPTR (status); 
-
-  ASSERT ( multiSFTs, status, COMPUTEFSTATISTIC_ENULL, COMPUTEFSTATISTIC_MSGENULL);
-  ASSERT ( multiSFTs->data, status, COMPUTEFSTATISTIC_ENULL, COMPUTEFSTATISTIC_MSGENULL);
-  ASSERT ( multiSFTs->length, status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
-
-  ASSERT ( multiWeights, status, COMPUTEFSTATISTIC_ENULL, COMPUTEFSTATISTIC_MSGENULL);
-  ASSERT ( (*multiWeights) == NULL, status, COMPUTEFSTATISTIC_ENULL, COMPUTEFSTATISTIC_MSGENULL);
-
-  numDet = multiSFTs->length;
-
-  if ( (ret = LALCalloc(1, sizeof(MultiNoiseWeights))) == NULL ){
-    ABORT (status,  COMPUTEFSTATISTIC_EMEM,  COMPUTEFSTATISTIC_MSGEMEM);
-  }
-  ret->length = numDet;
-
-  if ( (ret->data = LALCalloc( numDet, sizeof(REAL8Vector *))) == NULL) {
-    ABORT (status,  COMPUTEFSTATISTIC_EMEM,  COMPUTEFSTATISTIC_MSGEMEM);      
-  }
-
-  for ( X = 0; X < numDet; X ++) 
-    {
-      UINT4 numsfts = multiSFTs->data[X]->length;
-      UINT4 alpha;
-
-      /* create k^th weights vector */
-      if ( (ret->data[X] = XLALCreateREAL8Vector ( numsfts )) == NULL ) {
-	ABORT (status,  COMPUTEFSTATISTIC_EMEM,  COMPUTEFSTATISTIC_MSGEMEM);      
-      }
-
-      /* set all weights to unity */
-      for ( alpha = 0; alpha < numsfts; alpha ++ ) 
-	ret->data[X]->data[alpha] = 1.0;
-      
-    } /* for X < numDet */
-
-
-  (*multiWeights) = ret;
-  
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
-
-} /* getUnitWeights() */
 
 
 /*
