@@ -263,10 +263,6 @@ int main(int argc, char *argv[]){
   uvar_skyfile = (CHAR *)LALCalloc(512, sizeof(CHAR));
   strcpy(uvar_skyfile,SKYFILE);
 
-  uvar_linefile = (CHAR *)LALCalloc(512, sizeof(CHAR));
-
-  uvar_ifo = (CHAR *)LALCalloc(512, sizeof(CHAR));
-
   /* register user input variables */
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",             'h', UVAR_HELP,     "Print this message",                  &uvar_help),            &status);  
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "ifo",              'i', UVAR_OPTIONAL, "Detector L1, H1, H2, G1",             &uvar_ifo ),            &status);
@@ -618,6 +614,8 @@ int main(int argc, char *argv[]){
       patchSizeX = skySizeDelta[skyCounter];
       patchSizeY = skySizeAlpha[skyCounter];
 
+      fprintf(stdout, "starting skypatch %d of %d\n", skyCounter, nSkyPatches);
+      
       /* calculate amplitude modulation weights */
       if (uvar_weighAM) {
 
@@ -687,12 +685,14 @@ int main(int argc, char *argv[]){
 		fprintf(stderr, "unable to create skypatch directory %d\n", skyCounter);
 		return 1;  /* stop the program */
 	      }
-	  }
-	}
-      
-      /* create the base filenames for the stats, histo and event files and template files*/
-      strcat( filestats, uvar_fbasenameOut);
-      strcpy( filehisto, filestats);
+	  } /* dir created */
+            
+	  /* create the base filenames for the stats, histo and event files and template files*/
+	  strcat( filestats, uvar_fbasenameOut);
+	  strcpy( filehisto, filestats);
+
+	} /* if ( uvar_printStats || uvar_printEvents || uvar_printTemplates || uvar_printMaps ) */
+
 
       if ( uvar_printEvents )
 	strcpy( fileEvents, filestats);
@@ -941,7 +941,6 @@ int main(int argc, char *argv[]){
 		  nStarEventVec.event[fBinSearch-f0Bin].deltaStar = sourceLocation.delta;
 		  nStarEventVec.event[fBinSearch-f0Bin].fdotStar = ht.spinRes.data[0];
 		}
-
 
 	      /* ***** print results *********************** */
 
