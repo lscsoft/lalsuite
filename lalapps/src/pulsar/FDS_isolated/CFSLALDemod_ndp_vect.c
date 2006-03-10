@@ -237,7 +237,8 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 	    REAL4 tcos2pi = tcos * (REAL4)OOTWOPI;
 	    REAL4 Xa[4], Xs[4], Tf[4], Af[4];
 
-	    Xs[0] = ( Xs[1] = 0);
+	    Xs[0] = ( Xs[1] = 0 );
+	    Xs[2] = ( Xs[3] = 0 );
 	    Af[0] = 1.0;
 	    Tf[0] = tempFreq1;
 
@@ -255,10 +256,10 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 		Xa[3] = (*Xalpha_k).im;
                 Xalpha_k ++;
 
-		Af[3] = Af[0] * Tf[0];
+		Af[2] = Af[0] * Tf[0];
                 Tf[2] = Tf[0] - 1;
-		Tf[3] = Tf[2];
 		Af[3] = Af[2];
+		Tf[3] = Tf[2];
 
 		for(ilc=0; ilc<4; ilc++)
 		  Xs[ilc] = Tf[ilc] * Xs[ilc] + Xa[ilc] * Af[ilc];
@@ -268,8 +269,8 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 
               } /* for k < klim */
 
-	    Xs[0] = Xs[0] * Xs[3] / accFreq;
-	    Xs[1] = Xs[1] * Xs[4] / accFreq;
+	    Xs[0] = ( Xs[0] + Xs[3] ) / accFreq;
+	    Xs[1] = ( Xs[1] + Xs[4] ) / accFreq;
 
             realXP = tsin2pi * Xs[0] - tcos2pi * Xs[1];
             imagXP = tcos2pi * Xs[0] + tsin2pi * Xs[1];
