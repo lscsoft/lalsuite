@@ -252,8 +252,6 @@ int main(int argc, char *argv[]){
   uvar_skyfile = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_skyfile,SKYFILE);
 
-  uvar_ifo = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
-
   /* register user input variables */
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",            'h', UVAR_HELP,     "Print this message",                  &uvar_help),            &status);  
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "ifo",             'i', UVAR_OPTIONAL, "Detector L1, H1, H2, G1",             &uvar_ifo ),            &status);
@@ -559,7 +557,7 @@ int main(int argc, char *argv[]){
       strcpy ( fileSigma, uvar_dirnameOut);
       strcat ( fileSigma, "/");
       strcat ( fileSigma, uvar_fbasenameOut);
-      strcat ( fileSigma, "sigma_values");
+      strcat ( fileSigma, "sigma");
       
       if ( (fpSigma = fopen(fileSigma,"w")) == NULL)
 	{
@@ -674,12 +672,13 @@ int main(int argc, char *argv[]){
 		fprintf(stderr, "unable to create skypatch directory %d\n", skyCounter);
 		return 1;  /* stop the program */
 	      }
-	  }
-	}
-      
-      /* create the base filenames for the stats, histo and event files and template files*/
-      strcat( filestats, uvar_fbasenameOut);
-      strcpy( filehisto, filestats);
+	  } /* created directory */
+	  
+	  /* create the base filenames for the stats, histo and event files and template files*/
+	  strcat( filestats, uvar_fbasenameOut);
+	  strcpy( filehisto, filestats);
+
+	}  /* if ( uvar_printStats || uvar_printEvents || uvar_printTemplates || uvar_printMaps ) */
 
       if ( uvar_printEvents )
 	strcpy( fileEvents, filestats);
