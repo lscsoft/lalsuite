@@ -1,41 +1,3 @@
-/* LALDemod variants put out of ComputeFStatistic.c for separate compilation
- * Authors see ComputeFStatistic.c
-                                                         Bernd Machenschalk */
-#include "ComputeFStatistic.h"
-
-#if defined(USE_BOINC) && defined(_WIN32)
-#include "win_lib.h"
-#endif
-
-/* this is defined in C99 and *should* be in math.h.  Long term
-   protect this with a HAVE_FINITE */
-int finite(double);
-
-/* global variables defined in ComputeFStatistic.c */
-extern INT4 cfsRunNo;	   /**< CFS run-number: 0=run only once, 1=first run, 2=second run */
-extern UINT4 maxSFTindex;  /**< maximal sftindex, for error-checking */
-
-#define LD_SMALL        (1.0e-9 / LAL_TWOPI)
-#define OOTWOPI         (1.0 / LAL_TWOPI)
-#define LUT_RES         64      /* resolution of lookup-table */
-
-#define TWOPI_FLOAT     6.28318530717958f  /* 2*pi */
-#define OOTWOPI_FLOAT   (1.0f / TWOPI_FLOAT)	/* 1 / (2pi) */ 
-
-
-/* in special cases (macros) don't use the generic version of TestLALDemod() below, but the ones from external files */
-#if defined(USE_ALTIVEC)
-#include "CFSLALDemod_AltiVec.c"
-#elif defined(USE_NEW_DIV)
-#include "CFSLALDemod_new_div.c"
-#elif defined(USE_NEW_DIV_PART)
-#include "CFSLALDemod_new_div_part.c"
-#elif defined(USE_NDP_VECT)
-#include "CFSLALDemod_ndp_vect.c"
-#elif defined(USE_EXP_LALDEMOD)
-#include "CFSLALDemod_Experimental.c"
-#else /* USE_R4LALDEMOD, USE_ALTIVEC */
-
 RCSID( "$Id$");
 
 /* <lalVerbatim file="LALDemodCP"> */
@@ -183,26 +145,29 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
           tcos = tc-d*ts-d2*tc-1.0;
         }
 
+#ifdef USE_LUT_Y
+	/* use LUT here, too */
+	{
+	  REAL8 yTemp = f * skyConst[ tempInt1[ alpha ]-1 ] + ySum[ alpha ];
+	  REAL8 yRem = yTemp - (INT4)yTemp;
+	  if (yRem < 0) { yRem += 1.0f; }
+	  index = (UINT4)( yRem * LUT_RES + 0.5 );
+	  {
+	    REAL8 d = LAL_TWOPI*(yRem - (REAL8)index/(REAL8)LUT_RES);
+	    REAL8 d2=0.5*d*d;
+	    REAL8 ts = sinVal[index];
+	    REAL8 tc = cosVal[index];
+	    
+	    imagQ = ts + d * tc - d2 * ts;
+	    imagQ = -imagQ;
+	    realQ = tc - d * ts - d2 * tc;
+	  }
+	}
+#else
         y = - LAL_TWOPI * ( f * skyConst[ tempInt1[ alpha ]-1 ] + ySum[ alpha ] );
         realQ = cos(y);
         imagQ = sin(y);
-
-        /*
-        REAL8 yTemp = f * skyConst[ tempInt1[ alpha ]-1 ] + ySum[ alpha ];
-        REAL8 yRem = yTemp - (UINT4)yTemp;
-
-        index = (UINT4)( yRem * LUT_RES + 0.5 );
-        {
-          REAL8 d = LAL_TWOPI*(yRem - (REAL8)index/(REAL8)LUT_RES);
-          REAL8 d2=0.5*d*d;
-          REAL8 ts = sinVal[index];
-          REAL8 tc = cosVal[index];
-                
-          imagQ = ts + d * tc - d2 * ts;
-          imagQ = -imagQ;
-          realQ = tc - d * ts - d2 * tc;
-        }
-        */
+#endif
 
         k1 = (UINT4)xTemp - params->Dterms + 1;
 
@@ -256,41 +221,59 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
                 
               } /* for k < klim */
 
+	    if(sftIndex-1 > maxSFTindex) {
+	      fprintf(stderr,"ERROR! sftIndex = %d > %d in TestLALDemod\nalpha=%d,"
+		      "k1=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
+		      sftIndex-1, maxSFTindex, alpha, k1, xTemp, params->Dterms, params->ifmin);
+	      ABORT(status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+	    }
+
           } /* if x could become close to 0 */
         else
           {
             COMPLEX8 *Xalpha_k = Xalpha + sftIndex;
+	    REAL4 accFreq = 1.0; /* accumulating frequency factor, becomes common denominator */
+	    REAL4 tsin2pi = tsin * (REAL4)OOTWOPI;
+	    REAL4 tcos2pi = tcos * (REAL4)OOTWOPI;
+	    REAL4 Xa[4], Xs[4], Tf[4], Af[4];
 
-            realXP=0.0;
-            imagXP=0.0;
+	    Xs[0] = ( Xs[1] = 0);
+	    Af[0] = 1.0;
+	    Tf[0] = tempFreq1;
 
-            /* Loop over terms in Dirichlet Kernel */
+            for(k=0; k < klim/2 ; k++)
+	      {
+		UINT4 ilc;
 
+		Tf[1] = Tf[0];
+		Af[1] = Af[0];
 
-            for(k=0; k < klim ; k++)
-              {
-                REAL4 xinv = (REAL4)OOTWOPI / (REAL4)tempFreq1;
-                COMPLEX8 Xa = *Xalpha_k;
+		Xa[0] = (*Xalpha_k).re;
+		Xa[1] = (*Xalpha_k).im;
                 Xalpha_k ++;
-                tempFreq1 --;
-                
-                realP = tsin * xinv;
-                imagP = tcos * xinv;
-                /* these lines compute P*xtilde */
-                realXP += Xa.re * realP - Xa.im * imagP;
-                imagXP += Xa.re * imagP + Xa.im * realP;
+		Xa[2] = (*Xalpha_k).re;
+		Xa[3] = (*Xalpha_k).im;
+                Xalpha_k ++;
+
+		Af[3] = Af[0] * Tf[0];
+                Tf[2] = Tf[0] - 1;
+		Tf[3] = Tf[2];
+		Af[3] = Af[2];
+
+		for(ilc=0; ilc<4; ilc++)
+		  Xs[ilc] = Tf[ilc] * Xs[ilc] + Xa[ilc] * Af[ilc];
+
+		Af[0] = Af[2] * Tf[2];
+                Tf[0] = Tf[2] - 1;
 
               } /* for k < klim */
 
+	    Xs[0] = Xs[0] * Xs[3] / accFreq;
+	    Xs[1] = Xs[1] * Xs[4] / accFreq;
+
+            realXP = tsin2pi * Xs[0] - tcos2pi * Xs[1];
+            imagXP = tcos2pi * Xs[0] + tsin2pi * Xs[1];
           } /* if x cannot be close to 0 */
-
-        if(sftIndex-1 > maxSFTindex) {
-          fprintf(stderr,"ERROR! sftIndex = %d > %d in TestLALDemod\nalpha=%d,"
-                 "k1=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
-                 sftIndex-1, maxSFTindex, alpha, k1, xTemp, params->Dterms, params->ifmin);
-	  ABORT(status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-	}
-
 
         /* implementation of amplitude demodulation */
         {
@@ -325,4 +308,3 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 
 }
 
-#endif /* USE_R4LALDEMOD, USE_ALTIVEC */
