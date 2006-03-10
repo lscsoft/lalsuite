@@ -174,8 +174,8 @@ if options.seg.duration() < 3600:
 else:
 	psds_per_job = 16
 	psds_per_injection = 16
-# do this injections beteen flow and fhigh
-num_injections = 22
+# do this injections beteen flow and fhigh inclusively
+injection_bands = config_parser.getint('pipeline', 'injection_bands')
 
 
 #
@@ -549,7 +549,7 @@ def make_gsiscp_fragment(dag, parents, destination):
 
 def make_binj_fragment(dag, tag, seg, offset, flow, fhigh, fratio):
 	# one injection every time-step / pi seconds
-	period = num_injections * float(binjjob.get_opts()["time-step"]) / math.pi
+	period = injection_bands * float(binjjob.get_opts()["time-step"]) / math.pi
 	start = seg[0] - seg[0] % period + period * offset
 
 	node = power.BurstInjNode(binjjob)
@@ -581,7 +581,7 @@ def make_multibinj_fragment(dag, tag, seg):
 	# determine frequency ratio from number of injections across band
 	# (take a bit off to allow fhigh to be picked up despite round-off
 	# errors)
-	fratio = 0.9999999 * (fhigh / flow) ** (1.0/(num_injections - 1.0))
+	fratio = 0.9999999 * (fhigh / flow) ** (1.0/(injection_bands - 1.0))
 
 	binjnodes = [make_binj_fragment(dag, tag, seg, 0.0, flow, fhigh, fratio)]
 
