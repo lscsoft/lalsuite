@@ -50,7 +50,6 @@
 /* local includes */
 #include "DopplerScan.h"
 
-
 RCSID( "$Id$");
 
 /*---------- DEFINES ----------*/
@@ -99,8 +98,6 @@ typedef struct {
   REAL8 duration;			    /**< total time-span of the data (all streams) in seconds */
   LIGOTimeGPS refTime;			    /**< reference-time for pulsar-parameters in SBB frame */
   EphemerisData *edat;			    /**< ephemeris data (from LALInitBarycenter()) */
-  LALPulsarSpinRange *spinRangeRef; 	    /**< pulsar spin-range at reference-time 'refTime' */
-  LALPulsarSpinRange *spinRangeStart; 	    /**< pulsar spin-range at start of observation 'startTime; */
   DopplerRegion searchRegion;		    /**< parameter-space region to search over (FIXME) */
   UINT4 numDetectors;			    /**< number of detectors */
   MultiSFTVector *multiSFTs;		    /**< multi-IFO SFT-vectors */
@@ -190,9 +187,6 @@ int main(int argc,char *argv[])
 {
   LALStatus status = blank_status;	/* initialize status */
 
-  DopplerScanInit scanInit;		/* init-structure for DopperScanner */
-  DopplerScanState thisScan = empty_DopplerScanState; /* current state of the Doppler-scan */
-  DopplerPosition dopplerpos;		/* current search-parameters */
   SkyPosition thisPoint;
   
   FILE *fpFstat = NULL;
@@ -225,31 +219,6 @@ int main(int argc,char *argv[])
   /* like ephemeries data and template grids: */
   LAL_CALL ( InitFStat(&status, &GV), &status);
 
-  /* prepare initialization of DopplerScanner to step through paramter space */
-  scanInit.dAlpha = uvar_dAlpha;
-  scanInit.dDelta = uvar_dDelta;
-  scanInit.obsDuration = GV.duration;
-  scanInit.obsBegin = GV.startTime;
-  scanInit.Detector = &(GV.multiDetStates->data[0]->detector);	/* FIXME: need multi-IFO metric */
-  scanInit.ephemeris = GV.edat;		/* used by Ephemeris-based metric */
-
-  scanInit.searchRegion = GV.searchRegion;
-  
-  if (lalDebugLevel) printf ("\nSetting up template grid ...");
-  
-  LAL_CALL ( InitDopplerScan ( &status, &thisScan, &scanInit), &status); 
-  
-  if ( lalDebugLevel ) {
-    printf ("\nDEBUG: actual grid-spacings: dFreq = %g, df1dot = %g\n\n", 
-	    thisScan.dFreq, thisScan.df1dot );
-  }
-  /*----------------------------------------------------------------------*/
-  if (lalDebugLevel) printf ("done.\n");
-  if ( uvar_outputSkyGrid ) {
-    printf ("\nNow writing sky-grid into file '%s' ...", uvar_outputSkyGrid);
-    LAL_CALL (writeSkyGridFile( &status, thisScan.grid, uvar_outputSkyGrid, &scanInit), &status);
-    printf (" done.\n\n");
-  }
   
   /* if a complete output of the F-statistic file was requested,
    * we open and prepare the output-file here */
@@ -270,8 +239,8 @@ int main(int argc,char *argv[])
    */
   
    /* normalize skyposition: correctly map into [0,2pi]x[-pi/2,pi/2] */
-  thisPoint.longitude = dopplerpos.Alpha;
-  thisPoint.latitude = dopplerpos.Delta;
+  thisPoint.longitude = uvar_Alpha;
+  thisPoint.latitude = uvar_Delta;
   thisPoint.system = COORDINATESYSTEM_EQUATORIAL;
   LAL_CALL (LALNormalizeSkyPosition(&status, &thisPoint, &thisPoint), &status);
   
@@ -365,9 +334,6 @@ int main(int argc,char *argv[])
     }
   
   if (lalDebugLevel) printf ("\nSearch finished.\n");
-  
-  /* Free memory */
-  LAL_CALL ( FreeDopplerScan(&status, &thisScan), &status);
   
   LAL_CALL ( Freemem(&status, &GV), &status);
   
