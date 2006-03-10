@@ -1,7 +1,5 @@
 /*
- * Copyright (C) 2005, 2006 Reinhard Prix, Iraj Gholami
- * Copyright (C) 2004 Reinhard Prix
- * Copyright (C) 2002, 2003, 2004 M.A. Papa, X. Siemens, Y. Itoh
+ * Copyright (C) 2006 Iraj Gholami, Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -20,7 +18,7 @@
  */
 
 /*********************************************************************************/
-/** \author R. Prix, I. Gholami, Y. Ioth, Papa, X. Siemens
+/** \author I. Gholami, R. Prix
  * \file 
  * \brief
  * Calculate the F-statistic for a given parameter-space of pulsar GW signals.
@@ -304,30 +302,29 @@ int main(int argc,char *argv[])
 	UINT4 numSFTsX = GV.multiSFTs->data[X]->length;
 	AMCoeffs *amcoeX = multiAMcoef->data[X];
 	REAL8Vector *weightsX = GV.multiNoiseWeights->data[X];
-	
+
+	Tsft = 1 / (GV.multiSFTs->data[X]->data[0].deltaF);	
+
 	for(alpha = 0; alpha < numSFTsX; alpha++)
 	  {
-	    REAL8 Sqwi = sqrt ( weightsX->data[alpha] );
-	    REAL8 ahat = Sqwi * amcoeX->a->data[alpha] ;
-	    REAL8 bhat = Sqwi * amcoeX->b->data[alpha] ;
+	    REAL8 SqWN = sqrt ( weightsX->data[alpha] );
+	    REAL8 ahat = SqWN * amcoeX->a->data[alpha] ;
+	    REAL8 bhat = SqWN * amcoeX->b->data[alpha] ;
 	    
-	    /* *replace* original a(t), b(t) by noise-weighed version! */
-	    amcoeX->a->data[alpha] = ahat;
-	    amcoeX->b->data[alpha] = bhat;
-	  
 	    /* sum A, B, C on the fly */
 	    A += ahat * ahat;
 	    B += bhat * bhat;
 	    C += ahat * bhat;
+	    
 	  } /* for alpha < numSFTsX */
+
+	At += (Tsft ) * A;
+	Bt += (Tsft ) * B;
+	Ct += (Tsft ) * C;
+	Dt += A * B - C * C; 
+	
       } /* for X < numDetectors */
-    
-    Tsft = 1 / (GV.multiSFTs->data[X]->data[0].deltaF);
-    At = (Tsft ) * A;
-    Bt = (Tsft ) * B;
-    Ct = (Tsft ) * C;
-    Dt = A * B - C * C; 
-    
+        
     twophi = 2.0 * uvar_phi;
     twopsi = 2.0 * uvar_psi;
     
