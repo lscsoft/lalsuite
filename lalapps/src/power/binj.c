@@ -439,14 +439,8 @@ static struct options parse_command_line(int *argc, char **argv[], MetadataTable
 		break;
 
 	case FREQ_DIST_MONO_GEOMETRIC:
-		if((options.deltaf != 0.0) || (options.fratio <= 0.0)) {
-			fprintf(stderr, "error: invalid frequency distribution parameters\n");
-			exit(1);
-		}
-		break;
-
 	case FREQ_DIST_RANDOM_GEOMETRIC:
-		if((options.deltaf != 0.0) || (options.fratio != 0.0)) {
+		if((options.deltaf != 0.0) || (options.fratio <= 0.0)) {
 			fprintf(stderr, "error: invalid frequency distribution parameters\n");
 			exit(1);
 		}
