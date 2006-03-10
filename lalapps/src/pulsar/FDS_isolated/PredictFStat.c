@@ -239,7 +239,7 @@ int main(int argc,char *argv[])
 
   { /* Calculating the F-Statistic */
     
-    REAL8 A = 0.0, B = 0.0 ,C = 0.0, At = 0.0 ,Bt = 0.0 ,Ct = 0.0; 
+    REAL8 At = 0.0 ,Bt = 0.0 ,Ct = 0.0; 
     REAL8 A1, A2, A3, A4;
     REAL8 h0, cosi; 
     REAL8 Sh;
@@ -260,6 +260,7 @@ int main(int argc,char *argv[])
     /* Antenna-patterns and compute A,B,C */
     for ( X=0; X < GV.numDetectors; X ++)
       {
+	REAL8 A = 0.0, B = 0.0 ,C = 0.0;
 	UINT4 alpha;
 	UINT4 numSFTsX = GV.multiSFTs->data[X]->length;
 	AMCoeffs *amcoeX = multiAMcoef->data[X];
@@ -721,57 +722,4 @@ checkUserInputConsistency (LALStatus *status)
 /* debug-output a(t) and b(t) into given file.
  * return 0 = OK, -1 on error
  */
-int
-outputBeamTS( const CHAR *fname, const AMCoeffs *amcoe, const DetectorStateSeries *detStates )
-{
-  FILE *fp;
-  UINT4 i, len;
 
-  if ( !fname || !amcoe || !amcoe->a || !amcoe->b || !detStates)
-    return -1;
-  
-  len = amcoe->a->length;
-  if ( (len != amcoe->b->length) || ( len != detStates->length ) )
-    return -1;
-
-  if ( (fp = fopen(fname, "wb")) == NULL )
-    return -1;
-
-  for (i=0; i < len; i ++ )
-    {
-      INT4 ret;
-      ret = fprintf (fp, "%9d %f %f %f \n", 
-		     detStates->data[i].tGPS.gpsSeconds, detStates->data[i].LMST, amcoe->a->data[i], amcoe->b->data[i] );
-      if ( ret < 0 )
-	{
-	  fprintf (fp, "ERROR\n");
-	  fclose(fp);
-	  return -1;
-	}
-    }
-
-  fclose(fp);
-  return 0;
-} /* outputBeamTS() */
-
-
-/*
-  ============
-  va ['stolen' from Quake2 (GPL'ed)]
-
-  does a varargs printf into a temp buffer, so I don't need to have
-  varargs versions of all text functions.
-  FIXME: make this buffer size safe someday
-  ============
-*/
-const char *va(const char *format, ...)
-{
-  va_list         argptr;
-  static char     string[1024];
-
-  va_start (argptr, format);
-  vsprintf (string, format,argptr);
-  va_end (argptr);
-
-  return string;
-}
