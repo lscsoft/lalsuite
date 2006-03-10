@@ -408,6 +408,12 @@ static struct options parse_command_line(int *argc, char **argv[], MetadataTable
 
 
 	/* check some of the input parameters for consistency */
+	if(options.fhigh == options.flow) {
+		/* use monotonic arithmetic distribution for case of fixed
+		 * frequency */
+		options.freq_dist = FREQ_DIST_MONO_ARITHMETIC;
+		options.deltaf = 1.0;
+	}
 	if(options.fhigh < options.flow) {
 		fprintf(stderr, "error: --fhigh < --flow\n");
 		exit(1);
