@@ -439,8 +439,14 @@ static struct options parse_command_line(int *argc, char **argv[], MetadataTable
 		break;
 
 	case FREQ_DIST_MONO_GEOMETRIC:
-	case FREQ_DIST_RANDOM_GEOMETRIC:
 		if((options.deltaf != 0.0) || (options.fratio <= 0.0)) {
+			fprintf(stderr, "error: invalid frequency distribution parameters\n");
+			exit(1);
+		}
+		break;
+
+	case FREQ_DIST_RANDOM_GEOMETRIC:
+		if((options.deltaf != 0.0) || (options.fratio <= 0.0) || (options.fhigh / options.flow < sqrt(options.fratio))) {
 			fprintf(stderr, "error: invalid frequency distribution parameters\n");
 			exit(1);
 		}
@@ -617,12 +623,17 @@ static double freq_dist_monotonic_geometric_next(struct options options)
 
 
 /*
- * Logarithmically-distributed random sequence.
+ * Logarithmically-distributed random(ish) sequence.
  */
 
 static double freq_dist_random_geometric_next(RandomParams *randparams, struct options options)
 {
-	return freq_dist_monotonic_geometric_next(options) * Log10Deviate(randparams, -log10(options.fratio) / 2.0, log10(options.fratio) / 2.0);
+	const double sqrtratio = sqrt(options.fratio);
+	double freq = freq_dist_monotonic_geometric_next(options) * sqrtratio;
+	if(freq > options.fhigh)
+		freq = freq_dist_monotonic_geometric_next(options) * sqrtratio;
+
+	return Log10Deviate(randparams, log10(freq / sqrtratio), log10(freq * sqrtratio));
 }
 
 
