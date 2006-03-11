@@ -14,6 +14,7 @@ mfd_code="lalapps_Makefakedata"
 cfs_code="lalapps_ComputeFStatistic"
 cfsv2_code="ComputeFStatistic_v2"
 cmp_code="compareFstats"
+pfs_code="lalapps_PredictFStat"
 
 SFTdir="./testSFTs"
 
@@ -106,7 +107,6 @@ if ! eval $cmdline; then
 fi
 
 echo
-echo
 cmdline="$mfd_code $mfd2_CL";
 echo $cmdline;
 if ! eval $cmdline; then
@@ -114,23 +114,58 @@ if ! eval $cmdline; then
     exit 1
 fi
 
+echo
+echo "----------------------------------------------------------------------"
+echo " STEP 2: Calculate F-Statistic Semi-Analytically"
+echo "----------------------------------------------------------------------"
 echo 
-echo -n "Running '$saf_code' ... "
+
 cmdline="$saf_code $saf_CL --sqrtSh=$sqrtSh"	
 echo $cmdline
 if ! resF=`eval $cmdline 2> /dev/null`; then
     echo "Error ... something failed running '$saf_code' ..."
     exit 1;
 fi
-echo  "ok."
+#echo  "ok."
 res2F=`echo $resF | awk '{printf "%g", 2.0 * $1}'`
 echo
-echo "The SemiAnalyticF calculations for single detector, predicts: 2F = $res2F"
-echo 
+
+# this part of the command-line is compatible with PredictFStat:
+pfs_CL="--aPlus=$aPlus --aCross=$aCross --psi=$psi --phi=$phi0 --sqrtSh=$sqrtSh --Freq=100.0 --FreqBand=1.0 --DataFiles='./testSFTs/H-1_H1*' --Delta=$Delta --Alpha=$Alpha"
+
+cmdline="$pfs_code $pfs_CL"
+echo $cmdline
+
+if ! resPFS1=`eval $cmdline 2> /dev/null`; then
+    echo "Error ... something failed running '$pfs_code' ..."
+    exit 1;
+fi
+#echo  "ok."
+
+res2PFS1=`echo $resPFS1 | awk '{printf "%g", $1}'`
+echo
+
+pfs2_CL="--aPlus=$aPlus --aCross=$aCross --psi=$psi --phi=$phi0 --sqrtSh=$sqrtSh --Freq=100.0 --FreqBand=1.0 --DataFiles='./testSFTs/H-1_H*' --Delta=$Delta --Alpha=$Alpha"
+
+cmdline="$pfs_code $pfs2_CL"
+echo $cmdline
+
+if ! resPFS2=`eval $cmdline 2> /dev/null`; then
+    echo "Error ... something failed running '$pfs_code' ..."
+    exit 1;
+fi
+#echo  "ok."
+
+res2PFS2=`echo $resPFS2 | awk '{printf "%g", $1}'`
+echo
+
+echo "The SemiAnalyticF for $IFO1,    predicts: 2F = $res2F"
+echo "The PredictFStat  for $IFO1,    predicts: 2F = $res2PFS1"
+echo "The PredictFStat  for $IFO1+$IFO2, predicts: 2F = $res2PFS2"
 
 echo 
 echo "----------------------------------------------------------------------"
-echo "STEP 2: run CFS_v2 with perfect match, for single detector"
+echo " STEP 3: run CFS_v2 with perfect match, for single detector"
 echo "----------------------------------------------------------------------"
 echo
 
@@ -147,7 +182,7 @@ fi
 
 echo    
 echo "----------------------------------------------------------------------"
-echo " STEP 3: run CFS_v2 with perfect match, for two detectors"
+echo " STEP 4: run CFS_v2 with perfect match, for two detectors"
 echo "----------------------------------------------------------------------"
 echo
 
@@ -164,7 +199,7 @@ fi
 
 echo
 echo "----------------------------------------"
-echo " STEP 4: Comparing results: "
+echo " STEP 5: Comparing results: "
 echo "----------------------------------------"
 echo
 echo "Fstat_v2_1.dat: "
