@@ -126,7 +126,7 @@ main (INT4 argc, CHAR **argv )
   }
   
   /* --- Estimate the size of the signal --- */
-  LAL_CALL(BEGetMaximumSize(&status, randIn, &(signal.length)), 
+  LAL_CALL(BEGetMaximumSize(&status, randIn, coarseBankIn, &(signal.length)), 
 	   &status);
   /* if --num-seconds is provided, we want a specified length of data.
    * Otherwise, we stick to a minimal size given by twice the length of the
@@ -259,8 +259,9 @@ main (INT4 argc, CHAR **argv )
 	fprintf(stdout,"Init ... done\n");
       }
       
-      randIn.param.fCutoff = coarseBankIn.fUpper; 
+     /* randIn.param.fCutoff = coarseBankIn.fUpper; */
       if (vrbflg){
+        fprintf(stdout, "Upper frequency cut-off on signal: %e\n", randIn.param.fCutoff);
 	fprintf(stdout,"Signal Generation ... ");
 	fflush(stdout);
       }
@@ -343,7 +344,7 @@ main (INT4 argc, CHAR **argv )
               overlapin.param 	= list[currentTemplate].params;	   
               LAL_CALL(LALInspiralParameterCalc( &status,  &(overlapin.param) ), &status);
               overlapout.max    = -1.; /* let us be sure that is has a value */
-              overlapin.param.fCutoff = randIn.param.tSampling/2. - 1;;
+              overlapin.param.fCutoff = coarseBankIn.fUpper;
               overlapin.param.fFinal = randIn.param.tSampling/2. - 1;
               
               if (userParam.faithfulness){ /* same parameters but different templates */
@@ -352,7 +353,7 @@ main (INT4 argc, CHAR **argv )
 		list[currentTemplate].params = randIn.param;
 		overlapin.param                    = randIn.param;
                 LAL_CALL(LALInspiralParameterCalc( &status,  &(overlapin.param) ), &status);
-                overlapin.param.fCutoff = randIn.param.tSampling/2. - 1;;
+                overlapin.param.fCutoff = coarseBankIn.fUpper;
                 overlapin.param.fFinal = randIn.param.tSampling/2. - 1;
 		overlapin.param.approximant        = userParam.template;
 		overlapin.param.order              = tempOrder;
@@ -677,26 +678,26 @@ void InitUserParametersIn(UserParametersIn *userParam)
   userParam->H1.chanName             = "H1:LSC-AS_Q";
   userParam->H2.chanName             = "H2:LSC-AS_Q";
   
-  userParam->L1.dataFile.S4.calCacheName         =  "/archive/home/cokelaer/inspiralRuns/Calibration/L1-CAL-V03-793126813-796025053.cache";
-  userParam->L1.dataFile.S4.frInCacheName        =  "/archive/home/cokelaer/inspiralRuns/cacheFiles/L-RDS_R_L3-793131485-795679161.cache";     
-  userParam->H1.dataFile.S4.calCacheName         =  "/archive/home/cokelaer/inspiralRuns/Calibration/H1-CAL-V03-793126813-796025053.cache";
-  userParam->H1.dataFile.S4.frInCacheName        =  "/archive/home/cokelaer/inspiralRuns/cacheFiles/H-RDS_R_L3-793139225-795679221.cache";     
-  userParam->H2.dataFile.S4.calCacheName         =  "/archive/home/cokelaer/inspiralRuns/Calibration/H2-CAL-V03-793126813-796025053.cache";
-  userParam->H2.dataFile.S4.frInCacheName        =  "/archive/home/cokelaer/inspiralRuns/cacheFiles/H-RDS_R_L3-793139225-795679221.cache";
+  userParam->L1.dataFile.S4.calCacheName         =  "/home/spxcar/inspiralRuns/Calibration/L1-CAL-V03-793126813-796025053.cache";
+  userParam->L1.dataFile.S4.frInCacheName        =  "/home/spxcar/inspiralRuns/cacheFiles/L-RDS_R_L3-793131485-795679161.cache";     
+  userParam->H1.dataFile.S4.calCacheName         =  "/home/spxcar/inspiralRuns/Calibration/H1-CAL-V03-793126813-796025053.cache";
+  userParam->H1.dataFile.S4.frInCacheName        =  "/home/spxcar/inspiralRuns/cacheFiles/H-RDS_R_L3-793139225-795679221.cache";     
+  userParam->H2.dataFile.S4.calCacheName         =  "/home/spxcar/inspiralRuns/Calibration/H2-CAL-V03-793126813-796025053.cache";
+  userParam->H2.dataFile.S4.frInCacheName        =  "/home/spxcar/inspiralRuns/cacheFiles/H-RDS_R_L3-793139225-795679221.cache";
 
-  userParam->L1.dataFile.S3.calCacheName         =  "/archive/home/cokelaer/inspiralRuns/Calibration/L1-CAL-V03-751719553-757687393.cache";
-  userParam->L1.dataFile.S3.frInCacheName        =  "/archive/home/cokelaer/inspiralRuns/cacheFiles/L-S3_RDS_R_L3-751787954-757664301.cache";     
-  userParam->H1.dataFile.S3.calCacheName         =  "/archive/home/cokelaer/inspiralRuns/Calibration/H1-CAL-V03-751651153-757672093.cache";
-  userParam->H1.dataFile.S3.frInCacheName        =  "/archive/home/cokelaer/inspiralRuns/cacheFiles/H-S3_RDS_R_L3-751784320-757669742.cache";     
-  userParam->H2.dataFile.S3.calCacheName         =  "/archive/home/cokelaer/inspiralRuns/Calibration/H2-CAL-V03-751654453-757699693.cache";
-  userParam->H2.dataFile.S3.frInCacheName        =  "/archive/home/cokelaer/inspiralRuns/cacheFiles/H-S3_RDS_R_L3-751784320-757669742.cache";     
+  userParam->L1.dataFile.S3.calCacheName         =  "/home/spxcar/cache_files/L1-CAL-V02-729273600-734367600.cache";
+  userParam->L1.dataFile.S3.frInCacheName        =  "/home/spxcar/cachefiles/inspiralRuns/cacheFiles/CacheFile_L_S3_RDS_R_L3.txt";     
+  userParam->H1.dataFile.S3.calCacheName         =  "/home/spxcar/cache_files/H1-CAL-V02-751651244-757699245.cache";
+  userParam->H1.dataFile.S3.frInCacheName        =  "/home/spxcar/cachefiles/inspiralRuns/cacheFiles/CacheFile_H_S3_RDS_R_L3.txt";     
+  userParam->H2.dataFile.S3.calCacheName         =  "/home/spxcar/cache_files/H2-CAL-V02-751651244-757699245.cache";
+  userParam->H2.dataFile.S3.frInCacheName        =  "/home/spxcar/cachefiles/inspiralRuns/cacheFiles/CacheFile_H_S3_RDS_R_L3.txt";     
 
-  userParam->L1.dataFile.S2.calCacheName         =  "/archive/home/cokelaer/inspiralRuns/Calibrationcache_files/L1-CAL-V03-729273600-734367600.cache";
-  userParam->L1.dataFile.S2.frInCacheName        =  "/archive/home/cokelaer/inspiralRuns//cacheFiles/CacheFile_L_S2_RDS_R_L3.txt";     
-  userParam->H1.dataFile.S2.calCacheName         =  "/archive/home/cokelaer/inspiralRuns/Calibrationcache_files/H1-CAL-V03-729273600-734367600.cache";
-  userParam->H1.dataFile.S2.frInCacheName        =  "/archive/home/cokelaer/inspiralRuns/cacheFiles/CacheFile_H_S2_RDS_R_L3.txt";     
-  userParam->H2.dataFile.S2.calCacheName         =  "/archive/home/cokelaer/inspiralRuns/Calibration/cache_files/H2-CAL-V03-731849076-734367576.cache";
-  userParam->H2.dataFile.S2.frInCacheName        =  "/archive/home/cokelaer/inspiralRuns/cacheFiles/CacheFile_H_S2_RDS_R_L3.txt";      
+  userParam->L1.dataFile.S2.calCacheName         =  "/home/spxcar/inspiralRuns/Calibrationcache_files/L1-CAL-V03-729273600-734367600.cache";
+  userParam->L1.dataFile.S2.frInCacheName        =  "/home/spxcar/inspiralRuns//cacheFiles/CacheFile_L_S2_RDS_R_L3.txt";     
+  userParam->H1.dataFile.S2.calCacheName         =  "/home/spxcar/inspiralRuns/Calibrationcache_files/H1-CAL-V03-729273600-734367600.cache";
+  userParam->H1.dataFile.S2.frInCacheName        =  "/home/spxcar/inspiralRuns/cacheFiles/CacheFile_H_S2_RDS_R_L3.txt";     
+  userParam->H2.dataFile.S2.calCacheName         =  "/home/spxcar/inspiralRuns/Calibration/cache_files/H2-CAL-V03-731849076-734367576.cache";
+  userParam->H2.dataFile.S2.frInCacheName        =  "/home/spxcar/inspiralRuns/cacheFiles/CacheFile_H_S2_RDS_R_L3.txt";      
   userParam->dataCheckPoint                      = 0;
 }
 
@@ -1177,7 +1178,9 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
   if (coarseBankIn->fUpper >=coarseBankIn->tSampling/2. -1.){
     coarseBankIn->fUpper = coarseBankIn->tSampling/2 -1.;
   }
-  
+ 
+  randIn->param.fCutoff = coarseBankIn->fUpper;
+ 
   if (randIn->param.fCutoff >=coarseBankIn->tSampling/2. -1.){
       randIn->param.fCutoff = coarseBankIn->tSampling/2 -1.;
   }
@@ -1308,6 +1311,7 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
     randIn->param.massChoice = fixedMasses; 
     randIn->param.mass1 = userParam->m1;
     randIn->param.mass2 = userParam->m2;
+    randIn->param.fCutoff = userParam->signalfFinal;
     /* we need to update the mMin which is used to estimate the length of the vetors*/
     if (userParam->m1  > userParam->m2){
       randIn->mMin = userParam->m2;
@@ -1340,6 +1344,7 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
    randIn->param.massChoice = fixedTau; 
    randIn->param.t0 = userParam->tau0;
    randIn->param.t3 = userParam->tau3;
+   randIn->param.fCutoff = userParam->signalfFinal;
    if (userParam->psi0 != -1 ||userParam->psi3 != -1 || userParam->m1 != -1 || userParam->m2 != -1){
      sprintf(msg, "--m1 --m2 --psi0 --psi3 --tau0 --tau3 error. If particular injection is requested,  you must choose either (--m1,--m2) options or (--psi0,--psi3) or (--tau0,--tau3)\n");
      BEPrintError(msg);  
@@ -1403,6 +1408,7 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
 	   / (randIn->MMax )
 	   / (randIn->MMax );
        }
+     randIn->param.fCutoff = userParam->signalfFinal;
    }
 
 
@@ -3181,9 +3187,13 @@ BEInitOverlapOutputIn(OverlapOutputIn *this){
 
 /* Estimate the size of the longest template */
 void BEGetMaximumSize(LALStatus  *status, 		      
-		      RandomInspiralSignalIn  randIn, 
+		      RandomInspiralSignalIn  randIn,
+		      InspiralCoarseBankIn coarseBankIn, 
 		      UINT4 *length)
 {
+  /* Use these for the longest template from the bank */
+  InspiralTemplate params;
+  UINT4 maxTmpltLength = 0;
 
   INITSTATUS( status, "BEGetMaximumSize", BANKEFFICIENCYC );
   ATTATCHSTATUSPTR( status );
@@ -3194,6 +3204,16 @@ void BEGetMaximumSize(LALStatus  *status,
  
   LAL_CALL(LALInspiralWaveLength(status->statusPtr, length, randIn.param), 
 	   status->statusPtr);
+  
+  params = randIn.param;
+  params.mass1 = params.mass2 = coarseBankIn.mMin;
+
+  LAL_CALL(LALInspiralWaveLength(status->statusPtr, &maxTmpltLength, params),
+           status->statusPtr);
+
+  /* Now return the longest of max template or signal */
+  if (maxTmpltLength > *length)
+    *length = maxTmpltLength;
 
   DETATCHSTATUSPTR( status );
   RETURN( status );  
@@ -3464,7 +3484,7 @@ LALCreateRealPsd(LALStatus *status,
 
 
   
-  int i; FILE *Foutput;
+  int i; FILE *Foutput;  /* Not actually used - Craig */
   /* lal function variables */
 
 
@@ -3554,7 +3574,7 @@ LALCreateRealPsd(LALStatus *status,
 
   /*  fprintf(stderr,"Generating real PSD\n");*/
   calData = undefined;
-  calData = real_4;
+  /*calData = real_4;*/
 
   memset( ifo, 0, sizeof(ifo));
 
@@ -4256,11 +4276,13 @@ LALCreateRealPsd(LALStatus *status,
   }
   
 
-  Foutput= fopen("spec.dat","w");
+/*  Foutput= fopen("spec.dat","w");
 
   for (i = 1; i < (int)bankIn->shf.data->length; i++)
     fprintf(Foutput, "%15.10e\n", bankIn->shf.data->data[i]);  
-  fclose(Foutput); 
+  fclose(Foutput);*/
+
+   LALDPrintFrequencySeries( &(bankIn->shf), "spec.dat" );  
   /*
    Foutput= fopen("uncalibratedpsd.dat","w");
 
