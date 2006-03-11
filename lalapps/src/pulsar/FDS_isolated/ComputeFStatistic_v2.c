@@ -800,9 +800,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   
   /* ----- normalize SFTs and calculate noise-weights ----- */
   if ( uvar_SignalOnly )
-    {
-      TRY ( getUnitWeights ( status->statusPtr, &(cfg->multiNoiseWeights), cfg->multiSFTs ), status );
-    }
+    cfg->multiNoiseWeights = NULL; 
   else
     {
       MultiPSDVector *psds = NULL;
@@ -1085,59 +1083,6 @@ outputBeamTS( const CHAR *fname, const AMCoeffs *amcoe, const DetectorStateSerie
   fclose(fp);
   return 0;
 } /* outputBeamTS() */
-
-/** Helper-function to generate unity noise-weights for given multiSFT-vector */
-void
-getUnitWeights ( LALStatus *status, MultiNoiseWeights **multiWeights, const MultiSFTVector *multiSFTs )
-{
-  MultiNoiseWeights *ret = NULL;
-  UINT4 X, numDet;
-
-  INITSTATUS (status, "getUnitWeights", rcsid);
-  ATTATCHSTATUSPTR (status); 
-
-  ASSERT ( multiSFTs, status, COMPUTEFSTATISTIC_ENULL, COMPUTEFSTATISTIC_MSGENULL);
-  ASSERT ( multiSFTs->data, status, COMPUTEFSTATISTIC_ENULL, COMPUTEFSTATISTIC_MSGENULL);
-  ASSERT ( multiSFTs->length, status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
-
-  ASSERT ( multiWeights, status, COMPUTEFSTATISTIC_ENULL, COMPUTEFSTATISTIC_MSGENULL);
-  ASSERT ( (*multiWeights) == NULL, status, COMPUTEFSTATISTIC_ENULL, COMPUTEFSTATISTIC_MSGENULL);
-
-  numDet = multiSFTs->length;
-
-  if ( (ret = LALCalloc(1, sizeof(MultiNoiseWeights))) == NULL ){
-    ABORT (status,  COMPUTEFSTATISTIC_EMEM,  COMPUTEFSTATISTIC_MSGEMEM);
-  }
-  ret->length = numDet;
-
-  if ( (ret->data = LALCalloc( numDet, sizeof(REAL8Vector *))) == NULL) {
-    ABORT (status,  COMPUTEFSTATISTIC_EMEM,  COMPUTEFSTATISTIC_MSGEMEM);      
-  }
-
-  for ( X = 0; X < numDet; X ++) 
-    {
-      UINT4 numsfts = multiSFTs->data[X]->length;
-      UINT4 alpha;
-
-      /* create k^th weights vector */
-      if ( (ret->data[X] = XLALCreateREAL8Vector ( numsfts )) == NULL ) {
-	ABORT (status,  COMPUTEFSTATISTIC_EMEM,  COMPUTEFSTATISTIC_MSGEMEM);      
-      }
-
-      /* set all weights to unity */
-      for ( alpha = 0; alpha < numsfts; alpha ++ ) 
-	ret->data[X]->data[alpha] = 1.0;
-      
-    } /* for X < numDet */
-
-
-  (*multiWeights) = ret;
-  
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
-
-} /* getUnitWeights() */
-
 
 /*
 ============
