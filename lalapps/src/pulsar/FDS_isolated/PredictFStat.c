@@ -21,8 +21,8 @@
 /** \author I. Gholami, R. Prix
  * \file 
  * \brief
- * Calculate the F-statistic for a given parameter-space of pulsar GW signals.
- * Implements the so-called "F-statistic" as introduced in \ref JKS98.
+ * Calculate the F-statistic Semi-Analytically of pulsar GW signals.
+ * Implements the so-called "F-statistic" as introduced in \ref JKS98 and Cutler-Schutz 2005.
  *                                                                          
  *********************************************************************************/
 #include "config.h"
@@ -61,10 +61,6 @@ RCSID( "$Id$");
 #define TRUE (1==1)
 #define FALSE (1==0)
 
-/*----- SWITCHES -----*/
-#define NUM_SPINS 4		/* number of spin-values to consider: {f, fdot, f2dot, ... } */ 
-
-
 /*----- Error-codes -----*/
 #define COMPUTEFSTATISTIC_ENULL 	1
 #define COMPUTEFSTATISTIC_ESYS     	2
@@ -96,13 +92,11 @@ RCSID( "$Id$");
 typedef struct {
   LIGOTimeGPS startTime;		    /**< start time of observation */
   REAL8 duration;			    /**< total time-span of the data (all streams) in seconds */
-  LIGOTimeGPS refTime;			    /**< reference-time for pulsar-parameters in SBB frame */
   EphemerisData *edat;			    /**< ephemeris data (from LALInitBarycenter()) */
   DopplerRegion searchRegion;		    /**< parameter-space region to search over (FIXME) */
   UINT4 numDetectors;			    /**< number of detectors */
   MultiSFTVector *multiSFTs;		    /**< multi-IFO SFT-vectors */
   MultiDetectorStateSeries *multiDetStates; /**< pos, vel and LMSTs for detector at times t_i */
-  ComputeFParams CFparams;		    /**< parameters for the computation of Fstat (e.g Dterms, SSB-precision,...) */
 } ConfigVariables;
 
 #define SQ(x) ((x)*(x))
@@ -138,13 +132,6 @@ CHAR *uvar_DataFiles;
 BOOLEAN uvar_help;
 CHAR *uvar_outputLabel;
 CHAR *uvar_outputFstat;
-CHAR *uvar_outputLoudest;
-CHAR *uvar_outputSkyGrid;
-CHAR *uvar_workingDir;
-INT4 uvar_RngMedWindow;
-REAL8 uvar_refTime;
-INT4 uvar_SSBprecision;
-REAL8 uvar_dopplermax;
 
 /* ---------- local prototypes ---------- */
 int main(int argc,char *argv[]);
@@ -155,37 +142,28 @@ void Freemem(LALStatus *,  ConfigVariables *cfg);
 
 void WriteFStatLog (LALStatus *, CHAR *argv[]);
 void checkUserInputConsistency (LALStatus *);
-int outputBeamTS( const CHAR *fname, const AMCoeffs *amcoe, const DetectorStateSeries *detStates );
 void InitEphemeris (LALStatus *, EphemerisData *edat, const CHAR *ephemDir, const CHAR *ephemYear, LIGOTimeGPS epoch);
-
-const char *va(const char *format, ...);	/* little var-arg string helper function */
 
 /*---------- empty initializers ---------- */
 static const PulsarTimesParamStruc empty_PulsarTimesParamStruc;
 static const BarycenterInput empty_BarycenterInput;
 static const SFTConstraints empty_SFTConstraints;
-static const ComputeFBuffer empty_ComputeFBuffer;
 
 /*----------------------------------------------------------------------*/
-/* Function definitions start here */
+/* Main Function starts here */
 /*----------------------------------------------------------------------*/
 
 /** 
- * MAIN function of ComputeFStatistic code.
- * Calculate the F-statistic over a given portion of the parameter-space
- * and write a list of 'candidates' into a file(default: 'Fstats').
+ * MAIN function of PredictFStat code.
+ * Calculates the F-statistic for a given position in the sky and detector 
+ * semi-analytically and outputs the final 2F value.
  */
 int main(int argc,char *argv[]) 
 {
-  REAL8 F = 0.0;
-
   LALStatus status = blank_status;	/* initialize status */
-
-  SkyPosition thisPoint;
-  
   FILE *fpFstat = NULL;
   CWParamSpacePoint psPoint;		/* parameter-space point to compute Fstat for */
-   
+  SkyPosition thisPoint;   
 
   lalDebugLevel = 0;  
   vrbflg = 1;	/* verbose error-messages */
@@ -210,7 +188,7 @@ int main(int argc,char *argv[])
   LAL_CALL ( checkUserInputConsistency(&status), &status);
 
   /* Initialization the common variables of the code, */
-  /* like ephemeries data and template grids: */
+  /* like ephemeries data*/
   LAL_CALL ( InitFStat(&status, &GV), &status);
 
   
@@ -235,10 +213,10 @@ int main(int argc,char *argv[])
   
   /* set parameter-space point: sky-position */
   psPoint.skypos = thisPoint;
-  psPoint.refTime = GV.refTime;
 
   { /* Calculating the F-Statistic */
     
+    REAL8 F = 0.0;
     REAL8 At = 0.0 ,Bt = 0.0 ,Ct = 0.0; 
     REAL8 A1, A2, A3, A4;
     REAL8 h0, cosi; 
@@ -249,13 +227,8 @@ int main(int argc,char *argv[])
     UINT4 X;  
 
     MultiAMCoeffs *multiAMcoef = NULL;
-    MultiSSBtimes *multiSSB = NULL;
 
-    LAL_CALL ( LALGetMultiSSBtimes ( &status, &multiSSB, GV.multiDetStates, psPoint.skypos, psPoint.refTime, GV.CFparams.SSBprec ), &status );
     LAL_CALL ( LALGetMultiAMCoeffs ( &status, &multiAMcoef, GV.multiDetStates, psPoint.skypos ), &status);
-
-    /* Free SSB */
-    XLALDestroyMultiSSBtimes ( multiSSB );
 
     /* Antenna-patterns and compute A,B,C */
     for ( X=0; X < GV.numDetectors; X ++)
@@ -376,13 +349,6 @@ ATTATCHSTATUSPTR (status);
  
  uvar_outputFstat = NULL;
   
- uvar_workingDir = LALMalloc(512);
- strcpy(uvar_workingDir, ".");
- 
- uvar_RngMedWindow = 50;	/* for running-median */
- 
- uvar_SSBprecision = SSBPREC_RELATIVISTIC;
- 
  /* register all our user-variables */
  LALregBOOLUserVar(status, 	help, 		'h', UVAR_HELP,     "Print this message"); 
  
@@ -409,17 +375,8 @@ ATTATCHSTATUSPTR (status);
  LALregSTRINGUserVar(status,	ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
  LALregBOOLUserVar(status, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
  LALregSTRINGUserVar(status,	outputLabel,	'o', UVAR_OPTIONAL, "Label to be appended to all output file-names");
- LALregREALUserVar(status,	refTime,	 0,  UVAR_OPTIONAL, "SSB reference time for pulsar-paramters");
  LALregSTRINGUserVar(status,	outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for F-statistic field over the parameter-space");
   
- /* more experimental and unofficial stuff follows here */
- LALregINTUserVar (status, 	SSBprecision,	 0,  UVAR_DEVELOPER, "Precision to use for time-transformation to SSB: 0=Newtonian 1=relativistic");
- LALregINTUserVar(status, 	RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");
- LALregSTRINGUserVar(status,    workingDir,     'w', UVAR_DEVELOPER, "Directory to be made the working directory, . is default");
- LALregSTRINGUserVar(status,	outputSkyGrid,	 0,  UVAR_DEVELOPER, "Write sky-grid into this file.");
- LALregSTRINGUserVar(status,    outputLoudest,	 0,  UVAR_DEVELOPER, 
-		     "Output-file for the loudest F-statistic candidate in this search");
- 
  
  DETATCHSTATUSPTR (status);
  RETURN (status);
@@ -517,13 +474,6 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   endTime   = catalog->data[numSFTs-1].header.epoch;
   LALAddFloatToGPS(status->statusPtr, &endTime, &endTime, Tsft );	/* can't fail */
   cfg->duration = GPS2REAL8(endTime) - GPS2REAL8 (cfg->startTime);
-
-  /* ----- get reference-time (from user if given, use startTime otherwise): ----- */
-  if ( LALUserVarWasSet(&uvar_refTime)) {
-    TRY ( LALFloatToGPS (status->statusPtr, &(cfg->refTime), &uvar_refTime), status);
-  } else
-    cfg->refTime = cfg->startTime;
-
 
   { /* ----- get sky-region to search ----- */
     BOOLEAN haveAlphaDelta = LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta);
