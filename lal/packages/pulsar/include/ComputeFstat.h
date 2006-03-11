@@ -155,10 +155,6 @@ typedef struct {
   SkyPosition skypos;
   MultiSSBtimes *multiSSB;
   MultiAMCoeffs *multiAMcoef;
-  REAL8 A;
-  REAL8 B;
-  REAL8 C;
-  REAL8 Dinv;
 } ComputeFBuffer;
 
 /*---------- exported Global variables ----------*/
@@ -223,8 +219,6 @@ void ComputeFStat ( LALStatus *, Fcomponents *Fstat,
 		    const ComputeFParams *params,
 		    ComputeFBuffer *cfBuffer );
 
-
-
 void ComputeFStatFreqBand ( LALStatus *status, 
 			    REAL8FrequencySeries *FstatVector,
 			    const CWParamSpacePoint *psPoint,
@@ -233,6 +227,9 @@ void ComputeFStatFreqBand ( LALStatus *status,
 			    const MultiDetectorStateSeries *multiDetStates,
 			    const ComputeFParams *params,
 			    ComputeFBuffer *cfBuffer);
+
+int
+XLALWeighMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *multiWeights );
 
 void LALCreateDetectorStateSeries (LALStatus *, DetectorStateSeries **vect, UINT4 length );
 

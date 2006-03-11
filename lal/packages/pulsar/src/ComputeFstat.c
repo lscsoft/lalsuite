@@ -199,10 +199,6 @@ ComputeFStat ( LALStatus *status,
     { /* yes ==> reuse */
       multiSSB = cfBuffer->multiSSB;
       multiAMcoef = cfBuffer -> multiAMcoef;
-      A = cfBuffer->A;
-      B = cfBuffer->B;
-      C = cfBuffer->C;
-      Dinv = cfBuffer->Dinv;
     }
   else 
     {
@@ -214,32 +210,11 @@ ComputeFStat ( LALStatus *status,
 	XLALDestroyMultiSSBtimes ( multiSSB );
       } ENDFAIL (status);
 
-      /* noise-weight Antenna-patterns and compute A,B,C */
-      A = B = C = Dinv = 0.0;
-      for ( X=0; X < numDetectors; X ++)
-	{
-	  UINT4 alpha;
-	  UINT4 numSFTsX = multiSFTs->data[X]->length;
-	  AMCoeffs *amcoeX = multiAMcoef->data[X];
-	  REAL8Vector *weightsX = multiWeights->data[X];
-
-	  for(alpha = 0; alpha < numSFTsX; alpha++)
-	    {
-	      REAL8 Sqwi = sqrt ( weightsX->data[alpha] );
-	      REAL8 ahat = Sqwi * amcoeX->a->data[alpha] ;
-	      REAL8 bhat = Sqwi * amcoeX->b->data[alpha] ;
-	  
-	      /* *replace* original a(t), b(t) by noise-weighed version! */
-	      amcoeX->a->data[alpha] = ahat;
-	      amcoeX->b->data[alpha] = bhat;
- 
-	      /* sum A, B, C on the fly */
-	      A += ahat * ahat;
-	      B += bhat * bhat;
-	      C += ahat * bhat;
-	    } /* for alpha < numSFTsX */
-	} /* for X < numDetectors */
-      Dinv = 1.0 / (A * B - C * C );
+      /* noise-weigh Antenna-patterns and compute A,B,C */
+      if ( XLALWeighMultiAMCoeffs ( multiAMcoef, multiWeights ) != XLAL_SUCCESS ) {
+	LALPrintError("\nXLALWeighMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
+	ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
+      }
 
       /* store these in buffer if available */
       if ( cfBuffer )
@@ -248,13 +223,14 @@ ComputeFStat ( LALStatus *status,
 	  cfBuffer->multiSSB = multiSSB;
 	  cfBuffer->multiAMcoef = multiAMcoef;
 	  cfBuffer->skypos = psPoint->skypos;
-	  cfBuffer->A = A;
-	  cfBuffer->B = B;
-	  cfBuffer->C = C;
-	  cfBuffer->Dinv = Dinv;
 	} /* if cfBuffer */
 
     } /* if no buffer or different skypos */
+
+  A = multiAMcoef->A;
+  B = multiAMcoef->B;
+  C = multiAMcoef->C;
+  Dinv = 1.0 / multiAMcoef->D;
 
   /* ----- loop over detectors and compute all detector-specific quantities ----- */
   for ( X=0; X < numDetectors; X ++)
@@ -1321,6 +1297,93 @@ XLALEmptyComputeFBuffer ( ComputeFBuffer cfb )
 
   return;
 } /* XLALDestroyComputeFBuffer() */
+
+
+/**< Multiply AM-coeffs a_{Xi}, b_{Xi} by weights \sqrt(w_{Xi}) and 
+ * compute the resulting A, B, C (and D) by simply *SUMMING* the weighed 
+ * aX^2, bX^2 and a^X*b^x.
+ * 
+ * NOTE: this function modifies the AMCoeffs *in place* !
+ * NOTE2: if the weights = NULL, we assume unit-weights.
+ */
+int
+XLALWeighMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *multiWeights )
+{
+  UINT4 numDetectors, X;
+  REAL8 A, B, C;
+  UINT4 alpha;
+
+  if ( !multiAMcoef )
+    XLAL_ERROR( "XLALWeighMultiAMCoeffs", XLAL_EINVAL );
+
+  numDetectors = multiAMcoef->length;
+
+  if ( multiWeights && ( multiWeights->length != numDetectors ) )
+    {
+      LALPrintError("\nmultiWeights must have same length as mulitAMcoef!\n\n");
+      XLAL_ERROR( "XLALWeighMultiAMCoeffs", XLAL_EINVAL );
+    }
+  
+  /* noise-weight Antenna-patterns and compute A,B,C */
+  A = B = C = 0;
+
+  if ( multiWeights  )
+    for ( X=0; X < numDetectors; X ++)
+      {
+	AMCoeffs *amcoeX = multiAMcoef->data[X];
+	UINT4 numSteps = amcoeX->a->length;
+
+	REAL8Vector *weightsX = multiWeights->data[X];;
+	if ( weightsX->length != numSteps ) 
+	  {
+	    LALPrintError("\nmultiWeights must have same length as mulitAMcoef!\n\n");
+	    XLAL_ERROR( "XLALWeighMultiAMCoeffs", XLAL_EINVAL );
+	  }
+	
+	for(alpha = 0; alpha < numSteps; alpha++)
+	  {
+	    REAL8 Sqwi = sqrt ( weightsX->data[alpha] );
+	    REAL8 ahat = Sqwi * amcoeX->a->data[alpha] ;
+	    REAL8 bhat = Sqwi * amcoeX->b->data[alpha] ;
+	    
+	    /* *replace* original a(t), b(t) by noise-weighed version! */
+	    amcoeX->a->data[alpha] = ahat;
+	    amcoeX->b->data[alpha] = bhat;
+	    
+	    /* sum A, B, C on the fly */
+	    A += ahat * ahat;
+	    B += bhat * bhat;
+	    C += ahat * bhat;
+	  } /* for alpha < numSFTsX */
+      } /* for X < numDetectors */
+  else /* if no noise-weights: simply add to get A,B,C */
+    for ( X=0; X < numDetectors; X ++)
+      {
+	AMCoeffs *amcoeX = multiAMcoef->data[X];
+	UINT4 numSteps = amcoeX->a->length;
+
+	for(alpha = 0; alpha < numSteps; alpha++)
+	  {
+	    REAL8 ahat = amcoeX->a->data[alpha] ;
+	    REAL8 bhat = amcoeX->b->data[alpha] ;
+	    
+	    /* sum A, B, C on the fly */
+	    A += ahat * ahat;
+	    B += bhat * bhat;
+	    C += ahat * bhat;
+	  } /* for alpha < numSFTsX */
+      } /* for X < numDetectors */
+
+  multiAMcoef->A = A;
+  multiAMcoef->B = B;
+  multiAMcoef->C = C;
+
+  multiAMcoef->D = A * B - C * C;
+
+  return XLAL_SUCCESS;
+
+} /* XLALWeighMultiAMCoefs() */
+  
 
 /* ===== General internal helper functions ===== */
 
