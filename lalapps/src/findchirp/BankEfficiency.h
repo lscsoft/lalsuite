@@ -31,7 +31,7 @@
 #include <lal/Date.h>
 #include <lal/Units.h>
 #include <lal/FindChirp.h>
-
+#include <lal/PrintFTSeries.h>
 
 
 /* Here, I defined my own xml table outside the lal strcuture although
@@ -554,7 +554,8 @@ BEPrintBankXml(
 void 
 BEGetMaximumSize(
     LALStatus  *status, 		      
-    RandomInspiralSignalIn  randIn, 
+    RandomInspiralSignalIn  randIn,
+    InspiralCoarseBankIn    coarseBankIn, 
     UINT4 *length
     );
 
