@@ -35,12 +35,10 @@
 
 /* LAL-includes */
 #include <lal/AVFactories.h>
-
 #include <lal/LALInitBarycenter.h>
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
 #include <lal/ExtrapolatePulsarSpins.h>
-
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/ComputeFstat.h>
 #include <lal/LALHough.h>
@@ -76,15 +74,13 @@ RCSID( "$Id$");
 #define COMPUTEFSTATISTIC_MSGENONULL 	"Output pointer is non-NULL"
 #define COMPUTEFSTATISTIC_MSGEXLAL	"XLALFunction-call failed"
 
-/*----- Macros -----*/
-
 /** convert GPS-time to REAL8 */
 #define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
 
 #define MYMAX(x,y) ( (x) > (y) ? (x) : (y) )
 #define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
 
-/*---------- internal types ----------*/
+#define SQ(x) ((x)*(x))
 
 /** Configuration settings required for and defining a coherent pulsar search.
  * These are 'pre-processed' settings, which have been derived from the user-input.
@@ -99,60 +95,55 @@ typedef struct {
   MultiDetectorStateSeries *multiDetStates; /**< pos, vel and LMSTs for detector at times t_i */
 } ConfigVariables;
 
-#define SQ(x) ((x)*(x))
-
 /*---------- Global variables ----------*/
 extern int vrbflg;		/**< defined in lalapps.c */
 
 ConfigVariables GV;		/**< global container for various derived configuration settings */
 
 /* ----- User-variables: can be set from config-file or command-line */
+BOOLEAN uvar_help;
+BOOLEAN uvar_SignalOnly;
+
+INT4 uvar_gpsStart;
+
 REAL8 uvar_aPlus;
 REAL8 uvar_aCross;
-INT4 uvar_gpsStart;
 REAL8 uvar_phi;
 REAL8 uvar_psi;
 REAL8 uvar_h0;
 REAL8 uvar_cosiota;
 REAL8 uvar_sqrtSh;
-
-CHAR *uvar_IFO;
-BOOLEAN uvar_SignalOnly;
 REAL8 uvar_Freq;
 REAL8 uvar_FreqBand;
 REAL8 uvar_Alpha;
 REAL8 uvar_AlphaBand;
 REAL8 uvar_Delta;
 REAL8 uvar_DeltaBand;
-/* --- */
+
+CHAR *uvar_IFO;
 CHAR *uvar_ephemDir;
 CHAR *uvar_ephemYear;
 CHAR *uvar_skyRegion;
 CHAR *uvar_DataFiles;
-BOOLEAN uvar_help;
 CHAR *uvar_outputLabel;
 CHAR *uvar_outputFstat;
 
 /* ---------- local prototypes ---------- */
 int main(int argc,char *argv[]);
+
 void initUserVars (LALStatus *);
 void InitFStat ( LALStatus *, ConfigVariables *cfg );
-
 void Freemem(LALStatus *,  ConfigVariables *cfg);
-
 void WriteFStatLog (LALStatus *, CHAR *argv[]);
 void checkUserInputConsistency (LALStatus *);
 void InitEphemeris (LALStatus *, EphemerisData *edat, const CHAR *ephemDir, const CHAR *ephemYear, LIGOTimeGPS epoch);
 
 /*---------- empty initializers ---------- */
-static const PulsarTimesParamStruc empty_PulsarTimesParamStruc;
-static const BarycenterInput empty_BarycenterInput;
 static const SFTConstraints empty_SFTConstraints;
 
 /*----------------------------------------------------------------------*/
 /* Main Function starts here */
 /*----------------------------------------------------------------------*/
-
 /** 
  * MAIN function of PredictFStat code.
  * Calculates the F-statistic for a given position in the sky and detector 
@@ -161,7 +152,9 @@ static const SFTConstraints empty_SFTConstraints;
 int main(int argc,char *argv[]) 
 {
   LALStatus status = blank_status;	/* initialize status */
+
   FILE *fpFstat = NULL;
+
   CWParamSpacePoint psPoint;		/* parameter-space point to compute Fstat for */
   SkyPosition thisPoint;   
 
@@ -190,7 +183,6 @@ int main(int argc,char *argv[])
   /* Initialization the common variables of the code, */
   /* like ephemeries data*/
   LAL_CALL ( InitFStat(&status, &GV), &status);
-
   
   /* if a complete output of the F-statistic file was requested,
    * we open and prepare the output-file here */
@@ -312,7 +304,6 @@ int main(int argc,char *argv[])
   
 } /* main() */
 
-
 /** 
  * Register all our "user-variables" that can be specified from cmd-line and/or config-file.
  * Here we set defaults for some user-variables and register them with the UserInput module.
@@ -346,12 +337,12 @@ ATTATCHSTATUSPTR (status);
 
  uvar_help = FALSE;
  uvar_outputLabel = NULL;
- 
  uvar_outputFstat = NULL;
   
  /* register all our user-variables */
  LALregBOOLUserVar(status, 	help, 		'h', UVAR_HELP,     "Print this message"); 
- 
+ LALregBOOLUserVar(status, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
+
  LALregREALUserVar(status,      phi,            'Q', UVAR_OPTIONAL, "Phi_0: Initial phase in radians");
  LALregREALUserVar(status,      psi,            'Y', UVAR_OPTIONAL, "Polarisation in radians");
  LALregREALUserVar(status,      cosiota,        'i', UVAR_OPTIONAL, "Cos(iota)");
@@ -359,7 +350,6 @@ ATTATCHSTATUSPTR (status);
  LALregREALUserVar(status,      sqrtSh,         'N', UVAR_OPTIONAL, "Noise floor: one-sided sqrt(Sh) in 1/sqrt(Hz)");
  LALregREALUserVar(status,      aPlus,            0, UVAR_OPTIONAL, "Strain amplitude h_0");
  LALregREALUserVar(status,      aCross,           0, UVAR_OPTIONAL, "Noise floor: one-sided sqrt(Sh) in 1/sqrt(Hz)");
-	   
  LALregREALUserVar(status, 	Alpha, 		'a', UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in radians");
  LALregREALUserVar(status, 	Delta, 		'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians");
  LALregREALUserVar(status, 	AlphaBand, 	'z', UVAR_OPTIONAL, "Band in alpha (equatorial coordinates) in radians");
@@ -369,15 +359,12 @@ ATTATCHSTATUSPTR (status);
  
  LALregSTRINGUserVar(status,	skyRegion, 	'R', UVAR_OPTIONAL, "ALTERNATIVE: Specify sky-region by polygon (or use 'allsky')");
  LALregSTRINGUserVar(status,	DataFiles, 	'D', UVAR_REQUIRED, "File-pattern specifying (multi-IFO) input SFT-files"); 
- LALregSTRINGUserVar(status, 	IFO, 		'I', UVAR_OPTIONAL, 
-		     "Detector-constraint: 'G1', 'L1', 'H1', 'H2' ...(useful for single-IFO v1-SFTs only!)");
+ LALregSTRINGUserVar(status, 	IFO, 		'I', UVAR_OPTIONAL, "Detector-constraint: 'G1', 'L1', 'H1', 'H2' ...(useful for single-IFO v1-SFTs only!)");
  LALregSTRINGUserVar(status,	ephemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
  LALregSTRINGUserVar(status,	ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
- LALregBOOLUserVar(status, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
  LALregSTRINGUserVar(status,	outputLabel,	'o', UVAR_OPTIONAL, "Label to be appended to all output file-names");
  LALregSTRINGUserVar(status,	outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for F-statistic field over the parameter-space");
-  
- 
+
  DETATCHSTATUSPTR (status);
  RETURN (status);
 } /* initUserVars() */
@@ -385,7 +372,7 @@ ATTATCHSTATUSPTR (status);
 /** Load Ephemeris from ephemeris data-files  */
 void
 InitEphemeris (LALStatus * status,   
-  EphemerisData *edat,	/**< [out] the ephemeris-data */
+  EphemerisData *edat,	                /**< [out] the ephemeris-data */
 	       const CHAR *ephemDir,	/**< directory containing ephems */
 	       const CHAR *ephemYear,	/**< which years do we need? */
 	       LIGOTimeGPS epoch	/**< epoch of observation */
@@ -432,11 +419,7 @@ InitEphemeris (LALStatus * status,
   
 } /* InitEphemeris() */
 
-
-
-/** Initialized Fstat-code: handle user-input and set everything up.
- * NOTE: the logical *order* of things in here is very important, so be careful
- */
+/** Initialized Fstat-code: handle user-input and set everything up. */
 void
 InitFStat ( LALStatus *status, ConfigVariables *cfg )
 {
@@ -505,7 +488,6 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
 
   cfg->numDetectors = cfg->multiSFTs->length;
   
- 
   { /* ----- load ephemeris-data ----- */
     CHAR *ephemDir;
 
@@ -524,7 +506,6 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   RETURN (status);
 
 } /* InitFStat() */
-
 
 /***********************************************************************/
 /** Log the all relevant parameters of the present search-run to a log-file.
@@ -590,7 +571,6 @@ WriteFStatLog (LALStatus *status, char *argv[])
 
 } /* WriteFStatLog() */
 
-
 /** Free all globally allocated memory. */
 void
 Freemem(LALStatus *status,  ConfigVariables *cfg) 
@@ -620,7 +600,6 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
 
 } /* Freemem() */
 
-
 /*----------------------------------------------------------------------*/
 /** Some general consistency-checks on user-input.
  * Throws an error plus prints error-message if problems are found.
@@ -628,7 +607,6 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
 void
 checkUserInputConsistency (LALStatus *status)
 {
-
   INITSTATUS (status, "checkUserInputConsistency", rcsid);  
   
   if (uvar_ephemYear == NULL)
@@ -668,8 +646,3 @@ checkUserInputConsistency (LALStatus *status)
 
   RETURN (status);
 } /* checkUserInputConsistency() */
-
-/* debug-output a(t) and b(t) into given file.
- * return 0 = OK, -1 on error
- */
-
