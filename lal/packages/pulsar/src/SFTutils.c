@@ -170,11 +170,8 @@ LALDestroySFTtype (LALStatus *status,
 
   ASSERT (sft != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
 
-  /* be flexible: if points to null, nothing to do here.. (like 'free()') */
-  if (*sft == NULL) {
-    DETATCHSTATUSPTR( status );
-    RETURN (status);
-  }
+  if (*sft == NULL) 
+    goto finished;
 
   if ( (*sft)->data )
     {
@@ -187,6 +184,7 @@ LALDestroySFTtype (LALStatus *status,
 
   *sft = NULL;
 
+ finished:
   DETATCHSTATUSPTR( status );
   RETURN (status);
 
@@ -206,8 +204,9 @@ LALDestroySFTVector (LALStatus *status,
   ATTATCHSTATUSPTR( status );
 
   ASSERT (vect != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
-  ASSERT (*vect != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
-
+  
+  if ( *vect == NULL )	/* nothing to be done */
+    goto finished;
   
   for (i=0; i < (*vect)->length; i++)
     {
@@ -224,7 +223,8 @@ LALDestroySFTVector (LALStatus *status,
   LALFree ( *vect );
 
   *vect = NULL;
-
+  
+ finished:
   DETATCHSTATUSPTR( status );
   RETURN (status);
 
@@ -246,9 +246,10 @@ LALDestroyPSDVector (LALStatus *status,
   ATTATCHSTATUSPTR( status );
 
   ASSERT (vect != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
-  ASSERT (*vect != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
 
-  
+  if ( *vect == NULL )	/* nothing to be done */
+    goto finished;
+
   for (i=0; i < (*vect)->length; i++)
     {
       psd = &( (*vect)->data[i] );
@@ -265,13 +266,11 @@ LALDestroyPSDVector (LALStatus *status,
 
   *vect = NULL;
 
+ finished:
   DETATCHSTATUSPTR( status );
   RETURN (status);
 
 } /* LALDestroyPSDVector() */
-
-
-
 
 
 /** Destroy a multi SFT-vector
@@ -286,7 +285,9 @@ LALDestroyMultiSFTVector (LALStatus *status,
   ATTATCHSTATUSPTR( status );
 
   ASSERT (multvect != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
-  ASSERT (*multvect != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
+
+  if ( *multvect == NULL )	/* nothing to be done */
+    goto finished;
 
   for ( i = 0; i < (*multvect)->length; i++)
       LALDestroySFTVector( status->statusPtr, (*multvect)->data + i);
@@ -296,13 +297,11 @@ LALDestroyMultiSFTVector (LALStatus *status,
   
   *multvect = NULL;
 
+ finished:
   DETATCHSTATUSPTR( status );
   RETURN (status);
 
 } /* LALDestroyMultiSFTVector() */
-
-
-
 
 
 
@@ -318,25 +317,24 @@ LALDestroyMultiPSDVector (LALStatus *status,
   ATTATCHSTATUSPTR( status );
 
   ASSERT (multvect != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
-  ASSERT (*multvect != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
+
+  if ( *multvect == NULL )
+    goto finished;
 
   for ( i = 0; i < (*multvect)->length; i++) {    
     LALDestroyPSDVector( status->statusPtr, (*multvect)->data + i);
   }
 
-
   LALFree( (*multvect)->data );
   LALFree( *multvect );
   
   *multvect = NULL;
-
+  
+ finished:
   DETATCHSTATUSPTR( status );
   RETURN (status);
 
 } /* LALDestroySFTVector() */
-
-
-
 
 
 
@@ -396,7 +394,7 @@ LALConcatSFTVectors (LALStatus *status,
   UINT4 i;
   SFTVector *ret = NULL;
 
-  INITSTATUS( status, "LALDestroySFTVector", SFTUTILSC);
+  INITSTATUS( status, "LALConcatSFTVector", SFTUTILSC);
   ATTATCHSTATUSPTR (status); 
 
   ASSERT (outVect,  status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
@@ -521,7 +519,9 @@ LALDestroyStringVector ( LALStatus *status,
   INITSTATUS( status, "LALDestroyStringVector", SFTUTILSC);
 
   ASSERT ( vect, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL );
-  ASSERT ( *vect, status, SFTUTILS_ENONULL, SFTUTILS_MSGENONULL );
+  
+  if ( *vect == NULL )
+    goto finished;
 
   for ( i=0; i < (*vect)->length; i++ )
     {
@@ -534,7 +534,9 @@ LALDestroyStringVector ( LALStatus *status,
 
   (*vect) = NULL;
 
+ finished:
     RETURN(status);
+
 } /* LALDestroyStringVector() */
 
 
@@ -611,12 +613,15 @@ LALDestroyTimestampVector (LALStatus *status,
   INITSTATUS( status, "LALDestroyTimestampVector", SFTUTILSC);
 
   ASSERT (vect != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
-  ASSERT (*vect != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
+
+  if ( *vect == NULL ) 
+    goto finished;
 
   XLALDestroyTimestampVector ( (*vect) );
   
   (*vect) = NULL;
 
+ finished:
   RETURN (status);
   
 } /* LALDestroyTimestampVector() */
@@ -1075,24 +1080,30 @@ void LALComputeMultiNoiseWeights  (LALStatus             *status,
 }
 
 
-void LALDestroyMultiNoiseWeights  (LALStatus         *status, 
-				   MultiNoiseWeights **weights) 
+void 
+LALDestroyMultiNoiseWeights  (LALStatus         *status, 
+			      MultiNoiseWeights **weights) 
 {
-
   UINT4 k;
 
   INITSTATUS (status, "LALDestroyMultiNoiseWeights", SFTUTILSC);
   ATTATCHSTATUSPTR (status); 
 
+  ASSERT ( weights != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
+
+  if (*weights == NULL) 
+    goto finished;
+
   for ( k = 0; k < (*weights)->length; k++)
-      LALDDestroyVector (status->statusPtr, (*weights)->data + k);      
+    LALDDestroyVector (status->statusPtr, (*weights)->data + k);      
 
   LALFree( (*weights)->data );
   LALFree(*weights);
   
   *weights = NULL;
 
+ finished:
   DETATCHSTATUSPTR (status);
-   /* normal exit */
   RETURN (status);
-}
+
+} /* LALDestroyMultiNoiseWeights() */
