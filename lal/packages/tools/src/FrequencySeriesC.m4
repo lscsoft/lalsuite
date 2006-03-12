@@ -108,9 +108,9 @@ SERIESTYPE *`XLALCut'SERIESTYPE (
 }
 
 
-size_t `XLALShrink'SERIESTYPE (
+size_t `XLALResize'SERIESTYPE (
 	SERIESTYPE *series,
-	size_t first,
+	int first,
 	size_t length
 )
 {
@@ -118,7 +118,17 @@ size_t `XLALShrink'SERIESTYPE (
 		return(0);
 
 	series->f0 += first * series->deltaF;
-	return(`XLALShrink'SEQUENCETYPE (series->data, first, length));
+	return(`XLALResize'SEQUENCETYPE (series->data, first, length));
+}
+
+
+size_t `XLALShrink'SERIESTYPE (
+	SERIESTYPE *series,
+	size_t first,
+	size_t length
+)
+{
+	return(`XLALResize'SERIESTYPE (series, first, length));
 }
 
 

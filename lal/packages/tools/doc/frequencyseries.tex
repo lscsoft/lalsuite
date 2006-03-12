@@ -87,10 +87,11 @@ existing frequency series.
 \verb|Kipp Cannon <kipp@gravity.phys.uwm.edu>|
 
 
-\subsection{Shrinking Functions}
+\subsection{Resizing Functions}
 
 \subsubsection{Name}
 
+\texttt{XLALResize}\textit{frequencyseriestype}\texttt{()},
 \texttt{XLALShrink}\textit{frequencyseriestype}\texttt{()},
 \texttt{LALShrink}\textit{frequencyseriestype}\texttt{()}
 
@@ -103,7 +104,16 @@ existing frequency series.
 
 \subsubsection{Description}
 
-These functions reduce an existing frequency series to a section of itself.
+These functions resize an existing frequency series.  The new frequency
+series will have the given length, and its contents will consist of that
+part of the original time series that started at sample \texttt{first}.  If
+\texttt{first} is negative, then the new time series is padded at the start
+by that many samples.  The frequency series' heterodyne frequency,
+\(f_{0}\), is adjusted appropriately.
+
+The ``Shrink'' functions accept non-negative values for the parameter
+\texttt{first}, and are retained only for historical purposes.  New code
+should use the ``Resize'' variants.
 
 \subsubsection{Author}
 
