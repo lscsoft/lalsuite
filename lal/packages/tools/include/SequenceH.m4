@@ -103,3 +103,20 @@ SQUAREDATATYPE `XLAL'SEQUENCETYPE`SumSquares' (
 );
 /* </lalVerbatim> */
 
+ifelse(DATATYPE, COMPLEX8,
+/* <lalLaTeX file="SequenceConjugateP">
+\idx{`XLALConjugate'SEQUENCETYPE ()}
+</lalLaTeX> <lalVerbatim file="SequenceConjugateP"> */
+SEQUENCETYPE *`XLALConjugate'SEQUENCETYPE (
+        SEQUENCETYPE *series
+);
+/* </lalVerbatim> */
+, DATATYPE, COMPLEX16,
+/* <lalLaTeX file="SequenceConjugateP">
+\idx{`XLALConjugate'SEQUENCETYPE ()}
+</lalLaTeX> <lalVerbatim file="SequenceConjugateP"> */
+SEQUENCETYPE *`XLALConjugate'SEQUENCETYPE (
+        SEQUENCETYPE *series
+);
+/* </lalVerbatim> */
+,)

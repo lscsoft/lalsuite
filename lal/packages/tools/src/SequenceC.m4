@@ -210,3 +210,30 @@ SQUAREDATATYPE `XLAL'SEQUENCETYPE`SumSquares' (
 		count = sequence->length - first;
 	return(`XLAL'DATATYPE`SumSquares' (sequence->data, first, count));
 }
+
+
+ifelse(DATATYPE, COMPLEX8,
+SEQUENCETYPE *`XLALConjugate'SEQUENCETYPE (
+	SEQUENCETYPE *sequence
+)
+{
+	unsigned int i;
+
+	for(i = 0; i < sequence->length; i++)
+		sequence->data[i].im = -sequence->data[i].im;
+
+	return(sequence);
+}
+, DATATYPE, COMPLEX16,
+SEQUENCETYPE *`XLALConjugate'SEQUENCETYPE (
+	SEQUENCETYPE *sequence
+)
+{
+	unsigned int i;
+
+	for(i = 0; i < sequence->length; i++)
+		sequence->data[i].im = -sequence->data[i].im;
+
+	return(sequence);
+}
+,)
