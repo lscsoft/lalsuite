@@ -264,7 +264,7 @@ XLALEPSearch(
 	}
 
 	if(params->printSpectrum)
-		print_real4fseries(AverageSpec, "average_spectrum.dat");
+		print_real4fseries(AverageSpec, params->printSpectrum);
 
 	/*
 	 * Loop over data applying excess power method.
@@ -353,17 +353,12 @@ XLALEPSearch(
 #endif
 
 		/*
-		 * Sort the results.
-		 */
-
-		XLALPrintInfo("XLALEPSearch(): sorting the tiles\n");
-		XLALSortTFTilingByAlpha(Tiling);
-
-		/*
 		 * Convert the TFTiles into sngl_burst events for output.
 		 * The threhsold cut determined by alpha is applied here
 		 */
 
+		XLALPrintInfo("XLALEPSearch(): converting tiles to trigger list\n");
+		XLALSortTFTilingByAlpha(Tiling);
 		XLALClearErrno();
 		head = XLALTFTilesToSnglBurstTable(head, Tiling, tseries->name, &tfplane->epoch, params);
 		if(xlalErrno) {

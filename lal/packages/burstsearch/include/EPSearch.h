@@ -24,7 +24,7 @@ NRCSID(EPSEARCHH, "$Id$");
 
 typedef struct
 tagEPSearchParams {
-	BOOLEAN               printSpectrum;
+	char                 *printSpectrum;
 	BOOLEAN               useOverWhitening;	
 	REAL4Window          *window;
 	UINT4                 windowShift;

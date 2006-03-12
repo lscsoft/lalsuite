@@ -399,7 +399,6 @@ void parse_command_line(
 { 
 	char msg[240];
 	int args_are_bad = FALSE;
-	int printSpectrum;
 	int useoverwhitening;
 	int c;
 	int option_index;
@@ -430,7 +429,7 @@ void parse_command_line(
 		{"mdc-channel",         required_argument, NULL,           'S'},
 		{"noise-amplitude",     required_argument, NULL,           'V'},
 		{"printData",           no_argument, &options.printData,  TRUE},
-		{"printSpectrum",       no_argument, &printSpectrum,      TRUE},
+		{"printSpectrum",       required_argument, NULL,           'X'},
 		{"psd-average-method",  required_argument, NULL,           'Y'},
 		{"psd-average-points",  required_argument, NULL,           'Z'},
 		{"ram-limit",           required_argument, NULL,           'a'},
@@ -454,6 +453,7 @@ void parse_command_line(
 	 * Set parameter defaults.
 	 */
 
+	params->printSpectrum = NULL;	/* default == disable */
 	params->lnalphaThreshold = XLAL_REAL8_FAIL_NAN;	/* impossible */
 	params->method = -1;	/* impossible */
 	params->tfPlaneParams.flow = -1.0;	/* impossible */
@@ -499,7 +499,6 @@ void parse_command_line(
 	inspiralInjectionFile = NULL;	/* default */
 	mdcCacheFile = NULL;	        /* default */
 	mdcDirName = NULL;	        /* default */
-	printSpectrum = FALSE;	        /* default */
 	useoverwhitening = FALSE;       /* default */
 
 	/*
@@ -640,6 +639,10 @@ void parse_command_line(
 			args_are_bad = TRUE;
 		}
 		ADD_PROCESS_PARAM("int");
+		break;
+
+		case 'X':
+		params->printSpectrum = optarg;
 		break;
 
 		case 'Y':
@@ -898,7 +901,6 @@ void parse_command_line(
 	params->tfPlaneParams.timeBins = (options.windowLength / 2) / (options.ResampleRate * params->tfPlaneParams.deltaT);
 	params->tfPlaneParams.freqBins = options.bandwidth / params->tfPlaneParams.deltaF;
 
-	params->printSpectrum = printSpectrum;
 	params->useOverWhitening = useoverwhitening;
 
 	if(options.verbose) {
