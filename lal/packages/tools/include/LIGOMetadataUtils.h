@@ -214,7 +214,7 @@ CoincInspiralBittenLParams;
 <lalLaTeX>
 The \texttt{CoincInspiralBittenLParams} structure contains the bitten L parameter for
 each of the six global interferometers.  These are stored in the
-\textttt{param\_a} and \texttt{param\_b} structure. 
+\texttt{param\_a} and \texttt{param\_b} structure. 
 </lalLaTeX>
 #endif
 
@@ -255,9 +255,9 @@ a single inspiral table.  The\texttt{snrsq} clustering returns the trigger
 with the greatest summed snr$^{2}$ from all instruments.  The 
 \texttt{snr\_chi\_stat} replaces selects the trigger
 with the largest value of the snr and chisq statistic and the \texttt{bitten\_l}
-returns the minimum among the summed snr$^{2}$ from all instruments and the 
-$a\times snr_i - b$ in each detector. The parameters  $a$ and $b£ must be provided
-by the user.
+returns the minimum among the summed snr$^{2}$ from all instruments and the
+$a\times snr_i - b$ in each detector. The parameters  $a$ and $b$ must be
+provided by the user.
 </lalLaTeX>
 #endif
 /* <lalVerbatim> */
