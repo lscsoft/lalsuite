@@ -104,3 +104,29 @@ SERIESTYPE *`XLALSubtract'SERIESTYPE (
 );
 /* </lalVerbatim> */
 
+ifelse(DATATYPE, COMPLEX8,
+/* <lalLaTeX file="FrequencySeriesConjugateP">
+\idx{`XLALConjugate'SERIESTYPE ()}
+</lalLaTeX> <lalVerbatim file="FrequencySeriesConjugateP"> */
+SERIESTYPE *`XLALConjugate'SERIESTYPE (
+        SERIESTYPE *series
+);
+/* </lalVerbatim> */
+, DATATYPE, COMPLEX16,
+/* <lalLaTeX file="FrequencySeriesConjugateP">
+\idx{`XLALConjugate'SERIESTYPE ()}
+</lalLaTeX> <lalVerbatim file="FrequencySeriesConjugateP"> */
+SERIESTYPE *`XLALConjugate'SERIESTYPE (
+        SERIESTYPE *series
+);
+/* </lalVerbatim> */
+,)
+
+/* <lalLaTeX file="FrequencySeriesMultiplyP">
+\idx{`XLALMultiply'SERIESTYPE ()}
+</lalLaTeX> <lalVerbatim file="FrequencySeriesMultiplyP"> */
+SERIESTYPE *`XLALMultiply'SERIESTYPE (
+	SERIESTYPE *arg1,
+	const SERIESTYPE *arg2
+);
+/* </lalVerbatim> */

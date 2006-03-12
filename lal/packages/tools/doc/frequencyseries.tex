@@ -169,3 +169,50 @@ units that differ only by a dimensionless factor.
 
 \verb|Kipp Cannon <kipp@gravity.phys.uwm.edu>|
 
+
+\subsection{Conjugation Functions}
+
+\subsubsection{Name}
+
+\texttt{XLALConjugate}\textit{frequencyseriestype}\texttt{()}
+
+\subsubsection{Synopsis}
+
+\begin{verbatim}
+#include <lal/FrequencySeries.h>
+\end{verbatim}
+\input{FrequencySeriesConjugateP}
+
+\subsubsection{Description}
+
+These functions replace a frequency series with its complex conjugate.
+
+\subsubsection{Author}
+
+\verb|Kipp Cannon <kipp@gravity.phys.uwm.edu>|
+
+
+\subsection{Multiplication Functions}
+
+\subsubsection{Name}
+
+\texttt{XLALMultiply}\textit{frequencyseriestype}\texttt{()}
+
+\subsubsection{Synopsis}
+
+\begin{verbatim}
+#include <lal/FrequencySeries.h>
+\end{verbatim}
+\input{FrequencySeriesMultiplyP}
+
+\subsubsection{Description}
+
+These functions multiply the first argument by the second argument,
+returning a pointer to the first argument on success or NULL on failure.
+The two series must have the same epoch and frequency resolution, and have
+units that differ only by a dimensionless factor.
+
+\subsubsection{Author}
+
+\verb|Kipp Cannon <kipp@gravity.phys.uwm.edu>|
+

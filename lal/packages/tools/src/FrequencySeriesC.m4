@@ -219,3 +219,61 @@ SERIESTYPE *`XLALSubtract'SERIESTYPE (
 
 	return(arg1);
 }
+
+
+ifelse(DATATYPE, COMPLEX8,
+SERIESTYPE *`XLALConjugate'SERIESTYPE (
+	SERIESTYPE *series
+)
+{
+	`XLALConjugate'SEQUENCETYPE (series->data);
+	return(series);
+
+}
+, DATATYPE, COMPLEX16,
+SERIESTYPE *`XLALConjugate'SERIESTYPE (
+	SERIESTYPE *series
+)
+{
+	`XLALConjugate'SEQUENCETYPE (series->data);
+	return(series);
+}
+,)
+
+
+SERIESTYPE *`XLALMultiply'SERIESTYPE (
+	SERIESTYPE *arg1,
+	const SERIESTYPE *arg2
+)
+{
+	static const char *func = "`XLALMultiply'SERIESTYPE";
+	int offset = (arg2->f0 - arg1->f0) / arg1->deltaF;
+	REAL8 ratio = XLALUnitRatio(&arg1->sampleUnits, &arg2->sampleUnits);
+	unsigned int i;
+
+	/* make sure arguments are compatible */
+	if(XLALGPSCmp(&arg1->epoch, &arg2->epoch) || (arg1->deltaF != arg2->deltaF) || XLALIsREAL8FailNaN(ratio))
+		XLAL_ERROR_NULL(func, XLAL_EDATA);
+	/* FIXME: generalize to relax this requirement */
+	if((arg2->f0 < arg1->f0) || (offset + arg2->data->length > arg1->data->length))
+		XLAL_ERROR_NULL(func, XLAL_EBADLEN);
+	
+	/* multiply arg2 by arg1, adjusting the units */
+	for(i = 0; i < arg2->data->length; i++) {
+		ifelse(DATATYPE, COMPLEX8,
+		REAL4 re = arg2->data->data[i].re / ratio;
+		REAL4 im = arg2->data->data[i].im / ratio;
+		arg1->data->data[offset + i].re = arg1->data->data[offset + i].re * re - arg1->data->data[offset + i].im * im;
+		arg1->data->data[offset + i].im = arg1->data->data[offset + i].re * im + arg1->data->data[offset + i].im * re;
+		, DATATYPE, COMPLEX16,
+		REAL8 re = arg2->data->data[i].re / ratio;
+		REAL8 im = arg2->data->data[i].im / ratio;
+		arg1->data->data[offset + i].re = arg1->data->data[offset + i].re * re - arg1->data->data[offset + i].im * im;
+		arg1->data->data[offset + i].im = arg1->data->data[offset + i].re * im + arg1->data->data[offset + i].im * re;
+		, 
+		arg1->data->data[offset + i] *= arg2->data->data[i] / ratio;)
+	}
+
+	return(arg1);
+}
+
