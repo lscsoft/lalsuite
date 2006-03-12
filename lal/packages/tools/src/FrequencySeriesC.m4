@@ -43,7 +43,7 @@ SERIESTYPE *`XLALCreate'SERIESTYPE (
 		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
 	}
 
-	if(new->name)
+	if(name)
 		strncpy(new->name, name, LALNameLength);
 	else
 		new->name[0] = '\0';
