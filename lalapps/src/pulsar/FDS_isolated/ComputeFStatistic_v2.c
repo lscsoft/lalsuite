@@ -706,7 +706,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     cfg->refTime = cfg->startTime;
 
   { /* ----- prepare spin-range at refTime (in *canonical format*, ie all Bands >= 0) ----- */
-    REAL8 fMin = MYMIN ( uvar_Freq, uvar_Freq + uvar_FreqBand );
+    REAL8 fMin = MYMIN ( uvar_Freq, uvar_Freq - uvar_FreqBand );
     REAL8 fMax = MYMAX ( uvar_Freq, uvar_Freq + uvar_FreqBand );
 
     REAL8 f1dotMin = MYMIN ( uvar_f1dot, uvar_f1dot + uvar_f1dotBand );
