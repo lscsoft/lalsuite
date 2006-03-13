@@ -706,7 +706,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     cfg->refTime = cfg->startTime;
 
   { /* ----- prepare spin-range at refTime (in *canonical format*, ie all Bands >= 0) ----- */
-    REAL8 fMin = MYMIN ( uvar_Freq, uvar_Freq - uvar_FreqBand );
+    REAL8 fMin = MYMIN ( uvar_Freq, uvar_Freq + uvar_FreqBand );
     REAL8 fMax = MYMAX ( uvar_Freq, uvar_Freq + uvar_FreqBand );
 
     REAL8 f1dotMin = MYMIN ( uvar_f1dot, uvar_f1dot + uvar_f1dotBand );
@@ -724,8 +724,6 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     cfg->spinRangeRef->epoch = cfg->refTime;
     cfg->spinRangeRef->fkdot->data[0] = fMin;
     cfg->spinRangeRef->fkdotBand->data[0] = fMax - fMin;
-    cfg->spinRangeRef->fkdot->data[1] = f1dotMin;
-    cfg->spinRangeRef->fkdotBand->data[1] = f1dotMax - f1dotMin;
     cfg->spinRangeRef->fkdot->data[1] = f1dotMin;
     cfg->spinRangeRef->fkdotBand->data[1] = f1dotMax - f1dotMin;
     cfg->spinRangeRef->fkdot->data[2] = f2dotMin;
@@ -956,19 +954,7 @@ checkUserInputConsistency (LALStatus *status)
       LALPrintError ("\nNo ephemeris year specified (option 'ephemYear')\n\n");
       ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
     }      
-  /* don't allow negative frequency-band for safety */
-  if ( uvar_FreqBand < 0)
-    {
-      LALPrintError ("\nNegative value of frequency-band not allowed !\n\n");
-      ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
-    }
 
-  /* don't allow negative bands (for safty in griding-routines) */
-  if ( (uvar_AlphaBand < 0) ||  (uvar_DeltaBand < 0) )
-    {
-      LALPrintError ("\nNegative value of sky-bands not allowed (alpha or delta)!\n\n");
-      ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
-    }
   /* check for negative stepsizes in Freq, Alpha, Delta */
   if ( LALUserVarWasSet(&uvar_dAlpha) && (uvar_dAlpha < 0) )
     {
