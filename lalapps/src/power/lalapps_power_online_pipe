@@ -581,7 +581,7 @@ def make_multibinj_fragment(dag, tag, seg):
 	# determine frequency ratio from number of injections across band
 	# (take a bit off to allow fhigh to be picked up despite round-off
 	# errors)
-	fratio = 0.9999999 * (fhigh / flow) ** (1.0/(injection_bands - 1.0))
+	fratio = 0.9999999 * (fhigh / flow) ** (1.0/injection_bands)
 
 	binjnodes = [make_binj_fragment(dag, tag, seg, 0.0, flow, fhigh, fratio)]
 
