@@ -1034,7 +1034,6 @@ int main( int argc, char *argv[]) {
 	  LAL_CALL(SetUpFstatStack( &status, &FstatVect1, &FstatPar1), &status);
 	  
 	  /* calculate the Fstatistic */
-	  LAL_CALL(ComputeFstatStack( &status, &FstatVect1, &stackSFTs1, &FstatPar1), &status);
 	  
 	  /* print fstat vector if required -- mostly for debugging */
 	  if ( uvar_printFstat1 )
@@ -1162,7 +1161,7 @@ int main( int argc, char *argv[]) {
 			  LAL_CALL(SetUpFstatStack( &status, &FstatVect2, &FstatPar2), &status);
 			  
 			  /* calculate the Fstatistic */
-			  LAL_CALL(ComputeFstatStack( &status, &FstatVect2, &stackSFTs2, &FstatPar2), &status);
+
 			  
 			  /* select candidates from 2nd stage */
 			  for (k=0; k<nStacks2; k++) 
@@ -1281,159 +1280,6 @@ int main( int argc, char *argv[]) {
 
 
 
-
-/** \brief Function for calculating the Fstatistic for a stack of SFT data
-    \param *stackSFTs : pointer to SFTVectorSequence -- a sequence of SFT vectors
-    \param *params : structure of type FstatStackParams -- parameters for calculating Fstatistic 
-    \return *out : pointer to REAL8FrequencySeriesVector -- sequence of Fstatistic vectors
-
-    This function takes a set of SFTs broken up into stacks appropriately 
-    and calculates the Fstatistic for each stack over a frequency range for 
-    a single sky-location and a single value of the first spindown (the demodulation parameters). 
-    It allocates memory for the Fstatistic vectors appropriately which must 
-    be freed later outside the function.  It uses the ComputeFstatistic_v2 code
-    as a prototype.  The output set of Fstatistic vectors might be 
-    combined semicoherently in a small parameter space patch around the 
-    demodulation parameters.  Thus, the Fstatistic is calculated for a somewhat 
-    larger frequency range than what the user specified if the number of stacks exceeds unity.
-*/
-void ComputeFstatStack (LALStatus *status, 
-			REAL8FrequencySeriesVector *out, 
-			SFTVectorSequence *stackSFTs, 
-			FstatStackParams *params)
-{
-  /* stuff copied from params */
-  INT4 nStacks = params->nStacks;
-  REAL8 refTime = params->refTime;
-  INT4 *mCohSft = params->mCohSft;
-  REAL8Vector *fdot = params->fdot;
-
-  REAL8 deltaF, fStart;
-
-  /* copy timeBase from SFT vector */
-  REAL8 timeBase = 1.0 / ( stackSFTs->data->data->deltaF);
-
-  /* other variables */
-  SSBtimes tSSB;
-  AMCoeffs amcoe;
-  SkyPosition skyPoint;
-  DetectorStateSeries *DetectorStates=NULL;
-  LIGOTimeGPSVector timeStack;
-  INT4 k, j, indexSft;
-  REAL8Vector *fkdot=NULL;
-  LIGOTimeGPS tempRef;
-  INT8 binsFstat;
-
-  INITSTATUS( status, "ComputeFstatStack", rcsid );
-  ATTATCHSTATUSPTR (status);
-   
-  /* other stuff copied from params */
-  skyPoint.longitude = params->alpha;
-  skyPoint.latitude = params->delta;
-  skyPoint.system = COORDINATESYSTEM_EQUATORIAL;
-  TRY (LALNormalizeSkyPosition( status->statusPtr, &skyPoint, &skyPoint), status);
-
-  /* set reference time in GPS struct */
-  TRY (LALFloatToGPS ( status->statusPtr, &tempRef, &refTime), status);
-
-  /* copy spindown */
-  fkdot = NULL;
-  TRY ( LALDCreateVector( status->statusPtr, &(fkdot), 2), status);
-  fkdot->data[1] = fdot->data[0];
-
-  /*---------------- start loop over stacks ------------------*/
-  indexSft = 0;
-  for(k=0; k<nStacks; k++) {
-
-    /* set timestamps vector for sfts in stack */
-    timeStack.length = mCohSft[k];
-    timeStack.data = params->ts->data + indexSft;
-
-    /* obtain detector positions and velocities, together with LMSTs for the SFT midpoints (i.e. shifted by tSFT/2) */
-    TRY ( LALGetDetectorStates ( status->statusPtr, &DetectorStates, &timeStack, 
-				      &(params->detector), params->edat, 
-				      timeBase / 2.0 ), status);
-
-
-    /* allocate memory for am coeffs */
-    amcoe.a = NULL;
-    amcoe.b = NULL;
-    TRY (LALSCreateVector(status->statusPtr, &(amcoe.a), mCohSft[k]), status);
-    TRY (LALSCreateVector(status->statusPtr, &(amcoe.b), mCohSft[k]), status);
-
-    /* allocate memory for tssb */
-    tSSB.DeltaT = NULL;
-    tSSB.Tdot = NULL;
-    TRY ( LALDCreateVector(status->statusPtr, &(tSSB.DeltaT), mCohSft[k]), status );
-    TRY ( LALDCreateVector(status->statusPtr, &(tSSB.Tdot), mCohSft[k]), status );
-
-    /* loop over frequency bins and get Fstatistic */
-    binsFstat = out->data[k].data->length;
-    fStart = out->data[k].f0;
-    deltaF = out->data[k].deltaF;
-
-    for(j=0; j<binsFstat; j++) {
-
-      /* increase frequency value */
-      fkdot->data[0] = fStart + j*deltaF;
-
-      /* transform to SSB frame */ 
-      TRY ( LALGetSSBtimes ( status->statusPtr, &tSSB, DetectorStates, skyPoint, 
-			     tempRef , params->SSBprecision), status);
-     
-
-      /* calculate amplitude modulation coefficients */
-      TRY ( LALGetAMCoeffs( status->statusPtr, &amcoe, DetectorStates, skyPoint), status);      
-
-      {
-	/* get the F statistic */
-	Fcomponents FaFb;
-	REAL4 fact;
-	REAL4 At, Bt, Ct;
-	REAL4 FaRe, FaIm, FbRe, FbIm;
-	
-	XLALComputeFaFb ( &FaFb, stackSFTs->data + k, fkdot, &tSSB, 
-			  &amcoe, params->Dterms);
-	At = amcoe.A;
-	Bt = amcoe.B;
-	Ct = amcoe.C;
-	
-	FaRe = FaFb.Fa.re;
-	FaIm = FaFb.Fa.im;	    
-	FbRe = FaFb.Fb.re;
-	FbIm = FaFb.Fb.im;
-	
-	fact = 2.0f / (1.0f * stackSFTs->data[k].length * amcoe.D);    
-
-	/* fill up output vector */	
-	out->data[k].data->data[j] = fact * (Bt * (FaRe*FaRe + FaIm*FaIm) 
-					     + At * (FbRe*FbRe + FbIm*FbIm) 
-					     - 2.0f * Ct *(FaRe*FbRe + FaIm*FbIm) );
-      } /* end fstat calculation block */
-    
-    } /* end loop over frequencies */
-
-    /* increment over correct number of sfts */
-    indexSft += mCohSft[k];
-
-    /*---------- clear memory -----------*/
-    /* destroy DetectorStateSeries */
-    TRY ( LALDestroyDetectorStateSeries (status->statusPtr, &DetectorStates), status);
-
-    /* Free AM-coefficients */
-    TRY (LALSDestroyVector(status->statusPtr, &(amcoe.a)), status);
-    TRY (LALSDestroyVector(status->statusPtr, &(amcoe.b)), status);
-    /* Free SSB-times */
-    TRY (LALDDestroyVector(status->statusPtr, &(tSSB.DeltaT)), status);
-    TRY (LALDDestroyVector(status->statusPtr, &(tSSB.Tdot)), status);
-
-  } /* end loop over stacks */
-
-  TRY (LALDDestroyVector ( status->statusPtr, &(fkdot)), status);
-  
-  DETATCHSTATUSPTR (status);
-  RETURN(status); 
-}
 
 
 
