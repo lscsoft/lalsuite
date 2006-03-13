@@ -116,6 +116,19 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
     SFTVector *data; /**< the SFT vectors */
   } SFTVectorSequence;
 
+  /** sequence of MultiSFT vectors -- for each stack */
+  typedef struct tagMultiSFTVectorSequence {
+    UINT4 length;     /**< number of stacks */
+    MultiSFTVector **data; /**< the SFT vectors */
+  } MultiSFTVectorSequence;
+
+  /* sequence of SFT catalogs -- for each stack */
+  typedef struct tagSFTCatalogSequence {
+    UINT4 length;  /**< the number of stacts */
+    SFTCatalog *data; /**< the catalogs */
+  } SFTCatalogSequence;
+
+
   /** parameters for calculating Fstatistic for multiple stacks 
       --- this assumes that the output will be used in a Hough or perhaps 
       other semi-coherent method; therefore it also requires some
@@ -221,6 +234,12 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 		     LIGOTimeGPSVector *ts,
 		     INT4 nStacks);
 
+
+void SetUpStacks(LALStatus *status, 
+		 SFTCatalogSequence  *out,  
+		 SFTCatalog  *in,
+		 UINT4 nStacks);
+
   void PrintHmap2file(LALStatus *status,
 		      HOUGHMapTotal *ht, 
 		      CHAR *fnameOut, 
@@ -271,10 +290,6 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 			 INT4 *loopindex, 
 			 CHAR *fnameChkPoint);
 
-  void AddSignalToSFTVec( LALStatus *status,
-			  SFTVector *sftvec, 
-			  PulsarSignalParams *injectParams,
-			  SFTParams *sftParams);
 
   
 #ifdef  __cplusplus
