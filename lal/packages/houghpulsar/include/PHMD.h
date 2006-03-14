@@ -251,7 +251,7 @@ NRCSID (PHMDH, "$Id$");
 /*  Hough Map derivative pixel type */
 /* typedef CHAR  HoughDT; */
 /*  typedef INT2  HoughDT; */
-  typedef REAL4 HoughDT; /* for weighted hough maps */
+  typedef REAL8 HoughDT; /* for weighted hough maps */
 
 /** structure to store peakgrams */
   typedef struct tagHOUGHPeakGram{

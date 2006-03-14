@@ -196,7 +196,7 @@ void LALHoughStatistics( LALStatus     *status,
    the number counts */
 /* *******************************  <lalVerbatim file="StatisticsD"> */
 void LALHoughHistogram(LALStatus      *status,
-		       UINT4Vector    *out,
+		       UINT8Vector    *out,
 		       HOUGHMapTotal  *in)
 { /* *********************************************  </lalVerbatim> */
 
@@ -234,6 +234,9 @@ void LALHoughHistogram(LALStatus      *status,
          floats as when we use weights */
       temp = (INT4)(in->map[i*xSide + j] + 0.5);
 
+      if ( temp > length ) {
+	ABORT ( status, STATISTICSH_EVAL, STATISTICSH_MSGEVAL);
+      }
       /* add to relevant entry in histogram */
       out->data[temp] += 1;
     }

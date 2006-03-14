@@ -173,7 +173,7 @@ void LALHoughStatistics(LALStatus      *status,
 
 /** Calculates number count histogram */
 void LALHoughHistogram(LALStatus       *status, 
-		       UINT4Vector     *out,  /**< histogram */ 
+		       UINT8Vector     *out,  /**< histogram */ 
 		       HOUGHMapTotal   *in);  /**< hough map*/
 
 /* ****************************************************** */

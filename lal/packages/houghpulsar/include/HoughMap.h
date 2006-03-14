@@ -243,7 +243,7 @@ NRCSID (HOUGHMAPH, "$Id$");
 /* Total Hough Map pixel type */
 /* typedef UCHAR HoughTT; */
 /*typedef UINT2 HoughTT; */
-  typedef REAL4 HoughTT; /* for weighted hough maps only */
+  typedef REAL8 HoughTT; /* for weighted hough maps only */
   /* Depending of the number of maps to accumulate, */
   /* if needed change both types  to INT2 or UINT2  */
 
