@@ -171,35 +171,11 @@ char *lalWatch;
 /*
  *  Functions Declarations (i.e., prototypes).
  */
-int PrintHistogram(UINT4Vector *, CHAR *);
-int PrintHmap2file(HOUGHMapTotal *, CHAR *, INT4 );
-int PrintHmap2m_file(HOUGHMapTotal *, CHAR *, INT4 );
-
-
-	     
-void PrintHoughEvents (LALStatus       *status,
-        	      FILE            *fpEvents,
-	  	      INT4            houghThreshold,
-		      HOUGHMapTotal   *ht,
-	    	      HOUGHPatchGrid  *patch,
-	 	      HOUGHDemodPar   *parDem);	     
-
-void PrintHoughTemplates (LALStatus       *status,
-        	      FILE            *fpEvents,
-		      HOUGHMapTotal   *ht,
-	    	      HOUGHPatchGrid  *patch,
-	 	      HOUGHDemodPar   *parDem);	     
 
 void Periodo2PSDrng (LALStatus  *status,
 		     REAL8Periodogram1    *psd,
 		     REAL8Periodogram1    *peri,
 		     UINT2                *blocksRNG);
-
-
-void PrintnStarFile (LALStatus                   *status,
-		     HoughSignificantEventVector *eventVec,
-		     CHAR                        *dirname,
-		     CHAR                        *basename);
 
 
 /* ****************************************************** */

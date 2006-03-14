@@ -130,6 +130,15 @@ BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps, uvar_printStats, 
 
 void PrintLogFile (LALStatus *status, CHAR *dir, CHAR *basename, CHAR *skyfile, CHAR *linefile, CHAR *executable );
 
+int PrintHistogram(UINT8Vector *, CHAR *);
+
+int PrintHmap2file(HOUGHMapTotal *ht, CHAR *fnameOut, INT4 iHmap);
+
+int PrintHmap2m_file(HOUGHMapTotal *ht, CHAR *fnameOut, INT4 iHmap);
+
+void PrintHoughEvents (LALStatus *status, FILE *fpEvents, INT4 houghThreshold, HOUGHMapTotal *ht, HOUGHPatchGrid *patch, HOUGHDemodPar *parDem);
+
+void PrintnStarFile (LALStatus *status, HoughSignificantEventVector *eventVec, CHAR *dirname, CHAR *basename);
 
 /***********************************************/
 
@@ -170,8 +179,8 @@ int main(int argc, char *argv[]){
   static HOUGHDemodPar   parDem;  /* demodulation parameters or  */
   static HOUGHSizePar    parSize; 
   static HOUGHMapTotal   ht;   /* the total Hough map */
-  static UINT4Vector     hist; /* histogram of number counts for a single map */
-  static UINT4Vector     histTotal; /* number count histogram for all maps */
+  static UINT8Vector     hist; /* histogram of number counts for a single map */
+  static UINT8Vector     histTotal; /* number count histogram for all maps */
   static HoughStats      stats;
 
   /* skypatch info */
@@ -781,18 +790,19 @@ int main(int argc, char *argv[]){
       parRes.vTotC = VTOT;
 
       /* allocating histogram of the number-counts in the Hough maps */
-      hist.length = mObsCoh+1;
-      histTotal.length = mObsCoh+1;
-      hist.data = NULL;
-      histTotal.data = NULL;
-      hist.data = (UINT4 *)LALCalloc((mObsCoh+1), sizeof(UINT4));
-      histTotal.data = (UINT4 *)LALCalloc((mObsCoh+1), sizeof(UINT4));
-      { 
+      if ( uvar_printStats ) {
 	UINT4   j;
-	for(j=0; j< histTotal.length; ++j)
+	
+	hist.length = mObsCoh+1;
+	histTotal.length = mObsCoh+1;
+	hist.data = NULL;
+	histTotal.data = NULL;
+	hist.data = (UINT8 *)LALCalloc((mObsCoh+1), sizeof(UINT8));
+	histTotal.data = (UINT8 *)LALCalloc((mObsCoh+1), sizeof(UINT8));
+	for(j = 0; j < histTotal.length; ++j)
 	  histTotal.data[j]=0;
       }
-      
+
       
       fBin= f0Bin;
       iHmap = 0;
@@ -925,11 +935,17 @@ int main(int argc, char *argv[]){
 	      LAL_CALL( LALHoughStatistics ( &status, &stats, &ht), &status );
 	      LAL_CALL( LALStereo2SkyLocation (&status, &sourceLocation, 
 				       stats.maxIndex[0], stats.maxIndex[1], &patch, &parDem), &status);
-	      LAL_CALL( LALHoughHistogram ( &status, &hist, &ht), &status);
 
-	      for(j=0; j< histTotal.length; ++j){ 
-		histTotal.data[j]+=hist.data[j]; 
-	      }	      
+	      /* calculate histogram if necessary */
+	      if ( uvar_printStats ) {
+		LAL_CALL( LALHoughHistogram ( &status, &hist, &ht), &status);
+
+		for(j=0; j< histTotal.length; ++j){ 
+		  histTotal.data[j]+=hist.data[j]; 
+		}	      
+	      }
+
+	      
 
 	      significance =  (stats.maxCount - meanN)/sigmaN;	      
 	      if ( significance > nStarEventVec.event[fBinSearch-f0Bin].nStarSignificance )
@@ -1026,9 +1042,10 @@ int main(int argc, char *argv[]){
       
       LALFree(phmdVS.phmd);
       LALFree(freqInd.data);
-      LALFree(hist.data);
-      LALFree(histTotal.data);
-    
+      if ( uvar_printStats ) {
+	LALFree(hist.data);
+	LALFree(histTotal.data);
+      }
       
 #ifdef TIMING
       stop = realcc();
@@ -1092,7 +1109,7 @@ int main(int argc, char *argv[]){
 /* printing the Histogram of all maps into a file                    */
 /******************************************************************/
   
-int PrintHistogram(UINT4Vector *hist, CHAR *fnameOut){
+int PrintHistogram(UINT8Vector *hist, CHAR *fnameOut){
 
   FILE  *fp=NULL;   /* Output file */
   char filename[256];
@@ -1108,7 +1125,7 @@ int PrintHistogram(UINT4Vector *hist, CHAR *fnameOut){
     }
 
   for (i=0; i < hist->length; i++){
-    fprintf(fp,"%d  %d\n", i, hist->data[i]);
+    fprintf(fp,"%d  %llu\n", i, hist->data[i]);
   }
   
   fclose( fp );  
