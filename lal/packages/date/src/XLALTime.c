@@ -90,3 +90,26 @@ int XLALGPSCmp( const LIGOTimeGPS *t0, const LIGOTimeGPS *t1 )
     return 0;
 }
 
+/** Multiply a GPS time by a number. */
+LIGOTimeGPS *XLALGPSMultiply( LIGOTimeGPS *gps, REAL8 x )
+{
+  REAL8 hi = gps->gpsSeconds * x;
+  INT8 lo = gps->gpsNanoSeconds * x + 0.5;
+
+  XLALGPSSetREAL8(gps, hi);
+  XLALGPSSet(gps, gps->gpsSeconds, gps->gpsNanoSeconds + lo);
+
+  return gps;
+}
+
+/** Divide a GPS time by a number. */
+LIGOTimeGPS *XLALGPSDivide( LIGOTimeGPS *gps, REAL8 x )
+{
+  REAL8 hi = gps->gpsSeconds / x;
+  INT8 lo = gps->gpsNanoSeconds / x + 0.5;
+
+  XLALGPSSetREAL8(gps, hi);
+  XLALGPSSet(gps, gps->gpsSeconds, gps->gpsNanoSeconds + lo);
+
+  return gps;
+}

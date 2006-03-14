@@ -163,6 +163,12 @@ REAL8 XLALGPSDiff( const LIGOTimeGPS *t1, const LIGOTimeGPS *t0 );
  */
 int XLALGPSCmp( const LIGOTimeGPS *t0, const LIGOTimeGPS *t1 );
 
+/** Multiply a GPS time by a REAL8 */
+LIGOTimeGPS *XLALGPSMultiply( LIGOTimeGPS *gps, REAL8 x );
+
+/** Divide a GPS time by a REAL8 */
+LIGOTimeGPS *XLALGPSDivide( LIGOTimeGPS *gps, REAL8 x );
+
 /** Returns the leap seconds TAI-UTC at a given GPS second. */
 int XLALLeapSeconds( INT4 gpssec /**< [In] Seconds relative to GPS epoch.*/ );
 
