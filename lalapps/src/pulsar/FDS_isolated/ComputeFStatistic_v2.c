@@ -806,7 +806,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
 
       TRY ( LALNormalizeMultiSFTVect (status->statusPtr, &psds, cfg->multiSFTs, uvar_RngMedWindow ), status );
       /* note: the normalization S_hat would be required to compute the ML-estimator for A^\mu */
-      TRY ( LALComputeMultiNoiseWeights  (status->statusPtr, &(cfg->multiNoiseWeights), &S_hat, psds, uvar_RngMedWindow ), status );
+      TRY ( LALComputeMultiNoiseWeights  (status->statusPtr, &(cfg->multiNoiseWeights), &S_hat, psds, uvar_RngMedWindow, 0 ), status );
 
       TRY ( LALDestroyMultiPSDVector (status->statusPtr, &psds ), status );
 
