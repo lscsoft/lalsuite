@@ -105,6 +105,7 @@ BOOLEAN uvar_help;
 BOOLEAN uvar_SignalOnly;
 
 INT4 uvar_gpsStart;
+INT4 uvar_RngMedWindow;
 
 REAL8 uvar_aPlus;
 REAL8 uvar_aCross;
@@ -219,8 +220,11 @@ int main(int argc,char *argv[])
     UINT4 X;  
 
     MultiAMCoeffs *multiAMcoef = NULL;
+    MultiPSDVector *multiPSDs = NULL;
 
     LAL_CALL ( LALGetMultiAMCoeffs ( &status, &multiAMcoef, GV.multiDetStates, psPoint.skypos ), &status);
+    LAL_CALL ( LALNormalizeMultiSFTVect ( &status, &multiPSDs, GV.multiSFTs, uvar_RngMedWindow ), &status );
+
 
     /* Antenna-patterns and compute A,B,C */
     for ( X=0; X < GV.numDetectors; X ++)
@@ -229,32 +233,50 @@ int main(int argc,char *argv[])
 	UINT4 alpha;
 	UINT4 numSFTsX = GV.multiSFTs->data[X]->length;
 	AMCoeffs *amcoeX = multiAMcoef->data[X];
+	PSDVector *psdsX = multiPSDs->data[X]; 
 
 	Tsft = 1 / (GV.multiSFTs->data[X]->data[0].deltaF);	
 
 	for(alpha = 0; alpha < numSFTsX; alpha++)
 	  {
-	    REAL8 ahat = amcoeX->a->data[alpha] ;
-	    REAL8 bhat = amcoeX->b->data[alpha] ;
+	    UINT4 freq;
+	    REAL8 sumSh = 0.0, meanSh = 0.0;
+
+	    REAL8 fMin = MYMIN ( uvar_Freq, uvar_Freq + uvar_FreqBand );
+	    REAL8 fMax = MYMAX ( uvar_Freq, uvar_Freq + uvar_FreqBand );
+
+	    for(freq = fMin; freq <= fMax; freq++)
+	      {
+		Sh =  psdsX->data[alpha].data->data[freq];
+		sumSh += Sh;  
+	      }
+	    meanSh = sumSh / (fMax - fMin + 1);
+
+	    REAL8 ahat = (amcoeX->a->data[alpha]);
+	    REAL8 bhat = (amcoeX->b->data[alpha]);
 	    
 	    /* sum A, B, C on the fly */
-	    A += ahat * ahat;
-	    B += bhat * bhat;
-	    C += ahat * bhat;
+	    A += ahat * ahat / meanSh;
+	    B += bhat * bhat / meanSh;
+	    C += ahat * bhat / meanSh;
 	    
 	  } /* for alpha < numSFTsX */
+	At += Tsft * A / 2;
+	Bt += Tsft * B / 2;
+	Ct += Tsft * C / 2;
 
-	Sh = SQ(uvar_sqrtSh); 
 
-	At += (Tsft / (2*Sh)) * A;
-	Bt += (Tsft / (2*Sh)) * B;
-	Ct += (Tsft / (2*Sh)) * C;
+/* 	At += (Tsft / (2*Sh)) * A; */
+/* 	Bt += (Tsft / (2*Sh)) * B; */
+/* 	Ct += (Tsft / (2*Sh)) * C; */
 	
       } /* for X < numDetectors */
 
     /* Free AM Coefficients */
     XLALDestroyMultiAMCoeffs ( multiAMcoef );
-       
+    /*    XLALDestroyMultiPSDVector ( multiPSDs );*/
+    LAL_CALL ( LALDestroyMultiPSDVector (&status, &multiPSDs ), &status );
+      
     twophi = 2.0 * uvar_phi;
     twopsi = 2.0 * uvar_psi;
     
@@ -327,6 +349,7 @@ ATTATCHSTATUSPTR (status);
  uvar_AlphaBand = 0;
  uvar_DeltaBand = 0;
  uvar_skyRegion = NULL;
+ uvar_RngMedWindow = 50;	/* for running-median */
  
  uvar_ephemYear = LALCalloc (1, strlen(EPHEM_YEARS)+1);
  strcpy (uvar_ephemYear, EPHEM_YEARS);
@@ -342,6 +365,8 @@ ATTATCHSTATUSPTR (status);
  /* register all our user-variables */
  LALregBOOLUserVar(status, 	help, 		'h', UVAR_HELP,     "Print this message"); 
  LALregBOOLUserVar(status, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
+
+ LALregINTUserVar(status, 	RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");
 
  LALregREALUserVar(status,      phi,            'Q', UVAR_OPTIONAL, "Phi_0: Initial phase in radians");
  LALregREALUserVar(status,      psi,            'Y', UVAR_OPTIONAL, "Polarisation in radians");
@@ -487,7 +512,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   }
 
   cfg->numDetectors = cfg->multiSFTs->length;
-  
+
   { /* ----- load ephemeris-data ----- */
     CHAR *ephemDir;
 
@@ -580,7 +605,7 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
 
   /* Free SFT data */
   TRY ( LALDestroyMultiSFTVector (status->statusPtr, &(cfg->multiSFTs) ), status );
- 
+
   /* destroy DetectorStateSeries */
   XLALDestroyMultiDetectorStateSeries ( cfg->multiDetStates );
   
