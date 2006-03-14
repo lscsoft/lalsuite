@@ -165,8 +165,10 @@ void LALAppendString2Vector (LALStatus *, LALStringVector *vect, const CHAR *str
 CHAR *XLALGetChannelPrefix ( const CHAR *name );
 LALDetector *XLALGetSiteInfo ( const CHAR *name );
 
-void LALComputeNoiseWeights  (LALStatus *status, REAL8Vector *weightV, const SFTVector *sftVect, INT4 blkSize);
-void LALComputeMultiNoiseWeights  (LALStatus *status, MultiNoiseWeights **weightsV, REAL8 *normalization, const MultiPSDVector *multipsd, UINT4 blocksRngMed);
+void LALComputeNoiseWeights  (LALStatus *status, REAL8Vector *weightV, const SFTVector *sftVect, 
+			      INT4 blkSize, UINT4 excludePercentile);
+void LALComputeMultiNoiseWeights  (LALStatus *status, MultiNoiseWeights **weightsV, REAL8 *normalization, 
+				   const MultiPSDVector *multipsd, UINT4 blocksRngMed, UINT4 excludePercentile);
 void LALDestroyMultiNoiseWeights  (LALStatus *status, MultiNoiseWeights **weights);
 
 #ifdef  __cplusplus

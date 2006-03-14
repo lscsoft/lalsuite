@@ -900,11 +900,12 @@ create_nautilus_site ( LALDetector *Detector )
 void LALComputeNoiseWeights  (LALStatus        *status, 
 			      REAL8Vector      *weightV,
 			      const SFTVector  *sftVect,
-			      INT4             blkSize) 
+			      INT4             blkSize,
+			      UINT4            excludePercentile) 
 {
 
-  UINT4 lengthVect, lengthSFT, lengthPSD;
-  UINT4 j;
+  UINT4 lengthVect, lengthSFT, lengthPSD, halfLengthPSD;
+  UINT4 j, excludeIndex;
   SFTtype *sft;
   REAL8FrequencySeries periodo;
   REAL8Sequence mediansV, inputV;
@@ -920,6 +921,8 @@ void LALComputeNoiseWeights  (LALStatus        *status,
   ASSERT (blkSize > 0, status,  SFTUTILS_EINPUT, SFTUTILS_MSGEINPUT);
   ASSERT (weightV->data,status, SFTUTILS_ENULL, SFTUTILS_MSGENULL);
   ASSERT (sftVect->data,status, SFTUTILS_ENULL, SFTUTILS_MSGENULL);
+  ASSERT (excludePercentile >= 0, status, SFTUTILS_EINPUT, SFTUTILS_MSGEINPUT);
+  ASSERT (excludePercentile <= 100, status, SFTUTILS_EINPUT, SFTUTILS_MSGEINPUT);
   /* -------------------------------------------   */
 
   /* Make sure there is no size mismatch */
@@ -936,8 +939,11 @@ void LALComputeNoiseWeights  (LALStatus        *status,
   lengthSFT = sftVect->data->data->length;
   ASSERT( lengthSFT > 0, status,  SFTUTILS_EINPUT, SFTUTILS_MSGEINPUT);
   lengthPSD = lengthSFT - blkSize + 1;
+
   /* make sure blksize is not too big */
   ASSERT(lengthPSD > 0, status, SFTUTILS_EINPUT, SFTUTILS_MSGEINPUT);
+
+  halfLengthPSD = lengthPSD/2; /* integer division */
 
   /* allocate memory for periodogram */
   periodo.data = NULL;
@@ -951,6 +957,10 @@ void LALComputeNoiseWeights  (LALStatus        *status,
 
   /* rng med block size */
   rngMedPar.blocksize = blkSize;
+
+  /* calculate index in psd medians vector from which to calculate mean */
+  excludeIndex =  (excludePercentile * halfLengthPSD) ; /* integer arithmetic */
+  excludeIndex /= 100; /* integer arithmetic */
 
   /* loop over sfts and calculate weights */
   for (j=0; j<lengthVect; j++) {
@@ -967,7 +977,11 @@ void LALComputeNoiseWeights  (LALStatus        *status,
     inputV.data = periodo.data->data;
     TRY( LALDRunningMedian2(status->statusPtr, &mediansV, &inputV, rngMedPar), status);
 
-    for (k=0; k<lengthPSD; k++) {
+    /* now sort the mediansV.data vector and exclude the top and last percentiles */
+    gsl_sort(mediansV.data, 1, mediansV.length);
+
+    /* sum median excluding appropriate elements */ 
+    for (k = excludeIndex; k < lengthPSD - excludeIndex; k++) {
       sumMed += mediansV.data[k];
     }
 
@@ -996,11 +1010,14 @@ void LALComputeMultiNoiseWeights  (LALStatus             *status,
 				   MultiNoiseWeights     **out,
 				   REAL8                 *normalization,
 				   const MultiPSDVector  *multipsd,
-				   UINT4                 blocksRngMed) 
+				   UINT4                 blocksRngMed,
+				   UINT4                 excludePercentile) 
 {
   REAL8 Sn=0.0, sumSn=0.0;
-  INT4 i, k, j, numifos, numsfts, lengthsft, numsftsTot;
+  UINT4 i, k, j, numifos, numsfts, lengthsft, numsftsTot;
+  UINT4 excludeIndex, halfLengthPSD, lengthPSD;
   MultiNoiseWeights *weights;
+  
 
   INITSTATUS (status, "LALComputeMultiNoiseWeights", SFTUTILSC);
   ATTATCHSTATUSPTR (status); 
@@ -1050,8 +1067,16 @@ void LALComputeMultiNoiseWeights  (LALStatus             *status,
 	    ABORT ( status, SFTUTILS_EINPUT, SFTUTILS_MSGEINPUT);
 	  }
 
-	  for ( Sn = 0.0, i = halfBlock; i < lengthsft - halfBlock; i++)
-	    Sn += psd->data->data[i]/lengthsft;
+	  lengthPSD = lengthsft - blocksRngMed + 1;
+	  halfLengthPSD = lengthPSD/2;
+
+	  /* calculate index in psd medians vector from which to calculate mean */
+	  excludeIndex =  excludePercentile * halfLengthPSD ; /* integer arithmetic */
+	  excludeIndex /= 100; /* integer arithmetic */
+
+	  for ( Sn = 0.0, i = halfBlock + excludeIndex; i < lengthsft - halfBlock - excludeIndex; i++)
+	    Sn += psd->data->data[i];
+	  Sn /= lengthsft - 2*halfBlock - 2*excludeIndex;
 
 	  sumSn += Sn; /* sumSn is just a normalization factor */
 
