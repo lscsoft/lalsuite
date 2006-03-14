@@ -231,49 +231,49 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
           } /* if x could become close to 0 */
         else
           {
-            COMPLEX8 *Xalpha_k = Xalpha + sftIndex;
-	    REAL4 accFreq = 1.0; /* accumulating frequency factor, becomes common denominator */
+	    /* THIS IS DANGEROUS!! It relies on current implementation of COMPLEX8 type!! */
+	    REAL4 *Xalpha_kR4 = &(Xalpha[sftIndex].re);
+
 	    REAL4 tsin2pi = tsin * (REAL4)OOTWOPI;
 	    REAL4 tcos2pi = tcos * (REAL4)OOTWOPI;
-	    REAL4 Xa[4], Xs[4], Tf[4], Af[4];
+	    REAL4 XRes, XIms;
+	    REAL4 tFreq[4]; /* tempFreq1 vector */
+	    REAL4 aFreq[4]; /* accFreq vector */
+	    REAL4 Xsum[4]; /* vector holding partial sums */
 
-	    Xs[0] = ( Xs[1] = 0 );
-	    Xs[2] = ( Xs[3] = 0 );
-	    Af[0] = 1.0;
-	    Tf[0] = tempFreq1;
+	    /* init vectors */
+	    aFreq[0] = 1.0;
+	    aFreq[1] = 1.0;
+	    aFreq[2] = 1.0;
+	    aFreq[3] = 1.0;
 
-            for(k=0; k < klim/2 ; k++)
-	      {
-		UINT4 ilc;
+	    tFreq[0] = tempFreq1;
+	    tFreq[1] = tempFreq1;
+	    tFreq[2] = tempFreq1 - 1.0;
+	    tFreq[3] = tempFreq1 - 1.0;
 
-		Tf[1] = Tf[0];
-		Af[1] = Af[0];
+	    Xsum[0] = 0.0;
+	    Xsum[1] = 0.0;
+	    Xsum[2] = 0.0;
+	    Xsum[3] = 0.0;
 
-		Xa[0] = (*Xalpha_k).re;
-		Xa[1] = (*Xalpha_k).im;
-                Xalpha_k ++;
-		Xa[2] = (*Xalpha_k).re;
-		Xa[3] = (*Xalpha_k).im;
-                Xalpha_k ++;
+	    /* Vectorized version of the "hot loop" */
+            for(k=0; k < klim / 2; k++) {
+	      UINT4 ve;
+	      for(ve=0;ve<4;ve++) {
+                Xsum[ve] = Xsum[ve] * tFreq[ve] + Xalpha_kR4[ve] * aFreq[ve];
+		aFreq[ve] *= tFreq[ve];
+                tFreq[ve] -= 2.0;
+	      }
+	      Xalpha_kR4 += 4;
+	    }
 
-		Af[2] = Af[0] * Tf[0];
-                Tf[2] = Tf[0] - 1;
-		Af[3] = Af[2];
-		Tf[3] = Tf[2];
+	    aFreq[1] *= aFreq[2];
+	    XRes = (Xsum[0] * aFreq[2] + Xsum[2] * aFreq[0]) / aFreq[1];
+	    XIms = (Xsum[1] * aFreq[2] + Xsum[3] * aFreq[0]) / aFreq[1];
 
-		for(ilc=0; ilc<4; ilc++)
-		  Xs[ilc] = Tf[ilc] * Xs[ilc] + Xa[ilc] * Af[ilc];
-
-		Af[0] = Af[2] * Tf[2];
-                Tf[0] = Tf[2] - 1;
-
-              } /* for k < klim */
-
-	    Xs[0] = ( Xs[0] + Xs[3] ) / accFreq;
-	    Xs[1] = ( Xs[1] + Xs[4] ) / accFreq;
-
-            realXP = tsin2pi * Xs[0] - tcos2pi * Xs[1];
-            imagXP = tcos2pi * Xs[0] + tsin2pi * Xs[1];
+            realXP = tsin2pi * XRes - tcos2pi * XIms;
+            imagXP = tcos2pi * XRes + tsin2pi * XIms;
           } /* if x cannot be close to 0 */
 
         /* implementation of amplitude demodulation */
