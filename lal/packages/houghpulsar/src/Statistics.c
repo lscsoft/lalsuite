@@ -232,9 +232,9 @@ void LALHoughHistogram(LALStatus      *status,
       /* read the current number count and round it off to the
          nearest integer -- useful when the number counts are 
          floats as when we use weights */
-      temp = (INT4)(in->map[i*xSide + j] + 0.5);
+      temp = (INT4)(in->map[i*xSide + j]);
 
-      if ( temp > length ) {
+      if ( (temp > length) || (temp < 0) ) {
 	ABORT ( status, STATISTICSH_EVAL, STATISTICSH_MSGEVAL);
       }
       /* add to relevant entry in histogram */
