@@ -240,36 +240,32 @@ int main(int argc,char *argv[])
 	for(alpha = 0; alpha < numSFTsX; alpha++)
 	  {
 	    UINT4 freq;
-	    REAL8 sumSh = 0.0, meanSh = 0.0;
+	    REAL8 sumPSD = 0.0, meanPSD = 0.0, PSD;
 
 	    REAL8 fMin = MYMIN ( uvar_Freq, uvar_Freq + uvar_FreqBand );
 	    REAL8 fMax = MYMAX ( uvar_Freq, uvar_Freq + uvar_FreqBand );
 
-	    for(freq = fMin; freq <= fMax; freq++)
+	    for(freq = fMin; freq <= fMax; freq ++)
 	      {
-		Sh =  psdsX->data[alpha].data->data[freq];
-		sumSh += Sh;  
+		PSD =  psdsX->data[alpha].data->data[freq];
+		sumPSD += PSD;  
 	      }
-	    meanSh = sumSh / (fMax - fMin + 1);
+	    meanPSD = sumPSD / (fMax - fMin + 1);
 
+	    Sh = 1 * sumPSD / Tsft;
 	    REAL8 ahat = (amcoeX->a->data[alpha]);
 	    REAL8 bhat = (amcoeX->b->data[alpha]);
 	    
 	    /* sum A, B, C on the fly */
-	    A += ahat * ahat / meanSh;
-	    B += bhat * bhat / meanSh;
-	    C += ahat * bhat / meanSh;
+	    A += ahat * ahat / Sh;
+	    B += bhat * bhat / Sh;
+	    C += ahat * bhat / Sh;
 	    
 	  } /* for alpha < numSFTsX */
 	At += Tsft * A / 2;
 	Bt += Tsft * B / 2;
 	Ct += Tsft * C / 2;
 
-
-/* 	At += (Tsft / (2*Sh)) * A; */
-/* 	Bt += (Tsft / (2*Sh)) * B; */
-/* 	Ct += (Tsft / (2*Sh)) * C; */
-	
       } /* for X < numDetectors */
 
     /* Free AM Coefficients */
@@ -304,11 +300,11 @@ int main(int argc,char *argv[])
     /* Note: the expectation-value of 2F is 4 + lambda ==> add 2 to Fstat*/
     F += 2.0;
     
-    fprintf( stdout, "%g\n", 2 * F );
+    fprintf( stdout, "2F = %g,   sqrtSh =  %g\n", 2 * F , sqrt(Sh));
     
     if ( fpFstat )
       {
-	fprintf (fpFstat, "%g \n%%DONE\n", 2 * F);
+	fprintf (fpFstat, "%g\n%%DONE\n", 2 * F);
 	fclose (fpFstat);
 	fpFstat = NULL;
       }
