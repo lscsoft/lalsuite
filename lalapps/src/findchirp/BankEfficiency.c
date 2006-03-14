@@ -259,7 +259,7 @@ main (INT4 argc, CHAR **argv )
 	fprintf(stdout,"Init ... done\n");
       }
       
-     /* randIn.param.fCutoff = coarseBankIn.fUpper; */
+      randIn.param.fCutoff = userParam.signalfFinal; 
       if (vrbflg){
         fprintf(stdout, "Upper frequency cut-off on signal: %e\n", randIn.param.fCutoff);
 	fprintf(stdout,"Signal Generation ... ");
