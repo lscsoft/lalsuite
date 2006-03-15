@@ -93,11 +93,14 @@ int XLALGPSCmp( const LIGOTimeGPS *t0, const LIGOTimeGPS *t1 )
 /** Multiply a GPS time by a number. */
 LIGOTimeGPS *XLALGPSMultiply( LIGOTimeGPS *gps, REAL8 x )
 {
-  REAL8 hi = gps->gpsSeconds * x;
+  LIGOTimeGPS hi, mi;
   INT8 lo = gps->gpsNanoSeconds * x + 0.5;
 
-  XLALGPSSetREAL8(gps, hi);
-  XLALGPSSet(gps, gps->gpsSeconds, gps->gpsNanoSeconds + lo);
+  XLALGPSSetREAL8(&hi, (gps->gpsSeconds / 1000) * x * 1000.0);
+  hi.gpsNanoSeconds -= hi.gpsNanoSeconds % 1000;
+  XLALGPSSetREAL8(&mi, (gps->gpsSeconds % 1000) * x);
+
+  XLALGPSSet(gps, hi.gpsSeconds + mi.gpsSeconds, hi.gpsNanoSeconds + mi.gpsNanoSeconds + lo);
 
   return gps;
 }
@@ -105,11 +108,14 @@ LIGOTimeGPS *XLALGPSMultiply( LIGOTimeGPS *gps, REAL8 x )
 /** Divide a GPS time by a number. */
 LIGOTimeGPS *XLALGPSDivide( LIGOTimeGPS *gps, REAL8 x )
 {
-  REAL8 hi = gps->gpsSeconds / x;
+  LIGOTimeGPS hi, mi;
   INT8 lo = gps->gpsNanoSeconds / x + 0.5;
 
-  XLALGPSSetREAL8(gps, hi);
-  XLALGPSSet(gps, gps->gpsSeconds, gps->gpsNanoSeconds + lo);
+  XLALGPSSetREAL8(&hi, (gps->gpsSeconds / 1000) / x * 1000.0);
+  hi.gpsNanoSeconds -= hi.gpsNanoSeconds % 1000;
+  XLALGPSSetREAL8(&mi, (gps->gpsSeconds % 1000) / x);
+
+  XLALGPSSet(gps, hi.gpsSeconds + mi.gpsSeconds, hi.gpsNanoSeconds + mi.gpsNanoSeconds + lo);
 
   return gps;
 }
