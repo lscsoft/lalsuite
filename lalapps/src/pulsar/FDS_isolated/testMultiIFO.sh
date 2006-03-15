@@ -131,7 +131,7 @@ res2F=`echo $resF | awk '{printf "%g", 2.0 * $1}'`
 echo
 
 # this part of the command-line is compatible with PredictFStat:
-pfs_CL="--aPlus=$aPlus --aCross=$aCross --psi=$psi --phi=$phi0 --sqrtSh=$sqrtSh --Freq=100.0 --FreqBand=1.0 --DataFiles='./testSFTs/H-1_H1*' --Delta=$Delta --Alpha=$Alpha"
+pfs_CL="--aPlus=$aPlus --aCross=$aCross --psi=$psi --phi=$phi0 --Freq=100.0 --DataFiles='./testSFTs/H-1_H1*' --Delta=$Delta --Alpha=$Alpha"
 
 cmdline="$pfs_code $pfs_CL"
 echo $cmdline
@@ -145,7 +145,7 @@ fi
 res2PFS1=`echo $resPFS1 | awk '{printf "%g", $1}'`
 echo
 
-pfs2_CL="--aPlus=$aPlus --aCross=$aCross --psi=$psi --phi=$phi0 --sqrtSh=$sqrtSh --Freq=100.0 --FreqBand=1.0 --DataFiles='./testSFTs/H-1_H*' --Delta=$Delta --Alpha=$Alpha"
+pfs2_CL="--aPlus=$aPlus --aCross=$aCross --psi=$psi --phi=$phi0 --Freq=100.0 --DataFiles='./testSFTs/H-1_H*' --Delta=$Delta --Alpha=$Alpha"
 
 cmdline="$pfs_code $pfs2_CL"
 echo $cmdline

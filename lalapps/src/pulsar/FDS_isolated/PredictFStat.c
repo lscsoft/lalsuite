@@ -301,8 +301,9 @@ int main(int argc,char *argv[])
     /* Note: the expectation-value of 2F is 4 + lambda ==> add 2 to Fstat*/
     F += 2.0;
     
-    fprintf(stdout, "\n2F = %g,   sqrtSh =  %g\n\n", 2 * F , sqrt(Sh));
-    
+/*     fprintf(stdout, "\n2F = %g,   sqrtSh =  %g\n\n", 2 * F , sqrt(Sh)); */
+    fprintf(stdout, "\n%g\n", 2 * F);
+
     if ( fpFstat )
       {
 	fprintf (fpFstat, "%g\n%%DONE\n", 2 * F);
