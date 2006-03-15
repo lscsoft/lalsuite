@@ -127,8 +127,17 @@ of the trigger in the coinc with the highest \texttt{snr}.  If the
 every ifo in \texttt{ifos}.  If it is \texttt{NULL} then templates are only
 generated for those ifos which have triggers in the coinc.
 
-\texttt{XLALInspiralDistanceCut()} is used to perform a distance cut between 
-the triggers in a coincidence.  The distance cut uses the following algorithm:
+\texttt{XLALInspiralDistanceCut()} is used to perform a distance cut between
+the triggers in a coincidence.  The distance cut analyzes triggers from two
+different instruments.  It determines which instrument was the most sensitive
+by comparing the \texttt{sigmasq} values of the two triggers, the instrument 
+with the greatest range is designated ifo A, the other ifo B.  It then discards
+and triggers for which
+%
+\begin{equation}
+\frac{|distB - distA|}{distA} > \frac{epsilonB}{snrB} + kappaB   
+\end{equation}
+%
 
 \texttt{LALCoincCutSnglInspiral()} extracts all single inspirals from a
 specific ifo which are in coinc inspirals.  The output \texttt{snglPtr} is a
@@ -948,6 +957,37 @@ XLALRecreateCoincFromSngls(
       thisCoinc->numIfos = 1;
       thisSngl->event_id->coincInspiralTable = thisCoinc;
       numCoincs +=1;
+    }
+  }
+  /* discard any coincs which are from a single ifo */
+  thisCoinc = coincHead; 
+  coincHead = NULL;
+  numCoincs = 0;
+
+  while ( thisCoinc )
+  {
+    CoincInspiralTable *tmpCoinc = thisCoinc;
+    thisCoinc = thisCoinc->next;
+
+    if ( tmpCoinc->numIfos > 1 )
+    {
+      /* ifos match so keep tmpCoinc */
+      if ( ! coincHead  )
+      {
+        coincHead = tmpCoinc;
+      }
+      else
+      {
+        prevCoinc->next = tmpCoinc;
+      }
+      tmpCoinc->next = NULL;
+      prevCoinc = tmpCoinc;
+      ++numCoincs;
+    }
+    else
+    {
+      /* discard tmpCoinc */
+      XLALFreeCoincInspiral( &tmpCoinc );
     }
   }
 
