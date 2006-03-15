@@ -138,7 +138,7 @@ int main(int argc, char *argv[]){
   static LALStatus       status; 
   static HOUGHMapTotal   ht;
   static HoughStats      stats;
-  static UINT4Vector     hist;
+  static UINT8Vector     hist;
 
   CHAR   *fname = NULL;               /* The output filename */
   INT4   arg;                         /* Argument counter */
@@ -206,7 +206,7 @@ int main(int argc, char *argv[]){
 
   hist.length = ht.mObsCoh +1;
   hist.data= NULL;
-  hist.data = (UINT4 *)LALMalloc((hist.length)*sizeof(UINT4));
+  hist.data = (UINT8 *)LALMalloc((hist.length)*sizeof(UINT8));
 
   SUB( LALHoughHistogram ( &status, &hist, &ht), &status);
 
