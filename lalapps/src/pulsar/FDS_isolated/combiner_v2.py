@@ -28,7 +28,7 @@ parser.add_option("-r", "--resultfile", dest="resultfile",
                   help="Name of the result file.",
 		  default="Combined")
 parser.add_option("-n", "--includefnames", dest="includefnames",
-                  help="Ask your intention whether to include each result filenames.",
+                  help="Ask your intention whether to include each result filename.",
 		  default=1)
 parser.add_option("-v", "--verbose", dest="vrbflg",
                   help="Ask your intention for safety.",
@@ -38,7 +38,7 @@ parser.add_option("-v", "--verbose", dest="vrbflg",
 inclfnames=options.includefnames
 vrbflg=options.vrbflg
 
-if inclfnames:
+if inclfnames == 1:
     print "'Einstein at Home' - result filenames will be included into combined file."
 
 ## set-up and normalize directory names.
@@ -203,7 +203,7 @@ for parentdir, childdirs, files in os.walk(targetdir):
            
 ## This loop add various information to files.
 
-fileid=1
+fileid=0
 for parentdir, childdirs, files in os.walk(tmpdir):
     for file in files:              # For each file under the targetdir,
 	if file is not []:          # If there is a file, 
