@@ -55,6 +55,9 @@ NRCSID( COMPUTEFSTATC, "$Id$");
 
 #define SQ(x) ( (x) * (x) )
 
+#define MYMAX(x,y) ( (x) > (y) ? (x) : (y) )
+#define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
+
 /*----- SWITCHES -----*/
 
 /*---------- internal types ----------*/
@@ -890,6 +893,7 @@ LALGetMultiDetectorStates( LALStatus *status,
 {
   UINT4 X, numDetectors;
   MultiDetectorStateSeries *ret = NULL;
+  REAL8 t0=LAL_REAL4_MAX, t1=0;
 
   INITSTATUS (status, "LALGetMultiDetectorStates", COMPUTEFSTATC );
   ATTATCHSTATUSPTR (status);
@@ -917,7 +921,14 @@ LALGetMultiDetectorStates( LALStatus *status,
       LALDetector *det = NULL;
 
       SFTVector *this_sftvect = multiSFTs->data[X];
-      REAL8 tOffs = 0.5 / this_sftvect->data[0].deltaF;	/* Tsft / 2 */
+      REAL8 Tsft = 1.0 / this_sftvect->data[0].deltaF;
+      REAL8 tOffs = 0.5 * Tsft ;	/* shift all timestamps by Tsft / 2 */
+      REAL8 ti;
+      /* get earliest start-time, and latest end-time */
+      ti = GPS2REAL8(this_sftvect->data[0].epoch);
+      t0 = MYMIN(t0, ti );
+      ti = GPS2REAL8(this_sftvect->data[this_sftvect->length-1].epoch) + Tsft;
+      t1 = MYMAX(t1, ti );
 
       /* timestamps from SFTVector  of detector X */
       LALGetSFTtimestamps ( status->statusPtr, &ts, this_sftvect );
@@ -926,6 +937,7 @@ LALGetMultiDetectorStates( LALStatus *status,
 	  LALPrintError ( "\nCall to LALGetSFTtimestamps() has failed ... \n\n");
 	  goto failed;
 	}
+
       /* LALDetector struct for this detector */
       if ( (det = XLALGetSiteInfo ( this_sftvect->data[0].name )) == NULL ) 
 	{
@@ -949,6 +961,8 @@ LALGetMultiDetectorStates( LALStatus *status,
       LALFree ( det );
 
     } /* for X < numDetectors */
+
+  ret->Tspan = t1 - t0;		/* total time spanned by all SFTs */
 
   goto success;
 
