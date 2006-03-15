@@ -225,7 +225,6 @@ int main(int argc,char *argv[])
     LAL_CALL ( LALGetMultiAMCoeffs ( &status, &multiAMcoef, GV.multiDetStates, psPoint.skypos ), &status);
     LAL_CALL ( LALNormalizeMultiSFTVect ( &status, &multiPSDs, GV.multiSFTs, uvar_RngMedWindow ), &status );
 
-
     /* Antenna-patterns and compute A,B,C */
     for ( X=0; X < GV.numDetectors; X ++)
       {
@@ -239,22 +238,23 @@ int main(int argc,char *argv[])
 
 	for(alpha = 0; alpha < numSFTsX; alpha++)
 	  {
-	    UINT4 freq;
+	    UINT4 lengthPSD, i;
 	    REAL8 sumPSD = 0.0, meanPSD = 0.0, PSD;
+	    REAL8 ahat, bhat;
 
-	    REAL8 fMin = MYMIN ( uvar_Freq, uvar_Freq + uvar_FreqBand );
-	    REAL8 fMax = MYMAX ( uvar_Freq, uvar_Freq + uvar_FreqBand );
+	    lengthPSD = psdsX->data[0].data->length;
 
-	    for(freq = fMin; freq <= fMax; freq ++)
+	    for(i = 0; i < lengthPSD; i++)
 	      {
-		PSD =  psdsX->data[alpha].data->data[freq];
+		PSD =  psdsX->data[alpha].data->data[i];
 		sumPSD += PSD;  
 	      }
-	    meanPSD = sumPSD / (fMax - fMin + 1);
+	    meanPSD = sumPSD / lengthPSD;
 
-	    Sh = 1 * sumPSD / Tsft;
-	    REAL8 ahat = (amcoeX->a->data[alpha]);
-	    REAL8 bhat = (amcoeX->b->data[alpha]);
+	    Sh = 2 * meanPSD / Tsft;
+
+	    ahat = (amcoeX->a->data[alpha]);
+	    bhat = (amcoeX->b->data[alpha]);
 	    
 	    /* sum A, B, C on the fly */
 	    A += ahat * ahat / Sh;
@@ -262,15 +262,16 @@ int main(int argc,char *argv[])
 	    C += ahat * bhat / Sh;
 	    
 	  } /* for alpha < numSFTsX */
-	At += Tsft * A / 2;
-	Bt += Tsft * B / 2;
-	Ct += Tsft * C / 2;
+
+	At += 2 * Tsft * A;
+	Bt += 2 * Tsft * B;
+	Ct += 2 * Tsft * C;
 
       } /* for X < numDetectors */
 
     /* Free AM Coefficients */
     XLALDestroyMultiAMCoeffs ( multiAMcoef );
-    /*    XLALDestroyMultiPSDVector ( multiPSDs );*/
+    /* Free MultiPSDVector  */
     LAL_CALL ( LALDestroyMultiPSDVector (&status, &multiPSDs ), &status );
       
     twophi = 2.0 * uvar_phi;
@@ -295,12 +296,12 @@ int main(int argc,char *argv[])
     A3 =-aPlus * cos(twopsi) * sin(twophi) - aCross * sin(twopsi) * cos(twophi);
     A4 =-aPlus * sin(twopsi) * sin(twophi) + aCross * cos(twopsi) * cos(twophi);
     
-    F += At * ( SQ(A1) + SQ(A3) ) + Bt * ( SQ(A2) + SQ(A4) )+ 2.0 * Ct * (A1 * A2 + A3 * A4 );
+    F += (At * ( SQ(A1) + SQ(A3) ) + Bt * ( SQ(A2) + SQ(A4) )+ 2.0 * Ct * (A1 * A2 + A3 * A4 )) / 4;
     
     /* Note: the expectation-value of 2F is 4 + lambda ==> add 2 to Fstat*/
     F += 2.0;
     
-    fprintf( stdout, "2F = %g,   sqrtSh =  %g\n", 2 * F , sqrt(Sh));
+    fprintf(stdout, "\n2F = %g,   sqrtSh =  %g\n\n", 2 * F , sqrt(Sh));
     
     if ( fpFstat )
       {
