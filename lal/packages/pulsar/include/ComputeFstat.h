@@ -82,6 +82,7 @@ typedef struct
   UINT4 length;			/**< total number of entries */
   DetectorState *data;		/**< array of DetectorState entries */
   LALDetector detector;		/**< detector-info corresponding to this timeseries */
+  REAL8 duration;		/**< total spanned duration of the observation */
 } DetectorStateSeries;
 
 /** Multi-IFO time-series of DetectorStates */
