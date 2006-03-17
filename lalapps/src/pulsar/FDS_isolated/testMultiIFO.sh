@@ -81,7 +81,7 @@ echo
 echo "----------------------------------------------------------------------"
 echo " STEP 1: Generate Fake Signal"
 echo "----------------------------------------------------------------------"
-echo
+#echo
 if [ ! -d "$SFTdir" ]; then
     mkdir $SFTdir;
 else
@@ -92,21 +92,16 @@ fi
 saf_CL="--latitude=$Delta  --longitude=$Alpha --detector=$IFO1 --Tsft=$Tsft --startTime=$startTime --duration=$duration --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0"
 # concatenate this with the mfd-specific switches:
 mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --f0=$freq --outSFTbname=$SFTdir/ --f1dot=$f1dot  --refTime=$refTime --noiseSqrtSh=$sqrtSh"
-## --outSFTv1"
 
 # this part of the command-line is compatible with SemiAnalyticF:
 saf2_CL="--latitude=$Delta  --longitude=$Alpha --detector=$IFO2 --Tsft=$Tsft --startTime=$startTime --duration=$duration --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0"
 # concatenate this with the mfd-specific switches:
 mfd2_CL="${saf2_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --f0=$freq --outSFTbname=$SFTdir/ --f1dot=$f1dot  --refTime=$refTime --noiseSqrtSh=$sqrtSh"
-## --outSFTv1"
-
 
 # this part of the command-line is compatible with SemiAnalyticF:
 saf3_CL="--latitude=$Delta  --longitude=$Alpha --detector=$IFO3 --Tsft=$Tsft --startTime=$startTime --duration=$duration --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0"
 # concatenate this with the mfd-specific switches:
 mfd3_CL="${saf3_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --f0=$freq --outSFTbname=$SFTdir/ --f1dot=$f1dot  --refTime=$refTime --noiseSqrtSh=$sqrtSh"
-## --outSFTv1"
-
 
 cmdline="$mfd_code $mfd_CL";
 echo $cmdline;
@@ -115,7 +110,6 @@ if ! eval $cmdline; then
     exit 1
 fi
 
-echo
 cmdline="$mfd_code $mfd2_CL";
 echo $cmdline;
 if ! eval $cmdline; then
@@ -123,7 +117,6 @@ if ! eval $cmdline; then
     exit 1
 fi
 
-echo
 cmdline="$mfd_code $mfd3_CL";
 echo $cmdline;
 if ! eval $cmdline; then
@@ -135,7 +128,6 @@ echo
 echo "----------------------------------------------------------------------"
 echo " STEP 2: Calculate F-Statistic Semi-Analytically"
 echo "----------------------------------------------------------------------"
-echo 
 
 cmdline="$saf_code $saf_CL --sqrtSh=$sqrtSh"	
 echo $cmdline
@@ -143,12 +135,12 @@ if ! resF=`eval $cmdline 2> /dev/null`; then
     echo "Error ... something failed running '$saf_code' ..."
     exit 1;
 fi
-#echo  "ok."
+
 res2F=`echo $resF | awk '{printf "%g", 2.0 * $1}'`
 echo
 
 # this part of the command-line is compatible with PredictFStat:
-pfs_CL="--aPlus=$aPlus --aCross=$aCross --psi=$psi --phi=$phi0 --Freq=100.0 --DataFiles='./testSFTs/H-1_H1*' --Delta=$Delta --Alpha=$Alpha"
+pfs_CL="--aPlus=$aPlus --aCross=$aCross --psi=$psi --phi=$phi0 --Freq=$freq --DataFiles='./testSFTs/H-1_H1*' --Delta=$Delta --Alpha=$Alpha"
 
 cmdline="$pfs_code $pfs_CL"
 echo $cmdline
@@ -157,12 +149,10 @@ if ! resPFS1=`eval $cmdline 2> /dev/null`; then
     echo "Error ... something failed running '$pfs_code' ..."
     exit 1;
 fi
-#echo  "ok."
 
 res2PFS1=`echo $resPFS1 | awk '{printf "%g", $1}'`
-echo
 
-pfs2_CL="--aPlus=$aPlus --aCross=$aCross --psi=$psi --phi=$phi0 --Freq=100.0 --DataFiles='./testSFTs/H-1_H*' --Delta=$Delta --Alpha=$Alpha"
+pfs2_CL="--aPlus=$aPlus --aCross=$aCross --psi=$psi --phi=$phi0 --Freq=$freq --DataFiles='./testSFTs/H-1_H*' --Delta=$Delta --Alpha=$Alpha"
 
 cmdline="$pfs_code $pfs2_CL"
 echo $cmdline
@@ -171,12 +161,10 @@ if ! resPFS2=`eval $cmdline 2> /dev/null`; then
     echo "Error ... something failed running '$pfs_code' ..."
     exit 1;
 fi
-#echo  "ok."
 
 res2PFS2=`echo $resPFS2 | awk '{printf "%g", $1}'`
-echo
 
-pfs3_CL="--aPlus=$aPlus --aCross=$aCross --psi=$psi --phi=$phi0 --Freq=100.0 --DataFiles='./testSFTs/L-1_L*' --Delta=$Delta --Alpha=$Alpha"
+pfs3_CL="--aPlus=$aPlus --aCross=$aCross --psi=$psi --phi=$phi0 --Freq=$freq --DataFiles='./testSFTs/L-1_L*' --Delta=$Delta --Alpha=$Alpha"
 
 cmdline="$pfs_code $pfs3_CL"
 echo $cmdline
@@ -185,12 +173,10 @@ if ! resPFS3=`eval $cmdline 2> /dev/null`; then
     echo "Error ... something failed running '$pfs_code' ..."
     exit 1;
 fi
-#echo  "ok."
 
 res2PFS3=`echo $resPFS3 | awk '{printf "%g", $1}'`
-echo
 
-pfs4_CL="--aPlus=$aPlus --aCross=$aCross --psi=$psi --phi=$phi0 --Freq=100.0 --DataFiles='./testSFTs/*-1*' --Delta=$Delta --Alpha=$Alpha"
+pfs4_CL="--aPlus=$aPlus --aCross=$aCross --psi=$psi --phi=$phi0 --Freq=$freq --DataFiles='./testSFTs/*-1*' --Delta=$Delta --Alpha=$Alpha"
 
 cmdline="$pfs_code $pfs4_CL"
 echo $cmdline
@@ -199,11 +185,9 @@ if ! resPFS4=`eval $cmdline 2> /dev/null`; then
     echo "Error ... something failed running '$pfs_code' ..."
     exit 1;
 fi
-#echo  "ok."
 
 res2PFS4=`echo $resPFS4 | awk '{printf "%g", $1}'`
 echo
-
 
 echo "The SemiAnalyticF for $IFO1,           predicts: 2F = $res2F"
 echo "The PredictFStat  for $IFO1,           predicts: 2F = $res2PFS1"
@@ -212,47 +196,54 @@ echo "The PredictFStat  for $IFO1+$IFO2,        predicts: 2F = $res2PFS2"
 echo "The PredictFStat  for $IFO1+$IFO2+$IFO3,     predicts: 2F = $res2PFS4"
 
 echo 
-echo "----------------------------------------------------------------------"
-echo " STEP 3: run CFS_v2 with perfect match, for single detector"
-echo "----------------------------------------------------------------------"
-echo
+echo "-------------------------------------------------------------------------"
+echo " STEP 3: run CFS_v2 with perfect match, for single detector ($IFO1 and $IFO3)"
+echo "-------------------------------------------------------------------------"
 
 ## cmdline-options for v2, single detector   
 cfs1_CL="--Freq=$freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --f1dotBand=$f1dot --df1dot=$df1dot --Fthreshold=0 --DataFiles='$SFTdir/H-1_H1*' --refTime=$refTime $whatNoise"
     
-cmdline="$cfsv2_code $cfs1_CL --outputFstat=Fstat_v2_1.dat";
+cmdline="$cfsv2_code $cfs1_CL --outputFstat=Fstat_v2-H1.dat";
 echo $cmdline;
 
-if ! eval time $cmdline; then
-    echo "Error.. something failed when running '$cfs_code' ..."
-    exit 1
-fi
+## cmdline-options for v2, two detectors  
+cfs3_CL="--Freq=$freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --f1dotBand=$f1dot --df1dot=$df1dot --Fthreshold=0 --DataFiles='$SFTdir/L-1_L1*' --refTime=$refTime $whatNoise"
+
+cmdline="$cfsv2_code $cfs3_CL --outputFstat=Fstat_v2-L1.dat $extra_args";
+echo $cmdline;
 
 echo    
-echo "----------------------------------------------------------------------"
-echo " STEP 4: run CFS_v2 with perfect match, for two detectors"
-echo "----------------------------------------------------------------------"
-echo
+echo "------------------------------------------------------------------------------------------"
+echo " STEP 4: run CFS_v2 with perfect match, for two and three detectors ($IFO1+$IFO2 and  $IFO1+$IFO2+$IFO3)"
+echo "------------------------------------------------------------------------------------------"
+#echo
 
 ## cmdline-options for v2, two detectors  
 cfs2_CL="--Freq=$freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --f1dotBand=$f1dot --df1dot=$df1dot --Fthreshold=0 --DataFiles='$SFTdir/H-1_H*' --refTime=$refTime $whatNoise"
 
-cmdline="$cfsv2_code $cfs2_CL --outputFstat=Fstat_v2_2.dat $extra_args";
+cmdline="$cfsv2_code $cfs2_CL --outputFstat=Fstat_v2-H1H2.dat $extra_args";
 echo $cmdline;
 
-if ! eval time $cmdline; then
-    echo "Error.. something failed when running '$cfs_code' ..."
-    exit 1;
-fi
+## cmdline-options for v2, two detectors  
+cfs4_CL="--Freq=$freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --f1dotBand=$f1dot --df1dot=$df1dot --Fthreshold=0 --DataFiles='$SFTdir/*-1*' --refTime=$refTime $whatNoise"
+
+cmdline="$cfsv2_code $cfs4_CL --outputFstat=Fstat_v2-H1H2L1.dat $extra_args";
+echo $cmdline;
 
 echo
 echo "----------------------------------------"
 echo " STEP 5: Comparing results: "
 echo "----------------------------------------"
-echo
-echo "Fstat_v2_1.dat (for $IFO1): "
-cat Fstat_v2_1.dat
-echo "Fstat_v2_2.dat (for $IFO1+$IFO2): "
-cat Fstat_v2_2.dat
 
+echo "Fstat for $IFO1: "
+cat Fstat_v2-H1.dat
+echo
+echo "Fstat for $IFO1+$IFO2: "
+cat Fstat_v2-H1H2.dat
+echo
+echo "Fstat for $IFO3: "
+cat Fstat_v2-L1.dat
+echo
+echo "Fstat for $IFO1+$IFO2+$IFO3: "
+cat Fstat_v2-H1H2L1.dat
 echo
