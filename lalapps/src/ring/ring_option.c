@@ -27,6 +27,7 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
     { "geo-data", no_argument, &params->geoData, 1 },
     { "strain-data", no_argument, &params->strainData, 1 },
     { "simulated-data", no_argument, &params->simData, 1 },
+    { "zero-data", no_argument, &params->zeroData, 1 },
     { "white-spectrum", no_argument, &params->whiteSpectrum, 1 },
     { "bank-only", no_argument, &params->bankOnly, 1 },
     { "write-raw-data",     no_argument, &params->writeRawData, 1 },
@@ -418,6 +419,7 @@ static int ring_usage( const char *program )
   fprintf( stderr, "--simulated-data           create simulated white Gaussian noise\n" );
   fprintf( stderr, "--random-seed=seed         random number seed for simulated data\n" );
   fprintf( stderr, "--sample-rate=srate        sampling rate of simulated data (Hz)\n" );
+  fprintf( stderr, "--zero-data                create a time series of zeros\n" );
 
   fprintf( stderr, "\ndata conditioning options:\n" );
   fprintf( stderr, "--highpass-frequency=fhi   high-pass filter data at frequency fhi (Hz)\n" );

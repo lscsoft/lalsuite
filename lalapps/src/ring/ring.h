@@ -48,6 +48,7 @@ struct ring_params {
   /* flags */
   int          strainData;
   int          simData;
+  int          zeroData;
   int          whiteSpectrum;
   int          bankOnly;
   int          getData;

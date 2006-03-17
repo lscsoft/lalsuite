@@ -178,6 +178,9 @@ static REAL4TimeSeries *ring_get_data( struct ring_params *params )
       channel = get_simulated_data( params->channel, &params->startTime,
           params->duration, params->strainData, params->sampleRate, 
           params->randomSeed, 1.0 );
+    else if ( params->zeroData )
+      channel = get_zero_data( params->channel, &params->startTime,
+          params->duration, params->strainData, params->sampleRate );
     else if ( params->geoData )
       channel = get_frame_data_dbl_convert( params->dataCache, params->channel,
           &params->startTime, params->duration, params->strainData,
@@ -218,9 +221,9 @@ static COMPLEX8FrequencySeries *ring_get_response( struct ring_params *params )
   COMPLEX8FrequencySeries *response = NULL;
   if ( params->getResponse && ! params->strainData )
   {
-    response = get_response( params->calibCache, params->ifoName,
+  response = get_response( params->calibCache, params->ifoName,
         &params->startTime, params->segmentDuration, params->sampleRate,
-        params->dynRangeFac, params->strainData );
+        params->dynRangeFac, params->strainData ); 
     if ( params->writeResponse ) /* write response */
       write_COMPLEX8FrequencySeries( response );
   }
