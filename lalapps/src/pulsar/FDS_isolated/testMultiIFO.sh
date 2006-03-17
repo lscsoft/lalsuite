@@ -53,7 +53,7 @@ phi0=0
 freq=100.0
 mfd_fmin=$(echo $freq $mfd_FreqBand | awk '{printf "%g", $1 - $2 / 2.0}');
 
-echo "mfd_fmin = $mfd_fmin"
+#echo "mfd_fmin = $mfd_fmin"
 
 f1dot=1e-8
 df1dot=0.3e-8	## search about 3 spindown-values
@@ -71,6 +71,7 @@ fi
 
 IFO1=H1
 IFO2=H2
+IFO3=L1
 
 ##--------------------------------------------------
 ## test starts here
@@ -99,6 +100,14 @@ saf2_CL="--latitude=$Delta  --longitude=$Alpha --detector=$IFO2 --Tsft=$Tsft --s
 mfd2_CL="${saf2_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --f0=$freq --outSFTbname=$SFTdir/ --f1dot=$f1dot  --refTime=$refTime --noiseSqrtSh=$sqrtSh"
 ## --outSFTv1"
 
+
+# this part of the command-line is compatible with SemiAnalyticF:
+saf3_CL="--latitude=$Delta  --longitude=$Alpha --detector=$IFO3 --Tsft=$Tsft --startTime=$startTime --duration=$duration --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0"
+# concatenate this with the mfd-specific switches:
+mfd3_CL="${saf3_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --f0=$freq --outSFTbname=$SFTdir/ --f1dot=$f1dot  --refTime=$refTime --noiseSqrtSh=$sqrtSh"
+## --outSFTv1"
+
+
 cmdline="$mfd_code $mfd_CL";
 echo $cmdline;
 if ! eval $cmdline; then
@@ -108,6 +117,14 @@ fi
 
 echo
 cmdline="$mfd_code $mfd2_CL";
+echo $cmdline;
+if ! eval $cmdline; then
+    echo "Error.. something failed when running '$mfd_code' ..."
+    exit 1
+fi
+
+echo
+cmdline="$mfd_code $mfd3_CL";
 echo $cmdline;
 if ! eval $cmdline; then
     echo "Error.. something failed when running '$mfd_code' ..."
@@ -159,9 +176,40 @@ fi
 res2PFS2=`echo $resPFS2 | awk '{printf "%g", $1}'`
 echo
 
-echo "The SemiAnalyticF for $IFO1,    predicts: 2F = $res2F"
-echo "The PredictFStat  for $IFO1,    predicts: 2F = $res2PFS1"
-echo "The PredictFStat  for $IFO1+$IFO2, predicts: 2F = $res2PFS2"
+pfs3_CL="--aPlus=$aPlus --aCross=$aCross --psi=$psi --phi=$phi0 --Freq=100.0 --DataFiles='./testSFTs/L-1_L*' --Delta=$Delta --Alpha=$Alpha"
+
+cmdline="$pfs_code $pfs3_CL"
+echo $cmdline
+
+if ! resPFS3=`eval $cmdline 2> /dev/null`; then
+    echo "Error ... something failed running '$pfs_code' ..."
+    exit 1;
+fi
+#echo  "ok."
+
+res2PFS3=`echo $resPFS3 | awk '{printf "%g", $1}'`
+echo
+
+pfs4_CL="--aPlus=$aPlus --aCross=$aCross --psi=$psi --phi=$phi0 --Freq=100.0 --DataFiles='./testSFTs/*-1*' --Delta=$Delta --Alpha=$Alpha"
+
+cmdline="$pfs_code $pfs4_CL"
+echo $cmdline
+
+if ! resPFS4=`eval $cmdline 2> /dev/null`; then
+    echo "Error ... something failed running '$pfs_code' ..."
+    exit 1;
+fi
+#echo  "ok."
+
+res2PFS4=`echo $resPFS4 | awk '{printf "%g", $1}'`
+echo
+
+
+echo "The SemiAnalyticF for $IFO1,           predicts: 2F = $res2F"
+echo "The PredictFStat  for $IFO1,           predicts: 2F = $res2PFS1"
+echo "The PredictFStat  for $IFO3,           predicts: 2F = $res2PFS3"
+echo "The PredictFStat  for $IFO1+$IFO2,        predicts: 2F = $res2PFS2"
+echo "The PredictFStat  for $IFO1+$IFO2+$IFO3,     predicts: 2F = $res2PFS4"
 
 echo 
 echo "----------------------------------------------------------------------"
@@ -202,19 +250,9 @@ echo "----------------------------------------"
 echo " STEP 5: Comparing results: "
 echo "----------------------------------------"
 echo
-echo "Fstat_v2_1.dat: "
+echo "Fstat_v2_1.dat (for $IFO1): "
 cat Fstat_v2_1.dat
-echo "Fstat_v2_2.dat: "
+echo "Fstat_v2_2.dat (for $IFO1+$IFO2): "
 cat Fstat_v2_2.dat
 
 echo
-##cmdline="$cmp_code -1 ./Fstat_v2_1.dat -2 ./Fstat_v2_2.dat --clusterFiles=0 --Ftolerance=0.1"
-##echo $cmdline
-##if ! eval $cmdline; then
-##    echo "OUCH... files differ. Something might be wrong..."
-##    exit 2
-##else
-##    echo "OK."
-##fi
-##
-##echo
