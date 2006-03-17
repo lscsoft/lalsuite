@@ -24,6 +24,15 @@ REAL4TimeSeries * get_simulated_data(
     REAL4        simScale
     );
 
+REAL4TimeSeries * get_zero_data(
+    const char  *channelName,
+    LIGOTimeGPS *epoch,
+    REAL8        duration,
+    int          strainData,
+    REAL8        sampleRate
+    );
+
+
 /* read frame data */
 REAL4TimeSeries * get_frame_data(
     const char  *cacheName,

@@ -62,6 +62,46 @@ REAL4TimeSeries * get_simulated_data(
   return series;
 }
 
+/* create simulated data */
+REAL4TimeSeries * get_zero_data(
+    const char  *channelName,
+    LIGOTimeGPS *epoch,
+    REAL8        duration,
+    int          strainData,
+    REAL8        sampleRate
+    )
+{
+  REAL4TimeSeries *series;
+  UINT4 npoints;
+  UINT4 j;
+
+  verbose( "creating zero data\n");
+
+  series = LALCalloc( 1, sizeof( *series ) );
+  if ( ! series )
+    return NULL;
+
+  npoints = duration * sampleRate;
+
+  /* populate data with gaussian random numbers */
+  series->data = XLALCreateREAL4Vector( npoints );
+
+  /* set metadata */
+  LALSnprintf( series->name, sizeof( series->name ), "%s_ZERO", channelName );
+  series->epoch  = *epoch;
+  series->deltaT = 1.0/sampleRate;
+  if ( strainData )
+    series->sampleUnits = lalStrainUnit;
+  else
+    series->sampleUnits = lalADCCountUnit;
+  
+  for ( j = 0; j < series->data->length; ++j )
+    series->data->data[j] *= 0;
+
+  return series;
+}
+
+
 
 /* read frame data */
 REAL4TimeSeries * get_frame_data(
