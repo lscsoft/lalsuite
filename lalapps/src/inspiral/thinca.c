@@ -1255,9 +1255,11 @@ int main( int argc, char *argv[] )
     for( i = optind; i < argc; ++i )
     {
       INT4 numFileTriggers = 0;
+      SnglInspiralTable   *inspiralFileList = NULL;
+      SnglInspiralTable   *thisFileTrigger  = NULL;
 
-      numFileTriggers = XLALReadInspiralTriggerFile( &inspiralEventList,
-          &thisInspiralTrigger, &searchSummList, &inputFiles, argv[i] );
+      numFileTriggers = XLALReadInspiralTriggerFile( &inspiralFileList,
+          &thisFileTrigger, &searchSummList, &inputFiles, argv[i] );
       if (numFileTriggers < 0)
       {
         fprintf(stderr, "Error reading triggers from file %s",
@@ -1265,8 +1267,38 @@ int main( int argc, char *argv[] )
         exit( 1 );
       }
       
+      /* maximize over a given interval */
+      if ( maximizationInterval )
+      {
+        if (vrbflg)
+        {
+          fprintf( stdout, "Clustering triggers for over %d ms window\n",
+              maximizationInterval);
+        }
+        XLALMaxSnglInspiralOverIntervals( &inspiralFileList, 
+            (1.0e6 * maximizationInterval) );
+        numFileTriggers = XLALCountSnglInspiral( inspiralFileList );
+      }
+
       numTriggers += numFileTriggers;
+      /* If there are any remaining triggers ... */
+      if ( inspiralFileList )
+      {
+        /* add inspirals to list */
+        if ( thisInspiralTrigger )
+        {
+          thisInspiralTrigger->next = inspiralFileList;
+        }
+        else
+        {
+          inspiralEventList = thisInspiralTrigger = inspiralFileList;
+        }
+        for( ; thisInspiralTrigger->next; 
+            thisInspiralTrigger = thisInspiralTrigger->next);
+      }
+
     }
+    
   }
   else
   {
@@ -1323,17 +1355,6 @@ int main( int argc, char *argv[] )
   }
  
 
-  /* maximize over a given interval */
-  if ( maximizationInterval )
-  {
-    if (vrbflg)
-    {
-      fprintf( stdout, "Clustering triggers for over %d ms window\n",
-          maximizationInterval);
-    }
-    XLALMaxSnglInspiralOverIntervals( &inspiralEventList, 
-        (1.0e6 * maximizationInterval) );
-  }
 
 
   /* check that we have read in data for all the requested times
