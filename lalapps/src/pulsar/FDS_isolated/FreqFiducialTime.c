@@ -11,6 +11,9 @@
    (i.e. 'CFS_S4run_setup.h')  
 */
 
+
+/* $Id$  */
+
 /* ----------------------------------------------------------------------------- */
 /* defines */
 #ifndef FALSE
@@ -47,7 +50,6 @@
 #include <lalapps.h>
 
 #include "CFS_S4run_setup.h"  /* current Einstein at Home setup */
-
 
 
 /* this is defined in C99 and *should* be in math.h.  Long term
@@ -404,7 +406,9 @@ void ReadCombinedFile( LALStatus *lalStatus,
       nread = sscanf (line1,
 		      "%s %" LAL_INT4_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT "%c", &(cl->resultfname), &(cl->FileID), &(cl->f), &(cl->Alpha), &(cl->Delta), &(cl->F1dot), &(cl->TwoF), &newline );
 
-      /* check that values that are read in are sensible */
+      /* check that values that are read in are sensible, 
+	 (result file names will be checked later, when getting 
+	 the search parameters from Einstein at Home  setup library) */
       if (
           cl->FileID < 0                     ||
           cl->f < 0.0                        ||
@@ -614,12 +618,16 @@ void ComputeFiducialTimeFrequency( LALStatus *lalStatus,
       f_CFS = CList[iindex].f;
       F1dot_CFS = CList[iindex].F1dot;
       
+      /* get search parameters from Einstein at Home setup library */
       findSearchParams4Result( CList[iindex].resultfname, &wparams );
 	
-      deltaT = wparams.startTime - FIXED_FIDUCIAL_TIME;  /* fixed fiducial time = e.g. GPS time of first SFT in S4 */
+      /* fixed fiducial time = e.g. GPS time of first SFT in S4 */
+      deltaT = wparams.startTime - FIXED_FIDUCIAL_TIME;  
 
-      f_fiducial = f_CFS + (F1dot_CFS * deltaT);
+      /* compute new frequency values at fixed fiducial time */
+      f_fiducial = f_CFS - (F1dot_CFS * deltaT);
      
+      /* replace f values by the new ones, that all refer to the same */
       CList[iindex].f = f_fiducial;
  
       f_CFS = 0;
@@ -628,7 +636,7 @@ void ComputeFiducialTimeFrequency( LALStatus *lalStatus,
       deltaT=0;
 
       iindex++;
-  }
+    } /* while( iindex < candlen)  */
  
   DETATCHSTATUSPTR (lalStatus);
   RETURN (lalStatus);
