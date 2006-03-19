@@ -51,7 +51,7 @@
 
 /* local includes */
 #include "DopplerScan.h"
-
+#include "LogPrintf.h"
 
 RCSID( "$Id$");
 
@@ -235,6 +235,9 @@ int main(int argc,char *argv[])
 
   if (uvar_help)	/* if help was requested, we're done here */
     exit (0);
+
+  /* set log-level */
+  LogSetLevel ( lalDebugLevel );
 
   /* keep a log-file recording all relevant parameters of this search-run */
   LAL_CALL (WriteFStatLog (&status, argv), &status);
