@@ -142,14 +142,6 @@ NRCSID (SFTBINH, "$Id$");
  * 10. Structure, enum, union, etc., typdefs.
  */
 
-  typedef struct tagSFTHeader1{
-    REAL8  endian;
-    INT4   gpsSeconds;
-    INT4   gpsNanoSeconds;
-    REAL8  timeBase;
-    INT4   fminBinIndex;
-    INT4   length;
-  } SFTHeader1;
   
   typedef struct tagCOMPLEX8SFTData1{  /* simple case */
     LIGOTimeGPS  epoch; /* epoch of first series sample */
@@ -191,20 +183,7 @@ NRCSID (SFTBINH, "$Id$");
  * 12. Functions Declarations (i.e., prototypes).
  */
 
-void ReadSFTbinHeader1 (LALStatus  *status,
-                   SFTHeader1    *header,
-		   CHAR          *fname
-		   );
 
-void ReadCOMPLEX8SFTbinData1 (LALStatus  *status,
-		   COMPLEX8SFTData1    *sft,
-		   CHAR                *fname
-		   );
-
-void ReadCOMPLEX16SFTbinData1 (LALStatus  *status,
-		   COMPLEX16SFTData1    *sft,
-		   CHAR                 *fname
-		   );
 void COMPLEX8SFT2Periodogram1 (LALStatus  *status,
                    REAL8Periodogram1    *peri,
 		   COMPLEX8SFTData1    *sft		   
@@ -215,20 +194,6 @@ void SFT2Periodogram (LALStatus  *status,
 		   SFTtype    *sft		   
 		   );
 
-void COMPLEX16SFT2Periodogram1 (LALStatus  *status,
-                   REAL8Periodogram1    *peri,
-		   COMPLEX16SFTData1    *sft		   
-		   );
-
-void WriteCOMPLEX8SFT (LALStatus          *status,
-		       COMPLEX8SFTData1   *sft,
-		       CHAR               *outfname
-		       );
-
-void WriteCOMPLEX16SFT (LALStatus          *status,
-		       COMPLEX16SFTData1   *sft,
-		       CHAR                *outfname
-		       );
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

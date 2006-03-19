@@ -79,7 +79,7 @@ INT4 lalDebugLevel;
  *  Assignment of Id string using NRCSID()
  */
 
-NRCSID (MCINJECTHOUGHS2C, "$Id$");
+RCSID ("$Id$");
 
 /* vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv------------------------------------ */
 int main(int argc, char *argv[]){
@@ -89,7 +89,7 @@ int main(int argc, char *argv[]){
 
   static LALStatus            status;  
   static LALDetector          detector;
-  static LIGOTimeGPSVector    timeV;
+  static LIGOTimeGPSVector    *timeV=NULL;
   static REAL8Cart3CoorVector velV;
   static REAL8Vector          timeDiffV;
   static REAL8Vector          foft;
@@ -117,7 +117,7 @@ int main(int argc, char *argv[]){
   static UCHARPeakGram     pg1;
     
   UINT4  msp; /*number of spin-down parameters */
-  CHAR   filelist[MAXFILES][MAXFILENAMELENGTH];  
+
   
   UINT4  numberCount,maxNumberCount;
   INT4   nTemplates, controlN, controlNN, controlNH;
@@ -131,8 +131,8 @@ int main(int argc, char *argv[]){
   REAL8  threshold, h0scale;
 
   UINT4  sftlength; 
-  INT4   sftHeaderlength, fWings;
-  REAL4  sftRenorm; 
+  INT4   fWings;
+
   INT4   sftFminBin;
   REAL8  fHeterodyne;
   REAL8  tSamplingRate;
@@ -150,7 +150,7 @@ int main(int argc, char *argv[]){
 
   /* user input variables */
   BOOLEAN uvar_help;
-  INT4 uvar_ifo, uvar_blocksRngMed, uvar_nh0, uvar_nMCloop, uvar_AllSkyFlag;
+  INT4 uvar_blocksRngMed, uvar_nh0, uvar_nMCloop, uvar_AllSkyFlag;
   REAL8 uvar_f0, uvar_fSearchBand, uvar_peakThreshold, uvar_h0Min, uvar_h0Max;
   REAL8 uvar_alpha, uvar_delta, uvar_patchSizeAlpha, uvar_patchSizeDelta;
   CHAR *uvar_earthEphemeris=NULL;
@@ -158,7 +158,7 @@ int main(int argc, char *argv[]){
   CHAR *uvar_sftDir=NULL;
   CHAR *uvar_fnameout=NULL;
   CHAR *uvar_harmonicsfile=NULL;  
-
+  CHAR *uvar_ifo=NULL;
 
 #ifdef TIMING
   unsigned long long start, stop;
@@ -172,7 +172,7 @@ int main(int argc, char *argv[]){
   /*  set up the default parameters  */
   lalDebugLevel = 0;
   /* LALDebugLevel must be called before anything else */
-  SUB( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
+  LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
 
   uvar_help = FALSE;
   uvar_AllSkyFlag = 1;
@@ -191,7 +191,6 @@ int main(int argc, char *argv[]){
   nfSizeCylinder = NFSIZE;
   uvar_patchSizeAlpha = PATCHSIZEX;
   uvar_patchSizeDelta = PATCHSIZEY; 
-  uvar_ifo = IFO;
 
   uvar_earthEphemeris = (CHAR *)LALMalloc(512*sizeof(CHAR));
   strcpy(uvar_earthEphemeris,EARTHEPHEMERIS);
@@ -212,31 +211,31 @@ int main(int argc, char *argv[]){
 
 
   /* register user input variables */
-  SUB( LALRegisterBOOLUserVar(   &status, "help",            'h', UVAR_HELP,     "Print this message",            &uvar_help),            &status);  
-  SUB( LALRegisterINTUserVar(    &status, "ifo",             'i', UVAR_OPTIONAL, "Detector GEO(1) LLO(2) LHO(3)", &uvar_ifo ),            &status);
-  SUB( LALRegisterINTUserVar(    &status, "blocksRngMed",    'w', UVAR_OPTIONAL, "RngMed block size",             &uvar_blocksRngMed),    &status);
-  SUB( LALRegisterREALUserVar(   &status, "f0",              'f', UVAR_OPTIONAL, "Start search frequency",        &uvar_f0),              &status);
-  SUB( LALRegisterREALUserVar(   &status, "fSearchBand",     'b', UVAR_OPTIONAL, "Search frequency band",         &uvar_fSearchBand),     &status);
-  SUB( LALRegisterREALUserVar(   &status, "peakThreshold",   't', UVAR_OPTIONAL, "Peak selection threshold",      &uvar_peakThreshold),   &status);
-  SUB( LALRegisterSTRINGUserVar( &status, "earthEphemeris",  'E', UVAR_OPTIONAL, "Earth Ephemeris file",          &uvar_earthEphemeris),  &status);
-  SUB( LALRegisterSTRINGUserVar( &status, "sunEphemeris",    'S', UVAR_OPTIONAL, "Sun Ephemeris file",            &uvar_sunEphemeris),    &status);
-  SUB( LALRegisterSTRINGUserVar( &status, "sftDir",          'D', UVAR_OPTIONAL, "SFT Directory",                 &uvar_sftDir),          &status);
-  SUB( LALRegisterSTRINGUserVar( &status, "fnameout",        'o', UVAR_OPTIONAL, "Output file prefix",            &uvar_fnameout),        &status);
-  SUB( LALRegisterREALUserVar(   &status, "alpha",           'r', UVAR_OPTIONAL, "Right ascension",               &uvar_alpha),           &status);
-  SUB( LALRegisterREALUserVar(   &status, "delta",           'l', UVAR_OPTIONAL, "Declination",                   &uvar_delta),           &status);
-  SUB( LALRegisterREALUserVar(   &status, "patchSizeAlpha",  'R', UVAR_OPTIONAL, "Patch size in right ascension", &uvar_patchSizeAlpha),  &status);
-  SUB( LALRegisterREALUserVar(   &status, "patchSizeDelta",  'L', UVAR_OPTIONAL, "Patch size in declination",     &uvar_patchSizeDelta),  &status);
-  SUB( LALRegisterINTUserVar(    &status, "patch",           'P', UVAR_OPTIONAL, "Inject in patch if 0",          &uvar_AllSkyFlag),      &status);  
-  SUB( LALRegisterINTUserVar(    &status, "nMCloop",         'N', UVAR_OPTIONAL, "Number of MC injections",       &uvar_nMCloop),         &status);
-  SUB( LALRegisterREALUserVar(   &status, "h0Min",           'm', UVAR_OPTIONAL, "Smallest h0 to inject",         &uvar_h0Min),           &status);
-  SUB( LALRegisterREALUserVar(   &status, "h0Max",           'M', UVAR_OPTIONAL, "Largest h0 to inject",          &uvar_h0Max),           &status);
-  SUB( LALRegisterINTUserVar(    &status, "nh0",             'n', UVAR_OPTIONAL, "Number of h0 values to inject", &uvar_nh0),             &status);  
-  SUB( LALRegisterSTRINGUserVar( &status, "harmonicsfile",   'H', UVAR_OPTIONAL, "List of known lines",           &uvar_harmonicsfile),   &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",            'h', UVAR_HELP,     "Print this message",            &uvar_help),            &status);  
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "ifo",             'i', UVAR_OPTIONAL, "Detector L1, H1, H2, G1",       &uvar_ifo ),            &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",    'w', UVAR_OPTIONAL, "RngMed block size",             &uvar_blocksRngMed),    &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "f0",              'f', UVAR_OPTIONAL, "Start search frequency",        &uvar_f0),              &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "fSearchBand",     'b', UVAR_OPTIONAL, "Search frequency band",         &uvar_fSearchBand),     &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "peakThreshold",   't', UVAR_OPTIONAL, "Peak selection threshold",      &uvar_peakThreshold),   &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris",  'E', UVAR_OPTIONAL, "Earth Ephemeris file",          &uvar_earthEphemeris),  &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris",    'S', UVAR_OPTIONAL, "Sun Ephemeris file",            &uvar_sunEphemeris),    &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir",          'D', UVAR_OPTIONAL, "SFT Directory",                 &uvar_sftDir),          &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameout",        'o', UVAR_OPTIONAL, "Output file prefix",            &uvar_fnameout),        &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "alpha",           'r', UVAR_OPTIONAL, "Right ascension",               &uvar_alpha),           &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "delta",           'l', UVAR_OPTIONAL, "Declination",                   &uvar_delta),           &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "patchSizeAlpha",  'R', UVAR_OPTIONAL, "Patch size in right ascension", &uvar_patchSizeAlpha),  &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "patchSizeDelta",  'L', UVAR_OPTIONAL, "Patch size in declination",     &uvar_patchSizeDelta),  &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "patch",           'P', UVAR_OPTIONAL, "Inject in patch if 0",          &uvar_AllSkyFlag),      &status);  
+  LAL_CALL( LALRegisterINTUserVar(    &status, "nMCloop",         'N', UVAR_OPTIONAL, "Number of MC injections",       &uvar_nMCloop),         &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "h0Min",           'm', UVAR_OPTIONAL, "Smallest h0 to inject",         &uvar_h0Min),           &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "h0Max",           'M', UVAR_OPTIONAL, "Largest h0 to inject",          &uvar_h0Max),           &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "nh0",             'n', UVAR_OPTIONAL, "Number of h0 values to inject", &uvar_nh0),             &status);  
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "harmonicsfile",   'H', UVAR_OPTIONAL, "List of known lines",           &uvar_harmonicsfile),   &status);
 
 
 
   /* read all command line variables */
-  SUB( LALUserVarReadAllInput(&status, argc, argv), &status);
+  LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
 
   /* exit if help was required */
   if (uvar_help)
@@ -255,7 +254,7 @@ int main(int argc, char *argv[]){
   }
 
   /* get the log string */
-  SUB( LALUserVarGetLog(&status, &logstr, UVAR_LOGFMT_CFGFILE), &status);  
+  LAL_CALL( LALUserVarGetLog(&status, &logstr, UVAR_LOGFMT_CFGFILE), &status);  
 
 
   fprintf( fpLog, "## Log file for MCInjectHoughS2\n\n");
@@ -292,7 +291,7 @@ int main(int argc, char *argv[]){
 
   /* real line noise information */
   /* find number of harmonics */
-  SUB( LALFindNumberHarmonics (&status, &harmonics, uvar_harmonicsfile), &status); 
+  LAL_CALL( LALFindNumberHarmonics (&status, &harmonics, uvar_harmonicsfile), &status); 
   nHarmonicSets = harmonics.nHarmonicSets; 
   
   /* convert harmonics to explicit lines */
@@ -307,7 +306,7 @@ int main(int argc, char *argv[]){
       harmonics.rightWing = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
     
 
-      SUB( LALReadHarmonicsInfo( &status, &harmonics, uvar_harmonicsfile ), &status);
+      LAL_CALL( LALReadHarmonicsInfo( &status, &harmonics, uvar_harmonicsfile ), &status);
       
       for (count1=0; count1 < nHarmonicSets; count1++)
 	{
@@ -325,10 +324,10 @@ int main(int argc, char *argv[]){
       lines.leftWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
       lines.rightWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
       
-      SUB( LALHarmonics2Lines( &status, &lines2, &harmonics), &status);
+      LAL_CALL( LALHarmonics2Lines( &status, &lines2, &harmonics), &status);
       
       dopplerFreq = (uvar_f0 + uvar_fSearchBand)*VTOT;
-      SUB( LALChooseLines (&status, &lines, &lines2, uvar_f0 - dopplerFreq, 
+      LAL_CALL( LALChooseLines (&status, &lines, &lines2, uvar_f0 - dopplerFreq, 
 			uvar_f0 + uvar_fSearchBand + dopplerFreq), &status); 
       nLines = lines.nLines;
       
@@ -356,7 +355,7 @@ int main(int argc, char *argv[]){
     for (j=0; j<100; j++)
       {
 	sampFreq = uvar_f0 - dopplerWing + j*stepFreq;
-	SUB( LALCheckLines (&status, &flag, &lines, sampFreq), &status); 
+	LAL_CALL( LALCheckLines (&status, &flag, &lines, sampFreq), &status); 
 	if ( flag>0 ) counter++;
       }
     /* exit if more than 90% is covered by lines */
@@ -380,10 +379,7 @@ int main(int argc, char *argv[]){
   if ( (uvar_AllSkyFlag == 0) ) 
     injectPar.fullSky= 0;  /* patch case */
 
-  SUB( LALRngMedBias( &status, &normalizeThr, uvar_blocksRngMed ), &status ); 
-  if (uvar_ifo ==1) detector=lalCachedDetectors[LALDetectorIndexGEO600DIFF];
-  if (uvar_ifo ==2) detector=lalCachedDetectors[LALDetectorIndexLLODIFF];
-  if (uvar_ifo ==3) detector=lalCachedDetectors[LALDetectorIndexLHODIFF];
+  LAL_CALL( LALRngMedBias( &status, &normalizeThr, uvar_blocksRngMed ), &status ); 
   
   msp = 1; /*only one spin-down */
 
@@ -442,126 +438,87 @@ int main(int argc, char *argv[]){
      */
     
   }
-  
-  /******************************************************************/
-  /* Looking into the SFT data files to get the names and how many there are*/
-  /******************************************************************/
-  { 
-    CHAR     command[256];
-    glob_t   globbuf;
-    INT4    j;
-     
-    strcpy(command, uvar_sftDir);
-    strcat(command, "/*SFT*.*");
-    
-    globbuf.gl_offs = 1;
-    glob(command, GLOB_ERR, NULL, &globbuf);
-    
-    if(globbuf.gl_pathc==0)
-      {
-	fprintf(stderr,"No SFTs in directory %s ... Exiting.\n", uvar_sftDir);
-	return 1;  /* stop the program */
-      }
-    
-    /* we will read up to a certain number of SFT files, but not all 
-       if there are too many ! */ 
-    mObsCoh = MIN (MAXFILES, globbuf.gl_pathc);
-    
-    /* Remember to do the following: 
-       globfree(&globbuf); after reading the file names. The file names are 
-       globbuf.gl_pathv[fileno]   that one can copy into whatever as:
-       strcpy(filelist[fileno],globbuf.gl_pathv[fileno]);  */
-    
-    for (j=0; j < mObsCoh; j++){
-      strcpy(filelist[j],globbuf.gl_pathv[j]);
-    }
-    globfree(&globbuf);	
-  }
 
-  /* ****************************************************************/
-  /*  Reading the first headerfile of the first SFT  */
-  /* ****************************************************************/
+
+  /* sft reading */
   {
-    SFTHeader    header;
-    CHAR   *fname = NULL;
-    
-    fname = filelist[0];
-    SUB( LALReadSFTheader( &status, &header, fname ), &status );
-   /* SUB( ReadSFTbinHeader1( &status, &header,&(filelist[0]) ), &status ); */
- 
-    timeBase= header.timeBase; /* Coherent integration time */
-    deltaF = 1./timeBase;  /* the frequency resolution */ 
-    sftHeaderlength = header.length;   
-  }
-   
-  /* ****************************************************************/
-  /* computing sftLength, sftFminBin, fHeterodyne, tSamplingRate  */
-  /* bandwith to be read should account for Doppler effects and 
-       possible spin-down-up  and running median block size*/
-  /* ****************************************************************/
-  {    
-    INT4   length;
- 
-    f0Bin = floor(uvar_f0*timeBase + 0.5);     /* initial frequency to be analyzed */
-    length =  uvar_fSearchBand*timeBase; 
-    fLastBin = f0Bin+length;   /* final frequency to be analyzed */
-    fWings =  floor( fLastBin * VTOT +0.5) + nfSizeCylinder + uvar_blocksRngMed;
+    /* new SFT I/O data types */
+    SFTCatalog *catalog = NULL;
+    static SFTConstraints constraints;
 
+    CHAR *tempDir;
+    REAL8 doppWings, fmin, fmax;
+    INT4 length;
+
+    /* set detector constraint */
+    constraints.detector = NULL;
+    if ( LALUserVarWasSet( &uvar_ifo ) )    
+      constraints.detector = XLALGetChannelPrefix ( uvar_ifo );
+
+    /* get sft catalog */
+    tempDir = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
+    strcpy(tempDir, uvar_sftDir);
+    strcat(tempDir, "/*SFT*.*");
+    LAL_CALL( LALSFTdataFind( &status, &catalog, tempDir, &constraints), &status);
+
+
+    /* get some sft parameters */
+    mObsCoh = catalog->length; /* number of sfts */
+    deltaF = catalog->data->header.deltaF;  /* frequency resolution */
+    timeBase= 1.0/deltaF; /* coherent integration time */
+    f0Bin = floor( uvar_f0 * timeBase + 0.5); /* initial search frequency */
+    length =  uvar_fSearchBand * timeBase; /* total number of search bins - 1 */
+    fLastBin = f0Bin + length;   /* final frequency bin to be analyzed */
+    fWings =  floor( fLastBin * VTOT + 0.5) + nfSizeCylinder + uvar_blocksRngMed;
+
+    /* some more sft parameetrs */
     sftlength = 1 + length + 2*fWings;
-    sftFminBin= f0Bin-fWings;
+    sftFminBin= f0Bin - fWings;
     fHeterodyne = sftFminBin*deltaF;
     tSamplingRate = 2.0*deltaF*(sftlength -1.);
-    sftRenorm= 1.0 * sftlength/sftHeaderlength;
+
+    /* get SFT timestamps */
+    LAL_CALL( LALSFTtimestampsFromCatalog(  &status, &timeV, catalog ), &status);  	
+
+    /* add wings for Doppler modulation and running median block size*/
+    doppWings = (uvar_f0 + uvar_fSearchBand) * VTOT;    
+    fmin = uvar_f0 - doppWings - (uvar_blocksRngMed + nfSizeCylinder) * deltaF;
+    fmax = uvar_f0 + uvar_fSearchBand + doppWings + (uvar_blocksRngMed + nfSizeCylinder) * deltaF;
+
+    /* read sfts */
+    /* read sft files making sure to add extra bins for running median */
+    LAL_CALL( LALLoadSFTs ( &status, &inputSFTs, catalog, fmin, fmax), &status);
+
+
+    /* calculation of weights comes here */
+
+    /* normalize sfts */
+    LAL_CALL( LALNormalizeSFTVect (&status, inputSFTs, uvar_blocksRngMed), &status);
+
+        
+    /* free memory */
+    if ( LALUserVarWasSet( &uvar_ifo ) )    
+      LALFree( constraints.detector );
+    LALFree( tempDir);
+    LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);  	 
+
   } 
    
-  /* ****************************************************************/
-  /* reading  SFTs,  & times */
-  /* ****************************************************************/
-  timeV.length = mObsCoh;
-  timeV.data = NULL;  
-  timeV.data = (LIGOTimeGPS *)LALMalloc(mObsCoh*sizeof(LIGOTimeGPS));
-  SUB(LALCreateSFTVector(&status, &inputSFTs, mObsCoh, sftlength),&status );
-  
-  { 
-    INT4    j; 
-    CHAR     *fname = NULL; 
-    SFTtype  *sft= NULL; 
-    
-    sft = inputSFTs->data;
-    for (j=0; j < mObsCoh; j++){
-      fname = filelist[j];
-      SUB( LALReadSFTdata( &status, sft, fname, sftFminBin), &status ); 
-      timeV.data[j].gpsSeconds = sft->epoch.gpsSeconds;
-      timeV.data[j].gpsNanoSeconds = sft->epoch.gpsNanoSeconds;
-      ++sft;
-    }    
-  }
 
 
-  
-  /******************************************************************/
   /* compute the time difference relative to startTime for all SFT */
-  /******************************************************************/
   timeDiffV.length = mObsCoh;
   timeDiffV.data = NULL; 
-  timeDiffV.data = (REAL8 *)LALMalloc(mObsCoh*sizeof(REAL8));
-
-  {   
-    REAL8   t0, ts, tn, midTimeBase;
+  timeDiffV.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
+  
+  {
     INT4   j; 
-
-    midTimeBase=0.5*timeBase;
-    ts = timeV.data[0].gpsSeconds;
-    tn = timeV.data[0].gpsNanoSeconds * 1.00E-9;
-    t0=ts+tn;
-    timeDiffV.data[0] = midTimeBase;
-
-    for (j=1; j< mObsCoh; ++j){
-      ts = timeV.data[j].gpsSeconds;
-      tn = timeV.data[j].gpsNanoSeconds * 1.00E-9;  
-      timeDiffV.data[j] = ts+tn -t0+midTimeBase; 
-    }  
+    
+    for(j=0; j < mObsCoh; ++j)
+      timeDiffV.data[j] = XLALGPSDiff( timeV->data + j, timeV->data ) + 0.5*timeBase;
   }
+
+
 
   /******************************************************************/ 
   /*   setting of ephemeris info */ 
@@ -595,18 +552,18 @@ int main(int argc, char *argv[]){
     velPar.edat = NULL;
     
     /* Leap seconds for the start time of the run */   
-    SUB( LALLeapSecs(&status, &tmpLeap, &(timeV.data[0]), &lsfas), &status);
+    LAL_CALL( LALLeapSecs(&status, &tmpLeap, &(timeV->data[0]), &lsfas), &status);
     (*edat).leap = (INT2)tmpLeap;
     
     /* read in ephemeris data */
-    SUB( LALInitBarycenter( &status, edat), &status);
+    LAL_CALL( LALInitBarycenter( &status, edat), &status);
     velPar.edat = edat;
     
     for(j=0; j< velV.length; ++j){
-      velPar.startTime.gpsSeconds     = timeV.data[j].gpsSeconds;
-      velPar.startTime.gpsNanoSeconds = timeV.data[j].gpsNanoSeconds;
+      velPar.startTime.gpsSeconds     = timeV->data[j].gpsSeconds;
+      velPar.startTime.gpsNanoSeconds = timeV->data[j].gpsNanoSeconds;
       
-      SUB( LALAvgDetectorVel ( &status, vel, &velPar), &status );
+      LAL_CALL( LALAvgDetectorVel ( &status, vel, &velPar), &status );
       velV.data[j].x= vel[0];
       velV.data[j].y= vel[1];
       velV.data[j].z= vel[2];   
@@ -644,7 +601,7 @@ int main(int argc, char *argv[]){
  
   /******************************************************************/  
   sftParams.Tsft = timeBase;
-  sftParams.timestamps = &(timeV);
+  sftParams.timestamps = timeV;
   sftParams.noiseSFTs = NULL;       /* or =inputSFTs; */
   
   /* ****************************************************************/
@@ -652,14 +609,14 @@ int main(int argc, char *argv[]){
   /* params.transferFunction = NULL; */
   params.site = &(detector);
   params.ephemerides = edat;
-  params.startTimeGPS.gpsSeconds = timeV.data[0].gpsSeconds;   /* start time of output time series */
-  params.startTimeGPS.gpsNanoSeconds = timeV.data[0].gpsNanoSeconds;   /* start time of output time series */
+  params.startTimeGPS.gpsSeconds = timeV->data[0].gpsSeconds;   /* start time of output time series */
+  params.startTimeGPS.gpsNanoSeconds = timeV->data[0].gpsNanoSeconds;   /* start time of output time series */
   params.duration = injectPar.timeObs; /* length of time series in seconds */
   params.samplingRate = tSamplingRate;
   params.fHeterodyne = fHeterodyne;
   
-  params.pulsar.tRef.gpsSeconds = timeV.data[0].gpsSeconds; 
-  params.pulsar.tRef.gpsNanoSeconds = timeV.data[0].gpsNanoSeconds; 
+  params.pulsar.tRef.gpsSeconds = timeV->data[0].gpsSeconds; 
+  params.pulsar.tRef.gpsNanoSeconds = timeV->data[0].gpsNanoSeconds; 
   /* ****************************************************************/
   
   /* WE SHOULD LOOP OVER MC SIGNAL INJECTION HERE
@@ -698,8 +655,8 @@ int main(int argc, char *argv[]){
   /* sft1  stores the sum of one  signal + noise SFT */
   sft1.length = sftlength;
   sft1.fminBinIndex = sftFminBin;
-  sft1.epoch.gpsSeconds = timeV.data[0].gpsSeconds;
-  sft1.epoch.gpsNanoSeconds = timeV.data[0].gpsNanoSeconds;
+  sft1.epoch.gpsSeconds = timeV->data[0].gpsSeconds;
+  sft1.epoch.gpsNanoSeconds = timeV->data[0].gpsNanoSeconds;
   sft1.timeBase = timeBase;
   sft1.data = NULL;
   sft1.data = (COMPLEX8 *)LALMalloc(sftlength* sizeof(COMPLEX8));
@@ -740,7 +697,7 @@ int main(int argc, char *argv[]){
     controlNH=1;  /* checks if near template corresponds to max 
     		number count for the highest h0 value */
     
-    SUB( GenerateInjectParams(&status, &pulsarInject, &pulsarTemplate,
+    LAL_CALL( GenerateInjectParams(&status, &pulsarInject, &pulsarTemplate,
 			&closeTemplates, &injectPar, &lines), &status );
     
     /*  params.pulsar.TRefSSB=  ? ; */
@@ -754,8 +711,8 @@ int main(int argc, char *argv[]){
     params.pulsar.f0=     pulsarInject.f0;
     params.pulsar.spindown=  &pulsarInject.spindown ;
     
-    SUB( LALGeneratePulsarSignal(&status, &signalTseries, &params ), &status);
-    SUB( LALSignalToSFTs(&status, &outputSFTs, signalTseries, &sftParams), 
+    LAL_CALL( LALGeneratePulsarSignal(&status, &signalTseries, &params ), &status);
+    LAL_CALL( LALSignalToSFTs(&status, &outputSFTs, signalTseries, &sftParams), 
 	 &status);
 	   
    /* ****************************************************************/
@@ -776,7 +733,7 @@ int main(int argc, char *argv[]){
     /* ****************************************************************/   
 
     /* the geometrically nearest template */
-    SUB( ComputeFoft(&status, &foft,&pulsarTemplate,&timeDiffV,&velV, timeBase), &status);
+    LAL_CALL( ComputeFoft(&status, &foft,&pulsarTemplate,&timeDiffV,&velV, timeBase), &status);
     
     /* for all the 16 near templates */
     {
@@ -790,7 +747,7 @@ int main(int argc, char *argv[]){
 	  for(k=0;k<4;++k){
 	    pulsarTemplate.latitude = closeTemplates.skytemp[k].delta;
 	    pulsarTemplate.longitude = closeTemplates.skytemp[k].alpha;
-            SUB( ComputeFoft(&status, &(foftV[itemplate]),
+            LAL_CALL( ComputeFoft(&status, &(foftV[itemplate]),
 	                   &pulsarTemplate,&timeDiffV,&velV, timeBase), &status);
             ++itemplate;
 	  }
@@ -828,20 +785,20 @@ int main(int argc, char *argv[]){
 	for (i=0; (UINT4)i < sftlength; i++)  {
 	  /* sumSFT->re = noise1SFT->re + h0scale *signal1SFT->re; */
 	  /* sumSFT->im = noise1SFT->im + h0scale *signal1SFT->im; */
-	  sumSFT->re = sftRenorm *noise1SFT->re + h0scale *signal1SFT->re;
-	  sumSFT->im = sftRenorm *noise1SFT->im + h0scale *signal1SFT->im;
+	  sumSFT->re = noise1SFT->re + h0scale *signal1SFT->re;
+	  sumSFT->im = noise1SFT->im + h0scale *signal1SFT->im;
 	  ++noise1SFT;
 	  ++signal1SFT;
 	  ++sumSFT;
 	}
 	
-	SUB( COMPLEX8SFT2Periodogram1(&status, &periPSD.periodogram, &sft1), &status );	
+	LAL_CALL( COMPLEX8SFT2Periodogram1(&status, &periPSD.periodogram, &sft1), &status );	
 	/* for color noise */    
-	SUB( LALPeriodo2PSDrng( &status, 
+	LAL_CALL( LALPeriodo2PSDrng( &status, 
 			     &periPSD.psd, &periPSD.periodogram, &uvar_blocksRngMed), &status );	
-	/* SUB( Periodo2PSDrng( &status, 
+	/* LAL_CALL( Periodo2PSDrng( &status, 
                      &periPSD.psd, &periPSD.periodogram, &uvar_blocksRngMed),  &status ); */	
-	SUB( LALSelectPeakColorNoise(&status,&pg1,&threshold,&periPSD), &status); 	
+	LAL_CALL( LALSelectPeakColorNoise(&status,&pg1,&threshold,&periPSD), &status); 	
 
 	index = floor( foft.data[j]*timeBase -sftFminBin+0.5); 
 	numberCount+=pg1.data[index]; /* adds 0 or 1 to the counter*/
@@ -884,7 +841,7 @@ int main(int argc, char *argv[]){
     LALFree(signalTseries->data);
     LALFree(signalTseries);
     signalTseries =NULL;
-    SUB(LALDestroySFTVector(&status, &outputSFTs),&status );
+    LAL_CALL(LALDestroySFTVector(&status, &outputSFTs),&status );
     outputSFTs = NULL;
     
   } /* Closing MC loop */
@@ -905,8 +862,9 @@ int main(int argc, char *argv[]){
   LALFree(periPSD.periodogram.data);
   LALFree(periPSD.psd.data);
   LALFree(pg1.data);
+
+  LAL_CALL(LALDestroyTimestampVector ( &status, &timeV), &status); 
   
-  LALFree(timeV.data);
   LALFree(timeDiffV.data);
   LALFree(velV.data);
   LALFree(foft.data);
@@ -927,7 +885,7 @@ int main(int argc, char *argv[]){
   LALFree(edat->ephemS);
   LALFree(edat);
   
-  SUB(LALDestroySFTVector(&status, &inputSFTs),&status );
+  LAL_CALL(LALDestroySFTVector(&status, &inputSFTs),&status );
 
   if (nLines > 0)
     {
@@ -936,7 +894,7 @@ int main(int argc, char *argv[]){
       LALFree(lines.rightWing);
     }
 
-  SUB (LALDestroyUserVars(&status), &status);  
+  LAL_CALL (LALDestroyUserVars(&status), &status);  
   LALCheckMemoryLeaks();
   
   
@@ -972,7 +930,7 @@ void GenerateInjectParams(LALStatus   *status,
   UINT4    msp;
   
   /* --------------------------------------------- */
-  INITSTATUS (status, "GenerateInjectParams", MCINJECTHOUGHS2C);
+  INITSTATUS (status, "GenerateInjectParams", rcsid);
   ATTATCHSTATUSPTR (status);
   
   /*   Make sure the arguments are not NULL: */
@@ -1193,7 +1151,7 @@ void ComputeFoft(LALStatus   *status,
   REAL8Cart3Coor  sourceLocation;
   
   /* --------------------------------------------- */
-  INITSTATUS (status, "ComputeFoft", MCINJECTHOUGHS2C);
+  INITSTATUS (status, "ComputeFoft", rcsid);
   ATTATCHSTATUSPTR (status);
   
   /*   Make sure the arguments are not NULL: */
