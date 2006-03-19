@@ -90,6 +90,8 @@ RCSID( "$Id$");
 #define MYMAX(x,y) ( (x) > (y) ? (x) : (y) )
 #define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
 
+#define LAL_INT4_MAX 2147483647
+
 /*---------- internal types ----------*/
 
 /** Configuration settings required for and defining a coherent pulsar search.
@@ -162,6 +164,9 @@ INT4 uvar_RngMedWindow;
 REAL8 uvar_refTime;
 INT4 uvar_SSBprecision;
 
+INT4 uvar_minStartTime;
+INT4 uvar_maxEndTime;
+
 /* ---------- local prototypes ---------- */
 int main(int argc,char *argv[]);
 void initUserVars (LALStatus *);
@@ -182,6 +187,7 @@ static const PulsarTimesParamStruc empty_PulsarTimesParamStruc;
 static const BarycenterInput empty_BarycenterInput;
 static const SFTConstraints empty_SFTConstraints;
 static const ComputeFBuffer empty_ComputeFBuffer;
+static const LIGOTimeGPS empty_LIGOTimeGPS;
 
 /*----------------------------------------------------------------------*/
 /* Function definitions start here */
@@ -551,6 +557,9 @@ initUserVars (LALStatus *status)
 
   uvar_SSBprecision = SSBPREC_RELATIVISTIC;
 
+  uvar_minStartTime = 0;
+  uvar_maxEndTime = LAL_INT4_MAX;
+
   /* register all our user-variables */
   LALregBOOLUserVar(status, 	help, 		'h', UVAR_HELP,     "Print this message"); 
 
@@ -592,6 +601,9 @@ initUserVars (LALStatus *status)
   LALregREALUserVar(status, 	dopplermax, 	'q', UVAR_OPTIONAL, "Maximum doppler shift expected");  
   LALregSTRINGUserVar(status,	outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for F-statistic field over the parameter-space");
   LALregSTRINGUserVar(status,	outputBstat,	 0,  UVAR_OPTIONAL, "Output-file for 'B-statistic' field over the parameter-space");
+
+  LALregINTUserVar ( status, 	minStartTime, 	 0,  UVAR_OPTIONAL, "Earliest start-time to include");
+  LALregINTUserVar ( status, 	maxEndTime, 	 0,  UVAR_OPTIONAL, "Latest end-time to include");
 
   /* more experimental and unofficial stuff follows here */
   LALregINTUserVar (status, 	SSBprecision,	 0,  UVAR_DEVELOPER, "Precision to use for time-transformation to SSB: 0=Newtonian 1=relativistic");
@@ -666,6 +678,8 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   REAL8 fCoverMin, fCoverMax;	/* covering frequency-band to read from SFTs */
   SFTCatalog *catalog = NULL;
   SFTConstraints constraints = empty_SFTConstraints;
+  LIGOTimeGPS minStartTimeGPS = empty_LIGOTimeGPS;
+  LIGOTimeGPS maxEndTimeGPS = empty_LIGOTimeGPS;
 
   UINT4 numSFTs;
   LIGOTimeGPS endTime;
@@ -678,7 +692,11 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     if ( (constraints.detector = XLALGetChannelPrefix ( uvar_IFO )) == NULL ) {
       ABORT ( status,  COMPUTEFSTATISTIC_EINPUT,  COMPUTEFSTATISTIC_MSGEINPUT);
     }
-
+  minStartTimeGPS.gpsSeconds = uvar_minStartTime;
+  maxEndTimeGPS.gpsSeconds = uvar_maxEndTime;
+  constraints.startTime = &minStartTimeGPS;
+  constraints.endTime = &maxEndTimeGPS;
+  
   /* get full SFT-catalog of all matching (multi-IFO) SFTs */
   TRY ( LALSFTdataFind ( status->statusPtr, &catalog, uvar_DataFiles, &constraints ), status);    
   if ( constraints.detector ) 
