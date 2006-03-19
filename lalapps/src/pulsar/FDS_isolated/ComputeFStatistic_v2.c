@@ -344,8 +344,9 @@ int main(int argc,char *argv[])
   nf3dot = (UINT4)(GV.spinRangeStart->fkdotBand->data[3] / uvar_df3dot + 0.5) + 1; 
 
   
-  LogPrintf (LOG_DEBUG, "Sky x Freq x f1dot x f2dot x f3dot = %d x %d x %d x %d x %d\n",
-	     thisScan.numGridPoints, nFreq, nf1dot, nf2dot, nf3dot );
+  LogPrintf (LOG_DEBUG, "N = Sky x Freq x f1dot x f2dot x f3dot = %d x %d x %d x %d x %d = %g\n",
+	     thisScan.numGridPoints, nFreq, nf1dot, nf2dot, nf3dot, 
+	     1.0 * thisScan.numGridPoints * nFreq * nf1dot * nf2dot * nf3dot );
 
 
   loopcounter = 0;
