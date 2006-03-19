@@ -33,7 +33,6 @@ CFSsources = 	ComputeFStatistic.h	\
 		FstatToplist.c FstatToplist.h \
 		LogPrintf.c LogPrintf.h	
 
-##lalapps_ComputeFStatistic_CPPFLAGS= -DUSE_HACKED_TWODMESH $(CPPFLAGS) $(AM_CPPFLAGS)
 lalapps_ComputeFStatistic_SOURCES = ComputeFStatistic.c CFSLALDemod.c $(CFSsources)
 
 lalapps_FrComputeFStatistic_SOURCES = FrComputeFStatistic.c FrComputeFStatistic.h	\
@@ -68,9 +67,6 @@ TESTS = testFStat.sh
 
 getMetric_SOURCES = getMetric.c DopplerScan.c DopplerScan.h FlatPulsarMetric.c FlatPulsarMetric.h \
 		    LogPrintf.c
-
-##getHackedMesh_CPPFLAGS= -DUSE_HACKED_TWODMESH $(CPPFLAGS) $(AM_CPPFLAGS)
-##getHackedMesh_SOURCES = getMesh.c DopplerScan.c DopplerScan.h LogPrintf.c hackedTwoDMesh.c
 
 getMesh_SOURCES = getMesh.c DopplerScan.c DopplerScan.h LogPrintf.c
 

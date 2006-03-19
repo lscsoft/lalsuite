@@ -37,10 +37,6 @@
 #include <lal/ConfigFile.h>
 #include <lal/Velocity.h>
 
-#ifdef USE_HACKED_TWODMESH
-#include "hackedTwoDMesh.h"
-#endif
-
 #include "FlatPulsarMetric.h"
 
 #include "DopplerScan.h"
@@ -97,15 +93,10 @@ enum {
 
 static int meshOrder = ORDER_DELTA_ALPHA;
 
-#ifdef USE_HACKED_TWODMESH
-typedef REAL8	meshREAL;
-typedef h_TwoDMeshNode meshNODE;
-typedef h_TwoDMeshParamStruc meshPARAMS;
-#else
 typedef REAL4	meshREAL;
 typedef TwoDMeshNode meshNODE;
 typedef TwoDMeshParamStruc meshPARAMS;
-#endif
+
 
 /*---------- empty initializers ---------- */
 /* some empty structs for initializations */
@@ -1024,13 +1015,7 @@ buildMetricGrid (LALStatus *status,
   meshpar.metricParams = (void *) (&params);
 
   /* finally: create the mesh! (ONLY 2D for now!) */
-#ifdef USE_HACKED_TWODMESH
-  LogPrintf (LOG_DEBUG, "Calling hackedLALCreateTwoDMesh()\n");
-  TRY( hackedLALCreateTwoDMesh( status->statusPtr, &mesh2d, &meshpar ), status);
-#else
-  LogPrintf (LOG_DEBUG, "Calling ('non-hacked') LALCreateTwoDMesh()\n");
   TRY( LALCreateTwoDMesh( status->statusPtr, &mesh2d, &meshpar ), status);
-#endif
 
   if (metricpar.spindown) {
     /* FIXME: this is currently broken in LAL, as length=0 is not allowed */
@@ -1044,11 +1029,7 @@ buildMetricGrid (LALStatus *status,
     ConvertTwoDMesh2Grid ( status->statusPtr, grid, mesh2d, skyRegion );
 
   /* get rid of 2D-mesh */
-#ifdef USE_HACKED_TWODMESH
-  TRY ( hackedLALDestroyTwoDMesh ( status->statusPtr,  &mesh2d, 0), status);
-#else
   TRY ( LALDestroyTwoDMesh ( status->statusPtr,  &mesh2d, 0), status);
-#endif
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
