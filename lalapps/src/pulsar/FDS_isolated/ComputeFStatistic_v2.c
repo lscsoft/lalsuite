@@ -268,7 +268,7 @@ int main(int argc,char *argv[])
   GV.searchRegion.f1dotBand = GV.spinRangeStart->fkdotBand->data[1];
   scanInit.searchRegion = GV.searchRegion;
   
-  LogPrintf (LOG_DEBUG, "Setting up template grid ...");
+  LogPrintf (LOG_DEBUG, "Setting up template grid ...\n");
   
   LAL_CALL ( InitDopplerScan ( &status, &thisScan, &scanInit), &status); 
   
@@ -278,8 +278,7 @@ int main(int argc,char *argv[])
   
   if( LALUserVarWasSet( &uvar_df1dot) ) 
     thisScan.df1dot = uvar_df1dot;
-  
-  LogPrintf (LOG_DEBUG, "Skygrid has %d nodes\n", thisScan.numGridPoints );
+
   LogPrintf (LOG_DEBUG, "Actual grid-spacings: dFreq = %g, df1dot = %g\n\n", 
 	     thisScan.dFreq, thisScan.df1dot );
   
@@ -343,6 +342,11 @@ int main(int argc,char *argv[])
   /* the 2nd and 3rd spindown stepsizes are not controlled by DopplerScan (and the metric) yet */
   nf2dot = (UINT4)(GV.spinRangeStart->fkdotBand->data[2] / uvar_df2dot + 0.5) + 1; 
   nf3dot = (UINT4)(GV.spinRangeStart->fkdotBand->data[3] / uvar_df3dot + 0.5) + 1; 
+
+  
+  LogPrintf (LOG_DEBUG, "Sky x Freq x f1dot x f2dot x f3dot = %d x %d x %d x %d x %d\n",
+	     thisScan.numGridPoints, nFreq, nf1dot, nf2dot, nf3dot );
+
 
   loopcounter = 0;
   while (1)
