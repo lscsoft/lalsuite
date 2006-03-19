@@ -53,6 +53,7 @@ RCSID ("$Id$");
 #define TRUE    (1==1)
 #define FALSE   (1==0)
 
+#define LAL_INT4_MAX 2147483647
 /*----- Macros ----- */
 /*---------- internal types ----------*/
 
@@ -230,6 +231,9 @@ initUserVars (LALStatus *status)
   uvar_extraComment = NULL;
   uvar_descriptionMisc = NULL;
   uvar_IFO = NULL;
+
+  uvar_minStartTime = 0;
+  uvar_maxEndTime = LAL_INT4_MAX;
 
   /* now register all our user-variable */
   LALregSTRINGUserVar(status, inputSFTs,		'i', UVAR_REQUIRED, "File-pattern for input SFTs");
