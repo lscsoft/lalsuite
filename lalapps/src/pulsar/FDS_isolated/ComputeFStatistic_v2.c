@@ -268,7 +268,7 @@ int main(int argc,char *argv[])
   GV.searchRegion.f1dotBand = GV.spinRangeStart->fkdotBand->data[1];
   scanInit.searchRegion = GV.searchRegion;
   
-  if (lalDebugLevel) printf ("\nSetting up template grid ...");
+  LogPrintf (LOG_DEBUG, "Setting up template grid ...");
   
   LAL_CALL ( InitDopplerScan ( &status, &thisScan, &scanInit), &status); 
   
@@ -279,10 +279,10 @@ int main(int argc,char *argv[])
   if( LALUserVarWasSet( &uvar_df1dot) ) 
     thisScan.df1dot = uvar_df1dot;
   
-  if ( lalDebugLevel ) {
-    printf ("\nDEBUG: actual grid-spacings: dFreq = %g, df1dot = %g\n\n", 
-	    thisScan.dFreq, thisScan.df1dot );
-  }
+  LogPrintf (LOG_DEBUG, "Skygrid has %d nodes\n", thisScan.numGridPoints );
+  LogPrintf (LOG_DEBUG, "Actual grid-spacings: dFreq = %g, df1dot = %g\n\n", 
+	     thisScan.dFreq, thisScan.df1dot );
+  
   /*----------------------------------------------------------------------*/
   if (lalDebugLevel) printf ("done.\n");
   if ( uvar_outputSkyGrid ) {
