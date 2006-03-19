@@ -60,6 +60,7 @@ RCSID ("$Id$");
 static const LALStatus empty_status;
 static const SFTConstraints empty_constraints;
 static const SFTCatalog empty_catalog;
+static const LIGOTimeGPS empty_LIGOTimeGPS;
 
 /*---------- Global variables ----------*/
 
@@ -73,8 +74,12 @@ CHAR *uvar_IFO;
 REAL8 uvar_fmin;
 REAL8 uvar_fmax;
 
+INT4 uvar_minStartTime;
+INT4 uvar_maxEndTime;
+
+
 /*---------- internal prototypes ----------*/
-void initUserVars (LALStatus *stat);
+void initUserVars (LALStatus *status);
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -86,6 +91,8 @@ main(int argc, char *argv[])
 {
   LALStatus status = empty_status;	/* initialize status */
   SFTConstraints constraints = empty_constraints;
+  LIGOTimeGPS minStartTimeGPS = empty_LIGOTimeGPS;
+  LIGOTimeGPS maxEndTimeGPS = empty_LIGOTimeGPS;
   SFTCatalog *FullCatalog = NULL;
   CHAR *add_comment = NULL;
   UINT4 i;
@@ -109,10 +116,16 @@ main(int argc, char *argv[])
     exit (0);
 
   /* use IFO-contraint if one given by the user */
-  if ( LALUserVarWasSet ( &uvar_IFO ) )
+  if ( LALUserVarWasSet ( &uvar_IFO ) ) {
     if ( (constraints.detector = XLALGetChannelPrefix ( uvar_IFO )) == NULL ) {
       return CONVERTSFT_EINPUT;
     }
+  }
+
+  minStartTimeGPS.gpsSeconds = uvar_minStartTime;
+  maxEndTimeGPS.gpsSeconds = uvar_maxEndTime;
+  constraints.startTime = &minStartTimeGPS;
+  constraints.endTime = &maxEndTimeGPS;
 
   /* get full SFT-catalog of all matching (multi-IFO) SFTs */
   LAL_CALL ( LALSFTdataFind ( &status, &FullCatalog, uvar_inputSFTs, &constraints ), &status);    
@@ -205,10 +218,10 @@ main(int argc, char *argv[])
 /*----------------------------------------------------------------------*/
 /* register all our "user-variables" */
 void
-initUserVars (LALStatus *stat)
+initUserVars (LALStatus *status)
 {
-  INITSTATUS( stat, "initUserVars", rcsid );
-  ATTATCHSTATUSPTR (stat);
+  INITSTATUS( status, "initUserVars", rcsid );
+  ATTATCHSTATUSPTR (status);
 
   /* set defaults */
   uvar_outputDir = LALMalloc (2);
@@ -219,21 +232,26 @@ initUserVars (LALStatus *stat)
   uvar_IFO = NULL;
 
   /* now register all our user-variable */
-  LALregSTRINGUserVar(stat, inputSFTs,		'i', UVAR_REQUIRED, "File-pattern for input SFTs");
-  LALregSTRINGUserVar(stat, IFO,		'I', UVAR_REQUIRED, "IFO of input SFTs: 'G1', 'H1', 'H2', ...");
+  LALregSTRINGUserVar(status, inputSFTs,		'i', UVAR_REQUIRED, "File-pattern for input SFTs");
+  LALregSTRINGUserVar(status, IFO,		'I', UVAR_REQUIRED, "IFO of input SFTs: 'G1', 'H1', 'H2', ...");
 
-  LALregSTRINGUserVar(stat, outputDir,		'o', UVAR_OPTIONAL, "Output directory for SFTs");
+  LALregSTRINGUserVar(status, outputDir,		'o', UVAR_OPTIONAL, "Output directory for SFTs");
 
-  LALregSTRINGUserVar(stat, extraComment,	'C', UVAR_OPTIONAL, "Additional comment to be added to output-SFTs");
+  LALregSTRINGUserVar(status, extraComment,	'C', UVAR_OPTIONAL, "Additional comment to be added to output-SFTs");
 
-  LALregSTRINGUserVar(stat, descriptionMisc,	'D', UVAR_OPTIONAL, "'Misc' entry in the SFT filename description-field (see SFTv2 naming convention)");
-  LALregREALUserVar(stat,   fmin,		'f', UVAR_OPTIONAL, "Lowest frequency to extract from SFTs. [Default: lowest in inputSFTs]");
-  LALregREALUserVar(stat,   fmax,		'F', UVAR_OPTIONAL, "Highest frequency to extract from SFTs. [Default: highest in inputSFTs]");
+  LALregSTRINGUserVar(status, descriptionMisc,	'D', UVAR_OPTIONAL, "'Misc' entry in the SFT filename description-field (see SFTv2 naming convention)");
+  LALregREALUserVar(status,   fmin,		'f', UVAR_OPTIONAL, "Lowest frequency to extract from SFTs. [Default: lowest in inputSFTs]");
+  LALregREALUserVar(status,   fmax,		'F', UVAR_OPTIONAL, "Highest frequency to extract from SFTs. [Default: highest in inputSFTs]");
 
-  LALregBOOLUserVar(stat,   help,		'h', UVAR_HELP,     "Print this help/usage message");
+
+  LALregINTUserVar ( status, 	minStartTime, 	 0,  UVAR_OPTIONAL, "Earliest GPS start-time to include");
+  LALregINTUserVar ( status, 	maxEndTime, 	 0,  UVAR_OPTIONAL, "Latest GPS end-time to include");
+
+
+  LALregBOOLUserVar(status,   help,		'h', UVAR_HELP,     "Print this help/usage message");
   
-  DETATCHSTATUSPTR (stat);
-  RETURN (stat);
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
 
 } /* initUserVars() */
 
