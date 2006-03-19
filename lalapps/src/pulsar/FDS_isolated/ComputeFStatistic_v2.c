@@ -864,8 +864,8 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
       
       utc = *XLALGPSToUTC( &utc, (INT4)GPS2REAL8(cfg->startTime) );
       strcpy ( dateStr, asctime(&utc) );
-      dateStr[ strlen(dateStr) - 2 ] = 0;
-      printf ("Start GPS time tStart = %12.3f    (%s UTC)\n", GPS2REAL8(cfg->startTime), dateStr);
+      dateStr[ strlen(dateStr) - 1 ] = 0;
+      printf ("Start GPS time tStart = %12.3f    (%s GMT)\n", GPS2REAL8(cfg->startTime), dateStr);
       printf ("Total time spanned    = %12.3f s  (%.1f hours)\n", cfg->duration, cfg->duration/3600 );
       printf ("Effective spin-range at tStart:\n" );
 
