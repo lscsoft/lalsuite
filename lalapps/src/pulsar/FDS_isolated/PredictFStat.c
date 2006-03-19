@@ -102,7 +102,6 @@ ConfigVariables GV;		/**< global container for various derived configuration set
 
 /* ----- User-variables: can be set from config-file or command-line */
 BOOLEAN uvar_help;
-BOOLEAN uvar_SignalOnly;
 
 INT4 uvar_gpsStart;
 INT4 uvar_RngMedWindow;
@@ -113,18 +112,14 @@ REAL8 uvar_phi;
 REAL8 uvar_psi;
 REAL8 uvar_h0;
 REAL8 uvar_cosiota;
-REAL8 uvar_sqrtSh;
 REAL8 uvar_Freq;
 REAL8 uvar_FreqBand;
 REAL8 uvar_Alpha;
-REAL8 uvar_AlphaBand;
 REAL8 uvar_Delta;
-REAL8 uvar_DeltaBand;
 
 CHAR *uvar_IFO;
 CHAR *uvar_ephemDir;
 CHAR *uvar_ephemYear;
-CHAR *uvar_skyRegion;
 CHAR *uvar_DataFiles;
 CHAR *uvar_outputLabel;
 CHAR *uvar_outputFstat;
@@ -339,14 +334,10 @@ ATTATCHSTATUSPTR (status);
  uvar_psi       = 0.0;
  uvar_h0        = 0.0;
  uvar_cosiota   = 0.0;
- uvar_sqrtSh    = 1.0;
- uvar_Freq      = 100.0; 
+  uvar_Freq      = 100.0; 
  uvar_FreqBand  = 1.0;
  uvar_Alpha 	= 0.0;
  uvar_Delta 	= 0.0;
- uvar_AlphaBand = 0;
- uvar_DeltaBand = 0;
- uvar_skyRegion = NULL;
  uvar_RngMedWindow = 50;	/* for running-median */
  
  uvar_ephemYear = LALCalloc (1, strlen(EPHEM_YEARS)+1);
@@ -362,7 +353,6 @@ ATTATCHSTATUSPTR (status);
   
  /* register all our user-variables */
  LALregBOOLUserVar(status, 	help, 		'h', UVAR_HELP,     "Print this message"); 
- LALregBOOLUserVar(status, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
 
  LALregINTUserVar(status, 	RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");
 
@@ -370,17 +360,13 @@ ATTATCHSTATUSPTR (status);
  LALregREALUserVar(status,      psi,            'Y', UVAR_OPTIONAL, "Polarisation in radians");
  LALregREALUserVar(status,      cosiota,        'i', UVAR_OPTIONAL, "Cos(iota)");
  LALregREALUserVar(status,      h0,             's', UVAR_OPTIONAL, "Strain amplitude h_0");
- LALregREALUserVar(status,      sqrtSh,         'N', UVAR_OPTIONAL, "Noise floor: one-sided sqrt(Sh) in 1/sqrt(Hz)");
- LALregREALUserVar(status,      aPlus,            0, UVAR_OPTIONAL, "Strain amplitude h_0");
+  LALregREALUserVar(status,      aPlus,            0, UVAR_OPTIONAL, "Strain amplitude h_0");
  LALregREALUserVar(status,      aCross,           0, UVAR_OPTIONAL, "Noise floor: one-sided sqrt(Sh) in 1/sqrt(Hz)");
  LALregREALUserVar(status, 	Alpha, 		'a', UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in radians");
  LALregREALUserVar(status, 	Delta, 		'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians");
- LALregREALUserVar(status, 	AlphaBand, 	'z', UVAR_OPTIONAL, "Band in alpha (equatorial coordinates) in radians");
- LALregREALUserVar(status, 	DeltaBand, 	'c', UVAR_OPTIONAL, "Band in delta (equatorial coordinates) in radians");
  LALregREALUserVar(status,      Freq, 	        'F', UVAR_OPTIONAL, "Search Frequency");
  LALregREALUserVar(status,      FreqBand, 	'B', UVAR_OPTIONAL, "Search Frequency Band");
  
- LALregSTRINGUserVar(status,	skyRegion, 	'R', UVAR_OPTIONAL, "ALTERNATIVE: Specify sky-region by polygon (or use 'allsky')");
  LALregSTRINGUserVar(status,	DataFiles, 	'D', UVAR_REQUIRED, "File-pattern specifying (multi-IFO) input SFT-files"); 
  LALregSTRINGUserVar(status, 	IFO, 		'I', UVAR_OPTIONAL, "Detector-constraint: 'G1', 'L1', 'H1', 'H2' ...(useful for single-IFO v1-SFTs only!)");
  LALregSTRINGUserVar(status,	ephemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
@@ -480,25 +466,6 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   endTime   = catalog->data[numSFTs-1].header.epoch;
   LALAddFloatToGPS(status->statusPtr, &endTime, &endTime, Tsft );	/* can't fail */
   cfg->duration = GPS2REAL8(endTime) - GPS2REAL8 (cfg->startTime);
-
-  { /* ----- get sky-region to search ----- */
-    BOOLEAN haveAlphaDelta = LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta);
-    if (uvar_skyRegion)
-      {
-	cfg->searchRegion.skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
-	if ( cfg->searchRegion.skyRegionString == NULL ) {
-	  ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
-	}
-	strcpy (cfg->searchRegion.skyRegionString, uvar_skyRegion);
-      }
-    else if (haveAlphaDelta)    /* parse this into a sky-region */
-      {
-	REAL8 eps = 1e-9;	/* hack for backwards compatbility */
-	TRY ( SkySquare2String( status->statusPtr, &(cfg->searchRegion.skyRegionString),
-				uvar_Alpha, uvar_Delta,
-				uvar_AlphaBand + eps, uvar_DeltaBand + eps), status);
-      }
-  } /* get sky-region */
 
   {/* ----- load the multi-IFO SFT-vectors ----- */
  
@@ -610,9 +577,6 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
   /* Free config-Variables and userInput stuff */
   TRY (LALDestroyUserVars (status->statusPtr), status);
 
-  if ( GV.searchRegion.skyRegionString )
-    LALFree ( GV.searchRegion.skyRegionString );
-  
   /* Free ephemeris data */
   LALFree(cfg->edat->ephemE);
   LALFree(cfg->edat->ephemS);
@@ -638,34 +602,5 @@ checkUserInputConsistency (LALStatus *status)
       ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
     }      
 
-  /* don't allow negative bands (for safty in griding-routines) */
-  if ( (uvar_AlphaBand < 0) ||  (uvar_DeltaBand < 0) )
-    {
-      LALPrintError ("\nNegative value of sky-bands not allowed (alpha or delta)!\n\n");
-      ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
-    }
-  /* grid-related checks */
-  {
-    BOOLEAN haveAlphaBand = LALUserVarWasSet( &uvar_AlphaBand );
-    BOOLEAN haveDeltaBand = LALUserVarWasSet( &uvar_DeltaBand );
-    BOOLEAN haveSkyRegion, haveAlphaDelta;
-
-    haveSkyRegion  = (uvar_skyRegion != NULL);
-    haveAlphaDelta = (LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta) );
-
-    if ( (haveAlphaBand && !haveDeltaBand) || (haveDeltaBand && !haveAlphaBand) )
-      {
-	LALPrintError ("\nERROR: Need either BOTH (AlphaBand, DeltaBand) or NONE.\n\n"); 
-        ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
-      }
-
-    if ( haveSkyRegion && haveAlphaDelta )
-      {
-        LALPrintError ("\nOverdetermined sky-region: only use EITHER (Alpha,Delta)"
-		       " OR skyRegion!\n\n");
-        ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
-      }
-  } /* Grid-related checks */
-
-  RETURN (status);
+   RETURN (status);
 } /* checkUserInputConsistency() */
