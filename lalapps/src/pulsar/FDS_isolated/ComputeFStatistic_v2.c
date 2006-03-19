@@ -104,7 +104,6 @@ typedef struct {
   LALPulsarSpinRange *spinRangeStart; 	    /**< pulsar spin-range at start of observation 'startTime; */
   DopplerRegion searchRegion;		    /**< parameter-space region to search over (FIXME) */
   EphemerisData *edat;			    /**< ephemeris data (from LALInitBarycenter()) */
-  UINT4 numDetectors;			    /**< number of detectors */
   MultiSFTVector *multiSFTs;		    /**< multi-IFO SFT-vectors */
   MultiDetectorStateSeries *multiDetStates; /**< pos, vel and LMSTs for detector at times t_i */
   MultiNoiseWeights *multiNoiseWeights;	    /**< normalized noise-weights of those SFTs */
@@ -794,8 +793,6 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     TRY ( LALDestroySFTCatalog ( status->statusPtr, &catalog ), status );
   }
 
-  cfg->numDetectors = cfg->multiSFTs->length;
-  
   /* ----- normalize SFTs and calculate noise-weights ----- */
   if ( uvar_SignalOnly )
     cfg->multiNoiseWeights = NULL; 
@@ -829,6 +826,38 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   /* ----- set computational parameters for F-statistic from User-input ----- */
   cfg->CFparams.Dterms = uvar_Dterms;
   cfg->CFparams.SSBprec = uvar_SSBprecision;
+
+
+  if ( lalDebugLevel ) 
+    {
+      struct tm utc;
+      CHAR dateStr[512];
+      UINT4 i, numDet;
+      numDet = cfg->multiSFTs->length;
+      printf ("\n-------------------- Summary of search setup --------------------\n");
+      printf ("Loaded SFTs from %d detectors: [ ", numDet );
+      for ( i=0; i < numDet; i ++ )
+	printf ( "%s%s", (i ? ", ":""), cfg->multiSFTs->data[i]->data->name );
+      printf (" ]\n");
+
+      for ( i=0; i < numDet; i ++ )
+	printf ("\t%s: %d SFT\n",  cfg->multiSFTs->data[i]->data->name, 
+		cfg->multiSFTs->data[i]->data->data->length );
+      
+      utc = *XLALGPSToUTC( &utc, (INT4)GPS2REAL8(cfg->startTime) );
+      strcpy ( dateStr, asctime(&utc) );
+      dateStr[ strlen(dateStr) - 2 ] = 0;
+      printf ("Start GPS time tStart = %12.3f    (%s UTC)\n", GPS2REAL8(cfg->startTime), dateStr);
+      printf ("Total time spanned    = %12.3f s  (%.1f hours)\n", cfg->duration, cfg->duration/3600 );
+      printf ("Effective spin-range at tStart:\n" );
+
+      for (i=0; i < cfg->spinRangeStart->fkdot->length; i ++ )
+	printf ( "\tf%ddot = [ %.16g, %.16g ]\n", i,
+		 cfg->spinRangeStart->fkdot->data[i],
+		 cfg->spinRangeStart->fkdot->data[i] + cfg->spinRangeStart->fkdotBand->data[i] );
+      printf ("------------------------------------------------------------\n");
+      
+    } /* if lalDebugLevel */
 
 
   DETATCHSTATUSPTR (status);
