@@ -51,12 +51,14 @@ NRCSID( COMPUTEFSTATH, "$Id$" );
 #define COMPUTEFSTATC_EINPUT   		3
 #define COMPUTEFSTATC_EMEM   		4
 #define COMPUTEFSTATC_EXLAL		5
+#define COMPUTEFSTATC_EIEEE		6
 
 #define COMPUTEFSTATC_MSGENULL 		"Arguments contained an unexpected null pointer"
 #define COMPUTEFSTATC_MSGENONULL 	"Output pointer is non-NULL"
 #define COMPUTEFSTATC_MSGEINPUT   	"Invalid input"
 #define COMPUTEFSTATC_MSGEMEM   	"Out of memory. Bad."
 #define COMPUTEFSTATC_MSGEXLAL		"XLAL function call failed"
+#define COMPUTEFSTATC_MSGEIEEE		"Floating point failure"
 
 /*---------- exported types ----------*/
 

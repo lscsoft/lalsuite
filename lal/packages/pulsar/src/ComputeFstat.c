@@ -29,6 +29,8 @@
 #define __USE_ISOC99 1
 #include <math.h>
 
+int finite(double x);
+
 #include <lal/AVFactories.h>
 #include "ComputeFstat.h"
 
@@ -39,7 +41,7 @@ NRCSID( COMPUTEFSTATC, "$Id$");
 #define FALSE (1==0)
 
 
-#define LD_SMALL4       (1.0e-9)		/**< "small" number for REAL4*/
+#define LD_SMALL4       (1.0e-6)		/**< "small" number for REAL4*/
 #define OOTWOPI         (1.0 / LAL_TWOPI)	/**< 1/2pi */
 
 #define TWOPI_FLOAT     6.28318530717958f  	/**< single-precision 2*pi */
@@ -243,7 +245,15 @@ ComputeFStat ( LALStatus *status,
 	  LALPrintError ("\nXALNewLALDemod() failed\n");
 	  ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
 	}
- 		  
+
+#ifndef LAL_NDEBUG
+      if ( !finite(FcX.Fa.re) || !finite(FcX.Fa.im) || !finite(FcX.Fb.re) || !finite(FcX.Fb.im) ) {
+	LALPrintError("XLALComputeFaFb() return non-finite: Fa=(%f,%f), Fb=(%f,%f)\n", 
+		      FcX.Fa.re, FcX.Fa.im, FcX.Fb.re, FcX.Fb.im );
+	ABORT (status,  COMPUTEFSTATC_EIEEE,  COMPUTEFSTATC_MSGEIEEE);
+      }
+#endif
+ 		 
       retF.Fa.re += FcX.Fa.re;
       retF.Fa.im += FcX.Fa.im;
  		  
@@ -470,7 +480,13 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 	  
 	  U_alpha = Sn / qn;
 	  V_alpha = Tn / qn;
-	  
+
+#ifndef LAL_NDEBUG
+	  if ( !finite(U_alpha) || !finite(V_alpha) || !finite(pn) || !finite(qn) || !finite(Sn) || !finite(Tn) ) {
+	    XLAL_ERROR ("XLALComputeFaFb()", COMPUTEFSTATC_EIEEE);
+	  }
+#endif
+
 	  realXP = s_alpha * U_alpha - c_alpha * V_alpha;
 	  imagXP = c_alpha * U_alpha + s_alpha * V_alpha;
 	  
@@ -493,6 +509,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,
       
       Fb.re += b_alpha * realQXP;
       Fb.im += b_alpha * imagQXP;
+
 
       /* advance pointers over alpha */
       a_al ++;
