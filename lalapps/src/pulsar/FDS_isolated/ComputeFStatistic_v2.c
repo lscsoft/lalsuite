@@ -438,7 +438,7 @@ int main(int argc,char *argv[])
 			       * f1dot, (f2dot, f3dot) :1e-5
 			       * F:1e-6 
 			       */
-			      LALSnprintf (buf, 511, "%.13g %.7g %.7g %.5g %.5g %.5g %.6g\n",
+			      LALSnprintf (buf, 511, "%.16g %.16g %.16g %.6g %.5g %.5g %.6g\n",
 					   fkdotRef->data[0], 
 					   dopplerpos.Alpha, dopplerpos.Delta, 
 					   fkdotRef->data[1], fkdotRef->data[2], fkdotRef->data[3],
