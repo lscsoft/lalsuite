@@ -294,11 +294,18 @@ int main(int argc,char *argv[])
    * we open and prepare the output-file here */
   if (uvar_outputFstat)
     {
+      CHAR *logstr = NULL;
       if ( (fpFstat = fopen (uvar_outputFstat, "wb")) == NULL)
 	{
 	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputFstat);
 	  return (COMPUTEFSTATISTIC_ESYS);
 	}
+      /* log search-footprint at head of output-file */
+      LAL_CALL( LALUserVarGetLog (&status, &logstr,  UVAR_LOGFMT_CMDLINE ), &status );
+      fprintf(fpFstat, "## %s\n## %s\n",
+	      "$Id$",
+	      logstr );
+      LALFree ( logstr );
     } /* if outputFstat */
   
   if (uvar_outputBstat)
