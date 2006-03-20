@@ -429,7 +429,7 @@ int main(int argc,char *argv[])
 		      if ( uvar_outputFstat || uvar_outputLoudest )
 			{
 			  
-			  if ( Fstat.F > uvar_Fthreshold )
+			  if ( Fstat.F >= uvar_Fthreshold )
 			    {
 			      /* output-precision following CFS_v1:
 			       * satisfy the following (generous!) significant-digit constraints:
