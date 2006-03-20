@@ -115,7 +115,7 @@ LIGOTimeGPS *XLALGPSDivide( LIGOTimeGPS *gps, REAL8 x )
 
   XLALGPSSetREAL8(&mi, (gps->gpsSeconds % 512) / x);
   gps->gpsSeconds -= gps->gpsSeconds % 512;
-  XLALGPSSetREAL8(&hi, gps->gpsSeconds * x);
+  XLALGPSSetREAL8(&hi, gps->gpsSeconds / x);
   hi.gpsNanoSeconds += 256;
   hi.gpsNanoSeconds -= hi.gpsNanoSeconds % 512;
 
