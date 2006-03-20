@@ -1083,7 +1083,7 @@ LALWriteSFTVector2Dir (LALStatus *status,
     strcat( filename, "_");
     sprintf( filenumber, "%d", timeBase); /* sft timebase */
     strcat( filename, filenumber);
-    strcat( filename, "SFTv2");
+    strcat( filename, "SFT");
     if ( description ) {
       strcat( filename, "_");
       strcat( filename, description);
