@@ -161,7 +161,6 @@ CHAR *uvar_outputBstat;
 CHAR *uvar_outputLoudest;
 CHAR *uvar_skyGridFile;
 CHAR *uvar_outputSkyGrid;
-CHAR *uvar_workingDir;
 REAL8 uvar_dopplermax;
 INT4 uvar_RngMedWindow;
 REAL8 uvar_refTime;
@@ -575,9 +574,6 @@ initUserVars (LALStatus *status)
 
   uvar_skyGridFile = NULL;
 
-  uvar_workingDir = LALMalloc(512);
-  strcpy(uvar_workingDir, ".");
-
   uvar_dopplermax =  1.05e-4;
   uvar_RngMedWindow = 50;	/* for running-median */
 
@@ -635,7 +631,6 @@ initUserVars (LALStatus *status)
   LALregINTUserVar (status, 	SSBprecision,	 0,  UVAR_DEVELOPER, "Precision to use for time-transformation to SSB: 0=Newtonian 1=relativistic");
   LALregINTUserVar(status, 	RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");
   LALregINTUserVar(status,	Dterms,		't', UVAR_DEVELOPER, "Number of terms to keep in Dirichlet kernel sum");
-  LALregSTRINGUserVar(status,   workingDir,     'w', UVAR_DEVELOPER, "Directory to be made the working directory, . is default");
   LALregSTRINGUserVar(status,	outputSkyGrid,	 0,  UVAR_DEVELOPER, "Write sky-grid into this file.");
   LALregSTRINGUserVar(status,   outputLoudest,	 0,  UVAR_DEVELOPER, 
 		      "Output-file for the loudest F-statistic candidate in this search");
