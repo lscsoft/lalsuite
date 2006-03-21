@@ -30,10 +30,13 @@
 #include "config.h"
 
 /* System includes */
+#include <math.h>
 #include <stdio.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+
+int finite(double);
 
 /* LAL-includes */
 #include <lal/AVFactories.h>
@@ -428,7 +431,16 @@ int main(int argc,char *argv[])
 		      /* now, if user requested it, we output ALL F-statistic results above threshold */
 		      if ( uvar_outputFstat || uvar_outputLoudest )
 			{
-			  
+			  if ( !finite(Fstat.F) )
+			    {
+			      LogPrintf(LOG_CRITICAL, 
+					"ComputeFstat returned non-finite F = %.16g, Fa=(%.16g,%.16g), Fb=(%.16g,%.16g)\n", 
+					Fstat.F, Fstat.Fa.re, Fstat.Fa.im, Fstat.Fb.re, Fstat.Fb.im );
+			      LogPrintf (LOG_CRITICAL, "in point: [Alpha,Delta] = [%.16g,%.16g], fkdot=[%.16g,%.16g,%.16g,%16.g]\n",
+					 dopplerpos.Alpha, dopplerpos.Delta, fkdotRef->data[0], fkdotRef->data[1],
+					 fkdotRef->data[2], fkdotRef->data[3] );
+			      return -1;
+			    }
 			  if ( Fstat.F >= uvar_Fthreshold )
 			    {
 			      /* output-precision following CFS_v1:
