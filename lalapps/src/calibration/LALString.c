@@ -14,7 +14,8 @@ char * XLALStringAppend( char *s, const char *append )
   s = LALRealloc( s, newlen + 1 );
   if ( ! s )
     XLAL_ERROR_NULL( func, XLAL_ENOMEM );
-  return strcpy( s + curlen, append );
+  strcpy( s + curlen, append );
+  return s;
 }
 
 char * XLALStringDuplicate( const char *s )

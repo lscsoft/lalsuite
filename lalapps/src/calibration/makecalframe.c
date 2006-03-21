@@ -28,8 +28,11 @@ void err_exit( const char *fmt, ... )
   exit( 1 );
 }
 
+
 int main( int argc, char *argv[] )
 {
+  char rcsid[] = "$Id$";
+  char *history = NULL;
   LALDataFileNameFields *fields = NULL;
   char fname[FILENAME_MAX] = "";
   char run[FILENAME_MAX] = "";
@@ -52,6 +55,13 @@ int main( int argc, char *argv[] )
   program = argv[0];
   lalDebugLevel = 7;
   XLALSetErrorHandler( XLALAbortErrorHandler );
+
+  history = XLALStringAppend( history, argv[0] );
+  for ( arg = 1; arg < argc; ++arg )
+  {
+    history = XLALStringAppend( history, " " );
+    history = XLALStringAppend( history, argv[arg] );
+  }
 
   fprintf( stderr, "Input files:\n\n" );
 
@@ -178,6 +188,9 @@ int main( int argc, char *argv[] )
 
   XLALGPSSetREAL8( &epoch, tstart );
   frame = XLALFrameNew( &epoch, tend - tstart, "LIGO", 0, 0, detectorFlags );
+  FrHistoryAdd( frame, rcsid );
+  FrHistoryAdd( frame, history );
+  XLALFree( history );
 
 
   /* now read the data files */
