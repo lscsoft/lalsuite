@@ -168,6 +168,7 @@ INT4 uvar_SSBprecision;
 
 INT4 uvar_minStartTime;
 INT4 uvar_maxEndTime;
+CHAR *uvar_workingDir;
 
 /* ---------- local prototypes ---------- */
 int main(int argc,char *argv[]);
@@ -582,7 +583,10 @@ initUserVars (LALStatus *status)
   uvar_minStartTime = 0;
   uvar_maxEndTime = LAL_INT4_MAX;
 
-  /* register all our user-variables */
+  uvar_workingDir = (CHAR*)LALMalloc(512);
+  strcpy(uvar_workingDir, ".");
+
+  /* ---------- register all user-variables ---------- */
   LALregBOOLUserVar(status, 	help, 		'h', UVAR_HELP,     "Print this message"); 
 
   LALregREALUserVar(status, 	Alpha, 		'a', UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in radians");
@@ -627,7 +631,7 @@ initUserVars (LALStatus *status)
   LALregINTUserVar ( status, 	minStartTime, 	 0,  UVAR_OPTIONAL, "Earliest SFT-timestamp to include");
   LALregINTUserVar ( status, 	maxEndTime, 	 0,  UVAR_OPTIONAL, "Latest SFT-timestamps to include");
 
-  /* more experimental and unofficial stuff follows here */
+  /* ----- more experimental/expert options follow here ----- */
   LALregINTUserVar (status, 	SSBprecision,	 0,  UVAR_DEVELOPER, "Precision to use for time-transformation to SSB: 0=Newtonian 1=relativistic");
   LALregINTUserVar(status, 	RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");
   LALregINTUserVar(status,	Dterms,		't', UVAR_DEVELOPER, "Number of terms to keep in Dirichlet kernel sum");
@@ -635,6 +639,7 @@ initUserVars (LALStatus *status)
   LALregSTRINGUserVar(status,   outputLoudest,	 0,  UVAR_DEVELOPER, 
 		      "Output-file for the loudest F-statistic candidate in this search");
 
+  LALregSTRINGUserVar(status,     workingDir,     'w', UVAR_DEVELOPER, "Directory to use as work directory.");
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -707,6 +712,14 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
 
   INITSTATUS (status, "InitFStat", rcsid);
   ATTATCHSTATUSPTR (status);
+
+
+  /* set the current working directory */
+  if(chdir(uvar_workingDir) != 0)
+    {
+      LogPrintf (LOG_CRITICAL,  "Unable to change directory to workinDir '%s'\n", uvar_workingDir);
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+    }
 
   /* use IFO-contraint if one given by the user */
   if ( LALUserVarWasSet ( &uvar_IFO ) )
