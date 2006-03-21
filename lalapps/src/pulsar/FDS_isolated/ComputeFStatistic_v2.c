@@ -146,7 +146,7 @@ REAL8 uvar_f3dot;
 REAL8 uvar_df3dot;
 REAL8 uvar_f3dotBand;
 /* --- */
-REAL8 uvar_Fthreshold;
+REAL8 uvar_TwoFthreshold;
 CHAR *uvar_ephemDir;
 CHAR *uvar_ephemYear;
 INT4  uvar_gridType;
@@ -434,23 +434,18 @@ int main(int argc,char *argv[])
 			  if ( !finite(Fstat.F) )
 			    {
 			      LogPrintf(LOG_CRITICAL, 
-					"ComputeFstat returned non-finite F = %.16g, Fa=(%.16g,%.16g), Fb=(%.16g,%.16g)\n", 
+					"non-finite F = %.16g, Fa=(%.16g,%.16g), Fb=(%.16g,%.16g)\n", 
 					Fstat.F, Fstat.Fa.re, Fstat.Fa.im, Fstat.Fb.re, Fstat.Fb.im );
-			      LogPrintf (LOG_CRITICAL, "in point: [Alpha,Delta] = [%.16g,%.16g], fkdot=[%.16g,%.16g,%.16g,%16.g]\n",
-					 dopplerpos.Alpha, dopplerpos.Delta, fkdotRef->data[0], fkdotRef->data[1],
-					 fkdotRef->data[2], fkdotRef->data[3] );
+			      LogPrintf (LOG_CRITICAL, 
+					 "[Alpha,Delta] = [%.16g,%.16g],\n"
+					 "fkdot=[%.16g,%.16g,%.16g,%16.g]\n",
+					 dopplerpos.Alpha, dopplerpos.Delta, fkdotRef->data[0], 
+					 fkdotRef->data[1], fkdotRef->data[2], fkdotRef->data[3] );
 			      return -1;
 			    }
-			  if ( Fstat.F >= uvar_Fthreshold )
+			  if ( 2.0 * Fstat.F >= uvar_TwoFthreshold )
 			    {
-			      /* output-precision following CFS_v1:
-			       * satisfy the following (generous!) significant-digit constraints:
-			       * Freq:1e-13 
-			       * Alpha,Delta:1e-7 
-			       * f1dot, (f2dot, f3dot) :1e-5
-			       * F:1e-6 
-			       */
-			      LALSnprintf (buf, 511, "%.16g %.16g %.16g %.6g %.5g %.5g %.6g\n",
+			      LALSnprintf (buf, 511, "%.16g %.16g %.16g %.6g %.5g %.5g %.9g\n",
 					   fkdotRef->data[0], 
 					   dopplerpos.Alpha, dopplerpos.Delta, 
 					   fkdotRef->data[1], fkdotRef->data[2], fkdotRef->data[3],
@@ -566,7 +561,7 @@ initUserVars (LALStatus *status)
   uvar_df3dot 	= 1.0;
   uvar_f1dotBand = 0.0;
   
-  uvar_Fthreshold = 10.0;
+  uvar_TwoFthreshold = 10.0;
   uvar_metricType =  LAL_PMETRIC_NONE;
   uvar_gridType = GRID_FLAT;
 
@@ -622,7 +617,7 @@ initUserVars (LALStatus *status)
   LALregSTRINGUserVar(status,	ephemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
   LALregSTRINGUserVar(status,	ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
   LALregBOOLUserVar(status, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
-  LALregREALUserVar(status, 	Fthreshold,	'F', UVAR_OPTIONAL, "Signal Set the threshold for selection of 2F");
+  LALregREALUserVar(status, 	TwoFthreshold,	'F', UVAR_OPTIONAL, "Set the threshold for selection of 2F");
   LALregINTUserVar(status, 	gridType,	 0 , UVAR_OPTIONAL, "Template grid: 0=flat, 1=isotropic, 2=metric, 3=file");
   LALregINTUserVar(status, 	metricType,	'M', UVAR_OPTIONAL, "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
   LALregREALUserVar(status, 	metricMismatch,	'X', UVAR_OPTIONAL, "Maximal allowed mismatch for metric tiling");

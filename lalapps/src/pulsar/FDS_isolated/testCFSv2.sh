@@ -112,12 +112,12 @@ echo "----------------------------------------------------------------------"
 echo
 
 ## common cmdline-options for v1 and v2    
-cfs_CL="--IFO=$IFO --Freq=$freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --f1dotBand=$f1dot --df1dot=$df1dot --Fthreshold=0 --DataFiles='$SFTdir/testSFT*' --refTime=$refTime"
+cfs_CL="--IFO=$IFO --Freq=$freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --f1dotBand=$f1dot --df1dot=$df1dot --DataFiles='$SFTdir/testSFT*' --refTime=$refTime"
 if [ "$haveNoise" = false ]; then
     cfs_CL="$cfs_CL --SignalOnly"
 fi
     
-cmdline="$cfs_code $cfs_CL  --outputFstat=Fstat_v1.dat --expLALDemod=0";
+cmdline="$cfs_code $cfs_CL  --outputFstat=Fstat_v1.dat --expLALDemod=1 --Fthreshold=0";
 echo $cmdline;
 
 if ! eval time $cmdline; then
@@ -130,7 +130,7 @@ echo "----------------------------------------------------------------------"
 echo " STEP 3: run CFS_v2 with perfect match"
 echo "----------------------------------------------------------------------"
 echo
-cmdline="$cfsv2_code $cfs_CL --outputFstat=Fstat_v2.dat $extra_args";
+cmdline="$cfsv2_code $cfs_CL --outputFstat=Fstat_v2.dat --TwoFthreshold=0 $extra_args";
 echo $cmdline;
 
 if ! eval time $cmdline; then
