@@ -3,6 +3,7 @@
 
 #include <FrameL.h>
 #include <lal/LALDatatypes.h>
+#include "LALCalibration.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,6 +28,9 @@ COMPLEX8FrequencySeries * XLALFrameGetCalRef( LIGOTimeGPS *validUntil, LIGOTimeG
 int XLALFrameAddCalFac( FrameH *frame, REAL4TimeSeries *series );
 
 REAL4TimeSeries * XLALFrameGetCalFac( const char *channel, FrameH *frame );
+
+/* high-level function */
+LALCalData * XLALFrGetCalData( LIGOTimeGPS *epoch, const char *readoutChannel, const char *fname );
 
 #ifdef __cplusplus
 }

@@ -1,13 +1,14 @@
 ## Process this file with automake to produce Makefile.in
 # $Id$
 if FRAME
-FRAMEPROGRAMS = lalapps_mkcalfac lalapps_mkcalref lalapps_makecalframe
+FRAMEPROGRAMS = lalapps_mkcalfac lalapps_mkcalref lalapps_makecalframe lalapps_readcalframe
 else
 FRAMEPROGRAMS = 
 endif
 bin_PROGRAMS = $(FRAMEPROGRAMS) lalapps_ComputeStrain lalapps_ComputeFactors lalapps_ComputeStrainDriver
 if FRAME
-lalapps_makecalframe_SOURCES = makecalframe.c LALString.c LALString.h LALFrameIO.c LALFrameIO.h LALASCIIFileRead.c LALASCIIFileRead.h
+lalapps_makecalframe_SOURCES = makecalframe.c LALString.c LALString.h LALFrameIO.c LALFrameIO.h LALASCIIFileRead.c LALASCIIFileRead.h LALCalibration.c LALCalibration.h
+lalapps_readcalframe_SOURCES = readcalframe.c LALFrameIO.c LALFrameIO.h LALString.c LALString.h LALCalibration.c LALCalibration.h
 lalapps_mkcalfac_SOURCES = mkcalfac.c
 lalapps_mkcalref_SOURCES = mkcalref.c
 endif

@@ -20,7 +20,7 @@ const char *program;
 void err_exit( const char *fmt, ... )
 {
   va_list ap;
-  fprintf( stderr, "%s error:", program );
+  fprintf( stderr, "%s error: ", program );
   va_start( ap, fmt );
   vfprintf( stderr, fmt, ap );
   va_end( ap );

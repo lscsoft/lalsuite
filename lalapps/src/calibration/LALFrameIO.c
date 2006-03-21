@@ -9,6 +9,7 @@
 
 #include "LALString.h"
 #include "LALFrameIO.h"
+#include "LALCalibration.h"
 
 
 FrDetector * XLALFrDetectorNew( int detector )
@@ -417,4 +418,101 @@ REAL4TimeSeries * XLALFrameGetCalFac( const char *channel, FrameH *frame )
   memcpy( series->data->data, proc->data->data, series->data->length * sizeof( *series->data->data ) );
 
   return series;
+}
+
+
+LALCalData * XLALFrGetCalData( LIGOTimeGPS *epoch, const char *readoutChannel, const char *fname )
+{
+  static const char *func = "XLALFrGetCalData";
+  char responseName[LALNameLength]  = "Xn:CAL-RESPONSE_";
+  char cavgainName[LALNameLength]   = "Xn:CAL-CAV_GAIN_";
+  char oloopgainName[LALNameLength] = "Xn:CAL-OLOOP_GAIN";
+  char cavfacName[LALNameLength]    = "Xn:CAL-CAV_FAC";
+  char oloopfacName[LALNameLength]  = "Xn:CAL-OLOOP_FAC";
+  char readoutPoint[LALNameLength]; /* DARM_ERR or AS_Q */
+  char ifo[3];
+  char *fileName;
+  LIGOTimeGPS tend;
+  LALCalData *caldata;
+  FrFile *frfile;
+  FrameH *frame;
+
+  /* setup channel names based on readout channel */
+  XLALStringCopy( ifo, readoutChannel, sizeof( ifo ) );
+  XLALStringCopy( readoutPoint, readoutChannel + strlen("Xn:LSC-"), sizeof( readoutPoint ) );
+  XLALStringConcatenate( responseName, readoutPoint, sizeof( responseName ) );
+  XLALStringConcatenate( cavgainName, readoutPoint, sizeof( cavgainName ) );
+  memcpy( responseName, ifo, 2 );
+  memcpy( cavgainName, ifo, 2 );
+  memcpy( oloopgainName, ifo, 2 );
+  memcpy( cavfacName, ifo, 2 );
+  memcpy( oloopfacName, ifo, 2 );
+
+  if ( strcmp( readoutPoint, "AS_Q" ) && strcmp( readoutPoint, "DARM_ERR" ) )
+    XLAL_ERROR_NULL( func, XLAL_ENAME );
+  
+
+  caldata = LALCalloc( 1, sizeof( *caldata ) );
+  if ( ! caldata )
+    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+
+  fileName = XLALStringDuplicate( fname );
+  if ( ! fileName )
+  {
+    XLALDestroyCalData( caldata );
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+  }
+  frfile = FrFileINew( fileName );
+  XLALFree( fileName );
+  if ( ! frfile )
+  {
+    XLALDestroyCalData( caldata );
+    XLAL_ERROR_NULL( func, XLAL_EERR );
+  }
+  frame = FrameRead( frfile );
+  if ( ! frame )
+  {
+    FrFileIEnd( frfile );
+    XLALDestroyCalData( caldata );
+    XLAL_ERROR_NULL( func, XLAL_EERR );
+  }
+
+  caldata->cavityFactors = XLALFrameGetCalFac( cavfacName, frame );
+  if ( ! caldata->cavityFactors )
+  {
+    FrFileIEnd( frfile );
+    XLALDestroyCalData( caldata );
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+  }
+  caldata->openLoopFactors = XLALFrameGetCalFac( oloopfacName, frame );
+  if ( ! caldata->openLoopFactors )
+  {
+    FrFileIEnd( frfile );
+    XLALDestroyCalData( caldata );
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+  }
+  caldata->responseReference = XLALFrameGetCalRef( &tend, epoch, responseName, frame );
+  if ( ! caldata->responseReference )
+  {
+    FrFileIEnd( frfile );
+    XLALDestroyCalData( caldata );
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+  }
+  caldata->cavityGainReference = XLALFrameGetCalRef( &tend, epoch, cavgainName, frame );
+  if ( ! caldata->cavityGainReference )
+  {
+    FrFileIEnd( frfile );
+    XLALDestroyCalData( caldata );
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+  }
+  caldata->openLoopGainReference = XLALFrameGetCalRef( &tend, epoch, oloopgainName, frame );
+  if ( ! caldata->openLoopGainReference )
+  {
+    FrFileIEnd( frfile );
+    XLALDestroyCalData( caldata );
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+  }
+
+  FrFileIEnd( frfile );
+  return caldata;
 }
