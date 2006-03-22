@@ -110,16 +110,15 @@ LIGOTimeGPS *XLALGPSMultiply( LIGOTimeGPS *gps, REAL8 x )
 /** Divide a GPS time by a number. */
 LIGOTimeGPS *XLALGPSDivide( LIGOTimeGPS *gps, REAL8 x )
 {
-  LIGOTimeGPS hi, mi;
-  INT8 lo = gps->gpsNanoSeconds / x + 0.5;
+  LIGOTimeGPS quotient;
+  int i;
 
-  XLALGPSSetREAL8(&mi, (gps->gpsSeconds % 512) / x);
-  gps->gpsSeconds -= gps->gpsSeconds % 512;
-  XLALGPSSetREAL8(&hi, gps->gpsSeconds / x);
-  hi.gpsNanoSeconds += 256;
-  hi.gpsNanoSeconds -= hi.gpsNanoSeconds % 512;
-
-  XLALGPSSet(gps, hi.gpsSeconds + mi.gpsSeconds, hi.gpsNanoSeconds + mi.gpsNanoSeconds + lo);
+  XLALGPSSet(&quotient, 0, 0);
+  for(i = 0; i < 3; i++) {	/* is 3 too many? */
+    LIGOTimeGPS tmp = quotient;
+    XLALGPSAdd(&quotient, XLALGPSDiff(gps, XLALGPSMultiply(&tmp, x)) / x);
+  }
+  *gps = quotient;
 
   return gps;
 }
