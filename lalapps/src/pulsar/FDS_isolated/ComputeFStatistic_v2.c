@@ -113,6 +113,7 @@ typedef struct {
   MultiDetectorStateSeries *multiDetStates; /**< pos, vel and LMSTs for detector at times t_i */
   MultiNoiseWeights *multiNoiseWeights;	    /**< normalized noise-weights of those SFTs */
   ComputeFParams CFparams;		    /**< parameters for the computation of Fstat (e.g Dterms, SSB-precision,...) */
+  CHAR *dataSummary;                        /**< descriptive string describing the data (e.g. #SFTs, startTime etc. ..*/
 } ConfigVariables;
 
 /*---------- Global variables ----------*/
@@ -309,6 +310,8 @@ int main(int argc,char *argv[])
 	      "$Id$",
 	      logstr );
       LALFree ( logstr );
+      /* append 'dataSummary' */
+      fprintf (fpFstat, "%s", GV.dataSummary );
     } /* if outputFstat */
   
   if (uvar_outputBstat)
@@ -880,36 +883,49 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   cfg->CFparams.SSBprec = uvar_SSBprecision;
 
 
-  if ( lalDebugLevel ) 
-    {
-      struct tm utc;
-      CHAR dateStr[512];
-      UINT4 i, numDet;
-      numDet = cfg->multiSFTs->length;
-      printf ("\n-------------------- Summary of search setup --------------------\n");
-      printf ("Loaded SFTs from %d detectors: [ ", numDet );
-      for ( i=0; i < numDet; i ++ )
-	printf ( "%s%s", (i ? ", ":""), cfg->multiSFTs->data[i]->data->name );
-      printf (" ]\n");
+  /* ----- produce a log-string describing the data-specific setup ----- */
+  {
+    struct tm utc;
+    time_t tp;
+    CHAR dateStr[512], line[512], summary[1024];
+    UINT4 i, numDet, numSpins;
+    numDet = cfg->multiSFTs->length;
+    tp = time(NULL);
+    sprintf (summary, "## Started search: %s", asctime( gmtime( &tp ) ) );
+    strcat (summary, "## Loaded SFTs: [ " );
+    for ( i=0; i < numDet; i ++ ) {
+      sprintf (line, "%s:%d%s",  cfg->multiSFTs->data[i]->data->name, 
+	       cfg->multiSFTs->data[i]->data->data->length,
+	       (i < numDet - 1)?", ":" ]\n");
+      strcat ( summary, line );
+    }
+    utc = *XLALGPSToUTC( &utc, (INT4)GPS2REAL8(cfg->startTime) );
+    strcpy ( dateStr, asctime(&utc) );
+    dateStr[ strlen(dateStr) - 1 ] = 0;
+    sprintf (line, "## Start GPS time tStart = %12.3f    (%s GMT)\n", 
+	     GPS2REAL8(cfg->startTime), dateStr);
+    strcat ( summary, line );
+    sprintf (line, "## Total time spanned    = %12.3f s  (%.1f hours)\n", 
+	     cfg->duration, cfg->duration/3600 );
+    strcat ( summary, line );
+    sprintf (line, "## Effective spin-range at tStart: " );
+    strcat ( summary, line );
+    numSpins = cfg->spinRangeStart->fkdot->length;
+    strcat (summary, "fkdot = [ " );
+    for (i=0; i < numSpins; i ++ ) {
+      sprintf (line, "%.16g:%.16g%s", 
+	       cfg->spinRangeStart->fkdot->data[i],
+	       cfg->spinRangeStart->fkdot->data[i] + cfg->spinRangeStart->fkdotBand->data[i],
+	       (i < numSpins - 1)?", ":" ]\n");
+      strcat ( summary, line );
+    }
+    if ( (cfg->dataSummary = LALCalloc(1, strlen(summary) + 1 )) == NULL ) {
+      ABORT (status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM);
+    }
+    strcpy ( cfg->dataSummary, summary );
+  } /* write dataSummary string */
 
-      for ( i=0; i < numDet; i ++ )
-	printf ("\t%s: %d SFT\n",  cfg->multiSFTs->data[i]->data->name, 
-		cfg->multiSFTs->data[i]->data->data->length );
-      
-      utc = *XLALGPSToUTC( &utc, (INT4)GPS2REAL8(cfg->startTime) );
-      strcpy ( dateStr, asctime(&utc) );
-      dateStr[ strlen(dateStr) - 1 ] = 0;
-      printf ("Start GPS time tStart = %12.3f    (%s GMT)\n", GPS2REAL8(cfg->startTime), dateStr);
-      printf ("Total time spanned    = %12.3f s  (%.1f hours)\n", cfg->duration, cfg->duration/3600 );
-      printf ("Effective spin-range at tStart:\n" );
-
-      for (i=0; i < cfg->spinRangeStart->fkdot->length; i ++ )
-	printf ( "\tf%ddot = [ %.16g, %.16g ]\n", i,
-		 cfg->spinRangeStart->fkdot->data[i],
-		 cfg->spinRangeStart->fkdot->data[i] + cfg->spinRangeStart->fkdotBand->data[i] );
-      printf ("------------------------------------------------------------\n");
-      
-    } /* if lalDebugLevel */
+  LogPrintfVerbatim( LOG_DEBUG, cfg->dataSummary );
 
 
   DETATCHSTATUSPTR (status);
@@ -1013,6 +1029,9 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
 
   XLALDestroyPulsarSpinRange ( cfg->spinRangeStart );
   XLALDestroyPulsarSpinRange ( cfg->spinRangeRef );
+
+  if ( cfg->dataSummary ) 
+    LALFree ( cfg->dataSummary );
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
