@@ -38,6 +38,7 @@ FrDetector * XLALFrDetectorNew( int detector )
   frDetector->armXaltitude = lalDetector->frDetector.xArmAltitudeRadians;
   frDetector->armYaltitude = lalDetector->frDetector.yArmAltitudeRadians;
   frDetector->armXmidpoint = lalDetector->frDetector.xArmMidpoint;
+  frDetector->armYmidpoint = lalDetector->frDetector.yArmMidpoint;
   frDetector->localTime    = 0;
 
   return frDetector;
