@@ -210,7 +210,7 @@ int main(int argc,char *argv[])
     REAL8 h0, cosi; 
     REAL8 Sh;
     REAL8 aPlus, aCross;
-    REAL8 twopsi, twophi;
+    REAL8 twopsi, phi0;
     REAL8 Tsft;
     UINT4 X;  
 
@@ -269,7 +269,7 @@ int main(int argc,char *argv[])
     /* Free MultiPSDVector  */
     LAL_CALL ( LALDestroyMultiPSDVector (&status, &multiPSDs ), &status );
       
-    twophi = 2.0 * uvar_phi;
+    phi0 = uvar_phi;
     twopsi = 2.0 * uvar_psi;
     
     h0 = uvar_h0;
@@ -286,10 +286,10 @@ int main(int argc,char *argv[])
 	aCross = uvar_aCross;
       }
     
-    A1 = aPlus * cos(twopsi) * cos(twophi) - aCross * sin(twopsi) * sin(twophi);
-    A2 = aPlus * sin(twopsi) * cos(twophi) + aCross * cos(twopsi) * sin(twophi);
-    A3 =-aPlus * cos(twopsi) * sin(twophi) - aCross * sin(twopsi) * cos(twophi);
-    A4 =-aPlus * sin(twopsi) * sin(twophi) + aCross * cos(twopsi) * cos(twophi);
+    A1 = aPlus * cos(twopsi) * cos(phi0) - aCross * sin(twopsi) * sin(phi0);
+    A2 = aPlus * sin(twopsi) * cos(phi0) + aCross * cos(twopsi) * sin(phi0);
+    A3 =-aPlus * cos(twopsi) * sin(phi0) - aCross * sin(twopsi) * cos(phi0);
+    A4 =-aPlus * sin(twopsi) * sin(phi0) + aCross * cos(twopsi) * cos(phi0);
     
     F += (At * ( SQ(A1) + SQ(A3) ) + Bt * ( SQ(A2) + SQ(A4) )+ 2.0 * Ct * (A1 * A2 + A3 * A4 )) / 4;
     

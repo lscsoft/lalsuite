@@ -1,7 +1,8 @@
 #!/bin/sh
-## A simple test script to compare the F-Statistic of a single and two detectors.
+## A simple test script to compare the F-Statistic of a single and multi detectors.
 ## This uses ComputeFStatistic_v2 to calcultae the F-Statistic and the makefakedata 
-## to generate v2 version of SFT.
+## to generate v2 version of SFT as well as SemiAnalyticF and PredictFStat to calculate
+## the value of F-Statistic semi-analytically.
 
 ## Author: Iraj Gholami
 
@@ -63,10 +64,10 @@ noiseSqrtSh=3e-20
 
 if [ "$noiseSqrtSh" != 0 ]; then
     sqrtSh=$noiseSqrtSh
-    whatNoise=
+    haveNoise=
 else
     sqrtSh=1;
-    whatNoise="--SignalOnly";
+    haveNoise="--SignalOnly";
 fi
 
 IFO1=H1
@@ -166,7 +167,7 @@ fi
 # Calculating the Semi-Analytic FStat for detector L1
 res2PFS2=`echo $resPFS2 | awk '{printf "%g", $1}'`
 
-cmdline="$pfs_code $pfs_CL --DataFiles='./testSFTs/L-1_L*'"
+cmdline="$pfs_code $pfs_CL --DataFiles='./testSFTs/L-1_L1*'"
 echo $cmdline
 
 if ! resPFS3=`eval $cmdline 2> /dev/null`; then
@@ -200,9 +201,9 @@ echo "--------------------------------------------------------------------------
 echo " STEP 3: run CFS_v2 with perfect match, for single detector ($IFO1, $IFO2 and $IFO3)"
 echo "--------------------------------------------------------------------------------"
 
-## common cmdline-options for v2   
-cfs_CL="--Freq=$freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --f1dotBand=$f1dot --df1dot=$df1dot --Fthreshold=0 --refTime=$refTime $whatNoise"
-    
+# common cmdline-options for v2   
+cfs_CL="--Freq=$freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --f1dotBand=$f1dot --df1dot=$df1dot --TwoFthreshold=0 --refTime=$refTime"
+
 cmdline="$cfsv2_code $cfs_CL --DataFiles='$SFTdir/H-1_H1*' --outputFstat=Fstat_v2-H1.dat";
 echo $cmdline;
 
