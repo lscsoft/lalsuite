@@ -291,8 +291,8 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 #define LAL_LHO_4K_DETECTOR_ARM_Y_AZIMUTH_RAD  	4.08408092164	/**< LHO_4k y arm azimuth (rad) */
 #define LAL_LHO_4K_DETECTOR_ARM_X_ALTITUDE_RAD 	-0.00061950000	/**< LHO_4k x arm altitude (rad) */
 #define LAL_LHO_4K_DETECTOR_ARM_Y_ALTITUDE_RAD 	0.00001250000	/**< LHO_4k y arm altitude (rad) */
-#define LAL_LHO_4K_DETECTOR_ARM_X_MIDPOINT_SI  	1997.54000000000	/**< LHO_4k x arm midpoint (m) */
-#define LAL_LHO_4K_DETECTOR_ARM_Y_MIDPOINT_SI  	1997.52000000000	/**< LHO_4k y arm midpoint (m) */
+#define LAL_LHO_4K_DETECTOR_ARM_X_MIDPOINT_SI  	1997.54200000000	/**< LHO_4k x arm midpoint (m) */
+#define LAL_LHO_4K_DETECTOR_ARM_Y_MIDPOINT_SI  	1997.52200000000	/**< LHO_4k y arm midpoint (m) */
 #define LAL_LHO_4K_VERTEX_LOCATION_X_SI        	-2.16141492636e+06	/**< LHO_4k x-component of vertex location in Earth-centered frame (m) */
 #define LAL_LHO_4K_VERTEX_LOCATION_Y_SI        	-3.83469517889e+06	/**< LHO_4k y-component of vertex location in Earth-centered frame (m) */
 #define LAL_LHO_4K_VERTEX_LOCATION_Z_SI        	4.60035022664e+06	/**< LHO_4k z-component of vertex location in Earth-centered frame (m) */
@@ -318,8 +318,8 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 #define LAL_LLO_4K_DETECTOR_ARM_Y_AZIMUTH_RAD  	2.83238139666	/**< LLO_4k y arm azimuth (rad) */
 #define LAL_LLO_4K_DETECTOR_ARM_X_ALTITUDE_RAD 	-0.00031210000	/**< LLO_4k x arm altitude (rad) */
 #define LAL_LLO_4K_DETECTOR_ARM_Y_ALTITUDE_RAD 	-0.00061070000	/**< LLO_4k y arm altitude (rad) */
-#define LAL_LLO_4K_DETECTOR_ARM_X_MIDPOINT_SI  	1997.57000000000	/**< LLO_4k x arm midpoint (m) */
-#define LAL_LLO_4K_DETECTOR_ARM_Y_MIDPOINT_SI  	1997.57000000000	/**< LLO_4k y arm midpoint (m) */
+#define LAL_LLO_4K_DETECTOR_ARM_X_MIDPOINT_SI  	1997.57500000000	/**< LLO_4k x arm midpoint (m) */
+#define LAL_LLO_4K_DETECTOR_ARM_Y_MIDPOINT_SI  	1997.57500000000	/**< LLO_4k y arm midpoint (m) */
 #define LAL_LLO_4K_VERTEX_LOCATION_X_SI        	-7.42760447238e+04	/**< LLO_4k x-component of vertex location in Earth-centered frame (m) */
 #define LAL_LLO_4K_VERTEX_LOCATION_Y_SI        	-5.49628371971e+06	/**< LLO_4k y-component of vertex location in Earth-centered frame (m) */
 #define LAL_LLO_4K_VERTEX_LOCATION_Z_SI        	3.22425701744e+06	/**< LLO_4k z-component of vertex location in Earth-centered frame (m) */
