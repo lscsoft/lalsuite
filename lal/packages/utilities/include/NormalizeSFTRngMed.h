@@ -180,6 +180,12 @@ void LALNormalizeMultiSFTVect (LALStatus  *status,
 			       MultiSFTVector *multsft,
 			       UINT4     blockSize);
 
+
+void LALSFTstoCrossPeriodogram (LALStatus    *status,
+				REAL8FrequencySeries    *periodo,
+				const COMPLEX8FrequencySeries *sft1,
+				const COMPLEX8FrequencySeries *sft2);
+
 #ifdef  __cplusplus
 }                /* Close C++ protection */
 #endif

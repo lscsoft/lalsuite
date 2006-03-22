@@ -567,11 +567,72 @@ void LALNormalizeMultiSFTVect (LALStatus      *status,
 
 
 
+/** \brief Calculate the cross-correlation periodogram from 2 SFTs 
+    \param *sft1 : pointer to first SFT
+    \param *sft2 : pointer to second SFT
+    \param *periodo : pointer to REAL8FrequencySeries containing modulus square of SFT data 
+*/
+void LALSFTstoCrossPeriodogram (LALStatus    *status,
+			  REAL8FrequencySeries    *periodo,
+			  const COMPLEX8FrequencySeries *sft1,
+			  const COMPLEX8FrequencySeries *sft2)
+{/*   *********************************************  </lalVerbatim> */
 
+  UINT4     length, j;
+  REAL8    *out;
+  COMPLEX8 *in1, *in2;
 
+  INITSTATUS (status, "LALSFTstoCrossPeriodogram", NORMALIZESFTRNGMEDC);
+  ATTATCHSTATUSPTR (status);
 
+  /* check argments are not NULL */
+  ASSERT (periodo, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+  ASSERT (periodo->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+  ASSERT (periodo->data->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
+  ASSERT (periodo->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+  ASSERT (sft1, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);  
+  ASSERT (sft1->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+  ASSERT (sft1->data->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);  
+  ASSERT (sft1->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
 
+  ASSERT (sft2, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);  
+  ASSERT (sft2->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
+  ASSERT (sft2->data->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);  
+  ASSERT (sft2->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
 
+  /* make sure both sfts are consistent in frequency and freq. band 
+     -- time stamps need not be consistent */
+  ASSERT (sft2->data->length == sft1->data->length, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);  
+  ASSERT (sft2->f0 == sft1->f0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);  
+  ASSERT (sft2->deltaF == sft1->deltaF, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);  
 
+  /* copy values from SFT */
+  /*   periodo->epoch.gpsSeconds = sft1->epoch.gpsSeconds; */
+  /*   periodo->epoch.gpsNanoSeconds = sft1->epoch.gpsNanoSeconds; */
+  periodo->f0 = sft1->f0;
+  periodo->deltaF = sft1->deltaF;
 
+  /* check lengths are same */
+  length = sft1->data->length;
+  ASSERT (length == periodo->data->length, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);  
+
+  out = periodo->data->data;
+  in1 = sft1->data->data;
+  in2 = sft2->data->data;
+
+  for (j=0; j<length; j++) {
+    /* extra-paranoia: make absolutely sure that the calculation below is in REAL8
+     * in order to avoid underflow-problems (data 'in' can be of order ~ 1e-20 )
+     */
+    *out = ((REAL8)in1->re)*((REAL8)in2->re) + ((REAL8)in1->im)*((REAL8)in2->im);
+    ++out;
+    ++in1;
+    ++in2;
+  }
+
+  DETATCHSTATUSPTR (status);
+  /* normal exit */
+  RETURN (status);
+
+} /* end LALSFTtoPeriodogram() */
 
