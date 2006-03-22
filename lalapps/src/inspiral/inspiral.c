@@ -1577,23 +1577,20 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALInitializeDataSegmentVector( &status, &dataSegVec,
         &chan, &spec, &resp, fcInitParams ), &status );
 
-  /************************************************************************/
+  /* set the analyze flag according to what we are doing */
   if ( tdFollowUpFile || injectionFile )
   {
-  {
-     if (tdFollowUpFile)
-     {
+    if (tdFollowUpFile)
+    {
       /* Only analyze segments containing coincident BCV triggers */
       XLALFindChirpSetFollowUpSegment (dataSegVec, &tdFollowUpEvents);
-     }
-     else
-     {
+    }
+    else
+    {
       /* set the analyzeSegment flag only on segments with injections */
       XLALFindChirpSetAnalyzeSegment (dataSegVec, injections);
-     }
+    }
   }
-  }
-  /************************************************************************/
 
   /* create the findchirp data storage */
   LAL_CALL( LALCreateFindChirpSegmentVector( &status, &fcSegVec, 
@@ -1830,7 +1827,6 @@ int main( int argc, char *argv[] )
       }  
     }
 
-    /************************************************************************/
     if ( injectionFile )
     {
       /* Make space for analyseThisTmplt */
@@ -1843,7 +1839,6 @@ int main( int argc, char *argv[] )
             numTmplts, tmpltHead, numInjections, injections ), &status );
 
     }
-    /************************************************************************/
 
     /*
      *
@@ -1857,8 +1852,9 @@ int main( int argc, char *argv[] )
         tmpltCurrent = tmpltCurrent->next, inserted = 0, thisTemplateIndex++ )
     {
 
-      /* If we are injecting / in td-follow-up mode and the analyseThisTmpltFlag is down -
-       * look no further - simply continue to the next template */
+      /* If we are injecting or in td-follow-up mode and the    */
+      /* analyseThisTmpltFlag is down look no further:          */
+      /* simply continue to the next template                   */
       if ( injectionFile )
       {
         if ( ! analyseThisTmplt[thisTemplateIndex] )
@@ -1931,26 +1927,30 @@ int main( int argc, char *argv[] )
         /* segment with the template (analyseTag = 1)           */
         analyseTag = 1;
 
-        /* If injections are being done or if in td follow-up mode, - check if for any      */
-        /* reason the analyseTag flag needs to be brought down. */
+        /* If injections are being done or if in td follow-up mode */
+        /* check if for any reason the analyseTag flag needs to be */
+        /* brought down                                            */
         if ( tdFollowUpFile || ( injectionFile  && flagFilterInjOnly ))
         {
-            if ( tdFollowUpFile )
+          if ( tdFollowUpFile )
+          {
+#if 0
+            analyseTag = XLALCmprSgmntTmpltFlags( numTDFollowUpEvents,
+                analyseThisTmplt[thisTemplateIndex], 
+                fcSegVec->data[i].analyzeSegment );
+#endif
+            if ( !fcSegVec->data[i].analyzeSegment )
             {
-                /*analyseTag = XLALCmprSgmntTmpltFlags( numTDFollowUpEvents,           */
-                /*analyseThisTmplt[thisTemplateIndex], fcSegVec->data[i].analyzeSegment ); */
-                if ( !fcSegVec->data[i].analyzeSegment )
-                {
-                    analyseTag = 0;
-                }
+              analyseTag = 0;
+            }
 
-            }
-            else
-            {
-                analyseTag = XLALCmprSgmntTmpltFlags( numInjections,
-                          analyseThisTmplt[thisTemplateIndex],
-                          fcSegVec->data[i].analyzeSegment );
-            }
+          }
+          else
+          {
+            analyseTag = XLALCmprSgmntTmpltFlags( numInjections,
+                analyseThisTmplt[thisTemplateIndex],
+                fcSegVec->data[i].analyzeSegment );
+          }
         }
 
         /* filter data segment */ 
