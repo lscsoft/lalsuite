@@ -159,6 +159,7 @@ void LALDestroyTimestampVector (LALStatus *status, LIGOTimeGPSVector **vect);
 void LALMakeTimestamps (LALStatus *, LIGOTimeGPSVector **timestamps, const LIGOTimeGPS tStart, REAL8 duration, REAL8 Tsft);
 void LALGetSFTtimestamps (LALStatus *, LIGOTimeGPSVector **timestamps, const SFTVector *sfts );
 
+void XLALDestroyStringVector ( LALStringVector *vect );
 void LALDestroyStringVector ( LALStatus *, LALStringVector **vect );
 void LALAppendString2Vector (LALStatus *, LALStringVector *vect, const CHAR *string );
 

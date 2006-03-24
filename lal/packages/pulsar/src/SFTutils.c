@@ -29,6 +29,8 @@
  */
 
 /*---------- INCLUDES ----------*/
+#include <gsl/gsl_sort_double.h>
+
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
 #include <lal/NormalizeSFTRngMed.h>
@@ -510,32 +512,48 @@ LALAppendString2Vector (LALStatus *status,
 
 
 
-/** Free a string-vector ;) */
+/** XLAL-interface: Free a string-vector ;) */
+void
+XLALDestroyStringVector ( LALStringVector *vect )
+{
+  UINT4 i;
+
+  if ( !vect )
+    return;
+  
+  if ( vect->data )
+    {
+      for ( i=0; i < vect->length; i++ )
+	{
+	  if ( vect->data[i] )
+	    LALFree ( vect->data[i] );
+	}
+      
+      LALFree ( vect->data );
+    }
+  
+  LALFree ( vect );
+  
+  return;
+
+} /* XLALDestroyStringVector() */
+
+/** LAL-interface: Free a string-vector ;) */
 void
 LALDestroyStringVector ( LALStatus *status,
 			 LALStringVector **vect )
 {
-  UINT4 i;
   INITSTATUS( status, "LALDestroyStringVector", SFTUTILSC);
 
   ASSERT ( vect, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL );
   
-  if ( *vect == NULL )
-    goto finished;
-
-  for ( i=0; i < (*vect)->length; i++ )
+  if ( (*vect) ) 
     {
-      if ( (*vect)->data[i] )
-	LALFree ( (*vect)->data[i] );
+      XLALDestroyStringVector ( (*vect) );
+      (*vect) = NULL;
     }
 
-  LALFree ( (*vect)->data );
-  LALFree ( (*vect) );
-
-  (*vect) = NULL;
-
- finished:
-    RETURN(status);
+  RETURN(status);
 
 } /* LALDestroyStringVector() */
 
@@ -921,7 +939,6 @@ void LALComputeNoiseWeights  (LALStatus        *status,
   ASSERT (blkSize > 0, status,  SFTUTILS_EINPUT, SFTUTILS_MSGEINPUT);
   ASSERT (weightV->data,status, SFTUTILS_ENULL, SFTUTILS_MSGENULL);
   ASSERT (sftVect->data,status, SFTUTILS_ENULL, SFTUTILS_MSGENULL);
-  ASSERT (excludePercentile >= 0, status, SFTUTILS_EINPUT, SFTUTILS_MSGEINPUT);
   ASSERT (excludePercentile <= 100, status, SFTUTILS_EINPUT, SFTUTILS_MSGEINPUT);
   /* -------------------------------------------   */
 
