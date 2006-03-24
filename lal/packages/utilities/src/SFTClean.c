@@ -870,7 +870,7 @@ void LALCleanMultiSFTVect (LALStatus       *status,
 }
 
 
-/** top level function to remove lines from a sft vector given a file 
+/** function to remove lines from a sft vector given a file 
     containing list of lines */
 void LALRemoveKnownLinesInSFTVect (LALStatus   *status,
 				   SFTVector   *sftVect,  /**< SFTVector to be cleaned */
@@ -880,8 +880,6 @@ void LALRemoveKnownLinesInSFTVect (LALStatus   *status,
 				   RandomParams *randPar) /**< for creating random numbers */ 
 {
 
-  FILE *fp=NULL;   
-  INT4 seed, ranCount;  
 
   static LineNoiseInfo   lines, lines2;
   static LineHarmonicsInfo harmonics; 
@@ -965,6 +963,68 @@ void LALRemoveKnownLinesInSFTVect (LALStatus   *status,
       LALFree(harmonics.rightWing);
 
     } /* if nHarmonicSets > 0 */
+
+
+  DETATCHSTATUSPTR (status);
+  /* normal exit */
+  RETURN (status);
+}
+
+/** top level function to remove lines from a multi sft vector given a list of files 
+    containing list of known spectral lines */
+void LALRemoveKnownLinesInMultiSFTVector (LALStatus        *status,
+					  MultiSFTVector   *MultiSFTVect,  /**< SFTVector to be cleaned */
+					  INT4             width,          /**< maximum width to be cleaned */      
+					  INT4             window,         /**< window size for noise floor estimation in vicinity of a line */
+					  LALStringVector *linefiles,      /**< file with list of lines */
+					  RandomParams     *randPar)       /**< for creating random numbers */ 
+{
+
+  UINT4 k, j, numifos;
+  CHAR *ifo;
+
+  INITSTATUS (status, "LALRemoveKnownLinesInMultiSFTVector", SFTCLEANC);
+  ATTATCHSTATUSPTR (status);   
+
+
+  ASSERT (MultiSFTVect, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);  
+  ASSERT (MultiSFTVect->data, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);  
+  ASSERT (MultiSFTVect->length > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);  
+  ASSERT (width > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);  
+  ASSERT (window > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);  
+
+  numifos = MultiSFTVect->length;
+
+  if ( linefiles != NULL ) {
+
+  ASSERT (linefiles->length > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);      
+  ASSERT (linefiles->data, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);      
+
+  /* loop over linefiles and clean the relevant SFTs */
+  for ( k = 0; k < linefiles->length; k++) 
+    { 
+      ifo = NULL;
+      /* try to get the ifo name from the linefile name */
+      if ( (ifo = XLALGetChannelPrefix ( linefiles->data[k])) == NULL) { 
+        ABORT ( status, SFTCLEANH_ELINENAME, SFTCLEANH_MSGELINENAME);  
+      }
+
+      /* loop over ifos and see if any matches */
+      for ( j = 0; j < numifos; j++)
+	{
+	  if ( strncmp( ifo, MultiSFTVect->data[j]->data->name, 3) == 0) {
+	    /* clean the sftvector which has matched */
+	    TRY ( LALRemoveKnownLinesInSFTVect ( status->statusPtr, MultiSFTVect->data[j], 
+						 width, window, linefiles->data[k], randPar), status);  
+	  } 
+
+	} /* loop over ifos */
+
+      LALFree( ifo );
+
+    } /* loop over linefiles */
+  
+  } /* if linefiles != NULL */
 
 
   DETATCHSTATUSPTR (status);

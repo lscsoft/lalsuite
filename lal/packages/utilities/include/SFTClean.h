@@ -140,6 +140,7 @@ NRCSID (SFTCLEANH, "$Id$");
 #define SFTCLEANH_EHEADER 3
 #define SFTCLEANH_EENDIAN 4
 #define SFTCLEANH_EVAL 5
+#define SFTCLEANH_ELINENAME 6
 #define SFTCLEANH_ESEEK 9
 #define SFTCLEANH_EREAD 10
 #define SFTCLEANH_EWRITE 11
@@ -149,6 +150,7 @@ NRCSID (SFTCLEANH, "$Id$");
 #define SFTCLEANH_MSGEHEADER "Incorrect header in file"
 #define SFTCLEANH_MSGEENDIAN "Incorrect endian type" 
 #define SFTCLEANH_MSGEVAL  "Invalid value"
+#define SFTCLEANH_MSGELINENAME  "Invalid linefile name"
 #define SFTCLEANH_MSGESEEK "fseek failed"
 #define SFTCLEANH_MSGEREAD "fread failed"
 #define SFTCLEANH_MSGEWRITE "fwrite failed"
@@ -269,6 +271,13 @@ void LALRemoveKnownLinesInSFTVect (LALStatus   *status,
 				   INT4        window,   
 				   CHAR        *linefile,
 				   RandomParams *randPar);
+
+void LALRemoveKnownLinesInMultiSFTVector (LALStatus        *status,
+					  MultiSFTVector   *multiSFTVect, 
+					  INT4             width,    
+					  INT4             window,   
+					  LALStringVector *linefiles,
+					  RandomParams     *randPar); 
 
 
 #ifdef  __cplusplus
