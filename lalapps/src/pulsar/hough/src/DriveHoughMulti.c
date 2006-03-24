@@ -105,8 +105,8 @@ BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps, uvar_printStats, 
 
 #define MAXFILENAMELENGTH 512 /* maximum # of characters  of a filename */
 
-/* #define SFTDIRECTORY "/local_data/badkri/fakesfts-multi"  */
-#define SFTDIRECTORY "/home/badkri/fakesfts"
+/* #define SFTDIRECTORY "/local_data/badkri/fakesfts-multi/*.sft"  */
+#define SFTDIRECTORY "/home/badkri/fakesfts/*.sft"
 /* #define SFTDIRECTORY "/nfs/morbo/geo600/hannover/sft/S4-LIGO/sft_1800.20050512.S4/S4-L1.1800-sft" */
 
 #define DIROUT "./outMulti"   /* output directory */
@@ -213,7 +213,7 @@ int main(int argc, char *argv[]){
 
   /* user input variables */
   BOOLEAN  uvar_help, uvar_weighAM, uvar_weighNoise;
-  INT4     uvar_blocksRngMed, uvar_nfSizeCylinder;
+  INT4     uvar_blocksRngMed, uvar_nfSizeCylinder, uvar_maxBinsClean;
   REAL8    uvar_f0, uvar_peakThreshold, uvar_houghFalseAlarm, uvar_fSearchBand;
   CHAR     *uvar_earthEphemeris=NULL;
   CHAR     *uvar_sunEphemeris=NULL;
@@ -222,7 +222,7 @@ int main(int argc, char *argv[]){
   CHAR     *uvar_fbasenameOut=NULL;
   CHAR     *uvar_skyfile=NULL;
   CHAR     *uvar_ifo=NULL;
-
+  LALStringVector *uvar_linefiles=NULL;
 
 
   /* Set up the default parameters */
@@ -231,8 +231,8 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
   
   uvar_help = FALSE;
-  uvar_weighAM = FALSE;
-  uvar_weighNoise = FALSE;
+  uvar_weighAM = TRUE;
+  uvar_weighNoise = TRUE;
   uvar_blocksRngMed = BLOCKSRNGMED;
   uvar_nfSizeCylinder = NFSIZE;
   uvar_f0 = F0;
@@ -273,7 +273,7 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighNoise",       0,  UVAR_OPTIONAL, "Use SFT noise weights",               &uvar_weighNoise),      &status);  
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris",  'E', UVAR_OPTIONAL, "Earth Ephemeris file",                &uvar_earthEphemeris),  &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris",    'S', UVAR_OPTIONAL, "Sun Ephemeris file",                  &uvar_sunEphemeris),    &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir",          'D', UVAR_OPTIONAL, "SFT Directory",                       &uvar_sftDir),          &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir",          'D', UVAR_OPTIONAL, "SFT Directory pattern",               &uvar_sftDir),          &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "dirnameOut",      'o', UVAR_OPTIONAL, "Output directory",                    &uvar_dirnameOut),      &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "fbasenameOut",     0,  UVAR_OPTIONAL, "Output file basename",                &uvar_fbasenameOut),    &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printMaps",        0,  UVAR_OPTIONAL, "Print Hough maps",                    &uvar_printMaps),       &status);  
@@ -281,10 +281,13 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterREALUserVar(   &status, "houghFalseAlarm",  0,  UVAR_OPTIONAL, "Hough false alarm to set threshold",  &uvar_houghFalseAlarm), &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printEvents",      0,  UVAR_OPTIONAL, "Print events above threshold",        &uvar_printEvents),     &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printStats",       0,  UVAR_OPTIONAL, "Print Hough statistics",              &uvar_printStats),      &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printSigma",       0,  UVAR_OPTIONAL, "Print expected number count stdev.",  &uvar_printSigma),      &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printSigma",       0,  UVAR_OPTIONAL, "Print expected number count stdev.",  &uvar_printSigma),      &status);
+  LAL_CALL( LALRegisterLISTUserVar(   &status, "linefiles",        0,  UVAR_OPTIONAL, "list of linefiles for cleaning",      &uvar_linefiles),       &status);
+  
   /* developer input variables */
   LAL_CALL( LALRegisterINTUserVar(    &status, "nfSizeCylinder",   0, UVAR_DEVELOPER, "Size of cylinder of PHMDs",           &uvar_nfSizeCylinder),  &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",     0, UVAR_DEVELOPER, "Running Median block size",           &uvar_blocksRngMed),    &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "maxBinsClean",      0, UVAR_DEVELOPER, "Maximum number of bins in cleaning", &uvar_maxBinsClean),    &status);
 
   /* read all command line variables */
   LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
@@ -366,7 +369,6 @@ int main(int argc, char *argv[]){
     SFTCatalog *catalog = NULL;
     static SFTConstraints constraints;
 
-    CHAR *tempDir;
     REAL8 doppWings, fmin, fmax;
     INT4 length;
 
@@ -376,10 +378,11 @@ int main(int argc, char *argv[]){
       constraints.detector = XLALGetChannelPrefix ( uvar_ifo );
 
     /* get sft catalog */
-    tempDir = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
-    strcpy(tempDir, uvar_sftDir);
-    strcat(tempDir, "/*SFT*.*");
-    LAL_CALL( LALSFTdataFind( &status, &catalog, tempDir, &constraints), &status);
+    LAL_CALL( LALSFTdataFind( &status, &catalog, uvar_sftDir, &constraints), &status);
+    if ( (catalog == NULL) || (catalog->length == 0) ) {
+      fprintf (stderr,"Unable to match any SFTs with pattern '%s'\n", uvar_sftDir );
+      exit(1);
+    }
 
     /* get some sft parameters */
     mObsCoh = catalog->length; /* number of sfts */
@@ -425,6 +428,33 @@ int main(int argc, char *argv[]){
     /* read the sfts */
     LAL_CALL( LALLoadMultiSFTs ( &status, &inputSFTs, catalog, fmin, fmax), &status);
 
+
+    /* clean sfts if required */
+    if ( LALUserVarWasSet( &uvar_linefiles ) )
+      {
+	RandomParams *randPar=NULL;
+	FILE *fpRand=NULL;
+	INT4 seed, ranCount;  
+
+	if ( (fpRand = fopen("/dev/urandom", "r")) == NULL ) {
+	  fprintf(stderr,"Error in opening /dev/urandom" ); 
+	  exit(1);
+	} 
+
+	if ( (ranCount = fread(&seed, sizeof(seed), 1, fpRand)) != 1 ) {
+	  fprintf(stderr,"Error in getting random seed" );
+	  exit(1);
+	}
+
+	LAL_CALL ( LALCreateRandomParams (&status, &randPar, seed), &status );
+
+	LAL_CALL( LALRemoveKnownLinesInMultiSFTVector ( &status, inputSFTs, uvar_maxBinsClean, uvar_blocksRngMed/2, uvar_linefiles, randPar), &status);
+
+	LAL_CALL ( LALDestroyRandomParams (&status, &randPar), &status);
+	fclose(fpRand);
+      } /* end cleaning */
+
+
     /* SFT info -- assume all SFTs have same length */
     numifo = inputSFTs->length;
     binsSFT = inputSFTs->data[0]->data->data->length;
@@ -432,7 +462,7 @@ int main(int argc, char *argv[]){
     /* free memory */
     if ( LALUserVarWasSet( &uvar_ifo ) )    
       LALFree( constraints.detector );
-    LALFree( tempDir);
+
     LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);  	
 
     /* set up weights -- this should be done before normalizing the sfts */
