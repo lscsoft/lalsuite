@@ -55,6 +55,7 @@ Module for general parsing of "user input" from config-file and/or command-line.
 #define _USERINPUT_H
 
 #include <lal/ConfigFile.h>
+#include <lal/SFTutils.h>
 
 #ifdef  __cplusplus   /* C++ protection. */
 extern "C" {
@@ -79,6 +80,7 @@ NRCSID( USERINPUTH, "$Id$");
 #define USERINPUTH_EDEBUG	9
 #define USERINPUTH_EONECONFIG   10
 #define USERINPUTH_ERECFORMAT   11
+#define USERINPUTH_EXLAL	12
 
 
 #define USERINPUTH_MSGENULL 	"Arguments contained an unexpected null pointer."
@@ -92,6 +94,8 @@ NRCSID( USERINPUTH, "$Id$");
 #define USERINPUTH_MSGEDEBUG	"lalDebugLevel can only be read before ANY mallocs(), even hidden.."
 #define USERINPUTH_MSGEONECONFIG "Currently one ONE config-file can be specified using '@'"
 #define USERINPUTH_MSGERECFORMAT   "Unknown format for recording user-input"
+#define USERINPUTH_MSGEXLAL	"Failure in XLAL function"
+
 /*@}*/
 /*************************************************** </lalErrTable> */
 
@@ -136,6 +140,10 @@ TRY(LALRegisterBOOLUserVar((status)->statusPtr, #name, option, flag, help, &(uva
 
 #define LALregSTRINGUserVar(status,name,option,flag,help) \
 TRY(LALRegisterSTRINGUserVar((status)->statusPtr, #name, option, flag, help, &(uvar_ ## name)),status)
+
+#define LALregLISTUserVar(status,name,option,flag,help) \
+TRY(LALRegisterLISTUserVar((status)->statusPtr, #name, option, flag, help, &(uvar_ ## name)),status)
+
 
 /********************************************************** <lalLaTeX>
 \vfill{\footnotesize\input{UserInputHV}}
@@ -192,6 +200,15 @@ LALRegisterSTRINGUserVar (LALStatus *,
 			  UserVarState flag,
 			  const CHAR *helpstr, 
 			  CHAR **cvar);
+
+void
+LALRegisterLISTUserVar (LALStatus *,
+			const CHAR *name,
+			CHAR optchar, 
+			UserVarState flag,
+			const CHAR *helpstr, 
+			LALStringVector **cvar);
+
 
 void LALDestroyUserVars (LALStatus *);
 

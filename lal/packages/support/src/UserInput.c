@@ -25,37 +25,6 @@
  *
  */
 
-/* <lalVerbatim file="UserInputCV">
-Author: Prix, Reinhard
-$Id$
-************************************* </lalVerbatim> */
-
-/********************************************************** <lalLaTeX>
-\subsection{Module \texttt{UserInput.c}}
-\label{ss:UserInput.c}
-
-Convenient unified handling of user-input via config-file and/or command-line.
-
-\subsubsection*{Prototypes}
-
-\input{UserInputCP}
-
-\subsubsection*{Description}
-
-This module provides a very simple and convenient way to handle
-user-input, wether it comes from the command-line or a config-file. 
-
-The general procedure is the following:
-
-\subsubsection*{Algorithm}
-
-\subsubsection*{Uses}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{UserInputCV}}
-
-******************************************************* </lalLaTeX> */
 #include "getopt.h"
 
 #include <lal/LALStdio.h>
@@ -75,7 +44,9 @@ typedef enum {
   UVAR_BOOL,	/**< boolean */
   UVAR_INT4,	/**< integer */
   UVAR_REAL8,	/**< float */
-  UVAR_STRING	/**< string */
+  UVAR_STRING,	/**< string */
+  UVAR_CSVLIST,	/**< list of comma-separated values */
+  UVAR_LAST
 } UserVarType;
 
 /** Linked list to hold the complete information about the user-variables.
@@ -102,11 +73,12 @@ static void RegisterUserVar (LALStatus *, const CHAR *name, UserVarType type, CH
 			     UserVarState flag, const CHAR *helpstr, void *cvar);
 
 static void UvarValue2String (LALStatus *, CHAR **outstr, LALUserVariable *uvar);
+CHAR *deblank_string ( const CHAR *start, UINT4 len );
+LALStringVector *XLALParseCSV2StringVector ( const CHAR *CSVlist );
 
 /*---------- Function definitions ---------- */
 
 /* these are type-specific wrappers to allow tighter type-checking! */
-/* <lalVerbatim file="UserInputCP"> */
 void
 LALRegisterREALUserVar (LALStatus *status, 
 			const CHAR *name, 
@@ -114,10 +86,10 @@ LALRegisterREALUserVar (LALStatus *status,
 			UserVarState flag,
 			const CHAR *helpstr, 
 			REAL8 *cvar)
-{ /* </lalVerbatim> */
+{
   RegisterUserVar (status, name, UVAR_REAL8, optchar, flag, helpstr, cvar);
 }
-/* <lalVerbatim file="UserInputCP"> */
+
 void
 LALRegisterINTUserVar (LALStatus *status, 
 		       const CHAR *name, 
@@ -125,11 +97,10 @@ LALRegisterINTUserVar (LALStatus *status,
 		       UserVarState flag,
 		       const CHAR *helpstr, 
 		       INT4 *cvar)
-{ /* </lalVerbatim> */
+{
   RegisterUserVar (status, name, UVAR_INT4, optchar, flag, helpstr, cvar);
 } 
 
-/* <lalVerbatim file="UserInputCP"> */
 void
 LALRegisterBOOLUserVar (LALStatus *status, 
 			const CHAR *name, 
@@ -137,11 +108,10 @@ LALRegisterBOOLUserVar (LALStatus *status,
 			UserVarState flag,
 			const CHAR *helpstr, 
 			BOOLEAN *cvar)
-{ /* </lalVerbatim> */
+{
   RegisterUserVar (status, name, UVAR_BOOL, optchar, flag, helpstr, cvar);
 } 
 
-/* <lalVerbatim file="UserInputCP"> */
 void
 LALRegisterSTRINGUserVar (LALStatus *status, 
 			  const CHAR *name, 
@@ -149,9 +119,21 @@ LALRegisterSTRINGUserVar (LALStatus *status,
 			  UserVarState flag,
 			  const CHAR *helpstr, 
 			  CHAR **cvar)
-{ /* </lalVerbatim> */
+{
   RegisterUserVar (status, name, UVAR_STRING, optchar, flag, helpstr, cvar);
 } 
+
+void
+LALRegisterLISTUserVar (LALStatus *status,
+			const CHAR *name,
+			CHAR optchar, 
+			UserVarState flag,
+			const CHAR *helpstr, 
+			LALStringVector **cvar)
+{
+  RegisterUserVar ( status, name, UVAR_CSVLIST, optchar, flag, helpstr, cvar );
+} 
+
 
 
 
@@ -176,7 +158,7 @@ RegisterUserVar (LALStatus *status,
   LALUserVariable *ptr;
 
   INITSTATUS( status, "LALRegisterUserVar", USERINPUTC );
-
+  
   ASSERT (cvar != NULL, status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
   ASSERT (name != NULL, status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
 
@@ -229,6 +211,10 @@ LALDestroyUserVars (LALStatus *status)
 	  LALFree ( *(CHAR**)(ptr->varp) );
 	  *(CHAR**)(ptr->varp) = NULL;		/* IMPORTANT: reset user-variable to NULL ! */
 	}
+      else if ( ptr->type == UVAR_CSVLIST ) {
+	XLALDestroyStringVector ( *(LALStringVector**)ptr->varp );
+	*(LALStringVector**)(ptr->varp) = NULL;
+      }
 
       /* free list-entry behind us (except for the head) */
       if (lastptr) {
@@ -266,6 +252,8 @@ LALUserVarReadCmdline (LALStatus *status,
   char optstring[512] = "\0";	/* string of short-options, should be easily enough */
   struct option *long_options;
   int longindex = -1;
+  CHAR *strp;
+  LALStringVector *csv;
 
   INITSTATUS( status, "LALUserVarReadCmdline", USERINPUTC );
   ATTATCHSTATUSPTR (status);
@@ -435,18 +423,32 @@ LALUserVarReadCmdline (LALStatus *status,
 	  if (!optarg) {	/* should not be possible, but let's be paranoid */
 	    ABORT (status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
 	  }
-	  if ( *(CHAR**)(ptr->varp) != NULL) {	 /* something allocated here before? */
-	    LALFree ( *(CHAR**)(ptr->varp) );
-	    (*(CHAR**)(ptr->varp))=NULL;
-	  }
+	  strp = *(CHAR**)(ptr->varp);
+	  if ( strp != NULL) 	 /* something allocated here before? */
+	    LALFree ( strp );
 
-	  *(CHAR**)(ptr->varp) = LALCalloc (1, strlen(optarg) + 1);
-	  if ( *(CHAR**)(ptr->varp) == NULL) {
+	  strp = LALCalloc (1, strlen(optarg) + 1);
+	  if (strp == NULL) {
 	    ABORT (status, USERINPUTH_EMEM, USERINPUTH_MSGEMEM);
 	  }
-	  strcpy ( *(CHAR**)(ptr->varp), optarg);
+	  strcpy ( strp, optarg);
+	  /* return value */
+	  *(CHAR**)(ptr->varp) = strp;
 	  ptr->state |= UVAR_WAS_SET;
 	  break; 
+
+	case UVAR_CSVLIST:	/* list of comma-separated values */
+	  csv = *(LALStringVector**)(ptr->varp);
+	  if ( csv != NULL)  	/* something allocated here before? */
+	    XLALDestroyStringVector ( csv );
+	  csv = XLALParseCSV2StringVector ( optarg );
+	  if ( !csv ) {
+	    ABORT ( status,  USERINPUTH_EXLAL,  USERINPUTH_MSGEXLAL );
+	  }
+	  /* return value */
+	  *(LALStringVector**)(ptr->varp) = csv;
+	  ptr->state |= UVAR_WAS_SET;
+	  break;
 
 	default:
 	  LALPrintError ("ERROR: unkown UserVariable-type encountered... points to a coding error!\n");
@@ -476,9 +478,10 @@ LALUserVarReadCfgfile (LALStatus *status,
 		       const CHAR *cfgfile) 	   /* name of config-file */
 {/* </lalVerbatim> */
   LALParsedDataFile *cfg = NULL;
-  CHAR *stringbuf;
+  CHAR *stringbuf, *strp;
   LALUserVariable *ptr;
   BOOLEAN wasRead;
+  LALStringVector *csv;
 
   INITSTATUS( status, "LALUserVarReadCfgfile", USERINPUTC );
   ATTATCHSTATUSPTR (status);
@@ -518,16 +521,32 @@ LALUserVarReadCfgfile (LALStatus *status,
 	  TRY(LALReadConfigSTRINGVariable(status->statusPtr,&stringbuf,cfg,ptr->name,&wasRead),status);
 	  if ( wasRead && stringbuf)	/* did we find something? */
 	    {
-	      if ( *(CHAR**)(ptr->varp) != NULL) {	 /* something allocated here before? */
-		LALFree ( *(CHAR**)(ptr->varp) );
-		( *(CHAR**)(ptr->varp) )=NULL;
-	      }
-
+	      strp = *(CHAR**)(ptr->varp);
+	      if ( strp != NULL) /* something allocated here before? */
+		LALFree ( strp ); 
+	      /* return value */
 	      *(CHAR**)(ptr->varp) = stringbuf;
 	      ptr->state |= UVAR_WAS_SET;
 	    } /* if stringbuf */
 	  break;
 
+	case UVAR_CSVLIST:
+	  stringbuf = NULL;
+	  TRY(LALReadConfigSTRINGVariable(status->statusPtr,&stringbuf,cfg,ptr->name,&wasRead),status);
+	  if ( wasRead && stringbuf)	/* did we find something? */
+	    {
+	      csv = *(LALStringVector**)(ptr->varp);
+	      if ( csv != NULL)  	/* something allocated here before? */
+		XLALDestroyStringVector ( csv );
+	      csv = XLALParseCSV2StringVector ( stringbuf );
+	      if ( !csv ) {
+		ABORT ( status,  USERINPUTH_EXLAL,  USERINPUTH_MSGEXLAL );
+	      }
+	      LALFree ( stringbuf );
+	      *(LALStringVector**)(ptr->varp) = csv;
+	      ptr->state |= UVAR_WAS_SET;
+	    } /* if stringbuf */
+	  break;
 	default:
 	  LALPrintError ("ERROR: unkown UserVariable-type encountered...points to a coding error!\n");
 	  ABORT (status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
@@ -563,7 +582,7 @@ LALUserVarHelpString (LALStatus *status,
   CHAR defaultstr[UVAR_MAXDEFSTR]; 	/* for display of default-value */
   CHAR optstr[10];			/* display of opt-char */
   /* we need strings for UVAR_BOOL, UVAR_INT4, UVAR_REAL8, UVAR_STRING: */
-  const CHAR *typestr[] = {"BOOL", "INT", "REAL", "STRING"}; 
+  const CHAR *typestr[] = {"BOOL", "INT", "REAL", "STRING", "LIST"}; 
   LALUserVariable *ptr;
   LALUserVariable *helpptr = NULL;	/* pointer to help-option */
   CHAR *helpstr = NULL;
@@ -1052,7 +1071,32 @@ UvarValue2String (LALStatus *status, CHAR **outstr, LALUserVariable *uvar)
       else
 	strcpy (buf, "NULL");
       break;
-      
+
+    case UVAR_CSVLIST:
+      {
+	UINT4 i, listlen, outlen;
+	LALStringVector *csv;
+	str = NULL;
+	csv = *(LALStringVector**)(uvar->varp);
+	if ( csv != NULL )
+	  {
+	    listlen = csv->length;
+	    for ( i=0; i < listlen; i++)
+	      {
+		outlen += strlen ( csv->data[i] + 3);
+		str = LALRealloc(str, outlen);
+		if ( i==0 )
+		  strcat ( str, "\"" );
+		else
+		  strcat ( str, "," );
+		strcat ( str, csv->data[i] );
+	      } /* for i < listlen */
+	    strcat(str,"\"" );
+	  } /* if csv != NULL */
+	else
+	  strcpy (buf, "NULL");
+      }
+      break;
     default:
       LALPrintError ("ERROR: unkown UserVariable-type encountered... this points to a coding error!\n");
       ABORT (status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
@@ -1074,3 +1118,105 @@ UvarValue2String (LALStatus *status, CHAR **outstr, LALUserVariable *uvar)
 
 } /* UvarValue2String() */
 
+
+
+/** Parse a list of comma-separated values (CSV) into a StringVector 
+ */
+LALStringVector *
+XLALParseCSV2StringVector ( const CHAR *CSVlist )
+{
+  UINT4 counter, i;
+  const CHAR *start, *tmp;
+  CHAR **data = NULL;
+  LALStringVector *ret = NULL;
+
+  if ( !CSVlist )
+    return NULL;
+
+  /* prepare return string-vector */
+  if ( ( ret = LALCalloc ( 1, sizeof( *ret )) ) == NULL )
+    XLAL_ERROR_NULL ( "XLALParseCSV2StringVector", XLAL_ENOMEM );
+
+  start = CSVlist;
+  counter = 0;
+  do
+    {
+      UINT4 len;
+
+      /* extend string-array */
+      if ( ( data = LALRealloc ( data, (counter+1) * sizeof(CHAR*) )) == NULL )
+	goto failed;
+
+      /* determine string-length of next value */
+      if ( ( tmp = strchr ( start, ',' ) ) )
+	len = tmp - start;
+      else
+	len = strlen ( start );
+
+      /* allocate space for that value in string-array */
+      if ( (data[counter] = deblank_string ( start, len ) ) == NULL )
+	goto failed;
+
+      counter ++;
+
+    } while ( tmp && (start = tmp + 1) );
+  
+  ret -> length = counter;
+  ret -> data = data;
+
+  /* success: */
+  return ( ret );
+
+ failed:
+  for ( i=0; i < counter; i++ )
+    if ( data[i] ) 
+      LALFree ( data[i] );
+
+  if ( data ) 
+    LALFree ( data );
+
+  if ( ret )
+    LALFree ( ret );
+
+  XLAL_ERROR_NULL ( "XLALParseCSV2StringVector", XLAL_ENOMEM );  
+
+} /* XLALParseCSV2StringVector() */
+
+
+/** Copy (and allocate) string from 'start' with length 'len', removing
+ * all starting- and trailing blanks!
+ */
+CHAR *
+deblank_string ( const CHAR *start, UINT4 len )
+{
+  const CHAR *blank_chars = " \t\n";
+  const CHAR *pos0, *pos1;
+  UINT4 newlen;
+  CHAR *ret;
+
+  if ( !start || !len )
+    return NULL;
+
+  /* clip from beginning */
+  pos0 = start;
+  pos1 = start + len - 1;
+  while ( (pos0 < pos1) && strchr ( blank_chars, *pos0 ) )
+    pos0 ++;
+
+  /* clip backwards from end */
+  while ( (pos1 >= pos0) && strchr ( blank_chars, *pos1 ) )
+    pos1 --;
+
+  newlen = pos1 - pos0 + 1;
+  if ( !newlen )
+    return NULL;
+
+  if ( (ret = LALCalloc(1, newlen + 1)) == NULL )
+    return NULL;
+
+  strncpy ( ret, pos0, newlen );
+  ret[ newlen ] = 0;
+  
+  return ret;
+
+} /* deblank_string() */
