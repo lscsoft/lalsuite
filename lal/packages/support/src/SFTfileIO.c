@@ -1025,7 +1025,7 @@ LALWriteSFTVector2Dir (LALStatus *status,
   SFTtype *sft;
   UINT4 timeBase, duration;
   UINT4 filenamelen;
-  LIGOTimeGPS time;
+  LIGOTimeGPS time0;
 
   INITSTATUS (status, "LALWriteSFTVector2Dir", SFTFILEIOC);
   ATTATCHSTATUSPTR (status);   
@@ -1061,16 +1061,16 @@ LALWriteSFTVector2Dir (LALStatus *status,
     }
 
 
-    time = sft->epoch;
+    time0 = sft->epoch;
 
     /* calculate sft duration -- may be different from timebase if nanosecond  
        of sft-epoch is non-zero or is timebase is not an integer number of seconds */ 
-    XLALGPSAdd( &time, timeBase);
-    if ( time.gpsNanoSeconds > 0) {
-      duration = time.gpsSeconds - sft->epoch.gpsSeconds + 1;
+    XLALGPSAdd( &time0, timeBase);
+    if ( time0.gpsNanoSeconds > 0) {
+      duration = time0.gpsSeconds - sft->epoch.gpsSeconds + 1;
     }
     else {
-      duration = time.gpsSeconds - sft->epoch.gpsSeconds;
+      duration = time0.gpsSeconds - sft->epoch.gpsSeconds;
     }
     
     /* create the k^th filename following naming convention 
