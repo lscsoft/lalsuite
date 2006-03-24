@@ -448,7 +448,7 @@ int main(int argc, char *argv[]){
 
 	LAL_CALL ( LALCreateRandomParams (&status, &randPar, seed), &status );
 
-	LAL_CALL( LALRemoveKnownLinesInMultiSFTVector ( &status, inputSFTs, uvar_maxBinsClean, uvar_blocksRngMed/2, uvar_linefiles, randPar), &status);
+	LAL_CALL( LALRemoveKnownLinesInMultiSFTVector ( &status, inputSFTs, uvar_maxBinsClean, uvar_blocksRngMed, uvar_linefiles, randPar), &status);
 
 	LAL_CALL ( LALDestroyRandomParams (&status, &randPar), &status);
 	fclose(fpRand);
