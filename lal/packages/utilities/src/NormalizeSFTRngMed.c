@@ -576,7 +576,7 @@ void LALSFTstoCrossPeriodogram (LALStatus    *status,
 			  REAL8FrequencySeries    *periodo,
 			  const COMPLEX8FrequencySeries *sft1,
 			  const COMPLEX8FrequencySeries *sft2)
-{/*   *********************************************  </lalVerbatim> */
+{
 
   UINT4     length, j;
   REAL8    *out;
