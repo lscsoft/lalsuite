@@ -191,10 +191,9 @@ RegisterUserVar (LALStatus *status,
 
 /** Free all memory associated with user-variable linked list
  */
-/* <lalVerbatim file="UserInputCP"> */
 void
 LALDestroyUserVars (LALStatus *status)
-{ /* </lalVerbatim> */
+{
 
   LALUserVariable *ptr, *lastptr;
 
@@ -240,11 +239,11 @@ LALDestroyUserVars (LALStatus *status)
 
 /** Parse command-line into UserVariable array
  */
-/* <lalVerbatim file="UserInputCP"> */
+/*
 void
 LALUserVarReadCmdline (LALStatus *status, 
 		     int argc, char *argv[]) 	  /* command-line contents */
-{ /* </lalVerbatim> */
+{
   INT4 c;
   UINT4 pos;
   UINT4 numvars;
@@ -472,11 +471,10 @@ LALUserVarReadCmdline (LALStatus *status,
  * An error is reported if the config-file reading fails, but the 
  * individual variable-reads are treated as optional
  */
-/* <lalVerbatim file="UserInputCP"> */
 void
 LALUserVarReadCfgfile (LALStatus *status, 
 		       const CHAR *cfgfile) 	   /* name of config-file */
-{/* </lalVerbatim> */
+{
   LALParsedDataFile *cfg = NULL;
   CHAR *stringbuf, *strp;
   LALUserVariable *ptr;
@@ -571,12 +569,11 @@ LALUserVarReadCfgfile (LALStatus *status,
 #define UVAR_MAXDEFSTR    100 	/* max length of default-string */
 /** Assemble all help-info from uvars into a help-string.
  */
-/* <lalVerbatim file="UserInputCP"> */
 void
 LALUserVarHelpString (LALStatus *status, 
 		      CHAR **helpstring, /* output: allocated here! */
 		      const CHAR *progname)
-{ /* </lalVerbatim> */
+{
 
   CHAR strbuf[UVAR_MAXHELPLINE];	/* should be enough for one line...*/
   CHAR defaultstr[UVAR_MAXDEFSTR]; 	/* for display of default-value */
@@ -768,10 +765,9 @@ LALUserVarHelpString (LALStatus *status,
  * get config-filename from cmd-line (if found),
  * then interpret config-file and then the command-line
  */
-/* <lalVerbatim file="UserInputCP"> */
 void
 LALUserVarReadAllInput (LALStatus *status, int argc, char *argv[])
-{ /* </lalVerbatim> */
+{
 
   INT4 i;
   CHAR* fname = NULL;
@@ -852,11 +848,9 @@ LALUserVarReadAllInput (LALStatus *status, int argc, char *argv[])
 /** Has this user-variable been set by the user?
  * return -1 on error, TRUE/FALSE otherwise
  */
-/* <lalVerbatim file="UserInputCP"> */
 INT4
 LALUserVarWasSet (const void *cvar)
-{ /* </lalVerbatim> */
-
+{
   LALUserVariable *ptr;
 
   if (!cvar)

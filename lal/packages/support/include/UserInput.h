@@ -33,24 +33,6 @@
  * \brief Header file defining the API for the UserInput modules.
  */
 
-/* <lalVerbatim file="UserInputHV">
-Author: Prix, Reinhard
-$Id$
-************************************* </lalVerbatim> */
-
-/**************************************************** <lalLaTeX>
-\section{Header \texttt{UserInput.h}}
-\label{s:UserInput.h}
-
-Module for general parsing of "user input" from config-file and/or command-line.
-
-\subsection*{Synopsis}
-\begin{verbatim}
-#include <lal/UserInput.h>
-\end{verbatim}
-
-****************************************************** </lalLaTeX> */
-
 #ifndef _USERINPUT_H  /* Double-include protection. */
 #define _USERINPUT_H
 
@@ -63,10 +45,6 @@ extern "C" {
 
 NRCSID( USERINPUTH, "$Id$");
 
-/********************************************************** <lalLaTeX>
-\subsection*{Error codes}
-</lalLaTeX>
-***************************************************** <lalErrTable> */
 /** \name Error codes */
 /*@{*/
 #define USERINPUTH_ENULL 	1
@@ -99,36 +77,6 @@ NRCSID( USERINPUTH, "$Id$");
 /*@}*/
 /*************************************************** </lalErrTable> */
 
-/* <lalLaTeX> 
-\subsection*{Macros}
-
-The following macros make it a bit easier to register the
-user-variables in a constistent way. The convention followed is that
-the C-variable corresponding to the user-variable \verb+Name+ is
-called \verb+uvar_[Name]+. These macros register a user-variable "name"
-of type \verb+REAL8+, \verb+INT4+, \verb+BOOLEAN+ or \verb+CHAR*+
-respectively. 
-</lalLaTeX> */
-/* <lalVerbatim> 
-regREALUserVar(stat,name,option,help)	
-regINTUserVar(stat,name,option,help) 
-regBOOLUserVar(stat,name,option,help)
-regSTRINGUserVar(stat,name,option,help)
-</lalVerbatim> */
-/* <lalLaTeX> 
-Some examples of use:
-</lalLaTeX> */
-/* <lalVerbatim> 
-CHAR *uvar_inDataFilename = NULL;
-REAL8 uvar_startTime;
-BOOLEAN uvar_binaryoutput = FALSE;
-INT4 uvar_nTsft;
-regSTRINGUserVar(stat, inDataFilename,  'i', UVAR_OPTIONAL, "Name of input parameter file");
-regREALUserVar(stat,   startTime,	'G', UVAR_REQUIRED, "Detector GPS time to start data");
-regBOOLUserVar(stat,   binaryoutput,	'b', UVAR_OPTIONAL, "Output time-domain data in binary format");
-regINTUserVar(stat,    nTsft,		'N', UVAR_REQUIRED, "Number of SFTs nTsft");
-</lalVerbatim> */
-
 #define LALregREALUserVar(status,name,option,flag,help) \
 TRY(LALRegisterREALUserVar((status)->statusPtr, #name, option, flag, help,&(uvar_ ## name)), status)
 
@@ -143,13 +91,6 @@ TRY(LALRegisterSTRINGUserVar((status)->statusPtr, #name, option, flag, help, &(u
 
 #define LALregLISTUserVar(status,name,option,flag,help) \
 TRY(LALRegisterLISTUserVar((status)->statusPtr, #name, option, flag, help, &(uvar_ ## name)),status)
-
-
-/********************************************************** <lalLaTeX>
-\vfill{\footnotesize\input{UserInputHV}}
-\newpage\input{UserInputC}
-\newpage\input{UserInputTestC}
-******************************************************* </lalLaTeX> */
 
 
 /** State-flags: variable is optional, required, help, developer or was_set */
