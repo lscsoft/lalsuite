@@ -25,7 +25,7 @@ REAL4FrequencySeries *compute_average_spectrum(
     int                      whiteSpectrum
     )
 {
-  LALStatus status = blank_status;
+  /*LALStatus status = blank_status;*/
   REAL4Window  *window  = NULL;
   REAL4FrequencySeries *spectrum;
   UINT4 segmentLength;
