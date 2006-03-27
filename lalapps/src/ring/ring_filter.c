@@ -44,7 +44,6 @@ static SnglRingdownTable * find_events(
     struct ring_params       *params
     );
 
-
 SnglRingdownTable * ring_filter(
     RingDataSegments         *segments,
     RingTemplateBank         *bank,
@@ -109,7 +108,7 @@ SnglRingdownTable * ring_filter(
       /* filter the segment with the template */
       filter_segment_template( &result, &rtilde, &stilde,
           &segments->sgmnt[sgmnt], revPlan );
-
+      
       /* search through results for threshold crossings and record events */
       events = find_events( events, &numEvents, &result, sigma,
           thisTmplt->frequency, thisTmplt->quality, params );
@@ -194,6 +193,8 @@ static int filter_segment_template(
   return 0;
 }
 
+
+
 /* NOTE: numEvents must be number of events _FROM_CURRENT_TEMPLATE_ so far. */
 /* It must be set to zero when filtering against a new template is started. */
 static SnglRingdownTable * find_events(
@@ -218,8 +219,8 @@ static SnglRingdownTable * find_events(
   UINT4 jmin;
   UINT4 jmax;
   UINT4 j;
-  LALStatus             status = blank_status;
-  LALMSTUnitsAndAcc     gmstUnits = { MST_HRS, LALLEAPSEC_STRICT };
+/*  LALStatus             status = blank_status;*/
+ /* LALMSTUnitsAndAcc     gmstUnits = { MST_HRS, LALLEAPSEC_STRICT };*/
 
   /* compute filter duration: sum of rindown duration and spec trunc duration */
   filterDuration  = efolds * tmpltQuality / (LAL_PI * tmpltFrequency);
@@ -287,19 +288,15 @@ static SnglRingdownTable * find_events(
         /* specific information about this threshold crossing */
         ns_to_epoch( &thisEvent->start_time, timeNS );
         thisEvent->snr = snr;
-#if 0 
-        amp = sqrt(5.0*0.01 / 2.0) / LAL_TWOPI * LAL_C_SI * 
-          sqrt( 1.0-0.63*pow( (tmpltQuality / 2.0), (-2.0/3.0) )) / tmpltFrequency /
-          1e6 / LAL_PC_SI / sqrt( tmpltQuality ) * pow (1+7/24/pow(tmpltQuality,2),-0.5);
-#endif
         amp = sqrt( 5.0 / 2.0 * 0.01 )  * ( LAL_G_SI * thisEvent->mass * LAL_MSUN_SI / 
             pow( LAL_C_SI, 2) / LAL_PC_SI /1000000.0 ) * pow( thisEvent->quality, -0.5 ) * 
             pow( 1.0 + 7.0 / 24.0 / pow( thisEvent->quality, 2.0), -0.5 ) *
             pow(  1.0 - 0.63 * pow( 1.0 - thisEvent->spin,0.3 ), -0.5);
+        
         sigma=tmpltSigma * amp;
         thisEvent->sigma_sq = pow(sigma, 2.0);
         thisEvent->eff_dist = sigma / thisEvent->snr;
-        
+        thisEvent->amplitude=amp;       
         ++eventCount;
       }
       else if ( snr > thisEvent->snr ) /* maximize within a set of crossings */
@@ -307,22 +304,16 @@ static SnglRingdownTable * find_events(
         /* update to specific information about this threshold crossing */
         ns_to_epoch( &thisEvent->start_time, timeNS );
         thisEvent->snr        = snr;
-
-#if 0     
-        amp = sqrt(5.0*0.01 / 2.0) / LAL_TWOPI * LAL_C_SI *
-          sqrt( 1.0-0.63*pow( (tmpltQuality / 2.0), (-2.0/3.0) )) / tmpltFrequency /
-          1e6 / LAL_PC_SI / sqrt( tmpltQuality ) * pow (1+7/24/pow(tmpltQuality,2),-0.5);
-#endif
-
         amp = sqrt( 5.0 / 2.0 * 0.01 )  * ( LAL_G_SI * thisEvent->mass * LAL_MSUN_SI/
             pow( LAL_C_SI, 2) / LAL_PC_SI /1000000.0 ) * pow( thisEvent->quality, -0.5 ) *
           pow( 1.0 + 7.0 / 24.0 / pow( thisEvent->quality, 2.0), -0.5 ) *
           pow(  1.0 - 0.63 * pow( 1.0 - thisEvent->spin,0.3 ), -0.5);
-        
+
         sigma=tmpltSigma * amp;
         thisEvent->eff_dist = sigma / thisEvent->snr;        
+        thisEvent->amplitude = amp;
       }
-
+      
       /* update last threshold crossing time */
       lastTimeNS = timeNS;
     }
