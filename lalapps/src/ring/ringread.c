@@ -868,10 +868,8 @@ int main( int argc, char *argv[] )
     }
 
     /* compute the out time from the search summary table */
-    LAL_CALL( LALGPStoINT8( &stat, 
-          &outStartNS, &(searchSummaryTable->out_start_time) ), &stat );
-    LAL_CALL( LALGPStoINT8( &stat, 
-          &outEndNS, &(searchSummaryTable->out_end_time) ), &stat );
+    outStartNS = XLALGPStoINT8 ( &(searchSummaryTable->out_start_time) );
+    outEndNS = XLALGPStoINT8 ( &(searchSummaryTable->out_end_time) );
     triggerTimeNS = outEndNS - outStartNS;
 
     /* check for events and playground */
@@ -879,7 +877,7 @@ int main( int argc, char *argv[] )
     {
       LAL_CALL( LALPlaygroundInSearchSummary( &stat, searchSummaryTable,
             &inPlay, &outPlay ), &stat );
-      LAL_CALL( LALGPStoINT8( &stat, &outPlayNS, &outPlay ), &stat );
+      outPlayNS = XLALGPStoINT8 ( &outPlay );
 
       if ( dataType == playground_only )
       {
@@ -1076,8 +1074,8 @@ int main( int argc, char *argv[] )
     if ( vrbflg ) fprintf( stdout, 
         "keeping only triggers from %s, discarding others...", ifoName );
     LAL_CALL( LALIfoCutSingleRingdown( &stat, &eventHead, ifoName ), &stat );
-    LAL_CALL( LALIfoCountSingleRingdown( &stat, &numEventsInIFO, eventHead, 
-          XLALIFONumber(ifoName) ), &stat );
+    LALIfoCountSingleRingdown( &stat, &numEventsInIFO, eventHead, 
+          XLALIFONumber(ifoName) );
 
     if ( vrbflg ) fprintf( stdout, "done\n" );
   }
@@ -1137,14 +1135,12 @@ int main( int argc, char *argv[] )
         /* at the relevant detector                          */
         if ( ! strcmp( "L1", thisEvent->ifo ) )
         {
-          LAL_CALL( LALGPStoINT8( &stat, &simTime, 
-                &(thisSimEvent->l_start_time) ), &stat );
+            simTime = XLALGPStoINT8 ( &(thisSimEvent->l_start_time) );
         }
         else if ( ! strcmp( "H1", thisEvent->ifo ) || 
             ! strcmp( "H2", thisEvent->ifo ) )
         {
-          LAL_CALL( LALGPStoINT8( &stat, &simTime, 
-                &(thisSimEvent->h_start_time) ), &stat );
+            simTime = XLALGPStoINT8 ( &(thisSimEvent->h_start_time) );
         }
         else
         {
@@ -1160,8 +1156,7 @@ int main( int argc, char *argv[] )
           coincidence = 0;
 
           /* compute the time in nanosec for the ringdown */
-          LAL_CALL( LALGPStoINT8( &stat, &ringdownTime, 
-                &(thisEvent->start_time) ), &stat );
+          ringdownTime = XLALGPStoINT8 ( &(thisEvent->start_time) );
 
           if ( ringdownTime < (simTime - inject_dt) )
           {
@@ -1184,8 +1179,7 @@ int main( int argc, char *argv[] )
         while ( thisEvent )
         {
           /* compute the time in nanosec for the ringdown */
-          LAL_CALL( LALGPStoINT8( &stat, &ringdownTime, 
-                &(thisEvent->start_time) ), &stat );
+          ringdownTime = XLALGPStoINT8 ( &(thisEvent->start_time) );
 
           if ( ringdownTime < (simTime + inject_dt) )
           {
@@ -1400,7 +1394,6 @@ int main( int argc, char *argv[] )
   if ( tamaFileName )
   {
     REAL8 trigtime;
-    REAL4 mtotal;
 
     fp = fopen( tamaFileName, "w" );
     if ( ! fp )
@@ -1485,7 +1478,7 @@ int main( int argc, char *argv[] )
           numEventsInIFO );
     }
 
-    LAL_CALL( LALINT8toGPS( &stat, &triggerTime, &triggerInputTimeNS ), &stat );
+    XLALINT8toGPS( &triggerTime, triggerInputTimeNS );
     fprintf( fp, "amount of time analysed for triggers %d sec %d ns\n", 
         triggerTime.gpsSeconds, triggerTime.gpsNanoSeconds );
 
