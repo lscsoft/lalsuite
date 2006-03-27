@@ -610,11 +610,10 @@ int main( int argc, char *argv[] )
     /* mass distribution */
     LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
     this_inj->mass = minMass + u * deltaM;
-     
+ 
     /* generate random spin parameter */  
     LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
     this_inj->spin = minSpin + u * deltaA;
-
     /* calculate central frequency, f0, and quality factor Q */
     this_inj->frequency = pow( LAL_C_SI, 3) / LAL_G_SI / LAL_MSUN_SI / 2.0 / LAL_PI
       * ( 1.0 - 0.63 * pow( ( 1.0 - this_inj->spin ), 0.3 ) ) / this_inj->mass;
@@ -626,18 +625,21 @@ int main( int argc, char *argv[] )
     this_inj->longitude = LAL_TWOPI * u ;
     LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
     this_inj->latitude = asin( 2.0 * u - 1.0 ) ;
+   
+    /* initial phase */
     LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
-        this_inj->init_phase = LAL_TWOPI * u ;
+    this_inj->init_phase = u * LAL_TWOPI;
     
     /* uniform distribution in log(distance) */
     LAL_CALL(  LALUniformDeviate(&status,&u,randParams),&status );
     exponent = lmin + deltaL * u;
     this_inj->distance = pow(10.0,(REAL4) exponent); 
     this_inj->distance = this_inj->distance / 1000.0; /*convert to Mpc */
-  
+
     /* compute random inclination, polarization */
     LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
     this_inj->inclination = acos( 2.0 * u - 1.0 );
+    
     LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
     this_inj->polarization = LAL_TWOPI * u ;
     
@@ -671,7 +673,7 @@ int main( int argc, char *argv[] )
     
     /* calculate h0 */
     this_inj->h0 = sqrt( 5.0 / 2.0 * this_inj->epsilon )  
-      * ( LAL_G_SI * this_inj->mass * LAL_MSUN_SI / pow( LAL_C_SI, 2) /
+      * ( LAL_G_SI * this_inj->mass * LAL_MSUN_SI / pow( LAL_C_SI, 2.0) /
            this_inj->distance / LAL_PC_SI /1000000.0 ) 
        * pow( this_inj->quality, -0.5 ) * pow( 1.0 + 7.0 / 
            24.0 / pow( this_inj->quality, 2.0), -0.5 )
@@ -712,7 +714,7 @@ int main( int argc, char *argv[] )
           (2*pow(this_inj->quality,3)+this_inj->quality ) * splus*splus*resp.plus*resp.plus +
           2*pow(this_inj->quality,2) * splus*scross*resp.plus*resp.cross +
           2*pow(this_inj->quality,3) * scross*scross*resp.cross*resp.cross )
-        *  2.0 / LAL_PI / this_inj->frequency / ( 1.0 + 4.0 * pow ( this_inj->quality, 2 ) ) , 0.5 );
+        /  2.0 / LAL_PI / this_inj->frequency / ( 1.0 + 4.0 * pow ( this_inj->quality, 2 ) ) , 0.5 );
       
     /* llo */
     placeAndGPS.p_detector = &llo;
@@ -735,7 +737,7 @@ int main( int argc, char *argv[] )
           (2*pow(this_inj->quality,3)+this_inj->quality ) * splus*splus*resp.plus*resp.plus +
           2*pow(this_inj->quality,2) * splus*scross*resp.plus*resp.cross +
           2*pow(this_inj->quality,3) * scross*scross*resp.cross*resp.cross )
-          *  2.0 / LAL_PI / this_inj->frequency / ( 1.0 + 4.0 * pow ( this_inj->quality, 2 ) ) , 0.5 );
+          /  2.0 / LAL_PI / this_inj->frequency / ( 1.0 + 4.0 * pow ( this_inj->quality, 2 ) ) , 0.5 );
         
     /* increment the injection time */
     if ( plygnd )
