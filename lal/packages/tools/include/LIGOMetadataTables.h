@@ -421,6 +421,7 @@ tagSnglRingdownTable
   REAL4         mass;
   REAL4         spin;
   REAL4         snr;
+  REAL4         amplitude;
   REAL4         eff_dist;
   REAL8         sigma_sq;
   EventIDColumn *event_id;

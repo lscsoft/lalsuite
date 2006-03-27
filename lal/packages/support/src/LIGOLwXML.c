@@ -558,6 +558,7 @@ LALWriteLIGOLwXMLTable (
               tablePtr.snglRingdownTable->mass,
               tablePtr.snglRingdownTable->spin,
               tablePtr.snglRingdownTable->snr,
+              tablePtr.snglRingdownTable->amplitude,
               tablePtr.snglRingdownTable->eff_dist,
               tablePtr.snglRingdownTable->sigma_sq
               );

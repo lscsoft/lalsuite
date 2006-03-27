@@ -289,16 +289,17 @@ MetaTableDirectory * XLALCreateMetaTableDir(
           {"ifo",                     -1, 0},
           {"search",                  -1, 1},
           {"channel",                 -1, 2},
-          {"start_time",      -1, 3},
-          {"start_time_ns",   -1, 4},
+          {"start_time",              -1, 3},
+          {"start_time_ns",           -1, 4},
           {"start_time_gmst",         -1, 5},
           {"frequency",               -1, 6},
           {"quality",                 -1, 7},
           {"mass",                    -1, 8},
           {"spin",                    -1, 9},
           {"snr",                     -1, 10},
-          {"eff_dist",                -1, 11},
-          {"sigma_sq",                -1, 12},
+          {"amplitde",                -1, 11},
+          {"eff_dist",                -1, 12},
+          {"sigma_sq",                -1, 13},
           {NULL,                       0, 0}
         };
         for ( i=0 ; tmpTableDir[i].name; ++i )
@@ -757,13 +758,17 @@ SnglRingdownTable    * XLALSnglRingdownTableFromLIGOLw (
               }
           else if ( tableDir[j].idx == 11 )
             {
+              thisEvent->amplitude = r4colData;
+              }
+          else if ( tableDir[j].idx == 12)
+            {
               thisEvent->eff_dist = r4colData;
               }
-          else if ( tableDir[j].idx == 12 )
+          else if ( tableDir[j].idx == 13 )
             {
               thisEvent->sigma_sq = r8colData;
               }
-          else if ( tableDir[j].idx == 13 )
+          else if ( tableDir[j].idx == 14 )
             {
               if ( tableDir[j].pos > 0 && i8colData )
                 {
@@ -1367,8 +1372,9 @@ LALCreateMetaTableDir(
           {"mass",                    -1, 8},
           {"spin",                    -1, 9},
           {"snr",                     -1, 10},
-          {"eff_dist",                -1, 11},
-          {"sigma_sq",                -1, 12},
+          {"amplitude",               -1, 11},
+          {"eff_dist",                -1, 12},
+          {"sigma_sq",                -1, 13},
           {NULL,                       0, 0}
         };
         for ( i=0 ; tmpTableDir[i].name; ++i )
@@ -1977,14 +1983,18 @@ LALSnglRingdownTableFromLIGOLw (
             thisEvent->snr = r4colData;
           }
           else if ( tableDir[j].idx == 11 )
-          {
-            thisEvent->eff_dist = r4colData;
+          { 
+            thisEvent->amplitude = r4colData;
           }
           else if ( tableDir[j].idx == 12 )
           {
-            thisEvent->sigma_sq = r8colData;
+            thisEvent->eff_dist = r4colData;
           }
           else if ( tableDir[j].idx == 13 )
+          {
+            thisEvent->sigma_sq = r8colData;
+          }
+          else if ( tableDir[j].idx == 14 )
             {
               if ( tableDir[j].pos > 0 && i8colData )
                 {
