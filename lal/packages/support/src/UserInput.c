@@ -239,10 +239,8 @@ LALDestroyUserVars (LALStatus *status)
 
 /** Parse command-line into UserVariable array
  */
-/*
 void
-LALUserVarReadCmdline (LALStatus *status, 
-		     int argc, char *argv[]) 	  /* command-line contents */
+LALUserVarReadCmdline (LALStatus *status, int argc, char *argv[])
 {
   INT4 c;
   UINT4 pos;
