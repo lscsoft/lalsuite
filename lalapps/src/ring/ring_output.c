@@ -138,7 +138,7 @@ static int ring_output_events_asc(
   thisEvent = events;
   while ( thisEvent )
   {
-    fprintf( fp, "%9d.%09d\t%e\t%e\t%e\t%e\n",
+    fprintf( fp, "%9d.%09d\t%22.16e\t%e\t%e\t%e\t%e\t%e\t%e\t%e\t%22.16e\n",
         (int) thisEvent->start_time.gpsSeconds,
         (int) thisEvent->start_time.gpsNanoSeconds,
         thisEvent->start_time_gmst,
@@ -146,6 +146,7 @@ static int ring_output_events_asc(
         thisEvent->quality,
         thisEvent->mass,
         thisEvent->spin,
+        thisEvent->snr,
         thisEvent->snr,
         thisEvent->eff_dist,
         thisEvent->sigma_sq );
