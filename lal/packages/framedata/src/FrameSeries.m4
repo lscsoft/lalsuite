@@ -90,6 +90,7 @@
  **** </lalLaTeX> */ 
 
 
+int rename( const char *from, const char *to );
 
 #include <FrameL.h>
 

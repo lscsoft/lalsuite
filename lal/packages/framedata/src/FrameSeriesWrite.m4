@@ -30,8 +30,9 @@ FUNC (
   TYPE 	*data;
   CHAR   seconds[] = "s";
   CHAR   comment[] = "Created by FUNC $Id$";
-  CHAR   source[256];
-  CHAR   fname[256];
+  CHAR   source[FILENAME_MAX];
+  CHAR   fname[FILENAME_MAX];
+  CHAR   tmpfname[FILENAME_MAX];
   CHAR   units[LALUnitNameSize];
   CHARVector vnits;
   struct FrFile *frfile;
@@ -59,10 +60,13 @@ FUNC (
   dt   -= series->epoch.gpsSeconds;
   dt    = dt < 1 ? 1 : dt; /* must be at least one */
 
+  LALSnprintf( tmpfname, sizeof( tmpfname ), "%s-%s-%d-%d.gwf.tmp", source,
+      params->description ? params->description : "UNKNOWN",
+      series->epoch.gpsSeconds, dt );
   LALSnprintf( fname, sizeof( fname ), "%s-%s-%d-%d.gwf", source,
       params->description ? params->description : "UNKNOWN",
       series->epoch.gpsSeconds, dt );
-  frfile = FrFileONew( fname, 0 );
+  frfile = FrFileONew( tmpfname, 0 );
 
   data = series->data->data;
   nframes = params->nframes;
@@ -113,6 +117,7 @@ FUNC (
   }
 
   FrFileOEnd( frfile );
+  rename( tmpfname, fname );
 
   DETATCHSTATUSPTR( status );
   RETURN( status );
@@ -130,8 +135,9 @@ FSFUNC (
   TYPE 	*data;
   CHAR   hertz[] = "Hz";
   CHAR   comment[] = "Created by FSFUNC $Id$";
-  CHAR   source[256];
-  CHAR   fname[256];
+  CHAR   source[FILENAME_MAX];
+  CHAR   fname[FILENAME_MAX];
+  CHAR   tmpfname[FILENAME_MAX];
   CHAR   units[LALUnitNameSize];
   CHARVector vnits;
   struct FrFile *frfile;
@@ -161,10 +167,13 @@ FSFUNC (
   dt   -= series->epoch.gpsSeconds;
   dt    = dt < 1 ? 1 : dt; /* must be at least one */
 
+  LALSnprintf( tmpfname, sizeof( tmpfname ), "%s-%s-%d-%d.gwf.tmp", source,
+      params->description ? params->description : "UNKNOWN",
+      series->epoch.gpsSeconds, dt );
   LALSnprintf( fname, sizeof( fname ), "%s-%s-%d-%d.gwf", source,
       params->description ? params->description : "UNKNOWN",
       series->epoch.gpsSeconds, dt );
-  frfile = FrFileONew( fname, 0 );
+  frfile = FrFileONew( tmpfname, 0 );
 
   data = series->data->data;
   /* nframes = params->nframes; */
@@ -226,6 +235,7 @@ FSFUNC (
   }
 
   FrFileOEnd( frfile );
+  rename( tmpfname, fname );
 
   DETATCHSTATUSPTR( status );
   RETURN( status );
