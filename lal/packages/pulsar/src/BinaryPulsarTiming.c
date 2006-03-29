@@ -38,11 +38,12 @@
    General relativistic time delay, $t_{\rm Einstein}$ is the special
    relativistic time delay, and $t_{\rm Abberation}$ is the delay caused by the
    pulsars' rotation. There are several models of the binary systems, described 
-   in \cite{TaylorWeisberg:1989}, of which the three most common a so far
-   implemented. The three models are Blandford-Teukolsky (BT)
+   in \cite{TaylorWeisberg:1989}, of which the four most common are so far
+   implemented. The four models are the Blandford-Teukolsky model (BT)
    \cite{BlandfordTeukolsky:1976}, the low ellipticity model (ELL1)
-   \cite{ChLangeetal:2001} and Damour-Deruelle (DD) \cite{DamourDeruelle:1985}.
-   These three models all use the five main binary parameters: the longitude of
+   \cite{ChLangeetal:2001}, Damour-Deruelle model (DD) \cite{DamourDeruelle:1985}, 
+   and the main sequence system model (MSS) \cite{Wex:1998}.
+   These four models all use the five main binary parameters: the longitude of
    periastron $\omega_0$, the eccentricity of the orbit $e$, the orbital period
    $P$, the time of periastron/or the time of ascension of the first node 
    $T_0$/$T_{{\rm asc}}$, and the projected semi-major axis $a\sin{}i$. The are
@@ -70,7 +71,7 @@
 
 /* Matt Pitkin 29/04/04 */
 
-#include <lal/BinaryPulsarTiming.h>
+#include "BinaryPulsarTiming.h"
 
 #include <string.h>
 #include <math.h>
@@ -126,7 +127,7 @@ LALBinaryPulsarDeltaT( LALStatus            *status,
   ASSERT((strstr(params->model, "BT") != NULL) || 
          (strstr(params->model, "ELL1") != NULL) ||
          (strstr(params->model, "DD") != NULL) ||
-	 (strstr(params->model, "MSS") != NULL), status,
+         (strstr(params->model, "MSS") != NULL), status,
          BINARYPULSARTIMINGH_ENULLBINARYMODEL, 
          BINARYPULSARTIMINGH_MSGNULLBINARYMODEL);
 
