@@ -363,7 +363,7 @@ LALFineHeterodyneToPulsar ( LALStatus                      *status,
   COMPLEX16 sum, sumvar;
   /* REAL8 binaryDeltaT; */
   
-  BinaryPulsarParameters orbit;
+  BinaryPulsarParams orbit;
   /*BinaryPulsarTiming outputBinary;*/
     
   INITSTATUS( status, "LALFineHeterodyneToPulsar", HETERODYNEPULSARC );
