@@ -70,7 +70,7 @@
 
 /* Matt Pitkin 29/04/04 */
 
-#include "BinaryPulsarTiming.h"
+#include <lal/BinaryPulsarTiming.h>
 
 #include <string.h>
 #include <math.h>
