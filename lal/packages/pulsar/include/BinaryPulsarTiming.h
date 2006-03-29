@@ -1,183 +1,250 @@
-/********************************* <lalVerbatim file="BinaryPulsarTimingHV">
-Author: Dupuis, R. J.
-$Id$
-********************************** </lalVerbatim> */
+/* LAL code to take into account binary pulsar motion */
+/*  for definitions of different models see Taylor and Weisberg (1989)
+    and TEMPO software documentation 
+    
+    Also contains function to read TEMPO .par files to obtain parameters
+    and errors on parameters (if available) */
+/* <lalVerbatim file="BinaryPulsarTimingHV">
+   Author: Pitkin, M. D.
+   $Id$
+*/
+/* Matt Pitkin 29/04/04 */
 
-/********************************* <lalLaTeX>
+/* <lalLaTeX>
+   \section{Header \texttt{BinaryPulsarTiming.h}}
+   label{ss:BinaryPulsarTiming.h}
+   
+   Calculates time delay to a signal from a pulsar in a binary system.
+   
+   \subsection*{Synopsis}
+   \begin{verbatim}
+   #include <lal/BinaryPulsarTiming.h>
+   \end{verbatim}
+   
+   \noindent This header covers routines for calculating the time delay to a
+   signal from a pulsar in a binary system. The are also routines for reading
+   pulsar data from TEMPO .par file formats.
+   </lalLaTeX> */
 
-\section{Header \texttt{BinaryPulsarTiming.h}}
-
-Provides routines to calculated time delay in binaries...
-
-\subsection*{Synopsis}
-\begin{verbatim}
-#include <lal/BinaryPulsarTiming.h>
-\end{verbatim}
-The gravitational wave signal from
-
-The function \texttt{LALBinaryPulsarDeltaT()} ...
-
-\begin{verbatim}
-void
-LALBinaryPulsarDeltaT(	LALStatus              	*status,
-		  	REAL8			deltaT,
-		   	BinaryPulsarParameters 	*input,
-		   	INT2	   		model )
-				
-\end{verbatim}
-
-\subsection*{Error conditions}
-\input{BinaryPulsarTimingHE}
-
-\subsection*{Types}
-
-\subsubsection*{Structure \texttt{CoarseHeterodyneInput}}
-\idx[Type]{CoarseHeterodyneInput}
-
-\noindent This structure stores the original calibrated gw data.
- 
-\begin{description}
-\item[\texttt{REAL4TimeSeries V}] calibrated strain data from detector
-
-\item[\texttt{REAL4 f0}] heterodyning base frequency
-
-\end{description}
-
-\subsubsection*{Structure \texttt{CoarseHeterodyneOutput}}
-\idx[Type]{CoarseHeterodyneOutput}
-
-\noindent This structure stores the output of the heterodyned data.
-
-\begin{description}
-\item[\texttt{REAL4TimeSeries Vh}] Heterodyned data.
-
-\item[\texttt{REAL4 varh}] Variance corresponding to each resampled data point.
-
-\item[\texttt{REAL4 phase}] phase of the reference signal f0 at t0
-\end{description}
-
-\subsubsection*{Structure \texttt{CoarseHeterodyneParams}}
-\idx[Type]{CoarseHeterodyneParams}
-
-\noindent This structure stores parameters for the coarse heterodyne.
-
-\begin{description}
-\item[\texttt{REAL4IIRFilter *iirFilterRe}] IIR filter to be applied to real part of complex heterodyned data
-
-\item[\texttt{REAL4IIRFilter *iirFilterIm}] IIR filter to be applied to imaginary part of complex heterodyned data
-
-\item[\texttt{UINT4 rFactor}] reduction factor - number of points to average before resampling
-\end{description}
-
-\subsubsection*{Structure \texttt{FineHeterodyneInput}}
-\idx[Type]{FineHeterodyneInput}
-\noindent This structure stores the input for the fine heterodyne.
-
-\begin{description}
-\item[\texttt{COMPLEX8TimeSeries Vh}]    heterodyned, averaged and resampled data 
-\item[\texttt{COMPLEX8TimeSeries varh}]   variance of the rFactor points that were averaged 
-\item[\texttt{REAL4 f0}]  frequency of the signal 
-\item[\texttt{REAL4 f1}]  first time derivative of frequency 
-\item[\texttt{REAL4 f2}] second time derivative of frequency 
-\item[\texttt{LIGOTimeGPS tEpochF}] epoch of the frequency
-\item[\texttt{SkyPosition source}] location of pulsar in sky - equatorial coordinate system 
-\end{description}
-
-\subsubsection*{Structure \texttt{FineHeterodyneOutput}}
-\idx[Type]{FineHeterodyneOutput}
-\noindent This structure stores the output of the fine heterodyne.
-
-\begin{description}
-\item[\texttt{COMPLEX8TimeSeries B}] bin value 
-\item[\texttt{COMPLEX8TimeSeries var}]  variance 
-\item[\texttt{REAL4 phase}] phase
-\end{description}
-
-
-
-\subsubsection*{Structure \texttt{FineHeterodyneParams}}
-\idx[Type]{FineHeterodyneParams}
-
-\noindent This structure stores the params of the fine heterodyne.
-
-\begin{description}
-\item[\texttt{EphemerisData *edat}]
-\item[\texttt{LALDetector detector}]
-\item[\texttt{REAL4IIRFilter *iirFilterRe}] IIR filter to be applied to real part of complex heterodyned data 
-\item[\texttt{REAL4IIRFilter *iirFilterIm}] IIR filter to be applied to imaginary part of complex heterodyned data 
-\item[\texttt{UINT4 rFactor}]  reduction factor - number of points to average before resampling 
-\end{description}
-
-\vfill{\footnotesize\input{BinaryPulsarTimingHV}}
-\newpage\input{BinaryPulsarTimingC}
-\newpage\input{BinaryPulsarTimingTestC}
-
-********************************** </lalLaTeX> */
-
-#ifndef _BinaryPulsarTiming_H
-#define _BinaryPulsarTiming_H
+#ifndef _BINARYPULSARTIMING_H
+#define _BINARYPULSARTIMING_H
 
 #include <lal/LALStdlib.h>
-/******* INCLUDE ANY OTHER LAL HEADERS needed for header (NOT module) ****/
 
-#include <lal/IIRFilter.h>
-#include <lal/ZPGFilter.h>
-#include <lal/LALBarycenter.h>
-#include <lal/SkyCoordinates.h> 
-#include <lal/AVFactories.h>
-
-#ifdef  __cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
-NRCSID (BinaryPulsarTimingH, "$Id$");
+/* <lalLaTeX>
+   \subsection*{Error conditions}
+   </lalLaTeX> */
 
-/******************************** <lalErrTable file="BinaryPulsarTimingHE"> */
+/* <lalErrTable> */
 #define BINARYPULSARTIMINGH_ENULLINPUT 1
 #define BINARYPULSARTIMINGH_ENULLOUTPUT 2
 #define BINARYPULSARTIMINGH_ENULLPARAMS 3
-#define BINARYPULSARTIMINGH_ERFACTOR 4
-#define BINARYPULSARTIMINGH_EINVALIDF0 5
-#define BINARYPULSARTIMINGH_ELENGTH 6
+#define BINARYPULSARTIMINGH_ENULLBINARYMODEL 4
+#define BINARYPULSARTIMINGH_ENULLPULSARANDPATH 5
+#define BINARYPULSARTIMINGH_EPARFILEERROR 6
 
 #define BINARYPULSARTIMINGH_MSGENULLINPUT "Input was Null"
 #define BINARYPULSARTIMINGH_MSGENULLOUTPUT "Output was Null"
 #define BINARYPULSARTIMINGH_MSGENULLPARAMS "Params was Null"
-#define BINARYPULSARTIMINGH_MSGERFACTOR "The decimation factor supplied was invalid"
-#define BINARYPULSARTIMINGH_MSGEINVALIDF0 "Invalid input f0"
-#define BINARYPULSARTIMINGH_MSGELENGTH "Input vectors were not the same length"
+#define BINARYPULSARTIMINGH_MSGNULLBINARYMODEL "Binary model is Null or not specified - you should\
+not be in the binary timing routine"
+#define BINARYPULSARTIMINGH_MSGENULLPULSARANDPATH "Path to pulsar.par file not specified"
+#define BINARYPULSARTIMINGH_MSGEPARFILEERROR ".par file path is wrong or file doesn't exist"
+/* </lalErrTable> */
 
-/************************************ </lalErrTable> */
+/* <lalLaTeX>
+   \subsection*{Structures}
+   \idx[Type]{BinaryPulsarParams}
+   \idx[Type]{BinaryPulsarInput}
+   \idx[Type]{BinaryPulsarOutput}
+   
+   \begin{verbatim}
+   typedef struct tagBinaryPulsarParams BinaryPulsarParams;
+   \end{verbatim}
+   
+   This structure contains all the pulsars parameters. The structure does not
+   have to be used for a binary pulsar, but can just contain the parameters for
+   an isolated pulsar. All parameters are in the same units as given by TEMPO.
+ 
+   \begin{verbatim}
+   typedef struct tagBinaryPulsarInput BinaryPulsarInput;
+   \end{verbatim}
+   
+   This structure contains the input time at which the binary correction needs
+   to be calculated.
+   
+   \begin{verbatim}
+   typedef struct tagBinaryPulsarOutput BinaryPulsarOutput;
+   \end{verbatim}
+   
+   This structure contains the binary time delay for the input time.
+ 
+   </lalLaTeX> */
 
-/****** DEFINE NEW STRUCTURES AND TYPES ************/
+/**** DEFINE STRUCTURES ****/
+
 typedef struct
-tagBinaryPulsarParameters
+tagBinaryPulsarParams
 {
-  REAL8 	Pb;
-  REAL8		x;
-  REAL8		e;
-  REAL8		w;
-  REAL8		T0;
-  REAL8 	lg; /*longitude at T0 (usually 0)*/
-  INT4	 	model;
-} BinaryPulsarParameters;
+  CHAR *name;   /* pulsar name */
+  
+  CHAR *model;  /* TEMPO binary model e.g. BT, DD, ELL1 */
+
+  REAL8 f0;
+  REAL8 f1;
+  REAL8 f2;
+  REAL8 f3;
+
+  REAL8 ra;
+  REAL8 dec;
+  REAL8 pmra;
+  REAL8 pmdec;
+  
+  REAL8 posepoch;
+  REAL8 pepoch;
+
+  /* all parameters will be in the same units as used in TEMPO */
+
+  /* Keplerian parameters */
+  REAL8 e;      /* orbital eccentricity */
+  REAL8 Pb;     /* orbital period (days) */
+  REAL8 w0;     /* logitude of periastron (deg) */
+  REAL8 x;      /* projected semi-major axis/speed of light (light secs) */
+  REAL8 T0;     /* time of orbital perisastron as measured in TDB (MJD) */
+  
+  REAL8 xpbdot;	/* (10^-12) */
+
+  /* for low eccentricity orbits (ELL1 model) use Laplace parameters */
+  /* (eps1 = e*sin(w), eps2 = e*cos(w)) instead of e, w.             */
+  /* see Appendix A, Ch. Lange etal, MNRAS (2001)                    */
+  REAL8 eps1;       /* e*sin(w) */
+  REAL8 eps2;       /* e*cos(w) */
+  REAL8 eps1dot;
+  REAL8 eps2dot;
+  REAL8 Tasc;  /* time of the ascending node (used rather than T0) */
+  UINT4 nEll;  /* set to zero if have eps time derivs (default) set to 1 if have wdot */
+
+  /* Post-Keplarian parameters */
+  /* for Blandford-Teukolsky (BT) model */
+  REAL8 wdot;   /* precesion of longitude of periastron w = w0 + wdot(tb-T0) (degs/year) */
+  REAL8 gamma;  /* gravitational redshift and time dilation parameter (s)*/
+  REAL8 Pbdot;  /* rate of change of Pb (dimensionless 10^-12) */
+  REAL8 xdot;   /* rate of change of x(=asini/c) - optional (10^-12)*/
+  REAL8 edot;   /* rate of change of e (10^-12)*/
+  
+  /* for Epstein-Haugan (EH) model */
+  REAL8 s; /* Shapiro 'shape' parameter sin i */
+
+  /* for Damour-Deruelle (DD) model */
+  /*REAL8 r; Shapiro 'range' parameter - defined internally as Gm2/c^3 */
+  REAL8 dr;
+  REAL8 dth;    /* (10^-6) */
+  REAL8 a0, b0; /* abberation delay parameters */
+
+  /* for DD (General Relativity) (DDGR) - assumes GR is correct model */
+  /* we do not need wdot, gamma, Pbdot, s, r, xdot and edot */
+  REAL8 M;      /* M = m1 + m2 (m1 = pulsar mass, m2 = companion mass) */
+  REAL8 m2;     /* companion mass */
+
+  /******** errors read in from a .par file **********/
+  REAL8 f0Err;
+  REAL8 f1Err;
+  REAL8 f2Err;
+  REAL8 f3Err;
+  
+  REAL8 pepochErr;
+  REAL8 posepochErr;
+  
+  REAL8 raErr;
+  REAL8 decErr;
+  REAL8 pmraErr;
+  REAL8 pmdecErr;
+
+  REAL8 eErr;
+  REAL8 PbErr;
+  REAL8 w0Err;
+  REAL8 xErr;
+  REAL8 T0Err;
+
+  REAL8 xpbdotErr;	
+
+  REAL8 eps1Err;
+  REAL8 eps2Err;
+  REAL8 eps1dotErr;
+  REAL8 eps2dotErr;
+  REAL8 TascErr;
+
+  REAL8 wdotErr;
+  REAL8 gammaErr;
+  REAL8 PbdotErr;
+  REAL8 xdotErr;
+  REAL8 edotErr;
+  
+  REAL8 sErr;
+  
+  /*REAL8 rErr; Shapiro 'range' parameter - defined internally as Gm2/c^3 */
+  REAL8 drErr;
+  REAL8 dthErr;
+  REAL8 a0Err, b0Err;
+
+  REAL8 MErr;
+  REAL8 m2Err;
+}BinaryPulsarParams;
 
 typedef struct
-tagBinaryPulsarTiming
+tagBinaryPulsarInput
 {
-  REAL8 	deltaT;
+  REAL8 tb;    /* Time of arrival (TOA) at the SSB */
+}BinaryPulsarInput;
 
-} BinaryPulsarTiming;
-/****** INCLUDE EXTERNAL GLOBAL VARIABLES ************/
+typedef struct
+tagBinaryPulsarOutput
+{
+  REAL8 deltaT;	/* deltaT to add to TDB in order to account for binary */
+}BinaryPulsarOutput;
+
+/* <lalLaTeX>
+   \newpage\input{BinaryPulsarTimingC}
+   </lalLaTeX> */
+
+/**** DEFINE FUNCTIONS ****/
 void
-LALBinaryPulsarDeltaT(	LALStatus              	*status,
-		  	BinaryPulsarTiming	*output,
-			REAL8 			tgps,
-		   	BinaryPulsarParameters 	*params);
-    
+LALBinaryPulsarDeltaT( LALStatus            *status,
+                       BinaryPulsarOutput   *output,
+                       BinaryPulsarInput    *input,
+                       BinaryPulsarParams   *params );
 
-#ifdef  __cplusplus
+void
+LALReadTEMPOParFile( LALStatus              *status,
+                     BinaryPulsarParams    *output,
+                     CHAR                  *pulsarAndPath );
+
+/* define a function to convert RA and Dec in format dd:mm:ss.ss
+   or ddmmss.ss into the number of degrees as a float
+   degs is the string containing the dd/hh:mm:ss.sss
+   coords is either ra/RA or dec/DEC                                */
+REAL8
+LALDegsToRads(CHAR *degs, CHAR *coords);
+
+/* functions for converting times given in Terrestrial time TT or TDB in MJD to
+times in GPS - this is important for epochs given in .par files which are in
+TDB. TT and GPS are different by a factor of 51.184 secs, this is just the
+historical factor of 32.184 secs between TT and TAI (International Atomic Time)
+and the other 19 seconds come from the leap seonds added between the TAI and
+UTC up to the point of definition of GPS time at UTC 01/01/1980 (see
+http://www.stjarnhimlen.se/comp/time.html for details) */
+REAL8
+LALTTtoGPS(REAL8 TT);
+
+REAL8
+LALTDBtoGPS(REAL8 TDB);
+
+#ifdef __cplusplus
 }
 #endif
 
-#endif /* _BinaryPulsarTiming_H */
+#endif /* _BINARYPULSARTIMING_H */
