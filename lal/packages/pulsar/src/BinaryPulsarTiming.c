@@ -6,7 +6,7 @@
 /*   Also contains function to read TEMPO .par files to obtain parameters
   and errors on parameters (if available) */
 
-/* <lalVerbatim file="BinaryPulsarTiming">
+/* <lalVerbatim file="BinaryPulsarTimingCV">
    Author: Pitkin, M. D.
    $Id$
    </lalVerbatim>
