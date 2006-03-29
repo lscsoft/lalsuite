@@ -1,7 +1,7 @@
 /* LAL functions to calculate the timing differences needed to
    take into account binary pulsar orbits
    Models are taken from Taylor and Weisberg (1989) and use the
-   naming conventions therein and used by TEMPO									*/
+   naming conventions therein and used by TEMPO */
    
 /*   Also contains function to read TEMPO .par files to obtain parameters
   and errors on parameters (if available) */
@@ -125,7 +125,8 @@ LALBinaryPulsarDeltaT( LALStatus            *status,
 
   ASSERT((strstr(params->model, "BT") != NULL) || 
          (strstr(params->model, "ELL1") != NULL) ||
-         (strstr(params->model, "DD") != NULL), status,
+         (strstr(params->model, "DD") != NULL) ||
+	 (strstr(params->model, "MSS") != NULL), status,
          BINARYPULSARTIMINGH_ENULLBINARYMODEL, 
          BINARYPULSARTIMINGH_MSGNULLBINARYMODEL);
 
@@ -316,7 +317,9 @@ LALBinaryPulsarDeltaT( LALStatus            *status,
   }
 
   /* for DD model - code partly adapted from TEMPO bnrydd.f */
-  if(strstr(params->model, "DD") != NULL){
+  /* also used for MSS model (Wex 1998) - main sequence star orbit - this only has two lines
+different than DD model - TEMPO bnrymss.f */
+  if(strstr(params->model, "DD") != NULL || strstr(params->model, "MSS") != NULL){
     REAL8 u, du=1.0;/* new eccentric anomaly */
     REAL8 Ae;       /* eccentricity parameter */
     REAL8 DRE;      /* Roemer delay + Einstein delay */
@@ -333,14 +336,17 @@ LALBinaryPulsarDeltaT( LALStatus            *status,
     REAL8 anhat, sqr1me2, cume, brace, dlogbr;
     REAL8 Dbb;    /* Delta barbar in DD eq 52 */
 
+    REAL8 xi; /* parameter for MSS model - the only other one needed */
+    
     /* fprintf(stderr, "You are using the Damour-Deruelle (DD) binary model.\n");*/
 
     /* part of code adapted from TEMPO bnrydd.f */
     an = LAL_TWOPI/Pb;
     k = wdot/an;
+    xi = xdot/an; /* MSS parameter */
 
     tt0 = tb - T0;
-    x = x + xdot*tt0;
+    //x = x + xdot*tt0;
     e = e + edot*tt0;
     er = e*(1.0+dr);
     eth = e*(1.0+dth);
@@ -374,8 +380,16 @@ LALBinaryPulsarDeltaT( LALStatus            *status,
 
     Ae = LAL_TWOPI*orbits + Ae - phase;
 
-    w = w0 + k*Ae; /* add corrections to omega */
-
+    w = w0 + k*Ae; /* add corrections to omega */ /* MSS also uses (om2dot, but not defined) */
+    
+    /* small difference between MSS and DD */
+    if(strstr(params->model, "MSS") != NULL){
+      x = x + xi*Ae; /* in bnrymss.f they also include a second time derivative of x (x2dot), but
+this isn't defined for either of the two pulsars currently using this model */
+    }
+    else
+      x = x + xdot*tt0;
+    
     /* now compute time delays as in DD eqs 46 - 52 */
 
     /* calculate Einstein and Roemer delay */
@@ -411,7 +425,7 @@ LALBinaryPulsarDeltaT( LALStatus            *status,
   /* for Epstein-Haugan (EH) model - see Haugan, ApJ (1985) eqs 69 and 71 */
   
   /* other models, e.g. BT2P for 1 binary pulsar in current catalogue */
-
+  
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
