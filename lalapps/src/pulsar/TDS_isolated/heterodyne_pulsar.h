@@ -59,7 +59,6 @@ extern "C" {
                       heterodyned data file\n"\
 " --channel           frame data channel (i.e. LSC-DARM_ERR)\n"\
 " --output-dir        directory for output data files\n"\
-" --run               (int) science run number\n"\
 " --seg-file          name of file containing science segment list\n"\
 " --calibrate         if specified calibrate data (no argument)\n"\
 " --response-file     name of file containing the response function\n"\
@@ -111,8 +110,6 @@ typedef struct tagInputParams{
   
   INT4 calibrate;
   CalibrationFiles calibfiles;
-
-  INT4 run; /* science run number */
   
   REAL8 stddevthresh;
 }InputParams;

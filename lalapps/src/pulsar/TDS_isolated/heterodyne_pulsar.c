@@ -102,12 +102,12 @@ int main(int argc, char *argv[]){
   set_filters(&iirFilters, inputParams.filterknee, inputParams.samplerate);
 
   if(inputParams.heterodyneflag == 0){
-    sprintf(outputfile, "%s/coarsehet_%s.S%d_%s_%d-%d", inputParams.outputdir, inputParams.pulsar,
-    inputParams.run, inputParams.ifo, starts->data[0], stops->data[numSegs-1]);
+    sprintf(outputfile, "%s/coarsehet_%s_%s_%d-%d", inputParams.outputdir, inputParams.pulsar,
+    inputParams.ifo, starts->data[0], stops->data[numSegs-1]);
   }
   else{
-    sprintf(outputfile, "%s/finehet_%s.S%d_%s", inputParams.outputdir, inputParams.pulsar,
-    inputParams.run, inputParams.ifo);
+    sprintf(outputfile, "%s/finehet_%s_%s", inputParams.outputdir, inputParams.pulsar,
+    inputParams.ifo);
   }
 
   remove(outputfile); /* if output file already exists remove it */
@@ -289,7 +289,6 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
     { "data-file",                required_argument,  0, 'd' },
     { "channel",                  required_argument,  0, 'c' },
     { "output-dir",               required_argument,  0, 'o' },
-    { "run",                      required_argument,  0, 't' },
     { "ephem-earth-file",         required_argument,  0, 'e' },
     { "ephem-sun-file",           required_argument,  0, 'S' },
     { "seg-file",                 required_argument,  0, 'l' },
@@ -302,7 +301,7 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
     { 0, 0, 0, 0 }
   };
 
-  char args[] = "h:i:p:z:f:g:k:s:r:d:c:o:t:e:S:l:R:C:F:O:T";
+  char args[] = "h:i:p:z:f:g:k:s:r:d:c:o:e:S:l:R:C:F:O:T";
   char *program = argv[0];
 
   /* set defaults */
@@ -415,9 +414,6 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
         break;
       case 'o': /* output data directory */
         sprintf(inputParams->outputdir, "%s", optarg);
-        break;
-      case 't': /* science run number */
-        inputParams->run = atoi(optarg);
         break;
       case 'e': /* earth ephemeris file */
         sprintf(inputParams->earthfile, optarg);
