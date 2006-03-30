@@ -1,0 +1,314 @@
+#!/usr/bin/python
+"""
+  lalapps_heterodyne_pulsar_pipe -- pipeline for creating Condor DAG to perform the known pulsar
+                                    time domain analysis - coarse or fine heterodyne (with or
+                                    without parameter updates)
+  
+  This has been greatly inspired (well blatently hacked together from) the stochastic pipeline by
+  Adam Mercer and the frequency domain binary pulsar search by Chris Messenger.
+  
+  Matt Pitkin 29/03/06
+  
+  $Id$
+"""
+
+__author__ = 'Matt Pitkin <matthew@astro.gla.ac.uk>'
+__date__ = '$Date$'
+__version__ = '$Revision$'
+
+# import required modules
+import sys
+import os
+import getopt
+import re
+import string
+import tempfile
+import ConfigParser
+import exceptions
+
+# append the lalapps python path
+sys.path.append('/home/matthew/lscsoft/lib/python')
+
+# import the lalapps pipeline modules
+from glue import pipeline
+import heterodyne_pulsar
+
+# program usage
+def usage():
+  msg = """\
+Usage: lalapps_heterodyne_pulsar_pipe [options]
+
+  -h, --help               display this message
+  -v, --version            print version information and exit
+
+  -d, --datafind           run LSCdataFind to create frame cache files
+  -s, --seglist            if give as 0 the run LSCsegFind to create ascience segment list
+                           otherwise read the segment list from the config file
+  -c, --coarse             run lalapps_heterodyne_pulsar in coarse mode
+  -f, --fine               run lalapps_heterodyne_pulsar in fine mode
+  -u, --update             run lalapps_heterodyne_pulsar in update mode
+  -C, --calibrate          run lalapps_heterodyne_pulsar with calibration flag set
+  
+  -F, --config-file FILE   use configuration file FILE
+  -l, --log-path PATH      directory to write condor log file
+  """
+  print >> sys.stderr, msg
+  
+# parse the command line options to figure out what we should do
+shortop = "hv:dscfuC:F:l:"
+longop = [
+  "help",
+  "version",
+  "datafind",
+  "seglist=",
+  "coarse",
+  "fine",
+  "update",
+  "calibrate",
+  "config-file=",
+  "log-path="
+  ]
+
+try:
+  opts, args = getopt.getopt(sys.argv[1:], shortop, longop)
+except getopt.GetoptError:
+  usage()
+  sys.exit(1)
+  
+# default options
+config_file = None
+do_datafind = None
+seglist = None
+do_fine = None
+do_coarse = None
+do_update = None
+do_calibrate = None
+config_file = None
+log_path = None
+
+# process options
+for o, a in opts:
+  if o in ("-v", "--version"):
+    print "lalapps_heterodyne_pulsar_pipe version", __version__
+    sys.exit(0)
+  elif o in ("-h", "--help"):
+    usage()
+    sys.exit(0)
+  elif o in ("-d", "--datafind"):
+    do_datafind = 1
+ elif o in ("-s", "--seglist"):
+    seglist = a
+  elif o in ("-c", "--coarse"):
+    do_coarse = 1
+  elif o in ("-f", "--fine"):
+    do_fine = 1
+  elif o in ("-u", "--update"):
+    do_update = a
+  elif o in ("-C", "--calibrate"):
+    do_calibrate = 1
+  elif o in ("-F", "--config-file"):
+    config_file = a
+  elif o in ("-l", "--log-path"):
+    log_path = a
+  else:
+    print >> sys.stderr, "Unknown option:", o
+    usage()
+    sys.exit(1)
+    
+# test arguments for validity
+if not config_file:
+  print >> sys.stderr, "No configuration file specified."
+  print >> sys.stderr, "Use --config-file FILE to specify location."
+  sys.exit(1)
+
+if not log_path:
+  print >> sys.stderr, "No log file path specified."
+  print >> sys.stderr, "Use --log-path PATH to specify a location."
+  sys.exit(1)
+
+if ((do_coarse) & (do_datafind==None))
+  print >> sys.stderr, "LSCdataFind is not selected."
+  print >> sys.stderr, "This is needed to get data for the heterodyne."
+  print >> sys.stderr, "Use --datafind to get a list of data frames for analysis"
+  
+if ((do_coarse) & (seglist==None)) | ((do_fine) & (seglist=None))
+  print >> sys.stderr, "No segment list is selected."
+  print >> sys.stderr, "This is needed to get data for the heterodyne."
+  print >> sys.stderr, "Use --seglist to set a list of segments for analysis"
+  
+# try and make a directory to store the cache files and job logs
+try: os.mkdir('cache')
+except: pass
+try: os.mkdir('logs')
+except: pass
+
+# create the config parser object and read in the ini file
+cp = ConfigParser.ConfigParser()
+cp.read(config_file)
+
+# create a log file that the Condor jobs will write to
+basename = re.sub(r'\.ini',r'',config_file) # remove .ini from config_file name
+tempfile.tempdir = log_path
+tempfile.template = basename + '.dag.log.' # adds on .dag.log
+logfile = tempfile.mktemp()
+fh = open( logfile, "w" ) # creates file
+fh.close()
+
+# create the DAG writing the log to the specified directory
+dag = pipeline.CondorDAG(logfile)
+dag.set_dag_file(basename + '.dag')
+
+# create Condor Jobds that will be used in the dag
+df_job = heterodyne_pulsar.LSCDataFindJob('cache','logs',cp) # data find job
+sl_job = heterodyne_pulsar.LSCsegFindJob(cp) # seg list job
+coarse_job = heterodyne_pulsar.heterodyneJob(cp)
+fine_job = heterodyne_pulsar.heterodyneJob(cp)
+update_job = heterodyne_pulsar.heterodyne(cp)
+
+# set Condor .sub submit file names
+subsuffix = '.sub'
+df_job.set_sub_file(basename + '.datafind' + subsuffix)
+sl_job.set_sub_file(basename + '.seglist' + subsuffix)
+heterodyne_job.set_sub_file(basename + '.heterodyne' + subsuffix)
+
+# set values from config file
+pulsar_param_dir = cp.get('data','pulsar_param_dir')
+frame_file_path = cp.get('data','frame_file_path')
+seg_file_path = cp.get('data','seg_file_path')
+
+earth_ephem = cp.get('ephem','earth_ephem')
+sun_ephem = cp.get('ephem','sun_ephem')
+
+# actual info on the analysis
+tstart = cp.get('input','starttime')
+tend = cp.get('input','endtime')
+detector = cp.get('input','detector')
+filter_knee = cp.get('input','filter_knee')
+sample_rate = cp.get('input','sample_rate')
+resample_rate = cp.get('input','resample_rate')
+channel = cp.get('input','channel')
+stddev_thresh = cp.get('input','stddev_thresh')
+
+
+# make DAGs
+if do_datafind:
+  # set frame file name and stuff
+  frame_file_name = 
+  frame_file = frame_file_path + frame_file_name
+  
+if seglist == 0: # need to work on this
+  # run LSCsegFind
+  # set segment list and stuff
+   
+elif seglist != None:
+  # set seglist file from value in the config file
+  seg_file_name = cp.get('data','seg_list')
+  seg_list = seg_file_path + seg_file_name
+
+if do_coarse:
+  param_files = os.listdir(pulsar_param_dir)
+  param_files.sort() # sort the files into alphabetical order
+  
+  het_flag = 0 # heterodyne flag for a coarse heterodyne
+  
+  coarse = [] # create list for coarse heterodyne nodes
+  
+  i = 0
+  j = 0
+  while i < len(param_files):
+    if ".par" in param_files[i]:
+      pulsar = 'J' + re.sub(r'\.par',r'',param_files[i]) # set pulsar name from .par file
+      param_file = pulsar_param_dir + param_files[i]
+      
+      # add heterodyneNode for DAG
+      coarse.append(heterodyne_pulsar.heterdoyneNode(coarse_job))
+      coarse[j].set_het_flag(het_flag)
+      coarse[j].set_ifo(detector)
+      coarse[j].set_pulsar(pulsar)
+      coarse[j].set_param_file(param_file)
+      """
+      don't need ephem files in coarse heterodyne YET!!
+      coarse[j].set_earth_ephem(earth_ephem)
+      coarse[j].set_sun_ephem(sun_ephem)
+      """
+      coarse[j].set_filter_knee(filter_knee)
+      coarse[j].set_sample_rate(sample_rate)
+      coarse[j].set_resample_rate(resample_rate)
+      coarse[j].set_data_file(frame_file)
+      coarse[j].set_seg_list(seg_list)
+      
+      dag.add_node(coarse[j])
+      j = j+1
+    
+    i = i+1
+
+if do_fine:
+  param_files = os.listdir(pulsar_param_dir)
+  param_files.sort()
+  
+  het_flag = 1
+  
+  input_dir = cp.get('fine','fine_input')
+  input_files = os.listdir(input_dir)
+  input_files.sort()
+  
+  # if calibration is being done get the files from the .ini file
+  if do_calibrate:
+    response_function = cp.get('calibration','response_file')
+    coefficient_file = cp.get('calibration','coefficient_file')
+    open_loop_gain = cp.get('calibration','open_loop_gain')
+    sensing_function = cp.get('calibration','sensing_function')
+  
+  fine = [] # create list for fine heterodyne nodes
+  
+  i = 0
+  j = 0
+  while i < len(param_files):
+    if ".par" in param_files[i]:
+      pulsar = 'J' + re.sub(r'\.par',r'',param_files[i]) # set pulsar name from .par file
+    
+      val = input_files.find(pulsar)
+      data_file = input_dir + input_files[val]
+      
+      # add heterodyneNode for DAG
+      fine.append(heterodyne_pulsar.heterodyneNode(fine_job)
+      fine[j].set_het_flag(het_flag)
+      fine[j].set_ifo(detector)
+      fine[j].set_pulsar(pulsar)
+      fine[j].set_param_file(param_file)
+      fine[j].set_earth_ephem(earth_ephem)
+      fine[j].set_sun_ephem(sun_ephem)
+      fine[j].set_filter_knee(filter_knee)
+      fine[j].set_sample_rate(sample_rate)
+      fine[j].set_resample_rate(resample_rate)
+      fine[j].set_data_file(data_file)
+      fine[j].set_seg_list(seg_list)
+      
+      if do_calibrate:
+        fine[j].set_calibrate()
+
+        if os._exists(response_function): # if the is a response function file
+          fine[j].set_response_function(response_function)
+        elif os._exists(coefficient_file) & os._exists(open_loop_gain) &
+os._exists(sensing_function):
+          fine[j].set_coefficient_file(coefficient_file)
+          fine[j].set_open_loop_gain(open_loop_gain)
+          fine[j].set_response_function(response_function)
+        else:
+          print "Could not find any calibration files! Check .ini file."
+          sys.exit(1)
+          
+      fine[j].set_stddev_thresh(stddev_thresh)
+      
+      dag.add_node(fine[j])
+      j = j+1
+      
+    i = i+1
+                  
+if do_update:
+
+# write out DAG
+dag.write_sub_files()
+dag.write_dag()
+
+sys.exit(0)
