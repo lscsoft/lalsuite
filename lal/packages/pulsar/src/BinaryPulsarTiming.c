@@ -71,7 +71,7 @@
 
 /* Matt Pitkin 29/04/04 */
 
-#include "BinaryPulsarTiming.h"
+#include <lal/BinaryPulsarTiming.h>
 
 #include <string.h>
 #include <math.h>
@@ -436,7 +436,7 @@ LALReadTEMPOParFile(  LALStatus *status,
                       BinaryPulsarParams *output,
                       CHAR      *pulsarAndPath )
 {
-  FILE *fp;
+  FILE *fp=NULL;
   CHAR val[500][40]; /* string array to hold all the read in values 
                         500 strings of max 40 characters is enough */
   INT4 i=0, j=1, k;
