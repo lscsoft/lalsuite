@@ -291,17 +291,17 @@ int main(int argc,char *argv[])
     A3 =-aPlus * cos(twopsi) * sin(phi0) - aCross * sin(twopsi) * cos(phi0);
     A4 =-aPlus * sin(twopsi) * sin(phi0) + aCross * cos(twopsi) * cos(phi0);
     
-    F += (At * ( SQ(A1) + SQ(A3) ) + Bt * ( SQ(A2) + SQ(A4) )+ 2.0 * Ct * (A1 * A2 + A3 * A4 )) / 4;
+    F = 0.25 * (At * ( SQ(A1) + SQ(A3) ) + Bt * ( SQ(A2) + SQ(A4) )+ 2.0 * Ct * (A1 * A2 + A3 * A4 ));
     
     /* Note: the expectation-value of 2F is 4 + lambda ==> add 2 to Fstat*/
     F += 2.0;
     
 /*     fprintf(stdout, "\n2F = %g,   sqrtSh =  %g\n\n", 2 * F , sqrt(Sh)); */
-    fprintf(stdout, "\n%g\n", 2 * F);
+    fprintf(stdout, "\n%.1f\n", 2.0 * F);
 
     if ( fpFstat )
       {
-	fprintf (fpFstat, "%g\n%%DONE\n", 2 * F);
+	fprintf (fpFstat, "%g\n%%DONE\n", 2.0 * F);
 	fclose (fpFstat);
 	fpFstat = NULL;
       }

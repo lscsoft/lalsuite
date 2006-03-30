@@ -203,15 +203,29 @@ echo "--------------------------------------------------------------------------
 
 # common cmdline-options for v2   
 cfs_CL="--Freq=$freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --f1dotBand=$f1dot --df1dot=$df1dot --TwoFthreshold=0 --refTime=$refTime"
-
 cmdline="$cfsv2_code $cfs_CL --DataFiles='$SFTdir/H-1_H1*' --outputFstat=Fstat_v2-H1.dat";
 echo $cmdline;
+
+if ! eval time $cmdline; then
+    echo "Error.. something failed when running '$cfs_code' ..."
+    exit 1;
+fi
 
 cmdline="$cfsv2_code $cfs_CL --DataFiles='$SFTdir/H-1_H2*' --outputFstat=Fstat_v2-H2.dat";
 echo $cmdline;
 
+if ! eval time $cmdline; then
+    echo "Error.. something failed when running '$cfs_code' ..."
+    exit 1;
+fi
+
 cmdline="$cfsv2_code $cfs_CL --DataFiles='$SFTdir/L-1_L1*' --outputFstat=Fstat_v2-L1.dat";
 echo $cmdline;
+
+if ! eval time $cmdline; then
+    echo "Error.. something failed when running '$cfs_code' ..."
+    exit 1;
+fi
 
 echo    
 echo "------------------------------------------------------------------------------------------"
@@ -221,8 +235,18 @@ echo "--------------------------------------------------------------------------
 cmdline="$cfsv2_code $cfs_CL --DataFiles='$SFTdir/H-1_H*' --outputFstat=Fstat_v2-H1H2.dat";
 echo $cmdline;
 
+if ! eval time $cmdline; then
+    echo "Error.. something failed when running '$cfs_code' ..."
+    exit 1;
+fi
+
 cmdline="$cfsv2_code $cfs_CL --DataFiles='$SFTdir/*-1*' --outputFstat=Fstat_v2-H1H2L1.dat";
 echo $cmdline;
+
+if ! eval time $cmdline; then
+    echo "Error.. something failed when running '$cfs_code' ..."
+    exit 1;
+fi
 
 echo
 echo "----------------------------------------"
