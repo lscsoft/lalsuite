@@ -21,10 +21,25 @@ import sys
 import os
 import getopt
 import re
+import pickle
 import string
 import tempfile
 import ConfigParser
 import exceptions
+
+# import things needed for the segment list finding part (as taken from LSCsegFind)
+from types import *
+
+try:
+  from glue import segments
+  from glue import LSCsegFindClient
+  from glue import gsiserverutils
+  from glue.lal import LIGOTimeGPS
+except ImportError, e:
+  print >> sys.stderr, """
+Error: unable to import modules from glue. Check that glue is correctly installed and in your
+PYTHONPATH. %s """ % e
+  sys.exit(1)
 
 # append the lalapps python path
 sys.path.append('/home/matthew/lscsoft/lib/python')
@@ -159,8 +174,7 @@ dag = pipeline.CondorDAG(logfile)
 dag.set_dag_file(basename + '.dag')
 
 # create Condor Jobds that will be used in the dag
-df_job = heterodyne_pulsar.LSCDataFindJob('cache','logs',cp) # data find job
-sl_job = heterodyne_pulsar.LSCsegFindJob(cp) # seg list job
+df_job = pipeline.LSCDataFindJob('cache','logs',cp) # data find job
 coarse_job = heterodyne_pulsar.heterodyneJob(cp)
 fine_job = heterodyne_pulsar.heterodyneJob(cp)
 update_job = heterodyne_pulsar.heterodyne(cp)
@@ -168,7 +182,6 @@ update_job = heterodyne_pulsar.heterodyne(cp)
 # set Condor .sub submit file names
 subsuffix = '.sub'
 df_job.set_sub_file(basename + '.datafind' + subsuffix)
-sl_job.set_sub_file(basename + '.seglist' + subsuffix)
 heterodyne_job.set_sub_file(basename + '.heterodyne' + subsuffix)
 
 # set values from config file
@@ -192,14 +205,123 @@ stddev_thresh = cp.get('input','stddev_thresh')
 
 # make DAGs
 if do_datafind:
-  # set frame file name and stuff
-  frame_file_name = 
-  frame_file = frame_file_path + frame_file_name
+  df = pipeline.LSCDataFindNode(df_job)
   
-if seglist == 0: # need to work on this
-  # run LSCsegFind
+  server = cp.get('datafind','server')
+  df.set_server(server)
+  
+  data_type = cp.get('datafind','data_type')
+  df.set_type(data_type)
+  
+  # set observatory for LSCdataFind
+  if detector == 'H1' | detector == 'H2':
+    obs = 'H'
+  elif detector == 'L1':
+    obs = 'L'
+  elif detector == 'G1' | detector == 'GEO':
+    obs = 'G'
+  else:
+    print >> "Detector not set in .ini file or not recognised, should be either H1, H2, L1, G1 or
+GEO"
+    sys.exit(1)
+    
+  df.set_observatory(obs)
+  df.set_start(tstart)
+  df.set_end(tend)  
+ 
+  # add DAG
+  dag.add_node(df)
+
+# this bit is basically hacked from LSCsegFind
+if seglist == 0:
+  # run LSCsegFind - don't bother with a job joust run it and create this list
   # set segment list and stuff
-   
+  seg_list_file = basename + '.seglist'
+
+  # defaults
+  hostPortString = None
+  port = 30015
+
+  clientMethodArgDict = {
+    'interferometer': None,
+    'type': None,
+    'explain': None,
+    'end': None,
+    'start': None,
+    'lfns': False,
+    'strict' : True
+  }
+
+  # default method 
+  clientMethod = 'findStateSegments'
+  typeString = None
+  format = None
+
+  hostPostString = cp.get('datafind','server')
+  
+  # environment variables override defaults but not
+  # command line options
+  try:
+    hostPortString = os.environ['LSC_SEGFIND_SERVER']
+  except:
+    pass
+
+  clientMethodArgDict['interferometer'] = detector
+  clientMethodArgDict['type'] = 'Science'
+  clientMethodArgDict['start'] = tstart
+  clientMethodArgDict['end'] = tend
+
+  if hostPortString.find(':') < 0:
+    # no port specified
+    host = hostPortString
+  else:
+    # server and port specified
+    host, portString = hostPortString.split(':')
+    port = int(portString)
+
+  # open connection to LSCsegFindServer
+  try:
+    myClient = LSCsegFindClient.LSCsegFind(host, port)
+
+  except Exception, e:
+    print >>sys.stderr, \
+      "Unable to connect to LSCsegFindServer %s:%d" % (host, port)
+    if gsiserverutils.checkCredentials():
+      print >>sys.stderr, "Got the following error : " + str(e)
+    sys.exit(1)
+
+  # get the segment list here
+  try:
+    seglist = eval("myClient.%s(%s)" % (clientMethod, clientMethodArgDict))
+
+    try:
+      f = open(seg_list_file, 'w')
+    
+    except Exception, e:
+      print >> sys.stderr, "Can't open file %s!" % (seg_list_file)
+      sys.exit(1)
+      
+    if type(seglist) is StringType:
+      print seglist
+    else:
+      if len( seglist ) == 0:
+        print >> sys.stderr, "No segments found!"
+      else: # output format will be segwizard style
+        wizlist = []
+        
+        i = 0
+        for seg in seglist:
+           wizlist[i] = [i,seg[0],seg[1],seg.duration()]
+           i += 1
+    
+    pickle.dump(wizlist, f)
+    
+    f.close()
+         
+  except Exception, e:
+    print >> sys.stderr, "Could not create segment list :("
+    sys.exit(1)
+  
 elif seglist != None:
   # set seglist file from value in the config file
   seg_file_name = cp.get('data','seg_list')
@@ -234,7 +356,7 @@ if do_coarse:
       coarse[j].set_filter_knee(filter_knee)
       coarse[j].set_sample_rate(sample_rate)
       coarse[j].set_resample_rate(resample_rate)
-      coarse[j].set_data_file(frame_file)
+      coarse[j].set_data_file(df.get_output()) # get frame cache from here!
       coarse[j].set_seg_list(seg_list)
       
       dag.add_node(coarse[j])
