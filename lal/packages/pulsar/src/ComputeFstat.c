@@ -1138,7 +1138,7 @@ LALGetMultiAMCoeffs (LALStatus *status,
  failed:
   /* free all memory allocated so far */
   XLALDestroyMultiAMCoeffs ( ret );
-  ABORT ( status, -1, "LALGetMultiSSBtimes failed" );
+  ABORT ( status, -1, "LALGetMultiAMCoeffs() failed" );
 
  success:
   (*multiAMcoef) = ret;
