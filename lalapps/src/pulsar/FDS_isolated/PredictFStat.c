@@ -334,8 +334,8 @@ ATTATCHSTATUSPTR (status);
  uvar_psi       = 0.0;
  uvar_h0        = 0.0;
  uvar_cosiota   = 0.0;
-  uvar_Freq      = 100.0; 
- uvar_FreqBand  = 1.0;
+ uvar_Freq      = 100.0; 
+ uvar_FreqBand  = 0.1;
  uvar_Alpha 	= 0.0;
  uvar_Delta 	= 0.0;
  uvar_RngMedWindow = 50;	/* for running-median */
