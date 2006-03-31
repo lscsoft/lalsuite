@@ -27,6 +27,11 @@ Header file for the template generation codes.
 # include <math.h>
 # include <stdio.h>
 # include <stdlib.h>
+
+#include <gsl/gsl_errno.h>
+#include <gsl/gsl_odeiv.h>
+#include <lal/LALGSL.h>
+
 # include <lal/LALStdlib.h>
 # include <lal/LALConstants.h>
 # include <lal/SimulateCoherentGW.h>
@@ -342,6 +347,10 @@ This structure contains various post-Newtonian and P-approximant expansion
 	the derivatives needed in solving the phasing formula when the
 	{\tt approximant} is {\tt TaylorT1, TaylorP1} or {\tt EOB.}
 \input{LALInspiralDerivativesH}
+
+\item {\tt rk4GSLIntegrator:} Structure containing steps and controls
+for the GSL Runge-Kutta solver
+\input{\tt LALInspiralGSLRungeKuttaH}
 
 \item {\tt rk4In:} Structure used as an input to Runge-Kutta solver.
 \input{LALInspiralRungeKuttaH}
@@ -767,6 +776,22 @@ tagrk4In
 \index{\texttt{rk4In}}
 </lalLaTeX>  */
 
+/* <lalVerbatim file="LALInspiralGSLRungeKuttaH"> */
+typedef struct
+tagrk4GSLIntegrator
+{
+   const gsl_odeiv_step_type *type;
+   gsl_odeiv_step *step;
+   gsl_odeiv_control *control;
+   gsl_odeiv_evolve *evolve;
+   REAL8 *y;
+   rk4In *input;
+} rk4GSLIntegrator;
+/* </lalVerbatim> */
+
+/* <lalLaTeX>
+\index{\texttt{rk4GSLIntegrator}}
+</lalLaTeX>  */
 
 /* <lalVerbatim file="LALInspiralPhaseH">  */
 typedef struct
@@ -1378,11 +1403,18 @@ void LALInspiralFrequency3_7PN (
 \newpage\input{LALRungeKutta4C}
 </lalLaTeX>  */
 
+rk4GSLIntegrator * XLALRungeKutta4Init(
+		   INT4 n,
+                   rk4In *input);
+
 void LALRungeKutta4(
      LALStatus *,
      REAL8Vector *,
-     rk4In *,
+     rk4GSLIntegrator *,
      void *);
+
+void XLALRungeKutta4Free(
+     rk4GSLIntegrator *integrator);
 
 /* --- PARSING PROTOTYPE FOR INSPIRALTEMPLATE STRCUTURE --- */
 
