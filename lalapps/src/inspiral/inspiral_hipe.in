@@ -73,9 +73,10 @@ class AnalyzedIFOData:
   """
   Contains the information for the data that needs to be filtered.
   """
-  def __init__(self,chunk,node):
+  def __init__(self,chunk,node, inj=0):
     self.__analysis_chunk = chunk
     self.__dag_node = node
+    self.__inj = inj
 
   def set_chunk(self,chunk):
     self.__analysis_chunk = chunk
@@ -88,6 +89,12 @@ class AnalyzedIFOData:
 
   def get_dag_node(self):
     return self.__dag_node
+
+  def set_inj(self, inj):
+    self.__inj = inj
+
+  def get_inj(self):
+    return self.__inj
 
 ##############################################################################
 # function to generate the coincident segments from four input segment lists
@@ -111,7 +118,7 @@ def generate_segments(ifo1_data, ifo2_data, ifo3_data, ifo4_data):
 ##############################################################################
 # function to set up datafind, template bank and inspiral jobs for an ifo  
 def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
-  prev_df,dag,usertag=None):
+  prev_df,dag, grbInjections, usertag=None):
   """
   Analyze the data from a single IFO.  Since the way we treat all this data is
   the same, this function is the same for all interferometers. Returns the last
@@ -125,6 +132,7 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
   df_job = the condor job to find the data
   prev_df = the previous LSCdataFind job that was executed
   dag = the DAG to attach the nodes to
+  grbInjections = specifies the number of GRB injections in the same data seg.
   usertag = the usertag to add to the job names
   """
 
@@ -208,28 +216,62 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
           if not calibrated: bank.calibration()
           if opts.datafind: bank.add_parent(df)
           if (opts.template_bank and not GeoBank): dag.add_node(bank)
-                 
-          # make an inspiral job for the master chunk
-          insp = inspiral.InspiralNode(insp_job)
-          insp.set_start(chunk.start())
-          insp.set_end(chunk.end())
-          insp.set_trig_start(chunk.trig_start())
-          insp.set_trig_end(chunk.trig_end())
-          insp.set_ifo(ifo_name)
-          insp.set_vds_group(ifo_name[0] + str(chunk.start()))
-          if not opts.read_cache: insp.set_cache(df.get_output())
-          else:  insp.set_cache(cp.get('datafind',ifo_name+"-cache"))
-          if not calibrated: insp.calibration()
-          if GeoBank: 
-            insp.set_bank(GeoBank)
-          else:  
-            insp.set_bank(bank.get_output())
-          if opts.datafind: insp.add_parent(df)
-          if (opts.template_bank and not GeoBank): insp.add_parent(bank)
-          if opts.inspiral: dag.add_node(insp)
+                  
+          # set grb flag
+	  doGRB=0;
+  	  if grbInjections>0: doGRB=1
 
-          # store this chunk in the list of filtered data
-          chunks_analyzed.append(AnalyzedIFOData(chunk,insp))
+ 	  # loop ober the GRB injections
+  	  for inj in range(doGRB, grbInjections+1):
+    	     if inj>0: 
+                # set the appropriate user-tag and the injection filename
+                grbUserTag=usertag+str(inj)
+                injectionFile='HL-INJECTION.'+str(inj)+'.xml' 
+	        #print injectionFile, newUserTag
+
+	        # check if the inspinj job has already be made
+	        inspinj=inspinj_job.check_node(inj)		 
+		if not inspinj:
+
+                   # create an inspinj node for the master chunk (once!)
+                   inspinj = inspiral.InspInjNode(inspinj_job)
+                   inspinj.set_end(chunk.end())
+       	           inspinj.set_seed(inj)
+                   inspinj.add_var_opt('user-tag',grbUserTag)
+	           inspinj.set_output(injectionFile)
+                   if opts.datafind: inspinj.add_parent(df)                 
+                   if (opts.template_bank and not GeoBank): inspinj.add_parent(bank)
+
+                   # store the node to the DAG AND to the inspinj_job
+                   if opts.inspiral: dag.add_node(inspinj)		
+		   inspinj_job.set_done(inj, inspinj)
+
+             # make an inspiral job for the master chunk
+             insp = inspiral.InspiralNode(insp_job)
+             if inj>0:
+                insp.add_var_opt('injection-file',injectionFile)
+                insp.set_user_tag(grbUserTag)
+             insp.set_start(chunk.start())
+             insp.set_end(chunk.end())
+             insp.set_trig_start(chunk.trig_start())
+             insp.set_trig_end(chunk.trig_end())
+             insp.set_ifo(ifo_name)
+             insp.set_vds_group(ifo_name[0] + str(chunk.start()))
+             if not opts.read_cache: insp.set_cache(df.get_output())
+             else:  insp.set_cache(cp.get('datafind',ifo_name+"-cache"))
+             if not calibrated: insp.calibration()
+             if GeoBank:
+                insp.set_bank(GeoBank)
+             else:
+                insp.set_bank(bank.get_output())
+             if opts.datafind: insp.add_parent(df)
+             if (opts.template_bank and not GeoBank): insp.add_parent(bank)
+	     if inj>0:  
+                insp.add_parent(inspinj)
+             if opts.inspiral: dag.add_node(insp)
+
+             # store this chunk in the list of filtered data
+             chunks_analyzed.append(AnalyzedIFOData(chunk,insp,inj))         
 
   return tuple([prev_df,chunks_analyzed])
 
@@ -271,7 +313,7 @@ def single_coinc(ifo_analyzed,ifo_name,ifo_single,single_coinc_job,dag,
 ##############################################################################
 # function to do thinca on coincident IFO data  
 def thinca_coinc(ifos,single_data_analyzed,coinc_segs,coinc_job,
-    dag,do_coinc,do_insp,usertag=None,ifotag=None,slides=None):
+    dag,do_coinc,do_insp,grbInjections, usertag=None,ifotag=None,slides=None):
   """
   Run thinca on the coincident times from each of the sets of IFOs. 
   Since the way we treat all this data is the same, this function is the same 
@@ -284,6 +326,7 @@ def thinca_coinc(ifos,single_data_analyzed,coinc_segs,coinc_job,
   dag = the DAG to attach the nodes to
   do_coinc = whether we should add these jobs to the dag
   do_insp  = whether previous inspiral jobs are in the dag
+  grbInjections = specifies the number of GRB injections in the same data seg.
   usertag = the usertag to add to the output file name
   ifotag = the ifotag to add to the output file name
   slides = number of time slides req'd, used as a boolean
@@ -294,36 +337,52 @@ def thinca_coinc(ifos,single_data_analyzed,coinc_segs,coinc_job,
     coinc_job.add_ini_opts(cp,'thinca-slide')
     
   coinc_analyzed = []
-  for seg in coinc_segs:
-    thinca = inspiral.ThincaNode(coinc_job)
-    thinca.set_start(seg.start())
-    thinca.set_end(seg.end())
-    if ifotag:
-      thinca.set_ifo_tag(ifotag)
-    if slides:
-      thinca.set_num_slides(slides)
+
+  # set grb flag
+  doGRB=0;
+  if grbInjections>0: doGRB=1
+
+  # loop ober the GRB injections
+  for inj in range(doGRB, grbInjections+1):
+      if inj>0:
+         # set the appropriate user-tag and the injection filename
+         grbUserTag=usertag+str(inj)
+
+      for seg in coinc_segs:
+         thinca = inspiral.ThincaNode(coinc_job)
+         if inj>0: thinca.set_user_tag(grbUserTag)
+         thinca.set_start(seg.start())
+         thinca.set_end(seg.end())
+         if ifotag:
+           thinca.set_ifo_tag(ifotag)
+         if slides:
+           thinca.set_num_slides(slides)
     
-    # scroll through ifos, adding the appropriate ones
-    for ifo in ifo_list:
-      if ifo in ifos:
-        thinca.set_ifo(ifo)
+         # scroll through ifos, adding the appropriate ones
+         for ifo in ifo_list:
+           if ifo in ifos:
+              thinca.set_ifo(ifo)
+                
+              # add all IFO A master chunks that overlap with segment to input
+              for done in single_data_analyzed[ifo]:
+                if inspiral.overlap_test(done.get_chunk(),seg) and (done.get_inj()==0 or done.get_inj()==inj):
 
-        # add all IFO A master chunks that overlap with segment to input
-        for done in single_data_analyzed[ifo]:
-          if inspiral.overlap_test(done.get_chunk(),seg):
-            thinca.add_file_arg(done.get_dag_node().get_output())
-            if do_insp: thinca.add_parent(done.get_dag_node())
+                  # set special user-tag first
+                  thinca.add_file_arg(done.get_dag_node().get_output())
+                  if do_insp: thinca.add_parent(done.get_dag_node())
 
-    if do_coinc: dag.add_node(thinca)
-    coinc_analyzed.append(AnalyzedIFOData(seg,thinca))
+         if do_coinc: dag.add_node(thinca)
+         coinc_analyzed.append(AnalyzedIFOData(seg,thinca,inj))
 
+        
   return coinc_analyzed
+
 
 
 ##############################################################################
 # function to set up trigbank and inspiral jobs for an ifo  
 def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
-                  insp_veto_job,dag,usertag=None):
+                  insp_veto_job,dag, grbInjections, usertag=None):
 
   """
   Perform the trigbank and second inspiral steps for the single ifo data.  
@@ -337,6 +396,7 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
   trig_job = the triggered bank job we should use 
   insp_veto_job = the condor job that we should use to analyze data
   dag = the DAG to attach the nodes to
+  grbInjections = specifies the number of GRB injections in the same data seg.
   usertag = the usertag to add to the job names
   """
 
@@ -363,59 +423,72 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
   
 
   trig_chunks_analyzed = []
-  # loop over the master science segments
-  for seg in ifo_data:
 
-    # loop over the master analysis chunks in the science segment
-    for chunk in seg:
-      done_this_chunk = 0
+  # set grb flag
+  doGRB=0;
+  if grbInjections>0: doGRB=1
 
-      # now loop over all the data that we need to filter
-      for coinc_done in coinc_data:
+  # loop ober the GRB injections
+  for inj in range(doGRB, grbInjections+1):
+    if inj>0:
+      grbUserTag=usertag+str(inj)
+  
+    # loop over the master science segments
+    for seg in ifo_data:
 
-        # if the current chunk is in one of the segments we need to filter
-        if (inspiral.overlap_test(chunk,coinc_done.get_chunk()) ):
+      # loop over the master analysis chunks in the science segment
+      for chunk in seg:
+        done_this_chunk = 0
 
-          if not done_this_chunk:
-            # make sure we only filter the master chunk once
-            done_this_chunk = 1
+        # now loop over all the data that we need to filter
+        for coinc_done in coinc_data:
 
-            # make a trigbank job for the master chunk
-            trigbank = inspiral.TrigToTmpltNode(trig_job)
-            trigbank.set_ifo_tag(coinc_ifos)
-            trigbank.set_output_ifo(ifo_name)
-            trigbank.set_input_ifo(ifo_name)
-            trigbank.set_start(chunk.start())
-            trigbank.set_end(chunk.end())
+          # if the current chunk is in one of the segments we need to filter
+          if (inspiral.overlap_test(chunk,coinc_done.get_chunk()) and (inj==0 or coinc_done.get_inj()==inj)):
 
-            if opts.trigbank: dag.add_node(trigbank)
+            if not done_this_chunk:
+              # make sure we only filter the master chunk once
+              done_this_chunk = 1
 
-            # make an inspiral job for the master chunk
-            insp = inspiral.InspiralNode(insp_veto_job)
-            insp.set_start(chunk.start())
-            insp.set_end(chunk.end())
-            insp.set_trig_start(chunk.trig_start())
-            insp.set_trig_end(chunk.trig_end())
-            insp.set_ifo(ifo_name)
-            insp.set_ifo_tag(coinc_ifos)
-            insp.set_vds_group(ifo_name[0] + str(chunk.start()))
-            if not opts.read_cache: 
-              insp.set_cache(seg.get_df_node().get_output())
-            else: insp.set_cache(cp.get('datafind',ifo_name+'-cache')) 
-            if not calibrated: insp.calibration()
-            insp.set_bank(trigbank.get_trig_out())
-            if opts.datafind: insp.add_parent(seg.get_df_node())
-            if opts.trigbank: insp.add_parent(trigbank)
-            if opts.inspiral_veto: dag.add_node(insp)
+              # make a trigbank job for the master chunk
+              trigbank = inspiral.TrigToTmpltNode(trig_job)
+              if inj>0: trigbank.set_user_tag(grbUserTag)
+              trigbank.set_ifo_tag(coinc_ifos)
+              trigbank.set_output_ifo(ifo_name)
+              trigbank.set_input_ifo(ifo_name)
+              trigbank.set_start(chunk.start())
+              trigbank.set_end(chunk.end())
+              if opts.trigbank: dag.add_node(trigbank)
+        
+              # make an inspiral job for the master chunk
+              insp = inspiral.InspiralNode(insp_veto_job)
+              if inj>0: insp.set_user_tag(grbUserTag)
+              insp.set_start(chunk.start())
+              insp.set_end(chunk.end())
+              insp.set_trig_start(chunk.trig_start())
+              insp.set_trig_end(chunk.trig_end())
+              insp.set_ifo(ifo_name)
+              insp.set_ifo_tag(coinc_ifos)
+              insp.set_vds_group(ifo_name[0] + str(chunk.start()))
+              if not opts.read_cache: 
+                insp.set_cache(seg.get_df_node().get_output())
+              else: insp.set_cache(cp.get('datafind',ifo_name+'-cache')) 
+              if not calibrated: insp.calibration()
+              insp.set_bank(trigbank.get_trig_out())
+              if opts.datafind: insp.add_parent(seg.get_df_node())
+              if opts.trigbank: insp.add_parent(trigbank)
+              if opts.inspiral_veto: dag.add_node(insp)
 
-            # store this chunk in the list of filtered data
-            trig_chunks_analyzed.append(AnalyzedIFOData(chunk,insp))
+              # store this chunk in the list of filtered data
+              trig_chunks_analyzed.append(AnalyzedIFOData(chunk,insp,inj))
 
-            # jobs already set up, just add the var_arg and parent to trigbank
-          trigbank.add_file_arg(coinc_done.get_dag_node().get_output())
-          if opts.coincidence: trigbank.add_parent(coinc_done.get_dag_node())
+              # jobs already set up, just add the var_arg and parent to trigbank
+              print coinc_done.get_dag_node().get_output()
+              trigbank.add_file_arg(coinc_done.get_dag_node().get_output())
+              if opts.coincidence: trigbank.add_parent(coinc_done.get_dag_node())
 
   return trig_chunks_analyzed
+
 
 ##############################################################################
 # function to TD follow-up tmpltbank and inspiral jobs for an ifo  
@@ -940,6 +1013,13 @@ else:
 ##############################################################################
 # create the Condor jobs that will be used in the DAG
 
+# check number of GRB injections
+try:
+  grbInjections=int(cp.get('pipeline','grb-injections'))
+except:
+  grbInjections=0
+
+ 
 # datafind:
 df_job = pipeline.LSCDataFindJob('cache','logs',cp,opts.dax)
 df_job.set_sub_file( basename + '.datafind'+ subsuffix )
@@ -950,6 +1030,10 @@ tmplt_jobs = {}
 for ifo in ifo_list:
   tmplt_jobs[ifo] = inspiral.TmpltBankJob(cp,opts.dax)
   tmplt_jobs[ifo].set_sub_file( basename + '.tmpltbank' + subsuffix )
+
+# inspinj:
+inspinj_job = inspiral.InspInjJob(cp) 
+inspinj_job.set_sub_file( basename + '.inspinj' + subsuffix )
 
 # inspiral:
 insp_jobs = {}
@@ -1045,7 +1129,7 @@ sire_clust_job = inspiral.SireJob(cp)
 sire_clust_job.set_sub_file( basename + '.sire_clust' + subsuffix )
 
 
-all_jobs = [single_inca_job, trig_job, cb_job, sire_job, 
+all_jobs = [inspinj_job, single_inca_job, trig_job, cb_job, sire_job, 
   sire_clust_job]
 all_jobs.extend(tmplt_jobs.values())
 all_jobs.extend(insp_jobs.values())
@@ -1298,7 +1382,7 @@ for ifo in ifo_list:
   sys.stdout.flush()
 
   (prev_df,chunks_analyzed[ifo]) = analyze_ifo(ifo,data[ifo],data_to_do[ifo],  
-      tmplt_jobs[ifo],insp_jobs[ifo],df_job,prev_df,dag,usertag)
+      tmplt_jobs[ifo],insp_jobs[ifo],df_job,prev_df,dag,grbInjections,usertag)
   
   # Step 4S: Run sire on the single ifo triggers
   if opts.sire and len(chunks_analyzed[ifo]):   
@@ -1340,7 +1424,7 @@ for ifos in ifo_coincs:
 
   thinca_jobs[ifos].add_ini_opts(cp, 'thinca-1')
   coinc_nodes[ifos] = thinca_coinc(ifos,chunks_analyzed,analyzed_data[ifos],
-      thinca_jobs[ifos],dag,opts.coincidence,opts.inspiral,usertag)
+      thinca_jobs[ifos],dag,opts.coincidence,opts.inspiral,grbInjections,usertag)
 
   # Step 6 slide: Time slides 
   coinc_slide_nodes[ifos] = []
@@ -1348,7 +1432,7 @@ for ifos in ifo_coincs:
     thinca_slide_jobs[ifos].add_ini_opts(cp, 'thinca-1')
     coinc_slide_nodes[ifos] = thinca_coinc(ifos,chunks_analyzed,
         analyzed_data[ifos],thinca_slide_jobs[ifos],dag,opts.coincidence,
-        opts.inspiral,usertag,ifotag,num_slides)
+        opts.inspiral,grbInjections,usertag,ifotag,num_slides)
 
   
   # Step 6 sire: Run sire triggers
@@ -1413,7 +1497,7 @@ for this_approx in approximants:
               banks[ifos][ifo])
         else:
           analyzed_coinc_data[ifos][ifo] = trig_inspiral(data[ifo],ifo,
-              coinc_nodes[ifos],ifos,trig_job,insp_veto_jobs[ifo],dag,usertag)
+              coinc_nodes[ifos],ifos,trig_job,insp_veto_jobs[ifo],dag,grbInjections,usertag)
 
         print "done"
 
@@ -1436,7 +1520,7 @@ for this_approx in approximants:
     else:
       coinc2_nodes[ifos] = thinca_coinc(ifos,analyzed_coinc_data[ifos],
         analyzed_data[ifos],thinca2_jobs[ifos],dag,opts.second_coinc,
-        opts.inspiral_veto,usertag,ifos)
+        opts.inspiral_veto,grbInjections,usertag,ifos)
 
   # Step 8slide: Time slides on the data
     if num_slides:
