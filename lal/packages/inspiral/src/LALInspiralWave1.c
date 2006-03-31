@@ -353,6 +353,7 @@ LALInspiralWave1Engine(
    InspiralPhaseIn in2;
    InspiralDerivativesIn in3;
    rk4In in4;
+   rk4GSLIntegrator *integrator;
    void *funcParams;
    expnCoeffs ak;
    expnFunc func;
@@ -477,6 +478,19 @@ LALInspiralWave1Engine(
    in4.yt = &yt;
    in4.dym = &dym;
    in4.dyt = &dyt;
+   
+   xlalErrno = 0;
+   /* Initialize GSL integrator */
+   if (!(integrator = XLALRungeKutta4Init(n, &in4)))
+   {
+     INT4 errNum = XLALClearErrno();
+     LALFree(dummy.data);
+
+     if (errNum = XLAL_ENOMEM)
+       ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
+     else
+       ABORTXLAL( status );
+   }
 
    count = 0;
    if (signal2) {
@@ -491,6 +505,7 @@ LALInspiralWave1Engine(
       /* Free up memory and abort if writing beyond the end of vector*/
       if ((signal1 && count >= signal1->length) || (ff && count >= ff->length))
       {
+          XLALRungeKutta4Free( integrator );
           LALFree(dummy.data);
           ABORT(status, LALINSPIRALH_EVECTOR, LALINSPIRALH_MSGEVECTOR);
       }
@@ -526,7 +541,7 @@ LALInspiralWave1Engine(
       in4.dydx = &dvalues;
       in4.x=t;
       
-      LALRungeKutta4(status->statusPtr, &valuesNew, &in4, funcParams);
+      LALRungeKutta4(status->statusPtr, &valuesNew, integrator, funcParams);
       CHECKSTATUSPTR(status);
       
       *(values.data) = v = *(valuesNew.data);
@@ -542,6 +557,8 @@ LALInspiralWave1Engine(
    params->tC = t;
 
    *countback = count;
+
+   XLALRungeKutta4Free( integrator );
    LALFree(dummy.data);
 
    DETATCHSTATUSPTR(status);

@@ -980,6 +980,7 @@ LALEOBWaveformEngine (
    InspiralPhaseIn in2;
    InspiralDerivativesIn in3;
    rk4In in4;
+   rk4GSLIntegrator *integrator = NULL;
    pr3In pr3in; 
    void *funcParams;
    expnCoeffs ak;
@@ -1228,6 +1229,13 @@ Userful for debugging: Make sure a solution for r exists.
    in4.dym = &dym;
    in4.dyt = &dyt;
 
+   /* Initialize the GSL integrator */
+   if (!(integrator = XLALRungeKutta4Init(nn, &in4)))
+   {
+     LALFree(dummy.data);
+     ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
+   }
+
    t = 0.0;
    count = 0;
    if (a || signal2)
@@ -1240,6 +1248,7 @@ Userful for debugging: Make sure a solution for r exists.
    while (r > rn && r < rOld) {
       if ((signal1 && count >= signal1->length) || (ff && count >= ff->length))
       {
+        XLALRungeKutta4Free( integrator );
 	LALFree(dummy.data);
 	ABORT(status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
       }
@@ -1279,7 +1288,7 @@ Userful for debugging: Make sure a solution for r exists.
       omega = dvalues.data[1];
       in4.dydx = &dvalues;
       in4.x = t/m;
-      LALRungeKutta4(status->statusPtr, &newvalues, &in4, funcParams);
+      LALRungeKutta4(status->statusPtr, &newvalues, integrator, funcParams);
       CHECKSTATUSPTR(status);
 
 
@@ -1305,6 +1314,7 @@ Record the final cutoff frequency of BD Waveforms for record keeping
    if (signal1 && !signal2) params->tC = t;
    *countback = count;
    
+   XLALRungeKutta4Free( integrator );
    LALFree(dummy.data);
    DETATCHSTATUSPTR(status);
    RETURN(status);

@@ -97,6 +97,7 @@ LALInspiralSpinModulatedWave(
 	REAL8Vector dummy, values, dvalues, newvalues, yt, dym, dyt;
 	void *funcParams;
 	rk4In rk4in;
+        rk4GSLIntegrator *integrator;
 	expnFunc func;
 	expnCoeffs ak;
 
@@ -174,6 +175,19 @@ LALInspiralSpinModulatedWave(
 	rk4in.yt = &yt;
 	rk4in.dym = &dym;
 	rk4in.dyt = &dyt;
+
+        xlalErrno = 0;
+        /* Initialize GSL integrator */
+        if (!(integrator = XLALRungeKutta4Init(nDEDim, &rk4in)))
+        {
+          INT4 errNum = XLALClearErrno();
+          LALFree(dummy.data);
+
+          if (errNum = XLAL_ENOMEM)
+            ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
+          else
+            ABORTXLAL( status );
+        }
 
 	/* Pad the first nStartPad elements of the signal array with zero */
 	count = 0;
@@ -261,7 +275,7 @@ LALInspiralSpinModulatedWave(
 		CHECKSTATUSPTR(status);
 		v = pow(LAL_PI * in->totalMass * LAL_MTSUN_SI * f, 1.L/3.L);
 		/* Integrate the equations one step forward */
-		LALRungeKutta4(status->statusPtr, &newvalues, &rk4in, funcParams);
+		LALRungeKutta4(status->statusPtr, &newvalues, integrator, funcParams);
 		CHECKSTATUSPTR(status);
 
 		/* re-record the new values of the variables */
@@ -286,6 +300,7 @@ LALInspiralSpinModulatedWave(
 		signal->data[count] = 0.L;
 		count++;
 	}
+        XLALRungeKutta4Free( integrator );
 	LALFree(dummy.data);
 	DETATCHSTATUSPTR(status);
 	RETURN(status);
@@ -482,6 +497,7 @@ LALInspiralSpinModulatedWaveForInjection(
   REAL8Vector dummy, values, dvalues, newvalues, yt, dym, dyt;
   void *funcParams;
     rk4In rk4in;
+    rk4GSLIntegrator *integrator;
     expnFunc func;
     expnCoeffs ak;
     REAL4Vector *a=NULL;
@@ -601,6 +617,19 @@ LALInspiralSpinModulatedWaveForInjection(
     rk4in.yt = &yt;
     rk4in.dym = &dym;
     rk4in.dyt = &dyt;
+
+    xlalErrno = 0;
+    /* Initialize GSL integrator */
+    if (!(integrator = XLALRungeKutta4Init(nDEDim, &rk4in)))
+    {
+      INT4 errNum = XLALClearErrno();
+      LALFree(dummy.data);
+
+      if (errNum = XLAL_ENOMEM)
+        ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
+      else
+        ABORTXLAL( status );
+    }
     
     /* Pad the first nStartPad elements of the signal array with zero */
     count = 0;
@@ -695,7 +724,7 @@ LALInspiralSpinModulatedWaveForInjection(
 	CHECKSTATUSPTR(status);
 	v = pow(LAL_PI * params->totalMass * LAL_MTSUN_SI * f, 1.L/3.L);
 	/* Integrate the equations one step forward */
-	LALRungeKutta4(status->statusPtr, &newvalues, &rk4in, funcParams);
+	LALRungeKutta4(status->statusPtr, &newvalues, integrator, funcParams);
 	CHECKSTATUSPTR(status);
 	
 	/* re-record the new values of the variables */
@@ -800,7 +829,7 @@ LALInspiralSpinModulatedWaveForInjection(
     LALFree(ff->data);
     LALFree(phiv->data);
     
-  
+    XLALRungeKutta4Free( integrator );
     LALFree(dummy.data);
     DETATCHSTATUSPTR(status);
     RETURN(status);

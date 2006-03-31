@@ -645,7 +645,8 @@ LALSTPNWaveformEngine (
   INT4 		length;                 /* memory allocation structure*/
   INT4 		j;                      /* counter*/
   
-  rk4In 	in4;                   /* used to setup the Runge-Kutta integration*/
+  rk4In 	in4;                    /* used to setup the Runge-Kutta integration*/
+  rk4GSLIntegrator *integrator;         
   
   expnCoeffs 	ak;
   expnFunc 	func;
@@ -979,6 +980,19 @@ LALSTPNWaveformEngine (
   in4.dym 	= &dym;
   in4.dyt 	= &dyt;
 
+  xlalErrno = 0;
+  /* Initialize GSL integrator */
+  if (!(integrator = XLALRungeKutta4Init(nn, &in4)))
+  {
+    INT4 errNum = XLALClearErrno();
+    LALFree(dummy.data);
+
+    if (errNum = XLAL_ENOMEM)
+      ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
+    else
+      ABORTXLAL( status );
+  }
+
   /* main integration loop*/
 
   t = 0.0;
@@ -1006,7 +1020,8 @@ LALSTPNWaveformEngine (
 
     /*    fprintf(stderr,"%d %d %15.12lf %15.12lf %15.12lf %15.12lf %15.12lf\n", count, length, omegadot, LNhz*LNhz, LNhztol, omega, unitHz);*/
     if ((signal1 && count >= signal1->length) || (ff && count >= ff->length))
-      {
+      { 
+        XLALRungeKutta4Free( integrator );
 	LALFree(dummy.data);
 	ABORT(status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
       }
@@ -1076,7 +1091,7 @@ LALSTPNWaveformEngine (
       /* This integrator should be replaced, eventually,*/
       /* by a variable-timestep algorithm*/
 
-      LALRungeKutta4(status->statusPtr, &newvalues, &in4, (void*)mparams);
+      LALRungeKutta4(status->statusPtr, &newvalues, integrator, (void*)mparams);
       CHECKSTATUSPTR(status);
 
       /* updating values of dynamical variables*/
@@ -1130,7 +1145,7 @@ LALSTPNWaveformEngine (
    *countback = count;
    
 
-
+  XLALRungeKutta4Free( integrator );
   LALFree(dummy.data);
 
   DETATCHSTATUSPTR(status);
