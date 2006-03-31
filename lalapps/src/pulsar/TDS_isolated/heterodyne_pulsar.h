@@ -87,6 +87,13 @@ typedef struct tagCalibrationFiles{
   CHAR *openloopgainfile;
 }CalibrationFiles;
 
+/* structure to store data from a lal frame cache as output from LSCdataFind */
+typedef struct tagFrameCache{
+  CHAR framelist[MAXNUMFRAMES][MAXSTRLENGTH]; /* list of file names in frame cache file */
+  INT4 duration[MAXNUMFRAMES]; /* duration of each frame file */
+  INT4 starttime[MAXNUMFRAMES]; /* start time of each frame file */
+}FrameCache;
+
 typedef struct tagInputParams{
   CHAR ifo[3];
   CHAR pulsar[12];
@@ -161,8 +168,9 @@ duration);
 INT4 get_segment_list(INT4Vector *starts, INT4Vector *stops, CHAR *seglistfile);
 
 /* get frame data for partcular science segment */
-CHAR *set_frame_files(INT4 *starts, INT4 *stops, CHAR framelist[][MAXSTRLENGTH], INT4
-numFrames, INT4 *position);
+/*CHAR *set_frame_files(INT4 *starts, INT4 *stops, CHAR framelist[][MAXSTRLENGTH], INT4
+numFrames, INT4 *position);*/
+CHAR *set_frame_files(INT4 *starts, INT4 *stops, FrameCache cache, INT4 numFrames, INT4 *position);
 
 /* calibrate data */
 void calibrate(COMPLEX16TimeSeries *series, REAL8Vector *datatimes, CalibrationFiles calfiles,

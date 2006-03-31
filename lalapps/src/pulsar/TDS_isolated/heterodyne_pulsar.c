@@ -27,7 +27,8 @@ int main(int argc, char *argv[]){
   Filters iirFilters;
 
   FILE *fpin=NULL, *fpout=NULL;
-  CHAR framelist[MAXNUMFRAMES][MAXSTRLENGTH]; /* list of file names in frame cache file */
+  //CHAR framelist[MAXNUMFRAMES][MAXSTRLENGTH]; /* list of file names in frame cache file */
+  FrameCache cache;
   INT4 frcount=0, count=0;
 
   CHAR outputfile[256]="";
@@ -87,9 +88,14 @@ int main(int argc, char *argv[]){
   }
 
   if(inputParams.heterodyneflag == 0){ /* input comes from frame files so read in frame filenames */
+    CHAR det[3]; /* detector from cache file */
+    CHAR type[10]; /* frame type e.g. RDS_R_L3 - from cache file */
+    
     frcount=0;
     while(!feof(fpin)){
-      fscanf(fpin, "%s", framelist[frcount]);
+      // fscanf(fpin, "%s", framelist[frcount]);
+      fscanf(fpin, "%s%s%d%d%s", det, type, &cache.starttime[frcount], &cache.duration[frcount],
+             cache.framelist[frcount]);
       frcount++;
     }
     fclose(fpin);
@@ -141,7 +147,9 @@ int main(int argc, char *argv[]){
       hetParams.length = inputParams.samplerate * duration;
       gpstime = (REAL8)starts->data[count];
 
-      smalllist = set_frame_files(&starts->data[count], &stops->data[count], framelist, frcount,
+      /*smalllist = set_frame_files(&starts->data[count], &stops->data[count], framelist, frcount,
+      &count);*/
+      smalllist = set_frame_files(&starts->data[count], &stops->data[count], cache, frcount,
       &count);
 
       /* make vector (make sure imaginary parts are set to zero) */
@@ -465,12 +473,12 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
 void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times, HeterodyneParams hetParams){
   static LALStatus status;
 
-  REAL8 phaseCoarse, phaseUpdate, deltaphase;
-  REAL8 t, tdt, T0, T0Update;
-  REAL8 dtpos; /* time between position epoch and data timestamp */
+  REAL8 phaseCoarse=0., phaseUpdate=0., deltaphase=0.;
+  REAL8 t=0., tdt=0., T0=0., T0Update=0.;
+  REAL8 dtpos=0.; /* time between position epoch and data timestamp */
   INT4 i=0;
 
-  EphemerisData *edat;
+  EphemerisData *edat=NULL;
   BarycenterInput baryinput;
   EarthState earth;
   EmissionTime  emit;
@@ -842,12 +850,13 @@ type: num starts stops dur */
 }
 
 /* get frame data for partcular science segment */
-CHAR *set_frame_files(INT4 *starts, INT4 *stops, CHAR framelist[][MAXSTRLENGTH], INT4
-numFrames, INT4 *position){
+/*CHAR *set_frame_files(INT4 *starts, INT4 *stops, CHAR framelist[][MAXSTRLENGTH], INT4
+numFrames, INT4 *position){*/
+CHAR *set_frame_files(INT4 *starts, INT4 *stops, FrameCache cache, INT4 numFrames, INT4 *position){
   INT4 i=0;
   INT4 durlock; /* duration of locked segment */
-  REAL8 gpstime;
-  INT4 tempstart, tempstop, duration;
+  //REAL8 gpstime;
+  INT4 tempstart, tempstop;//, duration;
   INT4 check=0;
   CHAR *smalllist=NULL;
 
@@ -862,8 +871,8 @@ numFrames, INT4 *position){
     tempstop = tempstart + MAXDATALENGTH;
 
   for(i=0;i<numFrames-1;i++){
-    get_frame_times(framelist[i], &gpstime, &duration);
-
+    /*get_frame_times(framelist[i], &gpstime, &duration);
+    
     if(tempstart >= gpstime && tempstart < gpstime+duration && gpstime < tempstop){
       if(check == 0){
         sprintf(smalllist, "%s %d %d ", framelist[i], (INT4)gpstime, duration);
@@ -873,9 +882,25 @@ numFrames, INT4 *position){
         sprintf(smalllist, "%s %s %d %d ", smalllist, framelist[i], (INT4)gpstime, duration);
       }
       tempstart += duration;
+    }*/
+    /* else if(gpstime > tempstop)  break out the loop when we have all the files for the segment 
+      break; */
+    if(tempstart >= cache.starttime[i] && tempstart < cache.starttime[i]+cache.duration[i] &&
+       cache.starttime[i] < tempstop){
+      if(check == 0){
+        sprintf(smalllist, "%s %d %d ", cache.framelist[i], cache.starttime[i], cache.duration[i]);
+        check++;
+      }
+      else{
+        sprintf(smalllist, "%s %s %d %d ", smalllist, cache.framelist[i], cache.starttime[i],
+                cache.duration[i]);
+      }
+      tempstart += cache.duration[i];
     }
-    else if(gpstime > tempstop) /* break out the loop when we have all the files for the segment */
+    else if(cache.starttime[i] > tempstop){ /* break out the loop when we have all the files for the
+segment */
       break;
+    }
   }
 
   if(durlock > MAXDATALENGTH){ /* set starts to its value plus MAXDATALENGTH */
