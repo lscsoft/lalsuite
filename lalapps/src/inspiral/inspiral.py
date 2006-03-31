@@ -45,6 +45,44 @@ class TmpltBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_sub_file('tmpltbank.sub')
 
 
+class InspInjJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+  """
+  A lalapps_inspinj job used by the grb inspiral pipeline. The static options
+  are read from the section [inspinj] in the ini file. The
+  stdout and stderr from the job are directed to the logs directory. The
+  job runs in the universe specified in the ini file. The path to the
+  executable is determined from the ini file.
+  """
+  def __init__(self,cp,dax=False):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    self.__executable = cp.get('condor','inspinj')
+    self.__universe = cp.get('condor','universe')
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    pipeline.AnalysisJob.__init__(self,cp,dax)
+    self.__listDone=[]
+    self.__listNodes=[]
+
+    for sec in ['inspinj']:
+      self.add_ini_opts(cp,sec)
+
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+
+    self.set_stdout_file('logs/inspinj-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/inspinj-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
+
+  def set_done(self, number, node):
+    self.__listDone.append(number)
+    self.__listNodes.append(node)
+
+  def check_node(self, number):
+    if self.__listDone.count(number):
+      index=self.__listDone.index(number)
+      return self.__listNodes[index]
+    return None    
+
+
 class BbhInjJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
   A lalapps_bbhinj job used by the online inspiral pipeline. The static options
@@ -320,7 +358,36 @@ class ChiaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_stderr_file('logs/chia-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
     self.set_sub_file('chia.sub')   
 
+class InspInjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+  """
+  A InspInjNode runs an instance of the inspinj generation job in a
+  Condor DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of lalapps_inspinj.
+    """
+    pipeline.CondorDAGNode.__init__(self,job)
+    pipeline.AnalysisNode.__init__(self)
+    self.__usertag = job.get_config('pipeline','user-tag')
 
+  def set_seed(self,seed):
+    """
+    Set the seed of the injection file by setting a --seed option to the
+    node when it is executed. The seed is automatically the number of
+    the injection 'round'.
+    @param seed: seed of the job
+    """
+    self.add_var_opt('seed',seed)
+    self.__seed = seed
+
+  def set_output(self, outputName):
+    """
+    Set the output name of the injection file
+    @param outputName: name of the injection file created
+    """
+    self.add_var_opt('output',outputName)
+    self.__outputName = outputName
 
 class BbhInjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
