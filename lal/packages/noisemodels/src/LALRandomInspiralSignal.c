@@ -408,6 +408,7 @@ LALRandomInspiralSignal
 	       * need for Fourier transform
 	       */
        if (randIn->param.approximant == BCV ||
+           randIn->param.approximant == BCVSpin ||
 	   randIn->param.approximant == TaylorF1 ||
 	   randIn->param.approximant == TaylorF2 ||
 	   randIn->param.approximant == PadeF1)
@@ -492,6 +493,7 @@ LALRandomInspiralSignal
          CHECKSTATUSPTR(status);
 
 	 if (randIn->param.approximant == BCV ||
+	     randIn->param.approximant == BCVSpin ||
 	     randIn->param.approximant == TaylorF1 ||
 	     randIn->param.approximant == TaylorF2 ||
 	     randIn->param.approximant == PadeF1)
