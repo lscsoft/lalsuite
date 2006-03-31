@@ -1,24 +1,32 @@
-/*  <lalVerbatim file="LALRungeKutta4AdaptCV">
+/*  <lalVerbatim file="LALRungeKutta4CV">
 Author: Robinson, C. A.
 $Id$
 </lalVerbatim>  */
 
 /*  <lalLaTeX>
 
-\subsection{Module \texttt{LALRungeKutta4Adapt.c}}
+\subsection{Module \texttt{LALRungeKutta4.c}}
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{LALRungeKutta4CP}
+\idx{LALRungeKutta4()}
 
-The code \texttt{LALRungeKutta4Adapt.c} solves a system of $n$ coupled first--order differential equations.
+\begin{itemize}
+\item {\tt n:} The number of coupled equations being integrated.
+\item {\tt yout:} The output values for the system after the time-step.
+\item {\tt input:} The input for the system
+\item {\tt integrator} Required for the GSL integratior. Created using {\tt XLALRungeKutta4Init()}.
+\item {\tt params} Parameters to be passed to the derivative function
+\end{itemize}
+
+\subsubsection*{Description}
+The code \texttt{LALRungeKutta4.c} solves a system of $n$ coupled first--order differential equations.
 Internally, it uses the gsl routines for performing adaptive step evolution of the system, but to the outside
 user, it returns results for a fixed step size.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALRungeKutta4AdaptCP}
-\idx{LALRungeKutta4Adapt()}
-
-\subsubsection*{Description}
-
-
+Prior to evolving a system using {\tt LALRungeKutta4()}, it is necessary to create the GSL integrator using
+{\tt XLALRungeKutta4Init()}. Once the evolution of the system has finished, this integrator should then
+be freed using {\tt XLALRungeKutta4Free()}.
 \subsubsection*{Algorithm}
 
 
@@ -27,16 +35,12 @@ None.
 
 \subsubsection*{Notes}
 
-\vfill{\footnotesize\input{LALRungeKutta4AdaptCV}}
+\vfill{\footnotesize\input{LALRungeKutta4CV}}
 
 </lalLaTeX>  */
 
 
-#include <gsl/gsl_errno.h>
-#include <gsl/gsl_odeiv.h>
-#include <lal/LALGSL.h>
 #include <lal/LALInspiral.h>
-#include <lal/LALStdlib.h>
 
 struct RungeGSLParams {
   rk4In *input;
@@ -50,49 +54,87 @@ static int derivativeGSLWrapper(
                                 void *params);
 
 
-NRCSID (LALRUNGEKUTTA4ADAPTC, "$Id$");
 
-/*  <lalVerbatim file="LALRungeKutta4AdaptCP"> */
+NRCSID (LALRUNGEKUTTA4C, "$Id$");
+
+/* Function for allocating memory and setting up the GSL integrator */
+/* <lalVerbatim file="LALRungeKutta4CP"> */
+rk4GSLIntegrator * XLALRungeKutta4Init( INT4 n,
+                                        rk4In *input
+                                      )
+{ /* </lalVerbatim>  */
+ 
+  static const char *func = "XLALRungeKutta4Init"; 
+  rk4GSLIntegrator  *integrator = NULL;
+  
+  /* Check we have an input */
+  if (!input)
+    XLAL_ERROR_NULL(func, XLAL_EFAULT);
+
+  /* Allocate memory for the integrator structure */
+  if (!(integrator = (rk4GSLIntegrator *) LALCalloc(1, sizeof(rk4GSLIntegrator))))
+  {
+    XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+  }
+
+  integrator->input = input;
+
+  /* Set the algorithm to 4th-order Runge-Kutta */
+  integrator->type = gsl_odeiv_step_rkf45;
+
+  /* Allocate memory for data values */
+  if (!(integrator->y = (REAL8 *) LALMalloc(n * sizeof(REAL8))))
+  {
+    LALFree(integrator);
+    XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+  }
+
+  /* Initialise GSL integrator */
+  XLAL_CALLGSL( integrator->step    = gsl_odeiv_step_alloc(integrator->type, n) );
+  XLAL_CALLGSL( integrator->control = gsl_odeiv_control_standard_new(1.0e-5, 1.0e-5, 1.0, 1.0) );
+  XLAL_CALLGSL( integrator->evolve  = gsl_odeiv_evolve_alloc(n) );
+
+  /* Check the integrator is allocated correctly */
+  if (!(integrator->step) || !(integrator->control) || !(integrator->evolve))
+  {
+    XLALRungeKutta4Free( integrator );
+    XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+  }
+
+  return integrator;
+}  
+
+
+/*  <lalVerbatim file="LALRungeKutta4CP"> */
 void 
 LALRungeKutta4(
-   LALStatus   *status,
-   REAL8Vector *yout,
-   rk4In       *input,
-   void        *params
+   LALStatus        *status,
+   REAL8Vector      *yout,
+   rk4GSLIntegrator *integrator,
+   void             *params
    )
 { /* </lalVerbatim>  */
 
    INT4 i;
    REAL8 t = 0.0;
    struct RungeGSLParams gslParams;
-   REAL8 *y;
-   REAL8 h = input->h;
-   const gsl_odeiv_step_type * type = gsl_odeiv_step_rk4;
-   gsl_odeiv_step *step;
-   gsl_odeiv_control *control;
-   gsl_odeiv_evolve *evolve;
+   rk4In *input = NULL;
+   REAL8 h;
    gsl_odeiv_system sys; 
   
-   INITSTATUS(status, "LALRungeKutta4", LALRUNGEKUTTA4ADAPTC);
+   INITSTATUS(status, "LALRungeKutta4", LALRUNGEKUTTA4C);
    ATTATCHSTATUSPTR(status);
 
    ASSERT (yout, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT (yout->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT (input, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT (integrator, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT (integrator->input, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT (params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
   /* Initialise GSL integrator */
-  step    = gsl_odeiv_step_alloc(type, input->n);
-  control = gsl_odeiv_control_standard_new(1.0e-5, 1.0e-5, 1.0, 1.0);
-  evolve  = gsl_odeiv_evolve_alloc(input->n);
 
-  if ( !(y = (REAL8 *) LALMalloc( input->n * sizeof(REAL8))))
-  {
-    gsl_odeiv_evolve_free(evolve);
-    gsl_odeiv_control_free(control);
-    gsl_odeiv_step_free(step);
-    ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
-  }
+  input = integrator->input;
+  h     = input->h;  
 
   gslParams.input = input;
   gslParams.params = params;
@@ -103,21 +145,18 @@ LALRungeKutta4(
   sys.params    = &gslParams;
 
 
-  memcpy( y, input->y->data, input->n * sizeof(REAL8));
+  memcpy( integrator->y, input->y->data, input->n * sizeof(REAL8));
 
    /* Evolve the system */
   while (t < input->h)
   {
     REAL8 tOld = t;
-    CALLGSL( gsl_odeiv_evolve_apply(evolve, control, step, &sys,
-				&t, input->h, &h, y), status );
+    CALLGSL( gsl_odeiv_evolve_apply(integrator->evolve, integrator->control,
+                 integrator->step, &sys,
+				&t, input->h, &h, integrator->y), status );
     /*printf("h = %e, t = %e\n", h, t);*/
     BEGINFAIL(status)
     {  
-  	gsl_odeiv_evolve_free(evolve);
-   	gsl_odeiv_control_free(control);
-   	gsl_odeiv_step_free(step);
-	LALFree(y);
         ABORT(status, LALINSPIRALH_ESTOPPED, LALINSPIRALH_MSGESTOPPED);
     }
     ENDFAIL(status);
@@ -126,47 +165,54 @@ LALRungeKutta4(
     if (t == tOld)
     {
          for (i=0; i<input->n; i++)
-         yout->data[i] = 0.0;
-         fprintf(stderr, "Integration become dodgy.\n");
- 
-         gsl_odeiv_evolve_free(evolve);
-         gsl_odeiv_control_free(control);
-         gsl_odeiv_step_free(step);
-	 LALFree(y);
-    
+           yout->data[i] = 0.0;
+
          ABORT(status, LALINSPIRALH_ESTOPPED, LALINSPIRALH_MSGESTOPPED);
     } 
   }
 
-  memcpy( yout->data, y, input->n * sizeof(REAL8));
+  memcpy( yout->data, integrator->y, input->n * sizeof(REAL8));
 
-  gsl_odeiv_evolve_free(evolve);
-  gsl_odeiv_control_free(control);
-  gsl_odeiv_step_free(step);
-  LALFree(y);
-   
   DETATCHSTATUSPTR(status);
   RETURN (status);
 }
 
 
+/* Function for freeing up memory for the GSL integrator */
+/*  <lalVerbatim file="LALRungeKutta4CP"> */
+void XLALRungeKutta4Free( rk4GSLIntegrator *integrator )
+{ /* </lalVerbatim> */
+
+  static const char *func = "XLALRungeKutta4Free";
+
+  if (!integrator) XLAL_ERROR_VOID(func, XLAL_EFAULT);
+
+  /* Free the GSL integrator controls etc */
+  if (integrator->evolve)  XLAL_CALLGSL( gsl_odeiv_evolve_free(integrator->evolve) );
+  if (integrator->control) XLAL_CALLGSL( gsl_odeiv_control_free(integrator->control) );
+  if (integrator->step)    XLAL_CALLGSL( gsl_odeiv_step_free(integrator->step) );
+  LALFree( integrator->y );
+  LALFree( integrator );
+  return;
+}
+
+
 /* A simple wrapper function to allow GSL to use the LAL
    derivative functions */
-int derivativeGSLWrapper(
+static int derivativeGSLWrapper(
 				REAL8 t, 
 				const REAL8 y[], 
 				REAL8 dydx[],
 				void *params)
 {
   struct RungeGSLParams *in = (struct RungeGSLParams *)params;
-  REAL8Vector yVect;
   REAL8Vector dyVect;
+  REAL8Vector *yVect = in->input->yt;
 
-  yVect.length = dyVect.length = in->input->n;
-  yVect.data = (REAL8 *)LALMalloc(in->input->n * sizeof(REAL8));
-  memcpy(yVect.data, y, in->input->n * sizeof(REAL8));
+  memcpy(yVect->data, y, in->input->n * sizeof(REAL8));
+
+  dyVect.length = in->input->n;
   dyVect.data = dydx;
-  in->input->function(&yVect, &dyVect, in->params);
-  LALFree(yVect.data);
+  in->input->function(yVect, &dyVect, in->params);
   return GSL_SUCCESS;
 }
