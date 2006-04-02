@@ -347,7 +347,7 @@ different than DD model - TEMPO bnrymss.f */
     xi = xdot/an; /* MSS parameter */
 
     tt0 = tb - T0;
-    //x = x + xdot*tt0;
+    /* x = x + xdot*tt0; */
     e = e + edot*tt0;
     er = e*(1.0+dr);
     eth = e*(1.0+dth);
@@ -562,7 +562,7 @@ LALReadTEMPOParFile(  LALStatus *status,
      the param or not (don't need this), fourth will be the error on the 
      param (in same units as the param) */
  
-  // convert all epochs given in MJD in .par files to secs in TDB
+  /* convert all epochs given in MJD in .par files to secs in TDB  */
   while(1){
     j=i;
     if(!strcmp(val[i], "NAME") || !strcmp(val[i], "name")){
@@ -759,7 +759,7 @@ LALReadTEMPOParFile(  LALStatus *status,
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
-        output->T0Err = atof(val[i+3])*DAYSTOSECS; // convert to seconds
+        output->T0Err = atof(val[i+3])*DAYSTOSECS; /* convert to seconds */
         j+=2;
       }
     }
@@ -768,7 +768,7 @@ LALReadTEMPOParFile(  LALStatus *status,
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
-        output->TascErr = atof(val[i+3])*DAYSTOSECS; // convert to seconds;
+        output->TascErr = atof(val[i+3])*DAYSTOSECS; /* convert to seconds; */
         j+=2;
       }
     }
