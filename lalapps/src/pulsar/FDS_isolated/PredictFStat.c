@@ -46,7 +46,6 @@
 #include <lalapps.h>
 
 /* local includes */
-#include "DopplerScan.h"
 
 RCSID( "$Id$");
 
@@ -89,7 +88,6 @@ typedef struct {
   LIGOTimeGPS startTime;		    /**< start time of observation */
   REAL8 duration;			    /**< total time-span of the data (all streams) in seconds */
   EphemerisData *edat;			    /**< ephemeris data (from LALInitBarycenter()) */
-  DopplerRegion searchRegion;		    /**< parameter-space region to search over (FIXME) */
   UINT4 numDetectors;			    /**< number of detectors */
   MultiSFTVector *multiSFTs;		    /**< multi-IFO SFT-vectors */
   MultiDetectorStateSeries *multiDetStates; /**< pos, vel and LMSTs for detector at times t_i */
@@ -537,7 +535,7 @@ WriteFStatLog (LALStatus *status, char *argv[])
   /* write out a log describing the complete user-input (in cfg-file format) */
   TRY (LALUserVarGetLog (status->statusPtr, &logstr,  UVAR_LOGFMT_CFGFILE), status);
 
-  fprintf (fplog, "## LOG-FILE of ComputeFStatistic run\n\n");
+  fprintf (fplog, "## LOG-FILE of PredictFStat run\n\n");
   fprintf (fplog, "# User-input:\n");
   fprintf (fplog, "# ----------------------------------------------------------------------\n\n");
 
@@ -596,11 +594,5 @@ checkUserInputConsistency (LALStatus *status)
 {
   INITSTATUS (status, "checkUserInputConsistency", rcsid);  
   
-  if (uvar_ephemYear == NULL)
-    {
-      LALPrintError ("\nNo ephemeris year specified (option 'ephemYear')\n\n");
-      ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
-    }      
-
    RETURN (status);
 } /* checkUserInputConsistency() */

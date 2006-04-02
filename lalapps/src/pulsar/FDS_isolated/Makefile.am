@@ -60,8 +60,7 @@ compareFstats_SOURCES = compareFstats.c
 
 ComputeFStatistic_v2_SOURCES = ComputeFStatistic_v2.c  DopplerScan.c DopplerScan.h LogPrintf.c 
 
-lalapps_PredictFStat_SOURCES = PredictFStat.c  DopplerScan.c DopplerScan.h LogPrintf.c 
-
+lalapps_PredictFStat_SOURCES = PredictFStat.c  LogPrintf.c 
 
 TESTS = testFStat.sh
 
