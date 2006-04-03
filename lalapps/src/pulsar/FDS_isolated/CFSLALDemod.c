@@ -63,7 +63,11 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
   REAL8 FbSq;
   REAL8 FaFb;
   COMPLEX16 Fa, Fb;
+#ifdef USE_BOINC
+#define klim 32
+#else
   UINT4 klim = 2*params->Dterms;
+#endif
   REAL8 f;
   static REAL8 sinVal[LUT_RES+1], cosVal[LUT_RES+1];        /*LUT values computed by the routine do_trig_lut*/
   static BOOLEAN firstCall = 1;
@@ -136,7 +140,10 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
         COMPLEX8 *Xalpha=input[alpha]->fft->data->data;
         REAL4 a = params->amcoe->a->data[alpha];
         REAL4 b = params->amcoe->b->data[alpha];
-        REAL8 x,y;
+        REAL8 x;
+#ifndef USE_LUT_Y
+	REAL8 y;
+#endif
         REAL4 realP, imagP;             /* real and imaginary parts of P, see CVS */
 
         /* NOTE: sky-constants are always positive!!
@@ -183,26 +190,29 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
           tcos = tc-d*ts-d2*tc-1.0;
         }
 
+#ifdef USE_LUT_Y
+	/* use LUT here, too */
+	{
+	  REAL8 yTemp = f * skyConst[ tempInt1[ alpha ]-1 ] + ySum[ alpha ];
+	  REAL8 yRem = yTemp - (INT4)yTemp;
+	  if (yRem < 0) { yRem += 1.0f; }
+	  index = (UINT4)( yRem * LUT_RES + 0.5 );
+	  {
+	    REAL8 d = LAL_TWOPI*(yRem - (REAL8)index/(REAL8)LUT_RES);
+	    REAL8 d2=0.5*d*d;
+	    REAL8 ts = sinVal[index];
+	    REAL8 tc = cosVal[index];
+	    
+	    imagQ = ts + d * tc - d2 * ts;
+	    imagQ = -imagQ;
+	    realQ = tc - d * ts - d2 * tc;
+	  }
+	}
+#else
         y = - LAL_TWOPI * ( f * skyConst[ tempInt1[ alpha ]-1 ] + ySum[ alpha ] );
         realQ = cos(y);
         imagQ = sin(y);
-
-        /*
-        REAL8 yTemp = f * skyConst[ tempInt1[ alpha ]-1 ] + ySum[ alpha ];
-        REAL8 yRem = yTemp - (UINT4)yTemp;
-
-        index = (UINT4)( yRem * LUT_RES + 0.5 );
-        {
-          REAL8 d = LAL_TWOPI*(yRem - (REAL8)index/(REAL8)LUT_RES);
-          REAL8 d2=0.5*d*d;
-          REAL8 ts = sinVal[index];
-          REAL8 tc = cosVal[index];
-                
-          imagQ = ts + d * tc - d2 * ts;
-          imagQ = -imagQ;
-          realQ = tc - d * ts - d2 * tc;
-        }
-        */
+#endif
 
         k1 = (UINT4)xTemp - params->Dterms + 1;
 
