@@ -25,7 +25,11 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
   REAL8 FbSq;
   REAL8 FaFb;
   COMPLEX16 Fa, Fb;
+#ifdef USE_BOINC
+#define klim 32
+#else
   UINT4 klim = 2*params->Dterms;
+#endif
   REAL8 f;
   static REAL8 sinVal[LUT_RES+1], cosVal[LUT_RES+1];        /*LUT values computed by the routine do_trig_lut*/
   static BOOLEAN firstCall = 1;
@@ -98,7 +102,10 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
         COMPLEX8 *Xalpha=input[alpha]->fft->data->data;
         REAL4 a = params->amcoe->a->data[alpha];
         REAL4 b = params->amcoe->b->data[alpha];
-        REAL8 x,y;
+        REAL8 x;
+#ifndef USE_LUT_Y
+	REAL8 y;
+#endif
         REAL4 realP, imagP;             /* real and imaginary parts of P, see CVS */
 
         /* NOTE: sky-constants are always positive!!
