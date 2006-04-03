@@ -332,7 +332,7 @@ different than DD model - TEMPO bnrymss.f */
     REAL8 er, eth, an, k;
     REAL8 orbits, phase;
     INT4 norbits;
-    REAL8 w, su, cu, onemecu, cae, sae;
+    REAL8 su, cu, onemecu, cae, sae;
     REAL8 sw, cw, alpha, beta, bg;
     REAL8 anhat, sqr1me2, cume, brace, dlogbr;
     REAL8 Dbb;    /* Delta barbar in DD eq 52 */
@@ -593,20 +593,20 @@ LALReadTEMPOParFile(  LALStatus *status,
     }
     else if(!strcmp(val[i],"pmra") || !strcmp(val[i],"PMRA")) {
       /* convert pmra from mas/year to rads/sec */
-      output->pmra = LAL_PI_180*atof(val[i+1])/(60.0*60.0*1000*LAL_YRSID_SI);
+      output->pmra = LAL_PI_180*atof(val[i+1])/(60.0*60.0*1000.*LAL_YRSID_SI);
       j++;
       if(atoi(val[i+2])==1 && i+2<k){
-        output->pmraErr = LAL_PI_180*atof(val[i+3])/(60.0*60.0*1000*LAL_YRSID_SI);
+        output->pmraErr = LAL_PI_180*atof(val[i+3])/(60.0*60.0*1000.*LAL_YRSID_SI);
         j+=2;
       }
     }
     else if(!strcmp(val[i],"pmdec") || !strcmp(val[i],"PMDEC")) {
       /* convert pmdec from mas/year to rads/sec */
-      output->pmdec = LAL_PI_180*atof(val[j+1])/(60.0*60.0*1000*LAL_YRSID_SI);
+      output->pmdec = LAL_PI_180*atof(val[j+1])/(60.0*60.0*1000.*LAL_YRSID_SI);
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
-        output->pmdecErr = LAL_PI_180*atof(val[i+3])/(60.0*60.0*1000*LAL_YRSID_SI);
+        output->pmdecErr = LAL_PI_180*atof(val[i+3])/(60.0*60.0*1000.*LAL_YRSID_SI);
         j+=2;
       }
     }
@@ -714,7 +714,6 @@ LALReadTEMPOParFile(  LALStatus *status,
     else if( !strcmp(val[i],"binary") || !strcmp(val[i],"BINARY")) {
       /*sprintf(output->model, "%s", val[j+1]);*/
       output->model = strdup(val[i+1]);
-
       j++;
     }
     else if( !strcmp(val[i],"a1") || !strcmp(val[i],"A1")) {
