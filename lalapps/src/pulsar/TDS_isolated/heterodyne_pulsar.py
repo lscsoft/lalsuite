@@ -75,7 +75,7 @@ class heterodyneNode(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.add_var_opt('data-file',data_file)
     self.__data_file = data_file
     
-  def set_output_dir(self,output_dir)
+  def set_output_dir(self,output_dir):
     # set output directory
     self.add_var_opt('output-dir',output_dir)
     self.__output_dir = output_dir
