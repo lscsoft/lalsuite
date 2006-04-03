@@ -26,12 +26,12 @@ extern UINT4 maxSFTindex;  /**< maximal sftindex, for error-checking */
 /* in special cases (macros) don't use the generic version of TestLALDemod() below, but the ones from external files */
 #if defined(USE_ALTIVEC)
 #include "CFSLALDemod_AltiVec.c"
-#elif defined(USE_NEW_DIV)
-#include "CFSLALDemod_new_div.c"
-#elif defined(USE_NEW_DIV_PART)
-#include "CFSLALDemod_new_div_part.c"
 #elif defined(USE_NDP_VECT)
 #include "CFSLALDemod_ndp_vect.c"
+#elif defined(USE_NEW_DIV_PART)
+#include "CFSLALDemod_new_div_part.c"
+#elif defined(USE_NEW_DIV)
+#include "CFSLALDemod_new_div.c"
 #elif defined(USE_EXP_LALDEMOD)
 #include "CFSLALDemod_Experimental.c"
 #else /* USE_R4LALDEMOD, USE_ALTIVEC */
