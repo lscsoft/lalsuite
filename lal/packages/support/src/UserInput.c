@@ -1066,7 +1066,7 @@ UvarValue2String (LALStatus *status, CHAR **outstr, LALUserVariable *uvar)
 
     case UVAR_CSVLIST:
       {
-	UINT4 i, listlen, outlen;
+	UINT4 i, listlen, outlen = 0;
 	LALStringVector *csv;
 	str = NULL;
 	csv = *(LALStringVector**)(uvar->varp);
@@ -1075,10 +1075,10 @@ UvarValue2String (LALStatus *status, CHAR **outstr, LALUserVariable *uvar)
 	    listlen = csv->length;
 	    for ( i=0; i < listlen; i++)
 	      {
-		outlen += strlen ( csv->data[i] + 3);
+		outlen += strlen (csv->data[i]) + 3;
 		str = LALRealloc(str, outlen);
 		if ( i==0 )
-		  strcat ( str, "\"" );
+		  sprintf ( str, "\"" );
 		else
 		  strcat ( str, "," );
 		strcat ( str, csv->data[i] );
