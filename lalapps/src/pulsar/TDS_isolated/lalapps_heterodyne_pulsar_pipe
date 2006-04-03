@@ -111,7 +111,7 @@ for o, a in opts:
     sys.exit(0)
   elif o in ("-d", "--datafind"):
     do_datafind = 1
- elif o in ("-s", "--seglist"):
+  elif o in ("-s", "--seglist"):
     seglist = a
   elif o in ("-c", "--coarse"):
     do_coarse = 1
@@ -141,12 +141,12 @@ if not log_path:
   print >> sys.stderr, "Use --log-path PATH to specify a location."
   sys.exit(1)
 
-if ((do_coarse) & (do_datafind==None))
+if ((do_coarse) & (do_datafind == None)):
   print >> sys.stderr, "LSCdataFind is not selected."
   print >> sys.stderr, "This is needed to get data for the heterodyne."
   print >> sys.stderr, "Use --datafind to get a list of data frames for analysis"
   
-if ((do_coarse) & (seglist==None)) | ((do_fine) & (seglist=None))
+if ((do_coarse) & (seglist == None)) | ((do_fine) & (seglist == None)):
   print >> sys.stderr, "No segment list is selected."
   print >> sys.stderr, "This is needed to get data for the heterodyne."
   print >> sys.stderr, "Use --seglist to set a list of segments for analysis"
@@ -219,7 +219,7 @@ if do_datafind:
   elif detector == 'G1' | detector == 'GEO':
     obs = 'G'
   else:
-    print >> "Detector not set in .ini file or not recognised, should be either H1, H2, L1, G1 or
+    print >> "Detector not set in .ini file or not recognised, should be either H1, H2, L1, G1 or \
 GEO"
     sys.exit(1)
     
@@ -390,7 +390,7 @@ if do_fine:
       data_file = input_dir + input_files[val]
       
       # add heterodyneNode for DAG
-      fine.append(heterodyne_pulsar.heterodyneNode(fine_job)
+      fine.append(heterodyne_pulsar.heterodyneNode(fine_job))
       fine[j].set_het_flag(het_flag)
       fine[j].set_ifo(detector)
       fine[j].set_pulsar(pulsar)
@@ -408,8 +408,8 @@ if do_fine:
 
         if os._exists(response_function): # if the is a response function file
           fine[j].set_response_function(response_function)
-        elif os._exists(coefficient_file) & os._exists(open_loop_gain) &
-os._exists(sensing_function):
+        elif (os._exists(coefficient_file) & os._exists(open_loop_gain) & \
+os._exists(sensing_function)):
           fine[j].set_coefficient_file(coefficient_file)
           fine[j].set_open_loop_gain(open_loop_gain)
           fine[j].set_response_function(response_function)
@@ -424,7 +424,7 @@ os._exists(sensing_function):
       
     i = i+1
                   
-if do_update:
+# if do_update: sort out later
 
 # write out DAG
 dag.write_sub_files()
