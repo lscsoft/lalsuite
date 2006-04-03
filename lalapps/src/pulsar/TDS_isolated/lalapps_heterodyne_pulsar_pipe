@@ -186,8 +186,6 @@ heterodyne_job.set_sub_file(basename + '.heterodyne' + subsuffix)
 
 # set values from config file
 pulsar_param_dir = cp.get('data','pulsar_param_dir')
-frame_file_path = cp.get('data','frame_file_path')
-seg_file_path = cp.get('data','seg_file_path')
 
 earth_ephem = cp.get('ephem','earth_ephem')
 sun_ephem = cp.get('ephem','sun_ephem')
@@ -234,7 +232,7 @@ GEO"
 
 # this bit is basically hacked from LSCsegFind
 if seglist == 0:
-  # run LSCsegFind - don't bother with a job joust run it and create this list
+  # run LSCsegFind - don't bother with a job just run it and create this list
   # set segment list and stuff
   seg_list_file = basename + '.seglist'
 
@@ -324,8 +322,7 @@ if seglist == 0:
   
 elif seglist != None:
   # set seglist file from value in the config file
-  seg_file_name = cp.get('data','seg_list')
-  seg_list = seg_file_path + seg_file_name
+  seg_list = cp.get('data','seg_list')
 
 if do_coarse:
   param_files = os.listdir(pulsar_param_dir)
