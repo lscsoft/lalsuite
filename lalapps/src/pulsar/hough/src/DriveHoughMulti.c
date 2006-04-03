@@ -105,8 +105,8 @@ BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps, uvar_printStats, 
 
 #define MAXFILENAMELENGTH 512 /* maximum # of characters  of a filename */
 
-/* #define SFTDIRECTORY "/local_data/badkri/fakesfts-multi/*.sft"  */
-#define SFTDIRECTORY "/home/badkri/fakesfts/*.sft"
+/* #define SFTDIRECTORY "/local_data/badkri/fakesfts-multi/*SFT*.*"  */
+#define SFTDIRECTORY "/home/badkri/fakesfts/*SFT*.*"
 /* #define SFTDIRECTORY "/nfs/morbo/geo600/hannover/sft/S4-LIGO/sft_1800.20050512.S4/S4-L1.1800-sft" */
 
 #define DIROUT "./outMulti"   /* output directory */
@@ -212,7 +212,7 @@ int main(int argc, char *argv[]){
   UINT2  maxNBins, maxNBorders;
 
   /* user input variables */
-  BOOLEAN  uvar_help, uvar_weighAM, uvar_weighNoise;
+  BOOLEAN  uvar_help, uvar_weighAM, uvar_weighNoise, uvar_printLog;
   INT4     uvar_blocksRngMed, uvar_nfSizeCylinder, uvar_maxBinsClean;
   REAL8    uvar_f0, uvar_peakThreshold, uvar_houghFalseAlarm, uvar_fSearchBand;
   CHAR     *uvar_earthEphemeris=NULL;
@@ -233,6 +233,7 @@ int main(int argc, char *argv[]){
   uvar_help = FALSE;
   uvar_weighAM = TRUE;
   uvar_weighNoise = TRUE;
+  uvar_printLog = FALSE;
   uvar_blocksRngMed = BLOCKSRNGMED;
   uvar_nfSizeCylinder = NFSIZE;
   uvar_f0 = F0;
@@ -244,6 +245,8 @@ int main(int argc, char *argv[]){
   uvar_printMaps = FALSE;
   uvar_printStats = FALSE;
   uvar_printSigma = FALSE;
+  uvar_maxBinsClean = 100;
+
   uvar_earthEphemeris = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_earthEphemeris,EARTHEPHEMERIS);
 
@@ -263,31 +266,32 @@ int main(int argc, char *argv[]){
   strcpy(uvar_skyfile,SKYFILE);
 
   /* register user input variables */
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",            'h', UVAR_HELP,     "Print this message",                  &uvar_help),            &status);  
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "ifo",             'i', UVAR_OPTIONAL, "Detector L1, H1, H2, G1",             &uvar_ifo ),            &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "f0",              'f', UVAR_OPTIONAL, "Start search frequency",              &uvar_f0),              &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "fSearchBand",     'b', UVAR_OPTIONAL, "Search frequency band",               &uvar_fSearchBand),     &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyfile",          0,  UVAR_OPTIONAL, "Input skypatch file",                 &uvar_skyfile),         &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "peakThreshold",    0,  UVAR_OPTIONAL, "Peak selection threshold",            &uvar_peakThreshold),   &status);
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighAM",          0,  UVAR_OPTIONAL, "Use amplitude modulation weights",    &uvar_weighAM),         &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighNoise",       0,  UVAR_OPTIONAL, "Use SFT noise weights",               &uvar_weighNoise),      &status);  
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris",  'E', UVAR_OPTIONAL, "Earth Ephemeris file",                &uvar_earthEphemeris),  &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris",    'S', UVAR_OPTIONAL, "Sun Ephemeris file",                  &uvar_sunEphemeris),    &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir",          'D', UVAR_OPTIONAL, "SFT Directory pattern",               &uvar_sftDir),          &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "dirnameOut",      'o', UVAR_OPTIONAL, "Output directory",                    &uvar_dirnameOut),      &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "fbasenameOut",     0,  UVAR_OPTIONAL, "Output file basename",                &uvar_fbasenameOut),    &status);
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printMaps",        0,  UVAR_OPTIONAL, "Print Hough maps",                    &uvar_printMaps),       &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printTemplates",   0,  UVAR_OPTIONAL, "Print templates file",                &uvar_printTemplates),  &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "houghFalseAlarm",  0,  UVAR_OPTIONAL, "Hough false alarm to set threshold",  &uvar_houghFalseAlarm), &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printEvents",      0,  UVAR_OPTIONAL, "Print events above threshold",        &uvar_printEvents),     &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printStats",       0,  UVAR_OPTIONAL, "Print Hough statistics",              &uvar_printStats),      &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printSigma",       0,  UVAR_OPTIONAL, "Print expected number count stdev.",  &uvar_printSigma),      &status);
-  LAL_CALL( LALRegisterLISTUserVar(   &status, "linefiles",        0,  UVAR_OPTIONAL, "list of linefiles for cleaning",      &uvar_linefiles),       &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",            'h', UVAR_HELP,     "Print this message",                    &uvar_help),            &status);  
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "ifo",             'i', UVAR_OPTIONAL, "Detector L1, H1, H2, G1",               &uvar_ifo ),            &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "f0",              'f', UVAR_OPTIONAL, "Start search frequency",                &uvar_f0),              &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "fSearchBand",     'b', UVAR_OPTIONAL, "Search frequency band",                 &uvar_fSearchBand),     &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyfile",          0,  UVAR_OPTIONAL, "Input skypatch file",                   &uvar_skyfile),         &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "peakThreshold",    0,  UVAR_OPTIONAL, "Peak selection threshold",              &uvar_peakThreshold),   &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighAM",          0,  UVAR_OPTIONAL, "Use amplitude modulation weights",      &uvar_weighAM),         &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighNoise",       0,  UVAR_OPTIONAL, "Use SFT noise weights",                 &uvar_weighNoise),      &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printLog",         0,  UVAR_OPTIONAL, "Print Log file",                        &uvar_printLog),        &status);  
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris",  'E', UVAR_OPTIONAL, "Earth Ephemeris file",                  &uvar_earthEphemeris),  &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris",    'S', UVAR_OPTIONAL, "Sun Ephemeris file",                    &uvar_sunEphemeris),    &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir",          'D', UVAR_OPTIONAL, "SFT Directory pattern",                 &uvar_sftDir),          &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "dirnameOut",      'o', UVAR_OPTIONAL, "Output directory",                      &uvar_dirnameOut),      &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "fbasenameOut",     0,  UVAR_OPTIONAL, "Output file basename",                  &uvar_fbasenameOut),    &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printMaps",        0,  UVAR_OPTIONAL, "Print Hough maps",                      &uvar_printMaps),       &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printTemplates",   0,  UVAR_OPTIONAL, "Print templates file",                  &uvar_printTemplates),  &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "houghFalseAlarm",  0,  UVAR_OPTIONAL, "Hough false alarm to set threshold",    &uvar_houghFalseAlarm), &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printEvents",      0,  UVAR_OPTIONAL, "Print events above threshold",          &uvar_printEvents),     &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printStats",       0,  UVAR_OPTIONAL, "Print Hough statistics",                &uvar_printStats),      &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printSigma",       0,  UVAR_OPTIONAL, "Print expected number count stdev.",    &uvar_printSigma),      &status);
+  LAL_CALL( LALRegisterLISTUserVar(   &status, "linefiles",        0,  UVAR_OPTIONAL, "list of linefiles separated by commas", &uvar_linefiles),       &status);
   
   /* developer input variables */
-  LAL_CALL( LALRegisterINTUserVar(    &status, "nfSizeCylinder",   0, UVAR_DEVELOPER, "Size of cylinder of PHMDs",           &uvar_nfSizeCylinder),  &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",     0, UVAR_DEVELOPER, "Running Median block size",           &uvar_blocksRngMed),    &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "maxBinsClean",      0, UVAR_DEVELOPER, "Maximum number of bins in cleaning", &uvar_maxBinsClean),    &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "nfSizeCylinder",   0, UVAR_DEVELOPER, "Size of cylinder of PHMDs",             &uvar_nfSizeCylinder),  &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",     0, UVAR_DEVELOPER, "Running Median block size",             &uvar_blocksRngMed),    &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "maxBinsClean",     0, UVAR_DEVELOPER, "Maximum number of bins in cleaning",    &uvar_maxBinsClean),    &status);
 
   /* read all command line variables */
   LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
@@ -320,8 +324,9 @@ int main(int argc, char *argv[]){
   }
 
   /* write log file with command line arguments, cvs tags, and contents of skypatch file */
-  LAL_CALL( PrintLogFile( &status, uvar_dirnameOut, uvar_fbasenameOut, uvar_skyfile, argv[0]), &status);
-
+  if ( uvar_printLog ) {
+    LAL_CALL( PrintLogFile( &status, uvar_dirnameOut, uvar_fbasenameOut, uvar_skyfile, argv[0]), &status);
+  }
 
   /***** start main calculations *****/
 
