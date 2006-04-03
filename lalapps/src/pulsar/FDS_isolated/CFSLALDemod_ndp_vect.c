@@ -25,7 +25,11 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
   REAL8 FbSq;
   REAL8 FaFb;
   COMPLEX16 Fa, Fb;
+#ifdef USE_BOINC
+#define klim 32
+#else
   UINT4 klim = 2*params->Dterms;
+#endif
   REAL8 f;
   static REAL8 sinVal[LUT_RES+1], cosVal[LUT_RES+1];        /*LUT values computed by the routine do_trig_lut*/
   static BOOLEAN firstCall = 1;
@@ -98,7 +102,10 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
         COMPLEX8 *Xalpha=input[alpha]->fft->data->data;
         REAL4 a = params->amcoe->a->data[alpha];
         REAL4 b = params->amcoe->b->data[alpha];
-        REAL8 x,y;
+        REAL8 x;
+#ifndef USE_LUT_Y
+	REAL8 y;
+#endif
         REAL4 realP, imagP;             /* real and imaginary parts of P, see CVS */
 
         /* NOTE: sky-constants are always positive!!
@@ -237,9 +244,28 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 	    REAL4 tsin2pi = tsin * (REAL4)OOTWOPI;
 	    REAL4 tcos2pi = tcos * (REAL4)OOTWOPI;
 	    REAL4 XRes, XIms;
-	    REAL4 tFreq[4]; /* tempFreq1 vector */
-	    REAL4 aFreq[4]; /* accFreq vector */
-	    REAL4 Xsum[4]; /* vector holding partial sums */
+
+	    /* The main idea of the vectorization is that
+
+	       [0] of a vector holds the real part of an even-index element
+	       [1] of a vector holds the imaginary part of an even-index element
+	       [2] of a vector holds the real part of an odd-index element
+	       [3] of a vector holds the imaginary part of an odd-index element
+
+	       The calculations for the four vector elements are performed independently
+	       possibly using vector-operations, and the sumsfor even- and odd-indexed
+	       element are combined at the very end.
+
+	       aFreq[0] = aFreq[1] and aFreq[2] = aFreq[3], as well as
+	       tFreq[0] = tFreq[1] and tFreq[2] = tFreq[3] throughout the whole loop.
+
+	       Note that compared to the "old" loop this one is only ran klim/2=DTerms
+	       times.
+ 	    */
+
+	    REAL4 tFreq[4]; /* tempFreq1 as a vector */
+	    REAL4 aFreq[4]; /* accFreq   as a vector */
+	    REAL4  Xsum[4]; /* vector holding partial sums */
 
 	    /* init vectors */
 	    aFreq[0] = 1.0;
@@ -268,6 +294,9 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 	      Xalpha_kR4 += 4;
 	    }
 
+	    /* conbination:
+	       Xs / aF = ( Xs_even * aF_odd + Xs_odd * aF_even ) / ( aF_even * aF_odd )
+	    */
 	    aFreq[1] *= aFreq[2];
 	    XRes = (Xsum[0] * aFreq[2] + Xsum[2] * aFreq[0]) / aFreq[1];
 	    XIms = (Xsum[1] * aFreq[2] + Xsum[3] * aFreq[0]) / aFreq[1];
