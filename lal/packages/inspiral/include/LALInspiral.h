@@ -350,7 +350,7 @@ This structure contains various post-Newtonian and P-approximant expansion
 
 \item {\tt rk4GSLIntegrator:} Structure containing steps and controls
 for the GSL Runge-Kutta solver
-\input{\tt LALInspiralGSLRungeKuttaH}
+\input{LALInspiralGSLRungeKuttaH}
 
 \item {\tt rk4In:} Structure used as an input to Runge-Kutta solver.
 \input{LALInspiralRungeKuttaH}
