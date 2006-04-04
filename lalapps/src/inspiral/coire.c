@@ -87,7 +87,13 @@ static void print_usage(char *program)
       " [--num-slides]        slides   number of time slides performed (used in clustering\n"\
       " [--sort-triggers]              time sort the coincident triggers\n"\
       " [--cluster-algorithm] alg      use trigger clustering algorithm alg\n"\
-      "                                [ snrsq | s3_snr_chi_stat ]\n"\
+      "                                [ snrsq | s3_snr_chi_stat | bitten_l]\n"\
+      " [--h1-bittenl-a]      bitten   paramater a for clustering\n"\
+      " [--h1-bittenl-b]      bitten   paramater b for clustering\n"\
+      " [--h2-bittenl-a]      bitten   paramater a for clustering\n"\
+      " [--h2-bittenl-b]      bitten   paramater b for clustering\n"\
+      " [--l1-bittenl-a]      bitten   paramater a for clustering\n"\
+      " [--l1-bittenl-b]      bitten   paramater b for clustering\n"\
       " [--cluster-time]      time     cluster triggers with time ms window\n"\
       "\n"\
       " [--injection-file]    inj_file read injection parameters from inj_file\n"\
@@ -243,7 +249,7 @@ int main( int argc, char *argv[] )
       {"h1-bittenl-a",            required_argument,      0,              'a'},
       {"h1-bittenl-b",            required_argument,      0,              'b'},
       {"h2-bittenl-a",            required_argument,      0,              'j'},
-      {"h2-bittenl-a",            required_argument,      0,              'n'},
+      {"h2-bittenl-b",            required_argument,      0,              'n'},
       {"l1-bittenl-a",            required_argument,      0,              'l'},
       {"l1-bittenl-b",            required_argument,      0,              'p'},
       {"missed-injections",       required_argument,      0,              'm'},
