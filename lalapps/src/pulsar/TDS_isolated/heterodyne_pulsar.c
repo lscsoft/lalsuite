@@ -94,8 +94,8 @@ int main(int argc, char *argv[]){
     frcount=0;
     while(!feof(fpin)){
       // fscanf(fpin, "%s", framelist[frcount]);
-      fscanf(fpin, "%s%s%d%d%s", det, type, &cache.starttime[frcount], &cache.duration[frcount],
-             cache.framelist[frcount]);
+      fscanf(fpin, "%s%s%d%d file://localhost%s", det, type, &cache.starttime[frcount],
+&cache.duration[frcount], cache.framelist[frcount]);
       frcount++;
     }
     fclose(fpin);
