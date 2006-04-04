@@ -145,11 +145,13 @@ if ((do_coarse) & (do_datafind == None)):
   print >> sys.stderr, "LSCdataFind is not selected."
   print >> sys.stderr, "This is needed to get data for the heterodyne."
   print >> sys.stderr, "Use --datafind to get a list of data frames for analysis"
+  sys.exit(1)
   
-if ((do_coarse) & (seglist == None)) | ((do_fine) & (seglist == None)):
+if seglist == None:
   print >> sys.stderr, "No segment list is selected."
   print >> sys.stderr, "This is needed to get data for the heterodyne."
   print >> sys.stderr, "Use --seglist to set a list of segments for analysis"
+  sys.exit(1)
   
 # try and make a directory to store the cache files and job logs
 try: os.mkdir('cache')
@@ -163,26 +165,30 @@ cp.read(config_file)
 
 # create a log file that the Condor jobs will write to
 basename = re.sub(r'\.ini',r'',config_file) # remove .ini from config_file name
-tempfile.tempdir = log_path
-tempfile.template = basename + '.dag.log.' # adds on .dag.log
-logfile = tempfile.mktemp()
-fh = open( logfile, "w" ) # creates file
+#tempfile.tempdir = log_path
+#tempfile.template = basename + '.dag.log' # adds on .dag.log
+#logfile = tempfile.mktemp()
+logfile = log_path + '/' + basename + '.dag.log'
+
+fh = open(logfile, "w" ) # creates file
 fh.close()
 
 # create the DAG writing the log to the specified directory
 dag = pipeline.CondorDAG(logfile)
-dag.set_dag_file(basename + '.dag')
+dag.set_dag_file(basename)
 
 # create Condor Jobds that will be used in the dag
-df_job = pipeline.LSCDataFindJob('cache','logs',cp) # data find job
+df_job = heterodyne_pulsar.LSCDataFindJob('cache','logs',cp) # data find job
 coarse_job = heterodyne_pulsar.heterodyneJob(cp)
 fine_job = heterodyne_pulsar.heterodyneJob(cp)
-update_job = heterodyne_pulsar.heterodyne(cp)
+update_job = heterodyne_pulsar.heterodyneJob(cp)
 
 # set Condor .sub submit file names
 subsuffix = '.sub'
 df_job.set_sub_file(basename + '.datafind' + subsuffix)
-heterodyne_job.set_sub_file(basename + '.heterodyne' + subsuffix)
+coarse_job.set_sub_file(basename + subsuffix)
+fine_job.set_sub_file(basename +  subsuffix)
+update_job.set_sub_file(basename + subsuffix)
 
 # set values from config file
 pulsar_param_dir = cp.get('data','pulsar_param_dir')
@@ -200,32 +206,31 @@ resample_rate = cp.get('input','resample_rate')
 channel = cp.get('input','channel')
 stddev_thresh = cp.get('input','stddev_thresh')
 
-
 # make DAGs
 if do_datafind:
-  df = pipeline.LSCDataFindNode(df_job)
+  df = heterodyne_pulsar.LSCDataFindNode(df_job)
   
-  server = cp.get('datafind','server')
-  df.set_server(server)
+  #server = cp.get('datafind','server')
+  #df.set_server(server)
   
   data_type = cp.get('datafind','data_type')
   df.set_type(data_type)
   
   # set observatory for LSCdataFind
-  if detector == 'H1' | detector == 'H2':
+  if (detector.find('H1') > -1) | (detector.find('H2') > -1):
     obs = 'H'
-  elif detector == 'L1':
+  elif (detector.find('L1') > -1):
     obs = 'L'
-  elif detector == 'G1' | detector == 'GEO':
+  elif (detector.find('G1') > -1) | (detector.find('GEO') > -1):
     obs = 'G'
   else:
-    print >> "Detector not set in .ini file or not recognised, should be either H1, H2, L1, G1 or \
-GEO"
+    print >> sys.stderr, """Detector not set in .ini file or not recognised, should be either H1,
+H2, L1, G1 or GEO."""
     sys.exit(1)
     
   df.set_observatory(obs)
   df.set_start(tstart)
-  df.set_end(tend)  
+  df.set_end(tend)
  
   # add DAG
   dag.add_node(df)
@@ -323,7 +328,7 @@ if seglist == 0:
 elif seglist != None:
   # set seglist file from value in the config file
   seg_list = cp.get('data','seg_list')
-
+  
 if do_coarse:
   param_files = os.listdir(pulsar_param_dir)
   param_files.sort() # sort the files into alphabetical order
@@ -337,10 +342,10 @@ if do_coarse:
   while i < len(param_files):
     if ".par" in param_files[i]:
       pulsar = 'J' + re.sub(r'\.par',r'',param_files[i]) # set pulsar name from .par file
-      param_file = pulsar_param_dir + param_files[i]
+      param_file = pulsar_param_dir + '/' + param_files[i]
       
       # add heterodyneNode for DAG
-      coarse.append(heterodyne_pulsar.heterdoyneNode(coarse_job))
+      coarse.append(heterodyne_pulsar.heterodyneNode(coarse_job))
       coarse[j].set_het_flag(het_flag)
       coarse[j].set_ifo(detector)
       coarse[j].set_pulsar(pulsar)
@@ -355,6 +360,8 @@ if do_coarse:
       coarse[j].set_resample_rate(resample_rate)
       coarse[j].set_data_file(df.get_output()) # get frame cache from here!
       coarse[j].set_seg_list(seg_list)
+     
+      coarse[j].add_parent(df)
       
       dag.add_node(coarse[j])
       j = j+1
@@ -424,7 +431,9 @@ os._exists(sensing_function)):
       
     i = i+1
                   
-# if do_update: sort out later
+if do_update:
+  print >> sys.stderr, """Haven't written code for the update bit yet, WRITE IT NOW!"""
+  sys.exit(1)
 
 # write out DAG
 dag.write_sub_files()
