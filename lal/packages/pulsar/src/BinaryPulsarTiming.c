@@ -98,7 +98,7 @@ LALBinaryPulsarDeltaT( LALStatus            *status,
   REAL8 w0, wdot;
   REAL8 Pb, pbdot;
   REAL8 xpbdot;
-  REAL8 T0, Tasc, tb; /* time parameters */
+  REAL8 T0, Tasc, tb=0.; /* time parameters */
 
   REAL8 s, r; /* Shapiro shape and range params */
   REAL8 gamma; /* time dilation and grav redshift */
@@ -946,7 +946,7 @@ LALReadTEMPOParFile(  LALStatus *status,
 /* function converts dec or ra from format dd/hh:mm:ss.sss or format 
    dd/hhmmss.ss to radians */
 REAL8 LALDegsToRads(CHAR *degs, CHAR *coord){
-  REAL8 radians;
+  REAL8 radians=0.;
   INT4 d, m;
   REAL8 s;
   CHAR dc[4]="", mc[3]="", *sc=NULL;
