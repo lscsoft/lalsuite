@@ -55,7 +55,8 @@ $Id$
 /* 02/23/06 gam; add function EstimateStackSlidePower */
 /* 03/01/06 gam; A seg fault problem can occur during a MC simulation if narrowBLKandSTKband is true. */
 /*               The fix is to compute the extraBins separately to the left and right of the SUM band.*/
-
+/* 04/03/06 gam; to save disk space, if running an MC do not output rows with loudest event from each injection unless (params->outputEventFlag & 16) > 0 */
+       
 /*********************************************/
 /*                                           */
 /* START SECTION: define preprocessor flags  */
@@ -287,33 +288,38 @@ void StackSlideIsolated (
                 }
               #endif
               if (params->outputEventFlag > 0) {
-                 /*  end previous row with comma */
-                 if ( params->xmlStream->first ) {
-                    params->xmlStream->first = 0;
-                 } else { 
-                    fprintf( params->xmlStream->fp, ",\n" );
-                 }
-                 /* print out the row */
-                 /* 02/09/04 gam; remove fderiv_2-5; remove pw_max_thissum and freq_max_thissum; change false_alarm_prob_upperlimit to false_alarm_prob */
-                 /* 02/12/04 gam; Add freq_index to SnglStackSlidePeriodicTable */
-                 fprintf( params->xmlStream->fp, SNGL_LOCAL_STACKSLIDEPERIODIC_ROW,
-		   params->peaks->sum_no,
-		   params->peaks->event_no_thissum,
-		   params->peaks->overlap_event,
-		   params->peaks->frequency,
-		   params->peaks->freq_index,
-		   params->peaks->power,
-		   params->peaks->width_bins,
-		   params->peaks->num_subpeaks,
-		   params->peaks->pwr_snr,
-		   params->peaks->false_alarm_prob,
-		   params->peaks->goodness_of_fit,
-		   params->peaks->sky_ra,
-		   params->peaks->sky_dec,
-		   params->peaks->fderiv_1,
-		   params->peaks->pw_mean_thissum,
-		   params->peaks->pw_stddev_thissum
-                );
+                 /* 04/03/06 gam; to save disk space, if running an MC do not output rows with loudest event from each injection unless (params->outputEventFlag & 16) > 0 */
+                 if ( ( (params->testFlag & 2) > 0 )  && !( (params->outputEventFlag & 16) > 0 ) ) {
+                    /* Just continue! */
+                 } else {
+                    /*  end previous row with comma */
+                    if ( params->xmlStream->first ) {
+                       params->xmlStream->first = 0;
+                    } else { 
+                       fprintf( params->xmlStream->fp, ",\n" );
+                    }
+                    /* print out the row */
+                    /* 02/09/04 gam; remove fderiv_2-5; remove pw_max_thissum and freq_max_thissum; change false_alarm_prob_upperlimit to false_alarm_prob */
+                    /* 02/12/04 gam; Add freq_index to SnglStackSlidePeriodicTable */
+                    fprintf( params->xmlStream->fp, SNGL_LOCAL_STACKSLIDEPERIODIC_ROW,
+		      params->peaks->sum_no,
+		      params->peaks->event_no_thissum,
+		      params->peaks->overlap_event,
+		      params->peaks->frequency,
+		      params->peaks->freq_index,
+		      params->peaks->power,
+		      params->peaks->width_bins,
+		      params->peaks->num_subpeaks,
+		      params->peaks->pwr_snr,
+		      params->peaks->false_alarm_prob,
+		      params->peaks->goodness_of_fit,
+		      params->peaks->sky_ra,
+		      params->peaks->sky_dec,
+		      params->peaks->fderiv_1,
+		      params->peaks->pw_mean_thissum,
+		      params->peaks->pw_stddev_thissum
+                   );
+                 } /* END if ( ( (params->testFlag & 2) > 0 )  && !( (params->outputEventFlag & 16) > 0 ) ) else */
               } /* end if (params->outputEventFlag > 0 */
 	   } /* end if (params->outputLoudestFromPeaks) */
            params->peaks = params->peaks->next;
@@ -346,33 +352,38 @@ void StackSlideIsolated (
        #endif    
        if (loudestPeaksArray[k].power > params->maxPower) {
               params->maxPower = loudestPeaksArray[k].power; /* 05/25/05 gam */ /* 02/20/04 gam; keep track for search summary */
-       }       
-       /*  end previous row with comma */
-       if ( params->xmlStream->first ) {
-          params->xmlStream->first = 0;
-       } else { 
-          fprintf( params->xmlStream->fp, ",\n" );
        }
-       fprintf( params->xmlStream->fp, SNGL_LOCAL_STACKSLIDEPERIODIC_ROW,
-        loudestPeaksArray[k].sum_no,
-        loudestPeaksArray[k].event_no_thissum,
-        loudestPeaksArray[k].overlap_event,
-        loudestPeaksArray[k].frequency,
-        loudestPeaksArray[k].freq_index,
-        loudestPeaksArray[k].power,
-        loudestPeaksArray[k].width_bins,
-        loudestPeaksArray[k].num_subpeaks,
-        loudestPeaksArray[k].pwr_snr,
-        loudestPeaksArray[k].false_alarm_prob,
-        loudestPeaksArray[k].goodness_of_fit,
-        loudestPeaksArray[k].sky_ra,
-        loudestPeaksArray[k].sky_dec,
-        loudestPeaksArray[k].fderiv_1,
-        loudestPeaksArray[k].pw_mean_thissum,
-        loudestPeaksArray[k].pw_stddev_thissum
-       );
+       /* 04/03/06 gam; to save disk space, if running an MC do not output rows with loudest event from each injection unless (params->outputEventFlag & 16) > 0 */
+       if ( ( (params->testFlag & 2) > 0 )  && !( (params->outputEventFlag & 16) > 0 ) ) {
+         /* Just continue! */
+       } else {
+          /*  end previous row with comma */
+          if ( params->xmlStream->first ) {
+             params->xmlStream->first = 0;
+          } else { 
+             fprintf( params->xmlStream->fp, ",\n" );
+          }
+          fprintf( params->xmlStream->fp, SNGL_LOCAL_STACKSLIDEPERIODIC_ROW,
+           loudestPeaksArray[k].sum_no,
+           loudestPeaksArray[k].event_no_thissum,
+           loudestPeaksArray[k].overlap_event,
+           loudestPeaksArray[k].frequency,
+           loudestPeaksArray[k].freq_index,
+           loudestPeaksArray[k].power,
+           loudestPeaksArray[k].width_bins,
+           loudestPeaksArray[k].num_subpeaks,
+           loudestPeaksArray[k].pwr_snr,
+           loudestPeaksArray[k].false_alarm_prob,
+           loudestPeaksArray[k].goodness_of_fit,
+           loudestPeaksArray[k].sky_ra,
+           loudestPeaksArray[k].sky_dec,
+           loudestPeaksArray[k].fderiv_1,
+           loudestPeaksArray[k].pw_mean_thissum,
+           loudestPeaksArray[k].pw_stddev_thissum
+          );
+       } /* END if ( ( (params->testFlag & 2) > 0 )  && !( (params->outputEventFlag & 16) > 0 ) ) else */
     } /* end for (k = 0; k < arraySize; k++) */
-    
+
     /* 01/12/06 gam; write loudest events to params->priorResultsFile if (outputEventFlag & 8) > 0 and not running Monte Carlo simulation!!! */
     if ( ( (params->outputEventFlag & 8) > 0 ) && !( (params->testFlag & 2) > 0 ) ) {
       /* params->parameterMC is the requested confidence; params->threshold4 is the first guess for the UL, and params->rescaleMCFraction is used as the initial uncertainty */
@@ -1787,8 +1798,13 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
 
   /* 05/24/05 gam; always finishPeriodicTable table here */
   if (params->outputEventFlag > 0) {
-      fprintf( params->xmlStream->fp, STACKSLIDE_XML_TABLE_FOOTER );
-      params->xmlStream->table = no_table;
+      /* 04/03/06 gam; to save disk space, if running an MC do not output rows with loudest event from each injection unless (params->outputEventFlag & 16) > 0 */
+      if ( ( (params->testFlag & 2) > 0 )  && !( (params->outputEventFlag & 16) > 0 ) ) {
+        /* Just continue! */
+      } else {  
+        fprintf( params->xmlStream->fp, STACKSLIDE_XML_TABLE_FOOTER );
+        params->xmlStream->table = no_table;
+      }
   }
   
   /* 05/24/05 gam */  
@@ -2144,6 +2160,7 @@ void EstimateStackSlidePower(LALStatus *status,
   INT4 kSUM = 0; /* index gives which SUM */ /* HARD CODED TO 0; This function only returns one SUM! */
   INT4 iSUM = 0; /* index gives which SUM bin */  
   REAL8 f_t;
+  REAL8 f0_t;    /* 04/03/06 gam; try more accurate calculation of the mismatch factor deltaKappa */
 
   REAL4 invNumSTKs = 1.0/((REAL4)params->numSTKs); /* 12/03/04 gam */ /* 02/21/05 gam */
 
@@ -2185,15 +2202,19 @@ void EstimateStackSlidePower(LALStatus *status,
 
         /* compute the frequency */
         f_t = refFreq;
+        f0_t = params->f0SUM; /* 04/03/06 gam; will calculate f0SUM at the detector to get better mismatch factor. */
 
         for (m=0; m<params->numSpinDown; m++) {
             f_t += params->freqDerivData[m] * pTdotsAndDeltaTs->vecDeltaTs[k][m];
+            f0_t += params->freqDerivData[m] * pTdotsAndDeltaTs->vecDeltaTs[k][m]; /* 04/03/06 gam */
         }
         f_t *= pTdotsAndDeltaTs->vecTDots[k];
+        f0_t *= pTdotsAndDeltaTs->vecTDots[k]; /* 04/03/06 gam; this is f0SUM at the detector */
         binoffset = floor(( (f_t - refFreq) * params->tSTK) + 0.5 );
 
         /* deltaKappa = kappa - k = mismatch in bins between actual frequency and freqency used. */
-        deltaKappa = fabs( ((f_t - refFreq) * params->tSTK) - (REAL8)binoffset );
+        /* deltaKappa = fabs( ((f_t - refFreq) * params->tSTK) - (REAL8)binoffset ); */
+        deltaKappa = fabs( (f0_t - params->f0STK)*params->tSTK - (REAL8)iMinSTK - (REAL8)binoffset ); /* 04/03/06 gam; get the real mismatch between f0SUM at the detector and which bin will be search for this. */
         piDeltaKappa = ((REAL8)LAL_PI)*deltaKappa;
 
         for (i=iMinSTK;i<=iMaxSTK; i++) {

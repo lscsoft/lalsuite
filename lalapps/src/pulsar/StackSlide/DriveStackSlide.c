@@ -166,6 +166,7 @@
 /* 01/12/06 gam; Add function WriteStackSlideLEsToPriorResultsFile; if ( (outputEventFlag & 8) > 0 ) && !( (params->testFlag & 2) > 0 ) write loudest events to params->priorResultsFile */
 /* 01/12/06 gam; Always set maxMC = params->maxMCinterations; if NOT ( (params->testFlag & 32) > 0 ) then run MC maxMCinterations times; linearly interpolate to get final result */
 /* 02/20/06 gam; if (debugOptionFlag & 64) > 0 generated SUMs with an estimate of StackSlide Power for a given source; also get F_+, F_x, sqrt(Sn) the bin mismatch, and binoffset if (debugOptionFlag & 2) > 0 */
+/* 04/03/06 gam; to save disk space, if running an MC do not output rows with loudest event from each injection unless (params->outputEventFlag & 16) > 0 */
 
 /*********************************************/
 /*                                           */
@@ -720,8 +721,9 @@ params->numFDeriv5   =   0;
     	fprintf(stdout,"#  keep the loudest event for every nBinsPerOutputEvent = nBinsPerSUM/keepThisNumber; \n");
     	fprintf(stdout,"#  thus if keepThisNumber == 1 then we only output the loudest event; if keepThisNumber == nBinsPerSUM we output the loudest event for every bin.\n");
     	fprintf(stdout,"# if ((outputEventFlag & 4) > 0) the loudest event from each template (i.e., each sky position and set of spindown parameters) is output. \n"); /* 08/30/04 gam */
-    	fprintf(stdout,"# if ((outputEventFlag & 8) > 0) and not running a Monte Carlo Simulation, write the loudest event to the priorResultsFile for use by later Monte Carlo Simulation; \n"); /* 01/12/06 gam */
-    	fprintf(stdout,"#  in this case the parameterMC must be set to the desired confidence, threshold4 to the first guess for the UL, and rescaleMCFraction will be used as the initial uncertainty in the UL.\n"); /* 01/12/06 gam */
+    	fprintf(stdout,"# if ((outputEventFlag & 8) > 0) and not running a Monte Carlo Simulation, write the loudest event to the priorResultsFile for use by later Monte Carlo Simulation; if running MC, produce estimated UL based on loudest event from priorResultsFile.\n"); /* 01/12/06 gam */
+    	fprintf(stdout,"#  In this case the parameterMC must be set to the desired confidence, threshold4 to the first guess for the UL, and rescaleMCFraction will be used as the initial uncertainty in the UL.\n"); /* 01/12/06 gam */
+    	fprintf(stdout,"# if ((outputEventFlag & 16) > 0) if running a Monte Carlo Simulation, write loudest event for each injection to xml file. (The default is not write these during an MC to save disk space.)\n"); /* 04/03/06 gam */
     	fprintf(stdout,"\n");
     	fprintf(stdout,"set startRA            %23.16e; #51 REAL8 start right ascension in radians. \n", params->stksldSkyPatchData->startRA);
     	fprintf(stdout,"set stopRA             %23.16e; #52 REAL8 end right ascension in radians. \n", params->stksldSkyPatchData->stopRA);
@@ -2564,9 +2566,14 @@ void StackSlideApplySearch(
   }
     
   if ((params->outputEventFlag > 0) && params->startSUMs) {
-     /* Begin the stackslide periodic table. */
-     fprintf( params->xmlStream->fp, LIGOLW_XML_SNGL_LOCAL_STACKSLIDEPERIODIC );
-     params->xmlStream->first = 1;
+     /* 04/03/06 gam; to save disk space, if running an MC do not output rows with loudest event from each injection unless (params->outputEventFlag & 16) > 0 */
+     if ( ( (params->testFlag & 2) > 0 )  && !( (params->outputEventFlag & 16) > 0 ) ) {
+       /* Just continue! */
+     } else {
+       /* Begin the stackslide periodic table. */     
+       fprintf( params->xmlStream->fp, LIGOLW_XML_SNGL_LOCAL_STACKSLIDEPERIODIC );
+       params->xmlStream->first = 1;
+     }
   }       
 
   /* 10/28/04 gam; weight STKs depending on value of params->weightFlag */
@@ -2722,8 +2729,13 @@ void StackSlideFinalizeSearch(
 
     /* 05/24/05 gam; finish stackslide periodic table in not done previously; move to FinializeSearch */
     if ((params->outputEventFlag > 0) && params->finishPeriodicTable) {
-      fprintf( params->xmlStream->fp, STACKSLIDE_XML_TABLE_FOOTER ); /* 04/12/05 gam */
-      params->xmlStream->table = no_table;
+      /* 04/03/06 gam; to save disk space, if running an MC do not output rows with loudest event from each injection unless (params->outputEventFlag & 16) > 0 */
+      if ( ( (params->testFlag & 2) > 0 )  && !( (params->outputEventFlag & 16) > 0 ) ) {
+         /* Just continue! */
+      } else {
+        fprintf( params->xmlStream->fp, STACKSLIDE_XML_TABLE_FOOTER ); /* 04/12/05 gam */
+        params->xmlStream->table = no_table;
+      }
     }
     if (params->outputEventFlag > 0) {
       MetadataTable         searchsumm;       
