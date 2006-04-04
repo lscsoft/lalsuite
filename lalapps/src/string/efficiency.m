@@ -70,9 +70,9 @@ lnA=lnA(1:size(lnA,2)-2);
 %errorbar(lnA,eL1,deL1,'r')
 %plot(lnA,eH1,'-')
 %plot(lnA,eH1,'bo')
-%ylabel('\epsilon (A^*=1.841 x 10^{-20},A)','FontSize',12)
+%ylabel('\epsilon (A^*=1.841,A)','FontSize',12)
 %xlabel('ln(A/10^{-20} s^{-1/3})','FontSize',12)
-%title('Triple coincident efficiencies for H1 (blue), H2 (green), L1 (red)','FontSize',12)
+%title('Triple coincident efficiency for H1','FontSize',12)
 
 % Find interpolated A50%
 for i = 2:size(lnA,2)
@@ -100,7 +100,7 @@ p=1e-3;        %Probability of reconnection
 
 Gmu=logspace(-13,-5,100); %Vector with values of Gmu
 
-n=5/2;         %power law for Gamma*Gmu (as in my PRD paper)
+n=3/2;         %power law for Gamma*Gmu (as in my PRD paper)
 epsilon=1;     %smal-scale structure pre-factor (as in Damour and Vilenkin, 2005 PRD)
 
 A=exp(lnA)*10^(-20);  %turn vector of ln(A) into A; and re-scale by 10^-20 factor
@@ -129,8 +129,9 @@ end
 
 T=1364984;
 
-figure
-loglog(Gmu,R,'r'); hold on
+hold on
+%figure
+loglog(Gmu,R,'b'); hold on
 loglog(Gmu,2.303/T,'r')
 xlabel('G\mu')
 ylabel('Rate[Hz]')
