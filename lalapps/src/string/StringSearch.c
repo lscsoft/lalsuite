@@ -237,18 +237,28 @@ int main(int argc,char *argv[])
  if (WindowData()) return 4;
 
  if (ProcessData()) return 5;
- 
+
+ if ( CommandLineArgs.printdataflag )
+   {
+     int p;
+     for (p=0; p<(int)GV.ht_proc.data->length; p++)
+       fprintf(stdout,"%1.15le\n",GV.ht_proc.data->data[p]);
+     return 0;
+   }
+
+
  if (DownSample(CommandLineArgs)) return 6;
+
 	
  /* re-size the time series to remove the pad */
  LALResizeREAL4TimeSeries(&status, &(GV.ht_proc), (int)(CommandLineArgs.pad/GV.ht_proc.deltaT+0.5),
 			  GV.ht_proc.data->length-2*(UINT4)(CommandLineArgs.pad/GV.ht_proc.deltaT+0.5));
  TESTSTATUS( &status );
 
+
+
  /* reduce duration of segment appropriately */
  GV.duration -= 2*CommandLineArgs.pad; 
-
- if ( CommandLineArgs.printdataflag ) LALSPrintTimeSeries( &GV.ht_proc, "data.txt" );
 
  if (AvgSpectrum(CommandLineArgs)) return 7;
 
