@@ -1467,12 +1467,7 @@ LALInspiralCreateBCVBank (
   LALSCreateVectorSequence( status->statusPtr, &tempList, &in );
   CHECKSTATUSPTR( status );
 
-  if (coarseIn.LowGM  == -4)
-  {
-    LALInspiralCreateFlatBankS3S4( status->statusPtr, tempList, &bankParams , coarseIn);
-    CHECKSTATUSPTR( status );
-  }
-  else if (coarseIn.LowGM  == -2)
+  if (coarseIn.gridSpacing  != S2BCV)
   {
     LALInspiralCreateFlatBankS3S4( status->statusPtr, tempList, &bankParams , coarseIn);
     CHECKSTATUSPTR( status );
@@ -1514,12 +1509,8 @@ LALInspiralCreateBCVBank (
    * Regular grid in cutoff frequency which is independant of LowGM or HighGM
    * and which lays between Flower and Fsampling/2
    *
-   * If coarseIn.LowGM > 0 it means that we want to use a bank where
-   * the cutoff frequency has some physical values betwwen Low and
-   * HighGM 
-   * option -2 is used to try hexagonal grid and so on. In that case lowGM is
-   * equal to 3 */
-  if (coarseIn.LowGM  == -4 || coarseIn.LowGM == -2)
+   *  */
+  if (coarseIn.gridSpacing != S2BCV)
     {
       LALInspiralBCVBankFcutS3S4( status->statusPtr, 
 				list, nlist, coarseIn);
@@ -2043,14 +2034,15 @@ LALInspiralCreateFlatBankS3S4 (
 	    if ( (x > bankParams->x0Min -dx0/2.) && (y < bankParams->x1Max + dx1/2.) && 
 		 (x < bankParams->x0Max +dx0/2.) && (y > bankParams->x1Min - dx1/2.))
 	      {
-
-                if (coarseIn.LowGM == -2){
-                  LALExcludeTemplate(status->statusPtr, &valid, bankParams, x, y);
-                }
-                if (coarseIn.LowGM == -4){
-                   
-		  LALInsidePolygon(status->statusPtr, xp, yp, npol, x, y, &valid);
+		if (coarseIn.insidePolygon == True)
+		{
+                  LALInsidePolygon(status->statusPtr, xp, yp, npol, x, y, &valid);
 		}
+                else
+		{
+		  LALExcludeTemplate(status->statusPtr, &valid, bankParams, x, y);
+		}
+
 
 
                 if (valid == 1)
@@ -2098,13 +2090,13 @@ LALInspiralCreateFlatBankS3S4 (
 		 (x < bankParams->x0Max + dx0/2.) && (y > bankParams->x1Min - dx1/2.))
 	    
 	      {
-                if (coarseIn.LowGM == -2){
-                  LALExcludeTemplate(status->statusPtr, &valid, bankParams, x, y);
-                }
-                if (coarseIn.LowGM == -4){
+		if (coarseIn.insidePolygon == True) {
 		  LALInsidePolygon(status->statusPtr, xp, yp, npol, x, y, &valid);
-
                 }
+		else
+		{
+		  LALExcludeTemplate(status->statusPtr, &valid, bankParams, x, y);
+		}
                 if (valid)
                 {
                   list->data = (REAL4 *) LALRealloc( list->data, (ndx+2) * sizeof(REAL4) );

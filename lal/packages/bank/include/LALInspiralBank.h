@@ -62,7 +62,7 @@ NRCSID(LALINSPIRALBANKH, "$Id$" );
 #define LALINSPIRALBANKH_MSGESIZE   "Invalid input range"
 #define LALINSPIRALBANKH_MSGEFRANGE "Limits outside range of frequency series"
 #define LALINSPIRALBANKH_MSGEORDER  "Inappropriate PN order"
-#define LALINSPIRALBANKH_MSGEGRIDSPACING "if SPA template requested, grid spacing parameter is either SquareNotOriented or Hexagonal. If BCV, it should be Hexagonal or SquareNotOriented although Square and HexagonalNotOriented can be used."
+#define LALINSPIRALBANKH_MSGEGRIDSPACING "If physical template requested, grid spacing parameter must be either SquareNotOriented or Hexagonal. If BCV, it must be Hexagonal or SquareNotOriented although Square and HexagonalNotOriented can be used. Instead of Hexagonal or Square option, S2BCV option can be usde to generate the bank used in S2 data using a  square lattice and an old code without any polygon fitting."
 /* </lalErrTable> */
 
 /* <lalLaTeX>
@@ -278,7 +278,8 @@ typedef enum
   SquareNotOriented, 
   Square,
   HexagonalNotOriented,
-  Hexagonal
+  Hexagonal, 
+  S2BCV
 }
 GridSpacing;
 /*  </lalVerbatim>  */
@@ -292,6 +293,19 @@ typedef enum
     In, Above, Below, Out
   }
 Position;
+
+
+/* <lalVerbatim file="LALInsidePolygonH"> */
+typedef enum
+{
+  False,
+  True
+}
+InsidePolygon;
+/*  </lalVerbatim>  */
+/*  <lalLaTeX> 
+\idx[Type]{InsidePolygon} 
+</lalLaTeX>  */
 
 
 
@@ -463,6 +477,7 @@ tagInspiralCoarseBankIn
   GridSpacing                   gridSpacing;
   Order                         order;        
   Approximant                   approximant;  
+  InsidePolygon                 insidePolygon;  
 }
 InspiralCoarseBankIn;
 /* </lalVerbatim>  */
