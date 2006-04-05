@@ -101,6 +101,7 @@ int main(int argc, char *argv[]){
   static LALDetector          detector;
   static LIGOTimeGPSVector    *timeV=NULL;
   static REAL8Cart3CoorVector velV;
+  static REAL8Cart3CoorVector skyPatchCenterV;
   static REAL8Vector          timeDiffV;
   static REAL8Vector          foft;
   static REAL8Vector          foftV[NTEMPLATES];
@@ -345,8 +346,22 @@ int main(int argc, char *argv[]){
   } /* end skyfile reading block */
  
   /******************************************************************/ 
+ /*  Converting skypatch centers into 3D cartessian coordinates*/
+ /******************************************************************/ 
+  skyPatchCenterV.length =nSkyPatches;
+  skyPatchCenterV.data = NULL;
+  skyPatchCenterV.data = (REAL8Cart3Coor *)LALCalloc(nSkyPatches, sizeof(REAL8Cart3Coor));
 
+  for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++)
+    {
+	skyPatchCenterV.data[skyCounter].x= cos(skyDelta[skyCounter])*cos(skyAlpha[skyCounter]);
+ 	skyPatchCenterV.data[skyCounter].y= cos(skyDelta[skyCounter])*sin(skyAlpha[skyCounter]);
+ 	skyPatchCenterV.data[skyCounter].z= sin(skyDelta[skyCounter]);
+    }
+
+  /******************************************************************/ 
   /* real line noise information */
+ /******************************************************************/ 
   /* find number of harmonics */
   LAL_CALL( LALFindNumberHarmonics (&status, &harmonics, uvar_harmonicsfile), &status); 
   nHarmonicSets = harmonics.nHarmonicSets; 
