@@ -28,6 +28,7 @@
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOLwXMLInspiralHeaders.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
 #include <lal/FindChirp.h>
@@ -174,6 +175,11 @@ fputs( "      <Stream Name=\"bankefficiencygroup:bankefficiency:table\"         
 #define None 512
 #define RealNoise 511
 
+
+#define BEASCII2XML_INPUT1 "Trigger.dat"
+#define BEASCII2XML_INPUT2 "BE_Proto.xml"
+#define BEASCII2XML_OUTPUT "Trigger.xml"
+#define BEASCII2XML_BANK   "BE_Bank.xml"
 
 
 /* ==================== local structures ==================== */
@@ -770,4 +776,10 @@ CHAR* GetStringFromTemplate(INT4 input);
 CHAR* GetStringFromNoiseModel(INT4 input);
 CHAR* GetStringFromScientificRun(INT4 input);
 
+
+void
+BEAscii2XmlHelp(void);
+
+void 
+BEAscii2Xml();
 
