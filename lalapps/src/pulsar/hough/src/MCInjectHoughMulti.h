@@ -1,6 +1,6 @@
 /*-----------------------------------------------------------------------
  *
- * File Name: MCInjectHoughS2.h
+ * File Name: MCInjectHoughMULTI.h
  *
  * Authors: Sintes, A.M., Krishnan, B. 
  *
@@ -12,8 +12,8 @@
  *     Note the naming convention!
  */
 
-#ifndef _MCINJECTHOUGHS2_H
-#define _MCINJECTHOUGHS2_H
+#ifndef _MCINJECTHOUGHMULTI_H
+#define _MCINJECTHOUGHMULTI_H
 
 #include <time.h>
 #include <math.h>
@@ -44,7 +44,7 @@ extern "C" {
  *  Assignment of Id string using NRCSID()
  */
 
-NRCSID (MCINJECTHOUGHS2H, "$Id$");
+NRCSID (MCINJECTHOUGHMULTIH, "$Id$");
 
 /* ************************************************************
  * Usage format string. 

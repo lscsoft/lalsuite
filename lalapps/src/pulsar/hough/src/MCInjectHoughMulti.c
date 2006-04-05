@@ -1,6 +1,6 @@
 /*-----------------------------------------------------------------------
  *
- * File Name: MCInjectHoughS2.c
+ * File Name: MCInjectHoughMulti.c
  *
  * Authors: Sintes, A.M., Krishnan, B. 
  *
@@ -39,12 +39,18 @@ Input shoud be from
    signals. 
 */
 
-#include "./MCInjectHoughS2.h" /* proper path*/
+#include "./MCInjectHoughMulti.h" /* proper path*/
 
 
 INT4 lalDebugLevel;
-#define EARTHEPHEMERIS "./earth00-04.dat"
-#define SUNEPHEMERIS "./sun00-04.dat"
+
+#define EARTHEPHEMERIS "./earth05-09.dat" 
+#define SUNEPHEMERIS "./sun05-09.dat"    
+
+/*
+ * #define EARTHEPHEMERIS "./earth00-04.dat"
+ * #define SUNEPHEMERIS "./sun00-04.dat"
+ */
 
 #define ACCURACY 0.00000001 /* of the velocity calculation */
 #define MAXFILES 3000 /* maximum number of files to read in a directory */
@@ -72,8 +78,17 @@ INT4 lalDebugLevel;
 #define FILEOUT "./HoughMC"      /* prefix file output */
 #define HARMONICSFILE "./harmonicsS2LLO4K_200_400.txt"
 
+#define SKYFILE "./sky1" 
+
+
 #define TRUE (1==1)
 #define FALSE (1==0)
+
+
+
+/* local function prototype */
+/* void PrintLogFile (LALStatus *status, CHAR *dir, CHAR *basename, CHAR *skyfile, CHAR *executable );
+*/
 
 /******************************************************
  *  Assignment of Id string using NRCSID()
@@ -100,6 +115,10 @@ int main(int argc, char *argv[]){
   static PulsarData           pulsarInject;
   static HoughTemplate        pulsarTemplate;
   static HoughNearTemplates   closeTemplates;
+  
+  /* skypatch info */
+  REAL8  *skyAlpha, *skyDelta, *skySizeAlpha, *skySizeDelta; 
+  INT4   nSkyPatches, skyCounter=0; 
 
   INT4 nLines=0, nHarmonicSets, count1;
 
@@ -153,22 +172,15 @@ int main(int argc, char *argv[]){
   INT4 uvar_blocksRngMed, uvar_nh0, uvar_nMCloop, uvar_AllSkyFlag;
   REAL8 uvar_f0, uvar_fSearchBand, uvar_peakThreshold, uvar_h0Min, uvar_h0Max;
   REAL8 uvar_alpha, uvar_delta, uvar_patchSizeAlpha, uvar_patchSizeDelta;
-  CHAR *uvar_earthEphemeris=NULL;
-  CHAR *uvar_sunEphemeris=NULL;
-  CHAR *uvar_sftDir=NULL;
-  CHAR *uvar_fnameout=NULL;
-  CHAR *uvar_harmonicsfile=NULL;  
-  CHAR *uvar_ifo=NULL;
+  CHAR   *uvar_earthEphemeris=NULL;
+  CHAR   *uvar_sunEphemeris=NULL;
+  CHAR   *uvar_sftDir=NULL;
+  CHAR   *uvar_fnameout=NULL;
+  CHAR   *uvar_harmonicsfile=NULL;  
+  CHAR   *uvar_ifo=NULL;
+  CHAR   *uvar_skyfile=NULL;
 
-#ifdef TIMING
-  unsigned long long start, stop;
-#endif
-
-
-#ifdef TIMING
-   start = realcc();
-#endif
-
+ /******************************************************************/ 
   /*  set up the default parameters  */
   lalDebugLevel = 0;
   /* LALDebugLevel must be called before anything else */
@@ -191,6 +203,7 @@ int main(int argc, char *argv[]){
   nfSizeCylinder = NFSIZE;
   uvar_patchSizeAlpha = PATCHSIZEX;
   uvar_patchSizeDelta = PATCHSIZEY; 
+  
 
   uvar_earthEphemeris = (CHAR *)LALMalloc(512*sizeof(CHAR));
   strcpy(uvar_earthEphemeris,EARTHEPHEMERIS);
@@ -208,8 +221,12 @@ int main(int argc, char *argv[]){
   strcpy(uvar_fnameout, FILEOUT);
 
   uvar_blocksRngMed = BLOCKSRNGMED;
+  
+  uvar_skyfile = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
+  strcpy(uvar_skyfile,SKYFILE);
 
 
+ /******************************************************************/ 
   /* register user input variables */
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",            'h', UVAR_HELP,     "Print this message",            &uvar_help),            &status);  
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "ifo",             'i', UVAR_OPTIONAL, "Detector L1, H1, H2, G1",       &uvar_ifo ),            &status);
@@ -231,9 +248,10 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterREALUserVar(   &status, "h0Max",           'M', UVAR_OPTIONAL, "Largest h0 to inject",          &uvar_h0Max),           &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "nh0",             'n', UVAR_OPTIONAL, "Number of h0 values to inject", &uvar_nh0),             &status);  
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "harmonicsfile",   'H', UVAR_OPTIONAL, "List of known lines",           &uvar_harmonicsfile),   &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyfile",          0,  UVAR_OPTIONAL, "Input skypatch file",           &uvar_skyfile),         &status);
 
 
-
+ /******************************************************************/ 
   /* read all command line variables */
   LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
 
@@ -241,7 +259,15 @@ int main(int argc, char *argv[]){
   if (uvar_help)
     exit(0); 
   
+ /******************************************************************/ 
+  /* write log file with command line arguments, cvs tags, and contents of skypatch file */
+/*
+ *   if ( uvar_printLog ) {
+ *     LAL_CALL( PrintLogFile( &status, uvar_dirnameOut, uvar_fbasenameOut, uvar_skyfile, argv[0]), &status);
+ *   
+ */
 
+  /* ------------------------------------------------------ */
   /* write the log file */
   fnamelog = (CHAR *)LALMalloc( 512*sizeof(CHAR));
   strcpy(fnamelog, uvar_fnameout);
@@ -257,7 +283,7 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALUserVarGetLog(&status, &logstr, UVAR_LOGFMT_CFGFILE), &status);  
 
 
-  fprintf( fpLog, "## Log file for MCInjectHoughS2\n\n");
+  fprintf( fpLog, "## Log file for MCInjectHoughMulti\n\n");
   fprintf( fpLog, "# User Input:\n");
   fprintf( fpLog, "#-------------------------------------------\n");
   fprintf( fpLog, logstr);
@@ -287,7 +313,44 @@ int main(int argc, char *argv[]){
 
     LALFree(fnamelog); 
   }
-
+ 
+  /******************************************************************/ 
+  /* read skypatch info */
+  {
+    FILE   *fpsky = NULL; 
+    INT4   r;
+    REAL8  temp1, temp2, temp3, temp4;
+    
+    if ( (fpsky = fopen(uvar_skyfile, "r")) == NULL)
+      {
+	fprintf(stderr, "Unable to find skyfile %s\n", uvar_skyfile);
+	return DRIVEHOUGHCOLOR_EFILE;
+      }
+        
+    nSkyPatches = 0;
+    do 
+      {
+	r = fscanf(fpsky,"%lf%lf%lf%lf\n", &temp1, &temp2, &temp3, &temp4);
+	/* make sure the line has the right number of entries or is EOF */
+	if (r==4) nSkyPatches++;
+      } while ( r != EOF);
+    rewind(fpsky);
+    
+    skyAlpha = (REAL8 *)LALCalloc(nSkyPatches, sizeof(REAL8));
+    skyDelta = (REAL8 *)LALCalloc(nSkyPatches, sizeof(REAL8));     
+    skySizeAlpha = (REAL8 *)LALCalloc(nSkyPatches, sizeof(REAL8));
+    skySizeDelta = (REAL8 *)LALCalloc(nSkyPatches, sizeof(REAL8));     
+    
+    for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++)
+      {
+	r = fscanf(fpsky,"%lf%lf%lf%lf\n", skyAlpha + skyCounter, skyDelta + skyCounter, 
+		   skySizeAlpha + skyCounter,  skySizeDelta + skyCounter);
+      }
+    
+    fclose(fpsky);     
+  } /* end skyfile reading block */
+ 
+  /******************************************************************/ 
 
   /* real line noise information */
   /* find number of harmonics */
@@ -343,7 +406,7 @@ int main(int argc, char *argv[]){
       
     }  /* done with reading line noise info */
 
-
+ /******************************************************************/ 
   /* check that the band is not covered by lines */
   {
     INT4  counter=0, j, flag;
@@ -372,7 +435,7 @@ int main(int argc, char *argv[]){
 	exit(0);
       }
   }
-  
+   /******************************************************************/ 
 
   /* set fullsky flag */
   injectPar.fullSky = 1;
@@ -384,7 +447,7 @@ int main(int argc, char *argv[]){
   msp = 1; /*only one spin-down */
 
 
-
+ /******************************************************************/ 
   /* computing h0 values and preparing  output files */
   h0V.length=uvar_nh0;
   h0V.data = NULL;
@@ -439,7 +502,7 @@ int main(int argc, char *argv[]){
     
   }
 
-
+ /******************************************************************/ 
   /* sft reading */
   {
     /* new SFT I/O data types */
@@ -505,7 +568,7 @@ int main(int argc, char *argv[]){
   } 
    
 
-
+ /******************************************************************/ 
   /* compute the time difference relative to startTime for all SFT */
   timeDiffV.length = mObsCoh;
   timeDiffV.data = NULL; 
@@ -898,10 +961,6 @@ int main(int argc, char *argv[]){
   LALCheckMemoryLeaks();
   
   
-#ifdef TIMING
-  stop = realcc();
-  printf(" All: %llu\n", stop-start);
-#endif
   
   INFO( DRIVEHOUGHCOLOR_MSGENORM );
   return DRIVEHOUGHCOLOR_ENORM;
