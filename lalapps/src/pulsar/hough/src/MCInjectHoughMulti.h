@@ -28,9 +28,6 @@
 #include <lal/SFTClean.h>
 #include "./DriveHoughColor.h" /* proper path*/
 
-#ifdef TIMING
-#include "./timer/cycle_counter/Intel/GCC/cycle_counter.h" /* proper path*/
-#endif
 
 /******************************************************
  *   Protection against C++ name mangling
@@ -121,6 +118,13 @@ void ComputeFoft(LALStatus   *status,
                  REAL8Vector          *timeDiffV,
                  REAL8Cart3CoorVector *velV,
 		 REAL8                timeBase);
+
+
+void PrintLogFile (LALStatus *status, 
+                  CHAR *dir, 
+		  CHAR *basename, 
+		  CHAR *skyfile, 
+		  CHAR *executable );
 
 /* ****************************************************** */
 

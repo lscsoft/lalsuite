@@ -85,11 +85,6 @@ INT4 lalDebugLevel;
 #define FALSE (1==0)
 
 
-
-/* local function prototype */
-/* void PrintLogFile (LALStatus *status, CHAR *dir, CHAR *basename, CHAR *skyfile, CHAR *executable );
-*/
-
 /******************************************************
  *  Assignment of Id string using NRCSID()
  */
@@ -136,7 +131,6 @@ int main(int argc, char *argv[]){
   static UCHARPeakGram     pg1;
     
   UINT4  msp; /*number of spin-down parameters */
-
   
   UINT4  numberCount,maxNumberCount;
   INT4   nTemplates, controlN, controlNN, controlNH;
@@ -169,9 +163,9 @@ int main(int argc, char *argv[]){
 
   /* user input variables */
   BOOLEAN uvar_help;
-  INT4 uvar_blocksRngMed, uvar_nh0, uvar_nMCloop, uvar_AllSkyFlag;
-  REAL8 uvar_f0, uvar_fSearchBand, uvar_peakThreshold, uvar_h0Min, uvar_h0Max;
-  REAL8 uvar_alpha, uvar_delta, uvar_patchSizeAlpha, uvar_patchSizeDelta;
+  INT4    uvar_blocksRngMed, uvar_nh0, uvar_nMCloop, uvar_AllSkyFlag;
+  REAL8   uvar_f0, uvar_fSearchBand, uvar_peakThreshold, uvar_h0Min, uvar_h0Max;
+  REAL8   uvar_alpha, uvar_delta, uvar_patchSizeAlpha, uvar_patchSizeDelta;
   CHAR   *uvar_earthEphemeris=NULL;
   CHAR   *uvar_sunEphemeris=NULL;
   CHAR   *uvar_sftDir=NULL;
@@ -1255,3 +1249,89 @@ void ComputeFoft(LALStatus   *status,
   /* normal exit */
   RETURN (status);
 }			
+/* ****************************************************************/
+/*    PrintLogFile  Copied from driver */
+/* ****************************************************************/   
+/******************************************************************/
+
+
+void PrintLogFile (LALStatus       *status,
+		   CHAR            *dir,
+		   CHAR            *basename,
+		   CHAR            *skyfile,
+		   CHAR            *executable )
+{
+  CHAR *fnameLog=NULL; 
+  FILE *fpLog=NULL;
+  CHAR *logstr=NULL; 
+
+  INITSTATUS (status, "PrintLogFile", rcsid);
+  ATTATCHSTATUSPTR (status);
+  
+  /* open log file for writing */
+  fnameLog = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
+  strcpy(fnameLog,dir);
+  strcat(fnameLog, "/logfiles/");
+  /* now create directory fdirOut/logfiles using mkdir */
+  errno = 0;
+  {
+    /* check whether file can be created or if it exists already 
+       if not then exit */
+    INT4 mkdir_result;
+    mkdir_result = mkdir(fnameLog, S_IRWXU | S_IRWXG | S_IRWXO);
+    if ( (mkdir_result == -1) && (errno != EEXIST) )
+      {
+	fprintf(stderr, "unable to create logfiles directory %s\n", fnameLog);
+        LALFree(fnameLog);
+	exit(1);  /* stop the program */
+      }
+  }
+
+  /* create the logfilename in the logdirectory */
+  strcat(fnameLog, basename);
+  strcat(fnameLog,".log");
+  /* open the log file for writing */
+  if ((fpLog = fopen(fnameLog, "w")) == NULL) {
+    fprintf(stderr, "Unable to open file %s for writing\n", fnameLog);
+    LALFree(fnameLog);
+    exit(1);
+  }
+  
+  /* get the log string */
+  TRY( LALUserVarGetLog(status->statusPtr, &logstr, UVAR_LOGFMT_CFGFILE), status);  
+
+  fprintf( fpLog, "## LOG FILE FOR Hough Multi IFO MC\n\n");
+  fprintf( fpLog, "# User Input:\n");
+  fprintf( fpLog, "#-------------------------------------------\n");
+  fprintf( fpLog, logstr);
+  LALFree(logstr);
+
+  /* copy contents of skypatch file into logfile */
+  fprintf(fpLog, "\n\n# Contents of skypatch file:\n");
+  fclose(fpLog);
+  {
+    CHAR command[1024] = "";
+    sprintf(command, "cat %s >> %s", skyfile, fnameLog);
+    system(command);
+  }
+
+  /* append an ident-string defining the exact CVS-version of the code used */
+  if ((fpLog = fopen(fnameLog, "a")) != NULL) 
+    {
+      CHAR command[1024] = "";
+      fprintf (fpLog, "\n\n# CVS-versions of executable:\n");
+      fprintf (fpLog, "# -----------------------------------------\n");
+      fclose (fpLog);
+      
+      sprintf (command, "ident %s | sort -u >> %s", executable, fnameLog);
+      system (command);	/* we don't check this. If it fails, we assume that */
+    			/* one of the system-commands was not available, and */
+    			/* therefore the CVS-versions will not be logged */ 
+    }
+
+  LALFree(fnameLog); 
+  	 
+  DETATCHSTATUSPTR (status);
+  /* normal exit */
+  RETURN (status);
+}    
