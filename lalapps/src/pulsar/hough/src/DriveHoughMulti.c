@@ -125,7 +125,7 @@ BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps, uvar_printStats, 
 #define FALSE (1==0)
 
 /* local function prototype */
-void PrintLogFile (LALStatus *status, CHAR *dir, CHAR *basename, CHAR *skyfile, CHAR *executable );
+void PrintLogFile (LALStatus *status, CHAR *dir, CHAR *basename, CHAR *skyfile, LALStringVector *linefiles, CHAR *executable );
 
 int PrintHistogram(UINT8Vector *hist, CHAR *fnameOut);
 
@@ -325,7 +325,7 @@ int main(int argc, char *argv[]){
 
   /* write log file with command line arguments, cvs tags, and contents of skypatch file */
   if ( uvar_printLog ) {
-    LAL_CALL( PrintLogFile( &status, uvar_dirnameOut, uvar_fbasenameOut, uvar_skyfile, argv[0]), &status);
+    LAL_CALL( PrintLogFile( &status, uvar_dirnameOut, uvar_fbasenameOut, uvar_skyfile, uvar_linefiles, argv[0]), &status);
   }
 
   /***** start main calculations *****/
@@ -1306,11 +1306,13 @@ void PrintLogFile (LALStatus       *status,
 		   CHAR            *dir,
 		   CHAR            *basename,
 		   CHAR            *skyfile,
+		   LALStringVector *linefiles,
 		   CHAR            *executable )
 {
   CHAR *fnameLog=NULL; 
   FILE *fpLog=NULL;
   CHAR *logstr=NULL; 
+  UINT4 k;
 
   INITSTATUS (status, "PrintLogFile", rcsid);
   ATTATCHSTATUSPTR (status);
@@ -1360,6 +1362,23 @@ void PrintLogFile (LALStatus       *status,
     CHAR command[1024] = "";
     sprintf(command, "cat %s >> %s", skyfile, fnameLog);
     system(command);
+  }
+
+
+  /* copy contents of linefile if necessary */
+  if ( linefiles ) {
+
+    for ( k = 0; k < linefiles->length; k++) {
+      
+      if ((fpLog = fopen(fnameLog, "a")) != NULL) {
+	CHAR command[1024] = "";
+	fprintf (fpLog, "\n\n# Contents of linefile %s :\n", linefiles->data[k]);
+	fprintf (fpLog, "# -----------------------------------------\n");
+	fclose (fpLog);
+	sprintf(command, "cat %s >> %s", linefiles->data[k], fnameLog);      
+	system (command);	 
+      } 
+    } 
   }
 
   /* append an ident-string defining the exact CVS-version of the code used */
