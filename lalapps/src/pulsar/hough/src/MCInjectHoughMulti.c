@@ -138,7 +138,7 @@ int main(int argc, char *argv[]){
 
   /* vector of weights */
   REAL8Vector weightsV, weightsNoise;
-  /* SFTVector    *inputSFTs  = NULL;  */
+  REAL8Vector *weightsAMskyV= NULL;
   
   SFTVector    *outputSFTs = NULL;
   REAL4TimeSeries   *signalTseries = NULL;
@@ -710,8 +710,46 @@ int main(int argc, char *argv[]){
   }
   
  
- 
- 
+  /******************************************************************/ 
+  /*   setting the weights considering only the AM coefficients to be only
+       computed once  for all the different patches*/ 
+  /******************************************************************/ 
+  if (uvar_weighAM){
+     SkyPosition      skypos;
+     UINT4            iIFO, iSFT;
+     UINT4 	      k, numsft;
+     
+     weightsAMskyV = (REAL8Vector *)LALCalloc(nSkyPatches, sizeof(REAL8Vector));
+     skypos.system = COORDINATESYSTEM_EQUATORIAL;
+     
+     /* loop over sky patches */
+     for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++){
+        MultiAMCoeffs   *multiAMcoef = NULL;
+       
+        weightsAMskyV[skyCounter].length = mObsCoh;    
+	weightsAMskyV[skyCounter].data = NULL;
+	weightsAMskyV[skyCounter].data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
+	
+	skypos.longitude = skyAlpha[skyCounter];
+	skypos.latitude  = skyDelta[skyCounter];
+	LAL_CALL ( LALGetMultiAMCoeffs ( &status, &multiAMcoef, mdetStates, skypos), &status);
+
+	/* loop over the weights and set them by the appropriate AM coefficients */
+	for ( k = 0, iIFO = 0; iIFO < numifo; iIFO++) {	  
+	  numsft = mdetStates->data[iIFO]->length;	
+	  for ( iSFT = 0; iSFT < numsft; iSFT++, k++) {	  
+	    REAL8 a, b;
+	    
+	    a = multiAMcoef->data[iIFO]->a->data[iSFT];
+	    b = multiAMcoef->data[iIFO]->b->data[iSFT];    
+	    weightsAMskyV[skyCounter].data[k] = (a*a + b*b);
+	  } /* loop over SFTs */
+	} /* loop over IFOs */
+		
+	XLALDestroyMultiAMCoeffs ( multiAMcoef );
+      } /*loop over sky patches */
+     	
+   }
   /******************************************************************/ 
   /*   setting of parameters */ 
   /******************************************************************/ 
@@ -1032,6 +1070,18 @@ int main(int argc, char *argv[]){
   LALFree(edat->ephemE);
   LALFree(edat->ephemS);
   LALFree(edat);
+  
+  LALFree(skyAlpha);
+  LALFree(skyDelta);
+  LALFree(skySizeAlpha);
+  LALFree(skySizeDelta);
+  
+  if (uvar_weighAM){
+    for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++){
+        LALFree(weightsAMskyV[skyCounter].data);
+      }
+    LALFree(weightsAMskyV);
+  }
   
   XLALDestroyMultiDetectorStateSeries ( mdetStates );
 
