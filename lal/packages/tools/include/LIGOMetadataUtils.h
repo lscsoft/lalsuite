@@ -777,6 +777,11 @@ XLALInspiralDistanceCut(
     InspiralAccuracyList       *accuracyParams
     );
 
+void
+XLALInspiralSNRCutBCV2(
+    CoincInspiralTable        **coincInspiral
+    );
+
 SnglInspiralTable *
 XLALExtractSnglInspiralFromCoinc(
     CoincInspiralTable         *coincInspiral,
