@@ -42,7 +42,7 @@ Input shoud be from
 #include "./MCInjectHoughMulti.h" /* proper path*/
 
 
-INT4 lalDebugLevel;
+extern int lalDebugLevel;
 
 #define EARTHEPHEMERIS "./earth05-09.dat" 
 #define SUNEPHEMERIS "./sun05-09.dat"    
@@ -51,6 +51,8 @@ INT4 lalDebugLevel;
  * #define EARTHEPHEMERIS "./earth00-04.dat"
  * #define SUNEPHEMERIS "./sun00-04.dat"
  */
+
+#define MAXFILENAMELENGTH 512 /* maximum # of characters  of a filename */
 
 #define ACCURACY 0.00000001 /* of the velocity calculation */
 #define MAXFILES 3000 /* maximum number of files to read in a directory */
@@ -97,12 +99,19 @@ int main(int argc, char *argv[]){
   static LineNoiseInfo   lines, lines2;
   static LineHarmonicsInfo harmonics; 
 
-  static LALStatus            status;  
+  static LALStatus            status; 
+  
+  /* LAL error-handler */
+  lal_errhandler = LAL_ERR_EXIT;
+   
   static LALDetector          detector;
   static LIGOTimeGPSVector    *timeV=NULL;
   static REAL8Cart3CoorVector velV;
-  static REAL8Cart3CoorVector skyPatchCenterV;
   static REAL8Vector          timeDiffV;
+  LIGOTimeGPS firstTimeStamp, lastTimeStamp;
+  REAL8 tObs;
+  static REAL8Cart3CoorVector skyPatchCenterV;
+
   static REAL8Vector          foft;
   static REAL8Vector          foftV[NTEMPLATES];
   static REAL8Vector          h0V;
@@ -118,7 +127,18 @@ int main(int argc, char *argv[]){
 
   INT4 nLines=0, nHarmonicSets, count1;
 
-  SFTVector    *inputSFTs  = NULL;  
+  /* standard pulsar sft types */ 
+  MultiSFTVector *inputSFTs = NULL;
+  UINT4 binsSFT;
+  
+  /* information about all the ifos */
+  MultiDetectorStateSeries *mdetStates = NULL;
+  UINT4 numifo;
+
+  /* vector of weights */
+  REAL8Vector weightsV, weightsNoise;
+  /* SFTVector    *inputSFTs  = NULL;  */
+  
   SFTVector    *outputSFTs = NULL;
   REAL4TimeSeries   *signalTseries = NULL;
   
@@ -137,7 +157,7 @@ int main(int argc, char *argv[]){
   INT4   nTemplates, controlN, controlNN, controlNH;
   UINT4  numberCountV[NTEMPLATES];
    
-  INT4   mObsCoh, nfSizeCylinder;
+  INT4   mObsCoh;
   INT8   f0Bin, fLastBin;           /* freq. bin to perform search */
   REAL8  normalizeThr;
   REAL8  timeBase, deltaF;
@@ -162,9 +182,11 @@ int main(int argc, char *argv[]){
   FILE  *fpLog = NULL;
   CHAR   *logstr=NULL; 
 
+ /******************************************************************/ 
   /* user input variables */
-  BOOLEAN uvar_help;
+  BOOLEAN uvar_help, uvar_weighAM, uvar_weighNoise, uvar_printLog;
   INT4    uvar_blocksRngMed, uvar_nh0, uvar_nMCloop, uvar_AllSkyFlag;
+  INT4    uvar_nfSizeCylinder, uvar_maxBinsClean;
   REAL8   uvar_f0, uvar_fSearchBand, uvar_peakThreshold, uvar_h0Min, uvar_h0Max;
   REAL8   uvar_alpha, uvar_delta, uvar_patchSizeAlpha, uvar_patchSizeDelta;
   CHAR   *uvar_earthEphemeris=NULL;
@@ -174,15 +196,21 @@ int main(int argc, char *argv[]){
   CHAR   *uvar_harmonicsfile=NULL;  
   CHAR   *uvar_ifo=NULL;
   CHAR   *uvar_skyfile=NULL;
+  LALStringVector *uvar_linefiles=NULL;
 
  /******************************************************************/ 
   /*  set up the default parameters  */
+  
   lalDebugLevel = 0;
   /* LALDebugLevel must be called before anything else */
   LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
 
   uvar_help = FALSE;
   uvar_AllSkyFlag = 1;
+  
+  uvar_weighAM = TRUE;
+  uvar_weighNoise = TRUE;
+  uvar_printLog = FALSE;
   
   uvar_nh0 = NH0;
   uvar_h0Min = H0MIN;
@@ -195,28 +223,27 @@ int main(int argc, char *argv[]){
   uvar_f0 =  F0;
   uvar_fSearchBand = FBAND;
   uvar_peakThreshold = THRESHOLD;
-  nfSizeCylinder = NFSIZE;
+  uvar_nfSizeCylinder = NFSIZE;
+  uvar_blocksRngMed = BLOCKSRNGMED;
+  uvar_maxBinsClean = 100;
+
   uvar_patchSizeAlpha = PATCHSIZEX;
   uvar_patchSizeDelta = PATCHSIZEY; 
   
-
-  uvar_earthEphemeris = (CHAR *)LALMalloc(512*sizeof(CHAR));
+  uvar_earthEphemeris = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_earthEphemeris,EARTHEPHEMERIS);
 
-  uvar_sunEphemeris = (CHAR *)LALMalloc(512*sizeof(CHAR));
-  strcpy(uvar_sunEphemeris,SUNEPHEMERIS);
+  uvar_sunEphemeris = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
 
-  uvar_sftDir = (CHAR *)LALMalloc(512*sizeof(CHAR));
+  uvar_sftDir = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_sftDir,SFTDIRECTORY);
 
-  uvar_harmonicsfile = (CHAR *)LALMalloc(512*sizeof(CHAR));
+  uvar_harmonicsfile = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_harmonicsfile,HARMONICSFILE);  
 
-  uvar_fnameout = (CHAR *)LALMalloc(512*sizeof(CHAR));
+  uvar_fnameout = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_fnameout, FILEOUT);
-
-  uvar_blocksRngMed = BLOCKSRNGMED;
-  
+ 
   uvar_skyfile = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_skyfile,SKYFILE);
 
@@ -244,7 +271,15 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterINTUserVar(    &status, "nh0",             'n', UVAR_OPTIONAL, "Number of h0 values to inject", &uvar_nh0),             &status);  
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "harmonicsfile",   'H', UVAR_OPTIONAL, "List of known lines",           &uvar_harmonicsfile),   &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyfile",          0,  UVAR_OPTIONAL, "Input skypatch file",           &uvar_skyfile),         &status);
-
+  LAL_CALL( LALRegisterLISTUserVar(   &status, "linefiles",        0,  UVAR_OPTIONAL, "list of linefiles separated by commas", &uvar_linefiles),       &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighAM",          0,  UVAR_OPTIONAL, "Use amplitude modulation weights",      &uvar_weighAM),         &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighNoise",       0,  UVAR_OPTIONAL, "Use SFT noise weights",                 &uvar_weighNoise),      &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printLog",         0,  UVAR_OPTIONAL, "Print Log file",                        &uvar_printLog),        &status);  
+ 
+  /* developer input variables */
+  LAL_CALL( LALRegisterINTUserVar(    &status, "nfSizeCylinder",   0, UVAR_DEVELOPER, "Size of cylinder of PHMDs",             &uvar_nfSizeCylinder),  &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",     0, UVAR_DEVELOPER, "Running Median block size",             &uvar_blocksRngMed),    &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "maxBinsClean",     0, UVAR_DEVELOPER, "Maximum number of bins in cleaning",    &uvar_maxBinsClean),    &status);
 
  /******************************************************************/ 
   /* read all command line variables */
@@ -253,62 +288,79 @@ int main(int argc, char *argv[]){
   /* exit if help was required */
   if (uvar_help)
     exit(0); 
+
+
+  /* very basic consistency checks on user input */
+  if ( uvar_f0 < 0 ) {
+    fprintf(stderr, "start frequency must be positive\n");
+    exit(1);
+  }
   
+  if ( uvar_fSearchBand < 0 ) {
+    fprintf(stderr, "search frequency band must be positive\n");
+    exit(1);
+  }
+ 
+  if ( uvar_peakThreshold < 0 ) {
+    fprintf(stderr, "peak selection threshold must be positive\n");
+    exit(1);
+  }
+
  /******************************************************************/ 
   /* write log file with command line arguments, cvs tags, and contents of skypatch file */
 /*
  *   if ( uvar_printLog ) {
  *     LAL_CALL( PrintLogFile( &status, uvar_dirnameOut, uvar_fbasenameOut, uvar_skyfile, argv[0]), &status);
- *   
+ *   }
  */
 
+ 
   /* ------------------------------------------------------ */
-  /* write the log file */
-  fnamelog = (CHAR *)LALMalloc( 512*sizeof(CHAR));
-  strcpy(fnamelog, uvar_fnameout);
-  strcat(fnamelog, "_log");
-  /* open the log file for writing */
-  if ((fpLog = fopen(fnamelog, "w")) == NULL) {
-    fprintf(stderr, "Unable to open file %s for writing\n", fnamelog);
-    LALFree(fnamelog);
-    exit(1);
-  }
+  if ( uvar_printLog ) {  /* write the old log file <<<<<<<<<<<<<<<<*/
+    fnamelog = (CHAR *)LALMalloc( 512*sizeof(CHAR));
+    strcpy(fnamelog, uvar_fnameout);
+    strcat(fnamelog, "_log");
+    /* open the log file for writing */
+    if ((fpLog = fopen(fnamelog, "w")) == NULL) {
+      fprintf(stderr, "Unable to open file %s for writing\n", fnamelog);
+      LALFree(fnamelog);
+      exit(1);
+    }
 
-  /* get the log string */
-  LAL_CALL( LALUserVarGetLog(&status, &logstr, UVAR_LOGFMT_CFGFILE), &status);  
+    /* get the log string */
+    LAL_CALL( LALUserVarGetLog(&status, &logstr, UVAR_LOGFMT_CFGFILE), &status);  
 
+    fprintf( fpLog, "## Log file for MCInjectHoughMulti\n\n");
+    fprintf( fpLog, "# User Input:\n");
+    fprintf( fpLog, "#-------------------------------------------\n");
+    fprintf( fpLog, logstr);
+    LALFree(logstr);
+    /* copy contents of harmonics file into logfile */
+    fprintf(fpLog, "\n\n# Contents of harmonics file:\n");
+    fclose(fpLog);
+    {
+      CHAR command[1024] = "";
+      sprintf(command, "cat %s >> %s", uvar_harmonicsfile, fnamelog);
+      system(command);
+    }
 
-  fprintf( fpLog, "## Log file for MCInjectHoughMulti\n\n");
-  fprintf( fpLog, "# User Input:\n");
-  fprintf( fpLog, "#-------------------------------------------\n");
-  fprintf( fpLog, logstr);
-  LALFree(logstr);
-
-  /* copy contents of harmonics file into logfile */
-  fprintf(fpLog, "\n\n# Contents of harmonics file:\n");
-  fclose(fpLog);
-  {
-    CHAR command[1024] = "";
-    sprintf(command, "cat %s >> %s", uvar_harmonicsfile, fnamelog);
-    system(command);
-  }
-
-  /* append an ident-string defining the exact CVS-version of the code used */
-  fpLog = fopen(fnamelog, "a");
-  {
-    CHAR command[1024] = "";
-    fprintf (fpLog, "\n\n# CVS-versions of executable:\n");
-    fprintf (fpLog, "# -----------------------------------------\n");
-    fclose (fpLog);
+    /* append an ident-string defining the exact CVS-version of the code used */
+    fpLog = fopen(fnamelog, "a");
+    {
+      CHAR command[1024] = "";
+      fprintf (fpLog, "\n\n# CVS-versions of executable:\n");
+      fprintf (fpLog, "# -----------------------------------------\n");
+      fclose (fpLog);
     
-    sprintf (command, "ident %s | sort -u >> %s", argv[0], fnamelog);
-    system (command);	/* we don't check this. If it fails, we assume that */
+      sprintf (command, "ident %s | sort -u >> %s", argv[0], fnamelog);
+      system (command);	/* we don't check this. If it fails, we assume that */
     			/* one of the system-commands was not available, and */
     			/* therefore the CVS-versions will not be logged */
 
-    LALFree(fnamelog); 
+      LALFree(fnamelog); 
+    }
   }
- 
+  
   /******************************************************************/ 
   /* read skypatch info */
   {
@@ -360,90 +412,102 @@ int main(int argc, char *argv[]){
     }
 
   /******************************************************************/ 
-  /* real line noise information */
+  /* real line noise information  OBSOLETE*/
  /******************************************************************/ 
   /* find number of harmonics */
-  LAL_CALL( LALFindNumberHarmonics (&status, &harmonics, uvar_harmonicsfile), &status); 
-  nHarmonicSets = harmonics.nHarmonicSets; 
+/*
+ *   LAL_CALL( LALFindNumberHarmonics (&status, &harmonics, uvar_harmonicsfile), &status); 
+ *   nHarmonicSets = harmonics.nHarmonicSets; 
+ */
   
   /* convert harmonics to explicit lines */
-  nLines = 0;
-  if (nHarmonicSets > 0)
-    {
-      REAL8 dopplerFreq;
-      harmonics.startFreq = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
-      harmonics.gapFreq = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
-      harmonics.numHarmonics = (INT4 *)LALMalloc(harmonics.nHarmonicSets * sizeof(INT4));
-      harmonics.leftWing = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
-      harmonics.rightWing = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
-    
-
-      LAL_CALL( LALReadHarmonicsInfo( &status, &harmonics, uvar_harmonicsfile ), &status);
-      
-      for (count1=0; count1 < nHarmonicSets; count1++)
-	{
-	  nLines += *(harmonics.numHarmonics + count1);
-	}
-
-      
-      lines2.nLines = nLines;
-      lines2.lineFreq = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
-      lines2.leftWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
-      lines2.rightWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
-      
-      lines.nLines = nLines;
-      lines.lineFreq = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
-      lines.leftWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
-      lines.rightWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
-      
-      LAL_CALL( LALHarmonics2Lines( &status, &lines2, &harmonics), &status);
-      
-      dopplerFreq = (uvar_f0 + uvar_fSearchBand)*VTOT;
-      LAL_CALL( LALChooseLines (&status, &lines, &lines2, uvar_f0 - dopplerFreq, 
-			uvar_f0 + uvar_fSearchBand + dopplerFreq), &status); 
-      nLines = lines.nLines;
-      
-      LALFree(lines2.lineFreq);
-      LALFree(lines2.leftWing);
-      LALFree(lines2.rightWing);
-
-      LALFree(harmonics.startFreq);
-      LALFree(harmonics.gapFreq);
-      LALFree(harmonics.numHarmonics);
-      LALFree(harmonics.leftWing);
-      LALFree(harmonics.rightWing);
-      
-    }  /* done with reading line noise info */
+/*
+ *   nLines = 0;
+ *   if (nHarmonicSets > 0)
+ *     {
+ *       REAL8 dopplerFreq;
+ *       harmonics.startFreq = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
+ *       harmonics.gapFreq = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
+ *       harmonics.numHarmonics = (INT4 *)LALMalloc(harmonics.nHarmonicSets * sizeof(INT4));
+ *       harmonics.leftWing = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
+ *       harmonics.rightWing = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
+ *     
+ * 
+ *       LAL_CALL( LALReadHarmonicsInfo( &status, &harmonics, uvar_harmonicsfile ), &status);
+ *       
+ *       for (count1=0; count1 < nHarmonicSets; count1++)
+ * 	{
+ * 	  nLines += *(harmonics.numHarmonics + count1);
+ * 	}
+ * 
+ *       
+ *       lines2.nLines = nLines;
+ *       lines2.lineFreq = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+ *       lines2.leftWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+ *       lines2.rightWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+ *       
+ *       lines.nLines = nLines;
+ *       lines.lineFreq = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+ *       lines.leftWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+ *       lines.rightWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+ *       
+ *       LAL_CALL( LALHarmonics2Lines( &status, &lines2, &harmonics), &status);
+ *       
+ *       dopplerFreq = (uvar_f0 + uvar_fSearchBand)*VTOT;
+ *       LAL_CALL( LALChooseLines (&status, &lines, &lines2, uvar_f0 - dopplerFreq, 
+ * 			uvar_f0 + uvar_fSearchBand + dopplerFreq), &status); 
+ *       nLines = lines.nLines;
+ *       
+ *       LALFree(lines2.lineFreq);
+ *       LALFree(lines2.leftWing);
+ *       LALFree(lines2.rightWing);
+ * 
+ *       LALFree(harmonics.startFreq);
+ *       LALFree(harmonics.gapFreq);
+ *       LALFree(harmonics.numHarmonics);
+ *       LALFree(harmonics.leftWing);
+ *       LALFree(harmonics.rightWing);
+ *       
+ *     
+ */
+  /* done with reading line noise info */
 
  /******************************************************************/ 
-  /* check that the band is not covered by lines */
-  {
-    INT4  counter=0, j, flag;
-    REAL8 sampFreq, stepFreq, dopplerWing;
+  /* check that the band is not covered by lines  OBSOLETE*/
+/*
+ *   {
+ *     INT4  counter=0, j, flag;
+ *     REAL8 sampFreq, stepFreq, dopplerWing;
+ * 
+ *     dopplerWing = (uvar_f0 + uvar_fSearchBand)*VTOT;
+ *     stepFreq = (uvar_fSearchBand + 2*dopplerWing)/100.0;
+ * 
+ *     for (j=0; j<100; j++)
+ *       {
+ * 	sampFreq = uvar_f0 - dopplerWing + j*stepFreq;
+ * 	LAL_CALL( LALCheckLines (&status, &flag, &lines, sampFreq), &status); 
+ * 	if ( flag>0 ) counter++;
+ *       } 
+ */
 
-    dopplerWing = (uvar_f0 + uvar_fSearchBand)*VTOT;
-    stepFreq = (uvar_fSearchBand + 2*dopplerWing)/100.0;
-
-    for (j=0; j<100; j++)
-      {
-	sampFreq = uvar_f0 - dopplerWing + j*stepFreq;
-	LAL_CALL( LALCheckLines (&status, &flag, &lines, sampFreq), &status); 
-	if ( flag>0 ) counter++;
-      }
     /* exit if more than 90% is covered by lines */
-    if (counter > 90 )
-      {
-	fprintf(stdout, "Too many lines in this band...nothing to do! \n");
-	/* deallocate memory and exit */
-	if (nLines > 0)
-	  {
-	    LALFree(lines.lineFreq);
-	    LALFree(lines.leftWing);
-	    LALFree(lines.rightWing);
-	  }
-	exit(0);
-      }
-  }
+/*
+ *     if (counter > 90 )
+ *       {
+ * 	fprintf(stdout, "Too many lines in this band...nothing to do! \n");
+ */
+  	/* deallocate memory and exit */
+ * 	if (nLines > 0)
+ * 	  {
+ * 	    LALFree(lines.lineFreq);
+ * 	    LALFree(lines.leftWing);
+ * 	    LALFree(lines.rightWing);
+ * 	  }
+ * 	exit(0);
+ *       }
+ *   
+ */
+
    /******************************************************************/ 
 
   /* set fullsky flag */
@@ -499,16 +563,6 @@ int main(int argc, char *argv[]){
     for (k=0; k<uvar_nh0; ++k){ fprintf(fpH0, "%g \n",  h0V.data[k] ); }  
     fclose(fpH0);
     
-    /*
-     *     for (k=0; k<uvar_nh0; ++k){
-     *       sprintf(filename, "%s_%03d.m",uvar_fnameout, k); 
-     *       fp[k] = fopen(filename, "w");
-     *       setlinebuf(fp[k]);  
-     *       fprintf(fp[k], " h0 = %g; \n",  h0V.data[k] );
-     *       fprintf(fp[k], " Ncount= [ \n" );
-     *     } 
-     */
-    
   }
 
  /******************************************************************/ 
@@ -528,10 +582,16 @@ int main(int argc, char *argv[]){
       constraints.detector = XLALGetChannelPrefix ( uvar_ifo );
 
     /* get sft catalog */
-    tempDir = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
-    strcpy(tempDir, uvar_sftDir);
-    strcat(tempDir, "/*SFT*.*");
-    LAL_CALL( LALSFTdataFind( &status, &catalog, tempDir, &constraints), &status);
+  /*
+ *   tempDir = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
+ *     strcpy(tempDir, uvar_sftDir);
+ *     strcat(tempDir, "/*SFT*.*");
+ */
+    LAL_CALL( LALSFTdataFind( &status, &catalog, uvar_sftDir, &constraints), &status);
+    if ( (catalog == NULL) || (catalog->length == 0) ) {
+      fprintf (stderr,"Unable to match any SFTs with pattern '%s'\n", uvar_sftDir );
+      exit(1);
+    }
 
 
     /* get some sft parameters */
@@ -541,7 +601,7 @@ int main(int argc, char *argv[]){
     f0Bin = floor( uvar_f0 * timeBase + 0.5); /* initial search frequency */
     length =  uvar_fSearchBand * timeBase; /* total number of search bins - 1 */
     fLastBin = f0Bin + length;   /* final frequency bin to be analyzed */
-    fWings =  floor( fLastBin * VTOT + 0.5) + nfSizeCylinder + uvar_blocksRngMed;
+    fWings =  floor( fLastBin * VTOT + 0.5) + uvar_nfSizeCylinder + uvar_blocksRngMed;
 
     /* some more sft parameetrs */
     sftlength = 1 + length + 2*fWings;
@@ -554,18 +614,15 @@ int main(int argc, char *argv[]){
 
     /* add wings for Doppler modulation and running median block size*/
     doppWings = (uvar_f0 + uvar_fSearchBand) * VTOT;    
-    fmin = uvar_f0 - doppWings - (uvar_blocksRngMed + nfSizeCylinder) * deltaF;
-    fmax = uvar_f0 + uvar_fSearchBand + doppWings + (uvar_blocksRngMed + nfSizeCylinder) * deltaF;
+    fmin = uvar_f0 - doppWings - (uvar_blocksRngMed + uvar_nfSizeCylinder) * deltaF;
+    fmax = uvar_f0 + uvar_fSearchBand + doppWings + (uvar_blocksRngMed + uvar_nfSizeCylinder) * deltaF;
 
     /* read sfts */
     /* read sft files making sure to add extra bins for running median */
     LAL_CALL( LALLoadSFTs ( &status, &inputSFTs, catalog, fmin, fmax), &status);
 
 
-    /* calculation of weights comes here */
-
-    /* normalize sfts */
-    LAL_CALL( LALNormalizeSFTVect (&status, inputSFTs, uvar_blocksRngMed), &status);
+    /* calculation of weights  and normalization of SFTs should NOT be here*/
 
         
     /* free memory */
@@ -660,7 +717,7 @@ int main(int argc, char *argv[]){
   injectPar.spnFmax.data = NULL; 
   injectPar.spnFmax.length=msp;   /*only 1 spin */
   injectPar.spnFmax.data = (REAL8 *)LALMalloc(msp*sizeof(REAL8));
-  injectPar.spnFmax.data[0] = -(nfSizeCylinder/2) *deltaF/timeDiffV.data[mObsCoh-1];
+  injectPar.spnFmax.data[0] = -(uvar_nfSizeCylinder/2) *deltaF/timeDiffV.data[mObsCoh-1];
   
   pulsarInject.spindown.length = msp;
   pulsarTemplate.spindown.length = msp;
