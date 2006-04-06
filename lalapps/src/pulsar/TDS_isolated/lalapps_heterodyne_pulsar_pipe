@@ -70,7 +70,7 @@ Usage: lalapps_heterodyne_pulsar_pipe [options]
   print >> sys.stderr, msg
   
 # parse the command line options to figure out what we should do
-shortop = "hv:dscfuC:F:l:"
+shortop = "hvds:cfuCF:l:"
 longop = [
   "help",
   "version",
