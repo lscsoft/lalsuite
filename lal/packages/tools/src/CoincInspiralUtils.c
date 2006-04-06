@@ -1978,5 +1978,53 @@ XLALCoincInspiralSlideCut(
   return( slideHead );
 }
 
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+void
+XLALInspiralSNRCutBCV2(
+    CoincInspiralTable        **coincInspiral
+    )
+/* </lalVerbatim> */
+{
+  CoincInspiralTable   *thisCoinc = NULL;
+  CoincInspiralTable   *prevCoinc = NULL;
+  CoincInspiralTable   *coincHead = NULL;
+
+  thisCoinc = *coincInspiral;
+  coincHead = NULL;
+
+  while( thisCoinc )
+  {
+    INT4  discardTrigger = 0;
+    REAL4 snrH1 = 0, snrH2 = 0;
+
+    CoincInspiralTable *tmpCoinc = thisCoinc;
+    thisCoinc = thisCoinc->next;
+
+    if( tmpCoinc->snglInspiral[LAL_IFO_H1] && tmpCoinc->snglInspiral[LAL_IFO_H2] 
+      && tmpCoinc->snglInspiral[LAL_IFO_H1]->snr < tmpCoinc->snglInspiral[LAL_IFO_H2]->snr)
+    {
+       discardTrigger = 1;  
+    }
+
+    if( discardTrigger )
+    {
+      XLALFreeCoincInspiral( &tmpCoinc );
+    }
+    else
+    {
+      if ( ! coincHead )
+      {
+        coincHead = tmpCoinc;
+      }
+      else
+      {
+        prevCoinc->next = tmpCoinc;
+      }
+      tmpCoinc->next = NULL;
+      prevCoinc = tmpCoinc;
+    }
+  }
+  *coincInspiral = coincHead;
+}
 
 
