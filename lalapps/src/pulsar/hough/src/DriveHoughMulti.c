@@ -46,10 +46,11 @@
       - RA and dec of skypatch center.
       - Size in RA and dec.
 
-   - Location of Directory containing the SFTs (can be either v1 or v2).
+   - Location of Directory containing the SFTs (must be v2 SFTs).
 
-   - Interferometer .
-      -- Not required for v2 SFTs.
+   - Interferometer (optional)
+
+   - List of linefiles containing information about known spectral disturbances
 
    - Location of output directory and basename of output files.
 
@@ -62,8 +63,8 @@
 
    - Boolean variable for deciding whether amplitude modulation weights should be used.
 
-   - Boolean variables for deciding whether the Hough maps, the statistics and list of 
-      events above a threshold should be written
+   - Boolean variables for deciding whether the Hough maps, the statistics, list of 
+      events above a threshold, and logfile should be written
 
    /par Output
 
@@ -71,7 +72,7 @@
    first two items are default while the rest are written according to the user input:
 
    - A directory called logfiles records the user input, contents of the skypatch file 
-      and cvs tags contained in the executable
+      and cvs tags contained in the executable (if the user has required logging)
 
    - A directory called nstarfiles containing the loudest event for each search frequency 
       bin maximised over all sky-locations and spindown parameters.  An event is said to be
@@ -277,7 +278,7 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printLog",         0,  UVAR_OPTIONAL, "Print Log file",                        &uvar_printLog),        &status);  
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris",  'E', UVAR_OPTIONAL, "Earth Ephemeris file",                  &uvar_earthEphemeris),  &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris",    'S', UVAR_OPTIONAL, "Sun Ephemeris file",                    &uvar_sunEphemeris),    &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir",          'D', UVAR_OPTIONAL, "SFT Directory pattern",                 &uvar_sftDir),          &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir",          'D', UVAR_OPTIONAL, "SFT filename pattern",                  &uvar_sftDir),          &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "dirnameOut",      'o', UVAR_OPTIONAL, "Output directory",                      &uvar_dirnameOut),      &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "fbasenameOut",     0,  UVAR_OPTIONAL, "Output file basename",                  &uvar_fbasenameOut),    &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printMaps",        0,  UVAR_OPTIONAL, "Print Hough maps",                      &uvar_printMaps),       &status);  
@@ -286,7 +287,8 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printEvents",      0,  UVAR_OPTIONAL, "Print events above threshold",          &uvar_printEvents),     &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printStats",       0,  UVAR_OPTIONAL, "Print Hough statistics",                &uvar_printStats),      &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printSigma",       0,  UVAR_OPTIONAL, "Print expected number count stdev.",    &uvar_printSigma),      &status);
-  LAL_CALL( LALRegisterLISTUserVar(   &status, "linefiles",        0,  UVAR_OPTIONAL, "list of linefiles separated by commas", &uvar_linefiles),       &status);
+  LAL_CALL( LALRegisterLISTUserVar(   &status, "linefiles",        0,  UVAR_OPTIONAL, "Comma separated List of linefiles (filenames must contain IFO name)",
+				                                                                                               &uvar_linefiles),       &status);
   
   /* developer input variables */
   LAL_CALL( LALRegisterINTUserVar(    &status, "nfSizeCylinder",   0, UVAR_DEVELOPER, "Size of cylinder of PHMDs",             &uvar_nfSizeCylinder),  &status);
@@ -366,7 +368,6 @@ int main(int argc, char *argv[]){
   } /* end skyfile reading block */
 
 
-  
 
   /* read sft Files and set up weights and nstar vector */
   {
@@ -379,8 +380,12 @@ int main(int argc, char *argv[]){
 
     /* set detector constraint */
     constraints.detector = NULL;
-    if ( LALUserVarWasSet( &uvar_ifo ) )    
-      constraints.detector = XLALGetChannelPrefix ( uvar_ifo );
+    if ( LALUserVarWasSet( &uvar_ifo ) ) {
+      if ( (constraints.detector = XLALGetChannelPrefix ( uvar_ifo )) == NULL) {
+	fprintf(stderr, "Invalid Detector\n");
+	exit(1);
+      }
+    }
 
     /* get sft catalog */
     LAL_CALL( LALSFTdataFind( &status, &catalog, uvar_sftDir, &constraints), &status);
@@ -609,7 +614,7 @@ int main(int argc, char *argv[]){
 	  fprintf(stderr,"Unable to find file %s for writing\n", fileSigma);
 	  return DRIVEHOUGHCOLOR_EFILE;
 	}
-    }
+    } /* end if( uvar_printSigma) */
   
   
   /* loop over sky patches */
