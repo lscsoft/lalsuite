@@ -709,7 +709,21 @@ int main(int argc, char *argv[]){
  
   }
   
- 
+  /******************************************************************/ 
+  /* initialize all weights to unity */
+  /******************************************************************/ 
+   
+  /* set up weights -- this should be done before normalizing the sfts */
+   weightsV.length = mObsCoh;
+   weightsV.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
+
+   weightsNoise.length = mObsCoh;
+   weightsNoise.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
+
+   /* initialize all weights to unity */
+   LAL_CALL( LALHOUGHInitializeWeights( &status, &weightsNoise), &status);
+   LAL_CALL( LALHOUGHInitializeWeights( &status, &weightsV), &status);
+
   /******************************************************************/ 
   /*   setting the weights considering only the AM coefficients to be only
        computed once  for all the different patches*/ 
@@ -1076,6 +1090,10 @@ int main(int argc, char *argv[]){
   LALFree(skySizeAlpha);
   LALFree(skySizeDelta);
   
+
+  LALFree(weightsV.data);
+  LALFree(weightsNoise.data); 
+   
   if (uvar_weighAM){
     for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++){
         LALFree(weightsAMskyV[skyCounter].data);
