@@ -1100,30 +1100,8 @@ XLALGenerateCoherentBank(
   
 /* <lalVerbatim file="CoincInspiralUtilsCP"> */
 void
-XLALInspiralDistanceCutPsi0Psi3BCVC(
-    CoincInspiralTable        **coincInspiral,
-    InspiralAccuracyList       *accuracyParams
-    )
-/* </lalVerbatim> */
-{
-}
-    
-/* <lalVerbatim file="CoincInspiralUtilsCP"> */
-void
-XLALInspiralDistanceCutPsi0BCVC(
-    CoincInspiralTable        **coincInspiral,
-    InspiralAccuracyList       *accuracyParams
-    )
-/* </lalVerbatim> */
-{
-}
-    
-
-/* <lalVerbatim file="CoincInspiralUtilsCP"> */
-void
-XLALInspiralDistanceCutBCVC(
-    CoincInspiralTable        **coincInspiral,
-    InspiralAccuracyList       *accuracyParams
+XLALInspiralPsi0Psi3CutBCVC(
+    CoincInspiralTable        **coincInspiral
     )
 /* </lalVerbatim> */
 {
@@ -1139,9 +1117,7 @@ XLALInspiralDistanceCutBCVC(
   INT4  discardTrigger = 0;
   REAL4 distA = 0, distB = 0;
   REAL4 sigA, sigB;
-  REAL4 snrA, snrB, dpsi3,dpsi0;
-  REAL4 iota; 
-  REAL4 kappaA = 0.7, epsilonA=0.;
+  REAL4 psi0A, psi0B, psi3A, psi3B, snr, snrA, snrB, x, y, X, Y, theta=0.035;
 
   /* loop over the coincindent triggers */
   while( thisCoinc )
@@ -1151,18 +1127,109 @@ XLALInspiralDistanceCutBCVC(
     CoincInspiralTable *tmpCoinc = thisCoinc;
     thisCoinc = thisCoinc->next;
       
-    kappaA = accuracyParams->ifoAccuracy[ifoA].kappa;
-    epsilonA = accuracyParams->ifoAccuracy[ifoA].epsilon;
 
     /* loop over all IFO combinations */
     for ( ifoA = 0; ifoA < LAL_NUM_IFO; ifoA++ )
     {
-      /* extract needed parameters */
-      kappaA = accuracyParams->ifoAccuracy[ifoA].kappa;
-      epsilonA = accuracyParams->ifoAccuracy[ifoA].epsilon;
-
       for ( ifoB = ifoA + 1; ifoB < LAL_NUM_IFO; ifoB++ )
       {
+        if( tmpCoinc->snglInspiral[ifoA] 
+            && tmpCoinc->snglInspiral[ifoB]  )
+        {
+          /* perform the distance consistency test */
+          psi0B = tmpCoinc->snglInspiral[ifoB]->psi0;
+          psi0A = tmpCoinc->snglInspiral[ifoA]->psi0;
+          psi3B = tmpCoinc->snglInspiral[ifoB]->psi3;
+          psi3A = tmpCoinc->snglInspiral[ifoA]->psi3;
+          snrA = tmpCoinc->snglInspiral[ifoA]->snr;
+          snrB = tmpCoinc->snglInspiral[ifoB]->snr;
+          if (snrA>snrB )
+  	  {
+	    snr = snrA;
+	  }
+	  else
+	  {
+	    snr = snrB;
+	  }
+        
+	x = (psi0A - psi0B) / snr ;
+	y = (psi3A - psi3B) / snr ;
+	X = x * cos(theta) - y * sin(theta);
+	Y = x * sin(theta) + y * cos(theta);
+
+
+        if ( ((X*X/3500/3500) + (Y*Y/40/40)) >  1 )     
+       	{
+          discardTrigger = 1;
+	}
+
+
+
+      }
+    }
+     
+     if ( discardTrigger )
+     {
+	break;
+     }
+   } 
+    
+    if( discardTrigger )
+    {
+	XLALFreeCoincInspiral( &tmpCoinc );
+    }
+    else
+    {
+      if ( ! coincHead )
+      {
+	  coincHead = tmpCoinc;
+      }
+      else
+	{
+	  prevCoinc->next = tmpCoinc;
+      }
+      tmpCoinc->next = NULL;
+      prevCoinc = tmpCoinc;
+    }
+  }
+  *coincInspiral = coincHead;
+}
+    
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+void
+XLALInspiralIotaCutBCVC(
+    CoincInspiralTable        **coincInspiral
+    )
+/* </lalVerbatim> */
+{
+  InterferometerNumber  ifoA = LAL_UNKNOWN_IFO;  
+  InterferometerNumber  ifoB = LAL_UNKNOWN_IFO;
+  CoincInspiralTable   *thisCoinc = NULL;
+  CoincInspiralTable   *prevCoinc = NULL;
+  CoincInspiralTable   *coincHead = NULL;
+
+  thisCoinc = *coincInspiral;
+  coincHead = NULL;
+   
+  INT4  discardTrigger = 0;
+  REAL4 snrA, snrB, sigA, sigB;
+  REAL4 iota; 
+
+  /* loop over the coincindent triggers */
+  while( thisCoinc )
+  {
+    discardTrigger=0;
+
+    CoincInspiralTable *tmpCoinc = thisCoinc;
+    thisCoinc = thisCoinc->next;
+      
+
+    /* loop over all IFO combinations */
+    for ( ifoA = 0; ifoA < LAL_NUM_IFO; ifoA++ )
+    {
+      for ( ifoB = ifoA + 1; ifoB < LAL_NUM_IFO; ifoB++ )
+      {
+        /*epsilonB = accuracyParams->ifoAccuracy[ifoB].epsilon;*/
 
         if( tmpCoinc->snglInspiral[ifoA] 
             && tmpCoinc->snglInspiral[ifoB]  )
@@ -1173,19 +1240,18 @@ XLALInspiralDistanceCutBCVC(
           snrA = tmpCoinc->snglInspiral[ifoA]->snr;
           snrB = tmpCoinc->snglInspiral[ifoB]->snr;
 
-	  /* first we were using epsilon = -4 and kappa = 0.65 
-	     then, epsilon =0 and kappa=0.7 */	        
-
 	  iota = fabs(sigA*sigA/snrA-sigB*sigB/snrB)/(sigA*sigA/snrA+sigB*sigB/snrB);
-          if (  (iota > epsilonA/(snrA)+ kappaA)
-                &&( ifoA==LAL_IFO_H1 && ifoB==LAL_IFO_H2) )
-          {
-            discardTrigger = 1;
-            break;
-          }
-	  
-	  
-	}
+
+          if (  (iota > (1. - 1./sqrt(snrA) ) ) )
+	    {
+	      discardTrigger = 1;	
+	    }
+	  if (  (iota > (1. - 1./sqrt(snrB) ) ) )
+	    {
+	      discardTrigger = 1;	
+	    }
+	 } 
+        
       }
       if ( discardTrigger )
       {
@@ -1214,7 +1280,90 @@ XLALInspiralDistanceCutBCVC(
   *coincInspiral = coincHead;
 }
 
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+void
+XLALInspiralDistanceCutBCVC(
+    CoincInspiralTable        **coincInspiral,
+    InspiralAccuracyList       *accuracyParams
+    )
+/* </lalVerbatim> */
+{
+  InterferometerNumber  ifoA = LAL_UNKNOWN_IFO;  
+  InterferometerNumber  ifoB = LAL_UNKNOWN_IFO;
+  CoincInspiralTable   *thisCoinc = NULL;
+  CoincInspiralTable   *prevCoinc = NULL;
+  CoincInspiralTable   *coincHead = NULL;
 
+  REAL4 kappaA=0, kappaB=0, epsilonA=0, epsilonB=0;
+  thisCoinc = *coincInspiral;
+  coincHead = NULL;
+  
+  while( thisCoinc )
+  {
+    INT4  discardTrigger = 0;
+    REAL4 snrA = 0, snrB = 0;
+    REAL4 distA = 0, distB = 0;
+    REAL8 sigmasqA = 0, sigmasqB = 0;
+
+    CoincInspiralTable *tmpCoinc = thisCoinc;
+    thisCoinc = thisCoinc->next;
+
+    for ( ifoA = 0; ifoA < LAL_NUM_IFO; ifoA++ )
+    {
+      kappaA = accuracyParams->ifoAccuracy[ifoA].kappa;
+      epsilonA = accuracyParams->ifoAccuracy[ifoA].epsilon;
+      
+      for ( ifoB = ifoA + 1; ifoB < LAL_NUM_IFO; ifoB++ )
+      {
+        kappaB = accuracyParams->ifoAccuracy[ifoB].kappa;
+        epsilonB = accuracyParams->ifoAccuracy[ifoB].epsilon;
+
+        if( tmpCoinc->snglInspiral[ifoA] && ( kappaA || epsilonA ) 
+            && tmpCoinc->snglInspiral[ifoB] && ( kappaB || epsilonB ) )
+	{
+          /* perform the distance consistency test */
+          sigmasqA = tmpCoinc->snglInspiral[ifoA]->sigmasq;
+          sigmasqB = tmpCoinc->snglInspiral[ifoB]->sigmasq;
+          snrA = tmpCoinc->snglInspiral[ifoA]->snr;
+          snrB = tmpCoinc->snglInspiral[ifoB]->snr;
+          distA = sigmasqA*sigmasqA/snrA;
+          distB = sigmasqB*sigmasqB/snrB;
+
+          if( ( fabs(distB - distA)/(distA + distB) > epsilonB/snrB + kappaB ) ||
+              ( fabs(distA - distB)/(distB + distA) > epsilonA/snrA + kappaA ) )
+          {
+            discardTrigger = 1;
+            break;
+          }
+        }
+      }
+     
+      if ( discardTrigger )
+      {
+        break;
+      }
+    }
+
+    if( discardTrigger )
+    {
+      XLALFreeCoincInspiral( &tmpCoinc );
+    }
+    else
+    {
+      if ( ! coincHead )
+      {
+        coincHead = tmpCoinc;
+      }
+      else
+      {
+        prevCoinc->next = tmpCoinc;
+      }
+      tmpCoinc->next = NULL;
+      prevCoinc = tmpCoinc;
+    }
+  }
+  *coincInspiral = coincHead;
+}
 
 
 /* <lalVerbatim file="CoincInspiralUtilsCP"> */
@@ -1442,7 +1591,7 @@ XLALCoincInspiralStat(
       {        
         statValue += snglInspiral->snr * snglInspiral->snr;
       }
-      if ( coincStat == bitten_l )
+      else if ( coincStat == bitten_l )
       {
         statValues[ifoNumber] = bittenLParams->param_a[ifoNumber] * snglInspiral->snr 
 		- bittenLParams->param_b[ifoNumber];
@@ -1496,7 +1645,7 @@ XLALClusterCoincInspiralTable (
   CoincInspiralTable     *prevCoinc = NULL;
   CoincInspiralTable     *nextCoinc = NULL;
   int                     numCoincClust = 0;
-  
+
   if ( !coincList )
   {
     XLAL_ERROR(func,XLAL_EIO);

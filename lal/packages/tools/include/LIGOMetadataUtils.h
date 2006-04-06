@@ -756,14 +756,12 @@ LALSnglInspiralCoincTest(
     );
 
 void
-XLALInspiralDistanceCutPsi0Psi3BCVC(
-    CoincInspiralTable        **coincInspiral,
-    InspiralAccuracyList       *accuracyParams
+XLALInspiralPsi0Psi3CutBCVC(
+    CoincInspiralTable        **coincInspiral
     );
 void
-XLALInspiralDistanceCutPsi0BCVC(
-    CoincInspiralTable        **coincInspiral,
-    InspiralAccuracyList       *accuracyParams
+XLALInspiralIotaCutBCVC(
+    CoincInspiralTable        **coincInspiral
     );
 
 
