@@ -414,101 +414,10 @@ int main(int argc, char *argv[]){
     }
 
   /******************************************************************/ 
-  /* real line noise information  OBSOLETE*/
+  /* real line noise information  OBSOLETE has been removed 
+  if required check MCInjectHoughS2.c*/
  /******************************************************************/ 
-  /* find number of harmonics */
-/*
- *   LAL_CALL( LALFindNumberHarmonics (&status, &harmonics, uvar_harmonicsfile), &status); 
- *   nHarmonicSets = harmonics.nHarmonicSets; 
- */
-  
-  /* convert harmonics to explicit lines */
-/*
- *   nLines = 0;
- *   if (nHarmonicSets > 0)
- *     {
- *       REAL8 dopplerFreq;
- *       harmonics.startFreq = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
- *       harmonics.gapFreq = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
- *       harmonics.numHarmonics = (INT4 *)LALMalloc(harmonics.nHarmonicSets * sizeof(INT4));
- *       harmonics.leftWing = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
- *       harmonics.rightWing = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
- *     
- * 
- *       LAL_CALL( LALReadHarmonicsInfo( &status, &harmonics, uvar_harmonicsfile ), &status);
- *       
- *       for (count1=0; count1 < nHarmonicSets; count1++)
- * 	{
- * 	  nLines += *(harmonics.numHarmonics + count1);
- * 	}
- * 
- *       
- *       lines2.nLines = nLines;
- *       lines2.lineFreq = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
- *       lines2.leftWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
- *       lines2.rightWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
- *       
- *       lines.nLines = nLines;
- *       lines.lineFreq = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
- *       lines.leftWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
- *       lines.rightWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
- *       
- *       LAL_CALL( LALHarmonics2Lines( &status, &lines2, &harmonics), &status);
- *       
- *       dopplerFreq = (uvar_f0 + uvar_fSearchBand)*VTOT;
- *       LAL_CALL( LALChooseLines (&status, &lines, &lines2, uvar_f0 - dopplerFreq, 
- * 			uvar_f0 + uvar_fSearchBand + dopplerFreq), &status); 
- *       nLines = lines.nLines;
- *       
- *       LALFree(lines2.lineFreq);
- *       LALFree(lines2.leftWing);
- *       LALFree(lines2.rightWing);
- * 
- *       LALFree(harmonics.startFreq);
- *       LALFree(harmonics.gapFreq);
- *       LALFree(harmonics.numHarmonics);
- *       LALFree(harmonics.leftWing);
- *       LALFree(harmonics.rightWing);
- *       
- *     
- */
-  /* done with reading line noise info */
- /******************************************************************/ 
-  /* check that the band is not covered by lines  OBSOLETE*/
-/*
- *   {
- *     INT4  counter=0, j, flag;
- *     REAL8 sampFreq, stepFreq, dopplerWing;
- * 
- *     dopplerWing = (uvar_f0 + uvar_fSearchBand)*VTOT;
- *     stepFreq = (uvar_fSearchBand + 2*dopplerWing)/100.0;
- * 
- *     for (j=0; j<100; j++)
- *       {
- * 	sampFreq = uvar_f0 - dopplerWing + j*stepFreq;
- * 	LAL_CALL( LALCheckLines (&status, &flag, &lines, sampFreq), &status); 
- * 	if ( flag>0 ) counter++;
- *       } 
- */
-
-    /* exit if more than 90% is covered by lines */
-/*
- *     if (counter > 90 )
- *       {
- * 	fprintf(stdout, "Too many lines in this band...nothing to do! \n");
- */
-  	/* deallocate memory and exit */
- * 	if (nLines > 0)
- * 	  {
- * 	    LALFree(lines.lineFreq);
- * 	    LALFree(lines.leftWing);
- * 	    LALFree(lines.rightWing);
- * 	  }
- * 	exit(0);
- *       }
- *   
- */
-
+ 
   /******************************************************************/ 
   /* set fullsky flag */
 
