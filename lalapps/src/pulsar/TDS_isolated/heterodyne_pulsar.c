@@ -20,8 +20,6 @@ int main(int argc, char *argv[]){
   static LALStatus status;
 
   InputParams inputParams;
-  BinaryPulsarParams params;
-  BinaryPulsarParams paramsUpdate;
   HeterodyneParams hetParams;
 
   Filters iirFilters;
@@ -46,11 +44,10 @@ int main(int argc, char *argv[]){
   hetParams.heterodyneflag = inputParams.heterodyneflag; /* set type of heterodyne */
 
   /* read in pulsar data */
-  LALReadTEMPOParFile(&status, &params, inputParams.paramfile);
+  LALReadTEMPOParFile(&status, &hetParams.het, inputParams.paramfile);
 
-  hetParams.het = params; /* set heterodyne params */
   if(inputParams.heterodyneflag == 1) // if performing fine heterdoyne using same params as coarse
-    hetParams.hetUpdate = params;
+    hetParams.hetUpdate = hetParams.het;
 
   hetParams.samplerate = inputParams.samplerate;
   sprintf(hetParams.earthfile, "%s", inputParams.earthfile);
@@ -68,13 +65,10 @@ int main(int argc, char *argv[]){
     return 2;
   }
 
-  if(inputParams.heterodyneflag == 2){ /* if updating parameters read in updated par file */
-    LALReadTEMPOParFile(&status, &paramsUpdate, inputParams.paramfileupdate);
-    hetParams.hetUpdate = paramsUpdate;
-  }
+  if(inputParams.heterodyneflag == 2) /* if updating parameters read in updated par file */
+    LALReadTEMPOParFile(&status, &hetParams.hetUpdate, inputParams.paramfileupdate);
 
-  /* get science segment lists */
-  /* allocate initial memory for starts and stops */
+  /* get science segment lists - allocate initial memory for starts and stops */
   starts = XLALCreateINT4Vector(MAXNUMFRAMES);
   stops = XLALCreateINT4Vector(MAXNUMFRAMES);
   numSegs = get_segment_list(starts, stops, inputParams.segfile);
@@ -242,7 +236,7 @@ inputParams.resamplerate, inputParams.heterodyneflag);
 
     /* calibrate */
     if(inputParams.calibrate)
-      calibrate(resampData, times, inputParams.calibfiles, 2.0*params.f0);
+      calibrate(resampData, times, inputParams.calibfiles, 2.0*hetParams.het.f0);
 
     /* remove outliers above our threshold */
     if(inputParams.stddevthresh != 0.)
@@ -918,8 +912,7 @@ segment */
 
 /* function to read in the calibration files and calibrate the data at that (gw) frequency */
 void calibrate(COMPLEX16TimeSeries *series, REAL8Vector *datatimes, CalibrationFiles
-calfiles, REAL8
-frequency){
+calfiles, REAL8 frequency){
   FILE *fpcoeff=NULL;
   REAL8 Rfunc, Rphase;
   REAL8 C, Cphase; /* sensing function */
