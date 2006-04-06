@@ -41,6 +41,9 @@ Input shoud be from
 
 #include "./MCInjectHoughS2.h" /* proper path*/
 
+
+extern int lalDebugLevel;
+
 #define EARTHEPHEMERIS "./earth00-04.dat"
 #define SUNEPHEMERIS "./sun00-04.dat"
 
