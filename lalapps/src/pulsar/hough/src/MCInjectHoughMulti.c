@@ -76,7 +76,8 @@ extern int lalDebugLevel;
 #define NMCLOOP 2 /* number of Monte-Carlos */
 #define NTEMPLATES 16 /* number templates for each Monte-Carlo */
 
-#define SFTDIRECTORY "/home/badkri/L1sfts"
+#define SFTDIRECTORY "/home/badkri/fakesfts/*SFT*.*"
+/*#define SFTDIRECTORY "/home/badkri/L1sfts" */
 #define FILEOUT "./HoughMC"      /* prefix file output */
 #define HARMONICSFILE "./harmonicsS2LLO4K_200_400.txt"
 
@@ -308,7 +309,7 @@ int main(int argc, char *argv[]){
 
  /******************************************************************/ 
   /* write log file with command line arguments, cvs tags, and contents of skypatch file */
-/*
+/*  BADRI, COULD YOU CHECK THIS AND HOW TO SWITCH TO FUNCTION CALL ONLY
  *   if ( uvar_printLog ) {
  *     LAL_CALL( PrintLogFile( &status, uvar_dirnameOut, uvar_fbasenameOut, uvar_skyfile, argv[0]), &status);
  *   }
@@ -363,6 +364,7 @@ int main(int argc, char *argv[]){
   
   /******************************************************************/ 
   /* read skypatch info */
+  /******************************************************************/ 
   {
     FILE   *fpsky = NULL; 
     INT4   r;
@@ -471,7 +473,6 @@ int main(int argc, char *argv[]){
  *     
  */
   /* done with reading line noise info */
-
  /******************************************************************/ 
   /* check that the band is not covered by lines  OBSOLETE*/
 /*
@@ -508,9 +509,9 @@ int main(int argc, char *argv[]){
  *   
  */
 
-   /******************************************************************/ 
-
+  /******************************************************************/ 
   /* set fullsky flag */
+
   injectPar.fullSky = 1;
   if ( (uvar_AllSkyFlag == 0) ) 
     injectPar.fullSky= 0;  /* patch case */
@@ -519,9 +520,9 @@ int main(int argc, char *argv[]){
   
   msp = 1; /*only one spin-down */
 
-
- /******************************************************************/ 
+  /******************************************************************/ 
   /* computing h0 values and preparing  output files */
+  /******************************************************************/ 
   h0V.length=uvar_nh0;
   h0V.data = NULL;
   h0V.data = (REAL8 *)LALMalloc(uvar_nh0*sizeof(REAL8));
@@ -565,16 +566,18 @@ int main(int argc, char *argv[]){
     
   }
 
- /******************************************************************/ 
+  /******************************************************************/ 
   /* sft reading */
+  /******************************************************************/ 
+ 
   {
     /* new SFT I/O data types */
     SFTCatalog *catalog = NULL;
     static SFTConstraints constraints;
 
-    CHAR *tempDir;
-    REAL8 doppWings, fmin, fmax;
-    INT4 length;
+    CHAR    *tempDir;
+    REAL8   doppWings, fmin, fmax;
+    INT4    length;
 
     /* set detector constraint */
     constraints.detector = NULL;
@@ -582,7 +585,7 @@ int main(int argc, char *argv[]){
       constraints.detector = XLALGetChannelPrefix ( uvar_ifo );
 
     /* get sft catalog */
-  /*
+/*
  *   tempDir = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
  *     strcpy(tempDir, uvar_sftDir);
  *     strcat(tempDir, "/*SFT*.*");
@@ -593,7 +596,6 @@ int main(int argc, char *argv[]){
       exit(1);
     }
 
-
     /* get some sft parameters */
     mObsCoh = catalog->length; /* number of sfts */
     deltaF = catalog->data->header.deltaF;  /* frequency resolution */
@@ -601,16 +603,19 @@ int main(int argc, char *argv[]){
     f0Bin = floor( uvar_f0 * timeBase + 0.5); /* initial search frequency */
     length =  uvar_fSearchBand * timeBase; /* total number of search bins - 1 */
     fLastBin = f0Bin + length;   /* final frequency bin to be analyzed */
+
     fWings =  floor( fLastBin * VTOT + 0.5) + uvar_nfSizeCylinder + uvar_blocksRngMed;
 
-    /* some more sft parameetrs */
-    sftlength = 1 + length + 2*fWings;
-    sftFminBin= f0Bin - fWings;
-    fHeterodyne = sftFminBin*deltaF;
-    tSamplingRate = 2.0*deltaF*(sftlength -1.);
+    /* catalog is ordered in time so we can get start, end time and tObs*/
+    firstTimeStamp = catalog->data[0].header.epoch;
+    lastTimeStamp = catalog->data[mObsCoh - 1].header.epoch;
+    tObs = XLALGPSDiff( &lastTimeStamp, &firstTimeStamp ) + timeBase;
 
-    /* get SFT timestamps */
-    LAL_CALL( LALSFTtimestampsFromCatalog(  &status, &timeV, catalog ), &status);  	
+    /* get SFT timestamps. alicia: I do not understand how are these ordered if multi
+        detectors are used, so I prefer to use the same as in the driver*/
+   /*
+     *  LAL_CALL( LALSFTtimestampsFromCatalog(  &status, &timeV, catalog ), &status);  	
+     */
 
     /* add wings for Doppler modulation and running median block size*/
     doppWings = (uvar_f0 + uvar_fSearchBand) * VTOT;    
@@ -619,85 +624,93 @@ int main(int argc, char *argv[]){
 
     /* read sfts */
     /* read sft files making sure to add extra bins for running median */
-    LAL_CALL( LALLoadSFTs ( &status, &inputSFTs, catalog, fmin, fmax), &status);
+    LAL_CALL( LALLoadMultiSFTs ( &status, &inputSFTs, catalog, fmin, fmax), &status);
+ 
 
-
-    /* calculation of weights  and normalization of SFTs should NOT be here*/
-
-        
+    /* SFT info -- assume all SFTs have same length */
+    numifo = inputSFTs->length;
+    binsSFT = inputSFTs->data[0]->data->data->length;
+     
+    /* some more sft parameetrs MIGHT NOT BE NEEDED*/
+    sftlength = 1 + length + 2*fWings;
+    sftFminBin= f0Bin - fWings;
+    fHeterodyne = sftFminBin*deltaF;
+    tSamplingRate = 2.0*deltaF*(sftlength -1.);
+         
     /* free memory */
     if ( LALUserVarWasSet( &uvar_ifo ) )    
       LALFree( constraints.detector );
-    LALFree( tempDir);
+    
+   /* LALFree( tempDir); */
     LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);  	 
 
   } 
-   
-
- /******************************************************************/ 
-  /* compute the time difference relative to startTime for all SFT */
-  timeDiffV.length = mObsCoh;
-  timeDiffV.data = NULL; 
-  timeDiffV.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
   
-  {
-    INT4   j; 
-    
-    for(j=0; j < mObsCoh; ++j)
-      timeDiffV.data[j] = XLALGPSDiff( timeV->data + j, timeV->data ) + 0.5*timeBase;
-  }
-
-
-
+  
+  /******************************************************************/  
+  /* allocate memory for velocity vector and timestamps */
   /******************************************************************/ 
+  
+    velV.length = mObsCoh;
+    velV.data = NULL;
+    velV.data = (REAL8Cart3Coor *)LALCalloc(mObsCoh, sizeof(REAL8Cart3Coor));
+
+    /* allocate memory for timestamps vector */
+    timeV.length = mObsCoh;
+    timeV.data = NULL;
+    timeV.data = (LIGOTimeGPS *)LALCalloc( mObsCoh, sizeof(LIGOTimeGPS));
+
+    /* allocate memory for vector of time differences from start */
+    timeDiffV.length = mObsCoh;
+    timeDiffV.data = NULL; 
+    timeDiffV.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
+  
+ 
+  /******************************************************************/ 
+  /* get detector velocities and timestamps */
+  /******************************************************************/ 
+  
   /*   setting of ephemeris info */ 
-  /******************************************************************/ 
   edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
   (*edat).ephiles.earthEphemeris = uvar_earthEphemeris;
   (*edat).ephiles.sunEphemeris = uvar_sunEphemeris;
   
-  /******************************************************************/
-  /* compute detector velocity for those time stamps  
-     if it is too slow , we can read it from the file genrated from the driver*/
-  /******************************************************************/
-  velV.length = mObsCoh;
-  velV.data = NULL;
-  velV.data = (REAL8Cart3Coor *)LALMalloc(mObsCoh*sizeof(REAL8Cart3Coor));
-  
-  {  
-    VelocityPar   velPar;
-    REAL8     vel[3]; 
-    UINT4     j; 
+  {
+    INT4    tmpLeap;
+    UINT4   iIFO, iSFT, numsft, j;
+    LALLeapSecFormatAndAcc   lsfas = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
     
-    LALLeapSecFormatAndAcc lsfas = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
-    INT4 tmpLeap; /* need this because Date pkg defines leap seconds as
-		     INT4, while EphemerisData defines it to be INT2. This won't
-                   cause problems before, oh, I don't know, the Earth has been 
-                   destroyed in nuclear holocaust. -- dwchin 2004-02-29 */    
-    
-    velPar.detector = detector;
-    velPar.tBase = timeBase;
-    velPar.vTol = ACCURACY;
-    velPar.edat = NULL;
-    
-    /* Leap seconds for the start time of the run */   
-    LAL_CALL( LALLeapSecs(&status, &tmpLeap, &(timeV->data[0]), &lsfas), &status);
+    LAL_CALL( LALLeapSecs(&status, &tmpLeap, &firstTimeStamp, &lsfas), &status);
     (*edat).leap = (INT2)tmpLeap;
-    
-    /* read in ephemeris data */
     LAL_CALL( LALInitBarycenter( &status, edat), &status);
-    velPar.edat = edat;
     
-    for(j=0; j< velV.length; ++j){
-      velPar.startTime.gpsSeconds     = timeV->data[j].gpsSeconds;
-      velPar.startTime.gpsNanoSeconds = timeV->data[j].gpsNanoSeconds;
-      
-      LAL_CALL( LALAvgDetectorVel ( &status, vel, &velPar), &status );
-      velV.data[j].x= vel[0];
-      velV.data[j].y= vel[1];
-      velV.data[j].z= vel[2];   
-    }  
+    /* get information about all detectors including velocity and timestamps */
+    /* note that this function returns the velocity at the 
+       mid-time of the SFTs --CAREFULL later on with the time stamps!!! velocity
+       is ok */
+       
+    LAL_CALL ( LALGetMultiDetectorStates ( &status, &mdetStates, inputSFTs, edat), &status);
+    
+    /* copy the timestamps and velocity vector */
+    for (j = 0, iIFO = 0; iIFO < numifo; iIFO++ ) {
+      numsft = mdetStates->data[iIFO]->length;      
+      for ( iSFT = 0; iSFT < numsft; iSFT++, j++) {
+	velV.data[j].x = mdetStates->data[iIFO]->data[iSFT].vDetector[0];
+	velV.data[j].y = mdetStates->data[iIFO]->data[iSFT].vDetector[1];
+	velV.data[j].z = mdetStates->data[iIFO]->data[iSFT].vDetector[2];
+	/* mid time of sfts */
+	timeV.data[j] = mdetStates->data[iIFO]->data[iSFT].tGPS;
+      } /* loop over SFTs */
+    } /* loop over IFOs */
+
+    /* compute the time difference relative to startTime for all SFT */
+    for(j = 0; j < mObsCoh; j++)
+      timeDiffV.data[j] = XLALGPSDiff( timeV.data + j, &firstTimeStamp );
+ 
   }
+  
+ 
+ 
  
   /******************************************************************/ 
   /*   setting of parameters */ 
@@ -730,7 +743,8 @@ int main(int argc, char *argv[]){
  
   /******************************************************************/  
   sftParams.Tsft = timeBase;
-  sftParams.timestamps = timeV;
+  sftParams.timestamps = timeV; /* this is no longer correct, because they refer
+  to mid time. to be fixed later on */
   sftParams.noiseSFTs = NULL;       /* or =inputSFTs; */
   
   /* ****************************************************************/
@@ -1019,23 +1033,29 @@ int main(int argc, char *argv[]){
   LALFree(edat->ephemS);
   LALFree(edat);
   
-  LAL_CALL(LALDestroySFTVector(&status, &inputSFTs),&status );
+  XLALDestroyMultiDetectorStateSeries ( mdetStates );
 
-  if (nLines > 0)
-    {
-      LALFree(lines.lineFreq);
-      LALFree(lines.leftWing);
-      LALFree(lines.rightWing);
-    }
+  LAL_CALL(LALDestroyMultiSFTVector(&status, &inputSFTs),&status );
+
+/*
+ *   if (nLines > 0)
+ *     {
+ *       LALFree(lines.lineFreq);
+ *       LALFree(lines.leftWing);
+ *       LALFree(lines.rightWing);
+ *     }
+ */
 
   LAL_CALL (LALDestroyUserVars(&status), &status);  
+
   LALCheckMemoryLeaks();
   
-  
-  
-  INFO( DRIVEHOUGHCOLOR_MSGENORM );
-  return DRIVEHOUGHCOLOR_ENORM;
+  if ( lalDebugLevel )
+    REPORTSTATUS ( &status);
+
+  return status.statusCode;
 }
+
 
 
  
