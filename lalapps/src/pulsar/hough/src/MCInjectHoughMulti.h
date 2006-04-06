@@ -125,7 +125,12 @@ void PrintLogFile (LALStatus *status,
 		  CHAR *basename, 
 		  CHAR *skyfile, 
 		  CHAR *executable );
-
+		  
+void FindNearestPatch( LALStatus      *status,
+		REAL8		      latitude,
+		REAL8		      longitude, 
+		REAL8Cart3CoorVector *skyPatchCenterV,
+                INT4		      skyIndex);
 /* ****************************************************** */
 
 #ifdef  __cplusplus

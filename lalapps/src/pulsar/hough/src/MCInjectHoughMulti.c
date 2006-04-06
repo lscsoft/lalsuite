@@ -114,7 +114,7 @@ int main(int argc, char *argv[]){
   
   /* skypatch info */
   REAL8  *skyAlpha, *skyDelta, *skySizeAlpha, *skySizeDelta; 
-  INT4   nSkyPatches, skyCounter=0; 
+  INT4   nSkyPatches, skyIndex, skyCounter=0; 
 
   INT4 nLines=0, nHarmonicSets, count1;
 
@@ -772,6 +772,10 @@ int main(int argc, char *argv[]){
     LAL_CALL( GenerateInjectParams(&status, &pulsarInject, &pulsarTemplate,
 			&closeTemplates, &injectPar, &lines), &status );
     
+    /* find the nearest patch in order to compute the weights accordingly */
+    LAL_CALL(FindNearestPatch( &status, pulsarInject.latitude,
+	          pulsarInject.longitude, &skyPatchCenterV,skyIndex);
+    
     /*  params.pulsar.TRefSSB=  ? ; */
     params.pulsar.position.longitude = pulsarInject.longitude;
     params.pulsar.position.latitude =  pulsarInject.latitude ;
@@ -939,6 +943,7 @@ int main(int argc, char *argv[]){
   
   LALFree(timeDiffV.data);
   LALFree(velV.data);
+  LALFree(skyPatchCenterV.data);
   LALFree(foft.data);
   LALFree(h0V.data);
   {
@@ -1263,7 +1268,66 @@ void ComputeFoft(LALStatus   *status,
   DETATCHSTATUSPTR (status);
   /* normal exit */
   RETURN (status);
-}			
+}
+
+
+			
+/* ****************************************************************/
+/*    Finding the nearest patch center*/
+/* ****************************************************************/
+
+
+void FindNearestPatch( LALStatus      *status,
+		REAL8		      latitude,
+		REAL8		      longitude, 
+		REAL8Cart3CoorVector *skyPatchCenterV,
+                INT4		      skyIndex){
+  
+  INT4    nSkyPatches, j; 
+  REAL8Cart3Coor  sourceLocation;
+  REAL8   cosDelta, escalarProd, escalarProdMax;
+  
+  /* --------------------------------------------- */
+  INITSTATUS (status, "FindNearestPatch", rcsid);
+  ATTATCHSTATUSPTR (status);
+  
+  /*   Make sure the arguments are not NULL: */
+  ASSERT (skyPatchCenterV,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (skyPatchCenterV->data,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  
+  cosDelta = cos(latitude);
+  skyIndex = 0;
+  escalarProdMax = -1.0;
+
+  sourceLocation.x = cosDelta* cos(longitude);
+  sourceLocation.y = cosDelta* sin(longitude);
+  sourceLocation.z = sin(latitude);
+    
+  nSkyPatches = skyPatchCenterV->length;    
+  
+  for (j=0; j<nSkyPatches; ++j){  /* loop for all different sky patches */
+    escalarProd = skyPatchCenterV->data[j].x * sourceLocation.x
+    		+ skyPatchCenterV->data[j].y * sourceLocation.y
+    	        + skyPatchCenterV->data[j].z * sourceLocation.z;
+		
+    if(escalarProd > escalarProdMax){
+      escalarProdMax = escalarProd;
+      skyIndex = j;
+    }	    
+  }    
+    
+  DETATCHSTATUSPTR (status);
+  /* normal exit */
+  RETURN (status);
+}
+
+
+   
+/******************************************************************/
+
+
+
+			
 /* ****************************************************************/
 /*    PrintLogFile  Copied from driver */
 /* ****************************************************************/   
