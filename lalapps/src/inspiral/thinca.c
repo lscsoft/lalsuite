@@ -65,6 +65,7 @@ int distCut = 0;
 int iotaCut = 0;
 int doPsi0Psi3Cut = 0;
 int doAlphaFCut = 0;
+int doBCV2H1H2Veto = 0;
 int doBCVC = 0;
 
 
@@ -176,6 +177,7 @@ static void print_usage(char *program)
       "  [--h2-alphaf-lo]      alphaFlo   alphaF area for H2\n"\
       "  [--l1-alphaf-hi]      alphaFhi   reject BCV triggers outside the specified \n"\
       "  [--l1-alphaf-lo]      alphaFlo   alphaF area for L1\n"\
+      "  [--do-bcvspin-H1H2-veto]         reject coincidences with H1 snr < H2 snr \n"\
       "   --data-type          data_type  specify the data type, must be one of\n"\
       "                                   (playground_only|exclude_play|all_data)\n"\
       "\n"\
@@ -294,6 +296,7 @@ int main( int argc, char *argv[] )
     {"check-times",         no_argument,   &checkTimes,               1 },
     {"multi-ifo-coinc",     no_argument,   &multiIfoCoinc,            1 },
     {"h1-h2-distance-cut",  no_argument,   &distCut,                  1 },
+    {"do-bcvspin-H1H2-veto",no_argument,   &doBCV2H1H2Veto,           1 },
     {"iota-cut",  	    no_argument,   &iotaCut,                  1 },
     {"do-alphaf-cut",       no_argument,   &doAlphaFCut,              1 },
     {"psi0-psi3-cut",       no_argument,   &doPsi0Psi3Cut,            1 },
@@ -1499,6 +1502,14 @@ int main( int argc, char *argv[] )
             XLALInspiralPsi0Psi3CutBCVC( &coincInspiralList );
       }
     }
+
+    if (doBCV2H1H2Veto)
+    {
+        if (vrbflg) fprintf (stdout, 
+          "Discarding triggers with H2 snr > H1 snr \n" );
+   
+        XLALInspiralSNRCutBCV2( &coincInspiralList);
+    }
   
     if ( multiIfoCoinc )
     {
@@ -1620,6 +1631,14 @@ int main( int argc, char *argv[] )
           }
         }
   
+
+       if (doBCV2H1H2Veto)
+       {
+          if (vrbflg) fprintf (stdout, 
+            "Discarding triggers with H2 snr > H1 snr \n" );
+   
+          XLALInspiralSNRCutBCV2( &coincInspiralList);
+       }
 
         if ( multiIfoCoinc )
         {
