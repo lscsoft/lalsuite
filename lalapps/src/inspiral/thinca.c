@@ -62,8 +62,10 @@ int haveTrig[LAL_NUM_IFO];
 int checkTimes = 0;
 int multiIfoCoinc = 0;
 int distCut = 0;
+int iotaCut = 0;
+int doPsi0Psi3Cut = 0;
 int doAlphaFCut = 0;
-int doBCVCVeto = 0;
+int doBCVC = 0;
 
 
 /*
@@ -159,7 +161,7 @@ static void print_usage(char *program)
       "  [--dmchirp-high]      dmchirp    different chirp mass window for high masses\n"\
       "  [--high-mass]         mass       total mass for trigger above which the high mass mchirp is used\n"\
       "\n"\
-      "  [--do-alphaF-cut]                perform cut based on alphaF\n"\
+      "  [--do-alphaf-cut]                perform cut based on alphaF\n"\
       "                                   with bounds given below\n"\
       "                                   (both bounds must be specified)\n"\
       "  [--alphaf-hi]         alphaFhi   reject BCV triggers with alphaF\n"\
@@ -265,11 +267,11 @@ int main( int argc, char *argv[] )
   alphafParams.h2_hi=+1e10;
   alphafParams.l1_lo=-1e10;
   alphafParams.l1_hi=+1e10;
+  alphafParams.psi0cut = 0; /*trigger with psi0 less than that value wont be vetoed.*/
 
   REAL4                 alphaFhi = -2.e4;
   REAL4                 alphaFlo = 9.e4;
-  REAL4                 thresholdT = 1e6;
-  REAL4                 snrCut = 0.;
+
 
   const CHAR                   ifoList[LAL_NUM_IFO][LIGOMETA_IFO_MAX] = 
                                    {"G1", "H1", "H2", "L1", "T1", "V1"};
@@ -292,8 +294,10 @@ int main( int argc, char *argv[] )
     {"check-times",         no_argument,   &checkTimes,               1 },
     {"multi-ifo-coinc",     no_argument,   &multiIfoCoinc,            1 },
     {"h1-h2-distance-cut",  no_argument,   &distCut,                  1 },
-    {"do-alphaF-cut",       no_argument,   &doAlphaFCut,              1 },
-    {"do-bcvc-veto",       no_argument,    &doBCVCVeto,               1 },
+    {"iota-cut",  	    no_argument,   &iotaCut,                  1 },
+    {"do-alphaf-cut",       no_argument,   &doAlphaFCut,              1 },
+    {"psi0-psi3-cut",       no_argument,   &doPsi0Psi3Cut,            1 },
+    {"bcvc",        	    no_argument,   &doBCVC,    		      1 },
     {"g1-slide",            required_argument, 0,                    'b'},
     {"h1-slide",            required_argument, 0,                    'c'},
     {"h2-slide",            required_argument, 0,                    'd'},
@@ -345,8 +349,6 @@ int main( int argc, char *argv[] )
     {"gps-start-time",      required_argument, 0,                    's'},
     {"gps-end-time",        required_argument, 0,                    't'},
     {"maximization-interval",required_argument, 0,                   '@'},    
-    {"alphaf-snr",          required_argument, 0,                    'v'},
-    {"snr-threshold",       required_argument, 0,                    '*'},
     {"data-type",           required_argument, 0,                    'k'},
     {"comment",             required_argument, 0,                    'x'},
     {"user-tag",            required_argument, 0,                    'Z'},
@@ -777,15 +779,6 @@ int main( int argc, char *argv[] )
         }
         break;
       
-      case 'v' :
-        thresholdT = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
-        break;
-      
-      case '*' :
-        snrCut = atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
-        break;
 
      case 'l':
         /* lower H1 alphaF cutoff */
@@ -1316,43 +1309,29 @@ int main( int argc, char *argv[] )
    * If at least alphaFhi is not specified, do not discard any triggers.
    */
 
-  if ( doAlphaFCut )
+  if ( doAlphaFCut & !doBCVC)
   {
     if ( alphaFhi <= alphaFlo )
     {
       fprintf( stderr, "Error: alphaFhi must be greater than alphaFlo.\n");
       exit( 1 );
     }
-
     if ( vrbflg ) fprintf( stdout,
-       "Discarding triggers with alphaF > %f OR alphaF < %f \n", 
+       "Discarding triggers with alphaF > %f OR alphaF < %f\n", 
        alphaFhi, alphaFlo );
-
-    LAL_CALL( LALalphaFCutSingleInspiral( &status, &(inspiralEventList),
-      alphaFhi, alphaFlo), &status );
+      LAL_CALL( LALalphaFCutSingleInspiral( &status, &(inspiralEventList),
+        alphaFhi, alphaFlo), &status );
   }
-
-  /*
-   * for the case of BCVC, discard the triggers that
-   * have alphaF/SNR greater than thresholdT and alphaF greater than 
-   * alphaFhi or lower than alphaFlo,
-   * as those are specified in the command line.
-   */
-  if ( doBCVCVeto )
-  {
-
+  
+  if (doBCVC & doAlphaFCut)
+    {
     if ( vrbflg ) fprintf( stdout,
-       "Discarding triggers with snr < %f \n",    
-	snrCut);
-    LAL_CALL( LALSNRCutSingleInspiral( &status, &(inspiralEventList), 
-	snrCut), &status);
-    
-    if ( vrbflg ) fprintf( stdout,
-       "Discarding triggers with alphaF > %f OR alphaF < %f \n and triggers with |alphaF/snr| >%f\n" , 
-       alphaFhi, alphaFlo , thresholdT);
-    LAL_CALL( LALBCVCVetoSingleInspiral( &status, &(inspiralEventList),
-      alphafParams ), &status );
-  }
+       "Discarding triggers with alphaF > %f OR alphaF < %f (BCVC case) \n", 
+  	alphafParams.h1_lo, alphafParams.h1_hi );
+	LAL_CALL( LALBCVCVetoSingleInspiral( &status, &(inspiralEventList),
+        alphafParams ), &status );
+    }
+  
  
 
 
@@ -1485,23 +1464,41 @@ int main( int argc, char *argv[] )
   {
     LAL_CALL( LALCreateTwoIFOCoincList( &status, &coincInspiralList,
         inspiralEventList, &accuracyParams ), &status );
-
-    if( distCut  )
-    {
-      if (!doBCVCVeto)
-      {
-        XLALInspiralDistanceCut( &coincInspiralList, &accuracyParams );
-      }
-      else
+      
+    if( distCut & !doBCVC ) 
       {
   	    if ( vrbflg ) fprintf( stdout, 
 	      "Discarding triggers h1-h2-distance-cut using kappa=%f and epsilon = %f\n", 
 	        accuracyParams.ifoAccuracy[LAL_IFO_H1].kappa,
 	        accuracyParams.ifoAccuracy[LAL_IFO_H1].epsilon);
-        XLALInspiralDistanceCutBCVC( &coincInspiralList, &accuracyParams );
+            XLALInspiralDistanceCut( &coincInspiralList, &accuracyParams);
+      }	
+    
+    if (doBCVC)
+    {
+      if( iotaCut  ) /*S4*/
+      {
+        {
+          if ( vrbflg ) fprintf( stdout, 
+	      "Discarding triggers where iota is above 1-1./sqrt(snr)\n"); 
+	    XLALInspiralIotaCutBCVC( &coincInspiralList );
+        }
+      }
+      if( distCut  ) /*S3*/
+          {
+  	     if ( vrbflg ) fprintf( stdout, 
+	      "Discarding triggers h1-h2-distance-cut using kappa=%f and epsilon = %f\n", 
+	        accuracyParams.ifoAccuracy[LAL_IFO_H1].kappa,
+	        accuracyParams.ifoAccuracy[LAL_IFO_H1].epsilon);
+            XLALInspiralDistanceCutBCVC( &coincInspiralList, &accuracyParams);
+	}
+      if ( doPsi0Psi3Cut ) /* S4*/
+      {
+  	    if ( vrbflg ) fprintf( stdout, 
+	      "Discarding triggers psi0/psi3 outisde an ellipse dpsi0-dpsi3 (see CoincInspiralUtils.c)\n");
+            XLALInspiralPsi0Psi3CutBCVC( &coincInspiralList );
       }
     }
-
   
     if ( multiIfoCoinc )
     {
@@ -1588,22 +1585,41 @@ int main( int argc, char *argv[] )
       {
         LAL_CALL( LALCreateTwoIFOCoincList(&status, &coincInspiralList,
           inspiralEventList, &accuracyParams ), &status);
-
-        if( distCut  )
-        {
-          if (!doBCVCVeto)
+          
+        if( distCut & !doBCVC  ) /*S3*/
           {
-            XLALInspiralDistanceCut( &coincInspiralList, &accuracyParams );
-          }
-          else
-          {
-  	    if ( vrbflg ) fprintf( stdout, 
+  	     if ( vrbflg ) fprintf( stdout, 
 	      "Discarding triggers h1-h2-distance-cut using kappa=%f and epsilon = %f\n", 
 	        accuracyParams.ifoAccuracy[LAL_IFO_H1].kappa,
 	        accuracyParams.ifoAccuracy[LAL_IFO_H1].epsilon);
-            XLALInspiralDistanceCutBCVC( &coincInspiralList, &accuracyParams );
-          }
+            XLALInspiralDistanceCut( &coincInspiralList, &accuracyParams);
 	}
+      
+        if (doBCVC)
+    	{
+        if( distCut  ) /*S3*/
+          {
+  	     if ( vrbflg ) fprintf( stdout, 
+	      "Discarding triggers h1-h2-distance-cut using kappa=%f and epsilon = %f\n", 
+	        accuracyParams.ifoAccuracy[LAL_IFO_H1].kappa,
+	        accuracyParams.ifoAccuracy[LAL_IFO_H1].epsilon);
+            XLALInspiralDistanceCutBCVC( &coincInspiralList, &accuracyParams);
+	}
+          if( iotaCut  ) /*S4*/
+          {           
+              if ( vrbflg ) fprintf( stdout, 
+	        "Discarding triggers where iota is above 1-1./sqrt(snr)\n"); 
+	      XLALInspiralIotaCutBCVC( &coincInspiralList );
+            
+          }
+          if ( doPsi0Psi3Cut ) /* S4*/
+          { 
+  	    if ( vrbflg ) fprintf( stdout, 
+	      "Discarding triggers psi0/psi3 outisde an ellipse dpsi0-dpsi3 (see CoincInspiralUtils.c)\n");
+            XLALInspiralPsi0Psi3CutBCVC( &coincInspiralList );
+          }
+        }
+  
 
         if ( multiIfoCoinc )
         {
