@@ -236,7 +236,7 @@ H2, L1, G1 or GEO."""
   dag.add_node(df)
 
 # this bit is basically hacked from LSCsegFind
-if seglist == 0:
+if int(seglist) == 0:
   # run LSCsegFind - don't bother with a job just run it and create this list
   # set segment list and stuff
   seg_list_file = basename + '.seglist'
