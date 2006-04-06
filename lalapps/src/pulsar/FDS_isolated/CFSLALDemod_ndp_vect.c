@@ -263,7 +263,8 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 	       times.
  	    */
 
-	    REAL4 tFreq[4]; /* tempFreq1 as a vector */
+	    REAL4 tFreq[4]; /* tempFreq0 as a vector */
+	    REAL4 tFint[4]; /* the integer part of the former tempFreq1 */
 	    REAL4 aFreq[4]; /* accFreq   as a vector */
 	    REAL4  Xsum[4]; /* vector holding partial sums */
 
@@ -273,10 +274,15 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 	    aFreq[2] = 1.0;
 	    aFreq[3] = 1.0;
 
-	    tFreq[0] = tempFreq1;
-	    tFreq[1] = tempFreq1;
-	    tFreq[2] = tempFreq1 - 1.0;
-	    tFreq[3] = tempFreq1 - 1.0;
+	    tFreq[0] = tempFreq0;
+	    tFreq[1] = tempFreq0;
+	    tFreq[2] = tempFreq0;
+	    tFreq[3] = tempFreq0;
+
+	    tFint[0] = params->Dterms - 1;
+	    tFint[1] = params->Dterms - 1;
+	    tFint[2] = params->Dterms - 2;
+	    tFint[3] = params->Dterms - 2;
 
 	    Xsum[0] = 0.0;
 	    Xsum[1] = 0.0;
@@ -287,9 +293,9 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
             for(k=0; k < klim / 2; k++) {
 	      UINT4 ve;
 	      for(ve=0;ve<4;ve++) {
-                Xsum[ve] = Xsum[ve] * tFreq[ve] + Xalpha_kR4[ve] * aFreq[ve];
-		aFreq[ve] *= tFreq[ve];
-                tFreq[ve] -= 2.0;
+                Xsum[ve] = Xsum[ve] * (tFreq[ve] + tFint[ve]) + Xalpha_kR4[ve] * aFreq[ve];
+		aFreq[ve] *= (tFreq[ve] + tFint[ve]);
+                tFint[ve] -= 2.0;
 	      }
 	      Xalpha_kR4 += 4;
 	    }
