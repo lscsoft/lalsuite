@@ -828,7 +828,7 @@ int main(int argc, char *argv[]){
    LAL_CALL( LALSignalToSFTs(&status, &outputSFTs, signalTseries, &sftParams), 
 	     &status);
 	   
-      *here we should generate as many outputSFTs as detectors*/
+      /*here we should generate as many outputSFTs as detectors*/
  
      /* ****************************************************************/
      /*  HERE THE LOOP FOR DIFFERENT H0 VALUES */
