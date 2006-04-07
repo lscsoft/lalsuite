@@ -131,6 +131,7 @@ int main(int argc, char *argv[]){
 
   /* standard pulsar sft types */ 
   MultiSFTVector *inputSFTs = NULL;
+  MultiSFTVector *sumSFTs = NULL;
   UINT4 binsSFT;
   
   /* information about all the ifos */
@@ -183,7 +184,7 @@ int main(int argc, char *argv[]){
   /******************************************************************/ 
   /*    user input variables   */
   /******************************************************************/ 
-   BOOLEAN uvar_help, uvar_weighAM, uvar_weighNoise, uvar_printLog;
+  BOOLEAN uvar_help, uvar_weighAM, uvar_weighNoise, uvar_printLog;
   INT4    uvar_blocksRngMed, uvar_nh0, uvar_nMCloop, uvar_AllSkyFlag;
   INT4    uvar_nfSizeCylinder, uvar_maxBinsClean;
   REAL8   uvar_f0, uvar_fSearchBand, uvar_peakThreshold, uvar_h0Min, uvar_h0Max;
@@ -241,6 +242,9 @@ int main(int argc, char *argv[]){
 
   uvar_harmonicsfile = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_harmonicsfile,HARMONICSFILE);  
+
+  uvar_dirnameOut = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
+  strcpy(uvar_dirnameOut,DIROUT);
 
   uvar_fnameout = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_fnameout, FILEOUT);
@@ -478,8 +482,8 @@ int main(int argc, char *argv[]){
     /* get SFT timestamps. alicia: I do not understand how are these ordered if multi
         detectors are used, so I prefer to use the same as in the driver */
    /*
-     *  LAL_CALL( LALSFTtimestampsFromCatalog(  &status, &timeV, catalog ), &status);  	
-     */
+    *  LAL_CALL( LALSFTtimestampsFromCatalog(  &status, &timeV, catalog ), &status);  	
+    */
 
     /* add wings for Doppler modulation and running median block size*/
     doppWings = (uvar_f0 + uvar_fSearchBand) * VTOT;    
@@ -510,7 +514,36 @@ int main(int argc, char *argv[]){
 
   } 
   
-  
+  /******************************************************************/  
+  /* allocate memory for sumSFTs of the same size of inputSFTs. TO BE DONE */
+  /******************************************************************/ 
+ 
+   sumSFTs = (MultiSFTVector *)LALMalloc(sizeof(MultiSFTVector));
+   sumSFTs->length = numifo;
+   sumSFTVec->data = (SFTVector **)LALCalloc(numifo, sizeof(SFTVector *));
+ 
+   {
+     UINT4   iIFO, iSFT, numsft, j;
+     
+     for ( j = 0; j < numifo; j++) {
+     
+       numsft = inputSFTVec->data[j]->length;
+       sumSFTVec->data[j]->length = numsft;
+       sumSFTVec->data[j]->data = (COMPLEX8FrequencySeries *)LALCalloc(numsft, sizeof(COMPLEX8FrequencySeries *));
+       
+       for(iSFT=0, iSFT<numsft, iSFT++){
+         sumSFTVec->data[j]->data[iSFT]->data =  (COMPLEX8Sequence *)LALCalloc(xx,
+	 sizeof(HELP, BADRI));
+	  now use binsSFT
+	 NOT FINISH. I got lost!!!
+	 should we have a  LALCreateMultiSFTVector() or a 
+	                   LALCopyMultiSFTVector() of a same size of an existing
+			   one?
+       }
+     }
+
+   }
+   
   /******************************************************************/  
   /* allocate memory for velocity vector and timestamps */
   /******************************************************************/ 
@@ -530,14 +563,14 @@ int main(int argc, char *argv[]){
     timeDiffV.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
   
  
-  /******************************************************************/ 
-  /* get detector velocities and timestamps */
-  /******************************************************************/ 
+    /******************************************************************/ 
+    /* get detector velocities and timestamps */
+    /******************************************************************/ 
   
-  /*   setting of ephemeris info */ 
-  edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
-  (*edat).ephiles.earthEphemeris = uvar_earthEphemeris;
-  (*edat).ephiles.sunEphemeris = uvar_sunEphemeris;
+    /*  setting of ephemeris info */ 
+    edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
+    (*edat).ephiles.earthEphemeris = uvar_earthEphemeris;
+    (*edat).ephiles.sunEphemeris = uvar_sunEphemeris;
   
   {
     INT4    tmpLeap;
@@ -552,7 +585,7 @@ int main(int argc, char *argv[]){
     /* note that this function returns the velocity at the 
        mid-time of the SFTs --CAREFULL later on with the time stamps!!! velocity
        is ok */
-       
+    
     LAL_CALL ( LALGetMultiDetectorStates ( &status, &mdetStates, inputSFTs, edat), &status);
     
     /* copy the timestamps and velocity vector */
@@ -566,68 +599,68 @@ int main(int argc, char *argv[]){
 	timeV.data[j] = mdetStates->data[iIFO]->data[iSFT].tGPS;
       } /* loop over SFTs */
     } /* loop over IFOs */
-
+    
     /* compute the time difference relative to startTime for all SFT */
     for(j = 0; j < mObsCoh; j++)
       timeDiffV.data[j] = XLALGPSDiff( timeV.data + j, &firstTimeStamp );
- 
+    
   }
   
   /******************************************************************/ 
   /* initialize all weights to unity */
   /******************************************************************/ 
-   
+  
   /* set up weights -- this should be done before normalizing the sfts */
-   weightsV.length = mObsCoh;
-   weightsV.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
-
-   weightsNoise.length = mObsCoh;
-   weightsNoise.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
-
-   /* initialize all weights to unity */
-   LAL_CALL( LALHOUGHInitializeWeights( &status, &weightsNoise), &status);
-   LAL_CALL( LALHOUGHInitializeWeights( &status, &weightsV), &status);
-
+  weightsV.length = mObsCoh;
+  weightsV.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
+  
+  weightsNoise.length = mObsCoh;
+  weightsNoise.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
+  
+  /* initialize all weights to unity */
+  LAL_CALL( LALHOUGHInitializeWeights( &status, &weightsNoise), &status);
+  LAL_CALL( LALHOUGHInitializeWeights( &status, &weightsV), &status);
+  
   /******************************************************************/ 
   /*   setting the weights considering only the AM coefficients to be only
        computed once  for all the different patches*/ 
   /******************************************************************/ 
   if (uvar_weighAM){
-     SkyPosition      skypos;
-     UINT4            iIFO, iSFT;
-     UINT4 	      k, numsft;
-     
-     weightsAMskyV = (REAL8Vector *)LALCalloc(nSkyPatches, sizeof(REAL8Vector));
-     skypos.system = COORDINATESYSTEM_EQUATORIAL;
-     
-     /* loop over sky patches */
-     for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++){
-        MultiAMCoeffs   *multiAMcoef = NULL;
-       
-        weightsAMskyV[skyCounter].length = mObsCoh;    
-	weightsAMskyV[skyCounter].data = NULL;
-	weightsAMskyV[skyCounter].data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
-	
-	skypos.longitude = skyAlpha[skyCounter];
-	skypos.latitude  = skyDelta[skyCounter];
-	LAL_CALL ( LALGetMultiAMCoeffs ( &status, &multiAMcoef, mdetStates, skypos), &status);
-
-	/* loop over the weights and set them by the appropriate AM coefficients */
-	for ( k = 0, iIFO = 0; iIFO < numifo; iIFO++) {	  
-	  numsft = mdetStates->data[iIFO]->length;	
-	  for ( iSFT = 0; iSFT < numsft; iSFT++, k++) {	  
-	    REAL8 a, b;
-	    
-	    a = multiAMcoef->data[iIFO]->a->data[iSFT];
-	    b = multiAMcoef->data[iIFO]->b->data[iSFT];    
-	    weightsAMskyV[skyCounter].data[k] = (a*a + b*b);
-	  } /* loop over SFTs */
-	} /* loop over IFOs */
-		
-	XLALDestroyMultiAMCoeffs ( multiAMcoef );
-      } /*loop over sky patches */
-     	
-   }
+    SkyPosition      skypos;
+    UINT4            iIFO, iSFT;
+    UINT4 	      k, numsft;
+    
+    weightsAMskyV = (REAL8Vector *)LALCalloc(nSkyPatches, sizeof(REAL8Vector));
+    skypos.system = COORDINATESYSTEM_EQUATORIAL;
+    
+    /* loop over sky patches */
+    for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++){
+      MultiAMCoeffs   *multiAMcoef = NULL;
+      
+      weightsAMskyV[skyCounter].length = mObsCoh;    
+      weightsAMskyV[skyCounter].data = NULL;
+      weightsAMskyV[skyCounter].data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
+      
+      skypos.longitude = skyAlpha[skyCounter];
+      skypos.latitude  = skyDelta[skyCounter];
+      LAL_CALL ( LALGetMultiAMCoeffs ( &status, &multiAMcoef, mdetStates, skypos), &status);
+      
+      /* loop over the weights and set them by the appropriate AM coefficients */
+      for ( k = 0, iIFO = 0; iIFO < numifo; iIFO++) {	  
+	numsft = mdetStates->data[iIFO]->length;	
+	for ( iSFT = 0; iSFT < numsft; iSFT++, k++) {	  
+	  REAL8 a, b;
+	  
+	  a = multiAMcoef->data[iIFO]->a->data[iSFT];
+	  b = multiAMcoef->data[iIFO]->b->data[iSFT];    
+	  weightsAMskyV[skyCounter].data[k] = (a*a + b*b);
+	} /* loop over SFTs */
+      } /* loop over IFOs */
+      
+      XLALDestroyMultiAMCoeffs ( multiAMcoef );
+    } /*loop over sky patches */
+    
+  }
   /******************************************************************/ 
   /*   setting of parameters */ 
   /******************************************************************/ 
@@ -641,47 +674,38 @@ int main(int argc, char *argv[]){
   injectPar.patchSizeDelta = uvar_patchSizeDelta; 
   injectPar.pixelFactor = PIXELFACTOR;
   injectPar.vTotC = VTOT;
-  injectPar.timeObs =timeDiffV.data[mObsCoh-1] + 0.5 * timeBase;
-  
+  injectPar.timeObs =tObs;  
   injectPar.spnFmax.data = NULL; 
   injectPar.spnFmax.length=msp;   /*only 1 spin */
   injectPar.spnFmax.data = (REAL8 *)LALMalloc(msp*sizeof(REAL8));
-  injectPar.spnFmax.data[0] = -(uvar_nfSizeCylinder/2) *deltaF/timeDiffV.data[mObsCoh-1];
+  injectPar.spnFmax.data[0] = -(uvar_nfSizeCylinder/2) *deltaF/tObs;
   
   pulsarInject.spindown.length = msp;
-  pulsarTemplate.spindown.length = msp;
-  
+  pulsarTemplate.spindown.length = msp; 
   pulsarInject.spindown.data = NULL;
-  pulsarTemplate.spindown.data = NULL;
-  
+  pulsarTemplate.spindown.data = NULL; 
   pulsarInject.spindown.data = (REAL8 *)LALMalloc(msp*sizeof(REAL8));
   pulsarTemplate.spindown.data = (REAL8 *)LALMalloc(msp*sizeof(REAL8));
  
-  /******************************************************************/  
   sftParams.Tsft = timeBase;
-  sftParams.timestamps = timeV; /* this is no longer correct, because they refer
-  to mid time. to be fixed later on */
-  sftParams.noiseSFTs = NULL;       /* or =inputSFTs; */
+  sftParams.noiseSFTs = NULL;       
   
-  /* ****************************************************************/
   params.orbit = NULL;
   /* params.transferFunction = NULL; */
-  params.site = &(detector);
   params.ephemerides = edat;
-  params.startTimeGPS.gpsSeconds = timeV->data[0].gpsSeconds;   /* start time of output time series */
-  params.startTimeGPS.gpsNanoSeconds = timeV->data[0].gpsNanoSeconds;   /* start time of output time series */
+  params.startTimeGPS.gpsSeconds = firstTimeStamp.gpsSeconds;   /* start time of output time series */
+  params.startTimeGPS.gpsNanoSeconds = firstTimeStamp.gpsNanoSeconds;   /* start time of output time series */
   params.duration = injectPar.timeObs; /* length of time series in seconds */
   params.samplingRate = tSamplingRate;
-  params.fHeterodyne = fHeterodyne;
-  
-  params.pulsar.tRef.gpsSeconds = timeV->data[0].gpsSeconds; 
-  params.pulsar.tRef.gpsNanoSeconds = timeV->data[0].gpsNanoSeconds; 
+  params.fHeterodyne = fHeterodyne;  
+  params.pulsar.tRef.gpsSeconds = firstTimeStamp.gpsSeconds; 
+  params.pulsar.tRef.gpsNanoSeconds = firstTimeStamp.gpsNanoSeconds; 
   /* ****************************************************************/
   
   /* WE SHOULD LOOP OVER MC SIGNAL INJECTION HERE
      BEFORE THAT :
-         -for each different h0 value create a file containing the h0
-	 value
+     -for each different h0 value create a file containing the h0
+     value
      LOOP over xxx Monte-Carlo signal Injections:
 		- Generate signal injections parameters (using uvar_h0Min values) and
 		random numbers....and also generate the corresponding template
@@ -705,31 +729,14 @@ int main(int argc, char *argv[]){
 		 END LOOP for h0
 	END LOOP for MC
  		(free memory)   */
-		
+  
   /* ****************************************************************/
   
-  /* sft1  stores the sum of one  signal + noise SFT */
-  sft1.length = sftlength;
-  sft1.fminBinIndex = sftFminBin;
-  sft1.epoch.gpsSeconds = timeV->data[0].gpsSeconds;
-  sft1.epoch.gpsNanoSeconds = timeV->data[0].gpsNanoSeconds;
-  sft1.timeBase = timeBase;
-  sft1.data = NULL;
-  sft1.data = (COMPLEX8 *)LALMalloc(sftlength* sizeof(COMPLEX8));
-  
-  periPSD.periodogram.length = sftlength;
-  periPSD.periodogram.data = NULL;
-  periPSD.periodogram.data = (REAL8 *)LALMalloc(sftlength* sizeof(REAL8));
-  periPSD.psd.length = sftlength;
-  periPSD.psd.data = NULL;
-  periPSD.psd.data = (REAL8 *)LALMalloc(sftlength* sizeof(REAL8));
-  
-  threshold = uvar_peakThreshold/normalizeThr; 
-  
-  pg1.length = sftlength;
+  pg1.length = sftlength; /*equal to binsSFT */
   pg1.data = NULL;
   pg1.data = (UCHAR *)LALMalloc(sftlength* sizeof(UCHAR));
   
+  /* ****************************************************************/
   foft.length = mObsCoh;
   foft.data = NULL;
   foft.data = (REAL8 *)LALMalloc(mObsCoh*sizeof(REAL8));
@@ -741,45 +748,29 @@ int main(int argc, char *argv[]){
       foftV[j].data = (REAL8 *)LALMalloc(mObsCoh*sizeof(REAL8));
     }
   }
-
-
+  
+  
   /* ****************************************************************/
   /*  HERE SHOULD START THE MONTE-CARLO */
-    
+  
   for(MCloopId=0; MCloopId < uvar_nMCloop; ++MCloopId){
-
+    
     controlN=uvar_nh0; /* checks if near template corresponds to max number count*/
     controlNN=0;/* checks if near template corresponds to max number count*/
     controlNH=1;  /* checks if near template corresponds to max 
-    		number count for the highest h0 value */
+		     number count for the highest h0 value */
     
     LAL_CALL( GenerateInjectParamsNoVeto(&status, &pulsarInject, &pulsarTemplate,
-			&closeTemplates, &injectPar), &status );
+					 &closeTemplates, &injectPar), &status );
     
     /* find the nearest patch in order to compute the weights accordingly */
     LAL_CALL(FindNearestPatch( &status, pulsarInject.latitude,
-	          pulsarInject.longitude, &skyPatchCenterV, skyIndex);
-    
-    /*  params.pulsar.TRefSSB=  ? ; */
-    params.pulsar.position.longitude = pulsarInject.longitude;
-    params.pulsar.position.latitude =  pulsarInject.latitude ;
-    params.pulsar.position.system= COORDINATESYSTEM_EQUATORIAL; 
-    params.pulsar.psi=    pulsarInject.psi;
-    params.pulsar.aPlus=  pulsarInject.aPlus;
-    params.pulsar.aCross= pulsarInject.aCross;
-    params.pulsar.phi0=   pulsarInject.phi0;
-    params.pulsar.f0=     pulsarInject.f0;
-    params.pulsar.spindown=  &pulsarInject.spindown ;
-    
-    LAL_CALL( LALGeneratePulsarSignal(&status, &signalTseries, &params ), &status);
-    LAL_CALL( LALSignalToSFTs(&status, &outputSFTs, signalTseries, &sftParams), 
-	 &status);
-	   
-   /* ****************************************************************/
+			       pulsarInject.longitude, &skyPatchCenterV, skyIndex);
+	     
     /* writing the parameters into fpPar, following the format
        MCloopId  I.f0 H.f0 I.f1 H.f1 I.alpha H.alpha I.delta H.delta I.phi0  I.psi
        (not cos iota)  */
-    /* ****************************************************************/   
+	     
     fprintf(fpPar," %d %f %f %g %g %f %f %f %f %f %f ", 
 	    MCloopId, pulsarInject.f0, pulsarTemplate.f0,
 	    pulsarInject.spindown.data[0], pulsarTemplate.spindown.data[0],
@@ -787,38 +778,63 @@ int main(int argc, char *argv[]){
 	    pulsarInject.latitude, pulsarTemplate.latitude,
 	    pulsarInject.phi0, pulsarInject.psi
 	    );
-    /* ****************************************************************/
-    /* Computing the frequency path f(t) = f0(t)* (1+v/c.n)  for */
-    /*  all the different templates */
-    /* ****************************************************************/   
-
-    /* the geometrically nearest template */
-    LAL_CALL( ComputeFoft(&status, &foft,&pulsarTemplate,&timeDiffV,&velV, timeBase), &status);
+	     
+   /* ****************************************************************/
+   /* Computing the frequency path f(t) = f0(t)* (1+v/c.n)  for */
+   /*  all the different templates */
+	     
+   /* the geometrically nearest template */
+   LAL_CALL( ComputeFoft(&status, &foft,&pulsarTemplate,&timeDiffV,&velV, timeBase), &status);
     
-    /* for all the 16 near templates */
-    {
-      UINT4 j,i,k, itemplate;
-      
-      itemplate =0;
-      for(j=0;j<2;++j){
-        pulsarTemplate.f0 = closeTemplates.f0[j];
-        for(i=0;i<2;++i){
-          pulsarTemplate.spindown.data[0] = closeTemplates.f1[i];
-	  for(k=0;k<4;++k){
-	    pulsarTemplate.latitude = closeTemplates.skytemp[k].delta;
-	    pulsarTemplate.longitude = closeTemplates.skytemp[k].alpha;
-            LAL_CALL( ComputeFoft(&status, &(foftV[itemplate]),
-	                   &pulsarTemplate,&timeDiffV,&velV, timeBase), &status);
-            ++itemplate;
-	  }
-	}
-      }
-    }
+   /* for all the 16 near templates */
+   {
+     UINT4 j,i,k, itemplate;
      
-    /*  HERE THE LOOP FOR DIFFERENT H0 VALUES */
+     itemplate =0;
+     for(j=0;j<2;++j){
+       pulsarTemplate.f0 = closeTemplates.f0[j];
+       for(i=0;i<2;++i){
+	 pulsarTemplate.spindown.data[0] = closeTemplates.f1[i];
+	 for(k=0;k<4;++k){
+	   pulsarTemplate.latitude = closeTemplates.skytemp[k].delta;
+	   pulsarTemplate.longitude = closeTemplates.skytemp[k].alpha;
+	   LAL_CALL( ComputeFoft(&status, &(foftV[itemplate]),
+				 &pulsarTemplate,&timeDiffV,&velV, timeBase), &status);
+	   ++itemplate;
+	 }
+       }
+     }
+   }
+	     /* ****************************************************************/
+		  
+		  
+   sftParams.timestamps = timeV; /* this is no longer correct, because they refer
+				   to mid time. to be fixed later on for different detectors */
+	     
+   params.site = &(detector); /*change to diffrent IFO */
+	     
+  /*  params.pulsar.TRefSSB=  ? ; */
+   params.pulsar.position.longitude = pulsarInject.longitude;
+   params.pulsar.position.latitude =  pulsarInject.latitude ;
+   params.pulsar.position.system= COORDINATESYSTEM_EQUATORIAL; 
+   params.pulsar.psi=    pulsarInject.psi;
+   params.pulsar.aPlus=  pulsarInject.aPlus;
+   params.pulsar.aCross= pulsarInject.aCross;
+   params.pulsar.phi0=   pulsarInject.phi0;
+   params.pulsar.f0=     pulsarInject.f0;
+   params.pulsar.spindown=  &pulsarInject.spindown ;
     
+   LAL_CALL( LALGeneratePulsarSignal(&status, &signalTseries, &params ), &status);
+   LAL_CALL( LALSignalToSFTs(&status, &outputSFTs, signalTseries, &sftParams), 
+	     &status);
+	   
+      *here we should generate as many outputSFTs as detectors*/
+ 
+     /* ****************************************************************/
+     /*  HERE THE LOOP FOR DIFFERENT H0 VALUES */
+	     
     fprintf(fpNc, " %d ",  MCloopId);
-    
+	     
     for(h0loop=0; h0loop <uvar_nh0; ++h0loop){
       
       INT4  j, i, index, itemplate; 
@@ -832,11 +848,12 @@ int main(int argc, char *argv[]){
       for(itemplate=0; itemplate<nTemplates; ++itemplate){
         numberCountV[itemplate]=0;
       }
+      
       h0scale =h0V.data[h0loop]/h0V.data[0]; /* different for different h0 values */
       
       /* ****************************************************************/
-      /* adding signal+ noise SFT,  generating peakgrams  and producing the number-count*/
-      /* ****************************************************************/      
+      /* adding signal+ noise SFT,  */      
+      
       for (j=0; j < mObsCoh; j++)  {
 	sumSFT = sft1.data;
 	signal1SFT = outputSFTs->data[j].data->data;
@@ -851,44 +868,114 @@ int main(int argc, char *argv[]){
 	  ++signal1SFT;
 	  ++sumSFT;
 	}
+      } /*The sum should be fixed into sumSFTs */
+      
+      /* ****************************************************************/
+      /* clean sfts if required */
+      if ( LALUserVarWasSet( &uvar_linefiles ) )
+	{
+	  RandomParams *randPar=NULL;
+	  FILE *fpRand=NULL;
+	  INT4 seed, ranCount;  
+	  
+	  if ( (fpRand = fopen("/dev/urandom", "r")) == NULL ) {
+	    fprintf(stderr,"Error in opening /dev/urandom" ); 
+	    exit(1);
+	  } 
+	  
+	  if ( (ranCount = fread(&seed, sizeof(seed), 1, fpRand)) != 1 ) {
+	    fprintf(stderr,"Error in getting random seed" );
+	    exit(1);
+	  }
+	  
+	  LAL_CALL ( LALCreateRandomParams (&status, &randPar, seed), &status );
+	  
+	  LAL_CALL( LALRemoveKnownLinesInMultiSFTVector ( &status, sumSFTs, uvar_maxBinsClean, uvar_blocksRngMed, uvar_linefiles, randPar), &status);
+	  
+	  LAL_CALL ( LALDestroyRandomParams (&status, &randPar), &status);
+	  fclose(fpRand);
+	} /* end cleaning */
+      
+      
+      /* ****************************************************************/
+      /* normalize sfts compute weights */
+      {   
+	MultiNoiseWeights *multweight = NULL;    
+	MultiPSDVector *multPSD = NULL;  
+	REAL8 dmpNormalization;
+	UINT4 iIFO, iSFT, numsft, j;
+	/* normalize sfts */
+	LAL_CALL( LALNormalizeMultiSFTVect (&status, &multPSD, sumSFTs, uvar_blocksRngMed), &status);
 	
-	LAL_CALL( COMPLEX8SFT2Periodogram1(&status, &periPSD.periodogram, &sft1), &status );	
-	/* for color noise */    
-	LAL_CALL( LALPeriodo2PSDrng( &status, 
-			     &periPSD.psd, &periPSD.periodogram, &uvar_blocksRngMed), &status );	
-	/* LAL_CALL( Periodo2PSDrng( &status, 
-                     &periPSD.psd, &periPSD.periodogram, &uvar_blocksRngMed),  &status ); */	
-	LAL_CALL( LALSelectPeakColorNoise(&status,&pg1,&threshold,&periPSD), &status); 	
-
-	index = floor( foft.data[j]*timeBase -sftFminBin+0.5); 
-	numberCount+=pg1.data[index]; /* adds 0 or 1 to the counter*/
-
-        for (itemplate=0; itemplate<nTemplates; ++itemplate) {
-	  index = floor( foftV[itemplate].data[j]*timeBase -sftFminBin+0.5); 
-          numberCountV[itemplate]+=pg1.data[index];
-        }
+	/* compute multi noise weights */
+	LAL_CALL ( LALComputeMultiNoiseWeights ( &status, &multweight, &dmpNormalization, multPSD, uvar_blocksRngMed, 0), &status);
+	
+	/* we are now done with the psd */
+	LAL_CALL ( LALDestroyMultiPSDVector  ( &status, &multPSD), &status);
+	
+	/* copy  weights */
+	for (j = 0, iIFO = 0; iIFO < numifo; iIFO++ ) {
+	  numsft = mdetStates->data[iIFO]->length;
+	  for ( iSFT = 0; iSFT < numsft; iSFT++, j++) {
+	    weightsNoise.data[j] = multweight->data[iIFO]->data[iSFT];
+	  } /* loop over SFTs */
+	} /* loop over IFOs */
+	
+	LAL_CALL ( LALDestroyMultiNoiseWeights ( &status, &multweight), &status);
+	
+	for (j=0, j<mObsCoh, j++){
+	  weightsV.data[j] = weightsNoise.data[j]*weightsAMsky[skyIndex].data[j];
+	}
+	
+	LAL_CALL( LALHOUGHNormalizeWeights( &status, &weightsV), &status);
+	
       }
       
+      /* ****************************************************************/
+      /* loop over SFT, generate peakgram and get number count */
+      {
+        SFTtype  *sft;
+        UINT4  iIFO, iSFT, numsft, j; 
+
+	for ( j = 0, iIFO = 0; iIFO < numifo; iIFO++){
+	  numsft = mdetStates->data[iIFO]->length;
+	  for ( iSFT = 0; iSFT < numsft; iSFT++, j++) {
+	    sft = inputSFTs->data[iIFO]->data + iSFT;
+	    LAL_CALL (SFTtoUCHARPeakGram( &status, &pg1, sft, uvar_peakThreshold), &status);
+	    
+	    index = floor( foft.data[j]*timeBase -sftFminBin+0.5); 
+	    numberCount+=pg1.data[index]*weightsV.data[j]; /* adds 0 or 1 to the counter*/
+	    
+	    for (itemplate=0; itemplate<nTemplates; ++itemplate) {
+	      index = floor( foftV[itemplate].data[j]*timeBase -sftFminBin+0.5); 
+	      numberCountV[itemplate]+=pg1.data[index]*weightsV.data[j];
+	    }	    
+	  } /* loop over SFTs */	  
+	} /* loop over IFOs */
+
+      }
+      
+      /* ****************************************************************/
       /*check the max number count */
       maxNumberCount = numberCount;
       for (itemplate=0; itemplate<nTemplates; ++itemplate) {
-         if( numberCountV[itemplate] > maxNumberCount ) {
-	   maxNumberCount = numberCountV[itemplate];
-	   controlNN=1;
-	   if (h0loop == (uvar_nh0-1)) controlNH=0;
-	 }
+	if( numberCountV[itemplate] > maxNumberCount ) {
+	  maxNumberCount = numberCountV[itemplate];
+	  controlNN=1;
+	  if (h0loop == (uvar_nh0-1)) controlNH=0;
+	}
       }
       controlN-=controlNN; /* substracts 1 every the near template was not the
-      best*/
+			      best*/
       /******************************************************************/
       /* printing result in the proper file */
       /******************************************************************/
       fprintf(fpNc, " %d ", maxNumberCount);
-     
+      
     } /* closing loop for different h0 values */
     fprintf(fpNc, " \n");
-    
-    
+	     
+	     
 
     /* ****************************************************************/
     /* writing the parameters into fpPar, following the format
@@ -896,7 +983,7 @@ int main(int argc, char *argv[]){
        (not cos iota) and now adding the 2 control */
     /* ****************************************************************/   
     fprintf(fpPar,"  %d %d \n",  controlN, controlNH );
-    
+	     
     LALFree(signalTseries->data->data);
     LALFree(signalTseries->data);
     LALFree(signalTseries);
@@ -965,7 +1052,7 @@ int main(int argc, char *argv[]){
   XLALDestroyMultiDetectorStateSeries ( mdetStates );
 
   LAL_CALL(LALDestroyMultiSFTVector(&status, &inputSFTs),&status );
-
+  LAL_CALL(LALDestroyMultiSFTVector(&status, &sumSFTs),&status )
 /*
  *   if (nLines > 0)
  *     {
