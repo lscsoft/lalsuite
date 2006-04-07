@@ -86,10 +86,9 @@ int main(int argc, char *argv[]){
     CHAR type[10]; /* frame type e.g. RDS_R_L3 - from cache file */
     
     frcount=0;
-    while(!feof(fpin)){
+    while(fscanf(fpin, "%s%s%d%d file://localhost%s", det, type, &cache.starttime[frcount],
+&cache.duration[frcount], cache.framelist[frcount]) != EOF){
       // fscanf(fpin, "%s", framelist[frcount]);
-      fscanf(fpin, "%s%s%d%d file://localhost%s", det, type, &cache.starttime[frcount],
-&cache.duration[frcount], cache.framelist[frcount]);
       frcount++;
     }
     fclose(fpin);
@@ -188,22 +187,21 @@ int main(int argc, char *argv[]){
 
       fprintf(stderr, "Reading heterodyned data from %s.\n", inputParams.datafile);
 
-      do{
-        fscanf(fpin, "%lf%lf%lf",&times->data[i],&data->data->data[i].re, &data->data->data[i].im);
-
+      while(fscanf(fpin, "%lf%lf%lf",&times->data[i],&data->data->data[i].re,
+            &data->data->data[i].im) != EOF);
         if(i==0)
           hetParams.timestamp = times->data[i]; /* set initial time stamp */
 
         i++;
-      }while(!feof(fpin));
+      };
 
       fclose(fpin);
 
       /* resize vector to actual size */
-      data->data = XLALResizeCOMPLEX16Vector(data->data, i-1);
-      hetParams.length = i-1;
+      data->data = XLALResizeCOMPLEX16Vector(data->data, i);
+      hetParams.length = i;
 
-      times = XLALResizeREAL8Vector(times, i-1);
+      times = XLALResizeREAL8Vector(times, i);
     }
     else{
       fprintf(stderr, "Error... Heterodyne flag = %d, should be 0, 1, or 2.\n",
@@ -727,7 +725,7 @@ void filter_data(COMPLEX16TimeSeries *data, Filters *iirFilters){
 COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data, REAL8Vector *times, INT4Vector
 *starts, INT4Vector *stops, REAL8 sampleRate, REAL8 resampleRate, INT4 hetflag){
   COMPLEX16TimeSeries *series;
-  INT4 i=0, j=0, k=0, length = floor((floor(resampleRate*data->data->length))/sampleRate);
+  INT4 i=0, j=0, k=0, length = floor((round(resampleRate*data->data->length))/sampleRate);
   COMPLEX16 tempData;
   INT4 size = (INT4)round(sampleRate/resampleRate);
 
@@ -820,10 +818,9 @@ INT4 get_segment_list(INT4Vector *starts, INT4Vector *stops, CHAR *seglistfile){
 
   /* segment list files have comment lines starting with a # so want to ignore those lines */
   while(!feof(fp)){
-   offset = ftell(fp); /* get current position of file stream */
+    offset = ftell(fp); /* get current position of file stream */
 
-    fscanf(fp, "%s", jnkstr); /* scan in value and check if == to # */
-    if(feof(fp))
+    if(fscanf(fp, "%s", jnkstr) == EOF) /* scan in value and check if == to # */
       break; /* break if there is an extra line at the end of file containing nothing */
 
     if(strstr(jnkstr, "#")){
@@ -864,7 +861,7 @@ CHAR *set_frame_files(INT4 *starts, INT4 *stops, FrameCache cache, INT4 numFrame
   if(durlock > MAXDATALENGTH)
     tempstop = tempstart + MAXDATALENGTH;
 
-  for(i=0;i<numFrames-1;i++){
+  for(i=0;i<numFrames;i++){
     /*get_frame_times(framelist[i], &gpstime, &duration);
     
     if(tempstart >= gpstime && tempstart < gpstime+duration && gpstime < tempstop){
@@ -953,8 +950,7 @@ calfiles.responsefunctionfile);
     while(!feof(fpcoeff)){
       offset = ftell(fpcoeff); /* get current position of file stream */
 
-      fscanf(fpcoeff, "%s", jnkstr); /* scan in value and check if == to % */
-      if(feof(fpcoeff))
+      if(fscanf(fpcoeff, "%s", jnkstr) == EOF) /* scan in value and check if == to % */
         break;
 
       if(strstr(jnkstr, "%")){
