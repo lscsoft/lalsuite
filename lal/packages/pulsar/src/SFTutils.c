@@ -159,6 +159,56 @@ LALCreateSFTVector (LALStatus *status,
 
 
 
+void LALCreateMultiSFTVector ( LALStatus *status,
+			       MultiSFTVector **out,  /**< [out] multi sft vector created */
+			       UINT4 length,          /**< number of sft data points */
+			       UINT4 numsft,          /**< number of sfts in each sftvect */
+			       UINT4 numifo           /**< number of ifos */ 
+			       )     
+{
+
+  UINT4 k, j;
+  MultiSFTVector *multSFTVec=NULL;
+  
+  INITSTATUS (status, "LALCreateMultiSFTs", SFTUTILSC);
+  ATTATCHSTATUSPTR (status); 
+
+  ASSERT ( out, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL );
+  ASSERT ( *out == NULL, status, SFTUTILS_ENONULL, SFTUTILS_MSGENONULL );  
+  ASSERT ( length, status, SFTUTILS_EINPUT, SFTUTILS_MSGEINPUT );
+  ASSERT ( numifo, status, SFTUTILS_EINPUT, SFTUTILS_MSGEINPUT );
+
+
+  if ( (multSFTVec = (MultiSFTVector *)LALCalloc(1, sizeof(MultiSFTVector))) == NULL){
+    ABORT ( status, SFTUTILS_EMEM, SFTUTILS_MSGEMEM );
+  }
+  multSFTVec->length = numifo;
+
+  if ( (multSFTVec->data = (SFTVector **)LALCalloc( 1, numifo*sizeof(SFTVector *))) == NULL) {
+    ABORT ( status, SFTUTILS_EMEM, SFTUTILS_MSGEMEM );
+  }
+  
+  for ( k = 0; k < numifo; k++) {
+    LALCreateSFTVector (status->statusPtr, multSFTVec->data + k, numsft, length);    
+      BEGINFAIL ( status ) {
+	for ( j = 0; j < k-1; j++)
+	  LALDestroySFTVector ( status->statusPtr, multSFTVec->data + j );
+	LALFree( multSFTVec->data);
+	LALFree( multSFTVec);
+      } ENDFAIL(status);
+  } /* loop over ifos */
+
+  *out = multSFTVec;
+
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+
+} /* LALLoadMultiSFTs() */
+
+
+
+
+
 
 /** Destroy an SFT-struct.
  */

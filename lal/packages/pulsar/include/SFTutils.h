@@ -137,6 +137,7 @@ typedef struct {
  *----------------------------------------------------------------------*/
 void LALCreateSFTtype (LALStatus *status, SFTtype **sft, UINT4 SFTlen);	
 void LALCreateSFTVector (LALStatus *status, SFTVector **sftvect, UINT4 numSFTs, UINT4 SFTlen);
+void LALCreateMultiSFTVector ( LALStatus *status, MultiSFTVector **out, UINT4 length, UINT4 numsft, UINT4 numifo );
 
 void LALDestroySFTtype (LALStatus *status, SFTtype **sft);
 void LALDestroySFTVector (LALStatus *status, SFTVector **sftvect);
