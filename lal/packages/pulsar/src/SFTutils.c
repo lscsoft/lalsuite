@@ -781,13 +781,6 @@ XLALGetChannelPrefix ( const CHAR *name )
     strcpy ( channel, "P1" );
   else if ( strstr(name, "TAMA") || strstr(name, "T1") )
     strcpy (channel, "T1" );
-  else if ( strstr(name, "Virgo") || strstr(name, "V1") || strstr(name, "V2") )
-    {
-      if ( strstr(name, "Virgo_CITF") || strstr(name, "V2") )
-	strcpy ( channel, "V2" );
-      else if ( strstr(name, "Virgo") || strstr(name, "V1") )
-	strcpy ( channel, "V1" );
-    } /* if Virgo */
   /* currently the only real ambiguity arises with H1 vs H2 */
   else if ( strstr(name, "LHO") || strstr(name, "Hanford") || strstr(name, "H1") || strstr(name, "H2") )
     {
@@ -802,6 +795,16 @@ XLALGetChannelPrefix ( const CHAR *name )
 	    LALPrintError("WARNING: Detector-name '%s' not unique, guessing '%s'\n", name, channel );
 	} 
     } /* if LHO */
+  /* try matching VIRGO last, because 'V1','V2' might be used as version-numbers
+   * also in some input-strings */
+  else if ( strstr(name, "Virgo") || strstr(name, "V1") || strstr(name, "V2") )
+    {
+      if ( strstr(name, "Virgo_CITF") || strstr(name, "V2") )
+	strcpy ( channel, "V2" );
+      else if ( strstr(name, "Virgo") || strstr(name, "V1") )
+	strcpy ( channel, "V1" );
+    } /* if Virgo */
+
     
   if ( channel[0] == 0 )
     {
