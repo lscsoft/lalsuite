@@ -78,6 +78,7 @@ extern int lalDebugLevel;
 
 #define SFTDIRECTORY "/home/badkri/fakesfts/*SFT*.*"
 /*#define SFTDIRECTORY "/home/badkri/L1sfts" */
+#define DIROUT "./outMultiMC"   /* output directory */
 #define FILEOUT "./HoughMC"      /* prefix file output */
 #define HARMONICSFILE "./harmonicsS2LLO4K_200_400.txt"
 
@@ -170,9 +171,7 @@ int main(int argc, char *argv[]){
 
   INT4   sftFminBin;
   REAL8  fHeterodyne;
-  REAL8  tSamplingRate;
-      
-  CHAR *fnamelog=NULL;
+  REAL8  tSamplingRate;      
  
   INT4 MCloopId;
   INT4 h0loop;
@@ -180,12 +179,11 @@ int main(int argc, char *argv[]){
   FILE  *fpPar = NULL;
   FILE  *fpH0 = NULL;
   FILE  *fpNc = NULL;
-  FILE  *fpLog = NULL;
-  CHAR   *logstr=NULL; 
 
- /******************************************************************/ 
-  /* user input variables */
-  BOOLEAN uvar_help, uvar_weighAM, uvar_weighNoise, uvar_printLog;
+  /******************************************************************/ 
+  /*    user input variables   */
+  /******************************************************************/ 
+   BOOLEAN uvar_help, uvar_weighAM, uvar_weighNoise, uvar_printLog;
   INT4    uvar_blocksRngMed, uvar_nh0, uvar_nMCloop, uvar_AllSkyFlag;
   INT4    uvar_nfSizeCylinder, uvar_maxBinsClean;
   REAL8   uvar_f0, uvar_fSearchBand, uvar_peakThreshold, uvar_h0Min, uvar_h0Max;
@@ -193,14 +191,16 @@ int main(int argc, char *argv[]){
   CHAR   *uvar_earthEphemeris=NULL;
   CHAR   *uvar_sunEphemeris=NULL;
   CHAR   *uvar_sftDir=NULL;
+  CHAR   *uvar_dirnameOut=NULL;
   CHAR   *uvar_fnameout=NULL;
   CHAR   *uvar_harmonicsfile=NULL;  
   CHAR   *uvar_ifo=NULL;
   CHAR   *uvar_skyfile=NULL;
   LALStringVector *uvar_linefiles=NULL;
 
- /******************************************************************/ 
+  /******************************************************************/ 
   /*  set up the default parameters  */
+  /******************************************************************/ 
   
   lalDebugLevel = 0;
   /* LALDebugLevel must be called before anything else */
@@ -249,8 +249,9 @@ int main(int argc, char *argv[]){
   strcpy(uvar_skyfile,SKYFILE);
 
 
- /******************************************************************/ 
-  /* register user input variables */
+  /******************************************************************/ 
+  /*      register user input variables    */
+  /******************************************************************/ 
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",            'h', UVAR_HELP,     "Print this message",            &uvar_help),            &status);  
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "ifo",             'i', UVAR_OPTIONAL, "Detector L1, H1, H2, G1",       &uvar_ifo ),            &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",    'w', UVAR_OPTIONAL, "RngMed block size",             &uvar_blocksRngMed),    &status);
@@ -260,7 +261,8 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris",  'E', UVAR_OPTIONAL, "Earth Ephemeris file",          &uvar_earthEphemeris),  &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris",    'S', UVAR_OPTIONAL, "Sun Ephemeris file",            &uvar_sunEphemeris),    &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir",          'D', UVAR_OPTIONAL, "SFT Directory",                 &uvar_sftDir),          &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameout",        'o', UVAR_OPTIONAL, "Output file prefix",            &uvar_fnameout),        &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "dirnameOut",      'o', UVAR_OPTIONAL, "Output directory",                      &uvar_dirnameOut),      &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameout",        '0', UVAR_OPTIONAL, "Output file prefix",            &uvar_fnameout),        &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "alpha",           'r', UVAR_OPTIONAL, "Right ascension",               &uvar_alpha),           &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "delta",           'l', UVAR_OPTIONAL, "Declination",                   &uvar_delta),           &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "patchSizeAlpha",  'R', UVAR_OPTIONAL, "Patch size in right ascension", &uvar_patchSizeAlpha),  &status);
@@ -282,8 +284,9 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",     0, UVAR_DEVELOPER, "Running Median block size",             &uvar_blocksRngMed),    &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "maxBinsClean",     0, UVAR_DEVELOPER, "Maximum number of bins in cleaning",    &uvar_maxBinsClean),    &status);
 
- /******************************************************************/ 
+  /******************************************************************/ 
   /* read all command line variables */
+  /******************************************************************/ 
   LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
 
   /* exit if help was required */
@@ -307,60 +310,13 @@ int main(int argc, char *argv[]){
     exit(1);
   }
 
- /******************************************************************/ 
+  /******************************************************************/ 
   /* write log file with command line arguments, cvs tags, and contents of skypatch file */
-/*  BADRI, COULD YOU CHECK THIS AND HOW TO SWITCH TO FUNCTION CALL ONLY
- *   if ( uvar_printLog ) {
- *     LAL_CALL( PrintLogFile( &status, uvar_dirnameOut, uvar_fbasenameOut, uvar_skyfile, argv[0]), &status);
- *   }
- */
-
- 
-  /* ------------------------------------------------------ */
-  if ( uvar_printLog ) {  /* write the old log file <<<<<<<<<<<<<<<<*/
-    fnamelog = (CHAR *)LALMalloc( 512*sizeof(CHAR));
-    strcpy(fnamelog, uvar_fnameout);
-    strcat(fnamelog, "_log");
-    /* open the log file for writing */
-    if ((fpLog = fopen(fnamelog, "w")) == NULL) {
-      fprintf(stderr, "Unable to open file %s for writing\n", fnamelog);
-      LALFree(fnamelog);
-      exit(1);
-    }
-
-    /* get the log string */
-    LAL_CALL( LALUserVarGetLog(&status, &logstr, UVAR_LOGFMT_CFGFILE), &status);  
-
-    fprintf( fpLog, "## Log file for MCInjectHoughMulti\n\n");
-    fprintf( fpLog, "# User Input:\n");
-    fprintf( fpLog, "#-------------------------------------------\n");
-    fprintf( fpLog, logstr);
-    LALFree(logstr);
-    /* copy contents of harmonics file into logfile */
-    fprintf(fpLog, "\n\n# Contents of harmonics file:\n");
-    fclose(fpLog);
-    {
-      CHAR command[1024] = "";
-      sprintf(command, "cat %s >> %s", uvar_harmonicsfile, fnamelog);
-      system(command);
-    }
-
-    /* append an ident-string defining the exact CVS-version of the code used */
-    fpLog = fopen(fnamelog, "a");
-    {
-      CHAR command[1024] = "";
-      fprintf (fpLog, "\n\n# CVS-versions of executable:\n");
-      fprintf (fpLog, "# -----------------------------------------\n");
-      fclose (fpLog);
-    
-      sprintf (command, "ident %s | sort -u >> %s", argv[0], fnamelog);
-      system (command);	/* we don't check this. If it fails, we assume that */
-    			/* one of the system-commands was not available, and */
-    			/* therefore the CVS-versions will not be logged */
-
-      LALFree(fnamelog); 
-    }
+  /******************************************************************/ 
+  if ( uvar_printLog ) {
+    LAL_CALL( PrintLogFile( &status, uvar_dirnameOut, uvar_fnameOut, uvar_skyfile, uvar_linefiles, argv[0]), &status);
   }
+ 
   
   /******************************************************************/ 
   /* read skypatch info */
@@ -413,13 +369,10 @@ int main(int argc, char *argv[]){
  	skyPatchCenterV.data[skyCounter].z= sin(skyDelta[skyCounter]);
     }
 
-  /******************************************************************/ 
-  /* real line noise information  OBSOLETE has been removed 
-  if required check MCInjectHoughS2.c*/
- /******************************************************************/ 
  
   /******************************************************************/ 
   /* set fullsky flag */
+  /******************************************************************/ 
 
   injectPar.fullSky = 1;
   if ( (uvar_AllSkyFlag == 0) ) 
@@ -430,7 +383,7 @@ int main(int argc, char *argv[]){
   msp = 1; /*only one spin-down */
 
   /******************************************************************/ 
-  /* computing h0 values and preparing  output files */
+  /* computing h0 values  */
   /******************************************************************/ 
   h0V.length=uvar_nh0;
   h0V.data = NULL;
@@ -444,7 +397,9 @@ int main(int argc, char *argv[]){
     for(k=1; k<uvar_nh0; ++k) h0V.data[k]= h0V.data[k-1]+steph0;
   }
   
-   /*fp = LALMalloc(nh0*sizeof(FILE *)); */
+  /******************************************************************/ 
+  /*  preparing  output files */
+  /******************************************************************/ 
   {
     INT4 k;
     CHAR filename[MAXFILENAMELENGTH];
@@ -521,7 +476,7 @@ int main(int argc, char *argv[]){
     tObs = XLALGPSDiff( &lastTimeStamp, &firstTimeStamp ) + timeBase;
 
     /* get SFT timestamps. alicia: I do not understand how are these ordered if multi
-        detectors are used, so I prefer to use the same as in the driver*/
+        detectors are used, so I prefer to use the same as in the driver */
    /*
      *  LAL_CALL( LALSFTtimestampsFromCatalog(  &status, &timeV, catalog ), &status);  	
      */
@@ -725,9 +680,7 @@ int main(int argc, char *argv[]){
   
   /* WE SHOULD LOOP OVER MC SIGNAL INJECTION HERE
      BEFORE THAT :
-         -initialize ephemeris data
-	 -create the set of h0 to be studied
-	 -for each different h0 value create a file containing the h0
+         -for each different h0 value create a file containing the h0
 	 value
      LOOP over xxx Monte-Carlo signal Injections:
 		- Generate signal injections parameters (using uvar_h0Min values) and
@@ -744,12 +697,11 @@ int main(int argc, char *argv[]){
 		   compute normalization factor (for different h0)
 		- for j=0; j<mObsCoh:
 		     -Add SFT with the signal normalized to the SFT original noise
-		     -COMPLEX8SFT2Periodogram1
-		     -Periodo2PSDrng
-		     -SelectPeackColorNoise
-		     - check corresponding index
-		     - increase or not numbercount
-		 print final number count to the correesponding file
+		     -clean lines
+		     -compute weights
+		     -select peaks
+		     -get the numbercount
+		      -print final number count to the correesponding file
 		 END LOOP for h0
 	END LOOP for MC
  		(free memory)   */
@@ -801,12 +753,12 @@ int main(int argc, char *argv[]){
     controlNH=1;  /* checks if near template corresponds to max 
     		number count for the highest h0 value */
     
-    LAL_CALL( GenerateInjectParams(&status, &pulsarInject, &pulsarTemplate,
-			&closeTemplates, &injectPar, &lines), &status );
+    LAL_CALL( GenerateInjectParamsNoVeto(&status, &pulsarInject, &pulsarTemplate,
+			&closeTemplates, &injectPar), &status );
     
     /* find the nearest patch in order to compute the weights accordingly */
     LAL_CALL(FindNearestPatch( &status, pulsarInject.latitude,
-	          pulsarInject.longitude, &skyPatchCenterV,skyIndex);
+	          pulsarInject.longitude, &skyPatchCenterV, skyIndex);
     
     /*  params.pulsar.TRefSSB=  ? ; */
     params.pulsar.position.longitude = pulsarInject.longitude;
@@ -1258,6 +1210,213 @@ void GenerateInjectParams(LALStatus   *status,
   RETURN (status);
 }
 
+ 
+/***************************************************************************/
+void GenerateInjectParamsNoVeto(LALStatus   *status,
+                        PulsarData           *injectPulsar,
+                        HoughTemplate        *templatePulsar,
+			HoughNearTemplates   *closeTemplates,
+                        HoughInjectParams    *params ){
+			
+  INT4          seed=0; /* seed generated using current time */
+  REAL4         randval;
+  RandomParams  *randPar=NULL;
+  FILE     *fpRandom;
+  INT4     count;
+  
+  REAL4    cosiota, h0;
+  REAL8    f0, deltaF, deltaX;
+  REAL8    latitude, longitude;  /* of the source in radians */
+  INT8    f0bin;
+  UINT4    msp;
+  
+  /* --------------------------------------------- */
+  INITSTATUS (status, "GenerateInjectParams", rcsid);
+  ATTATCHSTATUSPTR (status);
+  
+  /*   Make sure the arguments are not NULL: */
+  ASSERT (injectPulsar,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (templatePulsar, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (params, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  
+  /*  ++++++++++++++++++from makefakedata
+   * Modified so as to not create random number parameters with seed
+   * drawn from clock.  Seconds don't change fast enough and sft's
+   * look alike.  We open /dev/urandom and read a 4 byte integer from
+   * it and use that as our seed.  Note: /dev/random is slow after the
+   * first, few accesses.
+   */
+
+  fpRandom = fopen("/dev/urandom","r");
+  ASSERT (fpRandom, status, DRIVEHOUGHCOLOR_EFILE,  DRIVEHOUGHCOLOR_MSGEFILE); 
+  
+  count = fread(&seed, sizeof(INT4),1, fpRandom);
+  ASSERT (count, status, DRIVEHOUGHCOLOR_EARG,  DRIVEHOUGHCOLOR_MSGEARG); 
+  
+  fclose(fpRandom);
+  
+  TRY( LALCreateRandomParams(status->statusPtr, &randPar, seed), status);
+  
+ /*
+  *   to create a single random deviate distributed uniforly between zero and unity		     
+  *   TRY( LALUniformDeviate(status->statusPtr, &randval, randPar), status);
+  */
+  
+  
+  /* get random value phi0 [0, 2 pi] */ 
+  TRY( LALUniformDeviate(status->statusPtr, &randval, randPar), status);
+  injectPulsar->phi0 = randval * LAL_TWOPI;
+  
+  /* get random value cos iota [-1,1] */ 
+  TRY( LALUniformDeviate(status->statusPtr, &randval, randPar), status);
+  cosiota = 2.0* randval -1.0;
+  
+  h0=params->h0;
+  injectPulsar->aCross = h0*cosiota;
+  injectPulsar->aPlus  = 0.5*h0*(1.0 + cosiota*cosiota);
+  
+  /* get random value psi [0, 2 pi] */ 
+  TRY( LALUniformDeviate(status->statusPtr, &randval, randPar), status);
+  injectPulsar->psi = randval * LAL_TWOPI;
+
+  /* getting random number for the frequency (and mismatch)*/
+  TRY( LALUniformDeviate(status->statusPtr, &randval, randPar), status);
+  f0 = params->fmin + (params->fSearchBand) * randval;
+   
+  injectPulsar->f0 = f0;
+  deltaF = params->deltaF;
+  f0bin  = floor(f0/deltaF +0.5);
+  templatePulsar->f0 = f0bin*deltaF;
+  closeTemplates->f0[0] = floor(f0/deltaF)*deltaF;
+  closeTemplates->f0[1] = ceil(f0/deltaF)*deltaF;
+ 
+  /* sky location, depending if  full sky or small patch is analyzed */
+  deltaX = deltaF/(params->vTotC * params->pixelFactor *
+ 	           (params->fmin + params->fSearchBand) );
+  
+  
+  if (params->fullSky){ /*full sky*/   
+    REAL8 kkcos;
+    
+    TRY( LALUniformDeviate(status->statusPtr, &randval, randPar), status);
+    longitude = randval * LAL_TWOPI;
+    TRY( LALUniformDeviate(status->statusPtr, &randval, randPar), status);
+    kkcos = 2.0* randval -1.0;
+    latitude = acos(kkcos) -LAL_PI_2;
+  }
+  else {  /*small patch */  
+    TRY( LALUniformDeviate(status->statusPtr, &randval, randPar), status);
+    longitude = params->alpha + (params->patchSizeAlpha) *(randval-0.5);
+    TRY( LALUniformDeviate(status->statusPtr, &randval, randPar), status);
+    latitude = params->delta + (params->patchSizeDelta) *(randval-0.5);    
+  }
+  
+  injectPulsar->longitude = longitude;
+  injectPulsar->latitude  = latitude;   
+  
+  {
+    REAL8UnitPolarCoor    template, par; 
+    REAL8UnitPolarCoor    templRotated;
+    REAL8Cart2Coor        templProjected;
+    REAL8      dX1[2], dX2[2];
+    INT4      ii,jj,kk;
+    
+    par.alpha = injectPulsar->longitude;
+    par.delta = injectPulsar->latitude; 
+
+    /* mismatch with the template in stereographic plane */
+    TRY( LALUniformDeviate(status->statusPtr, &randval, randPar), status);
+    templProjected.x = dX1[0] = deltaX*(randval-0.5);
+    TRY( LALUniformDeviate(status->statusPtr, &randval, randPar), status);
+    templProjected.y = dX2[0] = deltaX*(randval-0.5);
+
+    if (dX1[0]<0.0) { 
+      dX1[1]= dX1[0]+deltaX;
+    } else {
+      dX1[1]= dX1[0]-deltaX;
+    }
+    
+    if (dX2[0]<0.0) { 
+      dX2[1]= dX2[0]+deltaX;
+    } else {
+      dX2[1]= dX2[0]-deltaX;
+    }
+    
+    /* invert the stereographic projection for a point on the projected plane */
+    TRY( LALStereoInvProjectCart( status->statusPtr,
+                                &templRotated, &templProjected ), status );
+    /* inverse rotate the mismatch from the south pole to desired location */
+    TRY( LALInvRotatePolarU( status->statusPtr, &template, &templRotated, &par), status);
+    templatePulsar->longitude = template.alpha; 
+    templatePulsar->latitude = template.delta; 
+     
+    kk=0;
+    for (ii=0; ii<2; ii++){
+      for (jj=0; jj<2; jj++) {
+      templProjected.x = dX1[ii];
+      templProjected.y = dX2[jj];
+      TRY( LALStereoInvProjectCart( status->statusPtr,
+                                &templRotated, &templProjected ), status );
+      TRY( LALInvRotatePolarU( status->statusPtr, &(closeTemplates->skytemp[kk]), &templRotated, 
+                               &par), status);
+      ++kk;
+      }
+    }
+    
+  }
+
+  /* now the spindown if any */
+  msp = params->spnFmax.length ;
+  closeTemplates->f1[0] = 0.0;
+  closeTemplates->f1[1] = 0.0;
+
+  ASSERT (templatePulsar->spindown.length == msp, status, DRIVEHOUGHCOLOR_EBAD,
+	  DRIVEHOUGHCOLOR_MSGEBAD);
+  ASSERT (injectPulsar->spindown.length == msp, status, DRIVEHOUGHCOLOR_EBAD,
+	  DRIVEHOUGHCOLOR_MSGEBAD);
+  
+  if(msp){ /*if there are spin-down values */
+    REAL8 deltaFk, spink;
+    REAL8 timeObsInv;
+    UINT4   i;
+    ASSERT (injectPulsar->spindown.data,  status, DRIVEHOUGHCOLOR_ENULL, 
+	    DRIVEHOUGHCOLOR_MSGENULL);
+    ASSERT (templatePulsar->spindown.data,  status, DRIVEHOUGHCOLOR_ENULL, 
+	    DRIVEHOUGHCOLOR_MSGENULL);
+    ASSERT (params->spnFmax.data,  status, DRIVEHOUGHCOLOR_ENULL, 
+	    DRIVEHOUGHCOLOR_MSGENULL);
+    
+    /* delta f_k = k! deltaF/ [T_Obs}^k  spd grid resolution*/
+    timeObsInv= 1.0/params->timeObs;
+    deltaFk= deltaF*timeObsInv;
+    
+    /* first spin-down parameter, (only spin-down) */	    
+    TRY( LALUniformDeviate(status->statusPtr, &randval, randPar), status);
+    spink=params->spnFmax.data[0]* randval;
+    
+    injectPulsar->spindown.data[0]= spink;
+    templatePulsar->spindown.data[0] = floor(spink/deltaFk +0.5)*deltaFk;
+    
+    closeTemplates->f1[0] = floor(spink/deltaFk)*deltaFk;
+    closeTemplates->f1[1] = ceil( spink/deltaFk)*deltaFk;
+
+    /* the rest of the spin orders */
+    for (i=1; i< msp; ++i) {
+      TRY( LALUniformDeviate(status->statusPtr, &randval, randPar), status);
+      spink=params->spnFmax.data[i]* (2.0* randval-1.0);
+      injectPulsar->spindown.data[i]= spink;   
+      deltaFk= deltaFk*timeObsInv*(i+1.0);
+      templatePulsar->spindown.data[i] = floor(spink/deltaFk +0.5)*deltaFk;
+    }
+  }
+  /* free memory */
+  TRY( LALDestroyRandomParams(status->statusPtr, &randPar), status);
+  
+  DETATCHSTATUSPTR (status);
+  /* normal exit */
+  RETURN (status);
+}
+
 
 /* ****************************************************************/
 /* Computing the frequency path f(t) = f0(t)* (1+v/c.n)   */
@@ -1392,11 +1551,13 @@ void PrintLogFile (LALStatus       *status,
 		   CHAR            *dir,
 		   CHAR            *basename,
 		   CHAR            *skyfile,
+		   LALStringVector *linefiles,
 		   CHAR            *executable )
 {
   CHAR *fnameLog=NULL; 
   FILE *fpLog=NULL;
   CHAR *logstr=NULL; 
+  UINT4 k;
 
   INITSTATUS (status, "PrintLogFile", rcsid);
   ATTATCHSTATUSPTR (status);
@@ -1433,7 +1594,7 @@ void PrintLogFile (LALStatus       *status,
   /* get the log string */
   TRY( LALUserVarGetLog(status->statusPtr, &logstr, UVAR_LOGFMT_CFGFILE), status);  
 
-  fprintf( fpLog, "## LOG FILE FOR Hough Multi IFO MC\n\n");
+  fprintf( fpLog, "## LOG FILE FOR MC Inject Hough\n\n");
   fprintf( fpLog, "# User Input:\n");
   fprintf( fpLog, "#-------------------------------------------\n");
   fprintf( fpLog, logstr);
@@ -1446,6 +1607,23 @@ void PrintLogFile (LALStatus       *status,
     CHAR command[1024] = "";
     sprintf(command, "cat %s >> %s", skyfile, fnameLog);
     system(command);
+  }
+
+
+  /* copy contents of linefile if necessary */
+  if ( linefiles ) {
+
+    for ( k = 0; k < linefiles->length; k++) {
+      
+      if ((fpLog = fopen(fnameLog, "a")) != NULL) {
+	CHAR command[1024] = "";
+	fprintf (fpLog, "\n\n# Contents of linefile %s :\n", linefiles->data[k]);
+	fprintf (fpLog, "# -----------------------------------------\n");
+	fclose (fpLog);
+	sprintf(command, "cat %s >> %s", linefiles->data[k], fnameLog);      
+	system (command);	 
+      } 
+    } 
   }
 
   /* append an ident-string defining the exact CVS-version of the code used */
@@ -1468,3 +1646,4 @@ void PrintLogFile (LALStatus       *status,
   /* normal exit */
   RETURN (status);
 }    
+

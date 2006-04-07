@@ -111,6 +111,12 @@ void GenerateInjectParams(LALStatus  *status,
 			HoughNearTemplates   *closeTemplates,
                         HoughInjectParams    *params,
 			LineNoiseInfo        *lines  );
+			     
+void GenerateInjectParamsNoVeto(LALStatus  *status,
+                        PulsarData           *injectPulsar,
+                        HoughTemplate        *templatePulsar,
+			HoughNearTemplates   *closeTemplates,
+                        HoughInjectParams    *params );
 
 void ComputeFoft(LALStatus   *status,
                  REAL8Vector          *foft,
@@ -120,11 +126,13 @@ void ComputeFoft(LALStatus   *status,
 		 REAL8                timeBase);
 
 
-void PrintLogFile (LALStatus *status, 
-                  CHAR *dir, 
-		  CHAR *basename, 
-		  CHAR *skyfile, 
-		  CHAR *executable );
+void PrintLogFile(LALStatus       *status, 
+                  CHAR            *dir, 
+		  CHAR            *basename, 
+		  CHAR            *skyfile, 
+		  LALStringVector *linefiles
+		  CHAR            *executable );
+
 		  
 void FindNearestPatch( LALStatus      *status,
 		REAL8		      latitude,
