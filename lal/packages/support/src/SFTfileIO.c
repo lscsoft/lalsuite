@@ -768,7 +768,7 @@ void LALLoadMultiSFTs ( LALStatus *status,
   }
   LALFree( catalog);
 
-  for ( k = 0; k < length; k++) {
+  for ( k = 0; k < numifoMax; k++) {
     LALFree(ifolist[k]);
     LALFree(sftLocationInCatalog[k]);
   }
