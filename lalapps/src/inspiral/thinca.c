@@ -177,7 +177,7 @@ static void print_usage(char *program)
       "  [--h2-alphaf-lo]      alphaFlo   alphaF area for H2\n"\
       "  [--l1-alphaf-hi]      alphaFhi   reject BCV triggers outside the specified \n"\
       "  [--l1-alphaf-lo]      alphaFlo   alphaF area for L1\n"\
-      "  [--do-bcvspin-H1H2-veto]         reject coincidences with H1 snr < H2 snr \n"\
+      "  [--do-bcvspin-h1h2-veto]         reject coincidences with H1 snr < H2 snr \n"\
       "   --data-type          data_type  specify the data type, must be one of\n"\
       "                                   (playground_only|exclude_play|all_data)\n"\
       "\n"\
@@ -296,7 +296,7 @@ int main( int argc, char *argv[] )
     {"check-times",         no_argument,   &checkTimes,               1 },
     {"multi-ifo-coinc",     no_argument,   &multiIfoCoinc,            1 },
     {"h1-h2-distance-cut",  no_argument,   &distCut,                  1 },
-    {"do-bcvspin-H1H2-veto",no_argument,   &doBCV2H1H2Veto,           1 },
+    {"do-bcvspin-h1h2-veto",no_argument,   &doBCV2H1H2Veto,           1 },
     {"iota-cut",  	    no_argument,   &iotaCut,                  1 },
     {"do-alphaf-cut",       no_argument,   &doAlphaFCut,              1 },
     {"psi0-psi3-cut",       no_argument,   &doPsi0Psi3Cut,            1 },
