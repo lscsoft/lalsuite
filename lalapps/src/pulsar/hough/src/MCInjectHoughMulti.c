@@ -108,6 +108,8 @@ int main(int argc, char *argv[]){
    
   static LALDetector          detector;
   static LIGOTimeGPSVector    *timeV=NULL;
+  MultiLIGOTimeGPSVector     *multiIniTimeV = NULL;
+  
   static REAL8Cart3CoorVector velV;
   static REAL8Vector          timeDiffV;
   LIGOTimeGPS firstTimeStamp, lastTimeStamp;
@@ -132,6 +134,7 @@ int main(int argc, char *argv[]){
   /* standard pulsar sft types */ 
   MultiSFTVector *inputSFTs = NULL;
   MultiSFTVector *sumSFTs = NULL;
+  MultiSFTVector *signalSFTs = NULL;
   UINT4 binsSFT;
   
   /* information about all the ifos */
@@ -515,62 +518,63 @@ int main(int argc, char *argv[]){
   } 
   
   /******************************************************************/  
-  /* allocate memory for sumSFTs of the same size of inputSFTs. TO BE DONE */
+  /* allocate memory for sumSFTs of the same size of inputSFTs and place for
+  signal only sfts. */
   /******************************************************************/ 
  
-   sumSFTs = (MultiSFTVector *)LALMalloc(sizeof(MultiSFTVector));
-   sumSFTs->length = numifo;
-   sumSFTVec->data = (SFTVector **)LALCalloc(numifo, sizeof(SFTVector *));
- 
-   {
-     UINT4   iIFO, iSFT, numsft, j;
-     
-     for ( j = 0; j < numifo; j++) {
-     
-       numsft = inputSFTVec->data[j]->length;
-       sumSFTVec->data[j]->length = numsft;
-       sumSFTVec->data[j]->data = (COMPLEX8FrequencySeries *)LALCalloc(numsft, sizeof(COMPLEX8FrequencySeries *));
-       
-       for(iSFT=0, iSFT<numsft, iSFT++){
-         sumSFTVec->data[j]->data[iSFT]->data =  (COMPLEX8Sequence *)LALCalloc(xx,
-	 sizeof(HELP, BADRI));
-	  now use binsSFT
-	 NOT FINISH. I got lost!!!
-	 should we have a  LALCreateMultiSFTVector() or a 
-	                   LALCopyMultiSFTVector() of a same size of an existing
-			   one?
-       }
-     }
+  {
+    UINT4Vector  numsft;
+    UINT4        j;
+    
+    numsft.length =  numifo;
+    numsft.data = NULL;
+    numsft.data =(UINT4 *)LALCalloc(numifo, sizeof(UINT4));
+    
+    for ( j = 0; j < numifo; j++) {
+      numsft.data[j] = sumSFTVec->data[j]->length;
+    }
+    
+    LAL_CALL( LALCreateMultiSFTVector(&status, sumSFTs, binsSFT, &numsft), &status);
+    LALFree( numsft.data);
+    
+    signalSFTs = (MultiSFTVector *)LALMalloc(sizeof(MultiSFTVector));
+    signalSFTs->length = numifo;
+    signalSFTs->data = (SFTVector **)LALCalloc(numifo, sizeof(SFTVector *));
 
-   }
-   
+  }
+ 
+  
+  
   /******************************************************************/  
   /* allocate memory for velocity vector and timestamps */
   /******************************************************************/ 
   
-    velV.length = mObsCoh;
-    velV.data = NULL;
-    velV.data = (REAL8Cart3Coor *)LALCalloc(mObsCoh, sizeof(REAL8Cart3Coor));
+  velV.length = mObsCoh;
+  velV.data = NULL;
+  velV.data = (REAL8Cart3Coor *)LALCalloc(mObsCoh, sizeof(REAL8Cart3Coor));
 
     /* allocate memory for timestamps vector */
-    timeV.length = mObsCoh;
-    timeV.data = NULL;
-    timeV.data = (LIGOTimeGPS *)LALCalloc( mObsCoh, sizeof(LIGOTimeGPS));
+  timeV.length = mObsCoh;
+  timeV.data = NULL;
+  timeV.data = (LIGOTimeGPS *)LALCalloc( mObsCoh, sizeof(LIGOTimeGPS));
 
     /* allocate memory for vector of time differences from start */
-    timeDiffV.length = mObsCoh;
-    timeDiffV.data = NULL; 
-    timeDiffV.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
+  timeDiffV.length = mObsCoh;
+  timeDiffV.data = NULL; 
+  timeDiffV.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
   
- 
-    /******************************************************************/ 
-    /* get detector velocities and timestamps */
-    /******************************************************************/ 
+  multiIniTimeV = (MultiLIGOTimeGPSVector *)LALMalloc(sizeof(MultiLIGOTimeGPSVector));
+  multiIniTimeV->length = numifo;
+  multiIniTimeV->data = (LIGOTimeGPSVector **)LALCalloc(numifo, sizeof(LIGOTimeGPSVector *));
+
+  /******************************************************************/ 
+  /* get detector velocities and timestamps */
+  /******************************************************************/ 
   
     /*  setting of ephemeris info */ 
-    edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
-    (*edat).ephiles.earthEphemeris = uvar_earthEphemeris;
-    (*edat).ephiles.sunEphemeris = uvar_sunEphemeris;
+  edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
+  (*edat).ephiles.earthEphemeris = uvar_earthEphemeris;
+  (*edat).ephiles.sunEphemeris = uvar_sunEphemeris;
   
   {
     INT4    tmpLeap;
@@ -596,14 +600,19 @@ int main(int argc, char *argv[]){
 	velV.data[j].y = mdetStates->data[iIFO]->data[iSFT].vDetector[1];
 	velV.data[j].z = mdetStates->data[iIFO]->data[iSFT].vDetector[2];
 	/* mid time of sfts */
-	timeV.data[j] = mdetStates->data[iIFO]->data[iSFT].tGPS;
+        timeV.data[j] = mdetStates->data[iIFO]->data[iSFT].tGPS;
       } /* loop over SFTs */
+      
+      LAL_CALL( LALGetSFTtimestamps(&status, multiIniTimeV->data[j], inputSFTs->data[j] ), &status);
     } /* loop over IFOs */
     
     /* compute the time difference relative to startTime for all SFT */
     for(j = 0; j < mObsCoh; j++)
       timeDiffV.data[j] = XLALGPSDiff( timeV.data + j, &firstTimeStamp );
     
+     /* removing mid time-stamps, no longer needed now */
+    LAL_CALL(LALDestroyTimestampVector ( &status, &timeV), &status); 
+   
   }
   
   /******************************************************************/ 
@@ -659,7 +668,7 @@ int main(int argc, char *argv[]){
       
       XLALDestroyMultiAMCoeffs ( multiAMcoef );
     } /*loop over sky patches */
-    
+   
   }
   /******************************************************************/ 
   /*   setting of parameters */ 
@@ -1009,11 +1018,16 @@ int main(int argc, char *argv[]){
   LALFree(periPSD.periodogram.data);
   LALFree(periPSD.psd.data);
   LALFree(pg1.data);
-
-  LAL_CALL(LALDestroyTimestampVector ( &status, &timeV), &status); 
-  
-  LALFree(timeDiffV.data);
+ 
   LALFree(velV.data);
+  LALFree(timeDiffV.data);
+  
+  LALFree(multiIniTimeV->data);
+  LALFree(multiIniTimeV);
+  
+   
+  XLALDestroyMultiDetectorStateSeries ( mdetStates );
+
   LALFree(skyPatchCenterV.data);
   LALFree(foft.data);
   LALFree(h0V.data);
@@ -1049,18 +1063,10 @@ int main(int argc, char *argv[]){
     LALFree(weightsAMskyV);
   }
   
-  XLALDestroyMultiDetectorStateSeries ( mdetStates );
 
   LAL_CALL(LALDestroyMultiSFTVector(&status, &inputSFTs),&status );
   LAL_CALL(LALDestroyMultiSFTVector(&status, &sumSFTs),&status )
-/*
- *   if (nLines > 0)
- *     {
- *       LALFree(lines.lineFreq);
- *       LALFree(lines.leftWing);
- *       LALFree(lines.rightWing);
- *     }
- */
+  /* LAL_CALL(LALDestroyMultiSFTVector(&status, &signalSFTs),&status ) */
 
   LAL_CALL (LALDestroyUserVars(&status), &status);  
 
