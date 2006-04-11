@@ -41,16 +41,10 @@ Input shoud be from
 
 #include "./MCInjectHoughMulti.h" /* proper path*/
 
-
 extern int lalDebugLevel;
 
 #define EARTHEPHEMERIS "./earth05-09.dat" 
 #define SUNEPHEMERIS "./sun05-09.dat"    
-
-/*
- * #define EARTHEPHEMERIS "./earth00-04.dat"
- * #define SUNEPHEMERIS "./sun00-04.dat"
- */
 
 #define MAXFILENAMELENGTH 512 /* maximum # of characters  of a filename */
 
@@ -77,17 +71,13 @@ extern int lalDebugLevel;
 #define NTEMPLATES 16 /* number templates for each Monte-Carlo */
 
 #define SFTDIRECTORY "/home/badkri/fakesfts/*SFT*.*"
-/*#define SFTDIRECTORY "/home/badkri/L1sfts" */
+/* */
 #define DIROUT "./outMultiMC"   /* output directory */
 #define FILEOUT "./HoughMC"      /* prefix file output */
-#define HARMONICSFILE "./harmonicsS2LLO4K_200_400.txt"
-
 #define SKYFILE "./sky1" 
-
 
 #define TRUE (1==1)
 #define FALSE (1==0)
-
 
 /******************************************************
  *  Assignment of Id string using NRCSID()
@@ -98,23 +88,18 @@ RCSID ("$Id$");
 /* vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv------------------------------------ */
 int main(int argc, char *argv[]){
 
-  static LineNoiseInfo   lines, lines2;
-  static LineHarmonicsInfo harmonics; 
-
-  static LALStatus            status; 
-  
+  static LALStatus            status;  
   /* LAL error-handler */
-  lal_errhandler = LAL_ERR_EXIT;
+  lal_errhandler   =   LAL_ERR_EXIT;
    
-  static LALDetector          detector;
+  EphemerisData              *edat = NULL;
+  static LALDetector           detector;  
+  static REAL8Cart3CoorVector  velV;
   static LIGOTimeGPSVector    *timeV=NULL;
   MultiLIGOTimeGPSVector     *multiIniTimeV = NULL;
-  
-  static REAL8Cart3CoorVector velV;
   static REAL8Vector          timeDiffV;
-  LIGOTimeGPS firstTimeStamp, lastTimeStamp;
-  REAL8 tObs;
-  static REAL8Cart3CoorVector skyPatchCenterV;
+  LIGOTimeGPS                firstTimeStamp, lastTimeStamp;
+  REAL8                      tObs;
 
   static REAL8Vector          foft;
   static REAL8Vector          foftV[NTEMPLATES];
@@ -128,37 +113,28 @@ int main(int argc, char *argv[]){
   /* skypatch info */
   REAL8  *skyAlpha, *skyDelta, *skySizeAlpha, *skySizeDelta; 
   INT4   nSkyPatches, skyIndex, skyCounter=0; 
-
-  INT4 nLines=0, nHarmonicSets, count1;
+  static REAL8Cart3CoorVector skyPatchCenterV;
 
   /* standard pulsar sft types */ 
-  MultiSFTVector *inputSFTs = NULL;
-  MultiSFTVector *sumSFTs = NULL;
+  MultiSFTVector *inputSFTs  = NULL;
+  MultiSFTVector *sumSFTs    = NULL;
   MultiSFTVector *signalSFTs = NULL;
-  UINT4 binsSFT;
   
   /* information about all the ifos */
   MultiDetectorStateSeries *mdetStates = NULL;
-  UINT4 numifo;
+  UINT4     numifo;
+  UINT4     binsSFT;
 
   /* vector of weights */
-  REAL8Vector weightsV, weightsNoise;
-  REAL8Vector *weightsAMskyV= NULL;
+  REAL8Vector      weightsV, weightsNoise;
+  REAL8Vector     *weightsAMskyV = NULL;
   
-  SFTVector    *outputSFTs = NULL;
   REAL4TimeSeries   *signalTseries = NULL;
-  
   static PulsarSignalParams  params;
   static SFTParams           sftParams;
-
-  EphemerisData   *edat = NULL;
-
-  static COMPLEX8SFTData1  sft1;
-  static REAL8PeriodoPSD   periPSD;
-  static UCHARPeakGram     pg1;
+  static UCHARPeakGram       pg1;
     
-  UINT4  msp; /*number of spin-down parameters */
-  
+  UINT4  msp = 1; /*number of spin-down parameters */ 
   UINT4  numberCount,maxNumberCount;
   INT4   nTemplates, controlN, controlNN, controlNH;
   UINT4  numberCountV[NTEMPLATES];
@@ -172,7 +148,6 @@ int main(int argc, char *argv[]){
 
   UINT4  sftlength; 
   INT4   fWings;
-
   INT4   sftFminBin;
   REAL8  fHeterodyne;
   REAL8  tSamplingRate;      
@@ -197,7 +172,6 @@ int main(int argc, char *argv[]){
   CHAR   *uvar_sftDir=NULL;
   CHAR   *uvar_dirnameOut=NULL;
   CHAR   *uvar_fnameout=NULL;
-  CHAR   *uvar_harmonicsfile=NULL;  
   CHAR   *uvar_ifo=NULL;
   CHAR   *uvar_skyfile=NULL;
   LALStringVector *uvar_linefiles=NULL;
@@ -243,9 +217,6 @@ int main(int argc, char *argv[]){
   uvar_sftDir = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_sftDir,SFTDIRECTORY);
 
-  uvar_harmonicsfile = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
-  strcpy(uvar_harmonicsfile,HARMONICSFILE);  
-
   uvar_dirnameOut = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_dirnameOut,DIROUT);
 
@@ -279,7 +250,6 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterREALUserVar(   &status, "h0Min",           'm', UVAR_OPTIONAL, "Smallest h0 to inject",         &uvar_h0Min),           &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "h0Max",           'M', UVAR_OPTIONAL, "Largest h0 to inject",          &uvar_h0Max),           &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "nh0",             'n', UVAR_OPTIONAL, "Number of h0 values to inject", &uvar_nh0),             &status);  
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "harmonicsfile",   'H', UVAR_OPTIONAL, "List of known lines",           &uvar_harmonicsfile),   &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyfile",          0,  UVAR_OPTIONAL, "Input skypatch file",           &uvar_skyfile),         &status);
   LAL_CALL( LALRegisterLISTUserVar(   &status, "linefiles",        0,  UVAR_OPTIONAL, "list of linefiles separated by commas", &uvar_linefiles),       &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighAM",          0,  UVAR_OPTIONAL, "Use amplitude modulation weights",      &uvar_weighAM),         &status);  
@@ -316,6 +286,8 @@ int main(int argc, char *argv[]){
     fprintf(stderr, "peak selection threshold must be positive\n");
     exit(1);
   }
+  
+  LAL_CALL( LALRngMedBias( &status, &normalizeThr, uvar_blocksRngMed ), &status ); 
 
   /******************************************************************/ 
   /* write log file with command line arguments, cvs tags, and contents of skypatch file */
@@ -323,7 +295,6 @@ int main(int argc, char *argv[]){
   if ( uvar_printLog ) {
     LAL_CALL( PrintLogFile( &status, uvar_dirnameOut, uvar_fnameOut, uvar_skyfile, uvar_linefiles, argv[0]), &status);
   }
- 
   
   /******************************************************************/ 
   /* read skypatch info */
@@ -375,7 +346,6 @@ int main(int argc, char *argv[]){
  	skyPatchCenterV.data[skyCounter].y= cos(skyDelta[skyCounter])*sin(skyAlpha[skyCounter]);
  	skyPatchCenterV.data[skyCounter].z= sin(skyDelta[skyCounter]);
     }
-
  
   /******************************************************************/ 
   /* set fullsky flag */
@@ -383,11 +353,7 @@ int main(int argc, char *argv[]){
 
   injectPar.fullSky = 1;
   if ( (uvar_AllSkyFlag == 0) ) 
-    injectPar.fullSky= 0;  /* patch case */
-
-  LAL_CALL( LALRngMedBias( &status, &normalizeThr, uvar_blocksRngMed ), &status ); 
-  
-  msp = 1; /*only one spin-down */
+    injectPar.fullSky= 0;  /* patch case */  
 
   /******************************************************************/ 
   /* computing h0 values  */
@@ -456,11 +422,6 @@ int main(int argc, char *argv[]){
       constraints.detector = XLALGetChannelPrefix ( uvar_ifo );
 
     /* get sft catalog */
-/*
- *   tempDir = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
- *     strcpy(tempDir, uvar_sftDir);
- *     strcat(tempDir, "/*SFT*.*");
- */
     LAL_CALL( LALSFTdataFind( &status, &catalog, uvar_sftDir, &constraints), &status);
     if ( (catalog == NULL) || (catalog->length == 0) ) {
       fprintf (stderr,"Unable to match any SFTs with pattern '%s'\n", uvar_sftDir );
@@ -482,22 +443,14 @@ int main(int argc, char *argv[]){
     lastTimeStamp = catalog->data[mObsCoh - 1].header.epoch;
     tObs = XLALGPSDiff( &lastTimeStamp, &firstTimeStamp ) + timeBase;
 
-    /* get SFT timestamps. alicia: I do not understand how are these ordered if multi
-        detectors are used, so I prefer to use the same as in the driver */
-   /*
-    *  LAL_CALL( LALSFTtimestampsFromCatalog(  &status, &timeV, catalog ), &status);  	
-    */
-
     /* add wings for Doppler modulation and running median block size*/
     doppWings = (uvar_f0 + uvar_fSearchBand) * VTOT;    
     fmin = uvar_f0 - doppWings - (uvar_blocksRngMed + uvar_nfSizeCylinder) * deltaF;
     fmax = uvar_f0 + uvar_fSearchBand + doppWings + (uvar_blocksRngMed + uvar_nfSizeCylinder) * deltaF;
 
-    /* read sfts */
     /* read sft files making sure to add extra bins for running median */
     LAL_CALL( LALLoadMultiSFTs ( &status, &inputSFTs, catalog, fmin, fmax), &status);
  
-
     /* SFT info -- assume all SFTs have same length */
     numifo = inputSFTs->length;
     binsSFT = inputSFTs->data[0]->data->data->length;
@@ -512,7 +465,6 @@ int main(int argc, char *argv[]){
     if ( LALUserVarWasSet( &uvar_ifo ) )    
       LALFree( constraints.detector );
     
-   /* LALFree( tempDir); */
     LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);  	 
 
   } 
@@ -542,9 +494,7 @@ int main(int argc, char *argv[]){
     signalSFTs->data = (SFTVector **)LALCalloc(numifo, sizeof(SFTVector *));
 
   }
- 
-  
-  
+   
   /******************************************************************/  
   /* allocate memory for velocity vector and timestamps */
   /******************************************************************/ 
@@ -1014,9 +964,6 @@ int main(int argc, char *argv[]){
   /******************************************************************/
   
   /* LALFree(fp); */
-  LALFree(sft1.data);
-  LALFree(periPSD.periodogram.data);
-  LALFree(periPSD.psd.data);
   LALFree(pg1.data);
  
   LALFree(velV.data);
