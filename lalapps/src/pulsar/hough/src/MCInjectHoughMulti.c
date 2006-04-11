@@ -134,15 +134,14 @@ int main(int argc, char *argv[]){
   static UCHARPeakGram       pg1;
     
   UINT4  msp = 1; /*number of spin-down parameters */ 
-  UINT4  numberCount,maxNumberCount;
+  REAL8  numberCount,maxNumberCount;
+  REAL8  numberCountV[NTEMPLATES];
   INT4   nTemplates, controlN, controlNN, controlNH;
-  UINT4  numberCountV[NTEMPLATES];
    
   INT4   mObsCoh;
   INT8   f0Bin, fLastBin;           /* freq. bin to perform search */
   REAL8  normalizeThr;
   REAL8  timeBase, deltaF;
-
   REAL8  threshold, h0scale;
 
   UINT4  sftlength; 
@@ -254,8 +253,7 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighAM",          0,  UVAR_OPTIONAL, "Use amplitude modulation weights",      &uvar_weighAM),         &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighNoise",       0,  UVAR_OPTIONAL, "Use SFT noise weights",                 &uvar_weighNoise),      &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printLog",         0,  UVAR_OPTIONAL, "Print Log file",                        &uvar_printLog),        &status);  
- 
-  /* developer input variables */
+   /* developer input variables */
   LAL_CALL( LALRegisterINTUserVar(    &status, "nfSizeCylinder",   0, UVAR_DEVELOPER, "Size of cylinder of PHMDs",             &uvar_nfSizeCylinder),  &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",     0, UVAR_DEVELOPER, "Running Median block size",             &uvar_blocksRngMed),    &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "maxBinsClean",     0, UVAR_DEVELOPER, "Maximum number of bins in cleaning",    &uvar_maxBinsClean),    &status);
@@ -510,6 +508,7 @@ int main(int argc, char *argv[]){
   timeDiffV.data = NULL; 
   timeDiffV.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
   
+   /* start time of the sfts sorted for the different IFOs */
   multiIniTimeV = (MultiLIGOTimeGPSVector *)LALMalloc(sizeof(MultiLIGOTimeGPSVector));
   multiIniTimeV->length = numifo;
   multiIniTimeV->data = (LIGOTimeGPSVector **)LALCalloc(numifo, sizeof(LIGOTimeGPSVector *));
@@ -771,8 +770,7 @@ int main(int argc, char *argv[]){
    params.pulsar.aCross= pulsarInject.aCross;
    params.pulsar.phi0=   pulsarInject.phi0;
    params.pulsar.f0=     pulsarInject.f0;
-   params.pulsar.spindown=  &pulsarInject.spindown ;
-    
+   params.pulsar.spindown=  &pulsarInject.spindown ;   
     
    {
      UINT4 iIFO;
@@ -791,22 +789,22 @@ int main(int argc, char *argv[]){
    }
    	     
    /* ****************************************************************/
-     /*  HERE THE LOOP FOR DIFFERENT H0 VALUES */
+   /*  HERE THE LOOP FOR DIFFERENT h0 VALUES */
 	     
     fprintf(fpNc, " %d ",  MCloopId);
 	     
     for(h0loop=0; h0loop <uvar_nh0; ++h0loop){
       
-      INT4  j, i, index, itemplate; 
+      UINT4  j, i, index, itemplate; 
       COMPLEX8 *noise1SFT;
       COMPLEX8 *signal1SFT;
       COMPLEX8 *sumSFT;
       
       controlNN=0; 
       
-      numberCount=0;
+      numberCount=0.0;
       for(itemplate=0; itemplate<nTemplates; ++itemplate){
-        numberCountV[itemplate]=0;
+        numberCountV[itemplate]=0.0;
       }
       
       h0scale =h0V.data[h0loop]/h0V.data[0]; /* different for different h0 values */
@@ -830,7 +828,6 @@ int main(int argc, char *argv[]){
 	}
       } /*The sum should be fixed into sumSFTs */
       
-      /* ****************************************************************/
       /* clean sfts if required */
       if ( LALUserVarWasSet( &uvar_linefiles ) )
 	{
@@ -930,7 +927,7 @@ int main(int argc, char *argv[]){
       /******************************************************************/
       /* printing result in the proper file */
       /******************************************************************/
-      fprintf(fpNc, " %d ", maxNumberCount);
+      fprintf(fpNc, " %f ", maxNumberCount);
       
     } /* closing loop for different h0 values */
     fprintf(fpNc, " \n");
