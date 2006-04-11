@@ -93,7 +93,6 @@ int main(int argc, char *argv[]){
   lal_errhandler   =   LAL_ERR_EXIT;
    
   EphemerisData              *edat = NULL;
-  static LALDetector           detector;  
   static REAL8Cart3CoorVector  velV;
   static LIGOTimeGPSVector    *timeV=NULL;
   MultiLIGOTimeGPSVector     *multiIniTimeV = NULL;
@@ -466,7 +465,6 @@ int main(int argc, char *argv[]){
       LALFree( constraints.detector );
     
     LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);  	 
-
   } 
   
   /******************************************************************/  
@@ -492,7 +490,6 @@ int main(int argc, char *argv[]){
     signalSFTs = (MultiSFTVector *)LALMalloc(sizeof(MultiSFTVector));
     signalSFTs->length = numifo;
     signalSFTs->data = (SFTVector **)LALCalloc(numifo, sizeof(SFTVector *));
-
   }
    
   /******************************************************************/  
@@ -706,8 +703,7 @@ int main(int argc, char *argv[]){
       foftV[j].data = NULL;
       foftV[j].data = (REAL8 *)LALMalloc(mObsCoh*sizeof(REAL8));
     }
-  }
-  
+  } 
   
   /* ****************************************************************/
   /*  HERE SHOULD START THE MONTE-CARLO */
@@ -739,8 +735,7 @@ int main(int argc, char *argv[]){
 	    );
 	     
    /* ****************************************************************/
-   /* Computing the frequency path f(t) = f0(t)* (1+v/c.n)  for */
-   /*  all the different templates */
+   /* Computing the frequency path f(t) = f0(t)* (1+v/c.n)  for all the different templates */
 	     
    /* the geometrically nearest template */
    LAL_CALL( ComputeFoft(&status, &foft,&pulsarTemplate,&timeDiffV,&velV, timeBase), &status);
@@ -764,15 +759,10 @@ int main(int argc, char *argv[]){
        }
      }
    }
-	     /* ****************************************************************/
-		  
-		  
-   sftParams.timestamps = timeV; /* this is no longer correct, because they refer
-				   to mid time. to be fixed later on for different detectors */
-	     
-   params.site = &(detector); /*change to diffrent IFO */
-	     
-  /*  params.pulsar.TRefSSB=  ? ; */
+   
+   /* ****************************************************************/
+		  	     
+   /*  params.pulsar.TRefSSB=  ? ; */
    params.pulsar.position.longitude = pulsarInject.longitude;
    params.pulsar.position.latitude =  pulsarInject.latitude ;
    params.pulsar.position.system= COORDINATESYSTEM_EQUATORIAL; 
@@ -783,13 +773,24 @@ int main(int argc, char *argv[]){
    params.pulsar.f0=     pulsarInject.f0;
    params.pulsar.spindown=  &pulsarInject.spindown ;
     
-   LAL_CALL( LALGeneratePulsarSignal(&status, &signalTseries, &params ), &status);
-   LAL_CALL( LALSignalToSFTs(&status, &outputSFTs, signalTseries, &sftParams), 
-	     &status);
-	   
-      /*here we should generate as many outputSFTs as detectors*/
- 
-     /* ****************************************************************/
+    
+   {
+     UINT4 iIFO;
+     
+     for (iIFO=0; iIFO<numifo; iIFO++){
+       params.site = &(mdetStates->data[iIFO]->detector);
+       sftParams.timestamps = multiIniTimeV->data[iIFO];
+       LAL_CALL( LALGeneratePulsarSignal(&status, &signalTseries, &params ), &status);
+       LAL_CALL( LALSignalToSFTs(&status, signalSFTs->[iIFO], signalTseries, &sftParams), &status);
+           
+       LALFree(signalTseries->data->data);
+       LALFree(signalTseries->data);
+       LALFree(signalTseries);
+       signalTseries =NULL;      
+     }   
+   }
+   	     
+   /* ****************************************************************/
      /*  HERE THE LOOP FOR DIFFERENT H0 VALUES */
 	     
     fprintf(fpNc, " %d ",  MCloopId);
@@ -811,7 +812,7 @@ int main(int argc, char *argv[]){
       h0scale =h0V.data[h0loop]/h0V.data[0]; /* different for different h0 values */
       
       /* ****************************************************************/
-      /* adding signal+ noise SFT,  */      
+      /* adding signal+ noise SFT, TO BE FIXED */      
       
       for (j=0; j < mObsCoh; j++)  {
 	sumSFT = sft1.data;
@@ -943,10 +944,7 @@ int main(int argc, char *argv[]){
     /* ****************************************************************/   
     fprintf(fpPar,"  %d %d \n",  controlN, controlNH );
 	     
-    LALFree(signalTseries->data->data);
-    LALFree(signalTseries->data);
-    LALFree(signalTseries);
-    signalTseries =NULL;
+
     LAL_CALL(LALDestroySFTVector(&status, &outputSFTs),&status );
     outputSFTs = NULL;
     
