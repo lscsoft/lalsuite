@@ -111,7 +111,7 @@ int main(int argc, char *argv[]){
   
   /* skypatch info */
   REAL8  *skyAlpha, *skyDelta, *skySizeAlpha, *skySizeDelta; 
-  INT4   nSkyPatches, skyIndex, skyCounter=0; 
+  UINT4   nSkyPatches, skyIndex, skyCounter=0; 
   static REAL8Cart3CoorVector skyPatchCenterV;
 
   /* standard pulsar sft types */ 
@@ -127,6 +127,7 @@ int main(int argc, char *argv[]){
   /* vector of weights */
   REAL8Vector      weightsV, weightsNoise;
   REAL8Vector     *weightsAMskyV = NULL;
+  REAL8      alphaPeak, meanN, sigmaN, significance;
   
   REAL4TimeSeries   *signalTseries = NULL;
   static PulsarSignalParams  params;
@@ -136,7 +137,7 @@ int main(int argc, char *argv[]){
   UINT4  msp = 1; /*number of spin-down parameters */ 
   REAL8  numberCount,maxNumberCount;
   REAL8  numberCountV[NTEMPLATES];
-  INT4   nTemplates, controlN, controlNN, controlNH;
+  UINT4   nTemplates, controlN, controlNN, controlNH;
    
   INT4   mObsCoh;
   INT8   f0Bin, fLastBin;           /* freq. bin to perform search */
@@ -479,7 +480,7 @@ int main(int argc, char *argv[]){
     numsft.data =(UINT4 *)LALCalloc(numifo, sizeof(UINT4));
     
     for ( j = 0; j < numifo; j++) {
-      numsft.data[j] = sumSFTVec->data[j]->length;
+      numsft.data[j] = inputSFTs->data[j]->length;
     }
     
     LAL_CALL( LALCreateMultiSFTVector(&status, sumSFTs, binsSFT, &numsft), &status);
@@ -616,6 +617,13 @@ int main(int argc, char *argv[]){
     } /*loop over sky patches */
    
   }
+
+  /******************************************************************/ 
+  /* probability of selecting a peak and expected mean for noise only */
+  /******************************************************************/ 
+  alphaPeak = exp( - uvar_peakThreshold);
+  meanN = mObsCoh* alphaPeak;
+
   /******************************************************************/ 
   /*   setting of parameters */ 
   /******************************************************************/ 
@@ -696,7 +704,7 @@ int main(int argc, char *argv[]){
   foft.data = NULL;
   foft.data = (REAL8 *)LALMalloc(mObsCoh*sizeof(REAL8));
   {
-    INT4 j;
+    UINT4 j;
     for (j=0;j<nTemplates;++j) {
       foftV[j].length = mObsCoh;
       foftV[j].data = NULL;
@@ -795,10 +803,11 @@ int main(int argc, char *argv[]){
 	     
     for(h0loop=0; h0loop <uvar_nh0; ++h0loop){
       
-      UINT4  j, i, index, itemplate; 
-      COMPLEX8 *noise1SFT;
-      COMPLEX8 *signal1SFT;
-      COMPLEX8 *sumSFT;
+      UINT4       j, i, index, itemplate; 
+      UINT4       iIFO, numsft, iSFT;
+      COMPLEX8   *noiseSFT;
+      COMPLEX8   *signalSFT;
+      COMPLEX8   *sumSFT;
       
       controlNN=0; 
       
@@ -810,24 +819,32 @@ int main(int argc, char *argv[]){
       h0scale =h0V.data[h0loop]/h0V.data[0]; /* different for different h0 values */
       
       /* ****************************************************************/
-      /* adding signal+ noise SFT, TO BE FIXED */      
-      
-      for (j=0; j < mObsCoh; j++)  {
-	sumSFT = sft1.data;
-	signal1SFT = outputSFTs->data[j].data->data;
-	noise1SFT  =  inputSFTs->data[j].data->data;
-	
-	for (i=0; (UINT4)i < sftlength; i++)  {
-	  /* sumSFT->re = noise1SFT->re + h0scale *signal1SFT->re; */
-	  /* sumSFT->im = noise1SFT->im + h0scale *signal1SFT->im; */
-	  sumSFT->re = noise1SFT->re + h0scale *signal1SFT->re;
-	  sumSFT->im = noise1SFT->im + h0scale *signal1SFT->im;
-	  ++noise1SFT;
-	  ++signal1SFT;
-	  ++sumSFT;
+      /* adding signal+ noise SFT, TO BE CHECKED */ 
+           
+      for (iIFO=0; iIFO<numifo; iIFO++){
+        numsft =  inputSFTs->data[iIFO]->length;
+	for ( iSFT = 0; iSFT < numsft; iSFT++){
+	  
+	  noiseSFT = inputSFTs->data[iIFO]->data[iSFT].data->data;
+	  /*  or noiseSFT = inputSFTs->data[iIFO]->data[iSFT]->data->data; */
+	 
+	  signalSFT = signalSFTs->data[iIFO]->data[iSFT].data->data;
+	  /*  or signalSFT = signalSFTs->data[iIFO]->data[iSFT]->data->data; */
+	  
+	  sumSFT = sumSFTs->data[iIFO]->data[iSFT].data->data;
+	  /*  or sumSFT = sumSFTs->data[iIFO]->data[iSFT]->data->data; */
+	  
+	  for (j=0; j < sftlength; j++) {
+	    sumSFT->re = noiseSFT->re + h0scale *signalSFT->re;
+	    sumSFT->im = noiseSFT->im + h0scale *signalSFT->im;
+	    ++noiseSFT;
+	    ++signalSFT;
+	    ++sumSFT;
+	  }	 
 	}
-      } /*The sum should be fixed into sumSFTs */
+      }
       
+      /* ****************************************************************/
       /* clean sfts if required */
       if ( LALUserVarWasSet( &uvar_linefiles ) )
 	{
@@ -859,8 +876,8 @@ int main(int argc, char *argv[]){
       {   
 	MultiNoiseWeights *multweight = NULL;    
 	MultiPSDVector *multPSD = NULL;  
-	REAL8 dmpNormalization;
-	UINT4 iIFO, iSFT, numsft, j;
+	REAL8 dmpNormalization, sumWeightSquare;
+	UINT4 iIFO, iSFT, numsft, j, k;
 	/* normalize sfts */
 	LAL_CALL( LALNormalizeMultiSFTVect (&status, &multPSD, sumSFTs, uvar_blocksRngMed), &status);
 	
@@ -886,6 +903,13 @@ int main(int argc, char *argv[]){
 	
 	LAL_CALL( LALHOUGHNormalizeWeights( &status, &weightsV), &status);
 	
+        /* calculate the sum of the weights squared */
+        sumWeightSquare = 0.0;
+        for ( k = 0; k < mObsCoh; k++)
+          sumWeightSquare += weightsV.data[k] * weightsV.data[k];
+
+        /* standard deviation for noise only */
+        sigmaN = sqrt(sumWeightSquare * alphaPeak * (1.0 - alphaPeak));	
       }
       
       /* ****************************************************************/
@@ -925,9 +949,10 @@ int main(int argc, char *argv[]){
       controlN-=controlNN; /* substracts 1 every the near template was not the
 			      best*/
       /******************************************************************/
-      /* printing result in the proper file */
+      /* printing the significance in the proper file */
       /******************************************************************/
-      fprintf(fpNc, " %f ", maxNumberCount);
+      significance = (maxNumberCount - meanN)/sigmaN;
+      fprintf(fpNc, " %f ", significance);
       
     } /* closing loop for different h0 values */
     fprintf(fpNc, " \n");
