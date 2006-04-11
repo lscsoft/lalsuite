@@ -622,23 +622,23 @@ void LALLoadMultiSFTs ( LALStatus *status,
   /* the number of ifos can be at most equal to length */
   /* each ifo name is 2 characters + \0 */
 
-  numifoMax = 5; /* should be sufficient -- realloc used later in case required */
+  numifoMax = 3; /* should be sufficient -- realloc used later in case required */
 
-  if ( (ifolist = (CHAR **)LALCalloc( numifoMax, sizeof(CHAR *))) == NULL) {
+  if ( (ifolist = (CHAR **)LALCalloc( 1, numifoMax * sizeof(CHAR *))) == NULL) {
     ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
   }
-  if ( (sftLocationInCatalog = (UINT4 **)LALCalloc( numifoMax, sizeof(UINT4 *))) == NULL) {
+  if ( (sftLocationInCatalog = (UINT4 **)LALCalloc( 1, numifoMax * sizeof(UINT4 *))) == NULL) {
     ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
   }
-  if ( (numsfts = (UINT4 *)LALCalloc( numifoMax, sizeof(UINT4))) == NULL) {
+  if ( (numsfts = (UINT4 *)LALCalloc( 1, numifoMax * sizeof(UINT4))) == NULL) {
     ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
   }
 
   for ( k = 0; k < numifoMax; k++) {
-    if ( (ifolist[k] = (CHAR *)LALCalloc( 3, sizeof(CHAR))) == NULL) {
+    if ( (ifolist[k] = (CHAR *)LALCalloc( 1, 3*sizeof(CHAR))) == NULL) {
       ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
     }
-    if ( (sftLocationInCatalog[k] = (UINT4 *)LALCalloc( length, sizeof(UINT4))) == NULL) {
+    if ( (sftLocationInCatalog[k] = (UINT4 *)LALCalloc( 1, length*sizeof(UINT4))) == NULL) {
       ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
     }
   }
@@ -668,22 +668,22 @@ void LALLoadMultiSFTs ( LALStatus *status,
 	  /* and realloc if necessary */
 	  if ( numifo >= numifoMax )
 	    {
-	      numifoMaxNew = numifoMax + 5;
-	      if ( (ifolist = (CHAR **)LALRealloc( ifolist, numifoMaxNew)) == NULL) {
+	      numifoMaxNew = numifoMax + 3;
+	      if ( (ifolist = (CHAR **)LALRealloc( ifolist, numifoMaxNew * sizeof(CHAR *))) == NULL) {
 		ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
 	      }
-	      if ( (sftLocationInCatalog = (UINT4 **)LALRealloc( sftLocationInCatalog, numifoMaxNew)) == NULL) {
+	      if ( (sftLocationInCatalog = (UINT4 **)LALRealloc( sftLocationInCatalog, numifoMaxNew * sizeof(UINT4 *))) == NULL) {
 		ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
 	      }
-	      if ( (numsfts = (UINT4 *)LALRealloc( numsfts, numifoMaxNew)) == NULL) {
+	      if ( (numsfts = (UINT4 *)LALRealloc( numsfts, numifoMaxNew * sizeof(UINT4))) == NULL) {
 		ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
 	      }
 	      
-	      for ( k = numifoMax; k < numifoMaxNew; k++) {
-		if ( (ifolist[k] = (CHAR *)LALCalloc( 3, sizeof(CHAR))) == NULL) {
+	      for ( i = numifoMax; i < numifoMaxNew; i++) {
+		if ( (ifolist[i] = (CHAR *)LALCalloc( 1, 3*sizeof(CHAR))) == NULL) {
 		  ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
 		}
-		if ( (sftLocationInCatalog[k] = (UINT4 *)LALCalloc( length, sizeof(UINT4))) == NULL) {
+		if ( (sftLocationInCatalog[i] = (UINT4 *)LALCalloc( 1, length*sizeof(UINT4))) == NULL) {
 		  ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
 		}
 	      } /* loop from numifoMax to numifoMaxNew */
@@ -696,8 +696,9 @@ void LALLoadMultiSFTs ( LALStatus *status,
 	  sftLocationInCatalog[j][0] = k;
 	  numsfts[numifo] = 1;
 	  numifo++;
-	}
-    }
+
+	} /* else part of if ( j < numifo ) */ 
+    } /*  for ( k = 0; k < length; k++) */
 
   /* now we can create the catalogs */
   if ( (catalog = (SFTCatalog **)LALCalloc( numifo, sizeof(SFTCatalog *))) == NULL) {
