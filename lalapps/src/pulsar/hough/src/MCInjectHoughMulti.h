@@ -131,7 +131,7 @@ void PrintLogFile(LALStatus       *status,
                   CHAR            *dir, 
 		  CHAR            *basename, 
 		  CHAR            *skyfile, 
-		  LALStringVector *linefiles
+		  LALStringVector *linefiles,
 		  CHAR            *executable );
 
 		  

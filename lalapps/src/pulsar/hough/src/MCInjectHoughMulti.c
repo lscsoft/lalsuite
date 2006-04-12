@@ -43,8 +43,8 @@ extern int lalDebugLevel;
 
 #define ACCURACY 0.00000001 /* of the velocity calculation */
 #define MAXFILES 3000 /* maximum number of files to read in a directory */
-#define MAXFILENAMELENGTH 256 /* maximum # of characters  of a SFT filename */
-
+ 
+ 
 #define IFO 2         /*  detector, 1:GEO, 2:LLO, 3:LHO */
 #define THRESHOLD 1.6 /* thresold for peak selection, with respect to the
                               the averaged power in the search band */
@@ -87,7 +87,7 @@ int main(int argc, char *argv[]){
    
   EphemerisData              *edat = NULL;
   static REAL8Cart3CoorVector  velV;
-  static LIGOTimeGPSVector    *timeV=NULL;
+  static LIGOTimeGPSVector     timeV;
   MultiLIGOTimeGPSVector     *multiIniTimeV = NULL;
   static REAL8Vector          timeDiffV;
   LIGOTimeGPS                firstTimeStamp, lastTimeStamp;
@@ -130,13 +130,13 @@ int main(int argc, char *argv[]){
   UINT4  msp = 1; /*number of spin-down parameters */ 
   REAL8  numberCount,maxNumberCount;
   REAL8  numberCountV[NTEMPLATES];
-  UINT4   nTemplates, controlN, controlNN, controlNH;
+  UINT4  nTemplates, controlN, controlNN, controlNH;
    
-  UINT4   mObsCoh;
+  UINT4  mObsCoh;
   INT8   f0Bin, fLastBin;           /* freq. bin to perform search */
   REAL8  normalizeThr;
   REAL8  timeBase, deltaF;
-  REAL8  threshold, h0scale;
+  REAL8  h0scale;
 
   UINT4  sftlength; 
   INT4   fWings;
@@ -163,7 +163,7 @@ int main(int argc, char *argv[]){
   CHAR   *uvar_sunEphemeris=NULL;
   CHAR   *uvar_sftDir=NULL;
   CHAR   *uvar_dirnameOut=NULL;
-  CHAR   *uvar_fnameout=NULL;
+  CHAR   *uvar_fnameOut=NULL;
   CHAR   *uvar_ifo=NULL;
   CHAR   *uvar_skyfile=NULL;
   LALStringVector *uvar_linefiles=NULL;
@@ -212,8 +212,8 @@ int main(int argc, char *argv[]){
   uvar_dirnameOut = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_dirnameOut,DIROUT);
 
-  uvar_fnameout = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
-  strcpy(uvar_fnameout, FILEOUT);
+  uvar_fnameOut = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
+  strcpy(uvar_fnameOut, FILEOUT);
  
   uvar_skyfile = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_skyfile,SKYFILE);
@@ -232,7 +232,7 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris",    'S', UVAR_OPTIONAL, "Sun Ephemeris file",            &uvar_sunEphemeris),    &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir",          'D', UVAR_OPTIONAL, "SFT Directory",                 &uvar_sftDir),          &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "dirnameOut",      'o', UVAR_OPTIONAL, "Output directory",                      &uvar_dirnameOut),      &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameout",        '0', UVAR_OPTIONAL, "Output file prefix",            &uvar_fnameout),        &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameout",        '0', UVAR_OPTIONAL, "Output file prefix",            &uvar_fnameOut),        &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "alpha",           'r', UVAR_OPTIONAL, "Right ascension",               &uvar_alpha),           &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "delta",           'l', UVAR_OPTIONAL, "Declination",                   &uvar_delta),           &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "patchSizeAlpha",  'R', UVAR_OPTIONAL, "Patch size in right ascension", &uvar_patchSizeAlpha),  &status);
@@ -369,21 +369,21 @@ int main(int argc, char *argv[]){
     CHAR filename[MAXFILENAMELENGTH];
     
     /* the paramerter file */
-    strcpy( filename, uvar_fnameout);
+    strcpy( filename, uvar_fnameOut);
     strcat( filename, "_par");
     fpPar= fopen(filename, "w"); /* where to write the parameters */
     /*setlinebuf(fpPar);*/  /* line buffered on */
     setvbuf(fpPar, (char *)NULL, _IOLBF, 0);
     
     /* the  file  with the h0 values */
-    strcpy( filename, uvar_fnameout);
+    strcpy( filename, uvar_fnameOut);
     strcat( filename, "_h0");
     fpH0= fopen(filename, "w"); /* where to write the parameters */
     /*setlinebuf(fpH0); */ /* line buffered on */
     setvbuf(fpH0, (char *)NULL, _IOLBF, 0); 
    
     /* the  file  with the the number-counts for different h0 values */
-    strcpy( filename, uvar_fnameout);
+    strcpy( filename, uvar_fnameOut);
     strcat( filename, "_nc");
     fpNc= fopen(filename, "w"); /* where to write the parameters */
     /*setlinebuf(fpNc);*/  /* line buffered on */
@@ -403,7 +403,6 @@ int main(int argc, char *argv[]){
     SFTCatalog *catalog = NULL;
     static SFTConstraints constraints;
 
-    CHAR    *tempDir;
     REAL8   doppWings, fmin, fmax;
     INT4    length;
 
@@ -481,7 +480,7 @@ int main(int argc, char *argv[]){
       signalSFTs->data[iIFO] = NULL;      
     }
     
-    LAL_CALL( LALCreateMultiSFTVector(&status, sumSFTs, binsSFT, &numsft), &status);
+    LAL_CALL( LALCreateMultiSFTVector(&status, &sumSFTs, binsSFT, &numsft), &status);
     LALFree( numsft.data);
      
   }
@@ -545,7 +544,7 @@ int main(int argc, char *argv[]){
         timeV.data[j] = mdetStates->data[iIFO]->data[iSFT].tGPS;
       } /* loop over SFTs */
       
-      LAL_CALL( LALGetSFTtimestamps(&status, multiIniTimeV->data[j], inputSFTs->data[j] ), &status);
+      LAL_CALL( LALGetSFTtimestamps(&status, &multiIniTimeV->data[j], inputSFTs->data[j] ), &status);
     } /* loop over IFOs */
     
     /* compute the time difference relative to startTime for all SFT */
@@ -553,7 +552,7 @@ int main(int argc, char *argv[]){
       timeDiffV.data[j] = XLALGPSDiff( timeV.data + j, &firstTimeStamp );
     
      /* removing mid time-stamps, no longer needed now */
-    LAL_CALL(LALDestroyTimestampVector ( &status, &timeV), &status); 
+    LALFree(timeV.data); 
    
   }
   
@@ -710,7 +709,7 @@ int main(int argc, char *argv[]){
     
     /* find the nearest patch in order to compute the weights accordingly */
     LAL_CALL(FindNearestPatch( &status, pulsarInject.latitude,
-			       pulsarInject.longitude, &skyPatchCenterV, skyIndex);
+			       pulsarInject.longitude, &skyPatchCenterV, skyIndex), &status );
 	     
     /* writing the parameters into fpPar, following the format
        MCloopId  I.f0 H.f0 I.f1 H.f1 I.alpha H.alpha I.delta H.delta I.phi0  I.psi
@@ -770,7 +769,7 @@ int main(int argc, char *argv[]){
        params.site = &(mdetStates->data[iIFO]->detector);
        sftParams.timestamps = multiIniTimeV->data[iIFO];
        LAL_CALL( LALGeneratePulsarSignal(&status, &signalTseries, &params ), &status);
-       LAL_CALL( LALSignalToSFTs(&status, signalSFTs->data[iIFO], signalTseries, &sftParams), &status);
+       LAL_CALL( LALSignalToSFTs(&status, &signalSFTs->data[iIFO], signalTseries, &sftParams), &status);
            
        LALFree(signalTseries->data->data);
        LALFree(signalTseries->data);
@@ -879,8 +878,8 @@ int main(int argc, char *argv[]){
 	
 	LAL_CALL ( LALDestroyMultiNoiseWeights ( &status, &multweight), &status);
 	
-	for (j=0, j<mObsCoh, j++){
-	  weightsV.data[j] = weightsNoise.data[j]*weightsAMsky[skyIndex].data[j];
+	for (j=0; j<mObsCoh; j++){
+	  weightsV.data[j] = weightsNoise.data[j]*weightsAMskyV[skyIndex].data[j];
 	}
 	
 	LAL_CALL( LALHOUGHNormalizeWeights( &status, &weightsV), &status);
@@ -952,7 +951,7 @@ int main(int argc, char *argv[]){
       UINT4 iIFO;
       
       for(iIFO = 0; iIFO<numifo; iIFO++){
-        LAL_CALL(LALDestroySFTVector(&status, signalSFTs->data[iIFO]),&status );
+        LAL_CALL(LALDestroySFTVector(&status, &signalSFTs->data[iIFO]),&status );
 	signalSFTs->data[iIFO] = NULL;
       }
     }
@@ -988,7 +987,7 @@ int main(int argc, char *argv[]){
   LALFree(foft.data);
   LALFree(h0V.data);
   {
-     INT4 j;
+     UINT4 j;
      for (j=0;j<nTemplates;++j) {
         LALFree(foftV[j].data);
      }
@@ -1021,7 +1020,7 @@ int main(int argc, char *argv[]){
   
 
   LAL_CALL(LALDestroyMultiSFTVector(&status, &inputSFTs),&status );
-  LAL_CALL(LALDestroyMultiSFTVector(&status, &sumSFTs),&status )
+  LAL_CALL(LALDestroyMultiSFTVector(&status, &sumSFTs),&status );
   LALFree(signalSFTs->data);
   LALFree(signalSFTs);
  
