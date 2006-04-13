@@ -3,7 +3,7 @@
   $Id$
 */
 
-/* Matt Pitkin - 07/02/06 ------------- heterodyne.c */
+/* Matt Pitkin - 07/02/06 ------------- heterodyne_pulsar.c */
 
 /* lalapps code to perform a coarse/fine heterodyne on LIGO or GEO data given a set of frequency
 parameters. The heterodyne can either be a 2 stage process with the code run for a coarse
@@ -25,7 +25,6 @@ int main(int argc, char *argv[]){
   Filters iirFilters;
 
   FILE *fpin=NULL, *fpout=NULL;
-  //CHAR framelist[MAXNUMFRAMES][MAXSTRLENGTH]; /* list of file names in frame cache file */
   FrameCache cache;
   INT4 frcount=0, count=0;
 
@@ -46,7 +45,7 @@ int main(int argc, char *argv[]){
   /* read in pulsar data */
   LALReadTEMPOParFile(&status, &hetParams.het, inputParams.paramfile);
 
-  if(inputParams.heterodyneflag == 1) // if performing fine heterdoyne using same params as coarse
+  if(inputParams.heterodyneflag == 1) /*if performing fine heterdoyne using same params as coarse*/
     hetParams.hetUpdate = hetParams.het;
 
   hetParams.samplerate = inputParams.samplerate;
@@ -88,7 +87,7 @@ int main(int argc, char *argv[]){
     frcount=0;
     while(fscanf(fpin, "%s%s%d%d file://localhost%s", det, type, &cache.starttime[frcount],
 &cache.duration[frcount], cache.framelist[frcount]) != EOF){
-      // fscanf(fpin, "%s", framelist[frcount]);
+      /* fscanf(fpin, "%s", framelist[frcount]);*/
       frcount++;
     }
     fclose(fpin);
@@ -141,8 +140,6 @@ int main(int argc, char *argv[]){
       hetParams.length = inputParams.samplerate * duration;
       gpstime = (REAL8)starts->data[count];
 
-      /*smalllist = set_frame_files(&starts->data[count], &stops->data[count], framelist, frcount,
-      &count);*/
       smalllist = set_frame_files(&starts->data[count], &stops->data[count], cache, frcount,
       &count);
 
@@ -426,19 +423,15 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
         sprintf(inputParams->segfile, optarg);
         break;
       case 'R':
-        //sprintf(inputParams->calibfiles.responsefunctionfile, optarg);
         inputParams->calibfiles.responsefunctionfile = optarg;
         break;
       case 'C':
-        //sprintf(inputParams->calibfiles.calibcoefficientfile, optarg);
         inputParams->calibfiles.calibcoefficientfile = optarg;
         break;
       case 'F':
-        //sprintf(inputParams->calibfiles.sensingfunctionfile, optarg);
         inputParams->calibfiles.sensingfunctionfile = optarg;
         break;
       case 'O':
-        //sprintf(inputParams->calibfiles.openloopgainfile, optarg);
         inputParams->calibfiles.openloopgainfile = optarg;
         break;
       case 'T':
@@ -452,7 +445,8 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
   }
 
   /* set more defaults */
-  if(inputParams->resamplerate==0)//if the resample rate hasn't been defined set equal tosamplerate
+  /*if the resample rate hasn't been defined set equal to samplerate*/
+  if(inputParams->resamplerate==0)
     inputParams->resamplerate = inputParams->samplerate;
 
   /* check that sample rate / resample rate is an integer */
@@ -462,7 +456,7 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
   }
 }
 
-// heterodyne data function
+/* heterodyne data function */
 void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times, HeterodyneParams hetParams){
   static LALStatus status;
 
@@ -638,7 +632,7 @@ duration){
   dblseries->data = XLALCreateREAL8Vector( length );
 
   /* get data */
-  // read in frame data
+  /* read in frame data */
   if((frvect = FrFileIGetV(frfile, dblseries->name, time, (REAL8)duration)) == NULL)
     return NULL; /* couldn't read frame data */
   FrFileIEnd(frfile);
@@ -842,13 +836,10 @@ type: num starts stops dur */
 }
 
 /* get frame data for partcular science segment */
-/*CHAR *set_frame_files(INT4 *starts, INT4 *stops, CHAR framelist[][MAXSTRLENGTH], INT4
-numFrames, INT4 *position){*/
 CHAR *set_frame_files(INT4 *starts, INT4 *stops, FrameCache cache, INT4 numFrames, INT4 *position){
   INT4 i=0;
   INT4 durlock; /* duration of locked segment */
-  //REAL8 gpstime;
-  INT4 tempstart, tempstop;//, duration;
+  INT4 tempstart, tempstop;
   INT4 check=0;
   CHAR *smalllist=NULL;
 
@@ -863,20 +854,6 @@ CHAR *set_frame_files(INT4 *starts, INT4 *stops, FrameCache cache, INT4 numFrame
     tempstop = tempstart + MAXDATALENGTH;
 
   for(i=0;i<numFrames;i++){
-    /*get_frame_times(framelist[i], &gpstime, &duration);
-    
-    if(tempstart >= gpstime && tempstart < gpstime+duration && gpstime < tempstop){
-      if(check == 0){
-        sprintf(smalllist, "%s %d %d ", framelist[i], (INT4)gpstime, duration);
-        check++;
-      }
-      else{
-        sprintf(smalllist, "%s %s %d %d ", smalllist, framelist[i], (INT4)gpstime, duration);
-      }
-      tempstart += duration;
-    }*/
-    /* else if(gpstime > tempstop)  break out the loop when we have all the files for the segment 
-      break; */
     if(tempstart >= cache.starttime[i] && tempstart < cache.starttime[i]+cache.duration[i] &&
        cache.starttime[i] < tempstop){
       if(check == 0){
@@ -889,10 +866,9 @@ CHAR *set_frame_files(INT4 *starts, INT4 *stops, FrameCache cache, INT4 numFrame
       }
       tempstart += cache.duration[i];
     }
-    else if(cache.starttime[i] > tempstop){ /* break out the loop when we have all the files for the
-segment */
+    /* break out the loop when we have all the files for the segment */
+    else if(cache.starttime[i] > tempstop)
       break;
-    }
   }
 
   if(durlock > MAXDATALENGTH){ /* set starts to its value plus MAXDATALENGTH */

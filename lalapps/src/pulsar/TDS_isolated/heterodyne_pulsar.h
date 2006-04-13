@@ -3,9 +3,9 @@
   $Id$
 */ 
 
-/* Matt Pitkin 09/02/06 -------------- heterodyne.h */
+/* Matt Pitkin 09/02/06 -------------- heterodyne_pulsar.h */
 
-/* header file for heterodyne.c */
+/* header file for heterodyne_pulsar.c */
 
 #ifndef _HETERODYNE_PULSAR_H
 #define _HETERODYNE_PULSAR_H
@@ -55,8 +55,8 @@ extern "C" {
 " --filter-knee       knee frequency of low-pass filter (don't filter if = 0)\n"\
 " --sample-rate       sample rate of input data\n"\
 " --resample-rate     sample rate for output data (i.e. 1, 1/60, 8192 etc) \n"\
-" --data-file         file containing list of frame files or previously\n\
-                      heterodyned data file\n"\
+" --data-file         file containing list of frame files (in frame cache format)\n\
+                      or previously heterodyned data file\n"\
 " --channel           frame data channel (i.e. LSC-DARM_ERR)\n"\
 " --output-dir        directory for output data files\n"\
 " --seg-file          name of file containing science segment list\n"\
@@ -168,8 +168,6 @@ duration);
 INT4 get_segment_list(INT4Vector *starts, INT4Vector *stops, CHAR *seglistfile);
 
 /* get frame data for partcular science segment */
-/*CHAR *set_frame_files(INT4 *starts, INT4 *stops, CHAR framelist[][MAXSTRLENGTH], INT4
-numFrames, INT4 *position);*/
 CHAR *set_frame_files(INT4 *starts, INT4 *stops, FrameCache cache, INT4 numFrames, INT4 *position);
 
 /* calibrate data */
