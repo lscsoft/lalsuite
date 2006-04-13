@@ -317,8 +317,13 @@ if int(seglist) == 0:
            wizlist[i] = [i,seg[0],seg[1],seg.duration()]
            i += 1
     
-    pickle.dump(wizlist, f)
+    try:
+      pickle.dump(wizlist, f)
     
+    except Exception, e:
+      print >> sys.stderr, "Could not pickle the data, boo!"
+      sys.exit(1)
+      
     f.close()
          
   except Exception, e:
