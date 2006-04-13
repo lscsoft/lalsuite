@@ -313,7 +313,7 @@ def single_coinc(ifo_analyzed,ifo_name,ifo_single,single_coinc_job,dag,
 ##############################################################################
 # function to do thinca on coincident IFO data  
 def thinca_coinc(ifos,single_data_analyzed,coinc_segs,coinc_job,
-    dag,do_coinc,do_insp,grbInjections, usertag=None,ifotag=None,slides=None):
+    dag,do_coinc,do_insp, grbInjections, usertag=None,ifotag=None,slides=None):
   """
   Run thinca on the coincident times from each of the sets of IFOs. 
   Since the way we treat all this data is the same, this function is the same 
@@ -1516,7 +1516,7 @@ for this_approx in approximants:
     if opts.td_follow_inspiral:
       coinc2_nodes[ifos] = thinca_coinc(ifos,analyzed_coinc_data[ifos],
           analyzed_data[ifos],thinca2_jobs[ifos],dag,opts.second_coinc,
-          opts.td_follow_inspiral,usertag,ifos+"_"+this_approx)
+          opts.td_follow_inspiral,grbInjections,usertag,ifos+"_"+this_approx)
     else:
       coinc2_nodes[ifos] = thinca_coinc(ifos,analyzed_coinc_data[ifos],
         analyzed_data[ifos],thinca2_jobs[ifos],dag,opts.second_coinc,
@@ -1529,11 +1529,11 @@ for this_approx in approximants:
       if opts.td_follow_inspiral:
         coinc2_slide_nodes[ifos] = thinca_coinc(ifos,
           analyzed_coinc_data[ifos],analyzed_data[ifos],thinca2_slide_jobs[ifos],
-          dag,opts.second_coinc,opts.inspiral_veto,usertag,ifos+'_'+this_approx,num_slides)
+          dag,opts.second_coinc,opts.inspiral_veto,grbInjections,usertag,ifos+'_'+this_approx,num_slides)
       else:
         coinc2_slide_nodes[ifos] = thinca_coinc(ifos,
           analyzed_coinc_data[ifos],analyzed_data[ifos],thinca2_slide_jobs[ifos],
-          dag,opts.second_coinc,opts.inspiral_veto,usertag,ifos,num_slides)
+          dag,opts.second_coinc,opts.inspiral_veto,grbInjections,usertag,ifos,num_slides)
   
     # Step 8 sire: Run sire triggers
     # Do sire with all coincidenct triggers, and clustered sires for each ifo
