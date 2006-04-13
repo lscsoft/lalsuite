@@ -21,7 +21,6 @@ import sys
 import os
 import getopt
 import re
-import pickle
 import string
 import tempfile
 import ConfigParser
@@ -310,19 +309,12 @@ if int(seglist) == 0:
       if len( seglist ) == 0:
         print >> sys.stderr, "No segments found!"
       else: # output format will be segwizard style
-        wizlist = []
-        
-        i = 0
+        i = 1
         for seg in seglist:
-           wizlist[i] = [i,seg[0],seg[1],seg.duration()]
+           wizlist = str(i) + ' ' + str(seg[0]) + ' ' + str(seg[1]) + ' ' + str(seg.duration()) +\
+'\n'
+           f.write(wizlist)
            i += 1
-    
-    try:
-      pickle.dump(wizlist, f)
-    
-    except Exception, e:
-      print >> sys.stderr, "Could not pickle the data, boo!"
-      sys.exit(1)
       
     f.close()
          
@@ -332,7 +324,7 @@ if int(seglist) == 0:
   
 elif seglist != None:
   # set seglist file from value in the config file
-  seg_list = cp.get('data','seg_list')
+  seg_list_file = cp.get('data','seg_list')
   
 if do_coarse:
   param_files = os.listdir(pulsar_param_dir)
@@ -364,7 +356,7 @@ if do_coarse:
       coarse[j].set_sample_rate(sample_rate)
       coarse[j].set_resample_rate(resample_rate)
       coarse[j].set_data_file(df.get_output()) # get frame cache from here!
-      coarse[j].set_seg_list(seg_list)
+      coarse[j].set_seg_list(seg_list_file)
      
       coarse[j].add_parent(df)
       
