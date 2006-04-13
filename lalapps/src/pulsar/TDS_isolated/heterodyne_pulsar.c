@@ -98,7 +98,8 @@ int main(int argc, char *argv[]){
 
   /* set filters - values held for the whole data set so we don't get lots of glitches from the
   filter ringing */
-  set_filters(&iirFilters, inputParams.filterknee, inputParams.samplerate);
+  if(inputParams.filterknee > 0.0)
+    set_filters(&iirFilters, inputParams.filterknee, inputParams.samplerate);
 
   if(inputParams.heterodyneflag == 0){
     sprintf(outputfile, "%s/coarsehet_%s_%s_%d-%d", inputParams.outputdir, inputParams.pulsar,
@@ -217,7 +218,7 @@ int main(int argc, char *argv[]){
     heterodyne_data(data, times, hetParams);
 
     /* filter data */
-    if(inputParams.filterknee!=0) /* filter if knee frequency is not zero */
+    if(inputParams.filterknee > 0.) /* filter if knee frequency is not zero */
       filter_data(data, &iirFilters);
 
     if(inputParams.heterodyneflag==0){
@@ -771,7 +772,7 @@ into each science segment (starts and stops) */
 
       remainder = duration%size;
 
-      for(j=prevdur+floor(remainder/2);j<prevdur+duration-ceil(remainder/2)-1;j+=size){
+      for(j=prevdur+floor(remainder/2);j<prevdur+duration-ceil(remainder/2);j+=size){
         tempData.re = 0.;
         tempData.im = 0.;
 
