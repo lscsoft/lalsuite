@@ -186,7 +186,7 @@ int main(int argc, char *argv[]){
       fprintf(stderr, "Reading heterodyned data from %s.\n", inputParams.datafile);
 
       while(fscanf(fpin, "%lf%lf%lf",&times->data[i],&data->data->data[i].re,
-            &data->data->data[i].im) != EOF);
+            &data->data->data[i].im) != EOF){
         if(i==0)
           hetParams.timestamp = times->data[i]; /* set initial time stamp */
 
