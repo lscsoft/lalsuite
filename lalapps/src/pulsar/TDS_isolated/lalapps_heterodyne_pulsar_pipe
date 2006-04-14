@@ -357,6 +357,7 @@ if do_coarse:
       coarse[j].set_resample_rate(resample_rate)
       coarse[j].set_data_file(df.get_output()) # get frame cache from here!
       coarse[j].set_seg_list(seg_list_file)
+      coarse[j].set_channel(channel)
      
       coarse[j].add_parent(df)
       
