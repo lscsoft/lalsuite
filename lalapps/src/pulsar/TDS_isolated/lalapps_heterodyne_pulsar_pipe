@@ -205,15 +205,15 @@ resample_rate = cp.get('input','resample_rate')
 channel = cp.get('input','channel')
 stddev_thresh = cp.get('input','stddev_thresh')
 
+# output file
+output_dir = cp.get('output', 'output_path')
+
 # make DAGs
 if do_datafind:
   df = heterodyne_pulsar.LSCDataFindNode(df_job)
   
   #server = cp.get('datafind','server')
   #df.set_server(server)
-  
-  data_type = cp.get('datafind','data_type')
-  df.set_type(data_type)
   
   # set observatory for LSCdataFind
   if (detector.find('H1') > -1) | (detector.find('H2') > -1):
@@ -358,6 +358,8 @@ if do_coarse:
       coarse[j].set_data_file(df.get_output()) # get frame cache from here!
       coarse[j].set_seg_list(seg_list_file)
       coarse[j].set_channel(channel)
+      
+      coarse[j].set_output_dir(output_dir)
      
       coarse[j].add_parent(df)
       
@@ -423,6 +425,8 @@ os._exists(sensing_function)):
           sys.exit(1)
           
       fine[j].set_stddev_thresh(stddev_thresh)
+      
+      fine[j].set_output_dir(output_dir)
       
       dag.add_node(fine[j])
       j = j+1
