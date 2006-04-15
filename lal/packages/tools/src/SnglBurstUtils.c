@@ -128,7 +128,6 @@ static INT8 min(INT8 a, INT8 b)
 		return(b);
 }*/
 
-
 static void findmatchingconf(const SnglBurstTable *a, SnglBurstTable *b, SnglBurstTable *c)
 {
   if (fabs(a->confidence - b->confidence) > fabs(a->confidence - c->confidence))
@@ -168,6 +167,51 @@ XLALFreeSnglBurst (
   LALFree( *eventHead );
 
   return (0);
+}
+
+
+/*
+ * This function removes triggers that are within any times in the segment list
+ * provided. It is ripped off SnglInspiralUtils.c
+ */
+
+
+SnglBurstTable * 
+XLALVetoSnglBurst (
+    SnglBurstTable             *eventHead,
+    LALSegList                 *vetoSegs 
+    )
+/* </lalVerbatim> */
+{
+SnglBurstTable      *thisEvent = NULL;
+SnglBurstTable      *prevEvent = NULL;
+
+  thisEvent = eventHead;
+  eventHead = NULL;
+  
+  while ( thisEvent )
+  {
+    /*-- Check the time of this event against the veto segment list --*/
+    if ( XLALSegListSearch( vetoSegs, &(thisEvent->peak_time) )  ) 
+    {
+      /*-- This event's end_time falls within one of the veto segments --*/
+      /* discard the trigger and move to the next one */
+      SnglBurstTable  *tmpEvent = NULL;
+      if ( prevEvent ) prevEvent->next = thisEvent->next;
+      tmpEvent = thisEvent;
+      thisEvent = thisEvent->next;
+      XLALFreeSnglBurst ( &tmpEvent );
+    } 
+    else 
+    {
+      /* This signle burst trigger does not fall within any veto segment */
+      /* keep the trigger and increment the count of triggers */
+      if ( ! eventHead ) eventHead = thisEvent;
+      prevEvent = thisEvent;
+      thisEvent = thisEvent->next;
+    }
+  }
+  return( eventHead );
 }
 
 

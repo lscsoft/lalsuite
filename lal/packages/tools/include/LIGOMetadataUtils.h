@@ -960,6 +960,12 @@ XLALCoincSimInspiralTest (
  *
  */
 
+SnglBurstTable *
+XLALVetoSnglBurst(
+    SnglBurstTable             *eventHead,
+    LALSegList                 *vetoSegs 
+    );
+
 int
 XLALFreeSnglBurst (
     SnglBurstTable **eventHead
