@@ -11,6 +11,8 @@
 #include <lal/FrameCache.h>
 #include <lalapps.h>
 #include <lal/BurstUtils.h>
+#include <lal/Segments.h>
+#include <lal/SegmentsIO.h>
 
 int snprintf(char *str, size_t size, const char *format, ...);
 
@@ -69,6 +71,7 @@ struct options_t {
 	int globtrig;
 	char *globdir;
 	char *ifoCut;
+        char *vetoFile; 
 	int outtxt;
 	int playground;
 	int noplayground;
@@ -133,6 +136,7 @@ static void set_option_defaults(struct options_t *options)
 	options->sort = FALSE;
 	options->clusterchoice = undefined;
 	options->ifoCut = NULL;
+	options->vetoFile = NULL;
 
 	options->maxConfidenceFlag = FALSE;
 	options->maxConfidence = 0.0;
@@ -196,6 +200,7 @@ static void parse_command_line(int argc, char **argv, struct options_t *options,
 		{"trig-stop-time", required_argument, NULL, 'r'},
 		{"globtrig", required_argument, NULL, 's'},
 		{"ifo-cut", required_argument,  NULL,  'p'},
+		{"veto-file", required_argument,  NULL,  'v'},
 		{"playground", no_argument, &options->playground, TRUE},
 		{"noplayground", no_argument, &options->noplayground, TRUE},
 		{"help", no_argument, NULL, 'o'},
@@ -208,7 +213,7 @@ static void parse_command_line(int argc, char **argv, struct options_t *options,
 	*infile = *outfile = *outtxt = NULL;
 
 	do {
-		switch (c = getopt_long(argc, argv, "a:b:c:d:e:f:g:h:i:j:k:l:m:n:q:r:s:p:o", long_options, &option_index)) {
+		switch (c = getopt_long(argc, argv, "a:b:c:d:e:f:g:h:i:j:k:l:m:n:q:r:s:p:v:o", long_options, &option_index)) {
 		case -1:
 		case 0:
 			break;
@@ -383,6 +388,12 @@ static void parse_command_line(int argc, char **argv, struct options_t *options,
 			 * only events with this ifo are selected
 			 */
 			options->ifoCut = optarg;
+			break;
+		case 'v':
+			/*
+			 * only events with this ifo are selected
+			 */
+			options->vetoFile = optarg;
 			break;
 
 		case ':':
@@ -685,6 +696,7 @@ int main(int argc, char **argv)
 	FrCache *fileCache = NULL;
 	FrCacheSieve fileCacheSieve;
 	UINT4 j;
+	LALSegList vetoSegs;
 
 
 
@@ -735,6 +747,15 @@ int main(int argc, char **argv)
 		fprintf(fpout, "# This file contains the start & stop times of all jobs that succeded\n");
 	} else
 		fpout = NULL;
+
+	/* read in the veto file (if specified) */
+	if ( options.vetoFile )
+	  {
+	    XLALSegListInit( &vetoSegs );
+	    LAL_CALL( LALSegListRead( &stat, &vetoSegs, options.vetoFile, NULL ), 
+		      &stat );
+	    XLALSegListCoalesce( &vetoSegs );
+	  }
 
 	burstEventList = NULL;
 	addpoint = &burstEventList;
@@ -844,6 +865,22 @@ int main(int argc, char **argv)
 		searchsumm.searchSummaryTable->out_start_time = searchsumm.searchSummaryTable->in_start_time;
 		searchsumm.searchSummaryTable->out_end_time = searchsumm.searchSummaryTable->in_end_time;
 	}
+
+	/* veto events */
+	if(burstEventList) 
+	  {
+	    int numFileTriggers;
+	    if ( options.vetoFile )
+	      {
+		 numFileTriggers = XLALCountSnglBurst( burstEventList);
+		 fprintf( stdout, "Had %d triggers before applying vetos\n",
+			  numFileTriggers );
+		 burstEventList = XLALVetoSnglBurst( burstEventList, &vetoSegs );
+		 numFileTriggers = XLALCountSnglBurst( burstEventList);
+		 fprintf( stdout, "Have %d triggers after applying vetos\n",
+			  numFileTriggers );
+	      }
+	  }
 
 	LAL_CALL(LALBeginLIGOLwXMLTable(&stat, &xmlStream, search_summary_table), &stat);
 	LAL_CALL(LALWriteLIGOLwXMLTable(&stat, &xmlStream, searchsumm, search_summary_table), &stat);
