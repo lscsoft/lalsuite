@@ -861,7 +861,7 @@ int main(int argc, char **argv)
 		while(list->next) {
 			list = list->next;
 		}
-		XLALINT8toGPS(&(searchsumm.searchSummaryTable->out_end_time), XLALGPStoINT8(&(list->start_time)) + 1e9 * list->duration);
+		XLALINT8toGPS(&(searchsumm.searchSummaryTable->in_end_time), XLALGPStoINT8(&(list->start_time)) + 1e9 * list->duration);
 		searchsumm.searchSummaryTable->out_start_time = searchsumm.searchSummaryTable->in_start_time;
 		searchsumm.searchSummaryTable->out_end_time = searchsumm.searchSummaryTable->in_end_time;
 	}
