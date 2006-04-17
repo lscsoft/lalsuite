@@ -36,7 +36,7 @@ int main(int argc, char *argv[]){
   CHAR *smalllist=NULL; /* list of frame files for a science segment */
 
   REAL8Vector *times=NULL; /* times of data read from coarse heterodyne file */
-
+  
   /* get input options */
   get_input_args(&inputParams, argc, argv);
 
@@ -153,10 +153,12 @@ int main(int argc, char *argv[]){
         fprintf(stderr, "Error... could not open frame files between %d and %d.\n", (INT4)gpstime,
         (INT4)gpstime + duration);
 
-        fprintf(stderr, "I've read in the data.\n");
-
         if(count < numSegs){
           count++; /* if not finished reading in all data try next set of frames */
+          
+          XLALDestroyCOMPLEX16Vector( data->data );
+          LALFree(data);
+          
           continue;
         }
         else
@@ -298,23 +300,20 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
     { "stddev-thresh",            required_argument,  0, 'T' },
     { 0, 0, 0, 0 }
   };
-
+  
   char args[] = "h:i:p:z:f:g:k:s:r:d:c:o:e:S:l:R:C:F:O:T";
   char *program = argv[0];
-
+  
   /* set defaults */
   inputParams->filterknee = 1.0; /* filter knee frequency of 1 Hz */
   inputParams->resamplerate = 0.; /* resample to 1 Hz */
   inputParams->samplerate = 0.;
   inputParams->calibrate = 0;
   inputParams->stddevthresh = 0.;
-  /*sprintf(inputParams->calibfiles.calibcoefficientfile, "%s", "");
-  sprintf(inputParams->calibfiles.sensingfunctionfile, "%s", "");
-  sprintf(inputParams->calibfiles.openloopgainfile, "%s", "");*/
   inputParams->calibfiles.calibcoefficientfile = NULL;
   inputParams->calibfiles.sensingfunctionfile = NULL;
   inputParams->calibfiles.openloopgainfile = NULL;
-
+  
   /* get input arguments */
   while(1){
     int option_index = 0;
@@ -617,19 +616,19 @@ duration){
   LIGOTimeGPS epoch;
   INT4 i;
 
-  dblseries = LALCalloc(1, sizeof(*dblseries));
-
-  epoch.gpsSeconds = (UINT4)floor(time);
-  epoch.gpsNanoSeconds = (UINT4)(1.e9*(time-floor(time)));
-  dblseries->epoch = epoch;
   /* open frame file for reading */
   if((frfile = FrFileINew(framefile)) == NULL)
     return NULL; /* couldn't open frame file */
-
-  strncpy( dblseries->name, channel, sizeof( dblseries->name ) - 1 );
-
+  
   /* create data memory */
+  dblseries = LALCalloc(1, sizeof(*dblseries));
   dblseries->data = XLALCreateREAL8Vector( length );
+  
+  epoch.gpsSeconds = (UINT4)floor(time);
+  epoch.gpsNanoSeconds = (UINT4)(1.e9*(time-floor(time)));
+  dblseries->epoch = epoch;
+  
+  strncpy( dblseries->name, channel, sizeof( dblseries->name ) - 1 );
 
   /* get data */
   /* read in frame data */
