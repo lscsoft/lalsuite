@@ -36,7 +36,7 @@ detectors and signals with random parameters in background noise.
 #include <lal/RealFFT.h>
 
 #ifdef  __cplusplus
-extern "C" {
+extern "C" { 
 #endif
 
     NRCSID( LALNOISEMODELSH, "$Id$" );
@@ -214,7 +214,14 @@ extern "C" {
 
                 INT4  coalescenceTime ;/* bin in which is maximum of the chirp (coalescence time)*/
 
-            } 
+                /* These are for spin Taylor waveforms */
+                REAL8 minDistance, maxDistance;
+                REAL8 spin1min, spin1max, spin2min, spin2max;
+                REAL8 theta0min, theta0max, phi0min, phi0max;
+                REAL8 polarisationAngleMin, polarisationAngleMax, polarisationAngle;
+                REAL8 sourceThetaMin, sourceThetaMax, sourcePhiMin, sourcePhiMax;
+                REAL8 inclinationMin, inclinationMax;
+            }  
     RandomInspiralSignalIn;
     /*  </lalVerbatim>  */
 
