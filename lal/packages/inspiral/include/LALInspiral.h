@@ -40,7 +40,7 @@ Header file for the template generation codes.
 
  
 #ifdef  __cplusplus
-extern "C" {
+extern "C" { 
 #endif
 
 NRCSID( LALINSPIRALH, "$Id$" );
@@ -444,7 +444,8 @@ typedef enum {
    bhns, 
    fixedMasses, 
    fixedPsi, 
-   fixedTau
+   fixedTau,
+   massesAndSpin
  } InputMasses;
 /* </lalVerbatim>  */
 
@@ -458,7 +459,7 @@ typedef enum {
 /* <lalVerbatim file="LALInspiralTemplateH">  */
 typedef struct
 tagInspiralTemplate
-{
+{ 
 /*  Parameters needed to generate Taylor/Pade waveforms */
   Approximant approximant;
   Order order;
