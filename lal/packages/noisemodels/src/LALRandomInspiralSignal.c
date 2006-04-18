@@ -149,12 +149,12 @@ LALAddVectors
 %Laldoc Closed at: Wed Jan 16 08:39:35 2002
 
 </lalLaTeX>  */
+#include <lal/LALStdlib.h>
 #include <lal/LALNoiseModels.h>
 #include <lal/Random.h>
 #include <lal/GenerateInspiral.h>
 #include <lal/GeneratePPNInspiral.h>
 #include <SkyCoordinates.h>
-#include <lal/LALStdlib.h>
 
 #define random() rand()
 #define srandom( seed ) srand( seed )
@@ -177,11 +177,12 @@ NRCSID (LALRANDOMINSPIRALSIGNALC, "$Id$");
 
 /*  <lalVerbatim file="LALRandomInspiralSignalCP"> */
 
-void LALRandomInspiralSignal (
-        LALStatus              *status, 
-        REAL4Vector            *signal,
-        RandomInspiralSignalIn *randIn
-        )
+void LALRandomInspiralSignal 
+(
+ LALStatus              *status, 
+ REAL4Vector            *signal,
+ RandomInspiralSignalIn *randIn
+ )
 {  /*  </lalVerbatim>  */
 
     REAL8                   maxTemp; /* temporary variable*/
@@ -205,8 +206,7 @@ void LALRandomInspiralSignal (
     ASSERT (randIn->type <= 2, status, LALNOISEMODELSH_ESIZE, LALNOISEMODELSH_MSGESIZE);
 
     buff.length = signal->length;
-    if (!(buff.data = (REAL4*) LALCalloc(buff.length, sizeof(REAL4)) )) 
-    {
+    if (!(buff.data = (REAL4*) LALCalloc(buff.length, sizeof(REAL4)) )) {
         ABORT (status, LALNOISEMODELSH_EMEM, LALNOISEMODELSH_MSGEMEM);
     }
 
@@ -214,7 +214,7 @@ void LALRandomInspiralSignal (
     indexFl = (UINT4)
             (randIn->param.fLower * signal->length / 
              randIn->param.tSampling);
-    
+
     /* Use the seed to initialize random(). */
     srandom(randIn->useed);
     /* use the random number so generated as the next seed */
@@ -269,8 +269,7 @@ void LALRandomInspiralSignal (
                     randIn->param.mass2 = randIn->mMin 
                             + (randIn->MMax - randIn->param.mass1 - randIn->mMin) * epsilon2;
                     randIn->param.totalMass = randIn->param.mass1 + randIn->param.mass2 ;
-                    randIn->param.eta = (randIn->param.mass1*randIn->param.mass2)
-                            / pow(randIn->param.totalMass,2.L); 
+                    randIn->param.eta = (randIn->param.mass1*randIn->param.mass2) / pow(randIn->param.totalMass,2.L); 
                     LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
                     CHECKSTATUSPTR(status);
                     break;
@@ -283,11 +282,9 @@ void LALRandomInspiralSignal (
                     {
                         REAL4 etaMin;
 
-                        randIn->param.totalMass =  2*randIn->mMin  +  
-                                epsilon1 * (randIn->MMax - 2 * randIn->mMin) ;
+                        randIn->param.totalMass =  2*randIn->mMin  +  epsilon1 * (randIn->MMax - 2 * randIn->mMin) ;
 
-                        if (randIn->param.totalMass < (randIn->mMin+ randIn->mMax)) 
-                        {
+                        if (randIn->param.totalMass < (randIn->mMin+ randIn->mMax)) {
                             etaMin = (randIn->mMin / randIn->param.totalMass);		 
                             etaMin = etaMin - etaMin *etaMin;
                         }
@@ -373,6 +370,7 @@ void LALRandomInspiralSignal (
                 default:
                     /* if the choice of parameters is wrong abort the run */
                     ABORT (status, LALNOISEMODELSH_ECHOICE, LALNOISEMODELSH_MSGECHOICE);
+                    break; 
             }
 
 
@@ -569,7 +567,7 @@ void LALRandomInspiralSignal (
             CHECKSTATUSPTR(status);
             LALColoredNoise(status->statusPtr, signal, randIn->psd);
             CHECKSTATUSPTR(status);
-                
+
             /* Zero out all frequencies <= fLower */
             {
                 UINT4 jj;
@@ -611,7 +609,7 @@ void LALRandomInspiralSignal (
             CHECKSTATUSPTR(status);
             LALColoredNoise(status->statusPtr, &noisy, randIn->psd);
             CHECKSTATUSPTR(status);
-            
+
             /* Zero out all frequencies <= fLower */
             {
                 UINT4 jj;
@@ -648,7 +646,7 @@ void LALRandomInspiralSignal (
                  * domain waveform buff(f) i.e signal(t) -> buff(f)*/
                 LALREAL4VectorFFT(status->statusPtr, &buff, signal, randIn->fwdp);
                 CHECKSTATUSPTR(status);
-            
+
                 /* Zero out all frequencies <= fLower */
                 {
                     UINT4 jj;
