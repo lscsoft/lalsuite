@@ -32,29 +32,25 @@ Usage: lalapps_ring_pipe [options]
   -h, --help               display this message
   -v, --version            print version information and exit
   -i, --injections         add simulated bursts
-  -s, --timeslides         do timeslides
   -f, --config-file FILE   use configuration file FILE
   -l, --log-path PATH      directory to write condor log file
   -p, --playground         run on playground data only 
   -d, --datafind           perform the datafind step
   -b, --burst-search       perform the burst search
-  -c, --coincidence        perform the coincidence step
 """
   print >> sys.stderr, msg
 
 # pasrse the command line options to figure out what we should do
-shortop = "hvispf:l:dbc"
+shortop = "hvipf:l:db"
 longop = [
   "help",
   "version",
   "injections",
-  "timeslides",
   "playground",
   "config-file=",
   "log-path=",
   "datafind",
   "burst-search",
-  "coincidence"
   ]
 
 try:
@@ -82,8 +78,6 @@ for o, a in opts:
     sys.exit(0)
   elif o in ("-i", "--injections"):
     do_inj = 1
-  elif o in ("-s", "--timeslides"):
-    do_slides = 1
   elif o in ("-p", "--playground"):
     playground = 1
   elif o in ("-f", "--config-file"):
@@ -94,8 +88,6 @@ for o, a in opts:
     do_datafind = 1
   elif o in ("-b", "--burst-search"):
     do_burstsearch = 1
-  elif o in ("-c", "--coincidence"):
-    do_coincidence = 1
   else:
     print >> sys.stderr, "Unknown option:", o
     usage()
@@ -121,12 +113,6 @@ except: pass
 try: os.mkdir('triggers')
 except: pass
 
-try: os.mkdir('doublecoincidencesH1L1')
-except: pass
-
-try: os.mkdir('coincidences')
-except: pass
-
 # create the config parser object and read in the ini file
 cp = ConfigParser.ConfigParser()
 cp.read(config_file)
@@ -147,7 +133,6 @@ dag.set_dag_file(basename + '.dag')
 # create the Condor jobs that will be used in the DAG
 df_job = pipeline.LSCDataFindJob('cache','logs',cp)
 string_job = cosmicstring.StringJob(cp)
-burca_job = cosmicstring.BurcaJob(cp)
 if do_inj: 
   injection_job = cosmicstring.InjJob(cp)
 
@@ -155,7 +140,6 @@ if do_inj:
 subsuffix = '.sub'
 df_job.set_sub_file( basename + '.datafind'+ subsuffix )
 string_job.set_sub_file( basename + '.string' + subsuffix )
-burca_job.set_sub_file( basename + '.burca' + subsuffix )
 if do_inj: 
   injection_job.set_sub_file( basename + '.binj' + subsuffix ) 
 
@@ -184,21 +168,9 @@ snrH1 = cp.get('pipeline','thresholdH1')
 snrH2 = cp.get('pipeline','thresholdH2')
 snrL1 = cp.get('pipeline','thresholdL1')
 
-# get coincidence time windows
-dtHL = int(cp.get('pipeline','dtHL'))
-dtHH = int(cp.get('pipeline','dtHH'))
-
 datatype1 = cp.get('input','type1') 
 datatype2 = cp.get('input','type2') 
 datatype3 = cp.get('input','type3')
-
-#get time slides info
-slidetime = 0
-no_slides = 0
-if do_slides:
-  slidetime = cp.get('pipeline','slide-time')
-  slidetimens = cp.get('pipeline','slide-time-ns')
-  no_slides = cp.get('pipeline','number-slides')
 
 # create all the LSCdataFind jobs to run in sequence
 prev_df1 = None
@@ -325,164 +297,19 @@ for seg in data:
     if do_burstsearch:
       dag.add_node(string3)
 
-    # Coincidence jobs
-    #13 H1-H2 coincidences (produces H1 survivors)
-    burca13 = cosmicstring.BurcaNode(burca_job)
-    burca13.set_start(chunk.start())
-    burca13.set_end(chunk.end())
-    burca13.set_ifoa(string1.get_output(),ifo1)
-    burca13.set_ifob(string3.get_output(),ifo3) 
-    if do_burstsearch:
-      burca13.add_parent(string1)
-      burca13.add_parent(string3)
-    burca13.add_var_opt('dt',dtHH)
-    burca13.add_var_opt('amplitude-cut',1)
-    burca13.set_name("burca_"+ifo1+ifo3+"_"+str(segment_number)+"_"+str(chunk_number))
-    burca13.add_var_opt('output-dir','coincidences')
-    if do_slides:
-      burca13.add_var_opt('slide-time',0)
-      burca13.add_var_opt('slide-time-ns',0)
-      burca13.add_var_opt('number-slides',0)
-    if do_coincidence:  
-      dag.add_node(burca13)
-
-    #31 H2-H1 coincidences (produces H2 survivors)
-    burca31 = cosmicstring.BurcaNode(burca_job)
-    burca31.set_start(chunk.start())
-    burca31.set_end(chunk.end())
-    burca31.set_ifoa(string3.get_output(),ifo3)
-    burca31.set_ifob(string1.get_output(),ifo1) 
-    if do_burstsearch:
-      burca31.add_parent(string1)
-      burca31.add_parent(string3)
-    burca31.add_var_opt('dt',dtHH)
-    burca31.add_var_opt('amplitude-cut',1)
-    burca31.set_name("burca_"+ifo3+ifo1+"_"+str(segment_number)+"_"+str(chunk_number))
-    burca31.add_var_opt('output-dir','coincidences')
-    if do_slides:
-      burca31.add_var_opt('slide-time',0)
-      burca31.add_var_opt('slide-time-ns',0)
-      burca31.add_var_opt('number-slides',0)
-    if do_coincidence:  
-      dag.add_node(burca31)
-
-    #132 H1-H2 survivors in coincidence with L1 (gives H1 survivors)
-    burca132 = cosmicstring.BurcaNode(burca_job)
-    burca132.set_start(chunk.start())
-    burca132.set_end(chunk.end())
-    burca132.set_ifoa(burca13.get_output(),ifo1)
-    burca132.set_ifob(string2.get_output(),ifo2) 
-    if do_coincidence:  
-      burca132.add_parent(burca13)
-    if do_burstsearch:
-      burca132.add_parent(string2)
-    burca132.add_var_opt('dt',dtHL)
-    burca132.add_var_opt('amplitude-cut',0)
-    burca132.set_name("burca_"+ifo1+ifo3+ifo2+"_"+str(segment_number)+"_"+str(chunk_number))
-    burca132.add_var_opt('output-dir','coincidences')
-    if do_slides:
-      burca132.add_var_opt('slide-time',slidetime)
-      burca132.add_var_opt('slide-time-ns',slidetimens)
-      burca132.add_var_opt('number-slides',no_slides)
-    if do_coincidence:  
-      dag.add_node(burca132)
-
-    #213 L1 events in coincidence with H1-H2 survivors (gives L1 survivors)
-    burca213 = cosmicstring.BurcaNode(burca_job)
-    burca213.set_start(chunk.start())
-    burca213.set_end(chunk.end())
-    burca213.set_ifoa(string2.get_output(),ifo2) 
-    burca213.set_ifob(burca13.get_output(),ifo1)
-    if do_coincidence:  
-      burca213.add_parent(burca13)
-    if do_burstsearch:  
-      burca213.add_parent(string2)
-    burca213.add_var_opt('dt',dtHL)
-    burca213.add_var_opt('amplitude-cut',0)
-    burca213.set_name("burca_"+ifo2+ifo1+ifo3+"_"+str(segment_number)+"_"+str(chunk_number))
-    burca213.add_var_opt('output-dir','coincidences')
-    if do_slides:
-      burca213.add_var_opt('slide-time',slidetime)
-      burca213.add_var_opt('slide-time-ns',slidetimens)
-      burca213.add_var_opt('number-slides',no_slides)
-    if do_coincidence:  
-      dag.add_node(burca213)
-
-    #312 H2-H1 survivors in coincidence with L1 (gives H2 survivors)
-    burca312 = cosmicstring.BurcaNode(burca_job)
-    burca312.set_start(chunk.start())
-    burca312.set_end(chunk.end())
-    burca312.set_ifoa(burca31.get_output(),ifo3)
-    burca312.set_ifob(string2.get_output(),ifo2) 
-    if do_coincidence:  
-      burca312.add_parent(burca31)
-    if do_burstsearch:  
-      burca312.add_parent(string2)
-    burca312.add_var_opt('dt',dtHL)
-    burca312.add_var_opt('amplitude-cut',0)
-    burca312.set_name("burca_"+ifo3+ifo1+ifo2+"_"+str(segment_number)+"_"+str(chunk_number))
-    burca312.add_var_opt('output-dir','coincidences')
-    if do_slides:
-      burca312.add_var_opt('slide-time',slidetime)
-      burca312.add_var_opt('slide-time-ns',slidetimens)
-      burca312.add_var_opt('number-slides',no_slides)
-    if do_coincidence:  
-      dag.add_node(burca312)
-
-    #H1-L1 double coincidences
-    #12 H1-L1 coincidences (produces H1 survivors)
-    burca12 = cosmicstring.BurcaNode(burca_job)
-    burca12.set_start(chunk.start())
-    burca12.set_end(chunk.end())
-    burca12.set_ifoa(string1.get_output(),ifo1)
-    burca12.set_ifob(string2.get_output(),ifo2) 
-    if do_burstsearch:
-      burca12.add_parent(string1)
-      burca12.add_parent(string2)
-    burca12.add_var_opt('dt',dtHL)
-    burca12.add_var_opt('amplitude-cut',0)
-    burca12.set_name("burca_"+ifo1+ifo2+"_"+str(segment_number)+"_"+str(chunk_number))
-    burca12.add_var_opt('output-dir','doublecoincidencesH1L1')
-    if do_slides:
-      burca12.add_var_opt('slide-time',slidetime)
-      burca12.add_var_opt('slide-time-ns',slidetimens)
-      burca12.add_var_opt('number-slides',no_slides)
-    if do_coincidence:  
-      dag.add_node(burca12)
-
-    #21 L1-H1 coincidences (produces L1 survivors)
-    burca21 = cosmicstring.BurcaNode(burca_job)
-    burca21.set_start(chunk.start())
-    burca21.set_end(chunk.end())
-    burca21.set_ifoa(string2.get_output(),ifo2)
-    burca21.set_ifob(string1.get_output(),ifo1) 
-    if do_burstsearch:
-      burca21.add_parent(string1)
-      burca21.add_parent(string2)
-    burca21.add_var_opt('dt',dtHL)
-    burca21.add_var_opt('amplitude-cut',0)
-    burca21.set_name("burca_"+ifo2+ifo1+"_"+str(segment_number)+"_"+str(chunk_number))
-    burca21.add_var_opt('output-dir','doublecoincidencesH1L1')
-    if do_slides:
-      burca21.add_var_opt('slide-time', slidetime)
-      burca21.add_var_opt('slide-time-ns', slidetimens)
-      burca21.add_var_opt('number-slides',no_slides)
-    if do_coincidence:  
-      dag.add_node(burca21)
-
 # write out the DAG
 dag.write_sub_files()
 dag.write_dag()
 
 # write a message telling the user that the DAG has been written
 print "\nCreated a DAG file which can be submitted by executing"
-print "\n   condor_submit_dag -maxjobs 200 ", dag.get_dag_file()
+print "\n   condor_submit_dag -maxjobs 100 ", dag.get_dag_file()
 print """\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)\n
 If you are running LSCdataFind jobs, do not forget to initialize your grid 
 proxy certificate on the condor submit machine by running the commands
 
   unset X509_USER_PROXY
-  grid-proxy-init -hours 72
+  grid-proxy-init -hours 177
   export LSC_DATAFIND_SERVER=dataserver.phys.uwm.edu
 
 Contact the administrator of your cluster to find the hostname and port of the
