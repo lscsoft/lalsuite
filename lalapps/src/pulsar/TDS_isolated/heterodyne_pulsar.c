@@ -301,7 +301,7 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
     { 0, 0, 0, 0 }
   };
   
-  char args[] = "h:i:p:z:f:g:k:s:r:d:c:o:e:S:l:R:C:F:O:T";
+  char args[] = "hi:p:z:f:g:k:s:r:d:c:o:e:S:l:R:C:F:O:T:";
   char *program = argv[0];
   
   /* set defaults */
