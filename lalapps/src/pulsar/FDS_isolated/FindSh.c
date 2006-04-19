@@ -16,13 +16,14 @@ REAL8 *po;
 char filelist[MAXFILES][MAXFILENAMELENGTH];
 REAL8 N,deltaT;
 REAL8 medianbias=1.0;
+UINT4 numbins=50;
 static LALStatus status;
 
 int main(int argc,char *argv[]) 
 {
 
 
-  LALRngMedBias (&status, &medianbias, 50);
+  LALRngMedBias (&status, &medianbias, numbins);
 
   /* Reads command line arguments into the CommandLineArgs struct. 
      In the absence of command line arguments it sets some defaults */
@@ -124,11 +125,12 @@ int ComputePSD(void)
       SpAve=0.0;
       for (j=0;j<ndeltaf;j++)
 	 {
-	   SpAve=SpAve+Sp->data[j]/ndeltaf;
+	   SpAve=SpAve+Sp->data[j];/*/ndeltaf;*/
 	 }
+      SpAve=SpAve/ndeltaf;
 
       /* Compute running median */
-      EstimateFloor(&status, Sp, 50, RngMdnSp);
+      EstimateFloor(&status, Sp, numbins, RngMdnSp);
 
       /* Average */
       ShAve=0.0;
@@ -263,9 +265,10 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->f0=0.0;
   CLA->b=0.0;
   CLA->s=0.0;
-
+  CLA->nbins=50;
+ 
   /* Scan through list of command line arguments */
-  while (!errflg && ((c = getopt(argc, argv,"hb:D:r:I:C:o:f:b:s:"))!=-1))
+  while (!errflg && ((c = getopt(argc, argv,"hb:D:r:I:C:o:f:b:s:n:"))!=-1))
     switch (c) {
     case 'D':
       /* SFT directory */
@@ -283,14 +286,19 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       /* sampling rate */
       CLA->s=atof(optarg);
       break;
-   case 'h':
+    case 'n':
+      /* number of bins for computing the running median */
+      CLA->nbins=atof(optarg);
+      break;
+    case 'h':
       /* print usage/help message */
       fprintf(stderr,"Arguments are:\n");
       fprintf(stderr,"\t-D\tSTRING\t(Directory where SFTs are located)\n");
       fprintf(stderr,"\t-f\tFLOAT\t(Starting Frequency in Hz; default is 0.0 Hz)\n");
       fprintf(stderr,"\t-b\tFLOAT\t(Frequenzy band in Hz)\n");
       fprintf(stderr,"\t-s\tFLOAT\t(Sampling Rate in Hz; if = 0 then header info is used)\n");
-      fprintf(stderr,"(eg: ./FindSh -D ../KnownPulsarDemo/data/ -f 1010.7 -b 3.0) \n");
+      fprintf(stderr,"\t-n\tINT\t(Number of bins to compute running median; default is 50)\n");
+      fprintf(stderr,"(e.g.: ./FindSh -D ../KnownPulsarDemo/data/ -f 1010.7 -b 3.0 -n 50) \n");
       exit(0);
       break;
     default:
@@ -305,7 +313,18 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stderr,"No frequency band specified; input band with -b option.\n");
       fprintf(stderr,"For help type ./FindSh -h \n");
       return 1;
+    }  
+  if(CLA->nbins <= 0)
+    {
+      fprintf(stderr,"Number of frequency bins must greater than zero; input number with -n option.\n");
+      fprintf(stderr,"For help type ./FindSh -h \n");
+      return 1;
     }      
+  else
+    {
+      numbins=CLA->nbins;
+    }
+
   if(CLA->directory == NULL)
     {
       fprintf(stderr,"No directory specified; input directory with -D option.\n");

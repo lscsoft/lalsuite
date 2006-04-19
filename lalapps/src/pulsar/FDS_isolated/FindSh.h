@@ -27,6 +27,7 @@ struct CommandLineArgsTag
   REAL8  b;
   REAL8  f0;
   REAL8  s;
+  UINT4  nbins;
 } CommandLineArgs;
 
 struct headertag 
