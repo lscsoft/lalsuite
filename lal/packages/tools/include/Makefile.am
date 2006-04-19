@@ -1,5 +1,6 @@
 ## Process this file with automake to produce Makefile.in
-pkginclude_HEADERS = Units.h LALDetectors.h DetectorSite.h DetResponse.h Calibration.h \
+pkginclude_HEADERS = Units.h LALDetectors.h DetectorSite.h DetResponse.h \
+		     LALCalibration.h Calibration.h \
                      CoherentEstimation.h ResampleTimeSeries.h \
                      LIGOMetadataTables.h LIGOMetadataUtils.h BurstUtils.h \
                      TemplateBankGeneration.h \

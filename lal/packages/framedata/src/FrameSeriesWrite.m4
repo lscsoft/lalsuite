@@ -18,6 +18,145 @@ define(`STYPE',`format(`%sTimeSeries',TYPE)')
 define(`FSTYPE',`format(`%sFrequencySeries',TYPE)')
 define(`FUNC',`format(`LALFrWrite%s',STYPE)')
 define(`FSFUNC',`format(`LALFrWrite%s',FSTYPE)')
+define(`XFUNC',`format(`XLALFrWrite%s',STYPE)')
+define(`XFSFUNC',`format(`XLALFrWrite%s',FSTYPE)')
+
+
+int XFUNC ( STYPE *series, int frnum )
+{
+  static const char *func = "XFUNC";
+  char fname[FILENAME_MAX];
+  char tmpfname[FILENAME_MAX];
+  char comment[] = "XFUNC $Id$";
+  char seconds[] = "s";
+  char units[LALUnitTextSize];
+  const int run = 0; /* this routine always sets run number to zero */
+  char site = 0;
+  char ifo[3] = "\0\0\0";
+  char description[FILENAME_MAX] = "";
+  char *s;
+  int detector;
+  int detectorFlag = 0;
+  REAL8 duration;
+  INT4 t0;
+  INT4 dt;
+  struct FrProcData *proc;
+  struct FrVect *vect;
+  struct FrameH *frame;
+  struct FrFile *frfile;
+  int c;
+
+  if ( ! series )
+    XLAL_ERROR( func, XLAL_EFAULT );
+  if ( ! series->data || ! series->data->data )
+    XLAL_ERROR( func, XLAL_EINVAL );
+  
+  /* if channel name is of the form Xn:... then Xn is the ifo name */
+  if ( isupper( series->name[0] ) )
+  {
+    site = series->name[0];
+    if ( isdigit( series->name[1] ) && series->name[2] == ':' )
+    {
+      memcpy( ifo, series->name, 2 );
+      /* figure out what detector this is */
+      for ( detector = 0; detector < LAL_NUM_DETECTORS; ++detector )
+        if ( ! strcmp( ifo, lalCachedDetectors[detector].frDetector.prefix ) )
+        {
+          detectorFlag = 1 << 2 * detector;
+          break;
+        }
+    }
+  }
+
+  /* if site was not set, do something sensible with it */
+  if ( ! site )
+    site = 'F'; /* fake site */
+
+  /* transform channel name to be a valid description field of file name */
+  memset( description, 0, sizeof( description ) );
+  strncpy( description, series->name, sizeof( description) - 1 );
+  s = description;
+  while ( *s )
+  {
+    if ( ! isalnum( *s ) )
+      *s = '_'; /* replace invalid description character with underscore */
+    ++s;
+  }
+
+  /* compute duration of the data and the stop and end times of frame file */
+  duration = series->data->length * series->deltaT;
+  t0 = series->epoch.gpsSeconds;
+  dt = (INT4)ceil( XLALGPSGetREAL8( &series->epoch ) + duration ) - t0;
+  if ( t0 < 0 || dt < 1 )
+    XLAL_ERROR( func, XLAL_ETIME );
+
+  /* construct file name */
+  c = LALSnprintf( fname, sizeof( fname ), "%c-%s-%d-%d.gwf", site, description, t0, dt );
+  if ( c < 0 || c > (int)sizeof(fname) - 2 )
+    XLAL_ERROR( func, XLAL_ENAME );
+  c = LALSnprintf( tmpfname, sizeof( tmpfname ), "%s.tmp", fname );
+  if ( c < 0 || c > (int)sizeof(tmpfname) - 2 )
+    XLAL_ERROR( func, XLAL_ENAME );
+
+  /* get sample unit string */
+  if (NULL == XLALUnitAsString( units, sizeof( units ), &series->sampleUnits ))
+    XLAL_ERROR( func, XLAL_EFUNC );
+
+  /* construct vector and copy data */
+  vect = FrVectNew1D( series->name, FRTYPE, series->data->length, series->deltaT, seconds, units );
+  if ( ! vect )
+    XLAL_ERROR( func, XLAL_EERR );
+  vect->startX[0] = 0.0;
+  memcpy( vect->data, series->data->data, series->data->length * sizeof( *series->data->data ) );
+
+  frame = XLALFrameNew( &series->epoch, duration, ifo, run, frnum, detectorFlag );
+  if ( ! frame )
+  {
+    FrVectFree( vect );
+    XLAL_ERROR( func, XLAL_EFUNC );
+  }
+
+  proc = FrProcDataNewV( frame, vect );
+  if ( ! proc )
+  {
+    FrameFree( frame );
+    FrVectFree( vect );
+    XLAL_ERROR( func, XLAL_EERR );
+  }
+  FrStrCpy( &proc->comment, comment );
+  proc->timeOffset = 0;
+  proc->type       = 1;
+  proc->subType    = 0;
+  proc->tRange     = duration;
+  proc->fShift     = series->f0;
+  proc->phase      = 0.0;
+  proc->BW         = 0.0;
+
+  /* write first to tmpfile then rename it */
+  frfile = FrFileONew( tmpfname, 0 );
+  if ( ! frfile )
+  {
+    FrameFree( frame ); /* this frees proc and vect */
+    XLAL_ERROR( func, XLAL_EIO );
+  }
+  if ( FR_OK != FrameWrite( frame, frfile ) )
+  {
+    FrameFree( frame ); /* this frees proc and vect */
+    FrFileFree( frfile );
+    XLAL_ERROR( func, XLAL_EERR );
+  }
+
+  FrFileOEnd( frfile );
+  FrameFree( frame ); /* this frees proc and vect */
+
+  /* now rename tmpfile */
+  if ( rename( tmpfname, fname ) < 0 )
+    XLAL_ERROR( func, XLAL_ESYS );
+
+  return 0;
+}
+
+
 
 /* <lalVerbatim file="FrameSeriesCP"> */
 void
@@ -122,6 +261,9 @@ FUNC (
   DETATCHSTATUSPTR( status );
   RETURN( status );
 }
+
+
+
 
 /* <lalVerbatim file="FrameSeriesCP"> */
 void

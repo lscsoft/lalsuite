@@ -4,7 +4,7 @@ pkginclude_HEADERS = LALStdlib.h LALConstants.h\
         LALRCSID.h LALStatusMacros.h \
 	LALStdio.h LALVersion.h LALMalloc.h LALErrno.h LALError.h LALGSL.h \
 	XLALError.h XLALGSL.h \
-	StringInput.h Grid.h
+	LALString.h StringInput.h Grid.h
 EXTRA_DIST = LALPrimer.h
 EXTRA_TEXSOURCES = LALPrimer.h
 MOSTLYCLEANFILES = .dvi-dep

@@ -92,18 +92,22 @@
 
 int rename( const char *from, const char *to );
 
-#include <FrameL.h>
 
+#include <lal/LALFrameIO.h>
+
+#include <ctype.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
+#include <lal/Date.h>
 #include <lal/Units.h>
 #include <lal/FrameCache.h>
 #include <lal/FrameStream.h>
 #include <lal/TimeSeries.h>
+#include <lal/LALDetectors.h>
 
 NRCSID( FRAMESERIESC, "$Id$" );
 

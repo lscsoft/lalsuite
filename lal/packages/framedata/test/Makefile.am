@@ -36,7 +36,7 @@ MakeFrames_SOURCES = MakeFrames.c
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep *.out *.[0-9][0-9][0-9] catalog.out Response*.txt
-CLEANFILES = catalog catalog.test
+CLEANFILES = catalog catalog.test H-H1_LSC_AS_Q-600000120-60.gwf
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
 

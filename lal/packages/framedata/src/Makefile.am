@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 OLDFRAMEDATASOURCES = FrameData.c SpecBuffer.c DataBuffer.c
-FRAMEDATASOURCES = FrameStream.c FrameCache.c FrameStreamDef.h \
+FRAMEDATASOURCES = LALFrameIO.c FrameStream.c FrameCache.c FrameStreamDef.h \
                    FrameCalibration.c
 
 if FRAME

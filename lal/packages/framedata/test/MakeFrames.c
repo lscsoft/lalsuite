@@ -121,6 +121,9 @@ int main( void )
   LALFrWriteINT4TimeSeries( &status, &series, &opar );
   TESTSTATUS( &status );
 
+  if ( XLALFrWriteINT4TimeSeries( &series, 7 ) < 0 )
+    return 1;
+
   /* cleanup */
 
   LALI4DestroyVector( &status, &series.data );
