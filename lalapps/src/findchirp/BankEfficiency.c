@@ -83,6 +83,7 @@ main (INT4 argc, CHAR **argv )
     
   /* --- Some initialization --- */ 
 
+  lal_errhandler = LAL_ERR_EXIT;
   lalDebugLevel = 0;
 
   templateBank.snglInspiralTable = NULL;
@@ -203,8 +204,11 @@ main (INT4 argc, CHAR **argv )
      {
        templateBank.snglInspiralTable = tmpltHead;
      }
-   LALBankPrintXML(templateBank, coarseBankIn, randIn, userParam);
-   LALBankPrintAscii(templateBank, sizeBank, coarseBankIn);
+   if (userParam.printBank)
+   {
+     LALBankPrintXML(templateBank, coarseBankIn, randIn, userParam);
+     LALBankPrintAscii(templateBank, sizeBank, coarseBankIn);
+   }
    
    if ( vrbflg )
      {
