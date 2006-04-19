@@ -140,16 +140,10 @@ if not log_path:
   print >> sys.stderr, "Use --log-path PATH to specify a location."
   sys.exit(1)
 
-if ((do_coarse) & (do_datafind == None)):
+if ((do_coarse) and (do_datafind == None)):
   print >> sys.stderr, "LSCdataFind is not selected."
   print >> sys.stderr, "This is needed to get data for the heterodyne."
   print >> sys.stderr, "Use --datafind to get a list of data frames for analysis"
-  sys.exit(1)
-  
-if seglist == None:
-  print >> sys.stderr, "No segment list is selected."
-  print >> sys.stderr, "This is needed to get data for the heterodyne."
-  print >> sys.stderr, "Use --seglist to set a list of segments for analysis"
   sys.exit(1)
   
 # try and make a directory to store the cache files and job logs
@@ -235,7 +229,7 @@ H2, L1, G1 or GEO."""
   dag.add_node(df)
 
 # this bit is basically hacked from LSCsegFind
-if int(seglist) == 0:
+if seglist == 0:
   # run LSCsegFind - don't bother with a job just run it and create this list
   # set segment list and stuff
   seg_list_file = basename + '.seglist'
@@ -322,9 +316,15 @@ if int(seglist) == 0:
     print >> sys.stderr, "Could not create segment list :("
     sys.exit(1)
   
-elif seglist != None:
+elif seglist == None:
   # set seglist file from value in the config file
   seg_list_file = cp.get('data','seg_list')
+  
+  # see if it exits - if it doesn't give an error
+  if os.path.isfile(seg_list_file)==False:
+    print >> sys.stderr, """No segment list file given in config file - add seg_list argument to
+[data] section of .ini file"""
+    sys.exit(1)
   
 if do_coarse:
   param_files = os.listdir(pulsar_param_dir)
@@ -384,7 +384,7 @@ if do_fine:
     coefficient_file = cp.get('calibration','coefficient_file')
     open_loop_gain = cp.get('calibration','open_loop_gain')
     sensing_function = cp.get('calibration','sensing_function')
-  
+    
   fine = [] # create list for fine heterodyne nodes
   
   i = 0
@@ -392,34 +392,48 @@ if do_fine:
   while i < len(param_files):
     if ".par" in param_files[i]:
       pulsar = 'J' + re.sub(r'\.par',r'',param_files[i]) # set pulsar name from .par file
-    
-      val = input_files.find(pulsar)
-      data_file = input_dir + input_files[val]
+      param_file = pulsar_param_dir + '/' + param_files[i]
       
+      # find correct input file
+      k=0
+      while k < len(input_files):
+        if pulsar in input_files[k]:
+          data_file = input_dir + '/' + input_files[k]
+          break
+
+        data_file = None
+        k = k+1
+
+      # if no file is set then tell me and move onto next pulsar
+      if data_file == None:
+        print >> sys.stderr, "No file set for PSR %s" % (pulsar)
+        i = i+1
+        continue
+
       # add heterodyneNode for DAG
       fine.append(heterodyne_pulsar.heterodyneNode(fine_job))
       fine[j].set_het_flag(het_flag)
       fine[j].set_ifo(detector)
       fine[j].set_pulsar(pulsar)
       fine[j].set_param_file(param_file)
-      fine[j].set_earth_ephem(earth_ephem)
-      fine[j].set_sun_ephem(sun_ephem)
+      fine[j].set_ephem_earth_file(earth_ephem)
+      fine[j].set_ephem_sun_file(sun_ephem)
       fine[j].set_filter_knee(filter_knee)
       fine[j].set_sample_rate(sample_rate)
       fine[j].set_resample_rate(resample_rate)
       fine[j].set_data_file(data_file)
-      fine[j].set_seg_list(seg_list)
-      
+      fine[j].set_seg_list(seg_list_file)
+     
       if do_calibrate:
         fine[j].set_calibrate()
-
-        if os._exists(response_function): # if the is a response function file
+        
+        if os.path.isfile(response_function): # if thereis a response function file
           fine[j].set_response_function(response_function)
-        elif (os._exists(coefficient_file) & os._exists(open_loop_gain) & \
-os._exists(sensing_function)):
+        elif (os.path.isfile(coefficient_file) & os.path.isfile(open_loop_gain) & \
+os.path.isfile(sensing_function)):
           fine[j].set_coefficient_file(coefficient_file)
           fine[j].set_open_loop_gain(open_loop_gain)
-          fine[j].set_response_function(response_function)
+          fine[j].set_sensing_function(sensing_function)
         else:
           print "Could not find any calibration files! Check .ini file."
           sys.exit(1)
