@@ -13,7 +13,7 @@ int isnan( double );
 #include <lal/TimeSeries.h>
 #include <lal/FrequencySeries.h>
 
-#include "LALString.h"
+#include <lal/LALString.h>
 #include "LALASCIIFileRead.h"
 
 

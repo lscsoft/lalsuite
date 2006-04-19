@@ -12,9 +12,9 @@
 #include <lal/FrequencySeries.h>
 #include <lal/PrintFTSeries.h>
 
-#include "LALCalibration.h"
-#include "LALFrameIO.h"
-#include "LALString.h"
+#include <lal/LALCalibration.h>
+#include <lal/LALFrameIO.h>
+#include <lal/LALString.h>
 
 static int generate_file_name( char *fname, size_t size, const char *sname, int t, int dt );
 static int write_REAL4TimeSeries( REAL4TimeSeries *series );

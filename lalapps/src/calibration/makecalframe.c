@@ -12,9 +12,10 @@ int isnan( double );
 #include <lal/TimeSeries.h>
 #include <lal/FrequencySeries.h>
 
+#include <lal/LALFrameIO.h>
+#include <lal/LALString.h>
+
 #include "LALASCIIFileRead.h"
-#include "LALFrameIO.h"
-#include "LALString.h"
 
 const char *program;
 void err_exit( const char *fmt, ... )
