@@ -205,6 +205,7 @@ int main(int argc, char *argv[]){
   strcpy(uvar_earthEphemeris,EARTHEPHEMERIS);
 
   uvar_sunEphemeris = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
+  strcpy(uvar_sunEphemeris,SUNEPHEMERIS);
 
   uvar_sftDir = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_sftDir,SFTDIRECTORY);
