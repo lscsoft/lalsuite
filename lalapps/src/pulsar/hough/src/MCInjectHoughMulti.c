@@ -454,7 +454,8 @@ int main(int argc, char *argv[]){
     sftlength = 1 + length + 2*fWings;
     sftFminBin= f0Bin - fWings;
     fHeterodyne = sftFminBin*deltaF;
-    tSamplingRate = 2.0*deltaF*(sftlength -1.);
+    /* tSamplingRate = 2.0*deltaF*(sftlength -1.); */
+    tSamplingRate = 2.0*deltaF*(binsSFT -1.);
          
     /* free memory */
     if ( LALUserVarWasSet( &uvar_ifo ) )    
@@ -687,9 +688,9 @@ int main(int argc, char *argv[]){
   
   /* ****************************************************************/
   
-  pg1.length = sftlength; /*equal to binsSFT */
+  pg1.length = binsSFT; /*equal to binsSFT */
   pg1.data = NULL;
-  pg1.data = (UCHAR *)LALMalloc(sftlength* sizeof(UCHAR));
+  pg1.data = (UCHAR *)LALMalloc(binsSFT* sizeof(UCHAR));
   
   /* ****************************************************************/
   foft.length = mObsCoh;
@@ -825,7 +826,7 @@ int main(int argc, char *argv[]){
 	  /*  signalSFT = signalSFTs->data[iIFO]->data[iSFT]->data->data; */
 	  /*   sumSFT = sumSFTs->data[iIFO]->data[iSFT]->data->data; */
 	  
-	  for (j=0; j < sftlength; j++) {
+	  for (j=0; j < binsSFT; j++) {
 	    sumSFT->re = noiseSFT->re + h0scale *signalSFT->re;
 	    sumSFT->im = noiseSFT->im + h0scale *signalSFT->im;
 	    ++noiseSFT;
