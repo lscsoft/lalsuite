@@ -193,7 +193,7 @@ int main(int argc, char *argv[]){
           hetParams.timestamp = times->data[i]; /* set initial time stamp */
 
         i++;
-      };
+      }
 
       fclose(fpin);
 
@@ -756,15 +756,42 @@ into each science segment (starts and stops) */
     INT4 prevdur=0; /* duration of previous segment */
 
     count=0;
+    j=0;
 
     for(i=0;i<starts->length;i++){
+      /* find first bit of data within a segment */
+      if(starts->data[i] < times->data[j] && stops->data[i] <= times->data[j]){
+        /* if the segmemt is before the jth data point then continue */
+        continue;
+      }
+      if(starts->data[i] < times->data[j] && stops->data[i] > times->data[j]){
+        /* if the segment overlaps the jth data point then use as much as possible */
+        starts->data[i] = times->data[j];
+      }
+      
+      while(times->data[j] < starts->data[i]){
+        j++; 
+        
+        if(j == times->length){
+          /* if our segment is after the end of the data then finish the resampling */
+          fprintf(stderr, "Segment %d to %d is outside the times of the data!\n", starts->data[i],
+stops->data[i]);
+          fprintf(stderr, "End resampling\n");
+          break;
+        }
+      }
+      
+      if(j == times->length) /* get completely out of the loop */
+        break;
+      
       if((duration = stops->data[i] - starts->data[i]) < size){
-        prevdur += duration;
+        j += duration*(INT4)sampleRate;
         continue; /* if segment is smaller than the number of samples needed then skip to next */
       }
 
-      remainder = duration%size;
+      remainder = (duration*(INT4)sampleRate)%size;
 
+      prevdur = j;
       for(j=prevdur+floor(remainder/2);j<prevdur+duration-ceil(remainder/2);j+=size){
         tempData.re = 0.;
         tempData.im = 0.;
@@ -777,12 +804,9 @@ into each science segment (starts and stops) */
         series->data->data[count].re = tempData.re/(REAL8)size;
         series->data->data[count].im = tempData.im/(REAL8)size;
 
-        times->data[count] = times->data[j+size/2] - (1./sampleRate)/2.;
+        times->data[count] = times->data[j+size/2-1] - (1./sampleRate)/2.;
         count++;
       }
-
-      prevdur += duration;
-
     }
   }
 
