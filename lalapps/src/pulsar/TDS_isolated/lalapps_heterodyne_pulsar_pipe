@@ -368,11 +368,16 @@ if do_coarse:
     
     i = i+1
 
-if do_fine:
+# code to create dag for fine heterodyne
+if do_fine | do_update:
   param_files = os.listdir(pulsar_param_dir)
   param_files.sort()
   
-  het_flag = 1
+  if do_fine:
+    het_flag = 1
+  if do_update:
+    het_flag = 2
+    pulsar_update_dir = cp.get('data', 'pulsar_update_dir')
   
   input_dir = cp.get('fine','fine_input')
   input_files = os.listdir(input_dir)
@@ -410,8 +415,33 @@ if do_fine:
         i = i+1
         continue
 
+      """ 
+      if updating parameters check that an updated .par file exists - else just 
+      do normal fine heterodyne
+      """
+      if do_update:
+        pulsar_update_file = pulsar_update_dir + '/' + param_files[i]
+        if os.path.isfile(pulsar_update_file)==False:
+          print >> sys.stderr, """No updated parameter file exists for PSR%s, just perform fine
+heterodyne using old parameters.""" % (pulsar)
+          het_flag = 1 
+      
       # add heterodyneNode for DAG
       fine.append(heterodyne_pulsar.heterodyneNode(fine_job))
+      
+      """ 
+      if updating parameters check that an updated .par file exists - else just 
+      do normal fine heterodyne
+      """
+      if do_update:
+        pulsar_update_file = pulsar_update_dir + '/' + param_files[i]
+        if os.path.isfile(pulsar_update_file):
+          fine[j].set_param_file_update(param_update_file):
+        else:
+          print >> sys.stderr, """No updated parameter file exists for PSR%s, just perform fine
+heterodyne using old parameters.""" % (pulsar)
+          het_flag = 1
+      
       fine[j].set_het_flag(het_flag)
       fine[j].set_ifo(detector)
       fine[j].set_pulsar(pulsar)
@@ -437,8 +467,10 @@ os.path.isfile(sensing_function)):
         else:
           print "Could not find any calibration files! Check .ini file."
           sys.exit(1)
-          
-      fine[j].set_stddev_thresh(stddev_thresh)
+      
+      # if a value of the standard deviation threshold is set add the arg
+      if stddev_thresh != '':        
+        fine[j].set_stddev_thresh(stddev_thresh)
       
       fine[j].set_output_dir(output_dir)
       
@@ -446,10 +478,6 @@ os.path.isfile(sensing_function)):
       j = j+1
       
     i = i+1
-                  
-if do_update:
-  print >> sys.stderr, """Haven't written code for the update bit yet, WRITE IT NOW!"""
-  sys.exit(1)
 
 # write out DAG
 dag.write_sub_files()
