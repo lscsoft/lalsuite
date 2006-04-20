@@ -988,6 +988,13 @@ int main(int argc, char *argv[]){
   LALFree(velV.data);
   LALFree(timeDiffV.data);
   
+  {
+     UINT4 iIFO;
+      
+     for(iIFO = 0; iIFO<numifo; iIFO++){
+        LAL_CALL(LALDestroyTimestampVector(&status, &multiIniTimeV->data[iIFO]),&status );
+      }
+    }
   LALFree(multiIniTimeV->data);
   LALFree(multiIniTimeV);
   
