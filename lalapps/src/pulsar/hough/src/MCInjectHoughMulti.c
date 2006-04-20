@@ -549,7 +549,9 @@ int main(int argc, char *argv[]){
         timeV.data[j] = mdetStates->data[iIFO]->data[iSFT].tGPS;
       } /* loop over SFTs */
       
+      multiIniTimeV->data[j]=NULL;
       LAL_CALL( LALGetSFTtimestamps(&status, &multiIniTimeV->data[j], inputSFTs->data[j] ), &status);
+    
     } /* loop over IFOs */
     
     /* compute the time difference relative to startTime for all SFT */
