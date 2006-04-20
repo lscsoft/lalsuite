@@ -63,11 +63,11 @@ extern int lalDebugLevel;
 #define NMCLOOP 2 /* number of Monte-Carlos */
 #define NTEMPLATES 16 /* number templates for each Monte-Carlo */
 
-#define SFTDIRECTORY "/home/badkri/fakesfts/*SFT*.*"
+#define SFTDIRECTORY "/local_data/sintes/SFT-S5-120-130/*SFT*.*"
 /* */
-#define DIROUT "./outMultiMC"   /* output directory */
-#define FILEOUT "./HoughMC"      /* prefix file output */
-#define SKYFILE "./sky1" 
+#define DIROUT "./"   /* output directory */
+#define FILEOUT "/HoughMC"      /* prefix file output */
+#define SKYFILE "./skyfileS4c" 
 
 #define TRUE (1==1)
 #define FALSE (1==0)
@@ -369,21 +369,25 @@ int main(int argc, char *argv[]){
     CHAR filename[MAXFILENAMELENGTH];
     
     /* the paramerter file */
-    strcpy( filename, uvar_fnameOut);
+    strcpy( filename, uvar_dirnameOut);
+     
+    strcat( filename, uvar_fnameOut);
     strcat( filename, "_par");
     fpPar= fopen(filename, "w"); /* where to write the parameters */
     /*setlinebuf(fpPar);*/  /* line buffered on */
     setvbuf(fpPar, (char *)NULL, _IOLBF, 0);
     
     /* the  file  with the h0 values */
-    strcpy( filename, uvar_fnameOut);
+    strcpy( filename, uvar_dirnameOut);
+    strcat( filename, uvar_fnameOut);
     strcat( filename, "_h0");
     fpH0= fopen(filename, "w"); /* where to write the parameters */
     /*setlinebuf(fpH0); */ /* line buffered on */
     setvbuf(fpH0, (char *)NULL, _IOLBF, 0); 
    
     /* the  file  with the the number-counts for different h0 values */
-    strcpy( filename, uvar_fnameOut);
+    strcpy( filename, uvar_dirnameOut);
+    strcat( filename, uvar_fnameOut);
     strcat( filename, "_nc");
     fpNc= fopen(filename, "w"); /* where to write the parameters */
     /*setlinebuf(fpNc);*/  /* line buffered on */
