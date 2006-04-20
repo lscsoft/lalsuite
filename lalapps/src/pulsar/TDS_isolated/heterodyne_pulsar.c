@@ -768,23 +768,40 @@ into each science segment (starts and stops) */
         /* if the segment overlaps the jth data point then use as much as possible */
         starts->data[i] = times->data[j];
       }
-      
-      while(times->data[j] < starts->data[i]){
-        j++; 
-        
-        if(j == times->length){
-          /* if our segment is after the end of the data then finish the resampling */
-          fprintf(stderr, "Segment %d to %d is outside the times of the data!\n", starts->data[i],
+      if(starts->data[i] < times->data[times->length-1] && stops->data[i] >
+times->data[times->length-1]){
+        /* if starts is before the end of the data but stops is after the end of the data then
+shorten the segment */
+        stops->data[i] = times->data[times->length-1] + (INT4)((1./sampleRate)/2.);
+      }
+      if(starts->data[i] >= times->data[times->length-1]){
+        /* segment is outside of data time, so exit */
+        fprintf(stderr, "Segment %d to %d is outside the times of the data!\n", starts->data[i],
 stops->data[i]);
-          fprintf(stderr, "End resampling\n");
+        fprintf(stderr, "End resampling\n");
+        break;
+      }
+      
+      while(times->data[j] < starts->data[i])
+        j++;
+        
+      starts->data[i] = times->data[j] - (INT4)((1./sampleRate)/2.);
+      
+      duration = stops->data[i] - starts->data[i]
+      
+      for(k=0;k<duration*(INT4)sampleRate-1;k++){
+        if(times->data[j+k+1] - times->data[j+k] > 1./sampleRate){
+          /* split segment */
+          duration  = times->data[j+k] - starts->data[i] - (INT4)((1./sampleRate)/2.);
+
+          /* set starts to new segemt start time */
+          starts->data[i] = times->data[j+k+1] - (INT4)((1./sampleRate)/2.);
+          i--; /* reset i so it redoes the new segment */
           break;
         }
       }
-      
-      if(j == times->length) /* get completely out of the loop */
-        break;
-      
-      if((duration = stops->data[i] - starts->data[i]) < size){
+
+      if(duration < size){
         j += duration*(INT4)sampleRate;
         continue; /* if segment is smaller than the number of samples needed then skip to next */
       }
@@ -792,7 +809,8 @@ stops->data[i]);
       remainder = (duration*(INT4)sampleRate)%size;
 
       prevdur = j;
-      for(j=prevdur+floor(remainder/2);j<prevdur+duration-ceil(remainder/2);j+=size){
+      for(j=prevdur+floor(remainder/2);j<prevdur + (duration*(INT4)sampleRate)
+          -ceil(remainder/2) - 1;j+=size){
         tempData.re = 0.;
         tempData.im = 0.;
 
