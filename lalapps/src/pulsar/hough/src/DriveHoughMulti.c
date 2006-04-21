@@ -543,7 +543,7 @@ int main(int argc, char *argv[]){
   
 
   /* print relative weights of ifos to stdout */  
-  if ( uvar_printWeights && uvar_weighNoise )
+  if ( uvar_printWeights )
     {
       UINT4 iIFO, iSFT, numsft, j;
       REAL8 *sumweights=NULL;
