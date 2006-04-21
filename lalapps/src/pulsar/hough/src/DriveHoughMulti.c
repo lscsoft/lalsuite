@@ -536,9 +536,11 @@ int main(int argc, char *argv[]){
     /* compute the time difference relative to startTime for all SFT */
     for(j = 0; j < mObsCoh; j++)
       timeDiffV.data[j] = XLALGPSDiff( timeV.data + j, &firstTimeStamp );
-    
-    LAL_CALL ( LALDestroyMultiNoiseWeights ( &status, &multweight), &status);
-  
+
+    if ( uvar_weighNoise ) {    
+      LAL_CALL ( LALDestroyMultiNoiseWeights ( &status, &multweight), &status);
+    }
+
   } /* end block for weights, velocity and time */
   
 
