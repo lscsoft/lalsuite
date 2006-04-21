@@ -870,27 +870,40 @@ int main(int argc, char *argv[]){
 	MultiPSDVector *multPSD = NULL;  
 	REAL8 dmpNormalization, sumWeightSquare;
 	
+	
+	/* initialize all weights to unity  each time*/
+        LAL_CALL( LALHOUGHInitializeWeights( &status, &weightsNoise), &status);
+        LAL_CALL( LALHOUGHInitializeWeights( &status, &weightsV), &status);
+  
+	
 	/* normalize sfts */
 	LAL_CALL( LALNormalizeMultiSFTVect (&status, &multPSD, sumSFTs, uvar_blocksRngMed), &status);
 	
-	/* compute multi noise weights */
-	LAL_CALL ( LALComputeMultiNoiseWeights ( &status, &multweight, &dmpNormalization, multPSD, uvar_blocksRngMed, 0), &status);
+	/* compute multi noise weights */ 
+	if ( uvar_weighNoise ) {
+ 	  LAL_CALL ( LALComputeMultiNoiseWeights ( &status, &multweight, &dmpNormalization, multPSD, uvar_blocksRngMed, 0), &status);
+	}
 	
 	/* we are now done with the psd */
 	LAL_CALL ( LALDestroyMultiPSDVector  ( &status, &multPSD), &status);
 	
 	/* copy  weights */
-	for (j = 0, iIFO = 0; iIFO < numifo; iIFO++ ) {
-	  numsft = mdetStates->data[iIFO]->length;
-	  for ( iSFT = 0; iSFT < numsft; iSFT++, j++) {
-	    weightsNoise.data[j] = multweight->data[iIFO]->data[iSFT];
-	  } /* loop over SFTs */
-	} /* loop over IFOs */
+        if ( uvar_weighNoise ) {
+	  for (j = 0, iIFO = 0; iIFO < numifo; iIFO++ ) {
+	    numsft = mdetStates->data[iIFO]->length;
+	    for ( iSFT = 0; iSFT < numsft; iSFT++, j++) {
+	      weightsNoise.data[j] = multweight->data[iIFO]->data[iSFT];
+	    } /* loop over SFTs */
+	  } /* loop over IFOs */
+      
+	  LAL_CALL ( LALDestroyMultiNoiseWeights ( &status, &multweight), &status);
+	  memcpy(weightsV.data, weightsNoise.data, mObsCoh * sizeof(REAL8));
+        }
 	
-	LAL_CALL ( LALDestroyMultiNoiseWeights ( &status, &multweight), &status);
-	
-	for (j=0; j<mObsCoh; j++){
-	  weightsV.data[j] = weightsNoise.data[j]*weightsAMskyV[skyIndex].data[j];
+	if (uvar_weighAM) {
+	  for (j=0; j<mObsCoh; j++){
+	    weightsV.data[j] = weightsV.data[j]*weightsAMskyV[skyIndex].data[j];
+	  }
 	}
 	
 	LAL_CALL( LALHOUGHNormalizeWeights( &status, &weightsV), &status);
