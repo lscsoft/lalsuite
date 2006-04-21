@@ -552,7 +552,6 @@ int main(int argc, char *argv[]){
       for (j = 0, iIFO = 0; iIFO < numifo; iIFO++ ) {
 	
 	numsft = mdetStates->data[iIFO]->length;
-	fprintf(stdout, "%d\n", numsft);
 	
 	for ( iSFT = 0; iSFT < numsft; iSFT++, j++) 	  
 	  sumweights[iIFO] += weightsNoise.data[j];	
@@ -647,14 +646,15 @@ int main(int argc, char *argv[]){
       patchSizeX = skySizeDelta[skyCounter];
       patchSizeY = skySizeAlpha[skyCounter];
 
-      /* calculate amplitude modulation weights */
+      /* copy noise weights if required */
+      if ( uvar_weighNoise )
+	memcpy(weightsV.data, weightsNoise.data, mObsCoh * sizeof(REAL8));
+      
+      /* calculate amplitude modulation weights if required */
       if (uvar_weighAM) {
 
 	MultiAMCoeffs *multiAMcoef = NULL;
 	UINT4 iIFO, iSFT;
-
-	if ( uvar_weighNoise )
-	  memcpy(weightsV.data, weightsNoise.data, mObsCoh * sizeof(REAL8));
 
 	/* get the amplitude modulation coefficients */
 	skypos.longitude = alpha;
