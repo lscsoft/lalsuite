@@ -829,8 +829,8 @@ int main(int argc, char *argv[]){
        for ( iSFT = 0; iSFT < numsft; iSFT++){
 	 signalSFT = signalSFTs->data[iIFO]->data[iSFT].data->data;
 	 for (j=0; j < binsSFT; j++) {
-	   sumSFT->re = 0.0;
-	   sumSFT->im = 0.0;
+	   signalSFT->re = 0.0;
+	   signalSFT->im = 0.0;
 	   ++signalSFT;
 	 }	 
        }
