@@ -23,18 +23,13 @@ extern UINT4 maxSFTindex;  /**< maximal sftindex, for error-checking */
 #define OOTWOPI_FLOAT   (1.0f / TWOPI_FLOAT)	/* 1 / (2pi) */ 
 
 
-/* in special cases (macros) don't use the generic version of TestLALDemod() below, but the ones from external files */
+/* in case of the (now almost obsolete) hand-coded AltiVec version (and and experimental hook),
+   don't use TestLALDemod() below, but the one in external file */
 #if defined(USE_ALTIVEC)
 #include "CFSLALDemod_AltiVec.c"
-#elif defined(USE_NDP_VECT)
-#include "CFSLALDemod_ndp_vect.c"
-#elif defined(USE_NEW_DIV_PART)
-#include "CFSLALDemod_new_div_part.c"
-#elif defined(USE_NEW_DIV)
-#include "CFSLALDemod_new_div.c"
 #elif defined(USE_EXP_LALDEMOD)
 #include "CFSLALDemod_Experimental.c"
-#else /* USE_R4LALDEMOD, USE_ALTIVEC */
+#else /* rather generic version */
 
 RCSID( "$Id$");
 
@@ -268,6 +263,16 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 
           } /* if x could become close to 0 */
         else
+	  /* when optimizing for a specific architecture, we usually don't want to rewrite
+	     the whole file, but only the following block of C code, so we insert another
+	     hook here, in the hope that we still maintain readability. Also too we'd like
+	     to avoid the necessarity to keep changes in other parts of the file in sync
+	     between these versions.                                                  BM */
+#if defined(USE_NDP_VECT)
+#include "CFSLALDemodLoop_ndp_vect.c"
+#elif defined(USE_NEW_DIV_PART)
+#include "CFSLALDemodLoop_div_part.c"
+#else
           {
             COMPLEX8 *Xalpha_k = Xalpha + sftIndex;
 
@@ -293,6 +298,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
               } /* for k < klim */
 
           } /* if x cannot be close to 0 */
+#endif
 
         if(sftIndex-1 > maxSFTindex) {
           fprintf(stderr,"ERROR! sftIndex = %d > %d in TestLALDemod\nalpha=%d,"
