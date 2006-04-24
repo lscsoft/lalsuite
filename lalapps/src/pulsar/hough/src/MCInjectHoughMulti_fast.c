@@ -853,6 +853,10 @@ int main(int argc, char *argv[]){
        for (iIFO=0; iIFO<numifo; iIFO++){
          params.site = &(mdetStates->data[iIFO]->detector);
          sftParams.timestamps = multiIniTimeV->data[iIFO];
+	 
+         LAL_CALL(LALDestroySFTVector(&status, &signalSFTs->data[iIFO]),&status );
+         signalSFTs->data[iIFO] = NULL;
+	 
          LAL_CALL( LALGeneratePulsarSignal(&status, &signalTseries, &params ), &status);
          LAL_CALL( LALSignalToSFTs(&status, &signalSFTs->data[iIFO], signalTseries, &sftParams), &status);
            
