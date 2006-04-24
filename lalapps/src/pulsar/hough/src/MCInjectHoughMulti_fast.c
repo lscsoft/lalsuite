@@ -833,8 +833,8 @@ int main(int argc, char *argv[]){
 	 /* initialize data to zero */
          for ( iSFT = 0; iSFT < numsft; iSFT++){	   
 	   for (j=0; j < binsSFT; j++) {
-	     signalSFTs->data[iIFO]->data[iSFT].data->data[j]->re = 0.0;
-	     signalSFTs->data[iIFO]->data[iSFT].data->data[j]->im = 0.0;	    
+	     signalSFTs->data[iIFO]->data[iSFT].data->data[j].re = 0.0;
+	     signalSFTs->data[iIFO]->data[iSFT].data->data[j].im = 0.0;	    
 	   }	 
          }
      	  	 
