@@ -823,27 +823,24 @@ int main(int argc, char *argv[]){
    {
      UINT4 iIFO, numsft, iSFT, j;    
      COMPLEX8   *signalSFT; 
-        
-     /* initialize data to zero */
-     for (iIFO=0; iIFO<numifo; iIFO++){
-       for ( iSFT = 0; iSFT < numsft; iSFT++){
-	 signalSFT = signalSFTs->data[iIFO]->data[iSFT].data->data;
-	 for (j=0; j < binsSFT; j++) {
-	   signalSFT->re = 0.0;
-	   signalSFT->im = 0.0;
-	   ++signalSFT;
-	 }	 
-       }
-     }
-
-
+       
      if(uvar_fast){
      
        for (iIFO=0; iIFO<numifo; iIFO++){       
          params.site = &(mdetStates->data[iIFO]->detector);
          sftParams.timestamps = multiIniTimeV->data[iIFO];
 	 numsft = mdetStates->data[iIFO]->length; 
-	  	 
+	 
+	 /* initialize data to zero */
+         for ( iSFT = 0; iSFT < numsft; iSFT++){
+	   signalSFT = signalSFTs->data[iIFO]->data[iSFT].data->data;
+	   for (j=0; j < binsSFT; j++) {
+	     signalSFT->re = 0.0;
+	     signalSFT->im = 0.0;
+	     ++signalSFT;
+	   }	 
+         }
+     	  	 
 	 LAL_CALL( LALComputeSkyAndZeroPsiAMResponse (&status, pSkyConstAndZeroPsiAMResponse, pSFTandSignalParams), &status);
          LAL_CALL( LALFastGeneratePulsarSFTs (&status, &signalSFTs->data[iIFO], pSkyConstAndZeroPsiAMResponse, pSFTandSignalParams), &status);	 
        }
@@ -1084,23 +1081,24 @@ int main(int argc, char *argv[]){
 	LALFree(pSkyConstAndZeroPsiAMResponse[iIFO].fPlusZeroPsi);
 	LALFree(pSkyConstAndZeroPsiAMResponse[iIFO].fCrossZeroPsi);
       }
-    }
+  }
+  
   LALFree(multiIniTimeV->data);
   LALFree(multiIniTimeV);
   LALFree(pSkyConstAndZeroPsiAMResponse);
- 
    
   XLALDestroyMultiDetectorStateSeries ( mdetStates );
 
   LALFree(skyPatchCenterV.data);
   LALFree(foft.data);
   LALFree(h0V.data);
+  
   {
      UINT4 j;
      for (j=0;j<nTemplates;++j) {
         LALFree(foftV[j].data);
      }
-   }
+  }
 
   
   LALFree(injectPar.spnFmax.data);
@@ -1127,7 +1125,6 @@ int main(int argc, char *argv[]){
     LALFree(weightsAMskyV);
   }
   
-
   LAL_CALL(LALDestroyMultiSFTVector(&status, &inputSFTs),&status );
   LAL_CALL(LALDestroyMultiSFTVector(&status, &sumSFTs),&status );
   LAL_CALL(LALDestroyMultiSFTVector(&status, &signalSFTs),&status );
