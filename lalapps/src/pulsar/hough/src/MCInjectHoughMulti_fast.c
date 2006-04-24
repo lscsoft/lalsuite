@@ -838,8 +838,10 @@ int main(int argc, char *argv[]){
 	   }	 
          }
      	  	 
-	 LAL_CALL( LALComputeSkyAndZeroPsiAMResponse (&status, pSkyConstAndZeroPsiAMResponse, pSFTandSignalParams), &status);
-         LAL_CALL( LALFastGeneratePulsarSFTs (&status, &signalSFTs->data[iIFO], pSkyConstAndZeroPsiAMResponse, pSFTandSignalParams), &status);	 
+	 LAL_CALL( LALComputeSkyAndZeroPsiAMResponse (&status,
+	  &pSkyConstAndZeroPsiAMResponse[iIFO], pSFTandSignalParams), &status);
+         LAL_CALL( LALFastGeneratePulsarSFTs (&status, &signalSFTs->data[iIFO],
+	  &pSkyConstAndZeroPsiAMResponse[iIFO], pSFTandSignalParams), &status);	 
        }
      }
      else{
