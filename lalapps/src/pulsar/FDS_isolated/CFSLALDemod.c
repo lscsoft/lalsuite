@@ -17,7 +17,9 @@ extern UINT4 maxSFTindex;  /**< maximal sftindex, for error-checking */
 
 #define LD_SMALL        (1.0e-9 / LAL_TWOPI)
 #define OOTWOPI         (1.0 / LAL_TWOPI)
+#ifndef LUT_RES
 #define LUT_RES         64      /* resolution of lookup-table */
+#endif
 
 #define TWOPI_FLOAT     6.28318530717958f  /* 2*pi */
 #define OOTWOPI_FLOAT   (1.0f / TWOPI_FLOAT)	/* 1 / (2pi) */ 
