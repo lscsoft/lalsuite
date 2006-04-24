@@ -62,6 +62,7 @@ extern int lalDebugLevel;
 #define H0MAX 1.0e-22
 #define NMCLOOP 2 /* number of Monte-Carlos */
 #define NTEMPLATES 16 /* number templates for each Monte-Carlo */
+#define DTERMS 5
 
 #define SFTDIRECTORY "/local_data/sintes/SFT-S5-120-130/*SFT*.*"
 /* */
@@ -101,6 +102,8 @@ int main(int argc, char *argv[]){
   static PulsarData           pulsarInject;
   static HoughTemplate        pulsarTemplate;
   static HoughNearTemplates   closeTemplates;
+  SkyConstAndZeroPsiAMResponse      *pSkyConstAndZeroPsiAMResponse = NULL;
+  SFTandSignalParams                *pSFTandSignalParams=NULL;
   
   /* skypatch info */
   REAL8  *skyAlpha, *skyDelta, *skySizeAlpha, *skySizeDelta; 
@@ -154,9 +157,9 @@ int main(int argc, char *argv[]){
   /******************************************************************/ 
   /*    user input variables   */
   /******************************************************************/ 
-  BOOLEAN uvar_help, uvar_weighAM, uvar_weighNoise, uvar_printLog;
+  BOOLEAN uvar_help, uvar_weighAM, uvar_weighNoise, uvar_printLog, uvar_fast;
   INT4    uvar_blocksRngMed, uvar_nh0, uvar_nMCloop, uvar_AllSkyFlag;
-  INT4    uvar_nfSizeCylinder, uvar_maxBinsClean;
+  INT4    uvar_nfSizeCylinder, uvar_maxBinsClean, uvar_Dterms;
   REAL8   uvar_f0, uvar_fSearchBand, uvar_peakThreshold, uvar_h0Min, uvar_h0Max;
   REAL8   uvar_alpha, uvar_delta, uvar_patchSizeAlpha, uvar_patchSizeDelta;
   CHAR   *uvar_earthEphemeris=NULL;
@@ -182,6 +185,7 @@ int main(int argc, char *argv[]){
   uvar_weighAM = TRUE;
   uvar_weighNoise = TRUE;
   uvar_printLog = FALSE;
+  uvar_fast = TRUE;
   
   uvar_nh0 = NH0;
   uvar_h0Min = H0MIN;
@@ -197,6 +201,7 @@ int main(int argc, char *argv[]){
   uvar_nfSizeCylinder = NFSIZE;
   uvar_blocksRngMed = BLOCKSRNGMED;
   uvar_maxBinsClean = 100;
+  uvar_Dterms = DTERMS;
 
   uvar_patchSizeAlpha = PATCHSIZEX;
   uvar_patchSizeDelta = PATCHSIZEY; 
@@ -248,10 +253,12 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighAM",          0,  UVAR_OPTIONAL, "Use amplitude modulation weights",      &uvar_weighAM),         &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighNoise",       0,  UVAR_OPTIONAL, "Use SFT noise weights",                 &uvar_weighNoise),      &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printLog",         0,  UVAR_OPTIONAL, "Print Log file",                        &uvar_printLog),        &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "fast",             0,  UVAR_OPTIONAL, "Use fast frequency domain SFT injections",    &uvar_fast),      &status);  
    /* developer input variables */
   LAL_CALL( LALRegisterINTUserVar(    &status, "nfSizeCylinder",   0, UVAR_DEVELOPER, "Size of cylinder of PHMDs",             &uvar_nfSizeCylinder),  &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",     0, UVAR_DEVELOPER, "Running Median block size",             &uvar_blocksRngMed),    &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "maxBinsClean",     0, UVAR_DEVELOPER, "Maximum number of bins in cleaning",    &uvar_maxBinsClean),    &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "Dterms",           0,  UVAR_DEVELOPER, "Number of f-bins in MC injection",     &uvar_Dterms),    &status);
 
   /******************************************************************/ 
   /* read all command line variables */
@@ -476,17 +483,13 @@ int main(int argc, char *argv[]){
     numsft.length =  numifo;
     numsft.data = NULL;
     numsft.data =(UINT4 *)LALCalloc(numifo, sizeof(UINT4));
-
-    signalSFTs = (MultiSFTVector *)LALMalloc(sizeof(MultiSFTVector));
-    signalSFTs->length = numifo;
-    signalSFTs->data = (SFTVector **)LALCalloc(numifo, sizeof(SFTVector *));
        
     for ( iIFO = 0; iIFO < numifo; iIFO++) {
-      numsft.data[iIFO] = inputSFTs->data[iIFO]->length;
-      signalSFTs->data[iIFO] = NULL;      
+      numsft.data[iIFO] = inputSFTs->data[iIFO]->length;     
     }
     
     LAL_CALL( LALCreateMultiSFTVector(&status, &sumSFTs, binsSFT, &numsft), &status);
+    LAL_CALL( LALCreateMultiSFTVector(&status, &signalSFTs, binsSFT, &numsft), &status);
     LALFree( numsft.data);
      
   }
@@ -627,6 +630,50 @@ int main(int argc, char *argv[]){
   alphaPeak = exp( - uvar_peakThreshold);
   meanN = mObsCoh* alphaPeak;
 
+  /******************************************************************/ 
+  /*  initialization of fast injections parameters  TO BE FIXED for multiIFO
+     and memory should be dealocated at the end */ 
+  /******************************************************************/ 
+
+  pSkyConstAndZeroPsiAMResponse = (SkyConstAndZeroPsiAMResponse *)
+                   LALMalloc(sizeof(SkyConstAndZeroPsiAMResponse)*numifo);
+  {	
+    UINT4 numsft,iIFO;
+     
+     for (iIFO=0; iIFO<numifo; iIFO++){
+       
+       numsft = mdetStates->data[iIFO]->length;   
+         
+       pSkyConstAndZeroPsiAMResponse[iIFO].skyConst = (REAL8 *)LALMalloc((2*msp*(numsft+1)+2*numsft+3)*sizeof(REAL8));
+       pSkyConstAndZeroPsiAMResponse[iIFO].fPlusZeroPsi = (REAL4 *)LALMalloc(numsft*sizeof(REAL4));
+       pSkyConstAndZeroPsiAMResponse[iIFO].fCrossZeroPsi = (REAL4 *)LALMalloc(numsft*sizeof(REAL4));
+      }
+    }
+
+  {    
+    INT4 k;
+    
+    pSFTandSignalParams = (SFTandSignalParams *)LALMalloc(sizeof(SFTandSignalParams));
+        /* create lookup table (LUT) values for doing trig */
+        /* pSFTandSignalParams->resTrig = 64; */ /* length sinVal and cosVal; resolution of trig functions = 2pi/resTrig */
+    pSFTandSignalParams->resTrig = 0; /* 08/02/04 gam; avoid serious bug when using LUT for trig calls */
+    pSFTandSignalParams->trigArg = (REAL8 *)LALMalloc((pSFTandSignalParams->resTrig+1)*sizeof(REAL8));
+    pSFTandSignalParams->sinVal  = (REAL8 *)LALMalloc((pSFTandSignalParams->resTrig+1)*sizeof(REAL8));
+    pSFTandSignalParams->cosVal  = (REAL8 *)LALMalloc((pSFTandSignalParams->resTrig+1)*sizeof(REAL8));
+
+    for (k=0; k<=pSFTandSignalParams->resTrig; k++) {
+       pSFTandSignalParams->trigArg[k]= ((REAL8)LAL_TWOPI) * ((REAL8)k) / ((REAL8)pSFTandSignalParams->resTrig);
+       pSFTandSignalParams->sinVal[k]=sin( pSFTandSignalParams->trigArg[k] );
+       pSFTandSignalParams->cosVal[k]=cos( pSFTandSignalParams->trigArg[k] );
+    }
+
+    pSFTandSignalParams->pSigParams = &params;    /* as defined in Hough*/
+    pSFTandSignalParams->pSFTParams = &sftParams; /* as defined in Hough*/
+    pSFTandSignalParams->nSamples = (INT4)(0.5*timeBase);  /* nsample to get version 2 sfts */
+    pSFTandSignalParams->Dterms = uvar_Dterms; 
+
+  }
+  
   /******************************************************************/ 
   /*   setting of parameters */ 
   /******************************************************************/ 
@@ -774,18 +821,46 @@ int main(int argc, char *argv[]){
    params.pulsar.spindown=  &pulsarInject.spindown ;   
     
    {
-     UINT4 iIFO;
-     
-     for (iIFO=0; iIFO<numifo; iIFO++){
-       params.site = &(mdetStates->data[iIFO]->detector);
-       sftParams.timestamps = multiIniTimeV->data[iIFO];
-       LAL_CALL( LALGeneratePulsarSignal(&status, &signalTseries, &params ), &status);
-       LAL_CALL( LALSignalToSFTs(&status, &signalSFTs->data[iIFO], signalTseries, &sftParams), &status);
+     UINT4 iIFO, numsft, iSFT, j;    
            
-       LALFree(signalTseries->data->data);
-       LALFree(signalTseries->data);
-       LALFree(signalTseries);
-       signalTseries =NULL;      
+     if(uvar_fast){
+     
+       for (iIFO=0; iIFO<numifo; iIFO++){       
+         params.site = &(mdetStates->data[iIFO]->detector);
+         sftParams.timestamps = multiIniTimeV->data[iIFO];
+	 numsft = mdetStates->data[iIFO]->length; 
+	 
+	 /* initialize data to zero */
+         for ( iSFT = 0; iSFT < numsft; iSFT++){	   
+	   for (j=0; j < binsSFT; j++) {
+	     signalSFTs->data[iIFO]->data[iSFT].data->data[j].re = 0.0;
+	     signalSFTs->data[iIFO]->data[iSFT].data->data[j].im = 0.0;	    
+	   }	 
+         }
+     	  	 
+	 LAL_CALL( LALComputeSkyAndZeroPsiAMResponse (&status,
+	  &pSkyConstAndZeroPsiAMResponse[iIFO], pSFTandSignalParams), &status);
+         LAL_CALL( LALFastGeneratePulsarSFTs (&status, &signalSFTs->data[iIFO],
+	  &pSkyConstAndZeroPsiAMResponse[iIFO], pSFTandSignalParams), &status);	 
+       }
+     }
+     else{
+     
+       for (iIFO=0; iIFO<numifo; iIFO++){
+         params.site = &(mdetStates->data[iIFO]->detector);
+         sftParams.timestamps = multiIniTimeV->data[iIFO];
+	 
+         LAL_CALL(LALDestroySFTVector(&status, &signalSFTs->data[iIFO]),&status );
+         signalSFTs->data[iIFO] = NULL;
+	 
+         LAL_CALL( LALGeneratePulsarSignal(&status, &signalTseries, &params ), &status);
+         LAL_CALL( LALSignalToSFTs(&status, &signalSFTs->data[iIFO], signalTseries, &sftParams), &status);
+           
+         LALFree(signalTseries->data->data);
+         LALFree(signalTseries->data);
+         LALFree(signalTseries);
+         signalTseries =NULL;      
+       }
      }   
    }
    	     
@@ -971,17 +1046,6 @@ int main(int argc, char *argv[]){
     /* ****************************************************************/   
     fprintf(fpPar,"  %d %d \n",  controlN, controlNH );
     
-    {
-      UINT4 iIFO;
-      
-      for(iIFO = 0; iIFO<numifo; iIFO++){
-        LAL_CALL(LALDestroySFTVector(&status, &signalSFTs->data[iIFO]),&status );
-	signalSFTs->data[iIFO] = NULL;
-      }
-    }
-	     
-
-    
   } /* Closing MC loop */
   
   /******************************************************************/
@@ -1001,28 +1065,39 @@ int main(int argc, char *argv[]){
   LALFree(velV.data);
   LALFree(timeDiffV.data);
   
+  LALFree(pSFTandSignalParams->cosVal);
+  LALFree(pSFTandSignalParams->sinVal);
+  LALFree(pSFTandSignalParams->trigArg);
+  LALFree(pSFTandSignalParams);
+
+  
   {
      UINT4 iIFO;
       
      for(iIFO = 0; iIFO<numifo; iIFO++){
         LAL_CALL(LALDestroyTimestampVector(&status, &multiIniTimeV->data[iIFO]),&status );
+	LALFree(pSkyConstAndZeroPsiAMResponse[iIFO].skyConst);
+	LALFree(pSkyConstAndZeroPsiAMResponse[iIFO].fPlusZeroPsi);
+	LALFree(pSkyConstAndZeroPsiAMResponse[iIFO].fCrossZeroPsi);
       }
-    }
+  }
+  
   LALFree(multiIniTimeV->data);
   LALFree(multiIniTimeV);
-  
+  LALFree(pSkyConstAndZeroPsiAMResponse);
    
   XLALDestroyMultiDetectorStateSeries ( mdetStates );
 
   LALFree(skyPatchCenterV.data);
   LALFree(foft.data);
   LALFree(h0V.data);
+  
   {
      UINT4 j;
      for (j=0;j<nTemplates;++j) {
         LALFree(foftV[j].data);
      }
-   }
+  }
 
   
   LALFree(injectPar.spnFmax.data);
@@ -1049,11 +1124,9 @@ int main(int argc, char *argv[]){
     LALFree(weightsAMskyV);
   }
   
-
   LAL_CALL(LALDestroyMultiSFTVector(&status, &inputSFTs),&status );
   LAL_CALL(LALDestroyMultiSFTVector(&status, &sumSFTs),&status );
-  LALFree(signalSFTs->data);
-  LALFree(signalSFTs);
+  LAL_CALL(LALDestroyMultiSFTVector(&status, &signalSFTs),&status );
  
   LAL_CALL (LALDestroyUserVars(&status), &status);  
 
