@@ -62,6 +62,7 @@ extern int lalDebugLevel;
 #define H0MAX 1.0e-22
 #define NMCLOOP 2 /* number of Monte-Carlos */
 #define NTEMPLATES 16 /* number templates for each Monte-Carlo */
+#define DTERMS 5
 
 #define SFTDIRECTORY "/local_data/sintes/SFT-S5-120-130/*SFT*.*"
 /* */
@@ -158,7 +159,7 @@ int main(int argc, char *argv[]){
   /******************************************************************/ 
   BOOLEAN uvar_help, uvar_weighAM, uvar_weighNoise, uvar_printLog, uvar_fast;
   INT4    uvar_blocksRngMed, uvar_nh0, uvar_nMCloop, uvar_AllSkyFlag;
-  INT4    uvar_nfSizeCylinder, uvar_maxBinsClean;
+  INT4    uvar_nfSizeCylinder, uvar_maxBinsClean, uvar_Dterms;
   REAL8   uvar_f0, uvar_fSearchBand, uvar_peakThreshold, uvar_h0Min, uvar_h0Max;
   REAL8   uvar_alpha, uvar_delta, uvar_patchSizeAlpha, uvar_patchSizeDelta;
   CHAR   *uvar_earthEphemeris=NULL;
@@ -200,6 +201,7 @@ int main(int argc, char *argv[]){
   uvar_nfSizeCylinder = NFSIZE;
   uvar_blocksRngMed = BLOCKSRNGMED;
   uvar_maxBinsClean = 100;
+  uvar_Dterms = DTERMS;
 
   uvar_patchSizeAlpha = PATCHSIZEX;
   uvar_patchSizeDelta = PATCHSIZEY; 
@@ -256,6 +258,7 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterINTUserVar(    &status, "nfSizeCylinder",   0, UVAR_DEVELOPER, "Size of cylinder of PHMDs",             &uvar_nfSizeCylinder),  &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",     0, UVAR_DEVELOPER, "Running Median block size",             &uvar_blocksRngMed),    &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "maxBinsClean",     0, UVAR_DEVELOPER, "Maximum number of bins in cleaning",    &uvar_maxBinsClean),    &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "Dterms",           0,  UVAR_DEVELOPER, "Number of f-bins in MC injection",     &uvar_Dterms),    &status);
 
   /******************************************************************/ 
   /* read all command line variables */
@@ -480,17 +483,13 @@ int main(int argc, char *argv[]){
     numsft.length =  numifo;
     numsft.data = NULL;
     numsft.data =(UINT4 *)LALCalloc(numifo, sizeof(UINT4));
-
-    signalSFTs = (MultiSFTVector *)LALMalloc(sizeof(MultiSFTVector));
-    signalSFTs->length = numifo;
-    signalSFTs->data = (SFTVector **)LALCalloc(numifo, sizeof(SFTVector *));
        
     for ( iIFO = 0; iIFO < numifo; iIFO++) {
-      numsft.data[iIFO] = inputSFTs->data[iIFO]->length;
-      signalSFTs->data[iIFO] = NULL;      
+      numsft.data[iIFO] = inputSFTs->data[iIFO]->length;     
     }
     
     LAL_CALL( LALCreateMultiSFTVector(&status, &sumSFTs, binsSFT, &numsft), &status);
+    LAL_CALL( LALCreateMultiSFTVector(&status, &signalSFTs, binsSFT, &numsft), &status);
     LALFree( numsft.data);
      
   }
@@ -671,7 +670,7 @@ int main(int argc, char *argv[]){
     pSFTandSignalParams->pSigParams = &params;    /* as defined in Hough*/
     pSFTandSignalParams->pSFTParams = &sftParams; /* as defined in Hough*/
     pSFTandSignalParams->nSamples = (INT4)(0.5*timeBase);  /* nsample to get version 2 sfts */
-    pSFTandSignalParams->Dterms = 16; 
+    pSFTandSignalParams->Dterms = uvar_Dterms; 
 
   }
   
@@ -825,31 +824,32 @@ int main(int argc, char *argv[]){
      UINT4 iIFO, numsft, iSFT, j;    
      COMPLEX8   *signalSFT; 
         
+     /* initialize data to zero */
+     for (iIFO=0; iIFO<numifo; iIFO++){
+       for ( iSFT = 0; iSFT < numsft; iSFT++){
+	 signalSFT = signalSFTs->data[iIFO]->data[iSFT].data->data;
+	 for (j=0; j < binsSFT; j++) {
+	   sumSFT->re = 0.0;
+	   sumSFT->im = 0.0;
+	   ++signalSFT;
+	 }	 
+       }
+     }
+
+
      if(uvar_fast){
      
-       for (iIFO=0; iIFO<numifo; iIFO++){
-       
+       for (iIFO=0; iIFO<numifo; iIFO++){       
          params.site = &(mdetStates->data[iIFO]->detector);
          sftParams.timestamps = multiIniTimeV->data[iIFO];
 	 numsft = mdetStates->data[iIFO]->length; 
-	  
-	 LAL_CALL( LALCreateSFTVector (&status, &signalSFTs->data[iIFO], numsft, binsSFT), &status);
-	 /* initialize data to zero */
-         for ( iSFT = 0; iSFT < numsft; iSFT++){
-	   signalSFT = signalSFTs->data[iIFO]->data[iSFT].data->data;
-	   for (j=0; j < binsSFT; j++) {
-	     sumSFT->re = 0.0;
-	     sumSFT->im = 0.0;
-	     ++signalSFT;
-	   }	 
-	 }
-	 
+	  	 
 	 LAL_CALL( LALComputeSkyAndZeroPsiAMResponse (&status, pSkyConstAndZeroPsiAMResponse, pSFTandSignalParams), &status);
-         LAL_CALL( LALFastGeneratePulsarSFTs (&status, &signalSFTs->data[iIFO], pSkyConstAndZeroPsiAMResponse, pSFTandSignalParams), &status);
-	 
+         LAL_CALL( LALFastGeneratePulsarSFTs (&status, &signalSFTs->data[iIFO], pSkyConstAndZeroPsiAMResponse, pSFTandSignalParams), &status);	 
        }
      }
      else{
+     
        for (iIFO=0; iIFO<numifo; iIFO++){
          params.site = &(mdetStates->data[iIFO]->detector);
          sftParams.timestamps = multiIniTimeV->data[iIFO];
@@ -1046,17 +1046,6 @@ int main(int argc, char *argv[]){
     /* ****************************************************************/   
     fprintf(fpPar,"  %d %d \n",  controlN, controlNH );
     
-    {
-      UINT4 iIFO;
-      
-      for(iIFO = 0; iIFO<numifo; iIFO++){
-        LAL_CALL(LALDestroySFTVector(&status, &signalSFTs->data[iIFO]),&status );
-	signalSFTs->data[iIFO] = NULL;
-      }
-    }
-	     
-
-    
   } /* Closing MC loop */
   
   /******************************************************************/
@@ -1137,8 +1126,7 @@ int main(int argc, char *argv[]){
 
   LAL_CALL(LALDestroyMultiSFTVector(&status, &inputSFTs),&status );
   LAL_CALL(LALDestroyMultiSFTVector(&status, &sumSFTs),&status );
-  LALFree(signalSFTs->data);
-  LALFree(signalSFTs);
+  LAL_CALL(LALDestroyMultiSFTVector(&status, &signalSFTs),&status );
  
   LAL_CALL (LALDestroyUserVars(&status), &status);  
 
