@@ -822,8 +822,7 @@ int main(int argc, char *argv[]){
     
    {
      UINT4 iIFO, numsft, iSFT, j;    
-     COMPLEX8   *signalSFT; 
-       
+           
      if(uvar_fast){
      
        for (iIFO=0; iIFO<numifo; iIFO++){       
@@ -832,12 +831,10 @@ int main(int argc, char *argv[]){
 	 numsft = mdetStates->data[iIFO]->length; 
 	 
 	 /* initialize data to zero */
-         for ( iSFT = 0; iSFT < numsft; iSFT++){
-	   signalSFT = signalSFTs->data[iIFO]->data[iSFT].data->data;
+         for ( iSFT = 0; iSFT < numsft; iSFT++){	   
 	   for (j=0; j < binsSFT; j++) {
-	     signalSFT->re = 0.0;
-	     signalSFT->im = 0.0;
-	     ++signalSFT;
+	     signalSFTs->data[iIFO]->data[iSFT].data->data[j]->re = 0.0;
+	     signalSFTs->data[iIFO]->data[iSFT].data->data[j]->im = 0.0;	    
 	   }	 
          }
      	  	 
