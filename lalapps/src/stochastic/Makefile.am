@@ -2,11 +2,10 @@
 # $Id$
 
 ## sources
-STOCH_SRCS       = stochastic.c
-STOCH_DEV_SRCS   = data_input.c data_input.h \
+STOCH_SRCS       = data_input.c data_input.h \
                    data_output.c data_output.h \
                    sgwb.c sgwb.h misc.c misc.h \
-                   stochastic_dev.c
+                   stochastic.c
 STOCH_FAKE_SRCS  = fake_data.c fake_data.h \
                    data_output.c data_output.h \
                    sgwb.c sgwb.h misc.c misc.h \
@@ -19,10 +18,8 @@ OLAPREDFCN_SRCS  = olapredfcn.c olapredfcn.h \
 ## frame library dependant programs
 if FRAME
 if LALFRAME
-FRAMEPROGRAMS = lalapps_stochastic lalapps_stochastic_dev \
-                lalapps_stochastic_fake
+FRAMEPROGRAMS = lalapps_stochastic lalapps_stochastic_fake
 lalapps_stochastic_SOURCES      = $(STOCH_SRCS)
-lalapps_stochastic_dev_SOURCES  = $(STOCH_DEV_SRCS)
 lalapps_stochastic_fake_SOURCES = $(STOCH_FAKE_SRCS)
 endif
 endif

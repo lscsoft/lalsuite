@@ -1,69 +1,52 @@
 /*
- * stochastic.c - SGWB Standalone Analysis Pipeline
+ * stochastic_dev.c - SGWB Standalone Analysis Pipeline
+ *                  - Development Branch
  *
- * Adam Mercer <ram@star.sr.bham.ac.uk>
- * Tania Regimbau <Tania.Regimbau@astro.cf.ac.uk>
+ * Copyright (C) 2002-2006 Adam Mercer
+ * Copyright (C) 2003-2004 Tania Regimbau
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or (at
+ * your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ * 02110-1301, USA
  *
  * $Id$
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <math.h>
-#include <getopt.h>
-
-#include <FrameL.h>
-
-#include <lal/AVFactories.h>
-#include <lal/Date.h>
-#include <lal/FrameCalibration.h>
-#include <lal/FrameStream.h>
-#include <lal/LALStdio.h>
-#include <lal/ResampleTimeSeries.h>
-#include <lal/StochasticCrossCorrelation.h>
-#include <lal/FrequencySeries.h>
-#include <lal/TimeSeries.h>
-#include <lal/LIGOLwXML.h>
-#include <lal/LIGOMetadataTables.h>
-#include <lal/PrintFTSeries.h>
-
-#include <lalapps.h>
-#include <processtable.h>
+#include "data_input.h"
+#include "misc.h"
+#include "sgwb.h"
+#include "data_output.h"
+#include "stochastic.h"
 
 NRCSID(STOCHASTICC, "$Id$");
 RCSID("$Id$");
 
 /* cvs info */
-#define PROGRAM_NAME "stochastic"
+#define PROGRAM_NAME "stochastic_dev"
 #define CVS_ID "$Id$"
 #define CVS_REVISION "$Revision$"
 #define CVS_DATE "$Date$"
 #define CVS_SOURCE "$Source$"
 
-/* xml process param table helper */
-#define ADD_PROCESS_PARAM(pptype, format, ppvalue) \
-  this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
-    calloc(1, sizeof(ProcessParamsTable)); \
-  LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
-      PROGRAM_NAME); \
-  LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
-      long_options[option_index].name); \
-  LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype); \
-  LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue);
-
-/* window duration for PSD estimation */
-#define PSD_WINDOW_DURATION 4
-
 /* flags for getopt_long */
-static int middle_segment_flag;
-static int apply_mask_flag;
-static int high_pass_flag;
-static int overlap_hann_flag;
-static int recentre_flag;
-static int cc_spectra_flag;
-static int debug_flag;
+int middle_segment_flag;
+int apply_mask_flag;
+int high_pass_flag;
+int overlap_hann_flag;
+int recentre_flag;
+int cc_spectra_flag;
+int debug_flag;
 extern int vrbflg;
 
 /* xml comment/tags */
@@ -129,1357 +112,6 @@ INT4 maskBin = -1;
 CHAR *outputPath = NULL;
 
 /* helper functions */
-
-/* can't use round() as its not C89 */
-static double myround(double x)
-{
-  return(x < 0 ? ceil(x - 0.5): floor(x + 0.5));
-}
-
-/* read a LIGO time series */
-static REAL4TimeSeries *get_ligo_data(LALStatus *status,
-    FrStream *stream,
-    CHAR *channel,
-    LIGOTimeGPS start,
-    LIGOTimeGPS end)
-{
-  /* variables */
-  REAL4TimeSeries *series;
-  FrChanIn channel_in;
-  size_t length;
-
-  /* set channelIn */
-  channel_in.name = channel;
-  channel_in.type = ADCDataChannel;
-
-  if (vrbflg)
-    fprintf(stdout, "Allocating memory for \"%s\" series...\n", channel);
-
-  /* create and initialise time series */
-  LAL_CALL(LALCreateREAL4TimeSeries(status, &series, channel, start, 0, 0, \
-        lalADCCountUnit, 0), status);
-
-  if (vrbflg)
-    fprintf(stdout, "Reading \"%s\" series metadata...\n", channel);
-
-  /* get the series meta data */
-  XLALFrGetREAL4TimeSeriesMetadata(series, stream);
-
-  if (vrbflg)
-    fprintf(stdout, "Resizing \"%s\" series...\n", channel);
-
-  /* resize series to the correct number of samples */
-  length = floor((XLALDeltaFloatGPS(&end, &start) / series->deltaT) + 0.5);
-  LAL_CALL(LALResizeREAL4TimeSeries(status, series, 0, length), status);
-
-  if (vrbflg)
-    fprintf(stdout, "Reading channel \"%s\"...\n", channel);
-
-  /* seek to and read data */
-  XLALFrSeek(stream, &start);
-  XLALFrGetREAL4TimeSeries(series, stream);
-
-  return(series);
-}
-
-/* read and high pass filter a GEO time series */
-static REAL4TimeSeries *get_geo_data(LALStatus *status,
-    FrStream *stream,
-    CHAR *channel,
-    LIGOTimeGPS start,
-    LIGOTimeGPS end)
-{
-  /* variables */
-  PassBandParamStruc high_pass_params;
-  REAL4TimeSeries *series;
-  REAL8TimeSeries *geo;
-  FrChanIn channel_in;
-  size_t length;
-  size_t i;
-
-  /* set channelIn */
-  channel_in.name = channel;
-  channel_in.type = ADCDataChannel;
-
-  if (vrbflg)
-    fprintf(stdout, "Allocating memory for \"%s\" series...\n", channel);
-
-  /* create and initialise time series */
-  LAL_CALL(LALCreateREAL8TimeSeries(status, &geo, channel, start, 0, 0, \
-        lalADCCountUnit, 0), status);
-
-  if (vrbflg)
-    fprintf(stdout, "Reading \"%s\" series metadata...\n", channel);
-
-  /* get the series meta data */
-  XLALFrGetREAL8TimeSeriesMetadata(geo, stream);
-
-  if (vrbflg)
-    fprintf(stdout, "Resizing \"%s\" series...\n", channel);
-
-  /* resize series to the correct number of samples */
-  length = floor((XLALDeltaFloatGPS(&end, &start) / series->deltaT) + 0.5);
-  LAL_CALL(LALResizeREAL8TimeSeries(status, geo, 0, length), status);
-
-  if (vrbflg)
-    fprintf(stdout, "Reading channel \"%s\"...\n", channel);
-
-  /* seek to and read data */
-  XLALFrSeek(stream, &start);
-  XLALFrGetREAL8TimeSeries(geo, stream);
-
-  if (vrbflg)
-    fprintf(stdout, "High pass filtering \"%s\"...\n", channel);
-
-  /* high pass filter before casting to a REAL4 */
-  high_pass_params.nMax = geoHighPassOrder;
-  high_pass_params.f1 = -1;
-  high_pass_params.f2 = geoHighPassFreq;
-  high_pass_params.a1 = -1;
-  high_pass_params.a2 = geoHighPassAtten;
-  XLALButterworthREAL8TimeSeries(geo, &high_pass_params);
-
-  if (vrbflg)
-    fprintf(stdout, "Casting \"%s\" as a REAL4...\n", channel);
-
-  /* cast as a REAL4 */
-  LAL_CALL(LALCreateREAL4TimeSeries(status, &series, geo->name, geo->epoch, \
-        geo->f0, geo->deltaT, geo->sampleUnits, geo->data->length), status);
-  for (i = 0; i < series->data->length; i++)
-    series->data->data[i] = (REAL4)geo->data->data[i];
-
-  /* destroy geo series */
-  XLALDestroyREAL8TimeSeries(geo);
-
-  return(series);
-}
-
-/* read a time series */
-static REAL4TimeSeries *get_time_series(LALStatus *status,
-    CHAR *ifo,
-    CHAR *cache_file,
-    CHAR *channel,
-    LIGOTimeGPS start,
-    LIGOTimeGPS end,
-    INT4 buffer)
-{
-  /* variables */
-  REAL4TimeSeries *series;
-  FrStream *stream = NULL;
-  FrCache *cache = NULL;
-  size_t length;
-  PassBandParamStruc high_pass_params;
-  int mode = LAL_FR_VERBOSE_MODE;
-
-  /* apply resample buffer if required */
-  if (buffer)
-  {
-    start.gpsSeconds -= buffer;
-    end.gpsSeconds += buffer;
-  }
-
-  if (vrbflg)
-    fprintf(stdout, "Opening frame cache \"%s\"...\n", cache_file);
-
-  /* open frame stream */
-  cache = XLALFrImportCache(cache_file);
-  stream = XLALFrCacheOpen(cache);
-  XLALFrDestroyCache(cache);
-
-  /* turn on checking for missing data */
-  XLALFrSetMode(stream, mode);
-
-  /* get the data */
-  if (strncmp(ifo, "G1", 2) == 0)
-    series = get_geo_data(status, stream, channel, start, end);
-  else
-    series = get_ligo_data(status, stream, channel, start, end);
-
-  /* check for missing data */
-  if (stream->state & LAL_FR_GAP)
-  {
-    fprintf(stderr, "Gap in data detected between GPS times %d s and %d s\n", \
-        start.gpsSeconds, end.gpsSeconds);
-    XLALDestroyREAL4TimeSeries(series);
-    exit(1);
-  }
-
-  /* clean up */
-  XLALFrClose(stream);
-
-  /* resample if required */
-  if (resampleRate)
-  {
-    if (vrbflg)
-      fprintf(stdout, "Resampling to %d Hz...\n", resampleRate);
-
-    /* resample */
-    XLALResampleREAL4TimeSeries(series, 1./resampleRate);
-  }
-
-  /* high pass fitering */
-  if (high_pass_flag)
-  {
-    if (vrbflg)
-    {
-      fprintf(stdout, "Applying high pass filter to \"%s\"...\n", \
-          series->name);
-    }
-
-    /* set high pass filter parameters */
-    high_pass_params.nMax = highPassOrder;
-    high_pass_params.f1 = -1;
-    high_pass_params.f2 = highPassFreq;
-    high_pass_params.a1 = -1;
-    high_pass_params.a2 = highPassAtten;
-
-    /* high pass filter */
-    XLALButterworthREAL4TimeSeries(series, &high_pass_params);
-  }
-
-  /* remove resample buffer */
-  if (buffer)
-  {
-    /* recover original start and end times */
-    start.gpsSeconds += buffer;
-    end.gpsSeconds -= buffer;
-
-    /* calculate required length */
-    length = floor((XLALDeltaFloatGPS(&end, &start) / series->deltaT) + 0.5);
-
-    /* remove resample buffer */
-    LAL_CALL(LALShrinkREAL4TimeSeries(status, series, \
-          buffer / series->deltaT, length), status);
-  }
-
-  return(series);
-}
-
-/* wrapper function to return the spectrum */
-static REAL4FrequencySeries *omega_gw(LALStatus *status,
-    REAL4 exponent,
-    REAL8 f_ref,
-    REAL4 omega_ref,
-    UINT4 length,
-    REAL8 f0,
-    REAL8 deltaF)
-{
-  /* variables */
-  REAL4FrequencySeries *series;
-  StochasticOmegaGWParameters omega_params;
-  LIGOTimeGPS epoch;
-
-  /* set epoch */
-  epoch.gpsSeconds = 0;
-  epoch.gpsNanoSeconds = 0;
-
-  /* create and initialise frequency series */
-  LAL_CALL(LALCreateREAL4FrequencySeries(status, &series, "OmegaGW", \
-        epoch, f0, deltaF, lalDimensionlessUnit, length), status);
-
-  /* set parameters */
-  omega_params.alpha = exponent;
-  omega_params.fRef = f_ref;
-  omega_params.omegaRef = omega_ref;
-  omega_params.length = length;
-  omega_params.f0 = f0;
-  omega_params.deltaF = deltaF;
-
-  /* calculate spectrum */
-  LAL_CALL(LALStochasticOmegaGW(status, series, &omega_params), status);
-
-  return(series);
-}
-
-/* wrapper function to return overlap reduction function */
-static REAL4FrequencySeries *overlap_reduction_function(LALStatus *status,
-    UINT4 length,
-    REAL8 f0,
-    REAL8 deltaF,
-    INT4 site_one,
-    INT4 site_two)
-{
-  /* variables */
-  REAL4FrequencySeries *series;
-  OverlapReductionFunctionParameters overlap_params;
-  LALDetectorPair detectors;
-  LIGOTimeGPS epoch;
-
-  /* set epoch */
-  epoch.gpsSeconds = 0;
-  epoch.gpsNanoSeconds = 0;
-
-  /* create and initialise frequency series */
-  LAL_CALL(LALCreateREAL4FrequencySeries(status, &series, "Overlap", \
-        epoch, f0, deltaF, lalDimensionlessUnit, length), status);
-
-  /* set parameters */
-  overlap_params.length = length;
-  overlap_params.f0 = f0;
-  overlap_params.deltaF = deltaF;
-
-  /* set detectors */
-  detectors.detectorOne = lalCachedDetectors[site_one];
-  detectors.detectorTwo = lalCachedDetectors[site_two];
-
-  /* calculate overlap reduction function */
-  LAL_CALL(LALOverlapReductionFunction(status, series, &detectors, \
-        &overlap_params), status);
-
-  return(series);
-}
-
-/* function to cut a time series between given start and end times */
-static REAL4TimeSeries *cut_time_series(LALStatus *status,
-    REAL4TimeSeries *input,
-    LIGOTimeGPS start,
-    UINT4 duration)
-{
-  /* variables */
-  REAL4TimeSeries *series;
-  INT4 length;
-  INT4 first;
-
-  /* calculate length of segment to cut */
-  length = floor((duration / input->deltaT) + 0.5);
-
-  /* get first bin */
-  first = (INT4)((start.gpsSeconds - input->epoch.gpsSeconds) / input->deltaT);
-  
-  /* allocate memory */
-  LAL_CALL(LALCreateREAL4TimeSeries(status, &series, input->name, start, \
-        input->f0, input->deltaT, input->sampleUnits, length), status);
-
-  /* cut time series */
-  LAL_CALL(LALCutREAL4TimeSeries(status, &series, input, first, length), \
-      status);
-
-  return(series);
-}
-
-/* function to save out ccSpectra as a frame file */
-static void write_ccspectra_frame(COMPLEX8FrequencySeries *series,
-    CHAR *ifo_one,
-    CHAR *ifo_two,
-    LIGOTimeGPS epoch,
-    INT4 duration)
-{
-  /* variables */
-  CHAR hertz[] = "Hz";
-  CHAR frame_comment[] = "$Id$";
-  CHAR frame_type[] = "CCSPECTRA";
-  CHAR source[FILENAME_MAX];
-  CHAR fname[FILENAME_MAX];
-  CHAR units[LALUnitNameSize];
-  struct FrFile *frfile;
-  struct FrameH *frame;
-  struct FrVect *vect;
-  struct FrProcData *proc;
-
-  /* set frame filename */
-  LALSnprintf(source, sizeof(source), "%s%s", ifo_one, ifo_two);
-  LALSnprintf(fname, sizeof(fname), "%s-%s-%d-%d.gwf", source, \
-      frame_type, epoch.gpsSeconds, duration);
-
-  /* setup frame file */
-  frfile = FrFileONew(fname, 0);
-
-  /* set frame properties */
-  frame = FrameHNew(source);
-  frame->run = 0;
-  frame->frame = 0;
-  frame->GTimeS = epoch.gpsSeconds;
-  frame->GTimeN = epoch.gpsNanoSeconds;
-  frame->dt = duration;
-
-  /* allocate memory for frame */
-  proc = LALCalloc(1, sizeof(*proc));
-  vect = FrVectNew1D(series->name, FR_VECT_8C, series->data->length, \
-      series->deltaF, hertz, units);
-
-  /* check that memory has been allocated */
-  if (!vect)
-  {
-    LALFree(proc);
-    FrVectFree(vect);
-    fprintf(stderr, "unable to allocate memory for frame.\n");
-    exit(1);
-  }
-
-  /* set start frequency */
-  vect->startX[0] = series->f0;
-
-  /* set frame properties */
-  FrStrCpy(&proc->name, frame_type);
-  FrStrCpy(&proc->comment, frame_comment);
-  proc->next = frame->procData;
-  frame->procData = proc;
-  proc->classe = FrProcDataDef();
-  proc->type = 2;
-  proc->data = vect;
-  proc->subType = 0;
-  proc->tRange = duration;
-  proc->fRange = series->data->length * series->deltaF;
-  
-  /* copy data into frame structure */
-  memcpy(vect->dataD, series->data->data, \
-      series->data->length * sizeof(*series->data->data));
-
-  /* write frame */
-  FrameWrite(frame, frfile);
-
-  /* free frame */
-  FrVectFree(vect); 
-  vect=NULL;
-
-  /* end frame file */
-  FrFileOEnd(frfile);
-}
-
-/* function to return the data window */
-static REAL4Window *data_window(REAL8 deltaT,
-    INT4 length,
-    INT4 hann_duration)
-{
-  /* variables */
-  REAL4Window *window = NULL;
-  REAL4Window *hann = NULL;
-  INT4 hann_length;
-  INT4 i;
-
-  /* get length of hann segment requested */
-  hann_length = (INT4)(hann_duration / deltaT);
-
-  if (hann_length == 0)
-  {
-    /* rectangular window requested */
-    window = XLALCreateRectangularREAL4Window(length);
-  }
-  else if (hann_length == length)
-  {
-    /* pure hann window requested */
-    window = XLALCreateHannREAL4Window(length);
-  }
-  else if ((hann_length > 0) && (hann_length < length))
-  {
-    window = XLALCreateRectangularREAL4Window(length);
-    hann =  XLALCreateHannREAL4Window(hann_length);
-
-    /* construct tukey window */
-    for (i = 0; i < hann_length / 2; i++)
-      window->data->data[i] = hann->data->data[i];
-    for (i = hann_length / 2; i < hann_length; i++)
-      window->data->data[length - hann_length + i] = hann->data->data[i];
-
-    /* free memory for hann window */
-    XLALDestroyREAL4Window(hann);
-  }
-  else
-  {
-    fprintf(stderr, "Invalid hann_length to data_window()...\n");
-    exit(1);
-  }
-
-  return(window);
-}
-
-/* wrapper function for calculating the inverse noise */
-static REAL4FrequencySeries *inverse_noise(LALStatus *status,
-    REAL4FrequencySeries *psd,
-    COMPLEX8FrequencySeries *response)
-{
-  /* variables */
-  REAL4FrequencySeries *series;
-  StochasticInverseNoiseInput input;
-  StochasticInverseNoiseCalOutput output;
-
-  /* allocate memory */
-  LAL_CALL(LALCreateREAL4FrequencySeries(status, &series, "calPSD", \
-        response->epoch, response->f0, response->deltaF, \
-        lalDimensionlessUnit, response->data->length), status);
-
-  /* set input */
-  input.unCalibratedNoisePSD = psd;
-  input.responseFunction = response;
-
-  /* set output */
-  output.calibratedInverseNoisePSD = series;
-
-  /* generate inverse noise */
-  LAL_CALL(LALStochasticInverseNoiseCal(status, &output, &input), status);
-
-  return(series);
-}
-
-/* wrapper function for calculating optimal filter */
-static REAL4FrequencySeries *optimal_filter(LALStatus *status,
-    REAL4FrequencySeries *overlap,
-    REAL4FrequencySeries *omega,
-    REAL4FrequencySeries *psd_one,
-    REAL4FrequencySeries *psd_two,
-    REAL4Window *window,
-    REAL8 *sigma)
-{
-  /* variables */
-  REAL4FrequencySeries *series;
-  StochasticOptimalFilterNormalizationInput norm_input;
-  StochasticOptimalFilterNormalizationOutput norm_output;
-  StochasticOptimalFilterNormalizationParameters norm_params;
-  StochasticOptimalFilterCalInput input;
-  REAL4WithUnits normalisation;
-  REAL4WithUnits variance;
-
-  /* set parameters for normalisation */
-  norm_params.fRef = fRef;
-  norm_params.heterodyned = 0;
-  norm_params.window1 = window->data;
-  norm_params.window2 = window->data;
-
-  /* set inputs for normalisation */
-  norm_input.overlapReductionFunction = overlap;
-  norm_input.omegaGW = omega;
-  norm_input.inverseNoisePSD1 = psd_one;
-  norm_input.inverseNoisePSD2 = psd_two;
-
-  /* set normalisation output */
-  norm_output.normalization = &normalisation;
-  norm_output.variance = &variance;
-
-  /* calculate variance and normalisation for the optimal filter */
-  LAL_CALL(LALStochasticOptimalFilterNormalization(status, \
-        &norm_output, &norm_input, &norm_params), status);
-
-  /* get theoretical sigma */
-  *sigma = sqrt((REAL8)(segmentDuration * variance.value * \
-        pow(10, variance.units.powerOfTen)));
-
-  /* allocate memory */
-  LAL_CALL(LALCreateREAL4FrequencySeries(status, &series, "filter", \
-        psd_one->epoch, psd_one->f0, psd_one->deltaF, lalDimensionlessUnit, \
-        psd_one->data->length), status);
-
-  /* set input */
-  input.overlapReductionFunction = overlap;
-  input.omegaGW = omega;
-  input.calibratedInverseNoisePSD1 = psd_one;
-  input.calibratedInverseNoisePSD2 = psd_two;
-
-  /* generate optimal filter */
-  LAL_CALL(LALStochasticOptimalFilterCal(status, series, &input, \
-        &normalisation), status);
-
-  return(series);
-}
-
-/* wrapper function for estimating the PSD */
-static REAL4FrequencySeries *estimate_psd(LALStatus *status,
-    REAL4TimeSeries *series,
-    REAL8 f0,
-    INT4 shrink_length)
-{
-  /* variables */
-  REAL4FrequencySeries *psd;
-  REAL4Window *window;
-  RealFFTPlan *plan = NULL;
-  UINT4 length;
-  UINT4 overlap;
-  REAL8 deltaF;
-  UINT4 psd_length;
-
-  /* lengths */
-  length = PSD_WINDOW_DURATION / series->deltaT;
-  overlap = length / 2;
-  deltaF = 1./(REAL8)PSD_WINDOW_DURATION;
-  psd_length = (length / 2) + 1;
-
-  /* allocate memory */
-  LAL_CALL(LALCreateREAL4FrequencySeries(status, &psd, "psd", \
-        series->epoch, series->f0, deltaF, lalDimensionlessUnit, \
-        psd_length), status);
-
-  /* create window for PSD estimation */
-  window = XLALCreateHannREAL4Window(length);
-
-  /* create fft plan for PSD estimation */
-  plan = XLALCreateForwardREAL4FFTPlan(length, 0);
-
-  /* esimate PSD */
-  XLALREAL4AverageSpectrumWelch(psd, series, length, overlap, window, plan);
-
-  /* destroy fft plan */
-  XLALDestroyREAL4FFTPlan(plan);
-
-  /* free memory for window */
-  XLALDestroyREAL4Window(window);
-
-  /* reduce to relevant frequency range */
-  LAL_CALL(LALShrinkREAL4FrequencySeries(status, psd, (INT4)(f0/deltaF), \
-        shrink_length), status);
-
-  return(psd);
-}
-
-/* function to return a unity response function, for use with GEO data */
-static COMPLEX8FrequencySeries *unity_response(LALStatus *status,
-    LIGOTimeGPS epoch,
-    REAL8 f0,
-    REAL8 deltaF,
-    LALUnit units,
-    INT4 length)
-{
-  /* variables */
-  COMPLEX8FrequencySeries *response;
-  int i;
-
-  /* allocate memory */
-  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(status, &response, "response", \
-        epoch, f0, deltaF, units, length), status);
-
-  /* get unity response function */
-  for (i = 0; i < length; i++)
-  {
-    response->data->data[i].re = 1;
-    response->data->data[i].im = 0;
-  }
-
-  return(response);
-}
-
-/* wrapper function for generating response function for LIGO data */
-static COMPLEX8FrequencySeries *ligo_response(LALStatus *status,
-    CHAR *ifo,
-    CHAR *cache_file,
-    LIGOTimeGPS epoch,
-    REAL8 f0,
-    REAL8 deltaF,
-    LALUnit units,
-    INT4 length,
-    INT4 offset)
-{
-  /* variables */
-  COMPLEX8FrequencySeries *response;
-  FrCache *cache = NULL;
-  CalibrationUpdateParams calib_params;
-
-  /* apply offset to epoch */
-  epoch.gpsSeconds += offset;
-
-  /* allocate memory */
-  memset(&calib_params, 0, sizeof(CalibrationUpdateParams));
-  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(status, &response, "response", \
-        epoch, 0, deltaF, units, length + (INT4)(f0/deltaF)), status);
-
-  /* set ifo */
-  calib_params.ifo = ifo;
-
-  /* open calibration frame cache */
-  cache = XLALFrImportCache(cache_file);
-
-  /* generate response function */
-  LAL_CALL(LALExtractFrameResponse(status, response, cache, &calib_params), \
-      status);
-
-  /* destory calibration frame cache */
-  XLALFrDestroyCache(cache);
-
-  /* reduce to required band */
-  LAL_CALL(LALShrinkCOMPLEX8FrequencySeries(status, response, f0/deltaF, \
-        length), status);
-
-  return(response);
-}
-
-/* wrapper to unity_response and ligo_response for generating the
- * appropriate response for the given detector */
-static COMPLEX8FrequencySeries *generate_response(LALStatus *status,
-    CHAR *ifo,
-    CHAR *cache_file,
-    LIGOTimeGPS epoch,
-    REAL8 f0,
-    REAL8 deltaF,
-    LALUnit units,
-    INT4 length,
-    INT4 offset)
-{
-  /* variables */
-  COMPLEX8FrequencySeries *response = NULL;
-
-  if (strncmp(ifo, "G1", 2) == 0)
-  {
-    /* generate response for GEO */
-    response = unity_response(status, epoch, f0, deltaF, units, length);
-  }
-  else
-  {
-    /* generate response function for LIGO */
-    response = ligo_response(status, ifo, cache_file, epoch, f0, deltaF, \
-        units, length, offset);
-  }
-
-  return(response);
-}
-
-/* helper function to return the frequency mask */
-static REAL4FrequencySeries *frequency_mask(LALStatus *status,
-    REAL8 f0,
-    REAL8 deltaF,
-    INT4 length,
-    INT4 bins)
-{
-  /* counters */
-  INT4 i, j;
-
-  /* variables */
-  REAL4FrequencySeries *mask;
-  LIGOTimeGPS epoch;
-  INT4 nBins;
-  INT4 numFMin;
-  INT4 full_length;
-
-  /* initialise time */
-  epoch.gpsSeconds = 0;
-  epoch.gpsNanoSeconds = 0;
-
-  /* extra bins */
-  nBins = (bins - 1) / 2;
-  numFMin = (INT4)(f0 / deltaF);
-
-  /* get length for full frequency band */
-  full_length = length + numFMin;
-
-  /* allocate memory for frequency mask */
-  LAL_CALL(LALCreateREAL4FrequencySeries(status, &mask, \
-        "mask", epoch, 0, deltaF, lalDimensionlessUnit, \
-        full_length), status);
-
-  /* set all values to 1 */
-  for (i = 0; i < full_length; i++)
-    mask->data->data[i] = 1;
-
-  /* remove multiples of 16 Hz */
-  for (i = 0; i < full_length; i += (INT4)(16 / deltaF))
-  {
-    mask->data->data[i]= 0;
-
-    for (j = 0; j < nBins; j++)
-    {
-      if ((i + 1 + j) < full_length)
-        mask->data->data[i + 1 + j]= 0;
-      if ((i - 1 - j) > 0 )
-        mask->data->data[i - 1 - j]= 0;
-    }
-  }
-
-  /* remove multiples of 60 Hz */
-  for (i = 0; i < full_length; i += (INT4)(60 / deltaF))
-  {
-    mask->data->data[i] = 0;
-
-    for (j = 0; j < nBins; j++)
-    {
-      if ((i + 1 + j) < full_length)
-        mask->data->data[i + 1 + j]= 0;
-      if ((i - 1 - j) > 0 )
-        mask->data->data[i - 1 - j]= 0;
-    }
-  }
-
-  /* get appropriate band */
-  LAL_CALL(LALShrinkREAL4FrequencySeries(status, mask, numFMin, \
-        length), status);
-
-  return(mask);
-}
-
-/* wrapper function for performing zero pad and fft */
-static COMPLEX8FrequencySeries *zero_pad_and_fft(LALStatus *status,
-    REAL4TimeSeries *series,
-    REAL8 deltaF,
-    INT4 length,
-    REAL4Window *window)
-{
-  /* variables */
-  COMPLEX8FrequencySeries *zero_pad;
-  RealFFTPlan *plan = NULL;
-  SZeroPadAndFFTParameters zero_pad_params;
-
-  /* create fft plan */
-  plan = XLALCreateForwardREAL4FFTPlan(2 * series->data->length, 0);
-
-  /* allocate memory */
-  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(status, &zero_pad, "zero_pad", \
-        series->epoch, 0, deltaF, lalDimensionlessUnit, length), status);
-
-  /* set zeropad parameters */
-  zero_pad_params.fftPlan = plan;
-  zero_pad_params.window = window->data;
-  zero_pad_params.length = 2 * series->data->length;
-
-  /* zero pad and fft */
-  LAL_CALL(LALSZeroPadAndFFT(status, zero_pad, series, &zero_pad_params), \
-      status);
-
-  /* destroy fft plan */
-  XLALDestroyREAL4FFTPlan(plan);
-
-  return(zero_pad);
-}
-
-/* wrapper function for generating the cross correlation spectra */
-static COMPLEX8FrequencySeries *cc_spectrum(LALStatus *status,
-    COMPLEX8FrequencySeries *zero_pad_one,
-    COMPLEX8FrequencySeries *zero_pad_two,
-    COMPLEX8FrequencySeries *response_one,
-    COMPLEX8FrequencySeries *response_two,
-    REAL4FrequencySeries *opt_filter)
-{
-  /* variables */
-  COMPLEX8FrequencySeries *series;
-  StochasticCrossCorrelationCalInput cc_input;
-
-  /* allocate memory */
-  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(status, &series, "cc_spectra", \
-        opt_filter->epoch, opt_filter->f0, opt_filter->deltaF, \
-        lalDimensionlessUnit, opt_filter->data->length), status);
-
-  /* set inputs */
-  cc_input.hBarTildeOne = zero_pad_one;
-  cc_input.hBarTildeTwo = zero_pad_two;
-  cc_input.responseFunctionOne = response_one;
-  cc_input.responseFunctionTwo = response_two;
-  cc_input.optimalFilter = opt_filter;
-  
-  /* calculate spectrum */
-  LAL_CALL(LALStochasticCrossCorrelationSpectrumCal(status, series, \
-        &cc_input, 1), status);
-
-  return(series);
-}
-
-/* helper function to generate cross correlation statistic from cross
- * correlation spectra */
-static REAL8 cc_statistic(COMPLEX8FrequencySeries *cc_spectra)
-{
-  /* variables */
-  REAL8 cc_stat = 0;
-  UINT4 i;
-
-  /* sum up frequencies */
-  for (i = 0; i < cc_spectra->data->length; i++)
-  {
-    cc_stat += cc_spectra->data->data[i].re;
-  }
-
-  /* normalise */
-  cc_stat *= 2 * cc_spectra->deltaF;
-
-  return(cc_stat);
-}
-
-/* helper function to save out xml tables */
-static void save_xml_file(LALStatus *status,
-    LALLeapSecAccuracy accuracy,
-    CHAR *output_path,
-    CHAR *base_name,
-    StochasticTable *stochtable)
-{
-  /* variables */
-  MetadataTable output_table;
-  CHAR xml_file_name[FILENAME_MAX];
-  LIGOLwXMLStream xml_stream;
-
-  /* save out any flags to the process params table */
-  if (middle_segment_flag)
-  {
-    this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
-                      calloc(1, sizeof(ProcessParamsTable));
-    LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
-        PROGRAM_NAME);
-    LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
-        "--middle-segment");
-    LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
-    LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
-  }
-  if (apply_mask_flag)
-  {
-    this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
-                      calloc(1, sizeof(ProcessParamsTable));
-    LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
-        PROGRAM_NAME);
-    LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
-        "--apply-mask");
-    LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
-    LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
-  }
-  if (high_pass_flag)
-  {
-    this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
-                      calloc(1, sizeof(ProcessParamsTable));
-    LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
-        PROGRAM_NAME);
-    LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
-        "--high-pass-filter");
-    LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
-    LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
-  }
-  if (overlap_hann_flag)
-  {
-    this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
-                      calloc(1, sizeof(ProcessParamsTable));
-    LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
-        PROGRAM_NAME);
-    LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
-        "--overlap-hann");
-    LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
-    LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
-  }
-  if (recentre_flag)
-  {
-    this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
-                      calloc(1, sizeof(ProcessParamsTable));
-    LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
-        PROGRAM_NAME);
-    LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
-        "--recentre");
-    LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
-    LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
-  }
-  if (cc_spectra_flag)
-  {
-    this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
-                      calloc(1, sizeof(ProcessParamsTable));
-    LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
-        PROGRAM_NAME);
-    LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
-        "--cc-spectra");
-    LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
-    LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
-  }
-  if (vrbflg)
-  {
-    this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
-                      calloc(1, sizeof(ProcessParamsTable));
-    LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
-        PROGRAM_NAME);
-    LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
-        "--verbose");
-    LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
-    LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
-  }
-
-  /* add the xml comment, if specified */
-  if (!*comment)
-  {
-    LALSnprintf(proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " ");
-  }
-  else
-  {
-    LALSnprintf(proctable.processTable->comment, LIGOMETA_COMMENT_MAX, "%s", \
-        comment);
-  }
-
-  /* delete empty first entry in process params table */
-  this_proc_param = procparams.processParamsTable;
-  procparams.processParamsTable = procparams.processParamsTable->next;
-  free(this_proc_param);
-
-  /* set xml output file */
-  if (output_path)
-  {
-    LALSnprintf(xml_file_name, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml",
-        output_path, base_name);
-  }
-  else
-  {
-    LALSnprintf(xml_file_name, FILENAME_MAX * sizeof(CHAR), "%s.xml",
-        base_name);
-  }
-
-  /* write out xml */
-  if (vrbflg)
-    fprintf(stdout, "Writing output XML file...\n");
-
-  /* opening xml file stream */
-  memset(&xml_stream, 0, sizeof(LIGOLwXMLStream));
-  LAL_CALL(LALOpenLIGOLwXMLFile(status, &xml_stream, xml_file_name), status);
-
-  /* write out process and process params tables */
-  LAL_CALL(LALGPSTimeNow(status, &(proctable.processTable->end_time), \
-        &accuracy), status);
-  LAL_CALL(LALBeginLIGOLwXMLTable(status, &xml_stream, process_table), \
-      status);
-  LAL_CALL(LALWriteLIGOLwXMLTable(status, &xml_stream, proctable, \
-        process_table), status);
-  LAL_CALL(LALEndLIGOLwXMLTable(status, &xml_stream), status);
-  free(proctable.processTable);
-
-  /* write the process params table */
-  LAL_CALL(LALBeginLIGOLwXMLTable(status, &xml_stream, \
-        process_params_table), status);
-  LAL_CALL(LALWriteLIGOLwXMLTable(status, &xml_stream, procparams, \
-        process_params_table), status);
-  LAL_CALL(LALEndLIGOLwXMLTable(status, &xml_stream), status);
-
-  /* write stochastic table */
-  if (stochtable)
-  {
-    output_table.stochasticTable = stochtable;
-    LAL_CALL(LALBeginLIGOLwXMLTable(status, &xml_stream, stochastic_table), \
-        status);
-    LAL_CALL(LALWriteLIGOLwXMLTable(status, &xml_stream, output_table, \
-          stochastic_table), status);
-    LAL_CALL(LALEndLIGOLwXMLTable(status, &xml_stream), status);
-  }
-
-  /* close xml file */
-  LAL_CALL(LALCloseLIGOLwXMLFile(status, &xml_stream), status);
-
-  return;
-}
-
-/* function to perform the stochastic search */
-static StochasticTable *stochastic_search(LALStatus *status,
-    REAL4TimeSeries *series_one,
-    REAL4TimeSeries *series_two,
-    REAL4FrequencySeries *overlap,
-    REAL4FrequencySeries *omega,
-    REAL4Window *window,
-    INT4 num_segments,
-    INT4 filter_length,
-    INT4 segs_in_interval,
-    INT4 segment_length)
-{
-  /* counters */
-  INT4 i, j, k;
-
-  /* data structures */
-  REAL4Vector *cal_psd_one;
-  REAL4Vector *cal_psd_two;
-  REAL4TimeSeries *segment_one = NULL;
-  REAL4TimeSeries *segment_two = NULL;
-  COMPLEX8FrequencySeries *response_one = NULL;
-  COMPLEX8FrequencySeries *response_two = NULL;
-  REAL4FrequencySeries *psd_one = NULL;
-  REAL4FrequencySeries *psd_two = NULL;
-  REAL4FrequencySeries *inv_psd_one = NULL;
-  REAL4FrequencySeries *inv_psd_two = NULL;
-  REAL4FrequencySeries *opt_filter = NULL;
-  COMPLEX8FrequencySeries *zero_pad_one = NULL;
-  COMPLEX8FrequencySeries *zero_pad_two = NULL;
-  COMPLEX8FrequencySeries *cc_spectra = NULL;
-  LALUnit countPerAttoStrain = {18,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
-
-  /* variables */
-  INT4 num_intervals;
-  INT4 segment_shift;
-  INT4 middle_segment;
-  LIGOTimeGPS seg_epoch;
-  LIGOTimeGPS analysis_epoch;
-  REAL8 delta_f;
-
-  /* results */
-  REAL8 sigma;
-  REAL8 y;
-  StochasticTable *stochHead = NULL;
-  StochasticTable *thisStoch = NULL;
-
-  /* debug file */
-  CHAR debug_filename[FILENAME_MAX];
-
-  /* initialise analysis_epoch */
-  analysis_epoch.gpsSeconds = 0;
-  analysis_epoch.gpsNanoSeconds = 0;
-
-  /* calculate number of intervals, and required shift to get to next
-   * interval */
-  if (overlap_hann_flag)
-  {
-    num_intervals = (2 * (num_segments - 2)) - 1;
-    segment_shift = segmentDuration / 2;
-  }
-  else
-  {
-    num_intervals = num_segments - 2;
-    segment_shift = segmentDuration;
-  }
-
-  /* get middle segment number */
-  middle_segment = (segs_in_interval - 1) / 2;
-
-  /* get delta_f for optimal filter */
-  delta_f = 1./(REAL8)PSD_WINDOW_DURATION;
-
-  /* allocate memory for calibrated PSDs */
-  cal_psd_one = XLALCreateREAL4Vector(filter_length);
-  cal_psd_two = XLALCreateREAL4Vector(filter_length);
-
-  if (vrbflg)
-    fprintf(stdout, "Starting analysis loop...\n");
-
-  /* loop over intervals */
-  for (j = 0; j < num_intervals; j++)
-  {	
-    /* initialize average PSDs */
-    for (i = 0; i < filter_length; i++)
-    {
-      cal_psd_one->data[i] = 0;
-      cal_psd_two->data[i] = 0;
-    }
-
-    /* loop over segments in the interval */
-    for (k = 0; k < segs_in_interval; k++)
-    {
-      /* set segment start time */
-      LAL_CALL(LALAddFloatToGPS(status, &seg_epoch, &series_one->epoch, \
-            (REAL8)((j * segment_shift) + (k * segmentDuration))), status);
-
-      /* is this the analysis segment? */
-      if (k == middle_segment)
-        analysis_epoch = seg_epoch;
-
-      if (vrbflg)
-      {
-        fprintf(stdout, "Request data at GPS time %d\n", \
-            seg_epoch.gpsSeconds);
-      }
-
-      /* cut segments from series */
-      segment_one = cut_time_series(status, series_one, seg_epoch, \
-          segmentDuration);
-      segment_two = cut_time_series(status, series_two, seg_epoch, \
-          segmentDuration);
-
-      /* save intermediate products */
-      if (debug_flag)
-      {
-        LALSnprintf(debug_filename, FILENAME_MAX, "segment_1-%d.dat", \
-            seg_epoch.gpsSeconds);
-        LALSPrintTimeSeries(segment_one, debug_filename);
-        LALSnprintf(debug_filename, FILENAME_MAX, "segment_2-%d.dat", \
-            seg_epoch.gpsSeconds);
-        LALSPrintTimeSeries(segment_two, debug_filename);
-      }
-
-      /* compute response */
-      response_one = generate_response(status, ifoOne, calCacheOne, \
-          seg_epoch, fMin, delta_f, countPerAttoStrain, filter_length, \
-          calibOffset);
-      response_two = generate_response(status, ifoTwo, calCacheTwo, \
-          seg_epoch, fMin, delta_f, countPerAttoStrain, filter_length, \
-          calibOffset);
-
-      /* save intermediate products */
-      if (debug_flag)
-      {
-        LALSnprintf(debug_filename, FILENAME_MAX, "response_1-%d.dat", \
-            seg_epoch.gpsSeconds + calibOffset);
-        LALCPrintFrequencySeries(response_one, debug_filename);
-        LALSnprintf(debug_filename, FILENAME_MAX, "response_2-%d.dat", \
-            seg_epoch.gpsSeconds + calibOffset);
-        LALCPrintFrequencySeries(response_two, debug_filename);
-      }
-
-      /* check if on middle segment and if we want to include this in
-       * the analysis */
-      if ((k == middle_segment) && (!middle_segment_flag))
-      {
-        if (vrbflg)
-          fprintf(stdout, "Ignoring middle segment..\n");
-      }
-      else
-      {
-        if (vrbflg)
-          fprintf(stdout, "Estimating PSDs...\n");
-
-        /* compute uncalibrated PSDs */
-        psd_one = estimate_psd(status, segment_one, fMin, filter_length);
-        psd_two = estimate_psd(status, segment_two, fMin, filter_length);
-
-        if (vrbflg)
-          fprintf(stdout, "Generating inverse noise...\n");
-
-        /* compute inverse calibrate PSDs */
-        inv_psd_one = inverse_noise(status, psd_one, response_one);
-        inv_psd_two = inverse_noise(status, psd_two, response_two);
-
-        /* sum over calibrated PSDs for average */
-        for (i = 0; i < filter_length; i++)
-        {
-          cal_psd_one->data[i] += 1. / inv_psd_one->data->data[i];
-          cal_psd_two->data[i] += 1. / inv_psd_two->data->data[i];
-        }
-      }
-    }
-
-    /* average calibrated PSDs and take inverse */
-    for (i = 0; i < filter_length; i++)
-    {
-      /* average */
-      if (!middle_segment_flag)
-      {
-        cal_psd_one->data[i] /= (REAL4)(segs_in_interval - 1);
-        cal_psd_two->data[i] /= (REAL4)(segs_in_interval - 1);
-      }
-      else
-      {
-        cal_psd_one->data[i] /= (REAL4)segs_in_interval;
-        cal_psd_two->data[i] /= (REAL4)segs_in_interval;
-      }
-      /* take inverse */
-      inv_psd_one->data->data[i] = 1. / cal_psd_one->data[i];
-      inv_psd_two->data->data[i] = 1. / cal_psd_two->data[i];
-    }
-
-    /* save intermediate products */
-    if (debug_flag)
-    {
-      LALSnprintf(debug_filename, FILENAME_MAX, "inv_psd_1-%d.dat", \
-          analysis_epoch.gpsSeconds);
-      LALSPrintFrequencySeries(inv_psd_one, debug_filename);
-      LALSnprintf(debug_filename, FILENAME_MAX, "inv_psd_2-%d.dat", \
-          analysis_epoch.gpsSeconds);
-      LALSPrintFrequencySeries(inv_psd_two, debug_filename);
-    }
-
-    if (vrbflg)
-      fprintf(stdout, "Generating optimal filter...\n");
-
-    /* build optimal filter */
-    opt_filter = optimal_filter(status, overlap, omega, inv_psd_one, \
-        inv_psd_two, window, &sigma);
-
-    /* save intermediate products */
-    if (debug_flag)
-    {
-      LALSnprintf(debug_filename, FILENAME_MAX, "opt_filter-%d.dat", \
-          analysis_epoch.gpsSeconds);
-      LALSPrintFrequencySeries(opt_filter, debug_filename);
-    }          
-
-    if (vrbflg)
-    {
-      fprintf(stdout, "Analysing segment at GPS %d\n", \
-          analysis_epoch.gpsSeconds);
-    }
-
-    /* cut analysis segment from full series */
-    segment_one = cut_time_series(status, series_one, analysis_epoch, \
-        segmentDuration);
-    segment_two = cut_time_series(status, series_two, analysis_epoch, \
-        segmentDuration);
-
-    /* save intermediate products */
-    if (debug_flag)
-    {
-      LALSnprintf(debug_filename, FILENAME_MAX, "analysis_segment_1-%d.dat", \
-          analysis_epoch.gpsSeconds);
-      LALSPrintTimeSeries(segment_one, debug_filename);
-      LALSnprintf(debug_filename, FILENAME_MAX, "analysis_segment_2-%d.dat", \
-          analysis_epoch.gpsSeconds);
-      LALSPrintTimeSeries(segment_two, debug_filename);
-    }
-
-    if (vrbflg)
-      fprintf(stdout, "Performing zero pad and FFT...\n");
-
-    /* zero pad and fft */
-    zero_pad_one = zero_pad_and_fft(status, segment_one, delta_f, \
-        segment_length + 1, window);
-    zero_pad_two = zero_pad_and_fft(status, segment_two, delta_f, \
-        segment_length + 1, window);
-
-    /* save intermediate products */
-    if (debug_flag)
-    {
-      LALSnprintf(debug_filename, FILENAME_MAX, "zero_pad_1-%d.dat", \
-          analysis_epoch.gpsSeconds);
-      LALCPrintFrequencySeries(zero_pad_one, debug_filename);
-      LALSnprintf(debug_filename, FILENAME_MAX, "zero_pad_2-%d.dat", \
-          analysis_epoch.gpsSeconds);
-      LALCPrintFrequencySeries(zero_pad_two, debug_filename);
-    }    
-
-    if (vrbflg)
-      fprintf(stdout, "Calculating cross correlation spectrum...\n");
-
-    /* get response functions for analysis segments */
-    response_one = generate_response(status, ifoOne, calCacheOne, \
-        analysis_epoch, fMin, delta_f, countPerAttoStrain, filter_length, \
-        calibOffset);
-    response_two = generate_response(status, ifoTwo, calCacheTwo, \
-        analysis_epoch, fMin, delta_f, countPerAttoStrain, filter_length, \
-        calibOffset);
-
-    /* calculate cc spectrum */
-    cc_spectra = cc_spectrum(status, zero_pad_one, zero_pad_two, \
-        response_one, response_two, opt_filter);
-
-    if (cc_spectra_flag)
-    {
-      /* save out cc spectra as frame */
-      if (vrbflg)
-        fprintf(stdout, "Saving ccSpectra to frame...\n");
-      write_ccspectra_frame(cc_spectra, ifoOne, ifoTwo, \
-          analysis_epoch, segmentDuration);
-    }
-      
-    /* cc statistic */
-    y = cc_statistic(cc_spectra);
-
-    /* display results */
-    if (vrbflg)
-    {
-      fprintf(stdout, "Interval %d\n", j + 1);
-      fprintf(stdout, "  GPS time  = %d\n", analysis_epoch.gpsSeconds);
-      fprintf(stdout, "  y         = %e\n", y);
-      fprintf(stdout, "  sigma     = %e\n", sigma);
-    }
-
-    /* allocate memory for table */
-    if (!stochHead)
-    {
-      stochHead = thisStoch = (StochasticTable *) \
-                  LALCalloc(1, sizeof(StochasticTable));
-    }
-    else
-    {
-      thisStoch = thisStoch->next = (StochasticTable *) \
-                  LALCalloc(1, sizeof(StochasticTable));
-    }
-
-    /* populate columns */
-    LALSnprintf(thisStoch->ifo_one, LIGOMETA_IFO_MAX, ifoOne);
-    LALSnprintf(thisStoch->ifo_two, LIGOMETA_IFO_MAX, ifoTwo);
-    LALSnprintf(thisStoch->channel_one, LIGOMETA_CHANNEL_MAX, channelOne);
-    LALSnprintf(thisStoch->channel_two, LIGOMETA_CHANNEL_MAX, channelTwo);
-    thisStoch->start_time.gpsSeconds = analysis_epoch.gpsSeconds;
-    thisStoch->start_time.gpsNanoSeconds = analysis_epoch.gpsNanoSeconds;
-    thisStoch->duration.gpsSeconds = segmentDuration;
-    thisStoch->duration.gpsNanoSeconds = 0;
-    thisStoch->f_min = fMin;
-    thisStoch->f_max = fMax;
-    thisStoch->cc_stat = y;
-    thisStoch->cc_sigma = sigma;
-  }
-
-  /* clean up */
-  XLALDestroyREAL4Vector(cal_psd_one);
-  XLALDestroyREAL4Vector(cal_psd_two);
-  XLALDestroyREAL4TimeSeries(segment_one);
-  XLALDestroyREAL4TimeSeries(segment_two);
-  XLALDestroyCOMPLEX8FrequencySeries(response_one);
-  XLALDestroyCOMPLEX8FrequencySeries(response_two);
-  XLALDestroyREAL4FrequencySeries(psd_one);
-  XLALDestroyREAL4FrequencySeries(psd_two);
-  XLALDestroyREAL4FrequencySeries(inv_psd_one);
-  XLALDestroyREAL4FrequencySeries(inv_psd_two);
-  XLALDestroyREAL4FrequencySeries(opt_filter);
-  XLALDestroyCOMPLEX8FrequencySeries(zero_pad_one);
-  XLALDestroyCOMPLEX8FrequencySeries(zero_pad_two);
-  XLALDestroyCOMPLEX8FrequencySeries(cc_spectra);
-
-  return(stochHead);
-}
 
 /* display usage information */
 static void display_usage()
@@ -1579,12 +211,12 @@ static void parse_options(INT4 argc, CHAR *argv[])
       {"hpf-frequency", required_argument, 0, 'y'},
       {"hpf-attenuation", required_argument, 0, 'z'},
       {"hpf-order", required_argument, 0, 'A'},
-      {"geo-hpf-frequency", required_argument, 0, 'E'},
-      {"geo-hpf-attenuation", required_argument, 0, 'F'},
-      {"geo-hpf-order", required_argument, 0, 'G'},
-      {"alpha", required_argument, 0, 'H'},
-      {"f-ref", required_argument, 0, 'I'},
-      {"omega0", required_argument, 0, 'J'},
+      {"geo-hpf-frequency", required_argument, 0, 'B'},
+      {"geo-hpf-attenuation", required_argument, 0, 'C'},
+      {"geo-hpf-order", required_argument, 0, 'D'},
+      {"alpha", required_argument, 0, 'E'},
+      {"f-ref", required_argument, 0, 'F'},
+      {"omega0", required_argument, 0, 'G'},
       {0, 0, 0, 0}
     };
 
@@ -1594,7 +226,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
     c = getopt_long_only(argc, argv, \
         "abc:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:" \
-        "A:E:F:G:H:I:J:", long_options, &option_index);
+        "A:B:C:D:E:F:G:", long_options, &option_index);
 
     if (c == -1)
     {
@@ -2005,7 +637,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         ADD_PROCESS_PARAM("int", "%d", highPassOrder);
         break;
 
-      case 'E':
+      case 'B':
         /* GEO high pass knee filter frequency */
         geoHighPassFreq = atof(optarg);
         if (geoHighPassFreq < 0)
@@ -2019,7 +651,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         ADD_PROCESS_PARAM("float", "%e", geoHighPassFreq);
         break;
 
-      case 'F':
+      case 'C':
         /* GEO high pass filter attenuation */
         geoHighPassAtten = atof(optarg);
         if ((geoHighPassAtten < 0.0) || (geoHighPassAtten > 1.0))
@@ -2033,7 +665,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         ADD_PROCESS_PARAM("float", "%e", geoHighPassAtten);
         break;
 
-      case 'G':
+      case 'D':
         /* GEO high pass filter order */
         geoHighPassOrder = atoi(optarg);
         if (geoHighPassOrder <= 0)
@@ -2047,13 +679,13 @@ static void parse_options(INT4 argc, CHAR *argv[])
         ADD_PROCESS_PARAM("int", "%d", geoHighPassOrder);
         break;
 
-      case 'H':
+      case 'E':
         /* filter spectrum exponent */
         alpha = atof(optarg);
         ADD_PROCESS_PARAM("float", "%e", alpha);
         break;
 
-      case 'I':
+      case 'F':
         /* filter reference frequency */
         fRef = atof(optarg);
         if (fRef < 0)
@@ -2066,7 +698,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         ADD_PROCESS_PARAM("float", "%e", fRef);
         break;
 
-      case 'J':
+      case 'G':
         /* filter reference omega */
         omegaRef = atof(optarg);
         if (omegaRef <= 0)
@@ -2453,10 +1085,14 @@ INT4 main(INT4 argc, CHAR *argv[])
   gpsEndTime.gpsNanoSeconds = 0;
 
   /* read data */
-  seriesOne = get_time_series(&status, ifoOne, frameCacheOne, channelOne, \
-      gpsStartTime, gpsEndTime, padData);
-  seriesTwo = get_time_series(&status, ifoTwo, frameCacheTwo, channelTwo, \
-      gpsStartTime, gpsEndTime, padData);
+  seriesOne = get_time_series(ifoOne, frameCacheOne, channelOne, \
+      gpsStartTime, gpsEndTime, resampleRate, highPassOrder, highPassFreq, \
+      highPassAtten, geoHighPassOrder, geoHighPassFreq, geoHighPassAtten, \
+      padData);
+  seriesTwo = get_time_series(ifoTwo, frameCacheTwo, channelTwo, \
+      gpsStartTime, gpsEndTime, resampleRate, highPassOrder, highPassFreq, \
+      highPassAtten, geoHighPassOrder, geoHighPassFreq, geoHighPassAtten, \
+      padData);
 
   /* check that the two series have the same sample rate */
   if (seriesOne->deltaT != seriesTwo->deltaT)
@@ -2512,7 +1148,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       fprintf(stdout, "Applying frequency mask to spectrum..\n");
 
     /* generate frequency mask */
-    mask = frequency_mask(&status, fMin, deltaF, filterLength, maskBin);
+    mask = frequency_mask(fMin, deltaF, filterLength, maskBin);
 
     /* apply mask to omegaGW */
     for (i = 0; i < filterLength; i++)
@@ -2524,11 +1160,14 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* perform search */
   stochHead = stochastic_search(&status, seriesOne, seriesTwo, overlap, \
-      omegaGW, dataWindow, numSegments, filterLength, segsInInt, \
-      segmentLength);
+      omegaGW, dataWindow, numSegments, filterLength, segmentDuration, \
+      segsInInt, segmentLength, PSD_WINDOW_DURATION, ifoOne, ifoTwo, \
+      channelOne, channelTwo, calCacheOne, calCacheTwo, calibOffset, \
+      fMin, fMax, fRef);
 
   /* save out xml table */
-  save_xml_file(&status, accuracy, outputPath, baseName, stochHead);
+  save_xml_file(&status, accuracy, PROGRAM_NAME, outputPath, baseName, \
+      stochHead, proctable, procparams, this_proc_param, comment);
 
   /* cleanup */
   XLALDestroyREAL4FrequencySeries(overlap);
