@@ -1,6 +1,5 @@
 /*
- * stochastic_dev.c - SGWB Standalone Analysis Pipeline
- *                  - Development Branch
+ * stochastic.c - SGWB Standalone Analysis Pipeline
  *
  * Copyright (C) 2002-2006 Adam Mercer
  * Copyright (C) 2003-2004 Tania Regimbau
@@ -33,7 +32,7 @@ NRCSID(STOCHASTICC, "$Id$");
 RCSID("$Id$");
 
 /* cvs info */
-#define PROGRAM_NAME "stochastic_dev"
+#define PROGRAM_NAME "stochastic"
 #define CVS_ID "$Id$"
 #define CVS_REVISION "$Revision$"
 #define CVS_DATE "$Date$"
