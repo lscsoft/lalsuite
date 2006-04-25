@@ -1,0 +1,203 @@
+#!/usr/bin/python
+#
+# $Id$
+#
+# Copyright (C) 2006  Kipp C. Cannon
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+
+from optparse import OptionParser
+import os
+import stat
+import sys
+
+from glue import pipeline
+
+__author__ = "Kipp Cannon <kipp@gravity.phys.uwm.edu>"
+__version__ = "$Revision$"[11:-2]
+__date__ = "$Date$"[7:-2]
+
+
+#
+# =============================================================================
+#
+#                                 Bin Packing
+#
+# =============================================================================
+#
+
+# implements a simple bin packing algorithm:  choose number of bins, sort
+# objects from largest to smallest, put each object into the emptiest bin.
+
+
+class Bin(object):
+	def __init__(self):
+		self.size = 0
+		self.objects = []
+
+	def add_object(self, object, size):
+		self.size += size
+		self.objects.append(object)
+
+	def __cmp__(self, other):
+		return cmp(self.size, other.size)
+
+	def __repr__(self):
+		return "(%d, %s)" % (self.size, self.objects)
+
+	__str__ = __repr__
+
+
+class Bins(list):
+	def __new__(cls, n):
+		l = list.__new__(cls, None)
+		for i in xrange(n):
+			l.append(Bin())
+		return l
+
+	def __init__(cls, n):
+		pass
+
+	def pack(self, object, size):
+		min(self).add_object(object, size)
+
+
+#
+# =============================================================================
+#
+#                                 Command Line
+#
+# =============================================================================
+#
+
+def parse_command_line():
+	parser = OptionParser(version = "%prog CVS $Id$")
+	parser.add_option("-a", "--args", default = "", help = "set command-line arguments for ligolw_burca")
+	parser.add_option("-n", "--max-nodes", default = 400, help = "set the maximum number of nodes in the DAG")
+	parser.add_option("-v", "--verbose", action = "store_true", help = "be verbose")
+	options, filenames = parser.parse_args()
+
+	if not filenames:
+		raise ValueError, "must provide list of filenames"
+
+	return options, filenames
+
+try:
+	options, filenames = parse_command_line()
+except ValueError, e:
+	print >>sys.stderr, "error: %s" % str(e)
+	sys.exit(1)
+
+
+#
+# =============================================================================
+#
+#                              Static Parameters
+#
+# =============================================================================
+#
+
+out_dir = "logs/"
+dag_log = "/tmp/kipp_burca.log"
+dag_name = "burca"
+executable = "/archive/home/kipp/local/bin/ligolw_burca"
+
+
+#
+# =============================================================================
+#
+#                                 Choose Bins
+#
+# =============================================================================
+#
+
+def measure_file_sizes(filenames):
+	"""
+	From a list of file names, return a list of (size, name) tuples
+	sorted in descending order by size.
+	"""
+	l = [(os.stat(name)[stat.ST_SIZE], name) for name in filenames]
+	l.sort()
+	l.reverse()
+	return l
+
+
+def compute_bin_count(files, maxnodes):
+	sizes = [item[0] for item in files]
+	total_size = reduce(long.__add__, sizes)
+	minimum_bin_size = max(min(2**22, total_size), max(sizes))
+	return min(total_size / minimum_bin_size, maxnodes)
+
+
+filenames = measure_file_sizes(filenames)
+bins = Bins(compute_bin_count(filenames, options.max_nodes))
+for (size, name) in filenames:
+	bins.pack(name, size)
+
+
+#
+# =============================================================================
+#
+#                                  Job Types
+#
+# =============================================================================
+#
+
+class BurcaJob(pipeline.CondorDAGJob):
+	def __init__(self, executable, out_dir, arguments):
+		pipeline.CondorDAGJob.__init__(self, "vanilla", executable)
+		self.set_sub_file("ligolw_burca.sub")
+		self.set_stdout_file(os.path.join(out_dir, "ligolw_burca-$(cluster)-$(process).out"))
+		self.set_stderr_file(os.path.join(out_dir, "ligolw_burca-$(cluster)-$(process).err"))
+		self.add_condor_cmd("getenv", "True")
+		if arguments:
+			self.add_arg(arguments)
+
+class BurcaNode(pipeline.CondorDAGNode):
+	pass
+
+
+burcajob = BurcaJob(executable, out_dir, options.args or None)
+
+
+#
+# =============================================================================
+#
+#                                 DAG Assembly
+#
+# =============================================================================
+#
+
+os.mkdir(out_dir)
+
+dag = pipeline.CondorDAG(dag_log)
+dag.set_dag_file(dag_name)
+
+for n, bin in enumerate(bins):
+	node = BurcaNode(burcajob)
+	node.set_name("ligolw_burca_%d" % n)
+	map(node.add_file_arg, bin.objects)
+	dag.add_node(node)
+
+dag.write_sub_files()
+dag.write_dag()
