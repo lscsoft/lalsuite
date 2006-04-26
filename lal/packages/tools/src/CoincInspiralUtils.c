@@ -1117,7 +1117,7 @@ XLALInspiralPsi0Psi3CutBCVC(
   INT4  discardTrigger = 0;
   REAL4 distA = 0, distB = 0;
   REAL4 sigA, sigB;
-  REAL4 psi0A, psi0B, psi3A, psi3B, snr, snrA, snrB, x, y, X, Y, theta=0.035;
+  REAL4 psi0A, psi0B, psi3A, psi3B, snr, snrA, snrB, x, y, X, Y, theta=0.040;
 
   /* loop over the coincindent triggers */
   while( thisCoinc )
@@ -1143,28 +1143,24 @@ XLALInspiralPsi0Psi3CutBCVC(
           psi3A = tmpCoinc->snglInspiral[ifoA]->psi3;
           snrA = tmpCoinc->snglInspiral[ifoA]->snr;
           snrB = tmpCoinc->snglInspiral[ifoB]->snr;
-          if (snrA>snrB )
+          if (snrA<snrB )
   	  {
-	    snr = snrA;
+	    snr = snrB;
 	  }
 	  else
 	  {
-	    snr = snrB;
+	    snr = snrA;
 	  }
         
-	x = (psi0A - psi0B) / snr ;
-	y = (psi3A - psi3B) / snr ;
-	X = x * cos(theta) - y * sin(theta);
-	Y = x * sin(theta) + y * cos(theta);
+   	  x = (psi0A - psi0B) / snr ;
+	  y = (psi3A - psi3B) / snr ;
+	  X = x * cos(theta) - y * sin(theta);
+	  Y = x * sin(theta) + y * cos(theta);
 
-
-        if ( ((X*X/3500/3500) + (Y*Y/40/40)) >  1 )     
-       	{
-          discardTrigger = 1;
-	}
-
-
-
+          if ( ((X*X/5000/5000) + (Y*Y/50/50)) >  1 )     
+       	  {
+            discardTrigger = 1;
+	  }
       }
     }
      
@@ -1242,16 +1238,27 @@ XLALInspiralIotaCutBCVC(
 
 	  iota = fabs(sigA*sigA/snrA-sigB*sigB/snrB)/(sigA*sigA/snrA+sigB*sigB/snrB);
 
-          if (  (iota > (1. - 1./sqrt(snrA) ) ) )
+          if(
+		 (  (ifoA == LAL_IFO_H1)  && (ifoB == LAL_IFO_H2) )
+          || (  (ifoA == LAL_IFO_H2)  && (ifoB == LAL_IFO_H1))
+){
+	  if (  (iota > 0.4 ) )
 	    {
 	      discardTrigger = 1;	
 	    }
-	  if (  (iota > (1. - 1./sqrt(snrB) ) ) )
+}
+          if(
+		 (  (ifoA == LAL_IFO_H1)  && (ifoB == LAL_IFO_L1) )
+          || (  (ifoA == LAL_IFO_L1)  && (ifoB == LAL_IFO_H1))){
+	  if (  (iota > 0.6 ) )
 	    {
 	      discardTrigger = 1;	
 	    }
-	 } 
-        
+
+
+
+        }
+       } 
       }
       if ( discardTrigger )
       {
@@ -1328,7 +1335,6 @@ XLALInspiralDistanceCutBCVC(
           snrB = tmpCoinc->snglInspiral[ifoB]->snr;
           distA = sigmasqA*sigmasqA/snrA;
           distB = sigmasqB*sigmasqB/snrB;
-
           if( ( fabs(distB - distA)/(distA + distB) > epsilonB/snrB + kappaB ) ||
               ( fabs(distA - distB)/(distB + distA) > epsilonA/snrA + kappaA ) )
           {
