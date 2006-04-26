@@ -1,5 +1,5 @@
           {
-	    static const char* CFSLoopRCSID = "$Id$";
+	    NRCSID (CFSLOOPVECTTAG, "$Id$");
 
 	    /* THIS IS DANGEROUS!! It relies on current implementation of COMPLEX8 type!! */
 	    REAL4 *Xalpha_kR4 = &(Xalpha[sftIndex].re);
@@ -56,7 +56,9 @@
             for(k=0; k < klim / 2; k++) {
 	      UINT4 ve;
 	      for(ve=0;ve<4;ve++) {
-                Xsum[ve] = Xsum[ve] * (tFreq[ve] + tFint[ve]) + Xalpha_kR4[ve] * aFreq[ve];
+                Xsum[ve] = Xsum[ve] * tFreq[ve]
+		         + Xsum[ve] * tFint[ve]
+		         + Xalpha_kR4[ve] * aFreq[ve];
 		aFreq[ve] *= (tFreq[ve] + tFint[ve]);
                 tFint[ve] -= 2.0;
 	      }
