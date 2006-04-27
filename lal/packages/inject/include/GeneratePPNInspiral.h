@@ -125,7 +125,7 @@ the + and $\times$ waveforms are elliptically polarized as follows:
 \label{eq:ppn-hplus}
 h_+(t) & = & A_+(t)\cos\phi(t) \; , \\
 \label{eq:ppn-hcross}
-h_\times(t) & = & A_+(t)\sin\phi(t) \; .
+h_\times(t) & = & A_\times(t)\sin\phi(t) \; .
 \end{eqnarray}
 
 ******************************************************* </lalLaTeX> */
