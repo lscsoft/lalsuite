@@ -900,13 +900,15 @@ LALGetDetectorStates (LALStatus *status,
 /* ===== Multi-IFO versions of some of the above functions ===== */
 
 /** Get the detector-time series for the given MultiSFTVector. 
- * (see LALGetDetectorStates for more comments).
+ * (see LALGetDetectorStates() for more comments).
+ *
+ * \note The time-series is based on the <em>midpoints</em> of the SFT-timestamps.
  */
 void
 LALGetMultiDetectorStates( LALStatus *status, 
-			   MultiDetectorStateSeries **mdetStates, 	/**< [out] multi-IFO detector-states */
+			   MultiDetectorStateSeries **mdetStates, /**< [out] multi-IFO detector-states */
 			   const MultiSFTVector *multiSFTs, 		/**< [in] multi-IFO SFTs */
-			   const EphemerisData *edat )			/**< ephemeris files data */				   
+			   const EphemerisData *edat )		/**< ephemeris files data nix nix*/
 {
   UINT4 X, numDetectors;
   MultiDetectorStateSeries *ret = NULL;
@@ -1328,9 +1330,9 @@ XLALEmptyComputeFBuffer ( ComputeFBuffer cfb )
 } /* XLALDestroyComputeFBuffer() */
 
 
-/**< Multiply AM-coeffs a_{Xi}, b_{Xi} by weights \sqrt(w_{Xi}) and 
- * compute the resulting A, B, C (and D) by simply *SUMMING* the weighed 
- * aX^2, bX^2 and a^X*b^x.
+/**< Multiply AM-coeffs \f$a_{Xi}, b_{Xi}\f$ by weights \f$\sqrt(w_{Xi})\f$ and 
+ * compute the resulting A, B, C (and D) by simply *SUMMING* them, i.e.
+ * \f$A = \sum_{X,i} \sqrt{w_{Xi} a_{Xi}^2\f$ etc.
  * 
  * NOTE: this function modifies the AMCoeffs *in place* !
  * NOTE2: if the weights = NULL, we assume unit-weights.
