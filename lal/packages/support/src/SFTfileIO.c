@@ -529,18 +529,6 @@ LALLoadSFTs ( LALStatus *status,
 
 
       /* equal-detector constraint dropped */
-#if 0	      
-      /* check that detector is identical for all SFTs !*/
-      if ( prev_det[0] && strncmp ( catalog->data[i].header.name, prev_det, 2 ) )
-	{
-	  LALDestroySFTVector (status->statusPtr, &ret );
-	  if ( lalDebugLevel )
-	    LALPrintError("\nERROR: SFTCatalog contains SFTs with different detectors!\n\n" );
-	  ABORT ( status, SFTFILEIO_EDIFFDET, SFTFILEIO_MSGEDIFFDET );
-	} /* if different detectors */
-
-      strncpy ( prev_det, catalog->data[i].header.name, 2 );
-#endif 
       if ( (fp = fopen_SFTLocator ( catalog->data[i].locator )) == NULL )
 	{
 	  LALDestroySFTVector (status->statusPtr, &ret );
@@ -2229,6 +2217,7 @@ read_one_sft_from_fp (  LALStatus *status, SFTtype **sft, REAL8 fMin, REAL8 fMax
   UINT4 firstSFTbin, lastSFTbin, numSFTbins;
   INT4 offsetBins;
   long offsetBytes;
+  volatile REAL8 tmp;	/* intermediate results: try to force IEEE-arithmetic */
 
   INITSTATUS (status, "read_one_sft_from_fp", SFTFILEIOC);
   ATTATCHSTATUSPTR ( status );
@@ -2245,36 +2234,53 @@ read_one_sft_from_fp (  LALStatus *status, SFTtype **sft, REAL8 fMin, REAL8 fMax
       ABORT ( status, SFTFILEIO_EHEADER, SFTFILEIO_MSGEHEADER ); 
     }
 
-  firstSFTbin = MYROUND ( ret->f0 / ret->deltaF );
+  tmp = ret->f0 / ret->deltaF;
+  firstSFTbin = MYROUND ( tmp );
   lastSFTbin = firstSFTbin + numSFTbins - 1;
 
   /* figure out frequency-bounds to read in */
   if ( fMin > 0 )
-    firstBin2read = floor ( fMin / ret->deltaF );	/* round down! to make sure, the requested fMin is contained */
+    {
+      tmp = fMin / ret->deltaF;
+      firstBin2read = floor ( tmp );	/* round down! requested fMin is contained */
+    }
   else
-    firstBin2read = firstSFTbin;
+    {
+      firstBin2read = firstSFTbin;
+    }
 
   if ( fMax > 0 )
-    lastBin2read = ceil ( fMax / ret->deltaF );	/* round up! make sure the requested fMax is contained */
+    {
+      tmp = fMax / ret->deltaF;
+      lastBin2read = ceil ( tmp );	/* round up! requested fMax is contained */
+    }
   else
-    lastBin2read = lastSFTbin;
+    {
+      lastBin2read = lastSFTbin;
+    }
 
   if ( firstBin2read > lastBin2read )
     {
-      if ( lalDebugLevel ) LALPrintError ("\nEmpty frequency-interval requested [%d, %d] bins\n\n", firstBin2read, lastBin2read );
+      if ( lalDebugLevel ) 
+	LALPrintError ("\nEmpty frequency-interval requested [%d, %d] bins\n\n", 
+		       firstBin2read, lastBin2read );
       ABORT ( status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL );
     }
 
   /* check that requested interval is found in SFT */
   if ( firstBin2read < firstSFTbin )
     {
-      if ( lalDebugLevel ) LALPrintError ( "\nRequested fMin=%f is not contained in SFT! (%d < %d)\n\n", fMin, firstBin2read, firstSFTbin );
+      if ( lalDebugLevel ) 
+	LALPrintError ( "\nRequested fMin=%f is not contained in SFT! (%d < %d)\n\n", 
+			fMin, firstBin2read, firstSFTbin );
       LALDestroySFTtype ( status->statusPtr, &ret );
       ABORT ( status, SFTFILEIO_EFREQBAND, SFTFILEIO_MSGEFREQBAND );
     }
   if ( lastBin2read > lastSFTbin )
     {
-      if ( lalDebugLevel ) LALPrintError ( "\nRequested fMax=%f is not contained in SFT! (%d > %d)\n\n", fMax, lastBin2read, lastSFTbin );
+      if ( lalDebugLevel ) 
+	LALPrintError ( "\nRequested fMax=%f is not contained in SFT! (%d > %d)\n\n", 
+			fMax, lastBin2read, lastSFTbin );
       LALDestroySFTtype ( status->statusPtr, &ret );
       ABORT ( status, SFTFILEIO_EFREQBAND, SFTFILEIO_MSGEFREQBAND );
     }
@@ -2285,7 +2291,9 @@ read_one_sft_from_fp (  LALStatus *status, SFTtype **sft, REAL8 fMin, REAL8 fMax
 
   if ( fseek ( fp, offsetBytes, SEEK_CUR ) != 0 )
     {
-      if ( lalDebugLevel ) LALPrintError ( "\nFailed to fseek() to first frequency-bin %d: %s\n\n", firstBin2read, strerror(errno) );
+      if ( lalDebugLevel ) 
+	LALPrintError ( "\nFailed to fseek() to first frequency-bin %d: %s\n\n", 
+			firstBin2read, strerror(errno) );
       LALDestroySFTtype ( status->statusPtr, &ret );
       ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
     }
@@ -2309,7 +2317,7 @@ read_one_sft_from_fp (  LALStatus *status, SFTtype **sft, REAL8 fMin, REAL8 fMax
   if ( version == 1 || swapEndian )
     {
       UINT4 i;
-      REAL8 band = 1.0 * numSFTbins * ret->deltaF;	/* need the TOTAL frequency-band in the SFT-file! */
+      REAL8 band = 1.0 * numSFTbins * ret->deltaF;/* need the TOTAL frequency-band in the SFT-file! */
       REAL8 fsamp = 2.0 * band;
       REAL8 dt = 1.0 / fsamp;
 
@@ -2327,7 +2335,8 @@ read_one_sft_from_fp (  LALStatus *status, SFTtype **sft, REAL8 fMin, REAL8 fMax
 	    }
 
 	  /* if the SFT-file was in v1-Format: need to renormalize the data now by 'Delta t' 
-	   * in order to follow the correct SFT-normalization (see LIGO-T040164-01-Z, and LIGO-T010095-00)
+	   * in order to follow the correct SFT-normalization 
+	   * (see LIGO-T040164-01-Z, and LIGO-T010095-00)
 	   */ 
 	  if ( version == 1 )
 	    {
