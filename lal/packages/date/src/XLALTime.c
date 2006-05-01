@@ -94,7 +94,7 @@ int XLALGPSCmp( const LIGOTimeGPS *t0, const LIGOTimeGPS *t1 )
 LIGOTimeGPS *XLALGPSMultiply( LIGOTimeGPS *gps, REAL8 x )
 {
   LIGOTimeGPS hi, mi;
-  INT8 lo = gps->gpsNanoSeconds * x + 0.5;
+  INT8 lo = ((INT8) gps->gpsNanoSeconds) * x + 0.5;
 
   XLALGPSSetREAL8(&mi, (gps->gpsSeconds % 512) * x);
   gps->gpsSeconds -= gps->gpsSeconds % 512;
