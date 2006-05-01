@@ -637,27 +637,37 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
   /* ---------- for SFT output: calculate effective fmin and Band ---------- */
   if ( LALUserVarWasSet( &uvar_outSFTbname ) )
     {
-      UINT4 imin, nsamples;
-      
+      UINT4 imin, imax;
+      volatile REAL8 dFreq = 1.0 / uvar_Tsft;
+      volatile REAL8 tmp;
+      REAL8 fMax, fMax_eff, fMin_eff;
+
       /* calculate "effective" fmin from uvar_fmin: following makefakedata_v2, we
        * make sure that fmin_eff * Tsft = integer, such that freqBinIndex corresponds
        * to a frequency-index of the non-heterodyned signal.
        */
-      imin = (UINT4) floor( uvar_fmin * uvar_Tsft);
-      cfg->fmin_eff = (REAL8)imin / uvar_Tsft;
+      tmp = uvar_fmin / dFreq;	/* NOTE: don't "simplify" this: we try to make sure
+				 * the result of this will be guaranteed to be IEEE-compliant,
+				 * and identical to other locations, such as in SFT-IO
+				 */
+      imin = (UINT4) floor( tmp );
+      fMin_eff = (REAL8)imin * dFreq;
+
+      fMax = uvar_fmin + uvar_Band;
+      tmp = fMax / dFreq;
+      imax = (UINT4) ceil (tmp);
+      fMax_eff = (REAL8)imax * dFreq;
 
       /* Increase Band correspondingly. */
-      cfg->fBand_eff = uvar_Band;
-      cfg->fBand_eff += (uvar_fmin - cfg->fmin_eff);
-      /* increase band further to make sure we get an integer number of frequency-bins in SFT */
-      nsamples = 2 * ceil(cfg->fBand_eff * uvar_Tsft);
-      cfg->fBand_eff = 1.0*nsamples/(2.0 * uvar_Tsft);
-      
+      cfg->fmin_eff = fMin_eff;
+      cfg->fBand_eff = 1.0 * (imax - imin) * dFreq;
+
       if ( lalDebugLevel )
 	{
-	  if ( (cfg->fmin_eff != uvar_fmin) || (cfg->fBand_eff != uvar_Band) )
+	  if ( abs(cfg->fmin_eff - uvar_fmin)> LAL_REAL8_EPS 
+	       || abs(cfg->fBand_eff - uvar_Band) > LAL_REAL8_EPS )
 	    printf("\nWARNING: for SFT-creation we had to adjust (fmin,Band) to"
-		   " fmin_eff=%f and Band_eff=%f\n\n", cfg->fmin_eff, cfg->fBand_eff);
+		   " fmin_eff=%.20g and Band_eff=%.20g\n\n", cfg->fmin_eff, cfg->fBand_eff);
 	}
       
     } /* END: SFT-specific corrections to fmin and Band */
