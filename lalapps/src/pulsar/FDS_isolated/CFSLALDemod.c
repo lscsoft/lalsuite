@@ -270,7 +270,9 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 	     hook here, in the hope that we still maintain readability. Also too we'd like
 	     to avoid the necessarity to keep changes in other parts of the file in sync
 	     between these versions.                                                  BM */
-#if defined(USE_NDP_VECT)
+#if defined(USE_X86_GAS)
+#include "CFSLALDemodLoop_x86gAss.c"
+#elif defined(USE_NDP_VECT)
 #include "CFSLALDemodLoop_ndp_vect.c"
 #elif defined(USE_NEW_DIV_PART)
 #include "CFSLALDemodLoop_div_part.c"
