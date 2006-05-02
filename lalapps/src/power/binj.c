@@ -41,6 +41,10 @@ RCSID("$Id$");
 #define MPC ( 1e6 * LAL_PC_SI )
 #define GPC ( 1e9 * LAL_PC_SI )
 
+#define MW_CENTER_J2000_RA_RAD 2.0318570464121519l /* = 27940.04 s = 7 h 45 m 40.04 s */
+#define MW_CENTER_J2000_DEC_RAD -0.50628171572274738l /* = -29o 00' 28.1" */
+
+
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
@@ -57,6 +61,7 @@ RCSID("$Id$");
  */
 
 enum population {
+	POPULATION_GALACTIC_CORE,
 	POPULATION_UNIFORM_SKY,
 	POPULATION_ZENITH
 };
@@ -146,7 +151,7 @@ static void print_usage(const char *prog)
 "  --gps-start-time TIME    start injections at GPS time TIME\n"\
 "  --gps-end-time TIME      end injections at GPS time TIME\n"\
 "  --time-step STEP         space injections STEP / pi seconds appart (210)\n"\
-"  --population [uniform_sky|zenith] select the population to synthesize\n"\
+"  --population [galactic_core|uniform_sky|zenith] select the population to synthesize\n"\
 "  --freq-dist [monoarithmetic|monogeometric|randgeometric] select the frequency distribution\n"\
 "  --flow FLOW              first frequency of injection (150.0)\n"\
 "  --fhigh FHIGH            only inject frequencies smaller than FHIGH (1000.0)\n"\
@@ -221,7 +226,9 @@ static struct options parse_command_line(int *argc, char **argv[], MetadataTable
 
 	do switch(c = getopt_long(*argc, *argv, "", long_options, &option_index)) {
 	case 'A':
-		if(!strcmp(optarg, "uniform_sky"))
+		if(!strcmp(optarg, "galactic_core"))
+			options.population = POPULATION_GALACTIC_CORE;
+		else if(!strcmp(optarg, "uniform_sky"))
 			options.population = POPULATION_UNIFORM_SKY;
 		else if(!strcmp(optarg, "zenith"))
 			options.population = POPULATION_ZENITH;
@@ -848,6 +855,20 @@ int main(int argc, char *argv[])
 
 		/* sky location and observatory peak times */
 		switch(options.population) {
+		case POPULATION_GALACTIC_CORE:
+			/* co-ordinate system */
+			sprintf(this_sim_burst->coordinates, "EQUATORIAL");
+
+			/* right ascension, declination, and polarization */
+			this_sim_burst->longitude = MW_CENTER_J2000_RA_RAD;
+			this_sim_burst->latitude = MW_CENTER_J2000_DEC_RAD;
+			this_sim_burst->polarization = 2.0 * LAL_PI * XLALUniformDeviate(randParams);
+
+			/* observatory peak times in GPS seconds */
+			this_sim_burst->h_peak_time = equatorial_arrival_time(lho, this_sim_burst->geocent_peak_time, this_sim_burst->longitude, this_sim_burst->latitude);
+			this_sim_burst->l_peak_time = equatorial_arrival_time(llo, this_sim_burst->geocent_peak_time, this_sim_burst->longitude, this_sim_burst->latitude);
+			break;
+
 		case POPULATION_UNIFORM_SKY:
 			/* co-ordinate system */
 			sprintf(this_sim_burst->coordinates, "EQUATORIAL");
