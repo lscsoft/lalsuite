@@ -67,6 +67,8 @@ struct CommandLineArgsTag {
   REAL8 G0Im;              /* Imaginary part of open loop gain at cal line freq. */
   REAL8 D0Re;              /* Real part of digital filter at cal line freq.*/
   REAL8 D0Im;              /* Imaginary part of digital filter at cal line freq. */
+  REAL8 W0Re;              /* Real part of whitening filter at cal line freq.*/
+  REAL8 W0Im;              /* Imaginary part of whitening filter at cal line freq. */
   char *FrCacheFile;       /* Frame cache file */
   char *SegmentsFile;      /* Text file with the segments */
   char *exc_chan;          /* excitation channel name */    
@@ -295,6 +297,7 @@ FILE *fpAlpha=NULL;
 
   fprintf(fpAlpha,"%s Re(Go) = %e, Im(Go)= %e \n", "%",CLA.G0Re, CLA.G0Im);
   fprintf(fpAlpha,"%s Re(Do) = %e, Im(Do)= %e \n", "%",CLA.D0Re, CLA.D0Im);
+  fprintf(fpAlpha,"%s Re(Wo) = %e, Im(Wo)= %e \n", "%",CLA.W0Re, CLA.W0Im);
   fprintf(fpAlpha,"%s  GPS Time          Re(a)    Im(a)     Re(b)    Im(b)    Re(ab)    Im(ab)   Re(AS_Q) Im(AS_Q) Re(DARM) Im(DARM) Re(EXC)  Im(EXC)\n", "%");
 
   for(m=0;m < (INT4)(GV.duration/CLA.t);m++)
@@ -343,6 +346,8 @@ FILE *fpAlpha=NULL;
       params.openloop.im =  CLA.G0Im;
       params.digital.re = CLA.D0Re;
       params.digital.im = CLA.D0Im;
+      params.whitener.re = CLA.W0Re;
+      params.whitener.im = CLA.W0Im;
 	  
       LALComputeCalibrationFactors(&status,&factors,&params);
       TESTSTATUS( &status );
@@ -455,6 +460,8 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->G0Im=0.0;
   CLA->D0Re=0.0;
   CLA->D0Im=0.0;
+  CLA->W0Re=0.0;
+  CLA->W0Im=0.0;
   CLA->FrCacheFile=NULL;
   CLA->SegmentsFile=NULL;
   CLA->alphafile=NULL;
@@ -466,7 +473,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->version=NULL;
 
   /* Scan through list of command line arguments */
-  while (!errflg && ((c = getopt(argc, argv,"hof:F:S:A:E:D:b:t:i:j:k:l:v:"))!=-1))
+  while (!errflg && ((c = getopt(argc, argv,"hof:F:S:A:E:D:b:t:i:j:k:l:m:n:v:"))!=-1))
     switch (c) {
     case 'f':
       /* calibration line frequency */
@@ -491,6 +498,14 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     case 'l':
       /* calibration line frequency */
       CLA->D0Im=atof(optarg);
+      break;
+    case 'm':
+      /* calibration line frequency */
+      CLA->W0Re=atof(optarg);
+      break;
+    case 'n':
+      /* calibration line frequency */
+      CLA->W0Im=atof(optarg);
       break;
     case 'F':
       /* name of frame cache file */
@@ -536,6 +551,8 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\t-j\tFLOAT\t Imaginary part of the open loop gain at the calibration line frequency.\n");
       fprintf(stdout,"\t-k\tFLOAT\t Real part of the digital filter at the calibration line frequency.\n");
       fprintf(stdout,"\t-l\tFLOAT\t Imaginary part of digital filter at the calibration line frequency.\n");
+      fprintf(stdout,"\t-m\tFLOAT\t Real part of the whitening filter at the calibration line frequency.\n");
+      fprintf(stdout,"\t-n\tFLOAT\t Imaginary part of whitening filter at the calibration line frequency.\n");
       fprintf(stdout,"\t-F\tSTRING\t Name of frame cache file.\n");
       fprintf(stdout,"\t-S\tSTRING\t Name of segment list file.\n");
       fprintf(stdout,"\t-A\tSTRING\t AS_Q channel name (eg, L1:LSC-AS_Q).\n");

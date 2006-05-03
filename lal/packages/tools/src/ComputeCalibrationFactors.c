@@ -74,7 +74,7 @@ void LALComputeCalibrationFactors(
   COMPLEX16 DARM_CTRL;
   COMPLEX16 AS_Q;
   COMPLEX16 EXC;
-  COMPLEX16 G0,D0;
+  COMPLEX16 G0,D0,W0;
   REAL8 f0;
   REAL8 a;
   REAL8 b;
@@ -114,6 +114,7 @@ void LALComputeCalibrationFactors(
   
   G0 = params->openloop;
   D0 = params->digital;
+  W0 = params->whitener;
 
 
   /* ------------------------------------- match filtering ----------------------------------- */
@@ -135,6 +136,12 @@ void LALComputeCalibrationFactors(
 
   DARM_CTRL.re *= params->darmCtrl->deltaT;
   DARM_CTRL.im *= -params->darmCtrl->deltaT;  /* The negative sign is needed for correct FT convention */
+
+  /* De-whiten DARM_CTRL */
+  if(W0.re != 0 && W0.im != 0)
+    {
+     cdiv( &DARM_CTRL, &DARM_CTRL, &W0); 
+    }
 
   output->darm=DARM_CTRL;
 
