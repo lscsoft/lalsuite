@@ -61,6 +61,8 @@ struct CommandLineArgsTag {
   REAL8 G0Im;              /* Imaginary part of open loop gain at cal line freq. */
   REAL8 D0Re;              /* Real part of digital filter at cal line freq.*/
   REAL8 D0Im;              /* Imaginary part of digital filter at cal line freq. */
+  REAL8 W0Re;              /* Real part of whitening filter at cal line freq.*/
+  REAL8 W0Im;              /* Imaginary part of whitening filter at cal line freq. */
   INT4 GPSStart;           /* Start GPS time for the segment to be calibrated */
   INT4 GPSEnd;             /* End GPS time for the segment to be calibrated */
   INT4 testsensing;
@@ -74,6 +76,8 @@ struct CommandLineArgsTag {
   char *frametype;
   char *strainchannel;
   char *datadir;
+  char *renamefrom;
+  char *renameto;
 } CommandLineArgs;
 
 
@@ -154,6 +158,11 @@ int main(int argc,char *argv[])
     }else{
       LALFrWriteREAL8TimeSeries( &status, &OutputData.h, &opar );
       TESTSTATUS( &status );
+    }
+
+  if(CommandLineArgs.renamefrom && CommandLineArgs.renameto)
+    {
+      rename(CommandLineArgs.renamefrom,CommandLineArgs.renameto);
     }
       
   if(FreeMem()) return 8;
@@ -254,6 +263,8 @@ static FrChanIn chanin_exc;
   InputData.Go.im=CLA.G0Im;
   InputData.Do.re=CLA.D0Re;
   InputData.Do.im=CLA.D0Im;
+  InputData.Wo.re=CLA.W0Re;
+  InputData.Wo.im=CLA.W0Im;
   InputData.f=CLA.f;
   InputData.To=CLA.To;
 
@@ -519,6 +530,8 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"olg-im",              required_argument, NULL,           'j'},
     {"servo-re",            required_argument, NULL,           'k'},
     {"servo-im",            required_argument, NULL,           'l'},
+    {"whitener-re",         required_argument, NULL,           'm'},
+    {"whitener-im",         required_argument, NULL,           'n'},
     {"wings",               required_argument, NULL,           'o'},
     {"test-sensing",        no_argument, NULL,                 'r'},
     {"test-actuation",      no_argument, NULL,                 'c'},
@@ -530,10 +543,12 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"frame-type",          required_argument, NULL,           'T'},
     {"strain-channel",      required_argument, NULL,           'S'},
     {"data-dir",            required_argument, NULL,           'z'},
+    {"rename-from",         required_argument, NULL,           'a'},
+    {"rename-to",           required_argument, NULL,           'w'},
     {"help",                no_argument, NULL,                 'h' },
     {0, 0, 0, 0}
   };
-  char args[] = "hrcduxyf:C:A:E:D:R:F:s:e:i:j:k:l:t:o:H:T:S:z:";
+  char args[] = "hrcduxyf:C:A:E:D:R:F:s:e:i:j:k:l:m:n:t:o:H:T:S:z:";
   
   /* Initialize default values */
   CLA->f=0.0;
@@ -550,11 +565,15 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->G0Im=0.0;
   CLA->D0Re=0.0;
   CLA->D0Im=0.0;
+  CLA->W0Re=0.0;
+  CLA->W0Im=0.0;
   CLA->testsensing=0;
   CLA->testactuation=0;
   CLA->frametype=NULL;
   CLA->strainchannel=NULL;
   CLA->datadir=NULL;
+  CLA->renamefrom=NULL;
+  CLA->renameto=NULL;
 
   InputData.delta=0;
   InputData.wings=0;
@@ -630,6 +649,14 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       /*  imaginary part of servo */
       CLA->D0Im=atof(optarg);
       break;
+    case 'm':
+      /*  real part of servo*/
+      CLA->W0Re=atof(optarg);
+      break;
+    case 'n':
+      /*  imaginary part of servo */
+      CLA->W0Im=atof(optarg);
+      break;
     case 'd':
       /*  use unit impulse*/
       InputData.delta=1;
@@ -669,6 +696,12 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     case 'z':
       CLA->datadir=optarg;       
       break;
+    case 'a':
+      CLA->renamefrom=optarg;       
+      break;
+    case 'w':
+      CLA->renameto=optarg;       
+      break;
     case 'h':
       /* print usage/help message */
       fprintf(stdout,"Arguments are:\n");
@@ -678,6 +711,8 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\tolg-im (-j)\tFLOAT\t Imaginary part of the open loop gain at the calibration line frequency.\n");
       fprintf(stdout,"\tservo-re (-k)\tFLOAT\t Real part of the digital filter at the calibration line frequency.\n");
       fprintf(stdout,"\tservo-im (-l)\tFLOAT\t Imaginary part of digital filter at the calibration line frequency.\n");
+      fprintf(stdout,"\twhitener-re (-m)\tFLOAT\t Real part of the digital filter at the calibration line frequency.\n");
+      fprintf(stdout,"\twhitener-im (-n)\tFLOAT\t Imaginary part of digital filter at the calibration line frequency.\n");
       fprintf(stdout,"\tgps-start-time (-s)\tINT\t GPS start time.\n");
       fprintf(stdout,"\tgps-end-time (-e)\tINT\t GPS end time.\n");
       fprintf(stdout,"\tfilters-file (-F)\tSTRING\t Name of file containing filters and histories.\n");
@@ -856,6 +891,14 @@ int FreeMem(void)
   LALDDestroyVector(&status,&InputData.A->history);   
   TESTSTATUS( &status );
   LALFree(InputData.A);
+
+  LALDDestroyVector(&status,&InputData.D->directCoef);
+  TESTSTATUS( &status );
+  LALDDestroyVector(&status,&InputData.D->recursCoef);
+  TESTSTATUS( &status );
+  LALDDestroyVector(&status,&InputData.D->history);   
+  TESTSTATUS( &status );
+  LALFree(InputData.D);
 
   /* Free output data */
   LALDDestroyVector(&status,&OutputData.h.data);
