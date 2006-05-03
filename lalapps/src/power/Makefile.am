@@ -29,7 +29,6 @@ bin_PROGRAMS =
 endif
 bin_SCRIPTS = lalapps_power_coinc_pipe lalapps_power_pipe lalapps_power_online_pipe
 
-pythonlibdir = ${prefix}/lib/python
 pythonlib_SCRIPTS = power.py
 
 pkgdata_DATA = power_pipe.ini
