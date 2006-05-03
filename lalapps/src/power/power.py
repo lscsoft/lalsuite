@@ -73,31 +73,6 @@ class BurstInjJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_sub_file('binjection.sub')
 
 
-class InspInjJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
-  """
-  A lalapps_binj job used by the power pipeline. The static options
-  are read from the sections [data] and [power] in the ini file. The
-  stdout and stderr from the job are directed to the logs directory. The job
-  runs in the universe specified in the ini file. The path to the executable
-  is determined from the ini file.
-  """
-  def __init__(self,cp):
-    """
-    cp = ConfigParser object from which options are read.
-    """
-    self.__executable = cp.get('condor','iinjection')
-    self.__universe = cp.get('condor','universe')
-    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-    pipeline.AnalysisJob.__init__(self,cp)
-
-    for sec in ['iinjection']:
-      self.add_ini_opts(cp,sec)
-
-    self.set_stdout_file('logs/iinj-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/iinj-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
-    self.set_sub_file('iinjection.sub')
-
-
 class PowerJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
   A lalapps_power job used by the power pipeline. The static options
@@ -279,35 +254,7 @@ class BurstInjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     else:
       return "HL-INJECTIONS-%d-%d.xml" % (int(self.get_start()), int(self.get_end() - self.get_start()))
 
-class InspInjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
-  """
-  A InjNode runs an instance of binj code
-  """
-  def __init__(self,job):
-    """
-    job = A CondorDAGJob that can run an instance of lalapps_power.
-    """
-    pipeline.CondorDAGNode.__init__(self,job)
-    pipeline.AnalysisNode.__init__(self)
-    self.__usertag = job.get_config('iinjection','user-tag')
-    
-  def get_output(self,seed):
-    """
-    Returns the file name of output from the power code. This must be kept
-    synchronized with the name of the output file in power.c.
-    """
-    if not self.get_start() or not self.get_end():
-      raise InjError, "Start time or end time has not been set"
 
-    basename = 'HL' + '-INJECTIONS' + '_' + str(seed)
-
-    if self.__usertag:
-      basename += '_' + str(self.__usertag) 
-
-    return basename + '-' + str(self.get_start()) + '-' + \
-      str(self.get_end() - self.get_start()) + '.xml'
-  
-  
 class PowerNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
   A PowerNode runs an instance of the power code in a Condor DAG.
