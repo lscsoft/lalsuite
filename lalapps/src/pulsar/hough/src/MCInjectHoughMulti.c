@@ -767,7 +767,7 @@ int main(int argc, char *argv[]){
     
     /* find the nearest patch in order to compute the weights accordingly */
     LAL_CALL(FindNearestPatch( &status, pulsarInject.latitude,
-			       pulsarInject.longitude, &skyPatchCenterV, skyIndex), &status );
+			       pulsarInject.longitude, &skyPatchCenterV, &skyIndex), &status );
 	     
     /* writing the parameters into fpPar, following the format
        MCloopId  I.f0 H.f0 I.f1 H.f1 I.alpha H.alpha I.delta H.delta I.phi0  I.psi
@@ -1647,7 +1647,7 @@ void FindNearestPatch( LALStatus      *status,
 		REAL8		      latitude,
 		REAL8		      longitude, 
 		REAL8Cart3CoorVector *skyPatchCenterV,
-                INT4		      skyIndex){
+                INT4		      *skyIndex){
   
   INT4    nSkyPatches, j; 
   REAL8Cart3Coor  sourceLocation;
@@ -1662,7 +1662,7 @@ void FindNearestPatch( LALStatus      *status,
   ASSERT (skyPatchCenterV->data,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
   
   cosDelta = cos(latitude);
-  skyIndex = 0;
+  *skyIndex = 0;
   escalarProdMax = -1.0;
 
   sourceLocation.x = cosDelta* cos(longitude);
@@ -1678,7 +1678,7 @@ void FindNearestPatch( LALStatus      *status,
 		
     if(escalarProd > escalarProdMax){
       escalarProdMax = escalarProd;
-      skyIndex = j;
+      *skyIndex = j;
     }	    
   }    
     

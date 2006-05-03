@@ -139,7 +139,7 @@ void FindNearestPatch( LALStatus      *status,
 		REAL8		      latitude,
 		REAL8		      longitude, 
 		REAL8Cart3CoorVector *skyPatchCenterV,
-                INT4		      skyIndex);
+                INT4		      *skyIndex);
 /* ****************************************************** */
 
 #ifdef  __cplusplus
