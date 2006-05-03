@@ -592,6 +592,7 @@ INT4 localtime = input->AS_Q.epoch.gpsSeconds;
       params.lineFrequency = input->f;
       params.openloop =  input->Go;
       params.digital = input->Do;
+      params.whitener = input->Wo;
 
       LALComputeCalibrationFactors(status->statusPtr,&factors,&params);
       CHECKSTATUSPTR( status );
