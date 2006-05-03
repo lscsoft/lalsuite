@@ -104,6 +104,7 @@ tagUpdateFactorsParams
    REAL8 lineFrequency;
    COMPLEX16 openloop;
    COMPLEX16 digital;
+   COMPLEX16 whitener;
    REAL4TimeSeries *darmCtrl;
    REAL4TimeSeries *asQ;
    REAL4TimeSeries *exc;
@@ -216,6 +217,7 @@ struct StrainInTag {
   REAL4TimeSeries EXC ;    /* timeseries containing the excitation */
   COMPLEX16 Do;            /* digital filter at cal line frequency */
   COMPLEX16 Go;            /* OLG at cal line frequency */
+  COMPLEX16 Wo;            /* Whitening filter at cal line frequency */
   REAL8 f;                 /* calibration line frequency */
   REAL4 To;                /* factors integration time */
   REAL8IIRFilter *Cinv;    /* Filters for inverse of sensing function */
