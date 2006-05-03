@@ -1,4 +1,4 @@
-#!/usr/bin/env @PYTHONPROG@
+#!/usr/bin/python
 """
 power_pipe.in - standalone power pipeline driver script
 
@@ -17,7 +17,6 @@ import sys, os, random
 import getopt, re, string
 import tempfile
 import ConfigParser
-sys.path.append('@PYTHONLIBDIR@')
 
 # import the modules we need to build the pipeline
 from glue import pipeline
