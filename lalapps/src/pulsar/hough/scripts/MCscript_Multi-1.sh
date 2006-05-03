@@ -59,7 +59,7 @@ mkdir -p $tempoutdir
 mkdir -p ${tempoutdir}/MultiMC
 
 # change to temporary working dir
-cd $tempworkdir
+cd $tempoutdir
 
 # ----------------------------------
 # copy files from some central place
@@ -91,7 +91,7 @@ highh0=1.0e-23
 echo range of h0 is from $lowh0 to $highh0
 
 # now run the MC
-./MCInjectHoughMulti -d 0 --f0=$freq --fSearchBand=$freqband  --skyfile=./skyfileS4c --weighAM=1 --weighNoise=1 --earthEphemeris=./earth05-09.dat --sunEphemeris=./sun05-09.dat --sftDir=${sftdir} --dirnameOut=${tempoutdir}/MultiMC --fnameout=/MCfreq_${freq} --linefiles=./S4lines_H1_xavi.txt.v2,./S4lines_L1_xavi.txt.v2,./S4lines_H2.txt --printLog --nMCloop=5 --h0Min=$lowh0 --h0Max=$highh0 --nh0=10 --fast=1
+./MCInjectHoughMulti -d 0 --f0=$freq --fSearchBand=$freqband  --skyfile=./skyfileS4c --weighAM=1 --weighNoise=1 --earthEphemeris=./earth05-09.dat --sunEphemeris=./sun05-09.dat --sftDir=${sftdir} --dirnameOut=${tempoutdir}/MultiMC --fnameout=/MCfreq_${freq} --linefiles=./S4lines_H1_xavi.txt.v2,./S4lines_L1_xavi.txt.v2,./S4lines_H2.txt --printLog --nMCloop=500 --h0Min=$lowh0 --h0Max=$highh0 --nh0=10 --fast=1
 
 echo finished running injections
 
