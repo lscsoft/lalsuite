@@ -8,14 +8,11 @@ __version__ = '$Revision$'[11:-2]
 
 import os
 import re
-import string
-import exceptions
-import ConfigParser
 from glue import pipeline
 from glue import segmentsUtils
 
 
-class PowerError(exceptions.Exception):
+class PowerError(Exception):
   def __init__(self, args=None):
     self.args = args
 
