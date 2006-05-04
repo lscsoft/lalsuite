@@ -436,7 +436,7 @@ heterodyne using old parameters.""" % (pulsar)
       if do_update:
         pulsar_update_file = pulsar_update_dir + '/' + param_files[i]
         if os.path.isfile(pulsar_update_file):
-          fine[j].set_param_file_update(param_update_file):
+          fine[j].set_param_file_update(param_update_file)
         else:
           print >> sys.stderr, """No updated parameter file exists for PSR%s, just perform fine
 heterodyne using old parameters.""" % (pulsar)
