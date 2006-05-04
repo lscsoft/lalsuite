@@ -494,3 +494,36 @@ def make_binjfind_fragment(dag, parent, tag):
 	dag.add_node(binjfind)
 
 	return binjfind
+
+
+#
+# =============================================================================
+#
+#                                 Segmentation
+#
+# =============================================================================
+#
+
+def split_segment(powerjob, segment, psds):
+	"""
+	Split the data segment into correctly-overlaping segments.  We try
+	to have the numbers of PSDs in each segment be equal to psds, but
+	with a short segment at the end if needed.
+	"""
+	psd_length = float(powerjob.get_opts()["psd-average-points"]) / float(powerjob.get_opts()["resample-rate"])
+	window_length = float(powerjob.get_opts()["window-length"]) / float(powerjob.get_opts()["resample-rate"])
+	window_shift = float(powerjob.get_opts()["window-shift"]) / float(powerjob.get_opts()["resample-rate"])
+	filter_corruption = float(powerjob.get_opts()["filter-corruption"]) / float(powerjob.get_opts()["resample-rate"])
+
+	psd_overlap = window_length - window_shift
+
+	joblength = psds * (psd_length - psd_overlap) + psd_overlap + 2 * filter_corruption
+	joboverlap = 2 * filter_corruption + psd_overlap
+
+	# can't use range() with non-integers
+	segs = segments.segmentlist()
+	t = segment[0]
+	while t < segment[1] - joboverlap:
+		segs.append(segments.segment(t, t + joblength) & segment)
+		t += joblength - joboverlap
+	return segs

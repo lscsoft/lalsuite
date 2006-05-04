@@ -272,32 +272,8 @@ gsiscpjob = GsiScpJob(out_dir)
 # =============================================================================
 #
 
-def split_segment(psds):
-	"""
-	Split the data segment into correctly-overlaping segments.  We try
-	to have the numbers of PSDs in each segment be equal to psds, but
-	with a short segment at the end if needed.
-	"""
-	psd_length = float(power.powerjob.get_opts()["psd-average-points"]) / float(power.powerjob.get_opts()["resample-rate"])
-	window_length = float(power.powerjob.get_opts()["window-length"]) / float(power.powerjob.get_opts()["resample-rate"])
-	window_shift = float(power.powerjob.get_opts()["window-shift"]) / float(power.powerjob.get_opts()["resample-rate"])
-	filter_corruption = float(power.powerjob.get_opts()["filter-corruption"]) / float(power.powerjob.get_opts()["resample-rate"])
-
-	psd_overlap = window_length - window_shift
-
-	joblength = psds * (psd_length - psd_overlap) + psd_overlap + 2 * filter_corruption
-	joboverlap = 2 * filter_corruption + psd_overlap
-
-	# can't use range() with non-integers
-	segs = segments.segmentlist()
-	t = options.seg[0]
-	while t < options.seg[1] - joboverlap:
-		segs.append(segments.segment(t, t + joblength) & options.seg)
-		t += joblength - joboverlap
-	return segs
-
-jobsegs = split_segment(psds_per_job)
-injsegs = split_segment(psds_per_injection)
+jobsegs = power.split_segment(power.powerjob, options.seg, psds_per_job)
+injsegs = power.split_segment(power.powerjob, options.seg, psds_per_injection)
 
 print >>sys.stderr, "Segment split: " + str(jobsegs)
 print >>sys.stderr, "Injections split: " + str(injsegs)
