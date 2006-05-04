@@ -94,7 +94,7 @@ class PowerJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_stderr_file(os.path.join(out_dir, 'power-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err'))
     self.set_sub_file('power.sub')
 
-    
+
 class BurcaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
   A lalapps_burca job used by the power pipeline. The static options are
@@ -118,28 +118,7 @@ class BurcaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_stderr_file('logs/burca-$(macrostarttime)-$(macrostoptime)-$(cluster)-$(process).err')
     self.set_sub_file('burca.sub')
 
-class VigilJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
-  """
-  A vigilance job used to produce summary info
-  once triggers have been produced
-  """
-  def __init__(self,cp):
-    """
-    cp = ConfigParser object from which options are read.
-    """
-    self.__executable = cp.get('condor','vigil')
-    self.__universe = cp.get('condor','universe')
-    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-    pipeline.AnalysisJob.__init__(self,cp)
-    
-    for sec in ['vigil']:
-      self.add_ini_opts(cp,sec)
 
-    self.set_stdout_file('logs/vigil-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/vigil-$(cluster)-$(process).err')
-    self.set_sub_file('vigil.sub')
-
-    
 class MdcDataFindNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
   A DataFindNode runs an instance of datafind in a Condor DAG.
@@ -393,18 +372,6 @@ class BurcaNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     Return the output file, i.e. the file containing the frame cache data.
     """
     return self.__output
-
-class VigilNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
-  """
-  A InjNode runs an instance of binj code
-  """
-  def __init__(self,job):
-    """
-    job = A CondorDAGJob that can run an instance of vigil.sh.
-    """
-    pipeline.CondorDAGNode.__init__(self,job)
-    pipeline.AnalysisNode.__init__(self)
-    self.__usertag = job.get_config('pipeline','user-tag')
 
 
 class BreadJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
