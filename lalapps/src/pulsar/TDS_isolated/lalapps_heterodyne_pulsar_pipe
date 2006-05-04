@@ -111,7 +111,7 @@ for o, a in opts:
   elif o in ("-d", "--datafind"):
     do_datafind = 1
   elif o in ("-s", "--seglist"):
-    seglist = a
+    seglist = int(a)
   elif o in ("-c", "--coarse"):
     do_coarse = 1
   elif o in ("-f", "--fine"):
