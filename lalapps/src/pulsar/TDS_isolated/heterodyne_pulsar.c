@@ -787,7 +787,7 @@ stops->data[i]);
         
       starts->data[i] = times->data[j] - (INT4)((1./sampleRate)/2.);
       
-      duration = stops->data[i] - starts->data[i]
+      duration = stops->data[i] - starts->data[i];
       
       for(k=0;k<duration*(INT4)sampleRate-1;k++){
         if(times->data[j+k+1] - times->data[j+k] > 1./sampleRate){
