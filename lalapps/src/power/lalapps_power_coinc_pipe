@@ -32,6 +32,7 @@ import stat
 import sys
 
 from glue import pipeline
+import power
 
 __author__ = "Kipp Cannon <kipp@gravity.phys.uwm.edu>"
 __version__ = "$Revision$"[11:-2]
@@ -49,7 +50,6 @@ __date__ = "$Date$"[7:-2]
 # implements a simple bin packing algorithm:  choose number of bins, sort
 # objects from largest to smallest, put each object into the emptiest bin.
 
-
 class Bin(object):
 	def __init__(self):
 		self.size = 0
@@ -58,6 +58,9 @@ class Bin(object):
 	def add_object(self, object, size):
 		self.size += size
 		self.objects.append(object)
+
+	def get_objects(self):
+		return self.objects
 
 	def __cmp__(self, other):
 		return cmp(self.size, other.size)
@@ -158,31 +161,6 @@ for (size, name) in filenames:
 #
 # =============================================================================
 #
-#                                  Job Types
-#
-# =============================================================================
-#
-
-class BurcaJob(pipeline.CondorDAGJob):
-	def __init__(self, executable, out_dir, arguments):
-		pipeline.CondorDAGJob.__init__(self, "vanilla", executable)
-		self.set_sub_file("ligolw_burca.sub")
-		self.set_stdout_file(os.path.join(out_dir, "ligolw_burca-$(cluster)-$(process).out"))
-		self.set_stderr_file(os.path.join(out_dir, "ligolw_burca-$(cluster)-$(process).err"))
-		self.add_condor_cmd("getenv", "True")
-		if arguments:
-			self.add_arg(arguments)
-
-class BurcaNode(pipeline.CondorDAGNode):
-	pass
-
-
-burcajob = BurcaJob(executable, out_dir, options.args or None)
-
-
-#
-# =============================================================================
-#
 #                                 DAG Assembly
 #
 # =============================================================================
@@ -193,8 +171,9 @@ os.mkdir(out_dir)
 dag = pipeline.CondorDAG(dag_log)
 dag.set_dag_file(dag_name)
 
+burcajob = power.BurcaJob(executable, out_dir, options.args or None)
 for n, bin in enumerate(bins):
-	node = BurcaNode(burcajob)
+	node = power.BurcaNode(burcajob)
 	node.set_name("ligolw_burca_%d" % n)
 	map(node.add_file_arg, bin.objects)
 	dag.add_node(node)

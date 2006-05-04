@@ -174,8 +174,6 @@ if options.seg.duration() < 3600:
 else:
 	psds_per_job = 16
 	psds_per_injection = 16
-# do this injections beteen flow and fhigh inclusively
-injection_bands = config_parser.getint('pipeline', 'injection_bands')
 
 
 #
@@ -185,6 +183,20 @@ injection_bands = config_parser.getint('pipeline', 'injection_bands')
 #
 # =============================================================================
 #
+
+class Burst2MonJob(pipeline.CondorDAGJob):
+	def __init__(self, out_dir, config_parser):
+		pipeline.CondorDAGJob.__init__(self, "vanilla", config_parser.get("condor", "ligolw_burst2mon"))
+		self.set_sub_file("ligolw_burst2mon.sub")
+		self.set_stdout_file(os.path.join(out_dir, "ligolw_burst2mon-$(cluster)-$(process).out"))
+		self.set_stderr_file(os.path.join(out_dir, "ligolw_burst2mon-$(cluster)-$(process).err"))
+		self.add_condor_cmd("getenv", "True")
+		self.add_ini_opts(config_parser, "ligolw_burst2mon")
+
+
+class Burst2MonNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+	pass
+
 
 class PublishJob(pipeline.CondorDAGJob):
 	def __init__(self, out_dir):
@@ -237,62 +249,6 @@ class GsiScpNode(pipeline.CondorDAGNode):
 		return self.__output
 
 
-class Burst2MonJob(pipeline.CondorDAGJob):
-	def __init__(self, out_dir, config_parser):
-		pipeline.CondorDAGJob.__init__(self, "vanilla", config_parser.get("condor", "ligolw_burst2mon"))
-		self.set_sub_file("ligolw_burst2mon.sub")
-		self.set_stdout_file(os.path.join(out_dir, "ligolw_burst2mon-$(cluster)-$(process).out"))
-		self.set_stderr_file(os.path.join(out_dir, "ligolw_burst2mon-$(cluster)-$(process).err"))
-		self.add_condor_cmd("getenv", "True")
-		self.add_ini_opts(config_parser, "ligolw_burst2mon")
-
-
-class Burst2MonNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
-	pass
-
-
-class BuclusterJob(pipeline.CondorDAGJob):
-	def __init__(self, out_dir, config_parser):
-		pipeline.CondorDAGJob.__init__(self, "vanilla", config_parser.get("condor", "ligolw_bucluster"))
-		self.set_sub_file("ligolw_bucluster.sub")
-		self.set_stdout_file(os.path.join(out_dir, "ligolw_bucluster-$(cluster)-$(process).out"))
-		self.set_stderr_file(os.path.join(out_dir, "ligolw_bucluster-$(cluster)-$(process).err"))
-		self.add_condor_cmd("getenv", "True")
-		self.add_ini_opts(config_parser, "ligolw_bucluster")
-
-
-class BuclusterNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
-	pass
-
-
-class BinjfindJob(pipeline.CondorDAGJob):
-	def __init__(self, out_dir, config_parser):
-		pipeline.CondorDAGJob.__init__(self, "vanilla", config_parser.get("condor", "ligolw_binjfind"))
-		self.set_sub_file("ligolw_binjfind.sub")
-		self.set_stdout_file(os.path.join(out_dir, "ligolw_binjfind-$(cluster)-$(process).out"))
-		self.set_stderr_file(os.path.join(out_dir, "ligolw_binjfind-$(cluster)-$(process).err"))
-		self.add_condor_cmd("getenv", "True")
-		self.add_ini_opts(config_parser, "ligolw_binjfind")
-
-
-class BinjfindNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
-	pass
-
-
-class TisiJob(pipeline.CondorDAGJob):
-	def __init__(self, out_dir, config_parser):
-		pipeline.CondorDAGJob.__init__(self, "vanilla", config_parser.get("condor", "ligolw_tisi"))
-		self.set_sub_file("ligolw_tisi.sub")
-		self.set_stdout_file(os.path.join(out_dir, "ligolw_tisi-$(cluster)-$(process).out"))
-		self.set_stderr_file(os.path.join(out_dir, "ligolw_tisi-$(cluster)-$(process).err"))
-		self.add_condor_cmd("getenv", "True")
-		self.add_ini_opts(config_parser, "ligolw_tisi")
-
-
-class TisiNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
-	pass
-
-
 #
 # =============================================================================
 #
@@ -301,34 +257,10 @@ class TisiNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 # =============================================================================
 #
 
-# LSCdataFind
-lscdatafindjob = pipeline.LSCDataFindJob(cache_dir, out_dir, config_parser)
+power.init_job_types(cache_dir, out_dir, config_parser)
 
-# lalapps_binj
-binjjob = power.BurstInjJob(config_parser)
-
-# lalapps_power
-powerjob = power.PowerJob(out_dir, config_parser)
-
-# ligolw_add
-lladdjob = pipeline.LigolwAddJob(out_dir, config_parser)
-
-# ligolw_tisi
-tisijob = TisiJob(out_dir, config_parser)
-
-# ligolw_binjfind
-binjfindjob = BinjfindJob(out_dir, config_parser)
-
-# ligolw_bucluster
-buclusterjob = BuclusterJob(out_dir, config_parser)
-
-# ligolw_burst2mon
 llb2mjob = Burst2MonJob(out_dir, config_parser)
-
-# publish
 publishjob = PublishJob(out_dir)
-
-# gsiscp
 gsiscpjob = GsiScpJob(out_dir)
 
 
@@ -346,10 +278,10 @@ def split_segment(psds):
 	to have the numbers of PSDs in each segment be equal to psds, but
 	with a short segment at the end if needed.
 	"""
-	psd_length = float(powerjob.get_opts()["psd-average-points"]) / float(powerjob.get_opts()["resample-rate"])
-	window_length = float(powerjob.get_opts()["window-length"]) / float(powerjob.get_opts()["resample-rate"])
-	window_shift = float(powerjob.get_opts()["window-shift"]) / float(powerjob.get_opts()["resample-rate"])
-	filter_corruption = float(powerjob.get_opts()["filter-corruption"]) / float(powerjob.get_opts()["resample-rate"])
+	psd_length = float(power.powerjob.get_opts()["psd-average-points"]) / float(power.powerjob.get_opts()["resample-rate"])
+	window_length = float(power.powerjob.get_opts()["window-length"]) / float(power.powerjob.get_opts()["resample-rate"])
+	window_shift = float(power.powerjob.get_opts()["window-shift"]) / float(power.powerjob.get_opts()["resample-rate"])
+	filter_corruption = float(power.powerjob.get_opts()["filter-corruption"]) / float(power.powerjob.get_opts()["resample-rate"])
 
 	psd_overlap = window_length - window_shift
 
@@ -369,99 +301,6 @@ injsegs = split_segment(psds_per_injection)
 
 print >>sys.stderr, "Segment split: " + str(jobsegs)
 print >>sys.stderr, "Injections split: " + str(injsegs)
-
-
-#
-# =============================================================================
-#
-#                           LSCdataFind DAG Fragment
-#
-# =============================================================================
-#
-
-def make_datafind_fragment(dag, observatory, seg):
-	datafind_pad = 512
-
-	node = pipeline.LSCDataFindNode(lscdatafindjob)
-	node.set_name("LSCdataFind")
-	node.set_start(options.seg[0] - datafind_pad)
-	node.set_end(options.seg[1] + 1)
-	node.set_observatory(observatory)
-	dag.add_node(node)
-
-	return node
-
-
-#
-# =============================================================================
-#
-#                          lalapps_power DAG Fragment
-#
-# =============================================================================
-#
-
-def make_power_fragment(dag, parents, framecache, seg, tag, injargs = {}):
-	suffix = "%s-%s-%s" % (tag, int(seg[0]), int(seg.duration()))
-
-	node = power.PowerNode(powerjob)
-	node.set_name("lalapps_power-%s" % suffix)
-	map(node.add_parent, parents)
-	node.set_cache(framecache)
-	node.set_ifo(options.instrument)
-	node.set_start(seg[0])
-	node.set_end(seg[1])
-	node.set_user_tag(tag)
-	for arg, value in injargs.iteritems():
-		# this is a hack, but I can't be bothered
-		node.add_var_arg("--%s %s" % (arg, value))
-	dag.add_node(node)
-
-	node.set_post_script(config_parser.get("condor", "fix_sngl_burst"))
-	node.add_post_script_arg(node.get_output())
-
-	return node
-
-
-#
-# =============================================================================
-#
-#                           ligolw_add DAG Fragment
-#
-# =============================================================================
-#
-
-def make_lladd_fragment(dag, parents, seg, tag):
-	cache_name = os.path.join(cache_dir, "lladd-%s.cache" % tag)
-	cachefile = file(cache_name, "w")
-
-	node = pipeline.LigolwAddNode(lladdjob)
-	node.set_name("lladd-%s" % tag)
-	for parent in parents:
-		node.add_parent(parent)
-		cache = lal.CacheEntry()
-		cache.observatory = "ANY"
-		cache.description = "EMPTY"
-		cache.segment = seg
-		cache.url = "file://localhost" + os.path.join(os.getcwd(), parent.get_output())
-		print >>cachefile, str(cache)
-	node.add_var_opt("input-cache", cache_name)
-	dag.add_node(node)
-
-	return node
-
-
-#
-# =============================================================================
-#
-#        DAG Fragment Combining Multiple lalapps_power With ligolw_add
-#
-# =============================================================================
-#
-
-def make_multipower_fragment(dag, powerparents, lladdparents, framecache, seglist, tag, injargs = {}):
-	node = make_lladd_fragment(dag, [make_power_fragment(dag, powerparents, framecache, seg, tag, injargs) for seg in seglist] + lladdparents, seglist.extent(), "POWER_%s" % tag)
-	node.set_output("%s-POWER_%s-%s-%s.xml" % (options.instrument, tag, int(seglist.extent()[0]), int(seglist.extent().duration())))
-	return node
 
 
 #
@@ -500,7 +339,7 @@ def make_publish_fragment(dag, tag, parent, destination):
 #
 
 def make_burst2mon_fragment(dag, parent, seg, tag):
-	cluster = BuclusterNode(buclusterjob)
+	cluster = power.BuclusterNode(power.buclusterjob)
 	cluster.set_name("ligolw_bucluster-POWERMON")
 	cluster.add_parent(parent)
 	cluster.set_input(parent.get_output())
@@ -542,104 +381,6 @@ def make_gsiscp_fragment(dag, parents, destination):
 #
 # =============================================================================
 #
-#                          lalapps_binj DAG Fragment
-#
-# =============================================================================
-#
-
-def make_binj_fragment(dag, tag, seg, offset, flow, fhigh, fratio):
-	# one injection every time-step / pi seconds
-	period = injection_bands * float(binjjob.get_opts()["time-step"]) / math.pi
-	start = seg[0] - seg[0] % period + period * offset
-
-	node = power.BurstInjNode(binjjob)
-	node.set_start(start)
-	node.set_end(seg[1])
-	node.set_name("lalapps_binj-%d-%d" % (int(node.get_start()), int(flow)))
-	node.set_user_tag(tag)
-	node.add_macro("macroflow", flow)
-	node.add_macro("macrofhigh", fhigh)
-	node.add_macro("macrofratio", fratio)
-	node.add_macro("macroseed", int(time.time() + node.get_start()))
-	dag.add_node(node)
-
-	return node
-
-
-#
-# =============================================================================
-#
-#         DAG Fragment Combining Multiple lalapps_binj With ligolw_add
-#
-# =============================================================================
-#
-
-def make_multibinj_fragment(dag, tag, seg):
-	flow = float(powerjob.get_opts()["low-freq-cutoff"])
-	fhigh = flow + float(powerjob.get_opts()["bandwidth"])
-
-	# determine frequency ratio from number of injections across band
-	# (take a bit off to allow fhigh to be picked up despite round-off
-	# errors)
-	fratio = 0.9999999 * (fhigh / flow) ** (1.0/injection_bands)
-
-	binjnodes = [make_binj_fragment(dag, tag, seg, 0.0, flow, fhigh, fratio)]
-
-	node = make_lladd_fragment(dag, binjnodes, seg, tag)
-	node.set_output("HL-%s-%d-%d.xml" % (tag, int(seg[0]), int(seg.duration())))
-
-	return node
-
-
-#
-# =============================================================================
-#
-#                           ligolw_tisi DAG Fragment
-#
-# =============================================================================
-#
-
-def make_tisi_fragment(dag, tag):
-	node = TisiNode(tisijob)
-	node.set_name("ligolw_tisi")
-	node.set_output("TISI_%s.xml" % tag)
-	node.add_macro("macrocomment", tag)
-	dag.add_node(node)
-
-	return node
-
-
-#
-# =============================================================================
-#
-#                         ligolw_binjfind DAG Fragment
-#
-# =============================================================================
-#
-
-def make_binjfind_fragment(dag, parent, tag):
-	cluster = BuclusterNode(buclusterjob)
-	cluster.set_name("ligolw_bucluster-INJECTIONS")
-	cluster.add_parent(parent)
-	cluster.set_input(parent.get_output())
-	cluster.set_output(parent.get_output())
-	cluster.add_macro("macrocomment", tag)
-	dag.add_node(cluster)
-
-	binjfind = BinjfindNode(binjfindjob)
-	binjfind.set_name("ligolw_binjfind")
-	binjfind.add_parent(cluster)
-	binjfind.set_input(cluster.get_output())
-	binjfind.set_output(cluster.get_output())
-	binjfind.add_macro("macrocomment", tag)
-	dag.add_node(binjfind)
-
-	return binjfind
-
-
-#
-# =============================================================================
-#
 #                               DAG Construction
 #
 # =============================================================================
@@ -651,18 +392,18 @@ os.mkdir(out_dir)
 dag = pipeline.CondorDAG(condor_log)
 dag.set_dag_file(options.dag_name)
 
-lscdatafindnode = make_datafind_fragment(dag, options.instrument[0], options.seg)
+datafindnode = power.make_datafind_fragment(dag, options.instrument[0], options.seg)
 
-darmpowerfrag = make_multipower_fragment(dag, [lscdatafindnode], [], lscdatafindnode.get_output(), jobsegs, options.user_tag)
+darmpowerfrag = power.make_multipower_fragment(dag, cache_dir, [datafindnode], [], datafindnode.get_output(), jobsegs, options.instrument, options.user_tag)
 
 make_publish_fragment(dag, "POWER", darmpowerfrag, options.publish_dest)
 if options.dmtmon_dest:
 	make_burst2mon_fragment(dag, darmpowerfrag, jobsegs.extent(), options.user_tag)
 
-binjfrag = make_multibinj_fragment(dag, "INJECTIONS_%s" % options.user_tag, injsegs.extent())
-tisifrag = make_tisi_fragment(dag, "INJECTIONS_%s" % options.user_tag)
-injpowerfrag = make_multipower_fragment(dag, [lscdatafindnode, binjfrag], [binjfrag, tisifrag], lscdatafindnode.get_output(), injsegs, "INJECTIONS_%s" % options.user_tag, injargs = {"burstinjection-file": binjfrag.get_output(), "calibration-cache": options.calibration_cache})
-binjfindfrag = make_binjfind_fragment(dag, injpowerfrag, "INJECTIONS_%s" % options.user_tag)
+binjfrag = power.make_multibinj_fragment(dag, cache_dir, "INJECTIONS_%s" % options.user_tag, injsegs.extent())
+tisifrag = power.make_tisi_fragment(dag, "INJECTIONS_%s" % options.user_tag)
+injpowerfrag = power.make_multipower_fragment(dag, cache_dir, [datafindnode, binjfrag], [binjfrag, tisifrag], datafindnode.get_output(), injsegs, options.instrument, "INJECTIONS_%s" % options.user_tag, injargs = {"burstinjection-file": binjfrag.get_output(), "calibration-cache": options.calibration_cache})
+binjfindfrag = power.make_binjfind_fragment(dag, injpowerfrag, "INJECTIONS_%s" % options.user_tag)
 make_publish_fragment(dag, "INJECTIONS", binjfindfrag, options.publish_dest)
 
 make_gsiscp_fragment(dag, [darmpowerfrag, binjfindfrag], options.gsiscp_dest)
