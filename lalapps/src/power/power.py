@@ -1,3 +1,5 @@
+# $Id$
+
 #
 # =============================================================================
 #
@@ -10,7 +12,7 @@
 Classes needed for the excess power analysis pipeline.
 """
 
-__author__ = "Duncan Brown <duncan@gravity.phys.uwm.edu>"
+__author__ = "Duncan Brown <duncan@gravity.phys.uwm.edu>, Kipp Cannon <kipp@gravity.phys.uwm.edu>"
 __date__ = "$Date$"[7:-2]
 __version__ = "$Revision$"[11:-2]
 
