@@ -117,7 +117,7 @@ for o, a in opts:
   elif o in ("-f", "--fine"):
     do_fine = 1
   elif o in ("-u", "--update"):
-    do_update = a
+    do_update = 1
   elif o in ("-C", "--calibrate"):
     do_calibrate = 1
   elif o in ("-F", "--config-file"):
@@ -369,7 +369,7 @@ if do_coarse:
     i = i+1
 
 # code to create dag for fine heterodyne
-if do_fine | do_update:
+if do_fine or do_update:
   param_files = os.listdir(pulsar_param_dir)
   param_files.sort()
   
@@ -413,18 +413,7 @@ if do_fine | do_update:
       if data_file == None:
         print >> sys.stderr, "No file set for PSR %s" % (pulsar)
         i = i+1
-        continue
-
-      """ 
-      if updating parameters check that an updated .par file exists - else just 
-      do normal fine heterodyne
-      """
-      if do_update:
-        pulsar_update_file = pulsar_update_dir + '/' + param_files[i]
-        if os.path.isfile(pulsar_update_file)==False:
-          print >> sys.stderr, """No updated parameter file exists for PSR%s, just perform fine
-heterodyne using old parameters.""" % (pulsar)
-          het_flag = 1 
+        continue 
       
       # add heterodyneNode for DAG
       fine.append(heterodyne_pulsar.heterodyneNode(fine_job))
@@ -436,7 +425,7 @@ heterodyne using old parameters.""" % (pulsar)
       if do_update:
         pulsar_update_file = pulsar_update_dir + '/' + param_files[i]
         if os.path.isfile(pulsar_update_file):
-          fine[j].set_param_file_update(param_update_file)
+          fine[j].set_param_file_update(pulsar_update_file)
         else:
           print >> sys.stderr, """No updated parameter file exists for PSR%s, just perform fine
 heterodyne using old parameters.""" % (pulsar)
