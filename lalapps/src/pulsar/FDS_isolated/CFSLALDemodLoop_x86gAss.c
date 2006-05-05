@@ -40,10 +40,10 @@
 
 	       "jmp contcode             \n"
 	       "V1100:                   \n\t"
-	       ".float 1.0               \n\t"
-	       ".float 1.0               \n\t"
 	       ".float 0.0               \n\t"
-	       ".float 0.0               \n"
+	       ".float 0.0               \n\t"
+	       ".float 1.0               \n\t"
+	       ".float 1.0               \n"
 	       "V2222:                   \n\t"
 	       ".float 2.0               \n\t"
 	       ".float 2.0               \n\t"
@@ -69,8 +69,8 @@
  
 	       ".rept 7                  \n\t" /* for (i=0; i<7; i++) { */
 	       "rcpps %%xmm0,%%xmm1      \n\t" /* XMM1: 1/(f-1) 1/(f-1) 1/f 1/f */
-	       "movups (%%edx),%%xmm7    \n\t"
-	       "mulps %%xmm7,%%xmm1      \n\t" /* XMM1: ImH/(f-1) ReH/(f-1) ImL/f ReL/f */
+	       "movups (%%edx),%%xmm4    \n\t"
+	       "mulps %%xmm4,%%xmm1      \n\t" /* XMM1: ImH/(f-1) ReH/(f-1) ImL/f ReL/f */
 	       "addps %%xmm1,%%xmm2      \n\t" /* XMM2: C_ImH C_ReH C_ImL C_ReL */
 	       "subps %%xmm6,%%xmm0      \n\t" /* XMM2: f-3 f-3 f-2 f-2 */
 	       "addl  $16,%%edx          \n\t" /* Xalpha_kX = Xalpha_kX + 2; */
@@ -81,8 +81,8 @@
 
 	       ".rept 7                  \n\t" /* for (i=0; i<7; i++) { */
 	       "rcpps %%xmm0,%%xmm1      \n\t" /* XMM1: 1/(f-1) 1/(f-1) 1/f 1/f */
-	       "movups (%%edx),%%xmm7    \n\t"
-	       "mulps %%xmm7,%%xmm1      \n\t" /* XMM1: ImH/(f-1) ReH/(f-1) ImL/f ReL/f */
+	       "movups (%%edx),%%xmm4    \n\t"
+	       "mulps %%xmm4,%%xmm1      \n\t" /* XMM1: ImH/(f-1) ReH/(f-1) ImL/f ReL/f */
 	       "addps %%xmm1,%%xmm2      \n\t" /* XMM2: C_ImH C_ReH C_ImL C_ReL */
 	       "subps %%xmm6,%%xmm0      \n\t" /* XMM2: f-3 f-3 f-2 f-2 */
 	       "addl  $16,%%edx          \n\t" /* Xalpha_kX = Xalpha_kX + 2; */
@@ -100,7 +100,7 @@
  
 	       : "=m" (XResX), "=m" (XImsX)       /* output  (here: to memory)*/
 	       : "m" (Xalpha_kX), "m" (tempFreqX) /* input (here: from memory)*/
-	       : "xmm0","xmm1","xmm2","xmm3","xmm4"
+	       : "xmm0","xmm1","xmm2","xmm3","xmm4",
 	         "xmm5","xmm6","xmm7","edx"       /* clobbered registers */
 	       );
 
