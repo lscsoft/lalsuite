@@ -1,6 +1,4 @@
           {
-	    NRCSID (CFSLOOPX86GASS, "$Id$");
-
             COMPLEX8 *Xalpha_k = Xalpha + sftIndex;
 
 	    REAL4 tsin2pi = tsin * (REAL4)OOTWOPI;
@@ -39,6 +37,8 @@
 	       "movss %3,%%xmm0          \n\t"
 
 	       "jmp contcode             \n"
+	       ".string \"$Id$\"\n"
+
 	       "V1100:                   \n\t"
 	       ".float 0.0               \n\t"
 	       ".float 0.0               \n\t"
@@ -68,24 +68,26 @@
 	       /* 4 REAL4 vaules = 2 ReIm pairs */
  
 	       ".rept 7                  \n\t" /* for (i=0; i<7; i++) { */
+	       "movlps (%%edx),%%xmm4    \n\t"
+	       "movhps +8(%%edx),%%xmm4  \n\t"
 	       "rcpps %%xmm0,%%xmm1      \n\t" /* XMM1: 1/(f-1) 1/(f-1) 1/f 1/f */
-	       "movups (%%edx),%%xmm4    \n\t"
-	       "mulps %%xmm4,%%xmm1      \n\t" /* XMM1: ImH/(f-1) ReH/(f-1) ImL/f ReL/f */
-	       "addps %%xmm1,%%xmm2      \n\t" /* XMM2: C_ImH C_ReH C_ImL C_ReL */
 	       "subps %%xmm6,%%xmm0      \n\t" /* XMM2: f-3 f-3 f-2 f-2 */
+	       "mulps %%xmm4,%%xmm1      \n\t" /* XMM1: ImH/(f-1) ReH/(f-1) ImL/f ReL/f */
 	       "addl  $16,%%edx          \n\t" /* Xalpha_kX = Xalpha_kX + 2; */
+	       "addps %%xmm1,%%xmm2      \n\t" /* XMM2: C_ImH C_ReH C_ImL C_ReL */
 	       ".endr                    \n\t" /* } for */
  
 	       "subps %%xmm7,%%xmm0      \n\t" /* JUMP OVER FPU CALCULATED VALUES */
 	       "addl  $32,%%edx          \n\t" /* Xalpha_kX = Xalpha_kX + 2; */
 
 	       ".rept 7                  \n\t" /* for (i=0; i<7; i++) { */
+	       "movlps (%%edx),%%xmm4    \n\t"
+	       "movhps +8(%%edx),%%xmm4  \n\t"
 	       "rcpps %%xmm0,%%xmm1      \n\t" /* XMM1: 1/(f-1) 1/(f-1) 1/f 1/f */
-	       "movups (%%edx),%%xmm4    \n\t"
-	       "mulps %%xmm4,%%xmm1      \n\t" /* XMM1: ImH/(f-1) ReH/(f-1) ImL/f ReL/f */
-	       "addps %%xmm1,%%xmm2      \n\t" /* XMM2: C_ImH C_ReH C_ImL C_ReL */
 	       "subps %%xmm6,%%xmm0      \n\t" /* XMM2: f-3 f-3 f-2 f-2 */
+	       "mulps %%xmm4,%%xmm1      \n\t" /* XMM1: ImH/(f-1) ReH/(f-1) ImL/f ReL/f */
 	       "addl  $16,%%edx          \n\t" /* Xalpha_kX = Xalpha_kX + 2; */
+	       "addps %%xmm1,%%xmm2      \n\t" /* XMM2: C_ImH C_ReH C_ImL C_ReL */
 	       ".endr                    \n\t" /* } for */
  
  	       /* XMM2 consists the low precision values */
