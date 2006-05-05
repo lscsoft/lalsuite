@@ -108,10 +108,10 @@ trigScanClusterOut;
 typedef struct tagTrigScanEpsSearchIn
 {
     trigScanInputPoint   *masterList;
-    INT4               nInputPoints;
-    REAL8              epsX, epsY, epsTc, alpha;
-    INT4               minPoints;
-    INT4               clusterID;
+    INT4                 nInputPoints;
+    REAL8                epsX, epsY, epsTc, alpha;
+    INT4                 minPoints;
+    INT4                 clusterID;
 }
 trigScanEpsSearchInput;
 
@@ -124,10 +124,10 @@ typedef struct tagExpandClusterIn
 ExpandClusterInput;
 
 /*--- Function prototypes ---*/
-void LALTrigScanClusterT0T3Tc (
+void LALTrigScanClusterDriver (
         LALStatus           *status,
-        trigScanClusterIn     *clusterIn, 
-        trigScanClusterOut    **clusterOut, 
+        trigScanClusterIn   *clusterIn, 
+        trigScanClusterOut  **clusterOut, 
         INT4                *nclusters
         );
 
@@ -135,7 +135,7 @@ void LALTrigScanClusterT0T3Tc (
 trigScanValidEvent XLALTrigScanExpandCluster (
         trigScanInputPoint    *list, 
         trigScanInputPoint    *masterList,
-        ExpandClusterInput  expandClusterIn
+        ExpandClusterInput    expandClusterIn
         );
 
 void XLALTrigScanGetEpsNeighbourhood (
@@ -153,8 +153,8 @@ REAL8 XLALTrigScanGetDistance (
 
 void LALTrigScanClusterMakeOutput (
         LALStatus               *status,
-        trigScanClusterIn         *condenseIn, 
-        trigScanClusterOut        **condenseOut,
+        trigScanClusterIn       *condenseIn, 
+        trigScanClusterOut      **condenseOut,
         INT4                    nclusters
         );
 
@@ -172,7 +172,7 @@ INT4 XLALDeleteSnglInspiralTable (
 SnglInspiralTable *  
 XLALTrimSnglInspiralTable (
         SnglInspiralTable   **inspiralEventList,
-        trigScanClusterOut    *clusterOut,
+        trigScanClusterOut  *clusterOut,
         INT4                nclusters
         );
 
@@ -188,7 +188,7 @@ INT4 XLALPopulateTrigScanInput (
 void LALClusterSnglInspiralOverTemplatesAndEndTime ( 
         LALStatus              *status,
         SnglInspiralTable      **eventHead,
-        trigScanClusterIn        *condenseIn
+        trigScanClusterIn      *condenseIn
         );
 
 #endif /* _LALTRIGSCANCLUSTER_H */
