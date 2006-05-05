@@ -136,13 +136,10 @@ int main(int argc, char *argv[]){
   UINT4  nTemplates, controlN, controlNN, controlNH;
    
   UINT4  mObsCoh;
-  INT8   f0Bin, fLastBin;           /* freq. bin to perform search */
   REAL8  normalizeThr;
   REAL8  timeBase, deltaF;
   REAL8  h0scale;
-
-  UINT4  sftlength; 
-  INT4   fWings;
+ 
   INT4   sftFminBin;
   REAL8  fHeterodyne;
   REAL8  tSamplingRate;      
@@ -167,7 +164,6 @@ int main(int argc, char *argv[]){
   CHAR   *uvar_sftDir=NULL;
   CHAR   *uvar_dirnameOut=NULL;
   CHAR   *uvar_fnameOut=NULL;
-  CHAR   *uvar_ifo=NULL;
   CHAR   *uvar_skyfile=NULL;
   LALStringVector *uvar_linefiles=NULL;
 
@@ -229,7 +225,6 @@ int main(int argc, char *argv[]){
   /*      register user input variables    */
   /******************************************************************/ 
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",            'h', UVAR_HELP,     "Print this message",            &uvar_help),            &status);  
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "ifo",             'i', UVAR_OPTIONAL, "Detector L1, H1, H2, G1",       &uvar_ifo ),            &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",    'w', UVAR_OPTIONAL, "RngMed block size",             &uvar_blocksRngMed),    &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "f0",              'f', UVAR_OPTIONAL, "Start search frequency",        &uvar_f0),              &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "fSearchBand",     'b', UVAR_OPTIONAL, "Search frequency band",         &uvar_fSearchBand),     &status);
@@ -416,12 +411,9 @@ int main(int argc, char *argv[]){
     static SFTConstraints constraints;
 
     REAL8   doppWings, fmin, fmax;
-    INT4    length;
-
+ 
     /* set detector constraint */
     constraints.detector = NULL;
-    if ( LALUserVarWasSet( &uvar_ifo ) )    
-      constraints.detector = XLALGetChannelPrefix ( uvar_ifo );
 
     /* get sft catalog */
     LAL_CALL( LALSFTdataFind( &status, &catalog, uvar_sftDir, &constraints), &status);
@@ -434,11 +426,6 @@ int main(int argc, char *argv[]){
     mObsCoh = catalog->length; /* number of sfts */
     deltaF = catalog->data->header.deltaF;  /* frequency resolution */
     timeBase= 1.0/deltaF; /* coherent integration time */
-    f0Bin = floor( uvar_f0 * timeBase + 0.5); /* initial search frequency */
-    length =  uvar_fSearchBand * timeBase; /* total number of search bins - 1 */
-    fLastBin = f0Bin + length;   /* final frequency bin to be analyzed */
-
-    fWings =  floor( fLastBin * VTOT + 0.5) + uvar_nfSizeCylinder + uvar_blocksRngMed;
 
     /* catalog is ordered in time so we can get start, end time and tObs*/
     firstTimeStamp = catalog->data[0].header.epoch;
@@ -457,17 +444,12 @@ int main(int argc, char *argv[]){
     numifo = inputSFTs->length;
     binsSFT = inputSFTs->data[0]->data->data->length;
      
-    /* some more sft parameetrs MIGHT NOT BE NEEDED*/
-    sftlength = 1 + length + 2*fWings;
-    sftFminBin= f0Bin - fWings;
-    fHeterodyne = sftFminBin*deltaF;
-    /* tSamplingRate = 2.0*deltaF*(sftlength -1.); */
+    /* some more sft parameetrs */  
+    fHeterodyne =inputSFTs->data[0]->data[0].f0;   
+    sftFminBin = (INT4) floor(fHeterodyne *timeBase +0.5);    
     tSamplingRate = 2.0*deltaF*(binsSFT -1.);
          
-    /* free memory */
-    if ( LALUserVarWasSet( &uvar_ifo ) )    
-      LALFree( constraints.detector );
-    
+    /* free memory */    
     LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);  	 
   } 
   
@@ -896,11 +878,7 @@ int main(int argc, char *argv[]){
 	  noiseSFT  = inputSFTs->data[iIFO]->data[iSFT].data->data;
 	  signalSFT = signalSFTs->data[iIFO]->data[iSFT].data->data;
 	  sumSFT    = sumSFTs->data[iIFO]->data[iSFT].data->data;
-	  
-	  /*  noiseSFT = inputSFTs->data[iIFO]->data[iSFT]->data->data; */
-	  /*  signalSFT = signalSFTs->data[iIFO]->data[iSFT]->data->data; */
-	  /*   sumSFT = sumSFTs->data[iIFO]->data[iSFT]->data->data; */
-	  
+	  	  
 	  for (j=0; j < binsSFT; j++) {
 	    sumSFT->re = noiseSFT->re + h0scale *signalSFT->re;
 	    sumSFT->im = noiseSFT->im + h0scale *signalSFT->im;
