@@ -69,7 +69,7 @@
  
 	       ".rept 7                  \n\t" /* for (i=0; i<7; i++) { */
 	       "movlps (%%edx),%%xmm4    \n\t"
-	       "movhps +8(%%edx),%%xmm4  \n\t"
+	       "movhps 8(%%edx),%%xmm4  \n\t"
 	       "rcpps %%xmm0,%%xmm1      \n\t" /* XMM1: 1/(f-1) 1/(f-1) 1/f 1/f */
 	       "subps %%xmm6,%%xmm0      \n\t" /* XMM2: f-3 f-3 f-2 f-2 */
 	       "mulps %%xmm4,%%xmm1      \n\t" /* XMM1: ImH/(f-1) ReH/(f-1) ImL/f ReL/f */
@@ -82,7 +82,7 @@
 
 	       ".rept 7                  \n\t" /* for (i=0; i<7; i++) { */
 	       "movlps (%%edx),%%xmm4    \n\t"
-	       "movhps +8(%%edx),%%xmm4  \n\t"
+	       "movhps 8(%%edx),%%xmm4  \n\t"
 	       "rcpps %%xmm0,%%xmm1      \n\t" /* XMM1: 1/(f-1) 1/(f-1) 1/f 1/f */
 	       "subps %%xmm6,%%xmm0      \n\t" /* XMM2: f-3 f-3 f-2 f-2 */
 	       "mulps %%xmm4,%%xmm1      \n\t" /* XMM1: ImH/(f-1) ReH/(f-1) ImL/f ReL/f */
