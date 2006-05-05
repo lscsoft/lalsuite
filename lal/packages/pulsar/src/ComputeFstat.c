@@ -859,7 +859,7 @@ LALGetDetectorStates (LALStatus *status,
 	TRY ( LALDestroyDetectorStateSeries(status->statusPtr, &ret), status);
       }ENDFAIL(status);
       /*----- then get detector-specific info */
-      baryinput.tgps = tgps;			/* irrelevant here! */
+      baryinput.tgps = tgps;			
       baryinput.site = (*detector);
       baryinput.site.location[0] /= LAL_C_SI;
       baryinput.site.location[1] /= LAL_C_SI;
