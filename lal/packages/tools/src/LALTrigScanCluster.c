@@ -1,10 +1,10 @@
-/*-----------------------------------------------------------------------------
+/*----------------------------------------------------------------------------
  *
  * File Name: LALTrigScanCluster.c
  *
  * Author: Sengupta, Anand. S. and Gupchup, Jayant A.
  *
- * Revision: $Id$
+ * $Id$
  *
  *---------------------------------------------------------------------------*/
 
@@ -34,11 +34,11 @@ trigScanValidEvent XLALTrigSCanExpandCluster (
 {
     trigScanValidEvent      flag = false;
     trigScanInputPoint      seed;
-    trigScanEpsSearchInput  epsSearchIn; /* Data structure given as input to  */
-    /* getEpsNeighbourhood fn.           */ 
+    trigScanEpsSearchInput  epsSearchIn; /* Data structure given as input to*/
+                                         /* getEpsNeighbourhood fn.         */ 
 
     INT4   pointer=0, size=1; /* when pointer < size, all elements */
-    /* have been accessed                */
+                              /* have been accessed                */
 
     /* Create the epsSearchIn data structure */
     epsSearchIn.masterList   = masterList;
@@ -128,7 +128,8 @@ void XLALTrigScanGetEpsNeighbourhood (
                 (*size)++;
 
                 if ( !(*list = (trigScanInputPoint*) 
-                            LALRealloc(*list, sizeof(trigScanInputPoint)*(*size)))
+                            LALRealloc(*list, 
+                                sizeof(trigScanInputPoint)*(*size)))
                    )
                 {
                     fprintf (stderr, "LALRealloc error. Aborting at %d\n", 
@@ -170,13 +171,13 @@ REAL8 XLALTrigScanGetDistance (
 } 
 
 /* --------------------------------------------------------------------- 
- * This function is used to fillout the TrigScanClusterOut structure after
+ * This function is used to fillout the trigScanClusterOut structure after
  * the clustering has been done. 
  ---------------------------------------------------------------------*/ 
 void LALTrigScanClusterMakeOutput (
         LALStatus               *status,
-        trigScanClusterIn         *condenseIn, 
-        trigScanClusterOut        **condenseOut,
+        trigScanClusterIn       *condenseIn, 
+        trigScanClusterOut      **condenseOut,
         INT4                    nclusters
         )
 { 
@@ -198,10 +199,10 @@ void LALTrigScanClusterMakeOutput (
             status, LALTRIGSCANCLUSTERH_ENULL, LALTRIGSCANCLUSTERH_MSGENULL);
     ASSERT (masterList, 
             status, LALTRIGSCANCLUSTERH_ENULL, LALTRIGSCANCLUSTERH_MSGENULL);
-    ASSERT (n > 0, 
-            status, LALTRIGSCANCLUSTERH_ECHOICE, LALTRIGSCANCLUSTERH_MSGECHOICE);
-    ASSERT (nclusters > 0, 
-            status, LALTRIGSCANCLUSTERH_ECHOICE, LALTRIGSCANCLUSTERH_MSGECHOICE);
+    ASSERT (n > 0, status, 
+            LALTRIGSCANCLUSTERH_ECHOICE, LALTRIGSCANCLUSTERH_MSGECHOICE);
+    ASSERT (nclusters > 0, status, 
+            LALTRIGSCANCLUSTERH_ECHOICE, LALTRIGSCANCLUSTERH_MSGECHOICE);
 
     t_idx  = (INT4 *) LALMalloc (n * sizeof(INT4));
     LALDCreateVector (status->statusPtr, &t_rho, n);
@@ -270,6 +271,9 @@ void LALTrigScanClusterMakeOutput (
     RETURN(status);
 }
 
+/* --------------------------------------------------------------------- 
+ * This function appends the stragglers to the condenseOut list 
+ ----------------------------------------------------------------------*/ 
 void LALTrigScanAppendIsolatedTriggers (
         LALStatus               *status,
         trigScanClusterIn       *condenseIn, 
@@ -283,7 +287,8 @@ void LALTrigScanAppendIsolatedTriggers (
     REAL8                *xx=NULL, *vv=NULL, *nn=NULL;
     INT4                 *mid = NULL;
 
-    INITSTATUS (status, "LALTrigScanAppendIsolatedTriggers", LALTRIGSCANCLUSTERC);
+    INITSTATUS (status, 
+            "LALTrigScanAppendIsolatedTriggers", LALTRIGSCANCLUSTERC);
     ATTATCHSTATUSPTR(status);
 
     n            = condenseIn->n;
@@ -298,10 +303,10 @@ void LALTrigScanAppendIsolatedTriggers (
             status, LALTRIGSCANCLUSTERH_ENULL, LALTRIGSCANCLUSTERH_MSGENULL);
     ASSERT (masterList, 
             status, LALTRIGSCANCLUSTERH_ENULL, LALTRIGSCANCLUSTERH_MSGENULL);
-    ASSERT (n > 0, 
-            status, LALTRIGSCANCLUSTERH_ECHOICE, LALTRIGSCANCLUSTERH_MSGECHOICE);
-    ASSERT (nclusters >= 0, 
-            status, LALTRIGSCANCLUSTERH_ECHOICE, LALTRIGSCANCLUSTERH_MSGECHOICE);
+    ASSERT (n > 0, status, 
+            LALTRIGSCANCLUSTERH_ECHOICE, LALTRIGSCANCLUSTERH_MSGECHOICE);
+    ASSERT (nclusters >= 0, status, 
+            LALTRIGSCANCLUSTERH_ECHOICE, LALTRIGSCANCLUSTERH_MSGECHOICE);
     ASSERT (xx && vv && nn && mid,
             status, LALTRIGSCANCLUSTERH_ENULL, LALTRIGSCANCLUSTERH_MSGENULL);
 
@@ -412,6 +417,10 @@ void LALTrigScanAppendIsolatedTriggers (
     RETURN(status);
 }
 
+/* ---------------------------------------------------------------------       
+ * This general purpose function can be used to delete all the elements
+ * of a SnglInspiralTable.
+ ----------------------------------------------------------------------*/ 
 INT4 XLALDeleteSnglInspiralTable (
         SnglInspiralTable **eventHead
         )
@@ -427,6 +436,11 @@ INT4 XLALDeleteSnglInspiralTable (
     }
 }
 
+/* --------------------------------------------------------------------- 
+ * This function populates some (not all) members of the trigScanClusterIn
+ * structure using the information available in other structures. This is
+ * typically called from inspiral.c
+ ----------------------------------------------------------------------*/ 
 INT4 XLALPopulateTrigScanInput (
         trigScanClusterIn     **condenseIn,
         FindChirpDataParams   *fcDataParams,
@@ -457,7 +471,8 @@ INT4 XLALPopulateTrigScanInput (
 
     (*condenseIn)->coarseShf.f0     = 0.0L;
     (*condenseIn)->coarseShf.deltaF = deltaF;
-    (*condenseIn)->coarseShf.data   = XLALCreateREAL8Vector( (numPoints/2 + 1) );
+    (*condenseIn)->coarseShf.data   = 
+            XLALCreateREAL8Vector( (numPoints/2 + 1) );
 
     /* Populate the shf vector from the wtilde vector */
     for (ki=0; ki<fcDataParams->wtildeVec->length ; ki++) 
@@ -478,6 +493,11 @@ INT4 XLALPopulateTrigScanInput (
     return 0;
 }
 
+/* --------------------------------------------------------------------- 
+ * This function takes a SnglInspiralTable and returns another SnglInspiral
+ * table consisting of ncluster elements contained in clusterOut[i]->masterIdx
+ * where i runs from 0 to ncluster-1.
+ ----------------------------------------------------------------------*/ 
 SnglInspiralTable *
 XLALTrimSnglInspiralTable (
         SnglInspiralTable   **eventHead,
@@ -559,104 +579,4 @@ XLALTrimSnglInspiralTable (
     return (output);
 }
 
-void LALClusterSnglInspiralOverTemplatesAndEndTime ( 
-        LALStatus              *status,
-        SnglInspiralTable      **eventHead,
-        trigScanClusterIn      *condenseIn
-        )
-{ 
-    INT4                nclusters = 0;
-    trigScanClusterOut  *condenseOut=NULL;
-    SnglInspiralTable   *clusteredList = NULL;
-
-    INITSTATUS (status, "LALClusterSnglInspiralOverTemplatesAndEndTime", LALTRIGSCANCLUSTERC);
-    ATTATCHSTATUSPTR(status);
-
-    ASSERT ((*eventHead), status, LALTRIGSCANCLUSTERH_ENULL, LALTRIGSCANCLUSTERH_MSGENULL);
-    ASSERT (condenseIn, status, LALTRIGSCANCLUSTERH_ENULL, LALTRIGSCANCLUSTERH_MSGENULL);
-    ASSERT (condenseIn->coarseShf.data, status, LALTRIGSCANCLUSTERH_ENULL, LALTRIGSCANCLUSTERH_MSGENULL);
-    ASSERT (condenseIn->n > 0, status, LALTRIGSCANCLUSTERH_ENULL, LALTRIGSCANCLUSTERH_MSGENULL);
-    ASSERT (condenseIn->scanMethod > 0 && condenseIn->scanMethod <=2, 
-            status, LALTRIGSCANCLUSTERH_ENULL, LALTRIGSCANCLUSTERH_MSGENULL);
-
-
-    if (condenseIn->vrbflag)
-          fprintf (stderr, "\nInput contains %d points \n", condenseIn->n);
-
-    condenseIn->masterList = (trigScanInputPoint *)
-            LALCalloc (1, condenseIn->n * sizeof(trigScanInputPoint));
-
-    /* Copy the relevant fields from the inspiralEventList */
-    {
-        SnglInspiralTable   *thisEvent = NULL;
-        INT4 l=0;
-
-        for ( thisEvent = (*eventHead); thisEvent; thisEvent = thisEvent->next )
-        {
-            if (condenseIn->scanMethod == T0T3Tc)
-            {
-                condenseIn->masterList[l].x = thisEvent->tau0;
-                condenseIn->masterList[l].y = thisEvent->tau3;
-            }
-            condenseIn->masterList[l].tc_sec = (thisEvent->end_time).gpsSeconds;
-            condenseIn->masterList[l].tc_ns  = (thisEvent->end_time).gpsNanoSeconds;
-            condenseIn->masterList[l].rho    = thisEvent->snr;
-            condenseIn->masterList[l].effD   = thisEvent->eff_distance;
-            condenseIn->masterList[l].chisq  = 0.0;
-            condenseIn->masterList[l].isValidEvent = 1;
-
-            ++l;
-        }
-    }
-
-    /*-- Call the appropriate clustering routine --*/
-    switch (condenseIn->scanMethod) 
-    { 
-        case  T0T3Tc:
-            condenseIn->massChoice = t03;
-            LALTrigScanClusterT0T3Tc (status->statusPtr, condenseIn, &condenseOut, &nclusters);
-            CHECKSTATUSPTR (status);
-            break;
-
-        case Psi0Psi3Tc:
-        case trigScanNone:
-        default:
-            nclusters = 0;
-            LALWarning( status->statusPtr, "trigScanCluster is not available for this choice of scanMethod." );
-            CHECKSTATUSPTR (status);
-            break;
-    }
-
-    if (nclusters) /* some clusters were found */
-    {
-        /* Clustering is now over. Create a new list containing the clustered
-         * elements only. The index is present in condenseOut->master_idx
-         */
-        clusteredList = NULL;
-        clusteredList = XLALTrimSnglInspiralTable ( eventHead, condenseOut, nclusters );
-
-        /* Now delete the inspiralEventList and replace it with clusteredList */
-        if ( clusteredList )
-        {
-            XLALDeleteSnglInspiralTable (eventHead);
-            if (!(*eventHead) && nclusters >0 )
-            {
-                (*eventHead) = clusteredList;
-            }
-        }
-    }
-    else /* No clusters were found by our algorithm */
-    {
-        /* In this case delete the original list. */
-        XLALDeleteSnglInspiralTable (eventHead);
-    }
-
-    /* Free the masterlist */
-    if ( condenseIn->masterList )
-          LALFree( condenseIn->masterList );
-
-    /* Normal Exit */
-    DETATCHSTATUSPTR(status);
-    RETURN(status);
-}
 
