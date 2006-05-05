@@ -69,7 +69,8 @@
  
 	       ".rept 7                  \n\t" /* for (i=0; i<7; i++) { */
 	       "rcpps %%xmm0,%%xmm1      \n\t" /* XMM1: 1/(f-1) 1/(f-1) 1/f 1/f */
-	       "mulps (%%edx),%%xmm1     \n\t" /* XMM1: ImH/(f-1) ReH/(f-1) ImL/f ReL/f */
+	       "movups (%%edx),%%xmm7    \n\t"
+	       "mulps %%xmm7,%%xmm1      \n\t" /* XMM1: ImH/(f-1) ReH/(f-1) ImL/f ReL/f */
 	       "addps %%xmm1,%%xmm2      \n\t" /* XMM2: C_ImH C_ReH C_ImL C_ReL */
 	       "subps %%xmm6,%%xmm0      \n\t" /* XMM2: f-3 f-3 f-2 f-2 */
 	       "addl  $16,%%edx          \n\t" /* Xalpha_kX = Xalpha_kX + 2; */
@@ -78,6 +79,15 @@
 	       "subps %%xmm7,%%xmm0      \n\t" /* JUMP OVER FPU CALCULATED VALUES */
 	       "addl  $32,%%edx          \n\t" /* Xalpha_kX = Xalpha_kX + 2; */
 
+	       ".rept 7                  \n\t" /* for (i=0; i<7; i++) { */
+	       "rcpps %%xmm0,%%xmm1      \n\t" /* XMM1: 1/(f-1) 1/(f-1) 1/f 1/f */
+	       "movups (%%edx),%%xmm7    \n\t"
+	       "mulps %%xmm7,%%xmm1      \n\t" /* XMM1: ImH/(f-1) ReH/(f-1) ImL/f ReL/f */
+	       "addps %%xmm1,%%xmm2      \n\t" /* XMM2: C_ImH C_ReH C_ImL C_ReL */
+	       "subps %%xmm6,%%xmm0      \n\t" /* XMM2: f-3 f-3 f-2 f-2 */
+	       "addl  $16,%%edx          \n\t" /* Xalpha_kX = Xalpha_kX + 2; */
+	       ".endr                    \n\t" /* } for */
+ 
  	       /* XMM2 consists the low precision values */
 	       /* XRes and Xims consist the high precision values */
  
@@ -88,9 +98,9 @@
 	       "shufps $1,%%xmm2,%%xmm2  \n\t" /* XMM0: f   f   f   f */
 	       "movss %%xmm2,%1          \n\t" /* SAVE Im part */
  
-	       : "=m" (XResX), "=m" (XImsX)       /* output (here: to memory)*/
+	       : "=m" (XResX), "=m" (XImsX)       /* output  (here: to memory)*/
 	       : "m" (Xalpha_kX), "m" (tempFreqX) /* input (here: from memory)*/
-	       : "xmm0","xmm1","xmm2","xmm3",
+	       : "xmm0","xmm1","xmm2","xmm3","xmm4"
 	         "xmm5","xmm6","xmm7","edx"       /* clobbered registers */
 	       );
 
