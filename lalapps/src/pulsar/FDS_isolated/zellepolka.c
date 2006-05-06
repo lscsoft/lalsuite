@@ -1,7 +1,7 @@
 /********************************************************************************************/
 /*      zellepolka - the pulsar coincidence analysis code for einstein at home postprocess  */
 /*                                                                                          */
-/*               Xavier Siemens,  Bruce Allen,  Bernd Machenschalk,  Yousuke Itoh           */
+/*      Xavier Siemens,  Bruce Allen,  Bernd Machenschalk,  Yousuke Itoh,  Holger Pletsch   */
 /*                                                                                          */
 /*                                                                                          */
 /*                                  UWM - April  2005                                       */
@@ -11,13 +11,14 @@
 
 /*! 
    @file
-   @brief the pulsar coincidence analysis code for einstein at home postprocess --- count numbers of events in cells construcetd in parameters space.
+   @brief the pulsar coincidence analysis code for einstein at home post-process --- counting
+    number of events in cells construcetd in parameters space.
 
 <li>Inputs and outputs
 <ul>   
 <li> This code takes one single file generated from the EaH zipped result files by a python code combiner_v2.py in 
 lalapps/src/pulsar/FDS_isolated.
-<li> This code outputs one output file whose name is specified by user, five files with default names, and 
+<li> This code outputs one output file whose name is specified by the user, five files with default names, and 
 some information on stderr.
 <ol>
 <li> The one output file contains all the information (f,a,d,f1dot,ncandidate,sig) in all the cells. This can be huge.
@@ -26,20 +27,24 @@ some information on stderr.
 <li> One file outputs time variation of 2F of some coincident outliers.
 <li> One file outputs cell information of some coincident outliers
 <li> One file outputs the cell info of the maximum coincident event over each Frequency cell but all over the sky.
-<li> Outputs summary table on stderr. This table shows how many cells have how many counts. (e.g. 2 cells have 60 coincidences.)
+<li> Outputs summary table on stderr. This table shows how many cells have how many counts. 
+     (e.g. 2 cells have 10 coincidences.)
 </ol>
 </ul>
 
 <li>Algorithm
 <ol>
 <li> First construct a grid in four dimensional parameters space (frequency, right ascension, declination and f1dot).
-   We take the isotropic grid in the sky location, a uniform grid in the frequency.
+   We take an adaptive grid in the sky location according to the metric used in the search
+   (the actual implementation uses a Gaussian declination-model, with maximum around the equator),
+   a uniform grid in the frequency and spin-down.
    We can change the grid spacing of the each parameter, and shift the grid as a whole for 
   each parameter.  <br> 
-<li>  Then count how many candidate events are in each cell.
+<li>  Then we count how many candidate events are in each cell.
   Even if a file has more than one event in a cell, we say we have one event from that file, 
   and take the largest F statistic event among the events in the cell from that file.
-  Therefore, the largets number counts in a cell is the number of the files to be read.
+  Therefore, the greatest number counts in a cell is the number of data-stretches from
+  which the result files have originated.
 </ol>
 
 
@@ -81,7 +86,8 @@ some information on stderr.
 
 /*
    To use unzip, you need to have unzip-5.5x from, say,  the InfoZip webpage, 
-   and readzipfile_util.h and .c. from yousuke. 
+   and readzipfile_util.h and .c. from yousuke.
+   ( not needed any more, will be done by combiner_v2.py ) 
 #define USE_UNZIP  
 */
 
@@ -155,8 +161,8 @@ Configuration variables have three categories.
 
 Cell parameters: Define dimensions of cells and center of the cells.
 @param Deltaf     REAL8 Size of coincidence window in Hz (= Size of cell in frequency)
-@param DeltaAlpha REAL8 Size of coincidence window in radians (= Size of cell in delta)
-@param DeltaDelta REAL8 Size of coincidence window in radians (= Size of cell in alpha)
+@param DeltaAlpha REAL8 Size of coincidence window in radians (at the equator delta=0)
+@param DeltaDelta REAL8 Size of coincidence window in radians (at the equator delta=0)
 @param DeltaF1dot REAL8 Size of coincidence window of spindown d/dt f (= Size of cell in f1dot)
 @param Shiftf     REAL8 Parallel shift of frequency in Hz of cell 
 @param ShiftAlpha REAL8 Parallel shift of Alpha in Hz of cell
@@ -193,8 +199,8 @@ typedef struct PolkaConfigVarsTag
   REAL8 TwoFthr;     /*  Threshold for TwoF values */
   REAL8 Deltaf;      /*  Size of coincidence window in Hz */
   REAL8 DeltaF1dot;  /*  Size of coincidence window of spindown */
-  REAL8 DeltaAlpha;  /*  Size of coincidence window in radians */
-  REAL8 DeltaDelta;  /*  Size of coincidence window in radians */
+  REAL8 DeltaAlpha;  /*  Size of coincidence window in radians (at equator) */
+  REAL8 DeltaDelta;  /*  Size of coincidence window in radians (at equator) */
   REAL8 Kappa;       /*  Tuning parameter for declination window */
   REAL8 Shiftf;      /*  Parallel shift of frequency in Hz of cell */
   REAL8 ShiftAlpha;  /*  Parallel shift of Alpha in Hz of cell */
@@ -378,6 +384,7 @@ int main(INT4 argc,CHAR *argv[])
   /* initialization */
   /* Initialise arrays of sorted candidates. */
 
+  /* flexible declination window */
   DeltaDeltaFlex = 0;
   
   for (icand=0;icand<CLength;icand++)
@@ -435,7 +442,7 @@ int main(INT4 argc,CHAR *argv[])
 	    else  
 	      { 
 		/* This candidate has the same file id to one of candidates in this cell. */ 
-		/* 	       Because the array is already sorted in the DECREASING ORDER OF F,  */
+		/* 	       Because the array is already sorted in the DECREASING ORDER OF 2F,  */
 		/* 		 we do nothing here. */
 	      }  /*if( SortedC[icand].FileID != lastFileIDinThisCell ) */
 	  } /*  if( SortedC[icand].iFreq  == cell[icell].iFreq  && .. ) */ 
@@ -616,10 +623,10 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
   /* ------------------------------------------------------------- */
   /* output summary table. */
   if(lalDebugLevel < 3 ) {
-    fprintf(stderr,"%% Maximly significant cell : freq [Hz]\tdec [rad]\tra [rad]  \tF1dot \t\t   #[events]\tSig" "\n");
+    fprintf(stderr,"%% Most significant cell : freq [Hz]\tdec [rad]\tra [rad]  \tF1dot \t\t   #[events]\tSig" "\n");
     fprintf(stderr, "%%\t\t\t     ");
     TRY( print_info_of_the_cell( lalStatus->statusPtr, stderr, cell, idxmax,idxmax+1,0,0), lalStatus);
-    fprintf(stderr,"%% Maximly coincident cell  : freq [Hz]\tdec [rad]\tra [rad]  \tF1dot \t\t   #[events]\tSig" "\n");
+    fprintf(stderr,"%% Most coincident cell  : freq [Hz]\tdec [rad]\tra [rad]  \tF1dot \t\t   #[events]\tSig" "\n");
     fprintf(stderr, "%%\t\t\t     ");
     TRY( print_info_of_the_cell( lalStatus->statusPtr, stderr, cell, 0,1,0,0), lalStatus);
 
@@ -635,7 +642,7 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
       fprintf(stderr, "%7d",count[nc]);
     }
     
-    fprintf(stderr,"\n%%\n%% Candidates of maximly coincident cell : \n%% freq [Hz]\tdec [rad]\tra [rad]  \tF1dot[Hz/s]\t\t2F" "\n");
+    fprintf(stderr,"\n%%\n%% Candidates of most coincident cell : \n%% freq [Hz]\tdec [rad]\tra [rad]  \tF1dot[Hz/s]\t\t2F" "\n");
     TRY( print_cand_of_most_coin_cell( lalStatus->statusPtr, &cell[0], CList), lalStatus);
 
   
@@ -1000,11 +1007,11 @@ void get_info_of_the_cell( LALStatus *lalStatus, CellData *cd, const CandidateLi
 
 /* ########################################################################################## */
 /*!
-  print candidates of maximly coincident cell. 
+  print candidates of most coincident cell. 
 
   We have indices of the candidate events contained in each cell 
   before the call of this function. This function returns all
-  the candidates belonging to the maximly coincident cell.
+  the candidates belonging to the most coincident cell.
 
   @param[in,out] lalStatus   LALStatus* 
   @param[in,out] cd          CellData*
@@ -2451,7 +2458,7 @@ ReadCommandLineArgs( LALStatus *lalStatus,
   uvar_AlphaWindow = 0.0;
   uvar_DeltaWindow = 0.0;
   uvar_F1dotWindow = 0.0;
-  uvar_Kappa = 4.5;
+  uvar_Kappa = 4.3;
   
   uvar_FreqShift = 0.0;
   uvar_AlphaShift = 0.0;
