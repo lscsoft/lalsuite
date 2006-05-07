@@ -1215,8 +1215,11 @@ void GenerateInjectParams(LALStatus   *status,
   closeTemplates->f0[1] = ceil(f0/deltaF)*deltaF;
  
   /* sky location, depending if  full sky or small patch is analyzed */
-  deltaX = deltaF/(params->vTotC * params->pixelFactor *
- 	           (params->fmin + params->fSearchBand) );
+/*
+ *   deltaX = deltaF/(params->vTotC * params->pixelFactor *
+ *  	           (params->fmin + params->fSearchBand) );
+ */
+  deltaX = deltaF/(params->vTotC * params->pixelFactor * f0 );
   
   
   if (params->fullSky){ /*full sky*/   
