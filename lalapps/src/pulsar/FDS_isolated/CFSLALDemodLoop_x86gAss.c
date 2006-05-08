@@ -47,7 +47,7 @@
 	       "jmp contcode             \n"
 	       AD_ASCII "\"$Id$\"\n"
 
-	       "V1100:                   \n\t"
+	       "V0011:                   \n\t"
 	       AD_FLOAT "0.0             \n\t"
 	       AD_FLOAT "0.0             \n\t"
 	       AD_FLOAT "1.0             \n\t"
@@ -57,19 +57,13 @@
 	       AD_FLOAT "2.0             \n\t"
 	       AD_FLOAT "2.0             \n\t"
 	       AD_FLOAT "2.0             \n"
-	       "V4444:                   \n\t"
-	       AD_FLOAT "4.0             \n\t"
-	       AD_FLOAT "4.0             \n\t"
-	       AD_FLOAT "4.0             \n\t"
-	       AD_FLOAT "4.0             \n"
 	       "contcode:                \n\t"
-	       "movups V1100,%%xmm5      \n\t"
-	       "movups V2222,%%xmm6      \n\t"
-	       "movups V4444,%%xmm7      \n\t"
 
+	       "movups V0011,%%xmm5      \n\t"
 	       "shufps $0,%%xmm0,%%xmm0  \n\t" /* XMM0: f   f   f   f */
 	       "subps %%xmm5,%%xmm0      \n\t" /* XMM0: f-1 f-1 f   f */
 	       "xorps %%xmm2,%%xmm2      \n\t" /* XMM2 will collect the low-precision values */
+	       "movups V2222,%%xmm5      \n\t"
 
 	       /* calculation (for 28 REAL4 values (7x(2 ReIm pairs))) */
 	       /* one SSE register will consist 4 REAL4 values */
@@ -80,7 +74,7 @@
 	       "movlps (%%edx),%%xmm4    \n\t"\
 	       "movhps 8(%%edx),%%xmm4   \n\t"\
 	       "rcpps %%xmm0,%%xmm1      \n\t" /* XMM1: 1/(f-1) 1/(f-1) 1/f 1/f */\
-	       "subps %%xmm6,%%xmm0      \n\t" /* XMM2: f-3 f-3 f-2 f-2 */\
+	       "subps %%xmm5,%%xmm0      \n\t" /* XMM2: f-3 f-3 f-2 f-2 */\
 	       "mulps %%xmm4,%%xmm1      \n\t" /* XMM1: ImH/(f-1) ReH/(f-1) ImL/f ReL/f */\
 	       "addl  $16,%%edx          \n\t" /* Xalpha_kX = Xalpha_kX + 2; */\
 	       "addps %%xmm1,%%xmm2      \n\t" /* XMM2: C_ImH C_ReH C_ImL C_ReL */
@@ -93,8 +87,9 @@
 	       ADD4SSE
 	       ADD4SSE
  
-	       "subps %%xmm7,%%xmm0      \n\t" /* JUMP OVER FPU CALCULATED VALUES */
+	       "subps %%xmm5,%%xmm0      \n\t" /* JUMP OVER FPU CALCULATED VALUES */
 	       "addl  $32,%%edx          \n\t" /* Xalpha_kX = Xalpha_kX + 2; */
+	       "subps %%xmm5,%%xmm0      \n\t" /* JUMP OVER FPU CALCULATED VALUES */
 
 	       ADD4SSE
 	       ADD4SSE
