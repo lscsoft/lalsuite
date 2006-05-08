@@ -272,7 +272,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 	     between these versions.                                                  BM */
 #if defined(USE_X86_GAS)
 #include "CFSLALDemodLoop_x86gAss.c"
-#if defined(USE_X86_MAS)
+#elif defined(USE_X86_MAS)
 #include "CFSLALDemodLoop_x86MSAss.c"
 #elif defined(USE_NDP_VECT)
 #include "CFSLALDemodLoop_ndp_vect.c"
