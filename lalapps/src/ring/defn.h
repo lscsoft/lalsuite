@@ -1,0 +1,1 @@
+REAL4 ampl( REAL4 M, REAL4 Q, REAL4 a, REAL4 eps, REAL4 D );
