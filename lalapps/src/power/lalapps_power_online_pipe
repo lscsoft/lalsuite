@@ -36,10 +36,10 @@ import os
 import sys
 import tempfile
 
-from glue import lal
 from glue import pipeline
 from glue import segments
 from glue import segmentsUtils
+from pylal.date import LIGOTimeGPS
 import power
 
 __author__ = "Kipp Cannon <kipp@gravity.phys.uwm.edu>"
@@ -75,13 +75,13 @@ del parser, args
 
 # data segment
 try:
-	options.seg = segments.segment(lal.LIGOTimeGPS(options.data_start), lal.LIGOTimeGPS(options.data_end))
+	options.seg = segments.segment(LIGOTimeGPS(options.data_start), LIGOTimeGPS(options.data_end))
 except:
 	raise Exception, "failure parsing -s and/or -e; try --help"
 
 # trigger segment
 try:
-	options.trig_seg = segments.segment(lal.LIGOTimeGPS(options.trig_start), lal.LIGOTimeGPS(options.trig_end))
+	options.trig_seg = segments.segment(LIGOTimeGPS(options.trig_start), LIGOTimeGPS(options.trig_end))
 except:
 	raise Exception, "failure parsing -a and/or -b; try --help"
 if options.trig_seg not in options.seg:
