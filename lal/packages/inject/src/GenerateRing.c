@@ -79,16 +79,15 @@ LALGenerateRing(
   REAL4 *aData;        /* pointer to frequency data */
   LIGOTimeGPS startTime;  /* start time of injection */
   REAL4TimeSeries signal; /* start time of block that injection is injected into */
+  LALTimeInterval  interval;
   UINT4 nPointInj; /* number of data points in a block */
-  UINT4 start_i, bb;   /* index at which to start injection, debugging const */
   INT8 geoc_tns;       /* geocentric_start_time of the injection in ns */
   INT8 block_tns;      /* start time of block in ns */
-/*  INT8 deltaTns;  */     /* deltaT in ns */
   REAL8 deltaTns;
   INT8 inj_diff;       /* time between start of segment and injection */
   LALTimeInterval dummyInterval;
-/* REAL8  deltaTns; */
   
+ 
   INITSTATUS( stat, "LALGenerateRing", GENERATERINGC );
   ATTATCHSTATUSPTR( stat );
 
@@ -107,10 +106,13 @@ LALGenerateRing(
 	  GENERATERINGH_MSGEOUT );
   ASSERT( !( output->shift ), stat, GENERATERINGH_EOUT,
 	  GENERATERINGH_MSGEOUT );
+  
 
   /* Set up some other constants, to avoid repeated dereferencing. */
   dt = params->deltaT; 
   startTime = simRingdown->geocent_start_time;
+/* N_point = 2 * floor(0.5+ 1/ dt); */
+ 
   nPointInj = 163840;
   
   /* Generic ring parameters */
@@ -120,7 +122,7 @@ LALGenerateRing(
   twopif0 = f0*LAL_TWOPI;
   init_phase = simRingdown->init_phase;
 
-  
+ 
   if ( ( output->a = (REAL4TimeVectorSeries *)
 	 LALMalloc( sizeof(REAL4TimeVectorSeries) ) ) == NULL ) {
     ABORT( stat, GENERATERINGH_EMEM, GENERATERINGH_MSGEMEM );
@@ -156,6 +158,7 @@ LALGenerateRing(
   LALSnprintf( output->f->name, LALNameLength, "Ring frequency" );
   LALSnprintf( output->phi->name, LALNameLength, "Ring phase" );
 
+
   /* Allocate phase and frequency arrays. */
   LALSCreateVector( stat->statusPtr, &( output->f->data ), nPointInj );
   BEGINFAIL( stat ) {
@@ -172,7 +175,8 @@ LALGenerateRing(
     LALFree( output->f );   output->f = NULL;
     LALFree( output->phi ); output->phi = NULL;
   } ENDFAIL( stat );
- 
+
+
   /* Allocate amplitude array. */
   {
     CreateVectorSequenceIn in; /* input to create output->a */
@@ -190,14 +194,14 @@ LALGenerateRing(
     } ENDFAIL( stat );
   }
   
+
   /*  set arrays to zero */
   memset( output->f->data->data, 0, sizeof( REAL4 ) *  output->f->data->length );
   memset( output->phi->data->data, 0, sizeof( REAL8 ) * output->phi->data->length );
   memset( output->a->data->data, 0, sizeof( REAL4 ) * 
       output->a->data->length * output->a->data->vectorLength );
-  
-  /* Fill frequency and phase arrays starting at time of injection NOT start
-   * of block. */
+
+/* Fill frequency and phase arrays starting at time of injection NOT start */
   fData = output->f->data->data;
   phiData = output->phi->data->data;
   aData = output->a->data->data;
@@ -220,7 +224,8 @@ LALGenerateRing(
     ABORT( stat, GENERATERINGH_ETYP, GENERATERINGH_MSGETYP );
   }
 
-  /* Set output field and return. */
+  
+/* Set output field and return. */
   DETATCHSTATUSPTR( stat );
   RETURN( stat );
 }
@@ -230,7 +235,7 @@ LALGenerateRing(
 void
 LALRingInjectSignals( 
     LALStatus               *stat, 
-    REAL4TimeSeries         *series, 
+    REAL4TimeSeries         *series,
     SimRingdownTable        *injections,
     COMPLEX8FrequencySeries *resp,
     INT4                     calType
@@ -392,7 +397,7 @@ LALRingInjectSignals(
     CHECKSTATUSPTR( stat );
 
     /* print the waveform to a file */
-    if ( 1 )
+    if ( 0 )
       {
         FILE *fp;
         char fname[512];
@@ -416,14 +421,14 @@ LALRingInjectSignals(
         fclose( fp );     
         }
     /* end */
-
+#if 0
     fprintf( stderr, "a->epoch->gpsSeconds = %d\na->epoch->gpsNanoSeconds = %d\n",
         waveform.a->epoch.gpsSeconds, waveform.a->epoch.gpsNanoSeconds );
     fprintf( stderr, "phi->epoch->gpsSeconds = %d\nphi->epoch->gpsNanoSeconds = %d\n",
         waveform.phi->epoch.gpsSeconds, waveform.phi->epoch.gpsNanoSeconds );
     fprintf( stderr, "f->epoch->gpsSeconds = %d\nf->epoch->gpsNanoSeconds = %d\n",
         waveform.f->epoch.gpsSeconds, waveform.f->epoch.gpsNanoSeconds );
-
+#endif
     /* must set the epoch of signal since it's used by coherent GW */
     signal.epoch = series->epoch;
     memset( signal.data->data, 0, signal.data->length * sizeof(REAL4) );
@@ -441,7 +446,7 @@ LALRingInjectSignals(
 
 
 /* print the waveform to a file */
-    if ( 1 )
+    if ( 0 )
       {
         FILE *fp;
         char fname[512];
@@ -460,12 +465,12 @@ LALRingInjectSignals(
         fclose( fp );
         }
     /* end */
-
+#if 0
     fprintf( stderr, "series.epoch->gpsSeconds = %d\nseries.epoch->gpsNanoSeconds = %d\n",
         series->epoch.gpsSeconds, series->epoch.gpsNanoSeconds );
     fprintf( stderr, "signal->epoch->gpsSeconds = %d\nsignal->epoch->gpsNanoSeconds = %d\n",
         signal.epoch.gpsSeconds, signal.epoch.gpsNanoSeconds );
-
+#endif
     /* if calibration using RespFilt */
     if( calType == 1 )
       XLALRespFilt(&signal, transfer);
