@@ -306,6 +306,39 @@ def init_job_types(cache_dir, out_dir, config_parser, types = ["datafind", "binj
 #
 # =============================================================================
 #
+#                                 Segmentation
+#
+# =============================================================================
+#
+
+def split_segment(powerjob, segment, psds):
+	"""
+	Split the data segment into correctly-overlaping segments.  We try
+	to have the numbers of PSDs in each segment be equal to psds, but
+	with a short segment at the end if needed.
+	"""
+	psd_length = float(powerjob.get_opts()["psd-average-points"]) / float(powerjob.get_opts()["resample-rate"])
+	window_length = float(powerjob.get_opts()["window-length"]) / float(powerjob.get_opts()["resample-rate"])
+	window_shift = float(powerjob.get_opts()["window-shift"]) / float(powerjob.get_opts()["resample-rate"])
+	filter_corruption = float(powerjob.get_opts()["filter-corruption"]) / float(powerjob.get_opts()["resample-rate"])
+
+	psd_overlap = window_length - window_shift
+
+	joblength = psds * (psd_length - psd_overlap) + psd_overlap + 2 * filter_corruption
+	joboverlap = 2 * filter_corruption + psd_overlap
+
+	# can't use range() with non-integers
+	segs = segments.segmentlist()
+	t = segment[0]
+	while t < segment[1] - joboverlap:
+		segs.append(segments.segment(t, t + joblength) & segment)
+		t += joblength - joboverlap
+	return segs
+
+
+#
+# =============================================================================
+#
 #                           LSCdataFind DAG Fragment
 #
 # =============================================================================
@@ -398,6 +431,27 @@ def make_multipower_fragment(dag, cache_dir, powerparents, lladdparents, frameca
 #
 # =============================================================================
 #
+#             Analyze A Segment Using Multiple lalapps_power Jobs
+#
+# =============================================================================
+#
+
+def make_power_segment_fragment(dag, cache_dir, datafindnode, segment, instrument, psds_per_job, tag):
+	"""
+	Construct a DAG fragment for an entire segment, splitting the
+	segment into multiple power jobs.
+	"""
+	seglist = split_segment(powerjob, segment, psds_per_job)
+	print >>sys.stderr, "Segment split: " + str(seglist)
+
+	lladdnode = make_multipower_fragment(dag, cache_dir, [datafindnode], [], datafindnode.get_output(), seglist, instrument, tag)
+
+	return lladdnode
+
+
+#
+# =============================================================================
+#
 #                          lalapps_binj DAG Fragment
 #
 # =============================================================================
@@ -471,6 +525,27 @@ def make_tisi_fragment(dag, tag):
 #
 # =============================================================================
 #
+#     Analyze A Segment Using Multiple lalapps_power Jobs With Injections
+#
+# =============================================================================
+#
+
+def make_injection_segment_fragment(dag, cache_dir, datafindnode, segment, instrument, calibration_cache, psds_per_job, tag):
+	seglist = split_segment(powerjob, segment, psds_per_job)
+	print >>sys.stderr, "Injections split: " + str(seglist)
+
+	binjfrag = make_multibinj_fragment(dag, cache_dir, "INJECTIONS_%s" % tag, seglist.extent())
+
+	tisifrag = make_tisi_fragment(dag, "INJECTIONS_%s" % tag)
+
+	lladdnode = make_multipower_fragment(dag, cache_dir, [datafindnode, binjfrag], [binjfrag, tisifrag], datafindnode.get_output(), seglist, instrument, "INJECTIONS_%s" % tag, injargs = {"burstinjection-file": binjfrag.get_output(), "calibration-cache": calibration_cache})
+
+	return lladdnode
+
+
+#
+# =============================================================================
+#
 #                         ligolw_binjfind DAG Fragment
 #
 # =============================================================================
@@ -494,36 +569,3 @@ def make_binjfind_fragment(dag, parent, tag):
 	dag.add_node(binjfind)
 
 	return binjfind
-
-
-#
-# =============================================================================
-#
-#                                 Segmentation
-#
-# =============================================================================
-#
-
-def split_segment(powerjob, segment, psds):
-	"""
-	Split the data segment into correctly-overlaping segments.  We try
-	to have the numbers of PSDs in each segment be equal to psds, but
-	with a short segment at the end if needed.
-	"""
-	psd_length = float(powerjob.get_opts()["psd-average-points"]) / float(powerjob.get_opts()["resample-rate"])
-	window_length = float(powerjob.get_opts()["window-length"]) / float(powerjob.get_opts()["resample-rate"])
-	window_shift = float(powerjob.get_opts()["window-shift"]) / float(powerjob.get_opts()["resample-rate"])
-	filter_corruption = float(powerjob.get_opts()["filter-corruption"]) / float(powerjob.get_opts()["resample-rate"])
-
-	psd_overlap = window_length - window_shift
-
-	joblength = psds * (psd_length - psd_overlap) + psd_overlap + 2 * filter_corruption
-	joboverlap = 2 * filter_corruption + psd_overlap
-
-	# can't use range() with non-integers
-	segs = segments.segmentlist()
-	t = segment[0]
-	while t < segment[1] - joboverlap:
-		segs.append(segments.segment(t, t + joblength) & segment)
-		t += joblength - joboverlap
-	return segs

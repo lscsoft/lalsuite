@@ -31,13 +31,10 @@ Pipeline generation script for the excess power online analysis.
 """
 
 import ConfigParser
-import math
 from optparse import OptionParser
 import os
-import stat
 import sys
 import tempfile
-import time
 
 from glue import lal
 from glue import pipeline
@@ -267,21 +264,6 @@ gsiscpjob = GsiScpJob(out_dir)
 #
 # =============================================================================
 #
-#                                 Segmentation
-#
-# =============================================================================
-#
-
-jobsegs = power.split_segment(power.powerjob, options.seg, psds_per_job)
-injsegs = power.split_segment(power.powerjob, options.seg, psds_per_injection)
-
-print >>sys.stderr, "Segment split: " + str(jobsegs)
-print >>sys.stderr, "Injections split: " + str(injsegs)
-
-
-#
-# =============================================================================
-#
 #                             Publish DAG Fragment
 #
 # =============================================================================
@@ -370,15 +352,14 @@ dag.set_dag_file(options.dag_name)
 
 datafindnode = power.make_datafind_fragment(dag, options.instrument[0], options.seg)
 
-darmpowerfrag = power.make_multipower_fragment(dag, cache_dir, [datafindnode], [], datafindnode.get_output(), jobsegs, options.instrument, options.user_tag)
+darmpowerfrag = power.make_power_segment_fragment(dag, cache_dir, datafindnode, options.seg, options.instrument, psds_per_job, options.user_tag)
 
 make_publish_fragment(dag, "POWER", darmpowerfrag, options.publish_dest)
 if options.dmtmon_dest:
-	make_burst2mon_fragment(dag, darmpowerfrag, jobsegs.extent(), options.user_tag)
+	make_burst2mon_fragment(dag, darmpowerfrag, options.seg, options.user_tag)
 
-binjfrag = power.make_multibinj_fragment(dag, cache_dir, "INJECTIONS_%s" % options.user_tag, injsegs.extent())
-tisifrag = power.make_tisi_fragment(dag, "INJECTIONS_%s" % options.user_tag)
-injpowerfrag = power.make_multipower_fragment(dag, cache_dir, [datafindnode, binjfrag], [binjfrag, tisifrag], datafindnode.get_output(), injsegs, options.instrument, "INJECTIONS_%s" % options.user_tag, injargs = {"burstinjection-file": binjfrag.get_output(), "calibration-cache": options.calibration_cache})
+injpowerfrag = power.make_injection_segment_fragment(dag, cache_dir, datafindnode, options.seg, options.instrument, options.calibration_cache, psds_per_injection, options.user_tag)
+
 binjfindfrag = power.make_binjfind_fragment(dag, injpowerfrag, "INJECTIONS_%s" % options.user_tag)
 make_publish_fragment(dag, "INJECTIONS", binjfindfrag, options.publish_dest)
 
