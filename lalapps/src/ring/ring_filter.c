@@ -1,7 +1,6 @@
 #include <math.h>
 #include <string.h>
 #include <limits.h>
-
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/LALConstants.h>
@@ -17,6 +16,7 @@
 #include "errutil.h"
 #include "gpstime.h"
 #include "ring.h"
+#include "defn.h"
 
 RCSID( "$Id$" );
 
@@ -93,8 +93,10 @@ SnglRingdownTable * ring_filter(
     /* make template and fft it */
     XLALComputeRingTemplate( &signal, thisTmplt );
     LALSnprintf( signal.name, sizeof(signal.name), "TMPLT_%u", tmplt );
+    /*write_REAL4TimeSeries( &signal );*/
     XLALREAL4TimeFreqFFT( &stilde, &signal, fwdPlan );
     LALSnprintf( stilde.name, sizeof(stilde.name), "TMPLT_%u_FFT", tmplt );
+/*    write_COMPLEX8FrequencySeries( &stilde );    */
 
     /* compute sigma for this template */
     sigma = sqrt( compute_template_variance( &stilde, invSpectrum,
@@ -108,6 +110,7 @@ SnglRingdownTable * ring_filter(
       /* filter the segment with the template */
       filter_segment_template( &result, &rtilde, &stilde,
           &segments->sgmnt[sgmnt], revPlan );
+
       
       /* search through results for threshold crossings and record events */
       events = find_events( events, &numEvents, &result, sigma,
@@ -185,11 +188,12 @@ static int filter_segment_template(
   XLALCCVectorMultiplyConjugate( rtilde->data, segment->data, stilde->data );
   XLALUnitMultiply( &rtilde->sampleUnits, &segment->sampleUnits, &stilde->sampleUnits );
   rtilde->epoch = segment->epoch;
+  /*write_COMPLEX8FrequencySeries( rtilde );*/
 
   /* inverse fft to obtain result */
   XLALREAL4FreqTimeFFT( result, rtilde, plan );
+ /*write_REAL4TimeSeries( result );*/
   result->epoch = rtilde->epoch;
-
   return 0;
 }
 
@@ -288,11 +292,13 @@ static SnglRingdownTable * find_events(
         /* specific information about this threshold crossing */
         ns_to_epoch( &thisEvent->start_time, timeNS );
         thisEvent->snr = snr;
+
+        
         amp = sqrt( 5.0 / 2.0 * 0.01 )  * ( LAL_G_SI * thisEvent->mass * LAL_MSUN_SI / 
             pow( LAL_C_SI, 2) / LAL_PC_SI /1000000.0 ) * pow( thisEvent->quality, -0.5 ) * 
             pow( 1.0 + 7.0 / 24.0 / pow( thisEvent->quality, 2.0), -0.5 ) *
             pow(  1.0 - 0.63 * pow( 1.0 - thisEvent->spin,0.3 ), -0.5);
-        
+        amp = ampl(thisEvent->mass, thisEvent->quality, thisEvent->spin, 0.01, 1); 
         sigma=tmpltSigma * amp;
         thisEvent->sigma_sq = pow(sigma, 2.0);
         thisEvent->eff_dist = sigma / thisEvent->snr;
@@ -304,11 +310,12 @@ static SnglRingdownTable * find_events(
         /* update to specific information about this threshold crossing */
         ns_to_epoch( &thisEvent->start_time, timeNS );
         thisEvent->snr        = snr;
+
         amp = sqrt( 5.0 / 2.0 * 0.01 )  * ( LAL_G_SI * thisEvent->mass * LAL_MSUN_SI/
             pow( LAL_C_SI, 2) / LAL_PC_SI /1000000.0 ) * pow( thisEvent->quality, -0.5 ) *
           pow( 1.0 + 7.0 / 24.0 / pow( thisEvent->quality, 2.0), -0.5 ) *
           pow(  1.0 - 0.63 * pow( 1.0 - thisEvent->spin,0.3 ), -0.5);
-
+        amp = ampl(thisEvent->mass, thisEvent->quality, thisEvent->spin, 0.01, 1);
         sigma=tmpltSigma * amp;
         thisEvent->eff_dist = sigma / thisEvent->snr;        
         thisEvent->amplitude = amp;

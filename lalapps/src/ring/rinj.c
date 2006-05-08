@@ -37,6 +37,10 @@
 #include <lal/DetResponse.h>
 #include <lal/TimeDelay.h>
 #include <lal/LALAtomicDatatypes.h>
+
+#include "defn.h"
+
+
 /* ??? */
 RCSID( "$Id$" );
 #define CVS_ID_STRING "$Id$"
@@ -96,7 +100,6 @@ ProcessParamsTable *next_process_param( const char *name, const char *type,
 
 static int is_outside_playground( LIGOTimeGPS gpsStartTime ); 
 static REAL8 step( LIGOTimeGPS gpsStartTime );
-  
 
 int main( int argc, char *argv[] )
 {
@@ -118,7 +121,7 @@ int main( int argc, char *argv[] )
   REAL4         maxSpin = 0.994;
   REAL4         dmin = 1;
   REAL4         dmax = 200000;
-  REAL4         epsilon = 0.01;
+  REAL4         epsilon = 0.010;
   
   /* program variables */
   RandomParams *randParams = NULL;
@@ -623,6 +626,7 @@ int main( int argc, char *argv[] )
     /* compute random longitude and latitude */ 
     LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
     this_inj->longitude = LAL_TWOPI * u ;
+    
     LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
     this_inj->latitude = asin( 2.0 * u - 1.0 ) ;
    
@@ -672,13 +676,9 @@ int main( int argc, char *argv[] )
     gpsAndAcc.gps = this_inj->geocent_start_time;
     
     /* calculate h0 */
-    this_inj->h0 = sqrt( 5.0 / 2.0 * this_inj->epsilon )  
-      * ( LAL_G_SI * this_inj->mass * LAL_MSUN_SI / pow( LAL_C_SI, 2.0) /
-           this_inj->distance / LAL_PC_SI /1000000.0 ) 
-       * pow( this_inj->quality, -0.5 ) * pow( 1.0 + 7.0 / 
-           24.0 / pow( this_inj->quality, 2.0), -0.5 )
-       * pow(  1.0 - 0.63 * pow( 1.0 - this_inj->spin,0.3 ), -0.5);
-    
+    this_inj->h0 = ampl(this_inj->mass,this_inj->quality,this_inj->spin,
+                         this_inj->epsilon, this_inj->distance);    
+
     /* calculate hrss */
     this_inj->hrss = this_inj->h0 * sqrt( 2 / LAL_PI / this_inj->frequency ) * 
       pow( ( 2.0 * pow( this_inj->quality, 3.0 ) + this_inj->quality ) / 
@@ -708,6 +708,9 @@ int main( int argc, char *argv[] )
     /* compute the effective distance for LHO */
     this_inj->eff_dist_h /= sqrt( splus*splus*resp.plus*resp.plus +
         scross*scross*resp.cross*resp.cross );
+
+    /* fprintf( stdout, "antenna factor = %e\n",sqrt( splus*splus*resp.plus*resp.plus +
+        scross*scross*resp.cross*resp.cross ) );    */
 
     /* compute hrss at LHO */ 
     this_inj->hrss_h = this_inj->h0 * pow ( ( 
@@ -854,3 +857,4 @@ static REAL8 step( LIGOTimeGPS gpsStartTime )
   fstep = fstep / 1000000000 ; /*convert ns to s */
   return fstep;
 }
+

@@ -25,8 +25,9 @@ lalapps_ring_SOURCES = ring.c ring.h ring_option.c ring_filter.c ring_output.c \
 	 injsgnl.c injsgnl.h \
 	 getresp.c getresp.h \
 	 spectrm.c spectrm.h \
-	 segment.c segment.h 
-lalapps_rinj_SOURCES = rinj.c
+	 segment.c segment.h \
+         defn.c defn.h
+lalapps_rinj_SOURCES = rinj.c defn.c defn.h
 lalapps_ringread_SOURCES = ringread.c
 lalapps_rinca_SOURCES = rinca.c
 endif
