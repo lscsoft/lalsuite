@@ -14,8 +14,8 @@ NRCSID( XLALGSLH, "$Id$" );
 #ifdef LAL_PTHREAD_LOCK
 #include <pthread.h>
 extern pthread_mutex_t lalGSLPthreadMutex;
-#define XLALGSL_PTHREAD_MUTEX_LOCK pthread_mutex_lock( &lalGSLPThreadMutex )
-#define XLALGSL_PTHREAD_MUTEX_UNLOCK pthread_mutex_unlock( &lalGSLPThreadMutex )
+#define XLALGSL_PTHREAD_MUTEX_LOCK pthread_mutex_lock( &lalGSLPthreadMutex )
+#define XLALGSL_PTHREAD_MUTEX_UNLOCK pthread_mutex_unlock( &lalGSLPthreadMutex )
 #else
 #define XLALGSL_PTHREAD_MUTEX_LOCK  ((void)(0))
 #define XLALGSL_PTHREAD_MUTEX_UNLOCK  ((void)(0))
