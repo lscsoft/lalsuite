@@ -670,32 +670,6 @@ static double hpeak_preset_next(RandomParams *params)
  * ============================================================================
  */
 
-/* output for LIGO-TAMA simulations */
-static void ligo_tama_output(FILE *fpout, SimBurstTable *simBursts)
-{
-	fprintf(fpout, "# $I" "d$\n");
-	fprintf(fpout, "# %s\n", simBursts->waveform);
-	fprintf(fpout, "# geocent_peak_time\tnSec\tdtminus\t\tdtplus\t\tlongitude\tlatitude\tpolarization\tcoordinates\thrss\thpeak\tfreq\ttau\n");
-	for(; simBursts; simBursts = simBursts->next)
-		fprintf(fpout, "%0d\t%0d\t%f\t%f\t%f\t%f\t%f\t%s\t%e\t%e\t%f\t%f\n", simBursts->geocent_peak_time.gpsSeconds, simBursts->geocent_peak_time.gpsNanoSeconds, simBursts->dtminus, simBursts->dtplus, simBursts->longitude, simBursts->latitude, simBursts->polarization, simBursts->coordinates, simBursts->hrss, simBursts->hpeak, simBursts->freq, simBursts->tau);
-	fprintf(fpout, "# $I" "d$\n");
-}
-
-static void write_tamma(MetadataTable injections, struct options options)
-{
-	FILE *fpout;
-	char fname[256];
-
-	if(options.user_tag)
-		snprintf(fname, sizeof(fname), "HLT-INJECTIONS_%s-%d-%d.txt", options.user_tag, (int) (options.gps_start_time / LAL_INT8_C(1000000000)), (int) ((options.gps_end_time - options.gps_start_time) / LAL_INT8_C(1000000000)));
-	else
-		snprintf(fname, sizeof(fname), "HLT-INJECTIONS-%d-%d.txt", (int) (options.gps_start_time / LAL_INT8_C(1000000000)), (int) ((options.gps_end_time - options.gps_start_time) / LAL_INT8_C(1000000000)));
-	fpout = fopen(fname, "w");
-	ligo_tama_output(fpout, injections.simBurstTable);
-	fclose(fpout);
-}
-
-
 /* LIGO LW XML of MDC injections */
 static void write_mdc_xml(MetadataTable mdcinjections)
 {
@@ -1054,7 +1028,6 @@ int main(int argc, char *argv[])
 	} else {
 		/* non-mdc XML output */
 		write_xml(proctable, procparams, injections, options);
-		write_tamma(injections, options);
 	}
 
 	exit(0);
