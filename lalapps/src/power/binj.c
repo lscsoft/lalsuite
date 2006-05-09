@@ -146,30 +146,30 @@ static void print_usage(const char *prog)
 {
 	fprintf(stderr, 
 "%s [options]\n"\
-"\nDefaults are shown in brackets\n\n" \
-"  --help                   display this message\n"\
-"  --gps-start-time TIME    start injections at GPS time TIME\n"\
-"  --gps-end-time TIME      end injections at GPS time TIME\n"\
-"  --time-step STEP         space injections STEP / pi seconds appart (210)\n"\
-"  --population [galactic_core|uniform_sky|zenith] select the population to synthesize\n"\
-"  --freq-dist [monoarithmetic|monogeometric|randgeometric] select the frequency distribution\n"\
-"  --flow FLOW              first frequency of injection (150.0)\n"\
-"  --fhigh FHIGH            only inject frequencies smaller than FHIGH (1000.0)\n"\
-"  --fratio FACTOR          exponential spacing of injection frequencies (0.0)\n"\
-"  --deltaf DELF            linear spacing of injection frequencies (0.0)\n"\
-"  --quality Q              quality factor for SG waveforms TAU=Q/(sqrt(2) pi F)\n"\
-"  --tau TAU                duration of SG waveforms.  Q overrides TAU setting\n"\
-"  --strain-dist [consthpeak|consthrss|hpeakpresets|loghpeak|loghrss] select the strain distribution\n" \
-"  --strain-scale-min VALUE  mininum of the strain distribution\n"\
-"  --strain-scale-max VALUE  maximum of the strain distribution\n"\
-"  --min-distance           min distance of source in Kpc(default 100Kpc) \n"\
-"  --max-distance           max distance of source in Kpc(default 10000Kpc) \n"\
-"  --simwaveform-duration   duration of th esimulated waveform (Warren/Ott/ZM)\n"\
-"  --simwaveform-min-number min # of the simulated waveform \n"\
-"  --simwaveform-max-number max # of the simulated waveform \n"\
-"  --seed SEED              seed random number generator with SEED (1)\n"\
-"  --waveform NAME          set waveform type to NAME (SineGaussian)\n"\
-"  --user-tag STRING        set the usertag to STRING\n\n", prog);
+"\nDefaults are shown in brackets\n\n"\
+"\t--help                   display this message\n"\
+"\t--gps-start-time SECONDS start injections at GPS time TIME\n"\
+"\t--gps-end-time SECONDS   end injections at GPS time TIME\n"\
+"\t--time-step STEP         space injections STEP / pi seconds appart (210)\n"\
+"\t--population [galactic_core|uniform_sky|zenith] select the population to synthesize\n"\
+"\t--freq-dist [monoarithmetic|monogeometric|randgeometric] select the frequency distribution\n"\
+"\t--flow FLOW              first frequency of injection (150.0)\n"\
+"\t--fhigh FHIGH            only inject frequencies smaller than FHIGH (1000.0)\n"\
+"\t--fratio FACTOR          exponential spacing of injection frequencies (0.0)\n"\
+"\t--deltaf DELF            linear spacing of injection frequencies (0.0)\n"\
+"\t--quality Q              quality factor for SG waveforms TAU=Q/(sqrt(2) pi F)\n"\
+"\t--tau TAU                duration of SG waveforms.  Q overrides TAU setting\n"\
+"\t--strain-dist [consthpeak|consthrss|hpeakpresets|loghpeak|loghrss] select the strain distribution\n"\
+"\t--strain-scale-min VALUE  mininum of the strain distribution\n"\
+"\t--strain-scale-max VALUE  maximum of the strain distribution\n"\
+"\t--min-distance VALUE     min distance of source in Kpc(default 100Kpc) \n"\
+"\t--max-distance VALUE     max distance of source in Kpc(default 10000Kpc) \n"\
+"\t--simwaveform-duration   duration of the simulated waveform (Warren/Ott/ZM)\n"\
+"\t--simwaveform-min-number min # of the simulated waveform \n"\
+"\t--simwaveform-max-number max # of the simulated waveform \n"\
+"\t--seed SEED              seed random number generator with SEED (1)\n"\
+"\t--waveform NAME          set waveform type to NAME (SineGaussian)\n"\
+"\t--user-tag STRING        set the usertag to STRING\n\n", prog);
 }
 
 
