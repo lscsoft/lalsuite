@@ -151,7 +151,6 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
       {
         REAL8 tempFreq0, tempFreq1;
         REAL4 tsin, tcos;
-        REAL4 tsin1, tcos1;
         COMPLEX8 *Xalpha=input[alpha]->fft->data->data;
         REAL4 a = params->amcoe->a->data[alpha];
         REAL4 b = params->amcoe->b->data[alpha];
