@@ -1,7 +1,8 @@
 % $Id$
 
-prefix='/local_data/sintes/S4/MultiMC_100_199_500/MCfreq_';
-fileoutput = 'MultiMC_100_200';
+%prefix='/local_data/sintes/S4/MultiMC_100_199_500/MCfreq_';
+prefix='/local_data/sintes/S4/MultiMC/MultiMC_100_499_500/MCfreq_';
+fileoutput = 'MultiMC_100_500';
 fid = fopen(fileoutput, 'w');
 
 
@@ -11,9 +12,14 @@ load(file);
 
 Bands = BandList(:,1);
 %Nbands = length(Bands);
-Nbands = 100;
+Nbands = 400;
 
-for bandnumber = 1:Nbands; %the  current frequency band
+%fshift=100;
+fshift=0;
+%fshift=334;
+%Nbands = 400-fshift;
+
+for bandnumber = fshift+1:(fshift+Nbands); %the  current frequency band
    fmin = BandList(bandnumber, 1);
    fmax = BandList(bandnumber, 2);
    basestring = strcat(prefix, int2str( fmin ) );
@@ -35,15 +41,6 @@ for bandnumber = 1:Nbands; %the  current frequency band
       fprintf(fid,' %d %d ', h0val(h0num), CH(h0num) );
    end
    
-   h0min = h0val(nh0-1);
-   h0max = 5.0*h0val(nh0);
-
-   if( CH(nh0)> 0.955)
-     small = find( CH<0.945);
-     h0min = h0val(length(small));
-     large = find(CH > 0.955);
-     h0max = h0val(large(1));
-   end
 
    h0vec =h0val;
    CLvec = CH;
@@ -75,6 +72,21 @@ for bandnumber = 1:Nbands; %the  current frequency band
     slope = (h02 - h01)/(CL2 -CL1);
     UL = h01 + slope * (0.95 - CL1);
   end
+
+   h0min = h0val(nh0-1);
+   h0max = 5.0*h0val(nh0);
+
+   if( CH(nh0)> 0.955)
+     small = find( CH<0.945);
+     if(length(small) > 0)
+       h0min = h0val(length(small));
+     else
+       h0min = UL*0.95;
+     end
+       
+     large = find(CH > 0.955);
+     h0max = h0val(large(1));
+   end
 
    
    fprintf(fid,' %d  %d %d \n', h0min, h0max, UL);
