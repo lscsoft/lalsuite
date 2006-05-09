@@ -269,7 +269,7 @@ void LALTrigScanClusterDriver (
             /*-- noise. Otherwise increment the current clusterID for    --*/
             /*-- the next cluster.                                       --*/
 
-            if (!(XLALTrigSCanExpandCluster ( list, masterList, 
+            if (!(XLALTrigScanExpandCluster ( list, masterList, 
                             expandClusterIn))
                     )
             {

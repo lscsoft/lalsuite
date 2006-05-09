@@ -26,7 +26,7 @@ NRCSID (LALTRIGSCANCLUSTERC,
 /* same cluster. If the input seed cannot be 'expand'ed then it      */
 /* returns false. Otherwise it returns true.                         */
 /* ------------------------------------------------------------------*/
-trigScanValidEvent XLALTrigSCanExpandCluster (
+trigScanValidEvent XLALTrigScanExpandCluster (
         trigScanInputPoint    *list, 
         trigScanInputPoint    *masterList,
         ExpandClusterInput  expandClusterIn
@@ -305,7 +305,7 @@ void LALTrigScanAppendIsolatedTriggers (
             status, LALTRIGSCANCLUSTERH_ENULL, LALTRIGSCANCLUSTERH_MSGENULL);
     ASSERT (n > 0, status, 
             LALTRIGSCANCLUSTERH_ECHOICE, LALTRIGSCANCLUSTERH_MSGECHOICE);
-    ASSERT (nclusters >= 0, status, 
+    ASSERT (*nclusters >= 0, status, 
             LALTRIGSCANCLUSTERH_ECHOICE, LALTRIGSCANCLUSTERH_MSGECHOICE);
     ASSERT (xx && vv && nn && mid,
             status, LALTRIGSCANCLUSTERH_ENULL, LALTRIGSCANCLUSTERH_MSGENULL);
@@ -434,6 +434,8 @@ INT4 XLALDeleteSnglInspiralTable (
         (*eventHead) = (*eventHead)->next;
         XLALFreeSnglInspiral ( &thisEvent );
     }
+
+    return (0);
 }
 
 /* --------------------------------------------------------------------- 
