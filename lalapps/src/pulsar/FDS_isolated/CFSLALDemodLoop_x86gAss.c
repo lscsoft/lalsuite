@@ -1,35 +1,16 @@
           {
             COMPLEX8 *Xalpha_k = Xalpha + sftIndex;
-
 	    REAL4 tsin2pi = tsin * (REAL4)OOTWOPI;
 	    REAL4 tcos2pi = tcos * (REAL4)OOTWOPI;
 
-	    REAL4 XRes=0.0, XIms=0.0;   /* sums of Xa.re and Xa.im */
-	    REAL4 XResX=0.0, XImsX=0.0;   /* sums of Xa.re and Xa.im */
-
-	    REAL4 accFreq = 1.0; /* accumulating frequency factor, becomes common denominator */
-
 	    /* prepare values for SSE */
 	    REAL4 tempFreqX = tempFreq1; /* REAL4 because of SSE */
+	    REAL4 floatFreq1; /* REAL4 */
 	    COMPLEX8 *Xalpha_kX = Xalpha_k; /* -> SSE values */
 
-	    tempFreq1 = tempFreq1 - 14;
 	    Xalpha_k = Xalpha_k + 14; /* -> FPU values */
- 
-	    /* let the compiler code the x87 part */
-	    for(k=0; k < 4 ; k++)
-	      {
-		XRes = tempFreq1 * XRes + (*Xalpha_k).re * accFreq;
-		XIms = tempFreq1 * XIms + (*Xalpha_k).im * accFreq;
-		
-		accFreq *= (REAL4)tempFreq1;
-		tempFreq1 --;
-		Xalpha_k ++;
-	      } /* for k < klim */
-	    
-	    accFreq = 1.0 / accFreq;
-	    XRes *= accFreq;
-	    XIms *= accFreq;
+	    REAL4 XRes, XIms;   /* sums of Xa.re and Xa.im */
+	    REAL4 XResX, XImsX; /* sums of Xa.re and Xa.im for SSE */
 
 #ifdef __APPLE__ /* specials for Apples assembler */
 #define AD_FLOAT ".single "
@@ -38,7 +19,119 @@
 #define AD_FLOAT ".float "
 #define AD_ASCII ".string "
 #endif
-	    /* The SSE part is coded in Assembler */
+
+#define reOffset "0"
+#define imOffset "4"
+
+	    /* x87 FPU part */
+	    __asm __volatile
+	      (
+	       /* REAL4 XRes=0.0, XIms=0.0;   /* sums of Xa.re and Xa.im */
+	       "fld1                     \n\t" /* 1 */
+	       "fldz                     \n\t" /* XRes, 1 */
+	       "fldz                     \n\t" /* XIms, XRes, 1 */
+
+	       /* REAL4 accFreq = 1.0; /* accumulating frequency factor, becomes common denominator */
+	       "fld1                     \n\t" /* accFreq, XIms, XRes, 1 */
+
+	       /* tempFreq1 = tempFreq1 - 14; */
+	       ".section .rodata         \n"
+	       ".align 8                 \n\t"
+	       "C14:                     \n\t"
+	       AD_FLOAT "14.0            \n\t"
+	       ".text                    \n\t"
+
+	       "fldl %1                  \n\t" /* tempFreq1, accFreq, XIms, XRes, 1 */
+	       "fsub C14                 \n\t" /* tempFreq1, accFreq, XIms, XRes, 1 */
+ 
+	       /* for(k=0; k < 4 ; k++) */
+	       /* { */
+	       /*   XRes = tempFreq1 * XRes + (*Xalpha_k).re * accFreq; */
+	       /*   XIms = tempFreq1 * XIms + (*Xalpha_k).im * accFreq; */
+	       "fmul %%st, %%st(3)       \n\t" /* tempFreq1, accFreq, XIms, XRes*tempFreq1, 1 */
+	       "fmul %%st, %%st(2)       \n\t" /* tempFreq1, accFreq, XIms*tempFreq1, XRes, 1 */
+	       "flds "reOffset" (%0)     \n\t" /* (*Xalpha_k).re, tempFreq1, accFreq, XIms*tempFreq1, XRes*tempFreq1, 1 */
+	       "fmul %%st(2), %%st       \n\t" /* (*Xalpha_k).re*accFreq, tempFreq1, accFreq, XIms*tempFreq1, XRes*tempFreq1, 1 */
+	       "faddp %%st, %%st(4)      \n\t" /* tempFreq1, accFreq, XIms*tempFreq1, XRes, 1 */
+	       "flds "imOffset" (%0)     \n\t" /* (*Xalpha_k).im, tempFreq1, accFreq, XIms*tempFreq1, XRes, 1 */
+	       "fmul %%st(2), %%st       \n\t" /* (*Xalpha_k).im*accFreq, tempFreq1, accFreq, XIms*tempFreq1, XRes, 1 */
+	       "faddp %%st, %%st(3)      \n\t" /* tempFreq1, accFreq, XIms, XRes, 1 */
+
+	       /*   accFreq *= (REAL4)tempFreq1; */
+	       "fsts %2                  \n\t" /* tempFreq1, accFreq, XIms, XRes, 1 */
+	       "flds %2                  \n\t" /* (REAL4)tempFreq1, tempFreq1, accFreq, XIms, XRes, 1 */
+	       "fmulp %%st, %%st(2)      \n\t" /* tempFreq1, accFreq, XIms, XRes, 1 */
+
+	       /*   tempFreq1 --; */
+	       "fsub %%st(4)             \n\t" /* tempFreq1, accFreq, XIms, XRes, 1 */
+	       /*   Xalpha_k ++; */
+	       "add $8, %0               \n\t"
+	       /* } /* for k < klim */
+	       "fmul %%st, %%st(3)       \n\t" /* tempFreq1, accFreq, XIms, XRes*tempFreq1, 1 */
+	       "fmul %%st, %%st(2)       \n\t" /* tempFreq1, accFreq, XIms*tempFreq1, XRes, 1 */
+	       "flds "reOffset" (%0)     \n\t" /* (*Xalpha_k).re, tempFreq1, accFreq, XIms*tempFreq1, XRes*tempFreq1, 1 */
+	       "fmul %%st(2), %%st       \n\t" /* (*Xalpha_k).re*accFreq, tempFreq1, accFreq, XIms*tempFreq1, XRes*tempFreq1, 1 */
+	       "faddp %%st, %%st(4)      \n\t" /* tempFreq1, accFreq, XIms*tempFreq1, XRes, 1 */
+	       "flds "imOffset" (%0)     \n\t" /* (*Xalpha_k).im, tempFreq1, accFreq, XIms*tempFreq1, XRes, 1 */
+	       "fmul %%st(2), %%st       \n\t" /* (*Xalpha_k).im*accFreq, tempFreq1, accFreq, XIms*tempFreq1, XRes, 1 */
+	       "faddp %%st, %%st(3)      \n\t" /* tempFreq1, accFreq, XIms, XRes, 1 */
+	       "fsts %2                  \n\t" /* tempFreq1, accFreq, XIms, XRes, 1 */
+	       "flds %2                  \n\t" /* (REAL4)tempFreq1, tempFreq1, accFreq, XIms, XRes, 1 */
+	       "fmulp %%st, %%st(2)      \n\t" /* tempFreq1, accFreq, XIms, XRes, 1 */
+	       "fsub %%st(4)             \n\t" /* tempFreq1, accFreq, XIms, XRes, 1 */
+	       "add $8, %0               \n\t"
+	    
+	       "fmul %%st, %%st(3)       \n\t" /* tempFreq1, accFreq, XIms, XRes*tempFreq1, 1 */
+	       "fmul %%st, %%st(2)       \n\t" /* tempFreq1, accFreq, XIms*tempFreq1, XRes, 1 */
+	       "flds "reOffset" (%0)     \n\t" /* (*Xalpha_k).re, tempFreq1, accFreq, XIms*tempFreq1, XRes*tempFreq1, 1 */
+	       "fmul %%st(2), %%st       \n\t" /* (*Xalpha_k).re*accFreq, tempFreq1, accFreq, XIms*tempFreq1, XRes*tempFreq1, 1 */
+	       "faddp %%st, %%st(4)      \n\t" /* tempFreq1, accFreq, XIms*tempFreq1, XRes, 1 */
+	       "flds "imOffset" (%0)     \n\t" /* (*Xalpha_k).im, tempFreq1, accFreq, XIms*tempFreq1, XRes, 1 */
+	       "fmul %%st(2), %%st       \n\t" /* (*Xalpha_k).im*accFreq, tempFreq1, accFreq, XIms*tempFreq1, XRes, 1 */
+	       "faddp %%st, %%st(3)      \n\t" /* tempFreq1, accFreq, XIms, XRes, 1 */
+	       "fsts %2                  \n\t" /* tempFreq1, accFreq, XIms, XRes, 1 */
+	       "flds %2                  \n\t" /* (REAL4)tempFreq1, tempFreq1, accFreq, XIms, XRes, 1 */
+	       "fmulp %%st, %%st(2)      \n\t" /* tempFreq1, accFreq, XIms, XRes, 1 */
+	       "fsub %%st(4)             \n\t" /* tempFreq1, accFreq, XIms, XRes, 1 */
+	       "add $8, %0               \n\t"
+
+	       "fmul %%st, %%st(3)       \n\t" /* tempFreq1, accFreq, XIms, XRes*tempFreq1, 1 */
+	       "fmul %%st, %%st(2)       \n\t" /* tempFreq1, accFreq, XIms*tempFreq1, XRes, 1 */
+	       "flds "reOffset" (%0)     \n\t" /* (*Xalpha_k).re, tempFreq1, accFreq, XIms*tempFreq1, XRes*tempFreq1, 1 */
+	       "fmul %%st(2), %%st       \n\t" /* (*Xalpha_k).re*accFreq, tempFreq1, accFreq, XIms*tempFreq1, XRes*tempFreq1, 1 */
+	       "faddp %%st, %%st(4)      \n\t" /* tempFreq1, accFreq, XIms*tempFreq1, XRes, 1 */
+	       "flds "imOffset" (%0)     \n\t" /* (*Xalpha_k).im, tempFreq1, accFreq, XIms*tempFreq1, XRes, 1 */
+	       "fmul %%st(2), %%st       \n\t" /* (*Xalpha_k).im*accFreq, tempFreq1, accFreq, XIms*tempFreq1, XRes, 1 */
+	       "faddp %%st, %%st(3)      \n\t" /* tempFreq1, accFreq, XIms, XRes, 1 */
+	       "fsts %2                  \n\t" /* tempFreq1, accFreq, XIms, XRes, 1 */
+	       "flds %2                  \n\t" /* (REAL4)tempFreq1, tempFreq1, accFreq, XIms, XRes, 1 */
+	       "fmulp %%st, %%st(2)      \n\t" /* tempFreq1, accFreq, XIms, XRes, 1 */
+	       "fsub %%st(4)             \n\t" /* tempFreq1, accFreq, XIms, XRes, 1 */
+	       "add $8, %0               \n\t"
+
+	       /* accFreq = 1.0 / accFreq; */
+	       "fld %%st(4)              \n\t" /* 1, tempFreq1, accFreq, XIms, XRes, 1 */
+	       "fdivp %%st(2)            \n\t" /* tempFreq1, accFreq, XIms, XRes, 1 */
+	       "fstpl %1                 \n\t" /* accFreq, XIms, XRes, 1 */
+
+	       /* XRes *= accFreq; */
+	       "fmul %%st, %%st(2)       \n\t" /* accFreq, XIms, XRes, 1 */
+	       /* XIms *= accFreq; */
+	       "fmulp %%st, %%st(1)      \n\t" /* XIms, XRes, 1 */
+	       "fstps %4                 \n\t" /* XRes, 1 */
+	       "fstps %3                 \n\t" /* 1 */
+	       "ffree %%st               \n\t"
+	       
+	       :         /* combined in + output  */
+	       "+r" (Xalpha_k), "+m" (tempFreq1),
+	       "=m" (floatFreq1),
+	       "=m" (XRes), "=m" (XIms)
+	       :
+	       : "st", "st(1)", "st(2)", "st(3)", "st(4)", "st(5)" /* clobbered registers */
+	       );
+
+
+	    /* SSE part */
 	    __asm __volatile
 	      (
 	       "mov %2,%%edx             \n\t"
@@ -115,7 +208,6 @@
 	       );
 
 	    /* And last, we add the single and double precision values */
-	    
 	    XRes = XRes + XResX;
 	    XIms = XIms + XImsX;
 
