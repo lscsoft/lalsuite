@@ -50,7 +50,6 @@ extern "C" {
 
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LALInspiral.h>
-#include <lal/LALRingDown.h>
 #include <lal/GeneratePPNInspiral.h>
 #include <lal/Segments.h>
 
