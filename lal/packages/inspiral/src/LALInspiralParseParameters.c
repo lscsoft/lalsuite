@@ -372,7 +372,7 @@ void LALInspiralITStructureHelp()
   fprintf(stderr,"--order       (0, 1, 2, 3, 4, 5, 6 (i.e. 4==twoPN)\n");
   fprintf(stderr,"--mass1       (in solar mass)\n"); 
   fprintf(stderr,"--mass2       (in solar mass)\n");
-  fprintf(stderr,"--fcutoff     \n");
+  fprintf(stderr,"--fcutoff (currently not implemented) \n");
   fprintf(stderr,"--fLower      \n");
   fprintf(stderr,"--tSampling   \n");
   fprintf(stderr,"--distance    \n");
