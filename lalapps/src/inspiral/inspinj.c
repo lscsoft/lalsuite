@@ -46,8 +46,6 @@
 "  --lal-eff-dist           calculate effective distances using LAL code\n"\
 "  --waveform NAME          set waveform type to NAME (GeneratePPNtwoPN)\n"\
 "  --user-tag STRING        set the usertag to STRING\n"\
-"  --tama-output            generate a text file for tama\n"\
-"  --write-eff-dist         output the effective distances in tama file\n"\
 "  --ilwd                   generate an ILWD file for LDAS\n"\
 "  --enable-milkyway        enables Milky Way injections\n"\
 "  --disable-milkyway       disables Milky Way injections\n"\
@@ -737,13 +735,9 @@ int main( int argc, char *argv[] )
   size_t ninj;
   size_t inj;
   FILE *fp = NULL;
-  FILE *fq = NULL;
   int rand_seed = 1;
   static int ilwd = 0;
   int lalEffDist = 0;
-  int tamaOutput = 0;
-  int writeDeff = 0;
-  int i = 0;
   /* waveform */
   CHAR waveform[LIGOMETA_WAVEFORM_MAX];
 
@@ -757,7 +751,6 @@ int main( int argc, char *argv[] )
   MetadataTable         injections;
   ProcessParamsTable   *this_proc_param;
   LIGOLwXMLStream       xmlfp;
-  CHAR           tamaFileName[256];
 
   /* getopt arguments */
   struct option long_options[] =
@@ -780,8 +773,6 @@ int main( int argc, char *argv[] )
     {"min-distance",            required_argument, 0,                'p'},
     {"max-distance",            required_argument, 0,                'r'},
     {"d-distr",                 required_argument, 0,                'e'},
-    {"tama-output",                   no_argument, &tamaOutput,       1 },
-    {"write-eff-dist",                no_argument, &writeDeff,        1 },
     {"lal-eff-dist",                  no_argument, &lalEffDist,       1 },
     {"ilwd",                          no_argument, &ilwd,             1 },
     {"enable-milkyway",               no_argument, &allowMW,          1 },
@@ -1079,31 +1070,6 @@ int main( int argc, char *argv[] )
         "GeneratePPNtwoPN" );
   }
 
-  /* store the tamaOutput argument */
-  if ( tamaOutput )
-  {
-    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
-      calloc( 1, sizeof(ProcessParamsTable) );
-    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
-        PROGRAM_NAME );
-    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--tama-output" );
-    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
-  }
-
-  /* store the writeDeff argument */
-  if ( writeDeff )
-  {
-    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
-      calloc( 1, sizeof(ProcessParamsTable) );
-    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
-        PROGRAM_NAME );
-    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
-        "--write-eff-dist" );
-    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
-  }
-
   /* store the lalEffDist argument */
   if ( lalEffDist )
   {
@@ -1389,119 +1355,6 @@ int main( int argc, char *argv[] )
       LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, injections, 
             sim_inspiral_table ), &status );
       LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
-
-      /* write out text file for Tama */
-      if ( tamaOutput )
-      {
-        if ( userTag )
-        {
-          LALSnprintf( tamaFileName, sizeof(tamaFileName), 
-              "HLT-INJECTIONS_%d_%s-%d-%d.txt", rand_seed, userTag, 
-              gpsStartTime, gpsEndTime - gpsStartTime );
-        }
-        else
-        {
-          LALSnprintf( tamaFileName, sizeof(tamaFileName), 
-              "HLT-INJECTIONS_%d-%d-%d.txt", rand_seed, gpsStartTime, 
-              gpsEndTime - gpsStartTime );
-        }
-        fq = fopen( tamaFileName, "w" );
-        fprintf( fq, "Injections for joint LIGO-TAMA analysis \n" );
-        fprintf( fq, "geocentric end time  hanford end time   " );
-        fprintf( fq, "livingston end time   tama end time     " );
-        if ( writeDeff )
-        {
-          fprintf( fq, "H d_eff(kpc) L d_eff(kpc) T d_eff(kpc) " );
-        }
-        fprintf( fq, "  mtotal        eta      distance(kpc) " );
-        fprintf( fq, " longitude     latitude    " );
-        fprintf( fq, "inclination   coa_phase   polarization");
-        fprintf( fq, "   tama pol  end-time GMST\n");
-
-        this_sim_insp = injections.simInspiralTable;
-        while ( this_sim_insp )
-        {
-          double injtime, ltime, htime, ttime;
-          double psiTAMA = 0;
-          double x[3];
-          double y[3];
-
-          /* the z-axis for TAMA coordinated (orthogonal to nxT, xyT) */
-          double nzT[3] = { -0.6180, +0.5272, +0.5832 };
-
-          double theta;
-          double phi;
-          double psi;
-
-          double xDotz;
-          double yDotz;
-
-
-          /* turn the end times into floats */
-          LAL_CALL( LALGPStoFloat( &status, &injtime, 
-                &(this_sim_insp->geocent_end_time) ),  &status );
-          LAL_CALL( LALGPStoFloat( &status, &htime, 
-                &(this_sim_insp->h_end_time) ),  &status );
-          LAL_CALL( LALGPStoFloat( &status, &ltime, 
-                &(this_sim_insp->l_end_time) ),  &status );
-          LAL_CALL( LALGPStoFloat( &status, &ttime, 
-                &(this_sim_insp->t_end_time) ),  &status );
-
-          /* calculate the polarization angle for the TAMA detector */
-          theta = 0.5 * LAL_PI - this_sim_insp->latitude;
-          phi = this_sim_insp->longitude 
-            - LAL_PI * this_sim_insp->end_time_gmst / 12.0;
-          psi = this_sim_insp->polarization;
-
-          x[0] = +( sin( phi ) * cos( psi ) 
-              - sin( psi ) * cos( phi ) * cos( theta ) );
-          x[1] = -( cos( phi ) * cos( psi ) 
-              + sin( psi ) * sin( phi ) * cos( theta ) );
-          x[2] = sin( psi ) * sin( theta );
-          y[0] = -( sin( phi ) * sin( psi ) 
-              + cos( psi ) * cos( phi ) * cos( theta ) );
-          y[1] = +( cos( phi ) * sin( psi ) 
-              - cos( psi ) * sin( phi ) * cos( theta ) );
-          y[2] = cos( psi ) * sin( theta );
-          xDotz = 0;
-          yDotz = 0;
-          for ( i = 0; i < 3; ++i )
-          {  
-            xDotz += x[i] * nzT[i];
-            yDotz += y[i] * nzT[i];
-          }
-
-          /* ensure the angle is between zero and 2 pi */
-          psiTAMA = atan2( xDotz, yDotz );
-          if ( psiTAMA < 0 )
-          {
-            psiTAMA += 2 * LAL_PI;
-          }
-
-          /* write out the entry */
-          fprintf( fq, "%19.9f %19.9f %19.9f %19.9f ", injtime, htime, ltime,
-              ttime );
-          if ( writeDeff )
-          {
-            fprintf( fq, "%12.6e %12.6e %12.6e ", 
-                1.0e+03 * this_sim_insp->eff_dist_h,
-                1.0e+03 * this_sim_insp->eff_dist_l, 
-                1.0e+03 * this_sim_insp->eff_dist_t );
-          }
-          fprintf( fq, "%12.6e %12.6e %12.6e %12.6e %13.6e ",
-              (this_sim_insp->mass1 + this_sim_insp->mass2), 
-              this_sim_insp->eta, 1.0e+03 * this_sim_insp->distance,
-              this_sim_insp->longitude, this_sim_insp->latitude );
-          fprintf( fq, "%12.6e %12.6e %12.6e", 
-              this_sim_insp->inclination, this_sim_insp->coa_phase,
-              this_sim_insp->polarization );
-          fprintf( fq, " %12.6e %12.6e\n", psiTAMA,
-              this_sim_insp->end_time_gmst );
-
-          this_sim_insp = this_sim_insp->next;
-        }
-      }
-
     }
 
     LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &xmlfp ), &status );
