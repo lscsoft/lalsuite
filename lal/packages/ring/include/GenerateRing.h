@@ -1,5 +1,5 @@
 /***************************** <lalVerbatim file="GenerateRingHV">
-Author: Brady, P R
+Author: Goggin, L., and Brown, D. A.
 $Id$
 **************************************************** </lalVerbatim> */
 
@@ -15,8 +15,7 @@ Provides routines to generate ringdown waveforms.
 #include <lal/GenerateRing.h>
 \end{verbatim}
 
-This header covers routines to generate a variety of ringdown waveforms
-......
+This header covers routines to generate ringdown waveforms.
 
 
 ******************************************************* </lalLaTeX> */
