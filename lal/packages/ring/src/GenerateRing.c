@@ -1,5 +1,5 @@
 /************************** <lalVerbatim file="GenerateRingCV">
-Author: Goggin, L. M., based on GenerateBurst.c by Brady, P. B.
+Author: Goggin, L. M., and Brown, D. A.
 $Id$
 **************************************************** </lalVerbatim> */
 
@@ -116,11 +116,11 @@ LALGenerateRing(
   nPointInj = 163840;
   
   /* Generic ring parameters */
-  h0 = simRingdown->h0;
+  h0 = simRingdown->amplitude;
   quality = (REAL8)simRingdown->quality;
   f0 = (REAL8)simRingdown->frequency;
   twopif0 = f0*LAL_TWOPI;
-  init_phase = simRingdown->init_phase;
+  init_phase = simRingdown->phase;
 
  
   if ( ( output->a = (REAL4TimeVectorSeries *)
