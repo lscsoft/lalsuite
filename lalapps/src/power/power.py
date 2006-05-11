@@ -563,8 +563,7 @@ def make_binjfind_fragment(dag, parent, tag):
 	binjfind = BinjfindNode(binjfindjob)
 	binjfind.set_name("ligolw_binjfind-%s" % tag)
 	binjfind.add_parent(cluster)
-	binjfind.set_input(cluster.get_output())
-	binjfind.set_output(cluster.get_output())
+	binjfind.add_file_arg(cluster.get_output())
 	binjfind.add_macro("macrocomment", tag)
 	dag.add_node(binjfind)
 
