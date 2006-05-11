@@ -546,9 +546,9 @@ LALWriteLIGOLwXMLTable (
       while( tablePtr.snglRingdownTable )
       {
         UINT8 id = 0;
-        if ( tablePtr.snglInspiralTable->event_id )
+        if ( tablePtr.snglRingdownTable->event_id )
         {
-          id = tablePtr.snglInspiralTable->event_id->id;
+          id = tablePtr.snglRingdownTable->event_id->id;
         }
         FIRST_TABLE_ROW
           fprintf( xml->fp, SNGL_RINGDOWN_ROW,
