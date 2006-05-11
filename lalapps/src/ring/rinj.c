@@ -38,7 +38,6 @@
 #include <lal/TimeDelay.h>
 #include <lal/LALAtomicDatatypes.h>
 
-#include "defn.h"
 
 
 /* ??? */
@@ -676,9 +675,9 @@ int main( int argc, char *argv[] )
     gpsAndAcc.gps = this_inj->geocent_start_time;
     
     /* calculate h0 */
-    this_inj->h0 = ampl(this_inj->mass,this_inj->quality,this_inj->spin,
-                         this_inj->epsilon, this_inj->distance);    
-
+    this_inj->h0 = XLALBlackHoleRingAmplitude( this_inj->frequency,
+        this_inj->quality, this_inj->distance );
+      
     /* calculate hrss */
     this_inj->hrss = this_inj->h0 * sqrt( 2 / LAL_PI / this_inj->frequency ) * 
       pow( ( 2.0 * pow( this_inj->quality, 3.0 ) + this_inj->quality ) / 
