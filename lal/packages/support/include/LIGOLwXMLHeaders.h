@@ -193,7 +193,7 @@ fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:quality\" Type=\"r
 fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:phase\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:mass\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:spin\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:percent_mass_loss\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:epsilon\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:amplitude\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:snr\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_ringdowngroup:sngl_ringdown:eff_dist\" Type=\"real_4\"/>\n" , fp ) == EOF || \
@@ -255,7 +255,7 @@ fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:quality\" Type=\"rea
 fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:phase\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:mass\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:spin\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:percent_mass_loss\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:epsilon\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:amplitude\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:eff_dist_h\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:eff_dist_l\" Type=\"real_4\"/>\n" , fp ) == EOF || \

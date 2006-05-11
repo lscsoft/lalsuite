@@ -191,7 +191,7 @@ SnglRingdownTable* XLALSnglRingdownTableFromLIGOLw (
       }
       else if ( tableDir[j].idx == 10 )
       {
-        thisEvent->percent_mass_loss = r4colData;
+        thisEvent->epsilon = r4colData;
       }
       else if ( tableDir[j].idx == 11 )
       {
@@ -374,59 +374,59 @@ SimRingdownTable* XLALSimRingdownTableFromLIGOLw (
         {
           thisEvent->start_time_gmst = r8colData;
         }
-        else if ( tableDir[j].idx == 10 )
+        else if ( tableDir[j].idx == 9 )
         {
           thisEvent->longitude = r4colData;
         }
-        else if ( tableDir[j].idx == 11 )
+        else if ( tableDir[j].idx == 10 )
         {
           thisEvent->latitude = r4colData;
         }
-        else if ( tableDir[j].idx == 13 )
+        else if ( tableDir[j].idx == 11 )
         {
           thisEvent->distance = r4colData;
         }
-        else if ( tableDir[j].idx == 14 )
+        else if ( tableDir[j].idx == 12 )
         {
           thisEvent->inclination = r4colData;
         }
-        else if ( tableDir[j].idx == 15 )
+        else if ( tableDir[j].idx == 13 )
         {
           thisEvent->polarization = r4colData;
         }
-        else if ( tableDir[j].idx == 18 )
+        else if ( tableDir[j].idx == 14 )
         {
           thisEvent->frequency = r4colData;
         }
-        else if ( tableDir[j].idx == 19 )
+        else if ( tableDir[j].idx == 15 )
         {
           thisEvent->quality = r4colData;
         }
-        else if ( tableDir[j].idx == 12 )
+        else if ( tableDir[j].idx == 16 )
         {
           thisEvent->phase = r4colData;
         }
-        else if ( tableDir[j].idx == 9 )
+        else if ( tableDir[j].idx == 17 )
         {
           thisEvent->mass = r4colData;
         }
-        else if ( tableDir[j].idx == 17 )
+        else if ( tableDir[j].idx == 18 )
         {
           thisEvent->spin = r4colData;
         }
-        else if ( tableDir[j].idx == 16 )
+        else if ( tableDir[j].idx == 19 )
         {
-          thisEvent->percent_mass_loss = r4colData;
-        }
-        else if ( tableDir[j].idx == 22 )
-        {
-          thisEvent->amplitude = r4colData;
+          thisEvent->epsilon= r4colData;
         }
         else if ( tableDir[j].idx == 20 )
         {
-          thisEvent->eff_dist_h = r4colData;
+          thisEvent->amplitude = r4colData;
         }
         else if ( tableDir[j].idx == 21 )
+        {
+          thisEvent->eff_dist_h = r4colData;
+        }
+        else if ( tableDir[j].idx == 22 )
         {
           thisEvent->eff_dist_l = r4colData;
         }

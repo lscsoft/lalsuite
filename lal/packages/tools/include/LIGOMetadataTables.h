@@ -429,7 +429,7 @@ tagSnglRingdownTable
   REAL4         phase;
   REAL4         mass;
   REAL4         spin;
-  REAL4         percent_mass_loss;
+  REAL4         epsilon;
   REAL4         amplitude;
   REAL4         snr;
   REAL4         eff_dist;
@@ -459,8 +459,8 @@ found.
 \item[\texttt{spin}] The dimensionless spin parameter of the
     black hole ${\hat{a}}$ where the spin is $S={\hat{a}}GM^2/c$ ($G$ is
     Newton's constant and $c$ is the speed of light).
-\item[\texttt{percent_mass_loss}] The fractional mass loss $\epsilon$, as a
-    percent of the initial black hole mass, in ringdown radiation.
+\item[\texttt{epsilon}] The fractional mass loss $\epsilon$
+    of the initial black hole mass in ringdown radiation.
 \item[\texttt{amplitude}] The peak strain amplitude $h_0$ of the waveform,
     given by 
     \begin{equation}
@@ -678,7 +678,7 @@ tagSimRingdownTable
   REAL4          phase;
   REAL4          mass;
   REAL4          spin;
-  REAL4          percent_mass_loss;
+  REAL4          epsilon;
   REAL4          amplitude;
   REAL4          eff_dist_h;
   REAL4          eff_dist_l;
@@ -722,8 +722,8 @@ injection.  The fields are:
 \item[\texttt{spin}] The dimensionless spin parameter of the
     black hole ${\hat{a}}$ where the spin is $S={\hat{a}}GM^2/c$ ($G$ is
     Newton's constant and $c$ is the speed of light).
-\item[\texttt{percent_mass_loss}] The fractional mass loss $\epsilon$, as a
-    percent of the initial black hole mass, in ringdown radiation.
+\item[\texttt{epsilon}] The fractional mass loss $\epsilon$
+    of the initial black hole mass in ringdown radiation.
 \item[\texttt{amplitude}] The peak strain amplitude $h_0$ of the waveform,
     given by 
     \begin{equation}
