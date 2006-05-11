@@ -175,7 +175,6 @@ void XLALDestroyRingTemplateBank( RingTemplateBank *bank );
  * 
  * \vfill{\footnotesize\input{RingHV}}
  * \newpage\input{RingC}
- * \newpage\input{RingTestC}
  * 
  **** </lalLaTeX> */
 

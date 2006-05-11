@@ -105,12 +105,16 @@ static REAL4 ring_spin_factor( REAL4 a )
  */
 
 
+/* <lalVerbatim file="RingCP"> */
 REAL4 XLALBlackHoleRingSpin( REAL4 Q )
+/* </lalVerbatim> */
 {
   return 1.0 - pow( 2.0/Q, 20.0/9.0 );
 }
 
+/* <lalVerbatim file="RingCP"> */
 REAL4 XLALBlackHoleRingMass( REAL4 f, REAL4 Q )
+/* </lalVerbatim> */
 {
   const REAL4 c = LAL_C_SI;
   const REAL4 a = XLALBlackHoleRingSpin( Q );
@@ -118,7 +122,9 @@ REAL4 XLALBlackHoleRingMass( REAL4 f, REAL4 Q )
   return (c * c * c * g) / ( LAL_TWOPI * LAL_G_SI * LAL_MSUN_SI * f );
 }
 
+/* <lalVerbatim file="RingCP"> */
 REAL4 XLALBlackHoleRingAmplitude( REAL4 f, REAL4 Q, REAL4 r )
+/* </lalVerbatim> */
 {
   const REAL4 c = LAL_C_SI;
   const REAL4 epsilon = 0.01;
@@ -132,7 +138,9 @@ REAL4 XLALBlackHoleRingAmplitude( REAL4 f, REAL4 Q, REAL4 r )
     (1.0 / sqrt( Q * F * g) );
 }
 
+/* <lalVerbatim file="RingCP"> */
 int XLALComputeRingTemplate( REAL4TimeSeries *output, SnglRingdownTable *input )
+/* </lalVerbatim> */
 {
   static const char *func = "XLALComputeRingTemplate";
   const REAL8 efolds = 10;
@@ -182,7 +190,9 @@ int XLALComputeRingTemplate( REAL4TimeSeries *output, SnglRingdownTable *input )
 }
 
 
+/* <lalVerbatim file="RingCP"> */
 int XLALComputeBlackHoleRing( REAL4TimeSeries *output, SnglRingdownTable *input )
+/* </lalVerbatim> */
 {
   static const char *func = "XLALComputeBlackHoleRing";
   const REAL4 amp = 1.0;
@@ -230,7 +240,9 @@ static int MakeBank( SnglRingdownTable *tmplt, RingTemplateBankInput *input )
 }
 
 
+/* <lalVerbatim file="RingCP"> */
 RingTemplateBank *XLALCreateRingTemplateBank( RingTemplateBankInput *input )
+/* </lalVerbatim> */
 {
   static const char *func = "XLALCreateRingTemplateBank";
   UINT4 i;
@@ -258,7 +270,9 @@ RingTemplateBank *XLALCreateRingTemplateBank( RingTemplateBankInput *input )
 }
 
 
+/* <lalVerbatim file="RingCP"> */
 void XLALDestroyRingTemplateBank( RingTemplateBank *bank )
+/* </lalVerbatim> */
 {
   if ( bank )
   {
