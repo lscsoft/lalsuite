@@ -448,7 +448,7 @@ template and storing ringdown triggers.  The fields are:
 \item[\texttt{ifo}] The interferometer in which the trigger is found.
 \item[\texttt{channel}] The interferometer channel in which the ringdown is 
 found.
-\item[\texttt{start_time}] The GPS start time of the ringdown trigger.
+\item[\texttt{start\_time}] The GPS start time of the ringdown trigger.
 \item[\texttt{frequency}] The central frequency of the ringdown waveform
     (in Hz).
 \item[\texttt{quality}] The quality factor $Q$ of the ringdown waveform.
@@ -470,9 +470,9 @@ found.
     where $F(Q) = 1 + 7/(24 Q^2)$, $g(a) = 1 - 0.63(1-a)^{3/10}$ and $r$
     is the distance to the trigger.
 \item[\texttt{snr}] The signal-to-noise ratio of the trigger.
-\item[\texttt{eff_dist}] The effective distance to the trigger source in 
+\item[\texttt{eff\_dist}] The effective distance to the trigger source in 
     megaparsecs (Mpc).
-\item[\texttt{sigma_sq}] The variance of the matched filter used to find the
+\item[\texttt{sigma\_sq}] The variance of the matched filter used to find the
     trigger.
 \end{description}
 
@@ -697,13 +697,13 @@ injection.  The fields are:
 \begin{description}
 \item[\texttt{waveform}] Description of the type of waveform to inject.
 \item[\texttt{coordinates}] Type of coordinate system to perform injection.
-\item[\texttt{geocent_start_time}] The GPS start time of the waveform at the
+\item[\texttt{geocent\_start\_time}] The GPS start time of the waveform at the
     center of the earth.
-\item[\texttt{h_start_time}] The GPS start time of the waveform at the
+\item[\texttt{h\_start\_time}] The GPS start time of the waveform at the
     LIGO Hanford Observatory.
-\item[\texttt{l_start_time}] The GPS start time of the waveform at the
+\item[\texttt{l\_start\_time}] The GPS start time of the waveform at the
     LIGO Livingston Observatory.
-\item[\texttt{start_time_gmst}] The start time of the waveform at the
+\item[\texttt{start\_time\_gmst}] The start time of the waveform at the
     in siderial time.
 \item[\texttt{longitude}] The longitude of the source defined in the
     stated coordinate system.
@@ -732,13 +732,13 @@ injection.  The fields are:
     \end{equation}
     where $F(Q) = 1 + 7/(24 Q^2)$, $g(a) = 1 - 0.63(1-a)^{3/10}$ and $r$
     is the distance to the trigger.
-\item[\texttt{h_eff_dist}] The effective distance to the source from the
+\item[\texttt{h\_eff\_dist}] The effective distance to the source from the
     LIGO Hanford Observatory in megaparsecs (Mpc).
-\item[\texttt{l_eff_dist}] The effective distance to the source from the
+\item[\texttt{l\_eff\_dist}] The effective distance to the source from the
     LIGO Livingston Observatory in megaparsecs (Mpc).
 \item[\texttt{hrss}] Define.
-\item[\texttt{hrss_h}] Define.
-\item[\texttt{hrss_l}] Define.
+\item[\texttt{hrss\_h}] Define.
+\item[\texttt{hrss\_l}] Define.
 \end{description}
 
 \subsubsection*{Type \texttt{CoincRingdownTable}}
