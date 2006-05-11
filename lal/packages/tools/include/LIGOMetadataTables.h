@@ -405,23 +405,33 @@ tagSnglInspiralTable
   EventIDColumn *event_id;
 }
 SnglInspiralTable;
+/* </lalVerbatim> */
+#if 0
+<lalLaTeX>
 
+Document table.
 
+\subsubsection*{Type \texttt{SnglRingdownTable}}
+
+</lalLaTeX>
+#endif
+/* <lalVerbatim> */
 typedef struct
 tagSnglRingdownTable
 {
   struct tagSnglRingdownTable *next;
   CHAR          ifo[LIGOMETA_IFO_MAX];
-  CHAR          search[LIGOMETA_SEARCH_MAX];
   CHAR          channel[LIGOMETA_CHANNEL_MAX];
   LIGOTimeGPS   start_time;
   REAL8         start_time_gmst;
   REAL4         frequency;
   REAL4         quality;
+  REAL4         phase;
   REAL4         mass;
   REAL4         spin;
-  REAL4         snr;
+  REAL4         percent_mass_loss;
   REAL4         amplitude;
+  REAL4         snr;
   REAL4         eff_dist;
   REAL8         sigma_sq;
   EventIDColumn *event_id;
@@ -432,7 +442,39 @@ SnglRingdownTable;
 #if 0
 <lalLaTeX>
 
-Document table.
+This structure contains the required information for generating a ringdown
+template and storing ringdown triggers.  The fields are:
+\begin{description}
+\item[\texttt{ifo}] The interferometer in which the trigger is found.
+\item[\texttt{channel}] The interferometer channel in which the ringdown is 
+found.
+\item[\texttt{start_time}] The GPS start time of the ringdown trigger.
+\item[\texttt{frequency}] The central frequency of the ringdown waveform
+    (in Hz).
+\item[\texttt{quality}] The quality factor $Q$ of the ringdown waveform.
+\item[\texttt{phase}] The initial phase of the ringdown in radians.
+    Zero is a cosine-phase ringdown; $-\pi/2$ is a sine-phase ringdown.
+\item[\texttt{mass}] The mass $M$ of the black hole (in solar
+    masses, $M_\odot$).
+\item[\texttt{spin}] The dimensionless spin parameter of the
+    black hole ${\hat{a}}$ where the spin is $S={\hat{a}}GM^2/c$ ($G$ is
+    Newton's constant and $c$ is the speed of light).
+\item[\texttt{percent_mass_loss}] The fractional mass loss $\epsilon$, as a
+    percent of the initial black hole mass, in ringdown radiation.
+\item[\texttt{amplitude}] The peak strain amplitude $h_0$ of the waveform,
+    given by 
+    \begin{equation}
+    h_0=\sqrt{\frac{5}{2}\epsilon}\left(\frac{GM}{c^2 r}\right)
+    Q^{-\frac{1}{2}} F(Q)^{-\frac{1}{2}} g(a)^{-\frac{1}{2}},
+    \end{equation}
+    where $F(Q) = 1 + 7/(24 Q^2)$, $g(a) = 1 - 0.63(1-a)^{3/10}$ and $r$
+    is the distance to the trigger.
+\item[\texttt{snr}] The signal-to-noise ratio of the trigger.
+\item[\texttt{eff_dist}] The effective distance to the trigger source in 
+    megaparsecs (Mpc).
+\item[\texttt{sigma_sq}] The variance of the matched filter used to find the
+    trigger.
+\end{description}
 
 \subsubsection*{Type \texttt{MultiInspiralTable}}
 
@@ -605,8 +647,6 @@ tagSimBurstTable
   EventIDColumn   *event_id;
 }
 SimBurstTable;
-
-
 /* </lalVerbatim> */
 #if 0
 <lalLaTeX>
@@ -628,28 +668,84 @@ tagSimRingdownTable
   LIGOTimeGPS    h_start_time;
   LIGOTimeGPS    l_start_time;
   REAL8          start_time_gmst;
-  REAL4          mass;
   REAL4          longitude;
   REAL4          latitude;
-  REAL4          init_phase;
   REAL4          distance;
   REAL4          inclination;
   REAL4          polarization;
-  REAL4          epsilon;
-  REAL4          spin;
   REAL4          frequency;
   REAL4          quality;
+  REAL4          phase;
+  REAL4          mass;
+  REAL4          spin;
+  REAL4          percent_mass_loss;
+  REAL4          amplitude;
   REAL4          eff_dist_h;
   REAL4          eff_dist_l;
-  REAL4          h0;
   REAL4          hrss;
   REAL4          hrss_h;
   REAL4          hrss_l;
   EventIDColumn  *event_id;
 }
 SimRingdownTable;
-                              
+/* </lalVerbatim> */
+#if 0
+<lalLaTeX>
 
+This structure contains the required information for generating a ringdown
+injection.  The fields are:
+\begin{description}
+\item[\texttt{waveform}] Description of the type of waveform to inject.
+\item[\texttt{coordinates}] Type of coordinate system to perform injection.
+\item[\texttt{geocent_start_time}] The GPS start time of the waveform at the
+    center of the earth.
+\item[\texttt{h_start_time}] The GPS start time of the waveform at the
+    LIGO Hanford Observatory.
+\item[\texttt{l_start_time}] The GPS start time of the waveform at the
+    LIGO Livingston Observatory.
+\item[\texttt{start_time_gmst}] The start time of the waveform at the
+    in siderial time.
+\item[\texttt{longitude}] The longitude of the source defined in the
+    stated coordinate system.
+\item[\texttt{latitude}] The latitude of the source defined in the
+    stated coordinate system.
+\item[\texttt{distance}] The distance to the source defined in the
+    stated coordinate system in megaparsecs (Mpc).
+\item[\texttt{inclination}] The inclination angle $\iota$ of the source.
+\item[\texttt{polarization}] The polarization angle $\Psi$ of the source.
+\item[\texttt{frequency}] The central frequency of the ringdown waveform
+    (in Hz).
+\item[\texttt{quality}] The quality factor $Q$ of the ringdown waveform.
+\item[\texttt{phase}] The initial phase of the ringdown signal $\phi_0$.
+\item[\texttt{mass}] The mass $M$ of the black hole (in solar
+    masses, $M_\odot$).
+\item[\texttt{spin}] The dimensionless spin parameter of the
+    black hole ${\hat{a}}$ where the spin is $S={\hat{a}}GM^2/c$ ($G$ is
+    Newton's constant and $c$ is the speed of light).
+\item[\texttt{percent_mass_loss}] The fractional mass loss $\epsilon$, as a
+    percent of the initial black hole mass, in ringdown radiation.
+\item[\texttt{amplitude}] The peak strain amplitude $h_0$ of the waveform,
+    given by 
+    \begin{equation}
+    h_0=\sqrt{\frac{5}{2}\epsilon}\left(\frac{GM}{c^2 r}\right)
+    Q^{-\frac{1}{2}} F(Q)^{-\frac{1}{2}} g(a)^{-\frac{1}{2}},
+    \end{equation}
+    where $F(Q) = 1 + 7/(24 Q^2)$, $g(a) = 1 - 0.63(1-a)^{3/10}$ and $r$
+    is the distance to the trigger.
+\item[\texttt{h_eff_dist}] The effective distance to the source from the
+    LIGO Hanford Observatory in megaparsecs (Mpc).
+\item[\texttt{l_eff_dist}] The effective distance to the source from the
+    LIGO Livingston Observatory in megaparsecs (Mpc).
+\item[\texttt{hrss}] Define.
+\item[\texttt{hrss_h}] Define.
+\item[\texttt{hrss_l}] Define.
+\end{description}
+
+\subsubsection*{Type \texttt{CoincRingdownTable}}
+
+</lalLaTeX>
+#endif
+/* <lalVerbatim> */
 typedef struct
 tagCoincRingdownTable
 {
@@ -659,10 +755,7 @@ tagCoincRingdownTable
   SnglRingdownTable  *snglRingdown[LAL_NUM_IFO];
   SimRingdownTable   *simRingdown;
 }
-CoincRingdownTable;/* </lalVerbatim> */
-
-
-
+CoincRingdownTable;
 /* </lalVerbatim> */
 #if 0
 <lalLaTeX>
