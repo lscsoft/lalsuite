@@ -115,14 +115,16 @@ with columns in an xml file.
 #endif
 
 
-/* <lalLaTeX>
-\newpage\input{LIGOLwXMLReadC}
-</lalLaTeX> */
+#if 0
+<lalLaTeX>
+\newpage\input{CreateMetaTableDirC}
+</lalLaTeX>
+#endif
 
-MetaTableDirectory * XLALCreateMetaTableDir(
-      const MetaioParseEnv    env,
-      MetadataTableType       table
-      );
+MetaTableDirectory* XLALCreateMetaTableDir(
+    const MetaioParseEnv    env,
+    MetadataTableType       table
+    );
 
 void
 LALCreateMetaTableDir(
@@ -132,19 +134,25 @@ LALCreateMetaTableDir(
     MetadataTableType       table
     );
 
-SnglBurstTable * XLALSnglBurstTableFromLIGOLw (
+#if 0
+<lalLaTeX>
+\newpage\input{LIGOLwXMLReadC}
+</lalLaTeX>
+#endif
+
+SnglBurstTable* XLALSnglBurstTableFromLIGOLw (
     CHAR               *fileName
     );
 
-ProcessTable    * XLALProcessTableFromLIGOLw (
+ProcessTable* XLALProcessTableFromLIGOLw (
     CHAR               *fileName
     );
 
-ProcessParamsTable    * XLALProcessParamsTableFromLIGOLw (
+ProcessParamsTable* XLALProcessParamsTableFromLIGOLw (
     CHAR               *fileName
     );
 
-MultiInspiralTable    * XLALMultiInspiralTableFromLIGOLw (
+MultiInspiralTable* XLALMultiInspiralTableFromLIGOLw (
     CHAR               *fileName
     );
 
@@ -164,25 +172,6 @@ LALSimBurstTableFromLIGOLw (
     INT4                startTime,
     INT4                stopTime
     );
-
-/*void*/
-int
-LALSnglRingdownTableFromLIGOLw (
-    LALStatus          *status,
-    SnglRingdownTable    **eventHead,
-    CHAR               *fileName
-    );
-
-/*void*/
-int
-LALSimRingdownTableFromLIGOLw (
-    LALStatus          *status,
-    SimRingdownTable    **eventHead,
-    CHAR               *fileName,
-    INT4                startTime,
-    INT4                stopTime
-    );
-
 
 int
 LALSnglInspiralTableFromLIGOLw (
@@ -249,16 +238,29 @@ XLALReadInspiralTriggerFile (
     CHAR                  *fileName
     );
 
-int
-XLALReadRingdownTriggerFile (
-    LALStatus             *status,
+#if 0
+<lalLaTeX>
+\newpage\input{LIGOLwXMLRingdownReadC}
+</lalLaTeX>
+#endif
+
+SnglRingdownTable* XLALSnglRingdownTableFromLIGOLw (
+    CHAR               *fileName
+    );
+
+SimRingdownTable* XLALSimRingdownTableFromLIGOLw (
+    CHAR               *fileName,
+    INT4                startTime,
+    INT4                stopTime
+    );
+
+INT4 XLALReadRingdownTriggerFile (
     SnglRingdownTable    **ringdownEventList,
     SnglRingdownTable    **lastTrigger,
     SearchSummaryTable   **searchSummList,
     SearchSummvarsTable  **inputFileList,
     CHAR                  *fileName
     );
-
 
 #ifdef  __cplusplus
 }

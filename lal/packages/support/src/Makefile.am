@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 ## $Id$
-LALMETAIOSOURCES = LIGOLwXMLRead.c
+LALMETAIOSOURCES = CreateMetaTableDir.c LIGOLwXMLRead.c LIGOLwXMLRingdownRead.c
 
 if METAIO
 LALMETAIOLIBRARIES = liblalmetaio.la

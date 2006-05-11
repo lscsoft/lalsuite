@@ -545,22 +545,29 @@ LALWriteLIGOLwXMLTable (
     case sngl_ringdown_table:
       while( tablePtr.snglRingdownTable )
       {
+        UINT8 id = 0;
+        if ( tablePtr.snglInspiralTable->event_id )
+        {
+          id = tablePtr.snglInspiralTable->event_id->id;
+        }
         FIRST_TABLE_ROW
           fprintf( xml->fp, SNGL_RINGDOWN_ROW,
               tablePtr.snglRingdownTable->ifo,
-              tablePtr.snglRingdownTable->search,
               tablePtr.snglRingdownTable->channel,
               tablePtr.snglRingdownTable->start_time.gpsSeconds,
               tablePtr.snglRingdownTable->start_time.gpsNanoSeconds,
               tablePtr.snglRingdownTable->start_time_gmst,
               tablePtr.snglRingdownTable->frequency,
               tablePtr.snglRingdownTable->quality,
+              tablePtr.snglRingdownTable->phase,
               tablePtr.snglRingdownTable->mass,
               tablePtr.snglRingdownTable->spin,
-              tablePtr.snglRingdownTable->snr,
+              tablePtr.snglRingdownTable->percent_mass_loss,
               tablePtr.snglRingdownTable->amplitude,
+              tablePtr.snglRingdownTable->snr,
               tablePtr.snglRingdownTable->eff_dist,
-              tablePtr.snglRingdownTable->sigma_sq
+              tablePtr.snglRingdownTable->sigma_sq,
+              id
               );
         tablePtr.snglRingdownTable = tablePtr.snglRingdownTable->next;
       }
@@ -699,13 +706,15 @@ LALWriteLIGOLwXMLTable (
                 tablePtr.simBurstTable->tau,
                 tablePtr.simBurstTable->zm_number,
                 id++
-                );
+                  );
           tablePtr.simBurstTable = tablePtr.simBurstTable->next;
         }
       }
       break;
     case sim_ringdown_table:
-      while( tablePtr.simRingdownTable )
+      {
+        int id = 0;
+        while( tablePtr.simRingdownTable )
         {
           FIRST_TABLE_ROW
             fprintf( xml->fp, SIM_RINGDOWN_ROW,
@@ -718,26 +727,28 @@ LALWriteLIGOLwXMLTable (
                 tablePtr.simRingdownTable->l_start_time.gpsSeconds,
                 tablePtr.simRingdownTable->l_start_time.gpsNanoSeconds,
                 tablePtr.simRingdownTable->start_time_gmst,
-                tablePtr.simRingdownTable->mass,
                 tablePtr.simRingdownTable->longitude,
                 tablePtr.simRingdownTable->latitude,
-                tablePtr.simRingdownTable->init_phase,
                 tablePtr.simRingdownTable->distance,
                 tablePtr.simRingdownTable->inclination,
                 tablePtr.simRingdownTable->polarization,
-                tablePtr.simRingdownTable->epsilon,
-                tablePtr.simRingdownTable->spin,
                 tablePtr.simRingdownTable->frequency,
                 tablePtr.simRingdownTable->quality,
+                tablePtr.simRingdownTable->phase,
+                tablePtr.simRingdownTable->mass,
+                tablePtr.simRingdownTable->spin,
+                tablePtr.simRingdownTable->percent_mass_loss,
+                tablePtr.simRingdownTable->amplitude,
                 tablePtr.simRingdownTable->eff_dist_h,
                 tablePtr.simRingdownTable->eff_dist_l,
-                tablePtr.simRingdownTable->h0,
                 tablePtr.simRingdownTable->hrss,
                 tablePtr.simRingdownTable->hrss_h,
-                tablePtr.simRingdownTable->hrss_l
-                );
+                tablePtr.simRingdownTable->hrss_l,
+                id++
+                  );
           tablePtr.simRingdownTable = tablePtr.simRingdownTable->next;
-          }
+        }
+      }
       break;
     case summ_value_table:
       while( tablePtr.summValueTable )
