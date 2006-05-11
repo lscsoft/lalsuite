@@ -6,6 +6,7 @@
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
+#include <lal/LIGOMetadataTables.h>
 #include <lal/Ring.h>
 
 /**** <lalLaTeX>
@@ -16,10 +17,10 @@
  *
  * \subsubsection*{Prototypes}
  * \input{RingCP}
- * \idx{LALComputeRingTemplate()}
- * \idx{LALComputeBlackHoleRing()}
- * \idx{LALCreateRingTemplateBank()}
- * \idx{LALDestroyRingTemplateBank()}
+ * \idx{XLALComputeRingTemplate()}
+ * \idx{XLALComputeBlackHoleRing()}
+ * \idx{XLALCreateRingTemplateBank()}
+ * \idx{XLALDestroyRingTemplateBank()}
  * 
  * \subsubsection*{Description}
  * 
@@ -91,6 +92,11 @@
 
 NRCSID( RINGC, "$Id$" );
 
+static REAL4 ring_spin_factor( REAL4 a )
+{
+  return 1.0 - 0.63 * pow( 1.0 - a, 3.0/10.0 );
+}
+
 
 /*
  *
@@ -108,7 +114,7 @@ REAL4 XLALBlackHoleRingMass( REAL4 f, REAL4 Q )
 {
   const REAL4 c = LAL_C_SI;
   const REAL4 a = XLALBlackHoleRingSpin( Q );
-  const REAL4 g = 1.0 - 0.63 * pow( 1.0 - a, 3.0/10.0 );
+  const REAL4 g = ring_spin_factor( a );
   return (c * c * c * g) / ( LAL_TWOPI * LAL_G_SI * LAL_MSUN_SI * f );
 }
 
@@ -118,19 +124,19 @@ REAL4 XLALBlackHoleRingAmplitude( REAL4 f, REAL4 Q, REAL4 r )
   const REAL4 epsilon = 0.01;
   const REAL4 M = XLALBlackHoleRingMass( f, Q );
   const REAL4 a = XLALBlackHoleRingSpin( Q );
+  const REAL4 g = ring_spin_factor( a );
   const REAL4 F = 1.0 + 7.0/(24.0*Q*Q);
-  const REAL4 g = 1.0 - 0.63 * pow( 1.0 - a, 3.0/10.0 );
 
   return sqrt(5.0/2.0 * epsilon) * 
     ( (LAL_G_SI * M * LAL_MSUN_SI) / ( c * c * r * 1.0e6 * LAL_PC_SI) ) *
     (1.0 / sqrt( Q * F * g) );
 }
 
-int XLALComputeRingTemplate( REAL4TimeSeries *output, RingTemplateInput *input )
+int XLALComputeRingTemplate( REAL4TimeSeries *output, SnglRingdownTable *input )
 {
   static const char *func = "XLALComputeRingTemplate";
   const REAL8 efolds = 10;
-  REAL8 amp;
+  REAL8 amp = 1.0;
   REAL8 fac;
   REAL8 a;
   REAL8 y;
@@ -148,15 +154,15 @@ int XLALComputeRingTemplate( REAL4TimeSeries *output, RingTemplateInput *input )
     XLAL_ERROR( func, XLAL_EINVAL );
 
   /* exponential decay variables */
-  /* amp = sqrt( 2 * LAL_PI ); */ /* OLD conventions of PRD 022001 (1999) */
-  amp = 1; /* NEW conventions */
   fac = exp( - LAL_PI * input->frequency * output->deltaT / input->quality );
   n = ceil( - efolds / log( fac ) );
 
   /* oscillator variables */
   a = 2 * cos( 2 * LAL_PI * input->frequency * output->deltaT );
-  y = sin( -2 * LAL_PI * input->frequency * output->deltaT + 0.5 * LAL_PI + input->phase );
-  yy = sin( -4 * LAL_PI * input->frequency * output->deltaT + 0.5 * LAL_PI + input->phase );
+  y = sin( -2 * LAL_PI * input->frequency * output->deltaT + 
+      0.5 * LAL_PI + input->phase );
+  yy = sin( -4 * LAL_PI * input->frequency * output->deltaT + 
+      0.5 * LAL_PI + input->phase );
 
   if ( n < output->data->length )
     memset( output->data->data + n, 0,
@@ -176,28 +182,13 @@ int XLALComputeRingTemplate( REAL4TimeSeries *output, RingTemplateInput *input )
 }
 
 
-int XLALComputeBlackHoleRing( REAL4TimeSeries *output, BlackHoleRingInput *input )
+int XLALComputeBlackHoleRing( REAL4TimeSeries *output, SnglRingdownTable *input )
 {
   static const char *func = "XLALComputeBlackHoleRing";
-  RingTemplateInput tmplt;
-  REAL4 ffac;
-  REAL4 amp;
+  const REAL4 amp = 1.0;
   UINT4 i;
 
-  if ( ! input )
-    XLAL_ERROR( func, XLAL_EFAULT );
-
-  ffac = 1 - 0.63 * pow( 1 - input->dimensionlessSpin, 0.3 );
-  tmplt.frequency = 32000 * ffac / input->solarMasses;
-  tmplt.quality = 2 * pow( 1 - input->dimensionlessSpin, -0.45 );
-  tmplt.phase = input->initialPhase;
-
-  amp  = 2.415e-21; /* factor given in PRD 022001 (1999) */
-  amp *= sqrt( 2 * LAL_PI ); /* convert NEW conventions to OLD conventions */
-  amp *= sqrt( input->percentMassLoss / ( tmplt.quality * ffac ) );
-  amp *= input->solarMasses / input->distanceMpc;
-
-  if ( XLALComputeRingTemplate( output, &tmplt ) < 0 )
+  if ( XLALComputeRingTemplate( output, input ) < 0 )
     XLAL_ERROR( func, XLAL_EFUNC );
 
   for ( i = 0; i < output->data->length; ++i )
@@ -207,7 +198,7 @@ int XLALComputeBlackHoleRing( REAL4TimeSeries *output, BlackHoleRingInput *input
 }
 
 
-static int MakeBank( RingTemplateInput *tmplt, RingTemplateBankInput *input )
+static int MakeBank( SnglRingdownTable *tmplt, RingTemplateBankInput *input )
 {
   UINT4 count = 0;
   REAL4 dseff = 4 * sqrt( input->maxMismatch );
@@ -242,6 +233,7 @@ static int MakeBank( RingTemplateInput *tmplt, RingTemplateBankInput *input )
 RingTemplateBank *XLALCreateRingTemplateBank( RingTemplateBankInput *input )
 {
   static const char *func = "XLALCreateRingTemplateBank";
+  UINT4 i;
   RingTemplateBank *bank;
 
   if ( ! input )
@@ -258,6 +250,8 @@ RingTemplateBank *XLALCreateRingTemplateBank( RingTemplateBankInput *input )
     LALFree( bank );
     XLAL_ERROR_NULL( func, XLAL_ENOMEM );
   }
+  for ( i = 0; i < bank->numTmplt - 1; ++i )
+    bank->tmplt[i].next = bank->tmplt + i + 1;
 
   MakeBank( bank->tmplt, input );
   return bank;
@@ -273,123 +267,4 @@ void XLALDestroyRingTemplateBank( RingTemplateBank *bank )
     LALFree( bank );
   }
   return;
-}
-
-
-/*
- *
- * LAL Routines.
- *
- */
-
-
-/* <lalVerbatim file="RingCP"> */
-void
-LALComputeRingTemplate(
-    LALStatus         *status,
-    REAL4TimeSeries   *output,
-    RingTemplateInput *input
-    )
-{ /* </lalVerbatim> */
-  INITSTATUS( status, "LALComputeRingTemplate", RINGC );
-
-  ASSERT( input, status, RINGH_ENULL, RINGH_MSGENULL );
-  ASSERT( output, status, RINGH_ENULL, RINGH_MSGENULL );
-  ASSERT( output->data, status, RINGH_ENULL, RINGH_MSGENULL );
-
-  if ( XLALComputeRingTemplate( output, input ) < 0 )
-  {
-    int errnum = xlalErrno;
-    XLALClearErrno();
-    switch ( errnum )
-    {
-      case XLAL_EFAULT:
-        ABORT( status, RINGH_ENULL, RINGH_MSGENULL );
-      default:
-        ABORTXLAL( status );
-    }
-  }
-
-  RETURN( status );
-}
-
-
-/* <lalVerbatim file="RingCP"> */
-void
-LALComputeBlackHoleRing(
-    LALStatus          *status,
-    REAL4TimeSeries    *output,
-    BlackHoleRingInput *input
-    )
-{ /* </lalVerbatim> */
-  INITSTATUS( status, "LALComputeBlackHoleRing", RINGC );
-
-  ASSERT( input, status, RINGH_ENULL, RINGH_MSGENULL );
-  ASSERT( output, status, RINGH_ENULL, RINGH_MSGENULL );
-  ASSERT( output->data, status, RINGH_ENULL, RINGH_MSGENULL );
-
-  if ( XLALComputeBlackHoleRing( output, input ) < 0 )
-  {
-    int errnum = XLALGetBaseErrno();
-    XLALClearErrno();
-    switch ( errnum )
-    {
-      case XLAL_EFAULT:
-        ABORT( status, RINGH_ENULL, RINGH_MSGENULL );
-      default:
-        ABORTXLAL( status );
-    }
-  }
-
-  RETURN( status );
-}
-
-
-/* <lalVerbatim file="RingCP"> */
-void
-LALCreateRingTemplateBank(
-    LALStatus              *status,
-    RingTemplateBank      **output,
-    RingTemplateBankInput  *input
-    )
-{ /* </lalVerbatim> */
-  INITSTATUS( status, "LALCreateRingTemplateBank", RINGC );
-
-  ASSERT( input, status, RINGH_ENULL, RINGH_MSGENULL );
-  ASSERT( output, status, RINGH_ENULL, RINGH_MSGENULL );
-  ASSERT( ! *output, status, RINGH_ENNUL, RINGH_MSGENNUL );
-
-  *output = XLALCreateRingTemplateBank( input );
-  if ( ! *output )
-  {
-    int errnum = xlalErrno;
-    XLALClearErrno();
-    switch ( errnum )
-    {
-      case XLAL_EFAULT:
-        ABORT( status, RINGH_ENNUL, RINGH_MSGENNUL );
-      case XLAL_ENOMEM:
-        ABORT( status, RINGH_EALOC, RINGH_MSGEALOC );
-      default:
-        ABORTXLAL( status );
-    }
-  }
-
-  RETURN( status );
-}
-
-
-/* <lalVerbatim file="RingCP"> */
-void
-LALDestroyRingTemplateBank(
-    LALStatus         *status,
-    RingTemplateBank **bank
-    )
-{ /* </lalVerbatim> */
-  INITSTATUS( status, "LALDestroyRingTemplateBank", RINGC );
-  ASSERT( bank, status, RINGH_ENULL, RINGH_MSGENULL );
-  ASSERT( *bank, status, RINGH_ENULL, RINGH_MSGENULL );
-  XLALDestroyRingTemplateBank( *bank );
-  *bank = NULL;
-  RETURN( status );
 }

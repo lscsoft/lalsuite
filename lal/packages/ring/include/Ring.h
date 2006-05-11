@@ -108,81 +108,12 @@ extern "C" {
 #define RINGH_MSGEALOC "Memory allocation error"
 /**** </lalErrTable> */
 
-/**** <lalLaTeX>
- * 
- * \subsection*{Structures}
- * 
- * \subsubsection*{Type \texttt{RingTemplateInput}}
- * \idx[Type]{RingTemplateInput}
- *
- **** </lalLaTeX> */
-/**** <lalVerbatim> */
-typedef struct
-tagRingTemplateInput
-{
-  REAL4 quality;
-  REAL4 frequency;
-  REAL4 phase;
-}
-RingTemplateInput;
-/**** </lalVerbatim> */
-/**** <lalLaTeX>
- *
- * This structure contains the required information for generating a ringdown
- * template $q(t)$.  The fields are:
- * \begin{description}
- * \item[\texttt{quality}] The quality factor $Q$ of the ringdown waveform.
- * \item[\texttt{frequency}] The central frequency of the ringdown waveform
- *     (in Hz).
- * \item[\texttt{phase}] The initial phase of the ringdown in radians.
- *     Zero is a cosine-phase ringdown; $-\pi/2$ is a sine-phase ringdown.
- * \end{description}
- *
- *
- * \subsubsection*{Type \texttt{BlackHoleRingInput}}
- * \idx[Type]{BlackHoleRingInput}
- *
- **** </lalLaTeX> */
-/**** <lalVerbatim> */
-typedef struct
-tagBlackHoleRingInput
-{
-  REAL4 solarMasses;
-  REAL4 dimensionlessSpin;
-  REAL4 percentMassLoss;
-  REAL4 distanceMpc;
-  REAL4 initialPhase;
-}
-BlackHoleRingInput;
-/**** </lalVerbatim> */
-/**** <lalLaTeX>
- *
- * This structure contains the physical parameters for generating the ringdown
- * waveform from a black hole source.  The fields are:
- * \begin{description}
- * \item[\texttt{solarMasses}] The mass $M$ of the black hole (in solar
- *     masses, $M_\odot$).
- * \item[\texttt{dimensionlessSpin}] The dimensionless spin parameter of the
- *     black hole ${\hat{a}}$ where the spin is $S={\hat{a}}GM^2/c$ ($G$ is
- *     Newton's constant and $c$ is the speed of light).
- * \item[\texttt{percentMassLoss}] The fractional mass loss, as a percent of
- *     the initial black hole mass, in ringdown radiation.
- * \item[\texttt{distanceMpc}] The distance of the source in megaparsecs (Mpc).
- * \item[\texttt{initialPhase}] The initial phase of the ringdown in radians.
- *     Zero is a cosine-phase ringdown; $-\pi/2$ is a sine-phase ringdown.
- * \end{description}
- *
- *
- * \subsubsection*{Type \texttt{RingTemplateBank}}
- * \idx[Type]{RingTemplateBank}
- *
- **** </lalLaTeX> */
 /**** <lalVerbatim> */
 typedef struct
 tagRingTemplateBank
 {
   UINT4              numTmplt;
-  RingTemplateInput *tmplt;
+  SnglRingdownTable *tmplt;
 }
 RingTemplateBank;
 /**** </lalVerbatim> */
@@ -235,37 +166,10 @@ REAL4 XLALBlackHoleRingSpin( REAL4 Q );
 REAL4 XLALBlackHoleRingMass( REAL4 f, REAL4 Q );
 REAL4 XLALBlackHoleRingAmplitude( REAL4 f, REAL4 Q, REAL4 r );
 
-int XLALComputeRingTemplate( REAL4TimeSeries *output, RingTemplateInput *input );
-int XLALComputeBlackHoleRing( REAL4TimeSeries *output, BlackHoleRingInput *input );
+int XLALComputeRingTemplate( REAL4TimeSeries *output, SnglRingdownTable *input );
+int XLALComputeBlackHoleRing( REAL4TimeSeries *output, SnglRingdownTable *input );
 RingTemplateBank *XLALCreateRingTemplateBank( RingTemplateBankInput *input );
 void XLALDestroyRingTemplateBank( RingTemplateBank *bank );
-
-void
-LALComputeRingTemplate(
-    LALStatus          *status,
-    REAL4TimeSeries    *output,
-    RingTemplateInput  *input
-    );
-
-void
-LALComputeBlackHoleRing(
-    LALStatus          *status,
-    REAL4TimeSeries    *output,
-    BlackHoleRingInput *input
-    );
-
-void
-LALCreateRingTemplateBank(
-    LALStatus              *status,
-    RingTemplateBank      **output,
-    RingTemplateBankInput  *input
-    );
-
-void
-LALDestroyRingTemplateBank(
-    LALStatus         *status,
-    RingTemplateBank **bank
-    );
 
 /**** <lalLaTeX>
  * 
