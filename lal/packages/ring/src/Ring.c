@@ -99,6 +99,33 @@ NRCSID( RINGC, "$Id$" );
  */
 
 
+REAL4 XLALBlackHoleRingSpin( REAL4 Q )
+{
+  return 1.0 - pow( 2.0/Q, 20.0/9.0 );
+}
+
+REAL4 XLALBlackHoleRingMass( REAL4 f, REAL4 Q )
+{
+  const REAL4 c = LAL_C_SI;
+  const REAL4 a = XLALBlackHoleRingSpin( Q );
+  const REAL4 g = 1.0 - 0.63 * pow( 1.0 - a, 3.0/10.0 );
+  return (c * c * c * g) / ( LAL_TWOPI * LAL_G_SI * LAL_MSUN_SI * f );
+}
+
+REAL4 XLALBlackHoleRingAmplitude( REAL4 f, REAL4 Q, REAL4 r )
+{
+  const REAL4 c = LAL_C_SI;
+  const REAL4 epsilon = 0.01;
+  const REAL4 M = XLALBlackHoleRingMass( f, Q );
+  const REAL4 a = XLALBlackHoleRingSpin( Q );
+  const REAL4 F = 1.0 + 7.0/(24.0*Q*Q);
+  const REAL4 g = 1.0 - 0.63 * pow( 1.0 - a, 3.0/10.0 );
+
+  return sqrt(5.0/2.0 * epsilon) * 
+    ( (LAL_G_SI * M * LAL_MSUN_SI) / ( c * c * r * 1.0e6 * LAL_PC_SI) ) *
+    (1.0 / sqrt( Q * F * g) );
+}
+
 int XLALComputeRingTemplate( REAL4TimeSeries *output, RingTemplateInput *input )
 {
   static const char *func = "XLALComputeRingTemplate";

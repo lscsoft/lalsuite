@@ -231,6 +231,10 @@ RingTemplateBankInput;
  *
  **** </lalLaTeX> */
 
+REAL4 XLALBlackHoleRingSpin( REAL4 Q );
+REAL4 XLALBlackHoleRingMass( REAL4 f, REAL4 Q );
+REAL4 XLALBlackHoleRingAmplitude( REAL4 f, REAL4 Q, REAL4 r );
+
 int XLALComputeRingTemplate( REAL4TimeSeries *output, RingTemplateInput *input );
 int XLALComputeBlackHoleRing( REAL4TimeSeries *output, BlackHoleRingInput *input );
 RingTemplateBank *XLALCreateRingTemplateBank( RingTemplateBankInput *input );
