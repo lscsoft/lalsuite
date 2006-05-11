@@ -16,7 +16,6 @@
 #include "errutil.h"
 #include "gpstime.h"
 #include "ring.h"
-#include "defn.h"
 
 RCSID( "$Id$" );
 
@@ -298,7 +297,6 @@ static SnglRingdownTable * find_events(
             pow( LAL_C_SI, 2) / LAL_PC_SI /1000000.0 ) * pow( thisEvent->quality, -0.5 ) * 
             pow( 1.0 + 7.0 / 24.0 / pow( thisEvent->quality, 2.0), -0.5 ) *
             pow(  1.0 - 0.63 * pow( 1.0 - thisEvent->spin,0.3 ), -0.5);
-        amp = ampl(thisEvent->mass, thisEvent->quality, thisEvent->spin, 0.01, 1); 
         sigma=tmpltSigma * amp;
         thisEvent->sigma_sq = pow(sigma, 2.0);
         thisEvent->eff_dist = sigma / thisEvent->snr;
@@ -315,7 +313,6 @@ static SnglRingdownTable * find_events(
             pow( LAL_C_SI, 2) / LAL_PC_SI /1000000.0 ) * pow( thisEvent->quality, -0.5 ) *
           pow( 1.0 + 7.0 / 24.0 / pow( thisEvent->quality, 2.0), -0.5 ) *
           pow(  1.0 - 0.63 * pow( 1.0 - thisEvent->spin,0.3 ), -0.5);
-        amp = ampl(thisEvent->mass, thisEvent->quality, thisEvent->spin, 0.01, 1);
         sigma=tmpltSigma * amp;
         thisEvent->eff_dist = sigma / thisEvent->snr;        
         thisEvent->amplitude = amp;
