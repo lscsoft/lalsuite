@@ -611,15 +611,15 @@ LALReadTEMPOParFile(  LALStatus *status,
       }
     }
     else if(!strcmp(val[i],"pepoch") || !strcmp(val[i],"PEPOCH")) {
-      output->pepoch = (atof(val[i+1])-44244.)*DAYSTOSECS; /* convert all epochs to from MJD to
-        seconds in TDB */
+      output->pepoch = LALTDBMJDtoGPS(atof(val[i+1])); /* convert all epochs to from MJD to
+        GPS seconds in TDB */
       j++;
 
     }
     else if( !strcmp(val[i],"posepoch") || !strcmp(val[i],"POSEPOCH")){
-      output->posepoch = (atof(val[i+1])-44244.)*DAYSTOSECS;
+      output->posepoch = LALTDBMJDtoGPS(atof(val[i+1]));
       j++;
-      /* position epoch in secs in TDB */
+      /* position epoch in GPS seconds TDB */
     }
     else if( !strcmp(val[i],"f0") || !strcmp(val[i],"F0")) {
       /* in .par files exponents sometimes shown as D/d rather than e/E
@@ -754,7 +754,7 @@ LALReadTEMPOParFile(  LALStatus *status,
       }
     }
     else if( !strcmp(val[i], "T0")){
-      output->T0 = (atof(val[i+1])-44244.)*DAYSTOSECS;
+      output->T0 = LALTDBMJDtoGPS(atof(val[i+1]));
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
@@ -763,7 +763,7 @@ LALReadTEMPOParFile(  LALStatus *status,
       }
     }
     else if( !strcmp(val[i], "Tasc") || !strcmp(val[i], "TASC")){
-      output->Tasc = (atof(val[i+1])-44244.)*DAYSTOSECS;
+      output->Tasc = LALTDBMJDtoGPS(atof(val[i+1]));
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
@@ -1034,33 +1034,37 @@ historical factor of 32.184 secs between TT and TAI (International Atomic Time)
 and the other 19 seconds come from the leap seonds added between the TAI and
 UTC up to the point of definition of GPS time at UTC 01/01/1980 (see
 http://www.stjarnhimlen.se/comp/time.html for details) */
-REAL8 LALTTtoGPS(REAL8 TT){
+
+/* Matt - you have tested these function using the radio pulsar data that Michael 
+Kramer sent you and they are correct and are especially needed for the binary system 
+epochs */
+REAL8 LALTTMJDtoGPS(REAL8 MJD){
   REAL8 GPS;
 
   /* Check not before the start of GPS time (MJD 44222) */
-  if(TT < 44244.){
+  if(MJD < 44244.){
     fprintf(stderr, "Input time is not in range.\n");
     exit(0);
   } 
 
   /* there is the magical number factor of 32.184 + 19 leap seconds to the
 start of GPS time */
-  GPS = (TT-44244.)*86400. - 51.184;
+  GPS = (MJD-44244.)*86400. - 51.184;
 
   return GPS;
 }
 
-REAL8 LALTDBtoGPS(REAL8 TDB){
+REAL8 LALTDBMJDtoGPS(REAL8 MJD){
   REAL8 GPS;
   REAL8 Tdiff, meanAnomaly, TDBtoTT;
   
   /* Check not before the start of GPS time (MJD 44222) */
-  if(TDB < 44244.){
+  if(MJD < 44244.){
     fprintf(stderr, "Input time is not in range.\n");
     exit(0);
   } 
   
-  Tdiff = TDB + (2400000.5-2451545.0);
+  Tdiff = MJD + (2400000.5-2451545.0);
   meanAnomaly = 357.53 + 0.98560028*Tdiff; /* mean anomaly in degrees */
   meanAnomaly *= LAL_PI_180; /* mean anomaly in rads */
   
@@ -1069,7 +1073,7 @@ REAL8 LALTDBtoGPS(REAL8 TDB){
   /* convert TDB to TT (TDB-TDBtoTT) and then convert TT to GPS */
   /* there is the magical number factor of 32.184 + 19 leap seconds to the
 start of GPS time */
-  GPS = (TDB-44244.)*86400. - 51.184 - TDBtoTT;
+  GPS = (MJD-44244.)*86400. - 51.184 - TDBtoTT;
 
   return GPS;
 }

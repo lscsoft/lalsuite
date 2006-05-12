@@ -238,10 +238,10 @@ and the other 19 seconds come from the leap seonds added between the TAI and
 UTC up to the point of definition of GPS time at UTC 01/01/1980 (see
 http://www.stjarnhimlen.se/comp/time.html for details) */
 REAL8
-LALTTtoGPS(REAL8 TT);
+LALTTMJDtoGPS(REAL8 MJD);
 
 REAL8
-LALTDBtoGPS(REAL8 TDB);
+LALTDBMJDtoGPS(REAL8 MJD);
 
 #ifdef __cplusplus
 }
