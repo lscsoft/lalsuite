@@ -2,8 +2,9 @@
  * 
  * File Name: rinj.c
  *
- * Author: Goggin, L. M. based on minj.c by Brown, D. A. and bbhinj.c by Brown,
- * D. A., Messaritaki E
+ * Author: Goggin, L. M., and  Brown, D. A.
+ *
+ * $Id$
  * 
  *-----------------------------------------------------------------------
  */
@@ -37,10 +38,9 @@
 #include <lal/DetResponse.h>
 #include <lal/TimeDelay.h>
 #include <lal/LALAtomicDatatypes.h>
+#include <lal/Ring.h>
 
 
-
-/* ??? */
 RCSID( "$Id$" );
 #define CVS_ID_STRING "$Id$"
 #define CVS_NAME_STRING "$Name$"
@@ -631,7 +631,7 @@ int main( int argc, char *argv[] )
    
     /* initial phase */
     LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
-    this_inj->init_phase = u * LAL_TWOPI;
+    this_inj->phase = u * LAL_TWOPI;
     
     /* uniform distribution in log(distance) */
     LAL_CALL(  LALUniformDeviate(&status,&u,randParams),&status );
@@ -675,11 +675,11 @@ int main( int argc, char *argv[] )
     gpsAndAcc.gps = this_inj->geocent_start_time;
     
     /* calculate h0 */
-    this_inj->h0 = XLALBlackHoleRingAmplitude( this_inj->frequency,
+    this_inj->amplitude = XLALBlackHoleRingAmplitude( this_inj->frequency,
         this_inj->quality, this_inj->distance );
       
     /* calculate hrss */
-    this_inj->hrss = this_inj->h0 * sqrt( 2 / LAL_PI / this_inj->frequency ) * 
+    this_inj->hrss = this_inj->amplitude * sqrt( 2 / LAL_PI / this_inj->frequency ) * 
       pow( ( 2.0 * pow( this_inj->quality, 3.0 ) + this_inj->quality ) / 
           ( 1.0 + 4.0 * pow ( this_inj->quality, 2 ) ) , 0.5);
       
@@ -712,7 +712,7 @@ int main( int argc, char *argv[] )
         scross*scross*resp.cross*resp.cross ) );    */
 
     /* compute hrss at LHO */ 
-    this_inj->hrss_h = this_inj->h0 * pow ( ( 
+    this_inj->hrss_h = this_inj->amplitude * pow ( ( 
           (2*pow(this_inj->quality,3)+this_inj->quality ) * splus*splus*resp.plus*resp.plus +
           2*pow(this_inj->quality,2) * splus*scross*resp.plus*resp.cross +
           2*pow(this_inj->quality,3) * scross*scross*resp.cross*resp.cross )
@@ -735,7 +735,7 @@ int main( int argc, char *argv[] )
         + scross*scross*resp.cross*resp.cross );
     
     /* compute hrss at LLO */
-    this_inj->hrss_l = this_inj->h0 * pow ( (
+    this_inj->hrss_l = this_inj->amplitude * pow ( (
           (2*pow(this_inj->quality,3)+this_inj->quality ) * splus*splus*resp.plus*resp.plus +
           2*pow(this_inj->quality,2) * splus*scross*resp.plus*resp.cross +
           2*pow(this_inj->quality,3) * scross*scross*resp.cross*resp.cross )

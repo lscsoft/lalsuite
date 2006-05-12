@@ -141,12 +141,12 @@ int main( int argc, char *argv[] )
   MetadataTable         procparams;
   ProcessParamsTable   *this_proc_param;
 
-  int                   numSimEvents = 0;
-  int                   numSimInData = 0;
-  int                   numSimFound  = 0;
-  int                   numSimMissed = 0;
-  int                   numSimDiscard = 0;
-  int                   numSimProcessed = 0;
+  UINT4                 numSimEvents = 0;
+  UINT4                 numSimInData = 0;
+  UINT4                 numSimFound  = 0;
+  UINT4                 numSimMissed = 0;
+  UINT4                 numSimDiscard = 0;
+  UINT4                 numSimProcessed = 0;
 
   SimRingdownTable     *simEventHead = NULL;
   SimRingdownTable     *thisSimEvent = NULL;
@@ -157,14 +157,13 @@ int main( int argc, char *argv[] )
 
   SearchSummaryTable   *searchSummaryTable = NULL;
 
-  int                   numEvents = 0;
-  int                   numEventsInXML = 0;
-  int                   numEventsKept = 0;
-  int                   numEventsInIFO = 0;
-  int                   numEventsCoinc = 0;
-  int                   numEventsDiscard = 0;
-  int                   numEventsProcessed = 0;
-  int                   numClusteredEvents = 0;
+  UINT4                 numEvents = 0;
+  UINT4                 numEventsKept = 0;
+  UINT4                 numEventsInIFO = 0;
+  UINT4                 numEventsCoinc = 0;
+  UINT4                 numEventsDiscard = 0;
+  UINT4                 numEventsProcessed = 0;
+  UINT4                 numClusteredEvents = 0;
 
   SnglRingdownTable   **eventHandle = NULL;      
   SnglRingdownTable    *eventHead = NULL;
@@ -425,7 +424,7 @@ int main( int argc, char *argv[] )
         memcpy( ifoName, optarg, optarg_len );
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
-        
+
       case 'T':
         /* injection coincidence time is specified on command line in ms */
         inject_dt = (INT8) atoi( optarg );
@@ -622,12 +621,11 @@ int main( int argc, char *argv[] )
     if ( vrbflg ) 
       fprintf( stdout, "reading injections from %s... ", injectFileName );
 
-    numSimEvents = LALSimRingdownTableFromLIGOLw( &stat, &simEventHead, 
-        injectFileName, 0, 0 );
+    simEventHead = XLALSimRingdownTableFromLIGOLw( injectFileName, 0, 0 );
 
     if ( vrbflg ) fprintf( stdout, "got %d injections\n", numSimEvents );
 
-    if ( numSimEvents < 0 )
+    if ( ! simEventHead )
     {
       fprintf( stderr, "error: unable to read sim_ringdown table from %s\n", 
           injectFileName );
@@ -971,22 +969,21 @@ int main( int argc, char *argv[] )
         eventHandle = &(prevEvent->next);
       }
 
-      
-
       /* read the events from the file into a temporary list */
-      if ( (numEventsInXML = LALSnglRingdownTableFromLIGOLw( &stat, eventHandle, 
-              inFileNameList[j] )) < 0 )
+      *eventHandle = XLALSnglRingdownTableFromLIGOLw( inFileNameList[j] );
+      if ( ! *eventHandle )
       {
         fprintf( stderr, "error: unable to read sngl_ringdown table from %s\n", 
             inFileNameList[j] );
         exit( 1 );
       }
-      numEvents += numEventsInXML;
 
       /* only keep triggers from the data that we want to analyze */
       thisEvent = *eventHandle;
       while ( thisEvent )
       {
+        numEvents++;
+
         LAL_CALL( LALGPSIsPlayground( &stat, &isPlay, &(thisEvent->start_time) ),
             &stat );
 
@@ -1075,7 +1072,7 @@ int main( int argc, char *argv[] )
         "keeping only triggers from %s, discarding others...", ifoName );
     LAL_CALL( LALIfoCutSingleRingdown( &stat, &eventHead, ifoName ), &stat );
     LALIfoCountSingleRingdown( &stat, &numEventsInIFO, eventHead, 
-          XLALIFONumber(ifoName) );
+        XLALIFONumber(ifoName) );
 
     if ( vrbflg ) fprintf( stdout, "done\n" );
   }
@@ -1135,12 +1132,12 @@ int main( int argc, char *argv[] )
         /* at the relevant detector                          */
         if ( ! strcmp( "L1", thisEvent->ifo ) )
         {
-            simTime = XLALGPStoINT8 ( &(thisSimEvent->l_start_time) );
+          simTime = XLALGPStoINT8 ( &(thisSimEvent->l_start_time) );
         }
         else if ( ! strcmp( "H1", thisEvent->ifo ) || 
             ! strcmp( "H2", thisEvent->ifo ) )
         {
-            simTime = XLALGPStoINT8 ( &(thisSimEvent->h_start_time) );
+          simTime = XLALGPStoINT8 ( &(thisSimEvent->h_start_time) );
         }
         else
         {

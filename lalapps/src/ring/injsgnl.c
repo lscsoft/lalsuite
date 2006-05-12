@@ -54,8 +54,8 @@ int inject_signal( REAL4TimeSeries *series, int injectSignalType,
   switch ( injectSignalType )
   {
     case ring_inject:
-      LAL_CALL( LALSimRingdownTableFromLIGOLw( &status, &injectList, injFile,
-            startSec, stopSec ), &status );
+      injectList = 
+        XLALSimRingdownTableFromLIGOLw( injFile, startSec, stopSec );
       break;
     default:
       error( "unrecognized injection signal type\n" );

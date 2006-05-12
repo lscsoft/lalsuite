@@ -155,7 +155,7 @@ int main( int argc, char *argv[] )
   CHAR  fileName[FILENAME_MAX];
   CHAR  fileSlide[FILENAME_MAX];
 
-  UINT4  numIFO = 0;
+  INT4   numIFO = 0;
   UINT4  numTrigIFO = 0;
   UINT4  numTriggers = 0;
   UINT4  numCoinc = 0;
@@ -163,7 +163,6 @@ int main( int argc, char *argv[] )
   UINT4  numTriples = 0;
   UINT4  numQuadruples = 0;
   UINT4  numTrigs[LAL_NUM_IFO];
-  UINT4  N = 0;
 
   LALDetector          aDet;
   LALDetector          bDet;
@@ -184,8 +183,6 @@ int main( int argc, char *argv[] )
   SearchSummaryTable   *searchSummList = NULL;
   SearchSummaryTable   *thisSearchSumm = NULL;
 
-  SummValueTable       *thisSummValue = NULL;
-
   MetadataTable         proctable;
   MetadataTable         processParamsTable;
   MetadataTable         searchsumm;
@@ -197,22 +194,12 @@ int main( int argc, char *argv[] )
   InterferometerNumber  ifoNumber = LAL_UNKNOWN_IFO;
   InterferometerNumber  ifoTwo    = LAL_UNKNOWN_IFO;
   INT4                  i;
-  INT4                  loopVar;
   INT4                  maximizationInterval = 0;
 
-
-#if 0
-  REAL4                 alphaFhi = -2.e4;
-  REAL4                 alphaFlo = 9.e4;
-  REAL4                 thresholdT = 1e6;
-  REAL4  	        lambda   = 1e6;
-#endif
-  
   const CHAR    ifoList[LAL_NUM_IFO][LIGOMETA_IFO_MAX] =
                      {"H1", "H2", "L1"};
   const CHAR    *ifoArg[LAL_NUM_IFO] = 
                      {"h1-triggers", "h2-triggers", "l1-triggers"};
-
 
   /* getopt arguments */
   struct option long_options[] =
@@ -808,7 +795,7 @@ int main( int argc, char *argv[] )
     {
       INT4 numFileTriggers = 0;
 
-      numFileTriggers = XLALReadRingdownTriggerFile( &status, &ringdownEventList,
+      numFileTriggers = XLALReadRingdownTriggerFile( &ringdownEventList,
           &thisRingdownTrigger, &searchSummList, &inputFiles, argv[i] );
       if (numFileTriggers < 0)
       {

@@ -83,7 +83,7 @@ SnglRingdownTable * ring_filter(
   /* loop over all elements in the template bank */
   for ( tmplt = 0; tmplt < bank->numTmplt; ++tmplt )
   {
-    RingTemplateInput *thisTmplt = bank->tmplt + tmplt;
+    SnglRingdownTable *thisTmplt = bank->tmplt + tmplt;
     UINT4 numEvents = 0;
     REAL8 sigma;
     
@@ -274,7 +274,6 @@ static SnglRingdownTable * find_events(
 
         /* copy general information about the filter */
         strncpy( thisEvent->ifo, params->ifoName, sizeof( thisEvent->ifo ) );
-        strncpy( thisEvent->search, "ring", sizeof( thisEvent->search ) );
         strncpy( thisEvent->channel, params->channel, sizeof( thisEvent->channel ) );
 /*       LAL_CALL( LALGPStoGMST1( &status, &(thisEvent->start_time_gmst), 
                         &(thisEvent->start_time), &gmstUnits ), &status); */ 
