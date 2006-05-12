@@ -196,10 +196,12 @@ int main( int argc, char *argv[] )
   INT4                  i;
   INT4                  maximizationInterval = 0;
 
-  const CHAR    ifoList[LAL_NUM_IFO][LIGOMETA_IFO_MAX] =
-                     {"H1", "H2", "L1"};
-  const CHAR    *ifoArg[LAL_NUM_IFO] = 
-                     {"h1-triggers", "h2-triggers", "l1-triggers"};
+  const CHAR                   ifoList[LAL_NUM_IFO][LIGOMETA_IFO_MAX] = 
+                                   {"G1", "H1", "H2", "L1", "T1", "V1"};
+  const CHAR                  *ifoArg[LAL_NUM_IFO] = 
+                                   {"g1-triggers", "h1-triggers", 
+                                    "h2-triggers", "l1-triggers", 
+                                    "t1-triggers", "v1-triggers"};
 
   /* getopt arguments */
   struct option long_options[] =
