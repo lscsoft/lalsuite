@@ -214,7 +214,7 @@ SnglRingdownTable* XLALSnglRingdownTableFromLIGOLw (
         thisEvent->event_id = (EventIDColumn *) 
           LALCalloc( 1, sizeof(EventIDColumn) );
         sscanf( env->ligo_lw.table.elt[tableDir[j].pos].data.ilwd_char.data,
-            "sngl_ringdown:event_id:%lld", thisEvent->event_id->id );
+            "sngl_ringdown:event_id:%lld", &(thisEvent->event_id->id) );
         thisEvent->event_id->snglRingdownTable = thisEvent;
       }
       else
