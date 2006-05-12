@@ -88,6 +88,7 @@ tagLIGOLwXMLStream
 {
   FILE                 *fp;
   INT4                  first;
+  UINT8                 rowCount;
   MetadataTableType     table;
 }
 LIGOLwXMLStream;
@@ -100,6 +101,7 @@ directly, but passed to the \verb+LIGOLwXML+ functions for their use.
 \begin{description}
 \item[\texttt{fp}] The file stream pointer of the XML file.
 \item[\texttt{first}] Is this the first entry in the table.
+\item[\texttt{rowCount}] Counter for the number of rows in the current table.
 \item[\texttt{table}] The database table currently open.
 \end{description}
 </lalLaTeX>

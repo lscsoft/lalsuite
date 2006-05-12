@@ -267,6 +267,7 @@ LALBeginLIGOLwXMLTable (
       ABORT( status, LIGOLWXMLH_EUTAB, LIGOLWXMLH_MSGEUTAB );
   }
   xml->first = 1;
+  xml->rowCount = 0;
   xml->table = table;
   RETURN( status );
 }
@@ -350,6 +351,7 @@ LALWriteLIGOLwXMLTable (
               tablePtr.processTable->ifos
               );
         tablePtr.processTable = tablePtr.processTable->next;
+        ++(xml->rowCount);
       }
       break;
     case process_params_table:
@@ -363,6 +365,7 @@ LALWriteLIGOLwXMLTable (
               tablePtr.processParamsTable->value
               );
         tablePtr.processParamsTable = tablePtr.processParamsTable->next;
+        ++(xml->rowCount);
       }
       break;
     case search_summary_table:
@@ -385,6 +388,7 @@ LALWriteLIGOLwXMLTable (
               tablePtr.searchSummaryTable->nnodes
               );
         tablePtr.searchSummaryTable = tablePtr.searchSummaryTable->next;
+        ++(xml->rowCount);
       }
       break;
     case search_summvars_table:
@@ -397,12 +401,13 @@ LALWriteLIGOLwXMLTable (
               tablePtr.searchSummvarsTable->value
               );
         tablePtr.searchSummvarsTable = tablePtr.searchSummvarsTable->next;
+        ++(xml->rowCount);
       }
       break;
     case sngl_burst_table:
       while( tablePtr.snglBurstTable )
       {
-        UINT8 id = 0;
+        UINT8 id = xml->rowCount;
         if ( tablePtr.snglBurstTable->event_id )
         {
           id = tablePtr.snglBurstTable->event_id->id;
@@ -427,6 +432,7 @@ LALWriteLIGOLwXMLTable (
 	      id
               );
         tablePtr.snglBurstTable = tablePtr.snglBurstTable->next;
+        ++(xml->rowCount);
       }
       break;
     case sngl_inspiral_table:
@@ -481,6 +487,7 @@ LALWriteLIGOLwXMLTable (
 	      tablePtr.snglInspiralTable->rsqveto_duration,
               id );
         tablePtr.snglInspiralTable = tablePtr.snglInspiralTable->next;
+        ++(xml->rowCount);
       }
       break;
     case sngl_inspiral_table_bns:
@@ -512,6 +519,7 @@ LALWriteLIGOLwXMLTable (
               tablePtr.snglInspiralTable->sigmasq,
 	      tablePtr.snglInspiralTable->rsqveto_duration );
         tablePtr.snglInspiralTable = tablePtr.snglInspiralTable->next;
+        ++(xml->rowCount);
       }
       break;
     case sngl_inspiral_table_bcv:
@@ -540,12 +548,13 @@ LALWriteLIGOLwXMLTable (
               tablePtr.snglInspiralTable->sigmasq,
 	      tablePtr.snglInspiralTable->rsqveto_duration );
         tablePtr.snglInspiralTable = tablePtr.snglInspiralTable->next;
+        ++(xml->rowCount);
       }
       break;
     case sngl_ringdown_table:
       while( tablePtr.snglRingdownTable )
       {
-        UINT8 id = 0;
+        UINT8 id = xml->rowCount;
         if ( tablePtr.snglRingdownTable->event_id )
         {
           id = tablePtr.snglRingdownTable->event_id->id;
@@ -570,6 +579,7 @@ LALWriteLIGOLwXMLTable (
               id
               );
         tablePtr.snglRingdownTable = tablePtr.snglRingdownTable->next;
+        ++(xml->rowCount);
       }
       break;
     case multi_inspiral_table:
@@ -613,11 +623,11 @@ LALWriteLIGOLwXMLTable (
               tablePtr.multiInspiralTable->polarization
                 );
         tablePtr.multiInspiralTable = tablePtr.multiInspiralTable->next;
+        ++(xml->rowCount);
       }
       break;
     case sim_inspiral_table:
       {
-      int id = 0;
       while( tablePtr.simInspiralTable )
       {
         FIRST_TABLE_ROW
@@ -672,15 +682,15 @@ LALWriteLIGOLwXMLTable (
               tablePtr.simInspiralTable->eff_dist_g,
               tablePtr.simInspiralTable->eff_dist_t,
               tablePtr.simInspiralTable->eff_dist_v,
-              id++
+              xml->rowCount
               );
         tablePtr.simInspiralTable = tablePtr.simInspiralTable->next;
+        ++(xml->rowCount);
         }
       }
       break;
     case sim_burst_table:
       {
-        int id = 0;
         while( tablePtr.simBurstTable )
         {
           FIRST_TABLE_ROW
@@ -705,15 +715,15 @@ LALWriteLIGOLwXMLTable (
                 tablePtr.simBurstTable->freq,
                 tablePtr.simBurstTable->tau,
                 tablePtr.simBurstTable->zm_number,
-                id++
+                xml->rowCount
                   );
           tablePtr.simBurstTable = tablePtr.simBurstTable->next;
+          ++(xml->rowCount);
         }
       }
       break;
     case sim_ringdown_table:
       {
-        int id = 0;
         while( tablePtr.simRingdownTable )
         {
           FIRST_TABLE_ROW
@@ -744,9 +754,10 @@ LALWriteLIGOLwXMLTable (
                 tablePtr.simRingdownTable->hrss,
                 tablePtr.simRingdownTable->hrss_h,
                 tablePtr.simRingdownTable->hrss_l,
-                id++
+                xml->rowCount
                   );
           tablePtr.simRingdownTable = tablePtr.simRingdownTable->next;
+          ++(xml->rowCount);
         }
       }
       break;
@@ -766,6 +777,7 @@ LALWriteLIGOLwXMLTable (
               tablePtr.summValueTable->comment
               );
         tablePtr.snglInspiralTable = tablePtr.snglInspiralTable->next;
+        ++(xml->rowCount);
       }
       break;
     case sim_inst_params_table:
@@ -778,6 +790,7 @@ LALWriteLIGOLwXMLTable (
               tablePtr.simInstParamsTable->value
               );
         tablePtr.simInstParamsTable = tablePtr.simInstParamsTable->next;
+        ++(xml->rowCount);
       }
       break;
     case stochastic_table:
@@ -799,6 +812,7 @@ LALWriteLIGOLwXMLTable (
               tablePtr.stochasticTable->cc_sigma
               );
         tablePtr.stochasticTable = tablePtr.stochasticTable->next;
+        ++(xml->rowCount);
       }
       break;
     case stoch_summ_table:
@@ -820,6 +834,7 @@ LALWriteLIGOLwXMLTable (
               tablePtr.stochSummTable->error
               );
         tablePtr.stochSummTable = tablePtr.stochSummTable->next;
+        ++(xml->rowCount);
       }
       break;
     case ext_triggers_table:
@@ -868,6 +883,7 @@ LALWriteLIGOLwXMLTable (
 	      tablePtr.extTriggerTable->event_status
 	    );
         tablePtr.extTriggerTable = tablePtr.extTriggerTable->next;
+        ++(xml->rowCount);
       }
       break;
     case filter_table:
@@ -881,6 +897,7 @@ LALWriteLIGOLwXMLTable (
               tablePtr.filterTable->comment
               );
         tablePtr.filterTable = tablePtr.filterTable->next;
+        ++(xml->rowCount);
       }
       break;
     default:
