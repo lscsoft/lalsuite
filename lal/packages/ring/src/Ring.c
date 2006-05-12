@@ -193,7 +193,7 @@ int XLALComputeRingTemplate( REAL4TimeSeries *output, SnglRingdownTable *input )
 /* <lalVerbatim file="RingCP"> */
 int XLALComputeBlackHoleRing( 
     REAL4TimeSeries     *output, 
-    SnglRingdownTable   *input
+    SnglRingdownTable   *input,
     REAL4                dynRange
     )
 /* </lalVerbatim> */
