@@ -47,7 +47,7 @@
 "  --waveform NAME          set waveform type to NAME (GeneratePPNtwoPN)\n"\
 "  --user-tag STRING        set the usertag to STRING\n"\
 "  --ilwd                   generate an ILWD file for LDAS\n"\
-"  --enable-milkyway        enables Milky Way injections\n"\
+"  --enable-milkyway LUM    enables Milky Way injections, set MW luminosity LUM\n"\
 "  --disable-milkyway       disables Milky Way injections\n"\
 "  --incl-peak PEAK         peaks the inclination angle with width PEAK. \n"\
 "                           Random in cos(i) if not specified\n"\
@@ -61,8 +61,8 @@
 "  --max-mass MAX           set the maximum component mass to MAX (20.0)\n"\
 "  --m-distr MDISTR         distribute injections uniformly over\n"\
 "                           total mass (MDISTR = 0), or over mass1 and\n"\
-"                           over mass2 (MDISTR = 1) (default: MDISTR=-1, using mass file)\n"\
-"                           if not given the mass-file will be used\n"\
+"                           over mass2 (MDISTR = 1)\n"\
+"                           (default: MDISTR=-1, using mass file)\n"\
 "\n"
 
 RCSID( "$Id$" );
@@ -120,6 +120,7 @@ char *massFileName = NULL;
 char *sourceFileName = NULL;
 
 int allowMW=-1;
+float mwLuminosity = -1;
 
 int ddistr=-1;
 float dmin= 1;
@@ -540,9 +541,12 @@ int sky_position( double *dist, double *alpha, double *delta, char *source )
   if ( ! init )
   {
     init = 1;
-    if (allowMW) {
-      norm=1; /* milky way */
-    } else {
+    if (allowMW) 
+    {
+      norm = mwLuminosity; /* milky way */
+    } 
+    else 
+    {
       norm = 0; /* do not use the milky way as sourec, only the source list */
     } 
     num_source = read_source_data();
@@ -609,11 +613,12 @@ int inj_params( double *injPar, char *source )
   /* get sky position */
   sky_position( &dist, &alpha, &delta, source );
 
-  if (massFileName) {
+  if (massFileName) 
+  {
     /* get random mass from mass file */
     if ( ! n )
       n = read_source_mass_data( &m1arr, &m2arr );
-    
+
     /* choose masses from the mass-list */
     i = (size_t)( n * my_urandom() );
     m1 = m1arr[i];
@@ -621,69 +626,70 @@ int inj_params( double *injPar, char *source )
   }
 
   /* use the user-specified parameters to calculate the masses */
-  if (mdistr>=0) {
-    
+  if (mdistr>=0) 
+  {
     /* mass range, per component */
     deltaM = maxMass - minMass;
-    
-    if (mdistr == 1) {
 
+    if (mdistr == 1) 
+    {
       /* uniformly distributed mass1 and uniformly distributed mass2 */
       u=my_urandom();
       m1 = minMass + u * deltaM;
       u=my_urandom();
       m2 = minMass + u * deltaM;
-      
-    } else if (mdistr == 0) {
+    }
+    else if (mdistr == 0) 
+    {
       /*uniformly distributed total mass */
-      
       u=my_urandom();
-      mtotal = 2.0 * minMass + u * 2.0 *deltaM ;	
+      mtotal = 2.0 * minMass + u * 2.0 *deltaM ;        
       u=my_urandom();
       m1 = minMass + u * deltaM;
       m2 = mtotal - m1;
-      
+
       while (m1 >= mtotal || 
-	     m2 >= maxMass || m2 <= minMass ) {
-	u=my_urandom();
-	m1 = minMass + u * deltaM;
-	m2 = mtotal - m1;
+          m2 >= maxMass || m2 <= minMass ) 
+      {
+        u=my_urandom();
+        m1 = minMass + u * deltaM;
+        m2 = mtotal - m1;
       }
     }
   }
 
   /* use the user-specified parameters to calculate the distance */
-  if (ddistr>=0) {
-
+  if (ddistr>=0) 
+  {
     if (ddistr == 0)
+    {
       /* uniform distribution in distance */
-      {
-	REAL4 deltaD = dmax - dmin ;
-	u=my_urandom();
-	dist = (dmin + deltaD * u) * KPC;
-      }
+      REAL4 deltaD = dmax - dmin ;
+      u=my_urandom();
+      dist = (dmin + deltaD * u) * KPC;
+    }
     else if (ddistr == 1)
+    {
       /* uniform distribution in log(distance) */
-      {
-        REAL4 lmin = log10(dmin);
-        REAL4 lmax = log10(dmax);
-        REAL4 deltaL = lmax - lmin;
-	REAL4 exponent;
-	u=my_urandom();
-        exponent = lmin + deltaL * u;
-        dist = pow(10.0,(REAL4) exponent) * KPC;
-      }
+      REAL4 lmin = log10(dmin);
+      REAL4 lmax = log10(dmax);
+      REAL4 deltaL = lmax - lmin;
+      REAL4 exponent;
+      u=my_urandom();
+      exponent = lmin + deltaL * u;
+      dist = pow(10.0,(REAL4) exponent) * KPC;
+    }
     else if (ddistr == 2)
+    {
       /* uniform volume distribution */
-      {
-	REAL4 d2min = dmin * dmin ;
-	REAL4 d2max = dmax * dmax ;
-	REAL4 deltad2 = d2max - d2min ;
-	REAL4 d2;
-	u=my_urandom();
-	d2 = d2min + u * deltad2 ;
-	dist = sqrt(d2) * KPC;
-      }    
+      REAL4 d2min = dmin * dmin ;
+      REAL4 d2max = dmax * dmax ;
+      REAL4 deltad2 = d2max - d2min ;
+      REAL4 d2;
+      u=my_urandom();
+      d2 = d2min + u * deltad2 ;
+      dist = sqrt(d2) * KPC;
+    }    
   } 
 
   /* set the masses and other parameters */
@@ -692,11 +698,13 @@ int inj_params( double *injPar, char *source )
   injPar[mTotElem] = m1 + m2;
   injPar[etaElem]  = m1 * m2 / ( ( m1 + m2 ) * ( m1 + m2 ) );
 
-  if (flagInclPeak) {
+  if (flagInclPeak) 
+  {
     LALNormalDeviates( &status, vector, randParams );
     injPar[incElem] = inclPeak*(double)(vector->data[0]);
-
-  } else {
+  } 
+  else 
+  {
     injPar[incElem]  = acos( -1.0 + 2.0 * my_urandom() );
   }
   injPar[phiElem]  = 2 * LAL_PI * my_urandom();
@@ -773,9 +781,9 @@ int main( int argc, char *argv[] )
     {"min-distance",            required_argument, 0,                'p'},
     {"max-distance",            required_argument, 0,                'r'},
     {"d-distr",                 required_argument, 0,                'e'},
+    {"enable-milkyway",         required_argument, 0,                'M'},
     {"lal-eff-dist",                  no_argument, &lalEffDist,       1 },
     {"ilwd",                          no_argument, &ilwd,             1 },
-    {"enable-milkyway",               no_argument, &allowMW,          1 },
     {"disable-milkyway",              no_argument, &allowMW,          0 },
     {0, 0, 0, 0}
   };
@@ -808,7 +816,7 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "hf:m:a:b:t:s:w:i:", long_options, &option_index );
+        "hf:m:a:b:t:s:w:i:M:", long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == - 1 )
@@ -935,6 +943,24 @@ int main( int argc, char *argv[] )
               "%s", optarg );
         break;
 
+      case 'M':
+        /* set the luminosity of the Milky Way */
+        mwLuminosity = atof( optarg );
+        if ( mwLuminosity < 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "Milky Way luminosity must be positive" 
+              "(%f specified)\n", 
+              long_options[option_index].name, mwLuminosity );
+          exit( 1 );
+        }
+
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, "float", 
+              "%le", mwLuminosity );
+        allowMW = 1;
+        break;
+
       case 'Z':
         /* create storage for the usertag */
         optarg_len = strlen( optarg ) + 1;
@@ -971,9 +997,9 @@ int main( int argc, char *argv[] )
           next_process_param( long_options[option_index].name, 
               "float", "%le", maxMass );
         break;
-    
+
       case 'c':
-	flagInclPeak=1;
+        flagInclPeak=1;
         inclPeak = atof( optarg );
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, 
@@ -1046,14 +1072,17 @@ int main( int argc, char *argv[] )
 
   /* check if proper GRB mode is selected */
   if (allowMW==-1) {
-    fprintf( stderr, "Must specify either --enable-milkyway or --disable-milkyway\n" );
+    fprintf( stderr, 
+        "Must specify either --enable-milkyway or --disable-milkyway\n" );
     fprintf( stderr, USAGE );
     exit( 1 );
   }
 
   /* check selection of masses */
-  if (!massFileName && mdistr==-1) {
-    fprintf( stderr, "Must specify either a mass-file or a mass range with the distribution parameter\n" );
+  if (!massFileName && mdistr==-1)
+  {
+    fprintf( stderr, 
+        "Must specify either a --mass-file or a --m-distr\n" );
     fprintf( stderr, USAGE );
     exit( 1 );
   }
@@ -1103,20 +1132,18 @@ int main( int argc, char *argv[] )
   }
 
   /* store the milkyway-injection flag */
-  LALSnprintf( procparams.processParamsTable->program, 
-	       LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
-  if (allowMW) {
+  if (!allowMW) 
+  {
+    LALSnprintf( procparams.processParamsTable->program, 
+        LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
     LALSnprintf( procparams.processParamsTable->param,
-		 LIGOMETA_PARAM_MAX, "--enable-milkyway" );
-  } else {
-    LALSnprintf( procparams.processParamsTable->param,
-		 LIGOMETA_PARAM_MAX, "--disable-milkyway" );
+        LIGOMETA_PARAM_MAX, "--disable-milkyway" );
+    LALSnprintf( procparams.processParamsTable->type, 
+        LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( procparams.processParamsTable->value, 
+        LIGOMETA_TYPE_MAX, " " );
   }
-  LALSnprintf( procparams.processParamsTable->type, 
-	       LIGOMETA_TYPE_MAX, "string" );
-  LALSnprintf( procparams.processParamsTable->value, 
-	       LIGOMETA_TYPE_MAX, " " );
-  
+
   /* create the first injection */
   this_sim_insp = injections.simInspiralTable = (SimInspiralTable *)
     calloc( 1, sizeof(SimInspiralTable) );
@@ -1220,7 +1247,8 @@ int main( int argc, char *argv[] )
         numElem, (int) ninj );
   }
 
-  if (flagInclPeak) {
+  if (flagInclPeak) 
+  {
     LALCreateRandomParams( &status, &randParams, rand_seed );
     LALCreateVector( &status, &vector, 1 );
   }
@@ -1302,7 +1330,8 @@ int main( int argc, char *argv[] )
     }
   }
 
-  if (flagInclPeak) {
+  if (flagInclPeak) 
+  {
     LALDestroyRandomParams( &status, &randParams );
     LALDestroyVector( &status, &vector );
   }
@@ -1341,8 +1370,8 @@ int main( int argc, char *argv[] )
 
     if ( procparams.processParamsTable )
     {
-      LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, process_params_table ), 
-          &status );
+      LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, process_params_table ),
+            &status );
       LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, procparams, 
             process_params_table ), &status );
       LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
@@ -1351,10 +1380,11 @@ int main( int argc, char *argv[] )
     if ( injections.simInspiralTable )
     {
       LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, sim_inspiral_table ), 
-          &status );
+            &status );
       LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, injections, 
             sim_inspiral_table ), &status );
       LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
+
     }
 
     LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &xmlfp ), &status );
