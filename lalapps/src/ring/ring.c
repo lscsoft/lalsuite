@@ -296,6 +296,9 @@ static RingTemplateBank *ring_get_bank( struct ring_params *params )
         bank->numTmplt = count;
         bank->tmplt = LALRealloc( bank->tmplt,
             bank->numTmplt * sizeof( *bank->tmplt ) );
+        for ( tmplt = 0; tmplt < count - 1; ++tmplt )
+          bank->tmplt[tmplt].next = bank->tmplt + tmplt + 1;
+        bank->tmplt[count - 1].next = NULL;
       }
       else /* no templates: return an NULL bank */
       {
@@ -303,11 +306,6 @@ static RingTemplateBank *ring_get_bank( struct ring_params *params )
         LALFree( bank );
         bank = NULL;
       }
-    }
-
-    if ( params->bankFile ) /* write template bank */
-    {
-
     }
   }
 
@@ -457,6 +455,22 @@ static int is_in_list( int i, const char *list )
 
     /* now see if this token is a range */
     if ( ( tok2 = strchr( tok, '-' ) ) )
+      *tok2++ = 0; /* nul terminate first part of token; tok2 is second part */ 	 
+    if ( tok2 ) /* range */ 	 
+    { 	 
+      int n1, n2; 	 
+      if ( strcmp( tok, "^" ) == 0 ) 	 
+        n1 = INT_MIN; 	 
+      else 	 
+        n1 = atoi( tok ); 	 
+      if ( strcmp( tok2, "$" ) == 0 ) 	 
+        n2 = INT_MAX; 	 
+      else 	 
+        n2 = atoi( tok2 ); 	 
+      if ( i >= n1 && i <= n2 ) /* see if i is in the range */ 	 
+        ans = 1; 	 
+    } 	 
+    else if ( i == atoi( tok ) )
       ans = 1;
 
     if ( ans ) /* i is in the list */
