@@ -139,6 +139,8 @@ tagRingTemplateBankInput
   REAL4 maxFrequency;
   REAL4 maxMismatch;
   REAL4 templatePhase;
+  REAL4 templateDistance;
+  REAL4 templateEpsilon;
 }
 RingTemplateBankInput;
 /**** </lalVerbatim> */
@@ -164,7 +166,7 @@ RingTemplateBankInput;
 
 REAL4 XLALBlackHoleRingSpin( REAL4 Q );
 REAL4 XLALBlackHoleRingMass( REAL4 f, REAL4 Q );
-REAL4 XLALBlackHoleRingAmplitude( REAL4 f, REAL4 Q, REAL4 r );
+REAL4 XLALBlackHoleRingAmplitude( REAL4 f, REAL4 Q, REAL4 r, REAL4 epsilon );
 
 int XLALComputeRingTemplate( 
     REAL4TimeSeries *output, SnglRingdownTable *input );

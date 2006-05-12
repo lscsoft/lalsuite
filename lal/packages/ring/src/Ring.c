@@ -123,11 +123,10 @@ REAL4 XLALBlackHoleRingMass( REAL4 f, REAL4 Q )
 }
 
 /* <lalVerbatim file="RingCP"> */
-REAL4 XLALBlackHoleRingAmplitude( REAL4 f, REAL4 Q, REAL4 r )
+REAL4 XLALBlackHoleRingAmplitude( REAL4 f, REAL4 Q, REAL4 r, REAL4 epsilon )
 /* </lalVerbatim> */
 {
   const REAL4 c = LAL_C_SI;
-  const REAL4 epsilon = 0.01;
   const REAL4 M = XLALBlackHoleRingMass( f, Q );
   const REAL4 a = XLALBlackHoleRingSpin( Q );
   const REAL4 g = ring_spin_factor( a );
@@ -200,7 +199,8 @@ int XLALComputeBlackHoleRing(
 {
   static const char *func = "XLALComputeBlackHoleRing";
   const REAL4 amp = dynRange * 
-    XLALBlackHoleRingAmplitude( input->frequency, input->quality, 1.0 );
+    XLALBlackHoleRingAmplitude( 
+        input->frequency, input->quality, input->eff_dist, input->epsilon );
   UINT4 i;
 
   if ( XLALComputeRingTemplate( output, input ) < 0 )
@@ -233,6 +233,8 @@ static int MakeBank( SnglRingdownTable *tmplt, RingTemplateBankInput *input )
         tmplt[count].quality   = q;
         tmplt[count].frequency = exp( logfreq );
         tmplt[count].phase     = input->templatePhase;
+        tmplt[count].epsilon   = input->templateEpsilon;
+        tmplt[count].eff_dist  = input->templateDistance;
       }
       ++count;
       logfreq += dseff / sqrt( 3 + 8 * q2 );
