@@ -676,7 +676,7 @@ int main( int argc, char *argv[] )
     
     /* calculate h0 */
     this_inj->amplitude = XLALBlackHoleRingAmplitude( this_inj->frequency,
-        this_inj->quality, this_inj->distance );
+        this_inj->quality, this_inj->distance, this_inj->epsilon );
       
     /* calculate hrss */
     this_inj->hrss = this_inj->amplitude * sqrt( 2 / LAL_PI / this_inj->frequency ) * 

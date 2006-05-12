@@ -220,6 +220,10 @@ static int ring_default_params( struct ring_params *params )
   params->dynRangeFac = 1.0;
   params->geoScale    = 1.0;
 
+  /* generate a template at 1 Mpc with an epsilon of 0.01 */
+  params->bankParams.templateDistance = 1.0;
+  params->bankParams.templateEpsilon  = 1.0;
+
   /* negative value means use the "default" values */
   params->highpassFrequency     = -1.0; /* use low-frequency cutoff */
   params->geoHighpassFrequency  = -1.0; /* use low-frequency cutoff */
