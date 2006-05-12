@@ -219,7 +219,7 @@ MetaTableDirectory* XLALCreateMetaTableDir(
           {"mass",                    -1, 8},
           {"spin",                    -1, 9},
           {"epsilon",                 -1, 10},
-          {"amplitde",                -1, 11},
+          {"amplitude",               -1, 11},
           {"snr",                     -1, 12},
           {"eff_dist",                -1, 13},
           {"sigma_sq",                -1, 14},
