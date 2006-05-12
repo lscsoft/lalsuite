@@ -708,10 +708,6 @@ ${M4} SendRecv.m4 > SendRecv.c || fail "creating sources in packages/comm/src"
 ${M4} Exchange.m4 > Exchange.c || fail "creating sources in packages/comm/src"
 cd ../../.. || fail "creating sources in packages/comm/src"
 
-cd packages/ring/src || fail "creating sources in packages/ring/src"
-${M4} LALRingDown.m4 > LALRingDown.c || fail "creating sources in packages/ring/src"
-cd ../../.. || fail "creating sources in packages/ring/src"
-
 cd packages/framedata/src || fail "creating sources in packages/framedata/src"
 ${M4} FrameSeries.m4 > FrameSeries.c || fail "creating sources in packages/framedata/src"
 cd ../../.. || fail "creating sources in packages/framedata/src"
