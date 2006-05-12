@@ -100,7 +100,7 @@ int main( int argc, char **argv )
 
   /* create the template bank */
   bank = ring_get_bank( params );
-  if ( params->bankFile ) /* write out the bank */
+  if ( params->bankFile[0] ) /* write out the bank */
     ring_output_events_xml( params->bankFile, bank->tmplt, procpar, params );
 
   /* create the segments to do */

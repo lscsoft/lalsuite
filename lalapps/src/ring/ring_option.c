@@ -69,9 +69,12 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
     { "sample-rate",             required_argument, 0, 's' },
     { "segment-duration",        required_argument, 0, 'S' },
     { "threshold",               required_argument, 0, 't' },
+    { "inverse-spec-length",     required_argument, 0, 'T' },
+    { "trig-start-time",         required_argument, 0, 'u' },
+    { "trig-end-time",           required_argument, 0, 'U' },
     { 0, 0, 0, 0 }
   };
-  char args[] = "a:A:b:B:c:C:d:D:e:E:f:F:g:G:hi:I:m:o:O:p:q:Q:r:R:s:S:t:V";
+  char args[] = "a:A:b:B:c:C:d:D:e:E:f:F:g:G:hi:I:m:o:O:p:q:Q:r:R:s:S:t:T:u:U:V";
   char *program = argv[0];
 
   /* set default values for parameters before parsing arguments */
@@ -187,6 +190,15 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
         break;
       case 't': /* threshold */
         params->threshold = atof( optarg );
+        break;
+      case 'T': /* inverse-spec-length */
+        params->invSpecLen = atof( optarg );
+        break;
+      case 'u': /* trig-start-time */
+        params->trigStartTimeNS = (INT8) atol( optarg ) * 1000000000LL;
+        break;
+      case 'U': /* trig-end-time */
+        params->trigEndTimeNS = (INT8) atol( optarg ) * 1000000000LL;
         break;
       case 'V': /* version */
         PRINT_VERSION( "ring" );
@@ -434,7 +446,7 @@ static int ring_usage( const char *program )
   fprintf( stderr, "\npower spectrum options:\n" );
   fprintf( stderr, "--white-spectrum           use uniform white power spectrum\n" );
   fprintf( stderr, "--cutoff-frequency=fcut    low frequency spectral cutoff (Hz)\n" );
-  fprintf( stderr, "???invspectrunc???\n" );
+  fprintf( stderr, "--inverse-spec-length=t    set length of inverse spectrum to t seconds\n" );
 
   fprintf( stderr, "\nbank generation options:\n" );
   fprintf( stderr, "--bank-template-phase=phi  phase of ringdown waveforms (rad, 0=cosine)\n" );
@@ -454,6 +466,8 @@ static int ring_usage( const char *program )
 
   fprintf( stderr, "\ntrigger output options:\n" );
   fprintf( stderr, "--output-file=outfile      output triggers to file outfile\n" );
+  fprintf( stderr, "--trig-start-time=sec      output only triggers after GPS time sec\n" );
+  fprintf( stderr, "--trig-end-time=sec        output only triggers before GPS time sec\n" );
 
   fprintf( stderr, "\nintermediate data output options:\n" );
   fprintf( stderr, "--write-raw-data           write raw data before injection or conditioning\n" );

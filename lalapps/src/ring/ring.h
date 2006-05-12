@@ -14,6 +14,8 @@ struct ring_params {
   INT4         randomSeed;
   LIGOTimeGPS  startTime;
   LIGOTimeGPS  endTime;
+  INT8         trigStartTimeNS;
+  INT8         trigEndTimeNS;
   REAL8        duration;
   const char  *channel;
   const char  *calibCache;
@@ -27,6 +29,7 @@ struct ring_params {
   REAL4        dynRangeFac;
   REAL4        lowCutoffFrequency;
   REAL4        highpassFrequency;
+  REAL4        invSpecLen;
   char         bankFile[256];
   RingTemplateBankInput bankParams;
   REAL4        bankMinFrequency;
