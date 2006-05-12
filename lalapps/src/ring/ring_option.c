@@ -35,7 +35,6 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
     { "write-response",     no_argument, &params->writeResponse, 1 },
     { "write-spectrum",     no_argument, &params->writeSpectrum, 1 },
     { "write-inv-spectrum", no_argument, &params->writeInvSpectrum, 1 },
-    { "write-bank",         no_argument, &params->writeBank, 1 },
     { "write-segment",      no_argument, &params->writeSegment, 1 },
     { "write-filter-output",no_argument, &params->writeFilterOutput, 1 },
     { "help",                    no_argument,       0, 'h' },
@@ -61,7 +60,7 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
     { "only-segment-numbers",    required_argument, 0, 'n' },
     { "only-template-numbers",   required_argument, 0, 'N' },
     { "output-file",             required_argument, 0, 'o' },
-    { "output-format",           required_argument, 0, 'O' },
+    { "bank-file",               required_argument, 0, 'O' },
     { "bank-template-phase",     required_argument, 0, 'p' },
     { "bank-min-quality",        required_argument, 0, 'q' },
     { "bank-max-quality",        required_argument, 0, 'Q' },
@@ -162,16 +161,8 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
       case 'o': /* output-file */
         strncpy( params->outputFile, optarg, sizeof( params->outputFile ) - 1 );
         break;
-      case 'O': /* output-file */
-        if ( strstr( optarg, "xml" ) || strstr( optarg, "XML" ) )
-          params->outputFormat = output_ligolw;
-        else if ( strstr( optarg, "ligo" ) || strstr( optarg, "LIGO" ) )
-          params->outputFormat = output_ligolw;
-        else if ( strstr( optarg, "asc" ) || strstr( optarg, "ASC" ) )
-          params->outputFormat = output_ascii;
-        else
-          error( "unknown output format %s: "
-              "expect either \"xml\" or \"asc\"\n", optarg );
+      case 'O': /* bank-file */
+        strncpy( params->bankFile, optarg, sizeof( params->bankFile ) - 1 );
         break;
       case 'p': /* bank template phase */
         params->bankParams.templatePhase = atof( optarg );
@@ -370,9 +361,8 @@ int ring_params_sanity_check( struct ring_params *params )
     /* output file name */
     if ( ! strlen( params->outputFile ) )
       LALSnprintf( params->outputFile, sizeof( params->outputFile ),
-          "%s-RING-%d-%d.%s", params->ifoName, params->startTime.gpsSeconds,
-          (int)ceil( params->duration ),
-          params->outputFormat == output_ligolw ? "xml" : "asc" );
+          "%s-RING-%d-%d.xml", params->ifoName, params->startTime.gpsSeconds,
+          (int)ceil( params->duration ) );
   }
 
   /* parameters required to make bank */
@@ -449,6 +439,7 @@ static int ring_usage( const char *program )
   fprintf( stderr, "--bank-min-frequency=fmin  minimum central frequency of bank (Hz)\n" );
   fprintf( stderr, "--bank-max-frequency=fmax  maximum central frequency of bank (Hz)\n" );
   fprintf( stderr, "--bank-max-mismatch=maxmm  maximum template mismatch in bank\n" );
+  fprintf( stderr, "--bank-file=name           write template bank to LIGO_LW XML file\n" );
   fprintf( stderr, "--bank-only                generate bank only -- do not read data or filter\n" );
 
   fprintf( stderr, "\nfiltering options:\n" );
@@ -459,7 +450,6 @@ static int ring_usage( const char *program )
 
   fprintf( stderr, "\ntrigger output options:\n" );
   fprintf( stderr, "--output-file=outfile      output triggers to file outfile\n" );
-  fprintf( stderr, "--output-format=outfmt     output file format (\"XML\" or \"ASCII\")\n" );
 
   fprintf( stderr, "\nintermediate data output options:\n" );
   fprintf( stderr, "--write-raw-data           write raw data before injection or conditioning\n" );

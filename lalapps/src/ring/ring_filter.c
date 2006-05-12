@@ -274,7 +274,8 @@ static SnglRingdownTable * find_events(
 
         /* copy general information about the filter */
         strncpy( thisEvent->ifo, params->ifoName, sizeof( thisEvent->ifo ) );
-        strncpy( thisEvent->channel, params->channel, sizeof( thisEvent->channel ) );
+        strncpy( thisEvent->channel, strchr( params->channel, ':') + 1, 
+            sizeof( thisEvent->channel ) );
 /*       LAL_CALL( LALGPStoGMST1( &status, &(thisEvent->start_time_gmst), 
                         &(thisEvent->start_time), &gmstUnits ), &status); */ 
         /*this isnt working properly, will just leave awhile, as it is not

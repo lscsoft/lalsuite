@@ -34,19 +34,6 @@ RCSID( "$Id$" );
   ( strlen(s) > 1 && (s)[0] == '-' && isalpha( s[1] ) )
 #define is_option(s) ( is_long_option(s) || is_short_option(s) )
 
-/* routine to output events as ascii */
-static int ring_output_events_asc( 
-    SnglRingdownTable  *events,
-    struct ring_params *params
-    );
-
-/* routine to output events as LIGOLw XML */
-static int ring_output_events_xml( 
-    SnglRingdownTable     *events,
-    ProcessParamsTable *processParamsTable,
-    struct ring_params *params
-    );
-
 
 /* creates a process table */
 static ProcessTable * ring_create_process_table( struct ring_params *params );
@@ -107,59 +94,10 @@ ProcessParamsTable * create_process_params( int argc, char **argv,
 }
 
 
-/* routine to output events */
-int ring_output_events( 
-    SnglRingdownTable     *events,
-    ProcessParamsTable *processParamsTable,
-    struct ring_params *params
-    )
-{
-  if ( ! strlen( params->outputFile ) )
-    return 0;
-  if ( params->outputFormat == output_ligolw )
-    ring_output_events_xml( events, processParamsTable, params );
-  if ( params->outputFormat == output_ascii )
-    ring_output_events_asc( events, params );
-  return 0;
-}
-
-
-/* routine to output events as an ascii file */
-static int ring_output_events_asc( 
-    SnglRingdownTable     *events,
-    struct ring_params *params
-    )
-{
-  SnglRingdownTable *thisEvent;
-  FILE *fp;
-  verbose( "output events to ascii file %s\n", params->outputFile );
-  fp = fopen( params->outputFile, "w" );
-  fprintf( fp, "# gps start time\tsignal/noise\tamplitude\tfrequency\tbandwidth\n" );
-  thisEvent = events;
-  while ( thisEvent )
-  {
-    fprintf( fp, "%9d.%09d\t%22.16e\t%e\t%e\t%e\t%e\t%e\t%e\t%e\t%22.16e\n",
-        (int) thisEvent->start_time.gpsSeconds,
-        (int) thisEvent->start_time.gpsNanoSeconds,
-        thisEvent->start_time_gmst,
-        thisEvent->frequency,
-        thisEvent->quality,
-        thisEvent->mass,
-        thisEvent->spin,
-        thisEvent->snr,
-        thisEvent->snr,
-        thisEvent->eff_dist,
-        thisEvent->sigma_sq );
-    thisEvent = thisEvent->next;
-  }
-  fclose( fp );
-  return 0;
-}
-
-
 /* routine to output events as LIGOLw XML file */
-static int ring_output_events_xml( 
-    SnglRingdownTable     *events,
+int ring_output_events_xml( 
+    char               *outputFile,
+    SnglRingdownTable  *events,
     ProcessParamsTable *processParamsTable,
     struct ring_params *params
     )
@@ -171,7 +109,7 @@ static int ring_output_events_xml(
   MetadataTable   ringEvents;
   LIGOLwXMLStream results;
 
-  verbose( "output events to LIGOLw XML file %s\n", params->outputFile );
+  verbose( "output events to LIGOLw XML file %s\n", outputFile );
 
   memset( &process, 0, sizeof( process ) );
   memset( &processParams, 0, sizeof( processParams ) );
@@ -186,12 +124,11 @@ static int ring_output_events_xml(
   ringEvents.snglRingdownTable = events;
 
   /* open results xml file */
-  LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, params->outputFile ), &status );
+  LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, outputFile ), &status );
 
   /* output the process table */
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_table ), &status );
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, process, process_table ), &status );
-
   LAL_CALL( LALEndLIGOLwXMLTable( &status, &results ), &status );
 
   /* output process params table */

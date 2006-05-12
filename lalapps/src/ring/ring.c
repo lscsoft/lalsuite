@@ -100,6 +100,8 @@ int main( int argc, char **argv )
 
   /* create the template bank */
   bank = ring_get_bank( params );
+  if ( params->bankFile ) /* write out the bank */
+    ring_output_events_xml( params->bankFile, bank->tmplt, procpar, params );
 
   /* create the segments to do */
   segments = ring_get_segments( channel, response, invspec, fwdplan, params );
@@ -108,7 +110,7 @@ int main( int argc, char **argv )
   events = ring_filter( segments, bank, invspec, fwdplan, revplan, params );
 
   /* output the results */
-  ring_output_events( events, procpar, params );
+  ring_output_events_xml( params->outputFile, events, procpar, params );
 
   /* cleanup */
   ring_cleanup( procpar, fwdplan, revplan, channel, response, invspec, bank,
@@ -303,8 +305,10 @@ static RingTemplateBank *ring_get_bank( struct ring_params *params )
       }
     }
 
-    if ( params->writeBank ) /* write template bank */
-      write_bank( bank );
+    if ( params->bankFile ) /* write template bank */
+    {
+
+    }
   }
 
   if ( bank )

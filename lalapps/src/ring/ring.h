@@ -3,7 +3,6 @@
 #include <lal/RealFFT.h>
 #include <lal/Ring.h>
 
-enum { output_ligolw, output_ascii };
 enum { write_frame, write_ascii };
 
 struct ring_params {
@@ -28,6 +27,7 @@ struct ring_params {
   REAL4        dynRangeFac;
   REAL4        lowCutoffFrequency;
   REAL4        highpassFrequency;
+  char         bankFile[256];
   RingTemplateBankInput bankParams;
   REAL4        bankMinFrequency;
   REAL4        bankMaxFrequency;
@@ -41,7 +41,6 @@ struct ring_params {
   const char  *templatesToDoList;
   UINT4        numEvents;
   char         outputFile[256];
-  int          outputFormat;
   int          geoData;
   REAL8        geoHighpassFrequency;
   REAL8        geoScale;
@@ -62,7 +61,6 @@ struct ring_params {
   int          writeResponse;
   int          writeSpectrum;
   int          writeInvSpectrum;
-  int          writeBank;
   int          writeSegment;
   int          writeFilterOutput;
 };
@@ -81,11 +79,13 @@ int ring_params_sanity_check( struct ring_params *params );
 /* routines in ring_output */
 ProcessParamsTable * create_process_params( int argc, char **argv,
     const char *program );
-int ring_output_events(
+int ring_output_events_xml( 
+    char               *outputFile,
     SnglRingdownTable  *events,
     ProcessParamsTable *processParamsTable,
     struct ring_params *params
     );
+
 /* routines to write intermediate results in ring_output */
 int write_REAL4TimeSeries( REAL4TimeSeries *series );
 int write_REAL4FrequencySeries( REAL4FrequencySeries *series );
