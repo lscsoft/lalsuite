@@ -191,11 +191,16 @@ int XLALComputeRingTemplate( REAL4TimeSeries *output, SnglRingdownTable *input )
 
 
 /* <lalVerbatim file="RingCP"> */
-int XLALComputeBlackHoleRing( REAL4TimeSeries *output, SnglRingdownTable *input )
+int XLALComputeBlackHoleRing( 
+    REAL4TimeSeries     *output, 
+    SnglRingdownTable   *input
+    REAL4                dynRange
+    )
 /* </lalVerbatim> */
 {
   static const char *func = "XLALComputeBlackHoleRing";
-  const REAL4 amp = 1.0;
+  const REAL4 amp = dynRange * 
+    XLALBlackHoleRingAmplitude( input->frequency, input->quality, 1.0 );
   UINT4 i;
 
   if ( XLALComputeRingTemplate( output, input ) < 0 )
