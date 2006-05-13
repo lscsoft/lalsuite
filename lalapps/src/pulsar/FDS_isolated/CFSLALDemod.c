@@ -17,11 +17,8 @@ extern UINT4 maxSFTindex;  /**< maximal sftindex, for error-checking */
 
 #define LD_SMALL        (1.0e-9 / LAL_TWOPI)
 #define OOTWOPI         (1.0 / LAL_TWOPI)
-#ifndef LUT_RES
-#define LUT_RES         64      /* resolution of lookup-table */
-#endif
-#ifndef SINCOSQ
-#define SINCOSQ         1024    /* resolution of a sin quadrant, must be power of 2 */ 
+#ifndef LUT_RES_4
+#define LUT_RES_4       16      /* resolution of lookup-table */
 #endif
 
 #define TWOPI_FLOAT     6.28318530717958f  /* 2*pi */
@@ -69,13 +66,12 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
   UINT4 klim = 2*params->Dterms;
 #endif
   REAL8 f;
+  static REAL8 sinVal[LUT_RES_4*4+LUT_RES_4+1]; /* Lookup tables for fast sin/cos calculation */
+  static REAL8 sinVal2PI[LUT_RES_4*4+LUT_RES_4+1];
+  static REAL8 sinVal2PIPI[LUT_RES_4*4+LUT_RES_4+1];
+  static REAL8 *cosVal, *cosVal2PI, *cosVal2PIPI;
+  static REAL8 divLUTtab[LUT_RES_4*4+1];
   static BOOLEAN firstCall = 1;
-#ifdef USE_LINEAR_SINCOS 
-  static REAL8 sincostab [5*SINCOSQ]; /* add an extra quadrant for cos values */
-  static REAL8 sincosdiff[5*SINCOSQ];
-#else
-  static REAL8 sinVal[LUT_RES+1], cosVal[LUT_RES+1];        /*LUT values computed by the routine do_trig_lut*/
-#endif
 
   REAL8 A=params->amcoe->A;
   REAL8 B=params->amcoe->B;
@@ -104,20 +100,18 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
   /* This size LUT gives errors ~ 10^-7 with a three-term Taylor series */
   if ( firstCall )
     {
-#ifdef USE_LINEAR_SINCOS
-      REAL8 tmpval = 0;
-      for (k=0; k < 5 * SINCOSQ; k++) {
-	sincostab[k] = sin(k * LAL_TWOPI / (4.0 * SINCOSQ));
-	sincosdiff[k] = sincostab[k] - tmpval;
-	tmpval = sincostab[k];
+      for (k=0; k <= LUT_RES_4*5; k++) {
+	sinVal[k] = sin((LAL_TWOPI*k)/(LUT_RES_4*4));
+	sinVal2PI[k] = sinVal[k]  *  LAL_TWOPI;
+	sinVal2PIPI[k] = sinVal2PI[k] * LAL_PI;
       }
-#else
-      for (k=0; k <= LUT_RES; k++)
-        {
-          sinVal[k] = sin( (LAL_TWOPI*k)/LUT_RES );
-          cosVal[k] = cos( (LAL_TWOPI*k)/LUT_RES );
-        }
-#endif
+      cosVal = sinVal+LUT_RES_4;
+      cosVal2PI = sinVal2PI+LUT_RES_4;
+      cosVal2PIPI = sinVal2PIPI+LUT_RES_4;
+      
+      for (k=0; k <= LUT_RES_4*4; k++)
+	divLUTtab[k] = (REAL8)k/(REAL8)(LUT_RES_4*4);
+
       firstCall = 0;
     }
 
@@ -155,7 +149,9 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
         REAL4 a = params->amcoe->a->data[alpha];
         REAL4 b = params->amcoe->b->data[alpha];
         REAL8 x;
+#ifndef USE_LUT_Y
 	REAL8 y;
+#endif
         REAL4 realP, imagP;             /* real and imaginary parts of P, see CVS */
 
         /* NOTE: sky-constants are always positive!!
@@ -189,63 +185,34 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 	}
 
         /* find correct index into LUT -- pick closest point */
-        tempFreq0 = xTemp - (UINT4)xTemp;  /* lies in [0, +1) by definition */
-#ifdef USE_LINEAR_SINCOS
-	{
-	  REAL8 yf = tempFreq0 * (4.0*SINCOSQ);
-	  INT4  yi = yf;
-	  REAL8 yd = yf - yi;
-	  
-	  tsin = sincostab[yi] + sincosdiff[yi] * yd;
-	  tcos = sincostab[yi+SINCOSQ] + sincosdiff[yi+SINCOSQ] * yd -1.0;
-	}
-#else
-        index = (UINT4)( tempFreq0 * LUT_RES + 0.5 ); /* positive! */
+        tempFreq0 = xTemp - (UINT4)(xTemp);   /* lies in [0, +1) by definition */
+	
         {
-          REAL8 d=LAL_TWOPI*(tempFreq0 - (REAL8)index/(REAL8)LUT_RES);
-          REAL8 d2=0.5*d*d;
-          REAL8 ts=sinVal[index];
-          REAL8 tc=cosVal[index];
+	  INT4  idx  = (tempFreq0*(REAL8)(LUT_RES_4*4)+.5);
+	  REAL8 d    = (tempFreq0 - divLUTtab[idx]);
+          REAL8 d2   = d*d;
                 
-          tsin = ts+d*tc-d2*ts;
-          tcos = tc-d*ts-d2*tc-1.0;
-	}
-#endif
+          tsin = sinVal[idx] + d * cosVal2PI[idx] - d2 * sinVal2PIPI[idx];
+          tcos = cosVal[idx] - d * sinVal2PI[idx] - d2 * cosVal2PIPI[idx];
+	  tcos -= 1.0;
+        }
 
 #ifdef USE_LUT_Y
 	/* use LUT here, too */
-#ifdef USE_LINEAR_SINCOS
-        y = -1 * ( f * skyConst[ tempInt1[ alpha ]-1 ] + ySum[ alpha ] );
-	{
-	  REAL8 yt = y - (INT4)y; 
-	  if (yt<0.0) {yt+=1.0;}
-	  {
-	    REAL8 yf = yt * (4.0*SINCOSQ);
-	    INT4  yi = yf;
-	    REAL8 yd = yf - yi;
-
-	    imagQ = sincostab[yi] + sincosdiff[yi] * yd;
-	    realQ = sincostab[yi+SINCOSQ] + sincosdiff[yi+SINCOSQ] * yd;
-	  }
-	}
-#else
 	{
 	  REAL8 yTemp = f * skyConst[ tempInt1[ alpha ]-1 ] + ySum[ alpha ];
-	  REAL8 yRem = yTemp - (INT4)yTemp;
-	  if (yRem < 0) { yRem += 1.0f; }
-	  index = (UINT4)( yRem * LUT_RES + 0.5 );
+	  REAL8 yRem = yTemp - (INT4)(yTemp);
+	  if (yRem < 0) { yRem += 1.0f; } /* make sure this is in [0..1) */
 	  {
-	    REAL8 d = LAL_TWOPI*(yRem - (REAL8)index/(REAL8)LUT_RES);
-	    REAL8 d2=0.5*d*d;
-	    REAL8 ts = sinVal[index];
-	    REAL8 tc = cosVal[index];
-	    
-	    imagQ = ts + d * tc - d2 * ts;
+	    INT4  idx  = yRem*(REAL8)(LUT_RES_4*4)+.5;
+	    REAL8 d    = yRem-divLUTtab[idx];
+	    REAL8 d2   = d*d;
+	  
+	    imagQ = sinVal[idx] + d * cosVal2PI[idx] - d2 * sinVal2PIPI[idx];
+	    realQ = cosVal[idx] - d * sinVal2PI[idx] - d2 * cosVal2PIPI[idx];
 	    imagQ = -imagQ;
-	    realQ = tc - d * ts - d2 * tc;
 	  }
 	}
-#endif
 #else
         y = - LAL_TWOPI * ( f * skyConst[ tempInt1[ alpha ]-1 ] + ySum[ alpha ] );
         realQ = cos(y);
