@@ -35,25 +35,25 @@ from glue import pipeline
 class BurstInjJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 	"""
 	A lalapps_binj job used by the power pipeline. The static options
-	are read from the sections [data] and [power] in the ini file. The
+	are read from the [lalapps_binj] section in the ini file. The
 	stdout and stderr from the job are directed to the logs directory.
-	The job runs in the universe specified in the ini file. The path to
-	the executable is determined from the ini file.
+	The job runs in the universe specified in the ini file.  The path
+	to the executable is determined from the ini file.
 	"""
 	def __init__(self, cp):
 		"""
 		cp = ConfigParser object from which options are read.
 		"""
-		self.__executable = cp.get("condor", "binjection")
+		self.__executable = cp.get("condor", "lalapps_binj")
 		self.__universe = cp.get("condor", "universe")
 		pipeline.CondorDAGJob.__init__(self, self.__universe, self.__executable)
 		pipeline.AnalysisJob.__init__(self, cp)
 
-		self.add_ini_opts(cp, "binjection")
+		self.add_ini_opts(cp, "lalapps_binj")
 
 		self.set_stdout_file("logs/binj-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out")
 		self.set_stderr_file("logs/binj-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err")
-		self.set_sub_file("binjection.sub")
+		self.set_sub_file("lalapps_binj.sub")
 
 
 class BurstInjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
@@ -68,7 +68,7 @@ class BurstInjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 		pipeline.CondorDAGNode.__init__(self, job)
 		pipeline.AnalysisNode.__init__(self)
 		try:
-			self.__usertag = job.get_config("binjection", "user-tag")
+			self.__usertag = job.get_config("lalapps_binj", "user-tag")
 			self.add_var_opt("user-tag", self.__usertag)
 		except:
 			self.__usertag = None
@@ -99,25 +99,25 @@ class BurstInjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 class PowerJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 	"""
 	A lalapps_power job used by the power pipeline. The static options
-	are read from the [power] section in the ini file. The stdout and
-	stderr from the job are directed to the logs directory.  The job
-	runs in the universe specified in the ini file. The path to the
-	executable is determined from the ini file.
+	are read from the [lalapps_power] section in the ini file. The
+	stdout and stderr from the job are directed to the logs directory.
+	The job runs in the universe specified in the ini file. The path to
+	the executable is determined from the ini file.
 	"""
 	def __init__(self, out_dir, cp):
 		"""
 		cp = ConfigParser object from which options are read.
 		"""
-		self.__executable = cp.get("condor", "power")
+		self.__executable = cp.get("condor", "lalapps_power")
 		self.__universe = cp.get("condor", "universe")
 		pipeline.CondorDAGJob.__init__(self, self.__universe, self.__executable)
 		pipeline.AnalysisJob.__init__(self, cp)
 
-		self.add_ini_opts(cp, "power")
+		self.add_ini_opts(cp, "lalapps_power")
 
 		self.set_stdout_file(os.path.join(out_dir, "power-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out"))
 		self.set_stderr_file(os.path.join(out_dir, "power-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err"))
-		self.set_sub_file("power.sub")
+		self.set_sub_file("lalapps_power.sub")
 
 
 class PowerNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
