@@ -28,10 +28,10 @@
 
 from optparse import OptionParser
 import os
-import stat
 import sys
 
 from glue import pipeline
+from pylal import llwapp
 import power
 
 __author__ = "Kipp Cannon <kipp@gravity.phys.uwm.edu>"
@@ -134,17 +134,6 @@ executable = "/archive/home/kipp/local/bin/ligolw_burca"
 # =============================================================================
 #
 
-def measure_file_sizes(filenames):
-	"""
-	From a list of file names, return a list of (size, name) tuples
-	sorted in descending order by size.
-	"""
-	l = [(os.stat(name)[stat.ST_SIZE], name) for name in filenames]
-	l.sort()
-	l.reverse()
-	return l
-
-
 def compute_bin_count(files, maxnodes):
 	sizes = [item[0] for item in files]
 	total_size = reduce(long.__add__, sizes)
@@ -152,7 +141,7 @@ def compute_bin_count(files, maxnodes):
 	return min(total_size / minimum_bin_size, maxnodes)
 
 
-filenames = measure_file_sizes(filenames)
+filenames = llwapp.measure_file_sizes(filenames)
 bins = Bins(compute_bin_count(filenames, options.max_nodes))
 for (size, name) in filenames:
 	bins.pack(name, size)
