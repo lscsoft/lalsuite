@@ -32,57 +32,12 @@ import sys
 
 from glue import pipeline
 from pylal import llwapp
+from pylal import packing
 import power
 
 __author__ = "Kipp Cannon <kipp@gravity.phys.uwm.edu>"
 __version__ = "$Revision$"[11:-2]
 __date__ = "$Date$"[7:-2]
-
-
-#
-# =============================================================================
-#
-#                                 Bin Packing
-#
-# =============================================================================
-#
-
-# implements a simple bin packing algorithm:  choose number of bins, sort
-# objects from largest to smallest, put each object into the emptiest bin.
-
-class Bin(object):
-	def __init__(self):
-		self.size = 0
-		self.objects = []
-
-	def add_object(self, object, size):
-		self.size += size
-		self.objects.append(object)
-
-	def get_objects(self):
-		return self.objects
-
-	def __cmp__(self, other):
-		return cmp(self.size, other.size)
-
-	def __repr__(self):
-		return "(%d, %s)" % (self.size, self.objects)
-
-	__str__ = __repr__
-
-
-class Bins(list):
-	def __new__(cls, n):
-		l = list.__new__(cls, None)
-		for i in xrange(n):
-			l.append(Bin())
-		return l
-
-	def __init__(cls, n):
-		pass
-
-	def pack(self, object, size):
-		min(self).add_object(object, size)
 
 
 #
@@ -142,9 +97,8 @@ def compute_bin_count(files, maxnodes):
 
 
 filenames = llwapp.measure_file_sizes(filenames)
-bins = Bins(compute_bin_count(filenames, options.max_nodes))
-for (size, name) in filenames:
-	bins.pack(name, size)
+bins = packing.BiggestIntoEmptiest(compute_bin_count(filenames, options.max_nodes))
+bins.packlist(filenames)
 
 
 #
