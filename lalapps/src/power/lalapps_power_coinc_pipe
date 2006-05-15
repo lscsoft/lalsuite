@@ -97,7 +97,7 @@ def compute_bin_count(files, maxnodes):
 
 
 filenames = llwapp.measure_file_sizes(filenames)
-bins = packing.BiggestIntoEmptiest(compute_bin_count(filenames, options.max_nodes))
+bins = packing.BiggestIntoEmptiest(packing.Bins(compute_bin_count(filenames, options.max_nodes)))
 bins.packlist(filenames)
 
 
@@ -115,7 +115,7 @@ dag = pipeline.CondorDAG(dag_log)
 dag.set_dag_file(dag_name)
 
 burcajob = power.BurcaJob(executable, out_dir, options.args or None)
-for n, bin in enumerate(bins):
+for n, bin in enumerate(bins.bins):
 	node = power.BurcaNode(burcajob)
 	node.set_name("ligolw_burca_%d" % n)
 	map(node.add_file_arg, bin.objects)
