@@ -618,15 +618,19 @@ int main(int argc, char **argv)
 				    }
 				  memcpy( outEvent, currentTrigger[0], sizeof(SnglBurstTable));
 				  prevEvent = outEvent;
+				  /* FIXME: cruft
 				  prevEvent->event_id = (EventIDColumn *) LALCalloc( 1, sizeof(EventIDColumn) );
 				  prevEvent->event_id->id = start + (INT8)(coincidentnumber);
+				  */
 				  outEvent = outEvent->next = NULL;
 				  outEvent = (SnglBurstTable *)LALCalloc(1, sizeof(SnglBurstTable) );
 				  prevEvent->next = outEvent;
 				  memcpy( outEvent, tmpEvent, sizeof(SnglBurstTable));
 				  prevEvent = outEvent;
+				  /* FIXME: cruft
 				  prevEvent->event_id = (EventIDColumn *) LALCalloc( 1, sizeof(EventIDColumn) );
 				  prevEvent->event_id->id = start + (INT8)(coincidentnumber);
+				  */
 				  outEvent = outEvent->next = NULL;
 				}
 			    }
@@ -654,15 +658,19 @@ int main(int argc, char **argv)
 			}
 		      memcpy( outEvent, currentTrigger[0], sizeof(SnglBurstTable));
 		      prevEvent = outEvent;
+		      /* FIXME: cruft
 		      prevEvent->event_id = (EventIDColumn *) LALCalloc( 1, sizeof(EventIDColumn) );
 		      prevEvent->event_id->id = start + (INT8)(coincidentnumber);
+		      */
 		      outEvent = outEvent->next = NULL;
 		      outEvent = (SnglBurstTable *)LALCalloc(1, sizeof(SnglBurstTable) );
 		      prevEvent->next = outEvent;
 		      memcpy( outEvent, bestconfidence, sizeof(SnglBurstTable));
 		      prevEvent = outEvent;
+		      /* FIXME: cruft
 		      prevEvent->event_id = (EventIDColumn *) LALCalloc( 1, sizeof(EventIDColumn) );
 		      prevEvent->event_id->id = start + (INT8)(coincidentnumber);
+		      */
 		      outEvent = outEvent->next = NULL;
 		    }
 
@@ -718,10 +726,14 @@ int main(int argc, char **argv)
 		    eventId += (INT8)((5000 - slideNum) * 1e5);
 		  else if (slideNum > 0)
 		    eventId += (INT8)(slideNum * 1e5);
-		  
+
+		  /* FIXME: cruft
 		  tmpEvent->event_id->id = eventId;
+		  */
 		  tmpEvent = tmpEvent->next;
+		  /* FIXME: cruft
 		  tmpEvent->event_id->id = eventId;
+		  */
 		}
 	    }
 
@@ -797,7 +809,7 @@ int main(int argc, char **argv)
 	    {
 	      prevEvent = coincidentEvents;
 	      coincidentEvents = coincidentEvents->next;
-	      XLALFreeSnglBurst( &prevEvent);
+	      XLALFreeSnglBurst(prevEvent);
 	    }
     
 	  if (noncoincident)
@@ -806,7 +818,7 @@ int main(int argc, char **argv)
 		{
 		  prevEvent = noncoincidentEvents;
 		  noncoincidentEvents = noncoincidentEvents->next;
-		  XLALFreeSnglBurst( &prevEvent);
+		  XLALFreeSnglBurst(prevEvent);
 		} 
 	    }
 	}
@@ -817,7 +829,7 @@ int main(int argc, char **argv)
 	    {
 	      prevEvent = burstEventList[j];
 	      burstEventList[j] = burstEventList[j]->next;
-	      XLALFreeSnglBurst( &prevEvent);
+	      XLALFreeSnglBurst(prevEvent);
 	    }
 	}
 
@@ -834,7 +846,7 @@ int main(int argc, char **argv)
     {
       prevEvent = eventBList;
       eventBList = eventBList->next;
-      XLALFreeSnglBurst( &prevEvent);
+      XLALFreeSnglBurst(prevEvent);
     }
 
   for(j=0; j<2 ; j++)

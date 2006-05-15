@@ -1802,12 +1802,14 @@ int main( int argc, char *argv[])
 	}
 
 	/*
-	 * Cluster and sort the events.
+	 * Cluster and sort the events, and assign IDs.
 	 */
 
 	if(options.cluster)
 		XLALClusterSnglBurstTable(&burstEvent, XLALCompareSnglBurstByPeakTime, XLALCompareSnglBurstByPeakTimeAndFreq, XLALSnglBurstCluster);
 	XLALSortSnglBurst(&burstEvent, XLALCompareSnglBurstByStartTimeAndLowFreq);
+	XLALSnglBurstAssignIDs(burstEvent);
+
 
 	/*
 	 * Check event rate limit.

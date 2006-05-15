@@ -272,10 +272,12 @@ int main(int argc,char *argv[])
 
  if (CommandLineArgs.cluster != 0.0 && events) 
    {
-     XLALClusterStringBurstTable(&events,  XLALCompareStringBurstByTime, XLALCompareStringBurstByTime);
+     XLALClusterSnglBurstTable(&events, XLALCompareStringBurstByTime, XLALCompareStringBurstByTime, XLALStringBurstCluster);
      LALSortSnglBurst(&status, &events, XLALCompareSnglBurstByPeakTimeAndSNR);
      TESTSTATUS( &status );
    }
+
+ XLALSnglBurstAssignIDs(&events);
 
  if (OutputEvents(CommandLineArgs)) return 12;
 
@@ -556,8 +558,7 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 	  (*thisEvent)->snr          = maximum;
 	  (*thisEvent)->amplitude   = vector->data[pmax]/strtemplate[m].norm;
 	  (*thisEvent)->confidence   = -fabs((*thisEvent)->amplitude); /* FIXME */
-	  (*thisEvent)->clusterT   = CLA.cluster;
-	  
+	  (*thisEvent)->string_cluster_t = CLA.cluster;
 	}
     }
 
