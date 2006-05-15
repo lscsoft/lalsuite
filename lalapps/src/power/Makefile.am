@@ -1,25 +1,18 @@
 ## Process this file with automake to produce Makefile.in
 # $Id$
 POWERSRCS = power.c
-BURCASRC = burca.c
-BINCASRC = binca.c
 BREADSRC = bread.c
 BINJSRC = binj.c
-BINJFINDSRC = binj_find.c
 COALESCENCEINFOSRC = coalescenceinfo.c
 
 if LALFRAME
 if LALMETAIO
-bin_PROGRAMS = lalapps_power lalapps_burca lalapps_binca\
+bin_PROGRAMS = lalapps_power \
                lalapps_bread lalapps_binj \
-               lalapps_binj_find \
                lalapps_coalescenceinfo
 lalapps_power_SOURCES = $(POWERSRCS)
-lalapps_burca_SOURCES = $(BURCASRC)
-lalapps_binca_SOURCES = $(BINCASRC)
 lalapps_bread_SOURCES = $(BREADSRC)
 lalapps_binj_SOURCES = $(BINJSRC)
-lalapps_binj_find_SOURCES = $(BINJFINDSRC)
 lalapps_coalescenceinfo_SOURCES = $(COALESCENCEINFOSRC)
 else
 bin_PROGRAMS = 
