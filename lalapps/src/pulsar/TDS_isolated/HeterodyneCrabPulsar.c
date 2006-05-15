@@ -210,6 +210,7 @@
 #include <stdio.h>
 
 #include <lal/LALConstants.h>
+#include <lal/BinaryPulsarTiming.h>
 #include "HeterodyneCrabPulsar.h"
 
 /* DEFINE RCS ID STRING */
@@ -277,7 +278,8 @@ LALGetCrabEphemeris	( LALStatus			*status,
   
   /* convert time in MJD to secs in TDB */
   for(i=0;i<j;i++){
-   	GPStemp = (MJDVec[i]-44244.)*86400.;
+   	/*GPStemp = (MJDVec[i]-44244.)*86400.;*/
+    GPStemp = LALTDBMJDtoGPS(MJDVec[i]);
 		
 		MJDVec[i] = GPStemp + tArrVec[i];
 		    
