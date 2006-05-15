@@ -965,14 +965,19 @@ XLALVetoSnglBurst(
     LALSegList                 *vetoSegs 
     );
 
-int
+void
 XLALFreeSnglBurst (
-    SnglBurstTable **eventHead
+    SnglBurstTable *event
 );
 
 INT4 
 XLALCountSnglBurst( 
     SnglBurstTable *head 
+);
+
+void
+XLALSnglBurstAssignIDs(
+	SnglBurstTable *head
 );
 
 void
@@ -1002,6 +1007,12 @@ XLALCompareSnglBurstByPeakTime(
 
 int
 XLALCompareSnglBurstByExactPeakTime(
+	const SnglBurstTable * const *a,
+	const SnglBurstTable * const *b
+);
+
+int
+XLALCompareStringBurstByTime(
 	const SnglBurstTable * const *a,
 	const SnglBurstTable * const *b
 );
@@ -1092,14 +1103,6 @@ XLALCompareSnglBurst(
 	const SnglBurstTable * const *b
 );
 
-void
-LALCompareSnglBurst(
-	LALStatus *status,
-	const SnglBurstTable *a,
-	const SnglBurstTable *b,
-	int *difference
-);
-
 int
 XLALCompareSnglBurstSnglInspiral(
 	const SnglBurstTable * const *a,
@@ -1149,15 +1152,6 @@ XLALCompareCoincBurstByPeakTime(
 	const SnglBurstTable * const *d
 );
 
-void
-LALCompareSimBurstAndSnglBurst(
-	LALStatus *status,
-	const SimBurstTable *a,
-	const SnglBurstTable *b,
-	int (*testfunc)(const SimBurstTable * const *, const SnglBurstTable * const *),
-	int *match
-);
-
 int
 XLALCompareSimInspiralAndSnglBurst(
 	const SimInspiralTable * const *a,
@@ -1174,6 +1168,12 @@ LALCompareSimInspiralAndSnglBurst(
 
 void
 XLALSnglBurstCluster(
+	SnglBurstTable *a,
+	const SnglBurstTable *b
+);
+
+void
+XLALStringBurstCluster(
 	SnglBurstTable *a,
 	const SnglBurstTable *b
 );
@@ -1202,12 +1202,6 @@ XLALClusterTWOCoincSnglBurstTable(
 	void (*clusterfunc)(SnglBurstTable *, const SnglBurstTable *)
 );
 
-void XLALClusterStringBurstTable(
-	SnglBurstTable  **list,
-	int (*bailoutfunc)(const SnglBurstTable * const *, const SnglBurstTable * const *),
-	int (*testfunc)(const SnglBurstTable * const *, const SnglBurstTable * const *)
-);
-
 void
 XLALClusterCoincSnglBurstTable(
 	SnglBurstTable  **list,
@@ -1229,8 +1223,6 @@ XLALIfoCutSnglBurst (
 	SnglBurstTable  **eventHead,
 	CHAR            *ifo
 );
-
-
 
 
 /*

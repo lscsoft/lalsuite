@@ -147,164 +147,7 @@ files.
   thisEvent = NULL; \
 }
 
-/* <lalVerbatim file="LIGOLwXMLReadCP"> */
-SnglBurstTable    * XLALSnglBurstTableFromLIGOLw (
-    CHAR               *fileName
-    )
-/* </lalVerbatim> */
-{
-  static const char   *func = "XLALSnglBurstTableFromLIGOLw";
-  int                                   i, j, nrows;
-  int                                   mioStatus=0;
-  SnglBurstTable                       *thisEvent = NULL;
-  SnglBurstTable                       *eventHead = NULL;
-  struct MetaioParseEnvironment         parseEnv;
-  const  MetaioParseEnv                 env = &parseEnv;
-  MetaTableDirectory                   *tableDir = NULL;
 
-  /* open the sngl_burst XML file */
-  mioStatus = MetaioOpenTable( env, fileName, "sngl_burst" );
-  if ( mioStatus )
-  {
-    XLAL_ERROR_NULL( func, XLAL_EIO );
-  }
-
-  /* create table directory to find columns in file*/
-  tableDir = XLALCreateMetaTableDir(env, sngl_burst_table);
-
-  /* loop over the rows in the file */
-  i = nrows = 0;
-  while ( (mioStatus = MetaioGetRow(env)) == 1 ) 
-  {
-    /* count the rows in the file */
-    i++;
-
-    /* allocate memory for the template we are about to read in */
-    if ( ! eventHead )
-    {
-      thisEvent = eventHead = (SnglBurstTable *) 
-        LALCalloc( 1, sizeof(SnglBurstTable) );
-    }
-    else
-    {
-      thisEvent = thisEvent->next = (SnglBurstTable *) 
-        LALCalloc( 1, sizeof(SnglBurstTable) );
-    }
-    if ( ! thisEvent )
-    {
-      fprintf( stderr, "could not allocate burst event\n" );
-      XLAL_CLOBBER_EVENTS;
-      MetaioClose( env );
-      XLAL_ERROR_NULL( func, XLAL_ENOMEM );
-    }
-
-    /* parse the contents of the row into the InspiralTemplate structure */
-    for ( j = 0; tableDir[j].name; ++j )
-    {
-      REAL4 r4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
-      /* REAL8 r8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_8; */
-      INT4  i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
-      UINT8 i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
-
-      if ( tableDir[j].idx == 0 )
-      {
-        LALSnprintf( thisEvent->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), 
-            "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
-      }
-      else if ( tableDir[j].idx == 1 )
-      {
-        LALSnprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
-            "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
-      }
-      else if ( tableDir[j].idx == 2 )
-      {
-        LALSnprintf( thisEvent->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
-            "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
-      }
-      else if ( tableDir[j].idx == 3 )
-      {
-        thisEvent->start_time.gpsSeconds = i4colData;
-      }
-      else if ( tableDir[j].idx == 4 )
-      {
-        thisEvent->start_time.gpsNanoSeconds = i4colData;
-      }
-      else if ( tableDir[j].idx == 5 )
-      {
-        thisEvent->duration = r4colData;
-      }
-      else if ( tableDir[j].idx == 6 )
-      {
-        thisEvent->central_freq = r4colData;
-      }
-      else if ( tableDir[j].idx == 7 )
-      {
-        thisEvent->bandwidth = r4colData;
-      }
-      else if ( tableDir[j].idx == 8 )
-      {
-        thisEvent->amplitude = r4colData;
-      }
-      else if ( tableDir[j].idx == 9 )
-      {
-        thisEvent->snr = r4colData;
-      }
-      else if ( tableDir[j].idx == 10 )
-      {
-        thisEvent->confidence = r4colData;
-      }
-      else if ( tableDir[j].idx == 11 )
-      {
-        thisEvent->peak_time.gpsSeconds = i4colData;
-      }
-      else if ( tableDir[j].idx == 12 )
-      {
-        thisEvent->peak_time.gpsNanoSeconds = i4colData;
-      }
-      else if ( tableDir[j].idx == 13 )
-      {
-        thisEvent->clusterT = r4colData;
-      }
-      else if ( tableDir[j].idx == 14 )
-      {
-        thisEvent->peak_dof = r4colData;
-      }
-      else if ( tableDir[j].idx == 15 )
-      {
-	if ( tableDir[j].pos > 0 && i8colData )
-	{
-	  thisEvent->event_id = (EventIDColumn *) 
-	    LALCalloc( 1, sizeof(EventIDColumn) );
-	  thisEvent->event_id->id = i8colData;
-	  thisEvent->event_id->snglBurstTable = thisEvent;
-	}
-      }
-
-      else
-      {
-        XLAL_CLOBBER_EVENTS;
-        XLAL_ERROR_NULL( func, XLAL_EIO);
-      }
-    }
-    /* count the number of triggers parsed */
-    nrows++;
-  }
-
-  if ( mioStatus == -1 )
-  {
-    fprintf( stderr, "error parsing after row %d\n", i );
-    XLAL_CLOBBER_EVENTS;
-    MetaioClose( env );
-    XLAL_ERROR_NULL( func, XLAL_EIO);
-  }
-
-  /* Normal exit */
-  LALFree( tableDir );
-  MetaioClose( env );
-
-  return eventHead;
-}
-    
 /* <lalVerbatim file="LIGOLwXMLReadCP"> */
 ProcessTable    * XLALProcessTableFromLIGOLw (
     CHAR               *fileName
@@ -855,28 +698,30 @@ LALSnglBurstTableFromLIGOLw (
       ABORT(status, LIGOLWXMLREADH_EALOC, LIGOLWXMLREADH_MSGEALOC);
     }
 
+    /* initialize values that don't come from the intput file */
+    thisEvent->string_cluster_t = XLAL_REAL4_FAIL_NAN;
+
     /* parse the contents of the row into the InspiralTemplate structure */
     for ( j = 0; tableDir[j].name; ++j )
     {
       REAL4 r4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
-      /* REAL8 r8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_8; */
       INT4  i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
-      UINT8 i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
+      CHAR *lscolData = env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data;
 
       if ( tableDir[j].idx == 0 )
       {
         LALSnprintf( thisEvent->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), 
-            "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+            "%s", lscolData );
       }
       else if ( tableDir[j].idx == 1 )
       {
         LALSnprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
-            "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+            "%s", lscolData );
       }
       else if ( tableDir[j].idx == 2 )
       {
         LALSnprintf( thisEvent->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
-            "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+            "%s", lscolData );
       }
       else if ( tableDir[j].idx == 3 )
       {
@@ -920,21 +765,11 @@ LALSnglBurstTableFromLIGOLw (
       }
       else if ( tableDir[j].idx == 13 )
       {
-        thisEvent->clusterT = r4colData;
+        thisEvent->tfvolume = r4colData;
       }
       else if ( tableDir[j].idx == 14 )
       {
-        thisEvent->peak_dof = r4colData;
-      }
-      else if ( tableDir[j].idx == 15 )
-      {
-	if ( tableDir[j].pos > 0 && i8colData )
-	{
-	  thisEvent->event_id = (EventIDColumn *) 
-	    LALCalloc( 1, sizeof(EventIDColumn) );
-	  thisEvent->event_id->id = i8colData;
-	  thisEvent->event_id->snglBurstTable = thisEvent;
-	}
+        sscanf(lscolData, "[^0-9]%u", &thisEvent->event_id);
       }
       else
       {

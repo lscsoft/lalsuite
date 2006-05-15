@@ -407,11 +407,6 @@ LALWriteLIGOLwXMLTable (
     case sngl_burst_table:
       while( tablePtr.snglBurstTable )
       {
-        UINT8 id = xml->rowCount;
-        if ( tablePtr.snglBurstTable->event_id )
-        {
-          id = tablePtr.snglBurstTable->event_id->id;
-        }
         FIRST_TABLE_ROW
           fprintf( xml->fp, SNGL_BURST_ROW,
               tablePtr.snglBurstTable->ifo,
@@ -427,12 +422,10 @@ LALWriteLIGOLwXMLTable (
               tablePtr.snglBurstTable->amplitude,
 	      tablePtr.snglBurstTable->snr,
 	      tablePtr.snglBurstTable->confidence,
-	      tablePtr.snglBurstTable->clusterT,
-	      tablePtr.snglBurstTable->peak_dof,
-	      id
+	      tablePtr.snglBurstTable->tfvolume,
+	      tablePtr.snglBurstTable->event_id
               );
         tablePtr.snglBurstTable = tablePtr.snglBurstTable->next;
-        ++(xml->rowCount);
       }
       break;
     case sngl_inspiral_table:

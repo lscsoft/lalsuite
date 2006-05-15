@@ -170,9 +170,8 @@ MetaTableDirectory* XLALCreateMetaTableDir(
           {"confidence",              -1, 10},
           {"peak_time",               -1, 11},
           {"peak_time_ns",            -1, 12},
-          {"clusterT",                -1, 13},
-          {"peak_dof",                -1, 14},
-          {"event_id",                -1, 15},
+          {"tfvolume",                -1, 13},
+          {"event_id",                -1, 14},
           {NULL,                       0, 0}
         };
         for ( i=0 ; tmpTableDir[i].name; ++i )
@@ -180,17 +179,9 @@ MetaTableDirectory* XLALCreateMetaTableDir(
           if ( (tmpTableDir[i].pos = 
                 MetaioFindColumn( env, tmpTableDir[i].name )) < 0 )
           {
-            if ( ! strcmp(tmpTableDir[i].name, "clusterT") )
-            {
-              XLALPrintInfo( 
-                  "The clusterT column is not populated, continuing anyway\n" );
-            }
-            else
-            {
-              XLALPrintError( "XLALError - unable to find column %s\n", 
-                  tmpTableDir[i].name );
-              XLAL_ERROR_NULL( func, XLAL_EFAILED );
-            }
+            XLALPrintError( "XLALError - unable to find column %s\n", 
+                tmpTableDir[i].name );
+            XLAL_ERROR_NULL( func, XLAL_EFAILED );
           }
         }
 
@@ -458,9 +449,8 @@ LALCreateMetaTableDir(
           {"confidence",              -1, 10},
           {"peak_time",               -1, 11},
           {"peak_time_ns",            -1, 12},
-          {"clusterT",                -1, 13},
-          {"peak_dof",                -1, 14},
-          {"event_id",                -1, 15},
+          {"tfvolume",                -1, 13},
+          {"event_id",                -1, 14},
           {NULL,                       0, 0}
         };
         for ( i=0 ; tmpTableDir[i].name; ++i )
@@ -468,17 +458,9 @@ LALCreateMetaTableDir(
           if ( (tmpTableDir[i].pos = 
                 MetaioFindColumn( env, tmpTableDir[i].name )) < 0 )
           {
-            if ( ! strcmp(tmpTableDir[i].name, "clusterT") || ! strcmp(tmpTableDir[i].name, "peak_dof") || ! strcmp(tmpTableDir[i].name, "event_id") )
-            {
-              fprintf( stderr, 
-                  "The clusterT/peak_dof/event_id column is not populated, continuing anyway\n");
-            }
-            else
-            {
-              fprintf( stderr, "unable to find column %s\n", 
-                  tmpTableDir[i].name );
-              ABORT(status,LIGOLWXMLREADH_ENCOL,LIGOLWXMLREADH_MSGENCOL);
-            }
+            fprintf( stderr, "unable to find column %s\n", 
+                tmpTableDir[i].name );
+            ABORT(status,LIGOLWXMLREADH_ENCOL,LIGOLWXMLREADH_MSGENCOL);
           }
         }
 

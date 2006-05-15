@@ -140,10 +140,6 @@ LALCreateMetaTableDir(
 </lalLaTeX>
 #endif
 
-SnglBurstTable* XLALSnglBurstTableFromLIGOLw (
-    CHAR               *fileName
-    );
-
 ProcessTable* XLALProcessTableFromLIGOLw (
     CHAR               *fileName
     );

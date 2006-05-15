@@ -344,9 +344,9 @@ tagSnglBurstTable
   REAL4         amplitude;
   REAL4         snr;
   REAL4         confidence;
-  REAL4         clusterT;
-  REAL4         peak_dof;
-  EventIDColumn *event_id;
+  REAL4         tfvolume;
+  REAL4         string_cluster_t;
+  UINT4         event_id;
 }
 SnglBurstTable;
 /* </lalVerbatim> */
@@ -644,7 +644,6 @@ tagSimBurstTable
   REAL4            freq;
   REAL4            tau;
   INT4             zm_number;
-  EventIDColumn   *event_id;
 }
 SimBurstTable;
 /* </lalVerbatim> */
