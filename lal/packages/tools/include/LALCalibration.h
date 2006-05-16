@@ -18,6 +18,8 @@ typedef struct tagLALCalData
   COMPLEX8FrequencySeries *responseReference;
   COMPLEX8FrequencySeries *cavityGainReference;
   COMPLEX8FrequencySeries *openLoopGainReference;
+  COMPLEX8FrequencySeries *actuationReference;
+  COMPLEX8FrequencySeries *digitalFilterReference;
 }
 LALCalData;
 

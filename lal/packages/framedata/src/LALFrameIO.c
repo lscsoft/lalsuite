@@ -1,3 +1,9 @@
+#include <config.h>
+#include <unistd.h>
+#ifndef HAVE_GETHOSTNAME_PROTOTYPE
+int gethostname(char *name, int len);
+#endif
+
 #include <math.h>
 
 #include <lal/LALDetectors.h>
@@ -8,8 +14,67 @@
 #include <lal/FrequencySeries.h>
 
 #include <lal/LALString.h>
+#include <lal/FrameCache.h>
 #include <lal/LALFrameIO.h>
 #include <lal/LALCalibration.h>
+
+
+struct FrFile * XLALFrOpenURL( const char *url )
+{
+  static const char *func = "XLALFrOpenURL";
+  struct FrFile *frfile = NULL;
+  char prot[FILENAME_MAX] = "";
+  char host[FILENAME_MAX] = "";
+  char path[FILENAME_MAX] = "";
+  int n;
+
+  if ( ! url )
+    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+  if ( strlen( url ) >= FILENAME_MAX )
+  {
+    XLALPrintError( "XLAL Error - %s: URL too long: %s\n", func, url );
+    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+  }
+
+  n = sscanf( url, "%[^:]://%[^/]%s", prot, host, path );
+  if ( n != 3 ) /* perhaps the hostname has been omitted */
+  {
+    strncpy( host, "localhost", sizeof( host ) - 1 );
+    n = sscanf( url, "%[^:]://%s", prot, path );
+    if ( n != 2 ) /* assume the whole thing is a file path */
+    {
+      strncpy( prot, "file", sizeof( prot ) - 1 );
+      strncpy( path, url, sizeof( path ) - 1 );
+    }
+  }
+
+  if ( strcmp( prot, "file" ) ) /* not a file URL */
+  {
+    XLALPrintError( "XLAL Error - %s: unsupported protocol %s\n", func, prot );
+    XLAL_ERROR_NULL( func, XLAL_EINVAL );
+  }
+  else /* OK: this is a file URL */
+  {
+    if ( strcmp( host, "localhost" ) ) /* not explicitly localhost */
+    { /* make sure that the host is the localhost */
+      char localhost[FILENAME_MAX];
+      gethostname( localhost, FILENAME_MAX - 1 );
+      if ( strcmp( host, localhost ) ) /* not localhost */
+      {
+        XLALPrintError( "XLAL Error - %s: cannot read files from remote host %s\n", func, host );
+        XLAL_ERROR_NULL( func, XLAL_EINVAL );
+      }
+    }
+    frfile = FrFileINew( path );
+    if ( ! frfile )
+    {
+      XLALPrintError( "XLAL Error - %s: could not open frame file %s\n", func, path );
+      XLAL_ERROR_NULL( func, XLAL_EIO );
+    }
+  }
+
+  return frfile;
+}
 
 
 FrDetector * XLALFrDetectorNew( int detector )
@@ -153,7 +218,6 @@ FrVect * XLALFrVectCOMPLEX8TimeSeries( COMPLEX8TimeSeries *series )
 }
 
 
-/*  FIXME: Should f0 be startX in the vect or fShift in the proc data ??? */
 
 FrVect * XLALFrVectCOMPLEX16TimeSeries( COMPLEX16TimeSeries *series )
 {
@@ -175,6 +239,7 @@ FrVect * XLALFrVectCOMPLEX16TimeSeries( COMPLEX16TimeSeries *series )
   return vect;
 }
 
+/*  FIXME: Should f0 be startX in the vect or fShift in the proc data ??? */
 
 FrVect * XLALFrVectREAL4FrequencySeries( REAL4FrequencySeries *series )
 {
@@ -263,7 +328,7 @@ FrVect * XLALFrVectCOMPLEX16FrequencySeries( COMPLEX16FrequencySeries *series )
 int XLALFrameAddCalRef( FrameH *frame, COMPLEX8FrequencySeries *series, int version, double duration )
 {
   static const char *func = "XLALFrameAddCalRef";
-  char representation[] = "calibration";
+  char representation[] = "CAL_REF";
   char comment[] = "$Id$";
   char prefix[3];
   FrDetector *detector;
@@ -322,7 +387,7 @@ COMPLEX8FrequencySeries * XLALFrameGetCalRef( LIGOTimeGPS *validUntil, LIGOTimeG
   chan = XLALStringDuplicate( channel );
   sdat = FrameFindStatData( frame, prefix, chan, epoch->gpsSeconds );
   LALFree( chan );
-  if ( ! sdat )
+  if ( ! sdat || sdat->timeStart > (UINT4)epoch->gpsSeconds || sdat->timeEnd < (UINT4)epoch->gpsSeconds )
   {
     XLALPrintError( "XLAL Error - %s: no stat data channel %s for GPS time %d in frame\n", func, channel, epoch->gpsSeconds );
     XLAL_ERROR_NULL( func, XLAL_EINVAL );
@@ -352,6 +417,87 @@ COMPLEX8FrequencySeries * XLALFrameGetCalRef( LIGOTimeGPS *validUntil, LIGOTimeG
 }
 
 
+int XLALFrameAddCalFac( FrameH *frame, REAL4TimeSeries *series, int version )
+{
+  static const char *func = "XLALFrameAddCalFac";
+  char representation[] = "CAL_FAC";
+  char comment[] = "$Id$";
+  char prefix[3];
+  FrDetector *detector;
+  FrStatData *sdat;
+  FrVect *vect;
+  int tstart;
+  int tend;
+
+  /* To find the detector, look for the detector prefix stored as the first
+   * two characters of the channel name. */
+  prefix[0] = series->name[0];
+  prefix[1] = series->name[1];
+  prefix[2] = 0;
+
+  detector = FrameFindDetector( frame, prefix );
+  if ( ! detector )
+  {
+    XLALPrintError( "XLAL Error - %s: no detector associated with prefix %s in frame\n", func, prefix );
+    XLAL_ERROR( func, XLAL_EINVAL );
+  }
+
+  vect = XLALFrVectREAL4TimeSeries( series );
+  if ( ! vect )
+    XLAL_ERROR( func, XLAL_EFUNC );
+
+  tstart = series->epoch.gpsSeconds;
+  tend = (int)ceil( series->epoch.gpsSeconds + 1e-9*series->epoch.gpsNanoSeconds + series->data->length * series->deltaT );
+  sdat = FrStatDataNew( series->name, comment, representation, tstart, tend, version, vect, NULL );
+  if ( ! sdat )
+  {
+    FrVectFree( vect );
+    XLAL_ERROR( func, XLAL_EERR );
+  }
+
+  FrStatDataAdd( detector, sdat );
+
+  return 0;
+}
+
+
+REAL4TimeSeries * XLALFrameGetCalFac( LIGOTimeGPS *epoch, const char *channel, FrameH *frame )
+{
+  static const char *func = "XLALFrameGetCalFac";
+  char prefix[3];
+  LIGOTimeGPS tmpEpoch;
+  REAL4TimeSeries *series;
+  FrStatData *sdat;
+  char *chan;
+
+  /* To find the detector, look for the detector prefix stored as the first
+   * two characters of the channel name. */
+  prefix[0] = channel[0];
+  prefix[1] = channel[1];
+  prefix[2] = 0;
+
+  chan = XLALStringDuplicate( channel );
+  sdat = FrameFindStatData( frame, prefix, chan, epoch->gpsSeconds );
+  LALFree( chan );
+  if ( ! sdat || sdat->timeStart > (UINT4)epoch->gpsSeconds || sdat->timeEnd < (UINT4)epoch->gpsSeconds )
+  {
+    XLALPrintError( "XLAL Error - %s: no stat data channel %s for GPS time %d in frame\n", func, channel, epoch->gpsSeconds );
+    XLAL_ERROR_NULL( func, XLAL_EINVAL );
+  }
+
+  tmpEpoch.gpsSeconds     = sdat->timeStart;
+  tmpEpoch.gpsNanoSeconds = 0;
+  series = XLALCreateREAL4TimeSeries( sdat->data->name, &tmpEpoch, 0.0, sdat->data->dx[0], &lalDimensionlessUnit, sdat->data->nData );
+  if ( ! series )
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+
+  memcpy( series->data->data, sdat->data->data, series->data->length * sizeof( *series->data->data ) );
+
+  return series;
+}
+
+
+#if 0
 int XLALFrameAddCalFac( FrameH *frame, REAL4TimeSeries *series )
 {
   static const char *func = "XLALFrameAddCalFac";
@@ -420,94 +566,167 @@ REAL4TimeSeries * XLALFrameGetCalFac( const char *channel, FrameH *frame )
 
   return series;
 }
+#endif
 
 
-LALCalData * XLALFrGetCalData( LIGOTimeGPS *epoch, const char *readoutChannel, const char *fname )
+LALCalData * XLALFrameGetCalData( LIGOTimeGPS *epoch, const char *readoutChannel, FrameH *frame )
 {
-  static const char *func = "XLALFrGetCalData";
-  char responseName[LALNameLength]  = "Xn:CAL-RESPONSE_";
-  char cavgainName[LALNameLength]   = "Xn:CAL-CAV_GAIN_";
-  char oloopgainName[LALNameLength] = "Xn:CAL-OLOOP_GAIN";
-  char cavfacName[LALNameLength]    = "Xn:CAL-CAV_FAC";
-  char oloopfacName[LALNameLength]  = "Xn:CAL-OLOOP_FAC";
+  static const char *func = "XLALFrameGetCalData";
+  LALCalData *caldata;
+  char oloopgainName[LALNameLength]     = "Xn:CAL-OLOOP_GAIN";
+  char cavgainName[LALNameLength]       = "Xn:CAL-CAV_GAIN_";
+  char responseName[LALNameLength]      = "Xn:CAL-RESPONSE_";
+  char actuationName[LALNameLength]     = "Xn:CAL-ACTUATION";
+  char digfltName[LALNameLength]        = "Xn:CAL-DIGFLT_";
+  char cavfacName[LALNameLength]        = "Xn:CAL-CAV_FAC";
+  char oloopfacName[LALNameLength]      = "Xn:CAL-OLOOP_FAC";
   char readoutPoint[LALNameLength]; /* DARM_ERR or AS_Q */
   char ifo[3];
-  char *fileName;
   LIGOTimeGPS tend;
-  LALCalData *caldata;
-  FrFile *frfile;
-  FrameH *frame;
+  int errnum;
 
   /* setup channel names based on readout channel */
   XLALStringCopy( ifo, readoutChannel, sizeof( ifo ) );
   XLALStringCopy( readoutPoint, readoutChannel + strlen("Xn:LSC-"), sizeof( readoutPoint ) );
   XLALStringConcatenate( responseName, readoutPoint, sizeof( responseName ) );
   XLALStringConcatenate( cavgainName, readoutPoint, sizeof( cavgainName ) );
+  XLALStringConcatenate( digfltName, readoutPoint, sizeof( digfltName ) );
+  memcpy( oloopgainName, ifo, 2 );
+  memcpy( actuationName, ifo, 2 );
   memcpy( responseName, ifo, 2 );
   memcpy( cavgainName, ifo, 2 );
-  memcpy( oloopgainName, ifo, 2 );
+  memcpy( digfltName, ifo, 2 );
   memcpy( cavfacName, ifo, 2 );
   memcpy( oloopfacName, ifo, 2 );
 
   if ( strcmp( readoutPoint, "AS_Q" ) && strcmp( readoutPoint, "DARM_ERR" ) )
     XLAL_ERROR_NULL( func, XLAL_ENAME );
-  
 
   caldata = LALCalloc( 1, sizeof( *caldata ) );
   if ( ! caldata )
     XLAL_ERROR_NULL( func, XLAL_ENOMEM );
 
-  fileName = XLALStringDuplicate( fname );
-  if ( ! fileName )
-  {
-    XLALDestroyCalData( caldata );
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
-  }
-  frfile = FrFileINew( fileName );
-  XLALFree( fileName );
-  if ( ! frfile )
-  {
-    XLALDestroyCalData( caldata );
-    XLAL_ERROR_NULL( func, XLAL_EERR );
-  }
-  frame = FrameRead( frfile );
-  if ( ! frame )
-  {
-    FrFileIEnd( frfile );
-    XLALDestroyCalData( caldata );
-    XLAL_ERROR_NULL( func, XLAL_EERR );
-  }
-
-  caldata->cavityFactors = XLALFrameGetCalFac( cavfacName, frame );
+  /* caldata->cavityFactors = XLALFrameGetCalFac( cavfacName, frame ); */
+  caldata->cavityFactors = XLALFrameGetCalFac( epoch, cavfacName, frame );
   if ( ! caldata->cavityFactors )
   {
-    FrFileIEnd( frfile );
     XLALDestroyCalData( caldata );
     XLAL_ERROR_NULL( func, XLAL_EFUNC );
   }
-  caldata->openLoopFactors = XLALFrameGetCalFac( oloopfacName, frame );
+  /* caldata->openLoopFactors = XLALFrameGetCalFac( oloopfacName, frame ); */
+  caldata->openLoopFactors = XLALFrameGetCalFac( epoch, oloopfacName, frame );
   if ( ! caldata->openLoopFactors )
   {
-    FrFileIEnd( frfile );
     XLALDestroyCalData( caldata );
     XLAL_ERROR_NULL( func, XLAL_EFUNC );
   }
   caldata->responseReference = XLALFrameGetCalRef( &tend, epoch, responseName, frame );
   if ( ! caldata->responseReference )
   {
-    FrFileIEnd( frfile );
     XLALDestroyCalData( caldata );
     XLAL_ERROR_NULL( func, XLAL_EFUNC );
   }
   caldata->cavityGainReference = XLALFrameGetCalRef( &tend, epoch, cavgainName, frame );
   if ( ! caldata->cavityGainReference )
   {
-    FrFileIEnd( frfile );
     XLALDestroyCalData( caldata );
     XLAL_ERROR_NULL( func, XLAL_EFUNC );
   }
   caldata->openLoopGainReference = XLALFrameGetCalRef( &tend, epoch, oloopgainName, frame );
   if ( ! caldata->openLoopGainReference )
+  {
+    XLALDestroyCalData( caldata );
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+  }
+  XLAL_TRY( caldata->actuationReference = XLALFrameGetCalRef( &tend, epoch, actuationName, frame ), errnum );
+  XLAL_TRY( caldata->digitalFilterReference = XLALFrameGetCalRef( &tend, epoch, digfltName, frame ), errnum );
+
+  return caldata;
+}
+
+
+LALCalData * XLALFrGetCalData( LIGOTimeGPS *epoch, const char *readoutChannel, const char *fname )
+{
+  static const char *func = "XLALFrGetCalData";
+  LALCalData *caldata;
+  char *fileName;
+  FrFile *frfile;
+  FrameH *frame;
+
+  fileName = XLALStringDuplicate( fname );
+  if ( ! fileName )
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+  frfile = FrFileINew( fileName );
+  XLALFree( fileName );
+  if ( ! frfile )
+    XLAL_ERROR_NULL( func, XLAL_EERR );
+  frame = FrameRead( frfile );
+  if ( ! frame )
+  {
+    FrFileIEnd( frfile );
+    XLAL_ERROR_NULL( func, XLAL_EERR );
+  }
+  caldata = XLALFrameGetCalData( epoch, readoutChannel, frame );
+  if ( ! caldata )
+  {
+    FrFileIEnd( frfile );
+    XLALDestroyCalData( caldata );
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+  }
+
+  FrFileIEnd( frfile );
+  return caldata;
+}
+
+
+LALCalData * XLALFrCacheGetCalData( LIGOTimeGPS *epoch, const char *readoutChannel, FrCache *cache )
+{
+  static const char *func = "XLALFrCacheGetCalData";
+  LALCalData *caldata;
+  char srcRegEx[] = "X";
+  char dscRegEx[] = "Xn_CAL_";
+  FrCacheSieve sieve;
+  FrFile *frfile;
+  FrameH *frame;
+
+  memset( &sieve, 0, sizeof(sieve) );
+  memcpy( srcRegEx, readoutChannel, 1 ); /* copy site */
+  memcpy( dscRegEx, readoutChannel, 2 ); /* copy ifo */
+
+  /* first sieve: get all cal frames containing the specified time */
+  sieve.srcRegEx = srcRegEx; /* those files for the correct site */
+  sieve.dscRegEx = dscRegEx; /* those files for the correct ifo */
+  /* only want frame files that contain the specified time */
+  sieve.earliestTime = epoch->gpsSeconds;
+  sieve.latestTime = epoch->gpsSeconds;
+  cache = XLALFrSieveCache( cache, &sieve );
+  if ( ! cache )
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+  if ( cache->numFrameFiles < 1 )
+  {
+    XLALPrintError( "XLAL Error - %s: no matching calibration frame files found in cache %s\n", func );
+    XLALFrDestroyCache( cache );
+    XLAL_ERROR_NULL( func, XLAL_EIO );
+  }
+
+  /*
+   * We want to open the LAST of the remaining frames!
+   * This frame will have the highest version number and
+   * it will be the latest one to contain the specified
+   * time (in case the files overlap).
+   */
+  frfile = XLALFrOpenURL( cache->frameFiles[cache->numFrameFiles - 1].url );
+  XLALFrDestroyCache( cache ); /* don't need this anymore */
+  if ( ! frfile )
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+  frame = FrameRead( frfile );
+  if ( ! frame )
+  {
+    FrFileIEnd( frfile );
+    XLAL_ERROR_NULL( func, XLAL_EERR );
+  }
+  caldata = XLALFrameGetCalData( epoch, readoutChannel, frame );
+  if ( ! caldata )
   {
     FrFileIEnd( frfile );
     XLALDestroyCalData( caldata );

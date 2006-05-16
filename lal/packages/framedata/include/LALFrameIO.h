@@ -4,11 +4,13 @@
 #include <FrameL.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALCalibration.h>
+#include <lal/FrameCache.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+struct FrFile * XLALFrOpenURL( const char *url );
 FrDetector * XLALFrDetectorNew( int detector );
 FrameH * XLALFrameNew( LIGOTimeGPS *epoch, double duration, 
     const char *project, int run, int frnum, int detectorFlags );
@@ -25,12 +27,16 @@ int XLALFrameAddCalRef( FrameH *frame, COMPLEX8FrequencySeries *series, int vers
 
 COMPLEX8FrequencySeries * XLALFrameGetCalRef( LIGOTimeGPS *validUntil, LIGOTimeGPS *epoch, const char *channel, FrameH *frame );
 
-int XLALFrameAddCalFac( FrameH *frame, REAL4TimeSeries *series );
+/* int XLALFrameAddCalFac( FrameH *frame, REAL4TimeSeries *series ); */
+int XLALFrameAddCalFac( FrameH *frame, REAL4TimeSeries *series, int version );
 
-REAL4TimeSeries * XLALFrameGetCalFac( const char *channel, FrameH *frame );
+/* REAL4TimeSeries * XLALFrameGetCalFac( const char *channel, FrameH *frame ); */
+REAL4TimeSeries * XLALFrameGetCalFac( LIGOTimeGPS *epoch, const char *channel, FrameH *frame );
 
 /* high-level function */
+LALCalData * XLALFrameGetCalData( LIGOTimeGPS *epoch, const char *readoutChannel, FrameH *frame );
 LALCalData * XLALFrGetCalData( LIGOTimeGPS *epoch, const char *readoutChannel, const char *fname );
+LALCalData * XLALFrCacheGetCalData( LIGOTimeGPS *epoch, const char *readoutChannel, FrCache *cache );
 
 #ifdef __cplusplus
 }
