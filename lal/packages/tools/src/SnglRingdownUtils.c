@@ -843,7 +843,26 @@ XLALMaxSnglRingdownOverIntervals(
   
   return (0);
 }  
+
+INT4 XLALCountSnglRingdown( SnglRingdownTable *head )
+  /* </lalVerbatim> */
+{
+  INT4 length;
+  SnglRingdownTable *event;
       
+  if ( !head )
+   {
+     return( 0 );
+   }
+     
+  /* count the number of events in the list */
+  for(length = 0, event = head; event; event = event->next)
+    length++;
+   
+  return length;
+}
+
+        
       
       
       
