@@ -9,6 +9,7 @@ int isnan( double );
 
 #include <lal/LALStdlib.h>
 #include <lal/Date.h>
+#include <lal/Units.h>
 #include <lal/TimeSeries.h>
 #include <lal/FrequencySeries.h>
 
@@ -16,6 +17,10 @@ int isnan( double );
 #include <lal/LALString.h>
 
 #include "LALASCIIFileRead.h"
+
+#define OPEN_ENDED_DURATION (999999999)
+#define NUM_OPEN_ENDED_POINTS (3)
+#define OPEN_ENDED_DELTA_T (OPEN_ENDED_DURATION/NUM_OPEN_ENDED_POINTS)
 
 const char *program;
 void err_exit( const char *fmt, ... )
@@ -41,12 +46,17 @@ int main( int argc, char *argv[] )
   int version = 9999;
   int tstart = 0;
   int tend = 0;
+  int open_ended_reference = 0;
+  int open_ended_factors = 0;
   int have_fac = 0;
   int have_oloop_gain = 0;
+  int have_actuation  = 0;
   int have_cav_gain_as_q = 0;
   int have_response_as_q = 0;
+  int have_digflt_as_q   = 0;
   int have_cav_gain_darm_err = 0;
   int have_response_darm_err = 0;
+  int have_digflt_darm_err   = 0;
   int detectorFlags;
   LIGOTimeGPS epoch;
   FrFile *frfile;
@@ -54,7 +64,7 @@ int main( int argc, char *argv[] )
   int arg;
 
   program = argv[0];
-  lalDebugLevel = 7;
+  lalDebugLevel = 7 | 32;
   XLALSetErrorHandler( XLALAbortErrorHandler );
 
   history = XLALStringAppend( history, argv[0] );
@@ -71,8 +81,16 @@ int main( int argc, char *argv[] )
   for ( arg = 1; arg < argc; ++arg )
   {
     const char *filename = argv[arg];
+    /* skip all files that are not _CAL_REF_ or _CAL_FAC_ */
+    if ( ! ( strstr(filename, "_CAL_REF_") || strstr(filename, "_CAL_FAC_") ) )
+    {
+      fprintf( stderr, "\tignoring: %s\n", filename );
+      /* ignore this by setting argv[] to NULL */
+      argv[arg] = NULL;
+      continue;
+    }
 
-    fprintf( stderr, "\t%s\n", filename );
+    fprintf( stderr, "\tusing: %s\n", filename );
 
     XLALDataFileNameParse( fields + arg, filename );
 
@@ -97,16 +115,29 @@ int main( int argc, char *argv[] )
       }
       if ( ! strcmp( dscfields.channelPostfix, "OLOOP_GAIN" ) )
         ++have_oloop_gain;
+      else if ( ! strcmp( dscfields.channelPostfix, "ACTUATION" ) )
+        ++have_actuation;
       else if ( ! strcmp( dscfields.channelPostfix, "CAV_GAIN_AS_Q" ) )
         ++have_cav_gain_as_q;
       else if ( ! strcmp( dscfields.channelPostfix, "RESPONSE_AS_Q" ) )
         ++have_response_as_q;
+      else if ( ! strcmp( dscfields.channelPostfix, "DIGFLT_AS_Q" ) )
+        ++have_digflt_as_q;
       else if ( ! strcmp( dscfields.channelPostfix, "CAV_GAIN_DARM_ERR" ) )
         ++have_cav_gain_darm_err;
       else if ( ! strcmp( dscfields.channelPostfix, "RESPONSE_DARM_ERR" ) )
         ++have_response_darm_err;
+      else if ( ! strcmp( dscfields.channelPostfix, "DIGFLT_DARM_ERR" ) )
+        ++have_digflt_darm_err;
       else
+      {
         fprintf( stderr, "%s warning: unrecognized reference function for file %s\n", program, filename );
+        /* ignore this by setting argv[] to NULL */
+        argv[arg] = NULL;
+        continue;
+      }
+      if ( fields[arg].duration == OPEN_ENDED_DURATION )
+        open_ended_reference = 1;
     }
     else if ( strstr( fields[arg].description, "CAL_FAC" ) )
     {
@@ -127,7 +158,22 @@ int main( int argc, char *argv[] )
         if ( strcmp( run, dscfields.run ) )
           err_exit( "incompatible runs for file %s", filename );
       }
-      ++have_fac;
+
+      /* set start and end time */
+      if ( ! have_fac++ )
+      {
+        tstart = fields[arg].tstart;
+        tend   = fields[arg].tstart + fields[arg].duration;
+      }
+      else
+      {
+        if ( fields[arg].tstart < tstart )
+          tstart = fields[arg].tstart;
+        if ( fields[arg].tstart + fields[arg].duration > tend )
+          tend = fields[arg].tstart + fields[arg].duration;
+      }
+      if ( fields[arg].duration == OPEN_ENDED_DURATION )
+        open_ended_factors = 1;
     }
     else
       err_exit( "invalid file name %s", filename );
@@ -137,20 +183,6 @@ int main( int argc, char *argv[] )
       err_exit( "site field not consitent with ifo for file %s", filename );
     if ( strcmp( fields[arg].extension, "txt" ) )
       err_exit( "incorrect extention for file %s", filename );
-
-    /* set start and end time */
-    if ( arg == 1 )
-    {
-      tstart = fields[arg].tstart;
-      tend   = fields[arg].tstart + fields[arg].duration;
-    }
-    else
-    {
-      if ( fields[arg].tstart < tstart )
-        tstart = fields[arg].tstart;
-      if ( fields[arg].tstart + fields[arg].duration > tend )
-        tend = fields[arg].tstart + fields[arg].duration;
-    }
   }
 
 
@@ -187,6 +219,9 @@ int main( int argc, char *argv[] )
   }
 
 
+  if ( open_ended_reference || open_ended_factors )
+    tend = tstart + OPEN_ENDED_DURATION;
+
   XLALGPSSetREAL8( &epoch, tstart );
   frame = XLALFrameNew( &epoch, tend - tstart, "LIGO", 0, 0, detectorFlags );
   FrHistoryAdd( frame, rcsid );
@@ -198,13 +233,87 @@ int main( int argc, char *argv[] )
   for ( arg = 1; arg < argc; ++arg )
   {
     const char *filename = argv[arg];
+    if ( ! filename ) /* skip this one */
+      continue;
     if ( strstr( fields[arg].description, "CAL_FAC" ) ) /* factors file */
     {
+#if 0
+      CHAR factorStatusName[] = "Xn:CAL-FAC_STATUS";
+      CHAR seconds[] = "s";
+      CHAR dimensionless[] = "";
+#endif
       REAL4TimeSeries *alpha = NULL;
       REAL4TimeSeries *gamma = NULL;
+#if 0
+      INT4TimeSeries *factorStatus = NULL;
+      FrProcData *proc;
+      FrVect *vect;
+      UINT4 i;
+#endif
       XLALASCIIFileReadCalFac( &alpha, &gamma, filename );
+#if 0
+      memcpy( factorStatusName, ifo, 2 );
+      factorStatus = XLALCreateINT4TimeSeries( factorStatusName, &alpha->epoch, alpha->f0, alpha->deltaT, &lalDimensionlessUnit, alpha->data->length );
+      for ( i = 0; i < alpha->data->length; ++i )
+        if ( alpha->data->data[i] == 0.0 && gamma->data->data[i] == 0.0 )
+          factorStatus->data->data[i] = -1; /* indicates invalid calibration */
+        else
+          factorStatus->data->data[i] = 0;
+      if ( open_ended ) /* append unity */
+      {
+        UINT4 newLength;
+        UINT4 origLength;
+        origLength = alpha->data->length;
+        newLength = floor( (REAL8)OPEN_ENDED_DURATION / alpha->deltaT );
+        XLALResizeREAL4TimeSeries( alpha, 0, newLength );
+        XLALResizeREAL4TimeSeries( gamma, 0, newLength );
+        XLALResizeINT4TimeSeries( factorStatus, 0, newLength );
+        for ( i = origLength; i < newLength; ++i )
+        {
+          alpha->data->data[i] = 1.0;
+          gamma->data->data[i] = 1.0;
+          factorStatus->data->data[i] = 1; /* indicates unity factor */
+        }
+      }
+#endif
+      /*
       XLALFrameAddCalFac( frame, alpha );
       XLALFrameAddCalFac( frame, gamma );
+      */
+      XLALFrameAddCalFac( frame, alpha, version );
+      XLALFrameAddCalFac( frame, gamma, version );
+      if ( open_ended_reference || ! open_ended_factors ) /* add stat data with unity factors */
+      {
+        LIGOTimeGPS unityEpoch;
+        REAL4TimeSeries *unityAlpha;
+        REAL4TimeSeries *unityGamma;
+        UINT4 i;
+        unityEpoch = alpha->epoch;
+        XLALGPSAdd( &unityEpoch, alpha->data->length * alpha->deltaT );
+        unityAlpha = XLALCreateREAL4TimeSeries( alpha->name, &unityEpoch, alpha->f0, OPEN_ENDED_DELTA_T, &lalDimensionlessUnit, NUM_OPEN_ENDED_POINTS );
+        unityGamma = XLALCreateREAL4TimeSeries( gamma->name, &unityEpoch, gamma->f0, OPEN_ENDED_DELTA_T, &lalDimensionlessUnit, NUM_OPEN_ENDED_POINTS );
+        for ( i = 0; i < NUM_OPEN_ENDED_POINTS; ++i )
+          unityAlpha->data->data[i] = unityGamma->data->data[i] = 1.0;
+        XLALFrameAddCalFac( frame, unityAlpha, version );
+        XLALFrameAddCalFac( frame, unityGamma, version );
+        XLALDestroyREAL4TimeSeries( unityGamma );
+        XLALDestroyREAL4TimeSeries( unityAlpha );
+      }
+      /* add alphaStatus channel */
+#if 0
+      vect = FrVectNew1D( factorStatusName, FR_VECT_4S, factorStatus->data->length, factorStatus->deltaT, seconds, dimensionless );
+      vect->startX[0] = 0.0;
+      memcpy( vect->data, factorStatus->data->data, factorStatus->data->length * sizeof( *factorStatus->data->data ) ); 
+      proc = FrProcDataNewV( frame, vect );
+      proc->timeOffset = 0;
+      proc->type       = 1;
+      proc->subType    = 0;
+      proc->tRange     = factorStatus->data->length * factorStatus->deltaT;
+      proc->fShift     = 0.0;
+      proc->phase      = 0.0;
+      proc->BW         = 0.0;
+      XLALDestroyINT4TimeSeries( factorStatus );
+#endif
       XLALDestroyREAL4TimeSeries( gamma );
       XLALDestroyREAL4TimeSeries( alpha );
     }
@@ -213,6 +322,11 @@ int main( int argc, char *argv[] )
       COMPLEX8FrequencySeries *series = NULL;
       REAL8 duration;
       XLALASCIIFileReadCalRef( &series, &duration, filename );
+      /* modify duration so that the series fits into existing frame */
+      /*
+      if ( XLALGPSGetREAL8( &series->epoch ) + duration > tend )
+        duration = floor( tend - XLALGPSGetREAL8( &series->epoch ) );
+        */
       XLALFrameAddCalRef( frame, series, version, duration );
       XLALDestroyCOMPLEX8FrequencySeries( series );
     }
@@ -226,7 +340,7 @@ int main( int argc, char *argv[] )
   else
     snprintf( fname, sizeof( fname ), "%c-%s_CAL_%s_V%d-%d-%d.gwf", ifo[0], ifo,run, version, (int)floor(tstart), (int)ceil(tend) - (int)floor(tstart) );
   fprintf( stderr, "\nOutput: %s\n\n", fname );
-  frfile = FrFileONew( fname, 0 );
+  frfile = FrFileONew( fname, 8 );
   FrameWrite( frame, frfile );
   FrFileOEnd( frfile );
 

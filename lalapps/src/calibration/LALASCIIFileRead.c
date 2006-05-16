@@ -39,7 +39,7 @@ int XLALDataFileNameParse( LALDataFileNameFields *fields, const char *fname )
     XLALPrintError( "XLAL Error - %s: Filename %s too long\n", func, basename );
     XLAL_ERROR( func, XLAL_EBADLEN );
   }
-  c = sscanf( fname, fmt, fields->site, fields->description, &t0, &dt, fields->extension );
+  c = sscanf( basename, fmt, fields->site, fields->description, &t0, &dt, fields->extension );
   if ( c != 5 )
   {
     XLALPrintError( "XLAL Error - %s: Could not parse basename %s\n\tinto <site>-<description>-<tstart>-<duration>.<extension> format\n", func, basename );
@@ -429,7 +429,7 @@ int XLALASCIIFileReadCalFac( REAL4TimeSeries **alpha, REAL4TimeSeries **gamma, c
   tend   = ELEM(data,nrow-1,1);
   ndat   = 1 + (int)floor( (tend - tstart)/deltaT + 0.5 );
   if ( ( fileFields.tstart != (int)floor( tstart ) )
-    || ( fileFields.tstart + fileFields.duration != (int)ceil( tend ) ) )
+    || ( fileFields.tstart + fileFields.duration != (int)ceil( tend + deltaT ) ) )
   {
     XLALPrintError( "XLAL Error - %s: filename start time and duration not consistent with contents\n", func );
     XLALDestroyREAL8VectorSequence( data );
@@ -547,6 +547,10 @@ int XLALASCIIFileReadCalRef( COMPLEX8FrequencySeries **series, REAL8 *duration, 
   else if ( strstr( descFields.channelPostfix, "CAV_GAIN" ) )
     XLALUnitDivide( &unit, &lalADCCountUnit, &lalStrainUnit );
   else if ( strstr( descFields.channelPostfix, "OLOOP_GAIN" ) )
+    unit = lalDimensionlessUnit;
+  else if ( strstr( descFields.channelPostfix, "ACTUATION" ) )
+    XLALUnitDivide( &unit, &lalADCCountUnit, &lalStrainUnit );
+  else if ( strstr( descFields.channelPostfix, "DIGFLT" ) )
     unit = lalDimensionlessUnit;
   else
   {
