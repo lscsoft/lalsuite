@@ -136,7 +136,6 @@ class PowerNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 			self.add_var_opt("user-tag", self.__usertag)
 		except:
 			self.__usertag = None
-		self.set_post_script(job._AnalysisJob__cp.get("condor", "fix_sngl_burst"))
 
 	def set_user_tag(self, tag):
 		self.__usertag = tag
@@ -408,8 +407,6 @@ def make_power_fragment(dag, parents, framecache, seg, instrument, tag, injargs 
 		# this is a hack, but I can't be bothered
 		node.add_var_arg("--%s %s" % (arg, value))
 	dag.add_node(node)
-
-	node.add_post_script_arg(node.get_output())
 
 	return node
 
