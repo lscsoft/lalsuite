@@ -1075,7 +1075,7 @@ XLALGenerateCoherentBank(
         currentTrigger->event_id = LALCalloc( 1, sizeof(EventIDColumn) );
         if ( !(currentTrigger->event_id) )
         {
-		      goto error;
+                      goto error;
         }
         currentTrigger->event_id->id = 
           thisCoinc->snglInspiral[ifoMax]->event_id->id;
@@ -1144,45 +1144,45 @@ XLALInspiralPsi0Psi3CutBCVC(
           snrA = tmpCoinc->snglInspiral[ifoA]->snr;
           snrB = tmpCoinc->snglInspiral[ifoB]->snr;
           if (snrA<snrB )
-  	  {
-	    snr = snrB;
-	  }
-	  else
-	  {
-	    snr = snrA;
-	  }
+          {
+            snr = snrB;
+          }
+          else
+          {
+            snr = snrA;
+          }
         
-   	  x = (psi0A - psi0B) / snr ;
-	  y = (psi3A - psi3B) / snr ;
-	  X = x * cos(theta) - y * sin(theta);
-	  Y = x * sin(theta) + y * cos(theta);
+          x = (psi0A - psi0B) / snr ;
+          y = (psi3A - psi3B) / snr ;
+          X = x * cos(theta) - y * sin(theta);
+          Y = x * sin(theta) + y * cos(theta);
 
           if ( ((X*X/5000/5000) + (Y*Y/50/50)) >  1 )     
-       	  {
+          {
             discardTrigger = 1;
-	  }
+          }
       }
     }
      
      if ( discardTrigger )
      {
-	break;
+        break;
      }
    } 
     
     if( discardTrigger )
     {
-	XLALFreeCoincInspiral( &tmpCoinc );
+        XLALFreeCoincInspiral( &tmpCoinc );
     }
     else
     {
       if ( ! coincHead )
       {
-	  coincHead = tmpCoinc;
+          coincHead = tmpCoinc;
       }
       else
-	{
-	  prevCoinc->next = tmpCoinc;
+        {
+          prevCoinc->next = tmpCoinc;
       }
       tmpCoinc->next = NULL;
       prevCoinc = tmpCoinc;
@@ -1231,29 +1231,29 @@ XLALInspiralIotaCutBCVC(
             && tmpCoinc->snglInspiral[ifoB]  )
         {
           /* perform the distance consistency test */
-	  sigA = tmpCoinc->snglInspiral[ifoA]->sigmasq;
+          sigA = tmpCoinc->snglInspiral[ifoA]->sigmasq;
           sigB = tmpCoinc->snglInspiral[ifoB]->sigmasq;
           snrA = tmpCoinc->snglInspiral[ifoA]->snr;
           snrB = tmpCoinc->snglInspiral[ifoB]->snr;
 
-	  iota = fabs(sigA*sigA/snrA-sigB*sigB/snrB)/(sigA*sigA/snrA+sigB*sigB/snrB);
+          iota = fabs(sigA*sigA/snrA-sigB*sigB/snrB)/(sigA*sigA/snrA+sigB*sigB/snrB);
 
           if(
-		 (  (ifoA == LAL_IFO_H1)  && (ifoB == LAL_IFO_H2) )
+                 (  (ifoA == LAL_IFO_H1)  && (ifoB == LAL_IFO_H2) )
           || (  (ifoA == LAL_IFO_H2)  && (ifoB == LAL_IFO_H1))
 ){
-	  if (  (iota > 0.4 ) )
-	    {
-	      discardTrigger = 1;	
-	    }
+          if (  (iota > 0.4 ) )
+            {
+              discardTrigger = 1;       
+            }
 }
           if(
-		 (  (ifoA == LAL_IFO_H1)  && (ifoB == LAL_IFO_L1) )
+                 (  (ifoA == LAL_IFO_H1)  && (ifoB == LAL_IFO_L1) )
           || (  (ifoA == LAL_IFO_L1)  && (ifoB == LAL_IFO_H1))){
-	  if (  (iota > 0.6 ) )
-	    {
-	      discardTrigger = 1;	
-	    }
+          if (  (iota > 0.6 ) )
+            {
+              discardTrigger = 1;       
+            }
 
 
 
@@ -1262,23 +1262,23 @@ XLALInspiralIotaCutBCVC(
       }
       if ( discardTrigger )
       {
-	  break;
+          break;
       }
     } 
     
     if( discardTrigger )
     {
-	XLALFreeCoincInspiral( &tmpCoinc );
+        XLALFreeCoincInspiral( &tmpCoinc );
     }
     else
     {
       if ( ! coincHead )
       {
-	  coincHead = tmpCoinc;
+          coincHead = tmpCoinc;
       }
       else
-	{
-	  prevCoinc->next = tmpCoinc;
+        {
+          prevCoinc->next = tmpCoinc;
       }
       tmpCoinc->next = NULL;
       prevCoinc = tmpCoinc;
@@ -1327,7 +1327,7 @@ XLALInspiralDistanceCutBCVC(
 
         if( tmpCoinc->snglInspiral[ifoA] && ( kappaA || epsilonA ) 
             && tmpCoinc->snglInspiral[ifoB] && ( kappaB || epsilonB ) )
-	{
+        {
           /* perform the distance consistency test */
           sigmasqA = tmpCoinc->snglInspiral[ifoA]->sigmasq;
           sigmasqB = tmpCoinc->snglInspiral[ifoB]->sigmasq;
@@ -1563,14 +1563,14 @@ XLALCoincInspiralTimeNS (
 
 REAL4 
 XLALCoincInspiralStat(
-    CoincInspiralTable     	*coincInspiral,
-    CoincInspiralStatistic  	coincStat,
+    CoincInspiralTable          *coincInspiral,
+    CoincInspiralStatistic      coincStat,
     CoincInspiralBittenLParams *bittenLParams
     )
 {
   InterferometerNumber  ifoNumber;
   SnglInspiralTable     *snglInspiral;
-  REAL4 		statValues[LAL_NUM_IFO];
+  REAL4                 statValues[LAL_NUM_IFO];
   REAL4 statValue = 0;
   INT4  i;
   
@@ -1597,11 +1597,23 @@ XLALCoincInspiralStat(
       {        
         statValue += snglInspiral->snr * snglInspiral->snr;
       }
+      else if ( coincStat == effective_snrsq )
+      {
+        REAL4 tmp_snr = snglInspiral->snr;
+        REAL4 tmp_chisq = snglInspiral->chisq;
+        /* XXX Assuming that chisq_dof contains the number of bins, not dof */
+        REAL4 tmp_bins = snglInspiral->chisq_dof;
+        
+        statValue += tmp_snr * tmp_snr / 
+          sqrt ( tmp_chisq/(2*tmp_bins-2) * (1+tmp_snr*tmp_snr/250) ) ;
+      }
+
       else if ( coincStat == bitten_l )
       {
-        statValues[ifoNumber] = bittenLParams->param_a[ifoNumber] * snglInspiral->snr 
-		- bittenLParams->param_b[ifoNumber];
-	statValue += snglInspiral->snr * snglInspiral->snr ;          
+        statValues[ifoNumber] = bittenLParams->param_a[ifoNumber] 
+                * snglInspiral->snr 
+                - bittenLParams->param_b[ifoNumber];
+        statValue += snglInspiral->snr * snglInspiral->snr ;          
       }
       else if ( coincStat == s3_snr_chi_stat )
       {
@@ -1611,11 +1623,12 @@ XLALCoincInspiralStat(
         statValue += tmp_snr * tmp_snr * tmp_snr * tmp_snr / 
           ( tmp_chisq * ( 250 + tmp_snr * tmp_snr ) );
       }
+
     }
   }
 
   /*    for the bitten L case only , we need to compare different 
-	values and keep the minimum one */
+        values and keep the minimum one */
   if ( coincStat == bitten_l )
   {
     statValue = sqrt(statValue);
@@ -1624,10 +1637,10 @@ XLALCoincInspiralStat(
     {
       if ( (snglInspiral = coincInspiral->snglInspiral[ifoNumber]) )
       {
-	if (statValues[ifoNumber] < statValue)
-	{
-	 statValue = statValues[ifoNumber];
-	}
+        if (statValues[ifoNumber] < statValue)
+        {
+         statValue = statValues[ifoNumber];
+        }
       }
     }
   }
@@ -1676,8 +1689,10 @@ XLALClusterCoincInspiralTable (
     /* find events within the cluster window */
     if ( (nextTime - thisTime) < dtimeNS )
     {
-      REAL4 thisStat = XLALCoincInspiralStat( thisCoinc, coincStat, bittenLParams);
-      REAL4 nextStat = XLALCoincInspiralStat( nextCoinc, coincStat, bittenLParams );
+      REAL4 thisStat = 
+        XLALCoincInspiralStat( thisCoinc, coincStat, bittenLParams);
+      REAL4 nextStat = 
+        XLALCoincInspiralStat( nextCoinc, coincStat, bittenLParams );
       
       if ( nextStat > thisStat )
       {

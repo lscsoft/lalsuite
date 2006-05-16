@@ -241,7 +241,8 @@ with the largest value of snr squared divided by the chi squared.
 typedef enum 
 { 
   no_stat,
-  snrsq, 
+  snrsq,
+  effective_snrsq,
   s3_snr_chi_stat,
   bitten_l 
 } 

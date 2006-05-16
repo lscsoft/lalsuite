@@ -185,6 +185,7 @@ XLALSimInspiralInSearchedData(
   int numInj = 0;
 
   XLALTimeSortSearchSummary( &summList, LALCompareSearchSummaryByOutTime );
+  XLALSortSimInspiral( eventHead, XLALCompareSimInspiralByGeocentEndTime ); 
 
   thisEvent = *eventHead;
   thisSearchSumm = summList;
