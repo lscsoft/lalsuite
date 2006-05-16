@@ -440,6 +440,7 @@ SnglRingdownTable;
 
 /* </lalVerbatim> */
 #if 0
+
 <lalLaTeX>
 
 This structure contains the required information for generating a ringdown
@@ -458,7 +459,7 @@ found.
     masses, $M_\odot$).
 \item[\texttt{spin}] The dimensionless spin parameter of the
     black hole ${\hat{a}}$ where the spin is $S={\hat{a}}GM^2/c$ ($G$ is
-    Newton's constant and $c$ is the speed of light).
+    Newton constant and $c$ is the speed of light).
 \item[\texttt{epsilon}] The fractional mass loss $\epsilon$
     of the initial black hole mass in ringdown radiation.
 \item[\texttt{amplitude}] The peak strain amplitude $h_0$ of the waveform,
@@ -720,7 +721,7 @@ injection.  The fields are:
     masses, $M_\odot$).
 \item[\texttt{spin}] The dimensionless spin parameter of the
     black hole ${\hat{a}}$ where the spin is $S={\hat{a}}GM^2/c$ ($G$ is
-    Newton's constant and $c$ is the speed of light).
+    Newton constant and $c$ is the speed of light).
 \item[\texttt{epsilon}] The fractional mass loss $\epsilon$
     of the initial black hole mass in ringdown radiation.
 \item[\texttt{amplitude}] The peak strain amplitude $h_0$ of the waveform,
