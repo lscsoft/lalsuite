@@ -283,35 +283,35 @@ int main( int argc, char *argv[] )
           exit( 1 );
         }
         break;
-	
+      
       case 'a':
         bittenLParams.param_a[LAL_IFO_H1] = atof(optarg);
-	ADD_PROCESS_PARAM( "float", "%s", optarg);
+      ADD_PROCESS_PARAM( "float", "%s", optarg);
         break;
       
       case 'b':
         bittenLParams.param_b[LAL_IFO_H1] = atof(optarg);
-	ADD_PROCESS_PARAM( "float", "%s", optarg);
+      ADD_PROCESS_PARAM( "float", "%s", optarg);
         break;
 
       case 'j':
         bittenLParams.param_a[LAL_IFO_H2] = atof(optarg);
-	ADD_PROCESS_PARAM( "float", "%s", optarg);
+      ADD_PROCESS_PARAM( "float", "%s", optarg);
         break;
 
       case 'n':
         bittenLParams.param_b[LAL_IFO_H2] = atof(optarg);
-	ADD_PROCESS_PARAM( "float", "%s", optarg);
+      ADD_PROCESS_PARAM( "float", "%s", optarg);
         break;
 
       case 'l':
         bittenLParams.param_a[LAL_IFO_L1] = atof(optarg);
-	ADD_PROCESS_PARAM( "float", "%s", optarg);
+      ADD_PROCESS_PARAM( "float", "%s", optarg);
         break;
 
       case 'p':
         bittenLParams.param_b[LAL_IFO_L1] = atof(optarg);
-	ADD_PROCESS_PARAM( "float", "%s", optarg);
+      ADD_PROCESS_PARAM( "float", "%s", optarg);
         break;
 
       case 'h':
@@ -402,7 +402,7 @@ int main( int argc, char *argv[] )
       case 'N':
         /* store the number of slides */
         numSlides = atoi( optarg );
-        if ( numSlides <= 0 )
+        if ( numSlides < 0 )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
               "numSlides >= 0: "
@@ -455,11 +455,15 @@ int main( int argc, char *argv[] )
           }
           else if ( ! strcmp( "bitten_l", optarg ) )
           {
-	      clusterchoice = bitten_l;
+            clusterchoice = bitten_l;
           }
           else if ( ! strcmp( "s3_snr_chi_stat", optarg) )
           {
             clusterchoice = s3_snr_chi_stat;
+          }
+          else if ( ! strcmp( "effective_snrsq", optarg) )
+          {
+            clusterchoice = effective_snrsq;
           }
           else
           {
