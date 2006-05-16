@@ -15,8 +15,8 @@
 	    REAL4 tempFreqX = tempFreq1; /* REAL4 because of SSE */
 	    COMPLEX8 *Xalpha_kX = Xalpha_k; /* -> SSE values */
 
-	    REAL4 XRes,  XIms;  /* sums of Xa.re and Xa.im */
-	    REAL4 XResX, XImsX; /* sums of Xa.re and Xa.im for SSE */
+	    REAL4 XRes, XIms;   /* sums of Xa.re and Xa.im */
+	    COMPLEX8 XSumsX;    /* sums of Xa.re and Xa.im for SSE */
 
 	    /* shift values for FPU calculation */
 	    COMPLEX8 *Xalpha_kF = Xalpha_k + 16;
@@ -151,17 +151,14 @@
 	       "addps %%xmm3,%%xmm2      \n\t" /* XMM2: - - C_Im C_Re */
 
 	       /* store the result */
-	       "movss %%xmm2,%[XResX]    \n\t" /* SAVE Re part */
-	       "shufps $1,%%xmm2,%%xmm2  \n\t" /* XMM0: f   f   f   f */
-	       "movss %%xmm2,%[XImsX]    \n\t" /* SAVE Im part */
+	       "movlps %%xmm2, %[XSumsX] \n\t"
 
 	       : /* output  (here: to memory)*/
-	       [XResX] "=m" (XResX),
-	       [XImsX] "=m" (XImsX),
+	       [XSumsX]  "=m" (XSumsX),
 	       [XRes]  "=m" (XRes),
 	       [XIms]  "=m" (XIms),
-	       /* input */
-	       [Xalpha_kX] "+r" (Xalpha_kX)
+ 	         /* input */
+	       [Xalpha_kX] "+r" (Xalpha_kX) /* is changed by the code, so put into output section */
 	       :
 	       [Xalpha_k]  "r" (Xalpha_kF),
 	       [tempFreq1] "m" (tempFreqF),
@@ -173,8 +170,8 @@
 	    
 
 	    /* And last, we add the single and double precision values */
-	    XRes = XRes + XResX;
-	    XIms = XIms + XImsX;
+	    XRes = XRes + XSumsX.re;
+	    XIms = XIms + XSumsX.im;
 
             realXP = tsin2pi * XRes - tcos2pi * XIms;
             imagXP = tcos2pi * XRes + tsin2pi * XIms;
