@@ -1323,6 +1323,13 @@ XLALMaxSnglRingdownOverIntervals(
     INT4                       deltaT
     );
 
+INT4 
+XLALCountSnglRingdown(
+    SnglRingdownTable *head
+    );
+
+
+
 /* coinc ringdown */
 void
 LALCreateTwoIFORingdownCoincList(
