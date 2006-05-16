@@ -796,6 +796,8 @@ int main( int argc, char *argv[] )
     for( i = optind; i < argc; ++i )
     {
       INT4 numFileTriggers = 0;
+      SnglRingdownTable   *ringdownFileList = NULL;
+      SnglRingdownTable   *thisFileTrigger  = NULL;
 
       numFileTriggers = XLALReadRingdownTriggerFile( &ringdownEventList,
           &thisRingdownTrigger, &searchSummList, &inputFiles, argv[i] );
@@ -806,8 +808,38 @@ int main( int argc, char *argv[] )
         exit( 1 );
       }
       
+       /* maximize over a given interval */
+      if ( maximizationInterval )
+      {
+        if (vrbflg)
+        {
+          fprintf( stdout, "Clustering triggers for over %d ms window\n",
+              maximizationInterval);
+        }
+        XLALMaxSnglRingdownOverIntervals( &ringdownFileList,
+            (1.0e6 * maximizationInterval) );
+        numFileTriggers = XLALCountSnglRingdown( ringdownFileList );
+      }
+      
       numTriggers += numFileTriggers;
+      /* If there are any remaining triggers ... */
+      if ( ringdownFileList )
+      {
+        /* add ringdowns to list */
+        if ( thisRingdownTrigger )
+        {
+          thisRingdownTrigger->next = ringdownFileList;
+        }
+         else
+        {
+          ringdownEventList = thisRingdownTrigger = ringdownFileList;
+        }
+         for( ; thisRingdownTrigger->next;
+             thisRingdownTrigger = thisRingdownTrigger->next);
+      }
+      
     }
+  
   }
   else
   {
@@ -817,19 +849,6 @@ int main( int argc, char *argv[] )
 
   if ( vrbflg ) fprintf( stdout, "Read in a total of %d triggers.\n",
       numTriggers );
-
-
-  /* maximize over a given interval */
-  if ( maximizationInterval )
-  {
-    if (vrbflg)
-    {
-      fprintf( stdout, "Clustering triggers for over %d ms window\n",
-          maximizationInterval);
-    }
-    XLALMaxSnglRingdownOverIntervals( &ringdownEventList, 
-        (1.0e6 * maximizationInterval) );
-  }
 
 
   /* check that we have read in data for all the requested times
@@ -1085,8 +1104,8 @@ int main( int argc, char *argv[] )
    */
 
 
-  /* since we don't yet write coinc inspiral tables, we must make a list of
-   * sngl_inspiral tables with the eventId's appropriately poplulated */
+  /* since we don't yet write coinc ringdown tables, we must make a list of
+   * sngl_ringdown tables with the eventId's appropriately poplulated */
   
    
 cleanexit:
