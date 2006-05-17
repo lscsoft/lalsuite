@@ -46,7 +46,7 @@
 	      (
 	       /* constants */
 	       "jmp cntcode              \n"
-	       ".align 64                \n\t"
+	       AD_ALIGN16 "              \n\t"
 	       "C_V0011:                 \n\t"
 	       AD_FLOAT "0.0             \n\t"
 	       AD_FLOAT "0.0             \n\t"
@@ -61,7 +61,7 @@
 	       AD_FLOAT "2.0             \n"
 
 	       AD_ASCII "\"$Id$\"\n"
-	       ".align 64                \n\t"
+	       AD_ALIGN16 "              \n\t"
 	       "cntcode:                 \n\t"
 
 	       /* SSE prelude */
@@ -76,30 +76,30 @@
 	       ADD4SSE(32,40)
 
 	       "FLDL %[tempFreq1]        \n\t" /* FLD D [TempFreqMinus15]   ;A15 */
-	       "FLD -16(%[Xalpha_k])     \n\t" /* FLD D [EBP-10h]   ;X14 A15 */
+	       "FLDS -16(%[Xalpha_k])    \n\t" /* FLD D [EBP-10h]   ;X14 A15 */
 	       "FMUL %%ST(1),%%ST        \n\t" /* FMUL ST,ST1       ;X14A15 A15 */
 
 	       ADD4SSE(48,56)
 
-	       "FLD -12(%[Xalpha_k])     \n\t" /* FLD D [EBP-0Ch]   ;Y14 X14A15 A15 */
+	       "FLDS -12(%[Xalpha_k])    \n\t" /* FLD D [EBP-0Ch]   ;Y14 X14A15 A15 */
 	       "FMUL %%ST(2),%%ST        \n\t" /* FMUL ST,ST2       ;Y14A15 X14A15 A15 */
 	       "FXCH %%ST(2)             \n\t" /* FXCH ST2          ;A15 X14A15 Y14A15 */
-	       "FLD  C_F1                \n\t" /* FLD D [_ONE_]     ;1 A15 X14A15 Y14A15 */
+	       "FLDS C_F1                \n\t" /* FLD D [_ONE_]     ;1 A15 X14A15 Y14A15 */
 	       "FADD %%ST(1),%%ST        \n\t" /* FADD ST,ST1       ;A14 A15 X14A15 Y14A15 */
 	       
 	       ADD4SSE(64,72)
 
-	       "FLD -8(%[Xalpha_k])      \n\t" /* FLD D [EBP-08h]   ;X15 A14 A15 X14A15 Y14A15 */
+	       "FLDS -8(%[Xalpha_k])     \n\t" /* FLD D [EBP-08h]   ;X15 A14 A15 X14A15 Y14A15 */
 	       "FMUL %%ST(1),%%ST        \n\t" /* FMUL ST,ST1       ;X15A14 A14 A15 X14A15 Y14A15 */
 	       "FADDP %%ST,%%ST(3)       \n\t" /* FADDP ST3,ST      ;A14 A15 X' Y14A15 */
 	       "FMUL %%ST,%%ST(1)        \n\t" /* FMUL ST1,ST       ;A14 Q145 X' Y14A15 */
-	       "FLD -4(%[Xalpha_k])      \n\t" /* FLD D [EBP-04h]   ;Y15 A14 Q145 X' Y14A15 */
+	       "FLDS -4(%[Xalpha_k])     \n\t" /* FLD D [EBP-04h]   ;Y15 A14 Q145 X' Y14A15 */
 
 	       ADD4SSE(80,88)
 
 	       "FMUL %%ST(1),%%ST        \n\t" /* FMUL ST,ST1       ;Y15A14 A14 Q145 X' Y14A15 */
 	       "FADDP %%ST,%%ST(4)       \n\t" /* FADDP ST4,ST      ;A14 Q145 X' Y' */
-	       "FSUB C_F2                \n\t" /* FSUB D [_TWO_]    ;A16 Q145 X' Y' */
+	       "FSUBS C_F2               \n\t" /* FSUB D [_TWO_]    ;A16 Q145 X' Y' */
 	       "FMUL %%ST,%%ST(2)        \n\t" /* FMUL ST2,ST       ;A16 Q145 X'A16 Y' */
 	       "FMUL %%ST,%%ST(3)        \n\t" /* FMUL ST3,ST       ;A16 Q145 X'A16 Y'A16 */
 	       
@@ -110,44 +110,44 @@
 	       "addl  $144,%[Xalpha_kX]  \n\t" /* Xalpha_kX = Xalpha_kX + 4; */
 	       "subps %%xmm5,%%xmm0      \n\t"
 
-	       "FLD 0(%[Xalpha_k])       \n\t" /* FLD D [EBP+00h]   ;X16 A16 Q145 X'A16 Y'A16 */
+	       "FLDS 0(%[Xalpha_k])      \n\t" /* FLD D [EBP+00h]   ;X16 A16 Q145 X'A16 Y'A16 */
 	       "FMUL %%ST(2),%%ST        \n\t" /* FMUL ST,ST2       ;X16Q145 A16 Q145 X'A16 Y'A16 */
 	       "FADDP %%ST,%%ST(3)       \n\t" /* FADDP ST3,ST      ;A16 Q145 X" Y'A16 */
-	       "FLD 4(%[Xalpha_k])       \n\t" /* FLD D [EBP+04h]   ;Y16 A16 Q145 X" Y'A16 */
+	       "FLDS 4(%[Xalpha_k])      \n\t" /* FLD D [EBP+04h]   ;Y16 A16 Q145 X" Y'A16 */
 	       "FMUL %%ST(2),%%ST        \n\t" /* FMUL ST,ST2       ;Y16Q145 A16 Q145 X" Y'A16 */
 
 	       ADD4SSE(0,8)
 
 	       "FADDP %%ST,%%ST(4)       \n\t" /* FADDP ST4,ST      ;A16 Q145 X" Y" */
 	       "FMUL %%ST,%%ST(1)        \n\t" /* FMUL ST1,ST       ;A16 Q146 X" Y" */
-	       "FSUB C_F1                \n\t" /* FSUB D [_ONE_]    ;A17 Q146 X" Y" */
+	       "FSUBS C_F1               \n\t" /* FSUB D [_ONE_]    ;A17 Q146 X" Y" */
 	       "FMUL %%ST,%%ST(2)        \n\t" /* FMUL ST2,ST       ;A17 Q146 X"A17 Y" */
 	       "FMUL %%ST,%%ST(3)        \n\t" /* FMUL ST3,ST       ;A17 Q146 X"A17 Y"A17 */
 	       
 	       ADD4SSE(16,24)
 
-	       "FLD 8(%[Xalpha_k])       \n\t" /* FLD D [EBP+08h]   ;X17 A17 Q146 X"A17 Y"A17 */
+	       "FLDS 8(%[Xalpha_k])      \n\t" /* FLD D [EBP+08h]   ;X17 A17 Q146 X"A17 Y"A17 */
 	       "FMUL %%ST(2),%%ST        \n\t" /* FMUL ST,ST2       ;X17Q146 A17 Q146 X"A17 Y"A17 */
 	       "FADDP %%ST,%%ST(3)       \n\t" /* FADDP ST3,ST      ;A17 Q146 X! Y"A17 */
 
 	       ADD4SSE(32,40)
 
-	       "FLD 12(%[Xalpha_k])      \n\t" /* FLD D [EBP+0Ch]   ;Y17 A17 Q146 X! Y"A17 */
+	       "FLDS 12(%[Xalpha_k])     \n\t" /* FLD D [EBP+0Ch]   ;Y17 A17 Q146 X! Y"A17 */
 	       "FMUL %%ST(2),%%ST        \n\t" /* FMUL ST,ST2       ;Y17Q146 A17 Q146 X! Y"A17 */
 	       "FADDP %%ST,%%ST(4)       \n\t" /* FADDP ST4,ST      ;A17 Q146 X! Y! */
 	       "FMULP %%ST,%%ST(1)       \n\t" /* FMULP ST1,ST      ;Q147 X! Y! */
 	       
 	       ADD4SSE(48,56)
 
-	       "FDIVR C_F1               \n\t" /* FDIVR D [_ONE_]   ;1/Q x y */
+	       "FDIVRS C_F1              \n\t" /* FDIVR D [_ONE_]   ;1/Q x y */
 	       "FMUL %%ST,%%ST(1)        \n\t" /* FMUL ST1,ST       ;1/Q xq y */
 	       "FMULP %%ST,%%ST(2)       \n\t" /* FMULP ST2,ST      ;xq yq */
 	       
 	       ADD4SSE(64,72)
 	       ADD4SSE(80,88)
 
-	       "FSTP %[XRes]             \n\t"
-	       "FSTP %[XIms]             \n\t"
+	       "FSTPS %[XRes]            \n\t"
+	       "FSTPS %[XIms]            \n\t"
 
 	       ADD4SSE(96,104) 
 
