@@ -245,11 +245,7 @@ int main(int argc, char *argv[]){
   LAL_CALL ( LALComputeMultiNoiseWeights ( &status, &multweight, &dmpNormalization, multPSD, uvar_blocksRngMed, 0), &status);
     
   /* we are now done with the psd */
-  LAL_CALL ( LALDestroyMultiPSDVector  ( &status, &multPSD), &status);
-  
-  LAL_CALL ( LALDestroyMultiNoiseWeights ( &status, &multweight), &status);
-  
-  
+  LAL_CALL ( LALDestroyMultiPSDVector  ( &status, &multPSD), &status);  
   
   {
     /* print relative weights of ifos to stdout */ 
@@ -271,9 +267,11 @@ int main(int argc, char *argv[]){
     
     LALFree(sumweights);
       
-  } /* end debugging */
+  } /* end printing of relative weights */
+
+  LAL_CALL (LALDestroyMultiSFTVector(&status, &inputSFTs), &status );
 				      
- 
+  LAL_CALL ( LALDestroyMultiNoiseWeights ( &status, &multweight), &status); 
 
   LAL_CALL (LALDestroyUserVars(&status), &status);
 
