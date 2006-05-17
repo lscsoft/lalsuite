@@ -1,10 +1,17 @@
           {
+#define GCC_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
+
 #ifdef __APPLE__ /* specials for Apples assembler */
-#define AD_FLOAT ".single "
-#define AD_ASCII ".ascii "
-#else /* standard x86 gas */
-#define AD_FLOAT ".float "
-#define AD_ASCII ".string "
+
+#define AD_FLOAT   ".single "
+#define AD_ASCII   ".ascii "
+#define AD_ALIGN16 ".align 4"
+#define AD_ALIGN64 ".align 6"
+#else /* x86 gas */
+#define AD_FLOAT   ".float "
+#define AD_ASCII   ".string "
+#define AD_ALIGN16 ".align 16"
+#define AD_ALIGN64 ".align 64"
 #endif
 	    
             COMPLEX8 *Xalpha_k = Xalpha + sftIndex;
@@ -163,11 +170,13 @@
 	       [Xalpha_k]  "r" (Xalpha_kF),
 	       [tempFreq1] "m" (tempFreqF),
 	       [tempFreqX] "m" (tempFreqX)
+
 	       : /* clobbered registers */
-	       "st","st(1)","st(2)","st(3)","st(4)",
-	       "xmm0","xmm1","xmm2","xmm3","xmm4","xmm5"
-	       );
-	    
+#if (GCC_VERSION != 40100)
+	       "xmm0","xmm1","xmm2","xmm3","xmm4","xmm5",
+#endif
+	       "st","st(1)","st(2)","st(3)","st(4)"
+	       );	    
 
 	    /* And last, we add the single and double precision values */
 	    XRes = XRes + XSumsX.re;
