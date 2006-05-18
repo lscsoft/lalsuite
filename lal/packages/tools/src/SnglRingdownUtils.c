@@ -785,7 +785,7 @@ LALPlayTestSingleRingdown(
 int
 XLALMaxSnglRingdownOverIntervals(
     SnglRingdownTable         **eventHead,
-    INT4                       deltaT
+    INT8                       deltaT
     )
 /* </lalVerbatim> */
 {
