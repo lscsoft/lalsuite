@@ -14,6 +14,19 @@
 #include <lal/BlackHoleMode.h>
 
 
+static int mysignbit( REAL8 x )
+{
+  if ( x == 0 )
+  {
+    REAL8 y = 0;
+    if ( memcmp( &x, &y, sizeof(x) ) )
+      return 1;
+    return 0;
+  }
+  return x < 0.0;
+}
+
+
 /*
  *
  * NOTE: STRANGE CONVENTIONS ...
@@ -294,7 +307,7 @@ static int XLALBlackHoleModeEigenSolve( COMPLEX16 *A, COMPLEX16 *omega, REAL8 a,
   int status;
 
   /* if a is negative, use an identity to obtain eigenvalues from -m mode */
-  if ( ( aIsNegative = signbit( a ) ) )
+  if ( ( aIsNegative = mysignbit( a ) ) )
   {
     a = fabs(a);
     m = -m;
@@ -445,7 +458,7 @@ int XLALBlackHoleModeEigenvaluesLeaverT( COMPLEX16 *A, COMPLEX16 *omega, REAL8 a
 
   /* locate the value of a in the table that is closer to zero than
    * the requested value */
-  eigen = signbit(a) ? mode->negativeEigenTable : mode->positiveEigenTable;
+  eigen = mysignbit(a) ? mode->negativeEigenTable : mode->positiveEigenTable;
   for ( i = 1; i < mode->eigenTableSize; ++i )
     if ( fabs( a ) < fabs( eigen[i].a ) )
       break;
@@ -471,7 +484,7 @@ int XLALBlackHoleModeEigenvaluesLeaver( COMPLEX16 *A, COMPLEX16 *omega, REAL8 a,
 
   if ( ! (fabs(a) < 0.5) )
     XLAL_ERROR( func, XLAL_EINVAL );
-  sign = signbit(a) ? -1 : 1;
+  sign = mysignbit(a) ? -1 : 1;
 
   /* step towards desired value of a */
   *A = crect(l*(l+1) - s*(s+1),0);
