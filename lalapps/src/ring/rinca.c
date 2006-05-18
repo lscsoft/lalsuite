@@ -194,7 +194,7 @@ int main( int argc, char *argv[] )
   InterferometerNumber  ifoNumber = LAL_UNKNOWN_IFO;
   InterferometerNumber  ifoTwo    = LAL_UNKNOWN_IFO;
   INT4                  i;
-  INT4                  maximizationInterval = 0;
+  INT8                  maximizationInterval = 0;
 
   const CHAR                   ifoList[LAL_NUM_IFO][LIGOMETA_IFO_MAX] = 
                                    {"G1", "H1", "H2", "L1", "T1", "V1"};
@@ -799,7 +799,7 @@ int main( int argc, char *argv[] )
       SnglRingdownTable   *ringdownFileList = NULL;
       SnglRingdownTable   *thisFileTrigger  = NULL;
 
-      numFileTriggers = XLALReadRingdownTriggerFile( &ringdownEventList,
+      numFileTriggers = XLALReadRingdownTriggerFile( &ringdownFileList,
           &thisRingdownTrigger, &searchSummList, &inputFiles, argv[i] );
       if (numFileTriggers < 0)
       {
