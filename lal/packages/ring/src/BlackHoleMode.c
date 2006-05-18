@@ -674,19 +674,22 @@ int XLALBlackHoleRingdownAmplitude(
     )
 {
   COMPLEX16 swf_1, swf_2;
-  COMPLEX16 amp;
+  COMPLEX16 omega, amp;
   REAL8 mu; /* cosine of inclinaion */
 
   mu = cos( inclinationRad );
   XLALSpheroidalWaveFunction( &swf_1, mu, mode );
   XLALSpheroidalWaveFunction( &swf_2, -mu, mode );
 
+  /* change from Leaver's conventions to usual conventions */
+  omega = cmulr( mode->omega, 0.5 ); 
+
   amp = cexp(cmulr(I, mode->m*azimuthRad));
-  amp = cmulr( amp, -4.0*massSolar*sqrt(-1.0*cimag(mode->omega)*0.5*fracMassLoss/cabs2(mode->omega)));
+  amp = cmulr( amp, -4.0*massSolar*sqrt(-1.0*cimag(omega)*0.5*fracMassLoss/cabs2(omega)));
   amp = cmulr( amp, LAL_MRSUN_SI/(distanceMpc*1e6*LAL_PC_SI));
 
-  *amplitudePlus = cmul(cadd(swf_1,conj(swf_2)),amp);
-  *amplitudeCross = cmul(cmul(I,csub(swf_1,conj(swf_2))),amp);
+  *amplitudePlus = cmul(cadd(swf_1,swf_2),amp);
+  *amplitudeCross = cmul(cmul(I,csub(swf_1,swf_2)),amp);
 
   return 0;
 }
