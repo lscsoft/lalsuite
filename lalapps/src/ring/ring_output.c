@@ -232,7 +232,7 @@ int write_REAL4TimeSeries( REAL4TimeSeries *series )
   char fname[FILENAME_SIZE];
   int t, dt;
   t  = series->epoch.gpsSeconds;
-  dt = ceil(series->epoch.gpsNanoSeconds + series->data->length*series->deltaT);
+  dt = ceil(1e-9*series->epoch.gpsNanoSeconds + series->data->length*series->deltaT);
   generate_file_name( fname, sizeof( fname ), series->name, t, dt );
   verbose( "writing series %s to file %s\n", series->name, fname );
   LALSPrintTimeSeries( series, fname );
@@ -246,7 +246,7 @@ int write_REAL4FrequencySeries( REAL4FrequencySeries *series )
   char fname[FILENAME_SIZE];
   int t, dt;
   t  = series->epoch.gpsSeconds;
-  dt = ceil(series->epoch.gpsNanoSeconds + 1.0/series->deltaF);
+  dt = ceil(1e-9*series->epoch.gpsNanoSeconds + 1.0/series->deltaF);
   generate_file_name( fname, sizeof( fname ), series->name, t, dt );
   verbose( "writing series %s to file %s\n", series->name, fname );
   LALSPrintFrequencySeries( series, fname );
@@ -260,7 +260,7 @@ int write_COMPLEX8FrequencySeries( COMPLEX8FrequencySeries *series )
   char fname[FILENAME_SIZE];
   int t, dt;
   t  = series->epoch.gpsSeconds;
-  dt = ceil(series->epoch.gpsNanoSeconds + 1.0/series->deltaF);
+  dt = ceil(1e-9*series->epoch.gpsNanoSeconds + 1.0/series->deltaF);
   generate_file_name( fname, sizeof( fname ), series->name, t, dt );
   verbose( "writing series %s to file %s\n", series->name, fname );
   LALCPrintFrequencySeries( series, fname );
