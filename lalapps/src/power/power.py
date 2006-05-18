@@ -56,7 +56,7 @@ class BurstInjJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 		self.set_sub_file("lalapps_binj.sub")
 
 
-class BurstInjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+class BurstInjNode(pipeline.AnalysisNode):
 	"""
 	A BurstInjNode runs an instance of lalapps_binj.
 	"""
@@ -67,11 +67,7 @@ class BurstInjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 		"""
 		pipeline.CondorDAGNode.__init__(self, job)
 		pipeline.AnalysisNode.__init__(self)
-		try:
-			self.__usertag = job.get_config("lalapps_binj", "user-tag")
-			self.add_var_opt("user-tag", self.__usertag)
-		except:
-			self.__usertag = None
+		self.__usertag = None
 
 	def set_user_tag(self, tag):
 		self.__usertag = tag
@@ -88,7 +84,7 @@ class BurstInjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 		"start" and "duration" parts of the name.
 		"""
 		if not self.get_start() or not self.get_end():
-			raise ValueError, "Start time or end time has not been set"
+			raise ValueError, "start time or end time has not been set"
 
 		if self.__usertag:
 			return "HL-INJECTIONS_%s-%d-%d.xml" % (self.__usertag, int(self.get_start()), int(self.get_end() - self.get_start()))
@@ -99,10 +95,11 @@ class BurstInjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 class PowerJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 	"""
 	A lalapps_power job used by the power pipeline. The static options
-	are read from the [lalapps_power] section in the ini file. The
-	stdout and stderr from the job are directed to the logs directory.
-	The job runs in the universe specified in the ini file. The path to
-	the executable is determined from the ini file.
+	are read from the [lalapps_power] and [lalapps_power_<inst>]
+	sections in the ini file. The stdout and stderr from the job are
+	directed to the logs directory.  The job runs in the universe
+	specified in the ini file. The path to the executable is determined
+	from the ini file.
 	"""
 	def __init__(self, out_dir, cp):
 		"""
@@ -120,7 +117,7 @@ class PowerJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 		self.set_sub_file("lalapps_power.sub")
 
 
-class PowerNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+class PowerNode(pipeline.AnalysisNode):
 	"""
 	A PowerNode runs an instance of the power code in a Condor DAG.
 	"""
@@ -131,11 +128,16 @@ class PowerNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 		"""
 		pipeline.CondorDAGNode.__init__(self, job)
 		pipeline.AnalysisNode.__init__(self)
-		try:
-			self.__usertag = job.get_config("pipeline", "user-tag")
-			self.add_var_opt("user-tag", self.__usertag)
-		except:
-			self.__usertag = None
+		self.__usertag = None
+
+	def set_ifo(self, instrument):
+		"""
+		Load additional options from the per-instrument section in
+		the config file.
+		"""
+		pipeline.AnalysisNode.set_ifo(self, instrument)
+		for optvalue in job._AnalysisJob__cp.items("lalapps_power_%s" % instrument):
+			self.add_var_arg("--%s %s" % optvalue)
 
 	def set_user_tag(self, tag):
 		self.__usertag = tag
@@ -152,7 +154,7 @@ class PowerNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 		"start" and "duration" parts of the name.
 		"""
 		if None in [self.get_start(), self.get_end(), self.get_ifo(), self.__usertag]:
-			raise ValueError, "Start time, end time, ifo, or user tag has not been set"
+			raise ValueError, "start time, end time, ifo, or user tag has not been set"
 		return "%s-POWER_%s-%d-%d.xml" % (self.get_ifo(), self.__usertag, int(self.get_start()), int(self.get_end()) - int(self.get_start()))
 
 	def set_mdccache(self, file):
@@ -202,7 +204,7 @@ class BuclusterJob(pipeline.CondorDAGJob):
 		self.add_ini_opts(config_parser, "ligolw_bucluster")
 
 
-class BuclusterNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+class BuclusterNode(pipeline.AnalysisNode):
 	pass
 
 
@@ -216,7 +218,7 @@ class BinjfindJob(pipeline.CondorDAGJob):
 		self.add_ini_opts(config_parser, "ligolw_binjfind")
 
 
-class BinjfindNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+class BinjfindNode(pipeline.AnalysisNode):
 	pass
 
 
@@ -230,8 +232,10 @@ class TisiJob(pipeline.CondorDAGJob):
 		self.add_ini_opts(config_parser, "ligolw_tisi")
 
 
-class TisiNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
-	pass
+class TisiNode(pipeline.AnalysisNode):
+	def set_output(self, file):
+		self.__output = file
+		self.add_file_arg(file)
 
 
 class BurcaJob(pipeline.CondorDAGJob):
@@ -527,15 +531,19 @@ def make_tisi_fragment(dag, tag):
 # =============================================================================
 #
 
-def make_injection_segment_fragment(dag, cache_dir, datafindnode, segment, instrument, calibration_cache, psds_per_job, tag):
+# FIXME:  after the lladd, add a bucut to strip injections that weren't done.
+
+def make_injection_segment_fragment(dag, cache_dir, datafindnode, segment, instrument, psds_per_job, tag, binjfrag = None, tisifrag = None):
 	seglist = split_segment(powerjob, segment, psds_per_job)
 	print >>sys.stderr, "Injections split: " + str(seglist)
 
-	binjfrag = make_multibinj_fragment(dag, cache_dir, "INJECTIONS_%s" % tag, seglist.extent())
+	if not binjfrag:
+		binjfrag = make_multibinj_fragment(dag, cache_dir, "INJECTIONS_%s" % tag, seglist.extent())
 
-	tisifrag = make_tisi_fragment(dag, "INJECTIONS_%s" % tag)
+	if not tisifrag:
+		tisifrag = make_tisi_fragment(dag, "INJECTIONS_%s" % tag)
 
-	lladdnode = make_multipower_fragment(dag, cache_dir, [datafindnode, binjfrag], [binjfrag, tisifrag], datafindnode.get_output(), seglist, instrument, "INJECTIONS_%s" % tag, injargs = {"burstinjection-file": binjfrag.get_output(), "calibration-cache": calibration_cache})
+	lladdnode = make_multipower_fragment(dag, cache_dir, [datafindnode, binjfrag], [binjfrag, tisifrag], datafindnode.get_output(), seglist, instrument, "INJECTIONS_%s" % tag, injargs = {"burstinjection-file": binjfrag.get_output()})
 
 	return lladdnode
 

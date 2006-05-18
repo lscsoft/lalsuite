@@ -69,7 +69,6 @@ parser.add_option("--publish-dest", metavar = "PATH", help = "set directory for 
 parser.add_option("--dmtmon-dest", metavar = "PATH", help = "set directory for DMT monitor output")
 parser.add_option("--gsiscp-dest", metavar = "PATH", help = "set destination for gsiscp")
 parser.add_option("--user-tag", metavar = "TAG", help = "set user tag on jobs that need it")
-parser.add_option("--calibration-cache", metavar = "FILENAME", help = "set name of calibration cache relative to auxiliary data directory")
 options, args = parser.parse_args()
 del parser, args
 
@@ -143,16 +142,6 @@ try:
 		options.user_tag = config_parser.get('pipeline', 'user-tag')
 except Exception, e:
 	raise Exception, "must either provide --user-tag, or user-tag variable in [pipeline] section of .ini: %s" % str(e)
-
-# calibration cache
-try:
-	if options.calibration_cache:
-		config_parser.set('pipeline', 'calibration-cache', options.calibration_cache)
-	else:
-		options.calibration_cache = config_parser.get('pipeline', 'calibration-cache')
-except Exception, e:
-	raise Exception, "must either provide --calibration-cache, or calibration-cache variable in [pipeline] section of .ini: %s" % str(e)
-options.calibration_cache = os.path.join(options.aux_dir, options.calibration_cache)
 
 
 #
@@ -350,15 +339,15 @@ os.mkdir(out_dir)
 dag = pipeline.CondorDAG(condor_log)
 dag.set_dag_file(options.dag_name)
 
-datafindnode = power.make_datafind_fragment(dag, options.instrument[0], options.seg)
+datafindfrag = power.make_datafind_fragment(dag, options.instrument[0], options.seg)
 
-darmpowerfrag = power.make_power_segment_fragment(dag, cache_dir, datafindnode, options.seg, options.instrument, psds_per_job, options.user_tag)
+darmpowerfrag = power.make_power_segment_fragment(dag, cache_dir, datafindfrag, options.seg, options.instrument, psds_per_job, options.user_tag)
 
 make_publish_fragment(dag, "POWER", darmpowerfrag, options.publish_dest)
 if options.dmtmon_dest:
 	make_burst2mon_fragment(dag, darmpowerfrag, options.seg, options.user_tag)
 
-injpowerfrag = power.make_injection_segment_fragment(dag, cache_dir, datafindnode, options.seg, options.instrument, options.calibration_cache, psds_per_injection, options.user_tag)
+injpowerfrag = power.make_injection_segment_fragment(dag, cache_dir, datafindfrag, options.seg, options.instrument, psds_per_injection, options.user_tag)
 
 binjfindfrag = power.make_binjfind_fragment(dag, injpowerfrag, "INJECTIONS_%s" % options.user_tag)
 make_publish_fragment(dag, "INJECTIONS", binjfindfrag, options.publish_dest)
