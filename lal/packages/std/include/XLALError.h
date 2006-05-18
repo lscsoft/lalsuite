@@ -297,6 +297,9 @@ void XLALDefaultErrorHandler( const char *func, const char *file, int line, int 
 void XLALAbortErrorHandler( const char *func, const char *file, int line, int errnum );
 /** The XLAL error handler that calls exit. */
 void XLALExitErrorHandler( const char *func, const char *file, int line, int errnum );
+/** The XLAL error handler that prints a function call backtrace then raises SIGABRT. */
+void XLALBacktraceErrorHandler( const char *func, const char *file, int line, int errnum );
+
 
 
 /** Sets the error handler to a new handler and returns the old handler. */
