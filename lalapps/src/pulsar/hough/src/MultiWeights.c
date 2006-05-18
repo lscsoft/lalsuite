@@ -82,6 +82,8 @@ int main(int argc, char *argv[]){
 
   /* LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
+
+  REAL8 scalepow=1.0e40;
   
   /* standard pulsar sft types */ 
   MultiSFTVector *inputSFTs = NULL;
@@ -227,16 +229,22 @@ int main(int argc, char *argv[]){
 	
 	binsSFT = multPSD->data[iIFO]->data[iSFT].data->length;
 	sumSn = 0.0;
+	/* use a scale to make numbers closer to unity */
 	for ( j = 0; j < binsSFT; j++)
-	  sumSn += multPSD->data[iIFO]->data[iSFT].data->data[j];
+	  sumSn += scalepow * multPSD->data[iIFO]->data[iSFT].data->data[j];
 
-	sumSnInv += binsSFT/sumSn;
+	sumSnInv += binsSFT * binsSFT / (sumSn * sumSn);
       } /* end loop over sfts */
       
     } /* end loop over IFOs */
     
+    
+    sumSnInv = sqrt(sumSnInv);
+    sumSnInv *= scalepow;
+    sumSnInv = sqrt(sumSnInv);
 
-    fprintf(stdout, "%g\n", sumSnInv);
+
+    fprintf(stdout, "%g\n", 1.0/sumSnInv);
   } /* end block for 1/Sn calculation */
 
 
