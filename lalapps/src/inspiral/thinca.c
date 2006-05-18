@@ -171,7 +171,7 @@ static void print_usage(char *program)
       "  [--alphaf-lo]         alphaFlo   reject BCV triggers with alphaF smaller\n"\
       "                                   than alphaFlo (< alphaFhi)\n"\
       "                                   (if --do-alphaF-cut used)\n"\
-      "  [--do-bcvc-veto]                 perform cut based on alphaF\n"\
+      "  [--bcvc]                         perform cut based on alphaF\n"\
       "                                   with individual bounds given below.\n"\
       "  [--h1-alphaf-hi]      alphaFhi   reject BCV triggers outside the specified \n"\
       "  [--h1-alphaf-lo]      alphaFlo   alphaF area for H1 (if \n"\
@@ -179,6 +179,7 @@ static void print_usage(char *program)
       "  [--h2-alphaf-lo]      alphaFlo   alphaF area for H2\n"\
       "  [--l1-alphaf-hi]      alphaFhi   reject BCV triggers outside the specified \n"\
       "  [--l1-alphaf-lo]      alphaFlo   alphaF area for L1\n"\
+      "  [--snr-cut]           snr        reject triggers below this snr \n"\
       "  [--do-bcvspin-h1h2-veto]         reject coincidences with H1 snr < H2 snr \n"\
       "   --data-type          data_type  specify the data type, must be one of\n"\
       "                                   (playground_only|exclude_play|all_data)\n"\
@@ -275,7 +276,7 @@ int main( int argc, char *argv[] )
 
   REAL4                 alphaFhi = -2.e4;
   REAL4                 alphaFlo = 9.e4;
-
+  REAL4                 snrCut = 0; /* by default we do not remove any triggers in the SNR Cut*/     
 
   const CHAR                   ifoList[LAL_NUM_IFO][LIGOMETA_IFO_MAX] = 
                                    {"G1", "H1", "H2", "L1", "T1", "V1"};
@@ -372,6 +373,7 @@ int main( int argc, char *argv[] )
     {"l1-alphaf-hi",        required_argument, 0,                    'X'},
     {"alphaf-lo",           required_argument, 0,                    '#'},
     {"alphaf-hi",           required_argument, 0,                    '%'},
+    {"snr-cut",             required_argument, 0,                    '*'},
     {0, 0, 0, 0}
   };
   int c;
@@ -427,7 +429,7 @@ int main( int argc, char *argv[] )
     c = getopt_long_only( argc, argv, 
         "A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:VW:Y:Z:"
         "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:"
-        "2:3:4:5:6:7:8:9:!:-:+:=:@:^:&:*", 
+        "2:3:4:5:6:7:8:9:!:-:+:=:@:^:&:*:", 
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -1029,6 +1031,12 @@ int main( int argc, char *argv[] )
         accuracyParams.ifoAccuracy[LAL_IFO_H2].epsilon = atof(optarg);
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
+      
+      case '*':
+        /* snr cut */
+        snrCut = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
         
       default:
         fprintf( stderr, "Error: Unknown error while parsing options\n" );
@@ -1320,6 +1328,17 @@ int main( int argc, char *argv[] )
   if ( vrbflg ) fprintf( stdout, "Read in a total of %d triggers.\n",
       numTriggers );
 
+  /* SNR Cut if requested*/
+  if ( snrCut > 0.0 )
+  {    
+    if ( vrbflg ) 
+    {
+      fprintf(stdout, "Removing triggers with SNR lower than %f", snrCut);
+    }
+    
+    LAL_CALL( LALSNRCutSingleInspiral( &status, &(inspiralEventList), 
+          snrCut),  &status );
+  }
   /*
    * for the case of BCV unconstrained-max, discard the triggers that
    * have alphaF greater than alphaFhi or lower than alphaFlo,
