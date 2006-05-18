@@ -87,12 +87,12 @@ int main(int argc, char *argv[]){
   MultiSFTVector *inputSFTs = NULL;
   UINT4 numifo;
 
-
+  REAL8Vector weightsNoise;
   MultiNoiseWeights *multweight = NULL;    
   MultiPSDVector *multPSD = NULL;  
   REAL8 dmpNormalization;
   UINT4 iIFO, iSFT, numsft;
-  
+  INT4 j;
 
   /* miscellaneous */
   UINT4  mObsCoh;
@@ -219,7 +219,6 @@ int main(int argc, char *argv[]){
   {
     REAL8 sumSn, sumSnInv=0.0;
     INT8 binsSFT;
-    INT4 j;
 
     for ( iIFO = 0; iIFO < numifo; iIFO++ ) {
       numsft = multPSD->data[iIFO]->length;
@@ -243,31 +242,51 @@ int main(int argc, char *argv[]){
 
   /* compute multi noise weights */
   LAL_CALL ( LALComputeMultiNoiseWeights ( &status, &multweight, &dmpNormalization, multPSD, uvar_blocksRngMed, 0), &status);
+
+
+  weightsNoise.length = mObsCoh;
+  weightsNoise.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
+
+  /* copy the timestamps, weights, and velocity vector */
+  for (j = 0, iIFO = 0; iIFO < numifo; iIFO++ ) {
     
-  /* we are now done with the psd */
-  LAL_CALL ( LALDestroyMultiPSDVector  ( &status, &multPSD), &status);  
+    numsft = multweight->data[iIFO]->length;
+    
+    /* loop over sfts and copy weights */
+    for ( iSFT = 0; iSFT < numsft; iSFT++, j++)
+      weightsNoise.data[j] = multweight->data[iIFO]->data[iSFT];
+    
+  } /* loop over IFOs */
+
+  /* normalize weights */
+  LAL_CALL( LALHOUGHNormalizeWeights( &status, &weightsNoise), &status);    
   
   {
     /* print relative weights of ifos to stdout */ 
-    REAL8 *sumweights=NULL;
-    
+    REAL8 *sumweights=NULL;    
     sumweights = (REAL8 *)LALCalloc(1, numifo*sizeof(REAL8));
-    for ( iIFO = 0; iIFO < numifo; iIFO++ ) {
-      
+
+    for (j=0, iIFO = 0; iIFO < numifo; iIFO++ ) {      
       numsft = multweight->data[iIFO]->length;
       
-      for ( iSFT = 0; iSFT < numsft; iSFT++) 	  
-	sumweights[iIFO] += multweight->data[iIFO]->data[iSFT];
+      for ( iSFT = 0; iSFT < numsft; iSFT++, j++) 	  
+	sumweights[iIFO] += weightsNoise.data[j];
       
     } /* end loop over IFOs */
 
     /* print relative sum of weights */    
     for ( iIFO = 0; iIFO < numifo; iIFO++ )
-      fprintf(stdout, "%d  %f\n", iIFO, sumweights[iIFO]);
+      fprintf(stdout, "%s  %f\n", inputSFTs->data[iIFO]->data[0].name, sumweights[iIFO]/mObsCoh);
     
     LALFree(sumweights);
       
   } /* end printing of relative weights */
+
+
+  /* free memory and exit */
+  LALFree(weightsNoise.data);  
+
+  LAL_CALL ( LALDestroyMultiPSDVector  ( &status, &multPSD), &status);  
 
   LAL_CALL (LALDestroyMultiSFTVector(&status, &inputSFTs), &status );
 				      
