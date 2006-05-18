@@ -14,7 +14,9 @@ else
 RINGPROG =
 endif
 bin_SCRIPTS = lalapps_ring_pipe 
-bin_PROGRAMS = $(RINGPROG)
+bin_PROGRAMS = $(RINGPROG) \
+	       lalapps_qnmode lalapps_qnmode_table lalapps_spheroidal_harmonic \
+	       lalapps_ringdown_amplitude lalapps_ringdown_waveform
 if FRAME
 if LALFRAME
 if LALMETAIO
@@ -32,6 +34,11 @@ lalapps_rinca_SOURCES = rinca.c
 endif
 endif
 endif
+lalapps_qnmode_SOURCES = qnmode.c
+lalapps_qnmode_table_SOURCES = qnmode_table.c
+lalapps_spheroidal_harmonic_SOURCES = spheroidal_harmonic.c
+lalapps_ringdown_amplitude_SOURCES = ringdown_amplitude.c
+lalapps_ringdown_waveform_SOURCES = ringdown_waveform.c
 pythonlibdir = ${prefix}/lib/python
 pythonlib_SCRIPTS = ring.py
 pkgdata_DATA = ring_test.ini
