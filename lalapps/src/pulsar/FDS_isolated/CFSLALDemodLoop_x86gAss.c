@@ -172,7 +172,7 @@
 	       [tempFreqX] "m" (tempFreqX)
 
 	       : /* clobbered registers */
-#if (GCC_VERSION != 40100)
+#ifndef IGNORE_XMM_REGISTERS
 	       "xmm0","xmm1","xmm2","xmm3","xmm4","xmm5",
 #endif
 	       "st","st(1)","st(2)","st(3)","st(4)"
