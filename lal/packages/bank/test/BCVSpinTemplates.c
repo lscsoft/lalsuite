@@ -83,7 +83,8 @@ main(int argc, char **argv)
   coarseIn.alpha = 0.L;
   coarseIn.numFcutTemplates = 4;
   coarseIn.betaMin = 0.0;
-  coarseIn.betaMax = 400.;
+  coarseIn.betaMax = 800.;
+  coarseIn.spinBank = 1;
   coarseIn.gridSpacing = Hexagonal;
 
   memset( &(coarseIn.shf), 0, sizeof(REAL8FrequencySeries) );
@@ -92,10 +93,11 @@ main(int argc, char **argv)
   coarseIn.shf.deltaF = coarseIn.tSampling / (2.*(REAL8) coarseIn.shf.data->length + 1.L);
   LALNoiseSpectralDensity (&status, coarseIn.shf.data, noisemodel, coarseIn.shf.deltaF );
 
-  coarseIn.approximant = BCV;
+  coarseIn.approximant = BCVSpin;
   coarseIn.space       = Psi0Psi3;
   
-  LALInspiralBCVSpinBank (&status, &tiles, &nlist1, &coarseIn);
+  // LALInspiralBCVSpinBank (&status, &tiles, &nlist1, &coarseIn);
+  LALInspiralBankGeneration(&status, &coarseIn, &tiles, &nlist1);
   fprintf (fpr, "#numtemplaes=%d\n", nlist1);
   beta = tiles->beta;
   for (j=0; j<nlist1; j++)
@@ -109,9 +111,9 @@ main(int argc, char **argv)
 	  }
   }
 
+  fclose(fpr);
   LALDDestroyVector( &status, &(coarseIn.shf.data) );
   LALFree(tiles);
   LALCheckMemoryLeaks();
-  fclose(fpr);
   return 0;
 }

@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-check_PROGRAMS = ChirpSpace CoarseTest CoarseTest2 MetricTest MetricTestBCV BCVTemplates BCVSpinTemplates PNTemplates BCVTemplatesFlatMesh InspiralSpinBankTest SpaceCovering GetOrientationEllipse
+check_PROGRAMS = ChirpSpace CoarseTest CoarseTest2 MetricTest MetricTestBCV BCVTemplates PNTemplates BCVTemplatesFlatMesh InspiralSpinBankTest SpaceCovering GetOrientationEllipse
 
 GetOrientationEllipse_SOURCES = GetOrientationEllipse.c
 GetOrientationEllipse_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
@@ -25,9 +25,6 @@ MetricTestBCV_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(to
 BCVTemplates_SOURCES = BCVTemplates.c
 BCVTemplates_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 
-BCVSpinTemplates_SOURCES = BCVSpinTemplates.c
-BCVSpinTemplates_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-
 PNTemplates_SOURCES = PNTemplates.c
 PNTemplates_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 
@@ -42,8 +39,8 @@ InspiralSpinBankTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.
 endif
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
-#TESTS = ChirpSpace CoarseTest CoarseTest2 MetricTest MetricTestBCV PNTemplates BCVTemplates BCVSpinTemplates BCVTemplatesFlatMesh InspiralSpinBankTest
-TESTS = ChirpSpace CoarseTest CoarseTest2 MetricTest MetricTestBCV PNTemplates BCVTemplates BCVSpinTemplates BCVTemplatesFlatMesh
+#TESTS = ChirpSpace CoarseTest CoarseTest2 MetricTest MetricTestBCV PNTemplates BCVTemplates BCVTemplatesFlatMesh InspiralSpinBankTest
+TESTS = ChirpSpace CoarseTest CoarseTest2 MetricTest MetricTestBCV PNTemplates BCVTemplates BCVTemplatesFlatMesh
 EXTRA_DIST = CoarseTest.par demo 
 MOSTLYCLEANFILES = .dvi-dep *.out
 DISTCLEANFILES = *.tex
