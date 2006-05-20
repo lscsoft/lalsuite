@@ -1158,7 +1158,7 @@ double vector_product(double *a,double *b,double *c)
 
 
 /* compute the product of matrix, B and C, BC. Result is A*/
-int product_matrix(int n,double A[][n+1],double B[][n+1],double C[][n+1])
+int product_matrix(int n,double A[][n],double B[][n],double C[][n])
 {
   int i,j;
   double b[4][4],c[4][4];

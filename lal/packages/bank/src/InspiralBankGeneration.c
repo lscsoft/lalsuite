@@ -93,8 +93,10 @@ LALInspiralBankGeneration(
     else if (input->spinBank==1)
     {
     /* For extended bank use LALInspiralBCVSpinBank() */
+/*
     TRY( LALInspiralBCVSpinBank( status->statusPtr, first, ntiles, input ),
          status );   
+*/
     }
     else
     {
