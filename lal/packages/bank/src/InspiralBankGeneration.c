@@ -84,9 +84,23 @@ LALInspiralBankGeneration(
     break;
 
   case BCVSpin:
+    if (input->spinBank==0)
+    {
     /* Use LALInspiralSpinBank(); no need to convert output. */
     TRY( LALInspiralSpinBank( status->statusPtr, first, ntiles, input ),
          status );   
+    }
+    else if (input->spinBank==1)
+    {
+    /* For extended bank use LALInspiralBCVSpinBank() */
+    TRY( LALInspiralBCVSpinBank( status->statusPtr, first, ntiles, input ),
+         status );   
+    }
+    else
+    {
+      ABORT( status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE );
+    }
+
     if (*ntiles < 1){       
       ABORT( status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
     }

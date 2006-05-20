@@ -49,11 +49,11 @@ LALInspiralBCVSpinBank(
 {
   /* Nmax is the maximum number of beta values we are allowed to have */
   INT4 Nmax=1000;
-  INT4 N, i, k, nbeta, totTemps=0;
-  REAL8 *Sn, MM, beta, betaMin, betaMax;
+  INT4 N, k, nbeta, totTemps=0;
+  REAL8 *Sn, MM, betaMin, betaMax;
   REAL8 fmin, fmax, beta_list[Nmax+1];
   REAL8 effmetric_list[3][3][Nmax+1];
-  INT4 nlist; 
+
   /* Let us declare the metric, bank parameters and vector sequences that will
    * hold the psi0-psi3 values at the location of the templates 
    */
@@ -206,10 +206,12 @@ LALInspiralBCVSpinBank(
 		  */
 	  }
   }
+  /*
   for (k=0; k<totTemps; k++)
   {
 	  printf("%e %e %e\n", totList->data[3*k], totList->data[3*k+1], totList->data[3*k+2]); 
   }
+  */
     
   /* Convert output data structure. */
  
@@ -291,7 +293,7 @@ LALInspiralBCVSpinBank(
                            This can be set to 1. */
 #define N_RANDOM (100)  /* The number of monte carlo to generate 
                            the 6 phase factor */
-#define JJ (1500)       /* The number of direction of contour 
+#define JJ (150)       /* The number of direction of contour 
                            for which the fitting is done. */
 
 double cont_data[JJ+1][4];
@@ -397,8 +399,9 @@ int innerC(/* input */
 
   int i,imin;
   double df,tmp;
-  dcomplex ctmp1,cA[N+1];
+  dcomplex ctmp1,*cA;
 
+  cA = (dcomplex *) malloc(sizeof(dcomplex)*(N+1));
   df=(fmax)/N;
   imin=fmin/df;
 
@@ -415,6 +418,7 @@ int innerC(/* input */
     tmp+=ctmp1.r/Sn[i];
   }
   *result=tmp*4*df;
+  free(cA);
 
   return 0;
 }
@@ -429,8 +433,8 @@ int orthonormalized_A(/* input */
 		      double *normtA2,double *normtA3)
 {
   int i;
-  double df,freq,tmp,a,b,d;
-  double A1A1,A1A2,A1A3,tA2A3,hA2A3;
+  double tmp,a,b,d;
+  double A1A1,A1A2,A1A3,hA2A3;
 
   innerR(N,A1,A1,Sn,fmin,fmax,&A1A1);
   innerR(N,A1,A2,Sn,fmin,fmax,&A1A2);
@@ -468,15 +472,15 @@ int orthonormalized_A(/* input */
 }
 
 int dA2dbeta(/* input */
-	     int N,double *Sn,double fmin,double fmax,
-	     double *hA1,double *A2,
-	     double *tA2,double *hA2,double *dA2,double normtA2,
+	     int N,double *Sn,double fmin,double fmax, double *hA1,
+	     double *tA2,double *dA2,double normtA2,
 	     /* output */
 	     double *dhA2)
 {
   int i;
-  double df,inner,inner2,dtA2[N+1];
+  double inner,inner2,*dtA2;
 
+  dtA2 = (double *) malloc(sizeof(double) *(N+1));
   innerR(N,dA2,hA1,Sn,fmin,fmax,&inner);
 
   for(i=0;i<=N;i++)
@@ -487,6 +491,7 @@ int dA2dbeta(/* input */
   for(i=0;i<=N;i++)
     dhA2[i]=dtA2[i]/normtA2-tA2[i]*inner2/pow(normtA2,3.);
 
+  free(dtA2);
   return 0;
 }
 
@@ -498,8 +503,10 @@ int dA3dbeta(/* input */
 	     double *dhA3)
 {
   int i;
-  double df,inner,tA1dA3,tA2dA3,dhA2A3,hA2A3,dtA3[N+1];
+  double inner,dhA2A3,hA2A3,*dtA3;
   double hA1dA3,hA2dA3;
+
+  dtA3 = (double *) malloc(sizeof(double)*(N+1));
 
   innerR(N,hA1,dA3,Sn,fmin,fmax,&hA1dA3);
 
@@ -518,6 +525,7 @@ int dA3dbeta(/* input */
   for(i=0;i<=N;i++)
     dhA3[i]=dtA3[i]/normtA3-tA3[i]*inner/pow(normtA3,3.);
 
+  free(dtA3);
   return 0;
 }
 
@@ -534,9 +542,24 @@ int calc_function_G(/* input */
 	       double funcG[7][7][4][4])
 {
   int i,j,k,l,m,imin;
-  double freq,df,inner,inner2,freq2[N+1],freq3[N+1],tmp1,sum;
+  double freq,df,*freq2,sum;
   double inn1[7][7][4][4],inn2[7][7][4];
-  dcomplex u[7][4][N+1],A[7][N+1],ctmp,ctmp1;
+
+
+  /*
+  dcomplex u[7][4][N+1],A[7][N+1],ctmp;
+  */
+  dcomplex *u[7][4],*A[7],ctmp;
+
+  for(i=0;i<=6;i++)
+  for(j=0;j<=3;j++)
+  {
+     u[i][j] = (dcomplex *) malloc(sizeof(dcomplex)*(N+1));
+  }
+  for(i=0;i<=6;i++)
+  {
+     A[i] = (dcomplex *) malloc(sizeof(dcomplex)*(N+1));
+  }
 
   df=(fmax)/N;
   imin=fmin/df;
@@ -567,10 +590,11 @@ int calc_function_G(/* input */
     u[6][3][i]=DComplex(0,dhA3db[i]);
   }
 
+  freq2 = (double *) malloc(sizeof(double)*(N+1));
   freq2[0]=0.;
   for(i=1;i<=N;i++){
     freq=df*i;
-    freq2[i]=pow(freq,-5/3.);
+    freq2[i]=pow(freq,-5./3.);
   }
   for(j=1;j<=6;j++){
     for(i=0;i<=N;i++){
@@ -579,17 +603,18 @@ int calc_function_G(/* input */
     }
   }
 
-  freq3[0]=0.;
+  freq2[0]=0.;
   for(i=1;i<=N;i++){
     freq=df*i;
-    freq3[i]=pow(freq,-2/3.);
+    freq2[i]=pow(freq,-2./3.);
   }
   for(j=1;j<=6;j++){
     for(i=0;i<=N;i++){
-      ctmp=DComplex(0,freq3[i]);
+      ctmp=DComplex(0,freq2[i]);
       u[j][2][i]=DCmul(ctmp,A[j][i]);
     }
   }
+  free(freq2);
 
   for(i=1;i<=6;i++)
     for(j=1;j<=6;j++)
@@ -617,6 +642,16 @@ int calc_function_G(/* input */
 	  funcG[i][j][k][l]=inn1[i][j][k][l]-sum;
 	}
 
+  for(i=0;i<=6;i++)
+  for(j=0;j<=3;j++)
+  {
+     free(u[i][j]);
+  }
+  for(i=0;i<=6;i++)
+  {
+     free(A[i]);
+  }
+
   return 0;
 }
 
@@ -625,22 +660,55 @@ int functionG(/* input */
 	      /* output */
 	      double funcG[7][7][4][4])
 {
-  int i;
-  double A1[N+1],A2[N+1],A3[N+1],tA2[N+1],tA3[N+1],hA1[N+1],hA2[N+1],hA3[N+1];
-  double costerm[N+1],sinterm[N+1];
-  double dA2[N+1],dA3[N+1],dtA2[N+1],dtA3[N+1],dhA2[N+1],dhA3[N+1];
+  double *A1,*A2,*A3,*tA2,*tA3,*hA1,*hA2,*hA3;
+  double *costerm,*sinterm;
+  double *dA2,*dA3,*dhA2,*dhA3;
   double normtA2,normtA3;
-  double result;
+
+  A1 = (double *) malloc(sizeof(double)*(N+1));
+  A2 = (double *) malloc(sizeof(double)*(N+1));
+  A3 = (double *) malloc(sizeof(double)*(N+1));
+  dA2 = (double *) malloc(sizeof(double)*(N+1));
+  dA3 = (double *) malloc(sizeof(double)*(N+1));
+  costerm = (double *) malloc(sizeof(double)*(N+1));
+  sinterm = (double *) malloc(sizeof(double)*(N+1));
 
   cos_sin_func(N,beta,fmax,costerm,sinterm);
   coef_A(N,costerm,sinterm,fmax,A1,A2,A3);
   deriv_A(N,costerm,sinterm,fmax,dA2,dA3);
+
+  free(costerm);
+  free(sinterm);
+
+  tA2 = (double *) malloc(sizeof(double)*(N+1));
+  tA3 = (double *) malloc(sizeof(double)*(N+1));
+  hA1 = (double *) malloc(sizeof(double)*(N+1));
+  hA2 = (double *) malloc(sizeof(double)*(N+1));
+  hA3 = (double *) malloc(sizeof(double)*(N+1));
+  dhA2 = (double *) malloc(sizeof(double)*(N+1));
+  dhA3 = (double *) malloc(sizeof(double)*(N+1));
+
   orthonormalized_A(N,A1,A2,A3,Sn,fmin,fmax,tA2,tA3,hA1,hA2,hA3,
 		    &normtA2,&normtA3);
-  dA2dbeta(N,Sn,fmin,fmax,hA1,A2,tA2,hA2,dA2,normtA2,dhA2);
+  free(A1);
+  free(A2);
+
+  dA2dbeta(N,Sn,fmin,fmax,hA1,tA2,dA2,normtA2,dhA2);
+  free(tA2);
+  free(dA2);
+
   dA3dbeta(N,Sn,fmin,fmax,hA1,hA2,dhA2,A3,tA3,dA3,normtA3,dhA3);
+  free(A3);
+  free(dA3);
+  free(tA3);
 
   calc_function_G(N,Sn,fmin,fmax,hA1,hA2,hA3,dhA2,dhA3,funcG);
+
+  free(hA1);
+  free(hA2);
+  free(hA3);
+  free(dhA2);
+  free(dhA3);
 
   return 0;
 }
@@ -686,7 +754,7 @@ int generate_fit_points(/*input*/double MinMatch, double funcG[7][7][4][4],
 {
   const gsl_rng_type * T;
   gsl_rng * r;
-  int i,j,k,nrot;
+  int i,j,k;
   double x[4],xd[4],sum,alpha[7],metric3[4][4];
 
   /*  for(i=1;i<=6;i++)
@@ -759,11 +827,10 @@ int generate_metric_data(/* input */double MinMatch,
 			 double funcG[7][7][4][4])
 {
   extern double cont_data[JJ+1][4];  
-  int i,j,k,i2,j2,nn;
-  double tmp1,tmp2,tmp3,th,phi,x[4],maxr;
+  int i,k,i2,j2;
+  double x[4],maxr;
   double alpha[7],metric3[N_RANDOM+1][4][4],sum,rr[N_RANDOM+1],distance;
   double fit_point[JJ+1][4];
-  FILE *fp;
   const gsl_rng_type * T;
   gsl_rng * r;
 	
@@ -815,7 +882,7 @@ int generate_metric_data(/* input */double MinMatch,
 	return 0;
 }
 
-void model_func(double xx,double afunc[],int ma)
+void model_func(double xx,double afunc[])
 {
   int i,j,k;
   double x[4];
@@ -857,7 +924,7 @@ int metric_by_fit(/* input */
     ia[i]=1;
   }
 
-  svdfit_d_test(x,y,sig,ndata,a,ma,u,v,w,&chisq,model_func);
+  svdfit_d_test(x,y,sig,ndata,a,ma,u,v,w,&chisq,&model_func);
 	
   k=1;
   for(i=1;i<=3;i++)
@@ -919,9 +986,9 @@ int BCVspin_metric(/*input*/
 		double bcv2metric[4][4],int dbg)
 {
   extern double cont_data[JJ+1][4];
-  int i,j,k,l,J,m,nn,ndata2,ndata3;
-  double funcG[7][7][4][4],metric3[4][4],alpha[7];
-  double tmp,tmp1,tmp2,tmp3,maxr,minr,metric_data3[JJ+1][4];
+  int i,j;
+  double funcG[7][7][4][4];
+  double metric_data3[JJ+1][4];
   double metric_fit[4][4],metric_rescaled[4][4];
 
   functionG(N,beta,Sn,fmin,fmax,funcG);
@@ -981,7 +1048,7 @@ double determinant3(gsl_matrix *matrix)
 
 int matrix2_determinant_plus(gsl_matrix *matrix,gsl_vector *eig)
 {
-  int i,j,k;
+  int i,j;
   double a[3][3],det;
 	
 	for (i = 0; i < 2; i++){
@@ -1026,7 +1093,7 @@ int matrix2_determinant_plus(gsl_matrix *matrix,gsl_vector *eig)
 
 int matrix3_determinant_plus(gsl_matrix *matrix,gsl_vector *eig)
 {
-  int i,j,k;
+  int i,j;
   double det;
 
 
@@ -1068,7 +1135,7 @@ int matrix3_determinant_plus(gsl_matrix *matrix,gsl_vector *eig)
 /* Compute the inner product of two vectors */
 double innerp(int n,double *b,double *c)
 {
-  int i,j,k;
+  int i;
   double sum;
 
   sum=0.;
@@ -1081,9 +1148,6 @@ double innerp(int n,double *b,double *c)
 /* Compute the 3-dim vector product */
 double vector_product(double *a,double *b,double *c)
 {
-  int i,j,k;
-  double sum;
-
   a[1]=b[2]*c[3]-b[3]*c[2];
   a[2]=b[3]*c[1]-b[1]*c[3];
   a[3]=b[1]*c[2]-b[2]*c[1];
@@ -1095,7 +1159,7 @@ double vector_product(double *a,double *b,double *c)
 /* compute the product of matrix, B and C, BC. Result is A*/
 int product_matrix(int n,double A[][n+1],double B[][n+1],double C[][n+1])
 {
-  int i,j,k;
+  int i,j;
   double b[4][4],c[4][4];
 
   for(i=1;i<=n;i++)
@@ -1114,7 +1178,7 @@ int product_matrix(int n,double A[][n+1],double B[][n+1],double C[][n+1])
 /*Compute the product of a matrix A and a vector v, Av. Result is *w */
 int product_mat_vec(int n,double *w,double A[][n+1],double *v)
 {
-  int i,j,k;
+  int i,j;
 
   for(i=1;i<=n;i++){
     w[i]=0;
@@ -1141,9 +1205,9 @@ int BCVspin_spacing(/* input */
 		    /* output */
 		    double a[4][4],double *deltax)
 {
-	int i,j,k,nrot;
+	int i,j;
 	double e[4][4],ad[4][4],f[4][4],P[4][4],Q[4][4],iQP[4][4],PQ[4][4],iP[4][4],iQ[4][4];
-	double t1,t2;
+	double t1;
 
 	gsl_matrix *mat = gsl_matrix_alloc (3, 3);
 	gsl_vector *eig = gsl_vector_alloc (3);
@@ -1239,9 +1303,9 @@ int BCVspin_effmetric(/* input */
 		      /* output */
 		      double effmetric[3][3])
 {
-	int i,j,k,nrot,dim=2;
+	int i,j,dim=2;
 	double e[3][3],b[3][3],bd[3][3],f[3][3],P[3][3],Q[3][3],iQP[3][3],PQ[3][3],iP[3][3],iQ[3][3];
-  double t1,t2;
+  double t1;
 	
 	gsl_matrix *mat = gsl_matrix_alloc (2, 2);
 	gsl_vector *eig = gsl_vector_alloc (2);
@@ -1382,7 +1446,7 @@ int BCVspin_beta_placement(double MinMatch,double beta_min,double beta_max,
 			   int N,double *Sn,double fmin,double fmax,
 			   double *beta_list,int *nbeta)
 {
-  int i,j,k,nn=100,Nmax=1000;
+  int i,j,Nmax=1000;
   double bcv2metric[4][4],a[4][4],deltax[4],tmplist[Nmax+1],tmp;
 
 
@@ -1515,7 +1579,7 @@ return 0;
 
 void svdfit_d_test(double x[], double y[], double sig[], int ndata, gsl_vector *a, int ma,
 	gsl_matrix *u, gsl_matrix *v, gsl_vector *w, double *chisq,
-	void (*funcs)(double, double [], int))
+	void (*funcs)(double, double []))
 {
 	int j,i;
 	double wmax,tmp,thresh,sum,afunc[ma+1];
@@ -1524,7 +1588,7 @@ void svdfit_d_test(double x[], double y[], double sig[], int ndata, gsl_vector *
 	
 	
 	for (i=1;i<=ndata;i++) {
-		(*funcs)(x[i],afunc,ma);
+		(*funcs)(x[i],afunc);
 		tmp=1.0/sig[i];
 		for (j=1;j<=ma;j++) {
 			gsl_matrix_set(u,i-1,j-1,afunc[j]*tmp);
@@ -1547,7 +1611,7 @@ void svdfit_d_test(double x[], double y[], double sig[], int ndata, gsl_vector *
 	
 	*chisq=0.0;
 	for (i=1;i<=ndata;i++) {
-		(*funcs)(x[i],afunc,ma);
+		(*funcs)(x[i],afunc);
 		for (sum=0.0,j=1;j<=ma;j++) sum += gsl_vector_get(a, j-1)*afunc[j];
 		*chisq += (tmp=(y[i]-sum)/sig[i],tmp*tmp);
 	}
