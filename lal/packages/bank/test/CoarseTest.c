@@ -139,20 +139,20 @@ main ( void )
    coarseIn = (InspiralCoarseBankIn *)LALMalloc(sizeof(InspiralCoarseBankIn));
    fineIn = (InspiralFineBankIn *)LALMalloc(sizeof(InspiralFineBankIn));
 
-   coarseIn->mMin = 3.0;
+   coarseIn->mMin = 1.0;
    coarseIn->mMax = 20.0;
    coarseIn->MMax = coarseIn->mMax * 2.0;
-   /* coarseIn->massRange = MinComponentMassMaxTotalMass;*/
-   coarseIn->massRange = MinMaxComponentMass; 
+   coarseIn->massRange = MinComponentMassMaxTotalMass;
+   /* coarseIn->massRange = MinMaxComponentMass; */
 
-   coarseIn->mmCoarse = 0.7;
+   coarseIn->mmCoarse = 0.95;
    coarseIn->mmFine = 0.97;
    coarseIn->fLower = 40.;
    coarseIn->fUpper = 2000;
    coarseIn->iflso = 0;
    coarseIn->tSampling = 4096.L;
    coarseIn->order = twoPN;
-   coarseIn->approximant = TaylorT1;
+   coarseIn->approximant = TaylorT3;
    coarseIn->space = Tau0Tau3;
 
    /* minimum value of eta  */

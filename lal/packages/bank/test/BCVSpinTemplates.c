@@ -46,7 +46,7 @@ int
 main(int argc, char **argv)
 {
   /* top-level status structure */
-  UINT4   numPSDpts=4097;
+  UINT4   numPSDpts=65537;
   static LALStatus status;     
   static InspiralCoarseBankIn coarseIn;
   void *noisemodel = LALLIGOIPsd;
