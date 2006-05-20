@@ -33,6 +33,7 @@ $Id$
 #include <lal/LIGOMetadataTables.h>
 #include <lal/SeqFactories.h>
 #include <lal/LALInspiralBCVSpinBank.h>
+#include <gsl/gsl_linalg.h>
 
 NRCSID(LALINSPIRALBCVSPINBANKC, "$Id$");
 
