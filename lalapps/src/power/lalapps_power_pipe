@@ -79,7 +79,7 @@ def parse_config_file(options):
 	config = ConfigParser.SafeConfigParser()
 	config.read(options.config_file)
 
-	options.tag = config.get("pipeline", "user-tag")
+	options.tag = config.get("pipeline", "user_tag")
 	options.injection_bands = config.getint("pipeline", "injection-bands")
 
 	options.seglistdict = segments.segmentlistdict()
@@ -89,8 +89,6 @@ def parse_config_file(options):
 	options.timeslides = list(ligolw_tisi.SlidesIter(ligolw_tisi.parse_slides([slidespec for slidespec in config.get("ligolw_tisi", "instrument").split() if slidespec != "--instrument"])))
 
 	# A few static parameters
-	options.cache_dir = "cache/"
-	options.out_dir = "logs/"
 	options.psds_per_job = 32
 	options.psds_per_injection = 32
 
@@ -107,7 +105,7 @@ config_parser = parse_config_file(options)
 # =============================================================================
 #
 
-power.init_job_types(options.cache_dir, options.out_dir, config_parser)
+power.init_job_types(config_parser)
 
 
 #
@@ -136,8 +134,8 @@ def make_single_instrument_fragment(dag, options, instrument, seglist, binjfrag 
 	nodes = []
 	for seg in seglist:
 		datafindfrag = power.make_datafind_fragment(dag, instrument, seg)
-		darmpowerfrag = power.make_power_segment_fragment(dag, options.cache_dir, datafindfrag, seg, instrument, options.psds_per_job, options.tag)
-		injpowerfrag = power.make_injection_segment_fragment(dag, options.cache_dir, datafindfrag, seg, instrument, options.psds_per_injection, options.tag, binjfrag = binjfrag, tisifrag = tisifrag)
+		darmpowerfrag = power.make_power_segment_fragment(dag, datafindfrag, seg, instrument, options.psds_per_job, options.tag)
+		injpowerfrag = power.make_injection_segment_fragment(dag, datafindfrag, seg, instrument, options.psds_per_injection, options.tag, binjfrag = binjfrag, tisifrag = tisifrag)
 		binjfindfrag = power.make_binjfind_fragment(dag, injpowerfrag, "INJECTIONS_%s" % options.tag)
 		nodes.append(darmpowerfrag)
 	return nodes
@@ -151,13 +149,12 @@ def make_single_instrument_fragment(dag, options, instrument, seglist, binjfrag 
 # =============================================================================
 #
 
-os.mkdir(options.cache_dir)
-os.mkdir(options.out_dir)
+power.make_dag_directories(config_parser)
 
 dag = pipeline.CondorDAG(condor_log)
 dag.set_dag_file(filenames[0])
 
-binjfrag = power.make_multibinj_fragment(dag, options.cache_dir, options.tag, options.seglistdict.extent())
+binjfrag = power.make_multibinj_fragment(dag, options.tag, options.seglistdict.extent())
 tisifrag = power.make_tisi_fragment(dag, options.tag)
 
 single_instrument_fragments = {}

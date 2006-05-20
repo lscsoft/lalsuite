@@ -18,10 +18,37 @@ __version__ = "$Revision$"[11:-2]
 
 import math
 import os
+import sys
 import time
 
+from glue import segments
 from glue.lal import CacheEntry
 from glue import pipeline
+
+
+#
+# =============================================================================
+#
+#                                   Helpers
+#
+# =============================================================================
+#
+
+def get_universe(config_parser):
+	return config_parser.get("condor", "universe")
+
+def get_executable(config_parser, name):
+	return config_parser.get("condor", name)
+
+def get_out_dir(config_parser):
+	return config_parser.get("pipeline", "out_dir")
+
+def get_cache_dir(config_parser):
+	return config_parser.get("pipeline", "cache_dir")
+
+def make_dag_directories(config_parser):
+	os.mkdir(get_cache_dir(config_parser))
+	os.mkdir(get_out_dir(config_parser))
 
 
 #
@@ -40,19 +67,18 @@ class BurstInjJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 	The job runs in the universe specified in the ini file.  The path
 	to the executable is determined from the ini file.
 	"""
-	def __init__(self, cp):
+	def __init__(self, config_parser):
 		"""
-		cp = ConfigParser object from which options are read.
+		config_parser = ConfigParser object from which options are
+		read.
 		"""
-		self.__executable = cp.get("condor", "lalapps_binj")
-		self.__universe = cp.get("condor", "universe")
-		pipeline.CondorDAGJob.__init__(self, self.__universe, self.__executable)
-		pipeline.AnalysisJob.__init__(self, cp)
+		pipeline.CondorDAGJob.__init__(self, get_universe(config_parser), get_executable(config_parser, "lalapps_binj"))
+		pipeline.AnalysisJob.__init__(self, config_parser)
 
-		self.add_ini_opts(cp, "lalapps_binj")
+		self.add_ini_opts(config_parser, "lalapps_binj")
 
-		self.set_stdout_file("logs/binj-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out")
-		self.set_stderr_file("logs/binj-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err")
+		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "binj-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out"))
+		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "binj-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err"))
 		self.set_sub_file("lalapps_binj.sub")
 
 
@@ -76,7 +102,7 @@ class BurstInjNode(pipeline.AnalysisNode):
 	def get_user_tag(self):
 		return self.__usertag
 
-	def get_output(self):
+	def get_output_files(self):
 		"""
 		Returns the file name of output from the power code. This
 		must be kept synchronized with the name of the output file
@@ -87,9 +113,14 @@ class BurstInjNode(pipeline.AnalysisNode):
 			raise ValueError, "start time or end time has not been set"
 
 		if self.__usertag:
-			return "HL-INJECTIONS_%s-%d-%d.xml" % (self.__usertag, int(self.get_start()), int(self.get_end() - self.get_start()))
+			filename = "HL-INJECTIONS_%s-%d-%d.xml" % (self.__usertag, int(self.get_start()), int(self.get_end() - self.get_start()))
 		else:
-			return "HL-INJECTIONS-%d-%d.xml" % (int(self.get_start()), int(self.get_end() - self.get_start()))
+			filename = "HL-INJECTIONS-%d-%d.xml" % (int(self.get_start()), int(self.get_end() - self.get_start()))
+		return [filename]
+
+	def get_output(self):
+		# FIXME: use get_output_files() instead
+		return self.get_output_files()[0]
 
 
 class PowerJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
@@ -101,19 +132,18 @@ class PowerJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 	specified in the ini file. The path to the executable is determined
 	from the ini file.
 	"""
-	def __init__(self, out_dir, cp):
+	def __init__(self, config_parser):
 		"""
-		cp = ConfigParser object from which options are read.
+		config_parser = ConfigParser object from which options are
+		read.
 		"""
-		self.__executable = cp.get("condor", "lalapps_power")
-		self.__universe = cp.get("condor", "universe")
-		pipeline.CondorDAGJob.__init__(self, self.__universe, self.__executable)
-		pipeline.AnalysisJob.__init__(self, cp)
+		pipeline.CondorDAGJob.__init__(self, get_universe(config_parser), get_executable(config_parser, "lalapps_power"))
+		pipeline.AnalysisJob.__init__(self, config_parser)
 
-		self.add_ini_opts(cp, "lalapps_power")
+		self.add_ini_opts(config_parser, "lalapps_power")
 
-		self.set_stdout_file(os.path.join(out_dir, "power-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out"))
-		self.set_stderr_file(os.path.join(out_dir, "power-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err"))
+		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "power-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out"))
+		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "power-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err"))
 		self.set_sub_file("lalapps_power.sub")
 
 
@@ -136,7 +166,7 @@ class PowerNode(pipeline.AnalysisNode):
 		the config file.
 		"""
 		pipeline.AnalysisNode.set_ifo(self, instrument)
-		for optvalue in job._AnalysisJob__cp.items("lalapps_power_%s" % instrument):
+		for optvalue in self.job()._AnalysisJob__cp.items("lalapps_power_%s" % instrument):
 			self.add_var_arg("--%s %s" % optvalue)
 
 	def set_user_tag(self, tag):
@@ -146,7 +176,7 @@ class PowerNode(pipeline.AnalysisNode):
 	def get_user_tag(self):
 		return self.__usertag
 
-	def get_output(self):
+	def get_output_files(self):
 		"""
 		Returns the file name of output from the power code. This
 		must be kept synchronized with the name of the output file
@@ -155,7 +185,12 @@ class PowerNode(pipeline.AnalysisNode):
 		"""
 		if None in [self.get_start(), self.get_end(), self.get_ifo(), self.__usertag]:
 			raise ValueError, "start time, end time, ifo, or user tag has not been set"
-		return "%s-POWER_%s-%d-%d.xml" % (self.get_ifo(), self.__usertag, int(self.get_start()), int(self.get_end()) - int(self.get_start()))
+		filename = "%s-POWER_%s-%d-%d.xml" % (self.get_ifo(), self.__usertag, int(self.get_start()), int(self.get_end()) - int(self.get_start()))
+		return [filename]
+
+	def get_output(self):
+		# FIXME: use get_output_files() instead
+		return self.get_output_files()[0]
 
 	def set_mdccache(self, file):
 		"""
@@ -194,63 +229,104 @@ class PowerNode(pipeline.AnalysisNode):
 		self.add_input_file(file)
 
 
+class BucutJob(pipeline.CondorDAGJob):
+	def __init__(self, config_parser):
+		pipeline.CondorDAGJob.__init__(self, "vanilla", get_executable(config_parser, "ligolw_bucut"))
+		self.set_sub_file("ligolw_bucut.sub")
+		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "ligolw_bucut-$(cluster)-$(process).out"))
+		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "ligolw_bucut-$(cluster)-$(process).err"))
+		self.add_condor_cmd("getenv", "True")
+		self.add_ini_opts(config_parser, "ligolw_bucut")
+
+
+class BucutNode(pipeline.CondorDAGNode):
+	def add_file_arg(self, filename):
+		pipeline.CondorDAGNode.add_file_arg(self, filename)
+		self.add_output_file(filename)
+
+	def get_output(self):
+		# FIXME: use get_output_files() instead
+		return self.get_output_files()[0]
+
+
 class BuclusterJob(pipeline.CondorDAGJob):
-	def __init__(self, out_dir, config_parser):
-		pipeline.CondorDAGJob.__init__(self, "vanilla", config_parser.get("condor", "ligolw_bucluster"))
+	def __init__(self, config_parser):
+		pipeline.CondorDAGJob.__init__(self, "vanilla", get_executable(config_parser, "ligolw_bucluster"))
 		self.set_sub_file("ligolw_bucluster.sub")
-		self.set_stdout_file(os.path.join(out_dir, "ligolw_bucluster-$(cluster)-$(process).out"))
-		self.set_stderr_file(os.path.join(out_dir, "ligolw_bucluster-$(cluster)-$(process).err"))
+		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "ligolw_bucluster-$(cluster)-$(process).out"))
+		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "ligolw_bucluster-$(cluster)-$(process).err"))
 		self.add_condor_cmd("getenv", "True")
 		self.add_ini_opts(config_parser, "ligolw_bucluster")
 
 
-class BuclusterNode(pipeline.AnalysisNode):
-	pass
+class BuclusterNode(pipeline.CondorDAGNode):
+	def add_file_arg(self, filename):
+		pipeline.CondorDAGNode.add_file_arg(self, filename)
+		self.add_output_file(filename)
+
+	def get_output(self):
+		# FIXME: use get_output_files() instead
+		return self.get_output_files()[0]
 
 
 class BinjfindJob(pipeline.CondorDAGJob):
-	def __init__(self, out_dir, config_parser):
-		pipeline.CondorDAGJob.__init__(self, "vanilla", config_parser.get("condor", "ligolw_binjfind"))
+	def __init__(self, config_parser):
+		pipeline.CondorDAGJob.__init__(self, "vanilla", get_executable(config_parser, "ligolw_binjfind"))
 		self.set_sub_file("ligolw_binjfind.sub")
-		self.set_stdout_file(os.path.join(out_dir, "ligolw_binjfind-$(cluster)-$(process).out"))
-		self.set_stderr_file(os.path.join(out_dir, "ligolw_binjfind-$(cluster)-$(process).err"))
+		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "ligolw_binjfind-$(cluster)-$(process).out"))
+		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "ligolw_binjfind-$(cluster)-$(process).err"))
 		self.add_condor_cmd("getenv", "True")
 		self.add_ini_opts(config_parser, "ligolw_binjfind")
 
 
-class BinjfindNode(pipeline.AnalysisNode):
-	pass
+class BinjfindNode(pipeline.CondorDAGNode):
+	def add_file_arg(self, filename):
+		pipeline.CondorDAGNode.add_file_arg(self, filename)
+		self.add_output_file(filename)
+
+	def get_output(self):
+		# FIXME: use get_output_files() instead
+		return self.get_output_files()[0]
 
 
 class TisiJob(pipeline.CondorDAGJob):
-	def __init__(self, out_dir, config_parser):
-		pipeline.CondorDAGJob.__init__(self, "vanilla", config_parser.get("condor", "ligolw_tisi"))
+	def __init__(self, config_parser):
+		pipeline.CondorDAGJob.__init__(self, "vanilla", get_executable(config_parser, "ligolw_tisi"))
 		self.set_sub_file("ligolw_tisi.sub")
-		self.set_stdout_file(os.path.join(out_dir, "ligolw_tisi-$(cluster)-$(process).out"))
-		self.set_stderr_file(os.path.join(out_dir, "ligolw_tisi-$(cluster)-$(process).err"))
+		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "ligolw_tisi-$(cluster)-$(process).out"))
+		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "ligolw_tisi-$(cluster)-$(process).err"))
 		self.add_condor_cmd("getenv", "True")
 		self.add_ini_opts(config_parser, "ligolw_tisi")
 
 
-class TisiNode(pipeline.AnalysisNode):
-	def set_output(self, file):
-		self.__output = file
-		self.add_file_arg(file)
+class TisiNode(pipeline.CondorDAGNode):
+	def add_file_arg(self, filename):
+		pipeline.CondorDAGNode.add_file_arg(self, filename)
+		self.add_output_file(filename)
+
+	def get_output(self):
+		# FIXME: use get_output_files() instead
+		return self.get_output_files()[0]
 
 
 class BurcaJob(pipeline.CondorDAGJob):
-	def __init__(self, executable, out_dir, arguments):
-		pipeline.CondorDAGJob.__init__(self, "vanilla", executable)
+	def __init__(self, config_parser):
+		pipeline.CondorDAGJob.__init__(self, "vanilla", get_executable(config_parser, "ligolw_burca"))
 		self.set_sub_file("ligolw_burca.sub")
-		self.set_stdout_file(os.path.join(out_dir, "ligolw_burca-$(cluster)-$(process).out"))
-		self.set_stderr_file(os.path.join(out_dir, "ligolw_burca-$(cluster)-$(process).err"))
+		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "ligolw_burca-$(cluster)-$(process).out"))
+		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "ligolw_burca-$(cluster)-$(process).err"))
 		self.add_condor_cmd("getenv", "True")
-		if arguments:
-			self.add_arg(arguments)
+		self.add_ini_opts(config_parser, "ligolw_burca")
 
 
 class BurcaNode(pipeline.CondorDAGNode):
-	pass
+	def add_file_arg(self, filename):
+		pipeline.CondorDAGNode.add_file_arg(self, filename)
+		self.add_output_file(filename)
+
+	def get_output(self):
+		# FIXME: use get_output_files() instead
+		return self.get_output_files()[0]
 
 
 #
@@ -269,17 +345,19 @@ powerjob = None
 lladdjob = None
 tisijob = None
 binjfindjob = None
+bucutjob = None
 buclusterjob = None
+burcajob = None
 
-def init_job_types(cache_dir, out_dir, config_parser, types = ["datafind", "binj", "power", "lladd", "tisi", "binjfind", "bucluster"]):
+def init_job_types(config_parser, types = ["datafind", "binj", "power", "lladd", "tisi", "binjfind", "bucluster", "bucut"]):
 	"""
 	Construct definitions of the submit files.
 	"""
-	global datafindjob, binjjob, powerjob, lladdjob, tisijob, binjfindjob, buclusterjob, llb2mjob
+	global datafindjob, binjjob, powerjob, lladdjob, tisijob, binjfindjob, buclusterjob, llb2mjob, bucutjob
 
 	# LSCdataFind
 	if "datafind" in types:
-		datafindjob = pipeline.LSCDataFindJob(cache_dir, out_dir, config_parser)
+		datafindjob = pipeline.LSCDataFindJob(get_cache_dir(config_parser), get_out_dir(config_parser), config_parser)
 
 	# lalapps_binj
 	if "binj" in types:
@@ -287,23 +365,32 @@ def init_job_types(cache_dir, out_dir, config_parser, types = ["datafind", "binj
 
 	# lalapps_power
 	if "power" in types:
-		powerjob = PowerJob(out_dir, config_parser)
+		powerjob = PowerJob(config_parser)
 
 	# ligolw_add
 	if "lladd" in types:
-		lladdjob = pipeline.LigolwAddJob(out_dir, config_parser)
+		lladdjob = pipeline.LigolwAddJob(get_out_dir(config_parser), config_parser)
+		lladdjob.cache_dir = get_cache_dir(config_parser)
 
 	# ligolw_tisi
 	if "tisi" in types:
-		tisijob = TisiJob(out_dir, config_parser)
+		tisijob = TisiJob(config_parser)
 
 	# ligolw_binjfind
 	if "binjfind" in types:
-		binjfindjob = BinjfindJob(out_dir, config_parser)
+		binjfindjob = BinjfindJob(config_parser)
+
+	# ligolw_bucut
+	if "bucut" in types:
+		bucutjob = BucutJob(config_parser)
 
 	# ligolw_bucluster
 	if "bucluster" in types:
-		buclusterjob = BuclusterJob(out_dir, config_parser)
+		buclusterjob = BuclusterJob(config_parser)
+
+	# ligolw_burca
+	if "burca" in types:
+		burcajob = BurcaJob(config_parser)
 
 
 #
@@ -368,8 +455,8 @@ def make_datafind_fragment(dag, observatory, seg):
 # =============================================================================
 #
 
-def make_lladd_fragment(dag, cache_dir, parents, seg, tag):
-	cache_name = os.path.join(cache_dir, "lladd-%s.cache" % tag)
+def make_lladd_fragment(dag, parents, seg, tag):
+	cache_name = os.path.join(lladdjob.cache_dir, "lladd-%s.cache" % tag)
 	cachefile = file(cache_name, "w")
 
 	node = pipeline.LigolwAddNode(lladdjob)
@@ -423,8 +510,8 @@ def make_power_fragment(dag, parents, framecache, seg, instrument, tag, injargs 
 # =============================================================================
 #
 
-def make_multipower_fragment(dag, cache_dir, powerparents, lladdparents, framecache, seglist, instrument, tag, injargs = {}):
-	node = make_lladd_fragment(dag, cache_dir, [make_power_fragment(dag, powerparents, framecache, seg, instrument, tag, injargs) for seg in seglist] + lladdparents, seglist.extent(), "POWER_%s" % tag)
+def make_multipower_fragment(dag, powerparents, lladdparents, framecache, seglist, instrument, tag, injargs = {}):
+	node = make_lladd_fragment(dag, [make_power_fragment(dag, powerparents, framecache, seg, instrument, tag, injargs) for seg in seglist] + lladdparents, seglist.extent(), "POWER_%s" % tag)
 	node.set_output("%s-POWER_%s-%s-%s.xml" % (instrument, tag, int(seglist.extent()[0]), int(seglist.extent().duration())))
 	return node
 
@@ -437,7 +524,7 @@ def make_multipower_fragment(dag, cache_dir, powerparents, lladdparents, frameca
 # =============================================================================
 #
 
-def make_power_segment_fragment(dag, cache_dir, datafindnode, segment, instrument, psds_per_job, tag):
+def make_power_segment_fragment(dag, datafindnode, segment, instrument, psds_per_job, tag):
 	"""
 	Construct a DAG fragment for an entire segment, splitting the
 	segment into multiple power jobs.
@@ -445,7 +532,7 @@ def make_power_segment_fragment(dag, cache_dir, datafindnode, segment, instrumen
 	seglist = split_segment(powerjob, segment, psds_per_job)
 	print >>sys.stderr, "Segment split: " + str(seglist)
 
-	lladdnode = make_multipower_fragment(dag, cache_dir, [datafindnode], [], datafindnode.get_output(), seglist, instrument, tag)
+	lladdnode = make_multipower_fragment(dag, [datafindnode], [], datafindnode.get_output(), seglist, instrument, tag)
 
 	return lladdnode
 
@@ -485,7 +572,7 @@ def make_binj_fragment(dag, tag, seg, offset, flow, fhigh, fratio, injection_ban
 # =============================================================================
 #
 
-def make_multibinj_fragment(dag, cache_dir, tag, seg):
+def make_multibinj_fragment(dag, tag, seg):
 	flow = float(powerjob.get_opts()["low-freq-cutoff"])
 	fhigh = flow + float(powerjob.get_opts()["bandwidth"])
 
@@ -499,7 +586,7 @@ def make_multibinj_fragment(dag, cache_dir, tag, seg):
 
 	binjnodes = [make_binj_fragment(dag, tag, seg, 0.0, flow, fhigh, fratio, injection_bands)]
 
-	node = make_lladd_fragment(dag, cache_dir, binjnodes, seg, tag)
+	node = make_lladd_fragment(dag, binjnodes, seg, tag)
 	node.set_output("HL-%s-%d-%d.xml" % (tag, int(seg[0]), int(seg.duration())))
 
 	return node
@@ -516,7 +603,26 @@ def make_multibinj_fragment(dag, cache_dir, tag, seg):
 def make_tisi_fragment(dag, tag):
 	node = TisiNode(tisijob)
 	node.set_name("ligolw_tisi-%s" % tag)
-	node.set_output("TISI_%s.xml" % tag)
+	node.add_file_arg("TISI_%s.xml" % tag)
+	node.add_macro("macrocomment", tag)
+	dag.add_node(node)
+
+	return node
+
+
+#
+# =============================================================================
+#
+#                          ligolw_bucut DAG Fragment
+#
+# =============================================================================
+#
+
+def make_bucut_fragment(dag, tag, parent):
+	node = BucutNode(bucutjob)
+	node.set_name("ligolw_bucut-%s" % tag)
+	node.add_parent(parent)
+	node.add_file_arg(parent.get_output())
 	node.add_macro("macrocomment", tag)
 	dag.add_node(node)
 
@@ -531,21 +637,21 @@ def make_tisi_fragment(dag, tag):
 # =============================================================================
 #
 
-# FIXME:  after the lladd, add a bucut to strip injections that weren't done.
-
-def make_injection_segment_fragment(dag, cache_dir, datafindnode, segment, instrument, psds_per_job, tag, binjfrag = None, tisifrag = None):
+def make_injection_segment_fragment(dag, datafindnode, segment, instrument, psds_per_job, tag, binjfrag = None, tisifrag = None):
 	seglist = split_segment(powerjob, segment, psds_per_job)
 	print >>sys.stderr, "Injections split: " + str(seglist)
 
 	if not binjfrag:
-		binjfrag = make_multibinj_fragment(dag, cache_dir, "INJECTIONS_%s" % tag, seglist.extent())
+		binjfrag = make_multibinj_fragment(dag, "INJECTIONS_%s" % tag, seglist.extent())
 
 	if not tisifrag:
 		tisifrag = make_tisi_fragment(dag, "INJECTIONS_%s" % tag)
 
-	lladdnode = make_multipower_fragment(dag, cache_dir, [datafindnode, binjfrag], [binjfrag, tisifrag], datafindnode.get_output(), seglist, instrument, "INJECTIONS_%s" % tag, injargs = {"burstinjection-file": binjfrag.get_output()})
+	lladdnode = make_multipower_fragment(dag, [datafindnode, binjfrag], [binjfrag, tisifrag], datafindnode.get_output(), seglist, instrument, "INJECTIONS_%s" % tag, injargs = {"burstinjection-file": binjfrag.get_output()})
 
-	return lladdnode
+	bucutnode = make_bucut_fragment(dag, "INJECTIONS_%s" % tag, lladdnode)
+
+	return bucutnode
 
 
 #
@@ -560,8 +666,7 @@ def make_binjfind_fragment(dag, parent, tag):
 	cluster = BuclusterNode(buclusterjob)
 	cluster.set_name("ligolw_bucluster-%s" % tag)
 	cluster.add_parent(parent)
-	cluster.set_input(parent.get_output())
-	cluster.set_output(parent.get_output())
+	cluster.add_file_arg(parent.get_output())
 	cluster.add_macro("macrocomment", tag)
 	dag.add_node(cluster)
 

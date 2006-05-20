@@ -137,9 +137,9 @@ except Exception, e:
 # user tag
 try:
 	if options.user_tag:
-		config_parser.set('pipeline', 'user-tag', options.user_tag)
+		config_parser.set('pipeline', 'user_tag', options.user_tag)
 	else:
-		options.user_tag = config_parser.get('pipeline', 'user-tag')
+		options.user_tag = config_parser.get('pipeline', 'user_tag')
 except Exception, e:
 	raise Exception, "must either provide --user-tag, or user-tag variable in [pipeline] section of .ini: %s" % str(e)
 
@@ -152,8 +152,6 @@ except Exception, e:
 # =============================================================================
 #
 
-cache_dir = "cache/"
-out_dir = "logs/"
 if options.seg.duration() < 3600:
 	psds_per_job = 4
 	psds_per_injection = 4
@@ -171,24 +169,27 @@ else:
 #
 
 class Burst2MonJob(pipeline.CondorDAGJob):
-	def __init__(self, out_dir, config_parser):
-		pipeline.CondorDAGJob.__init__(self, "vanilla", config_parser.get("condor", "ligolw_burst2mon"))
+	def __init__(self, config_parser):
+		pipeline.CondorDAGJob.__init__(self, "vanilla", power.get_executable(config_parser, "ligolw_burst2mon"))
 		self.set_sub_file("ligolw_burst2mon.sub")
-		self.set_stdout_file(os.path.join(out_dir, "ligolw_burst2mon-$(cluster)-$(process).out"))
-		self.set_stderr_file(os.path.join(out_dir, "ligolw_burst2mon-$(cluster)-$(process).err"))
+		self.set_stdout_file(os.path.join(power.get_out_dir(config_parser), "ligolw_burst2mon-$(cluster)-$(process).out"))
+		self.set_stderr_file(os.path.join(power.get_out_dir(config_parser), "ligolw_burst2mon-$(cluster)-$(process).err"))
 		self.add_condor_cmd("getenv", "True")
 		self.add_ini_opts(config_parser, "ligolw_burst2mon")
 
 
-class Burst2MonNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
-	pass
+class Burst2MonNode(pipeline.AnalysisNode):
+	def __init__(self, job):
+		# FIXME: this shouldn't be needed.
+		pipeline.CondorDAGNode.__init__(self, job)
+		pipeline.AnalysisNode.__init__(self)
 
 
 class PublishJob(pipeline.CondorDAGJob):
-	def __init__(self, out_dir):
-		pipeline.CondorDAGJob.__init__(self, "vanilla", config_parser.get("condor", "publish"))
-		self.set_stdout_file(os.path.join(out_dir, "publish-$(cluster)-$(process).out"))
-		self.set_stderr_file(os.path.join(out_dir, "publish-$(cluster)-$(process).err"))
+	def __init__(self, config_parser):
+		pipeline.CondorDAGJob.__init__(self, "vanilla", power.get_executable(config_parser, "publish"))
+		self.set_stdout_file(os.path.join(power.get_out_dir(config_parser), "publish-$(cluster)-$(process).out"))
+		self.set_stderr_file(os.path.join(power.get_out_dir(config_parser), "publish-$(cluster)-$(process).err"))
 		self.set_sub_file("publish.sub")
 
 	def write_sub_file(self):
@@ -201,22 +202,15 @@ class PublishNode(pipeline.CondorDAGNode):
 	def set_input(self, source):
 		self.add_file_arg(source)
 
-	def get_input(self):
-		return self.get_input_files()
-
 	def set_output(self, destination):
-		self.__output = destination
 		self.add_macro("macrodestination", destination)
-
-	def get_output(self):
-		return self.__output
 
 
 class GsiScpJob(pipeline.CondorDAGJob):
-	def __init__(self, out_dir):
-		pipeline.CondorDAGJob.__init__(self, "scheduler", "/ldcg/stow_pkgs/ldg-3.5/ldg/globus/bin/gsiscp")
-		self.set_stdout_file(os.path.join(out_dir, "gsiscp-$(cluster)-$(process).out"))
-		self.set_stderr_file(os.path.join(out_dir, "gsiscp-$(cluster)-$(process).err"))
+	def __init__(self, config_parser):
+		pipeline.CondorDAGJob.__init__(self, "scheduler", power.get_executable(config_parser, "gsiscp"))
+		self.set_stdout_file(os.path.join(power.get_out_dir(config_parser), "gsiscp-$(cluster)-$(process).out"))
+		self.set_stderr_file(os.path.join(power.get_out_dir(config_parser), "gsiscp-$(cluster)-$(process).err"))
 		self.set_sub_file("gsiscp.sub")
 		self.add_condor_cmd("getenv", "True")
 
@@ -228,11 +222,7 @@ class GsiScpJob(pipeline.CondorDAGJob):
 
 class GsiScpNode(pipeline.CondorDAGNode):
 	def set_output(self, destination):
-		self.__output = destination
 		self.add_macro("macrodestination", destination)
-
-	def get_output(self):
-		return self.__output
 
 
 #
@@ -243,11 +233,11 @@ class GsiScpNode(pipeline.CondorDAGNode):
 # =============================================================================
 #
 
-power.init_job_types(cache_dir, out_dir, config_parser)
+power.init_job_types(config_parser)
 
-llb2mjob = Burst2MonJob(out_dir, config_parser)
-publishjob = PublishJob(out_dir)
-gsiscpjob = GsiScpJob(out_dir)
+llb2mjob = Burst2MonJob(config_parser)
+publishjob = PublishJob(config_parser)
+gsiscpjob = GsiScpJob(config_parser)
 
 
 #
@@ -289,8 +279,9 @@ def make_burst2mon_fragment(dag, parent, seg, tag):
 	cluster = power.BuclusterNode(power.buclusterjob)
 	cluster.set_name("ligolw_bucluster-POWERMON")
 	cluster.add_parent(parent)
-	cluster.set_input(parent.get_output())
-	cluster.set_output("%s-POWERMON_%s-%s-%s.xml" % (options.instrument, tag, int(seg[0]), int(seg.duration())))
+	cluster_output = "%s-POWERMON_%s-%s-%s.xml" % (options.instrument, tag, int(seg[0]), int(seg.duration()))
+	cluster.set_pre_script("/bin/cp %s %s" % (parent.get_output(), cluster_output))
+	cluster.add_file_arg(cluster_output)
 	cluster.add_macro("macrocomment", tag)
 	dag.add_node(cluster)
 
@@ -333,21 +324,20 @@ def make_gsiscp_fragment(dag, parents, destination):
 # =============================================================================
 #
 
-os.mkdir(cache_dir)
-os.mkdir(out_dir)
+power.make_dag_directories(config_parser)
 
 dag = pipeline.CondorDAG(condor_log)
 dag.set_dag_file(options.dag_name)
 
 datafindfrag = power.make_datafind_fragment(dag, options.instrument[0], options.seg)
 
-darmpowerfrag = power.make_power_segment_fragment(dag, cache_dir, datafindfrag, options.seg, options.instrument, psds_per_job, options.user_tag)
+darmpowerfrag = power.make_power_segment_fragment(dag, datafindfrag, options.seg, options.instrument, psds_per_job, options.user_tag)
 
 make_publish_fragment(dag, "POWER", darmpowerfrag, options.publish_dest)
 if options.dmtmon_dest:
 	make_burst2mon_fragment(dag, darmpowerfrag, options.seg, options.user_tag)
 
-injpowerfrag = power.make_injection_segment_fragment(dag, cache_dir, datafindfrag, options.seg, options.instrument, psds_per_injection, options.user_tag)
+injpowerfrag = power.make_injection_segment_fragment(dag, datafindfrag, options.seg, options.instrument, psds_per_injection, options.user_tag)
 
 binjfindfrag = power.make_binjfind_fragment(dag, injpowerfrag, "INJECTIONS_%s" % options.user_tag)
 make_publish_fragment(dag, "INJECTIONS", binjfindfrag, options.publish_dest)
