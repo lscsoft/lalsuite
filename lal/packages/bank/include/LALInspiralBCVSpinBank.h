@@ -48,7 +48,7 @@ typedef struct DCOMPLEX {double r,i;} dcomplex;
 #define _DCOMPLEX_DECLARE_HT_
 #endif /* _DCOMPLEX_DECLARE_HT_ */
 
-dcomplex DCadd(dcomplex a, dcomplex b);
+static dcomplex DCadd(dcomplex a, dcomplex b);
 dcomplex DCsub(dcomplex a, dcomplex b);
 dcomplex DCmul(dcomplex a, dcomplex b);
 dcomplex DComplex(double re, double im);
@@ -59,15 +59,6 @@ dcomplex DCsqrt(dcomplex z);
 dcomplex DRCmul(double x, dcomplex a);
 
 #endif /* _HT_DCOMPLEX_H_ */
-
-void
-LALInspiralBCVSpinBank(
-    LALStatus         	 *status,
-    SnglInspiralTable   **tiles,
-    INT4      		 *ntiles,
-    InspiralCoarseBankIn *coarseIn
-    );
-
 
 #ifndef _HT_BCVSPINMETRIC_H_
 #define _HT_BCVSPINMETRIC_H_
@@ -113,9 +104,8 @@ int orthonormalized_A(/* input */
 		      double *normtA2,double *normtA3);
 
 int dA2dbeta(/* input */
-	     int N,double *Sn,double fmin,double fmax,
-	     double *hA1,double *A2,
-	     double *tA2,double *hA2,double *dA2,double normtA2,
+	     int N,double *Sn,double fmin,double fmax, double *hA1,
+	     double *tA2,double *dA2,double normtA2,
 	     /* output */
 	     double *dhA2);
 
@@ -150,7 +140,7 @@ int generate_fit_points(/*input*/double MinMatch, double funcG[7][7][4][4],
 int generate_metric_data(/* input */double MinMatch,
 			 double funcG[7][7][4][4]);
 
-void model_func(double xx,double afunc[],int ma);
+void model_func(double xx,double afunc[]);
 
 int metric_by_fit(/* input */
 		   double MinMatch, int ndata,
@@ -219,7 +209,7 @@ int BCVspin_beta_placement_effmetric(/* input*/ double MinMatch,double beta_min,
 
 void svdfit_d_test(double x[], double y[], double sig[], int ndata, gsl_vector *a, int ma,
 	gsl_matrix *u, gsl_matrix  *v, gsl_vector *w, double *chisq,
-		void (*funcs)(double, double [], int));
+		void (*funcs)(double, double []));
 
 #endif
 

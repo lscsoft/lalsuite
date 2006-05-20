@@ -470,6 +470,9 @@ tagInspiralCoarseBankIn
   REAL8FrequencySeries          shf;
 
   INT4                          iflso;          
+  INT4                          spinBank;  
+  /* spinBank=0:use Owen+Hanna bank*/
+  /* spinBank=1:use extended bank by AEI/Cardiff/Osaka */
   UINT4                         numFcutTemplates;
   REAL4				HighGM;
   REAL4				LowGM;
@@ -653,7 +656,15 @@ LALInspiralBCVRegularFcutBank (
 void
 LALInspiralSpinBank(
     LALStatus         	 *status,
-    SnglInspiralTable   **tiles,
+    SnglInspiralTable    **tiles,
+    INT4      		 *ntiles,
+    InspiralCoarseBankIn *coarseIn
+    );
+
+void
+LALInspiralBCVSpinBank(
+    LALStatus         	 *status,
+    SnglInspiralTable    **tiles,
     INT4      		 *ntiles,
     InspiralCoarseBankIn *coarseIn
     );
