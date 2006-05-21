@@ -48,7 +48,7 @@ typedef struct DCOMPLEX {double r,i;} dcomplex;
 #define _DCOMPLEX_DECLARE_HT_
 #endif /* _DCOMPLEX_DECLARE_HT_ */
 
-static dcomplex DCadd(dcomplex a, dcomplex b);
+dcomplex DCadd(dcomplex a, dcomplex b);
 dcomplex DCsub(dcomplex a, dcomplex b);
 dcomplex DCmul(dcomplex a, dcomplex b);
 dcomplex DComplex(double re, double im);
