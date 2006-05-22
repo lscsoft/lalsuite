@@ -128,6 +128,7 @@ CoordinateSpace space;                  /* coordinate space used        */
 INT4    haveGridSpacing = 0;            /* flag to indicate gridspacing */
 GridSpacing gridSpacing = SquareNotOriented; /* grid spacing (square or hexa)*/
 INT4   	isMaxTotMass    = 0;            /* Use a maximum total mass?	*/
+int     polygonFit      = 1;            /* fit a polygon around BCV bank */
 
 /* generic simulation parameters */
 INT4  unitResponse      = 0;            /* set the response to unity    */
@@ -943,6 +944,7 @@ int main ( int argc, char *argv[] )
   bankIn.approximant   = approximant;
   bankIn.gridSpacing   = gridSpacing;
   bankIn.space         = space;
+  bankIn.insidePolygon = polygonFit; /*by default it uses a polygon fitting. */
   bankIn.etamin        = bankIn.mMin * ( bankIn.MMax - bankIn.mMin) /
     ( bankIn.MMax * bankIn.MMax );
   bankIn.LowGM  = -4.;
@@ -1208,6 +1210,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --minimum-psi3 PSI3          set minimum range of BCV parameter psi3 to PSI3\n"\
 "  --maximum-psi3 PSI3          set maximum range of BCV parameter psi3 to PSI3\n"\
 "  --maximum-fcut-tmplts N      maximum number of tmplts in fcut direction is N\n"\
+"  --disable-polygon-fit        disable the polygon fitting for BCV bank\n"\
 "  --alpha ALPHA                set alpha for the BCV bank generation\n"\
 "  --minimum-beta BETA		set minimum BCV spin parameter beta to BETA\n"\
 "  --maximum-beta BETA		set maximum BCV spin parameter beta to BETA\n"\
@@ -1290,6 +1293,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"space",                   required_argument, 0,                'G'},
     {"grid-spacing",            required_argument, 0,                'v'},
     {"maximum-total-mass", 	no_argument, 	   0,		     'y'},
+    {"disable-polygon-fit",     no_argument, 	   &polygonFit,       0 },
+
     /* standard candle parameters */
     {"candle-snr",              required_argument, 0,                'k'},
     {"candle-mass1",            required_argument, 0,                'l'},
@@ -1313,7 +1318,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   UINT4   havePsi3Min     = 0;
   UINT4   havePsi3Max     = 0;
   UINT4   haveAlpha       = 0;
-
 
   /*
    *
