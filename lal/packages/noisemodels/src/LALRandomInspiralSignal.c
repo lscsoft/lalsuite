@@ -185,9 +185,9 @@ void LALRandomInspiralSignal
  )
 {  /*  </lalVerbatim>  */
 
-    REAL8                   maxTemp; /* temporary variable*/
-    INT4                    iMax;     /* temporary indice */
-    UINT4                   indice, indexFl;
+    REAL8                   maxTemp; /* temporary variable */
+    INT4                    iMax;    /* temporary index    */
+    UINT4                   indice;
     REAL8                   epsilon1, epsilon2, norm;
     REAL4Vector             noisy, buff;
     AddVectorsIn            addIn;
@@ -209,11 +209,6 @@ void LALRandomInspiralSignal
     if (!(buff.data = (REAL4*) LALCalloc(buff.length, sizeof(REAL4)) )) {
         ABORT (status, LALNOISEMODELSH_EMEM, LALNOISEMODELSH_MSGEMEM);
     }
-
-    /* Figure out the index corresponding to the lower cut-Off frequency */
-    indexFl = (UINT4)
-            (randIn->param.fLower * signal->length / 
-             randIn->param.tSampling);
 
     /* Use the seed to initialize random(). */
     srandom(randIn->useed);
@@ -520,16 +515,6 @@ void LALRandomInspiralSignal
                 LALREAL4VectorFFT(status->statusPtr, signal, &buff, randIn->fwdp);
                 CHECKSTATUSPTR(status);
 
-                /* Zero out all frequencies <= fLower */
-                {
-                    UINT4 jj;
-
-                    for (jj=1; jj<=indexFl; jj++)
-                    {
-                        signal->data[jj] = 0.L;
-                        signal->data[signal->length-jj] = 0.L;
-                    }
-                }
             } /* End of else if time domain waveform */
 
             /* we might want to know where is the signal injected*/
@@ -569,17 +554,6 @@ void LALRandomInspiralSignal
             LALColoredNoise(status->statusPtr, signal, randIn->psd);
             CHECKSTATUSPTR(status);
 
-            /* Zero out all frequencies <= fLower */
-            {
-                UINT4 jj;
-
-                for (jj=1; jj<=indexFl; jj++)
-                {
-                    signal->data[jj] = 0.L;
-                    signal->data[signal->length-jj] = 0.L;
-                }
-            }
-
             /* multiply the noise vector by the correct normalisation factor */
             {
                 double a2 = randIn->NoiseAmp * sqrt (randIn->param.tSampling)/2.L; 
@@ -611,17 +585,6 @@ void LALRandomInspiralSignal
             LALColoredNoise(status->statusPtr, &noisy, randIn->psd);
             CHECKSTATUSPTR(status);
 
-            /* Zero out all frequencies <= fLower */
-            {
-                UINT4 jj;
-
-                for (jj=1; jj<=indexFl; jj++)
-                {
-                    noisy.data[jj] = 0.L;
-                    noisy.data[noisy.length-jj] = 0.L;
-                }
-            }
-
             if (randIn->param.approximant == BCV ||
                     randIn->param.approximant == BCVSpin  ||
                     randIn->param.approximant == TaylorF1 ||
@@ -649,16 +612,6 @@ void LALRandomInspiralSignal
                 LALREAL4VectorFFT(status->statusPtr, &buff, signal, randIn->fwdp);
                 CHECKSTATUSPTR(status);
 
-                /* Zero out all frequencies <= fLower */
-                {
-                    UINT4 jj;
-
-                    for (jj=1; jj<=indexFl; jj++)
-                    {
-                        buff.data[jj] = 0.L;
-                        buff.data[buff.length-jj] = 0.L;
-                    }
-                }
             }
 
             /* we might want to know where is the signal injected*/
@@ -701,7 +654,7 @@ void LALRandomInspiralSignal
     DETATCHSTATUSPTR(status);
     RETURN(status);
 }
-
+ 
 
 /*----------- Functions static within this file -------------------*/
 
