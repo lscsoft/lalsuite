@@ -54,15 +54,6 @@ RCSID( "power $Id$");
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
 
-#include <config.h>
-#ifndef HAVE_LIBLALFRAME
-int main(void)
-{
-	fputs("Disabled: LALApps compiled with non-frame-enabled LAL\n", stderr);
-	exit(77);
-}
-#else
-
 #define TRUE       1
 #define FALSE      0
 #define SCALE      1e10
@@ -1851,5 +1842,3 @@ int main( int argc, char *argv[])
 	LALCheckMemoryLeaks();
 	exit(0);
 }
-
-#endif
