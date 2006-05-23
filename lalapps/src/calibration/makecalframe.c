@@ -46,6 +46,7 @@ int main( int argc, char *argv[] )
   int version = 9999;
   int tstart = 0;
   int tend = 0;
+  int tstartunity = 0;
   int open_ended_reference = 0;
   int open_ended_factors = 0;
   int have_fac = 0;
@@ -219,6 +220,7 @@ int main( int argc, char *argv[] )
   }
 
 
+  tstartunity = tend;
   if ( open_ended_reference || open_ended_factors )
     tend = tstart + OPEN_ENDED_DURATION;
 
@@ -288,8 +290,9 @@ int main( int argc, char *argv[] )
         REAL4TimeSeries *unityAlpha;
         REAL4TimeSeries *unityGamma;
         UINT4 i;
-        unityEpoch = alpha->epoch;
-        XLALGPSAdd( &unityEpoch, alpha->data->length * alpha->deltaT );
+        open_ended_factors = 1; /* only do this once! */
+        unityEpoch.gpsSeconds = tstartunity;
+        unityEpoch.gpsNanoSeconds = 0;
         unityAlpha = XLALCreateREAL4TimeSeries( alpha->name, &unityEpoch, alpha->f0, OPEN_ENDED_DELTA_T, &lalDimensionlessUnit, NUM_OPEN_ENDED_POINTS );
         unityGamma = XLALCreateREAL4TimeSeries( gamma->name, &unityEpoch, gamma->f0, OPEN_ENDED_DELTA_T, &lalDimensionlessUnit, NUM_OPEN_ENDED_POINTS );
         for ( i = 0; i < NUM_OPEN_ENDED_POINTS; ++i )
