@@ -401,11 +401,11 @@ def init_job_types(config_parser, types = ["datafind", "binj", "power", "lladd",
 # =============================================================================
 #
 
-def split_segment(powerjob, segment, psds):
+def split_segment(powerjob, segment, psds_per_job):
 	"""
 	Split the data segment into correctly-overlaping segments.  We try
-	to have the numbers of PSDs in each segment be equal to psds, but
-	with a short segment at the end if needed.
+	to have the numbers of PSDs in each segment be equal to
+	psds_per_job, but with a short segment at the end if needed.
 	"""
 	psd_length = float(powerjob.get_opts()["psd-average-points"]) / float(powerjob.get_opts()["resample-rate"])
 	window_length = float(powerjob.get_opts()["window-length"]) / float(powerjob.get_opts()["resample-rate"])
@@ -414,7 +414,7 @@ def split_segment(powerjob, segment, psds):
 
 	psd_overlap = window_length - window_shift
 
-	joblength = psds * (psd_length - psd_overlap) + psd_overlap + 2 * filter_corruption
+	joblength = psds_per_job * (psd_length - psd_overlap) + psd_overlap + 2 * filter_corruption
 	joboverlap = 2 * filter_corruption + psd_overlap
 
 	# can't use range() with non-integers
@@ -424,6 +424,15 @@ def split_segment(powerjob, segment, psds):
 		segs.append(segments.segment(t, t + joblength) & segment)
 		t += joblength - joboverlap
 	return segs
+
+
+def test_segment(segment, psds_per_job):
+	"""
+	Return True if the segment can be analyzed using lalapps_power.
+	"""
+	# This is slow, but guaranteed to be using the same algorithm as
+	# split_segment()
+	return bool(split_segment(powerjob, segment, psds_per_job))
 
 
 #
