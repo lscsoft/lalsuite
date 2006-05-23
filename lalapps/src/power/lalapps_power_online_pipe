@@ -249,7 +249,7 @@ gsiscpjob = GsiScpJob(config_parser)
 #
 
 def make_publish_fragment(dag, tag, parent, destination):
-	start = segmentsUtils.fromfilenames([parent.get_output()])[0][0]
+	start = segmentsUtils.fromfilenames([parent.get_output_files()[0]])[0][0]
 	destination = os.path.join(destination, "%d/%d" % (start/1000000, start/100000))
 	try:
 		os.makedirs(destination)
@@ -260,7 +260,7 @@ def make_publish_fragment(dag, tag, parent, destination):
 	node = PublishNode(publishjob)
 	node.set_name("publish-%s" % tag)
 	node.add_parent(parent)
-	node.set_input(parent.get_output())
+	node.set_input(parent.get_output_files()[0])
 	node.set_output(destination)
 	dag.add_node(node)
 
@@ -275,21 +275,18 @@ def make_publish_fragment(dag, tag, parent, destination):
 # =============================================================================
 #
 
-def make_burst2mon_fragment(dag, parent, seg, tag):
-	cluster = power.BuclusterNode(power.buclusterjob)
-	cluster.set_name("ligolw_bucluster-POWERMON")
+def make_burst2mon_fragment(dag, parent, instrument, seg, tag):
+	cluster_output = "%s-POWERMON_%s-%s-%s.xml" % (instrument, tag, int(seg[0]), int(seg.duration()))
+	cluster = power.make_bucluster_fragment(dag, [], instrument, seg, "POWERMON_%s" % tag)
 	cluster.add_parent(parent)
-	cluster_output = "%s-POWERMON_%s-%s-%s.xml" % (options.instrument, tag, int(seg[0]), int(seg.duration()))
-	cluster.set_pre_script("/bin/cp %s %s" % (parent.get_output(), cluster_output))
+	cluster.set_pre_script("/bin/cp %s %s" % (parent.get_output_files()[0], cluster_output))
 	cluster.add_file_arg(cluster_output)
-	cluster.add_macro("macrocomment", tag)
-	dag.add_node(cluster)
 
 	node = Burst2MonNode(llb2mjob)
 	node.set_name("ligolw_burst2mon")
 	node.add_parent(cluster)
-	node.set_input(cluster.get_output())
-	node.set_output(os.path.join(options.dmtmon_dest, cluster.get_output()))
+	node.set_input(cluster.get_output_files()[0])
+	node.set_output(os.path.join(options.dmtmon_dest, cluster.get_output_files()[0]))
 	node.add_macro("macrocomment", tag)
 	dag.add_node(node)
 
@@ -309,7 +306,7 @@ def make_gsiscp_fragment(dag, parents, destination):
 	node.set_name("gsiscp")
 	for parent in parents:
 		node.add_parent(parent)
-		node.add_file_arg(parent.get_output())
+		node.add_file_arg(parent.get_output_files()[0])
 	node.set_output(destination)
 	dag.add_node(node)
 
@@ -335,11 +332,11 @@ darmpowerfrag = power.make_power_segment_fragment(dag, datafindfrag, options.seg
 
 make_publish_fragment(dag, "POWER", darmpowerfrag, options.publish_dest)
 if options.dmtmon_dest:
-	make_burst2mon_fragment(dag, darmpowerfrag, options.seg, options.user_tag)
+	make_burst2mon_fragment(dag, darmpowerfrag, options.instrument, options.seg, options.user_tag)
 
 injpowerfrag = power.make_injection_segment_fragment(dag, datafindfrag, options.seg, options.instrument, psds_per_injection, options.user_tag)
 
-binjfindfrag = power.make_binjfind_fragment(dag, injpowerfrag, options.instrument, options.seg, "INJECTIONS_%s" % options.user_tag)
+binjfindfrag = power.make_binjfind_fragment(dag, [injpowerfrag], options.instrument, options.seg, "INJECTIONS_%s" % options.user_tag)
 make_publish_fragment(dag, "INJECTIONS", binjfindfrag, options.publish_dest)
 
 make_gsiscp_fragment(dag, [darmpowerfrag, binjfindfrag], options.gsiscp_dest)

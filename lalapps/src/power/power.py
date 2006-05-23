@@ -189,8 +189,7 @@ class PowerNode(pipeline.AnalysisNode):
 		return [filename]
 
 	def get_output(self):
-		# FIXME: use get_output_files() instead
-		return self.get_output_files()[0]
+		raise NotImplementedError
 
 	def set_mdccache(self, file):
 		"""
@@ -245,8 +244,7 @@ class BucutNode(pipeline.CondorDAGNode):
 		self.add_output_file(filename)
 
 	def get_output(self):
-		# FIXME: use get_output_files() instead
-		return self.get_output_files()[0]
+		raise NotImplementedError
 
 
 class BuclusterJob(pipeline.CondorDAGJob):
@@ -265,8 +263,7 @@ class BuclusterNode(pipeline.CondorDAGNode):
 		self.add_output_file(filename)
 
 	def get_output(self):
-		# FIXME: use get_output_files() instead
-		return self.get_output_files()[0]
+		raise NotImplementedError
 
 
 class BinjfindJob(pipeline.CondorDAGJob):
@@ -285,8 +282,7 @@ class BinjfindNode(pipeline.CondorDAGNode):
 		self.add_output_file(filename)
 
 	def get_output(self):
-		# FIXME: use get_output_files() instead
-		return self.get_output_files()[0]
+		raise NotImplementedError
 
 
 class TisiJob(pipeline.CondorDAGJob):
@@ -305,8 +301,7 @@ class TisiNode(pipeline.CondorDAGNode):
 		self.add_output_file(filename)
 
 	def get_output(self):
-		# FIXME: use get_output_files() instead
-		return self.get_output_files()[0]
+		raise NotImplementedError
 
 
 class BurcaJob(pipeline.CondorDAGJob):
@@ -325,8 +320,7 @@ class BurcaNode(pipeline.CondorDAGNode):
 		self.add_output_file(filename)
 
 	def get_output(self):
-		# FIXME: use get_output_files() instead
-		return self.get_output_files()[0]
+		raise NotImplementedError
 
 
 #
@@ -438,6 +432,27 @@ def segment_ok(segment, psds_per_job):
 #
 # =============================================================================
 #
+#                                    Cache
+#
+# =============================================================================
+#
+
+class LALCache(list):
+	def add_entry(self, observatory, description, segment, filename):
+		entry = CacheEntry()
+		entry.observatory = observatory
+		entry.description = description
+		entry.segment = segment
+		entry.url = "file://localhost" + os.path.join(os.getcwd(), filename)
+		self.append(entry)
+
+	def __str__(self):
+		return "\n".join(map(str, self))
+
+
+#
+# =============================================================================
+#
 #                            Single Node Fragments
 #
 # =============================================================================
@@ -451,8 +466,7 @@ def make_datafind_fragment(dag, instrument, seg):
 	node.set_start(seg[0] - datafind_pad)
 	node.set_end(seg[1] + 1)
 	node.set_observatory(instrument[0])
-	# FIXME: add check for job failure using $RETURN variable
-	node.set_post_script("/home/kipp/local/bin/LSCdataFindcheck --gps-start-time %s --gps-end-time %s %s" % (str(seg[0]), str(seg[1]), node.get_output()))
+	node.set_post_script("/archive/home/kipp/local/bin/LSCdataFindcheck --dagman-return $RETURN --gps-start-time %s --gps-end-time %s %s" % (str(seg[0]), str(seg[1]), node.get_output()))
 	dag.add_node(node)
 
 	return node
@@ -470,18 +484,15 @@ def make_tisi_fragment(dag, tag):
 
 def make_lladd_fragment(dag, parents, instrument, seg, tag):
 	cache_name = os.path.join(lladdjob.cache_dir, "lladd-%s-%s-%s-%s.cache" % (instrument, tag, int(seg[0]), int(seg.duration())))
-	cachefile = file(cache_name, "w")
+	cache = LALCache()
 
 	node = pipeline.LigolwAddNode(lladdjob)
 	node.set_name("lladd-%s-%s-%s-%s" % (instrument, tag, int(seg[0]), int(seg.duration())))
 	for parent in parents:
 		node.add_parent(parent)
-		cache = CacheEntry()
-		cache.observatory = "ANY"
-		cache.description = "EMPTY"
-		cache.segment = seg
-		cache.url = "file://localhost" + os.path.join(os.getcwd(), parent.get_output())
-		print >>cachefile, str(cache)
+		for filename in parent.get_output_files():
+			cache.add_entry("ANY", "EMPTY", seg, filename)
+	print >>file(cache_name, "w"), cache
 	node.add_var_opt("input-cache", cache_name)
 	dag.add_node(node)
 
@@ -505,11 +516,12 @@ def make_power_fragment(dag, parents, instrument, seg, tag, framecache, injargs 
 	return node
 
 
-def make_bucut_fragment(dag, parent, instrument, seg, tag):
+def make_bucut_fragment(dag, parents, instrument, seg, tag):
 	node = BucutNode(bucutjob)
 	node.set_name("ligolw_bucut-%s-%s-%s-%s" % (instrument, tag, int(seg[0]), int(seg.duration())))
-	node.add_parent(parent)
-	node.add_file_arg(parent.get_output())
+	for parent in parents:
+		node.add_parent(parent)
+		map(node.add_file_arg, parent.get_output_files())
 	node.add_macro("macrocomment", tag)
 	dag.add_node(node)
 
@@ -535,18 +547,25 @@ def make_binj_fragment(dag, seg, tag, offset, flow, fhigh, fratio, injection_ban
 	return node
 
 
-def make_binjfind_fragment(dag, parent, instrument, seg, tag):
-	cluster = BuclusterNode(buclusterjob)
-	cluster.set_name("ligolw_bucluster-%s-%s-%s-%s" % (instrument, tag, int(seg[0]), int(seg.duration())))
-	cluster.add_parent(parent)
-	cluster.add_file_arg(parent.get_output())
-	cluster.add_macro("macrocomment", tag)
-	dag.add_node(cluster)
+def make_bucluster_fragment(dag, parents, instrument, seg, tag):
+	node = BuclusterNode(buclusterjob)
+	node.set_name("ligolw_bucluster-%s-%s-%s-%s" % (instrument, tag, int(seg[0]), int(seg.duration())))
+	for parent in parents:
+		node.add_parent(parent)
+		map(node.add_file_arg, parent.get_output_files())
+	node.add_macro("macrocomment", tag)
+	dag.add_node(node)
+
+	return node
+
+
+def make_binjfind_fragment(dag, parents, instrument, seg, tag):
+	cluster = make_bucluster_fragment(dag, parents, instrument, seg, tag)
 
 	binjfind = BinjfindNode(binjfindjob)
 	binjfind.set_name("ligolw_binjfind-%s-%s-%s-%s" % (instrument, tag, int(seg[0]), int(seg.duration())))
 	binjfind.add_parent(cluster)
-	binjfind.add_file_arg(cluster.get_output())
+	map(binjfind.add_file_arg, cluster.get_output_files())
 	binjfind.add_macro("macrocomment", tag)
 	dag.add_node(binjfind)
 
@@ -638,7 +657,7 @@ def make_injection_segment_fragment(dag, datafindnode, segment, instrument, psds
 
 	lladdnode = make_multipower_fragment(dag, [datafindnode, binjfrag], [binjfrag, tisifrag], datafindnode.get_output(), seglist, instrument, "INJECTIONS_%s" % tag, injargs = {"burstinjection-file": binjfrag.get_output()})
 
-	bucutnode = make_bucut_fragment(dag, lladdnode, instrument, segment, "INJECTIONS_%s" % tag)
+	bucutnode = make_bucut_fragment(dag, [lladdnode], instrument, segment, "INJECTIONS_%s" % tag)
 
 	return bucutnode
 

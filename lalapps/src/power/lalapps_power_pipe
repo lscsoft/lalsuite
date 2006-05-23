@@ -149,7 +149,7 @@ def make_single_instrument_fragment(dag, options, instrument, seglist, binjfrag 
 		datafindfrag = power.make_datafind_fragment(dag, instrument, seg)
 		darmpowerfrag = power.make_power_segment_fragment(dag, datafindfrag, seg, instrument, options.psds_per_power, options.tag)
 		injpowerfrag = power.make_injection_segment_fragment(dag, datafindfrag, seg, instrument, options.psds_per_injection, options.tag, binjfrag = binjfrag, tisifrag = tisifrag)
-		binjfindfrag = power.make_binjfind_fragment(dag, injpowerfrag, instrument, seg, "INJECTIONS_%s" % options.tag)
+		binjfindfrag = power.make_binjfind_fragment(dag, [injpowerfrag], instrument, seg, "INJECTIONS_%s" % options.tag)
 		nodes.append(darmpowerfrag)
 	return nodes
 
@@ -167,8 +167,17 @@ power.make_dag_directories(config_parser)
 dag = pipeline.CondorDAG(tempfile.mkstemp(".log", "power_", options.condor_log_dir)[1])
 dag.set_dag_file(os.path.splitext(filenames[0])[0])
 
+#
+# DAG "preamble":  injection and time slide lists.
+#
+
 binjfrag = power.make_multibinj_fragment(dag, options.seglistdict.extent_all(), options.tag)
 tisifrag = power.make_tisi_fragment(dag, options.tag)
+
+#
+# Build single instrument fragments, one for each instrument for each
+# segment.
+#
 
 single_instrument_fragments = {}
 for instrument, seglist in options.seglistdict.iteritems():
