@@ -79,9 +79,13 @@ tables whos \texttt{ifos} field matches the string \texttt{ifos}.
 \texttt{LALTimeSortSummValue()} performs the same functions as described
 above.  The only difference being that they act on summ value tables.
 
-Finally, \texttt{LALCheckOutTimeFromSearchSummary()} verifies that all times
+\texttt{LALCheckOutTimeFromSearchSummary()} verifies that all times
 between the specified \texttt{startTime} and \texttt{endTime} have been
 searched precisely once for the given \texttt{ifo}.
+
+Finally, \texttt{LALDistanceScanSummValueTable()} scan a summ value table
+ searching for a trigger belonging to a given ifo and englobing a give GPS
+ time.
 
  
 \subsubsection*{Algorithm}
@@ -674,6 +678,49 @@ LALIfoScanSearchSummary(
   RETURN (status);
 
 }  
+
+/* <lalVerbatim file="LIGOMetadataUtilsCP"> */
+void
+LALDistanceScanSummValueTable (
+    LALStatus            *status,
+    SummValueTable       *summValueList,
+    LIGOTimeGPS          gps,
+    CHAR                 *ifo,
+    REAL4                *distance)
+{
+  SummValueTable    *thisSummValue = NULL;
+  INT4 test=0; 
+  INT8 ta=0, tb=0, tc=0;
+
+  INITSTATUS( status, "LALDistanceScanSummValueTable", LIGOMETADATAUTILSC );
+  ATTATCHSTATUSPTR( status );
+
+  /* convert the input GPS time into INT8 */
+  LALGPStoINT8( status->statusPtr, &ta, &(gps) );
+
+  /* scan the summ value table */
+  for( thisSummValue = summValueList; thisSummValue; 
+      thisSummValue = thisSummValue->next )
+  {
+    /* if this is the requested ifo */
+    if ( !strcmp(thisSummValue->ifo, ifo) ) 
+    {
+      /* IFOs match so now let us check if the this entry coincide 
+	with the requested GPS time */
+
+      LALGPStoINT8( status->statusPtr, &tb, &(thisSummValue->start_time) );
+      LALGPStoINT8( status->statusPtr, &tc, &(thisSummValue->end_time) );
+      if ( ta >= tb && ta<=tc )
+      {
+        *distance = thisSummValue->value; 
+        break;
+      } 
+    }
+  }
+  
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}
 
 /* <lalVerbatim file="LIGOMetadataUtilsCP"> */
 void
