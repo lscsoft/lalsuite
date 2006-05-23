@@ -226,12 +226,22 @@ LALExtTriggerTableFromLIGOLw (
     );
 
 int
+XLALReadSummValueFile (
+    SummValueTable **summValueList,
+    CHAR                  *fileName
+    );
+int
 XLALReadInspiralTriggerFile (
     SnglInspiralTable    **inspiralEventList,
     SnglInspiralTable    **lastTrigger,
     SearchSummaryTable   **searchSummList,
     SearchSummvarsTable  **inputFileList,
     CHAR                  *fileName
+    );
+
+void
+XLALCleanSummValueTable (
+    SummValueTable **summValueList
     );
 
 #if 0

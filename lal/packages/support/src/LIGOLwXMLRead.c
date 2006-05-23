@@ -3013,6 +3013,54 @@ LALExtTriggerTableFromLIGOLw (
 #undef CLOBBER_EVENTS
 
 
+int 
+XLALReadSummValueFile (
+    SummValueTable **summValueList,
+    CHAR                  *fileName
+    )
+/* </lalVerbatim> */
+{
+  const char *func = "XLALReadSummValueFile";
+  INT4 numFileTriggers = 0;
+  INT4 haveSummValue = 0;
+  SummValueTable  *thisSummValue = NULL;
+  SummValueTable  *inputSummValue = NULL;
+
+
+  /* read in the summ value table and store */ 
+  XLALPrintInfo( 
+      "XLALReadSummValueFile(): Reading summ_value table\n");
+
+  haveSummValue = SummValueTableFromLIGOLw(&inputSummValue, fileName);
+
+  if ( ! inputSummValue || haveSummValue < 1)
+  {
+    XLALPrintError("No valid summ_value table in %s, exiting\n",
+        fileName );
+    XLAL_ERROR(func, XLAL_EIO);
+  }
+  else
+  {
+    /* store the summ value table in SummValueList list */
+    XLALPrintInfo("XLALReadSummValueFile(): Checking summ_value_table\n"); 
+    
+    /* keep only relevant information (inspiral_effective_distance)*/  
+    XLALCleanSummValueTable(&inputSummValue);
+    
+    if ( ! *summValueList )
+    {
+      *summValueList = thisSummValue = inputSummValue;
+    }
+    else
+    {
+      for ( thisSummValue = *summValueList; thisSummValue->next; 
+          thisSummValue = thisSummValue->next);
+      thisSummValue = thisSummValue->next = inputSummValue;    
+    }
+  }
+ return 1;
+}
+
 /* <lalVerbatim file="LIGOLwXMLReadCP"> */
 int
 XLALReadInspiralTriggerFile (
@@ -3026,10 +3074,15 @@ XLALReadInspiralTriggerFile (
 {
   const char *func = "XLALReadInspiralTriggerFile";
   INT4 numFileTriggers = 0;
+  INT4 haveSummValue = 0;
   SnglInspiralTable  *inputData = NULL;
   SearchSummaryTable *inputSummary = NULL;
   SearchSummaryTable *thisSearchSumm = NULL;
   SearchSummvarsTable  *thisInputFile = NULL;
+#if 0
+  SummValueTable  *thisSummValue = NULL;
+  SummValueTable  *inputSummValue = NULL;
+#endif
 
 
   /* store the file name in search summvars */
@@ -3082,7 +3135,40 @@ XLALReadInspiralTriggerFile (
       thisSearchSumm = thisSearchSumm->next = inputSummary;
     }
   }
+#if 0
+  /* read in the summ value table and store */ 
+  XLALPrintInfo( 
+      "XLALReadInspiralTriggerFile(): Reading summ_value table\n");
 
+  haveSummValue = SummValueTableFromLIGOLw(&inputSummValue, fileName);
+
+  if ( ! inputSummValue || haveSummValue < 1)
+  {
+    XLALPrintError("No valid summ_value table in %s, exiting\n",
+        fileName );
+    LALFree(thisInputFile);
+    XLAL_ERROR(func, XLAL_EIO);
+  }
+  else
+  {
+    /* store the summ value table in SummValueList list */
+    XLALPrintInfo("XLALReadInspiralTriggerFile(): Checking summ_value_table\n"); 
+    
+    /* keep only relevant information (inspiral_effective_distance)*/  
+    XLALCleanSummValueTable(&inputSummValue);
+    
+    if ( ! *summValueList )
+    {
+      *summValueList = thisSummValue = inputSummValue;
+    }
+    else
+    {
+      for ( thisSummValue = *summValueList; thisSummValue->next; 
+          thisSummValue = thisSummValue->next);
+      thisSummValue = thisSummValue->next = inputSummValue;    
+    }
+  }
+#endif
   /* read in the triggers */
   numFileTriggers = 
     LALSnglInspiralTableFromLIGOLw( &inputData, fileName, 0, -1 );
@@ -3120,3 +3206,64 @@ XLALReadInspiralTriggerFile (
 
   return( numFileTriggers );
 }
+
+      
+
+/* function which reads a summ_value table and remove
+   all rows which do not contain name set 
+   to "effective_inspiral_distance". */
+void XLALCleanSummValueTable(SummValueTable **inputSummValue)
+{
+  SummValueTable *this = NULL;
+  SummValueTable *prev = NULL;
+  SummValueTable *head = NULL;
+  
+  this  = *inputSummValue;
+  head = NULL;
+      
+  while( this )
+  {
+    INT4 discard = 0;
+    SummValueTable *tmp = this;
+
+    this = this->next;
+
+    if (strncmp( tmp->name, "inspiral_effective_distance", 
+	LIGOMETA_SUMMVALUE_NAME_MAX) )
+    {      
+      /* not an effective distance -- discard */
+      XLALPrintInfo(
+  	"XLALReadIspiralTriggerFile(): Removing entry with  \"%s\" name \n",
+  	 tmp->name);
+      discard = 1;
+    }
+    else
+    {
+      discard = 0; 
+      XLALPrintInfo( 
+	"XLALReadIspiralTriggerFile(): Got inspiral effective distance of %f for a %s system.\n",
+	tmp->value, tmp->comment);     
+    }
+
+    if (discard)
+    {
+      LALFree(tmp);
+    }
+    else
+    {
+      if (!head)
+      {
+        head = tmp;
+      }
+      else
+      {
+        prev->next = tmp;
+      }
+      tmp->next = NULL;
+      prev = tmp;
+    }
+  }
+  *inputSummValue = head;
+}
+
+
