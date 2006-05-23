@@ -329,7 +329,7 @@ power.make_dag_directories(config_parser)
 dag = pipeline.CondorDAG(condor_log)
 dag.set_dag_file(options.dag_name)
 
-datafindfrag = power.make_datafind_fragment(dag, options.instrument[0], options.seg)
+datafindfrag = power.make_datafind_fragment(dag, options.instrument, options.seg)
 
 darmpowerfrag = power.make_power_segment_fragment(dag, datafindfrag, options.seg, options.instrument, psds_per_job, options.user_tag)
 
@@ -339,7 +339,7 @@ if options.dmtmon_dest:
 
 injpowerfrag = power.make_injection_segment_fragment(dag, datafindfrag, options.seg, options.instrument, psds_per_injection, options.user_tag)
 
-binjfindfrag = power.make_binjfind_fragment(dag, injpowerfrag, "INJECTIONS_%s" % options.user_tag)
+binjfindfrag = power.make_binjfind_fragment(dag, injpowerfrag, options.instrument, options.seg, "INJECTIONS_%s" % options.user_tag)
 make_publish_fragment(dag, "INJECTIONS", binjfindfrag, options.publish_dest)
 
 make_gsiscp_fragment(dag, [darmpowerfrag, binjfindfrag], options.gsiscp_dest)

@@ -426,7 +426,7 @@ def split_segment(powerjob, segment, psds_per_job):
 	return segs
 
 
-def test_segment(segment, psds_per_job):
+def segment_ok(segment, psds_per_job):
 	"""
 	Return True if the segment can be analyzed using lalapps_power.
 	"""
@@ -438,38 +438,42 @@ def test_segment(segment, psds_per_job):
 #
 # =============================================================================
 #
-#                           LSCdataFind DAG Fragment
+#                            Single Node Fragments
 #
 # =============================================================================
 #
 
-def make_datafind_fragment(dag, observatory, seg):
+def make_datafind_fragment(dag, instrument, seg):
 	datafind_pad = 512
 
 	node = pipeline.LSCDataFindNode(datafindjob)
-	node.set_name("LSCdataFind-%s-%s" % (int(seg[0]), int(seg.duration())))
+	node.set_name("LSCdataFind-%s-%s-%s" % (instrument, int(seg[0]), int(seg.duration())))
 	node.set_start(seg[0] - datafind_pad)
 	node.set_end(seg[1] + 1)
-	node.set_observatory(observatory)
+	node.set_observatory(instrument[0])
+	# FIXME: add check for job failure using $RETURN variable
+	node.set_post_script("/home/kipp/local/bin/LSCdataFindcheck --gps-start-time %s --gps-end-time %s" % (str(seg[0]), str(seg[1])))
 	dag.add_node(node)
 
 	return node
 
 
-#
-# =============================================================================
-#
-#                           ligolw_add DAG Fragment
-#
-# =============================================================================
-#
+def make_tisi_fragment(dag, tag):
+	node = TisiNode(tisijob)
+	node.set_name("ligolw_tisi-%s" % tag)
+	node.add_file_arg("tisi_%s.xml" % tag)
+	node.add_macro("macrocomment", tag)
+	dag.add_node(node)
 
-def make_lladd_fragment(dag, parents, seg, tag):
-	cache_name = os.path.join(lladdjob.cache_dir, "lladd-%s.cache" % tag)
+	return node
+
+
+def make_lladd_fragment(dag, parents, instrument, seg, tag):
+	cache_name = os.path.join(lladdjob.cache_dir, "lladd-%s-%s-%s-%s.cache" % (instrument, tag, int(seg[0]), int(seg.duration())))
 	cachefile = file(cache_name, "w")
 
 	node = pipeline.LigolwAddNode(lladdjob)
-	node.set_name("lladd-%s" % tag)
+	node.set_name("lladd-%s-%s-%s-%s" % (instrument, tag, int(seg[0]), int(seg.duration())))
 	for parent in parents:
 		node.add_parent(parent)
 		cache = CacheEntry()
@@ -484,19 +488,9 @@ def make_lladd_fragment(dag, parents, seg, tag):
 	return node
 
 
-#
-# =============================================================================
-#
-#                          lalapps_power DAG Fragment
-#
-# =============================================================================
-#
-
-def make_power_fragment(dag, parents, framecache, seg, instrument, tag, injargs = {}):
-	suffix = "%s-%s-%s" % (tag, int(seg[0]), int(seg.duration()))
-
+def make_power_fragment(dag, parents, instrument, seg, tag, framecache, injargs = {}):
 	node = PowerNode(powerjob)
-	node.set_name("lalapps_power-%s" % suffix)
+	node.set_name("lalapps_power-%s-%s-%s-%s" % (instrument, tag, int(seg[0]), int(seg.duration())))
 	map(node.add_parent, parents)
 	node.set_cache(framecache)
 	node.set_ifo(instrument)
@@ -511,6 +505,54 @@ def make_power_fragment(dag, parents, framecache, seg, instrument, tag, injargs 
 	return node
 
 
+def make_bucut_fragment(dag, parent, instrument, seg, tag):
+	node = BucutNode(bucutjob)
+	node.set_name("ligolw_bucut-%s-%s-%s-%s" % (instrument, tag, int(seg[0]), int(seg.duration())))
+	node.add_parent(parent)
+	node.add_file_arg(parent.get_output())
+	node.add_macro("macrocomment", tag)
+	dag.add_node(node)
+
+	return node
+
+
+def make_binj_fragment(dag, seg, tag, offset, flow, fhigh, fratio, injection_bands):
+	# one injection every time-step / pi seconds
+	period = injection_bands * float(binjjob.get_opts()["time-step"]) / math.pi
+	start = seg[0] - seg[0] % period + period * offset
+
+	node = BurstInjNode(binjjob)
+	node.set_start(start)
+	node.set_end(seg[1])
+	node.set_name("lalapps_binj-%d-%d" % (int(node.get_start()), int(flow)))
+	node.set_user_tag(tag)
+	node.add_macro("macroflow", flow)
+	node.add_macro("macrofhigh", fhigh)
+	node.add_macro("macrofratio", fratio)
+	node.add_macro("macroseed", int(time.time() + node.get_start()))
+	dag.add_node(node)
+
+	return node
+
+
+def make_binjfind_fragment(dag, parent, instrument, seg, tag):
+	cluster = BuclusterNode(buclusterjob)
+	cluster.set_name("ligolw_bucluster-%s-%s-%s-%s" % (instrument, tag, int(seg[0]), int(seg.duration())))
+	cluster.add_parent(parent)
+	cluster.add_file_arg(parent.get_output())
+	cluster.add_macro("macrocomment", tag)
+	dag.add_node(cluster)
+
+	binjfind = BinjfindNode(binjfindjob)
+	binjfind.set_name("ligolw_binjfind-%s-%s-%s-%s" % (instrument, tag, int(seg[0]), int(seg.duration())))
+	binjfind.add_parent(cluster)
+	binjfind.add_file_arg(cluster.get_output())
+	binjfind.add_macro("macrocomment", tag)
+	dag.add_node(binjfind)
+
+	return binjfind
+
+
 #
 # =============================================================================
 #
@@ -520,9 +562,11 @@ def make_power_fragment(dag, parents, framecache, seg, instrument, tag, injargs 
 #
 
 def make_multipower_fragment(dag, powerparents, lladdparents, framecache, seglist, instrument, tag, injargs = {}):
-	node = make_lladd_fragment(dag, [make_power_fragment(dag, powerparents, framecache, seg, instrument, tag, injargs) for seg in seglist] + lladdparents, seglist.extent(), "POWER_%s" % tag)
-	node.set_output("%s-POWER_%s-%s-%s.xml" % (instrument, tag, int(seglist.extent()[0]), int(seglist.extent().duration())))
-	return node
+	segment = seglist.extent()
+	powernodes = [make_power_fragment(dag, powerparents, instrument, seg, tag, framecache, injargs) for seg in seglist]
+	lladdnode = make_lladd_fragment(dag, powernodes + lladdparents, instrument, segment, "POWER_%s" % tag)
+	lladdnode.set_output("%s-POWER_%s-%s-%s.xml" % (instrument, tag, int(segment[0]), int(segment.duration())))
+	return lladdnode
 
 
 #
@@ -549,39 +593,12 @@ def make_power_segment_fragment(dag, datafindnode, segment, instrument, psds_per
 #
 # =============================================================================
 #
-#                          lalapps_binj DAG Fragment
-#
-# =============================================================================
-#
-
-def make_binj_fragment(dag, tag, seg, offset, flow, fhigh, fratio, injection_bands):
-	# one injection every time-step / pi seconds
-	period = injection_bands * float(binjjob.get_opts()["time-step"]) / math.pi
-	start = seg[0] - seg[0] % period + period * offset
-
-	node = BurstInjNode(binjjob)
-	node.set_start(start)
-	node.set_end(seg[1])
-	node.set_name("lalapps_binj-%d-%d" % (int(node.get_start()), int(flow)))
-	node.set_user_tag(tag)
-	node.add_macro("macroflow", flow)
-	node.add_macro("macrofhigh", fhigh)
-	node.add_macro("macrofratio", fratio)
-	node.add_macro("macroseed", int(time.time() + node.get_start()))
-	dag.add_node(node)
-
-	return node
-
-
-#
-# =============================================================================
-#
 #         DAG Fragment Combining Multiple lalapps_binj With ligolw_add
 #
 # =============================================================================
 #
 
-def make_multibinj_fragment(dag, tag, seg):
+def make_multibinj_fragment(dag, seg, tag):
 	flow = float(powerjob.get_opts()["low-freq-cutoff"])
 	fhigh = flow + float(powerjob.get_opts()["bandwidth"])
 
@@ -593,47 +610,10 @@ def make_multibinj_fragment(dag, tag, seg):
 	# errors)
 	fratio = 0.9999999 * (fhigh / flow) ** (1.0/injection_bands)
 
-	binjnodes = [make_binj_fragment(dag, tag, seg, 0.0, flow, fhigh, fratio, injection_bands)]
+	binjnodes = [make_binj_fragment(dag, seg, tag, 0.0, flow, fhigh, fratio, injection_bands)]
 
-	node = make_lladd_fragment(dag, binjnodes, seg, tag)
+	node = make_lladd_fragment(dag, binjnodes, "ANY", seg, tag)
 	node.set_output("HL-%s-%d-%d.xml" % (tag, int(seg[0]), int(seg.duration())))
-
-	return node
-
-
-#
-# =============================================================================
-#
-#                           ligolw_tisi DAG Fragment
-#
-# =============================================================================
-#
-
-def make_tisi_fragment(dag, tag):
-	node = TisiNode(tisijob)
-	node.set_name("ligolw_tisi-%s" % tag)
-	node.add_file_arg("TISI_%s.xml" % tag)
-	node.add_macro("macrocomment", tag)
-	dag.add_node(node)
-
-	return node
-
-
-#
-# =============================================================================
-#
-#                          ligolw_bucut DAG Fragment
-#
-# =============================================================================
-#
-
-def make_bucut_fragment(dag, tag, parent):
-	node = BucutNode(bucutjob)
-	node.set_name("ligolw_bucut-%s" % tag)
-	node.add_parent(parent)
-	node.add_file_arg(parent.get_output())
-	node.add_macro("macrocomment", tag)
-	dag.add_node(node)
 
 	return node
 
@@ -651,39 +631,14 @@ def make_injection_segment_fragment(dag, datafindnode, segment, instrument, psds
 	print >>sys.stderr, "Injections split: " + str(seglist)
 
 	if not binjfrag:
-		binjfrag = make_multibinj_fragment(dag, "INJECTIONS_%s" % tag, seglist.extent())
+		binjfrag = make_multibinj_fragment(dag, seglist.extent(), "INJECTIONS_%s" % tag)
 
 	if not tisifrag:
 		tisifrag = make_tisi_fragment(dag, "INJECTIONS_%s" % tag)
 
 	lladdnode = make_multipower_fragment(dag, [datafindnode, binjfrag], [binjfrag, tisifrag], datafindnode.get_output(), seglist, instrument, "INJECTIONS_%s" % tag, injargs = {"burstinjection-file": binjfrag.get_output()})
 
-	bucutnode = make_bucut_fragment(dag, "INJECTIONS_%s" % tag, lladdnode)
+	bucutnode = make_bucut_fragment(dag, lladdnode, instrument, segment, "INJECTIONS_%s" % tag)
 
 	return bucutnode
 
-
-#
-# =============================================================================
-#
-#                         ligolw_binjfind DAG Fragment
-#
-# =============================================================================
-#
-
-def make_binjfind_fragment(dag, parent, tag):
-	cluster = BuclusterNode(buclusterjob)
-	cluster.set_name("ligolw_bucluster-%s" % tag)
-	cluster.add_parent(parent)
-	cluster.add_file_arg(parent.get_output())
-	cluster.add_macro("macrocomment", tag)
-	dag.add_node(cluster)
-
-	binjfind = BinjfindNode(binjfindjob)
-	binjfind.set_name("ligolw_binjfind-%s" % tag)
-	binjfind.add_parent(cluster)
-	binjfind.add_file_arg(cluster.get_output())
-	binjfind.add_macro("macrocomment", tag)
-	dag.add_node(binjfind)
-
-	return binjfind
