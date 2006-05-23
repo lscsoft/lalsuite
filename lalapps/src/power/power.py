@@ -452,7 +452,7 @@ def make_datafind_fragment(dag, instrument, seg):
 	node.set_end(seg[1] + 1)
 	node.set_observatory(instrument[0])
 	# FIXME: add check for job failure using $RETURN variable
-	node.set_post_script("/home/kipp/local/bin/LSCdataFindcheck --gps-start-time %s --gps-end-time %s" % (str(seg[0]), str(seg[1])))
+	node.set_post_script("/home/kipp/local/bin/LSCdataFindcheck --gps-start-time %s --gps-end-time %s %s" % (str(seg[0]), str(seg[1]), node.get_output()))
 	dag.add_node(node)
 
 	return node
