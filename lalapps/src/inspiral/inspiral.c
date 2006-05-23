@@ -56,6 +56,7 @@
 #include <lal/FindChirpBCV.h>
 #include <lal/FindChirpBCVSpin.h>
 #include <lal/FindChirpChisq.h>
+#include <lal/LALTrigScanCluster.h>
 
 RCSID( "$Id$" );
 
@@ -214,6 +215,20 @@ CHAR   fileName[FILENAME_MAX];          /* name of output files         */
 INT4   maximizationInterval = 0;        /* Max over template in this    */ 
                                         /* maximizationInterval Nanosec */ 
                                         /* interval                     */
+trigScanType trigScanMethod = trigScanNone;    
+                                        /* Switch for clustering        */
+                                        /* triggers in template         */
+                                        /* parameters and end time      */
+REAL8  trigScanDeltaEndTime = 0.0;      /* Use this interval (msec)     */
+                                        /* over trigger end time while  */
+                                        /* using trigScanCluster        */
+REAL8  trigScanAreaSafetyFac = 0.0;     
+/* Use this safety factor for  the area spanned by a trigger in the     */
+/* parameter space. When set to 1.0, the area is taken to be that of the*/
+/* ambiguity ellipse at the template MM.                                */ 
+INT2  trigScanAppendStragglers = -1;    /* Switch to append cluster     */
+                                        /* out-liers (stragglers)       */
+
 INT8   trigStartTimeNS  = 0;            /* write triggers only after    */
 INT8   trigEndTimeNS    = 0;            /* write triggers only before   */
 INT8   outTimeNS        = 0;            /* search summ out time         */
@@ -367,6 +382,10 @@ int main( int argc, char *argv[] )
   UINT4  *analyseThisTmplt = NULL;
   INT4    thisTemplateIndex = 0;
   UINT4   analyseTag;
+  
+  /* trigScan clustering input parameters */
+  trigScanClusterIn  *condenseIn=NULL; 
+
 
   /*
    *
@@ -1840,6 +1859,15 @@ int main( int argc, char *argv[] )
 
     }
 
+    /* If using trigScan clustering, then init the clustering */
+    /* input parameters before they are freed up in the code. */
+    if ( trigScanMethod )
+    { 
+        XLALPopulateTrigScanInput( &condenseIn, fcDataParams, 
+                fcTmpltParams, fcFilterParams, bankHead ); 
+    }
+
+
     /*
      *
      * hierarchial search engine
@@ -2592,6 +2620,35 @@ int main( int argc, char *argv[] )
           maximizationInterval);
     }
 
+    /* trigScanClustering */ 
+    if ( trigScanMethod ) 
+    { 
+        if ( condenseIn && (savedEvents.snglInspiralTable) ) 
+        { 
+            condenseIn->bin_time   = trigScanDeltaEndTime; 
+            condenseIn->sf_area    = trigScanAreaSafetyFac; 
+            condenseIn->scanMethod = trigScanMethod; 
+            condenseIn->n          = XLALCountSnglInspiral ( (savedEvents.snglInspiralTable) ); 
+            condenseIn->vrbflag    = vrbflg;
+            condenseIn->appendStragglers = trigScanAppendStragglers; 
+            
+            /* Call the clustering routine */ 
+            LAL_CALL( LALClusterSnglInspiralOverTemplatesAndEndTime ( &status, 
+                        &(savedEvents.snglInspiralTable), condenseIn ), &status );
+            
+            /* Once clustering is over, free up memory */ 
+            XLALDestroyREAL8Vector ( condenseIn->coarseShf.data ); 
+            LALFree ( condenseIn ); 
+        }
+        else
+        {
+            if ( vrbflg )
+                  fprintf (stderr, 
+                          "The event head appears to be null containing %d triggers \n", 
+                          XLALCountSnglInspiral ( (savedEvents.snglInspiralTable) ));
+        }
+    }
+
     /* if we haven't thrown all the triggers away, write sngl_inspiral table */
     if ( savedEvents.snglInspiralTable )
     {
@@ -2603,6 +2660,7 @@ int main( int argc, char *argv[] )
       LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
     }
   }
+  
   while ( savedEvents.snglInspiralTable )
   {
     event = savedEvents.snglInspiralTable;
@@ -2780,6 +2838,12 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "\n"\
 "  --maximization-interval msec set length of maximization interval\n"\
 "\n"\
+"  --ts-cluster   MTHD          max over template and end time MTHD \n"\
+"                                 (T0T3Tc|T0T3TcAS|Psi0Psi3Tc|Psi0Psi3TcAS)\n"\
+"  --ts-endtime-interval msec   set end-time interval for TrigScan clustering\n"\
+"  --ts-area-safety fac         set template area safety factor for TrigScan clustering\n"\
+"                                 fac should be >= 1.0\n"\
+"\n"\
 "  --enable-output              write the results to a LIGO LW XML file\n"\
 "  --output-mask MASK           write the output sngl_inspiral table\n"\
 "                                 with optional MASK (bns|bcv)\n"\
@@ -2901,6 +2965,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"sim-frame-file",          required_argument, 0,                '7'},
     {"sim-frame-channel",       required_argument, 0,                '8'},
     {"td-follow-up",            required_argument, 0,                '9'},
+    {"ts-cluster",              required_argument, 0,                '*'},
+    {"ts-endtime-interval",     required_argument, 0,                '<'},
+    {"ts-area-safety",          required_argument, 0,                '>'},
     /* frame writing options */
     {"write-raw-data",          no_argument,       &writeRawData,     1 },
     {"write-filter-data",       no_argument,       &writeFilterData,  1 },
@@ -2936,7 +3003,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     c = getopt_long_only( argc, argv, 
         "-A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:VW:X:Y:Z:"
         "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:"
-        "0:1::2:3:4:567:8:9:",
+        "0:1::2:3:4:567:8:9:*:>:<",
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -3954,6 +4021,67 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
+      case '*':
+        /* store trigSanClustering method */
+        if ( ! strcmp( "T0T3Tc", optarg ) )
+        {
+            trigScanMethod = T0T3Tc;
+            trigScanAppendStragglers = 0;
+        }
+        else if ( ! strcmp( "T0T3TcAS", optarg ) )
+        {
+            trigScanMethod = T0T3Tc;
+            trigScanAppendStragglers = 1;
+        }
+        else if ( ! strcmp( "Psi0Psi3Tc", optarg ) )
+        {
+            trigScanMethod = Psi0Psi3Tc;
+            trigScanAppendStragglers = 0;
+        }
+        else if ( ! strcmp( "Psi0Psi3TcAS", optarg ) )
+        {
+            trigScanMethod = Psi0Psi3Tc;
+            trigScanAppendStragglers = 1;
+        }
+        else 
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "unknown scan method specified: %s\n"
+              "(Must be one of T0T3Tc, T0T3TcAS, Psi0Psi3Tc, Psi0Psi3TcAS)\n", 
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+
+      case '<':
+        /* TrigScan Delta End Time */ 
+        trigScanDeltaEndTime = atof( optarg ); 
+        if ( trigScanDeltaEndTime <= 0.0 ) 
+        { 
+          fprintf( stderr, "invalid argument to --%s:\n" 
+              "endTime interval must be positive: " 
+              "(%f specified)\n",  
+              long_options[option_index].name, trigScanDeltaEndTime ); 
+          exit( 1 ); 
+        } 
+        ADD_PROCESS_PARAM( "float", "%s", optarg ); 
+        break; 
+      
+      case '>':
+        /* TrigScan Template Area Safety Factor */ 
+        trigScanAreaSafetyFac = atof( optarg ); 
+        if ( trigScanAreaSafetyFac < 1.0 ) 
+        { 
+          fprintf( stderr, "invalid argument to --%s:\n" 
+              "templateArea safety factor must be >= 1.0 : " 
+              "(%f specified)\n",  
+              long_options[option_index].name, trigScanAreaSafetyFac ); 
+          exit( 1 ); 
+        } 
+        ADD_PROCESS_PARAM( "float", "%s", optarg ); 
+        break; 
+
       case '?':
         exit( 1 );
         break;
@@ -4499,6 +4627,28 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         "--disable-filter-inj-only must be specified\n" );
     exit( 1 );
   }
+
+  /* Check the trigScan input parameters */
+  if ( trigScanMethod )
+  {
+      if ( (trigScanDeltaEndTime <= 0.0) || (trigScanAreaSafetyFac < 1.0) )
+      {
+          fprintf ( stderr, "You must specify --trigScan-endTime-interval"
+                  " and --trigScan-templateArea-safetyFac.\n" );
+          exit(1);
+      }
+
+      if ( maximizationInterval )
+      {
+          fprintf ( stderr, "Cannot specify both --maximization-interval"
+                  " and --trigScanCluster \nChoose any one of the two methods"
+                  " for clustering inspiral triggers.\n" );
+          exit(1);
+      }
+  }
+  /* If the trigScan parameters are reasonable, set trigScanDeltaEndTimeBin*/
+  /* Here we change trigScanDeltaEndTime from msec to number of bins       */
+  trigScanDeltaEndTime *= (REAL8)(sampleRate)/1000.;
 
   return 0;
 }
