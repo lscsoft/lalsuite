@@ -3,11 +3,10 @@ INCLUDES = -I$(top_srcdir)/src/lalapps
 
 if LALFRAME
 if LALMETAIO
-bin_PROGRAMS = lalapps_power lalapps_bread lalapps_binj lalapps_coalescenceinfo
+bin_PROGRAMS = lalapps_power lalapps_bread lalapps_binj
 lalapps_power_SOURCES = power.c
 lalapps_bread_SOURCES = bread.c
 lalapps_binj_SOURCES = binj.c
-lalapps_coalescenceinfo_SOURCES = coalescenceinfo.c
 else
 bin_PROGRAMS = 
 endif
