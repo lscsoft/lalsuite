@@ -37,6 +37,7 @@ __version__ = "$Revision$"[11:-2]
 import ConfigParser
 from optparse import OptionParser
 import sys
+import tempfile
 
 from glue import pipeline
 from glue import segments
@@ -44,6 +45,7 @@ from glue import segmentsUtils
 from pylal import ligolw_tisi
 from pylal import llwapp
 from pylal.date import LIGOTimeGPS
+import power
 
 
 #
@@ -56,7 +58,9 @@ from pylal.date import LIGOTimeGPS
 
 def parse_command_line():
 	parser = OptionParser(version="%prog CVS $Id$")
+	parser.add_option("--condor-log-dir", metavar = "path", default = ".", help = "set directory for Condor log (default = .)")
 	parser.add_option("--config-file", metavar = "filename", default = "power.ini", help = "set .ini config file name (default = power.ini)")
+	parser.add_option("-v", "--verbose", action = "store_true", help = "be verbose")
 	options, filenames = parser.parse_args()
 
 	return options, (filenames or ["power.dag"])
@@ -76,15 +80,16 @@ except ValueError, e:
 #
 
 def parse_config_file(options):
+	if options.verbose:
+		print >>sys.stderr, "reading %s..." % options.config_file
 	config = ConfigParser.SafeConfigParser()
 	config.read(options.config_file)
 
 	options.tag = config.get("pipeline", "user_tag")
-	options.injection_bands = config.getint("pipeline", "injection-bands")
 
 	options.seglistdict = segments.segmentlistdict()
 	for ifo in config.get("pipeline", "ifos").split():
-		options.seglistdict[ifo] = segmentsUtils.fromsegwizard(file(config.get("pipeline", "seglist-%s" % ifo)), coltype = LIGOTimeGPS).coalesce()
+		options.seglistdict[ifo] = segmentsUtils.fromsegwizard(file(config.get("pipeline", "seglist_%s" % ifo)), coltype = LIGOTimeGPS).coalesce()
 
 	options.timeslides = list(ligolw_tisi.SlidesIter(ligolw_tisi.parse_slides([slidespec for slidespec in config.get("ligolw_tisi", "instrument").split() if slidespec != "--instrument"])))
 
@@ -117,6 +122,8 @@ power.init_job_types(config_parser)
 #
 
 def compute_coincident_segment_lists(options):
+	if options.verbose:
+		print >>sys.stderr, "constructing segment list..."
 	options.seglistdict = llwapp.get_coincident_segmentlistdict(options.seglistdict, options.timeslides)
 
 compute_coincident_segment_lists(options)
@@ -133,6 +140,12 @@ compute_coincident_segment_lists(options)
 def make_single_instrument_fragment(dag, options, instrument, seglist, binjfrag = None, tisifrag = None):
 	nodes = []
 	for seg in seglist:
+		if not power.test_segment(seg, options.psds_per_job):
+			if options.verbose:
+				print >>sys.stderr, "WARNING: cannot generate fragment for: %s: %s -- %s" % (instrument, str(seg[0]), str(seg[1]))
+			continue
+		if options.verbose:
+			print >>sys.stderr, "generating fragment: %s: %s -- %s" % (instrument, str(seg[0]), str(seg[1]))
 		datafindfrag = power.make_datafind_fragment(dag, instrument, seg)
 		darmpowerfrag = power.make_power_segment_fragment(dag, datafindfrag, seg, instrument, options.psds_per_job, options.tag)
 		injpowerfrag = power.make_injection_segment_fragment(dag, datafindfrag, seg, instrument, options.psds_per_injection, options.tag, binjfrag = binjfrag, tisifrag = tisifrag)
@@ -151,15 +164,17 @@ def make_single_instrument_fragment(dag, options, instrument, seglist, binjfrag 
 
 power.make_dag_directories(config_parser)
 
-dag = pipeline.CondorDAG(condor_log)
+dag = pipeline.CondorDAG(tempfile.mkstemp(".log", "power_", options.condor_log_dir)[1])
 dag.set_dag_file(filenames[0])
 
-binjfrag = power.make_multibinj_fragment(dag, options.tag, options.seglistdict.extent())
+binjfrag = power.make_multibinj_fragment(dag, options.tag, options.seglistdict.extent_all())
 tisifrag = power.make_tisi_fragment(dag, options.tag)
 
 single_instrument_fragments = {}
 for instrument, seglist in options.seglistdict.iteritems():
-	single_instrument_fragements[instrument] = make_single_instrument_fragment(dag, options, instrument, seglist, binjfrag = binjfrag, tisifrag = tisifrag)
+	single_instrument_fragments[instrument] = make_single_instrument_fragment(dag, options, instrument, seglist, binjfrag = binjfrag, tisifrag = tisifrag)
 
+if options.verbose:
+	print >>sys.stderr, "writing dag..."
 dag.write_sub_files()
 dag.write_dag()
