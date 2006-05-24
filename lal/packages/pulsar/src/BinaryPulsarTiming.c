@@ -1068,7 +1068,7 @@ REAL8 LALTDBMJDtoGPS(REAL8 MJD){
   meanAnomaly = 357.53 + 0.98560028*Tdiff; /* mean anomaly in degrees */
   meanAnomaly *= LAL_PI_180; /* mean anomaly in rads */
   
-  TDBtoTT = 0.001658*sin(meanAnomaly) + 0.000014*sin(meanAnomaly); /* time diff in seconds */
+  TDBtoTT = 0.001658*sin(meanAnomaly) + 0.000014*sin(2.*meanAnomaly); /* time diff in seconds */
 
   /* convert TDB to TT (TDB-TDBtoTT) and then convert TT to GPS */
   /* there is the magical number factor of 32.184 + 19 leap seconds to the
