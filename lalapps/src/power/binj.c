@@ -72,6 +72,7 @@ enum strain_dist {
 	STRAIN_DIST_CONST_HRSS,
 	STRAIN_DIST_LOG_HPEAK,
 	STRAIN_DIST_LOG_HRSS,
+	STRAIN_DIST_LOG_HRSSTAU,
 	STRAIN_DIST_PRESET_HPEAK
 };
 
@@ -159,7 +160,7 @@ static void print_usage(const char *prog)
 "\t--deltaf DELF            linear spacing of injection frequencies (0.0)\n"\
 "\t--quality Q              quality factor for SG waveforms TAU=Q/(sqrt(2) pi F)\n"\
 "\t--tau TAU                duration of SG waveforms.  Q overrides TAU setting\n"\
-"\t--strain-dist [consthpeak|consthrss|hpeakpresets|loghpeak|loghrss] select the strain distribution\n"\
+"\t--strain-dist [consthpeak|consthrss|hpeakpresets|loghpeak|loghrss|loghrss-t] select the strain distribution\n"\
 "\t--strain-scale-min VALUE  mininum of the strain distribution\n"\
 "\t--strain-scale-max VALUE  maximum of the strain distribution\n"\
 "\t--min-distance VALUE     min distance of source in Kpc(default 100Kpc) \n"\
@@ -316,6 +317,8 @@ static struct options parse_command_line(int *argc, char **argv[], MetadataTable
 			options.strain_dist = STRAIN_DIST_LOG_HPEAK;
 		else if(!strcmp(optarg, "loghrss"))
 			options.strain_dist = STRAIN_DIST_LOG_HRSS;
+		else if(!strcmp(optarg, "loghrss-t"))
+			options.strain_dist = STRAIN_DIST_LOG_HRSSTAU;
 		else {
 			fprintf(stderr, "error: unrecognized strain distribution \"%s\"", optarg);
 			exit(1);
@@ -487,6 +490,7 @@ static struct options parse_command_line(int *argc, char **argv[], MetadataTable
 		break;
 
 	case STRAIN_DIST_LOG_HRSS:
+	case STRAIN_DIST_LOG_HRSSTAU:
 		if(options.strain_scale_min == 0.0) {
 			fprintf(stderr, "error: must set --strain-scale-min\n");
 			exit(1);
@@ -895,6 +899,11 @@ int main(int argc, char *argv[])
 
 		case STRAIN_DIST_LOG_HRSS:
 			this_sim_burst->hrss = Log10Deviate(randParams, options.strain_scale_min, options.strain_scale_max);
+			this_sim_burst->hpeak = hpeak_from_tau_and_hrss(this_sim_burst->tau, this_sim_burst->hrss);
+			break;
+
+		case STRAIN_DIST_LOG_HRSSTAU:
+			this_sim_burst->hrss = Log10Deviate(randParams, options.strain_scale_min - log10(this_sim_burst->tau), options.strain_scale_max - log10(this_sim_burst->tau));
 			this_sim_burst->hpeak = hpeak_from_tau_and_hrss(this_sim_burst->tau, this_sim_burst->hrss);
 			break;
 
