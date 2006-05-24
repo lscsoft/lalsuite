@@ -46,7 +46,7 @@ int
 main(int argc, char **argv)
 {
   /* top-level status structure */
-  UINT4   numPSDpts=65537;
+ UINT4   numPSDpts=1025;
   static LALStatus status;     
   static InspiralCoarseBankIn coarseIn;
   void *noisemodel = LALLIGOIPsd;
@@ -86,6 +86,7 @@ main(int argc, char **argv)
   coarseIn.betaMax = 800.;
   coarseIn.spinBank = 1;
   coarseIn.gridSpacing = Hexagonal;
+  coarseIn.insidePolygon = True;
 
   memset( &(coarseIn.shf), 0, sizeof(REAL8FrequencySeries) );
   coarseIn.shf.f0 = 0;
