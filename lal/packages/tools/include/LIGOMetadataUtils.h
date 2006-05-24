@@ -714,6 +714,11 @@ XLALCountSnglInspiral(
     SnglInspiralTable *head 
     );
 
+INT4 
+XLALCountCoincInspiral( 
+    CoincInspiralTable *head 
+    );
+
 /* coinc inspiral */
 void
 LALCreateTwoIFOCoincList(

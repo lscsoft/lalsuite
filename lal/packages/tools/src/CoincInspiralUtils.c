@@ -55,6 +55,7 @@ NRCSID( COINCINSPIRALUTILSC, "$Id$" );
 \idx{XLALGenerateCoherentBank()}
 \idx{XLALInspiralDistanceCut()}
 \idx{LALCoincCutSnglInspiral()}
+\idx{XLALCountInspiralTable()}
 
 \subsubsection*{Description}
 
@@ -144,6 +145,11 @@ specific ifo which are in coinc inspirals.  The output \texttt{snglPtr} is a
 pointer to a linked list of single inspiral tables.  That list contains only
 single inspirals from the specified \texttt{ifo} which are found in
 coincidence. 
+
+\texttt{XLALCountCoincInspiral()} scans through a linked list of coincidence
+inspiral table and counts the number of events. This count is returned 
+as \texttt{numTrigs}.
+
 
 
 \subsubsection*{Algorithm}
@@ -1298,8 +1304,10 @@ LALInspiralDistanceCutCleaning(
   
   INITSTATUS( status, "LALInspiralDistanceCutCleaning", COINCINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
-
-    XLALPrintInfo("Cleaning.....\n"); 
+ 
+  if (!vetoSegsH1 || !vetoSegsH2 )
+  XLALPrintWarning("LALInspiralDistanceCutCleaning: Warning, no veto list provided. you should provide h1 and h2 ones. ");
+ 
   while( thisCoinc )
   {
     INT4  discardTrigger = 0;
@@ -1331,6 +1339,10 @@ LALInspiralDistanceCutCleaning(
 	    discardTrigger =1;
 	  }
         }
+	else
+	{
+	discardTrigger = 1;
+	}
       }
     }
 
@@ -1351,11 +1363,11 @@ LALInspiralDistanceCutCleaning(
      	  { 
 	    discardTrigger =1;
 	  }
-	
+	}	
 	else
 	{
- 	  printf("do not remove that event \n");	
-        }}
+ 	  discardTrigger = 1;	
+        }
       }
     }
 
@@ -2141,6 +2153,26 @@ XLALInspiralSNRCutBCV2(
     }
   }
   *coincInspiral = coincHead;
+}
+
+
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+INT4 XLALCountCoincInspiral( CoincInspiralTable *head )
+/* </lalVerbatim> */
+{
+  INT4 length;
+  CoincInspiralTable *event;
+ 
+  if ( !head )
+  {
+    return( 0 );
+  }
+
+  /* count the number of events in the list */
+  for(length = 0, event = head; event; event = event->next)
+    length++;
+
+  return length;
 }
 
 
