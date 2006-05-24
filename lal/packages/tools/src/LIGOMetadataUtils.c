@@ -46,6 +46,7 @@ NRCSID( LIGOMETADATAUTILSC, "$Id$" );
 \idx{LALCompareSummValueByTime()}
 \idx{LALTimeSortSummValue()}
 \idx{LALCheckOutTimeFromSearchSummary()}
+\idx{LALDistanceScansummValueTable()}
   
 \subsubsection*{Description}
 
@@ -687,6 +688,7 @@ LALDistanceScanSummValueTable (
     LIGOTimeGPS          gps,
     CHAR                 *ifo,
     REAL4                *distance)
+/* </lalVerbatim> */
 {
   SummValueTable    *thisSummValue = NULL;
   INT4 test=0; 
