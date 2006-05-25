@@ -24,6 +24,7 @@ import time
 from glue import segments
 from glue.lal import CacheEntry
 from glue import pipeline
+from pylal import packing
 
 
 #
@@ -59,7 +60,7 @@ def make_dag_directories(config_parser):
 # =============================================================================
 #
 
-class BurstInjJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+class BurstInjJob(pipeline.CondorDAGJob):
 	"""
 	A lalapps_binj job used by the power pipeline. The static options
 	are read from the [lalapps_binj] section in the ini file. The
@@ -73,7 +74,6 @@ class BurstInjJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 		read.
 		"""
 		pipeline.CondorDAGJob.__init__(self, get_universe(config_parser), get_executable(config_parser, "lalapps_binj"))
-		pipeline.AnalysisJob.__init__(self, config_parser)
 
 		self.add_ini_opts(config_parser, "lalapps_binj")
 
@@ -82,7 +82,7 @@ class BurstInjJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 		self.set_sub_file("lalapps_binj.sub")
 
 
-class BurstInjNode(pipeline.AnalysisNode):
+class BurstInjNode(pipeline.CondorDAGNode):
 	"""
 	A BurstInjNode runs an instance of lalapps_binj.
 	"""
@@ -92,7 +92,6 @@ class BurstInjNode(pipeline.AnalysisNode):
 		lalapps_power.
 		"""
 		pipeline.CondorDAGNode.__init__(self, job)
-		pipeline.AnalysisNode.__init__(self)
 		self.__usertag = None
 
 	def set_user_tag(self, tag):
@@ -432,27 +431,6 @@ def segment_ok(segment, psds_per_job):
 #
 # =============================================================================
 #
-#                                    Cache
-#
-# =============================================================================
-#
-
-class LALCache(list):
-	def add_entry(self, observatory, description, segment, filename):
-		entry = CacheEntry()
-		entry.observatory = observatory
-		entry.description = description
-		entry.segment = segment
-		entry.url = "file://localhost" + os.path.join(os.getcwd(), filename)
-		self.append(entry)
-
-	def __str__(self):
-		return "\n".join(map(str, self))
-
-
-#
-# =============================================================================
-#
 #                            Single Node Fragments
 #
 # =============================================================================
@@ -484,15 +462,15 @@ def make_tisi_fragment(dag, tag):
 
 def make_lladd_fragment(dag, parents, instrument, seg, tag):
 	cache_name = os.path.join(lladdjob.cache_dir, "lladd-%s-%s-%s-%s.cache" % (instrument, tag, int(seg[0]), int(seg.duration())))
-	cache = LALCache()
+	cache = packing.LALCache()
 
 	node = pipeline.LigolwAddNode(lladdjob)
 	node.set_name("lladd-%s-%s-%s-%s" % (instrument, tag, int(seg[0]), int(seg.duration())))
 	for parent in parents:
 		node.add_parent(parent)
 		for filename in parent.get_output_files():
-			cache.add_entry("ANY", "EMPTY", seg, filename)
-	print >>file(cache_name, "w"), cache
+			cache.add_new("ANY", "EMPTY", seg, filename)
+	print >>file(cache_name, "w"), str(cache)
 	node.add_var_opt("input-cache", cache_name)
 	dag.add_node(node)
 
