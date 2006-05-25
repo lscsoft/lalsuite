@@ -84,10 +84,12 @@ class BurstInjJob(pipeline.CondorDAGJob):
 	"""
 	def __init__(self, config_parser):
 		"""
-		config_parser = ConfigParser object from which options are
-		read.
+		config_parser = ConfigParser object
 		"""
 		pipeline.CondorDAGJob.__init__(self, get_universe(config_parser), get_executable(config_parser, "lalapps_binj"))
+
+		# do this many injections between flow and fhigh inclusively
+		self.injection_bands = config_parser.getint("pipeline", "injection_bands")
 
 		self.add_ini_opts(config_parser, "lalapps_binj")
 
@@ -97,14 +99,7 @@ class BurstInjJob(pipeline.CondorDAGJob):
 
 
 class BurstInjNode(pipeline.CondorDAGNode):
-	"""
-	A BurstInjNode runs an instance of lalapps_binj.
-	"""
 	def __init__(self, job):
-		"""
-		job = A CondorDAGJob that can run an instance of
-		lalapps_power.
-		"""
 		pipeline.CondorDAGNode.__init__(self, job)
 		self.__usertag = None
 
@@ -115,12 +110,24 @@ class BurstInjNode(pipeline.CondorDAGNode):
 	def get_user_tag(self):
 		return self.__usertag
 
+	def set_start(self, start):
+		self.add_var_opt("gps-start-time", start)
+
+	def set_end(self, end):
+		self.add_var_opt("gps-end-time", end)
+
+	def get_start(self):
+		return self.get_opts().get("macrogpsstarttime", None)
+
+	def get_end(self):
+		return self.get_opts().get("macrogpsendtime", None)
+
 	def get_output_files(self):
 		"""
-		Returns the file name of output from the power code. This
-		must be kept synchronized with the name of the output file
-		in binj.c.  Note in particular the calculation of the
-		"start" and "duration" parts of the name.
+		Returns the list of output file names.  This must be kept
+		synchronized with the name of the output file in binj.c.
+		Note in particular the calculation of the "start" and
+		"duration" parts of the name.
 		"""
 		if not self.get_start() or not self.get_end():
 			raise ValueError, "start time or end time has not been set"
@@ -147,8 +154,7 @@ class PowerJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 	"""
 	def __init__(self, config_parser):
 		"""
-		config_parser = ConfigParser object from which options are
-		read.
+		config_parser = ConfigParser object
 		"""
 		pipeline.CondorDAGJob.__init__(self, get_universe(config_parser), get_executable(config_parser, "lalapps_power"))
 		pipeline.AnalysisJob.__init__(self, config_parser)
@@ -161,14 +167,7 @@ class PowerJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 
 
 class PowerNode(pipeline.AnalysisNode):
-	"""
-	A PowerNode runs an instance of the power code in a Condor DAG.
-	"""
 	def __init__(self, job):
-		"""
-		job = A CondorDAGJob that can run an instance of
-		lalapps_power.
-		"""
 		pipeline.CondorDAGNode.__init__(self, job)
 		pipeline.AnalysisNode.__init__(self)
 		self.__usertag = None
@@ -424,12 +423,15 @@ def split_segment(powerjob, segment, psds_per_job):
 	joblength = psds_per_job * (psd_length - psd_overlap) + psd_overlap + 2 * filter_corruption
 	joboverlap = 2 * filter_corruption + psd_overlap
 
-	# can't use range() with non-integers
 	segs = segments.segmentlist()
 	t = segment[0]
-	while t < segment[1] - joboverlap:
+	while t + joblength <= segment[1]:
 		segs.append(segments.segment(t, t + joblength) & segment)
 		t += joblength - joboverlap
+
+	extra_psds = int((float(segment[1] - t) - 2 * filter_corruption - psd_overlap) / (psd_length - psd_overlap))
+	if extra_psds:
+		segs.append(segments.segment(segment[0], segment[0] + extra_psds * (psd_length - psd_overlap) + psd_overlap + 2 * filter_corruption))
 	return segs
 
 
@@ -520,20 +522,27 @@ def make_bucut_fragment(dag, parents, instrument, seg, tag):
 	return node
 
 
-def make_binj_fragment(dag, seg, tag, offset, flow, fhigh, fratio, injection_bands):
+def make_binj_fragment(dag, seg, tag, offset, flow, fhigh):
+	# determine frequency ratio from number of injections across band
+	# (take a bit off to allow fhigh to be picked up despite round-off
+	# errors)
+	fratio = 0.9999999 * (fhigh / flow) ** (1.0 / binjjob.injection_bands)
+
 	# one injection every time-step / pi seconds
-	period = injection_bands * float(binjjob.get_opts()["time-step"]) / math.pi
+	period = binjjob.injection_bands * float(binjjob.get_opts()["time-step"]) / math.pi
+
+	# adjust start time to be commensurate with injection period
 	start = seg[0] - seg[0] % period + period * offset
 
 	node = BurstInjNode(binjjob)
 	node.set_start(start)
 	node.set_end(seg[1])
-	node.set_name("lalapps_binj-%d-%d" % (int(node.get_start()), int(flow)))
+	node.set_name("lalapps_binj-%d-%d" % (int(start), int(flow)))
 	node.set_user_tag(tag)
 	node.add_macro("macroflow", flow)
 	node.add_macro("macrofhigh", fhigh)
 	node.add_macro("macrofratio", fratio)
-	node.add_macro("macroseed", int(time.time() + node.get_start()))
+	node.add_macro("macroseed", int(time.time() + start))
 	dag.add_node(node)
 
 	return node
@@ -613,15 +622,7 @@ def make_multibinj_fragment(dag, seg, tag):
 	flow = float(powerjob.get_opts()["low-freq-cutoff"])
 	fhigh = flow + float(powerjob.get_opts()["bandwidth"])
 
-	# do this many injections between flow and fhigh inclusively
-	injection_bands = binjjob._AnalysisJob__cp.getint("pipeline", "injection_bands")
-
-	# determine frequency ratio from number of injections across band
-	# (take a bit off to allow fhigh to be picked up despite round-off
-	# errors)
-	fratio = 0.9999999 * (fhigh / flow) ** (1.0/injection_bands)
-
-	binjnodes = [make_binj_fragment(dag, seg, tag, 0.0, flow, fhigh, fratio, injection_bands)]
+	binjnodes = [make_binj_fragment(dag, seg, tag, 0.0, flow, fhigh)]
 
 	node = make_lladd_fragment(dag, binjnodes, "ANY", seg, tag)
 	node.set_output("HL-%s-%d-%d.xml" % (tag, int(seg[0]), int(seg.duration())))

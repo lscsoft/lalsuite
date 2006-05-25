@@ -89,10 +89,19 @@ executable = "/archive/home/kipp/local/bin/ligolw_burca"
 # =============================================================================
 #
 
-def compute_bin_count(files, maxnodes):
-	sizes = [item[0] for item in files]
+def compute_bin_count(size_name_pairs, maxnodes):
+	"""
+	Determine how many bins the files will be grouped into.  The
+	algorithm is to try and set the number of bins to maxnodes unless
+	that would result in the bins being too small.  If maxnodes bins
+	would each be too small, then the count of bins is set so that each
+	bin has 2**24 bytes of data in it (16 MiB), unless the single
+	largest file is bigger than that in which case the count of bins is
+	set so that each bin has as many bytes as the largest file.
+	"""
+	sizes = [item[0] for item in size_name_pairs]
 	total_size = reduce(long.__add__, sizes)
-	minimum_bin_size = max(min(2**22, total_size), max(sizes))
+	minimum_bin_size = max(min(2**24, total_size), max(sizes))
 	return min(total_size / minimum_bin_size, maxnodes)
 
 
