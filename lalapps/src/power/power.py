@@ -569,16 +569,15 @@ def make_bucluster_fragment(dag, parents, instrument, seg, tag):
 
 
 def make_binjfind_fragment(dag, parents, instrument, seg, tag):
-	cluster = make_bucluster_fragment(dag, parents, instrument, seg, tag)
+	node = BinjfindNode(binjfindjob)
+	node.set_name("ligolw_binjfind-%s-%s-%s-%s" % (instrument, tag, int(seg[0]), int(seg.duration())))
+	for parent in parents:
+		node.add_parent(parent)
+		map(node.add_file_arg, parent.get_output_files())
+	node.add_macro("macrocomment", tag)
+	dag.add_node(node)
 
-	binjfind = BinjfindNode(binjfindjob)
-	binjfind.set_name("ligolw_binjfind-%s-%s-%s-%s" % (instrument, tag, int(seg[0]), int(seg.duration())))
-	binjfind.add_parent(cluster)
-	map(binjfind.add_file_arg, cluster.get_output_files())
-	binjfind.add_macro("macrocomment", tag)
-	dag.add_node(binjfind)
-
-	return binjfind
+	return node
 
 
 #

@@ -170,6 +170,8 @@ def make_single_instrument_fragment(dag, options, instrument, seglist, binjfrag 
 			darmpowerfrag = power.make_bucluster_fragment(dag, [darmpowerfrag], instrument, seg, options.tag)
 
 		injpowerfrag = power.make_injection_segment_fragment(dag, datafindfrag, seg, instrument, options.psds_per_injection, options.tag, binjfrag = binjfrag, tisifrag = tisifrag)
+		if "cluster" in power.powerjob.get_opts():
+			injpowerfrag = power.make_bucluster_fragment(dag, [injpowerfrag], instrument, seg, "INJECTIONS_%s" % options.tag)
 
 		binjfindfrag = power.make_binjfind_fragment(dag, [injpowerfrag], instrument, seg, "INJECTIONS_%s" % options.tag)
 
