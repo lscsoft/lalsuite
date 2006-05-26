@@ -111,12 +111,12 @@ static void print_usage(char *program)
       "  [--t1-triggers]               input triggers from T1\n"\
       "  [--v1-triggers]               input triggers from V1\n"\
       "\n"\
-      "  [--g1-triggers]               veto file for G1\n"\
-      "  [--h1-triggers]               veto file for H1\n"\
-      "  [--h2-triggers]               veto file for H2\n"\
-      "  [--l1-triggers]               veto file for L1\n"\
-      "  [--t1-triggers]               veto file for T1\n"\
-      "  [--v1-triggers]               veto file for V1\n"\
+      "  [--g1-veto-file]               veto file for G1\n"\
+      "  [--h1-veto-file]               veto file for H1\n"\
+      "  [--h2-veto-file]               veto file for H2\n"\
+      "  [--l1-veto-file]               veto file for L1\n"\
+      "  [--t1-veto-file]               veto file for T1\n"\
+      "  [--v1-veto-file]               veto file for V1\n"\
       "\n"\
       "   --parameter-test     test    set parameters with which to test coincidence:\n"\
       "                                (m1_and_m2|mchirp_and_eta|psi0_and_psi3)\n"\
