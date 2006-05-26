@@ -165,6 +165,13 @@ class PowerJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "power-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err"))
 		self.set_sub_file("lalapps_power.sub")
 
+		# pre-evaluate some segmentation parameters
+		self.psd_length = float(self.get_opts()["psd-average-points"]) / float(self.get_opts()["resample-rate"])
+		self.window_length = float(self.get_opts()["window-length"]) / float(self.get_opts()["resample-rate"])
+		self.window_shift = float(self.get_opts()["window-shift"]) / float(self.get_opts()["resample-rate"])
+		self.filter_corruption = float(self.get_opts()["filter-corruption"]) / float(self.get_opts()["resample-rate"])
+		self.psd_overlap = self.window_length - self.window_shift
+
 
 class PowerNode(pipeline.AnalysisNode):
 	def __init__(self, job):
@@ -407,21 +414,34 @@ def init_job_types(config_parser, types = ["datafind", "binj", "power", "lladd",
 # =============================================================================
 #
 
+def psds_from_job_length(powerjob, t):
+	"""
+	Return the number of PSDs that can fit into a job of length t.  In
+	general, the return value is a non-integer.
+	"""
+	if t < 0.0:
+		raise ValueError, t
+	return (t - 2 * powerjob.filter_corruption - powerjob.psd_overlap) / (powerjob.psd_length - powerjob.psd_overlap)
+
+
+def job_length_from_psds(powerjob, psds):
+	"""
+	From the analysis parameters and a count of PSDs, return the length of
+	the job in seconds.
+	"""
+	if psds < 1:
+		raise ValueError, psds
+	return psds * (powerjob.psd_length - powerjob.psd_overlap) + powerjob.psd_overlap + 2 * powerjob.filter_corruption
+
+
 def split_segment(powerjob, segment, psds_per_job):
 	"""
 	Split the data segment into correctly-overlaping segments.  We try
 	to have the numbers of PSDs in each segment be equal to
 	psds_per_job, but with a short segment at the end if needed.
 	"""
-	psd_length = float(powerjob.get_opts()["psd-average-points"]) / float(powerjob.get_opts()["resample-rate"])
-	window_length = float(powerjob.get_opts()["window-length"]) / float(powerjob.get_opts()["resample-rate"])
-	window_shift = float(powerjob.get_opts()["window-shift"]) / float(powerjob.get_opts()["resample-rate"])
-	filter_corruption = float(powerjob.get_opts()["filter-corruption"]) / float(powerjob.get_opts()["resample-rate"])
-
-	psd_overlap = window_length - window_shift
-
-	joblength = psds_per_job * (psd_length - psd_overlap) + psd_overlap + 2 * filter_corruption
-	joboverlap = 2 * filter_corruption + psd_overlap
+	joblength = job_length_from_psds(powerjob, psds_per_job)
+	joboverlap = 2 * powerjob.filter_corruption + powerjob.psd_overlap
 
 	segs = segments.segmentlist()
 	t = segment[0]
@@ -429,19 +449,17 @@ def split_segment(powerjob, segment, psds_per_job):
 		segs.append(segments.segment(t, t + joblength) & segment)
 		t += joblength - joboverlap
 
-	extra_psds = int((float(segment[1] - t) - 2 * filter_corruption - psd_overlap) / (psd_length - psd_overlap))
+	extra_psds = int(psds_from_job_length(powerjob, float(segment[1] - t)))
 	if extra_psds:
-		segs.append(segments.segment(segment[0], segment[0] + extra_psds * (psd_length - psd_overlap) + psd_overlap + 2 * filter_corruption))
+		segs.append(segments.segment(segment[0], segment[0] + job_length_from_psds(powerjob, extra_psds)))
 	return segs
 
 
-def segment_ok(segment, psds_per_job):
+def segment_ok(powerjob, segment):
 	"""
 	Return True if the segment can be analyzed using lalapps_power.
 	"""
-	# This is slow, but guaranteed to be using the same algorithm as
-	# split_segment()
-	return bool(split_segment(powerjob, segment, psds_per_job))
+	return psds_from_job_length(powerjob, float(segment.duration())) >= 1.0
 
 
 #
