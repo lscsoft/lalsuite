@@ -12,7 +12,7 @@
 #if 0
 <lalVerbatim file="LALTrigScanClusterHV">
 Author: Sengupta, Anand. S. and Gupchup, Jayant A.
-$Id$"
+$Id$
 </lalVerbatim>
 #endif
 

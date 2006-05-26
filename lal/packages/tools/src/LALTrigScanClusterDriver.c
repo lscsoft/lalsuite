@@ -11,7 +11,7 @@
 #if 0
 <lalVerbatim file="LALTrigScanClusterDriverCV">
 Author: Sengupta, Anand. S. and Gupchup, Jayant A.
-$Id$"
+$Id$
 </lalVerbatim>
 #endif
 
