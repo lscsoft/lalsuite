@@ -28,6 +28,7 @@ int XLALUpdateResponse(
 {
   static const char *func = "XLALUpdateResponse";
   const REAL4 tiny = 1e-6;
+  INT4 isDarmErr = 1;
   INT4 offset;
   INT4 npts;
   INT4 i;
@@ -70,6 +71,13 @@ int XLALUpdateResponse(
   if ( XLALGPSCmp(&response->epoch,&caldata->responseReference->epoch) < 0 )
     XLAL_ERROR( func, XLAL_ETIME );
 
+  /* determine if we are obtaining a response function for AS_Q or DARM_ERR */
+  if ( strstr( caldata->responseReference->name, "DARM_ERR" ) )
+    isDarmErr = 1;
+  else if ( strstr( caldata->responseReference->name, "AS_Q" ) )
+    isDarmErr = 0;
+  else
+    XLAL_ERROR( func, XLAL_ENAME );
 
   /* figure out how many points of alpha and gamma to average */
   if ( duration == 0 )
@@ -135,8 +143,16 @@ int XLALUpdateResponse(
     G.im = caldata->openLoopGainReference->data->data[j].im;
 
     /* update using averaged factors */
-    C.re *= alpha;
-    C.im *= alpha;
+    if ( isDarmErr )
+    {
+      C.re *= gamma;
+      C.im *= gamma;
+    }
+    else
+    {
+      C.re *= alpha;
+      C.im *= alpha;
+    }
     G.re *= gamma;
     G.im *= gamma;
 
@@ -176,8 +192,16 @@ int XLALUpdateResponse(
     G.im = caldata->openLoopGainReference->data->data[j+1].im;
 
     /* update using averaged factors */
-    C.re *= alpha;
-    C.im *= alpha;
+    if ( isDarmErr )
+    {
+      C.re *= gamma;
+      C.im *= gamma;
+    }
+    else
+    {
+      C.re *= alpha;
+      C.im *= alpha;
+    }
     G.re *= gamma;
     G.im *= gamma;
 
