@@ -62,6 +62,7 @@ def parse_command_line():
 	parser = OptionParser(version="%prog CVS $Id$")
 	parser.add_option("--condor-log-dir", metavar = "path", default = ".", help = "set directory for Condor log (default = .)")
 	parser.add_option("--config-file", metavar = "filename", default = "power.ini", help = "set .ini config file name (default = power.ini)")
+	parser.add_option("--full-segments", action = "store_true", help = "analyze all data from segment lists, not just coincident times")
 	parser.add_option("-v", "--verbose", action = "store_true", help = "be verbose")
 	options, filenames = parser.parse_args()
 
@@ -122,26 +123,29 @@ power.init_job_types(config_parser)
 # =============================================================================
 #
 
-def compute_coincident_segment_lists(options):
+def compute_segment_lists(options):
 	if options.verbose:
 		print >>sys.stderr, "constructing segment list..."
-	# extract the segments that are coincident under the time slides
-	new = llwapp.get_coincident_segmentlistdict(options.seglistdict, options.timeslides)
 
-	# adjust surviving segment lengths up to the next integer number of
-	# PSDs
-	for seglist in new.itervalues():
-		for i in xrange(len(seglist)):
-			psds = power.psds_from_job_length(power.powerjob, float(seglist[i].duration()))
-			if psds >= 0.0:
-				new_duration = power.job_length_from_psds(power.powerjob, int(math.ceil(psds)))
-			else:
-				new_duration = power.job_length_from_psds(power.powerjob, 1)
-			seglist[i] = segments.segment(seglist[i][0], seglist[i][0] + new_duration)
+	if not options.full_segments:
+		# extract the segments that are coincident under the time
+		# slides
+		new = llwapp.get_coincident_segmentlistdict(options.seglistdict, options.timeslides)
 
-	# and take intersection with original segments to not exceed
-	# original bounds
-	options.seglistdict &= new
+		# adjust surviving segment lengths up to the next integer
+		# number of PSDs
+		for seglist in new.itervalues():
+			for i in xrange(len(seglist)):
+				psds = power.psds_from_job_length(power.powerjob, float(seglist[i].duration()))
+				if psds >= 0.0:
+					new_duration = power.job_length_from_psds(power.powerjob, int(math.ceil(psds)))
+				else:
+					new_duration = power.job_length_from_psds(power.powerjob, 1)
+				seglist[i] = segments.segment(seglist[i][0], seglist[i][0] + new_duration)
+
+		# and take intersection with original segments to not
+		# exceed original bounds
+		options.seglistdict &= new
 
 	# remove segments that are too short
 	for seglist in options.seglistdict.itervalues():
@@ -187,7 +191,7 @@ def make_single_instrument_fragment(dag, options, instrument, seglist, binjfrag 
 # =============================================================================
 #
 
-compute_coincident_segment_lists(options)
+compute_segment_lists(options)
 
 power.make_dag_directories(config_parser)
 
