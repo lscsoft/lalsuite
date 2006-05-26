@@ -139,8 +139,7 @@ class BurstInjNode(pipeline.CondorDAGNode):
 		return [filename]
 
 	def get_output(self):
-		# FIXME: use get_output_files() instead
-		return self.get_output_files()[0]
+		raise NotImplementedError
 
 
 class PowerJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
@@ -217,15 +216,6 @@ class PowerNode(pipeline.AnalysisNode):
 		file: calibration file to use.
 		"""
 		self.add_var_opt("mdc-cache", file)
-		self.add_input_file(file)
-
-	def set_burstinj(self, file):
-		"""
-		Set the LAL frame cache to to use. The frame cache is
-		passed to the job with the --frame-cache argument.  @param
-		file: calibration file to use.
-		"""
-		self.add_var_opt("burstinjection-file", file)
 		self.add_input_file(file)
 
 	def set_inspinj(self, file):
