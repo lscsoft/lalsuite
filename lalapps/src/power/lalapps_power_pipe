@@ -35,6 +35,7 @@ __date__ = "$Date$"[5:-2]
 __version__ = "$Revision$"[11:-2]
 
 import ConfigParser
+import math
 from optparse import OptionParser
 import os
 import sys
@@ -124,9 +125,29 @@ power.init_job_types(config_parser)
 def compute_coincident_segment_lists(options):
 	if options.verbose:
 		print >>sys.stderr, "constructing segment list..."
-	options.seglistdict = llwapp.get_coincident_segmentlistdict(options.seglistdict, options.timeslides)
+	# extract the segments that are coincident under the time slides
+	new = llwapp.get_coincident_segmentlistdict(options.seglistdict, options.timeslides)
 
-compute_coincident_segment_lists(options)
+	# adjust surviving segment lengths up to the next integer number of
+	# PSDs
+	for seglist in new.itervalues():
+		for i in xrange(len(seglist)):
+			psds = power.psds_from_job_length(power.powerjob, float(seglist[i].duration()))
+			if psds >= 0.0:
+				new_duration = power.job_length_from_psds(power.powerjob, int(math.ceil(psds)))
+			else:
+				new_duration = power.job_length_from_psds(power.powerjob, 1)
+			seglist[i] = segments.segment(seglist[i][0], seglist[i][0] + new_duration)
+
+	# and take intersection with original segments to not exceed
+	# original bounds
+	options.seglistdict &= new
+
+	# remove segments that are too short
+	for seglist in options.seglistdict.itervalues():
+		for i in xrange(len(seglist) - 1, -1, -1):
+			if not power.segment_ok(power.powerjob, seglist[i]):
+				del seglist[i]
 
 
 #
@@ -140,16 +161,18 @@ compute_coincident_segment_lists(options)
 def make_single_instrument_fragment(dag, options, instrument, seglist, binjfrag = None, tisifrag = None):
 	nodes = []
 	for seg in seglist:
-		if not power.segment_ok(seg, options.psds_per_power):
-			if options.verbose:
-				print >>sys.stderr, "WARNING: cannot generate fragment for: %s: %s -- %s" % (instrument, str(seg[0]), str(seg[1]))
-			continue
 		if options.verbose:
 			print >>sys.stderr, "generating fragment: %s: %s -- %s" % (instrument, str(seg[0]), str(seg[1]))
 		datafindfrag = power.make_datafind_fragment(dag, instrument, seg)
+
 		darmpowerfrag = power.make_power_segment_fragment(dag, datafindfrag, seg, instrument, options.psds_per_power, options.tag)
+		if "cluster" in power.powerjob.get_opts():
+			darmpowerfrag = power.make_bucluster_fragment(dag, [darmpowerfrag], instrument, seg, options.tag)
+
 		injpowerfrag = power.make_injection_segment_fragment(dag, datafindfrag, seg, instrument, options.psds_per_injection, options.tag, binjfrag = binjfrag, tisifrag = tisifrag)
+
 		binjfindfrag = power.make_binjfind_fragment(dag, [injpowerfrag], instrument, seg, "INJECTIONS_%s" % options.tag)
+
 		nodes.append(darmpowerfrag)
 	return nodes
 
@@ -161,6 +184,8 @@ def make_single_instrument_fragment(dag, options, instrument, seglist, binjfrag 
 #
 # =============================================================================
 #
+
+compute_coincident_segment_lists(options)
 
 power.make_dag_directories(config_parser)
 
