@@ -90,8 +90,9 @@ def make_plot(data):
 	axes = fig.gca()
 	axes.loglog()
 	axes.grid(True)
-	for i in range(1, data.shape[0]):
-		axes.plot(numarray.fabs(data[0]), numarray.fabs(data[i]))
+	axes.plot(data[0], numarray.fabs(data[1]))
+	axes.plot(data[0], numarray.fabs(data[2]))
+	axes.plot(data[0], numarray.sqrt(data[1]**2.0 + data[2]**2.0))
 	axes.set_xlim([min(data[0]), max(data[0])])
 	axes.set_title("Frequency Decomposition of Confidence Time Series")
 	axes.set_xlabel("Frequency (Hz)")
