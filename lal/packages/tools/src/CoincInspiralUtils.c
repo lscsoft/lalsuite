@@ -1329,7 +1329,7 @@ LALInspiralDistanceCutCleaning(
 
       
       /* iota =1 */
-      if (dH2/dH1*snrH1 > 6 *3)
+      if (dH2/dH1*snrH1 > 6 *2.3)
       {
         if (vetoSegsH2)
 	{
@@ -1354,7 +1354,7 @@ LALInspiralDistanceCutCleaning(
       LALDistanceScanSummValueTable(status->statusPtr, summValueList, 
 	tmpCoinc->snglInspiral[LAL_IFO_H2]->end_time, "H2",  &dH2);
       /* iota = 1 */
-      if (dH1/dH2*snrH2 > 6 *3)
+      if (dH1/dH2*snrH2 > 6 *2.3)
       {
         if (vetoSegsH1)
 	{
