@@ -105,7 +105,7 @@ def compute_bin_count(size_name_pairs, maxnodes):
 	return min(total_size / minimum_bin_size, maxnodes)
 
 
-filenames = llwapp.measure_file_sizes(filenames)
+filenames = llwapp.measure_file_sizes(filenames, reverse = True)
 bins = packing.BiggestIntoEmptiest(packing.bin_list(compute_bin_count(filenames, options.max_nodes)))
 bins.packlist(filenames)
 
