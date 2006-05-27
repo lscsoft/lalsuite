@@ -34,7 +34,7 @@ __author__ = "Kipp Cannon <kipp@gravity.phys.uwm.edu>"
 __date__ = "$Date$"[7:-2]
 __version__ = "$Revision$"[11:-2]
 
-import cmath
+import math
 import numarray
 from optparse import OptionParser
 import sys
@@ -149,7 +149,7 @@ def fourier_transform(eventlist, options):
 			print >>sys.stderr, "	%.1f%%\r" % (100.0 * n / len(eventlist)),
 		if event.ifo not in datasets:
 			datasets[event.ifo] = new_dataset(options.f_naught, options.delta_f, options.n_f)
-		value = event.confidence / (-2j * cmath.pi) / datasets[event.ifo][0] * (numarray.exp(-2j * cmath.pi * event.get_stop() * datasets[event.ifo][0]) - numarray.exp(-2j * cmath.pi * event.get_start() * datasets[event.ifo][0]))
+		value = math.log(-event.confidence) / (-2j * math.pi) / datasets[event.ifo][0] * (numarray.exp(-2j * math.pi * event.get_stop() * datasets[event.ifo][0]) - numarray.exp(-2j * math.pi * event.get_start() * datasets[event.ifo][0]))
 		datasets[event.ifo][1] += value.real
 		datasets[event.ifo][2] += value.imag
 	print >>sys.stderr, "	100.0%"
