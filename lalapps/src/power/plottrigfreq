@@ -1,0 +1,116 @@
+#!/usr/bin/python
+#
+# $Id$
+#
+# Copyright (C) 2006  Kipp C. Cannon
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+
+from optparse import OptionParser
+import matplotlib
+matplotlib.use("Agg")
+from matplotlib import figure
+from matplotlib.backends.backend_agg import FigureCanvasAgg
+import numarray
+
+from glue.ligolw import ligolw
+from glue.ligolw import array
+from pylal import llwapp
+
+__author__ = "Kipp Cannon <kipp@gravity.phys.uwm.edu>"
+__version__ = "$Revision$"[11:-2]
+__date__ = "$Date$"[7:-2]
+
+
+#
+# =============================================================================
+#
+#                                 Command Line
+#
+# =============================================================================
+#
+
+def parse_command_line():
+	parser = OptionParser(version="%prog CVS $Id$")
+	options, filenames = parser.parse_args()
+
+	return options, (filenames or [None])
+
+
+#
+# =============================================================================
+#
+#                                    Input
+#
+# =============================================================================
+#
+
+def load_document(filename):
+	doc = ligolw.Document()
+	ligolw.make_parser(array.LIGOLWContentHandler(doc)).parse(file(filename))
+	return doc
+
+
+def get_instrument(arrayelem):
+	return arrayelem.parentNode.getElementsByTagName(ligolw.Param.tagName)[0].pcdata.strip()
+
+
+#
+# =============================================================================
+#
+#                                     Plot
+#
+# =============================================================================
+#
+
+def make_plot(data):
+	fig = figure.Figure()
+	FigureCanvasAgg(fig)
+	fig.set_figsize_inches(16, 8)
+	axes = fig.gca()
+	axes.loglog()
+	axes.grid(True)
+	for i in range(1, data.shape[0]):
+		axes.plot(numarray.fabs(data[0]), numarray.fabs(data[i]))
+	axes.set_xlim([min(data[0]), max(data[0])])
+	axes.set_title("Frequency Decomposition of Confidence Time Series")
+	axes.set_xlabel("Frequency (Hz)")
+	axes.set_ylabel("Re, Im Magnitude")
+	return fig
+
+
+#
+# =============================================================================
+#
+#                                     Main
+#
+# =============================================================================
+#
+
+options, filenames = parse_command_line()
+
+for filename in filenames:
+	doc = load_document(filename)
+	for elem in array.getArraysByName(doc, "confidence_frequencies"):
+		fig = make_plot(elem.array)
+		fig.savefig("%s_%s.png" % (filename, get_instrument(elem)))

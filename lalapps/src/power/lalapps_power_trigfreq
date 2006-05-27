@@ -1,0 +1,205 @@
+#!/usr/bin/python
+#
+# $Id$
+#
+# Copyright (C) 2006  Kipp C. Cannon
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+
+"""
+Burst trigger frequency decomposition.
+"""
+
+__author__ = "Kipp Cannon <kipp@gravity.phys.uwm.edu>"
+__date__ = "$Date$"[7:-2]
+__version__ = "$Revision$"[11:-2]
+
+import cmath
+import numarray
+from optparse import OptionParser
+import sys
+
+from glue import segments
+from glue.ligolw import ligolw
+from glue.ligolw import array
+from glue.ligolw import lsctables
+from pylal import llwapp
+from pylal.date import LIGOTimeGPS
+
+
+#
+# =============================================================================
+#
+#                                 Command Line
+#
+# =============================================================================
+#
+
+def parse_command_line():
+	parser = OptionParser(version = "%prog CVS $Id$")
+	parser.add_option("--delta-f", metavar = "Hz", help = "set the frequency bin spacing")
+	parser.add_option("--n-f", metavar = "count", help = "set the number of frequency bins")
+	parser.add_option("-o", "--output", metavar = "filename", help = "write to filename (default = stdout)")
+	parser.add_option("--f-naught", metavar = "Hz", default = "0", help = "set lowest frequency bin (default = 0 Hz)")
+	parser.add_option("--t-naught", metavar = "GPS seconds", default = "0", help = "set origin of time coordinate (default = 0)")
+	parser.add_option("-v", "--verbose", action = "store_true", help = "be verbose")
+	options, filenames = parser.parse_args()
+
+	try:
+		options.n_f = int(options.n_f)
+	except Exception:
+		raise ValueError, "invalid or missing --n-f"
+	try:
+		options.delta_f = float(options.delta_f)
+	except Exception:
+		raise ValueError, "invalid or missing --delta-f"
+	try:
+		options.f_naught = float(options.f_naught)
+	except Exception:
+		raise ValueError, "invalid --f-naught"
+	try:
+		options.t_naught = LIGOTimeGPS(options.t_naught)
+	except Exception:
+		raise ValueError, "invalid --t-naught"
+
+	return options, (filenames or [None])
+
+
+#
+# =============================================================================
+#
+#                                    Input
+#
+# =============================================================================
+#
+
+class SnglBurst(object):
+	__slots__ = ["ifo", "confidence", "start_time", "start_time_ns", "duration"]
+
+	def get_start(self):
+		return float(LIGOTimeGPS(self.start_time, self.start_time_ns) - options.t_naught)
+
+	def get_stop(self):
+		return self.get_start() + self.duration
+
+def noop_append(self, row):
+	pass
+
+lsctables.SnglBurstTable.RowType = SnglBurst
+lsctables.CoincTable.append = noop_append
+lsctables.CoincMapTable.append = noop_append
+
+
+#
+# =============================================================================
+#
+#                                  Transform
+#
+# =============================================================================
+#
+
+def new_dataset(f_0, delta_f, n):
+	"""
+	Initialize and return an array for holding a single-instrument data
+	set.
+	"""
+	f = numarray.zeros((3, n), "Float64")
+	for k in xrange(n):
+		f[0, k] = f_0 + k * delta_f
+	return f
+
+
+def fourier_transform(eventlist, options):
+	"""
+	Returns
+	
+	C_{k} = \int_{t_{\mathrm{start}}}^{t_{\mathrm{stop}}} C(t) \exp^{-2 \pi \aye f_{k} t} \diff t
+
+	where \(C(t)\) is confidence as a function of time for the events
+	in the eventlist, and \(f_{k} = \delta f \cdot k\) for \(k \in [0,
+	nf)\).
+	"""
+	# for better numerical accuracy, process events with smallest
+	# confidence first.
+	eventlist.sort(lambda a, b: cmp(a.confidence, b.confidence))
+
+	datasets = {}
+	for n, event in enumerate(eventlist):
+		if not n % max(len(eventlist) / 1000, 200):
+			print >>sys.stderr, "	%.1f%%\r" % (100.0 * n / len(eventlist)),
+		if event.ifo not in datasets:
+			datasets[event.ifo] = new_dataset(options.f_naught, options.delta_f, options.n_f)
+		value = event.confidence / (-2j * cmath.pi) / datasets[event.ifo][0] * (numarray.exp(-2j * cmath.pi * event.get_stop() * datasets[event.ifo][0]) - numarray.exp(-2j * cmath.pi * event.get_start() * datasets[event.ifo][0]))
+		datasets[event.ifo][1] += value.real
+		datasets[event.ifo][2] += value.imag
+	print >>sys.stderr, "	100.0%"
+
+	return datasets
+
+
+#
+# =============================================================================
+#
+#                                    Output
+#
+# =============================================================================
+#
+
+def new_doc(datasets):
+	doc = ligolw.Document()
+	container = ligolw.LIGO_LW()
+	doc.appendChild(container)
+	for key, value in datasets.iteritems():
+		container.appendChild(ligolw.LIGO_LW())
+		param = ligolw.Param({"Name": "instrument", "Type": "lstring"})
+		param.appendData(key)
+		container.childNodes[-1].appendChild(param)
+		container.childNodes[-1].appendChild(array.from_array("sngl_burst:confidence_frequencies:array", value, ["Bin", "Hz Re(C_k) Im(C_k)"]))
+	return doc
+
+
+#
+# =============================================================================
+#
+#                                     Main
+#
+# =============================================================================
+#
+
+options, filenames = parse_command_line()
+
+datasets = {}
+for filename in llwapp.sort_files_by_size(filenames, options.verbose):
+	doc = llwapp.load_filename(filename, options.verbose)
+	eventlist = llwapp.get_table(doc, lsctables.SnglBurstTable.tableName)
+	if options.verbose:
+		print >>sys.stderr, "transforming %d events..." % len(eventlist)
+	newdatasets = fourier_transform(eventlist, options)
+	doc.unlink()
+	for key, value in newdatasets.iteritems():
+		if key in datasets:
+			datasets[key][1:] += value[1:]
+		else:
+			datasets[key] = value
+
+llwapp.write_filename(new_doc(datasets), options.output, options.verbose)
