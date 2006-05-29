@@ -895,6 +895,13 @@ XLALCoincInspiralSlideCut(
     int                  slideNum    
     );
 
+CoincInspiralTable *
+XLALStatCutCoincInspiral (
+    CoincInspiralTable         *eventHead,
+    CoincInspiralStatistic      coincStat,
+    CoincInspiralBittenLParams *bittenLParams,
+    REAL4                       statCut
+    );
 
 
 /* sim inspiral */

@@ -53,8 +53,23 @@ NRCSID( COINCINSPIRALUTILSC, "$Id$" );
 \idx{LALExtractSnglInspiralFromCoinc()}
 \idx{XLALRecreateCoincFromSngls()}
 \idx{XLALGenerateCoherentBank()}
+\idx{XLALInspiralPsi0Psi3CutBCVC()}
+\idx{XLALInspiralIotaCutBCVC()}
+\idx{LALInspiralDistanceCutCleaning()}
+\idx{XLALInspiralDistanceCutBCVC()}
 \idx{XLALInspiralDistanceCut()}
 \idx{LALCoincCutSnglInspiral()}
+\idx{XLALCoincInspiralTimeNS()}
+\idx{XLALCoincInspiralStat()}
+\idx{XLALClusterCoincInspiralTable()}
+\idx{XLALCoincInspiralIfos()}
+\idx{XLALCoincInspiralIfosCut()}
+\idx{XLALCoincInspiralIdNumber()}
+\idx{XLALCoincInspiralSlideCut()}
+\idx{XLALInspiralSNRCutBCV2()}
+\idx{XLALSNRCutCoincInspiral()}
+\idx{XLALSortCoincInspiral()}
+\idx{XLALCompareCoincInspiralByTime()}
 \idx{XLALCountInspiralTable()}
 
 \subsubsection*{Description}
@@ -1117,14 +1132,14 @@ XLALInspiralPsi0Psi3CutBCVC(
   CoincInspiralTable   *prevCoinc = NULL;
   CoincInspiralTable   *coincHead = NULL;
 
-  thisCoinc = *coincInspiral;
-  coincHead = NULL;
-   
   INT4  discardTrigger = 0;
   REAL4 distA = 0, distB = 0;
   REAL4 sigA, sigB;
   REAL4 psi0A, psi0B, psi3A, psi3B, snr, snrA, snrB, x, y, X, Y, theta=0.040;
 
+  thisCoinc = *coincInspiral;
+  coincHead = NULL;
+   
   /* loop over the coincindent triggers */
   while( thisCoinc )
   {
@@ -1210,19 +1225,20 @@ XLALInspiralIotaCutBCVC(
   CoincInspiralTable   *prevCoinc = NULL;
   CoincInspiralTable   *coincHead = NULL;
 
-  thisCoinc = *coincInspiral;
-  coincHead = NULL;
-   
   INT4  discardTrigger = 0;
   REAL4 snrA, snrB, sigA, sigB;
   REAL4 iota; 
 
+  thisCoinc = *coincInspiral;
+  coincHead = NULL;
+   
+
   /* loop over the coincindent triggers */
   while( thisCoinc )
   {
-    discardTrigger=0;
-
     CoincInspiralTable *tmpCoinc = thisCoinc;
+
+    discardTrigger=0;
     thisCoinc = thisCoinc->next;
       
 
@@ -1247,13 +1263,13 @@ XLALInspiralIotaCutBCVC(
           if(
                  (  (ifoA == LAL_IFO_H1)  && (ifoB == LAL_IFO_H2) )
           || (  (ifoA == LAL_IFO_H2)  && (ifoB == LAL_IFO_H1))
-	){
-	  /*  should be an user parameter in the future. */
-	  if (  (iota > 0.8 ) )
-	    {
-	      discardTrigger = 1;	
-	    }
-	}
+  ){
+    /*  should be an user parameter in the future. */
+    if (  (iota > 0.8 ) )
+      {
+        discardTrigger = 1; 
+      }
+  }
        } 
       }
       if ( discardTrigger )
@@ -1298,12 +1314,13 @@ LALInspiralDistanceCutCleaning(
   CoincInspiralTable   *thisCoinc = NULL;
   CoincInspiralTable   *prevCoinc = NULL;
   CoincInspiralTable   *coincHead = NULL;
-  thisCoinc = *coincInspiral;
-  coincHead = NULL;
   REAL4 dH1, dH2, snrH1, snrH2; 
   
   INITSTATUS( status, "LALInspiralDistanceCutCleaning", COINCINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
+  
+  thisCoinc = *coincInspiral;
+  coincHead = NULL;
  
   if (!vetoSegsH1 || !vetoSegsH2 )
   XLALPrintWarning("LALInspiralDistanceCutCleaning: Warning, no veto list provided. you should provide h1 and h2 ones. ");
@@ -1322,27 +1339,27 @@ LALInspiralDistanceCutCleaning(
     {
       snrH1 = tmpCoinc->snglInspiral[LAL_IFO_H1]->snr;
       LALDistanceScanSummValueTable(status->statusPtr, summValueList,
-	 tmpCoinc->snglInspiral[LAL_IFO_H1]->end_time, "H1",  &dH1);
+   tmpCoinc->snglInspiral[LAL_IFO_H1]->end_time, "H1",  &dH1);
       
-	LALDistanceScanSummValueTable(status->statusPtr, summValueList,
-	 tmpCoinc->snglInspiral[LAL_IFO_H1]->end_time, "H2",  &dH2);
+  LALDistanceScanSummValueTable(status->statusPtr, summValueList,
+   tmpCoinc->snglInspiral[LAL_IFO_H1]->end_time, "H2",  &dH2);
 
       
       /* iota =1 */
       if (dH2/dH1*snrH1 > 6 *2.3)
       {
         if (vetoSegsH2)
-	{
-	  if (!XLALSegListSearch( vetoSegsH2, 
-		&(tmpCoinc->snglInspiral[LAL_IFO_H1]->end_time)))
-     	  { 
-	    discardTrigger =1;
-	  }
+  {
+    if (!XLALSegListSearch( vetoSegsH2, 
+    &(tmpCoinc->snglInspiral[LAL_IFO_H1]->end_time)))
+        { 
+      discardTrigger =1;
+    }
         }
-	else
-	{
-	discardTrigger = 1;
-	}
+  else
+  {
+  discardTrigger = 1;
+  }
       }
     }
 
@@ -1350,23 +1367,23 @@ LALInspiralDistanceCutCleaning(
     {
       snrH2 = tmpCoinc->snglInspiral[LAL_IFO_H2]->snr;
       LALDistanceScanSummValueTable(status->statusPtr, summValueList,
-	tmpCoinc->snglInspiral[LAL_IFO_H2]->end_time, "H1",  &dH1);
+  tmpCoinc->snglInspiral[LAL_IFO_H2]->end_time, "H1",  &dH1);
       LALDistanceScanSummValueTable(status->statusPtr, summValueList, 
-	tmpCoinc->snglInspiral[LAL_IFO_H2]->end_time, "H2",  &dH2);
+  tmpCoinc->snglInspiral[LAL_IFO_H2]->end_time, "H2",  &dH2);
       /* iota = 1 */
       if (dH1/dH2*snrH2 > 6 *2.3)
       {
         if (vetoSegsH1)
-	{
-	  if (!XLALSegListSearch( vetoSegsH1, 
-		&(tmpCoinc->snglInspiral[LAL_IFO_H2]->end_time)))
-     	  { 
-	    discardTrigger =1;
-	  }
-	}	
-	else
-	{
- 	  discardTrigger = 1;	
+  {
+    if (!XLALSegListSearch( vetoSegsH1, 
+    &(tmpCoinc->snglInspiral[LAL_IFO_H2]->end_time)))
+        { 
+      discardTrigger =1;
+    }
+  } 
+  else
+  {
+    discardTrigger = 1; 
         }
       }
     }
@@ -1670,13 +1687,13 @@ XLALCoincInspiralTimeNS (
 
 REAL4 
 XLALCoincInspiralStat(
-    CoincInspiralTable          *coincInspiral,
+    CoincInspiralTable         *coincInspiral,
     CoincInspiralStatistic      coincStat,
     CoincInspiralBittenLParams *bittenLParams
     )
 {
   InterferometerNumber  ifoNumber;
-  SnglInspiralTable     *snglInspiral;
+  SnglInspiralTable    *snglInspiral;
   REAL4                 statValues[LAL_NUM_IFO];
   REAL4 statValue = 0;
   INT4  i;
@@ -2173,6 +2190,52 @@ INT4 XLALCountCoincInspiral( CoincInspiralTable *head )
     length++;
 
   return length;
+}
+
+
+/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+CoincInspiralTable *
+XLALStatCutCoincInspiral (
+    CoincInspiralTable         *eventHead,
+    CoincInspiralStatistic      coincStat,
+    CoincInspiralBittenLParams *bittenLParams,
+    REAL4                       statCut
+    )
+/* </lalVerbatim> */
+{
+  CoincInspiralTable    *thisEvent = NULL;
+  CoincInspiralTable    *prevEvent = NULL;
+
+
+  thisEvent = eventHead;
+  eventHead = NULL;
+  
+  while ( thisEvent )
+  {
+    CoincInspiralTable *tmpEvent = thisEvent;
+    thisEvent = thisEvent->next;
+    
+    if ( XLALCoincInspiralStat(tmpEvent,coincStat,bittenLParams) >= statCut )
+    {
+      /* keep this template */
+      if ( ! eventHead  )
+      {
+        eventHead = tmpEvent;
+      }
+      else
+      {
+        prevEvent->next = tmpEvent;
+      }
+      tmpEvent->next = NULL;
+      prevEvent = tmpEvent;
+    }
+    else
+    {
+      /* discard this template */
+      XLALFreeCoincInspiral ( &tmpEvent );
+    }
+  }
+  return( eventHead );
 }
 
 
