@@ -35,6 +35,7 @@ import numarray
 
 from glue.ligolw import ligolw
 from glue.ligolw import array
+from glue.ligolw import param
 from pylal import llwapp
 
 __author__ = "Kipp Cannon <kipp@gravity.phys.uwm.edu>"
@@ -52,6 +53,7 @@ __date__ = "$Date$"[7:-2]
 
 def parse_command_line():
 	parser = OptionParser(version="%prog CVS $Id$")
+	parser.add_option("-v", "--verbose", action = "store_true", help = "be verbose")
 	options, filenames = parser.parse_args()
 
 	return options, (filenames or [None])
@@ -65,14 +67,8 @@ def parse_command_line():
 # =============================================================================
 #
 
-def load_document(filename):
-	doc = ligolw.Document()
-	ligolw.make_parser(array.LIGOLWContentHandler(doc)).parse(file(filename))
-	return doc
-
-
 def get_instrument(arrayelem):
-	return arrayelem.parentNode.getElementsByTagName(ligolw.Param.tagName)[0].pcdata.strip()
+	return llwapp.get_param(arrayelem.parentNode, "instrument").pcdata
 
 
 #
@@ -111,7 +107,7 @@ def make_plot(data):
 options, filenames = parse_command_line()
 
 for filename in filenames:
-	doc = load_document(filename)
+	doc = llwapp.load_filename(filename, options.verbose)
 	for elem in array.getArraysByName(doc, "confidence_frequencies"):
 		fig = make_plot(elem.array)
 		fig.savefig("%s_%s.png" % (filename, get_instrument(elem)))
