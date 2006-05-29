@@ -42,6 +42,7 @@ import sys
 from glue import segments
 from glue.ligolw import ligolw
 from glue.ligolw import array
+from glue.ligolw import param
 from glue.ligolw import lsctables
 from pylal import llwapp
 from pylal.date import LIGOTimeGPS
@@ -171,9 +172,7 @@ def new_doc(datasets):
 	doc.appendChild(container)
 	for key, value in datasets.iteritems():
 		container.appendChild(ligolw.LIGO_LW())
-		param = ligolw.Param({"Name": "instrument", "Type": "lstring"})
-		param.appendData(key)
-		container.childNodes[-1].appendChild(param)
+		container.childNodes[-1].appendChild(param.new_param("instrument", "lstring", key))
 		container.childNodes[-1].appendChild(array.from_array("sngl_burst:confidence_frequencies:array", value, ["Bin", "Hz Re(C_k) Im(C_k)"]))
 	return doc
 
