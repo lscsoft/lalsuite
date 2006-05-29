@@ -484,7 +484,7 @@ def make_tisi_fragment(dag, tag):
 	return node
 
 
-def make_lladd_fragment(dag, parents, instrument, seg, tag):
+def make_lladd_fragment(dag, parents, instrument, seg, tag, preserves = []):
 	cache_name = os.path.join(lladdjob.cache_dir, "lladd-%s-%s-%s-%s.cache" % (instrument, tag, int(seg[0]), int(seg.duration())))
 	cache = packing.LALCache()
 
@@ -496,6 +496,8 @@ def make_lladd_fragment(dag, parents, instrument, seg, tag):
 			cache.add_new("ANY", "EMPTY", seg, filename)
 	print >>file(cache_name, "w"), str(cache)
 	node.add_var_opt("input-cache", cache_name)
+	for filename in preserves:
+		node.add_var_arg("--remove-input-exclude %s" % filename)
 	dag.add_node(node)
 
 	return node
@@ -591,7 +593,7 @@ def make_binjfind_fragment(dag, parents, instrument, seg, tag):
 def make_multipower_fragment(dag, powerparents, lladdparents, framecache, seglist, instrument, tag, injargs = {}):
 	segment = seglist.extent()
 	powernodes = [make_power_fragment(dag, powerparents, instrument, seg, tag, framecache, injargs) for seg in seglist]
-	lladdnode = make_lladd_fragment(dag, powernodes + lladdparents, instrument, segment, "POWER_%s" % tag)
+	lladdnode = make_lladd_fragment(dag, powernodes + lladdparents, instrument, segment, "POWER_%s" % tag, preserves = reduce(list.__add__, [node.get_output_files() for node in lladdparents], []))
 	lladdnode.set_output("%s-POWER_%s-%s-%s.xml" % (instrument, tag, int(segment[0]), int(segment.duration())))
 	return lladdnode
 
