@@ -29,6 +29,8 @@ extern UINT4 maxSFTindex;  /**< maximal sftindex, for error-checking */
    don't use TestLALDemod() below, but the one in external file */
 #if defined(USE_ALTIVEC)
 #include "CFSLALDemod_AltiVec.c"
+#elif defined(USE_AKOS_MARKS)
+#include "CFSLALDemod_Akos.c"
 #elif defined(USE_EXP_LALDEMOD)
 #include "CFSLALDemod_Experimental.c"
 #else /* rather generic version */
