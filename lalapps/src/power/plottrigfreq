@@ -84,7 +84,7 @@ def make_plot(data):
 	FigureCanvasAgg(fig)
 	fig.set_figsize_inches(16, 8)
 	axes = fig.gca()
-	axes.loglog()
+	axes.semilogy()
 	axes.grid(True)
 	axes.plot(data[0], numarray.fabs(data[1]))
 	axes.plot(data[0], numarray.fabs(data[2]))
