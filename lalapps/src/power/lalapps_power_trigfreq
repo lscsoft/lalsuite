@@ -94,6 +94,18 @@ def parse_command_line():
 # =============================================================================
 #
 
+def element_filter(name, attrs):
+	return lsctables.IsTableProperties(lsctables.SnglBurstTable, name, attrs)
+
+
+class ContentHandler(ligolw.PartialLIGOLWContentHandler):
+	def __init__(self, doc):
+		ligolw.PartialLIGOLWContentHandler.__init__(self, doc, element_filter)
+
+
+llwapp.ContentHandler = ContentHandler
+
+
 class SnglBurst(object):
 	__slots__ = ["ifo", "confidence", "start_time", "start_time_ns", "duration"]
 
@@ -103,12 +115,8 @@ class SnglBurst(object):
 	def get_stop(self):
 		return self.get_start() + self.duration
 
-def noop_append(self, row):
-	pass
 
 lsctables.SnglBurstTable.RowType = SnglBurst
-lsctables.CoincTable.append = noop_append
-lsctables.CoincMapTable.append = noop_append
 
 
 #
