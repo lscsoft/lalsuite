@@ -84,10 +84,12 @@ static void print_usage(char *program)
       " [--coinc-cut]         ifos     only keep triggers from IFOS\n"\
       " [--extract-slide]     slide    only keep triggers from specified slide\n"\
       "\n"\
-      " [--num-slides]        slides   number of time slides performed (used in clustering\n"\
+      " [--num-slides]        slides   number of time slides performed \n"\
+      "                                (used in clustering)\n"\
       " [--sort-triggers]              time sort the coincident triggers\n"\
-      " [--cluster-algorithm] alg      use trigger clustering algorithm alg\n"\
-      "                                [ snrsq | s3_snr_chi_stat | bitten_l]\n"\
+      " [--coinc-stat]        stat     use coinc statistic for cluster/cut\n"\
+      "                     [ snrsq | effective_snrsq | s3_snr_chi_stat | bitten_l]\n"\
+      " [--stat-threshold]    thresh   discard all triggers with stat less than thresh\n"\
       " [--h1-bittenl-a]      bitten   paramater a for clustering\n"\
       " [--h1-bittenl-b]      bitten   paramater b for clustering\n"\
       " [--h2-bittenl-a]      bitten   paramater a for clustering\n"\
@@ -131,8 +133,9 @@ int main( int argc, char *argv[] )
   char *inputFileName = NULL;
   char *outputFileName = NULL;
   char *summFileName = NULL;
-  CoincInspiralStatistic clusterchoice = no_stat;
-  INT8 cluster_dt = -1;
+  CoincInspiralStatistic coincstat = no_stat;
+  REAL4 statThreshold = 0;
+  INT8 cluster_dt = 0;
   char *injectFileName = NULL;
   INT8 injectWindowNS = -1;
   char *missedFileName = NULL;
@@ -168,6 +171,7 @@ int main( int argc, char *argv[] )
   int                   numTriggers = 0;
   int                   numCoincs = 0;
   int                   numEventsInIfos = 0;
+  int                   numEventsAboveThresh = 0;
   int                   numEventsCoinc = 0;
   int                   numClusteredEvents = 0;
   int                   numSnglFound = 0;
@@ -240,7 +244,8 @@ int main( int argc, char *argv[] )
       {"summary-file",            required_argument,      0,              'S'},
       {"extract-slide",           required_argument,      0,              'e'},
       {"num-slides",              required_argument,      0,              'N'},
-      {"cluster-algorithm",       required_argument,      0,              'C'},
+      {"coinc-stat",              required_argument,      0,              'C'},
+      {"stat-threshold",          required_argument,      0,              'E'},
       {"cluster-time",            required_argument,      0,              't'},
       {"discard-ifo",             required_argument,      0,              'd'},
       {"coinc-cut",               required_argument,      0,              'D'},
@@ -261,8 +266,9 @@ int main( int argc, char *argv[] )
     int option_index = 0;
     size_t optarg_len;
 
-    c = getopt_long_only ( argc, argv, "a:b:c:d:e:f:hd:nzZ:Vk:g:i:o:S:N:C:t:d:D;I:T:m", 
-        long_options, &option_index );
+    c = getopt_long_only ( argc, argv, "a:b:c:d:g:hi:j:k:l:m:n:o:p:t:z:"
+                                       "C:D:E:I:N:S:T:VZ", long_options, 
+                                       &option_index );
 
     /* detect the end of the options */
     if ( c == - 1 )
@@ -447,29 +453,30 @@ int main( int argc, char *argv[] )
         break;
 
       case 'C':
-        /* choose the clustering algorithm */
+        /* choose the coinc statistic */
         {        
           if ( ! strcmp( "snrsq", optarg ) )
           {
-            clusterchoice = snrsq;
+            coincstat = snrsq;
           }
           else if ( ! strcmp( "bitten_l", optarg ) )
           {
-            clusterchoice = bitten_l;
+            coincstat = bitten_l;
           }
           else if ( ! strcmp( "s3_snr_chi_stat", optarg) )
           {
-            clusterchoice = s3_snr_chi_stat;
+            coincstat = s3_snr_chi_stat;
           }
           else if ( ! strcmp( "effective_snrsq", optarg) )
           {
-            clusterchoice = effective_snrsq;
+            coincstat = effective_snrsq;
           }
           else
           {
             fprintf( stderr, "invalid argument to  --%s:\n"
-                "unknown clustering specified:\n "
-                "%s (must be one of: snrsq, s3_snr_chi_stat)\n",
+                "unknown coinc statistic:\n "
+                "%s (must be one of:\n"
+                "snrsq, effective_snrsq, bitten_l, s3_snr_chi_stat)\n",
                 long_options[option_index].name, optarg);
             exit( 1 );
           }
@@ -477,6 +484,19 @@ int main( int argc, char *argv[] )
         }
         break;
 
+      case 'E':
+        /* store the stat threshold for a cut */
+        statThreshold = atof( optarg );
+        if ( statThreshold <= 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "statThreshold must be positive: (%f specified)\n",
+              long_options[option_index].name, statThreshold );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%f", statThreshold );
+        break;
+        
       case 't':
         /* cluster time is specified on command line in ms */
         cluster_dt = (INT8) atoi( optarg );
@@ -604,19 +624,21 @@ int main( int argc, char *argv[] )
 
 
   /* check that if clustering is being done that we have all the options */
-  if ( clusterchoice && cluster_dt < 0 )
+  if ( cluster_dt && (coincstat == no_stat) )
   {
-    fprintf( stderr, "--cluster-time must be specified if --cluster-algorithm "
-        "is given\n" );
-    exit( 1 );
-  }
-  else if ( ! clusterchoice && cluster_dt >= 0 )
-  {
-    fprintf( stderr, "--cluster-algorithm must be specified if --cluster-time "
-        "is given\n" );
+    fprintf( stderr, 
+        "--coinc-stat must be specified if --cluster-time is given\n" );
     exit( 1 );
   }
 
+  /* check that if stat cut is being done that we have all the options */
+  if ( statThreshold && (coincstat == no_stat) )
+  {
+    fprintf( stderr, 
+        "--coinc-stat must be specified if --stat-threshold is given\n" );
+    exit( 1 );
+  }
+  
   /* check that we have all the options to do injections */
   if ( injectFileName && injectWindowNS < 0 )
   {
@@ -819,6 +841,18 @@ int main( int argc, char *argv[] )
       numEventsInIfos += numFileCoincs;
     }
 
+    /* perform the statistic cut */
+    if( statThreshold )
+    {
+      coincFileHead = XLALStatCutCoincInspiral ( coincFileHead, coincstat , 
+          &bittenLParams, statThreshold);
+      numFileCoincs = XLALCountCoincInspiral( coincFileHead );
+      if ( vrbflg ) fprintf( stdout,
+          "Kept %d coincs above threshold of %6.2f\n", numFileCoincs, 
+          statThreshold );
+      numEventsAboveThresh += numFileCoincs;
+    }
+    
     /* add coincs to list */
     if( numFileCoincs )
     {
@@ -885,7 +919,7 @@ int main( int argc, char *argv[] )
    */
 
 
-  if ( sortTriggers || clusterchoice )
+  if ( sortTriggers || cluster_dt )
   {
     if ( vrbflg ) fprintf( stdout, "sorting coinc inspiral trigger list..." );
     coincHead = XLALSortCoincInspiral( coincHead, 
@@ -1030,14 +1064,14 @@ int main( int argc, char *argv[] )
    */
 
 
-  if ( coincHead && clusterchoice )
+  if ( coincHead && cluster_dt )
   {
     if ( vrbflg ) fprintf( stdout, "clustering remaining triggers... " );
 
     if ( !numSlides )
     {
       numClusteredEvents = XLALClusterCoincInspiralTable( &coincHead, 
-          cluster_dt, clusterchoice , &bittenLParams);
+          cluster_dt, coincstat , &bittenLParams);
     }
     else
     { 
@@ -1055,7 +1089,7 @@ int main( int argc, char *argv[] )
         slideCoinc = XLALCoincInspiralSlideCut( &coincHead, slide );
         /* run clustering */
         numClusteredSlide = XLALClusterCoincInspiralTable( &slideCoinc, 
-          cluster_dt, clusterchoice, &bittenLParams);
+          cluster_dt, coincstat, &bittenLParams);
         
         if ( vrbflg ) fprintf( stdout, "%d clustered events \n", 
           numClusteredSlide );
@@ -1162,7 +1196,7 @@ int main( int argc, char *argv[] )
   }
 
   /* Write the results to the inspiral table */
-  if ( inspiralEventList )
+  if ( snglOutput )
   {
     if ( vrbflg ) fprintf( stdout, "sngl_inspiral... " );
     outputTable.snglInspiralTable = snglOutput;
@@ -1230,6 +1264,11 @@ int main( int argc, char *argv[] )
       fprintf( fp, "number of triggers from %s ifos: %d \n", ifos, 
           numEventsInIfos );
     }
+    if ( statThreshold )
+    {
+      fprintf( fp, "number of triggers with statistic above %6.2f is: %d \n", 
+          statThreshold, numEventsAboveThresh);
+    }
     XLALINT8toGPS( &triggerTime, triggerInputTimeNS );
     fprintf( fp, "amount of time analysed for triggers %d sec %d ns\n", 
         triggerTime.gpsSeconds, triggerTime.gpsNanoSeconds );
@@ -1255,7 +1294,7 @@ int main( int argc, char *argv[] )
       fprintf( fp, "kept only triggers from slide %d\n", extractSlide );
     }
 
-    if ( clusterchoice )
+    if ( cluster_dt )
     {
       if ( numSlides )
       {
