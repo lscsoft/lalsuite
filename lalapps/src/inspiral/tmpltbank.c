@@ -835,7 +835,7 @@ int main ( int argc, char *argv[] )
   LAL_CALL( LALDCreateVector( &status, &(bankIn.shf.data), spec.data->length ),
       &status );
   memset( bankIn.shf.data->data, 0, 
-      bankIn.shf.data->length * sizeof(COMPLEX8) ); 
+      bankIn.shf.data->length * sizeof(REAL8) ); 
 
   shf = spec.data->data[cut] * 
     ( resp.data->data[cut].re * resp.data->data[cut].re +
