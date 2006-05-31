@@ -158,9 +158,7 @@ cp.read(config_file)
 
 # create a log file that the Condor jobs will write to
 basename = re.sub(r'\.ini',r'',config_file) # remove .ini from config_file name
-#tempfile.tempdir = log_path
-#tempfile.template = basename + '.dag.log' # adds on .dag.log
-#logfile = tempfile.mktemp()
+
 logfile = log_path + '/' + basename + '.dag.log'
 
 fh = open(logfile, "w" ) # creates file
@@ -203,7 +201,10 @@ stddev_thresh = cp.get('input','stddev_thresh')
 seg_list_file = None
 
 # output file
-output_dir = cp.get('output', 'output_path')
+output_dir_temp = cp.get('output', 'output_path')
+output_dir = output_dir_temp + '/' + tstart + '-' + tend
+try: os.mkdir(output_dir) # create output directory using start and end time of data
+except: pass
 
 # make DAGs
 if do_datafind:
