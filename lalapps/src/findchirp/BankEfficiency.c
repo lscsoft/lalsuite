@@ -441,8 +441,8 @@ main (INT4 argc, CHAR **argv )
 	      */ 
 	      if (
 		  (userParam.fastSimulation == 1 ) &&
-		  		  ((fabs(randIn.param.t0 - insptmplt.t0)> .1) ||
-		    (fabs(randIn.param.t3 - insptmplt.t3)> .05) )
+		  		  ((fabs(randIn.param.t0 - insptmplt.t0)> .3) ||
+		    (fabs(randIn.param.t3 - insptmplt.t3)> .15) )
 		  )
 		{		  
 		  filter_processed--;
@@ -562,7 +562,6 @@ main (INT4 argc, CHAR **argv )
 	  
 	}
       }
-
     }  /*end while(trial)*/
   
 
@@ -2618,7 +2617,13 @@ void BEGenerateInputData(LALStatus *status,
 	    LALRandomInspiralSignal(status->statusPtr, signal, randIn);
 	    CHECKSTATUSPTR(status);
 	  }
-	else
+	else if (randIn->t0Min != 0)
+          {
+            randIn->param.massChoice = t03;
+            LALRandomInspiralSignal(status->statusPtr, signal, randIn);
+            CHECKSTATUSPTR(status);
+          }
+        else
 	  {
 	    randIn->param.massChoice = m1Andm2;
 	    randIn->param.massChoice = totalMassUAndEta;	    
@@ -4445,7 +4450,11 @@ void InitRandomInspiralSignalIn(RandomInspiralSignalIn *randIn)
   randIn->mMin          	= BANKEFFICIENCY_MMIN;				/* min mass to inject			*/
   randIn->mMax          	= BANKEFFICIENCY_MMAX;				/* max mass to inject 			*/
   randIn->MMax          	= BANKEFFICIENCY_MMAX * 2;			/* total mass max 			*/
-  randIn->etaMin                = BANKEFFICIENCY_MMIN 
+  randIn->t0Min                 = 0.;                                           /* min tau0 to inject                   */
+  randIn->t0Max                 = 0.;                                           /* max tau0 to inject                   */
+  randIn->t0Min                 = 0.;                                           /* min tau3 to inject                   */
+  randIn->t0Max                 = 0.;                                           /* max tau3 to inject                   */
+  randIn->etaMin                = BANKEFFICIENCY_MMIN
     * (BANKEFFICIENCY_MMAX - BANKEFFICIENCY_MMIN) 
     / (BANKEFFICIENCY_MMAX * 2) / (BANKEFFICIENCY_MMAX * 2);
   randIn->psi0Min  		= BANKEFFICIENCY_PSI0MIN;			/* psi0 range 				*/
@@ -4774,6 +4783,12 @@ ParseParameters(	INT4 			*argc,
         BEParseGetDouble2(argv,  &i, &(randIn->mMin), &(randIn->mMax));
 	randIn->param.mass1 = randIn->param.mass2 = randIn->mMin; /*default values for injection*/
       }   
+      else if (!strcmp(argv[i], "--signal-tau0-range")){
+        BEParseGetDouble2(argv,  &i, &(randIn->t0Min), &(randIn->t0Max));
+      }
+      else if (!strcmp(argv[i], "--signal-tau3-range")){
+        BEParseGetDouble2(argv,  &i, &(randIn->tnMin), &(randIn->tnMax));
+      }
       else if (!strcmp(argv[i],	"--signal-order")) {
 	BEParseGetInt(argv,  &i, (INT4*)&(randIn->param.order));
       }
@@ -5278,7 +5293,19 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
      randIn->param.fCutoff = userParam->signalfFinal;
    }
 
+  if ((randIn->t0Min != 0 || randIn->t0Max != 0) && 
+        ((randIn->t0Min >= randIn->t0Max ) || (randIn->t0Min <=0))){
+    sprintf(msg, "--signal-tau0-range (%f %f) paramter must be sorted and > 0 \n",
+            randIn->t0Min, randIn->t0Max);
+    BEPrintError(msg);
+  }
 
+  if ((randIn->tnMin != 0 || randIn->tnMax != 0) && 
+        ((randIn->tnMin >= randIn->tnMax ) || (randIn->tnMin <=0))){
+    sprintf(msg, "--signal-tau3-range (%f %f) paramter must be sorted and > 0 \n",
+            randIn->tnMin, randIn->tnMax);
+    BEPrintError(msg);
+  }
 
   switch ( userParam->detector)
     {
@@ -5473,6 +5500,8 @@ void Help()
   fprintf(stderr, "\t[--signal-amplitude<float>]\t set SNR of injection in the case NoiseandSignal simulation\n");
   fprintf(stderr, "\t[--signal-ffinal<float>]\t force final frequency value\n");
   fprintf(stderr, "\t[--signal-mass-range<float float>]\t set range of masses to inject (SPA injection)\n");
+  fprintf(stderr, "\t[--signal-tau0-range<float float>]\t set range of tau0 to inject (SPA injection)\n");
+  fprintf(stderr, "\t[--signal-tau3-range<float float>]\t set range of tau3 to inject (SPA injection)\n");
   fprintf(stderr, "\t[--signal-order<integer>]\t set PN order of injections \n");
   fprintf(stderr, "\t[--signal-psi0-range<float float>] set range of BCV injection \n");
   fprintf(stderr, "\t[--signal-psi3-range<float float>] set range of BCV injection\n");
