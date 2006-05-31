@@ -616,11 +616,11 @@ int main( int argc, char *argv[] )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "maximization interval must be positive:\n "
-              "(%d ms specified)\n",
+              "(%ld ms specified)\n",
               long_options[option_index].name, maximizationInterval );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "int", "%ld",  maximizationInterval );
+        ADD_PROCESS_PARAM( "int", "%lld",  maximizationInterval );
         break;
   
       default:
@@ -800,7 +800,7 @@ int main( int argc, char *argv[] )
       SnglRingdownTable   *thisFileTrigger  = NULL;
 
       numFileTriggers = XLALReadRingdownTriggerFile( &ringdownFileList,
-          &thisRingdownTrigger, &searchSummList, &inputFiles, argv[i] );
+          &thisFileTrigger, &searchSummList, &inputFiles, argv[i] );
       if (numFileTriggers < 0)
       {
         fprintf(stderr, "Error reading triggers from file %s",
@@ -813,7 +813,7 @@ int main( int argc, char *argv[] )
       {
         if (vrbflg)
         {
-          fprintf( stdout, "Clustering triggers for over %d ms window\n",
+          fprintf( stdout, "Clustering triggers for over %lld ms window\n",
               maximizationInterval);
         }
         XLALMaxSnglRingdownOverIntervals( &ringdownFileList,
