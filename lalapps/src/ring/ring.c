@@ -5,6 +5,7 @@
 
 #include <lal/LALStdlib.h>
 #include <lal/LIGOMetadataTables.h>
+#include <lal/LIGOMetadataUtils.h>
 #include <lal/AVFactories.h>
 #include <lal/RealFFT.h>
 #include <lal/Ring.h>
@@ -64,6 +65,7 @@ static void ring_cleanup(
 
 int main( int argc, char **argv )
 {
+  static LALStatus      status;
   struct ring_params      *params    = NULL;
   ProcessParamsTable      *procpar   = NULL;
   REAL4FFTPlan            *fwdplan   = NULL;
@@ -109,6 +111,11 @@ int main( int argc, char **argv )
   /* filter the data against the bank of templates */
   events = ring_filter( segments, bank, invspec, fwdplan, revplan, params );
 
+  /* time sort the triggers */
+  if ( vrbflg ) fprintf( stdout, "Sorting triggers\n" );
+  LAL_CALL( LALSortSnglRingdown( &status, &(events),
+        LALCompareSnglRingdownByTime ), &status );
+  
   /* output the results */
   ring_output_events_xml( params->outputFile, events, procpar, params );
 
