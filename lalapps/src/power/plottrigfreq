@@ -67,32 +67,48 @@ def parse_command_line():
 # =============================================================================
 #
 
-def get_instrument(arrayelem):
-	return llwapp.get_param(arrayelem.parentNode, "instrument").pcdata
+def get_instrument(elem):
+	return llwapp.get_param(elem.parentNode, "instrument").pcdata
 
 
 #
 # =============================================================================
 #
-#                                     Plot
+#                                    Plots
 #
 # =============================================================================
 #
 
-def make_plot(data):
+def make_frequency_plot(fseries):
 	fig = figure.Figure()
 	FigureCanvasAgg(fig)
 	fig.set_figsize_inches(16, 8)
 	axes = fig.gca()
 	axes.semilogy()
 	axes.grid(True)
-	axes.plot(data[0], numarray.fabs(data[1]))
-	axes.plot(data[0], numarray.fabs(data[2]))
-	axes.plot(data[0], numarray.sqrt(data[1]**2.0 + data[2]**2.0))
-	axes.set_xlim([min(data[0]), max(data[0])])
+	axes.plot(fseries[0], numarray.fabs(fseries[1]))
+	axes.plot(fseries[0], numarray.fabs(fseries[2]))
+	axes.plot(fseries[0], numarray.sqrt(fseries[1]**2.0 + fseries[2]**2.0))
+	axes.set_xlim([min(fseries[0]), max(fseries[0])])
 	axes.set_title("Frequency Decomposition of Confidence Time Series")
 	axes.set_xlabel("Frequency (Hz)")
 	axes.set_ylabel("Re, Im Magnitude")
+	return fig
+
+
+def make_rate_plot(rate):
+	rate.filter()
+	fig = figure.Figure()
+	FigureCanvasAgg(fig)
+	fig.set_figsize_inches(16, 8)
+	axes = fig.gca()
+	axes.semilogy()
+	axes.grid(True)
+	axes.plot(rate.xvals(), rate.yvals())
+	axes.set_xlim([min(rate.xvals()), max(rate.xvals())])
+	axes.set_title("Cummulative Event Confidence By Sidereal Time")
+	axes.set_xlabel("Sidereal Time (rad)")
+	axes.set_ylabel("Cummulative Event Confidence")
 	return fig
 
 
@@ -109,5 +125,8 @@ options, filenames = parse_command_line()
 for filename in filenames:
 	doc = llwapp.load_filename(filename, options.verbose)
 	for elem in array.getArraysByName(doc, "confidence_frequencies"):
-		fig = make_plot(elem.array)
-		fig.savefig("%s_%s.png" % (filename, get_instrument(elem)))
+		fig = make_frequency_plot(elem.array)
+		fig.savefig("%s_frequency_%s.png" % (filename, get_instrument(elem)))
+	for elem in param.getParamsByName(doc, "rate"):
+		fig = make_rate_plot(llwapp.pickle_from_param(elem, "rate"))
+		fig.savefig("%s_rate_%s.png" % (filename, get_instrument(elem)))

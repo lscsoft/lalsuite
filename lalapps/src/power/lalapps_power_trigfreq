@@ -45,7 +45,8 @@ from glue.ligolw import array
 from glue.ligolw import param
 from glue.ligolw import lsctables
 from pylal import llwapp
-from pylal.date import LIGOTimeGPS
+from pylal import date
+from pylal import rate
 
 
 #
@@ -79,7 +80,7 @@ def parse_command_line():
 	except Exception:
 		raise ValueError, "invalid --f-naught"
 	try:
-		options.t_naught = LIGOTimeGPS(options.t_naught)
+		options.t_naught = date.LIGOTimeGPS(options.t_naught)
 	except Exception:
 		raise ValueError, "invalid --t-naught"
 
@@ -110,7 +111,7 @@ class SnglBurst(object):
 	__slots__ = ["ifo", "confidence", "start_time", "start_time_ns", "duration"]
 
 	def get_start(self):
-		return float(LIGOTimeGPS(self.start_time, self.start_time_ns) - options.t_naught)
+		return date.LIGOTimeGPS(self.start_time, self.start_time_ns)
 
 	def get_stop(self):
 		return self.get_start() + self.duration
@@ -127,14 +128,13 @@ lsctables.SnglBurstTable.RowType = SnglBurst
 # =============================================================================
 #
 
-def new_dataset(f_0, delta_f, n):
+def new_fseries(f_0, delta_f, n):
 	"""
 	Initialize and return an array for holding a single-instrument data
 	set.
 	"""
 	f = numarray.zeros((3, n), "Float64")
-	for k in xrange(n):
-		f[0, k] = f_0 + k * delta_f
+	f[0] = f_0 + numarray.arange(n) * delta_f
 	return f
 
 
@@ -152,18 +152,28 @@ def fourier_transform(eventlist, options):
 	# confidence first.
 	eventlist.sort(lambda a, b: cmp(a.confidence, b.confidence))
 
-	datasets = {}
+	fseries = {}
 	for n, event in enumerate(eventlist):
 		if not n % max(len(eventlist) / 1000, 200):
 			print >>sys.stderr, "	%.1f%%\r" % (100.0 * n / len(eventlist)),
-		if event.ifo not in datasets:
-			datasets[event.ifo] = new_dataset(options.f_naught, options.delta_f, options.n_f)
-		value = math.log(-event.confidence) / (-2j * math.pi) / datasets[event.ifo][0] * (numarray.exp(-2j * math.pi * event.get_stop() * datasets[event.ifo][0]) - numarray.exp(-2j * math.pi * event.get_start() * datasets[event.ifo][0]))
-		datasets[event.ifo][1] += value.real
-		datasets[event.ifo][2] += value.imag
+		if event.ifo not in fseries:
+			fseries[event.ifo] = new_fseries(options.f_naught, options.delta_f, options.n_f)
+		value = -event.confidence / (-2j * math.pi) / fseries[event.ifo][0] * (numarray.exp(-2j * math.pi * float(event.get_stop() - options.t_naught) * fseries[event.ifo][0]) - numarray.exp(-2j * math.pi * float(event.get_start() - options.t_naught) * fseries[event.ifo][0]))
+		fseries[event.ifo][1] += value.real
+		fseries[event.ifo][2] += value.imag
 	print >>sys.stderr, "	100.0%"
 
-	return datasets
+	return fseries
+
+
+def bin_by_sidereal_time(rates, eventlist):
+	for n, event in enumerate(eventlist):
+		if event.ifo not in rates:
+			# 1000 bins per sidereal day
+			rates[event.ifo] = rate.Rate(segments.segment(0.0, 2.0 * math.pi), 2.0 * math.pi / 1000.0)
+		start = date.XLALGreenwichMeanSiderealTime(event.get_start())
+		stop = date.XLALGreenwichMeanSiderealTime(event.get_stop())
+		rates[event.ifo][segments.segment(start, stop)] = -event.confidence
 
 
 #
@@ -174,14 +184,15 @@ def fourier_transform(eventlist, options):
 # =============================================================================
 #
 
-def new_doc(datasets):
+def new_doc(fseries, rates):
 	doc = ligolw.Document()
 	container = ligolw.LIGO_LW()
 	doc.appendChild(container)
-	for key, value in datasets.iteritems():
+	for key, value in fseries.iteritems():
 		container.appendChild(ligolw.LIGO_LW())
 		container.childNodes[-1].appendChild(param.new_param("instrument", "lstring", key))
 		container.childNodes[-1].appendChild(array.from_array("sngl_burst:confidence_frequencies:array", value, ["Bin", "Hz Re(C_k) Im(C_k)"]))
+		container.childNodes[-1].appendChild(llwapp.pickle_to_param(rates[key], "rate"))
 	return doc
 
 
@@ -195,18 +206,20 @@ def new_doc(datasets):
 
 options, filenames = parse_command_line()
 
-datasets = {}
+fseries = {}
+rates = {}
 for filename in llwapp.sort_files_by_size(filenames, options.verbose):
 	doc = llwapp.load_filename(filename, options.verbose)
 	eventlist = llwapp.get_table(doc, lsctables.SnglBurstTable.tableName)
 	if options.verbose:
 		print >>sys.stderr, "transforming %d events..." % len(eventlist)
-	newdatasets = fourier_transform(eventlist, options)
-	doc.unlink()
-	for key, value in newdatasets.iteritems():
-		if key in datasets:
-			datasets[key][1:] += value[1:]
+	bin_by_sidereal_time(rates, eventlist)
+	newfseries = fourier_transform(eventlist, options)
+	for key, value in newfseries.iteritems():
+		if key in fseries:
+			fseries[key][1:] += value[1:]
 		else:
-			datasets[key] = value
+			fseries[key] = value
+	doc.unlink()
 
-llwapp.write_filename(new_doc(datasets), options.output, options.verbose)
+llwapp.write_filename(new_doc(fseries, rates), options.output, options.verbose)
