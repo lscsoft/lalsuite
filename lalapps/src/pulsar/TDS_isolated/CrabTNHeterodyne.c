@@ -17,6 +17,7 @@ $Id$
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/LALConstants.h>
+#include <lal/BinaryPulsarTiming.h>
 
 /* Crab heterodyne specific headers */
 #include "HeterodyneCrabPulsar.h"
@@ -27,8 +28,8 @@ INT4 lalDebugLevel = 1;
 #define MAXLENGTH 200000
 #define NUM 1000 /* max num of lines in crab ephem file (ok for next 61 years
 										file contains 266 lines as of 15 Jan 2004) */
-#define EFILE "/home/matthew/lscsoft/lal/packages/pulsar/test/earth03-06.dat"
-#define SFILE "/home/matthew/lscsoft/lal/packages/pulsar/test/sun03-06.dat"
+#define EFILE "/home/matthew/lscsoft/lal/packages/pulsar/test/earth05-09.dat"
+#define SFILE "/home/matthew/lscsoft/lal/packages/pulsar/test/sun05-09.dat"
 
 int main(int argc, char *argv[]){
 	static LALStatus status;
@@ -104,7 +105,7 @@ int main(int argc, char *argv[]){
       f2 = val;
     }
     else if( !strcmp(txt,"fepoch") || !strcmp(txt,"FEPOCH")) {
-      fepoch = val;
+      fepoch = LALTDBMJDtoGPS(val);
     }
 		else if (!strcmp(txt,"RA") || !strcmp(txt,"ra")){
 			hetParams.alpha = val;
