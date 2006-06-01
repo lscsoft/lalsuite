@@ -44,6 +44,12 @@ int main(int argc, char *argv[]){
 
   /* read in pulsar data */
   LALReadTEMPOParFile(&status, &hetParams.het, inputParams.paramfile);
+  if(inputParams.verbose){  
+    fprintf(stderr, "I've read in the pulsar parameters for %s.\n", inputParams.pulsar);
+    fprintf(stderr, "alpha = %lf rads, delta = %lf rads.\n", hetParams.het.ra, hetParams.het.dec);
+    fprintf(stderr, "f0 = %.1lf Hz, f1 = %.1e Hz/s, epoch = %.1lf.\n", hetParam.het.f0,
+hetParams.het.f1, hetParams.het.pepoch);
+  }
 
   if(inputParams.heterodyneflag == 1) /*if performing fine heterdoyne using same params as coarse*/
     hetParams.hetUpdate = hetParams.het;
@@ -63,10 +69,20 @@ int main(int argc, char *argv[]){
   fprintf(stderr,"Error DETECTOR must be either H1, H1, L1, or GEO\n");
     return 2;
   }
+  if(inputParams.verbose){  fprintf(stderr, "I've set the detector location for %s.\n",
+    inputParams.ifo); }
 
-  if(inputParams.heterodyneflag == 2) /* if updating parameters read in updated par file */
+  if(inputParams.heterodyneflag == 2){ /* if updating parameters read in updated par file */
     LALReadTEMPOParFile(&status, &hetParams.hetUpdate, inputParams.paramfileupdate);
-
+    if(inputParams.verbose){  
+      fprintf(stderr, "I've read the updated parameters for %s.\n", inputParams.pulsar);
+      fprintf(stderr, "alpha = %lf rads, delta = %lf rads.\n", hetParams.hetUpdate.ra,
+hetParams.hetUpdate.dec);
+      fprintf(stderr, "f0 = %.1lf Hz, f1 = %.1e Hz/s, epoch = %.1lf.\n", hetParam.hetUpdate.f0,
+hetParams.hetUpdate.f1, hetParams.hetUpdate.pepoch); 
+    }
+  }
+    
   /* get science segment lists - allocate initial memory for starts and stops */
   starts = XLALCreateINT4Vector(MAXNUMFRAMES);
   stops = XLALCreateINT4Vector(MAXNUMFRAMES);
@@ -91,22 +107,28 @@ int main(int argc, char *argv[]){
       frcount++;
     }
     fclose(fpin);
+    
+    if(inputParams.verbose){  fprintf(stderr, "I've read in the frame list.\n");  }
   }
 
   /************************BIT THAT DOES EVERYTHING*********************************************/
 
   /* set filters - values held for the whole data set so we don't get lots of glitches from the
   filter ringing */
-  if(inputParams.filterknee > 0.0)
+  if(inputParams.filterknee > 0.0){
     set_filters(&iirFilters, inputParams.filterknee, inputParams.samplerate);
-
+    if(inputParams.verbose){  fprintf(stderr, "I've set up the filters.\n");  }
+  }
+    
   if(inputParams.heterodyneflag == 0){
     sprintf(outputfile, "%s/coarsehet_%s_%s_%d-%d", inputParams.outputdir, inputParams.pulsar,
     inputParams.ifo, starts->data[0], stops->data[numSegs-1]);
+    if(inputParams.verbose){  fprintf(stderr, "I'm performing a coarse heterodyne.\n");  }
   }
   else{
     sprintf(outputfile, "%s/finehet_%s_%s", inputParams.outputdir, inputParams.pulsar,
     inputParams.ifo);
+    if(inputParams.verbose){  fprintf(stderr, "I'm performing a fine heterodyne.\n");  }
   }
 
   remove(outputfile); /* if output file already exists remove it */
@@ -129,7 +151,7 @@ int main(int argc, char *argv[]){
       REAL8 gpstime;
       INT4 duration;
       REAL8TimeSeries *datareal;
-
+      
       if((duration = stops->data[count] - starts->data[count]) > MAXDATALENGTH)
         duration = MAXDATALENGTH; /* if duration of science segment is large just get part of it */
 
@@ -215,10 +237,14 @@ int main(int argc, char *argv[]){
 
     /* heterodyne data */
     heterodyne_data(data, times, hetParams);
-
+    if(inputParams.verbose){  fprintf(stderr, "I've heterodyned the data.\n");  }
+      
     /* filter data */
-    if(inputParams.filterknee > 0.) /* filter if knee frequency is not zero */
+    if(inputParams.filterknee > 0.){ /* filter if knee frequency is not zero */
       filter_data(data, &iirFilters);
+      if(inputParams.verbose){  fprintf(stderr, "I've low pass filtered the data at %.1lf Hz\n",
+inputParams.filterknee);  }
+    }
 
     if(inputParams.heterodyneflag==0){
       times = NULL;
@@ -228,18 +254,28 @@ int main(int argc, char *argv[]){
     /* resample data and data times */
     resampData = resample_data(data, times, starts, stops, inputParams.samplerate,
 inputParams.resamplerate, inputParams.heterodyneflag);
+    if(inputParams.verbose){  fprintf(stderr, "I've resampled the data from %.1lf to %.3lf Hz\n",
+inputParams.samplerate, inputParams.resamplerate);  }
 
     XLALDestroyCOMPLEX16Vector( data->data );
     LALFree(data);
 
     /* calibrate */
-    if(inputParams.calibrate)
+    if(inputParams.calibrate){
       calibrate(resampData, times, inputParams.calibfiles, 2.0*hetParams.het.f0);
-
+      if(inputParams.verbose){  fprintf(stderr, "I've calibrated the data at %.1lf Hz\n",
+        2.0*hetParams.het.f0);  }
+    }
+      
     /* remove outliers above our threshold */
-    if(inputParams.stddevthresh != 0.)
+    if(inputParams.stddevthresh != 0.){
       remove_outliers(resampData, times, inputParams.stddevthresh);
-
+      if(inputParams.verbose){  
+        fprintf(stderr, "I've removed outliers above the threshold %.1lf sigma.\n",
+inputParams.stddevthresh);
+      }
+    }
+    
     /* output data */
     if((fpout = fopen(outputfile, "a"))==NULL){
       fprintf(stderr, "Error... can't open output file %s!\n", outputfile);
@@ -250,6 +286,7 @@ inputParams.resamplerate, inputParams.heterodyneflag);
       fprintf(fpout, "%lf\t%le\t%le\n", times->data[i], resampData->data->data[i].re,
       resampData->data->data[i].im);
     }
+    if(inputParams.verbose){  fprintf(stderr, "I've output the data.\n"); }
 
     fclose(fpout);
     XLALDestroyCOMPLEX16Vector(resampData->data);
@@ -269,6 +306,8 @@ inputParams.resamplerate, inputParams.heterodyneflag);
   LALDestroyREAL8IIRFilter( &status, &iirFilters.filter2Im );   
   LALDestroyREAL8IIRFilter( &status, &iirFilters.filter3Re );
   LALDestroyREAL8IIRFilter( &status, &iirFilters.filter3Im );
+  
+  if(inputParams.verbose){  fprintf(stderr, "I've destroyed all filters.\n"); }
   
   return 0;
 }
@@ -298,6 +337,7 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
     { "sensing-function",         required_argument,  0, 'F' },
     { "open-loop-gain",           required_argument,  0, 'O' },
     { "stddev-thresh",            required_argument,  0, 'T' },
+    { "verbose",                  no_argument, &inputParams->verbose, 1 },
     { 0, 0, 0, 0 }
   };
   
@@ -309,10 +349,12 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
   inputParams->resamplerate = 0.; /* resample to 1 Hz */
   inputParams->samplerate = 0.;
   inputParams->calibrate = 0;
+  inputParams->verbose = 0;
   inputParams->stddevthresh = 0.;
   inputParams->calibfiles.calibcoefficientfile = NULL;
   inputParams->calibfiles.sensingfunctionfile = NULL;
   inputParams->calibfiles.openloopgainfile = NULL;
+  inputParams->calibfiles.responsefunctionfile = NULL;
   
   /* get input arguments */
   while(1){
@@ -939,10 +981,10 @@ calfiles, REAL8 frequency){
   long offset;
   CHAR jnkstr[256]; /* junk string to contain comment lines */
   
-  if((fpcoeff = fopen(calfiles.calibcoefficientfile, "r"))==NULL){
-    fprintf(stderr, "Error... can't open calibration coefficient file %s.\n\
+  if(calfiles.calibcoefficientfile == NULL){
+    fprintf(stderr, "No calibration coefficient file %s.\n\
 Assume calibration coefficients are 1 and use the response funtcion.\n",
-calfiles.responsefunctionfile);
+    calfiles.responsefunctionfile);
     /* get response function values */
     get_calibration_values(&Rfunc, &Rphase, calfiles.responsefunctionfile, frequency);
 
@@ -957,6 +999,13 @@ calfiles.responsefunctionfile);
     REAL8 times[MAXCALIBLENGTH];
     REAL8 alpha[MAXCALIBLENGTH], gamma[MAXCALIBLENGTH]; /* gamma = alpha*beta */
     COMPLEX16 Resp;
+
+    if((fpcoeff = fopen(calfiles.calibcoefficientfile, "r"))==NULL){
+      fprintf(stderr, "Error... can't open calibration coefficient file %s.\n\
+Assume calibration coefficients are 1 and use the response funtcion.\n",
+calfiles.responsefunctionfile);
+      exit(0);
+    }    
 
     /* open sensing function file for reading */
     get_calibration_values(&C, &Cphase, calfiles.sensingfunctionfile, frequency);
@@ -1040,8 +1089,12 @@ frequency){
   REAL8 freq;
 
   /* open calibration file for reading */
-  if((fp = fopen(calibfilename, "r"))==NULL){
-    fprintf(stderr, "Error... can't open file %s.\n", calibfilename);
+  if(calibfilename == NULL){
+    fprintf(stderr, "Error... calibration filename has a null pointer\n");
+    exit(0);
+  }
+  else if((fp = fopen(calibfilename, "r"))==NULL){
+    fprintf(stderr, "Error... can't open calibration file %s.\n", calibfilename);
     exit(0);
   }
 

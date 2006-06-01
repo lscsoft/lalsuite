@@ -43,6 +43,7 @@ extern "C" {
 #define USAGE \
 "Usage: %s [options]\n\n"\
 " --help              display this message\n"\
+" --verbose           display all error messages\n"\
 " --ifo               name of ifo e.g. L1, H1, H2, G1\n"\
 " --pulsar            name of pulsar e.g. J0534+2200\n"\
 " --heterodyne-flag   (int) coarse heterodyne 0, fine heterodyne 1,\n\
@@ -119,6 +120,8 @@ typedef struct tagInputParams{
   CalibrationFiles calibfiles;
   
   REAL8 stddevthresh;
+  
+  INT4 verbose;
 }InputParams;
 
 typedef struct tagHeterodyneParams{
