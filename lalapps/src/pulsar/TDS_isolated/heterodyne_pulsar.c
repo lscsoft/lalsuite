@@ -47,7 +47,7 @@ int main(int argc, char *argv[]){
   if(inputParams.verbose){  
     fprintf(stderr, "I've read in the pulsar parameters for %s.\n", inputParams.pulsar);
     fprintf(stderr, "alpha = %lf rads, delta = %lf rads.\n", hetParams.het.ra, hetParams.het.dec);
-    fprintf(stderr, "f0 = %.1lf Hz, f1 = %.1e Hz/s, epoch = %.1lf.\n", hetParam.het.f0,
+    fprintf(stderr, "f0 = %.1lf Hz, f1 = %.1e Hz/s, epoch = %.1lf.\n", hetParams.het.f0,
 hetParams.het.f1, hetParams.het.pepoch);
   }
 
@@ -78,7 +78,7 @@ hetParams.het.f1, hetParams.het.pepoch);
       fprintf(stderr, "I've read the updated parameters for %s.\n", inputParams.pulsar);
       fprintf(stderr, "alpha = %lf rads, delta = %lf rads.\n", hetParams.hetUpdate.ra,
 hetParams.hetUpdate.dec);
-      fprintf(stderr, "f0 = %.1lf Hz, f1 = %.1e Hz/s, epoch = %.1lf.\n", hetParam.hetUpdate.f0,
+      fprintf(stderr, "f0 = %.1lf Hz, f1 = %.1e Hz/s, epoch = %.1lf.\n", hetParams.hetUpdate.f0,
 hetParams.hetUpdate.f1, hetParams.hetUpdate.pepoch); 
     }
   }
