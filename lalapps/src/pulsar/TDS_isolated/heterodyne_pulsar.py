@@ -143,7 +143,11 @@ class heterodyneNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     
   def set_calibrate(self):
     # set calibration flag
-    self.add_var_opt('calibrate', '') # no option required
+    self.add_var_opt('calibrate', '') # no variable required
+    
+  def set_verbose(self):
+    # set verbose flag
+    self.add_var_opt('verbose', '') # no variable required
     
   def set_response_function(self,response_function):
     # set reponse function file
