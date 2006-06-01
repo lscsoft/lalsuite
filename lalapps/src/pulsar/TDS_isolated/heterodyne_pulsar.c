@@ -1086,7 +1086,7 @@ frequency){
   long offset;
   CHAR jnkstr[256]; /* junk string to contain comment lines */
 
-  REAL8 freq;
+  REAL8 freq=0.;
 
   /* open calibration file for reading */
   if(calibfilename == NULL){
