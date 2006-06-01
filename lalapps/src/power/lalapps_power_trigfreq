@@ -208,7 +208,9 @@ options, filenames = parse_command_line()
 
 fseries = {}
 rates = {}
-for filename in llwapp.sort_files_by_size(filenames, options.verbose):
+for n, filename in enumerate(llwapp.sort_files_by_size(filenames, options.verbose)):
+	if options.verbose:
+		print >>sys.stderr, "%d/%d:" % (n + 1, len(filenames)),
 	doc = llwapp.load_filename(filename, options.verbose)
 	eventlist = llwapp.get_table(doc, lsctables.SnglBurstTable.tableName)
 	if options.verbose:
