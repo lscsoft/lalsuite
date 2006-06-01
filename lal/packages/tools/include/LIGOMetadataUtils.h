@@ -616,6 +616,13 @@ XLALVetoSingleInspiral (
     LALSegList                 *vetoSegs 
     );
 
+SnglInspiralTable *
+XLALVetoSingleInspiralThisIfo (
+    SnglInspiralTable          *eventHead,
+    LALSegList                 *vetoSegs, 
+    CHAR 		       *ifo
+    );
+
 void
 LALBCVCVetoSingleInspiral(
     LALStatus                  *status,

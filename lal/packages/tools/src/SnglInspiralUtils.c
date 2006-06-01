@@ -1058,6 +1058,50 @@ XLALVetoSingleInspiral (
   return( eventHead );
 }
 
+/*	this function is identical to XLALVetoSinglInspiral but check 
+	for the corresponding ifo.
+*/
+/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+SnglInspiralTable *
+XLALVetoSingleInspiralThisIfo (
+    SnglInspiralTable          *eventHead,
+    LALSegList                 *vetoSegs, 
+    CHAR 			*ifo
+    
+    )
+/* </lalVerbatim> */
+{
+  SnglInspiralTable    *thisEvent = NULL;
+  SnglInspiralTable    *prevEvent = NULL;
+
+  thisEvent = eventHead;
+  eventHead = NULL;
+  
+  while ( thisEvent )
+  {
+    /*-- Check the time of this event against the veto segment list --*/
+    if ( XLALSegListSearch( vetoSegs, &(thisEvent->end_time) )  && (strcmp(thisEvent->ifo, ifo)==0)) 
+    {
+      /*-- This event's end_time falls within one of the veto segments --*/
+      /* discard the trigger and move to the next one */
+      SnglInspiralTable    *tmpEvent = NULL;
+      if ( prevEvent ) prevEvent->next = thisEvent->next;
+      tmpEvent = thisEvent;
+      thisEvent = thisEvent->next;
+      XLALFreeSnglInspiral ( &tmpEvent );
+    } 
+    else 
+    {
+      /* This inspiral trigger does not fall within any veto segment */
+      /* keep the trigger and increment the count of triggers */
+      if ( ! eventHead ) eventHead = thisEvent;
+      prevEvent = thisEvent;
+      thisEvent = thisEvent->next;
+    }
+  }
+  return( eventHead );
+}
+
 
 void
 LALBCVCVetoSingleInspiral(
