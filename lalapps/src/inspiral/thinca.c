@@ -1461,7 +1461,7 @@ int main( int argc, char *argv[] )
   {
     for ( i = 0; i< LAL_NUM_IFO; i++)
     {
-      if ( vetoFileName[i] )
+      if ( vetoFileName[i] && haveTrig[i])
       {
     	XLALSegListInit( &(vetoSegs[i]) );
 	LAL_CALL( LALSegListRead( &status, &(vetoSegs[i]), vetoFileName[i], NULL),
@@ -1473,7 +1473,8 @@ int main( int argc, char *argv[] )
 	{
 	  if ( vrbflg ) fprintf( stdout, "Applying veto segment (%s) list on ifo  %s \n ",
 		vetoFileName[i], ifoName[i-1] );
-          inspiralEventList = XLALVetoSingleInspiral( inspiralEventList, &(vetoSegs[i]));
+/*          inspiralEventList = XLALVetoSingleInspiral( inspiralEventList, &(vetoSegs[i]));*/
+        inspiralEventList = XLALVetoSingleInspiralThisIfo( inspiralEventList, &(vetoSegs[i]), ifoName[i-1] );
           /* count the triggers  */
           numTriggers = XLALCountSnglInspiral( inspiralEventList );
           if ( vrbflg ) fprintf( stdout, " --> %d remaining triggers after veto segment list applied.\n",
@@ -2116,7 +2117,7 @@ cleanexit:
   /* free the veto segment list. */
   for (ifoNumber=0; ifoNumber<LAL_NUM_IFO; ifoNumber++)
   {
-   if ( vetoFileName[ifoNumber] )
+   if ( vetoFileName[ifoNumber]  && haveTrig[ifoNumber])
     {
       XLALSegListClear( &vetoSegs[ifoNumber] );
       free( vetoFileName[ifoNumber] );
