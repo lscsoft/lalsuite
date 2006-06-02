@@ -18,21 +18,21 @@ extern "C" {
 /*----------------------------------------------------------------------*/
 /* Error-codes */
 
-#define COMPUTEFSTATC_ENULL             1
-#define COMPUTEFSTATC_ESYS              2
-#define COMPUTEFSTATC_EINPUT            3
-#define COMPUTEFSTATC_EMEM              4
-#define COMPUTEFSTATC_ECHECKPOINT       5
-#define COMPUTEFSTATC_ECLUSTER          6
-#define COMPUTEFSTATC_EXLAL		50
+#define COMPUTEFSTAT_ENULL             1
+#define COMPUTEFSTAT_ESYS              2
+#define COMPUTEFSTAT_EINPUT            3
+#define COMPUTEFSTAT_EMEM              4
+#define COMPUTEFSTAT_ECHECKPOINT       5
+#define COMPUTEFSTAT_ECLUSTER          6
+#define COMPUTEFSTAT_EXLAL		50
 
-#define COMPUTEFSTATC_MSGENULL          "Arguments contained an unexpected null pointer"
-#define COMPUTEFSTATC_MSGESYS           "System call failed (probably file IO)"
-#define COMPUTEFSTATC_MSGEINPUT         "Invalid input"
-#define COMPUTEFSTATC_MSGEMEM           "Out of memory. Bad."
-#define COMPUTEFSTATC_MSGECHECKPOINT    "Illegal checkpoint"
-#define COMPUTEFSTATC_MSGECLUSTER       "Unspecified error in cluster-related routine"
-#define COMPUTEFSTATC_MSGEXLAL		"XLALFunction-call failed"
+#define COMPUTEFSTAT_MSGENULL          "Arguments contained an unexpected null pointer"
+#define COMPUTEFSTAT_MSGESYS           "System call failed (probably file IO)"
+#define COMPUTEFSTAT_MSGEINPUT         "Invalid input"
+#define COMPUTEFSTAT_MSGEMEM           "Out of memory. Bad."
+#define COMPUTEFSTAT_MSGECHECKPOINT    "Illegal checkpoint"
+#define COMPUTEFSTAT_MSGECLUSTER       "Unspecified error in cluster-related routine"
+#define COMPUTEFSTAT_MSGEXLAL		"XLALFunction-call failed"
 
 /*----------------------------------------------------------------------*/
 /* Exit values */

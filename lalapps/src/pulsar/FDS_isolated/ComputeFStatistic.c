@@ -605,7 +605,7 @@ int main(int argc,char *argv[])
 
       if ( (fpClusters = fopen (CFstatFilename, "wb")) == NULL ) {
 	LogPrintf (LOG_CRITICAL, "Failed to open Clusters-file '%s' for writing!\n", CFstatFilename );
-	return ( COMPUTEFSTATC_ESYS );
+	return ( COMPUTEFSTAT_ESYS );
       }
     }
   else {
@@ -775,7 +775,7 @@ int main(int argc,char *argv[])
 	LAL_CALL (NextDopplerPos( status, &dopplerpos, &thisScan ), status);
 	if (thisScan.state == STATE_FINISHED) {
 	  LogPrintf (LOG_CRITICAL, "Checkpointed loopcounter already at the end of main-loop\n");
-	  return COMPUTEFSTATC_ECHECKPOINT; 
+	  return COMPUTEFSTAT_ECHECKPOINT; 
 	}
       }
       /* seek to right point of fstats file (truncate what's left over) */
@@ -789,7 +789,7 @@ int main(int argc,char *argv[])
 	    {   /* something gone wrong seeking .. */
 	      LogPrintf (LOG_CRITICAL, "fseek(SEEK_SET) failed Fstat-file '%s'.Giving up...\n", 
 			 FstatFilename);
-	      return COMPUTEFSTATC_ECHECKPOINT;;
+	      return COMPUTEFSTAT_ECHECKPOINT;;
 	    }
 	} /* if fpFstat */
 
@@ -819,7 +819,7 @@ int main(int argc,char *argv[])
 	  }
 	  if (howmany >= uvar_MaxFileSizeKB * 1024) {
 	    LogPrintf (LOG_CRITICAL, "Size of compacted list exceeds MaxFileSize - reduce candidates to keep\n", FstatFilename);
-	    return (COMPUTEFSTATC_EINPUT);
+	    return (COMPUTEFSTAT_EINPUT);
 	  }
 	  fstat_bytecounter = howmany;
 	  
@@ -858,12 +858,12 @@ int main(int argc,char *argv[])
               if ( (fp = fopen(ckp_fname, "wb")) == NULL) {
                 LogPrintf (LOG_CRITICAL, "Failed to open checkpoint-file '%s' for writing. Exiting.\n", 
 			   ckp_fname);
-                return COMPUTEFSTATC_ECHECKPOINT;
+                return COMPUTEFSTAT_ECHECKPOINT;
               }
               if ( fprintf (fp, "%" LAL_UINT4_FORMAT " %" LAL_UINT4_FORMAT " %ld\nDONE\n", 
 			    loopcounter, fstat_checksum, fstat_bytecounter) < 0) {
                 LogPrintf (LOG_CRITICAL, "Error writing to checkpoint-file '%s'. Exiting.\n", ckp_fname);
-                return COMPUTEFSTATC_ECHECKPOINT;
+                return COMPUTEFSTAT_ECHECKPOINT;
               }
               fclose (fp);
 	      LogPrintf (LOG_DETAIL, "Checkpointed state (%d/%d/%ld).\n", 
@@ -954,7 +954,7 @@ int main(int argc,char *argv[])
 	      break;
 	    default:
 	      LogPrintf (LOG_CRITICAL, "Invalid expLALDemod value %d\n", uvar_expLALDemod);
-	      return COMPUTEFSTATC_EINPUT;
+	      return COMPUTEFSTAT_EINPUT;
 	    }
 	  
           /*  CLUSTER-OUTPUT: This fills-in highFLines that contains the outliers of F*/
@@ -2050,7 +2050,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   if(chdir(uvar_workingDir) != 0)
     {
       LogPrintf (LOG_CRITICAL,  "in Main: unable to change directory to %s\n", uvar_workingDir);
-      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      ABORT (status, COMPUTEFSTAT_EINPUT, COMPUTEFSTAT_MSGEINPUT);
     }
 
 
@@ -2119,7 +2119,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 #endif
     if (!(fp=fp_mergedSFT=fopen(uvar_mergedSFTFile,"rb"))){
       LogPrintf (LOG_CRITICAL, "Unable to open SFT file %s\n", uvar_mergedSFTFile);
-      ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+      ABORT (status, COMPUTEFSTAT_ESYS, COMPUTEFSTAT_MSGESYS);
     }
 
     fileno = 0;
@@ -2128,12 +2128,12 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 
       /* prepare memory for another filename */
       if ( (cfg->filelist=(CHAR**)LALRealloc(cfg->filelist, (fileno+1)*sizeof(CHAR*)))==NULL) {
-        ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+        ABORT (status, COMPUTEFSTAT_EMEM, COMPUTEFSTAT_MSGEMEM);
       }
       /* store a "file name" composed of merged name + block number */
       sprintf(tmp, "%s (block %d)", uvar_mergedSFTFile, ++blockno);
       if ( (cfg->filelist[fileno] = (CHAR*)LALCalloc (1, strlen(tmp)+1)) == NULL) {
-        ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+        ABORT (status, COMPUTEFSTAT_EMEM, COMPUTEFSTAT_MSGEMEM);
       }
       strcpy(cfg->filelist[fileno],tmp);
       
@@ -2151,7 +2151,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
       if (header.endian!=1.0) {
         LogPrintf (LOG_CRITICAL, "First object in file %s is not (double)1.0!\n",cfg->filelist[fileno]);
         LogPrintf (LOG_CRITICAL, "The file might be corrupted\n\n");
-        ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+        ABORT (status, COMPUTEFSTAT_ESYS, COMPUTEFSTAT_MSGESYS);
       }
       
       /* if this is the first SFT, save initial time */
@@ -2205,17 +2205,17 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     if(globbuf.gl_pathc==0)
       {
         LogPrintf (LOG_CRITICAL, "No SFTs in directory %s ... Exiting.\n\n", uvar_DataDir);
-        ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+        ABORT (status, COMPUTEFSTAT_ESYS, COMPUTEFSTAT_MSGESYS);
       }
     /* prepare memory for all filenames */
     if ( (cfg->filelist = (CHAR**)LALCalloc(globbuf.gl_pathc, sizeof(CHAR*))) == NULL) {
-      ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+      ABORT (status, COMPUTEFSTAT_EMEM, COMPUTEFSTAT_MSGEMEM);
     }
     while ((UINT4)fileno < (UINT4)globbuf.gl_pathc) 
       {
         if ((cfg->filelist[fileno]=(CHAR*)LALCalloc(1,strlen(globbuf.gl_pathv[fileno])+1))== NULL)
 	  {
-	    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+	    ABORT (status, COMPUTEFSTAT_EMEM, COMPUTEFSTAT_MSGEMEM);
 	  }
         strcpy(cfg->filelist[fileno],globbuf.gl_pathv[fileno]);
         fileno++;
@@ -2230,7 +2230,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     {
       LogPrintf (LOG_CRITICAL, "No suitable SFTs found within given time-range [%f, %g]\n\n", 
 		 uvar_startTime, uvar_endTime);
-      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      ABORT (status, COMPUTEFSTAT_EINPUT, COMPUTEFSTAT_MSGEINPUT);
     }
 
 
@@ -2243,7 +2243,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     if (errorcode!=1) 
       {
         LogPrintf (LOG_CRITICAL, "No header in data file %s\n\n", cfg->filelist[0]);
-        ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+        ABORT (status, COMPUTEFSTAT_ESYS, COMPUTEFSTAT_MSGESYS);
       }
 
     /* check that data is correct endian order and swap if needed */
@@ -2262,7 +2262,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
       {
         LogPrintf (LOG_CRITICAL, "First object in file %s is not (double)1.0!\n",cfg->filelist[0]);
         LogPrintf (LOG_CRITICAL, "The file might be corrupted\n\n");
-        ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+        ABORT (status, COMPUTEFSTAT_ESYS, COMPUTEFSTAT_MSGESYS);
       }
     fclose(fp);
     
@@ -2278,7 +2278,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     if (errorcode!=1) 
       {
         LogPrintf (LOG_CRITICAL, "No header in data file %s\n", cfg->filelist[fileno-1]);
-        ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+        ABORT (status, COMPUTEFSTAT_ESYS, COMPUTEFSTAT_MSGESYS);
       }
     if (reverse_endian)
       swapheader(&header);
@@ -2288,7 +2288,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
       {
         LogPrintf (LOG_CRITICAL, "First object in file %s is not (double)1.0!\n",cfg->filelist[fileno-1]);
         LogPrintf (LOG_CRITICAL, "The file might be corrupted\n\n");
-        ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+        ABORT (status, COMPUTEFSTAT_ESYS, COMPUTEFSTAT_MSGESYS);
       }
     fclose(fp);
 
@@ -2365,7 +2365,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
       {
 	cfg->searchRegion.skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
 	if ( cfg->searchRegion.skyRegionString == NULL ) {
-	  ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+	  ABORT (status, COMPUTEFSTAT_EMEM, COMPUTEFSTAT_MSGEMEM);
 	}
 	strcpy (cfg->searchRegion.skyRegionString, uvar_skyRegion);
       }
@@ -2402,7 +2402,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     {
       LogPrintf (LOG_CRITICAL, "Unknown detector. Currently allowed are 'GEO', 'LLO', 'LHO',"
 		     " 'NAUTILUS', 'VIRGO', 'TAMA', 'CIT' or '0'-'6'\n\n");
-      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      ABORT (status, COMPUTEFSTAT_EINPUT, COMPUTEFSTAT_MSGEINPUT);
     }
 
   /* ----- handle skygrid-file ----- */
@@ -2413,7 +2413,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 
       /* +3 to allow prepending of './' if no path was given */
       if ( ( cfg->skyGridFile = LALCalloc (1, len + 3)) == NULL ) {
-	ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+	ABORT (status, COMPUTEFSTAT_EMEM, COMPUTEFSTAT_MSGEMEM);
       }
 
       /* does it contain a path? */
@@ -2433,14 +2433,14 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 	if ( boinc_resolve_filename ( cfg->skyGridFile, resolved_name, sizeof(resolved_name)) )
 	  {
 	    LogPrintf (LOG_CRITICAL,  "Can't resolve file '%s'\n", cfg->skyGridFile );
-	    ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+	    ABORT (status, COMPUTEFSTAT_EINPUT, COMPUTEFSTAT_MSGEINPUT);
 	  }
 	LogPrintfVerbatim ( LOG_DEBUG, "resolved to '%s'.\n", resolved_name );
 	
 	is_zipped = is_zip_file ( resolved_name );
 	if ( is_zipped == -1 ) {
 	  LogPrintf (LOG_CRITICAL, "Error determining whether '%s' is a zip-file.\n", resolved_name );
-	  ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+	  ABORT (status, COMPUTEFSTAT_EINPUT, COMPUTEFSTAT_MSGEINPUT);
 	}
 	
 	/* if sky-Grid is not zipped ==> use the resolved name */
@@ -2449,7 +2449,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 	    LogPrintf ( LOG_DEBUG, "Skygrid file is not zip-compressed. Using boinc-resolved file.\n");
 	    LALFree ( cfg->skyGridFile );
 	    if ( (cfg->skyGridFile = LALCalloc ( 1, strlen ( resolved_name ) + 1 )) == NULL ) {
-	      ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+	      ABORT (status, COMPUTEFSTAT_EMEM, COMPUTEFSTAT_MSGEMEM);
 	    }
 	    strcpy ( cfg->skyGridFile, resolved_name );	/* done */
 	  }
@@ -2478,7 +2478,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 		  {
 		    LogPrintf (LOG_CRITICAL,  "Error removing '%s'. Return value: %d\n", cfg->skyGridFile, ret);
 		    LogPrintf (LOG_CRITICAL, "System says: %s\n", strerror (errno) );
-		    ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+		    ABORT (status, COMPUTEFSTAT_EINPUT, COMPUTEFSTAT_MSGEINPUT);
 		  }
 		zipfile = resolved_name;
 		LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
@@ -2501,7 +2501,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 
 	    /* find directory of boinc-link file */
 	    if ( (outdir = LALCalloc (1, strlen ( cfg->skyGridFile ) + 1 )) == NULL ) {
- 	      ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+ 	      ABORT (status, COMPUTEFSTAT_EMEM, COMPUTEFSTAT_MSGEMEM);
  	    }
  	    strcpy ( outdir, cfg->skyGridFile ); 
  	    /* simply truncate at last '/' */
@@ -2516,7 +2516,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 		LogPrintf (LOG_CRITICAL,  "Error in unzipping file '%s'. Return value: %d\n", 
 			   zipfile, ret);
 		LogPrintf (LOG_CRITICAL, "System says: %s\n", strerror (errno) );
-		ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+		ABORT (status, COMPUTEFSTAT_EINPUT, COMPUTEFSTAT_MSGEINPUT);
 	      }
 
 	    LALFree(outdir);
@@ -2601,7 +2601,7 @@ checkUserInputConsistency (LALStatus *lstat)
     LogPrintf (LOG_CRITICAL,  "The --startTime and --endTIme options may ONLY be used\n"
                     "with merged SFT files, specified with the -B option.\n"
                     "Try ./ComputeFStatistic -h \n\n");
-    ABORT (lstat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);      
+    ABORT (lstat, COMPUTEFSTAT_EINPUT, COMPUTEFSTAT_MSGEINPUT);      
   }
   
   if(!uvar_DataDir && !uvar_mergedSFTFile && !uvar_DataFiles)
@@ -2610,43 +2610,43 @@ checkUserInputConsistency (LALStatus *lstat)
                       "No SFT directory specified; input directory with -D option.\n"
                       "No merged SFT file specified; input file with -B option.\n"
                       "Try ./ComputeFStatistic -h \n\n");
-      ABORT (lstat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);      
+      ABORT (lstat, COMPUTEFSTAT_EINPUT, COMPUTEFSTAT_MSGEINPUT);      
     }
 
   if(uvar_DataDir && uvar_mergedSFTFile)
     {
       LogPrintf (LOG_CRITICAL,  "Cannot specify both 'DataDir' and 'mergedSFTfile'.\n"
                       "Try ./ComputeFStatistic -h \n\n" );
-      ABORT (lstat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      ABORT (lstat, COMPUTEFSTAT_EINPUT, COMPUTEFSTAT_MSGEINPUT);
     }      
 
   if (uvar_ephemYear == NULL)
     {
       LogPrintf (LOG_CRITICAL, "No ephemeris year specified (option 'ephemYear')\n\n");
-      ABORT (lstat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      ABORT (lstat, COMPUTEFSTAT_EINPUT, COMPUTEFSTAT_MSGEINPUT);
     }      
 
   /* don't allow negative bands (for safty in griding-routines) */
   if ( (uvar_AlphaBand < 0) ||  (uvar_DeltaBand < 0) )
     {
       LogPrintf (LOG_CRITICAL, "Negative value of sky-bands not allowed (alpha or delta)!\n\n");
-      ABORT (lstat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      ABORT (lstat, COMPUTEFSTAT_EINPUT, COMPUTEFSTAT_MSGEINPUT);
     }
   /* check for negative stepsizes in Freq, Alpha, Delta */
   if ( LALUserVarWasSet(&uvar_dAlpha) && (uvar_dAlpha < 0) )
     {
       LogPrintf (LOG_CRITICAL, "Negative value of stepsize dAlpha not allowed!\n\n");
-      ABORT (lstat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      ABORT (lstat, COMPUTEFSTAT_EINPUT, COMPUTEFSTAT_MSGEINPUT);
     }
   if ( LALUserVarWasSet(&uvar_dDelta) && (uvar_dDelta < 0) )
     {
       LogPrintf (LOG_CRITICAL, "Negative value of stepsize dDelta not allowed!\n\n");
-      ABORT (lstat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      ABORT (lstat, COMPUTEFSTAT_EINPUT, COMPUTEFSTAT_MSGEINPUT);
     }
   if ( LALUserVarWasSet(&uvar_dFreq) && (uvar_dFreq < 0) )
     {
       LogPrintf (LOG_CRITICAL, "Negative value of stepsize dFreq not allowed!\n\n");
-      ABORT (lstat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      ABORT (lstat, COMPUTEFSTAT_EINPUT, COMPUTEFSTAT_MSGEINPUT);
     }
 
   /* grid-related checks */
@@ -2665,24 +2665,24 @@ checkUserInputConsistency (LALStatus *lstat)
     if ( (haveAlphaBand && !haveDeltaBand) || (haveDeltaBand && !haveAlphaBand) )
       {
 	LogPrintf (LOG_CRITICAL, "ERROR: Need either BOTH (AlphaBand, DeltaBand) or NONE.\n\n"); 
-        ABORT (lstat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+        ABORT (lstat, COMPUTEFSTAT_EINPUT, COMPUTEFSTAT_MSGEINPUT);
       }
 
     if ( !useSkyGridFile && !(haveSkyRegion || haveAlphaDelta) )
       {
         LogPrintf (LOG_CRITICAL, "Need sky-region: either use (Alpha,Delta) or skyRegion!\n\n");
-        ABORT (lstat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+        ABORT (lstat, COMPUTEFSTAT_EINPUT, COMPUTEFSTAT_MSGEINPUT);
       }
     if ( haveSkyRegion && haveAlphaDelta )
       {
         LogPrintf (LOG_CRITICAL, "Overdetermined sky-region: only use EITHER (Alpha,Delta)"
 		       " OR skyRegion!\n\n");
-        ABORT (lstat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+        ABORT (lstat, COMPUTEFSTAT_EINPUT, COMPUTEFSTAT_MSGEINPUT);
       }
     if ( useSkyGridFile && !haveSkyGridFile )
       {
         LogPrintf (LOG_CRITICAL, "ERROR: gridType=(FILE|METRIC_SKYFILE), but no skyGridFile specified!\n\n");
-        ABORT (lstat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);  
+        ABORT (lstat, COMPUTEFSTAT_EINPUT, COMPUTEFSTAT_MSGEINPUT);  
       }
     if ( !useSkyGridFile && haveSkyGridFile )
       {
@@ -2702,7 +2702,7 @@ checkUserInputConsistency (LALStatus *lstat)
     if ( useMetric && !haveMetric) 
       {
         LogPrintf (LOG_CRITICAL, "Metric grid-type selected, but no metricType selected\n\n");
-        ABORT (lstat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);      
+        ABORT (lstat, COMPUTEFSTAT_EINPUT, COMPUTEFSTAT_MSGEINPUT);      
       }
 
   } /* grid-related checks */
@@ -2735,7 +2735,7 @@ WriteFStatLog (LALStatus *stat, char *argv[])
       len += strlen(uvar_outputLabel);
 
     if ( (fname = (CHAR*)LALCalloc(len,1)) == NULL) {
-      ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+      ABORT (stat, COMPUTEFSTAT_EMEM, COMPUTEFSTAT_MSGEMEM);
     }
     strcpy (fname, head);
     if (uvar_outputLabel)
@@ -2745,7 +2745,7 @@ WriteFStatLog (LALStatus *stat, char *argv[])
     if ( (fplog = fopen(fname, "wb" )) == NULL) {
       LogPrintf (LOG_CRITICAL, "Failed to open log-file '%f' for writing.\n\n", fname);
       LALFree (fname);
-      ABORT (stat, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+      ABORT (stat, COMPUTEFSTAT_ESYS, COMPUTEFSTAT_MSGESYS);
     }
 
     /* write out a log describing the complete user-input (in cfg-file format) */
@@ -3141,13 +3141,13 @@ EstimateFLines(LALStatus *stat)
 #ifdef FILE_FTXT
   /*  file contains freq, PSD, noise floor */
   if( (outfile = fopen("F.txt","wb")) == NULL) {
-    ABORT (stat, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+    ABORT (stat, COMPUTEFSTAT_ESYS, COMPUTEFSTAT_MSGESYS);
   }
 #endif
   /*  file contanis Freq, PSD, noise floor,lines */
 #ifdef FILE_FLINES  
   if( (outfile1 = fopen("FLines.txt","wb")) == NULL) {
-    ABORT (stat, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+    ABORT (stat, COMPUTEFSTAT_ESYS, COMPUTEFSTAT_MSGESYS);
   }
 #endif
 
@@ -3167,15 +3167,15 @@ EstimateFLines(LALStatus *stat)
   /*   j=EstimateFloor(F1, windowSize, FloorF1); */
  
   if ( (outliers = (Outliers *)LALCalloc(1, sizeof(Outliers))) == NULL) {
-    ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+    ABORT (stat, COMPUTEFSTAT_EMEM, COMPUTEFSTAT_MSGEMEM);
   }
   outliers->Noutliers=0;
 
   if ( (outliersParams = (OutliersParams *)LALCalloc(1,sizeof(OutliersParams))) == NULL) {
-    ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+    ABORT (stat, COMPUTEFSTAT_EMEM, COMPUTEFSTAT_MSGEMEM);
   }
   if ( (outliersInput = (OutliersInput *)LALCalloc(1,sizeof(OutliersInput))) == NULL) {
-    ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+    ABORT (stat, COMPUTEFSTAT_EMEM, COMPUTEFSTAT_MSGEMEM);
   }
   
   outliersParams->Thr=THR/(2.0*medianbias);
@@ -3186,7 +3186,7 @@ EstimateFLines(LALStatus *stat)
 
   /*find values of F above THR and populate outliers with them */
   if (ComputeOutliers(outliersInput, outliersParams, outliers)) {
-    ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+    ABORT (stat, COMPUTEFSTAT_EMEM, COMPUTEFSTAT_MSGEMEM);
   }
 
   /*if no outliers were found clean and exit */
@@ -3227,11 +3227,11 @@ EstimateFLines(LALStatus *stat)
 
    /* if outliers are found get ready to identify clusters of outliers*/
    if ( (SpClParams = (ClustersParams*)LALCalloc(1,sizeof(ClustersParams))) == NULL) {
-     ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+     ABORT (stat, COMPUTEFSTAT_EMEM, COMPUTEFSTAT_MSGEMEM);
    }
    
    if ( (clustersInput = (ClustersInput *)LALCalloc(1,sizeof(ClustersInput))) == NULL) {
-     ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+     ABORT (stat, COMPUTEFSTAT_EMEM, COMPUTEFSTAT_MSGEMEM);
    }
       
    SpClParams->wings=wings;
@@ -3336,10 +3336,10 @@ NormaliseSFTDataRngMdn(LALStatus *stat, INT4 windowSize)
   TRY ( LALDCreateVector(stat->statusPtr, &RngMdnSp, (UINT4)nbins), stat);
 
   if( (N = (REAL8 *) LALCalloc(nbins,sizeof(REAL8))) == NULL) {
-    ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+    ABORT (stat, COMPUTEFSTAT_EMEM, COMPUTEFSTAT_MSGEMEM);
   }
   if( (Sp1 = (REAL8 *) LALCalloc(nbins,sizeof(REAL8))) == NULL) {
-    ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+    ABORT (stat, COMPUTEFSTAT_EMEM, COMPUTEFSTAT_MSGEMEM);
   }
 
   /* loop over each SFTs */
@@ -3406,7 +3406,7 @@ NormaliseSFTDataRngMdn(LALStatus *stat, INT4 windowSize)
 
 #ifdef FILE_SPRNG  
   if( (outfile = fopen("SpRng.txt","wb")) == NULL) {
-    ABORT (stat, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+    ABORT (stat, COMPUTEFSTAT_ESYS, COMPUTEFSTAT_MSGESYS);
   } 
 
 
@@ -3876,10 +3876,10 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long
 #endif
  
   INITSTATUS( stat, "getCheckpointCounters", rcsid );
-  ASSERT ( fstat_fname, stat, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  ASSERT ( ckpfn, stat, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  ASSERT ( loopcounter, stat, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  ASSERT ( bytecounter, stat, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT ( fstat_fname, stat, COMPUTEFSTAT_ENULL, COMPUTEFSTAT_MSGENULL);
+  ASSERT ( ckpfn, stat, COMPUTEFSTAT_ENULL, COMPUTEFSTAT_MSGENULL);
+  ASSERT ( loopcounter, stat, COMPUTEFSTAT_ENULL, COMPUTEFSTAT_MSGENULL);
+  ASSERT ( bytecounter, stat, COMPUTEFSTAT_ENULL, COMPUTEFSTAT_MSGENULL);
 
   /* if anything goes wrong in here: start main-loop from beginning  */
   *loopcounter = 0;     
