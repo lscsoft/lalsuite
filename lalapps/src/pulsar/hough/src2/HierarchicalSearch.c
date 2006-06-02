@@ -110,7 +110,7 @@
 
 
 
-#include"./DriveHoughFStat.h"
+#include"./HierarchicalSearch.h"
 
 RCSID( "$Id$");
 
@@ -127,7 +127,6 @@ BOOLEAN uvar_printStats; /**< global variable for calculating Hough map stats */
 #define EARTHEPHEMERIS "../src/earth00-04.dat" /**< Default location of earth ephemeris */
 #define SUNEPHEMERIS "../src/sun00-04.dat"   /**< Default location of sun ephemeris */
 #define NSTACKS 10    /**< Default number of stacks */
-#define IFO 2         /**<  Default detector, 1:GEO, 2:LLO, 3:LHO  */
 #define BLOCKSRNGMED 101 /**< Default running median window size */
 #define FSTART 255.0   /**< Default Start search frequency */
 
@@ -178,7 +177,7 @@ int main( int argc, char *argv[]) {
   /* duration of each stack */
   REAL8 tObs1, tStart1, tEnd1;
   REAL8 tObs2, tStart2, tEnd2;
-  REAL8 *tStack1, *tStack2, tStackAvg1, tStackAvg2;
+  REAL8 tStack1, tStack2;
 
   /* leap second for LALBarycenter */
   LALLeapSecFormatAndAcc lsfas = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
@@ -271,7 +270,6 @@ int main( int argc, char *argv[]) {
 
   INT4 uvar_nCand1; /* number of candidates to be followed up from first stage */
   INT4 uvar_nCand2; /* number of candidates from second stage */
-  INT4 uvar_ifo1, uvar_ifo2; 
   INT4 uvar_blocksRngMed;
   INT4 uvar_nStacks1, uvar_nStacks2;
   INT4 uvar_Dterms;
@@ -287,6 +285,10 @@ int main( int argc, char *argv[]) {
   CHAR *uvar_fnameout=NULL;
   CHAR *uvar_skyGridFile=NULL;
   CHAR *uvar_skyRegion=NULL;
+
+  REAL8Vector refTime_fkdot, startTime_fkdot;
+  REAL8Vector refTime_fkdotBand, startTime_fkdotBand;
+  LALPulsarSpinRange refTime_spinRange, startTime_spinRange;
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
@@ -315,8 +317,6 @@ int main( int argc, char *argv[]) {
   uvar_fdotBand = DFDOT;
   uvar_fStart = FSTART;
   uvar_fBand = FBAND;
-  uvar_ifo1 = IFO;
-  uvar_ifo2 = IFO;
   uvar_blocksRngMed = BLOCKSRNGMED;
   uvar_nfSize = NFSIZE;
   uvar_FstatPeakSelect = FSTATTHRESHOLD;
@@ -328,7 +328,6 @@ int main( int argc, char *argv[]) {
   uvar_gridType = GRID_METRIC;
   uvar_metricMismatch1 = uvar_metricMismatch2 = MISMATCH;
   uvar_reallocBlock = 5000;
-
 
   uvar_skyGridFile = NULL;
 
@@ -355,8 +354,6 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "log",              0,  UVAR_OPTIONAL, "Write log file",                                    &uvar_log),             &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "chkPoint",         0,  UVAR_OPTIONAL, "For checkpointing (disabled)",                      &uvar_chkPoint),        &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "followUp",         0,  UVAR_OPTIONAL, "Follow up 1st stage candidates?",                   &uvar_followUp),        &status);  
-  LAL_CALL( LALRegisterINTUserVar(    &status, "ifo1",            'i', UVAR_OPTIONAL, "Detector GEO(1) LLO(2) LHO(3)",                     &uvar_ifo1 ),           &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "ifo2",             0,  UVAR_OPTIONAL, "Detector for follow up stage",                      &uvar_ifo2 ),           &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir1",          0,  UVAR_OPTIONAL, "SFT Directory for 1st stage",                       &uvar_sftDir1),         &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir2",          0,  UVAR_OPTIONAL, "SFT Directory for 2nd stage",                       &uvar_sftDir2),         &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyRegion",	   0,  UVAR_OPTIONAL, "Specify sky-region by polygon (or use 'allsky')",   &uvar_skyRegion),       &status);
@@ -384,13 +381,15 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",     0,  UVAR_OPTIONAL, "RngMed block size",                                 &uvar_blocksRngMed),    &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris",  'E', UVAR_OPTIONAL, "Earth Ephemeris file",                              &uvar_earthEphemeris),  &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris",    'S', UVAR_OPTIONAL, "Sun Ephemeris file",                                &uvar_sunEphemeris),    &status);
+
+  /* developer user variables */
   LAL_CALL( LALRegisterINTUserVar (   &status, "reallocBlock",     0,  UVAR_DEVELOPER,"Blocks to realloc for Fstat output if necessary",   &uvar_reallocBlock),    &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "SSBprecision",	   0,  UVAR_DEVELOPER,"Precision for SSB transform.",                      &uvar_SSBprecision),    &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "nfSize",           0,  UVAR_DEVELOPER,"No.of LUTs to keep in memory",                      &uvar_nfSize),          &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printMaps",        0,  UVAR_DEVELOPER,"Print Hough maps",                                  &uvar_printMaps),       &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printStats",       0,  UVAR_DEVELOPER,"Print Hough map statistics",                        &uvar_printStats),      &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printFstat1",      0,  UVAR_DEVELOPER,"Print 1st stage Fstat vectors ",                    &uvar_printFstat1),     &status);  
-  LAL_CALL( LALRegisterINTUserVar(    &status, "Dterms",           0,  UVAR_DEVELOPER,"For Dirichlet Kernel approx.",                      &uvar_Dterms ),         &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "Dterms",           0,  UVAR_DEVELOPER,"No. of terms to keep in  Dirichlet Kernel approx.", &uvar_Dterms ),         &status);
 
 
 
@@ -430,10 +429,28 @@ int main( int argc, char *argv[]) {
   if ( uvar_nCand2 <= 0 )
     uvar_followUp = FALSE;
 
+  /* copy spin variables to vector */
+  refTime_fkdot.length = 2; /* frequency and spindown */
+  refTime_fkdotBand.length = 2; /* frequency and spindown */
+  refTime_fkdot.data = (REAL8 *)LALCalloc(1, 2*sizeof(REAL8));
+  refTime_fkdotBand.data = (REAL8 *)LALCalloc(1, 2*sizeof(REAL8));
+  for (j = 0; j < 2; j++)  
+    {
+      refTime_fkdot.data[0] = uvar_fStart;
+      refTime_fkdot.data[1] = uvar_fdot;
+      refTime_fkdotBand.data[0] = uvar_fBand;
+      refTime_fkdotBand.data[1] = uvar_fdotBand;
+    }
+
+  /* allocate memory for another vetor of spin ranges (at start time) */
+  startTime_fkdot.length = 2;
+  startTime_fkdotBand.length = 2;
+  startTime_fkdot.data = (REAL8 *)LALCalloc(1, 2*sizeof(REAL8));
+  startTime_fkdotBand.data = (REAL8 *)LALCalloc(1, 2*sizeof(REAL8));
+
   /* write the log file */
   if ( uvar_log ) 
     {
-
       fnamelog = (CHAR *)LALMalloc( 512*sizeof(CHAR));
       strcpy(fnamelog, uvar_fnameout);
       strcat(fnamelog, ".log");
@@ -485,6 +502,20 @@ int main( int argc, char *argv[]) {
 	}
     }
 
+  /* initialize ephemeris info */ 
+  edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
+  (*edat).ephiles.earthEphemeris = uvar_earthEphemeris;
+  (*edat).ephiles.sunEphemeris = uvar_sunEphemeris;
+
+  /* Leap seconds for the first timestamp */   
+  LAL_CALL( LALLeapSecs(&status, &tmpLeap, startTsft1->data, &lsfas), &status);
+  (*edat).leap = (INT2)tmpLeap;
+  
+  /* read in ephemeris data */
+  LAL_CALL( LALInitBarycenter( &status, edat), &status);
+
+
+
 
   /*------------- read sfts ----------*/
   {
@@ -492,7 +523,6 @@ int main( int argc, char *argv[]) {
     SFTCatalog *catalog1 = NULL;
     SFTConstraints *constraints1 = NULL;
     CHAR *tempDir;
-
 
     /* get sft catalog */
     tempDir = (CHAR *)LALMalloc(512*sizeof(CHAR));
@@ -520,10 +550,19 @@ int main( int argc, char *argv[]) {
     else
       refTime = tStart1;
 
-    LAL_CALL ( LALFloatToGPS ( &status, &refTimeGPS, &refTime), &status);
-
     /* get sft catalogs for each stack */
     LAL_CALL( SetUpStacks( &status, &catalogSeq1, catalog1, uvar_nStacks1), &status);
+
+    /* get frequency band at start time of sfts */
+    LAL_CALL ( LALFloatToGPS ( &status, &refTimeGPS, &refTime), &status);
+    refTime_spinRange.epoch = refTimeGPS;
+    refTime_spinRange.fkdot = &refTime_fkdot;
+    refTime_spinRange.fkdotBand = &refTime_fkdotBand;
+
+    startTime_spinRange.fkdot = &startTime_fkdot;
+    startTime_spinRange.fkdotBand = &startTime_fkdotBand;    
+
+    LAL_CALL( LALExtrapolatePulsarSpinRange( &status, &startTime_spinRange, startTsft1->data[0], &refTime_spinRange), &status); 
 
     /* free memory -- now we don't need the original catalog */
     LALFree(tempDir);
@@ -531,25 +570,12 @@ int main( int argc, char *argv[]) {
     
   }
 
-
-  /* initialize ephemeris info */ 
-  edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
-  (*edat).ephiles.earthEphemeris = uvar_earthEphemeris;
-  (*edat).ephiles.sunEphemeris = uvar_sunEphemeris;
-
-  /* Leap seconds for the first timestamp */   
-  LAL_CALL( LALLeapSecs(&status, &tmpLeap, startTsft1->data, &lsfas), &status);
-  (*edat).leap = (INT2)tmpLeap;
-  
-  /* read in ephemeris data */
-  LAL_CALL( LALInitBarycenter( &status, edat), &status);
-
-
   
 
   /*------------- set up 1st stage stacks -----------------*/
   {
     REAL8 doppWings, fMin, fMax, f0;
+    REAL8 startTime_freqLo, startTime_freqHi;
 
     /* set wings of sfts to be read */
     /* the wings must be enough for the Doppler shift and extra bins
@@ -557,13 +583,13 @@ int main( int argc, char *argv[]) {
        In addition, it must also include wings for the spindown correcting 
        for the reference time -- this is not done yet */
     /* calculate Doppler wings at the highest frequency */
-    doppWings = (uvar_fStart + uvar_fBand) * VTOT;    
-    fMin = uvar_fStart - doppWings - (uvar_blocksRngMed + uvar_Dterms)*deltaF1; 
-    fMax = uvar_fStart + uvar_fBand + (doppWings + uvar_blocksRngMed + uvar_Dterms)*deltaF1; 
+    startTime_freqLo = startTime_fkdot.data[0]; /* lowest search freq at start time */
+    startTime_freqHi = startTime_freqLo + startTime_fkdotBand.data[0]; /* highest search freq. at start time*/
 
-    /* set up vector of stack durations */
-    tStack1 = NULL;
-    tStack1 = (REAL8 *)LALMalloc( uvar_nStacks1 * sizeof(REAL8));
+    doppWings = startTime_freqHi * VTOT;    
+    fMin = startTime_freqLo - doppWings - (uvar_blocksRngMed + uvar_Dterms)*deltaF1; 
+    fMax = startTime_freqHi + (doppWings + uvar_blocksRngMed + uvar_Dterms)*deltaF1; 
+
     
     /* set up vector of number of sfts in each stack */
     mCohSft1 = NULL;
@@ -594,14 +620,13 @@ int main( int argc, char *argv[]) {
 	/* get SFT timestamps in stack */
 	LAL_CALL( LALSFTtimestampsFromCatalog(  &status, &startTsftStack, catalogSeq1.data + k ), &status);  	
 
-	/* total duration of stack = last timestamp - first timestamp + timeBase*/
-	tStack1[nStacks1] = XLALGPSDiff( startTsftStack->data + startTsftStack->length - 1, startTsftStack->data ) + timebase1;
 	
 	/* start time of stack */
 	startTstack1.data[nStacks1] = startTsftStack->data[0];
 	
 	/* mid time of stack */          
-	LAL_CALL( LALAddFloatToGPS( &status, midTstack1.data + nStacks1, startTstack1.data + nStacks1,  0.5 * tStack1[nStacks1] ), &status);
+	tStack1 = XLALGPSDiff( startTsftStack->data + startTsftStack->length - 1, startTsftStack->data ) + timebase1;
+	LAL_CALL( LALAddFloatToGPS( &status, midTstack1.data + nStacks1, startTstack1.data + nStacks1,  0.5 * tStack1 ), &status);
 
 	/* load the sfts */
 	LAL_CALL( LALLoadMultiSFTs ( &status, stackMultiSFT1.data + nStacks1,  catalogSeq1.data + k, fMin, fMax ), &status);
@@ -613,20 +638,12 @@ int main( int argc, char *argv[]) {
  
 
     /* use stacks info to calculate search frequencies */
-    /* Fstat is calculated at the frequency resolutions of the stacks
-       here the stacks may be of different durations so we take the average
-       This is valid if the stack durations are not very different which 
-       will, hopefully, be true */
-    tStackAvg1 = 0.0;
-    for (k=0; k<nStacks1; k++)
-      tStackAvg1 += tStack1[k];
-    tStackAvg1 /= nStacks1;
-    deltaFstack1 = 1.0/tStackAvg1;
+
+    /* total duration of stack = last timestamp - first timestamp + timeBase*/
+    deltaFstack1 = 1.0/tStack1;
     
     /* realloc if nStacks1 != uvar_nStacks1 */
     if ( uvar_nStacks1 > nStacks1 ) {
-      
-      tStack1 = (REAL8 *)LALRealloc( tStack1, nStacks1 * sizeof(REAL8));
       
       mCohSft1 = (INT4 *)LALRealloc( mCohSft1, nStacks1 * sizeof(INT4));
       
@@ -772,8 +789,6 @@ int main( int argc, char *argv[]) {
       fMax = uvar_fStart + uvar_fBand + (doppWings + uvar_blocksRngMed + uvar_Dterms)*deltaF2; 
       
       /* set up vector of stack durations */
-      tStack2 = NULL;
-      tStack2 = (REAL8 *)LALMalloc( uvar_nStacks2 * sizeof(REAL8));
       
       /* set up vector of number of sfts in each stack */
       mCohSft2 = NULL;
@@ -805,13 +820,13 @@ int main( int argc, char *argv[]) {
 	  LAL_CALL( LALSFTtimestampsFromCatalog(  &status, &startTsftStack, catalogSeq2.data + k ), &status);  	
 	  
 	  /* total duration of stack = last timestamp - first timestamp + timeBase*/
-	  tStack2[nStacks2] = XLALGPSDiff( startTsftStack->data + startTsftStack->length - 2, startTsftStack->data ) + timebase2;
+	  tStack2 = XLALGPSDiff( startTsftStack->data + startTsftStack->length - 2, startTsftStack->data ) + timebase2;
 	
 	  /* start time of stack */
 	  startTstack2.data[nStacks2] = startTsftStack->data[0];
 	  
 	  /* mid time of stack */          
-	  LAL_CALL( LALAddFloatToGPS( &status, midTstack2.data + nStacks2, startTstack2.data + nStacks2,  0.5 * tStack2[nStacks2] ), &status);
+	  LAL_CALL( LALAddFloatToGPS( &status, midTstack2.data + nStacks2, startTstack2.data + nStacks2,  0.5 * tStack2 ), &status);
 	  
 	  /* load the sfts */
 	  LAL_CALL( LALLoadMultiSFTs ( &status, stackMultiSFT2.data + nStacks2,  catalogSeq2.data + k, fMin, fMax ), &status);
@@ -823,16 +838,11 @@ int main( int argc, char *argv[]) {
       
            
       /* use stacks info to calculate search frequencies */
-      tStackAvg2 = 0.0;
-      for (k=0; k<nStacks2; k++)
-	tStackAvg2 += tStack2[k];
-      tStackAvg2 /= nStacks2;
-      deltaFstack2 = 1.0/tStackAvg2;
+      deltaFstack2 = 1.0/tStack2;
       
       /* realloc if nStacks1 != uvar_nStacks1 */
       if ( uvar_nStacks2 > nStacks2 ) {
-	
-	tStack2 = (REAL8 *)LALRealloc( tStack2, nStacks2 * sizeof(REAL8));
+       
 	
 	mCohSft2 = (INT4 *)LALRealloc( mCohSft2, nStacks2 * sizeof(INT4));
 	
@@ -859,7 +869,7 @@ int main( int argc, char *argv[]) {
   /* set up parameters for first stage Fstat calculation */
   FstatPar1.nStacks = nStacks1;
   FstatPar1.tsStack = &midTstack1;
-  FstatPar1.tStackAvg = tStackAvg1;
+  FstatPar1.tStackAvg = tStack1;
   FstatPar1.fBand = uvar_fBand;
   FstatPar1.fStart = uvar_fStart;
   FstatPar1.nfSizeCylinder = uvar_nfSize;
@@ -877,8 +887,8 @@ int main( int argc, char *argv[]) {
   /* set up the Hough parameters */
   /* start and end bin for calculating hough map */
   /* these are just what the user specified */
-  binsHough = floor( tStackAvg1 * uvar_fBand );
-  fHoughBinIni = floor( tStackAvg1 * uvar_fStart + 0.5);
+  binsHough = floor( tStack1 * uvar_fBand );
+  fHoughBinIni = floor( tStack1 * uvar_fStart + 0.5);
   fHoughBinFin = fHoughBinIni + binsHough - 1;
   if ( ! LALUserVarWasSet(&uvar_houghThr))
     uvar_houghThr = 0.65 * nStacks1;
@@ -911,7 +921,7 @@ int main( int argc, char *argv[]) {
   scanInit1.metricType = uvar_metricType;
   scanInit1.metricMismatch = uvar_metricMismatch1;
   scanInit1.projectMetric = TRUE;
-  scanInit1.obsDuration = tStackAvg1;
+  scanInit1.obsDuration = tStack1;
   scanInit1.obsBegin = midTstack1.data[ nStacks1/2 ];
   scanInit1.Detector = &detector1;
   scanInit1.ephemeris = edat;		/* used by Ephemeris-based metric */
@@ -933,7 +943,7 @@ int main( int argc, char *argv[]) {
       /* fill up parameters for Fstat calculation */
       FstatPar2.nStacks = nStacks2;
       FstatPar2.tsStack = &midTstack2;
-      FstatPar2.tStackAvg = tStackAvg2;
+      FstatPar2.tStackAvg = tStack2;
       FstatPar2.nfSizeCylinder = uvar_nfSize;
       FstatPar2.mCohSft = mCohSft2;
       FstatPar2.refTime = refTime;
@@ -960,7 +970,7 @@ int main( int argc, char *argv[]) {
       scanInit2.metricType = uvar_metricType;
       scanInit2.metricMismatch = uvar_metricMismatch2;
       scanInit2.projectMetric = TRUE;
-      scanInit2.obsDuration = tStackAvg2;
+      scanInit2.obsDuration = tStack2;
       scanInit2.obsBegin = midTstack2.data[ nStacks1/2 ];
       scanInit2.Detector = &detector2;
       scanInit2.ephemeris = edat;		/* used by Ephemeris-based metric */
@@ -1216,7 +1226,6 @@ int main( int argc, char *argv[]) {
 
   if ( uvar_followUp )
     {
-      LALFree(tStack2);
       LALFree(mCohSft2);
       LAL_CALL (LALDDestroyVector (&status, &(FstatPar2.fdot)), &status); 
       LALFree(midTstack2.data);
@@ -1245,7 +1254,6 @@ int main( int argc, char *argv[]) {
   LALFree(mCohSft1);
   LALFree(midTstack1.data);
   LALFree(startTstack1.data);
-  LALFree(tStack1);
   LAL_CALL (LALDDestroyVector (&status, &(houghPar.fdot)), &status);
   LAL_CALL (LALDDestroyVector (&status, &(FstatPar1.fdot)), &status); 
 
@@ -1270,6 +1278,11 @@ int main( int argc, char *argv[]) {
  
   /* free candidates */
   LALFree(houghCand1.list);
+
+  LALFree(refTime_fkdot.data);
+  LALFree(refTime_fkdotBand.data);
+  LALFree(startTime_fkdot.data);
+  LALFree(startTime_fkdotBand.data);
 
   LAL_CALL (LALDestroyUserVars(&status), &status);  
 

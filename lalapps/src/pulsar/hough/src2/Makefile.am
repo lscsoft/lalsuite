@@ -8,7 +8,7 @@ LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 ## not usable before automake-1.6:
 ## AM_LDFLAGS = -all-static
 
-bin_PROGRAMS = HoughValidateAM HoughMismatch DriveHoughFStat
+bin_PROGRAMS = HoughValidateAM HoughMismatch HierarchicalSearch
 
 HoughValidateAM_SOURCES = HoughValidateAM.c ../src/MCInjectHoughS2.h \
 	                  ../src/SFTbin.h ../src/SFTbin.c \
@@ -18,7 +18,8 @@ HoughMismatch_SOURCES = HoughMismatch.c ../src/MCInjectHoughS2.h \
 			../src/SFTbin.h ../src/SFTbin.c \
 			../src/DriveHoughColor.h ../src/PeakSelect.h \
 			../src/PeakSelect.c
-DriveHoughFStat_SOURCES = DriveHoughFStat.c DriveHoughFStat.h \
+
+HierarchicalSearch_SOURCES = HierarchicalSearch.c HierarchicalSearch.h \
 			  ../../FDS_isolated/DopplerScan.c ../../FDS_isolated/DopplerScan.h \
 			  ../../FDS_isolated/LogPrintf.c ../../FDS_isolated/LogPrintf.h	\
 			  ../../FDS_isolated/FstatToplist.c ../../FDS_isolated/FstatToplist.h \
