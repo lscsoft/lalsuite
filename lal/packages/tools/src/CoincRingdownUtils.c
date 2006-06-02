@@ -44,8 +44,8 @@ NRCSID( COINCRINGDOWNUTILSC, "$Id$" );
 \vspace{0.1in}
 \input{CoincRingdownUtilsCP}
 \idx{LALCreateTwoIFOCoincList()}
-\idx{LALCreateNIFOCoincList()}
-\idx{LALRemoveRepeatedCoincs()}
+\idx{LALCreateNIFORingdownCoincList()}
+\idx{LALRemoveRepeatedRingdownCoincs()}
 \idx{LALFreeCoincRingdown()}
 \idx{XLALFreeCoincRingdown()}
 \idx{LALAddSnglRingdownToCoinc()}
@@ -67,18 +67,18 @@ to add the single inspirals to the coinc.  The function returns
 \texttt{coincOutput} which is a pointer to the head of a linked list of
 \texttt{CoincInspiralTable}s.
 
-\texttt{LALCreateNIFOCoincList()} takes linked list of
+\texttt{LALCreateNIFORingdownCoincList()} takes linked list of
 \texttt{CoincInspiralTable}s, assumed to contain (N-1) ifo coincidences and
 creates all N ifo coincidences.  Both the input and output list of
 \texttt{CoincInspiralTable}s are passed as \texttt{coincHead}.  
 
-\texttt{LALRemoveRepeatedCoincs()} will remove any lower order coincidences 
+\texttt{LALRemoveRepeatedRingdownCoincs()} will remove any lower order coincidences 
 if they are contained in a higher order coincidence.  For example, if an H1-L1
 double coincident trigger is also part of an H1-H2-L1 triple coincident 
 trigger, the double coincident trigger will be removed.  The head of the list 
 of coincident triggers is passed and returned as \texttt{coincHead}.
 
-\texttt{XLALFreeCoincInspiral()} \texttt{LALFreeCoincInspiral()} and  free the
+\texttt{XLALFreeCoincRingdown()} \texttt{LALFreeCoincRingdown()} and  free the
 memory associated to the \texttt{CoincInspiralTable} pointed to by
 \texttt{coincPtr}.  This entails freeing the \texttt{CoincInspiralTable} as
 well as any \texttt{eventId}s which point to the coinc.
@@ -262,10 +262,9 @@ LALCreateTwoIFORingdownCoincList(
   RETURN (status);
 } 
 
-#if 0
 /* <lalVerbatim file="CoincRingdownUtilsCP"> */
 void
-LALCreateNIFOCoincList(
+LALCreateNIFORingdownCoincList(
     LALStatus                  *status,
     CoincRingdownTable        **coincHead,
     RingdownAccuracyList       *accuracyParams,
@@ -286,7 +285,7 @@ LALCreateNIFOCoincList(
   EventIDColumn                *thisID        = NULL;
 
 
-  INITSTATUS( status, "LALCreateNIFOCoincList", COINCRINGDOWNUTILSC );
+  INITSTATUS( status, "LALCreateNIFORingdownCoincList", COINCRINGDOWNUTILSC );
   ATTATCHSTATUSPTR( status );
 
   /* loop over all the coincidences in the list */
@@ -381,22 +380,22 @@ LALCreateNIFOCoincList(
 }
 
 void
-LALRemoveRepeatedCoincs(
+LALRemoveRepeatedRingdownCoincs(
     LALStatus                  *status,
-    CoincInspiralTable        **coincHead
+    CoincRingdownTable        **coincHead
     )
 {
   INT4                          removeThisCoinc  = 0;
   InterferometerNumber          ifoNumber  = LAL_UNKNOWN_IFO;
   InterferometerNumber          firstEntry = LAL_UNKNOWN_IFO;
-  CoincInspiralTable           *thisCoinc     = NULL;
-  CoincInspiralTable           *prevCoinc     = NULL;
-  CoincInspiralTable           *otherCoinc    = NULL;
+  CoincRingdownTable           *thisCoinc     = NULL;
+  CoincRingdownTable           *prevCoinc     = NULL;
+  CoincRingdownTable           *otherCoinc    = NULL;
   EventIDColumn                *eventIDHead   = NULL;
   EventIDColumn                *thisID        = NULL;
 
 
-  INITSTATUS( status, "LALRemoveRepeatedCoincs", COINCINSPIRALUTILSC );
+  INITSTATUS( status, "LALRemoveRepeatedRingdownCoincs", COINCRINGDOWNUTILSC );
   ATTATCHSTATUSPTR( status );
 
   /* loop over all the coincidences in the list */
@@ -404,10 +403,10 @@ LALRemoveRepeatedCoincs(
 
   while( thisCoinc )
   {
-    /* look up the first single inspiral */
+    /* look up the first single ringdown */
     for ( firstEntry = 0; firstEntry < LAL_NUM_IFO; firstEntry++)
     {
-      if ( thisCoinc->snglInspiral[firstEntry] )
+      if ( thisCoinc->snglRingdown[firstEntry] )
       {
         LALInfo( status, "Found the first entry in the coinc" );
         break;
@@ -415,7 +414,7 @@ LALRemoveRepeatedCoincs(
     }
 
     /* get the list of event IDs for this first entry */
-    eventIDHead = thisCoinc->snglInspiral[firstEntry]->event_id;
+    eventIDHead = thisCoinc->snglRingdown[firstEntry]->event_id;
 
     /* loop over the coincs that firstEntry is a member of and see if
      * thisCoinc is a subset of a higher order coinc */
@@ -424,7 +423,7 @@ LALRemoveRepeatedCoincs(
 
     for( thisID = eventIDHead; thisID; thisID = thisID->next )
     {
-      otherCoinc = thisID->coincInspiralTable;
+      otherCoinc = thisID->coincRingdownTable;
 
       if( otherCoinc->numIfos >= thisCoinc->numIfos &&
           otherCoinc != thisCoinc )
@@ -435,9 +434,9 @@ LALRemoveRepeatedCoincs(
         for( ifoNumber = firstEntry + 1; ifoNumber < LAL_NUM_IFO; 
             ifoNumber++ )
         {
-          if ( thisCoinc->snglInspiral[ifoNumber] && 
-              !(thisCoinc->snglInspiral[ifoNumber] == 
-                otherCoinc->snglInspiral[ifoNumber]) )
+          if ( thisCoinc->snglRingdown[ifoNumber] && 
+              !(thisCoinc->snglRingdown[ifoNumber] == 
+                otherCoinc->snglRingdown[ifoNumber]) )
           {
             LALInfo( status, "No Match");
             break;
@@ -458,13 +457,13 @@ LALRemoveRepeatedCoincs(
       if ( !prevCoinc )
       {
         *coincHead = thisCoinc->next;
-        LALFreeCoincInspiral( status->statusPtr, &thisCoinc );
+        LALFreeCoincRingdown( status->statusPtr, &thisCoinc );
         thisCoinc = *coincHead;
       }
       else 
       {
         prevCoinc->next = thisCoinc->next;
-        LALFreeCoincInspiral( status->statusPtr, &thisCoinc );
+        LALFreeCoincRingdown( status->statusPtr, &thisCoinc );
         thisCoinc = prevCoinc->next;
       }
     }
@@ -480,9 +479,7 @@ LALRemoveRepeatedCoincs(
   RETURN (status);
 
 }
-#endif
 
-#if 0
 void
 LALFreeCoincRingdown(
     LALStatus                  *status,
@@ -546,7 +543,6 @@ XLALFreeCoincRingdown(
   }
   LALFree(*coincPtr);
 }
-#endif
 
 /* <lalVerbatim file="CoincRingdownUtilsCP"> */
 void
@@ -629,7 +625,6 @@ LALAddSnglRingdownToCoinc(
   RETURN (status);
 }
 
-#if 0
 /* <lalVerbatim file="CoincRingdownUtilsCP"> */
 void
 LALSnglRingdownCoincTest(
@@ -682,7 +677,6 @@ LALSnglRingdownCoincTest(
   DETATCHSTATUSPTR (status);
   RETURN (status);
 }
-#endif
 
 
 /* <lalVerbatim file="CoincRingdownUtilsCP"> */
@@ -1059,7 +1053,7 @@ XLALRingdownDistanceCut(
 
     if( discardTrigger )
     {
-      XLALFreeCoincInspiral( &tmpCoinc );
+      XLALFreeCoincRingdown( &tmpCoinc );
     }
     else
     {
