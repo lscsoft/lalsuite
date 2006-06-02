@@ -233,6 +233,7 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 
 void SetUpStacks(LALStatus *status, 
 		 SFTCatalogSequence  *out,  
+		 REAL8 *tStack,
 		 SFTCatalog  *in,
 		 UINT4 nStacks);
 
