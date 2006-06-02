@@ -1377,6 +1377,32 @@ LALCreateTwoIFORingdownCoincList(
     );
 
 void
+LALCreateNIFORingdownCoincList(
+    LALStatus                  *status,
+    CoincRingdownTable        **coincHead,
+    RingdownAccuracyList       *accuracyParams,
+    INT4                        N
+    );
+
+void
+LALRemoveRepeatedRingdownCoincs(
+    LALStatus                  *status,
+    CoincRingdownTable        **coincHead
+    );
+
+void
+LALFreeCoincRingdown(
+    LALStatus                  *status,
+    CoincRingdownTable        **coincPtr
+    );
+
+void
+XLALFreeCoincRingdown(
+    CoincRingdownTable        **coincPtr
+    );
+
+
+void
 LALAddSnglRingdownToCoinc(
     LALStatus                  *status,
     CoincRingdownTable        **coincPtr,
