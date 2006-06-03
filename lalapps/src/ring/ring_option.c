@@ -72,9 +72,11 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
     { "inverse-spec-length",     required_argument, 0, 'T' },
     { "trig-start-time",         required_argument, 0, 'u' },
     { "trig-end-time",           required_argument, 0, 'U' },
+    { "block-duration",          required_argument, 0, 'w' },
+    { "pad-data",                required_argument, 0, 'W' },
     { 0, 0, 0, 0 }
   };
-  char args[] = "a:A:b:B:c:C:d:D:e:E:f:F:g:G:hi:I:m:o:O:p:q:Q:r:R:s:S:t:T:u:U:V";
+  char args[] = "a:A:b:B:c:C:d:D:e:E:f:F:g:G:hi:I:m:o:O:p:q:Q:r:R:s:S:t:T:u:U:Vw:W:";
   char *program = argv[0];
 
   /* set default values for parameters before parsing arguments */
@@ -200,6 +202,12 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
       case 'U': /* trig-end-time */
         params->trigEndTimeNS = (INT8) atol( optarg ) * 1000000000LL;
         break;
+      case 'w': /* duration */
+        params->duration = atof( optarg );
+        break;
+      case 'W': /* pad-data */
+        params->padData = atof( optarg );
+        break;
       case 'V': /* version */
         PRINT_VERSION( "ring" );
         exit( 0 );
@@ -299,8 +307,8 @@ int ring_params_sanity_check( struct ring_params *params )
     endTime   = epoch_to_ns( &params->endTime );
     sanity_check( startTime > 0 );
     sanity_check( endTime > startTime );
-    params->duration = 1e-9*(endTime - startTime);
     sanity_check( params->duration > 0 );
+    sanity_check( params->duration == (1e-9*(endTime - startTime)) );
 
     /* checks on size of data record */
     sanity_check( params->sampleRate > 0 );
@@ -442,6 +450,8 @@ static int ring_usage( const char *program )
 
   fprintf( stderr, "\ndata segmentation options:\n" );
   fprintf( stderr, "--segment-duration=duration  duration of a data segment (sec)\n" );
+  fprintf( stderr, "--block-duration=duration    duration of an analysis block (sec)\n" );
+  fprintf( stderr, "--pad-data=duration          input data padding (sec)\n" );
 
   fprintf( stderr, "\npower spectrum options:\n" );
   fprintf( stderr, "--white-spectrum           use uniform white power spectrum\n" );

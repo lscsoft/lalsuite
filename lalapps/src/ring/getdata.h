@@ -70,4 +70,8 @@ int highpass_REAL4TimeSeries( REAL4TimeSeries *series, REAL8 frequency );
 /* highpass filter double-precision time series */
 int highpass_REAL8TimeSeries( REAL8TimeSeries *series, REAL8 frequency );
 
+/* trim padding from data */
+int trimpad_REAL4TimeSeries( REAL4TimeSeries *series, REAL8 padData,
+    REAL8 sampleRate );
+
 #endif /* GETDATA_H */

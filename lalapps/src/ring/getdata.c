@@ -360,3 +360,28 @@ int highpass_REAL8TimeSeries( REAL8TimeSeries *series, REAL8 frequency )
   }
   return 0;
 }
+
+
+/* trim padding from data */
+int trimpad_REAL4TimeSeries( REAL4TimeSeries *series, REAL8 padData,
+    REAL8 sampleRate )
+{
+  char name[LALNameLength];
+  UINT4 padSamples = floor( padData * sampleRate + 0.5 );
+  UINT4 blockSamples = series->data->length - 2 * padSamples;
+
+  if ( padData > 0 )
+  {
+    memmove( channel->data->data, channel->data->data + padSamples, 
+        blockSamples * sizeof(REAL4) );
+    channel->data->data = (REAL4 *) LALRealloc( channel->data->data, 
+        blockSamples * sizeof(REAL4) );
+    channel->data->length = blockSamples;
+    channel->epoch = params->starTime;
+    strncpy( name, series->name, LALNameLength * sizeof(char) );
+    LALSnprintf( series->name, sizeof( series->name ),
+        "%s_STRIPPAD", name );
+  }
+
+  return 0;
+}

@@ -179,7 +179,15 @@ static REAL4FFTPlan *ring_get_fft_revplan( struct ring_params *params )
 /* gets the data, performs any injections, and conditions the data */
 static REAL4TimeSeries *ring_get_data( struct ring_params *params )
 {
+  int stripPad = 0;
   REAL4TimeSeries *channel = NULL;
+  LIGOTimeGPS frameDataStartTime;
+  REAL8 frameDataDuration;
+
+  /* compute the start and duration needed to pad data */
+  frameDataStartTime = params->startTime;
+  XLALAddFloatToGPS( frameDataStartTime, -1.0 * params->padData );
+  frameDataDuration = params->duration + 2.0 * params->padData;
 
   if ( params->getData )
   {
@@ -191,12 +199,20 @@ static REAL4TimeSeries *ring_get_data( struct ring_params *params )
       channel = get_zero_data( params->channel, &params->startTime,
           params->duration, params->strainData, params->sampleRate );
     else if ( params->geoData )
+    {
       channel = get_frame_data_dbl_convert( params->dataCache, params->channel,
-          &params->startTime, params->duration, params->strainData,
+          &params->frameDataStartTime, params->frameDataDuration, 
+          params->strainData,
           params->geoHighpassFrequency, params->geoScale );
+      stripPad = 1;
+    }
     else
+    {
       channel = get_frame_data( params->dataCache, params->channel,
-          &params->startTime, params->duration, params->strainData );
+          &params->frameDataStartTime, params->frameDataDuration, 
+          params->strainData );
+      stripPad = 1;
+    }
     if ( params->writeRawData ) /* write raw data */
       write_REAL4TimeSeries( channel );
     
@@ -204,9 +220,6 @@ static REAL4TimeSeries *ring_get_data( struct ring_params *params )
     if ( params->injectFile ) 
       inject_signal( channel, ring_inject, params->injectFile,
           params->calibCache, 1.0 ); 
-    
-    /*  inject_signal( channel, ring_inject, params->injectFile,
-                    params->calibCache, params->dynRangeFac ); */
     if ( params->writeRawData )
        write_REAL4TimeSeries( channel );  
         
@@ -218,6 +231,13 @@ static REAL4TimeSeries *ring_get_data( struct ring_params *params )
     highpass_REAL4TimeSeries( channel, params->highpassFrequency );
     if ( params->writeProcessedData ) /* write processed data */
       write_REAL4TimeSeries( channel );
+
+    if ( stripPad )
+    {
+      trimpad_REAL4TimeSeries( channel, params->padData, params->sampleRate );
+      if ( params->writeRawData ) /* write data with padding removed */
+        write_REAL4TimeSeries( channel );  
+    }
   }
   
   return channel;
