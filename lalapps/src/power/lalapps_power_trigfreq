@@ -98,7 +98,7 @@ def parse_command_line():
 #
 
 def element_filter(name, attrs):
-	return lsctables.IsTableProperties(lsctables.SnglBurstTable, name, attrs)
+	return lsctables.IsTableProperties(lsctables.SnglBurstTable, name, attrs) or lsctables.IsTableProperties(lsctables.ProcessTable, name, attrs) or lsctables.IsTableProperties(lsctables.SearchSummaryTable, name, attrs)
 
 
 class ContentHandler(ligolw.PartialLIGOLWContentHandler):
@@ -178,6 +178,16 @@ def bin_by_sidereal_time(rates, eventlist):
 		rates[event.ifo][segments.segment(start, stop)] = -event.confidence
 
 
+def normalize_sidereal_bins(rates, segmentlists):
+	for key, value in segmentlists.iteritems():
+		# 1000 bins per sidereal day
+		livetime = rate.Rate(segments.segment(0.0, 2.0 * math.pi), 2.0 * math.pi / 1000.0)
+		for seglist in segmentsUtils.Fold(value, date.gmst_days(value.extent())):
+			for seg in seglist:
+				livetime[seg] = 1.0
+		rates[key].array /= livetime.array
+
+
 #
 # =============================================================================
 #
@@ -212,12 +222,14 @@ def new_doc(fseries, rates):
 
 options, filenames = parse_command_line()
 
+segmentlists = segments.segmentlistdict()
 fseries = {}
 rates = {}
 for n, filename in enumerate(llwapp.sort_files_by_size(filenames, options.verbose)):
 	if options.verbose:
 		print >>sys.stderr, "%d/%d:" % (n + 1, len(filenames)),
 	doc = llwapp.load_filename(filename, options.verbose)
+	segmentlists |= llwapp.segmentlistdict_fromsearchsummary(doc, "power")
 	eventlist = llwapp.get_table(doc, lsctables.SnglBurstTable.tableName)
 	if options.verbose:
 		print >>sys.stderr, "transforming %d events..." % len(eventlist)
@@ -231,4 +243,5 @@ for n, filename in enumerate(llwapp.sort_files_by_size(filenames, options.verbos
 				fseries[key] = value
 	doc.unlink()
 
+normalize_sidereal_bins(rates, segmentlists)
 llwapp.write_filename(new_doc(fseries, rates), options.output, options.verbose)
