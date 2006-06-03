@@ -5,6 +5,7 @@
 #include <lal/LALStdio.h>
 #include <lal/AVFactories.h>
 #include <lal/Random.h>
+#include <lal/Date.h>
 #include <lal/ResampleTimeSeries.h>
 #include <lal/FrameStream.h>
 #include <lal/Units.h>
@@ -372,12 +373,12 @@ int trimpad_REAL4TimeSeries( REAL4TimeSeries *series, REAL8 padData,
 
   if ( padData > 0 )
   {
-    memmove( channel->data->data, channel->data->data + padSamples, 
+    memmove( series->data->data, series->data->data + padSamples, 
         blockSamples * sizeof(REAL4) );
-    channel->data->data = (REAL4 *) LALRealloc( channel->data->data, 
+    series->data->data = (REAL4 *) LALRealloc( series->data->data, 
         blockSamples * sizeof(REAL4) );
-    channel->data->length = blockSamples;
-    channel->epoch = params->starTime;
+    series->data->length = blockSamples;
+    XLALAddFloatToGPS( &series->epoch, padData );
     strncpy( name, series->name, LALNameLength * sizeof(char) );
     LALSnprintf( series->name, sizeof( series->name ),
         "%s_STRIPPAD", name );

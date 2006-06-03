@@ -7,6 +7,7 @@
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/AVFactories.h>
+#include <lal/Date.h>
 #include <lal/RealFFT.h>
 #include <lal/Ring.h>
 #include <lal/FrameStream.h>
@@ -181,13 +182,11 @@ static REAL4TimeSeries *ring_get_data( struct ring_params *params )
 {
   int stripPad = 0;
   REAL4TimeSeries *channel = NULL;
-  LIGOTimeGPS frameDataStartTime;
-  REAL8 frameDataDuration;
 
   /* compute the start and duration needed to pad data */
-  frameDataStartTime = params->startTime;
-  XLALAddFloatToGPS( frameDataStartTime, -1.0 * params->padData );
-  frameDataDuration = params->duration + 2.0 * params->padData;
+  params->frameDataStartTime = params->startTime;
+  XLALAddFloatToGPS( &params->frameDataStartTime, -1.0 * params->padData );
+  params->frameDataDuration = params->duration + 2.0 * params->padData;
 
   if ( params->getData )
   {

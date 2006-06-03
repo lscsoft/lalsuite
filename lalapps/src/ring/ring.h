@@ -16,6 +16,8 @@ struct ring_params {
   LIGOTimeGPS  endTime;
   INT8         trigStartTimeNS;
   INT8         trigEndTimeNS;
+  LIGOTimeGPS  frameDataStartTime;
+  REAL8        frameDataDuration;
   REAL8        duration;
   const char  *channel;
   const char  *calibCache;
