@@ -400,27 +400,18 @@ int innerC(/* input */
 
   int i,imin;
   double df,tmp;
-  dcomplex ctmp1,*cA;
 
-  cA = (dcomplex *) malloc(sizeof(dcomplex)*(N+1));
   df=(fmax)/N;
   imin=fmin/df;
 
-  for(i=0;i<=N;i++){
-    cA[i]=DConjg(A[i]);
-  }
+  tmp = (A[imin].r * (B[imin].r) + A[imin].i * (B[imin].i))/Sn[imin]/2.;
+  tmp+= (A[N].r * B[N].r + A[N].i * B[N].i)/Sn[N]/2.;
 
-  ctmp1=DCmul(cA[imin],B[imin]);
-  tmp=ctmp1.r/Sn[imin]/2;
-  ctmp1=DCmul(cA[N],B[N]);
-  tmp+=ctmp1.r/Sn[N]/2;
   for(i=imin+1;i<N;i++){
-    ctmp1=DCmul(cA[i],B[i]);
-    tmp+=ctmp1.r/Sn[i];
+    /* here we take the multiplication of conjuguate of A by B and keep only the real part.*/
+    tmp+= (A[i].r * B[i].r + A[i].i * B[i].i)/Sn[i];
   }
-  *result=tmp*4*df;
-  free(cA);
-
+  *result=tmp*df*4;
   return 0;
 }
 
@@ -479,7 +470,7 @@ int dA2dbeta(/* input */
 	     double *dhA2)
 {
   int i;
-  double inner,inner2,*dtA2;
+  double inner,inner2,*dtA2, norm;
 
   dtA2 = (double *) malloc(sizeof(double) *(N+1));
   innerR(N,dA2,hA1,Sn,fmin,fmax,&inner);
@@ -488,9 +479,10 @@ int dA2dbeta(/* input */
     dtA2[i]=dA2[i]-inner*hA1[i];
 
   innerR(N,tA2,dtA2,Sn,fmin,fmax,&inner2);
-
+  
+  norm = pow(normtA2, 3.);
   for(i=0;i<=N;i++)
-    dhA2[i]=dtA2[i]/normtA2-tA2[i]*inner2/pow(normtA2,3.);
+    dhA2[i]=dtA2[i]/normtA2-tA2[i]*inner2/norm;
 
   free(dtA2);
   return 0;
@@ -505,7 +497,7 @@ int dA3dbeta(/* input */
 {
   int i;
   double inner,dhA2A3,hA2A3,*dtA3;
-  double hA1dA3,hA2dA3;
+  double hA1dA3,hA2dA3, norm;
 
   dtA3 = (double *) malloc(sizeof(double)*(N+1));
 
@@ -522,9 +514,9 @@ int dA3dbeta(/* input */
       hA2A3*dhA2[i];
 
   innerR(N,tA3,dtA3,Sn,fmin,fmax,&inner);
-
+  norm = pow(normtA3, 3.);
   for(i=0;i<=N;i++)
-    dhA3[i]=dtA3[i]/normtA3-tA3[i]*inner/pow(normtA3,3.);
+    dhA3[i]=dtA3[i]/normtA3-tA3[i]*inner/norm;
 
   free(dtA3);
   return 0;
@@ -564,31 +556,31 @@ int calc_function_G(/* input */
 
   df=(fmax)/N;
   imin=fmin/df;
-
+  
   for(i=0;i<=N;i++){
-    A[1][i]=DComplex(A1[i],0);
-    A[2][i]=DComplex(A2[i],0);
-    A[3][i]=DComplex(A3[i],0);
-    A[4][i]=DComplex(0,A1[i]);
-    A[5][i]=DComplex(0,A2[i]);
-    A[6][i]=DComplex(0,A3[i]);
+    A[1][i]=DComplex(A1[i],0.);
+    A[2][i]=DComplex(A2[i],0.);
+    A[3][i]=DComplex(A3[i],0.);
+    A[4][i]=DComplex(0.,A1[i]);
+    A[5][i]=DComplex(0.,A2[i]);
+    A[6][i]=DComplex(0.,A3[i]);
   }
-
+ 
   for(j=1;j<=6;j++){
     for(i=0;i<=N;i++){
       freq=df*i;
-      ctmp=DComplex(0,2*PI*freq/DTRENORM);
+      ctmp=DComplex(0.,2*PI*freq/DTRENORM);
       u[j][0][i]=DCmul(ctmp,A[j][i]);
     }
   }
 
   for(i=0;i<=N;i++){
-    u[1][3][i]=DComplex(0,0);
-    u[2][3][i]=DComplex(dhA2db[i],0);
-    u[3][3][i]=DComplex(dhA3db[i],0);
-    u[4][3][i]=DComplex(0,0);
-    u[5][3][i]=DComplex(0,dhA2db[i]);
-    u[6][3][i]=DComplex(0,dhA3db[i]);
+    u[1][3][i]=DComplex(0.,0.);
+    u[2][3][i]=DComplex(dhA2db[i],0.);
+    u[3][3][i]=DComplex(dhA3db[i],0.);
+    u[4][3][i]=DComplex(0.,0.);
+    u[5][3][i]=DComplex(0.,dhA2db[i]);
+    u[6][3][i]=DComplex(0.,dhA3db[i]);
   }
 
   freq2 = (double *) malloc(sizeof(double)*(N+1));
@@ -597,9 +589,10 @@ int calc_function_G(/* input */
     freq=df*i;
     freq2[i]=pow(freq,-5./3.);
   }
+  
   for(j=1;j<=6;j++){
     for(i=0;i<=N;i++){
-      ctmp=DComplex(0,freq2[i]);
+      ctmp=DComplex(0.,freq2[i]);
       u[j][1][i]=DCmul(ctmp,A[j][i]);
     }
   }
@@ -611,7 +604,7 @@ int calc_function_G(/* input */
   }
   for(j=1;j<=6;j++){
     for(i=0;i<=N;i++){
-      ctmp=DComplex(0,freq2[i]);
+      ctmp=DComplex(0.,freq2[i]);
       u[j][2][i]=DCmul(ctmp,A[j][i]);
     }
   }
@@ -665,6 +658,7 @@ int functionG(/* input */
   double *costerm,*sinterm;
   double *dA2,*dA3,*dhA2,*dhA3;
   double normtA2,normtA3;
+  
 
   A1 = (double *) malloc(sizeof(double)*(N+1));
   A2 = (double *) malloc(sizeof(double)*(N+1));
@@ -831,7 +825,7 @@ int generate_metric_data(/* input */double MinMatch,
   int i,k,i2,j2;
   double x[4],maxr;
   double alpha[7],metric3[N_RANDOM+1][4][4],sum,rr[N_RANDOM+1],distance;
-  double fit_point[JJ+1][4];
+  double fit_point[JJ+1][4], norm;
   const gsl_rng_type * T;
   gsl_rng * r;
 	
@@ -855,6 +849,8 @@ int generate_metric_data(/* input */double MinMatch,
     }
     three_metric(funcG,alpha,metric3[k]);
   }
+ 
+  norm = sqrt(1-MinMatch);
 
   for(i=1;i<=JJ;i++){
     x[1]=fit_point[i][1];
@@ -873,9 +869,9 @@ int generate_metric_data(/* input */double MinMatch,
     for(k=2;k<=N_RANDOM;k++)
       if(rr[k]>maxr) maxr=rr[k];
 
-    cont_data[i][1]=x[1]/maxr*sqrt(1-MinMatch);
-    cont_data[i][2]=x[2]/maxr*sqrt(1-MinMatch);
-    cont_data[i][3]=x[3]/maxr*sqrt(1-MinMatch);
+    cont_data[i][1]=x[1]/maxr*norm;
+    cont_data[i][2]=x[2]/maxr*norm;
+    cont_data[i][3]=x[3]/maxr*norm;
   }
 	
 	gsl_rng_free (r);
@@ -1454,12 +1450,12 @@ int BCVspin_beta_placement(double MinMatch,double beta_min,double beta_max,
   tmp=beta_min;
   if(beta_min==0)
     tmp+=20;
-
+  
   BCVspin_metric(MinMatch,N,Sn,fmin,fmax,tmp,bcv2metric,0);
   BCVspin_spacing(MinMatch,bcv2metric,a,deltax);
 	
    int status;
-	int iter = 0, max_iter = 500;
+   int iter = 0, max_iter = 500;
 	
   const gsl_root_fsolver_type *T;
 	gsl_root_fsolver *s;
@@ -1493,22 +1489,24 @@ int BCVspin_beta_placement(double MinMatch,double beta_min,double beta_max,
 		tmplist[1]=r;
     }
 	
+
 	while (status == GSL_CONTINUE && iter < max_iter);
     gsl_root_fsolver_free (s);
 	
   for(i=2;i<=Nmax;i++){
+
     BCVspin_metric(MinMatch,N,Sn,fmin,fmax,tmplist[i-1],bcv2metric,0);
     BCVspin_spacing(MinMatch,bcv2metric,a,deltax);
 		
-		if(tmplist[i-1]+deltax[3]/2>beta_max) break;
+    if(tmplist[i-1]+deltax[3]/2>beta_max) break;
 			
-         r = 0.;
-		 x_lo = tmplist[i-1], x_hi = tmplist[i-1]+deltax[3]*1.5;
+    r = 0.;
+    x_lo = tmplist[i-1], x_hi = tmplist[i-1]+deltax[3]*1.5;
 		
-	struct func2_params params = {tmplist[i-1],N,Sn,fmin,fmax,MinMatch};
+    struct func2_params params = {tmplist[i-1],N,Sn,fmin,fmax,MinMatch};
 
-  F.function = &func2;
-  F.params = &params;
+    F.function = &func2;
+     F.params = &params;
 
   T = gsl_root_fsolver_brent;
   s = gsl_root_fsolver_alloc (T);
@@ -1521,8 +1519,8 @@ int BCVspin_beta_placement(double MinMatch,double beta_min,double beta_max,
       status = gsl_root_fsolver_iterate (s);
       r = gsl_root_fsolver_root (s);
       x_lo = gsl_root_fsolver_x_lower (s);
-	  x_hi = gsl_root_fsolver_x_upper (s);
-	  status = gsl_root_test_interval (x_lo, x_hi,0., 0.001);
+      x_hi = gsl_root_fsolver_x_upper (s);
+      status = gsl_root_test_interval (x_lo, x_hi,0., 0.001);
    
 			
       if (status == GSL_SUCCESS)
@@ -1705,13 +1703,6 @@ dcomplex DComplex(double re, double im)
 	return c;
 }
 
-dcomplex DConjg(dcomplex z)
-{
-	dcomplex c;
-	c.r=z.r;
-	c.i = -z.i;
-	return c;
-}
 
 dcomplex DCdiv(dcomplex a, dcomplex b)
 {
