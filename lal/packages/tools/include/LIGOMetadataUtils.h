@@ -1410,6 +1410,14 @@ LALAddSnglRingdownToCoinc(
     );
 
 void
+LALSnglRingdownCoincTest(
+    LALStatus                  *status,
+    CoincRingdownTable         *coincRingdown,
+    SnglRingdownTable          *snglRingdown,
+    RingdownAccuracyList       *accuracyParams
+    );
+
+void
 LALExtractSnglRingdownFromCoinc(
     LALStatus                  *status,
     SnglRingdownTable         **snglPtr,
