@@ -150,10 +150,6 @@ def fourier_transform(eventlist, options):
 	in the eventlist, and \(f_{k} = \delta f \cdot k\) for \(k \in [0,
 	nf)\).
 	"""
-	# for better numerical accuracy, process events with smallest
-	# confidence first.
-	eventlist.sort(lambda a, b: cmp(a.confidence, b.confidence))
-
 	fseries = {}
 	for n, event in enumerate(eventlist):
 		if not n % max(len(eventlist) / 1000, 200):
@@ -233,7 +229,14 @@ for n, filename in enumerate(llwapp.sort_files_by_size(filenames, options.verbos
 	eventlist = llwapp.get_table(doc, lsctables.SnglBurstTable.tableName)
 	if options.verbose:
 		print >>sys.stderr, "transforming %d events..." % len(eventlist)
+	# for better numerical accuracy, process events with smallest
+	# confidence first.
+	eventlist.sort(lambda a, b: cmp(a.confidence, b.confidence))
+
+	# bin by sidereal time
 	bin_by_sidereal_time(rates, eventlist)
+
+	# Fourier transform
 	if not options.only_rate:
 		newfseries = fourier_transform(eventlist, options)
 		for key, value in newfseries.iteritems():
