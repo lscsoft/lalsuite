@@ -1637,11 +1637,11 @@ Injections are produced with various strains, and one of several strain
 distributions can be selected with the \option{--strain-dist} parameter.
 Some strain distributions require a ``min'' and or a ``max'' parameter, for
 example in the case of logarithmically-distributed \(h_{\mathrm{rss}}\) one
-needs to specify the smallest and largest values of \(\log
+needs to specify the smallest and largest values of \(\log_{10}
 h_{\mathrm{rss}}\).  These parameters are set using the
-\option{--strain-scale-min} and \option{--strain-scale-max} parameters.
-The following table lists the strain distributions, and the meaning of the
-``min'' and ``max'' parameters for each.
+\option{--strain-scale-min} and \option{--strain-scale-max} command line
+arguments.  The following table lists the strain distributions, and the
+meaning of the ``min'' and ``max'' parameters for each.
 \begin{center}\begin{tabular}{p{3cm}ccc}
 \hline\hline
 Description & \option{--strain-dist} & \option{--strain-scale-min} &
@@ -1652,6 +1652,7 @@ Constant \(h_{\mathrm{rss}}\) & \texttt{consthrss} & \(h_{\mathrm{rss}}\) & n/a 
 Randomly select one of several preset values of \(h_{\mathrm{peak}}\) & \texttt{hpeakpresets} & n/a & n/a \\
 Uniformly-distributed \(\log_{10} h_{\mathrm{peak}}\) & \texttt{loghpeak} & \(\min \log_{10} h_{\mathrm{peak}}\) & \(\max \log_{10} h_{\mathrm{peak}}\) \\
 Uniformly-distributed \(\log_{10} h_{\mathrm{rss}}\) & \texttt{loghrss} & \(\min \log_{10} h_{\mathrm{rss}}\) & \(\max \log_{10} h_{\mathrm{rss}}\) \\
+Uniformly-distributed \(\log_{10} (h_{\mathrm{rss}} \Delta t)\) & \texttt{loghrss-t} & \(\min \log_{10} (h_{\mathrm{rss}} \Delta t)\) & \(\max \log_{10} (h_{\mathrm{rss}} \Delta t)\) \\
 \hline\hline
 \end{tabular}\end{center}
 
@@ -1677,18 +1678,6 @@ the file covers. The file is in the standard LIGO lightweight XML format
 containing a \texttt{sim\_burst} table that describes the injections.  This
 table is described in the LAL \texttt{tools} package under
 \texttt{LIGOMetadataTables.h} header.  
-
-The output is also written to an ascii file named in the following way:
-\begin{center}
-\begin{verbatim}
-        HLT-INJECTIONS_USERTAG_SEED-GPSSTART-DURATION.txt
-\end{verbatim}
-\end{center}
-where \verb$USERTAG$ is \parm{tag} as specfied on the command line,
-\verb$SEED$ is the  value  of  the random number seed chosen and
-\verb$GPSSTART$ and \verb$DURATION$ describes the GPS time interval that
-the file covers. The file is in the format agreed to for LIGO-TAMA
-simulations.  
 
 If a \option{--user-tag} is not specified on the command line, the
 \texttt{\_USERTAG} part of the filename will be omitted.
