@@ -234,7 +234,7 @@ static REAL4TimeSeries *ring_get_data( struct ring_params *params )
     if ( stripPad )
     {
       trimpad_REAL4TimeSeries( channel, params->padData, params->sampleRate );
-      if ( params->writeRawData ) /* write data with padding removed */
+      if ( params->writeProcessedData ) /* write data with padding removed */
         write_REAL4TimeSeries( channel );  
     }
   }
