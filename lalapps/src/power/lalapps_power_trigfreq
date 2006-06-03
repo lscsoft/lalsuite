@@ -64,25 +64,27 @@ def parse_command_line():
 	parser.add_option("-o", "--output", metavar = "filename", help = "write to filename (default = stdout)")
 	parser.add_option("--f-naught", metavar = "Hz", default = "0", help = "set lowest frequency bin (default = 0 Hz)")
 	parser.add_option("--t-naught", metavar = "GPS seconds", default = "0", help = "set origin of time coordinate (default = 0)")
+	parser.add_option("--only-rate", action = "store_true", help = "only compute trigger confidence rates")
 	parser.add_option("-v", "--verbose", action = "store_true", help = "be verbose")
 	options, filenames = parser.parse_args()
 
-	try:
-		options.n_f = int(options.n_f)
-	except Exception:
-		raise ValueError, "invalid or missing --n-f"
-	try:
-		options.delta_f = float(options.delta_f)
-	except Exception:
-		raise ValueError, "invalid or missing --delta-f"
-	try:
-		options.f_naught = float(options.f_naught)
-	except Exception:
-		raise ValueError, "invalid --f-naught"
-	try:
-		options.t_naught = date.LIGOTimeGPS(options.t_naught)
-	except Exception:
-		raise ValueError, "invalid --t-naught"
+	if not options.only_rate:
+		try:
+			options.n_f = int(options.n_f)
+		except Exception:
+			raise ValueError, "invalid or missing --n-f"
+		try:
+			options.delta_f = float(options.delta_f)
+		except Exception:
+			raise ValueError, "invalid or missing --delta-f"
+		try:
+			options.f_naught = float(options.f_naught)
+		except Exception:
+			raise ValueError, "invalid --f-naught"
+		try:
+			options.t_naught = date.LIGOTimeGPS(options.t_naught)
+		except Exception:
+			raise ValueError, "invalid --t-naught"
 
 	return options, (filenames or [None])
 
@@ -192,6 +194,10 @@ def new_doc(fseries, rates):
 		container.appendChild(ligolw.LIGO_LW())
 		container.childNodes[-1].appendChild(param.new_param("instrument", "lstring", key))
 		container.childNodes[-1].appendChild(array.from_array("sngl_burst:confidence_frequencies:array", value, ["Bin", "Hz Re(C_k) Im(C_k)"]))
+	for key, value in rates.iteritems():
+		container.appendChild(ligolw.LIGO_LW())
+		container.childNodes[-1].appendChild(param.new_param("instrument", "lstring", key))
+
 		container.childNodes[-1].appendChild(llwapp.pickle_to_param(rates[key], "rate"))
 	return doc
 
@@ -216,12 +222,13 @@ for n, filename in enumerate(llwapp.sort_files_by_size(filenames, options.verbos
 	if options.verbose:
 		print >>sys.stderr, "transforming %d events..." % len(eventlist)
 	bin_by_sidereal_time(rates, eventlist)
-	newfseries = fourier_transform(eventlist, options)
-	for key, value in newfseries.iteritems():
-		if key in fseries:
-			fseries[key][1:] += value[1:]
-		else:
-			fseries[key] = value
+	if not options.only_rate:
+		newfseries = fourier_transform(eventlist, options)
+		for key, value in newfseries.iteritems():
+			if key in fseries:
+				fseries[key][1:] += value[1:]
+			else:
+				fseries[key] = value
 	doc.unlink()
 
 llwapp.write_filename(new_doc(fseries, rates), options.output, options.verbose)
