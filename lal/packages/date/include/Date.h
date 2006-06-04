@@ -217,6 +217,21 @@ REAL8 XLALGreenwichMeanSiderealTime(
 	const LIGOTimeGPS *gpstime
 );
 
+/** Returns the GPS time for the given Greenwich mean sidereal time (in
+ * radians). */
+LIGOTimeGPS *XLALGreenwichMeanSiderealTimeToGPS(
+	REAL8 gmst,
+	LIGOTimeGPS *gps
+);
+
+/** Returns the GPS time for the given Greenwich sidereal time (in
+ * radians). */
+LIGOTimeGPS *XLALGreenwichSiderealTimeToGPS(
+	REAL8 gmst,
+	REAL8 equation_of_equinoxes,
+	LIGOTimeGPS *gps
+);
+
 
 /* <lalLaTeX>
 

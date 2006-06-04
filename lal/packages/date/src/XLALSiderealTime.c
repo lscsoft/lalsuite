@@ -108,3 +108,36 @@ REAL8 XLALGreenwichMeanSiderealTime(
 {
 	return XLALGreenwichSiderealTime(gpstime, 0.0);
 }
+
+
+LIGOTimeGPS *XLALGreenwichMeanSiderealTimeToGPS(
+	REAL8 gmst,
+	LIGOTimeGPS *gps
+)
+{
+	static const char func[] = "XLALGreenwichMeanSiderealTimeToGPS";
+	const double gps_seconds_per_sidereal_radian = 13713.44;  /* approx */
+	const double precision = 1e-14;
+	int iterations = 10;
+	double error;
+
+	gps->gpsSeconds = gps->gpsNanoSeconds = 0;
+
+	do {
+		error = gmst - XLALGreenwichMeanSiderealTime(gps);
+		if(fabs(error / gmst) <= precision)
+			return gps;
+		XLALAddFloatToGPS(gps, error * gps_seconds_per_sidereal_radian);
+	} while(--iterations);
+	XLAL_ERROR_NULL(func, XLAL_EMAXITER);
+}
+
+
+LIGOTimeGPS *XLALGreenwichSiderealTimeToGPS(
+	REAL8 gmst,
+	REAL8 equation_of_equinoxes,
+	LIGOTimeGPS *gps
+)
+{
+	return XLALGreenwichMeanSiderealTimeToGPS(gmst - equation_of_equinoxes, gps);
+}
