@@ -1459,23 +1459,24 @@ int main( int argc, char *argv[] )
 	consistency check or the veto option itself. */
   if (h1h2Consistency || doVeto)
   {
-    for ( i = 0; i< LAL_NUM_IFO; i++)
+    for ( ifoNumber = 0; ifoNumber< LAL_NUM_IFO; ifoNumber++)
     {
-      if ( vetoFileName[i] && haveTrig[i])
+      /* to perform the veto, we need the filename. */
+      if ( vetoFileName[ifoNumber] && haveTrig[ifoNumber])
       {
-    	XLALSegListInit( &(vetoSegs[i]) );
-	LAL_CALL( LALSegListRead( &status, &(vetoSegs[i]), vetoFileName[i], NULL),
+    	XLALSegListInit( &(vetoSegs[ifoNumber]) );
+	LAL_CALL( LALSegListRead( &status, &(vetoSegs[ifoNumber]), vetoFileName[ifoNumber], NULL),
            &status);
-        XLALSegListCoalesce( &(vetoSegs[i]) );
+        XLALSegListCoalesce( &(vetoSegs[ifoNumber]) );
 	/* if the veto option is set, we remove single inspiral triggers 
-	   inside the list provided. */
+	   inside the list provided but we need to loop over the different ifo name. */
         if (doVeto)
 	{
 	  if ( vrbflg ) fprintf( stdout, "Applying veto segment (%s) list on ifo  %s \n ",
-		vetoFileName[i], ifoName[i-1] );
-/*          inspiralEventList = XLALVetoSingleInspiral( inspiralEventList, &(vetoSegs[i]));*/
-        inspiralEventList = XLALVetoSingleInspiralThisIfo( inspiralEventList, &(vetoSegs[i]), ifoName[i-1] );
-          /* count the triggers  */
+		vetoFileName[ifoNumber], ifoList[ifoNumber] );
+          inspiralEventList = XLALVetoSingleInspiral( inspiralEventList, &(vetoSegs[ifoNumber]), 
+		(CHAR*)(ifoList[ifoNumber]) );
+         /* count the triggers  */
           numTriggers = XLALCountSnglInspiral( inspiralEventList );
           if ( vrbflg ) fprintf( stdout, " --> %d remaining triggers after veto segment list applied.\n",
             numTriggers );
@@ -1735,7 +1736,9 @@ int main( int argc, char *argv[] )
 
     /* remove events in H1L1 and H2L1 (triple coincidence analysis)  */
     if(h1h2Consistency && (vetoFileName[LAL_IFO_H1] && vetoFileName[LAL_IFO_H2]))
-    {
+    {    if(vrbflg)
+	      fprintf(stdout, "Using h1-h2-consistency with veto segment list %s and %s\n", 
+		vetoFileName[LAL_IFO_H1], vetoFileName[LAL_IFO_H2]);
       LAL_CALL( LALInspiralDistanceCutCleaning(&status,  &coincInspiralList, 
 	&accuracyParams, &summValueList, &vetoSegs[LAL_IFO_H1], &vetoSegs[LAL_IFO_H2]), &status);
       if ( vrbflg ) fprintf( stdout, "%d remaining coincident triggers after h1-h2-consistency.\n", 
@@ -1887,6 +1890,9 @@ int main( int argc, char *argv[] )
         /* remove events in H1L1 and H2L1 (triple coincidence analysis)  */
 	if(h1h2Consistency && (vetoFileName[LAL_IFO_H1] && vetoFileName[LAL_IFO_H2]))
         {
+	    if(vrbflg)
+	      fprintf(stdout, "Using h1-h2-consistency with veto segment list %s and %s\n", 
+		vetoFileName[LAL_IFO_H1], vetoFileName[LAL_IFO_H2]);
           LAL_CALL( LALInspiralDistanceCutCleaning(&status,  &coincInspiralList, 
 	    &accuracyParams, &summValueList, &vetoSegs[LAL_IFO_H1], &vetoSegs[LAL_IFO_H2]), &status);
           if ( vrbflg ) fprintf( stdout, "%d remaining coincident triggers after h1-h2-consisteny .\n", 

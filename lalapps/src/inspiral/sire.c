@@ -90,9 +90,9 @@ static void print_usage(char *program)
       "Cuts and Vetos:\n"\
       " [--ifo-cut]       ifo         only keep triggers from specified ifo\n"\
       " [--snr-threshold] snr_star    discard all triggers with snr less than snr_star\n"\
-      " [--rsq-threshold] rsq_thresh  discard all triggers whose rsqveto_duration\n"\ 
+      " [--rsq-threshold] rsq_thresh  discard all triggers whose rsqveto_duration\n"\
       "                               exceeds rsq_thresh\n"\
-      " [--rsq-max-snr]   rsq_max_snr only apply rsq on triggers with snr < rsq_max_snr\n"\ 
+      " [--rsq-max-snr]   rsq_max_snr only apply rsq on triggers with snr < rsq_max_snr\n"\
       "                               exceeds rsq_thresh\n"\
       " [--veto-file]     veto_file   discard all triggers which occur during times\n"\
       "                               contained in the segments of the veto_file\n"\
@@ -803,7 +803,7 @@ int main( int argc, char *argv[] )
     /* veto events */
     if ( vetoFileName )
     {
-      inspiralFileList = XLALVetoSingleInspiral( inspiralFileList, &vetoSegs );
+      inspiralFileList = XLALVetoSingleInspiral( inspiralFileList, &vetoSegs , ifoName);
       /* count the triggers  */
       numFileTriggers = XLALCountSnglInspiral( inspiralFileList );
       if ( vrbflg ) fprintf( stdout, "Have %d triggers after applying veto\n",
