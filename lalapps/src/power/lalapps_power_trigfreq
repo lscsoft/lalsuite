@@ -169,8 +169,8 @@ def bin_by_sidereal_time(rates, eventlist):
 		if event.ifo not in rates:
 			# 1000 bins per sidereal day
 			rates[event.ifo] = rate.Rate(segments.segment(0.0, 2.0 * math.pi), 2.0 * math.pi / 1000.0)
-		start = date.XLALGreenwichMeanSiderealTime(event.get_start())
-		stop = date.XLALGreenwichMeanSiderealTime(event.get_stop())
+		start = date.XLALGreenwichMeanSiderealTime(event.get_start()) % (2.0 * math.pi)
+		stop = date.XLALGreenwichMeanSiderealTime(event.get_stop()) % (2.0 * math.pi)
 		rates[event.ifo][segments.segment(start, stop)] = -event.confidence
 
 
