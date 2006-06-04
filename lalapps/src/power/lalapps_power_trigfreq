@@ -40,6 +40,7 @@ from optparse import OptionParser
 import sys
 
 from glue import segments
+from glue import segmentsUtils
 from glue.ligolw import ligolw
 from glue.ligolw import array
 from glue.ligolw import param
@@ -119,7 +120,12 @@ class SnglBurst(object):
 		return self.get_start() + self.duration
 
 
+def search_summary_get_out(self):
+	return segments.segment(date.LIGOTimeGPS(self.out_start_time, self.out_start_time_ns), date.LIGOTimeGPS(self.out_end_time, self.out_end_time_ns))
+
+
 lsctables.SnglBurstTable.RowType = SnglBurst
+lsctables.SearchSummary.get_out = search_summary_get_out
 
 
 #
@@ -174,14 +180,21 @@ def bin_by_sidereal_time(rates, eventlist):
 		rates[event.ifo][segments.segment(start, stop)] = -event.confidence
 
 
+def gps_seglist_to_gmst(seglist):
+	return segments.segmentlist([segments.segment(date.XLALGreenwichMeanSiderealTime(seg[0]), date.XLALGreenwichMeanSiderealTime(seg[1])) for seg in seglist])
+
+
 def normalize_sidereal_bins(rates, segmentlists):
 	for key, value in segmentlists.iteritems():
 		# 1000 bins per sidereal day
 		livetime = rate.Rate(segments.segment(0.0, 2.0 * math.pi), 2.0 * math.pi / 1000.0)
-		for seglist in segmentsUtils.Fold(value, date.gmst_days(value.extent())):
+		gmst_days = segmentsUtils.segment_range(value[0][0] - value[0][0] % (2.0 * math.pi), value[-1][1] - value[-1][1] % (2.0 * math.pi) + 2.0 * math.pi, 2.0 * math.pi)
+		for seglist in segmentsUtils.Fold(gps_seglist_to_gmst(value), gmst_days):
 			for seg in seglist:
-				livetime[seg] = 1.0
-		rates[key].array = numarray.where(livetime.array > 0.0, rates[key].array / livetime.array, 0.0)
+				# take a negligible amount off the segment's
+				# uppoer bound to hack around precision issues
+				livetime[segments.segment(seg[0], seg[1] - 1e-10)] = 1.0
+		rates[key].array /= numarray.where(rates[key].array > 0.0, livetime.array, 1.0)
 
 
 #
