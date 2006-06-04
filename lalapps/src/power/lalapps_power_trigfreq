@@ -181,7 +181,7 @@ def normalize_sidereal_bins(rates, segmentlists):
 		for seglist in segmentsUtils.Fold(value, date.gmst_days(value.extent())):
 			for seg in seglist:
 				livetime[seg] = 1.0
-		rates[key].array /= livetime.array
+		rates[key].array = numarray.where(livetime.array > 0.0, rates[key].array / livetime.array, 0.0)
 
 
 #
