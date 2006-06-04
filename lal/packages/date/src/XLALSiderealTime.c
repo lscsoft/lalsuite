@@ -42,7 +42,7 @@ REAL8 XLALGreenwichSiderealTime(
 	struct tm utc;
 	double julian_day;
 	double t_hi, t_lo;
-	double t, t_squared, t_cubed;
+	double t;
 	double sidereal_time;
 
 	/*
@@ -82,32 +82,23 @@ REAL8 XLALGreenwichSiderealTime(
 	t_lo = gpstime->gpsNanoSeconds / (1e9 * 36525.0 * 86400.0);
 
 	/*
-	 * Compute sidereal time in seconds.  (magic)
+	 * Compute sidereal time in sidereal seconds.  (magic)
 	 */
 
 	t = t_hi + t_lo;
-	t_squared = t * t;
-	t_cubed = t_squared * t;
 
-	sidereal_time = equation_of_equinoxes - 6.2e-6 * t_cubed + 0.093104 * t_squared + 67310.54841
-		+ 8640184.812866 * t_lo
-		+ 3155760000.0 * t_lo
-		+ 8640184.812866 * t_hi
-		+ 3155760000.0 * t_hi;
+	sidereal_time = equation_of_equinoxes + (-6.2e-6 * t + 0.093104) * t * t + 67310.54841;
+	sidereal_time += 8640184.812866 * t_lo;
+	sidereal_time += 3155760000.0 * t_lo;
+	sidereal_time += 8640184.812866 * t_hi;
+	sidereal_time += 3155760000.0 * t_hi;
 
 	/*
-	 * Convert from seconds to fraction of day.
+	 * Return radians (2 pi radians in 1 sidereal day = 86400 sidereal
+	 * seconds).
 	 */
 
-	sidereal_time = fmod(sidereal_time / 86400.0, 1.0);
-	if(sidereal_time < 0.0)
-		sidereal_time += 1.0;
-  
-	/*
-	 * Return radians
-	 */
-
-	return sidereal_time * 2.0 * LAL_PI;
+	return sidereal_time * LAL_PI / 43200.0;
 }
 
 

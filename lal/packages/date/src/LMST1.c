@@ -292,7 +292,9 @@ LALGPStoGMST1( LALStatus         *status,
   /*
    * Compute GMST for GPS on given date in seconds 
    */
-  *p_gmst = XLALGreenwichMeanSiderealTime(p_gps) / (2.0 * LAL_PI) * SECS_PER_DAY;
+  *p_gmst = fmod(XLALGreenwichMeanSiderealTime(p_gps) / (2.0 * LAL_PI) * SECS_PER_DAY, SECS_PER_DAY);
+  if(*p_gmst < 0.0)
+    *p_gmst += SECS_PER_DAY;
 
   /*
    * Convert GMST to requested units
