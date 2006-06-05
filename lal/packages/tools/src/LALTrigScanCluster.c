@@ -451,14 +451,21 @@ INT4 XLALPopulateTrigScanInput (
         InspiralTemplate      *bankHead
         )
 {
+    static const char *func = "XLALPopulateTrigScanInput";
     UINT4        numPoints, ki;
     REAL8        sampleRate, deltaF, deltaT;
 
+    if ( !fcFilterParams || !fcTmpltParams || !fcDataParams || !bankHead )
+        XLAL_ERROR( func, XLAL_ENOMEM );
+    
     (*condenseIn) = (trigScanClusterIn *)
             LALCalloc (1, sizeof(trigScanClusterIn));
 
+    if ( !condenseIn ) 
+        XLAL_ERROR( func, XLAL_ENOMEM );
+          
     sampleRate = 1.0L/fcTmpltParams->deltaT;
-    numPoints  = fcTmpltParams->xfacVec->length;
+    numPoints  = 2*(fcDataParams->wtildeVec->length - 1);
     deltaT     = fcTmpltParams->deltaT;
     deltaF     = sampleRate / (REAL8)(numPoints);
 
@@ -475,6 +482,9 @@ INT4 XLALPopulateTrigScanInput (
     (*condenseIn)->coarseShf.deltaF = deltaF;
     (*condenseIn)->coarseShf.data   = 
             XLALCreateREAL8Vector( (numPoints/2 + 1) );
+    
+    if ( !(*condenseIn)->coarseShf.data )
+          XLAL_ERROR( func, XLAL_ENOMEM );
 
     /* Populate the shf vector from the wtilde vector */
     for (ki=0; ki<fcDataParams->wtildeVec->length ; ki++) 
