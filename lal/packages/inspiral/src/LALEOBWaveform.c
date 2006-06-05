@@ -987,6 +987,13 @@ LALEOBWaveformEngine (
    expnFunc func;
    rOfOmegaIn rofomegain;
    DFindRootIn rootIn;
+
+   /* Variables to allow the waveform to be generated */
+   /* from a specific fLower */
+   REAL8 fCurrent;  /* The current frequency of the waveform */
+   BOOLEAN writeToWaveform = 0; /* Set to true when the current frequency
+                                 * crosses fLower */
+   REAL8 sInit, sSubtract = 0.0;  /* Initial phase, and phase to subtract */
   
    CHAR message[256];
 
@@ -1010,8 +1017,6 @@ LALEOBWaveformEngine (
    func = paramsInit->func;
 
    ASSERT(ak.totalmass/LAL_MTSUN_SI > 0.4, status, 
-   	LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT(ak.totalmass/LAL_MTSUN_SI < 100, status, 
    	LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
 /* Allocate all the memory required to dummy and then point the various
@@ -1080,6 +1085,7 @@ LALEOBWaveformEngine (
    LALInspiralPhasing1(status->statusPtr, &s, v, &in2);
    CHECKSTATUSPTR(status);
    s = s/2.;
+   sInit = s;
 
    /* light ring value - where to stop evolution */
    rofomegain.eta = eta;
@@ -1165,6 +1171,15 @@ Userful for debugging: Make sure a solution for r exists.
         LALWarning(status->statusPtr, message);
         RETURN( status );
    }
+
+   /* We want the waveform to generate from a point which won't cause
+    * problems with the initial conditions. Therefore we force the code
+    * to start at least at r = 10 M.
+    */
+   if (r < 10.0)
+   {
+     r = 10.0;
+   }
    /*params->rInitial = r;
    params->vInitial = v;
    params->rLightRing = rn;
@@ -1243,9 +1258,21 @@ Userful for debugging: Make sure a solution for r exists.
 
    count = params->nStartPad;
 
+   /* Calculate the initial value of omega */
+   if (params->order<threePN)
+       LALHCapDerivatives(&values, &dvalues, funcParams);
+   else
+       LALHCapDerivatives3PN(&values, &dvalues, funcParams);
+
+   CHECKSTATUSPTR(status);
+
+   omega = dvalues.data[1];
+
+   /* Begin integration loop here */
    t = 0.0;
    rOld = r+0.1;
    while (r > rn && r < rOld) {
+
       if ((signal1 && count >= signal1->length) || (ff && count >= ff->length))
       {
         XLALRungeKutta4Free( integrator );
@@ -1254,28 +1281,41 @@ Userful for debugging: Make sure a solution for r exists.
       }
 
       rOld = r;
-      
-      v = pow(omega, oneby3);
 
-      if (signal1)  /* Wave or templates */
+      fCurrent = omega / (LAL_PI*m);
+      if (!writeToWaveform)
       {
-        amp = params->signalAmplitude *v*v;
-        h1 = amp * cos(2.*s);
-        *(signal1->data + count) = (REAL4) h1;
-
-        if (signal2)
+        sSubtract = s - sInit;
+        if (r > 10 || fCurrent > f || fabs(fCurrent - f) < 1.0e-5)
         {
-          h2 = amp * cos(2.*s + LAL_PI_2);
-          *(signal2->data + count) = (REAL4) h2;
+          writeToWaveform = 1;
         }
       }
-      else if (a)   /* For injections */
+
+      v = pow(omega, oneby3);
+
+      if (writeToWaveform)
       {
-        ff->data[count]= (REAL4)(omega/unitHz);
-        f2a = pow (f2aFac * omega, 2./3.);
-        a->data[2*count]          = (REAL4)(4.*apFac * f2a);
-        a->data[2*count+1]        = (REAL4)(4.*acFac * f2a);
-        phi->data[count]          = (REAL8)(2* s);
+        if (signal1)  /* Wave or templates */
+        {
+          amp = params->signalAmplitude *v*v;
+          h1 = amp * cos(2.* (s - sSubtract));
+          *(signal1->data + count) = (REAL4) h1;
+
+          if (signal2)
+          {
+            h2 = amp * cos(2.* (s - sSubtract) + LAL_PI_2);
+            *(signal2->data + count) = (REAL4) h2;
+          }
+        }
+        else if (a)   /* For injections */
+        {
+          ff->data[count]= (REAL4)(omega/unitHz);
+          f2a = pow (f2aFac * omega, 2./3.);
+          a->data[2*count]          = (REAL4)(4.*apFac * f2a);
+          a->data[2*count+1]        = (REAL4)(4.*acFac * f2a);
+          phi->data[count]          = (REAL8)(2* s);
+        }
       }
 
       if (params->order<threePN) 
@@ -1297,7 +1337,10 @@ Userful for debugging: Make sure a solution for r exists.
       p = values.data[2] = newvalues.data[2];
       q = values.data[3] = newvalues.data[3];
 
-      t = (++count-params->nStartPad) * dt;
+      if (writeToWaveform)
+      {
+        t = (++count-params->nStartPad) * dt;
+      }
 /*----------------------------------------------------------
       printf("%e %e %e %e %e %e %e\n", t, r, v, s, p, q, h);
       if (v>ak->vlso) printf("TLSO=%e\n", t);
