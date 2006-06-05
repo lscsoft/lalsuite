@@ -173,28 +173,32 @@ def fourier_transform(eventlist, options):
 def bin_by_sidereal_time(rates, eventlist):
 	for n, event in enumerate(eventlist):
 		if event.ifo not in rates:
-			# 1000 bins per sidereal day
-			rates[event.ifo] = rate.Rate(segments.segment(0.0, 2.0 * math.pi), 2.0 * math.pi / 1000.0)
+			# 1 filter-width per 10 sidereal seconds
+			rates[event.ifo] = rate.RatiosRate(segments.segment(0.0, 2.0 * math.pi), 2.0 * math.pi / 8640.0)
 		start = date.XLALGreenwichMeanSiderealTime(event.get_start()) % (2.0 * math.pi)
 		stop = date.XLALGreenwichMeanSiderealTime(event.get_stop()) % (2.0 * math.pi)
-		rates[event.ifo][segments.segment(start, stop)] = -event.confidence
+		if stop >= start:
+			rates[event.ifo].incnumerator((segments.segment(start, stop),), -event.confidence)
+		else:
+			rates[event.ifo].incnumerator((segments.segment(start, 2.0 * math.pi),), -event.confidence)
+			rates[event.ifo].incnumerator((segments.segment(0.0, stop),), -event.confidence)
 
 
 def gps_seglist_to_gmst(seglist):
-	return segments.segmentlist([segments.segment(date.XLALGreenwichMeanSiderealTime(seg[0]), date.XLALGreenwichMeanSiderealTime(seg[1])) for seg in seglist])
+	return segments.segmentlist([segments.segment(date.XLALGreenwichMeanSiderealTime(seg[0]) % (2.0 * math.pi), date.XLALGreenwichMeanSiderealTime(seg[1]) % (2.0 * math.pi)) for seg in seglist])
 
 
 def normalize_sidereal_bins(rates, segmentlists):
 	for key, value in segmentlists.iteritems():
-		# 1000 bins per sidereal day
-		livetime = rate.Rate(segments.segment(0.0, 2.0 * math.pi), 2.0 * math.pi / 1000.0)
+		# FIXME: why is the protract() needed?
+		value = gps_seglist_to_gmst(value).protract(10)
 		gmst_days = segmentsUtils.segment_range(value[0][0] - value[0][0] % (2.0 * math.pi), value[-1][1] - value[-1][1] % (2.0 * math.pi) + 2.0 * math.pi, 2.0 * math.pi)
-		for seglist in segmentsUtils.Fold(gps_seglist_to_gmst(value), gmst_days):
+		for seglist in segmentsUtils.Fold(value, gmst_days):
 			for seg in seglist:
-				# take a negligible amount off the segment's
-				# uppoer bound to hack around precision issues
-				livetime[segments.segment(seg[0], seg[1] - 1e-10)] = 1.0
-		rates[key].array /= numarray.where(rates[key].array > 0.0, livetime.array, 1.0)
+				# take a negligible amount off the
+				# segment's upper bound to hack around
+				# precision issues
+				rates[key].incdenominator((segments.segment(seg[0], seg[1] - 1e-9),))
 
 
 #
