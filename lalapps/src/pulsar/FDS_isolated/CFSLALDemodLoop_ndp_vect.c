@@ -53,16 +53,24 @@
 	    Xsum[3] = 0.0;
 
 	    /* Vectorized version of the "hot loop" */
-            for(k=0; k < klim / 2; k++) {
+	    /* This loop is now unrolled manually */
+            /* for(k=0; k < klim / 2; k++) { */
+	    {
 	      UINT4 ve;
-	      for(ve=0;ve<4;ve++) {
-                Xsum[ve] = Xsum[ve] * tFreq[ve]
-		         + Xsum[ve] * tFint[ve]
-		         + Xalpha_kR4[ve] * aFreq[ve];
-		aFreq[ve] *= (tFreq[ve] + tFint[ve]);
-                tFint[ve] -= 2.0;
-	      }
+#define VEC_LOOP\
+	      for(ve=0;ve<4;ve++) {\
+                Xsum[ve] = Xsum[ve] * tFreq[ve]\
+		         + Xsum[ve] * tFint[ve]\
+		         + Xalpha_kR4[ve] * aFreq[ve];\
+		aFreq[ve] *= (tFreq[ve] + tFint[ve]);\
+                tFint[ve] -= 2.0;\
+	      }\
 	      Xalpha_kR4 += 4;
+
+	      VEC_LOOP; VEC_LOOP; VEC_LOOP; VEC_LOOP; 
+	      VEC_LOOP; VEC_LOOP; VEC_LOOP; VEC_LOOP; 
+	      VEC_LOOP; VEC_LOOP; VEC_LOOP; VEC_LOOP; 
+	      VEC_LOOP; VEC_LOOP; VEC_LOOP; VEC_LOOP; 
 	    }
 
 	    /* conbination:
