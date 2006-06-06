@@ -202,7 +202,7 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
       case 'U': /* trig-end-time */
         params->trigEndTimeNS = (INT8) atol( optarg ) * 1000000000LL;
         break;
-      case 'w': /* duration */
+      case 'w': /* block-duration */
         params->duration = atof( optarg );
         break;
       case 'W': /* pad-data */
@@ -308,7 +308,7 @@ int ring_params_sanity_check( struct ring_params *params )
     sanity_check( startTime > 0 );
     sanity_check( endTime > startTime );
     sanity_check( params->duration > 0 );
-    sanity_check( params->duration == (1e-9*(endTime - startTime)) );
+    sanity_check( 1e9*params->duration == ((endTime - startTime)) );
 
     /* checks on size of data record */
     sanity_check( params->sampleRate > 0 );
