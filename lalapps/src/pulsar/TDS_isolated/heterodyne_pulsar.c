@@ -831,6 +831,7 @@ stops->data[i]);
       
       duration = stops->data[i] - starts->data[i];
       
+      /* check that data is contiguous within a segment - if not split in two */
       for(k=0;k<duration*(INT4)sampleRate-1;k++){
         if(times->data[j+k+1] - times->data[j+k] > 1./sampleRate){
           /* split segment */
@@ -838,7 +839,17 @@ stops->data[i]);
 
           /* set starts to new segemt start time */
           starts->data[i] = times->data[j+k+1] - (INT4)((1./sampleRate)/2.);
-          i--; /* reset i so it redoes the new segment */
+          
+          /* this if statement is a fix needed due to problems that can effect the coarse
+heterodyne if performed using Condor - this problem being that if the job is evicted from a
+node but wasn't checkpointed recently enough, then when the program starts up it will redo sections
+of the heterodyne, leading to an overlap in the data. This means that there can be times when there
+is doubling up of data, and the time appears to step backwards. These doubled up sections should be
+removed by the checks in this function, with this if statement checking for times when the time
+steps backwards */
+          if(duration > 0)
+            i--; /* reset i so it redoes the new segment */
+          
           break;
         }
       }
