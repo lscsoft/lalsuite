@@ -613,7 +613,8 @@ XLALRsqCutSingleInspiral (
 SnglInspiralTable *
 XLALVetoSingleInspiral (
     SnglInspiralTable          *eventHead,
-    LALSegList                 *vetoSegs 
+    LALSegList                 *vetoSegs, 
+    CHAR 			*ifo
     );
 
 SnglInspiralTable *
