@@ -125,6 +125,7 @@ ConfigVariables GV;		/**< global container for various derived configuration set
 INT4 uvar_Dterms;
 CHAR *uvar_IFO;
 BOOLEAN uvar_SignalOnly;
+BOOLEAN uvar_EstimSigParam;
 REAL8 uvar_Freq;
 REAL8 uvar_FreqBand;
 REAL8 uvar_dFreq;
@@ -557,11 +558,12 @@ initUserVars (LALStatus *status)
   strcpy (uvar_ephemDir, DEFAULT_EPHEMDIR);
 
   uvar_SignalOnly = FALSE;
- 
-  uvar_f1dot = 0.0;
-  uvar_df1dot 	= 1.0;
-  uvar_df2dot 	= 1.0;
-  uvar_df3dot 	= 1.0;
+  uvar_EstimSigParam = FALSE;
+
+  uvar_f1dot     = 0.0;
+  uvar_df1dot 	 = 1.0;
+  uvar_df2dot 	 = 1.0;
+  uvar_df3dot 	 = 1.0;
   uvar_f1dotBand = 0.0;
   
   uvar_TwoFthreshold = 10.0;
@@ -620,6 +622,7 @@ initUserVars (LALStatus *status)
   LALregSTRINGUserVar(status,	ephemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
   LALregSTRINGUserVar(status,	ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
   LALregBOOLUserVar(status, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
+  LALregBOOLUserVar(status,     EstimSigParam,  'p', UVAR_OPTIONAL, "Do Signal Parameter Estimation");
   LALregREALUserVar(status, 	TwoFthreshold,	'F', UVAR_OPTIONAL, "Set the threshold for selection of 2F");
   LALregINTUserVar(status, 	gridType,	 0 , UVAR_OPTIONAL, "Template grid: 0=flat, 1=isotropic, 2=metric, 3=file");
   LALregINTUserVar(status, 	metricType,	'M', UVAR_OPTIONAL, "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
@@ -642,7 +645,7 @@ initUserVars (LALStatus *status)
   LALregSTRINGUserVar(status,   outputLoudest,	 0,  UVAR_DEVELOPER, 
 		      "Output-file for the loudest F-statistic candidate in this search");
 
-  LALregSTRINGUserVar(status,     workingDir,     'w', UVAR_DEVELOPER, "Directory to use as work directory.");
+  LALregSTRINGUserVar(status,   workingDir,     'w', UVAR_DEVELOPER, "Directory to use as work directory.");
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
