@@ -243,12 +243,12 @@ LALStochasticOptimalFilterCal(
       STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
       STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
-  /* half-calibrated inverse noise 1 of input */
+  /* calibrated inverse noise 1 of input */
   ASSERT(input->calibratedInverseNoisePSD1 != NULL, status, \
       STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
       STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
-  /* half-calibrated inverse noise 2 of input */
+  /* calibrated inverse noise 2 of input */
   ASSERT(input->calibratedInverseNoisePSD2 != NULL, status, \
       STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
       STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
@@ -263,12 +263,12 @@ LALStochasticOptimalFilterCal(
       STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
       STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
-  /* data member of half-calibrated inverse noise 1 */
+  /* data member of calibrated inverse noise 1 */
   ASSERT(input->calibratedInverseNoisePSD1->data != NULL, status, \
       STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
       STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
-  /* data member of half-calibrated inverse noise 2 */
+  /* data member of calibrated inverse noise 2 */
   ASSERT(input->calibratedInverseNoisePSD2->data != NULL, status, \
       STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
       STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
@@ -288,12 +288,12 @@ LALStochasticOptimalFilterCal(
       STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
       STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
-  /* data-data member of half calibrated inverse noise 1 */
+  /* data-data member of calibrated inverse noise 1 */
   ASSERT(input->calibratedInverseNoisePSD1->data->data != NULL, status, \
       STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
       STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
-  /* data-data member of half calibrated inverse noise 2 */
+  /* data-data member of calibrated inverse noise 2 */
   ASSERT(input->calibratedInverseNoisePSD2->data->data != NULL, status, \
       STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
       STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
@@ -478,6 +478,7 @@ LALStochasticOptimalFilterCal(
   DETATCHSTATUSPTR(status);
   RETURN(status);
 } /* LALStochasticOptimalFilterCal() */
+
 
 /* <lalVerbatim file="StochasticOptimalFilterCP"> */
 void

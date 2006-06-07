@@ -336,6 +336,13 @@ typedef struct tagStochasticCrossCorrelationInput {
   COMPLEX8FrequencySeries  *optimalFilter;
 } StochasticCrossCorrelationInput;
 
+typedef struct tagStochasticCrossCorrelationStrainInput {
+  COMPLEX8FrequencySeries  *hBarTildeOne;
+  COMPLEX8FrequencySeries  *hBarTildeTwo;
+  REAL4FrequencySeries  *optimalFilter;
+} StochasticCrossCorrelationStrainInput;
+
+
 typedef struct tagStochasticCrossCorrelationCalInput {
   COMPLEX8FrequencySeries  *hBarTildeOne;
   COMPLEX8FrequencySeries  *hBarTildeTwo;
@@ -366,6 +373,27 @@ LALStochasticCrossCorrelationSpectrum(
             LALStatus                              *status,
             COMPLEX8FrequencySeries                *output,
             const StochasticCrossCorrelationInput  *input,
+            BOOLEAN                                 epochsMatch);
+
+void 
+LALStochasticCrossCorrelationStatisticStrain(
+            LALStatus                              *status,
+            REAL4WithUnits                         *output,
+            const StochasticCrossCorrelationStrainInput  *input,
+            BOOLEAN                                 epochsMatch);
+
+void 
+LALStochasticHeterodynedCrossCorrelationStatisticStrain(
+            LALStatus                              *status,
+            COMPLEX8WithUnits                      *output,
+            const StochasticCrossCorrelationStrainInput  *input,
+            BOOLEAN                                 epochsMatch);
+
+void 
+LALStochasticCrossCorrelationSpectrumStrain(
+            LALStatus                              *status,
+            COMPLEX8FrequencySeries                *output,
+            const StochasticCrossCorrelationStrainInput  *input,
             BOOLEAN                                 epochsMatch);
 
 void 
