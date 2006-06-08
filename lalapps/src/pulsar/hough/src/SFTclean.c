@@ -99,7 +99,6 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
 
   uvar_help = FALSE;
-  
   uvar_sftDir = (CHAR *)LALMalloc(256 * sizeof(CHAR));
   strcpy(uvar_sftDir, INPUTSFTDIR);
 
@@ -112,14 +111,16 @@ int main(int argc, char *argv[]){
   uvar_maxBins = MAXBINS;
 
   /* register user input variables */
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",     'h',UVAR_HELP,     "Print this message",  &uvar_help),   &status);  
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir",   'i',UVAR_OPTIONAL, "Input SFT Directory", &uvar_sftDir), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "outDir",   'o',UVAR_OPTIONAL, "Output SFT Directory",&uvar_outDir), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "fMin",      0, UVAR_OPTIONAL, "start Frequency",     &uvar_fMin),   &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "fMax",      0, UVAR_OPTIONAL, "Max Frequency Band",  &uvar_fMax),   &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "window",   'w',UVAR_OPTIONAL, "Window size",         &uvar_window), &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "maxBins",  'm',UVAR_OPTIONAL, "Max. bins to clean",  &uvar_maxBins),&status);
-  LAL_CALL( LALRegisterLISTUserVar(   &status, "linefiles", 0, UVAR_REQUIRED, "List of linefiles (filenames must contain IFO name)", &uvar_linefiles),  &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",     'h',UVAR_HELP,     "Print this message",     &uvar_help),   &status);  
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir",   'i',UVAR_OPTIONAL, "Input SFT file pattern", &uvar_sftDir), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "outDir",   'o',UVAR_OPTIONAL, "Output SFT Directory",   &uvar_outDir), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "fMin",      0, UVAR_OPTIONAL, "start Frequency",        &uvar_fMin),   &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "fMax",      0, UVAR_OPTIONAL, "Max Frequency Band",     &uvar_fMax),   &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "window",   'w',UVAR_OPTIONAL, "Window size",            &uvar_window), &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "maxBins",  'm',UVAR_OPTIONAL, "Max. bins to clean",     &uvar_maxBins),&status);
+  LAL_CALL( LALRegisterLISTUserVar(   &status, "linefiles", 0, UVAR_OPTIONAL, "List of linefiles (filenames must contain IFO name)", &uvar_linefiles),  &status);
+
+
 
   /* read all command line variables */
   LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
@@ -158,15 +159,16 @@ int main(int argc, char *argv[]){
 
 
   /* clean  lines */
-  LAL_CALL( LALRemoveKnownLinesInMultiSFTVector ( &status, inputSFTs, uvar_maxBins, 
+  if ( LALUserVarWasSet( &uvar_linefiles ) ) {
+    LAL_CALL( LALRemoveKnownLinesInMultiSFTVector ( &status, inputSFTs, uvar_maxBins, 
 						  uvar_window, uvar_linefiles, randPar), &status);
-
+  }
 
   /* write output */
   for (k = 0; k < inputSFTs->length; k++) {
     LAL_CALL( LALWriteSFTVector2Dir ( &status, inputSFTs->data[k], uvar_outDir, "cleaned", "cleaned"), &status);
   }
-  
+
   /* Free memory */
   fclose(fp);
   LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);
