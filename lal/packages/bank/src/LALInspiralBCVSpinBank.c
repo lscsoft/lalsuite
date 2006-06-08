@@ -168,7 +168,7 @@ LALInspiralBCVSpinBank(
 	   * to compute the psi0-psi3 values depending on the value of LowGM.
 	   */
 
-	  if (coarseIn->insidePolygon)
+	  if (coarseIn->insidePolygon == True)
 	  {
 		  LALInspiralCreateFlatBankS3S4 (status->statusPtr, list, &bankParams, *coarseIn);
 	  }
