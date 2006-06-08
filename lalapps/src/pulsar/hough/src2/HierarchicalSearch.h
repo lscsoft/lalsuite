@@ -110,21 +110,27 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
  */
 
 
-  /** sequence of SFT vectors -- for each stack */
-  typedef struct tagSFTVectorSequence {
-    UINT4 length;     /**< number of stacks */
-    SFTVector *data; /**< the SFT vectors */
-  } SFTVectorSequence;
-
   /** sequence of MultiSFT vectors -- for each stack */
   typedef struct tagMultiSFTVectorSequence {
     UINT4 length;     /**< number of stacks */
     MultiSFTVector **data; /**< the SFT vectors */
   } MultiSFTVectorSequence;
 
+  /** sequence of Multi-noise weights vectors -- for each stack */
+  typedef struct tagMultiNoiseWeightsSequence {
+    UINT4 length;     /**< number of stacks */
+    MultiNoiseWeights **data; /**< the noise weights */
+  } MultiNoiseWeightsSequence;
+
+  /** sequence of Multi-detector state vectors -- for each stack */
+  typedef struct tagMultiDetectorStateSeriesSequence {
+    UINT4 length;     /**< number of stacks */
+    MultiDetectorStateSeries **data; /**< the detector state series */
+  } MultiDetectorStateSeriesSequence;
+
   /* sequence of SFT catalogs -- for each stack */
   typedef struct tagSFTCatalogSequence {
-    UINT4 length;  /**< the number of stacts */
+    UINT4 length;  /**< the number of stacks */
     SFTCatalog *data; /**< the catalogs */
   } SFTCatalogSequence;
 
@@ -219,19 +225,7 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 			    REAL8FrequencySeriesVector *FstatVect,
 			    REAL8  thr);
 
-  void SetUpStacks1( LALStatus *status,
-		    SFTVectorSequence *out,
-		    SFTVector *sftVect,
-		    INT4 nStacks);
-
-  void SetUpStacks2( LALStatus *status,
-		     SFTVectorSequence *out,
-		     SFTVector *sftVect,
-		     LIGOTimeGPSVector *ts,
-		     INT4 nStacks);
-
-
-void SetUpStacks(LALStatus *status, 
+  void SetUpStacks(LALStatus *status, 
 		 SFTCatalogSequence  *out,  
 		 REAL8 *tStack,
 		 SFTCatalog  *in,
