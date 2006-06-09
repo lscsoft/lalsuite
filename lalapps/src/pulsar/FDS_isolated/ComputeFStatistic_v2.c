@@ -487,21 +487,89 @@ int main(int argc,char *argv[])
 			  A3 = - 4.0 * Dinv * ( B * Fstat.Fa.im - C * Fstat.Fb.im);
 			  A4 = - 4.0 * Dinv * ( A * Fstat.Fb.im - C * Fstat.Fa.im);
 			  
-			  
 			  Asq = A1*A1 + A2*A2 + A3*A3 + A4*A4;
-			  detA = A1*A4-A2*A3;
+			  detA = A1*A4 - A2*A3;
+
+			  fprintf(stdout,"\n\n A1 = %g,   A2 = %g,  A3 = %g,  A4 = %g,  Asq = %g,  detA = %g\n\n ", A1, A2, A3, A4, Asq, detA);
 			  
 			  /* Free AM Coefficients */
 			  XLALDestroyMultiAMCoeffs ( multiAMcoef );
 			  
+			  REAL8 beta,ampratio,A1test;
+			  REAL8 psi_mle,Phi0_mle,mu_mle;
+			  REAL8 h0mle,h0mleSq;
+			  REAL8 error_tol=1.0/pow(10,14);
+			  			  
+			  /* h_0 * sin(\zeta)*/
+			  h0mle = 0.5*pow( pow(((A1-A4)*(A1-A4)+(A2+A3)*(A2+A3)),0.25)+
+					   pow(((A1+A4)*(A1+A4)+(A2-A3)*(A2-A3)),0.25), 2);
+			  
+			  h0mleSq = pow(h0mle,2.0);
+			  ampratio=Asq/h0mleSq;
+			  
+			  
+			  if(ampratio<0.25-error_tol||ampratio>2.0+error_tol) 
+			    {
+			      fprintf(stderr,"Imaginary Cos[iota]; cannot compute parameters");
+			      fprintf(stderr,"in the EstimateSignalParameters routine");
+			      fprintf(stderr,"in ComputeFStatistic code");
+			      fprintf(stderr,"Now exitting...");
+			      /*      break; */
+			      exit(1);
+			    }
+			  
+			  if(fabs(ampratio-0.25)<error_tol) 
+			    {
+			      mu_mle =0.0;
+			    } 
+			  else if(fabs(ampratio-2.0)<error_tol) 
+			    {
+			      mu_mle = 1.0;
+			    } 
+			  else 
+			    {
+			      mu_mle = sqrt(-3.0+2.0*sqrt(2.0+ampratio));
+			    }
+			  
+			  if(detA<0) 
+			    mu_mle = - 1.0*mu_mle;
+			  
+			  if(Asq*Asq < 4.0*detA*detA)
+			    {
+			      fprintf(stderr,"Imaginary beta; cannot compute parameters");
+			      break;
+			    }
+			  
+			  /* Compute MLEs of psi and Phi0 up to sign of Cos[2*Phi0] */
+			  /* Make psi and Phi0 always in -Pi/2 to Pi/2 */ 
+			  beta  = (Asq + sqrt(Asq*Asq - 4.0*detA*detA))/(2.0*detA);
+			  psi_mle  = atan( (beta*A4-A1)/(beta*A3+A2) )/2.0;
+			  Phi0_mle  = atan( (A1-beta*A4)/(A3+beta*A2) )/2.0;
+			  
+			  
+			  A1test=h0mle*(0.5*(1+mu_mle*mu_mle)*cos(2.0*psi_mle)*cos(2.0*Phi0_mle)
+					-mu_mle*sin(2.0*psi_mle)*sin(2.0*Phi0_mle));
+			  
+			  /* Determine the sign of Cos[2*Phi0] */
+			  if(A1*A1test<0) 
+			    {
+			      if(Phi0_mle>0) 
+				{
+				  Phi0_mle=Phi0_mle - LAL_PI/2.0;
+				} 
+			      else 
+				{
+				  Phi0_mle=Phi0_mle + LAL_PI/2.0;
+				}
+			    }
 			}
 		      
 		    } /* for i < nBins: loop over frequency-bins */
-
+		  
 		} /* For GV.spinImax: loop over 1st spindowns */
 	    } /* for if2dot < nf2dot */
 	} /* for if3dot < nf3dot */
-
+      
       loopcounter ++;
       if (lalDebugLevel) 
 	printf ("\
