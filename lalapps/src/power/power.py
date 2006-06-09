@@ -441,7 +441,7 @@ def split_segment(powerjob, segment, psds_per_job):
 
 	extra_psds = int(psds_from_job_length(powerjob, float(segment[1] - t)))
 	if extra_psds:
-		segs.append(segments.segment(segment[0], segment[0] + job_length_from_psds(powerjob, extra_psds)))
+		segs.append(segments.segment(t, t + job_length_from_psds(powerjob, extra_psds)))
 	return segs
 
 
