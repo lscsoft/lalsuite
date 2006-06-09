@@ -35,6 +35,7 @@ __date__ = "$Date$"[5:-2]
 __version__ = "$Revision$"[11:-2]
 
 import ConfigParser
+import glob
 import math
 from optparse import OptionParser
 import os
@@ -218,3 +219,26 @@ if options.verbose:
 	print >>sys.stderr, "writing dag..."
 dag.write_sub_files()
 dag.write_dag()
+
+
+#
+# =============================================================================
+#
+#                               DAG Verification
+#
+# =============================================================================
+#
+
+def check_caches_against_segwizard(segwizard_filename, cache_filenames):
+	"""
+	Check that the segments in the segwizard file span the files in the
+	given caches.  This ensures that no job has been created that
+	analyzes data outside of the given input segment lists.
+	"""
+	segwizard_list = segmentsUtils.fromsegwizard(file(segwizard_filename), coltype = LIGOTimeGPS).coalesce()
+	cache_list = segments.segmentlist()
+	for cache_filename in cache_filenames:
+		cache_list |= segmentsUtils.fromlalcache(file(cache_filename), coltype = LIGOTimeGPS).coalesce()
+	extra = cache - segwizard
+	if extra:
+		raise ValueError, "caches span these times not spanned by segwizard: %s" % str(extra)
