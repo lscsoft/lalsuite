@@ -465,6 +465,36 @@ int main(int argc,char *argv[])
 			  loudestF = Fstat.F;
 			  strcpy ( loudestEntry,  buf );
 			}
+
+		      /* Calculating the (A^i)s coefficients in order to compute the Amplitude parameters 
+			 psi, iota, phi_0 and h_0.*/
+
+		      if(uvar_EstimSigParam) 
+			{   
+			  MultiAMCoeffs *multiAMcoef = NULL;
+			  LAL_CALL ( LALGetMultiAMCoeffs ( &status, &multiAMcoef, GV.multiDetStates, psPoint.skypos ), &status);
+			  
+			  REAL8 A1 = 0.0, A2 = 0.0, A3 = 0.0, A4 = 0.0, Asq = 0.0, detA = 0.0;
+			  REAL8 A =0.0, B =0.0, C = 0.0, Dinv = 0.0;
+
+			  A = multiAMcoef->A;
+			  B = multiAMcoef->B;
+			  C = multiAMcoef->C;
+			  Dinv = 1.0 / multiAMcoef->D;
+			  
+			  A1 =   4.0 * Dinv * ( B * Fstat.Fa.re - C * Fstat.Fb.re); /* A1=2/D(B H1-C H2) where, H1=Re(2Fa) and H2=Re(2Fb) */
+			  A2 =   4.0 * Dinv * ( A * Fstat.Fb.re - C * Fstat.Fa.re);
+			  A3 = - 4.0 * Dinv * ( B * Fstat.Fa.im - C * Fstat.Fb.im);
+			  A4 = - 4.0 * Dinv * ( A * Fstat.Fb.im - C * Fstat.Fa.im);
+			  
+			  
+			  Asq = A1*A1 + A2*A2 + A3*A3 + A4*A4;
+			  detA = A1*A4-A2*A3;
+			  
+			  /* Free AM Coefficients */
+			  XLALDestroyMultiAMCoeffs ( multiAMcoef );
+			  
+			}
 		      
 		    } /* for i < nBins: loop over frequency-bins */
 
@@ -561,9 +591,9 @@ initUserVars (LALStatus *status)
   uvar_EstimSigParam = FALSE;
 
   uvar_f1dot     = 0.0;
-  uvar_df1dot 	 = 1.0;
-  uvar_df2dot 	 = 1.0;
-  uvar_df3dot 	 = 1.0;
+  uvar_df1dot    = 1.0;
+  uvar_df2dot    = 1.0;
+  uvar_df3dot    = 1.0;
   uvar_f1dotBand = 0.0;
   
   uvar_TwoFthreshold = 10.0;
