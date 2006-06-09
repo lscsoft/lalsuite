@@ -274,7 +274,7 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 			    FILE *fp);
 
   void PrintHoughHistogram(LALStatus *status,
-			   UINT4Vector *hist, 
+			   UINT8Vector *hist, 
 			   CHAR *fnameOut);
 
   void GetChkPointIndex( LALStatus *status,

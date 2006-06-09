@@ -184,19 +184,15 @@ int main( int argc, char *argv[]) {
   INT4 tmpLeap; 
 
   /* sft related stuff */
-  /* input sft vectors */
-  SFTVector *inputSFTVec1=NULL;
-  SFTVector *inputSFTVec2=NULL;
-
   static MultiSFTVectorSequence stackMultiSFT1;
   static MultiSFTVectorSequence stackMultiSFT2;
   static MultiNoiseWeightsSequence stackMultiNoiseWeights1;
   static MultiNoiseWeightsSequence stackMultiNoiseWeights2;
   static MultiDetectorStateSeriesSequence stackMultiDetStates1;
   static MultiDetectorStateSeriesSequence stackMultiDetStates2;
-
-
+  REAL8 S_hat1, S_hat2;
   SFTCatalogSequence catalogSeq1, catalogSeq2;
+
 
   /* number of SFTs in each stack and total number of SFTs */
   INT4 *numSFTsinStack1, *numSFTsinStack2, nSFTs1, nSFTs2;
@@ -211,7 +207,6 @@ int main( int argc, char *argv[]) {
 
   /* LALdemod related stuff */
   REAL8FrequencySeriesVector fstatVector1, fstatVector2; /* Fstatistic vectors for each stack */
-  FstatStackParams FstatPar1, FstatPar2;
   ComputeFParams CFparams;		   
 
 
@@ -228,7 +223,15 @@ int main( int argc, char *argv[]) {
   DopplerScanState thisScan1 = empty_DopplerScanState; /* current state of the Doppler-scan */
   DopplerScanState thisScan2 = empty_DopplerScanState; /* current state of the Doppler-scan */
   DopplerPosition dopplerpos1, dopplerpos2;		/* current search-parameters */
-  SkyPosition thisPoint1, thisPoint2;
+  CWParamSpacePoint thisPoint1, thisPoint2; 
+  static ComputeFBuffer cfBuffer1;
+  static ComputeFBuffer cfBuffer2;
+
+  /* various fkdot vectors */
+  REAL8Vector fkdot_refTime, fkdot_startTime;
+  REAL8Vector fkdotBand_refTime, fkdotBand_startTime;
+  LALPulsarSpinRange spinRange_refTime, spinRange_startTime;
+  REAL8Vector fkdot_current;
 
   /* variables for logging */
   CHAR *fnamelog=NULL;
@@ -285,9 +288,6 @@ int main( int argc, char *argv[]) {
   CHAR *uvar_skyGridFile=NULL;
   CHAR *uvar_skyRegion=NULL;
 
-  REAL8Vector fkdot_refTime, fkdot_startTime;
-  REAL8Vector fkdotBand_refTime, fkdotBand_startTime;
-  LALPulsarSpinRange spinRange_refTime, spinRange_startTime;
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
@@ -420,6 +420,11 @@ int main( int argc, char *argv[]) {
     exit( DRIVEHOUGHFSTAT_EBAD );
   }
 
+  if ( uvar_followUp && (!LALUserVarWasSet(&uvar_sftDir2))) {
+    fprintf( stderr, "Specify sfts for second stage for follow-up\n");
+    exit( DRIVEHOUGHFSTAT_EBAD );
+  }
+
   /* no need to follow up zero 1st stage candidates */
   if ( uvar_nCand1 <= 0 )
     uvar_followUp = FALSE;
@@ -435,6 +440,8 @@ int main( int argc, char *argv[]) {
   fkdotBand_refTime.length = 2; /* frequency and spindown */
   fkdot_refTime.data = (REAL8 *)LALCalloc(1, 2*sizeof(REAL8));
   fkdotBand_refTime.data = (REAL8 *)LALCalloc(1, 2*sizeof(REAL8));
+  fkdot_current.length = 2;
+  fkdot_current.data = (REAL8 *)LALCalloc(1, 2*sizeof(REAL8));
   for (j = 0; j < 2; j++)  
     {
       fkdot_refTime.data[0] = uvar_fStart;
@@ -543,6 +550,10 @@ int main( int argc, char *argv[]) {
     tEnd1 += timebase1;
     tObs1 = tEnd1 - tStart1;
 
+    /* set reference time for calculating Fstatistic */
+    thisPoint1.refTime = sftTimeStamps1->data[0];
+    thisPoint1.binary = NULL;
+    
     /* set reference time for pular parameters */
     if ( LALUserVarWasSet(&uvar_refTime)) 
       refTime = uvar_refTime;
@@ -570,7 +581,7 @@ int main( int argc, char *argv[]) {
   } /* end of setting up 1st stage stacks */
 
 
-  
+  /* read sfts, normalize them, calculate noise weights and detector states */   
   {
     REAL8 doppWings, fMin, fMax, f0;
     REAL8 startTime_freqLo, startTime_freqHi;
@@ -618,7 +629,6 @@ int main( int argc, char *argv[]) {
 	/* if the stack is non-empty */
 
 	MultiPSDVector *psd = NULL;
-	REAL8 S0;
 	
 	LIGOTimeGPSVector *startTsftStack = NULL; 
 
@@ -650,15 +660,15 @@ int main( int argc, char *argv[]) {
 	LAL_CALL( LALNormalizeMultiSFTVect ( &status, &psd, stackMultiSFT1.data[nStacks1], 
 					     uvar_blocksRngMed ), &status );
 
-	LAL_CALL( LALComputeMultiNoiseWeights  ( &status, stackMultiNoiseWeights1.data + nStacks1, &S0, 
+	LAL_CALL( LALComputeMultiNoiseWeights  ( &status, stackMultiNoiseWeights1.data + nStacks1, &S_hat1, 
 						 psd, uvar_blocksRngMed, 0 ), &status );
 	
 	LAL_CALL ( LALGetMultiDetectorStates ( &status, stackMultiDetStates1.data + nStacks1, 
 					       stackMultiSFT1.data[nStacks1], edat ), &status );
 
-	nStacks1++;
 	LAL_CALL ( LALDestroyMultiPSDVector ( &status, &psd ), &status );
 
+	nStacks1++;
       } /* if ( catalogSeq1->data[k].length > 0 ) */
     } /* loop over k */
  
@@ -691,7 +701,7 @@ int main( int argc, char *argv[]) {
     /* free catalog sequence */
     LALFree( &catalogSeq1);
     
-  } /* finish setting up stacks */
+  } /* finish reading sfts and normalizing them */
 
     
   /* allocate fstat memory */
@@ -746,74 +756,43 @@ int main( int argc, char *argv[]) {
        to be followed up is probably very close to the full range.  However, this
        might have to be changed if there are a very few candidates to be followed up.
     */
-    if ( LALUserVarWasSet(&uvar_sftDir2))     
-      {
-	
-	SFTCatalog *catalog2 = NULL;
-	SFTConstraints *constraints2 = NULL;
-	CHAR *tempDir;
-
-
-	/* get sft catalog */
-	tempDir = (CHAR *)LALMalloc(512*sizeof(CHAR));
-	strcpy(tempDir, uvar_sftDir2);
-	strcat(tempDir, "/*.sft");
-	LAL_CALL( LALSFTdataFind( &status, &catalog2, tempDir, constraints2), &status);
-
-	/* set some sft parameters */
-	nSFTs2 = catalog2->length;
-	deltaF2 = catalog2->data->header.deltaF;
-	timebase2 = 1.0/deltaF1;
-
-	/* get SFT timestamps */
-	LAL_CALL( LALSFTtimestampsFromCatalog(  &status, &sftTimeStamps2, catalog2 ), &status);  	
-
-	/* calculate start and end times and tobs */
-	LAL_CALL( LALGPStoFloat ( &status, &tStart2, sftTimeStamps2->data), &status);
-	LAL_CALL( LALGPStoFloat ( &status, &tEnd2, sftTimeStamps2->data + sftTimeStamps2->length - 1), &status);
-	tEnd2 += timebase2;
-	tObs2 = tEnd2 - tStart2;
-	
-	/* get sft catalogs for each stack */
-	LAL_CALL( SetUpStacks( &status, &catalogSeq2, &tStack2, catalog2, uvar_nStacks2), &status);
-
-	/* free memory -- now we don't need the original catalog */
-	LALFree(tempDir);
-	LAL_CALL( LALDestroySFTCatalog( &status, &catalog2 ), &status);  	
-
-
-      } /* end sftdir2 if statement */
-    else 
-      {
-	/* reuse 1st stage sfts */
-	
-	/* set some sft parameters */
-	nSFTs2 = nSFTs1;
-	deltaF2 = deltaF1;
-	timebase2 = 1.0/deltaF2;
-
-	/* time stamps are the same */
-	sftTimeStamps2 = sftTimeStamps1;	
-		
-	/* calculate start and end times and tobs */
-	LAL_CALL( LALGPStoFloat ( &status, &tStart2, sftTimeStamps2->data), &status);
-	LAL_CALL( LALGPStoFloat ( &status, &tEnd2, sftTimeStamps2->data + sftTimeStamps2->length - 1), &status);
-	tEnd2 += timebase2;
-	tObs2 = tEnd2 - tStart2;
-	
-	/* set sftvec2 equal to 1st stage sft vector -- these are already normalized*/
-	inputSFTVec2 = inputSFTVec1;
-	
-	/* set other sft parameters */
-	sftlength2 = sftlength1;
-	sftFminBin2 = sftFminBin1;
-	
-
-      } /* end 2nd stage stack setting */
+    SFTCatalog *catalog2 = NULL;
+    SFTConstraints *constraints2 = NULL;
+    CHAR *tempDir;
+    
+    
+    /* get sft catalog */
+    tempDir = (CHAR *)LALMalloc(512*sizeof(CHAR));
+    strcpy(tempDir, uvar_sftDir2);
+    strcat(tempDir, "/*.sft");
+    LAL_CALL( LALSFTdataFind( &status, &catalog2, tempDir, constraints2), &status);
+    
+    /* set some sft parameters */
+    nSFTs2 = catalog2->length;
+    deltaF2 = catalog2->data->header.deltaF;
+    timebase2 = 1.0/deltaF1;
+    
+    /* get SFT timestamps */
+    LAL_CALL( LALSFTtimestampsFromCatalog(  &status, &sftTimeStamps2, catalog2 ), &status);  	
+    
+    /* calculate start and end times and tobs */
+    LAL_CALL( LALGPStoFloat ( &status, &tStart2, sftTimeStamps2->data), &status);
+    LAL_CALL( LALGPStoFloat ( &status, &tEnd2, sftTimeStamps2->data + sftTimeStamps2->length - 1), &status);
+    tEnd2 += timebase2;
+    tObs2 = tEnd2 - tStart2;
+    
+    /* get sft catalogs for each stack */
+    LAL_CALL( SetUpStacks( &status, &catalogSeq2, &tStack2, catalog2, uvar_nStacks2), &status);
+    
+    /* free memory -- now we don't need the original catalog */
+    LALFree(tempDir);
+    LAL_CALL( LALDestroySFTCatalog( &status, &catalog2 ), &status);  	
+    
 
     /* read 2nd stage sfts */
     {
       REAL8 doppWings, fMin, fMax, f0;
+      MultiPSDVector *psd = NULL;
       
       /* set wings of sfts to be read */
       /* the wings must be enough for the Doppler shift and extra bins
@@ -843,6 +822,12 @@ int main( int argc, char *argv[]) {
       stackMultiSFT2.length = uvar_nStacks2;
       stackMultiSFT2.data = (MultiSFTVector **)LALCalloc(2, uvar_nStacks2 * sizeof(MultiSFTVector *));
       
+      stackMultiNoiseWeights2.length = uvar_nStacks2;
+      stackMultiNoiseWeights2.data = (MultiNoiseWeights **)LALCalloc(1, uvar_nStacks2 * sizeof(MultiNoiseWeights *));
+      
+      stackMultiDetStates2.length = uvar_nStacks2;
+      stackMultiDetStates2.data = (MultiDetectorStateSeries **)LALCalloc(1, uvar_nStacks2 * sizeof(MultiDetectorStateSeries *));
+
       for (nStacks2 = 0, k = 0; k < uvar_nStacks2; k++) {
       
 	if ( catalogSeq2.data[k].length > 0 ){
@@ -864,6 +849,25 @@ int main( int argc, char *argv[]) {
 	  
 	  /* load the sfts */
 	  LAL_CALL( LALLoadMultiSFTs ( &status, stackMultiSFT2.data + nStacks2,  catalogSeq2.data + k, fMin, fMax ), &status);
+
+
+	  /* free memory for sft catalog for this stack*/
+	  {
+	    SFTCatalog *thisCatalog = catalogSeq2.data + k;
+	    LAL_CALL( LALDestroySFTCatalog( &status, &thisCatalog), &status);  	
+	  }
+	  
+	  /* normalize sfts and compute noise weights and detector state */
+	  LAL_CALL( LALNormalizeMultiSFTVect ( &status, &psd, stackMultiSFT2.data[nStacks2], 
+					       uvar_blocksRngMed ), &status );
+	  
+	  LAL_CALL( LALComputeMultiNoiseWeights  ( &status, stackMultiNoiseWeights2.data + nStacks2, &S_hat2, 
+						   psd, uvar_blocksRngMed, 0 ), &status );
+	  
+	  LAL_CALL ( LALGetMultiDetectorStates ( &status, stackMultiDetStates2.data + nStacks2, 
+						 stackMultiSFT2.data[nStacks2], edat ), &status );
+	  
+	  LAL_CALL ( LALDestroyMultiPSDVector ( &status, &psd ), &status );
 	  
 	  nStacks2++;
 	  
@@ -942,7 +946,7 @@ int main( int argc, char *argv[]) {
   scanInit1.obsDuration = tStack1;
   scanInit1.obsBegin = midTstack1.data[ nStacks1/2 ];
   scanInit1.Detector = &detector1;
-  scanInit1.ephemeris = edat;		/* used by Ephemeris-based metric */
+  scanInit1.ephemeris = edat;
   scanInit1.skyGridFile = uvar_skyGridFile;
   scanInit1.searchRegion.Freq = uvar_fStart;
   scanInit1.searchRegion.FreqBand = uvar_fBand;
@@ -954,8 +958,8 @@ int main( int argc, char *argv[]) {
 
   /* parameters for 2nd stage */
   /* set up parameters for second stage Fstat calculation */
-  /* same as for FstatPar1 except we don't set frequency
-     and frequency band -- these depend on candidates to be followed up */
+  /* we don't set frequency and frequency band 
+     -- these depend on candidates to be followed up */
   if ( uvar_followUp ) 
     {
 
@@ -1024,14 +1028,10 @@ int main( int argc, char *argv[]) {
       /*------------- calculate F statistic for each stack --------------*/
       
       /* normalize skyposition: correctly map into [0,2pi]x[-pi/2,pi/2] */
-      thisPoint1.longitude = dopplerpos1.Alpha;
-      thisPoint1.latitude = dopplerpos1.Delta;
-      thisPoint1.system = COORDINATESYSTEM_EQUATORIAL;
-      LAL_CALL (LALNormalizeSkyPosition(&status, &thisPoint1, &thisPoint1), &status);
-      
-      /* set sky template points */
-      FstatPar1.alpha = thisPoint1.longitude;
-      FstatPar1.delta = thisPoint1.latitude;
+      thisPoint1.skypos.longitude = dopplerpos1.Alpha;
+      thisPoint1.skypos.latitude = dopplerpos1.Delta;
+      thisPoint1.skypos.system = COORDINATESYSTEM_EQUATORIAL;
+      LAL_CALL (LALNormalizeSkyPosition(&status, &thisPoint1.skypos, &thisPoint1.skypos), &status);
       
       /* number of fdot values */
       dfDot = thisScan1.df1dot;
@@ -1041,40 +1041,35 @@ int main( int argc, char *argv[]) {
       for ( ifdot=0; ifdot<nfdot; ifdot++)
 	{
 	  /* set spindown value for Fstat calculation */
-	  FstatPar1.fdot->data[0] = uvar_fdot + ifdot * dfDot;
+	  thisPoint1.fkdot->data[1] = uvar_fdot + ifdot * dfDot;
 	  	  
-	  /* calculate the Fstatistic */
-	  
-
+	  /* calculate the Fstatistic for each stack*/
+	  for ( k = 0; k < nStacks1; k++) {
+	    LAL_CALL( ComputeFStatFreqBand ( &status, fstatVector1.data + k, &thisPoint1, 
+					     stackMultiSFT1.data[k], stackMultiNoiseWeights1.data[k], 
+					     stackMultiDetStates1.data[k], &CFparams, &cfBuffer1 ), &status);
+	  }
 	  
 	  /* print fstat vector if required -- mostly for debugging */
 	  if ( uvar_printFstat1 )
 	    {
 	      for (k=0; k<nStacks1; k++)
-		LAL_CALL( PrintFstatVec_fp ( &status, fstatVector1.data + k, fpFstat1, FstatPar1.alpha, 
-					     FstatPar1.delta, FstatPar1.fdot->data[0]), &status); 
+		LAL_CALL( PrintFstatVec_fp ( &status, fstatVector1.data + k, fpFstat1, thisPoint1.skypos.longitude, 
+					     thisPoint1.skypos.latitude, thisPoint1.fkdot->data[1]), &status); 
 	    }
 
 
 	  
-	  /*------------ select peaks ------------*/ 
-	      
+	  /* select peaks */ 	      
 	  LAL_CALL( FstatVectToPeakGram( &status, &pgV, &fstatVector1, uvar_peakThrF), &status);
-	  
-	  /* free Fstat vectors -- we don't need them now because we have the peakgrams */
-	  for(k=0; k<nStacks1; k++) {
-	    LALFree(fstatVector1.data[k].data->data);
-	    LALFree(fstatVector1.data[k].data);
-	  }
-	  LALFree(fstatVector1.data);
-	  
+	  	  
 	  
 	  /*--------------- calculate Hough map and get candidates ---------------*/
 	  
 	  /* set sky location and spindown for Hough grid -- same as for Fstat calculation */	  
-	  houghPar.alpha = FstatPar1.alpha;
-	  houghPar.delta = FstatPar1.delta;
-	  houghPar.fdot->data[0] = FstatPar1.fdot->data[0];
+	  houghPar.alpha = thisPoint1.skypos.longitude;
+	  houghPar.delta = thisPoint1.skypos.latitude;
+	  houghPar.fdot->data[0] = thisPoint1.fkdot->data[1];
 	  
 	  /* get candidates */
 	  LAL_CALL ( ComputeFstatHoughMap ( &status, &houghCand1, &pgV, &houghPar, LALUserVarWasSet(&uvar_houghThr) ), &status);
@@ -1114,9 +1109,6 @@ int main( int argc, char *argv[]) {
 		  fdot1 = houghCand1.list[j].fdot - 0.5 * houghCand1.list[j].dFdot;
 		  fdotBand1 = houghCand1.list[j].dFdot;
 		  
-		  /* set frequency range */
-		  FstatPar2.fStart = fStart1;
-		  FstatPar2.fBand = freqBand1;
 		  
 		  /* set sky region to be refined */
 		  alpha1 = houghCand1.list[j].alpha - 0.5 * houghCand1.list[j].dAlpha;
@@ -1149,15 +1141,11 @@ int main( int argc, char *argv[]) {
 		      /*------------- calculate F statistic for each stack --------------*/
 		      
 		      /* normalize skyposition: correctly map into [0,2pi]x[-pi/2,pi/2] */
-		      thisPoint2.longitude = dopplerpos2.Alpha;
-		      thisPoint2.latitude = dopplerpos2.Delta;
-		      thisPoint2.system = COORDINATESYSTEM_EQUATORIAL;
-		      LAL_CALL (LALNormalizeSkyPosition(&status, &thisPoint2, &thisPoint2), &status);
-		      
-		      /* set sky template points */
-		      FstatPar2.alpha = thisPoint2.longitude;
-		      FstatPar2.delta = thisPoint2.latitude;
-		      
+		      thisPoint2.skypos.longitude = dopplerpos2.Alpha;
+		      thisPoint2.skypos.latitude = dopplerpos2.Delta;
+		      thisPoint2.skypos.system = COORDINATESYSTEM_EQUATORIAL;
+		      LAL_CALL (LALNormalizeSkyPosition(&status, &thisPoint2.skypos, &thisPoint2.skypos), &status);
+		      		      
 		      /* number of fdot values */
 		      dfDot2 = thisScan2.df1dot;
 		      nfdot2 = (UINT4)( fdotBand1 / dfDot2 + 0.5) + 1; 
@@ -1167,25 +1155,27 @@ int main( int argc, char *argv[]) {
 			{
 			  
 			  /* set spindown value for Fstat calculation */
-			  FstatPar2.fdot->data[0] = fdot1 + ifdot2 * dfDot2;
-			  
-			  /* set up memory for Fstat vectors */
-			  LAL_CALL(SetUpFstatStack( &status, &fstatVector2, &FstatPar2), &status);
+			  thisPoint2.fkdot->data[1] = fdot1 + ifdot2 * dfDot2;
 			  
 			  /* calculate the Fstatistic */
-
+			  for ( k = 0; k < nStacks2; k++) {
+			    LAL_CALL( ComputeFStatFreqBand ( &status, fstatVector2.data + k, &thisPoint2, 
+							     stackMultiSFT2.data[k], stackMultiNoiseWeights2.data[k], 
+							     stackMultiDetStates2.data[k], &CFparams, &cfBuffer2 ), &status);
+			  }
+			  
 			  
 			  /* select candidates from 2nd stage */
 			  for (k=0; k<nStacks2; k++) 
 			    {
 			      if ( LALUserVarWasSet(&uvar_fstatThr))
 				LAL_CALL( GetFstatCandidates( &status, fstatToplist, fstatVector2.data + k, uvar_fstatThr,
-							      FstatPar2.alpha, FstatPar2.delta, 
-							      FstatPar2.fdot->data[0], uvar_reallocBlock ), &status);
+							      thisPoint2.skypos.longitude, thisPoint2.skypos.latitude, 
+							      thisPoint2.fkdot->data[1], uvar_reallocBlock ), &status);
 			      else
 				LAL_CALL( GetFstatCandidates_toplist( &status, fstatToplist, fstatVector2.data + k, 
-								      FstatPar2.alpha, FstatPar2.delta, 
-								      FstatPar2.fdot->data[0] ), &status);
+								      thisPoint2.skypos.longitude, thisPoint2.skypos.latitude, 
+								      thisPoint2.fkdot->data[1] ), &status);
 			      
 			      /* free Fstat vector */
 			      LALFree(fstatVector2.data[k].data->data);
@@ -1229,10 +1219,18 @@ int main( int argc, char *argv[]) {
   if ( uvar_followUp )
     {
       LALFree(numSFTsinStack2);
-      LAL_CALL (LALDDestroyVector (&status, &(FstatPar2.fdot)), &status); 
       LALFree(midTstack2.data);
 
-     
+      /* free sfts */
+      for ( k = 0; k < nStacks2; k++) {
+	LAL_CALL( LALDestroyMultiSFTVector ( &status, stackMultiSFT2.data + k), &status);
+	LAL_CALL( LALDestroyMultiNoiseWeights ( &status, stackMultiNoiseWeights2.data + k), &status);
+	XLALDestroyMultiDetectorStateSeries ( stackMultiDetStates2.data[k] );
+      }
+      LALFree(stackMultiSFT2.data);
+      LALFree(stackMultiNoiseWeights2.data);
+      LALFree(stackMultiDetStates2.data);
+           
       if ( fstatToplist ) 
 	free_toplist(&fstatToplist);
       
@@ -1259,16 +1257,22 @@ int main( int argc, char *argv[]) {
   LALFree(stackMultiNoiseWeights1.data);
   LALFree(stackMultiDetStates1.data);
 
+  XLALEmptyComputeFBuffer ( cfBuffer1 );
+  
   LAL_CALL(LALDestroyTimestampVector ( &status, &sftTimeStamps1), &status);  	  
-  LAL_CALL (LALDestroySFTVector(&status, &inputSFTVec1),&status );
+
   LALFree(numSFTsinStack1);
   LALFree(midTstack1.data);
   LALFree(startTstack1.data);
   LAL_CALL (LALDDestroyVector (&status, &(houghPar.fdot)), &status);
-  LAL_CALL (LALDDestroyVector (&status, &(FstatPar1.fdot)), &status); 
 
-
-
+  /* free Fstat vectors  */
+  for(k=0; k<nStacks1; k++) {
+    LALFree(fstatVector1.data[k].data->data);
+    LALFree(fstatVector1.data[k].data);
+  }
+  LALFree(fstatVector1.data);
+  
 
   /* free Vel/Pos vectors and ephemeris */
   LALFree(edat->ephemE);
@@ -1285,7 +1289,6 @@ int main( int argc, char *argv[]) {
   /* free second stage memory if required */
   if ( ( LALUserVarWasSet(&uvar_sftDir2)) )
     {     
-      LAL_CALL (LALDestroySFTVector(&status, &inputSFTVec2),&status );
       LAL_CALL(LALDestroyTimestampVector ( &status, &sftTimeStamps2), &status);  	
     }
  
@@ -1296,6 +1299,7 @@ int main( int argc, char *argv[]) {
   LALFree(fkdotBand_refTime.data);
   LALFree(fkdot_startTime.data);
   LALFree(fkdotBand_startTime.data);
+  LALFree(fkdot_current.data);
 
   LAL_CALL (LALDestroyUserVars(&status), &status);  
 
@@ -1443,8 +1447,8 @@ void ComputeFstatHoughMap(LALStatus *status,
   LIGOTimeGPSVector   *ts;
   REAL8Vector timeDiffV;
   REAL8 houghThr;
-  UINT4Vector hist; /* histogram vector */ 
-  UINT4Vector histTotal; /* total histogram vector */
+  UINT8Vector hist; /* histogram vector */ 
+  UINT8Vector histTotal; /* total histogram vector */
   HoughStats stats; /* statistics struct */
   CHAR *fileStats = NULL;
   FILE *fpStats = NULL;
@@ -1529,8 +1533,8 @@ void ComputeFstatHoughMap(LALStatus *status,
     histTotal.length = nStacks+1;
     hist.data = NULL;
     histTotal.data = NULL;
-    hist.data = (UINT4 *)LALMalloc((nStacks+1)*sizeof(UINT4));
-    histTotal.data = (UINT4 *)LALMalloc((nStacks+1)*sizeof(UINT4));
+    hist.data = (UINT8 *)LALMalloc((nStacks+1)*sizeof(UINT8));
+    histTotal.data = (UINT8 *)LALMalloc((nStacks+1)*sizeof(UINT8));
     { 
       UINT4   j;
       for(j=0; j< histTotal.length; ++j) 
@@ -2328,7 +2332,7 @@ void GetFstatCandidates_toplist( LALStatus *status,
 
 /** Print hough histogram to a file */
 void PrintHoughHistogram( LALStatus *status,
-		     UINT4Vector *hist, 
+		     UINT8Vector *hist, 
 		     CHAR *fnameOut)
 {
 
@@ -2348,7 +2352,7 @@ void PrintHoughHistogram( LALStatus *status,
     }
 
   for (i=0; i < hist->length; i++)
-    fprintf(fp,"%d  %d\n", i, hist->data[i]);
+    fprintf(fp,"%d  %llud\n", i, hist->data[i]);
   
   fclose( fp );  
   
