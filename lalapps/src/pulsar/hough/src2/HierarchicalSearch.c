@@ -1236,6 +1236,10 @@ int main( int argc, char *argv[]) {
       
       fclose(fpFstat);
       LALFree(fnameFstatCand);
+
+      XLALEmptyComputeFBuffer ( cfBuffer1 );
+
+      LAL_CALL(LALDestroyTimestampVector ( &status, &sftTimeStamps2), &status);  	
     }
 
   if ( uvar_printCand1 )
@@ -1286,11 +1290,6 @@ int main( int argc, char *argv[]) {
   if ( scanInit1.searchRegion.skyRegionString )
     LALFree ( scanInit1.searchRegion.skyRegionString );
 
-  /* free second stage memory if required */
-  if ( ( LALUserVarWasSet(&uvar_sftDir2)) )
-    {     
-      LAL_CALL(LALDestroyTimestampVector ( &status, &sftTimeStamps2), &status);  	
-    }
  
   /* free candidates */
   LALFree(houghCand1.list);
