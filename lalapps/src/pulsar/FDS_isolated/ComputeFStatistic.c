@@ -245,6 +245,7 @@ INT4 uvar_MaxFileSizeKB;
 INT4 uvar_NumCandidatesToKeep;
 
 BOOLEAN uvar_projectMetric;
+REAL8 uvar_WUfpops;
 
 /*----------------------------------------------------------------------*/
 /* some other global variables */
@@ -1292,6 +1293,8 @@ initUserVars (LALStatus *status)
 		   "Number of Fstat 'canidates' to keep. (0 = All)");
 
   LALregINTUserVar(status,        RngMedWindow,     0, UVAR_DEVELOPER, "Window-size to use in running-median normalization of data");
+
+  LALregREALUserVar(status,       WUfpops, 	0, UVAR_DEVELOPER, "Einstein@Home: estimated fpops for this WU");
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
