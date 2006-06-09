@@ -34,7 +34,8 @@ exploring parameter space and wondering how we can practically take
 advantage of correlations. It's also good at catching bugs and errors in the
 numerical routines under \texttt{StackMetric.h}.  The effectiveness of the
 tiling at catching signals should be very little reduced by the
-approximation. Owen will write a short paper on this and other details.
+approximation. Jones, Owen, and Whitbeck will write a short paper on this
+and other details.
 
 **************************************************************</lalLaTeX> */
 
