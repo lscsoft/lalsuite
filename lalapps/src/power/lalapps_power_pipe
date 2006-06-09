@@ -64,6 +64,7 @@ def parse_command_line():
 	parser.add_option("--condor-log-dir", metavar = "path", default = ".", help = "set directory for Condor log (default = .)")
 	parser.add_option("--config-file", metavar = "filename", default = "power.ini", help = "set .ini config file name (default = power.ini)")
 	parser.add_option("--full-segments", action = "store_true", help = "analyze all data from segment lists, not just coincident times")
+	parser.add_option("--no-injections", action = "store_true", help = "do not do injections")
 	parser.add_option("-v", "--verbose", action = "store_true", help = "be verbose")
 	options, filenames = parser.parse_args()
 
@@ -174,11 +175,12 @@ def make_single_instrument_fragment(dag, options, instrument, seglist, binjfrag 
 		if "cluster" in power.powerjob.get_opts():
 			darmpowerfrag = power.make_bucluster_fragment(dag, [darmpowerfrag], instrument, seg, options.tag)
 
-		injpowerfrag = power.make_injection_segment_fragment(dag, datafindfrag, seg, instrument, options.psds_per_injection, options.tag, binjfrag = binjfrag, tisifrag = tisifrag)
-		if "cluster" in power.powerjob.get_opts():
-			injpowerfrag = power.make_bucluster_fragment(dag, [injpowerfrag], instrument, seg, "INJECTIONS_%s" % options.tag)
+		if not options.no_injections:
+			injpowerfrag = power.make_injection_segment_fragment(dag, datafindfrag, seg, instrument, options.psds_per_injection, options.tag, binjfrag = binjfrag, tisifrag = tisifrag)
+			if "cluster" in power.powerjob.get_opts():
+				injpowerfrag = power.make_bucluster_fragment(dag, [injpowerfrag], instrument, seg, "INJECTIONS_%s" % options.tag)
 
-		binjfindfrag = power.make_binjfind_fragment(dag, [injpowerfrag], instrument, seg, "INJECTIONS_%s" % options.tag)
+			binjfindfrag = power.make_binjfind_fragment(dag, [injpowerfrag], instrument, seg, "INJECTIONS_%s" % options.tag)
 
 		nodes.append(darmpowerfrag)
 	return nodes
@@ -203,7 +205,10 @@ dag.set_dag_file(os.path.splitext(filenames[0])[0])
 # DAG "preamble":  injection and time slide lists.
 #
 
-binjfrag = power.make_multibinj_fragment(dag, options.seglistdict.extent_all(), options.tag)
+if options.no_injections:
+	binjfrag = None
+else:
+	binjfrag = power.make_multibinj_fragment(dag, options.seglistdict.extent_all(), options.tag)
 tisifrag = power.make_tisi_fragment(dag, options.tag)
 
 #
