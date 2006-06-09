@@ -902,7 +902,7 @@ int main(int argc,char *argv[])
 	  *fraction_done_hook=local_fraction_done;
 
 	/* pass currently estimated fpops to client: */
-	if ( LALUserVarWasSet ( &uvar_WUfpops ) ) /* ?? what to do about Integer-ops?? */
+	if ( LALUserVarWasSet ( &uvar_WUfpops ) ) /* ignore IOPS  */
 	  boinc_ops_cumulative( local_fraction_done * uvar_WUfpops, 0); 
       }
 #endif
@@ -3626,6 +3626,11 @@ void worker(void) {
 
     } /* if useCompression && ok */
 #endif
+
+  /* report final WU-fpops to client if given */
+  if ( LALUserVarWasSet ( &uvar_WUfpops ) ) 
+    boinc_ops_cumulative( uvar_WUfpops, 0); /* ignore IOPS */
+
   boinc_finish(retval);
   return;
 
