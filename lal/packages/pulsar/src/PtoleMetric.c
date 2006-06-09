@@ -1,10 +1,7 @@
 /**************************************** <lalVerbatim file="PtoleMetricCV">
-Author: Jones D. I.,   Owen, B. J.
+Author: Jones D. I., Owen, B. J., and Whitbeck, D. M.
 $Id$
 ********************************************************** </lalVerbatim> */
-
-/* some parts of this file are based on code from DopplerScan.c, 
-   written by Reinhard Prix. */
 
 /**************************************************************** <lalLaTeX>
 
