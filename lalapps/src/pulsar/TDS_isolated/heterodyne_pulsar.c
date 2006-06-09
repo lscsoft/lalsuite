@@ -525,7 +525,7 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times, HeterodynePa
   if(hetParams.heterodyneflag > 0){
     if(hetParams.hetUpdate.pepoch == 0. && hetParams.hetUpdate.posepoch != 0.)
       hetParams.hetUpdate.pepoch = hetParams.hetUpdate.posepoch;
-    else if(hetParams.het.posepoch == 0. && hetParams.hetUpdate.pepoch != 0.)
+    else if(hetParams.hetUpdate.posepoch == 0. && hetParams.hetUpdate.pepoch != 0.)
       hetParams.hetUpdate.posepoch = hetParams.hetUpdate.pepoch;
       
     T0Update = hetParams.hetUpdate.pepoch;
