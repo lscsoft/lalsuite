@@ -900,6 +900,10 @@ int main(int argc,char *argv[])
 	/* pass variable externally to graphics routines */
 	if (fraction_done_hook != NULL)
 	  *fraction_done_hook=local_fraction_done;
+
+	/* pass currently estimated fpops to client: */
+	if ( LALUserVarWasSet ( &uvar_WUfpops ) ) /* ?? what to do about Integer-ops?? */
+	  boinc_ops_cumulative( local_fraction_done * uvar_WUfpops, 0); 
       }
 #endif
 
