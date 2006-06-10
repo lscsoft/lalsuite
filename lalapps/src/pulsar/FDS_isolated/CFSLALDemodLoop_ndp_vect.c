@@ -59,9 +59,7 @@
 	      UINT4 ve;
 #define VEC_LOOP\
 	      for(ve=0;ve<4;ve++) {\
-                Xsum[ve] = Xsum[ve] * tFreq[ve]\
-		         + Xsum[ve] * tFint[ve]\
-		         + Xalpha_kR4[ve] * aFreq[ve];\
+                Xsum[ve] = Xsum[ve] * (tFreq[ve] + tFint[ve]) + Xalpha_kR4[ve] * aFreq[ve];\
 		aFreq[ve] *= (tFreq[ve] + tFint[ve]);\
                 tFint[ve] -= 2.0;\
 	      }\
