@@ -27,9 +27,7 @@ extern UINT4 maxSFTindex;  /**< maximal sftindex, for error-checking */
 
 /* in case of the (now almost obsolete) hand-coded AltiVec version (and and experimental hook),
    don't use TestLALDemod() below, but the one in external file */
-#if defined(USE_ALTIVEC)
-#include "CFSLALDemod_AltiVec.c"
-#elif defined(USE_AKOS_MARKS)
+#if defined(USE_AKOS_MARKS)
 #include "CFSLALDemod_Akos.c"
 #elif defined(USE_EXP_LALDEMOD)
 #include "CFSLALDemod_Experimental.c"
@@ -311,6 +309,8 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 #include "CFSLALDemodLoop_x86gAss.c"
 #elif defined(USE_X86_MAS)
 #include "CFSLALDemodLoop_x86MSAss.c"
+#elif defined(USE_ALTIVEC)
+#include "CFSLALDemodLoop_AltiVec.c"
 #elif defined(USE_NDP_VECT)
 #include "CFSLALDemodLoop_ndp_vect.c"
 #elif defined(USE_NEW_DIV_PART)
