@@ -363,7 +363,7 @@ initUserVars (LALStatus *stat)
 		      "Year (or range of years) of ephemeris files to be used");
 
   /* ---------- */
-  LALregINTUserVar(stat,        gridType,        0 , UVAR_OPTIONAL, "Template SKY-grid: 0=flat, 1=isotropic, 2=metric, 3=file");
+  LALregINTUserVar(stat,        gridType,        0 , UVAR_OPTIONAL, "Template SKY-grid: 0=flat, 1=isotropic, 2=metric, 3=file, 4=SkyGridFILE+metric");
   LALregINTUserVar(stat,        metricType,     'M', UVAR_OPTIONAL, "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
   LALregREALUserVar(stat,       metricMismatch, 'X', UVAR_OPTIONAL, "Maximal mismatch for SKY-grid (adjust value for more dimensions)");
   LALregREALUserVar(stat,       dAlpha,         'l', UVAR_OPTIONAL, "Resolution in alpha (equatorial coordinates) in radians");
@@ -482,7 +482,7 @@ checkUserInputConsistency (LALStatus *status)
     haveSkyRegion  = (uvar_skyRegion != NULL);
     haveAlphaDelta = (LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta) );
     haveGridFile   = (uvar_skyGridFile != NULL);
-    useGridFile   = (uvar_gridType == GRID_FILE);
+    useGridFile   = (uvar_gridType == GRID_FILE) || (uvar_gridType == GRID_METRIC_SKYFILE);
     haveMetric     = (uvar_metricType > LAL_PMETRIC_NONE);
     useMetric     = (uvar_gridType == GRID_METRIC);
 
