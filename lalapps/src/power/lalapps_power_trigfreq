@@ -170,11 +170,11 @@ def fourier_transform(eventlist, options):
 	return fseries
 
 
-def bin_by_sidereal_time(rates, eventlist):
+def bin_events_by_sidereal_time(rates, eventlist):
 	for n, event in enumerate(eventlist):
 		if event.ifo not in rates:
 			# 1 filter-width per 10 sidereal seconds
-			rates[event.ifo] = rate.RatiosRate(segments.segment(0.0, 2.0 * math.pi), 2.0 * math.pi / 8640.0)
+			rates[event.ifo] = rate.RatiosRate(segments.segment(0.0, 2.0 * math.pi), 10.0 * math.pi / 43200.0)
 		start = date.XLALGreenwichMeanSiderealTime(event.get_start()) % (2.0 * math.pi)
 		stop = date.XLALGreenwichMeanSiderealTime(event.get_stop()) % (2.0 * math.pi)
 		if stop >= start:
@@ -185,14 +185,14 @@ def bin_by_sidereal_time(rates, eventlist):
 
 
 def gps_seglist_to_gmst(seglist):
-	return segments.segmentlist([segments.segment(date.XLALGreenwichMeanSiderealTime(seg[0]) % (2.0 * math.pi), date.XLALGreenwichMeanSiderealTime(seg[1]) % (2.0 * math.pi)) for seg in seglist])
+	return segments.segmentlist([segments.segment(date.XLALGreenwichMeanSiderealTime(start), date.XLALGreenwichMeanSiderealTime(stop)) for (start, stop) in seglist])
 
 
-def normalize_sidereal_bins(rates, segmentlists):
+def bin_segments_by_sidereal_time(rates, segmentlists):
 	for key, value in segmentlists.iteritems():
 		# FIXME: why is the protract() needed?
 		value = gps_seglist_to_gmst(value).protract(10)
-		gmst_days = segmentsUtils.segment_range(value[0][0] - value[0][0] % (2.0 * math.pi), value[-1][1] - value[-1][1] % (2.0 * math.pi) + 2.0 * math.pi, 2.0 * math.pi)
+		gmst_days = segmentsUtils.segmentlist_range(value[0][0] - value[0][0] % (2.0 * math.pi), value[-1][1] - value[-1][1] % (2.0 * math.pi) + 2.0 * math.pi, 2.0 * math.pi)
 		for seglist in segmentsUtils.Fold(value, gmst_days):
 			for seg in seglist:
 				# take a negligible amount off the
@@ -235,26 +235,30 @@ def new_doc(fseries, rates):
 
 options, filenames = parse_command_line()
 
-segmentlists = segments.segmentlistdict()
 fseries = {}
 rates = {}
 for n, filename in enumerate(llwapp.sort_files_by_size(filenames, options.verbose)):
 	if options.verbose:
 		print >>sys.stderr, "%d/%d:" % (n + 1, len(filenames)),
 	doc = llwapp.load_filename(filename, options.verbose)
-	segmentlists |= llwapp.segmentlistdict_fromsearchsummary(doc, "power")
 	eventlist = llwapp.get_table(doc, lsctables.SnglBurstTable.tableName)
-	if options.verbose:
-		print >>sys.stderr, "transforming %d events..." % len(eventlist)
+
 	# for better numerical accuracy, process events with smallest
 	# confidence first.
+	if options.verbose:
+		print >>sys.stderr, "sorting %d events by confidence..." % len(eventlist)
 	eventlist.sort(lambda a, b: cmp(a.confidence, b.confidence))
 
 	# bin by sidereal time
-	bin_by_sidereal_time(rates, eventlist)
+	if options.verbose:
+		print >>sys.stderr, "binning by sidereal time..."
+	bin_events_by_sidereal_time(rates, eventlist)
+	bin_segments_by_sidereal_time(rates, llwapp.segmentlistdict_fromsearchsummary(doc, "power"))
 
 	# Fourier transform
 	if not options.only_rate:
+		if options.verbose:
+			print >>sys.stderr, "Fourier transforming..."
 		newfseries = fourier_transform(eventlist, options)
 		for key, value in newfseries.iteritems():
 			if key in fseries:
@@ -263,5 +267,4 @@ for n, filename in enumerate(llwapp.sort_files_by_size(filenames, options.verbos
 				fseries[key] = value
 	doc.unlink()
 
-normalize_sidereal_bins(rates, segmentlists)
 llwapp.write_filename(new_doc(fseries, rates), options.output, options.verbose)
