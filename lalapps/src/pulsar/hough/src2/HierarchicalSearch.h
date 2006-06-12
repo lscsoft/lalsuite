@@ -165,15 +165,31 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
     INT8 fBinIni;              /**< start frequency */
     INT8 fBinFin;              /**< frequency band */
     INT4 nfSizeCylinder;       /**< cylinder of LUTs */
-    LALDetector detector;      /**< detector */
     LIGOTimeGPSVector *ts;     /**< timestamps of mid points of stacks */
     REAL8VectorSequence *vel;  /**< detector velocity for each stack */
     REAL8VectorSequence *pos;  /**< detector position for each stack */
     REAL8 alpha;               /**< right ascension */
     REAL8 delta;               /**< declination */
-    REAL8Vector *fdot;         /**< spindown parameters */
+    REAL8Vector *fkdot;        /**< spin parameters (f and fdot) */
+    REAL8Vector *fkdotBand;    /**< range of spin parameters */ 
     CHAR *outBaseName;         /**< file for writing output -- if chosen */
   } HoughParams;
+
+
+  /** parameters for the semicoherent stage -- hough or stackslide */
+  typedef struct tagSemiCoherentParams {
+    REAL8 nCand;               /**< number of cancidates to return */
+    REAL8 tStack;              /**< length of each stack stack */
+    LIGOTimeGPSVector *tsMid;  /**< timestamps of mid points of stacks */
+    REAL8VectorSequence *vel;  /**< detector velocity for each stack */
+    REAL8VectorSequence *pos;  /**< detector position for each stack */
+    REAL8 alpha;               /**< right ascension of demodulation point */
+    REAL8 delta;               /**< declination of demodulation point*/
+    REAL8Vector *fkdot;        /**< spin parameters (f and fdot) of demodulation point */
+    REAL8Vector *fkdotBand;    /**< range of spin parameters to search over */ 
+    CHAR *outBaseName;         /**< file for writing output -- if chosen */
+  } SemiCoherentParams;
+
 
   /** one hough candidate */
   typedef struct tagHoughList {
@@ -201,11 +217,6 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 
 
   /* function prototypes */
-
-  void SetUpFstatStack (LALStatus *status, 
-			REAL8FrequencySeriesVector *out,  
-			FstatStackParams *params);
-
 
   void PrintFstatVec_fp (LALStatus *status,
 			 REAL8FrequencySeries *in,
