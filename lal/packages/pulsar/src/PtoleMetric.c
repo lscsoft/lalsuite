@@ -22,17 +22,19 @@ very similar to those of \texttt{CoherentMetric} called with the
 output of \texttt{TBaryPtolemaic}. The CPU demand, however, is less,
 and the metric components can be expressed analytically, lending
 themselves to better understanding of the behavior of the parameter
-space.  For short durations (less than about 70000 seconds) a Taylor
-series expansion is used to improve the accuracy with which several
+space.  For short durations (less than about 70000 seconds or 20 hours) a
+Taylor series expansion is used to improve the accuracy with which several
 terms are computed.
 
 \subsubsection*{Algorithm}
 
 For speed and checking reasons, a minimum of numerical computation is
-involved. The metric components can be expressed analytically (though
-not tidily) in terms of trig functions and are much too large to be
-worth writing down here.  Jones \& Owen will write up a note on the
-calculation for submission to the preprint server.
+involved. The metric components can be expressed analytically (though not
+tidily) in terms of trig functions and are much too large to be worth
+writing down here.  More comprehensive documentation on the derivation of
+the metric components can be found in the pulgroup CVS archive as
+docs/S2/FDS/Isolated/ptolemetric.tex.  Jones, Owen, and Whitbeck will write
+up the calculation and some tests as a journal article.
 
 The function \texttt{GetEarthTimes} is used to calculate the spin and
 rotational phase of the Earth at the beginning of the observation.
@@ -41,22 +43,25 @@ On output, the \texttt{metric->data} is arranged with the same indexing
 scheme as in \texttt{CoherentMetric()}. The order of the parameters is
 $(f_0, \alpha, \delta)$.
 
-More comprehensive documentation on the derivation of the metric components can be found in the pulgroup CVS archive as docs/S2/FDS/Isolated/ptolemetric.tex.
-
 \subsubsection*{Uses}
 
 LALGetEarthTimes()
 
 \subsubsection*{Notes}
 
-The analytic metric components were derived separately by the
-two authors and found to agree.  Also, the output of this function has
-been compared against that of the function combination (CoherentMetric
-+ TDBaryPtolemaic), which is a non-analytic implementation of the
-Ptolemaic approximation, and found to agree up to the fourth
-significant figure or better.
+The analytic metric components were derived separately by Jones and
+Whitbeck (and partly by Owen) and found to agree.  Also, the output of this
+function has been compared against that of the function combination
+(CoherentMetric + TDBaryPtolemaic), which is a numerical implementation of
+the Ptolemaic approximation, and found to agree up to the fourth
+significant figure or better.  Even using DTEphemeris.c for the true
+Earth's orbit only causes errors in the metric components of order 10\%,
+with (so far) no noticeable effect on the sky coverage.
 
-Spindown is not yet included.
+At present, only one spindown parameter can be included with the sky
+location.  The code contains (commented out) expressions for
+spindown-spindown metric components for an arbitrary number of spindowns,
+but the (commented out) spindown-sky components neglect orbital motion.
 
 \vfill{\footnotesize\input{PtoleMetricCV}}
 
