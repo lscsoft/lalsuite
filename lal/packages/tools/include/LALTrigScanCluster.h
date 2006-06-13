@@ -71,11 +71,12 @@ trigScanValidEvent;
 
 typedef struct tagTrigScanInputPoint
 { 
-    REAL8         x, y, rho, effD, chisq;
-    REAL8         tc_sec, tc_ns;  
-    REAL8         figOfMerit;
-    INT4          isValidEvent;
-    INT4          clusterID;
+    REAL8    y, z, rho, effD, chisq;
+    REAL8    tc_sec, tc_ns;  
+    REAL8    figOfMerit;
+    INT4     isValidEvent;
+    INT4     clusterID;
+    REAL8    Gamma[6];
 }
 trigScanInputPoint;
 
@@ -88,17 +89,16 @@ typedef struct tagTrigScanClusterIn
     Order                 order;
     Approximant           approximant;
     InputMasses           massChoice;
-    REAL8                 bin_time, sf_area;
+    REAL8                 bin_time, sf_volume;
     trigScanInputPoint    *masterList;
     trigScanType          scanMethod;
-    REAL8                 *a, *b, *theta;
     INT4                  n;
 }
 trigScanClusterIn;
 
 typedef struct tagTrigScanClusterOut
 {
-    REAL8  x, y, tc_sec, tc_ns;
+    REAL8  y, z, tc_sec, tc_ns;
     REAL8  rho, effD;
     INT4   master_idx;
     INT4   cluster_id, nelements;
@@ -109,17 +109,17 @@ typedef struct tagTrigScanEpsSearchIn
 {
     trigScanInputPoint   *masterList;
     INT4                 nInputPoints;
-    REAL8                epsX, epsY, epsTc, alpha;
     INT4                 minPoints;
     INT4                 clusterID;
+    INT4                 seedID;
 }
 trigScanEpsSearchInput;
 
 typedef struct tagExpandClusterIn
 {
-    REAL8  epsX, epsY, epsTc, alpha;
     INT4   nInputPoints;  
     INT4   currClusterID;
+    INT4   currSeedID;
 }
 ExpandClusterInput;
 
@@ -144,12 +144,6 @@ void XLALTrigScanGetEpsNeighbourhood (
         INT4                    *size,
         trigScanEpsSearchInput  *epsSearchIn
         );
-
-REAL8 XLALTrigScanGetDistance (
-        REAL8 dx,  REAL8 dy, 
-        REAL8 dtc, REAL8 a, 
-        REAL8 b,   REAL8 alpha, 
-        REAL8 c);
 
 void LALTrigScanClusterMakeOutput (
         LALStatus               *status,
