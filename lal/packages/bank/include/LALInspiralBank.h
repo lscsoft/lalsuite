@@ -113,6 +113,7 @@ The members of this structure are:
 \item \texttt{g00}: 00-component of the diagonalised metric.
 \item \texttt{g11}: 11-component of the diagonalised metric.
 \item \texttt{theta}:  Angle from tau0 to semi-major axis of the ellipse.
+\item \texttt{Gamma[6]}: 3d metric co-efficients in $(t_C, \tau_0,\tau_{2(3)})$ coordinates.
 \item \texttt{space}:  The enum describing the coordinate space in which 
 the metric is computed.
 \end{itemize}
@@ -337,7 +338,9 @@ tagInspiralMetric
 
   REAL8            g00;     
   REAL8            g11;     
-  REAL8            theta;   
+  REAL8            theta;  
+
+  REAL8            Gamma[6];
 
   CoordinateSpace  space;   
 } 
