@@ -176,7 +176,7 @@ CHAR *uvar_workingDir;
 int main(int argc,char *argv[]);
 void initUserVars (LALStatus *);
 void InitFStat ( LALStatus *, ConfigVariables *cfg );
-
+void EstimateSigParams (LALStatus *, const CWParamSpacePoint *psPoint, const Fcomponents *Fstat);
 void Freemem(LALStatus *,  ConfigVariables *cfg);
 
 void WriteFStatLog (LALStatus *, CHAR *argv[]);
@@ -408,7 +408,8 @@ int main(int argc,char *argv[])
 		      /* correct results in --SignalOnly case:
 		       * this means we didn't normalize data by 1/sqrt(Tsft * 0.5 * Sh) in terms of 
 		       * the single-sided PSD Sh: the SignalOnly case is characterized by
-		       * setting Sh->1, so we need to divide Fa,Fb by sqrt(0.5*Tsft)
+		         
+    * setting Sh->1, so we need to divide Fa,Fb by sqrt(0.5*Tsft)
 		       * and F by (0.5*Tsft)
 		       */
 		      if ( uvar_SignalOnly )
@@ -421,6 +422,15 @@ int main(int argc,char *argv[])
 			  Fstat.F *= norm * norm;
 			} /* if SignalOnly */
 		      
+		      /* Calculating the (A^i)s coefficients in order to compute the Amplitude parameters 
+			 psi, iota, phi_0 and h_0.*/
+		      
+		      if(uvar_EstimSigParam) 
+			{   
+			  LAL_CALL ( EstimateSigParams(&status, &psPoint, &Fstat), &status);
+
+			} /*if(uvar_EstimSigParam) */
+
 		      /* propagate fkdot back to reference-time for outputting results */
 		      LAL_CALL ( LALExtrapolatePulsarSpins(&status, fkdotRef, GV.refTime, fkdotStart, GV.startTime ), &status );
 
@@ -465,100 +475,6 @@ int main(int argc,char *argv[])
 			  loudestF = Fstat.F;
 			  strcpy ( loudestEntry,  buf );
 			}
-		      
-		      /* Calculating the (A^i)s coefficients in order to compute the Amplitude parameters 
-			 psi, iota, phi_0 and h_0.*/
-		      
-		      if(uvar_EstimSigParam) 
-			{   
-			  REAL8 A1, A2, A3, A4, Asq, detA;
-			  REAL8 A, B, C, Dinv;
-			  
-			  MultiAMCoeffs *multiAMcoef = NULL;
-			  LAL_CALL ( LALGetMultiAMCoeffs ( &status, &multiAMcoef, GV.multiDetStates, psPoint.skypos ), &status);
-			  
-			  A = multiAMcoef->A;
-			  B = multiAMcoef->B;
-			  C = multiAMcoef->C;
-			  Dinv = 1.0 / multiAMcoef->D;
-			  
-			  A1 =   4.0 * Dinv * ( B * Fstat.Fa.re - C * Fstat.Fb.re); /* A1=2(B H1-C H2)/D where, H1=Re(2Fa) and H2=Re(2Fb) */
-			  A2 =   4.0 * Dinv * ( A * Fstat.Fb.re - C * Fstat.Fa.re);
-			  A3 = - 4.0 * Dinv * ( B * Fstat.Fa.im - C * Fstat.Fb.im);
-			  A4 = - 4.0 * Dinv * ( A * Fstat.Fb.im - C * Fstat.Fa.im);
-			  
-			  Asq = A1*A1 + A2*A2 + A3*A3 + A4*A4;
-			  detA = A1*A4 - A2*A3;
-			  
-			  fprintf(stdout,"\n\n A1 = %g,   A2 = %g,  A3 = %g,  A4 = %g,  Asq = %g,  detA = %g\n\n ", A1, A2, A3, A4, Asq, detA);
-			  
-			  /* Free AM Coefficients */
-			  XLALDestroyMultiAMCoeffs ( multiAMcoef );
-			  
-			  REAL8 beta, ampratio, A1test;
-			  REAL8 psi_mle, Phi0_mle, mu_mle;
-			  REAL8 h0mle, h0mleSq;
-			  REAL8 error_tol = 1.0 / pow(10,14);
-			  
-			  /* h_0 * sin(\zeta)*/
-			  h0mle = 0.5 * pow (pow( ((A1-A4)*(A1-A4) + (A2+A3)*(A2+A3)), 0.25)+
-					     pow( ((A1+A4)*(A1+A4) + (A2-A3)*(A2-A3)), 0.25), 2);
-			  
-			  h0mleSq = pow(h0mle, 2.0);
-			  ampratio= Asq / h0mleSq;
-			  
-			  
-			  if(ampratio < 0.25-error_tol || ampratio > 2.0+error_tol) 
-			    {
-			      fprintf(stderr,"Imaginary Cos[iota]; cannot compute parameters");
-			      fprintf(stderr,"in the EstimateSignalParameters routine");
-			      fprintf(stderr,"in ComputeFStatistic code");
-			      fprintf(stderr,"Now exitting...");
-			      /*      break; */
-			      exit(1);
-			    }
-			  
-			  if(fabs(ampratio-0.25)<error_tol) 
-			    mu_mle =0.0;
-			  
-			  else if(fabs(ampratio-2.0)<error_tol) 
-			    mu_mle = 1.0;
-			  
-			  else 
-			    mu_mle = sqrt(-3.0 + 2.0 * sqrt(2.0 + ampratio));
-			  
-			  if(detA<0) 
-			    mu_mle = - 1.0 * mu_mle;
-			  
-			  if(Asq * Asq < 4.0 * detA * detA)
-			    {
-			      fprintf(stderr,"Imaginary beta; cannot compute parameters");
-			      break;
-			    }
-			  
-			  /* Compute MLEs of psi and Phi0 up to sign of Cos[2*Phi0] */
-			  /* Make psi and Phi0 always in -Pi/2 to Pi/2 */ 
-			  beta  = ( Asq + sqrt(Asq * Asq - 4.0 * detA * detA) ) / (2.0 * detA);
-			  psi_mle  = atan( (beta * A4 - A1) / (beta * A3 + A2) ) / 2.0;
-			  Phi0_mle  = atan( (A1 - beta * A4) /(A3 + beta * A2) ) / 2.0;
-						  
-			  /* Test if we get the same value of A1 by using the computed signal parameters. */
-			  A1test = h0mle * (0.5 * (1 + mu_mle * mu_mle) * cos(2.0 * psi_mle) * cos(2.0 * Phi0_mle)
-					    -mu_mle * sin(2.0 * psi_mle) * sin(2.0 * Phi0_mle));
-			  
-			  fprintf(stdout,"\n A1_test = %g,\n ", A1test);
-			  
-			  /* Determine the sign of Cos[2*Phi0] */
-			  if(A1 * A1test < 0.0) 
-			    {
-			      if(Phi0_mle > 0.0) 
-				Phi0_mle = Phi0_mle - LAL_PI / 2.0;
-			      
-			      else 
-				Phi0_mle = Phi0_mle + LAL_PI / 2.0;
-			    }
-			  
-			} /*if(uvar_EstimSigParam) */
 		      
 		    } /* for i < nBins: loop over frequency-bins */
 		  
@@ -1029,6 +945,276 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   RETURN (status);
 
 } /* InitFStat() */
+
+
+void
+EstimateSigParams (LALStatus *status, const CWParamSpacePoint *psPoint, const Fcomponents *Fstat)
+{
+  REAL8 A1, A2, A3, A4, Asq, detA;
+  REAL8 Dinv;
+  REAL8 beta, ampratio, A1test, A2test, A3test, A4test;
+  REAL8 psi_mle, Phi0_mle, mu_mle;
+  REAL8 h0mle, h0mleSq;
+  REAL8 error_tol = 1.0 / pow(10,14);
+
+  REAL8 At = 0.0 ,Bt = 0.0 ,Ct = 0.0; 
+  REAL8 Sh, sqrtSh=0.0, sumSh=0.0;
+  REAL8 Tsft;
+  UINT4 X, numDetectors, numSFTs;  
+  REAL8 norm;
+ 
+  MultiAMCoeffs *multiAMcoef = NULL;
+  MultiPSDVector *multiPSDs = NULL;
+  
+  FILE * fpMLEParam;
+  
+
+  if(!(fpMLEParam=fopen("ParamMLE.txt","w")))
+    fprintf(stderr,"Error in EstimateSignalParameters: unable to open the file");
+ 
+  
+  TRY ( LALGetMultiAMCoeffs ( status->statusPtr, &multiAMcoef, GV.multiDetStates, psPoint->skypos ), status);
+  TRY ( LALNormalizeMultiSFTVect ( status->statusPtr, &multiPSDs, GV.multiSFTs, uvar_RngMedWindow ), status );
+  
+  numDetectors = GV.multiSFTs->length;
+  
+  /* Antenna-patterns and compute A,B,C */
+  for ( X=0; X < numDetectors; X ++)
+    {
+      REAL8 A = 0.0, B = 0.0 ,C = 0.0;
+      UINT4 alpha;
+      UINT4 numSFTsX = GV.multiSFTs->data[X]->length;
+      AMCoeffs *amcoeX = multiAMcoef->data[X];
+      PSDVector *psdsX = multiPSDs->data[X]; 
+      
+      Tsft = 1 / (GV.multiSFTs->data[X]->data[0].deltaF);	
+      
+      for(alpha = 0; alpha < numSFTsX; alpha++)
+	{
+	  UINT4 lengthPSD, i;
+	  REAL8 sumPSD = 0.0, meanPSD = 0.0, PSD;
+	  REAL8 ahat, bhat;
+	  
+	  lengthPSD = psdsX->data[0].data->length;
+	  
+	  for(i = 0; i < lengthPSD; i++)
+	    {
+	      PSD =  psdsX->data[alpha].data->data[i];
+	      sumPSD += PSD;  
+	    }
+	  meanPSD = sumPSD / lengthPSD;
+	  
+	  Sh = 2 * meanPSD / Tsft;
+	  
+	  sumSh +=Sh;
+	  
+	  ahat = (amcoeX->a->data[alpha]);
+	  bhat = (amcoeX->b->data[alpha]);
+	  
+	  /* sum A, B, C on the fly */
+	  A += ahat * ahat / Sh;
+	  B += bhat * bhat / Sh;
+	  C += ahat * bhat / Sh;
+
+	  numSFTs += numSFTsX;
+	  
+	} /* for alpha < numSFTsX */
+      
+      At += 2 * Tsft * A;
+      Bt += 2 * Tsft * B;
+      Ct += 2 * Tsft * C;
+      
+      sqrtSh += sqrt(sumSh) / (numDetectors * numSFTsX);
+      
+    } /* for X < numDetectors */
+  
+  Dinv = 1/(At * Bt - Ct * Ct);
+  
+  A1 =   4.0 * Dinv * ( Bt * Fstat->Fa.re - Ct * Fstat->Fb.re); /* A1=2(B H1-C H2)/D where, H1=Re(2Fa) and H2=Re(2Fb) */
+  A2 =   4.0 * Dinv * ( At * Fstat->Fb.re - Ct * Fstat->Fa.re);
+  A3 = - 4.0 * Dinv * ( Bt * Fstat->Fa.im - Ct * Fstat->Fb.im);
+  A4 = - 4.0 * Dinv * ( At * Fstat->Fb.im - Ct * Fstat->Fa.im);
+			  
+  Asq = A1*A1 + A2*A2 + A3*A3 + A4*A4;
+  detA = A1*A4 - A2*A3;
+			  
+  fprintf(stdout,"\n\n A1 = %g,   A2 = %g,  A3 = %g,  A4 = %g,  Asq = %g,  detA = %g\n\n ", A1, A2, A3, A4, Asq, detA);
+			  
+  /* Free AM Coefficients */
+  XLALDestroyMultiAMCoeffs ( multiAMcoef );
+  /* Free MultiPSDVector  */
+  LAL_CALL ( LALDestroyMultiPSDVector (&status, &multiPSDs ), &status );
+  
+  
+/* h_0 * sin(\zeta)*/
+  h0mle = 0.5 * pow (pow( ((A1-A4)*(A1-A4) + (A2+A3)*(A2+A3)), 0.25)+
+		     pow( ((A1+A4)*(A1+A4) + (A2-A3)*(A2-A3)), 0.25), 2);
+			  
+  h0mleSq = pow(h0mle, 2.0);
+  ampratio= Asq / h0mleSq;
+			  
+			  
+  if(ampratio < 0.25-error_tol || ampratio > 2.0+error_tol) 
+    {
+      fprintf(stderr,"Imaginary Cos[iota]; cannot compute parameters");
+      fprintf(stderr,"in the EstimateSignalParameters routine");
+      fprintf(stderr,"in ComputeFStatistic code");
+      fprintf(stderr,"Now exitting...");
+      /*      break; */
+      exit(1);
+    }
+			  
+  if(fabs(ampratio-0.25)<error_tol) 
+    mu_mle =0.0;
+			  
+  else if(fabs(ampratio-2.0)<error_tol) 
+    mu_mle = 1.0;
+			  
+  else 
+    mu_mle = sqrt(-3.0 + 2.0 * sqrt(2.0 + ampratio));
+			  
+  if(detA<0) 
+    mu_mle = - 1.0 * mu_mle;
+			  
+  if(Asq * Asq < 4.0 * detA * detA)
+    {
+      fprintf(stderr,"Imaginary beta; cannot compute parameters");
+      /*      break;*/
+    }
+			  
+  /* Compute MLEs of psi and Phi0 up to sign of Cos[2*Phi0] */
+  /* Make psi and Phi0 always in -Pi/2 to Pi/2 */ 
+  beta  = ( Asq + sqrt(Asq * Asq - 4.0 * detA * detA) ) / (2.0 * detA);
+  psi_mle  = atan( (beta * A4 - A1) / (beta * A3 + A2) ) / 2.0;
+  Phi0_mle  = atan( (A1 - beta * A4) /(A3 + beta * A2) ) / 2.0;
+						  
+  /* Test if we get the same value of A1 by using the computed signal parameters. */
+  A1test = h0mle * (0.5 * (1 + mu_mle * mu_mle) * cos(2.0 * psi_mle) * cos(2.0 * Phi0_mle)
+		    -mu_mle * sin(2.0 * psi_mle) * sin(2.0 * Phi0_mle));
+			  
+  fprintf(stdout,"\n A1_test = %g,\n ", A1test);
+			  
+  /* Determine the sign of Cos[2*Phi0] */
+  if(A1 * A1test < 0.0) 
+    {
+      if(Phi0_mle > 0.0) 
+	Phi0_mle = Phi0_mle - LAL_PI / 2.0;
+			      
+      else 
+	Phi0_mle = Phi0_mle + LAL_PI / 2.0;
+    }
+
+  /* Reconstruct A1,A2,A3,A4. Compare them with the original values. */
+
+  A1test=h0mle*(0.5*(1+mu_mle*mu_mle)*cos(2.0*psi_mle)*cos(2.0*Phi0_mle)
+		-mu_mle*sin(2.0*psi_mle)*sin(2.0*Phi0_mle));
+  A2test=h0mle*(0.5*(1+mu_mle*mu_mle)*sin(2.0*psi_mle)*cos(2.0*Phi0_mle)
+		+mu_mle*cos(2.0*psi_mle)*sin(2.0*Phi0_mle));
+  A3test=h0mle*(-0.5*(1+mu_mle*mu_mle)*cos(2.0*psi_mle)*sin(2.0*Phi0_mle)
+		-mu_mle*sin(2.0*psi_mle)*cos(2.0*Phi0_mle));
+  A4test=h0mle*(-0.5*(1+mu_mle*mu_mle)*sin(2.0*psi_mle)*sin(2.0*Phi0_mle)
+		+mu_mle*cos(2.0*psi_mle)*cos(2.0*Phi0_mle));
+
+
+  fprintf(stderr,"LALDemod_Estimate output: "
+	  "A1=%20.15f A2=%20.15f A3=%20.15f A4=%20.15f\n"
+	  ,A1,A2,A3,A4);
+  fprintf(stderr,"Reconstructed from MLE: "
+	  "A1=%20.15f A2=%20.15f A3=%20.15f A4=%20.15f !!!!\n\n",
+	  A1test,A2test,A3test,A4test);
+  fflush(stderr);
+
+
+  if(fabs(A1-A1test)>fabs(A1)/(10e5)){ 
+    fprintf(stderr,"Something is wrong with Estimate A1\n");
+
+    fprintf(stderr,"relative error Abs((A1-A1test)/A1)=%f\n",
+	    fabs(A1-A1test)/fabs(A1));
+    exit(1);
+  }
+  if(fabs(A2-A2test)>fabs(A2)/(10e5)){ 
+    fprintf(stderr,"Something is wrong with Estimate A2\n");
+
+    fprintf(stderr,"relative error Abs((A2-A2test)/A2)=%f\n",
+	    fabs(A2-A2test)/fabs(A2));
+    exit(1);
+  }
+  if(fabs(A3-A3test)>fabs(A3)/(10e5)){ 
+    fprintf(stderr,"Something is wrong with Estimate A3\n");
+
+    fprintf(stderr,"relative error Abs((A3-A3test)/A3)=%f\n",
+	    fabs(A3-A3test)/fabs(A3));
+    exit(1);
+  }
+  if(fabs(A4-A4test)>fabs(A4)/(10e5)){ 
+    fprintf(stderr,"Something is wrong with Estimate A4\n");
+
+    fprintf(stderr,"relative error Abs((A4-A4test)/A4)=%f\n",
+	    fabs(A4-A4test)/fabs(A4));
+    exit(1);
+  }
+
+  /* normalization */
+  norm=2.0 * sqrt(Tsft)/(Tsft * numSFTs);
+  h0mle=h0mle*norm;
+
+
+/*   /\* For the real data, we need to multiply long(2.0) *\/ */
+/*   /\* Because we use running median to estimate the S_h. *\/ */
+/*   if(GV.noise!=1)  */
+/*     h0mle=h0mle*sqrt(medianbias); */
+
+
+
+/*   {double hp,hc,ds; */
+/*   hp=(1.0+mu_mle*mu_mle)*h0mle/2.0; */
+/*   hc=mu_mle*h0mle; */
+/*   ds=GV.SFTno*GV.tsft/2.0*(hp*hp*((A+B)/2.0+(A-B)/2.0*cos(4.0*psi_mle) */
+/* 				  +C*sin(4.0*psi_mle)) */
+/* 			   +hc*hc*((A+B)/2.0-(A-B)/2.0*cos(4.0*psi_mle) */
+/* 				   -C*sin(4.0*psi_mle))); */
+/*   /\*fprintf(stderr,"A=%f,B=%f,C=%f,d=%f,mu=%f,h0=%f\n", */
+/*     A,B,C,ds,mu_mle,h0mle); *\/ */
+/*   } */
+
+
+/*   /\* Note that we print out MLE of 2.0*Phi0_JKS *\/ */
+/*   /\* because Phi0_PULGROUPDOC=2.0*Phi0_JKS *\/ */
+/*   /\* and Phi0_PULGROUPDOC is the one used in In.data. *\/ */
+ 
+/*   if(GV.noise==1) { */
+/*     fprintf(fpMLEParam,"%16.8lf %E", */
+/* 	    GV.Freq+irec*GV.dFreq,2.0*Fstr.F[irec]); */
+/*   } else { */
+/*     fprintf(fpMLEParam,"%16.8lf %E", */
+/* 	    GV.Freq+irec*GV.dFreq,2.0*medianbias*Fstr.F[irec]); */
+/*   } */
+
+  fprintf(fpMLEParam,"  %f",(1.0+mu_mle*mu_mle)*h0mle/2.0);
+  fprintf(fpMLEParam,"  %f",mu_mle*h0mle);
+  fprintf(fpMLEParam,"  %f",psi_mle);
+  fprintf(fpMLEParam,"  %f",2.0*Phi0_mle);
+  fprintf(fpMLEParam,"\n");
+			
+
+  fclose(fpMLEParam);
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 /***********************************************************************/
