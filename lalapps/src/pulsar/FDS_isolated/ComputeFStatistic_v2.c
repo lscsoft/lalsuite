@@ -973,7 +973,7 @@ EstimateSigParams (LALStatus *status, const CWParamSpacePoint *psPoint, const Fc
   ATTATCHSTATUSPTR (status);
 
 
-  if(!(fpMLEParam=fopen("ParamMLE.txt","w")))
+  if(!(fpMLEParam=fopen("ParamMLE.txt","a")))
     fprintf(stderr,"Error in EstimateSignalParameters: unable to open the file");
  
   
@@ -1048,7 +1048,7 @@ EstimateSigParams (LALStatus *status, const CWParamSpacePoint *psPoint, const Fc
   TRY ( LALDestroyMultiPSDVector (status->statusPtr, &multiPSDs ), status );
   
   
-/* h_0 * sin(\zeta)*/
+  /* h0mle = h_0 * sin(\zeta)*/
   h0mle = 0.5 * pow (pow( ((A1-A4)*(A1-A4) + (A2+A3)*(A2+A3)), 0.25)+
 		     pow( ((A1+A4)*(A1+A4) + (A2-A3)*(A2-A3)), 0.25), 2);
 			  
@@ -1081,7 +1081,7 @@ EstimateSigParams (LALStatus *status, const CWParamSpacePoint *psPoint, const Fc
   if(Asq * Asq < 4.0 * detA * detA)
     {
       fprintf(stderr,"Imaginary beta; cannot compute parameters");
-      /*      break;*/
+      /*break;*/
     }
 			  
   /* Compute MLEs of psi and Phi0 up to sign of Cos[2*Phi0] */
@@ -1091,8 +1091,7 @@ EstimateSigParams (LALStatus *status, const CWParamSpacePoint *psPoint, const Fc
   Phi0_mle  = atan( (A1 - beta * A4) /(A3 + beta * A2) ) / 2.0;
 						  
   /* Test if we get the same value of A1 by using the computed signal parameters. */
-  A1test = h0mle * (0.5 * (1 + mu_mle * mu_mle) * cos(2.0 * psi_mle) * cos(2.0 * Phi0_mle)
-		    -mu_mle * sin(2.0 * psi_mle) * sin(2.0 * Phi0_mle));
+  A1test = h0mle * (0.5 * (1 + mu_mle * mu_mle) * cos(2.0 * psi_mle) * cos(2.0 * Phi0_mle) - mu_mle * sin(2.0 * psi_mle) * sin(2.0 * Phi0_mle));
 			  
   /* Determine the sign of Cos[2*Phi0] */
   if(A1 * A1test < 0.0) 
@@ -1107,16 +1106,16 @@ EstimateSigParams (LALStatus *status, const CWParamSpacePoint *psPoint, const Fc
   /* Reconstruct A1,A2,A3,A4. Compare them with the original values. */
 
   A1test = h0mle * (0.5 * (1 + mu_mle * mu_mle) * cos(2.0 * psi_mle) * cos (2.0 * Phi0_mle)
-		- mu_mle * sin(2.0 * psi_mle) * sin(2.0 * Phi0_mle));
+		    - mu_mle * sin(2.0 * psi_mle) * sin(2.0 * Phi0_mle));
 
   A2test = h0mle * (0.5 * (1 + mu_mle * mu_mle) * sin(2.0 * psi_mle) * cos(2.0 * Phi0_mle)
-		+ mu_mle * cos(2.0 * psi_mle) * sin(2.0 * Phi0_mle));
+		    + mu_mle * cos(2.0 * psi_mle) * sin(2.0 * Phi0_mle));
 
   A3test = h0mle * (-0.5 * (1 + mu_mle * mu_mle) * cos(2.0 * psi_mle) * sin(2.0 * Phi0_mle)
-		- mu_mle * sin(2.0 * psi_mle) * cos(2.0 * Phi0_mle));
+		    - mu_mle * sin(2.0 * psi_mle) * cos(2.0 * Phi0_mle));
  
   A4test = h0mle * (-0.5 * (1 + mu_mle * mu_mle) * sin(2.0 * psi_mle) * sin(2.0 * Phi0_mle)
-		+ mu_mle * cos(2.0 * psi_mle) * cos(2.0 * Phi0_mle));
+		    + mu_mle * cos(2.0 * psi_mle) * cos(2.0 * Phi0_mle));
 
 
   fprintf(stderr,"LALDemod_Estimate output: ""A1=%20.15f A2=%20.15f A3=%20.15f A4=%20.15f\n", A1, A2, A3, A4);
@@ -1126,92 +1125,53 @@ EstimateSigParams (LALStatus *status, const CWParamSpacePoint *psPoint, const Fc
 
   if ( fabs(A1 - A1test) > fabs(A1) / (10e5))
     { 
-    fprintf(stderr,"Something is wrong with Estimate A1\n");
-    fprintf(stderr,"relative error Abs((A1-A1test)/A1)=%f\n", fabs(A1 - A1test) / fabs(A1));
-    exit(1);
+      fprintf(stderr,"Something is wrong with Estimate A1\n");
+      fprintf(stderr,"relative error Abs((A1-A1test)/A1)=%f\n", fabs(A1 - A1test) / fabs(A1));
+      exit(1);
     }
 
   if(fabs(A2-A2test)>fabs(A2)/(10e5))
     { 
-    fprintf(stderr,"Something is wrong with Estimate A2\n");
-    fprintf(stderr,"relative error Abs((A2-A2test)/A2)=%f\n", fabs(A2 - A2test) / fabs(A2));
-    exit(1);
+      fprintf(stderr,"Something is wrong with Estimate A2\n");
+      fprintf(stderr,"relative error Abs((A2-A2test)/A2)=%f\n", fabs(A2 - A2test) / fabs(A2));
+      exit(1);
     }
 
   if(fabs(A3-A3test)>fabs(A3)/(10e5))
     { 
-    fprintf(stderr,"Something is wrong with Estimate A3\n");
-    fprintf(stderr,"relative error Abs((A3-A3test)/A3)=%f\n", fabs(A3 - A3test) / fabs(A3));
-    exit(1);
+      fprintf(stderr,"Something is wrong with Estimate A3\n");
+      fprintf(stderr,"relative error Abs((A3-A3test)/A3)=%f\n", fabs(A3 - A3test) / fabs(A3));
+      exit(1);
     }
-
+  
   if(fabs(A4-A4test)>fabs(A4)/(10e5))
     { 
-    fprintf(stderr,"Something is wrong with Estimate A4\n");
-    fprintf(stderr,"relative error Abs((A4-A4test)/A4)=%f\n", fabs(A4 - A4test) / fabs(A4));
-    exit(1);
+      fprintf(stderr,"Something is wrong with Estimate A4\n");
+      fprintf(stderr,"relative error Abs((A4-A4test)/A4)=%f\n", fabs(A4 - A4test) / fabs(A4));
+      exit(1);
     }
-
+  
   /* normalization */
   norm = 2.0 * sqrt(Tsft) / (Tsft * numSFTs);
   h0mle = h0mle * norm;
 
-  /* LALRngMedBias (status, &medianbias, uvar_RngMedWindow);*/
-
+  TRY ( LALRngMedBias (status->statusPtr, &medianbias, uvar_RngMedWindow), status);
+  
   /* For the real data, we need to multiply long(2.0) */ 
   /* Because we use running median to estimate the S_h. */
+  h0mle=h0mle*sqrt(medianbias); 
 
-    h0mle=h0mle*sqrt(medianbias); 
-
-/*   {double hp,hc,ds; */
-/*   hp=(1.0+mu_mle*mu_mle)*h0mle/2.0; */
-/*   hc=mu_mle*h0mle; */
-/*   ds=GV.SFTno*GV.tsft/2.0*(hp*hp*((A+B)/2.0+(A-B)/2.0*cos(4.0*psi_mle) */
-/* 				  +C*sin(4.0*psi_mle)) */
-/* 			   +hc*hc*((A+B)/2.0-(A-B)/2.0*cos(4.0*psi_mle) */
-/* 				   -C*sin(4.0*psi_mle))); */
-/*   /\*fprintf(stderr,"A=%f,B=%f,C=%f,d=%f,mu=%f,h0=%f\n", */
-/*     A,B,C,ds,mu_mle,h0mle); *\/ */
-/*   } */
-
-
-/*   /\* Note that we print out MLE of 2.0*Phi0_JKS *\/ */
-/*   /\* because Phi0_PULGROUPDOC=2.0*Phi0_JKS *\/ */
-/*   /\* and Phi0_PULGROUPDOC is the one used in In.data. *\/ */
- 
-/*   if(GV.noise==1) { */
-/*     fprintf(fpMLEParam,"%16.8lf %E", */
-/* 	    GV.Freq+irec*GV.dFreq,2.0*Fstr.F[irec]); */
-/*   } else { */
-/*     fprintf(fpMLEParam,"%16.8lf %E", */
-/* 	    GV.Freq+irec*GV.dFreq,2.0*medianbias*Fstr.F[irec]); */
-/*   } */
-
-  fprintf(fpMLEParam,"  %f",(1.0+mu_mle*mu_mle)*h0mle/2.0);
-  fprintf(fpMLEParam,"  %f",mu_mle*h0mle);
-  fprintf(fpMLEParam,"  %f",psi_mle);
-  fprintf(fpMLEParam,"  %f",2.0*Phi0_mle);
+  fprintf(fpMLEParam,"  %1.2e", h0mle);
+  fprintf(fpMLEParam,"  %f", mu_mle );
+  fprintf(fpMLEParam,"  %f", psi_mle);
+  fprintf(fpMLEParam,"  %f", 2.0 * Phi0_mle);
   fprintf(fpMLEParam,"\n");
 			
-
   fclose(fpMLEParam);
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
-
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 /***********************************************************************/
