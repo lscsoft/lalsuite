@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 # $Id$
 if FRAME
-FRAMEPROGRAMS = lalapps_mkcalfac lalapps_mkcalref lalapps_makecalframe lalapps_readcalframe
+FRAMEPROGRAMS = lalapps_mkcalfac lalapps_mkcalref lalapps_makecalframe lalapps_readcalframe lalapps_dumpcalframe
 else
 FRAMEPROGRAMS = 
 endif
@@ -9,6 +9,7 @@ bin_PROGRAMS = $(FRAMEPROGRAMS) lalapps_ComputeStrain lalapps_ComputeFactors lal
 if FRAME
 lalapps_makecalframe_SOURCES = makecalframe.c LALASCIIFileRead.c LALASCIIFileRead.h
 lalapps_readcalframe_SOURCES = readcalframe.c
+lalapps_dumpcalframe_SOURCES = dumpcalframe.c
 lalapps_mkcalfac_SOURCES = mkcalfac.c
 lalapps_mkcalref_SOURCES = mkcalref.c
 endif
@@ -25,6 +26,7 @@ pkgdata_DATA = \
   S1-H1-CAL-FACTORS.txt S1-H1-CAL-RESPONSE.txt S1-H1-CAL-CAV_GAIN.txt \
   S1-H2-CAL-FACTORS.txt S1-H2-CAL-RESPONSE.txt S1-H2-CAL-CAV_GAIN.txt
 EXTRA_DIST = mkcalfac.c mkcalref.c mkcalfiles_test.sh mkcal.py \
+	     simplereadcalframe.c \
   S1-L1-CAL-FACTORS.txt S1-L1-CAL-RESPONSE.txt S1-L1-CAL-CAV_GAIN.txt \
   S1-H1-CAL-FACTORS.txt S1-H1-CAL-RESPONSE.txt S1-H1-CAL-CAV_GAIN.txt \
   S1-H2-CAL-FACTORS.txt S1-H2-CAL-RESPONSE.txt S1-H2-CAL-CAV_GAIN.txt \
