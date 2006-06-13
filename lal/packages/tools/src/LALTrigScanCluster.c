@@ -29,7 +29,7 @@ NRCSID (LALTRIGSCANCLUSTERC,
 trigScanValidEvent XLALTrigScanExpandCluster (
         trigScanInputPoint    *list, 
         trigScanInputPoint    *masterList,
-        ExpandClusterInput  expandClusterIn
+        ExpandClusterInput    expandClusterIn
         )
 {
     trigScanValidEvent      flag = false;
@@ -43,12 +43,9 @@ trigScanValidEvent XLALTrigScanExpandCluster (
     /* Create the epsSearchIn data structure */
     epsSearchIn.masterList   = masterList;
     epsSearchIn.nInputPoints = expandClusterIn.nInputPoints;
-    epsSearchIn.epsX         = expandClusterIn.epsX;
-    epsSearchIn.epsY         = expandClusterIn.epsY;
-    epsSearchIn.epsTc        = expandClusterIn.epsTc;
-    epsSearchIn.alpha        = expandClusterIn.alpha;
     epsSearchIn.minPoints    = TRIGSCAN_CLUSTER_MIN_PTS;
     epsSearchIn.clusterID    = expandClusterIn.currClusterID;
+    epsSearchIn.seedID       = expandClusterIn.currSeedID;
 
     while (pointer < size) { 
 
@@ -94,30 +91,30 @@ trigScanValidEvent XLALTrigScanExpandCluster (
 void XLALTrigScanGetEpsNeighbourhood (
         trigScanInputPoint      seed, 
         trigScanInputPoint      **list,
-        INT4                  *size,
+        INT4                    *size,
         trigScanEpsSearchInput  *epsSearchIn
         )
 {
     INT4     i;
-    REAL8    epsX  = epsSearchIn->epsX;
-    REAL8    epsY  = epsSearchIn->epsY;
-    REAL8    epsTc = epsSearchIn->epsTc;
-    REAL8    alpha = epsSearchIn->alpha;
     REAL8    distance;
-    REAL8    dx, dy, dtc;
+    REAL8    dy, dz, dtc;
 
     for (i = 0; i < epsSearchIn->nInputPoints; i++)
     {
         /* check if the point has been classified */
         if (epsSearchIn->masterList[i].clusterID == TRIGSCAN_UNCLASSIFIED)
         {
-            dx   = epsSearchIn->masterList[i].x - seed.x;
             dy   = epsSearchIn->masterList[i].y - seed.y;
+            dz   = epsSearchIn->masterList[i].z - seed.z;
             dtc  = epsSearchIn->masterList[i].tc_sec - seed.tc_sec;
             dtc += 1.e-9*(epsSearchIn->masterList[i].tc_ns - seed.tc_ns);
 
-            distance = XLALTrigScanGetDistance (dx, dy, dtc, epsX, epsY, 
-                    alpha, epsTc);
+            distance  = dtc*dtc*epsSearchIn->masterList[epsSearchIn->seedID].Gamma[0] 
+                    + 2.0*dtc*dy*epsSearchIn->masterList[epsSearchIn->seedID].Gamma[1] 
+                    + 2.0*dtc*dz*epsSearchIn->masterList[epsSearchIn->seedID].Gamma[2];
+            distance += dy*dy*epsSearchIn->masterList[epsSearchIn->seedID].Gamma[3] 
+                    + 2.0*dy*dz*epsSearchIn->masterList[epsSearchIn->seedID].Gamma[4];
+            distance += dz*dz*epsSearchIn->masterList[epsSearchIn->seedID].Gamma[5];
 
             if (distance > 0 && distance <= 1.) 
             {
@@ -138,8 +135,8 @@ void XLALTrigScanGetEpsNeighbourhood (
                 }
 
                 /* add the shortlisted point to the list at position size - 1*/
-                (*list)[*size - 1].x  = epsSearchIn->masterList[i].x;
                 (*list)[*size - 1].y  = epsSearchIn->masterList[i].y;
+                (*list)[*size - 1].z  = epsSearchIn->masterList[i].z;
                 (*list)[*size - 1].tc_sec = epsSearchIn->masterList[i].tc_sec;
                 (*list)[*size - 1].tc_ns  = epsSearchIn->masterList[i].tc_ns;	
                 (*list)[*size - 1].rho    = epsSearchIn->masterList[i].rho;
@@ -151,24 +148,6 @@ void XLALTrigScanGetEpsNeighbourhood (
     }
 }
 
-/* --------------------------------------------------------------------- 
- * returns a value >=0 given the offsets dx, dy, dz and 
- * a, b, c and angle alpha for an ellipsoid. If the value is <=1.0 it
- * implies that the point is inside the ellipsoid. 
- ---------------------------------------------------------------------*/ 
-REAL8 XLALTrigScanGetDistance (
-        REAL8 dx,  REAL8 dy, 
-        REAL8 dtc, REAL8 a, 
-        REAL8 b,   REAL8 alpha, 
-        REAL8 c)
-{
-    REAL8 xpp, ypp;
-
-    xpp =  dx*cos(alpha) + dy*sin(alpha);
-    ypp = -dx*sin(alpha) + dy*cos(alpha);
-
-    return (pow(xpp/a, 2.) + pow (ypp/b, 2.) + pow (dtc/c, 2.));
-} 
 
 /* --------------------------------------------------------------------- 
  * This function is used to fillout the trigScanClusterOut structure after
@@ -221,11 +200,10 @@ void LALTrigScanClusterMakeOutput (
                 
                 if (condenseIn->vrbflag) 
                 {
-                    fprintf (stdout, "%d %e %e %9.f %9.f %.8e %e %e %e %e\n", 
-                            i, masterList[j].x, masterList[j].y, 
+                    fprintf (stdout, "%d %e %e %9.f %9.f %.8e %e\n", 
+                            i, masterList[j].y, masterList[j].z, 
                             masterList[j].tc_sec, masterList[j].tc_ns,
-                            masterList[j].rho, condenseIn->a[j], 
-                            condenseIn->b[j], condenseIn->theta[j], masterList[j].effD);
+                            masterList[j].rho, masterList[j].effD);
                 }
 
                 cSize ++;
@@ -237,8 +215,8 @@ void LALTrigScanClusterMakeOutput (
         LALDMax ( status->statusPtr, &maxResult, t_rho, &maxResultIdx);
         CHECKSTATUSPTR (status);
 
-        (*condenseOut)[i-1].x          = masterList[t_idx[maxResultIdx]].x;
         (*condenseOut)[i-1].y          = masterList[t_idx[maxResultIdx]].y;
+        (*condenseOut)[i-1].z          = masterList[t_idx[maxResultIdx]].z;
         (*condenseOut)[i-1].tc_sec     = masterList[t_idx[maxResultIdx]].tc_sec;
         (*condenseOut)[i-1].tc_ns      = masterList[t_idx[maxResultIdx]].tc_ns;
         (*condenseOut)[i-1].rho        = masterList[t_idx[maxResultIdx]].rho;
@@ -371,8 +349,8 @@ void LALTrigScanAppendIsolatedTriggers (
             }
 
             /* Copy the elements to the newly created memory */
-            (*condenseOut)[(*nclusters)].x          = masterList[k].x;
             (*condenseOut)[(*nclusters)].y          = masterList[k].y;
+            (*condenseOut)[(*nclusters)].z          = masterList[k].z;
             (*condenseOut)[(*nclusters)].tc_sec     = masterList[k].tc_sec;
             (*condenseOut)[(*nclusters)].tc_ns      = masterList[k].tc_ns;
             (*condenseOut)[(*nclusters)].rho        = masterList[k].rho;
@@ -385,11 +363,10 @@ void LALTrigScanAppendIsolatedTriggers (
             /* After adding this element, print it to stderr and stdout */
             if (condenseIn->vrbflag) 
             {
-                fprintf (stdout, "%4d %e %e %9.f %9.f %.8e %e %e %e %e\n", 
-                        (*nclusters), masterList[k].x, masterList[k].y, 
+                fprintf (stdout, "%4d %e %e %9.f %9.f %.8e %e\n", 
+                        (*nclusters), masterList[k].y, masterList[k].z, 
                         masterList[k].tc_sec, masterList[k].tc_ns,
-                        masterList[k].rho, condenseIn->a[k], 
-                        condenseIn->b[k], condenseIn->theta[k], masterList[k].effD);
+                        masterList[k].rho, masterList[k].effD);
                 fprintf (stderr, "Added cluster %3d after %3d (%3d members) max snr index "
                         "%3d %9d %9d %e\n", 
                         (*nclusters), (*nclusters)-1, (*condenseOut)[(*nclusters)-1].nelements, 
