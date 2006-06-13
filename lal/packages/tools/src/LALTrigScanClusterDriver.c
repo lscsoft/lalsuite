@@ -20,18 +20,17 @@ $Id$
 NRCSID (LALTRIGSCANCLUSTERDRIVERC,
   "$Id$");
 
-/* Local function proto-type which returns the step length along         */
-/* x and y directions (in this case tau0 and tau3 directions) and the    */ 
-/* angle alpha between x-axis and the major eigendirection based         */
-/* on the metric on the x-y space.                                       */
-static void LALTrigScanFindStepT0T3 (
+/* Local function prototype. This function calculates the 3d metric in the
+ * space of tc,tau0,tau3 for every trigger. Note that y direction is \tau_0
+ * and z direction corresponds to \tau_3. Also, the metric is scaled down by
+ * S(1-MM) where S is a safety factor and MM is the minimal match of the
+ * template bank used in the search.
+ */
+static void LALTrigScan3DMetricCoeff_TcT0T3  (
         LALStatus               *status,
-        REAL8                   *x, 
-        REAL8                   *y,
-        trigScanClusterIn       *condenseIn, 
-        REAL8                   *deltaX, 
-        REAL8                   *deltaY,
-        REAL8                   *alpha
+        REAL8                   *y, 
+        REAL8                   *z,
+        trigScanClusterIn       *condenseIn 
         );
 
 /*---------------------------------------------------------------------------
@@ -80,8 +79,8 @@ void LALClusterSnglInspiralOverTemplatesAndEndTime (
         {
             if (condenseIn->scanMethod == T0T3Tc)
             {
-                condenseIn->masterList[l].x = thisEvent->tau0;
-                condenseIn->masterList[l].y = thisEvent->tau3;
+                condenseIn->masterList[l].y = thisEvent->tau0;
+                condenseIn->masterList[l].z = thisEvent->tau3;
             }
             condenseIn->masterList[l].tc_sec = 
                     (thisEvent->end_time).gpsSeconds;
@@ -147,10 +146,10 @@ void LALTrigScanClusterDriver (
         )
 {
     INT4    i, n;
-    REAL8   dt_a, *nx, *ny, *nstepX, *nstepY, *nalpha;
+    REAL8   *ny, *nz;
 
     /* For clustering */
-    trigScanInputPoint     *masterList=NULL, *list=NULL;
+    trigScanInputPoint   *masterList=NULL, *list=NULL;
     ExpandClusterInput   expandClusterIn;  
 
     INITSTATUS (status, 
@@ -174,26 +173,19 @@ void LALTrigScanClusterDriver (
 
     n            = condenseIn->n;
     masterList   = condenseIn->masterList;
-    dt_a         = 0.5/ (condenseIn->coarseShf.data->length - 1);
-    dt_a        /= condenseIn->coarseShf.deltaF;
 
     /*-- Create space to store the putative events into temp list --*/
-    nx = (REAL8 *) LALMalloc( n * sizeof(REAL8));
     ny = (REAL8 *) LALMalloc( n * sizeof(REAL8));
+    nz = (REAL8 *) LALMalloc( n * sizeof(REAL8));
 
-    /*-- Copy the temp list of x and y co-ords and init clusterID --*/
+    /*-- Copy the temp list of y and z co-ords and init clusterID --*/
     for (i = 0; i < n; i++)
     {
-        nx[i] = masterList[i].x;
         ny[i] = masterList[i].y;
+        nz[i] = masterList[i].z;
 
         masterList[i].clusterID = TRIGSCAN_UNCLASSIFIED; 
     }
-
-    /*-- The stepSize to be calculated at all the points in x-y --*/
-    nstepX = (REAL8 *) LALCalloc( 1, n * sizeof(REAL8));
-    nstepY = (REAL8 *) LALCalloc( 1, n * sizeof(REAL8));
-    nalpha = (REAL8 *) LALCalloc( 1, n * sizeof(REAL8));
 
     /*-- Calculate the step size now by calling the appropriate subroutine --*/
     switch (condenseIn->scanMethod) 
@@ -205,9 +197,10 @@ void LALTrigScanClusterDriver (
                         "LALTrigScanFindStepT0T3 to calculate step size\n");
             }
             condenseIn->massChoice = t03;
-            LALTrigScanFindStepT0T3 (status->statusPtr, nx , ny, condenseIn, 
-                    nstepX, nstepY, nalpha);
+
+            LALTrigScan3DMetricCoeff_TcT0T3 (status->statusPtr, ny , nz, condenseIn);
             CHECKSTATUSPTR (status);
+
             break;
 
         case Psi0Psi3Tc:
@@ -225,10 +218,6 @@ void LALTrigScanClusterDriver (
             RETURN(status);
             break;
     }
-
-    condenseIn->a     = nstepX;
-    condenseIn->b     = nstepY;
-    condenseIn->theta = nalpha;
 
     /*-----------------------*/
     /*-- CLUSTERING BEGINS --*/
@@ -251,28 +240,25 @@ void LALTrigScanClusterDriver (
             masterList[i].clusterID = expandClusterIn.currClusterID;
 
             /* assign the values of the seed-point to the list */
-            list[0].x            =  masterList[i].x;
             list[0].y            =  masterList[i].y;
+            list[0].z            =  masterList[i].z;
             list[0].tc_sec       =  masterList[i].tc_sec;
             list[0].tc_ns        =  masterList[i].tc_ns;
             list[0].rho          =  masterList[i].rho;
             list[0].isValidEvent =  masterList[i].isValidEvent;
             list[0].clusterID    =  masterList[i].clusterID;
-
-            expandClusterIn.epsTc  = condenseIn->bin_time * dt_a;  
-            expandClusterIn.epsX   = sqrt(condenseIn->sf_area) * nstepX[i];  
-            expandClusterIn.epsY   = sqrt(condenseIn->sf_area) * nstepY[i];  
-            expandClusterIn.alpha  = nalpha[i];
+            
+            expandClusterIn.currSeedID = i;
 
             /*-- Try to expand this seed and see if it agglomerates more --*/
             /*-- more points around it. If it does not then assign it to --*/
             /*-- noise. Otherwise increment the current clusterID for    --*/
             /*-- the next cluster.                                       --*/
 
-            if (!(XLALTrigScanExpandCluster ( list, masterList, 
-                            expandClusterIn))
-                    )
-            {
+            if (!(XLALTrigScanExpandCluster ( 
+                            list, masterList, expandClusterIn
+                          )))
+           {
                 /* the seed point did not agglomerate into a cluster */
                 masterList[i].clusterID = TRIGSCAN_NOISE;
             }
@@ -319,56 +305,47 @@ void LALTrigScanClusterDriver (
     }
 
     /* Free-up memory */
-    if (nx) LALFree (nx);
     if (ny) LALFree (ny);
-    if (nstepX) LALFree (nstepX);
-    if (nstepY) LALFree (nstepY);
-    if (nalpha) LALFree (nalpha);
+    if (nz) LALFree (nz);
 
     /* Normal exit */
     DETATCHSTATUSPTR(status);
     RETURN(status);
 }
 
-
-
-
-
 /*-------------------------------------------------------------------------*/
-/* Local function that calculates the step size along tau0/tau3 directions */
-/* The convention we follow is x[] = tau0[], y[] = tau3[].                 */ 
-/* For each of these points we calculate deltaX, deltaY and alpha          */
+/* Local function that calculates the 3d metric                            */
+/* The convention we follow is x[] = tc, y[] = tau0[], z[] = tau3[].       */
+/* Note that the metric is scaled down by S(1-MM)                          */
 /*-------------------------------------------------------------------------*/
-static void LALTrigScanFindStepT0T3 (
+static void LALTrigScan3DMetricCoeff_TcT0T3  (
         LALStatus               *status,
-        REAL8                   *x, 
-        REAL8                   *y,
-        trigScanClusterIn       *condenseIn, 
-        REAL8                   *deltaX, 
-        REAL8                   *deltaY,
-        REAL8                   *alpha
+        REAL8                   *y, 
+        REAL8                   *z,
+        trigScanClusterIn       *condenseIn 
         )
 {
     INT4                N;
-    REAL8               dx, dy;     
     InspiralMetric      *metric   = NULL;
     InspiralTemplate    *tempPars = NULL;
     InspiralMomentsEtc  *moments  = NULL;
+    trigScanInputPoint  *masterList=NULL;
 
+    masterList = condenseIn->masterList;
     N = condenseIn->n;
 
-    INITSTATUS (status, "LALTrigScanFindStepT0T3", LALTRIGSCANCLUSTERDRIVERC);
+    INITSTATUS (status, "LALTrigScan3DMetricCoeff_TcT0T3", LALTRIGSCANCLUSTERDRIVERC);
     ATTATCHSTATUSPTR(status);
 
-    ASSERT (x && y && deltaX && deltaY && alpha, 
+    ASSERT (y && z && masterList, 
             status, LALTRIGSCANCLUSTERH_ENULL, LALTRIGSCANCLUSTERH_MSGENULL);
 
     tempPars = (InspiralTemplate *) LALMalloc (sizeof (InspiralTemplate));
     tempPars->nStartPad   = 0;
     tempPars->nEndPad     = 0;
     tempPars->startPhase  = 0.0;
-    tempPars->t0          = x[0];
-    tempPars->t3          = y[0];
+    tempPars->t0          = y[0];
+    tempPars->t3          = z[0];
     tempPars->fLower      = condenseIn->fLower;
     tempPars->fCutoff     = condenseIn->fUpper;
     tempPars->tSampling   = condenseIn->tSampling;
@@ -393,8 +370,8 @@ static void LALTrigScanFindStepT0T3 (
 
         for (kk=0; kk<N; kk++) 
         {
-            tempPars->t0       = x[kk];
-            tempPars->t3       = y[kk];
+            tempPars->t0       = y[kk];
+            tempPars->t3       = z[kk];
             LALInspiralParameterCalc (status->statusPtr, tempPars);
             CHECKSTATUSPTR (status);
 
@@ -405,15 +382,13 @@ static void LALTrigScanFindStepT0T3 (
                     metric, tempPars, moments);
             CHECKSTATUSPTR (status);
 
-            /* Now calculate the step size in X and Y direction. 
-             * Remember that these are approximate.  However, this 
-             * is the best we can do. */
-            dx = sqrt(2.0*(1. - condenseIn->mmCoarse)/metric->g00);
-            dy = sqrt(2.0*(1. - condenseIn->mmCoarse)/metric->g11);
-
-            deltaX[kk] = dx;
-            deltaY[kk] = dy;
-            alpha[kk]  = metric->theta;
+            /* Copy out the 3d metric co-effs */
+            masterList[kk].Gamma[0] = metric->Gamma[0]/(condenseIn->sf_volume*(1.0L - condenseIn->mmCoarse));
+            masterList[kk].Gamma[1] = metric->Gamma[1]/(condenseIn->sf_volume*(1.0L - condenseIn->mmCoarse));
+            masterList[kk].Gamma[2] = metric->Gamma[2]/(condenseIn->sf_volume*(1.0L - condenseIn->mmCoarse));
+            masterList[kk].Gamma[3] = metric->Gamma[3]/(condenseIn->sf_volume*(1.0L - condenseIn->mmCoarse));
+            masterList[kk].Gamma[4] = metric->Gamma[4]/(condenseIn->sf_volume*(1.0L - condenseIn->mmCoarse));
+            masterList[kk].Gamma[5] = metric->Gamma[5]/(condenseIn->sf_volume*(1.0L - condenseIn->mmCoarse));
         }
     }
 
