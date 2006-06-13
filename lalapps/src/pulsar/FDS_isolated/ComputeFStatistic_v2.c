@@ -962,12 +962,16 @@ EstimateSigParams (LALStatus *status, const CWParamSpacePoint *psPoint, const Fc
   REAL8 Tsft;
   UINT4 X, numDetectors, numSFTs;  
   REAL8 norm;
- 
+  double medianbias=1.0;
+
   MultiAMCoeffs *multiAMcoef = NULL;
   MultiPSDVector *multiPSDs = NULL;
   
   FILE * fpMLEParam;
   
+  INITSTATUS (status, "EstimateSigParams", rcsid);
+  ATTATCHSTATUSPTR (status);
+
 
   if(!(fpMLEParam=fopen("ParamMLE.txt","w")))
     fprintf(stderr,"Error in EstimateSignalParameters: unable to open the file");
@@ -1038,12 +1042,10 @@ EstimateSigParams (LALStatus *status, const CWParamSpacePoint *psPoint, const Fc
   Asq = A1*A1 + A2*A2 + A3*A3 + A4*A4;
   detA = A1*A4 - A2*A3;
 			  
-  fprintf(stdout,"\n\n A1 = %g,   A2 = %g,  A3 = %g,  A4 = %g,  Asq = %g,  detA = %g\n\n ", A1, A2, A3, A4, Asq, detA);
-			  
   /* Free AM Coefficients */
   XLALDestroyMultiAMCoeffs ( multiAMcoef );
   /* Free MultiPSDVector  */
-  LAL_CALL ( LALDestroyMultiPSDVector (&status, &multiPSDs ), &status );
+  TRY ( LALDestroyMultiPSDVector (status->statusPtr, &multiPSDs ), status );
   
   
 /* h_0 * sin(\zeta)*/
@@ -1092,8 +1094,6 @@ EstimateSigParams (LALStatus *status, const CWParamSpacePoint *psPoint, const Fc
   A1test = h0mle * (0.5 * (1 + mu_mle * mu_mle) * cos(2.0 * psi_mle) * cos(2.0 * Phi0_mle)
 		    -mu_mle * sin(2.0 * psi_mle) * sin(2.0 * Phi0_mle));
 			  
-  fprintf(stdout,"\n A1_test = %g,\n ", A1test);
-			  
   /* Determine the sign of Cos[2*Phi0] */
   if(A1 * A1test < 0.0) 
     {
@@ -1106,65 +1106,62 @@ EstimateSigParams (LALStatus *status, const CWParamSpacePoint *psPoint, const Fc
 
   /* Reconstruct A1,A2,A3,A4. Compare them with the original values. */
 
-  A1test=h0mle*(0.5*(1+mu_mle*mu_mle)*cos(2.0*psi_mle)*cos(2.0*Phi0_mle)
-		-mu_mle*sin(2.0*psi_mle)*sin(2.0*Phi0_mle));
-  A2test=h0mle*(0.5*(1+mu_mle*mu_mle)*sin(2.0*psi_mle)*cos(2.0*Phi0_mle)
-		+mu_mle*cos(2.0*psi_mle)*sin(2.0*Phi0_mle));
-  A3test=h0mle*(-0.5*(1+mu_mle*mu_mle)*cos(2.0*psi_mle)*sin(2.0*Phi0_mle)
-		-mu_mle*sin(2.0*psi_mle)*cos(2.0*Phi0_mle));
-  A4test=h0mle*(-0.5*(1+mu_mle*mu_mle)*sin(2.0*psi_mle)*sin(2.0*Phi0_mle)
-		+mu_mle*cos(2.0*psi_mle)*cos(2.0*Phi0_mle));
+  A1test = h0mle * (0.5 * (1 + mu_mle * mu_mle) * cos(2.0 * psi_mle) * cos (2.0 * Phi0_mle)
+		- mu_mle * sin(2.0 * psi_mle) * sin(2.0 * Phi0_mle));
+
+  A2test = h0mle * (0.5 * (1 + mu_mle * mu_mle) * sin(2.0 * psi_mle) * cos(2.0 * Phi0_mle)
+		+ mu_mle * cos(2.0 * psi_mle) * sin(2.0 * Phi0_mle));
+
+  A3test = h0mle * (-0.5 * (1 + mu_mle * mu_mle) * cos(2.0 * psi_mle) * sin(2.0 * Phi0_mle)
+		- mu_mle * sin(2.0 * psi_mle) * cos(2.0 * Phi0_mle));
+ 
+  A4test = h0mle * (-0.5 * (1 + mu_mle * mu_mle) * sin(2.0 * psi_mle) * sin(2.0 * Phi0_mle)
+		+ mu_mle * cos(2.0 * psi_mle) * cos(2.0 * Phi0_mle));
 
 
-  fprintf(stderr,"LALDemod_Estimate output: "
-	  "A1=%20.15f A2=%20.15f A3=%20.15f A4=%20.15f\n"
-	  ,A1,A2,A3,A4);
-  fprintf(stderr,"Reconstructed from MLE: "
-	  "A1=%20.15f A2=%20.15f A3=%20.15f A4=%20.15f !!!!\n\n",
-	  A1test,A2test,A3test,A4test);
+  fprintf(stderr,"LALDemod_Estimate output: ""A1=%20.15f A2=%20.15f A3=%20.15f A4=%20.15f\n", A1, A2, A3, A4);
+  fprintf(stderr,"Reconstructed from MLE: ""  A1=%20.15f A2=%20.15f A3=%20.15f A4=%20.15f !!!!\n\n", A1test, A2test, A3test, A4test);
   fflush(stderr);
 
 
-  if(fabs(A1-A1test)>fabs(A1)/(10e5)){ 
+  if ( fabs(A1 - A1test) > fabs(A1) / (10e5))
+    { 
     fprintf(stderr,"Something is wrong with Estimate A1\n");
-
-    fprintf(stderr,"relative error Abs((A1-A1test)/A1)=%f\n",
-	    fabs(A1-A1test)/fabs(A1));
+    fprintf(stderr,"relative error Abs((A1-A1test)/A1)=%f\n", fabs(A1 - A1test) / fabs(A1));
     exit(1);
-  }
-  if(fabs(A2-A2test)>fabs(A2)/(10e5)){ 
+    }
+
+  if(fabs(A2-A2test)>fabs(A2)/(10e5))
+    { 
     fprintf(stderr,"Something is wrong with Estimate A2\n");
-
-    fprintf(stderr,"relative error Abs((A2-A2test)/A2)=%f\n",
-	    fabs(A2-A2test)/fabs(A2));
+    fprintf(stderr,"relative error Abs((A2-A2test)/A2)=%f\n", fabs(A2 - A2test) / fabs(A2));
     exit(1);
-  }
-  if(fabs(A3-A3test)>fabs(A3)/(10e5)){ 
+    }
+
+  if(fabs(A3-A3test)>fabs(A3)/(10e5))
+    { 
     fprintf(stderr,"Something is wrong with Estimate A3\n");
-
-    fprintf(stderr,"relative error Abs((A3-A3test)/A3)=%f\n",
-	    fabs(A3-A3test)/fabs(A3));
+    fprintf(stderr,"relative error Abs((A3-A3test)/A3)=%f\n", fabs(A3 - A3test) / fabs(A3));
     exit(1);
-  }
-  if(fabs(A4-A4test)>fabs(A4)/(10e5)){ 
+    }
+
+  if(fabs(A4-A4test)>fabs(A4)/(10e5))
+    { 
     fprintf(stderr,"Something is wrong with Estimate A4\n");
-
-    fprintf(stderr,"relative error Abs((A4-A4test)/A4)=%f\n",
-	    fabs(A4-A4test)/fabs(A4));
+    fprintf(stderr,"relative error Abs((A4-A4test)/A4)=%f\n", fabs(A4 - A4test) / fabs(A4));
     exit(1);
-  }
+    }
 
   /* normalization */
-  norm=2.0 * sqrt(Tsft)/(Tsft * numSFTs);
-  h0mle=h0mle*norm;
+  norm = 2.0 * sqrt(Tsft) / (Tsft * numSFTs);
+  h0mle = h0mle * norm;
 
+  /* LALRngMedBias (status, &medianbias, uvar_RngMedWindow);*/
 
-/*   /\* For the real data, we need to multiply long(2.0) *\/ */
-/*   /\* Because we use running median to estimate the S_h. *\/ */
-/*   if(GV.noise!=1)  */
-/*     h0mle=h0mle*sqrt(medianbias); */
+  /* For the real data, we need to multiply long(2.0) */ 
+  /* Because we use running median to estimate the S_h. */
 
-
+    h0mle=h0mle*sqrt(medianbias); 
 
 /*   {double hp,hc,ds; */
 /*   hp=(1.0+mu_mle*mu_mle)*h0mle/2.0; */
