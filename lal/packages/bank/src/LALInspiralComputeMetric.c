@@ -448,6 +448,26 @@ LALInspiralComputeMetric (
     metric->theta = atan( b / (metric->g00 - c) );
   }
 
+/* Now we compute the 3d metric in tc,\tau_0,\tau_3 co-ordinates */
+  metric->Gamma[0] = 0.5*pow(2.*LAL_PI*params->fLower,2.)*
+          ( moments->j[1] - (moments->j[4]*moments->j[4]) );
+  
+  metric->Gamma[1] = 0.5*pow(2.*LAL_PI*params->fLower,2.)*
+          ( Psi[0][0]*(moments->j[9] - (moments->j[4]*moments->j[12]) ) 
+          + Psi[0][2]*(moments->j[7] - (moments->j[4]*moments->j[10]) ) 
+          + Psi[0][4]*(moments->j[5] - (moments->j[4]*moments->j[8]) ));
+  
+  metric->Gamma[2] = 0.5*pow(2.*LAL_PI*params->fLower,2.)*
+          ( Psi[1][2]*(moments->j[7] - (moments->j[4]*moments->j[10]) ) 
+          + Psi[1][3]*(moments->j[6] - (moments->j[4]*moments->j[9])  ) 
+          + Psi[1][4]*(moments->j[5] - (moments->j[4]*moments->j[8])  ));
+
+
+  metric->Gamma[3] = metric->G00 + metric->Gamma[1]*metric->Gamma[1]/metric->Gamma[0];
+  metric->Gamma[4] = metric->G01 + metric->Gamma[1]*metric->Gamma[2]/metric->Gamma[0];
+  metric->Gamma[5] = metric->G11 + metric->Gamma[2]*metric->Gamma[2]/metric->Gamma[0];
+
+
   RETURN( status );
 }
 
