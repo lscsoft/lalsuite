@@ -98,6 +98,12 @@ def make_frequency_plot(fseries):
 	return fig
 
 
+def normalize(array):
+	# used in validation code
+	array -= array.mean()
+	return array / array.stddev()
+
+
 def make_rate_plot(rate):
 	fig = figure.Figure()
 	FigureCanvasAgg(fig)
@@ -105,12 +111,20 @@ def make_rate_plot(rate):
 	axes = fig.gca()
 	axes.semilogy()
 	axes.grid(True)
-	ymin = min(numarray.compress(rate.numerator, rate.yvals()))
-	rate.filter()
+
+	# some commented-out code for validation
+	#yvals = rate.yvals()
+	#axes.plot(rate.xvals(), normalize(rate.numerator), "go")
+	#axes.plot(rate.xvals(), normalize(rate.denominator), "b")
+	#axes.plot(rate.xvals(), normalize(yvals), "r")
+	#axes.set_xlim([0, 1])
+
 	yvals = rate.yvals()
+	ymin = min(numarray.compress(rate.numerator, yvals))
 	axes.plot(rate.xvals(), yvals, "k")
 	axes.set_xlim([0, 2.0 * math.pi])
 	axes.set_ylim([10.0**(int(math.log10(ymin)) - 1), 10.0**(int(math.log10(max(yvals))) + 1)])
+
 	axes.set_title("Event Confidence Accumulation Rate By Sidereal Time")
 	axes.set_xlabel("Greenwich Mean Sidereal Time (rad)")
 	axes.set_ylabel("Event Confidence Accumulation Rate (confidence / sidereal day / rad)")
