@@ -66,6 +66,7 @@ def parse_command_line():
 	parser.add_option("--f-naught", metavar = "Hz", default = "0", help = "set lowest frequency bin (default = 0 Hz)")
 	parser.add_option("--t-naught", metavar = "GPS seconds", default = "0", help = "set origin of time coordinate (default = 0)")
 	parser.add_option("--only-rate", action = "store_true", help = "only compute trigger confidence rates")
+	parser.add_option("--program", metavar = "name", default = "power", help = "set name of program that generated the triggers (default = \"power\")")
 	parser.add_option("-v", "--verbose", action = "store_true", help = "be verbose")
 	options, filenames = parser.parse_args()
 
@@ -128,6 +129,14 @@ lsctables.SnglBurstTable.RowType = SnglBurst
 lsctables.SearchSummary.get_out = search_summary_get_out
 
 
+def verify_burst_events(doc, program):
+	segmentlists = llwapp.segmentlistdict_fromsearchsummary(doc, program)
+	for event in llwapp.get_table(doc, lsctables.SnglBurstTable.tableName):
+		seg = segments.segment(event.get_start(), event.get_stop())
+		if seg not in segmentlists[event.ifo]:
+			raise ValueError, "event spanning times %s for instrument %s not contained in search summary segments" % (str(seg), event.ifo)
+
+
 #
 # =============================================================================
 #
@@ -170,11 +179,11 @@ def fourier_transform(eventlist, options):
 	return fseries
 
 
-def bin_events_by_sidereal_time(rates, eventlist):
+def bin_confidence_by_sidereal_time(rates, eventlist):
 	for n, event in enumerate(eventlist):
 		if event.ifo not in rates:
-			# 1 filter-width per 10 sidereal seconds
-			rates[event.ifo] = rate.RatiosRate(segments.segment(0.0, 2.0 * math.pi), 10.0 * math.pi / 43200.0)
+			# 1 filter-width per 1 sidereal minute
+			rates[event.ifo] = rate.RatiosRate(segments.segment(0.0, 2.0 * math.pi), 60.0 * math.pi / 43200.0)
 		start = date.XLALGreenwichMeanSiderealTime(event.get_start()) % (2.0 * math.pi)
 		stop = date.XLALGreenwichMeanSiderealTime(event.get_stop()) % (2.0 * math.pi)
 		if stop >= start:
@@ -188,11 +197,12 @@ def gps_seglist_to_gmst(seglist):
 	return segments.segmentlist([segments.segment(date.XLALGreenwichMeanSiderealTime(start), date.XLALGreenwichMeanSiderealTime(stop)) for (start, stop) in seglist])
 
 
-def bin_segments_by_sidereal_time(rates, segmentlists):
+def bin_livetime_by_sidereal_time(rates, segmentlists):
 	for key, value in segmentlists.iteritems():
-		# FIXME: why is the protract() needed?
-		value = gps_seglist_to_gmst(value).protract(10)
-		gmst_days = segmentsUtils.segmentlist_range(value[0][0] - value[0][0] % (2.0 * math.pi), value[-1][1] - value[-1][1] % (2.0 * math.pi) + 2.0 * math.pi, 2.0 * math.pi)
+		value = gps_seglist_to_gmst(value)
+		# add a little bit to the stop time to ensure we generate a
+		# segment for the last day
+		gmst_days = segmentsUtils.segmentlist_range(value[0][0] - value[0][0] % (2.0 * math.pi), value[-1][1] - value[-1][1] % (2.0 * math.pi) + 2.0 * math.pi + 0.5, 2.0 * math.pi)
 		for seglist in segmentsUtils.Fold(value, gmst_days):
 			for seg in seglist:
 				# take a negligible amount off the
@@ -210,6 +220,8 @@ def bin_segments_by_sidereal_time(rates, segmentlists):
 #
 
 def new_doc(fseries, rates):
+	if options.verbose:
+		print >>sys.stderr, "generating output document ..."
 	doc = ligolw.Document()
 	container = ligolw.LIGO_LW()
 	doc.appendChild(container)
@@ -241,6 +253,7 @@ for n, filename in enumerate(llwapp.sort_files_by_size(filenames, options.verbos
 	if options.verbose:
 		print >>sys.stderr, "%d/%d:" % (n + 1, len(filenames)),
 	doc = llwapp.load_filename(filename, options.verbose)
+	verify_burst_events(doc, options.program)
 	eventlist = llwapp.get_table(doc, lsctables.SnglBurstTable.tableName)
 
 	# for better numerical accuracy, process events with smallest
@@ -252,8 +265,8 @@ for n, filename in enumerate(llwapp.sort_files_by_size(filenames, options.verbos
 	# bin by sidereal time
 	if options.verbose:
 		print >>sys.stderr, "binning by sidereal time..."
-	bin_events_by_sidereal_time(rates, eventlist)
-	bin_segments_by_sidereal_time(rates, llwapp.segmentlistdict_fromsearchsummary(doc, "power"))
+	bin_confidence_by_sidereal_time(rates, eventlist)
+	bin_livetime_by_sidereal_time(rates, llwapp.segmentlistdict_fromsearchsummary(doc, options.program))
 
 	# Fourier transform
 	if not options.only_rate:
