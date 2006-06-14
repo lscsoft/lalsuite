@@ -112,6 +112,7 @@ typedef struct {
   MultiSFTVector *multiSFTs;		    /**< multi-IFO SFT-vectors */
   MultiDetectorStateSeries *multiDetStates; /**< pos, vel and LMSTs for detector at times t_i */
   MultiNoiseWeights *multiNoiseWeights;	    /**< normalized noise-weights of those SFTs */
+  REAL8 S_hat;
   ComputeFParams CFparams;		    /**< parameters for the computation of Fstat (e.g Dterms, SSB-precision,...) */
   CHAR *dataSummary;                        /**< descriptive string describing the data (e.g. #SFTs, startTime etc. ..*/
 } ConfigVariables;
@@ -176,7 +177,7 @@ CHAR *uvar_workingDir;
 int main(int argc,char *argv[]);
 void initUserVars (LALStatus *);
 void InitFStat ( LALStatus *, ConfigVariables *cfg );
-void EstimateSigParams (LALStatus *, const CWParamSpacePoint *psPoint, const Fcomponents *Fstat);
+void EstimateSigParams (LALStatus *, const Fcomponents *Fstat, const MultiAMCoeffs *multiAMcoef);
 void Freemem(LALStatus *,  ConfigVariables *cfg);
 
 void WriteFStatLog (LALStatus *, CHAR *argv[]);
@@ -409,7 +410,7 @@ int main(int argc,char *argv[])
 		       * this means we didn't normalize data by 1/sqrt(Tsft * 0.5 * Sh) in terms of 
 		       * the single-sided PSD Sh: the SignalOnly case is characterized by
 		         
-    * setting Sh->1, so we need to divide Fa,Fb by sqrt(0.5*Tsft)
+		       * setting Sh->1, so we need to divide Fa,Fb by sqrt(0.5*Tsft)
 		       * and F by (0.5*Tsft)
 		       */
 		      if ( uvar_SignalOnly )
@@ -427,7 +428,7 @@ int main(int argc,char *argv[])
 		      
 		      if(uvar_EstimSigParam) 
 			{   
-			  LAL_CALL ( EstimateSigParams(&status, &psPoint, &Fstat), &status);
+			  LAL_CALL ( EstimateSigParams(&status, &Fstat, cfBuffer.multiAMcoef), &status);
 
 			} /*if(uvar_EstimSigParam) */
 
@@ -873,6 +874,8 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
       /* note: the normalization S_hat would be required to compute the ML-estimator for A^\mu */
       TRY ( LALComputeMultiNoiseWeights  (status->statusPtr, &(cfg->multiNoiseWeights), &S_hat, psds, uvar_RngMedWindow, 0 ), status );
 
+      GV.S_hat = S_hat;
+
       TRY ( LALDestroyMultiPSDVector (status->statusPtr, &psds ), status );
 
     } /* if ! SignalOnly */
@@ -948,25 +951,21 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
 
 
 void
-EstimateSigParams (LALStatus *status, const CWParamSpacePoint *psPoint, const Fcomponents *Fstat)
+EstimateSigParams (LALStatus *status, const Fcomponents *Fstat, const MultiAMCoeffs *multiAMcoef)
 {
   REAL8 A1, A2, A3, A4, Asq, detA;
-  REAL8 Dinv;
   REAL8 beta, ampratio, A1test, A2test, A3test, A4test;
   REAL8 psi_mle, Phi0_mle, mu_mle;
   REAL8 h0mle, h0mleSq;
   REAL8 error_tol = 1.0 / pow(10,14);
 
-  REAL8 At = 0.0 ,Bt = 0.0 ,Ct = 0.0;
-  REAL8 Sh, sqrtSh=0.0, sumSh=0.0;
-  REAL8 Tsft;
-  UINT4 X, numDetectors, numSFTs=0;  
+  REAL8 A, B, C, D, At ,Bt ,Ct, Dinv ;
+  REAL8 Tsft = GV.Tsft;
+  INT4 numSFTs;
+
   REAL8 norm;
   double medianbias=1.0;
 
-  MultiAMCoeffs *multiAMcoef = NULL;
-  MultiPSDVector *multiPSDs = NULL;
-  
   FILE * fpMLEParam;
   
   INITSTATUS (status, "EstimateSigParams", rcsid);
@@ -976,63 +975,17 @@ EstimateSigParams (LALStatus *status, const CWParamSpacePoint *psPoint, const Fc
   if(!(fpMLEParam=fopen("ParamMLE.txt","w")))
     fprintf(stderr,"Error in EstimateSigParams: unable to open the file");
  
-  
-  TRY ( LALGetMultiAMCoeffs ( status->statusPtr, &multiAMcoef, GV.multiDetStates, psPoint->skypos ), status);
-  TRY ( LALNormalizeMultiSFTVect ( status->statusPtr, &multiPSDs, GV.multiSFTs, uvar_RngMedWindow ), status );
-  
-  numDetectors = GV.multiSFTs->length;
-  
-  /* Antenna-patterns and compute A,B,C */
-  for ( X=0; X < numDetectors; X ++)
-    {
-      REAL8 A = 0.0, B = 0.0 ,C = 0.0;
-      UINT4 alpha;
-      UINT4 numSFTsX = GV.multiSFTs->data[X]->length;
-      AMCoeffs *amcoeX = multiAMcoef->data[X];
-      PSDVector *psdsX = multiPSDs->data[X]; 
-      
-      Tsft = 1 / (GV.multiSFTs->data[X]->data[0].deltaF);	
-      
-      for(alpha = 0; alpha < numSFTsX; alpha++)
-	{
-	  UINT4 lengthPSD, i;
-	  REAL8 sumPSD = 0.0, meanPSD = 0.0, PSD;
-	  REAL8 ahat, bhat;
-	  
-	  lengthPSD = psdsX->data[0].data->length;
-	  
-	  for(i = 0; i < lengthPSD; i++)
-	    {
-	      PSD =  psdsX->data[alpha].data->data[i];
-	      sumPSD += PSD;  
-	    }
-	  meanPSD = sumPSD / lengthPSD;
-	  
-	  Sh = 2 * meanPSD / Tsft;
-	  
-	  sumSh +=Sh;
-	  
-	  ahat = (amcoeX->a->data[alpha]);
-	  bhat = (amcoeX->b->data[alpha]);
-	  
-	  /* sum A, B, C on the fly */
-	  A += ahat * ahat / Sh;
-	  B += bhat * bhat / Sh;
-	  C += ahat * bhat / Sh;
 
-	} /* for alpha < numSFTsX */
+  A = multiAMcoef->A;
+  B = multiAMcoef->B;
+  C = multiAMcoef->C;
+  D = A * B - C * C;
+  
+  At = 2.0 * Tsft * GV.S_hat * A;
+  Bt = 2.0 * Tsft * GV.S_hat * B;
+  Ct = 2.0 * Tsft * GV.S_hat * C;
+  Dinv = 1.0 / (pow((2 * Tsft * GV.S_hat), 2) * D);
 
-      numSFTs += numSFTsX;
-      
-      At += 2 * Tsft * A;
-      Bt += 2 * Tsft * B;
-      Ct += 2 * Tsft * C;
-      
-      sqrtSh += sqrt(sumSh) / (numDetectors * numSFTsX);
-      
-    } /* for X < numDetectors */
-
-  Dinv = 1/(At * Bt - Ct * Ct);
   
   A1 =   4.0 * Dinv * ( Bt * Fstat->Fa.re - Ct * Fstat->Fb.re); /* A1=2(B H1-C H2)/D where, H1=Re(2Fa) and H2=Re(2Fb) */
   A2 =   4.0 * Dinv * ( At * Fstat->Fb.re - Ct * Fstat->Fa.re);
@@ -1042,12 +995,6 @@ EstimateSigParams (LALStatus *status, const CWParamSpacePoint *psPoint, const Fc
   Asq = A1*A1 + A2*A2 + A3*A3 + A4*A4;
   detA = A1*A4 - A2*A3;
 			  
-  /* Free AM Coefficients */
-  XLALDestroyMultiAMCoeffs ( multiAMcoef );
-  /* Free MultiPSDVector  */
-  TRY ( LALDestroyMultiPSDVector (status->statusPtr, &multiPSDs ), status );
-  
-  
   /* h0mle = h_0 * sin(\zeta)*/
   h0mle = 0.5 * pow (pow( ((A1-A4)*(A1-A4) + (A2+A3)*(A2+A3)), 0.25)+
 		     pow( ((A1+A4)*(A1+A4) + (A2-A3)*(A2-A3)), 0.25), 2);
@@ -1118,7 +1065,7 @@ EstimateSigParams (LALStatus *status, const CWParamSpacePoint *psPoint, const Fc
 		    + mu_mle * cos(2.0 * psi_mle) * cos(2.0 * Phi0_mle));
 
 
-  fprintf(stderr,"LALDemod_Estimate output: A1=%g A2=%g A3=%g A4=%g\n", A1, A2, A3, A4);
+  fprintf(stderr,"\nLALDemod_Estimate output: A1=%g A2=%g A3=%g A4=%g\n", A1, A2, A3, A4);
   fprintf(stderr,"Reconstructed from MLE:   A1=%g A2=%g A3=%g A4=%g !!!!\n\n", A1test, A2test, A3test, A4test);
   fflush(stderr);
 
@@ -1152,6 +1099,7 @@ EstimateSigParams (LALStatus *status, const CWParamSpacePoint *psPoint, const Fc
     }
   
   /* normalization */
+  numSFTs = GV.multiSFTs->length;
   norm = 2.0 * sqrt(Tsft) / (Tsft * numSFTs);
   h0mle = h0mle * norm;
 
