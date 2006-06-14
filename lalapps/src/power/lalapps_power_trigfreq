@@ -253,8 +253,12 @@ for n, filename in enumerate(llwapp.sort_files_by_size(filenames, options.verbos
 	if options.verbose:
 		print >>sys.stderr, "%d/%d:" % (n + 1, len(filenames)),
 	doc = llwapp.load_filename(filename, options.verbose)
-	verify_burst_events(doc, options.program)
 	eventlist = llwapp.get_table(doc, lsctables.SnglBurstTable.tableName)
+
+	# check that triggers are all inside segments
+	if options.verbose:
+		print >>sys.stderr, "verifying event times ..."
+	verify_burst_events(doc, options.program)
 
 	# for better numerical accuracy, process events with smallest
 	# confidence first.
