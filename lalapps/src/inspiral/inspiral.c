@@ -222,10 +222,10 @@ trigScanType trigScanMethod = trigScanNone;
 REAL8  trigScanDeltaEndTime = 0.0;      /* Use this interval (msec)     */
                                         /* over trigger end time while  */
                                         /* using trigScanCluster        */
-REAL8  trigScanAreaSafetyFac = 0.0;     
-/* Use this safety factor for  the area spanned by a trigger in the     */
-/* parameter space. When set to 1.0, the area is taken to be that of the*/
-/* ambiguity ellipse at the template MM.                                */ 
+REAL8  trigScanVolumeSafetyFac = 0.0;     
+/* Use this safety factor for  the volume spanned by a trigger in the     */
+/* parameter space. When set to 1.0, the volume is taken to be that of the*/
+/* ambiguity ellipsoid at the template MM.                                */ 
 INT2  trigScanAppendStragglers = -1;    /* Switch to append cluster     */
                                         /* out-liers (stragglers)       */
 
@@ -2626,7 +2626,7 @@ int main( int argc, char *argv[] )
         if ( condenseIn && (savedEvents.snglInspiralTable) ) 
         { 
             condenseIn->bin_time   = trigScanDeltaEndTime; 
-            condenseIn->sf_area    = trigScanAreaSafetyFac; 
+            condenseIn->sf_volume  = trigScanVolumeSafetyFac; 
             condenseIn->scanMethod = trigScanMethod; 
             condenseIn->n          = XLALCountSnglInspiral ( (savedEvents.snglInspiralTable) ); 
             condenseIn->vrbflag    = vrbflg;
@@ -2841,7 +2841,7 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "  --ts-cluster   MTHD          max over template and end time MTHD \n"\
 "                                 (T0T3Tc|T0T3TcAS|Psi0Psi3Tc|Psi0Psi3TcAS)\n"\
 "  --ts-endtime-interval msec   set end-time interval for TrigScan clustering\n"\
-"  --ts-area-safety fac         set template area safety factor for TrigScan clustering\n"\
+"  --ts-volume-safety fac       set template volume safety factor for TrigScan clustering\n"\
 "                                 fac should be >= 1.0\n"\
 "\n"\
 "  --enable-output              write the results to a LIGO LW XML file\n"\
@@ -2967,7 +2967,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"td-follow-up",            required_argument, 0,                '9'},
     {"ts-cluster",              required_argument, 0,                '*'},
     {"ts-endtime-interval",     required_argument, 0,                '<'},
-    {"ts-area-safety",          required_argument, 0,                '>'},
+    {"ts-volume-safety",        required_argument, 0,                '>'},
     /* frame writing options */
     {"write-raw-data",          no_argument,       &writeRawData,     1 },
     {"write-filter-data",       no_argument,       &writeFilterData,  1 },
@@ -4060,7 +4060,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         if ( trigScanDeltaEndTime <= 0.0 ) 
         { 
           fprintf( stderr, "invalid argument to --%s:\n" 
-              "endTime interval must be positive: " 
+              "ts-endtime-interval must be positive: " 
               "(%f specified)\n",  
               long_options[option_index].name, trigScanDeltaEndTime ); 
           exit( 1 ); 
@@ -4069,14 +4069,14 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break; 
       
       case '>':
-        /* TrigScan Template Area Safety Factor */ 
-        trigScanAreaSafetyFac = atof( optarg ); 
-        if ( trigScanAreaSafetyFac < 1.0 ) 
+        /* TrigScan Template Volume Safety Factor */ 
+        trigScanVolumeSafetyFac = atof( optarg ); 
+        if ( trigScanVolumeSafetyFac < 1.0 ) 
         { 
           fprintf( stderr, "invalid argument to --%s:\n" 
-              "templateArea safety factor must be >= 1.0 : " 
+              "ts-volume-safety must be >= 1.0 : " 
               "(%f specified)\n",  
-              long_options[option_index].name, trigScanAreaSafetyFac ); 
+              long_options[option_index].name, trigScanVolumeSafetyFac ); 
           exit( 1 ); 
         } 
         ADD_PROCESS_PARAM( "float", "%s", optarg ); 
@@ -4631,17 +4631,17 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   /* Check the trigScan input parameters */
   if ( trigScanMethod )
   {
-      if ( (trigScanDeltaEndTime <= 0.0) || (trigScanAreaSafetyFac < 1.0) )
+      if ( (trigScanDeltaEndTime <= 0.0) || (trigScanVolumeSafetyFac < 1.0) )
       {
-          fprintf ( stderr, "You must specify --trigScan-endTime-interval"
-                  " and --trigScan-templateArea-safetyFac.\n" );
+          fprintf ( stderr, "You must specify --ts-endtime-interval"
+                  " and --ts-volume-safety\n" );
           exit(1);
       }
 
       if ( maximizationInterval )
       {
           fprintf ( stderr, "Cannot specify both --maximization-interval"
-                  " and --trigScanCluster \nChoose any one of the two methods"
+                  " and --ts-cluster \nChoose any one of the two methods"
                   " for clustering inspiral triggers.\n" );
           exit(1);
       }
