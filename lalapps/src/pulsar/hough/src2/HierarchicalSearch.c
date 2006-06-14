@@ -134,7 +134,7 @@ BOOLEAN uvar_printStats; /**< global variable for calculating Hough map stats */
 #define FDOT 0.0      /**< Default value of first spindown */
 #define DFDOT 0.0   /**< Default range of first spindown parameter */
 #define SKYREGION "(1,1),(1,1.5),(1.5,1.5),(1.5,1)" /**< default sky region to search over -- just a single point*/
-#define NFSIZE  21    /**< Default size of hough cylinder of look up tables */
+#define NFDOT  10    /**< Default size of hough cylinder of look up tables */
 #define DTERMS 8     /**< Default number of dirichlet kernel terms for calculating Fstat */
 #define MISMATCH 0.2 /**< Default for metric grid maximal mismatch value */
 #define DALPHA 0.001 /**< Default resolution for isotropic or flat grids */
@@ -204,7 +204,6 @@ int main( int argc, char *argv[]) {
   INT4 sftlength1, sftlength2; /* number of bins in each sft */
   REAL8 deltaF1, deltaF2, timebase1, timebase2; /* frequency resolution of SFTs */
   INT8 sftFminBin1, sftFminBin2; /* first sft bin index */
-  INT8 fHoughBinIni, fHoughBinFin, binsHough; /* frequency bins of start and end search frequencies */
   REAL8 deltaFstack1, deltaFstack2; /* frequency resolution of Fstat calculation */
 
   /* LALdemod related stuff */
@@ -214,8 +213,8 @@ int main( int argc, char *argv[]) {
 
   /* hough variables */
   HOUGHPeakGramVector pgV;
-  HoughParams houghPar;
-  HoughCandidates houghCand1;
+  SemiCoherentParams semiCohPar;
+  SemiCohCandidateList semiCohCandList1;
 
   /* fstat candidate structure */
   toplist_t *fstatToplist=NULL;
@@ -280,7 +279,7 @@ int main( int argc, char *argv[]) {
   INT4 uvar_nStacks1, uvar_nStacks2;
   INT4 uvar_Dterms;
   INT4 uvar_SSBprecision;
-  INT4 uvar_nfSize;
+  INT4 uvar_nfdot;
   INT4 uvar_gridType;
   INT4 uvar_metricType;
   INT4 uvar_reallocBlock;
@@ -321,7 +320,7 @@ int main( int argc, char *argv[]) {
   uvar_fStart = FSTART;
   uvar_fBand = FBAND;
   uvar_blocksRngMed = BLOCKSRNGMED;
-  uvar_nfSize = NFSIZE;
+  uvar_nfdot = NFDOT;
   uvar_peakThrF = FSTATTHRESHOLD;
   uvar_nCand1 = uvar_nCand2 = NCAND1;
   uvar_houghThr = 0;
@@ -388,7 +387,7 @@ int main( int argc, char *argv[]) {
   /* developer user variables */
   LAL_CALL( LALRegisterINTUserVar (   &status, "reallocBlock", 0,  UVAR_DEVELOPER,"Blocks to realloc for Fstat output if necessary",   &uvar_reallocBlock),    &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "SSBprecision", 0,  UVAR_DEVELOPER,"Precision for SSB transform.", &uvar_SSBprecision),    &status);
-  LAL_CALL( LALRegisterINTUserVar (   &status, "nfSize",       0, UVAR_DEVELOPER,"No.of LUTs to keep in memory", &uvar_nfSize), &status);
+  LAL_CALL( LALRegisterINTUserVar (   &status, "nfdot",        0, UVAR_DEVELOPER,"No.of LUTs to keep in memory", &uvar_nfdot), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printMaps",    0,  UVAR_DEVELOPER,"Print Hough maps", &uvar_printMaps), &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printStats",   0,  UVAR_DEVELOPER,"Print Hough map statistics", &uvar_printStats), &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printFstat1",  0,  UVAR_DEVELOPER,"Print 1st stage Fstat vectors", &uvar_printFstat1), &status);  
@@ -951,31 +950,18 @@ int main( int argc, char *argv[]) {
   } /* end if(uvar_followup) */
 
   
-  /* set up the Hough parameters */
-  /* start and end bin for calculating hough map */
-  /* these are just what the user specified */
-  binsHough = binsFstat;
-  fHoughBinIni = floor( fkdot_startTime->data[0]/deltaFstack1 + 0.5);
-  fHoughBinFin = fHoughBinIni + binsHough - 1;
-  if ( ! LALUserVarWasSet(&uvar_houghThr))
-    uvar_houghThr = 0.65 * nStacks1;
-  houghPar.outBaseName = uvar_fnameout;
-  houghPar.houghThr = uvar_houghThr;
-  houghPar.tStart = tStart1;
-  houghPar.fBinIni = fHoughBinIni;
-  houghPar.fBinFin = fHoughBinFin;
-  houghPar.nfSizeCylinder = uvar_nfSize;
-  houghPar.ts = midTstack1;
-  houghPar.vel = velStack1;
-  houghPar.pos = posStack1;
-  houghPar.fkdot = fkdot_startTime;
+  /* set up some semiCoherent parameters */
+  semiCohPar.tsMid = midTstack1;
+  semiCohPar.vel = velStack1;
+  semiCohPar.pos = posStack1;
+  semiCohPar.nfdot = uvar_nfdot;
+  semiCohPar.outBaseName = uvar_fnameout;
 
   /* allocate memory for Hough candidates */
-  houghCand1.length = uvar_nCand1;
-  houghCand1.nCandidates = 0; /* initialization */
-  houghCand1.minSigIndex = 0;
-  houghCand1.list = (HoughList *)LALMalloc( houghCand1.length * sizeof(HoughList));
-
+  semiCohCandList1.length = uvar_nCand1;
+  semiCohCandList1.nCandidates = 0; /* initialization */
+  semiCohCandList1.minSigIndex = 0;
+  semiCohCandList1.list = (SemiCohCandidate *)LALMalloc( semiCohCandList1.length * sizeof(SemiCohCandidate));
 
   /*-----------Create template grid for first stage ---------------*/
   /* prepare initialization of DopplerScanner to step through paramter space */
@@ -1073,7 +1059,6 @@ int main( int argc, char *argv[]) {
 					     thisPoint1.skypos.latitude, thisPoint1.fkdot->data[1]), &status); 
 	    }
 
-
 	  
 	  /* select peaks */ 	      
 	  LAL_CALL( FstatVectToPeakGram( &status, &pgV, &fstatVector1, uvar_peakThrF), &status);
@@ -1082,12 +1067,12 @@ int main( int argc, char *argv[]) {
 	  /*--------------- calculate Hough map and get candidates ---------------*/
 	  
 	  /* set sky location and spindown for Hough grid -- same as for Fstat calculation */	  
-	  houghPar.alpha = thisPoint1.skypos.longitude;
-	  houghPar.delta = thisPoint1.skypos.latitude;
-	  houghPar.fkdot->data[1] = thisPoint1.fkdot->data[1];
+	  semiCohPar.alpha = thisPoint1.skypos.longitude;
+	  semiCohPar.delta = thisPoint1.skypos.latitude;
+	  semiCohPar.fdot = thisPoint1.fkdot->data[1];
 	  
 	  /* get candidates */
-	  LAL_CALL ( ComputeFstatHoughMap ( &status, &houghCand1, &pgV, &houghPar, LALUserVarWasSet(&uvar_houghThr) ), &status);
+	  LAL_CALL ( ComputeFstatHoughMap ( &status, &semiCohCandList1, &pgV, &semiCohPar), &status);
 	  
 	  /* free peakgrams -- we don't need them now because we have the Hough maps */
 	  for (k=0; k<nStacks1; k++) 
@@ -1096,7 +1081,7 @@ int main( int argc, char *argv[]) {
 	  
 	  /* print candidates */
 	  if ( uvar_printCand1 )
-	    LAL_CALL ( PrintHoughCandidates ( &status, &houghCand1, fpHough), &status);
+	    LAL_CALL ( PrintHoughCandidates ( &status, &semiCohCandList1, fpHough), &status);
 	  
 	  
 	  /*------------- Follow up candidates --------------*/
@@ -1110,7 +1095,7 @@ int main( int argc, char *argv[]) {
 	    {
 	      
 	      /* loop over candidates surviving 1st stage  */
-	      for ( j=0; j < houghCand1.nCandidates; j++) 
+	      for ( j=0; j < semiCohCandList1.nCandidates; j++) 
 		{		  
 		  /* 2nd stage frequency and spindown variables */
 		  /* these are the parameters passed down from the 
@@ -1119,17 +1104,17 @@ int main( int argc, char *argv[]) {
 		  REAL8 alpha1, delta1, alphaBand1, deltaBand1;
 		  
 		  /* set frequency and spindown ranges */
-		  fStart1 = houghCand1.list[j].freq - 0.5 * houghCand1.list[j].dFreq;
-		  freqBand1 = houghCand1.list[j].dFreq;
-		  fdot1 = houghCand1.list[j].fdot - 0.5 * houghCand1.list[j].dFdot;
-		  fdotBand1 = houghCand1.list[j].dFdot;
+		  fStart1 = semiCohCandList1.list[j].freq - 0.5 * semiCohCandList1.list[j].dFreq;
+		  freqBand1 = semiCohCandList1.list[j].dFreq;
+		  fdot1 = semiCohCandList1.list[j].fdot - 0.5 * semiCohCandList1.list[j].dFdot;
+		  fdotBand1 = semiCohCandList1.list[j].dFdot;
 		  
 		  
 		  /* set sky region to be refined */
-		  alpha1 = houghCand1.list[j].alpha - 0.5 * houghCand1.list[j].dAlpha;
-		  delta1 = houghCand1.list[j].delta - 0.5 * houghCand1.list[j].dDelta;
-		  alphaBand1 = houghCand1.list[j].dAlpha;
-		  deltaBand1 = houghCand1.list[j].dDelta;
+		  alpha1 = semiCohCandList1.list[j].alpha - 0.5 * semiCohCandList1.list[j].dAlpha;
+		  delta1 = semiCohCandList1.list[j].delta - 0.5 * semiCohCandList1.list[j].dDelta;
+		  alphaBand1 = semiCohCandList1.list[j].dAlpha;
+		  deltaBand1 = semiCohCandList1.list[j].dDelta;
 		  LAL_CALL (SkySquare2String( &status, &(scanInit2.searchRegion.skyRegionString),
 					      alpha1, delta1, alphaBand1, deltaBand1), &status);
 		  
@@ -1306,7 +1291,7 @@ int main( int argc, char *argv[]) {
 
  
   /* free candidates */
-  LALFree(houghCand1.list);
+  LALFree(semiCohCandList1.list);
 
   LAL_CALL( LALDDestroyVector( &status, &fkdot_refTime), &status);
   LAL_CALL( LALDDestroyVector( &status, &fkdot_startTime), &status);
@@ -1342,10 +1327,9 @@ int main( int argc, char *argv[]) {
     on demodulated data instead of SFTs.  
 */
 void ComputeFstatHoughMap(LALStatus *status,
-			  HoughCandidates  *out,   /* output candidates */
+			  SemiCohCandidateList  *out,   /* output candidates */
 			  HOUGHPeakGramVector *pgV, /* peakgram vector */
-			  HoughParams *params,
-			  BOOLEAN selectCandThr)
+			  SemiCoherentParams *params)
 {
 
   /* hough structures */
@@ -1365,10 +1349,9 @@ void ComputeFstatHoughMap(LALStatus *status,
   REAL8 deltaF, alpha, delta;
   REAL8 patchSizeX, patchSizeY, f1jump, tStart;
   REAL8VectorSequence *vel, *pos;
-  REAL8Vector *fkdot;
-  LIGOTimeGPSVector   *ts;
+  REAL8 fdot;
+  LIGOTimeGPSVector   *tsMid;
   REAL8Vector timeDiffV;
-  REAL8 houghThr;
   UINT8Vector hist; /* histogram vector */ 
   UINT8Vector histTotal; /* total histogram vector */
   HoughStats stats; /* statistics struct */
@@ -1378,22 +1361,23 @@ void ComputeFstatHoughMap(LALStatus *status,
   INITSTATUS( status, "ComputeFstatHoughMap", rcsid );
   ATTATCHSTATUSPTR (status);
 
+  /* copy some parameters from peakgram vector */
+  deltaF = pgV->pg->deltaF;
+  nStacks = pgV->length;
+
   /* copy some params to local variables */
-  houghThr = params->houghThr;
-  nfSizeCylinder = params->nfSizeCylinder;
-  fBinIni = params->fBinIni;
-  fBinFin = params->fBinFin;
+  nfSizeCylinder = 2*params->nfdot + 1;
+  fBinIni = pgV->pg[0].fBinIni;
+  fBinFin = pgV->pg[0].fBinFin;
   alpha = params->alpha;
   delta = params->delta;
   vel = params->vel;
   pos = params->pos;
-  fkdot = params->fkdot;
-  ts = params->ts;
-  tStart = params->tStart;
+  fdot = params->fdot;
+  tsMid = params->tsMid;
+  TRY ( LALGPStoFloat( status->statusPtr, &tStart, &(tsMid->data[0]) ), status);
+  tStart -= 1.0/deltaF;
 
-  /* copy some parameters from peakgram vector */
-  deltaF = pgV->pg->deltaF;
-  nStacks = pgV->length;
 
   /* set patch size */
   /* this is supposed to be the "educated guess" 
@@ -1433,13 +1417,20 @@ void ComputeFstatHoughMap(LALStatus *status,
   ht.spinRes.data = NULL;
   ht.spinRes.data = (REAL8 *)LALMalloc(ht.spinRes.length*sizeof(REAL8));
 
+  /* the residual spindowns */
+  ht.spinDem.length = 1;
+  ht.spinDem.data = NULL;
+  ht.spinDem.data = (REAL8 *)LALMalloc(ht.spinRes.length*sizeof(REAL8));
+
   /* Case: no spindown */
   parDem.deltaF = deltaF;
   parDem.skyPatch.alpha = alpha;
   parDem.skyPatch.delta = delta;
-  parDem.spin.length = fkdot->length - 1;
-  parDem.spin.data = fkdot->data + 1;
-  
+  parDem.spin.length = 1;
+  parDem.spin.data = NULL;
+  parDem.spin.data = (REAL8 *)LALCalloc(1, sizeof(REAL8));
+  parDem.spin.data[0] = fdot;
+
   parRes.deltaF = deltaF;
   parRes.patchSkySizeX  = patchSizeX;
   parRes.patchSkySizeY  = patchSizeY;
@@ -1481,7 +1472,7 @@ void ComputeFstatHoughMap(LALStatus *status,
   for (k=0; k<nStacks; k++) {
     REAL8 tMidStack;
 
-    TRY ( LALGPStoFloat ( status->statusPtr, &tMidStack, ts->data + k), status);
+    TRY ( LALGPStoFloat ( status->statusPtr, &tMidStack, tsMid->data + k), status);
     timeDiffV.data[k] = tMidStack - tStart;
   }
 
@@ -1569,8 +1560,7 @@ void ComputeFstatHoughMap(LALStatus *status,
     ht.skyPatch.delta = delta;
     ht.mObsCoh = nStacks;
     ht.deltaF = deltaF;
-    ht.spinDem.length = fkdot->length - 1;
-    ht.spinDem.data = fkdot->data + 1;
+    ht.spinDem.data[0] = fdot;
     ht.patchSizeX = patchSizeX;
     ht.patchSizeY = patchSizeY;
     ht.dFdot.data[0] = deltaF * f1jump;
@@ -1604,10 +1594,11 @@ void ComputeFstatHoughMap(LALStatus *status,
 	  TRY( LALHOUGHConstructHMT(status->statusPtr, &ht, &freqInd, &phmdVS),status );
 
 	  /* get candidates */
-	  if ( selectCandThr )
-	    TRY(GetHoughCandidates( status->statusPtr, out, &ht, &patch, &parDem, houghThr), status);
-	  else
-	    TRY(GetHoughCandidates_toplist( status->statusPtr, out, &ht, &patch, &parDem), status);
+	  /* 	  if ( selectCandThr ) */
+	  /* 	    TRY(GetHoughCandidates( status->statusPtr, out, &ht, &patch, &parDem, houghThr), status); */
+	  /* 	  else */
+	  /* 	    TRY(GetHoughCandidates_toplist( status->statusPtr, out, &ht, &patch, &parDem), status); */
+	  TRY(GetHoughCandidates_toplist( status->statusPtr, out, &ht, &patch, &parDem), status); 
 
 	  /* calculate statistics and histogram */
 	  if ( uvar_printStats ) {
@@ -1669,11 +1660,13 @@ void ComputeFstatHoughMap(LALStatus *status,
   
   /* free remaining memory */
   LALFree(ht.spinRes.data);
+  LALFree(ht.spinDem.data);
   LALFree(ht.dFdot.data);
   LALFree(lutV.lut);
   LALFree(phmdVS.phmd);
   LALFree(freqInd.data);
   LALFree(timeDiffV.data);
+  LALFree(parDem.spin.data);
 
   if (uvar_printStats ) {
     
@@ -1884,7 +1877,7 @@ void PrintHmap2file(LALStatus *status,
 
 /** Get Hough candidates */
 void GetHoughCandidates(LALStatus *status,
-			HoughCandidates *houghCand,
+			SemiCohCandidateList *semiCohCand,
 			HOUGHMapTotal *ht,
 			HOUGHPatchGrid  *patch,
 			HOUGHDemodPar   *parDem,
@@ -1916,33 +1909,32 @@ void GetHoughCandidates(LALStatus *status,
       /* if threshold is exceeded then add candidate */
       if ( ht->map[i*xSide + j] > houghThreshold ) {
 
-	nCandidates = houghCand->nCandidates;
+	nCandidates = semiCohCand->nCandidates;
 
 	/* if there isn't enough memory then realloc */
-	if ( nCandidates >= houghCand->length ) {
-	  houghCand->length += 5000;
-	  houghCand->list = (HoughList *)LALRealloc( houghCand->list,
-						     houghCand->length * sizeof(HoughList));
+	if ( nCandidates >= semiCohCand->length ) {
+	  semiCohCand->length += 5000;
+	  semiCohCand->list = (SemiCohCandidate *)LALRealloc( semiCohCand->list, semiCohCand->length * sizeof(SemiCohCandidate));
 	} /* end of reallocs */
 
-	houghCand->list[nCandidates].freq = f0;
-	houghCand->list[nCandidates].dFreq = deltaF;
+	semiCohCand->list[nCandidates].freq = f0;
+	semiCohCand->list[nCandidates].dFreq = deltaF;
 	
-	houghCand->list[nCandidates].fdot = fdot;
-	houghCand->list[nCandidates].dFdot = dFdot;
+	semiCohCand->list[nCandidates].fdot = fdot;
+	semiCohCand->list[nCandidates].dFdot = dFdot;
 
 	/* get sky location of pixel */
 	TRY( LALStereo2SkyLocation (status->statusPtr, &sourceLocation, 
 				    j, i, patch, parDem), status);
 
-	houghCand->list[nCandidates].alpha = sourceLocation.alpha;
-	houghCand->list[nCandidates].delta = sourceLocation.delta;
+	semiCohCand->list[nCandidates].alpha = sourceLocation.alpha;
+	semiCohCand->list[nCandidates].delta = sourceLocation.delta;
 
-	houghCand->list[nCandidates].dAlpha = patchSizeX / ((REAL8)xSide);
-	houghCand->list[nCandidates].dDelta = patchSizeY / ((REAL8)ySide);
+	semiCohCand->list[nCandidates].dAlpha = patchSizeX / ((REAL8)xSide);
+	semiCohCand->list[nCandidates].dDelta = patchSizeY / ((REAL8)ySide);
 
 	/* increment candidate count */
-	houghCand->nCandidates += 1;
+	semiCohCand->nCandidates += 1;
 
       } /* end if statement */
     } /* end loop over xSide */
@@ -1954,7 +1946,7 @@ void GetHoughCandidates(LALStatus *status,
 
 /** Get Hough candidates */
 void GetHoughCandidates_toplist(LALStatus *status,
-				HoughCandidates *houghCand,
+				SemiCohCandidateList *semiCohCand,
 				HOUGHMapTotal *ht,
 				HOUGHPatchGrid  *patch,
 				HOUGHDemodPar   *parDem)
@@ -1974,8 +1966,8 @@ void GetHoughCandidates_toplist(LALStatus *status,
   f0Bin = ht->f0Bin;
   f0 = f0Bin * deltaF;
 
-  nCandidates = houghCand->nCandidates;
-  maxCandidates = houghCand->length;
+  nCandidates = semiCohCand->nCandidates;
+  maxCandidates = semiCohCand->length;
 
   fdot = ht->spinDem.data[0] + ht->spinRes.data[0];
   dFdot = ht->dFdot.data[0];
@@ -1998,55 +1990,55 @@ void GetHoughCandidates_toplist(LALStatus *status,
 
 	  if ( nCandidates < maxCandidates )
 	    {
-	      houghCand->list[nCandidates].freq = f0;
-	      houghCand->list[nCandidates].dFreq = deltaF;
+	      semiCohCand->list[nCandidates].freq = f0;
+	      semiCohCand->list[nCandidates].dFreq = deltaF;
 	      
-	      houghCand->list[nCandidates].fdot = fdot;
-	      houghCand->list[nCandidates].dFdot = dFdot;
+	      semiCohCand->list[nCandidates].fdot = fdot;
+	      semiCohCand->list[nCandidates].dFdot = dFdot;
 	      
 	      /* get sky location of pixel */
 	      TRY( LALStereo2SkyLocation (status->statusPtr, &sourceLocation, 
 					  j, i, patch, parDem), status);
 
-	      houghCand->list[nCandidates].alpha = sourceLocation.alpha;
-	      houghCand->list[nCandidates].delta = sourceLocation.delta;
-	      houghCand->list[nCandidates].dAlpha = patchSizeX / ((REAL8)xSide);
-	      houghCand->list[nCandidates].dDelta = patchSizeY / ((REAL8)ySide);
-	      houghCand->list[nCandidates].significance = tempSig;
+	      semiCohCand->list[nCandidates].alpha = sourceLocation.alpha;
+	      semiCohCand->list[nCandidates].delta = sourceLocation.delta;
+	      semiCohCand->list[nCandidates].dAlpha = patchSizeX / ((REAL8)xSide);
+	      semiCohCand->list[nCandidates].dDelta = patchSizeY / ((REAL8)ySide);
+	      semiCohCand->list[nCandidates].significance = tempSig;
 
-	      TRY ( GetMinSigIndex_toplist ( status->statusPtr, &minSigIndex, houghCand), status);		
-	      houghCand->minSigIndex = minSigIndex;
+	      TRY ( GetMinSigIndex_toplist ( status->statusPtr, &minSigIndex, semiCohCand), status);		
+	      semiCohCand->minSigIndex = minSigIndex;
 
 	      /* increment candidate count */
-	      houghCand->nCandidates += 1;
-	      nCandidates = houghCand->nCandidates;
+	      semiCohCand->nCandidates += 1;
+	      nCandidates = semiCohCand->nCandidates;
 
 	    }
 	  else 
 	    {
 	      /* if event is more significant than least significant 
 		 event stored in toplist then replace it */
-	      minSigIndex = houghCand->minSigIndex;
-	      if ( tempSig > houghCand->list[minSigIndex].significance ) 
+	      minSigIndex = semiCohCand->minSigIndex;
+	      if ( tempSig > semiCohCand->list[minSigIndex].significance ) 
 		{
-		  houghCand->list[minSigIndex].freq = f0;
-		  houghCand->list[minSigIndex].dFreq = deltaF;
-		  houghCand->list[minSigIndex].fdot = fdot;
-		  houghCand->list[minSigIndex].dFdot = dFdot;
+		  semiCohCand->list[minSigIndex].freq = f0;
+		  semiCohCand->list[minSigIndex].dFreq = deltaF;
+		  semiCohCand->list[minSigIndex].fdot = fdot;
+		  semiCohCand->list[minSigIndex].dFdot = dFdot;
 	  
 		  /* get sky location of pixel */
 		  TRY( LALStereo2SkyLocation (status->statusPtr, &sourceLocation, 
 					      j, i, patch, parDem), status);
 		  
-		  houghCand->list[minSigIndex].alpha = sourceLocation.alpha;
-		  houghCand->list[minSigIndex].delta = sourceLocation.delta;  
-		  houghCand->list[minSigIndex].dAlpha = patchSizeX / ((REAL8)xSide);
-		  houghCand->list[minSigIndex].dDelta = patchSizeY / ((REAL8)ySide);
-		  houghCand->list[minSigIndex].significance = tempSig;
+		  semiCohCand->list[minSigIndex].alpha = sourceLocation.alpha;
+		  semiCohCand->list[minSigIndex].delta = sourceLocation.delta;  
+		  semiCohCand->list[minSigIndex].dAlpha = patchSizeX / ((REAL8)xSide);
+		  semiCohCand->list[minSigIndex].dDelta = patchSizeY / ((REAL8)ySide);
+		  semiCohCand->list[minSigIndex].significance = tempSig;
 
 		  /* find index of new least significant event */
-		  TRY ( GetMinSigIndex_toplist ( status->statusPtr, &minSigIndex, houghCand), status);
-		  houghCand->minSigIndex = minSigIndex;
+		  TRY ( GetMinSigIndex_toplist ( status->statusPtr, &minSigIndex, semiCohCand), status);
+		  semiCohCand->minSigIndex = minSigIndex;
 
 		} /* end if statement for replacing least significant candidate */
 
@@ -2068,21 +2060,21 @@ void GetHoughCandidates_toplist(LALStatus *status,
 /** Get least significant Hough candidate index */
 void GetMinSigIndex_toplist(LALStatus *status,
 			    INT4 *minSigIndex,
-			    HoughCandidates *houghCand)
+			    SemiCohCandidateList *semiCohCand)
 {
 
   REAL8 minSig;
-  INT4 k, nCandidates = houghCand->nCandidates;
+  INT4 k, nCandidates = semiCohCand->nCandidates;
 
-  INITSTATUS( status, "GetHoughCandidates_toplist", rcsid );
+  INITSTATUS( status, "GetMinSigIndex_toplist", rcsid );
   ATTATCHSTATUSPTR (status);
 
 
   *minSigIndex = 0;
-  minSig = houghCand->list[0].significance;
+  minSig = semiCohCand->list[0].significance;
   for (k = 1; k < nCandidates; k++)
     {
-      REAL8 tempSig = houghCand->list[k].significance;
+      REAL8 tempSig = semiCohCand->list[k].significance;
       if ( tempSig < minSig )
 	{
 	  *minSigIndex = k;
@@ -2102,7 +2094,7 @@ void GetMinSigIndex_toplist(LALStatus *status,
 
 /** Print Hough candidates */
 void PrintHoughCandidates(LALStatus *status,
-			  HoughCandidates *in,
+			  SemiCohCandidateList *in,
 			  FILE *fp)
 {
   INT4 k;

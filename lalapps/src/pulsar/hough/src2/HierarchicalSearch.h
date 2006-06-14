@@ -135,84 +135,38 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
   } SFTCatalogSequence;
 
 
-  /** parameters for calculating Fstatistic for multiple stacks 
-      --- this assumes that the output will be used in a Hough or perhaps 
-      other semi-coherent method; therefore it also requires some
-      Hough parameters */ 
-  typedef struct tagFstatStackParams {
-    INT4 nStacks;           /**< number of stacks */
-    REAL8 tStackAvg;        /**< average timebaseline of each stack */
-    REAL8 fBand;            /**< search band -- fstat is actually calculated in a larger band */
-    REAL8 fStart;           /**< start search frequency -- fstat calculation actually starts at a somewhat smaller frequency */
-    INT4 nfSizeCylinder;    /**< Hough nfSizeCylinder -- used for calculating extra frequency bins */
-    INT4 *mCohSft;          /**< number of sfts in each stack */
-    LIGOTimeGPSVector *tsStack; /**< mid times of stacks */
-    REAL8 refTime;          /**< reference time for pulsar frequency and spndn. */
-    INT4 SSBprecision;      /**< precision for transformation from detector to SSB times*/
-    INT4 Dterms;            /**< value of Dterms for LALDemod */
-    LALDetector detector;   /**< detector */
-    EphemerisData *edat;    /**< ephemeris info */ 
-    LIGOTimeGPSVector *ts;  /**< timestamp vector for each sft */
-    REAL8 alpha;            /**< sky-location -- right acsension */
-    REAL8 delta;            /**< sky-location -- declination */
-    REAL8Vector *fdot;      /**< vector containing spindown values */
-  } FstatStackParams;
-
-  /** parameters for calculating Hough Maps */
-  typedef struct tagHoughParams {
-    REAL8 houghThr;            /**< number count threshold */
-    REAL8 tStart;              /**< start time of first stack */
-    INT8 fBinIni;              /**< start frequency */
-    INT8 fBinFin;              /**< frequency band */
-    INT4 nfSizeCylinder;       /**< cylinder of LUTs */
-    LIGOTimeGPSVector *ts;     /**< timestamps of mid points of stacks */
-    REAL8VectorSequence *vel;  /**< detector velocity for each stack */
-    REAL8VectorSequence *pos;  /**< detector position for each stack */
-    REAL8 alpha;               /**< right ascension */
-    REAL8 delta;               /**< declination */
-    REAL8Vector *fkdot;        /**< spin parameters (f and fdot) */
-    REAL8Vector *fkdotBand;    /**< range of spin parameters */ 
-    CHAR *outBaseName;         /**< file for writing output -- if chosen */
-  } HoughParams;
-
-
   /** parameters for the semicoherent stage -- hough or stackslide */
   typedef struct tagSemiCoherentParams {
-    REAL8 nCand;               /**< number of cancidates to return */
-    REAL8 tStack;              /**< length of each stack stack */
     LIGOTimeGPSVector *tsMid;  /**< timestamps of mid points of stacks */
     REAL8VectorSequence *vel;  /**< detector velocity for each stack */
     REAL8VectorSequence *pos;  /**< detector position for each stack */
     REAL8 alpha;               /**< right ascension of demodulation point */
     REAL8 delta;               /**< declination of demodulation point*/
-    REAL8Vector *fkdot;        /**< spin parameters (f and fdot) of demodulation point */
-    REAL8Vector *fkdotBand;    /**< range of spin parameters to search over */ 
+    REAL8 fdot;                /**< spindown value of demodulation point */
+    UINT4 nfdot;               /**< number of fdot values to search over */ 
     CHAR *outBaseName;         /**< file for writing output -- if chosen */
   } SemiCoherentParams;
 
-
   /** one hough candidate */
-  typedef struct tagHoughList {
+  typedef struct tagSemiCohCandidate {
     REAL8 freq;        /**< frequency */
     REAL8 alpha;       /**< right ascension */
     REAL8 delta;       /**< declination */
-    REAL8 fdot;        /**< spindown vector */
+    REAL8 fdot;        /**< spindown */
     REAL8 dFreq;       /**< frequency error */
     REAL8 dAlpha;      /**< alpha error */
     REAL8 dDelta ;     /**< delta error */
     REAL8 dFdot;       /**< fdot error */
     REAL8 significance;/**< significance */
-  } HoughList;  
+  } SemiCohCandidate;  
 
   /** structure for storing candidates produced by Hough search */
-  typedef struct tagHoughCandidates {
-    INT4 length;        /**< maximum allowed length of vectors */
-    INT4 nCandidates;   /**< number of candidates -- must be less than length */
-    INT4 minSigIndex;   /**< index of least significant candidate */ 
-    HoughList *list;    /**> list of candidates */
-  } HoughCandidates;
-
-
+  typedef struct tagSemiCohCandidateList {
+    INT4 length;               /**< maximum allowed length of vectors */
+    INT4 nCandidates;          /**< number of candidates -- must be less than length */
+    INT4 minSigIndex;          /**< index of least significant candidate */ 
+    SemiCohCandidate *list;    /**> list of candidates */
+  } SemiCohCandidateList;
 
 
 
@@ -226,10 +180,9 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 			 REAL8 fdot);
 
   void ComputeFstatHoughMap (LALStatus *status,
-			     HoughCandidates *out,
+			     SemiCohCandidateList *out,
 			     HOUGHPeakGramVector *pgV,
-			     HoughParams *params,
-			     BOOLEAN selectCandThr);
+			     SemiCoherentParams *params);
 
   void FstatVectToPeakGram (LALStatus *status,
 			    HOUGHPeakGramVector *pgV,
@@ -248,14 +201,14 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 		      INT4 iHmap);
 
   void GetHoughCandidates(LALStatus *status,
-			  HoughCandidates *houghCand,
+			  SemiCohCandidateList *semiCohCand,
 			  HOUGHMapTotal *ht,
 			  HOUGHPatchGrid  *patch,
 			  HOUGHDemodPar   *parDem,
 			  REAL8 houghThreshold);
 
   void GetHoughCandidates_toplist(LALStatus *status,
-				  HoughCandidates *houghCand,
+				  SemiCohCandidateList *semiCohCand,
 				  HOUGHMapTotal *ht,
 				  HOUGHPatchGrid  *patch,
 				  HOUGHDemodPar   *parDem);
@@ -278,10 +231,10 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 
   void GetMinSigIndex_toplist(LALStatus *status,
 			      INT4 *minSigIndex,
-			      HoughCandidates *houghCand);
+			      SemiCohCandidateList *semiCohCand);
 
   void PrintHoughCandidates(LALStatus *status,
-			    HoughCandidates *in,
+			    SemiCohCandidateList *in,
 			    FILE *fp);
 
   void PrintHoughHistogram(LALStatus *status,
