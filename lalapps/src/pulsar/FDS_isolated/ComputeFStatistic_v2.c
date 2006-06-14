@@ -960,21 +960,18 @@ EstimateSigParams (LALStatus *status, const Fcomponents *Fstat, const MultiAMCoe
   REAL8 error_tol = 1.0 / pow(10,14);
 
   REAL8 A, B, C, D, At ,Bt ,Ct, Dinv ;
+  REAL8 Fa_re, Fa_im, Fb_re, Fb_im;
   REAL8 Tsft = GV.Tsft, S_hat = GV.S_hat;
-  INT4 numSFTs;
-
-  REAL8 norm;
-  double medianbias=1.0;
+  INT4 numSFTs = GV.multiSFTs->length;;
+  REAL8 norm, medianbias=1.0;
 
   FILE * fpMLEParam;
-  
+
   INITSTATUS (status, "EstimateSigParams", rcsid);
   ATTATCHSTATUSPTR (status);
 
-
   if(!(fpMLEParam=fopen("ParamMLE.txt","w")))
     fprintf(stderr,"Error in EstimateSigParams: unable to open the file");
- 
 
   A = multiAMcoef->A;
   B = multiAMcoef->B;
@@ -986,11 +983,15 @@ EstimateSigParams (LALStatus *status, const Fcomponents *Fstat, const MultiAMCoe
   Ct = 2.0 * Tsft * S_hat * C;
   Dinv = 1.0 / (pow((2 * Tsft * S_hat), 2) * D);
 
+  Fa_re = LAL_TWOPI * sqrt(Tsft * S_hat) * Fstat->Fa.re;
+  Fa_im = LAL_TWOPI * sqrt(Tsft * S_hat) * Fstat->Fa.im;
+  Fb_re = LAL_TWOPI * sqrt(Tsft * S_hat) * Fstat->Fb.re;
+  Fb_im = LAL_TWOPI * sqrt(Tsft * S_hat) * Fstat->Fb.im;
   
-  A1 =   4.0 * Dinv * ( Bt * Fstat->Fa.re - Ct * Fstat->Fb.re); /* A1=2(B H1-C H2)/D where, H1=Re(2Fa) and H2=Re(2Fb) */
-  A2 =   4.0 * Dinv * ( At * Fstat->Fb.re - Ct * Fstat->Fa.re);
-  A3 = - 4.0 * Dinv * ( Bt * Fstat->Fa.im - Ct * Fstat->Fb.im);
-  A4 = - 4.0 * Dinv * ( At * Fstat->Fb.im - Ct * Fstat->Fa.im);
+  A1 =   4.0 * Dinv * ( Bt * Fa_re - Ct * Fb_re ); /* A1=2(B H1-C H2)/D where, H1=Re(2Fa) and H2=Re(2Fb) */
+  A2 =   4.0 * Dinv * ( At * Fb_re - Ct * Fa_re );
+  A3 = - 4.0 * Dinv * ( Bt * Fa_im - Ct * Fb_im );
+  A4 = - 4.0 * Dinv * ( At * Fb_im - Ct * Fa_im );
 			  
   Asq = A1*A1 + A2*A2 + A3*A3 + A4*A4;
   detA = A1*A4 - A2*A3;
@@ -1099,7 +1100,6 @@ EstimateSigParams (LALStatus *status, const Fcomponents *Fstat, const MultiAMCoe
     }
   
   /* normalization */
-  numSFTs = GV.multiSFTs->length;
   norm = 2.0 * sqrt(Tsft) / (Tsft * numSFTs);
   h0mle = h0mle * norm;
 
