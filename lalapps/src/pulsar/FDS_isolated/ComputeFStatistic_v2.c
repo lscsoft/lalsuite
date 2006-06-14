@@ -957,10 +957,10 @@ EstimateSigParams (LALStatus *status, const CWParamSpacePoint *psPoint, const Fc
   REAL8 h0mle, h0mleSq;
   REAL8 error_tol = 1.0 / pow(10,14);
 
-  REAL8 At = 0.0 ,Bt = 0.0 ,Ct = 0.0; 
+  REAL8 At = 0.0 ,Bt = 0.0 ,Ct = 0.0;
   REAL8 Sh, sqrtSh=0.0, sumSh=0.0;
   REAL8 Tsft;
-  UINT4 X, numDetectors, numSFTs;  
+  UINT4 X, numDetectors, numSFTs=0;  
   REAL8 norm;
   double medianbias=1.0;
 
@@ -973,8 +973,8 @@ EstimateSigParams (LALStatus *status, const CWParamSpacePoint *psPoint, const Fc
   ATTATCHSTATUSPTR (status);
 
 
-  if(!(fpMLEParam=fopen("ParamMLE.txt","a")))
-    fprintf(stderr,"Error in EstimateSignalParameters: unable to open the file");
+  if(!(fpMLEParam=fopen("ParamMLE.txt","w")))
+    fprintf(stderr,"Error in EstimateSigParams: unable to open the file");
  
   
   TRY ( LALGetMultiAMCoeffs ( status->statusPtr, &multiAMcoef, GV.multiDetStates, psPoint->skypos ), status);
@@ -1020,9 +1020,9 @@ EstimateSigParams (LALStatus *status, const CWParamSpacePoint *psPoint, const Fc
 	  B += bhat * bhat / Sh;
 	  C += ahat * bhat / Sh;
 
-	  numSFTs += numSFTsX;
-	  
 	} /* for alpha < numSFTsX */
+
+      numSFTs += numSFTsX;
       
       At += 2 * Tsft * A;
       Bt += 2 * Tsft * B;
@@ -1031,7 +1031,7 @@ EstimateSigParams (LALStatus *status, const CWParamSpacePoint *psPoint, const Fc
       sqrtSh += sqrt(sumSh) / (numDetectors * numSFTsX);
       
     } /* for X < numDetectors */
-  
+
   Dinv = 1/(At * Bt - Ct * Ct);
   
   A1 =   4.0 * Dinv * ( Bt * Fstat->Fa.re - Ct * Fstat->Fb.re); /* A1=2(B H1-C H2)/D where, H1=Re(2Fa) and H2=Re(2Fb) */
@@ -1059,8 +1059,8 @@ EstimateSigParams (LALStatus *status, const CWParamSpacePoint *psPoint, const Fc
   if(ampratio < 0.25-error_tol || ampratio > 2.0+error_tol) 
     {
       fprintf(stderr,"Imaginary Cos[iota]; cannot compute parameters");
-      fprintf(stderr,"in the EstimateSignalParameters routine");
-      fprintf(stderr,"in ComputeFStatistic code");
+      fprintf(stderr,"in the EstimateSigParams Function");
+      fprintf(stderr,"in ComputeFStatistic_v2 code");
       fprintf(stderr,"Now exitting...");
       /*      break; */
       exit(1);
@@ -1081,7 +1081,7 @@ EstimateSigParams (LALStatus *status, const CWParamSpacePoint *psPoint, const Fc
   if(Asq * Asq < 4.0 * detA * detA)
     {
       fprintf(stderr,"Imaginary beta; cannot compute parameters");
-      /*break;*/
+      exit(1);
     }
 			  
   /* Compute MLEs of psi and Phi0 up to sign of Cos[2*Phi0] */
@@ -1118,8 +1118,8 @@ EstimateSigParams (LALStatus *status, const CWParamSpacePoint *psPoint, const Fc
 		    + mu_mle * cos(2.0 * psi_mle) * cos(2.0 * Phi0_mle));
 
 
-  fprintf(stderr,"LALDemod_Estimate output: ""A1=%20.15f A2=%20.15f A3=%20.15f A4=%20.15f\n", A1, A2, A3, A4);
-  fprintf(stderr,"Reconstructed from MLE: ""  A1=%20.15f A2=%20.15f A3=%20.15f A4=%20.15f !!!!\n\n", A1test, A2test, A3test, A4test);
+  fprintf(stderr,"LALDemod_Estimate output: A1=%g A2=%g A3=%g A4=%g\n", A1, A2, A3, A4);
+  fprintf(stderr,"Reconstructed from MLE:   A1=%g A2=%g A3=%g A4=%g !!!!\n\n", A1test, A2test, A3test, A4test);
   fflush(stderr);
 
 
@@ -1161,10 +1161,10 @@ EstimateSigParams (LALStatus *status, const CWParamSpacePoint *psPoint, const Fc
   /* Because we use running median to estimate the S_h. */
   h0mle=h0mle*sqrt(medianbias); 
 
-  fprintf(fpMLEParam,"  %1.2e", h0mle);
-  fprintf(fpMLEParam,"  %f", mu_mle );
-  fprintf(fpMLEParam,"  %f", psi_mle);
-  fprintf(fpMLEParam,"  %f", 2.0 * Phi0_mle);
+  fprintf(fpMLEParam,"  %g", h0mle);
+  fprintf(fpMLEParam,"  %g", mu_mle );
+  fprintf(fpMLEParam,"  %g", psi_mle);
+  fprintf(fpMLEParam,"  %g", 2.0 * Phi0_mle);
   fprintf(fpMLEParam,"\n");
 			
   fclose(fpMLEParam);
