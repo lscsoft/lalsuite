@@ -343,7 +343,7 @@ int main( int argc, char *argv[] )
   else
     snprintf( fname, sizeof( fname ), "%c-%s_CAL_%s_V%d-%d-%d.gwf", ifo[0], ifo,run, version, (int)floor(tstart), (int)ceil(tend) - (int)floor(tstart) );
   fprintf( stderr, "\nOutput: %s\n\n", fname );
-  frfile = FrFileONew( fname, 8 );
+  frfile = FrFileONew( fname, 1 ); /* 1 = GZIP */
   FrameWrite( frame, frfile );
   FrFileOEnd( frfile );
 
