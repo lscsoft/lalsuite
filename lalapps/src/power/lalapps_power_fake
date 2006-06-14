@@ -35,6 +35,7 @@ from glue.ligolw import lsctables
 from glue import segments
 from glue import segmentsUtils
 from pylal import llwapp
+from pylal.date import LIGOTimeGPS
 
 __author__ = "Kipp Cannon <kipp@gravity.phys.uwm.edu>"
 __version__ = "$Revision$"[11:-2]
@@ -57,7 +58,7 @@ def parse_command_line():
 	options, filenames = parser.parse_args()
 
 	if options.segwizard_segments:
-		options.seglist = segmentsUtils.fromsegwizard(file(options.segwizard_segments))
+		options.seglist = segmentsUtils.fromsegwizard(file(options.segwizard_segments), coltype = LIGOTimeGPS)
 	else:
 		raise ValueError, "must specify a segment list"
 
@@ -84,7 +85,7 @@ def new_doc():
 
 
 def append_process(doc, **kwargs):
-	process = llwapp.append_process(doc, program = "lalpps_power_fake", version = __version__, cvs_repository = "lscsoft", cvs_entry_time = __date__, comment = kwargs["comment"])
+	process = llwapp.append_process(doc, program = "lalapps_power_fake", version = __version__, cvs_repository = "lscsoft", cvs_entry_time = __date__, comment = kwargs["comment"])
 
 	llwapp.append_process_params(doc, process, [])
 
@@ -104,7 +105,7 @@ def set_segments(process, doc, seglist):
 	for seg in seglist:
 		row = lsctables.SearchSummary()
 		row.process_id = process.process_id
-		row.ifo = "fake"
+		row.ifos = "fake"
 		row.set_in(seg)
 		row.set_out(seg)
 
@@ -124,8 +125,8 @@ def make_triggers(process, doc, rate, seglist):
 	ids = lsctables.NewILWDs(sngl_burst, "event_id")
 
 	(start, stop) = seglist.extent()
-	for t in map(LIGOTimeGPS, numarray.arange(start, stop, 1.0 / rate)):
-		seg = segments.segment(t - 0.01, t + 0.01)
+	for t in map(LIGOTimeGPS, numarray.arange(float(start), float(stop), 1.0 / rate)):
+		seg = segments.segment(t - 1.0 / 32.0, t + 1.0 / 32.0)
 		if seg not in seglist:
 			continue
 		event = lsctables.SnglBurst()
@@ -136,10 +137,10 @@ def make_triggers(process, doc, rate, seglist):
 		event.set_stop(seg[1])
 		event.set_peak(t)
 		event.duration = seg.duration()
-		event.flow = 100.0
-		event.fhigh = 110.0
 		event.central_freq = 105.0
 		event.bandwidth = 10.0
+		event.flow = event.central_freq - event.bandwidth / 2.0
+		event.fhigh = event.central_freq + event.bandwidth / 2.0
 		event.confidence = -40.0
 
 		sngl_burst.append(event)
@@ -158,7 +159,7 @@ options, filenames = parse_command_line()
 doc = new_doc()
 process = append_process(doc, **options.__dict__)
 set_segments(process, doc, options.seglist)
-make_triggers(process, doc, 0.01, options.seglist)
+make_triggers(process, doc, 0.1, options.seglist)
 
 for filename in filenames:
 	llwapp.write_filename(doc, filename, options.verbose)
