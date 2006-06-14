@@ -119,11 +119,12 @@ def make_rate_plot(rate):
 	#axes.plot(rate.xvals(), normalize(yvals), "r")
 	#axes.set_xlim([0, 1])
 
+	ymin = min(numarray.compress(rate.denominator, rate.numerator) / numarray.compress(rate.denominator, rate.denominator))
+	rate.logregularize()
 	yvals = rate.yvals()
-	ymin = min(numarray.compress(rate.numerator, yvals))
 	axes.plot(rate.xvals(), yvals, "k")
 	axes.set_xlim([0, 2.0 * math.pi])
-	axes.set_ylim([10.0**(int(math.log10(ymin)) - 1), 10.0**(int(math.log10(max(yvals))) + 1)])
+	axes.set_ylim([10.0**(int(math.log10(max(ymin, 1.0))) - 1), 10.0**(int(math.log10(max(yvals))) + 1)])
 
 	axes.set_title("Event Confidence Accumulation Rate By Sidereal Time")
 	axes.set_xlabel("Greenwich Mean Sidereal Time (rad)")
