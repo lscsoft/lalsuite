@@ -112,7 +112,7 @@ typedef struct {
   MultiSFTVector *multiSFTs;		    /**< multi-IFO SFT-vectors */
   MultiDetectorStateSeries *multiDetStates; /**< pos, vel and LMSTs for detector at times t_i */
   MultiNoiseWeights *multiNoiseWeights;	    /**< normalized noise-weights of those SFTs */
-  REAL8 S_hatinv;
+  REAL8 S_hat;                              /**< Sum over the 1/Sn */ 
   ComputeFParams CFparams;		    /**< parameters for the computation of Fstat (e.g Dterms, SSB-precision,...) */
   CHAR *dataSummary;                        /**< descriptive string describing the data (e.g. #SFTs, startTime etc. ..*/
 } ConfigVariables;
@@ -868,13 +868,13 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   else
     {
       MultiPSDVector *psds = NULL;
-      REAL8 S_hat;
+      REAL8 S_hatinv;
 
       TRY ( LALNormalizeMultiSFTVect (status->statusPtr, &psds, cfg->multiSFTs, uvar_RngMedWindow ), status );
       /* note: the normalization S_hat would be required to compute the ML-estimator for A^\mu */
-      TRY ( LALComputeMultiNoiseWeights  (status->statusPtr, &(cfg->multiNoiseWeights), &S_hat, psds, uvar_RngMedWindow, 0 ), status );
+      TRY ( LALComputeMultiNoiseWeights  (status->statusPtr, &(cfg->multiNoiseWeights), &S_hatinv, psds, uvar_RngMedWindow, 0 ), status );
 
-      GV.S_hatinv = 1.0/S_hat;
+      GV.S_hat = 1.0/S_hatinv;
 
       TRY ( LALDestroyMultiPSDVector (status->statusPtr, &psds ), status );
 
@@ -960,7 +960,7 @@ EstimateSigParams (LALStatus *status, const Fcomponents *Fstat, const MultiAMCoe
   REAL8 error_tol = 1.0 / pow(10,14);
 
   REAL8 A, B, C, D, At ,Bt ,Ct, Dinv ;
-  REAL8 Tsft = GV.Tsft, S_hat = GV.S_hatinv;
+  REAL8 Tsft = GV.Tsft, S_hat = GV.S_hat;
   INT4 numSFTs;
 
   REAL8 norm;
