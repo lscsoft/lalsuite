@@ -960,7 +960,7 @@ EstimateSigParams (LALStatus *status, const Fcomponents *Fstat, const MultiAMCoe
   REAL8 error_tol = 1.0 / pow(10,14);
 
   REAL8 A, B, C, D, At ,Bt ,Ct, Dinv ;
-  REAL8 Tsft = GV.Tsft, S_hat = sqrt(GV.S_hatinv);
+  REAL8 Tsft = GV.Tsft, S_hat = GV.S_hatinv;
   INT4 numSFTs;
 
   REAL8 norm;
