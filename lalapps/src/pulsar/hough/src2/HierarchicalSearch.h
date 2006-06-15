@@ -82,25 +82,25 @@ extern "C" {
  *  Assignment of Id string using NRCSID()
  */
 
-NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
+NRCSID( HIERARCHICALSEARCHH, "$Id$" );
 
 /******************************************************
  *  Error codes and messages.
  */
  
-#define DRIVEHOUGHFSTAT_ENORM 0
-#define DRIVEHOUGHFSTAT_ESUB  1
-#define DRIVEHOUGHFSTAT_EARG  2
-#define DRIVEHOUGHFSTAT_EBAD  3
-#define DRIVEHOUGHFSTAT_EFILE 4
-#define DRIVEHOUGHFSTAT_ENULL 5
+#define HIERARCHICALSEARCH_ENORM 0
+#define HIERARCHICALSEARCH_ESUB  1
+#define HIERARCHICALSEARCH_EARG  2
+#define HIERARCHICALSEARCH_EBAD  3
+#define HIERARCHICALSEARCH_EFILE 4
+#define HIERARCHICALSEARCH_ENULL 5
 
-#define DRIVEHOUGHFSTAT_MSGENORM "Normal exit"
-#define DRIVEHOUGHFSTAT_MSGESUB  "Subroutine failed"
-#define DRIVEHOUGHFSTAT_MSGEARG  "Error parsing arguments"
-#define DRIVEHOUGHFSTAT_MSGEBAD  "Bad argument values"
-#define DRIVEHOUGHFSTAT_MSGEFILE "Could not create output file"
-#define DRIVEHOUGHFSTAT_MSGENULL "Null pointer"
+#define HIERARCHICALSEARCH_MSGENORM "Normal exit"
+#define HIERARCHICALSEARCH_MSGESUB  "Subroutine failed"
+#define HIERARCHICALSEARCH_MSGEARG  "Error parsing arguments"
+#define HIERARCHICALSEARCH_MSGEBAD  "Bad argument values"
+#define HIERARCHICALSEARCH_MSGEFILE "Could not create output file"
+#define HIERARCHICALSEARCH_MSGENULL "Null pointer"
 
 
 
@@ -130,7 +130,7 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 
   /* sequence of SFT catalogs -- for each stack */
   typedef struct tagSFTCatalogSequence {
-    UINT4 length;  /**< the number of stacks */
+    UINT4 length;     /**< the number of stacks */
     SFTCatalog *data; /**< the catalogs */
   } SFTCatalogSequence;
 
@@ -233,7 +233,7 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 			      INT4 *minSigIndex,
 			      SemiCohCandidateList *semiCohCand);
 
-  void PrintHoughCandidates(LALStatus *status,
+  void PrintSemiCohCandidates(LALStatus *status,
 			    SemiCohCandidateList *in,
 			    FILE *fp);
 
@@ -252,7 +252,7 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 #endif
 
 
-#endif     /* Close double-include protection _DRIVEHOUGHFSTAT_H */
+#endif     /* Close double-include protection _HIERARCHICALSEARCH_H */
 
 
 

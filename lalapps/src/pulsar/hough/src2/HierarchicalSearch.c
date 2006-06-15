@@ -155,9 +155,6 @@ int main( int argc, char *argv[]) {
   /* in general any variable ending with 1 is for the 
      first stage, 2 for the second and so on */
 
-  /* detecor -- remove eventually because this could be a multi ifo search! */
-  /*   LALDetector detector1;  */
-  LALDetector detector2;
 
   /* ephemeris */
   EphemerisData *edat = NULL;
@@ -243,9 +240,9 @@ int main( int argc, char *argv[]) {
 
   /* output candidate files and file pointers */
   CHAR *fnameFstatCand=NULL;
-  CHAR *fnameHoughCand=NULL;
+  CHAR *fnameSemiCohCand=NULL;
   FILE *fpFstat=NULL;
-  FILE *fpHough=NULL;
+  FILE *fpSemiCoh=NULL;
   FILE *fpFstat1=NULL;
 
   
@@ -273,6 +270,7 @@ int main( int argc, char *argv[]) {
   REAL8 uvar_mismatch2; /* metric mismatch for second stage coarse grid */
   REAL8 uvar_refTime;
 
+  INT4 uvar_method; /* hough = 0, stackslide = 1*/
   INT4 uvar_nCand1; /* number of candidates to be followed up from first stage */
   INT4 uvar_nCand2; /* number of candidates from second stage */
   INT4 uvar_blocksRngMed;
@@ -304,6 +302,7 @@ int main( int argc, char *argv[]) {
   /* now set the other defaults */
   uvar_help = FALSE;
   uvar_log = FALSE;
+  uvar_method = 0;
   uvar_followUp = TRUE;
   uvar_printMaps = FALSE;
   uvar_printStats = FALSE;
@@ -355,6 +354,7 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",      'h', UVAR_HELP,     "Print this message", &uvar_help), &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "log",        0,  UVAR_OPTIONAL, "Write log file", &uvar_log), &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "chkPoint",   0,  UVAR_OPTIONAL, "For checkpointing", &uvar_chkPoint), &status);  
+  LAL_CALL( LALRegisterINTUserVar(    &status, "uvar_method",0,  UVAR_OPTIONAL, "Hough=0, stackslide=1", &uvar_method ), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "followUp",   0,  UVAR_OPTIONAL, "Follow up stage?", &uvar_followUp), &status);  
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir1",    0,  UVAR_OPTIONAL, "1st SFT file pattern", &uvar_sftDir1), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir2",    0,  UVAR_OPTIONAL, "2nd SFT file pattern", &uvar_sftDir2), &status);
@@ -377,20 +377,20 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar(    &status, "nCand1",     0,  UVAR_OPTIONAL, "No.of 1st stage candidates to be followed up", &uvar_nCand1), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "nCand2",     0,  UVAR_OPTIONAL, "No.of 2nd stage candidates to be followed up",&uvar_nCand2), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "houghThr",   0,  UVAR_OPTIONAL, "Hough number count threshold (default --nCand1)",   &uvar_houghThr), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "fstatThr",   0,  UVAR_OPTIONAL, "Fstat threshold (default --nCand2)", &uvar_fstatThr), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printCand1", 0,  UVAR_OPTIONAL, "Print 1st stage candidates", &uvar_printCand1),      &status);  
   LAL_CALL( LALRegisterREALUserVar(   &status, "refTime",    0,  UVAR_OPTIONAL, "Ref. time for pulsar pars [start time]", &uvar_refTime), &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",0,  UVAR_OPTIONAL, "RngMed block size", &uvar_blocksRngMed), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemE",     'E', UVAR_OPTIONAL, "Earth Ephemeris file", &uvar_ephemE),  &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemS",     'S', UVAR_OPTIONAL, "Sun Ephemeris file", &uvar_ephemS),  &status);
 
   /* developer user variables */
-  LAL_CALL( LALRegisterINTUserVar (   &status, "reallocBlock", 0,  UVAR_DEVELOPER,"Blocks to realloc for Fstat output if necessary",   &uvar_reallocBlock),    &status);
-  LAL_CALL( LALRegisterINTUserVar (   &status, "SSBprecision", 0,  UVAR_DEVELOPER,"Precision for SSB transform.", &uvar_SSBprecision),    &status);
-  LAL_CALL( LALRegisterINTUserVar (   &status, "nfdot",        0, UVAR_DEVELOPER,"No.of LUTs to keep in memory", &uvar_nfdot), &status);
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printMaps",    0,  UVAR_DEVELOPER,"Print Hough maps", &uvar_printMaps), &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printStats",   0,  UVAR_DEVELOPER,"Print Hough map statistics", &uvar_printStats), &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printFstat1",  0,  UVAR_DEVELOPER,"Print 1st stage Fstat vectors", &uvar_printFstat1), &status);  
+  LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed", 0, UVAR_DEVELOPER, "RngMed block size", &uvar_blocksRngMed), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "fstatThr",     0, UVAR_DEVELOPER, "Fstat threshold (default --nCand2)", &uvar_fstatThr), &status);
+  LAL_CALL( LALRegisterINTUserVar (   &status, "reallocBlock", 0, UVAR_DEVELOPER,"Blocks to realloc for Fstat output if necessary",   &uvar_reallocBlock),    &status);
+  LAL_CALL( LALRegisterINTUserVar (   &status, "SSBprecision", 0, UVAR_DEVELOPER,"Precision for SSB transform.", &uvar_SSBprecision),    &status);
+  LAL_CALL( LALRegisterINTUserVar (   &status, "nfdot",        0, UVAR_DEVELOPER,"No.of residual fdot values to be searched", &uvar_nfdot), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printMaps",    0, UVAR_DEVELOPER,"Print Hough maps", &uvar_printMaps), &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printStats",   0, UVAR_DEVELOPER,"Print Hough map statistics", &uvar_printStats), &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printFstat1",  0, UVAR_DEVELOPER,"Print 1st stage Fstat vectors", &uvar_printFstat1), &status);  
   LAL_CALL( LALRegisterINTUserVar( &status, "Dterms", 0, UVAR_DEVELOPER,"No.of terms to keep in Dirichlet Kernel", &uvar_Dterms ), &status);
 
 
@@ -403,29 +403,34 @@ int main( int argc, char *argv[]) {
     exit(0); 
 
   /* some basic sanity checks on user vars */
+  if ( (uvar_method != 0) && (uvar_method != 1)) {
+    fprintf(stderr, "Invalid method....must be 0 or 1\n");
+    exit( HIERARCHICALSEARCH_EBAD );
+  }
+
   if ( uvar_nStacks1 < 1) {
     fprintf(stderr, "Invalid number of stacks\n");
-    exit( DRIVEHOUGHFSTAT_EBAD );
+    exit( HIERARCHICALSEARCH_EBAD );
   }
 
   if ( uvar_nStacks2 < 1) {
     fprintf(stderr, "Invalid number of stacks\n");
-    exit( DRIVEHOUGHFSTAT_EBAD );
+    exit( HIERARCHICALSEARCH_EBAD );
   }
 
   if ( uvar_blocksRngMed < 1 ) {
     fprintf(stderr, "Invalid Running Median block size\n");
-    exit( DRIVEHOUGHFSTAT_EBAD );
+    exit( HIERARCHICALSEARCH_EBAD );
   }
 
   if ( uvar_peakThrF < 0 ) {
     fprintf(stderr, "Invalid value of Fstatistic threshold\n");
-    exit( DRIVEHOUGHFSTAT_EBAD );
+    exit( HIERARCHICALSEARCH_EBAD );
   }
 
   if ( uvar_followUp && (!LALUserVarWasSet(&uvar_sftDir2))) {
     fprintf( stderr, "Must specify SFTs for second stage!\n");
-    exit( DRIVEHOUGHFSTAT_EBAD );
+    exit( HIERARCHICALSEARCH_EBAD );
   }
 
   /* no need to follow up zero 1st stage candidates */
@@ -497,16 +502,20 @@ int main( int argc, char *argv[]) {
     }
 
 
+  /* compute F params */
+  CFparams.Dterms = uvar_Dterms;
+  CFparams.SSBprec = uvar_SSBprecision;
+
   /* create output Hough file for writing if requested by user */
   if ( uvar_printCand1 )
     {
-      fnameHoughCand = (CHAR *)LALMalloc( 512*sizeof(CHAR));
-      strcpy(fnameHoughCand, uvar_fnameout);
-      strcat(fnameHoughCand, "_hough.txt");
-      if (!(fpHough = fopen(fnameHoughCand, "w"))) 
+      fnameSemiCohCand = (CHAR *)LALMalloc( 512*sizeof(CHAR));
+      strcpy(fnameSemiCohCand, uvar_fnameout);
+      strcat(fnameSemiCohCand, "_semicoh.txt");
+      if (!(fpSemiCoh = fopen(fnameSemiCohCand, "w"))) 
 	{
-	  fprintf ( stderr, "Unable to open Hough file '%s' for writing.\n", fnameHoughCand);
-	  return DRIVEHOUGHFSTAT_EFILE;
+	  fprintf ( stderr, "Unable to open file '%s' for writing.\n", fnameSemiCohCand);
+	  return HIERARCHICALSEARCH_EFILE;
 	}
     }
   
@@ -522,7 +531,7 @@ int main( int argc, char *argv[]) {
       if  (!(fpFstat = fopen(fnameFstatCand, "w")))
 	{
 	  fprintf ( stderr, "Unable to open Fstat file '%s' for writing.\n", fnameFstatCand);
-	  return DRIVEHOUGHFSTAT_EFILE;
+	  return HIERARCHICALSEARCH_EFILE;
 	}
     } 
 
@@ -531,7 +540,7 @@ int main( int argc, char *argv[]) {
       if ( !(fpFstat1 = fopen( "./fstatvec1.out", "w")))
 	{
 	  fprintf ( stderr, "Unable to open Fstat file fstatvec1.out for writing.\n");
-	  return DRIVEHOUGHFSTAT_EFILE;
+	  return HIERARCHICALSEARCH_EFILE;
 	}
     }
 
@@ -740,7 +749,7 @@ int main( int argc, char *argv[]) {
 
   
   /*------------ calculate velocity and position for each 1st stage stack ------------*/
-
+  
   /* create velocity and position vectors */
   {
     CreateVectorSequenceIn createPar;
@@ -754,7 +763,10 @@ int main( int argc, char *argv[]) {
   /* which detector?  -- think carefully about this! */
   /* Since only the sfts are associated with a detector, the cleanest solution 
      (unless something better comes up) seems to be to average the velocities 
-     and positions of the sfts in each stack */
+     and positions of the sfts in each stack.  Thus, for the purposes of the velocity
+     and position calculation, we can view the sfts as coming from the a single 
+     hypothetical ifo which is moving in a strange way */
+
   for (k = 0; k < nStacks1; k++)
     {
       INT4 counter=0;
@@ -793,7 +805,7 @@ int main( int argc, char *argv[]) {
       velStack1->data[3*k+1] /= counter;
       velStack1->data[3*k+2] /= counter;
 
-    } /* loop over stacks */
+    } /* loop over stacks -- end velocity and position calculation */
 
 
   /*------------------ read sfts and set up stacks for follow up stage -----------------------*/
@@ -949,19 +961,21 @@ int main( int argc, char *argv[]) {
 
   } /* end if(uvar_followup) */
 
+
+  /* start setting up the semicoherent (Hough or stack slide) part of the search */
   
   /* set up some semiCoherent parameters */
   semiCohPar.tsMid = midTstack1;
   semiCohPar.vel = velStack1;
   semiCohPar.pos = posStack1;
-  semiCohPar.nfdot = uvar_nfdot;
   semiCohPar.outBaseName = uvar_fnameout;
 
   /* allocate memory for Hough candidates */
   semiCohCandList1.length = uvar_nCand1;
   semiCohCandList1.nCandidates = 0; /* initialization */
   semiCohCandList1.minSigIndex = 0;
-  semiCohCandList1.list = (SemiCohCandidate *)LALMalloc( semiCohCandList1.length * sizeof(SemiCohCandidate));
+  semiCohCandList1.list = (SemiCohCandidate *)LALCalloc( 1, semiCohCandList1.length * sizeof(SemiCohCandidate));
+
 
   /*-----------Create template grid for first stage ---------------*/
   /* prepare initialization of DopplerScanner to step through paramter space */
@@ -973,7 +987,7 @@ int main( int argc, char *argv[]) {
   scanInit1.projectMetric = TRUE;
   scanInit1.obsDuration = tStack1;
   scanInit1.obsBegin = startTstack1->data[ nStacks1/2 ];
-  /*   scanInit1.Detector = &detector1; */
+  scanInit1.Detector = &(stackMultiDetStates1.data[0]->data[0]->detector);
   scanInit1.ephemeris = edat;
   scanInit1.skyGridFile = uvar_skyGridFile;
   scanInit1.searchRegion.Freq = uvar_fStart;
@@ -983,7 +997,9 @@ int main( int argc, char *argv[]) {
   scanInit1.searchRegion.skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
   strcpy (scanInit1.searchRegion.skyRegionString, uvar_skyRegion);
 
-
+  /* initialize skygrid  */  
+  LAL_CALL ( InitDopplerScan ( &status, &thisScan1, &scanInit1), &status); 
+  
   /* parameters for 2nd stage */
   /* set up parameters for second stage Fstat calculation */
   /* we don't set frequency and frequency band 
@@ -992,10 +1008,9 @@ int main( int argc, char *argv[]) {
     {
       /* allocate memory for Fstat candidates */
       if ( LALUserVarWasSet(&uvar_fstatThr))
-	  create_toplist(&fstatToplist, uvar_reallocBlock); 
-      else if ( uvar_nCand2 > 0 )
+	create_toplist(&fstatToplist, uvar_reallocBlock); 
+      else
 	create_toplist(&fstatToplist, uvar_nCand2); 
-
 
      /* prepare initialization of DopplerScanner to step through paramter space */
       scanInit2.dAlpha = uvar_dAlpha;
@@ -1006,16 +1021,20 @@ int main( int argc, char *argv[]) {
       scanInit2.projectMetric = TRUE;
       scanInit2.obsDuration = tStack2;
       scanInit2.obsBegin = midTstack2.data[ nStacks1/2 ];
-      scanInit2.Detector = &detector2;
+      scanInit2.Detector = &(stackMultiDetStates2.data[0]->data[0]->detector);
       scanInit2.ephemeris = edat;  /* used by Ephemeris-based metric */
       scanInit2.skyGridFile = uvar_skyGridFile;
-    }
+      /* the search region for scanInit2 will be set later 
+	 -- it depends on the candidates from the first stage */
+    } /* end if( uvar_followUp) */
 
+
+
+
+
+  /*----- start main calculations by going over coarse grid points and 
+          selecting candidates and following up --------*/
  
-  /* initialize skygrid  */  
-  LAL_CALL ( InitDopplerScan ( &status, &thisScan1, &scanInit1), &status); 
-
-
   /* loop over skygrid points */
   while(1)
     {
@@ -1060,35 +1079,47 @@ int main( int argc, char *argv[]) {
 	    }
 
 	  
-	  /* select peaks */ 	      
-	  LAL_CALL( FstatVectToPeakGram( &status, &pgV, &fstatVector1, uvar_peakThrF), &status);
-	  	  
-	  
-	  /*--------------- calculate Hough map and get candidates ---------------*/
-	  
+	  /*--------------- get candidates from a semicoherent search ---------------*/
+
+	  /* the input to this section is the set of fstat vectors fstatVector1 and the 
+	     parameters semiCohPar. The output is the list of candidates in semiCohCandList1 */
+
 	  /* set sky location and spindown for Hough grid -- same as for Fstat calculation */	  
 	  semiCohPar.alpha = thisPoint1.skypos.longitude;
 	  semiCohPar.delta = thisPoint1.skypos.latitude;
 	  semiCohPar.fdot = thisPoint1.fkdot->data[1];
+	  semiCohPar.nfdot = uvar_nfdot; /* look into this more carefully */
 	  
-	  /* get candidates */
-	  LAL_CALL ( ComputeFstatHoughMap ( &status, &semiCohCandList1, &pgV, &semiCohPar), &status);
-	  
-	  /* free peakgrams -- we don't need them now because we have the Hough maps */
-	  for (k=0; k<nStacks1; k++) 
-	    LALFree(pgV.pg[k].peak);
-	  LALFree(pgV.pg);
-	  
-	  /* print candidates */
+	  /* the hough option */
+	  /* select peaks */ 	      
+	  if ( uvar_method == 0 ) {
+	    LAL_CALL( FstatVectToPeakGram( &status, &pgV, &fstatVector1, uvar_peakThrF), &status);
+	    	    
+	    /* get candidates */
+	    LAL_CALL ( ComputeFstatHoughMap ( &status, &semiCohCandList1, &pgV, &semiCohPar), &status);
+	    
+	    /* free peakgrams -- we don't need them now because we have the Hough maps */
+	    for (k=0; k<nStacks1; k++) 
+	      LALFree(pgV.pg[k].peak);
+	    LALFree(pgV.pg);
+	  }
+
+
+	  /* --- stackslide option should come here --------*/
+
+	  /* if ( uvar_method == 1 ) {.....} */	  
+
+
+	  /* print candidates if desired */
 	  if ( uvar_printCand1 )
-	    LAL_CALL ( PrintHoughCandidates ( &status, &semiCohCandList1, fpHough), &status);
-	  
+	    LAL_CALL ( PrintSemiCohCandidates ( &status, &semiCohCandList1, fpSemiCoh), &status);
+
 	  
 	  /*------------- Follow up candidates --------------*/
 	  
-	  /* this part is more general than it has to be
+	  /* this part is more general than it has to be.
 	     it is meant to be generalized to the case when 
-	     the number of follow-up stacks is not necessarily 1 */
+	     nStacks2 is not necessarily 1 */
 	  
 	  /* check if user requested a follow up stage*/
 	  if ( uvar_followUp ) 
@@ -1151,7 +1182,7 @@ int main( int argc, char *argv[]) {
 		      nfdot2 = (UINT4)( fdotBand1 / dfDot2 + 0.5) + 1; 
 		      
 		      /* loop over fdot values */
-		      for ( ifdot2=0; ifdot2<nfdot2; ifdot2++)
+		      for ( ifdot2 = 0; ifdot2 < nfdot2; ifdot2++)
 			{
 			  
 			  /* set spindown value for Fstat calculation */
@@ -1164,9 +1195,8 @@ int main( int argc, char *argv[]) {
 							     stackMultiDetStates2.data[k], &CFparams, &cfBuffer2 ), &status);
 			  }
 			  
-			  
 			  /* select candidates from 2nd stage */
-			  for (k=0; k<nStacks2; k++) 
+			  for (k = 0; k < nStacks2; k++) 
 			    {
 			      if ( LALUserVarWasSet(&uvar_fstatThr))
 				LAL_CALL( GetFstatCandidates( &status, fstatToplist, fstatVector2.data + k, uvar_fstatThr,
@@ -1244,8 +1274,8 @@ int main( int argc, char *argv[]) {
 
   if ( uvar_printCand1 )
     {
-      LALFree(fnameHoughCand);
-      fclose(fpHough);
+      LALFree(fnameSemiCohCand);
+      fclose(fpSemiCoh);
     }
 
   if ( uvar_printFstat1 )
@@ -1303,7 +1333,7 @@ int main( int argc, char *argv[]) {
 
   LALCheckMemoryLeaks();
 
-  return DRIVEHOUGHFSTAT_ENORM;
+  return HIERARCHICALSEARCH_ENORM;
 }
 
 
@@ -1345,13 +1375,13 @@ void ComputeFstatHoughMap(LALStatus *status,
 
   UINT2  xSide, ySide, maxNBins, maxNBorders;
   INT8  fBinIni, fBinFin, fBin;
-  INT4  k, iHmap, nSpin1Max, nStacks, nfSizeCylinder;
+  INT4  k, iHmap, nSpin1Max, nStacks, nfdot;
   REAL8 deltaF, alpha, delta;
   REAL8 patchSizeX, patchSizeY, f1jump, tStart;
   REAL8VectorSequence *vel, *pos;
   REAL8 fdot;
   LIGOTimeGPSVector   *tsMid;
-  REAL8Vector timeDiffV;
+  REAL8Vector *timeDiffV=NULL;
   UINT8Vector hist; /* histogram vector */ 
   UINT8Vector histTotal; /* total histogram vector */
   HoughStats stats; /* statistics struct */
@@ -1366,7 +1396,7 @@ void ComputeFstatHoughMap(LALStatus *status,
   nStacks = pgV->length;
 
   /* copy some params to local variables */
-  nfSizeCylinder = 2*params->nfdot + 1;
+  nfdot = params->nfdot;
   fBinIni = pgV->pg[0].fBinIni;
   fBinFin = pgV->pg[0].fBinFin;
   alpha = params->alpha;
@@ -1376,8 +1406,7 @@ void ComputeFstatHoughMap(LALStatus *status,
   fdot = params->fdot;
   tsMid = params->tsMid;
   TRY ( LALGPStoFloat( status->statusPtr, &tStart, &(tsMid->data[0]) ), status);
-  tStart -= 1.0/deltaF;
-
+  tStart -= 0.5/deltaF; /* tStart -= 0.5 * timebase = 0.5/deltaF */
 
   /* set patch size */
   /* this is supposed to be the "educated guess" 
@@ -1396,10 +1425,10 @@ void ComputeFstatHoughMap(LALStatus *status,
   
   /* partial hough map derivative vector */
   phmdVS.length  = nStacks;
-  phmdVS.nfSize  = nfSizeCylinder;
+  phmdVS.nfSize  = 2*nfdot + 1;
   phmdVS.deltaF  = deltaF;
   phmdVS.phmd = NULL;
-  phmdVS.phmd=(HOUGHphmd *)LALMalloc(nStacks*nfSizeCylinder*sizeof(HOUGHphmd));
+  phmdVS.phmd=(HOUGHphmd *)LALMalloc( phmdVS.length * phmdVS.nfSize *sizeof(HOUGHphmd));
   
   /* residual spindown trajectory */
   freqInd.deltaF = deltaF;
@@ -1422,7 +1451,7 @@ void ComputeFstatHoughMap(LALStatus *status,
   ht.spinDem.data = NULL;
   ht.spinDem.data = (REAL8 *)LALMalloc(ht.spinRes.length*sizeof(REAL8));
 
-  /* Case: no spindown */
+  /* the demodulation params */
   parDem.deltaF = deltaF;
   parDem.skyPatch.alpha = alpha;
   parDem.skyPatch.delta = delta;
@@ -1431,6 +1460,7 @@ void ComputeFstatHoughMap(LALStatus *status,
   parDem.spin.data = (REAL8 *)LALCalloc(1, sizeof(REAL8));
   parDem.spin.data[0] = fdot;
 
+  /* the skygrid resolution params */
   parRes.deltaF = deltaF;
   parRes.patchSkySizeX  = patchSizeX;
   parRes.patchSkySizeY  = patchSizeY;
@@ -1454,31 +1484,30 @@ void ComputeFstatHoughMap(LALStatus *status,
 	histTotal.data[j]=0; 
     }
     fileStats = NULL;
-    fileStats = (CHAR *)LALMalloc( 256 * sizeof(CHAR));
+    fileStats = (CHAR *)LALCalloc(1, 256 * sizeof(CHAR));
     strcpy( fileStats, params->outBaseName);
     strcat( fileStats, "stats");
     if ( !(fpStats = fopen(fileStats, "w")))
       {
-	fprintf(stderr, "Unable to open file '%s' for writing\n", fileStats);
-	exit(1);
+	fprintf(stderr, "Unable to open file '%s' for writing...continuing\n", fileStats);
       }
   }
 
 
-
   /* calculate time differences from start of observation time */
-  timeDiffV.length = nStacks;
-  timeDiffV.data = (REAL8 *)LALMalloc( nStacks * sizeof(REAL8));
+  TRY( LALDCreateVector( status->statusPtr, &timeDiffV, nStacks), status);
+
   for (k=0; k<nStacks; k++) {
     REAL8 tMidStack;
 
     TRY ( LALGPStoFloat ( status->statusPtr, &tMidStack, tsMid->data + k), status);
-    timeDiffV.data[k] = tMidStack - tStart;
+    timeDiffV->data[k] = tMidStack - tStart;
   }
 
   /* if there are residual spindowns */
-  nSpin1Max = nfSizeCylinder/2; /* integer division -- maximum number of spindowns */
-  f1jump = 1.0 / timeDiffV.data[nStacks - 1]; /* resolution in residual fdot */
+  nSpin1Max = nfdot;
+  f1jump = 1.0 / timeDiffV->data[nStacks - 1]; /* resolution in residual fdot */
+
  
   /*------------------ start main Hough calculation ---------------------*/
 
@@ -1498,6 +1527,13 @@ void ComputeFstatHoughMap(LALStatus *status,
     maxNBins = parSize.maxNBins;
     maxNBorders = parSize.maxNBorders;
 	
+    /* increment the fBin value
+       -- we need to be sure that we have the fstat values for
+       all search frequencies */
+    /* this is probably too large
+       -- we might have left some initial frequency bins unanalyzed */
+    fBin += maxNBins;
+
     /*------------------ create patch grid at fBin ----------------------*/
     patch.xSide = xSide;
     patch.ySide = ySide;
@@ -1521,6 +1557,7 @@ void ComputeFstatHoughMap(LALStatus *status,
 	  (COORType *)LALMalloc(ySide*sizeof(COORType));
       }
     }
+
     for(j=0; j<phmdVS.length * phmdVS.nfSize; ++j){
       phmdVS.phmd[j].maxNBorders = maxNBorders;
       phmdVS.phmd[j].leftBorderP =
@@ -1540,7 +1577,7 @@ void ComputeFstatHoughMap(LALStatus *status,
       parDem.positC.x = pos->data[3*j];
       parDem.positC.y = pos->data[3*j + 1];
       parDem.positC.z = pos->data[3*j + 2];
-      parDem.timeDiff = timeDiffV.data[j];
+      parDem.timeDiff = timeDiffV->data[j];
 
       /* calculate parameters needed for buiding the LUT */
       TRY( LALHOUGHParamPLUT( status->statusPtr, &parLut, &parSize, &parDem),status );
@@ -1550,7 +1587,7 @@ void ComputeFstatHoughMap(LALStatus *status,
     }
     
     /*--------- build the set of  PHMD centered around fBin -------------*/     
-    phmdVS.fBinMin = fBin - floor(nfSizeCylinder/2.);
+    phmdVS.fBinMin = fBin - nfdot;
     TRY( LALHOUGHConstructSpacePHMD(status->statusPtr, &phmdVS, pgV, &lutV), status );
     
     /*-------------- initializing the Total Hough map space ------------*/   
@@ -1570,7 +1607,7 @@ void ComputeFstatHoughMap(LALStatus *status,
     
     /*  Search frequency interval possible using the same LUTs */
     fBinSearch = fBin;
-    fBinSearchMax = fBin + parSize.nFreqValid - 1 - (nfSizeCylinder - 1 )/2;
+    fBinSearchMax = fBin + parSize.nFreqValid - 1 - nfdot;
      
     /* Study all possible frequencies with one set of LUT */    
     while ( (fBinSearch <= fBinFin) && (fBinSearch < fBinSearchMax) )  { 
@@ -1589,7 +1626,7 @@ void ComputeFstatHoughMap(LALStatus *status,
 	  ht.spinRes.data[0] =  f1dis*deltaF;
 	  
 	  for (j=0; j < (UINT4)nStacks; j++)
-	    freqInd.data[j] = fBinSearch + floor(timeDiffV.data[j]*f1dis + 0.5);
+	    freqInd.data[j] = fBinSearch + floor(timeDiffV->data[j]*f1dis + 0.5);
 	  
 	  TRY( LALHOUGHConstructHMT(status->statusPtr, &ht, &freqInd, &phmdVS),status );
 
@@ -1601,7 +1638,7 @@ void ComputeFstatHoughMap(LALStatus *status,
 	  TRY(GetHoughCandidates_toplist( status->statusPtr, out, &ht, &patch, &parDem), status); 
 
 	  /* calculate statistics and histogram */
-	  if ( uvar_printStats ) {
+	  if ( uvar_printStats && (fpStats != NULL) ) {
 	    TRY( LALHoughStatistics ( status->statusPtr, &stats, &ht), status );
 	    TRY( LALStereo2SkyLocation ( status->statusPtr, &sourceLocation, 
 					stats.maxIndex[0], stats.maxIndex[1], 
@@ -1665,8 +1702,9 @@ void ComputeFstatHoughMap(LALStatus *status,
   LALFree(lutV.lut);
   LALFree(phmdVS.phmd);
   LALFree(freqInd.data);
-  LALFree(timeDiffV.data);
   LALFree(parDem.spin.data);
+
+  TRY( LALDDestroyVector( status->statusPtr, &timeDiffV), status);
 
   if (uvar_printStats ) {
     
@@ -1853,7 +1891,7 @@ void PrintHmap2file(LALStatus *status,
   /* replace this by an assert */
   /*   if ( !fp ){   */
   /*     fprintf(stderr,"Unable to find file %s\n",filename); */
-  /*     return DRIVEHOUGHFSTAT_EFILE;  */
+  /*     return HIERARCHICALSEARCH_EFILE;  */
   /*   } */
 
   ySide= ht->ySide;
@@ -2093,13 +2131,13 @@ void GetMinSigIndex_toplist(LALStatus *status,
 
 
 /** Print Hough candidates */
-void PrintHoughCandidates(LALStatus *status,
+void PrintSemiCohCandidates(LALStatus *status,
 			  SemiCohCandidateList *in,
 			  FILE *fp)
 {
   INT4 k;
 
-  INITSTATUS( status, "GetHoughCandidates", rcsid );
+  INITSTATUS( status, "PrintSemiCohCandidates", rcsid );
   ATTATCHSTATUSPTR (status);
 
  
@@ -2254,7 +2292,7 @@ void PrintHoughHistogram( LALStatus *status,
   char filename[256];
   UINT4  i ;
  
-  INITSTATUS( status, "GetHoughCandidates", rcsid );
+  INITSTATUS( status, "PrintHoughHistogram", rcsid );
   ATTATCHSTATUSPTR (status);
 
   strcpy(  filename, fnameOut);
