@@ -864,7 +864,10 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
 
   /* ----- normalize SFTs and calculate noise-weights ----- */
   if ( uvar_SignalOnly )
-    cfg->multiNoiseWeights = NULL; 
+    {
+      cfg->multiNoiseWeights = NULL; 
+      GV.S_hat = 2.0 / GV.Tsft;
+    }
   else
     {
       MultiPSDVector *psds = NULL;
