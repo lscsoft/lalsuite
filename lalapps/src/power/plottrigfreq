@@ -113,22 +113,24 @@ def make_rate_plot(rate):
 	axes.grid(True)
 
 	# some commented-out code for validation
-	#yvals = rate.yvals()
 	#axes.plot(rate.xvals(), normalize(rate.numerator), "go")
 	#axes.plot(rate.xvals(), normalize(rate.denominator), "b")
-	#axes.plot(rate.xvals(), normalize(yvals), "r")
+	#axes.plot(rate.xvals(), normalize(rate.yvals()), "r")
 	#axes.set_xlim([0, 1])
 
-	ymin = min(numarray.compress(rate.denominator, rate.numerator) / numarray.compress(rate.denominator, rate.denominator))
 	rate.logregularize()
+	rate.set_filterwidth(math.pi / 8)
 	yvals = rate.yvals(cyclic = True)
+	ymin = min(numarray.compress(rate.denominator, yvals))
 	axes.plot(rate.xvals(), yvals, "k")
 	axes.set_xlim([0, 2.0 * math.pi])
-	axes.set_ylim([10.0**(int(math.log10(max(ymin, 1.0))) - 1), 10.0**(int(math.log10(max(yvals))) + 1)])
+	axes.set_ylim([10.0**int(math.log10(ymin)), 10.0**(int(math.log10(max(yvals))) + 1)])
 
 	axes.set_title("Event Confidence Accumulation Rate By Sidereal Time")
 	axes.set_xlabel("Greenwich Mean Sidereal Time (rad)")
 	axes.set_ylabel("Event Confidence Accumulation Rate (confidence / sidereal day / rad)")
+	axes.set_xticks(numarray.arange(9) * math.pi / 4)
+	axes.set_xticklabels([r"0", r"$\pi/4$", r"$\pi/2$", r"$3\pi/4$", r"$\pi$", r"$5\pi/4$", r"$3\pi/2$", r"$7\pi/4$", r"$2\pi$"])
 	return fig
 
 
