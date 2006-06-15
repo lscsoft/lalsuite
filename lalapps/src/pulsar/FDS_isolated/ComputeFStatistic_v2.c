@@ -961,14 +961,14 @@ EstimateSigParams (LALStatus *status, const Fcomponents *Fstat, const MultiAMCoe
   REAL8 psi_mle, Phi0_mle, mu_mle;
   REAL8 h0mle, h0mleSq;
   REAL8 error_tol = 1.0 / pow(10,14);
+  REAL8 norm, medianbias;
 
   REAL8 A, B, C, D, At ,Bt ,Ct, Dinv ;
   REAL8 Fa_re, Fa_im, Fb_re, Fb_im;
   REAL8 Tsft = GV.Tsft, S_hat = GV.S_hat;
   INT4 numSFTs = GV.multiSFTs->length;;
-  REAL8 norm, medianbias=1.0;
 
-  FILE * fpMLEParam;
+  FILE *fpMLEParam;
 
   INITSTATUS (status, "EstimateSigParams", rcsid);
   ATTATCHSTATUSPTR (status);
@@ -981,20 +981,12 @@ EstimateSigParams (LALStatus *status, const Fcomponents *Fstat, const MultiAMCoe
   C = multiAMcoef->C;
   D = A * B - C * C;
 
-  At = 2.0 * Tsft * S_hat * A;
-  Bt = 2.0 * Tsft * S_hat * B;
-  Ct = 2.0 * Tsft * S_hat * C;
-  Dinv = 1.0 / (pow((2 * Tsft * S_hat), 2) * D);
-
-  Fa_re = LAL_TWOPI * sqrt(Tsft * S_hat) * Fstat->Fa.re;
-  Fa_im = LAL_TWOPI * sqrt(Tsft * S_hat) * Fstat->Fa.im;
-  Fb_re = LAL_TWOPI * sqrt(Tsft * S_hat) * Fstat->Fb.re;
-  Fb_im = LAL_TWOPI * sqrt(Tsft * S_hat) * Fstat->Fb.im;
+  Dinv = 1.0 / D;
   
-  A1 =   4.0 * Dinv * ( Bt * Fa_re - Ct * Fb_re ); /* A1=2(B H1-C H2)/D where, H1=Re(2Fa) and H2=Re(2Fb) */
-  A2 =   4.0 * Dinv * ( At * Fb_re - Ct * Fa_re );
-  A3 = - 4.0 * Dinv * ( Bt * Fa_im - Ct * Fb_im );
-  A4 = - 4.0 * Dinv * ( At * Fb_im - Ct * Fa_im );
+  A1 =   2.0 * Dinv * ( B * Fstat->Fa.re - C * Fstat->Fb.re ) / sqrt(Tsft * S_hat); /* A1=2(B H1-C H2)/D where, H1=Re(2Fa) and H2=Re(2Fb) */
+  A2 =   2.0 * Dinv * ( A * Fstat->Fb.re - C * Fstat->Fa.re ) / sqrt(Tsft * S_hat);
+  A3 = - 2.0 * Dinv * ( B * Fstat->Fa.im - C * Fstat->Fb.im ) / sqrt(Tsft * S_hat);
+  A4 = - 2.0 * Dinv * ( A * Fstat->Fb.im - C * Fstat->Fa.im ) / sqrt(Tsft * S_hat);
 			  
   Asq = A1*A1 + A2*A2 + A3*A3 + A4*A4;
   detA = A1*A4 - A2*A3;
@@ -1038,8 +1030,8 @@ EstimateSigParams (LALStatus *status, const Fcomponents *Fstat, const MultiAMCoe
   /* Compute MLEs of psi and Phi0 up to sign of Cos[2*Phi0] */
   /* Make psi and Phi0 always in -Pi/2 to Pi/2 */ 
   beta  = ( Asq + sqrt(Asq * Asq - 4.0 * detA * detA) ) / (2.0 * detA);
-  psi_mle  = atan( (beta * A4 - A1) / (beta * A3 + A2) ) / 2.0;
-  Phi0_mle  = atan( (A1 - beta * A4) /(A3 + beta * A2) ) / 2.0;
+  psi_mle  = 0.5 * atan( (beta * A4 - A1) / (beta * A3 + A2) );
+  Phi0_mle  = 0.5 * atan( (A1 - beta * A4) / (A3 + beta * A2) );
 						  
   /* Test if we get the same value of A1 by using the computed signal parameters. */
   A1test = h0mle * (0.5 * (1 + mu_mle * mu_mle) * cos(2.0 * psi_mle) * cos(2.0 * Phi0_mle) - mu_mle * sin(2.0 * psi_mle) * sin(2.0 * Phi0_mle));
@@ -1106,6 +1098,7 @@ EstimateSigParams (LALStatus *status, const Fcomponents *Fstat, const MultiAMCoe
   norm = 2.0 * sqrt(Tsft) / (Tsft * numSFTs);
   h0mle = h0mle * norm;
 
+  medianbias = 1.0; /* Initial value for medianbias*/
   TRY ( LALRngMedBias (status->statusPtr, &medianbias, uvar_RngMedWindow), status);
   
   /* For the real data, we need to multiply long(2.0) */ 
@@ -1113,7 +1106,7 @@ EstimateSigParams (LALStatus *status, const Fcomponents *Fstat, const MultiAMCoe
   h0mle=h0mle*sqrt(medianbias); 
 
   fprintf(fpMLEParam,"  %g", h0mle);
-  fprintf(fpMLEParam,"  %g", mu_mle );
+  fprintf(fpMLEParam,"  %g", mu_mle);
   fprintf(fpMLEParam,"  %g", psi_mle);
   fprintf(fpMLEParam,"  %g", 2.0 * Phi0_mle);
   fprintf(fpMLEParam,"\n");
@@ -1122,7 +1115,7 @@ EstimateSigParams (LALStatus *status, const Fcomponents *Fstat, const MultiAMCoe
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
-}
+} /*EstimateSigParams()*/
 
 
 /***********************************************************************/
