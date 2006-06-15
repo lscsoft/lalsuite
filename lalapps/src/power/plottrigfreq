@@ -121,7 +121,7 @@ def make_rate_plot(rate):
 
 	ymin = min(numarray.compress(rate.denominator, rate.numerator) / numarray.compress(rate.denominator, rate.denominator))
 	rate.logregularize()
-	yvals = rate.yvals()
+	yvals = rate.yvals(cyclic = True)
 	axes.plot(rate.xvals(), yvals, "k")
 	axes.set_xlim([0, 2.0 * math.pi])
 	axes.set_ylim([10.0**(int(math.log10(max(ymin, 1.0))) - 1), 10.0**(int(math.log10(max(yvals))) + 1)])
