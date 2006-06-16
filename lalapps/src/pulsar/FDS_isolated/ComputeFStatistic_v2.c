@@ -32,6 +32,7 @@
 /* System includes */
 #include <math.h>
 #include <stdio.h>
+#include <time.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -172,6 +173,7 @@ INT4 uvar_SSBprecision;
 INT4 uvar_minStartTime;
 INT4 uvar_maxEndTime;
 CHAR *uvar_workingDir;
+REAL8 uvar_timerCount;
 
 /* ---------- local prototypes ---------- */
 int main(int argc,char *argv[]);
@@ -214,7 +216,6 @@ int main(int argc,char *argv[])
   SkyPosition thisPoint;
   FILE *fpFstat = NULL;
   FILE *fpBstat = NULL;
-  UINT4 loopcounter;
   CHAR loudestEntry[512];
   CHAR buf[512];
   REAL8 loudestF = 0;
@@ -224,7 +225,9 @@ int main(int argc,char *argv[])
   CWParamSpacePoint psPoint;		/* parameter-space point to compute Fstat for */
   UINT4 nFreq, nf1dot, nf2dot, nf3dot;	/* number of frequency- and f1dot-bins */
   UINT4 iFreq, if1dot, if2dot, if3dot;  /* counters over freq- and f1dot- bins */
-  
+  REAL8 numTemplates, templateCounter;
+  REAL8 tickCounter;
+  clock_t clock0;
 
   lalDebugLevel = 0;  
   vrbflg = 1;	/* verbose error-messages */
@@ -274,9 +277,9 @@ int main(int argc,char *argv[])
   GV.searchRegion.f1dotBand = GV.spinRangeStart->fkdotBand->data[1];
   scanInit.searchRegion = GV.searchRegion;
   
-  LogPrintf (LOG_DEBUG, "Setting up template grid ...\n");
-  
+  LogPrintf (LOG_DEBUG, "Setting up template grid ... ");
   LAL_CALL ( InitDopplerScan ( &status, &thisScan, &scanInit), &status); 
+  LogPrintfVerbatim (LOG_DEBUG, "done.\n");
   
   /* ---------- set Frequency- and spindown-resolution if not input by user ----------*/
   if ( LALUserVarWasSet( &uvar_dFreq ) )
@@ -289,11 +292,10 @@ int main(int argc,char *argv[])
 	     thisScan.dFreq, thisScan.df1dot );
   
   /*----------------------------------------------------------------------*/
-  if (lalDebugLevel) printf ("done.\n");
   if ( uvar_outputSkyGrid ) {
-    printf ("\nNow writing sky-grid into file '%s' ...", uvar_outputSkyGrid);
+    LogPrintf (LOG_NORMAL, "Now writing sky-grid into file '%s' ...", uvar_outputSkyGrid);
     LAL_CALL (writeSkyGridFile( &status, thisScan.grid, uvar_outputSkyGrid, &scanInit), &status);
-    printf (" done.\n\n");
+    LogPrintfVerbatim (" done.\n");
   }
   
   /* if a complete output of the F-statistic file was requested,
@@ -334,9 +336,6 @@ int main(int argc,char *argv[])
 	}
     } /* if outputBstat */
 
-
-  if (lalDebugLevel) printf ("\nStarting main search-loop.. \n");
-  
   if ( ( fkdotStart = XLALCreateREAL8Vector ( NUM_SPINS ) ) == NULL ) {
     return COMPUTEFSTATISTIC_EMEM;
   }
@@ -358,13 +357,16 @@ int main(int argc,char *argv[])
   nf2dot = (UINT4)(GV.spinRangeStart->fkdotBand->data[2] / uvar_df2dot + 0.5) + 1; 
   nf3dot = (UINT4)(GV.spinRangeStart->fkdotBand->data[3] / uvar_df3dot + 0.5) + 1; 
 
+  numTemplates = 1.0 * thisScan.numGridPoints * nFreq * nf1dot * nf2dot * nf3dot;
   
   LogPrintf (LOG_DEBUG, "N = Sky x Freq x f1dot x f2dot x f3dot = %d x %d x %d x %d x %d = %g\n",
 	     thisScan.numGridPoints, nFreq, nf1dot, nf2dot, nf3dot, 
-	     1.0 * thisScan.numGridPoints * nFreq * nf1dot * nf2dot * nf3dot );
+	     numTemplates);
 
+  templateCounter = 0.0; 
+  tickCounter = uvar_timerCount - 100;	/* do 100 iterations before first progress-report */
+  clock0 = clock();
 
-  loopcounter = 0;
   while (1)
     {
       LAL_CALL (NextDopplerPos( &status, &dopplerpos, &thisScan ), &status);
@@ -397,7 +399,7 @@ int main(int argc,char *argv[])
 		  for ( iFreq = 0 ; iFreq < nFreq ; iFreq ++ )
 		    {
 		      Fcomponents Fstat;
-		      
+
 		      fkdotStart->data[0] = GV.spinRangeStart->fkdot->data[0] + iFreq * thisScan.dFreq;
 
 		      /* set parameter-space point: spin-vector fkdot */
@@ -405,6 +407,20 @@ int main(int argc,char *argv[])
 		      
 		      LAL_CALL(ComputeFStat(&status, &Fstat, &psPoint, GV.multiSFTs, GV.multiNoiseWeights, GV.multiDetStates, &GV.CFparams, &cfBuffer ),
 			       &status );
+
+		      templateCounter += 1.0;
+		      tickCounter += 1.0;
+		      if ( lalDebugLevel && ( tickCounter > uvar_timerCount) )
+			{
+			  clock_t diff = clock() - clock0;
+			  REAL8 diffSec = (REAL8)diff / CLOCKS_PER_SEC;
+			  REAL8 taup = diffSec / templateCounter ;
+			  REAL8 timeLeft = (numTemplates - templateCounter) *  taup;
+			  tickCounter = 0.0;
+			  LogPrintf (LOG_DEBUG, "Progres: %g/%g = %.2f %% done, Estimated time left: %.0f s\n", 
+				     templateCounter, numTemplates, templateCounter/numTemplates * 100.0, timeLeft);
+			}
+		      
 
 		      /* correct results in --SignalOnly case:
 		       * this means we didn't normalize data by 1/sqrt(Tsft * 0.5 * Sh) in terms of 
@@ -483,11 +499,6 @@ int main(int argc,char *argv[])
 	    } /* for if2dot < nf2dot */
 	} /* for if3dot < nf3dot */
       
-      loopcounter ++;
-      if (lalDebugLevel) 
-	printf ("\
-Search progress: %5.1f%%", (100.0* loopcounter / thisScan.numGridPoints));
-      
     } /*  while SkyPos : loop over skypositions */
 
  
@@ -516,10 +527,8 @@ Search progress: %5.1f%%", (100.0* loopcounter / thisScan.numGridPoints));
       fprintf (fpLoudest, "%s", loudestEntry );
       fclose(fpLoudest);
     } /* write loudest candidate to file */
-
-
   
-  if (lalDebugLevel) printf ("\nSearch finished.\n");
+  LogPrintf (LOG_DEBUG, "Search finished.\n");
   
   /* Free memory */
   LAL_CALL ( FreeDopplerScan(&status, &thisScan), &status);
@@ -602,6 +611,8 @@ initUserVars (LALStatus *status)
   uvar_workingDir = (CHAR*)LALMalloc(512);
   strcpy(uvar_workingDir, ".");
 
+  uvar_timerCount = 1e4;	/* output a timer/progress count every N templates */
+
   /* ---------- register all user-variables ---------- */
   LALregBOOLUserVar(status, 	help, 		'h', UVAR_HELP,     "Print this message"); 
 
@@ -657,6 +668,7 @@ initUserVars (LALStatus *status)
 		      "Output-file for the loudest F-statistic candidate in this search");
 
   LALregSTRINGUserVar(status,   workingDir,     'w', UVAR_DEVELOPER, "Directory to use as work directory.");
+  LALregREALUserVar(status, 	timerCount, 	 0,  UVAR_DEVELOPER, "N: Output progress/timer info every N templates");  
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -749,7 +761,10 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   constraints.endTime = &maxEndTimeGPS;
   
   /* get full SFT-catalog of all matching (multi-IFO) SFTs */
+  LogPrintf (LOG_DEBUG, "Finding all SFTs to load ... ");
   TRY ( LALSFTdataFind ( status->statusPtr, &catalog, uvar_DataFiles, &constraints ), status);    
+  LogPrintfVerbatim (LOG_DEBUG, "done.\n");
+
   if ( constraints.detector ) 
     LALFree ( constraints.detector );
 
@@ -857,8 +872,10 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     UINT4 wings = MYMAX(uvar_Dterms, uvar_RngMedWindow/2 +1);	/* extra frequency-bins needed for rngmed, and Dterms */
     REAL8 fMax = (1.0 + uvar_dopplermax) * fCoverMax + wings / cfg->Tsft; /* correct for doppler-shift and wings */
     REAL8 fMin = (1.0 - uvar_dopplermax) * fCoverMin - wings / cfg->Tsft;
-
+    
+    LogPrintf (LOG_DEBUG, "Loading SFTs ... ");
     TRY ( LALLoadMultiSFTs ( status->statusPtr, &(cfg->multiSFTs), catalog, fMin, fMax ), status );
+    LogPrintfVerbatim (LOG_DEBUG, "done.\n");
     TRY ( LALDestroySFTCatalog ( status->statusPtr, &catalog ), status );
   }
 
@@ -962,13 +979,11 @@ EstimateSigParams (LALStatus *status, const Fcomponents *Fstat, const MultiAMCoe
   REAL8 h0mle, h0mleSq;
   REAL8 error_tol = 1.0 / pow(10,14);
   REAL8 norm, medianbias;
+  FILE *fpMLEParam;
 
-  REAL8 A, B, C, D, At ,Bt ,Ct, Dinv ;
-  REAL8 Fa_re, Fa_im, Fb_re, Fb_im;
+  REAL8 A, B, C, D, Dinv ;
   REAL8 Tsft = GV.Tsft, S_hat = GV.S_hat;
   INT4 numSFTs = GV.multiSFTs->length;;
-
-  FILE *fpMLEParam;
 
   INITSTATUS (status, "EstimateSigParams", rcsid);
   ATTATCHSTATUSPTR (status);
