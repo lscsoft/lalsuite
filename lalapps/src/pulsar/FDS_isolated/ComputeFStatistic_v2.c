@@ -295,7 +295,7 @@ int main(int argc,char *argv[])
   if ( uvar_outputSkyGrid ) {
     LogPrintf (LOG_NORMAL, "Now writing sky-grid into file '%s' ...", uvar_outputSkyGrid);
     LAL_CALL (writeSkyGridFile( &status, thisScan.grid, uvar_outputSkyGrid, &scanInit), &status);
-    LogPrintfVerbatim (" done.\n");
+    LogPrintfVerbatim (LOG_NORMAL, " done.\n");
   }
   
   /* if a complete output of the F-statistic file was requested,
