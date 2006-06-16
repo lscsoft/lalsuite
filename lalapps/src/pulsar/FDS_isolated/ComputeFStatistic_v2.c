@@ -227,7 +227,7 @@ int main(int argc,char *argv[])
   UINT4 iFreq, if1dot, if2dot, if3dot;  /* counters over freq- and f1dot- bins */
   REAL8 numTemplates, templateCounter;
   REAL8 tickCounter;
-  clock_t clock0;
+  REAL8 clock0;
 
   lalDebugLevel = 0;  
   vrbflg = 1;	/* verbose error-messages */
@@ -365,7 +365,7 @@ int main(int argc,char *argv[])
 
   templateCounter = 0.0; 
   tickCounter = uvar_timerCount - 100;	/* do 100 iterations before first progress-report */
-  clock0 = clock();
+  clock0 = (REAL8)clock() / CLOCKS_PER_SEC;
 
   while (1)
     {
@@ -412,8 +412,7 @@ int main(int argc,char *argv[])
 		      tickCounter += 1.0;
 		      if ( lalDebugLevel && ( tickCounter > uvar_timerCount) )
 			{
-			  clock_t diff = clock() - clock0;
-			  REAL8 diffSec = (REAL8)diff / CLOCKS_PER_SEC;
+			  REAL8 diffSec = (REAL8)(clock()) / CLOCKS_PER_SEC - clock0;
 			  REAL8 taup = diffSec / templateCounter ;
 			  REAL8 timeLeft = (numTemplates - templateCounter) *  taup;
 			  tickCounter = 0.0;
