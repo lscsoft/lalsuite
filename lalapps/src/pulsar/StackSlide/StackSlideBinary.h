@@ -82,11 +82,18 @@ void getStackSlideBinaryPriorResults(LALStatus *status,
                                REAL8 *priorBand,
                                CHAR  *priorResultsFile);
 
-void ComputeConfidence(LALStatus *status, REAL4 priorLoudestEvent, REAL8 *Confidence, REAL8 *conf_err);
+void ComputeConfidence(LALStatus *status, REAL4 priorLoudestEvent, REAL4 maxPower, REAL8 *Confidence, REAL8 *conf_err);
 
 void getStackSlideBinarySearchResults(LALStatus *status, StackSlideSearchParams *params, REAL8 *SearchLoudestEvent);
 
-void ValidateMCResults(LALStatus *status, const REAL4FrequencySeries *oneSUM, StackSlideSearchParams *params, REAL4 *SNR);
+/*void ValidateMCResults(LALStatus *status, const REAL4FrequencySeries *oneSUM, StackSlideSearchParams *params, REAL4 *SNR);*/
+void ValidateMCResults(LALStatus *status,
+			REAL4FrequencySeries **SUMData,
+			REAL4FrequencySeries **STKData,
+			TdotsAndDeltaTs *pTdotsAndDeltaTs,
+			StackSlideSearchParams *searchParams,
+			INT4 iSky,
+			StackSlideParams *params);
 
 /*void ComputeUpperLimit(LALStatus *status, REAL8 *interpolatedUL, const REAL8 *arrayULs, const REAL8 *arrayConfs, REAL8 desiredConf, INT4 startIndex, INT4 numVals);*/
 void ComputeUpperLimit(LALStatus *status, const REAL8 *arrayULs, const REAL8 *arrayConfs, REAL8 desiredConf);
