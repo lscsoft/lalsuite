@@ -52,6 +52,7 @@ LALInspiralBCVSpinBank(
   INT4 Nmax=1000;
   INT4 N, k, nbeta, totTemps=0;
   REAL8 *Sn, MM, betaMin, betaMax;
+  REAL8Vector newSn;
   REAL8 fmin, fmax, beta_list[Nmax+1];
   REAL8 effmetric_list[3][3][Nmax+1];
 
@@ -113,11 +114,34 @@ LALInspiralBCVSpinBank(
    * Instead of noisespec(N, Sn, fmin, fmax) let us use the noise
    * PSD provided by coarseIn.
    */
+
   Sn = coarseIn->shf.data->data;
   N = coarseIn->shf.data->length-1;
-  /*
-  printf("Num beta steps=%d Sn[0]=%e, Sn[N/2]=%e\n", N, Sn[0], Sn[N/2]);
-   */
+
+  if (N>16384)
+  {
+    int ratio, i;
+    ratio = N/16384;
+    N = N / ratio;
+    fprintf(stderr, "ratio = %d\n", ratio);
+    newSn.length= N;
+
+    newSn.data  = (REAL8*) LALCalloc(1, sizeof(REAL8) * (newSn.length+1));
+    for (i=0; i<N; i++)
+    {
+      int j;
+      for (j=0;j<ratio; j++)
+      {
+        newSn.data[i]+=  coarseIn->shf.data->data[i*ratio+j];
+      }
+    newSn.data[i]/=ratio;
+    }
+    newSn.data[N] = coarseIn->shf.data->data[N*ratio];
+    Sn = newSn.data; 
+     
+  }
+
+/*  printf("Num beta steps=%d Sn[0]=%e, Sn[N/2]=%e, MM=%f\n", N, Sn[0], Sn[N/2], MM);*/
 
   /* Use Tagoshi's code to get values of beta b/w betaMin and betaMax at
    * the given minimal match MM and the effective metric at the corresponding
@@ -145,12 +169,24 @@ LALInspiralBCVSpinBank(
 	  b = metric.G01 = effmetric_list[1][2][k];
 	  c = metric.G11 = effmetric_list[2][2][k];
 
+	  
 	  /* Diagonalize the metric and store the diagonalized values in the metric */
   
 	  det = a * c - b * b;
 	  q = sqrt( (a-c)*(a-c) + 4. * b*b );
 	  metric.g00 = 0.5 * (a + c - q);
 	  metric.g11 = 0.5 * (a + c + q);
+
+	/* 	THOMAS UPDATES !!!!!!!!!!! I have the feeling that the bank 
+		is over efficiency by a factor 3 with respect to classical
+		BCV search. Here as a first go, I would use a factor of sqrt(3)
+		in the metric component, based on comparison between BCV bank 
+		and BCVspin bank ffor different MM form 0.8 to 0.97 which shows
+		 a constant ration of 3.1 
+	
+ 	metric.g00/=sqrt(3.);
+ 	metric.g11/=sqrt(3.);
+	*/
 	  if ( a == c )
 	  {
 		  metric.theta = LAL_PI/2.;
@@ -240,6 +276,11 @@ LALInspiralBCVSpinBank(
   bank = (*tiles)->next;
   LALFree( *tiles );
   *tiles = bank;
+
+  if (newSn.data!=NULL)
+  {
+	LALFree(newSn.data);
+  }
 
   LALFree (totList->data);
   LALFree (list->data);
@@ -799,9 +840,9 @@ int generate_fit_points(/*input*/double MinMatch, double funcG[7][7][4][4],
     sum=x[1]*x[1]+x[2]*x[2]+x[3]*x[3];
 		sum=sqrt(sum);
 
-    xd[1]=x[1]/sum*sqrt((1-MinMatch)/gsl_vector_get (eig, 0));
-    xd[2]=x[2]/sum*sqrt((1-MinMatch)/gsl_vector_get (eig, 1));
-	xd[3]=x[3]/sum*sqrt((1-MinMatch)/gsl_vector_get (eig, 2));
+    xd[1]=x[1]/sum*sqrt((1.-MinMatch)/gsl_vector_get (eig, 0));
+    xd[2]=x[2]/sum*sqrt((1.-MinMatch)/gsl_vector_get (eig, 1));
+	xd[3]=x[3]/sum*sqrt((1.-MinMatch)/gsl_vector_get (eig, 2));
 		
     for(j=1;j<=3;j++){
       fit_point[i][j]=0;
@@ -850,7 +891,7 @@ int generate_metric_data(/* input */double MinMatch,
     three_metric(funcG,alpha,metric3[k]);
   }
  
-  norm = sqrt(1-MinMatch);
+  norm = sqrt(1.-MinMatch);
 
   for(i=1;i<=JJ;i++){
     x[1]=fit_point[i][1];
@@ -914,11 +955,11 @@ int metric_by_fit(/* input */
 	  
   for(i=1;i<=ndata;i++){
     x[i]=i;
-    y[i]=1-MinMatch;
-    sig[i]=1;
+    y[i]=1.-MinMatch;
+    sig[i]=1.;
   }
   for(i=1;i<=ma;i++){
-    ia[i]=1;
+    ia[i]=1.;
   }
 
   svdfit_d_test(x,y,sig,ndata,a,ma,u,v,w,&chisq,&model_func);
@@ -956,7 +997,7 @@ int rescale_metric(/*input*/double MinMatch, int ndata, double metric1[4][4],
 
   for(i=1;i<=3;i++)
     for(j=1;j<=3;j++)
-      metric[i][j]=metric1[i][j]*(1-MinMatch)/dmin;
+      metric[i][j]=metric1[i][j]*(1.-MinMatch)/dmin;
 
   return 0;
 }
@@ -1202,37 +1243,40 @@ int BCVspin_spacing(/* input */
 		    /* output */
 		    double a[4][4],double *deltax)
 {
-	int i,j;
-	double e[4][4],ad[4][4],f[4][4],P[4][4],Q[4][4],iQP[4][4],PQ[4][4],iP[4][4],iQ[4][4];
-	double t1;
+  int i,j;
+  double e[4][4],ad[4][4],f[4][4],P[4][4],Q[4][4],iQP[4][4],PQ[4][4],iP[4][4],iQ[4][4];
+  double t1;
 
-	gsl_matrix *mat = gsl_matrix_alloc (3, 3);
-	gsl_vector *eig = gsl_vector_alloc (3);
-    gsl_matrix *PP = gsl_matrix_alloc (3, 3);
+  gsl_matrix *mat = gsl_matrix_alloc (3, 3);
+  gsl_vector *eig = gsl_vector_alloc (3);
+  gsl_matrix *PP = gsl_matrix_alloc (3, 3);
 	
   for(i=1;i<=3;i++)
     for(j=1;j<=3;j++)
       e[i][j]=0;
+  
   for(i=1;i<=3;i++)
     e[i][i]=1;
 
   for(i=1;i<=3;i++)
     for(j=1;j<=3;j++)
-			gsl_matrix_set (mat, i-1, j-1,bcvspinmetric[i][j]);
+      gsl_matrix_set (mat, i-1, j-1,bcvspinmetric[i][j]);
 	
-	gsl_eigen_symmv_workspace * w = gsl_eigen_symmv_alloc (3);
+  gsl_eigen_symmv_workspace * w = gsl_eigen_symmv_alloc (3);
   
-   gsl_eigen_symmv (mat, eig,PP,w);
+  gsl_eigen_symmv (mat, eig,PP,w);
 
-	gsl_eigen_symmv_free (w);
+  gsl_eigen_symmv_free (w);
 	
-	matrix3_determinant_plus(PP,eig);
+  matrix3_determinant_plus(PP,eig);
 	
-	for(i=1;i<=3;i++){
-    for(j=1;j<=3;j++){
-			P[i][j]=gsl_matrix_get (PP, i-1, j-1);
-			}
-	}
+  for(i=1;i<=3;i++)
+  {
+    for(j=1;j<=3;j++)
+    {
+      P[i][j]=gsl_matrix_get (PP, i-1, j-1);
+    }
+  }
 	
 	
   for(i=1;i<=3;i++)
@@ -1255,16 +1299,20 @@ int BCVspin_spacing(/* input */
   vector_product(f[3],f[1],f[2]);
 
   t1=sqrt(innerp(3,f[1],f[1]));
+  
   for(i=1;i<=3;i++)
     ad[1][i]=f[1][i]/t1;
+  
   t1=sqrt(innerp(3,f[3],f[3]));
+  
   for(i=1;i<=3;i++)
     ad[3][i]=f[3][i]/t1;
+  
   vector_product(ad[2],ad[3],ad[1]);
 
   for(i=1;i<=3;i++)
     for(j=1;j<=3;j++)
-      ad[i][j]*=2./sqrt(3.)*sqrt(1-MinMatch);
+      ad[i][j]*=2./sqrt(3.)*sqrt(1.-MinMatch);
 
   for(i=1;i<=3;i++)
     product_mat_vec(3,a[i],PQ,ad[i]);
@@ -1272,9 +1320,9 @@ int BCVspin_spacing(/* input */
   for(i=1;i<=3;i++)
     deltax[i]=innerp(3,a[i],e[i]);
 
-	gsl_vector_free(eig);
-	gsl_matrix_free(PP);
-	gsl_matrix_free(mat);
+  gsl_vector_free(eig);
+  gsl_matrix_free(PP);
+  gsl_matrix_free(mat);
 		
   return 0;
 }
@@ -1300,36 +1348,37 @@ int BCVspin_effmetric(/* input */
 		      /* output */
 		      double effmetric[3][3])
 {
-	int i,j,dim=2;
-	double e[3][3],b[3][3],bd[3][3],f[3][3],P[3][3],Q[3][3],iQP[3][3],PQ[3][3],iP[3][3],iQ[3][3];
+  int i,j,dim=2;
+  double e[3][3],b[3][3],bd[3][3],f[3][3],P[3][3],Q[3][3],iQP[3][3],PQ[3][3],iP[3][3],iQ[3][3];
   double t1;
 	
-	gsl_matrix *mat = gsl_matrix_alloc (2, 2);
-	gsl_vector *eig = gsl_vector_alloc (2);
-    gsl_matrix *PP = gsl_matrix_alloc (2, 2);
+  gsl_matrix *mat = gsl_matrix_alloc (2, 2);
+  gsl_vector *eig = gsl_vector_alloc (2);
+  gsl_matrix *PP = gsl_matrix_alloc (2, 2);
 	
   for(i=1;i<=dim;i++)
     for(j=1;j<=dim;j++)
       e[i][j]=0;
+  
   for(i=1;i<=dim;i++)
     e[i][i]=1;
 
   for(i=1;i<=2;i++)
-			for(j=1;j<=2;j++)
-			gsl_matrix_set (mat, i-1, j-1,bcvspinmetric[i][j]);
+    for(j=1;j<=2;j++)
+      gsl_matrix_set (mat, i-1, j-1,bcvspinmetric[i][j]);
 	
 	
-	gsl_eigen_symmv_workspace * w = gsl_eigen_symmv_alloc (2);
+  gsl_eigen_symmv_workspace * w = gsl_eigen_symmv_alloc (2);
   
-   gsl_eigen_symmv (mat, eig,PP,w);
+  gsl_eigen_symmv (mat, eig,PP,w);
 
-	gsl_eigen_symmv_free (w);
+  gsl_eigen_symmv_free (w);
 	
-	matrix2_determinant_plus(PP,eig);
+  matrix2_determinant_plus(PP,eig);
 	
-		for(i=1;i<=2;i++){
+  for(i=1;i<=2;i++){
     for(j=1;j<=2;j++){
-			P[i][j]=gsl_matrix_get (PP, i-1, j-1);
+	P[i][j]=gsl_matrix_get (PP, i-1, j-1);
 			}
 	}
 	
@@ -1349,22 +1398,29 @@ int BCVspin_effmetric(/* input */
   product_matrix(dim,iQP,iQ,iP);
 
   product_mat_vec(dim,f[1],iQP,e[1]);
+
   for(i=1;i<=2;i++)
     f[2][i]=e[2][i]-f[1][i]/innerp(2,f[1],f[1])*innerp(2,f[1],e[2]);
 
   t1=sqrt(innerp(dim,f[1],f[1]));
+
   for(i=1;i<=dim;i++)
     bd[1][i]=f[1][i]/t1;
+
   t1=sqrt(innerp(dim,f[2],f[2]));
+
   for(i=1;i<=dim;i++)
     bd[2][i]=f[2][i]/t1;
 
   for(i=1;i<=dim;i++)
     for(j=1;j<=dim;j++)
-      bd[i][j]*=sqrt(2.)*sqrt(1-MinMatch);
+      bd[i][j]*=sqrt(2.)*sqrt(1.-MinMatch);
+
+
+
 
   for(i=1;i<=dim;i++)
-    product_mat_vec(dim,b[i],PQ,bd[i]);
+    product_mat_vec(dim, b[i], PQ, bd[i]);
 
   for(i=1;i<=dim;i++)
     for(j=1;j<=dim;j++)
@@ -1405,7 +1461,6 @@ double func1(double beta,void *params)
 	double MinMatch=p->MinMatch;
 	
 	 double bcv2metric[4][4],a[4][4],deltax[4];
-
 
   BCVspin_metric(MinMatch,N,Sn,fmin,fmax,beta,bcv2metric,0);
   BCVspin_spacing(MinMatch,bcv2metric,a,deltax);
@@ -1464,7 +1519,7 @@ int BCVspin_beta_placement(double MinMatch,double beta_min,double beta_max,
 	gsl_function F;
 	
 	
-	struct func1_params params = {N,Sn,fmin,fmax,MinMatch};
+  struct func1_params params = {N,Sn,fmin,fmax,MinMatch};
 
   F.function = &func1;
   F.params = &params;
@@ -1473,7 +1528,6 @@ int BCVspin_beta_placement(double MinMatch,double beta_min,double beta_max,
   s = gsl_root_fsolver_alloc (T);
   gsl_root_fsolver_set (s, &F, x_lo, x_hi);
 
-	
 	do
     {
       iter++;
@@ -1530,7 +1584,9 @@ int BCVspin_beta_placement(double MinMatch,double beta_min,double beta_max,
 	while (status == GSL_CONTINUE && iter < max_iter);
 		
 		gsl_root_fsolver_free (s);
-	}
+  }
+
+
   *nbeta=i-1;
   if(i>Nmax){
     fprintf(stderr,"Something is wrong in BCVspin_beta_placement.\n");
@@ -1559,7 +1615,7 @@ int BCVspin_beta_placement_effmetric(/* input*/ double MinMatch,double beta_min,
 			
 	for(k=1;k<=nbeta2;k++){
 	beta=beta_list[k];
-    BCVspin_metric(MinMatch,N,Sn,fmin,fmax,beta,bcv2metric,0);
+        BCVspin_metric(MinMatch,N,Sn,fmin,fmax,beta,bcv2metric,0);
  	BCVspin_spacing(MinMatch,bcv2metric,a,deltax); 
 	BCVspin_effmetric(MinMatch,bcv2metric,a,effmetric);
 		
@@ -1622,7 +1678,6 @@ void svdfit_d_test(double x[], double y[], double sig[], int ndata, gsl_vector *
 #undef DTRENORM
 #undef N_RANDOM
 #undef JJ
-#undef MinMatch
 
 #endif
 
