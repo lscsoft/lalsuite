@@ -1,6 +1,6 @@
 /*<lalVerbatim file="DetResponseCV">
 
-Author: David Chin <dwchin@umich.edu> +1-734-709-9119
+Author: David Chin <dwchin@umich.edu> +1-734-709-9119, Kipp Cannon <kipp@gravity.phys.uwm.edu>
 $Id$
 
 </lalVerbatim> */
