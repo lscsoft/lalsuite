@@ -16,6 +16,9 @@ and reheterodyne with this phase difference. This code does not perform any cali
 
 #include "heterodyne_pulsar.h"
 
+/* define a macro to round a number without having to use the C round function */
+#define ROUND(a) (ceil(a)-a > 0.5 ? floor(a) : ceil(a))
+
 int main(int argc, char *argv[]){
   static LALStatus status;
 
@@ -815,16 +818,9 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data, REAL8Vector *times
 
   INT4 count=0;
 
-  /* use floor and ceil rather than round */
-  if(ceil(resampleRate*data->data->length)-resampleRate*data->data->length > 0.5)
-    length = (INT4)floor(floor(resampleRate*data->data->length)/sampleRate);
-  else
-    length = (INT4)floor(ceil(resampleRate*data->data->length)/sampleRate);
-  
-  if(ceil(sampleRate/resampleRate)-sampleRate/resampleRate > 0.5)
-    size = (INT4)floor(sampleRate/resampleRate);
-  else
-    size = (INT4)ceil(sampleRate/resampleRate);
+  /* use ROUND macro */
+  length = (INT4)floor(ROUND(resampleRate*data->data->length)/sampleRate);
+  size = (INT4)ROUND(sampleRate/resampleRate);
     
   series = LALCalloc(1, sizeof(*series));
   series->data = XLALCreateCOMPLEX16Vector( length );
