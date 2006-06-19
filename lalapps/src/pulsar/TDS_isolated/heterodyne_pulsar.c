@@ -49,6 +49,9 @@ int main(int argc, char *argv[]){
     fprintf(stderr, "alpha = %lf rads, delta = %lf rads.\n", hetParams.het.ra, hetParams.het.dec);
     fprintf(stderr, "f0 = %.1lf Hz, f1 = %.1e Hz/s, epoch = %.1lf.\n", hetParams.het.f0,
 hetParams.het.f1, hetParams.het.pepoch);
+
+    fprintf(stderr, "\nI'm looking for gravitational waves at %.2lf times the pulsars spin \
+frequency.\n", inputParams.freqfactor);
   }
 
   if(inputParams.heterodyneflag == 1) /*if performing fine heterdoyne using same params as coarse*/
@@ -236,7 +239,7 @@ hetParams.hetUpdate.f1, hetParams.hetUpdate.pepoch);
     data->epoch.gpsNanoSeconds = (UINT4)(1.e9*(hetParams.timestamp - floor(hetParams.timestamp)));
 
     /* heterodyne data */
-    heterodyne_data(data, times, hetParams);
+    heterodyne_data(data, times, hetParams, inputParams.freqfactor);
     if(inputParams.verbose){  fprintf(stderr, "I've heterodyned the data.\n");  }
       
     /* filter data */
@@ -262,9 +265,9 @@ inputParams.samplerate, inputParams.resamplerate);  }
 
     /* calibrate */
     if(inputParams.calibrate){
-      calibrate(resampData, times, inputParams.calibfiles, 2.0*hetParams.het.f0);
+      calibrate(resampData, times, inputParams.calibfiles, inputParams.freqfactor*hetParams.het.f0);
       if(inputParams.verbose){  fprintf(stderr, "I've calibrated the data at %.1lf Hz\n",
-        2.0*hetParams.het.f0);  }
+        inputParams.freqfactor*hetParams.het.f0);  }
     }
       
     /* remove outliers above our threshold */
@@ -337,11 +340,12 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
     { "sensing-function",         required_argument,  0, 'F' },
     { "open-loop-gain",           required_argument,  0, 'O' },
     { "stddev-thresh",            required_argument,  0, 'T' },
+    { "freq-factor",              required_argument,  0, 'm' },
     { "verbose",                  no_argument, &inputParams->verbose, 1 },
     { 0, 0, 0, 0 }
   };
   
-  char args[] = "hi:p:z:f:g:k:s:r:d:c:o:e:S:l:R:C:F:O:T:";
+  char args[] = "hi:p:z:f:g:k:s:r:d:c:o:e:S:l:R:C:F:O:T:m:";
   char *program = argv[0];
   
   /* set defaults */
@@ -355,6 +359,8 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
   inputParams->calibfiles.sensingfunctionfile = NULL;
   inputParams->calibfiles.openloopgainfile = NULL;
   inputParams->calibfiles.responsefunctionfile = NULL;
+  
+  inputParams->freqfactor = 2.0; /* default is to look for gws at twice the pulsar spin frequency */
   
   /* get input arguments */
   while(1){
@@ -478,6 +484,25 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
       case 'T':
         inputParams->stddevthresh = atof(optarg);
         break;
+      case 'm': /* this can be defined as a real number or fraction e.g. 2.0 or 4/3 */
+        {/* find if the string contains a / and get its position */
+          CHAR *loc=NULL;
+          CHAR numerator[10]="", *denominator=NULL;
+          INT4 n;
+
+          if((loc = strchr(optarg, '/'))!=NULL){
+            n = loc-optarg; /* length of numerator i.e. bit before / */
+
+            strncpy(numerator, optarg, n);
+
+            denominator = strdup(loc+1); /* set the denominator i.e. bit after / */
+
+            inputParams->freqfactor = atof(numerator)/atof(denominator);
+          }
+          else
+            inputParams->freqfactor = atof(optarg);
+        }
+        break;
       case '?':
         fprintf(stderr, "unknown error while parsing options\n" );
       default:
@@ -486,19 +511,32 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
   }
 
   /* set more defaults */
-  /*if the resample rate hasn't been defined set equal to samplerate*/
-  if(inputParams->resamplerate==0)
-    inputParams->resamplerate = inputParams->samplerate;
+  /*if the sample rate or resample rate hasn't been defined give error */
+  if(inputParams->samplerate==0 || inputParams->resamplerate==0){
+    fprintf(stderr, "Error... sample rate and/or resample rate has not been defined.\n");
+    exit(0);
+  }
+  else if(inputParams->samplerate < inputParams->resamplerate){ /* if sr is less than rsr give
+error */
+    fprintf(stderr, "Error... sample rate is less than the resample rate.\n");
+    exit(0);
+  }
 
   /* check that sample rate / resample rate is an integer */
   if(fmod(inputParams->samplerate/inputParams->resamplerate, 1.) != 0.){
     fprintf(stderr, "Error... invalid sample rates.\n");
     exit(0);
   }
+  
+  if(inputParams->freqfactor < 0.){
+    fprintf(stderr, "Error... frequency factor must be greater than zero.\n");
+    exit(0);
+  }
 }
 
 /* heterodyne data function */
-void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times, HeterodyneParams hetParams){
+void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times, HeterodyneParams hetParams,
+REAL8 freqfactor){
   static LALStatus status;
 
   REAL8 phaseCoarse=0., phaseUpdate=0., deltaphase=0.;
@@ -557,7 +595,7 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times, HeterodynePa
       tdt = times->data[i] - T0;
     
     /* multiply by 2 to get gw phase */
-    phaseCoarse = 2.*(hetParams.het.f0*tdt + 0.5*hetParams.het.f1*tdt*tdt +
+    phaseCoarse = freqfactor*(hetParams.het.f0*tdt + 0.5*hetParams.het.f1*tdt*tdt +
     (1./6.)*hetParams.het.f2*tdt*tdt*tdt + (1./24.)*hetParams.het.f3*tdt*tdt*tdt*tdt);
 
     /**************************************************************************************/
@@ -599,8 +637,8 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times, HeterodynePa
       else{
         tdt = t - T0Update + emit.deltaT;
       }
-      /* multiply by 2 to get gw phase */
-      phaseUpdate = 2.0*(hetParams.hetUpdate.f0*tdt + 0.5*hetParams.hetUpdate.f1*tdt*tdt +
+      /* multiply by freqfactor to get gw phase */
+      phaseUpdate = freqfactor*(hetParams.hetUpdate.f0*tdt + 0.5*hetParams.hetUpdate.f1*tdt*tdt +
       (1./6.)*hetParams.hetUpdate.f2*tdt*tdt*tdt + (1./24.)*hetParams.hetUpdate.f3*tdt*tdt*tdt*tdt);
     }
 
@@ -679,13 +717,23 @@ duration){
   FrFileIEnd(frfile);
 
   /* fill into REAL8 vector */
-  for(i=0;i<(INT4)length;i++){
-    if(strstr(channel, "STRAIN") == NULL || strstr(channel, "DER_DATA") == NULL){ /* data is
-uncalibrated single precision */
+  if((strstr(channel, "STRAIN") == NULL || strstr(channel, "DER_DATA") == NULL) &&
+strstr(channel, ":LSC") != NULL){ /* data is
+uncalibrated single precision  - not neccesarily from DARM_ERR or AS_Q though - might be analysing
+an enviromental channel */
+    for(i=0;i<(INT4)length;i++){
       dblseries->data->data[i] = (REAL8)frvect->dataF[i];
     }
-    else /* data is calibrated h(t) */
+  }
+  else if(strstr(channel, "STRAIN") != NULL || strstr(channel, "DER_DATA") != NULL){ /* data is
+calibrated h(t) */
+    for(i=0;i<(INT4)length;i++){
       dblseries->data->data[i] = frvect->dataD[i];
+    }
+  }
+  else{ /* channel name is not recognised */
+    fprintf(stderr, "Channel name %s is not recognised as a proper channel.\n", channel);
+    exit(0); /* abort code */
   }
 
   FrVectFree(frvect);
@@ -761,12 +809,23 @@ void filter_data(COMPLEX16TimeSeries *data, Filters *iirFilters){
 COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data, REAL8Vector *times, INT4Vector
 *starts, INT4Vector *stops, REAL8 sampleRate, REAL8 resampleRate, INT4 hetflag){
   COMPLEX16TimeSeries *series;
-  INT4 i=0, j=0, k=0, length = floor((round(resampleRate*data->data->length))/sampleRate);
+  INT4 i=0, j=0, k=0, length;/* = floor((round(resampleRate*data->data->length))/sampleRate);*/
   COMPLEX16 tempData;
-  INT4 size = (INT4)round(sampleRate/resampleRate);
+  INT4 size; /* = (INT4)round(sampleRate/resampleRate); */
 
   INT4 count=0;
 
+  /* use floor and ceil rather than round */
+  if(ceil(resampleRate*data->data->length)-resampleRate*data->data->length > 0.5)
+    length = (INT4)floor(floor(resampleRate*data->data->length)/sampleRate);
+  else
+    length = (INT4)floor(ceil(resampleRate*data->data->length)/sampleRate);
+  
+  if(ceil(sampleRate/resampleRate)-sampleRate/resampleRate > 0.5)
+    size = (INT4)floor(sampleRate/resampleRate);
+  else
+    size = (INT4)ceil(sampleRate/resampleRate)
+    
   series = LALCalloc(1, sizeof(*series));
   series->data = XLALCreateCOMPLEX16Vector( length );
 
@@ -814,7 +873,7 @@ into each science segment (starts and stops) */
 times->data[times->length-1]){
         /* if starts is before the end of the data but stops is after the end of the data then
 shorten the segment */
-        stops->data[i] = times->data[times->length-1] + (INT4)((1./sampleRate)/2.);
+        stops->data[i] = times->data[times->length-1] + floor((1./sampleRate)/2.);
       }
       if(starts->data[i] >= times->data[times->length-1]){
         /* segment is outside of data time, so exit */
@@ -827,7 +886,7 @@ stops->data[i]);
       while(times->data[j] < starts->data[i])
         j++;
         
-      starts->data[i] = times->data[j] - (INT4)((1./sampleRate)/2.);
+      starts->data[i] = times->data[j] - ((1./sampleRate)/2.);
       
       duration = stops->data[i] - starts->data[i];
       
@@ -835,10 +894,10 @@ stops->data[i]);
       for(k=0;k<duration*(INT4)sampleRate-1;k++){
         if(times->data[j+k+1] - times->data[j+k] > 1./sampleRate){
           /* split segment */
-          duration  = times->data[j+k] - starts->data[i] - (INT4)((1./sampleRate)/2.);
+          duration  = times->data[j+k] - starts->data[i] - ((1./sampleRate)/2.);
 
           /* set starts to new segemt start time */
-          starts->data[i] = times->data[j+k+1] - (INT4)((1./sampleRate)/2.);
+          starts->data[i] = times->data[j+k+1] - ((1./sampleRate)/2.);
           
           /* this if statement is a fix needed due to problems that can effect the coarse
 heterodyne if performed using Condor - this problem being that if the job is evicted from a

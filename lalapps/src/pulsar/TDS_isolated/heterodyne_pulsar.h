@@ -67,6 +67,7 @@ extern "C" {
 " --sensing-function  name of sensing function file (CAV_GAIN)\n"\
 " --open-loop-gain    name of open loop gain file(OLOOP_GAIN)\n"\
 " --stddev-thresh     standard deviation threshold veto for outliers\n"\
+" --freq-factor       factor which mulitplies the pulsar spin frequency (default 2.0)\n"\
 "\n"
 
 #define MAXLENGTH 10000000 /* max number of lines in heterodyned data file */
@@ -103,6 +104,8 @@ typedef struct tagInputParams{
   CHAR paramfile[256];
   CHAR paramfileupdate[256];
 
+  REAL8 freqfactor;
+  
   CHAR earthfile[256];
   CHAR sunfile[256];
 
@@ -151,7 +154,8 @@ typedef struct tagFilters{
 /* define functions */
 void get_input_args(InputParams *inputParams, int argc, char *argv[]);
 
-void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times, HeterodyneParams hetParams);
+void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times, HeterodyneParams hetParams,
+REAL8 freqfactor);
 
 void set_filters(Filters *iirFilters, REAL8 filterKnee, REAL8 samplerate);
 
