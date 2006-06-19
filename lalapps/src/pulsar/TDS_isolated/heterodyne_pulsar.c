@@ -824,7 +824,7 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data, REAL8Vector *times
   if(ceil(sampleRate/resampleRate)-sampleRate/resampleRate > 0.5)
     size = (INT4)floor(sampleRate/resampleRate);
   else
-    size = (INT4)ceil(sampleRate/resampleRate)
+    size = (INT4)ceil(sampleRate/resampleRate);
     
   series = LALCalloc(1, sizeof(*series));
   series->data = XLALCreateCOMPLEX16Vector( length );
