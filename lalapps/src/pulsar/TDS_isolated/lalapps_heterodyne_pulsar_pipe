@@ -201,6 +201,7 @@ sample_rate = cp.get('input','sample_rate')
 resample_rate = cp.get('input','resample_rate')
 channel = cp.get('input','channel')
 stddev_thresh = cp.get('input','stddev_thresh')
+freq_factor = cp.get('input', 'freq_factor')
 
 # default
 seg_list_file = None
@@ -357,6 +358,7 @@ if do_coarse:
       coarse[j].set_ifo(detector)
       coarse[j].set_pulsar(pulsar)
       coarse[j].set_param_file(param_file)
+      coarse[j].set_freq_factor(freq_factor)
       """
       don't need ephem files in coarse heterodyne YET!!
       coarse[j].set_earth_ephem(earth_ephem)
@@ -448,6 +450,7 @@ heterodyne using old parameters.""" % (pulsar)
       fine[j].set_ifo(detector)
       fine[j].set_pulsar(pulsar)
       fine[j].set_param_file(param_file)
+      fine[j].set_freq_factor(freq_factor)
       fine[j].set_ephem_earth_file(earth_ephem)
       fine[j].set_ephem_sun_file(sun_ephem)
       fine[j].set_filter_knee(filter_knee)

@@ -59,6 +59,7 @@ class heterodyneNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     # initilise job variables
     self.__ifo = None
     self.__param_file = None
+    self.__freq_factor = None
     self.__filter_knee = None
     self.__sample_rate = None
     self.__resample_rate = None
@@ -95,6 +96,11 @@ class heterodyneNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.add_var_opt('param-file', param_file)
     self.__param_file = param_file
   
+  def set_freq_factor(self, freq_factor):
+    # set the factor by which to muliply the pulsar spin frequency (normally 2.0)
+    self.add_var_opt('freq-factor', freq_factor)
+    self.__freq_factor = freq_factor
+    
   def set_param_file_update(self, param_file_update):
     # set file containing updated pulsar parameters
     self.add_var_opt('param-file-update',param_file_update)
