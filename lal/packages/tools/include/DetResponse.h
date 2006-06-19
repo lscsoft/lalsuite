@@ -282,6 +282,15 @@ LALComputeDetAMResponse( LALStatus             *status,
                          const LALDetAndSource *pDetAndSrc,
                          const LALGPSandAcc    *pGPSandAcc);
 
+LALDetAMResponse *XLALComputeDetAMResponse(
+	LALDetAMResponse *output,
+	REAL4 response[3][3],
+	const double right_ascension,
+	const double declination,
+	const double orientation,
+	const double gmst
+);
+
 /*
  * Gives a time series of the detector's response to plus and cross
  * polarization
@@ -291,6 +300,18 @@ LALComputeDetAMResponseSeries( LALStatus                      *status,
                                LALDetAMResponseSeries         *pResponseSeries,
                                const LALDetAndSource          *pDetAndSource,
                                const LALTimeIntervalAndNSample *pTimeInfo);
+
+int XLALComputeDetAMResponseSeries(
+	REAL4TimeSeries **plus,
+	REAL4TimeSeries **cross,
+	REAL4 response[3][3],
+	const double right_ascension,
+	const double declination,
+	const double orientation,
+	const LIGOTimeGPS *start,
+	const double deltaT,
+	const int n
+);
 
 
 #ifdef __cplusplus
