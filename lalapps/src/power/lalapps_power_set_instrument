@@ -1,0 +1,117 @@
+#!/usr/bin/python
+#
+# $Id$
+#
+# Copyright (C) 2006  Kipp C. Cannon
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+
+from optparse import OptionParser
+import sys
+
+from glue.ligolw import table
+from glue.ligolw import lsctables
+from pylal import llwapp
+
+__author__ = "Kipp Cannon <kipp@gravity.phys.uwm.edu>"
+__version__ = "$Revision$"[11:-2]
+__date__ = "$Date$"[7:-2]
+
+
+#
+# =============================================================================
+#
+#                                 Command Line
+#
+# =============================================================================
+#
+
+def parse_command_line():
+	parser = OptionParser(version="%prog CVS $Id$")
+	parser.add_option("-m", "--map", metavar = "old,new", action = "append", default = [], help = "relabel instrument \"old\" to \"new\"")
+	parser.add_option("-p", "--program", metavar = "name", default = "power", help = "set name of program whose triggers are being modified (default = \"power\")")
+	parser.add_option("-v", "--verbose", action = "store_true", help = "be verbose")
+	options, filenames = parser.parse_args()
+
+	try:
+		map = {}
+		for m in options.map:
+			[old, new] = m.split(",")
+			map[old] = new
+	except:
+		raise ValueError, "unable to parse mappings"
+	options.map = map
+
+	return options, (filenames or [None])
+
+
+#
+# =============================================================================
+#
+#                                  Remapping
+#
+# =============================================================================
+#
+
+def remap_instruments(doc, options):
+	ids = llwapp.get_process_ids_by_program(doc, options.program)
+	print >>sys.stderr, ids
+	for tbl in table.getTablesByName(doc, lsctables.ProcessTable.tableName):
+		for row in tbl:
+			if llwapp.bisect_contains(ids, row.process_id):
+				try:
+					row.ifos = options.map[row.ifos]
+				except KeyError:
+					pass
+	for tbl in table.getTablesByName(doc, lsctables.SearchSummaryTable.tableName):
+		for row in tbl:
+			if llwapp.bisect_contains(ids, row.process_id):
+				try:
+					row.ifos = options.map[row.ifos]
+				except KeyError:
+					pass
+	for tbl in table.getTablesByName(doc, lsctables.SnglBurstTable.tableName):
+		for row in tbl:
+			try:
+				row.ifo = options.map[row.ifo]
+			except KeyError:
+				pass
+	return doc
+
+
+#
+# =============================================================================
+#
+#                                     Main
+#
+# =============================================================================
+#
+
+options, filenames = parse_command_line()
+
+for filename in filenames:
+	doc = llwapp.load_filename(filename, options.verbose)
+	if options.verbose:
+		print >>sys.stderr, "remapping instruments..."
+	remap_instruments(doc, options)
+	llwapp.write_filename(doc, filename, options.verbose)
