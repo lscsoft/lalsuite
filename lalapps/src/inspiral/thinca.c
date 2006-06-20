@@ -65,6 +65,7 @@ int checkTimes = 0;
 int multiIfoCoinc = 0;
 int distCut = 0;
 int iotaCut = 0;
+int h1l1iotaCut = 0;
 int doPsi0Psi3Cut = 0;
 int doAlphaFCut = 0;
 int doBCV2H1H2Veto = 0;
@@ -308,6 +309,7 @@ int main( int argc, char *argv[] )
     {"h1-h2-consistency",   no_argument,   &h1h2Consistency,          1 },
     {"do-bcvspin-h1h2-veto",no_argument,   &doBCV2H1H2Veto,           1 },
     {"iota-cut",            no_argument,   &iotaCut,                  1 },
+    {"h1l1-iota-cut",       no_argument,   &h1l1iotaCut,              1 },
     {"do-alphaf-cut",       no_argument,   &doAlphaFCut,              1 },
     {"psi0-psi3-cut",       no_argument,   &doPsi0Psi3Cut,            1 },
     {"bcvc",                no_argument,   &doBCVC,                   1 },
@@ -1351,6 +1353,31 @@ int main( int argc, char *argv[] )
     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
     LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );    
   }
+  
+  /* store the veto option */ 
+  if ( iotaCut )
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+        "%s", PROGRAM_NAME );
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+        "--iota-cut" );
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+  }
+  
+  /* store the veto option */ 
+  if ( h1l1iotaCut )
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+        "%s", PROGRAM_NAME );
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+        "--h1l1-iota-cut" );
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+  }
+
 
   /* store the H1H2 snr cut for BCVSpin */
   if (doBCV2H1H2Veto)
@@ -1685,9 +1712,21 @@ int main( int argc, char *argv[] )
           if ( vrbflg ) fprintf( stdout, 
               "Discarding triggers where iota using iota cut\n"); 
             XLALInspiralIotaCutBCVC( &coincInspiralList );
-          if ( vrbflg ) fprintf( stdout, "%d remaining coincident triggers.\n", 
+           accuracyParams.ifoAccuracy[LAL_IFO_H1].kappa = 0.8;
+           accuracyParams.ifoAccuracy[LAL_IFO_H2].kappa = 0.8;
+ 	   if ( vrbflg ) fprintf( stdout, "%d remaining coincident triggers.\n", 
 		XLALCountCoincInspiral(coincInspiralList));
         }
+      }
+      if( h1l1iotaCut  ) /*S4*/
+      {
+        {
+          if ( vrbflg ) fprintf( stdout, 
+              "Discarding triggers H1L1 triggesr where iota >1.2\n"); 
+            XLALInspiralIotaCutBCVC( &coincInspiralList );
+ 	   if ( vrbflg ) fprintf( stdout, "%d remaining coincident triggers.\n", 
+		XLALCountCoincInspiral(coincInspiralList));
+	}
       }
       if( distCut  ) /*S3*/
           {
@@ -1740,7 +1779,7 @@ int main( int argc, char *argv[] )
 	      fprintf(stdout, "Using h1-h2-consistency with veto segment list %s and %s\n", 
 		vetoFileName[LAL_IFO_H1], vetoFileName[LAL_IFO_H2]);
       LAL_CALL( LALInspiralDistanceCutCleaning(&status,  &coincInspiralList, 
-	&accuracyParams, &summValueList, &vetoSegs[LAL_IFO_H1], &vetoSegs[LAL_IFO_H2]), &status);
+	&accuracyParams, 6, &summValueList, &vetoSegs[LAL_IFO_H1], &vetoSegs[LAL_IFO_H2]), &status);
       if ( vrbflg ) fprintf( stdout, "%d remaining coincident triggers after h1-h2-consistency.\n", 
 	XLALCountCoincInspiral(coincInspiralList));
     }
@@ -1750,7 +1789,7 @@ int main( int argc, char *argv[] )
     {
      if (vrbflg) fprintf(stdout, "Using h1-h2-consistency without veto segment list can be dangerous...\n");
       LAL_CALL( LALInspiralDistanceCutCleaning(&status,  &coincInspiralList, 
-	&accuracyParams, &summValueList, NULL, NULL), &status);
+	&accuracyParams, 6, &summValueList, NULL, NULL), &status);
       if ( vrbflg ) fprintf( stdout, "%d remaining coincident triggers after h1-h2-consistency.\n", 
 	XLALCountCoincInspiral(coincInspiralList));
     }
@@ -1856,10 +1895,21 @@ int main( int argc, char *argv[] )
           {           
               if ( vrbflg ) fprintf( stdout, 
                 "Discarding triggers where iota is above 1-1./sqrt(snr)\n"); 
+              accuracyParams.ifoAccuracy[LAL_IFO_H1].kappa = 0.8;
+              accuracyParams.ifoAccuracy[LAL_IFO_H2].kappa = 0.8;
               XLALInspiralIotaCutBCVC( &coincInspiralList );
             
           }
-          if ( doPsi0Psi3Cut ) /* S4*/
+         if( h1l1iotaCut  ) /*S4*/
+         {
+          if ( vrbflg ) fprintf( stdout, 
+              "Discarding triggers H1L1 triggesr where iota >1.2\n"); 
+            XLALInspiralIotaCutBCVC( &coincInspiralList );
+ 	   if ( vrbflg ) fprintf( stdout, "%d remaining coincident triggers.\n", 
+		XLALCountCoincInspiral(coincInspiralList));
+    	 }
+         
+	if ( doPsi0Psi3Cut ) /* S4*/
           { 
             if ( vrbflg ) fprintf( stdout, 
               "Discarding triggers psi0/psi3 outisde an ellipse dpsi0-dpsi3 (see CoincInspiralUtils.c)\n");
@@ -1894,7 +1944,7 @@ int main( int argc, char *argv[] )
 	      fprintf(stdout, "Using h1-h2-consistency with veto segment list %s and %s\n", 
 		vetoFileName[LAL_IFO_H1], vetoFileName[LAL_IFO_H2]);
           LAL_CALL( LALInspiralDistanceCutCleaning(&status,  &coincInspiralList, 
-	    &accuracyParams, &summValueList, &vetoSegs[LAL_IFO_H1], &vetoSegs[LAL_IFO_H2]), &status);
+	    &accuracyParams, 6, &summValueList, &vetoSegs[LAL_IFO_H1], &vetoSegs[LAL_IFO_H2]), &status);
           if ( vrbflg ) fprintf( stdout, "%d remaining coincident triggers after h1-h2-consisteny .\n", 
 	    XLALCountCoincInspiral(coincInspiralList));
 	}
@@ -1905,7 +1955,7 @@ int main( int argc, char *argv[] )
 	    if(vrbflg)
 	      fprintf(stdout, "Using h1-h2-consistency without veto segment list can be dangerous...\n");
 	    LAL_CALL( LALInspiralDistanceCutCleaning(&status,  &coincInspiralList, 
-	      &accuracyParams, &summValueList, NULL, NULL), &status);
+	      &accuracyParams, 6, &summValueList, NULL, NULL), &status);
             if ( vrbflg ) 
 	      fprintf( stdout, "%d remaining coincident triggers after h1-h2-consistency.\n", 
 		XLALCountCoincInspiral(coincInspiralList));
