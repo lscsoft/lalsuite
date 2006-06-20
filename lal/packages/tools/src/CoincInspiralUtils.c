@@ -1262,15 +1262,102 @@ XLALInspiralIotaCutBCVC(
 
           if(
                  (  (ifoA == LAL_IFO_H1)  && (ifoB == LAL_IFO_H2) )
-          || (  (ifoA == LAL_IFO_H2)  && (ifoB == LAL_IFO_H1))
-  ){
-    /*  should be an user parameter in the future. */
-    if (  (iota > 0.8 ) )
-      {
-        discardTrigger = 1; 
+          || (  (ifoA == LAL_IFO_H2)  && (ifoB == LAL_IFO_H1))  )
+	  {
+	    /*  should be an user parameter in the future. */
+	    if (  (iota > 0.8 ) )
+	    {
+              discardTrigger = 1; 
+            }
+          }
+        } 
       }
+      if ( discardTrigger )
+      {
+          break;
+      }
+    } 
+    
+    if( discardTrigger )
+    {
+        XLALFreeCoincInspiral( &tmpCoinc );
+    }
+    else
+    {
+      if ( ! coincHead )
+      {
+          coincHead = tmpCoinc;
+      }
+      else
+        {
+          prevCoinc->next = tmpCoinc;
+      }
+      tmpCoinc->next = NULL;
+      prevCoinc = tmpCoinc;
+    }
   }
-       } 
+  *coincInspiral = coincHead;
+}
+
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+void
+XLALInspiralH1L1IotaCut(
+    CoincInspiralTable        **coincInspiral
+    )
+/* </lalVerbatim> */
+{
+  InterferometerNumber  ifoA = LAL_UNKNOWN_IFO;  
+  InterferometerNumber  ifoB = LAL_UNKNOWN_IFO;
+  CoincInspiralTable   *thisCoinc = NULL;
+  CoincInspiralTable   *prevCoinc = NULL;
+  CoincInspiralTable   *coincHead = NULL;
+
+  INT4  discardTrigger = 0;
+  REAL4 snrA, snrB, sigA, sigB;
+  REAL4 iota; 
+
+  thisCoinc = *coincInspiral;
+  coincHead = NULL;
+   
+
+  /* loop over the coincindent triggers */
+  while( thisCoinc )
+  {
+    CoincInspiralTable *tmpCoinc = thisCoinc;
+
+    discardTrigger=0;
+    thisCoinc = thisCoinc->next;
+      
+
+    /* loop over all IFO combinations */
+    for ( ifoA = 0; ifoA < LAL_NUM_IFO; ifoA++ )
+    {
+      for ( ifoB = ifoA + 1; ifoB < LAL_NUM_IFO; ifoB++ )
+      {
+        /*epsilonB = accuracyParams->ifoAccuracy[ifoB].epsilon;*/
+
+        if( tmpCoinc->snglInspiral[ifoA] 
+            && tmpCoinc->snglInspiral[ifoB]  )
+        {
+          /* perform the distance consistency test */
+          sigA = tmpCoinc->snglInspiral[ifoA]->sigmasq;
+          sigB = tmpCoinc->snglInspiral[ifoB]->sigmasq;
+          snrA = tmpCoinc->snglInspiral[ifoA]->snr;
+          snrB = tmpCoinc->snglInspiral[ifoB]->snr;
+
+          iota = 2 * fabs(sigA*sigA/snrA-sigB*sigB/snrB)/(sigA*sigA/snrA+sigB*sigB/snrB);
+
+          if(
+                 (  (ifoA == LAL_IFO_H1)  && (ifoB == LAL_IFO_L1) )
+          || (  (ifoA == LAL_IFO_L1)  && (ifoB == LAL_IFO_H1))  )
+	  {
+	    /*  should be an user parameter in the future. */
+	    if (  (iota > 1.2 ) )
+	    {
+              discardTrigger = 1; 
+            }
+          }
+        } 
       }
       if ( discardTrigger )
       {
@@ -1305,6 +1392,7 @@ LALInspiralDistanceCutCleaning(
     LALStatus                  *status,
     CoincInspiralTable        **coincInspiral,
     InspiralAccuracyList       *accuracyParams,
+    REAL4			snrThreshold,
     SummValueTable            **summValueList,
     LALSegList                 *vetoSegsH1, 
     LALSegList                 *vetoSegsH2
@@ -1315,7 +1403,7 @@ LALInspiralDistanceCutCleaning(
   CoincInspiralTable   *prevCoinc = NULL;
   CoincInspiralTable   *coincHead = NULL;
   REAL4 dH1, dH2, snrH1, snrH2; 
-  
+  REAL4 iotaCut;
   INITSTATUS( status, "LALInspiralDistanceCutCleaning", COINCINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
   
@@ -1324,7 +1412,13 @@ LALInspiralDistanceCutCleaning(
  
   if (!vetoSegsH1 || !vetoSegsH2 )
   XLALPrintWarning("LALInspiralDistanceCutCleaning: Warning, no veto list provided. you should provide h1 and h2 ones. ");
- 
+
+
+
+  /*  compute the iota accuracy  */
+  iotaCut  =  1/((2-accuracyParams->ifoAccuracy[LAL_IFO_H1].kappa)
+	/(2+accuracyParams->ifoAccuracy[LAL_IFO_H1].kappa));
+
   while( thisCoinc )
   {
     INT4  discardTrigger = 0;
@@ -1346,7 +1440,7 @@ LALInspiralDistanceCutCleaning(
 
       
       /* iota =1 */
-      if (dH2/dH1*snrH1 > 6 *2.3)
+      if (dH2/dH1*snrH1 > snrThreshold * iotaCut)
       {
         if (vetoSegsH2)
   {
@@ -1371,7 +1465,7 @@ LALInspiralDistanceCutCleaning(
       LALDistanceScanSummValueTable(status->statusPtr, summValueList, 
   tmpCoinc->snglInspiral[LAL_IFO_H2]->end_time, "H2",  &dH2);
       /* iota = 1 */
-      if (dH1/dH2*snrH2 > 6 *2.3)
+      if (dH1/dH2*snrH2 > snrThreshold *iotaCut)
       {
         if (vetoSegsH1)
   {

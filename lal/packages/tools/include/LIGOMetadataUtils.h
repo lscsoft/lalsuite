@@ -614,14 +614,12 @@ SnglInspiralTable *
 XLALVetoSingleInspiral (
     SnglInspiralTable          *eventHead,
     LALSegList                 *vetoSegs, 
-    CHAR 			*ifo
+    CHAR 		       *ifo
     );
 
 SnglInspiralTable *
-XLALVetoSingleInspiralThisIfo (
-    SnglInspiralTable          *eventHead,
-    LALSegList                 *vetoSegs, 
-    CHAR 		       *ifo
+XLALalphaFTemp (
+    SnglInspiralTable          *eventHead
     );
 
 void
@@ -781,6 +779,12 @@ void
 XLALInspiralPsi0Psi3CutBCVC(
     CoincInspiralTable        **coincInspiral
     );
+
+void
+XLALInspiralH1L1IotaCut(
+    CoincInspiralTable        **coincInspiral
+    );
+
 void
 XLALInspiralIotaCutBCVC(
     CoincInspiralTable        **coincInspiral
@@ -791,6 +795,7 @@ LALInspiralDistanceCutCleaning(
     LALStatus *status, 
     CoincInspiralTable        **coincInspiral,
     InspiralAccuracyList       *accuracyParams,
+    REAL4 			snrThreshold,
     SummValueTable            **summValueList,
     LALSegList                 *vetoSegsH1,
     LALSegList                 *vetoSegsH2
