@@ -94,6 +94,7 @@ NRCSID( HIERARCHICALSEARCHH, "$Id$" );
 #define HIERARCHICALSEARCH_EBAD  3
 #define HIERARCHICALSEARCH_EFILE 4
 #define HIERARCHICALSEARCH_ENULL 5
+#define HIERARCHICALSEARCH_EVAL  6
 
 #define HIERARCHICALSEARCH_MSGENORM "Normal exit"
 #define HIERARCHICALSEARCH_MSGESUB  "Subroutine failed"
@@ -101,7 +102,7 @@ NRCSID( HIERARCHICALSEARCHH, "$Id$" );
 #define HIERARCHICALSEARCH_MSGEBAD  "Bad argument values"
 #define HIERARCHICALSEARCH_MSGEFILE "Could not create output file"
 #define HIERARCHICALSEARCH_MSGENULL "Null pointer"
-
+#define HIERARCHICALSEARCH_MSGEVAL "Invalid value"
 
 
 
@@ -193,6 +194,7 @@ NRCSID( HIERARCHICALSEARCHH, "$Id$" );
   void SetUpStacks(LALStatus *status, 
 		 SFTCatalogSequence  *out,  
 		 REAL8 *tStack,
+		 LIGOTimeGPSVector **ts,
 		 SFTCatalog  *in,
 		 UINT4 nStacks);
 

@@ -128,7 +128,7 @@ BOOLEAN uvar_printStats; /**< global variable for calculating Hough map stats */
 #define SUNEPHEMERIS "./sun05-09.dat"   /**< Default location of sun ephemeris */
 #define NSTACKS 10    /**< Default number of stacks */
 #define BLOCKSRNGMED 101 /**< Default running median window size */
-#define FSTART 255.0   /**< Default Start search frequency */
+#define FSTART 910.0   /**< Default Start search frequency */
 
 #define FBAND 0.001    /**< Default search band */
 #define FDOT 0.0      /**< Default value of first spindown */
@@ -141,7 +141,7 @@ BOOLEAN uvar_printStats; /**< global variable for calculating Hough map stats */
 #define DDELTA 0.001 /**< Default resolution for isotropic or flat grids */
 #define FSTATTHRESHOLD 2.6  /**< Default threshold on Fstatistic for peak selection */
 #define NCAND1 5 /**< Default number of candidates to be followed up from first stage */
-#define SFTDIRECTORY "/home/badkri/fakesfts/"  /**< Default directory containing sfts */
+#define SFTDIRECTORY "/home/badkri/fakesfts/H-1_H1*.sft"  /**< Default directory containing sfts */
 #define FNAMEOUT "./candidates"  /**< Default output file basename */
 
 int main( int argc, char *argv[]) {
@@ -305,7 +305,7 @@ int main( int argc, char *argv[]) {
   uvar_help = FALSE;
   uvar_log = FALSE;
   uvar_method = 0;
-  uvar_followUp = TRUE;
+  uvar_followUp = FALSE;
   uvar_printMaps = FALSE;
   uvar_printStats = FALSE;
   uvar_printCand1 = FALSE;
@@ -569,8 +569,8 @@ int main( int argc, char *argv[]) {
     deltaF1 = catalog->data->header.deltaF;
     timebase1 = 1.0/deltaF1;
 
-    /* get SFT timestamps */
-    LAL_CALL( LALSFTtimestampsFromCatalog(  &status, &sftTimeStamps1, catalog ), &status);  	
+    /* get sft catalogs for each stack */
+    LAL_CALL( SetUpStacks( &status, &catalogSeq1, &tStack1, &sftTimeStamps1, catalog, uvar_nStacks1), &status);
 
     /* calculate start and end times and tobs */
     LAL_CALL( LALGPStoFloat ( &status, &tStart1, sftTimeStamps1->data), &status);
@@ -595,9 +595,6 @@ int main( int argc, char *argv[]) {
 
     LAL_CALL( LALExtrapolatePulsarSpinRange( &status, &spinRange_startTime, sftTimeStamps1->data[0], &spinRange_refTime), &status); 
 
-    /* get sft catalogs for each stack */
-    LAL_CALL( SetUpStacks( &status, &catalogSeq1, &tStack1, catalog, uvar_nStacks1), &status);
-
     /* use stacks info to calculate search frequency resolution */
     /* total duration of stack = last timestamp - first timestamp + timeBase*/
     deltaFstack1 = 1.0/tStack1;
@@ -605,7 +602,7 @@ int main( int argc, char *argv[]) {
     /* set reference time for calculating Fstatistic */
     thisPoint1.refTime = refTimeGPS;
     thisPoint1.binary = NULL;
-    
+    thisPoint1.fkdot = fkdot_current;
 
     /* initialize ephemeris info */ 
     edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
@@ -667,7 +664,6 @@ int main( int argc, char *argv[]) {
 
 	/* get SFT timestamps in stack */
 	LAL_CALL( LALSFTtimestampsFromCatalog(  &status, &startTsftStack, catalogSeq1.data + k ), &status);  	
-
 	
 	/* start time of stack */
 	startTstack1->data[nStacks1] = startTsftStack->data[0];
@@ -679,12 +675,6 @@ int main( int argc, char *argv[]) {
 	/* load the sfts */
 	LAL_CALL( LALLoadMultiSFTs ( &status, stackMultiSFT1.data + nStacks1,  catalogSeq1.data + k, 
 				     fMin, fMax ), &status);
-
-	/* free memory for sft catalog for this stack*/
-	{
-	  SFTCatalog *thisCatalog = catalogSeq1.data + k;
-	  LAL_CALL( LALDestroySFTCatalog( &status, &thisCatalog), &status);  	
-	}
 
 	/* normalize sfts and compute noise weights and detector state */
 	LAL_CALL( LALNormalizeMultiSFTVect ( &status, &psd, stackMultiSFT1.data[nStacks1], 
@@ -723,12 +713,20 @@ int main( int argc, char *argv[]) {
     sftlength1 = stackMultiSFT1.data[0]->data[0]->data[0].data->length; /* all sfts have same length */
     f0 = stackMultiSFT1.data[0]->data[0]->data[0].f0; /* all sfts have same f0 */
     sftFminBin1 = floor( timebase1 * f0 + 0.5); /* possible rounding off errors? */
+    
+    /* we don't need the original catalog */
+    LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);  	
 
     /* free catalog sequence */
-    LALFree( &catalogSeq1);
+    for (k = 0; k < uvar_nStacks1; k++)
+      {
+    	if ( catalogSeq1.data[k].length > 0 ) {
+    	    LALFree(catalogSeq1.data[k].data);
+	} /* end if */
+      } /* loop over stacks */
+    LALFree( catalogSeq1.data);
     
-    /* free memory -- now we don't need the original catalog */
-    LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);  	
+
     
   } /* finish reading sfts and normalizing them */
 
@@ -839,8 +837,8 @@ int main( int argc, char *argv[]) {
     deltaF2 = catalog2->data->header.deltaF;
     timebase2 = 1.0/deltaF1;
     
-    /* get SFT timestamps */
-    LAL_CALL( LALSFTtimestampsFromCatalog(  &status, &sftTimeStamps2, catalog2 ), &status);  	
+    /* get sft catalogs for each stack */
+    LAL_CALL( SetUpStacks( &status, &catalogSeq2, &tStack2, &sftTimeStamps2, catalog2, uvar_nStacks2), &status);
     
     /* calculate start and end times and tobs */
     LAL_CALL( LALGPStoFloat ( &status, &tStart2, sftTimeStamps2->data), &status);
@@ -858,8 +856,6 @@ int main( int argc, char *argv[]) {
     LAL_CALL( LALExtrapolatePulsarSpinRange( &status, &spinRange_startTime, sftTimeStamps2->data[0], &spinRange_refTime), &status); 
 
     
-    /* get sft catalogs for each stack */
-    LAL_CALL( SetUpStacks( &status, &catalogSeq2, &tStack2, catalog2, uvar_nStacks2), &status);
        
     /* use stacks info to calculate freq. resolution */
     deltaFstack2 = 1.0/tStack2;
@@ -1425,7 +1421,7 @@ void ComputeFstatHoughMap(LALStatus *status,
 
   UINT2  xSide, ySide, maxNBins, maxNBorders;
   INT8  fBinIni, fBinFin, fBin;
-  INT4  k, iHmap, nSpin1Max, nStacks, nfdot;
+  INT4  k, iHmap, nSpin1Max, nSpin1Min, nStacks, nfdot;
   REAL8 deltaF, alpha, delta;
   REAL8 patchSizeX, patchSizeY, f1jump;
   REAL8VectorSequence *vel, *pos;
@@ -1554,17 +1550,26 @@ void ComputeFstatHoughMap(LALStatus *status,
   }
 
   /* if there are residual spindowns */
-  nSpin1Max = nfdot;
   f1jump = 1.0 / timeDiffV->data[nStacks - 1]; /* resolution in residual fdot */
-
  
+  /* adjust fBinIni and fBinFin to take maxNBins into account */
+  /* and make sure that we have fstat values for sufficient number of bins */
+  parRes.f0Bin =  fBinIni;      
+    /* need a function to more accurately calculate maxNBins apriori */
+  TRY( LALHOUGHComputeSizePar( status->statusPtr, &parSize, &parRes ),  status );
+  fBinIni += parSize.maxNBins;
+  fBinFin -= parSize.maxNBins;
+  fprintf(stdout, "%lld %lld %d\n", fBinIni, fBinFin, parSize.maxNBins);
+  ASSERT ( fBinIni < fBinFin, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
+
+
   /*------------------ start main Hough calculation ---------------------*/
 
   /* initialization */  
   fBin= fBinIni; /* initial search bin */
   iHmap = 0; /* hough map index */
 
-  while( fBin <= fBinFin){
+  while( fBin <= fBinFin ){
     INT8 fBinSearch, fBinSearchMax;
     UINT4 i,j; 
     REAL8UnitPolarCoor sourceLocation;
@@ -1576,13 +1581,6 @@ void ComputeFstatHoughMap(LALStatus *status,
     maxNBins = parSize.maxNBins;
     maxNBorders = parSize.maxNBorders;
 	
-    /* increment the fBin value
-       -- we need to be sure that we have the fstat values for
-       all search frequencies */
-    /* this is probably too large
-       -- we might have left some initial frequency bins unanalyzed */
-    fBin += maxNBins;
-
     /*------------------ create patch grid at fBin ----------------------*/
     patch.xSide = xSide;
     patch.ySide = ySide;
@@ -1656,7 +1654,7 @@ void ComputeFstatHoughMap(LALStatus *status,
     
     /*  Search frequency interval possible using the same LUTs */
     fBinSearch = fBin;
-    fBinSearchMax = fBin + parSize.nFreqValid - 1 - nfdot;
+    fBinSearchMax = fBin + parSize.nFreqValid - 1 - nfdot; /* do we need the -nfdot here? */
      
     /* Study all possible frequencies with one set of LUT */    
     while ( (fBinSearch <= fBinFin) && (fBinSearch < fBinSearchMax) )  { 
@@ -1667,9 +1665,12 @@ void ComputeFstatHoughMap(LALStatus *status,
 	REAL8  f1dis;
 
 	ht.f0Bin = fBinSearch;
-	    
+
+	nSpin1Max = (nfdot < fBinFin - fBinSearch)? nfdot : fBinFin - fBinSearch;
+	nSpin1Min = (nfdot < fBinSearch - fBinIni)? nfdot : fBinSearch - fBinIni;
+
 	/*loop over all values of residual spindown */
-	for( n=-nSpin1Max; n<= nSpin1Max; n++ ){ 
+	for( n = -nSpin1Min; n <= nSpin1Max; n++ ){ 
 	  f1dis =  n*f1jump;
 
 	  ht.spinRes.data[0] =  f1dis*deltaF;
@@ -1858,13 +1859,14 @@ void FstatVectToPeakGram (LALStatus *status,
 void SetUpStacks(LALStatus *status, 
 		 SFTCatalogSequence  *out,
 		 REAL8 *tStack,
+		 LIGOTimeGPSVector **ts,
 		 SFTCatalog  *in,
 		 UINT4 nStacks)
 {
 
   UINT4 nSFTs, length, j, k;
   REAL8 timeBase, deltaF, tStart, tEnd, thisTime;
-  LIGOTimeGPSVector *ts=NULL;
+
 
   INITSTATUS( status, "SetUpStacks", rcsid );
   ATTATCHSTATUSPTR (status);
@@ -1874,26 +1876,22 @@ void SetUpStacks(LALStatus *status,
   
   nSFTs = in->length;
 
-  /* replace by assert */
-  if ( nStacks > nSFTs ) {
-    fprintf(stderr, "invalid number of stacks...exiting\n");
-    exit(1);
-  }
+  ASSERT ( nStacks < nSFTs, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
 
-  TRY( LALSFTtimestampsFromCatalog( status->statusPtr, &ts, in), status);  	
+  TRY( LALSFTtimestampsFromCatalog( status->statusPtr, ts, in), status);  	
 
   deltaF = in->data[0].header.deltaF;
   timeBase = 1.0/deltaF;
 
-  TRY ( LALGPStoFloat ( status->statusPtr, &tStart, ts->data), status);
-  TRY ( LALGPStoFloat ( status->statusPtr, &tEnd, ts->data + nSFTs - 1), status);
+  TRY ( LALGPStoFloat ( status->statusPtr, &tStart, ts[0]->data), status);
+  TRY ( LALGPStoFloat ( status->statusPtr, &tEnd, ts[0]->data + nSFTs - 1), status);
   *tStack = (tEnd + timeBase - tStart) / nStacks;
 
   /* loop over the sfts and find out if it belongs to the k^th stack */
   for( j = 0; j < nSFTs; j++) {
 
     /* calculate which stack the j^th SFT belongs to */
-    TRY ( LALGPStoFloat ( status->statusPtr, &thisTime, ts->data + j), status);
+    TRY ( LALGPStoFloat ( status->statusPtr, &thisTime, ts[0]->data + j), status);
     k = (UINT4)((thisTime - tStart)/(*tStack));
 
     out->data[k].length += 1;    
@@ -1901,10 +1899,12 @@ void SetUpStacks(LALStatus *status,
     length = out->data[k].length;
     
     out->data[k].data = (SFTDescriptor *)LALRealloc( out->data[k].data, length * sizeof(SFTDescriptor));
-    out->data[k].data[length - 1] = in->data[j];    
+
+    out->data[k].data[length - 1] = in->data[j];   
 
   } /* loop over sfts */
-  
+
+
   DETATCHSTATUSPTR (status);
   RETURN(status);
 }
@@ -1931,17 +1931,9 @@ void PrintHmap2file(LALStatus *status,
   strcpy(  filename, fnameOut);
   sprintf( filenumber, ".%06d",iHmap); 
   strcat(  filename, filenumber);
-  if ( !(fp=fopen(filename,"w"))) 
-    { 
-      fprintf(stderr, "Unable to open file '%s' for writing\n", filename);
-      exit(1);
-    }
 
-  /* replace this by an assert */
-  /*   if ( !fp ){   */
-  /*     fprintf(stderr,"Unable to find file %s\n",filename); */
-  /*     return HIERARCHICALSEARCH_EFILE;  */
-  /*   } */
+  fp=fopen(filename,"w");  
+  ASSERT ( fp != NULL, status, HIERARCHICALSEARCH_EFILE, HIERARCHICALSEARCH_MSGEFILE );
 
   ySide= ht->ySide;
   xSide= ht->xSide;
