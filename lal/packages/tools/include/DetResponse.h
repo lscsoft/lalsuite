@@ -282,12 +282,13 @@ LALComputeDetAMResponse( LALStatus             *status,
                          const LALDetAndSource *pDetAndSrc,
                          const LALGPSandAcc    *pGPSandAcc);
 
-LALDetAMResponse *XLALComputeDetAMResponse(
-	LALDetAMResponse *output,
-	REAL4 response[3][3],
-	const double right_ascension,
-	const double declination,
-	const double orientation,
+void XLALComputeDetAMResponse(
+	double *fplus,
+	double *fcross,
+	REAL4 D[3][3],
+	const double ra,
+	const double dec,
+	const double psi,
 	const double gmst
 );
 
@@ -302,12 +303,12 @@ LALComputeDetAMResponseSeries( LALStatus                      *status,
                                const LALTimeIntervalAndNSample *pTimeInfo);
 
 int XLALComputeDetAMResponseSeries(
-	REAL4TimeSeries **plus,
-	REAL4TimeSeries **cross,
-	REAL4 response[3][3],
-	const double right_ascension,
-	const double declination,
-	const double orientation,
+	REAL4TimeSeries **fplus,
+	REAL4TimeSeries **fcross,
+	REAL4 D[3][3],
+	const double ra,
+	const double dec,
+	const double psi,
 	const LIGOTimeGPS *start,
 	const double deltaT,
 	const int n

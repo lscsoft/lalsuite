@@ -69,110 +69,75 @@ directory.
 NRCSID(DETRESPONSEC, "$Id$");
 
 
-/*
- * Matrix operations.
- */
-
-static double matrix_dot(REAL4 a[3][3], double b[3][3])
-{
-	return a[0][0] * b[0][0] + a[0][1] * b[0][1] + a[0][2] * b[0][2] + a[1][0] * b[1][0] + a[1][1] * b[1][1] + a[1][2] * b[1][2] + a[2][0] * b[2][0] + a[2][1] * b[2][1] + a[2][2] * b[2][2];
-}
-
-
-/* rotate a matrix by computing rot * M * rot^T where rot is a rotation
- * matrix.  assumes that M[][2] and M[2][] = {0,0,0} */
-static void matrix_rot(double out[3][3], double rot[3][3], const double M[3][3])
-{
-	double t[3][2];
-	int i, j;
-
-	for(i = 0; i < 3; i++)
-		for(j = 0; j < 2; j++)
-			t[i][j] = rot[i][0] * M[0][j] + rot[i][1] * M[1][j];
-	for(i = 0; i < 3; i++)
-		for(j = 0; j < 3; j++)
-			out[i][j] = t[i][0] * rot[j][0] + t[i][1] * rot[j][1];
-}
-
-
-/*
- * Compute detector response, making use of the detector response tensor
- * stored in LALDetector
+/** XLALComputeDetAMResponse
+ *
+ * An implementation of the detector response formulae in Anderson et al
+ * PRD 63 042003 (2001) [ABCF].
+ *
+ * Computes F+ and Fx for a source at a specified sky position,
+ * polarization angle, and sidereal time.  Also requires the detector's
+ * response matrix which is defined by Eq. (B6) of [ABCF] using either
+ * Table 1 of [ABCF] or Eqs. (B11)--(B17) of [ABCF] to compute the arm
+ * direction unit vectors.
  */
 
 /* <lalVerbatim file="DetResponseCP"> */
-LALDetAMResponse *XLALComputeDetAMResponse(LALDetAMResponse *output, REAL4 response[3][3], const double right_ascension, const double declination, const double orientation, const double gmst)
-{				/* </lalVerbatim> */
-	/* unit strains */
-	const double e_plus[3][3] = {{1.0, 0.0, 0.0}, {0.0, -1.0, 0.0}, {0.0, 0.0, 0.0}};
-	const double e_cros[3][3] = {{0.0, 1.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
+void XLALComputeDetAMResponse(
+	double *fplus,		/**< Returned value of F+ */
+	double *fcross, 	/**< Returned value of Fx */
+	REAL4 D[3][3],		/**< Detector response 3x3 matrix */
+	const double ra,	/**< Right ascention of source (radians) */
+	const double dec,	/**< Declination of source (radians) */
+	const double psi,	/**< Polarization angle of source (radians) */
+	const double gmst	/**< Greenwich mean sidereal time (radians) */
+)
+{
+	int i;
+	double X[3];
+	double Y[3];
 
-	/* rotated to Earth-fixed frame */
-	double e_plus_E[3][3];
-	double e_cros_E[3][3];
+	/* Greenwich hour angle of source (radians). */
+	const double gha = gmst - ra;
 
-	/* rotation matrix */
-	double rot[3][3];
-
-	/* Greenwich hour angle of source */
-	const double gha = gmst - right_ascension;
-
-	/* pre-computed trig functions */
-	const double singha = sin(gha);
+	/* pre-compute trig functions */
 	const double cosgha = cos(gha);
-	const double sinorient = sin(orientation);
-	const double cosorient = cos(orientation);
-	const double sindec = sin(declination);
-	const double cosdec = cos(declination);
+	const double singha = sin(gha);
+	const double cosdec = cos(dec);
+	const double sindec = sin(dec);
+	const double cospsi = cos(psi);
+	const double sinpsi = sin(psi);
 
-	/*
-	 * Construct the rotation matrix to convert the source perterbation
-	 * matrix into the Earth-fixed basis.  This rotation matrix equals
-	 *
-	 * R_z(gha + pi/2) * R_x(-declination - pi/2) * R_z(-orientation)
-	 *
-	 * where R_i is the matrix for a right-hand rotation about axis i.
-	 * Some elements are set to 0 because they are not needed due to
-	 * zeros in the e+ and ex matrices.
-	 */
+	/* Eq. (B4) of [ABCF].  Note that dec = pi/2 - theta, and gha =
+	 * -phi where theta and phi are the standard spherical coordinates
+	 * used in that paper. */
+	X[0] = -cospsi * singha - sinpsi * cosgha * sindec;
+	X[1] = -cospsi * cosgha + sinpsi * singha * sindec;
+	X[2] =  sinpsi * cosdec;
 
-	rot[0][0] = -singha * cosorient - cosgha * sinorient * sindec;
-	rot[0][1] =  singha * sinorient - cosgha * cosorient * sindec;
-	rot[0][2] =  0.0;	/* -cosgha * cosdec */
-	rot[1][0] = -cosgha * cosorient + singha * sinorient * sindec;
-	rot[1][1] =  cosgha * sinorient + singha * cosorient * sindec;
-	rot[1][2] =  0.0;	/* singha * cosdec */
-	rot[2][0] =  sinorient * cosdec;
-	rot[2][1] =  cosorient * cosdec;
-	rot[2][2] =  0.0;	/* -sindec */
-
-	/*
-	 * Now, get the unit perturbation tensors in the Earth fixed frame.
-	 *
-	 *    e_plus_Earth = rot &* e_plus &* transpose(rot)
-	 *    e_cros_Earth = rot &* e_cros &* transpose(rot)
-	 */
-
-	matrix_rot(e_plus_E, rot, e_plus);
-	matrix_rot(e_cros_E, rot, e_cros);
-
-	/*
-	 * Then, F_plus = det_response &. e_plus_E, F_cros = det_response
-	 * &. e_cros_E
-	 */
-
-	output->plus = matrix_dot(response, e_plus_E);
-	output->cross = matrix_dot(response, e_cros_E);
-	/* FIXME: scalar response not implemented, yet.  Will have to read
-	 * Waggoner's paper to do this. */
-	output->scalar = 0.0;
-
-	return output;
+	/* Eq. (B5) of [ABCF].  Note that dec = pi/2 - theta, and gha =
+	 * -phi where theta and phi are the standard spherical coordinates
+	 * used in that paper. */
+	Y[0] =  sinpsi * singha - cospsi * cosgha * sindec;
+	Y[1] =  sinpsi * cosgha + cospsi * singha * sindec;
+	Y[2] =  cospsi * cosdec;
+	
+	/* Now compute Eq. (B7) of [ABCF] for each polarization state, i.e.,
+	 * with s+=1 and sx=0 to get F+, with s+=0 and sx=1 to get Fx */
+	*fplus = *fcross = 0.0;
+	for(i = 0; i < 3; i++) {
+		const double DX = D[i][0] * X[0] + D[i][1] * X[1] + D[i][2] * X[2];
+		const double DY = D[i][0] * Y[0] + D[i][1] * Y[1] + D[i][2] * Y[2];
+		*fplus  += X[i] * DX - Y[i] * DY;
+		*fcross += X[i] * DY + Y[i] * DX;
+	}
 }
+
 
 /* <lalVerbatim file="DetResponseCP"> */
 void LALComputeDetAMResponse(LALStatus * status, LALDetAMResponse * pResponse, const LALDetAndSource * pDetAndSrc, const LALGPSandAcc * pGPSandAcc)
 {				/* </lalVerbatim> */
+	double fplus, fcross;
+
 	INITSTATUS(status, "LALComputeDetAMResponse", DETRESPONSEC);
 	ATTATCHSTATUSPTR(status);
 
@@ -185,7 +150,11 @@ void LALComputeDetAMResponse(LALStatus * status, LALDetAMResponse * pResponse, c
 	/* source coordinates must be in equatorial system */
 	ASSERT(pDetAndSrc->pSource->equatorialCoords.system == COORDINATESYSTEM_EQUATORIAL, status, DETRESPONSEH_ESRCNOTEQUATORIAL, DETRESPONSEH_MSGESRCNOTEQUATORIAL);
 
-	XLALComputeDetAMResponse(pResponse, pDetAndSrc->pDetector->response, pDetAndSrc->pSource->equatorialCoords.longitude, pDetAndSrc->pSource->equatorialCoords.latitude, pDetAndSrc->pSource->orientation, XLALGreenwichMeanSiderealTime(&pGPSandAcc->gps));
+	XLALComputeDetAMResponse(&fplus, &fcross, pDetAndSrc->pDetector->response, pDetAndSrc->pSource->equatorialCoords.longitude, pDetAndSrc->pSource->equatorialCoords.latitude, pDetAndSrc->pSource->orientation, XLALGreenwichMeanSiderealTime(&pGPSandAcc->gps));
+
+	pResponse->plus = fplus;
+	pResponse->cross = fcross;
+	pResponse->scalar = 0.0;	/* not implemented */
 
 	DETATCHSTATUSPTR(status);
 	RETURN(status);
@@ -196,20 +165,30 @@ void LALComputeDetAMResponse(LALStatus * status, LALDetAMResponse * pResponse, c
  * Computes REAL4TimeSeries containing time series of response amplitudes.
  */
 
-int XLALComputeDetAMResponseSeries(REAL4TimeSeries **plus, REAL4TimeSeries **cross, REAL4 response[3][3], const double right_ascension, const double declination, const double orientation, const LIGOTimeGPS *start, const double deltaT, const int n)
+int XLALComputeDetAMResponseSeries(
+	REAL4TimeSeries **fplus,
+	REAL4TimeSeries **fcross,
+	REAL4 D[3][3],
+	const double ra,
+	const double dec,
+	const double psi,
+	const LIGOTimeGPS *start,
+	const double deltaT,
+	const int n
+)
 {
 	static const char func[] = "XLALComputeDetAMResponseSeries";
 	LIGOTimeGPS t;
 	double gmst;
 	int i;
-	LALDetAMResponse resp;
+	double p, c;
 
-	*plus = XLALCreateREAL4TimeSeries("plus", start, 0.0, deltaT, &lalDimensionlessUnit, n);
-	*cross = XLALCreateREAL4TimeSeries("cross", start, 0.0, deltaT, &lalDimensionlessUnit, n);
-	if(!*plus || !*cross) {
-		XLALDestroyREAL4TimeSeries(*plus);
-		XLALDestroyREAL4TimeSeries(*cross);
-		*plus = *cross = NULL;
+	*fplus = XLALCreateREAL4TimeSeries("plus", start, 0.0, deltaT, &lalDimensionlessUnit, n);
+	*fcross = XLALCreateREAL4TimeSeries("cross", start, 0.0, deltaT, &lalDimensionlessUnit, n);
+	if(!*fplus || !*fcross) {
+		XLALDestroyREAL4TimeSeries(*fplus);
+		XLALDestroyREAL4TimeSeries(*fcross);
+		*fplus = *fcross = NULL;
 		XLAL_ERROR(func, XLAL_EFUNC);
 	}
 
@@ -217,14 +196,14 @@ int XLALComputeDetAMResponseSeries(REAL4TimeSeries **plus, REAL4TimeSeries **cro
 		t = *start;
 		gmst = XLALGreenwichMeanSiderealTime(XLALAddFloatToGPS(&t, i * deltaT));
 		if(XLAL_IS_REAL8_FAIL_NAN(gmst)) {
-			XLALDestroyREAL4TimeSeries(*plus);
-			XLALDestroyREAL4TimeSeries(*cross);
-			*plus = *cross = NULL;
+			XLALDestroyREAL4TimeSeries(*fplus);
+			XLALDestroyREAL4TimeSeries(*fcross);
+			*fplus = *fcross = NULL;
 			XLAL_ERROR(func, XLAL_EFUNC);
 		}
-		XLALComputeDetAMResponse(&resp, response, right_ascension, declination, orientation, gmst);
-		(*plus)->data->data[i] = resp.plus;
-		(*cross)->data->data[i] = resp.cross;
+		XLALComputeDetAMResponse(&p, &c, D, ra, dec, psi, gmst);
+		(*fplus)->data->data[i] = p;
+		(*fcross)->data->data[i] = c;
 	}
 
 	return 0;
