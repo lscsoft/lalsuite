@@ -68,12 +68,11 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
   REAL8 f;
   static REAL8 sinVal[LUT_RES+(LUT_RES/4)+1]; /* Lookup tables for fast sin/cos calculation */
   static REAL8 *cosVal;
-#ifdef USE_4_LUT
+
   static REAL8 sinVal2PI[LUT_RES+(LUT_RES/4)+1];
   static REAL8 sinVal2PIPI[LUT_RES+(LUT_RES/4)+1];
   static REAL8 *cosVal2PI, *cosVal2PIPI;
   static REAL8 divLUTtab[LUT_RES+1];
-#endif
   static BOOLEAN firstCall = 1;
 
   REAL8 A=params->amcoe->A;
@@ -105,19 +104,15 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
     {
       for (k=0; k <= (LUT_RES/4)*5; k++) {
 	sinVal[k] = sin((LAL_TWOPI*k)/(LUT_RES));
-#ifdef USE_4_LUT
 	sinVal2PI[k] = sinVal[k]  *  LAL_TWOPI;
 	sinVal2PIPI[k] = sinVal2PI[k] * LAL_PI;
-#endif
       }
       cosVal = sinVal+(LUT_RES/4);
-#ifdef USE_4_LUT
       cosVal2PI = sinVal2PI+(LUT_RES/4);
       cosVal2PIPI = sinVal2PIPI+(LUT_RES/4);
 
       for (k=0; k <= LUT_RES; k++)
 	divLUTtab[k] = (REAL8)k/(REAL8)(LUT_RES);
-#endif      
       firstCall = 0;
     }
 
@@ -194,57 +189,32 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
         tempFreq0 = xTemp - (UINT4)(xTemp);   /* lies in [0, +1) by definition */
 	
         {
-	  UINT4  idx  = tempFreq0*(REAL8)(LUT_RES)+.5;
-#ifdef USE_4_LUT
+	  UINT4  idx = tempFreq0 * LUT_RES +.5;
 	  REAL8 d    = tempFreq0 - divLUTtab[idx];
           REAL8 d2   = d*d;
                 
           tsin = sinVal[idx] + d * cosVal2PI[idx] - d2 * sinVal2PIPI[idx];
           tcos = cosVal[idx] - d * sinVal2PI[idx] - d2 * cosVal2PIPI[idx];
-#else
-          REAL8 d=LAL_TWOPI*(tempFreq0-(REAL8)idx/(REAL8)LUT_RES);
-          REAL8 d2=0.5*d*d;
-          REAL8 ts=sinVal[idx];
-          REAL8 tc=cosVal[idx];
-                
-          tsin = ts+d*tc-d2*ts;
-          tcos = tc-d*ts-d2*tc;
-#endif
+
 	  tcos -= 1.0;
         }
 
-#ifdef USE_LUT_Y
 	/* use LUT here, too */
 	{
 	  REAL8 yTemp = f * skyConst[ tempInt1[ alpha ]-1 ] + ySum[ alpha ];
 	  REAL8 yRem = yTemp - (INT4)(yTemp);
 	  if (yRem < 0) { yRem += 1.0f; } /* make sure this is in [0..1) */
 	  {
-#ifdef USE_4_LUT
 	    UINT4 idx  = yRem*(REAL8)(LUT_RES)+.5;
 	    REAL8 d    = yRem-divLUTtab[idx];
 	    REAL8 d2   = d*d;
 	  
 	    imagQ = sinVal[idx] + d * cosVal2PI[idx] - d2 * sinVal2PIPI[idx];
 	    realQ = cosVal[idx] - d * sinVal2PI[idx] - d2 * cosVal2PIPI[idx];
-#else
-	    UINT4 idx = (UINT4)( yRem * LUT_RES + 0.5 );
-	    REAL8 d = LAL_TWOPI*(yRem - (REAL8)idx/(REAL8)LUT_RES);
-	    REAL8 d2=0.5*d*d;
-	    REAL8 ts = sinVal[idx];
-	    REAL8 tc = cosVal[idx];
-	    
-	    imagQ = ts + d * tc - d2 * ts;
-	    realQ = tc - d * ts - d2 * tc;
-#endif
+
 	    imagQ = -imagQ;
 	  }
 	}
-#else
-        y = - LAL_TWOPI * ( f * skyConst[ tempInt1[ alpha ]-1 ] + ySum[ alpha ] );
-        realQ = cos(y);
-        imagQ = sin(y);
-#endif
 
         k1 = (UINT4)xTemp - params->Dterms + 1;
 
