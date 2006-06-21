@@ -803,6 +803,8 @@ parser.add_option("-t", "--template-bank",action="store_true",default=False,\
     help="run lalapps_tmpltbank to generate template banks")
 parser.add_option("-i", "--inspiral" ,action="store_true",default=False,\
     help="run lalapps_inspiral to generate triggers")
+parser.add_option("-r", "--ringdown" ,action="store_true",default=False,\
+    help="run lalapps_ring to generate triggers")
 parser.add_option("-c", "--coincidence",action="store_true",default=False,\
     help="run lalapps_thinca to test for coincidence")
 parser.add_option("-U", "--td-follow-bank", action="store_true",default=False,\
@@ -1028,7 +1030,10 @@ df_job.set_sub_file( basename + '.datafind'+ subsuffix )
 tmplt_jobs = {}
 
 for ifo in ifo_list:
-  tmplt_jobs[ifo] = inspiral.TmpltBankJob(cp,opts.dax)
+  if opts.ringdown:
+    tmplt_jobs[ifo] = inspiral.TmpltBankJob(cp,opts.dax,'RINGBANK')
+  else:
+    tmplt_jobs[ifo] = inspiral.TmpltBankJob(cp,opts.dax)
   tmplt_jobs[ifo].set_sub_file( basename + '.tmpltbank' + subsuffix )
 
 # inspinj:
@@ -1039,7 +1044,10 @@ inspinj_job.set_sub_file( basename + '.inspinj' + subsuffix )
 insp_jobs = {}
 
 for ifo in ifo_list:
-  insp_jobs[ifo] = inspiral.InspiralJob(cp,opts.dax)
+  if opts.ringdown:
+    insp_jobs[ifo] = inspiral.InspiralJob(cp,opts.dax,'RING')
+  else:
+    insp_jobs[ifo] = inspiral.InspiralJob(cp,opts.dax)
   insp_jobs[ifo].set_sub_file( basename + '.inspiral_' + ifo + subsuffix )
 
 # single_inca:
@@ -1050,7 +1058,10 @@ single_inca_job.set_sub_file( basename + '.s_inca' + subsuffix )
 thinca_jobs = {}
 
 for ifos in ifo_coincs:
-  thinca_jobs[ifos] = inspiral.ThincaJob(cp)
+  if opts.ringdown:
+    thinca_jobs[ifos] = inspiral.ThincaJob(cp,opts.dax,'RINCA')
+  else:
+    thinca_jobs[ifos] = inspiral.ThincaJob(cp)
   thinca_jobs[ifos].set_sub_file(basename + '.thinca_' + ifos + 
       subsuffix )
 
@@ -1058,7 +1069,10 @@ for ifos in ifo_coincs:
 thinca_slide_jobs = {}
 
 for ifos in ifo_coincs:
-  thinca_slide_jobs[ifos] = inspiral.ThincaJob(cp)
+  if opts.ringdown:
+    thinca_slide_jobs[ifos] = inspiral.ThincaJob(cp,opts.dax,'RINCA')
+  else:
+    thinca_slide_jobs[ifos] = inspiral.ThincaJob(cp)
   thinca_slide_jobs[ifos].set_sub_file(basename + '.thinca_slides_' + 
       ifos + subsuffix )
 
@@ -1245,12 +1259,16 @@ sire_clust_job.add_ini_opts(cp,'sire-cluster')
 ##############################################################################
 # get the pad and chunk lengths from the values in the ini file
 pad = int(cp.get('data', 'pad-data'))
-n = int(cp.get('data', 'segment-length'))
-s = int(cp.get('data', 'number-of-segments'))
-r = int(cp.get('data', 'sample-rate'))
-o = int(cp.get('inspiral', 'segment-overlap'))
-length = ( n * s - ( s - 1 ) * o ) / r
-overlap = o / r
+if ringdown:
+  length = int(cp.get('data','block-duration'))
+  overlap = int(cp.get('data','segment-duration'))/2
+else:
+  n = int(cp.get('data', 'segment-length'))
+  s = int(cp.get('data', 'number-of-segments'))
+  r = int(cp.get('data', 'sample-rate'))
+  o = int(cp.get('inspiral', 'segment-overlap'))
+  length = ( n * s - ( s - 1 ) * o ) / r
+  overlap = o / r
 
 
 ##############################################################################
