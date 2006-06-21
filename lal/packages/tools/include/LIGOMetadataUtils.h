@@ -782,7 +782,8 @@ XLALInspiralPsi0Psi3CutBCVC(
 
 void
 XLALInspiralH1L1IotaCut(
-    CoincInspiralTable        **coincInspiral
+    CoincInspiralTable        **coincInspiral,
+     REAL4                    iotaCut
     );
 
 void
