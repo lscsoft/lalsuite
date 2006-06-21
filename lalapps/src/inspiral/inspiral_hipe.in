@@ -1261,7 +1261,7 @@ sire_clust_job.add_ini_opts(cp,'sire-cluster')
 ##############################################################################
 # get the pad and chunk lengths from the values in the ini file
 pad = int(cp.get('data', 'pad-data'))
-if ringdown:
+if opts.ringdown:
   length = int(cp.get('data','block-duration'))
   overlap = int(cp.get('data','segment-duration'))/2
 else:
