@@ -1330,35 +1330,23 @@ XLALInspiralH1L1IotaCut(
       
 
     /* loop over all IFO combinations */
-    for ( ifoA = 0; ifoA < LAL_NUM_IFO; ifoA++ )
+    if( tmpCoinc->snglInspiral[LAL_IFO_H1] 
+           && tmpCoinc->snglInspiral[LAL_IFO_L1]  )
     {
-      for ( ifoB = ifoA + 1; ifoB < LAL_NUM_IFO; ifoB++ )
+      /* perform the distance consistency test */
+      sigA = tmpCoinc->snglInspiral[LAL_IFO_H1]->sigmasq;
+      sigB = tmpCoinc->snglInspiral[LAL_IFO_L1]->sigmasq;
+      snrA = tmpCoinc->snglInspiral[LAL_IFO_H1]->snr;
+      snrB = tmpCoinc->snglInspiral[LAL_IFO_L1]->snr;
+
+      iota = 2 * fabs(sigA*sigA/snrA-sigB*sigB/snrB)/(sigA*sigA/snrA+sigB*sigB/snrB);
+
+      /*  should be an user parameter in the future. */
+      if (  (iota > 1.2 ) )
       {
-        /*epsilonB = accuracyParams->ifoAccuracy[ifoB].epsilon;*/
-
-        if( tmpCoinc->snglInspiral[ifoA] 
-            && tmpCoinc->snglInspiral[ifoB]  )
-        {
-          /* perform the distance consistency test */
-          sigA = tmpCoinc->snglInspiral[ifoA]->sigmasq;
-          sigB = tmpCoinc->snglInspiral[ifoB]->sigmasq;
-          snrA = tmpCoinc->snglInspiral[ifoA]->snr;
-          snrB = tmpCoinc->snglInspiral[ifoB]->snr;
-
-          iota = 2 * fabs(sigA*sigA/snrA-sigB*sigB/snrB)/(sigA*sigA/snrA+sigB*sigB/snrB);
-
-          if(
-                 (  (ifoA == LAL_IFO_H1)  && (ifoB == LAL_IFO_L1) )
-          || (  (ifoA == LAL_IFO_L1)  && (ifoB == LAL_IFO_H1))  )
-	  {
-	    /*  should be an user parameter in the future. */
-	    if (  (iota > 1.2 ) )
-	    {
-              discardTrigger = 1; 
-            }
-          }
-        } 
+        discardTrigger = 1; 
       }
+    
       if ( discardTrigger )
       {
           break;
