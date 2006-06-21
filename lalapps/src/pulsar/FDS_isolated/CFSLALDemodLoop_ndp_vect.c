@@ -57,18 +57,17 @@
             /* for(k=0; k < klim / 2; k++) { */
 	    {
 	      UINT4 ve;
-#define VEC_LOOP\
+#define VEC_LOOP(n)\
 	      for(ve=0;ve<4;ve++) {\
-                Xsum[ve] = Xsum[ve] * (tFreq[ve] + tFint[ve]) + Xalpha_kR4[ve] * aFreq[ve];\
+                Xsum[ve] = Xsum[ve] * (tFreq[ve] + tFint[ve]) + (Xalpha_kR4+n)[ve] * aFreq[ve];\
 		aFreq[ve] *= (tFreq[ve] + tFint[ve]);\
                 tFint[ve] -= 2.0;\
-	      }\
-	      Xalpha_kR4 += 4;
+	      }
 
-	      VEC_LOOP; VEC_LOOP; VEC_LOOP; VEC_LOOP; 
-	      VEC_LOOP; VEC_LOOP; VEC_LOOP; VEC_LOOP; 
-	      VEC_LOOP; VEC_LOOP; VEC_LOOP; VEC_LOOP; 
-	      VEC_LOOP; VEC_LOOP; VEC_LOOP; VEC_LOOP; 
+	      VEC_LOOP(00+0); VEC_LOOP(00+4); VEC_LOOP(00+8); VEC_LOOP(00+12); 
+	      VEC_LOOP(16+0); VEC_LOOP(16+4); VEC_LOOP(16+8); VEC_LOOP(16+12); 
+	      VEC_LOOP(32+0); VEC_LOOP(32+4); VEC_LOOP(32+8); VEC_LOOP(32+12); 
+	      VEC_LOOP(48+0); VEC_LOOP(48+4); VEC_LOOP(48+8); VEC_LOOP(48+12); 
 	    }
 
 	    /* conbination:
