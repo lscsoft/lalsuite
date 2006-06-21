@@ -26,7 +26,7 @@ class TmpltBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   runs in the universe specfied in the ini file. The path to the executable
   is determined from the ini file.
   """
-  def __init__(self,cp,dax=False):
+  def __init__(self,cp,dax=False,tag_base='TMPLTBANK'):
     """
     cp = ConfigParser object from which options are read.
     """
@@ -34,6 +34,7 @@ class TmpltBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.__universe = cp.get('condor','universe')
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
     pipeline.AnalysisJob.__init__(self,cp,dax)
+    self.tag_base = tag_base
 
     for sec in ['data','tmpltbank']:
       self.add_ini_opts(cp,sec)
@@ -168,7 +169,7 @@ class InspiralJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   runs in the universe specfied in the ini file. The path to the executable
   is determined from the ini file.
   """
-  def __init__(self,cp,dax=False):
+  def __init__(self,cp,dax=False,tag_base='INSPIRAL'):
     """
     cp = ConfigParser object from which options are read.
     """
@@ -176,6 +177,7 @@ class InspiralJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.__universe = cp.get('condor','universe')
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
     pipeline.AnalysisJob.__init__(self,cp,dax)
+    self.tag_base = tag_base
 
     for sec in ['data','inspiral']:
       self.add_ini_opts(cp,sec)
@@ -247,7 +249,7 @@ class ThincaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   the job are directed to the logs directory.  The path to the executable is 
   determined from the ini file.
   """
-  def __init__(self,cp,dax=False):
+  def __init__(self,cp,dax=False,tag_base='THINCA'):
     """
     cp = ConfigParser object from which options are read.
     """
@@ -255,6 +257,7 @@ class ThincaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.__universe = cp.get('condor','universe')
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
     pipeline.AnalysisJob.__init__(self,cp,False)
+    self.tag_base = tag_base
     
     for sec in ['thinca']:
       self.add_ini_opts(cp,sec)
@@ -502,19 +505,20 @@ class TmpltBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     Returns the file name of output from the template bank code. This must
     be kept synchronized with the name of the output file in tmpltbank.c.
     """
+    tag_base = self.job().tag_base
     if not self.get_start() or not self.get_end() or not self.get_ifo():
       raise InspiralError, "Start time, end time or ifo has not been set"
     if self.__usertag and self.get_ifo_tag():
-      bank = self.get_ifo() + '-TMPLTBANK_' + self.get_ifo_tag() + "_" + self.__usertag + '-' 
+      bank = self.get_ifo() + '-' + tag_base + '_' + self.get_ifo_tag() + "_" + self.__usertag + '-' 
       bank = bank + str(self.get_start())
     elif self.__usertag:
-      bank = self.get_ifo() + '-TMPLTBANK_' + self.__usertag + '-'  
+      bank = self.get_ifo() + '-' + tag_base + '_' + self.__usertag + '-'  
       bank = bank + str(self.get_start())
     elif self.get_ifo_tag():
-      bank = self.get_ifo() + '-TMPLTBANK_' + self.get_ifo_tag() + '-'  
+      bank = self.get_ifo() + '-' + tag_base + + '_' + self.get_ifo_tag() + '-'  
       bank = bank + str(self.get_start())
     else:
-      bank = self.get_ifo() + '-TMPLTBANK-' + str(self.get_start())
+      bank = self.get_ifo() + '-' + tag_base + '-' + str(self.get_start())
     bank = bank + '-' + str(self.get_end() - self.get_start()) + '.xml'
 
     self.add_output_file(bank)
@@ -659,7 +663,8 @@ class InspiralNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     if not self.get_start() or not self.get_end() or not self.get_ifo():
       raise InspiralError, "Start time, end time or ifo has not been set"
 
-    basename = self.get_ifo() + '-INSPIRAL'
+    tag_base = self.job().tag_base
+    basename = self.get_ifo() + '-' + tag_base
 
     if self.get_ifo_tag():
       basename += '_' + self.get_ifo_tag()
@@ -681,7 +686,8 @@ class InspiralNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     if not self.get_start() or not self.get_end() or not self.get_ifo():
       raise InspiralError, "Start time, end time or ifo has not been set"
 
-    basename = self.get_ifo() + '-INSPIRAL'
+    tag_base = self.job().tag_base
+    basename = self.get_ifo() + '-' + tag_base
 
     if self.get_ifo_tag():
       basename += '_' + self.get_ifo_tag()
@@ -1037,10 +1043,11 @@ class ThincaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     if not self.get_start() or not self.get_end() or not self.get_ifos():
       raise InspiralError, "Start time, end time or ifos have not been set"
     
+    tag_base = self.job().tag_base
     if self.__num_slides:
-      basename = self.get_ifos() + '-THINCA_SLIDE'
+      basename = self.get_ifos() + '-' + tag_base + '_SLIDE'
     else:
-      basename = self.get_ifos() + '-THINCA'
+      basename = self.get_ifos() + '-' + tag_base
 
     if self.__ifotag:
       basename += '_' + self.__ifotag  
