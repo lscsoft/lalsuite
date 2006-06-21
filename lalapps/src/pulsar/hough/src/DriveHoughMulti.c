@@ -101,8 +101,8 @@ BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps, uvar_printStats, 
 /* #define EARTHEPHEMERIS "./earth05-09.dat" */
 /* #define SUNEPHEMERIS "./sun05-09.dat"    */
 
-#define EARTHEPHEMERIS "./earth00-04.dat"
-#define SUNEPHEMERIS "./sun00-04.dat"
+#define EARTHEPHEMERIS "/home/badkri/lscsoft/share/lal/earth05-09.dat"
+#define SUNEPHEMERIS "/home/badkri/lscsoft/share/lal/sun05-09.dat"
 
 #define MAXFILENAMELENGTH 512 /* maximum # of characters  of a filename */
 
@@ -112,9 +112,9 @@ BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps, uvar_printStats, 
 #define THRESHOLD 1.6 /* thresold for peak selection, with respect to the
                               the averaged power in the search band */
 #define FALSEALARM 1.0e-9 /* Hough false alarm for candidate selection */
-#define SKYFILE "./sky1"      
-#define F0 505.0   /*  frequency to build the LUT and start search */
-#define FBAND 0.05   /* search frequency band  (in Hz) */
+#define SKYFILE "./skypatchfile"      
+#define F0 310.0   /*  frequency to build the LUT and start search */
+#define FBAND 0.05   /* search frequency band  */
 #define NFSIZE  21   /* n-freq. span of the cylinder, to account for spin-down search */
 #define BLOCKSRNGMED 101 /* Running median window size */
 
@@ -1541,7 +1541,7 @@ void ReadTimeStampsFile (LALStatus          *status,
 
   ASSERT(ts, status, DRIVEHOUGHCOLOR_ENULL,DRIVEHOUGHCOLOR_MSGENULL); 
   ASSERT(ts->data == NULL, status, DRIVEHOUGHCOLOR_ENULL,DRIVEHOUGHCOLOR_MSGENULL); 
-  ASSERT(ts->length > 0, status, DRIVEHOUGHCOLOR_ENULL,DRIVEHOUGHCOLOR_MSGENULL); 
+  ASSERT(ts->length == 0, status, DRIVEHOUGHCOLOR_ENULL,DRIVEHOUGHCOLOR_MSGENULL); 
   ASSERT(filename, status, DRIVEHOUGHCOLOR_ENULL,DRIVEHOUGHCOLOR_MSGENULL); 
 
   if ( (fp = fopen(filename, "r")) == NULL) {
@@ -1550,13 +1550,15 @@ void ReadTimeStampsFile (LALStatus          *status,
 
   /* count number of timestamps */
   numTimeStamps = 0;     
-  {
+
+  do {
     r = fscanf(fp,"%lf%lf\n", &temp1, &temp2);
     /* make sure the line has the right number of entries or is EOF */
     if (r==2) numTimeStamps++;
   } while ( r != EOF);
   rewind(fp);
 
+  ts->length = numTimeStamps;
   ts->data = LALCalloc (1, numTimeStamps * sizeof(LIGOTimeGPS));;
   if ( ts->data == NULL ) {
     fclose(fp);
