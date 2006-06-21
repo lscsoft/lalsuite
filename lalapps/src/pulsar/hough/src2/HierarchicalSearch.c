@@ -688,7 +688,10 @@ int main( int argc, char *argv[]) {
 
 	LAL_CALL ( LALDestroyMultiPSDVector ( &status, &psd ), &status );
 
+	LAL_CALL ( LALDestroyTimestampVector ( &status, &startTsftStack), &status);
+
 	nStacks1++;
+
       } /* if ( catalogSeq1->data[k].length > 0 ) */
     } /* loop over k */
  
@@ -725,8 +728,6 @@ int main( int argc, char *argv[]) {
 	} /* end if */
       } /* loop over stacks */
     LALFree( catalogSeq1.data);
-    
-
     
   } /* finish reading sfts and normalizing them */
 
@@ -827,8 +828,7 @@ int main( int argc, char *argv[]) {
 
     REAL8 doppWings, fMin, fMax, f0;
     REAL8 startTime_freqLo, startTime_freqHi;
-    
-    
+        
     /* get sft catalog */
     LAL_CALL( LALSFTdataFind( &status, &catalog2, uvar_sftDir2, constraints2), &status);
     
@@ -854,8 +854,6 @@ int main( int argc, char *argv[]) {
     spinRange_startTime.fkdotBand = fkdotBand_startTime2;    
 
     LAL_CALL( LALExtrapolatePulsarSpinRange( &status, &spinRange_startTime, sftTimeStamps2->data[0], &spinRange_refTime), &status); 
-
-    
        
     /* use stacks info to calculate freq. resolution */
     deltaFstack2 = 1.0/tStack2;
@@ -863,9 +861,6 @@ int main( int argc, char *argv[]) {
     /* set reference time for calculating fstat */
     thisPoint2.refTime = refTimeGPS;
     thisPoint2.binary = NULL;
-
-    
-    
 
       
     /* set wings of sfts to be read */
@@ -925,13 +920,6 @@ int main( int argc, char *argv[]) {
 	/* load the sfts */
 	LAL_CALL( LALLoadMultiSFTs ( &status, stackMultiSFT2.data + nStacks2,  catalogSeq2.data + k, fMin, fMax ), &status);
 	
-
-	/* free memory for sft catalog for this stack*/
-	{
-	  SFTCatalog *thisCatalog = catalogSeq2.data + k;
-	  LAL_CALL( LALDestroySFTCatalog( &status, &thisCatalog), &status);  	
-	}
-	
 	/* normalize sfts and compute noise weights and detector state */
 	LAL_CALL( LALNormalizeMultiSFTVect ( &status, &psd, stackMultiSFT2.data[nStacks2], 
 					     uvar_blocksRngMed ), &status );
@@ -944,7 +932,9 @@ int main( int argc, char *argv[]) {
 	
 	LAL_CALL ( LALDestroyMultiPSDVector ( &status, &psd ), &status );
 	
-	  nStacks2++;
+	LAL_CALL ( LALDestroyTimestampVector ( &status, &startTsftStack), &status);
+
+	nStacks2++;
 	  
       } /* if ( catalogSeq2->data[k].length > 0 ) */
     } /* loop over k */
@@ -952,8 +942,7 @@ int main( int argc, char *argv[]) {
     
     /* realloc if nStacks1 != uvar_nStacks1 */
     if ( uvar_nStacks2 > nStacks2 ) {
-       
-	
+       	
       numSFTsinStack2 = (INT4 *)LALRealloc( numSFTsinStack2, nStacks2 * sizeof(INT4));
       
       midTstack2.length = nStacks2;
@@ -975,6 +964,14 @@ int main( int argc, char *argv[]) {
     /* free memory -- now we don't need the original catalog */
     LAL_CALL( LALDestroySFTCatalog( &status, &catalog2 ), &status);  	
     
+    /* free catalog sequence */
+    for (k = 0; k < uvar_nStacks2; k++)
+      {
+    	if ( catalogSeq2.data[k].length > 0 ) {
+    	    LALFree(catalogSeq2.data[k].data);
+	} /* end if */
+      } /* loop over stacks */
+    LALFree( catalogSeq2.data);
   
   } /* end if(uvar_followup) */
 
