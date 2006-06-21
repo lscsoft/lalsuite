@@ -2128,7 +2128,7 @@ timestamp_in_list( LIGOTimeGPS timestamp, LIGOTimeGPSVector *list )
     return FALSE;
 
   el = &(list->data[0]);
-  for ( i=0; i < list->length; i ++)
+  for ( i=0; i < list->length; i++, el++)
     {
       if ( (timestamp.gpsSeconds == el->gpsSeconds) && ( timestamp.gpsNanoSeconds == el->gpsNanoSeconds ) )
 	return TRUE;
