@@ -134,6 +134,10 @@ int PrintHmap2m_file(HOUGHMapTotal *ht, CHAR *fnameOut, INT4 iHmap);
 
 int PrintHmap2file(HOUGHMapTotal *ht, CHAR *fnameOut, INT4 iHmap);
 
+void ReadTimeStampsFile (LALStatus *status, LIGOTimeGPSVector *ts, CHAR *filename);
+
+
+
 /******************************************/
 
 int main(int argc, char *argv[]){
@@ -208,9 +212,14 @@ int main(int argc, char *argv[]){
   UINT2  xSide, ySide;
   UINT2  maxNBins, maxNBorders;
 
+  /* sft constraint variables */
+  LIGOTimeGPS startTimeGPS, endTimeGPS;
+  LIGOTimeGPSVector inputTimeStampsVector;
+
   /* user input variables */
   BOOLEAN  uvar_help, uvar_weighAM, uvar_weighNoise, uvar_printLog, uvar_printWeights;
   INT4     uvar_blocksRngMed, uvar_nfSizeCylinder, uvar_maxBinsClean;
+  REAL8    uvar_startTime, uvar_endTime;
   REAL8    uvar_f0, uvar_peakThreshold, uvar_houghFalseAlarm, uvar_fSearchBand;
   CHAR     *uvar_earthEphemeris=NULL;
   CHAR     *uvar_sunEphemeris=NULL;
@@ -218,6 +227,7 @@ int main(int argc, char *argv[]){
   CHAR     *uvar_dirnameOut=NULL;
   CHAR     *uvar_fbasenameOut=NULL;
   CHAR     *uvar_skyfile=NULL;
+  CHAR     *uvar_timeStampsFile=NULL;
   LALStringVector *uvar_linefiles=NULL;
 
 
@@ -263,6 +273,9 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",            'h', UVAR_HELP,     "Print this message",                    &uvar_help),            &status);  
   LAL_CALL( LALRegisterREALUserVar(   &status, "f0",              'f', UVAR_OPTIONAL, "Start search frequency",                &uvar_f0),              &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "fSearchBand",     'b', UVAR_OPTIONAL, "Search frequency band",                 &uvar_fSearchBand),     &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "startTime",        0,  UVAR_OPTIONAL, "GPS start time of observation",         &uvar_startTime),        &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "endTime",          0,  UVAR_OPTIONAL, "GPS end time of observation",           &uvar_endTime),          &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "timeStampsFile",   0,  UVAR_OPTIONAL, "Input time-stamps file",                &uvar_timeStampsFile),   &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyfile",          0,  UVAR_OPTIONAL, "Input skypatch file",                   &uvar_skyfile),         &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "peakThreshold",    0,  UVAR_OPTIONAL, "Peak selection threshold",              &uvar_peakThreshold),   &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "weighAM",          0,  UVAR_OPTIONAL, "Use amplitude modulation weights",      &uvar_weighAM),         &status);  
@@ -279,8 +292,8 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printEvents",      0,  UVAR_OPTIONAL, "Print events above threshold",          &uvar_printEvents),     &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printStats",       0,  UVAR_OPTIONAL, "Print Hough statistics",                &uvar_printStats),      &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printSigma",       0,  UVAR_OPTIONAL, "Print expected number count stdev.",    &uvar_printSigma),      &status);
-  LAL_CALL( LALRegisterLISTUserVar(   &status, "linefiles",        0,  UVAR_OPTIONAL, "Comma separated List of linefiles (filenames must contain IFO name)",
-				                                                                                               &uvar_linefiles),       &status);
+  LAL_CALL( LALRegisterLISTUserVar(   &status, "linefiles",        0,  UVAR_OPTIONAL, "Comma separated List of linefiles (filenames must contain IFO name)",  
+	      &uvar_linefiles),       &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "nfSizeCylinder",   0,  UVAR_OPTIONAL, "Size of cylinder of PHMDs",             &uvar_nfSizeCylinder),  &status);
 
   /* developer input variables */
@@ -322,6 +335,7 @@ int main(int argc, char *argv[]){
   if ( uvar_printLog ) {
     LAL_CALL( PrintLogFile( &status, uvar_dirnameOut, uvar_fbasenameOut, uvar_skyfile, uvar_linefiles, argv[0]), &status);
   }
+
 
   /***** start main calculations *****/
 
@@ -374,11 +388,31 @@ int main(int argc, char *argv[]){
     /* set detector constraint */
     constraints.detector = NULL;
 
+    if ( LALUserVarWasSet( &uvar_startTime ) ) {
+      LAL_CALL ( LALFloatToGPS( &status, &startTimeGPS, &uvar_startTime), &status);
+      constraints.startTime = &startTimeGPS;
+    }
+
+    if ( LALUserVarWasSet( &uvar_endTime ) ) {
+      LAL_CALL ( LALFloatToGPS( &status, &endTimeGPS, &uvar_endTime), &status);
+      constraints.endTime = &endTimeGPS;
+    }
+
+    if ( LALUserVarWasSet( &uvar_timeStampsFile ) ) {
+      LAL_CALL ( ReadTimeStampsFile ( &status, &inputTimeStampsVector, uvar_timeStampsFile), &status);
+      constraints.timestamps = &inputTimeStampsVector;
+    }
+    
     /* get sft catalog */
     LAL_CALL( LALSFTdataFind( &status, &catalog, uvar_sftDir, &constraints), &status);
     if ( (catalog == NULL) || (catalog->length == 0) ) {
       fprintf (stderr,"Unable to match any SFTs with pattern '%s'\n", uvar_sftDir );
       exit(1);
+    }
+
+    /* now we can free the inputTimeStampsVector */
+    if ( LALUserVarWasSet( &uvar_timeStampsFile ) ) {
+      LALFree( inputTimeStampsVector.data );
     }
 
     /* get some sft parameters */
@@ -1483,6 +1517,60 @@ void PrintnStarFile (LALStatus                   *status,
   /* close nstar file */
   fclose(fpStar);
   LALFree(filestar); 
+  	 
+  DETATCHSTATUSPTR (status);
+  /* normal exit */
+  RETURN (status);
+}    
+
+
+
+/* read timestamps file */
+void ReadTimeStampsFile (LALStatus          *status,
+			 LIGOTimeGPSVector  *ts,
+			 CHAR               *filename)
+{
+
+  FILE  *fp = NULL;
+  INT4  numTimeStamps, r;
+  UINT4 j;
+  REAL8 temp1, temp2;
+
+  INITSTATUS (status, "ReadTimeStampsFile", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT(ts, status, DRIVEHOUGHCOLOR_ENULL,DRIVEHOUGHCOLOR_MSGENULL); 
+  ASSERT(ts->data == NULL, status, DRIVEHOUGHCOLOR_ENULL,DRIVEHOUGHCOLOR_MSGENULL); 
+  ASSERT(ts->length > 0, status, DRIVEHOUGHCOLOR_ENULL,DRIVEHOUGHCOLOR_MSGENULL); 
+  ASSERT(filename, status, DRIVEHOUGHCOLOR_ENULL,DRIVEHOUGHCOLOR_MSGENULL); 
+
+  if ( (fp = fopen(filename, "r")) == NULL) {
+    ABORT( status, DRIVEHOUGHCOLOR_EFILE, DRIVEHOUGHCOLOR_MSGEFILE);
+  }
+
+  /* count number of timestamps */
+  numTimeStamps = 0;     
+  {
+    r = fscanf(fp,"%lf%lf\n", &temp1, &temp2);
+    /* make sure the line has the right number of entries or is EOF */
+    if (r==2) numTimeStamps++;
+  } while ( r != EOF);
+  rewind(fp);
+
+  ts->data = LALCalloc (1, numTimeStamps * sizeof(LIGOTimeGPS));;
+  if ( ts->data == NULL ) {
+    fclose(fp);
+    ABORT( status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  }
+  
+  for (j = 0; j < ts->length; j++)
+    {
+      r = fscanf(fp,"%lf%lf\n", &temp1, &temp2);
+      ts->data[j].gpsSeconds = (INT4)temp1;
+      ts->data[j].gpsNanoSeconds = (INT4)temp2;
+    }
+  
+  fclose(fp);
   	 
   DETATCHSTATUSPTR (status);
   /* normal exit */
