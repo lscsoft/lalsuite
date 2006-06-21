@@ -44,8 +44,9 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
   REAL8 *xSum=NULL, *ySum=NULL; /* temp variables for computation of fs*as and fs*bs */
   INT4 s;                       /* local variable for spinDwn calcs. */
   REAL8 xTemp;                  /* temp variable for phase model */
+  REAL4 xTInt;                   /* integer part of xTemp */
   REAL8 deltaF;                 /* width of SFT band */
-  INT4  k1;                     /* defining the sum over which is calculated */
+  /* INT4  k1;                     /* defining the sum over which is calculated */
   UINT4 k=0;
   REAL8 *skyConst;              /* vector of sky constants data */
   REAL8 *spinDwn;               /* vector of spinDwn parameters (maybe a structure? */
@@ -186,44 +187,54 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 	}
 
         /* find correct index into LUT -- pick closest point */
-        tempFreq0 = xTemp - (UINT4)(xTemp);   /* lies in [0, +1) by definition */
-	
+#ifdef USE_FLOOR
+	xTInt =  floor(xTemp);
+#else
+	xTInt =  (UINT4)xTemp;
+#endif
+        tempFreq0 = xTemp - xTInt;   /* lies in [0, +1) by definition */
+
         {
-	  UINT4  idx = tempFreq0 * LUT_RES +.5;
-	  REAL8 d    = tempFreq0 - divLUTtab[idx];
+          UINT4 idx  = tempFreq0 * LUT_RES +.5;
+          REAL8 d    = tempFreq0 - divLUTtab[idx];
           REAL8 d2   = d*d;
-                
+	  
           tsin = sinVal[idx] + d * cosVal2PI[idx] - d2 * sinVal2PIPI[idx];
           tcos = cosVal[idx] - d * sinVal2PI[idx] - d2 * cosVal2PIPI[idx];
-
-	  tcos -= 1.0;
+	  
+          tcos -= 1.0;
         }
-
-	/* use LUT here, too */
-	{
-	  REAL8 yTemp = f * skyConst[ tempInt1[ alpha ]-1 ] + ySum[ alpha ];
+	
+        {
+          REAL8 yTemp = f * skyConst[ tempInt1[ alpha ]-1 ] + ySum[ alpha ];
+#ifdef USE_FLOOR
+          REAL8 yRem;
+          if (yTemp >= 0) {
+            yRem = yTemp - floor(yTemp);
+          } else {
+            /* yRem = yTemp - ceil(yTemp) + 1.0; */
+            yRem = yTemp + floor(- yTemp) + 1.0;
+          }
+#else
 	  REAL8 yRem = yTemp - (INT4)(yTemp);
 	  if (yRem < 0) { yRem += 1.0f; } /* make sure this is in [0..1) */
-	  {
-	    UINT4 idx  = yRem*(REAL8)(LUT_RES)+.5;
-	    REAL8 d    = yRem-divLUTtab[idx];
-	    REAL8 d2   = d*d;
-	  
-	    imagQ = sinVal[idx] + d * cosVal2PI[idx] - d2 * sinVal2PIPI[idx];
-	    realQ = cosVal[idx] - d * sinVal2PI[idx] - d2 * cosVal2PIPI[idx];
-
-	    imagQ = -imagQ;
-	  }
-	}
-
-        k1 = (UINT4)xTemp - params->Dterms + 1;
-
-        sftIndex = k1 - params->ifmin;
+#endif
+          {
+            UINT4 idx  = yRem * LUT_RES + .5;
+            REAL8 d    = yRem - divLUTtab[idx];
+            REAL8 d2   = d*d;            imagQ = sinVal[idx] + d * cosVal2PI[idx] - d2 * sinVal2PIPI[idx];
+            realQ = cosVal[idx] - d * sinVal2PI[idx] - d2 * cosVal2PIPI[idx];
+	    
+            imagQ = -imagQ;
+          }
+        }
+	
+        sftIndex = xTInt - params->Dterms + 1 - params->ifmin;
 
 	if(sftIndex < 0){
               fprintf(stderr,"ERROR! sftIndex = %d < 0 in TestLALDemod run %d\n", sftIndex, cfsRunNo);
-              fprintf(stderr," alpha=%d, k1=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
-                      alpha, k1, xTemp, params->Dterms, params->ifmin);
+              fprintf(stderr," alpha=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
+                      alpha, xTemp, params->Dterms, params->ifmin);
 	      ABORT(status, COMPUTEFSTAT_EINPUT, COMPUTEFSTAT_MSGEINPUT);
 	}
 
@@ -315,8 +326,8 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 
         if(sftIndex-1 > maxSFTindex) {
           fprintf(stderr,"ERROR! sftIndex = %d > %d in TestLALDemod\nalpha=%d,"
-                 "k1=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
-                 sftIndex-1, maxSFTindex, alpha, k1, xTemp, params->Dterms, params->ifmin);
+                 "xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
+                 sftIndex-1, maxSFTindex, alpha, xTemp, params->Dterms, params->ifmin);
 	  ABORT(status, COMPUTEFSTAT_EINPUT, COMPUTEFSTAT_MSGEINPUT);
 	}
 
