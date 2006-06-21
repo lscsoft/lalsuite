@@ -1723,7 +1723,7 @@ int main( int argc, char *argv[] )
         {
           if ( vrbflg ) fprintf( stdout, 
               "Discarding triggers H1L1 triggesr where iota >1.2\n"); 
-            XLALInspiralIotaCutBCVC( &coincInspiralList );
+            XLALInspiralH1L1IotaCut( &coincInspiralList , 1.4);
  	   if ( vrbflg ) fprintf( stdout, "%d remaining coincident triggers.\n", 
 		XLALCountCoincInspiral(coincInspiralList));
 	}
@@ -1904,7 +1904,7 @@ int main( int argc, char *argv[] )
          {
           if ( vrbflg ) fprintf( stdout, 
               "Discarding triggers H1L1 triggesr where iota >1.2\n"); 
-            XLALInspiralIotaCutBCVC( &coincInspiralList );
+            XLALInspiralH1L1IotaCut( &coincInspiralList , 1.4);
  	   if ( vrbflg ) fprintf( stdout, "%d remaining coincident triggers.\n", 
 		XLALCountCoincInspiral(coincInspiralList));
     	 }
