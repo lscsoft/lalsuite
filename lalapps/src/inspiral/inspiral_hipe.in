@@ -156,6 +156,8 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
     data_opts = 'ligo-data'
     try: type = cp.get('input','ligo-type')
     except: type = None
+    if type == 'RDS_R_L4':
+      type = ifo_name + '_' + type
     channel = cp.get('input','ligo-channel')
   
   tmplt_job.add_ini_opts(cp,data_opts)
