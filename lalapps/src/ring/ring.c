@@ -117,6 +117,54 @@ int main( int argc, char **argv )
   LAL_CALL( LALSortSnglRingdown( &status, &(events),
         LALCompareSnglRingdownByTime ), &status );
   
+  /* discard any triggers outside the trig start/end time window */
+  SnglRingdownTable *tmpEventHead = NULL;
+  SnglRingdownTable *checkEvents = NULL;
+  SnglRingdownTable *lastEvent = NULL;
+  UINT4 numEvents = 0;
+      
+  
+  if ( vrbflg ) fprintf( stdout, 
+      "  discarding triggers outside trig start/end time... \n" );
+
+  checkEvents = events;
+ 
+  while ( checkEvents )
+  {
+    INT8 trigTimeNS;
+    LAL_CALL( LALGPStoINT8( &status, &trigTimeNS, &(checkEvents->start_time) ), 
+        &status );
+    if ( trigTimeNS &&  ((params->trigStartTimeNS && 
+            (trigTimeNS < params->trigStartTimeNS)) ||
+          (params->trigEndTimeNS && (trigTimeNS >= params->trigEndTimeNS))) )
+    {
+      /* throw this trigger away */
+      SnglRingdownTable *tmpEvent = checkEvents;
+
+      if ( lastEvent )
+      {
+        lastEvent->next = checkEvents->next;
+      }
+
+      /* increment the linked list by one and free the event */
+      checkEvents = checkEvents->next;
+      LALFree( tmpEvent );
+    }
+    else
+    {
+      /* store the first event as the head of the new linked list */
+      if ( ! tmpEventHead ) tmpEventHead = checkEvents;
+
+      /* save the last event and increment the linked list by one */
+      lastEvent = checkEvents;
+     checkEvents = checkEvents->next;
+     numEvents++;
+    }
+  }
+
+  if ( vrbflg ) fprintf( stdout, "%u triggers remaining\n", numEvents );
+  events = tmpEventHead;
+
   /* output the results */
   ring_output_events_xml( params->outputFile, events, procpar, params );
 
