@@ -1,5 +1,7 @@
 #include    <math.h>
 #include    <lal/LALStdlib.h>
+#include    <lal/LALGSL.h>
+#include    <lal/LALError.h>
 #include    <gsl/gsl_errno.h>
 #include    <gsl/gsl_math.h>
 #include    <gsl/gsl_min.h>
@@ -28,6 +30,9 @@ typedef struct tagfContactWorkSpace
     gsl_matrix        *tmpA, *tmpB, *C;
     gsl_vector        *tmpV;
     gsl_permutation   *p1;
+
+    /* Variable to determine whether to free invQ1 and invQ2 */
+    BOOLEAN           _freeMatrices;
 }
 fContactWorkSpace;
 
@@ -38,3 +43,13 @@ REAL8 XLALCheckOverlapOfEllipsoids (
         gsl_vector         *rb,
         fContactWorkSpace  *workSpace );
 
+
+fContactWorkSpace * XLALInitFContactWorkSpace(
+                       INT4                           n,
+                       gsl_matrix                    *a,
+                       gsl_matrix                    *b,
+                       const gsl_min_fminimizer_type *T,
+                       REAL8                          conv
+                                             );
+
+void XLALFreeFContactWorkSpace( fContactWorkSpace *workSpace );
