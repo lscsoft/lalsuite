@@ -5,7 +5,7 @@ pkginclude_HEADERS = Units.h LALDetectors.h DetectorSite.h DetResponse.h \
                      LIGOMetadataTables.h LIGOMetadataUtils.h BurstUtils.h \
                      TemplateBankGeneration.h \
 		     Sequence.h TimeSeries.h FrequencySeries.h \
-		     Segments.h LALTrigScanCluster.h
+		     Segments.h LALTrigScanCluster.h EllipsoidOverlapTools.h
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 MAINTAINERCLEANFILES = FrequencySeries.h Sequence.h TimeSeries.h
