@@ -368,12 +368,12 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
   char *program = argv[0];
   
   /* set defaults */
-  inputParams->filterknee = 1.0; /* filter knee frequency of 1 Hz */
+  inputParams->filterknee = 0.; /* default is not to filter */
   inputParams->resamplerate = 0.; /* resample to 1 Hz */
   inputParams->samplerate = 0.;
-  inputParams->calibrate = 0;
-  inputParams->verbose = 0;
-  inputParams->stddevthresh = 0.;
+  inputParams->calibrate = 0; /* default is not to calibrate */
+  inputParams->verbose = 0; /* default is not to do verbose */
+  inputParams->stddevthresh = 0.; /* default is not to threshold */
   inputParams->calibfiles.calibcoefficientfile = NULL;
   inputParams->calibfiles.sensingfunctionfile = NULL;
   inputParams->calibfiles.openloopgainfile = NULL;
@@ -915,7 +915,7 @@ stops->data[i]);
           /* split segment */
           duration  = times->data[j+k] - starts->data[i] - ((1./sampleRate)/2.);
 
-          /* set starts to new segemt start time */
+          /* set starts to new segment start time */
           starts->data[i] = times->data[j+k+1] - ((1./sampleRate)/2.);
           
           /* this if statement is a fix needed due to problems that can effect the coarse
