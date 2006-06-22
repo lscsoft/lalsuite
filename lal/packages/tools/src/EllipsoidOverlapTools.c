@@ -74,7 +74,8 @@ static REAL8 fContact (REAL8 x, void *params)
  * This function allocates and initialises the memory and parameters for
  * the workspace used for determining whether the two ellipsoids intersect.
  * If the shape matrices a and b are not null, these will be used in the
- * workspace; otherwise memory will be allocated for these matrices.
+ * workspace; otherwise they will point to null, and will have to be
+ * set by hand.
  * ------------------------------------------------------------------------*/
 fContactWorkSpace * XLALInitFContactWorkSpace(
                        INT4                           n,
@@ -99,7 +100,7 @@ fContactWorkSpace * XLALInitFContactWorkSpace(
     XLAL_ERROR_NULL( func, XLAL_EFAULT );
 
   /* The matrices a and b should be both supplied or both null */
-  if (!( a && b ) && ( a || b ))
+  if ((!( a && b )) && ( a || b ))
         XLAL_ERROR_NULL( func, XLAL_EINVAL );
 
   /* Check the matrices conform to the expected sizes */
@@ -122,12 +123,6 @@ fContactWorkSpace * XLALInitFContactWorkSpace(
     workSpace->invQ1         = a;
     workSpace->invQ2         = b;
   }
-  else
-  {
-    XLAL_CALLGSL( workSpace->invQ1 = gsl_matrix_calloc( n, n ) );
-    XLAL_CALLGSL( workSpace->invQ2 = gsl_matrix_calloc( n, n ) );
-    workSpace->_freeMatrices = 1;
-  }
 
   XLAL_CALLGSL( workSpace->tmpA = gsl_matrix_calloc( n, n ) );
   XLAL_CALLGSL( workSpace->tmpB = gsl_matrix_calloc( n, n ) );
@@ -140,7 +135,7 @@ fContactWorkSpace * XLALInitFContactWorkSpace(
   /* Check all of the above were allocated properly */
   if (!workSpace->tmpA || !workSpace->tmpB || !workSpace->C || 
       !workSpace->p1 || !workSpace->tmpV || !workSpace->r_AB 
-      || !workSpace->s || !workSpace->invQ1 || !workSpace->invQ2)
+      || !workSpace->s )
   {
     XLALFreeFContactWorkSpace( workSpace );
     XLAL_ERROR_NULL( func, XLAL_ENOMEM );
@@ -242,13 +237,6 @@ void XLALFreeFContactWorkSpace( fContactWorkSpace *workSpace )
   if (workSpace->p1)   XLAL_CALLGSL( gsl_permutation_free( workSpace->p1 ));
   if (workSpace->tmpV) XLAL_CALLGSL( gsl_vector_free( workSpace->tmpV ));
   if (workSpace->r_AB) XLAL_CALLGSL( gsl_vector_free( workSpace->r_AB ));
-
-  if (workSpace->_freeMatrices)
-  {
-    if (workSpace->invQ1) XLAL_CALLGSL( gsl_matrix_free( workSpace->invQ1 ));
-    if (workSpace->invQ2) XLAL_CALLGSL( gsl_matrix_free( workSpace->invQ2 ));
-  }
-
   if (workSpace->s)    XLAL_CALLGSL( gsl_min_fminimizer_free( workSpace->s ));
 
   LALFree( workSpace );

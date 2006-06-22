@@ -30,9 +30,6 @@ typedef struct tagfContactWorkSpace
     gsl_matrix        *tmpA, *tmpB, *C;
     gsl_vector        *tmpV;
     gsl_permutation   *p1;
-
-    /* Variable to determine whether to free invQ1 and invQ2 */
-    BOOLEAN           _freeMatrices;
 }
 fContactWorkSpace;
 
