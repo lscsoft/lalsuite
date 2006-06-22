@@ -47,9 +47,9 @@ extern "C" {
 " --ifo               name of ifo e.g. L1, H1, H2, G1\n"\
 " --pulsar            name of pulsar e.g. J0534+2200\n"\
 " --heterodyne-flag   (int) coarse heterodyne 0, fine heterodyne 1,\n\
-                      parameter update 2\n"\
+                     parameter update 2\n"\
 " --param-file        name of file containing initial pulsar parameters\n\
-                      (.par file)\n"\
+                     (.par file)\n"\
 " --param-file-update name of file containing updated pulsar parameters\n"\
 " --ephem-earth-file  name of file containing the earth ephemeris\n"\
 " --ephem-sun-file    name of file containing the sun ephemeris\n"\
@@ -57,7 +57,7 @@ extern "C" {
 " --sample-rate       sample rate of input data\n"\
 " --resample-rate     sample rate for output data (i.e. 1, 1/60, 8192 etc) \n"\
 " --data-file         file containing list of frame files (in frame cache format)\n\
-                      or previously heterodyned data file\n"\
+                     or previously heterodyned data file\n"\
 " --channel           frame data channel (i.e. LSC-DARM_ERR)\n"\
 " --output-dir        directory for output data files\n"\
 " --seg-file          name of file containing science segment list\n"\
@@ -67,7 +67,8 @@ extern "C" {
 " --sensing-function  name of sensing function file (CAV_GAIN)\n"\
 " --open-loop-gain    name of open loop gain file(OLOOP_GAIN)\n"\
 " --stddev-thresh     standard deviation threshold veto for outliers\n"\
-" --freq-factor       factor which mulitplies the pulsar spin frequency (default 2.0)\n"\
+" --freq-factor       factor which mulitplies the pulsar spin frequency\n\
+                     (default 2.0 i.e. a signal from a triaxial pulsar)\n"\
 "\n"
 
 #define MAXLENGTH 10000000 /* max number of lines in heterodyned data file */
