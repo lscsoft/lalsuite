@@ -47,6 +47,14 @@ int main(int argc, char *argv[]){
 
   /* read in pulsar data */
   LALReadTEMPOParFile(&status, &hetParams.het, inputParams.paramfile);
+  
+  /* check whether the file has been read in  */
+  if(status.statusCode){
+    fprintf(stderr, "Error... function returned returned error code %d and message:\n\t%s.\n",
+    status.statusCode, status.statusDescription);
+    return 0;
+  }
+  
   if(inputParams.verbose){  
     fprintf(stderr, "I've read in the pulsar parameters for %s.\n", inputParams.pulsar);
     fprintf(stderr, "alpha = %lf rads, delta = %lf rads.\n", hetParams.het.ra, hetParams.het.dec);
@@ -80,6 +88,14 @@ frequency.\n", inputParams.freqfactor);
 
   if(inputParams.heterodyneflag == 2){ /* if updating parameters read in updated par file */
     LALReadTEMPOParFile(&status, &hetParams.hetUpdate, inputParams.paramfileupdate);
+    
+    /* check whether the file has been read in  */
+    if(status.statusCode){
+      fprintf(stderr, "Error... function returned returned error code %d and message:\n\t%s.\n",
+      status.statusCode, status.statusDescription);
+      return 0;
+    }
+    
     if(inputParams.verbose){  
       fprintf(stderr, "I've read the updated parameters for %s.\n", inputParams.pulsar);
       fprintf(stderr, "alpha = %lf rads, delta = %lf rads.\n", hetParams.hetUpdate.ra,
@@ -665,6 +681,13 @@ REAL8 freqfactor){
     LALFree(edat->ephemS);
     LALFree(edat);
   }
+  
+  /* check LALstatus error code in case any of the barycntring code has had a problem */
+  if(status.statusCode){
+    fprintf(stderr, "Error... got error code %d and message:\n\t%s\n", 
+    status.statusCode, status.statusDescription);
+    exit(0);
+  } 
 }
 
 /* function to extract the frame time and duration from the file name */
