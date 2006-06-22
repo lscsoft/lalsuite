@@ -384,6 +384,7 @@ int main(int argc, char *argv[]){
 
     REAL8 doppWings, fmin, fmax;
     INT4 length;
+    INT4 k;
 
     /* set detector constraint */
     constraints.detector = NULL;
@@ -432,8 +433,13 @@ int main(int argc, char *argv[]){
     nStarEventVec.length = length + 1;
     nStarEventVec.event = NULL;
     nStarEventVec.event = (HoughSignificantEvent *)LALCalloc( length+1, sizeof(HoughSignificantEvent));
-    /* initialize nstar values -- really unnecessary */
-    memset( nStarEventVec.event, 0, length+1);
+    /* initialize nstar significance value
+       -- this should be sufficiently small so that the maximum significance is 
+       always found */
+    for ( k = 0; k < nStarEventVec.length; k++) {
+      REAL8 alphaPeak = exp( - uvar_peakThreshold);
+      nStarEventVec.event[k].nStarSignificance = -sqrt( mObsCoh * alphaPeak / (1-alphaPeak));
+    }
 
     /* allocate memory for velocity vector */
     velV.length = mObsCoh;
