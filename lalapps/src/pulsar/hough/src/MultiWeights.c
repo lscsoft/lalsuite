@@ -244,7 +244,7 @@ int main(int argc, char *argv[]){
     sumSnInv = sqrt(sumSnInv);
 
 
-    fprintf(stdout, "%g\n", 1.0/sumSnInv);
+    fprintf(stdout, "%f  %g\n", uvar_f0, 1.0/sumSnInv);
   } /* end block for 1/Sn calculation */
 
 
@@ -283,8 +283,8 @@ int main(int argc, char *argv[]){
     } /* end loop over IFOs */
 
     /* print relative sum of weights */    
-    for ( iIFO = 0; iIFO < numifo; iIFO++ )
-      fprintf(stdout, "%s  %f\n", inputSFTs->data[iIFO]->data[0].name, sumweights[iIFO]/mObsCoh);
+    /*     for ( iIFO = 0; iIFO < numifo; iIFO++ ) */
+    /*       fprintf(stdout, "%s  %f\n", inputSFTs->data[iIFO]->data[0].name, sumweights[iIFO]/mObsCoh); */
     
     LALFree(sumweights);
       
