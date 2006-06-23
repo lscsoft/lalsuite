@@ -71,10 +71,8 @@ trigScanValidEvent;
 
 typedef struct tagTrigScanInputPoint
 { 
-    REAL8       y, z, rho, effD, chisq;
-    REAL8       tc_sec, tc_ns;  
-    REAL8       figOfMerit;
-    INT4        isValidEvent;
+    REAL8       y, z, tc_sec, tc_ns;  
+    REAL8       rho;
     INT4        clusterID;
     REAL8       Gamma[6];
     gsl_matrix  *invGamma;
@@ -100,7 +98,7 @@ trigScanClusterIn;
 typedef struct tagTrigScanClusterOut
 {
     REAL8  y, z, tc_sec, tc_ns;
-    REAL8  rho, effD;
+    REAL8  rho;
     INT4   master_idx;
     INT4   cluster_id, nelements;
 }
@@ -110,19 +108,9 @@ typedef struct tagTrigScanEpsSearchIn
 {
     trigScanInputPoint   *masterList;
     INT4                 nInputPoints;
-    INT4                 minPoints;
     INT4                 clusterID;
-    INT4                 seedID;
 }
 trigScanEpsSearchInput;
-
-typedef struct tagExpandClusterIn
-{
-    INT4   nInputPoints;  
-    INT4   currClusterID;
-    INT4   currSeedID;
-}
-ExpandClusterInput;
 
 /*--- Function prototypes ---*/
 void LALTrigScanClusterDriver (
@@ -134,14 +122,15 @@ void LALTrigScanClusterDriver (
 
 /*--- Core functions which carry out clustering ---*/
 trigScanValidEvent XLALTrigScanExpandCluster (
-        trigScanInputPoint    *list, 
+        INT4                  *list, 
         trigScanInputPoint    *masterList,
-        ExpandClusterInput    expandClusterIn
+        INT4                  nPoints,
+        INT4                  currClusterID
         );
 
 void XLALTrigScanGetEpsNeighbourhood (
-        trigScanInputPoint      seed, 
-        trigScanInputPoint      **list,
+        INT4                    seed, 
+        INT4                    **list,
         INT4                    *size,
         trigScanEpsSearchInput  *epsSearchIn
         );

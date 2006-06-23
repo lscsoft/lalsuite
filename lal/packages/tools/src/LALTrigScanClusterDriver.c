@@ -88,9 +88,6 @@ void LALClusterSnglInspiralOverTemplatesAndEndTime (
             condenseIn->masterList[k].tc_ns  = 
                     (thisEvent->end_time).gpsNanoSeconds;
             condenseIn->masterList[k].rho    = thisEvent->snr;
-            condenseIn->masterList[k].effD   = thisEvent->eff_distance;
-            condenseIn->masterList[k].chisq  = 0.0;
-            condenseIn->masterList[k].isValidEvent = 1;
 
             ++k;
         }
@@ -160,8 +157,9 @@ void LALTrigScanClusterDriver (
     REAL8   *ny, *nz;
 
     /* For clustering */
-    trigScanInputPoint   *masterList=NULL, *list=NULL;
-    ExpandClusterInput   expandClusterIn;  
+    trigScanInputPoint   *masterList=NULL;
+    INT4                 *list = NULL;
+    INT4                 currClusterID = 1;
 
     INITSTATUS (status, 
             "LALTrigScanClusterDriver.c", LALTRIGSCANCLUSTERDRIVERC);
@@ -234,8 +232,7 @@ void LALTrigScanClusterDriver (
     /*-- CLUSTERING BEGINS --*/
     /*-----------------------*/
 
-    expandClusterIn.nInputPoints  = n;
-    expandClusterIn.currClusterID = 1;
+    currClusterID = 1;
 
     /*-- For each point in the masterList --*/
     for (i = 0; i < n; i++)
@@ -244,22 +241,14 @@ void LALTrigScanClusterDriver (
         if (masterList[i].clusterID == TRIGSCAN_UNCLASSIFIED)
         {
             /* create a list of size 1 */
-            list = (trigScanInputPoint *) 
-                    LALMalloc (sizeof(trigScanInputPoint));
+            list = (INT4 *) 
+                    LALMalloc (sizeof(INT4));
 
             /* assume that this seed point is a cluster */
-            masterList[i].clusterID = expandClusterIn.currClusterID;
+            masterList[i].clusterID = currClusterID;
 
             /* assign the values of the seed-point to the list */
-            list[0].y            =  masterList[i].y;
-            list[0].z            =  masterList[i].z;
-            list[0].tc_sec       =  masterList[i].tc_sec;
-            list[0].tc_ns        =  masterList[i].tc_ns;
-            list[0].rho          =  masterList[i].rho;
-            list[0].isValidEvent =  masterList[i].isValidEvent;
-            list[0].clusterID    =  masterList[i].clusterID;
-            
-            expandClusterIn.currSeedID = i;
+            list[0]  =  i;
 
             /*-- Try to expand this seed and see if it agglomerates more --*/
             /*-- more points around it. If it does not then assign it to --*/
@@ -267,7 +256,7 @@ void LALTrigScanClusterDriver (
             /*-- the next cluster.                                       --*/
 
             if (!(XLALTrigScanExpandCluster ( 
-                            list, masterList, expandClusterIn
+                            list, masterList, n, currClusterID 
                           )))
            {
                 /* the seed point did not agglomerate into a cluster */
@@ -276,7 +265,7 @@ void LALTrigScanClusterDriver (
             else
             {
                 /* a cluster has been found .. eureka !*/
-                expandClusterIn.currClusterID++;
+                currClusterID++;
             }
         }
     }
@@ -286,7 +275,7 @@ void LALTrigScanClusterDriver (
     /*---------------------*/
 
     /*--- Output ----------*/
-    (*nclusters) = expandClusterIn.currClusterID-1;  
+    (*nclusters) = currClusterID-1;  
 
     /* Worry about output only if there are clusters */
     if (*nclusters)
@@ -305,11 +294,11 @@ void LALTrigScanClusterDriver (
                 condenseIn, condenseOut, (*nclusters));
         CHECKSTATUSPTR (status);
 
-    } /* If nclusters */
+    } 
 
+    /* Append the unclustered points if required */
     if ( condenseIn->appendStragglers )
     {
-        /* Append the unclustered points */
         LALTrigScanAppendIsolatedTriggers( status->statusPtr, 
                 condenseIn, condenseOut, nclusters);
         CHECKSTATUSPTR (status);

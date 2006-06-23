@@ -27,13 +27,14 @@ NRCSID (LALTRIGSCANCLUSTERC,
 /* returns false. Otherwise it returns true.                         */
 /* ------------------------------------------------------------------*/
 trigScanValidEvent XLALTrigScanExpandCluster (
-        trigScanInputPoint    *list, 
+        INT4                  *list, 
         trigScanInputPoint    *masterList,
-        ExpandClusterInput    expandClusterIn
+        INT4                  nPoints,
+        INT4                  currClusterID
         )
 {
     trigScanValidEvent      flag = trigScanFalse;
-    trigScanInputPoint      seed;
+    INT4                    seed;
     trigScanEpsSearchInput  epsSearchIn; /* Data structure given as input to*/
                                          /* getEpsNeighbourhood fn.         */ 
 
@@ -42,14 +43,12 @@ trigScanValidEvent XLALTrigScanExpandCluster (
 
     /* Create the epsSearchIn data structure */
     epsSearchIn.masterList   = masterList;
-    epsSearchIn.nInputPoints = expandClusterIn.nInputPoints;
-    epsSearchIn.minPoints    = TRIGSCAN_CLUSTER_MIN_PTS;
-    epsSearchIn.clusterID    = expandClusterIn.currClusterID;
-    epsSearchIn.seedID       = expandClusterIn.currSeedID;
+    epsSearchIn.nInputPoints = nPoints;
+    epsSearchIn.clusterID    = currClusterID;
 
     while (pointer < size) { 
 
-        /* Pick the first point in this list as the seed */
+        /* Pick the index of the first point in this list as the seed */
         seed = list[pointer];
 
         /* call function which returns the points which are inside the */ 
@@ -89,33 +88,33 @@ trigScanValidEvent XLALTrigScanExpandCluster (
 /*  member added to it. The 'size' variable is the length of this list.    */
 /* ------------------------------------------------------------------------*/
 void XLALTrigScanGetEpsNeighbourhood (
-        trigScanInputPoint      seed, 
-        trigScanInputPoint      **list,
+        INT4                    seed, 
+        INT4                    **list,
         INT4                    *size,
         trigScanEpsSearchInput  *epsSearchIn
         )
 {
     INT4              i;
     REAL8             distance;
-    REAL8             dy, dz, dtc;
-    REAL8             q1[3], q2[3];  /* Position vectors */
-    gsl_vector_view   vq1, vq2;      /* vector views from position vectors */
-    fContactWorkSpace *workSpace;    /* reqd for ellipsoid overlap */
+    REAL8             q1[3], q2[3]; /* Position vectors */
+    gsl_vector_view   vq1, vq2;     /* vector views from position vectors */
+    fContactWorkSpace *workSpace;   /* reqd for ellipsoid overlap */
 
     /* Init the workSpace required for checking ellipsoid overlaps */
     workSpace = XLALInitFContactWorkSpace( 3, NULL, NULL, gsl_min_fminimizer_brent, 1.0e-2 ); 
     
-   /* Set the position vector (q1) of the seed point */
-    q1[0] = seed.tc_sec + 1.e-9*(seed.tc_ns);
-    q1[1] = seed.y;
-    q1[2] = seed.z;
+    /* Set the position vector (q1) of the seed point */
+    q1[0] = epsSearchIn->masterList[seed].tc_sec 
+            + 1.e-9*(epsSearchIn->masterList[seed].tc_ns);
+    q1[1] = epsSearchIn->masterList[seed].y;
+    q1[2] = epsSearchIn->masterList[seed].z;
 
     /* create a vector view from the q1 array */
     vq1 = gsl_vector_view_array(q1,3);
 
     /* Set the shape matrix of the seed point */
-    workSpace->invQ1  = epsSearchIn->masterList[epsSearchIn->seedID].invGamma;
-            
+    workSpace->invQ1  = epsSearchIn->masterList[seed].invGamma;
+
     for (i = 0; i < epsSearchIn->nInputPoints; i++)
     {
         /* check if the point has been classified */
@@ -133,23 +132,8 @@ void XLALTrigScanGetEpsNeighbourhood (
             /* Set the shape matrix of the i-th point */
             workSpace->invQ2    = epsSearchIn->masterList[i].invGamma;
 
-#if 1
+            /* Figure out if the above ellipsoids overlap */
             distance = XLALCheckOverlapOfEllipsoids (&(vq1.vector), &(vq2.vector), workSpace);
-#endif
-
-#if 0
-            /* Vector \vec{r}_{AB} = \vec{r}_B - \vec{r}_A */ 
-            dtc  = q2[0] - q1[0];
-            dy   = q2[1] - q1[1];
-            dz   = q2[2] - q1[2];
-
-            distance  = dtc*dtc*epsSearchIn->masterList[epsSearchIn->seedID].Gamma[0] 
-                    + 2.0*dtc*dy*epsSearchIn->masterList[epsSearchIn->seedID].Gamma[1] 
-                    + 2.0*dtc*dz*epsSearchIn->masterList[epsSearchIn->seedID].Gamma[2];
-            distance += dy*dy*epsSearchIn->masterList[epsSearchIn->seedID].Gamma[3] 
-                    + 2.0*dy*dz*epsSearchIn->masterList[epsSearchIn->seedID].Gamma[4];
-            distance += dz*dz*epsSearchIn->masterList[epsSearchIn->seedID].Gamma[5];
-#endif
 
             if (distance > 0 && distance <= 1.) 
             {
@@ -159,9 +143,9 @@ void XLALTrigScanGetEpsNeighbourhood (
                 /* increment the size variable and hence realloc the list */
                 (*size)++;
 
-                if ( !(*list = (trigScanInputPoint*) 
+                if ( !(*list = (INT4*) 
                             LALRealloc(*list, 
-                                sizeof(trigScanInputPoint)*(*size)))
+                                sizeof(INT4)*(*size)))
                    )
                 {
                     fprintf (stderr, "LALRealloc error. Aborting at %d\n", 
@@ -170,14 +154,7 @@ void XLALTrigScanGetEpsNeighbourhood (
                 }
 
                 /* add the shortlisted point to the list at position size - 1*/
-                (*list)[*size - 1].y  = epsSearchIn->masterList[i].y;
-                (*list)[*size - 1].z  = epsSearchIn->masterList[i].z;
-                (*list)[*size - 1].tc_sec = epsSearchIn->masterList[i].tc_sec;
-                (*list)[*size - 1].tc_ns  = epsSearchIn->masterList[i].tc_ns;	
-                (*list)[*size - 1].rho    = epsSearchIn->masterList[i].rho;
-                (*list)[*size - 1].isValidEvent =
-                        epsSearchIn->masterList[i].isValidEvent;
-                (*list)[*size - 1].clusterID = epsSearchIn->clusterID;
+                (*list)[*size - 1]  = i;
             }
         }
     }
@@ -235,14 +212,16 @@ void LALTrigScanClusterMakeOutput (
             if (masterList[j].clusterID == i) {
                 t_rho->data [cSize] = masterList[j].rho;
                 t_idx  [cSize] = j;
-                
+
+#if 0
                 if (condenseIn->vrbflag) 
                 {
-                    fprintf (stdout, "%d %e %e %9.f %9.f %.8e %e\n", 
+                    fprintf (stdout, "%d %e %e %9.f %9.f %.8e\n", 
                             i, masterList[j].y, masterList[j].z, 
                             masterList[j].tc_sec, masterList[j].tc_ns,
-                            masterList[j].rho, masterList[j].effD);
+                            masterList[j].rho);
                 }
+#endif
 
                 cSize ++;
             }
@@ -261,6 +240,7 @@ void LALTrigScanClusterMakeOutput (
         (*condenseOut)[i-1].master_idx = t_idx[maxResultIdx];
         (*condenseOut)[i-1].nelements  = cSize;
 
+#if 0
         if (condenseIn->vrbflag)
         {
             fprintf (stderr, 
@@ -271,6 +251,7 @@ void LALTrigScanClusterMakeOutput (
                     (INT4)((*condenseOut)[i-1].tc_ns),
                     (*condenseOut)[i-1].rho);
         }
+#endif
 
     } /* Loop over clusters */
 
@@ -326,9 +307,10 @@ void LALTrigScanAppendIsolatedTriggers (
     ASSERT (xx && vv && nn && mid,
             status, LALTRIGSCANCLUSTERH_ENULL, LALTRIGSCANCLUSTERH_MSGENULL);
 
-
+#if 0
     if ( condenseIn->vrbflag )
           fprintf (stderr, "--------- BEGINNING TO APPEND ----------\n");
+#endif
     for (i=1, n1=0; i<=n; i++) {
         if (masterList[i-1].clusterID < 1 ) {
             n1++;
@@ -337,6 +319,7 @@ void LALTrigScanAppendIsolatedTriggers (
             nn[n1]  = (REAL8)(masterList[i-1].clusterID);
             mid[n1] = i-1; 
 
+#if 0
             if ( condenseIn->vrbflag )
                   fprintf (stderr, "%4d   %d  %d   %d   %d   %1.12e\n", 
                           n1, mid[n1],
@@ -344,6 +327,7 @@ void LALTrigScanAppendIsolatedTriggers (
                           (int)(masterList[i-1].tc_sec),
                           (int)(masterList[i-1].tc_ns),
                           masterList[i-1].rho);
+#endif
         }
     }
 
@@ -398,13 +382,14 @@ void LALTrigScanAppendIsolatedTriggers (
             /* increment nclusters as we have added a new one */
             (*nclusters) ++;
 
+#if 0
             /* After adding this element, print it to stderr and stdout */
             if (condenseIn->vrbflag) 
             {
-                fprintf (stdout, "%4d %e %e %9.f %9.f %.8e %e\n", 
+                fprintf (stdout, "%4d %e %e %9.f %9.f %.8e\n", 
                         (*nclusters), masterList[k].y, masterList[k].z, 
                         masterList[k].tc_sec, masterList[k].tc_ns,
-                        masterList[k].rho, masterList[k].effD);
+                        masterList[k].rho);
                 fprintf (stderr, "Added cluster %3d after %3d (%3d members) max snr index "
                         "%3d %9d %9d %e\n", 
                         (*nclusters), (*nclusters)-1, (*condenseOut)[(*nclusters)-1].nelements, 
@@ -413,13 +398,16 @@ void LALTrigScanAppendIsolatedTriggers (
                         (INT4)((*condenseOut)[(*nclusters)-1].tc_ns), 
                         (*condenseOut)[(*nclusters)-1].rho); 
             }
+#endif
         }
 
         i = ni;
     }
 
+#if 0
     if ( condenseIn->vrbflag )
           fprintf (stderr, "--------- DONE APPENDING ----------\n");
+#endif
 
     /* Free up memory */
     if (xx)  LALFree (xx);
