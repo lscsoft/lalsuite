@@ -804,9 +804,9 @@ parser.add_option("-d", "--datafind",action="store_true",default=False,\
 parser.add_option("-t", "--template-bank",action="store_true",default=False,\
     help="run lalapps_tmpltbank to generate template banks")
 parser.add_option("-i", "--inspiral" ,action="store_true",default=False,\
-    help="run lalapps_inspiral to generate triggers")
+    help="run lalapps_inspiral (or lalapps_ring) to generate triggers")
 parser.add_option("-r", "--ringdown" ,action="store_true",default=False,\
-    help="run lalapps_ring to generate triggers")
+    help="run lalapps_ring insted of lalapps_inspiral")
 parser.add_option("-c", "--coincidence",action="store_true",default=False,\
     help="run lalapps_thinca to test for coincidence")
 parser.add_option("-U", "--td-follow-bank", action="store_true",default=False,\
