@@ -4,7 +4,7 @@
  */
 #if 0
 <lalVerbatim file="TSDataHV">
-Author Cristina Torres
+Author C. Torres
 </lalVerbatim>
 
 <lalLaTeX file="TSDataH">
@@ -42,6 +42,7 @@ and production use of the tracksearch libraries.
 #include <lal/TFTransform.h>
 #include <lal/TSSearch.h>
 #include <lal/TimeSeries.h>
+#include <string.h>
 
 #ifdef  __cplusplus   /* C++ protection. */
 extern "C" {
@@ -60,6 +61,7 @@ NRCSID (TSDATAH, "$Id$");
 #define TSDATA_EWHIT    64
 #define TSDATA_ERESP    128
 #define TSDATA_EINTP    256
+#define TSDATA_EINVA    512
 
 #define TSDATA_MSGENULL "Null pointer"
 #define TSDATA_MSGENNUL "Non-null pointer"
@@ -70,10 +72,11 @@ NRCSID (TSDATAH, "$Id$");
 #define TSDATA_MSGEWHIT "Response function does not have enough frequency information to whiten data"
 #define TSDATA_MSGERESP "Response function start frequency not equal to 0"
 #define TSDATA_MSGEINTP "Not enough points for interpolate function."
+#define TSDATA_MSGEINVA "Inconsistent Argument(s)"
 /******** </lalErrTable> ********/
 
 /*
- * Old obsolete structure not used
+ * All fields are depricated minus dataSegmentPoints and numberDataSegments
  */
 typedef struct
 tagTSCreateParams
@@ -144,7 +147,7 @@ LALCreateTSDataSegmentVector (
 void
 LALDestroyTSDataSegmentVector (
 			       LALStatus                  *status,
-			       TSSegmentVector           **vector
+			       TSSegmentVector            *vector
 			       );
 
 /* 
@@ -159,6 +162,15 @@ void TrackSearchPrep(
 		     TSSegmentVector                *PreparedData,
 		     TSSearchParams                  params
 		     );
+/*
+ * This is a less functional version of TrackSearchPrep which is
+ * greatly simplified in light of analysis pipeline design
+ */
+void LALTrackSearchDataSegmenter(
+				 LALStatus           *status,
+				 REAL4TimeSeries     *TSSearchData,
+				 TSSegmentVector     *PreparedData,
+				 TSSearchParams       params);
 /*
  * This routine applies our thresholds on length and power
  * It expects to allocate a thresholded candidate list
@@ -193,15 +205,41 @@ LALTrackSearchWhitenREAL4TimeSeries(
 				    REAL4FrequencySeries   *signalPSD,
 				    TSWhitenParams          params
 				    );
+
+/*
+ * This function does simple manipulation to avoid
+ * wasting CPU time on FFTs
+ */
+
+void 
+LALTrackSearchWhitenCOMPLEX8FrequencySeries(
+					    LALStatus                *status,
+					    COMPLEX8FrequencySeries  *fSeries,
+					    REAL4FrequencySeries     *PSD,
+					    UINT4                     level
+					    );
+
+
 /*
  * This routine can be run alone but is called via TrackSearchPrep to
  * use a response curve for the segment epoch and calibrate that
- * time series segment
+ * time series segment DEAD FUNCTION
  */
 void
 LALTrackSearchCalibrateREAL4TimeSeries(LALStatus               *status,
 				       REAL4TimeSeries         *signal,
 				       COMPLEX8FrequencySeries *response);
+
+/*
+ * This routine will calibrate the fourier data given a corresponding
+ * transfer function working just in fourier domain
+ */
+void
+LALTrackSearchCalibrateCOMPLEX8FrequencySeries(
+					       LALStatus                 *status,
+					       COMPLEX8FrequencySeries   *fSeries,
+					       COMPLEX8FrequencySeries   *response
+					       );
 
 /*
  * This routine is unfinished it was an attempt to mimic

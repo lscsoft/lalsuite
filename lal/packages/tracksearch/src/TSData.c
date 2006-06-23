@@ -11,6 +11,8 @@
  
 #include <lal/TSData.h>
 #include <lal/TSSearch.h>
+#include <lal/FrameCache.h>
+#include <lal/LALStdlib.h>
 
 NRCSID (TSDATAC,"$Id$");
 
@@ -78,32 +80,44 @@ LALCreateTSDataSegmentVector (
 			      )
 {
   INT4                           i;
-  TSSegmentVector       *vectorPtr;
+  UINT4                  segmentLength=0;
+  const LIGOTimeGPS      gps_zero = LIGOTIMEGPSZERO;
 
   INITSTATUS (status, "LALCreateTSSegmentVector", TSDATAC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (!*vector, status, TSDATA_ENNUL, TSDATA_MSGENNUL);
   ASSERT (params, status, TSDATA_ENULL, TSDATA_MSGENULL);
-  ASSERT (params->numberDataSegments > 0, status, TSDATA_ESEGZ, TSDATA_MSGESEGZ);
-  ASSERT (params->dataSegmentPoints > 0, status, TSDATA_ENUMZ, TSDATA_MSGENUMZ);
-  vectorPtr = *vector = (TSSegmentVector *) LALMalloc (sizeof(TSSegmentVector));
-  vectorPtr->length = params->numberDataSegments;
-  vectorPtr->dataSeg  = (REAL4TimeSeries *) 
-    LALMalloc(params->numberDataSegments*sizeof(REAL4TimeSeries));
-  if ( !(vectorPtr->dataSeg) )
+  ASSERT (params->numberDataSegments > 0, 
+	  status, TSDATA_ESEGZ, TSDATA_MSGESEGZ);
+  ASSERT (params->dataSegmentPoints > 0,
+	  status, TSDATA_ENUMZ, TSDATA_MSGENUMZ);
+  
+  *vector = (TSSegmentVector *) LALMalloc(sizeof(TSSegmentVector));
+
+
+  (*vector)->length = params->numberDataSegments;
+  (*vector)->dataSeg  = (REAL4TimeSeries **) 
+    LALMalloc(params->numberDataSegments*sizeof(REAL4TimeSeries*));
+  if ( !((*vector)->dataSeg) )
     {
-      LALFree( vectorPtr );
-      vectorPtr = NULL;
+      LALFree(*vector);
       ABORT( status, TSDATA_EALOC, TSDATA_MSGEALOC );
     }
-  for (i = 0; i < (INT4)(vectorPtr->length) ; ++i)
+  /*
+   * Intialize structure to empty state
+   */
+  segmentLength=params->dataSegmentPoints;
+  for (i = 0; i < (INT4)((*vector)->length); i++)
     {
-      strncpy( vectorPtr->dataSeg->name, "anonymous", LALNameLength * sizeof(CHAR) );
-      vectorPtr->dataSeg[i].data = NULL;
-      LALCreateVector (status->statusPtr, 
-		       &(vectorPtr->dataSeg[i].data), 
-		       params->dataSegmentPoints);
+      LALCreateREAL4TimeSeries(status->statusPtr,
+			       &((*vector)->dataSeg[i]),
+			       "Uninitialized",
+			       gps_zero,
+			       0,
+			       1,
+			       lalDimensionlessUnit,
+			       segmentLength);
       CHECKSTATUSPTR (status);
     }
   DETATCHSTATUSPTR (status);
@@ -115,297 +129,30 @@ LALCreateTSDataSegmentVector (
 void
 LALDestroyTSDataSegmentVector (
 			       LALStatus                  *status,
-			       TSSegmentVector           **vector
+			       TSSegmentVector            *vector
 			       )
 {
   INT4                    i;
-  TSSegmentVector       *vectorPtr;
 
   INITSTATUS (status, "LALDestroyTSDataSegmentVector", TSDATAC);
   ATTATCHSTATUSPTR (status);
-  ASSERT (*vector, 
+  ASSERT (vector, 
 	  status, 
 	  TSDATA_ENULL, 
 	  TSDATA_MSGENULL);
-  vectorPtr = (*vector);
-  for (i = 0; i < (INT4)(vectorPtr->length) ; ++i)
+  for (i = 0; i < (INT4)(vector->length) ; i++)
     {
-      LALDestroyVector (status->statusPtr, &(vectorPtr->dataSeg[i].data));
+      LALDestroyREAL4TimeSeries(status->statusPtr,(vector->dataSeg[i]));
       CHECKSTATUSPTR (status);
     }
-  LALFree (vectorPtr->dataSeg);
-  LALFree (*vector);
+  if (vector->dataSeg)
+    LALFree(vector->dataSeg);
+  if (vector)
+    LALFree(vector);
   DETATCHSTATUSPTR (status);
   RETURN (status);
 }
 /*END LALDestroyTSDataSegmentVector */
-
-
-void TrackSearchPrep(
-		     LALStatus                *status,
-		     REAL4TimeSeries          *TSSearchData, /*NeedTimeSeries*/
-		     COMPLEX8Vector           *TSSearchResponse,/*N/A*/
-		     REAL8FrequencySeries     *TSSearchSpectrum,/*Not needed*/
-      		     TSSegmentVector          *PreparedData,
-		     TSSearchParams            params)
-{
-  UINT4                          j=0;
-  UINT4                          l=0;
-  UINT4                          n=0;
-  INT4                           k=0;
-  REAL8                          kTime;
-  LIGOTimeGPS                    timeInterval;
-  REAL4FrequencySeries          *averagePSD=NULL;
-  REAL4FFTPlan                  *averagePSDPlan=NULL;
-  const LIGOTimeGPS              gps_zero = LIGOTIMEGPSZERO;
-  AverageSpectrumParams          avgPSDParams;
-  LALWindowParams                windowParamsPSD;
-  REAL4Window                   *windowPSD=NULL;
-  UINT4                          effDataPoints=0;
-  TSWhitenParams                 whitenParams;
-  const LALUnit          strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
-  /*  COMPLEX8                      one = {1.0, 0.0};*/
-  CalibrationUpdateParams       calfacts;
-  FrCache                      *calcache = NULL;
-  COMPLEX8FrequencySeries      *response=NULL;
-  UINT4                         segmentPoints=0;
-
-
-  INITSTATUS (status, "LALTrackSearchPrep", TSDATAC);
-  ATTATCHSTATUSPTR (status);
-
-  /*
-   * We won't do anything yet 
-   * We hardwire the ability to skip these tests
-   * These tests are useless the prototype will change soon
-   */
-  if (0)
-    {
-      if (!TSSearchData)
-	{
-	  ABORT(status->statusPtr,TSDATA_ESUBR,TSDATA_MSGESUBR);
-	}
-      if (!TSSearchResponse) 
-	{
-	  ABORT(status->statusPtr,TSDATA_ESUBR,TSDATA_MSGESUBR);
-	}
-      if (!TSSearchSpectrum)
-	{
-	  ABORT(status->statusPtr,TSDATA_ESUBR,TSDATA_MSGESUBR);
-	}
-    }
-
-  /*
-   * We want to fill up our TSDataVector structure accounding for
-   * desired number of segments and overlaps
-   */
-  k=0;
-  for (l=0;l<params.NumSeg;l++)
-    {
-      /*Determlne Segment Epoch*/
-      kTime=TSSearchData->deltaT*k;
-      LALFloatToGPS(status->statusPtr,&(timeInterval),&kTime);
-      CHECKSTATUSPTR (status);
-      for (j=0;j<params.SegLengthPoints;j++)
-	{
-	  PreparedData->dataSeg[l].data->data[j]=TSSearchData->data->data[k];
-	  /*	  printf("%d\n",j);*/
-	  k++;
-	};
-      /*Ajust for segment overlap*/
-      k = k - params.overlapFlag;
-      PreparedData->dataSeg[l].data->length = params.SegLengthPoints;
-      PreparedData->dataSeg[l].deltaT=TSSearchData->deltaT;
-      PreparedData->dataSeg[l].epoch.gpsSeconds=
-	TSSearchData->epoch.gpsSeconds+timeInterval.gpsSeconds;
-      PreparedData->dataSeg[l].epoch.gpsNanoSeconds=
-	TSSearchData->epoch.gpsNanoSeconds+timeInterval.gpsNanoSeconds;
-    };
-  PreparedData->length = params.NumSeg;
-  /*
-   * End segment setup
-   */
-
-  /*
-   * We are whitening before calibration
-   * Do the following if whiten data is requested
-   */
-  if (params.whiten != 0)
-    {
-      /*
-       * Setup and make PSD estimate
-       * we accound for overlaps in TSDataVector
-       * so that we take params.NumSeg PSDs to average with
-       */
-      effDataPoints=params.SegLengthPoints/2+1;
-      averagePSD=XLALCreateREAL4FrequencySeries("averagePSD",
-						&gps_zero,
-						0,
-						0,
-						&lalDimensionlessUnit,
-						effDataPoints);
-
-      windowParamsPSD.length=params.SegLengthPoints;
-      windowParamsPSD.type=params.avgSpecWindow;
-      LALCreateREAL4Window(status->statusPtr,&(windowPSD),&windowParamsPSD);
-      CHECKSTATUSPTR (status);
-
-      /* If we only do one map we need to something special here*/
-      if (params.NumSeg < 2)
-	avgPSDParams.overlap=1;
-      else /* use same as segment overlap request*/
-	avgPSDParams.overlap=params.overlapFlag;
-
-      avgPSDParams.window=windowPSD;
-      avgPSDParams.method=params.avgSpecMethod;
-      /* Set PSD plan */
-      LALCreateForwardREAL4FFTPlan(status->statusPtr,
-				   &averagePSDPlan,
-				   TSSearchData->data->length,
-				   0);
-      CHECKSTATUSPTR (status);
-      avgPSDParams.plan=averagePSDPlan;
-
-      LALREAL4AverageSpectrum(status->statusPtr,
-			      averagePSD,
-			      TSSearchData,
-			      &avgPSDParams);
-      CHECKSTATUSPTR (status);
-
-      /*
-       * Diagnostic temporary code
-       */
-      print_real4tseries(TSSearchData,"TSSearchData.txt");
-      print_real4fseries(averagePSD,"averagePSD.txt");
-
-      /* Set whiten params */
-      whitenParams.renormalize=0;
-      whitenParams.mean=0;
-      whitenParams.variance=1;
-      whitenParams.whitenLevel=1;
-      for ( n=0 ; n < PreparedData->length; n++)
-	{
-	  LALTrackSearchWhitenREAL4TimeSeries(status->statusPtr,
-					      &(PreparedData->dataSeg[n]),
-					      averagePSD,
-					      whitenParams);
-	  CHECKSTATUSPTR(status);
-	}
-      /* Free memory window and plan */
-      if (averagePSDPlan)
-	{
-	  LALDestroyREAL4FFTPlan(status->statusPtr,&averagePSDPlan);
-	  CHECKSTATUSPTR(status);
-	}
-      if (averagePSD)
-	{
-	  LALDestroyREAL4FrequencySeries(status->statusPtr,averagePSD);
-	  CHECKSTATUSPTR (status);
-	}
-      if (windowPSD)
-	{
-	  LALDestroyREAL4Window(status->statusPtr,&windowPSD);
-	  CHECKSTATUSPTR (status);
-	}
-    } /* End section that whitens the data */
-
-  /*
-   *
-   * Apply the calibrations
-   * Each map may have different calibration coefficients
-   * We average the coefficients on over the map duration
-   * NOT OPTIMIZED
-   */
-  if (params.calibrate)
-    {
-      /*See LSD p 1065*/
-      /*
-       * Create temporary storage for response
-       */
-      segmentPoints=params.SegLengthPoints;
-      LALCreateCOMPLEX8FrequencySeries(status->statusPtr,
-				       &response,
-				       "tmpResponse",
-				       gps_zero,
-				       0,
-				       PreparedData->dataSeg[0].deltaT,
-				       strainPerCount,
-				       segmentPoints/2+1);
-      /* 
-       * We will only allocate RAM once and resuse by incrementing
-       * the epoch field accordingly
-       */
-
-      /*
-       *
-       *There were linker problems for 
-       *LALFrCacheImport
-       *LALDestroyFrCache
-       *LALExtractFrameResponse
-       */
-      /*
-       * Open up the cache file for reading
-       */
-      /******************************************
-      LALFrCacheImport(status->statusPtr, &calcache, params.calFrameCache);
-      CHECKSTATUSPTR (status);
-      *******************************************/
-      /*
-       * Loop for each map segment
-       */
-      for ( n=0 ; n < PreparedData->length; n++)
-	{
-	  /* Set the epoch for this segment */
-	  response->epoch=PreparedData->dataSeg[n].epoch;
-	  /*
-	   * Get response function for given epoch
-	   * and map duration
-	   */
-
-	  /*
-           ************************************************
-	   LALExtractFrameResponse(status->statusPtr, 
-	   response, 
-	   calcache, 
-	   &calfacts);
-	   CHECKSTATUSPTR (status);
-	   *************************************************
-	   */
-	  /*
-	   * Do calibration
-	   */
-	  LALTrackSearchCalibrateREAL4TimeSeries(status->statusPtr,
-						 &(PreparedData->dataSeg[n]),
-						 response);
-	  CHECKSTATUSPTR (status);
-	}
-      /*
-       * Destroy frame cache
-       */
-      /*********************
-      if (calcache)
-	{
-	  LALDestroyFrCache(status->statusPtr, &calcache);
-	  CHECKSTATUSPTR (status);
-	}
-      ********************/
-      /* 
-       * Destroy storage response function
-       */
-      if (response)
-	{
-	  LALDestroyCOMPLEX8FrequencySeries(status->statusPtr,response);
-	  CHECKSTATUSPTR (status);
-	} 
-    }
-  /*
-   * End the section to calibrate the data
-   */
-
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
-} /* End Tracksearch Prep */
-
 
 
 void
@@ -546,7 +293,9 @@ LALTrackSearchWhitenREAL4TimeSeries(
   const LIGOTimeGPS              gps_zero = LIGOTIMEGPSZERO;
   UINT4                      planLength=0;
   REAL8                     factor=0;
-
+  LALUnit                   tmpUnit1=lalDimensionlessUnit;
+  LALUnitPair               tmpUnitPair;
+  RAT4                      exponent;
   INITSTATUS(status,"LALTrackSearchWhitenREAL4TimeSeries",TSDATAC);
   ATTATCHSTATUSPTR (status);
 
@@ -569,7 +318,7 @@ LALTrackSearchWhitenREAL4TimeSeries(
 				   "tmpSegPSD",
 				   gps_zero,
 				   0,
-				   1/signal->deltaT,
+				   1/(signal->deltaT*signal->data->length),
 				   lalDimensionlessUnit,
 				   planLength/2+1);
   /* FFT the time series */
@@ -586,7 +335,7 @@ LALTrackSearchWhitenREAL4TimeSeries(
   print_complex8fseries(signalFFT,"dataFFTComplex.txt");
   /*
    * Perform whitening
-   * Look at Tech Doc T010095-00  Sec2.3 
+   * Look at Tech Doc T010095-00  Sec3 
    */
   for (i=0;i<signalFFT->data->length;i++)
     {
@@ -601,6 +350,22 @@ LALTrackSearchWhitenREAL4TimeSeries(
       signalFFT->data->data[i].re = signalFFT->data->data[i].re * factor;
       signalFFT->data->data[i].im = signalFFT->data->data[i].im * factor;
     }
+  /* 
+   * Manipulate the LALUnits structure to reflect above operation
+   */
+  exponent.numerator=-1;
+  exponent.denominatorMinusOne=1;/*2*/
+  LALUnitRaise(status->statusPtr,
+	       &tmpUnit1,
+	       &(signalPSD->sampleUnits),
+	       &exponent);
+  CHECKSTATUSPTR (status);
+  tmpUnitPair.unitOne=&tmpUnit1;
+  tmpUnitPair.unitTwo=&(signalFFT->sampleUnits);
+  LALUnitMultiply(status->statusPtr,
+		  &(signalFFT->sampleUnits),
+		  &tmpUnitPair);
+  CHECKSTATUSPTR (status);
   /* 
    * Diagnostic code
    */
@@ -650,6 +415,64 @@ LALTrackSearchWhitenREAL4TimeSeries(
 
 /* End whiten routine */
 
+
+/* Begin Fourier Domain whitening routine */
+void
+LALTrackSearchWhitenCOMPLEX8FrequencySeries(
+					    LALStatus                *status,
+					    COMPLEX8FrequencySeries  *fSeries,
+					    REAL4FrequencySeries     *PSD,
+					    UINT4                     level
+					    )
+{
+  UINT4         i=0;
+  REAL8         factor=0;
+  LALUnit       tmpUnit1=lalDimensionlessUnit;
+  LALUnitPair   tmpUnitPair;
+  RAT4          exponent;
+
+  INITSTATUS(status,"LALTrackSearchWhitenCOMPLEX8FrequencySeries",TSDATAC);
+  ATTATCHSTATUSPTR (status);
+  /*
+   * Error checking 
+   */
+  ASSERT(level > 0, status,TSDATA_EINVA,TSDATA_MSGEINVA);
+
+  for (i=0;i<fSeries->data->length;i++)
+    {
+      if ( PSD->data->data[i] == 0.0 )
+	factor=0;
+      else
+	/*
+	 * This whitening filter pulled from EPsearch code
+	 */
+	factor=2*sqrt(fSeries->deltaF/PSD->data->data[i]);
+
+      fSeries->data->data[i].re = fSeries->data->data[i].re * factor;
+      fSeries->data->data[i].im = fSeries->data->data[i].im * factor;
+    }
+ /*
+  * LALUnits manipulation
+  */
+   exponent.numerator=-1;
+  exponent.denominatorMinusOne=1;/*2*/
+  LALUnitRaise(status->statusPtr,
+	       &tmpUnit1,
+	       &(PSD->sampleUnits),
+	       &exponent);
+  CHECKSTATUSPTR (status);
+  tmpUnitPair.unitOne=&tmpUnit1;
+  tmpUnitPair.unitTwo=&(fSeries->sampleUnits);
+  LALUnitMultiply(status->statusPtr,
+		  &(fSeries->sampleUnits),
+		  &tmpUnitPair);
+  CHECKSTATUSPTR (status);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+/* End Fourier domain whitening */
+
 /* Begin calibration routine */
 void
 LALTrackSearchCalibrateREAL4TimeSeries(LALStatus               *status,
@@ -664,6 +487,7 @@ LALTrackSearchCalibrateREAL4TimeSeries(LALStatus               *status,
 
   INITSTATUS(status,"LALTrackSearchCalibrateREAL4TimeSeries",TSDATAC);
   ATTATCHSTATUSPTR (status);
+  /* Need consistency checks for inputs so that the df of each match */
   /*
    * Setup FFT plans for FFTing the data segment
    */
@@ -751,6 +575,128 @@ LALTrackSearchCalibrateREAL4TimeSeries(LALStatus               *status,
 }
 /* End calibration routine */
 
+
+/* Begin Fourier Domain calibration routine */
+void
+LALTrackSearchCalibrateCOMPLEX8FrequencySeries(
+					       LALStatus                 *status,
+					       COMPLEX8FrequencySeries   *fSeries,
+					       COMPLEX8FrequencySeries   *response
+					       )
+{
+  UINT4          i=0;
+  LALUnitPair    tmpUnitPair;
+  REAL4          a=0;
+  REAL4          b=0;
+  REAL4          c=0;
+  REAL4          d=0;
+
+  INITSTATUS(status,"LALTrackSearchCalibrateCOMPLEX8FrequencySeries",TSDATAC);
+  ATTATCHSTATUSPTR (status);
+  /*
+   * Error checking
+   */
+  ASSERT(fSeries != NULL,status,TSDATA_ENULL, TSDATA_MSGENULL);
+  ASSERT(response != NULL,status,TSDATA_ENULL, TSDATA_MSGENULL);
+  /*
+   * Calibration is done via applying expression
+   * 23.1 Conventions
+   * s(f) = R(f;t)v(f)
+   * Unit field is adjust appropriately and we return a 
+   * calibrated data solution
+   */
+  for(i=0;i<fSeries->data->length;i++)
+    {
+      a=fSeries->data->data[i].re;
+      b=fSeries->data->data[i].im;
+      c=response->data->data[i].re;
+      d=response->data->data[i].im;
+      /*(a+bi)*(c+di)*/
+      fSeries->data->data[i].re=(a*c - b*d);
+      fSeries->data->data[i].im=(a*d + b*c);
+    }
+  /* 
+   * Unit manipulation
+   */
+  tmpUnitPair.unitOne=&(fSeries->sampleUnits);
+  tmpUnitPair.unitTwo=&(response->sampleUnits);
+  LALUnitMultiply(status->statusPtr,
+		  &(fSeries->sampleUnits),
+		  &tmpUnitPair);
+  CHECKSTATUSPTR (status);
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+/* End Fourier Domain calibration routine */
+
+/*
+ * This is the function to break up long stretch of input data
+ * into the requested chunks accounting for overlap
+ */
+void
+LALTrackSearchDataSegmenter(
+			    LALStatus           *status,
+			    REAL4TimeSeries     *TSSearchData,
+			    TSSegmentVector     *PreparedData,
+			    TSSearchParams       params)
+{
+  UINT4         k=0;
+  UINT4         l=0;
+  UINT4         j=0;
+  REAL8         kTime;
+  LIGOTimeGPS   timeInterval;
+
+  INITSTATUS (status, "LALTrackSearchDataSegmenter", TSDATAC);
+
+  /*
+   * Error checking
+   */
+  ASSERT(PreparedData != NULL,status,TSDATA_ENULL,TSDATA_MSGENULL);
+  ASSERT(TSSearchData != NULL,status,TSDATA_ENULL,TSDATA_MSGENULL);
+  ASSERT((params.SegLengthPoints == PreparedData->dataSeg[0]->data->length),
+	 status,
+	 TSDATA_ENUMZ,
+	 TSDATA_MSGENUMZ);
+  ASSERT(PreparedData->length == params.NumSeg,
+	 status,
+	 TSDATA_ESEGZ,
+	 TSDATA_MSGESEGZ);
+  /*
+   * We want to fill up our TSDataVector structure accounding for
+   * desired number of segments and overlaps
+   */
+  ATTATCHSTATUSPTR (status);
+  for (l=0;l<PreparedData->length;l++)
+    {
+      /*Determlne Segment Epoch*/
+      kTime=TSSearchData->deltaT*k;
+      LALFloatToGPS(status->statusPtr,&(timeInterval),&kTime);
+      CHECKSTATUSPTR (status);
+      for (j=0;j<PreparedData->dataSeg[l]->data->length;j++)
+	{
+	  PreparedData->dataSeg[l]->data->data[j]=TSSearchData->data->data[k];
+	  /*	  printf("%d\n",j);*/
+	  k++;
+	};
+      /*Ajust for segment overlap*/
+      k = k - params.overlapFlag;
+      PreparedData->dataSeg[l]->data->length = params.SegLengthPoints;
+      PreparedData->dataSeg[l]->deltaT=TSSearchData->deltaT;
+      PreparedData->dataSeg[l]->sampleUnits=TSSearchData->sampleUnits;
+      PreparedData->dataSeg[l]->epoch.gpsSeconds=
+	TSSearchData->epoch.gpsSeconds+timeInterval.gpsSeconds;
+      PreparedData->dataSeg[l]->epoch.gpsNanoSeconds=
+	TSSearchData->epoch.gpsNanoSeconds+timeInterval.gpsNanoSeconds;
+      sprintf(PreparedData->dataSeg[l]->name,"%s","Initialized");
+    };
+
+  /*
+   * End segment setup
+   */
+ DETATCHSTATUSPTR (status);
+ RETURN (status);
+}
+/* End the data segmenter */
 
 void
 LALSVectorPolynomialInterpolation(
@@ -1065,6 +1011,11 @@ void DumpTFImage(
   REAL4      maxval=0;
   REAL4      maxnum;
   REAL4      minval=0;
+  REAL8      meanval=0;
+  INT4       counter=0;
+  REAL8      stdDev=0;
+  REAL8      sumXsqr=0;
+  REAL8      sumX=0;
   INT4       pgmval;
   REAL4      temppgm;
   REAL4      currentval;
@@ -1108,6 +1059,10 @@ void DumpTFImage(
 	    };
 	  currentval = temppoint;
 	  currentabsval = fabs(temppoint);
+	  /* To figure out mean and stddev*/
+	  sumX=sumX+currentval;
+	  sumXsqr=sumXsqr+(currentval*currentval);
+	  counter++;
 	  if (maxval < currentabsval)
 	    {
 	      maxval = currentabsval;
@@ -1153,6 +1108,8 @@ void DumpTFImage(
     }
   fclose(fp);
   /* Writing Aux file for information purpose only */
+  meanval=sumX/counter;
+  stdDev=sqrt((sumXsqr-(sumX*meanval))/counter-1);
   fp = fopen(auxfilename,"w");
   fprintf(fp,"Aux Data information\n");
   fprintf(fp,"Data ABS Max Value Found:%e\n",maxval);
@@ -1160,6 +1117,9 @@ void DumpTFImage(
   fprintf(fp,"Data Min Value Found    :%e\n",minval);
   fprintf(fp,"Data Dim Height %i\n",height);
   fprintf(fp,"Data Dim Width  %i\n",width);
+  fprintf(fp,"Data Mean    : %e\n",meanval);
+  fprintf(fp,"Data STDDEV  : %e\n",stdDev);
+  fprintf(fp,"Data Elements: %e\n",counter);
   fclose(fp);
   LALFree(auxfilename);
   LALFree(pgmfilename);

@@ -37,9 +37,9 @@ $Id$
 extern "C" {
 #endif
 
-NRCSID (TSSEARCHH, "$Id$");
+  NRCSID (TSSEARCHH, "$Id$");
 
-/******** <lalErrTable file="TSSearchHErrTab"> ********/
+  /******** <lalErrTable file="TSSearchHErrTab"> ********/
 #define TSSEARCHH_ENULLP       1
 #define TSSEARCHH_EPOSARG      2
 #define TSSEARCHH_EPOW2        4
@@ -60,17 +60,32 @@ NRCSID (TSSEARCHH, "$Id$");
 #define TSSEARCHH_MSGENONNULL  "Null pointer expected"
 #define TSSEARCHH_MSGETILES    "Malloc failed while assigning memory for a tile"
 #define TSSEARCHH_MSGEDELF     "Inconsistent deltaF in spectrum and data"
-/******** </lalErrTable> ********/
+  /******** </lalErrTable> ********/
+
+  /*
+   * Enumeration type to hold diagnostic flag information
+   */
+  typedef enum tagTSDiagnosticType
+    {
+      quiet, verbose, printFiles, all
+    }TSDiagnosticType;
   
-/*
- * Structure to hold a collection of data segments which may be
- * overlapped by n points
- */
+  typedef enum tagTSSearchLogic
+    {
+      abortLogic,
+      Lgtl_AND_Pgtp,Lltl_AND_Pgtp,Lgtl_AND_Pltp,Lltl_AND_Pltp,
+      Lgtl_OR_Pgtp,Lltl_OR_Pgtp,Lgtl_OR_Pltp,Lltl_OR_Pltp
+    }TSSearchLogic;
+
+  /*
+   * Structure to hold a collection of data segments which may be
+   * overlapped by n points
+   */
   typedef struct 
   tagTSSegmentVector
   {
     UINT4               length;  /* Number of segments long */
-    REAL4TimeSeries    *dataSeg; /* Structure for individual data segments */
+    REAL4TimeSeries   **dataSeg; /* Structure for individual data segments */
   }TSSegmentVector;
   
   /*
@@ -80,6 +95,7 @@ NRCSID (TSSEARCHH, "$Id$");
   typedef struct
   tagTSSearchParams
   {
+    BOOLEAN           tSeriesAnalysis; /*Yes we prep for tseries processing*/
     BOOLEAN           searchMaster; /*DO NOT USE*/
     BOOLEAN           haveData;/*DO NOT USE */
     UINT4            *numSlaves;/* DO NOT USE*/
@@ -91,7 +107,8 @@ NRCSID (TSSEARCHH, "$Id$");
 				  */
     UINT4             SegLengthPoints;/*Data Seg Length*/
     UINT4             NumSeg;/* Number of segments length TLP */
-    UINT4             SamplingRate; /*Samples per second*/
+    REAL8             SamplingRate; /*Samples per second*/
+    REAL8             SamplingRateOriginal; /*Samples per second*/
     LIGOTimeGPS       Tlength;/*Data set time length*/
     TimeFreqRepType   TransformType;/*Type of TF rep to make */
     INT4              LineWidth;/* Sigma-convolution kernel width*/
@@ -117,12 +134,21 @@ NRCSID (TSSEARCHH, "$Id$");
     FrChanType        calChannelType;/*Frame channel for calibration*/
     CHAR             *calFrameCache;/*Cache file for cal frames*/
     BOOLEAN           calibrate;/*Calibration flag Y/N */
+    CHAR              calibrateIFO[3];/*3LetterName of IFO*/
     CHAR             *calCatalog;/*Holds calib coeffs*/
     TSSegmentVector  *dataSegVec; /*Vector of NumSeg of data */
     UINT4             currentSeg; /*Denotes current chosen seg */
     INT4              makenoise; /*SeedFlag to fake lalapps data*/
     CHAR             *auxlabel; /*For labeling out etc testing*/
     BOOLEAN           joinCurves; /*Flag joins 1 sigma gap curves */
+    TSDiagnosticType  verbosity; /* 1 verbose,2 aux files,0 quiet */
+    BOOLEAN           printPGM; /* Create output PGMs (BWdefault) */
+    CHAR             *pgmColorMapFile; /* User specifiable colormap AsciiPGM*/
+    CHAR             *injectMapCache;/* filename to text set of maps*/
+    CHAR             *injectSingleMap;/* explicit map file read */
+    UINT4             smoothAvgPSD;/*(>0) True apply running median to AvgPSD*/
+    REAL4             highPass;/*Real f value to high pass filter with*/
+    REAL4             lowPass;/*Real f value to low pass filter with*/
   }TSSearchParams;
 
 

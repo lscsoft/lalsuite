@@ -144,14 +144,14 @@ LALSignalTrackSearch(LALStatus *status,
    * rather than in the function call itself 
    * Dumping original map also
    */
-  if (1==0)
+  if (1==1)
     {
       DumpTFImage(tfMap->map,"DumpMap0",params->height,params->width,1);
-      DumpTFImage(out->store.k[0],"DumpVar0",params->height,params->width,0);
-      DumpTFImage(out->store.k[1],"DumpVar1",params->height,params->width,0);
-      DumpTFImage(out->store.k[2],"DumpVar2",params->height,params->width,0);
-      DumpTFImage(out->store.k[3],"DumpVar3",params->height,params->width,0);
-      DumpTFImage(out->store.k[4],"DumpVar4",params->height,params->width,0);
+      DumpTFImage(out->store.k[0],"DumpVar0_Col1Derv",params->height,params->width,0);
+      DumpTFImage(out->store.k[1],"DumpVar1_Row1Derv",params->height,params->width,0);
+      DumpTFImage(out->store.k[2],"DumpVar2_Col2Derv",params->height,params->width,0);
+      DumpTFImage(out->store.k[3],"DumpVar3_Row2Derv",params->height,params->width,0);
+      DumpTFImage(out->store.k[4],"DumpVar4_RC_2Derv",params->height,params->width,0);
       /* Dumping Out Kernels Collectivly */
       tempmaskcount=ceil(4*params->sigma);
       DumpREAL8KernelMask(out->store.gaussMask[0],"DumpVarKernel_0",
@@ -804,15 +804,16 @@ ConnectLinePoints(LALStatus *status,
     /* check if the length of the curve is greater than the threshhold*/
     if(contour[0].n+contour[1].n-1 >= LENGTH_THRESHOLD){
       /* record the curve found in the output structure by joining the left and right Contours*/
-      out->curves = LALRealloc(out->curves,sizeof(Curve)*(out->numberOfCurves+1));
+      out->curves = (Curve*)LALRealloc(out->curves,sizeof(Curve)*(out->numberOfCurves+1));
+      /* Check why contour[1].n-1 has the -1*/
       ((out->curves)[out->numberOfCurves]).n = contour[0].n+contour[1].n-1;
-      out->curves[out->numberOfCurves].row=LALMalloc(sizeof(INT4)* out->curves[out->numberOfCurves].n);
-      out->curves[out->numberOfCurves].col=LALMalloc(sizeof(INT4)* out->curves[out->numberOfCurves].n);
-      out->curves[out->numberOfCurves].depth=LALMalloc(sizeof(REAL4)* out->curves[out->numberOfCurves].n);
+      out->curves[out->numberOfCurves].row=(INT4*)LALMalloc(sizeof(INT4)* out->curves[out->numberOfCurves].n);
+      out->curves[out->numberOfCurves].col=(INT4*)LALMalloc(sizeof(INT4)* out->curves[out->numberOfCurves].n);
+      out->curves[out->numberOfCurves].depth=(REAL4*)LALMalloc(sizeof(REAL4)* out->curves[out->numberOfCurves].n);
       /* Initialize the deltaF and deltaT fields to zeros */
       /* Allocate fbin and gpsbin labels */
-      out->curves[out->numberOfCurves].fBinHz=LALMalloc(sizeof(REAL4)*out->curves[out->numberOfCurves].n);
-      out->curves[out->numberOfCurves].gpsStamp=LALMalloc(sizeof(LIGOTimeGPS)*out->curves[out->numberOfCurves].n);
+      out->curves[out->numberOfCurves].fBinHz=(REAL4*)LALMalloc(sizeof(REAL4)*out->curves[out->numberOfCurves].n);
+      out->curves[out->numberOfCurves].gpsStamp=(LIGOTimeGPS*)LALMalloc(sizeof(LIGOTimeGPS)*out->curves[out->numberOfCurves].n);
 
       powerHalfContourA = 0;
       for(i=0;i<contour[0].n;i++){
@@ -826,7 +827,9 @@ ConnectLinePoints(LALStatus *status,
 	powerHalfContourA = powerHalfContourA + out->curves[out->numberOfCurves].depth[i];
       }
       powerHalfContourB = 0;
-      for(i=1;i<contour[1].n;i++){
+      /*ORIGINAL for(i=1;i<contour[1].n;i++){*/
+      /* Start a 1 since element zero should be equal to contour[0].n entry*/
+      for(i=0;i<contour[1].n;i++){
 	out->curves[out->numberOfCurves].row[i+contour[0].n-1] = contour[1].row[i];     
 	out->curves[out->numberOfCurves].col[i+contour[0].n-1] = contour[1].col[i]; 
 	out->curves[out->numberOfCurves].fBinHz[i+contour[0].n-1] = 0;
@@ -999,6 +1002,7 @@ void LALTrackSearchInsertMarkers(
 {
   LALTimeInterval dT;
   REAL8 deltaT;
+  REAL8 currentRelativeFloatTime=0;
   INT4 i;
   INT4 j;
 
@@ -1010,7 +1014,7 @@ void LALTrackSearchInsertMarkers(
   j=0;
   /* Use sampling rate Hz to determine dT */
   deltaT=((REAL8) input->deltaT);
-  LALFloatToInterval(status->statusPtr,&dT,&deltaT);
+
   for (i=0;i < output->numberOfCurves;i++)
     { /* 
        *Get ready to start looping over returned curve 
@@ -1023,11 +1027,17 @@ void LALTrackSearchInsertMarkers(
 	   * Colums are the freq labels
 	   */
 	  output->curves[i].fBinHz[j]=
-	    (output->curves[i].col[j]*((1/input->deltaT)/input->mapFreqBins));
+	    (output->curves[i].col[j]*
+	     ((1/(2*input->deltaT))/(input->mapFreqBins))
+	     );
+	  currentRelativeFloatTime=output->curves[i].row[j]*deltaT;
+	    LALFloatToInterval(status->statusPtr,
+			       &dT,
+			       &currentRelativeFloatTime);	  
 	  output->curves[i].gpsStamp[j].gpsSeconds=
-	    (output->curves[i].row[j]*dT.seconds);
+	    dT.seconds+input->mapStartGPS.gpsSeconds;
 	  output->curves[i].gpsStamp[j].gpsNanoSeconds=
-	    (output->curves[i].row[j]*dT.nanoSeconds);
+	    dT.nanoSeconds+input->mapStartGPS.gpsNanoSeconds;
 	}
     }
   DETATCHSTATUSPTR (status);
