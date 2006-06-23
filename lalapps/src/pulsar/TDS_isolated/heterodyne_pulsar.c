@@ -1071,9 +1071,8 @@ calfiles, REAL8 frequency){
   CHAR jnkstr[256]; /* junk string to contain comment lines */
   
   if(calfiles.calibcoefficientfile == NULL){
-    fprintf(stderr, "No calibration coefficient file %s.\n\
-Assume calibration coefficients are 1 and use the response funtcion.\n",
-    calfiles.responsefunctionfile);
+    fprintf(stderr, "No calibration coefficient file.\n\
+Assume calibration coefficients are 1 and use the response funtcion.\n");
     /* get response function values */
     get_calibration_values(&Rfunc, &Rphase, calfiles.responsefunctionfile, frequency);
 
@@ -1092,7 +1091,7 @@ Assume calibration coefficients are 1 and use the response funtcion.\n",
     if((fpcoeff = fopen(calfiles.calibcoefficientfile, "r"))==NULL){
       fprintf(stderr, "Error... can't open calibration coefficient file %s.\n\
 Assume calibration coefficients are 1 and use the response funtcion.\n",
-calfiles.responsefunctionfile);
+calfiles.calibcoefficientfile);
       exit(0);
     }    
 
