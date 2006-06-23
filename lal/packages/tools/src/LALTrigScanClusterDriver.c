@@ -15,7 +15,7 @@ $Id$
 </lalVerbatim>
 #endif
 
-#include <LALTrigScanCluster.h>
+#include <lal/LALTrigScanCluster.h>
 
 NRCSID (LALTRIGSCANCLUSTERDRIVERC,
   "$Id$");
@@ -66,32 +66,33 @@ void LALClusterSnglInspiralOverTemplatesAndEndTime (
     if (condenseIn->vrbflag)
           fprintf(stderr, "\nInput contains %d points \n", condenseIn->n);
 
+    /* Allocate memory for the masterList */
     condenseIn->masterList = (trigScanInputPoint *)
             LALCalloc (1, condenseIn->n * sizeof(trigScanInputPoint));
 
-    /* Copy the relevant fields from the inspiralEventList */
+    /* Copy the relevant fields from the inspiralEventList to masterList */
     {
         SnglInspiralTable   *thisEvent = NULL;
-        INT4 l=0;
+        INT4 k=0;
 
         for ( thisEvent = (*eventHead); 
                 thisEvent; thisEvent = thisEvent->next )
         {
             if (condenseIn->scanMethod == T0T3Tc)
             {
-                condenseIn->masterList[l].y = thisEvent->tau0;
-                condenseIn->masterList[l].z = thisEvent->tau3;
+                condenseIn->masterList[k].y = thisEvent->tau0;
+                condenseIn->masterList[k].z = thisEvent->tau3;
             }
-            condenseIn->masterList[l].tc_sec = 
+            condenseIn->masterList[k].tc_sec = 
                     (thisEvent->end_time).gpsSeconds;
-            condenseIn->masterList[l].tc_ns  = 
+            condenseIn->masterList[k].tc_ns  = 
                     (thisEvent->end_time).gpsNanoSeconds;
-            condenseIn->masterList[l].rho    = thisEvent->snr;
-            condenseIn->masterList[l].effD   = thisEvent->eff_distance;
-            condenseIn->masterList[l].chisq  = 0.0;
-            condenseIn->masterList[l].isValidEvent = 1;
+            condenseIn->masterList[k].rho    = thisEvent->snr;
+            condenseIn->masterList[k].effD   = thisEvent->eff_distance;
+            condenseIn->masterList[k].chisq  = 0.0;
+            condenseIn->masterList[k].isValidEvent = 1;
 
-            ++l;
+            ++k;
         }
     }
 
@@ -123,6 +124,16 @@ void LALClusterSnglInspiralOverTemplatesAndEndTime (
     {
         /* In this case delete the original list. */
         XLALDeleteSnglInspiralTable( eventHead );
+    }
+
+    /* Free the invGamma gsl_matrix in the masterList */
+    {
+        int k;
+
+        for (k=0; k<condenseIn->n; k++) {
+              gsl_matrix_free ( condenseIn->masterList[k].invGamma );
+              condenseIn->masterList[k].invGamma = NULL;
+        }
     }
 
     /* Free the masterlist */
@@ -389,6 +400,36 @@ static void LALTrigScan3DMetricCoeff_TcT0T3  (
             masterList[kk].Gamma[3] = metric->Gamma[3]/(condenseIn->sf_volume*(1.0L - condenseIn->mmCoarse));
             masterList[kk].Gamma[4] = metric->Gamma[4]/(condenseIn->sf_volume*(1.0L - condenseIn->mmCoarse));
             masterList[kk].Gamma[5] = metric->Gamma[5]/(condenseIn->sf_volume*(1.0L - condenseIn->mmCoarse));
+
+            /* This is the part where we calculate the inverse of the Gamma
+             * matrix and store it in the element of the masterList structure.
+             */
+            {
+                int               i, j, k, s1;
+                gsl_permutation   *p1 = NULL;
+                gsl_matrix        *GG = NULL;
+
+                GG = gsl_matrix_calloc (3,3);
+
+                k = 0;
+                for (i=0; i<3; i++) {
+                      for(j=i; j<3; j++) {
+                          gsl_matrix_set (GG, i, j, masterList[kk].Gamma[k]);
+                          gsl_matrix_set (GG, j, i, gsl_matrix_get (GG, i, j));
+                          k = k+1;
+                      }
+                }
+                            
+                p1 = gsl_permutation_alloc( 3 );
+                gsl_linalg_LU_decomp( GG, p1, &s1 ); 
+                
+                masterList[kk].invGamma = NULL;
+                masterList[kk].invGamma = gsl_matrix_alloc( 3, 3 );
+                gsl_linalg_LU_invert( GG, p1, masterList[kk].invGamma );
+
+                gsl_matrix_free (GG);
+                gsl_permutation_free (p1);
+            } 
         }
     }
 

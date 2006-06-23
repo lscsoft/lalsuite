@@ -32,7 +32,7 @@ $Id$
 #include    <lal/AVFactories.h>
 #include    <lal/FindChirp.h>
 #include    <lal/Sort.h>
-
+#include    <lal/EllipsoidOverlapTools.h>
 
 NRCSID( LALTRIGSCANCLUSTERH, 
         "$Id$");
@@ -64,19 +64,20 @@ typedef enum {
 trigScanType;
 
 typedef enum {
-    false,
-    true
+    trigScanFalse,
+    trigScanTrue
 }
 trigScanValidEvent;
 
 typedef struct tagTrigScanInputPoint
 { 
-    REAL8    y, z, rho, effD, chisq;
-    REAL8    tc_sec, tc_ns;  
-    REAL8    figOfMerit;
-    INT4     isValidEvent;
-    INT4     clusterID;
-    REAL8    Gamma[6];
+    REAL8       y, z, rho, effD, chisq;
+    REAL8       tc_sec, tc_ns;  
+    REAL8       figOfMerit;
+    INT4        isValidEvent;
+    INT4        clusterID;
+    REAL8       Gamma[6];
+    gsl_matrix  *invGamma;
 }
 trigScanInputPoint;
 
@@ -177,7 +178,6 @@ INT4 XLALPopulateTrigScanInput (
         FindChirpFilterParams *fcFilterParams,
         InspiralTemplate      *bankHead
         );
-
 
 void LALClusterSnglInspiralOverTemplatesAndEndTime ( 
         LALStatus              *status,

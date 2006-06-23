@@ -15,7 +15,7 @@ $Id$
 </lalVerbatim>
 #endif
 
-#include <LALTrigScanCluster.h>
+#include <lal/LALTrigScanCluster.h>
 
 NRCSID (LALTRIGSCANCLUSTERC, 
         "$Id$");
@@ -32,7 +32,7 @@ trigScanValidEvent XLALTrigScanExpandCluster (
         ExpandClusterInput    expandClusterIn
         )
 {
-    trigScanValidEvent      flag = false;
+    trigScanValidEvent      flag = trigScanFalse;
     trigScanInputPoint      seed;
     trigScanEpsSearchInput  epsSearchIn; /* Data structure given as input to*/
                                          /* getEpsNeighbourhood fn.         */ 
@@ -67,7 +67,7 @@ trigScanValidEvent XLALTrigScanExpandCluster (
     /* set flag to true if (size > 1) indicating that a valid cluster 
      * has been discovered
      * */
-    if (size > 1) flag = true;
+    if (size > 1) flag = trigScanTrue;
 
     /* deallocate the list before returning */
     LALFree (list);
@@ -95,19 +95,53 @@ void XLALTrigScanGetEpsNeighbourhood (
         trigScanEpsSearchInput  *epsSearchIn
         )
 {
-    INT4     i;
-    REAL8    distance;
-    REAL8    dy, dz, dtc;
+    INT4              i;
+    REAL8             distance;
+    REAL8             dy, dz, dtc;
+    REAL8             q1[3], q2[3];  /* Position vectors */
+    gsl_vector_view   vq1, vq2;      /* vector views from position vectors */
+    fContactWorkSpace *workSpace;    /* reqd for ellipsoid overlap */
 
+    /* Init the workSpace required for checking ellipsoid overlaps */
+    workSpace = XLALInitFContactWorkSpace( 3, NULL, NULL, gsl_min_fminimizer_brent, 1.0e-2 ); 
+    
+   /* Set the position vector (q1) of the seed point */
+    q1[0] = seed.tc_sec + 1.e-9*(seed.tc_ns);
+    q1[1] = seed.y;
+    q1[2] = seed.z;
+
+    /* create a vector view from the q1 array */
+    vq1 = gsl_vector_view_array(q1,3);
+
+    /* Set the shape matrix of the seed point */
+    workSpace->invQ1  = epsSearchIn->masterList[epsSearchIn->seedID].invGamma;
+            
     for (i = 0; i < epsSearchIn->nInputPoints; i++)
     {
         /* check if the point has been classified */
         if (epsSearchIn->masterList[i].clusterID == TRIGSCAN_UNCLASSIFIED)
         {
-            dy   = epsSearchIn->masterList[i].y - seed.y;
-            dz   = epsSearchIn->masterList[i].z - seed.z;
-            dtc  = epsSearchIn->masterList[i].tc_sec - seed.tc_sec;
-            dtc += 1.e-9*(epsSearchIn->masterList[i].tc_ns - seed.tc_ns);
+            /* Set the position vector (q2) of the i-th point */
+            q2[0] = epsSearchIn->masterList[i].tc_sec 
+                    + 1.e-9*(epsSearchIn->masterList[i].tc_ns);
+            q2[1] = epsSearchIn->masterList[i].y;
+            q2[2] = epsSearchIn->masterList[i].z;
+
+            /* create a vector view from the q2 array */
+            vq2 = gsl_vector_view_array(q2,3);
+
+            /* Set the shape matrix of the i-th point */
+            workSpace->invQ2    = epsSearchIn->masterList[i].invGamma;
+
+#if 1
+            distance = XLALCheckOverlapOfEllipsoids (&(vq1.vector), &(vq2.vector), workSpace);
+#endif
+
+#if 0
+            /* Vector \vec{r}_{AB} = \vec{r}_B - \vec{r}_A */ 
+            dtc  = q2[0] - q1[0];
+            dy   = q2[1] - q1[1];
+            dz   = q2[2] - q1[2];
 
             distance  = dtc*dtc*epsSearchIn->masterList[epsSearchIn->seedID].Gamma[0] 
                     + 2.0*dtc*dy*epsSearchIn->masterList[epsSearchIn->seedID].Gamma[1] 
@@ -115,6 +149,7 @@ void XLALTrigScanGetEpsNeighbourhood (
             distance += dy*dy*epsSearchIn->masterList[epsSearchIn->seedID].Gamma[3] 
                     + 2.0*dy*dz*epsSearchIn->masterList[epsSearchIn->seedID].Gamma[4];
             distance += dz*dz*epsSearchIn->masterList[epsSearchIn->seedID].Gamma[5];
+#endif
 
             if (distance > 0 && distance <= 1.) 
             {
@@ -146,8 +181,12 @@ void XLALTrigScanGetEpsNeighbourhood (
             }
         }
     }
-}
 
+    /* De-allocate workSpace allocated earlier */
+    /* This workSpace is used to check overlap */
+    /* of ambiguity ellipsoids                 */
+    XLALFreeFContactWorkSpace( workSpace );
+}
 
 /* --------------------------------------------------------------------- 
  * This function is used to fillout the trigScanClusterOut structure after
@@ -160,7 +199,6 @@ void LALTrigScanClusterMakeOutput (
         INT4                    nclusters
         )
 { 
-
     INT4          i, j, n, cSize;
     INT4          *t_idx = NULL, maxResultIdx;
     REAL8         maxResult;
@@ -558,6 +596,15 @@ XLALTrimSnglInspiralTable (
 
             memcpy (tempList, thisEvent, sizeof(SnglInspiralTable));
             tempList->next = NULL;
+
+            /* This is the place to append cluster specific information
+             * to the sngl_inspiral table. At the moment we want to know
+             * how big was the cluster. Since there is no element of the
+             * sngl_inspiral table structure dedicated to store this
+             * information, we will use the element alpha. However this is
+             * not a good practice.
+             */
+            tempList->alpha = (REAL4)(clusterOut[heapSortIndex->data[j-1]].nelements); 
         }
     }
 
