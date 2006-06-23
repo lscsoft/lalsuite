@@ -930,7 +930,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     strcat (summary, "## Loaded SFTs: [ " );
     for ( i=0; i < numDet; i ++ ) {
       sprintf (line, "%s:%d%s",  cfg->multiSFTs->data[i]->data->name, 
-	       cfg->multiSFTs->data[i]->data->data->length,
+	       cfg->multiSFTs->data[i]->length,
 	       (i < numDet - 1)?", ":" ]\n");
       strcat ( summary, line );
     }
