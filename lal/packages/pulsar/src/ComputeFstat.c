@@ -1445,6 +1445,7 @@ sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
   INT4 i0;
   REAL8 d, d2;
   REAL8 ts, tc;
+  REAL8 dummy;
 
   static BOOLEAN firstCall = TRUE;
   static REAL4 sinVal[LUT_RES+1], cosVal[LUT_RES+1];
@@ -1461,7 +1462,15 @@ sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
       firstCall = FALSE;
     }
 
-  xt = x - (INT4)x;		/* xt in (-1, 1) */
+  /* we only need the fractional part of 'x', which is number of cylces,
+   * this was previously done using
+   *   xt = x - (INT4)x;
+   * which is numerically unsafe for x > LAL_INT4_MAX ~ 2e9
+   * for saftey we therefore rather use modf(), even if that 
+   * will be somewhat slower... 
+   */
+  xt = modf(x, &dummy);/* xt in (-1, 1) */
+
   if ( xt < 0.0 )
     xt += 1.0;			/* xt in [0, 1 ) */
 #ifndef LAL_NDEBUG
