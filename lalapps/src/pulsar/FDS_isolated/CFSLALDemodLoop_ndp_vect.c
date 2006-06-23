@@ -42,10 +42,10 @@
 	    tFreq[2] = tempFreq0;
 	    tFreq[3] = tempFreq0;
 
-	    tFint[0] = params->Dterms - 1;
-	    tFint[1] = params->Dterms - 1;
-	    tFint[2] = params->Dterms - 2;
-	    tFint[3] = params->Dterms - 2;
+	    tFint[0] = klim/2 - 1;
+	    tFint[1] = klim/2 - 1;
+	    tFint[2] = klim/2 - 2;
+	    tFint[3] = klim/2 - 2;
 
 	    Xsum[0] = 0.0;
 	    Xsum[1] = 0.0;
