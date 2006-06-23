@@ -59,8 +59,8 @@ GMST has been related to UT1 as follows:
 \end{displaymath}
 %
 where $T_{u} = d_{u} / 36525$, $d_{u}$ is the number of days of
-Universal Time elapsed since JD 2451545.0 UT1 (J2000.0), taking on
-values of $\pm 0.5, \pm 1.5, \pm 2.5,
+Universal Time elapsed since JD 2451545.0 UT1 (January 1, 2000, at 12:00 UT1),
+taking on values of $\pm 0.5, \pm 1.5, \pm 2.5,
 \pm 3.5, \ldots$
 
 
