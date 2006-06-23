@@ -91,7 +91,7 @@ void XLALComputeDetAMResponse(
 	const double psi,	/**< Polarization angle of source (radians) */
 	const double gmst	/**< Greenwich mean sidereal time (radians) */
 )
-{
+{				/* </lalVerbatim> */
 	int i;
 	double X[3];
 	double Y[3];
