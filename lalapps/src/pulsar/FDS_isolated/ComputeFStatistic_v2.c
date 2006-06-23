@@ -762,7 +762,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   /* get full SFT-catalog of all matching (multi-IFO) SFTs */
   LogPrintf (LOG_DEBUG, "Finding all SFTs to load ... ");
   TRY ( LALSFTdataFind ( status->statusPtr, &catalog, uvar_DataFiles, &constraints ), status);    
-  LogPrintfVerbatim (LOG_DEBUG, "done.\n");
+  LogPrintfVerbatim (LOG_DEBUG, "done. (found %d SFTs)\n", catalog->length);
 
   if ( constraints.detector ) 
     LALFree ( constraints.detector );
