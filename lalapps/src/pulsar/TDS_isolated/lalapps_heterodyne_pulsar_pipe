@@ -388,10 +388,8 @@ if do_fine or do_update:
   param_files = os.listdir(pulsar_param_dir)
   param_files.sort()
   
-  if do_fine:
-    het_flag = 1
+  # get updated parameter file
   if do_update:
-    het_flag = 2
     pulsar_update_dir = cp.get('data', 'pulsar_update_dir')
   
   input_dir = cp.get('fine','fine_input')
@@ -413,6 +411,12 @@ if do_fine or do_update:
     if ".par" in param_files[i]:
       pulsar = 'J' + re.sub(r'\.par',r'',param_files[i]) # set pulsar name from .par file
       param_file = pulsar_param_dir + '/' + param_files[i]
+      
+      # set heterodyne flag
+      if do_fine:
+        het_flag = 1
+      if do_update:
+        het_flag = 2
       
       # find correct input file
       k=0
