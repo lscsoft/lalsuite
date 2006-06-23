@@ -3,6 +3,9 @@ Author: Torres. C
 $ID: tracksearch.h,v 1.0 2004/04/14 02:00:00 charlie Exp $
 ***** </lalVerbatim> **********************************/
 
+#ifndef TRACKSEARCH_H
+#define TRACKSEARCH_H
+
 #include <config.h>
 #include <fcntl.h>
 #include <getopt.h>
@@ -41,3 +44,103 @@ $ID: tracksearch.h,v 1.0 2004/04/14 02:00:00 charlie Exp $
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
+#include <tracksearchToolbox.h>
+#include <tracksearchAverager.h>
+#include <lal/ResampleTimeSeries.h>
+#include <lal/LALRunningMedian.h>
+#include <lal/RngMedBias.h>
+
+#define maxFilenameLength 2048
+
+/*
+ * lalapps functions
+ */
+/*
+ * SemiPrivate functions
+ */
+void
+LALappsTrackSearchPrepareData(
+			      LALStatus*,      
+			      REAL4TimeSeries*,
+			      TSSegmentVector*,
+			      TSSearchParams);
+
+void 
+LALappsTrackSearchInitialize(LALStatus*,
+			     int argc,
+			     char* argv[],
+			     TSSearchParams*,
+			     CHARVector**,
+			     CHARVector**);
+void
+LALappsGetFrameData(LALStatus*,
+		    TSSearchParams*,
+		    REAL4TimeSeries*,
+		    CHARVector*,
+		    CHAR*);
+
+void
+LALappsGetAsciiData(LALStatus*,
+		    TSSearchParams*,
+		    REAL4TimeSeries*,
+		    CHARVector*);
+
+void
+LALappsDoTrackSearch(LALStatus*,
+		     TimeFreqRep*,
+		     TrackSearchParams,
+		     TrackSearchMapMarkingParams ,
+		     TSSearchParams);
+
+void
+LALappsDoTSeriesSearch(LALStatus*,
+		       REAL4TimeSeries*,
+		       TSSearchParams,
+		       INT4);
+
+void
+LALappsDoTimeSeriesAnalysis(LALStatus*,
+			    TSSearchParams,
+			    CHAR*,
+			    CHARVector*);
+
+void
+LALappsDoTSAMapSearch(LALStatus*,
+		      TSAMap*,
+		      TSSearchParams*,
+		      INT4);
+
+
+void
+LALappsDoTSAMapAnalysis(LALStatus*,
+			TSSearchParams);
+
+
+void
+LALappsWriteCurveList(LALStatus*,
+		      CHAR*,
+		      TrackSearchOut,
+		      TSSearchParams*);
+
+/*
+ * Following routine need to be fixed
+ * they limp along and are prone to error
+ * if use is not careful
+ * CONSIDER PLACING IN TSDATA.C FROM LALLIBS
+ */
+void
+LALappsCreateCurveDataSection(LALStatus*,
+			      Curve**);
+
+void
+LALappsDestroyCurveDataSection(LALStatus*,
+				Curve**,
+				INT4);
+/*
+ * Private functions
+ */
+void Dump_Search_Data(TSSearchParams,TrackSearchOut,CHAR*);
+void QuickDump_Data(TSSearchParams,TrackSearchOut,CHAR*);
+void fakeDataGeneration(LALStatus*,REAL4TimeSeries*,INT4,INT4);
+
+#endif

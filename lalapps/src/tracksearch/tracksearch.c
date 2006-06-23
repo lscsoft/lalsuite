@@ -3,7 +3,6 @@
  */
 
 #include "tracksearch.h"
-#include <lal/TSSearch.h>
 
 #define PROGRAM_NAME "tracksearch"
 
@@ -13,21 +12,6 @@ typedef struct
   CHAR**  argv;
 }LALInitSearchParams;
 
-/* 
- * Declare local subroutines to use 
- */
-
-void initializeTSSearch(LALStatus*,int argc,char* argv[],TSSearchParams*,CHAR*,CHARVector*);
-void Get_Data(LALStatus*,TSSearchParams*,REAL4TimeSeries*,CHARVector*,CHAR*);
-void Get_Ascii_Data(LALStatus*,TSSearchParams*,REAL4TimeSeries*,CHARVector*);
-void Do_TrackSearch(LALStatus*,REAL4Vector*,TSSearchParams,INT4);
-void Dump_Search_Data(TSSearchParams,TrackSearchOut,CHAR*);
-void QuickDump_Data(TSSearchParams,TrackSearchOut,CHAR*);
-void fakeDataGeneration(LALStatus*,REAL4TimeSeries*,INT4,INT4);
-void Create_Curve_DataSection(LALStatus*,Curve**);
-void Destroy_Search_DataSection(LALStatus*,Curve**,INT4);
-
-
 /* Code Identifying information */
 NRCSID( TRACKSEARCHC, "tracksearch $Id$");
 RCSID( "tracksearch $Id$");
@@ -36,6 +20,95 @@ RCSID( "tracksearch $Id$");
 #define CVS_DATE "$Date$"
 
 
+
+/* ********************************************************************** */
+/* ********************************************************************** */
+/* ********************************************************************** */
+/* ********************************************************************** */
+
+/* TEMPORARY */
+/* Non Compliant code taken from EPSearch.c */
+static void print_real4tseries(const REAL4TimeSeries *fseries, const char *file)
+{
+#if 0
+  /* FIXME: why can't the linker find this function? */
+  LALSPrintTimeSeries(fseries, file);
+#else
+  FILE *fp = fopen(file, "w");
+  LALStatus   status=blank_status;
+  REAL8   time;
+  size_t i;
+  LAL_CALL(LALGPStoFloat(&status,
+			 &time,
+			 &(fseries->epoch)),
+	   &status);
+  if(fp) 
+    {
+      for(i = 0; i < fseries->data->length; i++)
+	fprintf(fp, "%f\t%g\n", (i * fseries->deltaT)+time, fseries->data->data[i]);
+      fclose(fp);
+    }
+#endif
+}
+
+static void print_complex8fseries(const COMPLEX8FrequencySeries *fseries, const char *file)
+{
+#if 0
+  /* FIXME: why can't the linker find this function? */
+  LALCPrintFrequencySeries(fseries, file);
+#else
+  FILE *fp = fopen(file, "w");
+  size_t i;
+
+  if(fp) {
+    for(i = 0; i < fseries->data->length; i++)
+      fprintf(fp, "%f\t%g\n", i * fseries->deltaF, sqrt(fseries->data->data[i].re * fseries->data->data[i].re + fseries->data->data[i].im * fseries->data->data[i].im));
+    fclose(fp);
+  }
+#endif
+}
+
+static void print_complex8_RandC_fseries(const COMPLEX8FrequencySeries *fseries, const char *file)
+{
+#if 0
+  /* FIXME: why can't the linker find this function? */
+  LALCPrintFrequencySeries(fseries, file);
+#else
+  FILE *fp = fopen(file, "w");
+  size_t i;
+
+  if(fp) {
+    for(i = 0; i < fseries->data->length; i++)
+      fprintf(fp, "%f\t%g\t%g\n", i * fseries->deltaF, 
+	      fseries->data->data[i].re,
+	      fseries->data->data[i].im);
+    fclose(fp);
+  }
+
+#endif
+}
+
+static void print_lalUnit(LALUnit unit,const char *file)
+{
+  FILE *fp = fopen(file,"w");
+  CHARVector *unitString=NULL;
+  LALStatus  status=blank_status;
+
+  LAL_CALL(LALCHARCreateVector(&status,&unitString,maxFilenameLength),&status);
+  LAL_CALL(LALUnitAsString(&status,unitString,&unit),&status);
+  if (fp)
+    fprintf(fp,"%s\n",unitString->data);
+  fclose(fp);
+  LAL_CALL(LALCHARDestroyVector(&status,&unitString),&status);
+}
+/*
+ * End diagnostic code
+ */
+
+/* ********************************************************************** */
+/* ********************************************************************** */
+/* ********************************************************************** */
+/* ********************************************************************** */
 
 
 
@@ -52,6 +125,8 @@ RCSID( "tracksearch $Id$");
 #define TRACKSEARCHC_EREAD              16
 #define TRACKSEARCHC_EMEM               32
 #define TRACKSEARCHC_EMISC              64
+#define TRACKSEARCHC_ENULL              128
+#define TRACKSEARCHC_EDATA              256
 
 #define TRACKSEARCHC_MSGENORM          "Normal Exit"
 #define TRACKSEARCHC_MSGESUB           "Subroutine Fail"
@@ -61,6 +136,8 @@ RCSID( "tracksearch $Id$");
 #define TRACKSEARCHC_MSGEREAD          "Error Reading File"
 #define TRACKSEARCHC_MSGEMEM           "Memory Error"
 #define TRACKSEARCHC_MSGEMISC          "Unknown Error"
+#define TRACKSEARCHC_MSGENULL          "Unexpected NULL pointer"
+#define TRACKSEARCHC_MSGEDATA          "Unknown data corruption error"
 
 #define TRUE     1
 #define FALSE    0
@@ -73,28 +150,16 @@ int main (int argc, char *argv[])
 {
   /* Global Variable Declarations */
   /* Variables that will be in final produciton code */
-  static LALStatus      status;/* Error containing structure */
-  TSSearchParams       *params;/*Large struct for all params*/
-  TSSegmentVector      *SegVec = NULL;/*Holds array of data sets*/
-  TSCreateParams        SegVecParams;/*Hold info for memory allocation*/
-  REAL4TimeSeries       dataset;/*Structure holding entire dataset to analyze*/
-  REAL4Vector          *datavector = NULL;/*Vector holding copy of incoming data*/
-  COMPLEX8Vector       *dummyresponse = NULL;/* Specifically not null */
-  REAL8FrequencySeries *dummyspectra = NULL;/* Specifically not null */
-  CHAR                 *cachefile = NULL;/* name of file with frame cache info */
-  CHARVector           *dirpath=NULL;/*Void contain for path string */
-  CHARVector           *dirname=NULL;/* name of directory with frames      */
-  /* 
-   * Variables that will be most likely removed after debugging 
-   */
-  UINT4             i;  /* Counter for data breaking */
-  INT4              j;
-  UINT4             productioncode = 1; /* Variable for ascii or frame */
-                                        /* Set to zero to use ascii files */
+  LALStatus         status;/* Error containing structure */
+  TSSearchParams   *params;/*Large struct for all params*/
+  CHARVector       *cachefile=NULL;/* name of file with frame cache info */
+  CHAR            *cachefileDataField=NULL;/*field of cachefile*/
+  CHARVector       *dirpath=NULL;
+
   /*
    *Sleep for Attaching DDD 
    */
-  unsigned int doze = 5;
+  unsigned int doze = 7;
   pid_t myPID;
   myPID = getpid( );
   fprintf( stdout, "pid %d sleeping for %d seconds\n", myPID, doze );
@@ -106,104 +171,67 @@ int main (int argc, char *argv[])
   /* End Global Variable Declarations */
 
   /* SET LAL DEBUG STUFF */
+  set_debug_level("NONE");
+  memset(&status, 0, sizeof(status));
+  lal_errhandler = LAL_ERR_EXIT;
+  lal_errhandler = LAL_ERR_RTRN;
   set_debug_level("MEMDBG");
+  /*  set_debug_level("ERROR | WARNING | MEMDBG");*/
+  set_debug_level("ERROR | WARNING ");
+  /*    set_debug_level("ALLDBG");*/
 
-  /*Setup structure for path name temp*/
-  LALCHARCreateVector(&status,&dirpath,1024);
+  /*
+   * Initialize status structure 
+   */
+  
   params=LALMalloc(sizeof(TSSearchParams));
   /* 
    * Parse incoming search arguments initialize variables 
    */
-  initializeTSSearch(&status,argc,argv,params,cachefile,dirpath);
-  /* 
-   * Setup string for path to data frames
-   */
-  LALCHARCreateVector(&status,&dirname,strlen(dirpath->data)+1);
-  strncpy(dirname->data,dirpath->data,dirname->length);
-  LALCHARDestroyVector(&status,&dirpath);
+  LALappsTrackSearchInitialize(&status,argc,argv,params,&(cachefile),&(dirpath));
 
-  /* 
-   * This is the data reading section of code
-   * Sources: Frame file or Single Ascii file (1C)
-   * All pathing is relative for this code
-   * 0 - use frames
-   * 1 - use Ascii file
+  /*
+   * Check params structure what analysis are we doing?
+   * Do we look for tseries data files or map data files?
    */
-  if (productioncode == 1) /* Use production frame file inputs */
+  if (params->tSeriesAnalysis)
     {
-      if (params->makenoise < 1 )
-	{  
-	  Get_Data(&status,params,&dataset,dirname,NULL);
-	}
-      else
-	{
-	  /* 
-	   * Fake Data Generation routing generates UnitGaussian 
-	   * random values 
-	   *  the output array is desire length in a 
-	   * time series structure 
-	   */
-	  fakeDataGeneration(&status,&dataset,
-			     (params->NumSeg*params->SegLengthPoints),
-			     params->makenoise);
-	};
+      /*
+       * We proceed as if this is a tSeries analysis
+       */
+      if (cachefile != NULL)
+	cachefileDataField=cachefile->data;
+      LALappsDoTimeSeriesAnalysis(&status,*params,cachefileDataField,dirpath);
     }
   else
     {
-      Get_Ascii_Data(&status,params,&dataset,dirname);
+      /*
+       * Assume we have preformed maps to use and do a map
+       * analysis instead
+       */
+      LALappsDoTSAMapAnalysis(&status,*params);
     }
-
-  LALCHARDestroyVector(&status,&dirname);
-
-  /* 
-   * Prepare the data for the call to Tracksearch 
-   */
-  /* All functionality is still not implemented yet here */
-  SegVecParams.dataSegmentPoints = dataset.data->length;
-  SegVecParams.responseSegmentPoints = 0;
-  SegVecParams.spectraSegmentPoints = 0;
-  SegVecParams.numberDataSegments = params->NumSeg;
-  LALCreateTSDataSegmentVector(&status,&SegVec,&SegVecParams);
-  LALCreateVector(&status,&datavector,dataset.data->length);
-  for(i = 0;i < dataset.data->length; i++)
-    datavector->data[i] = dataset.data->data[i];
-  /* 
-   * TracksearchPrep creates a collection of overlapped segments
-   * each of the segments will be used to make an individual TF map.
-   * We also will apply whitening and condition the data via calls
-   * inside this LAL routine.  The TSSearchParams struct has all
-   * the information needed to accoplish this
-   *
-   * Function protype to change soon....
-   */
-  TrackSearchPrep(&status,&dataset,dummyresponse,dummyspectra,SegVec,*params);
-  j=0;
-  for(i = 0;i < params->NumSeg;i++)
-    {
-      printf(".");
-      Do_TrackSearch(&status,SegVec->dataSeg[j].data,*(params),j);
-      j++;
-    };
-  printf("\n");
-  /* Free some of the memory used to do the analysis */
-  LALDestroyVector(&status,&datavector);
-  LALDestroyTSDataSegmentVector(&status,&SegVec);
-  LALDestroyVector(&status,&(dataset.data));
   /* 
    * Free searchParams input arguement structure from InitializeRoutine
    * Free elements first 
    */
+
+  if (dirpath)
+    LAL_CALL(LALCHARDestroyVector(&status,&dirpath),&status);
+  if (cachefile)
+    LAL_CALL(LALCHARDestroyVector(&status,&cachefile),&status);
   if (params->channelName)
     LALFree(params->channelName);
   if (params->auxlabel)
     LALFree(params->auxlabel);
-  if (params->dataSegVec)
-    {
-      LALDestroyTSDataSegmentVector(&status,&(params->dataSegVec));
-    }
   if (params->numSlaves)
     LALFree(params->numSlaves);
-  LALFree(params);   
+  if (params->injectMapCache)
+    LALFree(params->injectMapCache);
+  if (params->injectSingleMap)
+    LALFree(params->injectSingleMap);
+  if (params)
+    LALFree(params);   
   /* 
    * Done freeing for search params struct memory
    */
@@ -213,24 +241,573 @@ int main (int argc, char *argv[])
 /* End Main Code Body */
 
 
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+
+/* ********************************************************************** */
 /*
- * These are local scope subroutines mean for use 
- * by tracksearch only if it may be globally useful then we will place
- * it in the LAL libraries
+ * These are the SemiPrivate functions for LALapps tracksearch
+ * Useful and permanent to local lalapps code
+ *
  */
+
+/*
+ * Function that prepared data for analysis
+ * Can do whitening and calibration on the segments
+ */
+void LALappsTrackSearchPrepareData( LALStatus*        status,
+				    REAL4TimeSeries  *dataSet,
+				    TSSegmentVector  *dataSegments,
+				    TSSearchParams    params)
+{
+  AverageSpectrumParams     avgPSDParams;
+  CHARVector               *dataLabel=NULL;
+  COMPLEX8FrequencySeries  *response=NULL;
+  COMPLEX8FrequencySeries  *signalFFT=NULL;
+  CalibrationUpdateParams   calfacts;
+  FrCache                  *calcache = NULL;
+  LALUnit                   originalFrequecyUnits;
+  LALWindowParams           windowParamsPSD;
+  REAL4FFTPlan             *forwardPlan=NULL;
+  REAL4FFTPlan             *reversePlan=NULL;
+  REAL4FFTPlan             *averagePSDPlan=NULL;
+  REAL4FFTPlan             *dataSetPlan=NULL;
+  COMPLEX8FrequencySeries  *dataSetFFT=NULL;
+  REAL4FrequencySeries     *averagePSD=NULL;
+  REAL4Vector              *smoothedAveragePSD=NULL;
+  REAL4Vector              *tmpExtendedAveragePSD=NULL;
+  REAL8                     smoothingAveragePSDBias=0;
+  LALRunningMedianPar       smoothingPSDparams;
+  REAL4TimeSeries          *tmpSignalPtr=NULL;
+  REAL4Window              *windowPSD=NULL;
+  UINT4                     i=0;
+  UINT4                     j=0;
+  UINT4                     segmentPoints=0;
+  UINT4                    planLength=0;
+  PassBandParamStruc       bandPassParams;
+  const LALUnit     strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
+  const LIGOTimeGPS        gps_zero = LIGOTIMEGPSZERO;
+
+
+  if (params.verbosity == printFiles)
+    {
+      print_lalUnit(dataSet->sampleUnits,"EntireInputDataSet_Units.diag");
+      print_real4tseries(dataSet,"EntireInputDataSet.diag");
+    }
+
+  /*
+   * Calibrate entire input data set
+   */
+  if (params.calibrate)
+    {
+      if (params.verbosity >= verbose)
+	fprintf(stdout,"Performing calibration on input data\n");
+      /* 
+       * Create response function based on starting epoch from 
+       * first data segment.  We assume it is constant over 
+       * all the other data segments available.
+       */
+      segmentPoints=params.SegLengthPoints;
+      /* 
+       * Implicity set Epoch, Unit and df for Response extract
+       */
+      LAL_CALL( LALCreateCOMPLEX8FrequencySeries(status,
+						 &response,
+						 "tmpResponse",
+						 dataSet->epoch,
+						 0,
+						 1/(dataSet->deltaT*dataSet->data->length),
+						 strainPerCount,
+						 segmentPoints/2+1),
+		status);
+
+      LAL_CALL(LALFrCacheImport(status,
+				&calcache, 
+				params.calFrameCache),
+	       status);
+      /*
+       * Extract response function from calibration cache
+       */
+      /* Configure calfacts */
+      memset(&calfacts, 0, sizeof(calfacts));
+      calfacts.ifo = (CHAR*) LALMalloc(3*sizeof(CHAR));
+      strcpy(calfacts.ifo,params.calibrateIFO);
+
+
+      LAL_CALL( LALExtractFrameResponse(status,
+					response, 
+					calcache, 
+					&calfacts),
+		status);
+      if (params.verbosity == printFiles)
+	{
+	  print_lalUnit(response->sampleUnits,"responseFunction_Units.diag");
+	  print_complex8fseries(response,"responseFunction.diag");
+	}
+      /*
+       * Destroy IFO text pointer
+       */
+      LALFree(calfacts.ifo);
+      /*
+       * Destroy frame cache
+       */
+      if (calcache)
+	{
+	  LAL_CALL( LALDestroyFrCache(status, &calcache),status);
+	}
+      /* Done getting response function */
+      /*
+       * Allocate frequency series for Set FFT
+       */
+      LAL_CALL(
+	       LALCreateCOMPLEX8FrequencySeries(status,
+						&dataSetFFT,
+						"Entire data FFTed",
+						dataSet->epoch,
+						0,
+						(dataSet->deltaT*dataSet->data->length),
+						dataSet->sampleUnits,
+						dataSet->data->length/2+1),
+	       status);
+      /*
+       * FFT input unsegmented data set
+       */
+      LAL_CALL( LALCreateForwardREAL4FFTPlan(status,
+					     &dataSetPlan,
+					     dataSet->data->length,
+					     0),
+		status);
+      LAL_CALL( LALForwardREAL4FFT(status,
+				   dataSetFFT->data,
+				   dataSet->data,
+				   dataSetPlan),
+		status);
+      if (dataSetPlan)
+	LAL_CALL(LALDestroyREAL4FFTPlan(status,&dataSetPlan),status);
+
+      if (params.verbosity == printFiles)
+	{
+	  print_complex8fseries(dataSetFFT,"dataSetFFT.diag");
+	  print_lalUnit(dataSetFFT->sampleUnits,"dataSetFFT_Units.diag");
+	}
+      /*
+       * Calibrate
+       */
+      LAL_CALL(LALTrackSearchCalibrateCOMPLEX8FrequencySeries(status,
+							      dataSetFFT,
+							      response),
+	       status);
+
+      if (params.verbosity == printFiles)
+	{
+	  print_complex8fseries(dataSetFFT,"dataSetFFTCalibrate.diag");
+	  print_lalUnit(dataSetFFT->sampleUnits,"dataSetFFTCalibrate_Units.diag");
+	}
+      /*
+       * Inverse FFT the entire dataSet
+       */
+      fprintf(stderr,"Hack on Response function...Don't forget\n");
+      fprintf(stderr,"Will cause memory leak for some reason?\n");
+      dataSetFFT->data->data[dataSetFFT->data->length-1].im=0;
+      dataSetFFT->data->data[dataSetFFT->data->length].im=0;
+      
+      LAL_CALL(LALCreateReverseREAL4FFTPlan(status,
+					    &dataSetPlan,
+					    dataSet->data->length,
+					    0),
+	       status);
+      LAL_CALL(LALReverseREAL4FFT(status,
+				  dataSet->data,
+				  dataSetFFT->data,
+				  dataSetPlan),
+	       status);
+      /* 
+       * Migrate units fields from F basis to T basis
+       */
+      dataSet->sampleUnits=dataSetFFT->sampleUnits;
+      /*
+       * Apply missing factor 1/n
+       */
+      for (j=0;j<dataSet->data->length;j++)
+	dataSet->data->data[i]=dataSet->data->data[i]/dataSet->data->length;
+
+      if (dataSetPlan)
+	LAL_CALL(LALDestroyREAL4FFTPlan(status,&dataSetPlan),status);
+      
+      if (params.verbosity == printFiles)
+	{
+	  print_real4tseries(dataSet,"dataSetCalibrate.diag");
+	  print_lalUnit(dataSet->sampleUnits,"dataSetCalibrate_Units.diag");
+	}
+      /*
+       * Free the FFT memory space
+       */
+	if (dataSetFFT)
+	LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(status,dataSetFFT),
+	status);
+      if (response)
+	LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(status,response),
+		 status);
+    }
+  else
+    {
+      if (params.verbosity >= verbose)
+	fprintf(stdout,"Calibration not requested, assuming no calibration needed\n");
+    }
+  /* 
+   *End calibration conditional 
+   */
+
+  /* STRIP OUT LATER */
+  /* Set all data points to 1 and see what happens */
+  /*  for (j=0;j<dataSet->data->length;j++)*/
+  /*    dataSet->data->data[j]=1;*/
+
+  /*
+   * Perform low pass filtering on the input data stream if requested
+   */
+  if ((params.highPass > 0) || (params.lowPass > 0))
+    {
+      if (params.verbosity >= verbose)
+	{
+	  fprintf(stdout,"You requested a high pass filter of the data at %f Hz\n",params.highPass);
+	  fprintf(stdout,"You requested a low pass filter of the data at %f Hz\n",params.lowPass);
+	}
+      bandPassParams.name=NULL;
+      bandPassParams.nMax=10;
+      /* F < f1 kept, F > f2 kept */
+      bandPassParams.f1=params.lowPass;
+      bandPassParams.f2=params.highPass;
+      bandPassParams.a1=0.9;
+      bandPassParams.a2=0.9;
+      /*
+       * Call the low pass filter function.
+       */
+      LAL_CALL(LALButterworthREAL4TimeSeries(status,
+					     dataSet,
+					     &bandPassParams),
+	       status);
+      if (params.verbosity >= printFiles)
+	print_real4tseries(dataSet,"ButterworthFiltered.diag");
+    }
+  /*
+   * End the high pass filter
+   */
+
+
+  /*
+   * Split incoming data into Segment Vector
+   */
+  LAL_CALL(LALTrackSearchDataSegmenter(status,
+				       dataSet,
+				       dataSegments,
+				       params),
+	   status);
+  /*
+   * If we are to whiten first let us calculate the 
+   * average PSD using the non segment data structure
+   */
+
+  if (params.whiten !=0 )
+    {
+      if (params.verbosity >= verbose )
+	fprintf(stdout,"Estimating PSD for whitening\n");
+      LAL_CALL(
+	       LALCreateREAL4FrequencySeries(status,
+					     &averagePSD,
+					     "averagePSD",
+					     gps_zero,
+					     0,
+					     1/((params.SegLengthPoints)*dataSet->deltaT),
+					     lalDimensionlessUnit,
+					     params.SegLengthPoints/2+1),
+	       status);
+      /*
+       * The given units above need to be correct to truly reflect the
+       * units stored in the frame file
+       */
+      windowParamsPSD.length=params.SegLengthPoints;
+      windowParamsPSD.type=params.avgSpecWindow;
+      LAL_CALL( LALCreateREAL4Window(status,
+				     &(windowPSD),
+				     &windowParamsPSD),
+		status);
+      /* If we only do one map we need to something special here*/
+      if (params.NumSeg < 2)
+	avgPSDParams.overlap=1;
+      else /* use same as segment overlap request*/
+	avgPSDParams.overlap=params.overlapFlag;
+
+      avgPSDParams.window=windowPSD;
+      avgPSDParams.method=params.avgSpecMethod;
+      /* Set PSD plan length and plan*/
+      LAL_CALL( LALCreateForwardREAL4FFTPlan(status,
+					     &averagePSDPlan,
+					     params.SegLengthPoints,
+					     0),
+		status);
+      avgPSDParams.plan=averagePSDPlan;
+
+      LAL_CALL(  LALREAL4AverageSpectrum(status,
+					 averagePSD,
+					 dataSet,
+					 &avgPSDParams),
+		status);
+      if (params.smoothAvgPSD > 2)
+	{
+	  /* Error check that median block size less than =
+	     length of power psd
+	  */
+	  if (params.verbosity >= verbose)
+	    {
+	      fprintf(stdout,"We will do the running median smoothing of the average PSD with block size of %i\n",
+		      params.smoothAvgPSD);
+	    }
+	  if (params.verbosity >= printFiles)
+	    {
+	      print_real4fseries(averagePSD,"PreSmoothing-averagePSD.diag");
+	      print_lalUnit(averagePSD->sampleUnits,
+			    "PreSmoothing-averagePSD_Units.diag");
+	    }
+	  
+	  /*
+	   * Perform running median on the average PSD using
+	   * blocks of size n
+	   */
+	  LAL_CALL(LALSCreateVector(status,
+				    &smoothedAveragePSD,
+				    averagePSD->data->length),
+		   status);
+	  LAL_CALL(LALSCreateVector(status,
+				    &tmpExtendedAveragePSD,
+				    averagePSD->data->length+params.smoothAvgPSD-1),
+		   status);
+	  /*
+	   * Build a buffered PSD rep so that median estimate
+	   * returned will have m points equal to the n points of the 
+	   * original average PSD
+	   */
+	  for (i=0;i<averagePSD->data->length;i++)
+	    tmpExtendedAveragePSD->data[i]=averagePSD->data->data[i];
+	  for (i=averagePSD->data->length-1;
+	       i<tmpExtendedAveragePSD->length;
+	       i++)
+	    tmpExtendedAveragePSD->data[i]=averagePSD->data->data[averagePSD->data->length-1];
+	  /*
+	   * Setup running median parameters
+	   */
+	  smoothingPSDparams.blocksize=params.smoothAvgPSD;
+	  LAL_CALL(LALSRunningMedian(status,
+				     smoothedAveragePSD,
+				     tmpExtendedAveragePSD,
+				     smoothingPSDparams),
+		   status);
+	  LALPrintVector(tmpExtendedAveragePSD);
+	  LALPrintVector(smoothedAveragePSD);
+	  LAL_CALL(LALRngMedBias(status,
+				 &smoothingAveragePSDBias,
+				 smoothingPSDparams.blocksize),
+		   status);
+	  /*
+	   * Fix possible bias of the running median
+	   */
+	  for (i=0;i<smoothedAveragePSD->length;i++)
+	    smoothedAveragePSD->data[i]=
+	      smoothingAveragePSDBias*smoothedAveragePSD->data[i];
+	  /*
+	   * Copy newly smoothed PSD to frequency series
+	   */
+	  for (i=0;i<averagePSD->data->length;i++)
+	   averagePSD->data->data[i]=smoothedAveragePSD->data[i];
+
+	  if (smoothedAveragePSD)
+	    LAL_CALL(LALSDestroyVector(status,
+				       &smoothedAveragePSD),
+		     status);
+
+	  if (tmpExtendedAveragePSD)
+	    LAL_CALL(LALSDestroyVector(status,
+				       &tmpExtendedAveragePSD),
+		     status);
+	  
+	  
+	}
+      if (params.verbosity == printFiles)
+	{
+	  print_real4tseries(dataSet,"dataSet.diag");
+	  print_real4fseries(averagePSD,"averagePSD.diag");
+	  print_lalUnit(averagePSD->sampleUnits,"averagePSD_Units.diag");
+	}
+      /*
+       * Setup global FFT plans 
+       */
+      planLength=params.SegLengthPoints;
+      LAL_CALL(  LALCreateForwardREAL4FFTPlan(status,
+					      &forwardPlan,
+					      planLength,
+					      0),
+		 status);
+      LAL_CALL( LALCreateReverseREAL4FFTPlan(status,
+					     &reversePlan,
+					     planLength,
+					     0),
+		status);
+      /*
+       * Allocate Frequency Struture to use as memory space for 
+       * subsequent ffts of segments
+       */
+      LAL_CALL( 
+	       LALCreateCOMPLEX8FrequencySeries(
+						status,
+						&signalFFT,
+						"tmpSegPSD",
+						gps_zero,
+						0,
+						1/(dataSegments->dataSeg[0]->deltaT * dataSegments->dataSeg[0]->data->length),
+						dataSegments->dataSeg[0]->sampleUnits,
+						planLength/2+1),
+	       status);
+      /*
+       * Grab original units for manipulations later
+       */
+      originalFrequecyUnits=signalFFT->sampleUnits;
+
+      /* Sanity check those units above should be counts or strain */
+      /* 
+       * Actually whiten each data segment
+       */
+      for (i=0;i<dataSegments->length;i++)
+	{
+	  tmpSignalPtr = (dataSegments->dataSeg[i]);
+	  if (params.verbosity == printFiles)
+	    {
+	      print_lalUnit(tmpSignalPtr->sampleUnits,"InputTimeSeries_Units.diag");
+	    }
+	  /*
+	   * FFT segment
+	   */
+	  LAL_CALL( LALForwardREAL4FFT(status,
+				       signalFFT->data,
+				       tmpSignalPtr->data,
+				       forwardPlan),
+		    status);
+	  if (params.verbosity == printFiles)
+	    {
+	      print_complex8fseries(signalFFT,"signalFFT.diag");
+	      print_lalUnit(signalFFT->sampleUnits,"signalFFT_Units.diag");
+	    }
+	  /*
+	   * Whiten
+	   */
+	  if (params.whiten != 0)
+	    {
+	      LAL_CALL(LALTrackSearchWhitenCOMPLEX8FrequencySeries(status,
+								   signalFFT,
+								   averagePSD,
+								   params.whiten),
+		       status);
+	      if (params.verbosity == printFiles)
+		{
+		  print_complex8fseries(signalFFT,"signalFFTWhiten.diag");
+		}
+	    }
+	  /*
+	   * Reverse FFT
+	   */
+	  LAL_CALL( LALReverseREAL4FFT(status,
+				       tmpSignalPtr->data,
+				       signalFFT->data,
+				       reversePlan),
+		    status);
+	  /* 
+	   * Normalize the IFFT by 1/n factor
+	   * See lsd-5 p259 10.1 for explaination
+	   */
+	  for (j=0;j<tmpSignalPtr->data->length;j++)
+	    tmpSignalPtr->data->data[j]= 
+	      tmpSignalPtr->data->data[j]/tmpSignalPtr->data->length;
+	  if (params.verbosity == printFiles)
+	    {
+	      LAL_CALL(LALCHARCreateVector(status,&dataLabel,128),
+		       status);
+	      sprintf(dataLabel->data,"signalFFT_%i.diag",i);
+	      print_complex8fseries(signalFFT,dataLabel->data);
+	      LAL_CALL(LALCHARDestroyVector(status,&dataLabel),
+		       status);
+	    }
+	}
+      /*
+       * Reset the tmp frequency series units
+       */
+      signalFFT->sampleUnits=originalFrequecyUnits;
+      tmpSignalPtr=NULL;
+      
+      /*
+       * Free temporary Frequency Series
+       */
+      if (signalFFT)
+	{
+	  LAL_CALL( LALDestroyCOMPLEX8FrequencySeries(status,signalFFT),
+		    status);
+	}
+      if (windowPSD)
+	LAL_CALL( LALDestroyREAL4Window(status,
+					&windowPSD),
+		  status);
+      if (averagePSDPlan)
+	LAL_CALL( LALDestroyREAL4FFTPlan(status,&averagePSDPlan),
+		  status);
+      if (averagePSD)
+	LAL_CALL(LALDestroyREAL4FrequencySeries(status,averagePSD),
+		 status);
+      if (forwardPlan)
+	{
+	  LAL_CALL(
+		   LALDestroyREAL4FFTPlan(status,&forwardPlan),
+		   status);
+	}
+      if (reversePlan)
+	{
+	  LAL_CALL( LALDestroyREAL4FFTPlan(status,&reversePlan),
+		    status);
+	}
+    }
+  if (params.verbosity == printFiles)
+    {
+      tmpSignalPtr=NULL;
+      for (i=0;i<dataSegments->length;i++)
+	{
+	  tmpSignalPtr=(dataSegments->dataSeg[i]);
+	  LAL_CALL(LALCHARCreateVector(status,&dataLabel,128),
+		   status);
+	  sprintf(dataLabel->data,"dataSeg_%i.diag",i);
+	  print_real4tseries(tmpSignalPtr,dataLabel->data);
+	  sprintf(dataLabel->data,"dataSeg_%i_Units.diag",i);
+	  print_lalUnit(tmpSignalPtr->sampleUnits,dataLabel->data);
+	  LAL_CALL(LALCHARDestroyVector(status,&dataLabel),
+		   status);
+	}
+    }
+  return;
+}
+/* End the PrepareData routine */
 
 /*
  * Setup params structure by parsing the command line
  */
-void initializeTSSearch(
-			LALStatus     *status,
-			int            argc,
-			char          *argv[], 
-			TSSearchParams  *params,
-			CHAR*         cachefile,
-			CHARVector   *dirname
-			)
+void LALappsTrackSearchInitialize(
+				  LALStatus       *status,
+				  int              argc,
+				  char            *argv[], 
+				  TSSearchParams  *params,
+				  CHARVector     **dPtrCachefile,
+				  CHARVector     **dPtrDirPath
+				  )
 {
+  /*Local Variables*/
+  LIGOTimeGPS     tempGPS;
 
   /* Setup file option to read ascii types and not frames */
   /* getop arguments */
@@ -262,19 +839,28 @@ void initializeTSSearch(
       {"PSD_framefile",       required_argument,  0,    'x'},
       {"spectrum_average_method", required_argument,0,  'y'},
       {"calibration_cache_file", required_argument,0,   'z'},
+      {"printPGM",            no_argument,        0,    'A'},
+      {"color_map",           required_argument,  0,    'B'},
+      {"inject_map_cache",    required_argument,  0,    'C'},
+      {"inject_map",          required_argument,  0,    'D'},
+      {"sample_rate",         required_argument,  0,    'E'},
+      {"smooth_average_spectrum", required_argument,    0,    'F'},
+      {"filter_high_pass", required_argument, 0,  'G'},
+      {"filter_low_pass", required_argument, 0, 'H'},
       {0,                     0,                  0,      0}
     };
   
   int              C;
 
-  INITSTATUS (status, "getparams", TRACKSEARCHC);
-  ATTATCHSTATUSPTR (status);
+  /*  INITSTATUS (status, "getparams", TRACKSEARCHC);*/
+  /*  ATTATCHSTATUSPTR (status);*/
 
   /*
    * Set default values for optional arguments 
    * These options will be used if omitted from the command line 
    * Required arguements will be initialized as well to simply debugging
    */
+  params->tSeriesAnalysis=1;/*Default Yes this is tseries to analyze*/
   params->LineWidth = 0;
   params->TransformType = Spectrogram;
   params->NumSeg = 1;
@@ -286,6 +872,9 @@ void initializeTSSearch(
   params->whiten = 0;
   params->avgSpecMethod = -1; /*Will trigger error*/
   params->avgSpecWindow = Rectangular; /* Default no window */
+  params->smoothAvgPSD = 0;/*0 means no smoothing*/
+  params->highPass=0;/*High pass filter freq*/
+  params->lowPass=0;/*Low pass filter freq*/
   params->FreqBins = 0;
   params->TimeBins = 0;
   params->windowsize = 0;/*256*/ /*30*/
@@ -301,18 +890,27 @@ void initializeTSSearch(
    */
   params->TimeLengthPoints = 0;
   params->SamplingRate = 1;
+  params->SamplingRateOriginal = params->SamplingRate;
   params->makenoise = -1;
   params->calChannelType=SimDataChannel;/*See lsd*/
   params->channelName=NULL; /* Leave NULL to avoid frame read problems */
   params->dataDirPath=NULL;
   params->singleDataCache=NULL;
   params->detectorPSDCache=NULL;
-  params->auxlabel=NULL;
+  params->channelNamePSD=NULL;
+  params->auxlabel=NULL;;
   params->joinCurves=FALSE; /*default no curve joining */
   params->dataSegVec=NULL;
   params->numSlaves=0;
   params->calFrameCache=NULL;
-
+  params->printPGM=0; /*Don't output PGMs of map*/
+  params->pgmColorMapFile=NULL;
+  params->verbosity=printFiles;
+  params->calibrate=0;/*No calibration default */
+  params->calCatalog=NULL;
+  strcpy(params->calibrateIFO,"L1");
+  params->injectMapCache=NULL;
+  params->injectSingleMap=NULL;
   /* 
    * Parse the command line arguments 
    */
@@ -328,7 +926,7 @@ void initializeTSSearch(
       int option_index=0;
       C = getopt_long_only(argc,
 			   argv,
-			   "a:b:c:d:e:f:h:i:j:k:l:m:o:p:q:r:s:t:u",
+			   "a:b:c:d:e:f:h:i:j:k:l:m:o:p:q:r:s:t:u:v:w:x:y:z:A:B:C:D:E:F:G:H",
 			   long_options, 
 			   &option_index);
       /* The end of the arguments is C = -1 */
@@ -355,9 +953,15 @@ void initializeTSSearch(
 	case 'a':
 	  /* Setting the GPS start time parameter */
 	  {
-	    UINT4 startTime = atoi(optarg);
-	    params->GPSstart.gpsSeconds = startTime;
-	    params->GPSstart.gpsNanoSeconds = 0;
+	    /* Allow intepreting float values */
+	    REAL8 startTime = atof(optarg);
+	    LAL_CALL(
+		     LALFloatToGPS(status,
+				   &tempGPS,
+				   &startTime),
+		     status);
+	    params->GPSstart.gpsSeconds = tempGPS.gpsSeconds;
+	    params->GPSstart.gpsNanoSeconds = tempGPS.gpsNanoSeconds;
 	  }
 	  break;
 	  
@@ -559,9 +1163,12 @@ void initializeTSSearch(
 
 	case 's':
 	  {
+	    /*Setup structure for path or cachefile name temp*/
+	    LAL_CALL(LALCHARCreateVector(status,dPtrDirPath,maxFilenameLength),
+		     status);
 	    INT4 len;
 	    len= strlen(optarg) +1;
-	    strncpy(dirname->data,optarg,len);
+	    strncpy((*dPtrDirPath)->data,optarg,len);
 	  }
 	  break;
 
@@ -580,10 +1187,11 @@ void initializeTSSearch(
 	case 'v':
 	  { /* Setting up aux label if present */
 	    /* Insert string copy code here */
+	    LAL_CALL(LALCHARCreateVector(status,dPtrCachefile,maxFilenameLength),
+		     status);
 	    INT4 len;
 	    len = strlen(optarg) +1;
-	    cachefile = (CHAR *) LALCalloc(len,sizeof(CHAR));
-	    memcpy(cachefile,optarg,len);
+	    memcpy((*dPtrCachefile)->data,optarg,len);
 	  }
 	  break;
 
@@ -601,7 +1209,7 @@ void initializeTSSearch(
 	      LALCalloc(len,sizeof(CHAR));
 	    memcpy(params->detectorPSDCache,optarg,len);
 	  }
-
+	  break;
 	case 'y':
 	  {
 	    if(!strcmp(optarg, "useMean"))
@@ -615,8 +1223,8 @@ void initializeTSSearch(
 		fprintf(stderr,TRACKSEARCHC_MSGEARGS);
 		exit(TRACKSEARCHC_EARGS);
 	      };
-	    break;
 	  }
+	  break;
 	case 'z':
 	  { /* Setting up aux label if present */
 	    /* Insert string copy code here */
@@ -624,6 +1232,69 @@ void initializeTSSearch(
 	    len = strlen(optarg) +1;
 	    params->calFrameCache = (CHAR *) LALCalloc(len,sizeof(CHAR));
 	    memcpy(params->calFrameCache,optarg,len);
+	    params->calibrate=1;
+	  }
+	  break;
+	case 'A':
+	  {
+	    params->printPGM=1;/*Enable PGM printing*/
+	  }
+	  break;
+	case 'B':
+	  {
+	    INT4 len;
+	    len = strlen(optarg) +1;
+	    params->pgmColorMapFile = (CHAR *) LALCalloc(len,sizeof(CHAR));
+	    memcpy(params->pgmColorMapFile,optarg,len);
+	  }
+	case 'C':
+	  {
+	    params->injectMapCache=
+	      (CHAR*) LALCalloc(strlen(optarg)+1,sizeof(CHAR));
+	    memcpy(params->injectMapCache,optarg,strlen(optarg)+1);
+	    /*
+	     * Turn off tseries flag
+	     */
+	    params->tSeriesAnalysis=0;
+	  }
+	  break;
+
+	case 'D':
+	  {
+	    params->injectSingleMap=
+	      (CHAR*) LALCalloc(strlen(optarg)+1,sizeof(CHAR));
+	    memcpy(params->injectSingleMap,optarg,strlen(optarg)+1);
+	    /*
+	     * Turn off tseries flag
+	     */
+	    params->tSeriesAnalysis=0;
+	  }
+	  break;
+
+	case 'E':
+	  {
+	    params->SamplingRate=atof(optarg);
+	  }
+	  break;
+
+	case 'F':
+	  {
+	    params->smoothAvgPSD =(UINT4) atoi(optarg); 
+	    /* 
+	     * >0 Means do running median with this block size
+	     */
+	  }
+	  break;
+
+	case 'G':
+	  {
+	    params->highPass=atof(optarg);
+	  }
+	  break;
+
+	case 'H':
+	  {
+	    params->lowPass=atof(optarg);
 	  }
 	  break;
 
@@ -639,9 +1310,12 @@ void initializeTSSearch(
   /* 
    * Include here a simple section of code to santiy check all params 
    * structure arguements for reasonable values. This will involve 
-   * moving error catching code out of the case statement 
+   * moving error catching code out of the case statement in some cases
    */
 
+  /*
+   * End input parameter consistency checking
+   */
   /* 
    * Tabulate the number of segments to create for specified overlap
    * Check for valid overlap number which < segment length number 
@@ -668,33 +1342,437 @@ void initializeTSSearch(
       params->NumSeg=floor((params->TimeLengthPoints-params->overlapFlag)
 			   /(params->SegLengthPoints - params->overlapFlag));
       /* Determine number of points to throw away (not process) */
-      params->discardTLP=params->TimeLengthPoints -
-	(params->NumSeg*(params->SegLengthPoints -
-			 params->overlapFlag)
-	 /(params->TimeLengthPoints - params->SegLengthPoints));
+      /*params->discardTLP=floor(params->NumSeg*
+       *		       (params->SegLengthPoints-params->overlapFlag)
+       *		       /(params->TimeLengthPoints-params->SegLengthPoints));
+       */
+      params->discardTLP=(params->TimeLengthPoints-params->overlapFlag)%(params->SegLengthPoints - params->overlapFlag);
       /* 
        * Reset points to process by N-discardTLP, this gives us
        * uniform segments to make maps with
        */
       params->TimeLengthPoints=params->TimeLengthPoints-params->discardTLP;
+      if ((params->verbosity >= verbose))
+	fprintf(stdout,"We need to throw away %i trailing data points for %i, evenly matched data segments\n",params->discardTLP,params->NumSeg);
+	  
     };
-  DETATCHSTATUSPTR(status);
+  /*  DETATCHSTATUSPTR(status);*/
   return;
 }
 /* End initialization subroutine for search */
 
+/* 
+ * This is the frame reading routine taken from power.c
+ * it has been modified very slightly
+ */
+void LALappsGetFrameData(LALStatus*          status,
+			 TSSearchParams*     params,
+			 REAL4TimeSeries*    DataIn,
+			 CHARVector*         dirname,
+			 CHAR*               cachefile
+			 )
+
+
+{
+  MetadataTable        procparams;
+  MetadataTable        procTable;
+  LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
+  ProcessParamsTable   *this_proc_param;
+  MetadataTable         searchsumm;
+  FrStream             *stream = NULL;
+  FrCache              *frameCache = NULL;
+  FrChanIn              channelIn;
+  CHAR                 *comment=NULL;
+  REAL4TimeSeries      *tmpData=NULL;
+  UINT4                 loadPoints=0;
+  UINT4                 i=0;
+  ResampleTSParams      resampleParams;
+
+  /* Set all variables from params structure here */
+  channelIn.name = params->channelName;
+  /* create the process and process params tables */
+
+  /*
+****************************************
+procTable.processTable = (ProcessTable *) 
+
+LALCalloc( 1, sizeof(ProcessTable) );
+LAL_CALL( LALGPSTimeNow(status,
+&(procTable.processTable->start_time),
+&accuracy ), 
+status );
+LAL_CALL( populate_process_table( status,
+procTable.processTable, 
+PROGRAM_NAME, 
+CVS_REVISION, 
+CVS_SOURCE,
+CVS_DATE ),
+status);
+this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
+LALCalloc( 1, sizeof(ProcessParamsTable) );
+****************************************
+*/
+
+  /* create the search summary table */
+
+  /*
+****************************************
+searchsumm.searchSummaryTable = (SearchSummaryTable *)
+LALCalloc( 1, sizeof(SearchSummaryTable) );
+****************************************
+*/
+
+/* fill the comment, if a user has specified one, or leave it blank */
+
+  /*
+****************************************
+if ( comment )
+{
+LALSnprintf( procTable.processTable->comment, 
+LIGOMETA_COMMENT_MAX,
+" " );
+LALSnprintf( searchsumm.searchSummaryTable->comment, 
+LIGOMETA_COMMENT_MAX,
+" " );    
+} 
+else 
+{
+  LALSnprintf( procTable.processTable->comment, 
+	       LIGOMETA_COMMENT_MAX,
+	       "%s", 
+	       comment );
+  LALSnprintf( searchsumm.searchSummaryTable->comment,
+	       LIGOMETA_COMMENT_MAX,
+	       "%s",
+	       comment );
+}
+****************************************
+*/
+
+/* the number of nodes for a standalone job is always 1 */
+
+/*
+  searchsumm.searchSummaryTable->nnodes = 1;
+*/
+
+/* Change the name field to the proper params entry */
+memcpy(DataIn->name,
+       params->channelName,
+       (strlen(params->channelName)*sizeof(CHAR)));
+ 
+memset( DataIn->data->data, 0, DataIn->data->length*sizeof(REAL4) );
+/* Need to use NULL DataIN->name so we will skip this line of code
+   Nullifying the DataIn->name pointer by hand hope it works */
+
+/* only try to load frame if name is specified */
+if (dirname || cachefile)
+{
+  REAL8 tmpTime=0;
+  if(dirname){
+    /* Open frame stream */
+    LAL_CALL( LALFrOpen( status, &stream, dirname->data, "*.gwf" ), status);
+  }
+  else if (cachefile){
+    /* Open frame cache */
+    LAL_CALL( LALFrCacheImport( status, &frameCache, cachefile ), status);
+    LAL_CALL( LALFrCacheOpen( status, &stream, frameCache ), status);
+    LAL_CALL( LALDestroyFrCache( status, &frameCache ), status );
+  }
+  /*
+   * Determine information about the channel and seek to the
+   * right place in the fram files 
+   */
+  DataIn->epoch.gpsSeconds     = params->GPSstart.gpsSeconds;
+  DataIn->epoch.gpsNanoSeconds = params->GPSstart.gpsNanoSeconds;
+  LAL_CALL( LALFrSeek(status, &(DataIn->epoch), stream), status);
+  /*
+   * Load the metadata to check the frame sampling rate
+   */
+  LAL_CALL( LALFrGetREAL4TimeSeriesMetadata( status, 
+				     DataIn, 
+				     &channelIn, 
+				     stream), 
+	    status);
+  /*
+   * Determine the sampling rate and assuming the params.sampling rate
+   * how many of these points do we load to get the same time duration
+   * of data points
+   */
+  params->SamplingRateOriginal=1/(DataIn->deltaT);
+  loadPoints=params->SamplingRateOriginal*(params->TimeLengthPoints/params->SamplingRate);
+  LAL_CALL(
+	   LALCreateREAL4TimeSeries(status,
+				    &tmpData,
+				    "Higher Sampling Tmp Data",
+				    params->GPSstart,
+				    0,
+				    1/params->SamplingRateOriginal,
+				    lalADCCountUnit,
+				    loadPoints),
+	   status);
+  /* get the data */
+  LAL_CALL( LALFrSeek(status, &(tmpData->epoch), stream), status);
+  LAL_CALL( LALFrGetREAL4TimeSeries( status, 
+				     tmpData, 
+				     &channelIn, 
+				     stream), 
+	    status);
+      if (params->verbosity > 0)
+	print_real4tseries(tmpData,"OriginalInputTimeSeries.diag");
+  /*
+   * Prepare for the resample if needed or just copy the data so send
+   * back
+   */
+  if (params->SamplingRate < params->SamplingRateOriginal)
+    {
+      fprintf(stdout,"We will resample the data from %6.3f to %6.3f, a few edge data points will be corrupted in time series\n",
+	      1/tmpData->deltaT,
+	      params->SamplingRate);
+      resampleParams.deltaT=1/params->SamplingRate;
+      resampleParams.filterType=defaultButterworth;
+      /*resampleParams->filterParams*/
+      LAL_CALL(
+	       LALResampleREAL4TimeSeries(status,
+					  tmpData,
+					  &resampleParams),
+	       status);
+      if (params->verbosity > 0)
+	print_real4tseries(tmpData,"ResampledlInputTimeSeries.diag");
+      /*
+       * Copy only the valid data and fill the returnable metadata
+       */
+      DataIn->deltaT=(1/params->SamplingRate);
+      LALappsTSassert((tmpData->data->length >=
+		       DataIn->data->length),
+		      TRACKSEARCHC_EDATA,
+		      TRACKSEARCHC_MSGEDATA);
+      for (i=0;i<DataIn->data->length;i++)
+	DataIn->data->data[i]=tmpData->data->data[i];
+    }
+  else
+    {
+      fprintf(stdout,"Resampling to %f, not possible we have %f sampling rate in the frame file.\n",
+	      params->SamplingRate,
+	      params->SamplingRateOriginal);
+      /*
+       * Straight copy the data over to returnable structure
+       */
+      params->SamplingRate=params->SamplingRateOriginal;
+      DataIn->deltaT=1/params->SamplingRateOriginal;
+      for (i=0;i<DataIn->data->length;i++)
+	DataIn->data->data[i]=tmpData->data->data[i];
+    }
+  if (params->verbosity > 0)
+    	print_real4tseries(tmpData,"ActualReDoneTimeSeries.diag");
+  /*
+   * Release the memory for the temporary time series
+   */
+   if (tmpData)
+     LAL_CALL(LALDestroyREAL4TimeSeries(status,tmpData),
+	      status);
+  /* 
+   * store the start and end time of the raw channel 
+   * in the search summary 
+   */
+  /*
+****************************************
+searchsumm.searchSummaryTable->in_start_time = DataIn->epoch;
+LAL_CALL( LALGPStoFloat( status, &tmpTime, &(DataIn->epoch) ), 
+status );
+tmpTime += DataIn->deltaT * (REAL8) DataIn->data->length;
+LAL_CALL( LALFloatToGPS( status, 
+&(searchsumm.searchSummaryTable->in_end_time), 
+&tmpTime ), 
+status );
+****************************************
+*/
+  /* close the frame stream */
+  LAL_CALL( LALFrClose( status, &stream ), status);
+}
+/* Free memory allocation on procTable at start of routine */
+/*
+****************************************
+LALFree(procTable.processTable);
+LALFree(procparams.processParamsTable);
+LALFree(searchsumm.searchSummaryTable);
+****************************************
+*/
+	
+}
+/* End frame reading code */
+
+
+
+/*
+ * Routine to allow use of acsii input rather than frames
+ */
+void LALappsGetAsciiData(LALStatus*          status,
+			 TSSearchParams*     params,
+			 REAL4TimeSeries*    DataIn,
+			 CHARVector*         dirname
+			 )
+{
+  FILE                 *fp=NULL;
+  INT4                  i;
+
+  /* File opening via an absolute path */
+  fp = fopen(dirname->data,"r");
+  if (!fp)
+    {
+      fprintf(stderr,TRACKSEARCHC_MSGEREAD);
+      exit(TRACKSEARCHC_EREAD);
+    };
+  for(i=0;i<(INT4)params->TimeLengthPoints;i++)
+    {
+      fscanf(fp,"%f\n",&(DataIn->data->data[i]));
+    }
+  fclose(fp);
+  if (DataIn->data->length != params->TimeLengthPoints)
+    {
+      fprintf(stderr,TRACKSEARCHC_MSGEREAD);
+      exit(TRACKSEARCHC_EREAD);
+    }
+  return;
+}
+/* End of Ascii reader function */
+
+
 /*
  * Local routine to actually carry out search
  */
-void Do_TrackSearch(
-		    LALStatus       *status,
-		    REAL4Vector     *signal,
-		    TSSearchParams   params,
-		    INT4             CallNum
-		    )
+void LALappsDoTrackSearch(
+			  LALStatus                     *status,
+			  TimeFreqRep                   *tfmap,
+			  TrackSearchParams              tsInputs,
+			  TrackSearchMapMarkingParams    tsMarkers,
+			  TSSearchParams                 params)
+{
+  TrackSearchOut         outputCurves;/*Native LAL format for results*/
+  TrackSearchOut         outputCurvesThreshold; /*Curve data thresholded */
+  CHARVector            *outputFilename=NULL;
+  CHARVector            *outputFilenameMask=NULL;
+
+ /*************************************************************/
+  /* 
+   * The LALTracksearch seems to map the 
+   * width to tCol and the height to fRow
+   */
+  LAL_CALL(LALCHARCreateVector(status,&outputFilename,maxFilenameLength),status);
+  LAL_CALL(LALCHARCreateVector(status,&outputFilenameMask,maxFilenameLength),status);
+  /*
+   * Setup file mask for output filenames
+   */
+   sprintf(outputFilenameMask->data,"CandidateList_Start_%i_%i_Stop_%i_%i",
+	   tsMarkers.mapStartGPS.gpsSeconds,
+	   tsMarkers.mapStartGPS.gpsNanoSeconds,
+	   tsMarkers.mapStopGPS.gpsSeconds,
+	   tsMarkers.mapStopGPS.gpsNanoSeconds);
+  /* Flag to prepare structure inside LALTrackSearch */
+  tsInputs.allocFlag = 1; 
+  outputCurves.curves = NULL;
+  /*
+   * The power thresholding is not done in the LALroutine
+   * This information is forwarded to this function for a post processing 
+   * Should be default be givin minimum curve length parameter 
+   * We want to apply thresholds in a seperate routine 
+   */
+  /* Catch the error code here and abort */
+  LAL_CALL( LALSignalTrackSearch(status,&outputCurves,tfmap,&tsInputs),
+	    status);
+
+  /* 
+   * Call tracksearch again to free any temporary ram in 
+   * variable outputCurves which is no longer required
+   */
+  tsInputs.allocFlag = 2;
+    LAL_CALL(  LALSignalTrackSearch(status,&outputCurves,tfmap,&tsInputs),
+	     status);
+  /*
+   * Write PGM to disk if requested
+   */
+  if (params.verbosity == printFiles)
+    DumpTFImage(tfmap->map,"DumpMap0",tsInputs.height,tsInputs.width,1);
+  /*
+   * Setup for call to function to do map marking
+   * We mark maps is convert Tbin and Fbin to 
+   * Hz and GPSseconds
+   */
+  /*Height -> time bins */
+  /*Width -> freq bins */
+  /* Need to configure mapMarkerParams correctly!*/
+  LAL_CALL(  LALTrackSearchInsertMarkers(status,
+					 &outputCurves,
+					 &tsMarkers),
+	     status);
+  /* 
+   *Call the connect curve routine if argument is specified 
+   */
+  if (params.joinCurves)
+    {
+      LAL_CALL( LALTrackSearchConnectSigma(status,
+					   &outputCurves,
+					   *tfmap,
+					   tsInputs),
+		status);
+    };
+  /*
+   * Write Pre-Threshold Results to Disk
+   */
+  if (params.verbosity == printFiles)
+    {
+      sprintf(outputFilename->data,"Pre-%s",outputFilenameMask->data);
+      LALappsWriteCurveList(status,
+			    outputFilename->data,
+			    outputCurves,
+			    NULL);
+    }
+  /*
+   * Apply the user requested thresholds 
+   */
+  outputCurvesThreshold.curves = NULL;
+  outputCurvesThreshold.numberOfCurves = 0;
+  LAL_CALL( LALTrackSearchApplyThreshold(status,
+					 &outputCurves,
+					 &outputCurvesThreshold,
+					 params),
+	    status);
+
+  /* 
+   * Dump out list of surviving candidates
+   */
+  LALappsWriteCurveList(status,
+			outputFilenameMask->data,
+			outputCurvesThreshold,
+			&params);
+  /*
+   * General Memory Cleanup
+   */
+  LALappsDestroyCurveDataSection(status,
+				 &(outputCurves.curves),
+				 outputCurves.numberOfCurves);
+  LALappsDestroyCurveDataSection(status,
+				 &(outputCurvesThreshold.curves),
+				 outputCurvesThreshold.numberOfCurves);
+  if (outputFilename)
+    LAL_CALL(LALCHARDestroyVector(status,&outputFilename),
+	     status);
+  if (outputFilenameMask)
+    LAL_CALL(LALCHARDestroyVector(status,&outputFilenameMask),
+	     status);
+
+  /*************************************************************/
+}
+/* 
+ * End Do_tracksearch function
+ */
+
+void
+LALappsDoTSeriesSearch(LALStatus         *status,
+		       REAL4TimeSeries   *signalSeries,
+		       TSSearchParams     params,
+		       INT4               callNum)
 {
   CHAR                   strCallNum[16];
-  CHAR                   tempchar[128];
   CreateTimeFreqIn       tfInputs;/*Input params for map making*/
   INT4                   j;
   LALWindowParams        windowParams;/*Needed to generate windowing funcs*/
@@ -702,99 +1780,127 @@ void Do_TrackSearch(
   TimeFreqParam         *autoparams = NULL;/*SelfGenerated values for TFmap*/
   TimeFreqRep           *tfmap = NULL;/*TF map of dataset*/
   TrackSearchMapMarkingParams  mapMarkerParams;/*Struct of params for marking*/
-  TrackSearchOut         outputCurves;/*Native LAL format for results*/
-  TrackSearchOut         outputCurvesThreshold; /*Curve data thresholded */
   TrackSearchParams      inputs;/*Native LAL format for tracksearch module*/
-
-  INITSTATUS (status, "Do_Tracksearch", TRACKSEARCHC);
-  ATTATCHSTATUSPTR (status);
-  tfInputs.type = params.TransformType;
-  tfInputs.fRow = 2*params.FreqBins;
-  tfInputs.tCol = params.TimeBins;
-  /*  tfInputs.wlengthT = params.FreqBins+1;*/
-  /*  tfInputs.wlengthF = params.FreqBins+1;*/
-  tfInputs.wlengthF = params.windowsize;
-  tfInputs.wlengthT = params.windowsize;
-
-  LALCreateTimeFreqParam(status->statusPtr,&autoparams,&tfInputs);
-  CHECKSTATUSPTR(status);
-
-  LALCreateTimeFreqRep(status->statusPtr,&tfmap,&tfInputs);
-  CHECKSTATUSPTR(status);
-
-  for (j=0;j<tfmap->tCol;j++)
-    {
-      tfmap->timeInstant[j]=j;
-    }
-  windowParams.length = params.windowsize;
-  windowParams.type = params.window;
-
-  LALCreateREAL4Window(status->statusPtr,&(tempWindow),&(windowParams));
-  CHECKSTATUSPTR(status);
-
-  /* 
-   * Case statment that look to do the various TF Reps 
-   */
-  switch ( tfInputs.type )
-    {
-    case Undefined:
-      {
-	fprintf(stderr,TRACKSEARCHC_MSGEVAL);
-	exit(TRACKSEARCHC_EVAL);
-      }
-      break;
-    case Spectrogram:
-      {
-	/* Required from deprication of LALWindow function */
-	memcpy(autoparams->windowT->data,
-	       tempWindow->data->data,
-	       (windowParams.length * sizeof(REAL4)));
-	LALTfrSp(status->statusPtr,signal,tfmap,autoparams);
-      }
-      break;
-    case WignerVille:
-      {
-
-	LALTfrWv(status->statusPtr,signal,tfmap,autoparams);
-      }
-      break;
-    case PSWignerVille:
-      {
-	/* Required from deprication of LALWindow function */
-	memcpy(autoparams->windowT->data,
-	       tempWindow->data->data,
-	       (windowParams.length * sizeof(REAL4)));
-	memcpy(autoparams->windowF->data,
-	       tempWindow->data->data,
-	       (windowParams.length * sizeof(REAL4)));
-	LALTfrPswv(status->statusPtr,signal,tfmap,autoparams);
-      }
-      break;
-    case RSpectrogram:
-      {
-	/* Required from deprication of LALWindow function */
-	memcpy(autoparams->windowT->data,
-	       tempWindow->data->data,
-	       (windowParams.length * sizeof(REAL4)));
-	LALTfrRsp(status->statusPtr,signal,tfmap,autoparams);
-      }
-      break;
-    default:
-      {
-	fprintf(stderr,TRACKSEARCHC_MSGEMISC);
-	exit(TRACKSEARCHC_EMISC);
-      }
-      break;
-    };
+  UINT4                  injectionRun=0;/*1=yes*/
+  CHARVector            *binaryFilename=NULL;
+  TSAMap                *mapBuilder=NULL;/* point to write vars for saving*/
+  REAL8                 signalStop=0;
+  REAL8                 signalStart=0;
   /*
-   * Destroy window memory 
-   * Destroy TF params also
+   * Error checking section
    */
-  LALDestroyREAL4Window(status->statusPtr,&tempWindow);
-  CHECKSTATUSPTR(status);
-  LALDestroyTimeFreqParam(status->statusPtr,&autoparams);
-  CHECKSTATUSPTR(status);
+  if ((signalSeries == NULL) && ((params.injectMapCache !=NULL) ||
+			   (params.injectSingleMap !=NULL)))
+    injectionRun=1;
+  /*
+   * If we are creating our maps for analysis via tseries data
+   */
+  if (injectionRun == 0)
+    { 
+      tfInputs.type = params.TransformType;
+      tfInputs.fRow = 2*params.FreqBins;
+      tfInputs.tCol = params.TimeBins;
+      /*  tfInputs.wlengthT = params.FreqBins+1;*/
+      /*  tfInputs.wlengthF = params.FreqBins+1;*/
+      tfInputs.wlengthF = params.windowsize;
+      tfInputs.wlengthT = params.windowsize;
 
+      LAL_CALL(LALCreateTimeFreqParam(status,&autoparams,&tfInputs),
+	       status);
+
+      LAL_CALL(LALCreateTimeFreqRep(status,&tfmap,&tfInputs),
+	       status);
+
+      for (j=0;j<tfmap->tCol;j++)
+	{
+	  tfmap->timeInstant[j]=j;
+	}
+      windowParams.length = params.windowsize;
+      windowParams.type = params.window;
+
+      LAL_CALL(LALCreateREAL4Window(status,&(tempWindow),&(windowParams)),
+	       status);
+
+      /* 
+       * Case statment that look to do the various TF Reps 
+       */
+      switch ( tfInputs.type )
+	{
+	case Undefined:
+	  {
+	    fprintf(stderr,TRACKSEARCHC_MSGEVAL);
+	    exit(TRACKSEARCHC_EVAL);
+	  }
+	  break;
+	case Spectrogram:
+	  {
+	    /* Required from deprication of LALWindow function */
+	    memcpy(autoparams->windowT->data,
+		   tempWindow->data->data,
+		   (windowParams.length * sizeof(REAL4)));
+	    LAL_CALL( LALTfrSp(status,signalSeries->data,tfmap,autoparams),
+		      status);
+	  }
+	  break;
+	case WignerVille:
+	  {
+
+	    LAL_CALL( LALTfrWv(status,signalSeries->data,tfmap,autoparams),
+		      status);
+	  }
+	  break;
+	case PSWignerVille:
+	  {
+	    /* Required from deprication of LALWindow function */
+	    memcpy(autoparams->windowT->data,
+		   tempWindow->data->data,
+		   (windowParams.length * sizeof(REAL4)));
+	    memcpy(autoparams->windowF->data,
+		   tempWindow->data->data,
+		   (windowParams.length * sizeof(REAL4)));
+	    LAL_CALL( LALTfrPswv(status,signalSeries->data,tfmap,autoparams),
+		      status);
+	  }
+	  break;
+	case RSpectrogram:
+	  {
+	    /* Required from deprication of LALWindow function */
+	    memcpy(autoparams->windowT->data,
+		   tempWindow->data->data,
+		   (windowParams.length * sizeof(REAL4)));
+	    LAL_CALL( LALTfrRsp(status,signalSeries->data,tfmap,autoparams),
+		      status);
+	  }
+	  break;
+	default:
+	  {
+	    fprintf(stderr,TRACKSEARCHC_MSGEMISC);
+	    exit(TRACKSEARCHC_EMISC);
+	  }
+	  break;
+	};
+      /*
+       * Destroy window memory 
+       * Destroy TF params also
+       */
+      LAL_CALL( LALDestroyREAL4Window(status,&tempWindow),
+		status);
+      LAL_CALL( LALDestroyTimeFreqParam(status,&autoparams),
+		status);
+    }
+  /*
+   * End preparing map from time series data
+   */
+  /*
+   * Setup map variable via reading in the params with the 
+   * map file name
+   */
+  if (injectionRun==1)
+    {
+      /*
+       * Read in file with a map
+       */
+    }
   /*
    * Fill in LALSignalTrackSearch params structure via the use of
    * the TSSearch huge struct elements
@@ -804,114 +1910,623 @@ void Do_TrackSearch(
   inputs.low=params.LinePThresh;
   inputs.width=((tfmap->fRow/2)+1);
   inputs.height=tfmap->tCol;
-  /* 
-   * The LALTracksearch seems to map the 
-   * width to tCol and the height to fRow
+  /*
+   * Fill the map marking parameter structure
    */
-
-  /* Flag to prepare structure inside LALTrackSearch */
-  inputs.allocFlag = 1; 
-  outputCurves.curves = NULL;
-  /* Comment out WriteMap to reduce extra data file creation */
-  WriteMap(*tfmap,*signal);
+  mapMarkerParams.deltaT=signalSeries->deltaT;
+  mapMarkerParams.mapTimeBins=inputs.height;
+  mapMarkerParams.mapFreqBins=inputs.width;
+  mapMarkerParams.mapStartGPS.gpsSeconds=signalSeries->epoch.gpsSeconds;
+  mapMarkerParams.mapStartGPS.gpsNanoSeconds=
+    signalSeries->epoch.gpsNanoSeconds;
+  LAL_CALL(
+	   LALGPStoFloat(status,
+			 &signalStart,
+			 &mapMarkerParams.mapStartGPS),
+	   status);
+  signalStop=(signalSeries->deltaT*signalSeries->data->length)+signalStart;
+  LAL_CALL(
+	   LALFloatToGPS(status,
+      			 &(mapMarkerParams.mapStopGPS),
+			 &signalStop),
+			 
+	   status);
 
   /*
-   * The power thresholding is not done in the LALroutine
-   * This information is forwarded to this function for a post processing 
-   * Should be default be givin minimum curve length parameter 
-   * We want to apply thresholds in a seperate routine 
+   * Call subroutine to run the search
    */
-  LALSignalTrackSearch(status->statusPtr,&outputCurves,tfmap,&inputs);
-  CHECKSTATUSPTR(status);
-
-  /* 
-   * Call tracksearch again to free any temporary ram in 
-   * variable outputCurves which is no longer required
-   */
-  inputs.allocFlag = 2;
-  LALSignalTrackSearch(status->statusPtr,&outputCurves,tfmap,&inputs);
-  CHECKSTATUSPTR(status);
-
+  LALappsDoTrackSearch(status,
+		       tfmap,
+		       inputs,
+		       mapMarkerParams,
+		       params);
   /*
-   * Setup for call to function to do map marking
-   * We mark maps is convert Tbin and Fbin to 
-   * Hz and GPSseconds
+   * Assemble the TSAmap to write to disk
    */
-  mapMarkerParams.deltaT=1/(params.SamplingRate);
-  mapMarkerParams.mapStartGPS.gpsSeconds=params.GPSstart.gpsSeconds;
-  mapMarkerParams.mapStartGPS.gpsNanoSeconds=params.GPSstart.gpsNanoSeconds;
-  mapMarkerParams.mapStopGPS.gpsSeconds=0;
-  mapMarkerParams.mapStopGPS.gpsNanoSeconds=0;
-  mapMarkerParams.mapTimeBins=inputs.height;/*Height -> time bins */
-  mapMarkerParams.mapFreqBins=inputs.width; /*Width -> freq bins */
-  LALTrackSearchInsertMarkers(status->statusPtr,
-			      &outputCurves,
-			      &mapMarkerParams); 
-  CHECKSTATUSPTR(status);
-
-
-  /* Call the connect curve routine if argument is specified */
-  if (params.joinCurves)
+ if (1==1)
     {
-      LALTrackSearchConnectSigma(status->statusPtr,
-				 &outputCurves,
-				 *tfmap,
-				 inputs);
-      CHECKSTATUSPTR(status);
-    };
-
-  /* 
-   * Diagnostic Code
-   * Dump out this particular pgm map file for visual inspection 
-   */
-  sprintf(tempchar,"%s_%i",params.auxlabel,CallNum);
-  fprintf("%s\n",tempchar);
-  DumpTFImage(tfmap->map,tempchar,inputs.height,inputs.width,1);
-  sprintf(strCallNum,"Pre_%i",CallNum);
-  Dump_Search_Data(params,outputCurves,strCallNum);
-  QuickDump_Data(params,outputCurves,strCallNum);
-
+      LAL_CALL(LALCHARCreateVector(status,&binaryFilename,maxFilenameLength),
+	       status);
+      /*
+       * Set filename
+       */
+      /* tsaMap_gpsSeconds_gpsNanoseconds.map*/
+      /*
+       * Assemble a tsaMap structure 
+       */
+      mapBuilder=LALMalloc(sizeof(TSAMap));
+      mapBuilder->imageCreateParams=tfInputs;
+      mapBuilder->clippedWith=0;
+      mapBuilder->imageBorders=mapMarkerParams;
+      mapBuilder->imageRep=tfmap;
+      sprintf(binaryFilename->data,
+	      "tsaMap_Start_%i_%i_Stop_%i_%i.map",
+	      mapMarkerParams.mapStartGPS.gpsSeconds,
+	      mapMarkerParams.mapStartGPS.gpsNanoSeconds,
+	      mapMarkerParams.mapStopGPS.gpsSeconds,
+	      mapMarkerParams.mapStopGPS.gpsNanoSeconds);
+      /*
+       *LALappsTSAWriteMapFile(status,
+       *		     mapBuilder,
+       *		     binaryFilename);
+       */
+      LALappsTSAWriteMapFile(status,
+			     mapBuilder,
+			     NULL);
+      LAL_CALL(LALCHARDestroyVector(status,&binaryFilename),
+	       status);
+      LALFree(mapBuilder);
+    }
   /* 
    * Destroy the memory holding the actual TF map
    */
-  LALDestroyTimeFreqRep(status->statusPtr,&tfmap);
-  CHECKSTATUSPTR(status);
-  
-  /*
-   * Apply the user requested thresholds 
-   */
-  outputCurvesThreshold.curves = NULL;
-  outputCurvesThreshold.numberOfCurves = 0;
-  LALTrackSearchApplyThreshold(status->statusPtr,
-			       &outputCurves,
-			       &outputCurvesThreshold,
-			       params);
-  CHECKSTATUSPTR(status);
-
-  /* 
-   * Dump out list of surving candidates
-   * Long List 
-   * Short List
-   */
-  sprintf(strCallNum,"%i",CallNum);
-  Dump_Search_Data(params,outputCurvesThreshold,strCallNum);
-  QuickDump_Data(params,outputCurvesThreshold,strCallNum);
-
-  /*
-   * General Memory Cleanup
-   */
-  Destroy_Search_DataSection(status->statusPtr,
-			     &(outputCurves.curves),
-			     outputCurves.numberOfCurves);
-  CHECKSTATUSPTR(status);
-  Destroy_Search_DataSection(status->statusPtr,
-			     &(outputCurvesThreshold.curves),
-			     outputCurvesThreshold.numberOfCurves);
-  CHECKSTATUSPTR(status);
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
+  LAL_CALL( LALDestroyTimeFreqRep(status,&tfmap),
+	    status);
 }
-/* End Do_tracksearch function*/
+/*
+ * End LALappsDoTSeriesSearch
+ */
+
+void
+LALappsDoTimeSeriesAnalysis(LALStatus       *status,
+			    TSSearchParams   params,
+			    CHAR            *cachefile,
+			    CHARVector      *dirpath)
+{
+  TSSegmentVector  *SegVec = NULL;/*Holds array of data sets*/
+  TSCreateParams    SegVecParams;/*Hold info for memory allocation*/
+  REAL4TimeSeries  *dataset = NULL;/*Structure holding entire dataset to analyze*/
+  UINT4             i;  /* Counter for data breaking */
+  INT4              j;
+  UINT4             productioncode = 1; /* Variable for ascii or frame */
+                                        /* Set to zero to use ascii files */
+  /*
+   * Check for nonNULL directory path Ptr to frame files
+   */
+  LALappsTSassert(((dirpath!=NULL)||(cachefile!=NULL)),
+		  TRACKSEARCHC_ENULL,
+		  TRACKSEARCHC_MSGENULL);
+  LALappsTSassert((status!=NULL),
+		  TRACKSEARCHC_ENULL,
+		  TRACKSEARCHC_MSGENULL);
+  /* 
+   * This is the data reading section of code
+   * Sources: Frame file or Single Ascii file (1C)
+   * All pathing is relative for this code
+   * 0 - use frames
+   * 1 - use Ascii file
+   */
+  /*
+   * Allocate space for dataset time series
+   */
+  /* create and initialize the time series vector */
+  LAL_CALL(
+	   LALCreateREAL4TimeSeries(status,
+				    &dataset,
+				    "Uninitialized",
+				    params.GPSstart,
+				    0,
+				    1/params.SamplingRate,
+				    lalADCCountUnit,
+				    params.TimeLengthPoints),
+	   status);
+  if (productioncode == 1) /* Use production frame file inputs */
+    {
+      if (params.makenoise < 1 )
+	{  
+	  if (params.verbosity >= verbose)
+	    fprintf(stdout,"Reading frame files.\n");
+	  LALappsGetFrameData(status,&params,dataset,dirpath,cachefile);
+	  if (params.verbosity >= verbose)
+	    fprintf(stdout,"Reading frame complete.\n");
+
+	}
+      else
+	{
+	  /* 
+	   * Fake Data Generation routing generates UnitGaussian 
+	   * random values 
+	   *  the output array is desire length in a 
+	   * time series structure 
+	   */
+	  fakeDataGeneration(status,dataset,
+			     (params.NumSeg*params.SegLengthPoints),
+			     params.makenoise);
+	};
+    }
+  else
+    {
+      LALappsGetAsciiData(status,&params,dataset,dirpath);
+    }
+  /* 
+   * Prepare the data for the call to Tracksearch 
+   */
+  SegVecParams.dataSegmentPoints = params.SegLengthPoints;
+  SegVecParams.numberDataSegments = params.NumSeg;
+  LAL_CALL(LALCreateTSDataSegmentVector(status,&SegVec,&SegVecParams),
+	   status);
+
+  if (params.verbosity >= printFiles)
+    print_real4tseries(dataset,"InputReal4TimeSeriesPrePrepare.diag");
+  LALappsTrackSearchPrepareData(status,dataset,SegVec,params);
+  if (params.verbosity >= printFiles)
+    print_real4tseries(dataset,"InputReal4TimeSeriesPostPrepare.diag");
+
+  j=0;
+  for(i = 0;i < params.NumSeg;i++)
+    {
+      printf(".");
+      /*
+       * Call to prepare tSeries search
+       */
+      LALappsDoTSeriesSearch(status,SegVec->dataSeg[j],params,j);
+      j++;
+    };
+  printf("\n");
+  /* Free some of the memory used to do the analysis */
+  if (params.dataSegVec)
+    {
+      LALDestroyTSDataSegmentVector(status,(params.dataSegVec));
+    }
+  if (SegVec)
+    LAL_CALL(LALDestroyTSDataSegmentVector(status,SegVec),
+	     status);
+
+  if (dataset)
+    LAL_CALL(LALDestroyREAL4TimeSeries(status,dataset),
+	     status);
+}
+/*
+ * End LALappsDoTimeSeriesAnalysis
+ */
+
+void
+LALappsDoTSAMapAnalysis(LALStatus        *status,
+			TSSearchParams    params)
+{
+  UINT4                  i=0;
+  TSAMap                *currentMap=NULL;
+  TSAcache              *mapCache=NULL;
+  CHARVector            *mapFilenameVec=NULL;
+  /*
+   * Error Checking
+   */
+  LALappsTSassert((params.injectMapCache != NULL),
+		  TRACKSEARCHC_ENULL,
+		  TRACKSEARCHC_MSGENULL);
+  /*
+   * Only configuration options we need are
+   * minLength
+   * minPower
+   * lineWidth
+   */
+  /* 
+   * Open a map cache and sequentially loop through the entries 
+   * performing the analysis
+   */
+  LAL_CALL(LALCHARCreateVector(status,&mapFilenameVec,maxFilenameLength),
+	   status);
+  strcpy(mapFilenameVec->data,params.injectMapCache);
+  LALappsTSALoadCacheFile(status,
+			  mapFilenameVec,
+			  &mapCache);
+  LAL_CALL(LALCHARDestroyVector(status,&mapFilenameVec),
+	   status);
+  if (mapCache->numMapFilenames < 1)
+    {
+      fprintf(stderr,"Cache file has no entries!\n");
+      LALappsTSassert(0,
+		      TRACKSEARCHC_EARGS,
+		      TRACKSEARCHC_MSGEARGS);
+    }
+  for (i=0;i<mapCache->numMapFilenames;i++)
+    {
+      /*
+       * Perform the search for each individual map
+       * Create the map to process
+       */
+      LALappsTSAReadMapFile(status,
+			    &currentMap,
+			    mapCache->filename[i]);
+      /*
+       * Execute complete search and write results
+       */
+      LALappsDoTSAMapSearch(status,
+			    currentMap,
+			    &params,
+			    0);
+      /*
+       * Free RAM
+       */
+      LALappsTSADestroyMap(status,
+		          &currentMap);
+    }
+  /*
+   * Free map cache structure
+   */
+  LALappsTSADestroyCache(status,
+			 &mapCache);
+}
+/*
+ * End LALappsDoTSAMapAnalysis
+ */
+
+void
+LALappsDoTSAMapSearch(LALStatus          *status,
+		      TSAMap             *tfmap,
+		      TSSearchParams     *params,
+		      INT4                callNum)
+{
+  TrackSearchParams      inputs;/*Native LAL format for tracksearch
+				  module*/
+  /*
+   * Setup search parameter structure
+   */
+  inputs.sigma=params->LineWidth;
+  inputs.high=params->StartThresh;
+  inputs.low=params->LinePThresh;
+  inputs.width=((tfmap->imageRep->fRow/2)+1);
+  inputs.height=tfmap->imageRep->tCol;
+  LALappsDoTrackSearch(status,
+		       tfmap->imageRep,
+		       inputs,
+		       tfmap->imageBorders,
+		      *params);
+}
+/*
+ * End LALappsDoTSAMapSearch
+ */
+
+void
+LALappsWriteCurveList(LALStatus            *status,
+		      CHAR                 *filename,
+		      TrackSearchOut        outCurve,
+		      TSSearchParams       *params)
+{
+  FILE            *totalFile=NULL;
+  FILE            *breveFile=NULL;
+  FILE            *configFile=NULL;
+  INT4             i=0;
+  INT4             j=0;
+  CHARVector      *totalName=NULL;
+  CHARVector      *breveName=NULL;
+  CHARVector      *configName=NULL;
+  REAL8            startStamp=0;
+  REAL8            stopStamp=0;
+  INT4             TB=0;
+  INT4             FB=0;
+  /*
+   * Error checks
+   */
+  LALappsTSassert((status != NULL),
+		  TRACKSEARCHC_ENULL,
+		  TRACKSEARCHC_MSGENULL);
+  LALappsTSassert((filename !=NULL),
+		  TRACKSEARCHC_ENULL,
+		  TRACKSEARCHC_MSGENULL);
+  /*
+   * Create two file names and open both files.
+   */
+  LAL_CALL(LALCHARCreateVector(status,&totalName,maxFilenameLength),status);
+  LAL_CALL(LALCHARCreateVector(status,&breveName,maxFilenameLength),status);
+  sprintf(totalName->data,"%s.full",filename);
+  sprintf(breveName->data,"%s.breve",filename);
+  totalFile=fopen(totalName->data,"w");
+  breveFile=fopen(breveName->data,"w");
+  if (totalName)
+    LAL_CALL(LALCHARDestroyVector(status,&totalName),status);
+  if (breveName)
+    LAL_CALL(LALCHARDestroyVector(status,&breveName),status);
+  /*
+   * Output values of TSSearch structure.
+   * These are the configuration options for the run.
+   * Iff params !=NULL (Duh)
+   */
+  if (params!=NULL)
+    {
+      LAL_CALL(LALCHARCreateVector(status,&configName,maxFilenameLength),
+	       status);
+      sprintf(configName->data,"%s.config",filename);
+      configFile=fopen(configName->data,"w");      
+      if (configName)
+	LAL_CALL(LALCHARDestroyVector(status,&configName),status);
+
+
+      fprintf(configFile,"tSeriesAnalysis\t: %i\n",params->tSeriesAnalysis);
+      fprintf(configFile,"searchMaster\t: %i\n",params->searchMaster);
+      fprintf(configFile,"haveData\t: %i\n",params->haveData);
+      fprintf(configFile,"numSlaves\t: NO USED\n");
+      fprintf(configFile,"GPSstart\t: %i,%i\n",
+	      params->GPSstart.gpsSeconds,
+	      params->GPSstart.gpsNanoSeconds);
+      fprintf(configFile,"TimeLengthPoints\t: %i\n",
+	      params->TimeLengthPoints);
+      fprintf(configFile,"discardTLP\t: %i\n",params->discardTLP);
+      fprintf(configFile,"SegLengthPoints\t: %i\n",
+	      params->SegLengthPoints);
+      fprintf(configFile,"NumSeg\t: %i\n",params->NumSeg);
+      fprintf(configFile,"SamplingRate\t: %i\n",params->SamplingRate);
+      fprintf(configFile,"OriginalSamplingRate\t: %i\n",
+	      params->SamplingRateOriginal);
+      fprintf(configFile,"Tlength\t: %i,%i\n",
+	      params->Tlength.gpsSeconds,
+	      params->Tlength.gpsNanoSeconds);
+      fprintf(configFile,"TransformType\t: %i\n",
+	      (params->TransformType));
+      fprintf(configFile,"LineWidth\t: %i\n",params->LineWidth);
+      fprintf(configFile,"MinLength\t: %i\n",params->MinLength);
+      fprintf(configFile,"MinPower\t: %f\n",params->MinPower);
+      fprintf(configFile,"overlapFlag\t: %i\n",params->overlapFlag);
+      fprintf(configFile,"whiten\t: %i\n",params->whiten);
+      fprintf(configFile,"avgSpecMethod\t: %i\n",
+	      (params->avgSpecMethod));
+      fprintf(configFile,"avgSpecWindow\t: %i\n",
+	      (params->avgSpecWindow));
+      fprintf(configFile,"multiResolution\t: %i\n",
+	      params->multiResolution);
+      FB=params->FreqBins;
+      TB=params->TimeBins;
+      fprintf(configFile,"FreqBins\t: %i\n",FB);
+      fprintf(configFile,"TimeBins\t: %i\n",TB);
+      fprintf(configFile,"windowsize\t: %i\n",params->windowsize);
+      fprintf(configFile,"window\t: %i\n",params->window);
+      fprintf(configFile,"numEvents\t: %i\n",params->numEvents);
+      if (params->channelName == NULL)
+	fprintf(configFile,"channelName\t: NULL\n");
+      else
+	fprintf(configFile,"channelName\t: %s\n",params->channelName);
+      if (params->dataDirPath == NULL)
+	fprintf(configFile,"channelName\t: NULL\n");
+      else
+	fprintf(configFile,"dataDirPath\t: %s\n",params->dataDirPath);
+      if (params->singleDataCache == NULL)
+	fprintf(configFile,"singleDataCache\t: NULL\n");
+      else
+	fprintf(configFile,"singleDataCache\t: %s\n",
+		params->singleDataCache);
+      if (params->detectorPSDCache == NULL)
+	fprintf(configFile,"detectorPSDCache\t: NULL\n");
+      else
+	fprintf(configFile,"detectorPSDCache\t: %s\n",
+		params->detectorPSDCache);
+      if (params->channelNamePSD == NULL)
+	fprintf(configFile,"channelNamePSD\t: NULL\n");
+      else
+	fprintf(configFile,"channelNamePSD\t: %s\n",
+		params->channelNamePSD);
+
+      fprintf(configFile,"calChannelType\t: %i\n",
+	      params->calChannelType);
+      if (params->calFrameCache == NULL)
+	fprintf(configFile,"calFrameCache\t: \n");
+      else
+	fprintf(configFile,"calFrameCache\t: %s\n",
+		params->calFrameCache);
+      fprintf(configFile,"calibrate\t: %i\n",
+	      params->calibrate);
+      fprintf(configFile,"calibrateIFO\t: %s\n",
+	      params->calibrateIFO);
+      if (params->calCatalog == NULL)
+	fprintf(configFile,"calCatalog\t: NULL\n");
+      else
+	fprintf(configFile,"calCatalog\t: %s\n",
+		params->calCatalog);
+      fprintf(configFile,"dataSegVect\t: MEMORY SPACE\n");
+      fprintf(configFile,"currentSeg\t: %i\n",
+	      params->currentSeg);
+      fprintf(configFile,"makenoise\t: %i\n",
+	      params->makenoise);
+      if (params->auxlabel == NULL)
+	fprintf(configFile,"auxlabel\t: NULL\n");
+      else
+	fprintf(configFile,"auxlabel\t: %s\n",
+		params->auxlabel);
+      fprintf(configFile,"joinCurves\t: %i\n",
+	      params->joinCurves);
+      fprintf(configFile,"verbosity\t: %i\n",
+	      params->verbosity);
+      fprintf(configFile,"printPGM\t: %i\n",
+	      params->printPGM);
+      fprintf(configFile,"pgmColorMapFile\t: %s\n",
+	      params->pgmColorMapFile);
+      fprintf(configFile,"injectMapCache\t: %s\n",
+	      params->injectMapCache);
+      fprintf(configFile,"injectSingleMap\t: %s\n",
+	      params->injectSingleMap);
+
+      fclose(configFile);
+    }
+  /*
+   * Write long ascii curve results file each curve is explicity
+   * written out like:
+   * CurveNum,length,power,col,row,depth,fbinHz,gpsStamp
+   */
+   fprintf(totalFile,"# TF Image Dimensions\n");
+   fprintf(totalFile,"# %i %i \n",FB,TB);
+   fprintf(totalFile,"#CurveNum, totalPower, col, row, depth, fBinHz, gpsSec, gpsNano\n");
+  for (i = 0;i < outCurve.numberOfCurves;i++)
+    for (j = 0;j < outCurve.curves[i].n;j++)
+      { /*Long info*/
+	fprintf(totalFile,"%i\t %i\t %f\t %i\t %i\t %f\t %f\t %i,%i\n",
+		i,
+		outCurve.curves[i].n,
+		outCurve.curves[i].totalPower,
+		outCurve.curves[i].col[j],
+		outCurve.curves[i].row[j],
+		outCurve.curves[i].depth[j],
+		outCurve.curves[i].fBinHz[j],
+		outCurve.curves[i].gpsStamp[j].gpsSeconds,
+		outCurve.curves[i].gpsStamp[j].gpsNanoSeconds);
+      }
+  
+  /*Short info*/
+  fprintf(breveFile,"%12s %12s %12s %12s %12s %12s %12s %12s %12s %12s %12s\n",
+	  "CurveNum",
+	  "Power",
+	  "Length",
+	  "StartF",
+	  "FinishF",
+	  "StartT",
+	  "FinishT",
+	  "FreqStart",
+	  "FreqStop",
+	  "GPSstart",
+	  "GPSstop");
+  
+  for (i = 0;i < outCurve.numberOfCurves;i++)
+    {
+      LAL_CALL(
+	       LALGPStoFloat(status,
+			     &startStamp,
+			     &(outCurve.curves[i].gpsStamp[0]))
+	       ,status);
+      LAL_CALL(
+	       LALGPStoFloat(status,
+			     &stopStamp,
+			     &(outCurve.curves[i].gpsStamp[outCurve.curves[i].n -1]))
+	       ,status);
+      fprintf(breveFile,
+	      "%12i %12e %12i %12i %12i %12i %12i %12.3f %12.3f %12.3f %12.3f\n",
+	      i,
+	      outCurve.curves[i].totalPower,
+	      outCurve.curves[i].n,
+	      outCurve.curves[i].col[0],
+	      outCurve.curves[i].col[outCurve.curves[i].n - 1],
+	      outCurve.curves[i].row[0],
+	      outCurve.curves[i].row[outCurve.curves[i].n - 1],
+	      outCurve.curves[i].fBinHz[0],
+	      outCurve.curves[i].fBinHz[outCurve.curves[i].n -1],
+	      startStamp,
+	      stopStamp
+	      );
+
+    }
+  /*
+   * Close files and clear mem
+   */
+  fclose(totalFile);
+  fclose(breveFile);
+  return;
+}
+/*
+ * End LALappsWriteCurveList
+ */
+
+/*
+ * Local routine to allocate memory for the curve structure
+ */
+void LALappsCreateCurveDataSection(LALStatus    *status,
+				   Curve        **curvein)
+{
+  INT4    counter;
+  Curve  *curve;
+ 
+  INITSTATUS (status, "fixCurveStrucAllocation", TRACKSEARCHC);
+  ATTATCHSTATUSPTR (status);
+  *curvein = curve = LALMalloc(MAX_NUMBER_OF_CURVES * sizeof(Curve));
+  for (counter = 0; counter < MAX_NUMBER_OF_CURVES;counter++)
+    {
+      curve[counter].n = 0;
+      curve[counter].junction = 0;
+      curve[counter].totalPower = 0;
+      curve[counter].row = NULL;
+      curve[counter].col = NULL;
+      curve[counter].depth = NULL;
+      curve[counter].row = LALMalloc(MAX_CURVE_LENGTH * sizeof(INT4));
+      curve[counter].col = LALMalloc(MAX_CURVE_LENGTH * sizeof(INT4));
+      curve[counter].depth = LALMalloc(MAX_CURVE_LENGTH * sizeof(REAL4));
+      if (curve[counter].row == NULL)
+	{
+	  ABORT(status,TRACKSEARCHC_EMEM,TRACKSEARCHC_MSGEMEM);
+	}
+      if (curve[counter].col == NULL)
+	{
+	  ABORT(status,TRACKSEARCHC_EMEM,TRACKSEARCHC_MSGEMEM);
+	}
+      if (curve[counter].depth == NULL)
+	{
+	  ABORT(status,TRACKSEARCHC_EMEM,TRACKSEARCHC_MSGEMEM);
+	}
+      /* Need to gracdfully exit here by unallocating later */
+    };
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+/* End of curve structure allocation function */
+
+
+/*
+ * Local routine to clean up memory once used to hold
+ * collection of curve candidates
+ */
+void LALappsDestroyCurveDataSection(LALStatus    *status,
+				    Curve        **curvein,
+				    INT4         numCurves)
+{
+  INT4    counter;
+  Curve  *curve;
+
+  INITSTATUS (status, "fixCurveStrucAllocation", TRACKSEARCHC);
+  ATTATCHSTATUSPTR (status);
+  curve = *curvein;
+
+  for (counter = 0; counter < numCurves;counter++)
+    {
+      LALFree(curve[counter].fBinHz);
+      LALFree(curve[counter].row);
+      LALFree(curve[counter].col);
+      LALFree(curve[counter].depth);
+      LALFree(curve[counter].gpsStamp);
+      /* Need to gracefully exit here by unallocating later */
+      /* Just in case there is an error in deallocation */
+    };
+  if (numCurves > 0)
+    {
+      LALFree(curve);
+    }
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+/* End function to deallocate the curve structures */
+
+/*
+ * End of Semi Private functions
+ */
+
+
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+
+/* ********************************************************************** */
+
+/*
+ * These are local scope subroutines mean for use 
+ * by tracksearch only if it may be globally useful then we will place
+ * it in the LAL libraries.
+ */
+
 
 /*
  * Diagnostic function to dump information to disk in Ascii form
@@ -1054,257 +2669,16 @@ void fakeDataGeneration(LALStatus              *status,
 }
 
 /*
- * Local routine to allocate memory for the curve structure
+ * End local scratch functions
+ * These functions may eventually be integrated more into
+ * lalapps tracksearch code
  */
-void Create_Curve_DataSection(LALStatus    *status,
-			      Curve        **curvein)
-{
-  INT4    counter;
-  Curve  *curve;
- 
-  INITSTATUS (status, "fixCurveStrucAllocation", TRACKSEARCHC);
-  ATTATCHSTATUSPTR (status);
-  *curvein = curve = LALMalloc(MAX_NUMBER_OF_CURVES * sizeof(Curve));
-  for (counter = 0; counter < MAX_NUMBER_OF_CURVES;counter++)
-    {
-      curve[counter].n = 0;
-      curve[counter].junction = 0;
-      curve[counter].totalPower = 0;
-      curve[counter].row = NULL;
-      curve[counter].col = NULL;
-      curve[counter].depth = NULL;
-      curve[counter].row = LALMalloc(MAX_CURVE_LENGTH * sizeof(INT4));
-      curve[counter].col = LALMalloc(MAX_CURVE_LENGTH * sizeof(INT4));
-      curve[counter].depth = LALMalloc(MAX_CURVE_LENGTH * sizeof(REAL4));
-      if (curve[counter].row == NULL)
-	{
-	  ABORT(status,TRACKSEARCHC_EMEM,TRACKSEARCHC_MSGEMEM);
-	}
-      if (curve[counter].col == NULL)
-	{
-	  ABORT(status,TRACKSEARCHC_EMEM,TRACKSEARCHC_MSGEMEM);
-	}
-      if (curve[counter].depth == NULL)
-	{
-	  ABORT(status,TRACKSEARCHC_EMEM,TRACKSEARCHC_MSGEMEM);
-	}
-      /* Need to gracdfully exit here by unallocating later */
-    };
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
-}
 
-/*
- * Local routine to clean up memory once used to hold
- * collection of curve candidates
- */
-void Destroy_Search_DataSection(LALStatus    *status,
-				Curve        **curvein,
-				INT4         numCurves)
-{
-  INT4    counter;
-  Curve  *curve;
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
 
-  INITSTATUS (status, "fixCurveStrucAllocation", TRACKSEARCHC);
-  ATTATCHSTATUSPTR (status);
-  curve = *curvein;
-
-  for (counter = 0; counter < numCurves;counter++)
-    {
-      LALFree(curve[counter].fBinHz);
-      LALFree(curve[counter].row);
-      LALFree(curve[counter].col);
-      LALFree(curve[counter].depth);
-      LALFree(curve[counter].gpsStamp);
-      /* Need to gracefully exit here by unallocating later */
-      /* Just in case there is an error in deallocation */
-    };
-  if (numCurves > 0)
-    {
-      LALFree(curve);
-    }
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
-}
-
-
-/* 
- * This is the frame reading routine taken from power.c
- * it has been modified very slightly
- */
-void Get_Data(LALStatus*          status,
-	      TSSearchParams*     params,
-	      REAL4TimeSeries*    DataIn,
-	      CHARVector*         dirname,
-	      CHAR*               cachefile
-	      )
-
-
-{
-  MetadataTable        procparams;
-  MetadataTable procTable;
-  LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
-  ProcessParamsTable   *this_proc_param;
-  MetadataTable         searchsumm;
-  FrStream             *stream = NULL;
-  FrCache              *frameCache = NULL;
-  FrChanIn              channelIn;
-  CHAR                 *comment=NULL;
-
-  /* Set all variables from params structure here */
-  channelIn.name = params->channelName;
-  /* create the process and process params tables */
-  procTable.processTable = (ProcessTable *) 
-    LALCalloc( 1, sizeof(ProcessTable) );
-  LAL_CALL( 
-	   LALGPSTimeNow(status, 
-			 &(procTable.processTable->start_time),
-			 &accuracy ), 
-	   status );
-  LAL_CALL( 
-	   populate_process_table( status, 
-				   procTable.processTable, 
-				   PROGRAM_NAME, 
-				   CVS_REVISION, 
-				   CVS_SOURCE,
-				   CVS_DATE ),
-	   status );
-  this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
-    LALCalloc( 1, sizeof(ProcessParamsTable) );
-
-  /* create the search summary table */
-  searchsumm.searchSummaryTable = (SearchSummaryTable *)
-    LALCalloc( 1, sizeof(SearchSummaryTable) );
-
-  /* fill the comment, if a user has specified one, or leave it blank */
-  if ( comment )
-    {
-      LALSnprintf( procTable.processTable->comment, 
-		   LIGOMETA_COMMENT_MAX,
-		   " " );
-      LALSnprintf( searchsumm.searchSummaryTable->comment, 
-		   LIGOMETA_COMMENT_MAX,
-		   " " );    
-    } 
-  else 
-    {
-      LALSnprintf( procTable.processTable->comment, 
-		   LIGOMETA_COMMENT_MAX,
-		   "%s", 
-		   comment );
-      LALSnprintf( searchsumm.searchSummaryTable->comment,
-		   LIGOMETA_COMMENT_MAX,
-		   "%s",
-		   comment );
-    }
-
-  /* the number of nodes for a standalone job is always 1 */
-  searchsumm.searchSummaryTable->nnodes = 1;
-
-  /* create and initialize the time series vector */
-  DataIn->data = NULL;
-  /*Bug HERE */
-  LAL_CALL( 
-	   LALCreateVector( status, 
-			    &(DataIn->data), 
-			    params->TimeLengthPoints), 
-	   status);
-  memset( DataIn->data->data, 0, DataIn->data->length*sizeof(REAL4) );
-  /* Need to use NULL DataIN->name so we will skip this line of code
-     Nullifying the DataIn->name pointer by hand hope it works */
-  strcpy(DataIn->name, params->channelName);
-  /*    DataIn->deltaT = 1.0/((REAL8) sampleRate); */
-  DataIn->deltaT = 1.0;
-  DataIn->f0 = 0.0;
-  DataIn->sampleUnits = lalADCCountUnit;
-  /* only try to load frame if name is specified */
-  if (dirname->data || cachefile)
-    {
-      REAL8 tmpTime=0;
-      if(dirname){
-	/* Open frame stream */
-	LAL_CALL( LALFrOpen( status, &stream, dirname->data, "*.gwf" ), status);
-      }
-      else if (cachefile){
-	/* Open frame cache */
-	LAL_CALL( LALFrCacheImport( status, &frameCache, cachefile ), status);
-	LAL_CALL( LALFrCacheOpen( status, &stream, frameCache ), status);
-	LAL_CALL( LALDestroyFrCache( status, &frameCache ), status );
-      }
-      /*
-       * Determine information about the channel and seek to the
-       * right place in the fram files 
-       */
-      DataIn->epoch.gpsSeconds     = params->GPSstart.gpsSeconds;
-      DataIn->epoch.gpsNanoSeconds = params->GPSstart.gpsNanoSeconds;
-      LAL_CALL( LALFrSeek(status, &(DataIn->epoch), stream), status);
-
-      /* get the data */
-
-      LAL_CALL( LALFrGetREAL4TimeSeries( status, 
-					 DataIn, 
-					 &channelIn, 
-					 stream), 
-		status);
-
-      /* 
-       * store the start and end time of the raw channel 
-       * in the search summary 
-       */
-      searchsumm.searchSummaryTable->in_start_time = DataIn->epoch;
-      LAL_CALL( LALGPStoFloat( status, &tmpTime, &(DataIn->epoch) ), 
-		status );
-      tmpTime += DataIn->deltaT * (REAL8) DataIn->data->length;
-      LAL_CALL( LALFloatToGPS( status, 
-			       &(searchsumm.searchSummaryTable->in_end_time), 
-			       &tmpTime ), 
-		status );
-
-      /* close the frame stream */
-      LAL_CALL( LALFrClose( status, &stream ), status);
-    }
-  /* Free memory allocation on procTable at start of routine */
-  LALFree(procTable.processTable);
-  LALFree(procparams.processParamsTable);
-  LALFree(searchsumm.searchSummaryTable);
-}
-
-/*
- * Routine to allow use of acsii input rather than frames
- */
-void Get_Ascii_Data(LALStatus*          status,
-		    TSSearchParams*     params,
-		    REAL4TimeSeries*    DataIn,
-		    CHARVector*         dirname
-		    )
-{
-  FILE                 *fp=NULL;
-  INT4                  i;
-  INITSTATUS (status, "readascii", TRACKSEARCHC);
-  ATTATCHSTATUSPTR (status);
-  /* File opening via an absolute path */
-  fp = fopen(dirname->data,"r");
-  if (!fp)
-    {
-      fprintf(stderr,TRACKSEARCHC_MSGEREAD);
-      exit(TRACKSEARCHC_EREAD);
-    };
-  DataIn->data=NULL;
-  LALCreateVector(status->statusPtr,&(DataIn->data),params->TimeLengthPoints);
-  for(i=0;i<(INT4)params->TimeLengthPoints;i++)
-    {
-      fscanf(fp,"%f\n",&(DataIn->data->data[i]));
-    }
-  fclose(fp);
-  if (DataIn->data->length != params->TimeLengthPoints)
-    {
-      fprintf(stderr,TRACKSEARCHC_MSGEREAD);
-      exit(TRACKSEARCHC_EREAD);
-      LALDestroyVector(status->statusPtr,&(DataIn->data));
-    }
-  DETATCHSTATUSPTR(status);
-  return;
-}
 
 
 

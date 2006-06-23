@@ -3,13 +3,16 @@
 #
 # Charlie
 #
-TRACKSEARCHSRCS = tracksearch.c
+TSUTILSRCS = tfdat2pgm.c tracksearchToolbox.c
+TRACKSEARCHSRCS = tracksearch.c tracksearchToolbox.c
 TSDATAGENSRCS = TSDatagen.c 
+TRACKSEARCHAVGSRC = tracksearchAverager.c tracksearchToolbox.c
 
-bin_PROGRAMS = lalapps_tracksearch lalapps_TSDatagen
+bin_PROGRAMS = lalapps_tracksearch lalapps_TSDatagen lalapps_TSaverager lalapps_tfdat2pgm
 lalapps_tracksearch_SOURCES = $(TRACKSEARCHSRCS)
 lalapps_TSDatagen_SOURCES = $(TSDATAGENSRCS)
-
+lalapps_TSaverager_SOURCES = $(TRACKSEARCHAVGSRC)
+lalapps_tfdat2pgm_SOURCES=$(TSUTILSRCS)
 
 EXTRA_DIST = $(TRACKSEARCHSRCS)
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps

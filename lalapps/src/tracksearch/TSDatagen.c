@@ -90,7 +90,7 @@ int main (int argc, char *argv[])
   intializeArgs(argc,argv,&params);
   /* Prepare to make frame time series */
   /* If default params left untouched we skip this */
-  if ((params.quiet != params.noiseOnly) || (params.externalSignal))
+  if ((1==1)||(params.quiet != params.noiseOnly) || (params.externalSignal))
     {
       LALCreateVector(&status,&dataX,params.numSamplePoints);
       LALCreateVector(&status,&dataY,params.numSamplePoints);
@@ -141,6 +141,8 @@ int intializeArgs(
       {"Multiple_Inject_Spacing",required_argument,      0,       'o'},
       {"LIGOIPSD_MaxF"          ,required_argument,      0,       'p'},
       {"LIGOIPSD_DeltaF"        ,required_argument,      0,       'q'},
+      {"gpsSeconds"             ,required_argument,      0,       'r'},
+      {"gpsNanoSeconds"         ,required_argument,      0,       's'},
       {0,                                        0,      0,         0}
     };
 
@@ -153,6 +155,8 @@ int intializeArgs(
   params->freqInitial = 0.0;
   params->freqFinal = 0.0;
   params->sampleFreq = 1.0;
+  /* This is the estimated minimum signal to create */
+  /* Is is then copied over injection time with space 2*inject spacing*/
   params->numSamplePoints = 0;
   params->noiseAmp = 1.0;
   params->seed = 0.0;
@@ -166,6 +170,8 @@ int intializeArgs(
   params->name=NULL;
   params->noisePSDMaxF=0;
   params->noisePSDDeltaF=0;
+  params->gpsSeconds=0;
+  params->gpsNanoSeconds=0;
 
   if (argc < 1) /* Not enough arguments */
     {
@@ -324,7 +330,18 @@ int intializeArgs(
 	    params->noisePSDDeltaF=atof(optarg);
 	  }
 	  break;
-
+	  
+	case 'r':
+	    {
+	      params->gpsSeconds=atoi(optarg);
+	    }
+	    break;
+	    
+	case 's':
+	  {
+	    params->gpsNanoSeconds=atoi(optarg);
+	  }
+	  break;
 	default:
 	  {
 	    fprintf(stderr,TSDATAGENC_MSGEMISC);
@@ -380,7 +397,7 @@ void createdata(
 	    {
 	      currentF = params.freqInitial+(i*deltaF);
 	      dataY->data[i] = (params.ampInitial+(i*deltaA))
-		*(sin(2*LAL_PI*(currentF)*i));
+		*(sin(2*LAL_PI*(currentF)*(i*1/params.sampleFreq)));
 	      dataX->data[i] = (i* (1/params.sampleFreq));
 	    };
 	}
@@ -447,9 +464,9 @@ void generateoutput(
   REAL4TimeSeries       dataTS;
   FrOutPar              frameheader;
   INT4                   j;
-  CHAR                   detector[16]="Simulate";
+  CHAR                   detector[16]="S";
   FILE                  *fp;
-  CHAR                  *filetxtname;
+  CHARVector            *filetxtname=NULL;
 
   INITSTATUS (status, "makefakedata", TRACKSEARCHC);
   ATTATCHSTATUSPTR (status);
@@ -458,8 +475,8 @@ void generateoutput(
 
   /*  dataTS->name = detector; */
   strcpy(dataTS.name,"Simulate");
-  dataTS.epoch.gpsSeconds = 0;
-  dataTS.epoch.gpsNanoSeconds = 0;
+  dataTS.epoch.gpsSeconds = params.gpsSeconds;
+  dataTS.epoch.gpsNanoSeconds = params.gpsNanoSeconds;
   dataTS.deltaT = 1/params.sampleFreq;
   dataTS.f0 = 0;
   dataTS.sampleUnits = lalADCCountUnit;
@@ -470,7 +487,7 @@ void generateoutput(
     source-description-GPS start time-duration.gwf.*/
 
   frameheader.source = detector;
-  frameheader.description = "FakeTSS";
+  frameheader.description = "SimData";
   frameheader.type = LAL_ADC_CHAN; /*Used so that frame stream can be read */
   frameheader.nframes = 1;
   frameheader.frame = 1;
@@ -481,18 +498,20 @@ void generateoutput(
   LALFrWriteREAL4TimeSeries(status->statusPtr,&dataTS,&frameheader);
 
   /* Write plaintext equivalent file 2C*/
-  filetxtname = (CHAR *) LALCalloc(32,sizeof(CHAR));
-  sprintf(filetxtname,"Ascii--%s-%i-%i.txt",
+  LALCHARCreateVector(status->statusPtr,&filetxtname,128);
+  CHECKSTATUSPTR(status);
+  sprintf(filetxtname->data,"Ascii--%s-%i-%i.txt",
 	  frameheader.description,
 	  dataTS.epoch.gpsSeconds,
 	  dataY->length);
-  fp = fopen(filetxtname,"w");
+  fp = fopen(filetxtname->data,"w");
   for (j=0; j < (INT4) dataY->length;j++)
     {
-      fprintf(fp,"%f %f\n",j,dataY->data[j]);
+      fprintf(fp,"%e %e\n",dataX->data[j],dataY->data[j]);
     }
   fclose(fp);
-  LALFree(filetxtname);
+  LALCHARDestroyVector(status->statusPtr,&filetxtname);
+  CHECKSTATUSPTR(status);
   DETATCHSTATUSPTR (status);
   return;
 } /* End Subroutine */

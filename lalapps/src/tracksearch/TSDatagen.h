@@ -53,6 +53,8 @@ extern "C" {
     INT4           multipleInjectSpacing;
     REAL8          noisePSDDeltaF;
     REAL8          noisePSDMaxF;
+    INT4          gpsSeconds;
+    INT4          gpsNanoSeconds;
   }TSDataGenParams;
 
 #ifdef  __cplusplus
