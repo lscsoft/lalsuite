@@ -1279,6 +1279,10 @@ static void add_sim_injections(
 	    *(detector.site) = lalCachedDetectors[LALDetectorIndexLLODIFF];
 	    LALWarning( stat, "computing waveform for Livingston." );
 	    break;
+          case 'G':
+            *(detector.site) = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
+            LALWarning( stat, "computing waveform for GEO600." );
+            break;
 	  default:
 	    LALFree( detector.site );
 	    detector.site = NULL;
