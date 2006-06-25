@@ -144,7 +144,7 @@ LALSignalTrackSearch(LALStatus *status,
    * rather than in the function call itself 
    * Dumping original map also
    */
-  if (1==1)
+  if (0==1)
     {
       DumpTFImage(tfMap->map,"DumpMap0",params->height,params->width,1);
       DumpTFImage(out->store.k[0],"DumpVar0_Col1Derv",params->height,params->width,0);
