@@ -973,15 +973,14 @@ void
 EstimateSigParams (LALStatus *status, const Fcomponents *Fstat, const MultiAMCoeffs *multiAMcoef)
 {
   REAL8 A1, A2, A3, A4, Asq, detA, C1, C2;
-  REAL8 beta, ampratio, A1test, A2test, A3test, A4test;
+  REAL8 ampratio, A1test, A2test, A3test, A4test;
   REAL8 psi, Phi0, mu;
-  REAL8 h0, h0mle, h0Sq;
+  REAL8 h0, h0Sq;
   REAL8 error_tol = 1.0 / pow(10,14);
   REAL8 A_Plus, A_Cross;
 
   REAL8 A, B, C, D, Dinv ;
   REAL8 Tsft = GV.Tsft, S_hat = GV.S_hat;
-
 
   FILE *fpMLEParam;
 
@@ -1008,24 +1007,22 @@ EstimateSigParams (LALStatus *status, const Fcomponents *Fstat, const MultiAMCoe
   
   A_Plus  = sqrt( 0.5 * (Asq + sqrt( Asq * Asq - 4 * detA * detA) ) );
   A_Cross = sqrt( 0.5 * (Asq - sqrt( Asq * Asq - 4 * detA * detA) ) );
-  
+ 
+  if(detA < 0)
+    A_Cross = -1.0 * A_Cross;
+ 
   h0 = A_Plus + sqrt(A_Plus * A_Plus - A_Cross * A_Cross);
   
   mu = A_Cross / h0;
   
   C1 = A1*A1 + A2*A2;
-  C2 = A1*A1 + A2*A3;
+  C2 = A1*A1 + A3*A3;
   
   Phi0 = acos(sqrt((C1 - A_Cross * A_Cross) / (A_Plus * A_Plus - A_Cross * A_Cross)));
   psi = 0.5 * acos(sqrt((C2 - A_Cross * A_Cross) / (A_Plus * A_Plus - A_Cross * A_Cross)));
   		  
-  /* h0mle = h_0 * sin(\zeta) */
-  h0mle = 0.5 * pow (pow( ((A1-A4)*(A1-A4) + (A2+A3)*(A2+A3)), 0.25)+ 
- 		     pow( ((A1+A4)*(A1+A4) + (A2-A3)*(A2-A3)), 0.25), 2); 
-  
   h0Sq = pow(h0, 2.0); 
   ampratio= Asq / h0Sq; 
-  
   
   if(ampratio < 0.25-error_tol || ampratio > 2.0+error_tol)  
     { 
@@ -1045,7 +1042,7 @@ EstimateSigParams (LALStatus *status, const Fcomponents *Fstat, const MultiAMCoe
   else  
     mu = sqrt(-3.0 + 2.0 * sqrt(2.0 + ampratio)); 
   
-  if(detA<0)  
+  if(detA < 0)  
     mu = - 1.0 * mu; 
   
   if(Asq * Asq < 4.0 * detA * detA) 
@@ -1054,23 +1051,17 @@ EstimateSigParams (LALStatus *status, const Fcomponents *Fstat, const MultiAMCoe
       exit(1); 
     } 
   
-  /* Compute MLEs of psi and Phi0 up to sign of Cos[2*Phi0] */
-  /* Make psi and Phi0 always in -Pi/2 to Pi/2 */
-  beta  = ( Asq + sqrt(Asq * Asq - 4.0 * detA * detA) ) / (2.0 * detA); 
-/*   psi_mle  = 0.5 * atan( (beta * A4 - A1) / (beta * A3 + A2) );  */
-/*   Phi0_mle  = 0.5 * atan( (A1 - beta * A4) / (A3 + beta * A2) );  */
-  
   /* Test if we get the same value of A1 by using the computed signal parameters. */
   A1test = h0 * (0.5 * (1 + mu * mu) * cos(2.0 * psi) * cos(2.0 * Phi0) - mu * sin(2.0 * psi) * sin(2.0 * Phi0)); 
   
-  /*  Determine the sign of Cos[2*Phi0]  */
+  /*  Determine the sign of Cos[Phi0]  */
   if(A1 * A1test < 0.0)  
     { 
       if(Phi0 > 0.0)  
-	Phi0 = Phi0 - LAL_PI / 2.0; 
+	Phi0 = Phi0 - LAL_PI; 
       
       else  
- 	Phi0 = Phi0 + LAL_PI / 2.0; 
+ 	Phi0 = Phi0 + LAL_PI; 
     } 
   
   /* Reconstruct A1,A2,A3,A4. Compare them with the original values. */
@@ -1121,14 +1112,6 @@ EstimateSigParams (LALStatus *status, const Fcomponents *Fstat, const MultiAMCoe
       exit(1);
     }
   
-/*   /\* normalization *\/ */
-/*   norm = 2.0 * sqrt(Tsft) / (Tsft * numSFTs); */
-/*   h0mle = h0mle * norm; */
-
-/*   /\* Calculating A_plus and A_cross usning h_0 and cosiota in hand.*\/ */
-/*   Aplus = (1.0 + mu_mle * mu_mle) * h0mle / 2.0; */
-/*   Across = mu_mle * h0mle; */
-
   fprintf(fpMLEParam," h0=%g", h0);
   fprintf(fpMLEParam," cosiota=%g", mu);
   fprintf(fpMLEParam," psi=%g", psi);
