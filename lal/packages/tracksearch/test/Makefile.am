@@ -7,4 +7,7 @@ TESTS = TrackSearchTest
 TESTS_ENVIRONMENT = 1>/dev/null 2>/dev/null LAL_DATA_PATH=$(srcdir)
 noinst_DATA = a.pgm
 EXTRA_DIST = $(DATA)
+MOSTLYCLEANFILES = Dump*
+CLEANFILES = Dump*
+DISTCLEANFILES = Dump*
 @DVIMKFILE@
