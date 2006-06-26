@@ -7,7 +7,7 @@ libtools_la_SOURCES = \
   SnglRingdownUtils.c \
   BurstUtils.c CoincInspiralUtils.c CoincRingdownUtils.c SimInspiralUtils.c \
   ComputeCalibrationFactors.c LIGOMetadataUtils.c \
-  NDTemplateBank.c ComputeStrain.c \
+  NDTemplateBank.c ComputeStrain.c ComputeStrainDMT.c \
   Sequence.c TimeSeries.c FrequencySeries.c \
   Segments.c LALTrigScanCluster.c LALTrigScanClusterDriver.c \
   EllipsoidOverlapTools.c
