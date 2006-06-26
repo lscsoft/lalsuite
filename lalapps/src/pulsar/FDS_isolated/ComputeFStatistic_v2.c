@@ -1033,17 +1033,15 @@ EstimateSigParams (LALStatus *status, const Fcomponents *Fstat, const MultiAMCoe
       exit(1); 
     } 
   
-  if(fabs(ampratio-0.25)<error_tol)  
-    mu =0.0; 
+   if(fabs(ampratio-0.25)<error_tol)   
+     mu = 0.0;  
   
-  else if(fabs(ampratio-2.0)<error_tol)  
-    mu = 1.0; 
+   else if(fabs(ampratio-2.0)<error_tol)   
+     mu = 1.0;  
   
-  else  
-    mu = sqrt(-3.0 + 2.0 * sqrt(2.0 + ampratio)); 
+/*    else    */
+/*      mu = sqrt(-3.0 + 2.0 * sqrt(2.0 + ampratio));   */
   
-  if(detA < 0)  
-    mu = - 1.0 * mu; 
   
   if(Asq * Asq < 4.0 * detA * detA) 
     { 
@@ -1055,28 +1053,25 @@ EstimateSigParams (LALStatus *status, const Fcomponents *Fstat, const MultiAMCoe
   A1test = h0 * (0.5 * (1 + mu * mu) * cos(2.0 * psi) * cos(2.0 * Phi0) - mu * sin(2.0 * psi) * sin(2.0 * Phi0)); 
   
   /*  Determine the sign of Cos[Phi0]  */
-  if(A1 * A1test < 0.0)  
-    { 
-      if(Phi0 > 0.0)  
-	Phi0 = Phi0 - LAL_PI; 
-      
-      else  
- 	Phi0 = Phi0 + LAL_PI; 
-    } 
+   if(A1 * A1test < 0.0)   
+     {  
+       if(Phi0 < 0.0)   
+ 	Phi0 = Phi0 + LAL_PI;  
+     }  
   
   /* Reconstruct A1,A2,A3,A4. Compare them with the original values. */
   
-  A1test = h0 * (0.5 * (1 + mu * mu) * cos(2.0 * psi) * cos (2.0 * Phi0)
-		 - mu * sin(2.0 * psi) * sin(2.0 * Phi0));
+  A1test = h0 * (0.5 * (1 + mu * mu) * cos(2.0 * psi) * cos(Phi0)
+		 - mu * sin(2.0 * psi) * sin(Phi0));
   
-  A2test = h0 * (0.5 * (1 + mu * mu) * sin(2.0 * psi) * cos(2.0 * Phi0)
-		 + mu * cos(2.0 * psi) * sin(2.0 * Phi0));
+  A2test = h0 * (0.5 * (1 + mu * mu) * sin(2.0 * psi) * cos(Phi0)
+		 + mu * cos(2.0 * psi) * sin(Phi0));
   
-  A3test = h0 * (-0.5 * (1 + mu * mu) * cos(2.0 * psi) * sin(2.0 * Phi0)
-		 - mu * sin(2.0 * psi) * cos(2.0 * Phi0));
+  A3test = h0 * (-0.5 * (1 + mu * mu) * cos(2.0 * psi) * sin(Phi0)
+		 - mu * sin(2.0 * psi) * cos(Phi0));
   
-  A4test = h0 * (-0.5 * (1 + mu * mu) * sin(2.0 * psi) * sin(2.0 * Phi0)
-		 + mu * cos(2.0 * psi) * cos(2.0 * Phi0));
+  A4test = h0 * (-0.5 * (1 + mu * mu) * sin(2.0 * psi) * sin(Phi0)
+		 + mu * cos(2.0 * psi) * cos(Phi0));
   
   
   fprintf(stderr,"\nLALDemod_Estimate output: A1=%g A2=%g A3=%g A4=%g\n", A1, A2, A3, A4);
