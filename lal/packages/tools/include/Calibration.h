@@ -230,6 +230,17 @@ struct StrainInTag {
   INT4 wings;               /* size of wings in seconds */
   INT4 fftconv;
   INT4 outalphas;
+  /* Stuff needed to run old IIR code */
+  REAL8IIRFilter *AA;      /* Filters for analog actuation function */
+  INT4 AADelay;            /* Overall analog actuation function delay */
+  REAL8IIRFilter *AX;      /* Digital filters for x arm actuation function */
+  REAL8IIRFilter *AY;      /* Digital filters for y arm actuation function */
+  INT4 NCinv;              /* Numbers of filters of each type */
+  INT4 ND;
+  INT4 NAA;
+  INT4 NAX;
+  INT4 NAY;
+
 } StrainIn;
 
 typedef
@@ -280,6 +291,12 @@ void LALComputeStrain(
     StrainIn               *input
     );
 
+void LALComputeStrainDMT(
+    LALStatus              *status,
+    StrainOut              *output,    
+    StrainIn               *input
+    );
+
 void LALGetFactors(
     LALStatus              *status,
     StrainOut              *output,    
@@ -303,6 +320,13 @@ int XALFIRFilter(REAL8TimeSeries *tseries,
 void LALFFTFIRFilter(LALStatus *status, 
 		     REAL8TimeSeries *tseries, 
 		     REAL8IIRFilter *FIR);
+
+void LALFIRFilter(LALStatus *status, 
+		     REAL8TimeSeries *tseries, 
+		     REAL8IIRFilter *FIR);
+
+void LALFreeFilter(LALStatus *status, REAL8IIRFilter *F2, int ORDER);
+void LALCopyFilter(LALStatus *status, REAL8IIRFilter **F2, REAL8IIRFilter *F1, int ORDER);
 
 int XLALDivideTimeSeries(REAL8TimeSeries *hR, REAL8TimeSeries *ALPHAS);
 int XLALUpsample(REAL8TimeSeries *uphR, REAL8TimeSeries *hR, int up_factor);
