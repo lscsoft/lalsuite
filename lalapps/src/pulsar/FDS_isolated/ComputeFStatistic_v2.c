@@ -882,18 +882,15 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   if ( uvar_SignalOnly )
     {
       cfg->multiNoiseWeights = NULL; 
-      GV.S_hat = 2.0 / GV.Tsft;
+      GV.S_hat = 2.0;
     }
   else
     {
       MultiPSDVector *psds = NULL;
-      REAL8 S_hatinv;
 
       TRY ( LALNormalizeMultiSFTVect (status->statusPtr, &psds, cfg->multiSFTs, uvar_RngMedWindow ), status );
       /* note: the normalization S_hat would be required to compute the ML-estimator for A^\mu */
-      TRY ( LALComputeMultiNoiseWeights  (status->statusPtr, &(cfg->multiNoiseWeights), &S_hatinv, psds, uvar_RngMedWindow, 0 ), status );
-
-      GV.S_hat = 1.0/S_hatinv;
+      TRY ( LALComputeMultiNoiseWeights  (status->statusPtr, &(cfg->multiNoiseWeights), &GV.S_hat, psds, uvar_RngMedWindow, 0 ), status );
 
       TRY ( LALDestroyMultiPSDVector (status->statusPtr, &psds ), status );
 
