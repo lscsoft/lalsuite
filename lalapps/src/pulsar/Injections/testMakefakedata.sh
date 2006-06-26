@@ -106,7 +106,7 @@ echo ${cmdline}
 eval ${cmdline}
 
 echo
-cmdline="$compCode -v -1 '${testDIR}/mfdv4_SFTv1.*' -2 '${testDIR}/*SFTv2*.sft'"
+cmdline="$compCode -v -1 '${testDIR}/mfdv4_SFTv1.*' -2 '${testDIR}/*_L1_*.sft'"
 echo ${cmdline}
 eval ${cmdline}
 
