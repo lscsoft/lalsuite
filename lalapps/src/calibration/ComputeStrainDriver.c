@@ -711,8 +711,8 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\tolg-im (-j)\tFLOAT\t Imaginary part of the open loop gain at the calibration line frequency.\n");
       fprintf(stdout,"\tservo-re (-k)\tFLOAT\t Real part of the digital filter at the calibration line frequency.\n");
       fprintf(stdout,"\tservo-im (-l)\tFLOAT\t Imaginary part of digital filter at the calibration line frequency.\n");
-      fprintf(stdout,"\twhitener-re (-m)\tFLOAT\t Real part of the digital filter at the calibration line frequency.\n");
-      fprintf(stdout,"\twhitener-im (-n)\tFLOAT\t Imaginary part of digital filter at the calibration line frequency.\n");
+      fprintf(stdout,"\twhitener-re (-m)\tFLOAT\t Real part of the whitening filter at the calibration line frequency.\n");
+      fprintf(stdout,"\twhitener-im (-n)\tFLOAT\t Imaginary part of whitening filter at the calibration line frequency.\n");
       fprintf(stdout,"\tgps-start-time (-s)\tINT\t GPS start time.\n");
       fprintf(stdout,"\tgps-end-time (-e)\tINT\t GPS end time.\n");
       fprintf(stdout,"\tfilters-file (-F)\tSTRING\t Name of file containing filters and histories.\n");
