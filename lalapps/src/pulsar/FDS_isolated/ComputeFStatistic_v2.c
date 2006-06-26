@@ -90,6 +90,8 @@ RCSID( "$Id$");
 
 /** convert GPS-time to REAL8 */
 #define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
+#define SQ(x) ( (x) * (x) )
+#define MYSIGN(x) ( ((x) < 0) ? (-1.0):(+1.0) )
 
 #define MYMAX(x,y) ( (x) > (y) ? (x) : (y) )
 #define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
@@ -179,7 +181,8 @@ REAL8 uvar_timerCount;
 int main(int argc,char *argv[]);
 void initUserVars (LALStatus *);
 void InitFStat ( LALStatus *, ConfigVariables *cfg );
-void EstimateSigParams (LALStatus *, const Fcomponents *Fstat, const MultiAMCoeffs *multiAMcoef);
+void EstimateSigParams (LALStatus *, 
+			const Fcomponents *Fstat, const MultiAMCoeffs *multiAMcoef, REAL8 TsftShat);
 void Freemem(LALStatus *,  ConfigVariables *cfg);
 
 void WriteFStatLog (LALStatus *, CHAR *argv[]);
@@ -443,12 +446,13 @@ int main(int argc,char *argv[])
 		      
 		      if(uvar_EstimSigParam) 
 			{   
-			  LAL_CALL ( EstimateSigParams(&status, &Fstat, cfBuffer.multiAMcoef), &status);
-
+			  REAL8 norm = GV.Tsft * GV.S_hat;
+			  LAL_CALL ( EstimateSigParams(&status, &Fstat, cfBuffer.multiAMcoef, norm),  &status);
 			} /*if(uvar_EstimSigParam) */
 
 		      /* propagate fkdot back to reference-time for outputting results */
-		      LAL_CALL ( LALExtrapolatePulsarSpins(&status, fkdotRef, GV.refTime, fkdotStart, GV.startTime ), &status );
+		      LAL_CALL ( LALExtrapolatePulsarSpins(&status, fkdotRef, GV.refTime, fkdotStart, 
+							   GV.startTime ), &status );
 
 		      /* calculate the baysian-marginalized 'B-statistic' */
 		      if ( fpBstat )
@@ -882,7 +886,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   if ( uvar_SignalOnly )
     {
       cfg->multiNoiseWeights = NULL; 
-      GV.S_hat = 2.0;
+      GV.S_hat = 2;
     }
   else
     {
@@ -964,158 +968,6 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   RETURN (status);
 
 } /* InitFStat() */
-
-
-void
-EstimateSigParams (LALStatus *status, const Fcomponents *Fstat, const MultiAMCoeffs *multiAMcoef)
-{
-  REAL8 A1, A2, A3, A4, Asq, detA, C1, C2;
-  REAL8 ampratio, A1test, A2test, A3test, A4test;
-  REAL8 psi, Phi0, mu;
-  REAL8 h0, h0Sq;
-  REAL8 error_tol = 1.0 / pow(10,14);
-  REAL8 A_Plus, A_Cross;
-
-  REAL8 A, B, C, D, Dinv ;
-  REAL8 Tsft = GV.Tsft, S_hat = GV.S_hat;
-
-  FILE *fpMLEParam;
-
-  INITSTATUS (status, "EstimateSigParams", rcsid);
-  ATTATCHSTATUSPTR (status);
-
-  if(!(fpMLEParam=fopen("ParamMLE.txt","w")))
-    fprintf(stderr,"Error in EstimateSigParams: unable to open the file");
-
-  A = multiAMcoef->A;
-  B = multiAMcoef->B;
-  C = multiAMcoef->C;
-  D = A * B - C * C;
-
-  Dinv = 1.0 / D;
-  
-  A1 =   2.0 * Dinv * ( B * Fstat->Fa.re - C * Fstat->Fb.re ) / sqrt(Tsft * S_hat); 
-  A2 =   2.0 * Dinv * ( A * Fstat->Fb.re - C * Fstat->Fa.re ) / sqrt(Tsft * S_hat);
-  A3 = - 2.0 * Dinv * ( B * Fstat->Fa.im - C * Fstat->Fb.im ) / sqrt(Tsft * S_hat);
-  A4 = - 2.0 * Dinv * ( A * Fstat->Fb.im - C * Fstat->Fa.im ) / sqrt(Tsft * S_hat);
-  
-  Asq = A1*A1 + A2*A2 + A3*A3 + A4*A4;
-  detA = A1*A4 - A2*A3;
-  
-  A_Plus  = sqrt( 0.5 * (Asq + sqrt( Asq * Asq - 4 * detA * detA) ) );
-  A_Cross = sqrt( 0.5 * (Asq - sqrt( Asq * Asq - 4 * detA * detA) ) );
- 
-  if(detA < 0)
-    A_Cross = -1.0 * A_Cross;
- 
-  h0 = A_Plus + sqrt(A_Plus * A_Plus - A_Cross * A_Cross);
-  
-  mu = A_Cross / h0;
-  
-  C1 = A1*A1 + A2*A2;
-  C2 = A1*A1 + A3*A3;
-  
-  Phi0 = acos(sqrt((C1 - A_Cross * A_Cross) / (A_Plus * A_Plus - A_Cross * A_Cross)));
-  psi = 0.5 * acos(sqrt((C2 - A_Cross * A_Cross) / (A_Plus * A_Plus - A_Cross * A_Cross)));
-  		  
-  h0Sq = pow(h0, 2.0); 
-  ampratio= Asq / h0Sq; 
-  
-  if(ampratio < 0.25-error_tol || ampratio > 2.0+error_tol)  
-    { 
-      fprintf(stderr,"Imaginary Cos[iota]; cannot compute parameters"); 
-      fprintf(stderr,"in the EstimateSigParams Function"); 
-      fprintf(stderr,"in ComputeFStatistic_v2 code"); 
-      fprintf(stderr,"Now exitting..."); 
-      exit(1); 
-    } 
-  
-   if(fabs(ampratio-0.25)<error_tol)   
-     mu = 0.0;  
-  
-   else if(fabs(ampratio-2.0)<error_tol)   
-     mu = 1.0;  
-  
-/*    else    */
-/*      mu = sqrt(-3.0 + 2.0 * sqrt(2.0 + ampratio));   */
-  
-  
-  if(Asq * Asq < 4.0 * detA * detA) 
-    { 
-      fprintf(stderr,"Imaginary beta; cannot compute parameters"); 
-      exit(1); 
-    } 
-  
-  /* Test if we get the same value of A1 by using the computed signal parameters. */
-  A1test = h0 * (0.5 * (1 + mu * mu) * cos(2.0 * psi) * cos(2.0 * Phi0) - mu * sin(2.0 * psi) * sin(2.0 * Phi0)); 
-  
-  /*  Determine the sign of Cos[Phi0]  */
-   if(A1 * A1test < 0.0)   
-     {  
-       if(Phi0 < 0.0)   
- 	Phi0 = Phi0 + LAL_PI;  
-     }  
-  
-  /* Reconstruct A1,A2,A3,A4. Compare them with the original values. */
-  
-  A1test = h0 * (0.5 * (1 + mu * mu) * cos(2.0 * psi) * cos(Phi0)
-		 - mu * sin(2.0 * psi) * sin(Phi0));
-  
-  A2test = h0 * (0.5 * (1 + mu * mu) * sin(2.0 * psi) * cos(Phi0)
-		 + mu * cos(2.0 * psi) * sin(Phi0));
-  
-  A3test = h0 * (-0.5 * (1 + mu * mu) * cos(2.0 * psi) * sin(Phi0)
-		 - mu * sin(2.0 * psi) * cos(Phi0));
-  
-  A4test = h0 * (-0.5 * (1 + mu * mu) * sin(2.0 * psi) * sin(Phi0)
-		 + mu * cos(2.0 * psi) * cos(Phi0));
-  
-  
-  fprintf(stderr,"\nLALDemod_Estimate output: A1=%g A2=%g A3=%g A4=%g\n", A1, A2, A3, A4);
-  fprintf(stderr,"Reconstructed from MLE:   A1=%g A2=%g A3=%g A4=%g !!!!\n\n", A1test, A2test, A3test, A4test);
-  fflush(stderr);
-  
-  
-  if ( fabs(A1 - A1test) > fabs(A1) / (10e5))
-    { 
-      fprintf(stderr,"Something is wrong with Estimate A1\n");
-      fprintf(stderr,"relative error Abs((A1-A1test)/A1)=%f\n", fabs(A1 - A1test) / fabs(A1));
-      exit(1);
-    }
-
-  if(fabs(A2-A2test)>fabs(A2)/(10e5))
-    { 
-      fprintf(stderr,"Something is wrong with Estimate A2\n");
-      fprintf(stderr,"relative error Abs((A2-A2test)/A2)=%f\n", fabs(A2 - A2test) / fabs(A2));
-      exit(1);
-    }
-
-  if(fabs(A3-A3test)>fabs(A3)/(10e5))
-    { 
-      fprintf(stderr,"Something is wrong with Estimate A3\n");
-      fprintf(stderr,"relative error Abs((A3-A3test)/A3)=%f\n", fabs(A3 - A3test) / fabs(A3));
-      exit(1);
-    }
-  
-  if(fabs(A4-A4test)>fabs(A4)/(10e5))
-    { 
-      fprintf(stderr,"Something is wrong with Estimate A4\n");
-      fprintf(stderr,"relative error Abs((A4-A4test)/A4)=%f\n", fabs(A4 - A4test) / fabs(A4));
-      exit(1);
-    }
-  
-  fprintf(fpMLEParam," h0=%g", h0);
-  fprintf(fpMLEParam," cosiota=%g", mu);
-  fprintf(fpMLEParam," psi=%g", psi);
-  fprintf(fpMLEParam," phi0=%g", Phi0);
-  fprintf(fpMLEParam,"\n");
-			
-  fclose(fpMLEParam);
-
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
-} /*EstimateSigParams()*/
-
 
 /***********************************************************************/
 /** Log the all relevant parameters of the present search-run to a log-file.
@@ -1373,3 +1225,135 @@ const char *va(const char *format, ...)
 
         return string;
 }
+
+
+void
+EstimateSigParams (LALStatus *status, 
+		   const Fcomponents *Fstat, const MultiAMCoeffs *multiAMcoef, REAL8 TsftShat)
+{
+  REAL8 A1, A2, A3, A4;
+  REAL8 dA1, dA2, dA3, dA4;	/* Cramer-Rao error-bounds */
+  REAL8 x1, x2, x3, x4;
+  REAL8 A, B, C, D;
+  REAL8 normM, normx;
+
+  REAL8 Asq, Da, disc, dAsq, dDa, ddisc;
+  REAL8 Aplus, Across, dAplus, dAcross;
+  REAL8 Ap2, Ac2, Ap2mAc2;
+  REAL8 beta, dbeta;
+  REAL8 phi0, psi, dphi0, dpsi;
+  REAL8 tan2psi, tanphi0;
+  REAL8 b1, b2, b3, db1, db2, db3;
+  REAL8 h0, cosi, dh0, dcosi;
+
+  FILE *fp = NULL;
+
+  INITSTATUS (status, "EstimateSigParams", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+  A = multiAMcoef->A;
+  B = multiAMcoef->B;
+  C = multiAMcoef->C;
+  D = multiAMcoef->D;
+
+  normM = 2.0 / ( D * TsftShat );
+  normx = sqrt(TsftShat);
+
+  x1 =   normx * Fstat->Fa.re;
+  x2 =   normx * Fstat->Fb.re;
+  x3 = - normx * Fstat->Fa.im;
+  x4 = - normx * Fstat->Fb.im;
+
+  A1 = normM * (   B * x1 - C * x2 );
+  A2 = normM * ( - C * x1 + A * x2 );
+  A3 = normM * (   B * x3 - C * x4 );
+  A4 = normM * ( - C * x3 + A * x4 );
+
+  /* compute Cramer-Rao (lower) error-bounds from inverse Fisher matrix 
+   * We want the std-dev, not variances ==> sqrt() */
+  dA1 = dA3 = sqrt( normM * B );
+  dA2 = dA4 = sqrt( normM * A );
+
+  LogPrintf (LOG_NORMAL, "A1 = %g +- %g, A2 = %g +- %g, A3 = %g +- %g, A4 = %g +- %g\n", 
+	     A1, dA1,  
+	     A2, dA2,
+	     A3, dA3,
+	     A4, dA4 );
+
+  Asq = SQ(A1) + SQ(A2) + SQ(A3) + SQ(A4);
+  dAsq = 2.0 * ( A1 * dA1 + A2 * dA2 + A3 * dA3 + A4 * dA4 );
+  Da = A1 * A4 - A2 * A3;
+  dDa = A1 * dA4 + A4 * dA1 - A2 * dA3 - A3 * dA2;
+
+  disc = sqrt ( SQ(Asq) - 4.0 * SQ(Da) );
+  ddisc = (Asq * dAsq - 4.0 * Da * dDa) / disc;
+
+  Ap2  = 0.5 * ( Asq + disc );
+  Aplus = sqrt(Ap2);
+  dAplus = ( dAsq + ddisc ) / ( 4.0 * Aplus );
+  Ac2 = 0.5 * ( Asq - disc );
+  Across = sqrt( Ac2 );
+  dAcross = (dAsq - ddisc ) / ( 4.0 * Across );
+  Across *= MYSIGN ( Da );
+
+  Ap2mAc2 = Ap2 - Ac2;
+
+  LogPrintf (LOG_NORMAL, "Aplus = %g +- %g, Across = %g +- %g\n", 
+	     Aplus, dAplus, Across, dAcross );
+
+  beta = Across / Aplus;
+  dbeta = (dAcross - beta * dAplus) / Aplus;
+  
+  b1 = A4 - beta * A1;
+  db1 =  dA4 - beta * dA1 - A1 * dbeta;
+  b2 = A3 + beta * A2;
+  db2 =  dA3 + beta * dA2 + A2 * dbeta;
+  b3 = - A1 + beta * A4 ;
+  db3 = -dA1 + beta * dA4 + A4 * dbeta;
+
+  psi  = 0.5 * atan2 ( b1, b2 );
+  tan2psi = b1 / b2;
+  dpsi = 0.5 * ( db1 - tan2psi * db2 ) / (( 1.0 + SQ(tan2psi) ) * b2 );
+
+  phi0 =      atan2 ( b2, b3 );
+  tanphi0 = b2 / b3;
+  dphi0 = (db2 - tanphi0 * db3 )/ ( (1.0 + SQ(tanphi0) ) * b3 );
+
+  /* use gauge-freedom to fix gauge to [0,pi] for both phi0, psi */
+  if ( phi0 < 0 )
+    {
+      phi0 += LAL_PI;
+      psi  += LAL_PI_2;
+    }
+  if ( psi > LAL_PI  )
+    psi -= LAL_PI;
+  else if ( psi < 0 )
+    psi += LAL_PI;
+
+  LogPrintf (LOG_NORMAL, "phi0 = %g +- %g, psi = %g +- %g\n", 
+	     phi0, dphi0, psi, dpsi );
+
+
+  /* translate A_{+,x} into {h_0, cosi} */
+  h0 = Aplus + sqrt ( Ap2mAc2 );
+  dh0 = dAplus + ( Aplus * dAplus - Across * dAcross ) / sqrt(Ap2mAc2);
+
+  cosi = Across / h0;
+  dcosi = ( dAcross - cosi * dh0 ) / h0;
+
+  LogPrintf (LOG_NORMAL, "h0 = %g +- %g, cosi = %g +- %g\n", 
+	     h0, dh0, cosi, dcosi );
+
+  if( ( fp = fopen ( "ParamMLE2.dat", "wb" ) ) ==  NULL )
+    {
+      LogPrintf (LOG_CRITICAL, "Failed to open file 'ParamMLE2.dat' for writing!\n");
+      ABORT ( status, COMPUTEFSTATISTIC_ESYS, COMPUTEFSTATISTIC_MSGESYS );
+    }
+			
+  fclose(fp);
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+
+} /*EstimateSigParams()*/
+
