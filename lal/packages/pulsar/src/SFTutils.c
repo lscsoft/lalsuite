@@ -1077,7 +1077,10 @@ void LALComputeNoiseWeights  (LALStatus        *status,
 
 
 /** Computes weight factors arising from MultiSFTs with different noise 
-    floors -- it multiplies an existing weight vector */
+ * floors -- it multiplies an existing weight vector 
+ * The 'normalization' returned is the factor by which the inverse PSD's S^-1_{X,a}
+ * have been normalized to give the noise-weights w_{X,a}
+ */
 void LALComputeMultiNoiseWeights  (LALStatus             *status, 
 				   MultiNoiseWeights     **out,
 				   REAL8                 *normalization,
@@ -1089,7 +1092,7 @@ void LALComputeMultiNoiseWeights  (LALStatus             *status,
   UINT4 i, k, j, numifos, numsfts, lengthsft, numsftsTot;
   UINT4 excludeIndex, halfLengthPSD, lengthPSD;
   MultiNoiseWeights *weights;
-  
+  REAL8 Tsft = 1.0 / multipsd->data[0]->data[0].deltaF;
 
   INITSTATUS (status, "LALComputeMultiNoiseWeights", SFTUTILSC);
   ATTATCHSTATUSPTR (status); 
@@ -1112,10 +1115,11 @@ void LALComputeMultiNoiseWeights  (LALStatus             *status,
     ABORT (status,  SFTUTILS_EMEM,  SFTUTILS_MSGEMEM);      
   }
 
-
+  numsftsTot = 0;
   for ( k = 0; k < numifos; k++) 
     {
       numsfts = multipsd->data[k]->length;
+      numsftsTot += numsfts;
 
       /* create k^th weights vector */
       LALDCreateVector ( status->statusPtr, weights->data + k, numsfts);
@@ -1159,9 +1163,6 @@ void LALComputeMultiNoiseWeights  (LALStatus             *status,
 
 
   /* make weights of order unity by myltiplying by sumSn/total number of sfts */
-  for (numsftsTot = 0, k = 0; k < numifos; k++)
-    numsftsTot += multipsd->data[k]->length;
-
   for ( k = 0; k < numifos; k++) {
     numsfts = weights->data[k]->length;    
     for ( j = 0; j < numsfts; j++) 
@@ -1169,7 +1170,7 @@ void LALComputeMultiNoiseWeights  (LALStatus             *status,
   }
 
   *out = weights;
-  *normalization = sumSn/numsftsTot;
+  *normalization = Tsft * numsftsTot / sumSn;	/* 'S_hat' normalization factor */
   
   DETATCHSTATUSPTR (status);
    /* normal exit */
