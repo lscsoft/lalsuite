@@ -234,7 +234,7 @@ int main( int argc, char *argv[]) {
   REAL8Vector *fkdotBand_startTime2=NULL; /* freq. and spindown ranges at start time of second stack */
   REAL8Vector *fkdot_current1=NULL;
   REAL8Vector *fkdot_current2=NULL;
-
+  LALPulsarSpinRange spinRange_refTime, spinRange_startTime1, spinRange_startTime2;
 
   /* variables for logging */
   CHAR *fnamelog=NULL;
@@ -558,7 +558,6 @@ int main( int argc, char *argv[]) {
 
     SFTCatalog *catalog = NULL;
     SFTConstraints *constraints1 = NULL;
-    LALPulsarSpinRange spinRange_refTime, spinRange_startTime;
 
     REAL8 doppWings, fMin, fMax, f0;
     REAL8 startTime_freqLo, startTime_freqHi;
@@ -592,19 +591,21 @@ int main( int argc, char *argv[]) {
     spinRange_refTime.fkdot = fkdot_refTime;
     spinRange_refTime.fkdotBand = fkdotBand_refTime;
 
-    spinRange_startTime.fkdot = fkdot_startTime1;
-    spinRange_startTime.fkdotBand = fkdotBand_startTime1;    
+    /* copy pointers */
+    spinRange_startTime1.fkdot = fkdot_startTime1;
+    spinRange_startTime1.fkdotBand = fkdotBand_startTime1;    
 
-    LAL_CALL( LALExtrapolatePulsarSpinRange( &status, &spinRange_startTime, sftTimeStamps1->data[0], &spinRange_refTime), &status); 
+    LAL_CALL( LALExtrapolatePulsarSpinRange( &status, &spinRange_startTime1, sftTimeStamps1->data[0], &spinRange_refTime), &status); 
 
     /* use stacks info to calculate search frequency resolution */
     /* total duration of stack = last timestamp - first timestamp + timeBase*/
     deltaFstack1 = 1.0/tStack1;
 
+
     /* set reference time for calculating Fstatistic */
-    thisPoint1.refTime = refTimeGPS;
+    thisPoint1.refTime = sftTimeStamps1->data[0];
     thisPoint1.binary = NULL;
-    thisPoint1.fkdot = fkdot_current1;
+    thisPoint1.fkdot = fkdot_current1; /* not yet initialized */
 
     /* initialize ephemeris info */ 
     edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
@@ -743,7 +744,7 @@ int main( int argc, char *argv[]) {
     { 
       fstatVector1.data[k].epoch = startTstack1->data[k];
       fstatVector1.data[k].deltaF = deltaFstack1;
-      fstatVector1.data[k].f0 = fkdot_refTime->data[0];
+      fstatVector1.data[k].f0 = fkdot_startTime1->data[0];
       fstatVector1.data[k].data = (REAL8Sequence *)LALCalloc( 1, sizeof(REAL8Sequence));
       fstatVector1.data[k].data->length = binsFstat1;
       fstatVector1.data[k].data->data = (REAL8 *)LALCalloc( 1, binsFstat1 * sizeof(REAL8));
@@ -1010,7 +1011,7 @@ int main( int argc, char *argv[]) {
   scanInit1.searchRegion.Freq = uvar_fStart;
   scanInit1.searchRegion.FreqBand = uvar_fBand;
   scanInit1.searchRegion.f1dot = uvar_fdot;
-  scanInit1.searchRegion.f1dotBand = uvar_fdotBand;
+  scanInit1.searchRegion.f1dotBand = fkdotBand_startTime1->data[1];;
   scanInit1.searchRegion.skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
   strcpy (scanInit1.searchRegion.skyRegionString, uvar_skyRegion);
 
@@ -1076,13 +1077,14 @@ int main( int argc, char *argv[]) {
       
       /* number of fdot values */
       dfDot = thisScan1.df1dot;
-      nfdot = (UINT4)(uvar_fdotBand / dfDot + 0.5) + 1; 
+      
+      nfdot = (UINT4)( fkdotBand_startTime1->data[1]/ dfDot + 0.5) + 1; 
       
       /* loop over fdot values */
       for ( ifdot=0; ifdot<nfdot; ifdot++)
 	{
 	  /* set spindown value for Fstat calculation */
-	  thisPoint1.fkdot->data[1] = fkdot_refTime->data[1] + ifdot * dfDot;
+	  thisPoint1.fkdot->data[1] = fkdot_startTime1->data[1] + ifdot * dfDot;
 	  	  
 	  /* calculate the Fstatistic for each stack*/
 	  for ( k = 0; k < nStacks1; k++) {
