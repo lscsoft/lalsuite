@@ -5,7 +5,7 @@ FRAMEPROGRAMS = lalapps_mkcalfac lalapps_mkcalref lalapps_makecalframe lalapps_r
 else
 FRAMEPROGRAMS = 
 endif
-bin_PROGRAMS = $(FRAMEPROGRAMS) lalapps_ComputeStrain lalapps_ComputeFactors lalapps_ComputeStrainDriver
+bin_PROGRAMS = $(FRAMEPROGRAMS) lalapps_ComputeStrain lalapps_ComputeFactors lalapps_ComputeStrainDriver lalapps_ComputeStrainDriverDMT
 if FRAME
 lalapps_makecalframe_SOURCES = makecalframe.c LALASCIIFileRead.c LALASCIIFileRead.h
 lalapps_readcalframe_SOURCES = readcalframe.c
@@ -16,6 +16,7 @@ endif
 bin_SCRIPTS = lalapps_strain_pipe
 lalapps_ComputeStrain_SOURCES = ComputeStrain.c
 lalapps_ComputeStrainDriver_SOURCES = ComputeStrainDriver.c
+lalapps_ComputeStrainDriverDMT_SOURCES = ComputeStrainDriverDMT.c
 lalapps_ComputeFactors_SOURCES = ComputeFactors.c
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
