@@ -38,6 +38,7 @@ Tsft=1800
 nTsft=20
 timestamps=./testT8_1800
 refTime=731210229
+##refTime=714180733
 fmin=300.0
 Band=10.0
 
@@ -52,8 +53,8 @@ alpha=1.7
 delta=0.9
 noiseDir="../"
 noiseSFTs="$noiseDir/SFT.0000[0-9]"
-f1dot="-1.e-6"
-f2dot="1e-13"
+f1dot="-1.e-9"
+f2dot="1e-14"
 
 dataTMP=In.data-test
 oldCL="-i $dataTMP  -I $IFO -E $ephemdir -S $refTime" ## -D $noiseDir"
