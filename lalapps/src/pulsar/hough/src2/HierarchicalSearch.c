@@ -168,7 +168,7 @@ int main( int argc, char *argv[]) {
   LIGOTimeGPSVector *sftTimeStamps1=NULL; 
   LIGOTimeGPSVector *sftTimeStamps2=NULL; 
   REAL8 refTime;
-  LIGOTimeGPS refTimeGPS;
+  LIGOTimeGPS refTimeGPS, tStart1GPS, tStart2GPS;
 
   /* velocities and positions at midTstack */
   REAL8VectorSequence *velStack1=NULL;
@@ -235,6 +235,7 @@ int main( int argc, char *argv[]) {
   REAL8Vector *fkdot_current1=NULL;
   REAL8Vector *fkdot_current2=NULL;
   LALPulsarSpinRange spinRange_refTime, spinRange_startTime1, spinRange_startTime2;
+  LALPulsarSpinRange *spinRange_Temp=NULL;
 
   /* variables for logging */
   CHAR *fnamelog=NULL;
@@ -382,8 +383,8 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterREALUserVar(   &status, "houghThr",   0,  UVAR_OPTIONAL, "Hough number count threshold (default --nCand1)",   &uvar_houghThr), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printCand1", 0,  UVAR_OPTIONAL, "Print 1st stage candidates", &uvar_printCand1),      &status);  
   LAL_CALL( LALRegisterREALUserVar(   &status, "refTime",    0,  UVAR_OPTIONAL, "Ref. time for pulsar pars [start time]", &uvar_refTime), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemE",     'E', UVAR_OPTIONAL, "Earth Ephemeris file", &uvar_ephemE),  &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemS",     'S', UVAR_OPTIONAL, "Sun Ephemeris file", &uvar_ephemS),  &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemE",    'E', UVAR_OPTIONAL, "Earth Ephemeris file", &uvar_ephemE),  &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemS",    'S', UVAR_OPTIONAL, "Sun Ephemeris file", &uvar_ephemS),  &status);
 
   /* developer user variables */
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed", 0, UVAR_DEVELOPER, "RngMed block size", &uvar_blocksRngMed), &status);
@@ -394,7 +395,7 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printMaps",    0, UVAR_DEVELOPER,"Print Hough maps", &uvar_printMaps), &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printStats",   0, UVAR_DEVELOPER,"Print Hough map statistics", &uvar_printStats), &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printFstat1",  0, UVAR_DEVELOPER,"Print 1st stage Fstat vectors", &uvar_printFstat1), &status);  
-  LAL_CALL( LALRegisterINTUserVar( &status, "Dterms", 0, UVAR_DEVELOPER,"No.of terms to keep in Dirichlet Kernel", &uvar_Dterms ), &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "Dterms",       0, UVAR_DEVELOPER,"No.of terms to keep in Dirichlet Kernel", &uvar_Dterms ), &status);
 
 
 
@@ -498,7 +499,15 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALDCreateVector( &status, &fkdot_current1, 2), &status);
   LAL_CALL( LALDCreateVector( &status, &fkdot_current2, 2), &status);
 
-  /* copy user specified spin variables at reftime to vector */
+
+  spinRange_refTime.fkdot = fkdot_refTime;
+  spinRange_refTime.fkdotBand = fkdotBand_refTime;
+  spinRange_startTime1.fkdot = fkdot_startTime1;
+  spinRange_startTime1.fkdotBand = fkdotBand_startTime1;
+  spinRange_startTime2.fkdot = fkdot_startTime2;
+  spinRange_startTime2.fkdotBand = fkdotBand_startTime2;
+
+  /* copy user specified spin variables at reftime  */
   for (j = 0; j < 2; j++)  
     {
       fkdot_refTime->data[0] = uvar_fStart; /* frequency */
@@ -507,8 +516,10 @@ int main( int argc, char *argv[]) {
       fkdotBand_refTime->data[1] = uvar_fdotBand; /* spindown range */
     }
 
+  /* utility temp variable */
+  spinRange_Temp = XLALCreatePulsarSpinRange(2);
 
-  /* compute F params */
+  /* some compute F params */
   CFparams.Dterms = uvar_Dterms;
   CFparams.SSBprec = uvar_SSBprecision;
 
@@ -574,10 +585,13 @@ int main( int argc, char *argv[]) {
     LAL_CALL( SetUpStacks( &status, &catalogSeq1, &tStack1, &sftTimeStamps1, catalog, uvar_nStacks1), &status);
 
     /* calculate start and end times and tobs */
-    LAL_CALL( LALGPStoFloat ( &status, &tStart1, sftTimeStamps1->data), &status);
+    tStart1GPS = sftTimeStamps1->data[0];
+    LAL_CALL( LALGPStoFloat ( &status, &tStart1, &tStart1GPS), &status);
     LAL_CALL( LALGPStoFloat ( &status, &tEnd1, sftTimeStamps1->data + sftTimeStamps1->length - 1), &status);
     tEnd1 += timebase1;
     tObs1 = tEnd1 - tStart1;
+    /* use stacks info to calculate search frequency resolution */
+    deltaFstack1 = 1.0/tStack1;
 
     /* set reference time for pular parameters */
     if ( LALUserVarWasSet(&uvar_refTime)) 
@@ -588,22 +602,11 @@ int main( int argc, char *argv[]) {
     /* get frequency and fdot bands at start time of sfts by extrapolating from reftime */
     LAL_CALL ( LALFloatToGPS ( &status, &refTimeGPS, &refTime), &status);
     spinRange_refTime.epoch = refTimeGPS;
-    spinRange_refTime.fkdot = fkdot_refTime;
-    spinRange_refTime.fkdotBand = fkdotBand_refTime;
 
-    /* copy pointers */
-    spinRange_startTime1.fkdot = fkdot_startTime1;
-    spinRange_startTime1.fkdotBand = fkdotBand_startTime1;    
-
-    LAL_CALL( LALExtrapolatePulsarSpinRange( &status, &spinRange_startTime1, sftTimeStamps1->data[0], &spinRange_refTime), &status); 
-
-    /* use stacks info to calculate search frequency resolution */
-    /* total duration of stack = last timestamp - first timestamp + timeBase*/
-    deltaFstack1 = 1.0/tStack1;
-
+    LAL_CALL( LALExtrapolatePulsarSpinRange( &status, &spinRange_startTime1, tStart1GPS, &spinRange_refTime), &status); 
 
     /* set reference time for calculating Fstatistic */
-    thisPoint1.refTime = sftTimeStamps1->data[0];
+    thisPoint1.refTime = tStart1GPS;
     thisPoint1.binary = NULL;
     thisPoint1.fkdot = fkdot_current1; /* not yet initialized */
 
@@ -613,7 +616,7 @@ int main( int argc, char *argv[]) {
     (*edat).ephiles.sunEphemeris = uvar_ephemS;
     
     /* Leap seconds for the first timestamp */   
-    LAL_CALL( LALLeapSecs(&status, &tmpLeap, sftTimeStamps1->data, &lsfas), &status);
+    LAL_CALL( LALLeapSecs(&status, &tmpLeap, &tStart1GPS, &lsfas), &status);
     (*edat).leap = (INT2)tmpLeap;
   
     /* read in ephemeris data */
@@ -827,7 +830,6 @@ int main( int argc, char *argv[]) {
     */
     SFTCatalog *catalog2 = NULL;
     SFTConstraints *constraints2 = NULL;
-    LALPulsarSpinRange spinRange_refTime, spinRange_startTime;
 
     REAL8 doppWings, fMin, fMax, f0;
     REAL8 startTime_freqLo, startTime_freqHi;
@@ -844,27 +846,20 @@ int main( int argc, char *argv[]) {
     LAL_CALL( SetUpStacks( &status, &catalogSeq2, &tStack2, &sftTimeStamps2, catalog2, uvar_nStacks2), &status);
     
     /* calculate start and end times and tobs */
-    LAL_CALL( LALGPStoFloat ( &status, &tStart2, sftTimeStamps2->data), &status);
+    tStart2GPS = sftTimeStamps2->data[0];
+    LAL_CALL( LALGPStoFloat ( &status, &tStart2, &tStart2GPS), &status);
     LAL_CALL( LALGPStoFloat ( &status, &tEnd2, sftTimeStamps2->data + sftTimeStamps2->length - 1), &status);
     tEnd2 += timebase2;
     tObs2 = tEnd2 - tStart2;
-
-    spinRange_refTime.epoch = refTimeGPS;
-    spinRange_refTime.fkdot = fkdot_refTime;
-    spinRange_refTime.fkdotBand = fkdotBand_refTime;
-
-    spinRange_startTime.fkdot = fkdot_startTime2;
-    spinRange_startTime.fkdotBand = fkdotBand_startTime2;    
-
-    LAL_CALL( LALExtrapolatePulsarSpinRange( &status, &spinRange_startTime, sftTimeStamps2->data[0], &spinRange_refTime), &status); 
-       
     /* use stacks info to calculate freq. resolution */
     deltaFstack2 = 1.0/tStack2;
 
+    LAL_CALL( LALExtrapolatePulsarSpinRange( &status, &spinRange_startTime2, sftTimeStamps2->data[0], &spinRange_refTime), &status); 
+       
     /* set reference time for calculating fstat */
-    thisPoint2.refTime = refTimeGPS;
+    thisPoint2.refTime = tStart2GPS;
     thisPoint2.binary = NULL;
-    thisPoint2.fkdot = fkdot_current2;
+    thisPoint2.fkdot = fkdot_current2; /* not initialized yet */
       
     /* set wings of sfts to be read */
     /* the wings must be enough for the Doppler shift and extra bins
@@ -990,6 +985,7 @@ int main( int argc, char *argv[]) {
 
   /* allocate memory for Hough candidates */
   semiCohCandList1.length = uvar_nCand1;
+  semiCohCandList1.refTime = tStart1GPS;
   semiCohCandList1.nCandidates = 0; /* initialization */
   semiCohCandList1.minSigIndex = 0;
   semiCohCandList1.list = (SemiCohCandidate *)LALCalloc( 1, semiCohCandList1.length * sizeof(SemiCohCandidate));
@@ -1084,7 +1080,8 @@ int main( int argc, char *argv[]) {
       for ( ifdot=0; ifdot<nfdot; ifdot++)
 	{
 	  /* set spindown value for Fstat calculation */
-	  thisPoint1.fkdot->data[1] = fkdot_startTime1->data[1] + ifdot * dfDot;
+  	  thisPoint1.fkdot->data[1] = fkdot_startTime1->data[1] + ifdot * dfDot;
+	  thisPoint1.fkdot->data[0] = fstatVector1.data[k].f0 = fkdot_startTime1->data[0];
 	  	  
 	  /* calculate the Fstatistic for each stack*/
 	  for ( k = 0; k < nStacks1; k++) {
@@ -1097,8 +1094,7 @@ int main( int argc, char *argv[]) {
 	  if ( uvar_printFstat1 )
 	    {
 	      for (k=0; k<nStacks1; k++)
-		LAL_CALL( PrintFstatVec_fp ( &status, fstatVector1.data + k, fpFstat1, thisPoint1.skypos.longitude, 
-					     thisPoint1.skypos.latitude, thisPoint1.fkdot->data[1]), &status); 
+		LAL_CALL( PrintFstatVec ( &status, fstatVector1.data + k, fpFstat1, &thisPoint1, refTimeGPS), &status); 
 	    }
 
 	  
@@ -1134,9 +1130,9 @@ int main( int argc, char *argv[]) {
 
 
 	  /* print candidates if desired */
-	  if ( uvar_printCand1 )
+	  if ( uvar_printCand1 ) {
 	    LAL_CALL ( PrintSemiCohCandidates ( &status, &semiCohCandList1, fpSemiCoh), &status);
-
+	  }
 	  
 	  /*------------- Follow up candidates --------------*/
 	  
@@ -1156,13 +1152,22 @@ int main( int argc, char *argv[]) {
 		     first stage which is why they have the subscript 1 */
 		  REAL8 fStart1, freqBand1, fdot1, fdotBand1;
 		  REAL8 alpha1, delta1, alphaBand1, deltaBand1;
-		  
+
+		  /* get spin range of candidate */
+		  spinRange_Temp->epoch = tStart1GPS;
+		  spinRange_Temp->fkdot->data[0] = semiCohCandList1.list[j].freq - 0.5 * semiCohCandList1.list[j].dFreq;
+		  spinRange_Temp->fkdotBand->data[0] = semiCohCandList1.list[j].dFreq;
+		  spinRange_Temp->fkdot->data[1] = semiCohCandList1.list[j].fdot - 0.5 * semiCohCandList1.list[j].dFdot;
+		  spinRange_Temp->fkdotBand->data[1] = semiCohCandList1.list[j].dFdot;
+
+		  /* extrapulate spin range to start time of second stack */
+		  LAL_CALL( LALExtrapolatePulsarSpinRange(  &status, spinRange_Temp, tStart2GPS, spinRange_Temp ), &status);
+
 		  /* set frequency and spindown ranges */
-		  fStart1 = semiCohCandList1.list[j].freq - 0.5 * semiCohCandList1.list[j].dFreq;
-		  freqBand1 = semiCohCandList1.list[j].dFreq;
-		  fdot1 = semiCohCandList1.list[j].fdot - 0.5 * semiCohCandList1.list[j].dFdot;
-		  fdotBand1 = semiCohCandList1.list[j].dFdot;
-		  
+		  fStart1 = spinRange_Temp->fkdot->data[0];
+		  freqBand1 = spinRange_Temp->fkdotBand->data[0];
+		  fdot1 = spinRange_Temp->fkdot->data[1];
+		  fdotBand1 = spinRange_Temp->fkdotBand->data[1];
 		  
 		  /* set sky region to be refined */
 		  alpha1 = semiCohCandList1.list[j].alpha - 0.5 * semiCohCandList1.list[j].dAlpha;
@@ -1178,7 +1183,6 @@ int main( int argc, char *argv[]) {
 		  scanInit2.searchRegion.f1dot = fdot1;
 		  scanInit2.searchRegion.f1dotBand = fdotBand1;
 		  
-
 		  /* allocate fstat memory */
 		  fstatVector2.length = nStacks2;
 		  fstatVector2.data = NULL;
@@ -1382,6 +1386,8 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALDDestroyVector( &status, &fkdotBand_startTime2), &status);
   LAL_CALL( LALDDestroyVector( &status, &fkdot_current1), &status);
   LAL_CALL( LALDDestroyVector( &status, &fkdot_current2), &status);
+
+  XLALDestroyPulsarSpinRange(spinRange_Temp);
 
   LAL_CALL (LALDestroyUserVars(&status), &status);  
 
@@ -2200,20 +2206,25 @@ void PrintSemiCohCandidates(LALStatus *status,
 }
 
 
-/** Print Fstat vectors -- mostly for debugging purposes */
-  void PrintFstatVec_fp (LALStatus *status,
-			 REAL8FrequencySeries *in,
-			 FILE *fp,
-			 REAL8 alpha,
-			 REAL8 delta,
-			 REAL8 fdot)
+/** Print Fstat vectors */
+  void PrintFstatVec (LALStatus *status,
+		      REAL8FrequencySeries *in,
+		      FILE                 *fp,
+		      CWParamSpacePoint    *thisPoint,
+		      LIGOTimeGPS          refTime)
 {
   INT4 length, k;
-  REAL8 f0, deltaF, freq;
+  REAL8 f0, deltaF, alpha, delta;
+  REAL8Vector *fkdot=NULL;
 
-  INITSTATUS( status, "PrintFstatVec_fp", rcsid );
+  INITSTATUS( status, "PrintFstatVec", rcsid );
   ATTATCHSTATUSPTR (status);
 
+  TRY( LALDCreateVector( status->statusPtr, &fkdot, 2), status);
+
+  alpha = thisPoint->skypos.longitude;
+  delta = thisPoint->skypos.latitude;
+  fkdot->data[1] = thisPoint->fkdot->data[1];
 
   length = in->data->length;
   deltaF = in->deltaF;
@@ -2221,9 +2232,15 @@ void PrintSemiCohCandidates(LALStatus *status,
 
   for (k=0; k<length; k++)
     {
-      freq = f0 + k*deltaF;
-      fprintf(fp, "%.13g %.7g %.7g %.5g %.6g\n", freq, alpha, delta, fdot, in->data->data[k]);
+      fkdot->data[0] = f0 + k*deltaF;
+		      
+      /* propagate fkdot back to reference-time  */
+      TRY ( LALExtrapolatePulsarSpins(status->statusPtr, fkdot, refTime, fkdot, in->epoch ), status );
+
+      fprintf(fp, "%.13g %.7g %.7g %.5g %.6g\n", fkdot->data[0], alpha, delta, fkdot->data[1], in->data->data[k]);
     }
+
+  TRY( LALDDestroyVector( status->statusPtr, &fkdot), status);
 
   DETATCHSTATUSPTR (status);
   RETURN(status);

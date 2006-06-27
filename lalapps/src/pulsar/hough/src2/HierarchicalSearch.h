@@ -164,6 +164,7 @@ NRCSID( HIERARCHICALSEARCHH, "$Id$" );
 
   /** structure for storing candidates produced by Hough search */
   typedef struct tagSemiCohCandidateList {
+    LIGOTimeGPS refTime;       /**< reference time for candidates */
     INT4 length;               /**< maximum allowed length of vectors */
     INT4 nCandidates;          /**< number of candidates -- must be less than length */
     INT4 minSigIndex;          /**< index of least significant candidate */ 
@@ -174,12 +175,11 @@ NRCSID( HIERARCHICALSEARCHH, "$Id$" );
 
   /* function prototypes */
 
-  void PrintFstatVec_fp (LALStatus *status,
-			 REAL8FrequencySeries *in,
-			 FILE *fp,
-			 REAL8 alpha,
-			 REAL8 delta,
-			 REAL8 fdot);
+  void PrintFstatVec (LALStatus *status,
+		      REAL8FrequencySeries *in,
+		      FILE *fp,
+		      CWParamSpacePoint *thisPoint,
+		      LIGOTimeGPS  refTime);
 
   void ComputeFstatHoughMap (LALStatus *status,
 			     SemiCohCandidateList *out,
