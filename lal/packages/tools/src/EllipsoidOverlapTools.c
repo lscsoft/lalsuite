@@ -79,8 +79,8 @@ static REAL8 fContact (REAL8 x, void *params)
  * ------------------------------------------------------------------------*/
 fContactWorkSpace * XLALInitFContactWorkSpace(
                        INT4                           n,
-                       gsl_matrix                    *a,
-                       gsl_matrix                    *b,
+                       const gsl_matrix              *a,
+                       const gsl_matrix              *b,
                        const gsl_min_fminimizer_type *T,
                        REAL8                          conv
                                              )
@@ -157,8 +157,8 @@ fContactWorkSpace * XLALInitFContactWorkSpace(
  * to 1 to check if two ellipsoids indeed overlap.
  * ------------------------------------------------------------------------*/
 REAL8 XLALCheckOverlapOfEllipsoids (
-        gsl_vector         *ra, 
-        gsl_vector         *rb,
+        const gsl_vector   *ra, 
+        const gsl_vector   *rb,
         fContactWorkSpace  *workSpace )
 {
     static const char *func = "XLALCheckOverlapOfEllipsoids";
@@ -177,9 +177,16 @@ REAL8 XLALCheckOverlapOfEllipsoids (
     if ( ra->size != rb->size || ra->size != workSpace->n )
       XLAL_ERROR_REAL8( func, XLAL_EBADLEN);
 
+
     /* Set r_AB to be rb - ra */
     XLAL_CALLGSL( gsl_vector_memcpy( workSpace->r_AB, rb) );
     XLAL_CALLGSL( gsl_vector_sub (workSpace->r_AB, ra) );
+ 
+    if ( gsl_vector_isnull( workSpace->r_AB ))
+    {
+      XLALPrintWarning("Position vectors ra and rb are identical.\n");
+      return 0;
+    }
 
     F.function = &fContact;
     F.params   = workSpace;

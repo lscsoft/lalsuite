@@ -2,6 +2,7 @@
 #include    <lal/LALStdlib.h>
 #include    <lal/LALGSL.h>
 #include    <lal/LALError.h>
+#include    <lal/LIGOMetadataUtils.h>
 #include    <gsl/gsl_errno.h>
 #include    <gsl/gsl_math.h>
 #include    <gsl/gsl_min.h>
@@ -9,6 +10,9 @@
 #include    <gsl/gsl_matrix.h>
 #include    <gsl/gsl_blas.h>
 #include    <gsl/gsl_linalg.h>
+
+#ifndef _ELLIPSOIDOVERLAPTOOLSH
+#define _ELLIPSOIDOVERLAPTOOLSH
 
 typedef struct tagfContactWorkSpace
 {
@@ -19,7 +23,7 @@ typedef struct tagfContactWorkSpace
     /* shape matrices for ellipsoid centered */
     /* at points A and B                     */
     gsl_vector        *r_AB;
-    gsl_matrix        *invQ1, *invQ2;
+    const gsl_matrix  *invQ1, *invQ2;
 
     /* Parameters for minimizing the contact function */
     REAL8             convParam;
@@ -36,17 +40,19 @@ fContactWorkSpace;
 
 /* Function Prototypes */
 REAL8 XLALCheckOverlapOfEllipsoids (
-        gsl_vector         *ra, 
-        gsl_vector         *rb,
+        const gsl_vector   *ra, 
+        const gsl_vector   *rb,
         fContactWorkSpace  *workSpace );
 
 
 fContactWorkSpace * XLALInitFContactWorkSpace(
                        INT4                           n,
-                       gsl_matrix                    *a,
-                       gsl_matrix                    *b,
+                       const gsl_matrix              *a,
+                       const gsl_matrix              *b,
                        const gsl_min_fminimizer_type *T,
                        REAL8                          conv
                                              );
 
 void XLALFreeFContactWorkSpace( fContactWorkSpace *workSpace );
+
+#endif
