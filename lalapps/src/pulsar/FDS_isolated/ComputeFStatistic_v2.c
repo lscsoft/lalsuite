@@ -120,6 +120,21 @@ typedef struct {
   CHAR *dataSummary;                        /**< descriptive string describing the data (e.g. #SFTs, startTime etc. ..*/
 } ConfigVariables;
 
+/** Container to hold all relevant parameters of a 'candidate' 
+ */
+typedef struct {
+  LIGOTimeGPS refTime;		/**< SSB reference GPS-time at which spins are defined */
+  REAL8Vector *fkdotRef;	/**< spin-vector {f, f1dot, f2dot, ... } @ epoch */
+  SkyPosition skypos;
+  Fcomponents Fstat;
+  REAL8 Aplus, dAplus;		/**< amplitude-parameters with (Cramer-Rao) error estimators */
+  REAL8 Across, dAcross;
+  REAL8 phi0, dphi0;		/**< signal-phase @ reference-epoch */
+  REAL8 psi, dpsi;
+  REAL8 h0, dh0;
+  REAL8 cosi, dcosi;
+} candidate_t;
+
 /*---------- Global variables ----------*/
 extern int vrbflg;		/**< defined in lalapps.c */
 
@@ -129,7 +144,6 @@ ConfigVariables GV;		/**< global container for various derived configuration set
 INT4 uvar_Dterms;
 CHAR *uvar_IFO;
 BOOLEAN uvar_SignalOnly;
-BOOLEAN uvar_EstimSigParam;
 REAL8 uvar_Freq;
 REAL8 uvar_FreqBand;
 REAL8 uvar_dFreq;
@@ -181,8 +195,7 @@ REAL8 uvar_timerCount;
 int main(int argc,char *argv[]);
 void initUserVars (LALStatus *);
 void InitFStat ( LALStatus *, ConfigVariables *cfg );
-void EstimateSigParams (LALStatus *, 
-			const Fcomponents *Fstat, const MultiAMCoeffs *multiAMcoef, REAL8 TsftShat);
+void EstimateSigParams (LALStatus *, candidate_t *cand, const MultiAMCoeffs *multiAMcoef, REAL8 TsftShat);
 void Freemem(LALStatus *,  ConfigVariables *cfg);
 
 void WriteFStatLog (LALStatus *, CHAR *argv[]);
@@ -190,6 +203,7 @@ void checkUserInputConsistency (LALStatus *);
 int outputBeamTS( const CHAR *fname, const AMCoeffs *amcoe, const DetectorStateSeries *detStates );
 void InitEphemeris (LALStatus *, EphemerisData *edat, const CHAR *ephemDir, const CHAR *ephemYear, LIGOTimeGPS epoch);
 void getUnitWeights ( LALStatus *, MultiNoiseWeights **multiWeights, const MultiSFTVector *multiSFTs );
+int XLALwriteCandidate2file ( FILE *fp,  const candidate_t *cand );
 
 const char *va(const char *format, ...);	/* little var-arg string helper function */
 
@@ -199,7 +213,7 @@ static const BarycenterInput empty_BarycenterInput;
 static const SFTConstraints empty_SFTConstraints;
 static const ComputeFBuffer empty_ComputeFBuffer;
 static const LIGOTimeGPS empty_LIGOTimeGPS;
-
+static const candidate_t empty_candidate;
 /*----------------------------------------------------------------------*/
 /* Function definitions start here */
 /*----------------------------------------------------------------------*/
@@ -219,9 +233,7 @@ int main(int argc,char *argv[])
   SkyPosition thisPoint;
   FILE *fpFstat = NULL;
   FILE *fpBstat = NULL;
-  CHAR loudestEntry[512];
   CHAR buf[512];
-  REAL8 loudestF = 0;
   REAL8Vector *fkdotStart = NULL;	/* temporary storage for fkdots */
   REAL8Vector *fkdotRef = NULL;
   ComputeFBuffer cfBuffer = empty_ComputeFBuffer;
@@ -231,6 +243,8 @@ int main(int argc,char *argv[])
   REAL8 numTemplates, templateCounter;
   REAL8 tickCounter;
   REAL8 clock0;
+  Fcomponents Fstat;
+  candidate_t loudestCandidate = empty_candidate;
 
   lalDebugLevel = 0;  
   vrbflg = 1;	/* verbose error-messages */
@@ -261,6 +275,12 @@ int main(int argc,char *argv[])
   /* like ephemeries data and template grids: */
   LAL_CALL ( InitFStat(&status, &GV), &status);
 
+  /* prepare container for loudest candidate */
+  loudestCandidate.fkdotRef = XLALCreateREAL8Vector ( GV.spinRangeRef->fkdot->length );
+  if ( loudestCandidate.fkdotRef == NULL )
+    return COMPUTEFSTATISTIC_EMEM;
+  loudestCandidate.refTime = GV.refTime;
+  
   /* prepare initialization of DopplerScanner to step through paramter space */
   scanInit.dAlpha = uvar_dAlpha;
   scanInit.dDelta = uvar_dDelta;
@@ -401,15 +421,13 @@ int main(int argc,char *argv[])
 		  /* Loop over frequencies to be demodulated */
 		  for ( iFreq = 0 ; iFreq < nFreq ; iFreq ++ )
 		    {
-		      Fcomponents Fstat;
-
 		      fkdotStart->data[0] = GV.spinRangeStart->fkdot->data[0] + iFreq * thisScan.dFreq;
 
 		      /* set parameter-space point: spin-vector fkdot */
 		      psPoint.fkdot = fkdotStart;
 		      
-		      LAL_CALL(ComputeFStat(&status, &Fstat, &psPoint, GV.multiSFTs, GV.multiNoiseWeights, GV.multiDetStates, &GV.CFparams, &cfBuffer ),
-			       &status );
+		      LAL_CALL( ComputeFStat(&status, &Fstat, &psPoint, GV.multiSFTs, GV.multiNoiseWeights, 
+					     GV.multiDetStates, &GV.CFparams, &cfBuffer ), &status );
 
 		      templateCounter += 1.0;
 		      tickCounter += 1.0;
@@ -419,10 +437,23 @@ int main(int argc,char *argv[])
 			  REAL8 taup = diffSec / templateCounter ;
 			  REAL8 timeLeft = (numTemplates - templateCounter) *  taup;
 			  tickCounter = 0.0;
-			  LogPrintf (LOG_DEBUG, "Progres: %g/%g = %.2f %% done, Estimated time left: %.0f s\n", 
-				     templateCounter, numTemplates, templateCounter/numTemplates * 100.0, timeLeft);
+			  LogPrintf (LOG_DEBUG, "Progres: %g/%g = %.2f %% done, Estimated time left: %.0f s\n",
+				     templateCounter, numTemplates, templateCounter/numTemplates * 100.0, 
+				     timeLeft);
 			}
-		      
+
+		      if ( !finite(Fstat.F) )
+			{
+			  LogPrintf(LOG_CRITICAL, 
+				    "non-finite F = %.16g, Fa=(%.16g,%.16g), Fb=(%.16g,%.16g)\n", 
+				    Fstat.F, Fstat.Fa.re, Fstat.Fa.im, Fstat.Fb.re, Fstat.Fb.im );
+			  LogPrintf (LOG_CRITICAL, 
+				     "[Alpha,Delta] = [%.16g,%.16g],\n"
+				     "fkdot=[%.16g,%.16g,%.16g,%16.g]\n",
+				     dopplerpos.Alpha, dopplerpos.Delta, fkdotRef->data[0], 
+				     fkdotRef->data[1], fkdotRef->data[2], fkdotRef->data[3] );
+			  return -1;
+			}
 
 		      /* correct results in --SignalOnly case:
 		       * this means we didn't normalize data by 1/sqrt(Tsft * 0.5 * Sh) in terms of 
@@ -441,15 +472,6 @@ int main(int argc,char *argv[])
 			  Fstat.F *= norm * norm;
 			} /* if SignalOnly */
 		      
-		      /* Calculating the (A^i)s coefficients in order to compute the Amplitude parameters 
-			 psi, iota, phi_0 and h_0.*/
-		      
-		      if(uvar_EstimSigParam) 
-			{   
-			  REAL8 norm = GV.Tsft * GV.S_hat;
-			  LAL_CALL ( EstimateSigParams(&status, &Fstat, cfBuffer.multiAMcoef, norm),  &status);
-			} /*if(uvar_EstimSigParam) */
-
 		      /* propagate fkdot back to reference-time for outputting results */
 		      LAL_CALL ( LALExtrapolatePulsarSpins(&status, fkdotRef, GV.refTime, fkdotStart, 
 							   GV.startTime ), &status );
@@ -463,45 +485,31 @@ int main(int argc,char *argv[])
 			}
 		      
 		      /* now, if user requested it, we output ALL F-statistic results above threshold */
-		      if ( uvar_outputFstat || uvar_outputLoudest )
+		      if ( uvar_outputFstat && ( 2.0 * Fstat.F >= uvar_TwoFthreshold ) )
 			{
-			  if ( !finite(Fstat.F) )
-			    {
-			      LogPrintf(LOG_CRITICAL, 
-					"non-finite F = %.16g, Fa=(%.16g,%.16g), Fb=(%.16g,%.16g)\n", 
-					Fstat.F, Fstat.Fa.re, Fstat.Fa.im, Fstat.Fb.re, Fstat.Fb.im );
-			      LogPrintf (LOG_CRITICAL, 
-					 "[Alpha,Delta] = [%.16g,%.16g],\n"
-					 "fkdot=[%.16g,%.16g,%.16g,%16.g]\n",
-					 dopplerpos.Alpha, dopplerpos.Delta, fkdotRef->data[0], 
-					 fkdotRef->data[1], fkdotRef->data[2], fkdotRef->data[3] );
-			      return -1;
-			    }
-			  if ( 2.0 * Fstat.F >= uvar_TwoFthreshold )
-			    {
-			      LALSnprintf (buf, 511, "%.16g %.16g %.16g %.6g %.5g %.5g %.9g\n",
-					   fkdotRef->data[0], 
-					   dopplerpos.Alpha, dopplerpos.Delta, 
-					   fkdotRef->data[1], fkdotRef->data[2], fkdotRef->data[3],
-					   2.0 * Fstat.F );
-			      buf[511] = 0;
-			      if ( fpFstat )
-				fprintf (fpFstat, buf );
-			    } /* if F > threshold */
-			}  
-		      
-		      if ( Fstat.F > loudestF )
+			  LALSnprintf (buf, 511, "%.16g %.16g %.16g %.6g %.5g %.5g %.9g\n",
+				       fkdotRef->data[0], 
+				       dopplerpos.Alpha, dopplerpos.Delta, 
+				       fkdotRef->data[1], fkdotRef->data[2], fkdotRef->data[3],
+				       2.0 * Fstat.F );
+			  buf[511] = 0;
+			  if ( fpFstat )
+			    fprintf (fpFstat, buf );
+			} /* if F > threshold */
+
+		      /* keep track of loudest candidate */
+		      if ( Fstat.F > loudestCandidate.Fstat.F )
 			{
-			  loudestF = Fstat.F;
-			  strcpy ( loudestEntry,  buf );
+			  UINT4 len = fkdotRef->length * sizeof( fkdotRef->data[0] );
+			  memcpy ( loudestCandidate.fkdotRef->data, fkdotRef->data, len );
+			  loudestCandidate.skypos = thisPoint;
+			  loudestCandidate.Fstat = Fstat;
 			}
 		      
 		    } /* for i < nBins: loop over frequency-bins */
-		  
 		} /* For GV.spinImax: loop over 1st spindowns */
 	    } /* for if2dot < nf2dot */
 	} /* for if3dot < nf3dot */
-      
     } /*  while SkyPos : loop over skypositions */
 
  
@@ -518,17 +526,38 @@ int main(int argc,char *argv[])
       fpBstat = NULL;
     }
 
-  /* now write loudest canidate into separate file ".loudest" */
+  /* do full parameter-estimation for loudest canidate and output into separate file */
   if ( uvar_outputLoudest )
     {
+      MultiAMCoeffs *multiAMcoef = NULL;
+      REAL8 norm = GV.Tsft * GV.S_hat;
       FILE *fpLoudest;
+      
+      LAL_CALL ( LALGetMultiAMCoeffs ( &status, &multiAMcoef, GV.multiDetStates, loudestCandidate.skypos ), 
+		 &status);
+      /* noise-weigh Antenna-patterns and compute A,B,C */
+      if ( XLALWeighMultiAMCoeffs ( multiAMcoef, GV.multiNoiseWeights ) != XLAL_SUCCESS ) {
+	LALPrintError("\nXLALWeighMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
+	return COMPUTEFSTATC_EXLAL;
+      }
+
+      LAL_CALL ( EstimateSigParams(&status, &loudestCandidate, cfBuffer.multiAMcoef, norm),  &status);
+
+      XLALDestroyMultiAMCoeffs ( multiAMcoef );
+
       if ( (fpLoudest = fopen (uvar_outputLoudest, "wb")) == NULL)
 	{
 	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputLoudest);
 	  return COMPUTEFSTATISTIC_ESYS;
 	}
-      fprintf (fpLoudest, "%s", loudestEntry );
-      fclose(fpLoudest);
+      /* write header with run-info */
+      fprintf (fpLoudest, GV.dataSummary );
+      if ( XLALwriteCandidate2file ( fpLoudest,  &loudestCandidate ) != XLAL_SUCCESS )
+	{
+	  LALPrintError("\nXLALwriteCandidate2file() failed with error = %d\n\n", xlalErrno );
+	  return COMPUTEFSTATC_EXLAL;
+	}
+      fclose (fpLoudest);
     } /* write loudest candidate to file */
   
   LogPrintf (LOG_DEBUG, "Search finished.\n");
@@ -540,6 +569,7 @@ int main(int argc,char *argv[])
 
   XLALDestroyREAL8Vector ( fkdotStart );
   XLALDestroyREAL8Vector ( fkdotRef );
+  XLALDestroyREAL8Vector ( loudestCandidate.fkdotRef );
 
   LAL_CALL ( Freemem(&status, &GV), &status);
   
@@ -581,7 +611,6 @@ initUserVars (LALStatus *status)
   strcpy (uvar_ephemDir, DEFAULT_EPHEMDIR);
 
   uvar_SignalOnly = FALSE;
-  uvar_EstimSigParam = FALSE;
 
   uvar_f1dot     = 0.0;
   uvar_df1dot    = 1.0;
@@ -647,7 +676,6 @@ initUserVars (LALStatus *status)
   LALregSTRINGUserVar(status,	ephemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
   LALregSTRINGUserVar(status,	ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
   LALregBOOLUserVar(status, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
-  LALregBOOLUserVar(status,     EstimSigParam,  'p', UVAR_OPTIONAL, "Do Signal Parameter Estimation");
   LALregREALUserVar(status, 	TwoFthreshold,	'F', UVAR_OPTIONAL, "Set the threshold for selection of 2F");
   LALregINTUserVar(status, 	gridType,	 0 , UVAR_OPTIONAL, "Template grid: 0=flat, 1=isotropic, 2=metric, 3=file");
   LALregINTUserVar(status, 	metricType,	'M', UVAR_OPTIONAL, "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
@@ -1228,8 +1256,7 @@ const char *va(const char *format, ...)
 
 
 void
-EstimateSigParams (LALStatus *status, 
-		   const Fcomponents *Fstat, const MultiAMCoeffs *multiAMcoef, REAL8 TsftShat)
+EstimateSigParams (LALStatus *status, candidate_t *cand, const MultiAMCoeffs *multiAMcoef, REAL8 TsftShat)
 {
   REAL8 A1, A2, A3, A4;
   REAL8 dA1, dA2, dA3, dA4;	/* Cramer-Rao error-bounds */
@@ -1246,8 +1273,6 @@ EstimateSigParams (LALStatus *status,
   REAL8 b1, b2, b3, db1, db2, db3;
   REAL8 h0, cosi, dh0, dcosi;
 
-  FILE *fp = NULL;
-
   INITSTATUS (status, "EstimateSigParams", rcsid);
   ATTATCHSTATUSPTR (status);
 
@@ -1259,10 +1284,10 @@ EstimateSigParams (LALStatus *status,
   normM = 2.0 / ( D * TsftShat );
   normx = sqrt(TsftShat);
 
-  x1 =   normx * Fstat->Fa.re;
-  x2 =   normx * Fstat->Fb.re;
-  x3 = - normx * Fstat->Fa.im;
-  x4 = - normx * Fstat->Fb.im;
+  x1 =   normx * cand->Fstat.Fa.re;
+  x2 =   normx * cand->Fstat.Fb.re;
+  x3 = - normx * cand->Fstat.Fa.im;
+  x4 = - normx * cand->Fstat.Fb.im;
 
   A1 = normM * (   B * x1 - C * x2 );
   A2 = normM * ( - C * x1 + A * x2 );
@@ -1344,16 +1369,59 @@ EstimateSigParams (LALStatus *status,
   LogPrintf (LOG_NORMAL, "h0 = %g +- %g, cosi = %g +- %g\n", 
 	     h0, dh0, cosi, dcosi );
 
-  if( ( fp = fopen ( "ParamMLE2.dat", "wb" ) ) ==  NULL )
-    {
-      LogPrintf (LOG_CRITICAL, "Failed to open file 'ParamMLE2.dat' for writing!\n");
-      ABORT ( status, COMPUTEFSTATISTIC_ESYS, COMPUTEFSTATISTIC_MSGESYS );
-    }
-			
-  fclose(fp);
+  /* fill candidate-struct with the obtained signal-parameters and error-estimations */
+  cand->Aplus  = Aplus;
+  cand->dAplus = dAplus;
+  cand->Across = Across;
+  cand->dAcross = dAcross;
+  cand->phi0 = phi0;
+  cand->dphi0 = dphi0;
+  cand->psi = psi;
+  cand->dpsi = dpsi;
+  cand->h0 = h0;
+  cand->dh0 = dh0;
+  cand->cosi = cosi;
+  cand->dcosi = dcosi;
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
 
 } /*EstimateSigParams()*/
 
+
+int
+XLALwriteCandidate2file ( FILE *fp,  const candidate_t *cand )
+{
+  UINT4 i, s;
+
+  fprintf (fp, "refTime = %9d\n", cand->refTime.gpsSeconds );   /* forget about ns... */
+
+  fprintf (fp, "Freq = %.16g\n", cand->fkdotRef->data[0] );
+  s = cand->fkdotRef->length;
+  for ( i=1; i < s; i ++ )
+    fprintf (fp, "f%ddot  = %.16g\n", i, cand->fkdotRef->data[i] );
+
+  fprintf (fp, "Alpha = %.16g\n", cand->skypos.longitude );
+  fprintf (fp, "Delta = %.16g\n", cand->skypos.latitude );
+
+  fprintf (fp, "Fa  = %.6g  %+.6gi\n", cand->Fstat.Fa.re, cand->Fstat.Fa.im );
+  fprintf (fp, "Fb  = %.6g  %+.6gi\n", cand->Fstat.Fb.re, cand->Fstat.Fb.im );
+  fprintf (fp, "F   = %.6g\n", cand->Fstat.F );
+
+  fprintf (fp, "aPlus  = %.6g\n", cand->Aplus );
+  fprintf (fp, "aCross = %.6g\n", cand->Across );
+  fprintf (fp, "phi0   = %.6g\n", cand->phi0 );
+  fprintf (fp, "psi    = %.6g\n", cand->psi );
+  fprintf (fp, "h0     = %.6g\n", cand->h0 );
+  fprintf (fp, "cosiota= %.6g\n", cand->cosi );
+
+  fprintf (fp, "\ndAplus  = %.6g\n", cand->dAplus );
+  fprintf (fp, "dAcross  = %.6g\n", cand->dAcross );
+  fprintf (fp, "dphi0    = %.6g\n", cand->dphi0 );
+  fprintf (fp, "dpsi     = %.6g\n", cand->dpsi );
+  fprintf (fp, "dh0      = %.6g\n", cand->dh0 );
+  fprintf (fp, "dcosiota = %.6g\n", cand->dcosi );
+
+  return XLAL_SUCCESS;
+
+} /* XLALwriteCandidate2file() */
