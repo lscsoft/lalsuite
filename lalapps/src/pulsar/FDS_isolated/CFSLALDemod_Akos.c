@@ -41,34 +41,37 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
      "FLDL  (%%EDX,%%EAX)           \n\t" /* divLUTtab[i] x */
      "FSUBRP                        \n\t" /* (d = tempFreq0 - divLUTtab[i]) */
 
-     /* three-term Taylor expansion for sin value, leaving d on stack, idx kept in EAX */
-     "MOV   %[sinVal2PIPI],%%EDX    \n\t" /* d */
-     "FLDL  (%%EDX,%%EAX)           \n\t" /* sinVal2PIPI[i] d */
-     "FMUL  %%st(1),%%st(0)         \n\t" /* (d*sinVal2PIPI[i]) d */
+     "FLD   %%st(0)                 \n\t" /* d d */
+     "FMUL  %%st(0),%%st(0)         \n\t" /* (d*d) d */
 
-     "MOV   %[cosVal2PI],%%EDX      \n\t" /* (d*sinVal2PIPI[i]) d */
-     "FLDL  (%%EDX,%%EAX)           \n\t" /* cosVal2PI[i] (d*sinVal2PIPI[i]) d */
-     "FSUBP                         \n\t" /* (cosVal2PI[i]-d*sinVal2PIPI[i]) d */
-     "FMUL  %%st(1),%%st(0)         \n\t" /* (d*(cosVal2PI[i]-d*sinVal2PIPI[i])) d */
+     /* three-term Taylor expansion for sin value, leaving d and d*d on stack, idx kept in EAX */
+     "MOV   %[sinVal2PIPI],%%EDX    \n\t" /* (d*d) d */
+     "FLDL  (%%EDX,%%EAX)           \n\t" /* sinVal2PIPI[i] (d*d) d */
+     "FMUL  %%st(1),%%st(0)         \n\t" /* (d*d*sinVal2PIPI[i]) (d*d) d */
 
-     "MOV   %[sinVal],%%EDX         \n\t" /* (d*(cosVal2PI[i]-d*sinVal2PIPI[i])) d */
-     "FLDL  (%%EDX,%%EAX)           \n\t" /* sinVal[i] (d*(cosVal2PI[i]-d*sinVal2PIPI[i])) d */
-     "FADDP                         \n\t" /* (sinVal[i]+d*(cosVal2PI[i]-d*sinVal2PIPI[i])) d */
-     "FSTPS %[sinv]                 \n\t" /* d */
+     "MOV   %[cosVal2PI],%%EDX      \n\t" /* (d*d*sinVal2PIPI[i]) (d*d) d */
+     "FLDL  (%%EDX,%%EAX)           \n\t" /* cosVal2PI[i] (d*d*sinVal2PIPI[i]) (d*d) d */
+     "FMUL  %%st(3),%%st(0)         \n\t" /* (d*cosVal2PI[i]) (d*d*sinVal2PIPI[i]) (d*d) d */
+     "FSUBP                         \n\t" /* (d*cosVal2PI[i]-d*d*sinVal2PIPI[i]) (d*d) d */
+
+     "MOV   %[sinVal],%%EDX         \n\t" /* (d*cosVal2PI[i]-d*d*sinVal2PIPI[i]) (d*d) d */
+     "FLDL  (%%EDX,%%EAX)           \n\t" /* sinVal[i] (d*cosVal2PI[i]-d*d*sinVal2PIPI[i]) (d*d) d */
+     "FADDP                         \n\t" /* (sinVal[i]+d*cosVal2PI[i]-d*d*sinVal2PIPI[i]) (d*d) d */
+     "FSTPS %[sinv]                 \n\t" /* (d*d) d */
 
      /* the same for cos value, this time popping d */
-     "MOV   %[cosVal2PIPI],%%EDX    \n\t" /* cosVal2PIPI[i] d */
-     "FLDL  (%%EDX,%%EAX)           \n\t" /* cosVal2PIPI[i] d */
-     "FMUL  %%st(1),%%st(0)         \n\t" /* (d*cosVal2PIPI[i]) d */
+     "MOV   %[cosVal2PIPI],%%EDX    \n\t" /* cosVal2PIPI[i] (d*d) d */
+     "FLDL  (%%EDX,%%EAX)           \n\t" /* cosVal2PIPI[i] (d*d) d */
+     "FMULP                         \n\t" /* (d*d*cosVal2PIPI[i]) d */
 
-     "MOV   %[sinVal2PI],%%EDX      \n\t" /* sinVal2PI[i] (d*cosVal2PIPI[i]) d */
-     "FLDL  (%%EDX,%%EAX)           \n\t" /* sinVal2PI[i] (d*cosVal2PIPI[i]) d */
-     "FSUBP                         \n\t" /* (sinVal2PI[i]-d*cosVal2PIPI[i]) d */
-     "FMULP                         \n\t" /* (d*(sinVal2PI[i]-d*cosVal2PIPI[i])) */
+     "MOV   %[sinVal2PI],%%EDX      \n\t" /* (d*d*cosVal2PIPI[i]) d */
+     "FLDL  (%%EDX,%%EAX)           \n\t" /* sinVal2PI[i] (d*d*cosVal2PIPI[i]) d */
+     "FMULP %%st(0),%%st(2)         \n\t" /* (d*d*cosVal2PIPI[i]) (d*sinVal2PI[i]) */
+     "FSUBRP                        \n\t" /* (d*sinVal2PI[i]-d*d*cosVal2PIPI[i]) */
 
-     "MOV   %[cosVal],%%EDX         \n\t" /* cosVal[i] (d*(sinVal2PI[i]-d*cosVal2PIPI[i])) */
-     "FLDL  (%%EDX,%%EAX)           \n\t" /* cosVal[i] (d*(sinVal2PI[i]-d*cosVal2PIPI[i])) */
-     "FSUBP                         \n\t" /* (cosVal[i]-d*(sinVal2PI[i]-d*cosVal2PIPI[i])) */
+     "MOV   %[cosVal],%%EDX         \n\t" /* cosVal[i] (d*sinVal2PI[i]-d*d*cosVal2PIPI[i]) */
+     "FLDL  (%%EDX,%%EAX)           \n\t" /* cosVal[i] (d*sinVal2PI[i]-d*d*cosVal2PIPI[i]) */
+     "FSUBP                         \n\t" /* (cosVal[i]-d*sinVal2PI[i]-d*d*cosVal2PIPI[i])) */
 
      /* special here: tcos -= 1.0 */
      "FLD1                          \n\t" /* 1 (cosVal[i]-d*(sinVal2PI[i]-d*cosVal2PIPI[i])) */
@@ -92,7 +95,7 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
      [divLUTtab]   "m" (divTab)
 
      : /* clobbered registers */
-     "eax", "edx", "st","st(1)","st(2)"
+     "eax", "edx", "st","st(1)","st(2)","st(3)"
      );	
 
 #else
