@@ -3,16 +3,13 @@
                                                          Bernd Machenschalk */
 RCSID( "$Id$");
 
-static REAL8 sinVal[LUT_RES+(LUT_RES/4)+1]; /* Lookup tables for fast sin/cos calculation */
-static REAL8 *cosVal;
-static REAL8 sinVal2PI[LUT_RES+(LUT_RES/4)+1];
-static REAL8 sinVal2PIPI[LUT_RES+(LUT_RES/4)+1];
-static REAL8 *cosVal2PI, *cosVal2PIPI;
-static REAL8 divLUTtab[LUT_RES+1];
-static BOOLEAN firstCall = 1;
+static REAL8 *sinVal, *sinVal2PI, *sinVal2PIPI;
+static REAL8 *cosVal, *cosVal2PI, *cosVal2PIPI;
+static REAL8 *divTab;
 
 #define klim 32
 
+/* __attribute__ ((always_inline)) */
 void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
 		 REAL8 tempFreq0, REAL8 tempFreq1, REAL8 x, REAL8 yTemp,
 		 REAL8* realXPo, REAL8* imagXPo, REAL8* realQo, REAL8* imagQo)
@@ -23,16 +20,95 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
   REAL8 realXP, imagXP, realQ, imagQ; /* output parameters */
 
   /* calculate tsin, tcos, realQ and imagQ from sin/cos LUT */
+
+#ifdef USE_SINCOS_GAS
+
+  REAL4 lutr = LUT_RES; /* LUT_RES in memory */
+
+  __asm __volatile
+    (
+
+     /* calculate idx and put into EAX */
+     "FLDL   %[x]                   \n\t" /* LUT_RES */
+     "FLDS   %[lutr]                \n\t" /* LUT_RES x */
+     "FMUL   %%st(1),%%st(0)        \n\t" /* (x*LUT_RES) x */
+     "FISTPL %[sinv]                \n\t" /* x */
+     "MOVL   %[sinv],%%EAX          \n\t" /* x */
+     "SAL    $3,%%EAX               \n\t" /* x */ /* <<3 */
+
+     /* calculate d = divLUTtab[idx] - x in st(0) */
+     "MOVL  %[divLUTtab],%%EDX      \n\t" /* x */
+     "FLDL  (%%EDX,%%EAX)           \n\t" /* divLUTtab[i] x */
+     "FSUBRP                        \n\t" /* (d = tempFreq0 - divLUTtab[i]) */
+
+     /* three-term Taylor expansion for sin value, leaving d on stack, idx kept in EAX */
+     "MOV   %[sinVal2PIPI],%%EDX    \n\t" /* d */
+     "FLDL  (%%EDX,%%EAX)           \n\t" /* sinVal2PIPI[i] d */
+     "FMUL  %%st(1),%%st(0)         \n\t" /* (d*sinVal2PIPI[i]) d */
+
+     "MOV   %[cosVal2PI],%%EDX      \n\t" /* (d*sinVal2PIPI[i]) d */
+     "FLDL  (%%EDX,%%EAX)           \n\t" /* cosVal2PI[i] (d*sinVal2PIPI[i]) d */
+     "FSUBP                         \n\t" /* (cosVal2PI[i]-d*sinVal2PIPI[i]) d */
+     "FMUL  %%st(1),%%st(0)         \n\t" /* (d*(cosVal2PI[i]-d*sinVal2PIPI[i])) d */
+
+     "MOV   %[sinVal],%%EDX         \n\t" /* (d*(cosVal2PI[i]-d*sinVal2PIPI[i])) d */
+     "FLDL  (%%EDX,%%EAX)           \n\t" /* sinVal[i] (d*(cosVal2PI[i]-d*sinVal2PIPI[i])) d */
+     "FADDP                         \n\t" /* (sinVal[i]+d*(cosVal2PI[i]-d*sinVal2PIPI[i])) d */
+     "FSTPS %[sinv]                 \n\t" /* d */
+
+     /* the same for cos value, this time popping d */
+     "MOV   %[cosVal2PIPI],%%EDX    \n\t" /* cosVal2PIPI[i] d */
+     "FLDL  (%%EDX,%%EAX)           \n\t" /* cosVal2PIPI[i] d */
+     "FMUL  %%st(1),%%st(0)         \n\t" /* (d*cosVal2PIPI[i]) d */
+
+     "MOV   %[sinVal2PI],%%EDX      \n\t" /* sinVal2PI[i] (d*cosVal2PIPI[i]) d */
+     "FLDL  (%%EDX,%%EAX)           \n\t" /* sinVal2PI[i] (d*cosVal2PIPI[i]) d */
+     "FSUBP                         \n\t" /* (sinVal2PI[i]-d*cosVal2PIPI[i]) d */
+     "FMULP                         \n\t" /* (d*(sinVal2PI[i]-d*cosVal2PIPI[i])) */
+
+     "MOV   %[cosVal],%%EDX         \n\t" /* cosVal[i] (d*(sinVal2PI[i]-d*cosVal2PIPI[i])) */
+     "FLDL  (%%EDX,%%EAX)           \n\t" /* cosVal[i] (d*(sinVal2PI[i]-d*cosVal2PIPI[i])) */
+     "FSUBP                         \n\t" /* (cosVal[i]-d*(sinVal2PI[i]-d*cosVal2PIPI[i])) */
+
+     /* special here: tcos -= 1.0 */
+     "FLD1                          \n\t" /* 1 (cosVal[i]-d*(sinVal2PI[i]-d*cosVal2PIPI[i])) */
+     "FSUBRP                        \n\t" /* (cosVal[i]-d*(sinVal2PI[i]-d*cosVal2PIPI[i])-1) */
+
+     "FSTPS %[cosv]                 \n\t" /* % */
+
+     : /* output */
+     [sinv]  "=m" (tsin), /* used for passing a constant, too */
+     [cosv]  "=m" (tcos)
+
+     : /* input */
+     [x]           "m" (tempFreq0),
+     [lutr]        "m" (lutr),
+     [sinVal]      "m" (sinVal),
+     [cosVal]      "m" (cosVal),
+     [sinVal2PI]   "m" (sinVal2PI),
+     [cosVal2PI]   "m" (cosVal2PI),
+     [sinVal2PIPI] "m" (sinVal2PIPI),
+     [cosVal2PIPI] "m" (cosVal2PIPI),
+     [divLUTtab]   "m" (divTab)
+
+     : /* clobbered registers */
+     "eax", "edx", "st","st(1)","st(2)"
+     );	
+
+#else
+  
   {
     UINT4 idx  = tempFreq0 * LUT_RES +.5;
-    REAL8 d    = tempFreq0 - divLUTtab[idx];
+    REAL8 d    = tempFreq0 - divTab[idx];
     REAL8 d2   = d*d;
-    
+
     tsin = sinVal[idx] + d * cosVal2PI[idx] - d2 * sinVal2PIPI[idx];
     tcos = cosVal[idx] - d * sinVal2PI[idx] - d2 * cosVal2PIPI[idx];
     
     tcos -= 1.0;
   }
+
+#endif
   
   {
 #ifdef USE_FLOOR
@@ -49,7 +125,7 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
 #endif
     {
       UINT4 idx  = yRem * LUT_RES + .5;
-      REAL8 d    = yRem - divLUTtab[idx];
+      REAL8 d    = yRem - divTab[idx];
       REAL8 d2   = d*d;
       imagQ = sinVal[idx] + d * cosVal2PI[idx] - d2 * sinVal2PIPI[idx];
       realQ = cosVal[idx] - d * sinVal2PI[idx] - d2 * cosVal2PIPI[idx];
@@ -172,6 +248,13 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
   COMPLEX16 Fa, Fb;
   REAL8 f;
 
+  static REAL8 sinTab[LUT_RES+(LUT_RES/4)+1]; /* Lookup tables for fast sin/cos calculation */
+  static REAL8 sinTab2PI[LUT_RES+(LUT_RES/4)+1];
+  static REAL8 sinTab2PIPI[LUT_RES+(LUT_RES/4)+1];
+  static REAL8 divLUTtab[LUT_RES+1];
+  static BOOLEAN firstCall = 1;
+
+
   REAL8 A=params->amcoe->A;
   REAL8 B=params->amcoe->B;
   REAL8 C=params->amcoe->C;
@@ -200,10 +283,13 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
   if ( firstCall )
     {
       for (k=0; k <= (LUT_RES/4)*5; k++) {
-	sinVal[k] = sin((LAL_TWOPI*k)/(LUT_RES));
-	sinVal2PI[k] = sinVal[k]  *  LAL_TWOPI;
-	sinVal2PIPI[k] = sinVal2PI[k] * LAL_PI;
+	sinTab[k] = sin((LAL_TWOPI*k)/(LUT_RES));
+	sinTab2PI[k] = sinTab[k]  *  LAL_TWOPI;
+	sinTab2PIPI[k] = sinTab2PI[k] * LAL_PI;
       }
+      sinVal = sinTab;
+      sinVal2PI = sinTab2PI;
+      sinVal2PIPI = sinTab2PIPI;
       cosVal = sinVal+(LUT_RES/4);
       cosVal2PI = sinVal2PI+(LUT_RES/4);
       cosVal2PIPI = sinVal2PIPI+(LUT_RES/4);
@@ -211,6 +297,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
       for (k=0; k <= LUT_RES; k++)
 	divLUTtab[k] = (REAL8)k/(REAL8)(LUT_RES);
       firstCall = 0;
+      divTab = divLUTtab;
     }
 
   /* this loop computes the values of the phase model */
