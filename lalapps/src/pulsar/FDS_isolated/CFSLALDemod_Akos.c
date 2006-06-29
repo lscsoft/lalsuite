@@ -170,10 +170,10 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
     REAL8 d    = tempFreq0 - divTab[idx];
     REAL8 d2   = d*d;
 
-    tsin2 = sinVal[idx] + d * cosVal2PI[idx] - d2 * sinVal2PIPI[idx];
-    tcos2 = cosVal[idx] - d * sinVal2PI[idx] - d2 * cosVal2PIPI[idx];
+    tsin = sinVal[idx] + d * cosVal2PI[idx] - d2 * sinVal2PIPI[idx];
+    tcos = cosVal[idx] - d * sinVal2PI[idx] - d2 * cosVal2PIPI[idx];
 
-    tcos2 -= 1.0;
+    tcos -= 1.0;
     
   }
 #endif
