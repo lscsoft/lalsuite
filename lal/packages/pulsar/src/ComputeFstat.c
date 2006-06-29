@@ -98,7 +98,7 @@ void ComputeFStatFreqBand ( LALStatus *status,
 {
 
   UINT4 numDetectors, numBins, k;	
-  REAL8 startFreq, deltaF;
+  REAL8 deltaF;
   Fcomponents Fstat;
 
   INITSTATUS( status, "ComputeFStatFreqBand", COMPUTEFSTATC );
@@ -118,13 +118,12 @@ void ComputeFStatFreqBand ( LALStatus *status,
   ASSERT ( fstatVector->data->length > 0, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
 
   numBins = fstatVector->data->length;
-  startFreq = fstatVector->f0;
   deltaF = fstatVector->deltaF;
 
   /* loop over frequency values and fill up values in fstatVector */
   for ( k = 0; k < numBins; k++) {
     
-    psPoint->fkdot->data[0] = startFreq + k * deltaF;
+    psPoint->fkdot->data[0] += k * deltaF;
  
     TRY (ComputeFStat ( status->statusPtr, &Fstat, psPoint, multiSFTs, multiWeights, 
 			multiDetStates, params, cfBuffer ), status);
