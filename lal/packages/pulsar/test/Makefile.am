@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-check_PROGRAMS = StackMetricTest FlatMeshTest TwoDMeshTest SkyMetricTest DirectedMeshTest ResampleTest FoldAmplitudesTest LALBarycenterTest PtoleMetricTest PtoleMeshTest GeneralMetricTest GeneralMeshTest HeterodynePulsarTest FitToPulsarTest PulsarCatTest ExtrapolatePulsarSpinsTest
+check_PROGRAMS = StackMetricTest FlatMeshTest TwoDMeshTest SkyMetricTest DirectedMeshTest ResampleTest FoldAmplitudesTest LALBarycenterTest PtoleMetricTest PtoleMeshTest GeneralMetricTest GeneralMeshTest HeterodynePulsarTest FitToPulsarTest PulsarCatTest ExtrapolatePulsarSpinsTest GetAMCoeffsTest
 #check_PROGRAMS = StackMetricTest FlatMeshTest TwoDMeshTest ResampleTest LALDemodTest FoldAmplitudesTest LALBarycenterTest PtoleMetricTest PtoleMeshTest GeneralMetricTest GeneralMeshTest HeterodynePulsarTest FitToPulsarTest PulsarCatTest
 pkgdata_DATA = eigen_Tf0-1e8_n-2.dat eigenInv_Tf0-1e8_n-2.dat \
   range_tauOverT-1e5_n-2.dat in.data \
@@ -65,13 +65,16 @@ PulsarCatTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(to
 
 ExtrapolatePulsarSpinsTest_SOURCES = ExtrapolatePulsarSpinsTest.c
 ExtrapolatePulsarSpinsTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+GetAMCoeffsTest_SOURCES = GetAMCoeffsTest.c
+GetAMCoeffsTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 #TESTS = StackMetricTest FlatMeshTest TwoDMeshTest ResampleTest FoldAmplitudesTest LALBarycenterTest PtoleMetricTest PtoleMeshTest GeneralMetricTest GeneralMeshTest FitToPulsarTest LALDemodTest
 TESTS = StackMetricTest FlatMeshTest TwoDMeshTest SkyMetricTest      \
   ResampleTest FoldAmplitudesTest LALBarycenterTest \
   PtoleMetricTest PtoleMeshTest GeneralMetricTest GeneralMeshTest FitToPulsarTest PulsarCatTest \
-  ExtrapolatePulsarSpinsTest
+  ExtrapolatePulsarSpinsTest GetAMCoeffsTest
 
 TESTS_ENVIRONMENT = 1>/dev/null 2>/dev/null LAL_DATA_PATH=$(srcdir)
 DISTCLEANFILES = *.tex
