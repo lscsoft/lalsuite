@@ -14,10 +14,11 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
 		 REAL8 tempFreq0, REAL8 tempFreq1, REAL8 x, REAL8 yTemp,
 		 REAL8* realXPo, REAL8* imagXPo, REAL8* realQo, REAL8* imagQo)
 {
-  REAL4 tsin, tcos;
+  REAL4 tsin, tcos,  tsin2, tcos2;
   REAL4 realP, imagP;
   INT4 k;                             /* loop counter */
   REAL8 realXP, imagXP, realQ, imagQ; /* output parameters */
+  REAL8 t1,t2,t3,t4;
 
   /* calculate tsin, tcos, realQ and imagQ from sin/cos LUT */
 
@@ -26,16 +27,10 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
   REAL4 lutr = LUT_RES; /* LUT_RES in memory */
   REAL4 half = .5;
 
-  __asm __volatile
+  // fprintf(stderr,"LALDemodSub called\n");
+
+  __asm
     (
-
-     /* reset rounding mode to default round-to-nearest. Didn't help */
-     /*
-     "fnstcw %[sinv]                \n\t"
-     "andw   $0xf3ff,%[sinv]        \n\t"
-     "fldcw  %[sinv]                \n\t"
-     */
-
      /* calculate index and put into EAX */
      /*                                    vvvvv-- these comments keeps track of the FPU stack */
      "fldl   %[x]                   \n\t" /* x */
@@ -90,25 +85,44 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
      "fldl  (%%edx,%%ebx)           \n\t" /* sinVal2PI[i] (d*d*cosVal2PIPI[i]) d */
      "fmulp %%st(0),%%st(2)         \n\t" /* (d*d*cosVal2PIPI[i]) (d*sinVal2PI[i]) */
      "fsubrp                        \n\t" /* (d*sinVal2PI[i]-d*d*cosVal2PIPI[i]) */
-
-     "mov   %[cosVal],%%edx         \n\t" /* cosVal[i] (d*sinVal2PI[i]-d*d*cosVal2PIPI[i]) */
+     
+#ifdef DEBUG
+     "fstl  %[t2]\n\t"
+#endif
+     "mov   %[cosVal],%%edx         \n\t" /* (d*sinVal2PI[i]-d*d*cosVal2PIPI[i]) */
      "fldl  (%%edx,%%ebx)           \n\t" /* cosVal[i] (d*sinVal2PI[i]-d*d*cosVal2PIPI[i]) */
+
+#ifdef DEBUG
+     "fstl  %[t3]\n\t"
+#endif
      "fsubp                         \n\t" /* (cosVal[i]-d*sinVal2PI[i]-d*d*cosVal2PIPI[i])) */
+#ifdef DEBUG
+     "fstl  %[t4]\n\t"
+#endif
+
+#ifndef SKIP_COS_ROUNDING
+     "fstps %[cosv]                 \n\t" /* % */
 
      /* special here: tcos -= 1.0 */
+     "flds  %[cosv]                 \n\t" /* % */
+#endif
      "fld1                          \n\t" /* 1 (cosVal[i]-d*(sinVal2PI[i]-d*cosVal2PIPI[i])) */
      "fsubrp                        \n\t" /* (cosVal[i]-d*(sinVal2PI[i]-d*cosVal2PIPI[i])-1) */
-
      "fstps %[cosv]                 \n\t" /* % */
 
      : /* output */
+#ifdef DEBUG
+     [t1]    "=m" (t1),
+     [t2]    "=m" (t2),
+     [t3]    "=m" (t3),
+     [t4]    "=m" (t4),
+#endif
      [sinv]  "=m" (tsin),
      [cosv]  "=m" (tcos)
 
      : /* input */
      [x]           "m" (tempFreq0),
-     [lutr]        "m" (lutr),
-     [half]        "m" (half),
+     [lutr]        "m" (lutr),     [half]        "m" (half),
      [sinVal]      "m" (sinVal),
      [cosVal]      "m" (cosVal),
      [sinVal2PI]   "m" (sinVal2PI),
@@ -121,19 +135,47 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
      "eax", "ebx", "edx", "st","st(1)","st(2)","st(3)"
      );	
 
+#ifdef DEBUG
+  {
+    UINT4 idx  = tempFreq0 * LUT_RES +.5;
+    REAL8 d    = tempFreq0 - divTab[idx];
+    REAL8 d2   = d*d;
+    REAL8 t11,t12,t13,t14;
+    
+    t11 = d2;
+
+    tsin2 = sinVal[idx] + d * cosVal2PI[idx] - d2 * sinVal2PIPI[idx];
+    tcos2 = (t14= (t13= cosVal[idx]) - (t12= d * sinVal2PI[idx] - d2 * cosVal2PIPI[idx]));
+
+    tcos2 -= 1.0;
+    
+    if (fabs(tsin - tsin2) > 1e-18)
+      fprintf(stderr,"\n%f: %e\n",tempFreq0,tsin-tsin2);
+
+    if (fabs(tcos - tcos2) > 1e-18){
+      fprintf(stderr,"\n%f: %e\n",tempFreq0,tcos-tcos2);
+      // fprintf(stderr,"%.20f\n%.20f\n",t1,t11);
+      fprintf(stderr,"%.20f\n%.20f\n",t2,t12);
+      fprintf(stderr,"%.20f\n%.20f\n",t3,t13);
+      fprintf(stderr,"%.20f\n%.20f\n",t4,t14);
+      fprintf(stderr,"%.20f\n%.20f\n",tcos,tcos2);
+    }
+  }
+#endif
+
 #else
-  
+
   {
     UINT4 idx  = tempFreq0 * LUT_RES +.5;
     REAL8 d    = tempFreq0 - divTab[idx];
     REAL8 d2   = d*d;
 
-    tsin = sinVal[idx] + d * cosVal2PI[idx] - d2 * sinVal2PIPI[idx];
-    tcos = cosVal[idx] - d * sinVal2PI[idx] - d2 * cosVal2PIPI[idx];
-    
-    tcos -= 1.0;
-  }
+    tsin2 = sinVal[idx] + d * cosVal2PI[idx] - d2 * sinVal2PIPI[idx];
+    tcos2 = cosVal[idx] - d * sinVal2PI[idx] - d2 * cosVal2PIPI[idx];
 
+    tcos2 -= 1.0;
+    
+  }
 #endif
   
   {
@@ -183,7 +225,7 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
 	    }      
 	  else
 	    {
-	      realP = tsin / x;
+      	      realP = tsin / x;
 	      imagP = tcos / x;
 	      /* these four lines compute P*xtilde */
 	      realXP += Xalpha_k.re * realP;
