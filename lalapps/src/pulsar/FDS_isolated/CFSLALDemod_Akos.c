@@ -24,27 +24,39 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
 #ifdef USE_SINCOS_GAS
 
   REAL4 lutr = LUT_RES; /* LUT_RES in memory */
+  REAL4 half = .5;
 
   __asm __volatile
     (
 
-     /* calculate idx and put into EAX */
-     "FLDL   %[x]                   \n\t" /* LUT_RES */
+     /* reset rounding mode to default round-to-nearest. Didn't help */
+     /*
+     "FNSTCW %[sinv]                \n\t"
+     "ANDW   $0xf3ff,%[sinv]        \n\t"
+     "FLDCW  %[sinv]                \n\t"
+     */
+
+     /* calculate index and put into EAX */
+     /*                                    vvvvv-- these comments keeps track of the FPU stack */
+     "FLDL   %[x]                   \n\t" /* x */
      "FLDS   %[lutr]                \n\t" /* LUT_RES x */
      "FMUL   %%st(1),%%st(0)        \n\t" /* (x*LUT_RES) x */
-     "FISTPL %[sinv]                \n\t" /* x */
+     "FISTPL %[sinv]                \n\t" /* x */ /* NOTE: this temporary stores an integer in a memory location of a
+						     float variable, but it's overwritten later anyway */
      "MOVL   %[sinv],%%EAX          \n\t" /* x */
-     "SAL    $3,%%EAX               \n\t" /* x */ /* <<3 */
+     "SAL    $3,%%EAX               \n\t" /* x */ /* <<3 = *sizeof(REAL8) */
 
-     /* calculate d = divLUTtab[idx] - x in st(0) */
+     /* calculate d = x - divLUTtab[idx] in st(0) */
      "MOVL  %[divLUTtab],%%EDX      \n\t" /* x */
      "FLDL  (%%EDX,%%EAX)           \n\t" /* divLUTtab[i] x */
      "FSUBRP                        \n\t" /* (d = tempFreq0 - divLUTtab[i]) */
 
+     /* add d*d on the stack */
      "FLD   %%st(0)                 \n\t" /* d d */
      "FMUL  %%st(0),%%st(0)         \n\t" /* (d*d) d */
 
-     /* three-term Taylor expansion for sin value, leaving d and d*d on stack, idx kept in EAX */
+     /* three-term Taylor expansion for sin value, starting with the last term,
+	leaving d and d*d on stack, idx kept in EAX */
      "MOV   %[sinVal2PIPI],%%EDX    \n\t" /* (d*d) d */
      "FLDL  (%%EDX,%%EAX)           \n\t" /* sinVal2PIPI[i] (d*d) d */
      "FMUL  %%st(1),%%st(0)         \n\t" /* (d*d*sinVal2PIPI[i]) (d*d) d */
@@ -59,7 +71,7 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
      "FADDP                         \n\t" /* (sinVal[i]+d*cosVal2PI[i]-d*d*sinVal2PIPI[i]) (d*d) d */
      "FSTPS %[sinv]                 \n\t" /* (d*d) d */
 
-     /* the same for cos value, this time popping d */
+     /* similar calculation for cos value, this time popping the stack */
      "MOV   %[cosVal2PIPI],%%EDX    \n\t" /* cosVal2PIPI[i] (d*d) d */
      "FLDL  (%%EDX,%%EAX)           \n\t" /* cosVal2PIPI[i] (d*d) d */
      "FMULP                         \n\t" /* (d*d*cosVal2PIPI[i]) d */
@@ -86,6 +98,7 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
      : /* input */
      [x]           "m" (tempFreq0),
      [lutr]        "m" (lutr),
+     [half]        "m" (half),
      [sinVal]      "m" (sinVal),
      [cosVal]      "m" (cosVal),
      [sinVal2PI]   "m" (sinVal2PI),
