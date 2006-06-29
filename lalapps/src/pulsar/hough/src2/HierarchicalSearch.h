@@ -175,11 +175,6 @@ NRCSID( HIERARCHICALSEARCHH, "$Id$" );
 
   /* function prototypes */
 
-  void PrintFstatVec (LALStatus *status,
-		      REAL8FrequencySeries *in,
-		      FILE *fp,
-		      CWParamSpacePoint *thisPoint,
-		      LIGOTimeGPS  refTime);
 
   void ComputeFstatHoughMap (LALStatus *status,
 			     SemiCohCandidateList *out,
@@ -235,14 +230,6 @@ NRCSID( HIERARCHICALSEARCHH, "$Id$" );
   void GetMinSigIndex_toplist(LALStatus *status,
 			      INT4 *minSigIndex,
 			      SemiCohCandidateList *semiCohCand);
-
-  void PrintSemiCohCandidates(LALStatus *status,
-			    SemiCohCandidateList *in,
-			    FILE *fp);
-
-  void PrintHoughHistogram(LALStatus *status,
-			   UINT8Vector *hist, 
-			   CHAR *fnameOut);
 
   void GetChkPointIndex( LALStatus *status,
 			 INT4 *loopindex, 

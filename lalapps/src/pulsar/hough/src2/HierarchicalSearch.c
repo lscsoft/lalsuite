@@ -122,6 +122,13 @@ extern int lalDebugLevel;
 BOOLEAN uvar_printMaps; /**< global variable for printing Hough maps */
 BOOLEAN uvar_printStats; /**< global variable for calculating Hough map stats */
 
+/* functions for printing various stuff */
+void PrintFstatVec (LALStatus *status, REAL8FrequencySeries *in, FILE *fp, CWParamSpacePoint *thisPoint, LIGOTimeGPS  refTime);
+
+void PrintSemiCohCandidates(LALStatus *status, SemiCohCandidateList *in, FILE *fp);
+
+void PrintHoughHistogram(LALStatus *status, UINT8Vector *hist, CHAR *fnameOut);
+
 
 /* default values for input variables */
 #define EARTHEPHEMERIS "./earth05-09.dat" /**< Default location of earth ephemeris */
@@ -745,6 +752,7 @@ int main( int argc, char *argv[]) {
   binsFstat1 = (UINT4)(fkdotBand_refTime->data[0]/deltaFstack1 + 0.5);
   for (k = 0; k < nStacks1; k++) 
     { 
+      /* careful--the epoch here is not the reference time for f0! */
       fstatVector1.data[k].epoch = startTstack1->data[k];
       fstatVector1.data[k].deltaF = deltaFstack1;
       fstatVector1.data[k].f0 = fkdot_startTime1->data[0];
@@ -978,7 +986,7 @@ int main( int argc, char *argv[]) {
   
   /* set up some semiCoherent parameters */
   semiCohPar.tsMid = midTstack1;
-  semiCohPar.refTime = refTime;
+  semiCohPar.refTime = tStart1;
   semiCohPar.vel = velStack1;
   semiCohPar.pos = posStack1;
   semiCohPar.outBaseName = uvar_fnameout;
@@ -1081,7 +1089,7 @@ int main( int argc, char *argv[]) {
 	{
 	  /* set spindown value for Fstat calculation */
   	  thisPoint1.fkdot->data[1] = fkdot_startTime1->data[1] + ifdot * dfDot;
-	  thisPoint1.fkdot->data[0] = fstatVector1.data[k].f0 = fkdot_startTime1->data[0];
+	  thisPoint1.fkdot->data[0] = fkdot_startTime1->data[0];
 	  	  
 	  /* calculate the Fstatistic for each stack*/
 	  for ( k = 0; k < nStacks1; k++) {
@@ -2225,17 +2233,17 @@ void PrintSemiCohCandidates(LALStatus *status,
   alpha = thisPoint->skypos.longitude;
   delta = thisPoint->skypos.latitude;
   fkdot->data[1] = thisPoint->fkdot->data[1];
+  f0 = thisPoint->fkdot->data[0];
 
   length = in->data->length;
   deltaF = in->deltaF;
-  f0 = in->f0;
 
   for (k=0; k<length; k++)
     {
       fkdot->data[0] = f0 + k*deltaF;
 		      
       /* propagate fkdot back to reference-time  */
-      TRY ( LALExtrapolatePulsarSpins(status->statusPtr, fkdot, refTime, fkdot, in->epoch ), status );
+      TRY ( LALExtrapolatePulsarSpins(status->statusPtr, fkdot, refTime, fkdot, thisPoint->refTime ), status );
 
       fprintf(fp, "%.13g %.7g %.7g %.5g %.6g\n", fkdot->data[0], alpha, delta, fkdot->data[1], in->data->data[k]);
     }
