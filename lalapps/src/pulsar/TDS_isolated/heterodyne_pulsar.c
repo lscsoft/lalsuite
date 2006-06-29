@@ -909,6 +909,10 @@ stops->data[i]);
       
       duration = stops->data[i] - starts->data[i];
       
+      /* check duration is not negative */
+      if(duration <= 0)
+        continue;
+      
       /* check that data is contiguous within a segment - if not split in two */
       /* OR if data is repeated - then ignore the repeated data. This is a fix needed due to
 problems that can effect the coarse heterodyne if performed using Condor - this problem being that
@@ -935,7 +939,7 @@ checking for times when the time steps backwards */
           
           /* check that the new point is still in the same segment or not - if we are then redo
              new segment, if not then move on to next segment */ 
-          if(starts->data[i] < stops->data[i])
+          if(starts->data[i] < stops->data[i] && duration > 0)
             i--; /* reset i so it redoes the new segment */
           
           break;
