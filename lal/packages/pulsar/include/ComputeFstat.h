@@ -230,8 +230,7 @@ void ComputeFStatFreqBand ( LALStatus *status,
 			    const MultiSFTVector *multiSFTs, 
 			    const MultiNoiseWeights *multiWeights,
 			    const MultiDetectorStateSeries *multiDetStates,
-			    const ComputeFParams *params,
-			    ComputeFBuffer *cfBuffer);
+			    const ComputeFParams *params);
 
 int
 XLALWeighMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *multiWeights );

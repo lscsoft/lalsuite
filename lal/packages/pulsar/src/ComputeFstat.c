@@ -68,6 +68,7 @@ NRCSID( COMPUTEFSTATC, "$Id$");
 static const BarycenterInput empty_BarycenterInput;
 static const LALStatus empty_status;
 static const Fcomponents empty_Fcomponents;
+static const ComputeFBuffer empty_ComputeFBuffer;
 
 /*---------- Global variables ----------*/
 #define NUM_FACT 6
@@ -92,14 +93,15 @@ void ComputeFStatFreqBand ( LALStatus *status,
 			    const MultiSFTVector *multiSFTs, /**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
 			    const MultiNoiseWeights *multiWeights,	/**< noise-weights of all SFTs */
 			    const MultiDetectorStateSeries *multiDetStates,/**< 'trajectories' of the different IFOs */
-			    const ComputeFParams *params,	/**< addition computational params */
-			    ComputeFBuffer *cfBuffer	/**< CF-internal buffering structure */
+			    const ComputeFParams *params	/**< addition computational params */
 			    )
 {
 
   UINT4 numDetectors, numBins, k;	
   REAL8 deltaF;
   Fcomponents Fstat;
+  CWParamSpacePoint thisPoint;
+  ComputeFBuffer cfBuffer = empty_ComputeFBuffer;
 
   INITSTATUS( status, "ComputeFStatFreqBand", COMPUTEFSTATC );
   ATTATCHSTATUSPTR (status);
@@ -117,20 +119,39 @@ void ComputeFStatFreqBand ( LALStatus *status,
   ASSERT ( fstatVector->data->data, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
   ASSERT ( fstatVector->data->length > 0, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
 
+  /* copy values from psPoint to local variable */
+  thisPoint.refTime = psPoint->refTime;
+  thisPoint.skypos = psPoint->skypos;
+  thisPoint.binary = NULL;
+
+  /* now copy fkdot */
+  if ( (psPoint->fkdot != NULL) && (psPoint->fkdot->length > 0) ) {
+
+    thisPoint.fkdot = XLALCreateREAL8Vector ( psPoint->fkdot->length );
+    ASSERT ( thisPoint.fkdot, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
+    ASSERT ( thisPoint.fkdot->data, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
+
+    for ( k = 0; k < thisPoint.fkdot->length; k++)
+      thisPoint.fkdot->data[k] = psPoint->fkdot->data[k];
+  } /* finished copying psPoint */
+
   numBins = fstatVector->data->length;
   deltaF = fstatVector->deltaF;
 
   /* loop over frequency values and fill up values in fstatVector */
   for ( k = 0; k < numBins; k++) {
     
-    psPoint->fkdot->data[0] += k * deltaF;
+    thisPoint.fkdot->data[0] += deltaF;
  
-    TRY (ComputeFStat ( status->statusPtr, &Fstat, psPoint, multiSFTs, multiWeights, 
-			multiDetStates, params, cfBuffer ), status);
+    TRY (ComputeFStat ( status->statusPtr, &Fstat, &thisPoint, multiSFTs, multiWeights, 
+			multiDetStates, params, &cfBuffer ), status);
 
     fstatVector->data->data[k] = Fstat.F;
       
   }
+
+  XLALDestroyREAL8Vector ( thisPoint.fkdot);
+  XLALEmptyComputeFBuffer ( cfBuffer );
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
