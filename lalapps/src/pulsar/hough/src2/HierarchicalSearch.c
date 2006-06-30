@@ -229,8 +229,6 @@ int main( int argc, char *argv[]) {
   DopplerScanState thisScan2 = empty_DopplerScanState; /* current state of the Doppler-scan */
   DopplerPosition dopplerpos1, dopplerpos2;		/* current search-parameters */
   CWParamSpacePoint thisPoint1, thisPoint2; 
-  static ComputeFBuffer cfBuffer1;
-  static ComputeFBuffer cfBuffer2;
 
   /* various fkdot vectors */
   REAL8Vector *fkdot_refTime=NULL; /* freq. and spindown at user defined reference time */
@@ -1095,7 +1093,7 @@ int main( int argc, char *argv[]) {
 	  for ( k = 0; k < nStacks1; k++) {
 	    LAL_CALL( ComputeFStatFreqBand ( &status, fstatVector1.data + k, &thisPoint1, 
 					     stackMultiSFT1.data[k], stackMultiNoiseWeights1.data[k], 
-					     stackMultiDetStates1.data[k], &CFparams, &cfBuffer1 ), &status);
+					     stackMultiDetStates1.data[k], &CFparams), &status);
 	  }
 	  
 	  /* print fstat vector if required -- mostly for debugging */
@@ -1249,7 +1247,7 @@ int main( int argc, char *argv[]) {
 			  for ( k = 0; k < nStacks2; k++) {
 			    LAL_CALL( ComputeFStatFreqBand ( &status, fstatVector2.data + k, &thisPoint2, 
 							     stackMultiSFT2.data[k], stackMultiNoiseWeights2.data[k], 
-							     stackMultiDetStates2.data[k], &CFparams, &cfBuffer2 ), &status);
+							     stackMultiDetStates2.data[k], &CFparams), &status);
 			  }
 			  
 			  /* select candidates from 2nd stage */
@@ -1330,8 +1328,6 @@ int main( int argc, char *argv[]) {
       fclose(fpFstat);
       LALFree(fnameFstatCand);
 
-      XLALEmptyComputeFBuffer ( cfBuffer2 );
-
       LAL_CALL(LALDestroyTimestampVector ( &status, &sftTimeStamps2), &status);  	
     }
 
@@ -1353,8 +1349,6 @@ int main( int argc, char *argv[]) {
   LALFree(stackMultiSFT1.data);
   LALFree(stackMultiNoiseWeights1.data);
   LALFree(stackMultiDetStates1.data);
-
-  XLALEmptyComputeFBuffer ( cfBuffer1 );
   
   LAL_CALL(LALDestroyTimestampVector ( &status, &sftTimeStamps1), &status);  	  
 
