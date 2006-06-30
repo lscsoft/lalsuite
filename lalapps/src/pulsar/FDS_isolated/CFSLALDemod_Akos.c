@@ -18,11 +18,15 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
 		 REAL8 tempFreq0, REAL8 tempFreq1, REAL8 x, REAL8 yTemp,
 		 REAL8* realXPo, REAL8* imagXPo, REAL8* realQo, REAL8* imagQo)
 {
-  REAL4 tsin, tcos,  tsin2, tcos2;
+  REAL4 tsin, tcos;
   REAL4 realP, imagP;
   INT4 k;                             /* loop counter */
   REAL8 realXP, imagXP, realQ, imagQ; /* output parameters */
+
+#ifdef DEBUG
   REAL8 t1,t2,t3,t4;
+  REAL4 tsin2, tcos2;
+#endif
 
   /* calculate tsin, tcos, realQ and imagQ from sin/cos LUT */
 
@@ -40,6 +44,11 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
      "fldl   %[x]                   \n\t" /* x */
      "flds   %[lutr]                \n\t" /* LUT_RES x */
      "fmul   %%st(1),%%st(0)        \n\t" /* (x*LUT_RES) x */
+
+#ifdef USE_DEFAULT_ROUNDING_MODE
+     "fistpl %[sinv]                \n\t" /* x */
+     "movl   %[sinv],%%ebx          \n\t" /* x */
+#else
      "fadds  %[half]                \n\t" /* (x*LUT_RES+.5) x */
                                           /* NOTE: this temporary stores an integer in a memory location of a
 					           float variable, but it's overwritten later anyway */
@@ -52,6 +61,7 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
      "jns    sincos1                \n\t" /* x */                /* the result is ok, rounding = truncation */
      "dec    %%ebx                  \n\t" /* x */                /* sinv=sinv-1.0 (it was rounded up) */
      "sincos1:                      \n\t" /* x */
+#endif
 
      /* calculate d = x - diVal[idx] in st(0) */
      "fsubl  %[diVal](,%%ebx,8)     \n\t" /* (d = x - diVal[i]) */
@@ -61,7 +71,7 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
      "fmul   %%st(0),%%st(0)        \n\t" /* (d*d) d */
 
      /* three-term Taylor expansion for sin value, starting with the last term,
-	leaving d and d*d on stack, idx kept in EAX */
+	leaving d and d*d on stack, idx kept in ebx */
      "fldl  %[sinVal2PIPI](,%%ebx,8)\n\t" /* sinVal2PIPI[i] (d*d) d */
      "fmul  %%st(1),%%st(0)         \n\t" /* (d*d*sinVal2PIPI[i]) (d*d) d */
 
@@ -120,7 +130,7 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
      [diVal]       "m" (diVal[0])
 
      : /* clobbered registers */
-     "eax", "ebx", "edx", "st","st(1)","st(2)","st(3)"
+     "eax", "ebx", "st","st(1)","st(2)","st(3)"
      );	
 
 #ifdef DEBUG
