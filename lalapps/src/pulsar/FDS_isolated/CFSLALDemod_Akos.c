@@ -3,9 +3,15 @@
                                                          Bernd Machenschalk */
 RCSID( "$Id$");
 
-static REAL8 *sinVal, *sinVal2PI, *sinVal2PIPI;
-static REAL8 *cosVal, *cosVal2PI, *cosVal2PIPI;
-static REAL8 *divTab;
+static REAL8 sinTab[LUT_RES+1]; /* Lookup tables for fast sin/cos calculation */
+static REAL8 sinTab2PI[LUT_RES+1];
+static REAL8 sinTab2PIPI[LUT_RES+1];
+static REAL8 cosTab[LUT_RES+1];
+static REAL8 cosTab2PI[LUT_RES+1];
+static REAL8 cosTab2PIPI[LUT_RES+1];
+static REAL8 diviTab[LUT_RES+1];
+static BOOLEAN firstCall = 1;
+
 
 #define klim 32
 
@@ -14,18 +20,21 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
 		 REAL8 tempFreq0, REAL8 tempFreq1, REAL8 x, REAL8 yTemp,
 		 REAL8* realXPo, REAL8* imagXPo, REAL8* realQo, REAL8* imagQo)
 {
-  REAL4 tsin, tcos,  tsin2, tcos2;
+  REAL4 tsin, tcos;
   REAL4 realP, imagP;
   INT4 k;                             /* loop counter */
   REAL8 realXP, imagXP, realQ, imagQ; /* output parameters */
+#ifdef DEBUG
+  REAL4 tsin2, tcos2;
   REAL8 t1,t2,t3,t4;
+#endif
 
   /* calculate tsin, tcos, realQ and imagQ from sin/cos LUT */
 
 #ifdef USE_SINCOS_GAS
 
-  REAL4 lutr = LUT_RES; /* LUT_RES in memory */
-  REAL4 half = .5;
+  static REAL4 lutr = LUT_RES; /* LUT_RES in memory */
+  static REAL4 half = .5;
 
   // fprintf(stderr,"LALDemodSub called\n");
 
@@ -36,6 +45,11 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
      "fldl   %[x]                   \n\t" /* x */
      "flds   %[lutr]                \n\t" /* LUT_RES x */
      "fmul   %%st(1),%%st(0)        \n\t" /* (x*LUT_RES) x */
+
+#ifdef USE_DEFAULT_ROUNDING
+     "fistpl %[sinv]                \n\t" /* x */
+     "movl   %[sinv],%%ebx          \n\t" /* x */
+#else
      "fadds  %[half]                \n\t" /* (x*LUT_RES+.5) x */
                                           /* NOTE: this temporary stores an integer in a memory location of a
 					           float variable, but it's overwritten later anyway */
@@ -47,14 +61,15 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
      "orl    %[cosv],%%eax          \n\t" /* x */                /* it will set the S (sign) flag */
      "jns    sincos1                \n\t" /* x */                /* the result is ok, rounding = truncation */
      "dec    %%ebx                  \n\t" /* x */                /* sinv=sinv-1.0 (it was rounded up) */
-     "sincos1:                      \n\t" /* FPU is empty */
+     "sincos1:                      \n\t" /* x */
+#endif
 
      "sal    $3,%%ebx               \n\t" /* x */ /* <<3 = *sizeof(REAL8) */
 
-     /* calculate d = x - divLUTtab[idx] in st(0) */
-     "movl  %[divLUTtab],%%edx      \n\t" /* x */
-     "fldl  (%%edx,%%ebx)           \n\t" /* divLUTtab[i] x */
-     "fsubrp                        \n\t" /* (d = tempFreq0 - divLUTtab[i]) */
+     /* calculate d = x - diviTab[idx] in st(0) */
+     "movl  $%[diviTab],%%edx       \n\t" /* x */
+     "fldl  (%%edx,%%ebx)           \n\t" /* diviTab[i] x */
+     "fsubrp                        \n\t" /* (d = tempFreq0 - diviTab[i]) */
 
      /* add d*d on the stack */
      "fld   %%st(0)                 \n\t" /* d d */
@@ -62,40 +77,40 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
 
      /* three-term Taylor expansion for sin value, starting with the last term,
 	leaving d and d*d on stack, idx kept in EAX */
-     "mov   %[sinVal2PIPI],%%edx    \n\t" /* (d*d) d */
-     "fldl  (%%edx,%%ebx)           \n\t" /* sinVal2PIPI[i] (d*d) d */
-     "fmul  %%st(1),%%st(0)         \n\t" /* (d*d*sinVal2PIPI[i]) (d*d) d */
+     "mov   $%[sinTab2PIPI],%%edx   \n\t" /* (d*d) d */
+     "fldl  (%%edx,%%ebx)           \n\t" /* sinTab2PIPI[i] (d*d) d */
+     "fmul  %%st(1),%%st(0)         \n\t" /* (d*d*sinTab2PIPI[i]) (d*d) d */
 
-     "mov   %[cosVal2PI],%%edx      \n\t" /* (d*d*sinVal2PIPI[i]) (d*d) d */
-     "fldl  (%%edx,%%ebx)           \n\t" /* cosVal2PI[i] (d*d*sinVal2PIPI[i]) (d*d) d */
-     "fmul  %%st(3),%%st(0)         \n\t" /* (d*cosVal2PI[i]) (d*d*sinVal2PIPI[i]) (d*d) d */
-     "fsubp                         \n\t" /* (d*cosVal2PI[i]-d*d*sinVal2PIPI[i]) (d*d) d */
+     "mov   $%[cosTab2PI],%%edx     \n\t" /* (d*d*sinTab2PIPI[i]) (d*d) d */
+     "fldl  (%%edx,%%ebx)           \n\t" /* cosTab2PI[i] (d*d*sinTab2PIPI[i]) (d*d) d */
+     "fmul  %%st(3),%%st(0)         \n\t" /* (d*cosTab2PI[i]) (d*d*sinTab2PIPI[i]) (d*d) d */
+     "fsubp                         \n\t" /* (d*cosTab2PI[i]-d*d*sinTab2PIPI[i]) (d*d) d */
 
-     "mov   %[sinVal],%%edx         \n\t" /* (d*cosVal2PI[i]-d*d*sinVal2PIPI[i]) (d*d) d */
-     "fldl  (%%edx,%%ebx)           \n\t" /* sinVal[i] (d*cosVal2PI[i]-d*d*sinVal2PIPI[i]) (d*d) d */
-     "faddp                         \n\t" /* (sinVal[i]+d*cosVal2PI[i]-d*d*sinVal2PIPI[i]) (d*d) d */
+     "mov   $%[sinTab],%%edx        \n\t" /* (d*cosTab2PI[i]-d*d*sinTab2PIPI[i]) (d*d) d */
+     "fldl  (%%edx,%%ebx)           \n\t" /* sinTab[i] (d*cosTab2PI[i]-d*d*sinTab2PIPI[i]) (d*d) d */
+     "faddp                         \n\t" /* (sinTab[i]+d*cosTab2PI[i]-d*d*sinTab2PIPI[i]) (d*d) d */
      "fstps %[sinv]                 \n\t" /* (d*d) d */
 
      /* similar calculation for cos value, this time popping the stack */
-     "mov   %[cosVal2PIPI],%%edx    \n\t" /* cosVal2PIPI[i] (d*d) d */
-     "fldl  (%%edx,%%ebx)           \n\t" /* cosVal2PIPI[i] (d*d) d */
-     "fmulp                         \n\t" /* (d*d*cosVal2PIPI[i]) d */
+     "mov   $%[cosTab2PIPI],%%edx   \n\t" /* cosTab2PIPI[i] (d*d) d */
+     "fldl  (%%edx,%%ebx)           \n\t" /* cosTab2PIPI[i] (d*d) d */
+     "fmulp                         \n\t" /* (d*d*cosTab2PIPI[i]) d */
 
-     "mov   %[sinVal2PI],%%edx      \n\t" /* (d*d*cosVal2PIPI[i]) d */
-     "fldl  (%%edx,%%ebx)           \n\t" /* sinVal2PI[i] (d*d*cosVal2PIPI[i]) d */
-     "fmulp %%st(0),%%st(2)         \n\t" /* (d*d*cosVal2PIPI[i]) (d*sinVal2PI[i]) */
-     "fsubrp                        \n\t" /* (d*sinVal2PI[i]-d*d*cosVal2PIPI[i]) */
+     "mov   $%[sinTab2PI],%%edx     \n\t" /* (d*d*cosTab2PIPI[i]) d */
+     "fldl  (%%edx,%%ebx)           \n\t" /* sinTab2PI[i] (d*d*cosTab2PIPI[i]) d */
+     "fmulp %%st(0),%%st(2)         \n\t" /* (d*d*cosTab2PIPI[i]) (d*sinTab2PI[i]) */
+     "fsubrp                        \n\t" /* (d*sinTab2PI[i]-d*d*cosTab2PIPI[i]) */
      
 #ifdef DEBUG
      "fstl  %[t2]\n\t"
 #endif
-     "mov   %[cosVal],%%edx         \n\t" /* (d*sinVal2PI[i]-d*d*cosVal2PIPI[i]) */
-     "fldl  (%%edx,%%ebx)           \n\t" /* cosVal[i] (d*sinVal2PI[i]-d*d*cosVal2PIPI[i]) */
+     "mov   $%[cosTab],%%edx        \n\t" /* (d*sinTab2PI[i]-d*d*cosTab2PIPI[i]) */
+     "fldl  (%%edx,%%ebx)           \n\t" /* cosTab[i] (d*sinTab2PI[i]-d*d*cosTab2PIPI[i]) */
 
 #ifdef DEBUG
      "fstl  %[t3]\n\t"
 #endif
-     "fsubp                         \n\t" /* (cosVal[i]-d*sinVal2PI[i]-d*d*cosVal2PIPI[i])) */
+     "fsubp                         \n\t" /* (cosTab[i]-d*sinTab2PI[i]-d*d*cosTab2PIPI[i])) */
 #ifdef DEBUG
      "fstl  %[t4]\n\t"
 #endif
@@ -106,8 +121,8 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
      /* special here: tcos -= 1.0 */
      "flds  %[cosv]                 \n\t" /* % */
 #endif
-     "fld1                          \n\t" /* 1 (cosVal[i]-d*(sinVal2PI[i]-d*cosVal2PIPI[i])) */
-     "fsubrp                        \n\t" /* (cosVal[i]-d*(sinVal2PI[i]-d*cosVal2PIPI[i])-1) */
+     "fld1                          \n\t" /* 1 (cosTab[i]-d*(sinTab2PI[i]-d*cosTab2PIPI[i])) */
+     "fsubrp                        \n\t" /* (cosTab[i]-d*(sinTab2PI[i]-d*cosTab2PIPI[i])-1) */
      "fstps %[cosv]                 \n\t" /* % */
 
      : /* output */
@@ -122,14 +137,15 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
 
      : /* input */
      [x]           "m" (tempFreq0),
-     [lutr]        "m" (lutr),     [half]        "m" (half),
-     [sinVal]      "m" (sinVal),
-     [cosVal]      "m" (cosVal),
-     [sinVal2PI]   "m" (sinVal2PI),
-     [cosVal2PI]   "m" (cosVal2PI),
-     [sinVal2PIPI] "m" (sinVal2PIPI),
-     [cosVal2PIPI] "m" (cosVal2PIPI),
-     [divLUTtab]   "m" (divTab)
+     [lutr]        "m" (lutr),
+     [half]        "m" (half),
+     [sinTab]      "m" (sinTab[0]),
+     [cosTab]      "m" (cosTab[0]),
+     [sinTab2PI]   "m" (sinTab2PI[0]),
+     [cosTab2PI]   "m" (cosTab2PI[0]),
+     [sinTab2PIPI] "m" (sinTab2PIPI[0]),
+     [cosTab2PIPI] "m" (cosTab2PIPI[0]),
+     [diviTab]     "m" (diviTab[0])
 
      : /* clobbered registers */
      "eax", "ebx", "edx", "st","st(1)","st(2)","st(3)"
@@ -138,14 +154,14 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
 #ifdef DEBUG
   {
     UINT4 idx  = tempFreq0 * LUT_RES +.5;
-    REAL8 d    = tempFreq0 - divTab[idx];
+    REAL8 d    = tempFreq0 - diviTab[idx];
     REAL8 d2   = d*d;
     REAL8 t11,t12,t13,t14;
     
     t11 = d2;
 
-    tsin2 = sinVal[idx] + d * cosVal2PI[idx] - d2 * sinVal2PIPI[idx];
-    tcos2 = (t14= (t13= cosVal[idx]) - (t12= d * sinVal2PI[idx] - d2 * cosVal2PIPI[idx]));
+    tsin2 = sinTab[idx] + d * cosTab2PI[idx] - d2 * sinTab2PIPI[idx];
+    tcos2 = (t14= (t13= cosTab[idx]) - (t12= d * sinTab2PI[idx] - d2 * cosTab2PIPI[idx]));
 
     tcos2 -= 1.0;
     
@@ -167,11 +183,11 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
 
   {
     UINT4 idx  = tempFreq0 * LUT_RES +.5;
-    REAL8 d    = tempFreq0 - divTab[idx];
+    REAL8 d    = tempFreq0 - diviTab[idx];
     REAL8 d2   = d*d;
 
-    tsin = sinVal[idx] + d * cosVal2PI[idx] - d2 * sinVal2PIPI[idx];
-    tcos = cosVal[idx] - d * sinVal2PI[idx] - d2 * cosVal2PIPI[idx];
+    tsin = sinTab[idx] + d * cosTab2PI[idx] - d2 * sinTab2PIPI[idx];
+    tcos = cosTab[idx] - d * sinTab2PI[idx] - d2 * cosTab2PIPI[idx];
 
     tcos -= 1.0;
     
@@ -193,10 +209,10 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
 #endif
     {
       UINT4 idx  = yRem * LUT_RES + .5;
-      REAL8 d    = yRem - divTab[idx];
+      REAL8 d    = yRem - diviTab[idx];
       REAL8 d2   = d*d;
-      imagQ = sinVal[idx] + d * cosVal2PI[idx] - d2 * sinVal2PIPI[idx];
-      realQ = cosVal[idx] - d * sinVal2PI[idx] - d2 * cosVal2PIPI[idx];
+      imagQ = sinTab[idx] + d * cosTab2PI[idx] - d2 * sinTab2PIPI[idx];
+      realQ = cosTab[idx] - d * sinTab2PI[idx] - d2 * cosTab2PIPI[idx];
       
       imagQ = -imagQ;
     }
@@ -316,13 +332,6 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
   COMPLEX16 Fa, Fb;
   REAL8 f;
 
-  static REAL8 sinTab[LUT_RES+(LUT_RES/4)+1]; /* Lookup tables for fast sin/cos calculation */
-  static REAL8 sinTab2PI[LUT_RES+(LUT_RES/4)+1];
-  static REAL8 sinTab2PIPI[LUT_RES+(LUT_RES/4)+1];
-  static REAL8 divLUTtab[LUT_RES+1];
-  static BOOLEAN firstCall = 1;
-
-
   REAL8 A=params->amcoe->A;
   REAL8 B=params->amcoe->B;
   REAL8 C=params->amcoe->C;
@@ -350,22 +359,18 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
   /* This size LUT gives errors ~ 10^-7 with a three-term Taylor series */
   if ( firstCall )
     {
-      for (k=0; k <= (LUT_RES/4)*5; k++) {
-	sinTab[k] = sin((LAL_TWOPI*k)/(LUT_RES));
-	sinTab2PI[k] = sinTab[k]  *  LAL_TWOPI;
+      for (k=0; k <= LUT_RES; k++) {
+	sinTab[k]      = sin((LAL_TWOPI*k)/(LUT_RES));
+	sinTab2PI[k]   = sinTab[k]    * LAL_TWOPI;
 	sinTab2PIPI[k] = sinTab2PI[k] * LAL_PI;
+	cosTab[k]      = cos((LAL_TWOPI*k)/(LUT_RES));
+	cosTab2PI[k]   = cosTab[k]    * LAL_TWOPI;
+	cosTab2PIPI[k] = cosTab2PI[k] * LAL_PI;
       }
-      sinVal = sinTab;
-      sinVal2PI = sinTab2PI;
-      sinVal2PIPI = sinTab2PIPI;
-      cosVal = sinVal+(LUT_RES/4);
-      cosVal2PI = sinVal2PI+(LUT_RES/4);
-      cosVal2PIPI = sinVal2PIPI+(LUT_RES/4);
 
       for (k=0; k <= LUT_RES; k++)
-	divLUTtab[k] = (REAL8)k/(REAL8)(LUT_RES);
+	diviTab[k] = (REAL8)k/(REAL8)(LUT_RES);
       firstCall = 0;
-      divTab = divLUTtab;
     }
 
   /* this loop computes the values of the phase model */
