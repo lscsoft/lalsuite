@@ -51,55 +51,39 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
      "orl    %[cosv],%%eax          \n\t" /* x */                /* it will set the S (sign) flag */
      "jns    sincos1                \n\t" /* x */                /* the result is ok, rounding = truncation */
      "dec    %%ebx                  \n\t" /* x */                /* sinv=sinv-1.0 (it was rounded up) */
-     "sincos1:                      \n\t" /* FPU is empty */
-
-     /* "sal    $3,%%ebx               \n\t" /* x */ /* <<3 = *sizeof(REAL8) */
+     "sincos1:                      \n\t" /* x */
 
      /* calculate d = x - diVal[idx] in st(0) */
-     "movl  $%[diVal],%%edx         \n\t" /* x */
-     "fldl  (%%edx,%%ebx,8)         \n\t" /* diVal[i] x */
-     "fsubrp                        \n\t" /* (d = tempFreq0 - diVal[i]) */
+     "fsubl  %[diVal](,%%ebx,8)     \n\t" /* (d = x - diVal[i]) */
 
      /* add d*d on the stack */
-     "fld   %%st(0)                 \n\t" /* d d */
-     "fmul  %%st(0),%%st(0)         \n\t" /* (d*d) d */
+     "fld    %%st(0)                \n\t" /* d d */
+     "fmul   %%st(0),%%st(0)        \n\t" /* (d*d) d */
 
      /* three-term Taylor expansion for sin value, starting with the last term,
 	leaving d and d*d on stack, idx kept in EAX */
-     "movl $%[sinVal2PIPI],%%edx    \n\t" /* (d*d) d */
-     "fldl  (%%edx,%%ebx,8)         \n\t" /* sinVal2PIPI[i] (d*d) d */
+     "fldl  %[sinVal2PIPI](,%%ebx,8)\n\t" /* sinVal2PIPI[i] (d*d) d */
      "fmul  %%st(1),%%st(0)         \n\t" /* (d*d*sinVal2PIPI[i]) (d*d) d */
 
-     "movl $%[cosVal2PI],%%edx      \n\t" /* (d*d*sinVal2PIPI[i]) (d*d) d */
-     "fldl  (%%edx,%%ebx,8)         \n\t" /* cosVal2PI[i] (d*d*sinVal2PIPI[i]) (d*d) d */
+     "fldl  %[cosVal2PI](,%%ebx,8)  \n\t" /* cosVal2PI[i] (d*d*sinVal2PIPI[i]) (d*d) d */
      "fmul  %%st(3),%%st(0)         \n\t" /* (d*cosVal2PI[i]) (d*d*sinVal2PIPI[i]) (d*d) d */
      "fsubp                         \n\t" /* (d*cosVal2PI[i]-d*d*sinVal2PIPI[i]) (d*d) d */
 
-     "movl $%[sinVal],%%edx         \n\t" /* (d*cosVal2PI[i]-d*d*sinVal2PIPI[i]) (d*d) d */
-     "fldl  (%%edx,%%ebx,8)         \n\t" /* sinVal[i] (d*cosVal2PI[i]-d*d*sinVal2PIPI[i]) (d*d) d */
-     "faddp                         \n\t" /* (sinVal[i]+d*cosVal2PI[i]-d*d*sinVal2PIPI[i]) (d*d) d */
+     "faddl %[sinVal](,%%ebx,8)     \n\t" /* (sinVal[i]+d*cosVal2PI[i]-d*d*sinVal2PIPI[i]) (d*d) d */
      "fstps %[sinv]                 \n\t" /* (d*d) d */
 
      /* similar calculation for cos value, this time popping the stack */
-     "movl $%[cosVal2PIPI],%%edx    \n\t" /* cosVal2PIPI[i] (d*d) d */
-     "fldl  (%%edx,%%ebx,8)         \n\t" /* cosVal2PIPI[i] (d*d) d */
-     "fmulp                         \n\t" /* (d*d*cosVal2PIPI[i]) d */
+     "fmull %[cosVal2PIPI](,%%ebx,8)\n\t" /* (d*d*cosVal2PIPI[i]) d */
 
-     "movl $%[sinVal2PI],%%edx      \n\t" /* (d*d*cosVal2PIPI[i]) d */
-     "fldl  (%%edx,%%ebx,8)         \n\t" /* sinVal2PI[i] (d*d*cosVal2PIPI[i]) d */
-     "fmulp %%st(0),%%st(2)         \n\t" /* (d*d*cosVal2PIPI[i]) (d*sinVal2PI[i]) */
-     "fsubrp                        \n\t" /* (d*sinVal2PI[i]-d*d*cosVal2PIPI[i]) */
+     "fxch                          \n\t" /* d (d*d*cosVal2PIPI[i]) */
+     "fmull %[sinVal2PI](,%%ebx,8)  \n\t" /* (d*sinVal2PI[i]) (d*d*cosVal2PIPI[i]) d */
+     "fsubp                         \n\t" /* (d*sinVal2PI[i]-d*d*cosVal2PIPI[i]) */
      
 #ifdef DEBUG
      "fstl  %[t2]\n\t"
 #endif
-     "movl $%[cosVal],%%edx         \n\t" /* (d*sinVal2PI[i]-d*d*cosVal2PIPI[i]) */
-     "fldl  (%%edx,%%ebx,8)         \n\t" /* cosVal[i] (d*sinVal2PI[i]-d*d*cosVal2PIPI[i]) */
 
-#ifdef DEBUG
-     "fstl  %[t3]\n\t"
-#endif
-     "fsubp                         \n\t" /* (cosVal[i]-d*sinVal2PI[i]-d*d*cosVal2PIPI[i])) */
+     "fsubrl %[cosVal](,%%ebx,8)    \n\t" /* (cosVal[i]-d*sinVal2PI[i]-d*d*cosVal2PIPI[i])) */
 #ifdef DEBUG
      "fstl  %[t4]\n\t"
 #endif
@@ -160,7 +144,7 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
       fprintf(stderr,"\n%f: %e\n",tempFreq0,tcos-tcos2);
       // fprintf(stderr,"%.20f\n%.20f\n",t1,t11);
       fprintf(stderr,"%.20f\n%.20f\n",t2,t12);
-      fprintf(stderr,"%.20f\n%.20f\n",t3,t13);
+      // fprintf(stderr,"%.20f\n%.20f\n",t3,t13);
       fprintf(stderr,"%.20f\n%.20f\n",t4,t14);
       fprintf(stderr,"%.20f\n%.20f\n",tcos,tcos2);
     }
