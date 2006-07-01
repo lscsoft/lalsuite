@@ -124,9 +124,10 @@ typedef struct {
  */
 typedef struct {
   LIGOTimeGPS refTime;		/**< SSB reference GPS-time at which spins are defined */
-  REAL8Vector *fkdotRef;	/**< spin-vector {f, f1dot, f2dot, ... } @ epoch */
+  LIGOTimeGPS startTime;	/**< internal reference time used to compute Fa,Fb */
+  REAL8Vector *fkdotRef;	/**< spin-vector {f, f1dot, f2dot, ... } @ refTime */
   SkyPosition skypos;
-  Fcomponents Fstat;
+  Fcomponents Fstat;		/**< Fstat-value Fa,Fb, using internal reference-time 'startTime' */
   REAL8 Aplus, dAplus;		/**< amplitude-parameters with (Cramer-Rao) error estimators */
   REAL8 Across, dAcross;
   REAL8 phi0, dphi0;		/**< signal-phase @ reference-epoch */
@@ -280,6 +281,7 @@ int main(int argc,char *argv[])
   if ( loudestCandidate.fkdotRef == NULL )
     return COMPUTEFSTATISTIC_EMEM;
   loudestCandidate.refTime = GV.refTime;
+  loudestCandidate.startTime = GV.startTime;
   
   /* prepare initialization of DopplerScanner to step through paramter space */
   scanInit.dAlpha = uvar_dAlpha;
@@ -1263,6 +1265,7 @@ EstimateSigParams (LALStatus *status, candidate_t *cand, const MultiAMCoeffs *mu
   REAL8 x1, x2, x3, x4;
   REAL8 A, B, C, D;
   REAL8 normM, normx;
+  REAL8 A1check;
 
   REAL8 Asq, Da, disc, dAsq, dDa, ddisc;
   REAL8 Aplus, Across, dAplus, dAcross;
@@ -1333,8 +1336,8 @@ EstimateSigParams (LALStatus *status, candidate_t *cand, const MultiAMCoeffs *mu
   db1 =  dA4 - beta * dA1 - A1 * dbeta;
   b2 = A3 + beta * A2;
   db2 =  dA3 + beta * dA2 + A2 * dbeta;
-  b3 = - A1 + beta * A4 ;
-  db3 = -dA1 + beta * dA4 + A4 * dbeta;
+  b3 =  - A1 + beta * A4 ;
+  db3 = - dA1 + beta * dA4 + A4 * dbeta;
 
   psi  = 0.5 * atan2 ( b1, b2 );
   tan2psi = b1 / b2;
@@ -1344,11 +1347,23 @@ EstimateSigParams (LALStatus *status, candidate_t *cand, const MultiAMCoeffs *mu
   tanphi0 = b2 / b3;
   dphi0 = (db2 - tanphi0 * db3 )/ ( (1.0 + SQ(tanphi0) ) * b3 );
 
+  /* Fix remaining sign-ambiguity by checking sign of reconstructed A1 */
+  A1check = Aplus * cos(phi0) * cos(2.0*psi) - Across * sin(phi0) * sin(2*psi);
+  if ( A1check * A1 <  0 )
+    phi0 += LAL_PI;
+
+  /* propagate phase from internal reference-time 'startTime' to refTime */
+  TRY ( LALExtrapolatePulsarPhase (status->statusPtr, &phi0, cand->fkdotRef, cand->refTime, 
+				   phi0, cand->startTime ), status);
+
   /* use gauge-freedom to fix gauge to [0,pi] for both phi0, psi */
   if ( phi0 < 0 )
+    phi0 += LAL_TWOPI;
+
+  if ( phi0 > LAL_PI )
     {
-      phi0 += LAL_PI;
-      psi  += LAL_PI_2;
+      phi0 -= LAL_PI;
+      psi  -= LAL_PI_2;
     }
   if ( psi > LAL_PI  )
     psi -= LAL_PI;
