@@ -1,6 +1,6 @@
 /*
  * 
- * Copyright (C) 2005 Reinhard Prix
+ * Copyright (C) 2005, 2006 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -240,3 +240,49 @@ XLALDestroyPulsarSpinRange ( LALPulsarSpinRange *range )
   return;
 
 } /* XLALDestroyPulsarSpinRange() */
+
+/** Extrapolate phase phi0 from epoch0 to epoch1, given the spins fkdot1 at epoch1 
+ * Returns phi1 in the range [0, 2pi] */
+void
+LALExtrapolatePulsarPhase (LALStatus *status,
+			   REAL8 *phi1,			/**< [out] phase at epoch1 */
+			   const REAL8Vector *fkdot1,	/**< [in] spin-params at reference epoch1 */
+			   LIGOTimeGPS  epoch1, 	/**< [in] GPS SSB-time of epoch1 */
+			   REAL8 phi0,			/**< [in] initial phase at epoch 0 */
+			   LIGOTimeGPS epoch0		/**< [in] GPS SSB-time of reference-epoch */
+			   )
+{
+  UINT4 numSpins;
+  UINT4 k;
+  UINT4 kFact;
+  REAL8 dTau, dTauk;
+  REAL8 frac_cycles;
+  REAL8 dummy, phi;
+
+  INITSTATUS( status, "LALExtrapolatePulsarPhase", EXTRAPOLATEPULSARSPINSC );
+
+  ASSERT ( fkdot1, status, EXTRAPOLATEPULSARSPINS_ENULL, EXTRAPOLATEPULSARSPINS_MSGENULL);
+  ASSERT ( phi1, status, EXTRAPOLATEPULSARSPINS_ENULL, EXTRAPOLATEPULSARSPINS_MSGENULL);
+
+  numSpins = fkdot1->length;
+
+  kFact = 1;
+  dTau = XLALDeltaFloatGPS( &epoch0, &epoch1 );
+  dTauk = 1.0;
+  frac_cycles = 0;
+  for ( k=0; k < numSpins; k++ )
+    {
+      kFact *= (k+1);
+      dTauk *= dTau;
+      frac_cycles += modf ( fkdot1->data[k] * dTauk / kFact, &dummy );
+    }
+
+  phi = fmod ( phi0 - LAL_TWOPI * frac_cycles, LAL_TWOPI );
+  if ( phi < 0 )
+    phi += LAL_TWOPI;
+
+  (*phi1) = phi;
+  
+  RETURN (status);
+
+} /* LALExtrapolatePulsarPhase() */

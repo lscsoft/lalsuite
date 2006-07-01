@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005 Reinhard Prix
+ * Copyright (C) 2005, 2006 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -123,6 +123,10 @@ void LALExtrapolatePulsarSpinRange( LALStatus *, LALPulsarSpinRange *range1, LIG
 
 void LALExtrapolatePulsarSpins (LALStatus *, REAL8Vector *fkdot1, LIGOTimeGPS epoch1,
 				const REAL8Vector *fkdot0, LIGOTimeGPS epoch0);
+
+void LALExtrapolatePulsarPhase (LALStatus *, REAL8 *phi1, const REAL8Vector *fkdot1, LIGOTimeGPS epoch1,
+				REAL8 phi0, LIGOTimeGPS epoch0);
+
 
 #ifdef  __cplusplus
 }
