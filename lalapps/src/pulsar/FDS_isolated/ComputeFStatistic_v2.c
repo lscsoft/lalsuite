@@ -1409,33 +1409,42 @@ XLALwriteCandidate2file ( FILE *fp,  const candidate_t *cand )
 {
   UINT4 i, s;
 
-  fprintf (fp, "refTime = %9d\n", cand->refTime.gpsSeconds );   /* forget about ns... */
+  fprintf (fp, "refTime = %9d;\n", cand->refTime.gpsSeconds );   /* forget about ns... */
 
-  fprintf (fp, "Freq = %.16g\n", cand->fkdotRef->data[0] );
+  fprintf (fp, "Freq = %.16g;\n", cand->fkdotRef->data[0] );
   s = cand->fkdotRef->length;
   for ( i=1; i < s; i ++ )
-    fprintf (fp, "f%ddot  = %.16g\n", i, cand->fkdotRef->data[i] );
+    fprintf (fp, "f%ddot  = %.16g;\n", i, cand->fkdotRef->data[i] );
 
-  fprintf (fp, "Alpha = %.16g\n", cand->skypos.longitude );
-  fprintf (fp, "Delta = %.16g\n", cand->skypos.latitude );
+  fprintf (fp, "Alpha = %.16g;\n", cand->skypos.longitude );
+  fprintf (fp, "Delta = %.16g;\n", cand->skypos.latitude );
 
-  fprintf (fp, "Fa  = %.6g  %+.6gi\n", cand->Fstat.Fa.re, cand->Fstat.Fa.im );
-  fprintf (fp, "Fb  = %.6g  %+.6gi\n", cand->Fstat.Fb.re, cand->Fstat.Fb.im );
-  fprintf (fp, "F   = %.6g\n", cand->Fstat.F );
+  fprintf (fp, "Fa  = %.6g  %+.6gi;\n", cand->Fstat.Fa.re, cand->Fstat.Fa.im );
+  fprintf (fp, "Fb  = %.6g  %+.6gi;\n", cand->Fstat.Fb.re, cand->Fstat.Fb.im );
+  fprintf (fp, "F   = %.6g;\n", cand->Fstat.F );
 
-  fprintf (fp, "aPlus  = %.6g\n", cand->Aplus );
-  fprintf (fp, "aCross = %.6g\n", cand->Across );
-  fprintf (fp, "phi0   = %.6g\n", cand->phi0 );
-  fprintf (fp, "psi    = %.6g\n", cand->psi );
-  fprintf (fp, "h0     = %.6g\n", cand->h0 );
-  fprintf (fp, "cosiota= %.6g\n", cand->cosi );
+  fprintf (fp, "aPlus  = %.6g;\n", cand->Aplus );
+  fprintf (fp, "daPlus   = %.6g;\n", cand->dAplus );
+  fprintf (fp, "\n");
 
-  fprintf (fp, "\ndAplus  = %.6g\n", cand->dAplus );
-  fprintf (fp, "dAcross  = %.6g\n", cand->dAcross );
-  fprintf (fp, "dphi0    = %.6g\n", cand->dphi0 );
-  fprintf (fp, "dpsi     = %.6g\n", cand->dpsi );
-  fprintf (fp, "dh0      = %.6g\n", cand->dh0 );
-  fprintf (fp, "dcosiota = %.6g\n", cand->dcosi );
+  fprintf (fp, "aCross = %.6g;\n", cand->Across );
+  fprintf (fp, "daCross  = %.6g;\n", cand->dAcross );
+  fprintf (fp, "\n");
+
+  fprintf (fp, "phi0   = %.6g;\n", cand->phi0 );
+  fprintf (fp, "dphi0    = %.6g;\n", cand->dphi0 );
+  fprintf (fp, "\n");
+
+  fprintf (fp, "psi    = %.6g;\n", cand->psi );
+  fprintf (fp, "dpsi     = %.6g;\n", cand->dpsi );
+  fprintf (fp, "\n");
+
+  fprintf (fp, "h0     = %.6g;\n", cand->h0 );
+  fprintf (fp, "dh0      = %.6g;\n", cand->dh0 );
+  fprintf (fp, "\n");
+
+  fprintf (fp, "cosiota= %.6g;\n", cand->cosi );
+  fprintf (fp, "dcosiota = %.6g;\n", cand->dcosi );
 
   return XLAL_SUCCESS;
 
