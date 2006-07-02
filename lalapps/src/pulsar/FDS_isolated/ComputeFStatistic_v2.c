@@ -37,6 +37,15 @@
 #include <unistd.h>
 #endif
 
+/* GSL includes */
+#include <gsl/gsl_vector.h>
+#include <gsl/gsl_matrix.h>
+#include <gsl/gsl_blas.h>
+#include <gsl/gsl_permutation.h>
+#include <gsl/gsl_linalg.h>
+
+
+
 int finite(double);
 
 /* LAL-includes */
@@ -128,8 +137,8 @@ typedef struct {
   REAL8Vector *fkdotRef;	/**< spin-vector {f, f1dot, f2dot, ... } @ refTime */
   SkyPosition skypos;
   Fcomponents Fstat;		/**< Fstat-value Fa,Fb, using internal reference-time 'startTime' */
-  REAL8 Aplus, dAplus;		/**< amplitude-parameters with (Cramer-Rao) error estimators */
-  REAL8 Across, dAcross;
+  REAL8 aPlus, daPlus;		/**< amplitude-parameters with (Cramer-Rao) error estimators */
+  REAL8 aCross, daCross;
   REAL8 phi0, dphi0;		/**< signal-phase @ reference-epoch */
   REAL8 psi, dpsi;
   REAL8 h0, dh0;
@@ -205,6 +214,7 @@ int outputBeamTS( const CHAR *fname, const AMCoeffs *amcoe, const DetectorStateS
 void InitEphemeris (LALStatus *, EphemerisData *edat, const CHAR *ephemDir, const CHAR *ephemYear, LIGOTimeGPS epoch);
 void getUnitWeights ( LALStatus *, MultiNoiseWeights **multiWeights, const MultiSFTVector *multiSFTs );
 int XLALwriteCandidate2file ( FILE *fp,  const candidate_t *cand );
+int printGSLmatrix4 ( FILE *fp, const CHAR *prefix, const gsl_matrix *gij );
 
 const char *va(const char *format, ...);	/* little var-arg string helper function */
 
@@ -1266,41 +1276,101 @@ EstimateSigParams (LALStatus *status,
 		   REAL8 TsftShat)
 {
   REAL8 A1h, A2h, A3h, A4h;
-  REAL8 x1h, x2h, x3h, x4h;
-  REAL8 A, B, C, D;
+  REAL8 Ad, Bd, Cd, Dd;
   REAL8 normAmu;
   REAL8 A1check, A2check, A3check, A4check;
 
   REAL8 Asq, Da, disc;
-  REAL8 Aplus, Across;
-  REAL8 Ap2, Ac2, Ap2mAc2;
+  REAL8 aPlus, aCross;
+  REAL8 Ap2, Ac2;
   REAL8 beta;
   REAL8 phi0, psi;
   REAL8 b1, b2, b3;
   REAL8 h0, cosi;
   
+  REAL8 cosphi0, sinphi0, cos2psi, sin2psi;
+
   REAL8 tolerance = LAL_REAL4_EPS;
+
+  gsl_vector *x_mu, *A_Mu;
+  gsl_matrix *M_Mu_Nu;
+  gsl_matrix *J_Mu_nu, *Jh_Mu_nu;
+  gsl_permutation *perm, *permh;
+  gsl_matrix *tmp, *tmp2;
+  int signum;
 
   INITSTATUS (status, "EstimateSigParams", rcsid);
   ATTATCHSTATUSPTR (status);
 
-  A = multiAMcoef->A;
-  B = multiAMcoef->B;
-  C = multiAMcoef->C;
-  D = multiAMcoef->D;
+  Ad = multiAMcoef->A;
+  Bd = multiAMcoef->B;
+  Cd = multiAMcoef->C;
+  Dd = multiAMcoef->D;
 
   normAmu = 2.0 / sqrt(TsftShat);	/* generally *very* small!! */
 
-  x1h =   cand->Fstat.Fa.re;
-  x2h =   cand->Fstat.Fb.re;
-  x3h = - cand->Fstat.Fa.im;
-  x4h = - cand->Fstat.Fb.im;
+  /* ----- GSL memory allocation ----- */
+  if ( ( x_mu = gsl_vector_calloc (4) ) == NULL ) {
+    ABORT ( status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM );
+  }
+  if ( ( A_Mu = gsl_vector_calloc (4) ) == NULL ) {
+    ABORT ( status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM );
+  }
+  if ( ( M_Mu_Nu = gsl_matrix_calloc (4, 4) ) == NULL ) {
+    ABORT ( status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM );
+  }
+  if ( ( J_Mu_nu = gsl_matrix_calloc (4, 4) ) == NULL ) {
+    ABORT ( status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM );
+  }
+  if ( ( Jh_Mu_nu = gsl_matrix_calloc (4, 4) ) == NULL ) {
+    ABORT ( status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM );
+  }
+  if ( ( perm = gsl_permutation_calloc ( 4 )) == NULL ) {
+    ABORT ( status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM );
+  }
+  if ( ( permh = gsl_permutation_calloc ( 4 )) == NULL ) {
+    ABORT ( status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM );
+  }
+  if ( ( tmp = gsl_matrix_calloc (4, 4) ) == NULL ) {
+    ABORT ( status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM );
+  }
+  if ( ( tmp2 = gsl_matrix_calloc (4, 4) ) == NULL ) {
+    ABORT ( status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM );
+  }
 
-  /* amplitudes not normalized yet! */
-  A1h = (   B * x1h - C * x2h ) / D;
-  A2h = ( - C * x1h + A * x2h ) / D;
-  A3h = (   B * x3h - C * x4h ) / D;
-  A4h = ( - C * x3h + A * x4h ) / D;
+
+  /* ----- fill vector x_mu */
+  gsl_vector_set (x_mu, 0,   cand->Fstat.Fa.re );	/* x_1 */
+  gsl_vector_set (x_mu, 1,   cand->Fstat.Fb.re ); 	/* x_2 */
+  gsl_vector_set (x_mu, 2, - cand->Fstat.Fa.im );	/* x_3 */
+  gsl_vector_set (x_mu, 3, - cand->Fstat.Fb.im );	/* x_4 */
+
+  /* ----- fill matrix M^{mu,nu} [symmetric: use UPPER HALF ONLY!!]*/
+  gsl_matrix_set (M_Mu_Nu, 0, 0,   Bd / Dd );
+  gsl_matrix_set (M_Mu_Nu, 1, 1,   Ad / Dd );
+  gsl_matrix_set (M_Mu_Nu, 0, 1, - Cd / Dd );  
+
+  gsl_matrix_set (M_Mu_Nu, 2, 2,   Bd / Dd );
+  gsl_matrix_set (M_Mu_Nu, 3, 3,   Ad / Dd );
+  gsl_matrix_set (M_Mu_Nu, 2, 3, - Cd / Dd );  
+
+  /* get (un-normalized) MLE's for amplitudes A^mu  = M^{mu,nu} x_nu */
+
+  /* GSL-doc: int gsl_blas_dsymv (CBLAS_UPLO_t Uplo, double alpha, const gsl_matrix * A, 
+   *                              const gsl_vector * x, double beta, gsl_vector * y )
+   * 
+   * compute the matrix-vector product and sum: y = alpha A x + beta y 
+   * for the symmetric matrix A. Since the matrix A is symmetric only its 
+   * upper half or lower half need to be stored. When Uplo is CblasUpper 
+   * then the upper triangle and diagonal of A are used, and when Uplo 
+   * is CblasLower then the lower triangle and diagonal of A are used. 
+   */
+  gsl_blas_dsymv (CblasUpper, 1.0, M_Mu_Nu, x_mu, 0.0, A_Mu);
+
+  A1h = gsl_vector_get ( A_Mu, 0 );
+  A2h = gsl_vector_get ( A_Mu, 1 );
+  A3h = gsl_vector_get ( A_Mu, 2 );
+  A4h = gsl_vector_get ( A_Mu, 3 );
 
   LogPrintf (LOG_NORMAL, "norm= %g; A1 = %g, A2 = %g, A3 = %g, A4 = %g\n", 
 	     normAmu, A1h, A2h, A3h, A4h );
@@ -1310,15 +1380,13 @@ EstimateSigParams (LALStatus *status,
   disc = sqrt ( SQ(Asq) - 4.0 * SQ(Da) );
 
   Ap2  = 0.5 * ( Asq + disc );
-  Aplus = sqrt(Ap2);	/* not yet normalized */
+  aPlus = sqrt(Ap2);		/* not yet normalized */
 
   Ac2 = 0.5 * ( Asq - disc );
-  Across = sqrt( Ac2 );	/* not yet normalized */
-  Across *= MYSIGN ( Da );
+  aCross = sqrt( Ac2 );	
+  aCross *= MYSIGN ( Da ); 	/* not yet normalized */
 
-  Ap2mAc2 = Ap2 - Ac2;
-
-  beta = Across / Aplus;
+  beta = aCross / aPlus;
   
   b1 =   A4h - beta * A1h;
   b2 =   A3h + beta * A2h;
@@ -1328,7 +1396,7 @@ EstimateSigParams (LALStatus *status,
   phi0 =       atan2 ( b2, b3 );
 
   /* Fix remaining sign-ambiguity by checking sign of reconstructed A1 */
-  A1check = Aplus * cos(phi0) * cos(2.0*psi) - Across * sin(phi0) * sin(2*psi);
+  A1check = aPlus * cos(phi0) * cos(2.0*psi) - aCross * sin(phi0) * sin(2*psi);
   if ( A1check * A1h <  0 )
     phi0 += LAL_PI;
 
@@ -1351,14 +1419,19 @@ EstimateSigParams (LALStatus *status,
     psi += LAL_PI;
 
   /* translate A_{+,x} into {h_0, cosi} */
-  h0 = Aplus + sqrt ( Ap2mAc2 );  /* not yet normalized ! */
-  cosi = Across / h0;
+  h0 = aPlus + sqrt ( disc );  /* not yet normalized ! */
+  cosi = aCross / h0;
 
   /* check numerical consistency of estimated Amu and reconstructed */
-  A1check =   Aplus * cos(phi0) * cos(2.0*psi) - Across * sin(phi0) * sin(2*psi);  
-  A2check =   Aplus * cos(phi0) * sin(2.0*psi) + Across * sin(phi0) * cos(2*psi);  
-  A3check = - Aplus * sin(phi0) * cos(2.0*psi) - Across * cos(phi0) * sin(2*psi);  
-  A4check = - Aplus * sin(phi0) * sin(2.0*psi) + Across * cos(phi0) * cos(2*psi);  
+  cosphi0 = cos(phi0);
+  sinphi0 = sin(phi0);
+  cos2psi = cos(2*psi);
+  sin2psi = sin(2*psi);
+
+  A1check =   aPlus * cosphi0 * cos2psi - aCross * sinphi0 * sin2psi;  
+  A2check =   aPlus * cosphi0 * sin2psi + aCross * sinphi0 * cos2psi;  
+  A3check = - aPlus * sinphi0 * cos2psi - aCross * cosphi0 * sin2psi;  
+  A4check = - aPlus * sinphi0 * sin2psi + aCross * cosphi0 * cos2psi;  
 
   if ( ( fabs( A1check - A1h ) > tolerance ) ||
        ( fabs( A2check - A2h ) > tolerance ) ||
@@ -1371,17 +1444,144 @@ EstimateSigParams (LALStatus *status,
     }
 
   /* fill candidate-struct with the obtained signal-parameters and error-estimations */
-  cand->Aplus  = normAmu * Aplus;
-  cand->Across = normAmu * Across;
+  cand->aPlus  = normAmu * aPlus;
+  cand->aCross = normAmu * aCross;
   cand->phi0   = phi0;
   cand->psi    = psi;
   cand->h0     = normAmu * h0;
   cand->cosi   = cosi;
 
-  LogPrintf (LOG_NORMAL, "Aplus = %g, Across = %g\n", cand->Aplus, cand->Across );
-  LogPrintf (LOG_NORMAL, "phi0 = %g, psi = %g\n", cand->phi0, cand->psi );
-  LogPrintf (LOG_NORMAL, "h0 = %g, cosi = %g\n", cand->h0, cand->cosi );
+  /* ========== Estimate the errors ========== */
+  
+  /* ----- compute derivatives \partial A^\mu / \partial B^\nu, where
+   * we consider the output-variables B^\nu = (A_+, A_x, phi0, psi) 
+   */
 
+  /* ----- A1 =   aPlus * cosphi0 * cos2psi - aCross * sinphi0 * sin2psi; ----- */
+  gsl_matrix_set (J_Mu_nu, 0, 0,   cosphi0 * cos2psi );	/* dA1/daPlus */
+  gsl_matrix_set (J_Mu_nu, 0, 1, - sinphi0 * sin2psi );	/* dA1/daCross */
+  gsl_matrix_set (J_Mu_nu, 0, 2,   A3h );		/* dA1/dphi0 */
+  gsl_matrix_set (J_Mu_nu, 0, 3, - 2.0 * A2h );		/* dA1/dpsi */
+  
+  /* ----- A2 =   aPlus * cosphi0 * sin2psi + aCross * sinphi0 * cos2psi; ----- */ 
+  gsl_matrix_set (J_Mu_nu, 1, 0,   cosphi0 * sin2psi );	/* dA2/daPlus */
+  gsl_matrix_set (J_Mu_nu, 1, 1,   sinphi0 * cos2psi );	/* dA2/daCross */
+  gsl_matrix_set (J_Mu_nu, 1, 2,   A4h );		/* dA2/dphi0 */
+  gsl_matrix_set (J_Mu_nu, 1, 3,   2.0 * A1h );		/* dA2/dpsi */
+
+  /* ----- A3 = - aPlus * sinphi0 * cos2psi - aCross * cosphi0 * sin2psi; ----- */ 
+  gsl_matrix_set (J_Mu_nu, 2, 0, - sinphi0 * cos2psi );	/* dA3/daPlus */ 
+  gsl_matrix_set (J_Mu_nu, 2, 1, - cosphi0 * sin2psi );	/* dA3/daCross */
+  gsl_matrix_set (J_Mu_nu, 2, 2, - A1h );		/* dA3/dphi0 */  
+  gsl_matrix_set (J_Mu_nu, 2, 3, - 2.0 * A4h );		/* dA3/dpsi */
+
+  /* ----- A4 = - aPlus * sinphi0 * sin2psi + aCross * cosphi0 * cos2psi; ----- */ 
+  gsl_matrix_set (J_Mu_nu, 3, 0, - sinphi0 * sin2psi );	/* dA4/daPlus */
+  gsl_matrix_set (J_Mu_nu, 3, 1,   cosphi0 * cos2psi );	/* dA4/daCross */
+  gsl_matrix_set (J_Mu_nu, 3, 2, - A2h );		/* dA4/dphi0 */
+  gsl_matrix_set (J_Mu_nu, 3, 3,   2.0 * A3h );		/* dA4/dpsi */
+
+  /* ----- compute derivatives \partial A^\mu / \partial Bh^\nu, where
+   * we consider the output-variables Bh^\nu = (h0, cosi, phi0, psi) 
+   * where aPlus = 0.5 * h0 * (1 + cosi^2)  and aCross = h0 * cosi
+   */
+  { /* Ahat^mu is just A^mu with the replacements: A_+ --> A_x, and A_x --> h0 */
+    REAL8 A1hat =   aCross * cosphi0 * cos2psi - h0 * sinphi0 * sin2psi;  
+    REAL8 A2hat =   aCross * cosphi0 * sin2psi + h0 * sinphi0 * cos2psi;  
+    REAL8 A3hat = - aCross * sinphi0 * cos2psi - h0 * cosphi0 * sin2psi;  
+    REAL8 A4hat = - aCross * sinphi0 * sin2psi + h0 * cosphi0 * cos2psi;  
+
+    /* ----- A1 =   aPlus * cosphi0 * cos2psi - aCross * sinphi0 * sin2psi; ----- */
+    gsl_matrix_set (Jh_Mu_nu, 0, 0,   A1h / h0 );	/* dA1/h0 */
+    gsl_matrix_set (Jh_Mu_nu, 0, 1,   A1hat ); 		/* dA1/dcosi */
+    gsl_matrix_set (Jh_Mu_nu, 0, 2,   A3h );		/* dA1/dphi0 */
+    gsl_matrix_set (Jh_Mu_nu, 0, 3, - 2.0 * A2h );	/* dA1/dpsi */
+  
+    /* ----- A2 =   aPlus * cosphi0 * sin2psi + aCross * sinphi0 * cos2psi; ----- */ 
+    gsl_matrix_set (Jh_Mu_nu, 1, 0,   A2h / h0 );	/* dA2/h0 */
+    gsl_matrix_set (Jh_Mu_nu, 1, 1,   A2hat ); 		/* dA2/dcosi */
+    gsl_matrix_set (Jh_Mu_nu, 1, 2,   A4h );		/* dA2/dphi0 */
+    gsl_matrix_set (Jh_Mu_nu, 1, 3,   2.0 * A1h );	/* dA2/dpsi */
+
+    /* ----- A3 = - aPlus * sinphi0 * cos2psi - aCross * cosphi0 * sin2psi; ----- */ 
+    gsl_matrix_set (Jh_Mu_nu, 2, 0,   A3h / h0 );	/* dA3/h0 */ 
+    gsl_matrix_set (Jh_Mu_nu, 2, 1,   A3hat ); 		/* dA3/dcosi */
+    gsl_matrix_set (Jh_Mu_nu, 2, 2, - A1h );		/* dA3/dphi0 */  
+    gsl_matrix_set (Jh_Mu_nu, 2, 3, - 2.0 * A4h );	/* dA3/dpsi */
+
+    /* ----- A4 = - aPlus * sinphi0 * sin2psi + aCross * cosphi0 * cos2psi; ----- */ 
+    gsl_matrix_set (Jh_Mu_nu, 3, 0,   A4h / h0 );	/* dA4/h0 */
+    gsl_matrix_set (Jh_Mu_nu, 3, 1,   A4hat ); 		/* dA4/dcosi */
+    gsl_matrix_set (Jh_Mu_nu, 3, 2, - A2h );		/* dA4/dphi0 */
+    gsl_matrix_set (Jh_Mu_nu, 3, 3,   2.0 * A3h );	/* dA4/dpsi */
+  }
+
+  
+  /* ----- compute inverse matrices J^{-1} by LU-decomposition ----- */
+  gsl_linalg_LU_decomp (J_Mu_nu,  perm, &signum );
+  gsl_linalg_LU_decomp (Jh_Mu_nu, permh, &signum );
+
+  /* inverse matrix */
+  gsl_linalg_LU_invert (J_Mu_nu,  perm,  tmp );	
+  gsl_matrix_memcpy ( J_Mu_nu, tmp );
+
+  gsl_linalg_LU_invert (Jh_Mu_nu, permh, tmp );
+  gsl_matrix_memcpy ( Jh_Mu_nu, tmp );
+
+  /* ----- compute J^-1 . Minv . (J^-1)^T ----- */
+  
+  /* GSL-doc: gsl_blas_dgemm (CBLAS_TRANSPOSE_t TransA, CBLAS_TRANSPOSE_t TransB, double alpha, 
+   *                          const gsl_matrix *A, const gsl_matrix *B, double beta, gsl_matrix *C)
+   * These functions compute the matrix-matrix product and sum 
+   * C = \alpha op(A) op(B) + \beta C 
+   * where op(A) = A, A^T, A^H for TransA = CblasNoTrans, CblasTrans, CblasConjTrans 
+   * and similarly for the parameter TransB.
+   */
+
+  /* first tmp = Minv . (J^-1)^T */
+  gsl_blas_dgemm (CblasNoTrans, CblasTrans, 1.0, M_Mu_Nu, J_Mu_nu, 0.0, tmp );
+  /* then J^-1 . tmp , store result in tmp2 */
+  gsl_blas_dgemm (CblasNoTrans, CblasNoTrans, 1.0, J_Mu_nu, tmp, 0.0, tmp2 );
+  gsl_matrix_memcpy ( J_Mu_nu, tmp2 );
+
+  /* same for Jh^-1 */
+  gsl_blas_dgemm (CblasNoTrans, CblasTrans, 1.0, M_Mu_Nu, Jh_Mu_nu, 0.0, tmp );
+  /* then J^-1 . tmp , store result in J_Mu_nu */
+  gsl_blas_dgemm (CblasNoTrans, CblasNoTrans, 1.0, Jh_Mu_nu, tmp, 0.0, tmp2 );
+  gsl_matrix_memcpy ( Jh_Mu_nu, tmp2 );
+  
+  /* ===== debug-output resulting matrices ===== */
+  if ( lalDebugLevel )
+    {
+      printGSLmatrix4 ( stdout, "var(dB^mu, dB^nu) = \n", J_Mu_nu );
+      printGSLmatrix4 ( stdout, "var(dBh^mu, dBh^nu) = \n", Jh_Mu_nu );
+    }
+  
+  /* read out principal estimation-errors from diagonal elements */
+  cand->daPlus  = normAmu * sqrt( gsl_matrix_get (J_Mu_nu, 0, 0 ) );
+  cand->daCross = normAmu * sqrt( gsl_matrix_get (J_Mu_nu, 1, 1 ) );
+  cand->dphi0   = sqrt( gsl_matrix_get (J_Mu_nu, 2, 2 ) );
+  cand->dpsi    = sqrt( gsl_matrix_get (J_Mu_nu, 3, 3 ) );
+  cand->dh0     = normAmu * sqrt( gsl_matrix_get (Jh_Mu_nu, 0, 0 ) );
+  cand->dcosi   = sqrt( gsl_matrix_get (Jh_Mu_nu, 1, 1 ) );
+
+  LogPrintf (LOG_NORMAL, "aPlus  = %g +- %g\n", cand->aPlus, cand->daPlus );
+  LogPrintf (LOG_NORMAL, "aCross = %g +- %g\n", cand->aCross, cand->daCross );
+  LogPrintf (LOG_NORMAL, "h0     = %g +- %g\n", cand->h0, cand->dh0 );
+  LogPrintf (LOG_NORMAL, "cosi   = %g +- %g\n", cand->cosi, cand->dcosi );
+  LogPrintf (LOG_NORMAL, "phi0   = %g +- %g\n", cand->phi0, cand->dphi0 );
+  LogPrintf (LOG_NORMAL, "psi    = %g +- %g\n", cand->psi,  cand->dpsi );
+
+  /* ----- free GSL memory ----- */
+  gsl_vector_free ( x_mu );
+  gsl_vector_free ( A_Mu );
+  gsl_matrix_free ( M_Mu_Nu );
+  gsl_matrix_free ( J_Mu_nu );
+  gsl_matrix_free ( Jh_Mu_nu );
+  gsl_permutation_free ( perm );
+  gsl_permutation_free ( permh );
+  gsl_matrix_free ( tmp );
+  gsl_matrix_free ( tmp2 );
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -1408,12 +1608,12 @@ XLALwriteCandidate2file ( FILE *fp,  const candidate_t *cand )
   fprintf (fp, "Fb  = %.6g  %+.6gi;\n", cand->Fstat.Fb.re, cand->Fstat.Fb.im );
   fprintf (fp, "F   = %.6g;\n", cand->Fstat.F );
 
-  fprintf (fp, "aPlus  = %.6g;\n", cand->Aplus );
-  fprintf (fp, "daPlus   = %.6g;\n", cand->dAplus );
+  fprintf (fp, "aPlus  = %.6g;\n", cand->aPlus );
+  fprintf (fp, "daPlus   = %.6g;\n", cand->daPlus );
   fprintf (fp, "\n");
 
-  fprintf (fp, "aCross = %.6g;\n", cand->Across );
-  fprintf (fp, "daCross  = %.6g;\n", cand->dAcross );
+  fprintf (fp, "aCross = %.6g;\n", cand->aCross );
+  fprintf (fp, "daCross  = %.6g;\n", cand->daCross );
   fprintf (fp, "\n");
 
   fprintf (fp, "phi0   = %.6g;\n", cand->phi0 );
@@ -1434,3 +1634,37 @@ XLALwriteCandidate2file ( FILE *fp,  const candidate_t *cand )
   return XLAL_SUCCESS;
 
 } /* XLALwriteCandidate2file() */
+
+
+/** Output 4x4 gsl_matrix in octave-format.
+ * return -1 on error, 0 if OK.
+ */
+int
+printGSLmatrix4 ( FILE *fp, const CHAR *prefix, const gsl_matrix *gij )
+{
+  if ( !gij )
+    return -1;
+  if ( !fp )
+    return -1;
+  if ( (gij->size1 != 4) || (gij->size2 != 4 ) )
+    return -1;
+  if ( !prefix ) 
+    return -1;
+
+  fprintf (fp, prefix );
+  fprintf (fp, " [ %.9f, %.9f, %.9f, %.9f;\n",
+	   gsl_matrix_get ( gij, 0, 0 ), gsl_matrix_get ( gij, 0, 1 ), 
+	   gsl_matrix_get ( gij, 0, 2 ), gsl_matrix_get ( gij, 0, 3 ) );
+  fprintf (fp, "   %.9f, %.9f, %.9f, %.9f;\n",
+	   gsl_matrix_get ( gij, 1, 0 ), gsl_matrix_get ( gij, 1, 1 ),
+	   gsl_matrix_get ( gij, 1, 2 ), gsl_matrix_get ( gij, 1, 3 ) );
+  fprintf (fp, "   %.9f, %.9f, %.9f, %.9f;\n",
+	   gsl_matrix_get ( gij, 2, 0 ), gsl_matrix_get ( gij, 2, 1 ),
+	   gsl_matrix_get ( gij, 2, 2 ), gsl_matrix_get ( gij, 2, 3 ) );
+  fprintf (fp, "   %.9f, %.9f, %.9f, %.9f ];\n",
+	   gsl_matrix_get ( gij, 3, 0 ), gsl_matrix_get ( gij, 3, 1 ),
+	   gsl_matrix_get ( gij, 3, 2 ), gsl_matrix_get ( gij, 3, 3 ) );
+  
+  return 0;
+
+} /* printGSLmatrix4() */
