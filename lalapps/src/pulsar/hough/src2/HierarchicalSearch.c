@@ -127,13 +127,16 @@ BOOLEAN uvar_printStats; /**< global variable for calculating Hough map stats */
 #define HSMIN(x,y) ( (x) < (y) ? (x) : (y) )
 
 /* functions for printing various stuff */
-void PrintFstatVec (LALStatus *status, REAL8FrequencySeries *in, FILE *fp, CWParamSpacePoint *thisPoint, LIGOTimeGPS  refTime);
+void PrintFstatVec (LALStatus *status, REAL8FrequencySeries *in, FILE *fp, CWParamSpacePoint *thisPoint, 
+		    LIGOTimeGPS  refTime, INT4 stackIndex);
 
 void PrintSemiCohCandidates(LALStatus *status, SemiCohCandidateList *in, FILE *fp);
 
 void PrintHoughHistogram(LALStatus *status, UINT8Vector *hist, CHAR *fnameOut);
 
 void PrintCatalogInfo( LALStatus  *status, const SFTCatalog *catalog, FILE *fp);
+
+void PrintStackInfo( LALStatus  *status, const SFTCatalogSequence *catalogSeq, FILE *fp);
 
 /* default values for input variables */
 #define EARTHEPHEMERIS "./earth05-09.dat" /**< Default location of earth ephemeris */
@@ -646,6 +649,21 @@ int main( int argc, char *argv[]) {
     /* get sft catalogs for each stack */
     LAL_CALL( SetUpStacks( &status, &catalogSeq1, &tStack1, &sftTimeStamps1, catalog, uvar_nStacks1), &status);
 
+
+    if ( uvar_followUp ) {
+      LAL_CALL ( PrintStackInfo ( &status, &catalogSeq1, fpFstat), &status);
+    }
+
+    if ( uvar_printFstat1 ) {
+      LAL_CALL ( PrintStackInfo ( &status, &catalogSeq1, fpFstat1), &status);
+    }
+
+    if ( uvar_printCand1 ) {
+      LAL_CALL ( PrintStackInfo ( &status, &catalogSeq1, fpSemiCoh), &status);
+    }
+
+
+
     /* calculate start and end times and tobs */
     tStart1GPS = sftTimeStamps1->data[0];
     tEnd1GPS = sftTimeStamps1->data[sftTimeStamps1->length - 1];
@@ -667,7 +685,6 @@ int main( int argc, char *argv[]) {
 
     /* get frequency and fdot bands at start time of sfts by extrapolating from reftime */
     spinRange_refTime.epoch = refTimeGPS;
-
     LAL_CALL( LALExtrapolatePulsarSpinRange( &status, &spinRange_startTime1, tStart1GPS, &spinRange_refTime), &status); 
     LAL_CALL( LALExtrapolatePulsarSpinRange( &status, &spinRange_endTime1, tEnd1GPS, &spinRange_refTime), &status); 
 
@@ -1174,7 +1191,7 @@ int main( int argc, char *argv[]) {
 	  if ( uvar_printFstat1 )
 	    {
 	      for (k=0; k<nStacks1; k++)
-		LAL_CALL( PrintFstatVec ( &status, fstatVector1.data + k, fpFstat1, &thisPoint1, refTimeGPS), &status); 
+		LAL_CALL( PrintFstatVec ( &status, fstatVector1.data + k, fpFstat1, &thisPoint1, refTimeGPS, k+1), &status); 
 	    }
 
 	  
@@ -2296,7 +2313,8 @@ void PrintSemiCohCandidates(LALStatus *status,
 		      REAL8FrequencySeries *in,
 		      FILE                 *fp,
 		      CWParamSpacePoint    *thisPoint,
-		      LIGOTimeGPS          refTime)
+		      LIGOTimeGPS          refTime,
+		      INT4                 stackIndex)
 {
   INT4 length, k;
   REAL8 f0, deltaF, alpha, delta;
@@ -2306,6 +2324,8 @@ void PrintSemiCohCandidates(LALStatus *status,
   ATTATCHSTATUSPTR (status);
 
   TRY( LALDCreateVector( status->statusPtr, &fkdot, 2), status);
+
+  fprintf(fp, "## Fstat values from stack %d (reftime -- %d %d)\n", stackIndex, refTime.gpsSeconds, refTime.gpsNanoSeconds);
 
   alpha = thisPoint->skypos.longitude;
   delta = thisPoint->skypos.latitude;
@@ -2324,6 +2344,8 @@ void PrintSemiCohCandidates(LALStatus *status,
 
       fprintf(fp, "%.13g %.7g %.7g %.5g %.6g\n", fkdot->data[0], alpha, delta, fkdot->data[1], in->data->data[k]);
     }
+
+  fprintf(fp, "\n");
 
   TRY( LALDDestroyVector( status->statusPtr, &fkdot), status);
 
@@ -2486,6 +2508,39 @@ void PrintCatalogInfo( LALStatus  *status,
   fprintf(fp, "## Number of SFTs: %d\n", nSFT);
   fprintf(fp, "## First SFT timestamp: %d %d\n", start.gpsSeconds, start.gpsNanoSeconds);  
   fprintf(fp, "## Last SFT timestamp: %d %d\n", end.gpsSeconds, end.gpsNanoSeconds);    
+
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+
+}
+
+
+
+/** Print some stack info from sft catalog sequence*/
+void PrintStackInfo( LALStatus  *status,
+		     const SFTCatalogSequence *catalogSeq, 
+		     FILE *fp)
+{
+
+  INT4 nStacks, k;
+ 
+  INITSTATUS( status, "PrintCatalogInfo", rcsid );
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT ( fp != NULL, status, HIERARCHICALSEARCH_EFILE, HIERARCHICALSEARCH_MSGEFILE );
+  ASSERT ( catalogSeq != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  ASSERT ( catalogSeq->length > 0, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
+  ASSERT ( catalogSeq->data != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+
+  nStacks = catalogSeq->length;
+  fprintf(fp, "## Number of stacks: %d\n", nStacks);
+  
+  for ( k = 0; k < nStacks; k++) {
+    fprintf(fp, "## Stack No. %d : \n", k+1);
+    TRY ( PrintCatalogInfo( status->statusPtr, catalogSeq->data + k, fp), status);
+  }
+
+  fprintf(fp, "\n\n");
 
   DETATCHSTATUSPTR (status);
   RETURN(status);
