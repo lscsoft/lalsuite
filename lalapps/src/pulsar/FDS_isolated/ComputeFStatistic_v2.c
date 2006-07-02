@@ -1257,24 +1257,29 @@ const char *va(const char *format, ...)
 }
 
 
+/** Parameter-estimation: based on large parts on Yousuke's notes and implemention (in CFSv1)
+ */
 void
-EstimateSigParams (LALStatus *status, candidate_t *cand, const MultiAMCoeffs *multiAMcoef, REAL8 TsftShat)
+EstimateSigParams (LALStatus *status, 
+		   candidate_t *cand, 
+		   const MultiAMCoeffs *multiAMcoef, 
+		   REAL8 TsftShat)
 {
-  REAL8 A1, A2, A3, A4;
-  REAL8 dA1, dA2, dA3, dA4;	/* Cramer-Rao error-bounds */
-  REAL8 x1, x2, x3, x4;
+  REAL8 A1h, A2h, A3h, A4h;
+  REAL8 x1h, x2h, x3h, x4h;
   REAL8 A, B, C, D;
-  REAL8 normM, normx;
-  REAL8 A1check;
+  REAL8 normAmu;
+  REAL8 A1check, A2check, A3check, A4check;
 
-  REAL8 Asq, Da, disc, dAsq, dDa, ddisc;
-  REAL8 Aplus, Across, dAplus, dAcross;
+  REAL8 Asq, Da, disc;
+  REAL8 Aplus, Across;
   REAL8 Ap2, Ac2, Ap2mAc2;
-  REAL8 beta, dbeta;
-  REAL8 phi0, psi, dphi0, dpsi;
-  REAL8 tan2psi, tanphi0;
-  REAL8 b1, b2, b3, db1, db2, db3;
-  REAL8 h0, cosi, dh0, dcosi;
+  REAL8 beta;
+  REAL8 phi0, psi;
+  REAL8 b1, b2, b3;
+  REAL8 h0, cosi;
+  
+  REAL8 tolerance = LAL_REAL4_EPS;
 
   INITSTATUS (status, "EstimateSigParams", rcsid);
   ATTATCHSTATUSPTR (status);
@@ -1284,72 +1289,47 @@ EstimateSigParams (LALStatus *status, candidate_t *cand, const MultiAMCoeffs *mu
   C = multiAMcoef->C;
   D = multiAMcoef->D;
 
-  normM = 2.0 / ( D * TsftShat );
-  normx = sqrt(TsftShat);
+  normAmu = 2.0 / sqrt(TsftShat);	/* generally *very* small!! */
 
-  x1 =   normx * cand->Fstat.Fa.re;
-  x2 =   normx * cand->Fstat.Fb.re;
-  x3 = - normx * cand->Fstat.Fa.im;
-  x4 = - normx * cand->Fstat.Fb.im;
+  x1h =   cand->Fstat.Fa.re;
+  x2h =   cand->Fstat.Fb.re;
+  x3h = - cand->Fstat.Fa.im;
+  x4h = - cand->Fstat.Fb.im;
 
-  A1 = normM * (   B * x1 - C * x2 );
-  A2 = normM * ( - C * x1 + A * x2 );
-  A3 = normM * (   B * x3 - C * x4 );
-  A4 = normM * ( - C * x3 + A * x4 );
+  /* amplitudes not normalized yet! */
+  A1h = (   B * x1h - C * x2h ) / D;
+  A2h = ( - C * x1h + A * x2h ) / D;
+  A3h = (   B * x3h - C * x4h ) / D;
+  A4h = ( - C * x3h + A * x4h ) / D;
 
-  /* compute Cramer-Rao (lower) error-bounds from inverse Fisher matrix 
-   * We want the std-dev, not variances ==> sqrt() */
-  dA1 = dA3 = sqrt( normM * B );
-  dA2 = dA4 = sqrt( normM * A );
+  LogPrintf (LOG_NORMAL, "norm= %g; A1 = %g, A2 = %g, A3 = %g, A4 = %g\n", 
+	     normAmu, A1h, A2h, A3h, A4h );
 
-  LogPrintf (LOG_NORMAL, "A1 = %g +- %g, A2 = %g +- %g, A3 = %g +- %g, A4 = %g +- %g\n", 
-	     A1, dA1,  
-	     A2, dA2,
-	     A3, dA3,
-	     A4, dA4 );
-
-  Asq = SQ(A1) + SQ(A2) + SQ(A3) + SQ(A4);
-  dAsq = 2.0 * ( A1 * dA1 + A2 * dA2 + A3 * dA3 + A4 * dA4 );
-  Da = A1 * A4 - A2 * A3;
-  dDa = A1 * dA4 + A4 * dA1 - A2 * dA3 - A3 * dA2;
-
+  Asq = SQ(A1h) + SQ(A2h) + SQ(A3h) + SQ(A4h);
+  Da = A1h * A4h - A2h * A3h;
   disc = sqrt ( SQ(Asq) - 4.0 * SQ(Da) );
-  ddisc = (Asq * dAsq - 4.0 * Da * dDa) / disc;
 
   Ap2  = 0.5 * ( Asq + disc );
-  Aplus = sqrt(Ap2);
-  dAplus = ( dAsq + ddisc ) / ( 4.0 * Aplus );
+  Aplus = sqrt(Ap2);	/* not yet normalized */
+
   Ac2 = 0.5 * ( Asq - disc );
-  Across = sqrt( Ac2 );
-  dAcross = (dAsq - ddisc ) / ( 4.0 * Across );
+  Across = sqrt( Ac2 );	/* not yet normalized */
   Across *= MYSIGN ( Da );
 
   Ap2mAc2 = Ap2 - Ac2;
 
-  LogPrintf (LOG_NORMAL, "Aplus = %g +- %g, Across = %g +- %g\n", 
-	     Aplus, dAplus, Across, dAcross );
-
   beta = Across / Aplus;
-  dbeta = (dAcross - beta * dAplus) / Aplus;
   
-  b1 = A4 - beta * A1;
-  db1 =  dA4 - beta * dA1 - A1 * dbeta;
-  b2 = A3 + beta * A2;
-  db2 =  dA3 + beta * dA2 + A2 * dbeta;
-  b3 =  - A1 + beta * A4 ;
-  db3 = - dA1 + beta * dA4 + A4 * dbeta;
+  b1 =   A4h - beta * A1h;
+  b2 =   A3h + beta * A2h;
+  b3 = - A1h + beta * A4h ;
 
   psi  = 0.5 * atan2 ( b1, b2 );
-  tan2psi = b1 / b2;
-  dpsi = 0.5 * ( db1 - tan2psi * db2 ) / (( 1.0 + SQ(tan2psi) ) * b2 );
-
-  phi0 =      atan2 ( b2, b3 );
-  tanphi0 = b2 / b3;
-  dphi0 = (db2 - tanphi0 * db3 )/ ( (1.0 + SQ(tanphi0) ) * b3 );
+  phi0 =       atan2 ( b2, b3 );
 
   /* Fix remaining sign-ambiguity by checking sign of reconstructed A1 */
   A1check = Aplus * cos(phi0) * cos(2.0*psi) - Across * sin(phi0) * sin(2*psi);
-  if ( A1check * A1 <  0 )
+  if ( A1check * A1h <  0 )
     phi0 += LAL_PI;
 
   /* propagate phase from internal reference-time 'startTime' to refTime */
@@ -1370,33 +1350,38 @@ EstimateSigParams (LALStatus *status, candidate_t *cand, const MultiAMCoeffs *mu
   else if ( psi < 0 )
     psi += LAL_PI;
 
-  LogPrintf (LOG_NORMAL, "phi0 = %g +- %g, psi = %g +- %g\n", 
-	     phi0, dphi0, psi, dpsi );
-
-
   /* translate A_{+,x} into {h_0, cosi} */
-  h0 = Aplus + sqrt ( Ap2mAc2 );
-  dh0 = dAplus + ( Aplus * dAplus - Across * dAcross ) / sqrt(Ap2mAc2);
-
+  h0 = Aplus + sqrt ( Ap2mAc2 );  /* not yet normalized ! */
   cosi = Across / h0;
-  dcosi = ( dAcross - cosi * dh0 ) / h0;
 
-  LogPrintf (LOG_NORMAL, "h0 = %g +- %g, cosi = %g +- %g\n", 
-	     h0, dh0, cosi, dcosi );
+  /* check numerical consistency of estimated Amu and reconstructed */
+  A1check =   Aplus * cos(phi0) * cos(2.0*psi) - Across * sin(phi0) * sin(2*psi);  
+  A2check =   Aplus * cos(phi0) * sin(2.0*psi) + Across * sin(phi0) * cos(2*psi);  
+  A3check = - Aplus * sin(phi0) * cos(2.0*psi) - Across * cos(phi0) * sin(2*psi);  
+  A4check = - Aplus * sin(phi0) * sin(2.0*psi) + Across * cos(phi0) * cos(2*psi);  
+
+  if ( ( fabs( A1check - A1h ) > tolerance ) ||
+       ( fabs( A2check - A2h ) > tolerance ) ||
+       ( fabs( A3check - A3h ) > tolerance ) ||
+       ( fabs( A4check - A4h ) > tolerance ) )
+    {
+      LogPrintf (LOG_CRITICAL, 
+		 "Difference between estimated and reconstructed Amu exceeds tolerance of %g\n", 
+		 tolerance );
+    }
 
   /* fill candidate-struct with the obtained signal-parameters and error-estimations */
-  cand->Aplus  = Aplus;
-  cand->dAplus = dAplus;
-  cand->Across = Across;
-  cand->dAcross = dAcross;
-  cand->phi0 = phi0;
-  cand->dphi0 = dphi0;
-  cand->psi = psi;
-  cand->dpsi = dpsi;
-  cand->h0 = h0;
-  cand->dh0 = dh0;
-  cand->cosi = cosi;
-  cand->dcosi = dcosi;
+  cand->Aplus  = normAmu * Aplus;
+  cand->Across = normAmu * Across;
+  cand->phi0   = phi0;
+  cand->psi    = psi;
+  cand->h0     = normAmu * h0;
+  cand->cosi   = cosi;
+
+  LogPrintf (LOG_NORMAL, "Aplus = %g, Across = %g\n", cand->Aplus, cand->Across );
+  LogPrintf (LOG_NORMAL, "phi0 = %g, psi = %g\n", cand->phi0, cand->psi );
+  LogPrintf (LOG_NORMAL, "h0 = %g, cosi = %g\n", cand->h0, cand->cosi );
+
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
