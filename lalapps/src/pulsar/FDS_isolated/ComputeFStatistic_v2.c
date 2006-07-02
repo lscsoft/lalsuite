@@ -1400,6 +1400,27 @@ EstimateSigParams (LALStatus *status,
   if ( A1check * A1h <  0 )
     phi0 += LAL_PI;
 
+  A1check =   aPlus * cos(phi0) * cos(2*psi) - aCross * sin(phi0) * sin(2*psi);  
+  A2check =   aPlus * cos(phi0) * sin(2*psi) + aCross * sin(phi0) * cos(2*psi);  
+  A3check = - aPlus * sin(phi0) * cos(2*psi) - aCross * cos(phi0) * sin(2*psi);  
+  A4check = - aPlus * sin(phi0) * sin(2*psi) + aCross * cos(phi0) * cos(2*psi);  
+
+  LogPrintf (LOG_NORMAL, "reconstructed:    A1 = %g, A2 = %g, A3 = %g, A4 = %g\n", 
+	     A1check, A2check, A3check, A4check );
+
+  if ( ( fabs( (A1check - A1h)/A1h ) > tolerance ) ||
+       ( fabs( (A2check - A2h)/A2h ) > tolerance ) ||
+       ( fabs( (A3check - A3h)/A3h ) > tolerance ) ||
+       ( fabs( (A4check - A4h)/A4h ) > tolerance ) )
+    {
+      LogPrintf (LOG_CRITICAL, 
+		 "Difference between estimated and reconstructed Amu exceeds tolerance of %g\n", 
+		 tolerance );
+    }
+
+
+
+
   /* propagate phase from internal reference-time 'startTime' to refTime */
   TRY ( LALExtrapolatePulsarPhase (status->statusPtr, &phi0, cand->fkdotRef, cand->refTime, 
 				   phi0, cand->startTime ), status);
@@ -1427,21 +1448,6 @@ EstimateSigParams (LALStatus *status,
   sinphi0 = sin(phi0);
   cos2psi = cos(2*psi);
   sin2psi = sin(2*psi);
-
-  A1check =   aPlus * cosphi0 * cos2psi - aCross * sinphi0 * sin2psi;  
-  A2check =   aPlus * cosphi0 * sin2psi + aCross * sinphi0 * cos2psi;  
-  A3check = - aPlus * sinphi0 * cos2psi - aCross * cosphi0 * sin2psi;  
-  A4check = - aPlus * sinphi0 * sin2psi + aCross * cosphi0 * cos2psi;  
-
-  if ( ( fabs( A1check - A1h ) > tolerance ) ||
-       ( fabs( A2check - A2h ) > tolerance ) ||
-       ( fabs( A3check - A3h ) > tolerance ) ||
-       ( fabs( A4check - A4h ) > tolerance ) )
-    {
-      LogPrintf (LOG_CRITICAL, 
-		 "Difference between estimated and reconstructed Amu exceeds tolerance of %g\n", 
-		 tolerance );
-    }
 
   /* fill candidate-struct with the obtained signal-parameters and error-estimations */
   cand->aPlus  = normAmu * aPlus;
