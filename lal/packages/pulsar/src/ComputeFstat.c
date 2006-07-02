@@ -140,14 +140,14 @@ void ComputeFStatFreqBand ( LALStatus *status,
 
   /* loop over frequency values and fill up values in fstatVector */
   for ( k = 0; k < numBins; k++) {
-    
-    thisPoint.fkdot->data[0] += deltaF;
  
     TRY (ComputeFStat ( status->statusPtr, &Fstat, &thisPoint, multiSFTs, multiWeights, 
 			multiDetStates, params, &cfBuffer ), status);
 
     fstatVector->data->data[k] = Fstat.F;
       
+    thisPoint.fkdot->data[0] += deltaF;
+
   }
 
   XLALDestroyREAL8Vector ( thisPoint.fkdot);
