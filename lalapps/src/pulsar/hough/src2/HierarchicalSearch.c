@@ -623,7 +623,6 @@ int main( int argc, char *argv[]) {
     REAL8 freqLo, freqHi;
     INT4 extraBins;
 
-
     /* get sft catalog */
     constraints1.startTime = &minStartTimeGPS;
     constraints1.endTime = &maxEndTimeGPS;
@@ -649,7 +648,6 @@ int main( int argc, char *argv[]) {
     /* get sft catalogs for each stack */
     LAL_CALL( SetUpStacks( &status, &catalogSeq1, &tStack1, &sftTimeStamps1, catalog, uvar_nStacks1), &status);
 
-
     if ( uvar_followUp ) {
       LAL_CALL ( PrintStackInfo ( &status, &catalogSeq1, fpFstat), &status);
     }
@@ -661,7 +659,6 @@ int main( int argc, char *argv[]) {
     if ( uvar_printCand1 ) {
       LAL_CALL ( PrintStackInfo ( &status, &catalogSeq1, fpSemiCoh), &status);
     }
-
 
 
     /* calculate start and end times and tobs */
@@ -705,8 +702,7 @@ int main( int argc, char *argv[]) {
   
     /* read in ephemeris data */
     LAL_CALL( LALInitBarycenter( &status, edat), &status);
-    
-    
+        
     /* set wings of sfts to be read */
     /* the wings must be enough for the Doppler shift and extra bins
        for the running median block size and Dterms for Fstat calculation.
@@ -833,7 +829,7 @@ int main( int argc, char *argv[]) {
   fstatVector1.length = nStacks1;
   fstatVector1.data = NULL;
   fstatVector1.data = (REAL8FrequencySeries *)LALCalloc( 1, nStacks1 * sizeof(REAL8FrequencySeries));
-  binsFstat1 = (UINT4)(fkdotBand_refTime->data[0]/deltaFstack1 + 0.5);
+  binsFstat1 = (UINT4)(fkdotBand_startTime1->data[0]/deltaFstack1 + 0.5) + 1;
   for (k = 0; k < nStacks1; k++) 
     { 
       /* careful--the epoch here is not the reference time for f0! */
@@ -1284,7 +1280,7 @@ int main( int argc, char *argv[]) {
 		  fstatVector2.length = nStacks2;
 		  fstatVector2.data = NULL;
 		  fstatVector2.data = (REAL8FrequencySeries *)LALCalloc( 1, nStacks2 * sizeof(REAL8FrequencySeries));
-		  binsFstat2 = (UINT4)(freqBand1/deltaFstack2 + 0.5);
+		  binsFstat2 = (UINT4)(freqBand1/deltaFstack2 + 0.5) + 1;
 		  for (k = 0; k < nStacks2; k++) 
 		    { 
 		      fstatVector2.data[k].epoch = startTstack2->data[k];
