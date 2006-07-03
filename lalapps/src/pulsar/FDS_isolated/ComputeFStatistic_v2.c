@@ -1372,7 +1372,7 @@ EstimateSigParams (LALStatus *status,
   A3h = gsl_vector_get ( A_Mu, 2 );
   A4h = gsl_vector_get ( A_Mu, 3 );
 
-  LogPrintf (LOG_NORMAL, "norm= %g; A1 = %g, A2 = %g, A3 = %g, A4 = %g\n", 
+  LogPrintf (LOG_DEBUG, "norm= %g; A1 = %g, A2 = %g, A3 = %g, A4 = %g\n", 
 	     normAmu, A1h, A2h, A3h, A4h );
 
   Asq = SQ(A1h) + SQ(A2h) + SQ(A3h) + SQ(A4h);
@@ -1405,7 +1405,7 @@ EstimateSigParams (LALStatus *status,
   A3check = - aPlus * sin(phi0) * cos(2*psi) - aCross * cos(phi0) * sin(2*psi);  
   A4check = - aPlus * sin(phi0) * sin(2*psi) + aCross * cos(phi0) * cos(2*psi);  
 
-  LogPrintf (LOG_NORMAL, "reconstructed:    A1 = %g, A2 = %g, A3 = %g, A4 = %g\n", 
+  LogPrintf (LOG_DEBUG, "reconstructed:    A1 = %g, A2 = %g, A3 = %g, A4 = %g\n", 
 	     A1check, A2check, A3check, A4check );
 
   if ( ( fabs( (A1check - A1h)/A1h ) > tolerance ) ||
@@ -1571,12 +1571,12 @@ EstimateSigParams (LALStatus *status,
   cand->dh0     = normAmu * sqrt( gsl_matrix_get (Jh_Mu_nu, 0, 0 ) );
   cand->dcosi   = sqrt( gsl_matrix_get (Jh_Mu_nu, 1, 1 ) );
 
-  LogPrintf (LOG_NORMAL, "aPlus  = %g +- %g\n", cand->aPlus, cand->daPlus );
-  LogPrintf (LOG_NORMAL, "aCross = %g +- %g\n", cand->aCross, cand->daCross );
-  LogPrintf (LOG_NORMAL, "h0     = %g +- %g\n", cand->h0, cand->dh0 );
-  LogPrintf (LOG_NORMAL, "cosi   = %g +- %g\n", cand->cosi, cand->dcosi );
-  LogPrintf (LOG_NORMAL, "phi0   = %g +- %g\n", cand->phi0, cand->dphi0 );
-  LogPrintf (LOG_NORMAL, "psi    = %g +- %g\n", cand->psi,  cand->dpsi );
+  LogPrintf (LOG_DEBUG, "aPlus  = %g +- %g\n", cand->aPlus, cand->daPlus );
+  LogPrintf (LOG_DEBUG, "aCross = %g +- %g\n", cand->aCross, cand->daCross );
+  LogPrintf (LOG_DEBUG, "h0     = %g +- %g\n", cand->h0, cand->dh0 );
+  LogPrintf (LOG_DEBUG, "cosi   = %g +- %g\n", cand->cosi, cand->dcosi );
+  LogPrintf (LOG_DEBUG, "phi0   = %g +- %g\n", cand->phi0, cand->dphi0 );
+  LogPrintf (LOG_DEBUG, "psi    = %g +- %g\n", cand->psi,  cand->dpsi );
 
   /* ----- free GSL memory ----- */
   gsl_vector_free ( x_mu );
