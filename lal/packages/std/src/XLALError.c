@@ -569,7 +569,6 @@ static int print_stack( void )
     default: addr = NULL; break; \
   } while (0)
 
-extern void main(void);
 int print_stack( void )
 {
   Dl_info info;
@@ -579,7 +578,7 @@ int print_stack( void )
   {
     void *addr;
     get_return_address( addr, level );
-    if ( ! addr || addr < (void*)&main )
+    if ( ! addr )
       break;
     dladdr( addr, &info );
     fprintf( stderr, "%s(%s+%p)[%p]\n", info.dli_fname, info.dli_sname, (void*)(addr - info.dli_saddr), addr );
