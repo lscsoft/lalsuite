@@ -66,7 +66,7 @@ RCSID( "$Id$");
 #define PREDICTFSTAT_EINPUT   	3
 #define PREDICTFSTAT_EMEM   	4
 #define PREDICTFSTAT_ENONULL 	5
-#define PREDICTFSTAT_EXLAL		6
+#define PREDICTFSTAT_EXLAL	6
 
 #define PREDICTFSTAT_MSGENULL 	"Arguments contained an unexpected null pointer"
 #define PREDICTFSTAT_MSGESYS	"System call failed (probably file IO)"
@@ -89,15 +89,10 @@ RCSID( "$Id$");
  * These are 'pre-processed' settings, which have been derived from the user-input.
  */
 typedef struct {
-  LIGOTimeGPS startTime;		    	/**< start time of observation */
-  REAL8 duration;			    	/**< total time-span of the data (all streams) [s] */
-  EphemerisData *edat;			    	/**< ephemeris data (from LALInitBarycenter()) */
-  UINT4 numDetectors;			    	/**< number of detectors */
-  MultiSFTVector *multiSFTs;		    	/**< multi-IFO SFT-vectors */
-  MultiDetectorStateSeries *multiDetStates; 	/**< pos, vel and LMSTs for detector at times t_i */
-  REAL8 Tsft;					/**< SFT length */
-  CHAR *dataSummary;                        	/**< descriptive string describing the data */
-  REAL8 aPlus, aCross;				/**< internally always use Aplus, Across */
+  CHAR *dataSummary;            /**< descriptive string describing the data */
+  REAL8 aPlus, aCross;		/**< internally always use Aplus, Across */
+  REAL8 A, B, C;		/**< antenna-pattern integrals */
+  REAL8 TsftShat;		/**< noise normalization */
 } ConfigVariables;
 
 /*---------- Global variables ----------*/
@@ -132,7 +127,6 @@ int main(int argc,char *argv[]);
 
 void initUserVars (LALStatus *);
 void InitPFS ( LALStatus *, ConfigVariables *cfg );
-void Freemem(LALStatus *,  ConfigVariables *cfg);
 void InitEphemeris (LALStatus *, EphemerisData *edat, const CHAR *ephemDir, const CHAR *ephemYear, LIGOTimeGPS epoch);
 
 /*---------- empty initializers ---------- */
@@ -149,9 +143,7 @@ static const SFTConstraints empty_SFTConstraints;
 int main(int argc,char *argv[]) 
 {
   LALStatus status = blank_status;	/* initialize status */
-
-  CWParamSpacePoint psPoint;		/* parameter-space point to compute Fstat for */
-  SkyPosition thisPoint;   
+  REAL8 F = 0.0;
 
   lalDebugLevel = 0;  
   vrbflg = 1;	/* verbose error-messages */
@@ -169,109 +161,37 @@ int main(int argc,char *argv[])
   if (uvar_help)	/* if help was requested, we're done here */
     exit (0);
 
-  /* Initialization the common variables of the code, */
-  /* like ephemeries data*/
+  /* Initialize code-setup */
   LAL_CALL ( InitPFS(&status, &GV), &status);
   
-   /* normalize skyposition: correctly map into [0,2pi]x[-pi/2,pi/2] */
-  thisPoint.longitude = uvar_Alpha;
-  thisPoint.latitude = uvar_Delta;
-  thisPoint.system = COORDINATESYSTEM_EQUATORIAL;
-  LAL_CALL (LALNormalizeSkyPosition(&status, &thisPoint, &thisPoint), &status);
-  
-  /* set parameter-space point: sky-position */
-  psPoint.skypos = thisPoint;
-
   { /* Calculating the F-Statistic */
+    REAL8 al1, al2, al3;
+    REAL8 Ap2 = SQ(GV.aPlus);
+    REAL8 Ac2 = SQ(GV.aCross);
+    REAL8 cos2psi2 = SQ( cos(2*uvar_psi) );
+    REAL8 sin2psi2 = SQ( sin(2*uvar_psi) );
+
+    al1 = Ap2 * cos2psi2 + Ac2 * sin2psi2;	/* A1^2 + A3^2 */
+    al2 = Ap2 * sin2psi2 + Ac2 * cos2psi2;	/* A2^2 + A4^2 */
+    al3 = ( Ap2 - Ac2 ) * sin(2.0*uvar_psi) * cos(2.0*uvar_psi);	/* A1 A2 + A3 A4 */
     
-    REAL8 F = 0.0;
-    REAL8 At = 0.0 ,Bt = 0.0 ,Ct = 0.0; 
-    REAL8 Sh;
-    UINT4 X;  
+    F = 2.0 + 0.25 * GV.TsftShat * (GV.A * al1 + GV.B * al2 + 2.0 * GV.C * al3 );
+  }
 
-    MultiAMCoeffs *multiAMcoef = NULL;
-    MultiPSDVector *multiPSDs = NULL;
+  fprintf(stdout, "\n%.1f\n", 2.0 * F);
 
-    LAL_CALL ( LALGetMultiAMCoeffs ( &status, &multiAMcoef, GV.multiDetStates, psPoint.skypos ), 
-	       &status);
-    LAL_CALL ( LALNormalizeMultiSFTVect ( &status, &multiPSDs, GV.multiSFTs, uvar_RngMedWindow ), 
-	       &status );
-
-    /* Antenna-patterns and compute A,B,C */
-    for ( X=0; X < GV.numDetectors; X ++)
-      {
-	REAL8 A = 0.0, B = 0.0 ,C = 0.0;
-	UINT4 alpha;
-	UINT4 numSFTsX = GV.multiSFTs->data[X]->length;
-	AMCoeffs *amcoeX = multiAMcoef->data[X];
-	PSDVector *psdsX = multiPSDs->data[X]; 
-
-	for(alpha = 0; alpha < numSFTsX; alpha++)
-	  {
-	    UINT4 lengthPSD, i;
-	    REAL8 sumPSD = 0.0, meanPSD = 0.0, PSD;
-	    REAL8 ahat, bhat;
-
-	    lengthPSD = psdsX->data[0].data->length;
-
-	    for(i = 0; i < lengthPSD; i++)
-	      {
-		PSD =  psdsX->data[alpha].data->data[i];
-		sumPSD += PSD;  
-	      }
-	    meanPSD = sumPSD / lengthPSD;
-
-	    Sh = 2.0 * meanPSD / GV.Tsft;
-
-	    ahat = (amcoeX->a->data[alpha]);
-	    bhat = (amcoeX->b->data[alpha]);
-	    
-	    /* sum A, B, C on the fly */
-	    A += ahat * ahat / Sh;
-	    B += bhat * bhat / Sh;
-	    C += ahat * bhat / Sh;
-	    
-	  } /* for alpha < numSFTsX */
-
-	At += 2 * GV.Tsft * A;
-	Bt += 2 * GV.Tsft * B;
-	Ct += 2 * GV.Tsft * C;
-
-      } /* for X < numDetectors */
-
-    /* Free AM Coefficients */
-    XLALDestroyMultiAMCoeffs ( multiAMcoef );
-    /* Free MultiPSDVector  */
-    LAL_CALL ( LALDestroyMultiPSDVector (&status, &multiPSDs ), &status );
-
-    {
-      REAL8 al1, al2, al3;
-      REAL8 Ap2 = SQ(GV.aPlus);
-      REAL8 Ac2 = SQ(GV.aCross);
-      REAL8 cos2psi2 = SQ( cos(2*uvar_psi) );
-      REAL8 sin2psi2 = SQ( sin(2*uvar_psi) );
-
-      al1 = Ap2 * cos2psi2 + Ac2 * sin2psi2;	/* A1^2 + A3^2 */
-      al2 = Ap2 * sin2psi2 + Ac2 * cos2psi2;	/* A2^2 + A4^2 */
-      al3 = ( Ap2 - Ac2 ) * sin(2.0*uvar_psi) * cos(2.0*uvar_psi);	/* A1 A2 + A3 A4 */
-    
-      F = 2.0 + 0.25 * (At * al1 + Bt * al2 + 2.0 * Ct * al3 );
-    }
-
-    fprintf(stdout, "\n%.1f\n", 2.0 * F);
-
-    /* output predicted Fstat-value into file, if requested */
-    if (uvar_outputFstat)
+  /* output predicted Fstat-value into file, if requested */
+  if (uvar_outputFstat)
     {
       FILE *fpFstat = NULL;
       CHAR *logstr = NULL;
-
+      
       if ( (fpFstat = fopen (uvar_outputFstat, "wb")) == NULL)
 	{
 	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputFstat);
 	  return (PREDICTFSTAT_ESYS);
 	}
-
+      
       /* log search-footprint at head of output-file */
       LAL_CALL( LALUserVarGetLog (&status, &logstr,  UVAR_LOGFMT_CMDLINE ), &status );
 
@@ -285,9 +205,9 @@ int main(int argc,char *argv[])
       fclose (fpFstat);
     } /* if outputFstat */   
 
-  } /* computation of Fstatistic */
-
-  LAL_CALL ( Freemem(&status, &GV), &status);
+  /* Free config-Variables and userInput stuff */
+  LAL_CALL (LALDestroyUserVars (&status), &status);
+  LALFree ( GV.dataSummary );
   
   /* did we forget anything ? */
   LALCheckMemoryLeaks();
@@ -322,7 +242,6 @@ initUserVars (LALStatus *status)
   
   uvar_minStartTime = 0;
   uvar_maxEndTime = LAL_INT4_MAX;
-  
   
   /* register all our user-variables */
   LALregBOOLUserVar(status,	help, 		'h', UVAR_HELP,     "Print this message"); 
@@ -410,10 +329,19 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg )
 {
   SFTCatalog *catalog = NULL;
   SFTConstraints constraints = empty_SFTConstraints;
+  SkyPosition skypos;
+  REAL8 S_hat;
 
-  UINT4 numSFTs;
-  LIGOTimeGPS endTime;
+  LIGOTimeGPS startTime, endTime;
+  REAL8 duration, Tsft;
   LIGOTimeGPS minStartTimeGPS, maxEndTimeGPS;
+
+  EphemerisData *edat = NULL;		    	/* ephemeris data */
+  MultiAMCoeffs *multiAMcoef = NULL;
+  MultiPSDVector *multiPSDs = NULL;
+  MultiNoiseWeights *multiNoiseWeights = NULL;
+  MultiSFTVector *multiSFTs = NULL;	    	/* multi-IFO SFT-vectors */
+  MultiDetectorStateSeries *multiDetStates = NULL; /* pos, vel and LMSTs for detector at times t_i */
 
   INITSTATUS (status, "InitPFS", rcsid);
   ATTATCHSTATUSPTR (status);
@@ -436,14 +364,12 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg )
 	LogPrintf (LOG_CRITICAL, "Need both (aPlus, aCross) to specify signal!\n");
 	ABORT ( status, PREDICTFSTAT_EINPUT, PREDICTFSTAT_MSGEINPUT );
       }
-    
     if ( have_h0 && have_Ap )
       {
 	LogPrintf (LOG_CRITICAL, "Overdetermined: specify EITHER (h0,cosi) OR (aPlus,aCross)!\n");
 	ABORT ( status, PREDICTFSTAT_EINPUT, PREDICTFSTAT_MSGEINPUT );
       }
-
-    /* internally we always use Aplus, Across */
+    /* ----- internally we always use Aplus, Across */
     if ( have_h0 )
       {
 	cfg->aPlus = 0.5 * uvar_h0 * ( 1.0 + SQ( uvar_cosiota) );
@@ -454,10 +380,10 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg )
 	cfg->aPlus = uvar_aPlus;
 	cfg->aCross = uvar_aCross;
       }
-
   }/* check user-input */
 
-  /* use IFO-contraint if one given by the user */
+
+  /* ----- prepare SFT-reading ----- */
   if ( LALUserVarWasSet ( &uvar_IFO ) )
     if ( (constraints.detector = XLALGetChannelPrefix ( uvar_IFO )) == NULL ) {
       ABORT ( status,  PREDICTFSTAT_EINPUT,  PREDICTFSTAT_MSGEINPUT);
@@ -470,7 +396,7 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg )
   constraints.startTime = &minStartTimeGPS;
   constraints.endTime = &maxEndTimeGPS;
 
-  /* get full SFT-catalog of all matching (multi-IFO) SFTs */
+  /* ----- get full SFT-catalog of all matching (multi-IFO) SFTs */
   LogPrintf (LOG_DEBUG, "Finding all SFTs to load ... ");
   TRY ( LALSFTdataFind ( status->statusPtr, &catalog, uvar_DataFiles, &constraints ), status);    
   LogPrintfVerbatim (LOG_DEBUG, "done. (found %d SFTs)\n", catalog->length);
@@ -479,47 +405,30 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg )
 
   if ( catalog->length == 0 ) 
     {
-      LALPrintError ("\nSorry, didn't find any matching SFTs with pattern '%s'!\n\n", 
-		     uvar_DataFiles );
+      LogPrintf (LOG_CRITICAL, "No matching SFTs for pattern '%s'!\n", uvar_DataFiles );
       ABORT ( status,  PREDICTFSTAT_EINPUT,  PREDICTFSTAT_MSGEINPUT);
     }
 
-  /* deduce start- and end-time of the observation spanned by the data */
-  numSFTs = catalog->length;
-  cfg->Tsft = 1.0 / catalog->data[0].header.deltaF;
-  cfg->startTime = catalog->data[0].header.epoch;
-  endTime   = catalog->data[numSFTs-1].header.epoch;
-  LALAddFloatToGPS(status->statusPtr, &endTime, &endTime, cfg->Tsft );	/* can't fail */
-  cfg->duration = GPS2REAL8(endTime) - GPS2REAL8 (cfg->startTime);
+  /* ----- deduce start- and end-time of the observation spanned by the data */
+  {
+    UINT4 numSFTs = catalog->length;
+    Tsft = 1.0 / catalog->data[0].header.deltaF;
+    startTime = catalog->data[0].header.epoch;
+    endTime   = catalog->data[numSFTs-1].header.epoch;
+    LALAddFloatToGPS(status->statusPtr, &endTime, &endTime, Tsft );	/* can't fail */
+    duration = GPS2REAL8(endTime) - GPS2REAL8 (startTime);
+  }
 
   {/* ----- load the multi-IFO SFT-vectors ----- */
     UINT4 wings = uvar_RngMedWindow/2 + 10;   /* extra frequency-bins needed for rngmed */
-    REAL8 fMax = uvar_Freq + 1.0 * wings / cfg->Tsft;
-    REAL8 fMin = uvar_Freq - 1.0 * wings / cfg->Tsft;
+    REAL8 fMax = uvar_Freq + 1.0 * wings / Tsft;
+    REAL8 fMin = uvar_Freq - 1.0 * wings / Tsft;
 
     LogPrintf (LOG_DEBUG, "Loading SFTs ... ");
-    TRY ( LALLoadMultiSFTs ( status->statusPtr, &(cfg->multiSFTs), catalog, fMin, fMax ), status );
+    TRY ( LALLoadMultiSFTs ( status->statusPtr, &multiSFTs, catalog, fMin, fMax ), status );
     LogPrintfVerbatim (LOG_DEBUG, "done.\n");
     TRY ( LALDestroySFTCatalog ( status->statusPtr, &catalog ), status );
   }
-
-  cfg->numDetectors = cfg->multiSFTs->length;
-
-  { /* ----- load ephemeris-data ----- */
-    CHAR *ephemDir;
-
-    cfg->edat = LALCalloc(1, sizeof(EphemerisData));
-    if ( LALUserVarWasSet ( &uvar_ephemDir ) )
-      ephemDir = uvar_ephemDir;
-    else
-      ephemDir = NULL;
-    TRY( InitEphemeris (status->statusPtr, cfg->edat, ephemDir, uvar_ephemYear, cfg->startTime ),
-	 status);
-  }
-  
-  /* ----- obtain the (multi-IFO) 'detector-state series' for all SFTs ----- */
-  TRY (LALGetMultiDetectorStates( status->statusPtr, &(cfg->multiDetStates), cfg->multiSFTs, cfg->edat),
-       status );
 
   /* ----- produce a log-string describing the data-specific setup ----- */
   {
@@ -527,63 +436,83 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg )
     time_t tp;
     CHAR dateStr[512], line[512], summary[1024];
     UINT4 i, numDet;
-    numDet = cfg->multiSFTs->length;
+    numDet = multiSFTs->length;
     tp = time(NULL);
     sprintf (summary, "## Date: %s", asctime( gmtime( &tp ) ) );
     strcat (summary, "## Loaded SFTs: [ " );
     for ( i=0; i < numDet; i ++ ) {
-      sprintf (line, "%s:%d%s",  cfg->multiSFTs->data[i]->data->name, 
-	       cfg->multiSFTs->data[i]->length,
+      sprintf (line, "%s:%d%s",  multiSFTs->data[i]->data->name, multiSFTs->data[i]->length,
 	       (i < numDet - 1)?", ":" ]\n");
       strcat ( summary, line );
     }
-    utc = *XLALGPSToUTC( &utc, (INT4)GPS2REAL8(cfg->startTime) );
+    utc = *XLALGPSToUTC( &utc, (INT4)GPS2REAL8(startTime) );
     strcpy ( dateStr, asctime(&utc) );
     dateStr[ strlen(dateStr) - 1 ] = 0;
-    sprintf (line, "## Start GPS time tStart = %12.3f    (%s GMT)\n", 
-	     GPS2REAL8(cfg->startTime), dateStr);
+    sprintf (line, "## Start GPS time tStart = %12.3f    (%s GMT)\n", GPS2REAL8(startTime), dateStr);
     strcat ( summary, line );
-    sprintf (line, "## Total time spanned    = %12.3f s  (%.1f hours)\n", 
-	     cfg->duration, cfg->duration/3600 );
+    sprintf (line, "## Total time spanned    = %12.3f s  (%.1f hours)\n", duration, duration/3600 );
     strcat ( summary, line );
 
     if ( (cfg->dataSummary = LALCalloc(1, strlen(summary) + 1 )) == NULL ) {
       ABORT (status, PREDICTFSTAT_EMEM, PREDICTFSTAT_MSGEMEM);
     }
     strcpy ( cfg->dataSummary, summary );
+
+    LogPrintfVerbatim( LOG_DEBUG, cfg->dataSummary );
   } /* write dataSummary string */
 
-  LogPrintfVerbatim( LOG_DEBUG, cfg->dataSummary );
+  { /* ----- load ephemeris-data ----- */
+    CHAR *ephemDir;
+
+    edat = LALCalloc(1, sizeof(EphemerisData));
+    if ( LALUserVarWasSet ( &uvar_ephemDir ) )
+      ephemDir = uvar_ephemDir;
+    else
+      ephemDir = NULL;
+    TRY( InitEphemeris (status->statusPtr, edat, ephemDir, uvar_ephemYear, startTime ), status);
+  }
+
+  /* ----- obtain the (multi-IFO) 'detector-state series' for all SFTs ----- */
+  TRY (LALGetMultiDetectorStates( status->statusPtr, &multiDetStates, multiSFTs, edat), status );
+
+  /* normalize skyposition: correctly map into [0,2pi]x[-pi/2,pi/2] */
+  skypos.longitude = uvar_Alpha;
+  skypos.latitude = uvar_Delta;
+  skypos.system = COORDINATESYSTEM_EQUATORIAL;
+  TRY (LALNormalizeSkyPosition ( status->statusPtr, &skypos, &skypos), status);
+
+  TRY ( LALGetMultiAMCoeffs ( status->statusPtr, &multiAMcoef, multiDetStates, skypos ), status);
+  TRY ( LALNormalizeMultiSFTVect(status->statusPtr, &multiPSDs, multiSFTs, uvar_RngMedWindow ), status);
+  TRY ( LALComputeMultiNoiseWeights (status->statusPtr, &multiNoiseWeights, &S_hat, multiPSDs, 
+				     uvar_RngMedWindow, 0 ), status );
+
+  cfg->TsftShat = Tsft * S_hat;	/* overall inverse noise-norm for Fstat */
+
+  /* noise-weighting of Antenna-patterns and compute A,B,C */
+  if ( XLALWeighMultiAMCoeffs ( multiAMcoef, multiNoiseWeights ) != XLAL_SUCCESS ) {
+    LogPrintf (LOG_CRITICAL, "XLALWeighMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
+    ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
+  }
+
+  /* OK: we only need the integrated antenna-pattern coefficients A,B,C, D */
+  cfg->A = multiAMcoef->A;
+  cfg->B = multiAMcoef->B;
+  cfg->C = multiAMcoef->C;
+
+  /* free everything not needed any more */
+  TRY ( LALDestroyMultiPSDVector (status->statusPtr, &multiPSDs ), status );
+  TRY ( LALDestroyMultiNoiseWeights (status->statusPtr, &multiNoiseWeights ), status );
+  TRY ( LALDestroyMultiSFTVector (status->statusPtr, &multiSFTs ), status );
+  XLALDestroyMultiDetectorStateSeries ( multiDetStates );
+  XLALDestroyMultiAMCoeffs ( multiAMcoef );
+
+  /* Free ephemeris data */
+  LALFree(edat->ephemE);
+  LALFree(edat->ephemS);
+  LALFree(edat);
+
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
 
 } /* InitPFS() */
-
-/** Free all globally allocated memory. */
-void
-Freemem(LALStatus *status,  ConfigVariables *cfg) 
-{
-  INITSTATUS (status, "Freemem", rcsid);
-  ATTATCHSTATUSPTR (status);
-
-  /* Free SFT data */
-  TRY ( LALDestroyMultiSFTVector (status->statusPtr, &(cfg->multiSFTs) ), status );
-
-  /* destroy DetectorStateSeries */
-  XLALDestroyMultiDetectorStateSeries ( cfg->multiDetStates );
-  
-  /* Free config-Variables and userInput stuff */
-  TRY (LALDestroyUserVars (status->statusPtr), status);
-
-  LALFree ( cfg->dataSummary );
-
-  /* Free ephemeris data */
-  LALFree(cfg->edat->ephemE);
-  LALFree(cfg->edat->ephemS);
-  LALFree(cfg->edat);
-
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
-
-} /* Freemem() */
