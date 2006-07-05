@@ -190,20 +190,13 @@ LALGeneratePulsarSignal (LALStatus *status,
   detector.site = params->site;
   detector.ephemerides = params->ephemerides;
 
-  /* similar to the spirit of makefakedata_v2, we use the pulsar reference-time 
-   * as t_h if given, so that several time-series generated for the same pulsar would be 
-   * guaranteed to have consistent heterodyning. If tRef not given, use startTime.
-   *
-   * However, we round this to integer-seconds to allow simplifications concerning
-   * the necessary phase-correction in the final SFTs. (see docu)
+  /* *contrary* to makefakedata_v2, we use the GPS start-time of the timeseries as
+   * the heterodyning epoch, in order to make sure that the global phase of the 
+   * SFTs it correct: this is necessary to allow correct parameter-estimation on the 
+   * pulsar signal-phase in heterodyned SFTs 
    */
-  if ( params->pulsar.tRef.gpsSeconds != 0)
-    detector.heterodyneEpoch = params->pulsar.tRef;
-  else
-    detector.heterodyneEpoch = params->startTimeGPS;
+  detector.heterodyneEpoch = params->startTimeGPS;
 
-  detector.heterodyneEpoch.gpsNanoSeconds = 0;	/* make sure this only has seconds */
-  
   /* ok, we  need to prepare the output time-series */
   if ( (output = LALCalloc (1, sizeof (*output) )) == NULL) {
     ABORT (status,  GENERATEPULSARSIGNALH_EMEM,  GENERATEPULSARSIGNALH_MSGEMEM);
