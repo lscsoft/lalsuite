@@ -45,6 +45,8 @@
 
 #include <lalapps.h>
 
+#include "LogPrintf.h"
+
 /* local includes */
 
 RCSID( "$Id$");
@@ -59,19 +61,19 @@ RCSID( "$Id$");
 #define FALSE (1==0)
 
 /*----- Error-codes -----*/
-#define COMPUTEFSTATISTIC_ENULL 	1
-#define COMPUTEFSTATISTIC_ESYS     	2
-#define COMPUTEFSTATISTIC_EINPUT   	3
-#define COMPUTEFSTATISTIC_EMEM   	4
-#define COMPUTEFSTATISTIC_ENONULL 	5
-#define COMPUTEFSTATISTIC_EXLAL		6
+#define PREDICTFSTAT_ENULL 	1
+#define PREDICTFSTAT_ESYS     	2
+#define PREDICTFSTAT_EINPUT   	3
+#define PREDICTFSTAT_EMEM   	4
+#define PREDICTFSTAT_ENONULL 	5
+#define PREDICTFSTAT_EXLAL		6
 
-#define COMPUTEFSTATISTIC_MSGENULL 	"Arguments contained an unexpected null pointer"
-#define COMPUTEFSTATISTIC_MSGESYS	"System call failed (probably file IO)"
-#define COMPUTEFSTATISTIC_MSGEINPUT   	"Invalid input"
-#define COMPUTEFSTATISTIC_MSGEMEM   	"Out of memory. Bad."
-#define COMPUTEFSTATISTIC_MSGENONULL 	"Output pointer is non-NULL"
-#define COMPUTEFSTATISTIC_MSGEXLAL	"XLALFunction-call failed"
+#define PREDICTFSTAT_MSGENULL 	"Arguments contained an unexpected null pointer"
+#define PREDICTFSTAT_MSGESYS	"System call failed (probably file IO)"
+#define PREDICTFSTAT_MSGEINPUT  "Invalid input"
+#define PREDICTFSTAT_MSGEMEM   	"Out of memory. Bad."
+#define PREDICTFSTAT_MSGENONULL "Output pointer is non-NULL"
+#define PREDICTFSTAT_MSGEXLAL	"XLALFunction-call failed"
 
 /** convert GPS-time to REAL8 */
 #define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
@@ -81,16 +83,21 @@ RCSID( "$Id$");
 
 #define SQ(x) ((x)*(x))
 
+#define LAL_INT4_MAX 2147483647
+
 /** Configuration settings required for and defining a coherent pulsar search.
  * These are 'pre-processed' settings, which have been derived from the user-input.
  */
 typedef struct {
-  LIGOTimeGPS startTime;		    /**< start time of observation */
-  REAL8 duration;			    /**< total time-span of the data (all streams) in seconds */
-  EphemerisData *edat;			    /**< ephemeris data (from LALInitBarycenter()) */
-  UINT4 numDetectors;			    /**< number of detectors */
-  MultiSFTVector *multiSFTs;		    /**< multi-IFO SFT-vectors */
-  MultiDetectorStateSeries *multiDetStates; /**< pos, vel and LMSTs for detector at times t_i */
+  LIGOTimeGPS startTime;		    	/**< start time of observation */
+  REAL8 duration;			    	/**< total time-span of the data (all streams) [s] */
+  EphemerisData *edat;			    	/**< ephemeris data (from LALInitBarycenter()) */
+  UINT4 numDetectors;			    	/**< number of detectors */
+  MultiSFTVector *multiSFTs;		    	/**< multi-IFO SFT-vectors */
+  MultiDetectorStateSeries *multiDetStates; 	/**< pos, vel and LMSTs for detector at times t_i */
+  REAL8 Tsft;					/**< SFT length */
+  CHAR *dataSummary;                        	/**< descriptive string describing the data */
+  REAL8 aPlus, aCross;				/**< internally always use Aplus, Across */
 } ConfigVariables;
 
 /*---------- Global variables ----------*/
@@ -101,17 +108,14 @@ ConfigVariables GV;		/**< global container for various derived configuration set
 /* ----- User-variables: can be set from config-file or command-line */
 BOOLEAN uvar_help;
 
-INT4 uvar_gpsStart;
 INT4 uvar_RngMedWindow;
 
 REAL8 uvar_aPlus;
 REAL8 uvar_aCross;
-REAL8 uvar_phi;
 REAL8 uvar_psi;
 REAL8 uvar_h0;
 REAL8 uvar_cosiota;
 REAL8 uvar_Freq;
-REAL8 uvar_FreqBand;
 REAL8 uvar_Alpha;
 REAL8 uvar_Delta;
 
@@ -119,17 +123,16 @@ CHAR *uvar_IFO;
 CHAR *uvar_ephemDir;
 CHAR *uvar_ephemYear;
 CHAR *uvar_DataFiles;
-CHAR *uvar_outputLabel;
 CHAR *uvar_outputFstat;
+INT4 uvar_minStartTime;
+INT4 uvar_maxEndTime;
 
 /* ---------- local prototypes ---------- */
 int main(int argc,char *argv[]);
 
 void initUserVars (LALStatus *);
-void InitFStat ( LALStatus *, ConfigVariables *cfg );
+void InitPFS ( LALStatus *, ConfigVariables *cfg );
 void Freemem(LALStatus *,  ConfigVariables *cfg);
-void WriteFStatLog (LALStatus *, CHAR *argv[]);
-void checkUserInputConsistency (LALStatus *);
 void InitEphemeris (LALStatus *, EphemerisData *edat, const CHAR *ephemDir, const CHAR *ephemYear, LIGOTimeGPS epoch);
 
 /*---------- empty initializers ---------- */
@@ -146,8 +149,6 @@ static const SFTConstraints empty_SFTConstraints;
 int main(int argc,char *argv[]) 
 {
   LALStatus status = blank_status;	/* initialize status */
-
-  FILE *fpFstat = NULL;
 
   CWParamSpacePoint psPoint;		/* parameter-space point to compute Fstat for */
   SkyPosition thisPoint;   
@@ -168,28 +169,9 @@ int main(int argc,char *argv[])
   if (uvar_help)	/* if help was requested, we're done here */
     exit (0);
 
-  /* keep a log-file recording all relevant parameters of this search-run */
-  LAL_CALL (WriteFStatLog (&status, argv), &status);
-
-  /* do some sanity checks on the user-input before we proceed */
-  LAL_CALL ( checkUserInputConsistency(&status), &status);
-
   /* Initialization the common variables of the code, */
   /* like ephemeries data*/
-  LAL_CALL ( InitFStat(&status, &GV), &status);
-  
-  /* if a complete output of the F-statistic file was requested,
-   * we open and prepare the output-file here */
-  if (uvar_outputFstat)
-    {
-      if ( (fpFstat = fopen (uvar_outputFstat, "wb")) == NULL)
-	{
-	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputFstat);
-	  return (COMPUTEFSTATISTIC_ESYS);
-	}
-    } /* if outputFstat */
-  
-  if (lalDebugLevel) printf ("\nStarting main search-loop.. \n");
+  LAL_CALL ( InitPFS(&status, &GV), &status);
   
    /* normalize skyposition: correctly map into [0,2pi]x[-pi/2,pi/2] */
   thisPoint.longitude = uvar_Alpha;
@@ -204,19 +186,16 @@ int main(int argc,char *argv[])
     
     REAL8 F = 0.0;
     REAL8 At = 0.0 ,Bt = 0.0 ,Ct = 0.0; 
-    REAL8 A1, A2, A3, A4;
-    REAL8 h0, cosi; 
     REAL8 Sh;
-    REAL8 aPlus, aCross;
-    REAL8 twopsi, phi0;
-    REAL8 Tsft;
     UINT4 X;  
 
     MultiAMCoeffs *multiAMcoef = NULL;
     MultiPSDVector *multiPSDs = NULL;
 
-    LAL_CALL ( LALGetMultiAMCoeffs ( &status, &multiAMcoef, GV.multiDetStates, psPoint.skypos ), &status);
-    LAL_CALL ( LALNormalizeMultiSFTVect ( &status, &multiPSDs, GV.multiSFTs, uvar_RngMedWindow ), &status );
+    LAL_CALL ( LALGetMultiAMCoeffs ( &status, &multiAMcoef, GV.multiDetStates, psPoint.skypos ), 
+	       &status);
+    LAL_CALL ( LALNormalizeMultiSFTVect ( &status, &multiPSDs, GV.multiSFTs, uvar_RngMedWindow ), 
+	       &status );
 
     /* Antenna-patterns and compute A,B,C */
     for ( X=0; X < GV.numDetectors; X ++)
@@ -226,8 +205,6 @@ int main(int argc,char *argv[])
 	UINT4 numSFTsX = GV.multiSFTs->data[X]->length;
 	AMCoeffs *amcoeX = multiAMcoef->data[X];
 	PSDVector *psdsX = multiPSDs->data[X]; 
-
-	Tsft = 1 / (GV.multiSFTs->data[X]->data[0].deltaF);	
 
 	for(alpha = 0; alpha < numSFTsX; alpha++)
 	  {
@@ -244,7 +221,7 @@ int main(int argc,char *argv[])
 	      }
 	    meanPSD = sumPSD / lengthPSD;
 
-	    Sh = 2 * meanPSD / Tsft;
+	    Sh = 2.0 * meanPSD / GV.Tsft;
 
 	    ahat = (amcoeX->a->data[alpha]);
 	    bhat = (amcoeX->b->data[alpha]);
@@ -256,9 +233,9 @@ int main(int argc,char *argv[])
 	    
 	  } /* for alpha < numSFTsX */
 
-	At += 2 * Tsft * A;
-	Bt += 2 * Tsft * B;
-	Ct += 2 * Tsft * C;
+	At += 2 * GV.Tsft * A;
+	Bt += 2 * GV.Tsft * B;
+	Ct += 2 * GV.Tsft * C;
 
       } /* for X < numDetectors */
 
@@ -266,48 +243,50 @@ int main(int argc,char *argv[])
     XLALDestroyMultiAMCoeffs ( multiAMcoef );
     /* Free MultiPSDVector  */
     LAL_CALL ( LALDestroyMultiPSDVector (&status, &multiPSDs ), &status );
-      
-    phi0 = uvar_phi;
-    twopsi = 2.0 * uvar_psi;
+
+    {
+      REAL8 al1, al2, al3;
+      REAL8 Ap2 = SQ(GV.aPlus);
+      REAL8 Ac2 = SQ(GV.aCross);
+      REAL8 cos2psi2 = SQ( cos(2*uvar_psi) );
+      REAL8 sin2psi2 = SQ( sin(2*uvar_psi) );
+
+      al1 = Ap2 * cos2psi2 + Ac2 * sin2psi2;	/* A1^2 + A3^2 */
+      al2 = Ap2 * sin2psi2 + Ac2 * cos2psi2;	/* A2^2 + A4^2 */
+      al3 = ( Ap2 - Ac2 ) * sin(2.0*uvar_psi) * cos(2.0*uvar_psi);	/* A1 A2 + A3 A4 */
     
-    h0 = uvar_h0;
-    cosi = uvar_cosiota;
-    
-    if ( h0 != 0 ) 
-      {
-	aPlus = h0 * 0.5 * (1.0 + cosi*cosi );
-	aCross= h0 * cosi;
-      } 
-    else   /* alternative way to specify amplitude (compatible with mfd_v4) */
-      {
-	aPlus = uvar_aPlus;
-	aCross = uvar_aCross;
-      }
-    
-    A1 = aPlus * cos(twopsi) * cos(phi0) - aCross * sin(twopsi) * sin(phi0);
-    A2 = aPlus * sin(twopsi) * cos(phi0) + aCross * cos(twopsi) * sin(phi0);
-    A3 =-aPlus * cos(twopsi) * sin(phi0) - aCross * sin(twopsi) * cos(phi0);
-    A4 =-aPlus * sin(twopsi) * sin(phi0) + aCross * cos(twopsi) * cos(phi0);
-    
-    F = 0.25 * (At * ( SQ(A1) + SQ(A3) ) + Bt * ( SQ(A2) + SQ(A4) )+ 2.0 * Ct * (A1 * A2 + A3 * A4 ));
-    
-    /* Note: the expectation-value of 2F is 4 + lambda ==> add 2 to Fstat*/
-    F += 2.0;
-    
-/*     fprintf(stdout, "\n2F = %g,   sqrtSh =  %g\n\n", 2 * F , sqrt(Sh)); */
+      F = 2.0 + 0.25 * (At * al1 + Bt * al2 + 2.0 * Ct * al3 );
+    }
+
     fprintf(stdout, "\n%.1f\n", 2.0 * F);
 
-    if ( fpFstat )
-      {
-	fprintf (fpFstat, "%g\n%%DONE\n", 2.0 * F);
-	fclose (fpFstat);
-	fpFstat = NULL;
-      }
-    
-  }/* Compute FStat */ 
-  
-  if (lalDebugLevel) printf ("\nSearch finished.\n");
-  
+    /* output predicted Fstat-value into file, if requested */
+    if (uvar_outputFstat)
+    {
+      FILE *fpFstat = NULL;
+      CHAR *logstr = NULL;
+
+      if ( (fpFstat = fopen (uvar_outputFstat, "wb")) == NULL)
+	{
+	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputFstat);
+	  return (PREDICTFSTAT_ESYS);
+	}
+
+      /* log search-footprint at head of output-file */
+      LAL_CALL( LALUserVarGetLog (&status, &logstr,  UVAR_LOGFMT_CMDLINE ), &status );
+
+      fprintf(fpFstat, "## %s\n## %s\n",
+	      "$Id$",
+	      logstr );
+      LALFree ( logstr );
+      /* append 'dataSummary' */
+      fprintf (fpFstat, "%s", GV.dataSummary );
+      fprintf (fpFstat, "%g\n", 2.0 * F);
+      fclose (fpFstat);
+    } /* if outputFstat */   
+
+  } /* computation of Fstatistic */
+
   LAL_CALL ( Freemem(&status, &GV), &status);
   
   /* did we forget anything ? */
@@ -324,62 +303,61 @@ int main(int argc,char *argv[])
 void
 initUserVars (LALStatus *status)
 {
-INITSTATUS( status, "initUserVars", rcsid );
-ATTATCHSTATUSPTR (status);
 
-/* set a few defaults */
- uvar_phi       = 0.0;
- uvar_psi       = 0.0;
- uvar_h0        = 0.0;
- uvar_cosiota   = 0.0;
- uvar_Freq      = 100.0; 
- uvar_FreqBand  = 0.1;
- uvar_Alpha 	= 0.0;
- uvar_Delta 	= 0.0;
- uvar_RngMedWindow = 50;	/* for running-median */
- 
- uvar_ephemYear = LALCalloc (1, strlen(EPHEM_YEARS)+1);
- strcpy (uvar_ephemYear, EPHEM_YEARS);
- 
-#define DEFAULT_EPHEMDIR "env LAL_DATA_PATH"
- uvar_ephemDir = LALCalloc (1, strlen(DEFAULT_EPHEMDIR)+1);
- strcpy (uvar_ephemDir, DEFAULT_EPHEMDIR);
+  INITSTATUS( status, "initUserVars", rcsid );
+  ATTATCHSTATUSPTR (status);
 
- uvar_help = FALSE;
- uvar_outputLabel = NULL;
- uvar_outputFstat = NULL;
+  /* set a few defaults */
+  uvar_RngMedWindow = 50;	/* for running-median */
   
- /* register all our user-variables */
- LALregBOOLUserVar(status, 	help, 		'h', UVAR_HELP,     "Print this message"); 
+  uvar_ephemYear = LALCalloc (1, strlen(EPHEM_YEARS)+1);
+  strcpy (uvar_ephemYear, EPHEM_YEARS);
+  
+#define DEFAULT_EPHEMDIR "env LAL_DATA_PATH"
+  uvar_ephemDir = LALCalloc (1, strlen(DEFAULT_EPHEMDIR)+1);
+  strcpy (uvar_ephemDir, DEFAULT_EPHEMDIR);
+  
+  uvar_help = FALSE;
+  uvar_outputFstat = NULL;
+  
+  uvar_minStartTime = 0;
+  uvar_maxEndTime = LAL_INT4_MAX;
+  
+  
+  /* register all our user-variables */
+  LALregBOOLUserVar(status,	help, 		'h', UVAR_HELP,     "Print this message"); 
+  
+  LALregINTUserVar(status,	RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");
+  
+  LALregREALUserVar(status,	psi,		'Y', UVAR_REQUIRED, "Polarisation in rad");
+  
+  LALregREALUserVar(status,	cosiota,	'i', UVAR_OPTIONAL, "Cos(iota)");
+  LALregREALUserVar(status,	h0,		's', UVAR_OPTIONAL, "Strain amplitude h_0");
+  LALregREALUserVar(status,	aPlus,		  0, UVAR_OPTIONAL, "Strain amplitude h_0");
+  LALregREALUserVar(status,	aCross,		  0, UVAR_OPTIONAL, "Noise floor: one-sided sqrt(Sh) in 1/sqrt(Hz)");
+  LALregREALUserVar(status,	Alpha,		'a', UVAR_REQUIRED, "Sky position alpha (equatorial coordinates) in radians");
+  LALregREALUserVar(status,	Delta,		'd', UVAR_REQUIRED, "Sky position delta (equatorial coordinates) in radians");
+  LALregREALUserVar(status,	Freq,		'F', UVAR_REQUIRED, "Signal frequency (for noise-estimation)");
+  
+  LALregSTRINGUserVar(status,	DataFiles, 	'D', UVAR_REQUIRED, "File-pattern specifying (multi-IFO) input SFT-files"); 
+  LALregSTRINGUserVar(status,	IFO, 		'I', UVAR_OPTIONAL, "Detector-constraint: 'G1', 'L1', 'H1', 'H2' ...(useful for single-IFO v1-SFTs only!)");
+  LALregSTRINGUserVar(status,	ephemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
+  LALregSTRINGUserVar(status,	ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
+  LALregSTRINGUserVar(status,	outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for F-statistic field over the parameter-space");
+  
+  LALregINTUserVar ( status,	minStartTime, 	 0,  UVAR_OPTIONAL, "Earliest SFT-timestamp to include");
+  LALregINTUserVar ( status,	maxEndTime, 	 0,  UVAR_OPTIONAL, "Latest SFT-timestamps to include");
+  
+  
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
 
- LALregINTUserVar(status, 	RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");
-
- LALregREALUserVar(status,      phi,            'Q', UVAR_OPTIONAL, "Phi_0: Initial phase in radians");
- LALregREALUserVar(status,      psi,            'Y', UVAR_OPTIONAL, "Polarisation in radians");
- LALregREALUserVar(status,      cosiota,        'i', UVAR_OPTIONAL, "Cos(iota)");
- LALregREALUserVar(status,      h0,             's', UVAR_OPTIONAL, "Strain amplitude h_0");
-  LALregREALUserVar(status,      aPlus,            0, UVAR_OPTIONAL, "Strain amplitude h_0");
- LALregREALUserVar(status,      aCross,           0, UVAR_OPTIONAL, "Noise floor: one-sided sqrt(Sh) in 1/sqrt(Hz)");
- LALregREALUserVar(status, 	Alpha, 		'a', UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in radians");
- LALregREALUserVar(status, 	Delta, 		'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians");
- LALregREALUserVar(status,      Freq, 	        'F', UVAR_OPTIONAL, "Search Frequency");
- LALregREALUserVar(status,      FreqBand, 	'B', UVAR_OPTIONAL, "Search Frequency Band");
- 
- LALregSTRINGUserVar(status,	DataFiles, 	'D', UVAR_REQUIRED, "File-pattern specifying (multi-IFO) input SFT-files"); 
- LALregSTRINGUserVar(status, 	IFO, 		'I', UVAR_OPTIONAL, "Detector-constraint: 'G1', 'L1', 'H1', 'H2' ...(useful for single-IFO v1-SFTs only!)");
- LALregSTRINGUserVar(status,	ephemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
- LALregSTRINGUserVar(status,	ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
- LALregSTRINGUserVar(status,	outputLabel,	'o', UVAR_OPTIONAL, "Label to be appended to all output file-names");
- LALregSTRINGUserVar(status,	outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for F-statistic field over the parameter-space");
-
- DETATCHSTATUSPTR (status);
- RETURN (status);
 } /* initUserVars() */
 
 /** Load Ephemeris from ephemeris data-files  */
 void
 InitEphemeris (LALStatus * status,   
-  EphemerisData *edat,	                /**< [out] the ephemeris-data */
+	       EphemerisData *edat,	/**< [out] the ephemeris-data */
 	       const CHAR *ephemDir,	/**< directory containing ephems */
 	       const CHAR *ephemYear,	/**< which years do we need? */
 	       LIGOTimeGPS epoch	/**< epoch of observation */
@@ -394,8 +372,8 @@ InitEphemeris (LALStatus * status,
   INITSTATUS( status, "InitEphemeris", rcsid );
   ATTATCHSTATUSPTR (status);
   
-  ASSERT ( edat, status, COMPUTEFSTATISTIC_ENULL, COMPUTEFSTATISTIC_MSGENULL );
-  ASSERT ( ephemYear, status, COMPUTEFSTATISTIC_ENULL, COMPUTEFSTATISTIC_MSGENULL );
+  ASSERT ( edat, status, PREDICTFSTAT_ENULL, PREDICTFSTAT_MSGENULL );
+  ASSERT ( ephemYear, status, PREDICTFSTAT_ENULL, PREDICTFSTAT_MSGENULL );
   
   if ( ephemDir )
     {
@@ -428,49 +406,100 @@ InitEphemeris (LALStatus * status,
 
 /** Initialized Fstat-code: handle user-input and set everything up. */
 void
-InitFStat ( LALStatus *status, ConfigVariables *cfg )
+InitPFS ( LALStatus *status, ConfigVariables *cfg )
 {
   SFTCatalog *catalog = NULL;
   SFTConstraints constraints = empty_SFTConstraints;
 
   UINT4 numSFTs;
-  REAL8 Tsft;
   LIGOTimeGPS endTime;
+  LIGOTimeGPS minStartTimeGPS, maxEndTimeGPS;
 
-  INITSTATUS (status, "InitFStat", rcsid);
+  INITSTATUS (status, "InitPFS", rcsid);
   ATTATCHSTATUSPTR (status);
+
+  { /* Check user-input consistency */
+    BOOLEAN have_h0, have_cosi, have_Ap, have_Ac;
+
+    have_h0 = LALUserVarWasSet ( &uvar_h0 );
+    have_cosi = LALUserVarWasSet ( &uvar_cosiota );
+    have_Ap = LALUserVarWasSet ( &uvar_aPlus );
+    have_Ac = LALUserVarWasSet ( &uvar_aCross );
+    
+    if ( ( have_h0 && !have_cosi ) || ( !have_h0 && have_cosi ) )
+      {
+	LogPrintf (LOG_CRITICAL, "Need both (h0, cosi) to specify signal!\n");
+	ABORT ( status, PREDICTFSTAT_EINPUT, PREDICTFSTAT_MSGEINPUT );
+      }
+    if ( ( have_Ap && !have_Ac) || ( !have_Ap && have_Ac ) )
+      {
+	LogPrintf (LOG_CRITICAL, "Need both (aPlus, aCross) to specify signal!\n");
+	ABORT ( status, PREDICTFSTAT_EINPUT, PREDICTFSTAT_MSGEINPUT );
+      }
+    
+    if ( have_h0 && have_Ap )
+      {
+	LogPrintf (LOG_CRITICAL, "Overdetermined: specify EITHER (h0,cosi) OR (aPlus,aCross)!\n");
+	ABORT ( status, PREDICTFSTAT_EINPUT, PREDICTFSTAT_MSGEINPUT );
+      }
+
+    /* internally we always use Aplus, Across */
+    if ( have_h0 )
+      {
+	cfg->aPlus = 0.5 * uvar_h0 * ( 1.0 + SQ( uvar_cosiota) );
+	cfg->aCross = uvar_h0 * uvar_cosiota;
+      }
+    else
+      {
+	cfg->aPlus = uvar_aPlus;
+	cfg->aCross = uvar_aCross;
+      }
+
+  }/* check user-input */
 
   /* use IFO-contraint if one given by the user */
   if ( LALUserVarWasSet ( &uvar_IFO ) )
     if ( (constraints.detector = XLALGetChannelPrefix ( uvar_IFO )) == NULL ) {
-      ABORT ( status,  COMPUTEFSTATISTIC_EINPUT,  COMPUTEFSTATISTIC_MSGEINPUT);
+      ABORT ( status,  PREDICTFSTAT_EINPUT,  PREDICTFSTAT_MSGEINPUT);
     }
 
+  minStartTimeGPS.gpsSeconds = uvar_minStartTime;
+  minStartTimeGPS.gpsNanoSeconds = 0;
+  maxEndTimeGPS.gpsSeconds = uvar_maxEndTime;
+  maxEndTimeGPS.gpsNanoSeconds = 0;
+  constraints.startTime = &minStartTimeGPS;
+  constraints.endTime = &maxEndTimeGPS;
+
   /* get full SFT-catalog of all matching (multi-IFO) SFTs */
+  LogPrintf (LOG_DEBUG, "Finding all SFTs to load ... ");
   TRY ( LALSFTdataFind ( status->statusPtr, &catalog, uvar_DataFiles, &constraints ), status);    
+  LogPrintfVerbatim (LOG_DEBUG, "done. (found %d SFTs)\n", catalog->length);
   if ( constraints.detector ) 
     LALFree ( constraints.detector );
 
   if ( catalog->length == 0 ) 
     {
-      LALPrintError ("\nSorry, didn't find any matching SFTs with pattern '%s'!\n\n", uvar_DataFiles );
-      ABORT ( status,  COMPUTEFSTATISTIC_EINPUT,  COMPUTEFSTATISTIC_MSGEINPUT);
+      LALPrintError ("\nSorry, didn't find any matching SFTs with pattern '%s'!\n\n", 
+		     uvar_DataFiles );
+      ABORT ( status,  PREDICTFSTAT_EINPUT,  PREDICTFSTAT_MSGEINPUT);
     }
 
   /* deduce start- and end-time of the observation spanned by the data */
   numSFTs = catalog->length;
-  Tsft = 1.0 / catalog->data[0].header.deltaF;
+  cfg->Tsft = 1.0 / catalog->data[0].header.deltaF;
   cfg->startTime = catalog->data[0].header.epoch;
   endTime   = catalog->data[numSFTs-1].header.epoch;
-  LALAddFloatToGPS(status->statusPtr, &endTime, &endTime, Tsft );	/* can't fail */
+  LALAddFloatToGPS(status->statusPtr, &endTime, &endTime, cfg->Tsft );	/* can't fail */
   cfg->duration = GPS2REAL8(endTime) - GPS2REAL8 (cfg->startTime);
 
   {/* ----- load the multi-IFO SFT-vectors ----- */
- 
-    REAL8 fMin = MYMIN ( uvar_Freq, uvar_Freq + uvar_FreqBand );
-    REAL8 fMax = MYMAX ( uvar_Freq, uvar_Freq + uvar_FreqBand );
+    UINT4 wings = uvar_RngMedWindow/2 + 10;   /* extra frequency-bins needed for rngmed */
+    REAL8 fMax = uvar_Freq + 1.0 * wings / cfg->Tsft;
+    REAL8 fMin = uvar_Freq - 1.0 * wings / cfg->Tsft;
 
+    LogPrintf (LOG_DEBUG, "Loading SFTs ... ");
     TRY ( LALLoadMultiSFTs ( status->statusPtr, &(cfg->multiSFTs), catalog, fMin, fMax ), status );
+    LogPrintfVerbatim (LOG_DEBUG, "done.\n");
     TRY ( LALDestroySFTCatalog ( status->statusPtr, &catalog ), status );
   }
 
@@ -484,80 +513,52 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
       ephemDir = uvar_ephemDir;
     else
       ephemDir = NULL;
-    TRY( InitEphemeris (status->statusPtr, cfg->edat, ephemDir, uvar_ephemYear, cfg->startTime ),status);
+    TRY( InitEphemeris (status->statusPtr, cfg->edat, ephemDir, uvar_ephemYear, cfg->startTime ),
+	 status);
   }
   
   /* ----- obtain the (multi-IFO) 'detector-state series' for all SFTs ----- */
-  TRY ( LALGetMultiDetectorStates ( status->statusPtr, &(cfg->multiDetStates), cfg->multiSFTs, cfg->edat ), status );
+  TRY (LALGetMultiDetectorStates( status->statusPtr, &(cfg->multiDetStates), cfg->multiSFTs, cfg->edat),
+       status );
+
+  /* ----- produce a log-string describing the data-specific setup ----- */
+  {
+    struct tm utc;
+    time_t tp;
+    CHAR dateStr[512], line[512], summary[1024];
+    UINT4 i, numDet;
+    numDet = cfg->multiSFTs->length;
+    tp = time(NULL);
+    sprintf (summary, "## Date: %s", asctime( gmtime( &tp ) ) );
+    strcat (summary, "## Loaded SFTs: [ " );
+    for ( i=0; i < numDet; i ++ ) {
+      sprintf (line, "%s:%d%s",  cfg->multiSFTs->data[i]->data->name, 
+	       cfg->multiSFTs->data[i]->length,
+	       (i < numDet - 1)?", ":" ]\n");
+      strcat ( summary, line );
+    }
+    utc = *XLALGPSToUTC( &utc, (INT4)GPS2REAL8(cfg->startTime) );
+    strcpy ( dateStr, asctime(&utc) );
+    dateStr[ strlen(dateStr) - 1 ] = 0;
+    sprintf (line, "## Start GPS time tStart = %12.3f    (%s GMT)\n", 
+	     GPS2REAL8(cfg->startTime), dateStr);
+    strcat ( summary, line );
+    sprintf (line, "## Total time spanned    = %12.3f s  (%.1f hours)\n", 
+	     cfg->duration, cfg->duration/3600 );
+    strcat ( summary, line );
+
+    if ( (cfg->dataSummary = LALCalloc(1, strlen(summary) + 1 )) == NULL ) {
+      ABORT (status, PREDICTFSTAT_EMEM, PREDICTFSTAT_MSGEMEM);
+    }
+    strcpy ( cfg->dataSummary, summary );
+  } /* write dataSummary string */
+
+  LogPrintfVerbatim( LOG_DEBUG, cfg->dataSummary );
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
 
-} /* InitFStat() */
-
-/***********************************************************************/
-/** Log the all relevant parameters of the present search-run to a log-file.
- * The name of the log-file is "Fstats{uvar_outputLabel}.log".
- * <em>NOTE:</em> Currently this function only logs the user-input and code-versions.
- */
-void
-WriteFStatLog (LALStatus *status, char *argv[])
-{
-  CHAR *logstr = NULL;
-  const CHAR *head = "Fstats";
-  CHAR command[512] = "";
-  UINT4 len;
-  CHAR *fname = NULL;
-  FILE *fplog;
-
-  INITSTATUS (status, "WriteFStatLog", rcsid);
-  ATTATCHSTATUSPTR (status);
-
-  /* prepare log-file for writing */
-  len = strlen(head) + strlen(".log") +10;
-  if (uvar_outputLabel)
-    len += strlen(uvar_outputLabel);
-
-  if ( (fname=LALCalloc(len,1)) == NULL) {
-    ABORT (status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM);
-  }
-  strcpy (fname, head);
-  if (uvar_outputLabel)
-    strcat (fname, uvar_outputLabel);
-  strcat (fname, ".log");
-
-  if ( (fplog = fopen(fname, "w" )) == NULL) {
-    LALPrintError ("\nFailed to open log-file '%f' for writing.\n\n", fname);
-    LALFree (fname);
-    ABORT (status, COMPUTEFSTATISTIC_ESYS, COMPUTEFSTATISTIC_MSGESYS);
-  }
-
-  /* write out a log describing the complete user-input (in cfg-file format) */
-  TRY (LALUserVarGetLog (status->statusPtr, &logstr,  UVAR_LOGFMT_CFGFILE), status);
-
-  fprintf (fplog, "## LOG-FILE of PredictFStat run\n\n");
-  fprintf (fplog, "# User-input:\n");
-  fprintf (fplog, "# ----------------------------------------------------------------------\n\n");
-
-  fprintf (fplog, logstr);
-  LALFree (logstr);
-
-  /* append an ident-string defining the exact CVS-version of the code used */
-  fprintf (fplog, "\n\n# CVS-versions of executable:\n");
-  fprintf (fplog, "# ----------------------------------------------------------------------\n");
-  fclose (fplog);
-    
-  sprintf (command, "ident %s 2> /dev/null | sort -u >> %s", argv[0], fname);
-  system (command);	/* we don't check this. If it fails, we assume that */
-    			/* one of the system-commands was not available, and */
-    			/* therefore the CVS-versions will not be logged */
-
-  LALFree (fname);
-
-  DETATCHSTATUSPTR (status);
-  RETURN(status);
-
-} /* WriteFStatLog() */
+} /* InitPFS() */
 
 /** Free all globally allocated memory. */
 void
@@ -575,6 +576,8 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
   /* Free config-Variables and userInput stuff */
   TRY (LALDestroyUserVars (status->statusPtr), status);
 
+  LALFree ( cfg->dataSummary );
+
   /* Free ephemeris data */
   LALFree(cfg->edat->ephemE);
   LALFree(cfg->edat->ephemS);
@@ -584,15 +587,3 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
   RETURN (status);
 
 } /* Freemem() */
-
-/*----------------------------------------------------------------------*/
-/** Some general consistency-checks on user-input.
- * Throws an error plus prints error-message if problems are found.
- */
-void
-checkUserInputConsistency (LALStatus *status)
-{
-  INITSTATUS (status, "checkUserInputConsistency", rcsid);  
-  
-   RETURN (status);
-} /* checkUserInputConsistency() */
