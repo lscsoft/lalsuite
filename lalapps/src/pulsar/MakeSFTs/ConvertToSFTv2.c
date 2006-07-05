@@ -236,10 +236,10 @@ initUserVars (LALStatus *status)
   uvar_maxEndTime = LAL_INT4_MAX;
 
   /* now register all our user-variable */
-  LALregSTRINGUserVar(status, inputSFTs,		'i', UVAR_REQUIRED, "File-pattern for input SFTs");
-  LALregSTRINGUserVar(status, IFO,		'I', UVAR_REQUIRED, "IFO of input SFTs: 'G1', 'H1', 'H2', ...");
+  LALregSTRINGUserVar(status, inputSFTs,	'i', UVAR_REQUIRED, "File-pattern for input SFTs");
+  LALregSTRINGUserVar(status, IFO,		'I', UVAR_OPTIONAL, "IFO of input SFTs: 'G1', 'H1', 'H2', ...(required for v1-SFTs)");
 
-  LALregSTRINGUserVar(status, outputDir,		'o', UVAR_OPTIONAL, "Output directory for SFTs");
+  LALregSTRINGUserVar(status, outputDir,	'o', UVAR_OPTIONAL, "Output directory for SFTs");
 
   LALregSTRINGUserVar(status, extraComment,	'C', UVAR_OPTIONAL, "Additional comment to be added to output-SFTs");
 
