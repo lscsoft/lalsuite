@@ -1,43 +1,66 @@
+## Octave script for comparing the 1st stage Fstat calculation of 
+## HierarchicalSearch.c with ComputeFStatistic_v2. We run
+## HierarchicalSearch using 1 stack and compare the outputs.  The
+## reference time is allowed to be different from the start time of the
+## first sft
+
+
+## Set the parameters
+
+fStart=310;
+fBand=0.1;
+fdot=0;
+fdotBand=1.0e-9;
+nStacks1=1;
+maxEndTime=820631477; 
+minStartTime=0;
+refTime=600000000;
+DataFiles="/local_data/badkri/fakesfts/H-1_H1*.sft";
+skyGridFile="./skygrid";
+dFreq=0.000055555555555555555;
+df1dot=1.5432e-09;
+
+## run HierarchicalSearch.c
+cmdline = sprintf("HierarchicalSearch --sftData=%s --followUp=0 \
+--printFstat1=1 \
+    --ephemE=/local_data/badkri/lscsoft/share/lal/earth05-09.dat \
+    --ephemS=/local_data/badkri/lscsoft/share/lal/sun05-09.dat \
+    --fStart=%.12g --fBand=%.12g --fdot=%.12g --fdotBand=%.12g \
+--nStacks1=%d --skyGridFile=%s --gridType=3 --blocksRngMed=50 \
+--Dterms=16 --refTime=%d --minStartTime=%d --maxEndTime=%d", \
+		  DataFiles, fStart, fBand, fdot, fdotBand, nStacks1, \
+		  skyGridFile, refTime, minStartTime, maxEndTime); 
+
+[output,status] = system(cmdline)
+
+
+
+## run ComputeFStatistic_v2
+cmdline = sprintf("ComputeFStatistic_v2 --Freq=%.12g --f1dot=%.12g \
+--FreqBand=%.12g --f1dotBand=%.12g --dFreq=%.12g --df1dot=%.12g \
+--minStartTime=%d --maxEndTime=%d --refTime=%d \
+--DataFiles=%s --skyGridFile=%s \
+--ephemDir=/local_data/badkri/lscsoft/share/lal/ --ephemYear=05-09 \
+--TwoFthreshold=0 --gridType=3 --outputLabel=CFSv2 --outputFstat=CFSv2 \
+", fStart, fdot, fBand, fdotBand, dFreq, df1dot, minStartTime, \
+		  maxEndTime, refTime, DataFiles, skyGridFile);
 
 
 load out/HS_fstatVec1.txt
 
-
-Freq=HS_fstatVec1(:,1);
-f1dot=HS_fstatVec1(:,4);
-Alpha=HS_fstatVec1(:,2);
-Delta=HS_fstatVec1(:,3);
-FreqBand=0;
-f1dotBand=0;
-dFreq=0.00005555555555555;
-df1dot=1.5432e-9;
-dAlpha=0.2;
-dDelta=0.2;
-minStartTime=0
-maxEndTime=820631477; 
-refTime=600000000;
-DataFiles="/local_data/badkri/fakesfts/H-1_H1*.sft";
-
 load CFSv2
 
-for index=1:length(Freq) 
-  
-  cmdline = sprintf("ComputeFStatistic_v2 --Freq=%.12g --f1dot=%.12g \
-  --FreqBand=%.12g --f1dotBand=%.12g --dFreq=%.12g --df1dot=%.12g \
-  --dAlpha=%.12g  --dDelta=%.12g --minStartTime=%d --maxEndTime=%d --refTime=%d \
-  --DataFiles=%s --Alpha=%.12g --Delta=%.12g --AlphaBand=0.1 --DeltaBand=0.1 \
-  --ephemDir=/local_data/badkri/lscsoft/share/lal/ --ephemYear=05-09 \
-      --TwoFthreshold=0 --gridType=0 --outputLabel=CFSv2 \
---outputFstat=CFSv2 -v1", Freq(index), f1dot(index), FreqBand, f1dotBand, dFreq, df1dot, \
-		    dAlpha, dDelta, minStartTime, maxEndTime, refTime, DataFiles, \
-		    Alpha(index), Delta(index))  
-  
-  [output, status] = system(cmdline)
-    
-  F_CFSv2(index) = CFSv2(1 ,7);
-  F_HS(index) = 2*HS_fstatVec1(index,5);
+F1 = CFSv2(:,7);
+F2 = 2*HS_fstatVec1(:,5);
+diff = 100*(F1 - F2)./F1;
 
-endfor
+mean(diff)
+std(diff)
+max(diff)
+min(diff)
 
-diff=F_CFSv2 - F_HS;
+plot(diff)
+
+clear
+
 
