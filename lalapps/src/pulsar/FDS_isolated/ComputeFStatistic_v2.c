@@ -813,7 +813,8 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
 
   if ( !catalog || catalog->length == 0 ) 
     {
-      LALPrintError ("\nSorry, didn't find any matching SFTs with pattern '%s'!\n\n", uvar_DataFiles );
+      LALPrintError ("\nSorry, didn't find any matching SFTs with pattern '%s'!\n\n", 
+		     uvar_DataFiles );
       ABORT ( status,  COMPUTEFSTATISTIC_EINPUT,  COMPUTEFSTATISTIC_MSGEINPUT);
     }
 
@@ -1392,8 +1393,8 @@ EstimateSigParams (LALStatus *status,
   b2 =   A3h + beta * A2h;
   b3 = - A1h + beta * A4h ;
 
-  psi  = 0.5 * atan2 ( b1, b2 );
-  phi0 =       atan2 ( b2, b3 );
+  psi  = 0.5 * atan ( b1 /  b2 );	/* in [-pi/4,pi/4] (gauge used also by TDS) */
+  phi0 =       atan ( b2 / b3 );	/* in [-pi/2,pi/2] */
 
   /* Fix remaining sign-ambiguity by checking sign of reconstructed A1 */
   A1check = aPlus * cos(phi0) * cos(2.0*psi) - aCross * sin(phi0) * sin(2*psi);
@@ -1418,26 +1419,13 @@ EstimateSigParams (LALStatus *status,
 		 tolerance );
     }
 
-
-
-
   /* propagate phase from internal reference-time 'startTime' to refTime */
   TRY ( LALExtrapolatePulsarPhase (status->statusPtr, &phi0, cand->fkdotRef, cand->refTime, 
 				   phi0, cand->startTime ), status);
 
-  /* use gauge-freedom to fix gauge to [0,pi] for both phi0, psi */
+  /* want phi0 in [0, 2*pi] */
   if ( phi0 < 0 )
     phi0 += LAL_TWOPI;
-
-  if ( phi0 > LAL_PI )
-    {
-      phi0 -= LAL_PI;
-      psi  -= LAL_PI_2;
-    }
-  if ( psi > LAL_PI  )
-    psi -= LAL_PI;
-  else if ( psi < 0 )
-    psi += LAL_PI;
 
   /* translate A_{+,x} into {h_0, cosi} */
   h0 = aPlus + sqrt ( disc );  /* not yet normalized ! */
