@@ -1,8 +1,9 @@
 ## Octave script for comparing the 1st stage Fstat calculation of 
 ## HierarchicalSearch.c with ComputeFStatistic_v2. We run
-## HierarchicalSearch using 1 stack and compare the outputs.  The
+## HierarchicalSearch using 1 stack and compare the outputs on the same
+## parameter space.  The
 ## reference time is allowed to be different from the start time of the
-## first sft
+## first sft. 
 
 
 ## Set the parameters
