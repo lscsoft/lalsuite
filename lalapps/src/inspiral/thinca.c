@@ -120,7 +120,7 @@ static void print_usage(char *program)
       "  [--v1-veto-file]               veto file for V1\n"\
       "\n"\
       "   --parameter-test     test    set parameters with which to test coincidence:\n"\
-      "                                (m1_and_m2|mchirp_and_eta|psi0_and_psi3)\n"\
+      "                                (m1_and_m2|mchirp_and_eta|mchirp_and_eta_ext|psi0_and_psi3)\n"\
       "  [--g1-time-accuracy]  g1_dt   specify the timing accuracy of G1 in ms\n"\
       "  [--h1-time-accuracy]  h1_dt   specify the timing accuracy of H1 in ms\n"\
       "  [--h2-time-accuracy]  h2_dt   specify the timing accuracy of H2 in ms\n"\
@@ -193,6 +193,8 @@ static void print_usage(char *program)
       "  [--do-bcvspin-h1h2-veto]         reject coincidences with H1 snr < H2 snr \n"\
       "   --data-type          data_type  specify the data type, must be one of\n"\
       "                                   (playground_only|exclude_play|all_data)\n"\
+      "  [--location-ra]       rec        right ascension of a source on the sky (degree) [with mchirp_and_eta_ext only]\n"\
+      "  [--location-de]       dec        declination of a source on the sky (degree) [with mchirp_and_eta_ext only]\n"\
       "\n"\
       "[LIGOLW XML input files] list of the input trigger files.\n"\
       "\n", program);
@@ -283,7 +285,17 @@ int main( int argc, char *argv[] )
 
   REAL4                 alphaFhi = -2.e4;
   REAL4                 alphaFlo = 9.e4;
-  REAL4                 snrCut = 0; /* by default we do not remove any triggers in the SNR Cut*/     
+  REAL4                 snrCut = 0; /* by default we do not remove any triggers in the SNR Cut*/  
+
+  REAL4                 locRec=-1; /* for specifying a certain location on the sky */
+  REAL4                 locDec=-100;   
+  LALPlaceAndGPS*       site1;
+  LALPlaceAndGPS*       site2;
+  SkyPosition*          source;
+  TwoDetsTimeAndASource* sourceDets;
+  LIGOTimeGPS           sourceTime;
+  REAL8                 timeDelay;
+
 
   const CHAR                   ifoList[LAL_NUM_IFO][LIGOMETA_IFO_MAX] = 
                                    {"G1", "H1", "H2", "L1", "T1", "V1"};
@@ -291,6 +303,12 @@ int main( int argc, char *argv[] )
                                    {"g1-triggers", "h1-triggers", 
                                     "h2-triggers", "l1-triggers", 
                                     "t1-triggers", "v1-triggers"};
+
+  /* do the stupid memory allocation */
+  site1     = (LALPlaceAndGPS*)LALMallocShort( sizeof(LALPlaceAndGPS ));
+  site2     = (LALPlaceAndGPS*)LALMallocShort( sizeof(LALPlaceAndGPS ));
+  source    = (SkyPosition*)LALMallocShort( sizeof(SkyPosition ));
+  sourceDets= (TwoDetsTimeAndASource*)LALMallocShort( sizeof(TwoDetsTimeAndASource));
 
 
   /* getopt arguments */
@@ -390,6 +408,8 @@ int main( int argc, char *argv[] )
     {"l1-veto-file",        required_argument, 0,                    '}'},
     {"t1-veto-file",        required_argument, 0,                    '['},
     {"v1-veto-file",        required_argument, 0,                    ']'},
+    {"location-ra",         required_argument, 0,                    '_'},
+    {"location-de",         required_argument, 0,                    '~'},
     {0, 0, 0, 0}
   };
   int c;
@@ -492,11 +512,15 @@ int main( int argc, char *argv[] )
         {
           accuracyParams.test = mchirp_and_eta;
         }
+        else if ( ! strcmp( "mchirp_and_eta_ext", optarg ) )
+        {
+          accuracyParams.test = mchirp_and_eta_ext;
+        }
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown test specified: "
-              "%s (must be m1_and_m2, psi0_and_psi3 or mchirp_and_eta)\n",
+              "%s (must be m1_and_m2, psi0_and_psi3, mchirp_and_eta or mchirp_and_eta_ext)\n",
               long_options[option_index].name, optarg );
           exit( 1 );
         }
@@ -907,7 +931,7 @@ int main( int argc, char *argv[] )
           calloc( 1, sizeof(ProcessParamsTable) );
         LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
             PROGRAM_NAME );
-        LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
+        LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--userTag" );
         LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
         LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
             optarg );
@@ -1108,7 +1132,19 @@ int main( int argc, char *argv[] )
 	vetoFileName[LAL_IFO_V1] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
  	memcpy( vetoFileName[LAL_IFO_V1], optarg, optarg_len );
         ADD_PROCESS_PARAM( "string", "%s", optarg );
-	break;        
+	break;       
+
+      case '_':
+        /* location of a source on the sky, right ascension (degree) */
+        locRec= atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
+      case '~':
+        /* location of a source on the sky, declination (degree) */
+        locDec= atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
         
       default:
         fprintf( stderr, "Error: Unknown error while parsing options\n" );
@@ -1157,6 +1193,16 @@ int main( int argc, char *argv[] )
   {
     fprintf( stderr, "Error: --data-type must be specified\n");
     exit(1);
+  }
+
+  /* Check ext-data type */
+  fprintf(stdout,"rec: %f  dec: %f\n", locRec, locDec);
+  if ( accuracyParams.test == mchirp_and_eta_ext )
+  {
+    if (locRec<0 || locDec<-90) {
+      fprintf( stderr, "Error: --location-rec and --location-dec must be specified (coordinates of a source on the sky)\n");
+      exit(1);
+    }
   }
 
 
@@ -1668,11 +1714,35 @@ int main( int argc, char *argv[] )
     for ( ifoTwo = 0; ifoTwo < LAL_NUM_IFO; ifoTwo++)
     {
       XLALReturnDetector( &bDet, ifoTwo );
-      accuracyParams.lightTravelTime[ ifoNumber][ ifoTwo ] = 
-        XLALLightTravelTime( &aDet, &bDet );
+      if (accuracyParams.test == mchirp_and_eta_ext ) {
+
+        sourceTime.gpsSeconds=(INT4)( (endCoincidence+startCoincidence)/2.0 );
+        sourceTime.gpsNanoSeconds=0;
+        site1->p_detector=&aDet;
+        site1->p_gps=&sourceTime;
+        site2->p_detector=&bDet;
+        site2->p_gps=&sourceTime;
+
+        source->longitude=locRec*LAL_PI_180;
+        source->latitude=locDec*LAL_PI_180;
+        source->system=COORDINATESYSTEM_EQUATORIAL;
+  
+        sourceDets->p_det_and_time1=site1;
+        sourceDets->p_det_and_time2=site2;
+        sourceDets->p_source=source; 
+
+        LALTimeDelay( &status, &timeDelay, sourceDets );
+        accuracyParams.lightTravelTime[ ifoNumber][ ifoTwo ] = (INT8) 1e9*timeDelay;
+
+      } else {
+        accuracyParams.lightTravelTime[ ifoNumber][ ifoTwo ] = 
+          XLALLightTravelTime( &aDet, &bDet );
+      }
     }
   }
 
+
+  
   /* 
    *  
    * check for two IFO coincidence
