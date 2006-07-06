@@ -20,7 +20,7 @@ pfs_code="lalapps_PredictFStat"
 
 SFTdir="./testSFTs"
 
-maxiter=10;
+maxiter=1;
 echo "maxiter=$maxiter"
 ## ---------- param-ranges for MC
 fmin=50.0
@@ -40,8 +40,8 @@ duration=144000	      ## 27.7777 hours
 
 mfd_FreqBand=1.0;
 
-aplusmin=0.5e-20
-aplusmax=0.5e-19
+aplusmin=1e-21
+aplusmax=1e-20
 acrossmin=0.5e-21
 acrossmax=0.5e-20
 
@@ -114,24 +114,6 @@ echo "Iter = $iteration"
     randval=$(echo $randvals | awk '{print $2}');
     convToRange $randval 0 $twopi
     Alpha=$convToRangeOut
-    #---------- IFO
-    randval=$(echo $randvals | awk '{print $3}');
-    convToRange $randval 0 4
-    tmpnum=$convToRangeOut
-    case $tmpnum in
-	*0\.*)
-	    IFO=H1;;
-	*1\.*)
-	    IFO=H2;;
-	*2\.*)
-	    IFO=L1;;
-	*3\.*)
-	    IFO=G1;;
-	*)
-	    echo "Something went wrong: '$tmpnum' should lie in [0,4)"
-	    exit 1;
-	    ;;
-    esac
     #---------- aPlus
     randval=$(echo $randvals | awk '{print $4}');
     convToRange $randval $aplusmin $aplusmax
@@ -160,34 +142,6 @@ echo "Iter = $iteration"
     randval=$(echo $randvals | awk '{print $10}');
     convToRange $randval -1 1
     cosiota=$convToRangeOut
-#    echo "Randvals = $randvals"
-#    echo " $alpha    $delta    $aPlus    $aCross    $psi     $phi0    $f0   $f1dot    $cosi"
-#	echo "random Input params: "
-#	echo "alpha=$alpha" 
-#	echo "delta=$delta"
-#	echo "IFO=$IFO" 
-#	echo "aPlus=$aPlus" 
-#	echo "aCross=$aCross" 
-#	echo "psi=$psi" 
-#	echo "phi0=$phi0" 
-#	echo "f0=$f0"
-#	echo "f1dot=$f1dot"
-#	echo "f2dot=$f2dot"
-    ## DEBUG-output of variable MC params
-    if [ -n "$DEBUG" ]; then
-	echo "Randvals = $randvals"
-	echo "random Input params: "
-	echo "alpha=$alpha" 
-	echo "delta=$delta"
-	echo "IFO=$IFO" 
-	echo "aPlus=$aPlus" 
-	echo "aCross=$aCross" 
-	echo "psi=$psi" 
-	echo "phi0=$phi0" 
-	echo "f0=$f0"
-	echo "f1dot=$f1dot"
-	echo "f2dot=$f2dot"
-    fi
 
 ##--------------------------------------------------
 ## test starts here
@@ -308,6 +262,19 @@ if ! resPFSH1H2=`eval $cmdline 2> /dev/null`; then
 fi
 
 res2PFSH1H2=`echo $resPFSH1H2 | awk '{printf "%.1f", $1}'`
+
+############################################################
+# Calculating the Semi-Analytic FStat for detector H1+H2+G1
+cmdline="$pfs_code $pfs_CL --DataFiles='./testSFTs/'H-1_H*  G-1_G*''"
+echo $cmdline
+
+if ! resPFSH1H2G1=`eval $cmdline 2> /dev/null`; then
+    echo "Error ... something failed running '$pfs_code' ..."
+    exit 1;
+fi
+
+res2PFSH1H2G1=`echo $resPFSH1H2G1 | awk '{printf "%.1f", $1}'`
+echo "res2PFSH1H2G1=$res2PFSH1H2G1"
 
 ############################################################
 # Calculating the Semi-Analytic FStat for detector H1+H2+L1+G1

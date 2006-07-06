@@ -154,6 +154,8 @@ ConfigVariables GV;		/**< global container for various derived configuration set
 INT4 uvar_Dterms;
 CHAR *uvar_IFO;
 BOOLEAN uvar_SignalOnly;
+BOOLEAN uvar_noHeader;
+BOOLEAN uvar_addOutput;
 REAL8 uvar_Freq;
 REAL8 uvar_FreqBand;
 REAL8 uvar_dFreq;
@@ -338,19 +340,37 @@ int main(int argc,char *argv[])
   if (uvar_outputFstat)
     {
       CHAR *logstr = NULL;
-      if ( (fpFstat = fopen (uvar_outputFstat, "wb")) == NULL)
+      
+      if(uvar_addOutput)
 	{
-	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputFstat);
-	  return (COMPUTEFSTATISTIC_ESYS);
+	  if ( (fpFstat = fopen (uvar_outputFstat, "a")) == NULL)
+	    {
+	      LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputFstat);
+	      return (COMPUTEFSTATISTIC_ESYS);
+	    }
 	}
-      /* log search-footprint at head of output-file */
-      LAL_CALL( LALUserVarGetLog (&status, &logstr,  UVAR_LOGFMT_CMDLINE ), &status );
-      fprintf(fpFstat, "## %s\n## %s\n",
-	      "$Id$",
-	      logstr );
-      LALFree ( logstr );
-      /* append 'dataSummary' */
-      fprintf (fpFstat, "%s", GV.dataSummary );
+      
+      else
+	{
+	  if ( (fpFstat = fopen (uvar_outputFstat, "wb")) == NULL)
+	    {
+	      LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputFstat);
+	      return (COMPUTEFSTATISTIC_ESYS);
+	    }
+	}
+      
+      if(!uvar_noHeader)
+	{
+	  /* log search-footprint at head of output-file */
+	  LAL_CALL( LALUserVarGetLog (&status, &logstr,  UVAR_LOGFMT_CMDLINE ), &status );
+	  fprintf(fpFstat, "## %s\n## %s\n",
+		  "$Id$",
+		  logstr );
+	  LALFree ( logstr );
+	  /* append 'dataSummary' */
+	  fprintf (fpFstat, "%s", GV.dataSummary );
+	}
+      
     } /* if outputFstat */
   
   if (uvar_outputBstat)
@@ -361,7 +381,7 @@ int main(int argc,char *argv[])
 	  return (COMPUTEFSTATISTIC_ESYS);
 	}
     } /* if outputFstat */
-
+  
   if (uvar_outputBstat)
     {
       if ( (fpBstat = fopen (uvar_outputBstat, "wb")) == NULL)
@@ -623,6 +643,8 @@ initUserVars (LALStatus *status)
   strcpy (uvar_ephemDir, DEFAULT_EPHEMDIR);
 
   uvar_SignalOnly = FALSE;
+  uvar_noHeader = FALSE;
+  uvar_addOutput =FALSE;
 
   uvar_f1dot     = 0.0;
   uvar_df1dot    = 1.0;
@@ -688,6 +710,8 @@ initUserVars (LALStatus *status)
   LALregSTRINGUserVar(status,	ephemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
   LALregSTRINGUserVar(status,	ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
   LALregBOOLUserVar(status, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
+  LALregBOOLUserVar(status, 	noHeader, 	'H', UVAR_OPTIONAL, "Do not print the header if this option is used");
+  LALregBOOLUserVar(status, 	addOutput, 	'A', UVAR_OPTIONAL, "Add output result to the previous run");
   LALregREALUserVar(status, 	TwoFthreshold,	'F', UVAR_OPTIONAL, "Set the threshold for selection of 2F");
   LALregINTUserVar(status, 	gridType,	 0 , UVAR_OPTIONAL, "Template grid: 0=flat, 1=isotropic, 2=metric, 3=file");
   LALregINTUserVar(status, 	metricType,	'M', UVAR_OPTIONAL, "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
