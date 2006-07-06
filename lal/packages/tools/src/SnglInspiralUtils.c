@@ -522,7 +522,7 @@ LALCompareSnglInspiral (
         params->match = 0;
       }
     }
-    else if ( params->test == mchirp_and_eta )
+    else if ( params->test == mchirp_and_eta || params->test == mchirp_and_eta_ext )
     {  
       dmchirp = fabs( aPtr->mchirp - bPtr->mchirp );
       deta = fabs( aPtr->eta - bPtr->eta );
@@ -612,7 +612,15 @@ LALCompareInspirals (
   aAcc = params->ifoAccuracy[ifoaNum];
   bAcc = params->ifoAccuracy[ifobNum];
 
-  if ( labs( ta - tb ) < (aAcc.dt + bAcc.dt)
+
+  if ( params->test == mchirp_and_eta_ext &&
+       labs( ta - tb + params->lightTravelTime[ifoaNum][ifobNum]) < (aAcc.dt + bAcc.dt) )
+  {
+    LALInfo( status, "Triggers pass time coincidence test");
+    params->match = 1;
+  }
+  else if (  params->test != mchirp_and_eta_ext &&
+      labs( ta - tb ) < (aAcc.dt + bAcc.dt)
       + params->lightTravelTime[ifoaNum][ifobNum])
   {
     LALInfo( status, "Triggers pass time coincidence test");
@@ -663,7 +671,7 @@ LALCompareInspirals (
       goto exit;
     }
   }
-  else if ( params->test == mchirp_and_eta )
+  else if ( params->test == mchirp_and_eta || params->test == mchirp_and_eta_ext )
   {  
     REAL4 dmchirpTest;
     dmchirp = fabs( aPtr->mchirp - bPtr->mchirp );
