@@ -1426,6 +1426,7 @@ EstimateSigParams (LALStatus *status,
   if ( A1check * A1h <  0 )
     phi0 += LAL_PI;
 
+  /* check numerical consistency of estimated Amu and reconstructed */
   A1check =   aPlus * cos(phi0) * cos(2*psi) - aCross * sin(phi0) * sin(2*psi);  
   A2check =   aPlus * cos(phi0) * sin(2*psi) + aCross * sin(phi0) * cos(2*psi);  
   A3check = - aPlus * sin(phi0) * cos(2*psi) - aCross * cos(phi0) * sin(2*psi);  
@@ -1444,31 +1445,15 @@ EstimateSigParams (LALStatus *status,
 		 tolerance );
     }
 
-  /* propagate phase from internal reference-time 'startTime' to refTime */
-  TRY ( LALExtrapolatePulsarPhase (status->statusPtr, &phi0, cand->fkdotRef, cand->refTime, 
-				   phi0, cand->startTime ), status);
-
-  /* want phi0 in [0, 2*pi] */
-  if ( phi0 < 0 )
-    phi0 += LAL_TWOPI;
 
   /* translate A_{+,x} into {h_0, cosi} */
   h0 = aPlus + sqrt ( disc );  /* not yet normalized ! */
   cosi = aCross / h0;
 
-  /* check numerical consistency of estimated Amu and reconstructed */
   cosphi0 = cos(phi0);
   sinphi0 = sin(phi0);
   cos2psi = cos(2*psi);
   sin2psi = sin(2*psi);
-
-  /* fill candidate-struct with the obtained signal-parameters and error-estimations */
-  cand->aPlus  = normAmu * aPlus;
-  cand->aCross = normAmu * aCross;
-  cand->phi0   = phi0;
-  cand->psi    = psi;
-  cand->h0     = normAmu * h0;
-  cand->cosi   = cosi;
 
   /* ========== Estimate the errors ========== */
   
@@ -1575,6 +1560,25 @@ EstimateSigParams (LALStatus *status,
       printGSLmatrix4 ( stdout, "var(dB^mu, dB^nu) = \n", J_Mu_nu );
       printGSLmatrix4 ( stdout, "var(dBh^mu, dBh^nu) = \n", Jh_Mu_nu );
     }
+
+
+  /* propagate phase from internal reference-time 'startTime' to refTime */
+  TRY ( LALExtrapolatePulsarPhase (status->statusPtr, &phi0, cand->fkdotRef, cand->refTime, 
+				   phi0, cand->startTime ), status);
+
+  /* want phi0 in [0, 2*pi] */
+  if ( phi0 < 0 )
+    phi0 += LAL_TWOPI;
+  phi0 = fmod ( phi0, LAL_TWOPI );
+
+  /* fill candidate-struct with the obtained signal-parameters and error-estimations */
+  cand->aPlus  = normAmu * aPlus;
+  cand->aCross = normAmu * aCross;
+  cand->phi0   = phi0;
+  cand->psi    = psi;
+  cand->h0     = normAmu * h0;
+  cand->cosi   = cosi;
+
   
   /* read out principal estimation-errors from diagonal elements */
   cand->daPlus  = normAmu * sqrt( gsl_matrix_get (J_Mu_nu, 0, 0 ) );
