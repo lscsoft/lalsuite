@@ -143,7 +143,7 @@ static const SFTConstraints empty_SFTConstraints;
 int main(int argc,char *argv[]) 
 {
   LALStatus status = blank_status;	/* initialize status */
-  REAL8 F = 0.0;
+  REAL8 rho2;	/* SNR^2 */
 
   lalDebugLevel = 0;  
   vrbflg = 1;	/* verbose error-messages */
@@ -175,10 +175,11 @@ int main(int argc,char *argv[])
     al2 = Ap2 * sin2psi2 + Ac2 * cos2psi2;	/* A2^2 + A4^2 */
     al3 = ( Ap2 - Ac2 ) * sin(2.0*uvar_psi) * cos(2.0*uvar_psi);	/* A1 A2 + A3 A4 */
     
-    F = 2.0 + 0.25 * GV.TsftShat * (GV.A * al1 + GV.B * al2 + 2.0 * GV.C * al3 );
+    /* SNR^2 */
+    rho2 = 0.5 * GV.TsftShat * (GV.A * al1 + GV.B * al2 + 2.0 * GV.C * al3 );
   }
 
-  fprintf(stdout, "\n%.1f\n", 2.0 * F);
+  fprintf(stdout, "\n%.1f\n", 4.0 + rho2);
 
   /* output predicted Fstat-value into file, if requested */
   if (uvar_outputFstat)
@@ -201,7 +202,8 @@ int main(int argc,char *argv[])
       LALFree ( logstr );
       /* append 'dataSummary' */
       fprintf (fpFstat, "%s", GV.dataSummary );
-      fprintf (fpFstat, "%g\n", 2.0 * F);
+      fprintf (fpFstat, "Fav = %g;\n", 0.5 * (4.0 + rho2) );
+      fprintf (fpFstat, "dF  = %g;\n", 0.5 * sqrt( 4.0 * ( 2.0 + rho2 ) ) );
       fclose (fpFstat);
     } /* if outputFstat */   
 
