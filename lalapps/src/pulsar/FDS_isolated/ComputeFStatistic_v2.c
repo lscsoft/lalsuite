@@ -125,8 +125,8 @@ typedef struct {
   MultiDetectorStateSeries *multiDetStates; /**< pos, vel and LMSTs for detector at times t_i */
   MultiNoiseWeights *multiNoiseWeights;	    /**< normalized noise-weights of those SFTs */
   REAL8 S_hat;                              /**< Sum over the 1/Sn */ 
-  ComputeFParams CFparams;		    /**< parameters for the computation of Fstat (e.g Dterms, SSB-precision,...) */
-  CHAR *dataSummary;                        /**< descriptive string describing the data (e.g. #SFTs, startTime etc. ..*/
+  ComputeFParams CFparams;		    /**< parameters for Fstat (e.g Dterms, SSB-prec,...) */
+  CHAR *logstring;                          /**< log containing max-info on this search setup */
 } ConfigVariables;
 
 /** Container to hold all relevant parameters of a 'candidate' 
@@ -255,7 +255,7 @@ int main(int argc,char *argv[])
   UINT4 iFreq, if1dot, if2dot, if3dot;  /* counters over freq- and f1dot- bins */
   REAL8 numTemplates, templateCounter;
   REAL8 tickCounter;
-  REAL8 clock0;
+  time_t clock0;
   Fcomponents Fstat;
   candidate_t loudestCandidate = empty_candidate;
 
@@ -339,8 +339,6 @@ int main(int argc,char *argv[])
    * we open and prepare the output-file here */
   if (uvar_outputFstat)
     {
-      CHAR *logstr = NULL;
-      
       if(uvar_addOutput)
 	{
 	  if ( (fpFstat = fopen (uvar_outputFstat, "a")) == NULL)
@@ -349,7 +347,6 @@ int main(int argc,char *argv[])
 	      return (COMPUTEFSTATISTIC_ESYS);
 	    }
 	}
-      
       else
 	{
 	  if ( (fpFstat = fopen (uvar_outputFstat, "wb")) == NULL)
@@ -360,17 +357,7 @@ int main(int argc,char *argv[])
 	}
       
       if(!uvar_noHeader)
-	{
-	  /* log search-footprint at head of output-file */
-	  LAL_CALL( LALUserVarGetLog (&status, &logstr,  UVAR_LOGFMT_CMDLINE ), &status );
-	  fprintf(fpFstat, "## %s\n## %s\n",
-		  "$Id$",
-		  logstr );
-	  LALFree ( logstr );
-	  /* append 'dataSummary' */
-	  fprintf (fpFstat, "%s", GV.dataSummary );
-	}
-      
+	fprintf (fpFstat, "%s", GV.logstring );
     } /* if outputFstat */
   
   if (uvar_outputBstat)
@@ -420,7 +407,7 @@ int main(int argc,char *argv[])
 
   templateCounter = 0.0; 
   tickCounter = uvar_timerCount - 100;	/* do 100 iterations before first progress-report */
-  clock0 = (REAL8)clock() / CLOCKS_PER_SEC;
+  clock0 = time(NULL);
 
   while (1)
     {
@@ -465,13 +452,14 @@ int main(int argc,char *argv[])
 		      tickCounter += 1.0;
 		      if ( lalDebugLevel && ( tickCounter > uvar_timerCount) )
 			{
-			  REAL8 diffSec = (REAL8)(clock()) / CLOCKS_PER_SEC - clock0;
+			  REAL8 diffSec = 1.0 * clock0 - time(NULL);  /* seconds since start of loop*/
 			  REAL8 taup = diffSec / templateCounter ;
 			  REAL8 timeLeft = (numTemplates - templateCounter) *  taup;
 			  tickCounter = 0.0;
-			  LogPrintf (LOG_DEBUG, "Progres: %g/%g = %.2f %% done, Estimated time left: %.0f s\n",
-				     templateCounter, numTemplates, templateCounter/numTemplates * 100.0, 
-				     timeLeft);
+			  LogPrintf (LOG_DEBUG, 
+				     "Progres: %g/%g = %.2f %% done, Estimated time left: %.0f s\n",
+				     templateCounter, numTemplates, 
+				     templateCounter/numTemplates * 100.0, timeLeft);
 			}
 
 		      if ( !finite(Fstat.F) )
@@ -583,7 +571,7 @@ int main(int argc,char *argv[])
 	  return COMPUTEFSTATISTIC_ESYS;
 	}
       /* write header with run-info */
-      fprintf (fpLoudest, GV.dataSummary );
+      fprintf (fpLoudest, GV.logstring );
       if ( XLALwriteCandidate2file ( fpLoudest,  &loudestCandidate ) != XLAL_SUCCESS )
 	{
 	  LALPrintError("\nXLALwriteCandidate2file() failed with error = %d\n\n", xlalErrno );
@@ -710,8 +698,6 @@ initUserVars (LALStatus *status)
   LALregSTRINGUserVar(status,	ephemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
   LALregSTRINGUserVar(status,	ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
   LALregBOOLUserVar(status, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
-  LALregBOOLUserVar(status, 	noHeader, 	'H', UVAR_OPTIONAL, "Do not print the header if this option is used");
-  LALregBOOLUserVar(status, 	addOutput, 	'A', UVAR_OPTIONAL, "Add output result to the previous run");
   LALregREALUserVar(status, 	TwoFthreshold,	'F', UVAR_OPTIONAL, "Set the threshold for selection of 2F");
   LALregINTUserVar(status, 	gridType,	 0 , UVAR_OPTIONAL, "Template grid: 0=flat, 1=isotropic, 2=metric, 3=file");
   LALregINTUserVar(status, 	metricType,	'M', UVAR_OPTIONAL, "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
@@ -736,6 +722,9 @@ initUserVars (LALStatus *status)
 
   LALregSTRINGUserVar(status,   workingDir,     'w', UVAR_DEVELOPER, "Directory to use as work directory.");
   LALregREALUserVar(status, 	timerCount, 	 0,  UVAR_DEVELOPER, "N: Output progress/timer info every N templates");  
+  LALregBOOLUserVar(status, 	noHeader, 	'H', UVAR_DEVELOPER, "Do not print the header if this option is used");
+  LALregBOOLUserVar(status, 	addOutput, 	'A', UVAR_DEVELOPER, "Add output result to the previous run");
+
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -988,18 +977,28 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   {
     struct tm utc;
     time_t tp;
-    CHAR dateStr[512], line[512], summary[1024];
+    CHAR dateStr[512], line[512], summary[4096];
+    CHAR *cmdline = NULL;
     UINT4 i, numDet, numSpins;
+    const CHAR *codeID = "$Id$";
+
+    /* first get full commandline describing search*/
+    TRY ( LALUserVarGetLog (status->statusPtr, &cmdline,  UVAR_LOGFMT_CMDLINE ), status );
+    sprintf (summary, "## %s\n## %s\n", codeID, cmdline );
+    LALFree ( cmdline );
+
     numDet = cfg->multiSFTs->length;
     tp = time(NULL);
-    sprintf (summary, "## Started search: %s", asctime( gmtime( &tp ) ) );
+    sprintf (line, "## Started search: %s", asctime( gmtime( &tp ) ) );
+    strcat ( summary, line );
     strcat (summary, "## Loaded SFTs: [ " );
-    for ( i=0; i < numDet; i ++ ) {
-      sprintf (line, "%s:%d%s",  cfg->multiSFTs->data[i]->data->name, 
-	       cfg->multiSFTs->data[i]->length,
-	       (i < numDet - 1)?", ":" ]\n");
-      strcat ( summary, line );
-    }
+    for ( i=0; i < numDet; i ++ ) 
+      {
+	sprintf (line, "%s:%d%s",  cfg->multiSFTs->data[i]->data->name, 
+		 cfg->multiSFTs->data[i]->length,
+		 (i < numDet - 1)?", ":" ]\n");
+	strcat ( summary, line );
+      }
     utc = *XLALGPSToUTC( &utc, (INT4)GPS2REAL8(cfg->startTime) );
     strcpy ( dateStr, asctime(&utc) );
     dateStr[ strlen(dateStr) - 1 ] = 0;
@@ -1013,20 +1012,22 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     strcat ( summary, line );
     numSpins = cfg->spinRangeStart->fkdot->length;
     strcat (summary, "fkdot = [ " );
-    for (i=0; i < numSpins; i ++ ) {
-      sprintf (line, "%.16g:%.16g%s", 
-	       cfg->spinRangeStart->fkdot->data[i],
-	       cfg->spinRangeStart->fkdot->data[i] + cfg->spinRangeStart->fkdotBand->data[i],
-	       (i < numSpins - 1)?", ":" ]\n");
-      strcat ( summary, line );
-    }
-    if ( (cfg->dataSummary = LALCalloc(1, strlen(summary) + 1 )) == NULL ) {
+    for (i=0; i < numSpins; i ++ ) 
+      {
+	sprintf (line, "%.16g:%.16g%s", 
+		 cfg->spinRangeStart->fkdot->data[i],
+		 cfg->spinRangeStart->fkdot->data[i] + cfg->spinRangeStart->fkdotBand->data[i],
+		 (i < numSpins - 1)?", ":" ]\n");
+	strcat ( summary, line );
+      }
+
+    if ( (cfg->logstring = LALCalloc(1, strlen(summary) + 1 )) == NULL ) {
       ABORT (status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM);
     }
-    strcpy ( cfg->dataSummary, summary );
+    strcpy ( cfg->logstring, summary );
   } /* write dataSummary string */
 
-  LogPrintfVerbatim( LOG_DEBUG, cfg->dataSummary );
+  LogPrintfVerbatim( LOG_DEBUG, cfg->logstring );
 
 
   DETATCHSTATUSPTR (status);
@@ -1130,8 +1131,8 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
   XLALDestroyPulsarSpinRange ( cfg->spinRangeStart );
   XLALDestroyPulsarSpinRange ( cfg->spinRangeRef );
 
-  if ( cfg->dataSummary ) 
-    LALFree ( cfg->dataSummary );
+  if ( cfg->logstring ) 
+    LALFree ( cfg->logstring );
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
