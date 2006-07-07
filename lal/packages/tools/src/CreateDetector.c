@@ -215,8 +215,9 @@ standard output.  These are supposed to be removed once it's been tested.
   W.~G.~Anderson, J.~T.~Whelan, P.~R.~Brady, J.~D.~E.~Creighton,
   D.~Chin, and K.~Riles, ``Beam Pattern Response Functions and Times
   of Arrival for Earthbound Interferometers'', Maple worksheet,
-  \href{http://dirac.phys.utb.edu/~warren/unprot/beam\_patterns\_260401.tar.gz}
-  {\texttt{http://dirac.phys.utb.edu/\~ warren/unprot/beam\_patterns\_260401.tar.gz}}
+  pdf version at
+  \href{http://www.lsc-group.phys.uwm.edu/daswg/docs/technical/T010110.pdf}
+  {\texttt{http://www.lsc-group.phys.uwm.edu/daswg/docs/technical/T010110.pdf}}
 \bibitem{tools:Maggiore:2000b}
   M.~Maggiore, ``Gravitational Wave Experiments and Early Universe Cosmology'',
   Phys.\ Rept.\ \textbf{331}, 283-367 (2000);
