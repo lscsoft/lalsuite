@@ -30,7 +30,8 @@
 #include <lal/TimeDelay.h>
 #include <lal/Random.h>
 #include <lal/AVFactories.h>
-
+#include <gsl/gsl_rng.h>
+#include <gsl/gsl_randist.h>
 
 #define USAGE \
   "lalapps_inspinj [options]\n"\
@@ -61,8 +62,10 @@
 "  --max-mass MAX           set the maximum component mass to MAX (20.0)\n"\
 "  --m-distr MDISTR         distribute injections uniformly over\n"\
 "                           total mass (MDISTR = 0), or over mass1 and\n"\
-"                           over mass2 (MDISTR = 1)\n"\
+"                           over mass2 (MDISTR = 1), or gaussian (MDISTR=2)\n"\
 "                           (default: MDISTR=-1, using mass file)\n"\
+"  --mean-mass MASS         set the mean value for the mass if MDISTR=2\n"\
+"  --stdev-mass MSTD        set the standard deviation for mass if MDISTR=2\n"\
 "\n"
 
 RCSID( "$Id$" );
@@ -116,6 +119,9 @@ SimInspiralTable *this_sim_insp;
 const int randm = 2147483647;
 struct { int i; int y; int v[32]; } randpar;
 
+const gsl_rng_type * rngType;
+gsl_rng * rngR;
+
 char *massFileName = NULL;
 char *sourceFileName = NULL;
 
@@ -128,6 +134,8 @@ float dmax=20000;
 int mdistr=-1;
 float minMass=3;
 float maxMass=20;
+float meanMass=-1.0;
+float massStdev=-1.0;
 float inclPeak=1;
 int flagInclPeak=0;
 
@@ -146,6 +154,12 @@ struct {
 } *source_data;
 
 struct time_list { long long tinj; struct time_list *next; };
+
+/*
+ *
+ * GSL random number generator 
+ *
+ */
 
 
 /*
@@ -405,7 +419,7 @@ int read_source_mass_data( double **pm1, double **pm2 )
     { /* prepend path from env variable */
       const char *path = getenv( "LALAPPS_DATA_PATH" );
       LALSnprintf( fname, sizeof( fname ), "%s/%s",
-          path ? path : PREFIX "/" PACKAGE "/share", basename );
+          path ? path : PREFIX "/share/" PACKAGE, basename );
     }
     fp = fopen( fname, "r" );
   }
@@ -456,7 +470,7 @@ int read_source_data( void )
     { /* prepend path from env variable */
       const char *path = getenv( "LALAPPS_DATA_PATH" );
       LALSnprintf( fname, sizeof( fname ), "%s/%s",
-          path ? path : PREFIX "/" PACKAGE "/share", basename );
+          path ? path : PREFIX "/share/" PACKAGE, basename );
     }
     fp = fopen( fname, "r" );
   }
@@ -639,6 +653,22 @@ int inj_params( double *injPar, char *source )
       u=my_urandom();
       m2 = minMass + u * deltaM;
     }
+    else if (mdistr == 2)
+    {
+      /* gaussian distributed mass1 and mass2 */
+      m1 = 0.0;
+      while ( (m1-maxMass)*(m1-minMass) > 0 )
+      {
+        u = (float)gsl_ran_gaussian(rngR, massStdev);
+        m1 = meanMass + u;
+      }
+      m2 = 0.0;
+      while ( (m2-maxMass)*(m2-minMass) > 0 )
+      {
+        u = (float)gsl_ran_gaussian(rngR, massStdev);
+        m2 = meanMass + u;
+      }
+    }
     else if (mdistr == 0) 
     {
       /*uniformly distributed total mass */
@@ -777,6 +807,8 @@ int main( int argc, char *argv[] )
     {"m-distr",                 required_argument, 0,                'd'},
     {"min-mass",                required_argument, 0,                'j'},
     {"max-mass",                required_argument, 0,                'k'},
+    {"mean-mass",               required_argument, 0,                'n'},
+    {"stdev-mass",              required_argument, 0,                'o'},
     {"incl-peak",               required_argument, 0,                'c'},
     {"min-distance",            required_argument, 0,                'p'},
     {"max-distance",            required_argument, 0,                'r'},
@@ -998,6 +1030,20 @@ int main( int argc, char *argv[] )
               "float", "%le", maxMass );
         break;
 
+      case 'n':
+        meanMass = atof( optarg );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, 
+              "float", "%le", meanMass );
+        break;
+
+      case 'o':
+        massStdev = atof( optarg );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, 
+              "float", "%le", massStdev );
+        break;
+
       case 'c':
         flagInclPeak=1;
         inclPeak = atof( optarg );
@@ -1087,7 +1133,21 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
+  /* check for gaussian mass distribution parameters */
+  if (mdistr==2 && meanMass < 0.0 && massStdev < 0.0)
+  {
+    fprintf( stderr, 
+        "Must specify both --mean-mass and --stdev-mass for mdistr=2\n" );
+    fprintf( stderr, USAGE );
+    exit( 1 );
+  }
+
   seed_random( rand_seed );
+
+  /* set up the gsl random number generator */
+  gsl_rng_env_setup();
+  rngType = gsl_rng_default;
+  rngR = gsl_rng_alloc (rngType);
 
   tlisthead.tinj = tinj + timeInterval * my_urandom();
   tlisthead.next = NULL;
