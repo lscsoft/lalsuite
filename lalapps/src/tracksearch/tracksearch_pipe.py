@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.3
 """
 This is a python script that will setup a big segment run with given
 arguements and a combination from the ini file specified
@@ -53,11 +53,13 @@ dataBlockSize=int(float(str.strip(cp.get('layerconfig','layerTopBlockSize'))))
 #Convert the segment list to smaller blocks
 reformatSegList=tracksearch.tracksearchConvertSegList(segmentList,dataBlockSize)
 #Setup logfile mask
-logFilePath=cp.get('fileLayout','workpath')
+logFilePath=cp.get('fileLayout','logpath')
 logFileMask=logFilePath+'/logFile_'
-if not os.path.isdir(logFilePath):
-            try: os.mkdir(logFilePath)
-            except: pass
+if not(os.path.isdir(logFilePath)):
+       print 'Log path does not exist!'
+       print 'Expected to find:',logFilePath
+       os.abort()
+       
 reformatSegList.writeSegList()
 segmentList=reformatSegList.getSegmentName()
 allData=pipeline.ScienceData()

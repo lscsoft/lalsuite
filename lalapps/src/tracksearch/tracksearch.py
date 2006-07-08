@@ -34,11 +34,16 @@ def buildDir(dirpath):
     #Now reverse this list and recurse creating the pathing as needed
     pathArray.reverse()
     for pathBlock in pathArray:
+        if os.path.isfile(pathBlock):
+            print 'We have a problem the path requested may clobber an existing file!'
+            print 'File :',str(pathBlock)
+            os.abort()
         if not os.path.isdir(pathBlock):
-            print 'Making path:',pathBlock
-            try: os.mkdir(pathBlock)
-            except: pass
-    #Now double check that directory exits else flag error
+           print 'Making path:',pathBlock
+           try: os.mkdir(pathBlock)
+           except: pass
+    
+    #Now double check that directory exists else flag error
     if not os.path.isdir(dirpath):
         print '***'
         print 'SHIT, directory still not ready contain(s) ',pathArray.__len__(),' branches!'
@@ -296,7 +301,7 @@ class tracksearchAveragerJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         self.dagDirectory=dagDir
     #Setup job options to take a cache of caches and build new maps
             #ConfigParser object -> cp
-        self.__executable = cp.get('condor','tracksearch')
+        self.__executable = cp.get('condor','averager')
         self.__universe = cp.get('condor','universe');
         pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
         pipeline.AnalysisJob.__init__(self,cp)
@@ -333,7 +338,7 @@ class tracksearchMapCacheBuildJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         self.dagDirectory=dagDir
     #Setup job options to take a cache of caches and build new maps
             #ConfigParser object -> cp
-        self.__executable = cp.get('condor','tracksearch')
+        self.__executable = cp.get('condor','cachebuilder')
         self.__universe = cp.get('condor','universe');
         pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
         pipeline.AnalysisJob.__init__(self,cp)
@@ -366,6 +371,7 @@ class tracksearchMapCacheBuildJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         self.overlapTime=float(string.strip(cp.get('layerconfig',layerTimeLabel)))*percentOverlap
         self.mapTime=float(string.strip(cp.get('layerconfig',layerTimeLabel)))
         #Work on all files listed
+        #OK THIS IS INCORRECT SETTING OF MACROS
         self.add_opt('file','$macroFile')
         self.add_opt('start_time','$macroStartTime')
         self.add_opt('map_set_duration','$macroMapSetDuration')
@@ -544,12 +550,16 @@ class tracksearch:
         runStartTime=self.sciSeg.start()
         #What is name of dagDir location of dags and sub files
         dagDir=self.dagDirectory
-        #Create dataFindJob
-        outputDir=self.blockID+'/1/'
         layerID=1
-        df_job = pipeline.LSCDataFindJob(outputDir,self.dagDirectory,self.cp)
+        #Create dataFindJob
+        #This path is relative to the jobs initialDir arguments!
+        #outputDir=str(self.blockID)+'/'+str(layerID)+'/'
+        dataFindInitialDir=determineLayerPath(self.cp,self.blockID,layerID)
+        outputDir=dataFindInitialDir
+        dataFindLogPath=os.path.normpath(determineBlockPath(self.cp,self.blockID)+'/logs/')
+        df_job = pipeline.LSCDataFindJob(outputDir,dataFindLogPath,self.cp)
         df_job.set_sub_file(self.dagDirectory+'datafind.sub')
-        df_job.add_condor_cmd('initialdir',determineLayerPath(self.cp,self.blockID,layerID))
+        df_job.add_condor_cmd('initialdir',str(dataFindInitialDir))
         prev_df = None
         for chunk in self.sciSeg:
             df_node=pipeline.LSCDataFindNode(df_job)
@@ -570,7 +580,9 @@ class tracksearch:
         for chunk in self.sciSeg:
             tracksearchTime_node=tracksearchTimeNode(tracksearchTime_job)
             #Fix format of FILENAME
-            tracksearchTime_node.add_var_opt('frame_cache',df_node.get_output_files())
+            #Inserted a SETB Pool Hack for testing
+            tracksearchTime_node.add_var_opt('cachefile','/home/charlie/pipeTest/testFrame.cache')
+            #tracksearchTime_node.add_var_opt('frame_cache',df_node.get_output())
             #Set the node job time markers from chunk!
             tracksearchTime_node.add_var_opt('gpsstart_seconds',chunk.start())
 
