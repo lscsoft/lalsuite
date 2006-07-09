@@ -21,8 +21,6 @@ def buildDir(dirpath):
     pathArray=[]
     stopVar=0
     #Check for trailing slash
-    if not dirpath.endswith('/'):
-        print 'NOTE:Path does not end with /, assuming it is implied!'
     oldDir=str(os.path.abspath(dirpath)).__add__('/')
     while stopVar == 0:
         splitContainer=os.path.split(oldDir)
@@ -425,7 +423,7 @@ class tracksearchMapCacheBuildJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         for num in range(1,jobCacheNumEstimate+1):
             outputList.append('JobSet_'+str(num)+'.cacheTSA')
         return outputList
-    #End getJobsetList
+    #End getJobTSAList
 #End Class
 
 class tracksearchDataFindJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
@@ -509,6 +507,7 @@ class tracksearch:
         #Expects a fixed size PsuedoScience Segment
         #The dag for this run will be then run from this data
         self.sciSeg=scienceSegment
+        self.runStartTime=self.sciSeg.start()
         #cp -> ConfigParser object
         self.cp=cparser
         #The variable to link a previous jobblock into next block
@@ -521,6 +520,35 @@ class tracksearch:
         self.dagFilename=self.dagDirectory+'/'+self.dagName
         buildDir(self.dagDirectory)
         self.dag.set_dag_file(self.dagFilename)
+        #Variables that are common to all search layers
+        self.percentOverlap=float(string.strip(self.cp.get('layerconfig','layerOverlapPercent')))
+        self.layerTimeScaleInfo=[]
+        tempLib=[]
+        for opt in self.cp.options('layerconfig'):
+            section='layerconfig'
+            arg=string.strip(self.cp.get(section,opt))
+            if str(opt).__contains__(str('TimeScale').lower()):
+                entry=[]
+                entry.append(str(opt))
+                entry.append(str(arg))
+                tempLib.append(entry)
+        tempLib.sort()
+        self.layerTimeScaleInfo=tempLib
+        tempLib=[]
+        self.layerSetSizeInfo=[]
+        for opt in self.cp.options('layerconfig'):
+            section='layerconfig'
+            arg=string.strip(self.cp.get(section,opt))
+            if str(opt).__contains__(str('SetSize').lower()):
+                entry=[]
+                entry.append(str(arg))
+                tempLib.append(entry)
+        tempLib.sort()
+        self.layerSetSizeInfo=tempLib
+        if self.layerTimeScaleInfo.__len__()!=self.layerSetSizeInfo.__len__():
+            print 'ERROR with section [layerconfig]'
+        self.layerCount=self.layerTimeScaleInfo.__len__()
+
     #End Init
 
     def getDagDirectory(self):
@@ -529,31 +557,29 @@ class tracksearch:
         return dagDirectory
     #end def
     
-    def createJobs(self):
-        #This method will call all the needed jobs/node objects to create
-        #a coherent job dag
-        #CHECK TO MAKE SURE LAYERCONFIG IS VALID HAS ENTRIES
-        #We need a consistency check between above and [tracksearchbase]
-        percentOverlap=float(string.strip(self.cp.get('layerconfig','layerOverlapPercent')))
+    def startingSearchLayer(self,layerID):
+        #This layer is responsible for initial data find jobs and the
+        #tracksearch time jobs in a single layer search this would be
+        #the only layer to actually be used
+        #RETURNS the last node of this layer to satisify the
+        #parent child relationship to next execution layer
+        #layerID is expected to be a 1 Duh, first layer!
+        print 'Preparing layer ',layerID,' of block ',self.blockID
         #We need to make chunks of data from this sciSeg which are
         #layer1SetSize long in time
         mapTime=float(self.cp.get('layerconfig','layer1TimeScale'))
-        overlapTime=mapTime*percentOverlap
+        overlapTime=mapTime*self.percentOverlap
         setSize=float(self.cp.get('layerconfig','layer1SetSize'))
-        ###minTime=mapTime*setSize+ceil(overlapTime)
-        ###minTime=1+(1-percentOverlap)*(setSize-1)
         ifo=str(self.cp.get('datafind','observatory'))
         #Create the chunk list that we will makeing data find jobs for
         #Give allowance for 1 extra map worth of data just in case
         self.sciSeg.make_chunks(setSize*mapTime+math.ceil(overlapTime),math.ceil(overlapTime))
         #Setup time marker for entire run
-        runStartTime=self.sciSeg.start()
+        runStartTime=self.runStartTime
         #What is name of dagDir location of dags and sub files
         dagDir=self.dagDirectory
-        layerID=1
         #Create dataFindJob
         #This path is relative to the jobs initialDir arguments!
-        #outputDir=str(self.blockID)+'/'+str(layerID)+'/'
         dataFindInitialDir=determineLayerPath(self.cp,self.blockID,layerID)
         outputDir=dataFindInitialDir
         dataFindLogPath=os.path.normpath(determineBlockPath(self.cp,self.blockID)+'/logs/')
@@ -583,6 +609,7 @@ class tracksearch:
             #Inserted a SETB Pool Hack for testing
             tracksearchTime_node.add_var_opt('cachefile','/home/charlie/pipeTest/testFrame.cache')
             #tracksearchTime_node.add_var_opt('frame_cache',df_node.get_output())
+
             #Set the node job time markers from chunk!
             tracksearchTime_node.add_var_opt('gpsstart_seconds',chunk.start())
 
@@ -590,98 +617,123 @@ class tracksearch:
             tracksearchTime_node.add_parent(df_node)
             self.dag.add_node(tracksearchTime_node)
             prevLayerJobList.append(tracksearchTime_node)
-        #Finished with getting data and layer 1 of analysis submit files
-        #The analysis can either stop here or perform the layers specified
-        #by the [layerconfig] section of the ini file
-        layerCountA=[]
-        layerCountB=[]
-        for opt in self.cp.options('layerconfig'):
-            section='layerconfig'
-            arg=string.strip(self.cp.get(section,opt))
-            if str(opt).__contains__(str('TimeScale').lower()):
-                layerCountA.append(arg)
+        return prevLayerJobList
+    #Finished with getting data and layer 1 of analysis submit files
+    #end def
 
-            if str(opt).__contains__(str('SetSize').lower()):
-                layerCountB.append(arg)
+    def finalSearchLayer(self,layerID,nodeLinks):
+        #This layer will setup last nodes of dag.  These nodes
+        #should perform a final map search.  No additional cache
+        #building needs to be done here
+        #RETURNS no node linkage
+        closeme=0
+    #end def
 
-        if layerCountA.__len__() != layerCountB.__len__():
-            print 'ERROR with section [layerconfig]'
-        layerCount=layerCountA.__len__()
-        layerCountA.sort()
-        layerCountB.sort()
-        if (layerCount <= 1):
-            print 'We are done. Only only layer configuration found.'
-        else:
-            print 'We are creating a run with ',layerCount,' search layers.'
-        print 'Preparing DAG ',self.blockID,' layer  1'
+    def clusterSearchLayer(self):
+        #clustering and other "post jobs" go here
+        closeme=0
+    #end def
+
+    def intermediateSearchLayers(self,layerID,nodeLinks):
+        #This layer performs the required map cache building from
+        #previous ith layer.  It is these caches which are joined into
+        #new maps and placed as part of the i+1 layer and analyzed
+        #RETURNS node linkage to possibly perform another search layer
+        layerNum=layerID
+        layerNumPrevious=layerID-1
+        layer_id = layerNum 
+        block_id=self.blockID
+        dagDir=self.dagDirectory
+        if (layerNumPrevious < 1):
+            print 'Error calling the intermediate search layer method!'
+        print 'Preparing layer ',layerID,' of block ',self.blockID
+        prevLayerJobList=nodeLinks
+        # Setup each additonal individual layer
+        # The cache build node list clear after first pass through loop
+        if (layerNum < 2):
+            prevLayerJobList=[]
+        cacheBuild_job=tracksearchMapCacheBuildJob(self.cp,block_id,layerNum,dagDir)
+        cacheBuild_node=tracksearchMapCacheBuildNode(cacheBuild_job)
+        #Add directory to process code expects file but behavior will
+        #adjust to a directory listing if that is the case
+        #Specify directory contain map files to setup
+        #Should be previous layer already processed!
+        cacheBuildMapDir=determineLayerPath(self.cp,block_id,layerNumPrevious)
+        cacheBuildWorkDir=determineLayerPath(self.cp,block_id,layerNum)
+        cacheBuild_node.add_macro('macroStartDir',cacheBuildWorkDir)
+        cacheBuild_node.add_macro('macroFile',cacheBuildMapDir)            
+        #Set the time of this run to start preping caches for
+        cacheBuild_node.add_macro('macroStartTime',self.runStartTime)
+        #Lookup the proper layer options
+        layerMapNewDur=float(self.cp.get('layerconfig','layer'+str(layerNum)+'TimeScale'))
+        layerMapSetDur=float(layerMapNewDur*float(self.cp.get('layerconfig','layer'+str(layerNum)+'SetSize')))
+        layerMapOverlap=float(self.percentOverlap*layerMapNewDur)
+        cacheBuild_node.add_macro('macroMapSetDuration',layerMapSetDur)
+        cacheBuild_node.add_macro('macroNewMapDuration',layerMapNewDur)
+        cacheBuild_node.add_macro('macroOverlapMaps',layerMapOverlap)
+        #Make this process the child of all frame analysis jobs
+        for parentJob in prevLayerJobList:
+            cacheBuild_node.add_parent(parentJob)
+        self.dag.add_node(cacheBuild_node)
+        
+        # The merge map
+        tracksearchAverager_job=tracksearchAveragerJob(self.cp,block_id,layerNum,dagDir)
+
+        jobSetList=cacheBuild_job.getJobsetList()
+        jobTSAList=cacheBuild_job.getJobTSAList()
+        #Var to store copies of these objects to get right parent relation
+        averagerJobListing=[]
+        #Loop over all theoretical jobsets for map making
+        averagerWorkDir=determineLayerPath(self.cp,block_id,layerNum)
+        for cacheSet in jobTSAList:
+            tracksearchAverager_node=tracksearchAveragerNode(tracksearchAverager_job)
+            tracksearchAverager_node.add_var_opt('multi_cache',cacheSet)
+            tracksearchAverager_node.add_macro('macroStartDir',averagerWorkDir)
+            tracksearchAverager_node.add_parent(cacheBuild_node)
+            self.dag.add_node(tracksearchAverager_node)
+            averagerJobListing.append(tracksearchAverager_node)
+        #Run this new layer map analysis
+        nextLayerJobList=[]
+        #The results of this analysis should be stored in layerNum layer
+        tracksearchMap_job=tracksearchMapJob(self.cp,block_id,layerNum,dagDir)
+        #The entries in the JobSet file will be the input cache sets
+        #for this layer of the Analysis
+        for cacheSet in jobSetList:
+            tracksearchMap_node=tracksearchMapNode(tracksearchMap_job)
+            tracksearchMap_node.add_var_opt('inject_map_cache',cacheSet)
+            tracksearchMap_node.add_macro('macroStartDir',determineLayerPath(self.cp,block_id,layer_id+1))
+            for parent in averagerJobListing:
+                tracksearchMap_node.add_parent(parent)
+            self.dag.add_node(tracksearchMap_node)
+            nextLayerJobList.append(tracksearchMap_node)
+        prevLayerJobList=nextLayerJobList
+        return nextLayerJobList
+    #end def
+    
+    def createJobs(self):
+        #This method will call all the needed jobs/node objects to create
+        #a coherent job dag
+        #CHECK TO MAKE SURE LAYERCONFIG IS VALID HAS ENTRIES
+        #We need a consistency check between above and [tracksearchbase]
+        layerID=1
+
+        nodeLinkage=self.startingSearchLayer(layerID)
+
+        layerCount=self.layerCount
+        #set of numbers [i,j)
         for layerNum in range(2,layerCount+1):
-            #??? Check this is the right way to do this!!!!
-            layer_id = layerNum 
-            print 'Preparing DAG ',self.blockID,' layer ',layerNum
-            # Setup each additonal individual layer
-            # The cache build node list clear after first pass through loop
-            if (layerNum > 2):
-                prevLayerJobList=[]
-            cacheBuild_job=tracksearchMapCacheBuildJob(self.cp,block_id,layer_id,dagDir)
-            cacheBuild_node=tracksearchMapCacheBuildNode(cacheBuild_job)
-            #Add directory to process code expects file but behavior will
-            #adjust to a directory listing if that is the case
-            #Specify directory contain map files to setup
-            cacheBuildPath=determineLayerPath(self.cp,block_id,layer_id)
-            cacheBuild_node.add_macro('macroStartDir',cacheBuildPath)
-            cacheBuild_node.add_macro('macroFile',cacheBuildPath)            
-            #Set the time of this run to start preping caches for
-            cacheBuild_node.add_macro('macroStartTime',runStartTime)
-            #Lookup the proper layer options
-            layerMapNewDur=float(self.cp.get('layerconfig','layer'+str(layer_id)+'TimeScale'))
-            layerMapSetDur=float(layerMapNewDur*float(self.cp.get('layerconfig','layer'+str(layer_id)+'SetSize')))
-            layerMapOverlap=float(layerMapNewDur*float(self.cp.get('layerconfig','layerOverlapPercent')))
-            cacheBuild_node.add_macro('macroMapSetDuration',layerMapSetDur)
-            cacheBuild_node.add_macro('macroNewMapDuration',layerMapNewDur)
-            cacheBuild_node.add_macro('macroOverlapMaps',layerMapOverlap)
-            #Make this process the child of all frame analysis jobs
-            for parentJob in prevLayerJobList:
-                cacheBuild_node.add_parent(parentJob)
-            self.dag.add_node(cacheBuild_node)
-            
-            # The merge map
-            tracksearchAverager_job=tracksearchAveragerJob(self.cp,block_id,layer_id,dagDir)
-#############
-            jobSetList=cacheBuild_job.getJobsetList()
-            jobTSAList=cacheBuild_job.getJobTSAList()
-            #Var to store copies of these objects to get right parent relation
-            averagerJobListing=[]
-            #Loop over all theoretical jobsets for map making
-            print 'Working with ',jobSetList.__len__(),' sets of maps to merge.'
-            for cacheSet in jobSetList:
-                tracksearchAverager_node=tracksearchAveragerNode(tracksearchAverager_job)
-                tracksearchAverager_node.add_var_opt('multi_cache',cacheSet)
-                tracksearchAverager_node.add_macro('macroStartDir',determineLayerPath(self.cp,block_id,layer_id))
-                tracksearchAverager_node.add_parent(cacheBuild_node)
-                self.dag.add_node(tracksearchAverager_node)
-                averagerJobListing.append(tracksearchAverager_node)
-            #Run this new layer map analysis
-            nextLayerJobList=[]
-            #The results of this analysis should be stored in next layer dir
-            tracksearchMap_job=tracksearchMapJob(self.cp,block_id,layerID+1,dagDir)
-            #The entries in the JobSet file will be the input cache sets
-            #for this layer of the Analysis
-            for cacheSet in jobSetList:
-                tracksearchMap_node=tracksearchMapNode(tracksearchMap_job)
-                tracksearchMap_node.add_var_opt('inject_map_cache',cacheSet)
-                tracksearchMap_node.add_macro('macroStartDir',determineLayerPath(self.cp,block_id,layer_id+1))
-                for parent in averagerJobListing:
-                    tracksearchMap_node.add_parent(parent)
-                self.dag.add_node(tracksearchMap_node)
-                nextLayerJobList.append(tracksearchMap_node)
-            prevLayerJobList=nextLayerJobList
-            """
-            We still need the pre and post script setups for each job
-            then the correct config section in the ini file
-            also need to the final track clustering code
-            There is an implied fix to mapBuild.py code so Jobset uses
-            GPS markers and not floats in the filenames!!
-            """
+            nodeLinkage=self.intermediateSearchLayers(layerNum,nodeLinkage)
+
+        self.finalSearchLayer(layerCount,nodeLinkage)
+
+
+        """
+        We still need the pre and post script setups for each job
+        then the correct config section in the ini file
+        also need to the final track clustering code
+        There is an implied fix to mapBuild.py code so Jobset uses
+        GPS markers and not floats in the filenames!!
+        """
     #End createJobs
     def writePipelineDAG(self):
         #This method lays out the dag files to a simple submission to condor

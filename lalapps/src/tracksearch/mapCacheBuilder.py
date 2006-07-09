@@ -350,7 +350,7 @@ while (index1 < jobSetCache.__len__()-1):
     fp.close()
     index1=index1+setSize
 print 'Done writing Jobset files.'
-print 'Writing new TSA map file listings!'
+print 'Writing new tracksearch averager(TSA) map file listings!'
 index1=0
 counter=0
 while (index1 < jobSetCache.__len__()-1):
