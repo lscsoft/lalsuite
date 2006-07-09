@@ -21,7 +21,7 @@ Converts between GPS time (in seconds and nanoseconds) and UTC in a
 
 \texttt{LALGPStoUTC()} and \texttt{LALUTCtoGPS} convert time in GPS seconds
 and nanoseconds (\texttt{LIGOTimeGPS}) and time in UTC (\texttt{LALDate}),
-taking into account leap seconds until 2006-Jun-30 23:59:59 UTC. % UPDATEME %
+taking into account leap seconds until 2006-Dec-31 23:59:59 UTC. % UPDATEME %
 
 \texttt{LALLeapSecs()} returns the number of leap seconds introduced since
 the GPS epoch 1980-Jan-06, abbreviated GPS-UTC.
@@ -53,7 +53,7 @@ included is 2006-Jan-01. % UPDATEME %
 These routines will not work for times before 1980-01-06 00:00:00 UTC (GPS
 0).  The latest leap second that can be accounted for is the one added at
 the end of 2005-Dec. % UPDATEME %  These routines have accurate leap second
-information until 2006-Jun-30. % UPDATEME %
+information until 2006-Dec-31. % UPDATEME %
 
 \textbf{Example:} To convert a GPS time to UTC, and then back to GPS:
 
@@ -113,10 +113,17 @@ char *asctime_r( const struct tm *, char * );
 
 
 /* UPDATEME */
-/* latest time for which this routine will work: 2006-06-30 23:59:59 UTC */
-/* GPS for maxtestedGPS computed using tconvert (part of ligotools) by
-   P. Shawhan */
-static const INT4 maxtestedGPS = 835747213;
+/* The international earth rotation service announces leap seconds;
+ * their data is posted in bulletin C at
+ *    http://www.iers.org/MainDisp.csl?pid=36-9
+ * Another useful web site is at
+ *    http://maia.usno.navy.mil/
+ * which carries these announcements too.  The latest time for which 
+ * this routine will work: 2006-12-31 23:59:59 UTC 
+ */
+
+/* GPS for maxtestedGPS computed using lalapps_tconvert (part of ligotools) */
+static const INT4 maxtestedGPS = 851644813;
 
 /*
  * Convert GPS seconds to UTC date-time contained in LALDate structure
@@ -493,7 +500,7 @@ LALUTCtoGPS (LALStatus                *status,
   /* UPDATEME -- to update, fix the comment and the first if() statement */
   /*
    * Check that time asked for is not after last known leap sec
-   * Use by: 2006-Jun-30 23:59:59 UTC
+   * Use by: 2006-Dec-31 23:59:59 UTC
    * Check bulletins such as the following to see if additional ones are needed:
    * http://hpiers.obspm.fr/eoppc/bul/bulc/bulletinc.dat
    * if date is later
