@@ -132,17 +132,28 @@ typedef struct {
 /** Container to hold all relevant parameters of a 'candidate' 
  */
 typedef struct {
-  LIGOTimeGPS refTime;		/**< SSB reference GPS-time at which spins are defined */
-  LIGOTimeGPS startTime;	/**< internal reference time used to compute Fa,Fb */
-  REAL8Vector *fkdotRef;	/**< spin-vector {f, f1dot, f2dot, ... } @ refTime */
-  SkyPosition skypos;
-  Fcomponents Fstat;		/**< Fstat-value Fa,Fb, using internal reference-time 'startTime' */
-  REAL8 aPlus, daPlus;		/**< amplitude-parameters with (Cramer-Rao) error estimators */
-  REAL8 aCross, daCross;
+  LIGOTimeGPS refTime;		/**< SSB reference GPS-time at which spins and phi0 are defined */
+
+
+  REAL8 h0, dh0;		/**< estimated amplitude-parameters with (Cramer-Rao) error estimators */
+  REAL8 cosi, dcosi;
   REAL8 phi0, dphi0;		/**< signal-phase @ reference-epoch */
   REAL8 psi, dpsi;
-  REAL8 h0, dh0;
-  REAL8 cosi, dcosi;
+  REAL8 aPlus, daPlus;		
+  REAL8 aCross, daCross;
+
+  REAL8Vector *fkdotRef;	/**< Doppler-params: spin-vector {f, f1dot, f2dot, ... } @ refTime */
+  SkyPosition skypos;
+
+  /* Fstatistic-values */
+  LIGOTimeGPS startTime;	/**< internal reference-time for CFS_v2 */
+  INT4 duration;		/**< effective time spanned */
+  Fcomponents Fstat;		/**< Fstat-value Fa,Fb, at internal reference-time 'startTime' */
+
+  CHAR *DataFiles;		/**< Data-files pattern used in the search */
+  LIGOTimeGPS minStartTime;	/**< earliest start-time */
+  LIGOTimeGPS maxEndTime;	/**< latest SFT-timestamp to include */
+  
 } candidate_t;
 
 /*---------- Global variables ----------*/
@@ -452,7 +463,7 @@ int main(int argc,char *argv[])
 		      tickCounter += 1.0;
 		      if ( lalDebugLevel && ( tickCounter > uvar_timerCount) )
 			{
-			  REAL8 diffSec = 1.0 * clock0 - time(NULL);  /* seconds since start of loop*/
+			  REAL8 diffSec = time(NULL) - clock0 ;  /* seconds since start of loop*/
 			  REAL8 taup = diffSec / templateCounter ;
 			  REAL8 timeLeft = (numTemplates - templateCounter) *  taup;
 			  tickCounter = 0.0;
@@ -1629,7 +1640,7 @@ XLALwriteCandidate2file ( FILE *fp,  const candidate_t *cand )
 
   fprintf (fp, "Fa  = %.6g  %+.6gi;\n", cand->Fstat.Fa.re, cand->Fstat.Fa.im );
   fprintf (fp, "Fb  = %.6g  %+.6gi;\n", cand->Fstat.Fb.re, cand->Fstat.Fb.im );
-  fprintf (fp, "F   = %.6g;\n", cand->Fstat.F );
+  fprintf (fp, "twoF = %.6g;\n", 2.0 * cand->Fstat.F );
 
   fprintf (fp, "aPlus  = %.6g;\n", cand->aPlus );
   fprintf (fp, "daPlus   = %.6g;\n", cand->daPlus );
