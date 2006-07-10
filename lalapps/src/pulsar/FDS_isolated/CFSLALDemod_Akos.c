@@ -44,13 +44,19 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
      "fmul   %%st(1),%%st(0)        \n\t" /* (x*LUT_RES) x */
 
 #ifdef USE_DEFAULT_ROUNDING_MODE
+     /* The default rounding mode is truncation (round-to-zero), which is exactly what we want here.
+	It should be restored by the compiler after every operation that involves floating-point-to-integer
+	conversion (rounding). Switching the rounding mode is slow, so the following code is the fastest
+	possible, as it simply expects the default rounding mode being active. However relying on this is
+	kind of	dangerous, so we don't do this by default. */
      "fistpl %[sinv]                \n\t" /* x */
      "movl   %[sinv],%%ebx          \n\t" /* x */
 #else
      "fadds  %[half]                \n\t" /* (x*LUT_RES+.5) x */
-     /* implementation of floor() that doesn't rely on a rounding mode being set */
-                                          /* NOTE: this temporary stores an integer in a memory location of a
-					           float variable, but it's overwritten later anyway */
+     /* Implementation of floor() that doesn't rely on a rounding mode being set
+	The current way works for positive values only! */
+     /* This code temporary stores integer values in memory locations of float variables,
+	but they're overwritten later anyway */
      "fistl  %[sinv]                \n\t" /* (x*LUT_RES+.5) x */ /* saving the rounded value, the original in FPU */
      "fisubl %[sinv]                \n\t" /* (x*LUT_RES+.5) x */ /* value - round(value) will be negative if was rounding up */
      "fstps  %[cosv]                \n\t" /* x */                /* we will check the sign in integer registers */
@@ -65,11 +71,13 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
      /* calculate d = x - diVal[idx] in st(0) */
      "fsubl  %[diVal](,%%ebx,8)     \n\t" /* (d = x - diVal[i]) */
 
-     /* add d*d on the stack */
+     /* copy d on the stack to prepare for calculating d*d */
      "fld    %%st(0)                \n\t" /* d d */
 #if 1
-     /* mimick compiler's calculation of cos */
+     /* mimic compiler's calculation of cos */
      /* changing the order of the substractions gives an error up to 1e-3 in the result!! */
+
+     /* this calculates d*d on _top_ of the stack (unlike the "original" version below) */ 
      "fmul   %%st(0),%%st(0)        \n\t" /* (d*d) d */
 
      /* three-term Taylor expansion for sin value, starting with the last term,
@@ -91,8 +99,10 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
      "fmull %[sinVal2PI](,%%ebx,8)  \n\t" /* (d*sinVal2PI[i]) (d*d*cosVal2PIPI[i]) d */
      "fsubrl %[cosVal](,%%ebx,8)    \n\t" /* (cosVal[i]-d*sinVal2PI[i]) (d*d*cosVal2PIPI[i]) */
      "fsubp                         \n\t" /* (cosVal[i]-d*sinVal2PI[i]-d*d*cosVal2PIPI[i]) */
-     "fstps %[cosv]                 \n\t" /* % */
+
 #else
+
+     /* calculate (d*d) */
      "fmul   %%st(0),%%st(1)        \n\t" /* d (d*d) */
 
      /* three-term Taylor expansion for sin value, starting with the last term,
@@ -112,13 +122,19 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
      "fsubrl %[cosVal](,%%ebx,8)    \n\t" /* (cosVal[i]-d*sinVal2PI[i]) (d*d) */
      "fxch                          \n\t" /* (d*d) (cosVal[i]-d*sinVal2PI[i]) */
      "fmull %[cosVal2PIPI](,%%ebx,8)\n\t" /* (d*d*cosVal2PIPI[i]) (cosVal[i]-d*sinVal2PI[i]) */
-     "fsubp                         \n\t" /* (d*sinVal2PI[i]-d*d*cosVal2PIPI[i]) */
+     "fsubp                         \n\t" /* (cosVal[i]-d*sinVal2PI[i]-d*d*cosVal2PIPI[i]) */
+
+#endif
      
+#ifndef SKIP_COS_ROUNDING
+     /* this stores the cos value in the single precision output variable before substracting 1.0,
+	again to mimic the compilers code to get the same result. It is faster and might be better
+	to simply leave this value on the stack, so we add a switch for skipping this */
      "fstps %[cosv]                 \n\t" /* % */
+     "flds  %[cosv]                 \n\t" /* % */
 #endif
 
      /* special here: tcos -= 1.0 */
-     "flds  %[cosv]                 \n\t" /* % */
      "fld1                          \n\t" /* 1 (cosVal[i]-d*(sinVal2PI[i]-d*cosVal2PIPI[i])) */
      "fsubrp                        \n\t" /* (cosVal[i]-d*(sinVal2PI[i]-d*cosVal2PIPI[i])-1) */
      "fstps %[cosv]                 \n\t" /* % */
