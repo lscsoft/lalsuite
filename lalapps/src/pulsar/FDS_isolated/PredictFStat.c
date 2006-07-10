@@ -202,8 +202,13 @@ int main(int argc,char *argv[])
       LALFree ( logstr );
       /* append 'dataSummary' */
       fprintf (fpFstat, "%s", GV.dataSummary );
+<<<<<<< PredictFStat.c
+      fprintf (fpFstat, "## E[2F]   sigma[2F] \n");
+      fprintf (fpFstat, "  %g    %g\n", 4.0 + rho2,  sqrt( 4.0 * ( 2.0 + rho2 )  ) );
+=======
       fprintf (fpFstat, "Fav = %g;\n", 0.5 * (4.0 + rho2) );
       fprintf (fpFstat, "dF  = %g;\n", 0.5 * sqrt( 4.0 * ( 2.0 + rho2 ) ) );
+>>>>>>> 1.21
       fclose (fpFstat);
     } /* if outputFstat */   
 
@@ -248,14 +253,12 @@ initUserVars (LALStatus *status)
   /* register all our user-variables */
   LALregBOOLUserVar(status,	help, 		'h', UVAR_HELP,     "Print this message"); 
   
-  LALregINTUserVar(status,	RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");
-  
+  LALregREALUserVar(status,	h0,		's', UVAR_OPTIONAL, "Signal amplitude h_0");
+  LALregREALUserVar(status,	cosiota,	'i', UVAR_OPTIONAL, "Inclination of rotation-axis Cos(iota)");
+  LALregREALUserVar(status,	aPlus,		  0, UVAR_OPTIONAL, "ALTERNATIVE: Amplitude of '+' polarization");
+  LALregREALUserVar(status,	aCross,		  0, UVAR_OPTIONAL, "Amplitude of 'x' polarization");
   LALregREALUserVar(status,	psi,		'Y', UVAR_REQUIRED, "Polarisation in rad");
-  
-  LALregREALUserVar(status,	cosiota,	'i', UVAR_OPTIONAL, "Cos(iota)");
-  LALregREALUserVar(status,	h0,		's', UVAR_OPTIONAL, "Strain amplitude h_0");
-  LALregREALUserVar(status,	aPlus,		  0, UVAR_OPTIONAL, "Strain amplitude h_0");
-  LALregREALUserVar(status,	aCross,		  0, UVAR_OPTIONAL, "Noise floor: one-sided sqrt(Sh) in 1/sqrt(Hz)");
+
   LALregREALUserVar(status,	Alpha,		'a', UVAR_REQUIRED, "Sky position alpha (equatorial coordinates) in radians");
   LALregREALUserVar(status,	Delta,		'd', UVAR_REQUIRED, "Sky position delta (equatorial coordinates) in radians");
   LALregREALUserVar(status,	Freq,		'F', UVAR_REQUIRED, "Signal frequency (for noise-estimation)");
@@ -264,11 +267,12 @@ initUserVars (LALStatus *status)
   LALregSTRINGUserVar(status,	IFO, 		'I', UVAR_OPTIONAL, "Detector-constraint: 'G1', 'L1', 'H1', 'H2' ...(useful for single-IFO v1-SFTs only!)");
   LALregSTRINGUserVar(status,	ephemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
   LALregSTRINGUserVar(status,	ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
-  LALregSTRINGUserVar(status,	outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for F-statistic field over the parameter-space");
+  LALregSTRINGUserVar(status,	outputFstat,	  0,  UVAR_OPTIONAL, "Output-file for predicted F-stat value" );
   
   LALregINTUserVar ( status,	minStartTime, 	 0,  UVAR_OPTIONAL, "Earliest SFT-timestamp to include");
   LALregINTUserVar ( status,	maxEndTime, 	 0,  UVAR_OPTIONAL, "Latest SFT-timestamps to include");
-  
+
+  LALregINTUserVar(status,	RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");  
   
   DETATCHSTATUSPTR (status);
   RETURN (status);
