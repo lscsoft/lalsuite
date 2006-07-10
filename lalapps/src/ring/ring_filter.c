@@ -294,7 +294,7 @@ static SnglRingdownTable * find_events(
 
         
         amp = sqrt( 5.0 / 2.0 * 0.01 )  * ( LAL_G_SI * thisEvent->mass * LAL_MSUN_SI / 
-            pow( LAL_C_SI, 2) / LAL_PC_SI /1000000.0 ) * pow( thisEvent->quality, -0.5 ) * 
+            pow( LAL_C_SI, 2) * 2.0 / LAL_PC_SI /1000000.0 ) * pow( thisEvent->quality, -0.5 ) * 
             pow( 1.0 + 7.0 / 24.0 / pow( thisEvent->quality, 2.0), -0.5 ) *
             pow(  1.0 - 0.63 * pow( 1.0 - thisEvent->spin,0.3 ), -0.5);
         sigma=tmpltSigma * amp;
@@ -310,7 +310,7 @@ static SnglRingdownTable * find_events(
         thisEvent->snr        = snr;
 
         amp = sqrt( 5.0 / 2.0 * 0.01 )  * ( LAL_G_SI * thisEvent->mass * LAL_MSUN_SI/
-            pow( LAL_C_SI, 2) / LAL_PC_SI /1000000.0 ) * pow( thisEvent->quality, -0.5 ) *
+            pow( LAL_C_SI, 2) * 2.0 / LAL_PC_SI /1000000.0 ) * pow( thisEvent->quality, -0.5 ) *
           pow( 1.0 + 7.0 / 24.0 / pow( thisEvent->quality, 2.0), -0.5 ) *
           pow(  1.0 - 0.63 * pow( 1.0 - thisEvent->spin,0.3 ), -0.5);
         sigma=tmpltSigma * amp;
