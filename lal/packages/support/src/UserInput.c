@@ -989,7 +989,7 @@ LALUserVarGetLog (LALStatus *status, CHAR **logstr,  UserVarLogFormat format)
       switch (format)
 	{
 	case UVAR_LOGFMT_CFGFILE:
-	  sprintf (append, "%s = %s\n", ptr->name, valstr);
+	  sprintf (append, "%s = %s ;\n", ptr->name, valstr);
 	  break;
 	case UVAR_LOGFMT_CMDLINE:
 	  sprintf (append, " --%s=%s", ptr->name, valstr);
