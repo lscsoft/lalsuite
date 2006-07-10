@@ -2,5 +2,5 @@
 
 for filename in "${@}" ; do
 	echo ${filename}
-	ligolw_cut --delete-table time_slide --delete-table coinc_event --delete-table coinc_event_map --delete-table coinc_definer <${filename} | sed -e "/ligolw_burca/d" -e "/ligolw_binjfind/d" >${filename}.new && mv -f ${filename}.new ${filename}
+	ligolw_cut --delete-table time_slide --delete-table coinc_event --delete-table coinc_event_map --delete-table coinc_definer <${filename} | sed -e "/ligolw_burca/d" -e "/ligolw_binjfind/d" -e "/ligolw_tisi/d" >${filename}.new && mv -f ${filename}.new ${filename}
 done
