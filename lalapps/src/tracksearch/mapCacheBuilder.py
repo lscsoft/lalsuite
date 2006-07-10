@@ -231,17 +231,17 @@ parser.add_option("-f", "--file", dest="filename",
 parser.add_option("-t","--start_time",
                   dest="startTime",
                   default=0,
-                  help="This is the time start of interest to construct our new resolution maps",
+                  help="This is the time start of interest to construct our new resolution maps.  The default value is 0, we work with any map time.",
                   metavar="sec")
 parser.add_option("-l","--map_set_duration",
                   dest="mapSetDuration",
                   default=1e9,
-                  help="This is the time in seconds that the new resolution maps will span",
-                  metavar="sec")
+                  help="This is the time in seconds that the new resolution maps will span. This means work only on the maps that have timestamps starting after SEC and ending on or before SEC+SECSTOP.  The default value is 1e9 seconds.",
+                  metavar="secstop")
 parser.add_option("-n","--new_map_duration",
                   dest="newMapTime",
                   default=1,
-                  help="This is the length in seconds that a map should last for.  New maps may exceed this time length in order to be collapsed properly",
+                  help="This is the length in seconds that a map should last for.  New maps may exceed this time length in order to be collapsed properly.  Avoid using values < 1 this may cause unusual behavior.",
                   metavar="sec")
 parser.add_option("-o","--overlap_maps",
                   dest="mapOverlap",default=0,
