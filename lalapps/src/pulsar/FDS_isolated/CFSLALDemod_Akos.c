@@ -31,14 +31,17 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
   /* calculate tsin, tcos, realQ and imagQ from sin/cos LUT */
 
 #ifdef USE_SINCOS_GAS
+  static REAL4 lutr = LUT_RES; /* LUT_RES in memory */
+  static REAL4 one  = 1.0;
+  static REAL4 half = .5;
+#endif
 
-  REAL4 lutr = LUT_RES; /* LUT_RES in memory */
-  REAL4 half = .5;
+#ifdef USE_SINCOS_GAS
 
   __asm __volatile
     (
      /* calculate index and put into EAX */
-     /*                                    vvvvv-- these comments keeps track of the FPU stack */
+     /*                                    vvvvv-- these comments keep track of the FPU stack */
      "fldl   %[x]                   \n\t" /* x */
      "flds   %[lutr]                \n\t" /* LUT_RES x */
      "fmul   %%st(1),%%st(0)        \n\t" /* (x*LUT_RES) x */
@@ -135,22 +138,18 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
 #endif
 
      /* special here: tcos -= 1.0 */
-     "fld1                          \n\t" /* 1 (cosVal[i]-d*(sinVal2PI[i]-d*cosVal2PIPI[i])) */
-     "fsubrp                        \n\t" /* (cosVal[i]-d*(sinVal2PI[i]-d*cosVal2PIPI[i])-1) */
+     "fsub  %[one]                  \n\t" /* (cosVal[i]-d*(sinVal2PI[i]-d*cosVal2PIPI[i])-1) */
      "fstps %[cosv]                 \n\t" /* % */
+
+     /* interface */
      : /* output */
-#ifdef DEBUG
-     [t1]    "=m" (t1),
-     [t2]    "=m" (t2),
-     [t3]    "=m" (t3),
-     [t4]    "=m" (t4),
-#endif
      [sinv]  "=m" (tsin),
      [cosv]  "=m" (tcos)
 
      : /* input */
      [x]           "m" (tempFreq0),
      [lutr]        "m" (lutr),
+     [one]         "m" (one),
      [half]        "m" (half),
      [sinVal]      "m" (sinVal[0]),
      [cosVal]      "m" (cosVal[0]),
@@ -229,7 +228,7 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
       imagQ = -imagQ;
     }
   }
-  
+
   /* we branch now (instead of inside the central loop)
    * depending on wether x can ever become SMALL in the loop or not, 
    * because it requires special treatment in the Dirichlet kernel
