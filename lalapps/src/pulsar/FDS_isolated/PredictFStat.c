@@ -202,13 +202,8 @@ int main(int argc,char *argv[])
       LALFree ( logstr );
       /* append 'dataSummary' */
       fprintf (fpFstat, "%s", GV.dataSummary );
-<<<<<<< PredictFStat.c
       fprintf (fpFstat, "## E[2F]   sigma[2F] \n");
       fprintf (fpFstat, "  %g    %g\n", 4.0 + rho2,  sqrt( 4.0 * ( 2.0 + rho2 )  ) );
-=======
-      fprintf (fpFstat, "Fav = %g;\n", 0.5 * (4.0 + rho2) );
-      fprintf (fpFstat, "dF  = %g;\n", 0.5 * sqrt( 4.0 * ( 2.0 + rho2 ) ) );
->>>>>>> 1.21
       fclose (fpFstat);
     } /* if outputFstat */   
 
