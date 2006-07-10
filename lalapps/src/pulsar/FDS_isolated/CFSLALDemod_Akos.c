@@ -26,6 +26,7 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
 #ifdef DEBUG
   REAL8 t1,t2,t3,t4;
   REAL4 tsin2, tcos2;
+  REAL8 realQ2, imagQ2;
 #endif
 
   /* calculate tsin, tcos, realQ and imagQ from sin/cos LUT */
@@ -162,49 +163,21 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
      : /* clobbered registers */
      "eax", "ebx", "st","st(1)","st(2)","st(4)"
      );	
-
-#ifdef DEBUG
-  {
-    UINT4 idx  = tempFreq0 * LUT_RES +.5;
-    REAL8 d    = tempFreq0 - diVal[idx];
-    REAL8 d2   = d*d;
-    REAL8 t11,t12,t13,t14;
-    
-    t11 = d2;
-
-    tsin2 = sinVal[idx] + d * cosVal2PI[idx] - d2 * sinVal2PIPI[idx];
-    // tcos2 = (t14= (t13= cosVal[idx]) - (t12= d * sinVal2PI[idx] - d2 * cosVal2PIPI[idx]));
-    tcos2 = cosVal[idx] - d * sinVal2PI[idx] - d2 * cosVal2PIPI[idx];
-
-    tcos2 -= 1.0;
-    
-    if (fabs(tsin - tsin2) > 1e-20)
-      fprintf(stderr,"\nsin %f: %e\n",tempFreq0,tsin-tsin2);
-
-    if (fabs(tcos - tcos2) > 1e-20){
-      fprintf(stderr,"\ncos %f: %e\n",tempFreq0,tcos-tcos2);
-      // fprintf(stderr,"%.20f\n%.20f\n",t1,t11);
-      // fprintf(stderr,"%.20f\n%.20f\n",t2,t12);
-      // fprintf(stderr,"%.20f\n%.20f\n",t3,t13);
-      // fprintf(stderr,"%.20f\n%.20f\n",t4,t14);
-      fprintf(stderr,"%.20f\n%.20f\n",tcos,tcos2);
-    }
-  }
-#endif
 #else
   {
     UINT4 idx  = tempFreq0 * LUT_RES +.5;
     REAL8 d    = tempFreq0 - diVal[idx];
     REAL8 d2   = d*d;
 
-    // tsin = sinVal[idx] + d * cosVal2PI[idx] - d2 * sinVal2PIPI[idx];
-    tcos2 = cosVal[idx] - d * sinVal2PI[idx] - d2 * cosVal2PIPI[idx];
-    tcos2 -= 1.0;
-
-    tcos = tcos2;
+    tsin = sinVal[idx] + d * cosVal2PI[idx] - d2 * sinVal2PIPI[idx];
+    tcos = cosVal[idx] - d * sinVal2PI[idx] - d2 * cosVal2PIPI[idx];
+    tcos -= 1.0;
   }
 #endif
   
+
+
+
   {
 #ifdef USE_FLOOR
     REAL8 yRem;
@@ -218,6 +191,150 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
     REAL8 yRem = yTemp - (INT4)(yTemp);
     if (yRem < 0) { yRem += 1.0f; } /* make sure this is in [0..1) */
 #endif
+
+#ifdef USE_SINCOS_GAS
+
+  __asm __volatile
+    (
+     /* calculate index and put into EAX */
+     /*                                    vvvvv-- these comments keep track of the FPU stack */
+     "fldl   %[x]                   \n\t" /* x */
+     "flds   %[lutr]                \n\t" /* LUT_RES x */
+     "fmul   %%st(1),%%st(0)        \n\t" /* (x*LUT_RES) x */
+
+#ifdef USE_DEFAULT_ROUNDING_MODE
+     /* The default rounding mode is truncation (round-to-zero), which is exactly what we want here.
+	It should be restored by the compiler after every operation that involves floating-point-to-integer
+	conversion (rounding). Switching the rounding mode is slow, so the following code is the fastest
+	possible, as it simply expects the default rounding mode being active. However relying on this is
+	kind of	dangerous, so we don't do this by default. */
+     "fistpl %[sinv]                \n\t" /* x */
+     "movl   %[sinv],%%ebx          \n\t" /* x */
+#else
+     "fadds  %[half]                \n\t" /* (x*LUT_RES+.5) x */
+     /* Implementation of floor() that doesn't rely on a rounding mode being set
+	The current way works for positive values only! */
+     /* This code temporary stores integer values in memory locations of float variables,
+	but they're overwritten later anyway */
+     "fistl  %[sinv]                \n\t" /* (x*LUT_RES+.5) x */ /* saving the rounded value, the original in FPU */
+     "fisubl %[sinv]                \n\t" /* (x*LUT_RES+.5) x */ /* value - round(value) will be negative if was rounding up */
+     "fstps  %[cosv]                \n\t" /* x */                /* we will check the sign in integer registers */
+     "movl   %[sinv],%%ebx          \n\t" /* x */
+     "sub    %%eax,%%eax            \n\t" /* x */                /* EAX=0 */
+     "orl    %[cosv],%%eax          \n\t" /* x */                /* it will set the S (sign) flag */
+     "jns    sincos2                \n\t" /* x */                /* the result is ok, rounding = truncation */
+     "dec    %%ebx                  \n"   /* x */                /* sinv=sinv-1.0 (it was rounded up) */
+     "sincos2:                      \n\t" /* x */
+#endif
+
+     /* calculate d = x - diVal[idx] in st(0) */
+     "fsubl  %[diVal](,%%ebx,8)     \n\t" /* (d = x - diVal[i]) */
+
+     /* copy d on the stack to prepare for calculating d*d */
+     "fld    %%st(0)                \n\t" /* d d */
+#if 1
+     /* mimic compiler's calculation of cos */
+     /* changing the order of the substractions gives an error up to 1e-3 in the result!! */
+
+     /* this calculates d*d on _top_ of the stack (unlike the "original" version below) */ 
+     "fmul   %%st(0),%%st(0)        \n\t" /* (d*d) d */
+
+     /* three-term Taylor expansion for sin value, starting with the last term,
+	leaving d and d*d on stack, idx kept in ebx */
+     "fldl  %[sinVal2PIPI](,%%ebx,8)\n\t" /* sinVal2PIPI[i] (d*d) d */
+     "fmul  %%st(1),%%st(0)         \n\t" /* (d*d*sinVal2PIPI[i]) (d*d) d */
+
+     "fldl  %[cosVal2PI](,%%ebx,8)  \n\t" /* cosVal2PI[i] (d*d*sinVal2PIPI[i]) (d*d) d */
+     "fmul  %%st(3),%%st(0)         \n\t" /* (d*cosVal2PI[i]) (d*d*sinVal2PIPI[i]) (d*d) d */
+     "fsubp                         \n\t" /* (d*cosVal2PI[i]-d*d*sinVal2PIPI[i]) (d*d) d */
+
+     "faddl %[sinVal](,%%ebx,8)     \n\t" /* (sinVal[i]+d*cosVal2PI[i]-d*d*sinVal2PIPI[i]) (d*d) d */
+     "fchs                          \n\t" /* -(sinVal[i]+d*cosVal2PI[i]-d*d*sinVal2PIPI[i]) (d*d) d */
+     "fstpl %[sinv]                 \n\t" /* (d*d) d */
+
+     /* similar calculation for cos value, this time popping the stack */
+     "fmull %[cosVal2PIPI](,%%ebx,8)\n\t" /* (d*d*cosVal2PIPI[i]) d */
+
+     "fxch                          \n\t" /* d (d*d*cosVal2PIPI[i]) */
+     "fmull %[sinVal2PI](,%%ebx,8)  \n\t" /* (d*sinVal2PI[i]) (d*d*cosVal2PIPI[i]) d */
+     "fsubrl %[cosVal](,%%ebx,8)    \n\t" /* (cosVal[i]-d*sinVal2PI[i]) (d*d*cosVal2PIPI[i]) */
+     "fsubp                         \n\t" /* (cosVal[i]-d*sinVal2PI[i]-d*d*cosVal2PIPI[i]) */
+
+#else
+
+     /* calculate (d*d) */
+     "fmul   %%st(0),%%st(1)        \n\t" /* d (d*d) */
+
+     /* three-term Taylor expansion for sin value, starting with the last term,
+	leaving d and d*d on stack, idx kept in ebx */
+     "fldl  %[sinVal2PIPI](,%%ebx,8)\n\t" /* sinVal2PIPI[i] d (d*d) */
+     "fmul  %%st(2),%%st(0)         \n\t" /* (d*d*sinVal2PIPI[i]) d (d*d) */
+
+     "fldl  %[cosVal2PI](,%%ebx,8)  \n\t" /* cosVal2PI[i] (d*d*sinVal2PIPI[i]) d (d*d) */
+     "fmul  %%st(2),%%st(0)         \n\t" /* (d*cosVal2PI[i]) (d*d*sinVal2PIPI[i]) d (d*d) */
+     "fsubp                         \n\t" /* (d*cosVal2PI[i]-d*d*sinVal2PIPI[i]) d (d*d) */
+
+     "faddl %[sinVal](,%%ebx,8)     \n\t" /* (sinVal[i]+d*cosVal2PI[i]-d*d*sinVal2PIPI[i]) d (d*d) */
+     "fchs                          \n\t" /* -(sinVal[i]+d*cosVal2PI[i]-d*d*sinVal2PIPI[i]) d (d*d) */
+     "fstpl %[sinv]                 \n\t" /* d (d*d) */
+
+     /* similar calculation for cos value, this time popping the stack */
+     "fmull %[sinVal2PI](,%%ebx,8)  \n\t" /* (d*sinVal2PI[i]) (d*d) */
+     "fsubrl %[cosVal](,%%ebx,8)    \n\t" /* (cosVal[i]-d*sinVal2PI[i]) (d*d) */
+     "fxch                          \n\t" /* (d*d) (cosVal[i]-d*sinVal2PI[i]) */
+     "fmull %[cosVal2PIPI](,%%ebx,8)\n\t" /* (d*d*cosVal2PIPI[i]) (cosVal[i]-d*sinVal2PI[i]) */
+     "fsubp                         \n\t" /* (cosVal[i]-d*sinVal2PI[i]-d*d*cosVal2PIPI[i]) */
+
+#endif
+     "fstpl %[cosv]                 \n\t" /* % */
+     
+     /* interface */
+     : /* output */
+     [sinv]  "=m" (imagQ),
+     [cosv]  "=m" (realQ)
+
+     : /* input */
+     [x]           "m" (yRem),
+     [lutr]        "m" (lutr),
+     [one]         "m" (one),
+     [half]        "m" (half),
+     [sinVal]      "m" (sinVal[0]),
+     [cosVal]      "m" (cosVal[0]),
+     [sinVal2PI]   "m" (sinVal2PI[0]),
+     [cosVal2PI]   "m" (cosVal2PI[0]),
+     [sinVal2PIPI] "m" (sinVal2PIPI[0]),
+     [cosVal2PIPI] "m" (cosVal2PIPI[0]),
+     [diVal]       "m" (diVal[0])
+
+     : /* clobbered registers */
+     "eax", "ebx", "st","st(1)","st(2)","st(4)"
+     );	
+
+#ifdef DEBUG
+  {
+    UINT4 idx  = yRem * LUT_RES + .5;
+    REAL8 d    = yRem - diVal[idx];
+    REAL8 d2   = d*d;
+
+    imagQ2 = sinVal[idx] + d * cosVal2PI[idx] - d2 * sinVal2PIPI[idx];
+    realQ2 = cosVal[idx] - d * sinVal2PI[idx] - d2 * cosVal2PIPI[idx];
+      
+    imagQ2 = -imagQ2;
+    
+    if (fabs(imagQ - imagQ2) > 6e-17)
+      fprintf(stderr,"\nsin %f: %e\n",yRem,imagQ - imagQ2);
+
+    if (fabs(realQ - realQ2) > 6e-17){
+      fprintf(stderr,"\ncos %f: %e\n",yRem,realQ - realQ2);
+      // fprintf(stderr,"%.20f\n%.20f\n",t1,t11);
+      // fprintf(stderr,"%.20f\n%.20f\n",t2,t12);
+      // fprintf(stderr,"%.20f\n%.20f\n",t3,t13);
+      // fprintf(stderr,"%.20f\n%.20f\n",t4,t14);
+      // fprintf(stderr,"%.20f\n%.20f\n",tcos,tcos2);
+    }
+  }
+#endif
+#else
     {
       UINT4 idx  = yRem * LUT_RES + .5;
       REAL8 d    = yRem - diVal[idx];
@@ -227,6 +344,7 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
       
       imagQ = -imagQ;
     }
+#endif
   }
 
   /* we branch now (instead of inside the central loop)
