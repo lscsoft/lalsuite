@@ -35,9 +35,7 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
   REAL4 lutr = LUT_RES; /* LUT_RES in memory */
   REAL4 half = .5;
 
-  // fprintf(stderr,"LALDemodSub called\n");
-
-  __asm
+  __asm __volatile
     (
      /* calculate index and put into EAX */
      /*                                    vvvvv-- these comments keeps track of the FPU stack */
@@ -50,6 +48,7 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
      "movl   %[sinv],%%ebx          \n\t" /* x */
 #else
      "fadds  %[half]                \n\t" /* (x*LUT_RES+.5) x */
+     /* implementation of floor() that doesn't rely on a rounding mode being set */
                                           /* NOTE: this temporary stores an integer in a memory location of a
 					           float variable, but it's overwritten later anyway */
      "fistl  %[sinv]                \n\t" /* (x*LUT_RES+.5) x */ /* saving the rounded value, the original in FPU */
@@ -59,7 +58,7 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
      "sub    %%eax,%%eax            \n\t" /* x */                /* EAX=0 */
      "orl    %[cosv],%%eax          \n\t" /* x */                /* it will set the S (sign) flag */
      "jns    sincos1                \n\t" /* x */                /* the result is ok, rounding = truncation */
-     "dec    %%ebx                  \n\t" /* x */                /* sinv=sinv-1.0 (it was rounded up) */
+     "dec    %%ebx                  \n"   /* x */                /* sinv=sinv-1.0 (it was rounded up) */
      "sincos1:                      \n\t" /* x */
 #endif
 
@@ -68,6 +67,9 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
 
      /* add d*d on the stack */
      "fld    %%st(0)                \n\t" /* d d */
+#if 1
+     /* mimick compiler's calculation of cos */
+     /* changing the order of the substractions gives an error up to 1e-3 in the result!! */
      "fmul   %%st(0),%%st(0)        \n\t" /* (d*d) d */
 
      /* three-term Taylor expansion for sin value, starting with the last term,
@@ -87,27 +89,39 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
 
      "fxch                          \n\t" /* d (d*d*cosVal2PIPI[i]) */
      "fmull %[sinVal2PI](,%%ebx,8)  \n\t" /* (d*sinVal2PI[i]) (d*d*cosVal2PIPI[i]) d */
+     "fsubrl %[cosVal](,%%ebx,8)    \n\t" /* (cosVal[i]-d*sinVal2PI[i]) (d*d*cosVal2PIPI[i]) */
+     "fsubp                         \n\t" /* (cosVal[i]-d*sinVal2PI[i]-d*d*cosVal2PIPI[i]) */
+     "fstps %[cosv]                 \n\t" /* % */
+#else
+     "fmul   %%st(0),%%st(1)        \n\t" /* d (d*d) */
+
+     /* three-term Taylor expansion for sin value, starting with the last term,
+	leaving d and d*d on stack, idx kept in ebx */
+     "fldl  %[sinVal2PIPI](,%%ebx,8)\n\t" /* sinVal2PIPI[i] d (d*d) */
+     "fmul  %%st(2),%%st(0)         \n\t" /* (d*d*sinVal2PIPI[i]) d (d*d) */
+
+     "fldl  %[cosVal2PI](,%%ebx,8)  \n\t" /* cosVal2PI[i] (d*d*sinVal2PIPI[i]) d (d*d) */
+     "fmul  %%st(2),%%st(0)         \n\t" /* (d*cosVal2PI[i]) (d*d*sinVal2PIPI[i]) d (d*d) */
+     "fsubp                         \n\t" /* (d*cosVal2PI[i]-d*d*sinVal2PIPI[i]) d (d*d) */
+
+     "faddl %[sinVal](,%%ebx,8)     \n\t" /* (sinVal[i]+d*cosVal2PI[i]-d*d*sinVal2PIPI[i]) d (d*d) */
+     "fstps %[sinv]                 \n\t" /* d (d*d) */
+
+     /* similar calculation for cos value, this time popping the stack */
+     "fmull %[sinVal2PI](,%%ebx,8)  \n\t" /* (d*sinVal2PI[i]) (d*d) */
+     "fsubrl %[cosVal](,%%ebx,8)    \n\t" /* (cosVal[i]-d*sinVal2PI[i]) (d*d) */
+     "fxch                          \n\t" /* (d*d) (cosVal[i]-d*sinVal2PI[i]) */
+     "fmull %[cosVal2PIPI](,%%ebx,8)\n\t" /* (d*d*cosVal2PIPI[i]) (cosVal[i]-d*sinVal2PI[i]) */
      "fsubp                         \n\t" /* (d*sinVal2PI[i]-d*d*cosVal2PIPI[i]) */
      
-#ifdef DEBUG
-     "fstl  %[t2]\n\t"
-#endif
-
-     "fsubrl %[cosVal](,%%ebx,8)    \n\t" /* (cosVal[i]-d*sinVal2PI[i]-d*d*cosVal2PIPI[i])) */
-#ifdef DEBUG
-     "fstl  %[t4]\n\t"
-#endif
-
-#ifndef SKIP_COS_ROUNDING
      "fstps %[cosv]                 \n\t" /* % */
+#endif
 
      /* special here: tcos -= 1.0 */
      "flds  %[cosv]                 \n\t" /* % */
-#endif
      "fld1                          \n\t" /* 1 (cosVal[i]-d*(sinVal2PI[i]-d*cosVal2PIPI[i])) */
      "fsubrp                        \n\t" /* (cosVal[i]-d*(sinVal2PI[i]-d*cosVal2PIPI[i])-1) */
      "fstps %[cosv]                 \n\t" /* % */
-
      : /* output */
 #ifdef DEBUG
      [t1]    "=m" (t1),
@@ -120,7 +134,8 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
 
      : /* input */
      [x]           "m" (tempFreq0),
-     [lutr]        "m" (lutr),     [half]        "m" (half),
+     [lutr]        "m" (lutr),
+     [half]        "m" (half),
      [sinVal]      "m" (sinVal[0]),
      [cosVal]      "m" (cosVal[0]),
      [sinVal2PI]   "m" (sinVal2PI[0]),
@@ -130,7 +145,7 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
      [diVal]       "m" (diVal[0])
 
      : /* clobbered registers */
-     "eax", "ebx", "st","st(1)","st(2)","st(3)"
+     "eax", "ebx", "st","st(1)","st(2)","st(4)"
      );	
 
 #ifdef DEBUG
@@ -143,36 +158,35 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
     t11 = d2;
 
     tsin2 = sinVal[idx] + d * cosVal2PI[idx] - d2 * sinVal2PIPI[idx];
-    tcos2 = (t14= (t13= cosVal[idx]) - (t12= d * sinVal2PI[idx] - d2 * cosVal2PIPI[idx]));
+    // tcos2 = (t14= (t13= cosVal[idx]) - (t12= d * sinVal2PI[idx] - d2 * cosVal2PIPI[idx]));
+    tcos2 = cosVal[idx] - d * sinVal2PI[idx] - d2 * cosVal2PIPI[idx];
 
     tcos2 -= 1.0;
     
-    if (fabs(tsin - tsin2) > 1e-18)
-      fprintf(stderr,"\n%f: %e\n",tempFreq0,tsin-tsin2);
+    if (fabs(tsin - tsin2) > 1e-20)
+      fprintf(stderr,"\nsin %f: %e\n",tempFreq0,tsin-tsin2);
 
-    if (fabs(tcos - tcos2) > 1e-18){
-      fprintf(stderr,"\n%f: %e\n",tempFreq0,tcos-tcos2);
+    if (fabs(tcos - tcos2) > 1e-20){
+      fprintf(stderr,"\ncos %f: %e\n",tempFreq0,tcos-tcos2);
       // fprintf(stderr,"%.20f\n%.20f\n",t1,t11);
-      fprintf(stderr,"%.20f\n%.20f\n",t2,t12);
+      // fprintf(stderr,"%.20f\n%.20f\n",t2,t12);
       // fprintf(stderr,"%.20f\n%.20f\n",t3,t13);
-      fprintf(stderr,"%.20f\n%.20f\n",t4,t14);
+      // fprintf(stderr,"%.20f\n%.20f\n",t4,t14);
       fprintf(stderr,"%.20f\n%.20f\n",tcos,tcos2);
     }
   }
 #endif
-
 #else
-
   {
     UINT4 idx  = tempFreq0 * LUT_RES +.5;
     REAL8 d    = tempFreq0 - diVal[idx];
     REAL8 d2   = d*d;
 
-    tsin = sinVal[idx] + d * cosVal2PI[idx] - d2 * sinVal2PIPI[idx];
-    tcos = cosVal[idx] - d * sinVal2PI[idx] - d2 * cosVal2PIPI[idx];
+    // tsin = sinVal[idx] + d * cosVal2PI[idx] - d2 * sinVal2PIPI[idx];
+    tcos2 = cosVal[idx] - d * sinVal2PI[idx] - d2 * cosVal2PIPI[idx];
+    tcos2 -= 1.0;
 
-    tcos -= 1.0;
-    
+    tcos = tcos2;
   }
 #endif
   
@@ -206,7 +220,8 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
    */
   if ( tempFreq0 < LD_SMALL ) 
     {
-      
+      fprintf(stderr,"small x\n");
+
       realXP=0.0;
       imagXP=0.0;
       
@@ -238,49 +253,196 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
 	} /* for k < klim */
       
     } /* if x could become close to 0 */
+
   else
-    /* when optimizing for a specific architecture, we usually don't want to rewrite
-       the whole file, but only the following block of C code, so we insert another
-       hook here, in the hope that we still maintain readability. Also too we'd like
-       to avoid the necessarity to keep changes in other parts of the file in sync
-       between these versions.                                                  BM */
-#if defined(USE_X86_GAS)
-#include "CFSLALDemodLoop_x86gAss.c"
-#elif defined(USE_X86_MAS)
-#include "CFSLALDemodLoop_x86MSAss.c"
-#elif defined(USE_ALTIVEC)
-#include "CFSLALDemodLoop_AltiVec.c"
-#elif defined(USE_NDP_VECT)
-#include "CFSLALDemodLoop_ndp_vect.c"
-#elif defined(USE_NEW_DIV_PART)
-#include "CFSLALDemodLoop_div_part.c"
-#else
+
     {
-      COMPLEX8 *Xalpha_k = Xalpha + sftIndex;
-      
-      realXP=0.0;
-      imagXP=0.0;
-      
-      /* Loop over terms in Dirichlet Kernel */
-      
-      
-      for(k=0; k < klim ; k++)
-	{
-	  REAL4 xinv = (REAL4)OOTWOPI / (REAL4)tempFreq1;
-	  COMPLEX8 Xa = *Xalpha_k;
-	  Xalpha_k ++;
-	  tempFreq1 --;
-	  
-	  realP = tsin * xinv;
-	  imagP = tcos * xinv;
-	  /* these lines compute P*xtilde */
-	  realXP += Xa.re * realP - Xa.im * imagP;
-	  imagXP += Xa.re * imagP + Xa.im * realP;
-	  
-	} /* for k < klim */
-      
-    } /* if x cannot be close to 0 */
+#define GCC_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
+
+#ifdef __APPLE__ /* specials for Apples assembler */
+
+#define AD_FLOAT   ".single "
+#define AD_ASCII   ".ascii "
+#define AD_ALIGN16 ".align 4"
+#define AD_ALIGN64 ".align 6"
+#else /* x86 gas */
+#define AD_FLOAT   ".float "
+#define AD_ASCII   ".string "
+#define AD_ALIGN16 ".align 16"
+#define AD_ALIGN64 ".align 64"
 #endif
+	    
+      COMPLEX8 *Xalpha_k = Xalpha + sftIndex;
+      REAL4 tsin2pi = tsin * (REAL4)OOTWOPI;
+      REAL4 tcos2pi = tcos * (REAL4)OOTWOPI;
+
+      /* prepare values for SSE */
+      REAL4 tempFreqX = tempFreq1; /* REAL4 because of SSE */
+      COMPLEX8 *Xalpha_kX = Xalpha_k; /* -> SSE values */
+
+      REAL4 XRes, XIms;   /* sums of Xa.re and Xa.im */
+      COMPLEX8 XSumsX;    /* sums of Xa.re and Xa.im for SSE */
+
+      /* shift values for FPU calculation */
+      COMPLEX8 *Xalpha_kF = Xalpha_k + 16;
+      REAL8    tempFreqF  = tempFreq1 - 15.0;
+
+      /* calculation (for 28 REAL4 values (7x(2 ReIm pairs))) */
+      /* one SSE register will consist 4 REAL4 values */
+      /* 4 REAL4 vaules = 2 ReIm pairs */
+      
+      /* we want to do this SSE code 14 times */
+#define ADD4SSE(a,b) \
+       "movlps "#a"(%[Xalpha_kX]),%%xmm4 \n\t"\
+       "movhps "#b"(%[Xalpha_kX]),%%xmm4 \n\t"\
+       "rcpps %%xmm0,%%xmm1       \n\t" /* XMM1: 1/(f-1) 1/(f-1) 1/f 1/f */\
+       "subps %%xmm5,%%xmm0       \n\t" /* XMM2: f-3 f-3 f-2 f-2 */\
+       "mulps %%xmm4,%%xmm1       \n\t" /* XMM1: ImH/(f-1) ReH/(f-1) ImL/f ReL/f */\
+       "addps %%xmm1,%%xmm2       \n\t" /* XMM2: C_ImH C_ReH C_ImL C_ReL */
+
+      __asm __volatile
+	(
+	 /* constants */
+	 "jmp cntcode              \n"
+	 AD_ALIGN16 "              \n\t"
+	 "C_V0011:                 \n\t"
+	 AD_FLOAT "0.0             \n\t"
+	 AD_FLOAT "0.0             \n\t"
+	 "C_F1:                    \n\t"
+	 AD_FLOAT "1.0             \n\t"
+	 AD_FLOAT "1.0             \n"
+	 "C_F2:                    \n\t"
+	 "C_V2222:                 \n\t"
+	 AD_FLOAT "2.0             \n\t"
+	 AD_FLOAT "2.0             \n\t"
+	 AD_FLOAT "2.0             \n\t"
+	 AD_FLOAT "2.0             \n"
+
+	 AD_ASCII "\"$Id$\"\n"
+	 AD_ALIGN16 "              \n\t"
+	 "cntcode:                 \n\t"
+	 
+	 /* SSE prelude */
+	 "movss %[tempFreqX],%%xmm0\n\t"
+	 "shufps $0,%%xmm0,%%xmm0  \n\t" /* XMM0: f   f   f   f */
+	 "subps  C_V0011,%%xmm0    \n\t" /* XMM0: f-1 f-1 f   f */
+	 "xorps  %%xmm2,%%xmm2     \n\t" /* XMM2 will collect the low-precision values */
+	 "movups C_V2222,%%xmm5    \n\t"
+	 /* add two complex elements at a time */
+	 ADD4SSE(0,8)
+	 ADD4SSE(16,24)
+	 ADD4SSE(32,40)
+	 
+	 "FLDL %[tempFreq1]        \n\t" /* FLD D [TempFreqMinus15]   ;A15 */
+	 "FLDS -16(%[Xalpha_k])    \n\t" /* FLD D [EBP-10h]   ;X14 A15 */
+	 "FMUL %%ST(1),%%ST        \n\t" /* FMUL ST,ST1       ;X14A15 A15 */
+	 
+	 ADD4SSE(48,56)
+	 
+	 "FLDS -12(%[Xalpha_k])    \n\t" /* FLD D [EBP-0Ch]   ;Y14 X14A15 A15 */
+	 "FMUL %%ST(2),%%ST        \n\t" /* FMUL ST,ST2       ;Y14A15 X14A15 A15 */
+	 "FXCH %%ST(2)             \n\t" /* FXCH ST2          ;A15 X14A15 Y14A15 */
+	 "FLDS C_F1                \n\t" /* FLD D [_ONE_]     ;1 A15 X14A15 Y14A15 */
+	 "FADD %%ST(1),%%ST        \n\t" /* FADD ST,ST1       ;A14 A15 X14A15 Y14A15 */
+	 
+	 ADD4SSE(64,72)
+	 
+	 "FLDS -8(%[Xalpha_k])     \n\t" /* FLD D [EBP-08h]   ;X15 A14 A15 X14A15 Y14A15 */
+	 "FMUL %%ST(1),%%ST        \n\t" /* FMUL ST,ST1       ;X15A14 A14 A15 X14A15 Y14A15 */
+	 "FADDP %%ST,%%ST(3)       \n\t" /* FADDP ST3,ST      ;A14 A15 X' Y14A15 */
+	 "FMUL %%ST,%%ST(1)        \n\t" /* FMUL ST1,ST       ;A14 Q145 X' Y14A15 */
+	 "FLDS -4(%[Xalpha_k])     \n\t" /* FLD D [EBP-04h]   ;Y15 A14 Q145 X' Y14A15 */
+	 
+	 ADD4SSE(80,88)
+
+	 "FMUL %%ST(1),%%ST        \n\t" /* FMUL ST,ST1       ;Y15A14 A14 Q145 X' Y14A15 */
+	 "FADDP %%ST,%%ST(4)       \n\t" /* FADDP ST4,ST      ;A14 Q145 X' Y' */
+	 "FSUBS C_F2               \n\t" /* FSUB D [_TWO_]    ;A16 Q145 X' Y' */
+	 "FMUL %%ST,%%ST(2)        \n\t" /* FMUL ST2,ST       ;A16 Q145 X'A16 Y' */
+	 "FMUL %%ST,%%ST(3)        \n\t" /* FMUL ST3,ST       ;A16 Q145 X'A16 Y'A16 */
+	       
+	 ADD4SSE(96,104) 
+	 
+	 /* SSE: skip FPU calculated values */
+	 "subps %%xmm5,%%xmm0      \n\t"
+	 "addl  $144,%[Xalpha_kX]  \n\t" /* Xalpha_kX = Xalpha_kX + 4; */
+	 "subps %%xmm5,%%xmm0      \n\t"
+
+	 "FLDS 0(%[Xalpha_k])      \n\t" /* FLD D [EBP+00h]   ;X16 A16 Q145 X'A16 Y'A16 */
+	 "FMUL %%ST(2),%%ST        \n\t" /* FMUL ST,ST2       ;X16Q145 A16 Q145 X'A16 Y'A16 */
+	 "FADDP %%ST,%%ST(3)       \n\t" /* FADDP ST3,ST      ;A16 Q145 X" Y'A16 */
+	 "FLDS 4(%[Xalpha_k])      \n\t" /* FLD D [EBP+04h]   ;Y16 A16 Q145 X" Y'A16 */
+	 "FMUL %%ST(2),%%ST        \n\t" /* FMUL ST,ST2       ;Y16Q145 A16 Q145 X" Y'A16 */
+
+	 ADD4SSE(0,8)
+
+	 "FADDP %%ST,%%ST(4)       \n\t" /* FADDP ST4,ST      ;A16 Q145 X" Y" */
+	 "FMUL %%ST,%%ST(1)        \n\t" /* FMUL ST1,ST       ;A16 Q146 X" Y" */
+	 "FSUBS C_F1               \n\t" /* FSUB D [_ONE_]    ;A17 Q146 X" Y" */
+	 "FMUL %%ST,%%ST(2)        \n\t" /* FMUL ST2,ST       ;A17 Q146 X"A17 Y" */
+	 "FMUL %%ST,%%ST(3)        \n\t" /* FMUL ST3,ST       ;A17 Q146 X"A17 Y"A17 */
+	 
+	 ADD4SSE(16,24)
+	 
+	 "FLDS 8(%[Xalpha_k])      \n\t" /* FLD D [EBP+08h]   ;X17 A17 Q146 X"A17 Y"A17 */
+	 "FMUL %%ST(2),%%ST        \n\t" /* FMUL ST,ST2       ;X17Q146 A17 Q146 X"A17 Y"A17 */
+	 "FADDP %%ST,%%ST(3)       \n\t" /* FADDP ST3,ST      ;A17 Q146 X! Y"A17 */
+	 
+	 ADD4SSE(32,40)
+	 
+	 "FLDS 12(%[Xalpha_k])     \n\t" /* FLD D [EBP+0Ch]   ;Y17 A17 Q146 X! Y"A17 */
+	 "FMUL %%ST(2),%%ST        \n\t" /* FMUL ST,ST2       ;Y17Q146 A17 Q146 X! Y"A17 */
+	 "FADDP %%ST,%%ST(4)       \n\t" /* FADDP ST4,ST      ;A17 Q146 X! Y! */
+	 "FMULP %%ST,%%ST(1)       \n\t" /* FMULP ST1,ST      ;Q147 X! Y! */
+	 
+	 ADD4SSE(48,56)
+	 
+	 "FDIVRS C_F1              \n\t" /* FDIVR D [_ONE_]   ;1/Q x y */
+	 "FMUL %%ST,%%ST(1)        \n\t" /* FMUL ST1,ST       ;1/Q xq y */
+	 "FMULP %%ST,%%ST(2)       \n\t" /* FMULP ST2,ST      ;xq yq */
+	 
+	 ADD4SSE(64,72)
+	 ADD4SSE(80,88)
+	 
+	 "FSTPS %[XRes]            \n\t"
+	 "FSTPS %[XIms]            \n\t"
+	 
+	 ADD4SSE(96,104) 
+	 
+	 /* add two complex elements at a time */
+	 
+	 /* add the two calculated parts of the real and imaginary part */
+	 "movhlps %%xmm2,%%xmm3    \n\t" /* XMM3: ? ? C_ImH C_ReH */
+	 "addps %%xmm3,%%xmm2      \n\t" /* XMM2: - - C_Im C_Re */
+	 
+	 /* store the result */
+	 "movlps %%xmm2, %[XSumsX] \n\t"
+	 
+	 : /* output  (here: to memory)*/
+	 [XSumsX]  "=m" (XSumsX),
+	 [XRes]  "=m" (XRes),
+	 [XIms]  "=m" (XIms),
+	 /* input */
+	 [Xalpha_kX] "+r" (Xalpha_kX) /* is changed by the code, so put into output section */
+	 :
+	 [Xalpha_k]  "r" (Xalpha_kF),
+	 [tempFreq1] "m" (tempFreqF),
+	 [tempFreqX] "m" (tempFreqX)
+	 
+	 : /* clobbered registers */
+#ifndef IGNORE_XMM_REGISTERS
+	 "xmm0","xmm1","xmm2","xmm3","xmm4","xmm5",
+#endif
+	 "st","st(1)","st(2)","st(3)","st(4)"
+	 );	    
+      
+      /* And last, we add the single and double precision values */
+      XRes = XRes + XSumsX.re;
+      XIms = XIms + XSumsX.im;
+      
+      realXP = tsin2pi * XRes - tcos2pi * XIms;
+      imagXP = tcos2pi * XRes + tsin2pi * XIms;
+    }
 
   *realXPo = realXP;
   *imagXPo = imagXP;
