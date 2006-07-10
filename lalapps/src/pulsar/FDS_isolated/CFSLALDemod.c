@@ -67,6 +67,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
   UINT4 klim = 2*params->Dterms;
 #endif
   REAL8 f;
+
   static REAL8 sinVal[LUT_RES+(LUT_RES/4)+1]; /* Lookup tables for fast sin/cos calculation */
   static REAL8 *cosVal;
 
@@ -82,6 +83,12 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
   REAL8 D=params->amcoe->D;
 
   UINT4 M=params->SFTno;
+
+#ifdef USE_ALTIVEC  
+/* APPLE - we need a buffer of tempFreq1 values calculated in double precision, but stored in single precision */
+  REAL4 *tempf = malloc(sizeof(REAL4)*64);
+  unsigned int tempF_size = 64;
+#endif
 
   INITSTATUS( status, "TestLALDemod", rcsid );
 
@@ -360,9 +367,14 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
   LALFree(tempInt1);
   LALFree(xSum);
   LALFree(ySum);
-  
+
+#ifdef USE_ALTIVEC  
+  /* APPLE - free the temporary buffer that was alloc'd in the vector loop */
+  free(tempf);
+#endif
+
   RETURN( status );
 
 }
 
-#endif /* USE_R4LALDEMOD, USE_ALTIVEC */
+#endif
