@@ -165,8 +165,66 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
   
 
 
-
   {
+#ifdef USE_SINCOS_GAS
+    REAL4 yRem;
+    
+    __asm __volatile
+      (
+       "fldl   %[yTemp]               \n\t" /* yT */
+#ifdef USE_DEFAULT_ROUNDING_MODE
+       "fistl  %[yRem]                \n\t" /* yT */
+       "fisubl %[yRem]                \n\t" /* (yT-(int)yT) */
+       "fstps  %[yRem]                \n\t" /* % */
+       "sub    %%eax,%%eax            \n\t" /*   EAX=0 */
+       "orl    %[yRem],%%eax          \n\t" /*   sets the S (sign) flag */
+       "jns    sincos3                \n\t" /*   jump if not negative */
+       "fld1                          \n\t" /* 1 */
+       "fadd   %[yRem]                \n\t" /* (yT-(int)yT+1) */
+       "fstps  %[yRem]                \n"   /* % */
+       "sincos3:                      \n\t"
+#else
+       "fsts   %[yRem]                \n\t" /* yT */ /* fist doesn't preserve the sign if -0.5<st<0 */
+       "sub    %%eax,%%eax            \n\t" /*   EAX=0 */
+       "orl    %[yRem],%%eax          \n\t" /*   sets the S (sign) flag */
+       "js     sincos3                \n\t" /*   jump if negative */
+
+       "fistl  %[yRem]                \n\t" /* yT */         /* saving the rounded value, the original in FPU */
+       "fisubl %[yRem]                \n\t" /* yT-(int)yT */ /* value - round(value) will be negative if was rounding up */
+       "fstps  %[yRem]                \n\t" /* % */          /* we will check the sign in integer registers */
+       "sub    %%eax,%%eax            \n\t" /* % */          /* EAX=0 */
+       "orl    %[yRem],%%eax          \n\t" /* % */          /* it will set the S (sign) flag */
+       "jns    sincos5                \n\t" /* % */          /* the result is ok, rounding = truncation */
+       "fld1                          \n\t" /* 1 */
+       "fadd   %[yRem]                \n\t" /* (yT-(int)yT+1) */
+       "jmp    sincos4                \n\t" /* (yT-(int)yT+1) */
+
+       "sincos3:                      \n\t"
+       "fistl  %[yRem]                \n\t" /* yT */         /* saving the rounded value, the original in FPU */
+       "fisubl %[yRem]                \n\t" /* yT-(int)yT */ /* value - round(value) will be positive if was rounding up */
+       "fstps  %[yRem]                \n\t" /* % */          /* we will check the sign in integer registers */
+       "sub    %%eax,%%eax            \n\t" /* % */          /* EAX=0 */
+       "orl    %[yRem],%%eax          \n\t" /* % */          /* it will set the S (sign) flag */
+       "jns    sincos5                \n\t" /* % */          /* */
+       "fld1                          \n\t" /* 1 */
+       "fadd   %[yRem]                \n\t" /* (yT-(int)yT+1) */
+
+       "sincos4:                      \n\t" /* yR */
+       "fstps  %[yRem]                \n"   /* % */
+       "sincos5:                      \n\t" /* % */
+#endif
+
+       /* interface */
+       : /* output */
+       [yRem]  "=m" (yRem)
+       : /* input */
+       [yTemp] "m" (yTemp)
+       : /* clobbered registers */
+       "eax", "st"
+       );	
+
+#else
+
 #ifdef USE_FLOOR
     REAL8 yRem;
     if (yTemp >= 0) {
@@ -184,7 +242,7 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
 
   __asm __volatile
     (
-     "fldl   %[x]                   \n\t" /* x */
+     "flds   %[x]                   \n\t" /* x */
      "flds   %[lutr]                \n\t" /* LUT_RES x */
      "fmul   %%st(1),%%st(0)        \n\t" /* (x*LUT_RES) x */
 
@@ -261,11 +319,6 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
 
     if (fabs(realQ - realQ2) > 6e-17){
       fprintf(stderr,"\ncos %f: %e\n",yRem,realQ - realQ2);
-      // fprintf(stderr,"%.20f\n%.20f\n",t1,t11);
-      // fprintf(stderr,"%.20f\n%.20f\n",t2,t12);
-      // fprintf(stderr,"%.20f\n%.20f\n",t3,t13);
-      // fprintf(stderr,"%.20f\n%.20f\n",t4,t14);
-      // fprintf(stderr,"%.20f\n%.20f\n",tcos,tcos2);
     }
   }
 #endif
