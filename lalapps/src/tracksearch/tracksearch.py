@@ -370,11 +370,11 @@ class tracksearchMapCacheBuildJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         self.mapTime=float(string.strip(cp.get('layerconfig',layerTimeLabel)))
         #Work on all files listed
         #OK THIS IS INCORRECT SETTING OF MACROS
-        self.add_opt('file','$macroFile')
-        self.add_opt('start_time','$macroStartTime')
-        self.add_opt('map_set_duration','$macroMapSetDuration')
-        self.add_opt('new_map_duration','$macroNewMapDuration')
-        self.add_opt('overlap_maps','$macroOverlapMaps')
+        #self.add_opt('file','$macroFile')
+        #self.add_opt('start_time','$macroStartTime')
+        #self.add_opt('map_set_duration','$macroMapSetDuration')
+        #self.add_opt('new_map_duration','$macroNewMapDuration')
+        #self.add_opt('overlap_maps','$macroOverlapMaps')
         #Parse all the options from BASE and Timeseries Config sections
         for sec in ['cachebuilder']:
             self.add_ini_opts(cp,sec)
@@ -503,6 +503,8 @@ class tracksearch:
     we expect an input of a Science Segment of exactly n seconds
     specified via the ini file
     """
+    #TO HANDLE FUTURE COINCIDENT ANALYSIS WE NEED TO ADJUST DAGDIR FOR
+    #EACH IFO THEN MAKE A CLUSTERING DIR OR SOMETHING LIKE THAT
     def __init__(self,cparser,scienceSegment,logfile):
         #Expects a fixed size PsuedoScience Segment
         #The dag for this run will be then run from this data
@@ -660,17 +662,17 @@ class tracksearch:
         #Should be previous layer already processed!
         cacheBuildMapDir=determineLayerPath(self.cp,block_id,layerNumPrevious)
         cacheBuildWorkDir=determineLayerPath(self.cp,block_id,layerNum)
-        cacheBuild_node.add_macro('macroStartDir',cacheBuildWorkDir)
-        cacheBuild_node.add_macro('macroFile',cacheBuildMapDir)            
+        cacheBuild_node.add_macro('StartDir',cacheBuildWorkDir)
+        cacheBuild_node.add_var_opt('file',cacheBuildMapDir)            
         #Set the time of this run to start preping caches for
-        cacheBuild_node.add_macro('macroStartTime',self.runStartTime)
+        cacheBuild_node.add_var_opt('start_time',self.runStartTime)
         #Lookup the proper layer options
         layerMapNewDur=float(self.cp.get('layerconfig','layer'+str(layerNum)+'TimeScale'))
-        layerMapSetDur=float(layerMapNewDur*float(self.cp.get('layerconfig','layer'+str(layerNum)+'SetSize')))
+        layerMapSetSize=int(self.cp.get('layerconfig','layer'+str(layerNum)+'SetSize'))
         layerMapOverlap=float(self.percentOverlap*layerMapNewDur)
-        cacheBuild_node.add_macro('macroMapSetDuration',layerMapSetDur)
-        cacheBuild_node.add_macro('macroNewMapDuration',layerMapNewDur)
-        cacheBuild_node.add_macro('macroOverlapMaps',layerMapOverlap)
+        cacheBuild_node.add_var_opt('job_set_size',layerMapSetSize)
+        cacheBuild_node.add_var_opt('new_map_duration',layerMapNewDur)
+        cacheBuild_node.add_var_opt('overlap_maps',layerMapOverlap)
         #Make this process the child of all frame analysis jobs
         for parentJob in prevLayerJobList:
             cacheBuild_node.add_parent(parentJob)
@@ -688,7 +690,7 @@ class tracksearch:
         for cacheSet in jobTSAList:
             tracksearchAverager_node=tracksearchAveragerNode(tracksearchAverager_job)
             tracksearchAverager_node.add_var_opt('multi_cache',cacheSet)
-            tracksearchAverager_node.add_macro('macroStartDir',averagerWorkDir)
+            tracksearchAverager_node.add_macro('StartDir',averagerWorkDir)
             tracksearchAverager_node.add_parent(cacheBuild_node)
             self.dag.add_node(tracksearchAverager_node)
             averagerJobListing.append(tracksearchAverager_node)
@@ -701,7 +703,7 @@ class tracksearch:
         for cacheSet in jobSetList:
             tracksearchMap_node=tracksearchMapNode(tracksearchMap_job)
             tracksearchMap_node.add_var_opt('inject_map_cache',cacheSet)
-            tracksearchMap_node.add_macro('macroStartDir',determineLayerPath(self.cp,block_id,layer_id+1))
+            tracksearchMap_node.add_var_opt('StartDir',determineLayerPath(self.cp,block_id,layer_id+1))
             for parent in averagerJobListing:
                 tracksearchMap_node.add_parent(parent)
             self.dag.add_node(tracksearchMap_node)
