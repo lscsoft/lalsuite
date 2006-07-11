@@ -146,6 +146,10 @@ The frequency-domain response function $\tilde{R}_2(f)$ for the second detector.
     COMPLEX8FrequencySeries  *whiteningFilter1;
     COMPLEX8FrequencySeries  *whiteningFilter2;
   } SSSimStochBGInput;
+
+  typedef struct tagSSSimStochBGStrainInput {
+    REAL4FrequencySeries     *omegaGW;
+  } SSSimStochBGStrainInput;
   
   
 /*********************************************************** <lalLaTeX> 
@@ -197,12 +201,28 @@ time series, in detector 2.
     LALUnit      SSimStochBGTimeSeries2Unit;
   } SSSimStochBGParams;
 
+  typedef struct tagSSSimStochBGStrainParams {
+    UINT4        length1,length2;   /* time length of output vector data samples */
+    REAL8        deltaT1, deltaT2;   /* time spacing */
+    INT4         seed;     /* for random numbers x, y */
+    LALDetector  detectorOne; 
+    LALDetector  detectorTwo;
+    LALUnit      SSimStochBGTimeSeries1Unit;    
+    LALUnit      SSimStochBGTimeSeries2Unit;
+  } SSSimStochBGStrainParams;
+
 
   void
   LALSSSimStochBGTimeSeries( LALStatus                  *status,
 			     SSSimStochBGOutput           *output, 
 			     SSSimStochBGInput            *input,
 			     SSSimStochBGParams           *params );
+
+  void
+  LALSSSimStochBGStrainTimeSeries( LALStatus                  *status,
+			     SSSimStochBGOutput           *output, 
+			     SSSimStochBGStrainInput            *input,
+			     SSSimStochBGStrainParams           *params );
   
 #ifdef  __cplusplus
 }

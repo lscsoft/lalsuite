@@ -813,3 +813,654 @@ LALSSSimStochBGTimeSeries( LALStatus                    *status,
   RETURN(status);
   
 }
+
+
+/****************************************************************************/
+
+void
+LALSSSimStochBGStrainTimeSeries( LALStatus              *status,
+			         SSSimStochBGOutput           *output,
+			         SSSimStochBGStrainInput       *input,
+			         SSSimStochBGStrainParams      *params 
+	       )
+     /* </lalVerbatim> */
+{
+  /* parameters */
+  UINT4             length, length1, length2; /* (time) length of output vector data samples */
+  UINT4             freqlen, freqlen1, freqlen2;
+  REAL8             deltaT, deltaT1, deltaT2;   /* time spacing */
+  REAL8             f0;       /* start frequency */
+  
+  /* counters */ 
+  UINT4             i;
+  
+  /* other variables used */
+  REAL8             deltaF, deltaF1, deltaF2;
+  RandomParams     *randParams=NULL;
+  
+  /* vector for storing random numbers */ 
+  REAL4Vector      *gaussdevsX1=NULL;
+  REAL4Vector      *gaussdevsY1=NULL;
+  REAL4Vector      *gaussdevsX2=NULL;
+  REAL4Vector      *gaussdevsY2=NULL;
+  
+  /* LAL structure needed as input/output for computing overlap 
+     reduction function */
+  LALDetectorPair                    detectors;
+  REAL4FrequencySeries               overlap11,overlap12,overlap22;
+  OverlapReductionFunctionParameters ORFparameters;
+  
+  
+  /* IFO output counts in freq domain : */
+  COMPLEX8Vector   *cstrain1=NULL;
+  COMPLEX8Vector   *cstrain2=NULL;
+  COMPLEX8Vector   *cstrainsTmp[2]={NULL,NULL};
+  
+  /* Plan for reverse FFTs */ 
+  RealFFTPlan      *invPlan1=NULL; 
+  RealFFTPlan      *invPlan2=NULL;  
+  
+  /* initialize status pointer */
+  INITSTATUS(status, "LALSSSimStochBGStrainTimeSeries", SIMULATESBC);
+  ATTATCHSTATUSPTR(status);
+  
+  
+  /*
+   *
+   *ERROR CHECKING
+   *
+   */
+  
+  /***** check input/output structures exist *****/
+
+  /* output structure */
+  ASSERT(output !=NULL, status, 
+         SIMULATESBH_ENULLP,
+         SIMULATESBH_MSGENULLP);
+  ASSERT(output->SSimStochBG1->data !=NULL, status, 
+         SIMULATESBH_ENULLP,
+         SIMULATESBH_MSGENULLP);
+  ASSERT(output->SSimStochBG2->data !=NULL, status, 
+         SIMULATESBH_ENULLP,
+         SIMULATESBH_MSGENULLP);
+  ASSERT(output->SSimStochBG1->data->data !=NULL, status, 
+         SIMULATESBH_ENULLP,
+         SIMULATESBH_MSGENULLP);
+  ASSERT(output->SSimStochBG2->data->data !=NULL, status, 
+         SIMULATESBH_ENULLP,
+         SIMULATESBH_MSGENULLP);
+  
+  /* input structure */
+  ASSERT(input != NULL, status, 
+         SIMULATESBH_ENULLP,
+         SIMULATESBH_MSGENULLP);
+  
+  /* omega member of input */
+  ASSERT(input->omegaGW != NULL, status, 
+         SIMULATESBH_ENULLP,
+         SIMULATESBH_MSGENULLP);
+
+  /* data member of omega */
+  ASSERT(input->omegaGW->data != NULL, status, 
+         SIMULATESBH_ENULLP,
+         SIMULATESBH_MSGENULLP);
+
+
+  /************* check parameter structures ***********/
+
+  /*No. of discrete time samples (length) is non-zero in each detector output*/
+  ASSERT(params->length1 > 0, status, 
+         SIMULATESBH_ENONPOSLEN,
+         SIMULATESBH_MSGENONPOSLEN);
+
+  ASSERT(params->length2 > 0, status, 
+         SIMULATESBH_ENONPOSLEN,
+         SIMULATESBH_MSGENONPOSLEN);
+
+  /* time-interval between successive samples is non-zero in each output */
+  ASSERT(params->deltaT1 > 0, status, 
+         SIMULATESBH_ENONPOSLEN,
+         SIMULATESBH_MSGENONPOSLEN);
+
+  ASSERT(params->deltaT2 > 0, status, 
+         SIMULATESBH_ENONPOSLEN,
+         SIMULATESBH_MSGENONPOSLEN);
+
+  /************* done with null pointers *****************/
+  
+  
+  /**** check for legality ****/
+  
+  /* start frequency must not be negative */
+  f0 = input->omegaGW->f0;
+  if (f0 < 0)
+    {
+      ABORT( status,
+	     SIMULATESBH_ENEGFMIN,
+	     SIMULATESBH_MSGENEGFMIN );
+    }
+  
+  
+  /** check for mismatches **/
+  /* frequency length = length/2 +1  */
+  length1 = params->length1;
+  length2 = params->length2;
+  if((length1>length2))
+   length = length1;
+  else
+   length = length2; 
+  freqlen1 = length1/2 + 1;
+  freqlen2 = length2/2 + 1;
+  freqlen = length/2 + 1;
+
+  if (input->omegaGW->data->length != freqlen) 
+    {
+      ABORT(status,
+	    SIMULATESBH_EMMLEN,
+	    SIMULATESBH_MSGEMMLEN);
+    }
+  
+
+  /* frequency spacing */
+  deltaT1 = params->deltaT1;
+  deltaT2 = params->deltaT2;
+  if((deltaT1<deltaT2))
+   deltaT = deltaT1;
+  else
+   deltaT = deltaT2;
+  deltaF1 = 1./(deltaT1*length1);
+  deltaF2 = 1./(deltaT2*length2);
+  deltaF = 1./(deltaT*length);
+  if (deltaF1 != deltaF2) 
+    {
+      ABORT(status,
+	    SIMULATESBH_EMMDELTAF,
+	    SIMULATESBH_MSGEMMDELTAF);
+    }
+  if (deltaF1 != deltaF) 
+    {
+      ABORT(status,
+	    SIMULATESBH_EMMDELTAF,
+	    SIMULATESBH_MSGEMMDELTAF);
+    }
+  
+  
+  /*
+   *
+   *EVERYHTING OKAY HERE 
+   *
+   */
+  
+
+  /******** create fft plans and workspace vectors *****/
+
+  LALCreateReverseRealFFTPlan(status->statusPtr,&invPlan1,length1,0);
+  CHECKSTATUSPTR( status ); 
+  LALCreateReverseRealFFTPlan(status->statusPtr,&invPlan2,length2,0);
+  CHECKSTATUSPTR( status ); 
+  
+
+  LALSCreateVector( status->statusPtr, 
+		    &gaussdevsX1, freqlen ); 
+  BEGINFAIL( status )
+    {
+      TRY( LALDestroyRealFFTPlan( status->statusPtr, 
+				  &invPlan1 ), status );
+      TRY( LALDestroyRealFFTPlan( status->statusPtr, 
+				  &invPlan2 ), status );
+    }
+  ENDFAIL( status );
+  
+
+  LALSCreateVector( status->statusPtr, 
+		    &gaussdevsY1, freqlen ); 
+  BEGINFAIL( status )
+    {
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX1), status ); 
+      TRY( LALDestroyRealFFTPlan( status->statusPtr, 
+				  &invPlan1 ), status );
+      TRY( LALDestroyRealFFTPlan( status->statusPtr, 
+				  &invPlan2 ), status );
+    }
+  ENDFAIL( status );
+  
+  LALSCreateVector( status->statusPtr, 
+		    &gaussdevsX2, freqlen ); 
+  BEGINFAIL( status )
+    {
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsY1), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX1), status ); 
+      TRY( LALDestroyRealFFTPlan( status->statusPtr, 
+				  &invPlan1 ), status );
+      TRY( LALDestroyRealFFTPlan( status->statusPtr, 
+				  &invPlan2 ), status );
+    }
+  ENDFAIL( status );
+  
+  LALSCreateVector( status->statusPtr, 
+		    &gaussdevsY2, freqlen ); 
+  BEGINFAIL( status )
+    {
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX2), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsY1), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX1), status ); 
+      TRY( LALDestroyRealFFTPlan( status->statusPtr, 
+				  &invPlan1 ), status );
+      TRY( LALDestroyRealFFTPlan( status->statusPtr, 
+				  &invPlan2 ), status );
+    }
+  ENDFAIL( status );
+  
+  /* create parameters for generating random numbers from seed */
+  LALCreateRandomParams( status->statusPtr, 
+			 &randParams, params->seed ); 
+  BEGINFAIL( status )
+    {
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsY2), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX2), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsY1), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX1), status ); 
+      TRY( LALDestroyRealFFTPlan( status->statusPtr, 
+				  &invPlan1 ), status );
+      TRY( LALDestroyRealFFTPlan( status->statusPtr, 
+				  &invPlan2 ), status );
+    }
+  ENDFAIL( status );
+  
+  LALCCreateVector(status->statusPtr, &cstrain1,freqlen1);
+  BEGINFAIL( status )
+    {
+      TRY( LALDestroyRandomParams( status->statusPtr, 
+				   &randParams), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsY2), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX2), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsY1), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX1), status ); 
+      TRY( LALDestroyRealFFTPlan( status->statusPtr, 
+				  &invPlan1 ), status );
+      TRY( LALDestroyRealFFTPlan( status->statusPtr, 
+				  &invPlan2 ), status );
+    }  
+  ENDFAIL( status );
+  
+  LALCCreateVector(status->statusPtr, &cstrain2,freqlen2);
+  BEGINFAIL( status )
+    {
+      TRY( LALCDestroyVector(status->statusPtr, &cstrain1), status);
+      TRY( LALDestroyRandomParams( status->statusPtr, 
+				   &randParams), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsY2), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX2), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsY1), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX1), status ); 
+      TRY( LALDestroyRealFFTPlan( status->statusPtr, 
+				  &invPlan1 ), status );
+      TRY( LALDestroyRealFFTPlan( status->statusPtr, 
+				  &invPlan2 ), status );
+    }  
+  ENDFAIL( status );
+  
+  LALCCreateVector(status->statusPtr, &cstrainsTmp[0],freqlen);
+  BEGINFAIL( status )
+    {
+      TRY( LALCDestroyVector(status->statusPtr, &cstrain2), status);
+      TRY( LALCDestroyVector(status->statusPtr, &cstrain1), status);
+      TRY( LALDestroyRandomParams( status->statusPtr, 
+				   &randParams), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsY2), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX2), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsY1), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX1), status ); 
+      TRY( LALDestroyRealFFTPlan( status->statusPtr, 
+				  &invPlan1 ), status );
+      TRY( LALDestroyRealFFTPlan( status->statusPtr, 
+				  &invPlan2 ), status );
+    }  
+  ENDFAIL( status );
+  
+  LALCCreateVector(status->statusPtr, &cstrainsTmp[1],freqlen);
+  BEGINFAIL( status )
+    {
+      TRY( LALCDestroyVector(status->statusPtr, &cstrainsTmp[0]), status);
+      TRY( LALCDestroyVector(status->statusPtr, &cstrain2), status);
+      TRY( LALCDestroyVector(status->statusPtr, &cstrain1), status);
+      TRY( LALDestroyRandomParams( status->statusPtr, 
+				   &randParams), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsY2), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX2), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsY1), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX1), status ); 
+      TRY( LALDestroyRealFFTPlan( status->statusPtr, 
+				  &invPlan1 ), status );
+      TRY( LALDestroyRealFFTPlan( status->statusPtr, 
+				  &invPlan2 ), status );
+    }  
+  ENDFAIL( status );
+
+  overlap11.data = NULL;
+  LALSCreateVector(status->statusPtr, &(overlap11.data),freqlen);
+  BEGINFAIL( status )
+    {
+      TRY( LALCDestroyVector(status->statusPtr, &cstrainsTmp[1]), status);
+      TRY( LALCDestroyVector(status->statusPtr, &cstrainsTmp[0]), status);
+      TRY( LALCDestroyVector(status->statusPtr, &cstrain2), status);
+      TRY( LALCDestroyVector(status->statusPtr, &cstrain1), status);
+      TRY( LALDestroyRandomParams( status->statusPtr, 
+				   &randParams), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsY2), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX2), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsY1), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX1), status ); 
+      TRY( LALDestroyRealFFTPlan( status->statusPtr, 
+				  &invPlan1 ), status );
+      TRY( LALDestroyRealFFTPlan( status->statusPtr, 
+				  &invPlan2 ), status );
+    }  
+  ENDFAIL( status );
+    
+  overlap12.data = NULL;
+  LALSCreateVector(status->statusPtr, &(overlap12.data),freqlen);
+  BEGINFAIL( status )
+    {
+      TRY( LALSDestroyVector(status->statusPtr, &(overlap11.data)), status);
+      TRY( LALCDestroyVector(status->statusPtr, &cstrainsTmp[1]), status);
+      TRY( LALCDestroyVector(status->statusPtr, &cstrainsTmp[0]), status);
+      TRY( LALCDestroyVector(status->statusPtr, &cstrain2), status);
+      TRY( LALCDestroyVector(status->statusPtr, &cstrain1), status);
+      TRY( LALDestroyRandomParams( status->statusPtr, 
+				   &randParams), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsY2), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX2), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsY1), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX1), status ); 
+      TRY( LALDestroyRealFFTPlan( status->statusPtr, 
+				  &invPlan1 ), status );
+      TRY( LALDestroyRealFFTPlan( status->statusPtr, 
+				  &invPlan2 ), status );
+    }  
+  ENDFAIL( status );
+    
+  overlap22.data = NULL;
+  LALSCreateVector(status->statusPtr, &(overlap22.data),freqlen);
+  BEGINFAIL( status )
+    {
+      TRY( LALSDestroyVector(status->statusPtr, &(overlap12.data)), status);
+      TRY( LALSDestroyVector(status->statusPtr, &(overlap11.data)), status);
+      TRY( LALCDestroyVector(status->statusPtr, &cstrainsTmp[1]), status);
+      TRY( LALCDestroyVector(status->statusPtr, &cstrainsTmp[0]), status);
+      TRY( LALCDestroyVector(status->statusPtr, &cstrain2), status);
+      TRY( LALCDestroyVector(status->statusPtr, &cstrain1), status);
+      TRY( LALDestroyRandomParams( status->statusPtr, 
+				   &randParams), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsY2), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX2), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsY1), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX1), status ); 
+      TRY( LALDestroyRealFFTPlan( status->statusPtr, 
+				  &invPlan1 ), status );
+      TRY( LALDestroyRealFFTPlan( status->statusPtr, 
+				  &invPlan2 ), status );
+    }  
+  ENDFAIL( status );
+    
+  /* create random numbers from parameters */
+  LALNormalDeviates( status->statusPtr, 
+		     gaussdevsX1, randParams ); 
+  CHECKSTATUSPTR( status);
+
+  LALDestroyRandomParams(status->statusPtr,&randParams);
+
+  LALCreateRandomParams(status->statusPtr,&randParams, params->seed +1);
+  
+  LALNormalDeviates( status->statusPtr, 
+		     gaussdevsY1, randParams ); 
+  CHECKSTATUSPTR( status);
+  
+  LALDestroyRandomParams(status->statusPtr,&randParams);
+  
+  LALCreateRandomParams(status->statusPtr,&randParams, params->seed +2);
+  
+  LALNormalDeviates( status->statusPtr, 
+		     gaussdevsX2, randParams ); 
+  CHECKSTATUSPTR( status);
+ 
+  LALDestroyRandomParams(status->statusPtr,&randParams);
+  
+  LALCreateRandomParams(status->statusPtr,&randParams, params->seed +3);
+  
+  LALNormalDeviates( status->statusPtr, 
+		     gaussdevsY2, randParams ); 
+  CHECKSTATUSPTR( status);
+  
+  LALDestroyRandomParams(status->statusPtr,&randParams);
+
+  ORFparameters.length   = length/2 + 1;
+  ORFparameters.f0       = f0;
+  ORFparameters.deltaF   = deltaF;
+  detectors.detectorOne  = params->detectorOne;
+  detectors.detectorTwo  = params->detectorOne;
+
+  LALOverlapReductionFunction( status->statusPtr, &overlap11, 
+			       &detectors, &ORFparameters);
+  CHECKSTATUSPTR( status);
+
+  detectors.detectorOne  = params->detectorOne;
+  detectors.detectorTwo  = params->detectorTwo;
+
+  LALOverlapReductionFunction( status->statusPtr, &overlap12, 
+			       &detectors, &ORFparameters);
+  CHECKSTATUSPTR( status);
+
+  detectors.detectorOne  = params->detectorTwo;
+  detectors.detectorTwo  = params->detectorTwo;
+
+  LALOverlapReductionFunction( status->statusPtr, &overlap22, 
+			       &detectors, &ORFparameters);
+  CHECKSTATUSPTR( status);
+  
+  if (f0 == 0) 
+    {
+      REAL4    gamma11,gamma12,gamma22;
+      REAL4    omega;
+      REAL8    freq;
+      REAL8    factor;
+      REAL8    factor2,factor3;
+       
+      /* loop over frequencies; will do DC and Nyquist below */
+      for (i = 1; i < freqlen; ++i)
+	{
+	  freq  = i*deltaF;	  
+
+	  gamma11 = overlap11.data->data[i];
+	  gamma12 = overlap12.data->data[i];
+	  gamma22 = overlap22.data->data[i];
+
+	  omega = input->omegaGW->data->data[i];
+	  
+	  factor = sqrt(3.0L * deltaF * omega / 
+				 (40.0L *freq*freq*freq)
+				 )* LAL_H0FAC_SI / LAL_PI;
+	  factor2 = sqrt(gamma22-gamma12*gamma12/gamma11)*factor;
+	  factor3 = sqrt(gamma11)*factor;
+
+	  cstrainsTmp[0]->data[i].re=factor3*gaussdevsX1->data[i];
+	  cstrainsTmp[0]->data[i].im=factor3*gaussdevsY1->data[i];
+	  cstrainsTmp[1]->data[i].re=cstrainsTmp[0]->data[i].re*gamma12/gamma11+factor2*gaussdevsX2->data[i];
+	  cstrainsTmp[1]->data[i].im=cstrainsTmp[0]->data[i].im*gamma12/gamma11+factor2*gaussdevsY2->data[i];
+	}
+
+      for (i = 1; i < freqlen1; ++i)
+          cstrain1->data[i] = cstrainsTmp[0]->data[i];
+      for (i = 1; i < freqlen2; ++i)
+          cstrain2->data[i] = cstrainsTmp[1]->data[i];
+	  
+        
+
+      /* Set DC, Nyquist (imaginary) components to zero */
+      cstrain1->data[0].re=0.0;
+      cstrain1->data[0].im=0.0;
+      cstrain2->data[0].re=0.0;
+      cstrain2->data[0].im=0.0;
+     
+      
+      /* Compute the whitened Nyquist (real) component */
+      
+      /* detector 1 */
+
+      cstrainsTmp[0]->data[length1/2].im=0.0;
+      cstrainsTmp[1]->data[length1/2].im=0.0; 
+      gamma11 = overlap11.data->data[length1/2];
+      gamma12 = overlap12.data->data[length1/2];
+      gamma22 = overlap22.data->data[length1/2];
+      
+      omega = input->omegaGW->data->data[length1/2];
+      freq = deltaF*length1/2;
+      
+      factor = sqrt(3.0L * deltaF * omega / 
+			     (40.0L *freq*freq*freq)
+			     )* LAL_H0FAC_SI / LAL_PI;
+      factor2 = sqrt(gamma22-gamma12*gamma12/gamma11)*factor;
+      factor3 = sqrt(gamma11)*factor;
+      
+      cstrainsTmp[0]->data[length1/2].re=factor3*gaussdevsX1->data[length1/2];
+      
+      cstrainsTmp[1]->data[length1/2].re=
+	(cstrainsTmp[0]->data[length1/2].re*gamma12/gamma11 + 
+	 factor2*gaussdevsX2->data[length1/2]);
+      
+      cstrain1->data[length1/2].re = cstrainsTmp[0]->data[length1/2].re;
+      cstrain1->data[length1/2].im = 0;
+
+       /* detector 2 */
+
+      cstrainsTmp[0]->data[length2/2].im=0.0;
+      cstrainsTmp[1]->data[length2/2].im=0.0; 
+      gamma11 = overlap11.data->data[length2/2];
+      gamma12 = overlap12.data->data[length2/2];
+      gamma22 = overlap22.data->data[length2/2];
+      
+      omega = input->omegaGW->data->data[length2/2];
+      freq = deltaF*length2/2;
+      
+      
+      factor = sqrt(3.0L * deltaF * omega / 
+			     (40.0L *freq*freq*freq)
+			     )* LAL_H0FAC_SI / LAL_PI;
+      factor2 = sqrt(gamma22-gamma12*gamma12/gamma11)*factor;
+      factor3 = sqrt(gamma11)*factor;
+      
+      cstrainsTmp[0]->data[length2/2].re=factor3*gaussdevsX1->data[length2/2];
+      
+      cstrainsTmp[1]->data[length2/2].re=
+	(cstrainsTmp[0]->data[length2/2].re*gamma12/gamma11 + 
+	 factor2*gaussdevsX2->data[length/2]);
+      
+      cstrain2->data[length2/2].re = cstrainsTmp[1]->data[length2/2].re;
+      cstrain2->data[length2/2].im = 0;
+      
+      LALSDestroyVector(status->statusPtr, &(overlap11.data));
+      LALSDestroyVector(status->statusPtr, &(overlap12.data));      
+      LALSDestroyVector(status->statusPtr, &(overlap22.data));
+      
+      LALSDestroyVector(status->statusPtr, &gaussdevsX1);
+      LALSDestroyVector(status->statusPtr, &gaussdevsY1);
+      LALSDestroyVector(status->statusPtr, &gaussdevsX2);
+      LALSDestroyVector(status->statusPtr, &gaussdevsY2);
+    
+      /*
+       * 
+       * assign parameters and data to output 
+       *
+       */
+      
+      
+      /*ReverseFFT from freq to time domain & get output (no detector noise)*/ 
+      LALReverseRealFFT(status->statusPtr,output->SSimStochBG1->data,
+			cstrain1,invPlan1); 
+      LALReverseRealFFT(status->statusPtr,output->SSimStochBG2->data,
+			cstrain2,invPlan2); 
+      
+      LALDestroyRealFFTPlan(status->statusPtr,&invPlan1);
+       LALDestroyRealFFTPlan(status->statusPtr,&invPlan2);
+  
+      LALCDestroyVector(status->statusPtr, &cstrainsTmp[0]);
+      LALCDestroyVector(status->statusPtr, &cstrainsTmp[1]);
+      LALCDestroyVector(status->statusPtr, &cstrain1);
+      LALCDestroyVector(status->statusPtr, &cstrain2);
+      
+      
+      /*
+       * 
+       * assign parameters and data to output 
+       *
+       */
+      
+      output->SSimStochBG1->f0                   = f0;
+      output->SSimStochBG1->deltaT               = deltaT1;
+      output->SSimStochBG1->epoch.gpsSeconds     = 0;
+      output->SSimStochBG1->epoch.gpsNanoSeconds = 0;
+      output->SSimStochBG1->sampleUnits          = params->SSimStochBGTimeSeries1Unit;;
+      strncpy( output->SSimStochBG1->name, 
+	       "Unwhitened-SimulatedSBOne", LALNameLength );
+
+      output->SSimStochBG2->f0                   = f0;
+      output->SSimStochBG2->deltaT               = deltaT2;
+      output->SSimStochBG2->epoch.gpsSeconds     = 0;
+      output->SSimStochBG2->epoch.gpsNanoSeconds = 0;
+      output->SSimStochBG2->sampleUnits          = params->SSimStochBGTimeSeries2Unit;
+      strncpy( output->SSimStochBG2->name, 
+	       "Unwhitened-SimulatedSBTwo", LALNameLength );
+    } /* if (f0 == 0) */
+  else
+    {
+      
+      /*****This abort should be replaced with the correct *****/
+      /***** non-zero heterodyne frequency procedure******/
+      ABORT(status, SIMULATESBH_ENOTYETHETERO,
+	    SIMULATESBH_MSGENOTYETHETERO); 
+    }
+  
+  /* clean up and exit */
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+  
+}
