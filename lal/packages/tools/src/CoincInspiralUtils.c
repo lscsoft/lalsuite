@@ -250,7 +250,7 @@ LALCreateTwoIFOCoincList(
       {
         LALInfo( status, "Found double coincident trigger,");
         /* create a 2 IFO coinc and store */
-        if ( ! coincHead  ) 
+        if ( ! coincHead  )
         {
           coincHead = thisCoinc = (CoincInspiralTable *) 
             LALCalloc( 1, sizeof(CoincInspiralTable) );
@@ -1215,9 +1215,7 @@ XLALInspiralPsi0Psi3CutBCVC(
 /* <lalVerbatim file="CoincInspiralUtilsCP"> */
 void
 XLALInspiralIotaCutBCVC(
-CoincInspiralTable        **coincInspiral,
-InspiralAccuracyList       *accuracyParams
-    
+    CoincInspiralTable        **coincInspiral
     )
 /* </lalVerbatim> */
 {
@@ -1228,8 +1226,8 @@ InspiralAccuracyList       *accuracyParams
   CoincInspiralTable   *coincHead = NULL;
 
   INT4  discardTrigger = 0;
-  REAL4 snrA, snrB, sigA, sigB, distA, distB;
-  REAL4 iota, iotaCutH1H2, iotaCutH1L1; 
+  REAL4 snrA, snrB, sigA, sigB;
+  REAL4 iota; 
 
   thisCoinc = *coincInspiral;
   coincHead = NULL;
@@ -1242,9 +1240,7 @@ InspiralAccuracyList       *accuracyParams
 
     discardTrigger=0;
     thisCoinc = thisCoinc->next;
-
-    iotaCutH1H2=accuracyParams->iotaCutH1H2;
-    iotaCutH1L1=accuracyParams->iotaCutH1L1;      
+      
 
     /* loop over all IFO combinations */
     for ( ifoA = 0; ifoA < LAL_NUM_IFO; ifoA++ )
@@ -1261,26 +1257,20 @@ InspiralAccuracyList       *accuracyParams
           sigB = tmpCoinc->snglInspiral[ifoB]->sigmasq;
           snrA = tmpCoinc->snglInspiral[ifoA]->snr;
           snrB = tmpCoinc->snglInspiral[ifoB]->snr;
-          distA = sigA*sigA/snrA;
-          distB = sigB*sigB/snrB;
-          iota=2* fabs(distA-distB)/(distA+distB);
 
-	  /* check the iota value */
-          if( ( ((ifoA == LAL_IFO_H1)  && (ifoB == LAL_IFO_H2) )
-		|| (  (ifoA == LAL_IFO_H2)  && (ifoB == LAL_IFO_H1))  )
-		 && iota>iotaCutH1H2 )
+          iota = 2 * fabs(sigA*sigA/snrA-sigB*sigB/snrB)/(sigA*sigA/snrA+sigB*sigB/snrB);
+
+          if(
+                 (  (ifoA == LAL_IFO_H1)  && (ifoB == LAL_IFO_H2) )
+          || (  (ifoA == LAL_IFO_H2)  && (ifoB == LAL_IFO_H1))  )
+	  {
+	    /*  should be an user parameter in the future. */
+	    if (  (iota > 0.8 ) )
 	    {
               discardTrigger = 1; 
             }
-          if( ( ((ifoA == LAL_IFO_H1)  && (ifoB == LAL_IFO_L1) )
-		|| (  (ifoA == LAL_IFO_L1)  && (ifoB == LAL_IFO_H1))  )
-		 && iota>iotaCutH1L1 )
-	    {
-              discardTrigger = 1; 
-            }
-
-
-        }
+          }
+        } 
       }
       if ( discardTrigger )
       {
@@ -1309,6 +1299,92 @@ InspiralAccuracyList       *accuracyParams
   *coincInspiral = coincHead;
 }
 
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+void
+XLALInspiralH1L1IotaCut(
+    CoincInspiralTable        **coincInspiral,
+    REAL4 			iotaCut	
+    )
+/* </lalVerbatim> */
+{
+  InterferometerNumber  ifoA = LAL_UNKNOWN_IFO;  
+  InterferometerNumber  ifoB = LAL_UNKNOWN_IFO;
+  CoincInspiralTable   *thisCoinc = NULL;
+  CoincInspiralTable   *prevCoinc = NULL;
+  CoincInspiralTable   *coincHead = NULL;
+
+  INT4  discardTrigger = 0;
+  REAL4 snrA, snrB, sigA, sigB;
+  REAL4 iota; 
+
+  thisCoinc = *coincInspiral;
+  coincHead = NULL;
+   
+
+  /* loop over the coincindent triggers */
+  while( thisCoinc )
+  {
+    CoincInspiralTable *tmpCoinc = thisCoinc;
+
+    discardTrigger=0;
+    thisCoinc = thisCoinc->next;
+
+    /* loop over all IFO combinations */
+    for ( ifoA = 0; ifoA < LAL_NUM_IFO; ifoA++ )
+    {
+      for ( ifoB = ifoA + 1; ifoB < LAL_NUM_IFO; ifoB++ )
+      {
+        /*epsilonB = accuracyParams->ifoAccuracy[ifoB].epsilon;*/
+
+        if( tmpCoinc->snglInspiral[ifoA] 
+            && tmpCoinc->snglInspiral[ifoB]  )
+        {
+          /* perform the distance consistency test */
+          sigA = tmpCoinc->snglInspiral[ifoA]->sigmasq;
+          sigB = tmpCoinc->snglInspiral[ifoB]->sigmasq;
+          snrA = tmpCoinc->snglInspiral[ifoA]->snr;
+          snrB = tmpCoinc->snglInspiral[ifoB]->snr;
+
+          iota = 2 * fabs(sigA*sigA/snrA-sigB*sigB/snrB)/(sigA*sigA/snrA+sigB*sigB/snrB);
+
+          if(
+                 (  (ifoA == LAL_IFO_H1)  && (ifoB == LAL_IFO_L1) )
+          || (  (ifoA == LAL_IFO_L1)  && (ifoB == LAL_IFO_H1))  )
+	  {
+	    /*  should be an user parameter in the future. */
+	    if (  (iota > iotaCut ) )
+	    {
+              discardTrigger = 1; 
+            }
+          }
+        } 
+      }
+      if ( discardTrigger )
+      {
+          break;
+      }
+    } 
+    
+    if( discardTrigger )
+    {
+        XLALFreeCoincInspiral( &tmpCoinc );
+    }
+    else
+    {
+      if ( ! coincHead )
+      {
+          coincHead = tmpCoinc;
+      }
+      else
+        {
+          prevCoinc->next = tmpCoinc;
+      }
+      tmpCoinc->next = NULL;
+      prevCoinc = tmpCoinc;
+    }
+  }
+  *coincInspiral = coincHead;
+}
 
 /* <lalVerbatim file="CoincInspiralUtilsCP"> */
 void
