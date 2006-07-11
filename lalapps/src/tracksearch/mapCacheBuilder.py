@@ -101,7 +101,8 @@ def averageFileDuration(inputFilenamelist):
 def filterFileList(inputFilenamelist,startFloat,stopFloat):
     inList=sortFileList(inputFilenamelist)
     indexList=[]
-    if inList.__len__() == 0:
+    if inList.__len__() <= 1:
+        print 'Error building new map cache listing! Not enough maps.'
         return ''
     stopgpsInt=float2gpsInt(stopFloat)
     startgpsInt=float2gpsInt(startFloat)
@@ -308,6 +309,7 @@ myPWD=os.path.dirname(mapListing[0])
 
 
 print 'You requested new maps at '+str(newMapTime)+' seconds.'
+print 'They will span ',str(startTime),' -> ',str(clt)
 while (ct <= mlt):
     currentCache=filterFileList(mapListing,ct,ct+newMapTime)
     startPointGPS=fileStartGPS(currentCache[0])
