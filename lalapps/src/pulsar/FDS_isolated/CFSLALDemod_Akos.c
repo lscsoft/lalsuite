@@ -34,8 +34,16 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
 {
   REAL4 tsin, tcos;
   REAL4 realP, imagP;
-  INT4 k;                             /* loop counter */
-  REAL8 realXP, imagXP, realQ, imagQ; /* output parameters */
+  INT4 k;                                 /* loop counter */
+  REAL8 realXP, imagXP, realQ, imagQ;     /* output parameters */
+
+  /* Variables for assembler Kernel loop */
+  COMPLEX8 *Xalpha_kX = Xalpha + sftIndex;
+  REAL4 tempFreqX     = tempFreq1;        /* REAL4 because of SSE */
+  REAL4 XRes, XIms;                       /* sums of Xa.re and Xa.im */
+  COMPLEX8 XSumsX;                        /* sums of Xa.re and Xa.im for SSE */
+  COMPLEX8 *Xalpha_kF = Xalpha_kX + 16;   /* shift values for FPU calculation */
+  REAL8    tempFreqF  = tempFreq1 - 15.0;
 
 #ifdef DEBUG
   REAL8 t1,t2,t3,t4;
@@ -228,7 +236,7 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
 
      : /* input */
      [x]           "m" (tempFreq0),
-     [yTemp] "m" (yTemp),
+     [yTemp]       "m" (yTemp),
      [lutr]        "m" (lutr),
      [one]         "m" (one),
      [half]        "m" (half),
@@ -246,6 +254,9 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
 
 #else /* USE_SINCOS_GAS */
 
+  /* C version of the same calculations */
+
+  /* calculation of tsin and tcos */
   {
     UINT4 idx  = tempFreq0 * LUT_RES +.5;
     REAL8 d    = tempFreq0 - diVal[idx];
@@ -256,6 +267,7 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
     tcos -= 1.0;
   }
 
+  /* calculation of yRem */
   {
 #ifdef USE_FLOOR
     REAL8 yRem;
@@ -270,6 +282,7 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
     if (yRem < 0) { yRem += 1.0f; } /* make sure this is in [0..1) */
 #endif
 
+    /* calculation of realQ and imagQ */
     {
       UINT4 idx  = yRem * LUT_RES + .5;
       REAL8 d    = yRem - diVal[idx];
@@ -283,64 +296,15 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
 
 #endif /* USE_SINCOS_GAS */
 
+
+
   /* we branch now (instead of inside the central loop)
    * depending on wether x can ever become SMALL in the loop or not, 
    * because it requires special treatment in the Dirichlet kernel
    */
-  if ( tempFreq0 < LD_SMALL ) 
-    {
-      fprintf(stderr,"small x\n");
-
-      realXP=0.0;
-      imagXP=0.0;
-      
-      /* Loop over terms in Dirichlet Kernel */
-      for(k=0; k < klim ; k++)
-	{
-	  COMPLEX8 Xalpha_k = Xalpha[sftIndex];
-	  sftIndex ++;
-	  /* If x is small we need correct x->0 limit of Dirichlet kernel */
-	  if( fabs(x) <  SMALL) 
-	    {
-	      realXP += Xalpha_k.re;
-	      imagXP += Xalpha_k.im;
-	    }      
-	  else
-	    {
-      	      realP = tsin / x;
-	      imagP = tcos / x;
-	      /* these four lines compute P*xtilde */
-	      realXP += Xalpha_k.re * realP;
-	      realXP -= Xalpha_k.im * imagP;
-	      imagXP += Xalpha_k.re * imagP;
-	      imagXP += Xalpha_k.im * realP;
-	    }
-	  
-	  tempFreq1 --;
-	  x = LAL_TWOPI * tempFreq1;
-	  
-	} /* for k < klim */
-      
-    } /* if x could become close to 0 */
-
-  else
+  if ( tempFreq0 >= LD_SMALL ) 
 
     {
-      COMPLEX8 *Xalpha_k = Xalpha + sftIndex;
-      REAL4 tsin2pi = tsin * (REAL4)OOTWOPI;
-      REAL4 tcos2pi = tcos * (REAL4)OOTWOPI;
-
-      /* prepare values for SSE */
-      REAL4 tempFreqX = tempFreq1; /* REAL4 because of SSE */
-      COMPLEX8 *Xalpha_kX = Xalpha_k; /* -> SSE values */
-
-      REAL4 XRes, XIms;   /* sums of Xa.re and Xa.im */
-      COMPLEX8 XSumsX;    /* sums of Xa.re and Xa.im for SSE */
-
-      /* shift values for FPU calculation */
-      COMPLEX8 *Xalpha_kF = Xalpha_k + 16;
-      REAL8    tempFreqF  = tempFreq1 - 15.0;
-
       /* calculation (for 28 REAL4 values (7x(2 ReIm pairs))) */
       /* one SSE register will consist 4 REAL4 values */
       /* 4 REAL4 vaules = 2 ReIm pairs */
@@ -493,10 +457,53 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
       /* And last, we add the single and double precision values */
       XRes = XRes + XSumsX.re;
       XIms = XIms + XSumsX.im;
-      
-      realXP = tsin2pi * XRes - tcos2pi * XIms;
-      imagXP = tcos2pi * XRes + tsin2pi * XIms;
+
+      {
+	REAL4 tsin2pi = tsin * (REAL4)OOTWOPI;
+	REAL4 tcos2pi = tcos * (REAL4)OOTWOPI;
+
+	realXP = tsin2pi * XRes - tcos2pi * XIms;
+	imagXP = tcos2pi * XRes + tsin2pi * XIms;
+      }
     }
+
+  else
+
+    {
+      fprintf(stderr,"small x\n");
+
+      realXP=0.0;
+      imagXP=0.0;
+      
+      /* Loop over terms in Dirichlet Kernel */
+      for(k=0; k < klim ; k++)
+	{
+	  COMPLEX8 Xalpha_k = Xalpha[sftIndex];
+	  sftIndex ++;
+	  /* If x is small we need correct x->0 limit of Dirichlet kernel */
+	  if( fabs(x) <  SMALL) 
+	    {
+	      realXP += Xalpha_k.re;
+	      imagXP += Xalpha_k.im;
+	    }      
+	  else
+	    {
+      	      realP = tsin / x;
+	      imagP = tcos / x;
+	      /* these four lines compute P*xtilde */
+	      realXP += Xalpha_k.re * realP;
+	      realXP -= Xalpha_k.im * imagP;
+	      imagXP += Xalpha_k.re * imagP;
+	      imagXP += Xalpha_k.im * realP;
+	    }
+	  
+	  tempFreq1 --;
+	  x = LAL_TWOPI * tempFreq1;
+	  
+	} /* for k < klim */
+      
+    } /* if x could become close to 0 */
+
 
   *realXPo = realXP;
   *imagXPo = imagXP;
