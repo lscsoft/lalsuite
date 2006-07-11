@@ -244,21 +244,21 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
 
   __asm __volatile
     (
-     "fldl   %[x]                   \n\t" /* x */
+     "fldl   %[yRem]                \n\t" /* x */
      "flds   %[lutr]                \n\t" /* LUT_RES x */
      "fmul   %%st(1),%%st(0)        \n\t" /* (x*LUT_RES) x */
 
 #ifdef USE_DEFAULT_ROUNDING_MODE
-     "fistpl %[sinv]                \n\t" /* x */
-     "movl   %[sinv],%%ebx          \n\t" /* x */
+     "fistpl %[sinq]                \n\t" /* x */
+     "movl   %[sinq],%%ebx          \n\t" /* x */
 #else
      "fadds  %[half]                \n\t" /* (x*LUT_RES+.5) x */
-     "fistl  %[sinv]                \n\t" /* (x*LUT_RES+.5) x */ /* saving the rounded value, the original in FPU */
-     "fisubl %[sinv]                \n\t" /* (x*LUT_RES+.5) x */ /* value - round(value) will be negative if was rounding up */
-     "fstps  %[cosv]                \n\t" /* x */                /* we will check the sign in integer registers */
-     "movl   %[sinv],%%ebx          \n\t" /* x */
+     "fistl  %[sinq]                \n\t" /* (x*LUT_RES+.5) x */ /* saving the rounded value, the original in FPU */
+     "fisubl %[sinq]                \n\t" /* (x*LUT_RES+.5) x */ /* value - round(value) will be negative if was rounding up */
+     "fstps  %[cosq]                \n\t" /* x */                /* we will check the sign in integer registers */
+     "movl   %[sinq],%%ebx          \n\t" /* x */
      "sub    %%eax,%%eax            \n\t" /* x */                /* EAX=0 */
-     "orl    %[cosv],%%eax          \n\t" /* x */                /* it will set the S (sign) flag */
+     "orl    %[cosq],%%eax          \n\t" /* x */                /* it will set the S (sign) flag */
      "jns    sincos2                \n\t" /* x */                /* the result is ok, rounding = truncation */
      "dec    %%ebx                  \n"   /* x */                /* sinv=sinv-1.0 (it was rounded up) */
      "sincos2:                      \n\t" /* x */
@@ -274,22 +274,22 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
      "fsubp                         \n\t" /* (d*cosVal2PI[i]-d*d*sinVal2PIPI[i]) (d*d) d */
      "faddl %[sinVal](,%%ebx,8)     \n\t" /* (sinVal[i]+d*cosVal2PI[i]-d*d*sinVal2PIPI[i]) (d*d) d */
      "fchs                          \n\t" /* -(sinVal[i]+d*cosVal2PI[i]-d*d*sinVal2PIPI[i]) (d*d) d */
-     "fstpl %[sinv]                 \n\t" /* (d*d) d */
+     "fstpl %[sinq]                 \n\t" /* (d*d) d */
 
      "fmull %[cosVal2PIPI](,%%ebx,8)\n\t" /* (d*d*cosVal2PIPI[i]) d */
      "fxch                          \n\t" /* d (d*d*cosVal2PIPI[i]) */
      "fmull %[sinVal2PI](,%%ebx,8)  \n\t" /* (d*sinVal2PI[i]) (d*d*cosVal2PIPI[i]) d */
      "fsubrl %[cosVal](,%%ebx,8)    \n\t" /* (cosVal[i]-d*sinVal2PI[i]) (d*d*cosVal2PIPI[i]) */
      "fsubp                         \n\t" /* (cosVal[i]-d*sinVal2PI[i]-d*d*cosVal2PIPI[i]) */
-     "fstpl %[cosv]                 \n\t" /* % */
+     "fstpl %[cosq]                 \n\t" /* % */
      
      /* interface */
      : /* output */
-     [sinv]  "=m" (imagQ),
-     [cosv]  "=m" (realQ)
+     [sinq]  "=m" (imagQ),
+     [cosq]  "=m" (realQ)
 
      : /* input */
-     [x]           "m" (yRem),
+     [yRem]        "m" (yRem),
      [lutr]        "m" (lutr),
      [one]         "m" (one),
      [half]        "m" (half),
