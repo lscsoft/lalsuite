@@ -100,10 +100,7 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
        /* copy d on the stack to prepare for calculating d*d */
        "fld    %%st(0)                \n\t" /* d d */
        
-       /* mimic compiler's calculation of cos */
-       /* changing the order of the substractions gives an error up to 1e-3 in the result!! */
-       
-       /* this calculates d*d on _top_ of the stack (unlike the "original" version below) */ 
+       /* this calculates d*d on _top_ of the stack */ 
        "fmul   %%st(0),%%st(0)        \n\t" /* (d*d) d */
        
        /* three-term Taylor expansion for sin value, starting with the last term,
@@ -119,8 +116,10 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
        "fstps %[sinv]                 \n\t" /* (d*d) d */
        
        /* similar calculation for cos value, this time popping the stack */
-       "fmull %[cosVal2PIPI](,%%ebx,8)\n\t" /* (d*d*cosVal2PIPI[i]) d */
+       /* this ordering mimics the calculation of cos as done by gcc (4.1.0)  */
+       /* WARNING: changing the order of the substractions gives an error up to 1e-3 in the result!! */
        
+       "fmull %[cosVal2PIPI](,%%ebx,8)\n\t" /* (d*d*cosVal2PIPI[i]) d */
        "fxch                          \n\t" /* d (d*d*cosVal2PIPI[i]) */
        "fmull %[sinVal2PI](,%%ebx,8)  \n\t" /* (d*sinVal2PI[i]) (d*d*cosVal2PIPI[i]) d */
        "fsubrl %[cosVal](,%%ebx,8)    \n\t" /* (cosVal[i]-d*sinVal2PI[i]) (d*d*cosVal2PIPI[i]) */
@@ -142,6 +141,7 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
        
        "fldl   %[yTemp]               \n\t" /* yT */
 #ifdef USE_DEFAULT_ROUNDING_MODE
+       /* see comment about USE_DEFAULT_ROUNDING_MODE above */
        "fistl  %[yRem]                \n\t" /* yT */
        "fisubl %[yRem]                \n\t" /* (yT-(int)yT) */
        "fsts   %[yRem]                \n\t" /* % */
@@ -168,6 +168,12 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
        "jmp    sincos4                \n"   /* (yT-(int)yT+1) */
        
        /* yTemp < 0 */
+       /* it requires some mind-bending to come from the algorithm used in the USE_FLOOR
+          case of the yRem calculation in the C code below to the implemented case distinction.
+          Hints:  yTemp<0 => yRem = yTemp - ceil(yTemp) + 1.0;
+                  y<0 => ceil(y) = ((y-(int)y)<-.5) ? ((int)y-1.0) : ((int)y)
+                  -1.0 + 1.0 = 0; 0 + 1.0 = +1.0
+       */
        "sincos3:                      \n\t"
        "fistl  %[yRem]                \n\t" /* yT */
        "fisubl %[yRem]                \n\t" /* yT-(int)yT */ /* value - round(value) will be positive if was rounding up */
