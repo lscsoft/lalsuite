@@ -515,9 +515,9 @@ LALUTCtoGPS (LALStatus                *status,
    */
   if (p_utcDate->unixDate.tm_year > 106 ||
       (p_utcDate->unixDate.tm_year == 106 &&
-       (p_utcDate->unixDate.tm_mon > LALMONTH_JUN ||
-        (p_utcDate->unixDate.tm_mon == LALMONTH_JUN &&
-         p_utcDate->unixDate.tm_mday == 30 &&
+       (p_utcDate->unixDate.tm_mon > LALMONTH_DEC ||
+        (p_utcDate->unixDate.tm_mon == LALMONTH_DEC &&
+         p_utcDate->unixDate.tm_mday == 31 &&
          p_utcDate->unixDate.tm_hour == 23 &&
          p_utcDate->unixDate.tm_min  == 59 &&
          p_utcDate->unixDate.tm_sec > 59))))
