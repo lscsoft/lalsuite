@@ -46,8 +46,8 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
 
     /* Variables for assembler Kernel loop */
     COMPLEX8 *Xalpha_kX = Xalpha + sftIndex;
-    REAL4 tempFreqX     = tempFreq1;        /* REAL4 because of SSE */
-    REAL4 XRes, XIms;                       /* sums of Xa.re and Xa.im */
+    REAL4    tempFreqX  = tempFreq1;        /* REAL4 because of SSE */
+    REAL4    XRes, XIms;                    /* sums of Xa.re and Xa.im */
     COMPLEX8 XSumsX;                        /* sums of Xa.re and Xa.im for SSE */
     COMPLEX8 *Xalpha_kF = Xalpha_kX + 16;   /* shift values for FPU calculation */
     REAL8    tempFreqF  = tempFreq1 - 15.0;
@@ -222,32 +222,8 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
        "fsubrl %[cosVal](,%%ebx,8)    \n\t" /* (cosVal[i]-d*sinVal2PI[i]) (d*d*cosVal2PIPI[i]) */
        "fsubp                         \n\t" /* (cosVal[i]-d*sinVal2PI[i]-d*d*cosVal2PIPI[i]) */
        "fstpl %[cosq]                 \n\t" /* % */
-     
-       /* interface */
-       : /* output */
-       [sinq]  "=m" (imagQ),
-       [cosq]  "=m" (realQ),
-       [sinv]  "=m" (tsin),
-       [cosv]  "=m" (tcos),
-       [yRem]  "=m" (yRem)
-       
-       : /* input */
-       [x]           "m" (tempFreq0),
-       [yTemp]       "m" (yTemp),
-       [lutr]        "m" (lutr),
-       [one]         "m" (one),
-       [half]        "m" (half),
-       [sinVal]      "m" (sinVal[0]),
-       [cosVal]      "m" (cosVal[0]),
-       [sinVal2PI]   "m" (sinVal2PI[0]),
-       [cosVal2PI]   "m" (cosVal2PI[0]),
-       [sinVal2PIPI] "m" (sinVal2PIPI[0]),
-       [cosVal2PIPI] "m" (cosVal2PIPI[0]),
-       [diVal]       "m" (diVal[0])
-       
-       : /* clobbered registers */
-       "eax", "ebx", "st","st(1)","st(2)","st(4)"
-       );       
+
+
 
       /* calculation (for 28 REAL4 values (7x(2 ReIm pairs))) */
       /* one SSE register will consist 4 REAL4 values */
@@ -262,8 +238,7 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
        "mulps %%xmm4,%%xmm1       \n\t" /* XMM1: ImH/(f-1) ReH/(f-1) ImL/f ReL/f */\
        "addps %%xmm1,%%xmm2       \n\t" /* XMM2: C_ImH C_ReH C_ImL C_ReL */
     
-    __asm __volatile
-      (
+
        /* constants */
        "jmp cntcode              \n"
        AD_ALIGN16 "              \n\t"
@@ -380,21 +355,41 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
        /* store the result */
        "movlps %%xmm2, %[XSumsX] \n\t"
          
+
+       /* interface */
        : /* output  (here: to memory)*/
-       [XSumsX]  "=m" (XSumsX),
-       [XRes]  "=m" (XRes),
-       [XIms]  "=m" (XIms),
+       [sinq]        "=m" (imagQ),
+       [cosq]        "=m" (realQ),
+       [sinv]        "=m" (tsin),
+       [cosv]        "=m" (tcos),
+       [yRem]        "=m" (yRem),
+       [XSumsX]      "=m" (XSumsX),
+       [XRes]        "=m" (XRes),
+       [XIms]        "=m" (XIms),
        /* input */
-       [Xalpha_kX] "+r" (Xalpha_kX) /* is changed by the code, so put into output section */
+       [Xalpha_kX]   "+r" (Xalpha_kX) /* is changed by the code, so put into output section */
        :
-       [Xalpha_k]  "r" (Xalpha_kF),
-       [tempFreq1] "m" (tempFreqF),
-       [tempFreqX] "m" (tempFreqX)
-         
+       [Xalpha_k]    "r"  (Xalpha_kF),
+       [tempFreq1]   "m"  (tempFreqF),
+       [tempFreqX]   "m"  (tempFreqX),
+       [x]           "m"  (tempFreq0),
+       [yTemp]       "m"  (yTemp),
+       [lutr]        "m"  (lutr),
+       [one]         "m"  (one),
+       [half]        "m"  (half),
+       [sinVal]      "m"  (sinVal[0]),
+       [cosVal]      "m"  (cosVal[0]),
+       [sinVal2PI]   "m"  (sinVal2PI[0]),
+       [cosVal2PI]   "m"  (cosVal2PI[0]),
+       [sinVal2PIPI] "m"  (sinVal2PIPI[0]),
+       [cosVal2PIPI] "m"  (cosVal2PIPI[0]),
+       [diVal]       "m"  (diVal[0])
+
        : /* clobbered registers */
 #ifndef IGNORE_XMM_REGISTERS
        "xmm0","xmm1","xmm2","xmm3","xmm4","xmm5",
 #endif
+       "eax", "ebx",
        "st","st(1)","st(2)","st(3)","st(4)"
        );           
       
