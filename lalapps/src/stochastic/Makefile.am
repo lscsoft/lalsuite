@@ -10,6 +10,8 @@ STOCH_FAKE_SRCS  = fake_data.c fake_data.h \
                    data_output.c data_output.h \
                    sgwb.c sgwb.h misc.c misc.h \
                    stochastic_fake.c
+
+STOCH_VIRGO_SRCS = stochastic_virgo.c stochastic_virgo.h
 STOPP_SRCS       = stopp.c
 STOPP_BAYES_SRCS = stopp_bayes.c
 OLAPREDFCN_SRCS  = olapredfcn.c olapredfcn.h \
@@ -18,9 +20,10 @@ OLAPREDFCN_SRCS  = olapredfcn.c olapredfcn.h \
 ## frame library dependant programs
 if FRAME
 if LALFRAME
-FRAMEPROGRAMS = lalapps_stochastic lalapps_stochastic_fake
+FRAMEPROGRAMS = lalapps_stochastic lalapps_stochastic_fake lalapps_stochastic_virgo
 lalapps_stochastic_SOURCES      = $(STOCH_SRCS)
 lalapps_stochastic_fake_SOURCES = $(STOCH_FAKE_SRCS)
+lalapps_stochastic_virgo_SOURCES = $(STOCH_VIRGO_SRCS)
 endif
 endif
 
