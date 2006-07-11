@@ -518,7 +518,7 @@ int main(int argc,char *argv[])
 		      /* now, if user requested it, we output ALL F-statistic results above threshold */
 		      if ( uvar_outputFstat && ( 2.0 * Fstat.F >= uvar_TwoFthreshold ) )
 			{
-			  LALSnprintf (buf, 511, "%.16g %.16g %.16g %.6g %.5g %.5g %.9g\n",
+			  LALSnprintf (buf, 511, "%.5f %.5f %.5f %1.3e %1.3e %1.3e %.3f\n",
 				       fkdotRef->data[0], 
 				       dopplerpos.Alpha, dopplerpos.Delta, 
 				       fkdotRef->data[1], fkdotRef->data[2], fkdotRef->data[3],
@@ -546,7 +546,9 @@ int main(int argc,char *argv[])
  
   if ( fpFstat )
     {
-      fprintf (fpFstat, "%%DONE\n");
+      if(!uvar_noHeader)
+	fprintf (fpFstat, "%%DONE\n");
+
       fclose (fpFstat);
       fpFstat = NULL;
     }
@@ -571,18 +573,31 @@ int main(int argc,char *argv[])
 	LALPrintError("\nXLALWeighMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
 	return COMPUTEFSTATC_EXLAL;
       }
-
+      
       LAL_CALL ( EstimateSigParams(&status, &loudestCandidate, cfBuffer.multiAMcoef, norm),  &status);
-
+      
       XLALDestroyMultiAMCoeffs ( multiAMcoef );
-
-      if ( (fpLoudest = fopen (uvar_outputLoudest, "wb")) == NULL)
+      
+      if(uvar_addOutput)
 	{
-	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputLoudest);
-	  return COMPUTEFSTATISTIC_ESYS;
+	  if ( (fpLoudest = fopen (uvar_outputLoudest, "a")) == NULL)
+	    {
+	      LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputLoudest);
+	      return COMPUTEFSTATISTIC_ESYS;
+	    }
+	}
+      else
+	{
+	  if ( (fpLoudest = fopen (uvar_outputLoudest, "wb")) == NULL)
+	    {
+	      LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputLoudest);
+	      return COMPUTEFSTATISTIC_ESYS;
+	    }
 	}
       /* write header with run-info */
-      fprintf (fpLoudest, GV.logstring );
+      if(!uvar_noHeader)
+	fprintf (fpLoudest, GV.logstring );
+      
       if ( XLALwriteCandidate2file ( fpLoudest,  &loudestCandidate ) != XLAL_SUCCESS )
 	{
 	  LALPrintError("\nXLALwriteCandidate2file() failed with error = %d\n\n", xlalErrno );
