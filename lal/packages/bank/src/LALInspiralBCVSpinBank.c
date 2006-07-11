@@ -117,13 +117,15 @@ LALInspiralBCVSpinBank(
 
   Sn = coarseIn->shf.data->data;
   N = coarseIn->shf.data->length-1;
+  newSn.length=0;
 
-  if (N>16384)
+#if 1
+  if (N>32768)
   {
     int ratio, i;
-    ratio = N/16384;
+    ratio = N/32768;
     N = N / ratio;
-    fprintf(stderr, "ratio = %d\n", ratio);
+    LALInfo(status,  "entering BCVSpin metric computation using the smooth PSD \n");
     newSn.length= N;
 
     newSn.data  = (REAL8*) LALCalloc(1, sizeof(REAL8) * (newSn.length+1));
@@ -140,6 +142,11 @@ LALInspiralBCVSpinBank(
     Sn = newSn.data; 
      
   }
+else
+{
+    LALInfo(status,  "entering BCVSpin metric computation using the whole PSD\n");
+}
+#endif
 
 /*  printf("Num beta steps=%d Sn[0]=%e, Sn[N/2]=%e, MM=%f\n", N, Sn[0], Sn[N/2], MM);*/
 
@@ -277,7 +284,7 @@ LALInspiralBCVSpinBank(
   LALFree( *tiles );
   *tiles = bank;
 
-  if (newSn.data!=NULL)
+  if (newSn.length!=0)
   {
 	LALFree(newSn.data);
   }
