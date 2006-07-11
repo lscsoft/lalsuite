@@ -74,7 +74,7 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
           It should be restored by the compiler after every operation that involves floating-point-to-integer
           conversion (rounding). Switching the rounding mode is slow, so the following code is the fastest
           possible, as it simply expects the default rounding mode being active. However relying on this is
-          kind of       dangerous, so we don't do this by default. */
+          kind of dangerous, so we don't do this by default. */
        "fistpl %[sinv]                \n\t" /* x */
        "movl   %[sinv],%%ebx          \n\t" /* x */
 #else
@@ -115,7 +115,7 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
        "faddl %[sinVal](,%%ebx,8)     \n\t" /* (sinVal[i]+d*cosVal2PI[i]-d*d*sinVal2PIPI[i]) (d*d) d */
        "fstps %[sinv]                 \n\t" /* (d*d) d */
        
-       /* similar calculation for cos value, this time popping the stack */
+       /* calculation for cos value, this time popping the stack */
        /* this ordering mimics the calculation of cos as done by gcc (4.1.0)  */
        /* WARNING: changing the order of the substractions gives an error up to 1e-3 in the result!! */
        
@@ -137,6 +137,7 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
        "fsub  %[one]                  \n\t" /* (cosVal[i]-d*(sinVal2PI[i]-d*cosVal2PIPI[i])-1) */
        "fstps %[cosv]                 \n\t" /* % */
        
+
        /* calculating yRem */
        
        "fldl   %[yTemp]               \n\t" /* yT */
@@ -188,7 +189,7 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
 #endif
        
        /* calculation of realQ and imagQ */
-       /* (see also calculation of tsin and tcos */
+       /* (see also comments in calculation of tsin and tcos */
        
        "fldl   %[yRem]                \n\t" /* x */
        "flds   %[lutr]                \n\t" /* LUT_RES x */
@@ -219,6 +220,9 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
        "fmul  %%st(3),%%st(0)         \n\t" /* (d*cosVal2PI[i]) (d*d*sinVal2PIPI[i]) (d*d) d */
        "fsubp                         \n\t" /* (d*cosVal2PI[i]-d*d*sinVal2PIPI[i]) (d*d) d */
        "faddl %[sinVal](,%%ebx,8)     \n\t" /* (sinVal[i]+d*cosVal2PI[i]-d*d*sinVal2PIPI[i]) (d*d) d */
+
+       /* the following sign change of the sin() result is special here,
+	  otherwise the calculation is the same as the previous one */
        "fchs                          \n\t" /* -(sinVal[i]+d*cosVal2PI[i]-d*d*sinVal2PIPI[i]) (d*d) d */
        "fstpl %[sinq]                 \n\t" /* (d*d) d */
        
@@ -230,12 +234,17 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
        "fstpl %[cosq]                 \n\t" /* % */
 
 
+       /* Kernel loop */
 
-      /* calculation (for 28 REAL4 values (7x(2 ReIm pairs))) */
-      /* one SSE register will consist 4 REAL4 values */
-      /* 4 REAL4 vaules = 2 ReIm pairs */
-      
-      /* we want to do this SSE code 14 times */
+       /* the "inner" four complex values that contribute the most to the sum
+	  will be calculated by the FPU with 80 Bit precision,
+	  the SSE taking care of the others ("wings") */
+
+       /* calculation (for 28 REAL4 values (7x(2 ReIm pairs))) */
+       /* one SSE register will consist 4 REAL4 values */
+       /* 4 REAL4 vaules = 2 ReIm pairs */
+
+       /* we want to do this SSE code 14 times */
 #define ADD4SSE(a,b) \
        "movlps "#a"(%[Xalpha_kX]),%%xmm4 \n\t"\
        "movhps "#b"(%[Xalpha_kX]),%%xmm4 \n\t"\
