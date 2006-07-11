@@ -185,6 +185,8 @@ tagInspiralAccuracyList
   SnglInspiralParameterTest test;
   SnglInspiralAccuracy      ifoAccuracy[LAL_NUM_IFO];
   INT8                      lightTravelTime[LAL_NUM_IFO][LAL_NUM_IFO];
+  REAL4                     iotaCutH1H2;
+  REAL4                     iotaCutH1L1;
 }
 InspiralAccuracyList;
 /*</lalVerbatim> */
@@ -782,14 +784,9 @@ XLALInspiralPsi0Psi3CutBCVC(
     );
 
 void
-XLALInspiralH1L1IotaCut(
-    CoincInspiralTable        **coincInspiral,
-     REAL4                    iotaCut
-    );
-
-void
 XLALInspiralIotaCutBCVC(
-    CoincInspiralTable        **coincInspiral
+    CoincInspiralTable        **coincInspiral,
+    InspiralAccuracyList       *accuracyParams
     );
 
 void
