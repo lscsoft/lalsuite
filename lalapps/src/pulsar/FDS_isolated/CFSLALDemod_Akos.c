@@ -168,8 +168,8 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
        "jmp    sincos4                \n"   /* (yT-(int)yT+1) */
        
        /* yTemp < 0 */
-       /* it requires some mind-bending to come from the algorithm used in the USE_FLOOR
-          case of the yRem calculation in the C code below to the implemented case distinction.
+       /* it requires some mind-bending to come from the algorithm used in the USE_FLOOR case
+          of the yRem calculation in the C code below to the case distinction implemented here.
           Hints:  yTemp<0 => yRem = yTemp - ceil(yTemp) + 1.0;
                   y<0 => ceil(y) = ((y-(int)y)<-.5) ? ((int)y-1.0) : ((int)y)
                   -1.0 + 1.0 = 0; 0 + 1.0 = +1.0
