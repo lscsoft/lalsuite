@@ -56,6 +56,8 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
 
   __asm __volatile
     (
+     /* calculation of tsin and tcos */
+
      /* calculate index and put into EAX */
      /*                                    vvvvv-- these comments keep track of the FPU stack */
      "fldl   %[x]                   \n\t" /* x */
@@ -131,83 +133,52 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
      "fsub  %[one]                  \n\t" /* (cosVal[i]-d*(sinVal2PI[i]-d*cosVal2PIPI[i])-1) */
      "fstps %[cosv]                 \n\t" /* % */
 
-     /* interface */
-     : /* output */
-     [sinv]  "=m" (tsin),
-     [cosv]  "=m" (tcos)
+     /* calculating yRem */
 
-     : /* input */
-     [x]           "m" (tempFreq0),
-     [lutr]        "m" (lutr),
-     [one]         "m" (one),
-     [half]        "m" (half),
-     [sinVal]      "m" (sinVal[0]),
-     [cosVal]      "m" (cosVal[0]),
-     [sinVal2PI]   "m" (sinVal2PI[0]),
-     [cosVal2PI]   "m" (cosVal2PI[0]),
-     [sinVal2PIPI] "m" (sinVal2PIPI[0]),
-     [cosVal2PIPI] "m" (cosVal2PIPI[0]),
-     [diVal]       "m" (diVal[0])
-
-     : /* clobbered registers */
-     "eax", "ebx", "st","st(1)","st(2)","st(4)"
-     );	
-
-    __asm __volatile
-      (
-       "fldl   %[yTemp]               \n\t" /* yT */
+     "fldl   %[yTemp]               \n\t" /* yT */
 #ifdef USE_DEFAULT_ROUNDING_MODE
-       "fistl  %[yRem]                \n\t" /* yT */
-       "fisubl %[yRem]                \n\t" /* (yT-(int)yT) */
-       "fsts   %[yRem]                \n\t" /* % */
-       "sub    %%eax,%%eax            \n\t" /*   EAX=0 */
-       "orl    %[yRem],%%eax          \n\t" /*   sets the S (sign) flag */
-       "jns    sincos3                \n\t" /*   jump if not negative */
-       "fadds  %[one]                 \n\t" /* (yT-(int)yT+1) */
-       "sincos3:                      \n\t"
-       "fstpl  %[yRem]                \n\t" /* % */
+     "fistl  %[yRem]                \n\t" /* yT */
+     "fisubl %[yRem]                \n\t" /* (yT-(int)yT) */
+     "fsts   %[yRem]                \n\t" /* % */
+     "sub    %%eax,%%eax            \n\t" /*   EAX=0 */
+     "orl    %[yRem],%%eax          \n\t" /*   sets the S (sign) flag */
+     "jns    sincos3                \n\t" /*   jump if not negative */
+     "fadds  %[one]                 \n\t" /* (yT-(int)yT+1) */
+     "sincos3:                      \n\t"
+     "fstpl  %[yRem]                \n\t" /* % */
 #else
-       "fsts   %[yRem]                \n\t" /* yT */
-       "sub    %%eax,%%eax            \n\t" /*   EAX=0 */
-       "orl    %[yRem],%%eax          \n\t" /*   sets the S (sign) flag */
-       "js     sincos3                \n\t" /*   jump if negative */
-
-       /* yTemp >= 0 */
-       "fistl  %[yRem]                \n\t" /* yT */         /* saving the rounded value, the original in FPU */
-       "fisubl %[yRem]                \n\t" /* yT-(int)yT */ /* value - round(value) will be negative if was rounding up */
-       "fsts   %[yRem]                \n\t" /* yT-(int)yT */ /* we will check the sign in integer registers */
-       "sub    %%eax,%%eax            \n\t" /* yT-(int)yT */ /* EAX=0 */
-       "orl    %[yRem],%%eax          \n\t" /* yT-(int)yT */ /* sets the S (sign) flag */
-       "jns    sincos4                \n\t" /* yT-(int)yT */ /* the result is ok, rounding = truncation */
-       "fadds  %[one]                 \n\t" /* (yT-(int)yT+1) */
-       "jmp    sincos4                \n"   /* (yT-(int)yT+1) */
-
-       /* yTemp < 0 */
-       "sincos3:                      \n\t"
-       "fistl  %[yRem]                \n\t" /* yT */
-       "fisubl %[yRem]                \n\t" /* yT-(int)yT */ /* value - round(value) will be positive if was rounding up */
-       "fsts   %[yRem]                \n\t" /* yT-(int)yT */ /* we will check the sign in integer registers */
-       "sub    %%eax,%%eax            \n\t" /* yT-(int)yT */ /* EAX=0 */
-       "orl    %[yRem],%%eax          \n\t" /* yT-(int)yT */ /* sets the S (sign) flag */
-       "jns    sincos4                \n\t" /* yT-(int)yT */ /* */
-       "fadds  %[one]                 \n"   /* (yT-(int)yT+1) */
-
-       "sincos4:                      \n\t" /* yR */
-       "fstpl  %[yRem]                \n"   /* % */
+     "fsts   %[yRem]                \n\t" /* yT */
+     "sub    %%eax,%%eax            \n\t" /*   EAX=0 */
+     "orl    %[yRem],%%eax          \n\t" /*   sets the S (sign) flag */
+     "js     sincos3                \n\t" /*   jump if negative */
+     
+     /* yTemp >= 0 */
+     "fistl  %[yRem]                \n\t" /* yT */         /* saving the rounded value, the original in FPU */
+     "fisubl %[yRem]                \n\t" /* yT-(int)yT */ /* value - round(value) will be negative if was rounding up */
+     "fsts   %[yRem]                \n\t" /* yT-(int)yT */ /* we will check the sign in integer registers */
+     "sub    %%eax,%%eax            \n\t" /* yT-(int)yT */ /* EAX=0 */
+     "orl    %[yRem],%%eax          \n\t" /* yT-(int)yT */ /* sets the S (sign) flag */
+     "jns    sincos4                \n\t" /* yT-(int)yT */ /* the result is ok, rounding = truncation */
+     "fadds  %[one]                 \n\t" /* (yT-(int)yT+1) */
+     "jmp    sincos4                \n"   /* (yT-(int)yT+1) */
+     
+     /* yTemp < 0 */
+     "sincos3:                      \n\t"
+     "fistl  %[yRem]                \n\t" /* yT */
+     "fisubl %[yRem]                \n\t" /* yT-(int)yT */ /* value - round(value) will be positive if was rounding up */
+     "fsts   %[yRem]                \n\t" /* yT-(int)yT */ /* we will check the sign in integer registers */
+     "sub    %%eax,%%eax            \n\t" /* yT-(int)yT */ /* EAX=0 */
+     "orl    %[yRem],%%eax          \n\t" /* yT-(int)yT */ /* sets the S (sign) flag */
+     "jns    sincos4                \n\t" /* yT-(int)yT */ /* */
+     "fadds  %[one]                 \n"   /* (yT-(int)yT+1) */
+     
+     "sincos4:                      \n\t" /* yR */
+     "fstpl  %[yRem]                \n"   /* % */
 #endif
 
-       /* interface */
-       : /* output */
-       [yRem]  "=m" (yRem)
-       : /* input */
-       [yTemp] "m" (yTemp),
-       [one]   "m" (one)
-       : /* clobbered registers */
-       "eax", "st"
-       );	
+     /* calculation of realQ and imagQ */
+     /* (see also calculation of tsin and tcos */
 
-  __asm __volatile
-    (
      "fldl   %[yRem]                \n\t" /* x */
      "flds   %[lutr]                \n\t" /* LUT_RES x */
      "fmul   %%st(1),%%st(0)        \n\t" /* (x*LUT_RES) x */
@@ -250,10 +221,14 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
      /* interface */
      : /* output */
      [sinq]  "=m" (imagQ),
-     [cosq]  "=m" (realQ)
+     [cosq]  "=m" (realQ),
+     [sinv]  "=m" (tsin),
+     [cosv]  "=m" (tcos),
+     [yRem]  "=m" (yRem)
 
      : /* input */
-     [yRem]        "m" (yRem),
+     [x]           "m" (tempFreq0),
+     [yTemp] "m" (yTemp),
      [lutr]        "m" (lutr),
      [one]         "m" (one),
      [half]        "m" (half),
