@@ -49,6 +49,7 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
   static REAL4 lutr = LUT_RES; /* LUT_RES in memory */
   static REAL4 one  = 1.0;
   static REAL4 half = .5;
+  static REAL8 yRem;
 #endif
 
 #ifdef USE_SINCOS_GAS
@@ -151,24 +152,7 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
      : /* clobbered registers */
      "eax", "ebx", "st","st(1)","st(2)","st(4)"
      );	
-#else
-  {
-    UINT4 idx  = tempFreq0 * LUT_RES +.5;
-    REAL8 d    = tempFreq0 - diVal[idx];
-    REAL8 d2   = d*d;
 
-    tsin = sinVal[idx] + d * cosVal2PI[idx] - d2 * sinVal2PIPI[idx];
-    tcos = cosVal[idx] - d * sinVal2PI[idx] - d2 * cosVal2PIPI[idx];
-    tcos -= 1.0;
-  }
-#endif
-  
-
-
-  {
-#ifdef USE_SINCOS_GAS
-    static REAL8 yRem;
-    
     __asm __volatile
       (
        "fldl   %[yTemp]               \n\t" /* yT */
@@ -221,26 +205,6 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
        : /* clobbered registers */
        "eax", "st"
        );	
-
-#else
-
-#ifdef USE_FLOOR
-    REAL8 yRem;
-    if (yTemp >= 0) {
-      yRem = yTemp - floor(yTemp);
-    } else {
-      /* yRem = yTemp - ceil(yTemp) + 1.0; */
-      yRem = yTemp + floor(- yTemp) + 1.0;
-    }
-#else
-    REAL8 yRem = yTemp - (INT4)(yTemp);
-    if (yRem < 0) { yRem += 1.0f; } /* make sure this is in [0..1) */
-#endif
-
-#endif
-
-
-#ifdef USE_SINCOS_GAS
 
   __asm __volatile
     (
@@ -305,26 +269,32 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
      "eax", "ebx", "st","st(1)","st(2)","st(4)"
      );	
 
-#ifdef DEBUG
+#else /* USE_SINCOS_GAS */
+
   {
-    UINT4 idx  = yRem * LUT_RES + .5;
-    REAL8 d    = yRem - diVal[idx];
+    UINT4 idx  = tempFreq0 * LUT_RES +.5;
+    REAL8 d    = tempFreq0 - diVal[idx];
     REAL8 d2   = d*d;
 
-    imagQ2 = sinVal[idx] + d * cosVal2PI[idx] - d2 * sinVal2PIPI[idx];
-    realQ2 = cosVal[idx] - d * sinVal2PI[idx] - d2 * cosVal2PIPI[idx];
-      
-    imagQ2 = -imagQ2;
-    
-    if (fabs(imagQ - imagQ2) > 6e-17)
-      fprintf(stderr,"\nsin %f: %e\n",yRem,imagQ - imagQ2);
-
-    if (fabs(realQ - realQ2) > 6e-17){
-      fprintf(stderr,"\ncos %f: %e\n",yRem,realQ - realQ2);
-    }
+    tsin = sinVal[idx] + d * cosVal2PI[idx] - d2 * sinVal2PIPI[idx];
+    tcos = cosVal[idx] - d * sinVal2PI[idx] - d2 * cosVal2PIPI[idx];
+    tcos -= 1.0;
   }
-#endif
+
+  {
+#ifdef USE_FLOOR
+    REAL8 yRem;
+    if (yTemp >= 0) {
+      yRem = yTemp - floor(yTemp);
+    } else {
+      /* yRem = yTemp - ceil(yTemp) + 1.0; */
+      yRem = yTemp + floor(- yTemp) + 1.0;
+    }
 #else
+    REAL8 yRem = yTemp - (INT4)(yTemp);
+    if (yRem < 0) { yRem += 1.0f; } /* make sure this is in [0..1) */
+#endif
+
     {
       UINT4 idx  = yRem * LUT_RES + .5;
       REAL8 d    = yRem - diVal[idx];
@@ -334,8 +304,9 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
       
       imagQ = -imagQ;
     }
-#endif
   }
+
+#endif /* USE_SINCOS_GAS */
 
   /* we branch now (instead of inside the central loop)
    * depending on wether x can ever become SMALL in the loop or not, 
