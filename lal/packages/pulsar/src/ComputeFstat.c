@@ -215,6 +215,7 @@ ComputeFStat ( LALStatus *status,
 
   /* check if that skyposition SSB+AMcoef were already buffered */
   if ( cfBuffer 
+       && ( cfBuffer->multiDetStates == multiDetStates )
        && ( cfBuffer->skypos.longitude == psPoint->skypos.longitude)
        && ( cfBuffer->skypos.latitude == psPoint->skypos.latitude) 
        && cfBuffer->multiSSB
@@ -246,6 +247,7 @@ ComputeFStat ( LALStatus *status,
 	  cfBuffer->multiSSB = multiSSB;
 	  cfBuffer->multiAMcoef = multiAMcoef;
 	  cfBuffer->skypos = psPoint->skypos;
+	  cfBuffer->multiDetStates = multiDetStates ;
 	} /* if cfBuffer */
 
     } /* if no buffer or different skypos */

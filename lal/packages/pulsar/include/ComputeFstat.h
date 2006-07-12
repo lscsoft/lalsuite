@@ -154,11 +154,13 @@ typedef struct {
 } ComputeFParams;
 
 /** Struct holding buffered ComputeFStat()-internal quantities to avoid unnecessarily 
- * recomputing things. For the first call of ComputeFStat() the pointer-entries should all be NULL.
+ * recomputing things that depend ONLY on the skyposition and detector-state series (but not on the spins). 
+ * For the first call of ComputeFStat() the pointer-entries should all be NULL.
  */
 typedef struct {
-  SkyPosition skypos;
-  MultiSSBtimes *multiSSB;
+  const MultiDetectorStateSeries *multiDetStates;/**< buffer for each detStates (store pointer) and skypos */
+  SkyPosition skypos;				/**< skyposition of candidate */
+  MultiSSBtimes *multiSSB;	
   MultiAMCoeffs *multiAMcoef;
 } ComputeFBuffer;
 
