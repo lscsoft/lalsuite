@@ -1,4 +1,4 @@
-/* LALDemod variant with structs and signatures for modifications by Feket Akos
+/* LALDemod variant with large assembler part for modifications by Feket Akos
  * Authors see ComputeFStatistic.c
                                                          Bernd Machenschalk */
 RCSID( "$Id$");
@@ -44,10 +44,10 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
   INT4  spOrder;                /* maximum spinDwn order */
   REAL8 realXP, imagXP;         /* temp variables used in computation of */
   INT4  nDeltaF;                /* number of frequency bins per SFT band */
+
   INT4  sftIndex;               /* more temp variables */
   REAL8 realQ, imagQ;
   INT4 *tempInt1;
-  /* UINT4 index; */
   REAL8 FaSq;
   REAL8 FbSq;
   REAL8 FaFb;
@@ -58,7 +58,6 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
   REAL4 realP, imagP;
 
   static BOOLEAN firstCall = 1;
-
 
   REAL8 A=params->amcoe->A;
   REAL8 B=params->amcoe->B;
@@ -188,35 +187,35 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 
         yTemp = f * skyConst[ tempInt1[ alpha ]-1 ] + ySum[ alpha ];
 
-  /* we branch now (instead of inside the central loop)
-   * depending on wether x can ever become SMALL in the loop or not, 
-   * because it requires special treatment in the Dirichlet kernel
-   */
-  if ( tempFreq0 >= LD_SMALL ) {
+        /* we branch now (instead of inside the central loop)
+         * depending on wether x can ever become SMALL in the loop or not, 
+         * because it requires special treatment in the Dirichlet kernel
+         */
+        if ( tempFreq0 >= LD_SMALL ) {
 
-    /* Variables for assembler Kernel loop */
-    COMPLEX8 *Xalpha_kX = Xalpha + sftIndex;
-    REAL4    tempFreqX  = tempFreq1;        /* REAL4 because of SSE */
-    REAL4    XRes, XIms;                    /* sums of Xa.re and Xa.im */
-    COMPLEX8 XSumsX;                        /* sums of Xa.re and Xa.im for SSE */
-    COMPLEX8 *Xalpha_kF = Xalpha_kX + 16;   /* shift values for FPU calculation */
-    REAL8    tempFreqF  = tempFreq1 - 15.0;
+          /* Variables for assembler Kernel loop */
+          COMPLEX8 *Xalpha_kX = Xalpha + sftIndex;
+          REAL4    tempFreqX  = tempFreq1;        /* REAL4 because of SSE */
+          REAL4    XRes, XIms;                    /* sums of Xa.re and Xa.im */
+          COMPLEX8 XSumsX;                        /* sums of Xa.re and Xa.im for SSE */
+          COMPLEX8 *Xalpha_kF = Xalpha_kX + 16;   /* shift values for FPU calculation */
+          REAL8    tempFreqF  = tempFreq1 - 15.0;
+          
+          /* constants in memory */
+          static REAL4 lutr = LUT_RES; /* LUT_RES in memory */
+          static REAL4 half = .5;
+          static REAL4 one  = 1.0;
+          static REAL4 two  = 2.0;
 
-    /* constants in memory */
-    static REAL4 lutr = LUT_RES; /* LUT_RES in memory */
-    static REAL4 half = .5;
-    static REAL4 one  = 1.0;
-    static REAL4 two  = 2.0;
-
-    /* vector constants */
-    /* having these not aligned will crash the assembler code */
-    static REAL4 V0011[4] __attribute__ ((aligned (16))) = { 0,0,1,1 };
-    static REAL4 V2222[4] __attribute__ ((aligned (16))) = { 2,2,2,2 };
-    static REAL4 V4444[4] __attribute__ ((aligned (16))) = { 4,4,4,4 };
+          /* vector constants */
+          /* having these not aligned will crash the assembler code */
+          static REAL4 V0011[4] __attribute__ ((aligned (16))) = { 0,0,1,1 };
+          static REAL4 V2222[4] __attribute__ ((aligned (16))) = { 2,2,2,2 };
+          static REAL4 V4444[4] __attribute__ ((aligned (16))) = { 4,4,4,4 };
  
-    static REAL8 yRem;
+          static REAL8 yRem;
 
-    __asm __volatile
+          __asm __volatile
       (
        /* calculation of tsin and tcos */
          
@@ -384,8 +383,8 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        /* Kernel loop */
 
        /* the "inner" four complex values that contribute the most to the sum
-	  will be calculated by the FPU with 80 Bit precision,
-	  the SSE taking care of the others ("wings") */
+          will be calculated by the FPU with 80 Bit precision,
+          the SSE taking care of the others ("wings") */
 
        /* calculation (for 28 REAL4 values (7x(2 ReIm pairs))) */
        /* one SSE register will consist 4 REAL4 values */
@@ -455,6 +454,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        /* SSE: skip FPU calculated values */
        "subps   %[V4444],%%xmm0       \n\t"
        "addl    $144,%[Xalpha_kX]     \n\t" /* Xalpha_kX = Xalpha_kX + 4; */
+       /* "subps   %%xmm5,%%xmm0         \n\t" */
 
        "FMUL    %%ST,%%ST(2)          \n\t" /* FMUL ST2,ST       ;A16 Q145 X'A16 Y' */
        "FMUL    %%ST,%%ST(3)          \n\t" /* FMUL ST3,ST       ;A16 Q145 X'A16 Y'A16 */
@@ -512,7 +512,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        "FSTPS   %[XRes]               \n\t"
        "FSTPS   %[XIms]               \n\t"
        
-              /* interface */
+       /* interface */
        :
        /* output  (here: to memory)*/
        [sinq]        "=m" (imagQ),
@@ -560,99 +560,99 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        "st","st(1)","st(2)","st(3)","st(4)"
        );           
       
-    /* And last, we add the single and double precision values */
-    XRes = XRes + XSumsX.re;
-    XIms = XIms + XSumsX.im;
+          /* And last, we add the single and double precision values */
+          XRes = XRes + XSumsX.re;
+          XIms = XIms + XSumsX.im;
     
-    {
-      REAL4 tsin2pi = tsin * (REAL4)OOTWOPI;
-      REAL4 tcos2pi = tcos * (REAL4)OOTWOPI;
-      
-      realXP = tsin2pi * XRes - tcos2pi * XIms;
-      imagXP = tcos2pi * XRes + tsin2pi * XIms;
-    }
-  }
-  
-  else /* if ( tempFreq0 >= LD_SMALL ) */
-    
-    {
-      fprintf(stderr,"small x\n");
-
-      /* C version of the same calculations */
-
-      /* calculation of tsin and tcos */
-      {
-        UINT4 idx  = tempFreq0 * LUT_RES +.5;
-        REAL8 d    = tempFreq0 - diVal[idx];
-        REAL8 d2   = d*d;
-        
-        tsin = sinVal[idx] + d * cosVal2PI[idx] - d2 * sinVal2PIPI[idx];
-        tcos = cosVal[idx] - d * sinVal2PI[idx] - d2 * cosVal2PIPI[idx];
-        tcos -= 1.0;
-      }
-      
-      /* calculation of yRem */
-      {
-#ifdef USE_FLOOR
-        REAL8 yRem;
-        if (yTemp >= 0) {
-          yRem = yTemp - floor(yTemp);
-        } else {
-          /* yRem = yTemp - ceil(yTemp) + 1.0; */
-          yRem = yTemp + floor(- yTemp) + 1.0;
+          {
+            REAL4 tsin2pi = tsin * (REAL4)OOTWOPI;
+            REAL4 tcos2pi = tcos * (REAL4)OOTWOPI;
+            
+            realXP = tsin2pi * XRes - tcos2pi * XIms;
+            imagXP = tcos2pi * XRes + tsin2pi * XIms;
+          }
         }
+        
+        else /* if ( tempFreq0 >= LD_SMALL ) */
+    
+          {
+            fprintf(stderr,"small x\n");
+            
+            /* C version of the same calculations */
+
+            /* calculation of tsin and tcos */
+            {
+              UINT4 idx  = tempFreq0 * LUT_RES +.5;
+              REAL8 d    = tempFreq0 - diVal[idx];
+              REAL8 d2   = d*d;
+        
+              tsin = sinVal[idx] + d * cosVal2PI[idx] - d2 * sinVal2PIPI[idx];
+              tcos = cosVal[idx] - d * sinVal2PI[idx] - d2 * cosVal2PIPI[idx];
+              tcos -= 1.0;
+            }
+      
+            /* calculation of yRem */
+            {
+#ifdef USE_FLOOR
+              REAL8 yRem;
+              if (yTemp >= 0) {
+                yRem = yTemp - floor(yTemp);
+              } else {
+                /* yRem = yTemp - ceil(yTemp) + 1.0; */
+                yRem = yTemp + floor(- yTemp) + 1.0;
+              }
 #else
-        REAL8 yRem = yTemp - (INT4)(yTemp);
-        if (yRem < 0) { yRem += 1.0f; } /* make sure this is in [0..1) */
+              REAL8 yRem = yTemp - (INT4)(yTemp);
+              if (yRem < 0) { yRem += 1.0f; } /* make sure this is in [0..1) */
 #endif
         
-        /* calculation of realQ and imagQ */
-        {
-          UINT4 idx  = yRem * LUT_RES + .5;
-          REAL8 d    = yRem - diVal[idx];
-          REAL8 d2   = d*d;
-          imagQ = sinVal[idx] + d * cosVal2PI[idx] - d2 * sinVal2PIPI[idx];
-          realQ = cosVal[idx] - d * sinVal2PI[idx] - d2 * cosVal2PIPI[idx];
+              /* calculation of realQ and imagQ */
+              {
+                UINT4 idx  = yRem * LUT_RES + .5;
+                REAL8 d    = yRem - diVal[idx];
+                REAL8 d2   = d*d;
+                imagQ = sinVal[idx] + d * cosVal2PI[idx] - d2 * sinVal2PIPI[idx];
+                realQ = cosVal[idx] - d * sinVal2PI[idx] - d2 * cosVal2PIPI[idx];
           
-          imagQ = -imagQ;
-        }
-      }
-
-
-      /* special version of the Kernel loop*/
-
-      realXP=0.0;
-      imagXP=0.0;
-      
-      /* Loop over terms in Dirichlet Kernel */
-      for(k=0; k < klim ; k++)
-        {
-          COMPLEX8 Xalpha_k = Xalpha[sftIndex];
-          sftIndex ++;
-          /* If x is small we need correct x->0 limit of Dirichlet kernel */
-          if( fabs(x) <  SMALL) 
-            {
-              realXP += Xalpha_k.re;
-              imagXP += Xalpha_k.im;
-            }      
-          else
-            {
-              realP = tsin / x;
-              imagP = tcos / x;
-              /* these four lines compute P*xtilde */
-              realXP += Xalpha_k.re * realP;
-              realXP -= Xalpha_k.im * imagP;
-              imagXP += Xalpha_k.re * imagP;
-              imagXP += Xalpha_k.im * realP;
+                imagQ = -imagQ;
+              }
             }
-          
-          tempFreq1 --;
-          x = LAL_TWOPI * tempFreq1;
-          
-        } /* for k < klim */
-      
-    } /* if x could become close to 0 */
 
+
+            /* special version of the Kernel loop*/
+
+            realXP=0.0;
+            imagXP=0.0;
+      
+            /* Loop over terms in Dirichlet Kernel */
+            for(k=0; k < klim ; k++)
+              {
+                COMPLEX8 Xalpha_k = Xalpha[sftIndex];
+                sftIndex ++;
+                /* If x is small we need correct x->0 limit of Dirichlet kernel */
+                if( fabs(x) <  SMALL) 
+                  {
+                    realXP += Xalpha_k.re;
+                    imagXP += Xalpha_k.im;
+                  }      
+                else
+                  {
+                    realP = tsin / x;
+                    imagP = tcos / x;
+                    /* these four lines compute P*xtilde */
+                    realXP += Xalpha_k.re * realP;
+                    realXP -= Xalpha_k.im * imagP;
+                    imagXP += Xalpha_k.re * imagP;
+                    imagXP += Xalpha_k.im * realP;
+                  }
+                
+                tempFreq1 --;
+                x = LAL_TWOPI * tempFreq1;
+                
+              } /* for k < klim */
+            
+          } /* if x could become close to 0 */
+        
         /* implementation of amplitude demodulation */
         {
           REAL8 realQXP = realXP*realQ-imagXP*imagQ;
@@ -683,5 +683,4 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
   LALFree(ySum);
   
   RETURN( status );
-
 }
