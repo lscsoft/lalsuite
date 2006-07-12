@@ -92,12 +92,12 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
        /* This code temporary stores integer values in memory locations of float variables,
           but they're overwritten later anyway */
        "fistl  %[sinv]                \n\t" /* (x*LUT_RES+.5) x */ /* saving the rounded value, the original in FPU */
-       "fildl  %[sinv]                \n\t"                        /* value - round(value) will be negative if was rounding up */
-       "fsubrp                        \n\t"
-       "movl   %[sinv],%%ebx          \n\t" /* x */
-       "fstps  %[cosv]                \n\t" /* x */                /* we will check the sign in integer registers */
-       "shll   $1,%[cosv]             \n\t" /* C=sign bit					*/
-       "sbb    $0,%%ebx               \n\t" /* EBX=T(x+0.5)					*/
+       "fildl  %[sinv]                \n\t" /* ((int)(x*LUT_RES+.5)) (x*LUT_RES+.5) x */
+       "fsubrp                        \n\t" /* ((x*LUT_RES+.5)-((int)(x*LUT_RES+.5))) x */
+       "movl   %[sinv],%%ebx          \n\t" /* ((x*LUT_RES+.5)-((int)(x*LUT_RES+.5))) x */ /* get the result in EBX */
+       "fstps  %[cosv]                \n\t" /* x */                /* value - round(value) will be negative if was rounding up */
+       "shll   $1,%[cosv]             \n\t" /* x */                /* shift the sign bit into the carry bit */
+       "sbb    $0,%%ebx               \n\t" /* x */                /* substract the carry in EBX */
 #endif
        
        /* calculate d = x - diVal[idx] in st(0) */
