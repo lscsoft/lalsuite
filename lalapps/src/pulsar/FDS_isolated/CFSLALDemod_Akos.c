@@ -212,24 +212,23 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
        "fsubl  %[diVal](,%%ebx,8)     \n\t" /* (d = x - diVal[i]) */
        "fld    %%st(0)                \n\t" /* d d */
        "fmul   %%st(0),%%st(0)        \n\t" /* (d*d) d */
-       "fldl  %[sinVal2PIPI](,%%ebx,8)\n\t" /* sinVal2PIPI[i] (d*d) d */
-       "fmul  %%st(1),%%st(0)         \n\t" /* (d*d*sinVal2PIPI[i]) (d*d) d */
-       
-       "fldl  %[cosVal2PI](,%%ebx,8)  \n\t" /* cosVal2PI[i] (d*d*sinVal2PIPI[i]) (d*d) d */
-       "fmul  %%st(3),%%st(0)         \n\t" /* (d*cosVal2PI[i]) (d*d*sinVal2PIPI[i]) (d*d) d */
-       "fsubp                         \n\t" /* (d*cosVal2PI[i]-d*d*sinVal2PIPI[i]) (d*d) d */
-       "faddl %[sinVal](,%%ebx,8)     \n\t" /* (sinVal[i]+d*cosVal2PI[i]-d*d*sinVal2PIPI[i]) (d*d) d */
 
-       /* the following sign change of the sin() result is special here,
-	  otherwise the calculation is the same as the previous one */
+       "fldl  %[cosVal2PI](,%%ebx,8)  \n\t" /* cosVal2PI[i] (d*d) d */
+       "fmul  %%st(2),%%st(0)         \n\t" /* (d*cosVal2PI[i]) (d*d) d */
+       "faddl %[sinVal](,%%ebx,8)     \n\t" /* (sinVal[i]+d*cosVal2PI[i]) (d*d) d */
+       "fldl  %[sinVal2PIPI](,%%ebx,8)\n\t" /* sinVal2PIPI[i] (sinVal[i]+d*cosVal2PI[i]) (d*d) d */
+       "fmul  %%st(2),%%st(0)         \n\t" /* (d*d*sinVal2PIPI[i]) (sinVal[i]+d*cosVal2PI[i]) (d*d) d */
+       "fsubrp                        \n\t" /* ((sinVal[i]+d*cosVal2PI[i])-d*d*sinVal2PIPI[i]) (d*d) d */
+
+       /* special here: sign change of the sin() result */
        "fchs                          \n\t" /* -(sinVal[i]+d*cosVal2PI[i]-d*d*sinVal2PIPI[i]) (d*d) d */
        "fstpl %[sinq]                 \n\t" /* (d*d) d */
        
        "fmull %[cosVal2PIPI](,%%ebx,8)\n\t" /* (d*d*cosVal2PIPI[i]) d */
-       "fxch                          \n\t" /* d (d*d*cosVal2PIPI[i]) */
-       "fmull %[sinVal2PI](,%%ebx,8)  \n\t" /* (d*sinVal2PI[i]) (d*d*cosVal2PIPI[i]) d */
-       "fsubrl %[cosVal](,%%ebx,8)    \n\t" /* (cosVal[i]-d*sinVal2PI[i]) (d*d*cosVal2PIPI[i]) */
-       "fsubp                         \n\t" /* (cosVal[i]-d*sinVal2PI[i]-d*d*cosVal2PIPI[i]) */
+       "fsubrl %[cosVal](,%%ebx,8)    \n\t" /* (cosVal[i]-d*d*cosVal2PIPI[i]) d */
+       "fxch                          \n\t" /* d (cosVal[i]-d*d*cosVal2PIPI[i]) d */
+       "fmull %[sinVal2PI](,%%ebx,8)  \n\t" /* (d*sinVal2PI[i]) (cosVal[i]-d*d*cosVal2PIPI[i]) d */
+       "fsubrp                        \n\t" /* ((cosVal[i]-d*d*cosVal2PIPI[i])-d*sinVal2PI[i]) */
        "fstpl %[cosq]                 \n\t" /* % */
 
 
