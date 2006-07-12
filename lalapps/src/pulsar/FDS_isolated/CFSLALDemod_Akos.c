@@ -109,27 +109,24 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
        /* this calculates d*d on _top_ of the stack */ 
        "fmul   %%st(0),%%st(0)        \n\t" /* (d*d) d */
        
-       /* three-term Taylor expansion for sin value, starting with the last term,
-          leaving d and d*d on stack, idx kept in ebx */
-       "fldl  %[sinVal2PIPI](,%%ebx,8)\n\t" /* sinVal2PIPI[i] (d*d) d */
-       "fmul  %%st(1),%%st(0)         \n\t" /* (d*d*sinVal2PIPI[i]) (d*d) d */
-       
-       "fldl  %[cosVal2PI](,%%ebx,8)  \n\t" /* cosVal2PI[i] (d*d*sinVal2PIPI[i]) (d*d) d */
-       "fmul  %%st(3),%%st(0)         \n\t" /* (d*cosVal2PI[i]) (d*d*sinVal2PIPI[i]) (d*d) d */
-       "fsubp                         \n\t" /* (d*cosVal2PI[i]-d*d*sinVal2PIPI[i]) (d*d) d */
-       
-       "faddl %[sinVal](,%%ebx,8)     \n\t" /* (sinVal[i]+d*cosVal2PI[i]-d*d*sinVal2PIPI[i]) (d*d) d */
+       /* three-term Taylor expansion for sin value, leaving d and d*d on stack, idx kept in ebx */
+       /* some reordering by Akos */
+       "fldl  %[cosVal2PI](,%%ebx,8)  \n\t" /* cosVal2PI[i] (d*d) d */
+       "fmul  %%st(2),%%st(0)         \n\t" /* (d*cosVal2PI[i]) (d*d) d */
+       "faddl %[sinVal](,%%ebx,8)     \n\t" /* (sinVal[i]+d*cosVal2PI[i]) (d*d) d */
+       "fldl  %[sinVal2PIPI](,%%ebx,8)\n\t" /* sinVal2PIPI[i] (sinVal[i]+d*cosVal2PI[i]) (d*d) d */
+       "fmul  %%st(2),%%st(0)         \n\t" /* (d*d*sinVal2PIPI[i]) (sinVal[i]+d*cosVal2PI[i]) (d*d) d */
+       "fsubrp                        \n\t" /* ((sinVal[i]+d*cosVal2PI[i])-d*d*sinVal2PIPI[i]) (d*d) d */
        "fstps %[sinv]                 \n\t" /* (d*d) d */
        
        /* calculation for cos value, this time popping the stack */
        /* this ordering mimics the calculation of cos as done by gcc (4.1.0)  */
-       /* WARNING: changing the order of the substractions gives an error up to 1e-3 in the result!! */
        
        "fmull %[cosVal2PIPI](,%%ebx,8)\n\t" /* (d*d*cosVal2PIPI[i]) d */
-       "fxch                          \n\t" /* d (d*d*cosVal2PIPI[i]) */
-       "fmull %[sinVal2PI](,%%ebx,8)  \n\t" /* (d*sinVal2PI[i]) (d*d*cosVal2PIPI[i]) d */
-       "fsubrl %[cosVal](,%%ebx,8)    \n\t" /* (cosVal[i]-d*sinVal2PI[i]) (d*d*cosVal2PIPI[i]) */
-       "fsubp                         \n\t" /* (cosVal[i]-d*sinVal2PI[i]-d*d*cosVal2PIPI[i]) */
+       "fsubrl %[cosVal](,%%ebx,8)    \n\t" /* (cosVal[i]-d*d*cosVal2PIPI[i]) d */
+       "fxch                          \n\t" /* d (cosVal[i]-d*d*cosVal2PIPI[i]) d */
+       "fmull %[sinVal2PI](,%%ebx,8)  \n\t" /* (d*sinVal2PI[i]) (cosVal[i]-d*d*cosVal2PIPI[i]) d */
+       "fsubrp                        \n\t" /* ((cosVal[i]-d*d*cosVal2PIPI[i])-d*sinVal2PI[i]) */
        
 #ifndef SKIP_COS_ROUNDING
        /* this stores the cos value in the single precision output variable before substracting 1.0,
