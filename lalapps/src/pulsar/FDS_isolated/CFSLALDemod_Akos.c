@@ -154,7 +154,6 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
        "jns    sincos3                \n\t" /*   jump if not negative */
        "fadds  %[one]                 \n\t" /* (yT-(int)yT+1) */
        "sincos3:                      \n\t"
-       "fstpl  %[yRem]                \n\t" /* % */
 #else
        "fsts   %[yRem]                \n\t" /* yT */
        "sub    %%eax,%%eax            \n\t" /*   EAX=0 */
@@ -188,13 +187,12 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
        "fadds  %[one]                 \n"   /* (yT-(int)yT+1) */
        
        "sincos4:                      \n\t" /* yR */
-       "fstpl  %[yRem]                \n"   /* % */
 #endif
        
        /* calculation of realQ and imagQ */
-       /* (see also comments in calculation of tsin and tcos */
+       /* yRem still in st(0), following named x */
+       /* see also comments in calculation of tsin and tcos */
        
-       "fldl   %[yRem]                \n\t" /* x */
        "flds   %[lutr]                \n\t" /* LUT_RES x */
        "fmul   %%st(1),%%st(0)        \n\t" /* (x*LUT_RES) x */
        
@@ -204,14 +202,12 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
 #else
        "fadds  %[half]                \n\t" /* (x*LUT_RES+.5) x */
        "fistl  %[sinq]                \n\t" /* (x*LUT_RES+.5) x */ /* saving the rounded value, the original in FPU */
-       "fisubl %[sinq]                \n\t" /* (x*LUT_RES+.5) x */ /* value - round(value) will be negative if was rounding up */
-       "fstps  %[cosq]                \n\t" /* x */                /* we will check the sign in integer registers */
-       "movl   %[sinq],%%ebx          \n\t" /* x */
-       "sub    %%eax,%%eax            \n\t" /* x */                /* EAX=0 */
-       "orl    %[cosq],%%eax          \n\t" /* x */                /* it will set the S (sign) flag */
-       "jns    sincos2                \n\t" /* x */                /* the result is ok, rounding = truncation */
-       "dec    %%ebx                  \n"   /* x */                /* sinv=sinv-1.0 (it was rounded up) */
-       "sincos2:                      \n\t" /* x */
+       "fildl  %[sinq]                \n\t" /* ((int)(x*LUT_RES+.5)) (x*LUT_RES+.5) x */
+       "fsubrp                        \n\t" /* ((x*LUT_RES+.5)-((int)(x*LUT_RES+.5))) x */
+       "movl   %[sinq],%%ebx          \n\t" /* ((x*LUT_RES+.5)-((int)(x*LUT_RES+.5))) x */ /* get the result in EBX */
+       "fstps  %[cosq]                \n\t" /* x */                /* value - round(value) will be negative if was rounding up */
+       "shll   $1,%[cosq]             \n\t" /* x */                /* shift the sign bit into the carry bit */
+       "sbb    $0,%%ebx               \n\t" /* x */                /* substract the carry in EBX */
 #endif
        "fsubl  %[diVal](,%%ebx,8)     \n\t" /* (d = x - diVal[i]) */
        "fld    %%st(0)                \n\t" /* d d */
