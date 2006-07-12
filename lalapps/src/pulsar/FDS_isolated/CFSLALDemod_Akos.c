@@ -64,6 +64,7 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
     /* having these not aligned will crash the assembler code */
     static REAL4 V0011[4] __attribute__ ((aligned (16))) = { 0,0,1,1 };
     static REAL4 V2222[4] __attribute__ ((aligned (16))) = { 2,2,2,2 };
+    static REAL4 V4444[4] __attribute__ ((aligned (16))) = { 4,4,4,4 };
  
     static REAL8 yRem;
 
@@ -243,110 +244,127 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
        /* 4 REAL4 vaules = 2 ReIm pairs */
 
        /* we want to do this SSE code 14 times */
-#define ADD4SSE(a,b) \
+#define ADD4SSEA(a,b) \
        "movlps "#a"(%[Xalpha_kX]),%%xmm4 \n\t"\
        "movhps "#b"(%[Xalpha_kX]),%%xmm4 \n\t"\
-       "rcpps %%xmm0,%%xmm1           \n\t" /* XMM1: 1/(f-1) 1/(f-1) 1/f 1/f */\
-       "subps %%xmm5,%%xmm0           \n\t" /* XMM2: f-3 f-3 f-2 f-2 */\
-       "mulps %%xmm4,%%xmm1           \n\t" /* XMM1: ImH/(f-1) ReH/(f-1) ImL/f ReL/f */\
-       "addps %%xmm1,%%xmm2           \n\t" /* XMM2: C_ImH C_ReH C_ImL C_ReL */
-    
+       "rcpps %%xmm0,%%xmm1       \n\t" /* XMM1: 1/(f-1) 1/(f-1) 1/f 1/f */\
+       "subps %%xmm5,%%xmm0       \n\t" /* XMM0: f-3 f-3 f-2 f-2 */\
+       "mulps %%xmm4,%%xmm1       \n\t" /* XMM1: ImH/(f-1) ReH/(f-1) ImL/f ReL/f */\
+       "addps %%xmm1,%%xmm2       \n\t" /* XMM2: C_ImH C_ReH C_ImL C_ReL */
+
+#define ADD4SSEB(a,b) \
+       "movlps "#a"(%[Xalpha_kX]),%%xmm7 \n\t"\
+       "movhps "#b"(%[Xalpha_kX]),%%xmm7 \n\t"\
+       "rcpps %%xmm0,%%xmm6       \n\t" /* XMM6: 1/(f-1) 1/(f-1) 1/f 1/f */\
+       "subps %%xmm5,%%xmm0       \n\t" /* XMM0: f-3 f-3 f-2 f-2 */\
+       "mulps %%xmm7,%%xmm6       \n\t" /* XMM6: ImH/(f-1) ReH/(f-1) ImL/f ReL/f */\
+       "addps %%xmm6,%%xmm2       \n\t" /* XMM2: C_ImH C_ReH C_ImL C_ReL */
+
        /* SSE prelude */
        "movss   %[tempFreqX],%%xmm0   \n\t"
        "shufps  $0,%%xmm0,%%xmm0      \n\t" /* XMM0: f   f   f   f */
        "subps   %[V0011],%%xmm0       \n\t" /* XMM0: f-1 f-1 f   f */
        "xorps   %%xmm2,%%xmm2         \n\t" /* XMM2 will collect the low-precision values */
-       "movups  %[V2222],%%xmm5       \n\t"
-       /* add two complex elements at a time */
-       ADD4SSE(0,8)
-       ADD4SSE(16,24)
-       ADD4SSE(32,40)
+       "movaps  %[V2222],%%xmm5       \n\t"
        
+       ADD4SSEA(0,8)
+
        "FLDL    %[tempFreq1]          \n\t" /* FLD D [TempFreqMinus15]   ;A15 */
        "FLDS    -16(%[Xalpha_k])      \n\t" /* FLD D [EBP-10h]   ;X14 A15 */
        "FMUL    %%ST(1),%%ST          \n\t" /* FMUL ST,ST1       ;X14A15 A15 */
        
-       ADD4SSE(48,56)
+       ADD4SSEB(16,24)
        
        "FLDS    -12(%[Xalpha_k])      \n\t" /* FLD D [EBP-0Ch]   ;Y14 X14A15 A15 */
        "FMUL    %%ST(2),%%ST          \n\t" /* FMUL ST,ST2       ;Y14A15 X14A15 A15 */
        "FXCH    %%ST(2)               \n\t" /* FXCH ST2          ;A15 X14A15 Y14A15 */
+
+       ADD4SSEA(32,40)
+
        "FLDS    %[one]                \n\t" /* FLD D [_ONE_]     ;1 A15 X14A15 Y14A15 */
        "FADD    %%ST(1),%%ST          \n\t" /* FADD ST,ST1       ;A14 A15 X14A15 Y14A15 */
        
-       ADD4SSE(64,72)
+       ADD4SSEB(48,56)
        
        "FLDS    -8(%[Xalpha_k])       \n\t" /* FLD D [EBP-08h]   ;X15 A14 A15 X14A15 Y14A15 */
        "FMUL    %%ST(1),%%ST          \n\t" /* FMUL ST,ST1       ;X15A14 A14 A15 X14A15 Y14A15 */
+
+       ADD4SSEA(64,72)
+
        "FADDP   %%ST,%%ST(3)          \n\t" /* FADDP ST3,ST      ;A14 A15 X' Y14A15 */
        "FMUL    %%ST,%%ST(1)          \n\t" /* FMUL ST1,ST       ;A14 Q145 X' Y14A15 */
+
+       ADD4SSEB(80,88)
+
        "FLDS    -4(%[Xalpha_k])       \n\t" /* FLD D [EBP-04h]   ;Y15 A14 Q145 X' Y14A15 */
-       
-       ADD4SSE(80,88)
-       
        "FMUL    %%ST(1),%%ST          \n\t" /* FMUL ST,ST1       ;Y15A14 A14 Q145 X' Y14A15 */
+
+       ADD4SSEA(96,104) 
+
        "FADDP   %%ST,%%ST(4)          \n\t" /* FADDP ST4,ST      ;A14 Q145 X' Y' */
        "FSUBS   %[two]                \n\t" /* FSUB D [_TWO_]    ;A16 Q145 X' Y' */
+       
+       /* SSE: skip FPU calculated values */
+       "subps   %[V4444],%%xmm0       \n\t"
+       "addl    $144,%[Xalpha_kX]     \n\t" /* Xalpha_kX = Xalpha_kX + 4; */
+
        "FMUL    %%ST,%%ST(2)          \n\t" /* FMUL ST2,ST       ;A16 Q145 X'A16 Y' */
        "FMUL    %%ST,%%ST(3)          \n\t" /* FMUL ST3,ST       ;A16 Q145 X'A16 Y'A16 */
        
-       ADD4SSE(96,104) 
-       
-       /* SSE: skip FPU calculated values */
-       "subps   %%xmm5,%%xmm0         \n\t"
-       "addl    $144,%[Xalpha_kX]     \n\t" /* Xalpha_kX = Xalpha_kX + 4; */
-       "subps   %%xmm5,%%xmm0         \n\t"
+       ADD4SSEB(0,8)
        
        "FLDS    0(%[Xalpha_k])        \n\t" /* FLD D [EBP+00h]   ;X16 A16 Q145 X'A16 Y'A16 */
        "FMUL    %%ST(2),%%ST          \n\t" /* FMUL ST,ST2       ;X16Q145 A16 Q145 X'A16 Y'A16 */
+
+       ADD4SSEA(16,24)
+       
        "FADDP   %%ST,%%ST(3)          \n\t" /* FADDP ST3,ST      ;A16 Q145 X" Y'A16 */
+
+       ADD4SSEB(32,40)
+
        "FLDS    4(%[Xalpha_k])        \n\t" /* FLD D [EBP+04h]   ;Y16 A16 Q145 X" Y'A16 */
        "FMUL    %%ST(2),%%ST          \n\t" /* FMUL ST,ST2       ;Y16Q145 A16 Q145 X" Y'A16 */
        
-       ADD4SSE(0,8)
+       ADD4SSEA(48,56)
        
        "FADDP   %%ST,%%ST(4)          \n\t" /* FADDP ST4,ST      ;A16 Q145 X" Y" */
        "FMUL    %%ST,%%ST(1)          \n\t" /* FMUL ST1,ST       ;A16 Q146 X" Y" */
+
+       ADD4SSEB(64,72)
+
        "FSUBS   %[one]                \n\t" /* FSUB D [_ONE_]    ;A17 Q146 X" Y" */
+
+       ADD4SSEA(80,88)
+
        "FMUL    %%ST,%%ST(2)          \n\t" /* FMUL ST2,ST       ;A17 Q146 X"A17 Y" */
        "FMUL    %%ST,%%ST(3)          \n\t" /* FMUL ST3,ST       ;A17 Q146 X"A17 Y"A17 */
-       
-       ADD4SSE(16,24)
+
+       ADD4SSEB(96,104) 
        
        "FLDS    8(%[Xalpha_k])        \n\t" /* FLD D [EBP+08h]   ;X17 A17 Q146 X"A17 Y"A17 */
        "FMUL    %%ST(2),%%ST          \n\t" /* FMUL ST,ST2       ;X17Q146 A17 Q146 X"A17 Y"A17 */
        "FADDP   %%ST,%%ST(3)          \n\t" /* FADDP ST3,ST      ;A17 Q146 X! Y"A17 */
        
-       ADD4SSE(32,40)
+       /* add the two calculated parts of the real and imaginary part */
+       "movhlps %%xmm2,%%xmm3         \n\t" /* XMM3: ? ? C_ImH C_ReH */
+       "addps   %%xmm3,%%xmm2         \n\t" /* XMM2: - - C_Im C_Re */
        
        "FLDS    12(%[Xalpha_k])       \n\t" /* FLD D [EBP+0Ch]   ;Y17 A17 Q146 X! Y"A17 */
        "FMUL    %%ST(2),%%ST          \n\t" /* FMUL ST,ST2       ;Y17Q146 A17 Q146 X! Y"A17 */
        "FADDP   %%ST,%%ST(4)          \n\t" /* FADDP ST4,ST      ;A17 Q146 X! Y! */
        "FMULP   %%ST,%%ST(1)          \n\t" /* FMULP ST1,ST      ;Q147 X! Y! */
        
-       ADD4SSE(48,56)
-       
+       /* store the result */
+       "movlps  %%xmm2, %[XSumsX]     \n\t"
+         
        "FDIVRS  %[one]                \n\t" /* FDIVR D [_ONE_]   ;1/Q x y */
        "FMUL    %%ST,%%ST(1)          \n\t" /* FMUL ST1,ST       ;1/Q xq y */
        "FMULP   %%ST,%%ST(2)          \n\t" /* FMULP ST2,ST      ;xq yq */
        
-       ADD4SSE(64,72)
-       ADD4SSE(80,88)
-       
        "FSTPS   %[XRes]               \n\t"
        "FSTPS   %[XIms]               \n\t"
        
-       ADD4SSE(96,104) 
-       
-       /* add the two calculated parts of the real and imaginary part */
-       "movhlps %%xmm2,%%xmm3         \n\t" /* XMM3: ? ? C_ImH C_ReH */
-       "addps   %%xmm3,%%xmm2         \n\t" /* XMM2: - - C_Im C_Re */
-       
-       /* store the result */
-       "movlps  %%xmm2, %[XSumsX]     \n\t"
-         
-
-       /* interface */
+              /* interface */
        :
        /* output  (here: to memory)*/
        [sinq]        "=m" (imagQ),
@@ -374,6 +392,7 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
        [two]         "m"  (two),
        [V0011]       "m"  (V0011[0]),
        [V2222]       "m"  (V2222[0]),
+       [V4444]       "m"  (V4444[0]),
 
        /* tables */
        [sinVal]      "m"  (sinVal[0]),
