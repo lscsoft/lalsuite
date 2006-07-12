@@ -29,16 +29,164 @@ static REAL8 diVal[LUT_RES+1];
 
 #define klim 32
 
-/* __attribute__ ((always_inline)) */
-void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
-                 REAL8 tempFreq0, REAL8 tempFreq1, REAL8 x, REAL8 yTemp,
-                 REAL8* realXPo, REAL8* imagXPo, REAL8* realQo, REAL8* imagQo)
-{
+void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params) 
+{ 
+
+  INT4 alpha,i;                 /* loop indices */
+  REAL8 *xSum=NULL, *ySum=NULL; /* temp variables for computation of fs*as and fs*bs */
+  INT4 s;                       /* local variable for spinDwn calcs. */
+  REAL8 xTemp;                  /* temp variable for phase model */
+  REAL4 xTInt;                  /* integer part of xTemp */
+  REAL8 deltaF;                 /* width of SFT band */
+  INT4 k=0;                     /* loop counter */
+  REAL8 *skyConst;              /* vector of sky constants data */
+  REAL8 *spinDwn;               /* vector of spinDwn parameters (maybe a structure? */
+  INT4  spOrder;                /* maximum spinDwn order */
+  REAL8 realXP, imagXP;         /* temp variables used in computation of */
+  INT4  nDeltaF;                /* number of frequency bins per SFT band */
+  INT4  sftIndex;               /* more temp variables */
+  REAL8 realQ, imagQ;
+  INT4 *tempInt1;
+  /* UINT4 index; */
+  REAL8 FaSq;
+  REAL8 FbSq;
+  REAL8 FaFb;
+  COMPLEX16 Fa, Fb;
+  REAL8 f;
+
   REAL4 tsin, tcos;
   REAL4 realP, imagP;
-  INT4 k;                                 /* loop counter */
-  REAL8 realXP, imagXP, realQ, imagQ;     /* output parameters */
 
+  static BOOLEAN firstCall = 1;
+
+
+  REAL8 A=params->amcoe->A;
+  REAL8 B=params->amcoe->B;
+  REAL8 C=params->amcoe->C;
+  REAL8 D=params->amcoe->D;
+
+  UINT4 M=params->SFTno;
+
+  INITSTATUS( status, "TestLALDemod", rcsid );
+
+  /* catch some obvious programming errors */
+  ASSERT ( (Fs != NULL)&&(Fs->F != NULL), status, COMPUTEFSTAT_ENULL, COMPUTEFSTAT_MSGENULL );
+  if (params->returnFaFb)
+    {
+      ASSERT ( (Fs->Fa != NULL)&&(Fs->Fb != NULL), status, COMPUTEFSTAT_ENULL, COMPUTEFSTAT_MSGENULL );
+    }
+
+  /* variable redefinitions for code readability */
+  spOrder=params->spinDwnOrder;
+  spinDwn=params->spinDwn;
+  skyConst=params->skyConst;
+  deltaF=(*input)->fft->deltaF;
+  nDeltaF=(*input)->fft->data->length;
+
+  /* res=10*(params->mCohSFT); */
+  /* This size LUT gives errors ~ 10^-7 with a three-term Taylor series */
+  if ( firstCall )
+    {
+      for (k=0; k <= LUT_RES; k++) {
+        sinVal[k] = sin((LAL_TWOPI*k)/(LUT_RES));
+        sinVal2PI[k] = sinVal[k]  *  LAL_TWOPI;
+        sinVal2PIPI[k] = sinVal2PI[k] * LAL_PI;
+        cosVal[k] = cos((LAL_TWOPI*k)/(LUT_RES));
+        cosVal2PI[k] = cosVal[k]  *  LAL_TWOPI;
+        cosVal2PIPI[k] = cosVal2PI[k] * LAL_PI;
+      }
+
+      for (k=0; k <= LUT_RES; k++)
+        diVal[k] = (REAL8)k/(REAL8)(LUT_RES);
+      firstCall = 0;
+    }
+
+  /* this loop computes the values of the phase model */
+  xSum=(REAL8 *)LALMalloc(params->SFTno*sizeof(REAL8));
+  ySum=(REAL8 *)LALMalloc(params->SFTno*sizeof(REAL8));
+  tempInt1=(INT4 *)LALMalloc(params->SFTno*sizeof(INT4));
+  for(alpha=0;alpha<params->SFTno;alpha++){
+    tempInt1[alpha]=2*alpha*(spOrder+1)+1;
+    xSum[alpha]=0.0;
+    ySum[alpha]=0.0;
+    for(s=0; s<spOrder;s++) {
+      xSum[alpha] += spinDwn[s] * skyConst[tempInt1[alpha]+2+2*s];      
+      ySum[alpha] += spinDwn[s] * skyConst[tempInt1[alpha]+1+2*s];
+    }
+  }
+
+
+  /* Loop over frequencies to be demodulated */
+  for(i=0 ; i< params->imax  ; i++ )
+  {
+    Fa.re =0.0;
+    Fa.im =0.0;
+    Fb.re =0.0;
+    Fb.im =0.0;
+
+    f=params->f0+i*params->df;
+
+    /* Loop over SFTs that contribute to F-stat for a given frequency */
+    for(alpha=0;alpha<params->SFTno;alpha++)
+      {
+        REAL8 tempFreq0, tempFreq1;
+        COMPLEX8 *Xalpha=input[alpha]->fft->data->data;
+        REAL4 a = params->amcoe->a->data[alpha];
+        REAL4 b = params->amcoe->b->data[alpha];
+        REAL8 x;
+        REAL8 yTemp;
+
+        /* NOTE: sky-constants are always positive!!
+         * this can be seen from there definition (-> documentation)
+         * we will use this fact in the following! 
+         */
+        xTemp = f * skyConst[ tempInt1[ alpha ] ] + xSum[ alpha ];       /* >= 0 !! */
+        
+        /* this will now be assumed positive, but we double-check this to be sure */
+        if  (!finite(xTemp)) {
+            fprintf (stderr, "xTemp is not finite\n");
+            fprintf (stderr, "DEBUG: loop=%d, xTemp=%f, f=%f, alpha=%d, tempInt1[alpha]=%d\n", 
+                     i, xTemp, f, alpha, tempInt1[alpha]);
+            fprintf (stderr, "DEBUG: skyConst[ tempInt1[ alpha ] ] = %f, xSum[ alpha ]=%f\n",
+                     skyConst[ tempInt1[ alpha ] ], xSum[ alpha ]);
+#ifndef USE_BOINC
+            fprintf (stderr, "\n*** PLEASE report this bug to pulgroup@gravity.phys.uwm.edu *** \n\n");
+#endif
+            exit (COMPUTEFSTAT_EXIT_DEMOD);
+        }
+        if (xTemp < 0) {
+            fprintf (stderr, "xTemp >= 0 failed\n");
+            fprintf (stderr, "DEBUG: loop=%d, xTemp=%f, f=%f, alpha=%d, tempInt1[alpha]=%d\n", 
+                     i, xTemp, f, alpha, tempInt1[alpha]);
+            fprintf (stderr, "DEBUG: skyConst[ tempInt1[ alpha ] ] = %f, xSum[ alpha ]=%f\n",
+                     skyConst[ tempInt1[ alpha ] ], xSum[ alpha ]);
+#ifndef USE_BOINC
+            fprintf (stderr, "\n*** PLEASE report this bug to pulgroup@gravity.phys.uwm.edu *** \n\n");
+#endif
+            exit (COMPUTEFSTAT_EXIT_DEMOD);
+        }
+
+#ifdef USE_FLOOR
+        xTInt =  floor(xTemp);
+#else
+        xTInt =  (UINT4)xTemp;
+#endif
+        tempFreq0 = xTemp - xTInt;   /* lies in [0, +1) by definition */
+
+        sftIndex = xTInt - params->Dterms + 1 - params->ifmin;
+
+        if(sftIndex < 0){
+              fprintf(stderr,"ERROR! sftIndex = %d < 0 in TestLALDemod run %d\n", sftIndex, cfsRunNo);
+              fprintf(stderr," alpha=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
+                      alpha, xTemp, params->Dterms, params->ifmin);
+              ABORT(status, COMPUTEFSTAT_EINPUT, COMPUTEFSTAT_MSGEINPUT);
+        }
+
+        tempFreq1 = tempFreq0 + params->Dterms - 1;     /* positive if Dterms > 1 (trivial) */
+
+        x = LAL_TWOPI * tempFreq1;      /* positive! */
+
+        yTemp = f * skyConst[ tempInt1[ alpha ]-1 ] + ySum[ alpha ];
 
   /* we branch now (instead of inside the central loop)
    * depending on wether x can ever become SMALL in the loop or not, 
@@ -504,174 +652,6 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
         } /* for k < klim */
       
     } /* if x could become close to 0 */
-
-
-  *realXPo = realXP;
-  *imagXPo = imagXP;
-  *realQo  = realQ;
-  *imagQo  = imagQ;
-}
-
-
-void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params) 
-{ 
-
-  INT4 alpha,i;                 /* loop indices */
-  REAL8 *xSum=NULL, *ySum=NULL; /* temp variables for computation of fs*as and fs*bs */
-  INT4 s;                       /* local variable for spinDwn calcs. */
-  REAL8 xTemp;                  /* temp variable for phase model */
-  REAL4 xTInt;                  /* integer part of xTemp */
-  REAL8 deltaF;                 /* width of SFT band */
-  UINT4 k=0;
-  REAL8 *skyConst;              /* vector of sky constants data */
-  REAL8 *spinDwn;               /* vector of spinDwn parameters (maybe a structure? */
-  INT4  spOrder;                /* maximum spinDwn order */
-  REAL8 realXP, imagXP;         /* temp variables used in computation of */
-  INT4  nDeltaF;                /* number of frequency bins per SFT band */
-  INT4  sftIndex;               /* more temp variables */
-  REAL8 realQ, imagQ;
-  INT4 *tempInt1;
-  /* UINT4 index; */
-  REAL8 FaSq;
-  REAL8 FbSq;
-  REAL8 FaFb;
-  COMPLEX16 Fa, Fb;
-  REAL8 f;
-
-  static BOOLEAN firstCall = 1;
-
-
-  REAL8 A=params->amcoe->A;
-  REAL8 B=params->amcoe->B;
-  REAL8 C=params->amcoe->C;
-  REAL8 D=params->amcoe->D;
-
-  UINT4 M=params->SFTno;
-
-  INITSTATUS( status, "TestLALDemod", rcsid );
-
-  /* catch some obvious programming errors */
-  ASSERT ( (Fs != NULL)&&(Fs->F != NULL), status, COMPUTEFSTAT_ENULL, COMPUTEFSTAT_MSGENULL );
-  if (params->returnFaFb)
-    {
-      ASSERT ( (Fs->Fa != NULL)&&(Fs->Fb != NULL), status, COMPUTEFSTAT_ENULL, COMPUTEFSTAT_MSGENULL );
-    }
-
-  /* variable redefinitions for code readability */
-  spOrder=params->spinDwnOrder;
-  spinDwn=params->spinDwn;
-  skyConst=params->skyConst;
-  deltaF=(*input)->fft->deltaF;
-  nDeltaF=(*input)->fft->data->length;
-
-  /* res=10*(params->mCohSFT); */
-  /* This size LUT gives errors ~ 10^-7 with a three-term Taylor series */
-  if ( firstCall )
-    {
-      for (k=0; k <= LUT_RES; k++) {
-        sinVal[k] = sin((LAL_TWOPI*k)/(LUT_RES));
-        sinVal2PI[k] = sinVal[k]  *  LAL_TWOPI;
-        sinVal2PIPI[k] = sinVal2PI[k] * LAL_PI;
-        cosVal[k] = cos((LAL_TWOPI*k)/(LUT_RES));
-        cosVal2PI[k] = cosVal[k]  *  LAL_TWOPI;
-        cosVal2PIPI[k] = cosVal2PI[k] * LAL_PI;
-      }
-
-      for (k=0; k <= LUT_RES; k++)
-        diVal[k] = (REAL8)k/(REAL8)(LUT_RES);
-      firstCall = 0;
-    }
-
-  /* this loop computes the values of the phase model */
-  xSum=(REAL8 *)LALMalloc(params->SFTno*sizeof(REAL8));
-  ySum=(REAL8 *)LALMalloc(params->SFTno*sizeof(REAL8));
-  tempInt1=(INT4 *)LALMalloc(params->SFTno*sizeof(INT4));
-  for(alpha=0;alpha<params->SFTno;alpha++){
-    tempInt1[alpha]=2*alpha*(spOrder+1)+1;
-    xSum[alpha]=0.0;
-    ySum[alpha]=0.0;
-    for(s=0; s<spOrder;s++) {
-      xSum[alpha] += spinDwn[s] * skyConst[tempInt1[alpha]+2+2*s];      
-      ySum[alpha] += spinDwn[s] * skyConst[tempInt1[alpha]+1+2*s];
-    }
-  }
-
-
-  /* Loop over frequencies to be demodulated */
-  for(i=0 ; i< params->imax  ; i++ )
-  {
-    Fa.re =0.0;
-    Fa.im =0.0;
-    Fb.re =0.0;
-    Fb.im =0.0;
-
-    f=params->f0+i*params->df;
-
-    /* Loop over SFTs that contribute to F-stat for a given frequency */
-    for(alpha=0;alpha<params->SFTno;alpha++)
-      {
-        REAL8 tempFreq0, tempFreq1;
-        COMPLEX8 *Xalpha=input[alpha]->fft->data->data;
-        REAL4 a = params->amcoe->a->data[alpha];
-        REAL4 b = params->amcoe->b->data[alpha];
-        REAL8 x;
-        REAL8 yTemp;
-
-        /* NOTE: sky-constants are always positive!!
-         * this can be seen from there definition (-> documentation)
-         * we will use this fact in the following! 
-         */
-        xTemp = f * skyConst[ tempInt1[ alpha ] ] + xSum[ alpha ];       /* >= 0 !! */
-        
-        /* this will now be assumed positive, but we double-check this to be sure */
-        if  (!finite(xTemp)) {
-            fprintf (stderr, "xTemp is not finite\n");
-            fprintf (stderr, "DEBUG: loop=%d, xTemp=%f, f=%f, alpha=%d, tempInt1[alpha]=%d\n", 
-                     i, xTemp, f, alpha, tempInt1[alpha]);
-            fprintf (stderr, "DEBUG: skyConst[ tempInt1[ alpha ] ] = %f, xSum[ alpha ]=%f\n",
-                     skyConst[ tempInt1[ alpha ] ], xSum[ alpha ]);
-#ifndef USE_BOINC
-            fprintf (stderr, "\n*** PLEASE report this bug to pulgroup@gravity.phys.uwm.edu *** \n\n");
-#endif
-            exit (COMPUTEFSTAT_EXIT_DEMOD);
-        }
-        if (xTemp < 0) {
-            fprintf (stderr, "xTemp >= 0 failed\n");
-            fprintf (stderr, "DEBUG: loop=%d, xTemp=%f, f=%f, alpha=%d, tempInt1[alpha]=%d\n", 
-                     i, xTemp, f, alpha, tempInt1[alpha]);
-            fprintf (stderr, "DEBUG: skyConst[ tempInt1[ alpha ] ] = %f, xSum[ alpha ]=%f\n",
-                     skyConst[ tempInt1[ alpha ] ], xSum[ alpha ]);
-#ifndef USE_BOINC
-            fprintf (stderr, "\n*** PLEASE report this bug to pulgroup@gravity.phys.uwm.edu *** \n\n");
-#endif
-            exit (COMPUTEFSTAT_EXIT_DEMOD);
-        }
-
-#ifdef USE_FLOOR
-        xTInt =  floor(xTemp);
-#else
-        xTInt =  (UINT4)xTemp;
-#endif
-        tempFreq0 = xTemp - xTInt;   /* lies in [0, +1) by definition */
-
-        sftIndex = xTInt - params->Dterms + 1 - params->ifmin;
-
-        if(sftIndex < 0){
-              fprintf(stderr,"ERROR! sftIndex = %d < 0 in TestLALDemod run %d\n", sftIndex, cfsRunNo);
-              fprintf(stderr," alpha=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
-                      alpha, xTemp, params->Dterms, params->ifmin);
-              ABORT(status, COMPUTEFSTAT_EINPUT, COMPUTEFSTAT_MSGEINPUT);
-        }
-
-        tempFreq1 = tempFreq0 + params->Dterms - 1;     /* positive if Dterms > 1 (trivial) */
-
-        x = LAL_TWOPI * tempFreq1;      /* positive! */
-
-        yTemp = f * skyConst[ tempInt1[ alpha ]-1 ] + ySum[ alpha ];
-
-        LALDemodSub(Xalpha, sftIndex,
-                    tempFreq0, tempFreq1, x, yTemp,
-                    &realXP, &imagXP, &realQ, &imagQ);
 
         /* implementation of amplitude demodulation */
         {
