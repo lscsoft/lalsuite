@@ -66,6 +66,33 @@ typedef struct {
   REAL8 angularSpeed;     /**< angular speed at periapsis (Hz) */
 } BinaryOrbitParams;
   
+/** Type containing the JKS 'amplitude parameters' {h0, cosi, phi0, psi} */
+typedef struct {
+  REAL8 h0;	/**< overall signal amplitude */
+  REAL8 cosi;	/**< cos(iota) of inclination angle iota of spin-axis wrt line of sight */
+  REAL8 psi;	/**< polarization angle psi */
+  REAL8 phi0;	/**< initial signal-phase (at some reference time) */
+} PulsarAmplitudeParams;
+
+/** Type containing the 'Doppler-parameters' affecting the time-evolution of the phase */
+typedef struct {
+  LIGOTimeGPS refTime;	/**< reference time of pulsar parameters (in SSB!) */
+  REAL8 Alpha;		/**< skyposition: RA (longitude) in equatorial coords and radians */ 
+  REAL8 Delta;		/**< skyposition: DEC (latitude) in equatorial coords and radians */ 
+  REAL8 Freq;		/**< intrinsic signal-frequency at refTime */
+  REAL8 f1dot;		/**< dFreq/dt in pulsar frame */
+  REAL8 f2dot;		/**< d^2Freq/dt^2 in pulsar frame */
+  REAL8 f3dot;		/**< d^3Freq/dt^3 in pulsar frame */
+  BinaryOrbitParams *orbit;	/**< binary orbital parameters (or NULL if isolated pulsar) */
+} PulsarDopplerParams;
+
+/** Type containing a "candidate": parameter-space point with estimated errors and Fstat-value/significance */
+typedef struct {
+  PulsarAmplitudeParams Amp, dAmp;	/**< amplitude-parameters and error-estimates */
+  PulsarDopplerParams Doppler, dDoppler;/**< Doppler-parameters and error-bars */
+  REAL8 significance;			/**< a (user-chosen) measure of 'significance': Fstat, Hough-count,... */
+} PulsarCandidate;
+
 
 #ifdef  __cplusplus
 }
