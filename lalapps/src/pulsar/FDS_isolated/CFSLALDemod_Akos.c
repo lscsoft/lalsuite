@@ -92,14 +92,12 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
        /* This code temporary stores integer values in memory locations of float variables,
           but they're overwritten later anyway */
        "fistl  %[sinv]                \n\t" /* (x*LUT_RES+.5) x */ /* saving the rounded value, the original in FPU */
-       "fisubl %[sinv]                \n\t" /* (x*LUT_RES+.5) x */ /* value - round(value) will be negative if was rounding up */
-       "fstps  %[cosv]                \n\t" /* x */                /* we will check the sign in integer registers */
+       "fildl  %[sinv]                \n\t"                        /* value - round(value) will be negative if was rounding up */
+       "fsubrp                        \n\t"
        "movl   %[sinv],%%ebx          \n\t" /* x */
-       "sub    %%eax,%%eax            \n\t" /* x */                /* EAX=0 */
-       "orl    %[cosv],%%eax          \n\t" /* x */                /* it will set the S (sign) flag */
-       "jns    sincos1                \n\t" /* x */                /* the result is ok, rounding = truncation */
-       "dec    %%ebx                  \n"   /* x */                /* sinv=sinv-1.0 (it was rounded up) */
-       "sincos1:                      \n\t" /* x */
+       "fstps  %[cosv]                \n\t" /* x */                /* we will check the sign in integer registers */
+       "shll   $1,%[cosv]             \n\t" /* C=sign bit					*/
+       "sbb    $0,%%ebx               \n\t" /* EBX=T(x+0.5)					*/
 #endif
        
        /* calculate d = x - diVal[idx] in st(0) */
@@ -262,11 +260,11 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
        "addps %%xmm1,%%xmm2           \n\t" /* XMM2: C_ImH C_ReH C_ImL C_ReL */
     
        /* SSE prelude */
-       "movss  %[tempFreqX],%%xmm0    \n\t"
-       "shufps $0,%%xmm0,%%xmm0       \n\t" /* XMM0: f   f   f   f */
-       "subps  %[V0011],%%xmm0        \n\t" /* XMM0: f-1 f-1 f   f */
-       "xorps  %%xmm2,%%xmm2          \n\t" /* XMM2 will collect the low-precision values */
-       "movups %[V2222],%%xmm5        \n\t"
+       "movss   %[tempFreqX],%%xmm0   \n\t"
+       "shufps  $0,%%xmm0,%%xmm0      \n\t" /* XMM0: f   f   f   f */
+       "subps   %[V0011],%%xmm0       \n\t" /* XMM0: f-1 f-1 f   f */
+       "xorps   %%xmm2,%%xmm2         \n\t" /* XMM2 will collect the low-precision values */
+       "movups  %[V2222],%%xmm5       \n\t"
        /* add two complex elements at a time */
        ADD4SSE(0,8)
        ADD4SSE(16,24)
@@ -357,7 +355,8 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
          
 
        /* interface */
-       : /* output  (here: to memory)*/
+       :
+       /* output  (here: to memory)*/
        [sinq]        "=m" (imagQ),
        [cosq]        "=m" (realQ),
        [sinv]        "=m" (tsin),
@@ -366,6 +365,7 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
        [XSumsX]      "=m" (XSumsX),
        [XRes]        "=m" (XRes),
        [XIms]        "=m" (XIms),
+
        /* input */
        [Xalpha_kX]   "+r" (Xalpha_kX) /* is changed by the code, so put into output section */
        :
@@ -374,6 +374,7 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
        [tempFreqX]   "m"  (tempFreqX),
        [x]           "m"  (tempFreq0),
        [yTemp]       "m"  (yTemp),
+
        /* constants */
        [lutr]        "m"  (lutr),
        [half]        "m"  (half),
@@ -381,6 +382,7 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
        [two]         "m"  (two),
        [V0011]       "m"  (V0011[0]),
        [V2222]       "m"  (V2222[0]),
+
        /* tables */
        [sinVal]      "m"  (sinVal[0]),
        [cosVal]      "m"  (cosVal[0]),
@@ -390,9 +392,10 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
        [cosVal2PIPI] "m"  (cosVal2PIPI[0]),
        [diVal]       "m"  (diVal[0])
 
-       : /* clobbered registers */
+       :
+       /* clobbered registers */
 #ifndef IGNORE_XMM_REGISTERS
-       "xmm0","xmm1","xmm2","xmm3","xmm4","xmm5",
+       "xmm0","xmm1","xmm2","xmm3","xmm4","xmm5","xmm6","xmm7",
 #endif
        "eax", "ebx",
        "st","st(1)","st(2)","st(3)","st(4)"
