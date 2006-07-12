@@ -54,13 +54,17 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
     COMPLEX8 *Xalpha_kF = Xalpha_kX + 16;   /* shift values for FPU calculation */
     REAL8    tempFreqF  = tempFreq1 - 15.0;
 
-    /* calculate tsin, tcos, realQ and imagQ from sin/cos LUT */
-
+    /* constants in memory */
     static REAL4 lutr = LUT_RES; /* LUT_RES in memory */
     static REAL4 half = .5;
     static REAL4 one  = 1.0;
     static REAL4 two  = 2.0;
 
+    /* vector constants */
+    /* having these not aligned will crash the assembler code */
+    static REAL4 V0011[4] __attribute__ ((aligned (16))) = { 0,0,1,1 };
+    static REAL4 V2222[4] __attribute__ ((aligned (16))) = { 2,2,2,2 };
+ 
     static REAL8 yRem;
 
     __asm __volatile
@@ -257,33 +261,12 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
        "mulps %%xmm4,%%xmm1           \n\t" /* XMM1: ImH/(f-1) ReH/(f-1) ImL/f ReL/f */\
        "addps %%xmm1,%%xmm2           \n\t" /* XMM2: C_ImH C_ReH C_ImL C_ReL */
     
-
-       /* constants */
-       "jmp cntcode              \n"
-       AD_ALIGN16 "              \n\t"
-       "C_V0011:                 \n\t"
-       AD_FLOAT "0.0             \n\t"
-       AD_FLOAT "0.0             \n\t"
-       "C_F1:                    \n\t"
-       AD_FLOAT "1.0             \n\t"
-       AD_FLOAT "1.0             \n"
-       "C_F2:                    \n\t"
-       "C_V2222:                 \n\t"
-       AD_FLOAT "2.0             \n\t"
-       AD_FLOAT "2.0             \n\t"
-       AD_FLOAT "2.0             \n\t"
-       AD_FLOAT "2.0             \n"
-       
-       AD_ASCII "\"$Id$\"\n"
-       AD_ALIGN16 "              \n\t"
-       "cntcode:                 \n\t"
-       
        /* SSE prelude */
        "movss  %[tempFreqX],%%xmm0    \n\t"
        "shufps $0,%%xmm0,%%xmm0       \n\t" /* XMM0: f   f   f   f */
-       "subps  C_V0011,%%xmm0         \n\t" /* XMM0: f-1 f-1 f   f */
+       "subps  %[V0011],%%xmm0        \n\t" /* XMM0: f-1 f-1 f   f */
        "xorps  %%xmm2,%%xmm2          \n\t" /* XMM2 will collect the low-precision values */
-       "movups C_V2222,%%xmm5         \n\t"
+       "movups %[V2222],%%xmm5        \n\t"
        /* add two complex elements at a time */
        ADD4SSE(0,8)
        ADD4SSE(16,24)
@@ -396,6 +379,8 @@ void LALDemodSub(COMPLEX8* Xalpha, INT4 sftIndex,
        [half]        "m"  (half),
        [one]         "m"  (one),
        [two]         "m"  (two),
+       [V0011]       "m"  (V0011[0]),
+       [V2222]       "m"  (V2222[0]),
        /* tables */
        [sinVal]      "m"  (sinVal[0]),
        [cosVal]      "m"  (cosVal[0]),
