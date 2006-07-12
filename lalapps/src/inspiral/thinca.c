@@ -112,6 +112,8 @@ static void print_usage(char *program)
       "  [--t1-triggers]               input triggers from T1\n"\
       "  [--v1-triggers]               input triggers from V1\n"\
       "\n"\
+      "  [--do-veto]                    perform a veto on single IFO triggers\n"\
+      "                                 at the times specified in the veto files below\n"\
       "  [--g1-veto-file]               veto file for G1\n"\
       "  [--h1-veto-file]               veto file for H1\n"\
       "  [--h2-veto-file]               veto file for H2\n"\
@@ -173,16 +175,12 @@ static void print_usage(char *program)
       "  [--high-mass]         mass       total mass for trigger above which\n"\
       "                                   the high mass mchirp is used\n"\
       "\n"\
+      "                                   (both bounds must be specified)\n"\
+      "  [--bcvc]                         perform cut based on alphaF\n"\
+      "                                   with individual bounds given below.\n"\
       "  [--do-alphaf-cut]                perform cut based on alphaF\n"\
       "                                   with bounds given below\n"\
       "                                   (both bounds must be specified)\n"\
-      "  [--alphaf-hi]         alphaFhi   reject BCV triggers with alphaF greater\n"\
-      "                                   than alphaFhi (if --do-alphaF-cut used)\n"\
-      "  [--alphaf-lo]         alphaFlo   reject BCV triggers with alphaF smaller\n"\
-      "                                   than alphaFlo (< alphaFhi)\n"\
-      "                                   (if --do-alphaF-cut used)\n"\
-      "  [--bcvc]                         perform cut based on alphaF\n"\
-      "                                   with individual bounds given below.\n"\
       "  [--h1-alphaf-hi]      alphaFhi   reject BCV triggers outside the specified \n"\
       "  [--h1-alphaf-lo]      alphaFlo   alphaF area for H1 (if \n"\
       "  [--h2-alphaf-hi]      alphaFhi   reject BCV triggers outside the specified \n"\
@@ -283,8 +281,6 @@ int main( int argc, char *argv[] )
 
   SnglInspiralBCVCalphafCut  alphafParams;
 
-  REAL4                 alphaFhi = -2.e4;
-  REAL4                 alphaFlo = 9.e4;
   REAL4                 snrCut = 0; /* by default we do not remove any triggers in the SNR Cut*/  
 
   REAL4                 locRec=-1; /* for specifying a certain location on the sky */
@@ -327,7 +323,6 @@ int main( int argc, char *argv[] )
     {"h1-h2-consistency",   no_argument,   &h1h2Consistency,          1 },
     {"do-bcvspin-h1h2-veto",no_argument,   &doBCV2H1H2Veto,           1 },
     {"iota-cut",            no_argument,   &iotaCut,                  1 },
-    {"h1l1-iota-cut",       no_argument,   &h1l1iotaCut,              1 },
     {"do-alphaf-cut",       no_argument,   &doAlphaFCut,              1 },
     {"psi0-psi3-cut",       no_argument,   &doPsi0Psi3Cut,            1 },
     {"bcvc",                no_argument,   &doBCVC,                   1 },
@@ -399,8 +394,8 @@ int main( int argc, char *argv[] )
     {"h2-alphaf-hi",        required_argument, 0,                    'S'},
     {"l1-alphaf-lo",        required_argument, 0,                    'U'},
     {"l1-alphaf-hi",        required_argument, 0,                    'X'},
-    {"alphaf-lo",           required_argument, 0,                    '#'},
-    {"alphaf-hi",           required_argument, 0,                    '%'},
+    {"iota-cut-h1h2",       required_argument, 0,                    '#'},
+    {"iota-cut-h1l1",       required_argument, 0,                    '%'},
     {"snr-cut",             required_argument, 0,                    '*'},
     {"h1-veto-file",        required_argument, 0,                    '('},
     {"h2-veto-file",        required_argument, 0,                    ')'},
@@ -422,6 +417,12 @@ int main( int argc, char *argv[] )
   alphafParams.l1_lo=-1e10;
   alphafParams.l1_hi=+1e10;
   alphafParams.psi0cut = 0; 
+ 
+  /* set default values for those values.
+     with those values ALL triggers will survive (i.e. no cut). */
+  accuracyParams.iotaCutH1H2=2.0;
+  accuracyParams.iotaCutH1L1=2.0;
+
 
   /*
    * 
@@ -873,14 +874,14 @@ int main( int argc, char *argv[] )
 
 
      case '#':
-        /* lower general alphaF cutoff */
-        alphaFlo = atof(optarg);
+        /* iota cut value for the H1H2 case (default=2) */
+        accuracyParams.iotaCutH1H2 = atof(optarg);
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
       case '%':
-        /* upper general alphaF cutoff */
-        alphaFhi = atof(optarg);
+        /* iota cut value for the H1L1 case  (default=2)*/
+        accuracyParams.iotaCutH1L1 = atof(optarg);
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
@@ -1412,17 +1413,6 @@ int main( int argc, char *argv[] )
     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
   }
   
-  /* store the veto option */ 
-  if ( h1l1iotaCut )
-  {
-    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
-      calloc( 1, sizeof(ProcessParamsTable) );
-    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
-        "%s", PROGRAM_NAME );
-    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
-        "--h1l1-iota-cut" );
-    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-  }
 
 
   /* store the H1H2 snr cut for BCVSpin */
@@ -1565,22 +1555,8 @@ int main( int argc, char *argv[] )
    * If at least alphaFhi is not specified, do not discard any triggers.
    */
 
-  /* In principle that part can be replaced by the next one and we can 
-     get rid of BCVC option I presumme. (thomas, May 2006) */ 
-  if ( doAlphaFCut & !doBCVC)
-  {
-    if ( alphaFhi <= alphaFlo )
-    {
-      fprintf( stderr, "Error: alphaFhi must be greater than alphaFlo.\n");
-      exit( 1 );
-    }
-    if ( vrbflg ) fprintf( stdout,
-       "Discarding triggers with alphaF > %f OR alphaF < %f : ", 
-       alphaFhi, alphaFlo );
-      LAL_CALL( LALalphaFCutSingleInspiral( &status, &(inspiralEventList),
-        alphaFhi, alphaFlo), &status );
-  }
-  
+ 
+  /* perform the alphaf-cut */
   if (doBCVC & doAlphaFCut)
     {
     if ( vrbflg ) fprintf( stdout,
@@ -1776,29 +1752,21 @@ int main( int argc, char *argv[] )
     /* BBH/BCV case */
     if (doBCVC)
     {
-      if( iotaCut  ) /*S4*/
+      /* perform the iota cut */
+      if( iotaCut  ) 
       {
-        {
-          if ( vrbflg ) fprintf( stdout, 
-              "Discarding triggers where iota using iota cut\n"); 
-            XLALInspiralIotaCutBCVC( &coincInspiralList );
-           accuracyParams.ifoAccuracy[LAL_IFO_H1].kappa = 0.8;
-           accuracyParams.ifoAccuracy[LAL_IFO_H2].kappa = 0.8;
- 	   if ( vrbflg ) fprintf( stdout, "%d remaining coincident triggers.\n", 
-		XLALCountCoincInspiral(coincInspiralList));
-        }
+        
+	if ( vrbflg ) fprintf( stdout, 
+			       "Applying iota Cut with iotaCutH1H2=%f and iotaCutH1L1=%f \n",
+			       accuracyParams.iotaCutH1H2,accuracyParams.iotaCutH1L1 ); 
+	XLALInspiralIotaCutBCVC( &coincInspiralList, &accuracyParams );
+	if ( vrbflg ) fprintf( stdout, "%d remaining coincident triggers.\n", 
+			       XLALCountCoincInspiral(coincInspiralList));
+        
       }
-      if( h1l1iotaCut  ) /*S4*/
-      {
-        {
-          if ( vrbflg ) fprintf( stdout, 
-              "Discarding triggers H1L1 triggesr where iota >1.2\n"); 
-            XLALInspiralH1L1IotaCut( &coincInspiralList , 1.4);
- 	   if ( vrbflg ) fprintf( stdout, "%d remaining coincident triggers.\n", 
-		XLALCountCoincInspiral(coincInspiralList));
-	}
-      }
-      if( distCut  ) /*S3*/
+     
+      /* perform the BCV distance cut */
+      if( distCut  ) 
           {
              if ( vrbflg ) fprintf( stdout, 
               "Discarding triggers h1-h2-distance-cut using kappa=%f and epsilon = %f\n", 
@@ -1809,7 +1777,8 @@ int main( int argc, char *argv[] )
 		XLALCountCoincInspiral(coincInspiralList));
         }
       
-      if ( doPsi0Psi3Cut ) /* S4*/
+      /* perform the psi0/psi3 cut (with build in parameters) */
+      if ( doPsi0Psi3Cut ) 
       {
             if ( vrbflg ) fprintf( stdout, 
               "Discarding triggers using coincidences in dpsi0/dpsi3 plane \n");
@@ -1961,23 +1930,19 @@ int main( int argc, char *argv[] )
                 accuracyParams.ifoAccuracy[LAL_IFO_H1].epsilon);
             XLALInspiralDistanceCutBCVC( &coincInspiralList, &accuracyParams);
         }
-          if( iotaCut  ) /*S4*/
-          {           
-              if ( vrbflg ) fprintf( stdout, 
-                "Discarding triggers where iota is above 1-1./sqrt(snr)\n"); 
-              accuracyParams.ifoAccuracy[LAL_IFO_H1].kappa = 0.8;
-              accuracyParams.ifoAccuracy[LAL_IFO_H2].kappa = 0.8;
-              XLALInspiralIotaCutBCVC( &coincInspiralList );
-            
-          }
-         if( h1l1iotaCut  ) /*S4*/
-         {
-          if ( vrbflg ) fprintf( stdout, 
-              "Discarding triggers H1L1 triggesr where iota >1.2\n"); 
-            XLALInspiralH1L1IotaCut( &coincInspiralList , 1.4);
- 	   if ( vrbflg ) fprintf( stdout, "%d remaining coincident triggers.\n", 
-		XLALCountCoincInspiral(coincInspiralList));
-    	 }
+	/* perform the iota cut */
+	if( iotaCut  ) 
+	  {
+	    
+	    if ( vrbflg ) fprintf( stdout, 
+				   "Applying iota Cut with iotaCutH1H2=%f and iotaCutH1L1=%f \n",
+				   accuracyParams.iotaCutH1H2,accuracyParams.iotaCutH1L1 ); 
+	    XLALInspiralIotaCutBCVC( &coincInspiralList, &accuracyParams );
+	    if ( vrbflg ) fprintf( stdout, "%d remaining coincident triggers.\n", 
+				   XLALCountCoincInspiral(coincInspiralList));
+	    
+	  }
+         
          
 	if ( doPsi0Psi3Cut ) /* S4*/
           { 
