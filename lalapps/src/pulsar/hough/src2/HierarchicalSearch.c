@@ -127,7 +127,7 @@ BOOLEAN uvar_printStats; /**< global variable for calculating Hough map stats */
 #define HSMIN(x,y) ( (x) < (y) ? (x) : (y) )
 
 /* functions for printing various stuff */
-void PrintFstatVec (LALStatus *status, REAL8FrequencySeries *in, FILE *fp, CWParamSpacePoint *thisPoint, 
+void PrintFstatVec (LALStatus *status, REAL8FrequencySeries *in, FILE *fp, PulsarDopplerParams *thisPoint, 
 		    LIGOTimeGPS  refTime, INT4 stackIndex);
 
 void PrintSemiCohCandidates(LALStatus *status, SemiCohCandidateList *in, FILE *fp);
@@ -237,7 +237,7 @@ int main( int argc, char *argv[]) {
   DopplerScanState thisScan1 = empty_DopplerScanState; /* current state of the Doppler-scan */
   DopplerScanState thisScan2 = empty_DopplerScanState; /* current state of the Doppler-scan */
   DopplerPosition dopplerpos1, dopplerpos2;		/* current search-parameters */
-  CWParamSpacePoint thisPoint1, thisPoint2; 
+  PulsarDopplerParams thisPoint1, thisPoint2; 
 
   /* various fkdot vectors */
   REAL8Vector *fkdot_refTime=NULL; /* freq. and spindown at user defined reference time */
@@ -251,8 +251,6 @@ int main( int argc, char *argv[]) {
   REAL8Vector *fkdotBand_endTime1=NULL; /* freq. and spindown ranges at end time of first stack */
   REAL8Vector *fkdotBand_endTime2=NULL; /* freq. and spindown ranges at end time of second stack */
 
-  REAL8Vector *fkdot_current1=NULL;
-  REAL8Vector *fkdot_current2=NULL;
   LALPulsarSpinRange spinRange_refTime, spinRange_startTime1, spinRange_startTime2;
   LALPulsarSpinRange spinRange_endTime1, spinRange_endTime2;
   LALPulsarSpinRange *spinRange_Temp=NULL;
@@ -532,9 +530,6 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALDCreateVector( &status, &fkdotBand_endTime1, 2), &status);
   LAL_CALL( LALDCreateVector( &status, &fkdotBand_endTime2, 2), &status);
 
-  LAL_CALL( LALDCreateVector( &status, &fkdot_current1, 2), &status);
-  LAL_CALL( LALDCreateVector( &status, &fkdot_current2, 2), &status);
-
 
   spinRange_refTime.fkdot = fkdot_refTime;
   spinRange_refTime.fkdotBand = fkdotBand_refTime;
@@ -688,8 +683,10 @@ int main( int argc, char *argv[]) {
 
     /* set reference time for calculating Fstatistic */
     thisPoint1.refTime = tStart1GPS;
-    thisPoint1.binary = NULL;
-    thisPoint1.fkdot = fkdot_current1; /* not yet initialized */
+    /* binary orbit and higher spindowns not considered so far */
+    thisPoint1.orbit = NULL;
+    thisPoint1.f2dot = 0.0;
+    thisPoint1.f3dot = 0.0;
 
     /* initialize ephemeris info */ 
     edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
@@ -949,8 +946,10 @@ int main( int argc, char *argv[]) {
        
     /* set reference time for calculating fstat */
     thisPoint2.refTime = tStart2GPS;
-    thisPoint2.binary = NULL;
-    thisPoint2.fkdot = fkdot_current2; /* not initialized yet */
+    /* binary and higher spindowns not implemented so far */
+    thisPoint2.orbit = NULL;
+    thisPoint2.f2dot = 0.0;
+    thisPoint2.f3dot = 0.0;
       
     /* set wings of sfts to be read */
     /* the wings must be enough for the Doppler shift and extra bins
@@ -1159,10 +1158,8 @@ int main( int argc, char *argv[]) {
       /*------------- calculate F statistic for each stack --------------*/
       
       /* normalize skyposition: correctly map into [0,2pi]x[-pi/2,pi/2] */
-      thisPoint1.skypos.longitude = dopplerpos1.Alpha;
-      thisPoint1.skypos.latitude = dopplerpos1.Delta;
-      thisPoint1.skypos.system = COORDINATESYSTEM_EQUATORIAL;
-      LAL_CALL (LALNormalizeSkyPosition(&status, &thisPoint1.skypos, &thisPoint1.skypos), &status);
+      thisPoint1.Alpha = dopplerpos1.Alpha;
+      thisPoint1.Delta = dopplerpos1.Delta;
       
       /* number of fdot values */
       dfDot = thisScan1.df1dot;
@@ -1173,8 +1170,8 @@ int main( int argc, char *argv[]) {
       for ( ifdot=0; ifdot<nfdot; ifdot++)
 	{
 	  /* set spindown value for Fstat calculation */
-  	  thisPoint1.fkdot->data[1] = fkdot_startTime1->data[1] + ifdot * dfDot;
-	  thisPoint1.fkdot->data[0] = fkdot_startTime1->data[0];
+  	  thisPoint1.f1dot = fkdot_startTime1->data[1] + ifdot * dfDot;
+	  thisPoint1.Freq = fkdot_startTime1->data[0];
 	  	  
 	  /* calculate the Fstatistic for each stack*/
 	  for ( k = 0; k < nStacks1; k++) {
@@ -1197,9 +1194,9 @@ int main( int argc, char *argv[]) {
 	     parameters semiCohPar. The output is the list of candidates in semiCohCandList1 */
 
 	  /* set sky location and spindown for Hough grid -- same as for Fstat calculation */	  
-	  semiCohPar.alpha = thisPoint1.skypos.longitude;
-	  semiCohPar.delta = thisPoint1.skypos.latitude;
-	  semiCohPar.fdot = thisPoint1.fkdot->data[1];
+	  semiCohPar.alpha = thisPoint1.Alpha;
+	  semiCohPar.delta = thisPoint1.Delta;
+	  semiCohPar.fdot = thisPoint1.f1dot;
 	  semiCohPar.nfdot = uvar_nfdot; /* look into this more carefully */
 	  
 	  /* the hough option */
@@ -1301,7 +1298,6 @@ int main( int argc, char *argv[]) {
 		    {
 		      UINT4 ifdot2, nfdot2;  /* counter and number of spindown values */
 		      REAL8 dfDot2;  /* resolution in spindown */
-		      
 
 		      LAL_CALL (NextDopplerPos( &status, &dopplerpos2, &thisScan2 ), &status);
 		      if (thisScan2.state == STATE_FINISHED) /* scanned all DopplerPositions yet? */
@@ -1314,10 +1310,8 @@ int main( int argc, char *argv[]) {
 		      /*------------- calculate F statistic for each stack --------------*/
 		      
 		      /* normalize skyposition: correctly map into [0,2pi]x[-pi/2,pi/2] */
-		      thisPoint2.skypos.longitude = dopplerpos2.Alpha;
-		      thisPoint2.skypos.latitude = dopplerpos2.Delta;
-		      thisPoint2.skypos.system = COORDINATESYSTEM_EQUATORIAL;
-		      LAL_CALL (LALNormalizeSkyPosition(&status, &thisPoint2.skypos, &thisPoint2.skypos), &status);
+		      thisPoint2.Alpha = dopplerpos2.Alpha;
+		      thisPoint2.Delta = dopplerpos2.Delta;
 		      		      
 		      /* number of fdot values */
 		      dfDot2 = thisScan2.df1dot;
@@ -1328,7 +1322,7 @@ int main( int argc, char *argv[]) {
 			{
 			  
 			  /* set spindown value for Fstat calculation */
-			  thisPoint2.fkdot->data[1] = fdot1 + ifdot2 * dfDot2;
+			  thisPoint2.f1dot = fdot1 + ifdot2 * dfDot2;
 			  
 			  /* calculate the Fstatistic */
 			  for ( k = 0; k < nStacks2; k++) {
@@ -1342,12 +1336,12 @@ int main( int argc, char *argv[]) {
 			    {
 			      if ( LALUserVarWasSet(&uvar_fstatThr))
 				LAL_CALL( GetFstatCandidates( &status, fstatToplist, fstatVector2.data + k, uvar_fstatThr,
-							      thisPoint2.skypos.longitude, thisPoint2.skypos.latitude, 
-							      thisPoint2.fkdot->data[1], uvar_reallocBlock ), &status);
+							      thisPoint2.Alpha, thisPoint2.Delta, 
+							      thisPoint2.f1dot, uvar_reallocBlock ), &status);
 			      else
 				LAL_CALL( GetFstatCandidates_toplist( &status, fstatToplist, fstatVector2.data + k, 
-								      thisPoint2.skypos.longitude, thisPoint2.skypos.latitude, 
-								      thisPoint2.fkdot->data[1] ), &status);
+								      thisPoint2.Alpha, thisPoint2.Delta, 
+								      thisPoint2.f1dot ), &status);
 			      
 
 			    } /* end loop over nstacks2 for selecting candidates */
@@ -1480,9 +1474,6 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALDDestroyVector( &status, &fkdotBand_startTime2), &status);
   LAL_CALL( LALDDestroyVector( &status, &fkdotBand_endTime1), &status);
   LAL_CALL( LALDDestroyVector( &status, &fkdotBand_endTime2), &status);
-
-  LAL_CALL( LALDDestroyVector( &status, &fkdot_current1), &status);
-  LAL_CALL( LALDDestroyVector( &status, &fkdot_current2), &status);
 
   XLALDestroyPulsarSpinRange(spinRange_Temp);
 
@@ -2308,7 +2299,7 @@ void PrintSemiCohCandidates(LALStatus *status,
   void PrintFstatVec (LALStatus *status,
 		      REAL8FrequencySeries *in,
 		      FILE                 *fp,
-		      CWParamSpacePoint    *thisPoint,
+		      PulsarDopplerParams  *thisPoint,
 		      LIGOTimeGPS          refTime,
 		      INT4                 stackIndex)
 {
@@ -2323,10 +2314,10 @@ void PrintSemiCohCandidates(LALStatus *status,
 
   fprintf(fp, "## Fstat values from stack %d (reftime -- %d %d)\n", stackIndex, refTime.gpsSeconds, refTime.gpsNanoSeconds);
 
-  alpha = thisPoint->skypos.longitude;
-  delta = thisPoint->skypos.latitude;
-  fkdot->data[1] = thisPoint->fkdot->data[1];
-  f0 = thisPoint->fkdot->data[0];
+  alpha = thisPoint->Alpha;
+  delta = thisPoint->Delta;
+  fkdot->data[1] = thisPoint->f1dot;
+  f0 = thisPoint->Freq;
 
   length = in->data->length;
   deltaF = in->deltaF;
