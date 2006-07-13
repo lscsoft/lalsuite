@@ -244,7 +244,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
           possible, as it simply expects the default rounding mode being active. However relying on this is
           kind of dangerous, so we don't do this by default. */
        "fistpl %[sinv]                \n\t" /* x */
-       "movl   %[sinv],%%ebx          \n\t" /* x */
+       "movl   %[sinv],%%eax          \n\t" /* x */
 #else
        "fadds  %[half]                \n\t" /* (x*LUT_RES+.5) x */
        /* Implementation of floor() that doesn't rely on a rounding mode being set
@@ -254,14 +254,14 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        "fistl  %[sinv]                \n\t" /* (x*LUT_RES+.5) x */ /* saving the rounded value, the original in FPU */
        "fildl  %[sinv]                \n\t" /* ((int)(x*LUT_RES+.5)) (x*LUT_RES+.5) x */
        "fsubrp                        \n\t" /* ((x*LUT_RES+.5)-((int)(x*LUT_RES+.5))) x */
-       "movl   %[sinv],%%ebx          \n\t" /* ((x*LUT_RES+.5)-((int)(x*LUT_RES+.5))) x */ /* get the result in EBX */
+       "movl   %[sinv],%%eax          \n\t" /* ((x*LUT_RES+.5)-((int)(x*LUT_RES+.5))) x */ /* get the result in EAX */
        "fstps  %[cosv]                \n\t" /* x */                /* value - round(value) will be negative if was rounding up */
        "shll   $1,%[cosv]             \n\t" /* x */                /* shift the sign bit into the carry bit */
-       "sbb    $0,%%ebx               \n\t" /* x */                /* substract the carry in EBX */
+       "sbb    $0,%%eax               \n\t" /* x */                /* substract the carry in EAX */
 #endif
        
        /* calculate d = x - diVal[idx] in st(0) */
-       "fsubl  %[diVal](,%%ebx,8)     \n\t" /* (d = x - diVal[i]) */
+       "fsubl  %[diVal](,%%eax,8)     \n\t" /* (d = x - diVal[i]) */
        
        /* copy d on the stack to prepare for calculating d*d */
        "fld    %%st(0)                \n\t" /* d d */
@@ -269,12 +269,12 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        /* this calculates d*d on _top_ of the stack */ 
        "fmul   %%st(0),%%st(0)        \n\t" /* (d*d) d */
        
-       /* three-term Taylor expansion for sin value, leaving d and d*d on stack, idx kept in ebx */
+       /* three-term Taylor expansion for sin value, leaving d and d*d on stack, idx kept in eax */
        /* some reordering by Akos */
-       "fldl  %[cosVal2PI](,%%ebx,8)  \n\t" /* cosVal2PI[i] (d*d) d */
+       "fldl  %[cosVal2PI](,%%eax,8)  \n\t" /* cosVal2PI[i] (d*d) d */
        "fmul  %%st(2),%%st(0)         \n\t" /* (d*cosVal2PI[i]) (d*d) d */
-       "faddl %[sinVal](,%%ebx,8)     \n\t" /* (sinVal[i]+d*cosVal2PI[i]) (d*d) d */
-       "fldl  %[sinVal2PIPI](,%%ebx,8)\n\t" /* sinVal2PIPI[i] (sinVal[i]+d*cosVal2PI[i]) (d*d) d */
+       "faddl %[sinVal](,%%eax,8)     \n\t" /* (sinVal[i]+d*cosVal2PI[i]) (d*d) d */
+       "fldl  %[sinVal2PIPI](,%%eax,8)\n\t" /* sinVal2PIPI[i] (sinVal[i]+d*cosVal2PI[i]) (d*d) d */
        "fmul  %%st(2),%%st(0)         \n\t" /* (d*d*sinVal2PIPI[i]) (sinVal[i]+d*cosVal2PI[i]) (d*d) d */
        "fsubrp                        \n\t" /* ((sinVal[i]+d*cosVal2PI[i])-d*d*sinVal2PIPI[i]) (d*d) d */
        "fstps %[sinv]                 \n\t" /* (d*d) d */
@@ -282,10 +282,10 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        /* calculation for cos value, this time popping the stack */
        /* this ordering mimics the calculation of cos as done by gcc (4.1.0)  */
        
-       "fmull %[cosVal2PIPI](,%%ebx,8)\n\t" /* (d*d*cosVal2PIPI[i]) d */
-       "fsubrl %[cosVal](,%%ebx,8)    \n\t" /* (cosVal[i]-d*d*cosVal2PIPI[i]) d */
+       "fmull %[cosVal2PIPI](,%%eax,8)\n\t" /* (d*d*cosVal2PIPI[i]) d */
+       "fsubrl %[cosVal](,%%eax,8)    \n\t" /* (cosVal[i]-d*d*cosVal2PIPI[i]) d */
        "fxch                          \n\t" /* d (cosVal[i]-d*d*cosVal2PIPI[i]) d */
-       "fmull %[sinVal2PI](,%%ebx,8)  \n\t" /* (d*sinVal2PI[i]) (cosVal[i]-d*d*cosVal2PIPI[i]) d */
+       "fmull %[sinVal2PI](,%%eax,8)  \n\t" /* (d*sinVal2PI[i]) (cosVal[i]-d*d*cosVal2PIPI[i]) d */
        "fsubrp                        \n\t" /* ((cosVal[i]-d*d*cosVal2PIPI[i])-d*sinVal2PI[i]) */
        
 #ifndef SKIP_COS_ROUNDING
@@ -331,25 +331,25 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        
 #ifdef USE_DEFAULT_ROUNDING_MODE
        "fistpl %[sinq]                \n\t" /* x */
-       "movl   %[sinq],%%ebx          \n\t" /* x */
+       "movl   %[sinq],%%eax          \n\t" /* x */
 #else
        "fadds  %[half]                \n\t" /* (x*LUT_RES+.5) x */
        "fistl  %[sinq]                \n\t" /* (x*LUT_RES+.5) x */ /* saving the rounded value, the original in FPU */
        "fildl  %[sinq]                \n\t" /* ((int)(x*LUT_RES+.5)) (x*LUT_RES+.5) x */
        "fsubrp                        \n\t" /* ((x*LUT_RES+.5)-((int)(x*LUT_RES+.5))) x */
-       "movl   %[sinq],%%ebx          \n\t" /* ((x*LUT_RES+.5)-((int)(x*LUT_RES+.5))) x */ /* get the result in EBX */
+       "movl   %[sinq],%%eax          \n\t" /* ((x*LUT_RES+.5)-((int)(x*LUT_RES+.5))) x */ /* get the result in EAX */
        "fstps  %[cosq]                \n\t" /* x */                /* value - round(value) will be negative if was rounding up */
        "shll   $1,%[cosq]             \n\t" /* x */                /* shift the sign bit into the carry bit */
-       "sbb    $0,%%ebx               \n\t" /* x */                /* substract the carry in EBX */
+       "sbb    $0,%%eax               \n\t" /* x */                /* substract the carry in EAX */
 #endif
-       "fsubl  %[diVal](,%%ebx,8)     \n\t" /* (d = x - diVal[i]) */
+       "fsubl  %[diVal](,%%eax,8)     \n\t" /* (d = x - diVal[i]) */
        "fld    %%st(0)                \n\t" /* d d */
        "fmul   %%st(0),%%st(0)        \n\t" /* (d*d) d */
 
-       "fldl  %[cosVal2PI](,%%ebx,8)  \n\t" /* cosVal2PI[i] (d*d) d */
+       "fldl  %[cosVal2PI](,%%eax,8)  \n\t" /* cosVal2PI[i] (d*d) d */
        "fmul  %%st(2),%%st(0)         \n\t" /* (d*cosVal2PI[i]) (d*d) d */
-       "faddl %[sinVal](,%%ebx,8)     \n\t" /* (sinVal[i]+d*cosVal2PI[i]) (d*d) d */
-       "fldl  %[sinVal2PIPI](,%%ebx,8)\n\t" /* sinVal2PIPI[i] (sinVal[i]+d*cosVal2PI[i]) (d*d) d */
+       "faddl %[sinVal](,%%eax,8)     \n\t" /* (sinVal[i]+d*cosVal2PI[i]) (d*d) d */
+       "fldl  %[sinVal2PIPI](,%%eax,8)\n\t" /* sinVal2PIPI[i] (sinVal[i]+d*cosVal2PI[i]) (d*d) d */
        "fmul  %%st(2),%%st(0)         \n\t" /* (d*d*sinVal2PIPI[i]) (sinVal[i]+d*cosVal2PI[i]) (d*d) d */
        "fsubrp                        \n\t" /* ((sinVal[i]+d*cosVal2PI[i])-d*d*sinVal2PIPI[i]) (d*d) d */
 
@@ -357,10 +357,10 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        "fchs                          \n\t" /* -(sinVal[i]+d*cosVal2PI[i]-d*d*sinVal2PIPI[i]) (d*d) d */
        "fstpl %[sinq]                 \n\t" /* (d*d) d */
        
-       "fmull %[cosVal2PIPI](,%%ebx,8)\n\t" /* (d*d*cosVal2PIPI[i]) d */
-       "fsubrl %[cosVal](,%%ebx,8)    \n\t" /* (cosVal[i]-d*d*cosVal2PIPI[i]) d */
+       "fmull %[cosVal2PIPI](,%%eax,8)\n\t" /* (d*d*cosVal2PIPI[i]) d */
+       "fsubrl %[cosVal](,%%eax,8)    \n\t" /* (cosVal[i]-d*d*cosVal2PIPI[i]) d */
        "fxch                          \n\t" /* d (cosVal[i]-d*d*cosVal2PIPI[i]) d */
-       "fmull %[sinVal2PI](,%%ebx,8)  \n\t" /* (d*sinVal2PI[i]) (cosVal[i]-d*d*cosVal2PIPI[i]) d */
+       "fmull %[sinVal2PI](,%%eax,8)  \n\t" /* (d*sinVal2PI[i]) (cosVal[i]-d*d*cosVal2PIPI[i]) d */
        "fsubrp                        \n\t" /* ((cosVal[i]-d*d*cosVal2PIPI[i])-d*sinVal2PI[i]) */
        "fstpl %[cosq]                 \n\t" /* % */
 
@@ -541,7 +541,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 #ifndef IGNORE_XMM_REGISTERS
        "xmm0","xmm1","xmm2","xmm3","xmm4","xmm5","xmm6","xmm7",
 #endif
-       "eax", "ebx",
+       "eax",
        "st","st(1)","st(2)","st(3)","st(4)"
        );           
       
