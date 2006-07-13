@@ -3,11 +3,16 @@
                                                          Bernd Machenschalk */
 RCSID( "$Id$");
 
+/* gcc version and Apples assembler specials aren't needed currently, but kept for reference */
 #ifdef __GNUC__
+#ifndef __GNUC_PATCHLEVEL__
+#define __GNUC_PATCHLEVEL__ 0
+#endif
 #define GCC_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
 #endif
 
-#ifdef __APPLE__ /* specials for Apples assembler */
+/* specials for Apples assembler */
+#ifdef __APPLE__
 #define AD_FLOAT   ".single "
 #define AD_ASCII   ".ascii "
 #define AD_ALIGN16 ".align 4"
@@ -18,16 +23,15 @@ RCSID( "$Id$");
 #define AD_ALIGN16 ".align 16"
 #define AD_ALIGN64 ".align 64"
 #endif
-            
-static REAL8 sinVal[LUT_RES+1]; /* Lookup tables for fast sin/cos calculation */
+
+/* Lookup tables for fast sin/cos calculation */
+static REAL8 sinVal[LUT_RES+1];
 static REAL8 sinVal2PI[LUT_RES+1];
 static REAL8 sinVal2PIPI[LUT_RES+1];
 static REAL8 cosVal[LUT_RES+1];
 static REAL8 cosVal2PI[LUT_RES+1];
 static REAL8 cosVal2PIPI[LUT_RES+1];
 static REAL8 diVal[LUT_RES+1];
-
-#define klim 32
 
 void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params) 
 { 
@@ -54,10 +58,16 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
   COMPLEX16 Fa, Fb;
   REAL8 f;
 
+#ifdef USE_BOINC
+#define klim 32
+#else
+  UINT4 klim = 2*params->Dterms;
+#endif
+
   REAL4 tsin, tcos;
   REAL4 realP, imagP;
 
-  static BOOLEAN firstCall = 1;
+  static BOOLEAN firstCall = 1; /* reset after initializing the sin/cos tables */
 
   REAL8 A=params->amcoe->A;
   REAL8 B=params->amcoe->B;
@@ -87,16 +97,18 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
   if ( firstCall )
     {
       for (k=0; k <= LUT_RES; k++) {
-        sinVal[k] = sin((LAL_TWOPI*k)/(LUT_RES));
-        sinVal2PI[k] = sinVal[k]  *  LAL_TWOPI;
+        sinVal[k]      = sin((LAL_TWOPI*k)/(LUT_RES));
+        sinVal2PI[k]   = sinVal[k]    * LAL_TWOPI;
         sinVal2PIPI[k] = sinVal2PI[k] * LAL_PI;
-        cosVal[k] = cos((LAL_TWOPI*k)/(LUT_RES));
-        cosVal2PI[k] = cosVal[k]  *  LAL_TWOPI;
+        cosVal[k]      = cos((LAL_TWOPI*k)/(LUT_RES));
+        cosVal2PI[k]   = cosVal[k]    * LAL_TWOPI;
         cosVal2PIPI[k] = cosVal2PI[k] * LAL_PI;
       }
 
+      /* this additional table saves a "costly" division in sin/cos calculation */
       for (k=0; k <= LUT_RES; k++)
         diVal[k] = (REAL8)k/(REAL8)(LUT_RES);
+
       firstCall = 0;
     }
 
@@ -136,7 +148,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
         REAL8 yTemp;
 
         /* NOTE: sky-constants are always positive!!
-         * this can be seen from there definition (-> documentation)
+         * this can be seen from their definition (-> documentation)
          * we will use this fact in the following! 
          */
         xTemp = f * skyConst[ tempInt1[ alpha ] ] + xSum[ alpha ];       /* >= 0 !! */
@@ -226,7 +238,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        "fmul   %%st(1),%%st(0)        \n\t" /* (x*LUT_RES) x */
        
 #ifdef USE_DEFAULT_ROUNDING_MODE
-       /* The default rounding mode is truncation (round-to-zero), which is exactly what we want here.
+       /* The default rounding mode is round-to-nearest, which is exactly what we want here.
           It should be restored by the compiler after every operation that involves floating-point-to-integer
           conversion (rounding). Switching the rounding mode is slow, so the following code is the fastest
           possible, as it simply expects the default rounding mode being active. However relying on this is
@@ -292,50 +304,23 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        /* calculating yRem */
        
        "fldl   %[yTemp]               \n\t" /* yT */
-#ifdef USE_DEFAULT_ROUNDING_MODE
-       /* see comment about USE_DEFAULT_ROUNDING_MODE above */
-       "fistl  %[yRem]                \n\t" /* yT */
-       "fisubl %[yRem]                \n\t" /* (yT-(int)yT) */
-       "fsts   %[yRem]                \n\t" /* % */
-       "sub    %%eax,%%eax            \n\t" /*   EAX=0 */
-       "orl    %[yRem],%%eax          \n\t" /*   sets the S (sign) flag */
-       "jns    sincos3                \n\t" /*   jump if not negative */
-       "fadds  %[one]                 \n\t" /* (yT-(int)yT+1) */
-       "sincos3:                      \n\t"
-#else
-       "fsts   %[yRem]                \n\t" /* yT */
-       "sub    %%eax,%%eax            \n\t" /*   EAX=0 */
-       "orl    %[yRem],%%eax          \n\t" /*   sets the S (sign) flag */
-       "js     sincos3                \n\t" /*   jump if negative */
-       
-       /* yTemp >= 0 */
-       "fistl  %[yRem]                \n\t" /* yT */         /* saving the rounded value, the original in FPU */
-       "fisubl %[yRem]                \n\t" /* yT-(int)yT */ /* value - round(value) will be negative if was rounding up */
-       "fsts   %[yRem]                \n\t" /* yT-(int)yT */ /* we will check the sign in integer registers */
-       "sub    %%eax,%%eax            \n\t" /* yT-(int)yT */ /* EAX=0 */
-       "orl    %[yRem],%%eax          \n\t" /* yT-(int)yT */ /* sets the S (sign) flag */
-       "jns    sincos4                \n\t" /* yT-(int)yT */ /* the result is ok, rounding = truncation */
-       "fadds  %[one]                 \n\t" /* (yT-(int)yT+1) */
-       "jmp    sincos4                \n"   /* (yT-(int)yT+1) */
-       
-       /* yTemp < 0 */
        /* it requires some mind-bending to come from the algorithm used in the USE_FLOOR case
-          of the yRem calculation in the C code below to the case distinction implemented here.
+          of the yRem calculation in the C code below (in case yTemp < 0) to the case distinction
+	  implemented here.
           Hints:  yTemp<0 => yRem = yTemp - ceil(yTemp) + 1.0;
                   y<0 => ceil(y) = ((y-(int)y)<-.5) ? ((int)y-1.0) : ((int)y)
-                  -1.0 + 1.0 = 0; 0 + 1.0 = +1.0
-       */
-       "sincos3:                      \n\t"
+                  -1.0 + 1.0 = 0; 0 + 1.0 = +1.0 */
+       /* The two cases (yTemp < 0) and (yTemp >= 0) then come out identical,
+	  so a case distinction is unnecessary. Furthermore this case turns out to be the
+	  same code independent of relying on the default rounding mode or not */
        "fistl  %[yRem]                \n\t" /* yT */
        "fisubl %[yRem]                \n\t" /* yT-(int)yT */ /* value - round(value) will be positive if was rounding up */
        "fsts   %[yRem]                \n\t" /* yT-(int)yT */ /* we will check the sign in integer registers */
        "sub    %%eax,%%eax            \n\t" /* yT-(int)yT */ /* EAX=0 */
        "orl    %[yRem],%%eax          \n\t" /* yT-(int)yT */ /* sets the S (sign) flag */
-       "jns    sincos4                \n\t" /* yT-(int)yT */ /* */
+       "jns    sincos3                \n\t" /* yT-(int)yT */ /* */
        "fadds  %[one]                 \n"   /* (yT-(int)yT+1) */
-       
-       "sincos4:                      \n\t" /* yR */
-#endif
+       "sincos3:                      \n\t" /* yR */
        
        /* calculation of realQ and imagQ */
        /* yRem still in st(0), following named x */
@@ -452,8 +437,8 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        "FSUBS   %[two]                \n\t" /* FSUB D [_TWO_]    ;A16 Q145 X' Y' */
        
        /* SSE: skip FPU calculated values */
-       "subps   %[V4444],%%xmm0       \n\t"
        "addl    $144,%[Xalpha_kX]     \n\t" /* Xalpha_kX = Xalpha_kX + 4; */
+       "subps   %[V4444],%%xmm0       \n\t"
        /* "subps   %%xmm5,%%xmm0         \n\t" */
 
        "FMUL    %%ST,%%ST(2)          \n\t" /* FMUL ST2,ST       ;A16 Q145 X'A16 Y' */
