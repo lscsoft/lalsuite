@@ -202,6 +202,7 @@ static const SFTConstraints empty_SFTConstraints;
 static const ComputeFBuffer empty_ComputeFBuffer;
 static const LIGOTimeGPS empty_LIGOTimeGPS;
 static const PulsarCandidate empty_PulsarCandidate;
+static const PulsarDopplerParams empty_DopplerParams;
 /*----------------------------------------------------------------------*/
 /* Function definitions start here */
 /*----------------------------------------------------------------------*/
@@ -218,22 +219,21 @@ int main(int argc,char *argv[])
   DopplerScanInit scanInit;		/* init-structure for DopperScanner */
   DopplerScanState thisScan = empty_DopplerScanState; /* current state of the Doppler-scan */
   DopplerPosition dopplerpos;		/* current search-parameters */
-  SkyPosition thisPoint;
+  SkyPosition skypos;
   FILE *fpFstat = NULL;
   FILE *fpBstat = NULL;
   CHAR buf[512];
-  REAL8Vector *fkdotStart = NULL;	/* temporary storage for fkdots */
   REAL8Vector *fkdotRef = NULL;
   REAL8Vector *fkdotTmp = NULL;
   ComputeFBuffer cfBuffer = empty_ComputeFBuffer;
-  CWParamSpacePoint psPoint;		/* parameter-space point to compute Fstat for */
   UINT4 nFreq, nf1dot, nf2dot, nf3dot;	/* number of frequency- and f1dot-bins */
   UINT4 iFreq, if1dot, if2dot, if3dot;  /* counters over freq- and f1dot- bins */
   REAL8 numTemplates, templateCounter;
   REAL8 tickCounter;
   time_t clock0;
   Fcomponents Fstat, loudestFstat;
-  PulsarCandidate loudestCandidate = empty_PulsarCandidate;
+  PulsarDopplerParams doppler = empty_DopplerParams;
+  PulsarDopplerParams loudestDoppler = empty_DopplerParams;
 
 
   lalDebugLevel = 0;  
@@ -311,7 +311,7 @@ int main(int argc,char *argv[])
     {
       if(uvar_addOutput)
 	{
-	  if ( (fpFstat = fopen (uvar_outputFstat, "a")) == NULL)
+	  if ( (fpFstat = fopen (uvar_outputFstat, "ab")) == NULL)
 	    {
 	      LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputFstat);
 	      return (COMPUTEFSTATISTIC_ESYS);
@@ -348,9 +348,6 @@ int main(int argc,char *argv[])
 	}
     } /* if outputBstat */
 
-  if ( ( fkdotStart = XLALCreateREAL8Vector ( NUM_SPINS ) ) == NULL ) {
-    return COMPUTEFSTATISTIC_EMEM;
-  }
   if ( ( fkdotRef = XLALCreateREAL8Vector ( NUM_SPINS ) ) == NULL ) {
     return COMPUTEFSTATISTIC_EMEM;
   }
@@ -363,8 +360,8 @@ int main(int argc,char *argv[])
    * and for each value of the frequency-spindown
    */
   
-  psPoint.refTime = GV.startTime;	/* we compute at startTime, not refTime right now */  
-  psPoint.binary = NULL;	/* binary pulsars not implemented yet */
+  doppler.refTime = GV.startTime;	/* we compute at startTime, not refTime right now */  
+  doppler.orbit = NULL;			/* binary pulsars not implemented yet */
   /* loop-counters for spin-loops fkdot */
   nFreq =  (UINT4)(GV.spinRangeStart->fkdotBand->data[0] / thisScan.dFreq  + 0.5) + 1;  
   nf1dot = (UINT4)(GV.spinRangeStart->fkdotBand->data[1] / thisScan.df1dot + 0.5) + 1; 
@@ -379,10 +376,11 @@ int main(int argc,char *argv[])
 	     thisScan.numGridPoints, nFreq, nf1dot, nf2dot, nf3dot, 
 	     numTemplates);
 
-  templateCounter = 0.0; 
-  tickCounter = uvar_timerCount - 100;	/* do 100 iterations before first progress-report */
-  clock0 = time(NULL);
+  LogPrintf (LOG_DEBUG, "Progress: 0/%g = 0 %% done, Estimated time left: ?? s\n", numTemplates );
 
+  templateCounter = 0.0; 
+  tickCounter = 0;
+  clock0 = time(NULL);
   while (1)
     {
       LAL_CALL (NextDopplerPos( &status, &dopplerpos, &thisScan ), &status);
@@ -390,36 +388,33 @@ int main(int argc,char *argv[])
 	break;
       
       /* normalize skyposition: correctly map into [0,2pi]x[-pi/2,pi/2] */
-      thisPoint.longitude = dopplerpos.Alpha;
-      thisPoint.latitude = dopplerpos.Delta;
-      thisPoint.system = COORDINATESYSTEM_EQUATORIAL;
-      LAL_CALL (LALNormalizeSkyPosition(&status, &thisPoint, &thisPoint), &status);
-
+      skypos.longitude = dopplerpos.Alpha;
+      skypos.latitude = dopplerpos.Delta;
+      skypos.system = COORDINATESYSTEM_EQUATORIAL;
+      LAL_CALL (LALNormalizeSkyPosition(&status, &skypos, &skypos), &status);
       /* set parameter-space point: sky-position */
-      psPoint.skypos = thisPoint;
+      doppler.Alpha = skypos.longitude;
+      doppler.Delta = skypos.latitude;
 
       /*----- loop over spindown values */
       for ( if3dot = 0; if3dot < nf3dot; if3dot ++ )
 	{
-	  fkdotStart->data[3] = GV.spinRangeStart->fkdot->data[3] + if3dot * uvar_df3dot;
+	  doppler.f3dot = GV.spinRangeStart->fkdot->data[3] + if3dot * uvar_df3dot;
 	  
 	  for ( if2dot = 0; if2dot < nf2dot; if2dot ++ )
 	    {
-	      fkdotStart->data[2] = GV.spinRangeStart->fkdot->data[2] + if2dot * uvar_df2dot;
+	      doppler.f2dot = GV.spinRangeStart->fkdot->data[2] + if2dot * uvar_df2dot;
 
 	      for (if1dot = 0; if1dot < nf1dot; if1dot ++)
 		{
-		  fkdotStart->data[1] = GV.spinRangeStart->fkdot->data[1] + if1dot * thisScan.df1dot;
+		  doppler.f1dot = GV.spinRangeStart->fkdot->data[1] + if1dot * thisScan.df1dot;
 	  
 		  /* Loop over frequencies to be demodulated */
 		  for ( iFreq = 0 ; iFreq < nFreq ; iFreq ++ )
 		    {
-		      fkdotStart->data[0] = GV.spinRangeStart->fkdot->data[0] + iFreq * thisScan.dFreq;
-
-		      /* set parameter-space point: spin-vector fkdot */
-		      psPoint.fkdot = fkdotStart;
+		      doppler.Freq = GV.spinRangeStart->fkdot->data[0] + iFreq * thisScan.dFreq;
 		      
-		      LAL_CALL( ComputeFStat(&status, &Fstat, &psPoint, GV.multiSFTs, GV.multiNoiseWeights, 
+		      LAL_CALL( ComputeFStat(&status, &Fstat, &doppler, GV.multiSFTs, GV.multiNoiseWeights, 
 					     GV.multiDetStates, &GV.CFparams, &cfBuffer ), &status );
 
 		      templateCounter += 1.0;
@@ -431,7 +426,7 @@ int main(int argc,char *argv[])
 			  REAL8 timeLeft = (numTemplates - templateCounter) *  taup;
 			  tickCounter = 0.0;
 			  LogPrintf (LOG_DEBUG, 
-				     "Progres: %g/%g = %.2f %% done, Estimated time left: %.0f s\n",
+				     "Progress: %g/%g = %.2f %% done, Estimated time left: %.0f s\n",
 				     templateCounter, numTemplates, 
 				     templateCounter/numTemplates * 100.0, timeLeft);
 			}
@@ -467,7 +462,12 @@ int main(int argc,char *argv[])
 			} /* if SignalOnly */
 		      
 		      /* propagate fkdot back to reference-time for outputting results */
-		      LAL_CALL ( LALExtrapolatePulsarSpins(&status, fkdotRef, GV.refTime, fkdotStart, 
+		      fkdotTmp->data[0] = doppler.Freq;
+		      fkdotTmp->data[1] = doppler.f1dot;
+		      fkdotTmp->data[2] = doppler.f2dot;
+		      fkdotTmp->data[3] = doppler.f3dot;
+
+		      LAL_CALL ( LALExtrapolatePulsarSpins(&status, fkdotRef, GV.refTime, fkdotTmp, 
 							   GV.startTime ), &status );
 
 		      /* calculate the baysian-marginalized 'B-statistic' */
@@ -494,16 +494,13 @@ int main(int argc,char *argv[])
 		      /* keep track of loudest candidate */
 		      if ( Fstat.F > loudestFstat.F )
 			{
-			  PulsarDopplerParams dop;
-			  dop.refTime = GV.refTime;
-			  dop.Alpha = dopplerpos.Alpha;
-			  dop.Delta = dopplerpos.Delta;
-			  dop.Freq  = fkdotRef->data[0];
-			  dop.f1dot = fkdotRef->data[1];
-			  dop.f2dot = fkdotRef->data[2];
-			  dop.f3dot = fkdotRef->data[3];
-			  loudestCandidate.Doppler = dop;
 			  loudestFstat = Fstat;
+			  loudestDoppler = doppler;
+			  /* correct spins to reference-time */
+			  loudestDoppler.Freq  = fkdotRef->data[0];
+			  loudestDoppler.f1dot = fkdotRef->data[1];
+			  loudestDoppler.f2dot = fkdotRef->data[2];
+			  loudestDoppler.f3dot = fkdotRef->data[3];
 			}
 		    } /* for i < nBins: loop over frequency-bins */
 		} /* For GV.spinImax: loop over 1st spindowns */
@@ -533,10 +530,11 @@ int main(int argc,char *argv[])
       MultiAMCoeffs *multiAMcoef = NULL;
       REAL8 norm = GV.Tsft * GV.S_hat;
       FILE *fpLoudest;
-      REAL8 phi0;
-      SkyPosition skypos;
-      skypos.longitude = loudestCandidate.Doppler.Alpha;
-      skypos.latitude  = loudestCandidate.Doppler.Delta;
+      PulsarAmplitudeParams Amp, dAmp;
+      PulsarCandidate cand = empty_PulsarCandidate;
+
+      skypos.longitude = loudestDoppler.Alpha;
+      skypos.latitude  = loudestDoppler.Delta;
       skypos.system = COORDINATESYSTEM_EQUATORIAL;
       LAL_CALL ( LALGetMultiAMCoeffs ( &status, &multiAMcoef, GV.multiDetStates, skypos ), &status);
       /* noise-weigh Antenna-patterns and compute A,B,C */
@@ -545,24 +543,23 @@ int main(int argc,char *argv[])
 	return COMPUTEFSTATC_EXLAL;
       }
 
-      LAL_CALL(LALEstimatePulsarAmplitudeParams (&status, &loudestCandidate.Amp, &loudestCandidate.dAmp, 
-						 &loudestFstat, cfBuffer.multiAMcoef, norm), &status);
+      LAL_CALL(LALEstimatePulsarAmplitudeParams (&status, &Amp, &dAmp, &loudestFstat, cfBuffer.multiAMcoef, norm), 
+	       &status);
       XLALDestroyMultiAMCoeffs ( multiAMcoef );
       
       /* propagate initial-phase from internal reference-time 'startTime' to refTime of Doppler-params */
-      phi0 = loudestCandidate.Amp.phi0;
-      fkdotTmp->data[0] = loudestCandidate.Doppler.Freq;
-      fkdotTmp->data[1] = loudestCandidate.Doppler.f1dot;
-      fkdotTmp->data[2] = loudestCandidate.Doppler.f2dot;
-      fkdotTmp->data[3] = loudestCandidate.Doppler.f3dot;
-      LAL_CALL( LALExtrapolatePulsarPhase (&status, &phi0, fkdotTmp, GV.refTime, phi0, GV.startTime), &status);
-      if ( phi0 < 0 )	      /* make sure phi0 in [0, 2*pi] */
-	phi0 += LAL_TWOPI;
-      loudestCandidate.Amp.phi0 = fmod ( phi0, LAL_TWOPI );
+      fkdotTmp->data[0] = loudestDoppler.Freq;
+      fkdotTmp->data[1] = loudestDoppler.f1dot;
+      fkdotTmp->data[2] = loudestDoppler.f2dot;
+      fkdotTmp->data[3] = loudestDoppler.f3dot;
+      LAL_CALL(LALExtrapolatePulsarPhase (&status, &Amp.phi0, fkdotTmp, GV.refTime, Amp.phi0, GV.startTime),&status);
+      if ( Amp.phi0 < 0 )	      /* make sure phi0 in [0, 2*pi] */
+	Amp.phi0 += LAL_TWOPI;
+      Amp.phi0 = fmod ( Amp.phi0, LAL_TWOPI );
 
       if(uvar_addOutput)
 	{
-	  if ( (fpLoudest = fopen (uvar_outputLoudest, "a")) == NULL)
+	  if ( (fpLoudest = fopen (uvar_outputLoudest, "ab")) == NULL)
 	    {
 	      LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputLoudest);
 	      return COMPUTEFSTATISTIC_ESYS;
@@ -579,8 +576,12 @@ int main(int argc,char *argv[])
       /* write header with run-info */
       if(!uvar_noHeader)
 	fprintf (fpLoudest, GV.logstring );
-      
-      if ( XLALwriteCandidate2file ( fpLoudest,  &loudestCandidate, &loudestFstat ) != XLAL_SUCCESS )
+
+      /* assemble 'candidate' structure */
+      cand.Amp = Amp;
+      cand.dAmp = dAmp;
+      cand.Doppler = loudestDoppler;
+      if ( XLALwriteCandidate2file ( fpLoudest,  &cand, &loudestFstat ) != XLAL_SUCCESS )
 	{
 	  LALPrintError("\nXLALwriteCandidate2file() failed with error = %d\n\n", xlalErrno );
 	  return COMPUTEFSTATC_EXLAL;
@@ -595,7 +596,6 @@ int main(int argc,char *argv[])
 
   XLALEmptyComputeFBuffer ( cfBuffer );
 
-  XLALDestroyREAL8Vector ( fkdotStart );
   XLALDestroyREAL8Vector ( fkdotRef );
   XLALDestroyREAL8Vector ( fkdotTmp );
 
