@@ -50,7 +50,6 @@ int finite(double);
 
 /* LAL-includes */
 #include <lal/AVFactories.h>
-
 #include <lal/LALInitBarycenter.h>
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
@@ -129,32 +128,6 @@ typedef struct {
   CHAR *logstring;                          /**< log containing max-info on this search setup */
 } ConfigVariables;
 
-/** Container to hold all relevant parameters of a 'candidate' 
- */
-typedef struct {
-  LIGOTimeGPS refTime;		/**< SSB reference GPS-time at which spins and phi0 are defined */
-
-
-  REAL8 h0, dh0;		/**< estimated amplitude-parameters with (Cramer-Rao) error estimators */
-  REAL8 cosi, dcosi;
-  REAL8 phi0, dphi0;		/**< signal-phase @ reference-epoch */
-  REAL8 psi, dpsi;
-  REAL8 aPlus, daPlus;		
-  REAL8 aCross, daCross;
-
-  REAL8Vector *fkdotRef;	/**< Doppler-params: spin-vector {f, f1dot, f2dot, ... } @ refTime */
-  SkyPosition skypos;
-
-  /* Fstatistic-values */
-  LIGOTimeGPS startTime;	/**< internal reference-time for CFS_v2 */
-  INT4 duration;		/**< effective time spanned */
-  Fcomponents Fstat;		/**< Fstat-value Fa,Fb, at internal reference-time 'startTime' */
-
-  CHAR *DataFiles;		/**< Data-files pattern used in the search */
-  LIGOTimeGPS minStartTime;	/**< earliest start-time */
-  LIGOTimeGPS maxEndTime;	/**< latest SFT-timestamp to include */
-  
-} candidate_t;
 
 /*---------- Global variables ----------*/
 extern int vrbflg;		/**< defined in lalapps.c */
@@ -218,7 +191,6 @@ REAL8 uvar_timerCount;
 int main(int argc,char *argv[]);
 void initUserVars (LALStatus *);
 void InitFStat ( LALStatus *, ConfigVariables *cfg );
-void EstimateSigParams (LALStatus *, candidate_t *cand, const MultiAMCoeffs *multiAMcoef, REAL8 TsftShat);
 void Freemem(LALStatus *,  ConfigVariables *cfg);
 
 void WriteFStatLog (LALStatus *, CHAR *argv[]);
@@ -226,18 +198,22 @@ void checkUserInputConsistency (LALStatus *);
 int outputBeamTS( const CHAR *fname, const AMCoeffs *amcoe, const DetectorStateSeries *detStates );
 void InitEphemeris (LALStatus *, EphemerisData *edat, const CHAR *ephemDir, const CHAR *ephemYear, LIGOTimeGPS epoch);
 void getUnitWeights ( LALStatus *, MultiNoiseWeights **multiWeights, const MultiSFTVector *multiSFTs );
-int XLALwriteCandidate2file ( FILE *fp,  const candidate_t *cand );
 int printGSLmatrix4 ( FILE *fp, const CHAR *prefix, const gsl_matrix *gij );
+
+void EstimateSigParams (LALStatus *, PulsarAmplitudeParams *Amp, PulsarAmplitudeParams *dAmp, const Fcomponents *Fstat, const MultiAMCoeffs *multiAMcoef,  REAL8 TsftShat);
+
+int XLALwriteCandidate2file ( FILE *fp,  const PulsarCandidate *cand, const Fcomponents *Fstat );
+
 
 const char *va(const char *format, ...);	/* little var-arg string helper function */
 
 /*---------- empty initializers ---------- */
 static const PulsarTimesParamStruc empty_PulsarTimesParamStruc;
-static const BarycenterInput empty_BarycenterInput;
+ static const BarycenterInput empty_BarycenterInput;
 static const SFTConstraints empty_SFTConstraints;
 static const ComputeFBuffer empty_ComputeFBuffer;
 static const LIGOTimeGPS empty_LIGOTimeGPS;
-static const candidate_t empty_candidate;
+static const PulsarCandidate empty_PulsarCandidate;
 /*----------------------------------------------------------------------*/
 /* Function definitions start here */
 /*----------------------------------------------------------------------*/
@@ -260,6 +236,7 @@ int main(int argc,char *argv[])
   CHAR buf[512];
   REAL8Vector *fkdotStart = NULL;	/* temporary storage for fkdots */
   REAL8Vector *fkdotRef = NULL;
+  REAL8Vector *fkdotTmp = NULL;
   ComputeFBuffer cfBuffer = empty_ComputeFBuffer;
   CWParamSpacePoint psPoint;		/* parameter-space point to compute Fstat for */
   UINT4 nFreq, nf1dot, nf2dot, nf3dot;	/* number of frequency- and f1dot-bins */
@@ -267,8 +244,9 @@ int main(int argc,char *argv[])
   REAL8 numTemplates, templateCounter;
   REAL8 tickCounter;
   time_t clock0;
-  Fcomponents Fstat;
-  candidate_t loudestCandidate = empty_candidate;
+  Fcomponents Fstat, loudestFstat;
+  PulsarCandidate loudestCandidate = empty_PulsarCandidate;
+
 
   lalDebugLevel = 0;  
   vrbflg = 1;	/* verbose error-messages */
@@ -299,13 +277,6 @@ int main(int argc,char *argv[])
   /* like ephemeries data and template grids: */
   LAL_CALL ( InitFStat(&status, &GV), &status);
 
-  /* prepare container for loudest candidate */
-  loudestCandidate.fkdotRef = XLALCreateREAL8Vector ( GV.spinRangeRef->fkdot->length );
-  if ( loudestCandidate.fkdotRef == NULL )
-    return COMPUTEFSTATISTIC_EMEM;
-  loudestCandidate.refTime = GV.refTime;
-  loudestCandidate.startTime = GV.startTime;
-  
   /* prepare initialization of DopplerScanner to step through paramter space */
   scanInit.dAlpha = uvar_dAlpha;
   scanInit.dDelta = uvar_dDelta;
@@ -395,6 +366,10 @@ int main(int argc,char *argv[])
   if ( ( fkdotRef = XLALCreateREAL8Vector ( NUM_SPINS ) ) == NULL ) {
     return COMPUTEFSTATISTIC_EMEM;
   }
+  if ( ( fkdotTmp = XLALCreateREAL8Vector ( NUM_SPINS ) ) == NULL ) {
+    return COMPUTEFSTATISTIC_EMEM;
+  }
+
   /*----------------------------------------------------------------------
    * main loop: demodulate data for each point in the sky-position grid
    * and for each value of the frequency-spindown
@@ -518,7 +493,7 @@ int main(int argc,char *argv[])
 		      /* now, if user requested it, we output ALL F-statistic results above threshold */
 		      if ( uvar_outputFstat && ( 2.0 * Fstat.F >= uvar_TwoFthreshold ) )
 			{
-			  LALSnprintf (buf, 511, "%.5f %.5f %.5f %1.3e %1.3e %1.3e %.3f\n",
+ 			  LALSnprintf (buf, 511, "%.16g %.16g %.16g %.6g %.5g %.5g %.9g\n",
 				       fkdotRef->data[0], 
 				       dopplerpos.Alpha, dopplerpos.Delta, 
 				       fkdotRef->data[1], fkdotRef->data[2], fkdotRef->data[3],
@@ -529,14 +504,19 @@ int main(int argc,char *argv[])
 			} /* if F > threshold */
 
 		      /* keep track of loudest candidate */
-		      if ( Fstat.F > loudestCandidate.Fstat.F )
+		      if ( Fstat.F > loudestFstat.F )
 			{
-			  UINT4 len = fkdotRef->length * sizeof( fkdotRef->data[0] );
-			  memcpy ( loudestCandidate.fkdotRef->data, fkdotRef->data, len );
-			  loudestCandidate.skypos = thisPoint;
-			  loudestCandidate.Fstat = Fstat;
+			  PulsarDopplerParams dop;
+			  dop.refTime = GV.refTime;
+			  dop.Alpha = dopplerpos.Alpha;
+			  dop.Delta = dopplerpos.Delta;
+			  dop.Freq  = fkdotRef->data[0];
+			  dop.f1dot = fkdotRef->data[1];
+			  dop.f2dot = fkdotRef->data[2];
+			  dop.f3dot = fkdotRef->data[3];
+			  loudestCandidate.Doppler = dop;
+			  loudestFstat = Fstat;
 			}
-		      
 		    } /* for i < nBins: loop over frequency-bins */
 		} /* For GV.spinImax: loop over 1st spindowns */
 	    } /* for if2dot < nf2dot */
@@ -565,19 +545,33 @@ int main(int argc,char *argv[])
       MultiAMCoeffs *multiAMcoef = NULL;
       REAL8 norm = GV.Tsft * GV.S_hat;
       FILE *fpLoudest;
-      
-      LAL_CALL ( LALGetMultiAMCoeffs ( &status, &multiAMcoef, GV.multiDetStates, loudestCandidate.skypos ), 
-		 &status);
+      REAL8 phi0;
+      SkyPosition skypos;
+      skypos.longitude = loudestCandidate.Doppler.Alpha;
+      skypos.latitude  = loudestCandidate.Doppler.Delta;
+      skypos.system = COORDINATESYSTEM_EQUATORIAL;
+      LAL_CALL ( LALGetMultiAMCoeffs ( &status, &multiAMcoef, GV.multiDetStates, skypos ), &status);
       /* noise-weigh Antenna-patterns and compute A,B,C */
       if ( XLALWeighMultiAMCoeffs ( multiAMcoef, GV.multiNoiseWeights ) != XLAL_SUCCESS ) {
 	LALPrintError("\nXLALWeighMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
 	return COMPUTEFSTATC_EXLAL;
       }
-      
-      LAL_CALL ( EstimateSigParams(&status, &loudestCandidate, cfBuffer.multiAMcoef, norm),  &status);
-      
+
+      LAL_CALL(EstimateSigParams(&status, &loudestCandidate.Amp, &loudestCandidate.dAmp, &loudestFstat,
+				 cfBuffer.multiAMcoef, norm), &status);
       XLALDestroyMultiAMCoeffs ( multiAMcoef );
       
+      /* propagate initial-phase from internal reference-time 'startTime' to refTime of Doppler-params */
+      phi0 = loudestCandidate.Amp.phi0;
+      fkdotTmp->data[0] = loudestCandidate.Doppler.Freq;
+      fkdotTmp->data[1] = loudestCandidate.Doppler.f1dot;
+      fkdotTmp->data[2] = loudestCandidate.Doppler.f2dot;
+      fkdotTmp->data[3] = loudestCandidate.Doppler.f3dot;
+      LAL_CALL( LALExtrapolatePulsarPhase (&status, &phi0, fkdotTmp, GV.refTime, phi0, GV.startTime), &status);
+      if ( phi0 < 0 )	      /* make sure phi0 in [0, 2*pi] */
+	phi0 += LAL_TWOPI;
+      loudestCandidate.Amp.phi0 = fmod ( phi0, LAL_TWOPI );
+
       if(uvar_addOutput)
 	{
 	  if ( (fpLoudest = fopen (uvar_outputLoudest, "a")) == NULL)
@@ -598,7 +592,7 @@ int main(int argc,char *argv[])
       if(!uvar_noHeader)
 	fprintf (fpLoudest, GV.logstring );
       
-      if ( XLALwriteCandidate2file ( fpLoudest,  &loudestCandidate ) != XLAL_SUCCESS )
+      if ( XLALwriteCandidate2file ( fpLoudest,  &loudestCandidate, &loudestFstat ) != XLAL_SUCCESS )
 	{
 	  LALPrintError("\nXLALwriteCandidate2file() failed with error = %d\n\n", xlalErrno );
 	  return COMPUTEFSTATC_EXLAL;
@@ -615,7 +609,7 @@ int main(int argc,char *argv[])
 
   XLALDestroyREAL8Vector ( fkdotStart );
   XLALDestroyREAL8Vector ( fkdotRef );
-  XLALDestroyREAL8Vector ( loudestCandidate.fkdotRef );
+  XLALDestroyREAL8Vector ( fkdotTmp );
 
   LAL_CALL ( Freemem(&status, &GV), &status);
   
@@ -1323,9 +1317,11 @@ const char *va(const char *format, ...)
  */
 void
 EstimateSigParams (LALStatus *status, 
-		   candidate_t *cand, 
-		   const MultiAMCoeffs *multiAMcoef, 
-		   REAL8 TsftShat)
+		   PulsarAmplitudeParams *Amp,		/**< [out] estimated amplitude params {h0,cosi,phi0,psi} */
+		   PulsarAmplitudeParams *dAmp,	/**< [out] estimated errors in Amp */
+		   const Fcomponents *Fstat,		/**<  Fstat-value and Fa, Fb */
+		   const MultiAMCoeffs *multiAMcoef, 	/**<  antenna-pattern A,B,C,D */
+		   REAL8 TsftShat)			/**<  Tsft * Shat */
 {
   REAL8 A1h, A2h, A3h, A4h;
   REAL8 Ad, Bd, Cd, Dd;
@@ -1346,13 +1342,19 @@ EstimateSigParams (LALStatus *status,
 
   gsl_vector *x_mu, *A_Mu;
   gsl_matrix *M_Mu_Nu;
-  gsl_matrix *J_Mu_nu, *Jh_Mu_nu;
-  gsl_permutation *perm, *permh;
+  gsl_matrix *Jh_Mu_nu;
+  gsl_permutation *permh;
   gsl_matrix *tmp, *tmp2;
   int signum;
 
   INITSTATUS (status, "EstimateSigParams", rcsid);
   ATTATCHSTATUSPTR (status);
+
+  ASSERT ( Amp, status, COMPUTEFSTATISTIC_ENULL, COMPUTEFSTATISTIC_MSGENULL );
+  ASSERT ( dAmp, status, COMPUTEFSTATISTIC_ENULL, COMPUTEFSTATISTIC_MSGENULL );
+  ASSERT ( Fstat, status, COMPUTEFSTATISTIC_ENULL, COMPUTEFSTATISTIC_MSGENULL );
+  ASSERT ( multiAMcoef, status, COMPUTEFSTATISTIC_ENULL, COMPUTEFSTATISTIC_MSGENULL );
+
 
   Ad = multiAMcoef->A;
   Bd = multiAMcoef->B;
@@ -1371,15 +1373,10 @@ EstimateSigParams (LALStatus *status,
   if ( ( M_Mu_Nu = gsl_matrix_calloc (4, 4) ) == NULL ) {
     ABORT ( status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM );
   }
-  if ( ( J_Mu_nu = gsl_matrix_calloc (4, 4) ) == NULL ) {
-    ABORT ( status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM );
-  }
   if ( ( Jh_Mu_nu = gsl_matrix_calloc (4, 4) ) == NULL ) {
     ABORT ( status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM );
   }
-  if ( ( perm = gsl_permutation_calloc ( 4 )) == NULL ) {
-    ABORT ( status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM );
-  }
+
   if ( ( permh = gsl_permutation_calloc ( 4 )) == NULL ) {
     ABORT ( status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM );
   }
@@ -1390,12 +1387,11 @@ EstimateSigParams (LALStatus *status,
     ABORT ( status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM );
   }
 
-
   /* ----- fill vector x_mu */
-  gsl_vector_set (x_mu, 0,   cand->Fstat.Fa.re );	/* x_1 */
-  gsl_vector_set (x_mu, 1,   cand->Fstat.Fb.re ); 	/* x_2 */
-  gsl_vector_set (x_mu, 2, - cand->Fstat.Fa.im );	/* x_3 */
-  gsl_vector_set (x_mu, 3, - cand->Fstat.Fb.im );	/* x_4 */
+  gsl_vector_set (x_mu, 0,   Fstat->Fa.re );	/* x_1 */
+  gsl_vector_set (x_mu, 1,   Fstat->Fb.re ); 	/* x_2 */
+  gsl_vector_set (x_mu, 2, - Fstat->Fa.im );	/* x_3 */
+  gsl_vector_set (x_mu, 3, - Fstat->Fb.im );	/* x_4 */
 
   /* ----- fill matrix M^{mu,nu} [symmetric: use UPPER HALF ONLY!!]*/
   gsl_matrix_set (M_Mu_Nu, 0, 0,   Bd / Dd );
@@ -1452,11 +1448,16 @@ EstimateSigParams (LALStatus *status,
   if ( A1check * A1h <  0 )
     phi0 += LAL_PI;
 
+  cosphi0 = cos(phi0);
+  sinphi0 = sin(phi0);
+  cos2psi = cos(2*psi);
+  sin2psi = sin(2*psi);
+
   /* check numerical consistency of estimated Amu and reconstructed */
-  A1check =   aPlus * cos(phi0) * cos(2*psi) - aCross * sin(phi0) * sin(2*psi);  
-  A2check =   aPlus * cos(phi0) * sin(2*psi) + aCross * sin(phi0) * cos(2*psi);  
-  A3check = - aPlus * sin(phi0) * cos(2*psi) - aCross * cos(phi0) * sin(2*psi);  
-  A4check = - aPlus * sin(phi0) * sin(2*psi) + aCross * cos(phi0) * cos(2*psi);  
+  A1check =   aPlus * cosphi0 * cos2psi - aCross * sinphi0 * sin2psi;  
+  A2check =   aPlus * cosphi0 * sin2psi + aCross * sinphi0 * cos2psi;  
+  A3check = - aPlus * sinphi0 * cos2psi - aCross * cosphi0 * sin2psi;  
+  A4check = - aPlus * sinphi0 * sin2psi + aCross * cosphi0 * cos2psi;  
 
   LogPrintf (LOG_DEBUG, "reconstructed:    A1 = %g, A2 = %g, A3 = %g, A4 = %g\n", 
 	     A1check, A2check, A3check, A4check );
@@ -1471,51 +1472,18 @@ EstimateSigParams (LALStatus *status,
 		 tolerance );
     }
 
-
   /* translate A_{+,x} into {h_0, cosi} */
   h0 = aPlus + sqrt ( disc );  /* not yet normalized ! */
   cosi = aCross / h0;
 
-  cosphi0 = cos(phi0);
-  sinphi0 = sin(phi0);
-  cos2psi = cos(2*psi);
-  sin2psi = sin(2*psi);
 
   /* ========== Estimate the errors ========== */
   
   /* ----- compute derivatives \partial A^\mu / \partial B^\nu, where
-   * we consider the output-variables B^\nu = (A_+, A_x, phi0, psi) 
-   */
-
-  /* ----- A1 =   aPlus * cosphi0 * cos2psi - aCross * sinphi0 * sin2psi; ----- */
-  gsl_matrix_set (J_Mu_nu, 0, 0,   cosphi0 * cos2psi );	/* dA1/daPlus */
-  gsl_matrix_set (J_Mu_nu, 0, 1, - sinphi0 * sin2psi );	/* dA1/daCross */
-  gsl_matrix_set (J_Mu_nu, 0, 2,   A3h );		/* dA1/dphi0 */
-  gsl_matrix_set (J_Mu_nu, 0, 3, - 2.0 * A2h );		/* dA1/dpsi */
-  
-  /* ----- A2 =   aPlus * cosphi0 * sin2psi + aCross * sinphi0 * cos2psi; ----- */ 
-  gsl_matrix_set (J_Mu_nu, 1, 0,   cosphi0 * sin2psi );	/* dA2/daPlus */
-  gsl_matrix_set (J_Mu_nu, 1, 1,   sinphi0 * cos2psi );	/* dA2/daCross */
-  gsl_matrix_set (J_Mu_nu, 1, 2,   A4h );		/* dA2/dphi0 */
-  gsl_matrix_set (J_Mu_nu, 1, 3,   2.0 * A1h );		/* dA2/dpsi */
-
-  /* ----- A3 = - aPlus * sinphi0 * cos2psi - aCross * cosphi0 * sin2psi; ----- */ 
-  gsl_matrix_set (J_Mu_nu, 2, 0, - sinphi0 * cos2psi );	/* dA3/daPlus */ 
-  gsl_matrix_set (J_Mu_nu, 2, 1, - cosphi0 * sin2psi );	/* dA3/daCross */
-  gsl_matrix_set (J_Mu_nu, 2, 2, - A1h );		/* dA3/dphi0 */  
-  gsl_matrix_set (J_Mu_nu, 2, 3, - 2.0 * A4h );		/* dA3/dpsi */
-
-  /* ----- A4 = - aPlus * sinphi0 * sin2psi + aCross * cosphi0 * cos2psi; ----- */ 
-  gsl_matrix_set (J_Mu_nu, 3, 0, - sinphi0 * sin2psi );	/* dA4/daPlus */
-  gsl_matrix_set (J_Mu_nu, 3, 1,   cosphi0 * cos2psi );	/* dA4/daCross */
-  gsl_matrix_set (J_Mu_nu, 3, 2, - A2h );		/* dA4/dphi0 */
-  gsl_matrix_set (J_Mu_nu, 3, 3,   2.0 * A3h );		/* dA4/dpsi */
-
-  /* ----- compute derivatives \partial A^\mu / \partial Bh^\nu, where
-   * we consider the output-variables Bh^\nu = (h0, cosi, phi0, psi) 
+   * we consider the output-variables B^\nu = (h0, cosi, phi0, psi) 
    * where aPlus = 0.5 * h0 * (1 + cosi^2)  and aCross = h0 * cosi
    */
-  { /* Ahat^mu is just A^mu with the replacements: A_+ --> A_x, and A_x --> h0 */
+  { /* Ahat^mu is defined as A^mu with the replacements: A_+ --> A_x, and A_x --> h0 */
     REAL8 A1hat =   aCross * cosphi0 * cos2psi - h0 * sinphi0 * sin2psi;  
     REAL8 A2hat =   aCross * cosphi0 * sin2psi + h0 * sinphi0 * cos2psi;  
     REAL8 A3hat = - aCross * sinphi0 * cos2psi - h0 * cosphi0 * sin2psi;  
@@ -1546,19 +1514,14 @@ EstimateSigParams (LALStatus *status,
     gsl_matrix_set (Jh_Mu_nu, 3, 3,   2.0 * A3h );	/* dA4/dpsi */
   }
 
-  
-  /* ----- compute inverse matrices J^{-1} by LU-decomposition ----- */
-  gsl_linalg_LU_decomp (J_Mu_nu,  perm, &signum );
+  /* ----- compute inverse matrices Jh^{-1} by LU-decomposition ----- */
   gsl_linalg_LU_decomp (Jh_Mu_nu, permh, &signum );
 
   /* inverse matrix */
-  gsl_linalg_LU_invert (J_Mu_nu,  perm,  tmp );	
-  gsl_matrix_memcpy ( J_Mu_nu, tmp );
-
   gsl_linalg_LU_invert (Jh_Mu_nu, permh, tmp );
   gsl_matrix_memcpy ( Jh_Mu_nu, tmp );
 
-  /* ----- compute J^-1 . Minv . (J^-1)^T ----- */
+  /* ----- compute Jh^-1 . Minv . (Jh^-1)^T ----- */
   
   /* GSL-doc: gsl_blas_dgemm (CBLAS_TRANSPOSE_t TransA, CBLAS_TRANSPOSE_t TransB, double alpha, 
    *                          const gsl_matrix *A, const gsl_matrix *B, double beta, gsl_matrix *C)
@@ -1568,66 +1531,38 @@ EstimateSigParams (LALStatus *status,
    * and similarly for the parameter TransB.
    */
 
-  /* first tmp = Minv . (J^-1)^T */
-  gsl_blas_dgemm (CblasNoTrans, CblasTrans, 1.0, M_Mu_Nu, J_Mu_nu, 0.0, tmp );
-  /* then J^-1 . tmp , store result in tmp2 */
-  gsl_blas_dgemm (CblasNoTrans, CblasNoTrans, 1.0, J_Mu_nu, tmp, 0.0, tmp2 );
-  gsl_matrix_memcpy ( J_Mu_nu, tmp2 );
-
-  /* same for Jh^-1 */
+  /* first tmp = Minv . (Jh^-1)^T */
   gsl_blas_dgemm (CblasNoTrans, CblasTrans, 1.0, M_Mu_Nu, Jh_Mu_nu, 0.0, tmp );
-  /* then J^-1 . tmp , store result in J_Mu_nu */
+  /* then J^-1 . tmp , store result in tmp2 */
   gsl_blas_dgemm (CblasNoTrans, CblasNoTrans, 1.0, Jh_Mu_nu, tmp, 0.0, tmp2 );
   gsl_matrix_memcpy ( Jh_Mu_nu, tmp2 );
   
   /* ===== debug-output resulting matrices ===== */
   if ( lalDebugLevel )
-    {
-      printGSLmatrix4 ( stdout, "var(dB^mu, dB^nu) = \n", J_Mu_nu );
-      printGSLmatrix4 ( stdout, "var(dBh^mu, dBh^nu) = \n", Jh_Mu_nu );
-    }
-
-
-  /* propagate phase from internal reference-time 'startTime' to refTime */
-  TRY ( LALExtrapolatePulsarPhase (status->statusPtr, &phi0, cand->fkdotRef, cand->refTime, 
-				   phi0, cand->startTime ), status);
-
-  /* want phi0 in [0, 2*pi] */
-  if ( phi0 < 0 )
-    phi0 += LAL_TWOPI;
-  phi0 = fmod ( phi0, LAL_TWOPI );
+    printGSLmatrix4 ( stdout, "var(dBh^mu, dBh^nu) = \n", Jh_Mu_nu );
 
   /* fill candidate-struct with the obtained signal-parameters and error-estimations */
-  cand->aPlus  = normAmu * aPlus;
-  cand->aCross = normAmu * aCross;
-  cand->phi0   = phi0;
-  cand->psi    = psi;
-  cand->h0     = normAmu * h0;
-  cand->cosi   = cosi;
+  Amp->h0     = normAmu * h0;
+  Amp->cosi   = cosi;
+  Amp->phi0   = phi0;
+  Amp->psi    = psi;
 
-  
   /* read out principal estimation-errors from diagonal elements */
-  cand->daPlus  = normAmu * sqrt( gsl_matrix_get (J_Mu_nu, 0, 0 ) );
-  cand->daCross = normAmu * sqrt( gsl_matrix_get (J_Mu_nu, 1, 1 ) );
-  cand->dphi0   = sqrt( gsl_matrix_get (J_Mu_nu, 2, 2 ) );
-  cand->dpsi    = sqrt( gsl_matrix_get (J_Mu_nu, 3, 3 ) );
-  cand->dh0     = normAmu * sqrt( gsl_matrix_get (Jh_Mu_nu, 0, 0 ) );
-  cand->dcosi   = sqrt( gsl_matrix_get (Jh_Mu_nu, 1, 1 ) );
+  dAmp->h0     = normAmu * sqrt( gsl_matrix_get (Jh_Mu_nu, 0, 0 ) );
+  dAmp->cosi   = sqrt( gsl_matrix_get (Jh_Mu_nu, 1, 1 ) );
+  dAmp->phi0   = sqrt( gsl_matrix_get (Jh_Mu_nu, 2, 2 ) );
+  dAmp->psi    = sqrt( gsl_matrix_get (Jh_Mu_nu, 3, 3 ) );
 
-  LogPrintf (LOG_DEBUG, "aPlus  = %g +- %g\n", cand->aPlus, cand->daPlus );
-  LogPrintf (LOG_DEBUG, "aCross = %g +- %g\n", cand->aCross, cand->daCross );
-  LogPrintf (LOG_DEBUG, "h0     = %g +- %g\n", cand->h0, cand->dh0 );
-  LogPrintf (LOG_DEBUG, "cosi   = %g +- %g\n", cand->cosi, cand->dcosi );
-  LogPrintf (LOG_DEBUG, "phi0   = %g +- %g\n", cand->phi0, cand->dphi0 );
-  LogPrintf (LOG_DEBUG, "psi    = %g +- %g\n", cand->psi,  cand->dpsi );
+  LogPrintf (LOG_DEBUG, "h0     = %g +- %g\n", Amp->h0, dAmp->h0 );
+  LogPrintf (LOG_DEBUG, "cosi   = %g +- %g\n", Amp->cosi, dAmp->cosi );
+  LogPrintf (LOG_DEBUG, "phi0   = %g +- %g\n", Amp->phi0, dAmp->phi0 );
+  LogPrintf (LOG_DEBUG, "psi    = %g +- %g\n", Amp->psi,  dAmp->psi );
 
   /* ----- free GSL memory ----- */
   gsl_vector_free ( x_mu );
   gsl_vector_free ( A_Mu );
   gsl_matrix_free ( M_Mu_Nu );
-  gsl_matrix_free ( J_Mu_nu );
   gsl_matrix_free ( Jh_Mu_nu );
-  gsl_permutation_free ( perm );
   gsl_permutation_free ( permh );
   gsl_matrix_free ( tmp );
   gsl_matrix_free ( tmp2 );
@@ -1639,46 +1574,41 @@ EstimateSigParams (LALStatus *status,
 
 
 int
-XLALwriteCandidate2file ( FILE *fp,  const candidate_t *cand )
+XLALwriteCandidate2file ( FILE *fp,  const PulsarCandidate *cand, const Fcomponents *Fstat )
 {
-  UINT4 i, s;
-
-  fprintf (fp, "refTime = %9d;\n", cand->refTime.gpsSeconds );   /* forget about ns... */
-
-  fprintf (fp, "Freq = %.16g;\n", cand->fkdotRef->data[0] );
-  s = cand->fkdotRef->length;
-  for ( i=1; i < s; i ++ )
-    fprintf (fp, "f%ddot  = %.16g;\n", i, cand->fkdotRef->data[i] );
-
-  fprintf (fp, "Alpha = %.16g;\n", cand->skypos.longitude );
-  fprintf (fp, "Delta = %.16g;\n", cand->skypos.latitude );
-
-  fprintf (fp, "Fa  = %.6g  %+.6gi;\n", cand->Fstat.Fa.re, cand->Fstat.Fa.im );
-  fprintf (fp, "Fb  = %.6g  %+.6gi;\n", cand->Fstat.Fb.re, cand->Fstat.Fb.im );
-  fprintf (fp, "twoF = %.6g;\n", 2.0 * cand->Fstat.F );
-
-  fprintf (fp, "aPlus  = %.6g;\n", cand->aPlus );
-  fprintf (fp, "daPlus   = %.6g;\n", cand->daPlus );
   fprintf (fp, "\n");
 
-  fprintf (fp, "aCross = %.6g;\n", cand->aCross );
-  fprintf (fp, "daCross  = %.6g;\n", cand->daCross );
+  fprintf (fp, "refTime  = % 9d;\n", cand->Doppler.refTime.gpsSeconds );   /* forget about ns... */
+
   fprintf (fp, "\n");
 
-  fprintf (fp, "phi0   = %.6g;\n", cand->phi0 );
-  fprintf (fp, "dphi0    = %.6g;\n", cand->dphi0 );
+  /* Amplitude parameters with error-estimates */
+  fprintf (fp, "h0       = % .6g;\n", cand->Amp.h0 );
+  fprintf (fp, "dh0      = % .6g;\n", cand->dAmp.h0 );
+  fprintf (fp, "cosiota  = % .6g;\n", cand->Amp.cosi );
+  fprintf (fp, "dcosiota = % .6g;\n", cand->dAmp.cosi );
+  fprintf (fp, "phi0     = % .6g;\n", cand->Amp.phi0 );
+  fprintf (fp, "dphi0    = % .6g;\n", cand->dAmp.phi0 );
+  fprintf (fp, "psi      = % .6g;\n", cand->Amp.psi );
+  fprintf (fp, "dpsi     = % .6g;\n", cand->dAmp.psi );
+
   fprintf (fp, "\n");
 
-  fprintf (fp, "psi    = %.6g;\n", cand->psi );
-  fprintf (fp, "dpsi     = %.6g;\n", cand->dpsi );
+  /* Doppler parameters */
+  fprintf (fp, "Alpha    = % .16g;\n",   cand->Doppler.Alpha );
+  fprintf (fp, "Delta    = % .16g;\n",   cand->Doppler.Delta );
+  fprintf (fp, "Freq     = % .16g;\n",    cand->Doppler.Freq );
+  fprintf (fp, "f1ddot   = % .16g;\n", cand->Doppler.f1dot );
+  fprintf (fp, "f2ddot   = % .16g;\n", cand->Doppler.f2dot );
+  fprintf (fp, "f3ddot   = % .16g;\n", cand->Doppler.f3dot );
+
   fprintf (fp, "\n");
 
-  fprintf (fp, "h0     = %.6g;\n", cand->h0 );
-  fprintf (fp, "dh0      = %.6g;\n", cand->dh0 );
-  fprintf (fp, "\n");
+  /* Fstat-values */
+  fprintf (fp, "Fa       = % .6g  %+.6gi;\n", Fstat->Fa.re, Fstat->Fa.im );
+  fprintf (fp, "Fb       = % .6g  %+.6gi;\n", Fstat->Fb.re, Fstat->Fb.im );
+  fprintf (fp, "twoF     = % .6g;\n", 2.0 * Fstat->F );
 
-  fprintf (fp, "cosiota= %.6g;\n", cand->cosi );
-  fprintf (fp, "dcosiota = %.6g;\n", cand->dcosi );
 
   return XLAL_SUCCESS;
 
