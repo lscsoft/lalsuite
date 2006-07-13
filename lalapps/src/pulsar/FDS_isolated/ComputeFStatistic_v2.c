@@ -1313,8 +1313,8 @@ XLALwriteCandidate2file ( FILE *fp,  const PulsarCandidate *cand, const Fcompone
   /* Amplitude parameters with error-estimates */
   fprintf (fp, "h0       = % .6g;\n", cand->Amp.h0 );
   fprintf (fp, "dh0      = % .6g;\n", cand->dAmp.h0 );
-  fprintf (fp, "cosiota  = % .6g;\n", cand->Amp.cosi );
-  fprintf (fp, "dcosiota = % .6g;\n", cand->dAmp.cosi );
+  fprintf (fp, "cosi     = % .6g;\n", cand->Amp.cosi );
+  fprintf (fp, "dcosi    = % .6g;\n", cand->dAmp.cosi );
   fprintf (fp, "phi0     = % .6g;\n", cand->Amp.phi0 );
   fprintf (fp, "dphi0    = % .6g;\n", cand->dAmp.phi0 );
   fprintf (fp, "psi      = % .6g;\n", cand->Amp.psi );
