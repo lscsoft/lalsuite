@@ -297,7 +297,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 #endif
        
        /* special here: tcos -= 1.0 */
-       "fsub  %[one]                  \n\t" /* (cosVal[i]-d*(sinVal2PI[i]-d*cosVal2PIPI[i])-1) */
+       "fsubs %[one]                  \n\t" /* (cosVal[i]-d*(sinVal2PI[i]-d*cosVal2PIPI[i])-1) */
        "fstps %[cosv]                 \n\t" /* % */
        
 
