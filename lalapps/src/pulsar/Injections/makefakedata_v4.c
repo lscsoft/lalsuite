@@ -55,10 +55,13 @@ RCSID ("$Id$");
 #define FALSE (1==0)
 
 #define myMax(x,y) ( (x) > (y) ? (x) : (y) )
+#define SQ(x) ( (x) * (x) )
+
 /*----------------------------------------------------------------------*/
 /** configuration-variables derived from user-variables */
 typedef struct 
 {
+  PulsarParams pulsar;		/**< pulsar signal-parameters (amplitude + doppler */
   EphemerisData edat;		/**< ephemeris-data */
   LALDetector site;  		/**< detector-site info */
 
@@ -67,14 +70,13 @@ typedef struct
 
   LIGOTimeGPSVector *timestamps;/**< a vector of timestamps to generate time-series/SFTs for */
 
-  LIGOTimeGPS refTime;		/**< reference-time for pulsar-parameters in SBB frame */
   REAL8 fmin_eff;		/**< 'effective' fmin: round down such that fmin*Tsft = integer! */
   REAL8 fBand_eff;		/**< 'effective' frequency-band such that samples/SFT is integer */
   REAL8Vector *spindown;	/**< vector of frequency-derivatives of GW signal */
 
   SFTVector *noiseSFTs;		/**< vector of noise-SFTs to be added to signal */
   REAL8 noiseSigma;		/**< sigma for Gaussian noise to be added */
-  BOOLEAN binaryPulsar;		/**< are we dealing with a binary pulsar? */
+
   COMPLEX8FrequencySeries *transfer;  /**< detector's transfer function for use in hardware-injection */
 } ConfigVars_t;
 
@@ -149,7 +151,9 @@ REAL8 uvar_noiseSigma;		/**< Gaussian noise with standard-deviation sigma */
 REAL8 uvar_noiseSqrtSh;		/**< ALTERNATIVE: single-sided sqrt(Sh) for Gaussian noise */
 
 /* Detector and ephemeris */
-CHAR *uvar_detector;		/**< Detector: LHO, LLO, VIRGO, GEO, TAMA, CIT, ROME */
+CHAR *uvar_IFO;			/**< Detector: H1, L1, H2, V1, ... */
+CHAR *uvar_detector;		/**< [DEPRECATED] Detector: LHO, LLO, VIRGO, GEO, TAMA, CIT, ROME */
+
 CHAR *uvar_actuation;		/**< filename containg detector actuation function */
 REAL8 uvar_actuationScale;	/**< Scale-factor to be applied to actuation-function */
 CHAR *uvar_ephemDir;		/**< Directory path for ephemeris files (optional), use LAL_DATA_PATH if unset. */
@@ -158,13 +162,21 @@ CHAR *uvar_ephemYear;		/**< Year (or range of years) of ephemeris files to be us
 /* pulsar parameters [REQUIRED] */
 REAL8 uvar_refTime;		/**< Pulsar reference time tRef in SSB ('0' means: use startTime converted to SSB) */
 
-REAL8 uvar_aPlus;		/**< Plus polarization amplitude aPlus */
-REAL8 uvar_aCross;		/**< Cross polarization amplitude aCross */
+REAL8 uvar_h0;			/**< overall signal amplitude h0 */
+REAL8 uvar_cosi;		/**< cos(iota) of inclination angle iota */
+REAL8 uvar_aPlus;		/**< ALTERNATIVE to {h0,cosi}: Plus polarization amplitude aPlus */
+REAL8 uvar_aCross;		/**< ALTERNATIVE to {h0,cosi}: Cross polarization amplitude aCross */
 REAL8 uvar_psi;			/**< Polarization angle psi */
 REAL8 uvar_phi0;		/**< Initial phase phi */
-REAL8 uvar_f0;			/**< Gravitational wave-frequency f0 at tRef */
-REAL8 uvar_longitude;		/**< Right ascension [radians] alpha of pulsar */
-REAL8 uvar_latitude;		/**< Declination [radians] delta of pulsar */
+
+REAL8 uvar_Alpha;		/**< Right ascension [radians] alpha of pulsar */
+REAL8 uvar_Delta;		/**< Declination [radians] delta of pulsar */
+REAL8 uvar_longitude;		/**< [DEPRECATED] Right ascension [radians] alpha of pulsar */
+REAL8 uvar_latitude;		/**< [DEPRECATED] Declination [radians] delta of pulsar */
+
+REAL8 uvar_Freq;
+REAL8 uvar_f0;			/**< [DEPRECATED] Gravitational wave-frequency f0 at refTime */
+
 REAL8 uvar_f1dot;		/**< First spindown parameter f' */
 REAL8 uvar_f2dot;		/**< Second spindown parameter f'' */
 REAL8 uvar_f3dot;		/**< Third spindown parameter f''' */
@@ -197,7 +209,6 @@ main(int argc, char *argv[])
   PulsarSignalParams params = empty_params;
   SFTVector *SFTs = NULL;
   REAL4TimeSeries *Tseries = NULL;
-  BinaryOrbitParams orbit;
   UINT4 i_chunk, numchunks;
 
   UINT4 i;
@@ -222,26 +233,23 @@ main(int argc, char *argv[])
    * fill the PulsarSignalParams struct 
    *----------------------------------------*/
   /* pulsar params */
-  params.pulsar.tRef = GV.refTime;
-  params.pulsar.position.longitude = uvar_longitude;
-  params.pulsar.position.latitude  = uvar_latitude;
+  params.pulsar.tRef               = GV.pulsar.Doppler.refTime;
   params.pulsar.position.system    = COORDINATESYSTEM_EQUATORIAL;
-  params.pulsar.psi 		   = uvar_psi;
-  params.pulsar.aPlus		   = uvar_aPlus;
-  params.pulsar.aCross		   = uvar_aCross;
-  params.pulsar.phi0		   = uvar_phi0;
-  params.pulsar.f0		   = uvar_f0;
+  params.pulsar.position.longitude = GV.pulsar.Doppler.Alpha;
+  params.pulsar.position.latitude  = GV.pulsar.Doppler.Delta;
+  {
+    REAL8 h0   = GV.pulsar.Amp.h0;
+    REAL8 cosi = GV.pulsar.Amp.cosi;
+    params.pulsar.aPlus		   = 0.5 * h0 * ( 1.0 + SQ(cosi) );
+    params.pulsar.aCross		   = h0 * cosi;
+  }
+  params.pulsar.phi0		   = GV.pulsar.Amp.phi0;
+  params.pulsar.psi 		   = GV.pulsar.Amp.psi;
+
+  params.pulsar.f0		   = GV.pulsar.Doppler.Freq;
   params.pulsar.spindown           = GV.spindown;
-
-  /* orbital params */
-  if (GV.binaryPulsar)
-    {
-      LAL_CALL ( GetOrbitalParams(&status, &orbit), &status);
-      params.orbit = &orbit;
-    }
-  else
-    params.orbit = NULL;
-
+  params.orbit                     = GV.pulsar.Doppler.orbit;
+  
   /* detector params */
   params.transfer = GV.transfer;	/* detector transfer function (NULL if not used) */	
   params.site = &(GV.site);	
@@ -387,7 +395,7 @@ main(int argc, char *argv[])
 	      break;
 
 	    default:
-	      LALPrintError ("\ninvalid Value for generationMode\n");
+	      LALPrintError ("\ninvalid Value for --generationMode\n\n");
 	      return MAKEFAKEDATAC_EBAD;
 	      break;
 	    }
@@ -486,13 +494,101 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
     TRY ( WriteMFDlog(status->statusPtr, argv, uvar_logfile), status);
   }
 
+  { /* ========== translate user-input into 'PulsarParams' struct ========== */
+    BOOLEAN have_h0     = LALUserVarWasSet ( &uvar_h0 );
+    BOOLEAN have_cosi   = LALUserVarWasSet ( &uvar_cosi );
+    BOOLEAN have_aPlus  = LALUserVarWasSet ( &uvar_aPlus );
+    BOOLEAN have_aCross = LALUserVarWasSet ( &uvar_aCross );
+    BOOLEAN have_Freq   = LALUserVarWasSet ( &uvar_Freq );
+    BOOLEAN have_f0     = LALUserVarWasSet ( &uvar_f0 );
+    BOOLEAN have_longitude = LALUserVarWasSet ( &uvar_longitude );
+    BOOLEAN have_latitude  = LALUserVarWasSet ( &uvar_latitude );
+    BOOLEAN have_Alpha  = LALUserVarWasSet ( &uvar_Alpha );
+    BOOLEAN have_Delta  = LALUserVarWasSet ( &uvar_Delta );
+
+    /* ----- {h0,cosi} or {aPlus,aCross} ----- */
+    if ( (have_aPlus || have_aCross) && ( have_h0 || have_cosi ) ) {
+      LALPrintError ( "\nSpecify EITHER {h0,cosi} OR {aPlus, aCross}!\n\n");
+      ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+    }
+    if ( (have_h0 && !have_cosi) || (!have_h0 && have_cosi) ) {
+      LALPrintError ( "\nNeed both --h0 and --cosi!\n\n");
+      ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+    }
+    if ( (have_aPlus && !have_aCross) || ( !have_aPlus && have_aCross ) ) {
+      LALPrintError ( "\nNeed both --aPlus and --aCross !\n\n");
+      ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+    }
+    if ( have_h0 )
+      {
+	cfg->pulsar.Amp.h0 = uvar_h0;
+	cfg->pulsar.Amp.cosi = uvar_cosi;
+      }
+    else
+      {  /* translate A_{+,x} into {h_0, cosi} */
+	REAL8 disc;
+	if ( fabs(uvar_aCross) > uvar_aPlus )
+	  {
+	    LALPrintError ( "\nSpecify EITHER {h0,cosi} OR {aPlus, aCross}!\n\n");
+	    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+	  }
+	disc = sqrt ( SQ(uvar_aPlus) - SQ(uvar_aCross) );
+	cfg->pulsar.Amp.h0   = uvar_aPlus + disc; 
+	cfg->pulsar.Amp.cosi = uvar_aCross / cfg->pulsar.Amp.h0;
+      }
+    cfg->pulsar.Amp.phi0 = uvar_phi0;
+    cfg->pulsar.Amp.psi  = uvar_psi;
+    /* ----- signal Frequency ----- */
+    if ( have_f0 && have_Freq ) {
+      LALPrintError ( "\nSpecify signal-frequency using EITHER --Freq [preferred] OR --f0 [deprecated]!\n\n");
+      ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+    }
+    if ( !have_f0 && !have_Freq ) {
+      LALPrintError ( "\nSpecify signal-frequency using --Freq!\n\n");
+      ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+    }
+    if ( have_Freq )
+      cfg->pulsar.Doppler.Freq = uvar_Freq;
+    else
+      cfg->pulsar.Doppler.Freq = uvar_f0;
+
+    /* ----- skypos ----- */
+    if ( (have_Alpha || have_Delta) && ( have_longitude || have_latitude ) ) {
+      LALPrintError ( "\nUse EITHER {Alpha, Delta} [preferred] OR {longitude,latitude} [deprecated]\n\n");
+      ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+    }
+    if ( (have_Alpha && !have_Delta) || ( !have_Alpha && have_Delta ) ) {
+      LALPrintError ( "\nSpecify skyposition: need BOTH --Alpha and --Delta!\n\n");
+      ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+    }
+    if ( (have_longitude && !have_latitude) || ( !have_longitude && have_latitude ) ) {
+      LALPrintError ( "\nSpecify skyposition: need BOTH --longitude and --latitude!\n\n");
+      ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+    }
+    if ( have_Alpha )
+      {
+	cfg->pulsar.Doppler.Alpha = uvar_Alpha;
+	cfg->pulsar.Doppler.Delta = uvar_Delta;
+      }
+    else
+      {
+	cfg->pulsar.Doppler.Alpha = uvar_longitude;
+	cfg->pulsar.Doppler.Delta = uvar_latitude;
+      }
+
+  } /* Pulsar signal parameters */
+
   /* ---------- prepare vector of spindown parameters ---------- */
   {
     UINT4 msp = 0;	/* number of spindown-parameters */
-    if (uvar_f3dot != 0) 		msp = 3;	/* counter number of spindowns */
+    cfg->pulsar.Doppler.f1dot = uvar_f1dot;
+    cfg->pulsar.Doppler.f2dot = uvar_f2dot;
+    cfg->pulsar.Doppler.f3dot = uvar_f3dot;
+
+    if (uvar_f3dot != 0) 	msp = 3;	/* counter number of spindowns */
     else if (uvar_f2dot != 0)	msp = 2;
     else if (uvar_f1dot != 0)	msp = 1;
-    else 				msp = 0;
+    else 			msp = 0;
     if (msp) {
       /* memory not initialized, but ALL alloc'ed entries will be set below! */
       TRY (LALDCreateVector(status->statusPtr, &(cfg->spindown), msp), status);
@@ -518,7 +614,21 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
   /* ---------- prepare detector ---------- */
   {
     LALDetector *site;
-    if ( ( site = XLALGetSiteInfo ( uvar_detector ) ) == NULL ) {
+    BOOLEAN have_detector = LALUserVarWasSet ( &uvar_detector );
+    BOOLEAN have_IFO = LALUserVarWasSet ( &uvar_IFO );
+    if ( !have_detector && !have_IFO ) {
+      LALPrintError ( "\nNeed detector input --IFO!\n\n");
+      ABORT (status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
+    }
+    if ( have_detector && have_IFO ) {
+      LALPrintError ( "\nUse EITHER --IFO [preferred] OR --detector [deprecated]!\n\n");
+      ABORT (status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
+    }
+    if ( have_detector )
+      site = XLALGetSiteInfo ( uvar_detector );
+    else
+      site = XLALGetSiteInfo ( uvar_IFO );
+    if ( site == NULL ) {
       ABORT (status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
     }
     cfg->site = (*site);
@@ -737,6 +847,8 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
     BOOLEAN set4 = LALUserVarWasSet(&uvar_orbitArgPeriapse);
     BOOLEAN set5 = LALUserVarWasSet(&uvar_orbitTperiSSBsec);
     BOOLEAN set6 = LALUserVarWasSet(&uvar_orbitTperiSSBns);
+    BinaryOrbitParams *orbit = NULL;
+
     if (set1 || set2 || set3 || set4 || set5 || set6)
     {
       if ( (uvar_orbitSemiMajorAxis > 0) && !(set1 && set2 && set3 && set4 && set5) ) 
@@ -744,15 +856,19 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 	  LALPrintError("\nPlease either specify  ALL orbital parameters or NONE!\n\n");
 	  ABORT (status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
 	}
-      cfg->binaryPulsar = TRUE;
-
       if ( (uvar_orbitEccentricity < 0) || (uvar_orbitEccentricity > 1) )
 	{
 	  LALPrintError ("\nEccentricity has to lie within [0, 1]\n\n");
 	  ABORT (status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
 	}
-
+      if ( (orbit = LALCalloc ( 1, sizeof(BinaryOrbitParams) )) == NULL ){
+	ABORT (status, MAKEFAKEDATAC_EMEM, MAKEFAKEDATAC_MSGEMEM);
+      }
+      TRY ( GetOrbitalParams(status->statusPtr, orbit), status);
+      cfg->pulsar.Doppler.orbit = orbit;
     } /* if one or more orbital parameters were set */
+    else
+      cfg->pulsar.Doppler.orbit = NULL;
   } /* END: binary orbital params */
 
 
@@ -795,7 +911,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 
 
   /* ----- set "pulsar reference time", i.e. SSB-time at which pulsar params are defined ---------- */
-  TRY ( LALFloatToGPS(status->statusPtr, &(cfg->refTime), &uvar_refTime), status);
+  TRY ( LALFloatToGPS(status->statusPtr, &(cfg->pulsar.Doppler.refTime), &uvar_refTime), status);
 
   /* ---------- has the user specified an actuation-function file ? ---------- */
   if ( uvar_actuation ) 
@@ -878,72 +994,81 @@ InitUserVars (LALStatus *status)
 
 
   /* ---------- register all our user-variable ---------- */
-  LALregBOOLUserVar(status,   help,	'h', UVAR_HELP    , "Print this help/usage message");
+  LALregBOOLUserVar(status,   help,		'h', UVAR_HELP    , "Print this help/usage message");
 
   /* output options */
-  LALregSTRINGUserVar(status, outSFTbname,'n', UVAR_OPTIONAL, "Output directory for output SFTs (include file-basename *ONLY* for v1-SFTs!) ");
+  LALregSTRINGUserVar(status, outSFTbname,	'n', UVAR_OPTIONAL, "Output directory for output SFTs (include file-basename *ONLY* for v1-SFTs!) ");
 
-  LALregSTRINGUserVar(status, TDDfile,	't', UVAR_OPTIONAL, "Filename for output of time-series");
-  LALregBOOLUserVar(status,   hardwareTDD,'b', UVAR_OPTIONAL, "Hardware injection: output TDD in binary format (implies generationMode=1)");
+  LALregSTRINGUserVar(status, TDDfile,		't', UVAR_OPTIONAL, "Filename for output of time-series");
+  LALregBOOLUserVar(status,   hardwareTDD,	'b', UVAR_OPTIONAL, "Hardware injection: output TDD in binary format (implies generationMode=1)");
 
-  LALregSTRINGUserVar(status, logfile,	'l', UVAR_OPTIONAL, "Filename for log-output");
+  LALregSTRINGUserVar(status, logfile,		'l', UVAR_OPTIONAL, "Filename for log-output");
 
   /* detector and ephemeris */
-  LALregSTRINGUserVar(status, detector,  'I', UVAR_REQUIRED, "Detector: 'G1','L1','H1,'H2',...");
+  LALregSTRINGUserVar(status, IFO,  		'I', UVAR_OPTIONAL, "Detector: 'G1','L1','H1,'H2',...");
+  LALregSTRINGUserVar(status, detector,  	 0,  UVAR_DEVELOPER, "[DEPRECATED] Detector: use --IFO instead!.");
 
-  LALregSTRINGUserVar(status, actuation,   0,  UVAR_OPTIONAL, "Filname containing actuation function of this detector");
-  LALregREALUserVar(status,   actuationScale, 0, UVAR_OPTIONAL, 
-		    "(Signed) scale-factor to apply to the actuation-function.");
+  LALregSTRINGUserVar(status, actuation,   	 0,  UVAR_OPTIONAL, "Filname containing actuation function of this detector");
+  LALregREALUserVar(status,   actuationScale, 	 0,  UVAR_OPTIONAL,  "(Signed) scale-factor to apply to the actuation-function.");
 
-  LALregSTRINGUserVar(status, ephemDir,	'E', UVAR_OPTIONAL, "Directory path for ephemeris files");
+  LALregSTRINGUserVar(status, ephemDir,		'E', UVAR_OPTIONAL, "Directory path for ephemeris files");
   LALregSTRINGUserVar(status, ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
 
   /* start + duration of timeseries */
-  LALregINTUserVar(status,   startTime,	'G', UVAR_OPTIONAL, "Start-time of requested signal in detector-frame (GPS seconds)");
-  LALregINTUserVar(status,   duration,	 0,  UVAR_OPTIONAL, "Duration of requested signal in seconds");
-  LALregSTRINGUserVar(status,timestampsFile,0, UVAR_OPTIONAL, "Timestamps file");
+  LALregINTUserVar(status,   startTime,		'G', UVAR_OPTIONAL, "Start-time of requested signal in detector-frame (GPS seconds)");
+  LALregINTUserVar(status,   duration,	 	 0,  UVAR_OPTIONAL, "Duration of requested signal in seconds");
+  LALregSTRINGUserVar(status,timestampsFile,	 0,  UVAR_OPTIONAL, "Timestamps file");
   
   /* generation-mode of timeseries: all-at-once or per-sft */
-  LALregINTUserVar(status,   generationMode, 0,  UVAR_OPTIONAL, "How to generate timeseries: 0=all-at-once, 1=per-sft");
+  LALregINTUserVar(status,   generationMode, 	 0,  UVAR_OPTIONAL, "How to generate timeseries: 0=all-at-once, 1=per-sft");
 
   /* sampling and heterodyning frequencies */
-  LALregREALUserVar(status,   fmin,	 0 , UVAR_OPTIONAL, "Lowest frequency in output SFT (= heterodyning frequency)");
-  LALregREALUserVar(status,   Band,	 0 , UVAR_OPTIONAL, "bandwidth of output SFT in Hz (= 1/2 sampling frequency)");
+  LALregREALUserVar(status,   fmin,	 	 0, UVAR_OPTIONAL, "Lowest frequency in output SFT (= heterodyning frequency)");
+  LALregREALUserVar(status,   Band,	 	 0, UVAR_OPTIONAL, "bandwidth of output SFT in Hz (= 1/2 sampling frequency)");
 
   /* SFT properties */
-  LALregREALUserVar(status,   Tsft, 	 0 , UVAR_OPTIONAL, "Time baseline of one SFT in seconds");
-  LALregREALUserVar(status,   SFToverlap,0 , UVAR_OPTIONAL, "Overlap between successive SFTs in seconds");
+  LALregREALUserVar(status,   Tsft, 	 	 0, UVAR_OPTIONAL, "Time baseline of one SFT in seconds");
+  LALregREALUserVar(status,   SFToverlap,	 0, UVAR_OPTIONAL, "Overlap between successive SFTs in seconds");
 
   /* pulsar params */
-  LALregREALUserVar(status,   refTime, 	'S', UVAR_OPTIONAL, "Pulsar reference time tRef in SSB (if 0: use startTime -> SSB)");
-  LALregREALUserVar(status,   longitude,	 0 , UVAR_REQUIRED, "Right ascension [radians] alpha of pulsar");
-  LALregREALUserVar(status,   latitude, 	 0 , UVAR_REQUIRED, "Declination [radians] delta of pulsar");
-  LALregREALUserVar(status,   aPlus,	 0 , UVAR_REQUIRED, "Plus polarization amplitude aPlus");
-  LALregREALUserVar(status,   aCross, 	 0 , UVAR_REQUIRED, "Cross polarization amplitude aCross");
-  LALregREALUserVar(status,   psi,  	 0 , UVAR_REQUIRED, "Polarization angle psi");
-  LALregREALUserVar(status,   phi0,	 0 , UVAR_REQUIRED, "Initial phase phi");
-  LALregREALUserVar(status,   f0,  	 0 , UVAR_REQUIRED, "Gravitational wave-frequency f0 at tRef");
-  LALregREALUserVar(status,   f1dot,  	 0 , UVAR_OPTIONAL, "First spindown parameter f'");
-  LALregREALUserVar(status,   f2dot,  	 0 , UVAR_OPTIONAL, "Second spindown parameter f''");
-  LALregREALUserVar(status,   f3dot,  	 0 , UVAR_OPTIONAL, "Third spindown parameter f'''");
+  LALregREALUserVar(status,   refTime, 		'S', UVAR_OPTIONAL, "Pulsar reference time in SSB (if 0: use startTime -> SSB)");
+
+  LALregREALUserVar(status,   Alpha,	 	 0, UVAR_OPTIONAL, "Right ascension/longitude [radians] of pulsar");
+  LALregREALUserVar(status,   Delta, 	 	 0, UVAR_OPTIONAL, "Declination/latitude [radians] of pulsar");
+  LALregREALUserVar(status,   longitude,	 0, UVAR_DEVELOPER, "[DEPRECATED] Use --Alpha instead!");
+  LALregREALUserVar(status,   latitude, 	 0, UVAR_DEVELOPER, "[DEPRECATED] Use --Delta instead!");
+
+  LALregREALUserVar(status,   h0,	 	 0, UVAR_OPTIONAL, "Overall signal-amplitude h0");
+  LALregREALUserVar(status,   cosi, 	 	 0, UVAR_OPTIONAL, "cos(iota) of inclination-angle iota");
+  LALregREALUserVar(status,   aPlus,	 	 0, UVAR_OPTIONAL, "Alternative to {h0,cosi}: A_+ amplitude");
+  LALregREALUserVar(status,   aCross, 	 	 0, UVAR_OPTIONAL, "Alternative to {h0,cosi}: A_x amplitude");
+
+  LALregREALUserVar(status,   psi,  	 	 0, UVAR_REQUIRED, "Polarization angle psi");
+  LALregREALUserVar(status,   phi0,	 	 0, UVAR_REQUIRED, "Initial phase phi");
+  LALregREALUserVar(status,   Freq,  	 	 0, UVAR_OPTIONAL, "Intrinsic GW-frequency at refTime");
+  LALregREALUserVar(status,   f0,  	 	 0, UVAR_DEVELOPER, "[DEPRECATED] Use --Freq instead!");
+
+  LALregREALUserVar(status,   f1dot,  	 	 0, UVAR_OPTIONAL, "First spindown parameter f'");
+  LALregREALUserVar(status,   f2dot,  	 	 0, UVAR_OPTIONAL, "Second spindown parameter f''");
+  LALregREALUserVar(status,   f3dot,  	 	 0, UVAR_OPTIONAL, "Third spindown parameter f'''");
 
   /* binary-system orbital parameters */
-  LALregREALUserVar(status,   orbitSemiMajorAxis, 0, UVAR_OPTIONAL, "Projected orbital semi-major axis in seconds (a/c)");
-  LALregREALUserVar(status,   orbitEccentricity,  0, UVAR_OPTIONAL, "Orbital eccentricity");
-  LALregINTUserVar(status,    orbitTperiSSBsec,   0, UVAR_OPTIONAL, "'observed' (SSB) time of periapsis passage. Seconds.");
-  LALregINTUserVar(status,    orbitTperiSSBns,    0, UVAR_OPTIONAL, "'observed' (SSB) time of periapsis passage. Nanoseconds.");
-  LALregREALUserVar(status,   orbitPeriod,        0, UVAR_OPTIONAL, "Orbital period (seconds)");
-  LALregREALUserVar(status,   orbitArgPeriapse,   0, UVAR_OPTIONAL, "Argument of periapsis (radians)");                            
+  LALregREALUserVar(status,   orbitSemiMajorAxis,0, UVAR_OPTIONAL, "Projected orbital semi-major axis in seconds (a/c)");
+  LALregREALUserVar(status,   orbitEccentricity, 0, UVAR_OPTIONAL, "Orbital eccentricity");
+  LALregINTUserVar(status,    orbitTperiSSBsec,  0, UVAR_OPTIONAL, "'observed' (SSB) time of periapsis passage. Seconds.");
+  LALregINTUserVar(status,    orbitTperiSSBns,   0, UVAR_OPTIONAL, "'observed' (SSB) time of periapsis passage. Nanoseconds.");
+  LALregREALUserVar(status,   orbitPeriod,       0, UVAR_OPTIONAL, "Orbital period (seconds)");
+  LALregREALUserVar(status,   orbitArgPeriapse,  0, UVAR_OPTIONAL, "Argument of periapsis (radians)");                            
 
   /* noise */
   LALregSTRINGUserVar(status, noiseSFTs,	'D', UVAR_OPTIONAL, "Glob-like pattern specifying noise-SFTs to be added to signal");  
-  LALregREALUserVar(status,   noiseSigma,	 0 , UVAR_OPTIONAL, "Gaussian noise with standard-deviation sigma");
-  LALregREALUserVar(status,   noiseSqrtSh,	 0 , UVAR_OPTIONAL, "ALTERNATIVE: Gaussian noise with single-sided PSD sqrt(Sh)");
+  LALregREALUserVar(status,   noiseSigma,	 0, UVAR_OPTIONAL, "Gaussian noise with standard-deviation sigma");
+  LALregREALUserVar(status,   noiseSqrtSh,	 0, UVAR_OPTIONAL, "ALTERNATIVE: Gaussian noise with single-sided PSD sqrt(Sh)");
   
   /* signal precision-level */
-  LALregBOOLUserVar(status,  exactSignal,	 0, UVAR_DEVELOPER, "Generate signal time-series as exactly as possible (slow).");
+  LALregBOOLUserVar(status,   exactSignal,	 0, UVAR_DEVELOPER, "Generate signal time-series as exactly as possible (slow).");
 
-  LALregBOOLUserVar(status,  outSFTv1,	 	 0, UVAR_OPTIONAL, "Write output-SFTs in obsolete SFT-v1 format." );
+  LALregBOOLUserVar(status,   outSFTv1,	 	 0, UVAR_OPTIONAL, "Write output-SFTs in obsolete SFT-v1 format." );
   
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -973,6 +1098,9 @@ void FreeMem (LALStatus* status, ConfigVars_t *cfg)
   if (cfg->spindown) {
     TRY (LALDDestroyVector(status->statusPtr, &(cfg->spindown)), status);
   }
+
+  if ( cfg->pulsar.Doppler.orbit )
+    LALFree ( cfg->pulsar.Doppler.orbit );
 
   /* free noise-SFTs */
   if (cfg->noiseSFTs) {
@@ -1304,7 +1432,7 @@ LALExtractSFTBand ( LALStatus *status, SFTVector **outSFTs, const SFTVector *inS
 
   if ( (fmin < SFTf0) || ( fmin + Band > SFTf0 + SFTBand ) )
     {
-      LALPrintError ( "ERROR: requested frequency-band is not contained in the given SFTs.");
+      LALPrintError ( "\nERROR: requested frequency-band is not contained in the given SFTs.\n\n");
       ABORT ( status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD );
     }
 
