@@ -95,6 +95,7 @@ int main(int argc, char *argv[]){
   REAL8 dmpNormalization;
   UINT4 iIFO, iSFT, numsft;
   INT4 j;
+  LIGOTimeGPSVector *inputTimeStampsVector=NULL;
 
   /* miscellaneous */
   UINT4  mObsCoh;
@@ -106,7 +107,7 @@ int main(int argc, char *argv[]){
   REAL8    uvar_f0, uvar_fSearchBand;
   CHAR     *uvar_sftDir=NULL;
   LALStringVector *uvar_linefiles=NULL;
-
+  CHAR     *uvar_timeStampsFile=NULL;
 
   /* Set up the default parameters */  
   lalDebugLevel = 0;  /* LALDebugLevel must be called before anything else */
@@ -131,6 +132,7 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir",          'D', UVAR_REQUIRED, "SFT filename pattern",                  &uvar_sftDir),          &status);
   LAL_CALL( LALRegisterLISTUserVar(   &status, "linefiles",        0,  UVAR_OPTIONAL, "Comma separated List of linefiles (filenames must contain IFO name)",
 				      &uvar_linefiles),       &status);		      
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "timeStampsFile",   0,  UVAR_OPTIONAL, "Input time-stamps file",                &uvar_timeStampsFile),  &status);
   /* developer input variables */
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",     0, UVAR_DEVELOPER, "Running Median block size",             &uvar_blocksRngMed),    &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "maxBinsClean",     0, UVAR_DEVELOPER, "Maximum number of bins in cleaning",    &uvar_maxBinsClean),    &status);
@@ -148,8 +150,7 @@ int main(int argc, char *argv[]){
   if ( uvar_printLog ) {
     LAL_CALL( PrintLogFile( &status, uvar_linefiles, argv[0]), &status);
   }
-
-
+    
   /* read sfts and clean them */
   {
     /* new SFT I/O data types */
@@ -160,11 +161,22 @@ int main(int argc, char *argv[]){
     /* set detector constraint */
     constraints.detector = NULL;
 
+    if ( LALUserVarWasSet( &uvar_timeStampsFile ) ) {
+      LAL_CALL ( LALReadTimestampsFile ( &status, &inputTimeStampsVector, uvar_timeStampsFile), &status);
+      constraints.timestamps = inputTimeStampsVector;
+    }
+
     /* get sft catalog */
     LAL_CALL( LALSFTdataFind( &status, &catalog, uvar_sftDir, &constraints), &status);
     if ( (catalog == NULL) || (catalog->length == 0) ) {
       fprintf (stderr,"Unable to match any SFTs with pattern '%s'\n", uvar_sftDir );
       exit(1);
+    }
+
+    
+    /* now we can free the inputTimeStampsVector */
+    if ( LALUserVarWasSet( &uvar_timeStampsFile ) ) {
+      LALDestroyTimestampVector( &status, &inputTimeStampsVector );
     }
 
     /* get some sft parameters */
