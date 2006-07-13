@@ -58,7 +58,9 @@ f2dot="1e-14"
 
 dataTMP=In.data-test
 oldCL="-i $dataTMP  -I $IFO -E $ephemdir -S $refTime" ## -D $noiseDir"
-newCL="-E $ephemdir --Tsft=$Tsft --fmin=$fmin --Band=$Band --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0 --f0=$f0 --latitude=$delta  --longitude=$alpha --detector=$IFO --timestampsFile=$timestamps --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot $@" ## -D$noiseSFTs -v1"
+newCL="-E $ephemdir --Tsft=$Tsft --fmin=$fmin --Band=$Band --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0 --f0=$f0 --longitude=$alpha --latitude=$delta --detector=$IFO --timestampsFile=$timestamps --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot $@" ## -D$noiseSFTs -v1"
+newCL2="-E $ephemdir --Tsft=$Tsft --fmin=$fmin --Band=$Band --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0 --Freq=$f0  --Alpha=$alpha --Delta=$delta --IFO=$IFO --timestampsFile=$timestamps --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot $@" ## -D$noiseSFTs -v1"
+
 
 ## produce In.data file for makefakedata_v2
 echo "$Tsft	%Tsft_in_sec
@@ -94,7 +96,7 @@ time $newcode $thisCL
 
 echo
 echo "Running makefakedata_v4, writing v2-SFTs"
-thisCL="$newCL --outSFTbname=${testDIR}/"
+thisCL="$newCL2 --outSFTbname=${testDIR}/"
 echo "$newcode $thisCL"
 time $newcode $thisCL
 
