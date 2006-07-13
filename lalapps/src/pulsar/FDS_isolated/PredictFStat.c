@@ -109,7 +109,8 @@ REAL8 uvar_aPlus;
 REAL8 uvar_aCross;
 REAL8 uvar_psi;
 REAL8 uvar_h0;
-REAL8 uvar_cosiota;
+REAL8 uvar_cosi;
+REAL8 uvar_cosiota;	/* DEPRECATED in favor of cosi */
 REAL8 uvar_Freq;
 REAL8 uvar_Alpha;
 REAL8 uvar_Delta;
@@ -249,11 +250,12 @@ initUserVars (LALStatus *status)
   LALregBOOLUserVar(status,	help, 		'h', UVAR_HELP,     "Print this message"); 
   
   LALregREALUserVar(status,	h0,		's', UVAR_OPTIONAL, "Signal amplitude h_0");
-  LALregREALUserVar(status,	cosiota,	'i', UVAR_OPTIONAL, "Inclination of rotation-axis Cos(iota)");
-  LALregREALUserVar(status,	aPlus,		  0, UVAR_OPTIONAL, "ALTERNATIVE: Amplitude of '+' polarization");
-  LALregREALUserVar(status,	aCross,		  0, UVAR_OPTIONAL, "Amplitude of 'x' polarization");
-  LALregREALUserVar(status,	psi,		'Y', UVAR_REQUIRED, "Polarisation in rad");
+  LALregREALUserVar(status,	cosi,		'i', UVAR_OPTIONAL, "Inclination of rotation-axis Cos(iota)");
+  LALregREALUserVar(status,	cosiota,	 0 , UVAR_DEVELOPER,"[DEPRECATED] Use --cosi instead!");
+  LALregREALUserVar(status, 	aPlus,	 	 0 , UVAR_OPTIONAL, "Alternative to {h0,cosi}: A_+ amplitude");
+  LALregREALUserVar(status,	aCross,  	 0 , UVAR_OPTIONAL, "Alternative to {h0,cosi}: A_x amplitude");
 
+  LALregREALUserVar(status,	psi,		'Y', UVAR_REQUIRED, "Polarisation in rad");
   LALregREALUserVar(status,	Alpha,		'a', UVAR_REQUIRED, "Sky position alpha (equatorial coordinates) in radians");
   LALregREALUserVar(status,	Delta,		'd', UVAR_REQUIRED, "Sky position delta (equatorial coordinates) in radians");
   LALregREALUserVar(status,	Freq,		'F', UVAR_REQUIRED, "Signal frequency (for noise-estimation)");
@@ -348,13 +350,26 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg )
   ATTATCHSTATUSPTR (status);
 
   { /* Check user-input consistency */
-    BOOLEAN have_h0, have_cosi, have_Ap, have_Ac;
+    BOOLEAN have_h0, have_cosi, have_cosiota, have_Ap, have_Ac;
+    REAL8 cosi;
 
     have_h0 = LALUserVarWasSet ( &uvar_h0 );
-    have_cosi = LALUserVarWasSet ( &uvar_cosiota );
+    have_cosi = LALUserVarWasSet ( &uvar_cosi );
+    have_cosiota = LALUserVarWasSet ( &uvar_cosiota );
     have_Ap = LALUserVarWasSet ( &uvar_aPlus );
     have_Ac = LALUserVarWasSet ( &uvar_aCross );
-    
+
+    /* ----- handle cosi/cosiota ambiguity */
+    if ( (have_cosi && have_cosiota) || ( !have_cosi && !have_cosiota) ) {
+      LogPrintf (LOG_CRITICAL, "Need EITHER --cosi [preferred] OR --cosiota [deprecated]!\n");
+      ABORT ( status, PREDICTFSTAT_EINPUT, PREDICTFSTAT_MSGEINPUT );
+    }
+    if ( have_cosiota )
+      cosi = uvar_cosiota;
+    else
+      cosi = uvar_cosi;
+    have_cosi = TRUE;
+    /* ----- handle {h0,cosi} || {aPlus,aCross} freedom ----- */
     if ( ( have_h0 && !have_cosi ) || ( !have_h0 && have_cosi ) )
       {
 	LogPrintf (LOG_CRITICAL, "Need both (h0, cosi) to specify signal!\n");
@@ -373,8 +388,8 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg )
     /* ----- internally we always use Aplus, Across */
     if ( have_h0 )
       {
-	cfg->aPlus = 0.5 * uvar_h0 * ( 1.0 + SQ( uvar_cosiota) );
-	cfg->aCross = uvar_h0 * uvar_cosiota;
+	cfg->aPlus = 0.5 * uvar_h0 * ( 1.0 + SQ( cosi) );
+	cfg->aCross = uvar_h0 * uvar_cosi;
       }
     else
       {
