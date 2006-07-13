@@ -9,7 +9,7 @@ fStart=310;
 fBand=0.1;
 fdot=0;
 fdotBand=1.0e-9;
-nStacks1=1;
+nStacks1=10;
 maxEndTime=820631477; 
 minStartTime=0;
 refTime=600000000;
@@ -39,6 +39,17 @@ freq_HS = HS_fstatVec1(:,1);
 alpha_HS = HS_fstatVec1(:,2);
 delta_HS = HS_fstatVec1(:,3);
 fdot_HS = HS_fstatVec1(:,4);
+
+
+
+cmdline = sprintf("ComputeFStatistic_v2 --Freq=%.12g --f1dot=%.12g \
+--FreqBand=%.12g --f1dotBand=%.12g --dFreq=%.12g --df1dot=%.12g \
+--minStartTime=%d --maxEndTime=%d --refTime=%d \
+--DataFiles=%s --skyGridFile=%s \
+--ephemDir=/local_data/badkri/lscsoft/share/lal/ --ephemYear=05-09 \
+    --TwoFthreshold=0 --gridType=3 --outputLabel=CFSv2 --outputFstat=CFSv2 \
+    ", fStart, fdot, fBand, fdotBand, dFreq, df1dot, minStartTime, \
+ 		  maxEndTime, refTime, DataFiles, skyGridFile)
 
 
 #for index=1:length(Freq) 

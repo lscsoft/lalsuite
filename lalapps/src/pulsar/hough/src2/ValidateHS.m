@@ -34,7 +34,7 @@ cmdline = sprintf("HierarchicalSearch --sftData=%s --followUp=0 \
  		  DataFiles, fStart, fBand, fdot, fdotBand, nStacks1, \
  		  skyGridFile, refTime, minStartTime, maxEndTime)
 
-[output,status] = system(cmdline)
+##[output,status] = system(cmdline)
 
 load out/HS_fstatVec1.txt
 
@@ -51,7 +51,7 @@ cmdline = sprintf("ComputeFStatistic_v2 --Freq=%.12g --f1dot=%.12g \
     ", fStart, fdot, fBand, fdotBand, dFreq, df1dot, minStartTime, \
  		  maxEndTime, refTime, DataFiles, skyGridFile)
 
-[output,status] = system(cmdline)
+##[output,status] = system(cmdline)
 
 
 load CFSv2
