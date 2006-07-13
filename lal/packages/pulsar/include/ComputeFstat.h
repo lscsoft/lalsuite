@@ -237,6 +237,15 @@ void ComputeFStatFreqBand ( LALStatus *status,
 int
 XLALWeighMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *multiWeights );
 
+void
+LALEstimatePulsarAmplitudeParams (LALStatus *,
+				  PulsarAmplitudeParams *Amp,
+				  PulsarAmplitudeParams *dAmp,
+				  const Fcomponents *Fstat,
+				  const MultiAMCoeffs *multiAMcoef,
+				  REAL8 TsftShat);
+
+
 void LALCreateDetectorStateSeries (LALStatus *, DetectorStateSeries **vect, UINT4 length );
 
 /* destructors */

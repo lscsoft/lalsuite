@@ -29,7 +29,14 @@
 #define __USE_ISOC99 1
 #include <math.h>
 
-int finite(double x);
+/* GSL includes */
+#include <lal/LALGSL.h>
+#include <gsl/gsl_vector.h>
+#include <gsl/gsl_matrix.h>
+#include <gsl/gsl_blas.h>
+#include <gsl/gsl_permutation.h>
+#include <gsl/gsl_linalg.h>
+
 
 #include <lal/AVFactories.h>
 #include "ComputeFstat.h"
@@ -59,6 +66,7 @@ NRCSID( COMPUTEFSTATC, "$Id$");
 
 #define MYMAX(x,y) ( (x) > (y) ? (x) : (y) )
 #define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
+#define MYSIGN(x) ( ((x) < 0) ? (-1.0):(+1.0) )
 
 /*----- SWITCHES -----*/
 
@@ -75,6 +83,9 @@ static const ComputeFBuffer empty_ComputeFBuffer;
 static const REAL8 inv_fact[NUM_FACT] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0), (1.0/24.0), (1.0/120.0) };
 
 /*---------- internal prototypes ----------*/
+int finite(double x);
+
+static int printGSLmatrix4 ( FILE *fp, const CHAR *prefix, const gsl_matrix *gij );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -1517,3 +1528,298 @@ sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
   return XLAL_SUCCESS;
 } /* sin_cos_2PI_LUT() */
 
+
+
+/** Parameter-estimation: based on large parts on Yousuke's notes and implemention (in CFSv1),
+ * extended for error-estimation.
+ * This implementation follows closely the derivations found in 
+ * http://www.lsc-group.phys.uwm.edu/cgi-bin/enote.pl?nb=puls5knownpulsardemod&action=view&page=12
+ * The normalization 'Shat' is returned from LALComputeMultiNoiseWeights(), 
+ * and Tsft is the length of an SFT in seconds.
+ */
+void
+LALEstimatePulsarAmplitudeParams (LALStatus *status, 
+				  PulsarAmplitudeParams *Amp, /**< [out] estimated params {h0,cosi,phi0,psi} */
+				  PulsarAmplitudeParams *dAmp,/**< [out] estimated errors in Amp (can be NULL) */
+				  const Fcomponents *Fstat,   /**<  Fstat-components Fa, Fb */
+				  const MultiAMCoeffs *multiAMcoef, /**<  antenna-pattern A,B,C,D */
+				  REAL8 TsftShat)             /**<  overall normalization: Tsft * Shat */
+{
+  REAL8 A1h, A2h, A3h, A4h;
+  REAL8 Ad, Bd, Cd, Dd;
+  REAL8 normAmu;
+  REAL8 A1check, A2check, A3check, A4check;
+
+  REAL8 Asq, Da, disc;
+  REAL8 aPlus, aCross;
+  REAL8 Ap2, Ac2;
+  REAL8 beta;
+  REAL8 phi0, psi;
+  REAL8 b1, b2, b3;
+  REAL8 h0, cosi;
+  
+  REAL8 cosphi0, sinphi0, cos2psi, sin2psi;
+
+  REAL8 tolerance = LAL_REAL4_EPS;
+
+  gsl_vector *x_mu, *A_Mu;
+  gsl_matrix *M_Mu_Nu;
+  gsl_matrix *Jh_Mu_nu;
+  gsl_permutation *permh;
+  gsl_matrix *tmp, *tmp2;
+  int signum;
+
+  INITSTATUS (status, "LALEstimatePulsarAmplitudeParams", COMPUTEFSTATC );
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT ( Amp, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
+  ASSERT ( Fstat, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
+  ASSERT ( multiAMcoef, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
+
+  Ad = multiAMcoef->A;
+  Bd = multiAMcoef->B;
+  Cd = multiAMcoef->C;
+  Dd = multiAMcoef->D;
+
+  normAmu = 2.0 / sqrt(TsftShat);	/* generally *very* small!! */
+
+  /* ----- GSL memory allocation ----- */
+  if ( ( x_mu = gsl_vector_calloc (4) ) == NULL ) {
+    ABORT ( status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM );
+  }
+  if ( ( A_Mu = gsl_vector_calloc (4) ) == NULL ) {
+    ABORT ( status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM );
+  }
+  if ( ( M_Mu_Nu = gsl_matrix_calloc (4, 4) ) == NULL ) {
+    ABORT ( status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM );
+  }
+  if ( ( Jh_Mu_nu = gsl_matrix_calloc (4, 4) ) == NULL ) {
+    ABORT ( status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM );
+  }
+
+  if ( ( permh = gsl_permutation_calloc ( 4 )) == NULL ) {
+    ABORT ( status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM );
+  }
+  if ( ( tmp = gsl_matrix_calloc (4, 4) ) == NULL ) {
+    ABORT ( status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM );
+  }
+  if ( ( tmp2 = gsl_matrix_calloc (4, 4) ) == NULL ) {
+    ABORT ( status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM );
+  }
+
+  /* ----- fill vector x_mu */
+  gsl_vector_set (x_mu, 0,   Fstat->Fa.re );	/* x_1 */
+  gsl_vector_set (x_mu, 1,   Fstat->Fb.re ); 	/* x_2 */
+  gsl_vector_set (x_mu, 2, - Fstat->Fa.im );	/* x_3 */
+  gsl_vector_set (x_mu, 3, - Fstat->Fb.im );	/* x_4 */
+
+  /* ----- fill matrix M^{mu,nu} [symmetric: use UPPER HALF ONLY!!]*/
+  gsl_matrix_set (M_Mu_Nu, 0, 0,   Bd / Dd );
+  gsl_matrix_set (M_Mu_Nu, 1, 1,   Ad / Dd );
+  gsl_matrix_set (M_Mu_Nu, 0, 1, - Cd / Dd );  
+
+  gsl_matrix_set (M_Mu_Nu, 2, 2,   Bd / Dd );
+  gsl_matrix_set (M_Mu_Nu, 3, 3,   Ad / Dd );
+  gsl_matrix_set (M_Mu_Nu, 2, 3, - Cd / Dd );  
+
+  /* get (un-normalized) MLE's for amplitudes A^mu  = M^{mu,nu} x_nu */
+
+  /* GSL-doc: int gsl_blas_dsymv (CBLAS_UPLO_t Uplo, double alpha, const gsl_matrix * A, 
+   *                              const gsl_vector * x, double beta, gsl_vector * y )
+   * 
+   * compute the matrix-vector product and sum: y = alpha A x + beta y 
+   * for the symmetric matrix A. Since the matrix A is symmetric only its 
+   * upper half or lower half need to be stored. When Uplo is CblasUpper 
+   * then the upper triangle and diagonal of A are used, and when Uplo 
+   * is CblasLower then the lower triangle and diagonal of A are used. 
+   */
+  TRYGSL(gsl_blas_dsymv (CblasUpper, 1.0, M_Mu_Nu, x_mu, 0.0, A_Mu), status);
+
+  A1h = gsl_vector_get ( A_Mu, 0 );
+  A2h = gsl_vector_get ( A_Mu, 1 );
+  A3h = gsl_vector_get ( A_Mu, 2 );
+  A4h = gsl_vector_get ( A_Mu, 3 );
+
+  /* LogPrintf (LOG_DEBUG, "norm= %g; A1 = %g, A2 = %g, A3 = %g, A4 = %g\n",  normAmu, A1h, A2h, A3h, A4h ); 
+   */
+
+  Asq = SQ(A1h) + SQ(A2h) + SQ(A3h) + SQ(A4h);
+  Da = A1h * A4h - A2h * A3h;
+  disc = sqrt ( SQ(Asq) - 4.0 * SQ(Da) );
+
+  Ap2  = 0.5 * ( Asq + disc );
+  aPlus = sqrt(Ap2);		/* not yet normalized */
+
+  Ac2 = 0.5 * ( Asq - disc );
+  aCross = sqrt( Ac2 );	
+  aCross *= MYSIGN ( Da ); 	/* not yet normalized */
+
+  beta = aCross / aPlus;
+  
+  b1 =   A4h - beta * A1h;
+  b2 =   A3h + beta * A2h;
+  b3 = - A1h + beta * A4h ;
+
+  psi  = 0.5 * atan ( b1 /  b2 );	/* in [-pi/4,pi/4] (gauge used also by TDS) */
+  phi0 =       atan ( b2 / b3 );	/* in [-pi/2,pi/2] */
+
+  /* Fix remaining sign-ambiguity by checking sign of reconstructed A1 */
+  A1check = aPlus * cos(phi0) * cos(2.0*psi) - aCross * sin(phi0) * sin(2*psi);
+  if ( A1check * A1h <  0 )
+    phi0 += LAL_PI;
+
+  cosphi0 = cos(phi0);
+  sinphi0 = sin(phi0);
+  cos2psi = cos(2*psi);
+  sin2psi = sin(2*psi);
+
+  /* check numerical consistency of estimated Amu and reconstructed */
+  A1check =   aPlus * cosphi0 * cos2psi - aCross * sinphi0 * sin2psi;  
+  A2check =   aPlus * cosphi0 * sin2psi + aCross * sinphi0 * cos2psi;  
+  A3check = - aPlus * sinphi0 * cos2psi - aCross * cosphi0 * sin2psi;  
+  A4check = - aPlus * sinphi0 * sin2psi + aCross * cosphi0 * cos2psi;  
+
+  /* LogPrintf (LOG_DEBUG, "reconstructed:    A1 = %g, A2 = %g, A3 = %g, A4 = %g\n", 
+     A1check, A2check, A3check, A4check ); 
+  */
+
+  if ( ( fabs( (A1check - A1h)/A1h ) > tolerance ) ||
+       ( fabs( (A2check - A2h)/A2h ) > tolerance ) ||
+       ( fabs( (A3check - A3h)/A3h ) > tolerance ) ||
+       ( fabs( (A4check - A4h)/A4h ) > tolerance ) )
+    {
+      if ( lalDebugLevel )
+	LALPrintError ( "WARNING LALEstimatePulsarAmplitudeParams(): Difference between estimated and reconstructed Amu exceeds tolerance of %g\n",  tolerance );
+    }
+
+  /* translate A_{+,x} into {h_0, cosi} */
+  h0 = aPlus + sqrt ( disc );  /* not yet normalized ! */
+  cosi = aCross / h0;
+
+
+  /* ========== Estimate the errors ========== */
+  
+  /* ----- compute derivatives \partial A^\mu / \partial B^\nu, where
+   * we consider the output-variables B^\nu = (h0, cosi, phi0, psi) 
+   * where aPlus = 0.5 * h0 * (1 + cosi^2)  and aCross = h0 * cosi
+   */
+  { /* Ahat^mu is defined as A^mu with the replacements: A_+ --> A_x, and A_x --> h0 */
+    REAL8 A1hat =   aCross * cosphi0 * cos2psi - h0 * sinphi0 * sin2psi;  
+    REAL8 A2hat =   aCross * cosphi0 * sin2psi + h0 * sinphi0 * cos2psi;  
+    REAL8 A3hat = - aCross * sinphi0 * cos2psi - h0 * cosphi0 * sin2psi;  
+    REAL8 A4hat = - aCross * sinphi0 * sin2psi + h0 * cosphi0 * cos2psi;  
+
+    /* ----- A1 =   aPlus * cosphi0 * cos2psi - aCross * sinphi0 * sin2psi; ----- */
+    gsl_matrix_set (Jh_Mu_nu, 0, 0,   A1h / h0 );	/* dA1/h0 */
+    gsl_matrix_set (Jh_Mu_nu, 0, 1,   A1hat ); 		/* dA1/dcosi */
+    gsl_matrix_set (Jh_Mu_nu, 0, 2,   A3h );		/* dA1/dphi0 */
+    gsl_matrix_set (Jh_Mu_nu, 0, 3, - 2.0 * A2h );	/* dA1/dpsi */
+  
+    /* ----- A2 =   aPlus * cosphi0 * sin2psi + aCross * sinphi0 * cos2psi; ----- */ 
+    gsl_matrix_set (Jh_Mu_nu, 1, 0,   A2h / h0 );	/* dA2/h0 */
+    gsl_matrix_set (Jh_Mu_nu, 1, 1,   A2hat ); 		/* dA2/dcosi */
+    gsl_matrix_set (Jh_Mu_nu, 1, 2,   A4h );		/* dA2/dphi0 */
+    gsl_matrix_set (Jh_Mu_nu, 1, 3,   2.0 * A1h );	/* dA2/dpsi */
+
+    /* ----- A3 = - aPlus * sinphi0 * cos2psi - aCross * cosphi0 * sin2psi; ----- */ 
+    gsl_matrix_set (Jh_Mu_nu, 2, 0,   A3h / h0 );	/* dA3/h0 */ 
+    gsl_matrix_set (Jh_Mu_nu, 2, 1,   A3hat ); 		/* dA3/dcosi */
+    gsl_matrix_set (Jh_Mu_nu, 2, 2, - A1h );		/* dA3/dphi0 */  
+    gsl_matrix_set (Jh_Mu_nu, 2, 3, - 2.0 * A4h );	/* dA3/dpsi */
+
+    /* ----- A4 = - aPlus * sinphi0 * sin2psi + aCross * cosphi0 * cos2psi; ----- */ 
+    gsl_matrix_set (Jh_Mu_nu, 3, 0,   A4h / h0 );	/* dA4/h0 */
+    gsl_matrix_set (Jh_Mu_nu, 3, 1,   A4hat ); 		/* dA4/dcosi */
+    gsl_matrix_set (Jh_Mu_nu, 3, 2, - A2h );		/* dA4/dphi0 */
+    gsl_matrix_set (Jh_Mu_nu, 3, 3,   2.0 * A3h );	/* dA4/dpsi */
+  }
+
+  /* ----- compute inverse matrices Jh^{-1} by LU-decomposition ----- */
+  TRYGSL( gsl_linalg_LU_decomp (Jh_Mu_nu, permh, &signum ), status);
+
+  /* inverse matrix */
+  TRYGSL(gsl_linalg_LU_invert (Jh_Mu_nu, permh, tmp ), status);
+  gsl_matrix_memcpy ( Jh_Mu_nu, tmp );
+
+  /* ----- compute Jh^-1 . Minv . (Jh^-1)^T ----- */
+  
+  /* GSL-doc: gsl_blas_dgemm (CBLAS_TRANSPOSE_t TransA, CBLAS_TRANSPOSE_t TransB, double alpha, 
+   *                          const gsl_matrix *A, const gsl_matrix *B, double beta, gsl_matrix *C)
+   * These functions compute the matrix-matrix product and sum 
+   * C = \alpha op(A) op(B) + \beta C 
+   * where op(A) = A, A^T, A^H for TransA = CblasNoTrans, CblasTrans, CblasConjTrans 
+   * and similarly for the parameter TransB.
+   */
+
+  /* first tmp = Minv . (Jh^-1)^T */
+  TRYGSL( gsl_blas_dgemm (CblasNoTrans, CblasTrans, 1.0, M_Mu_Nu, Jh_Mu_nu, 0.0, tmp ), status);
+  /* then J^-1 . tmp , store result in tmp2 */
+  TRYGSL( gsl_blas_dgemm (CblasNoTrans, CblasNoTrans, 1.0, Jh_Mu_nu, tmp, 0.0, tmp2 ), status);
+  gsl_matrix_memcpy ( Jh_Mu_nu, tmp2 );
+  
+  /* ===== debug-output resulting matrices ===== */
+  if ( lalDebugLevel )
+    printGSLmatrix4 ( stdout, "var(dBh^mu, dBh^nu) = \n", Jh_Mu_nu );
+
+  /* fill candidate-struct with the obtained signal-parameters and error-estimations */
+  Amp->h0     = normAmu * h0;
+  Amp->cosi   = cosi;
+  Amp->phi0   = phi0;
+  Amp->psi    = psi;
+
+  if ( dAmp )
+    {
+      /* read out principal estimation-errors from diagonal elements */
+      dAmp->h0     = normAmu * sqrt( gsl_matrix_get (Jh_Mu_nu, 0, 0 ) );
+      dAmp->cosi   = sqrt( gsl_matrix_get (Jh_Mu_nu, 1, 1 ) );
+      dAmp->phi0   = sqrt( gsl_matrix_get (Jh_Mu_nu, 2, 2 ) );
+      dAmp->psi    = sqrt( gsl_matrix_get (Jh_Mu_nu, 3, 3 ) );
+    }
+
+  /* ----- free GSL memory ----- */
+  gsl_vector_free ( x_mu );
+  gsl_vector_free ( A_Mu );
+  gsl_matrix_free ( M_Mu_Nu );
+  gsl_matrix_free ( Jh_Mu_nu );
+  gsl_permutation_free ( permh );
+  gsl_matrix_free ( tmp );
+  gsl_matrix_free ( tmp2 );
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+
+} /* LALEstimatePulsarAmplitudeParams() */
+
+
+/** Output 4x4 gsl_matrix in octave-format.
+ * return -1 on error, 0 if OK.
+ */
+static int
+printGSLmatrix4 ( FILE *fp, const CHAR *prefix, const gsl_matrix *gij )
+{
+  if ( !gij )
+    return -1;
+  if ( !fp )
+    return -1;
+  if ( (gij->size1 != 4) || (gij->size2 != 4 ) )
+    return -1;
+  if ( !prefix ) 
+    return -1;
+
+  fprintf (fp, prefix );
+  fprintf (fp, " [ %.9f, %.9f, %.9f, %.9f;\n",
+	   gsl_matrix_get ( gij, 0, 0 ), gsl_matrix_get ( gij, 0, 1 ), 
+	   gsl_matrix_get ( gij, 0, 2 ), gsl_matrix_get ( gij, 0, 3 ) );
+  fprintf (fp, "   %.9f, %.9f, %.9f, %.9f;\n",
+	   gsl_matrix_get ( gij, 1, 0 ), gsl_matrix_get ( gij, 1, 1 ),
+	   gsl_matrix_get ( gij, 1, 2 ), gsl_matrix_get ( gij, 1, 3 ) );
+  fprintf (fp, "   %.9f, %.9f, %.9f, %.9f;\n",
+	   gsl_matrix_get ( gij, 2, 0 ), gsl_matrix_get ( gij, 2, 1 ),
+	   gsl_matrix_get ( gij, 2, 2 ), gsl_matrix_get ( gij, 2, 3 ) );
+  fprintf (fp, "   %.9f, %.9f, %.9f, %.9f ];\n",
+	   gsl_matrix_get ( gij, 3, 0 ), gsl_matrix_get ( gij, 3, 1 ),
+	   gsl_matrix_get ( gij, 3, 2 ), gsl_matrix_get ( gij, 3, 3 ) );
+  
+  return 0;
+
+} /* printGSLmatrix4() */
