@@ -139,14 +139,6 @@ typedef enum {
 } SSBprecision;
 
 
-/** One point in the general continuous-waves parameters-space */
-typedef struct {
-  LIGOTimeGPS refTime;		/**< reference-time for these parameters */
-  SkyPosition skypos;		/**< skyposition longitude/latitude [in equatorial-coordinates!!] */
-  REAL8Vector *fkdot;		/**< *intrinsic* pulsar frequency + spindowns */
-  BinaryOrbitParams *binary; 	/**< PLACEHOLDER for future extension: binary-pulsar params */
-} CWParamSpacePoint;
-
 /** Extra parameters controlling the actual computation of F */
 typedef struct {
   UINT4 Dterms;		/**< how many terms to keep in the Dirichlet kernel (~16 is usually fine) */
@@ -159,7 +151,7 @@ typedef struct {
  */
 typedef struct {
   const MultiDetectorStateSeries *multiDetStates;/**< buffer for each detStates (store pointer) and skypos */
-  SkyPosition skypos;				/**< skyposition of candidate */
+  REAL8 Alpha, Delta;				/**< skyposition of candidate */
   MultiSSBtimes *multiSSB;	
   MultiAMCoeffs *multiAMcoef;
 } ComputeFBuffer;
@@ -219,7 +211,7 @@ LALGetMultiAMCoeffs (LALStatus *,
 
 
 void ComputeFStat ( LALStatus *, Fcomponents *Fstat, 
-		    const CWParamSpacePoint *psPoint,
+		    const PulsarDopplerParams *doppler,
 		    const MultiSFTVector *multiSFTs,
 		    const MultiNoiseWeights *multiWeights,
 		    const MultiDetectorStateSeries *multiDetStates,
@@ -228,7 +220,7 @@ void ComputeFStat ( LALStatus *, Fcomponents *Fstat,
 
 void ComputeFStatFreqBand ( LALStatus *status, 
 			    REAL8FrequencySeries *FstatVector,
-			    const CWParamSpacePoint *psPoint,
+			    const PulsarDopplerParams *doppler,
 			    const MultiSFTVector *multiSFTs, 
 			    const MultiNoiseWeights *multiWeights,
 			    const MultiDetectorStateSeries *multiDetStates,

@@ -100,7 +100,7 @@ static int printGSLmatrix4 ( FILE *fp, const CHAR *prefix, const gsl_matrix *gij
 */
 void ComputeFStatFreqBand ( LALStatus *status, 
 			    REAL8FrequencySeries *fstatVector, /**< [out] Vector of Fstat values */
-			    const CWParamSpacePoint *psPoint,/**< parameter-space point to compute F for */
+			    const PulsarDopplerParams *doppler,/**< parameter-space point to compute F for */
 			    const MultiSFTVector *multiSFTs, /**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
 			    const MultiNoiseWeights *multiWeights,	/**< noise-weights of all SFTs */
 			    const MultiDetectorStateSeries *multiDetStates,/**< 'trajectories' of the different IFOs */
@@ -111,15 +111,14 @@ void ComputeFStatFreqBand ( LALStatus *status,
   UINT4 numDetectors, numBins, k;	
   REAL8 deltaF;
   Fcomponents Fstat;
-  CWParamSpacePoint thisPoint;
+  PulsarDopplerParams thisPoint;
   ComputeFBuffer cfBuffer = empty_ComputeFBuffer;
 
   INITSTATUS( status, "ComputeFStatFreqBand", COMPUTEFSTATC );
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( multiSFTs, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
-  ASSERT ( psPoint, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
-  ASSERT ( psPoint->fkdot, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
+  ASSERT ( doppler, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
   ASSERT ( multiDetStates, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
   ASSERT ( params, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
 
@@ -130,21 +129,8 @@ void ComputeFStatFreqBand ( LALStatus *status,
   ASSERT ( fstatVector->data->data, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
   ASSERT ( fstatVector->data->length > 0, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
 
-  /* copy values from psPoint to local variable */
-  thisPoint.refTime = psPoint->refTime;
-  thisPoint.skypos = psPoint->skypos;
-  thisPoint.binary = NULL;
-
-  /* now copy fkdot */
-  if ( (psPoint->fkdot != NULL) && (psPoint->fkdot->length > 0) ) {
-
-    thisPoint.fkdot = XLALCreateREAL8Vector ( psPoint->fkdot->length );
-    ASSERT ( thisPoint.fkdot, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
-    ASSERT ( thisPoint.fkdot->data, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
-
-    for ( k = 0; k < thisPoint.fkdot->length; k++)
-      thisPoint.fkdot->data[k] = psPoint->fkdot->data[k];
-  } /* finished copying psPoint */
+  /* copy values from 'doppler' to local variable 'thisPoint' */
+  thisPoint = *doppler;
 
   numBins = fstatVector->data->length;
   deltaF = fstatVector->deltaF;
@@ -157,11 +143,9 @@ void ComputeFStatFreqBand ( LALStatus *status,
 
     fstatVector->data->data[k] = Fstat.F;
       
-    thisPoint.fkdot->data[0] += deltaF;
-
+    thisPoint.Freq += deltaF;
   }
 
-  XLALDestroyREAL8Vector ( thisPoint.fkdot);
   XLALEmptyComputeFBuffer ( cfBuffer );
 
   DETATCHSTATUSPTR (status);
@@ -187,13 +171,13 @@ void ComputeFStatFreqBand ( LALStatus *status,
  */
 void
 ComputeFStat ( LALStatus *status, 
-	       Fcomponents *Fstat, 		/**< [out] Fstatistic + Fa, Fb */
-	       const CWParamSpacePoint *psPoint,/**< parameter-space point to compute F for */
-	       const MultiSFTVector *multiSFTs, /**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
-	       const MultiNoiseWeights *multiWeights,	/**< noise-weights of all SFTs */
+	       Fcomponents *Fstat,                 /**< [out] Fstatistic + Fa, Fb */
+	       const PulsarDopplerParams *doppler, /**< parameter-space point to compute F for */
+	       const MultiSFTVector *multiSFTs,    /**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
+	       const MultiNoiseWeights *multiWeights,/**< noise-weights of all SFTs */
 	       const MultiDetectorStateSeries *multiDetStates,/**< 'trajectories' of the different IFOs */
-	       const ComputeFParams *params,	/**< addition computational params */
-	       ComputeFBuffer *cfBuffer		/**< CF-internal buffering structure */
+	       const ComputeFParams *params,       /**< addition computational params */
+	       ComputeFBuffer *cfBuffer            /**< CF-internal buffering structure */
 	       )
 {
   Fcomponents retF = empty_Fcomponents;
@@ -201,6 +185,8 @@ ComputeFStat ( LALStatus *status,
   MultiSSBtimes *multiSSB = NULL;
   MultiAMCoeffs *multiAMcoef = NULL;
   REAL8 A, B, C, Dinv;
+  REAL8Vector *fkdot = NULL;
+  REAL8 spdnOrder = 0;
 
   INITSTATUS( status, "ComputeFStat", COMPUTEFSTATC );
   ATTATCHSTATUSPTR (status);
@@ -208,8 +194,7 @@ ComputeFStat ( LALStatus *status,
   /* check input */
   ASSERT ( Fstat, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
   ASSERT ( multiSFTs, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
-  ASSERT ( psPoint, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
-  ASSERT ( psPoint->fkdot, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
+  ASSERT ( doppler, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
   ASSERT ( multiDetStates, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
   ASSERT ( params, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
 
@@ -219,16 +204,26 @@ ComputeFStat ( LALStatus *status,
     ASSERT ( multiWeights->length == numDetectors , status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
   }
 
-  if ( psPoint->binary ) {
+  if ( doppler->orbit ) {
     LALPrintError ("\nSorry, binary-pulsar search not yet implemented in LALComputeFStat()\n\n");
     ABORT ( status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
   }
 
+  /* create+initialize fkdot-vector (3 spindowns by default) */
+  spdnOrder = 3;
+  if ( ( fkdot = XLALCreateREAL8Vector ( 1 + spdnOrder ) ) == NULL ) {
+    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+  }
+  fkdot->data[0] = doppler->Freq;
+  fkdot->data[1] = doppler->f1dot;
+  fkdot->data[2] = doppler->f2dot;
+  fkdot->data[3] = doppler->f3dot;
+
   /* check if that skyposition SSB+AMcoef were already buffered */
   if ( cfBuffer 
        && ( cfBuffer->multiDetStates == multiDetStates )
-       && ( cfBuffer->skypos.longitude == psPoint->skypos.longitude)
-       && ( cfBuffer->skypos.latitude == psPoint->skypos.latitude) 
+       && ( cfBuffer->Alpha == doppler->Alpha )
+       && ( cfBuffer->Delta == doppler->Delta ) 
        && cfBuffer->multiSSB
        && cfBuffer->multiAMcoef )
     { /* yes ==> reuse */
@@ -237,10 +232,14 @@ ComputeFStat ( LALStatus *status,
     }
   else 
     {
+      SkyPosition skypos;
+      skypos.system =   COORDINATESYSTEM_EQUATORIAL;
+      skypos.longitude = doppler->Alpha;
+      skypos.latitude  = doppler->Delta;
       /* compute new AM-coefficients and SSB-times */
-      TRY ( LALGetMultiSSBtimes ( status->statusPtr, &multiSSB, multiDetStates, psPoint->skypos, psPoint->refTime, params->SSBprec ), status );
+      TRY ( LALGetMultiSSBtimes ( status->statusPtr, &multiSSB, multiDetStates, skypos, doppler->refTime, params->SSBprec ), status );
 
-      LALGetMultiAMCoeffs ( status->statusPtr, &multiAMcoef, multiDetStates, psPoint->skypos );
+      LALGetMultiAMCoeffs ( status->statusPtr, &multiAMcoef, multiDetStates, skypos );
       BEGINFAIL ( status ) {
 	XLALDestroyMultiSSBtimes ( multiSSB );
       } ENDFAIL (status);
@@ -257,11 +256,12 @@ ComputeFStat ( LALStatus *status,
 	  XLALEmptyComputeFBuffer ( *cfBuffer );
 	  cfBuffer->multiSSB = multiSSB;
 	  cfBuffer->multiAMcoef = multiAMcoef;
-	  cfBuffer->skypos = psPoint->skypos;
+	  cfBuffer->Alpha = doppler->Alpha;
+	  cfBuffer->Delta = doppler->Delta;
 	  cfBuffer->multiDetStates = multiDetStates ;
 	} /* if cfBuffer */
 
-    } /* if no buffer or different skypos */
+    } /* if no buffer, different skypos or different detStates */
 
   A = multiAMcoef->A;
   B = multiAMcoef->B;
@@ -273,7 +273,7 @@ ComputeFStat ( LALStatus *status,
     {
       Fcomponents FcX = empty_Fcomponents;	/* for detector-specific FaX, FbX */
  		  
-      if ( XLALComputeFaFb (&FcX, multiSFTs->data[X], psPoint->fkdot, multiSSB->data[X], multiAMcoef->data[X], params->Dterms) != 0)
+      if ( XLALComputeFaFb (&FcX, multiSFTs->data[X], fkdot, multiSSB->data[X], multiAMcoef->data[X], params->Dterms) != 0)
 	{
 	  LALPrintError ("\nXALNewLALDemod() failed\n");
 	  ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
@@ -287,9 +287,11 @@ ComputeFStat ( LALStatus *status,
       }
 #endif
  		 
+      /* Fa = sum_X Fa_X */
       retF.Fa.re += FcX.Fa.re;
       retF.Fa.im += FcX.Fa.im;
- 		  
+
+      /* Fb = sum_X Fb_X */ 		  
       retF.Fb.re += FcX.Fb.re;
       retF.Fb.im += FcX.Fb.im;
   		  
@@ -315,6 +317,8 @@ ComputeFStat ( LALStatus *status,
       XLALDestroyMultiSSBtimes ( multiSSB );
       XLALDestroyMultiAMCoeffs ( multiAMcoef );
     } /* if !cfBuffer */
+
+  XLALDestroyREAL8Vector ( fkdot );
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
