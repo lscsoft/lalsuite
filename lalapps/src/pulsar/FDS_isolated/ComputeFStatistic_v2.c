@@ -223,7 +223,7 @@ int main(int argc,char *argv[])
   FILE *fpFstat = NULL;
   FILE *fpBstat = NULL;
   CHAR buf[512];
-  REAL8Vector *fkdotRef = NULL;
+  PulsarSpins fkdotRef = {0,0,0,0};
   REAL8Vector *fkdotTmp = NULL;
   ComputeFBuffer cfBuffer = empty_ComputeFBuffer;
   UINT4 nFreq, nf1dot, nf2dot, nf3dot;	/* number of frequency- and f1dot-bins */
@@ -348,9 +348,6 @@ int main(int argc,char *argv[])
 	}
     } /* if outputBstat */
 
-  if ( ( fkdotRef = XLALCreateREAL8Vector ( NUM_SPINS ) ) == NULL ) {
-    return COMPUTEFSTATISTIC_EMEM;
-  }
   if ( ( fkdotTmp = XLALCreateREAL8Vector ( NUM_SPINS ) ) == NULL ) {
     return COMPUTEFSTATISTIC_EMEM;
   }
@@ -439,8 +436,8 @@ int main(int argc,char *argv[])
 			  LogPrintf (LOG_CRITICAL, 
 				     "[Alpha,Delta] = [%.16g,%.16g],\n"
 				     "fkdot=[%.16g,%.16g,%.16g,%16.g]\n",
-				     dopplerpos.Alpha, dopplerpos.Delta, fkdotRef->data[0], 
-				     fkdotRef->data[1], fkdotRef->data[2], fkdotRef->data[3] );
+				     dopplerpos.Alpha, dopplerpos.Delta, 
+				     fkdotRef[0], fkdotRef[1], fkdotRef[2], fkdotRef[3] );
 			  return -1;
 			}
 
@@ -467,24 +464,23 @@ int main(int argc,char *argv[])
 		      fkdotTmp->data[2] = doppler.fkdot[2];
 		      fkdotTmp->data[3] = doppler.fkdot[3];
 
-		      LAL_CALL ( LALExtrapolatePulsarSpins(&status, fkdotRef, GV.refTime, fkdotTmp, 
-							   GV.startTime ), &status );
+		      LAL_CALL ( LALExtrapolatePulsarSpins2 ( &status, fkdotRef, GV.refTime, doppler.fkdot, 
+							      GV.startTime ), &status );
 
 		      /* calculate the baysian-marginalized 'B-statistic' */
 		      if ( fpBstat )
 			{
 			  fprintf (fpBstat, "%16.12f %8.7f %8.7f %.17g %10.6g\n", 
-				   fkdotRef->data[0], dopplerpos.Alpha, dopplerpos.Delta, fkdotRef->data[1], 
-				   Fstat.Bstat );
+				   fkdotRef[0], dopplerpos.Alpha, dopplerpos.Delta, fkdotRef[1], Fstat.Bstat );
 			}
 		      
 		      /* now, if user requested it, we output ALL F-statistic results above threshold */
 		      if ( uvar_outputFstat && ( 2.0 * Fstat.F >= uvar_TwoFthreshold ) )
 			{
  			  LALSnprintf (buf, 511, "%.16g %.16g %.16g %.6g %.5g %.5g %.9g\n",
-				       fkdotRef->data[0], 
+				       fkdotRef[0], 
 				       dopplerpos.Alpha, dopplerpos.Delta, 
-				       fkdotRef->data[1], fkdotRef->data[2], fkdotRef->data[3],
+				       fkdotRef[1], fkdotRef[2], fkdotRef[3],
 				       2.0 * Fstat.F );
 			  buf[511] = 0;
 			  if ( fpFstat )
@@ -496,11 +492,8 @@ int main(int argc,char *argv[])
 			{
 			  loudestFstat = Fstat;
 			  loudestDoppler = doppler;
-			  /* correct spins to reference-time */
-			  loudestDoppler.fkdot[0] = fkdotRef->data[0];
-			  loudestDoppler.fkdot[1] = fkdotRef->data[1];
-			  loudestDoppler.fkdot[2] = fkdotRef->data[2];
-			  loudestDoppler.fkdot[3] = fkdotRef->data[3];
+			  /* keep spins at reference-time */
+			  memcpy ( &loudestDoppler.fkdot, &fkdotRef, sizeof fkdotRef );
 			}
 		    } /* for i < nBins: loop over frequency-bins */
 		} /* For GV.spinImax: loop over 1st spindowns */
@@ -552,7 +545,8 @@ int main(int argc,char *argv[])
       fkdotTmp->data[1] = loudestDoppler.fkdot[1];
       fkdotTmp->data[2] = loudestDoppler.fkdot[2];
       fkdotTmp->data[3] = loudestDoppler.fkdot[3];
-      LAL_CALL(LALExtrapolatePulsarPhase (&status, &Amp.phi0, fkdotTmp, GV.refTime, Amp.phi0, GV.startTime),&status);
+      LAL_CALL(LALExtrapolatePulsarPhase (&status, &Amp.phi0, loudestDoppler.fkdot, GV.refTime, 
+					  Amp.phi0,GV.startTime),&status);
       if ( Amp.phi0 < 0 )	      /* make sure phi0 in [0, 2*pi] */
 	Amp.phi0 += LAL_TWOPI;
       Amp.phi0 = fmod ( Amp.phi0, LAL_TWOPI );
@@ -596,7 +590,6 @@ int main(int argc,char *argv[])
 
   XLALEmptyComputeFBuffer ( cfBuffer );
 
-  XLALDestroyREAL8Vector ( fkdotRef );
   XLALDestroyREAL8Vector ( fkdotTmp );
 
   LAL_CALL ( Freemem(&status, &GV), &status);

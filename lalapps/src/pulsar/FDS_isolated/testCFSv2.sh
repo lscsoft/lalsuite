@@ -46,8 +46,7 @@ mfd_fmin=$(echo $Freq $mfd_FreqBand | awk '{printf "%g", $1 - $2 / 2.0}');
 
 echo "mfd_fmin = $mfd_fmin"
 
-f1dot=0
-df1dot=0.3e-8	## search about 3 spindown-values
+f1dot=-1e-10;
 
 noiseSqrtSh=5
 
@@ -81,7 +80,7 @@ fi
 # this part of the command-line is compatible with SemiAnalyticF:
 saf_CL=" --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --Tsft=$Tsft --startTime=$startTime --duration=$duration --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0"
 # concatenate this with the mfd-specific switches:
-mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir/testSFT --f1dot=$f1dot  --refTime=$refTime --outSFTv1"
+mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir/testSFT --f1dot=$f1dot --refTime=$refTime --outSFTv1"
 if [ "$haveNoise" = true ]; then
     mfd_CL="$mfd_CL --noiseSqrtSh=$sqrtSh";
 fi
@@ -112,7 +111,7 @@ echo "----------------------------------------------------------------------"
 echo
 
 ## common cmdline-options for v1 and v2    
-cfs_CL="--IFO=$IFO --Freq=$Freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --f1dotBand=$f1dot --df1dot=$df1dot --DataFiles='$SFTdir/testSFT*' --refTime=$refTime"
+cfs_CL="--IFO=$IFO --Freq=$Freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --DataFiles='$SFTdir/testSFT*' --refTime=$refTime"
 if [ "$haveNoise" = false ]; then
     cfs_CL="$cfs_CL --SignalOnly"
 fi
