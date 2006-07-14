@@ -1318,8 +1318,9 @@ LALInspiralDistanceCutCleaning(
     InspiralAccuracyList       *accuracyParams,
     REAL4			snrThreshold,
     SummValueTable            **summValueList,
-    LALSegList                 *vetoSegsH1, 
-    LALSegList                 *vetoSegsH2
+    LALSegList                 *vSegsH1, 
+    LALSegList                 *vSegsH2,
+    LIGOTimeGPS                 slideTimes[LAL_NUM_IFO]
     )
 /* </lalVerbatim> */
 {
@@ -1327,6 +1328,8 @@ LALInspiralDistanceCutCleaning(
   CoincInspiralTable   *prevCoinc = NULL;
   CoincInspiralTable   *coincHead = NULL;
   REAL4 dH1, dH2, snrH1, snrH2; 
+  LALSegList *vetoSegsH1 = NULL;
+  LALSegList *vetoSegsH2 = NULL;
   REAL4 iotaCut;
   INITSTATUS( status, "LALInspiralDistanceCutCleaning", COINCINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
@@ -1334,11 +1337,23 @@ LALInspiralDistanceCutCleaning(
   thisCoinc = *coincInspiral;
   coincHead = NULL;
  
-  if (!vetoSegsH1 || !vetoSegsH2 )
-  XLALPrintWarning("LALInspiralDistanceCutCleaning: Warning, no veto list provided. you should provide h1 and h2 ones. ");
-
-
-
+  
+  if ( !vSegsH1 || !vSegsH2 )
+    XLALPrintWarning("LALInspiralDistanceCutCleaning: Warning, no veto list provided for H1/H2. NOT RECOMMENDED.. ");
+  
+  /* Adding time shifts to the segment lists. 
+     To do it right, a H1-timeshift must be added to the H2-veto list!  */
+  if ( vSegsH1 ) {
+    vetoSegsH1=(LALSegList *) LALMalloc( sizeof(vSegsH1)*sizeof(LALSegList) );
+    memcpy( vetoSegsH1, vSegsH1, sizeof(vSegsH1)*sizeof(LALSegList) );
+    XLALSegListShift( vetoSegsH1, &slideTimes[LAL_IFO_H2]);
+  }   
+  if ( vSegsH2 ) {
+    vetoSegsH2=(LALSegList *) LALMalloc( sizeof(vSegsH2)*sizeof(LALSegList) );
+    memcpy( vetoSegsH2, vSegsH2, sizeof(vSegsH2)*sizeof(LALSegList) );
+    XLALSegListShift( vetoSegsH2, &slideTimes[LAL_IFO_H1]);
+  } 
+  
   /*  compute the iota accuracy  */
   iotaCut  =  1/((2-accuracyParams->ifoAccuracy[LAL_IFO_H1].kappa)
 	/(2+accuracyParams->ifoAccuracy[LAL_IFO_H1].kappa));
@@ -1357,78 +1372,80 @@ LALInspiralDistanceCutCleaning(
     {
       snrH1 = tmpCoinc->snglInspiral[LAL_IFO_H1]->snr;
       LALDistanceScanSummValueTable(status->statusPtr, summValueList,
-   tmpCoinc->snglInspiral[LAL_IFO_H1]->end_time, "H1",  &dH1);
+				    tmpCoinc->snglInspiral[LAL_IFO_H1]->end_time, "H1",  &dH1);
       
-  LALDistanceScanSummValueTable(status->statusPtr, summValueList,
-   tmpCoinc->snglInspiral[LAL_IFO_H1]->end_time, "H2",  &dH2);
-
+      LALDistanceScanSummValueTable(status->statusPtr, summValueList,
+				    tmpCoinc->snglInspiral[LAL_IFO_H1]->end_time, "H2",  &dH2);
       
       /* iota =1 */
       if (dH2/dH1*snrH1 > snrThreshold * iotaCut)
-      {
-        if (vetoSegsH2)
-  {
-    if (!XLALSegListSearch( vetoSegsH2, 
-    &(tmpCoinc->snglInspiral[LAL_IFO_H1]->end_time)))
-        { 
-      discardTrigger =1;
+	{
+	  if (vetoSegsH2->length)
+	    {
+	      if (!XLALSegListSearch( vetoSegsH2, 
+				      &(tmpCoinc->snglInspiral[LAL_IFO_H1]->end_time)))
+		{ 
+		  discardTrigger =1;
+		}
+	    }
+	  else
+	    {
+	      discardTrigger = 1;
+	    }
+	}
     }
-        }
-  else
-  {
-  discardTrigger = 1;
-  }
-      }
-    }
-
+    
     if( tmpCoinc->snglInspiral[LAL_IFO_H2] && !tmpCoinc->snglInspiral[LAL_IFO_H1])
-    {
-      snrH2 = tmpCoinc->snglInspiral[LAL_IFO_H2]->snr;
-      LALDistanceScanSummValueTable(status->statusPtr, summValueList,
-  tmpCoinc->snglInspiral[LAL_IFO_H2]->end_time, "H1",  &dH1);
-      LALDistanceScanSummValueTable(status->statusPtr, summValueList, 
-  tmpCoinc->snglInspiral[LAL_IFO_H2]->end_time, "H2",  &dH2);
-      /* iota = 1 */
-      if (dH1/dH2*snrH2 > snrThreshold *iotaCut)
       {
-        if (vetoSegsH1)
-  {
-    if (!XLALSegListSearch( vetoSegsH1, 
-    &(tmpCoinc->snglInspiral[LAL_IFO_H2]->end_time)))
-        { 
-      discardTrigger =1;
-    }
-  } 
-  else
-  {
-    discardTrigger = 1; 
-        }
+	snrH2 = tmpCoinc->snglInspiral[LAL_IFO_H2]->snr;
+	LALDistanceScanSummValueTable(status->statusPtr, summValueList,
+				      tmpCoinc->snglInspiral[LAL_IFO_H2]->end_time, "H1",  &dH1);
+	LALDistanceScanSummValueTable(status->statusPtr, summValueList, 
+				      tmpCoinc->snglInspiral[LAL_IFO_H2]->end_time, "H2",  &dH2);
+	/* iota = 1 */
+	if (dH1/dH2*snrH2 > snrThreshold *iotaCut)
+	  {
+	    if (vetoSegsH1->length)
+	      {
+		if (!XLALSegListSearch( vetoSegsH1, 
+					&(tmpCoinc->snglInspiral[LAL_IFO_H2]->end_time)))
+		  { 
+		    discardTrigger =1;
+		  }
+	      } 
+	    else
+	      {
+		discardTrigger = 1; 
+	      }
+	  }
       }
-    }
-
-/*    discardTrigger=0;*/
+    
+    /*    discardTrigger=0;*/
     if( discardTrigger )
-    {
-      XLALFreeCoincInspiral( &tmpCoinc );
-    }
+      {
+	XLALFreeCoincInspiral( &tmpCoinc );
+      }
     else
-    {
-      if ( ! coincHead )
       {
-        coincHead = tmpCoinc;
+	if ( ! coincHead )
+	  {
+	    coincHead = tmpCoinc;
+	  }
+	else
+	  {
+	    prevCoinc->next = tmpCoinc;
+	  }
+	tmpCoinc->next = NULL;
+	prevCoinc = tmpCoinc;
       }
-      else
-      {
-        prevCoinc->next = tmpCoinc;
-      }
-      tmpCoinc->next = NULL;
-      prevCoinc = tmpCoinc;
-    }
   }
   *coincInspiral = coincHead;
+  LALFree(vetoSegsH1);
+  LALFree(vetoSegsH2);
   DETATCHSTATUSPTR (status);
   RETURN (status);
 }
+
 /* <lalVerbatim file="CoincInspiralUtilsCP"> */
 void
 XLALInspiralDistanceCutBCVC(
