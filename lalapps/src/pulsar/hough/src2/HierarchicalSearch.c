@@ -139,8 +139,8 @@ void PrintCatalogInfo( LALStatus  *status, const SFTCatalog *catalog, FILE *fp);
 void PrintStackInfo( LALStatus  *status, const SFTCatalogSequence *catalogSeq, FILE *fp);
 
 /* default values for input variables */
-#define EARTHEPHEMERIS "./earth05-09.dat" /**< Default location of earth ephemeris */
-#define SUNEPHEMERIS "./sun05-09.dat"   /**< Default location of sun ephemeris */
+#define EPHEMERISDIR "/local_data/badkri/lscsoft/share/lal/" /**< Default location of ephemeris files*/
+#define EPHEMERISYEAR "05-09"   /**< Default location of sun ephemeris */
 #define NSTACKS 10    /**< Default number of stacks */
 #define BLOCKSRNGMED 101 /**< Default running median window size */
 #define FSTART 310.0   /**< Default Start search frequency */
@@ -267,7 +267,6 @@ int main( int argc, char *argv[]) {
   FILE *fpFstat=NULL;
   FILE *fpSemiCoh=NULL;
   FILE *fpFstat1=NULL;
-
   
   /* checkpoint filename and index of loop over skypoints */
   /*   CHAR *fnameChkPoint=NULL; */
@@ -283,9 +282,9 @@ int main( int argc, char *argv[]) {
   BOOLEAN uvar_printFstat1;
 
   REAL8 uvar_dAlpha, uvar_dDelta; /* resolution for flat or isotropic grids */
-  REAL8 uvar_fdot; /* first spindown value */
-  REAL8 uvar_fdotBand; /* range of first spindown parameter */
-  REAL8 uvar_fStart, uvar_fBand;
+  REAL8 uvar_f1dot; /* first spindown value */
+  REAL8 uvar_f1dotBand; /* range of first spindown parameter */
+  REAL8 uvar_Freq, uvar_FreqBand;
   REAL8 uvar_peakThrF; /* threshold of Fstat to select peaks */
   REAL8 uvar_houghThr; /* threshold on hough number count to select candidates */
   REAL8 uvar_fstatThr; /* threshold for selecting candidates from Fstat vector */
@@ -307,8 +306,8 @@ int main( int argc, char *argv[]) {
   INT4 uvar_metricType;
   INT4 uvar_reallocBlock;
 
-  CHAR *uvar_ephemE=NULL;
-  CHAR *uvar_ephemS=NULL;
+  CHAR *uvar_ephemDir=NULL;
+  CHAR *uvar_ephemYear=NULL;
   CHAR *uvar_sftData1=NULL;
   CHAR *uvar_sftData2=NULL;
   CHAR *uvar_fnameout=NULL;
@@ -340,10 +339,10 @@ int main( int argc, char *argv[]) {
   uvar_Dterms = DTERMS;
   uvar_dAlpha = DALPHA;
   uvar_dDelta = DDELTA;
-  uvar_fdot = FDOT;
-  uvar_fdotBand = DFDOT;
-  uvar_fStart = FSTART;
-  uvar_fBand = FBAND;
+  uvar_f1dot = FDOT;
+  uvar_f1dotBand = DFDOT;
+  uvar_Freq = FSTART;
+  uvar_FreqBand = FBAND;
   uvar_blocksRngMed = BLOCKSRNGMED;
   uvar_nfdot = NFDOT;
   uvar_peakThrF = FSTATTHRESHOLD;
@@ -364,11 +363,11 @@ int main( int argc, char *argv[]) {
   uvar_skyRegion = (CHAR *)LALMalloc(512*sizeof(CHAR));
   strcpy(uvar_skyRegion, SKYREGION);
 
-  uvar_ephemE = (CHAR *)LALMalloc(512*sizeof(CHAR));
-  strcpy(uvar_ephemE, EARTHEPHEMERIS);
+  uvar_ephemDir = (CHAR *)LALMalloc(512*sizeof(CHAR));
+  strcpy(uvar_ephemDir, EPHEMERISDIR);
 
-  uvar_ephemS = (CHAR *)LALMalloc(512*sizeof(CHAR));
-  strcpy(uvar_ephemS, SUNEPHEMERIS);
+  uvar_ephemYear = (CHAR *)LALMalloc(512*sizeof(CHAR));
+  strcpy(uvar_ephemYear, EPHEMERISYEAR);
 
   uvar_sftData1 = (CHAR *)LALMalloc(512*sizeof(CHAR));
   strcpy(uvar_sftData1, SFTDIRECTORY);
@@ -380,37 +379,36 @@ int main( int argc, char *argv[]) {
   strcpy(uvar_fnameout, FNAMEOUT);
 
   /* register user input variables */
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",      'h', UVAR_HELP,     "Print this message", &uvar_help), &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "log",        0,  UVAR_OPTIONAL, "Write log file", &uvar_log), &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "chkPoint",   0,  UVAR_OPTIONAL, "For checkpointing", &uvar_chkPoint), &status);  
-  LAL_CALL( LALRegisterINTUserVar(    &status, "uvar_method",0,  UVAR_OPTIONAL, "Hough=0, stackslide=1", &uvar_method ), &status);
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "followUp",   0,  UVAR_OPTIONAL, "Follow up stage?", &uvar_followUp), &status);  
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftData1",    0,  UVAR_OPTIONAL, "1st SFT file pattern", &uvar_sftData1), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftData2",    0,  UVAR_OPTIONAL, "2nd SFT file pattern", &uvar_sftData2), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyRegion",  0,  UVAR_OPTIONAL, "sky-region polygon (or 'allsky')", &uvar_skyRegion), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "fStart",    'f', UVAR_OPTIONAL, "Start search frequency", &uvar_fStart), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "fBand",     'b', UVAR_OPTIONAL, "Search frequency band", &uvar_fBand), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "fdot",       0,  UVAR_OPTIONAL, "Spindown parameter", &uvar_fdot), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "fdotBand",   0,  UVAR_OPTIONAL, "Range of fdot", &uvar_fdotBand), &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "nStacks1",  'N', UVAR_OPTIONAL, "No.of 1st stage stacks", &uvar_nStacks1 ), &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "nStacks2",   0,  UVAR_OPTIONAL, "No.of 2nd stage stacks", &uvar_nStacks2 ), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "mismatch1",  0,  UVAR_OPTIONAL, "1st stage mismatch", &uvar_mismatch1), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "mismatch2",  0,  UVAR_OPTIONAL, "2nd stage mismatch", &uvar_mismatch2), &status);
-  LAL_CALL( LALRegisterINTUserVar (   &status, "gridType",   0,  UVAR_OPTIONAL, "0=flat,1=isotropic,2=metric,3=file", &uvar_gridType),  &status);
-  LAL_CALL( LALRegisterINTUserVar (   &status, "metricType", 0,  UVAR_OPTIONAL, "0=none,1=Ptole-analytic,2=Ptole-numeric,3=exact", &uvar_metricType), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyGridFile",0,  UVAR_OPTIONAL, "sky-grid file", &uvar_skyGridFile), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "dAlpha",     0,  UVAR_OPTIONAL, "Resolution for flat or isotropic grids", &uvar_dAlpha), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "dDelta",     0,  UVAR_OPTIONAL, "Resolution for flat or isotropic grids", &uvar_dDelta), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameout",  'o', UVAR_OPTIONAL, "Output basefileneme", &uvar_fnameout), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "peakThrF",   0,  UVAR_OPTIONAL, "Fstat Threshold", &uvar_peakThrF), &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "nCand1",     0,  UVAR_OPTIONAL, "No.of 1st stage candidates to be followed up", &uvar_nCand1), &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "nCand2",     0,  UVAR_OPTIONAL, "No.of 2nd stage candidates to be followed up",&uvar_nCand2), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "houghThr",   0,  UVAR_OPTIONAL, "Hough number count threshold (default --nCand1)",   &uvar_houghThr), &status);
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printCand1", 0,  UVAR_OPTIONAL, "Print 1st stage candidates", &uvar_printCand1),
-&status);  
-  LAL_CALL( LALRegisterREALUserVar(   &status, "refTime",    0,  UVAR_OPTIONAL, "Ref. time for pulsar pars [start time]", &uvar_refTime), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemE",    'E', UVAR_OPTIONAL, "Earth Ephemeris file", &uvar_ephemE),  &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemS",    'S', UVAR_OPTIONAL, "Sun Ephemeris file", &uvar_ephemS),  &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",        'h', UVAR_HELP,     "Print this message", &uvar_help), &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "log",          0,  UVAR_OPTIONAL, "Write log file", &uvar_log), &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "chkPoint",     0,  UVAR_OPTIONAL, "For checkpointing", &uvar_chkPoint), &status);  
+  LAL_CALL( LALRegisterINTUserVar(    &status, "uvar_method",  0,  UVAR_OPTIONAL, "Hough=0, stackslide=1", &uvar_method ), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "followUp",     0,  UVAR_OPTIONAL, "Follow up stage?", &uvar_followUp), &status);  
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftData1",     0,  UVAR_OPTIONAL, "1st SFT file pattern", &uvar_sftData1), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftData2",     0,  UVAR_OPTIONAL, "2nd SFT file pattern", &uvar_sftData2), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyRegion",    0,  UVAR_OPTIONAL, "sky-region polygon (or 'allsky')", &uvar_skyRegion), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "Freq",        'f', UVAR_OPTIONAL, "Start search frequency", &uvar_Freq), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "FreqBand",    'b', UVAR_OPTIONAL, "Search frequency band", &uvar_FreqBand), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "f1dot",        0,  UVAR_OPTIONAL, "Spindown parameter", &uvar_f1dot), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "f1dotBand",    0,  UVAR_OPTIONAL, "Range of fdot", &uvar_f1dotBand), &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "nStacks1",    'N', UVAR_OPTIONAL, "No.of 1st stage stacks", &uvar_nStacks1 ), &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "nStacks2",     0,  UVAR_OPTIONAL, "No.of 2nd stage stacks", &uvar_nStacks2 ), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "mismatch1",    0,  UVAR_OPTIONAL, "1st stage mismatch", &uvar_mismatch1), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "mismatch2",    0,  UVAR_OPTIONAL, "2nd stage mismatch", &uvar_mismatch2), &status);
+  LAL_CALL( LALRegisterINTUserVar (   &status, "gridType",     0,  UVAR_OPTIONAL, "0=flat,1=isotropic,2=metric,3=file", &uvar_gridType),  &status);
+  LAL_CALL( LALRegisterINTUserVar (   &status, "metricType",   0,  UVAR_OPTIONAL, "0=none,1=Ptole-analytic,2=Ptole-numeric,3=exact", &uvar_metricType), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyGridFile",  0,  UVAR_OPTIONAL, "sky-grid file", &uvar_skyGridFile), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "dAlpha",       0,  UVAR_OPTIONAL, "Resolution for flat or isotropic grids", &uvar_dAlpha), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "dDelta",       0,  UVAR_OPTIONAL, "Resolution for flat or isotropic grids", &uvar_dDelta), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameout",    'o', UVAR_OPTIONAL, "Output basefileneme", &uvar_fnameout), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "peakThrF",     0,  UVAR_OPTIONAL, "Fstat Threshold", &uvar_peakThrF), &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "nCand1",       0,  UVAR_OPTIONAL, "No.of 1st stage candidates to be followed up", &uvar_nCand1), &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "nCand2",       0,  UVAR_OPTIONAL, "No.of 2nd stage candidates to be followed up",&uvar_nCand2), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "houghThr",     0,  UVAR_OPTIONAL, "Hough number count threshold (default --nCand1)",   &uvar_houghThr), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printCand1",   0,  UVAR_OPTIONAL, "Print 1st stage candidates", &uvar_printCand1), &status);  
+  LAL_CALL( LALRegisterREALUserVar(   &status, "refTime",      0,  UVAR_OPTIONAL, "Ref. time for pulsar pars [start time]", &uvar_refTime), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemDir",     0,  UVAR_OPTIONAL, "Location of ephemeris files", &uvar_ephemDir),  &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemYear",    0,  UVAR_OPTIONAL, "Ephemeris year", &uvar_ephemYear),  &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "minStartTime", 0,  UVAR_OPTIONAL, "Min start time of observation", &uvar_minStartTime), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "maxEndTime",   0,  UVAR_OPTIONAL, "Max end time of observation",   &uvar_maxEndTime),   &status);
 
@@ -545,10 +543,10 @@ int main( int argc, char *argv[]) {
   /* copy user specified spin variables at reftime  */
   for (j = 0; j < 2; j++)  
     {
-      fkdot_refTime->data[0] = uvar_fStart; /* frequency */
-      fkdot_refTime->data[1] = uvar_fdot;  /* 1st spindown */
-      fkdotBand_refTime->data[0] = uvar_fBand; /* frequency range */
-      fkdotBand_refTime->data[1] = uvar_fdotBand; /* spindown range */
+      fkdot_refTime->data[0] = uvar_Freq; /* frequency */
+      fkdot_refTime->data[1] = uvar_f1dot;  /* 1st spindown */
+      fkdotBand_refTime->data[0] = uvar_FreqBand; /* frequency range */
+      fkdotBand_refTime->data[1] = uvar_f1dotBand; /* spindown range */
     }
 
   /* utility temp variable */
@@ -680,7 +678,6 @@ int main( int argc, char *argv[]) {
     LAL_CALL( LALExtrapolatePulsarSpinRange( &status, &spinRange_startTime1, tStart1GPS, &spinRange_refTime), &status); 
     LAL_CALL( LALExtrapolatePulsarSpinRange( &status, &spinRange_endTime1, tEnd1GPS, &spinRange_refTime), &status); 
 
-
     /* set reference time for calculating Fstatistic */
     thisPoint1.refTime = tStart1GPS;
     /* binary orbit and higher spindowns not considered so far */
@@ -689,17 +686,25 @@ int main( int argc, char *argv[]) {
     thisPoint1.f3dot = 0.0;
 
     /* initialize ephemeris info */ 
-    edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
-    (*edat).ephiles.earthEphemeris = uvar_ephemE;
-    (*edat).ephiles.sunEphemeris = uvar_ephemS;
+    {
+      CHAR ephemE[512], ephemS[512];
+
+      sprintf(ephemE, "%s/earth%s.dat", uvar_ephemDir, uvar_ephemYear);
+      sprintf(ephemS, "%s/sun%s.dat", uvar_ephemDir, uvar_ephemYear);
+
+      edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
+      (*edat).ephiles.earthEphemeris = ephemE;
+      (*edat).ephiles.sunEphemeris = ephemS;
     
-    /* Leap seconds for the first timestamp */   
-    LAL_CALL( LALLeapSecs(&status, &tmpLeap, &tStart1GPS, &lsfas), &status);
-    (*edat).leap = (INT2)tmpLeap;
-  
-    /* read in ephemeris data */
-    LAL_CALL( LALInitBarycenter( &status, edat), &status);
-        
+      /* Leap seconds for the first timestamp */   
+      LAL_CALL( LALLeapSecs(&status, &tmpLeap, &tStart1GPS, &lsfas), &status);
+      (*edat).leap = (INT2)tmpLeap;
+      
+      /* read in ephemeris data */
+      LAL_CALL( LALInitBarycenter( &status, edat), &status);        
+    }
+
+
     /* set wings of sfts to be read */
     /* the wings must be enough for the Doppler shift and extra bins
        for the running median block size and Dterms for Fstat calculation.
@@ -1096,9 +1101,9 @@ int main( int argc, char *argv[]) {
   scanInit1.Detector = &(stackMultiDetStates1.data[0]->data[0]->detector);
   scanInit1.ephemeris = edat;
   scanInit1.skyGridFile = uvar_skyGridFile;
-  scanInit1.searchRegion.Freq = uvar_fStart;
-  scanInit1.searchRegion.FreqBand = uvar_fBand;
-  scanInit1.searchRegion.f1dot = uvar_fdot;
+  scanInit1.searchRegion.Freq = uvar_Freq;
+  scanInit1.searchRegion.FreqBand = uvar_FreqBand;
+  scanInit1.searchRegion.f1dot = uvar_f1dot;
   scanInit1.searchRegion.f1dotBand = fkdotBand_startTime1->data[1];;
   scanInit1.searchRegion.skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
   strcpy (scanInit1.searchRegion.skyRegionString, uvar_skyRegion);
