@@ -43,8 +43,6 @@ RCSID ("$Id$");
 #define TRUE (1==1)
 #define FALSE (1==0)
 
-#define DONE_MARKER "%DONE"
-
 /* (possible) fields of the output Fstat-file */ 
 typedef struct {
   REAL8 Freq;
@@ -185,29 +183,6 @@ compareClusterFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALP
   if ( !nlines1 || !nlines2 )	/* one file is empty.. don't continue */
     return;
 
-  /* cluster-files: last line now HAS to contain 'DONE'-marker */
-  line1 = f1->lines->tokens[nlines1-1];
-  line2 = f2->lines->tokens[nlines2-1];
-
-  if ( strcmp(line1, DONE_MARKER ) ) 
-    {
-      LALPrintError ("ERROR: File 1 is not properly terminated by '%s' marker!\n\n", 
-		     DONE_MARKER);
-      (*diff) ++;	/* increase difference-counter */
-    }
-  else
-    nlines1 --; /* avoid stepping on DONE-marker in comparison */
-
-  if ( strcmp(line2, DONE_MARKER ) )  
-    {
-      LALPrintError ("ERROR: File 2 is not properly terminated by '%s' marker!\n\n", 
-		     DONE_MARKER);
-      (*diff) ++;
-    }
-  else
-    nlines2 --;	/* avoid stepping on DONE-marker in comparison */
-
-
   /* step through the two files and compare (trying to avoid stumbling on roundoff-errors ) */
   minlines = (nlines1 < nlines2) ? nlines1 : nlines2;
 
@@ -299,24 +274,6 @@ compareFstatFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALPar
   /* last line HAS to contain 'DONE'-marker */
   line1 = f1->lines->tokens[nlines1-1];
   line2 = f2->lines->tokens[nlines2-1];
-
-  if ( strcmp(line1, DONE_MARKER ) ) 
-    {
-      LALPrintError ("ERROR: File 1 is not properly terminated by '%s' marker!\n\n", 
-		     DONE_MARKER);
-      (*diff) ++;	/* increase difference-counter */
-    }
-  else
-    nlines1 --; /* avoid stepping on DONE-marker in comparison */
-
-  if ( strcmp(line2, DONE_MARKER ) )  
-    {
-      LALPrintError ("ERROR: File 2 is not properly terminated by '%s' marker!\n\n", 
-		     DONE_MARKER);
-      (*diff) ++;
-    }
-  else
-    nlines2 --;	/* avoid stepping on DONE-marker in comparison */
 
   /* step through the two files and compare (trying to avoid stumbling on roundoff-errors ) */
   minlines = (nlines1 < nlines2) ? nlines1 : nlines2;
