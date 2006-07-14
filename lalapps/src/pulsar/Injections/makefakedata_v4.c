@@ -61,7 +61,7 @@ RCSID ("$Id$");
 /** configuration-variables derived from user-variables */
 typedef struct 
 {
-  PulsarCandidate pulsar;	/**< pulsar signal-parameters (amplitude + doppler */
+  PulsarParams pulsar;		/**< pulsar signal-parameters (amplitude + doppler */
   EphemerisData edat;		/**< ephemeris-data */
   LALDetector site;  		/**< detector-site info */
 
