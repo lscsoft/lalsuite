@@ -45,18 +45,6 @@ extern "C" {
 
 NRCSID( PULSARDATATYPESH, "$Id$");
 
-/** Type defining the parameters of a pulsar-source of Gravitational waves */
-typedef struct {
-  LIGOTimeGPS tRef;	/**< reference time of pulsar parameters (in SSB!) */
-  SkyPosition position;	/**< source location (in radians) */
-  REAL4 psi;            /**< polarization angle (radians) at tRef */
-  REAL4 aPlus; 		/**< plus-polarization amplitude at tRef */
-  REAL4 aCross;  	/**< cross-polarization amplitude at tRef */
-  REAL8 phi0;           /**< initial phase (radians) at tRef */
-  REAL8 f0;             /**< WAVE-frequency(!) at tRef (in Hz) */
-  REAL8Vector *spindown;/**< wave-frequency spindowns at tRef (NOT f0-normalized!) */
-} PulsarSourceParams;
-
 /** Type defining the orbital parameters of a binary pulsar */
 typedef struct {
   LIGOTimeGPS orbitEpoch; /**< time of periapsis passage (in SSB) */
@@ -86,6 +74,12 @@ typedef struct {
   BinaryOrbitParams *orbit;	/**< binary orbital parameters (or NULL if isolated pulsar) */
 } PulsarDopplerParams;
 
+/** Type defining the parameters of a pulsar-source of Gravitational waves */
+typedef struct {
+  PulsarAmplitudeParams Amp;	/**< 'Amplitude-parameters': h0, cosi, phi0, psi */
+  PulsarDopplerParams Doppler;	/**< 'Doppler-parameters': {skypos, fkdot, orbital params } */
+} PulsarParams;
+
 /** Type containing a "candidate": parameter-space point with estimated errors and Fstat-value/significance */
 typedef struct {
   PulsarAmplitudeParams Amp, dAmp;	/**< amplitude-parameters and error-estimates */
@@ -93,6 +87,22 @@ typedef struct {
   REAL8 significance;			/**< a (user-chosen) measure of 'significance': Fstat, Hough-count,... */
 } PulsarCandidate;
 
+
+/** [OBSOLETE] Type defining the parameters of a pulsar-source of Gravitational waves.
+ * NOTE: this type is obsolete and should no longer be used [==> use 'PulsarParams' instead]
+ * however, it's too entrenched in the the GeneratePulsarSignal() functions and codes using it,
+ * so we can't easily get rid of it any more, so we keep it for now....
+ */
+typedef struct {
+   LIGOTimeGPS tRef;	/**< reference time of pulsar parameters (in SSB!) */
+   SkyPosition position;	/**< source location (in radians) */
+   REAL4 psi;            /**< polarization angle (radians) at tRef */
+   REAL4 aPlus; 		/**< plus-polarization amplitude at tRef */
+   REAL4 aCross;  	/**< cross-polarization amplitude at tRef */
+   REAL8 phi0;           /**< initial phase (radians) at tRef */
+   REAL8 f0;             /**< WAVE-frequency(!) at tRef (in Hz) */
+   REAL8Vector *spindown;/**< wave-frequency spindowns at tRef (NOT f0-normalized!) */
+} PulsarSourceParams;
 
 #ifdef  __cplusplus
 }
