@@ -920,3 +920,59 @@ XLALSegListSearch( LALSegList *seglist, const LIGOTimeGPS *gps )
   /* If we get here, then we didn't find a match, so return NULL */
   return NULL;
 }
+
+
+
+/*---------------------------------------------------------------------------*/
+/* <lalVerbatim file="SegmentsCP"> */
+INT4
+XLALSegListShift(  LALSegList *seglist, const LIGOTimeGPS *gps )
+/* </lalVerbatim> */
+{
+  static const char *func = "XLALSegListShift";
+  static LALStatus status;
+  int i;
+  REAL8 shift;
+  LALSeg tmpSeg;
+
+  /* Make sure a non-null pointer was passed for the segment list */
+  if ( ! seglist ) {
+    XLALPrintError( "NULL LALSegList pointer passed to %s\n", func );
+    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+  }
+
+  /* Make sure a non-null pointer was passed for the GPS time */
+  if ( ! gps ) {
+    XLALPrintError( "NULL LIGOTimeGPS pointer passed to %s\n", func );
+    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+  }
+
+  /* Make sure the segment list has been properly initialized */
+  if ( seglist->initMagic != SEGMENTSH_INITMAGICVAL ) {
+    XLALPrintError( "Passed unintialized LALSegList structure to %s\n", func );
+    XLAL_ERROR_NULL( func, XLAL_EINVAL );
+  }
+
+  XLALSetErrno( 0 );
+
+  /* If the segment list is empty, simply return */
+  if ( seglist->length == 0 ) {
+    return NULL;
+  }
+
+  /* convert the time-shift to a float */
+  LALGPStoFloat( &status, &shift, gps);
+
+  /* loop over all segments in this list */
+  for (i=0; i<seglist->length; i++) {
+    tmpSeg=seglist->segs[i];
+
+    /* create time-shifted segments */
+    LALAddFloatToGPS( &status, &tmpSeg.start, &tmpSeg.start, shift);
+    LALAddFloatToGPS( &status, &tmpSeg.end, &tmpSeg.end, shift);    
+    seglist->segs[i]=tmpSeg;
+  }
+
+  return 1;
+
+}
