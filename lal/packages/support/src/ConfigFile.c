@@ -32,9 +32,9 @@ The general syntax is somewhat similar to the one provided by the
 perl-module <tt>ConfigParser</tt> (cf. 
 http://www.python.org/doc/current/lib/module-ConfigParser.html)
 but (currently) without the possibility of "chapters".
-Comments are allowed using either '<tt>\#</tt>' or '<tt>;</tt>'. You can also use 
-line-continuation  using a '<tt>\\</tt>' at the end of the line.
-Also note that '<tt>\#</tt>' or '<tt>;</tt>' within double-quotes '<tt>"..."</tt>' 
+Comments are allowed using either '<tt>\#</tt>', '<tt>;</tt>' or <tt>%</tt>. 
+You can also use line-continuation  using a '<tt>\\</tt>' at the end of the line.
+Also note that comment-signs '<tt>\#;%</tt>' within double-quotes '<tt>"..."</tt>' 
 are <em>not</em> treated as comment-characters.  The general syntax is best illustrated
 using a simple example: 
 \code
@@ -46,7 +46,7 @@ somevar = some text.\
    var3 = 4      # whatever that means
 note = "this is also possible, and # here does nothing"
 a_switch = true	 #possible values: 0,1,true,false,yes,no, case insensitive
-# etc etc.
+%% etc etc.
 \endcode
 
 Note that TABS generally get replaced by a single space, which can be
@@ -139,9 +139,9 @@ The general syntax is somewhat similar to the one provided by the
 perl-module \texttt{ConfigParser} (cf. 
 \verb+http://www.python.org/doc/current/lib/module-ConfigParser.html+ )
 but (currently) without the possibility of "chapters".
-Comments are allowed using either '\#' or ';'. You can also use
+Comments are allowed using either '\#', ';' or '%'. You can also use
 standard line-continuation  using a '\verb+\+' at the end of the line.
-Also note that '\#' or ';' within double-quotes '\"' are \emph{not}
+Also note that '\#', ';' or '%' within double-quotes '\"' are \emph{not}
 treated as comment-characters.  The general syntax is best illustrated
 using a simple example: 
 \begin{verbatim}
@@ -827,7 +827,7 @@ cleanConfig (CHARSequence *text)
       if ( (*ptr) == '\"' )
 	inQuotes = !inQuotes;	/* flip state */
 
-      if ( ((*ptr) == '#') || ( (*ptr) == ';') )
+      if ( ((*ptr) == '#') || ( (*ptr) == ';') || ( (*ptr) == '%') )
 	if ( !inQuotes )	/* only consider as comments if not quoted */
 	  {
 	    len = strcspn (ptr, "\n"); 
