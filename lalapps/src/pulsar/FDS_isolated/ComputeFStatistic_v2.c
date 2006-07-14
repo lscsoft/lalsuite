@@ -399,20 +399,20 @@ int main(int argc,char *argv[])
       /*----- loop over spindown values */
       for ( if3dot = 0; if3dot < nf3dot; if3dot ++ )
 	{
-	  doppler.f3dot = GV.spinRangeStart->fkdot->data[3] + if3dot * uvar_df3dot;
+	  doppler.fkdot[3] = GV.spinRangeStart->fkdot->data[3] + if3dot * uvar_df3dot;
 	  
 	  for ( if2dot = 0; if2dot < nf2dot; if2dot ++ )
 	    {
-	      doppler.f2dot = GV.spinRangeStart->fkdot->data[2] + if2dot * uvar_df2dot;
+	      doppler.fkdot[2] = GV.spinRangeStart->fkdot->data[2] + if2dot * uvar_df2dot;
 
 	      for (if1dot = 0; if1dot < nf1dot; if1dot ++)
 		{
-		  doppler.f1dot = GV.spinRangeStart->fkdot->data[1] + if1dot * thisScan.df1dot;
+		  doppler.fkdot[1] = GV.spinRangeStart->fkdot->data[1] + if1dot * thisScan.df1dot;
 	  
 		  /* Loop over frequencies to be demodulated */
 		  for ( iFreq = 0 ; iFreq < nFreq ; iFreq ++ )
 		    {
-		      doppler.Freq = GV.spinRangeStart->fkdot->data[0] + iFreq * thisScan.dFreq;
+		      doppler.fkdot[0] = GV.spinRangeStart->fkdot->data[0] + iFreq * thisScan.dFreq;
 		      
 		      LAL_CALL( ComputeFStat(&status, &Fstat, &doppler, GV.multiSFTs, GV.multiNoiseWeights, 
 					     GV.multiDetStates, &GV.CFparams, &cfBuffer ), &status );
@@ -462,10 +462,10 @@ int main(int argc,char *argv[])
 			} /* if SignalOnly */
 		      
 		      /* propagate fkdot back to reference-time for outputting results */
-		      fkdotTmp->data[0] = doppler.Freq;
-		      fkdotTmp->data[1] = doppler.f1dot;
-		      fkdotTmp->data[2] = doppler.f2dot;
-		      fkdotTmp->data[3] = doppler.f3dot;
+		      fkdotTmp->data[0] = doppler.fkdot[0];
+		      fkdotTmp->data[1] = doppler.fkdot[1];
+		      fkdotTmp->data[2] = doppler.fkdot[2];
+		      fkdotTmp->data[3] = doppler.fkdot[3];
 
 		      LAL_CALL ( LALExtrapolatePulsarSpins(&status, fkdotRef, GV.refTime, fkdotTmp, 
 							   GV.startTime ), &status );
@@ -497,10 +497,10 @@ int main(int argc,char *argv[])
 			  loudestFstat = Fstat;
 			  loudestDoppler = doppler;
 			  /* correct spins to reference-time */
-			  loudestDoppler.Freq  = fkdotRef->data[0];
-			  loudestDoppler.f1dot = fkdotRef->data[1];
-			  loudestDoppler.f2dot = fkdotRef->data[2];
-			  loudestDoppler.f3dot = fkdotRef->data[3];
+			  loudestDoppler.fkdot[0] = fkdotRef->data[0];
+			  loudestDoppler.fkdot[1] = fkdotRef->data[1];
+			  loudestDoppler.fkdot[2] = fkdotRef->data[2];
+			  loudestDoppler.fkdot[3] = fkdotRef->data[3];
 			}
 		    } /* for i < nBins: loop over frequency-bins */
 		} /* For GV.spinImax: loop over 1st spindowns */
@@ -548,10 +548,10 @@ int main(int argc,char *argv[])
       XLALDestroyMultiAMCoeffs ( multiAMcoef );
       
       /* propagate initial-phase from internal reference-time 'startTime' to refTime of Doppler-params */
-      fkdotTmp->data[0] = loudestDoppler.Freq;
-      fkdotTmp->data[1] = loudestDoppler.f1dot;
-      fkdotTmp->data[2] = loudestDoppler.f2dot;
-      fkdotTmp->data[3] = loudestDoppler.f3dot;
+      fkdotTmp->data[0] = loudestDoppler.fkdot[0];
+      fkdotTmp->data[1] = loudestDoppler.fkdot[1];
+      fkdotTmp->data[2] = loudestDoppler.fkdot[2];
+      fkdotTmp->data[3] = loudestDoppler.fkdot[3];
       LAL_CALL(LALExtrapolatePulsarPhase (&status, &Amp.phi0, fkdotTmp, GV.refTime, Amp.phi0, GV.startTime),&status);
       if ( Amp.phi0 < 0 )	      /* make sure phi0 in [0, 2*pi] */
 	Amp.phi0 += LAL_TWOPI;
@@ -1323,12 +1323,12 @@ XLALwriteCandidate2file ( FILE *fp,  const PulsarCandidate *cand, const Fcompone
   fprintf (fp, "\n");
 
   /* Doppler parameters */
-  fprintf (fp, "Alpha    = % .16g;\n",   cand->Doppler.Alpha );
-  fprintf (fp, "Delta    = % .16g;\n",   cand->Doppler.Delta );
-  fprintf (fp, "Freq     = % .16g;\n",    cand->Doppler.Freq );
-  fprintf (fp, "f1ddot   = % .16g;\n", cand->Doppler.f1dot );
-  fprintf (fp, "f2ddot   = % .16g;\n", cand->Doppler.f2dot );
-  fprintf (fp, "f3ddot   = % .16g;\n", cand->Doppler.f3dot );
+  fprintf (fp, "Alpha    = % .16g;\n", cand->Doppler.Alpha );
+  fprintf (fp, "Delta    = % .16g;\n", cand->Doppler.Delta );
+  fprintf (fp, "Freq     = % .16g;\n", cand->Doppler.fkdot[0] );
+  fprintf (fp, "f1ddot   = % .16g;\n", cand->Doppler.fkdot[1] );
+  fprintf (fp, "f2ddot   = % .16g;\n", cand->Doppler.fkdot[2] );
+  fprintf (fp, "f3ddot   = % .16g;\n", cand->Doppler.fkdot[3] );
 
   fprintf (fp, "\n");
 

@@ -246,7 +246,7 @@ main(int argc, char *argv[])
   params.pulsar.phi0		   = GV.pulsar.Amp.phi0;
   params.pulsar.psi 		   = GV.pulsar.Amp.psi;
 
-  params.pulsar.f0		   = GV.pulsar.Doppler.Freq;
+  params.pulsar.f0		   = GV.pulsar.Doppler.fkdot[0];
   params.pulsar.spindown           = GV.spindown;
   params.orbit                     = GV.pulsar.Doppler.orbit;
   
@@ -548,9 +548,9 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
       ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
     }
     if ( have_Freq )
-      cfg->pulsar.Doppler.Freq = uvar_Freq;
+      cfg->pulsar.Doppler.fkdot[0] = uvar_Freq;
     else
-      cfg->pulsar.Doppler.Freq = uvar_f0;
+      cfg->pulsar.Doppler.fkdot[0] = uvar_f0;
 
     /* ----- skypos ----- */
     if ( (have_Alpha || have_Delta) && ( have_longitude || have_latitude ) ) {
@@ -581,9 +581,9 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
   /* ---------- prepare vector of spindown parameters ---------- */
   {
     UINT4 msp = 0;	/* number of spindown-parameters */
-    cfg->pulsar.Doppler.f1dot = uvar_f1dot;
-    cfg->pulsar.Doppler.f2dot = uvar_f2dot;
-    cfg->pulsar.Doppler.f3dot = uvar_f3dot;
+    cfg->pulsar.Doppler.fkdot[1] = uvar_f1dot;
+    cfg->pulsar.Doppler.fkdot[2] = uvar_f2dot;
+    cfg->pulsar.Doppler.fkdot[3] = uvar_f3dot;
 
     if (uvar_f3dot != 0) 	msp = 3;	/* counter number of spindowns */
     else if (uvar_f2dot != 0)	msp = 2;

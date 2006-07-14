@@ -682,8 +682,8 @@ int main( int argc, char *argv[]) {
     thisPoint1.refTime = tStart1GPS;
     /* binary orbit and higher spindowns not considered so far */
     thisPoint1.orbit = NULL;
-    thisPoint1.f2dot = 0.0;
-    thisPoint1.f3dot = 0.0;
+    thisPoint1.fkdot[2] = 0.0;
+    thisPoint1.fkdot[3] = 0.0;
 
     /* initialize ephemeris info */ 
     {
@@ -953,8 +953,8 @@ int main( int argc, char *argv[]) {
     thisPoint2.refTime = tStart2GPS;
     /* binary and higher spindowns not implemented so far */
     thisPoint2.orbit = NULL;
-    thisPoint2.f2dot = 0.0;
-    thisPoint2.f3dot = 0.0;
+    thisPoint2.fkdot[0] = 0.0;
+    thisPoint2.fkdot[0] = 0.0;
       
     /* set wings of sfts to be read */
     /* the wings must be enough for the Doppler shift and extra bins
@@ -1175,8 +1175,8 @@ int main( int argc, char *argv[]) {
       for ( ifdot=0; ifdot<nfdot; ifdot++)
 	{
 	  /* set spindown value for Fstat calculation */
-  	  thisPoint1.f1dot = fkdot_startTime1->data[1] + ifdot * dfDot;
-	  thisPoint1.Freq = fkdot_startTime1->data[0];
+  	  thisPoint1.fkdot[1] = fkdot_startTime1->data[1] + ifdot * dfDot;
+	  thisPoint1.fkdot[0] = fkdot_startTime1->data[0];
 	  	  
 	  /* calculate the Fstatistic for each stack*/
 	  for ( k = 0; k < nStacks1; k++) {
@@ -1201,7 +1201,7 @@ int main( int argc, char *argv[]) {
 	  /* set sky location and spindown for Hough grid -- same as for Fstat calculation */	  
 	  semiCohPar.alpha = thisPoint1.Alpha;
 	  semiCohPar.delta = thisPoint1.Delta;
-	  semiCohPar.fdot = thisPoint1.f1dot;
+	  semiCohPar.fdot = thisPoint1.fkdot[1];
 	  semiCohPar.nfdot = uvar_nfdot; /* look into this more carefully */
 	  
 	  /* the hough option */
@@ -1327,7 +1327,7 @@ int main( int argc, char *argv[]) {
 			{
 			  
 			  /* set spindown value for Fstat calculation */
-			  thisPoint2.f1dot = fdot1 + ifdot2 * dfDot2;
+			  thisPoint2.fkdot[1] = fdot1 + ifdot2 * dfDot2;
 			  
 			  /* calculate the Fstatistic */
 			  for ( k = 0; k < nStacks2; k++) {
@@ -1342,11 +1342,11 @@ int main( int argc, char *argv[]) {
 			      if ( LALUserVarWasSet(&uvar_fstatThr))
 				LAL_CALL( GetFstatCandidates( &status, fstatToplist, fstatVector2.data + k, uvar_fstatThr,
 							      thisPoint2.Alpha, thisPoint2.Delta, 
-							      thisPoint2.f1dot, uvar_reallocBlock ), &status);
+							      thisPoint2.fkdot[1], uvar_reallocBlock ), &status);
 			      else
 				LAL_CALL( GetFstatCandidates_toplist( &status, fstatToplist, fstatVector2.data + k, 
 								      thisPoint2.Alpha, thisPoint2.Delta, 
-								      thisPoint2.f1dot ), &status);
+								      thisPoint2.fkdot[1] ), &status);
 			      
 
 			    } /* end loop over nstacks2 for selecting candidates */
@@ -2321,8 +2321,8 @@ void PrintSemiCohCandidates(LALStatus *status,
 
   alpha = thisPoint->Alpha;
   delta = thisPoint->Delta;
-  fkdot->data[1] = thisPoint->f1dot;
-  f0 = thisPoint->Freq;
+  fkdot->data[1] = thisPoint->fkdot[1];
+  f0 = thisPoint->fkdot[0];
 
   length = in->data->length;
   deltaF = in->deltaF;
