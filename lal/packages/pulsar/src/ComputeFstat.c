@@ -143,7 +143,7 @@ void ComputeFStatFreqBand ( LALStatus *status,
 
     fstatVector->data->data[k] = Fstat.F;
       
-    thisPoint.Freq += deltaF;
+    thisPoint.fkdot[0] += deltaF;
   }
 
   XLALEmptyComputeFBuffer ( cfBuffer );
@@ -214,10 +214,10 @@ ComputeFStat ( LALStatus *status,
   if ( ( fkdot = XLALCreateREAL8Vector ( 1 + spdnOrder ) ) == NULL ) {
     ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
   }
-  fkdot->data[0] = doppler->Freq;
-  fkdot->data[1] = doppler->f1dot;
-  fkdot->data[2] = doppler->f2dot;
-  fkdot->data[3] = doppler->f3dot;
+  fkdot->data[0] = doppler->fkdot[0];
+  fkdot->data[1] = doppler->fkdot[1];
+  fkdot->data[2] = doppler->fkdot[2];
+  fkdot->data[3] = doppler->fkdot[3];
 
   /* check if that skyposition SSB+AMcoef were already buffered */
   if ( cfBuffer 

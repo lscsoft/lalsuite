@@ -45,6 +45,9 @@ extern "C" {
 
 NRCSID( PULSARDATATYPESH, "$Id$");
 
+/** maximal number of spin-parameters (Freq + spindowns) we can handle */
+#define PULSAR_MAX_SPINS	4    
+
 /** Type defining the orbital parameters of a binary pulsar */
 typedef struct {
   LIGOTimeGPS orbitEpoch; /**< time of periapsis passage (in SSB) */
@@ -62,15 +65,14 @@ typedef struct {
   REAL8 phi0;	/**< initial signal-phase (at some reference time) */
 } PulsarAmplitudeParams;
 
+typedef REAL8 PulsarSpins[PULSAR_MAX_SPINS];
+
 /** Type containing the 'Doppler-parameters' affecting the time-evolution of the phase */
 typedef struct {
   LIGOTimeGPS refTime;	/**< reference time of pulsar parameters (in SSB!) */
   REAL8 Alpha;		/**< skyposition: RA (longitude) in equatorial coords and radians */ 
   REAL8 Delta;		/**< skyposition: DEC (latitude) in equatorial coords and radians */ 
-  REAL8 Freq;		/**< intrinsic signal-frequency at refTime */
-  REAL8 f1dot;		/**< dFreq/dt in pulsar frame */
-  REAL8 f2dot;		/**< d^2Freq/dt^2 in pulsar frame */
-  REAL8 f3dot;		/**< d^3Freq/dt^3 in pulsar frame */
+  PulsarSpins fkdot;	/**< intrinsic spins: [Freq, f1dot, f2dot, ... ] where fkdot = d^kFreq/dt^k */
   BinaryOrbitParams *orbit;	/**< binary orbital parameters (or NULL if isolated pulsar) */
 } PulsarDopplerParams;
 
