@@ -49,7 +49,7 @@ and setting \texttt{xlalErrno} to a nonzero value.
 \subsection*{Notes}
 
 A \texttt{LALSegList} must be initialized before it is used.  Initialization
-leaves it in an ``empty'' state, containing no segments.  Segments can then
+leaves it in an ``empty'' state, containing no segments. They also must be ''cleared'' after using \texttt{XLALSegListClear}, and freed with \texttt{LALFree} if it was dynamically allocated. Segments can then
 be added to the list through an ``append'' operation.  The information about
 each segment appended is copied to a memory location managed by the
 \texttt{LALSegList} object.  In fact, the segments are stored in the form of
@@ -113,6 +113,8 @@ are used to search the segment list more efficiently when possible.  Note
 that a segment list could in principle be disjoint but not sorted, but that
 case is not of interest for the code; the \texttt{disjoint} field in the
 structure specifically means that the list is sorted \emph{and} disjoint.
+
+Also all segments in a segment list can be time-shifted using \texttt{XLALSegListShift}.
 
 
 \vfill{\footnotesize\input{SegmentsHV}}
@@ -213,6 +215,9 @@ XLALSegListCoalesce( LALSegList *seglist );
 
 LALSeg *
 XLALSegListSearch( LALSegList *seglist, const LIGOTimeGPS *gps );
+
+INT4
+XLALSegListShift( LALSegList *seglist, const LIGOTimeGPS *gps );
 
 /*----------------------- Trailer stuff ----------------------------*/
 
