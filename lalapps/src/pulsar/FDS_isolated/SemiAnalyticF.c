@@ -50,24 +50,29 @@ RCSID("$Id$");
 
 /*---------- local types ---------- */
 struct CommandLineArgsTag {
-  REAL8 skyalpha;
-  REAL8 skydelta;
-  REAL8 tsft;
-  INT4 nTsft;
-  CHAR *detector;
-  CHAR *timestamps;
-  INT4 gpsStart;
-  CHAR *efiles;
-  REAL8 phi;
+  REAL8 Alpha;
+  REAL8 Delta;
+  REAL8 Tsft;
+  INT4  nTsft;
+  CHAR  *IFO;
+  CHAR  *timestamps;
+  INT4  gpsStart;
+  CHAR  *efiles;
+  REAL8 phi0;
   REAL8 psi;
-  REAL8 h0;
-  REAL8 cosiota;
   REAL8 sqrtSh;
   REAL8 duration;
-  CHAR *ephemYear;
+  CHAR  *ephemYear;
   REAL8 aPlus;
   REAL8 aCross;
+  REAL8 h0;
+  REAL8 cosi;
   BOOLEAN help;
+  /* ----- deprecated ----- */
+  REAL8 longitude;
+  REAL8 latitude;
+  REAL8 cosiota;
+  CHAR *detector;
 } CommandLineArgs;
 
 /*---------- global variables ---------- */
@@ -130,7 +135,7 @@ void
 ComputeF( LALStatus *status, struct CommandLineArgsTag CLA)
 {
 
-  REAL8 A,B,C,D, A1,A2,A3,A4,h0,cosi, To,Sh,F;
+  REAL8 A,B,C,D, A1,A2,A3,A4, To,Sh,F;
   REAL8 aPlus, aCross;
   REAL8 twopsi, twophi;
 
@@ -142,29 +147,18 @@ ComputeF( LALStatus *status, struct CommandLineArgsTag CLA)
   C = amc.C;
   D = amc.D; 
 
-  twophi = 2.0 * CLA.phi;
+  twophi = 2.0 * CLA.phi0;
   twopsi = 2.0 * CLA.psi;
 
-  h0 = CLA.h0;
-  cosi = CLA.cosiota;
-
-  if ( h0 != 0 ) 
-    {
-      aPlus = h0 * 0.5 * (1.0 + cosi*cosi );
-      aCross= h0 * cosi;
-    } 
-  else   /* alternative way to specify amplitude (compatible with mfd_v4) */
-    {
-      aPlus = CLA.aPlus;
-      aCross = CLA.aCross;
-    }
+  aPlus = CLA.aPlus;
+  aCross = CLA.aCross;
   
   A1 = aPlus * cos(twopsi) * cos(twophi) - aCross * sin(twopsi) * sin(twophi);
   A2 = aPlus * sin(twopsi) * cos(twophi) + aCross * cos(twopsi) * sin(twophi);
   A3 =-aPlus * cos(twopsi) * sin(twophi) - aCross * sin(twopsi) * cos(twophi);
   A4 =-aPlus * sin(twopsi) * sin(twophi) + aCross * cos(twopsi) * cos(twophi);
   
-  To = CLA.nTsft * CLA.tsft;
+  To = CLA.nTsft * CLA.Tsft;
   
   Sh=pow(CLA.sqrtSh,2);
 
@@ -193,18 +187,11 @@ InitUserVars (LALStatus *status, struct CommandLineArgsTag *CLA)
   ATTATCHSTATUSPTR (status);
 
   /* Initialize default values */
-  CLA->skyalpha=0.0;
-  CLA->skydelta=0.0;
-  CLA->tsft=1800;
-  CLA->detector=0;               
+  CLA->Tsft=1800;
   CLA->nTsft=0;            
   CLA->timestamps=NULL;
   CLA->gpsStart=-1;
   CLA->efiles=NULL;
-  CLA->phi=0.0;
-  CLA->psi=0.0;
-  CLA->cosiota=0.0;
-  CLA->h0 = 0;
   CLA->sqrtSh=1.0;
   
   /** Default year-span of ephemeris-files to be used */
@@ -221,22 +208,32 @@ InitUserVars (LALStatus *status, struct CommandLineArgsTag *CLA)
   /* ---------- register all our user-variable ---------- */
   TRY (LALRegisterBOOLUserVar(status->statusPtr, "help", 'h', UVAR_HELP, "Print this message",
 			      &(CLA->help)), status); 
-  TRY( LALRegisterREALUserVar(status->statusPtr, "latitude", 'd', UVAR_REQUIRED, 
-			      "Sky position delta (equatorial coordinates) in radians", 
-			      &(CLA->skydelta)), status);
-  
-  TRY( LALRegisterREALUserVar(status->statusPtr, "longitude", 'a', UVAR_REQUIRED, 
-			      "Sky position alpha (equatorial coordinates) in radians", 
-			      &(CLA->skyalpha)), status);
-  
-  TRY( LALRegisterREALUserVar(status->statusPtr, "phi0", 'Q', UVAR_OPTIONAL, 
-			     "Phi_0: Initial phase in radians", &(CLA->phi)), status);
 
-  TRY( LALRegisterREALUserVar(status->statusPtr, "psi", 'Y', UVAR_OPTIONAL, 
+  TRY( LALRegisterREALUserVar(status->statusPtr, "Alpha", 'a', UVAR_OPTIONAL, 
+			      "Sky position Alpha (equatorial coordinates) in radians", 
+			      &(CLA->Alpha)), status);
+  TRY( LALRegisterREALUserVar(status->statusPtr, "longitude",  0, UVAR_DEVELOPER, 
+			      "[DEPRECATED] Use --Alpha instead!",  
+			      &(CLA->longitude)), status);
+
+  TRY( LALRegisterREALUserVar(status->statusPtr, "Delta", 'd', UVAR_OPTIONAL, 
+			      "Sky position Delta (equatorial coordinates) in radians", 
+			      &(CLA->Delta)), status);
+  TRY( LALRegisterREALUserVar(status->statusPtr, "latitude", 0, UVAR_DEVELOPER, 
+			      "[DEPRECATED] Use --Delta instead!", 
+			      &(CLA->latitude)), status);
+ 
+  TRY( LALRegisterREALUserVar(status->statusPtr, "phi0",   'Q', UVAR_OPTIONAL, 
+			     "Phi_0: Initial phase in radians", &(CLA->phi0)), status);
+
+  TRY( LALRegisterREALUserVar(status->statusPtr, "psi",    'Y', UVAR_OPTIONAL, 
 			     "Polarisation in radians", &(CLA->psi)), status);
 
-  TRY( LALRegisterREALUserVar(status->statusPtr, "cosiota", 'i', UVAR_OPTIONAL, 
-			      "Cos(iota)", &(CLA->cosiota)), status);
+  TRY( LALRegisterREALUserVar(status->statusPtr, "cosi",   'i', UVAR_OPTIONAL, 
+			      "Cos(iota)", &(CLA->cosi)), status);
+  TRY( LALRegisterREALUserVar(status->statusPtr, "cosiota", 0, UVAR_DEVELOPER, 
+			      "[DEPRECATED] Use --cosi instead", &(CLA->cosiota)), status);
+
   TRY( LALRegisterREALUserVar(status->statusPtr, "h0", 's', UVAR_OPTIONAL, 
 			      "Strain amplitude h_0", &(CLA->h0)), status);
   TRY( LALRegisterREALUserVar(status->statusPtr, "sqrtSh", 'N', UVAR_OPTIONAL, 
@@ -249,7 +246,7 @@ InitUserVars (LALStatus *status, struct CommandLineArgsTag *CLA)
 			     "GPS start time of continuous observation", &(CLA->gpsStart)), status);
   
   TRY( LALRegisterREALUserVar(status->statusPtr, "Tsft", 't', UVAR_OPTIONAL, 
-			      "Length of an SFT in seconds", &(CLA->tsft)), status);
+			      "Length of an SFT in seconds", &(CLA->Tsft)), status);
   
   TRY( LALRegisterINTUserVar(status->statusPtr, "nTsft", 'n', UVAR_OPTIONAL, 
 			     "Number of SFTs", &(CLA->nTsft)), status);
@@ -257,9 +254,12 @@ InitUserVars (LALStatus *status, struct CommandLineArgsTag *CLA)
   TRY( LALRegisterSTRINGUserVar(status->statusPtr, "ephemDir", 'E', UVAR_OPTIONAL, 
 				"Directory where Ephemeris files are located", 
 				&(CLA->efiles)), status);
-  
-  TRY( LALRegisterSTRINGUserVar(status->statusPtr, "detector", 'D', UVAR_REQUIRED, 
+
+  TRY( LALRegisterSTRINGUserVar(status->statusPtr, "IFO", 'D', UVAR_OPTIONAL, 
 				"Detector: H1, H2, L1, G1, ... ",
+				&(CLA->IFO)), status);
+  TRY( LALRegisterSTRINGUserVar(status->statusPtr, "detector",  0, UVAR_DEVELOPER, 
+				"[DEPRECATED] Use --IFO instead!",
 				&(CLA->detector)), status);
   
   /* ----- added for mfd_v4 compatibility ---------- */
@@ -302,9 +302,8 @@ Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
   INITSTATUS (status, "Initialize", rcsid);
   ATTATCHSTATUSPTR (status);
 
-
   if ( LALUserVarWasSet ( &(CLA->nTsft) ) )
-    CLA->duration = 1.0 * CLA->nTsft * CLA->tsft;
+    CLA->duration = 1.0 * CLA->nTsft * CLA->Tsft;
 
   /* read or generate SFT timestamps */
   if ( LALUserVarWasSet(&(CLA->timestamps)) ) 
@@ -321,15 +320,29 @@ Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
       tStart.gpsSeconds = CLA->gpsStart;
       tStart.gpsNanoSeconds = 0;
 
-      TRY ( LALMakeTimestamps(status->statusPtr, &timestamps, tStart, CLA->duration, CLA->tsft ), status );
+      TRY ( LALMakeTimestamps(status->statusPtr, &timestamps, tStart, CLA->duration, CLA->Tsft ), status );
       CLA->nTsft = timestamps->length;
 
     } /* no timestamps */
 
-
   /*---------- initialize detector ---------- */
-  if ( ( Detector = XLALGetSiteInfo ( CLA->detector ) ) == NULL ) {
-    ABORT (status, SEMIANALYTIC_EINPUT, SEMIANALYTIC_MSGEINPUT);
+  {
+    BOOLEAN have_IFO       = LALUserVarWasSet ( &CLA->IFO );
+    BOOLEAN have_detector  = LALUserVarWasSet ( &CLA->detector );
+    CHAR *IFO;
+
+    if ( !have_IFO  && !have_detector ) {
+      fprintf (stderr, "\nNeed to specify the detector (--IFO) !\n\n");
+      ABORT (status, SEMIANALYTIC_EINPUT, SEMIANALYTIC_MSGEINPUT);
+    }
+    if ( have_IFO )
+      IFO = CLA->IFO;
+    else
+      IFO = CLA->detector;
+
+    if ( ( Detector = XLALGetSiteInfo ( IFO ) ) == NULL ) {
+      ABORT (status, SEMIANALYTIC_EINPUT, SEMIANALYTIC_MSGEINPUT);
+    }
   }
 
   /* ---------- load ephemeris-files ---------- */
@@ -372,8 +385,8 @@ Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
   baryinput.site.location[0] = Detector->location[0]/LAL_C_SI;
   baryinput.site.location[1] = Detector->location[1]/LAL_C_SI;
   baryinput.site.location[2] = Detector->location[2]/LAL_C_SI;
-  baryinput.alpha = CLA->skyalpha;
-  baryinput.delta = CLA->skydelta;
+  baryinput.alpha = CLA->Alpha;
+  baryinput.delta = CLA->Delta;
   baryinput.dInv = 0.e0;
 
   /* amParams structure to compute a(t) and b(t) */
@@ -388,10 +401,11 @@ Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
   amParams->earth = &earth; 
   amParams->edat = edat;
   amParams->das->pDetector = Detector; 
-  amParams->das->pSource->equatorialCoords.latitude = CLA->skydelta;
-  amParams->das->pSource->equatorialCoords.longitude = CLA->skyalpha;
-  amParams->das->pSource->orientation = 0.0;
   amParams->das->pSource->equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
+  amParams->das->pSource->equatorialCoords.longitude = CLA->Alpha;
+  amParams->das->pSource->equatorialCoords.latitude = CLA->Delta;
+  amParams->das->pSource->orientation = 0.0;
+
   amParams->polAngle = amParams->das->pSource->orientation ; /* These two have to be the same!!!!!!!!!*/
   amParams->leapAcc = formatAndAcc.accuracy;
   
@@ -407,7 +421,7 @@ Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
     {
       REAL8 teemp=0.0;
       TRY ( LALGPStoFloat(status->statusPtr, &teemp, &(timestamps->data[k])), status);
-      teemp += 0.5*CLA->tsft;
+      teemp += 0.5*CLA->Tsft;
       TRY ( LALFloatToGPS(status->statusPtr, &(midTS[k]), &teemp), status);
     }
   
@@ -445,7 +459,7 @@ CheckUserInput (LALStatus *status,  struct CommandLineArgsTag *CLA )
   BOOLEAN have_gpsStart = LALUserVarWasSet  (&(CLA->gpsStart));
   BOOLEAN have_duration  = LALUserVarWasSet (&(CLA->duration));
   BOOLEAN have_nTsft     = LALUserVarWasSet (&(CLA->nTsft));
-
+  
   INITSTATUS (status, "CheckUserInput", rcsid);
   
   if( have_timestamps && (have_gpsStart||have_duration) )
@@ -471,22 +485,32 @@ CheckUserInput (LALStatus *status,  struct CommandLineArgsTag *CLA )
   /* now one can either specify {h0, cosiota} OR {aPlus, aCross} */
   {
     BOOLEAN have_h0 = LALUserVarWasSet (&(CLA->h0));
-    BOOLEAN have_cosiota = LALUserVarWasSet (&(CLA->cosiota));
+    BOOLEAN have_cosi = LALUserVarWasSet (&(CLA->cosi));
     BOOLEAN have_aPlus = LALUserVarWasSet (&(CLA->aPlus));
     BOOLEAN have_aCross = LALUserVarWasSet (&(CLA->aCross));
     
-    if ( (have_h0 || have_cosiota) && (have_aPlus || have_aCross) ) 
+    if ( (have_h0 || have_cosi) && (have_aPlus || have_aCross) ) 
       {
-	fprintf (stderr, "\nSpecify only one set of {h0/cosiota} or {aPlus/aCross}\n\n");
+	fprintf (stderr, "\nSpecify EITHER {h0/cosiota} OR {aPlus/aCross}\n\n");
 	ABORT (status, SEMIANALYTIC_EINPUT, SEMIANALYTIC_MSGEINPUT);
       }
 
-    if ( !have_h0 && !(have_aPlus) )
+    if ( (have_h0 && !have_cosi) || ( !have_h0 && have_cosi ) )
       {
-	fprintf (stderr, "\nYou need to specify either h0 or aPlus/aCross\n\n");
+	fprintf (stderr, "\nYou need to specify both --h0 and --cosi\n\n");
 	ABORT (status, SEMIANALYTIC_EINPUT, SEMIANALYTIC_MSGEINPUT);
       }
-
+    if ( (have_aPlus && !have_aCross) || ( !have_aPlus && have_aCross ) )
+      {
+	fprintf (stderr, "\nYou need to specify both --aPlus and --aCross\n\n");
+	ABORT (status, SEMIANALYTIC_EINPUT, SEMIANALYTIC_MSGEINPUT);
+      }
+    /* hack, hack... */
+    if ( have_h0 )	/* internally only use aPlus, aCross */
+      {
+	CLA->aPlus = 0.5 * CLA->h0 * ( 1.0 + SQ ( CLA->cosi ) );
+	CLA->aCross = CLA->h0 * CLA->cosi;
+      }
   }
 
   RETURN (status);
