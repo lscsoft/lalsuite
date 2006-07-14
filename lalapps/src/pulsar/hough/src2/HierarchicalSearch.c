@@ -953,8 +953,8 @@ int main( int argc, char *argv[]) {
     thisPoint2.refTime = tStart2GPS;
     /* binary and higher spindowns not implemented so far */
     thisPoint2.orbit = NULL;
-    thisPoint2.fkdot[0] = 0.0;
-    thisPoint2.fkdot[0] = 0.0;
+    thisPoint2.fkdot[2] = 0.0;
+    thisPoint2.fkdot[3] = 0.0;
       
     /* set wings of sfts to be read */
     /* the wings must be enough for the Doppler shift and extra bins
