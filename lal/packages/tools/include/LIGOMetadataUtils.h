@@ -797,7 +797,8 @@ LALInspiralDistanceCutCleaning(
     REAL4 			snrThreshold,
     SummValueTable            **summValueList,
     LALSegList                 *vetoSegsH1,
-    LALSegList                 *vetoSegsH2
+    LALSegList                 *vetoSegsH2,
+    LIGOTimeGPS                 slideTimes[LAL_NUM_IFO]
     );
 
 void
