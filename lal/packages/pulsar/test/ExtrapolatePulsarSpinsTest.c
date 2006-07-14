@@ -83,10 +83,11 @@ static LALStatus empty_status;
 int main(int argc, char *argv[])
 {
   LALStatus status = empty_status;
-  REAL8 result[]= {347.6632471314574, 2.36975876347904E-6, 8.104593663999999E-14, 1.79216E-21, 2.0E-29};
+  PulsarSpins result;
   REAL8Vector *fkdot0 = NULL; 
   REAL8Vector *fkdot1 = NULL;
   REAL8 tolerance = 1.0e-12;
+  PulsarSpins spins0, spins1;
 
   LALPulsarSpinRange *range0, *range2;
   LALPulsarSpinRange *rangeResult;
@@ -98,9 +99,10 @@ int main(int argc, char *argv[])
   if ( argc == 1 )
     argc = 1;	/* avoid warning */
 
-  fkdot0 = XLALCreateREAL8Vector ( 5 );	/* 4 spindowns */
-  fkdot1 = XLALCreateREAL8Vector ( 5 );
-  range0 = XLALCreatePulsarSpinRange ( 5 );
+  fkdot0 = XLALCreateREAL8Vector ( 4 );	/* 3 spindowns */
+  fkdot1 = XLALCreateREAL8Vector ( 4 );
+
+  range0 = XLALCreatePulsarSpinRange ( 5 );	/* 4 spindowns */
   range2 = XLALCreatePulsarSpinRange ( 5 );
   rangeResult = XLALCreatePulsarSpinRange ( 5 );
   /* set up initial spin-values */
@@ -108,15 +110,96 @@ int main(int argc, char *argv[])
   fkdot0->data[1] = -1.e-7;
   fkdot0->data[2] = 1e-15;
   fkdot0->data[3] = -1e-22;
-  fkdot0->data[4] = 2e-29;
 
+  /* do the same extrapolations with the 'PulsarSpins' type */
+  spins0[0] = fkdot0->data[0];
+  spins0[1] = fkdot0->data[1];
+  spins0[2] = fkdot0->data[2];
+  spins0[3] = fkdot0->data[3];
+
+  /* Result: (from ExtrPulsarSpins.m) */
+  result[0] =  2.809011145986047e+02;
+  result[1] = -4.529256832000000e-07;
+  result[2] = -8.460800000000001e-15;
+  result[3] = -1.000000000000000e-22;
+
+  /* first propagate single spin-vector */
+  printf(" \n ----- Test1: LALExtrapolatePulsarSpins() ----- \n");
+  printf("Input @ tau0 = %d.%09d : [%.10g, %.10g, %.10g, %.10g ]\n", 
+	 epoch0.gpsSeconds, epoch0.gpsNanoSeconds,
+	 fkdot0->data[0], fkdot0->data[1], fkdot0->data[2], fkdot0->data[3] );
+
+  SUB ( LALExtrapolatePulsarSpins (&status, fkdot1, epoch1, fkdot0, epoch0), &status );
+
+  printf("Output@ tau1 = %d.%09d : [%.10g, %.10g, %.10g, %.10g]\n",
+	 epoch1.gpsSeconds, epoch1.gpsNanoSeconds,
+	 fkdot1->data[0], fkdot1->data[1], fkdot1->data[2], fkdot1->data[3] );
+  
+  /* do the same with LALExtrapolatePulsarSpins2() */
+  SUB ( LALExtrapolatePulsarSpins2 (&status, spins1, epoch1, spins0, epoch0), &status );
+
+  printf("Output2@ tau1 = %d.%09d : [%.10g, %.10g, %.10g, %.10g]\n",
+	 epoch1.gpsSeconds, epoch1.gpsNanoSeconds,
+	 spins1[0], spins1[1], spins1[2], spins1[3] );
+
+  printf ("Reference-result:                  : [%.10g, %.10g, %.10g, %.10g]\n",
+	  result[0], result[1], result[2], result[3] );
+
+  if ( (RELERROR(fkdot1->data[0], result[0]) > tolerance) ||
+       (RELERROR(fkdot1->data[1], result[1]) > tolerance) ||
+       (RELERROR(fkdot1->data[2], result[2]) > tolerance) ||
+       (RELERROR(fkdot1->data[3], result[3]) > tolerance) )
+    {
+      LALPrintError ( "\nRelative error of XLALExtrapolatePulsarSpins() exceeds tolerance of %g \n\n",
+		      tolerance);
+      return -1;
+    }
+  else
+    printf ("\n ==> OK. LALExtrapolatePulsarSpins() lies within %g of the reference-result!\n",
+	    tolerance);
+
+  if ( (RELERROR(spins1[0], result[0]) > tolerance) ||
+       (RELERROR(spins1[1], result[1]) > tolerance) ||
+       (RELERROR(spins1[2], result[2]) > tolerance) ||
+       (RELERROR(spins1[3], result[3]) > tolerance) )
+    {
+      LALPrintError ( "\nRelative error of LALExtrapolatePulsarSpins2() exceeds tolerance of %g \n\n",
+		      tolerance);
+      return -1;
+    }
+  else
+    printf ("\n ==> OK. LALExtrapolatePulsarSpins2() lies within %g of the reference-result!\n",
+	    tolerance);
+
+  /* ----- propagate phase from epoch1 --> epoch0, given fkdot0 ----- */
+  {
+
+    REAL8 phi1Result = 3.951107892803490;	/* from ExtrapolatePulsarSpins.m */
+    REAL8 phi0, phi1;
+
+    phi0 = 1;
+    SUB ( LALExtrapolatePulsarPhase ( &status, &phi1, spins1, epoch1, phi0, epoch0 ), &status );
+
+    printf ("\nExtrapolated phase phi1 = %f, Reference-result = %f\n", phi1, phi1Result );
+    if ( RELERROR(phi1, phi1Result) > tolerance ) 
+      {
+	LALPrintError ( "\nRelative error of LALExtrapolatePulsarPhase() exceeds tolerance of %g \n\n",
+			tolerance);
+	return -1;
+      }
+    else
+      printf ("\n ==> OK. LALExtrapolatePulsarPhase() lies within %g of the reference-result!\n",
+	      tolerance);
+  }
+
+  /* ----- now test LALExtrapolatePulsarSpinRange() ----- */
   /* set up initial spin-range */
   range0->epoch = epoch0;
   range0->fkdot->data[0] = fkdot0->data[0];
   range0->fkdot->data[1] = fkdot0->data[1];
   range0->fkdot->data[2] = fkdot0->data[2];
   range0->fkdot->data[3] = fkdot0->data[3];
-  range0->fkdot->data[4] = fkdot0->data[4];
+  range0->fkdot->data[4] = 2.0000e-29;
 
   range0->fkdotBand->data[0] = 0;
   range0->fkdotBand->data[1] = -1.0e-7;
@@ -131,7 +214,7 @@ int main(int argc, char *argv[])
   rangeResult->fkdot->data[1] = -4.106967813079040e-06;
   rangeResult->fkdot->data[2] =  9.549219980800000e-14;
   rangeResult->fkdot->data[3] =  -2.092160000000000e-21;
-  rangeResult->fkdot->data[4] =  1.900000000000000e-29;
+  rangeResult->fkdot->data[4] =   1.900000000000000e-29;
 
   rangeResult->fkdotBand->data[0] =  3.138766569203784e+01;
   rangeResult->fkdotBand->data[1] =  7.832759055339521e-07;
@@ -139,54 +222,7 @@ int main(int argc, char *argv[])
   rangeResult->fkdotBand->data[3] =  1.946080000000001e-22;
   rangeResult->fkdotBand->data[4] =  1.000000000000000e-30;
 
-  /* first propagate single spin-vector */
-  printf(" \n ----- Test1: LALExtrapolatePulsarSpins() ----- \n");
-  printf("Input @ tau0 = %d.%09d : [%.10g, %.10g, %.10g, %.10g, %.10g]\n", 
-	 epoch0.gpsSeconds, epoch0.gpsNanoSeconds,
-	 fkdot0->data[0], fkdot0->data[1], fkdot0->data[2], fkdot0->data[3], fkdot0->data[4]);
 
-  SUB ( LALExtrapolatePulsarSpins (&status, fkdot1, epoch1, fkdot0, epoch0), &status );
-
-  printf("Output@ tau1 = %d.%09d : [%.10g, %.10g, %.10g, %.10g, %.10g]\n",
-	 epoch1.gpsSeconds, epoch1.gpsNanoSeconds,
-	 fkdot1->data[0], fkdot1->data[1], fkdot1->data[2], fkdot1->data[3], fkdot1->data[4]);
-  
-  /* this is a maxima-script to calculate the result:
-     f(t) := f0 + f1 * t/1! + f2 * t^2 / 2! + f3 * t^3/3! + f4 * t^4/4!;
-     f1dot(t) := at ( diff( f(x), x, 1), x = t);
-     f2dot(t) := at ( diff( f(x), x, 2), x = t);
-     f3dot(t) := at ( diff( f(x), x, 3), x = t);
-     f4dot(t) := at ( diff( f(x), x, 4), x = t);
-     f0:300.0; f1:-1.e-7; f2:1e-15; f3:-1e-22; f4:2e-29$
-     tau:94608000;
-     [ f(tau), f1dot(tau), f2dot(tau), f3dot(tau), f4dot(tau)]; 
-
-     to exectute, simply paste into a maxima-buffer. The result is:
-     [347.6632471314574, 2.36975876347904E-6, 8.104593663999999E-14, 1.79216E-21, 2.0E-29]
-     and we use this to check the output of ExtrapolatePulsarSpins():
-  */
-  printf ("Reference-result:                  : [%.10g, %.10g, %.10g, %.10g, %.10g]\n",
-	  result[0], result[1], result[2], result[3], result[4]);
-
-  if ( (RELERROR(fkdot1->data[0], result[0]) > tolerance) ||
-       (RELERROR(fkdot1->data[1], result[1]) > tolerance) ||
-       (RELERROR(fkdot1->data[2], result[2]) > tolerance) ||
-       (RELERROR(fkdot1->data[3], result[3]) > tolerance) ||
-       (RELERROR(fkdot1->data[4], result[4]) > tolerance) )
-    {
-      LALPrintError ( "\nRelative error of XLALExtrapolatePulsarSpins() exceeds tolerance of %g ",
-		      tolerance);
-      return -1;
-    }
-  else
-    printf ("\n ==> OK. LALExtrapolatePulsarSpins() lies within %g of the reference-result!\n",
-	    tolerance);
-  
-  LALDDestroyVector (&status, &fkdot0);
-  LALDDestroyVector (&status, &fkdot1);
-
-
-  /* ----- now test LALExtrapolatePulsarSpinRange() ----- */
   printf(" \n ----- Test2: LALExtrapolatePulsarSpinRange() ----- \n");
   printf ("Input: epoch = %d.%09d \n", range0->epoch.gpsSeconds, range0->epoch.gpsNanoSeconds );
   printf ("Input: fkdot     = [%.10g, %.10g, %.10g, %.10g, %.10g ]\n",
@@ -245,6 +281,8 @@ int main(int argc, char *argv[])
     printf ("\n ==> OK. LALExtrapolatePulsarSpinRange() lies within %g of the reference-result!\n\n",
 	    tolerance);
 
+  LALDDestroyVector (&status, &fkdot0);
+  LALDDestroyVector (&status, &fkdot1);
 
   XLALDestroyPulsarSpinRange(range0);
   XLALDestroyPulsarSpinRange(range2);

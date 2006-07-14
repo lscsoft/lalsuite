@@ -67,6 +67,7 @@
 #ifndef _EXTRAPOLATEPULSARSPINS_H  /* Double-include protection. */
 #define _EXTRAPOLATEPULSARSPINS_H
 
+#include <lal/PulsarDataTypes.h>
 #include <lal/AVFactories.h>
 
 #ifdef  __cplusplus   /* C++ protection. */
@@ -112,19 +113,22 @@ typedef struct
   
 
 
-
 /*---------- exported Global variables ----------*/
 
 /*---------- exported prototypes [API] ----------*/
 LALPulsarSpinRange *XLALCreatePulsarSpinRange ( UINT4 numSpins );
 void XLALDestroyPulsarSpinRange ( LALPulsarSpinRange *range );
 
-void LALExtrapolatePulsarSpinRange( LALStatus *, LALPulsarSpinRange *range1, LIGOTimeGPS epoch1, const LALPulsarSpinRange *range0 );
+void LALExtrapolatePulsarSpinRange( LALStatus *, LALPulsarSpinRange *range1, LIGOTimeGPS epoch1, 
+				    const LALPulsarSpinRange *range0 );
 
 void LALExtrapolatePulsarSpins (LALStatus *, REAL8Vector *fkdot1, LIGOTimeGPS epoch1,
 				const REAL8Vector *fkdot0, LIGOTimeGPS epoch0);
 
-void LALExtrapolatePulsarPhase (LALStatus *, REAL8 *phi1, const REAL8Vector *fkdot1, LIGOTimeGPS epoch1,
+void LALExtrapolatePulsarSpins2 (LALStatus *, PulsarSpins fkdot1, LIGOTimeGPS  epoch1, 
+				 PulsarSpins  fkdot0,	LIGOTimeGPS  epoch0 );
+
+void LALExtrapolatePulsarPhase (LALStatus *, REAL8 *phi1, PulsarSpins fkdot1, LIGOTimeGPS epoch1,
 				REAL8 phi0, LIGOTimeGPS epoch0);
 
 
