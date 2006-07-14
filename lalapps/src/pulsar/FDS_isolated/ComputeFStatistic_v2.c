@@ -575,7 +575,7 @@ int main(int argc,char *argv[])
 	}
       /* write header with run-info */
       if(!uvar_noHeader)
-	fprintf (fpLoudest, GV.logstring );
+	fprintf (fpLoudest, "%s", GV.logstring );
 
       /* assemble 'candidate' structure */
       cand.Amp = Amp;
@@ -992,14 +992,14 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
 
     /* first get full commandline describing search*/
     TRY ( LALUserVarGetLog (status->statusPtr, &cmdline,  UVAR_LOGFMT_CMDLINE ), status );
-    sprintf (summary, "## %s\n## %s\n", codeID, cmdline );
+    sprintf (summary, "%%%% %s\n%%%% %s\n", codeID, cmdline );
     LALFree ( cmdline );
 
     numDet = cfg->multiSFTs->length;
     tp = time(NULL);
-    sprintf (line, "## Started search: %s", asctime( gmtime( &tp ) ) );
+    sprintf (line, "%%%% Started search: %s", asctime( gmtime( &tp ) ) );
     strcat ( summary, line );
-    strcat (summary, "## Loaded SFTs: [ " );
+    strcat (summary, "%% Loaded SFTs: [ " );
     for ( i=0; i < numDet; i ++ ) 
       {
 	sprintf (line, "%s:%d%s",  cfg->multiSFTs->data[i]->data->name, 
@@ -1010,13 +1010,13 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     utc = *XLALGPSToUTC( &utc, (INT4)GPS2REAL8(cfg->startTime) );
     strcpy ( dateStr, asctime(&utc) );
     dateStr[ strlen(dateStr) - 1 ] = 0;
-    sprintf (line, "## Start GPS time tStart = %12.3f    (%s GMT)\n", 
+    sprintf (line, "%%%% Start GPS time tStart = %12.3f    (%s GMT)\n", 
 	     GPS2REAL8(cfg->startTime), dateStr);
     strcat ( summary, line );
-    sprintf (line, "## Total time spanned    = %12.3f s  (%.1f hours)\n", 
+    sprintf (line, "%%%% Total time spanned    = %12.3f s  (%.1f hours)\n", 
 	     cfg->duration, cfg->duration/3600 );
     strcat ( summary, line );
-    sprintf (line, "## Effective spin-range at tStart: " );
+    sprintf (line, "%%%% Effective spin-range at tStart: " );
     strcat ( summary, line );
     numSpins = cfg->spinRangeStart->fkdot->length;
     strcat (summary, "fkdot = [ " );
@@ -1083,16 +1083,16 @@ WriteFStatLog (LALStatus *status, char *argv[])
     /* write out a log describing the complete user-input (in cfg-file format) */
     TRY (LALUserVarGetLog (status->statusPtr, &logstr,  UVAR_LOGFMT_CFGFILE), status);
 
-    fprintf (fplog, "## LOG-FILE of ComputeFStatistic run\n\n");
-    fprintf (fplog, "# User-input:\n");
-    fprintf (fplog, "# ----------------------------------------------------------------------\n\n");
+    fprintf (fplog, "%%%% LOG-FILE of ComputeFStatistic run\n\n");
+    fprintf (fplog, "%% User-input:\n");
+    fprintf (fplog, "%%----------------------------------------------------------------------\n\n");
 
     fprintf (fplog, logstr);
     LALFree (logstr);
 
     /* append an ident-string defining the exact CVS-version of the code used */
-    fprintf (fplog, "\n\n# CVS-versions of executable:\n");
-    fprintf (fplog, "# ----------------------------------------------------------------------\n");
+    fprintf (fplog, "\n\n%% CVS-versions of executable:\n");
+    fprintf (fplog, "%% ----------------------------------------------------------------------\n");
     fclose (fplog);
     
     sprintf (command, "ident %s 2> /dev/null | sort -u >> %s", argv[0], fname);
