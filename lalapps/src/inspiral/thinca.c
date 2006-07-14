@@ -420,8 +420,8 @@ int main( int argc, char *argv[] )
  
   /* set default values for those values.
      with those values ALL triggers will survive (i.e. no cut). */
-  accuracyParams.iotaCutH1H2=2.0;
-  accuracyParams.iotaCutH1L1=2.0;
+  accuracyParams.iotaCutH1H2=-1.0;
+  accuracyParams.iotaCutH1L1=-1.0;
 
 
   /*
@@ -1320,6 +1320,19 @@ int main( int argc, char *argv[] )
       }
     }
   }
+
+  /* check if cut values has been applied  */ 
+  if ( iotaCut )
+  {
+    if (accuracyParams.iotaCutH1H2<0 || accuracyParams.iotaCutH1H2>2 
+	|| accuracyParams.iotaCutH1L1<0 || accuracyParams.iotaCutH1L1>2) {
+      fprintf( stderr,"The iota-cut values for H1H2 and/or H1L1 lie outside \n"
+	       "a meaning full range of [0;2]\n");
+      exit( 1 );
+    }
+
+    
+  }
   
   /* fill the comment, if a user has specified one, or leave it blank */
   if ( ! *comment )
@@ -1524,13 +1537,14 @@ int main( int argc, char *argv[] )
   {
     for ( ifoNumber = 0; ifoNumber< LAL_NUM_IFO; ifoNumber++)
     {
-      /* to perform the veto, we need the filename. */
+      /* to perform the veto, we  need the filename. */
       if ( vetoFileName[ifoNumber] && haveTrig[ifoNumber])
       {
     	XLALSegListInit( &(vetoSegs[ifoNumber]) );
 	LAL_CALL( LALSegListRead( &status, &(vetoSegs[ifoNumber]), vetoFileName[ifoNumber], NULL),
            &status);
         XLALSegListCoalesce( &(vetoSegs[ifoNumber]) );
+
 	/* if the veto option is set, we remove single inspiral triggers 
 	   inside the list provided but we need to loop over the different ifo name. */
         if (doVeto)
@@ -1547,6 +1561,7 @@ int main( int argc, char *argv[] )
       }
     }
   }
+ 
 
   /*
    * for the case of BCV unconstrained-max, discard the triggers that
@@ -1598,6 +1613,7 @@ int main( int argc, char *argv[] )
 
     goto cleanexit;
   }
+
 
   /* time sort the triggers */
   if ( vrbflg ) fprintf( stdout, "Sorting triggers\n" );
@@ -1818,7 +1834,7 @@ int main( int argc, char *argv[] )
 	      fprintf(stdout, "Using h1-h2-consistency with veto segment list %s and %s\n", 
 		vetoFileName[LAL_IFO_H1], vetoFileName[LAL_IFO_H2]);
       LAL_CALL( LALInspiralDistanceCutCleaning(&status,  &coincInspiralList, 
-	&accuracyParams, 6, &summValueList, &vetoSegs[LAL_IFO_H1], &vetoSegs[LAL_IFO_H2]), &status);
+	&accuracyParams, snrCut, &summValueList, &vetoSegs[LAL_IFO_H1], &vetoSegs[LAL_IFO_H2], slideTimes), &status);
       if ( vrbflg ) fprintf( stdout, "%d remaining coincident triggers after h1-h2-consistency.\n", 
 	XLALCountCoincInspiral(coincInspiralList));
     }
@@ -1828,7 +1844,7 @@ int main( int argc, char *argv[] )
     {
      if (vrbflg) fprintf(stdout, "Using h1-h2-consistency without veto segment list can be dangerous...\n");
       LAL_CALL( LALInspiralDistanceCutCleaning(&status,  &coincInspiralList, 
-	&accuracyParams, 6, &summValueList, NULL, NULL), &status);
+	&accuracyParams, snrCut, &summValueList, NULL, NULL, slideTimes), &status);
       if ( vrbflg ) fprintf( stdout, "%d remaining coincident triggers after h1-h2-consistency.\n", 
 	XLALCountCoincInspiral(coincInspiralList));
     }
@@ -1979,7 +1995,7 @@ int main( int argc, char *argv[] )
 	      fprintf(stdout, "Using h1-h2-consistency with veto segment list %s and %s\n", 
 		vetoFileName[LAL_IFO_H1], vetoFileName[LAL_IFO_H2]);
           LAL_CALL( LALInspiralDistanceCutCleaning(&status,  &coincInspiralList, 
-	    &accuracyParams, 6, &summValueList, &vetoSegs[LAL_IFO_H1], &vetoSegs[LAL_IFO_H2]), &status);
+	    &accuracyParams, snrCut, &summValueList, &vetoSegs[LAL_IFO_H1], &vetoSegs[LAL_IFO_H2], slideTimes), &status);
           if ( vrbflg ) fprintf( stdout, "%d remaining coincident triggers after h1-h2-consisteny .\n", 
 	    XLALCountCoincInspiral(coincInspiralList));
 	}
@@ -1990,7 +2006,7 @@ int main( int argc, char *argv[] )
 	    if(vrbflg)
 	      fprintf(stdout, "Using h1-h2-consistency without veto segment list can be dangerous...\n");
 	    LAL_CALL( LALInspiralDistanceCutCleaning(&status,  &coincInspiralList, 
-	      &accuracyParams, 6, &summValueList, NULL, NULL), &status);
+						     &accuracyParams, snrCut, &summValueList, NULL, NULL, slideTimes), &status);
             if ( vrbflg ) 
 	      fprintf( stdout, "%d remaining coincident triggers after h1-h2-consistency.\n", 
 		XLALCountCoincInspiral(coincInspiralList));
