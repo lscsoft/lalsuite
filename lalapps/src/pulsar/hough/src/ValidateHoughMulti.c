@@ -135,6 +135,7 @@ int main(int argc, char *argv[]){
   CHAR     *uvar_sunEphemeris=NULL;
   CHAR     *uvar_sftDir=NULL;
   CHAR     *uvar_timeStampsFile=NULL;
+  CHAR     *uvar_outfile=NULL;
   LALStringVector *uvar_linefiles=NULL;
 
 
@@ -164,6 +165,9 @@ int main(int argc, char *argv[]){
 
   uvar_AlphaWeight = uvar_Alpha;
   uvar_DeltaWeight = uvar_Delta;
+
+  uvar_outfile = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
+  strcpy(uvar_outfile, "./tempout");
 
   uvar_earthEphemeris = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_earthEphemeris,EARTHEPHEMERIS);
@@ -200,7 +204,7 @@ int main(int argc, char *argv[]){
 
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",     0,  UVAR_OPTIONAL, "Running Median block size",             &uvar_blocksRngMed),    &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "maxBinsClean",     0,  UVAR_OPTIONAL, "Maximum number of bins in cleaning",    &uvar_maxBinsClean),    &status);
-
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "outfile",          0,  UVAR_OPTIONAL, "output file name",                      &uvar_outfile),         &status);
 
 
   /* read all command line variables */
@@ -530,8 +534,14 @@ int main(int argc, char *argv[]){
   }
    
 
-  fprintf(stdout, "%g\n", (numberCount - meanN)/sigmaN);
-  
+  {
+    FILE *fp=NULL;
+    fp = fopen("./tempout", "w");
+    fprintf(fp, "%g  %g  %g\n", numberCount, meanN ,sigmaN);
+    fclose(fp);
+  }
+
+
   /* free memory */
   LALFree(pulsarTemplate.spindown.data);  
   LALFree(timeV.data);
