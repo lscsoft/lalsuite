@@ -43,9 +43,6 @@ RCSID("$Id$");
 
 #define MAXIFO 4
 
-#define KAPPA 1000
-#define EPSILON 2
-
 #define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
   this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 calloc( 1, sizeof(ProcessParamsTable) ); \
@@ -60,8 +57,6 @@ int haveTrig[LAL_NUM_IFO];
 int checkTimes = 0;
 int multiIfoCoinc = 0;
 int distCut = 0;
-int doAlphaFCut = 0;
-int doBCVCVeto = 0;
 
 
 /*
@@ -99,7 +94,7 @@ static void print_usage(char *program)
       "  [--l1-triggers]               input triggers from L1\n"\
       "\n"\
       "   --parameter-test     test    set parameters with which to test coincidence:\n"\
-      "                                (m1_and_m2|mchirp_and_eta|psi0_and_psi3)\n"\
+      "                                (f_and_Q)\n"\
       "  [--h1-time-accuracy]  h1_dt   specify the timing accuracy of H1 in ms\n"\
       "  [--h2-time-accuracy]  h2_dt   specify the timing accuracy of H2 in ms\n"\
       "  [--l1-time-accuracy]  l1_dt   specify the timing accuracy of L1 in ms\n"\
@@ -161,8 +156,8 @@ int main( int argc, char *argv[] )
   UINT4  numCoinc = 0;
   UINT4  numDoubles = 0;
   UINT4  numTriples = 0;
-  UINT4  numQuadruples = 0;
   UINT4  numTrigs[LAL_NUM_IFO];
+  UINT4  N = 0;
 
   LALDetector          aDet;
   LALDetector          bDet;
@@ -331,7 +326,7 @@ int main( int argc, char *argv[] )
           {
             fprintf( stderr, "invalid argument to --%s:\n"
                 "unknown test specified: "
-                "%s (must be m1_and_m2, psi0_and_psi3 or mchirp_and_eta)\n",
+                "%s (must be f_and_Q)\n",
                 long_options[option_index].name, optarg );
             exit( 1 );
             }
@@ -701,6 +696,11 @@ int main( int argc, char *argv[] )
     }
   }
 
+if ( vrbflg)
+    {
+      fprintf( stderr, "number of ifos=%d\n",numIFO);
+    }
+
 
   /* check that we have at least two IFOs specified, or can't do coincidence */
   if ( numIFO < 2 )
@@ -710,14 +710,42 @@ int main( int argc, char *argv[] )
     exit ( 1 );
   }
 
+  if ( numIFO == 2 && multiIfoCoinc )
+  {
+    if ( vrbflg)
+    {
+      fprintf( stderr, "Must specify three IFOs to do multi-ifo coincidence\n");
+    }
+    exit ( 1 );
+  }
+
   if ( numIFO > 2 && vrbflg )
   {
-    fprintf( stdout, "This code just does double coincidence. Please specify two detectors.\n");
+    if ( !multiIfoCoinc )
+    {
+      fprintf( stdout, 
+          "Finding all double coincidences in %d IFO time.\n"
+          "If you want triples please specify --multi-ifo-coinc.\n",
+          numIFO);
+    }
+    else
+    {
+       fprintf( stdout, 
+           "Finding all double/triple coincidences in %d IFO time.\n",
+           numIFO);
+    }
   }
   
-
   /* set ifos to be the alphabetical list of the ifos with triggers */
-  LALSnprintf( ifos, LIGOMETA_IFOS_MAX, "%s%s", ifoName[0], ifoName[1] );
+  if( numIFO == 2 )
+  {
+    LALSnprintf( ifos, LIGOMETA_IFOS_MAX, "%s%s", ifoName[0], ifoName[1] );
+  }
+  else if ( numIFO == 3 )
+  {
+    LALSnprintf( ifos, LIGOMETA_IFOS_MAX, "%s%s%s", ifoName[0], ifoName[1], 
+        ifoName[2] );
+  }
 
   /* if numSlides is set, check that the slide times are different for
    * different ifos (for which we have triggers */
@@ -790,7 +818,6 @@ int main( int argc, char *argv[] )
    *
    */
 
-
   if ( optind < argc )
   {
     for( i = optind; i < argc; ++i )
@@ -847,10 +874,11 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
-  if ( vrbflg ) fprintf( stdout, "Read in a total of %d triggers.\n",
-      numTriggers );
-
-
+  if ( vrbflg && !maximizationInterval ) 
+    fprintf( stdout, "Read in a total of %d triggers.\n",  numTriggers );
+  else if ( vrbflg && maximizationInterval )
+    fprintf( stdout, "After maximization have a total of %d triggers.\n",  numTriggers );
+   
   /* check that we have read in data for all the requested times
      in all the requested instruments */
   if ( checkTimes )
@@ -986,22 +1014,51 @@ int main( int argc, char *argv[] )
       for (numCoinc = 0, thisCoinc = coincRingdownList;
             thisCoinc; ++numCoinc, thisCoinc = thisCoinc->next )
       {
+      }
+
+    }
+
+    if ( multiIfoCoinc )
+    {
+      for( N = 3; N <= numIFO; N++)
+      {
+        LAL_CALL( LALCreateNIFORingdownCoincList( &status, &coincRingdownList, 
+               &accuracyParams, N ), &status );
+      }
+ 
+      LAL_CALL( LALRemoveRepeatedRingdownCoincs( &status, &coincRingdownList ), 
+           &status );
+    }
+
+    /* count number of coincidences */
+    if ( vrbflg ) fprintf( stdout, "%d coincident triggers found (with repeated) .\n", 
+               XLALCountCoincRingdown(coincRingdownList));
+
+    /* count the coincs */
+    if( coincRingdownList )
+    {
+      for (numCoinc = 0, thisCoinc = coincRingdownList;
+            thisCoinc; ++numCoinc, thisCoinc = thisCoinc->next )
+      {
         if ( thisCoinc->numIfos == 2 )
         {
           ++numDoubles;
         }
-      }     
+        else if ( thisCoinc->numIfos == 3 )
+        {
+          ++numTriples;
+        }
+      }
     }
-   
+    
     if ( vrbflg ) 
     {
       fprintf( stdout, "%d coincident triggers found.\n", numCoinc );
       fprintf( stdout, "%d double coincident triggers\n"
-                       "%d triple coincident triggers\n"
-                       "%d quadruple coincident triggers\n",
-                       numDoubles, numTriples, numQuadruples );
+                       "%d triple coincident triggers\n",
+                       numDoubles, numTriples );
     }
-    
+
     /* write out all coincs as singles with event IDs */
     LAL_CALL( LALExtractSnglRingdownFromCoinc( &status, &snglOutput, 
           coincRingdownList, &startCoinc, slideNum), &status );
