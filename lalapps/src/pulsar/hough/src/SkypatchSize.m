@@ -1,4 +1,5 @@
 
+
 %% Set the parameters for makefakedata
 %% Signal parameters
 FreqSignal = 310;
@@ -99,3 +100,7 @@ mean = tempout(2)
 sigma = tempout(3)
 
 sigNoWeight = (numberCount - mean)/sigma
+
+
+mismatchPosition(0.1,0,1,1)
+
