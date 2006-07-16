@@ -53,7 +53,7 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
     { "bank-max-frequency",      required_argument, 0, 'F' },
     { "geo-highpass-frequency",  required_argument, 0, 'g' },
     { "geo-data-scale",          required_argument, 0, 'G' },
-    { "inject-file",             required_argument, 0, 'i' },
+    { "injection-file",             required_argument, 0, 'i' },
     { "inject-mdc-frame",        required_argument, 0, 'I' },
     { "bank-max-mismatch",       required_argument, 0, 'm' },
     { "maximize-duration",       required_argument, 0, 'M' },
@@ -145,7 +145,7 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
       case 'h': /* help */
         ring_usage( program );
         exit( 0 );
-      case 'i': /* inject-file */
+      case 'i': /* injection-file */
         params->injectFile = optarg;
         break;
       case 'I': /* inject-mdc-frame */
@@ -440,7 +440,7 @@ static int ring_usage( const char *program )
   fprintf( stderr, "--sample-rate=srate        decimate data to be at sample rate srate (Hz)\n" );
 
   fprintf( stderr, "\nsimulated injection options:\n" );
-  fprintf( stderr, "--inject-file=injfile      XML file with injection parameters\n" );
+  fprintf( stderr, "--injection-file=injfile      XML file with injection parameters\n" );
   fprintf( stderr, "--inject-mdc-frame=mdcframe  frame file with MDC-frame injections\n" );
 
   fprintf( stderr, "\ncalibration options:\n" );
