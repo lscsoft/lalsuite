@@ -1432,6 +1432,10 @@ LALExtractSnglRingdownFromCoinc(
     INT4                        slideNum
     );
 
+INT4
+XLALCountCoincRingdown(
+    CoincRingdownTable *head
+    );
 
 #if 0
 <lalLaTeX>
