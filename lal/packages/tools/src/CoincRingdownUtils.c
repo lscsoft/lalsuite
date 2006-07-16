@@ -766,6 +766,26 @@ LALExtractSnglRingdownFromCoinc(
   RETURN (status);
 }
 
+
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+INT4 XLALCountCoincRingdown( CoincRingdownTable *head )
+/* </lalVerbatim> */
+{
+  INT4 length;
+  CoincRingdownTable *event;
+  
+  if ( !head )
+  {
+    return( 0 );
+  }
+
+  /* count the number of events in the list */
+  for(length = 0, event = head; event; event = event->next)
+    length++;
+
+  return length;
+}
+
 #if 0
 /* <lalVerbatim file="CoincRingdownUtilsCP"> */
 int 
