@@ -93,7 +93,8 @@ SnglRingdownTable* XLALSnglRingdownTableFromLIGOLw (
   {
     XLALPrintError( "XLAL Error - unable to open sngl_ringdown table: "
         "metaio error code %d\n", mioStatus );
-    XLAL_ERROR_NULL( func, XLAL_EIO );
+    XLAL_ERROR_NULL( func, XLAL_EDATA ); 
+   /* return 0;*/
   }
 
   /* create table directory to find columns in file */
@@ -483,6 +484,7 @@ INT4 XLALReadRingdownTriggerFile (
 {
   const char *func = "XLALReadRingdownTriggerFile";
   INT4                 numFileTriggers = 0;
+  int 		       errnum;
   SnglRingdownTable   *inputData = NULL;
   SearchSummaryTable  *inputSummary = NULL;
   SearchSummaryTable  *thisSearchSumm = NULL;
@@ -542,12 +544,18 @@ INT4 XLALReadRingdownTriggerFile (
   }
   
   /* read in the triggers */
-  inputData = XLALSnglRingdownTableFromLIGOLw( fileName );
+  XLAL_TRY( inputData = XLALSnglRingdownTableFromLIGOLw( fileName ), errnum);
   if ( ! inputData )
-  {
-    XLALPrintError("Unable to read sngl_ringdown table from %s\n", fileName );
-    LALFree(thisInputFile);
-    XLAL_ERROR(func, XLAL_EIO);
+    switch ( errnum )
+    {
+      case XLAL_EDATA:
+        XLALPrintError("Unable to read sngl_ringdown table from %s\n", fileName );
+        /*LALFree(thisInputFile);*/
+        XLALClearErrno();
+        break;
+      default:
+        XLALSetErrno( errnum );
+        XLAL_ERROR( func, XLAL_EFUNC );
   }
   else
   {
@@ -563,7 +571,7 @@ INT4 XLALReadRingdownTriggerFile (
       /* trigger to the first trigger of the list being appended */
       *lastTrigger = (*lastTrigger)->next = inputData;
     }
-    
+  
     /* scroll to the end of the linked list of triggers */
     for ( ; (*lastTrigger)->next; *lastTrigger = (*lastTrigger)->next )
       numFileTriggers++;
