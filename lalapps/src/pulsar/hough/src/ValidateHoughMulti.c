@@ -464,8 +464,6 @@ int main(int argc, char *argv[]){
     } /* end AM weights calculation */
 
 
-
-
   /* misc. memory allocations */
 
   /* memory for one spindown */  
@@ -538,6 +536,7 @@ int main(int argc, char *argv[]){
     FILE *fp=NULL;
     fp = fopen("./tempout", "w");
     fprintf(fp, "%g  %g  %g\n", numberCount, meanN ,sigmaN);
+    fprintf(stdout, "%g  %g  %g\n", numberCount, meanN ,sigmaN);
     fclose(fp);
   }
 
