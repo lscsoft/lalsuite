@@ -1,7 +1,7 @@
 /**** <lalVerbatim file="TSDatgenHV"> *********
-Author: Torres. C
-$ID: tracksearch.h,v 1.0 2004/04/14 02:00:00 charlie Exp $
-***** </lalVerbatim> **********************************/
+      Author: Torres. C
+      $ID: tracksearch.h,v 1.0 2004/04/14 02:00:00 charlie Exp $
+      ***** </lalVerbatim> **********************************/
 
 #ifndef TRACKSEARCH_H
 #define TRACKSEARCH_H
@@ -134,8 +134,8 @@ LALappsCreateCurveDataSection(LALStatus*,
 
 void
 LALappsDestroyCurveDataSection(LALStatus*,
-				Curve**,
-				INT4);
+			       Curve**,
+			       INT4);
 /*
  * Private functions
  */

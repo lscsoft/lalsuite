@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
     {
       /*
        * Else just execute a single cache job
-	   */
+       */
       LALappsTSAProcessSingleCache(&status,
 				   &params);
     }
@@ -131,8 +131,8 @@ LALappsTSAInitialize(LALStatus        *status,
   struct option long_options[] =
     {
       {"map_cache",            required_argument,  0,   'a'},
-      {"collapse_taxis",       required_argument,  0,   'b'},
-      {"collapse_faxis",       required_argument,  0,   'c'},
+      {"new_t_bins",           required_argument,  0,   'b'},
+      {"new_f_bins",           required_argument,  0,   'c'},
       {"merge_maps",           no_argument,        0,   'd'},
       {"multi_cache",          required_argument,  0,   'e'},
       {0,                      0,                  0,     0}
@@ -146,6 +146,8 @@ LALappsTSAInitialize(LALStatus        *status,
   params->operation=Undefined;
   params->colParams.averageTBins=-1;
   params->colParams.averageFBins=-1;
+  params->colParams.newTDim=-1;
+  params->colParams.newFDim=-1;
   params->verbosity=printFiles;
 
   if (argc < TRACKSEARCHAVERAGERC_NARGS ) /* Not enough arguments to run */
@@ -192,13 +194,13 @@ LALappsTSAInitialize(LALStatus        *status,
 
 	case 'b':
 	  {
-	    params->colParams.averageTBins=(UINT4) atoi(optarg);
+	    params->colParams.newTDim=(UINT4) atoi(optarg);
 	  }
 	  break;
 
 	case 'c':
 	  {
-	    params->colParams.averageFBins=(UINT4) atoi(optarg);
+	    params->colParams.newFDim=(UINT4) atoi(optarg);
 	  }
 	  break;
 
@@ -233,10 +235,10 @@ LALappsTSAInitialize(LALStatus        *status,
    * Simple argument consistency checking 
    */
   LALappsTSassert((
-		  (params->cacheFilename != NULL)
-		  ||
-		  (params->multiCacheFilename != NULL)
-		  ),
+		   (params->cacheFilename != NULL)
+		   ||
+		   (params->multiCacheFilename != NULL)
+		   ),
 		  TRACKSEARCHAVERAGERC_EVAL,
 		  TRACKSEARCHAVERAGERC_MSGEVAL);
     
@@ -264,6 +266,7 @@ LALappsTSACollapseMap(LALStatus         *status,
   INT4    i=0;
   INT4    j=0;
   INT4    k=0;
+  INT4    pixelCount=0;
   TSAMap  *mapPrime=NULL;/*Map collapsed in T and F directions*/
   TSAMap  *mapPrimeF=NULL;/*Intermediate map collapsed in F only*/
   TSAMap  *map=NULL;
@@ -295,6 +298,28 @@ LALappsTSACollapseMap(LALStatus         *status,
   LALappsTSassert((map->imageRep->tCol >= cparams.averageTBins),
 		  TRACKSEARCHAVERAGERC_EDIMS,
 		  TRACKSEARCHAVERAGERC_MSGEDIMS);
+  LALappsTSassert((map->imageRep->fRow/2+1 >= cparams.newFDim),
+		  TRACKSEARCHAVERAGERC_EDIMS,
+		  TRACKSEARCHAVERAGERC_MSGEDIMS);
+  LALappsTSassert((map->imageRep->tCol >= cparams.newTDim),
+		  TRACKSEARCHAVERAGERC_EDIMS,
+		  TRACKSEARCHAVERAGERC_MSGEDIMS);
+
+  /*
+   * Set averaging field of cparams from user input 
+   */
+  /*Rounding via floor(x.y+.5) = x if y <0.5 x+1 if y > 0.5*/
+  if (cparams.newTDim > 0)
+    cparams.averageTBins=
+      (INT4)floor((map->imageRep->tCol/cparams.newTDim)+0.5);
+  else
+    cparams.averageTBins=1;
+  if (cparams.newFDim > 0)
+    cparams.averageFBins=
+      (INT4)floor((map->imageRep->fRow/2+1/cparams.newFDim)+0.5);
+  else
+    cparams.averageFBins=1;
+
   /*
    * Determine size of new collapsed map and create 
    *  map structure to send back include appropriate metadata
@@ -331,14 +356,14 @@ LALappsTSACollapseMap(LALStatus         *status,
     {
       for (i=0,k=0;i<(map->imageRep->fRow/2+1);i=i+cparams.averageFBins,k++)
 	{
-	  for (j=0,tmpSum=0;
+	  for (j=0,tmpSum=0,pixelCount=0;
 	       ((j<cparams.averageFBins) && ((i+j)<
 					     map->imageRep->fRow/2+1));
-	       j++)
+	       j++,pixelCount++)
 	    {
 	      tmpSum=tmpSum+map->imageRep->map[h][i+j];
 	    }
-	  mapPrimeF->imageRep->map[h][k]=tmpSum/cparams.averageFBins;
+	  mapPrimeF->imageRep->map[h][k]=tmpSum/pixelCount;
 	}
     }
   /*
@@ -349,15 +374,15 @@ LALappsTSACollapseMap(LALStatus         *status,
     {
       for (i=0,k=0;(i<mapPrimeF->imageRep->tCol);i=i+cparams.averageTBins,k++)
 	{
-	  for(j=0,tmpSum=0;
+	  for(j=0,tmpSum=0,pixelCount=0;
 	      ((j<cparams.averageTBins) &&
 	       ((i+j)<mapPrimeF->imageRep->tCol));
-	      j++)
+	      j++,pixelCount++)
 	    {
 	      /* [time][freq] */
 	      tmpSum=tmpSum+mapPrimeF->imageRep->map[(i+j)][h];
 	    }
-	  mapPrime->imageRep->map[k][h]=tmpSum/cparams.averageTBins;
+	  mapPrime->imageRep->map[k][h]=tmpSum/pixelCount;
 	}
     }
   /*
@@ -630,10 +655,10 @@ LALappsTSAProcessSingleCache(LALStatus    *status,
 			      &cache);
       /*
        * Sort cache structure chrono
-logically
-       */
+       logically
+      */
       if (params->verbosity > quiet)
-      fprintf(stdout,"Sorting cache file entries chronologically\n");
+	fprintf(stdout,"Sorting cache file entries chronologically\n");
       LALappsTSASortCache(status,
 			  cache,
 			  0);
@@ -663,28 +688,12 @@ logically
 		      TRACKSEARCHAVERAGERC_MSGEMEM);
     }
   /*
-   * Collapse each map if the user has requested it
-   */
-  if (
-      (params->colParams.averageTBins > -1)
-      ||
-      (params->colParams.averageFBins > -1)
-      )
-    {
-      if (params->verbosity > quiet)
-      fprintf(stdout,"Collapsing individual maps\n");
-      for (i=0;i<cache->numMapFilenames;i++)
-	LALappsTSACollapseMap(status,
-			      &(mapArray[i]),
-			      params->colParams);
-    }
-  /*
    * Begin merging the files into one output TSAMap
    */
   if (params->operation == Merge)
     {
       if (params->verbosity > quiet)
-      fprintf(stdout,"Merging maps\n");
+	fprintf(stdout,"Merging maps\n");
       LALappsTSassert((cache->numMapFilenames >= 2),
 		      TRACKSEARCHAVERAGERC_EVAL,
 		      TRACKSEARCHAVERAGERC_MSGEVAL);
@@ -705,7 +714,7 @@ logically
 	  for (i=2;i<cache->numMapFilenames;i++)
 	    {
 	      if (params->verbosity > quiet)
-	      fprintf(stdout,"Looping maps %i \n",i);
+		fprintf(stdout,"Looping maps %i \n",i);
 	      mergeMapTmp=mergeResultMap;
 	      mergeResultMap=NULL;
 	      LALappsTSAMergeMap(status,
@@ -720,6 +729,22 @@ logically
 				       &mergeMapTmp);
 		}
 	    }
+	}
+      /*
+       * Collapse each map if the user has requested it
+       */
+      if (
+	  (params->colParams.newTDim > -1)
+	  ||
+	  (params->colParams.newFDim > -1)
+	  )
+	{
+	  if (params->verbosity > quiet)
+	    fprintf(stdout,"Collapsing individual maps\n");
+	  for (i=0;i<cache->numMapFilenames;i++)
+	    LALappsTSACollapseMap(status,
+				  &(mapArray[i]),
+				  params->colParams);
 	}
       /*
        * Output the merged map
@@ -739,9 +764,27 @@ logically
     }
   else
     {
+      /*ONLY COLLAPSING*/
+      /*
+       * Collapse each map if the user has requested it
+       */
+      if (
+	  (params->colParams.newTDim > -1)
+	  ||
+	  (params->colParams.newFDim > -1)
+	  )
+	{
+	  if (params->verbosity > quiet)
+	    fprintf(stdout,"Collapsing individual maps\n");
+	  for (i=0;i<cache->numMapFilenames;i++)
+	    LALappsTSACollapseMap(status,
+				  &(mapArray[i]),
+				  params->colParams);
+	}
       /* 
        * Dump out the array of collapse maps if merge not requested
        */
+
       if (params->verbosity > quiet)
 	fprintf(stdout,"Maps not merged writing maps to disk");
 
@@ -772,8 +815,6 @@ logically
 /*
  * End LALappsTSAProcessSingleCache
  */
-
-
 
 
 void
@@ -848,8 +889,8 @@ tsaTest(
        * collapse on freq bins
        * Makeing it just like the A and B inputs
        */
-      collapseParams.averageTBins=64;
-      collapseParams.averageFBins=1;
+      collapseParams.newTDim=(INT4)floor(createParams.tCol/2);
+      collapseParams.newFDim=createParams.fRow;
       LALappsTSACollapseMap(status,
 			    &testMapMerge,
 			    collapseParams);

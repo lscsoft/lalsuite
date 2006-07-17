@@ -1,7 +1,7 @@
 /**** <lalVerbatim file="TSDatgenHV"> *********
-Author: Torres. C
-$ID: tracksearch.h,v 1.0 2004/04/14 02:00:00 charlie Exp $
-***** </lalVerbatim> **********************************/
+      Author: Torres. C
+      $ID: tracksearch.h,v 1.0 2004/04/14 02:00:00 charlie Exp $
+      ***** </lalVerbatim> **********************************/
 
 #ifndef TRACKSEARCHAVERAGER_H
 #define TRACKSEARCHAVERAGER_H
@@ -14,7 +14,7 @@ $ID: tracksearch.h,v 1.0 2004/04/14 02:00:00 charlie Exp $
  */
 
 /* Non-Error Code Define Statements */
-#define TRACKSEARCHAVERAGERC_NARGS 2
+#define TRACKSEARCHAVERAGERC_NARGS 4
 /* End N-E Defines */
 /* Define Error Codes */
 #define TRACKSEARCHAVERAGERC_ENORM              0
@@ -81,6 +81,8 @@ typedef struct tagTSACollapseParams {
    */
   INT4                  averageTBins;
   INT4                  averageFBins;
+  INT4                  newTDim;
+  INT4                  newFDim;
 } TSACollapseParams;
 
 typedef struct tagTSAparams {
