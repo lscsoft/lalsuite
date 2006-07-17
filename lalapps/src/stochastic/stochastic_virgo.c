@@ -75,7 +75,7 @@ static int post_analysis_flag = 0;
 
 /* parameters for the stochastic search */
 UINT8 startTime = 782758813;
-UINT8 stopTime =  782769673;
+UINT8 stopTime =  782759413;
 CHAR frameCache1 [200]= "cache/LIGOP1a.cache";
 CHAR frameCache2[200] = "cache/VirgoP1a.cache";
 CHAR channel1[LALNameLength]= "H1:STRAIN";
@@ -304,6 +304,10 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* open second frame cache */
   LAL_CALL( LALFrCacheImport( &status, &frCache2, frameCache2), &status);
   LAL_CALL( LALFrCacheOpen( &status, &frStream2, frCache2), &status);
+
+   /* set the mode of the frame stream to fail on gaps or time errors */
+  frStream1->mode = LAL_FR_VERBOSE_MODE;
+  frStream2->mode = LAL_FR_VERBOSE_MODE;
 
   /* set resample parameters */
   if (resampleRate1 != sampleRate1)
