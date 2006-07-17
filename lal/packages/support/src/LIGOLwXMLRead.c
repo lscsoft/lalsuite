@@ -1046,6 +1046,16 @@ LALSnglInspiralTableFromLIGOLw (
     {"sigmasq",                 -1, 38},
     {"rsqveto_duration",        -1, 39},
     {"event_id",                -1, 40},
+    {"Gamma0",                  -1, 41},
+    {"Gamma1",                  -1, 42},
+    {"Gamma2",                  -1, 43},
+    {"Gamma3",                  -1, 44},
+    {"Gamma4",                  -1, 45},
+    {"Gamma5",                  -1, 46},
+    {"Gamma6",                  -1, 47},
+    {"Gamma7",                  -1, 48},
+    {"Gamma8",                  -1, 49},
+    {"Gamma9",                  -1, 50},
     {NULL,                       0, 0}
   };
 
@@ -1089,6 +1099,11 @@ LALSnglInspiralTableFromLIGOLw (
       {
         fprintf( stderr, 
             "The event_id column is not populated, continuing anyway\n");
+      } 
+      else if ( strstr(tableDir[i].name, "Gamma") )
+      {
+        fprintf( stderr, 
+            "The %s column is not populated, continuing anyway\n", tableDir[i].name);
       }
       else
       {
@@ -1314,6 +1329,46 @@ LALSnglInspiralTableFromLIGOLw (
             thisEvent->event_id->snglInspiralTable = thisEvent;
           }
         }
+        else if ( tableDir[j].idx == 41 )
+        {
+          thisEvent->Gamma[0] = r4colData;
+        }
+        else if ( tableDir[j].idx == 42 )
+        {
+          thisEvent->Gamma[1] = r4colData;
+        }
+        else if ( tableDir[j].idx == 43 )
+        {
+          thisEvent->Gamma[2] = r4colData;
+        }
+        else if ( tableDir[j].idx == 44 )
+        {
+          thisEvent->Gamma[3] = r4colData;
+        }
+        else if ( tableDir[j].idx == 45 )
+        {
+          thisEvent->Gamma[4] = r4colData;
+        }
+        else if ( tableDir[j].idx == 46 )
+        {
+          thisEvent->Gamma[5] = r4colData;
+        }
+        else if ( tableDir[j].idx == 47 )
+        {
+          thisEvent->Gamma[6] = r4colData;
+        }
+        else if ( tableDir[j].idx == 48 )
+        {
+          thisEvent->Gamma[7] = r4colData;
+        }
+        else if ( tableDir[j].idx == 49 )
+        {
+          thisEvent->Gamma[8] = r4colData;
+        }
+        else if ( tableDir[j].idx == 50 )
+        {
+          thisEvent->Gamma[9] = r4colData;
+        }
         else
         {
           CLOBBER_EVENTS;
@@ -1389,6 +1444,16 @@ InspiralTmpltBankFromLIGOLw (
     {"end_time_ns", -1, 15},
     {"event_id", -1, 16},
     {"ifo", -1, 17},
+    {"Gamma0", -1, 18},
+    {"Gamma1", -1, 19},
+    {"Gamma2", -1, 20},
+    {"Gamma3", -1, 21},
+    {"Gamma4", -1, 22},
+    {"Gamma5", -1, 23},
+    {"Gamma6", -1, 24},
+    {"Gamma7", -1, 25},
+    {"Gamma8", -1, 26},
+    {"Gamma9", -1, 27},
     {NULL,      0, 0}
   };
 
@@ -1460,6 +1525,11 @@ InspiralTmpltBankFromLIGOLw (
       {
         fprintf( stderr, 
             "The event_id column is not populated, continuing anyway\n");
+      }
+      else if ( strstr(tableDir[i].name, "Gamma") )
+      {
+        fprintf( stderr, 
+            "The %s column is not populated, continuing anyway\n", tableDir[i].name);
       }
       else
       {
@@ -1588,6 +1658,46 @@ InspiralTmpltBankFromLIGOLw (
         {
           LALSnprintf( thisTmplt->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), 
               "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+        }
+        else if ( tableDir[j].idx == 18 )
+        {
+          thisTmplt->Gamma[0] = colData;
+        }
+        else if ( tableDir[j].idx == 19 )
+        {
+          thisTmplt->Gamma[1] = colData;
+        }
+        else if ( tableDir[j].idx == 20 )
+        {
+          thisTmplt->Gamma[2] = colData;
+        }
+        else if ( tableDir[j].idx == 21 )
+        {
+          thisTmplt->Gamma[3] = colData;
+        }
+        else if ( tableDir[j].idx == 22 )
+        {
+          thisTmplt->Gamma[4] = colData;
+        }
+        else if ( tableDir[j].idx == 23 )
+        {
+          thisTmplt->Gamma[5] = colData;
+        }
+        else if ( tableDir[j].idx == 24 )
+        {
+          thisTmplt->Gamma[6] = colData;
+        }
+        else if ( tableDir[j].idx == 25 )
+        {
+          thisTmplt->Gamma[7] = colData;
+        }
+        else if ( tableDir[j].idx == 26 )
+        {
+          thisTmplt->Gamma[8] = colData;
+        }
+        else if ( tableDir[j].idx == 27 )
+        {
+          thisTmplt->Gamma[9] = colData;
         }
         else
         {

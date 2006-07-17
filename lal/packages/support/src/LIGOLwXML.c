@@ -478,6 +478,16 @@ LALWriteLIGOLwXMLTable (
               tablePtr.snglInspiralTable->chisq_dof,
               tablePtr.snglInspiralTable->sigmasq,
 	      tablePtr.snglInspiralTable->rsqveto_duration,
+	      tablePtr.snglInspiralTable->Gamma[0],
+	      tablePtr.snglInspiralTable->Gamma[1],
+	      tablePtr.snglInspiralTable->Gamma[2],
+	      tablePtr.snglInspiralTable->Gamma[3],
+	      tablePtr.snglInspiralTable->Gamma[4],
+	      tablePtr.snglInspiralTable->Gamma[5],
+	      tablePtr.snglInspiralTable->Gamma[6],
+	      tablePtr.snglInspiralTable->Gamma[7],
+	      tablePtr.snglInspiralTable->Gamma[8],
+	      tablePtr.snglInspiralTable->Gamma[9],
               id );
         tablePtr.snglInspiralTable = tablePtr.snglInspiralTable->next;
         ++(xml->rowCount);
