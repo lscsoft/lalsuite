@@ -82,8 +82,8 @@ CHAR channel1[LALNameLength]= "H1:STRAIN";
 CHAR channel2[LALNameLength]= "V2:noise";
 CHAR ifo1[LALNameLength] = "H1";
 CHAR ifo2[LALNameLength] = "V2";
-INT4 site1 = 0;
-INT4 site2 = 2;
+INT4 site1 = 4;
+INT4 site2 = 1;
 
 /* data */
 INT4 segmentDuration = 60;
