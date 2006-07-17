@@ -402,6 +402,7 @@ tagSnglInspiralTable
   INT4          chisq_dof;
   REAL8         sigmasq;
   REAL4         rsqveto_duration;
+  REAL4         Gamma[10];    /* metric co-efficients */
   EventIDColumn *event_id;
 }
 SnglInspiralTable;
