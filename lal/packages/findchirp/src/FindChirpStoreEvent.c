@@ -135,6 +135,9 @@ LALFindChirpStoreEvent (
   thisEvent->ttotal  = (REAL4) input->fcTmplt->tmplt.tC;
   thisEvent->f_final = (REAL4) input->fcTmplt->tmplt.fFinal;
 
+  /* We can now memcpy the 10 metric co-efficients */
+  memcpy (thisEvent->Gamma, input->fcTmplt->tmplt.Gamma, 10*sizeof(REAL4));
+
   /* set the type of the template used in the analysis */
   memcpy( thisEvent->search, searchName, 
       LIGOMETA_SEARCH_MAX * sizeof(CHAR) );
