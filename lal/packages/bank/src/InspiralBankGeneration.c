@@ -74,6 +74,10 @@ LALInspiralBankGeneration(
       bank->f_final = coarseList[cnt].params.fFinal;
       bank->eta = coarseList[cnt].params.eta;
       bank->beta = coarseList[cnt].params.beta;
+      
+      /* Copy the 10 metric co-efficients ... */
+      memcpy (bank->Gamma, coarseList[cnt].metric.Gamma, 10*sizeof(REAL4));
+      
     }
     /* Free first template, which is blank. */
     bank = (*first)->next;

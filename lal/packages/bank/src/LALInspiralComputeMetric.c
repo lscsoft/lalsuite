@@ -448,7 +448,12 @@ LALInspiralComputeMetric (
     metric->theta = atan( b / (metric->g00 - c) );
   }
 
-/* Now we compute the 3d metric in tc,\tau_0,\tau_3 co-ordinates */
+  /* memset the metric->Gamma array to zero before populating them with correct
+   * values. This prevents junk getting stored in unused fields */
+  memset (metric->Gamma, 0, 10*sizeof(REAL4));
+
+  /* Now we compute the 3d metric in tc,\tau_0,\tau_3 co-ordinates */
+  /* We only need metric->Gamma[0,...,5].                          */
   metric->Gamma[0] = 0.5*pow(2.*LAL_PI*params->fLower,2.)*
           ( moments->j[1] - (moments->j[4]*moments->j[4]) );
   
