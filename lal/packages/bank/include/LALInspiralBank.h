@@ -340,7 +340,18 @@ tagInspiralMetric
   REAL8            g11;     
   REAL8            theta;  
 
-  REAL8            Gamma[6];
+  /* Gamma[] is a vector that stores the upper triangular part of the metric in
+   * the space of parameters. For time domain searches, Gamma[0,...,5] stores
+   * the following information :
+   *    Gamma[0] -> (tc,tc) metric component
+   *    Gamma[1] -> (tc,t0) metric component
+   *    Gamma[2] -> (tc,t3) metric component
+   *    Gamma[3] -> (t0,t0) metric component
+   *    Gamma[4] -> (t0,t3) metric component
+   *    Gamma[5] -> (t3,t3) metric component
+   * For spinBCV searches, (in 4 dimensions) Gamma[0,...,9] would be required.
+   */
+  REAL4            Gamma[10];
 
   CoordinateSpace  space;   
 } 
