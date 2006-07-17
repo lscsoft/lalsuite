@@ -1151,6 +1151,7 @@ LALSnglInspiralTableFromLIGOLw (
       /* parse the contents of the row into the InspiralTemplate structure */
       for ( j = 0; tableDir[j].name; ++j )
       {
+        if ( tableDir[j].pos < 0 ) continue;
         REAL4 r4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
         REAL8 r8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_8;
         INT4  i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
@@ -1577,6 +1578,7 @@ InspiralTmpltBankFromLIGOLw (
       /* parse the contents of the row into the InspiralTemplate structure */
       for ( j = 0; tableDir[j].name; ++j )
       {
+        if ( tableDir[j].pos < 0 ) continue;
         REAL4 colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
         INT4 i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
         UINT8 i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
