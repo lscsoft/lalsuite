@@ -75,7 +75,6 @@ def parse_command_line():
 
 def remap_instruments(doc, options):
 	ids = llwapp.get_process_ids_by_program(doc, options.program)
-	print >>sys.stderr, ids
 	for tbl in table.getTablesByName(doc, lsctables.ProcessTable.tableName):
 		for row in tbl:
 			if llwapp.bisect_contains(ids, row.process_id):
