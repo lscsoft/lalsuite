@@ -95,11 +95,21 @@ fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:chisq\" Type=\"rea
 fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:chisq_dof\" Type=\"int_4s\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:sigmasq\" Type=\"real_8\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:rsqveto_duration\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:Gamma0\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:Gamma1\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:Gamma2\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:Gamma3\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:Gamma4\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:Gamma5\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:Gamma6\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:Gamma7\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:Gamma8\" Type=\"real_4\"/>\n", fp ) == EOF || \
+fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:Gamma9\" Type=\"real_4\"/>\n", fp ) == EOF || \
 fputs( "      <Column Name=\"sngl_inspiralgroup:sngl_inspiral:event_id\" Type=\"int_8s\"/>\n", fp ) == EOF || \
 fputs( "      <Stream Name=\"sngl_inspiralgroup:sngl_inspiral:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 #define SNGL_INSPIRAL_ROW \
-"         \"process:process_id:0\",\"%s\",\"%s\",\"%s\",%d,%d,%22.16e,%d,%d,%22.16e,%22.16e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%d,%22.16e,%e,%lld"
+"         \"process:process_id:0\",\"%s\",\"%s\",\"%s\",%d,%d,%22.16e,%d,%d,%22.16e,%22.16e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%d,%22.16e,%e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,%lld"
 
 #define PRINT_LIGOLW_XML_SNGL_INSPIRAL_BNS(fp) ( \
 fputs( "   <Table Name=\"sngl_inspiralgroup:sngl_inspiral:table\">\n", fp ) == EOF || \
