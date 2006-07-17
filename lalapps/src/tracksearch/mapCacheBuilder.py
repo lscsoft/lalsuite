@@ -112,6 +112,10 @@ def filterFileList(inputFilenamelist,startFloat,stopFloat):
         if ((fileStop <= stopgpsInt) and (fileStart >= startgpsInt)):
             indexList.append(index)
     indexList.sort()
+    #If no appropriate entries for this time interval can be found
+    if indexList.__len__() < 1:
+        newList=[]
+        return newList
     startBound=indexList[0]
     stopBound=indexList[indexList.__len__()-1]
     if startBound > stopBound:
@@ -169,6 +173,13 @@ def filterFileList(inputFilenamelist,startFloat,stopFloat):
                     )):
                     testA='contained in set requested.'
             print 'File: ',entry.replace('\n',''),' is ',testA
+    #Make sure each entry has a newline character
+    tempList=newList
+    newList=[]
+    for entry in tempList:
+        if not entry.endswith('\n'):
+            entry=entry+'\n'
+        newList.append(entry)
     return newList
 
 def cacheLength(startFileName,stopFileName):
@@ -309,33 +320,41 @@ myPWD=os.path.dirname(mapListing[0])
 
 
 print 'You requested new maps at '+str(newMapTime)+' seconds.'
-print 'They will span ',str(startTime),' -> ',str(clt)
+print 'They will span ',str(startTime),' -> ',str(mlt)
 while (ct <= mlt):
     currentCache=filterFileList(mapListing,ct,ct+newMapTime)
-    startPointGPS=fileStartGPS(currentCache[0])
-    stopPointGPS=fileStopGPS(currentCache[currentCache.__len__()-1])
-    filenameCC1='MAP:Start:'+str(startPointGPS[0])+','+str(startPointGPS[1])+':Stop:'+str(stopPointGPS[0])+','+str(stopPointGPS[1])+':'
-    templateName=str(currentCache[0])
-    tail=str(templateName.__getslice__(int(templateName.find('TF')),templateName.__len__()))
-    filenameCC=str(filenameCC1)+str(tail)+'.cache'
-    filenameTSAPrep=str(filenameCC1)+str(tail)
-    #filenameCC='Cacheset_Start_'+str(ct)+'_Stop_'+str(ct+newMapTime)+'.cache'
-    setLength=cacheLength(currentCache[0],currentCache[currentCache.__len__()-1])
-    setLength=setLength
-    time.sleep(0)
-    if (continousCache(currentCache) and (setLength >= newMapTime)):
-        
-        print 'Writing: '+filenameCC+' with length '+str(setLength)+' seconds and '+str(currentCache.__len__())+' map entries.'
-        jobSetCache.append(filenameCC+str('\n'))
-        jobSetTSAList.append(filenameTSAPrep+str('\n'))
-        fp=open(filenameCC,'w')
-        fp.writelines(currentCache)
-        fp.close()
-    else:
-        print 'Error incomplete data for: '+filenameCC
-    overlapTime=newMapTime-mapOverlap
-    if (overlapTime == 0):
-        print 'Error with overlap time requested'
+    #If there is not cache for the interval ct->ct+newMapTime then don't execute the following
+    if currentCache.__len__() > 1:
+        startPointGPS=fileStartGPS(currentCache[0])
+        stopPointGPS=fileStopGPS(currentCache[currentCache.__len__()-1])
+        filenameCC1='MAP:Start:'+str(startPointGPS[0])+','+str(startPointGPS[1])+':Stop:'+str(stopPointGPS[0])+','+str(stopPointGPS[1])+':'
+        templateName=str(currentCache[0])
+        tail=str(templateName.__getslice__(int(templateName.find('TF')),templateName.__len__()-1))
+        filenameCC=str(filenameCC1)+str(tail)+'.cache'
+        filenameTSAPrep=str(filenameCC1)+str(tail)
+    
+        setLength=cacheLength(currentCache[0],currentCache[currentCache.__len__()-1])
+        setLength=setLength
+        time.sleep(0)
+        if (continousCache(currentCache) and (setLength >= newMapTime)):
+            
+            print 'Writing: '+filenameCC+' with length '+str(setLength)+' seconds and '+str(currentCache.__len__())+' map entries.'
+            jobSetCache.append(filenameCC+str('\n'))
+            jobSetTSAList.append(filenameTSAPrep+str('\n'))
+            #If filename resolves to a directory we will explicity prepend the proper path to the files!
+            if os.path.isdir(filename):
+                tempCache=currentCache
+                currentCache=[]
+                for entry in tempCache:
+                    currentCache.append(filename+entry)
+                    fp=open(filenameCC,'w')
+                    fp.writelines(currentCache)
+                    fp.close()
+        else:
+            print 'Error incomplete data for: '+filenameCC
+        overlapTime=newMapTime-mapOverlap
+        if (overlapTime == 0):
+            print 'Error with overlap time requested'
     ct=ct+overlapTime
 print 'Writing out Jobset files.'
 index1=0
@@ -351,8 +370,12 @@ while (index1 < jobSetCache.__len__()-1):
     fp.writelines(jobSetCache.__getslice__(index1,stopIndex))
     fp.close()
     index1=index1+setSize
-print 'Done writing Jobset files.'
+print 'Done writing Jobset files. Jobset files allow tracksearchAverager'
+print ' to batch average the sets of smaller maps listed in *.cache files.'
 print 'Writing new tracksearch averager(TSA) map file listings!'
+print 'These are the theoretical cache files which will allow'
+print ' the tracksearchMAP search to batch process the newly '
+print ' averaged maps.'
 index1=0
 counter=0
 while (index1 < jobSetCache.__len__()-1):

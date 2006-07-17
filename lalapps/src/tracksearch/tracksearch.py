@@ -391,9 +391,10 @@ class tracksearchMapCacheBuildJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         self.set_sub_file(self.dagDirectory+'tracksearchCacheBuild.sub')
     #End init
 
-    def getJobsetList(self):
-        #Generate the theoretical list of Jobset names to process based
-        #on the configuration options given to the job
+    def getJobTSAList(self):
+        #Generate the theoretical list of TSA cache names to process based
+        #on the configuration options given to the job.  This is then input
+        #into the tracksearchMAP code to batch process new maps.
         outputList=[]
         A=float(self.expectedTotalDuration)
         B=float(self.mapTime)
@@ -408,7 +409,7 @@ class tracksearchMapCacheBuildJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         return outputList
     #End getJobsetList
 
-    def getJobTSAList(self):
+    def getJobsetList(self):
         #Generate the theoretical list of Jobset names to process based
         #on the configuration options given to the job
         outputList=[]
@@ -662,7 +663,7 @@ class tracksearch:
         #Should be previous layer already processed!
         cacheBuildMapDir=determineLayerPath(self.cp,block_id,layerNumPrevious)
         cacheBuildWorkDir=determineLayerPath(self.cp,block_id,layerNum)
-        cacheBuild_node.add_macro('StartDir',cacheBuildWorkDir)
+        cacheBuild_node.add_macro('macroStartDir',cacheBuildWorkDir)
         cacheBuild_node.add_var_opt('file',cacheBuildMapDir)            
         #Set the time of this run to start preping caches for
         cacheBuild_node.add_var_opt('start_time',self.runStartTime)
@@ -681,16 +682,18 @@ class tracksearch:
         # The merge map
         tracksearchAverager_job=tracksearchAveragerJob(self.cp,block_id,layerNum,dagDir)
 
-        jobSetList=cacheBuild_job.getJobsetList()
-        jobTSAList=cacheBuild_job.getJobTSAList()
+        jobTSAList=cacheBuild_job.getJobsetList()
+        jobSetList=cacheBuild_job.getJobTSAList()
         #Var to store copies of these objects to get right parent relation
         averagerJobListing=[]
         #Loop over all theoretical jobsets for map making
         averagerWorkDir=determineLayerPath(self.cp,block_id,layerNum)
+        averagerTimeLayerBinCount=int(self.cp.get('tracksearchtime','number_of_time_bins'))
         for cacheSet in jobTSAList:
             tracksearchAverager_node=tracksearchAveragerNode(tracksearchAverager_job)
             tracksearchAverager_node.add_var_opt('multi_cache',cacheSet)
-            tracksearchAverager_node.add_macro('StartDir',averagerWorkDir)
+            tracksearchAverager_node.add_macro('macroStartDir',averagerWorkDir)
+            tracksearchAverager_node.add_var_opt('new_t_bins',averagerTimeLayerBinCount)
             tracksearchAverager_node.add_parent(cacheBuild_node)
             self.dag.add_node(tracksearchAverager_node)
             averagerJobListing.append(tracksearchAverager_node)
@@ -703,7 +706,7 @@ class tracksearch:
         for cacheSet in jobSetList:
             tracksearchMap_node=tracksearchMapNode(tracksearchMap_job)
             tracksearchMap_node.add_var_opt('inject_map_cache',cacheSet)
-            tracksearchMap_node.add_var_opt('StartDir',determineLayerPath(self.cp,block_id,layer_id+1))
+            tracksearchMap_node.add_var_opt('StartDir',determineLayerPath(self.cp,block_id,layerNum))
             for parent in averagerJobListing:
                 tracksearchMap_node.add_parent(parent)
             self.dag.add_node(tracksearchMap_node)
