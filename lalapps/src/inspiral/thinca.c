@@ -1899,12 +1899,18 @@ int main( int argc, char *argv[] )
       {
         if( slideNum == -numSlides )
         {
+	  /* Initialize the slide-times with the initial value, which is the negative extreme value */
           INT4 tmpSlide = (- numSlides * slideStep[ifoNumber]);
           slideTimes[ifoNumber].gpsSeconds = tmpSlide;
           slideReset[ifoNumber].gpsSeconds = (-tmpSlide);
         }
         else
         {
+	  /* Set the slide-times to the constant slide-step, 
+	     since this times refers to 'inspiralEventList', which triggers are shifted
+	     in each slide by a constant amount. 
+	     The reset-time however refers to the coincidence list, so it must
+	     be decreased for each slide. */
           slideTimes[ifoNumber].gpsSeconds = slideStep[ifoNumber];
           slideReset[ifoNumber].gpsSeconds -= slideStep[ifoNumber];
         }
@@ -1914,6 +1920,7 @@ int main( int argc, char *argv[] )
           "Performing time slide %d\n", slideNum );
 
       /* slide the data */
+
       LAL_CALL( LALTimeSlideSingleInspiral( &status, inspiralEventList,
             &startCoinc, &endCoinc, slideTimes), &status) ;
       LAL_CALL( LALSortSnglInspiral( &status, &(inspiralEventList),
