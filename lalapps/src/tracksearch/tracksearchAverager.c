@@ -743,7 +743,7 @@ LALappsTSAProcessSingleCache(LALStatus    *status,
 	    fprintf(stdout,"Collapsing individual maps\n");
 	  for (i=0;i<cache->numMapFilenames;i++)
 	    LALappsTSACollapseMap(status,
-				  &(mapArray[i]),
+				  &(mergeResultMap),
 				  params->colParams);
 	}
       /*
