@@ -1320,42 +1320,52 @@ void LALappsTrackSearchInitialize(
    * Tabulate the number of segments to create for specified overlap
    * Check for valid overlap number which < segment length number 
    */
-  if (params->overlapFlag >= params->SegLengthPoints)
+  /* 
+   *If doing a MAP analysis skip these checks these options should
+   *not be invoked
+   */
+  if (
+      (params->injectSingleMap != NULL) 
+      || (params->injectMapCache != NULL)
+      )
     {
-      fprintf(stderr,TRACKSEARCHC_MSGEVAL);
-      exit(TRACKSEARCHC_EVAL);
-    };
+      if (params->overlapFlag >= params->SegLengthPoints)
+	{
+	  fprintf(stderr,TRACKSEARCHC_MSGEVAL);
+	  exit(TRACKSEARCHC_EVAL);
+	};
 
-  if (params->TimeLengthPoints < params->SegLengthPoints)
-    {
-      fprintf(stderr,TRACKSEARCHC_MSGEVAL);
-      exit(TRACKSEARCHC_EVAL);
-    };
+      if (params->TimeLengthPoints < params->SegLengthPoints)
+	{
+	  fprintf(stderr,TRACKSEARCHC_MSGEVAL);
+	  exit(TRACKSEARCHC_EVAL);
+	};
 
-  if ( params->overlapFlag == 0)
-    {
-      params->NumSeg = floor(params->TimeLengthPoints/params->SegLengthPoints);
-    }
-  else
-    {
-      /* Determine the number of maps */
-      params->NumSeg=floor((params->TimeLengthPoints-params->overlapFlag)
-			   /(params->SegLengthPoints - params->overlapFlag));
-      /* Determine number of points to throw away (not process) */
-      /*params->discardTLP=floor(params->NumSeg*
-       *		       (params->SegLengthPoints-params->overlapFlag)
-       *		       /(params->TimeLengthPoints-params->SegLengthPoints));
-       */
-      params->discardTLP=(params->TimeLengthPoints-params->overlapFlag)%(params->SegLengthPoints - params->overlapFlag);
-      /* 
-       * Reset points to process by N-discardTLP, this gives us
-       * uniform segments to make maps with
-       */
-      params->TimeLengthPoints=params->TimeLengthPoints-params->discardTLP;
-      if ((params->verbosity >= verbose))
-	fprintf(stdout,"We need to throw away %i trailing data points for %i, evenly matched data segments\n",params->discardTLP,params->NumSeg);
+      if ( params->overlapFlag == 0)
+	{
+	  params->NumSeg = floor(params->TimeLengthPoints/params->SegLengthPoints);
+	}
+      else
+	{
+	  /* Determine the number of maps */
+	  params->NumSeg=floor((params->TimeLengthPoints-params->overlapFlag)
+			       /(params->SegLengthPoints - params->overlapFlag));
+	  /* Determine number of points to throw away (not process) */
+	  /*params->discardTLP=floor(params->NumSeg*
+	   *		       (params->SegLengthPoints-params->overlapFlag)
+	   *		       /(params->TimeLengthPoints-params->SegLengthPoints));
+	   */
+	  params->discardTLP=(params->TimeLengthPoints-params->overlapFlag)%(params->SegLengthPoints - params->overlapFlag);
+	  /* 
+	   * Reset points to process by N-discardTLP, this gives us
+	   * uniform segments to make maps with
+	   */
+	  params->TimeLengthPoints=params->TimeLengthPoints-params->discardTLP;
+	  if ((params->verbosity >= verbose))
+	    fprintf(stdout,"We need to throw away %i trailing data points for %i, evenly matched data segments\n",params->discardTLP,params->NumSeg);
 	  
-    };
+	};
+    }
   /*  DETATCHSTATUSPTR(status);*/
   return;
 }
