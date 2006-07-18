@@ -78,15 +78,12 @@ echo "";\
 echo "        Bourne shell [bash] users: please add the";\
 echo "        following lines to your .profile file";\
 echo "";\
-echo "            LAL_LOCATION=$(prefix)";\
-echo "            export LAL_LOCATION";\
-echo '            . $${LAL_LOCATION}/etc/lal-user-env.sh';\
+echo '            . $(sysconfdir)/lal-user-env.sh';\
 echo "";\
 echo "        C-shell [tcsh] users: please add the following";\
 echo "        lines to your .login file";\
 echo "";\
-echo "            setenv LAL_LOCATION $(prefix)";\
-echo '            source $${LAL_LOCATION}/etc/lal-user-env.csh';\
+echo '            source $(sysconfdir)/lal-user-env.csh';\
 echo "";\
 echo "================================================================="
 

@@ -1,12 +1,12 @@
 ## Process this file with automake to produce Makefile.in
 EXTRA_DIST = doc.mk dvi.mk include.mk main.tex.in \
              lal.m4 lallibtool.m4 lalam15patch.m4 pkg.m4 old-pkg.m4 \
-             acconfig.h lal-user-env.sh lal-user-env.csh \
-	     capture-uninstall.sh
+             acconfig.h capture-uninstall.sh
 
-CLEANFILES = uninstall-lal.sh
+CLEANFILES = uninstall-lal.sh lal-user-env.sh lal-user-env.csh
 
 sysconf_DATA = lal-user-env.sh lal-user-env.csh
+BUILT_SOURCES = lal-user-env.sh lal-user-env.csh
 
 install-exec-local: uninstall-lal-sh-target
 	$(mkinstalldirs) $(DESTDIR)$(sbindir)
@@ -15,3 +15,41 @@ install-exec-local: uninstall-lal-sh-target
 uninstall-lal-sh-target:
 	top_builddir=$(top_builddir) ; export top_builddir ; \
         $(SHELL) $(srcdir)/capture-uninstall.sh uninstall-lal.sh
+
+lal-user-env.sh:
+	@echo "creating $@" ;\
+	echo "# Source this file to access LAL" >$@ ;\
+	echo "LAL_PREFIX=\"$(prefix)\"" >>$@ ;\
+	echo "export LAL_PREFIX" >>$@ ;\
+	echo "PATH=\"$(bindir):\$${PATH}\"" >>$@ ;\
+	echo "MANPATH=\"$(mandir):\$${MANPATH}\"" >>$@ ;\
+	echo "LD_LIBRARY_PATH=\"$(libdir):\$${LD_LIBRARY_PATH}\"" >>$@ ;\
+	echo "DYLD_LIBRARY_PATH=\"$(libdir):\$${DYLD_LIBRARY_PATH}\"" >>$@ ;\
+	echo "PKG_CONFIG_PATH=\"$(libdir)/pkgconfig:\$${PKG_CONFIG_PATH}\"" >>$@ ;\
+	echo "export PATH MANPATH LD_LIBRARY_PATH DYLD_LIBRARY_PATH PKG_CONFIG_PATH" >>$@
+
+lal-user-env.csh:
+	@echo "creating $@" ;\
+	echo "# Source this file to access LAL" >$@ ;\
+	echo "setenv LAL_PREFIX \"$(prefix)\"" >>$@ ;\
+	echo "setenv PATH \"$(bindir):\$${PATH}\"" >>$@ ;\
+	echo "if ( \$$?MANPATH ) then" >>$@ ;\
+	echo "	setenv MANPATH \"$(mandir):\$${MANPATH}\"" >>$@ ;\
+	echo "else" >>$@ ;\
+	echo "	setenv MANPATH \"$(mandir)\"" >>$@ ;\
+	echo "endif" >>$@ ;\
+	echo "if ( \$$?LD_LIBRARY_PATH ) then" >>$@ ;\
+	echo "	setenv LD_LIBRARY_PATH \"$(libdir):\$${LD_LIBRARY_PATH}\"" >>$@ ;\
+	echo "else" >>$@ ;\
+	echo "	setenv LD_LIBRARY_PATH \"$(libdir)\"" >>$@ ;\
+	echo "endif" >>$@ ;\
+	echo "if ( \$$?DYLD_LIBRARY_PATH ) then" >>$@ ;\
+	echo "	setenv DYLD_LIBRARY_PATH \"$(libdir):\$${DYLD_LIBRARY_PATH}\"" >>$@ ;\
+	echo "else" >>$@ ;\
+	echo "	setenv DYLD_LIBRARY_PATH \"$(libdir)\"" >>$@ ;\
+	echo "endif" >>$@ ;\
+	echo "if ( \$$?PKG_CONFIG_PATH ) then" >>$@ ;\
+	echo "	setenv PKG_CONFIG_PATH \"$(libdir)/pkgconfig:\$${PKG_CONFIG_PATH}\"" >>$@ ;\
+	echo "else" >>$@ ;\
+	echo "	setenv PKG_CONFIG_PATH \"$(libdir)/pkgconfig\"" >>$@ ;\
+	echo "endif" >>$@
