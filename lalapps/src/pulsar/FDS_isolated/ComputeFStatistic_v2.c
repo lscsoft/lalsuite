@@ -1319,9 +1319,9 @@ XLALwriteCandidate2file ( FILE *fp,  const PulsarCandidate *cand, const Fcompone
   fprintf (fp, "Alpha    = % .16g;\n", cand->Doppler.Alpha );
   fprintf (fp, "Delta    = % .16g;\n", cand->Doppler.Delta );
   fprintf (fp, "Freq     = % .16g;\n", cand->Doppler.fkdot[0] );
-  fprintf (fp, "f1ddot   = % .16g;\n", cand->Doppler.fkdot[1] );
-  fprintf (fp, "f2ddot   = % .16g;\n", cand->Doppler.fkdot[2] );
-  fprintf (fp, "f3ddot   = % .16g;\n", cand->Doppler.fkdot[3] );
+  fprintf (fp, "f1dot   = % .16g;\n", cand->Doppler.fkdot[1] );
+  fprintf (fp, "f2dot   = % .16g;\n", cand->Doppler.fkdot[2] );
+  fprintf (fp, "f3dot   = % .16g;\n", cand->Doppler.fkdot[3] );
 
   fprintf (fp, "\n");
 
