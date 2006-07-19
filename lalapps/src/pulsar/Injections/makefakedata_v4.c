@@ -529,7 +529,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 	REAL8 disc;
 	if ( fabs(uvar_aCross) > uvar_aPlus )
 	  {
-	    LALPrintError ( "\nSpecify EITHER {h0,cosi} OR {aPlus, aCross}!\n\n");
+	    LALPrintError ( "\nInvalid input parameters: aCross must smaller or equal aPlus !\n\n");
 	    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
 	  }
 	disc = sqrt ( SQ(uvar_aPlus) - SQ(uvar_aCross) );
@@ -881,12 +881,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 	SFTCatalog *catalog = NULL;
 	SFTConstraints constraints = empty_SFTConstraints;
 
-	if ( (constraints.detector = XLALGetChannelPrefix ( uvar_detector )) == NULL ) {
-	  ABORT ( status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD );
-	}
-
 	TRY ( LALSFTdataFind( status->statusPtr, &catalog, uvar_noiseSFTs, &constraints ), status );
-	LALFree ( constraints.detector );
 
 	fMin = cfg->fmin_eff;
 	fMax = fMin + cfg->fBand_eff;
