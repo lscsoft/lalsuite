@@ -193,10 +193,7 @@ ProcessParamsTable *next_process_param( const char *name, const char *type,
     exit( 1 );
   }
   strncpy( pp->program, PROGRAM_NAME, LIGOMETA_PROGRAM_MAX );
-  if ( ! strcmp( name, "userTag" ) || ! strcmp( name, "user-tag" ) )
-    LALSnprintf( pp->param, LIGOMETA_PARAM_MAX, "-userTag" );
-  else
-    LALSnprintf( pp->param, LIGOMETA_PARAM_MAX, "--%s", name );
+  LALSnprintf( pp->param, LIGOMETA_PARAM_MAX, "--%s", name );
   strncpy( pp->type, type, LIGOMETA_TYPE_MAX );
   va_start( ap, fmt );
   LALVsnprintf( pp->value, LIGOMETA_VALUE_MAX, fmt, ap );
@@ -377,6 +374,8 @@ void LALSetIndividualMasses(LALStatus                   *status,
     break;
   }
 
+  this_inj->mchirp = pow( this_inj->eta, 0.6) * 
+      (this_inj->mass1 + this_inj->mass2);
 
 }
 
@@ -772,7 +771,7 @@ void LALParserInspiralInjection(LALStatus *status,
       else if ( strcmp(argv[i] , "--coa-phase-min") == 0 ){
 	params->coa_phase.min = atof( argv[++i] );
 	this_proc_param = this_proc_param->next = 
-	  next_process_param( "coa-phase-max", "float", "%le", params->coa_phase.min );
+	  next_process_param( "coa-phase-min", "float", "%le", params->coa_phase.min );
       }  
       else if ( strcmp(argv[i] , "--coa-phase-max") == 0 ){
 	params->coa_phase.max = atof( argv[++i] );
@@ -790,7 +789,7 @@ void LALParserInspiralInjection(LALStatus *status,
       else if ( strcmp(argv[i] , "--mass1-min") == 0 ){
 	params->m1.min = atof( argv[++i] );
 	this_proc_param = this_proc_param->next = 
-	  next_process_param( "mass1-max", "float", "%le", params->m1.min );
+	  next_process_param( "mass1-min", "float", "%le", params->m1.min );
       }  
       else if ( strcmp(argv[i] , "--mass1-max") == 0 ){
 	params->m1.max = atof( argv[++i] );
@@ -813,7 +812,7 @@ void LALParserInspiralInjection(LALStatus *status,
       else if ( strcmp(argv[i] , "--mass2-min") == 0 ){
 	params->m2.min = atof( argv[++i] );
 	this_proc_param = this_proc_param->next = 
-	  next_process_param( "mass2-max", "float", "%le", params->m2.min );
+	  next_process_param( "mass2-min", "float", "%le", params->m2.min );
       }  
       else if ( strcmp(argv[i] , "--mass2-max") == 0 ){
 	params->m2.max = atof( argv[++i] );
@@ -842,9 +841,9 @@ void LALParserInspiralInjection(LALStatus *status,
 	params->distance.min = atof( argv[++i] );
 	params->distance.max = atof( argv[++i] );
 	this_proc_param = this_proc_param->next = 
-	  next_process_param( "minimum-distance", "float", "%le", params->distance.min );
+	  next_process_param( "distance-min", "float", "%le", params->distance.min );
 	this_proc_param = this_proc_param->next = 
-	  next_process_param( "maximum-distance", "float", "%le", params->distance.max );
+	  next_process_param( "distance-max", "float", "%le", params->distance.max );
       } 
       else if ( strcmp(argv[i] , "--spin1-min") == 0 ){
 	params->spin1.min = atof( argv[++i] );
@@ -944,7 +943,7 @@ void LALParserInspiralInjection(LALStatus *status,
             exit(1); 
           }
         this_proc_param = this_proc_param->next =
-          next_process_param( "mdistr", "string",
+          next_process_param( "mass-distr", "string",
 			      "%s",argv[i] );	
       }
        else if ( strcmp(argv[i] , "--dist-distr") == 0 ){
@@ -966,7 +965,7 @@ void LALParserInspiralInjection(LALStatus *status,
             exit(1);
           }
         this_proc_param = this_proc_param->next =
-          next_process_param( "ddistr", "string",
+          next_process_param( "dist-distr", "string",
                               "%s",argv[i] );
       }
       else {
