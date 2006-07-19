@@ -208,7 +208,7 @@ class PublishNode(pipeline.CondorDAGNode):
 
 class GsiScpJob(pipeline.CondorDAGJob):
 	def __init__(self, config_parser):
-		pipeline.CondorDAGJob.__init__(self, "scheduler", power.get_executable(config_parser, "gsiscp"))
+		pipeline.CondorDAGJob.__init__(self, "local", power.get_executable(config_parser, "gsiscp"))
 		self.set_stdout_file(os.path.join(power.get_out_dir(config_parser), "gsiscp-$(cluster)-$(process).out"))
 		self.set_stderr_file(os.path.join(power.get_out_dir(config_parser), "gsiscp-$(cluster)-$(process).err"))
 		self.set_sub_file("gsiscp.sub")
