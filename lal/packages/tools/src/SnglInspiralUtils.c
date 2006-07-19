@@ -1339,6 +1339,152 @@ LALIfoCountSingleInspiral(
   RETURN (status);
 }  
 
+
+/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+void
+  LALTimeSlideSegList(
+       LALStatus                  *status,
+       LALSegList                 *seglist,
+       LIGOTimeGPS                *startTime,
+       LIGOTimeGPS                *endTime,
+       LIGOTimeGPS                *slideTime
+				 )
+/* </lalVerbatim> */
+{
+  INT8       startTimeNS = 0;
+  INT8       endTimeNS   = 0;
+  INT8       lengthTimeNS= 0;
+  INT8       slideNS     = 0;
+  INT8       segStartNS, segEndNS;
+  INT8       newStartNS, newEndNS; 
+  LALSeg     tmpSeg;;     
+  LALSegList tmplist; 
+  INT4       n,i=0;
+
+  INITSTATUS( status, "LALTimeSlideSegList", SNGLINSPIRALUTILSC );
+  ATTATCHSTATUSPTR( status );
+
+  /* time slide segs in a seglist by a time = slideTime, except those from the
+   * instrument skipIfo which are left untouched. If you want to slide 
+   * all triggers, simply set skipIfo = LAL_UNKNOWN_IFO */
+
+  /* check that seglist exist */
+  if ( !seglist ) {
+    DETATCHSTATUSPTR (status);
+    RETURN(status);
+  }
+  
+  /* Make sure the segment list has been properly initialized */
+  if ( seglist->initMagic != SEGMENTSH_INITMAGICVAL ) {
+    DETATCHSTATUSPTR (status);
+    RETURN(status);
+  }
+
+  if ( startTime )
+  {
+    LALGPStoINT8( status->statusPtr, &startTimeNS, startTime );
+  }
+
+  if ( endTime )
+  {
+    LALGPStoINT8( status->statusPtr, &endTimeNS, endTime );
+  }
+
+  /* calculate the slide time in nanoseconds */
+  LALGPStoINT8( status->statusPtr, &slideNS, slideTime);
+
+  /* initialize segment-list */
+  XLALSegListInit( &tmplist );
+
+  /*  check the length of the segment list. */
+  n=seglist->length;
+
+  /* loop over the entries in seglist */  
+  for( i=0; i<n; i++ ) {
+         
+    /* and seg time in nanoseconds */
+    LALGPStoINT8( status->statusPtr, &segStartNS, &(seglist->segs[i].start) );
+    LALGPStoINT8( status->statusPtr, &segEndNS,   &(seglist->segs[i].end) );
+
+    /* do the slide */
+    segStartNS += slideNS;
+    segEndNS   += slideNS;
+    
+
+    /* check times to lie on the ring... */
+    if ( startTimeNS && endTimeNS) {
+      lengthTimeNS=endTimeNS - startTimeNS;
+
+      /* print warning if the slide-time is too large...*/
+      if (slideNS>lengthTimeNS) {
+	fprintf(stdout, 
+		"WARNING in LALTimeSlideSegList: slide-window LARGER than segment-length.\n");
+      }
+
+      /* check the different cases where a segment can be 
+	 slide out of the ring completely or party.
+	 In the latter case, the segment has to be split */
+      if ( segStartNS<startTimeNS ) {
+
+	if ( segEndNS<startTimeNS ) {
+	  segStartNS += lengthTimeNS;
+	  segEndNS   += lengthTimeNS;
+	} else {
+	  /* split up */
+	  newStartNS = segStartNS + lengthTimeNS;
+	  newEndNS   = endTimeNS;
+	  LALINT8toGPS( status->statusPtr, &(tmpSeg.start), &newStartNS );
+	  LALINT8toGPS( status->statusPtr, &(tmpSeg.end),   &newEndNS );
+	  XLALSegListAppend( &tmplist, &tmpSeg );
+
+	  segStartNS = startTimeNS;	  
+	}
+	
+      } else if (segEndNS>endTimeNS) {
+
+	if ( segStartNS>endTimeNS) {
+	  segStartNS -= lengthTimeNS;
+	  segEndNS   -= lengthTimeNS;
+	} else {
+	  /* split up */
+	  newStartNS = startTimeNS;
+	  newEndNS   = segEndNS - lengthTimeNS;
+	  LALINT8toGPS( status->statusPtr, &(tmpSeg.start), &newStartNS );
+	  LALINT8toGPS( status->statusPtr, &(tmpSeg.end),   &newEndNS );
+	  XLALSegListAppend( &tmplist, &tmpSeg );
+
+	  segEndNS = endTimeNS;
+	}
+      } 
+    }
+    
+    /* restore segment */
+    LALINT8toGPS( status->statusPtr, &(tmpSeg.start), &segStartNS );
+    LALINT8toGPS( status->statusPtr, &(tmpSeg.end),   &segEndNS );
+    XLALSegListAppend( &tmplist, &tmpSeg );
+  }   
+
+
+  /* clear the old list */
+  XLALSegListClear( seglist ); 
+  
+  /* loop over all segments in this list */
+  for (i=0; i<tmplist.length; i++) {
+    XLALSegListAppend( seglist, &(tmplist.segs[i]));
+  }
+
+  /* clear the temporary list */
+  XLALSegListClear( &tmplist );
+  
+  /* sort and clean up the new list */
+  XLALSegListCoalesce( seglist );
+  
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}  
+
+
+/* ======================================= */
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
 void
 LALTimeSlideSingleInspiral(
