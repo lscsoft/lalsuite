@@ -219,6 +219,9 @@ XLALSegListSearch( LALSegList *seglist, const LIGOTimeGPS *gps );
 INT4
 XLALSegListShift( LALSegList *seglist, const LIGOTimeGPS *gps );
 
+INT4
+XLALSegListKeep(  LALSegList *seglist, const LIGOTimeGPS *start, const LIGOTimeGPS *end );
+
 /*----------------------- Trailer stuff ----------------------------*/
 
 #ifdef  __cplusplus
