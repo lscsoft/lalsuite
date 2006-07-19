@@ -1481,8 +1481,16 @@ try:
   approximants = cp.get('veto-inspiral', 'approximant')
   cp.remove_option('veto-inspiral', 'approximant')
 except ConfigParser.NoOptionError:
-  print "No approximant in veto-inspiral - using the main one..."
-  approximants = cp.get('inspiral', 'approximant')
+  try:
+    print "No approximant in veto-inspiral - using the main one..."
+    approximants = cp.get('inspiral', 'approximant')
+  except ConfigParser.NoOptionError:
+    if ops.ringdown:
+      print "Approximant not needed for ringdown code"
+      approximants = 'NONE'
+    else:
+      print "Could not determine approximant for second stage inspirals"
+      throw ConfigParser.NoOptionError
 
 # Initialise the banks
 banks = {}
