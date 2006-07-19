@@ -1545,6 +1545,9 @@ int main( int argc, char *argv[] )
            &status);
         XLALSegListCoalesce( &(vetoSegs[ifoNumber]) );
 
+	/* keep only the segments that lie within the data-segment part */
+	XLALSegListKeep(  &(vetoSegs[ifoNumber]), &startCoinc, &endCoinc );
+
 	/* if the veto option is set, we remove single inspiral triggers 
 	   inside the list provided but we need to loop over the different ifo name. */
         if (doVeto)
@@ -1834,7 +1837,7 @@ int main( int argc, char *argv[] )
 	      fprintf(stdout, "Using h1-h2-consistency with veto segment list %s and %s\n", 
 		vetoFileName[LAL_IFO_H1], vetoFileName[LAL_IFO_H2]);
       LAL_CALL( LALInspiralDistanceCutCleaning(&status,  &coincInspiralList, 
-	&accuracyParams, snrCut, &summValueList, &vetoSegs[LAL_IFO_H1], &vetoSegs[LAL_IFO_H2], slideTimes), &status);
+	&accuracyParams, snrCut, &summValueList, &vetoSegs[LAL_IFO_H1], &vetoSegs[LAL_IFO_H2]), &status);
       if ( vrbflg ) fprintf( stdout, "%d remaining coincident triggers after h1-h2-consistency.\n", 
 	XLALCountCoincInspiral(coincInspiralList));
     }
@@ -1844,7 +1847,7 @@ int main( int argc, char *argv[] )
     {
      if (vrbflg) fprintf(stdout, "Using h1-h2-consistency without veto segment list can be dangerous...\n");
       LAL_CALL( LALInspiralDistanceCutCleaning(&status,  &coincInspiralList, 
-	&accuracyParams, snrCut, &summValueList, NULL, NULL, slideTimes), &status);
+	&accuracyParams, snrCut, &summValueList, NULL, NULL), &status);
       if ( vrbflg ) fprintf( stdout, "%d remaining coincident triggers after h1-h2-consistency.\n", 
 	XLALCountCoincInspiral(coincInspiralList));
     }
@@ -1922,10 +1925,13 @@ int main( int argc, char *argv[] )
       /* slide the data */
 
       LAL_CALL( LALTimeSlideSingleInspiral( &status, inspiralEventList,
-            &startCoinc, &endCoinc, slideTimes), &status) ;
+	       &startCoinc, &endCoinc, slideTimes), &status) ;      
       LAL_CALL( LALSortSnglInspiral( &status, &(inspiralEventList),
             LALCompareSnglInspiralByTime ), &status );
-      
+      for ( ifoNumber = 0; ifoNumber< LAL_NUM_IFO; ifoNumber++) {	  
+	LAL_CALL( LALTimeSlideSegList( &status, &(vetoSegs[ifoNumber]),
+	     &startCoinc, &endCoinc, &(slideTimes[ifoNumber])), &status) ;
+      }
       /* look for coincidences, except in the zero lag */
       if( slideNum )
       {
@@ -1995,14 +2001,14 @@ int main( int argc, char *argv[] )
               &status );
         }
        
-        /* remove events in H1L1 and H2L1 (triple coincidence analysis)  */
+        /* remove events in H1L1 and H2L1 (triple coincidence analysis)  
 	if(h1h2Consistency && (vetoFileName[LAL_IFO_H1] && vetoFileName[LAL_IFO_H2]))
         {
 	    if(vrbflg)
 	      fprintf(stdout, "Using h1-h2-consistency with veto segment list %s and %s\n", 
 		vetoFileName[LAL_IFO_H1], vetoFileName[LAL_IFO_H2]);
           LAL_CALL( LALInspiralDistanceCutCleaning(&status,  &coincInspiralList, 
-	    &accuracyParams, snrCut, &summValueList, &vetoSegs[LAL_IFO_H1], &vetoSegs[LAL_IFO_H2], slideTimes), &status);
+	    &accuracyParams, snrCut, &summValueList, &vetoSegs[LAL_IFO_H1], &vetoSegs[LAL_IFO_H2]), &status);
           if ( vrbflg ) fprintf( stdout, "%d remaining coincident triggers after h1-h2-consisteny .\n", 
 	    XLALCountCoincInspiral(coincInspiralList));
 	}
@@ -2013,12 +2019,29 @@ int main( int argc, char *argv[] )
 	    if(vrbflg)
 	      fprintf(stdout, "Using h1-h2-consistency without veto segment list can be dangerous...\n");
 	    LAL_CALL( LALInspiralDistanceCutCleaning(&status,  &coincInspiralList, 
-						     &accuracyParams, snrCut, &summValueList, NULL, NULL, slideTimes), &status);
+						     &accuracyParams, snrCut, &summValueList, NULL, NULL), &status);
             if ( vrbflg ) 
 	      fprintf( stdout, "%d remaining coincident triggers after h1-h2-consistency.\n", 
 		XLALCountCoincInspiral(coincInspiralList));
 	  }
+	}*/
+
+	/* perform the h1h2-consistency check */
+	if ( h1h2Consistency ) {
+	  if(vrbflg) {
+	    if (vetoFileName[LAL_IFO_H1] && vetoFileName[LAL_IFO_H2])
+	      fprintf(stdout, "Using h1-h2-consistency with veto segment list %s and %s\n", 
+		 vetoFileName[LAL_IFO_H1], vetoFileName[LAL_IFO_H2]);
+	    else 
+	      fprintf(stdout, "Using h1-h2-consistency without veto segment list. NOT RECOMMENDED\n");
+	  }
+	  LAL_CALL( LALInspiralDistanceCutCleaning(&status,  &coincInspiralList, 
+	            &accuracyParams, snrCut, &summValueList, &vetoSegs[LAL_IFO_H1], &vetoSegs[LAL_IFO_H2]), &status);
+	  if ( vrbflg ) fprintf( stdout, "%d remaining coincident triggers after h1-h2-consisteny .\n", 
+		   XLALCountCoincInspiral(coincInspiralList));
 	}
+      
+
 
         /* count the coincs, scroll to end of list */
         if( coincInspiralList )
