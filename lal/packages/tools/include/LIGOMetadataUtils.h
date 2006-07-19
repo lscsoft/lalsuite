@@ -662,6 +662,15 @@ LALIfoCountSingleInspiral(
     );
 
 void
+LALTimeSlideSegList(
+    LALStatus                  *status,
+    LALSegList                 *seglist,
+    LIGOTimeGPS                *startTime,
+    LIGOTimeGPS                *endTime,
+    LIGOTimeGPS                *slideTimes
+    );
+
+void
 LALTimeSlideSingleInspiral(
     LALStatus                  *status,
     SnglInspiralTable          *input,
@@ -797,8 +806,7 @@ LALInspiralDistanceCutCleaning(
     REAL4 			snrThreshold,
     SummValueTable            **summValueList,
     LALSegList                 *vetoSegsH1,
-    LALSegList                 *vetoSegsH2,
-    LIGOTimeGPS                 slideTimes[LAL_NUM_IFO]
+    LALSegList                 *vetoSegsH2
     );
 
 void
