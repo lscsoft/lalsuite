@@ -1318,9 +1318,8 @@ LALInspiralDistanceCutCleaning(
     InspiralAccuracyList       *accuracyParams,
     REAL4			snrThreshold,
     SummValueTable            **summValueList,
-    LALSegList                 *vSegsH1, 
-    LALSegList                 *vSegsH2,
-    LIGOTimeGPS                 slideTimes[LAL_NUM_IFO]
+    LALSegList                 *vetoSegsH1, 
+    LALSegList                 *vetoSegsH2
     )
 /* </lalVerbatim> */
 {
@@ -1328,8 +1327,6 @@ LALInspiralDistanceCutCleaning(
   CoincInspiralTable   *prevCoinc = NULL;
   CoincInspiralTable   *coincHead = NULL;
   REAL4 dH1, dH2, snrH1, snrH2; 
-  LALSegList *vetoSegsH1 = NULL;
-  LALSegList *vetoSegsH2 = NULL;
   REAL4 iotaCut;
   INITSTATUS( status, "LALInspiralDistanceCutCleaning", COINCINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
@@ -1338,25 +1335,9 @@ LALInspiralDistanceCutCleaning(
   coincHead = NULL;
  
   
-  if ( !vSegsH1 || !vSegsH2 )
-    XLALPrintWarning("LALInspiralDistanceCutCleaning: Warning, no veto list provided for H1/H2. NOT RECOMMENDED.. ");
-  
-  /* Adding time shifts to the segment lists. 
-     To do it right, a H1-timeshift must be added to the H2-veto list!  */
-  if ( vSegsH1 ) {
-    vetoSegsH1=(LALSegList *) LALMalloc( sizeof(vSegsH1)*sizeof(LALSegList) );
-    memcpy( vetoSegsH1, vSegsH1, sizeof(vSegsH1)*sizeof(LALSegList) );
-    XLALSegListShift( vetoSegsH1, &slideTimes[LAL_IFO_H2]);
-  }   
-  if ( vSegsH2 ) {
-    vetoSegsH2=(LALSegList *) LALMalloc( sizeof(vSegsH2)*sizeof(LALSegList) );
-    memcpy( vetoSegsH2, vSegsH2, sizeof(vSegsH2)*sizeof(LALSegList) );
-    XLALSegListShift( vetoSegsH2, &slideTimes[LAL_IFO_H1]);
-  } 
-  
   /*  compute the iota accuracy  */
-  iotaCut  =  1/((2-accuracyParams->ifoAccuracy[LAL_IFO_H1].kappa)
-	/(2+accuracyParams->ifoAccuracy[LAL_IFO_H1].kappa));
+  iotaCut  =  1/((2-accuracyParams->iotaCutH1H2)
+	/(2+accuracyParams->iotaCutH1H2));
 
   while( thisCoinc )
   {
@@ -1364,7 +1345,6 @@ LALInspiralDistanceCutCleaning(
     REAL4 snrA = 0, snrB = 0;
     REAL4 distA = 0, distB = 0;
     REAL8 sigmasqA = 0, sigmasqB = 0;
-
     CoincInspiralTable *tmpCoinc = thisCoinc;
     thisCoinc = thisCoinc->next;
     
@@ -1380,9 +1360,9 @@ LALInspiralDistanceCutCleaning(
       /* iota =1 */
       if (dH2/dH1*snrH1 > snrThreshold * iotaCut)
 	{
-	  if (vetoSegsH2->length)
+	  if ( vetoSegsH2->initMagic == SEGMENTSH_INITMAGICVAL )
 	    {
-	      if (!XLALSegListSearch( vetoSegsH2, 
+	      if (!XLALSegListSearch( vetoSegsH2,
 				      &(tmpCoinc->snglInspiral[LAL_IFO_H1]->end_time)))
 		{ 
 		  discardTrigger =1;
@@ -1405,10 +1385,10 @@ LALInspiralDistanceCutCleaning(
 	/* iota = 1 */
 	if (dH1/dH2*snrH2 > snrThreshold *iotaCut)
 	  {
-	    if (vetoSegsH1->length)
+	    if ( vetoSegsH1->initMagic == SEGMENTSH_INITMAGICVAL )
 	      {
 		if (!XLALSegListSearch( vetoSegsH1, 
-					&(tmpCoinc->snglInspiral[LAL_IFO_H2]->end_time)))
+                     &(tmpCoinc->snglInspiral[LAL_IFO_H2]->end_time)))
 		  { 
 		    discardTrigger =1;
 		  }
@@ -1440,8 +1420,7 @@ LALInspiralDistanceCutCleaning(
       }
   }
   *coincInspiral = coincHead;
-  LALFree(vetoSegsH1);
-  LALFree(vetoSegsH2);
+
   DETATCHSTATUSPTR (status);
   RETURN (status);
 }
