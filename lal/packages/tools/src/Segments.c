@@ -938,26 +938,26 @@ XLALSegListShift(  LALSegList *seglist, const LIGOTimeGPS *gps )
   /* Make sure a non-null pointer was passed for the segment list */
   if ( ! seglist ) {
     XLALPrintError( "NULL LALSegList pointer passed to %s\n", func );
-    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+    XLAL_ERROR( func, XLAL_EFAULT );
   }
 
   /* Make sure a non-null pointer was passed for the GPS time */
   if ( ! gps ) {
     XLALPrintError( "NULL LIGOTimeGPS pointer passed to %s\n", func );
-    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+    XLAL_ERROR( func, XLAL_EFAULT );
   }
 
   /* Make sure the segment list has been properly initialized */
   if ( seglist->initMagic != SEGMENTSH_INITMAGICVAL ) {
     XLALPrintError( "Passed unintialized LALSegList structure to %s\n", func );
-    XLAL_ERROR_NULL( func, XLAL_EINVAL );
+    XLAL_ERROR( func, XLAL_EINVAL );
   }
 
   XLALSetErrno( 0 );
 
   /* If the segment list is empty, simply return */
   if ( seglist->length == 0 ) {
-    return NULL;
+    return XLAL_SUCCESS;
   }
 
   /* convert the time-shift to a float */
@@ -975,4 +975,91 @@ XLALSegListShift(  LALSegList *seglist, const LIGOTimeGPS *gps )
 
   return 1;
 
+}
+
+
+
+INT4
+XLALSegListKeep(  LALSegList *seglist, const LIGOTimeGPS *start, const LIGOTimeGPS *end )
+/* </lalVerbatim> */
+{
+ static const char *func = "XLALSegListKeep";
+ static LALStatus status;
+ LALSegList  newlist;
+ int i;
+ INT8 startNS, endNS;
+ INT8 segStart, segEnd;
+ LALSeg tmpSeg, newSeg;
+
+ /* Make sure a non-null pointer was passed for the segment list */
+ if ( ! seglist ) {
+   XLALPrintError( "NULL LALSegList pointer passed to %s\n", func );
+   XLAL_ERROR( func, XLAL_EFAULT );
+ }
+
+ /* Make sure a non-null pointer was passed for the GPS time */
+ if ( !start || !end ) {
+   XLALPrintError( "NULL LIGOTimeGPS pointers passed to %s\n", func );
+   XLAL_ERROR( func, XLAL_EFAULT );
+ }
+
+ /* Make sure the segment list has been properly initialized */
+ if ( seglist->initMagic != SEGMENTSH_INITMAGICVAL ) {
+   XLALPrintError( "Passed unintialized LALSegList structure to %s\n", func );
+   XLAL_ERROR( func, XLAL_EINVAL );
+ }
+
+ XLALSetErrno( 0 );
+
+ /* If the segment list is empty, simply return */
+ if ( seglist->length == 0 ) {
+   return XLAL_SUCCESS;
+ }
+
+/* init the temporary list */
+ XLALSegListInit( &newlist );
+
+ /* convert the time-shift to a float */
+ LALGPStoINT8( &status, &startNS, start);
+ LALGPStoINT8( &status, &endNS, end);
+
+ /* loop over all segments in this list */
+ for (i=0; i<seglist->length; i++) {
+   tmpSeg=seglist->segs[i];
+
+   LALGPStoINT8( &status, &segStart, &(tmpSeg.start));
+   LALGPStoINT8( &status, &segEnd,   &(tmpSeg.end));
+
+/* check the times */
+   if ( segEnd<startNS || segStart>endNS) {
+     segStart=0;
+     segEnd=0;
+   }
+   if ( segStart<startNS && segEnd>startNS ) {
+     segStart=startNS;
+     segEnd=segEnd;
+   }
+   if ( segStart<endNS && segEnd>endNS ) {
+     segStart=segStart;
+     segEnd=endNS;
+   }
+     if ( segStart ) {
+/* store time to temporary list */
+     LALINT8toGPS( &status, &(newSeg.start), &segStart );
+     LALINT8toGPS( &status, &(newSeg.end),   &segEnd );
+     XLALSegListAppend( &newlist, &newSeg );
+   }
+   }
+
+   /* clear the old list */
+ XLALSegListClear( seglist ); /* SEGFAULT */
+
+ /* loop over all segments in this list */
+ for (i=0; i<newlist.length; i++) {
+   XLALSegListAppend( seglist, &(newlist.segs[i]));
+ }
+
+ XLALSegListClear( &newlist );
+
+ return 1;
 }
