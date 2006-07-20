@@ -234,3 +234,21 @@ AC_OUTPUT( 				\
 	src/pulsar/hough/src2/Makefile	\
 	src/pulsar/MakeSFTs/Makefile	\
 )
+
+lalframeenabled="`test x${lalframe} = xtrue && echo "ENABLED" || echo "DISABLED"`"
+lalmetaioenabled="`test x${lalmetaio} = xtrue && echo "ENABLED" || echo "DISABLED"`"
+echo "
+================================================================
+
+        LALApps has now been successfully configured:
+
+                LAL Frame library support is $lalframeenabled
+                LAL MetaIo library support is $lalmetaioenabled
+
+        Now run 'make' to build LALApps
+        and run 'make install' to install LALApps
+        LALApps will be installed under the directory:
+
+                $prefix
+
+================================================================="

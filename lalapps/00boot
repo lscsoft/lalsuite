@@ -46,7 +46,7 @@ while test $# -gt 0 ; do
   shift
 done
 
-echo ">>> 00boot: checking versions of aclocal, automake, autoheader and autoconf"
+echo "00boot: checking versions of aclocal, automake, autoheader and autoconf"
 
 
 ACLOCAL=${ACLOCAL:-"aclocal"}
@@ -71,33 +71,32 @@ if test -z "$autoheader_version"; then
   fail "finding program autoheader"
 fi
 
-echo ">>> 00boot: using:"
-printf ">>> 00boot:\t%-16s %s\n" "aclocal-$aclocal_version:" "`which $ACLOCAL`"
-printf ">>> 00boot:\t%-16s %s\n" "automake-$automake_version:" "`which $AUTOMAKE`"
-printf ">>> 00boot:\t%-16s %s\n" "autoheader-$autoheader_version:" "`which $AUTOHEADER`"
-printf ">>> 00boot:\t%-16s %s\n" "autoconf-$autoconf_version:" "`which $AUTOCONF`"
+echo "00boot: using:"
+printf "00boot:\t%-16s %s\n" "aclocal-$aclocal_version:" "`which $ACLOCAL`"
+printf "00boot:\t%-16s %s\n" "automake-$automake_version:" "`which $AUTOMAKE`"
+printf "00boot:\t%-16s %s\n" "autoheader-$autoheader_version:" "`which $AUTOHEADER`"
+printf "00boot:\t%-16s %s\n" "autoconf-$autoconf_version:" "`which $AUTOCONF`"
 
 ## Generate the Makefile.in's and the configure script
 
-echo ">>> 00boot: running aclocal"
+echo "00boot: running aclocal"
 $ACLOCAL || fail "aclocal"
-echo ">>> 00boot: running autoheader"
+echo "00boot: running autoheader"
 $AUTOHEADER || fail "autoheader"
-echo ">>> 00boot: running automake"
+echo "00boot: running automake"
 $AUTOMAKE $INCLUDEDEPS || fail "automake"
-echo ">>> 00boot: running autoconf"
+echo "00boot: running autoconf"
 $AUTOCONF || fail "autoconf"
 
-echo ">>> 00boot: done"
+echo "00boot: success"
 echo "
-*****************************************************************
-*                                                               *
-*       00boot has been run.                                    *
-*                                                               *
-*       Now run './configure' with appropriate options          *
-*       to configure LALApps.                                   *
-*                                                               *
-*       See the LALApps README file for futher instructions     *
-*                                                               *
-*****************************************************************"
+=================================================================
 
+        00boot has been run.
+
+        Now run './configure' with appropriate options
+        to configure LALApps.
+
+        See the LALApps README file for futher instructions
+
+================================================================="
