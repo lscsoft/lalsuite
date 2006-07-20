@@ -996,11 +996,6 @@ void LALappsTrackSearchInitialize(
 	    /* We don't limit the max line width as an error the user
 	     * is responsible to pick this with some care
 	     */
-	    if ((params->LineWidth) < 1)
-	      {
-		fprintf(stderr,TRACKSEARCHC_MSGEARGS);
-		exit(TRACKSEARCHC_EARGS);
-	      }
 	  }
 	  break;
 	  
@@ -1008,14 +1003,6 @@ void LALappsTrackSearchInitialize(
 	  /* Setting Start Threshold parameter */
 	  {
 	    params->StartThresh = atof(optarg);
-	    if (params->LinePThresh != -1)
-	      {
-		if (params->StartThresh < params->LinePThresh)
-		  {
-		    fprintf(stderr,TRACKSEARCHC_MSGEARGS);
-		    exit(TRACKSEARCHC_EARGS);
-		  }
-	      }
 	  }
 	  break;
 	  
@@ -1023,14 +1010,6 @@ void LALappsTrackSearchInitialize(
 	  /* Setting member point threshold paramter */
 	  {
 	    params->LinePThresh = atof(optarg);
-	    if (params->StartThresh != -1)
-	      {
-		if (params->StartThresh < params->LinePThresh)
-		  {
-		    fprintf(stderr,TRACKSEARCHC_MSGEARGS);
-		    exit(TRACKSEARCHC_EARGS);
-		  }
-	      }
 	  }
 	  break;
 	  
@@ -1038,11 +1017,6 @@ void LALappsTrackSearchInitialize(
 	  /* Setting Thresholding on line length for search */
 	  {
 	    params->MinLength = atoi(optarg);
-	    if (params->MinLength < 2)
-	      {
-		fprintf(stderr,TRACKSEARCHC_MSGEARGS);
-		exit(TRACKSEARCHC_EARGS);
-	      }
 	  }
 	  break; 	  
 
@@ -1074,15 +1048,9 @@ void LALappsTrackSearchInitialize(
 	case 'j':
 	  /* Setting number of maps to split requested data into */
 	  {
-	    fprintf(stderr,"Can not specify number of maps\n");
+	    fprintf(stderr,"Option not available:Can not specify number of maps\n");
 	    fprintf(stderr,TRACKSEARCHC_MSGEMEM);
 	    exit(TRACKSEARCHC_EMEM);
-	    /*  params->NumSeg = atoi(optarg);
-		if (params->NumSeg < 1)
-		{
-		fprintf(stderr,TRACKSEARCHC_MSGEMEM);
-		exit(TRACKSEARCHC_EMEM);
-		} */
 	  }
 	  break;
 	  
@@ -1103,7 +1071,7 @@ void LALappsTrackSearchInitialize(
 	  /* Setup the designated windowing function for FFTing */
 	  {
 	    params->window = atoi(optarg);
-	    /* Error check */
+	    /* Error check FIX THIS LATER*/
 	    if ((params->window > NumberWindowTypes))
 	      {
 		fprintf(stderr,TRACKSEARCHC_MSGEARGS);
@@ -1123,11 +1091,6 @@ void LALappsTrackSearchInitialize(
 	  /* Setup whiten level is specified */
 	  {
 	    params->whiten = atoi(optarg);
-	    if (params->whiten > 2 )
-	      {
-		fprintf(stderr,TRACKSEARCHC_MSGEARGS);
-		exit(TRACKSEARCHC_EARGS);
-	      }
 	  }
 	  break;
 
@@ -1312,10 +1275,6 @@ void LALappsTrackSearchInitialize(
    * structure arguements for reasonable values. This will involve 
    * moving error catching code out of the case statement in some cases
    */
-
-  /*
-   * End input parameter consistency checking
-   */
   /* 
    * Tabulate the number of segments to create for specified overlap
    * Check for valid overlap number which < segment length number 
@@ -1324,11 +1283,9 @@ void LALappsTrackSearchInitialize(
    *If doing a MAP analysis skip these checks these options should
    *not be invoked
    */
-  if (
-      (params->injectSingleMap != NULL) 
-      || (params->injectMapCache != NULL)
-      )
+  if ( params->tSeriesAnalysis == 1)
     {
+      fprintf(stderr,"Checking tSeries parameters.\n");
       if (params->overlapFlag >= params->SegLengthPoints)
 	{
 	  fprintf(stderr,TRACKSEARCHC_MSGEVAL);
@@ -1365,7 +1322,36 @@ void LALappsTrackSearchInitialize(
 	    fprintf(stdout,"We need to throw away %i trailing data points for %i, evenly matched data segments\n",params->discardTLP,params->NumSeg);
 	  
 	};
+      if (params->whiten > 2 )
+	{
+	  fprintf(stderr,TRACKSEARCHC_MSGEARGS);
+	  exit(TRACKSEARCHC_EARGS);
+	}
     }
+  /*
+   * Do following checks
+   */
+  if (params->StartThresh < params->LinePThresh)
+    {
+      fprintf(stderr,TRACKSEARCHC_MSGEARGS);
+      exit(TRACKSEARCHC_EARGS);
+    }
+  if (params->StartThresh < params->LinePThresh)
+    {
+      fprintf(stderr,TRACKSEARCHC_MSGEARGS);
+      exit(TRACKSEARCHC_EARGS);
+    }
+  if (params->MinLength < 2)
+    {
+      fprintf(stderr,TRACKSEARCHC_MSGEARGS);
+      exit(TRACKSEARCHC_EARGS);
+    }
+  if ((params->LineWidth) < 1)
+    {
+      fprintf(stderr,TRACKSEARCHC_MSGEARGS);
+      exit(TRACKSEARCHC_EARGS);
+    }
+
   /*  DETATCHSTATUSPTR(status);*/
   return;
 }

@@ -106,7 +106,7 @@ def filterFileList(inputFilenamelist,startFloat,stopFloat):
         return ''
     stopgpsInt=float2gpsInt(stopFloat)
     startgpsInt=float2gpsInt(startFloat)
-    for index in range(0,inList.__len__()-1):
+    for index in range(0,inList.__len__()):
         fileStop=gps2gpsInt(fileStopGPS(inList[index]))
         fileStart=gps2gpsInt(fileStartGPS(inList[index]))
         if ((fileStop <= stopgpsInt) and (fileStart >= startgpsInt)):
@@ -118,6 +118,7 @@ def filterFileList(inputFilenamelist,startFloat,stopFloat):
         return newList
     startBound=indexList[0]
     stopBound=indexList[indexList.__len__()-1]
+    #Add error check here if indexList is NULL
     if startBound > stopBound:
         print 'Error with cache filter call!'
     if startBound <=0:
@@ -128,7 +129,7 @@ def filterFileList(inputFilenamelist,startFloat,stopFloat):
          (gps2gpsInt(fileStartGPS(inList[startBound-1])) < startgpsInt)
          ):
         startBound=startBound-1
-    if stopBound > inList.__len__()-1:
+    if stopBound >= inList.__len__()-1:
         stopBound = inList.__len__()-1
     elif (
         (gps2gpsInt(fileStopGPS(inList[stopBound])) < stopgpsInt)
@@ -143,6 +144,9 @@ def filterFileList(inputFilenamelist,startFloat,stopFloat):
         (gps2gpsInt(fileStopGPS(inList[stopBound])) < stopgpsInt)
         ):
         print 'Error filtering list, our list is inappropriate!'
+        print '#'
+        print newList
+        print '#'
         newList=[]
         return newList
     """x.__getslice__(i,i+1) --> x[i]"""
@@ -296,6 +300,7 @@ for map in mapListing:
     if (gps2float(fileStartGPS(map)) >= float(startTime)):
         newMapListing.append(map)
 mapListing=newMapListing
+mapListing.sort()
 print 'Done removing maps from input file which do not meet arguments specified. Only ',mapListing.__len__(),'maps remain.'
 
 #Start createing the map cache files
@@ -347,11 +352,21 @@ while (ct <= mlt):
                 currentCache=[]
                 for entry in tempCache:
                     currentCache.append(filename+entry)
-                    fp=open(filenameCC,'w')
-                    fp.writelines(currentCache)
-                    fp.close()
+                fp=open(filenameCC,'w')
+                fp.writelines(currentCache)
+                fp.close()
         else:
             print 'Error incomplete data for: '+filenameCC
+            #Write out this file with appended INCOMPLETE
+            #If filename resolves to a directory we will explicity prepend the proper path to the files!
+            if os.path.isdir(filename):
+                tempCache=currentCache
+                currentCache=[]
+                for entry in tempCache:
+                    currentCache.append(filename+entry)
+                fp=open(filenameCC+'INCOMPLETE','w')
+                fp.writelines(currentCache)
+                fp.close()
         overlapTime=newMapTime-mapOverlap
         if (overlapTime == 0):
             print 'Error with overlap time requested'
@@ -359,7 +374,7 @@ while (ct <= mlt):
 print 'Writing out Jobset files.'
 index1=0
 counter=0
-while (index1 < jobSetCache.__len__()-1):
+while (index1 <= jobSetCache.__len__()-1):
     counter=counter+1
     filenameJSC='JobSet_'+str(counter)+'.jobCache'
     fp=open(filenameJSC,'w')
@@ -378,7 +393,7 @@ print ' the tracksearchMAP search to batch process the newly '
 print ' averaged maps.'
 index1=0
 counter=0
-while (index1 < jobSetCache.__len__()-1):
+while (index1 <= jobSetCache.__len__()-1):
     counter=counter+1
     filenameJSC='JobSet_'+str(counter)+'.cacheTSA'
     fp=open(filenameJSC,'w')

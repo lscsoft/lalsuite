@@ -179,8 +179,8 @@ class tracksearchConvertSegList:
         for headline in input_fp.readlines():
             if str(headline)[0] == '#':
                  newHeading.append(headline)
-        newHeading.append('# This file is a reprocessed list at 100s intervals.\n')
-        newHeading.append('# We drop sections were there is not 100s of data\n')
+        newHeading.append('# This file is a reprocessed list at new intervals.\n')
+        newHeading.append('# We drop sections were there is not enough of original data\n')
         newHeading.append('# This file drawn from '+tracksearchConvertSegList.segFilename+'\n')
         output_fp=open(tracksearchConvertSegList.newSegFilename,'w')
         for newHeadline in newHeading:
@@ -399,13 +399,13 @@ class tracksearchMapCacheBuildJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         A=float(self.expectedTotalDuration)
         B=float(self.mapTime)
         C=float(self.overlapTime)
-        F=float(self.jobSetSize)
-        jobCacheNumEstimate=int(int((A-C)/(B-C))/int(F))
+        F=int(self.jobSetSize)
+        jobCacheNumEstimate=int(math.ceil(((A-C)/(B-C))/F))
         if (jobCacheNumEstimate == 0):
             print 'Error check object initialization.'
             return outList
         for num in range(1,jobCacheNumEstimate+1):
-            outputList.append('JobSet_'+str(num)+'.cacheSet')
+            outputList.append('JobSet_'+str(num)+'.cacheTSA')
         return outputList
     #End getJobsetList
 
@@ -416,13 +416,13 @@ class tracksearchMapCacheBuildJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         A=float(self.expectedTotalDuration)
         B=float(self.mapTime)
         C=float(self.overlapTime)
-        F=float(self.jobSetSize)
-        jobCacheNumEstimate=int(int((A-C)/(B-C))/int(F))
+        F=int(self.jobSetSize)
+        jobCacheNumEstimate=int(math.ceil(((A-C)/(B-C))/F))
         if (jobCacheNumEstimate == 0):
             print 'Error check object initialization.'
             return outList
         for num in range(1,jobCacheNumEstimate+1):
-            outputList.append('JobSet_'+str(num)+'.cacheTSA')
+            outputList.append('JobSet_'+str(num)+'.jobCache')
         return outputList
     #End getJobTSAList
 #End Class
@@ -576,7 +576,8 @@ class tracksearch:
         ifo=str(self.cp.get('datafind','observatory'))
         #Create the chunk list that we will makeing data find jobs for
         #Give allowance for 1 extra map worth of data just in case
-        self.sciSeg.make_chunks(setSize*mapTime+math.ceil(overlapTime),math.ceil(overlapTime))
+        #self.sciSeg.make_chunks(setSize*mapTime+math.ceil(overlapTime),math.ceil(overlapTime))
+        self.sciSeg.make_chunks(setSize*mapTime)
         #Setup time marker for entire run
         runStartTime=self.runStartTime
         #What is name of dagDir location of dags and sub files
@@ -682,14 +683,14 @@ class tracksearch:
         # The merge map
         tracksearchAverager_job=tracksearchAveragerJob(self.cp,block_id,layerNum,dagDir)
 
-        jobTSAList=cacheBuild_job.getJobsetList()
-        jobSetList=cacheBuild_job.getJobTSAList()
+        jobSetList=cacheBuild_job.getJobsetList()
+        jobTSAList=cacheBuild_job.getJobTSAList()
         #Var to store copies of these objects to get right parent relation
         averagerJobListing=[]
         #Loop over all theoretical jobsets for map making
         averagerWorkDir=determineLayerPath(self.cp,block_id,layerNum)
         averagerTimeLayerBinCount=int(self.cp.get('tracksearchtime','number_of_time_bins'))
-        for cacheSet in jobTSAList:
+        for cacheSet in jobSetList:
             tracksearchAverager_node=tracksearchAveragerNode(tracksearchAverager_job)
             tracksearchAverager_node.add_var_opt('multi_cache',cacheSet)
             tracksearchAverager_node.add_macro('macroStartDir',averagerWorkDir)
@@ -703,10 +704,10 @@ class tracksearch:
         tracksearchMap_job=tracksearchMapJob(self.cp,block_id,layerNum,dagDir)
         #The entries in the JobSet file will be the input cache sets
         #for this layer of the Analysis
-        for cacheSet in jobSetList:
+        for cacheSet in jobTSAList:
             tracksearchMap_node=tracksearchMapNode(tracksearchMap_job)
             tracksearchMap_node.add_var_opt('inject_map_cache',cacheSet)
-            tracksearchMap_node.add_var_opt('StartDir',determineLayerPath(self.cp,block_id,layerNum))
+            tracksearchMap_node.add_macro('macroStartDir',determineLayerPath(self.cp,block_id,layerNum))
             for parent in averagerJobListing:
                 tracksearchMap_node.add_parent(parent)
             self.dag.add_node(tracksearchMap_node)

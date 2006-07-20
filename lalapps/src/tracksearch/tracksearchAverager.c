@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
   /*
    *Sleep for Attaching DDD 
    */
-  unsigned int doze = 7;
+  unsigned int doze = 0;
   pid_t myPID;
   myPID = getpid( );
   fprintf( stdout, "pid %d sleeping for %d seconds\n", myPID, doze );
@@ -51,8 +51,9 @@ int main(int argc, char *argv[])
   fflush( stdout );
 
   /* SET LAL DEBUG STUFF */
-  set_debug_level("MEMDBG");
-  lal_errhandler = LAL_ERR_ABRT;
+  set_debug_level("ERROR | WARNING");
+  lal_errhandler = LAL_ERR_RTRN;
+
   /*set_debug_level("ALLDBG");*/
 
   LALappsTSAInitialize(&status,
