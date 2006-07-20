@@ -202,9 +202,9 @@ typedef struct PolkaConfigVarsTag
   REAL8 DeltaAlpha;  /*  Size of coincidence window in radians (at equator) */
   REAL8 DeltaDelta;  /*  Size of coincidence window in radians (at equator) */
   REAL8 Kappa;       /*  Tuning parameter for declination window */
-  REAL8 Shiftf;      /*  Parallel shift of frequency in Hz of cell */
-  REAL8 ShiftAlpha;  /*  Parallel shift of Alpha in Hz of cell */
-  REAL8 ShiftDelta;  /*  Parallel shift of Delta in Hz of cell */
+  REAL8 Shiftf;      /*  Parallel shift of frequency of cell */
+  REAL8 ShiftAlpha;  /*  Parallel shift of Alpha of cell */
+  REAL8 ShiftDelta;  /*  Parallel shift of Delta of cell */
   REAL8 ShiftF1dot;  /*  Parallel shift of F1dot spindown of cell */
   BOOLEAN UseUnzip;
 } PolkaConfigVars;
@@ -389,17 +389,17 @@ int main(INT4 argc,CHAR *argv[])
   
   for (icand=0;icand<CLength;icand++)
     {
-      SortedC[icand].iFreq=(INT4) (SortedC[icand].f/(PCV.Deltaf) + PCV.Shiftf  );
+      SortedC[icand].iFreq=(INT4) ( (SortedC[icand].f/(PCV.Deltaf)) + PCV.Shiftf  );
       
       /* This was used for an isotropic sky-grid */
       /*SortedC[icand].iDelta=(INT4)(SortedC[icand].Delta/(PCV.DeltaDelta)  + PCV.ShiftDelta ); */
       
       /* This is used for the anisotropic sky-grid produced by a metric. */
       DeltaDeltaFlex = PCV.DeltaAlpha + PCV.DeltaDelta * exp( -(PCV.Kappa)*(SortedC[icand].Delta)*(SortedC[icand].Delta) ); 
-      SortedC[icand].iDelta=(INT4)(SortedC[icand].Delta/(DeltaDeltaFlex)  + PCV.ShiftDelta ); 
+      SortedC[icand].iDelta=(INT4)( (SortedC[icand].Delta/(DeltaDeltaFlex)) + PCV.ShiftDelta ); 
 
-      SortedC[icand].iAlpha=(INT4)(SortedC[icand].Alpha*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha)  + PCV.ShiftAlpha  );
-      SortedC[icand].iF1dot=(INT4)(SortedC[icand].F1dot/(PCV.DeltaF1dot)  + PCV.ShiftF1dot );
+      SortedC[icand].iAlpha=(INT4)( (SortedC[icand].Alpha*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + PCV.ShiftAlpha  );
+      SortedC[icand].iF1dot=(INT4)( (SortedC[icand].F1dot/(PCV.DeltaF1dot))  + PCV.ShiftF1dot );
       SortedC[icand].iCand=icand; /* Keep the original ordering before sort to refer the orignal data later. */
     }
 
