@@ -100,7 +100,7 @@ lalapps_inspiral_online_pipe_inject: $(srcdir)/inspiral_online_pipe_inject.in py
 	sed -f python_config.sed $(srcdir)/inspiral_online_pipe_inject.in > lalapps_inspiral_online_pipe_inject
 	chmod +x lalapps_inspiral_online_pipe_inject
 
-pkgdata_DATA = BNSMasses.dat inspsrcs.dat inspiral_pipe.ini s2_dag.ini s2_tama.ini inspiral_hipe.ini online.ini online_inject_bbh.ini
+pkgdata_DATA = BNSMasses.dat inspsrcs.dat inspsrcs.errors inspiral_pipe.ini s2_dag.ini s2_tama.ini inspiral_hipe.ini online.ini online_inject_bbh.ini
 EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
              $(SIRESRC) $(COIRESRC) $(SIVASRC) $(MINJSRC) \
              $(INCASRC) inspiral_pipe.in s2_dag.ini \
