@@ -1,6 +1,7 @@
 /* LALDemod variant with large assembler part for modifications by Feket Akos
  * Authors see ComputeFStatistic.c
                                                          Bernd Machenschalk */
+
 RCSID( "$Id$");
 
 /* gcc version and Apples assembler specials aren't needed currently, but kept for reference */
@@ -17,56 +18,59 @@ RCSID( "$Id$");
 #define AD_ASCII   ".ascii "
 #define AD_ALIGN16 ".align 4"
 #define AD_ALIGN64 ".align 6"
-#else /* x86 gas */
+#else /* x86 GNU as */
 #define AD_FLOAT   ".float "
 #define AD_ASCII   ".string "
 #define AD_ALIGN16 ".align 16"
 #define AD_ALIGN64 ".align 64"
 #endif
 
-/* Lookup tables for fast sin/cos calculation */
-static REAL8 sinVal[LUT_RES+1];
-static REAL8 sinVal2PI[LUT_RES+1];
-static REAL8 sinVal2PIPI[LUT_RES+1];
-static REAL8 cosVal[LUT_RES+1];
-static REAL8 cosVal2PI[LUT_RES+1];
-static REAL8 cosVal2PIPI[LUT_RES+1];
-static REAL8 diVal[LUT_RES+1];
+#ifndef CPU_TYPE_S
+#define CPU_TYPE_S "0"
+#endif
 
 void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params) 
 { 
 
-  INT4 alpha,i;                 /* loop indices */
+  INT4  alpha,i,k=0;            /* loop indices */
   REAL8 *xSum=NULL, *ySum=NULL; /* temp variables for computation of fs*as and fs*bs */
-  INT4 s;                       /* local variable for spinDwn calcs. */
+  INT4  s;                      /* local variable for spinDwn calcs. */
   REAL8 xTemp;                  /* temp variable for phase model */
   REAL4 xTInt;                  /* integer part of xTemp */
   REAL8 deltaF;                 /* width of SFT band */
-  INT4 k=0;                     /* loop counter */
   REAL8 *skyConst;              /* vector of sky constants data */
   REAL8 *spinDwn;               /* vector of spinDwn parameters (maybe a structure? */
   INT4  spOrder;                /* maximum spinDwn order */
-  REAL8 realXP, imagXP;         /* temp variables used in computation of */
   INT4  nDeltaF;                /* number of frequency bins per SFT band */
 
   INT4  sftIndex;               /* more temp variables */
-  REAL8 realQ, imagQ;
-  INT4 *tempInt1;
+  REAL8 realXP, imagXP;
+  REAL4 realP, imagP;
+  static REAL8 realQ, imagQ;
+  INT4  *tempInt1;
   REAL8 FaSq;
   REAL8 FbSq;
   REAL8 FaFb;
-  COMPLEX16 Fa, Fb;
   REAL8 f;
+  COMPLEX16 Fa, Fb;
 
-#ifdef USE_BOINC
-#define klim 32
+
+#ifdef USE_BOINC                /* this actually is only a hint. The assembler Kernel loop */
+#define klim 32                 /* doesn't use this value at all, but relies on it being 32 */ 
 #else
   UINT4 klim = 2*params->Dterms;
 #endif
 
-  REAL4 tsin, tcos;
-  REAL4 realP, imagP;
+  static REAL4 tsin, tcos;
 
+  /* Lookup tables for fast sin/cos calculation */
+  static REAL8 sinVal[LUT_RES+1];
+  static REAL8 sinVal2PI[LUT_RES+1];
+  static REAL8 sinVal2PIPI[LUT_RES+1];
+  static REAL8 cosVal[LUT_RES+1];
+  static REAL8 cosVal2PI[LUT_RES+1];
+  static REAL8 cosVal2PIPI[LUT_RES+1];
+  static REAL8 diVal[LUT_RES+1];
   static BOOLEAN firstCall = 1; /* reset after initializing the sin/cos tables */
 
   REAL8 A=params->amcoe->A;
@@ -94,6 +98,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 
   /* res=10*(params->mCohSFT); */
   /* This size LUT gives errors ~ 10^-7 with a three-term Taylor series */
+  /* using three tables with values including PI is simply faster */
   if ( firstCall )
     {
       for (k=0; k <= LUT_RES; k++) {
@@ -105,7 +110,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
         cosVal2PIPI[k] = cosVal2PI[k] * LAL_PI;
       }
 
-      /* this additional table saves a "costly" division in sin/cos calculation */
+      /* this additional table saves another "costly" division in sin/cos calculation */
       for (k=0; k <= LUT_RES; k++)
         diVal[k] = (REAL8)k/(REAL8)(LUT_RES);
 
@@ -135,8 +140,8 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
     Fb.re =0.0;
     Fb.im =0.0;
 
-    f=params->f0+i*params->df;
-
+    f = params->f0 + i*params->df;
+ 
     /* Loop over SFTs that contribute to F-stat for a given frequency */
     for(alpha=0;alpha<params->SFTno;alpha++)
       {
@@ -218,7 +223,9 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
           static REAL4 half = .5;
           static REAL4 one  = 1.0;
           static REAL4 two  = 2.0;
-
+#ifdef USE_ASS_2PI_MULT
+	  static REAL4 pi2  = OOTWOPI; 
+#endif
           /* vector constants */
           /* having these not aligned will crash the assembler code */
           static REAL4 V0011[4] __attribute__ ((aligned (16))) = { 0,0,1,1 };
@@ -230,7 +237,8 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
           __asm __volatile
       (
        /* calculation of tsin and tcos */
-         
+       /* ---------------------------- */
+
        /* calculate index and put into EAX */
        /*                                    vvvvv-- these comments keep track of the FPU stack */
        "fldl   %[x]                   \n\t" /* x */
@@ -243,8 +251,19 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
           conversion (rounding). Switching the rounding mode is slow, so the following code is the fastest
           possible, as it simply expects the default rounding mode being active. However relying on this is
           kind of dangerous, so we don't do this by default. */
+#ifndef USE_DEPENDENCIES
        "fistpl %[sinv]                \n\t" /* x */
        "movl   %[sinv],%%eax          \n\t" /* x */
+#else
+       /* build dependency chain to avoid memory re-read
+	  Based on idea from Agner Fog
+	  He thinks that should be faster on P4 */
+       "fistl  %[sinv]                \n\t" /* store without popping */
+       "fcomip %%st,%%st              \n\t" /* compare and pop, make flags depend on ST */
+       "setc   %%al                   \n\t" /* make AL depend on flags */
+       "andl   $0,%%eax               \n\t" /* set to 0 */
+       "movl   %[sinv](%%eax),%%eax   \n\t" /* make dependent on EAX */
+#endif
 #else
        "fadds  %[half]                \n\t" /* (x*LUT_RES+.5) x */
        /* Implementation of floor() that doesn't rely on a rounding mode being set
@@ -263,10 +282,9 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        /* calculate d = x - diVal[idx] in st(0) */
        "fsubl  %[diVal](,%%eax,8)     \n\t" /* (d = x - diVal[i]) */
        
+       /* this calculates d*d on _top_ of the stack */ 
        /* copy d on the stack to prepare for calculating d*d */
        "fld    %%st(0)                \n\t" /* d d */
-       
-       /* this calculates d*d on _top_ of the stack */ 
        "fmul   %%st(0),%%st(0)        \n\t" /* (d*d) d */
        
        /* three-term Taylor expansion for sin value, leaving d and d*d on stack, idx kept in eax */
@@ -277,6 +295,11 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        "fldl  %[sinVal2PIPI](,%%eax,8)\n\t" /* sinVal2PIPI[i] (sinVal[i]+d*cosVal2PI[i]) (d*d) d */
        "fmul  %%st(2),%%st(0)         \n\t" /* (d*d*sinVal2PIPI[i]) (sinVal[i]+d*cosVal2PI[i]) (d*d) d */
        "fsubrp                        \n\t" /* ((sinVal[i]+d*cosVal2PI[i])-d*d*sinVal2PIPI[i]) (d*d) d */
+
+       /* special: * TWOPI */
+#ifdef USE_ASS_2PI_MULT
+       "fmuls %[pi2]                  \n\t" /* (((sinVal[i]+d*cosVal2PI[i])-d*d*sinVal2PIPI[i])*2*pi) (d*d) d */
+#endif
        "fstps %[sinv]                 \n\t" /* (d*d) d */
        
        /* calculation for cos value, this time popping the stack */
@@ -296,33 +319,39 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        "flds  %[cosv]                 \n\t" /* % */
 #endif
        
-       /* special here: tcos -= 1.0 */
+       /* special here: tcos = (tcos - 1.0) * TWOPI */
        "fsubs %[one]                  \n\t" /* (cosVal[i]-d*(sinVal2PI[i]-d*cosVal2PIPI[i])-1) */
+#ifdef USE_ASS_2PI_MULT
+       "fmuls %[pi2]                  \n\t" /* (((sinVal[i]+d*cosVal2PI[i])-d*d*sinVal2PIPI[i])*2*pi) (d*d) d */
+#endif
        "fstps %[cosv]                 \n\t" /* % */
        
 
        /* calculating yRem */
-       
+       /* ---------------- */
+
        "fldl   %[yTemp]               \n\t" /* yT */
        /* it requires some mind-bending to come from the algorithm used in the USE_FLOOR case
           of the yRem calculation in the C code below (in case yTemp < 0) to the case distinction
-	  implemented here.
+          implemented here.
           Hints:  yTemp<0 => yRem = yTemp - ceil(yTemp) + 1.0;
                   y<0 => ceil(y) = ((y-(int)y)<-.5) ? ((int)y-1.0) : ((int)y)
                   -1.0 + 1.0 = 0; 0 + 1.0 = +1.0 */
        /* The two cases (yTemp < 0) and (yTemp >= 0) then come out identical,
-	  so a case distinction is unnecessary. Furthermore this case turns out to be the
-	  same code independent of relying on the default rounding mode or not */
+          so a case distinction is unnecessary. Furthermore this case turns out to be the
+          same code independent of relying on the default rounding mode or not */
        "fistl  %[yRem]                \n\t" /* yT */
        "fisubl %[yRem]                \n\t" /* yT-(int)yT */ /* value - round(value) will be positive if was rounding up */
        "fsts   %[yRem]                \n\t" /* yT-(int)yT */ /* we will check the sign in integer registers */
        "sub    %%eax,%%eax            \n\t" /* yT-(int)yT */ /* EAX=0 */
        "orl    %[yRem],%%eax          \n\t" /* yT-(int)yT */ /* sets the S (sign) flag */
-       "jns    sincos3                \n\t" /* yT-(int)yT */ /* */
+       "jns    yrem" CPU_TYPE_S      "\n\t" /* yT-(int)yT */ /* append the CPU_TYPE to label to allow more instances */
        "fadds  %[one]                 \n"   /* (yT-(int)yT+1) */
-       "sincos3:                      \n\t" /* yR */
+       "yrem" CPU_TYPE_S ":           \n\t" /* yR */
        
        /* calculation of realQ and imagQ */
+       /* ------------------------------ */
+
        /* yRem still in st(0), following named x */
        /* see also comments in calculation of tsin and tcos */
        
@@ -330,8 +359,16 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        "fmul   %%st(1),%%st(0)        \n\t" /* (x*LUT_RES) x */
        
 #ifdef USE_DEFAULT_ROUNDING_MODE
+#ifndef USE_DEPENDENCIES
        "fistpl %[sinq]                \n\t" /* x */
        "movl   %[sinq],%%eax          \n\t" /* x */
+#else
+       "fistl  %[sinq]                \n\t" /* store without popping */
+       "fcomip %%st,%%st              \n\t" /* compare and pop, make flags depend on ST */
+       "setc   %%al                   \n\t" /* make AL depend on flags */
+       "andl   $0,%%eax               \n\t" /* set to 0 */
+       "movl   %[sinq](%%eax),%%eax   \n\t" /* make dependent on EAX */
+#endif
 #else
        "fadds  %[half]                \n\t" /* (x*LUT_RES+.5) x */
        "fistl  %[sinq]                \n\t" /* (x*LUT_RES+.5) x */ /* saving the rounded value, the original in FPU */
@@ -366,6 +403,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 
 
        /* Kernel loop */
+       /* ----------- */
 
        /* the "inner" four complex values that contribute the most to the sum
           will be calculated by the FPU with 80 Bit precision,
@@ -523,6 +561,9 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        [half]        "m"  (half),
        [one]         "m"  (one),
        [two]         "m"  (two),
+#ifdef USE_ASS_2PI_MULT
+       [pi2]         "m"  (pi2),
+#endif
        [V0011]       "m"  (V0011[0]),
        [V2222]       "m"  (V2222[0]),
        [V4444]       "m"  (V4444[0]),
@@ -546,16 +587,20 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        );           
       
           /* And last, we add the single and double precision values */
-          XRes = XRes + XSumsX.re;
-          XIms = XIms + XSumsX.im;
-    
+          XRes += XSumsX.re;
+          XIms += XSumsX.im;
+#ifndef USE_ASS_2PI_MULT
           {
             REAL4 tsin2pi = tsin * (REAL4)OOTWOPI;
             REAL4 tcos2pi = tcos * (REAL4)OOTWOPI;
             
             realXP = tsin2pi * XRes - tcos2pi * XIms;
             imagXP = tcos2pi * XRes + tsin2pi * XIms;
-          }
+	  }
+#else
+	  realXP = tsin * XRes - tcos * XIms;
+	  imagXP = tcos * XRes + tsin * XIms;
+#endif
         }
         
         else /* if ( tempFreq0 >= LD_SMALL ) */
