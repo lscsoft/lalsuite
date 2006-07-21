@@ -118,7 +118,10 @@ class SnglBurst(object):
 		return date.LIGOTimeGPS(self.start_time, self.start_time_ns)
 
 	def get_stop(self):
-		return self.get_start() + self.duration
+		return date.LIGOTimeGPS(self.start_time, self.start_time_ns) + self.duration
+
+	def get_power(self):
+		return self.snr + 2.0 * self.tfvolume
 
 
 def search_summary_get_out(self):
@@ -171,7 +174,7 @@ def fourier_transform(eventlist, options):
 			print >>sys.stderr, "	%.1f%%\r" % (100.0 * n / len(eventlist)),
 		if event.ifo not in fseries:
 			fseries[event.ifo] = new_fseries(options.f_naught, options.delta_f, options.n_f)
-		value = -event.confidence / (-2j * math.pi) / fseries[event.ifo][0] * (numarray.exp(-2j * math.pi * float(event.get_stop() - options.t_naught) * fseries[event.ifo][0]) - numarray.exp(-2j * math.pi * float(event.get_start() - options.t_naught) * fseries[event.ifo][0]))
+		value = event.get_power() / (-2j * math.pi) / fseries[event.ifo][0] * (numarray.exp(-2j * math.pi * float(event.get_stop() - options.t_naught) * fseries[event.ifo][0]) - numarray.exp(-2j * math.pi * float(event.get_start() - options.t_naught) * fseries[event.ifo][0]))
 		fseries[event.ifo][1] += value.real
 		fseries[event.ifo][2] += value.imag
 	print >>sys.stderr, "	100.0%"
@@ -179,18 +182,21 @@ def fourier_transform(eventlist, options):
 	return fseries
 
 
-def bin_confidence_by_sidereal_time(rates, eventlist):
+def bin_power_by_sidereal_time(rates, eventlist):
 	for n, event in enumerate(eventlist):
 		if event.ifo not in rates:
 			# 1 filter-width per 1 sidereal minute
 			rates[event.ifo] = rate.RatiosRate(segments.segment(0.0, 2.0 * math.pi), 60.0 * math.pi / 43200.0)
-		start = date.XLALGreenwichMeanSiderealTime(event.get_start()) % (2.0 * math.pi)
-		stop = date.XLALGreenwichMeanSiderealTime(event.get_stop()) % (2.0 * math.pi)
+		start = date.XLALGreenwichMeanSiderealTime(event.get_start())
+		stop = date.XLALGreenwichMeanSiderealTime(event.get_stop())
+		duration = stop - start
+		start %= 2.0 * math.pi
+		stop %= 2.0 * math.pi
 		if stop >= start:
-			rates[event.ifo].incnumerator((segments.segment(start, stop),), -event.confidence)
+			rates[event.ifo].incnumerator((segments.segment(start, stop),), event.get_power() / duration)
 		else:
-			rates[event.ifo].incnumerator((segments.segment(start, 2.0 * math.pi),), -event.confidence)
-			rates[event.ifo].incnumerator((segments.segment(0.0, stop),), -event.confidence)
+			rates[event.ifo].incnumerator((segments.segment(start, 2.0 * math.pi),), event.get_power() / duration)
+			rates[event.ifo].incnumerator((segments.segment(0.0, stop),), event.get_power() / duration)
 
 
 def gps_seglist_to_gmst(seglist):
