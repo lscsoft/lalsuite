@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 sysconf_DATA = lalapps-user-env.sh lalapps-user-env.csh
-BUILT_SOURCES = lal-user-env.sh lal-user-env.csh
-CLEANFILES = lal-user-env.sh lal-user-env.csh
+BUILT_SOURCES = lalapps-user-env.sh lalapps-user-env.csh
+CLEANFILES = lalapps-user-env.sh lalapps-user-env.csh
 
 lalapps-user-env.sh:
 	@echo "creating $@" ;\
