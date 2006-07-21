@@ -39,6 +39,7 @@ from glue.ligolw import ligolw
 from glue.ligolw import array
 from glue.ligolw import param
 from pylal import llwapp
+from pylal import SnglBurstUtils
 
 __author__ = "Kipp Cannon <kipp@gravity.phys.uwm.edu>"
 __version__ = "$Revision$"[11:-2]
@@ -104,34 +105,32 @@ def normalize(array):
 	return array / array.stddev()
 
 
-def make_rate_plot(rate):
-	fig = figure.Figure()
-	FigureCanvasAgg(fig)
-	fig.set_figsize_inches(16, 8)
-	axes = fig.gca()
-	axes.semilogy()
-	axes.grid(True)
+class RatePlot(SnglBurstUtils.BurstPlot):
+	def __init__(self, instrument):
+		SnglBurstUtils.BurstPlot.__init__(self, "Greenwich Mean Sidereal Time (rad)", "Event Power Accumulation Rate (power / sidereal day / rad)")
+		self.axes.semilogy()
 
-	# some commented-out code for validation
-	#axes.plot(rate.xvals(), normalize(rate.numerator), "go")
-	#axes.plot(rate.xvals(), normalize(rate.denominator), "b")
-	#axes.plot(rate.xvals(), normalize(rate.yvals()), "r")
-	#axes.set_xlim([0, 1])
+		self.axes.set_title("%s Event Power Accumulation Rate By Sidereal Time" % instrument)
+		self.axes.set_xticks(numarray.arange(9) * math.pi / 4)
+		self.axes.set_xticklabels([r"0", r"$\pi/4$", r"$\pi/2$", r"$3\pi/4$", r"$\pi$", r"$5\pi/4$", r"$3\pi/2$", r"$7\pi/4$", r"$2\pi$"])
 
-	rate.logregularize()
-	#rate.set_filterwidth(math.pi / 8)
-	yvals = rate.yvals(cyclic = True)
-	ymin = min(numarray.compress(rate.denominator, yvals))
-	axes.plot(rate.xvals(), yvals, "k")
-	axes.set_xlim([0, 2.0 * math.pi])
-	axes.set_ylim([10.0**int(math.log10(ymin)), 10.0**(int(math.log10(max(yvals))) + 1)])
+	def add_contents(self, rate):
+		self.rate = rate
 
-	axes.set_title("Event Confidence Accumulation Rate By Sidereal Time")
-	axes.set_xlabel("Greenwich Mean Sidereal Time (rad)")
-	axes.set_ylabel("Event Confidence Accumulation Rate (confidence / sidereal day / rad)")
-	axes.set_xticks(numarray.arange(9) * math.pi / 4)
-	axes.set_xticklabels([r"0", r"$\pi/4$", r"$\pi/2$", r"$3\pi/4$", r"$\pi$", r"$5\pi/4$", r"$3\pi/2$", r"$7\pi/4$", r"$2\pi$"])
-	return fig
+	def finish(self):
+		# some commented-out code for validation
+		#self.axes.plot(self.rate.xvals(), normalize(self.rate.numerator), "go")
+		#self.axes.plot(self.rate.xvals(), normalize(self.rate.denominator), "b")
+		#self.axes.plot(self.rate.xvals(), normalize(self.rate.filtered()), "r")
+		#self.axes.set_xlim([0, 1])
+
+		self.rate.logregularize()
+		#self.rate.set_filterwidth(math.pi / 8)
+		yvals = self.rate.filtered(cyclic = True)
+		ymin = min(numarray.compress(self.rate.denominator, yvals))
+		self.axes.plot(self.rate.xvals(), yvals, "k")
+		self.axes.set_xlim([0, 2.0 * math.pi])
+		self.axes.set_ylim([10.0**int(math.log10(ymin)), 10.0**(int(math.log10(max(yvals))) + 1)])
 
 
 #
@@ -153,10 +152,13 @@ for filename in filenames:
 			print >>sys.stderr, "writing %s..." % outname
 		fig.savefig(outname)
 	for elem in param.getParamsByName(doc, "rate"):
-		outname = "%s_rate_%s.png" % (filename, get_instrument(elem))
+		instrument = get_instrument(elem)
+		outname = "%s_rate_%s.png" % (filename, instrument)
 		if options.verbose:
 			print >>sys.stderr, "generating %s..." % outname
-		fig = make_rate_plot(llwapp.pickle_from_param(elem, "rate"))
+		plot = RatePlot(instrument)
+		plot.add_contents(llwapp.pickle_from_param(elem, "rate"))
+		plot.finish()
 		if options.verbose:
 			print >>sys.stderr, "writing %s..." % outname
-		fig.savefig(outname)
+		plot.fig.savefig(outname)
