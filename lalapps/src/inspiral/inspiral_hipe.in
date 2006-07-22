@@ -1475,22 +1475,18 @@ for ifos in ifo_coincs:
 # Step 7: Run trigbank and inspiral on each instrument in two ifo times
 #         or run the TD follow-up
 
-
 # For following up several approximants, we get the list here...
-try:
-  approximants = cp.get('veto-inspiral', 'approximant')
-  cp.remove_option('veto-inspiral', 'approximant')
-except ConfigParser.NoOptionError:
+if opts.td_follow_bank or opts.td_follow_inspiral:
   try:
+    approximants = cp.get('veto-inspiral', 'approximant')
+    cp.remove_option('veto-inspiral', 'approximant')
+  except ConfigParser.NoOptionError:
     print "No approximant in veto-inspiral - using the main one..."
     approximants = cp.get('inspiral', 'approximant')
-  except ConfigParser.NoOptionError:
-    if ops.ringdown:
-      print "Approximant not needed for ringdown code"
-      approximants = 'NONE'
-    else:
-      print "Could not determine approximant for second stage inspirals"
-      throw ConfigParser.NoOptionError
+
+  approximants = approximants.split(',')
+else
+  approximants = None
 
 # Initialise the banks
 banks = {}
@@ -1502,79 +1498,79 @@ for ifos in ifo_coincs:
     if ifo in ifos:
       banks[ifos][ifo] = None
 
-# Loop over the approximants
-approximants = approximants.split(',')
+analyzed_coinc_data = {}
 
-for this_approx in approximants:
-  this_approx.strip()
+for ifos in ifo_coincs:
+  analyzed_coinc_data[ifos] = {}
+ 
+  for ifo in ifo_list:
+    if ifo in ifos:
+      print "setting up jobs to filter " + ifo + \
+        " data with coinc trigs from " + ifos + " times ...",
+      sys.stdout.flush()
 
-  analyzed_coinc_data = {}
-
-  for ifos in ifo_coincs:
-    analyzed_coinc_data[ifos] = {}
-  
-    for ifo in ifo_list:
-      if ifo in ifos:
-        print "setting up jobs to filter " + ifo + \
-          " data with coinc trigs from " + ifos + " times ...",
-        sys.stdout.flush()
-
-        if opts.td_follow_bank or opts.td_follow_inspiral:
+      if opts.td_follow_bank or opts.td_follow_inspiral:
+        for this_approx in approximants:
+          this_approx = this_approx.strip()
           analyzed_coinc_data[ifos][ifo], banks[ifos][ifo] = follow_up(data[ifo],ifo,
-              coinc_nodes[ifos],ifos,tmplt_follow_jobs[ifo],insp_veto_jobs[ifo],dag,this_approx,usertag,
-              banks[ifos][ifo])
-        else:
-          analyzed_coinc_data[ifos][ifo] = trig_inspiral(data[ifo],ifo,
-              coinc_nodes[ifos],ifos,trig_job,insp_veto_jobs[ifo],dag,grbInjections,usertag)
+            coinc_nodes[ifos],ifos,tmplt_follow_jobs[ifo],insp_veto_jobs[ifo],dag,this_approx,usertag,
+            banks[ifos][ifo])
+      else:
+        analyzed_coinc_data[ifos][ifo] = trig_inspiral(data[ifo],ifo,
+            coinc_nodes[ifos],ifos,trig_job,insp_veto_jobs[ifo],dag,grbInjections,usertag)
 
-        print "done"
+      print "done"
 
 
 ##############################################################################
 # Step 8: Run thinca2 on each of the disjoint sets of coincident data
 
-  coinc2_nodes = {}
-  coinc2_slide_nodes = {}
+coinc2_nodes = {}
+coinc2_slide_nodes = {}
 
-  for ifos in ifo_coincs:
-    print "setting up second thinca jobs on " + ifos + " data...",
-    sys.stdout.flush()
+for ifos in ifo_coincs:
+  print "setting up second thinca jobs on " + ifos + " data...",
+  sys.stdout.flush()
 
-    thinca2_jobs[ifos].add_ini_opts(cp, 'thinca-2')
-    if opts.td_follow_inspiral:
+  thinca2_jobs[ifos].add_ini_opts(cp, 'thinca-2')
+  if opts.td_follow_inspiral:
+    for this_approx in approximants:
+      this_approx = this_approx.strip()
       coinc2_nodes[ifos] = thinca_coinc(ifos,analyzed_coinc_data[ifos],
           analyzed_data[ifos],thinca2_jobs[ifos],dag,opts.second_coinc,
           opts.td_follow_inspiral,grbInjections,usertag,ifos+"_"+this_approx)
-    else:
-      coinc2_nodes[ifos] = thinca_coinc(ifos,analyzed_coinc_data[ifos],
-        analyzed_data[ifos],thinca2_jobs[ifos],dag,opts.second_coinc,
-        opts.inspiral_veto,grbInjections,usertag,ifos)
+  else:
+    coinc2_nodes[ifos] = thinca_coinc(ifos,analyzed_coinc_data[ifos],
+      analyzed_data[ifos],thinca2_jobs[ifos],dag,opts.second_coinc,
+      opts.inspiral_veto,grbInjections,usertag,ifos)
 
   # Step 8slide: Time slides on the data
-    if num_slides:
-      thinca2_slide_jobs[ifos].add_ini_opts(cp, 'thinca-2')
-    
-      if opts.td_follow_inspiral:
+  if num_slides:
+    thinca2_slide_jobs[ifos].add_ini_opts(cp, 'thinca-2')
+  
+    if opts.td_follow_inspiral:
+      for this_approx in approximants:
+        this_approx = this_approx.strip()
         coinc2_slide_nodes[ifos] = thinca_coinc(ifos,
           analyzed_coinc_data[ifos],analyzed_data[ifos],thinca2_slide_jobs[ifos],
           dag,opts.second_coinc,opts.inspiral_veto,grbInjections,usertag,ifos+'_'+this_approx,num_slides)
-      else:
-        coinc2_slide_nodes[ifos] = thinca_coinc(ifos,
-          analyzed_coinc_data[ifos],analyzed_data[ifos],thinca2_slide_jobs[ifos],
-          dag,opts.second_coinc,opts.inspiral_veto,grbInjections,usertag,ifos,num_slides)
+    else:
+      coinc2_slide_nodes[ifos] = thinca_coinc(ifos,
+        analyzed_coinc_data[ifos],analyzed_data[ifos],thinca2_slide_jobs[ifos],
+        dag,opts.second_coinc,opts.inspiral_veto,grbInjections,usertag,ifos,num_slides)
+
+  # Step 8 sire: Run sire triggers
+  # Do sire with all coincidenct triggers, and clustered sires for each ifo
+  if opts.sire and len(analyzed_data[ifos]):
+    sire_segs(coinc_nodes[ifos],'output',ifos + '-SIRE_VETO_',sire_job,dag,
+    opts.second_coinc,usertag)
   
-    # Step 8 sire: Run sire triggers
-    # Do sire with all coincidenct triggers, and clustered sires for each ifo
-    if opts.sire and len(analyzed_data[ifos]):
-      sire_segs(coinc_nodes[ifos],'output',ifos + '-SIRE_VETO_',sire_job,dag,
-      opts.second_coinc,usertag)
-    
-      for ifo in ifo_list: 
-        if ifo in ifos:
-          sire_segs(coinc_nodes[ifos],'output',ifo + '-SIRE_VETO_' + ifos,
-              sire_job,dag,opts.second_coinc,usertag,ifo)
-    
-    print "done"
+    for ifo in ifo_list: 
+      if ifo in ifos:
+        sire_segs(coinc_nodes[ifos],'output',ifo + '-SIRE_VETO_' + ifos,
+            sire_job,dag,opts.second_coinc,usertag,ifo)
+  
+  print "done"
 
 
 ##############################################################################
