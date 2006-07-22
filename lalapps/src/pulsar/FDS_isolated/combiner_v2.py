@@ -192,15 +192,15 @@ for parentdir, childdirs, files in os.walk(targetdir):
            f=open(copiedfile,'r')
            buff=f.read(2);
            f.close()
-           #if "file unzipped": *NEEDS TO BE ADDED*
-           #    pass  # if the file already unzipped, do nothing. 
-           #else:     # if not, we assume it a zip file and unzip it.
-           zipfilename=copiedfile+"_tmp.zip"   
-           shutil.move(copiedfile,zipfilename)
-           os.system("unzip -qa "+zipfilename)   # Unzip the copied file
-           os.remove(zipfilename)
-           shutil.move(copiedfile, tmpdir)  
-           
+           if buff == 'PK':
+               zipfilename=copiedfile+"_tmp.zip"   
+               shutil.move(copiedfile,zipfilename)
+               os.system("unzip -qa "+zipfilename)   # Unzip the copied file
+               os.remove(zipfilename)
+               shutil.move(copiedfile, tmpdir)
+           else:
+               pass  # if the file already unzipped, do nothing. 
+            
 ## This loop add various information to files.
 
 fileid=0
