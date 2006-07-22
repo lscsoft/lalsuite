@@ -49,7 +49,7 @@
 
 #include <lalapps.h>
 
-#include "CFS_S4run_setup.h"  /* current Einstein at Home setup */
+#include "WU_generator_daemon.h"  /* current Einstein at Home setup */
 
 
 /* this is defined in C99 and *should* be in math.h.  Long term
@@ -95,6 +95,7 @@ typedef struct FiducialTimeConfigVarsTag
 {
   CHAR *OutputFile;  /*  Name of output file */
   CHAR *InputFile;   /*  Name of input file (combined result file produced by combiner_v2.py */
+  INT4 CandThr;
 } FiducialTimeConfigVars;
 
 typedef struct CandidateListTag
@@ -107,6 +108,8 @@ typedef struct CandidateListTag
   REAL8 TwoF;        /*  Maximum value of F for the cluster */
   INT4 FileID;       /*  File ID to specify from which file the candidate under consideration originally came. */
   CHAR resultfname[256];  /*  Name of the particular result file where values originally came from. */
+  INT4 DataStretch;
+  INT4 WUCandThr;
 } CandidateList;     
 
 
@@ -117,7 +120,11 @@ typedef struct CandidateListTag
 void ReadCommandLineArgs( LALStatus *, INT4 argc, CHAR *argv[], FiducialTimeConfigVars *CLA ); 
 void ReadCombinedFile( LALStatus *lalStatus, CandidateList **CList, FiducialTimeConfigVars *CLA, INT4 *candlen );
 
-void ComputeFiducialTimeFrequency( LALStatus *, CandidateList *CList, INT4 candlen );
+int compareINT4arrays(const INT4 *idata1, const INT4 *idata2, size_t s); /* compare two INT4 arrays of size s.*/
+int compareREAL8arrays(const REAL8 *rdata1, const REAL8 *rdata2, size_t s); /* compare two REAL8 arrays of size s.*/
+int compareCandidates(const void *ip, const void *jp);
+
+void ComputeFiducialTimeFrequency( LALStatus *,	FiducialTimeConfigVars *CLA, CandidateList *CList, INT4 candlen );
 
 void PrintResultFile( LALStatus *, const FiducialTimeConfigVars *CLA, CandidateList *CList, INT4 candlen );
 
@@ -173,7 +180,10 @@ int main(INT4 argc,CHAR *argv[])
 
   /* -----------------------------------------------------------------------------------------*/      
   /* Compute shifting of frequency parameters */
-  LAL_CALL( ComputeFiducialTimeFrequency( lalStatus, AllmyC, CLength),lalStatus );
+  LAL_CALL( ComputeFiducialTimeFrequency( lalStatus, &FTCV, AllmyC, CLength),lalStatus );
+ 
+  /* sort arrays of candidates */
+  qsort(AllmyC, (size_t)CLength, sizeof(CandidateList), compareCandidates);
 
   /* -----------------------------------------------------------------------------------------*/      
   /* Output result file */
@@ -194,7 +204,7 @@ int main(INT4 argc,CHAR *argv[])
 
 void PrintResultFile(LALStatus *lalStatus, const FiducialTimeConfigVars *CLA, CandidateList *CList, INT4 candlen)
 {
-  INT4 iindex;
+  INT4 iindex, iindex2;
   
 
   FILE *fp = NULL;
@@ -225,18 +235,48 @@ void PrintResultFile(LALStatus *lalStatus, const FiducialTimeConfigVars *CLA, Ca
   /* output lines */
   /*INITSTATUS( lalStatus, "print_output", rcsid ); */
  
-  iindex=0;
-  while( iindex < candlen )
+  fprintf(fp,"%" LAL_INT4_FORMAT " %.13g %.7g %.7g %.5g %.6g\n",
+		    CList[0].FileID, 
+		    CList[0].f, 
+		    CList[0].Alpha, 
+		    CList[0].Delta, 
+		    CList[0].F1dot, 
+		    CList[0].TwoF );
+	    
+  iindex=1;
+  iindex2=1;
+  /* printf("%d\n", CList[0].WUCandThr);*/
+  while(iindex < candlen) 
   {
-    fprintf(fp,"%" LAL_INT4_FORMAT " %.13g %.7g %.7g %.5g %.6g\n",
-	    CList[iindex].FileID, 
-	    CList[iindex].f, 
-	    CList[iindex].Alpha, 
-	    CList[iindex].Delta, 
-	    CList[iindex].F1dot, 
-	    CList[iindex].TwoF );
-    iindex++;
+    if(CList[iindex].DataStretch == CList[iindex-1].DataStretch)
+      {
+	if(CList[iindex].FileID == CList[iindex-1].FileID)
+	  {
+	    if( iindex2 < (CList[iindex].WUCandThr) )
+	      {
+		fprintf(fp,"%" LAL_INT4_FORMAT " %.13g %.7g %.7g %.5g %.6g\n",
+			CList[iindex].FileID, 
+			CList[iindex].f, 
+			CList[iindex].Alpha, 
+			CList[iindex].Delta, 
+			CList[iindex].F1dot, 
+			CList[iindex].TwoF );
+		iindex2++;
+	      }
+	  }
+	else
+	  {
+	     iindex2=0;
+	  }
+      }
+    else 
+      {
+	iindex2=0;
+      }
+
+    iindex++;	  
   }
+
   fprintf(fp, "%s", DONE_MARKER);
   
   BEGINFAIL(lalStatus) {fclose(fp);} ENDFAIL(lalStatus);
@@ -280,6 +320,68 @@ void FreeConfigVars(LALStatus *lalStatus, FiducialTimeConfigVars *CLA )
   RETURN (lalStatus);
 } /* FreeCOnfigVars */
 
+
+/* ########################################################################################## */
+
+
+
+int compareCandidates(const void *a, const void *b)
+{
+  const CandidateList *ip = a;
+  const CandidateList *jp = b;
+  int res;
+  
+  INT4 ap[2], bp[2];
+
+  ap[0]=ip->DataStretch;
+  ap[1]=ip->FileID;
+
+  bp[0]=jp->DataStretch;
+  bp[1]=jp->FileID;
+  
+  res=compareINT4arrays( ap, bp, 2 );
+  if( res == 0 ){
+    REAL8 F1, F2;
+    F1=ip->TwoF;
+    F2=jp->TwoF;
+    /* I put F1 and F2 inversely, because I would like to get decreasingly-ordered set. */
+    res = compareREAL8arrays( &F2,  &F1, 1);
+  }
+
+  return res;
+
+} /* int compareCandidates() */
+
+
+int
+compareINT4arrays(const INT4 *ap, const INT4 *bp, size_t n)
+{
+  if( (*ap) == (*bp) ) {
+    if ( n > 1 ){
+      return compareINT4arrays( ap+1, bp+1, n-1 );
+    } else {
+      return 0;
+    }
+  }
+  if ( (*ap) < (*bp) )
+    return -1;
+  return 1;
+} /* int compareINT4arrays() */
+
+int
+compareREAL8arrays(const REAL8 *ap, const REAL8 *bp, size_t n)
+{
+  if( (*ap) == (*bp) ) {
+    if ( n > 1 ){
+      return compareREAL8arrays( ap+1, bp+1, n-1 );
+    } else {
+      return 0;
+    }
+  }
+  if ( (*ap) < (*bp) )
+    return -1;
+  return 1;
+} /* int compareREAL8arrays() */
 
 
 /* ########################################################################################## */
@@ -404,7 +506,9 @@ void ReadCombinedFile( LALStatus *lalStatus,
       }
       
       nread = sscanf (line1,
-		      "%s %" LAL_INT4_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT "%c", &(cl->resultfname), &(cl->FileID), &(cl->f), &(cl->Alpha), &(cl->Delta), &(cl->F1dot), &(cl->TwoF), &newline );
+		      "%s %" LAL_INT4_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" 
+		      LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT "%c", 
+		      &(cl->resultfname), &(cl->FileID), &(cl->f), &(cl->Alpha), &(cl->Delta), &(cl->F1dot), &(cl->TwoF), &newline );
 
       /* check that values that are read in are sensible, 
 	 (result file names will be checked later, when getting 
@@ -592,7 +696,8 @@ void ReadCommandLineArgs( LALStatus *lalStatus,
 /* ########################################################################################## */
   
 
-void ComputeFiducialTimeFrequency( LALStatus *lalStatus, 
+void ComputeFiducialTimeFrequency( LALStatus *lalStatus,
+				   FiducialTimeConfigVars *CLA,
 				   CandidateList *CList, 
 				   INT4 candlen)
 {
@@ -601,18 +706,21 @@ void ComputeFiducialTimeFrequency( LALStatus *lalStatus,
   REAL8 f_fiducial;
   REAL8 deltaT;
   INT4 iindex;
+  INT4 MinNumJobs4Freq=9999999;
   WU_search_params_t wparams;
 
   INITSTATUS( lalStatus, "ComputeFiducialTimeFrequency", rcsid );
   ATTATCHSTATUSPTR (lalStatus);
   printf("Frequency values are shifted to fixed fiducial GPS time: %f\n", FIXED_FIDUCIAL_TIME);
 
+  CLA->CandThr=0;
   f_CFS=0;
   f_fiducial=0;
   F1dot_CFS=0;
   iindex=0;
   deltaT=0;
   
+
   while( iindex < candlen )
     {
       f_CFS = CList[iindex].f;
@@ -620,6 +728,14 @@ void ComputeFiducialTimeFrequency( LALStatus *lalStatus,
       
       /* get search parameters from Einstein at Home setup library */
       findSearchParams4Result( CList[iindex].resultfname, &wparams );
+      
+      CList[iindex].DataStretch = wparams.startTime - wparams.endTime;
+      CList[iindex].WUCandThr = (INT4)( 0.5 / wparams.fBand );
+      
+      if( wparams.minNumJobs < MinNumJobs4Freq )
+	{
+	  MinNumJobs4Freq = wparams.minNumJobs;
+	}
 	
       /* fixed fiducial time = e.g. GPS time of first SFT in S4 */
       deltaT = wparams.startTime - FIXED_FIDUCIAL_TIME;  
@@ -636,8 +752,19 @@ void ComputeFiducialTimeFrequency( LALStatus *lalStatus,
       deltaT=0;
 
       iindex++;
+
     } /* while( iindex < candlen)  */
- 
+
+  CLA->CandThr = MinNumJobs4Freq * 13000;
+
+  iindex=0;
+  while(iindex < candlen)
+    {
+      CList[iindex].WUCandThr = (INT4)( (CLA->CandThr) / (CList[iindex].WUCandThr) );
+      /*printf("%d\n",CList[iindex].WUCandThr);*/
+      iindex++;
+    }
+  /*printf("%d\n", CLA->CandThr);*/
   DETATCHSTATUSPTR (lalStatus);
   RETURN (lalStatus);
 
