@@ -1357,7 +1357,7 @@ void
   INT8       slideNS     = 0;
   INT8       segStartNS, segEndNS;
   INT8       newStartNS, newEndNS; 
-  LALSeg     tmpSeg;;     
+  LALSeg     tmpSeg;     
   LALSegList tmplist; 
   INT4       n,i=0;
 
