@@ -28,7 +28,7 @@ extern UINT4 maxSFTindex;  /**< maximal sftindex, for error-checking */
 /* in case of the (now almost obsolete) hand-coded AltiVec version (and and experimental hook),
    don't use TestLALDemod() below, but the one in external file */
 #if defined(USE_SSE_GAS)
-#include "CFSLALDemod_Akos.c"
+#include "CFSLALDemod_SSEgas.c"
 #elif defined(USE_X87_GAS)
 #include "CFSLALDemod_x87gas.c"
 #elif defined(USE_EXP_LALDEMOD)

@@ -1,4 +1,4 @@
-/* LALDemod variant with large assembler part for modifications by Feket Akos
+/* LALDemod variant with sin/cos calculation coded in (GNU) assembler
  * Authors see ComputeFStatistic.c
                                                          Bernd Machenschalk */
 
