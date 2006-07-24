@@ -165,7 +165,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
                      i, xTemp, f, alpha, tempInt1[alpha]);
             fprintf (stderr, "DEBUG: skyConst[ tempInt1[ alpha ] ] = %f, xSum[ alpha ]=%f\n",
                      skyConst[ tempInt1[ alpha ] ], xSum[ alpha ]);
-#ifndef USE_BOINC
+#if !USE_BOINC
             fprintf (stderr, "\n*** PLEASE report this bug to pulgroup@gravity.phys.uwm.edu *** \n\n");
 #endif
             exit (COMPUTEFSTAT_EXIT_DEMOD);
@@ -176,7 +176,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
                      i, xTemp, f, alpha, tempInt1[alpha]);
             fprintf (stderr, "DEBUG: skyConst[ tempInt1[ alpha ] ] = %f, xSum[ alpha ]=%f\n",
                      skyConst[ tempInt1[ alpha ] ], xSum[ alpha ]);
-#ifndef USE_BOINC
+#if !USE_BOINC
             fprintf (stderr, "\n*** PLEASE report this bug to pulgroup@gravity.phys.uwm.edu *** \n\n");
 #endif
             exit (COMPUTEFSTAT_EXIT_DEMOD);
@@ -606,9 +606,10 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
         else /* if ( tempFreq0 >= LD_SMALL ) */
     
           {
+#if !USE_BOINC
             fprintf(stderr,"small x\n");
-            
-            /* C version of the same calculations */
+#endif
+            /* C version of the sin/cos calculations */
 
             /* calculation of tsin and tcos */
             {
