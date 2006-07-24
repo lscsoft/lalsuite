@@ -414,8 +414,7 @@ int main(INT4 argc,CHAR *argv[])
 	      for (cc3 = 0; cc3 < 2; cc3++)
 		{
 		  for (cc4 = 0; cc4 < 2; cc4++)
-		    {
-		      
+		    {		      
 		      SortedC16[icand16].f = SortedC[icand].f;
 		      SortedC16[icand16].Delta = SortedC[icand].Delta;
 		      SortedC16[icand16].Alpha = SortedC[icand].Alpha;
@@ -424,7 +423,7 @@ int main(INT4 argc,CHAR *argv[])
 		      SortedC16[icand16].FileID = SortedC[icand].FileID;
 		      
 		      /*SortedC[icand].iFreq=(INT4) ((SortedC[icand].f/(PCV.Deltaf)) + PCV.Shiftf  );*/
-		      SortedC16[icand16].iFreq=(INT4) ((SortedC[icand].f/(PCV.Deltaf)) + (0.5 * cc1)  );
+		      SortedC16[icand16].iFreq=(INT4) (2*(SortedC[icand].f/(PCV.Deltaf)) + cc1  );
 		      
 		      /* This was used for an isotropic sky-grid */
 		      /*SortedC[icand].iDelta=(INT4)(SortedC[icand].Delta/(PCV.DeltaDelta)  + PCV.ShiftDelta ); */
@@ -432,11 +431,11 @@ int main(INT4 argc,CHAR *argv[])
 		      /* This is used for the anisotropic sky-grid produced by a metric. */
 		      DeltaDeltaFlex = PCV.DeltaAlpha + PCV.DeltaDelta * exp( -(PCV.Kappa)*(SortedC[icand].Delta)*(SortedC[icand].Delta) ); 
 		      /* SortedC[icand].iDelta=(INT4)((SortedC[icand].Delta/(DeltaDeltaFlex))  + PCV.ShiftDelta ); */
-		      SortedC16[icand16].iDelta=(INT4)((SortedC[icand].Delta/(DeltaDeltaFlex))  + (0.5 * cc2) ); 
+		      SortedC16[icand16].iDelta=(INT4)(2*(SortedC[icand].Delta/(DeltaDeltaFlex))  + cc2 ); 
 		      /* SortedC[icand].iAlpha=(INT4)((SortedC[icand].Alpha*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + PCV.ShiftAlpha  ); */
-		      SortedC16[icand16].iAlpha=(INT4)((SortedC[icand].Alpha*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (0.5 * cc3)  );
+		      SortedC16[icand16].iAlpha=(INT4)(2*(SortedC[icand].Alpha*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + cc3 );
 		      /* SortedC[icand].iF1dot=(INT4)((SortedC[icand].F1dot/(PCV.DeltaF1dot))  + PCV.ShiftF1dot ); */
-		      SortedC16[icand16].iF1dot=(INT4)((SortedC[icand].F1dot/(PCV.DeltaF1dot))  + (0.5 * cc4) );	  
+		      SortedC16[icand16].iF1dot=(INT4)(2*(SortedC[icand].F1dot/(PCV.DeltaF1dot))  + cc4 );	  
 		      
 		      SortedC[icand].iCand = icand;
 		      SortedC16[icand16].iCand = icand16; /* Keep the original ordering before sort to refer the orignal data later. */
@@ -524,7 +523,7 @@ int main(INT4 argc,CHAR *argv[])
   /* -----------------------------------------------------------------------------------------*/      
   /* Clean-up */
   LAL_CALL( FreeMemory(lalStatus, &PCV, cell, SortedC16, CLength16), lalStatus);
-
+  
   LALCheckMemoryLeaks(); 
 
   return(POLKA_EXIT_OK);
