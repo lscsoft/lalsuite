@@ -52,9 +52,13 @@ INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
         #ReadFTSeriesTest PrintFTSeriesTest StreamInputTest \
         #StreamSeriesInputTest ConfigFileTest UserInputTest SFTfileIOTest \
         #LALMath3DPlotTest LALMathNDPlotTest
+#TESTS = PrintVectorTest \
+        #ReadFTSeriesTest PrintFTSeriesTest StreamInputTest \
+        #StreamSeriesInputTest ConfigFileTest UserInputTest SFTfileIOTest \
+        #LALMath3DPlotTest LALMathNDPlotTest SegmentsIOTest
 TESTS = PrintVectorTest \
         ReadFTSeriesTest PrintFTSeriesTest StreamInputTest \
-        StreamSeriesInputTest ConfigFileTest UserInputTest SFTfileIOTest \
+        StreamSeriesInputTest ConfigFileTest UserInputTest \
         LALMath3DPlotTest LALMathNDPlotTest SegmentsIOTest
 
 TESTS_ENVIRONMENT = 1>/dev/null 2>/dev/null LAL_DATA_PATH=$(srcdir)
