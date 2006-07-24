@@ -164,9 +164,9 @@ Cell parameters: Define dimensions of cells and center of the cells.
 @param DeltaAlpha REAL8 Size of coincidence window in radians (at the equator delta=0)
 @param DeltaDelta REAL8 Size of coincidence window in radians (at the equator delta=0)
 @param DeltaF1dot REAL8 Size of coincidence window of spindown d/dt f (= Size of cell in f1dot)
-@param Shiftf     REAL8 Parallel shift of frequency in Hz of cell 
-@param ShiftAlpha REAL8 Parallel shift of Alpha in Hz of cell
-@param ShiftDelta REAL8 Parallel shift of Delta in Hz of cell 
+@param Shiftf     REAL8 Parallel shift of frequency of cell 
+@param ShiftAlpha REAL8 Parallel shift of Alpha of cell
+@param ShiftDelta REAL8 Parallel shift of Delta of cell 
 @param ShiftF1dot REAL8 Parallel shift of F1dot of cell
 @param Kappa      REAL8 Tuning parameter for declination window
 
@@ -292,7 +292,8 @@ typedef struct CellDataTag
 void ReadCommandLineArgs( LALStatus *, INT4 argc, CHAR *argv[], PolkaConfigVars *CLA ); 
 void GetFilesListInThisDir(LALStatus *, const CHAR *directory, const CHAR *basename, CHAR ***filelist, UINT4 *nfiles );
 void ReadCandidateFiles( LALStatus *, CandidateList **Clist, PolkaConfigVars *CLA, INT4 *datalen );
-void ReadOneCandidateFile( LALStatus *, CandidateList **CList, const CHAR *fname, INT4 *datalen, INT4 *candilenFthr, const REAL8 myFthr );
+void ReadOneCandidateFile( LALStatus *, CandidateList **CList, const CHAR *fname, INT4 *datalen, const REAL8 myFthr );
+/*void ReadOneCandidateFile( LALStatus *, CandidateList **CList, const CHAR *fname, INT4 *datalen, INT4 *candilenFthr, const REAL8 myFthr ); */
 void ReadOneCandidateFileV2( LALStatus *lalStatus, CandidateList **CList, const CHAR *fname, INT4 *candlen );
 
 #ifdef USE_UNZIP
@@ -354,11 +355,16 @@ RCSID ("$Id$");
 int main(INT4 argc,CHAR *argv[]) 
 {
   LALStatus *lalStatus = &global_status;
-  INT4  CLength=0;
+  INT4 CLength=0;
+  INT4 CLength16=0;
+  INT4 cc1, cc2, cc3, cc4;
   
   CandidateList *SortedC = NULL;
+
+  CandidateList *SortedC16 = NULL;
+
   CellData *cell = NULL;
-  INT4 icell, icand, ncell;
+  INT4 icell, icand, ncell, icand16;
 
   PolkaConfigVars PCV;
   REAL8 DeltaDeltaFlex;
@@ -375,9 +381,19 @@ int main(INT4 argc,CHAR *argv[])
   /* Reads in candidare files, set CLength */
   LAL_CALL( ReadCandidateFiles(lalStatus, &SortedC, &PCV, &CLength), lalStatus);
 
-  /* Prepare cells. */
-  LAL_CALL( PrepareCells( lalStatus, &cell, CLength ), lalStatus);  
+  CLength16 = 16 * CLength;
 
+  /* Prepare cells. */
+  LAL_CALL( PrepareCells( lalStatus, &cell, CLength16 ), lalStatus);  
+
+  SortedC16 = (CandidateList *)LALMalloc (CLength16*sizeof(CandidateList));
+
+  if ( !SortedC16 ) 
+    { 
+      LALPrintError ("Could not allocate memory for 16 candidate list.\n\n");
+      ABORT (lalStatus, POLKAC_EMEM, POLKAC_MSGEMEM);
+    }
+      
 
 
   /* --------------------------------------------------------------------------------*/      
@@ -387,78 +403,108 @@ int main(INT4 argc,CHAR *argv[])
   /* flexible declination window */
   DeltaDeltaFlex = 0;
   
-  for (icand=0;icand<CLength;icand++)
+  
+  icand16 = 0;
+  for (icand = 0; icand < CLength; icand++)
     {
-      SortedC[icand].iFreq=(INT4) ( (SortedC[icand].f/(PCV.Deltaf)) + PCV.Shiftf  );
-      
-      /* This was used for an isotropic sky-grid */
-      /*SortedC[icand].iDelta=(INT4)(SortedC[icand].Delta/(PCV.DeltaDelta)  + PCV.ShiftDelta ); */
-      
-      /* This is used for the anisotropic sky-grid produced by a metric. */
-      DeltaDeltaFlex = PCV.DeltaAlpha + PCV.DeltaDelta * exp( -(PCV.Kappa)*(SortedC[icand].Delta)*(SortedC[icand].Delta) ); 
-      SortedC[icand].iDelta=(INT4)( (SortedC[icand].Delta/(DeltaDeltaFlex)) + PCV.ShiftDelta ); 
-
-      SortedC[icand].iAlpha=(INT4)( (SortedC[icand].Alpha*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + PCV.ShiftAlpha  );
-      SortedC[icand].iF1dot=(INT4)( (SortedC[icand].F1dot/(PCV.DeltaF1dot))  + PCV.ShiftF1dot );
-      SortedC[icand].iCand=icand; /* Keep the original ordering before sort to refer the orignal data later. */
+      for (cc1 = 0; cc1 < 2; cc1++)
+	{
+	  for (cc2 = 0; cc2 < 2; cc2++)
+	    {
+	      for (cc3 = 0; cc3 < 2; cc3++)
+		{
+		  for (cc4 = 0; cc4 < 2; cc4++)
+		    {
+		      
+		      SortedC16[icand16].f = SortedC[icand].f;
+		      SortedC16[icand16].Delta = SortedC[icand].Delta;
+		      SortedC16[icand16].Alpha = SortedC[icand].Alpha;
+		      SortedC16[icand16].F1dot = SortedC[icand].F1dot;
+		      SortedC16[icand16].TwoF = SortedC[icand].TwoF;
+		      SortedC16[icand16].FileID = SortedC[icand].FileID;
+		      
+		      /*SortedC[icand].iFreq=(INT4) ((SortedC[icand].f/(PCV.Deltaf)) + PCV.Shiftf  );*/
+		      SortedC16[icand16].iFreq=(INT4) ((SortedC[icand].f/(PCV.Deltaf)) + (0.5 * cc1)  );
+		      
+		      /* This was used for an isotropic sky-grid */
+		      /*SortedC[icand].iDelta=(INT4)(SortedC[icand].Delta/(PCV.DeltaDelta)  + PCV.ShiftDelta ); */
+		      
+		      /* This is used for the anisotropic sky-grid produced by a metric. */
+		      DeltaDeltaFlex = PCV.DeltaAlpha + PCV.DeltaDelta * exp( -(PCV.Kappa)*(SortedC[icand].Delta)*(SortedC[icand].Delta) ); 
+		      /* SortedC[icand].iDelta=(INT4)((SortedC[icand].Delta/(DeltaDeltaFlex))  + PCV.ShiftDelta ); */
+		      SortedC16[icand16].iDelta=(INT4)((SortedC[icand].Delta/(DeltaDeltaFlex))  + (0.5 * cc2) ); 
+		      /* SortedC[icand].iAlpha=(INT4)((SortedC[icand].Alpha*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + PCV.ShiftAlpha  ); */
+		      SortedC16[icand16].iAlpha=(INT4)((SortedC[icand].Alpha*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (0.5 * cc3)  );
+		      /* SortedC[icand].iF1dot=(INT4)((SortedC[icand].F1dot/(PCV.DeltaF1dot))  + PCV.ShiftF1dot ); */
+		      SortedC16[icand16].iF1dot=(INT4)((SortedC[icand].F1dot/(PCV.DeltaF1dot))  + (0.5 * cc4) );	  
+		      
+		      SortedC[icand].iCand = icand;
+		      SortedC16[icand16].iCand = icand16; /* Keep the original ordering before sort to refer the orignal data later. */
+		      
+		      icand16++;
+		    }
+		}
+	    }
+	}
     }
 
+
   /* sort arrays of candidates */
-  qsort(SortedC, (size_t)CLength, sizeof(CandidateList), compareCandidates);
+  qsort(SortedC16, (size_t)CLength16, sizeof(CandidateList), compareCandidates);
   
 
   /* Initialise the first cell by the first candidate. */
   icell = 0;
-  icand = 0;
-  cell[icell].iFreq = SortedC[icand].iFreq;
-  cell[icell].iDelta = SortedC[icand].iDelta;
-  cell[icell].iAlpha = SortedC[icand].iAlpha;
-  cell[icell].iF1dot = SortedC[icand].iF1dot;
-  cell[icell].CandID->data = icand; 
+  icand16 = 0;
+  cell[icell].iFreq = SortedC16[icand16].iFreq;
+  cell[icell].iDelta = SortedC16[icand16].iDelta;
+  cell[icell].iAlpha = SortedC16[icand16].iAlpha;
+  cell[icell].iF1dot = SortedC16[icand16].iF1dot;
+  cell[icell].CandID->data = icand16; 
   cell[icell].nCand = 1;
 
   /* ------------------------------------------------------------------------------*/      
   /* main loop over candidates  */
   icell = 0;
-  for (icand=1; icand < CLength; icand++)
+  for (icand16 = 1; icand16 < CLength16; icand16++)
     {
     /* Skip candidate events with 2F values below the threshold of TwoFthr. */
-    if ( SortedC[icand].TwoF > PCV.TwoFthr ) 
+    if ( SortedC16[icand16].TwoF > PCV.TwoFthr ) 
       {
 
-	if( SortedC[icand].iFreq  == cell[icell].iFreq  && 
-	    SortedC[icand].iDelta == cell[icell].iDelta &&
-	    SortedC[icand].iAlpha == cell[icell].iAlpha &&
-	    SortedC[icand].iF1dot == cell[icell].iF1dot ) 
+	if( SortedC16[icand16].iFreq  == cell[icell].iFreq  && 
+	    SortedC16[icand16].iDelta == cell[icell].iDelta &&
+	    SortedC16[icand16].iAlpha == cell[icell].iAlpha &&
+	    SortedC16[icand16].iF1dot == cell[icell].iF1dot ) 
 	  { 
 	    /* This candidate is in this cell. */
-	    INT4 lastFileIDinThisCell = SortedC[cell[icell].CandID->data].FileID;
-	    if( SortedC[icand].FileID != lastFileIDinThisCell ) 
-	      { 
+	    INT4 lastFileIDinThisCell = SortedC16[cell[icell].CandID->data].FileID;
+	    if( SortedC16[icand16].FileID != lastFileIDinThisCell ) 
+	      {
 		/* This candidate has a different file id from the candidates in this cell. */
-		LAL_CALL( add_int4_data( lalStatus, &(cell[icell].CandID), &(icand) ), lalStatus );
-		cell[icell].nCand += 1;
-	      }  
+		    LAL_CALL( add_int4_data( lalStatus, &(cell[icell].CandID), &(icand16) ), lalStatus );
+		    cell[icell].nCand += 1;
+	      }
 	    else  
 	      { 
 		/* This candidate has the same file id to one of candidates in this cell. */ 
 		/* 	       Because the array is already sorted in the DECREASING ORDER OF 2F,  */
 		/* 		 we do nothing here. */
-	      }  /*if( SortedC[icand].FileID != lastFileIDinThisCell ) */
-	  } /*  if( SortedC[icand].iFreq  == cell[icell].iFreq  && .. ) */ 
+	      }  /*if( SortedC16[icand16].FileID != lastFileIDinThisCell ) */
+	  } /*  if( SortedC16[icand16].iFreq  == cell[icell].iFreq  && .. ) */ 
 	else 
 	  {	  
 	    /* This candidate is outside of this cell. */
 	    icell++;
-	    cell[icell].iFreq = SortedC[icand].iFreq;
-	    cell[icell].iDelta = SortedC[icand].iDelta;
-	    cell[icell].iAlpha = SortedC[icand].iAlpha;
-	    cell[icell].iF1dot = SortedC[icand].iF1dot;
-	    cell[icell].CandID->data = icand;
+	    cell[icell].iFreq = SortedC16[icand16].iFreq;
+	    cell[icell].iDelta = SortedC16[icand16].iDelta;
+	    cell[icell].iAlpha = SortedC16[icand16].iAlpha;
+	    cell[icell].iF1dot = SortedC16[icand16].iF1dot;
+	    cell[icell].CandID->data = icand16;
 	    cell[icell].nCand = 1;
-	  } /*  if( SortedC[icand].iFreq  == cell[icell].iFreq  && .. ) */ 
+	  } /*  if( SortedC16[icand].iFreq  == cell[icell].iFreq  && .. ) */ 
 
-      } /* if ( SortedC[icand].TwoF > PCV.TwoFthr ) */
+      } /* if ( SortedC16[icand].TwoF > PCV.TwoFthr ) */
 
     } /* for (icand=1; icand < CLength; icand++): loop over candidate list */      
 
@@ -468,17 +514,16 @@ int main(INT4 argc,CHAR *argv[])
   /* Get the information in each cell. */
   ncell=icell+1; /* number of the cells in which more than or at least one candidate exists. */
   for(icell=0;icell<ncell;icell++) {
-    LAL_CALL( get_info_of_the_cell( lalStatus, &cell[icell], SortedC), lalStatus);
+    LAL_CALL( get_info_of_the_cell( lalStatus, &cell[icell], SortedC16), lalStatus);
   }  
 
   /* -----------------------------------------------------------------------------------------*/      
   /* Output results */
-  LAL_CALL( PrintResult( lalStatus, &PCV, cell, &ncell, SortedC),lalStatus );
-
+  LAL_CALL( PrintResult( lalStatus, &PCV, cell, &ncell, SortedC16),lalStatus );
 
   /* -----------------------------------------------------------------------------------------*/      
   /* Clean-up */
-  LAL_CALL( FreeMemory(lalStatus, &PCV, cell, SortedC, CLength), lalStatus);
+  LAL_CALL( FreeMemory(lalStatus, &PCV, cell, SortedC16, CLength16), lalStatus);
 
   LALCheckMemoryLeaks(); 
 
@@ -1139,13 +1184,13 @@ int compareCandidates(const void *a, const void *b)
   ap[2]=ip->iAlpha;
   ap[3]=ip->iF1dot;
   ap[4]=ip->FileID;
-
+ 
   bp[0]=jp->iFreq;
   bp[1]=jp->iDelta;
   bp[2]=jp->iAlpha;
   bp[3]=jp->iF1dot;
   bp[4]=jp->FileID;
-
+ 
   res = compareINT4arrays( ap,  bp, 5);
   if( res == 0 ) {
     REAL8 F1, F2;
@@ -1361,7 +1406,7 @@ ReadCandidateFiles(LALStatus *lalStatus,
 		   INT4 *clen)
 {
   UINT4 kc;
-  UINT4 *CLenFthr;
+  /*  UINT4 *CLenFthr = 0; */
   REAL8 percentage = 0;
 
   INITSTATUS( lalStatus, "ReadCandidateFiles", rcsid );
@@ -1369,6 +1414,7 @@ ReadCandidateFiles(LALStatus *lalStatus,
 
   ASSERT( CLA != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
   ASSERT( *CList == NULL, lalStatus, POLKAC_ENONULL, POLKAC_MSGENONULL);
+  
 
   if( (CLA->InputDir != NULL) && (CLA->BaseName != NULL) ) 
     {
@@ -1381,7 +1427,7 @@ ReadCandidateFiles(LALStatus *lalStatus,
 	   lalStatus );
       
       *clen = 0;     /* We first have to set the candidate list length zero. */
-      *CLenFthr = 0;
+      /* *CLenFthr = 0; */
       *CList = NULL; /* We first have to nullify the list. */
       for (kc=0;kc<CLA->NFiles;kc++)
 	{
@@ -1415,8 +1461,10 @@ ReadCandidateFiles(LALStatus *lalStatus,
     } /* if( (CLA->InputDir != NULL) && (CLA->BaseName != NULL) )  */
   else if ( CLA->FstatsFile != NULL ) 
     {
+
       *CList = NULL;
-      TRY( ReadOneCandidateFile(lalStatus->statusPtr, CList, CLA->FstatsFile, clen, CLenFthr, CLA->TwoFthr ), lalStatus );
+      /* TRY( ReadOneCandidateFile(lalStatus->statusPtr, CList, CLA->FstatsFile, clen, CLenFthr, CLA->TwoFthr ), lalStatus );*/
+      TRY( ReadOneCandidateFile(lalStatus->statusPtr, CList, CLA->FstatsFile, clen, CLA->TwoFthr ), lalStatus );
       /* The last file is from last file.*/
       CLA->NFiles = (*CList)[*clen-1].FileID;
     } /* if( (CLA->InputDir != NULL) && (CLA->BaseName != NULL) )  */
@@ -1426,9 +1474,9 @@ ReadCandidateFiles(LALStatus *lalStatus,
       exit(POLKA_EXIT_ERR);;
     }
 
-  percentage = ( (REAL8) *CLenFthr / *clen ) * 100.0;
+  /*  percentage = ( (REAL8) *CLenFthr / *clen ) * 100.0;
 
-  fprintf(stderr,"\n%%Number of the candidate events in this file/directory = %u.\n%% --- Threshold for 2F: %.3f\t Number of candidates kept: %u  or  %.3f%% --- \n",*clen, CLA->TwoFthr, *CLenFthr, percentage);
+  fprintf(stderr,"\n%%Number of the candidate events in this file/directory = %u.\n%% --- Threshold for 2F: %.3f\t Number of candidates kept: %u  or  %.3f%% --- \n",*clen, CLA->TwoFthr, *CLenFthr, percentage);  */
 
   DETATCHSTATUSPTR (lalStatus);
   RETURN (lalStatus);
@@ -2136,12 +2184,16 @@ ReadOneCandidateFileV2( LALStatus *lalStatus,
   @param[in]     fname     CHAR* the name of the file to be read
   @param[out]    candlen   UINT4* total number of the candidate events
 */
+/* void  
+ReadOneCandidateFile( LALStatus *lalStatus, 
+		      CandidateList **CList, 
+		      const CHAR *fname, INT4 *candlen, INT4 *candilenFthr,
+		      const REAL8 myFthr ) */
 void  
 ReadOneCandidateFile( LALStatus *lalStatus, 
 		      CandidateList **CList, 
 		      const CHAR *fname, 
 		      INT4 *candlen, 
-		      INT4 *candilenFthr,
 		      const REAL8 myFthr )
 {
   UINT4 i;
@@ -2330,7 +2382,7 @@ ReadOneCandidateFile( LALStatus *lalStatus,
     } /*  end of main while loop */
 
   /* number of candidates above the 2F threshold. */
-  *candilenFthr = numlinesFthr;
+  /*  *candilenFthr = numlinesFthr; */
 
   /* check that we read ALL lines! */
   if (i != numlines) {
