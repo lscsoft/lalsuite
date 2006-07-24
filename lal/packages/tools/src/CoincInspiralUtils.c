@@ -1143,9 +1143,9 @@ XLALInspiralPsi0Psi3CutBCVC(
   /* loop over the coincindent triggers */
   while( thisCoinc )
   {
+    CoincInspiralTable *tmpCoinc = thisCoinc;
     discardTrigger=0;
 
-    CoincInspiralTable *tmpCoinc = thisCoinc;
     thisCoinc = thisCoinc->next;
       
 
