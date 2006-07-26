@@ -213,11 +213,14 @@ static int XLALBlackHoleModeEigenSolveSchwarzschild( COMPLEX16 *omega, int l, in
   struct tagBlackHoleMode p;
   const gsl_multiroot_fsolver_type *solverType;
   gsl_multiroot_fsolver *solver;
-  gsl_multiroot_function f = {&XLALBlackHoleModeEigenSolveSchwarzschildResid, ndim, &p};
+  gsl_multiroot_function f;
   gsl_vector *x;
   size_t iter = 0;
   int status;
-  
+
+  f.f = &XLALBlackHoleModeEigenSolveSchwarzschildResid;
+  f.n = ndim;
+  f.params = &p;
   x = gsl_vector_alloc( ndim );
   gsl_vector_set( x, 0, omega->re );
   gsl_vector_set( x, 1, omega->im );
@@ -257,11 +260,14 @@ static int XLALBlackHoleModeEigenSolveKerr( COMPLEX16 *A, COMPLEX16 *omega, REAL
   struct tagBlackHoleMode p;
   const gsl_multiroot_fsolver_type *solverType;
   gsl_multiroot_fsolver *solver;
-  gsl_multiroot_function f = {&XLALBlackHoleModeEigenSolveKerrResid, ndim, &p};
+  gsl_multiroot_function f;
   gsl_vector *x;
   size_t iter = 0;
   int status;
   
+  f.f = &XLALBlackHoleModeEigenSolveKerrResid;
+  f.n = ndim;
+  f.params = &p;
   x = gsl_vector_alloc( ndim );
   gsl_vector_set( x, 0, A->re );
   gsl_vector_set( x, 1, A->im );
