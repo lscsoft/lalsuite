@@ -96,7 +96,7 @@ main (  int argc, char **argv )
    static UINT4 psdLength, quietFlag = 0;
    static REAL8 df, norm;
    static REAL4Vector signal, correlation;
-   void   *noisemodel = LALLIGOIPsd;
+   void   (*noisemodel)(LALStatus*,REAL8*,REAL8) = LALLIGOIPsd;
    static InspiralWaveOverlapIn overlapin;
    static InspiralWaveOverlapOut overlapout;
    static REAL8FrequencySeries shf;
