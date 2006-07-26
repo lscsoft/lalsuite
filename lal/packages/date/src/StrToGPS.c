@@ -71,6 +71,7 @@ static int isbinaryexp(const char *s)
 int XLALStrToGPS(LIGOTimeGPS *t, const char *nptr, char **endptr)
 {
 	const char *func = "XLALStrToGPS";
+	union { char *s; const char *cs; } pconv; /* this is bad */
 	int olderrno;
 	int radix;
 	char *digits;
@@ -87,11 +88,14 @@ int XLALStrToGPS(LIGOTimeGPS *t, const char *nptr, char **endptr)
 	/* retrieve the radix character */
 	radix = localeconv()->decimal_point[0];
 
+	/* this is bad ... there is a reason for warnings! */
+	pconv.cs = nptr;
+
 	/* consume leading white space */
 	while(isspace(*nptr))
 		nptr++;
 	if(endptr)
-		*endptr = nptr;
+		*endptr  = pconv.s;
 
 	/* determine the sign */
 	if(*nptr == '-') {
@@ -168,13 +172,13 @@ int XLALStrToGPS(LIGOTimeGPS *t, const char *nptr, char **endptr)
 	case 10:
 		/* exponent is the number of powers of 10 */
 		if(isdecimalexp(nptr))
-			radixpos += strtol(nptr + 1, &nptr, 10);
+			radixpos += strtol(nptr + 1, &pconv.s, 10);
 		break;
 
 	case 16:
 		/* exponent is the number of powers of 2 */
 		if(isbinaryexp(nptr)) {
-			exppart = strtol(nptr + 1, &nptr, 10);
+			exppart = strtol(nptr + 1, &pconv.s, 10);
 			radixpos += exppart / 4;
 			exppart %= 4;
 			if(exppart < 0) {
@@ -188,7 +192,7 @@ int XLALStrToGPS(LIGOTimeGPS *t, const char *nptr, char **endptr)
 
 	/* save end of converted characters */
 	if(endptr)
-		*endptr = nptr;
+		*endptr = pconv.s;
 
 	/* insert the radix character, padding the scratch digits with zeroes
 	 * if needed */
