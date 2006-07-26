@@ -57,6 +57,10 @@
 
 #include "XLALLeapSeconds.h" /* contains the leap second table */
 
+/* in case this is not prototyped ... */
+struct tm * gmtime_r(const time_t *, struct tm *);
+
+
 /* change in TAI-UTC from previous second:
  *
  * return values:
