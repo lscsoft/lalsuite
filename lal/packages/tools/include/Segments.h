@@ -193,10 +193,10 @@ XLALSegCreate( const LIGOTimeGPS *start, const LIGOTimeGPS *end,
 	       const INT4 id );
 
 int
-XLALGPSInSeg( const LIGOTimeGPS *gps, const LALSeg *seg );
+XLALGPSInSeg( const void *gps, const void *seg );
 
 int
-XLALSegCmp( const LALSeg *seg0, const LALSeg *seg1 );
+XLALSegCmp( const void *seg0, const void *seg1 );
 
 INT4
 XLALSegListInit( LALSegList *seglist );

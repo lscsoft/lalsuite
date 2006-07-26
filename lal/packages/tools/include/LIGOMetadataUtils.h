@@ -863,7 +863,7 @@ XLALGenerateCoherentBank(
 
 INT8 
 XLALCoincInspiralTimeNS (
-    CoincInspiralTable         *coincInspiral
+    const CoincInspiralTable         *coincInspiral
     );
 
 REAL4

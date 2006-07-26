@@ -1680,7 +1680,7 @@ LALCoincCutSnglInspiral(
 
 INT8 
 XLALCoincInspiralTimeNS (
-    CoincInspiralTable         *coincInspiral
+    const CoincInspiralTable         *coincInspiral
     )
 {
   static const char *func = "XLALCoincInspiralTimeNS";

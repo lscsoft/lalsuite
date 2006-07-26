@@ -292,10 +292,13 @@ XLALSegCreate( const LIGOTimeGPS *start, const LIGOTimeGPS *end,
 /*---------------------------------------------------------------------------*/
 /* <lalVerbatim file="SegmentsCP"> */
 int
-XLALGPSInSeg( const LIGOTimeGPS *gps, const LALSeg *seg )
+XLALGPSInSeg( const void *pgps, const void *pseg )
 /* </lalVerbatim> */
 {
   static const char *func = "XLALGPSInSeg";
+  const LIGOTimeGPS *gps = pgps;
+  const LALSeg *seg = pseg;
+
   INT8 gpsns, startns, endns;
 
   /* Make sure a non-null pointer was passed for the GPS time */
@@ -344,10 +347,12 @@ XLALGPSInSeg( const LIGOTimeGPS *gps, const LALSeg *seg )
 /*---------------------------------------------------------------------------*/
 /* <lalVerbatim file="SegmentsCP"> */
 int
-XLALSegCmp( const LALSeg *seg0, const LALSeg *seg1 )
+XLALSegCmp( const void *pseg0, const void *pseg1 )
 /* </lalVerbatim> */
 {
   static const char *func = "XLALSegCmp";
+  const LALSeg *seg0 = pseg0;
+  const LALSeg *seg1 = pseg1;
   int cmpstart, cmpend;
 
   /* Make sure non-null pointers were passed for the segments */
