@@ -61,14 +61,14 @@ main(int argc, char **argv)
   INT4 nlist;
   REAL8FrequencySeries shf;
   REAL8 samplingRate, dx0, dx1;
-  void *noisemodel = LALLIGOIPsd;
+  void (*noisemodel)(LALStatus*,REAL8*,REAL8) = LALLIGOIPsd;
   static InspiralCoarseBankIn coarseIn;
   REAL4VectorSequence *list=NULL;
   static InspiralMetric metric;
   static InspiralMomentsEtc moments;
   static InspiralBankParams   bankParams; 
   static CreateVectorSequenceIn in; 
-  UINT4 valid;
+  INT4 valid;
   FILE *fpr;
   fpr = fopen("PNTemplates.out", "w");
 
@@ -168,7 +168,7 @@ main(int argc, char **argv)
   }
   {
     UINT4 j;
-    UINT4 valid;
+    INT4 valid;
   
     static RectangleIn RectIn;
     static RectangleOut RectOut;

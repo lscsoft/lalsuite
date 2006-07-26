@@ -53,7 +53,7 @@ main(int argc, char **argv)
 
   static RectangleIn RectIn;
   static RectangleOut RectOut;
-  void *noisemodel = LALLIGOIPsd;
+  void (*noisemodel)(LALStatus*,REAL8*,REAL8) = LALLIGOIPsd;
 
   UINT4   j, valid, numPSDpts=262144;
   FILE *fpr;

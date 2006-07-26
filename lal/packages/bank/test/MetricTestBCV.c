@@ -44,7 +44,7 @@ main ( void )
   static LALStatus status;
   InspiralTemplate     *params;
   REAL8FrequencySeries    psd;
-  void *(noisemodel) = LALLIGOIPsd;
+  void (*noisemodel)(LALStatus*,REAL8*,REAL8) = LALLIGOIPsd;
   UINT4 numPSDpts = 65536;    
   REAL8 tSampling;
   REAL8 mismatch;

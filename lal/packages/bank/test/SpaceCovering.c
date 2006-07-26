@@ -67,7 +67,7 @@ main(int argc, char **argv)
 /* Number of templates in list1 and list2 */
   INT4 nlist1=0, nlist2=0;
 
-  void *noisemodel = LALLIGOIPsd;
+  void (*noisemodel)(LALStatus*,REAL8*,REAL8) = LALLIGOIPsd;
   UINT4   j, numPSDpts=262144;
   FILE *fpr;
   UserParams userParams;

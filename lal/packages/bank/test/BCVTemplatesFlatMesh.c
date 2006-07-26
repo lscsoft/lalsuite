@@ -141,7 +141,7 @@ main(int argc, char **argv)
   UINT4   nlist, numPSDpts=262144;
   REAL8FrequencySeries shf;
   REAL8 samplingRate;
-  void *noisemodel = LALLIGOIPsd;
+  void (*noisemodel)(LALStatus*,REAL8*,REAL8) = LALLIGOIPsd;
   InspiralMomentsEtc moments;
 
 /* Number of templates is nlist */
@@ -337,7 +337,8 @@ main(int argc, char **argv)
     UINT4 i;
     InspiralBankParams   bankParams; 
     InspiralCoarseBankIn coarseIn;
-    UINT4 valid,k=0;
+    INT4 valid;
+    UINT4 k=0;
     REAL4 *data;
 
     coarseIn.mmCoarse = 0.70;

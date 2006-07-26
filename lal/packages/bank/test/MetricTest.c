@@ -67,7 +67,7 @@ main()
   UINT4  nlist, numPSDpts=65536;
   REAL8FrequencySeries shf;
   REAL8 samplingRate;
-  void *noisemodel = LALLIGOIPsd;
+  void (*noisemodel)(LALStatus*,REAL8*,REAL8) = LALLIGOIPsd;
   InspiralMomentsEtc moments;
   REAL8 mismatch;
   FILE *fpr;

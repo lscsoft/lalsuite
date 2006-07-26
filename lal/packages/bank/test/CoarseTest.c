@@ -131,7 +131,7 @@ main ( void )
    InspiralFineBankIn   *fineIn=NULL;
    INT4 i, j, clist=0, flist=0;
    UINT4 numPSDpts = 262144;
-   void *noisemodel = LALLIGOIPsd;
+   void (*noisemodel)(LALStatus*,REAL8*,REAL8) = LALLIGOIPsd;
    FILE *fpr;
   
    fpr = fopen("CoarseTest.out", "w");

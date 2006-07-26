@@ -66,7 +66,7 @@ main(int argc, char **argv)
 
 
   /*  void *noisemodel = LALLIGOIPsd;*/
-  void *noisemodel = LALVIRGOPsd;
+  void (*noisemodel)(LALStatus*,REAL8*,REAL8) = LALVIRGOPsd;
   UINT4   j, numPSDpts=262144/4/4;
   InspiralTemplate tempPars;
   InspiralMetric metric;
