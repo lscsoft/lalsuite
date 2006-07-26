@@ -92,26 +92,26 @@ int XLALStrToGPS(LIGOTimeGPS *t, const char *nptr, char **endptr)
 	pconv.cs = nptr;
 
 	/* consume leading white space */
-	while(isspace(*nptr))
-		nptr++;
+	while(isspace(*(pconv.cs)))
+		(pconv.cs)++;
 	if(endptr)
 		*endptr  = pconv.s;
 
 	/* determine the sign */
-	if(*nptr == '-') {
+	if(*(pconv.cs) == '-') {
 		sign = -1;
-		nptr++;
-	} else if(*nptr == '+') {
+		(pconv.cs)++;
+	} else if(*(pconv.cs) == '+') {
 		sign = +1;
-		nptr++;
+		(pconv.cs)++;
 	} else
 		sign = +1;
 
 	/* determine the base */
-	if(isbase16(nptr, radix)) {
+	if(isbase16((pconv.cs), radix)) {
 		base = 16;
-		nptr += 2;
-	} else if(isbase10(nptr, radix)) {
+		(pconv.cs) += 2;
+	} else if(isbase10((pconv.cs), radix)) {
 		base = 10;
 	} else {
 		/* this isn't a recognized number */
@@ -125,9 +125,9 @@ int XLALStrToGPS(LIGOTimeGPS *t, const char *nptr, char **endptr)
 	switch(base) {
 	case 10:
 		for(len = 0; 1; len++) {
-			if(isdigit(nptr[len]))
+			if(isdigit((pconv.cs)[len]))
 				continue;
-			if(nptr[len] == radix && radixpos < 0) {
+			if((pconv.cs)[len] == radix && radixpos < 0) {
 				radixpos = len;
 				continue;
 			}
@@ -137,9 +137,9 @@ int XLALStrToGPS(LIGOTimeGPS *t, const char *nptr, char **endptr)
 	
 	case 16:
 		for(len = 0; 1; len++) {
-			if(isxdigit(nptr[len]))
+			if(isxdigit((pconv.cs)[len]))
 				continue;
-			if(nptr[len] == radix && radixpos < 0) {
+			if((pconv.cs)[len] == radix && radixpos < 0) {
 				radixpos = len;
 				continue;
 			}
@@ -152,17 +152,17 @@ int XLALStrToGPS(LIGOTimeGPS *t, const char *nptr, char **endptr)
 	 * if one was found */
 	if(radixpos >= 0) {
 		digits = malloc(len + 1);
-		memcpy(digits, nptr, radixpos);
-		memcpy(digits + radixpos, nptr + radixpos + 1, len - radixpos - 1);
+		memcpy(digits, (pconv.cs), radixpos);
+		memcpy(digits + radixpos, (pconv.cs) + radixpos + 1, len - radixpos - 1);
 		digits[len - 1] = '\0';
-		nptr += len;
+		(pconv.cs) += len;
 		len--;
 	} else {
 		digits = malloc(len + 2);
-		memcpy(digits, nptr, len);
+		memcpy(digits, (pconv.cs), len);
 		digits[len] = '\0';
 		radixpos = len;
-		nptr += len;
+		(pconv.cs) += len;
 	}
 
 	/* check for and parse an exponent, performing an adjustment of the
@@ -171,14 +171,14 @@ int XLALStrToGPS(LIGOTimeGPS *t, const char *nptr, char **endptr)
 	switch(base) {
 	case 10:
 		/* exponent is the number of powers of 10 */
-		if(isdecimalexp(nptr))
-			radixpos += strtol(nptr + 1, &pconv.s, 10);
+		if(isdecimalexp((pconv.cs)))
+			radixpos += strtol((pconv.cs) + 1, &pconv.s, 10);
 		break;
 
 	case 16:
 		/* exponent is the number of powers of 2 */
-		if(isbinaryexp(nptr)) {
-			exppart = strtol(nptr + 1, &pconv.s, 10);
+		if(isbinaryexp((pconv.cs))) {
+			exppart = strtol((pconv.cs) + 1, &pconv.s, 10);
 			radixpos += exppart / 4;
 			exppart %= 4;
 			if(exppart < 0) {
