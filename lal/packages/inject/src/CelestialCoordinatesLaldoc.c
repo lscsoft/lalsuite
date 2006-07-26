@@ -158,3 +158,5 @@ LALEquatorialToEcliptic( LALStatus   *stat,
 			 SkyPosition *output,
 			 SkyPosition *input )
 { </lalVerbatim> */
+
+#include <stddef.h> /* just so the contents aren't empty... */
