@@ -18,7 +18,7 @@ NRCSID( STRINGCONVERTTESTC, "$Id$" );
     istring++;                                                   \
     if (istring >= MAXGPSSTRINGS) {                              \
         fprintf(stderr,"Too many GPS test cases; ABORTING\n");   \
-        exit -1;                                                 \
+        exit(-1);                                                 \
     }                                                            \
     strcpy( gpsString[istring], string );                       \
     gpsOutSec[istring] = sec ;                                   \
