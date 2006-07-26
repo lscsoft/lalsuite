@@ -581,7 +581,7 @@ int print_stack( void )
     if ( ! addr )
       break;
     dladdr( addr, &info );
-    fprintf( stderr, "%s(%s+%p)[%p]\n", info.dli_fname, info.dli_sname, (void*)(addr - info.dli_saddr), addr );
+    fprintf( stderr, "%s(%s+%p)[%p]\n", info.dli_fname, info.dli_sname, (char *)addr - (char *)info.dli_saddr, addr );
   }
   return 0;
 }
