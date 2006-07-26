@@ -213,11 +213,13 @@ int main( int argc, char *argv[] ) {
   /* Good maximum frequency */
   in.maxFreq = 1e3;
 
+  /* JC: DISABLE THIS
   if (test) {
     printf("\nTesting bad detector site...\n");
     in.site->frDetector.vertexLatitudeRadians = 100 * LAL_PI / 180;
     LALPtoleMetric( &status, metric, &in );
   }
+  */
   /* Use GEO600 site. */
   in.site = &lalCachedDetectors[LALDetectorIndexGEO600DIFF];
 

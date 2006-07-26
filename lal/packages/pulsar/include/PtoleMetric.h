@@ -134,7 +134,7 @@ tagPtoleMetricIn
   LIGOTimeGPS    epoch;
   REAL4          duration;
   REAL4          maxFreq;
-  LALDetector    *site;
+  const LALDetector    *site;
   EphemerisData  *ephemeris;
   LALPulsarMetricType metricType;
 }

@@ -231,7 +231,7 @@ typedef struct tagPulsarTimesParamStruc {
 		      about the north pole), in radians. */
   EphemerisData *ephemeris; /* Ephemeris data containing positions, */
                            /* velocities, etc... of Earth and Sun */
-  LALDetector *site;        /* The particular detector under consideration */
+  const LALDetector *site;        /* The particular detector under consideration */
 
   void (*t1)( LALStatus *, REAL8 *, REAL8Vector *,
 	      struct tagPulsarTimesParamStruc * );

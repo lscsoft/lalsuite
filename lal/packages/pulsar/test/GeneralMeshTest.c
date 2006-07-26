@@ -565,7 +565,7 @@ void getMetric( LALStatus *stat,
     {
       printf( "%s line %d: %s\n", __FILE__, __LINE__,
 	      GENERALMESHTESTC_MSGEMET );
-      return GENERALMESHTESTC_EMET;
+      return;
     }
 
 

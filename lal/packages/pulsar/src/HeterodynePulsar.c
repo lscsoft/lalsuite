@@ -406,7 +406,8 @@ LALFineHeterodyneToPulsar ( LALStatus                      *status,
   f1 = input->f1;
   f2 = input->f2;
  
-  orbit.model = input->model;
+  /* JC: THIS BETTER NOT DO ANYTHING ... BECAUSE IT IS A SYNTAX ERROR! */
+  /* orbit.model = input->model; */
 
  /* if (orbit.model != 0)
   {

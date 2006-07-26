@@ -20,7 +20,7 @@ NRCSID (TSDATAC,"$Id$");
  *Extra diagnostic code
  */
 /* Non Compliant code taken from EPSearch.c */
-const void print_real4fseries(const REAL4FrequencySeries *fseries,const char *file)
+static void print_real4fseries(const REAL4FrequencySeries *fseries,const char *file)
 {
 #if 0
   /* FIXME: why can't the linker find this function? */
