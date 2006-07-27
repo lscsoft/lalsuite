@@ -566,7 +566,7 @@ LALReadTEMPOParFile(  LALStatus *status,
   while(1){
     j=i;
     if(!strcmp(val[i], "NAME") || !strcmp(val[i], "name")){
-      output->name = strdup(val[i+1]);
+      output->name = XLALStringDuplicate(val[i+1]);
       j++;
     }
     else if(!strcmp(val[i],"ra") || !strcmp(val[i],"RA") || !strcmp(val[i],"RAJ")){
@@ -713,7 +713,7 @@ LALReadTEMPOParFile(  LALStatus *status,
     }
     else if( !strcmp(val[i],"binary") || !strcmp(val[i],"BINARY")) {
       /*sprintf(output->model, "%s", val[j+1]);*/
-      output->model = strdup(val[i+1]);
+      output->model = XLALStringDuplicate(val[i+1]);
       j++;
     }
     else if( !strcmp(val[i],"a1") || !strcmp(val[i],"A1")) {
@@ -972,7 +972,7 @@ REAL8 LALDegsToRads(CHAR *degs, CHAR *coord){
     m = atoi(mc);
 
     /* copy seconds part to sc */
-    sc = strdup(loc+4);
+    sc = XLALStringDuplicate(loc+4);
     s = atof(sc);
   }
   /* if in format hh/ddmmss.ss */
@@ -981,7 +981,7 @@ REAL8 LALDegsToRads(CHAR *degs, CHAR *coord){
     loc = strchr(degs, '.');
 
     /* get seconds part */
-    sc = strdup(loc-2);
+    sc = XLALStringDuplicate(loc-2);
     s = atof(sc);
 
     /* get minutes part */
