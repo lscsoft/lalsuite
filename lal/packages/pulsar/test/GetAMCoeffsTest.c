@@ -113,6 +113,7 @@ int main(int argc, char *argv[])
   UINT4 i;
   REAL8 maxerr_a, maxerr_b, averr_a, averr_b;
   REAL8 tolerance = 1e-2;	/* be generous: allow 1% error */
+  struct tms buf;
 
   const CHAR *sites[] = {"H1", "L1", "V1", "G1", "T1" };
   UINT4 pickedSite;
@@ -123,7 +124,7 @@ int main(int argc, char *argv[])
 
 
   /* init random-generator */
-  srand ( times(NULL) );
+  srand ( times(&buf) );
 
   /* ----- init ephemeris ----- */
   edat.ephiles.earthEphemeris = "earth00-04.dat";
