@@ -180,7 +180,7 @@ int main(int argc, char *argv[])
     phi0 = 1;
     SUB ( LALExtrapolatePulsarPhase ( &status, &phi1, spins1, epoch1, phi0, epoch0 ), &status );
 
-    printf ("\nExtrapolated phase phi1 = %f, Reference-result = %f\n", phi1, phi1Result );
+    printf ("\nExtrapolated phase phi1 = %.16f, Reference-result = %.16f\n", phi1, phi1Result );
     if ( RELERROR(phi1, phi1Result) > tolerance ) 
       {
 	LALPrintError ( "\nRelative error of LALExtrapolatePulsarPhase() exceeds tolerance of %g \n\n",
