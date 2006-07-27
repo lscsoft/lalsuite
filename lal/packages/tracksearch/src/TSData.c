@@ -999,7 +999,7 @@ void WriteMap(
  */
 void DumpTFImage(
 		 REAL4         **image,
-		 CHAR           *filename,
+		 const CHAR           *filename,
 		 INT4           height,
 		 INT4           width,
 		 BOOLEAN        killNeg
@@ -1131,7 +1131,7 @@ void DumpTFImage(
  */
 void DumpTFImageCHAR(
 		     CHAR         **image,
-		     CHAR           *filename,
+		     const CHAR           *filename,
 		     INT4           height,
 		     INT4           width,
 		     BOOLEAN        killNeg
@@ -1252,7 +1252,7 @@ void DumpTFImageCHAR(
  */
 void DumpREAL8KernelMask(
 			 REAL8      *kernel,
-			 CHAR       *filename,
+			 const CHAR       *filename,
 			 INT4        ksize
 			 )
 {
