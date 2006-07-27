@@ -77,6 +77,7 @@
 #include <math.h>
 #include <lal/LALConstants.h>
 #include <lal/LALStdlib.h>
+#include <lal/LALString.h>
 
 #define DAYSTOSECS 86400.0 /* number of seconds in a day */
 
@@ -945,7 +946,7 @@ LALReadTEMPOParFile(  LALStatus *status,
 
 /* function converts dec or ra from format dd/hh:mm:ss.sss or format 
    dd/hhmmss.ss to radians */
-REAL8 LALDegsToRads(CHAR *degs, CHAR *coord){
+REAL8 LALDegsToRads(CHAR *degs, const CHAR *coord){
   REAL8 radians=0.;
   INT4 d, m;
   REAL8 s;

@@ -228,7 +228,7 @@ LALReadTEMPOParFile( LALStatus              *status,
    degs is the string containing the dd/hh:mm:ss.sss
    coords is either ra/RA or dec/DEC                                */
 REAL8
-LALDegsToRads(CHAR *degs, CHAR *coords);
+LALDegsToRads(CHAR *degs, const CHAR *coords);
 
 /* functions for converting times given in Terrestrial time TT or TDB in MJD to
 times in GPS - this is important for epochs given in .par files which are in
