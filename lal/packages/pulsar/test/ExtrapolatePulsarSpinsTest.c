@@ -87,6 +87,7 @@ int main(int argc, char *argv[])
   REAL8Vector *fkdot0 = NULL; 
   REAL8Vector *fkdot1 = NULL;
   REAL8 tolerance = 1.0e-12;
+  REAL8 tolerancePhi = 1.0e-6;
   PulsarSpins spins0, spins1;
 
   LALPulsarSpinRange *range0, *range2;
@@ -181,15 +182,15 @@ int main(int argc, char *argv[])
     SUB ( LALExtrapolatePulsarPhase ( &status, &phi1, spins1, epoch1, phi0, epoch0 ), &status );
 
     printf ("\nExtrapolated phase phi1 = %.16f, Reference-result = %.16f\n", phi1, phi1Result );
-    if ( RELERROR(phi1, phi1Result) > tolerance ) 
+    if ( RELERROR(phi1, phi1Result) > tolerancePhi ) 
       {
 	LALPrintError ( "\nRelative error of LALExtrapolatePulsarPhase() exceeds tolerance of %g \n\n",
-			tolerance);
+			tolerancePhi);
 	return -1;
       }
     else
       printf ("\n ==> OK. LALExtrapolatePulsarPhase() lies within %g of the reference-result!\n",
-	      tolerance);
+	      tolerancePhi);
   }
 
   /* ----- now test LALExtrapolatePulsarSpinRange() ----- */
