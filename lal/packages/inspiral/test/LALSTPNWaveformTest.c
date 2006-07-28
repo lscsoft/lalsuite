@@ -40,7 +40,7 @@ int main(int argc,char **argv) {
     SimInspiralTable    injParams;
     PPNParamStruc       ppnParams;
 
-    char        *filename = "wave1.dat";
+    const char        *filename = "wave1.dat";
     FILE        *outputfile;
     INT4        i,length;
     REAL8       dt;
