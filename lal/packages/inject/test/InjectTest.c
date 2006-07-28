@@ -1133,6 +1133,7 @@ InjectWaveforms( LALStatus        *stat,
   BOOLEAN ok;               /* whether current line is okay */
   CoherentGWNode *here;     /* current source in list */
   REAL4TimeSeries input;    /* input data */
+  static LALDetector site;
   memset( &input, 0, sizeof(REAL4TimeSeries) );
 
   /* Line must have 4 arguments iff input is read from a file, and
@@ -1149,26 +1150,21 @@ InjectWaveforms( LALStatus        *stat,
 
   /* Set detector location. */
   token = tokens->tokens;
+  detector->site = &site;
   if ( !strcmp( *token, "-" ) )
     detector->site = NULL;
   else if ( !strcmp( *token, "LHO" ) )
-    detector->site = (LALDetector *)
-      ( lalCachedDetectors + LALDetectorIndexLHODIFF );
+    site = lalCachedDetectors[LALDetectorIndexLHODIFF];
   else if ( !strcmp( *token, "LLO" ) )
-    detector->site = (LALDetector *)
-      ( lalCachedDetectors + LALDetectorIndexLLODIFF );
+    site = lalCachedDetectors[LALDetectorIndexLLODIFF];
   else if ( !strcmp( *token, "VIRGO" ) )
-    detector->site = (LALDetector *)
-      ( lalCachedDetectors + LALDetectorIndexVIRGODIFF );
+    site = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
   else if ( !strcmp( *token, "GEO600" ) )
-    detector->site = (LALDetector *)
-      ( lalCachedDetectors + LALDetectorIndexGEO600DIFF );
+    site = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
   else if ( !strcmp( *token, "TAMA300" ) )
-    detector->site = (LALDetector *)
-      ( lalCachedDetectors + LALDetectorIndexTAMA300DIFF );
+    site = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
   else if ( !strcmp( *token, "CIT40" ) )
-    detector->site = (LALDetector *)
-      ( lalCachedDetectors + LALDetectorIndexCIT40DIFF );
+    site = lalCachedDetectors[LALDetectorIndexCIT40DIFF];
   else {
     LALSnprintf( msg, MSGLEN, "%s Unreognized detector %s"
 		 " (skipping line)", tag, *token );
