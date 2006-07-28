@@ -24,20 +24,6 @@ RCSID( "$Id$");
 #define AD_ALIGN64 ".align 64"
 #endif
 
-#ifndef CPU_TYPE_S
-#define CPU_TYPE_S "0"
-#endif
-
-/* Lookup tables for fast sin/cos calculation */
-static REAL8 sinVal[LUT_RES+1];
-static REAL8 sinVal2PI[LUT_RES+1];
-static REAL8 sinVal2PIPI[LUT_RES+1];
-static REAL8 cosVal[LUT_RES+1];
-static REAL8 cosVal2PI[LUT_RES+1];
-static REAL8 cosVal2PIPI[LUT_RES+1];
-static REAL8 diVal[LUT_RES+1];
-static BOOLEAN sincos_initialized = 1; /* reset after initializing the sin/cos tables */
-
 void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params) 
 { 
 
@@ -93,28 +79,6 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
   deltaF=(*input)->fft->deltaF;
   nDeltaF=(*input)->fft->data->length;
 
-  /* res=10*(params->mCohSFT); */
-  /* This size LUT gives errors ~ 10^-7 with a three-term Taylor series */
-  /* using three tables with values including PI is simply faster than doing
-     the multiplications in the taylor expansion*/
-  if ( sincos_initialized )
-    {
-      for (k=0; k <= LUT_RES; k++) {
-        sinVal[k]      = sin((LAL_TWOPI*k)/(LUT_RES));
-        sinVal2PI[k]   = sinVal[k]    * LAL_TWOPI;
-        sinVal2PIPI[k] = sinVal2PI[k] * LAL_PI;
-        cosVal[k]      = cos((LAL_TWOPI*k)/(LUT_RES));
-        cosVal2PI[k]   = cosVal[k]    * LAL_TWOPI;
-        cosVal2PIPI[k] = cosVal2PI[k] * LAL_PI;
-      }
-
-      /* this additional table saves a "costly" division in sin/cos calculation */
-      for (k=0; k <= LUT_RES; k++)
-        diVal[k] = (REAL8)k/(REAL8)(LUT_RES);
-
-      sincos_initialized = 0;
-    }
-
   /* this loop computes the values of the phase model */
   xSum=(REAL8 *)LALMalloc(params->SFTno*sizeof(REAL8));
   ySum=(REAL8 *)LALMalloc(params->SFTno*sizeof(REAL8));
@@ -129,6 +93,8 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
     }
   }
 
+  if ( sincos_initialized )
+    initialize_sincos();
 
   /* Loop over frequencies to be demodulated */
   for(i=0 ; i< params->imax  ; i++ )

@@ -24,8 +24,47 @@ extern UINT4 maxSFTindex;  /**< maximal sftindex, for error-checking */
 #define TWOPI_FLOAT     6.28318530717958f  /* 2*pi */
 #define OOTWOPI_FLOAT   (1.0f / TWOPI_FLOAT)	/* 1 / (2pi) */ 
 
+#ifndef CPU_TYPE
+#define CPU_TYPE 0
+#endif
 
-/* in case of the (now almost obsolete) hand-coded AltiVec version (and and experimental hook),
+
+/* include this only once */
+#if (CPU_TYPE == 0)
+/* Lookup tables for fast sin/cos calculation */
+static REAL8 sinVal[LUT_RES+1];
+static REAL8 sinVal2PI[LUT_RES+1];
+static REAL8 sinVal2PIPI[LUT_RES+1];
+static REAL8 cosVal[LUT_RES+1];
+static REAL8 cosVal2PI[LUT_RES+1];
+static REAL8 cosVal2PIPI[LUT_RES+1];
+static REAL8 diVal[LUT_RES+1];
+static BOOLEAN sincos_initialized = 1; /* reset after initializing the sin/cos tables */
+
+/* res=10*(params->mCohSFT); */
+/* This size LUT gives errors ~ 10^-7 with a three-term Taylor series */
+/* using three tables with values including PI is simply faster than doing
+   the multiplications in the taylor expansion*/
+void initialize_sincos() {
+  for (k=0; k <= LUT_RES; k++) {
+    sinVal[k]      = sin((LAL_TWOPI*k)/(LUT_RES));
+    sinVal2PI[k]   = sinVal[k]    * LAL_TWOPI;
+    sinVal2PIPI[k] = sinVal2PI[k] * LAL_PI;
+    cosVal[k]      = cos((LAL_TWOPI*k)/(LUT_RES));
+    cosVal2PI[k]   = cosVal[k]    * LAL_TWOPI;
+    cosVal2PIPI[k] = cosVal2PI[k] * LAL_PI;
+  }
+  
+  /* this additional table saves a "costly" division in sin/cos calculation */
+  for (k=0; k <= LUT_RES; k++)
+    diVal[k] = (REAL8)k/(REAL8)(LUT_RES);
+  
+  sincos_initialized = 0;
+}
+#endif /* (CPU_TYPE == 0) */
+
+
+/* in case of the hand-coded AltiVec version (and and experimental hook),
    don't use TestLALDemod() below, but the one in external file */
 #if defined(USE_SSE_GAS)
 #include "CFSLALDemod_SSEgas.c"
