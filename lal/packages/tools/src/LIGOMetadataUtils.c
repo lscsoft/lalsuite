@@ -480,8 +480,8 @@ LALCompareSearchSummaryByOutTime (
 {
   LALStatus     status;
 
-  const SearchSummaryTable *aPtr = *((SearchSummaryTable * const *)a);
-  const SearchSummaryTable *bPtr = *((SearchSummaryTable * const *)b);
+  const SearchSummaryTable *aPtr = *((const SearchSummaryTable * const *)a);
+  const SearchSummaryTable *bPtr = *((const SearchSummaryTable * const *)b);
 
   INT8 ta = 0;
   INT8 tb = 0;
@@ -897,8 +897,8 @@ LALCompareSummValueByTime (
 {
   LALStatus     status;
 
-  const SummValueTable *aPtr = *((SummValueTable * const *)a);
-  const SummValueTable *bPtr = *((SummValueTable * const *)b);
+  const SummValueTable *aPtr = *((const SummValueTable * const *)a);
+  const SummValueTable *bPtr = *((const SummValueTable * const *)b);
 
   INT8 ta = 0;
   INT8 tb = 0;
