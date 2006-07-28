@@ -24,6 +24,10 @@ RCSID( "$Id$");
 #define AD_ALIGN64 ".align 64"
 #endif
 
+#ifndef CPU_TYPE_S
+#define CPU_TYPE_S "0"
+#endif
+
 /* Lookup tables for fast sin/cos calculation */
 static REAL8 sinVal[LUT_RES+1];
 static REAL8 sinVal2PI[LUT_RES+1];
@@ -32,6 +36,7 @@ static REAL8 cosVal[LUT_RES+1];
 static REAL8 cosVal2PI[LUT_RES+1];
 static REAL8 cosVal2PIPI[LUT_RES+1];
 static REAL8 diVal[LUT_RES+1];
+static BOOLEAN sincos_initialized = 1; /* reset after initializing the sin/cos tables */
 
 void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params) 
 { 
@@ -58,16 +63,11 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
   COMPLEX16 Fa, Fb;
   REAL8 f;
 
-#ifdef USE_BOINC
-#define klim 32
-#else
-  UINT4 klim = 2*params->Dterms;
-#endif
+#define klim 32                 /* this actually is only a hint. The assembler Kernel loop
+				   doesn't use this value at all, but relies on it being 32 */ 
 
   REAL4 tsin, tcos;
   REAL4 realP, imagP;
-
-  static BOOLEAN firstCall = 1; /* reset after initializing the sin/cos tables */
 
   REAL8 A=params->amcoe->A;
   REAL8 B=params->amcoe->B;
@@ -94,7 +94,9 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 
   /* res=10*(params->mCohSFT); */
   /* This size LUT gives errors ~ 10^-7 with a three-term Taylor series */
-  if ( firstCall )
+  /* using three tables with values including PI is simply faster than doing
+     the multiplications in the taylor expansion*/
+  if ( sincos_initialized )
     {
       for (k=0; k <= LUT_RES; k++) {
         sinVal[k]      = sin((LAL_TWOPI*k)/(LUT_RES));
@@ -109,7 +111,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
       for (k=0; k <= LUT_RES; k++)
         diVal[k] = (REAL8)k/(REAL8)(LUT_RES);
 
-      firstCall = 0;
+      sincos_initialized = 0;
     }
 
   /* this loop computes the values of the phase model */
@@ -135,7 +137,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
     Fb.re =0.0;
     Fb.im =0.0;
 
-    f=params->f0+i*params->df;
+    f = params->f0 + i*params->df;
 
     /* Loop over SFTs that contribute to F-stat for a given frequency */
     for(alpha=0;alpha<params->SFTno;alpha++)
@@ -160,9 +162,6 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
                      i, xTemp, f, alpha, tempInt1[alpha]);
             fprintf (stderr, "DEBUG: skyConst[ tempInt1[ alpha ] ] = %f, xSum[ alpha ]=%f\n",
                      skyConst[ tempInt1[ alpha ] ], xSum[ alpha ]);
-#ifndef USE_BOINC
-            fprintf (stderr, "\n*** PLEASE report this bug to pulgroup@gravity.phys.uwm.edu *** \n\n");
-#endif
             exit (COMPUTEFSTAT_EXIT_DEMOD);
         }
         if (xTemp < 0) {
@@ -171,9 +170,6 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
                      i, xTemp, f, alpha, tempInt1[alpha]);
             fprintf (stderr, "DEBUG: skyConst[ tempInt1[ alpha ] ] = %f, xSum[ alpha ]=%f\n",
                      skyConst[ tempInt1[ alpha ] ], xSum[ alpha ]);
-#ifndef USE_BOINC
-            fprintf (stderr, "\n*** PLEASE report this bug to pulgroup@gravity.phys.uwm.edu *** \n\n");
-#endif
             exit (COMPUTEFSTAT_EXIT_DEMOD);
         }
 
@@ -230,6 +226,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
           __asm __volatile
       (
        /* calculation of tsin and tcos */
+       /* ---------------------------- */
          
        /* calculate index and put into EAX */
        /*                                    vvvvv-- these comments keep track of the FPU stack */
@@ -263,10 +260,8 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        /* calculate d = x - diVal[idx] in st(0) */
        "fsubl  %[diVal](,%%eax,8)     \n\t" /* (d = x - diVal[i]) */
        
-       /* copy d on the stack to prepare for calculating d*d */
+       /* this calculates d*d */ 
        "fld    %%st(0)                \n\t" /* d d */
-       
-       /* this calculates d*d on _top_ of the stack */ 
        "fmul   %%st(0),%%st(0)        \n\t" /* (d*d) d */
        
        /* three-term Taylor expansion for sin value, leaving d and d*d on stack, idx kept in eax */
@@ -281,7 +276,6 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        
        /* calculation for cos value, this time popping the stack */
        /* this ordering mimics the calculation of cos as done by gcc (4.1.0)  */
-       
        "fmull %[cosVal2PIPI](,%%eax,8)\n\t" /* (d*d*cosVal2PIPI[i]) d */
        "fsubrl %[cosVal](,%%eax,8)    \n\t" /* (cosVal[i]-d*d*cosVal2PIPI[i]) d */
        "fxch                          \n\t" /* d (cosVal[i]-d*d*cosVal2PIPI[i]) d */
@@ -302,7 +296,8 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        
 
        /* calculating yRem */
-       
+       /* ---------------- */
+
        "fldl   %[yTemp]               \n\t" /* yT */
        /* it requires some mind-bending to come from the algorithm used in the USE_FLOOR case
           of the yRem calculation in the C code below (in case yTemp < 0) to the case distinction
@@ -310,7 +305,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
           Hints:  yTemp<0 => yRem = yTemp - ceil(yTemp) + 1.0;
                   y<0 => ceil(y) = ((y-(int)y)<-.5) ? ((int)y-1.0) : ((int)y)
                   -1.0 + 1.0 = 0; 0 + 1.0 = +1.0 */
-       /* The two cases (yTemp < 0) and (yTemp >= 0) then come out identical,
+       /* Surprisingly the two cases (yTemp < 0) and (yTemp >= 0) then come out identical,
 	  so a case distinction is unnecessary. Furthermore this case turns out to be the
 	  same code independent of relying on the default rounding mode or not */
        "fistl  %[yRem]                \n\t" /* yT */
@@ -318,12 +313,14 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        "fsts   %[yRem]                \n\t" /* yT-(int)yT */ /* we will check the sign in integer registers */
        "sub    %%eax,%%eax            \n\t" /* yT-(int)yT */ /* EAX=0 */
        "orl    %[yRem],%%eax          \n\t" /* yT-(int)yT */ /* sets the S (sign) flag */
-       "jns    sincos3                \n\t" /* yT-(int)yT */ /* */
+       "jns    yrem" CPU_TYPE_S      "\n\t" /* yT-(int)yT */ /* append the CPU_TYPE to label to allow more instances */
        "fadds  %[one]                 \n"   /* (yT-(int)yT+1) */
-       "sincos3:                      \n\t" /* yR */
+       "yrem" CPU_TYPE_S ":           \n\t" /* yR */
        
        /* calculation of realQ and imagQ */
-       /* yRem still in st(0), following named x */
+       /* ------------------------------ */
+
+       /* yRem is still in st(0), following named x */
        /* see also comments in calculation of tsin and tcos */
        
        "flds   %[lutr]                \n\t" /* LUT_RES x */
@@ -561,9 +558,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
         else /* if ( tempFreq0 >= LD_SMALL ) */
     
           {
-            fprintf(stderr,"small x\n");
-            
-            /* C version of the same calculations */
+	    /* C version of the sin/cos calculations */
 
             /* calculation of tsin and tcos */
             {
