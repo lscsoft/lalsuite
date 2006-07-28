@@ -71,7 +71,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
   static REAL8 cosVal2PI[LUT_RES+1];
   static REAL8 cosVal2PIPI[LUT_RES+1];
   static REAL8 diVal[LUT_RES+1];
-  static BOOLEAN firstCall = 1; /* reset after initializing the sin/cos tables */
+  static BOOLEAN sincos_initialized = 1; /* reset after initializing the sin/cos tables */
 
   REAL8 A=params->amcoe->A;
   REAL8 B=params->amcoe->B;
@@ -99,7 +99,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
   /* res=10*(params->mCohSFT); */
   /* This size LUT gives errors ~ 10^-7 with a three-term Taylor series */
   /* using three tables with values including PI is simply faster */
-  if ( firstCall )
+  if ( sincos_initialized )
     {
       for (k=0; k <= LUT_RES; k++) {
         sinVal[k]      = sin((LAL_TWOPI*k)/(LUT_RES));
@@ -114,7 +114,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
       for (k=0; k <= LUT_RES; k++)
         diVal[k] = (REAL8)k/(REAL8)(LUT_RES);
 
-      firstCall = 0;
+      sincos_initialized = 0;
     }
 
   /* this loop computes the values of the phase model */
