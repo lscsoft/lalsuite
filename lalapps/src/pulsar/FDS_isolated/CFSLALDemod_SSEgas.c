@@ -63,7 +63,8 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
   COMPLEX16 Fa, Fb;
   REAL8 f;
 
-#define klim 32                 /* this actually is only a hint. The assembler Kernel loop
+  UINT4 klim = 2*params->Dterms;
+  /* #define klim 32                 /* this actually is only a hint. The assembler Kernel loop
 				   doesn't use this value at all, but relies on it being 32 */ 
 
   REAL4 tsin, tcos;
@@ -558,6 +559,8 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
         else /* if ( tempFreq0 >= LD_SMALL ) */
     
           {
+	    fprintf(stderr,"small x\n");
+	    
 	    /* C version of the sin/cos calculations */
 
             /* calculation of tsin and tcos */
