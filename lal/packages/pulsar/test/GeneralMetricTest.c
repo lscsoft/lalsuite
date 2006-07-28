@@ -193,6 +193,8 @@ int main( int argc, char *argv[] ) {
   REAL8           determinant;      /* Determinant of projected metric */
   REAL4           f0;               /* carrier frequency */
   UINT2           numSpindown;      /* Number of spindowns */
+  char earth[] = "earth00-04.dat";
+  char sun[] = "sun00-04.dat";
 
   /* Defaults that can be overwritten: */
   metric_code = 1;
@@ -339,8 +341,8 @@ int main( int argc, char *argv[] ) {
 
    /* Read in ephemeris data from files: */
    eph = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
-   eph->ephiles.earthEphemeris = "earth00-04.dat";
-   eph->ephiles.sunEphemeris = "sun00-04.dat";
+   eph->ephiles.earthEphemeris = earth;
+   eph->ephiles.sunEphemeris = sun;
    eph->leap = 13; /* right number for the years 2000-2004 */
    LALInitBarycenter( &status, eph );
    if( status.statusCode )

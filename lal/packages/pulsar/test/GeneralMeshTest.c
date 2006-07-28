@@ -197,6 +197,8 @@ int main( int argc, char **argv )
                                   /* 3 = Virgo,  4 = GEO,  5 = TAMA */
   float a, b, c, d, e, f;         /* To specify center of search region */
   BOOLEAN rectangular;            /* is the search region rectangular? */
+  char earth[] = "earth00-04.dat";
+  char sun[] = "sun00-04.dat";
   
   
   /* Set default values. */
@@ -370,8 +372,8 @@ int main( int argc, char **argv )
 
   /* Read in ephemeris data from files: */
   eph = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
-  eph->ephiles.earthEphemeris = "earth00-04.dat";
-  eph->ephiles.sunEphemeris = "sun00-04.dat";
+  eph->ephiles.earthEphemeris = earth;
+  eph->ephiles.sunEphemeris = sun;
   eph->leap = 13; /* OK for 2000-2004 */
  
 

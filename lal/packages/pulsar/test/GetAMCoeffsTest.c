@@ -117,6 +117,8 @@ int main(int argc, char *argv[])
 
   const CHAR *sites[] = {"H1", "L1", "V1", "G1", "T1" };
   UINT4 pickedSite;
+  char earthEphem[] = "earth00-04.dat";
+  char sunEphem[] = "sun00-04.dat";
 
   lalDebugLevel = 0;
   if ( argc == 2 && !strcmp(argv[1], "-v1") )
@@ -127,8 +129,8 @@ int main(int argc, char *argv[])
   srand ( times(&buf) );
 
   /* ----- init ephemeris ----- */
-  edat.ephiles.earthEphemeris = "earth00-04.dat";
-  edat.ephiles.sunEphemeris = "sun00-04.dat";
+  edat.ephiles.earthEphemeris = earthEphem;
+  edat.ephiles.sunEphemeris = sunEphem;
   edat.leap = 0;
   SUB ( LALInitBarycenter(&status, &edat), &status);
 

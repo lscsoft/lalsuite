@@ -107,6 +107,8 @@ int main(void)
   FineHeterodyneParams fineParams;
   EphemerisData *edat = NULL;
   UINT4 itmp;
+  char earth[] = "earth00.dat";
+  char sun[] = "sun00.dat";
   
 
   /******* ALLOCATE MEMORY *************/
@@ -307,8 +309,8 @@ if ( ! lalNoDebug ) {
   
   edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));    
    
-  (*edat).ephiles.earthEphemeris = "earth00.dat";
-  (*edat).ephiles.sunEphemeris = "sun00.dat";
+  (*edat).ephiles.earthEphemeris = earth;
+  (*edat).ephiles.sunEphemeris = sun;
   (*edat).leap = 12;
   
   LALInitBarycenter(&status, edat);
