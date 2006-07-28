@@ -87,6 +87,15 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
+/* hack to get around problem in regex.h */
+#ifdef __GLIBC__
+#ifdef __restrict_arr
+#undef __restrict_arr
+#endif
+#define __restrict_arr
+#endif
+
 #include <regex.h>
 #include <glob.h>
 
