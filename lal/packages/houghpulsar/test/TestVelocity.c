@@ -103,8 +103,10 @@ INT4 lalDebugLevel=7;
 
 /* Locations of the earth and sun ephemeris data */
 
-#define EARTHDATA "earth00-04.dat" 
-#define SUNDATA "sun00-04.dat" 
+#define EARTHDATAFILE "earth00-04.dat" 
+#define SUNDATAFILE "sun00-04.dat" 
+char EARTHDATA[] = EARTHDATAFILE;
+char SUNDATA[] = SUNDATAFILE;
 
 /* Usage format string.  */
 #define USAGE "Usage: %s [-d debuglevel] [-a accuracy]\n"

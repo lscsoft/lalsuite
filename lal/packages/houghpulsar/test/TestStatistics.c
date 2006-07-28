@@ -140,7 +140,7 @@ int main(int argc, char *argv[]){
   static HoughStats      stats;
   static UINT8Vector     hist;
 
-  CHAR   *fname = NULL;               /* The output filename */
+  const CHAR   *fname = NULL;               /* The output filename */
   INT4   arg;                         /* Argument counter */
   INT4   i;
   FILE   *fp=NULL;                    /* Output file */  
