@@ -121,9 +121,6 @@ NRCSID( FRAMESTREAMC, "$Id$" );
  *
  */
 
-#ifndef MAXHOSTNAMELEN
-#define MAXHOSTNAMELEN 256
-#endif
 
 
 #include <errno.h>
@@ -132,6 +129,9 @@ NRCSID( FRAMESTREAMC, "$Id$" );
 #define STR( x ) #x
 #define XSTR( x ) STR( x )
 #define MAXPROTOCOLLEN 16
+#ifndef MAXHOSTNAMELEN
+#define MAXHOSTNAMELEN 256
+#endif
 
 
 /*
