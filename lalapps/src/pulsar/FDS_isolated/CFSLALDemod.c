@@ -46,6 +46,8 @@ static BOOLEAN sincos_initialized = 1; /* reset after initializing the sin/cos t
 /* using three tables with values including PI is simply faster than doing
    the multiplications in the taylor expansion*/
 void initialize_sincos() {
+  UINT4 k;
+
   for (k=0; k <= LUT_RES; k++) {
     sinVal[k]      = sin((LAL_TWOPI*k)/(LUT_RES));
     sinVal2PI[k]   = sinVal[k]    * LAL_TWOPI;
