@@ -272,7 +272,9 @@ int main(int argc,char *argv[])
 
  if (CommandLineArgs.cluster != 0.0 && events) 
    {
+
      XLALClusterSnglBurstTable(&events, XLALCompareStringBurstByTime, XLALCompareStringBurstByTime, XLALStringBurstCluster);
+
      LALSortSnglBurst(&status, &events, XLALCompareSnglBurstByPeakTimeAndSNR);
      TESTSTATUS( &status );
    }
