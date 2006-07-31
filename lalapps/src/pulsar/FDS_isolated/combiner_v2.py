@@ -30,11 +30,15 @@ parser.add_option("-r", "--resultfile", dest="resultfile",
 parser.add_option("-n", "--includefnames", dest="includefnames",
                   help="Ask your intention whether to include each result filename.",
 		  default=1)
+parser.add_option("-d", "--datastretchID", dest="datastretchID",
+                  help="Give data-stretch ID of files to process.",
+                  default="5515")
 parser.add_option("-v", "--verbose", dest="vrbflg",
                   help="Ask your intention for safety.",
 		  default=1)
 (options, args) = parser.parse_args()
 
+datastretchID=options.datastretchID
 inclfnames=options.includefnames
 vrbflg=options.vrbflg
 
@@ -159,7 +163,7 @@ def appendfile(fromfile="",tofile=sys.stdout):
 ## Ask intention
 if os.path.isfile(resultfile):		
    print "Current size of the result file."
-   os.system("du -h "+resultfile)
+   os.system("du -hs "+resultfile)
    if vrbflg == 1:
        uinput=raw_input("Do you want to delete [d] the existing result file or append [a] results to it?:[d/a]")
        if uinput is "d":
@@ -170,7 +174,7 @@ if os.path.isfile(resultfile):
            sys.exit()
    
 print "size of the target directory before unzip (if it is a zipped file)"
-os.system("du -h "+targetdir+" | tail -n 1")
+os.system("du -hs "+targetdir+" | tail -n 1")
 if vrbflg == 1:
     uinput=raw_input("Are you sure to proceed?:[y/n]")
     if uinput is "y":
@@ -182,37 +186,44 @@ if vrbflg == 1:
 ##---------------------------------------------------------------
 ## Main 
 
+##datastretchIDs=[5515, 5538, 5613, 5653, 5783, 5813, 5828, 5946, 5955, 6102, 6120, 6126, 6130, 6341, 6497, 6514, 6537]
+
 ## This loop separates files.
 for parentdir, childdirs, files in os.walk(targetdir):
     for file in files:              # For each file under the targetdir,
-	if file is not []:          # If there is a file, 
-	   copiedfile=workdir+file  
-	   targetfile=os.path.join(parentdir,file)   
-	   shutil.copy2(targetfile,copiedfile) # Copy file to working dir.
-           f=open(copiedfile,'r')
-           buff=f.read(2);
-           f.close()
-           if buff == 'PK':
-               zipfilename=copiedfile+"_tmp.zip"   
-               shutil.move(copiedfile,zipfilename)
-               os.system("unzip -qa "+zipfilename)   # Unzip the copied file
-               os.remove(zipfilename)
-               shutil.move(copiedfile, tmpdir)
-           else:
-               pass  # if the file already unzipped, do nothing. 
-            
-## This loop add various information to files.
+        if file is not []:          # If there is a file,
+        ## work only data-stretch after data-stretch ##
+            myfp = os.popen("/export1/people/hpletsch/opt/lal/src/lalapps/src/pulsar/FDS_isolated/dumpWUparams -i %s" % file)
+            thisdatastretch=myfp.read(4)
+            if thisdatastretch == datastretchID:
+                copiedfile=workdir+file  
+                targetfile=os.path.join(parentdir,file)   
+                shutil.copy2(targetfile,copiedfile) # Copy file to working dir.
+                f=open(copiedfile,'r')
+                buff=f.read(2);
+                f.close()
+                if buff == 'PK':
+                    zipfilename=copiedfile+"_tmp.zip"   
+                    shutil.move(copiedfile,zipfilename)
+                    os.system("unzip -qa "+zipfilename)   # Unzip the copied file
+                    os.remove(zipfilename)
+                    shutil.move(copiedfile, tmpdir)
+                else:
+                    shutil.move(copiedfile, tmpdir)
+                    pass  # if the file already unzipped, do nothing. 
+
+##This loop add various information to files.
 
 fileid=0
 for parentdir, childdirs, files in os.walk(tmpdir):
     for file in files:              # For each file under the targetdir,
-	if file is not []:          # If there is a file, 
-	   targetfile=os.path.join(parentdir,file)
-	   deleteinfo(targetfile=targetfile,label="%")
-           addinfoToEachRaw(targetfile=targetfile,info=str(fileid))
-           if inclfnames == 1:
-               addinfoToEachRaw(targetfile=targetfile,info=str(file))
-           fileid+=1           
-	   appendfile(fromfile=targetfile,tofile=resultfile)
+        if file is not []:          # If there is a file, 
+            targetfile=os.path.join(parentdir,file)
+            deleteinfo(targetfile=targetfile,label="%")
+            addinfoToEachRaw(targetfile=targetfile,info=str(fileid))
+            if inclfnames == 1:
+                addinfoToEachRaw(targetfile=targetfile,info=str(file))
+            fileid+=1           
+            appendfile(fromfile=targetfile,tofile=resultfile)
 addfooterinfo(targetfile=resultfile,info="%DONE") 
 os.system("rm -rf "+tmpdir)
