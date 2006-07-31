@@ -96,20 +96,22 @@ typedef struct FiducialTimeConfigVarsTag
   CHAR *OutputFile;  /*  Name of output file */
   CHAR *InputFile;   /*  Name of input file (combined result file produced by combiner_v2.py */
   INT4 CandThr;
+  INT4 CandThrInput; 
 } FiducialTimeConfigVars;
 
 typedef struct CandidateListTag
 {
-  UINT4 iCand;       /*  Candidate id: unique with in this program.  */
+
   REAL8 f;           /*  Frequency of the candidate */
   REAL8 Alpha;       /*  right ascension of the candidate */
   REAL8 Delta;       /*  declination  of the candidate */
   REAL8 F1dot;       /*  spindown (d/dt f) of the candidate */
   REAL8 TwoF;        /*  Maximum value of F for the cluster */
   INT4 FileID;       /*  File ID to specify from which file the candidate under consideration originally came. */
-  CHAR resultfname[256];  /*  Name of the particular result file where values originally came from. */
   INT4 DataStretch;
   INT4 WUCandThr;
+  UINT4 iCand;       /*  Candidate id: unique with in this program.  */
+  CHAR resultfname[256];  /*  Name of the particular result file where values originally came from. */
 } CandidateList;     
 
 
@@ -118,7 +120,7 @@ typedef struct CandidateListTag
 /* ----------------------------------------------------------------------------- */
 /* Function declarelations */
 void ReadCommandLineArgs( LALStatus *, INT4 argc, CHAR *argv[], FiducialTimeConfigVars *CLA ); 
-void ReadCombinedFile( LALStatus *lalStatus, CandidateList **CList, FiducialTimeConfigVars *CLA, INT4 *candlen );
+void ReadCombinedFile( LALStatus *lalStatus, CandidateList **CList, FiducialTimeConfigVars *CLA, long *candlen );
 
 int compareINT4arrays(const INT4 *idata1, const INT4 *idata2, size_t s); /* compare two INT4 arrays of size s.*/
 int compareREAL8arrays(const REAL8 *rdata1, const REAL8 *rdata2, size_t s); /* compare two REAL8 arrays of size s.*/
@@ -126,7 +128,7 @@ int compareCandidates(const void *ip, const void *jp);
 
 void ComputeFiducialTimeFrequency( LALStatus *,	FiducialTimeConfigVars *CLA, CandidateList *CList, INT4 candlen );
 
-void PrintResultFile( LALStatus *, const FiducialTimeConfigVars *CLA, CandidateList *CList, INT4 candlen );
+void PrintResultFile( LALStatus *, const FiducialTimeConfigVars *CLA, CandidateList *CList, long candlen );
 
 void FreeMemory( LALStatus *, FiducialTimeConfigVars *CLA, CandidateList *CList, const UINT4 datalen );
 void FreeConfigVars( LALStatus *, FiducialTimeConfigVars *CLA );
@@ -161,7 +163,7 @@ RCSID ("$Id$");
 int main(INT4 argc,CHAR *argv[]) 
 {
   LALStatus *lalStatus = &global_status;
-  INT4 CLength=0;
+  long CLength=0;
   CandidateList *AllmyC = NULL;
   FiducialTimeConfigVars FTCV;
 
@@ -202,9 +204,9 @@ int main(INT4 argc,CHAR *argv[])
 
 /* ########################################################################################## */
 
-void PrintResultFile(LALStatus *lalStatus, const FiducialTimeConfigVars *CLA, CandidateList *CList, INT4 candlen)
+void PrintResultFile(LALStatus *lalStatus, const FiducialTimeConfigVars *CLA, CandidateList *CList, long candlen)
 {
-  INT4 iindex, iindex2;
+  long iindex, iindex2;
   
 
   FILE *fp = NULL;
@@ -236,7 +238,7 @@ void PrintResultFile(LALStatus *lalStatus, const FiducialTimeConfigVars *CLA, Ca
   /*INITSTATUS( lalStatus, "print_output", rcsid ); */
  
   fprintf(fp,"%" LAL_INT4_FORMAT " %.13g %.7g %.7g %.5g %.6g\n",
-		    CList[0].FileID, 
+		    CList[0].DataStretch, 
 		    CList[0].f, 
 		    CList[0].Alpha, 
 		    CList[0].Delta, 
@@ -255,7 +257,7 @@ void PrintResultFile(LALStatus *lalStatus, const FiducialTimeConfigVars *CLA, Ca
 	    if( iindex2 < (CList[iindex].WUCandThr) )
 	      {
 		fprintf(fp,"%" LAL_INT4_FORMAT " %.13g %.7g %.7g %.5g %.6g\n",
-			CList[iindex].FileID, 
+			CList[iindex].DataStretch, 
 			CList[iindex].f, 
 			CList[iindex].Alpha, 
 			CList[iindex].Delta, 
@@ -389,14 +391,14 @@ compareREAL8arrays(const REAL8 *ap, const REAL8 *bp, size_t n)
 void ReadCombinedFile( LALStatus *lalStatus, 
 		      CandidateList **CList, 
 		      FiducialTimeConfigVars *CLA, 
-		      INT4 *candlen )
+		      long *candlen )
 {
-  UINT4 i;
-  UINT4 numlines;
+  long i;
+  long  numlines;
   REAL8 epsilon=1e-5;
   CHAR line1[256];
   FILE *fp;
-  INT4 nread;
+  long nread;
   UINT4 checksum=0;
   UINT4 bytecount=0;
   const CHAR *fname;
@@ -635,6 +637,7 @@ void ReadCommandLineArgs( LALStatus *lalStatus,
   CHAR* uvar_InputData;
   CHAR* uvar_OutputData;
   BOOLEAN uvar_help;
+  INT4 uvar_CandThrInput;
 
   INITSTATUS( lalStatus, "ReadCommandLineArgs", rcsid );
   ATTATCHSTATUSPTR (lalStatus);
@@ -644,12 +647,14 @@ void ReadCommandLineArgs( LALStatus *lalStatus,
   uvar_help = 0;
   uvar_InputData = NULL;
   uvar_OutputData = NULL;
- 
+  uvar_CandThrInput = 0;
+
   /* register all our user-variables */
   LALregBOOLUserVar(lalStatus,       help,           'h', UVAR_HELP,     "Print this message"); 
 
   LALregSTRINGUserVar(lalStatus,     OutputData,     'o', UVAR_REQUIRED, "Ouput file name");
-  LALregSTRINGUserVar(lalStatus,     InputData,      'i', UVAR_OPTIONAL, "Input file name");
+  LALregSTRINGUserVar(lalStatus,     InputData,      'i', UVAR_REQUIRED, "Input file name");
+  LALregINTUserVar(lalStatus,     CandThrInput,     'x', UVAR_OPTIONAL, "Number of candidates to keep");
 
   TRY (LALUserVarReadAllInput(lalStatus->statusPtr,argc,argv),lalStatus); 
 
@@ -664,6 +669,7 @@ void ReadCommandLineArgs( LALStatus *lalStatus,
 
   CLA->OutputFile = NULL;
   CLA->InputFile = NULL;
+  CLA->CandThrInput = 0;
   
   CLA->OutputFile = (CHAR *) LALMalloc(strlen(uvar_OutputData)+1);
   if(CLA->OutputFile == NULL)
@@ -681,6 +687,8 @@ void ReadCommandLineArgs( LALStatus *lalStatus,
     }
   strcpy(CLA->InputFile,uvar_InputData);
     
+  CLA->CandThrInput = uvar_CandThrInput;
+
   LALDestroyUserVars(lalStatus->statusPtr);
   BEGINFAIL(lalStatus) {
     LALFree(CLA->InputFile);
@@ -707,7 +715,9 @@ void ComputeFiducialTimeFrequency( LALStatus *lalStatus,
   REAL8 deltaT;
   INT4 iindex;
   INT4 MinNumJobs4Freq=9999999;
-  WU_search_params_t wparams;
+  WU_search_params_t wparams, wparams2;
+  CHAR myWUname[256];
+
 
   INITSTATUS( lalStatus, "ComputeFiducialTimeFrequency", rcsid );
   ATTATCHSTATUSPTR (lalStatus);
@@ -729,14 +739,44 @@ void ComputeFiducialTimeFrequency( LALStatus *lalStatus,
       /* get search parameters from Einstein at Home setup library */
       findSearchParams4Result( CList[iindex].resultfname, &wparams );
       
-      CList[iindex].DataStretch = wparams.startTime - wparams.endTime;
+      CList[iindex].DataStretch = (INT4)(wparams.endTime / (wparams.endTime - wparams.startTime));
       CList[iindex].WUCandThr = (INT4)( 0.5 / wparams.fBand );
       
-      if( wparams.minNumJobs < MinNumJobs4Freq )
+
+      if (strcmp(wparams.DetName,"LHO")==0)
+	{
+	  /*CList[iindex].resultfname[0] = 'z';*/
+	  sprintf( myWUname, "z1_%c%c%c%c%c%c__0_S4R2a_0_0", CList[iindex].resultfname[3],
+		   CList[iindex].resultfname[4],
+		   CList[iindex].resultfname[5],
+		   CList[iindex].resultfname[6],
+		   CList[iindex].resultfname[7],
+		   CList[iindex].resultfname[8]);
+	  findSearchParams4Result( myWUname, &wparams2 );
+	}
+      else if (strcmp(wparams.DetName,"LLO")==0)
+	{
+	  /*CList[iindex].resultfname[0] = 'r';*/
+	  sprintf( myWUname, "r1_%c%c%c%c%c%c__0_S4R2a_0_0", CList[iindex].resultfname[3],
+                   CList[iindex].resultfname[4],
+                   CList[iindex].resultfname[5],
+                   CList[iindex].resultfname[6],
+                   CList[iindex].resultfname[7],
+                   CList[iindex].resultfname[8]);
+          findSearchParams4Result( myWUname, &wparams2 );
+	}
+
+
+      if( wparams2.minNumJobs < wparams.minNumJobs )
+	{
+	  MinNumJobs4Freq = wparams2.minNumJobs;
+	}
+      else
 	{
 	  MinNumJobs4Freq = wparams.minNumJobs;
 	}
 	
+
       /* fixed fiducial time = e.g. GPS time of first SFT in S4 */
       deltaT = wparams.startTime - FIXED_FIDUCIAL_TIME;  
 
@@ -755,7 +795,17 @@ void ComputeFiducialTimeFrequency( LALStatus *lalStatus,
 
     } /* while( iindex < candlen)  */
 
-  CLA->CandThr = MinNumJobs4Freq * 13000;
+  
+  if(CLA->CandThrInput == 0)
+    {
+      CLA->CandThr = MinNumJobs4Freq * 13000;
+    }
+  else
+    {
+      CLA->CandThr = CLA->CandThrInput;
+    }
+
+  printf("Number of candidates kept per data-stretch: %d\n", CLA->CandThr);
 
   iindex=0;
   while(iindex < candlen)
