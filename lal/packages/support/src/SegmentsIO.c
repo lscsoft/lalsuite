@@ -69,6 +69,7 @@ Character  & Effect \\ \hline
 
 #include <stdlib.h>
 #include <errno.h>
+#include <ctype.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
@@ -79,9 +80,9 @@ NRCSID( SEGMENTSIOC, "$Id$" );
 
 /* <lalVerbatim file="SegmentsIOCP"> */
 void
-LALSegListRead( LALStatus *status, LALSegList *seglist, CHAR *fileName, CHAR *options )
+LALSegListRead( LALStatus *status, LALSegList *seglist, const CHAR *fileName, const CHAR *options )
 { /* </lalVerbatim> */
-  CHAR *optc;
+  const CHAR *optc;
   FILE *fp;
   CHAR line[4096];
   CHAR *cptr, *newcptr;
@@ -256,9 +257,9 @@ LALSegListRead( LALStatus *status, LALSegList *seglist, CHAR *fileName, CHAR *op
 
 /* <lalVerbatim file="SegmentsIOCP"> */
 void
-LALSegListWrite( LALStatus *status, LALSegList *seglist, CHAR *fileName, CHAR *options )
+LALSegListWrite( LALStatus *status, LALSegList *seglist, const CHAR *fileName, const CHAR *options )
 { /* </lalVerbatim> */
-  CHAR *optc;
+  const CHAR *optc;
   /* Option flags */
   INT4 ascii=0, includeID=0, includeDuration=0;
   FILE *fp;

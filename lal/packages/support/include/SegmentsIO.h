@@ -68,10 +68,10 @@ NRCSID( SEGMENTSIOH, "$Id$" );
 /* Function prototypes */
 
 void
-LALSegListRead( LALStatus *status, LALSegList *seglist, CHAR *fileName, CHAR *options );
+LALSegListRead( LALStatus *status, LALSegList *seglist, const CHAR *fileName, const CHAR *options );
 
 void
-LALSegListWrite( LALStatus *status, LALSegList *seglist, CHAR *fileName, CHAR *options );
+LALSegListWrite( LALStatus *status, LALSegList *seglist, const CHAR *fileName, const CHAR *options );
 
 #ifdef __cplusplus
 }
