@@ -7,7 +7,7 @@
 	    REAL4 tsin2pi = tsin * (REAL4)OOTWOPI;
 	    REAL4 tcos2pi = tcos * (REAL4)OOTWOPI;
 	    REAL4 XRes, XIms;
-	    REAL8 combAF;
+	    REAL8 combAF, combAF1, combAF2, combAF3;
 
 	    /* The main idea of the vectorization is that
 
@@ -59,7 +59,6 @@
 
 	    /* Vectorized version of the "hot loop" */
 	    /* This loop is now unrolled manually */
-            /* for(k=0; k < klim / 2; k++) { */
 	    {
 	      UINT4 ve;
 #define VEC_LOOP(n)\
@@ -88,11 +87,12 @@
                 tFreq[ve] -= 4.0;
 		
 	      tFreqD[0] = tempFreq0 + klim/2 - 14;
-	      tFreqD[1] = tempFreq0 + klim/2 - 14;
+	      tFreqD[1] = tFreqD[0];
+
 	      VEC_LOOP_D(16+12);
 	      VEC_LOOP_D(16+14);
-	      VEC_LOOP_D(32+00);
-	      VEC_LOOP_D(32+08);
+	      VEC_LOOP_D(32+0);
+	      VEC_LOOP_D(32+2);
 
 	      VEC_LOOP(32+4); VEC_LOOP(32+8); VEC_LOOP(32+12); 
 	      VEC_LOOP(48+0); VEC_LOOP(48+4); VEC_LOOP(48+8); VEC_LOOP(48+12); 
@@ -101,14 +101,12 @@
 	    /* conbination:
 	       Xs / aF = ( Xs_even * aF_odd + Xs_odd * aF_even ) / ( aF_even * aF_odd )
 	    */
-	    aFreq[1] *= aFreq[2];
-	    XRes = (Xsum[0] * aFreq[2] + Xsum[2] * aFreq[0]) / aFreq[1];
-	    XIms = (Xsum[1] * aFreq[2] + Xsum[3] * aFreq[0]) / aFreq[1];
-
-	    /* combine with double precision calculation */
-	    aFreqD[1] *= aFreq[1];
-	    XRes = (XRes * aFreqD[0] + XsumD[0] * aFreq[1]) / aFreqD[1];
-	    XIms = (XIms * aFreqD[0] + XsumD[1] * aFreq[1]) / aFreqD[1];
+	    combAF  = aFreq[0] * aFreq[2] * aFreqD[0];
+	    combAF1 = aFreq[0] * aFreq[2];
+	    combAF2 = aFreq[0] *            aFreqD[0];
+	    combAF3 =            aFreq[2] * aFreqD[0];
+	    XRes = (Xsum[0] * combAF3 + Xsum[2] * combAF2 + XsumD[0] * combAF1 ) / combAF;
+	    XRes = (Xsum[1] * combAF3 + Xsum[3] * combAF2 + XsumD[1] * combAF1 ) / combAF;
 
             realXP = tsin2pi * XRes - tcos2pi * XIms;
             imagXP = tcos2pi * XRes + tsin2pi * XIms;
