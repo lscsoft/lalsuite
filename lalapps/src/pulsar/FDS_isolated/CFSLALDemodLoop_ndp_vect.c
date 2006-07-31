@@ -59,6 +59,7 @@
 
 	    /* Vectorized version of the "hot loop" */
 	    /* This loop is now unrolled manually */
+            /* for(k=0; k < klim / 2; k++) { */
 	    {
 	      UINT4 ve;
 #define VEC_LOOP(n)\
@@ -83,30 +84,37 @@
 		 in double precision */
 
 	      /* skip the values in single precision calculation */
+
 	      for(ve=0;ve<4;ve++)
-                tFreq[ve] -= 4.0;
-		
-	      tFreqD[0] = tempFreq0 + klim/2 - 14;
+		tFreq[ve] -= 4.0;
+
+	      // VEC_LOOP(16+12); VEC_LOOP(32+0);
+
+	      tFreqD[0] = tempFreq0 + klim/2 - 15;
 	      tFreqD[1] = tFreqD[0];
 
+	      /* double precision vectorization */
 	      VEC_LOOP_D(16+12);
 	      VEC_LOOP_D(16+14);
 	      VEC_LOOP_D(32+0);
 	      VEC_LOOP_D(32+2);
 
-	      VEC_LOOP(32+4); VEC_LOOP(32+8); VEC_LOOP(32+12); 
+                              VEC_LOOP(32+4); VEC_LOOP(32+8); VEC_LOOP(32+12); 
 	      VEC_LOOP(48+0); VEC_LOOP(48+4); VEC_LOOP(48+8); VEC_LOOP(48+12); 
 	    }
+
+	    
 
 	    /* conbination:
 	       Xs / aF = ( Xs_even * aF_odd + Xs_odd * aF_even ) / ( aF_even * aF_odd )
 	    */
-	    combAF  = aFreq[0] * aFreq[2] * aFreqD[0];
-	    combAF1 = aFreq[0] * aFreq[2];
-	    combAF2 = aFreq[0] *            aFreqD[0];
-	    combAF3 =            aFreq[2] * aFreqD[0];
-	    XRes = (Xsum[0] * combAF3 + Xsum[2] * combAF2 + XsumD[0] * combAF1 ) / combAF;
-	    XRes = (Xsum[1] * combAF3 + Xsum[3] * combAF2 + XsumD[1] * combAF1 ) / combAF;
+	    combAF1 =            aFreq[2] * aFreqD[0];
+	    combAF2 = aFreq[0]            * aFreqD[0];
+	    combAF3 = aFreq[0] * aFreq[2];
+	    combAF  =             combAF3 * aFreqD[0];
+
+	    XRes = (Xsum[0] * combAF1 + Xsum[2] * combAF2 + XsumD[0] * combAF3) / combAF;
+	    XIms = (Xsum[1] * combAF1 + Xsum[3] * combAF2 + XsumD[1] * combAF3) / combAF;
 
             realXP = tsin2pi * XRes - tcos2pi * XIms;
             imagXP = tcos2pi * XRes + tsin2pi * XIms;
