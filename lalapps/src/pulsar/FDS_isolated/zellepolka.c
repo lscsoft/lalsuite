@@ -230,7 +230,6 @@ CandidateList
 
 typedef struct CandidateListTag
 {
-  UINT4 iCand;       /*  Candidate id: unique with in this program.  */
   REAL8 f;           /*  Frequency of the candidate */
   REAL8 Alpha;       /*  right ascension of the candidate */
   REAL8 Delta;       /*  declination  of the candidate */
@@ -240,7 +239,8 @@ typedef struct CandidateListTag
   INT4 iFreq;        /*  Frequency index */
   INT4 iDelta;       /*  Declination index. This can be negative. */
   INT4 iAlpha;       /*  Right ascension index */
-  INT4 iF1dot;       /*  Spindown index */
+  INT2 iF1dot;       /*  Spindown index */
+  UINT4 iCand;       /*  Candidate id: unique with in this program.  */
 } CandidateList;     /*   Fstat lines */ 
 
 
@@ -273,16 +273,16 @@ Structure containg data in cells
 */
 typedef struct CellDataTag
 {
-  INT4 iFreq;          /*  Frequency index of this candidate event */
-  INT4 iDelta;         /*  Declination index of this candidate event */
-  INT4 iAlpha;         /*  Right ascension index of this candidate event */
-  INT4 iF1dot;         /*  Spindown index of this candidate event */
   REAL8 Freq;          /*  Frequency index of the cell */
   REAL8 Alpha;         /*  Right ascension index of the cell */
   REAL8 Delta;         /*  Declination index of the cell */
   REAL8 F1dot;          /*  Spindown index of the cell */
-  INT4 nCand;          /*  number of the events in this cell. */
   REAL8 significance;  /*  minus log of joint false alarm of the candidates in this cell. */
+  INT4 iFreq;          /*  Frequency index of this candidate event */
+  INT4 iDelta;         /*  Declination index of this candidate event */
+  INT4 iAlpha;         /*  Right ascension index of this candidate event */
+  INT4 iF1dot;         /*  Spindown index of this candidate event */
+  INT4 nCand;          /*  number of the events in this cell. */
   struct int4_linked_list *CandID;  /* linked structure that has candidate id-s of the candidates in this cell. */
 } CellData;
 
@@ -300,7 +300,8 @@ void ReadOneCandidateFileV2( LALStatus *lalStatus, CandidateList **CList, const 
 void ReadCandidateListFromZipFile (LALStatus *, CandidateList **CList, CHAR *fname, INT4 *candlen, const INT4 *FileID);
 #endif
 
-void PrepareCells( LALStatus *, CellData **cell, const UINT4 datalen );
+void PrepareCells( LALStatus *, CellData **cell, const UINT4 CLength );
+void RePrepareCells( LALStatus *, CellData **cell, const UINT4 CLength , const UINT4 iposition);
 
 int compareNumOfCoincidences(const void *a, const void *b);
 int compareCandidates(const void *ip, const void *jp);
@@ -357,6 +358,7 @@ int main(INT4 argc,CHAR *argv[])
   LALStatus *lalStatus = &global_status;
   INT4 CLength=0;
   INT4 CLength16=0;
+  INT4 sizecells=16384;
   INT4 cc1, cc2, cc3, cc4;
   
   CandidateList *SortedC = NULL;
@@ -384,8 +386,9 @@ int main(INT4 argc,CHAR *argv[])
   CLength16 = 16 * CLength;
 
   /* Prepare cells. */
-  LAL_CALL( PrepareCells( lalStatus, &cell, CLength16 ), lalStatus);  
+  LAL_CALL( PrepareCells( lalStatus, &cell, sizecells ), lalStatus);  
 
+  /* Allocate memory for 16 x Candidate List */ 
   SortedC16 = (CandidateList *)LALMalloc (CLength16*sizeof(CandidateList));
 
   if ( !SortedC16 ) 
@@ -447,6 +450,8 @@ int main(INT4 argc,CHAR *argv[])
 	}
     }
 
+  /* free old candidate list */
+  if( SortedC != NULL ) LALFree(SortedC);
 
   /* sort arrays of candidates */
   qsort(SortedC16, (size_t)CLength16, sizeof(CandidateList), compareCandidates);
@@ -494,7 +499,13 @@ int main(INT4 argc,CHAR *argv[])
 	else 
 	  {	  
 	    /* This candidate is outside of this cell. */
+	    
 	    icell++;
+	    /* Re-Allocate memory */
+	    if( icell >=  sizecells ){
+	      sizecells = sizecells + 16384;
+	      LAL_CALL( RePrepareCells(lalStatus, &cell, sizecells, icell), lalStatus);  
+	    }
 	    cell[icell].iFreq = SortedC16[icand16].iFreq;
 	    cell[icell].iDelta = SortedC16[icand16].iDelta;
 	    cell[icell].iAlpha = SortedC16[icand16].iAlpha;
@@ -522,7 +533,7 @@ int main(INT4 argc,CHAR *argv[])
 
   /* -----------------------------------------------------------------------------------------*/      
   /* Clean-up */
-  LAL_CALL( FreeMemory(lalStatus, &PCV, cell, SortedC16, CLength16), lalStatus);
+  LAL_CALL( FreeMemory(lalStatus, &PCV, cell, SortedC16, sizecells), lalStatus);
   
   LALCheckMemoryLeaks(); 
 
@@ -592,6 +603,80 @@ void PrepareCells( LALStatus *lalStatus, CellData **cell, const UINT4 CLength )
   DETATCHSTATUSPTR (lalStatus);
   RETURN (lalStatus);
 } /* PrepareCells() */
+
+
+
+/* ########################################################################################## */
+/* ------------------------------------------------------------------------------*/      
+/* Re-allocate memory, set initial values.                     */
+/* ------------------------------------------------------------------------------*/      
+/*!
+  Re-Allocate memory for the cells and initialize the additional celldata variables.
+
+  @param[in,out] lalStatus LALStatus*
+  @param[out]    cell      CellData** CellData structure to be initialized
+  @param[in]     CLength   UINT4      Number of the cells
+*/
+ 
+void RePrepareCells( LALStatus *lalStatus, CellData **cell, const UINT4 CLength , const UINT4 iposition)
+{
+  UINT4 icell, ncell;
+  INT4 errflg = 0;
+  
+  INITSTATUS( lalStatus, "RePrepareCells", rcsid );
+  ATTATCHSTATUSPTR (lalStatus);
+
+  /*  ASSERT( *cell == NULL, lalStatus, POLKAC_ENONULL, POLKAC_MSGENONULL); */
+
+  CellData *tmp;
+  tmp = (CellData *)LALRealloc (*cell, ( CLength * sizeof(CellData)) );
+  if ( !tmp ) 
+    { 
+      LALPrintError("Could not re-allocate memory for cells \n\n");
+      ABORT (lalStatus, POLKAC_EMEM, POLKAC_MSGEMEM);
+    }
+  *cell = tmp;
+
+  if( *cell == NULL ) {
+    ABORT (lalStatus, POLKAC_EMEM, POLKAC_MSGEMEM);
+  }
+
+  for(icell=iposition;icell<CLength;icell++) {
+    (*cell)[icell].CandID = NULL;
+    (*cell)[icell].CandID = (struct int4_linked_list *) LALCalloc( 1, sizeof(struct int4_linked_list) );
+    if( (*cell)[icell].CandID == NULL ) {
+      errflg = 1;
+      break;
+    }
+    (*cell)[icell].CandID->next = NULL;
+    (*cell)[icell].iFreq = 0;
+    (*cell)[icell].iDelta = 0;
+    (*cell)[icell].iAlpha = 0;
+    (*cell)[icell].iF1dot = 0;
+    (*cell)[icell].nCand = 0;
+    (*cell)[icell].Freq = 0.0;
+    (*cell)[icell].Delta = 0.0;
+    (*cell)[icell].Alpha = 0.0;
+    (*cell)[icell].F1dot = 0.0;
+    (*cell)[icell].significance = 0;
+  }
+
+
+  if( errflg != 0 ) {
+    ncell = icell;
+    for(icell=iposition;icell<ncell;icell++) {
+      LALFree( (*cell)[icell].CandID );
+    }
+    ABORT (lalStatus, POLKAC_EMEM, POLKAC_MSGEMEM);
+  }
+
+
+  DETATCHSTATUSPTR (lalStatus);
+  RETURN (lalStatus);
+} /* RePrepareCells() */
+
+
+
 
 
 /* ########################################################################################## */
