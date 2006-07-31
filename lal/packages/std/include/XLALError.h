@@ -93,6 +93,7 @@
 #ifndef XLALERROR_H
 #define XLALERROR_H
 
+#include <stddef.h>
 #include <lal/LALAtomicDatatypes.h>
 
 NRCSID( XLALERRORH, "$Id$" );
@@ -174,15 +175,27 @@ static REAL8 UNUSED XLALREAL8FailNaN( void )
 /** Tests if a value is an XLAL <tt>REAL4</tt> failure NaN. */
 static int UNUSED XLALIsREAL4FailNaN( REAL4 val )
 {
-  void *p = &val;
-  return ( *(INT4 *)p == XLAL_REAL4_FAIL_NAN_INT );
+  volatile const union { INT4 i; unsigned char s[4]; } a = { XLAL_REAL4_FAIL_NAN_INT } ;
+  volatile union { REAL4 x; unsigned char s[4]; } b;
+  size_t n;
+  b.x = val;
+  for ( n = 0; n < sizeof( val ); ++n )
+    if ( a.s[n] != b.s[n] )
+      return 0;
+  return 1;
 }
 
 /** Tests if a value is an XLAL <tt>REAL8</tt> failure NaN. */
 static int UNUSED XLALIsREAL8FailNaN( REAL8 val )
 {
-  void *p = &val;
-  return ( *(INT8 *)p == XLAL_REAL8_FAIL_NAN_INT );
+  volatile const union { INT8 i; unsigned char s[8]; } a = { XLAL_REAL8_FAIL_NAN_INT } ;
+  volatile union { REAL8 x; unsigned char s[8]; } b;
+  size_t n;
+  b.x = val;
+  for ( n = 0; n < sizeof( val ); ++n )
+    if ( a.s[n] != b.s[n] )
+      return 0;
+  return 1;
 }
 #undef UNUSED
 
