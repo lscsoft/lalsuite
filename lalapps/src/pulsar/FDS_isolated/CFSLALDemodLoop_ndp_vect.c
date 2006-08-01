@@ -4,6 +4,7 @@
 	    /* THIS IS DANGEROUS!! It relies on current implementation of COMPLEX8 type!! */
 	    REAL4 *Xalpha_kR4 = &(Xalpha[sftIndex].re);
 
+	    /* temporary variables to prevent double calculations */
 	    REAL4 tsin2pi = tsin * (REAL4)OOTWOPI;
 	    REAL4 tcos2pi = tcos * (REAL4)OOTWOPI;
 	    REAL4 XRes, XIms;
@@ -25,44 +26,45 @@
 
 	       Note that compared to the "old" loop this one is only ran klim/2=DTerms
 	       times.
+
+	       There was added a double-precision part that calculates the "inner"
+	       elements of the loop (that contribute the most to the result) in
+	       double precision. If vectorized, a complex calculation (i.e. two
+	       real ones) should be performed on a 128Bit vector unit capable of double
+	       precision, such as SSE or AltiVec
  	    */
 
 	    REAL4 tFreq[4]; /* tempFreq1 as a vector */
 	    REAL4 aFreq[4]; /* accFreq   as a vector */
 	    REAL4  Xsum[4]; /* vector holding partial sums */
 
-	    /* the same in double precision, two elements at once */
-	    REAL8  trans[2];
+	    /* the same in double precision, two elements (one complex) at once */
+	    REAL8  trans[2]; /* for type conversion REAL4->REAL8 */
 	    REAL8 tFreqD[2]; /* tempFreq1 as a vector */
 	    REAL8 aFreqD[2]; /* accFreq   as a vector */
 	    REAL8  XsumD[2]; /* vector holding partial sums */
 
 	    /* init vectors */
-	    aFreq[0] = 1.0;
-	    aFreq[1] = 1.0;
-	    aFreq[2] = 1.0;
-	    aFreq[3] = 1.0;
+	    aFreq[0] = 1.0; aFreq[1] = 1.0;
+	    aFreq[2] = 1.0; aFreq[3] = 1.0;
 
-	    tFreq[0] = tempFreq0 + klim/2 - 1;
-	    tFreq[1] = tempFreq0 + klim/2 - 1;
-	    tFreq[2] = tempFreq0 + klim/2 - 2;
-	    tFreq[3] = tempFreq0 + klim/2 - 2;
+	    tFreq[0] = tempFreq0 + klim/2 - 1; tFreq[1] = tFreq[0];
+	    tFreq[2] = tempFreq0 + klim/2 - 2; tFreq[3] = tFreq[2];
 
-	    Xsum[0] = 0.0;
-	    Xsum[1] = 0.0;
-	    Xsum[2] = 0.0;
-	    Xsum[3] = 0.0;
+	    Xsum[0] = 0.0; Xsum[1] = 0.0;
+	    Xsum[2] = 0.0; Xsum[3] = 0.0;
 
-	    aFreqD[0] = 1.0;
-	    aFreqD[1] = 1.0;
-	    XsumD[0] = 0.0;
-	    XsumD[1] = 0.0;
+	    aFreqD[0] = 1.0; aFreqD[1] = 1.0;
+	    XsumD[0]  = 0.0;  XsumD[1] = 0.0;
 
 	    /* Vectorized version of the "hot loop" */
-	    /* This loop is now unrolled manually */
+	    /* This loop has now been unrolled manually */
+
             /* for(k=0; k < klim / 2; k++) { */
 	    {
-	      UINT4 ve;
+	      UINT4 ve; /* this var should be optimized away... */
+
+	      /* single precision vector loop */
 #define VEC_LOOP(n)\
 	      for(ve=0;ve<4;ve++) {\
                 Xsum[ve] = Xsum[ve] * tFreq[ve] + (Xalpha_kR4+n)[ve] * aFreq[ve];\
@@ -70,6 +72,7 @@
                 tFreq[ve] -= 2.0;\
 	      }
 
+	      /* double precision vector loop */
 #define VEC_LOOP_D(n)\
               trans[0] = (Xalpha_kR4+n)[0];\
               trans[1] = (Xalpha_kR4+n)[1];\
@@ -89,11 +92,11 @@
 	      /* skip the values in single precision calculation */
 
 	      for(ve=0;ve<4;ve++)
-		tFreq[ve] -= 4.0;
+		tFreq[ve] -= 4.0; /* skip 4 elements */
 
-	      // VEC_LOOP(16+12); VEC_LOOP(32+0);
+	      /* VEC_LOOP(16+12); VEC_LOOP(32+0); */
 
-	      tFreqD[0] = tempFreq0 + klim/2 - 15;
+	      tFreqD[0] = tempFreq0 + klim/2 - 15; /* start at the 14th element */
 	      tFreqD[1] = tFreqD[0];
 
 	      /* double precision vectorization */
@@ -107,14 +110,13 @@
 	    }
 
 	    
-
-	    /* conbination:
-	       Xs / aF = ( Xs_even * aF_odd + Xs_odd * aF_even ) / ( aF_even * aF_odd )
+	    /* conbination of three partial sums:
+	       Xsum = (X1*a2*a3 + a1*X2*a3 + a1*a2*X3) / (a1*a2*a3)
 	    */
 	    combAF1 =            aFreq[2] * aFreqD[0];
 	    combAF2 = aFreq[0]            * aFreqD[0];
 	    combAF3 = aFreq[0] * aFreq[2];
-	    combAF  =             combAF3 * aFreqD[0];
+	    combAF  = aFreq[0] * combAF1;
 
 	    XRes = (Xsum[0] * combAF1 + Xsum[2] * combAF2 + XsumD[0] * combAF3) / combAF;
 	    XIms = (Xsum[1] * combAF1 + Xsum[3] * combAF2 + XsumD[1] * combAF3) / combAF;
