@@ -32,6 +32,7 @@
 	    REAL4  Xsum[4]; /* vector holding partial sums */
 
 	    /* the same in double precision, two elements at once */
+	    REAL8  trans[2];
 	    REAL8 tFreqD[2]; /* tempFreq1 as a vector */
 	    REAL8 aFreqD[2]; /* accFreq   as a vector */
 	    REAL8  XsumD[2]; /* vector holding partial sums */
@@ -70,8 +71,10 @@
 	      }
 
 #define VEC_LOOP_D(n)\
+              trans[0] = (Xalpha_kR4+n)[0];\
+              trans[1] = (Xalpha_kR4+n)[1];\
 	      for(ve=0;ve<2;ve++) {\
-                XsumD[ve] = XsumD[ve] * tFreqD[ve] + (Xalpha_kR4+n)[ve] * aFreqD[ve];\
+                XsumD[ve] = XsumD[ve] * tFreqD[ve] + trans[ve] * aFreqD[ve];\
 		aFreqD[ve] *= tFreqD[ve];\
                 tFreqD[ve] -= 1.0;\
 	      }
