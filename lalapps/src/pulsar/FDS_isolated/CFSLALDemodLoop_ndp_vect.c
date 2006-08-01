@@ -38,10 +38,18 @@
 	    REAL4 aFreq[4]; /* accFreq   as a vector */
 	    REAL4  Xsum[4]; /* vector holding partial sums */
 
+	    /* Unfortunately AltiVec / Velocity Engine doesn't do double precision
+	       vectors, so we have to distinguish here again for the type of
+	       double precision calculation (not really gaining readability...)
+	    */
+#ifdef USE_DOUBLE_VECT
 	    /* the same in double precision, two elements (one complex) at once */
 	    REAL8  trans[2]; /* for type conversion REAL4->REAL8 */
 	    REAL8 tFreqD[2]; /* tempFreq1 as a vector */
 	    REAL8 aFreqD[2]; /* accFreq   as a vector */
+#else
+	    REAL8 tFreqD, aFreqD;
+#endif
 	    REAL8  XsumD[2]; /* vector holding partial sums */
 
 	    /* init vectors */
@@ -54,7 +62,11 @@
 	    Xsum[0] = 0.0; Xsum[1] = 0.0;
 	    Xsum[2] = 0.0; Xsum[3] = 0.0;
 
+#ifdef USE_DOUBLE_VECT
 	    aFreqD[0] = 1.0; aFreqD[1] = 1.0;
+#else
+	    aFreqD = 1.0;
+#endif
 	    XsumD[0]  = 0.0;  XsumD[1] = 0.0;
 
 	    /* Vectorized version of the "hot loop" */
@@ -73,6 +85,7 @@
 	      }
 
 	      /* double precision vector loop */
+#ifdef USE_DOUBLE_VECT
 #define VEC_LOOP_D(n)\
               trans[0] = (Xalpha_kR4+n)[0];\
               trans[1] = (Xalpha_kR4+n)[1];\
@@ -81,6 +94,14 @@
 		aFreqD[ve] *= tFreqD[ve];\
                 tFreqD[ve] -= 1.0;\
 	      }
+#else
+	      /* non-vectorizing double-precision loop */
+#define VEC_LOOP_D(n)\
+              XsumD[0] = XsumD[0] * tFreqD + aFreqD * Xalpha_kR4[n];\
+              XsumD[1] = XsumD[1] * tFreqD + aFreqD * Xalpha_kR4[n+1];\
+	      aFreqD *= tFreqD;\
+              tFreqD -= 1.0;
+#endif
 
 	      VEC_LOOP(00+0); VEC_LOOP(00+4); VEC_LOOP(00+8); VEC_LOOP(00+12); 
 	      VEC_LOOP(16+0); VEC_LOOP(16+4); VEC_LOOP(16+8);
@@ -96,9 +117,12 @@
 
 	      /* VEC_LOOP(16+12); VEC_LOOP(32+0); */
 
+#ifdef USE_DOUBLE_VECT
 	      tFreqD[0] = tempFreq0 + klim/2 - 15; /* start at the 14th element */
 	      tFreqD[1] = tFreqD[0];
-
+#else
+	      tFreqD = tempFreq0 + klim/2 - 15; /* start at the 14th element */
+#endif
 	      /* double precision vectorization */
 	      VEC_LOOP_D(16+12);
 	      VEC_LOOP_D(16+14);
@@ -113,8 +137,13 @@
 	    /* conbination of three partial sums:
 	       Xsum = (X1*a2*a3 + a1*X2*a3 + a1*a2*X3) / (a1*a2*a3)
 	    */
+#ifdef USE_DOUBLE_VECT
 	    combAF1 =            aFreq[2] * aFreqD[0];
 	    combAF2 = aFreq[0]            * aFreqD[0];
+#else
+	    combAF1 =            aFreq[2] * aFreqD;
+	    combAF2 = aFreq[0]            * aFreqD;
+#endif
 	    combAF3 = aFreq[0] * aFreq[2];
 	    combAF  = aFreq[0] * combAF1;
 
