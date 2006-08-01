@@ -213,6 +213,12 @@ if condor_prio:
   trig_job.add_condor_cmd('priority',condor_prio)
   inca_job.add_condor_cmd('priority',condor_prio)
 
+# see if we are using calibrated data
+calibrated = False
+for opt in cp.options('data'):
+  if (opt.find('calibrated') >-1):
+    calibrated = True
+
 # get the pad and chunk lengths from the values in the ini file
 pad = int(cp.get('data', 'pad-data'))
 n = int(cp.get('data', 'segment-length'))
@@ -224,12 +230,12 @@ overlap = o / r
 
 # read science segs that are greater or equal to a chunk from the input file
 data = pipeline.ScienceData()
-data.read(cp.get('input','segments'),length)
+data.read(cp.get('input','segments'),length + 2*pad)
 
 # create the chunks from the science segments
-data.make_chunks(length,overlap,playground_only,0,overlap/2)
+data.make_chunks(length,overlap,playground_only,0,overlap/2,pad)
 data.make_chunks_from_unused(
-  length,overlap/2,playground_only,overlap/2,0,overlap/2)
+  length,overlap/2,playground_only,overlap/2,0,overlap/2,pad)
 
 # get the order of the ifos to filter
 ifo1 = cp.get('pipeline','ifo1')
@@ -284,7 +290,7 @@ for seg in data:
     bank.set_end(chunk.end())
     bank.set_ifo(ifo1)
     bank.set_cache(df1.get_output())
-    bank.calibration()
+    if not calibrated: bank.calibration()
     bank.set_vds_group(group)
 
     if do_datafind: 
@@ -302,7 +308,7 @@ for seg in data:
     insp1.set_ifo(ifo1)
     insp1.set_cache(df1.get_output())
     insp1.set_bank(bank.get_output())
-    insp1.calibration()
+    if not calibrated: insp1.calibration()
     insp1.set_vds_group(group)
 
     if do_tmpltbank:
@@ -332,7 +338,7 @@ for seg in data:
     insp2.add_var_opt('trig-end-time',chunk.trig_end())
     insp2.set_cache(df2.get_output())
     insp2.set_bank(trigbank.get_output())
-    insp2.calibration()
+    if not calibrated: insp2.calibration()
 
     if do_datafind:
       insp2.add_parent(df2)
