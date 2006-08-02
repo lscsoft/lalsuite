@@ -93,10 +93,12 @@ int finite(double);
 
 typedef struct FiducialTimeConfigVarsTag 
 {
+  REAL8 ThrTwoF;
   CHAR *OutputFile;  /*  Name of output file */
   CHAR *InputFile;   /*  Name of input file (combined result file produced by combiner_v2.py */
   INT4 CandThr;
   INT4 CandThrInput; 
+
 } FiducialTimeConfigVars;
 
 typedef struct CandidateListTag
@@ -110,7 +112,7 @@ typedef struct CandidateListTag
   INT4 FileID;       /*  File ID to specify from which file the candidate under consideration originally came. */
   INT4 DataStretch;
   INT4 WUCandThr;
-  UINT4 iCand;       /*  Candidate id: unique with in this program.  */
+  /*UINT4 iCand;*/       /*  Candidate id: unique with in this program.  */
   CHAR resultfname[256];  /*  Name of the particular result file where values originally came from. */
 } CandidateList;     
 
@@ -393,7 +395,7 @@ void ReadCombinedFile( LALStatus *lalStatus,
 		      FiducialTimeConfigVars *CLA, 
 		      long *candlen )
 {
-  long i;
+  long i,jj;
   long  numlines;
   REAL8 epsilon=1e-5;
   CHAR line1[256];
@@ -401,6 +403,7 @@ void ReadCombinedFile( LALStatus *lalStatus,
   long nread;
   UINT4 checksum=0;
   UINT4 bytecount=0;
+  INT4 sizelist=16384;
   const CHAR *fname;
         
   fname = CLA->InputFile;
@@ -473,10 +476,10 @@ void ReadCombinedFile( LALStatus *lalStatus,
 #endif
 
   
-  /* reserve memory for fstats-file contents */
+  /* start reserving memory for fstats-file contents */
   if (numlines > 0) 
     { 
-      *CList = (CandidateList *)LALMalloc (numlines*sizeof(CandidateList));
+      *CList = (CandidateList *)LALMalloc (sizelist*sizeof(CandidateList));
       if ( !CList ) 
         { 
           LALPrintError ("Could not allocate memory for candidate file %s\n\n", fname);
@@ -493,11 +496,25 @@ void ReadCombinedFile( LALStatus *lalStatus,
       LALFree ((*CList));
       ABORT (lalStatus, FIDUCIALC_EINVALIDFSTATS, FIDUCIALC_MSGEINVALIDFSTATS);
     }
+
+  jj=0;
   while(i < numlines && fgets(line1,sizeof(line1),fp))
     {
       CHAR newline='\0';
-      CandidateList *cl=&(*CList)[i];
-
+      
+      if (jj >= sizelist) {
+	sizelist = sizelist + 16384;
+	CandidateList *tmp;
+	tmp = (CandidateList *)LALRealloc(*CList, (sizelist * sizeof(CandidateList)) );
+	if ( !tmp ){
+	  LALPrintError("couldnot re-allocate memory for candidate list \n\n");
+	  ABORT (lalStatus, FIDUCIALC_EMEM, FIDUCIALC_MSGEMEM);
+	}
+	*CList = tmp;
+      }
+      
+      CandidateList *cl=&(*CList)[jj];
+      
       if (strlen(line1)==0 || line1[strlen(line1)-1] != '\n') {
         LALPrintError(
                 "Line %d of file %s is too long or has no NEWLINE.  First 255 chars are:\n%s\n",
@@ -507,74 +524,81 @@ void ReadCombinedFile( LALStatus *lalStatus,
 	ABORT (lalStatus, FIDUCIALC_EINVALIDFSTATS, FIDUCIALC_MSGEINVALIDFSTATS);
       }
       
+      
       nread = sscanf (line1,
 		      "%s %" LAL_INT4_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" 
 		      LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT "%c", 
 		      &(cl->resultfname), &(cl->FileID), &(cl->f), &(cl->Alpha), &(cl->Delta), &(cl->F1dot), &(cl->TwoF), &newline );
 
-      /* check that values that are read in are sensible, 
+      if(cl->TwoF >= CLA->ThrTwoF) {
+	/* check that values that are read in are sensible, 
 	 (result file names will be checked later, when getting 
 	 the search parameters from Einstein at Home  setup library) */
-      if (
-          cl->FileID < 0                     ||
-          cl->f < 0.0                        ||
-          cl->TwoF < 0.0                     ||
-          cl->Alpha <         0.0 - epsilon  ||
-          cl->Alpha >   LAL_TWOPI + epsilon  ||
-          cl->Delta < -0.5*LAL_PI - epsilon  ||
-          cl->Delta >  0.5*LAL_PI + epsilon  ||
-	  !finite(cl->FileID)                ||                                                                 
-          !finite(cl->f)                     ||
-          !finite(cl->Alpha)                 ||
-          !finite(cl->Delta)                 ||
-	  !finite(cl->F1dot)                 ||
-          !finite(cl->TwoF)
-          ) {
+	if (
+	    cl->FileID < 0                     ||
+	    cl->f < 0.0                        ||
+	    cl->TwoF < 0.0                     ||
+	    cl->Alpha <         0.0 - epsilon  ||
+	    cl->Alpha >   LAL_TWOPI + epsilon  ||
+	    cl->Delta < -0.5*LAL_PI - epsilon  ||
+	    cl->Delta >  0.5*LAL_PI + epsilon  ||
+	    !finite(cl->FileID)                ||                                                                 
+	    !finite(cl->f)                     ||
+	    !finite(cl->Alpha)                 ||
+	    !finite(cl->Delta)                 ||
+	    !finite(cl->F1dot)                 ||
+	    !finite(cl->TwoF)
+	    ) {
           LALPrintError(
-                  "Line %d of file %s has invalid values.\n"
-                  "First 255 chars are:\n"
-                  "%s\n"
-                  "1st and 4th field should be positive.\n" 
-                  "2nd field should lie between 0 and %1.15f.\n" 
-                  "3rd field should lie between %1.15f and %1.15f.\n"
-                  "All fields should be finite\n",
-                  i+1, fname, line1, (double)LAL_TWOPI, (double)-LAL_PI/2.0, (double)LAL_PI/2.0);
+			"Line %d of file %s has invalid values.\n"
+			"First 255 chars are:\n"
+			"%s\n"
+			"1st and 4th field should be positive.\n" 
+			"2nd field should lie between 0 and %1.15f.\n" 
+			"3rd field should lie between %1.15f and %1.15f.\n"
+			"All fields should be finite\n",
+			i+1, fname, line1, (double)LAL_TWOPI, (double)-LAL_PI/2.0, (double)LAL_PI/2.0);
           LALFree ((*CList));
           fclose(fp);
 	  ABORT (lalStatus, FIDUCIALC_EINVALIDFSTATS, FIDUCIALC_MSGEINVALIDFSTATS);
-      }
+	}
            
            
 
       /* check that the FIRST character following the Fstat value is a
          newline.  Note deliberate LACK OF WHITE SPACE char before %c
          above */
-      if (newline != '\n') {
-        LALPrintError(
-                "Line %d of file %s had extra chars after F value and before newline.\n"
-                "First 255 chars are:\n"
-                "%s\n",
-                i+1, fname, line1);
-        LALFree ((*CList));
-        fclose(fp);
-	ABORT (lalStatus, FIDUCIALC_EINVALIDFSTATS, FIDUCIALC_MSGEINVALIDFSTATS);
-      }
-
-      /* check that we read 8 quantities with exactly the right format */
-      if ( nread != 8 )
-        {
-          LALPrintError ("Found %d not %d values on line %d in file '%s'\n"
-                         "Line in question is\n%s",
-                         nread, 8, i+1, fname, line1);               
-          LALFree ((*CList));
-          fclose(fp);
+	if (newline != '\n') {
+	  LALPrintError(
+			"Line %d of file %s had extra chars after F value and before newline.\n"
+			"First 255 chars are:\n"
+			"%s\n",
+			i+1, fname, line1);
+	  LALFree ((*CList));
+	  fclose(fp);
 	  ABORT (lalStatus, FIDUCIALC_EINVALIDFSTATS, FIDUCIALC_MSGEINVALIDFSTATS);
+	}
+	
+	/* check that we read 8 quantities with exactly the right format */
+	if ( nread != 8 )
+	  {
+	    LALPrintError ("Found %d not %d values on line %d in file '%s'\n"
+			   "Line in question is\n%s",
+                         nread, 8, i+1, fname, line1);               
+	    LALFree ((*CList));
+	    fclose(fp);
+	    ABORT (lalStatus, FIDUCIALC_EINVALIDFSTATS, FIDUCIALC_MSGEINVALIDFSTATS);
         }
+	
+	jj++;
 
-
+      } /* if(cl->TwoF >= CLA->ThrTwoF) */
 
       i++;
     } /*  end of main while loop */
+
+  *candlen=jj-1;
+
   /* check that we read ALL lines! */
   if (i != numlines) {
     LALPrintError(
@@ -638,6 +662,7 @@ void ReadCommandLineArgs( LALStatus *lalStatus,
   CHAR* uvar_OutputData;
   BOOLEAN uvar_help;
   INT4 uvar_CandThrInput;
+  REAL8 uvar_ThrTwoF;
 
   INITSTATUS( lalStatus, "ReadCommandLineArgs", rcsid );
   ATTATCHSTATUSPTR (lalStatus);
@@ -648,13 +673,16 @@ void ReadCommandLineArgs( LALStatus *lalStatus,
   uvar_InputData = NULL;
   uvar_OutputData = NULL;
   uvar_CandThrInput = 0;
+  uvar_ThrTwoF = -1.0;
 
   /* register all our user-variables */
   LALregBOOLUserVar(lalStatus,       help,           'h', UVAR_HELP,     "Print this message"); 
 
   LALregSTRINGUserVar(lalStatus,     OutputData,     'o', UVAR_REQUIRED, "Ouput file name");
   LALregSTRINGUserVar(lalStatus,     InputData,      'i', UVAR_REQUIRED, "Input file name");
-  LALregINTUserVar(lalStatus,     CandThrInput,     'x', UVAR_OPTIONAL, "Number of candidates to keep");
+  LALregINTUserVar(lalStatus,     CandThrInput,      'x', UVAR_OPTIONAL, "Number of candidates to keep");
+  LALregREALUserVar(lalStatus,     ThrTwoF,           't', UVAR_OPTIONAL, "Threshold on values of 2F");
+
 
   TRY (LALUserVarReadAllInput(lalStatus->statusPtr,argc,argv),lalStatus); 
 
@@ -670,7 +698,8 @@ void ReadCommandLineArgs( LALStatus *lalStatus,
   CLA->OutputFile = NULL;
   CLA->InputFile = NULL;
   CLA->CandThrInput = 0;
-  
+  CLA->ThrTwoF = -1.0;
+
   CLA->OutputFile = (CHAR *) LALMalloc(strlen(uvar_OutputData)+1);
   if(CLA->OutputFile == NULL)
     {
@@ -688,6 +717,7 @@ void ReadCommandLineArgs( LALStatus *lalStatus,
   strcpy(CLA->InputFile,uvar_InputData);
     
   CLA->CandThrInput = uvar_CandThrInput;
+  CLA->ThrTwoF = uvar_ThrTwoF;
 
   LALDestroyUserVars(lalStatus->statusPtr);
   BEGINFAIL(lalStatus) {
