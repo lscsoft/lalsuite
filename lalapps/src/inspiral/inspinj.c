@@ -66,6 +66,7 @@
 "                           (default: MDISTR=-1, using mass file)\n"\
 "  --mean-mass MASS         set the mean value for the mass if MDISTR=2\n"\
 "  --stdev-mass MSTD        set the standard deviation for mass if MDISTR=2\n"\
+"  [--output NAME]          set the output filename \n"\
 "\n"
 
 RCSID( "$Id$" );
@@ -124,6 +125,7 @@ gsl_rng * rngR;
 
 char *massFileName = NULL;
 char *sourceFileName = NULL;
+char *outputFileName = NULL;
 
 int allowMW=-1;
 float mwLuminosity = -1;
@@ -814,6 +816,7 @@ int main( int argc, char *argv[] )
     {"max-distance",            required_argument, 0,                'r'},
     {"d-distr",                 required_argument, 0,                'e'},
     {"enable-milkyway",         required_argument, 0,                'M'},
+    {"output",                  required_argument, 0,                'O'},
     {"lal-eff-dist",                  no_argument, &lalEffDist,       1 },
     {"ilwd",                          no_argument, &ilwd,             1 },
     {"disable-milkyway",              no_argument, &allowMW,          0 },
@@ -1097,6 +1100,15 @@ int main( int argc, char *argv[] )
           next_process_param( long_options[option_index].name, 
               "int", "%d", ddistr );
 
+        break;
+
+    case 'O':
+        optarg_len = strlen( optarg ) + 1;
+        outputFileName = calloc( 1, optarg_len * sizeof(char) );
+        memcpy( outputFileName, optarg, optarg_len * sizeof(char) );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, "string", 
+              "%s", optarg );
         break;
 
       case 'h':
@@ -1415,6 +1427,11 @@ int main( int argc, char *argv[] )
     LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml", 
         rand_seed, gpsStartTime, gpsEndTime - gpsStartTime );
   }
+  if ( outputFileName ) {
+     LALSnprintf( fname, sizeof(fname), "%s", 
+		  outputFileName);
+  }
+  
 
   if ( ! ilwd )
   {
