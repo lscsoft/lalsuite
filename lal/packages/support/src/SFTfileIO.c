@@ -950,11 +950,13 @@ LALWriteSFT2file (LALStatus *status,
   ASSERT (sft->f0 >= 0, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
   ASSERT ( (sft->epoch.gpsSeconds >= 0) && (sft->epoch.gpsNanoSeconds >= 0), status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
   ASSERT ( sft->epoch.gpsNanoSeconds < 1000000000, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
-  ASSERT (sft->data->length > 0, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
-
-  ASSERT ( is_valid_detector(sft->name), status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL );
+  ASSERT ( sft->data->length > 0, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
 
   ASSERT (fname, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL); 
+
+  if ( !is_valid_detector(sft->name) ) {
+    ABORT ( status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL );
+  }
 
   /* open SFT-file for writing */
   if ( (fp = LALFopen ( fname, "wb" )) == NULL )
@@ -1162,9 +1164,11 @@ LALWrite_v2SFT_to_v1file (LALStatus *status,
   ASSERT ( sft->epoch.gpsNanoSeconds < 1000000000, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
   ASSERT (sft->data->length > 0, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
 
-  ASSERT ( is_valid_detector(sft->name), status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL );
-
   ASSERT (fname, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL); 
+
+  if ( !is_valid_detector(sft->name) ) {
+    ABORT ( status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL );
+  }
 
   numBins = sft->data->length;
   Band = sft->deltaF * numBins ;

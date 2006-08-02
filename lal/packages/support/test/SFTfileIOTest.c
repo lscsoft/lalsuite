@@ -278,15 +278,11 @@ int main(int argc, char *argv[])
 
   /* write v1-SFT to disk */
   SUB ( LALWriteSFTfile (&status, &(sft_vect->data[0]), "outputsft_v1.sft"), &status);
-#if 0
-  /* JC: DON'T DO THIS TEST!
-   * Doesn't work if ASSERT statements are disabled, as they are when LAL
-   * is compiled in "producion" mode.
-   */
+
   /* try to write this v1-SFTs as v2: should fail without detector-info ! */
   strncpy( sft_vect->data[0].name, "??", 2 );
   SHOULD_FAIL (LALWriteSFT2file( &status, &(sft_vect->data[0]), "outputsft_v2.sft", "Another v2-SFT file for testing!"), &status );
-#endif
+
   /* put detector there */
   strcpy ( sft_vect->data[0].name, "H1" );
   SHOULD_WORK (LALWriteSFT2file( &status, &(sft_vect->data[0]), "outputsft_v2.sft", "Another v2-SFT file for testing!"), &status );

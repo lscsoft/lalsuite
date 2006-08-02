@@ -59,7 +59,7 @@ INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 TESTS = PrintVectorTest \
         ReadFTSeriesTest PrintFTSeriesTest StreamInputTest \
         StreamSeriesInputTest ConfigFileTest UserInputTest \
-        LALMath3DPlotTest LALMathNDPlotTest SegmentsIOTest
+        LALMath3DPlotTest LALMathNDPlotTest SegmentsIOTest SFTfileIOTest
 
 TESTS_ENVIRONMENT = 1>/dev/null 2>/dev/null LAL_DATA_PATH=$(srcdir)
 MOSTLYCLEANFILES = .dvi-dep *.dat *PrintVector.00* *.out  outputsft.0 \
