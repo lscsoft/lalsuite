@@ -109,8 +109,8 @@ main(int argc, char *argv[])
   nlines2 = Fstats2->lines->nTokens;
   if ( nlines1 != nlines2 )
     {
-      LALPrintError ("Fstats files have different length.\n");
-      LALPrintError (" len1 = %d, len2 = %d\n\n", nlines1, nlines2);
+      printf ("Fstats files have different length.\n");
+      printf (" len1 = %d, len2 = %d\n\n", nlines1, nlines2);
       diffs = 1;
     }
 
@@ -172,8 +172,8 @@ compareClusterFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALP
   REAL4 Fstat1, Fstat2;
   INT4 N1, N2;
   REAL8 relErr;
-  REAL8 eps8 = 10.0 * LAL_REAL8_EPS;	/* tolerances */
-  REAL4 eps4 = 100.0 * LAL_REAL4_EPS;
+  REAL8 eps8 = 100.0 * LAL_REAL8_EPS;	/* tolerances */
+  REAL4 eps4 = 1000.0 * LAL_REAL4_EPS;
 
   INITSTATUS (status, "compareClusterFiles", rcsid );
 
@@ -197,7 +197,7 @@ compareClusterFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALP
 			" %" LAL_REAL4_FORMAT " %" LAL_REAL4_FORMAT, 
 			&freq1, &a1, &d1, &N1, &mean1, &std1, &Fstat1) ) 
 	{
-	  LALPrintError ("Failed to parse line %d in file 1\n", i+1);
+	  printf ("Failed to parse line %d in file 1\n", i+1);
 	  ABORT (status, MAKEFAKEDATAC_EFORMAT, MAKEFAKEDATAC_MSGEFORMAT);
 	}
       if ( 7 != sscanf (line2, "%" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT 
@@ -205,44 +205,44 @@ compareClusterFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALP
 			" %" LAL_REAL4_FORMAT " %" LAL_REAL4_FORMAT, 
 			&freq2, &a2, &d2, &N2, &mean2, &std2, &Fstat2) ) 
 	{
-	  LALPrintError ("Failed to parse line %d in file 2\n", i+1);
+	  printf ("Failed to parse line %d in file 2\n", i+1);
 	  ABORT (status, MAKEFAKEDATAC_EFORMAT, MAKEFAKEDATAC_MSGEFORMAT);
 	}
       
       /* now compare all 7 entries */
       if ( fabs(relErr = relError( freq1, freq2)) > eps8 )
 	{
-	  LALPrintError ("Relative frequency-error %g ecceeds %g in line %d\n", relErr, eps8, i+1);
+	  printf ("Relative frequency-error %g ecceeds %g in line %d\n", relErr, eps8, i+1);
 	  (*diff) ++;
 	} 
       if ( fabs(relErr = relError( a1, a2)) > eps8 )
 	{
-	  LALPrintError ("Relative error %g in alpha ecceeds %g in line %d\n", relErr, eps8, i+1);
+	  printf ("Relative error %g in alpha ecceeds %g in line %d\n", relErr, eps8, i+1);
 	  (*diff) ++;
 	} 
       if ( fabs(relErr = relError( d1, d2)) > eps8 )
 	{
-	  LALPrintError ("Relative error %g in delta ecceeds %g in line %d\n", relErr, eps8, i+1);
+	  printf ("Relative error %g in delta ecceeds %g in line %d\n", relErr, eps8, i+1);
 	  (*diff) ++;
 	} 
       if ( fabs(relErr = relError( Fstat1, Fstat2)) > eps4 )
 	{
-	  LALPrintError ("Relative error %g in F ecceeds %g in line %d\n", relErr, eps4, i+1);
+	  printf ("Relative error %g in F ecceeds %g in line %d\n", relErr, eps4, i+1);
 	  (*diff) ++;
 	}
       if ( N1 != N2)
 	{
-	  LALPrintError ("Different cluster-sizes in line %d\n", i+1);
+	  printf ("Different cluster-sizes in line %d\n", i+1);
 	  (*diff) ++;
 	} 
       if ( fabs(relErr = relError( mean1, mean2)) > eps4 )
 	{
-	  LALPrintError ("Relative error %g in mean ecceeds %g in line %d\n", relErr, eps4, i+1);
+	  printf ("Relative error %g in mean ecceeds %g in line %d\n", relErr, eps4, i+1);
 	  (*diff) ++;
 	}
       if ( fabs(relErr = relError( std1, std2)) > eps4 )
 	{
-	  LALPrintError ("Relative error %g in std-deviation ecceeds %g in line %d\n", 
+	  printf ("Relative error %g in std-deviation ecceeds %g in line %d\n", 
 			 relErr, eps4, i+1);
 	  (*diff)++;
 	}
@@ -294,37 +294,37 @@ compareFstatFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALPar
       /* now compare all entries */
       if ( fabs(relErr = relError( parsed1.Freq, parsed2.Freq)) > eps4 )
 	{
-	  LALPrintError ("Relative frequency-error %g ecceeds %g in line %d\n", relErr, eps4, i+1);
+	  printf ("Relative frequency-error %g ecceeds %g in line %d\n", relErr, eps4, i+1);
 	  (*diff) ++;
 	} 
       if ( fabs(relErr = relError( parsed1.Alpha, parsed2.Alpha)) > eps4 )
 	{
-	  LALPrintError ("Relative error %g in alpha ecceeds %g in line %d\n", relErr, eps4, i+1);
+	  printf ("Relative error %g in alpha ecceeds %g in line %d\n", relErr, eps4, i+1);
 	  (*diff) ++;
 	} 
       if ( fabs(relErr = relError( parsed1.Delta, parsed2.Delta)) > eps4 )
 	{
-	  LALPrintError ("Relative error %g in delta ecceeds %g in line %d\n", relErr, eps4, i+1);
+	  printf ("Relative error %g in delta ecceeds %g in line %d\n", relErr, eps4, i+1);
 	  (*diff) ++;
 	}
       if ( fabs(relErr = relError( parsed1.f1dot, parsed2.f1dot)) > eps4 )
 	{
-	  LALPrintError ("Relative error %g in f1dot ecceeds %g in line %d\n", relErr, eps4, i+1);
+	  printf ("Relative error %g in f1dot ecceeds %g in line %d\n", relErr, eps4, i+1);
 	  (*diff) ++;
 	} 
       if ( fabs(relErr = relError( parsed1.f2dot, parsed2.f2dot)) > eps4 )
 	{
-	  LALPrintError ("Relative error %g in f2dot ecceeds %g in line %d\n", relErr, eps4, i+1);
+	  printf ("Relative error %g in f2dot ecceeds %g in line %d\n", relErr, eps4, i+1);
 	  (*diff) ++;
 	} 
       if ( fabs(relErr = relError( parsed1.f3dot, parsed2.f3dot)) > eps4 )
 	{
-	  LALPrintError ("Relative error %g in f3dot ecceeds %g in line %d\n", relErr, eps4, i+1);
+	  printf ("Relative error %g in f3dot ecceeds %g in line %d\n", relErr, eps4, i+1);
 	  (*diff) ++;
 	} 
       if ( (relErr = relError( parsed1.TwoF, parsed2.TwoF)) > Ftol )
 	{
-	  LALPrintError ("Relative error %g in 2F ecceeds %g in line %d\n", relErr, Ftol, i+1);
+	  printf ("Relative error %g in 2F ecceeds %g in line %d\n", relErr, Ftol, i+1);
 	  (*diff) ++;
 	}
 
@@ -353,13 +353,13 @@ parse_Fstat_line ( const CHAR *line, FstatLine_t *FstatLine )
 
   if ( ret < 5 )
     {
-      LALPrintError("\nFailed to parse Fstat-line (less than 5 entries):\n'%s'\n\n", line );
+      printf("\nFailed to parse Fstat-line (less than 5 entries):\n'%s'\n\n", line );
       return -1;
     }
   
   if ( ret > 7 )
     { 
-      LALPrintError("\nFailed to parse Fstat-line (more than 7 entries):\n'%s'\n\n", line );
+      printf("\nFailed to parse Fstat-line (more than 7 entries):\n'%s'\n\n", line );
       return -1;
     }
 
