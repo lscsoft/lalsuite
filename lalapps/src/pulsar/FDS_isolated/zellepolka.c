@@ -187,15 +187,6 @@ Output: Control the way to return results
 
 typedef struct PolkaConfigVarsTag 
 {
-  CHAR *FstatsFile;  /*  Names of Fstat files to be read in */
-  CHAR *OutputFile;  /*  Names of output file */
-  CHAR *InputDir;    /*  Directory name of input files */
-  CHAR *BaseName;    /*  Base name of input files */
-  CHAR **Filelist;   /*  Array of filenames to load Fstats file from */
-  UINT4 NFiles;      /*  Number of input files read */
-  INT4 Nthr;         /*  Show exective results of cells with numbers of coincidence above Nthr. */
-  REAL4 Sthr;        /*  Show exective results of cells with significance above Sthr. */
-  BOOLEAN AutoOut;
   REAL8 TwoFthr;     /*  Threshold for TwoF values */
   REAL8 Deltaf;      /*  Size of coincidence window in Hz */
   REAL8 DeltaF1dot;  /*  Size of coincidence window of spindown */
@@ -206,7 +197,24 @@ typedef struct PolkaConfigVarsTag
   REAL8 ShiftAlpha;  /*  Parallel shift of Alpha of cell */
   REAL8 ShiftDelta;  /*  Parallel shift of Delta of cell */
   REAL8 ShiftF1dot;  /*  Parallel shift of F1dot spindown of cell */
+  
+  REAL8 fMIN;
+  REAL8 F1dotMIN;
+  REAL8 AlphaMIN;
+  REAL8 DeltaMIN;
+  INT4 FileIDMIN;
+  
+  CHAR *FstatsFile;  /*  Names of Fstat files to be read in */
+  CHAR *OutputFile;  /*  Names of output file */
+  CHAR *InputDir;    /*  Directory name of input files */
+  CHAR *BaseName;    /*  Base name of input files */
+  CHAR **Filelist;   /*  Array of filenames to load Fstats file from */
+  UINT4 NFiles;      /*  Number of input files read */
+  INT4 Nthr;         /*  Show exective results of cells with numbers of coincidence above Nthr. */
+  REAL4 Sthr;        /*  Show exective results of cells with significance above Sthr. */
+  BOOLEAN AutoOut;
   BOOLEAN UseUnzip;
+  
 } PolkaConfigVars;
 
 
@@ -235,12 +243,13 @@ typedef struct CandidateListTag
   REAL8 Delta;       /*  declination  of the candidate */
   REAL8 F1dot;       /*  spindown (d/dt f) of the candidate */
   REAL8 TwoF;        /*  Maximum value of F for the cluster */
-  INT4 FileID;       /*  File ID to specify from which file the candidate under consideration originaly comes. */
-  INT4 iFreq;        /*  Frequency index */
-  INT4 iDelta;       /*  Declination index. This can be negative. */
-  INT4 iAlpha;       /*  Right ascension index */
-  INT2 iF1dot;       /*  Spindown index */
   UINT4 iCand;       /*  Candidate id: unique with in this program.  */
+  INT2 FileID;       /*  File ID to specify from which file the candidate under consideration originaly comes. */
+  INT2 iFreq;        /*  Frequency index */
+  INT2 iDelta;       /*  Declination index. This can be negative. */
+  INT2 iAlpha;       /*  Right ascension index */
+  INT2 iF1dot;       /*  Spindown index */
+ 
 } CandidateList;     /*   Fstat lines */ 
 
 
@@ -273,16 +282,17 @@ Structure containg data in cells
 */
 typedef struct CellDataTag
 {
-  REAL8 Freq;          /*  Frequency index of the cell */
-  REAL8 Alpha;         /*  Right ascension index of the cell */
-  REAL8 Delta;         /*  Declination index of the cell */
-  REAL8 F1dot;          /*  Spindown index of the cell */
-  REAL8 significance;  /*  minus log of joint false alarm of the candidates in this cell. */
-  INT4 iFreq;          /*  Frequency index of this candidate event */
-  INT4 iDelta;         /*  Declination index of this candidate event */
-  INT4 iAlpha;         /*  Right ascension index of this candidate event */
-  INT4 iF1dot;         /*  Spindown index of this candidate event */
-  INT4 nCand;          /*  number of the events in this cell. */
+  REAL4 Freq;          /*  Frequency index of the cell */
+  REAL4 Alpha;         /*  Right ascension index of the cell */
+  REAL4 Delta;         /*  Declination index of the cell */
+  REAL4 F1dot;          /*  Spindown index of the cell */
+  REAL4 significance;  /*  minus log of joint false alarm of the candidates in this cell. */
+  UINT4 nCand;          /*  number of the events in this cell. */
+  INT2 iFreq;          /*  Frequency index of this candidate event */
+  INT2 iDelta;         /*  Declination index of this candidate event */
+  INT2 iAlpha;         /*  Right ascension index of this candidate event */
+  INT2 iF1dot;         /*  Spindown index of this candidate event */
+ 
   struct int4_linked_list *CandID;  /* linked structure that has candidate id-s of the candidates in this cell. */
 } CellData;
 
@@ -292,7 +302,7 @@ typedef struct CellDataTag
 void ReadCommandLineArgs( LALStatus *, INT4 argc, CHAR *argv[], PolkaConfigVars *CLA ); 
 void GetFilesListInThisDir(LALStatus *, const CHAR *directory, const CHAR *basename, CHAR ***filelist, UINT4 *nfiles );
 void ReadCandidateFiles( LALStatus *, CandidateList **Clist, PolkaConfigVars *CLA, INT4 *datalen );
-void ReadOneCandidateFile( LALStatus *, CandidateList **CList, const CHAR *fname, INT4 *datalen, const REAL8 myFthr );
+void ReadOneCandidateFile( LALStatus *, CandidateList **CList, const CHAR *fname, PolkaConfigVars *CLA, INT4 *datalen, const REAL8 myFthr );
 /*void ReadOneCandidateFile( LALStatus *, CandidateList **CList, const CHAR *fname, INT4 *datalen, INT4 *candilenFthr, const REAL8 myFthr ); */
 void ReadOneCandidateFileV2( LALStatus *lalStatus, CandidateList **CList, const CHAR *fname, INT4 *candlen );
 
@@ -371,6 +381,12 @@ int main(INT4 argc,CHAR *argv[])
   PolkaConfigVars PCV;
   REAL8 DeltaDeltaFlex;
 
+  PCV.fMIN=100000;
+  PCV.F1dotMIN=100000;
+  PCV.AlphaMIN=100000;
+  PCV.DeltaMIN=100000;
+  PCV.FileIDMIN=100000;
+
   lalDebugLevel = 0 ;  
   vrbflg = 1;   /* verbose error-messages */
 
@@ -397,7 +413,7 @@ int main(INT4 argc,CHAR *argv[])
       ABORT (lalStatus, POLKAC_EMEM, POLKAC_MSGEMEM);
     }
       
-
+  /* printf("%f %g %g %g %d\n",PCV.fMIN,PCV.F1dotMIN,PCV.AlphaMIN,  PCV.DeltaMIN, PCV.FileIDMIN);*/
 
   /* --------------------------------------------------------------------------------*/      
   /* initialization */
@@ -405,7 +421,6 @@ int main(INT4 argc,CHAR *argv[])
 
   /* flexible declination window */
   DeltaDeltaFlex = 0;
-  
   
   icand16 = 0;
   for (icand = 0; icand < CLength; icand++)
@@ -426,7 +441,7 @@ int main(INT4 argc,CHAR *argv[])
 		      SortedC16[icand16].FileID = SortedC[icand].FileID;
 		      
 		      /*SortedC[icand].iFreq=(INT4) ((SortedC[icand].f/(PCV.Deltaf)) + PCV.Shiftf  );*/
-		      SortedC16[icand16].iFreq=(INT4) (2*(SortedC[icand].f/(PCV.Deltaf)) + cc1  );
+		      SortedC16[icand16].iFreq=(INT4) (2*((SortedC[icand].f-PCV.fMIN)/(PCV.Deltaf)) + cc1  );
 		      
 		      /* This was used for an isotropic sky-grid */
 		      /*SortedC[icand].iDelta=(INT4)(SortedC[icand].Delta/(PCV.DeltaDelta)  + PCV.ShiftDelta ); */
@@ -438,11 +453,11 @@ int main(INT4 argc,CHAR *argv[])
 		      /* SortedC[icand].iAlpha=(INT4)((SortedC[icand].Alpha*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + PCV.ShiftAlpha  ); */
 		      SortedC16[icand16].iAlpha=(INT4)(2*(SortedC[icand].Alpha*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + cc3 );
 		      /* SortedC[icand].iF1dot=(INT4)((SortedC[icand].F1dot/(PCV.DeltaF1dot))  + PCV.ShiftF1dot ); */
-		      SortedC16[icand16].iF1dot=(INT4)(2*(SortedC[icand].F1dot/(PCV.DeltaF1dot))  + cc4 );	  
-		      
+		      SortedC16[icand16].iF1dot=(INT4)(2*((SortedC[icand].F1dot-PCV.F1dotMIN)/(PCV.DeltaF1dot))  + cc4 );	  
+		     
 		      SortedC[icand].iCand = icand;
 		      SortedC16[icand16].iCand = icand16; /* Keep the original ordering before sort to refer the orignal data later. */
-		      
+		
 		      icand16++;
 		    }
 		}
@@ -526,6 +541,7 @@ int main(INT4 argc,CHAR *argv[])
   for(icell=0;icell<ncell;icell++) {
     LAL_CALL( get_info_of_the_cell( lalStatus, &cell[icell], SortedC16), lalStatus);
   }  
+  fprintf(stderr,"Number of populated cells: %d \t Length of SortedC16: %d\n", ncell, CLength16);
 
   /* -----------------------------------------------------------------------------------------*/      
   /* Output results */
@@ -1548,7 +1564,7 @@ ReadCandidateFiles(LALStatus *lalStatus,
 
       *CList = NULL;
       /* TRY( ReadOneCandidateFile(lalStatus->statusPtr, CList, CLA->FstatsFile, clen, CLenFthr, CLA->TwoFthr ), lalStatus );*/
-      TRY( ReadOneCandidateFile(lalStatus->statusPtr, CList, CLA->FstatsFile, clen, CLA->TwoFthr ), lalStatus );
+      TRY( ReadOneCandidateFile(lalStatus->statusPtr, CList, CLA->FstatsFile, CLA, clen, CLA->TwoFthr ), lalStatus );
       /* The last file is from last file.*/
       CLA->NFiles = (*CList)[*clen-1].FileID;
     } /* if( (CLA->InputDir != NULL) && (CLA->BaseName != NULL) )  */
@@ -2277,6 +2293,7 @@ void
 ReadOneCandidateFile( LALStatus *lalStatus, 
 		      CandidateList **CList, 
 		      const CHAR *fname, 
+		      PolkaConfigVars *CLA,
 		      INT4 *candlen, 
 		      const REAL8 myFthr )
 {
@@ -2397,6 +2414,29 @@ ReadOneCandidateFile( LALStatus *lalStatus,
                      "%" LAL_INT4_FORMAT "%" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT 
                      " %" LAL_REAL8_FORMAT "%c", 
                      &(cl->FileID), &(cl->f), &(cl->Alpha), &(cl->Delta), &(cl->F1dot), &(cl->TwoF), &newline );
+
+      /* keep track of minimum values */
+      if ( cl->f < CLA->fMIN){
+	CLA->fMIN = cl->f;
+      }
+      
+      if ( cl->F1dot < CLA->F1dotMIN){
+	CLA->F1dotMIN = cl->F1dot;
+      }
+      
+      if ( cl->Alpha < CLA->AlphaMIN){
+	CLA->AlphaMIN = cl->Alpha;
+      }
+      
+      if ( cl->Delta < CLA->DeltaMIN){
+	CLA->DeltaMIN = cl->Delta;
+      }
+      
+      if ( cl->FileID < CLA->FileIDMIN){
+	CLA->FileIDMIN = cl->FileID;
+      }
+      
+
 
       /* find number of candidates that are above the 2F threshold. */
       if ( cl->TwoF > myFthr ) {
