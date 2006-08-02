@@ -65,10 +65,6 @@ int checkTimes = 0;
 int multiIfoCoinc = 0;
 int distCut = 0;
 int iotaCut = 0;
-<<<<<<< thinca.c
-/*int h1l1iotaCut = 0;*/
-=======
->>>>>>> 1.55
 int doPsi0Psi3Cut = 0;
 int doAlphaFCut = 0;
 int doBCV2H1H2Veto = 0;
