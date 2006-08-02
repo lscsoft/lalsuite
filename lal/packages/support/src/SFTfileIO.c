@@ -25,7 +25,6 @@
  *
  * $Id$ 
  *
- * \todo Sort by GPS-time, not by filename
  */
 
 /*---------- INCLUDES ----------*/
@@ -1271,6 +1270,7 @@ LALWriteSFTfile (LALStatus  *status,
   if (fp == NULL) {
     LALFree (rawheader);
     LALFree (rawdata);
+    LALPrintError ("\nFailed to open file '%s' for writing!\n\n", outfname );
     ABORT (status, SFTFILEIO_EFILE,  SFTFILEIO_MSGEFILE);
   }
 
