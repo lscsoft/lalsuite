@@ -65,6 +65,10 @@ int checkTimes = 0;
 int multiIfoCoinc = 0;
 int distCut = 0;
 int iotaCut = 0;
+<<<<<<< thinca.c
+/*int h1l1iotaCut = 0;*/
+=======
+>>>>>>> 1.55
 int doPsi0Psi3Cut = 0;
 int doAlphaFCut = 0;
 int doBCV2H1H2Veto = 0;
@@ -2231,11 +2235,15 @@ cleanexit:
   /* free the veto segment list. */
   for (ifoNumber=0; ifoNumber<LAL_NUM_IFO; ifoNumber++)
   {
-   if ( vetoFileName[ifoNumber]  && haveTrig[ifoNumber])
+    if ( vetoFileName[ifoNumber]  && haveTrig[ifoNumber])
     {
-      XLALSegListClear( &vetoSegs[ifoNumber] );
       free( vetoFileName[ifoNumber] );
-   }
+    }
+
+   if (vetoSegs[ifoNumber].initMagic == SEGMENTSH_INITMAGICVAL )
+   {
+        XLALSegListClear( &vetoSegs[ifoNumber] );
+    }
   }
   
 /* free the snglInspirals */
