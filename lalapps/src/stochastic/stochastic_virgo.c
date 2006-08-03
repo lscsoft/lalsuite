@@ -193,7 +193,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   PassBandParamStruc highpassParam;
 
   /* window for segment data streams */
-  REAL4TimeSeries dataWindow1, dataWindow2;;
+  REAL4TimeSeries dataWindow1, dataWindow2;
   /* hann window */
   INT4 hannLength1, hannLength2;
   LALWindowParams hannParams1, hannParams2;
