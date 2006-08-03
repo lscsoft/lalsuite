@@ -33,12 +33,17 @@ parser.add_option("-n", "--includefnames", dest="includefnames",
 parser.add_option("-d", "--datastretchID", dest="datastretchID",
                   help="Give data-stretch ID of files to process.",
                   default="5515")
+parser.add_option("-c", "--candThrPerData", dest="candThrPerData",
+                  help="Give candidate threshold per data-stretch.",
+                  default="24923")
 parser.add_option("-v", "--verbose", dest="vrbflg",
                   help="Ask your intention for safety.",
 		  default=1)
 (options, args) = parser.parse_args()
 
 datastretchID=options.datastretchID
+candThrPerData=options.candThrPerData
+print "Number of candidates kept per data-stretch: "+candThrPerData
 inclfnames=options.includefnames
 vrbflg=options.vrbflg
 
@@ -195,21 +200,28 @@ for parentdir, childdirs, files in os.walk(targetdir):
         ## work only data-stretch after data-stretch ##
             myfp = os.popen("/export1/people/hpletsch/opt/lal/src/lalapps/src/pulsar/FDS_isolated/dumpWUparams -i %s" % file)
             thisdatastretch=myfp.read(4)
+            myfp.close()
             if thisdatastretch == datastretchID:
+                myfp2 = os.popen("/export1/people/hpletsch/opt/lal/src/lalapps/src/pulsar/FDS_isolated/dumpWUparams2 -i %s -c %s" % (file,str(candThrPerData)) )
+                candThrPerWU=myfp2.readline()
+                myfp2.close()
                 copiedfile=workdir+file  
                 targetfile=os.path.join(parentdir,file)   
                 shutil.copy2(targetfile,copiedfile) # Copy file to working dir.
                 f=open(copiedfile,'r')
-                buff=f.read(2);
+                buff=f.read(2)
                 f.close()
+                print str(candThrPerWU)+" "+copiedfile
                 if buff == 'PK':
                     zipfilename=copiedfile+"_tmp.zip"   
                     shutil.move(copiedfile,zipfilename)
-                    os.system("unzip -qa "+zipfilename)   # Unzip the copied file
+                    os.system("unzip -p "+zipfilename+" | sort -n -r +4 | more | head -"+str(candThrPerWU)+" > "+copiedfile)   # Unzip the copied file
                     os.remove(zipfilename)
                     shutil.move(copiedfile, tmpdir)
                 else:
-                    shutil.move(copiedfile, tmpdir)
+                    copiedfile2=copiedfile+"2"
+                    os.system("more "+copiedfile+" | sort -n -r +4 | more | head -"+str(candThrPerWU)+" > "+copiedfile2)   # Unzip the copied file
+                    shutil.move(copiedfile2, tmpdir+file)
                     pass  # if the file already unzipped, do nothing. 
 
 ##This loop add various information to files.
