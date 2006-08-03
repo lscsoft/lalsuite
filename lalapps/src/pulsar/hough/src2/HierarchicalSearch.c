@@ -382,7 +382,7 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",        'h', UVAR_HELP,     "Print this message", &uvar_help), &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "log",          0,  UVAR_OPTIONAL, "Write log file", &uvar_log), &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "chkPoint",     0,  UVAR_OPTIONAL, "For checkpointing", &uvar_chkPoint), &status);  
-  LAL_CALL( LALRegisterINTUserVar(    &status, "uvar_method",  0,  UVAR_OPTIONAL, "Hough=0, stackslide=1", &uvar_method ), &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "method",       0,  UVAR_OPTIONAL, "Hough=0, stackslide=1", &uvar_method ), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "followUp",     0,  UVAR_OPTIONAL, "Follow up stage?", &uvar_followUp), &status);  
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftData1",     0,  UVAR_OPTIONAL, "1st SFT file pattern", &uvar_sftData1), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftData2",     0,  UVAR_OPTIONAL, "2nd SFT file pattern", &uvar_sftData2), &status);
