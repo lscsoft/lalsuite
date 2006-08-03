@@ -96,9 +96,6 @@ typedef struct FiducialTimeConfigVarsTag
   REAL8 ThrTwoF;
   CHAR *OutputFile;  /*  Name of output file */
   CHAR *InputFile;   /*  Name of input file (combined result file produced by combiner_v2.py */
-  INT4 CandThr;
-  INT4 CandThrInput; 
-
 } FiducialTimeConfigVars;
 
 typedef struct CandidateListTag
@@ -111,8 +108,6 @@ typedef struct CandidateListTag
   REAL8 TwoF;        /*  Maximum value of F for the cluster */
   INT4 FileID;       /*  File ID to specify from which file the candidate under consideration originally came. */
   INT4 DataStretch;
-  INT4 WUCandThr;
-  /*UINT4 iCand;*/       /*  Candidate id: unique with in this program.  */
   CHAR resultfname[256];  /*  Name of the particular result file where values originally came from. */
 } CandidateList;     
 
@@ -208,9 +203,8 @@ int main(INT4 argc,CHAR *argv[])
 
 void PrintResultFile(LALStatus *lalStatus, const FiducialTimeConfigVars *CLA, CandidateList *CList, long candlen)
 {
-  long iindex, iindex2;
   
-
+  INT4 iindex;
   FILE *fp = NULL;
   INT4 *count;
   INT4 nmax = 0;
@@ -239,47 +233,19 @@ void PrintResultFile(LALStatus *lalStatus, const FiducialTimeConfigVars *CLA, Ca
   /* output lines */
   /*INITSTATUS( lalStatus, "print_output", rcsid ); */
  
-  fprintf(fp,"%" LAL_INT4_FORMAT " %.13g %.7g %.7g %.5g %.6g\n",
-		    CList[0].DataStretch, 
-		    CList[0].f, 
-		    CList[0].Alpha, 
-		    CList[0].Delta, 
-		    CList[0].F1dot, 
-		    CList[0].TwoF );
-	    
-  iindex=1;
-  iindex2=1;
-  /* printf("%d\n", CList[0].WUCandThr);*/
+  iindex=0;
+  
   while(iindex < candlen) 
-  {
-    if(CList[iindex].DataStretch == CList[iindex-1].DataStretch)
-      {
-	if(CList[iindex].FileID == CList[iindex-1].FileID)
-	  {
-	    if( iindex2 < (CList[iindex].WUCandThr) )
-	      {
-		fprintf(fp,"%" LAL_INT4_FORMAT " %.13g %.7g %.7g %.5g %.6g\n",
-			CList[iindex].DataStretch, 
-			CList[iindex].f, 
-			CList[iindex].Alpha, 
-			CList[iindex].Delta, 
-			CList[iindex].F1dot, 
-			CList[iindex].TwoF );
-		iindex2++;
-	      }
-	  }
-	else
-	  {
-	     iindex2=0;
-	  }
-      }
-    else 
-      {
-	iindex2=0;
-      }
-
-    iindex++;	  
-  }
+    {
+      fprintf(fp,"%" LAL_INT4_FORMAT " %.13g %.7g %.7g %.5g %.6g\n",
+	      CList[iindex].DataStretch, 
+	      CList[iindex].f, 
+	      CList[iindex].Alpha, 
+	      CList[iindex].Delta, 
+	      CList[iindex].F1dot, 
+	      CList[iindex].TwoF );
+      iindex++;
+    }
 
   fprintf(fp, "%s", DONE_MARKER);
   
@@ -661,7 +627,6 @@ void ReadCommandLineArgs( LALStatus *lalStatus,
   CHAR* uvar_InputData;
   CHAR* uvar_OutputData;
   BOOLEAN uvar_help;
-  INT4 uvar_CandThrInput;
   REAL8 uvar_ThrTwoF;
 
   INITSTATUS( lalStatus, "ReadCommandLineArgs", rcsid );
@@ -672,7 +637,6 @@ void ReadCommandLineArgs( LALStatus *lalStatus,
   uvar_help = 0;
   uvar_InputData = NULL;
   uvar_OutputData = NULL;
-  uvar_CandThrInput = 0;
   uvar_ThrTwoF = -1.0;
 
   /* register all our user-variables */
@@ -680,8 +644,7 @@ void ReadCommandLineArgs( LALStatus *lalStatus,
 
   LALregSTRINGUserVar(lalStatus,     OutputData,     'o', UVAR_REQUIRED, "Ouput file name");
   LALregSTRINGUserVar(lalStatus,     InputData,      'i', UVAR_REQUIRED, "Input file name");
-  LALregINTUserVar(lalStatus,     CandThrInput,      'x', UVAR_OPTIONAL, "Number of candidates to keep");
-  LALregREALUserVar(lalStatus,     ThrTwoF,           't', UVAR_OPTIONAL, "Threshold on values of 2F");
+  LALregREALUserVar(lalStatus,       ThrTwoF,        't', UVAR_OPTIONAL, "Threshold on values of 2F");
 
 
   TRY (LALUserVarReadAllInput(lalStatus->statusPtr,argc,argv),lalStatus); 
@@ -697,7 +660,6 @@ void ReadCommandLineArgs( LALStatus *lalStatus,
 
   CLA->OutputFile = NULL;
   CLA->InputFile = NULL;
-  CLA->CandThrInput = 0;
   CLA->ThrTwoF = -1.0;
 
   CLA->OutputFile = (CHAR *) LALMalloc(strlen(uvar_OutputData)+1);
@@ -716,7 +678,6 @@ void ReadCommandLineArgs( LALStatus *lalStatus,
     }
   strcpy(CLA->InputFile,uvar_InputData);
     
-  CLA->CandThrInput = uvar_CandThrInput;
   CLA->ThrTwoF = uvar_ThrTwoF;
 
   LALDestroyUserVars(lalStatus->statusPtr);
@@ -733,7 +694,7 @@ void ReadCommandLineArgs( LALStatus *lalStatus,
 
 /* ########################################################################################## */
   
-
+#if 0
 void ComputeFiducialTimeFrequency( LALStatus *lalStatus,
 				   FiducialTimeConfigVars *CLA,
 				   CandidateList *CList, 
@@ -845,6 +806,68 @@ void ComputeFiducialTimeFrequency( LALStatus *lalStatus,
       iindex++;
     }
   /*printf("%d\n", CLA->CandThr);*/
+  DETATCHSTATUSPTR (lalStatus);
+  RETURN (lalStatus);
+
+} /* ComputeFiducialTimeFrequencies () */
+#endif 
+
+
+
+/*----------------------------------------------------- */
+void ComputeFiducialTimeFrequency( LALStatus *lalStatus,
+				   FiducialTimeConfigVars *CLA,
+				   CandidateList *CList, 
+				   INT4 candlen)
+{
+  REAL8 f_CFS;
+  REAL8 F1dot_CFS;
+  REAL8 f_fiducial;
+  REAL8 deltaT;
+  INT4 iindex;
+  WU_search_params_t wparams;
+
+
+  INITSTATUS( lalStatus, "ComputeFiducialTimeFrequency", rcsid );
+  ATTATCHSTATUSPTR (lalStatus);
+  printf("Frequency values are shifted to fixed fiducial GPS time: %f\n", FIXED_FIDUCIAL_TIME);
+
+  f_CFS=0;
+  f_fiducial=0;
+  F1dot_CFS=0;
+  iindex=0;
+  deltaT=0;
+  
+
+  while( iindex < candlen )
+    {
+      f_CFS = CList[iindex].f;
+      F1dot_CFS = CList[iindex].F1dot;
+      
+      /* get search parameters from Einstein at Home setup library */
+      findSearchParams4Result( CList[iindex].resultfname, &wparams );
+
+      /* Compute Data-StrtchID */
+      CList[iindex].DataStretch = (INT4)(wparams.endTime / (wparams.endTime - wparams.startTime));
+      
+      /* fixed fiducial time = e.g. GPS time of first SFT in S4 */
+      deltaT = wparams.startTime - FIXED_FIDUCIAL_TIME;  
+
+      /* compute new frequency values at fixed fiducial time */
+      f_fiducial = f_CFS - (F1dot_CFS * deltaT);
+     
+      /* replace f values by the new ones, that all refer to the same */
+      CList[iindex].f = f_fiducial;
+ 
+      f_CFS = 0;
+      f_fiducial = 0;
+      F1dot_CFS = 0;
+      deltaT=0;
+
+      iindex++;
+
+    } /* while( iindex < candlen)  */
+
   DETATCHSTATUSPTR (lalStatus);
   RETURN (lalStatus);
 
