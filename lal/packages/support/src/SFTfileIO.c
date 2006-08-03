@@ -3147,11 +3147,11 @@ read_SFTversion_from_fp ( UINT4 *version, BOOLEAN *need_swap, FILE *fp )
 
   /* figure out endian-ness and check version-range */
   swap = FALSE;
-  if ( ( ver - (UINT4)ver ) || (ver < MIN_SFT_VERSION) || (ver > MAX_SFT_VERSION )  ) 	/* illegal version --> maybe endian-swap? */
+  if ( (ver < MIN_SFT_VERSION) || (ver > MAX_SFT_VERSION ) ||  (ver - (UINT4)ver) ) 	/* illegal version --> maybe endian-swap? */
     {
       REAL8 unswapped = ver;
       endian_swap ( (CHAR*)(&ver), sizeof(ver), 1);
-      if ( (ver - (UINT4)ver) || (ver < MIN_SFT_VERSION) || (ver > MAX_SFT_VERSION )  ) 	/* still illegal version! */
+      if ( (ver < MIN_SFT_VERSION) || (ver > MAX_SFT_VERSION ) ||  (ver - (UINT4)ver) ) 	/* still illegal version! */
 	{
 	  if ( lalDebugLevel ) LALPrintError ( "\nERROR: illegal SFT-version '%f|%f', not within [%.0f, %.0f]\n\n", 
 					       unswapped, ver, MIN_SFT_VERSION, MAX_SFT_VERSION );
