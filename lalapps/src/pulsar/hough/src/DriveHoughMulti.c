@@ -128,7 +128,7 @@ int PrintHistogram(UINT8Vector *hist, CHAR *fnameOut);
 
 void PrintnStarFile (LALStatus *status, HoughSignificantEventVector *eventVec, CHAR *dirname, CHAR *basename);
 
-void PrintHoughEvents (LALStatus *status, FILE *fpEvents, INT4 houghThreshold, HOUGHMapTotal *ht, HOUGHPatchGrid *patch, HOUGHDemodPar *parDem);
+void PrintHoughEvents (LALStatus *status, FILE *fpEvents, INT4 houghThreshold, HOUGHMapTotal *ht, HOUGHPatchGrid *patch, HOUGHDemodPar *parDem, REAL8 mean, REAL8 sigma);
 
 int PrintHmap2m_file(HOUGHMapTotal *ht, CHAR *fnameOut, INT4 iHmap);
 
@@ -1055,10 +1055,10 @@ int main(int argc, char *argv[]){
 
 	      if ( uvar_printEvents )
 		LAL_CALL( PrintHoughEvents (&status, fpEvents, houghThreshold, &ht,
-					    &patch, &parDem), &status );
+					    &patch, &parDem, meanN, sigmaN), &status );
 
 	      if ( uvar_printTemplates )
-		LAL_CALL( PrintHoughEvents (&status, fpTemplates, 0.0, &ht, &patch, &parDem), &status);
+		LAL_CALL( PrintHoughEvents (&status, fpTemplates, 0.0, &ht, &patch, &parDem, meanN, sigmaN), &status);
 
 	      ++iHmap;
 	    } /* end loop over spindown values */ 
@@ -1309,7 +1309,9 @@ void PrintHoughEvents (LALStatus       *status,
 	  	      INT4            houghThreshold,
 		      HOUGHMapTotal   *ht,
 	    	      HOUGHPatchGrid  *patch,
-	 	      HOUGHDemodPar   *parDem)
+	 	      HOUGHDemodPar   *parDem,
+		      REAL8           mean,
+		      REAL8           sigma )
 {
 
   REAL8UnitPolarCoor sourceLocation;
@@ -1344,7 +1346,7 @@ void PrintHoughEvents (LALStatus       *status,
 				&sourceLocation,xPos,yPos,patch, parDem), status);
 	if (ht->spinRes.length) {
 	  fprintf(fpEvents, "%g %g %g %g %g \n", 
-		  temp, sourceLocation.alpha, sourceLocation.delta, 
+		  (temp - mean)/sigma, sourceLocation.alpha, sourceLocation.delta, 
 		  f0, ht->spinRes.data[0]);
 	}
 	else {
