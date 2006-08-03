@@ -448,6 +448,10 @@ if do_fine or do_update:
         else:
           print >> sys.stderr, """No updated parameter file exists for PSR%s, just perform fine
 heterodyne using old parameters.""" % (pulsar)
+          
+          # set default null value for the update file as it wil appear in the sub file
+          pulsar_update_file = 'none'
+          fine[j].set_param_file_update(pulsar_update_file)
           het_flag = 1
       
       fine[j].set_het_flag(het_flag)
