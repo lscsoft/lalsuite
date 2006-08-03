@@ -654,6 +654,7 @@ main(int argc, char **argv)
       currentSimEvent->mass1 = m1;
       currentSimEvent->mass2 = m2;
       currentSimEvent->eta = ppnParams.eta;
+      currentSimEvent->mchirp = (m1 + m2) * pow( currentSimEvent->eta, 0.6);
       currentSimEvent->distance = dist; 
       currentSimEvent->longitude = 0;
       currentSimEvent->latitude = 0;
