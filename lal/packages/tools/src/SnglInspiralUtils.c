@@ -1357,9 +1357,9 @@ void
   INT8       slideNS     = 0;
   INT8       segStartNS, segEndNS;
   INT8       newStartNS, newEndNS; 
-  LALSeg     tmpSeg;     
+  LALSeg     tmpSeg;;     
   LALSegList tmplist; 
-  INT4       n,i=0;
+  INT4       n,m,i=0;
 
   INITSTATUS( status, "LALTimeSlideSegList", SNGLINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
@@ -1395,6 +1395,10 @@ void
 
   /* initialize segment-list */
   XLALSegListInit( &tmplist );
+
+  /* make sure slide time is within segment time */
+  m=(int)( slideNS/(endTimeNS-startTimeNS) );
+  slideNS-=m*(endTimeNS-startTimeNS);
 
   /*  check the length of the segment list. */
   n=seglist->length;
@@ -1501,6 +1505,7 @@ LALTimeSlideSingleInspiral(
   INT8                  endTimeNS   = 0;
   INT8                  slideNS     = 0;
   INT8                  trigTimeNS  = 0;
+  INT8                  n           = 0;
   INITSTATUS( status, "LALTimeSlideSingleInspiral", SNGLINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
 
@@ -1522,6 +1527,10 @@ LALTimeSlideSingleInspiral(
   {
     LALGPStoINT8( status->statusPtr, &endTimeNS, endTime );
   }
+
+  /* make sure slide time is within segment time */
+  n=(int)( slideNS/(endTimeNS-startTimeNS) );
+  slideNS-=n*(endTimeNS-startTimeNS);
   
   for( thisEvent = triggerList; thisEvent; thisEvent = thisEvent->next )
   {
