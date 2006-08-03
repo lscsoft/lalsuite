@@ -60,8 +60,8 @@ RCSID ("$Id$");
 #define PROGRAM_NAME "lalapps_stochastic"
 
 /* variables for getopt options parsing */
-char *optarg;
-int optind;
+extern char *optarg;
+extern int optind;
 
 /* flags for getopt_long */
 static int recenter_flag = 0;
