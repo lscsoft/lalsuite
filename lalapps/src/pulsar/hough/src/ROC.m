@@ -2,18 +2,19 @@
 
 f0 = 78.5;
 fBand = 0.25;
-
-signalFreq = 78.6;
-
+h0 = 1.0e-23;
 FAthr = 1.0e-10;
 
-alpha = 1.0;
-delta = 1.0;
 
-h0 = 1.0e-23;
-phi0 = 0;
-psi = 0;
-cosi = 0.5;
+## signal params
+randvals = rand(1,7);
+
+signalFreq = f0 + fBand * randvals(1)
+alpha = 2*pi*randvals(2)
+delta = pi*randvals(3) - pi/2
+phi0 =  2*pi*randvals(4)
+psi =  2*pi*randvals(5)
+cosi =  2*randvals(6) - 1
 f1dot = 0;
 
 mfdfmin = f0 - 0.2;
