@@ -1,4 +1,4 @@
-
+#!/usr/bin/octave
 
 %% Set the parameters for makefakedata
 %% Signal parameters
