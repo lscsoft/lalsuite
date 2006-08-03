@@ -5,11 +5,11 @@
 STOCH_SRCS       = data_input.c data_input.h \
                    data_output.c data_output.h \
                    sgwb.c sgwb.h misc.c misc.h \
-                   stochastic.c
+                   stochastic.c stochastic.h
 STOCH_FAKE_SRCS  = fake_data.c fake_data.h \
                    data_output.c data_output.h \
                    sgwb.c sgwb.h misc.c misc.h \
-                   stochastic_fake.c
+                   stochastic_fake.c stochastic.h
 
 STOCH_VIRGO_SRCS = stochastic_virgo.c stochastic_virgo.h
 STOPP_SRCS       = stopp.c
