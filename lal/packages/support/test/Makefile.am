@@ -11,6 +11,7 @@ noinst_DATA = StreamInput.data StreamSeriesInput.data inputsft.0 inputsft.1 Conf
 	SFT-test1  SFT-test5
 
 EXTRA_DIST = $(DATA)
+AM_CPPFLAGS = -DSRCDIR=\"$(srcdir)\"
 
 PrintVectorTest_SOURCES = PrintVectorTest.c
 PrintVectorTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
@@ -29,7 +30,6 @@ StreamSeriesInputTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport
 
 SFTfileIOTest_SOURCES = SFTfileIOTest.c
 SFTfileIOTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-SFTfileIOTest_CPPFLAGS = $(AM_CPPFLAGS) $(CPPFLAGS) -DSRCDIR=\"$(srcdir)\"
 
 ConfigFileTest_SOURCES = ConfigFileTest.c
 ConfigFileTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
