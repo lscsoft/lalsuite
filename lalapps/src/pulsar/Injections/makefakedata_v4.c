@@ -279,7 +279,7 @@ main(int argc, char *argv[])
       numchunks = GV.timestamps->length;
       break;
     default:
-      LALPrintError ("\nIllegal value for generationMode %d\n\n", uvar_generationMode);
+      printf ("\nIllegal value for generationMode %d\n\n", uvar_generationMode);
       return MAKEFAKEDATAC_EARG;
       break;
     } /* switch generationMode */
@@ -335,7 +335,7 @@ main(int argc, char *argv[])
 	  if ( (fp = fopen (fname, "w")) == NULL)
 	    {
 	      perror ("Error opening outTDDfile for writing");
-	      LALPrintError ("TDDfile = %s\n", fname );
+	      printf ("TDDfile = %s\n", fname );
 	      exit ( MAKEFAKEDATAC_EFILE );
 	    }
 	  
@@ -395,7 +395,7 @@ main(int argc, char *argv[])
 	      break;
 
 	    default:
-	      LALPrintError ("\ninvalid Value for --generationMode\n\n");
+	      printf ("\ninvalid Value for --generationMode\n\n");
 	      return MAKEFAKEDATAC_EBAD;
 	      break;
 	    }
@@ -476,7 +476,8 @@ main(int argc, char *argv[])
 void
 InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 {
- 
+  CHAR *channelName = NULL;
+
   INITSTATUS( status, "InitMakefakedata", rcsid );
   ATTATCHSTATUSPTR (status);
 
@@ -508,15 +509,15 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 
     /* ----- {h0,cosi} or {aPlus,aCross} ----- */
     if ( (have_aPlus || have_aCross) && ( have_h0 || have_cosi ) ) {
-      LALPrintError ( "\nSpecify EITHER {h0,cosi} OR {aPlus, aCross}!\n\n");
+      printf ( "\nSpecify EITHER {h0,cosi} OR {aPlus, aCross}!\n\n");
       ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
     }
     if ( (have_h0 && !have_cosi) || (!have_h0 && have_cosi) ) {
-      LALPrintError ( "\nNeed both --h0 and --cosi!\n\n");
+      printf ( "\nNeed both --h0 and --cosi!\n\n");
       ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
     }
     if ( (have_aPlus && !have_aCross) || ( !have_aPlus && have_aCross ) ) {
-      LALPrintError ( "\nNeed both --aPlus and --aCross !\n\n");
+      printf ( "\nNeed both --aPlus and --aCross !\n\n");
       ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
     }
     if ( have_h0 )
@@ -529,7 +530,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 	REAL8 disc;
 	if ( fabs(uvar_aCross) > uvar_aPlus )
 	  {
-	    LALPrintError ( "\nInvalid input parameters: aCross must smaller or equal aPlus !\n\n");
+	    printf ( "\nInvalid input parameters: aCross must smaller or equal aPlus !\n\n");
 	    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
 	  }
 	disc = sqrt ( SQ(uvar_aPlus) - SQ(uvar_aCross) );
@@ -540,11 +541,11 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
     cfg->pulsar.Amp.psi  = uvar_psi;
     /* ----- signal Frequency ----- */
     if ( have_f0 && have_Freq ) {
-      LALPrintError ( "\nSpecify signal-frequency using EITHER --Freq [preferred] OR --f0 [deprecated]!\n\n");
+      printf ( "\nSpecify signal-frequency using EITHER --Freq [preferred] OR --f0 [deprecated]!\n\n");
       ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
     }
     if ( !have_f0 && !have_Freq ) {
-      LALPrintError ( "\nSpecify signal-frequency using --Freq!\n\n");
+      printf ( "\nSpecify signal-frequency using --Freq!\n\n");
       ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
     }
     if ( have_Freq )
@@ -554,15 +555,15 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 
     /* ----- skypos ----- */
     if ( (have_Alpha || have_Delta) && ( have_longitude || have_latitude ) ) {
-      LALPrintError ( "\nUse EITHER {Alpha, Delta} [preferred] OR {longitude,latitude} [deprecated]\n\n");
+      printf ( "\nUse EITHER {Alpha, Delta} [preferred] OR {longitude,latitude} [deprecated]\n\n");
       ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
     }
     if ( (have_Alpha && !have_Delta) || ( !have_Alpha && have_Delta ) ) {
-      LALPrintError ( "\nSpecify skyposition: need BOTH --Alpha and --Delta!\n\n");
+      printf ( "\nSpecify skyposition: need BOTH --Alpha and --Delta!\n\n");
       ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
     }
     if ( (have_longitude && !have_latitude) || ( !have_longitude && have_latitude ) ) {
-      LALPrintError ( "\nSpecify skyposition: need BOTH --longitude and --latitude!\n\n");
+      printf ( "\nSpecify skyposition: need BOTH --longitude and --latitude!\n\n");
       ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
     }
     if ( have_Alpha )
@@ -605,7 +606,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
       case 0:
 	break;
       default:
-	LALPrintError ("\nmsp = %d makes no sense to me...\n\n", msp);
+	printf ("\nmsp = %d makes no sense to me...\n\n", msp);
 	ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
       } /* switch(msp) */
 
@@ -617,132 +618,30 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
     BOOLEAN have_detector = LALUserVarWasSet ( &uvar_detector );
     BOOLEAN have_IFO = LALUserVarWasSet ( &uvar_IFO );
     if ( !have_detector && !have_IFO ) {
-      LALPrintError ( "\nNeed detector input --IFO!\n\n");
+      printf ( "\nNeed detector input --IFO!\n\n");
       ABORT (status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
     }
     if ( have_detector && have_IFO ) {
-      LALPrintError ( "\nUse EITHER --IFO [preferred] OR --detector [deprecated]!\n\n");
+      printf ( "\nUse EITHER --IFO [preferred] OR --detector [deprecated]!\n\n");
       ABORT (status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
     }
+
     if ( have_detector )
-      site = XLALGetSiteInfo ( uvar_detector );
+      {
+	site = XLALGetSiteInfo ( uvar_detector );
+	channelName = XLALGetChannelPrefix ( uvar_detector );
+      }
     else
-      site = XLALGetSiteInfo ( uvar_IFO );
+      {
+	site = XLALGetSiteInfo ( uvar_IFO );
+	channelName = XLALGetChannelPrefix ( uvar_IFO );
+      }
     if ( site == NULL ) {
       ABORT (status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
     }
     cfg->site = (*site);
     LALFree ( site );
   }
-  /* ---------- determine requested signal- start + duration ---------- */
-  {
-    /* check input consistency: *uvar_timestampsFile, uvar_startTime, uvar_duration */
-    BOOLEAN haveStart, haveDuration, haveTimestamps, haveOverlap;
-    haveStart = LALUserVarWasSet(&uvar_startTime);
-    haveDuration = LALUserVarWasSet(&uvar_duration);
-    haveTimestamps = LALUserVarWasSet(&uvar_timestampsFile);
-    haveOverlap = LALUserVarWasSet ( &uvar_SFToverlap );
-
-    /*-------------------- special case: Hardware injection ---------- */
-    /* don't allow timestamps-file and SFT-output */
-    if ( uvar_hardwareTDD )
-      {
-	if (haveTimestamps || !( haveStart && haveDuration ) ) 
-	  {
-	    LALPrintError ("\nHardware injection: please specify 'startTime' and 'duration'\n\n");
-	    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-	  }
-	if ( LALUserVarWasSet( &uvar_outSFTbname ) )
-	  {
-	    LALPrintError ("\nHardware injection mode is incompatible with producing SFTs\n\n");
-	    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-	  }
-      } /* if hardware-injection */
-    
-    /* ----- determine timestamps covering the observation period */
-    if ( haveTimestamps )
-      {
-	LIGOTimeGPSVector *timestamps = NULL;
-	if ( haveStart || haveDuration || haveOverlap )
-	  {
-	    LALPrintError ( "\nUsing --timestampsFile is incompatible with either of --startTime, --duration or --SFToverlap\n\n");
-	    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-	  }
-	TRY (LALReadTimestampsFile(status->statusPtr, &timestamps, uvar_timestampsFile), status);
-	cfg->timestamps = timestamps;
-      } /* haveTimestamps */
-    else
-      {
-	REAL8 tStep = uvar_Tsft - uvar_SFToverlap;
-	LIGOTimeGPS tStart;
-	if ( !haveStart || !haveDuration )
-	  {
-	    LALPrintError ( "\nYou need to specify either --timestampsFile OR --startTime and --duration \n\n");
-	    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-	  }
-	if ( uvar_SFToverlap > uvar_Tsft )
-	  {
-	    LALPrintError ("\nERROR: --SFToverlap cannot be larger than --Tsft!\n\n");
-	    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);	    
-	  }
-	/* for simplicity we *ALWAYS* use timestamps, 
-	 * so we generate them now as the user didnt' specify them */
-	XLALFloatToGPS ( &tStart, uvar_startTime );
-	TRY(LALMakeTimestamps(status->statusPtr, &(cfg->timestamps), tStart, uvar_duration, tStep ), status);
-      } /* !haveTimestamps */
-
-    /* ----- figure out start-time and duration ----- */
-    {
-      LIGOTimeGPS t1, t0;
-      REAL8 duration;
-      
-      t0 = cfg->timestamps->data[0];
-      t1 = cfg->timestamps->data[cfg->timestamps->length - 1 ];
-      TRY (LALDeltaFloatGPS(status->statusPtr, &duration, &t1, &t0), status);
-      duration += uvar_Tsft;
-      
-      cfg->startTimeGPS = cfg->timestamps->data[0];
-      cfg->duration = (UINT4)ceil ( duration );	/* round up to seconds */
-    }
-
-    if ( cfg->duration < uvar_Tsft )
-      {
-	LALPrintError ("\nERROR: requested duration of %d sec is less than minimal "
-		       "chunk-size of Tsft =%.0f sec.\n\n",
-		       uvar_duration, uvar_Tsft);
-	ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-      }
-
- 
-  } /* END: setup signal start + duration */
-
-  /*----------------------------------------------------------------------*/
-  /* currently there are only two modes: [uvar_generationMode]
-   * 1) produce the whole timeseries at once [default], 
-   *       [GENERATE_ALL_AT_ONCE]
-   * 2) produce timeseries for each SFT,
-   *       [GENERATE_PER_SFT]
-   * 
-   * Mode 2 which is useful if 1) is too memory-intensive (e.g. for hardware-injections)
-   *
-   * intermediate modes would require a bit more work because the 
-   * case with specified timestamps (allowing for gaps) would be 
-   * a bit more tricky ==> this is left for future extensions if found useful
-   */
-  if ( (uvar_generationMode < 0) || (uvar_generationMode >= GENERATE_LAST) )
-    {
-      LALPrintError ("\nIllegal input for 'generationMode': must lie within [0, %d]\n\n", 
-		     GENERATE_LAST -1);
-      ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-    }
-
-  /* this is a violation of the UserInput-paradigm that no user-variables 
-   * should by modified by the code, but this is the easiest way to do
-   * this here, and the log-output of user-variables will not be changed
-   * by this [it's already been written], so in this case it should be safe..
-   */
-  if ( uvar_hardwareTDD )
-    uvar_generationMode = GENERATE_PER_SFT;
 
   /* ---------- for SFT output: calculate effective fmin and Band ---------- */
   if ( LALUserVarWasSet( &uvar_outSFTbname ) )
@@ -787,6 +686,185 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
       cfg->fBand_eff = uvar_Band;
     }
 
+
+  /* ---------- determine timestamps to produce signal for  ---------- */
+  {
+    /* check input consistency: *uvar_timestampsFile, uvar_startTime, uvar_duration */
+    BOOLEAN haveStart, haveDuration, haveTimestampsFile, haveOverlap;
+  
+    haveStart = LALUserVarWasSet(&uvar_startTime);
+    haveDuration = LALUserVarWasSet(&uvar_duration);
+    haveTimestampsFile = LALUserVarWasSet(&uvar_timestampsFile);
+    haveOverlap = LALUserVarWasSet ( &uvar_SFToverlap );
+
+    if ( ( haveDuration && !haveStart) || ( !haveDuration && haveStart ) )
+      {
+	printf ( "\nNeed BOTH --startTime AND --duration if you give one of them !\n\n");
+	ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+      }
+    
+    /*-------------------- check special case: Hardware injection ---------- */
+    /* don't allow timestamps-file, noise-SFTs or SFT-output */
+    if ( uvar_hardwareTDD )
+      {
+	if (haveTimestampsFile || uvar_noiseSFTs )
+	  {
+	    printf ("\nHardware injection: don't specify --timestampsFile or --noiseSFTs\n\n");
+	    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+	  }
+	if ( !haveStart || !haveDuration )
+	  {
+	    printf ("\nHardware injection: need to specify --startTime and --duration!\n\n");
+	    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+	  }
+	if ( LALUserVarWasSet( &uvar_outSFTbname ) )
+	  {
+	    printf ("\nHardware injection mode is incompatible with producing SFTs\n\n");
+	    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+	  }
+      } /* if hardware-injection */
+
+    /* ----- load timestamps from file if given  */
+    if ( haveTimestampsFile )
+      {
+	LIGOTimeGPSVector *timestamps = NULL;
+	if ( haveStart || haveDuration || haveOverlap )
+	  {
+	    printf ( "\nUsing --timestampsFile is incompatible with either of --startTime, --duration or --SFToverlap\n\n");
+	    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+	  }
+	TRY (LALReadTimestampsFile(status->statusPtr, &timestamps, uvar_timestampsFile), status);
+	cfg->timestamps = timestamps;
+	
+      } /* if haveTimestampsFile */
+    
+    /* ----- if real noise-SFTs given: load them now using EITHER (start,start+duration) OR timestamps 
+     * as constraints if given, otherwise load all of them 
+     */
+    if ( uvar_noiseSFTs )
+      {
+	REAL8 fMin, fMax;
+	SFTCatalog *catalog = NULL;
+	SFTConstraints constraints = empty_SFTConstraints;
+	LIGOTimeGPS minStartTime, maxEndTime;
+
+	if ( lalDebugLevel ) 
+	  printf ( "\nWARNING: only SFTs corresponding to the noiseSFT-timestamps will be produced!\n" );
+
+	/* use all additional constraints user might have given */
+	if ( haveStart && haveDuration )
+	  {
+	    XLALFloatToGPS ( &minStartTime, uvar_startTime );
+	    constraints.startTime = &minStartTime;
+	    XLALFloatToGPS ( &maxEndTime, uvar_startTime + uvar_duration );
+	    constraints.endTime = &maxEndTime;
+	    if ( lalDebugLevel ) 
+	      printf ( "\nWARNING: only noise-SFTs between GPS [%d, %d] will be used!\n", 
+		       uvar_startTime, uvar_startTime + uvar_duration );
+	  } /* if start+duration given */
+	if ( cfg->timestamps ) 
+	  {
+	    constraints.timestamps = cfg->timestamps;
+	    if ( lalDebugLevel ) 
+	      printf ( "\nWARNING: only noise-SFTs corresponding to given timestamps '%s' will be used!\n", 
+		       uvar_timestampsFile );
+	  } /* if we have timestamps already */
+
+	/* use detector-constraint */
+	constraints.detector = channelName ;
+	
+	TRY ( LALSFTdataFind( status->statusPtr, &catalog, uvar_noiseSFTs, &constraints ), status );
+
+	/* check if anything matched */
+	if ( catalog->length == 0 )
+	  {
+	    printf ("\nNo noise-SFTs matching the constraints (IFO, start+duration, timestamps) were found!\n\n");
+	    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+	  }
+	
+	/* get timestamps from the matched SFTs */
+	TRY ( LALSFTtimestampsFromCatalog ( status->statusPtr, &cfg->timestamps, catalog ), status );
+	
+	/* load effective frequency-band from noise-SFTs */
+	fMin = cfg->fmin_eff;
+	fMax = fMin + cfg->fBand_eff;
+	TRY ( LALLoadSFTs( status->statusPtr, &(cfg->noiseSFTs), catalog, fMin, fMax ), status );
+	TRY ( LALDestroySFTCatalog ( status->statusPtr, &catalog ), status );
+	
+      } /* if uvar_noiseSFTs */
+    
+    /* have we got our timestamps yet?: If not, we must get them from (start, duration) user-input */
+    if ( ! cfg->timestamps )
+      {
+	REAL8 tStep = uvar_Tsft - uvar_SFToverlap;
+	LIGOTimeGPS tStart;
+	if ( !haveStart || !haveDuration )
+	  {
+	    printf ( "\nI need to have either --timestampsFile OR (--startTime,--duration) OR --noiseSFTs\n\n");
+	    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+	  }
+	if ( uvar_SFToverlap > uvar_Tsft )
+	  {
+	    printf ("\nERROR: --SFToverlap cannot be larger than --Tsft!\n\n");
+	    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);	    
+	  }
+	/* internally always use timestamps, so we generate them  */
+	XLALFloatToGPS ( &tStart, uvar_startTime );
+	TRY( LALMakeTimestamps ( status->statusPtr, &(cfg->timestamps), tStart, uvar_duration, tStep ), status);
+      } /* if !cfg->timestamps */
+
+    /* ----- figure out start-time and duration ----- */
+    {
+      LIGOTimeGPS t1, t0;
+      REAL8 duration;
+      
+      t0 = cfg->timestamps->data[0];
+      t1 = cfg->timestamps->data[cfg->timestamps->length - 1 ];
+      TRY (LALDeltaFloatGPS(status->statusPtr, &duration, &t1, &t0), status);
+      duration += uvar_Tsft;
+      
+      cfg->startTimeGPS = cfg->timestamps->data[0];
+      cfg->duration = (UINT4)ceil ( duration );	/* round up to seconds */
+    }
+
+    if ( cfg->duration < uvar_Tsft )
+      {
+	printf ("\nERROR: requested duration of %d sec is less than minimal "
+		       "chunk-size of Tsft =%.0f sec.\n\n",
+		       uvar_duration, uvar_Tsft);
+	ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+      }
+
+ 
+  } /* END: setup signal start + duration */
+
+  /*----------------------------------------------------------------------*/
+  /* currently there are only two modes: [uvar_generationMode]
+   * 1) produce the whole timeseries at once [default], 
+   *       [GENERATE_ALL_AT_ONCE]
+   * 2) produce timeseries for each SFT,
+   *       [GENERATE_PER_SFT]
+   * 
+   * Mode 2 which is useful if 1) is too memory-intensive (e.g. for hardware-injections)
+   *
+   * intermediate modes would require a bit more work because the 
+   * case with specified timestamps (allowing for gaps) would be 
+   * a bit more tricky ==> this is left for future extensions if found useful
+   */
+  if ( (uvar_generationMode < 0) || (uvar_generationMode >= GENERATE_LAST) )
+    {
+      printf ("\nIllegal input for 'generationMode': must lie within [0, %d]\n\n", 
+		     GENERATE_LAST -1);
+      ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+    }
+
+  /* this is a violation of the UserInput-paradigm that no user-variables 
+   * should by modified by the code, but this is the easiest way to do
+   * this here, and the log-output of user-variables will not be changed
+   * by this [it's already been written], so in this case it should be safe..
+   */
+  if ( uvar_hardwareTDD )
+    uvar_generationMode = GENERATE_PER_SFT;
 
   /* -------------------- Prepare quantities for barycentering -------------------- */
   {
@@ -853,12 +931,12 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
     {
       if ( (uvar_orbitSemiMajorAxis > 0) && !(set1 && set2 && set3 && set4 && set5) ) 
 	{
-	  LALPrintError("\nPlease either specify  ALL orbital parameters or NONE!\n\n");
+	  printf("\nPlease either specify  ALL orbital parameters or NONE!\n\n");
 	  ABORT (status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
 	}
       if ( (uvar_orbitEccentricity < 0) || (uvar_orbitEccentricity > 1) )
 	{
-	  LALPrintError ("\nEccentricity has to lie within [0, 1]\n\n");
+	  printf ("\nEccentricity has to lie within [0, 1]\n\n");
 	  ABORT (status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
 	}
       if ( (orbit = LALCalloc ( 1, sizeof(BinaryOrbitParams) )) == NULL ){
@@ -874,25 +952,9 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 
   /* -------------------- handle NOISE params -------------------- */
   {
-    /* if real noise-SFTs: load them in now */
-    if ( uvar_noiseSFTs )
-      {
-	REAL8 fMin, fMax;
-	SFTCatalog *catalog = NULL;
-	SFTConstraints constraints = empty_SFTConstraints;
-
-	TRY ( LALSFTdataFind( status->statusPtr, &catalog, uvar_noiseSFTs, &constraints ), status );
-
-	fMin = cfg->fmin_eff;
-	fMax = fMin + cfg->fBand_eff;
-	TRY ( LALLoadSFTs( status->statusPtr, &(cfg->noiseSFTs), catalog, fMin, fMax ), status );
-	TRY ( LALDestroySFTCatalog ( status->statusPtr, &catalog ), status );
-
-      } /* if uvar_noiseSFTs */
-
     if ( LALUserVarWasSet ( &uvar_noiseSigma ) && LALUserVarWasSet ( &uvar_noiseSqrtSh ) )
       {
-	LALPrintError ( "\nUse only one of '--noiseSigma' and '--noiseSqrtSh' to specify Gaussian noise!\n\n");
+	printf ( "\nUse only one of '--noiseSigma' and '--noiseSqrtSh' to specify Gaussian noise!\n\n");
 	ABORT ( status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD );
       }
     if ( LALUserVarWasSet ( &uvar_noiseSigma ) )
@@ -914,7 +976,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
       /* currently we only allow using a transfer-function for hardware-injections */
       if (!uvar_hardwareTDD )
 	{
-	  LALPrintError ("\nError: use of an actuation/transfer function "
+	  printf ("\nError: use of an actuation/transfer function "
 			 "restricted to hardare-injections\n\n");
 	  ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
 	}
@@ -927,10 +989,11 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
   
   if ( !uvar_actuation && LALUserVarWasSet(&uvar_actuationScale) )
     {
-      LALPrintError ("\nActuation-scale was specified without actuation-function file!\n\n");
+      printf ("\nActuation-scale was specified without actuation-function file!\n\n");
       ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
     }
 
+  LALFree ( channelName );
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -1157,13 +1220,13 @@ AddGaussianNoise (LALStatus* status, REAL4TimeSeries *outSeries, REAL4TimeSeries
   
   if ( (devrandom = fopen("/dev/urandom","r")) == NULL )
     {
-      LALPrintError ("\nCould not open '/dev/urandom'\n\n");
+      printf ("\nCould not open '/dev/urandom'\n\n");
       ABORT (status, MAKEFAKEDATAC_EFILE, MAKEFAKEDATAC_MSGEFILE);
     }
 
   if ( fread( (void*)&seed, sizeof(INT4), 1, devrandom) != 1)
     {
-      LALPrintError("\nCould not read from '/dev/urandom'\n\n");
+      printf("\nCould not read from '/dev/urandom'\n\n");
       fclose(devrandom);
       ABORT (status, MAKEFAKEDATAC_EFILE, MAKEFAKEDATAC_MSGEFILE);
     }
@@ -1255,12 +1318,12 @@ WriteMFDlog (LALStatus *status, char *argv[], const char *logfile)
 
     if ( logfile == NULL )
       {
-	LALPrintError ("\nERROR: WriteMFDlog() called with NULL logfile-name\n\n");
+	printf ("\nERROR: WriteMFDlog() called with NULL logfile-name\n\n");
 	ABORT( status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
       }
 
     if ( (fplog = fopen(uvar_logfile, "wb" )) == NULL) {
-      LALPrintError ("\nFailed to open log-file '%f' for writing.\n\n", uvar_logfile);
+      printf ("\nFailed to open log-file '%s' for writing.\n\n", uvar_logfile);
       ABORT (status, MAKEFAKEDATAC_EFILE, MAKEFAKEDATAC_MSGEFILE);
     }
 
@@ -1348,13 +1411,13 @@ LoadTransferFunctionFromActuation(LALStatus *status,
       f0 = f1;
       if ( 3 != sscanf (thisline, readfmt, &f1, &amp, &phi) )
 	{
-	  LALPrintError ("\nFailed to read 3 floats from line %d of file %s\n\n", i, fname);
+	  printf ("\nFailed to read 3 floats from line %d of file %s\n\n", i, fname);
 	  goto failed;
 	}
       
       if ( !gsl_finite(amp) || !gsl_finite(phi) )
 	{
-	  LALPrintError ("\nERROR: non-finite number encountered in actuation-function at f!=0. Line=%d\n\n", i);
+	  printf ("\nERROR: non-finite number encountered in actuation-function at f!=0. Line=%d\n\n", i);
 	  goto failed;
 	}
 
@@ -1369,7 +1432,7 @@ LoadTransferFunctionFromActuation(LALStatus *status,
       /* check constancy of frequency-step */
       if ( (f1 - f0 != ret->deltaF) && (i > startline) )
 	{
-	  LALPrintError ("\nIllegal frequency-step %f != %f in line %d of file %s\n\n",
+	  printf ("\nIllegal frequency-step %f != %f in line %d of file %s\n\n",
 			 (f1-f0), ret->deltaF, i, fname);
 	  goto failed;
 	}
@@ -1427,7 +1490,7 @@ LALExtractSFTBand ( LALStatus *status, SFTVector **outSFTs, const SFTVector *inS
 
   if ( (fmin < SFTf0) || ( fmin + Band > SFTf0 + SFTBand ) )
     {
-      LALPrintError ( "\nERROR: requested frequency-band is not contained in the given SFTs.\n\n");
+      printf ( "\nERROR: requested frequency-band is not contained in the given SFTs.\n\n");
       ABORT ( status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD );
     }
 
