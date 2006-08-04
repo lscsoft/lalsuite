@@ -39,8 +39,8 @@ static int mysignbit( REAL8 x )
 
 /* preprocessor macros */
 #define TINY LAL_REAL8_MIN
-#define EPS LAL_REAL8_EPS
-#define SMALL LAL_REAL8_EPS
+#define EPS LAL_REAL4_EPS
+#define SMALL LAL_REAL4_EPS
 #define MAXITER 10000
 #define ctiny crect(TINY,0)
 #define RCmul(x,a) cmulr((a),(x))
