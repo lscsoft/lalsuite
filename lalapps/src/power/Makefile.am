@@ -21,4 +21,4 @@ pythonlib_SCRIPTS = power.py
 pkgdata_DATA = power_pipe.ini power_online_pipe.ini
 
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
-
+EXTRA_DIST= $(SCRIPTS) $(DATA)
