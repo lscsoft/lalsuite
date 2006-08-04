@@ -105,7 +105,7 @@ EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
              $(SIRESRC) $(COIRESRC) $(SIVASRC) $(MINJSRC) \
              $(INCASRC) inspiral_pipe.in s2_dag.ini \
              $(COHERESRC) inspiral_pipe_s2.in inspiral_pipe.ini \
-             $(INSPINJSRC) BNSMasses.dat inspsrcs.dat \
+             $(INSPINJSRC) BNSMasses.dat inspsrcs.dat inspsrcs.errors \
              $(SPLITBANKSRC) inspiral.py inspiral_pipe_tama.in \
 	     inspiral_pipe_geo.in inspiral_online_pipe.in \
 	     inspiral_hipe.in inspiral_online_pipe_inject.in \
