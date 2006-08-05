@@ -67,6 +67,7 @@
 "  --mean-mass MASS         set the mean value for the mass if MDISTR=2\n"\
 "  --stdev-mass MSTD        set the standard deviation for mass if MDISTR=2\n"\
 "  [--output NAME]          set the output filename \n"\
+"  [--grb]                  set maximum of mass1 to 3\n"\
 "\n"
 
 RCSID( "$Id$" );
@@ -140,6 +141,7 @@ float meanMass=-1.0;
 float massStdev=-1.0;
 float inclPeak=1;
 int flagInclPeak=0;
+int flagGRB=0;
 
 static LALStatus status;
 static RandomParams* randParams;
@@ -654,6 +656,12 @@ int inj_params( double *injPar, char *source )
       m1 = minMass + u * deltaM;
       u=my_urandom();
       m2 = minMass + u * deltaM;
+
+      /* If GRB injections are made make sure mass1 is no larger than 3.0 */
+      if ( flagGRB ) {
+	u=my_urandom();
+	m1 = minMass + u * (3.0-minMass);
+      }
     }
     else if (mdistr == 2)
     {
@@ -820,6 +828,7 @@ int main( int argc, char *argv[] )
     {"lal-eff-dist",                  no_argument, &lalEffDist,       1 },
     {"ilwd",                          no_argument, &ilwd,             1 },
     {"disable-milkyway",              no_argument, &allowMW,          0 },
+    {"grb",                           no_argument, &flagGRB,          1 },
     {0, 0, 0, 0}
   };
   int c;
@@ -1215,6 +1224,20 @@ int main( int argc, char *argv[] )
     LALSnprintf( procparams.processParamsTable->value, 
         LIGOMETA_TYPE_MAX, " " );
   }
+
+  /* store the grb-flag argument */
+  if ( flagGRB )
+  {
+    LALSnprintf( procparams.processParamsTable->program, 
+        LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
+    LALSnprintf( procparams.processParamsTable->param,
+        LIGOMETA_PARAM_MAX, "--grb" );
+    LALSnprintf( procparams.processParamsTable->type, 
+        LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( procparams.processParamsTable->value, 
+        LIGOMETA_TYPE_MAX, " " );
+  }
+
 
   /* create the first injection */
   this_sim_insp = injections.simInspiralTable = (SimInspiralTable *)
