@@ -1017,7 +1017,6 @@ int ReadData(struct CommandLineArgsTag CLA)
 int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA) 
 {
   INT4 errflg = 0;
-  optarg = NULL;
   ProcessParamsTable **paramaddpoint = &procparams.processParamsTable;
   struct option long_options[] = {
     {"bw-flow",                     required_argument, NULL,           'f'},
@@ -1051,6 +1050,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   };
   char args[] = "hnckwabrxyzl:f:L:H:t:F:C:E:S:i:d:T:s:g:o:p:";
 
+  optarg = NULL;
   /* set up xml output stuff */
   /* create the process and process params tables */
   procTable.processTable = LALCalloc(1, sizeof(ProcessTable));
