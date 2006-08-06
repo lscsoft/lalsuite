@@ -77,6 +77,10 @@ int main( int argc, char **argv )
   RingTemplateBank        *bank      = NULL;
   RingDataSegments        *segments  = NULL;
   SnglRingdownTable       *events    = NULL;
+  SnglRingdownTable *tmpEventHead = NULL;
+  SnglRingdownTable *checkEvents = NULL;
+  SnglRingdownTable *lastEvent = NULL;
+  UINT4 numEvents = 0;
 
   /* set error handlers to abort on error */
   set_abrt_on_error();
@@ -118,11 +122,6 @@ int main( int argc, char **argv )
         LALCompareSnglRingdownByTime ), &status );
   
   /* discard any triggers outside the trig start/end time window */
-  SnglRingdownTable *tmpEventHead = NULL;
-  SnglRingdownTable *checkEvents = NULL;
-  SnglRingdownTable *lastEvent = NULL;
-  UINT4 numEvents = 0;
-      
   
   if ( vrbflg ) fprintf( stdout, 
       "  discarding triggers outside trig start/end time... \n" );
