@@ -108,8 +108,8 @@ int main( int argc, char *argv[] )
   const INT4            S4StopTime  = 795679213; /* Wed March 23, 2005 at 24:00 CST (22:00 PST) */
 
   /* command line options */
-  LIGOTimeGPS   gpsStartTime = {S4StartTime, 0};
-  LIGOTimeGPS   gpsEndTime   = {S4StopTime, 0};
+  LIGOTimeGPS   gpsStartTime;
+  LIGOTimeGPS   gpsEndTime;
   REAL8         meanTimeStep = 2630 / LAL_PI;
   REAL8         tstep = 0;
   UINT4         randSeed = 1;
@@ -180,9 +180,17 @@ int main( int argc, char *argv[] )
   };
   int c;
 
+  REAL4 lmin;
+  REAL4 lmax;
+  REAL4 deltaL;
+  REAL4 deltaA;
+
   /* set up inital debugging values */
   lal_errhandler = LAL_ERR_EXIT;
   set_debug_level( "1" );
+
+  gpsStartTime.gpsSeconds = S4StartTime;
+  gpsEndTime.gpsSeconds   = S4StopTime;
 
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) 
@@ -521,12 +529,12 @@ int main( int argc, char *argv[] )
   deltaM = maxMass - minMass;
 
   /* distance range */
-   REAL4 lmin = log10(dmin);
-   REAL4 lmax = log10(dmax);
-   REAL4 deltaL = lmax - lmin;
+   lmin = log10(dmin);
+   lmax = log10(dmax);
+   deltaL = lmax - lmin;
            
   /* spin range */
-   REAL4 deltaA = maxSpin - minSpin;
+   deltaA = maxSpin - minSpin;
   
   /* null out the head of the linked list */
    injections.simRingdownTable = NULL;
@@ -558,11 +566,11 @@ int main( int argc, char *argv[] )
              fprintf( stdout, "injecting into playground only\n");
     if ( is_outside_playground( gpsStartTime ) )
     {
+      LALStatus status = blank_status;
+      REAL8 randstep;
       if ( vrbflg )
         fprintf( stdout, "gps-start-time outside of playground, ... shifting to next playground interval\n");
 /*      REAL8 nextplay;*/
-      REAL8 randstep;
-      LALStatus status = blank_status;
 /*      nextplay = step(gpsStartTime);*/  /*find start of next playground interval*/
       LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
       randstep = step(gpsStartTime) + u * 600;  /* find a random time within this 600s */

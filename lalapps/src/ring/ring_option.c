@@ -21,22 +21,23 @@ static int ring_default_params( struct ring_params *params );
 /* parse command line arguments using getopt_long to get ring params */
 int ring_parse_options( struct ring_params *params, int argc, char **argv )
 {
+  static struct ring_params localparams;
   struct option long_options[] =
   {
     { "verbose", no_argument, &vrbflg, 1 },
-    { "geo-data", no_argument, &params->geoData, 1 },
-    { "strain-data", no_argument, &params->strainData, 1 },
-    { "simulated-data", no_argument, &params->simData, 1 },
-    { "zero-data", no_argument, &params->zeroData, 1 },
-    { "white-spectrum", no_argument, &params->whiteSpectrum, 1 },
-    { "bank-only", no_argument, &params->bankOnly, 1 },
-    { "write-raw-data",     no_argument, &params->writeRawData, 1 },
-    { "write-data",         no_argument, &params->writeProcessedData, 1 },
-    { "write-response",     no_argument, &params->writeResponse, 1 },
-    { "write-spectrum",     no_argument, &params->writeSpectrum, 1 },
-    { "write-inv-spectrum", no_argument, &params->writeInvSpectrum, 1 },
-    { "write-segment",      no_argument, &params->writeSegment, 1 },
-    { "write-filter-output",no_argument, &params->writeFilterOutput, 1 },
+    { "geo-data", no_argument, &localparams.geoData, 1 },
+    { "strain-data", no_argument, &localparams.strainData, 1 },
+    { "simulated-data", no_argument, &localparams.simData, 1 },
+    { "zero-data", no_argument, &localparams.zeroData, 1 },
+    { "white-spectrum", no_argument, &localparams.whiteSpectrum, 1 },
+    { "bank-only", no_argument, &localparams.bankOnly, 1 },
+    { "write-raw-data",     no_argument, &localparams.writeRawData, 1 },
+    { "write-data",         no_argument, &localparams.writeProcessedData, 1 },
+    { "write-response",     no_argument, &localparams.writeResponse, 1 },
+    { "write-spectrum",     no_argument, &localparams.writeSpectrum, 1 },
+    { "write-inv-spectrum", no_argument, &localparams.writeInvSpectrum, 1 },
+    { "write-segment",      no_argument, &localparams.writeSegment, 1 },
+    { "write-filter-output",no_argument, &localparams.writeFilterOutput, 1 },
     { "help",                    no_argument,       0, 'h' },
     { "version",                 no_argument,       0, 'V' },
     { "gps-start-time",          required_argument, 0, 'a' },
@@ -80,7 +81,7 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
   char *program = argv[0];
 
   /* set default values for parameters before parsing arguments */
-  ring_default_params( params );
+  ring_default_params( &localparams );
 
   while ( 1 )
   {
@@ -100,113 +101,113 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
           error( "error parsing option %s with argument %s\n",
               long_options[option_index].name, optarg );
       case 'a': /* gps-start-time */
-        params->startTime.gpsSeconds = atol( optarg );
+        localparams.startTime.gpsSeconds = atol( optarg );
         break;
       case 'A': /* gps-start-time-ns */
-        params->startTime.gpsNanoSeconds = atol( optarg );
+        localparams.startTime.gpsNanoSeconds = atol( optarg );
         break;
       case 'b': /* gps-end-time */
-        params->endTime.gpsSeconds = atol( optarg );
+        localparams.endTime.gpsSeconds = atol( optarg );
         break;
       case 'B': /* gps-end-time-ns */
-        params->endTime.gpsNanoSeconds = atol( optarg );
+        localparams.endTime.gpsNanoSeconds = atol( optarg );
         break;
       case 'c': /* channel-name */
-        params->channel = optarg;
+        localparams.channel = optarg;
         break;
       case 'C': /* calibration-cache */
-        params->calibCache = optarg;
+        localparams.calibCache = optarg;
         break;
       case 'd': /* debug-level */
         set_debug_level( optarg );
         break;
       case 'D': /* frame-cache */
-        params->dataCache = optarg;
+        localparams.dataCache = optarg;
         break;
       case 'e': /* cutoff-frequency */
-        params->lowCutoffFrequency = atof( optarg );
+        localparams.lowCutoffFrequency = atof( optarg );
         break;
       case 'E': /* highpass-frequency */
-        params->highpassFrequency = atof( optarg );
+        localparams.highpassFrequency = atof( optarg );
         break;
       case 'f': /* bank min frequency */
-        params->bankParams.minFrequency = atof( optarg );
+        localparams.bankParams.minFrequency = atof( optarg );
         break;
       case 'F': /* bank max frequency */
-        params->bankParams.maxFrequency = atof( optarg );
+        localparams.bankParams.maxFrequency = atof( optarg );
         break;
       case 'g': /* geo-highpass-frequency */
-        params->geoHighpassFrequency = atof( optarg );
+        localparams.geoHighpassFrequency = atof( optarg );
         break;
       case 'G': /* geo-data-scale */
-        params->geoScale = atof( optarg );
+        localparams.geoScale = atof( optarg );
         error( "currently geo scale is not implemented correctly\n" );
         break;
       case 'h': /* help */
         ring_usage( program );
         exit( 0 );
       case 'i': /* injection-file */
-        params->injectFile = optarg;
+        localparams.injectFile = optarg;
         break;
       case 'I': /* inject-mdc-frame */
         error( "currently unsupported option: --inject-mdc-frame\n" );
         break;
       case 'm': /* bank max mismatch */
-        params->bankParams.maxMismatch = atof( optarg );
+        localparams.bankParams.maxMismatch = atof( optarg );
         break;
       case 'M': /* maximize duration */
-        params->maximizeEventDuration = atof( optarg );
+        localparams.maximizeEventDuration = atof( optarg );
         break;
       case 'n': /* only-segment-numbers */
-        params->segmentsToDoList = optarg;
+        localparams.segmentsToDoList = optarg;
         break;
       case 'N': /* only-template-number */
-        params->templatesToDoList = optarg;
+        localparams.templatesToDoList = optarg;
         break;
       case 'o': /* output-file */
-        strncpy( params->outputFile, optarg, sizeof( params->outputFile ) - 1 );
+        strncpy( localparams.outputFile, optarg, sizeof( localparams.outputFile ) - 1 );
         break;
       case 'O': /* bank-file */
-        strncpy( params->bankFile, optarg, sizeof( params->bankFile ) - 1 );
+        strncpy( localparams.bankFile, optarg, sizeof( localparams.bankFile ) - 1 );
         break;
       case 'p': /* bank template phase */
-        params->bankParams.templatePhase = atof( optarg );
+        localparams.bankParams.templatePhase = atof( optarg );
         break;
       case 'q': /* bank min quality */
-        params->bankParams.minQuality = atof( optarg );
+        localparams.bankParams.minQuality = atof( optarg );
         break;
       case 'Q': /* bank max quality */
-        params->bankParams.maxQuality = atof( optarg );
+        localparams.bankParams.maxQuality = atof( optarg );
         break;
       case 'r': /* random seed */
-        params->randomSeed = atoi( optarg );
+        localparams.randomSeed = atoi( optarg );
         break;
       case 'R': /* dynamic range factor */
-        params->dynRangeFac = atof( optarg );
+        localparams.dynRangeFac = atof( optarg );
         break;
       case 's': /* sample rate */
-        params->sampleRate = atof( optarg );
+        localparams.sampleRate = atof( optarg );
         break;
       case 'S': /* segment-duration */
-        params->segmentDuration = atof( optarg );
+        localparams.segmentDuration = atof( optarg );
         break;
       case 't': /* threshold */
-        params->threshold = atof( optarg );
+        localparams.threshold = atof( optarg );
         break;
       case 'T': /* inverse-spec-length */
-        params->invSpecLen = atof( optarg );
+        localparams.invSpecLen = atof( optarg );
         break;
       case 'u': /* trig-start-time */
-        params->trigStartTimeNS = (INT8) atol( optarg ) * 1000000000LL;
+        localparams.trigStartTimeNS = (INT8) atol( optarg ) * 1000000000LL;
         break;
       case 'U': /* trig-end-time */
-        params->trigEndTimeNS = (INT8) atol( optarg ) * 1000000000LL;
+        localparams.trigEndTimeNS = (INT8) atol( optarg ) * 1000000000LL;
         break;
       case 'w': /* block-duration */
-        params->duration = atof( optarg );
+        localparams.duration = atof( optarg );
         break;
       case 'W': /* pad-data */
-        params->padData = atof( optarg );
+        localparams.padData = atof( optarg );
         break;
       case 'V': /* version */
         PRINT_VERSION( "ring" );
@@ -225,6 +226,8 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
       fprintf( stderr, "%s\n", argv[optind++] );
     exit( 1 );
   }
+
+  *params = localparams;
 
   return 0;
 }
