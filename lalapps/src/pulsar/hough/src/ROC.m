@@ -1,14 +1,14 @@
 #/usr/bin/octave
 
 ## start frequency of band to be analyzed 
-f0 = 140.5;
-##f0 = 78.5;
+##f0 = 140.5;
+f0 = 78.5;
 
 ## length of band to be analyzed
 fBand = 0.25;
 
 ## injected signal amplitude
-h0Start = 1.0e-24;
+h0Start = 9.0e-24;
 steph0 = 1.0e-24;
 
 ## Threshold on significance for detection
@@ -17,7 +17,16 @@ FAthr = 4;
 
 ## number of software injections
 numInjections = 50;
-numH0 = 7;
+numH0 = 5;
+
+## get skypatch info 
+load skyfileS4c
+
+alphaVec = skyfileS4c(:,1);
+deltaVec = skyfileS4c(:,2);
+sizeAlphaVec = skyfileS4c(:,3);
+sizeDeltaVec = skyfileS4c(:,4);
+
 
 for h0Index = 1:numH0
 
@@ -51,10 +60,10 @@ for h0Index = 1:numH0
     
     ## run makefakedata
     cmdline = sprintf("lalapps_Makefakedata --outSFTbname=./ROC-SFT/ \
-	--IFO=H1 --ephemDir=/home/badkri/lscsoft/share/lal/ \
+	--IFO=H1 --ephemDir=/local_data/badkri/lscsoft/share/lal/ \
       --ephemYear=05-09 --fmin=%.12g --Band=%.12g --Alpha=%.12g \
     --Delta=%.12g --h0=%.5e --cosi=%.12g --phi0=%.12g --psi=%.12g \
-    --Freq=%.12g --f1dot=%.5e --noiseSFTs='/home/badkri/ROC-140/*.sft'", \ 
+    --Freq=%.12g --f1dot=%.5e --noiseSFTs='/local_data/badkri/ROC-78/*.sft'", \ 
 		      mfdfmin, mfdband, signalAlpha, signalDelta, h0, cosi, phi0, psi, \
 		      signalFreq, signalF1dot);
     
@@ -69,15 +78,7 @@ for h0Index = 1:numH0
     x = cos(signalDelta)*cos(signalAlpha);
     y = cos(signalDelta)*sin(signalAlpha);
     z = sin(signalDelta);
-    
-    ## get skypatch info 
-    load skyfileS4c
-    
-    alphaVec = skyfileS4c(:,1);
-    deltaVec = skyfileS4c(:,2);
-    sizeAlphaVec = skyfileS4c(:,3);
-    sizeDeltaVec = skyfileS4c(:,4);
-    
+            
     ## cartesian components of skypatch centers
     thisX = cos(deltaVec) .* cos(alphaVec);
     thisY = cos(deltaVec) .* sin(alphaVec);
@@ -88,13 +89,13 @@ for h0Index = 1:numH0
     [maxval,maxind] = max(xprodX);
     
     ## now we know which skypatch hough driver should analyze
-    skyPar(1) = alphaVec(maxind);
-    skyPar(2) = deltaVec(maxind);
-    skyPar(3) = sizeAlphaVec(maxind);
-    skyPar(4) = sizeDeltaVec(maxind);
+    skyPar(1,1) = alphaVec(maxind);
+    skyPar(1,2) = deltaVec(maxind);
+    skyPar(1,3) = sizeAlphaVec(maxind);
+    skyPar(1,4) = sizeDeltaVec(maxind);
     
     ## write skypatch info to file which hough driver can use
-    save -text tempskyfile1 skyPar
+    save -ascii tempskyfile1 skyPar
     system("grep -v '#' tempskyfile1 > tempskyfile");
     system("rm tempskyfile1");
     
@@ -102,10 +103,12 @@ for h0Index = 1:numH0
     system("rm -rf ./outMulti/*");
     cmdline = sprintf("./DriveHoughMulti --f0=%.12g --fSearchBand=%.12g --skyfile=./tempskyfile \
     --houghThreshold=%.5e --sftDir='./ROC-SFT/*.sft' --printEvents=1 \
+    --earthEphemeris=/local_data/badkri/lscsoft/share/lal/earth05-09.dat \
+    --sunEphemeris=/local_data/badkri/lscsoft/share/lal/sun05-09.dat \
     --linefiles=../../LineInfo/S4lines_H1_xavi.txt.v2.thinlines,../../LineInfo/S4lines_L1_xavi.txt.v2.thinlines",f0,fBand, \
-		      FAthr);
+		      FAthr)
     
-    [output, status] = system(cmdline);
+    [output, status] = system(cmdline)
     
     ## some cleanup
     system("rm tempskyfile");
@@ -143,7 +146,8 @@ for h0Index = 1:numH0
     if closeSig(closestIndex) > sigmaThr    
       numDetections += 1;
     endif
-    
+
+    clear HMevents    
     
     ##freq = HMnstar(:,3);
     ##nstar = HMnstar(:,2);
@@ -166,3 +170,5 @@ for h0Index = 1:numH0
   h0Vector(h0Index) = h0
 
 endfor ## end of all h0 values
+
+save -ascii ROC.out efficiency h0Vector
