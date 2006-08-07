@@ -111,7 +111,7 @@ BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps, uvar_printStats, 
 
 #define THRESHOLD 1.6 /* thresold for peak selection, with respect to the
                               the averaged power in the search band */
-#define FALSEALARM 1.0e-9 /* Hough false alarm for candidate selection */
+#define HOUGHTHRESHOLD 5.0 /* Hough threshold for candidate selection -- number of sigmas away from mean*/
 #define SKYFILE "./skypatchfile"      
 #define F0 310.0   /*  frequency to build the LUT and start search */
 #define FBAND 0.05   /* search frequency band  */
@@ -128,7 +128,7 @@ int PrintHistogram(UINT8Vector *hist, CHAR *fnameOut);
 
 void PrintnStarFile (LALStatus *status, HoughSignificantEventVector *eventVec, CHAR *dirname, CHAR *basename);
 
-void PrintHoughEvents (LALStatus *status, FILE *fpEvents, INT4 houghThreshold, HOUGHMapTotal *ht, HOUGHPatchGrid *patch, HOUGHDemodPar *parDem, REAL8 mean, REAL8 sigma);
+void PrintHoughEvents (LALStatus *status, FILE *fpEvents, REAL8 houghThreshold, HOUGHMapTotal *ht, HOUGHPatchGrid *patch, HOUGHDemodPar *parDem, REAL8 mean, REAL8 sigma);
 
 int PrintHmap2m_file(HOUGHMapTotal *ht, CHAR *fnameOut, INT4 iHmap);
 
@@ -201,7 +201,7 @@ int main(int argc, char *argv[]){
   static HoughSignificantEventVector nStarEventVec;
 
   /* miscellaneous */
-  INT4   houghThreshold, iHmap, nSpin1Max;
+  INT4   iHmap, nSpin1Max;
   UINT4  mObsCoh;
   INT8   f0Bin, fLastBin, fBin;
   REAL8  alpha, delta, timeBase, deltaF, f1jump;
@@ -217,7 +217,7 @@ int main(int argc, char *argv[]){
   BOOLEAN  uvar_help, uvar_weighAM, uvar_weighNoise, uvar_printLog, uvar_printWeights;
   INT4     uvar_blocksRngMed, uvar_nfSizeCylinder, uvar_maxBinsClean;
   REAL8    uvar_startTime, uvar_endTime;
-  REAL8    uvar_f0, uvar_peakThreshold, uvar_houghFalseAlarm, uvar_fSearchBand;
+  REAL8    uvar_f0, uvar_peakThreshold, uvar_houghThreshold, uvar_fSearchBand;
   CHAR     *uvar_earthEphemeris=NULL;
   CHAR     *uvar_sunEphemeris=NULL;
   CHAR     *uvar_sftDir=NULL;
@@ -245,7 +245,7 @@ int main(int argc, char *argv[]){
   uvar_f0 = F0;
   uvar_fSearchBand = FBAND;
   uvar_peakThreshold = THRESHOLD;
-  uvar_houghFalseAlarm = FALSEALARM;
+  uvar_houghThreshold = HOUGHTHRESHOLD;
   uvar_printEvents = FALSE;
   uvar_printTemplates = FALSE;
   uvar_printMaps = FALSE;
@@ -288,7 +288,7 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "fbasenameOut",     0,  UVAR_OPTIONAL, "Output file basename",                  &uvar_fbasenameOut),    &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printMaps",        0,  UVAR_OPTIONAL, "Print Hough maps",                      &uvar_printMaps),       &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printTemplates",   0,  UVAR_OPTIONAL, "Print templates file",                  &uvar_printTemplates),  &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "houghFalseAlarm",  0,  UVAR_OPTIONAL, "Hough false alarm to set threshold",    &uvar_houghFalseAlarm), &status);  
+  LAL_CALL( LALRegisterREALUserVar(   &status, "houghThreshold",   0,  UVAR_OPTIONAL, "Hough threshold (No. of sigmas)",       &uvar_houghThreshold),  &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printEvents",      0,  UVAR_OPTIONAL, "Print events above threshold",          &uvar_printEvents),     &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printStats",       0,  UVAR_OPTIONAL, "Print Hough statistics",                &uvar_printStats),      &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printSigma",       0,  UVAR_OPTIONAL, "Print expected number count stdev.",    &uvar_printSigma),      &status);
@@ -322,13 +322,6 @@ int main(int argc, char *argv[]){
   if ( uvar_peakThreshold < 0 ) {
     fprintf(stderr, "peak selection threshold must be positive\n");
     exit(1);
-  }
-
-  if ( uvar_printEvents ) {
-    if ((uvar_houghFalseAlarm > 1.0 ) || (uvar_houghFalseAlarm < 0.0) )  {
-      fprintf(stderr, "hough false alarm must be between 0 and 1\n");
-      exit(1);
-    }
   }
 
   /* write log file with command line arguments, cvs tags, and contents of skypatch file */
@@ -679,7 +672,7 @@ int main(int argc, char *argv[]){
     {
       UINT4 k, numsft;
       REAL8 sumWeightSquare;
-      REAL8  alphaPeak, meanN, sigmaN, erfcInv;
+      REAL8  alphaPeak, meanN, sigmaN;
       SkyPosition skypos;
 
       /* set sky positions and skypatch sizes */
@@ -731,8 +724,7 @@ int main(int argc, char *argv[]){
 	sumWeightSquare += weightsV.data[k] * weightsV.data[k];
 
 
-      /* computing the Hough threshold for a given false alarm  */
-      /* HoughThreshold = N*alpha +sqrt(2 ||w||^2 * alpha *(1-alpha))*erfcinv(2 alpha_h) */      
+
 
       /* probability of selecting a peak expected mean and standard deviation for noise only */
       alphaPeak = exp( - uvar_peakThreshold);
@@ -748,10 +740,10 @@ int main(int argc, char *argv[]){
 	 erfcinv(x) = gsl_cdf_ugaussian_Qinv (0.5*x)/sqrt(2) */
       /* First check that false alarm is within bounds 
 	 and set it to something reasonable if not */
-      if ( uvar_printEvents ) {
-	erfcInv = gsl_cdf_ugaussian_Qinv (uvar_houghFalseAlarm)/sqrt(2);    
-	houghThreshold = meanN + sigmaN*sqrt(2.0)*erfcInv;    
-      }
+      /* if ( uvar_printEvents ) { */
+      /* 	erfcInv = gsl_cdf_ugaussian_Qinv (uvar_houghFalseAlarm)/sqrt(2);     */
+      /* 	houghThreshold = meanN + sigmaN*sqrt(2.0)*erfcInv;     */
+      /*       } */
       
 
       /* opening the output statistics and event files */
@@ -1054,7 +1046,7 @@ int main(int argc, char *argv[]){
 			(fBinSearch*deltaF), ht.spinRes.data[0]);
 
 	      if ( uvar_printEvents )
-		LAL_CALL( PrintHoughEvents (&status, fpEvents, houghThreshold, &ht,
+		LAL_CALL( PrintHoughEvents (&status, fpEvents, uvar_houghThreshold, &ht,
 					    &patch, &parDem, meanN, sigmaN), &status );
 
 	      if ( uvar_printTemplates )
@@ -1306,7 +1298,7 @@ int PrintHmap2m_file(HOUGHMapTotal *ht, CHAR *fnameOut, INT4 iHmap){
 /******************************************************************/
 void PrintHoughEvents (LALStatus       *status,
         	      FILE            *fpEvents,
-	  	      INT4            houghThreshold,
+	  	      REAL8           houghThreshold,
 		      HOUGHMapTotal   *ht,
 	    	      HOUGHPatchGrid  *patch,
 	 	      HOUGHDemodPar   *parDem,
@@ -1340,17 +1332,17 @@ void PrintHoughEvents (LALStatus       *status,
   for(yPos =0; yPos<ySide; yPos++){
     for(xPos =0; xPos<xSide; xPos++){
       /* read the current number count */
-      temp = ht->map[yPos*xSide + xPos];
+      temp = (ht->map[yPos*xSide + xPos] - mean)/sigma;
       if(temp > houghThreshold){
         TRY( LALStereo2SkyLocation(status->statusPtr, 
 				&sourceLocation,xPos,yPos,patch, parDem), status);
 	if (ht->spinRes.length) {
-	  fprintf(fpEvents, "%g %g %g %g %g \n", 
-		  (temp - mean)/sigma, sourceLocation.alpha, sourceLocation.delta, 
+	  fprintf(fpEvents, "%f %f %f %f %g \n", 
+		  temp, sourceLocation.alpha, sourceLocation.delta, 
 		  f0, ht->spinRes.data[0]);
 	}
 	else {
-	  fprintf(fpEvents, "%g %g %g %g %g \n", 
+	  fprintf(fpEvents, "%f %f %f %f %g \n", 
 		  temp, sourceLocation.alpha, sourceLocation.delta, 
 		  f0,0.00);
 	}
