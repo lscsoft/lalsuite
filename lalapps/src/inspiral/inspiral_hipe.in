@@ -1485,7 +1485,7 @@ if opts.td_follow_bank or opts.td_follow_inspiral:
     approximants = cp.get('inspiral', 'approximant')
 
   approximants = approximants.split(',')
-else
+else:
   approximants = None
 
 # Initialise the banks
