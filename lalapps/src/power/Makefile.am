@@ -24,4 +24,3 @@ EXTRA_DIST = power.c bread.c binj.c \
 pkgdata_DATA = power_pipe.ini power_online_pipe.ini
 
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
-EXTRA_DIST= $(SCRIPTS) $(DATA)
