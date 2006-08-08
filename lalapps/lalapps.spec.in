@@ -1,6 +1,9 @@
 %define _prefix @prefix@
 %define _mandir %{_prefix}/share/man
 %define _sysconfdir %{_prefix}/etc
+%define _pkgpythondir %{_prefix}/lib/python@PYTHON_VERSION@/site-packages/@PACKAGE@
+%define _pkgpyexecdir %{_libdir}/python@PYTHON_VERSION@/site-packages/@PACKAGE@
+
 Name: @PACKAGE@
 Version: @VERSION@
 Release: 1
@@ -43,7 +46,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %files
 %defattr(-,root,root)
 %{_bindir}/*
-%{_libdir}/python/*
+%{_pkgpythondir}/*
 %{_mandir}/man1/*
 %{_datadir}/lalapps/*
 %{_sysconfdir}/lalapps-user-env.*
