@@ -94,6 +94,7 @@ int finite(double);
 typedef struct FiducialTimeConfigVarsTag 
 {
   REAL8 ThrTwoF;
+  INT4 InNumLines;
   CHAR *OutputFile;  /*  Name of output file */
   CHAR *InputFile;   /*  Name of input file (combined result file produced by combiner_v2.py */
 } FiducialTimeConfigVars;
@@ -106,7 +107,7 @@ typedef struct CandidateListTag
   REAL8 Delta;       /*  declination  of the candidate */
   REAL8 F1dot;       /*  spindown (d/dt f) of the candidate */
   REAL8 TwoF;        /*  Maximum value of F for the cluster */
-  INT4 FileID;       /*  File ID to specify from which file the candidate under consideration originally came. */
+  INT2 FileID;       /*  File ID to specify from which file the candidate under consideration originally came. */
   INT4 DataStretch;
   CHAR resultfname[256];  /*  Name of the particular result file where values originally came from. */
 } CandidateList;     
@@ -208,6 +209,7 @@ void PrintResultFile(LALStatus *lalStatus, const FiducialTimeConfigVars *CLA, Ca
   FILE *fp = NULL;
   INT4 *count;
   INT4 nmax = 0;
+  const CHAR *fname;
   
   INITSTATUS( lalStatus, "PrintResultFile", rcsid );
   ATTATCHSTATUSPTR (lalStatus);
@@ -220,15 +222,21 @@ void PrintResultFile(LALStatus *lalStatus, const FiducialTimeConfigVars *CLA, Ca
     ABORT (lalStatus, FIDUCIALC_EMEM, FIDUCIALC_MSGEMEM);
   }
   
+  fname=CLA->OutputFile;  
 
 
   /* ------------------------------------------------------------- */
   /* Print out to the user-specified output file.*/
-  if( (fp = fopen(CLA->OutputFile,"w")) == NULL ) 
-    {
-      LALPrintError("\n Cannot open file %s\n",CLA->OutputFile); 
-      ABORT (lalStatus, FIDUCIALC_EMEM, FIDUCIALC_MSGEMEM);
-    }
+  if(strcmp(fname,"-")==0){
+    fp=stdout;
+  }
+  else {
+    if( (fp = fopen(fname,"w")) == NULL ) 
+      {
+	LALPrintError("\n Cannot open output file %s\n",CLA->OutputFile); 
+	ABORT (lalStatus, FIDUCIALC_EMEM, FIDUCIALC_MSGEMEM);
+      }
+  }
 
   /* output lines */
   /*INITSTATUS( lalStatus, "print_output", rcsid ); */
@@ -362,7 +370,7 @@ void ReadCombinedFile( LALStatus *lalStatus,
 		      long *candlen )
 {
   long i,jj;
-  long  numlines;
+  INT4  numlines;
   REAL8 epsilon=1e-5;
   CHAR line1[256];
   FILE *fp;
@@ -373,7 +381,7 @@ void ReadCombinedFile( LALStatus *lalStatus,
   const CHAR *fname;
         
   fname = CLA->InputFile;
-
+ 
   INITSTATUS( lalStatus, "ReadCombinedFile", rcsid );
   ATTATCHSTATUSPTR (lalStatus);
   ASSERT( fname != NULL, lalStatus, FIDUCIALC_ENULL, FIDUCIALC_MSGENULL);
@@ -381,57 +389,90 @@ void ReadCombinedFile( LALStatus *lalStatus,
 
   /* ------ Open and count candidates file ------ */
   i=0;
-  fp=fopen(fname,"rb");
-  if (fp==NULL) 
-    {
-      LALPrintError("File %s doesn't exist!\n",fname);
-      ABORT (lalStatus, FIDUCIALC_EINVALIDFSTATS, FIDUCIALC_MSGEINVALIDFSTATS);
-     }
-  while(fgets(line1,sizeof(line1),fp)) {
-    UINT4 k;
-    size_t len=strlen(line1);
 
-    /* check that each line ends with a newline char (no overflow of
-       line1 or null chars read) */
-    if (!len || line1[len-1] != '\n') {
-      LALPrintError(
-              "Line %d of file %s is too long or has no NEWLINE.  First 255 chars are:\n%s\n",
-              i+1, fname, line1);
-      fclose(fp);
-      ABORT (lalStatus, FIDUCIALC_EINVALIDFSTATS, FIDUCIALC_MSGEINVALIDFSTATS);
-     }
-
-    /* increment line counter */
-    i++;
-
-    /* maintain a running checksum and byte count */
-    bytecount+=len;
-    for (k=0; k<len; k++)
-      checksum+=(INT4)line1[k];
+  if(strcmp(fname,"-")==0){
+    fp=stdin;
+    }
+  else {
+    fp=fopen(fname,"rb");
+    if (fp==NULL) 
+      {
+	LALPrintError("File %s doesn't exist!\n",fname);
+	ABORT (lalStatus, FIDUCIALC_EINVALIDFSTATS, FIDUCIALC_MSGEINVALIDFSTATS);
+      }
   }
-  numlines=i;
-  /* -- close candidate file -- */
-  fclose(fp);     
 
+  
+  if(strcmp(fname,"-")==0){
+    numlines = CLA->InNumLines;
+#if 0
+    while(gets(line1)) {
+      UINT4 k;
+      size_t len=strlen(line1);
+      
+      /* increment line counter */
+      i++;
+      
+      /* maintain a running checksum and byte count */
+      bytecount+=len;
+      for (k=0; k<len; k++)
+	checksum+=(INT4)line1[k];
+    }
+#endif
+  }
+  
+  else{
+    while( fgets(line1,sizeof(line1),fp) ) {
+      UINT4 k;
+      size_t len=strlen(line1);
+      
+      /* check that each line ends with a newline char (no overflow of
+	 line1 or null chars read) */
+      if (!len || line1[len-1] != '\n') {
+	LALPrintError(
+		      "Line %d of file %s is too long or has no NEWLINE.  First 255 chars are:\n%s\n",
+		      i+1, fname, line1);
+	fclose(fp);
+	ABORT (lalStatus, FIDUCIALC_EINVALIDFSTATS, FIDUCIALC_MSGEINVALIDFSTATS);
+      }
+      
+      /* increment line counter */
+      i++;
+      
+      /* maintain a running checksum and byte count */
+      bytecount+=len;
+      for (k=0; k<len; k++)
+	checksum+=(INT4)line1[k];
+    }
+    /* -- close candidate file -- */
+    fclose(fp);  
+    numlines=i;
+  }
+    
+ 
+  
   if ( numlines == 0) 
     {
       LALPrintError ("ERROR: File '%s' has no lines so is not properly terminated by: %s", fname, DONE_MARKER);
       ABORT (lalStatus, FIDUCIALC_EINVALIDFSTATS, FIDUCIALC_MSGEINVALIDFSTATS);
     }
 
-  /* output a record of the running checksun amd byte count */
-  LALPrintError( "%% %s: bytecount %" LAL_UINT4_FORMAT " checksum %" LAL_UINT4_FORMAT "\n", fname, bytecount, checksum);
+  if(strcmp(fname,"-") != 0){
+    /* output a record of the running checksun amd byte count */
+    LALPrintError( "%% %s: bytecount %" LAL_UINT4_FORMAT " checksum %" LAL_UINT4_FORMAT "\n", fname, bytecount, checksum);
+    
+    /* check validity of this Fstats-file */
+    if ( strcmp(strcat(line1,"\n"), DONE_MARKER ) ) 
+      {
+	LALPrintError ("ERROR: File '%s' is not properly terminated by: %sbut has %s instead", fname, DONE_MARKER, line1);
+	ABORT (lalStatus, FIDUCIALC_EINVALIDFSTATS, FIDUCIALC_MSGEINVALIDFSTATS);
+      }
+    else
+      numlines --;        /* avoid stepping on DONE-marker */
 
-  /* check validity of this Fstats-file */
-  if ( strcmp(line1, DONE_MARKER ) ) 
-    {
-      LALPrintError ("ERROR: File '%s' is not properly terminated by: %sbut has %s instead", fname, DONE_MARKER, line1);
-      ABORT (lalStatus, FIDUCIALC_EINVALIDFSTATS, FIDUCIALC_MSGEINVALIDFSTATS);
-    }
-  else
-    numlines --;        /* avoid stepping on DONE-marker */
+    *candlen=numlines;
+  }
 
-  *candlen=numlines;
 
 #if 0 /* Do we need to check this? */
   if (*candlen <= 0  )
@@ -455,120 +496,203 @@ void ReadCombinedFile( LALStatus *lalStatus,
 
   /* ------ Open and count candidates file ------ */
   i=0;
-  fp=fopen(fname,"rb");
-  if (fp==NULL) 
-    {
-      LALPrintError("fopen(%s) failed!\n", fname);
-      LALFree ((*CList));
-      ABORT (lalStatus, FIDUCIALC_EINVALIDFSTATS, FIDUCIALC_MSGEINVALIDFSTATS);
-    }
-
-  jj=0;
-  while(i < numlines && fgets(line1,sizeof(line1),fp))
-    {
-      CHAR newline='\0';
-      
-      if (jj >= sizelist) {
-	sizelist = sizelist + 16384;
-	CandidateList *tmp;
-	tmp = (CandidateList *)LALRealloc(*CList, (sizelist * sizeof(CandidateList)) );
-	if ( !tmp ){
-	  LALPrintError("couldnot re-allocate memory for candidate list \n\n");
-	  ABORT (lalStatus, FIDUCIALC_EMEM, FIDUCIALC_MSGEMEM);
-	}
-	*CList = tmp;
-      }
-      
-      CandidateList *cl=&(*CList)[jj];
-      
-      if (strlen(line1)==0 || line1[strlen(line1)-1] != '\n') {
-        LALPrintError(
-                "Line %d of file %s is too long or has no NEWLINE.  First 255 chars are:\n%s\n",
-                i+1, fname, line1);
-        LALFree ((*CList));
-        fclose(fp);
+  if(strcmp(fname,"-")==0){
+    fp=stdin;
+  }
+  else {
+    fp=fopen(fname,"rb");
+    if (fp==NULL) 
+      {
+	LALPrintError("fopen(%s) failed!\n", fname);
+	LALFree ((*CList));
 	ABORT (lalStatus, FIDUCIALC_EINVALIDFSTATS, FIDUCIALC_MSGEINVALIDFSTATS);
       }
-      
-      
-      nread = sscanf (line1,
-		      "%s %" LAL_INT4_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" 
-		      LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT "%c", 
-		      &(cl->resultfname), &(cl->FileID), &(cl->f), &(cl->Alpha), &(cl->Delta), &(cl->F1dot), &(cl->TwoF), &newline );
+  }
 
-      if(cl->TwoF >= CLA->ThrTwoF) {
-	/* check that values that are read in are sensible, 
-	 (result file names will be checked later, when getting 
-	 the search parameters from Einstein at Home  setup library) */
-	if (
-	    cl->FileID < 0                     ||
-	    cl->f < 0.0                        ||
-	    cl->TwoF < 0.0                     ||
-	    cl->Alpha <         0.0 - epsilon  ||
-	    cl->Alpha >   LAL_TWOPI + epsilon  ||
-	    cl->Delta < -0.5*LAL_PI - epsilon  ||
-	    cl->Delta >  0.5*LAL_PI + epsilon  ||
-	    !finite(cl->FileID)                ||                                                                 
-	    !finite(cl->f)                     ||
-	    !finite(cl->Alpha)                 ||
-	    !finite(cl->Delta)                 ||
-	    !finite(cl->F1dot)                 ||
-	    !finite(cl->TwoF)
-	    ) {
-          LALPrintError(
-			"Line %d of file %s has invalid values.\n"
-			"First 255 chars are:\n"
-			"%s\n"
-			"1st and 4th field should be positive.\n" 
-			"2nd field should lie between 0 and %1.15f.\n" 
-			"3rd field should lie between %1.15f and %1.15f.\n"
-			"All fields should be finite\n",
-			i+1, fname, line1, (double)LAL_TWOPI, (double)-LAL_PI/2.0, (double)LAL_PI/2.0);
-          LALFree ((*CList));
-          fclose(fp);
-	  ABORT (lalStatus, FIDUCIALC_EINVALIDFSTATS, FIDUCIALC_MSGEINVALIDFSTATS);
+  
+  jj=0;
+
+  /* printf("Number of lines to read: %d\n", numlines); */
+    
+  if(strcmp(fname,"-")==0){
+    while(i < numlines && gets(line1) )
+      {
+       	CHAR newline='\0';
+	
+	if (jj >= sizelist) {
+	  sizelist = sizelist + 16384;
+	  CandidateList *tmp;
+	  tmp = (CandidateList *)LALRealloc(*CList, (sizelist * sizeof(CandidateList)) );
+	  if ( !tmp ){
+	    LALPrintError("couldnot re-allocate memory for candidate list \n\n");
+	    ABORT (lalStatus, FIDUCIALC_EMEM, FIDUCIALC_MSGEMEM);
+	  }
+	  *CList = tmp;
 	}
-           
-           
+	
+	CandidateList *cl=&(*CList)[jj];
+	
+	nread = sscanf (line1,
+			"%s %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT, 
+			&(cl->resultfname), &(cl->f), &(cl->Alpha), &(cl->Delta), &(cl->F1dot), &(cl->TwoF) );
 
-      /* check that the FIRST character following the Fstat value is a
-         newline.  Note deliberate LACK OF WHITE SPACE char before %c
-         above */
-	if (newline != '\n') {
+	if(cl->TwoF >= CLA->ThrTwoF) {
+	  /* check that values that are read in are sensible, 
+	     (result file names will be checked later, when getting 
+	     the search parameters from Einstein at Home  setup library) */
+	  if (
+	      cl->f < 0.0                        ||
+	      cl->TwoF < 0.0                     ||
+	      cl->Alpha <         0.0 - epsilon  ||
+	      cl->Alpha >   LAL_TWOPI + epsilon  ||
+	      cl->Delta < -0.5*LAL_PI - epsilon  ||
+	      cl->Delta >  0.5*LAL_PI + epsilon  ||
+	      !finite(cl->FileID)                ||                                                                 
+	      !finite(cl->f)                     ||
+	      !finite(cl->Alpha)                 ||
+	      !finite(cl->Delta)                 ||
+	      !finite(cl->F1dot)                 ||
+	      !finite(cl->TwoF)
+	      ) {
+	    LALPrintError(
+			  "Line %d of file %s has invalid values.\n"
+			  "First 255 chars are:\n"
+			  "%s\n"
+			  "1st and 4th field should be positive.\n" 
+			  "2nd field should lie between 0 and %1.15f.\n" 
+			  "3rd field should lie between %1.15f and %1.15f.\n"
+			  "All fields should be finite\n",
+			  i+1, fname, line1, (double)LAL_TWOPI, (double)-LAL_PI/2.0, (double)LAL_PI/2.0);
+	    LALFree ((*CList));
+	    fclose(fp);
+	    ABORT (lalStatus, FIDUCIALC_EINVALIDFSTATS, FIDUCIALC_MSGEINVALIDFSTATS);
+	  }
+	  
+          
+
+	  /* check that we read 6 quantities with exactly the right format */
+	  if ( nread != 6 )
+	    {
+	      LALPrintError ("Found %d not %d values on line %d in file '%s'\n"
+			     "Line in question is\n%s",
+			     nread, 6, i+1, fname, line1);               
+	      LALFree ((*CList));
+	      ABORT (lalStatus, FIDUCIALC_EINVALIDFSTATS, FIDUCIALC_MSGEINVALIDFSTATS);
+	    }
+	  
+	  jj++;
+	  
+	} /* if(cl->TwoF >= CLA->ThrTwoF) */
+	
+	i++;
+      } /*  end of main while loop */
+  }
+  else{
+    while(i < numlines && fgets(line1,sizeof(line1),fp) )
+      {
+	CHAR newline='\0';
+	
+	if (jj >= sizelist) {
+	  sizelist = sizelist + 16384;
+	  CandidateList *tmp;
+	  tmp = (CandidateList *)LALRealloc(*CList, (sizelist * sizeof(CandidateList)) );
+	  if ( !tmp ){
+	    LALPrintError("couldnot re-allocate memory for candidate list \n\n");
+	    ABORT (lalStatus, FIDUCIALC_EMEM, FIDUCIALC_MSGEMEM);
+	  }
+	  *CList = tmp;
+	}
+	
+	CandidateList *cl=&(*CList)[jj];
+	
+	if (strlen(line1)==0 || line1[strlen(line1)-1] != '\n') {
 	  LALPrintError(
-			"Line %d of file %s had extra chars after F value and before newline.\n"
-			"First 255 chars are:\n"
-			"%s\n",
+			"Line %d of file %s is too long or has no NEWLINE.  First 255 chars are:\n%s\n",
 			i+1, fname, line1);
 	  LALFree ((*CList));
 	  fclose(fp);
 	  ABORT (lalStatus, FIDUCIALC_EINVALIDFSTATS, FIDUCIALC_MSGEINVALIDFSTATS);
 	}
 	
-	/* check that we read 8 quantities with exactly the right format */
-	if ( nread != 8 )
-	  {
-	    LALPrintError ("Found %d not %d values on line %d in file '%s'\n"
-			   "Line in question is\n%s",
-                         nread, 8, i+1, fname, line1);               
+	nread = sscanf (line1,
+			"%s %" LAL_INT4_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" 
+			LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT "%c", 
+			&(cl->resultfname), &(cl->FileID), &(cl->f), &(cl->Alpha), &(cl->Delta), &(cl->F1dot), &(cl->TwoF), &newline );
+	if(cl->TwoF >= CLA->ThrTwoF) {
+	  /* check that values that are read in are sensible, 
+	     (result file names will be checked later, when getting 
+	     the search parameters from Einstein at Home  setup library) */
+	  if (
+	      cl->FileID < 0                     ||
+	      cl->f < 0.0                        ||
+	      cl->TwoF < 0.0                     ||
+	      cl->Alpha <         0.0 - epsilon  ||
+	      cl->Alpha >   LAL_TWOPI + epsilon  ||
+	      cl->Delta < -0.5*LAL_PI - epsilon  ||
+	      cl->Delta >  0.5*LAL_PI + epsilon  ||
+	      !finite(cl->FileID)                ||                                                                 
+	      !finite(cl->f)                     ||
+	      !finite(cl->Alpha)                 ||
+	      !finite(cl->Delta)                 ||
+	      !finite(cl->F1dot)                 ||
+	      !finite(cl->TwoF)
+	      ) {
+	    LALPrintError(
+			  "Line %d of file %s has invalid values.\n"
+			  "First 255 chars are:\n"
+			  "%s\n"
+			  "1st and 4th field should be positive.\n" 
+			  "2nd field should lie between 0 and %1.15f.\n" 
+			  "3rd field should lie between %1.15f and %1.15f.\n"
+			  "All fields should be finite\n",
+			  i+1, fname, line1, (double)LAL_TWOPI, (double)-LAL_PI/2.0, (double)LAL_PI/2.0);
 	    LALFree ((*CList));
 	    fclose(fp);
 	    ABORT (lalStatus, FIDUCIALC_EINVALIDFSTATS, FIDUCIALC_MSGEINVALIDFSTATS);
-        }
+	  }
+	  
+          
+
+	  /* check that the FIRST character following the Fstat value is a
+	     newline.  Note deliberate LACK OF WHITE SPACE char before %c
+	     above */
+	  if (newline != '\n') {
+	    LALPrintError(
+			  "Line %d of file %s had extra chars after F value and before newline.\n"
+			  "First 255 chars are:\n"
+			  "%s\n",
+			  i+1, fname, line1);
+	    LALFree ((*CList));
+	    fclose(fp);
+	    ABORT (lalStatus, FIDUCIALC_EINVALIDFSTATS, FIDUCIALC_MSGEINVALIDFSTATS);
+	  }
+	  
+	  /* check that we read 8 quantities with exactly the right format */
+	  if ( nread != 8 )
+	    {
+	      LALPrintError ("Found %d not %d values on line %d in file '%s'\n"
+			     "Line in question is\n%s",
+			     nread, 8, i+1, fname, line1);               
+	      LALFree ((*CList));
+	      fclose(fp);
+	      ABORT (lalStatus, FIDUCIALC_EINVALIDFSTATS, FIDUCIALC_MSGEINVALIDFSTATS);
+	    }
+	  
+	  jj++;
+	  
+	} /* if(cl->TwoF >= CLA->ThrTwoF) */
 	
-	jj++;
+	i++;
+      } /*  end of main while loop */
+  }
 
-      } /* if(cl->TwoF >= CLA->ThrTwoF) */
-
-      i++;
-    } /*  end of main while loop */
 
   *candlen=jj-1;
 
   /* check that we read ALL lines! */
   if (i != numlines) {
     LALPrintError(
-            "Read of file %s terminated after %d line but numlines=%d\n",
+            "Reading of file %s terminated after %d line but numlines=%d\n",
             fname, i, numlines);
     LALFree((*CList));
     fclose(fp);
@@ -628,7 +752,8 @@ void ReadCommandLineArgs( LALStatus *lalStatus,
   CHAR* uvar_OutputData;
   BOOLEAN uvar_help;
   REAL8 uvar_ThrTwoF;
-
+  INT4 uvar_InNumLines;
+  
   INITSTATUS( lalStatus, "ReadCommandLineArgs", rcsid );
   ATTATCHSTATUSPTR (lalStatus);
 
@@ -642,9 +767,10 @@ void ReadCommandLineArgs( LALStatus *lalStatus,
   /* register all our user-variables */
   LALregBOOLUserVar(lalStatus,       help,           'h', UVAR_HELP,     "Print this message"); 
 
-  LALregSTRINGUserVar(lalStatus,     OutputData,     'o', UVAR_REQUIRED, "Ouput file name");
-  LALregSTRINGUserVar(lalStatus,     InputData,      'i', UVAR_REQUIRED, "Input file name");
+  LALregSTRINGUserVar(lalStatus,     OutputData,     'o', UVAR_OPTIONAL, "Ouput file name");
+  LALregSTRINGUserVar(lalStatus,     InputData,      'i', UVAR_OPTIONAL, "Input file name");
   LALregREALUserVar(lalStatus,       ThrTwoF,        't', UVAR_OPTIONAL, "Threshold on values of 2F");
+  LALregINTUserVar(lalStatus,        InNumLines,       'l', UVAR_OPTIONAL, "Number of lines of input");
 
 
   TRY (LALUserVarReadAllInput(lalStatus->statusPtr,argc,argv),lalStatus); 
@@ -661,23 +787,48 @@ void ReadCommandLineArgs( LALStatus *lalStatus,
   CLA->OutputFile = NULL;
   CLA->InputFile = NULL;
   CLA->ThrTwoF = -1.0;
+  CLA->InNumLines = 0;
 
-  CLA->OutputFile = (CHAR *) LALMalloc(strlen(uvar_OutputData)+1);
-  if(CLA->OutputFile == NULL)
-    {
-      TRY( FreeConfigVars( lalStatus->statusPtr, CLA ), lalStatus);
-      exit(FIDUCIAL_EXIT_ERR);
-    }      
-  strcpy(CLA->OutputFile,uvar_OutputData);
 
-  CLA->InputFile = (CHAR *) LALMalloc(strlen(uvar_InputData)+1);
-  if(CLA->InputFile == NULL)
-    {
+  if(uvar_OutputData != ""){
+    if(uvar_OutputData !="-"){
+      CLA->OutputFile = (CHAR *) LALMalloc(strlen(uvar_OutputData)+1);
+      if(CLA->OutputFile == NULL) {
+	TRY( FreeConfigVars( lalStatus->statusPtr, CLA ), lalStatus);
+	LALPrintError("Output file '%s' is incorrect. \n\n",uvar_OutputData);
+	exit(FIDUCIAL_EXIT_ERR);
+      }
+    }
+    strcpy(CLA->OutputFile,uvar_OutputData);
+  }
+  
+  else 
+    { 
       TRY( FreeConfigVars( lalStatus->statusPtr, CLA ), lalStatus);
+      LALPrintError("Output file '%s' is incorrect. \n\n",uvar_OutputData);
       exit(FIDUCIAL_EXIT_ERR);
     }
-  strcpy(CLA->InputFile,uvar_InputData);
-    
+
+  
+  if(uvar_InputData != ""){
+    if(uvar_InputData !="-"){
+      CLA->InputFile = (CHAR *) LALMalloc(strlen(uvar_InputData)+1);
+      if(CLA->InputFile == NULL){
+	TRY( FreeConfigVars( lalStatus->statusPtr, CLA ), lalStatus);
+	LALPrintError("Input file '%s' is incorrect. \n\n",uvar_InputData);
+	exit(FIDUCIAL_EXIT_ERR);
+      }
+    }
+    strcpy(CLA->InputFile,uvar_InputData);
+  }
+  else
+    {
+      TRY( FreeConfigVars( lalStatus->statusPtr, CLA ), lalStatus);
+      LALPrintError("Input file '%s' is incorrect. \n\n",uvar_InputData);
+      exit(FIDUCIAL_EXIT_ERR);
+    }
+  
+  CLA->InNumLines = uvar_InNumLines;
   CLA->ThrTwoF = uvar_ThrTwoF;
 
   LALDestroyUserVars(lalStatus->statusPtr);
@@ -796,7 +947,7 @@ void ComputeFiducialTimeFrequency( LALStatus *lalStatus,
       CLA->CandThr = CLA->CandThrInput;
     }
 
-  printf("Number of candidates kept per data-stretch: %d\n", CLA->CandThr);
+  /* printf("Number of candidates kept per data-stretch: %d\n", CLA->CandThr); */
 
   iindex=0;
   while(iindex < candlen)
@@ -830,7 +981,7 @@ void ComputeFiducialTimeFrequency( LALStatus *lalStatus,
 
   INITSTATUS( lalStatus, "ComputeFiducialTimeFrequency", rcsid );
   ATTATCHSTATUSPTR (lalStatus);
-  printf("Frequency values are shifted to fixed fiducial GPS time: %f\n", FIXED_FIDUCIAL_TIME);
+  /* printf("Frequency values are shifted to fixed fiducial GPS time: %f\n", FIXED_FIDUCIAL_TIME); */
 
   f_CFS=0;
   f_fiducial=0;
