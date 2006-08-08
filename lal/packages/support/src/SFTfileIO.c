@@ -3129,7 +3129,6 @@ read_SFTversion_from_fp ( UINT4 *version, BOOLEAN *need_swap, FILE *fp )
 {
   long save_filepos;
   REAL8 ver;
-  BOOLEAN swap;
 
   /* store fileposition for restoring in case of failure */
   if ( ( save_filepos = ftell(fp) ) == -1 )
@@ -3145,22 +3144,26 @@ read_SFTversion_from_fp ( UINT4 *version, BOOLEAN *need_swap, FILE *fp )
       goto failed;
     }
 
+
   /* figure out endian-ness and check version-range */
-  swap = FALSE;
-  if ( (ver < MIN_SFT_VERSION) || (ver > MAX_SFT_VERSION ) ||  (ver - (UINT4)ver) ) 	/* illegal version --> maybe endian-swap? */
-    {
-      REAL8 unswapped = ver;
-      endian_swap ( (CHAR*)(&ver), sizeof(ver), 1);
-      if ( (ver < MIN_SFT_VERSION) || (ver > MAX_SFT_VERSION ) ||  (ver - (UINT4)ver) ) 	/* still illegal version! */
-	{
-	  if ( lalDebugLevel ) LALPrintError ( "\nERROR: illegal SFT-version '%f|%f', not within [%.0f, %.0f]\n\n", 
-					       unswapped, ver, MIN_SFT_VERSION, MAX_SFT_VERSION );
+  for ( *version = MAX_SFT_VERSION; *version >= MIN_SFT_VERSION; --(*version) )
+  {
+	  REAL8 vertest = *version;
+	  if ( ! memcmp( &ver, &vertest, sizeof( ver ) ) ) {
+		  *need_swap = FALSE;
+		  break;
+	  }
+	  endian_swap( (char*)(&vertest), sizeof( vertest ), 1 );
+	  if ( ! memcmp( &ver, &vertest, sizeof( ver ) ) ) {
+		  *need_swap = TRUE;
+		  break;
+	  }
+  }
+  if ( *version < MIN_SFT_VERSION ) {
+	  if ( lalDebugLevel )
+		  LALPrintError( "\nERROR: illegal SFT-version not within [%.0f, %.0f]\n\n", MIN_SFT_VERSION, MAX_SFT_VERSION );
 	  goto failed;
-	}
-      else	/* ok, endian-swapping required! */
-	swap = TRUE;
-	
-    } /* invalid unswapped version */
+  }
 
   /* restore initial filepointer position */
   if ( fseek ( fp, save_filepos, SEEK_SET ) == -1 )
@@ -3169,9 +3172,6 @@ read_SFTversion_from_fp ( UINT4 *version, BOOLEAN *need_swap, FILE *fp )
       goto failed;
     }
 
-  /* success: */
-  (*version) = (UINT4) ver;
-  (*need_swap) = swap;
   return 0;
 
  failed:
