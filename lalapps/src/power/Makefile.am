@@ -1,4 +1,3 @@
-pythonlibdir = ${prefix}/lib/python
 INCLUDES = -I$(top_srcdir)/src/lalapps
 
 if LALFRAME
@@ -14,9 +13,13 @@ else
 bin_PROGRAMS = 
 endif
 
+if HAVE_PYTHON
 bin_SCRIPTS = lalapps_power_coinc_pipe lalapps_power_pipe lalapps_power_online_pipe
-
-pythonlib_SCRIPTS = power.py
+pkgpython_DATA = power.py
+endif
+EXTRA_DIST = power.c bread.c binj.c \
+	     lalapps_power_coinc_pipe lalapps_power_pipe lalapps_power_online_pipe \
+	     power.py
 
 pkgdata_DATA = power_pipe.ini power_online_pipe.ini
 

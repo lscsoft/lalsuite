@@ -13,15 +13,18 @@ lalapps_dumpcalframe_SOURCES = dumpcalframe.c
 lalapps_mkcalfac_SOURCES = mkcalfac.c
 lalapps_mkcalref_SOURCES = mkcalref.c
 endif
-bin_SCRIPTS = lalapps_strain_pipe
 lalapps_ComputeStrain_SOURCES = ComputeStrain.c
 lalapps_ComputeStrainDriver_SOURCES = ComputeStrainDriver.c
 lalapps_ComputeStrainDriverDMT_SOURCES = ComputeStrainDriverDMT.c
 lalapps_ComputeFactors_SOURCES = ComputeFactors.c
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
-pythonlibdir = ${prefix}/lib/python
-pythonlib_SCRIPTS = mkcal.py strain.py
+
+if HAVE_PYTHON
+bin_SCRIPTS = lalapps_strain_pipe
+pkgpython_DATA = mkcal.py strain.py
+endif
+
 pkgdata_DATA = \
   S1-L1-CAL-FACTORS.txt S1-L1-CAL-RESPONSE.txt S1-L1-CAL-CAV_GAIN.txt \
   S1-H1-CAL-FACTORS.txt S1-H1-CAL-RESPONSE.txt S1-H1-CAL-CAV_GAIN.txt \
@@ -39,7 +42,7 @@ CLEANFILES = python_config.sed lalapps_strain_pipe
 
 python_config.sed:
 	-rm -f python_config.sed
-	echo "s+@PYTHONLIBDIR@+${pythonlibdir}+g" > python_config.sed
+	echo "s+@PYTHONLIBDIR@+@pkgpythondir@+g" > python_config.sed
 	echo "s+@PYTHONPROG@+@PYTHON@+g" >> python_config.sed
 	echo "s+@RINGEXECPATH@+${bindir}+g" >> python_config.sed
 

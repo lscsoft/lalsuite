@@ -61,18 +61,19 @@ endif
 else
 bin_PROGRAMS = 
 endif
+
+if HAVE_PYTHON
 bin_SCRIPTS = lalapps_inspiral_pipe lalapps_inspiral_pipe_s2 \
               lalapps_inspiral_pipe_tama lalapps_inspiral_pipe_geo \
               lalapps_inspiral_hipe lalapps_inspiral_online_pipe \
               lalapps_inspiral_online_pipe_inject \
 	      lalapps_check_hipe_times
-
-pythonlibdir = ${prefix}/lib/python
-pythonlib_SCRIPTS = inspiral.py
+pkgpython_DATA = inspiral.py
+endif
 
 python_config.sed:
 	-rm -f python_config.sed
-	echo "s+@PYTHONLIBDIR@+${pythonlibdir}+g" > python_config.sed
+	echo "s+@PYTHONLIBDIR@+@pkgpythondir@+g" > python_config.sed
 	echo "s+@PYTHONPROG@+@PYTHON@+g" >> python_config.sed
 
 lalapps_inspiral_pipe: $(srcdir)/inspiral_pipe.in python_config.sed

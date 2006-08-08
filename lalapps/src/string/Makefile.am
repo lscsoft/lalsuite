@@ -17,7 +17,6 @@ else
 RINGPROG =
 STRINGPROG =
 endif
-bin_SCRIPTS = lalapps_cosmicstring_pipe
 bin_PROGRAMS = $(STRINGPROG)
 if FRAME
 if LALFRAME
@@ -26,20 +25,23 @@ lalapps_StringSearch_SOURCES = StringSearch.c
 endif
 endif
 endif
-pythonlibdir = ${prefix}/lib/python
-pythonlib_SCRIPTS = cosmicstring.py
+if HAVE_PYTHON
+bin_SCRIPTS = lalapps_cosmicstring_pipe
+pkgpython_DATA = cosmicstring.py
+endif
+
 pkgdata_DATA = S3_H1_StringDag.ini S3_StringDag.ini S4_StringDag.ini
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 CLEANFILES = python_config.sed lalapps_cosmicstring_pipe
-EXTRA_DIST = StringSearch.c cosmicstring_pipe.in \
-             $(SCRIPTS) $(DATA) \
+EXTRA_DIST = StringSearch.c cosmicstring_pipe.in cosmicstring.py \
+             $(DATA) \
              bread_script.sh eff_script.sh \
              efficiency.m false_alarm.m string_injections.m
 
 python_config.sed:
 	-rm -f python_config.sed
-	echo "s+@PYTHONLIBDIR@+${pythonlibdir}+g" > python_config.sed
+	echo "s+@PYTHONLIBDIR@+@pkgpythondir@+g" > python_config.sed
 	echo "s+@PYTHONPROG@+@PYTHON@+g" >> python_config.sed
 	echo "s+@RINGEXECPATH@+${bindir}+g" >> python_config.sed
 
