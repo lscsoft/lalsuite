@@ -1,7 +1,7 @@
 /**** <lalVerbatim file="TSDatgenHV"> *********
       Author: Torres. C
       $ID: tracksearch.h,v 1.0 2004/04/14 02:00:00 charlie Exp $
-      ***** </lalVerbatim> **********************************/
+***** </lalVerbatim> **********************************/
 
 #ifndef TRACKSEARCH_H
 #define TRACKSEARCH_H
@@ -122,6 +122,20 @@ LALappsWriteCurveList(LALStatus*,
 		      TrackSearchOut,
 		      TSSearchParams*);
 
+void
+LALappsWriteSearchConfig(LALStatus*,
+			 const CHAR*,
+			 TSSearchParams);
+
+void
+LALappsWriteSearchResults(LALStatus*,
+			  const CHAR*,
+			  TrackSearchOut);
+
+void
+LALappsWriteBreveResults(LALStatus*,
+			 const CHAR*,
+			 TrackSearchOut);
 /*
  * Following routine need to be fixed
  * they limp along and are prone to error

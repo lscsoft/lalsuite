@@ -145,16 +145,10 @@ void LALappsTSAWriteMapFile( LALStatus         *status,
   if (fileNameVec == NULL)
     {
       dflag=1;
-      LAL_CALL(LALCHARCreateVector(status,&thisFilename,256),status);
-      sprintf(thisFilename->data,
-	      "MAP:Start:%i,%i:Stop:%i,%i:TF:%i,%i:.dat",
-	      tfImage->imageBorders.mapStartGPS.gpsSeconds,
-	      tfImage->imageBorders.mapStartGPS.gpsNanoSeconds,
-	      tfImage->imageBorders.mapStopGPS.gpsSeconds,
-	      tfImage->imageBorders.mapStopGPS.gpsNanoSeconds,
-	      tfImage->imageBorders.mapTimeBins,
-	      tfImage->imageBorders.mapFreqBins);
-
+      LALappsDetermineFilename(status,
+			       tfImage->imageBorders,
+			       &thisFilename,
+			       ".dat");
     }
   else
     thisFilename=fileNameVec;
@@ -284,6 +278,35 @@ void LALappsTSAWriteMapFile( LALStatus         *status,
  * End LALappsTSAWriteMapFile
  */
 
+void
+LALappsDetermineFilename(LALStatus                   *status,
+			 TrackSearchMapMarkingParams  imageBorders,
+			 CHARVector                 **thisFilename,
+			 const CHAR*                  myExt)
+{
+  LALappsTSassert((thisFilename != NULL),
+		  TRACKSEARCHTOOLBOXC_EFAIL,
+		  TRACKSEARCHTOOLBOXC_EMSGFAIL);
+  LALappsTSassert((*thisFilename == NULL),
+		  TRACKSEARCHTOOLBOXC_EFAIL,
+		  TRACKSEARCHTOOLBOXC_EMSGFAIL);
+  LAL_CALL(LALCHARCreateVector(status,
+			       thisFilename,
+			       maxFilenameLength),
+	   status);
+  sprintf((*thisFilename)->data,
+	  "MAP:Start:%i,%i:Stop:%i,%i:TF:%i,%i:%s",
+	  imageBorders.mapStartGPS.gpsSeconds,
+	  imageBorders.mapStartGPS.gpsNanoSeconds,
+	  imageBorders.mapStopGPS.gpsSeconds,
+	  imageBorders.mapStopGPS.gpsNanoSeconds,
+	  imageBorders.mapTimeBins,
+	  imageBorders.mapFreqBins,
+	  myExt);
+}
+/*
+ * End LALappsDetermineFilename
+ */
 
 void
 LALappsTSACreateMap(LALStatus                    *status,
@@ -398,13 +421,10 @@ LALappsTSAWritePGM(LALStatus  *status,
   if (overrideMask != NULL)
     strcpy(basicMask->data,overrideMask->data);
   else
-  sprintf(basicMask->data,"MAP:Start:%i,%i:Stop:%i,%i:TF:%i,%i:",
-	  map->imageBorders.mapStartGPS.gpsSeconds,
-	  map->imageBorders.mapStartGPS.gpsNanoSeconds,
-	  map->imageBorders.mapStopGPS.gpsSeconds,
-	  map->imageBorders.mapStopGPS.gpsNanoSeconds,
-	  map->imageBorders.mapTimeBins,
-	  map->imageBorders.mapFreqBins);
+    LALappsDetermineFilename(status,
+			     map->imageBorders,
+			     &basicMask,
+			     "");
   /*
    * Set filenames
    */
@@ -682,10 +702,11 @@ void
 LALappsTSADestroyCache(LALStatus       *status,
 		       TSAcache       **cache)
 {
+  UINT4   i=0;
+
   LALappsTSassert(((*cache) != NULL),
 		  TRACKSEARCHTOOLBOXC_EFAIL,
 		  TRACKSEARCHTOOLBOXC_EMSGFAIL);
-  UINT4   i=0;
 
   for (i=0;i<(*cache)->numMapFilenames;i++)
     LAL_CALL(

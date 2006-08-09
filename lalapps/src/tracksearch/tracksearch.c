@@ -808,6 +808,7 @@ void LALappsTrackSearchInitialize(
 {
   /*Local Variables*/
   LIGOTimeGPS     tempGPS;
+  INT4 len;
 
   /* Setup file option to read ascii types and not frames */
   /* getop arguments */
@@ -847,6 +848,7 @@ void LALappsTrackSearchInitialize(
       {"smooth_average_spectrum", required_argument,    0,    'F'},
       {"filter_high_pass", required_argument, 0,  'G'},
       {"filter_low_pass", required_argument, 0, 'H'},
+      {"verbosity",required_argument,0,'I'},
       {0,                     0,                  0,      0}
     };
   
@@ -905,7 +907,7 @@ void LALappsTrackSearchInitialize(
   params->calFrameCache=NULL;
   params->printPGM=0; /*Don't output PGMs of map*/
   params->pgmColorMapFile=NULL;
-  params->verbosity=printFiles;
+  params->verbosity=quiet;/*printFiles;*/
   params->calibrate=0;/*No calibration default */
   params->calCatalog=NULL;
   strcpy(params->calibrateIFO,"L1");
@@ -1129,7 +1131,7 @@ void LALappsTrackSearchInitialize(
 	    /*Setup structure for path or cachefile name temp*/
 	    LAL_CALL(LALCHARCreateVector(status,dPtrDirPath,maxFilenameLength),
 		     status);
-	    INT4 len;
+
 	    len= strlen(optarg) +1;
 	    strncpy((*dPtrDirPath)->data,optarg,len);
 	  }
@@ -1152,7 +1154,6 @@ void LALappsTrackSearchInitialize(
 	    /* Insert string copy code here */
 	    LAL_CALL(LALCHARCreateVector(status,dPtrCachefile,maxFilenameLength),
 		     status);
-	    INT4 len;
 	    len = strlen(optarg) +1;
 	    memcpy((*dPtrCachefile)->data,optarg,len);
 	  }
@@ -1261,6 +1262,24 @@ void LALappsTrackSearchInitialize(
 	  }
 	  break;
 
+	case 'I':
+	  {
+	    if(!strcmp(optarg,"quiet"))
+	      params->verbosity=quiet;
+	    else if(!strcmp(optarg,"verbose"))
+	      params->verbosity=verbose;
+	    else if(!strcmp(optarg,"printFiles"))
+	      params->verbosity=printFiles;
+	    else if(!strcmp(optarg,"all"))
+	      params->verbosity=all;
+	    else
+	      {
+		printf(stderr,"Invalid option:verbosity: assuming quiet\n");
+		params->verbosity=quiet;
+	      };
+	  }
+	  break;
+	      
 	default :
 	  {
 	    fprintf(stderr,TRACKSEARCHC_MSGEMISC);
@@ -1386,213 +1405,123 @@ void LALappsGetFrameData(LALStatus*          status,
 
   /* Set all variables from params structure here */
   channelIn.name = params->channelName;
-  /* create the process and process params tables */
-
-  /*
-****************************************
-procTable.processTable = (ProcessTable *) 
-
-LALCalloc( 1, sizeof(ProcessTable) );
-LAL_CALL( LALGPSTimeNow(status,
-&(procTable.processTable->start_time),
-&accuracy ), 
-status );
-LAL_CALL( populate_process_table( status,
-procTable.processTable, 
-PROGRAM_NAME, 
-CVS_REVISION, 
-CVS_SOURCE,
-CVS_DATE ),
-status);
-this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
-LALCalloc( 1, sizeof(ProcessParamsTable) );
-****************************************
-*/
-
-  /* create the search summary table */
-
-  /*
-****************************************
-searchsumm.searchSummaryTable = (SearchSummaryTable *)
-LALCalloc( 1, sizeof(SearchSummaryTable) );
-****************************************
-*/
-
-/* fill the comment, if a user has specified one, or leave it blank */
-
-  /*
-****************************************
-if ( comment )
-{
-LALSnprintf( procTable.processTable->comment, 
-LIGOMETA_COMMENT_MAX,
-" " );
-LALSnprintf( searchsumm.searchSummaryTable->comment, 
-LIGOMETA_COMMENT_MAX,
-" " );    
-} 
-else 
-{
-  LALSnprintf( procTable.processTable->comment, 
-	       LIGOMETA_COMMENT_MAX,
-	       "%s", 
-	       comment );
-  LALSnprintf( searchsumm.searchSummaryTable->comment,
-	       LIGOMETA_COMMENT_MAX,
-	       "%s",
-	       comment );
-}
-****************************************
-*/
-
-/* the number of nodes for a standalone job is always 1 */
-
-/*
-  searchsumm.searchSummaryTable->nnodes = 1;
-*/
-
-/* Change the name field to the proper params entry */
-memcpy(DataIn->name,
-       params->channelName,
-       (strlen(params->channelName)*sizeof(CHAR)));
+  memcpy(DataIn->name,
+	 params->channelName,
+	 (strlen(params->channelName)*sizeof(CHAR)));
  
-memset( DataIn->data->data, 0, DataIn->data->length*sizeof(REAL4) );
-/* Need to use NULL DataIN->name so we will skip this line of code
-   Nullifying the DataIn->name pointer by hand hope it works */
+  memset( DataIn->data->data, 0, DataIn->data->length*sizeof(REAL4) );
+  /* Need to use NULL DataIN->name so we will skip this line of code
+     Nullifying the DataIn->name pointer by hand hope it works */
 
-/* only try to load frame if name is specified */
-if (dirname || cachefile)
-{
-  REAL8 tmpTime=0;
-  if(dirname){
-    /* Open frame stream */
-    LAL_CALL( LALFrOpen( status, &stream, dirname->data, "*.gwf" ), status);
-  }
-  else if (cachefile){
-    /* Open frame cache */
-    LAL_CALL( LALFrCacheImport( status, &frameCache, cachefile ), status);
-    LAL_CALL( LALFrCacheOpen( status, &stream, frameCache ), status);
-    LAL_CALL( LALDestroyFrCache( status, &frameCache ), status );
-  }
-  /*
-   * Determine information about the channel and seek to the
-   * right place in the fram files 
-   */
-  DataIn->epoch.gpsSeconds     = params->GPSstart.gpsSeconds;
-  DataIn->epoch.gpsNanoSeconds = params->GPSstart.gpsNanoSeconds;
-  LAL_CALL( LALFrSeek(status, &(DataIn->epoch), stream), status);
-  /*
-   * Load the metadata to check the frame sampling rate
-   */
-  LAL_CALL( LALFrGetREAL4TimeSeriesMetadata( status, 
-				     DataIn, 
-				     &channelIn, 
-				     stream), 
-	    status);
-  /*
-   * Determine the sampling rate and assuming the params.sampling rate
-   * how many of these points do we load to get the same time duration
-   * of data points
-   */
-  params->SamplingRateOriginal=1/(DataIn->deltaT);
-  loadPoints=params->SamplingRateOriginal*(params->TimeLengthPoints/params->SamplingRate);
-  LAL_CALL(
-	   LALCreateREAL4TimeSeries(status,
-				    &tmpData,
-				    "Higher Sampling Tmp Data",
-				    params->GPSstart,
-				    0,
-				    1/params->SamplingRateOriginal,
-				    lalADCCountUnit,
-				    loadPoints),
-	   status);
-  /* get the data */
-  LAL_CALL( LALFrSeek(status, &(tmpData->epoch), stream), status);
-  LAL_CALL( LALFrGetREAL4TimeSeries( status, 
-				     tmpData, 
-				     &channelIn, 
-				     stream), 
-	    status);
+  /* only try to load frame if name is specified */
+  if (dirname || cachefile)
+    {
+      REAL8 tmpTime=0;
+      if(dirname){
+	/* Open frame stream */
+	LAL_CALL( LALFrOpen( status, &stream, dirname->data, "*.gwf" ), status);
+      }
+      else if (cachefile){
+	/* Open frame cache */
+	LAL_CALL( LALFrCacheImport( status, &frameCache, cachefile ), status);
+	LAL_CALL( LALFrCacheOpen( status, &stream, frameCache ), status);
+	LAL_CALL( LALDestroyFrCache( status, &frameCache ), status );
+      }
+      /*
+       * Determine information about the channel and seek to the
+       * right place in the fram files 
+       */
+      DataIn->epoch.gpsSeconds     = params->GPSstart.gpsSeconds;
+      DataIn->epoch.gpsNanoSeconds = params->GPSstart.gpsNanoSeconds;
+      LAL_CALL( LALFrSeek(status, &(DataIn->epoch), stream), status);
+      /*
+       * Load the metadata to check the frame sampling rate
+       */
+      LAL_CALL( LALFrGetREAL4TimeSeriesMetadata( status, 
+						 DataIn, 
+						 &channelIn, 
+						 stream), 
+		status);
+      /*
+       * Determine the sampling rate and assuming the params.sampling rate
+       * how many of these points do we load to get the same time duration
+       * of data points
+       */
+      params->SamplingRateOriginal=1/(DataIn->deltaT);
+      loadPoints=params->SamplingRateOriginal*(params->TimeLengthPoints/params->SamplingRate);
+      LAL_CALL(
+	       LALCreateREAL4TimeSeries(status,
+					&tmpData,
+					"Higher Sampling Tmp Data",
+					params->GPSstart,
+					0,
+					1/params->SamplingRateOriginal,
+					lalADCCountUnit,
+					loadPoints),
+	       status);
+      /* get the data */
+      LAL_CALL( LALFrSeek(status, &(tmpData->epoch), stream), status);
+      LAL_CALL( LALFrGetREAL4TimeSeries( status, 
+					 tmpData, 
+					 &channelIn, 
+					 stream), 
+		status);
       if (params->verbosity > 0)
 	print_real4tseries(tmpData,"OriginalInputTimeSeries.diag");
-  /*
-   * Prepare for the resample if needed or just copy the data so send
-   * back
-   */
-  if (params->SamplingRate < params->SamplingRateOriginal)
-    {
-      fprintf(stdout,"We will resample the data from %6.3f to %6.3f, a few edge data points will be corrupted in time series\n",
-	      1/tmpData->deltaT,
-	      params->SamplingRate);
-      resampleParams.deltaT=1/params->SamplingRate;
-      resampleParams.filterType=defaultButterworth;
-      /*resampleParams->filterParams*/
-      LAL_CALL(
-	       LALResampleREAL4TimeSeries(status,
-					  tmpData,
-					  &resampleParams),
-	       status);
+      /*
+       * Prepare for the resample if needed or just copy the data so send
+       * back
+       */
+      if (params->SamplingRate < params->SamplingRateOriginal)
+	{
+	  fprintf(stdout,"We will resample the data from %6.3f to %6.3f.\n",
+		  1/tmpData->deltaT,
+		  params->SamplingRate);
+	  resampleParams.deltaT=1/params->SamplingRate;
+	  resampleParams.filterType=defaultButterworth;
+	  /*resampleParams->filterParams*/
+	  LAL_CALL(
+		   LALResampleREAL4TimeSeries(status,
+					      tmpData,
+					      &resampleParams),
+		   status);
+	  if (params->verbosity > 0)
+	    print_real4tseries(tmpData,"ResampledlInputTimeSeries.diag");
+	  /*
+	   * Copy only the valid data and fill the returnable metadata
+	   */
+	  DataIn->deltaT=(1/params->SamplingRate);
+	  LALappsTSassert((tmpData->data->length >=
+			   DataIn->data->length),
+			  TRACKSEARCHC_EDATA,
+			  TRACKSEARCHC_MSGEDATA);
+	  for (i=0;i<DataIn->data->length;i++)
+	    DataIn->data->data[i]=tmpData->data->data[i];
+	}
+      else
+	{
+	  fprintf(stdout,"Resampling to %f, not possible we have %f sampling rate in the frame file.\n",
+		  params->SamplingRate,
+		  params->SamplingRateOriginal);
+	  /*
+	   * Straight copy the data over to returnable structure
+	   */
+	  params->SamplingRate=params->SamplingRateOriginal;
+	  DataIn->deltaT=1/params->SamplingRateOriginal;
+	  for (i=0;i<DataIn->data->length;i++)
+	    DataIn->data->data[i]=tmpData->data->data[i];
+	}
       if (params->verbosity > 0)
-	print_real4tseries(tmpData,"ResampledlInputTimeSeries.diag");
-      /*
-       * Copy only the valid data and fill the returnable metadata
-       */
-      DataIn->deltaT=(1/params->SamplingRate);
-      LALappsTSassert((tmpData->data->length >=
-		       DataIn->data->length),
-		      TRACKSEARCHC_EDATA,
-		      TRACKSEARCHC_MSGEDATA);
-      for (i=0;i<DataIn->data->length;i++)
-	DataIn->data->data[i]=tmpData->data->data[i];
-    }
-  else
-    {
-      fprintf(stdout,"Resampling to %f, not possible we have %f sampling rate in the frame file.\n",
-	      params->SamplingRate,
-	      params->SamplingRateOriginal);
-      /*
-       * Straight copy the data over to returnable structure
-       */
-      params->SamplingRate=params->SamplingRateOriginal;
-      DataIn->deltaT=1/params->SamplingRateOriginal;
-      for (i=0;i<DataIn->data->length;i++)
-	DataIn->data->data[i]=tmpData->data->data[i];
-    }
-  if (params->verbosity > 0)
     	print_real4tseries(tmpData,"ActualReDoneTimeSeries.diag");
-  /*
-   * Release the memory for the temporary time series
-   */
-   if (tmpData)
-     LAL_CALL(LALDestroyREAL4TimeSeries(status,tmpData),
-	      status);
-  /* 
-   * store the start and end time of the raw channel 
-   * in the search summary 
-   */
-  /*
-****************************************
-searchsumm.searchSummaryTable->in_start_time = DataIn->epoch;
-LAL_CALL( LALGPStoFloat( status, &tmpTime, &(DataIn->epoch) ), 
-status );
-tmpTime += DataIn->deltaT * (REAL8) DataIn->data->length;
-LAL_CALL( LALFloatToGPS( status, 
-&(searchsumm.searchSummaryTable->in_end_time), 
-&tmpTime ), 
-status );
-****************************************
-*/
-  /* close the frame stream */
-  LAL_CALL( LALFrClose( status, &stream ), status);
-}
-/* Free memory allocation on procTable at start of routine */
-/*
-****************************************
-LALFree(procTable.processTable);
-LALFree(procparams.processParamsTable);
-LALFree(searchsumm.searchSummaryTable);
-****************************************
-*/
+      /*
+       * Release the memory for the temporary time series
+       */
+      if (tmpData)
+	LAL_CALL(LALDestroyREAL4TimeSeries(status,tmpData),
+		 status);
+      /* close the frame stream */
+      LAL_CALL( LALFrClose( status, &stream ), status);
+    }
 	
 }
 /* End frame reading code */
@@ -1647,7 +1576,7 @@ void LALappsDoTrackSearch(
   TrackSearchOut         outputCurvesThreshold; /*Curve data thresholded */
   CHARVector            *outputFilename=NULL;
   CHARVector            *outputFilenameMask=NULL;
-
+  CHARVector            *outputCandidateFilename=NULL;
  /*************************************************************/
   /* 
    * The LALTracksearch seems to map the 
@@ -1714,7 +1643,7 @@ void LALappsDoTrackSearch(
   /*
    * Write Pre-Threshold Results to Disk
    */
-  if (params.verbosity == printFiles)
+  if (params.verbosity >= printFiles)
     {
       sprintf(outputFilename->data,"Pre-%s",outputFilenameMask->data);
       LALappsWriteCurveList(status,
@@ -1736,10 +1665,19 @@ void LALappsDoTrackSearch(
   /* 
    * Dump out list of surviving candidates
    */
-  LALappsWriteCurveList(status,
-			outputFilenameMask->data,
-			outputCurvesThreshold,
-			&params);
+  LALappsDetermineFilename(status,
+			   tsMarkers,
+			   &outputCandidateFilename,
+			   ".candidates");
+  LALappsWriteSearchResults(status,
+			    outputCandidateFilename->data,
+			    outputCurvesThreshold);
+
+  if (params.verbosity >= printFiles)
+    LALappsWriteCurveList(status,
+			  outputFilenameMask->data,
+			  outputCurvesThreshold,
+			  &params);
   /*
    * General Memory Cleanup
    */
@@ -1754,6 +1692,9 @@ void LALappsDoTrackSearch(
 	     status);
   if (outputFilenameMask)
     LAL_CALL(LALCHARDestroyVector(status,&outputFilenameMask),
+	     status);
+  if (outputCandidateFilename)
+    LAL_CALL(LALCHARDestroyVector(status,&outputCandidateFilename),
 	     status);
 
   /*************************************************************/
@@ -2199,18 +2140,10 @@ LALappsWriteCurveList(LALStatus            *status,
 		      TrackSearchOut        outCurve,
 		      TSSearchParams       *params)
 {
-  FILE            *totalFile=NULL;
-  FILE            *breveFile=NULL;
-  FILE            *configFile=NULL;
-  INT4             i=0;
-  INT4             j=0;
+
   CHARVector      *totalName=NULL;
   CHARVector      *breveName=NULL;
   CHARVector      *configName=NULL;
-  REAL8            startStamp=0;
-  REAL8            stopStamp=0;
-  INT4             TB=0;
-  INT4             FB=0;
   /*
    * Error checks
    */
@@ -2220,161 +2153,216 @@ LALappsWriteCurveList(LALStatus            *status,
   LALappsTSassert((filename !=NULL),
 		  TRACKSEARCHC_ENULL,
 		  TRACKSEARCHC_MSGENULL);
-  /*
-   * Create two file names and open both files.
-   */
-  LAL_CALL(LALCHARCreateVector(status,&totalName,maxFilenameLength),status);
+
+
+  /* Output Breve file */
   LAL_CALL(LALCHARCreateVector(status,&breveName,maxFilenameLength),status);
-  sprintf(totalName->data,"%s.full",filename);
   sprintf(breveName->data,"%s.breve",filename);
-  totalFile=fopen(totalName->data,"w");
-  breveFile=fopen(breveName->data,"w");
-  if (totalName)
-    LAL_CALL(LALCHARDestroyVector(status,&totalName),status);
+  LALappsWriteBreveResults(status,
+			   breveName->data,
+			   outCurve);
   if (breveName)
     LAL_CALL(LALCHARDestroyVector(status,&breveName),status);
-  /*
-   * Output values of TSSearch structure.
-   * These are the configuration options for the run.
-   * Iff params !=NULL (Duh)
-   */
+
+  /* Output Total file */
+  LAL_CALL(LALCHARCreateVector(status,&totalName,maxFilenameLength),status);
+  sprintf(totalName->data,"%s.full",filename);
+  LALappsWriteSearchResults(status,
+			    totalName->data,
+			    outCurve);
+  if (totalName)
+    LAL_CALL(LALCHARDestroyVector(status,&totalName),status);
+  /* If possible output configuration information */
   if (params!=NULL)
     {
       LAL_CALL(LALCHARCreateVector(status,&configName,maxFilenameLength),
 	       status);
       sprintf(configName->data,"%s.config",filename);
-      configFile=fopen(configName->data,"w");      
-      if (configName)
-	LAL_CALL(LALCHARDestroyVector(status,&configName),status);
+      LALappsWriteSearchConfig(status->statusPtr,
+			       configName->data,
+			       *params);
+    }     
+  if (configName)
+    LAL_CALL(LALCHARDestroyVector(status,&configName),status);
 
+  return;
+}
+/*
+ * End LALappsWriteCurveList
+ */
 
-      fprintf(configFile,"tSeriesAnalysis\t: %i\n",params->tSeriesAnalysis);
-      fprintf(configFile,"searchMaster\t: %i\n",params->searchMaster);
-      fprintf(configFile,"haveData\t: %i\n",params->haveData);
-      fprintf(configFile,"numSlaves\t: NO USED\n");
-      fprintf(configFile,"GPSstart\t: %i,%i\n",
-	      params->GPSstart.gpsSeconds,
-	      params->GPSstart.gpsNanoSeconds);
-      fprintf(configFile,"TimeLengthPoints\t: %i\n",
-	      params->TimeLengthPoints);
-      fprintf(configFile,"discardTLP\t: %i\n",params->discardTLP);
-      fprintf(configFile,"SegLengthPoints\t: %i\n",
-	      params->SegLengthPoints);
-      fprintf(configFile,"NumSeg\t: %i\n",params->NumSeg);
-      fprintf(configFile,"SamplingRate\t: %i\n",params->SamplingRate);
-      fprintf(configFile,"OriginalSamplingRate\t: %i\n",
-	      params->SamplingRateOriginal);
-      fprintf(configFile,"Tlength\t: %i,%i\n",
-	      params->Tlength.gpsSeconds,
-	      params->Tlength.gpsNanoSeconds);
-      fprintf(configFile,"TransformType\t: %i\n",
-	      (params->TransformType));
-      fprintf(configFile,"LineWidth\t: %i\n",params->LineWidth);
-      fprintf(configFile,"MinLength\t: %i\n",params->MinLength);
-      fprintf(configFile,"MinPower\t: %f\n",params->MinPower);
-      fprintf(configFile,"overlapFlag\t: %i\n",params->overlapFlag);
-      fprintf(configFile,"whiten\t: %i\n",params->whiten);
-      fprintf(configFile,"avgSpecMethod\t: %i\n",
-	      (params->avgSpecMethod));
-      fprintf(configFile,"avgSpecWindow\t: %i\n",
-	      (params->avgSpecWindow));
-      fprintf(configFile,"multiResolution\t: %i\n",
-	      params->multiResolution);
-      FB=params->FreqBins;
-      TB=params->TimeBins;
-      fprintf(configFile,"FreqBins\t: %i\n",FB);
-      fprintf(configFile,"TimeBins\t: %i\n",TB);
-      fprintf(configFile,"windowsize\t: %i\n",params->windowsize);
-      fprintf(configFile,"window\t: %i\n",params->window);
-      fprintf(configFile,"numEvents\t: %i\n",params->numEvents);
-      if (params->channelName == NULL)
-	fprintf(configFile,"channelName\t: NULL\n");
-      else
-	fprintf(configFile,"channelName\t: %s\n",params->channelName);
-      if (params->dataDirPath == NULL)
-	fprintf(configFile,"channelName\t: NULL\n");
-      else
-	fprintf(configFile,"dataDirPath\t: %s\n",params->dataDirPath);
-      if (params->singleDataCache == NULL)
-	fprintf(configFile,"singleDataCache\t: NULL\n");
-      else
-	fprintf(configFile,"singleDataCache\t: %s\n",
-		params->singleDataCache);
-      if (params->detectorPSDCache == NULL)
-	fprintf(configFile,"detectorPSDCache\t: NULL\n");
-      else
-	fprintf(configFile,"detectorPSDCache\t: %s\n",
-		params->detectorPSDCache);
-      if (params->channelNamePSD == NULL)
-	fprintf(configFile,"channelNamePSD\t: NULL\n");
-      else
-	fprintf(configFile,"channelNamePSD\t: %s\n",
-		params->channelNamePSD);
+void
+LALappsWriteSearchConfig(LALStatus          *status,
+			 const CHAR*         myFilename,
+			 TSSearchParams      myParams)
+{
+  FILE            *configFile=NULL;
+  INT4             TB=0;
+  INT4             FB=0;
+  
+  configFile=fopen(myFilename,"w");
+  fprintf(configFile,"tSeriesAnalysis\t: %i\n",myParams.tSeriesAnalysis);
+  fprintf(configFile,"searchMaster\t: %i\n",myParams.searchMaster);
+  fprintf(configFile,"haveData\t: %i\n",myParams.haveData);
+  fprintf(configFile,"numSlaves\t: NO USED\n");
+  fprintf(configFile,"GPSstart\t: %i,%i\n",
+	  myParams.GPSstart.gpsSeconds,
+	  myParams.GPSstart.gpsNanoSeconds);
+  fprintf(configFile,"TimeLengthPoints\t: %i\n",
+	  myParams.TimeLengthPoints);
+  fprintf(configFile,"discardTLP\t: %i\n",myParams.discardTLP);
+  fprintf(configFile,"SegLengthPoints\t: %i\n",
+	  myParams.SegLengthPoints);
+  fprintf(configFile,"NumSeg\t: %i\n",myParams.NumSeg);
+  fprintf(configFile,"SamplingRate\t: %8.3f\n",myParams.SamplingRate);
+  fprintf(configFile,"OriginalSamplingRate\t: %8.3f\n",
+	  myParams.SamplingRateOriginal);
+  fprintf(configFile,"Tlength\t: %i,%i\n",
+	  (INT4)myParams.Tlength.gpsSeconds,
+	  (INT4)myParams.Tlength.gpsNanoSeconds);
+  fprintf(configFile,"TransformType\t: %i\n",
+	  (myParams.TransformType));
+  fprintf(configFile,"LineWidth\t: %i\n",myParams.LineWidth);
+  fprintf(configFile,"MinLength\t: %i\n",myParams.MinLength);
+  fprintf(configFile,"MinPower\t: %f\n",myParams.MinPower);
+  fprintf(configFile,"overlapFlag\t: %i\n",myParams.overlapFlag);
+  fprintf(configFile,"whiten\t: %i\n",myParams.whiten);
+  fprintf(configFile,"avgSpecMethod\t: %i\n",
+	  (myParams.avgSpecMethod));
+  fprintf(configFile,"avgSpecWindow\t: %i\n",
+	  (myParams.avgSpecWindow));
+  fprintf(configFile,"multiResolution\t: %i\n",
+	  myParams.multiResolution);
+  FB=myParams.FreqBins;
+  TB=myParams.TimeBins;
+  fprintf(configFile,"FreqBins\t: %i\n",FB);
+  fprintf(configFile,"TimeBins\t: %i\n",TB);
+  fprintf(configFile,"windowsize\t: %i\n",myParams.windowsize);
+  fprintf(configFile,"window\t: %i\n",myParams.window);
+  fprintf(configFile,"numEvents\t: %i\n",myParams.numEvents);
+  if (myParams.channelName == NULL)
+    fprintf(configFile,"channelName\t: NULL\n");
+  else
+    fprintf(configFile,"channelName\t: %s\n",myParams.channelName);
+  if (myParams.dataDirPath == NULL)
+    fprintf(configFile,"channelName\t: NULL\n");
+  else
+    fprintf(configFile,"dataDirPath\t: %s\n",myParams.dataDirPath);
+  if (myParams.singleDataCache == NULL)
+    fprintf(configFile,"singleDataCache\t: NULL\n");
+  else
+    fprintf(configFile,"singleDataCache\t: %s\n",
+	    myParams.singleDataCache);
+  if (myParams.detectorPSDCache == NULL)
+    fprintf(configFile,"detectorPSDCache\t: NULL\n");
+  else
+    fprintf(configFile,"detectorPSDCache\t: %s\n",
+	    myParams.detectorPSDCache);
+  if (myParams.channelNamePSD == NULL)
+    fprintf(configFile,"channelNamePSD\t: NULL\n");
+  else
+    fprintf(configFile,"channelNamePSD\t: %s\n",
+	    myParams.channelNamePSD);
 
-      fprintf(configFile,"calChannelType\t: %i\n",
-	      params->calChannelType);
-      if (params->calFrameCache == NULL)
-	fprintf(configFile,"calFrameCache\t: \n");
-      else
-	fprintf(configFile,"calFrameCache\t: %s\n",
-		params->calFrameCache);
-      fprintf(configFile,"calibrate\t: %i\n",
-	      params->calibrate);
-      fprintf(configFile,"calibrateIFO\t: %s\n",
-	      params->calibrateIFO);
-      if (params->calCatalog == NULL)
-	fprintf(configFile,"calCatalog\t: NULL\n");
-      else
-	fprintf(configFile,"calCatalog\t: %s\n",
-		params->calCatalog);
-      fprintf(configFile,"dataSegVect\t: MEMORY SPACE\n");
-      fprintf(configFile,"currentSeg\t: %i\n",
-	      params->currentSeg);
-      fprintf(configFile,"makenoise\t: %i\n",
-	      params->makenoise);
-      if (params->auxlabel == NULL)
-	fprintf(configFile,"auxlabel\t: NULL\n");
-      else
-	fprintf(configFile,"auxlabel\t: %s\n",
-		params->auxlabel);
-      fprintf(configFile,"joinCurves\t: %i\n",
-	      params->joinCurves);
-      fprintf(configFile,"verbosity\t: %i\n",
-	      params->verbosity);
-      fprintf(configFile,"printPGM\t: %i\n",
-	      params->printPGM);
-      fprintf(configFile,"pgmColorMapFile\t: %s\n",
-	      params->pgmColorMapFile);
-      fprintf(configFile,"injectMapCache\t: %s\n",
-	      params->injectMapCache);
-      fprintf(configFile,"injectSingleMap\t: %s\n",
-	      params->injectSingleMap);
+  fprintf(configFile,"calChannelType\t: %i\n",
+	  myParams.calChannelType);
+  if (myParams.calFrameCache == NULL)
+    fprintf(configFile,"calFrameCache\t: \n");
+  else
+    fprintf(configFile,"calFrameCache\t: %s\n",
+	    myParams.calFrameCache);
+  fprintf(configFile,"calibrate\t: %i\n",
+	  myParams.calibrate);
+  fprintf(configFile,"calibrateIFO\t: %s\n",
+	  myParams.calibrateIFO);
+  if (myParams.calCatalog == NULL)
+    fprintf(configFile,"calCatalog\t: NULL\n");
+  else
+    fprintf(configFile,"calCatalog\t: %s\n",
+	    myParams.calCatalog);
+  fprintf(configFile,"dataSegVect\t: MEMORY SPACE\n");
+  fprintf(configFile,"currentSeg\t: %i\n",
+	  myParams.currentSeg);
+  fprintf(configFile,"makenoise\t: %i\n",
+	  myParams.makenoise);
+  if (myParams.auxlabel == NULL)
+    fprintf(configFile,"auxlabel\t: NULL\n");
+  else
+    fprintf(configFile,"auxlabel\t: %s\n",
+	    myParams.auxlabel);
+  fprintf(configFile,"joinCurves\t: %i\n",
+	  myParams.joinCurves);
+  fprintf(configFile,"verbosity\t: %i\n",
+	  myParams.verbosity);
+  fprintf(configFile,"printPGM\t: %i\n",
+	  myParams.printPGM);
+  fprintf(configFile,"pgmColorMapFile\t: %s\n",
+	  myParams.pgmColorMapFile);
+  fprintf(configFile,"injectMapCache\t: %s\n",
+	  myParams.injectMapCache);
+  fprintf(configFile,"injectSingleMap\t: %s\n",
+	  myParams.injectSingleMap);
 
-      fclose(configFile);
-    }
-  /*
-   * Write long ascii curve results file each curve is explicity
-   * written out like:
-   * CurveNum,length,power,col,row,depth,fbinHz,gpsStamp
-   */
-   fprintf(totalFile,"# TF Image Dimensions\n");
-   fprintf(totalFile,"# %i %i \n",FB,TB);
-   fprintf(totalFile,"#CurveNum, totalPower, col, row, depth, fBinHz, gpsSec, gpsNano\n");
+  fclose(configFile);
+  return;
+  
+}
+/*
+ * End LALappsWriteSearchConfig
+ */
+
+void
+LALappsWriteSearchResults(LALStatus      *status,
+			  const CHAR*     myFilename,
+			  TrackSearchOut  outCurve)
+{
+  FILE            *totalFile=NULL;
+  INT4             i=0;
+  INT4             j=0;
+
+  totalFile=fopen(myFilename,"w");
+  fprintf(totalFile,"# Total Curves: %i\n",outCurve.numberOfCurves);
+  fprintf(totalFile,"# Legend: Col,Row;gpsSec,gpsNanoSec,Freq,depth\n");
   for (i = 0;i < outCurve.numberOfCurves;i++)
+    {
+      fprintf(totalFile,"#Curve number,length,power:%i,%i,%f\n",
+	      i,
+	      outCurve.curves[i].n,
+	      outCurve.curves[i].totalPower);
     for (j = 0;j < outCurve.curves[i].n;j++)
       { /*Long info*/
-	fprintf(totalFile,"%i\t %i\t %f\t %i\t %i\t %f\t %f\t %i,%i\n",
-		i,
-		outCurve.curves[i].n,
-		outCurve.curves[i].totalPower,
+	fprintf(totalFile,"%i,%i;%i,%i,%f,%f",
 		outCurve.curves[i].col[j],
 		outCurve.curves[i].row[j],
-		outCurve.curves[i].depth[j],
-		outCurve.curves[i].fBinHz[j],
 		outCurve.curves[i].gpsStamp[j].gpsSeconds,
-		outCurve.curves[i].gpsStamp[j].gpsNanoSeconds);
+		outCurve.curves[i].gpsStamp[j].gpsNanoSeconds,
+		outCurve.curves[i].fBinHz[j],
+		outCurve.curves[i].depth[j]);
+	if (j+1 < outCurve.curves[i].n)
+	  fprintf(totalFile,":");
       }
-  
+    fprintf(totalFile,"\n");
+    }
+  /*
+   * Close files and clear mem
+   */
+  fclose(totalFile);
+}
+/*
+ * End LALappsWriteSearchResults
+ */
+
+void
+LALappsWriteBreveResults(LALStatus      *status,
+			 const CHAR*     myFilename,
+			 TrackSearchOut  outCurve)
+{
+  FILE       *breveFile=NULL;
+  INT4        i=0;
+  REAL8            startStamp=0;
+  REAL8            stopStamp=0;
+
+  breveFile=fopen(myFilename,"w");
   /*Short info*/
   fprintf(breveFile,"%12s %12s %12s %12s %12s %12s %12s %12s %12s %12s %12s\n",
 	  "CurveNum",
@@ -2388,7 +2376,6 @@ LALappsWriteCurveList(LALStatus            *status,
 	  "FreqStop",
 	  "GPSstart",
 	  "GPSstop");
-  
   for (i = 0;i < outCurve.numberOfCurves;i++)
     {
       LAL_CALL(
@@ -2417,15 +2404,10 @@ LALappsWriteCurveList(LALStatus            *status,
 	      );
 
     }
-  /*
-   * Close files and clear mem
-   */
-  fclose(totalFile);
   fclose(breveFile);
-  return;
 }
 /*
- * End LALappsWriteCurveList
+ * End LALappsWriteBreveResults
  */
 
 /*

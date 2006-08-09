@@ -19,8 +19,8 @@ $ID: tracksearch.h,v 1.0 2004/04/14 02:00:00 charlie Exp $
 #define TRACKSEARCHTOOLBOXC_ENORM                          0
 #define TRACKSEARCHTOOLBOXC_EFAIL                          1
 
-#define  TRACKSEARCHTOOLBOXC_EMSGNORM                 "Normal Exit"
-#define  TRACKSEARCHTOOLBOXC_EMSGFAIL                 "Subroutine Fail"
+#define  TRACKSEARCHTOOLBOXC_EMSGNORM            "TSToolbox Normal Exit"
+#define  TRACKSEARCHTOOLBOXC_EMSGFAIL            "TSToolbox Subroutine Fail"
 
 /*
  * Misc functions for lalapps tracksearch related software
@@ -72,5 +72,9 @@ void
 LALappsTSADestroyCache(LALStatus       *status,
 		       TSAcache       **mapCache);
 
-
+void
+LALappsDetermineFilename(LALStatus                    *status,
+			 TrackSearchMapMarkingParams  imageBorders,
+			 CHARVector                 **thisFilename, 
+			 const CHAR*                  myFileExt);
 #endif
