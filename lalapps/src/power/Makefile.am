@@ -19,7 +19,7 @@ pkgpython_DATA = power.py
 endif
 EXTRA_DIST = power.c bread.c binj.c \
 	     lalapps_power_coinc_pipe lalapps_power_pipe lalapps_power_online_pipe \
-	     power.py
+	     power.py power_pipe.ini power_online_pipe.ini
 
 pkgdata_DATA = power_pipe.ini power_online_pipe.ini
 
