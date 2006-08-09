@@ -3147,24 +3147,24 @@ read_SFTversion_from_fp ( UINT4 *version, BOOLEAN *need_swap, FILE *fp )
 
   /* figure out endian-ness and check version-range */
   for ( *version = MAX_SFT_VERSION; *version >= MIN_SFT_VERSION; --(*version) )
-  {
-	  REAL8 vertest = *version;
-	  if ( ! memcmp( &ver, &vertest, sizeof( ver ) ) ) {
-		  *need_swap = FALSE;
-		  break;
-	  }
-	  endian_swap( (char*)(&vertest), sizeof( vertest ), 1 );
-	  if ( ! memcmp( &ver, &vertest, sizeof( ver ) ) ) {
-		  *need_swap = TRUE;
-		  break;
-	  }
-  }
+    {
+      REAL8 vertest = *version;
+      if ( ! memcmp( &ver, &vertest, sizeof( ver ) ) ) {
+	*need_swap = FALSE;
+	break;
+      }
+      endian_swap( (char*)(&vertest), sizeof( vertest ), 1 );
+      if ( ! memcmp( &ver, &vertest, sizeof( ver ) ) ) {
+	*need_swap = TRUE;
+	break;
+      }
+    }
   if ( *version < MIN_SFT_VERSION ) {
-	  if ( lalDebugLevel )
-		  LALPrintError( "\nERROR: illegal SFT-version not within [%.0f, %.0f]\n\n", MIN_SFT_VERSION, MAX_SFT_VERSION );
-	  goto failed;
+    if ( lalDebugLevel )
+      LALPrintError( "\nERROR: illegal SFT-version not within [%.0f, %.0f]\n\n", MIN_SFT_VERSION, MAX_SFT_VERSION );
+    goto failed;
   }
-
+  
   /* restore initial filepointer position */
   if ( fseek ( fp, save_filepos, SEEK_SET ) == -1 )
     {
