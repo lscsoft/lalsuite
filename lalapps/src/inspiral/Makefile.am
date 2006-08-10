@@ -104,14 +104,14 @@ lalapps_inspiral_online_pipe_inject: $(srcdir)/inspiral_online_pipe_inject.in py
 pkgdata_DATA = BNSMasses.dat inspsrcs.dat inspsrcs.errors inspsrcs-050Mpc.errors inspsrcs-075Mpc.errors inspsrcs-100Mpc.errors inspiral_pipe.ini s2_dag.ini s2_tama.ini inspiral_hipe.ini online.ini online_inject_bbh.ini
 EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
              $(SIRESRC) $(COIRESRC) $(SIVASRC) $(MINJSRC) \
-             $(INCASRC) inspiral_pipe.in s2_dag.ini \
-             $(COHERESRC) inspiral_pipe_s2.in inspiral_pipe.ini \
-             $(INSPINJSRC) BNSMasses.dat inspsrcs.dat inspsrcs.errors \
+             $(INCASRC) inspiral_pipe.in \
+             $(COHERESRC) inspiral_pipe_s2.in \
+             $(INSPINJSRC) \
              $(SPLITBANKSRC) inspiral.py inspiral_pipe_tama.in \
 	     inspiral_pipe_geo.in inspiral_online_pipe.in \
 	     inspiral_hipe.in inspiral_online_pipe_inject.in \
-             s2_tama.ini inspiral_hipe.ini online.ini online_inject_bbh.ini \
-	     check_hipe_times.in
+	     check_hipe_times.in \
+             $(DATA)
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
