@@ -340,7 +340,7 @@ void LALTrigScanAppendIsolatedTriggers (
         for (j = i+1; j<=n1; j++)
         {
             xj = xx[j];
-            dxij = condenseIn->tSampling * fabs( xi - xj );
+            dxij = fabs( xi - xj );
             if ( dxij <= condenseIn->bin_time )
             {
                 ni = ni + 1;
@@ -472,39 +472,10 @@ INT4 XLALPopulateTrigScanInput (
     deltaT     = fcTmpltParams->deltaT;
     deltaF     = sampleRate / (REAL8)(numPoints);
 
-    (*condenseIn)->fLower      = fcDataParams->fLow;
-    (*condenseIn)->fUpper      = sampleRate/2.0L - deltaF;
-    (*condenseIn)->tSampling   = sampleRate;
     (*condenseIn)->mmCoarse    = bankHead->minMatch;
     (*condenseIn)->rho_th1     = sqrt(fcFilterParams->rhosqThresh);
     (*condenseIn)->chisq_th1   = fcFilterParams->chisqThresh;
-    (*condenseIn)->order       = twoPN;
-    (*condenseIn)->approximant = fcFilterParams->approximant;
-
-    (*condenseIn)->coarseShf.f0     = 0.0L;
-    (*condenseIn)->coarseShf.deltaF = deltaF;
-    (*condenseIn)->coarseShf.data   = 
-            XLALCreateREAL8Vector( (numPoints/2 + 1) );
     
-    if ( !(*condenseIn)->coarseShf.data )
-          XLAL_ERROR( func, XLAL_ENOMEM );
-
-    /* Populate the shf vector from the wtilde vector */
-    for (ki=0; ki<fcDataParams->wtildeVec->length ; ki++) 
-    {
-        if (fcDataParams->wtildeVec->data[ki].re) 
-        {
-            (*condenseIn)->coarseShf.data ->data[ki] = (REAL8) 
-                    (1./fcDataParams->wtildeVec->data[ki].re);
-        }
-        else 
-        {
-            /* Note that we can safely set shf to be zero as this is    */
-            /* correctly handled in the LALGetInspiralMoments function  */
-            (*condenseIn)->coarseShf.data->data[ki] = 0.0;
-        }
-    }
-
     return 0;
 }
 

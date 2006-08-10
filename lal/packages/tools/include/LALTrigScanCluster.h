@@ -82,11 +82,7 @@ trigScanInputPoint;
 typedef struct tagTrigScanClusterIn
 { 
     INT2                  vrbflag, appendStragglers;
-    REAL8                 fLower, fUpper, tSampling;
     REAL8                 mmCoarse, rho_th1, chisq_th1;
-    REAL8FrequencySeries  coarseShf;
-    Order                 order;
-    Approximant           approximant;
     InputMasses           massChoice;
     REAL8                 bin_time, sf_volume;
     trigScanInputPoint    *masterList;
