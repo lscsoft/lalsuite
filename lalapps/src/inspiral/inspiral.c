@@ -2636,8 +2636,6 @@ int main( int argc, char *argv[] )
             LAL_CALL( LALClusterSnglInspiralOverTemplatesAndEndTime ( &status, 
                         &(savedEvents.snglInspiralTable), condenseIn ), &status );
             
-            /* Once clustering is over, free up memory */ 
-            XLALDestroyREAL8Vector ( condenseIn->coarseShf.data ); 
             LALFree ( condenseIn ); 
         }
         else
@@ -4646,9 +4644,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           exit(1);
       }
   }
-  /* If the trigScan parameters are reasonable, set trigScanDeltaEndTimeBin*/
-  /* Here we change trigScanDeltaEndTime from msec to number of bins       */
-  trigScanDeltaEndTime *= (REAL8)(sampleRate)/1000.;
+  /* If the trigScan parameters are reasonable, set trigScanDeltaEndTime*/
+  /* Here we change trigScanDeltaEndTime to msec                        */
+  trigScanDeltaEndTime /= 1000.L;
 
   return 0;
 }
