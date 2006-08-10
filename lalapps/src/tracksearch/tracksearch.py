@@ -149,7 +149,7 @@ class tracksearchCheckIniFile:
     #end numberErrors def
 
     def printErrorList(self):
-        print self.numberErrors(),' Errors found!'
+        print self.numberErrors(),' INI file Errors found!'
         for error in self.errList:
             print error
     #end printErrorList
@@ -447,9 +447,51 @@ class tracksearchDataFindJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         self.df_job.add_condor_cmd('initialdir',determineLayerPath())
     #End init
 #End Class
-                   
-class tracksearchTimeNode(pipeline.CondorDAGNode,
-                          pipeline.AnalysisNode):
+
+class tracksearchClusterJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+    """
+    This calls is responsible for creating a generic cluster job.  The
+    cluster jobs will concatenate all results file into a single list.
+    The single lists will be saved in a special directory.
+    """
+    def __init__(self,cp,block_id,dagDir):
+        self.dagDirectory=dagDir
+        self.__executable = cp.get('condor','clustertool')
+        self.__universe = cp.get('condor','universe')
+        pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+        pipeline.AnalysisJob.__init__(self,cp)
+        self.block_id=blockID=block_id
+        layerID='RESULTS_'+str(blockID)
+        layerPath=determineLayerPath(cp,blockID,layerID)
+        self.initialDir=blockPath=determineBlockPath(cp,blockID)
+        #Setup needed directories for this job to write in!
+        buildDir(blockPath)
+        buildDir(layerPath)
+        buildDir(blockPath+'/logs')
+        self.set_stdout_file(os.path.normpath(blockPath+'/logs/tracksearchCluster-$(cluster)-$(process).out'))
+        self.set_stderr_file(os.path.normpath(blockPath+'/logs/tracksearchCluster-$(cluster)-$(process).err'))
+        self.set_sub_file(self.dagDirectory+'tracksearchCluster.sub')
+        #Load in the cluster configuration sections!
+        #Add the candidateUtils.py equivalent library to dag for proper
+        #execution!
+        self.candUtil=str(cp.get('clusterconfig','pyutilfile'))
+        if not os.path.isfile(self.candUtil):
+            print "We have a problem with the candidateUtil python library."
+            print "Check for :",self.candUtil
+            os.abort()
+        self.add_condor_cmd('should_transfer_files','yes')
+        self.add_condor_cmd('when_to_transfer_output','on_exit')
+        self.add_condor_cmd('transfer_input_files',self.candUtil)
+        #self.add_input_file(self.candUtil)
+        for sec in ['clusterconfig']:
+            if str(sec).lower().__contains__('pyutilfile') :
+                doNothing=0
+            else:
+                self.add_ini_opts(cp,sec)
+        #End __init__ method
+#End class tracksearchClusterJob
+
+class tracksearchTimeNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     The class acting as a generic template to do a Time search
     """
@@ -498,6 +540,19 @@ class tracksearchMapCacheBuildNode(pipeline.CondorDAGNode,
     #End init
 #End Class
 
+class tracksearchClusterNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
+    """
+    The class acting as a generic template to allow building a cluster job.
+    It gives the needed features to setup a condor node to cluster/clobber
+    the ascii results files from tracksearch C code.
+    """
+    def __init__(self,job):
+        #Expects to run CondorDAGJob object for tracksearch
+        pipeline.CondorDAGNode.__init__(self,job)
+        pipeline.AnalysisNode.__init__(self)
+    #End init
+#End Class
+        
 class tracksearch:
     """
     The class which wraps all 100 second blocks into a uniq DAG
@@ -630,13 +685,41 @@ class tracksearch:
         #should perform a final map search.  No additional cache
         #building needs to be done here
         #RETURNS no node linkage
-        closeme=0
-    #end def
-
-    def clusterSearchLayer(self):
-        #clustering and other "post jobs" go here
-        closeme=0
-    #end def
+        #Setup file globbing for each layer
+        tracksearchCluster_job=tracksearchClusterJob(self.cp,self.blockID,self.dagDirectory)
+        
+        tracksearchCluster_job.add_condor_cmd('initialdir',tracksearchCluster_job.initialDir)
+        #Loop through done search layers to glob
+        prevJobList=[]
+        for i in range(1,layerID):
+            tracksearchCluster_node=tracksearchClusterNode(tracksearchCluster_job)
+            layer2work=determineLayerPath(self.cp,self.blockID,i)
+            globFilename="Glob:"+str(self.blockID)+"_"+str(i)+".candidates"
+            tracksearchCluster_node.add_var_opt('file',layer2work)
+            tracksearchCluster_node.add_var_opt('outfile',globFilename)
+            tracksearchCluster_node.add_var_arg("--glob")
+            #Setup the parents
+            for parents in nodeLinks:
+                tracksearchCluster_node.add_parent(parents)
+            self.dag.add_node(tracksearchCluster_node)
+            #Record job information these jobs are parent of clobbers
+            prevJobList.append(tracksearchCluster_node)
+        #Setup the appropriate globbed list clobbering jobs
+        tracksearchCluster_job2=tracksearchClusterJob(self.cp,self.blockID,self.dagDirectory)
+        tracksearchCluster_job2.set_sub_file(self.dagDirectory+'tracksearchCluster2.sub')
+        tracksearchCluster_job.add_condor_cmd('initialdir',tracksearchCluster_job.initialDir)
+        for i in range(1,layerID-1):
+            tracksearchCluster_node2=tracksearchClusterNode(tracksearchCluster_job2)
+            file2clobber="Glob:"+str(self.blockID)+"_"+str(i)+".candidates"
+            clobberWith="Glob:"+str(self.blockID)+"_"+str(i+1)+".candidates"
+            clobFilename="Clob:"+str(self.blockID)+"_"+str(i)+"_"+str(i+1)+".candidates"
+            tracksearchCluster_node2.add_var_opt('file',file2clobber)
+            tracksearchCluster_node2.add_var_opt('outfile',clobFilename)
+            tracksearchCluster_node2.add_var_opt('clobber',clobberWith)
+            for parents in prevJobList:
+                tracksearchCluster_node2.add_parent(parents)
+            self.dag.add_node(tracksearchCluster_node2)
+    #end def finalsearchlayer method
 
     def intermediateSearchLayers(self,layerID,nodeLinks):
         #This layer performs the required map cache building from
@@ -730,9 +813,7 @@ class tracksearch:
         for layerNum in range(2,layerCount+1):
             nodeLinkage=self.intermediateSearchLayers(layerNum,nodeLinkage)
 
-        self.finalSearchLayer(layerCount,nodeLinkage)
-
-
+        self.finalSearchLayer(layerCount+1,nodeLinkage)
         """
         We still need the pre and post script setups for each job
         then the correct config section in the ini file

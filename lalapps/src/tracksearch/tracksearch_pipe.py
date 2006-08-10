@@ -58,8 +58,9 @@ logFileMask=logFilePath+'/logFile_'
 if not(os.path.isdir(logFilePath)):
        print 'Log path does not exist!'
        print 'Expected to find:',logFilePath
-       os.abort()
-       
+       tracksearch.buildDir(logFilePath)
+       print 'Created...'
+
 reformatSegList.writeSegList()
 segmentList=reformatSegList.getSegmentName()
 allData=pipeline.ScienceData()
