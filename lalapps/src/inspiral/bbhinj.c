@@ -31,7 +31,8 @@ int main( void ) { fprintf( stderr, "no gsl: disabled\n" ); return 77; }
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
-#include <lal/LIGOMetadataTables.h>#include <lal/LIGOMetadataUtils.h>
+#include <lal/LIGOMetadataTables.h>
+#include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/Date.h>
 #include <lal/SkyCoordinates.h>
@@ -63,7 +64,7 @@ RCSID( "$Id$" );
 "  --user-tag STRING        set the usertag to STRING\n"\
 "  --min-mass MIN           set the minimum component mass to MIN (3.0)\n"\
 "  --max-mass MAX           set the maximum component mass to MAX (20.0)\n"\
-"  --max-total-mass TOTAL   set the total mass of the two components\n"\ 
+"  --max-total-mass TOTAL   set the total mass of the two components\n"\
 "  --min-distance DMIN      set the minimum distance to DMIN kpc (1)\n"\
 "  --max-distance DMAX      set the maximum distance to DMAX kpc (20000)\n"\
 "  --d-distr DDISTR         distribute injections uniformly over\n"\
