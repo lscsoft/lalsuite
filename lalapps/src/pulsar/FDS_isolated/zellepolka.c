@@ -68,6 +68,7 @@ some information on stderr.
 /* maximum depth of a linked structure. */
 #define LINKEDSTR_MAX_DEPTH 1024 
 
+#define ADDITIONAL_MEM 16384
 
 
 /* ----------------------------------------------------------------------------- */
@@ -197,6 +198,11 @@ typedef struct PolkaConfigVarsTag
   REAL8 ShiftAlpha;  /*  Parallel shift of Alpha of cell */
   REAL8 ShiftDelta;  /*  Parallel shift of Delta of cell */
   REAL8 ShiftF1dot;  /*  Parallel shift of F1dot spindown of cell */
+  REAL8 fMIN;
+  REAL8 F1dotMIN;
+  REAL8 AlphaMIN;
+  REAL8 DeltaMIN;
+  INT4 FileIDMIN;
   CHAR *FstatsFile;  /*  Names of Fstat files to be read in */
   CHAR *OutputFile;  /*  Names of output file */
   CHAR *InputDir;    /*  Directory name of input files */
@@ -293,7 +299,7 @@ typedef struct CellDataTag
 void ReadCommandLineArgs( LALStatus *, INT4 argc, CHAR *argv[], PolkaConfigVars *CLA ); 
 void GetFilesListInThisDir(LALStatus *, const CHAR *directory, const CHAR *basename, CHAR ***filelist, UINT4 *nfiles );
 void ReadCandidateFiles( LALStatus *, CandidateList **Clist, PolkaConfigVars *CLA, INT4 *datalen );
-void ReadOneCandidateFile( LALStatus *, CandidateList **CList, const CHAR *fname, INT4 *datalen, const REAL8 myFthr );
+void ReadOneCandidateFile( LALStatus *, CandidateList **CList, const CHAR *fname, PolkaConfigVars *CLA, INT4 *datalen, const REAL8 myFthr );
 void ReadOneCandidateFileV2( LALStatus *lalStatus, CandidateList **CList, const CHAR *fname, INT4 *candlen );
 
 #ifdef USE_UNZIP
@@ -315,7 +321,7 @@ void delete_int4_linked_list( LALStatus *, struct int4_linked_list *list_ptr);
 
 void get_info_of_the_cell( LALStatus *, CellData *cd, const CandidateList *CList);
 
-void PrintResult( LALStatus *, const PolkaConfigVars *CLA, CellData *cell, const INT4 *ncell, CandidateList *CList );
+void PrintResult( LALStatus *, const PolkaConfigVars *CLA, CellData *cell, const INT4 *ncell, CandidateList *CList , const INT4 cellgridnum);
 void print_Fstat_of_the_cell( LALStatus *, FILE *fp, const CellData *cd, const CandidateList *CList, const INT4 icell_start, 
 			      const INT4 icell_end, const REAL8 sig_thr, const REAL8 ncand_thr );
 void print_info_of_the_cell( LALStatus *lalStatus, FILE *fp, const CellData *cd, const INT4 icell_start, 
@@ -323,6 +329,7 @@ void print_info_of_the_cell( LALStatus *lalStatus, FILE *fp, const CellData *cd,
 void print_cand_of_most_coin_cell( LALStatus *lalStatus, CellData *cd, const CandidateList *CList);
 
 void FreeMemory(LALStatus *, PolkaConfigVars *CLA, CellData *cell, CandidateList *CList, const UINT4 datalen);
+void FreeMemoryCellsOnly(LALStatus *, PolkaConfigVars *CLA, CellData *cell, const UINT4 datalen);
 void FreeConfigVars(LALStatus *, PolkaConfigVars *CLA );
 
 
@@ -361,15 +368,26 @@ int main(INT4 argc,CHAR *argv[])
   
   CandidateList *SortedC = NULL;
   CellData *cell = NULL;
-  INT4 icell, icand, ncell;
+  INT4 icell, icand, ncell, icell2, ic;
   INT4 cc1,cc2,cc3,cc4,bb1,bb2,bb3,bb4,selectGrid;
-  INT4 sizecells=16384;
+  INT4 sizecells;
 
   PolkaConfigVars PCV;
   REAL8 DeltaDeltaFlex;
 
+  PCV.fMIN=10000000.0;
+  PCV.F1dotMIN=10000000.0;
+  PCV.AlphaMIN=10000000.0;
+  PCV.DeltaMIN=10000000.0;
+
   lalDebugLevel = 0 ;  
   vrbflg = 1;   /* verbose error-messages */
+
+#if 0
+  printf("%d  %d\n",(INT4)(-0.414),(INT4)(-0.414+0.5));
+  printf("%d  %d\n",(INT4)floor((-0.414)),(INT4)floor((-0.414+0.5)));
+  exit(0);
+#endif
 
   /* Get the debuglevel from command line arg, then set laldebuglevel. */
   LAL_CALL (LALGetDebugLevel(lalStatus, argc, argv, 'v'), lalStatus);
@@ -380,14 +398,9 @@ int main(INT4 argc,CHAR *argv[])
   /* Reads in candidare files, set CLength */
   LAL_CALL( ReadCandidateFiles(lalStatus, &SortedC, &PCV, &CLength), lalStatus);
 
-  /* Prepare cells. */
-  LAL_CALL( PrepareCells( lalStatus, &cell, sizecells ), lalStatus);  
-
-
-
+ 
   /* --------------------------------------------------------------------------------*/      
-  /* initialization */
-  /* Initialise arrays of sorted candidates. */
+
 
   /* flexible declination window */
   DeltaDeltaFlex = 0;
@@ -401,122 +414,149 @@ int main(INT4 argc,CHAR *argv[])
     for (bb2=0; bb2<2; bb2++) {
       for (bb3=0; bb3<2; bb3++) {
 	for (bb4=0; bb4<2; bb4++) {
-	  if (selectGrid == PCV.CellGrid) {
+	 
+	  /*if (selectGrid == PCV.CellGrid) {*/
+
 	    cc1=bb1;
 	    cc2=bb2;
 	    cc3=bb3;
 	    cc4=bb4;
-	  }
-	  selectGrid++;
-	}
-      }
-    }
-  }
-  
-  fprintf(stderr,"%% Selected CellGrid: %d %d %d %d\n", cc1,cc2,cc3,cc4);
 
-  for (icand=0;icand<CLength;icand++)
-    {
-      SortedC[icand].iFreq=(INT4) ( (SortedC[icand].f/(PCV.Deltaf)) + (cc1 * 0.5)  );
-      
-      /* This was used for an isotropic sky-grid */
-      /*SortedC[icand].iDelta=(INT4)(SortedC[icand].Delta/(PCV.DeltaDelta)  + PCV.ShiftDelta ); */
-      
-      /* This is used for the anisotropic sky-grid produced by a metric. */
-      DeltaDeltaFlex = PCV.DeltaAlpha + PCV.DeltaDelta * exp( -(PCV.Kappa)*(SortedC[icand].Delta)*(SortedC[icand].Delta) ); 
-      SortedC[icand].iDelta=(INT4)( (SortedC[icand].Delta/(DeltaDeltaFlex)) + (cc2 * 0.5)  ); 
+	    /*}*/
+	    
+	    fprintf(stderr,"%% Selected CellGrid: %d %d %d %d\n", cc1,cc2,cc3,cc4);
+	    
+	     /* Prepare cells. */
+	    cell = NULL;
+	    sizecells = ADDITIONAL_MEM;
+	    LAL_CALL( PrepareCells( lalStatus, &cell, sizecells ), lalStatus);  
 
-      SortedC[icand].iAlpha=(INT4)( (SortedC[icand].Alpha*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (cc3 * 0.5)  );
-      SortedC[icand].iF1dot=(INT4)( (SortedC[icand].F1dot/(PCV.DeltaF1dot))  + (cc4 * 0.5)  );
-      SortedC[icand].iCand=icand; /* Keep the original ordering before sort to refer the orignal data later. */
-    }
-
-  /* sort arrays of candidates */
-  qsort(SortedC, (size_t)CLength, sizeof(CandidateList), compareCandidates);
-  
-
-  /* Initialise the first cell by the first candidate. */
-  icell = 0;
-  icand = 0;
-  cell[icell].iFreq = SortedC[icand].iFreq;
-  cell[icell].iDelta = SortedC[icand].iDelta;
-  cell[icell].iAlpha = SortedC[icand].iAlpha;
-  cell[icell].iF1dot = SortedC[icand].iF1dot;
-  cell[icell].CandID->data = icand; 
-  cell[icell].nCand = 1;
-
-  /* ------------------------------------------------------------------------------*/      
-  /* main loop over candidates  */
-  icell = 0;
-  for (icand=1; icand < CLength; icand++)
-    {
-    /* Skip candidate events with 2F values below the threshold of TwoFthr. */
-    if ( SortedC[icand].TwoF > PCV.TwoFthr ) 
-      {
-
-	if( SortedC[icand].iFreq  == cell[icell].iFreq  && 
-	    SortedC[icand].iDelta == cell[icell].iDelta &&
-	    SortedC[icand].iAlpha == cell[icell].iAlpha &&
-	    SortedC[icand].iF1dot == cell[icell].iF1dot ) 
-	  { 
-	    /* This candidate is in this cell. */
-	    INT4 lastFileIDinThisCell = SortedC[cell[icell].CandID->data].FileID;
-	    if( SortedC[icand].FileID != lastFileIDinThisCell ) 
-	      { 
-		/* This candidate has a different file id from the candidates in this cell. */
-		LAL_CALL( add_int4_data( lalStatus, &(cell[icell].CandID), &(icand) ), lalStatus );
-		cell[icell].nCand += 1;
-	      }  
-	    else  
-	      { 
-		/* This candidate has the same file id to one of candidates in this cell. */ 
-		/* 	       Because the array is already sorted in the DECREASING ORDER OF 2F,  */
-		/* 		 we do nothing here. */
-	      }  /*if( SortedC[icand].FileID != lastFileIDinThisCell ) */
-	  } /*  if( SortedC[icand].iFreq  == cell[icell].iFreq  && .. ) */ 
-	else 
-	  {	  
-	    /* This candidate is outside of this cell. */
-	    icell++;
-
-	    /* Re-allocate Memory for more cells */
-	    if( icell >= sizecells ) {
-	      sizecells = sizecells + 16384;
-	      LAL_CALL( RePrepareCells(lalStatus, &cell, sizecells, icell), lalStatus);
-	    }
-
+	    
+	    for (icand=0;icand<CLength;icand++)
+	      {
+		SortedC[icand].iFreq=(INT4) ( ((SortedC[icand].f)/(PCV.Deltaf)) + (cc1 * 0.5)  );
+		
+		/* This was used for an isotropic sky-grid */
+		/*SortedC[icand].iDelta=(INT4)(SortedC[icand].Delta/(PCV.DeltaDelta)  + PCV.ShiftDelta ); */
+		
+		/* This is used for the anisotropic sky-grid produced by a metric. */
+		DeltaDeltaFlex = PCV.DeltaAlpha + PCV.DeltaDelta * exp( -(PCV.Kappa)*(SortedC[icand].Delta)*(SortedC[icand].Delta) ); 
+		SortedC[icand].iDelta=(INT4)floor(( ((SortedC[icand].Delta)/(DeltaDeltaFlex)) + (cc2 * 0.5)  )); 
+		
+		SortedC[icand].iAlpha=(INT4)( (SortedC[icand].Alpha*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (cc3 * 0.5)  );
+		SortedC[icand].iF1dot=(INT4)floor(( ((SortedC[icand].F1dot)/(PCV.DeltaF1dot))  + (cc4 * 0.5)  ));
+		SortedC[icand].iCand=icand; /* Keep the original ordering before sort to refer the orignal data later. */
+		
+		/*
+		  printf("DeltaDeltaFlex: %g\n", DeltaDeltaFlex); 
+		  printf("Freq: %f \t Deltaf: %f \t %f \n",SortedC[icand].f, PCV.Deltaf, SortedC[icand].f/(PCV.Deltaf));
+		  printf("iFreq: %d  iAlpha: %d  iDelta: %d  iF1dot: %d\n",SortedC[icand].iFreq,SortedC[icand].iAlpha,SortedC[icand].iDelta,SortedC[icand].iF1dot);
+		*/
+		
+	      }
+	    
+	    /* sort arrays of candidates */
+	    qsort(SortedC, (size_t)CLength, sizeof(CandidateList), compareCandidates);
+	    
+	    /*
+	      for (icand = 0; icand < CLength; icand++)
+	      {
+	      printf("iFreq: %d  iAlpha: %d  iDelta: %d  iF1dot: %d  FileID: %d\n",SortedC[icand].iFreq,SortedC[icand].iAlpha,SortedC[icand].iDelta,SortedC[icand].iF1dot, SortedC[icand].FileID);
+	      }
+	    */
+	    
+	    /* Initialise the first cell by the first candidate. */
+	    icell = 0;
+	    icand = 0;
 	    cell[icell].iFreq = SortedC[icand].iFreq;
 	    cell[icell].iDelta = SortedC[icand].iDelta;
 	    cell[icell].iAlpha = SortedC[icand].iAlpha;
 	    cell[icell].iF1dot = SortedC[icand].iF1dot;
-	    cell[icell].CandID->data = icand;
+	    cell[icell].CandID->data = icand; 
 	    cell[icell].nCand = 1;
-	  } /*  if( SortedC[icand].iFreq  == cell[icell].iFreq  && .. ) */ 
-
-      } /* if ( SortedC[icand].TwoF > PCV.TwoFthr ) */
-
-    } /* for (icand=1; icand < CLength; icand++): loop over candidate list */      
-
-  /* ---------------------------------------------------------------------------------------- */      
-
-
-  /* Get the information in each cell. */
-  ncell=icell+1; /* number of the cells in which more than or at least one candidate exists. */
-  for(icell=0;icell<ncell;icell++) {
-    LAL_CALL( get_info_of_the_cell( lalStatus, &cell[icell], SortedC), lalStatus);
-  }  
-
-  /* -----------------------------------------------------------------------------------------*/      
-  /* Output results */
-  LAL_CALL( PrintResult( lalStatus, &PCV, cell, &ncell, SortedC),lalStatus );
-
+	    
+	    /* ------------------------------------------------------------------------------*/      
+	    /* main loop over candidates  */
+	    icell = 0;
+	    for (icand=1; icand < CLength; icand++)
+	      {
+		/* Skip candidate events with 2F values below the threshold of TwoFthr. */
+		if ( SortedC[icand].TwoF > PCV.TwoFthr ) 
+		  {
+		    
+		    if( SortedC[icand].iFreq  == cell[icell].iFreq  && 
+			SortedC[icand].iDelta == cell[icell].iDelta &&
+			SortedC[icand].iAlpha == cell[icell].iAlpha &&
+			SortedC[icand].iF1dot == cell[icell].iF1dot ) 
+		      { 
+			/* This candidate is in this cell. */
+			INT4 lastFileIDinThisCell = SortedC[cell[icell].CandID->data].FileID;
+			if( SortedC[icand].FileID != lastFileIDinThisCell ) 
+			  { 
+			    /* This candidate has a different file id from the candidates in this cell. */
+			    LAL_CALL( add_int4_data( lalStatus, &(cell[icell].CandID), &(icand) ), lalStatus );
+			    cell[icell].nCand += 1;
+			  }  
+			else  
+			  { 
+			    /* This candidate has the same file id to one of candidates in this cell. */ 
+			    /* 	       Because the array is already sorted in the DECREASING ORDER OF 2F,  */
+			    /* 		 we do nothing here. */
+			  }  /*if( SortedC[icand].FileID != lastFileIDinThisCell ) */
+		      } /*  if( SortedC[icand].iFreq  == cell[icell].iFreq  && .. ) */ 
+		    else 
+		      {	  
+			/* This candidate is outside of this cell. */
+			icell++;
+			
+			/* Re-allocate Memory for more cells */
+			if( icell >= sizecells ) {
+			  sizecells = sizecells + ADDITIONAL_MEM;
+			  LAL_CALL( RePrepareCells(lalStatus, &cell, sizecells, icell), lalStatus);
+			}
+			
+			cell[icell].iFreq = SortedC[icand].iFreq;
+			cell[icell].iDelta = SortedC[icand].iDelta;
+			cell[icell].iAlpha = SortedC[icand].iAlpha;
+			cell[icell].iF1dot = SortedC[icand].iF1dot;
+			cell[icell].CandID->data = icand;
+			cell[icell].nCand = 1;
+		      } /*  if( SortedC[icand].iFreq  == cell[icell].iFreq  && .. ) */ 
+		    
+		  } /* if ( SortedC[icand].TwoF > PCV.TwoFthr ) */
+		
+	      } /* for (icand=1; icand < CLength; icand++): loop over candidate list */      
+	    
+	    /* ---------------------------------------------------------------------------------------- */      
+	    
+	    
+	    /* Get the information in each cell. */
+	    ncell=icell+1; /* number of the cells in which more than or at least one candidate exists. */
+	    for(icell=0;icell<ncell;icell++) {
+	      LAL_CALL( get_info_of_the_cell( lalStatus, &cell[icell], SortedC), lalStatus);
+	    }  
+	    
+	    /* -----------------------------------------------------------------------------------------*/      
+	    /* Output results */
+	    LAL_CALL( PrintResult( lalStatus, &PCV, cell, &ncell, SortedC, selectGrid),lalStatus );
+	    
+	    
+	    /* clean memory for cells */
+	    LAL_CALL( FreeMemoryCellsOnly(lalStatus, &PCV, cell, sizecells), lalStatus);
+	    LALCheckMemoryLeaks(); 
+	    
+	    selectGrid++;
+	}
+      }
+    }
+  }
 
   /* -----------------------------------------------------------------------------------------*/      
   /* Clean-up */
   LAL_CALL( FreeMemory(lalStatus, &PCV, cell, SortedC, sizecells), lalStatus);
-
   LALCheckMemoryLeaks(); 
 
+  
   return(POLKA_EXIT_OK);
  
 } /* main() */
@@ -674,26 +714,37 @@ void RePrepareCells( LALStatus *lalStatus, CellData **cell, const UINT4 CLength 
   @param[in]     ncell     UINT4* Number of the cells
   @param[in]     CList     CandidateList
 */
-void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cell, const INT4 *ncell, CandidateList *CList)
+void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cell, const INT4 *ncell, CandidateList *CList, const INT4 cellgridnum)
 {
   INT4 icell;
-  CHAR fnameSigTime[]="polka_significant_outlier_2FofTime"; /* Time variation of 2F of some significant outliers. */
-  CHAR fnameSigCell[]="polka_significant_outlier_CellData"; /* Cell information of some significant outliers*/
-  CHAR fnameCoiTime[]="polka_coincident_outlier_2FofTime";  /* Time variation of 2F of some coincident outliers. */
-  CHAR fnameCoiCell[]="polka_coincident_outlier_CellData";  /* Cell information of some coincident outliers*/
+  CHAR fnameSigTime[256]; /* Time variation of 2F of some significant outliers. */
+  CHAR fnameSigCell[256]; /* Cell information of some significant outliers*/
+  CHAR fnameCoiTime[256];  /* Time variation of 2F of some coincident outliers. */
+  CHAR fnameCoiCell[256];  /* Cell information of some coincident outliers*/
   /* The cell info of the maximum coincident event over each Frequency cell but all over the sky.*/
-  CHAR fnameMaxOverSky[]="polka_maxcoincident_over_each_freqcell_and_allsky"; 
+  CHAR fnameMaxOverSky[256]; 
+  
+
+
   FILE *fp = NULL, *fpSigTime = NULL, *fpSigCell = NULL, *fpCoiTime = NULL, *fpCoiCell = NULL;
   INT4 *count;
   INT4 nc, nmax,idxmax = 0;
   REAL4 Sigmax = 0.0;
-
+  
   INITSTATUS( lalStatus, "PrintResult", rcsid );
   ATTATCHSTATUSPTR (lalStatus);
 
   ASSERT( cell != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
   ASSERT( CLA != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
   ASSERT( CList != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
+
+  sprintf(fnameSigTime,"polka_significant_outlier_2FofTime_%d", cellgridnum);
+  sprintf(fnameSigCell,"polka_significant_outlier_CellData_%d", cellgridnum);
+  sprintf(fnameCoiTime,"polka_coincident_outlier_2FofTime_%d", cellgridnum);
+  sprintf(fnameCoiCell,"polka_coincident_outlier_CellData_%d", cellgridnum);
+  sprintf(fnameMaxOverSky,"polka_maxcoincident_over_each_freqcell_and_allsky_%d", cellgridnum);
+
+
 
   /* ------------------------------------------------------------- */
   /* First Sort arrays of candidates based on number of candidate. */ 
@@ -709,6 +760,7 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
   
 
 
+#if 0
   /* ------------------------------------------------------------- */
   /* Print out to the user-specified output file all the information in all the cell. 
      This file can be too huge to be tractable.*/
@@ -720,6 +772,9 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
   /* output for all the cells */
   print_info_of_the_cell( lalStatus->statusPtr, fp, cell, 0,(*ncell),0,0);
   BEGINFAIL(lalStatus) {fclose(fp);} ENDFAIL(lalStatus);
+
+#endif
+
 
   /* number counts and find the most significant event. */
   for(icell=0;icell<(*ncell);icell++) {
@@ -944,12 +999,11 @@ void print_info_of_the_cell( LALStatus *lalStatus,
   @param[in]     CList     CandidateList*   CandidateList structure
   @param[in]     CLength   UINT4            Number of the cells
 */
-void 
-FreeMemory( LALStatus *lalStatus, 
+void FreeMemory( LALStatus *lalStatus, 
 	    PolkaConfigVars *CLA, 
 	    CellData *cell, 
 	    CandidateList *CList, 
-	    const UINT4 CLength)
+	    const UINT4 datalen)
 {
   UINT4 icell;
 
@@ -960,10 +1014,46 @@ FreeMemory( LALStatus *lalStatus,
 
   if( CList != NULL ) LALFree(CList);
 
+  /* This is now being done by FreeMemoryCellsOnly ! ############
+  if( cell != NULL ) {
+    for(icell=0;icell<datalen;icell++) {
+      TRY( delete_int4_linked_list( lalStatus->statusPtr, cell[icell].CandID ), lalStatus );
+    }
+    LALFree(cell);
+  }
+  */
+
+  DETATCHSTATUSPTR (lalStatus);
+  RETURN (lalStatus);
+} /* FreeMemory */
+
+
+/* ########################################################################################## */
+/*!
+  Free memory 
+
+  Free Configuration variables \b CLA, CellData variable \b cell, CandidateList var \b CList.
+
+  @param[in,out] lalStatus LALStatus* 
+  @param[in]     CLA       PolkaConfigVars* configuration variables structure
+  @param[in]     cell      CellData*        CellData structure
+  @param[in]     CList     CandidateList*   CandidateList structure
+  @param[in]     CLength   UINT4            Number of the cells
+*/
+void FreeMemoryCellsOnly( LALStatus *lalStatus, 
+			  PolkaConfigVars *CLA, 
+			  CellData *cell, 
+			  const UINT4 datalen)
+{
+  UINT4 icell;
+
+  INITSTATUS( lalStatus, "FreeMemoryCellsOnly", rcsid );
+  ATTATCHSTATUSPTR (lalStatus);
+
   /* FIX (?) ME:  
      This part takes really long, when lalDebugLevel = 3. I do not know why.*/
   if( cell != NULL ) {
-    for(icell=0;icell<CLength;icell++) {
+    for(icell=0;icell<datalen;icell++) {
       TRY( delete_int4_linked_list( lalStatus->statusPtr, cell[icell].CandID ), lalStatus );
     }
     LALFree(cell);
@@ -1528,7 +1618,7 @@ ReadCandidateFiles(LALStatus *lalStatus,
   else if ( CLA->FstatsFile != NULL ) 
     {
       *CList = NULL;
-      TRY( ReadOneCandidateFile(lalStatus->statusPtr, CList, CLA->FstatsFile, clen, CLA->TwoFthr ), lalStatus );
+      TRY( ReadOneCandidateFile(lalStatus->statusPtr, CList, CLA->FstatsFile,CLA, clen, CLA->TwoFthr ), lalStatus );
       /* The last file is from last file.*/
       CLA->NFiles = (*CList)[*clen-1].FileID;
     } /* if( (CLA->InputDir != NULL) && (CLA->BaseName != NULL) )  */
@@ -2254,6 +2344,7 @@ void
 ReadOneCandidateFile( LALStatus *lalStatus, 
 		      CandidateList **CList, 
 		      const CHAR *fname, 
+		      PolkaConfigVars *CLA,
 		      INT4 *candlen, 
 		      const REAL8 myFthr )
 {
@@ -2374,6 +2465,29 @@ ReadOneCandidateFile( LALStatus *lalStatus,
                      "%" LAL_INT4_FORMAT "%" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT 
                      " %" LAL_REAL8_FORMAT "%c", 
                      &(cl->FileID), &(cl->f), &(cl->Alpha), &(cl->Delta), &(cl->F1dot), &(cl->TwoF), &newline );
+
+      
+      /* keep track of minimum values */ 	 
+       if ( cl->f < CLA->fMIN){ 	 
+         CLA->fMIN = cl->f; 	 
+       } 	 
+  	 
+       if ( cl->F1dot < CLA->F1dotMIN){ 	 
+         CLA->F1dotMIN = cl->F1dot; 	 
+       } 	 
+  	 
+       if ( cl->Alpha < CLA->AlphaMIN){ 	 
+         CLA->AlphaMIN = cl->Alpha; 	 
+       } 	 
+  	 
+       if ( cl->Delta < CLA->DeltaMIN){ 	 
+         CLA->DeltaMIN = cl->Delta; 	 
+       } 	 
+  	 
+       if ( cl->FileID < CLA->FileIDMIN){ 	 
+         CLA->FileIDMIN = cl->FileID; 	 
+       } 	 
+ 
 
       /* find number of candidates that are above the 2F threshold. */
       if ( cl->TwoF > myFthr ) {
