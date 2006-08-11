@@ -168,6 +168,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
         REAL8 x;
         REAL8 yTemp;
 	static REAL4 half = .5;
+	static REAL4 one  = 1.0;
 
         /* NOTE: sky-constants are always positive!!
          * this can be seen from their definition (-> documentation)
@@ -193,24 +194,51 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
             exit (COMPUTEFSTAT_EXIT_DEMOD);
         }
 
-#ifdef USE_FLOOR
-        xTInt =  floor(xTemp);
-#elif 0 // defined (USE_DEFAULT_ROUNDING_MODE)
-	__asm __volatile
-	  (
-	   "fsubs   %[half]  \n\t"
-	   "frndint          \n\t"
-	   "fstps   %[xTInt] \n\t"
-	   : [xTInt] "=m" (xTInt)
-	   :         "t"  (xTemp),
-	     [half]  "m"  (half)
-	   );
+	{
+#ifdef USE_ASS_XTEMP
+	  INT4 xTInt;
+	  __asm __volatile
+	    (
+#ifdef USE_SSE3
+	     "fld     %%st(0)          \n\t" /* xT xT */ /* clone xTemp on the stack */
+	     "fisttpl %[xTInt]         \n\t" /* write integer w. truncation reagrdless of rounding */
+	     "fildl   %[xTInt]         \n\t" /* load it back on the stack */
+	     "fsubrp                   \n\t" /* xTemp - xTInt */
+	     "fstpl   %[tF0]           \n\t" /* store tempFreq0 */
 #else
-	xTInt =  (UINT4)xTemp;
-#endif
-        tempFreq0 = xTemp - xTInt;   /* lies in [0, +1) by definition */
+	     "fistl   %[xTInt]         \n\t" /* xT */           /* save the rounded value, keep the original in FPU */
+	     "fildl   %[xTInt]         \n\t" /* xTi xT */       /* load it back on the stack as float */
+	     "fxch                     \n\t" /* xT xTi */
+	     "fsub                     \n\t" /* (xT-xTi) xTi */
+	     "fsts    %[xTInt]         \n\t" /* (xT-xTi) xTi */ /* save the rounded value */
+	     "sub     %%eax,%%eax      \n\t"                    /* EAX=0 */
+	     "orl     %[xTInt],%%eax   \n\t"                    /* sets the S (sign) flag */
+	     "jns     tf0" CPU_TYPE_S "\n\t"                    /* jump if xTi<xT, i.e. rounding down */
 
-        sftIndex = xTInt - params->Dterms + 1 - params->ifmin;
+	     "fld1                     \n\t" /* 1 (xT-xTi) xTi */     /* correct values if rounded up */
+	     "fadd    %%st(0),%%st(1)  \n\t" /* 1 (xT-xTi+1) xTi */
+	     "fsubrp  %%st(0),%%st(2)  \n\t" /* (xT-xTi+1) (xTi-1) */
+
+	     "tf0" CPU_TYPE_S ":       \n\t"
+	     "fstpl   %[tF0]           \n\t" /* xTi */          /* store tempFreq0 */
+	     "fistpl  %[xTInt]         \n\t" /*% */             /* store xTInt */
+#endif
+	     :
+	     [xTInt] "=m" (xTInt),
+	     [tF0]   "=m" (tempFreq0)
+	     :       "t"  (xTemp)
+	     : "st(1)","st(2)"
+	     );
+#else
+#ifdef USE_FLOOR
+	  REAL4 xTInt =  floor(xTemp);
+#else
+	  REAL4 xTInt =  (UINT4)xTemp;
+#endif
+	  tempFreq0 = xTemp - xTInt;   /* lies in [0, +1) by definition */
+#endif
+	  sftIndex = xTInt - params->Dterms + 1 - params->ifmin;
+	}
 
         if(sftIndex < 0){
               fprintf(stderr,"ERROR! sftIndex = %d < 0 in TestLALDemod run %d\n", sftIndex, cfsRunNo);
@@ -241,7 +269,6 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
           
           /* constants in memory */
           static REAL4 lutr = LUT_RES; /* LUT_RES in memory */
-          static REAL4 one  = 1.0;
           static REAL4 two  = 2.0;
 
           /* vector constants */
