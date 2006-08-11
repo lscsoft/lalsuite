@@ -203,16 +203,16 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 	     "fld     %%st(0)          \n\t" /* xT xT */ /* clone xTemp on the stack */
 	     "fisttpl %[xTInt]         \n\t" /* write integer w. truncation reagrdless of rounding */
 	     "fildl   %[xTInt]         \n\t" /* load it back on the stack */
-	     "fsubrp                   \n\t" /* xTemp - xTInt */
+	     "fsubrp                   \n\t" /* tempFreq0 = xTemp - xTInt */
 	     "fstpl   %[tF0]           \n\t" /* store tempFreq0 */
 #else
 	     "fistl   %[xTInt]         \n\t" /* xT */           /* save the rounded value, keep the original in FPU */
 	     "fildl   %[xTInt]         \n\t" /* xTi xT */       /* load it back on the stack as float */
-	     "fxch                     \n\t" /* xT xTi */
-	     "fsub                     \n\t" /* (xT-xTi) xTi */
+	     "fxch                     \n\t" /* xT xTi */       /* flip to keep xTi after substraction */
+	     "fsub                     \n\t" /* (xT-xTi) xTi */ /* substract */
 	     "fsts    %[xTInt]         \n\t" /* (xT-xTi) xTi */ /* save the rounded value */
 	     "sub     %%eax,%%eax      \n\t"                    /* EAX=0 */
-	     "orl     %[xTInt],%%eax   \n\t"                    /* sets the S (sign) flag */
+	     "orl     %[xTInt],%%eax   \n\t"                    /* sets the S (sign) flag from xT-xTi */
 	     "jns     tf0" CPU_TYPE_S "\n\t"                    /* jump if xTi<xT, i.e. rounding down */
 
 	     "fld1                     \n\t" /* 1 (xT-xTi) xTi */     /* correct values if rounded up */
@@ -227,7 +227,10 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 	     [xTInt] "=m" (xTInt),
 	     [tF0]   "=m" (tempFreq0)
 	     :       "t"  (xTemp)
-	     : "st(1)","st(2)"
+	     : "st(1)"
+#ifndef USE_SSE3
+	     ,"st(2)","eax"
+#endif
 	     );
 #else
 #ifdef USE_FLOOR
@@ -375,7 +378,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        /* Surprisingly the two cases (yTemp < 0) and (yTemp >= 0) then come out identical,
 	  so a case distinction is unnecessary. Furthermore this case turns out to be the
 	  same code independent of relying on the default rounding mode or not */
-#ifdef USE_SSE3
+#if 0 // def USE_SSE3
        "fld     %%st(0)               \n\t" /* yT yT */
        "fisttpl %[yRem]               \n\t" /* yT */         /* write integer w. truncation reagrdless of rounding */
        "fisubl  %[yRem]               \n\t" /* yT-(int)yT */ 
