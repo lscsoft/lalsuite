@@ -78,11 +78,11 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
   REAL8 f;
 
   UINT4 klim = 2*params->Dterms;
-  /* #define klim 32                 /* this actually is only a hint. The assembler Kernel loop
+  /* #define klim 32               this actually is only a hint. The assembler Kernel loop
 				   doesn't use this value at all, but relies on it being 32 */ 
 
-  COMPLEX16 tsincos;            
   REAL4 tsin, tcos;
+  COMPLEX16 tsincos;            /* tsin and tcos as complex pair */
   REAL4 realP, imagP;
 
   REAL8 A=params->amcoe->A;
@@ -167,8 +167,6 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
         REAL4 b = params->amcoe->b->data[alpha];
         REAL8 x;
         REAL8 yTemp;
-	static REAL4 half = .5;
-	static REAL4 one  = 1.0;
 
         /* NOTE: sky-constants are always positive!!
          * this can be seen from their definition (-> documentation)
@@ -271,6 +269,8 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
           
           /* constants in memory */
           static REAL4 lutr = LUT_RES; /* LUT_RES in memory */
+	  static REAL4 half = 0.5;
+	  static REAL4 one  = 1.0;
           static REAL4 two  = 2.0;
 
           /* vector constants */
@@ -322,7 +322,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        "add    %%eax,%%eax                    \n\t"
        "fstpl  %[cosv]                        \n\t" /* % */
        "movlpd %[cosv],%%xmm0                 \n\t" /* xmm0 := (d,d) */
-#if 0
+#if 0 /* might have been faster */
        "shufpd  $0,%%xmm0,%%xmm0              \n\t"
 #else
        "movhpd %[cosq],%%xmm0                 \n\t"
