@@ -202,8 +202,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 #ifdef USE_SSE3
 	     "fld     %%st(0)          \n\t" /* xT xT */ /* clone xTemp on the stack */
 	     "fisttpl %[xTInt]         \n\t" /* write integer w. truncation reagrdless of rounding */
-	     "fildl   %[xTInt]         \n\t" /* load it back on the stack */
-	     "fsubrp                   \n\t" /* tempFreq0 = xTemp - xTInt */
+	     "fisubl  %[xTInt]         \n\t" /* tempFreq0 = xTemp - xTInt */
 	     "fstpl   %[tF0]           \n\t" /* store tempFreq0 */
 #else
 	     "fistl   %[xTInt]         \n\t" /* xT */           /* save the rounded value, keep the original in FPU */
