@@ -68,7 +68,7 @@ some information on stderr.
 /* maximum depth of a linked structure. */
 #define LINKEDSTR_MAX_DEPTH 1024 
 
-#define ADDITIONAL_MEM 16384
+#define ADDITIONAL_MEM 32768
 
 
 /* ----------------------------------------------------------------------------- */
@@ -234,7 +234,7 @@ CandidateList
 @param iAlpha        Right ascension index of this candidate event
 @param iF1dot        Spindwon index of this candidate event
 */
-
+#pragma pack(1)
 typedef struct CandidateListTag
 {
   REAL8 f;           /*  Frequency of the candidate */
@@ -249,7 +249,7 @@ typedef struct CandidateListTag
   INT4 iF1dot;       /*  Spindown index */
   UINT4 iCand;       /*  Candidate id: unique with in this program.  */
 } CandidateList;     /*   Fstat lines */ 
-
+#pragma pack(0)
 
 /*!
 Liked list containing one INT4 data..
@@ -278,6 +278,7 @@ Structure containg data in cells
 @param nCand;        INT4 number of the events in this cell
 @param CandID        int4_linked_list* linked structure that has candidate id-s of the candidates in this cell
 */
+#pragma pack(1)
 typedef struct CellDataTag
 {
   REAL8 Freq;          /*  Frequency index of the cell */
@@ -292,7 +293,7 @@ typedef struct CellDataTag
   INT4 nCand;          /*  number of the events in this cell. */
   struct int4_linked_list *CandID;  /* linked structure that has candidate id-s of the candidates in this cell. */
 } CellData;
-
+#pragma pack(0)
 
 /* ----------------------------------------------------------------------------- */
 /* Function declarelations */
@@ -383,11 +384,6 @@ int main(INT4 argc,CHAR *argv[])
   lalDebugLevel = 0 ;  
   vrbflg = 1;   /* verbose error-messages */
 
-#if 0
-  printf("%d  %d\n",(INT4)(-0.414),(INT4)(-0.414+0.5));
-  printf("%d  %d\n",(INT4)floor((-0.414)),(INT4)floor((-0.414+0.5)));
-  exit(0);
-#endif
 
   /* Get the debuglevel from command line arg, then set laldebuglevel. */
   LAL_CALL (LALGetDebugLevel(lalStatus, argc, argv, 'v'), lalStatus);
@@ -424,7 +420,7 @@ int main(INT4 argc,CHAR *argv[])
 
 	    /*}*/
 	    
-	    fprintf(stderr,"%% Selected CellGrid: %d %d %d %d\n", cc1,cc2,cc3,cc4);
+	    fprintf(stderr,"\n%% Selected CellGrid: %d %d %d %d\n", cc1,cc2,cc3,cc4);
 	    
 	     /* Prepare cells. */
 	    cell = NULL;
