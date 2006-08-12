@@ -209,7 +209,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 	     "fistl   %[xTInt]         \n\t" /* xT */           /* save the rounded value, keep the original in FPU */
 	     "fildl   %[xTInt]         \n\t" /* xTi xT */       /* load it back on the stack as float */
 	     "fxch                     \n\t" /* xT xTi */       /* flip to keep xTi after substraction */
-	     "fsub                     \n\t" /* (xT-xTi) xTi */ /* substract */
+	     "fsub    %%st(1),%%st(0)  \n\t" /* (xT-xTi) xTi */ /* substract */
 	     "fsts    %[xTInt]         \n\t" /* (xT-xTi) xTi */ /* save the rounded value */
 	     "sub     %%eax,%%eax      \n\t"                    /* EAX=0 */
 	     "orl     %[xTInt],%%eax   \n\t"                    /* sets the S (sign) flag from xT-xTi */
@@ -378,7 +378,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        /* Surprisingly the two cases (yTemp < 0) and (yTemp >= 0) then come out identical,
 	  so a case distinction is unnecessary. Furthermore this case turns out to be the
 	  same code independent of relying on the default rounding mode or not */
-#if 0 // def USE_SSE3
+#if 0 /* def USE_SSE3 */
        "fld     %%st(0)               \n\t" /* yT yT */
        "fisttpl %[yRem]               \n\t" /* yT */         /* write integer w. truncation reagrdless of rounding */
        "fisubl  %[yRem]               \n\t" /* yT-(int)yT */ 
