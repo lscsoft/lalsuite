@@ -2139,11 +2139,9 @@ void GetHoughCandidates_toplist(LALStatus *status,
 {
   REAL8UnitPolarCoor sourceLocation;
   REAL8 deltaF, f0, fdot, dFdot, patchSizeX, patchSizeY;
-  REAL8 mean, std;
   INT8 f0Bin;  
   INT4 nCandidates, maxCandidates; 
   INT4 i,j, xSide, ySide, minSigIndex;
-  HoughStats stats;
 
   INITSTATUS( status, "GetHoughCandidates_toplist", rcsid );
   ATTATCHSTATUSPTR (status);
@@ -2164,15 +2162,11 @@ void GetHoughCandidates_toplist(LALStatus *status,
   patchSizeX = ht->patchSizeX;
   patchSizeY = ht->patchSizeY;
 
-  TRY( LALHoughStatistics ( status->statusPtr, &stats, ht), status );
-  mean = stats.avgCount;
-  std = stats.stdDev;
-
   for (i = 0; i < ySide; i++)
     {
       for (j = 0; j < xSide; j++)
 	{ 
-	  REAL8 tempSig = (ht->map[i*xSide + j] - mean)/std;
+	  REAL8 tempSig = ht->map[i*xSide + j];
 
 	  if ( nCandidates < maxCandidates )
 	    {
