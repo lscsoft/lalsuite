@@ -82,7 +82,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 				   doesn't use this value at all, but relies on it being 32 */ 
 
   REAL4 tsin, tcos;
-  COMPLEX16 tsincos;            /* tsin and tcos as complex pair */
+  COMPLEX16 tsincos  __attribute__ ((aligned (16)));       /* tsin and tcos as complex pair */
   REAL4 realP, imagP;
 
   REAL8 A=params->amcoe->A;
@@ -268,7 +268,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
           REAL8    tempFreqF  = tempFreq1 - 15.0;
           
           /* constants in memory */
-          static REAL4 lutr = LUT_RES; /* LUT_RES in memory */
+          static REAL8 lutr = LUT_RES; /* LUT_RES in memory */
 	  static REAL4 half = 0.5;
 	  static REAL4 one  = 1.0;
           static REAL4 two  = 2.0;
@@ -285,11 +285,31 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
       (
        /* calculation of tsin and tcos */
        /* ---------------------------- */
-         
+
+#ifdef USE_SSE2
+
+       "movsd    %[x],%%xmm0                    \n\t" /* xmm0L := x */
+       /* "cvtss2sd %[lutr],%%xmm1                 \n\t" /* xmm1L := LUT_RES */
+       "movsd    %[lutr],%%xmm1                 \n\t" /* xmm1L := LUT_RES */
+       "mulsd    %%xmm0,%%xmm1                  \n\t" /* xmm1L := (x*LUT_RES) */
+       "cvtsd2si %%xmm1,%%eax                   \n\t" /* EAX := (int)(x*LUT_RES) */
+       "subsd    %[diVal](,%%eax,8),%%xmm0      \n\t" /* xmm0L := d = x - diVal[i] */
+       "unpcklpd %%xmm0,%%xmm0                  \n\t" /* xmm0 := (d,d) */
+       "add      %%eax,%%eax                    \n\t" /* EAX*2 as scale is 2,4,8 (need 16) */
+       "movapd   %%xmm0,%%xmm1                  \n\t" /* xmm1 := (d,d) */
+       "mulpd    %%xmm1,%%xmm1                  \n\t" /* xmm1 := (d*d,d*d) */
+       "mulpd    %[csVal2PI]  (,%%eax,8),%%xmm0 \n\t"
+       "mulpd    %[csVal2PIPI](,%%eax,8),%%xmm1 \n\t"
+       "addpd    %[csVal]     (,%%eax,8),%%xmm0 \n\t"
+       "addpd    %%xmm1,%%xmm0                  \n\t"
+       "movapd   %%xmm0,%[cosv]                 \n\t"
+
+#else /* SSE2 */
+
        /* calculate index and put into EAX */
        /*                                    vvvvv-- these comments keep track of the FPU stack */
        "fldl   %[x]                   \n\t" /* x */
-       "flds   %[lutr]                \n\t" /* LUT_RES x */
+       "fldl   %[lutr]                \n\t" /* LUT_RES x */
        "fmul   %%st(1),%%st(0)        \n\t" /* (x*LUT_RES) x */
        
 #ifdef USE_DEFAULT_ROUNDING_MODE
@@ -300,7 +320,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
           kind of dangerous, so we don't do this by default. */
        "fistpl %[sinv]                \n\t" /* x */
        "movl   %[sinv],%%eax          \n\t" /* x */
-#else
+#else /* DEFAULT_ROUNDING_MODE */
        "fadds  %[half]                \n\t" /* (x*LUT_RES+.5) x */
        /* Implementation of floor() that doesn't rely on a rounding mode being set
           The current way works for positive values only! */
@@ -313,28 +333,11 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        "fstps  %[cosv]                \n\t" /* x */                /* value - round(value) will be negative if was rounding up */
        "shll   $1,%[cosv]             \n\t" /* x */                /* shift the sign bit into the carry bit */
        "sbb    $0,%%eax               \n\t" /* x */                /* substract the carry in EAX */
-#endif
+#endif /* DEFAULT_ROUNDING_MODE */
 
        /* calculate d = x - diVal[idx] in st(0) */
        "fsubl  %[diVal](,%%eax,8)     \n\t" /* (d = x - diVal[i]) */
        
-#ifdef USE_SSE2
-       "add    %%eax,%%eax                    \n\t"
-       "fstpl  %[cosv]                        \n\t" /* % */
-       "movlpd %[cosv],%%xmm0                 \n\t" /* xmm0 := (d,d) */
-#if 0 /* might have been faster */
-       "shufpd  $0,%%xmm0,%%xmm0              \n\t"
-#else
-       "movhpd %[cosq],%%xmm0                 \n\t"
-#endif
-       "movapd %%xmm0,%%xmm1                  \n\t"
-       "mulpd  %%xmm1,%%xmm1                  \n\t" /* xmm1 := (d*d,d*d) */
-       "mulpd  %[csVal2PI]  (,%%eax,8),%%xmm0 \n\t"
-       "mulpd  %[csVal2PIPI](,%%eax,8),%%xmm1 \n\t"
-       "addpd  %[csVal]     (,%%eax,8),%%xmm0 \n\t"
-       "addpd  %%xmm1,%%xmm0                  \n\t"
-       "movupd %%xmm0,%[cosv]                 \n\t"
-#else
        /* calculate indices in csVal tabs: cos/.cs in EBX, sin/.sn in EAX */
        "sal    $4,%%eax               \n\t"
        "mov    %%eax,%%ebx            \n\t" /* save in EBX */
@@ -362,7 +365,8 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        "fmull %[csVal2PI](,%%ebx,1)   \n\t" /* (d*sinVal2PI[i]) (cosVal[i]-d*d*cosVal2PIPI[i]) d */
        "faddp                         \n\t" /* ((cosVal[i]-d*d*cosVal2PIPI[i])-d*sinVal2PI[i]) */
        "fstpl %[cosv]                 \n\t" /* % */
-#endif       
+
+#endif /* SSE2 */
 
        /* calculating yRem */
        /* ---------------- */
@@ -377,12 +381,6 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        /* Surprisingly the two cases (yTemp < 0) and (yTemp >= 0) then come out identical,
 	  so a case distinction is unnecessary. Furthermore this case turns out to be the
 	  same code independent of relying on the default rounding mode or not */
-#if 0 /* def USE_SSE3 */
-       "fld     %%st(0)               \n\t" /* yT yT */
-       "fisttpl %[yRem]               \n\t" /* yT */         /* write integer w. truncation reagrdless of rounding */
-       "fisubl  %[yRem]               \n\t" /* yT-(int)yT */ 
-       "fadds   %[one]                \n\t" /* (yT-(int)yT+1) */
-#else
        "fistl  %[yRem]                \n\t" /* yT */
        "fisubl %[yRem]                \n\t" /* yT-(int)yT */ /* value - round(value) will be positive if was rounding up */
        "fsts   %[yRem]                \n\t" /* yT-(int)yT */ /* we will check the sign in integer registers */
@@ -391,7 +389,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        "jns    yrem" CPU_TYPE_S      "\n\t" /* yT-(int)yT */ /* append the CPU_TYPE to label to allow more instances */
        "fadds  %[one]                 \n"   /* (yT-(int)yT+1) */
        "yrem" CPU_TYPE_S ":           \n\t" /* yR */
-#endif
+
        
        /* calculation of realQ and imagQ */
        /* ------------------------------ */
@@ -399,7 +397,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        /* yRem is still in st(0), following named x */
        /* see also comments in calculation of tsin and tcos */
        
-       "flds   %[lutr]                \n\t" /* LUT_RES x */
+       "fldl   %[lutr]                \n\t" /* LUT_RES x */
        "fmul   %%st(1),%%st(0)        \n\t" /* (x*LUT_RES) x */
        
 #ifdef USE_DEFAULT_ROUNDING_MODE
