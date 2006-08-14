@@ -99,6 +99,10 @@ def parse_command_line():
 # =============================================================================
 #
 
+#
+# read only sngl_burst, process, and search_summary tables
+#
+
 def element_filter(name, attrs):
 	return lsctables.IsTableProperties(lsctables.SnglBurstTable, name, attrs) or lsctables.IsTableProperties(lsctables.ProcessTable, name, attrs) or lsctables.IsTableProperties(lsctables.SearchSummaryTable, name, attrs)
 
@@ -111,26 +115,45 @@ class ContentHandler(ligolw.PartialLIGOLWContentHandler):
 llwapp.ContentHandler = ContentHandler
 
 
-class SnglBurst(object):
-	__slots__ = ["ifo", "confidence", "start_time", "start_time_ns", "duration"]
+#
+# Restrict the columns loaded from the sngl_burst table
+#
 
+lsctables.SnglBurstTable.loadcolumns = ["ifo", "start_time", "start_time_ns", "duration", "snr", "confidence", "tfvolume"]
+
+
+#
+# Override some methods of the SnglBurst and SearchSummary row classes
+#
+
+class SnglBurst(lsctables.SnglBurst):
 	def get_start(self):
+		# use date.LIGOTimeGPS instead of lal.LIGOTimeGPS
 		return date.LIGOTimeGPS(self.start_time, self.start_time_ns)
 
 	def get_stop(self):
+		# lal doesn't include stop time column, so need a different
+		# function
 		return date.LIGOTimeGPS(self.start_time, self.start_time_ns) + self.duration
 
 	def get_power(self):
+		# extra method to recover normalized event power
 		return self.snr + 2.0 * self.tfvolume
 
 
-def search_summary_get_out(self):
-	return segments.segment(date.LIGOTimeGPS(self.out_start_time, self.out_start_time_ns), date.LIGOTimeGPS(self.out_end_time, self.out_end_time_ns))
+class SearchSummary(lsctables.SearchSummary):
+	def get_out(self):
+		# use date.LIGOTimeGPS insetad of lal.LIGOTimeGPS
+		return segments.segment(date.LIGOTimeGPS(self.out_start_time, self.out_start_time_ns), date.LIGOTimeGPS(self.out_end_time, self.out_end_time_ns))
 
 
 lsctables.SnglBurstTable.RowType = SnglBurst
-lsctables.SearchSummary.get_out = search_summary_get_out
+lsctables.SearchSummaryTable.RowType = SearchSummary
 
+
+#
+# input cross-checks
+#
 
 def verify_burst_events(doc, program):
 	segmentlists = llwapp.segmentlistdict_fromsearchsummary(doc, program)
@@ -158,20 +181,20 @@ def new_fseries(f_0, delta_f, n):
 	return f
 
 
-def fourier_transform(eventlist, options):
+def fourier_transform(sngl_burst_table, options):
 	"""
 	Returns
 	
 	C_{k} = \int_{t_{\mathrm{start}}}^{t_{\mathrm{stop}}} C(t) \exp^{-2 \pi \aye f_{k} t} \diff t
 
 	where \(C(t)\) is confidence as a function of time for the events
-	in the eventlist, and \(f_{k} = \delta f \cdot k\) for \(k \in [0,
-	nf)\).
+	in the sngl_burst table, and \(f_{k} = \delta f \cdot k\) for \(k
+	\in [0, nf)\).
 	"""
 	fseries = {}
-	for n, event in enumerate(eventlist):
-		if not n % max(len(eventlist) / 1000, 200):
-			print >>sys.stderr, "	%.1f%%\r" % (100.0 * n / len(eventlist)),
+	for n, event in enumerate(sngl_burst_table):
+		if not n % max(len(sngl_burst_table) / 1000, 200):
+			print >>sys.stderr, "	%.1f%%\r" % (100.0 * n / len(sngl_burst_table)),
 		if event.ifo not in fseries:
 			fseries[event.ifo] = new_fseries(options.f_naught, options.delta_f, options.n_f)
 		value = event.get_power() / (-2j * math.pi) / fseries[event.ifo][0] * (numarray.exp(-2j * math.pi * float(event.get_stop() - options.t_naught) * fseries[event.ifo][0]) - numarray.exp(-2j * math.pi * float(event.get_start() - options.t_naught) * fseries[event.ifo][0]))
@@ -182,11 +205,15 @@ def fourier_transform(eventlist, options):
 	return fseries
 
 
-def bin_power_by_sidereal_time(rates, eventlist):
-	for n, event in enumerate(eventlist):
+def new_rates():
+	# 1 filter-width per 1 sidereal minute
+	return rate.RatiosRate(segments.segment(0.0, 2.0 * math.pi), 60.0 * math.pi / 43200.0)
+
+
+def bin_power_by_sidereal_time(rates, sngl_burst_table):
+	for n, event in enumerate(sngl_burst_table):
 		if event.ifo not in rates:
-			# 1 filter-width per 1 sidereal minute
-			rates[event.ifo] = rate.RatiosRate(segments.segment(0.0, 2.0 * math.pi), 60.0 * math.pi / 43200.0)
+			rates[event.ifo] = new_rates()
 		start = date.XLALGreenwichMeanSiderealTime(event.get_start())
 		stop = date.XLALGreenwichMeanSiderealTime(event.get_stop())
 		duration = stop - start
@@ -205,9 +232,11 @@ def gps_seglist_to_gmst(seglist):
 
 def bin_livetime_by_sidereal_time(rates, segmentlists):
 	for key, value in segmentlists.iteritems():
+		if key not in rates:
+			rates[key] = new_rates()
 		value = gps_seglist_to_gmst(value)
-		# add a little bit to the stop time to ensure we generate a
-		# segment for the last day
+		# in this formula, we add a little bit to the stop time to
+		# ensure we generate a segment for the last day
 		gmst_days = segmentsUtils.segmentlist_range(value[0][0] - value[0][0] % (2.0 * math.pi), value[-1][1] - value[-1][1] % (2.0 * math.pi) + 2.0 * math.pi + 0.5, 2.0 * math.pi)
 		for seglist in segmentsUtils.Fold(value, gmst_days):
 			for seg in seglist:
@@ -258,8 +287,8 @@ rates = {}
 for n, filename in enumerate(llwapp.sort_files_by_size(filenames, options.verbose)):
 	if options.verbose:
 		print >>sys.stderr, "%d/%d:" % (n + 1, len(filenames)),
-	doc = llwapp.load_filename(filename, options.verbose)
-	eventlist = llwapp.get_table(doc, lsctables.SnglBurstTable.tableName)
+	doc = llwapp.load_filename(filename, options.verbose, gz = filename[-3:] == ".gz")
+	sngl_burst_table = llwapp.get_table(doc, lsctables.SnglBurstTable.tableName)
 
 	# check that triggers are all inside segments
 	if options.verbose:
@@ -269,20 +298,20 @@ for n, filename in enumerate(llwapp.sort_files_by_size(filenames, options.verbos
 	# for better numerical accuracy, process events with smallest
 	# confidence first.
 	if options.verbose:
-		print >>sys.stderr, "sorting %d events by confidence..." % len(eventlist)
-	eventlist.sort(lambda a, b: cmp(a.confidence, b.confidence))
+		print >>sys.stderr, "sorting %d events by confidence..." % len(sngl_burst_table)
+	sngl_burst_table.sort(lambda a, b: cmp(a.confidence, b.confidence))
 
 	# bin by sidereal time
 	if options.verbose:
-		print >>sys.stderr, "binning by sidereal time..."
-	bin_confidence_by_sidereal_time(rates, eventlist)
+		print >>sys.stderr, "binning power and live time by sidereal time..."
+	bin_power_by_sidereal_time(rates, sngl_burst_table)
 	bin_livetime_by_sidereal_time(rates, llwapp.segmentlistdict_fromsearchsummary(doc, options.program))
 
 	# Fourier transform
 	if not options.only_rate:
 		if options.verbose:
-			print >>sys.stderr, "Fourier transforming..."
-		newfseries = fourier_transform(eventlist, options)
+			print >>sys.stderr, "Fourier transforming power..."
+		newfseries = fourier_transform(sngl_burst_table, options)
 		for key, value in newfseries.iteritems():
 			if key in fseries:
 				fseries[key][1:] += value[1:]
