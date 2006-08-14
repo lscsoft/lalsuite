@@ -48,7 +48,7 @@ from glue import segmentsUtils
 from pylal import ligolw_tisi
 from pylal import llwapp
 from pylal.date import LIGOTimeGPS
-import power
+from lalapps import power
 
 
 #

@@ -33,7 +33,7 @@ import sys
 from glue import pipeline
 from pylal import llwapp
 from pylal import packing
-import power
+from lalapps import power
 
 __author__ = "Kipp Cannon <kipp@gravity.phys.uwm.edu>"
 __version__ = "$Revision$"[11:-2]

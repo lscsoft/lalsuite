@@ -40,7 +40,7 @@ from glue import pipeline
 from glue import segments
 from glue import segmentsUtils
 from pylal.date import LIGOTimeGPS
-import power
+from lalapps import power
 
 __author__ = "Kipp Cannon <kipp@gravity.phys.uwm.edu>"
 __date__ = "$Date$"[11:-2]
