@@ -69,7 +69,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
   INT4  nDeltaF;                /* number of frequency bins per SFT band */
 
   INT4  sftIndex;               /* more temp variables */
-  COMPLEX16 Q;                  /* was REAL8 realQ, imagQ; */
+  COMPLEX16 Q __attribute__ ((aligned (16))); /* was REAL8 realQ, imagQ; */
   INT4 *tempInt1;
   REAL8 FaSq;
   REAL8 FbSq;
@@ -82,7 +82,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 				   doesn't use this value at all, but relies on it being 32 */ 
 
   REAL4 tsin, tcos;
-  COMPLEX16 tsincos  __attribute__ ((aligned (16)));       /* tsin and tcos as complex pair */
+  COMPLEX16 tsincos __attribute__ ((aligned (16)));       /* tsin and tcos as complex pair */
   REAL4 realP, imagP;
 
   REAL8 A=params->amcoe->A;
@@ -268,10 +268,13 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
           REAL8    tempFreqF  = tempFreq1 - 15.0;
           
           /* constants in memory */
-          static REAL8 lutr = LUT_RES; /* LUT_RES in memory */
-	  static REAL4 half = 0.5;
-	  static REAL4 one  = 1.0;
-          static REAL4 two  = 2.0;
+          static REAL8 lutr  = LUT_RES; /* LUT_RES in memory */
+	  static REAL8 one8  = 1.0;
+	  static REAL8 big   = 1<<30;   /* real(ly) big number */
+          static UINT4 lutri = LUT_RES; /* LUT_RES as int */
+	  static REAL4 half  = 0.5;
+	  static REAL4 one   = 1.0;
+          static REAL4 two   = 2.0;
 
           /* vector constants */
           /* having these not aligned will crash the assembler code */
@@ -368,6 +371,35 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 
 #endif /* SSE2 */
 
+#ifdef USE_SSE2
+
+       "movsd     %[yTemp],%%xmm0                \n\t" /* xmm0L := x */
+       "addsd     %[big],%%xmm0                  \n\t" /* make sure xmm0L is >0 */
+       "cvttsd2si %%xmm0,%%eax                   \n\t" /* EAX := (int)x */
+       "cvtsi2sd  %%eax,%%xmm1                   \n\t" /* xmm1L := (int)x */
+       "subsd     %%xmm1,%%xmm0                  \n\t" /* xmm0L := x-(int)x */
+       /* "test      %%eax,%%eax                    \n\t" /* sets the sign */
+       /* "jns    yrem" CPU_TYPE_S                "\n\t" /* */
+       /* "addsd    %[one8],%%xmm0                 \n"   /* (yT-(int)yT+1) */
+       /* "yrem" CPU_TYPE_S ":                     \n\t" /* */ 
+
+       "movsd    %[lutr],%%xmm1                 \n\t" /* xmm1L := LUT_RES */
+       "mulsd    %%xmm0,%%xmm1                  \n\t" /* xmm1L := (x*LUT_RES) */
+       "cvtsd2si %%xmm1,%%eax                   \n\t" /* EAX := (int)(x*LUT_RES) */
+       /* "andl     %[lutri],%%eax                 \n\t" */
+       "subsd    %[diVal](,%%eax,8),%%xmm0      \n\t" /* xmm0L := d = x - diVal[i] */
+       "unpcklpd %%xmm0,%%xmm0                  \n\t" /* xmm0 := (d,d) */
+       "add      %%eax,%%eax                    \n\t" /* EAX*2 as scale is 2,4,8 (need 16) */
+       "movapd   %%xmm0,%%xmm1                  \n\t" /* xmm1 := (d,d) */
+       "mulpd    %%xmm1,%%xmm1                  \n\t" /* xmm1 := (d*d,d*d) */
+       "mulpd    %[csVal2PI]  (,%%eax,8),%%xmm0 \n\t"
+       "mulpd    %[csVal2PIPI](,%%eax,8),%%xmm1 \n\t"
+       "addpd    %[csVal]     (,%%eax,8),%%xmm0 \n\t"
+       "addpd    %%xmm1,%%xmm0                  \n\t"
+       "movapd   %%xmm0,%[cosq]                 \n\t"
+
+#else /* SSE2 */
+
        /* calculating yRem */
        /* ---------------- */
 
@@ -415,24 +447,6 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 #endif
 
        "fsubl  %[diVal](,%%eax,8)     \n\t" /* (d = x - diVal[i]) */
-
-#ifdef USE_SSE2
-       "add    %%eax,%%eax                    \n\t"
-       "fstpl  %[cosq]                        \n\t" /* % */
-       "movlpd %[cosq],%%xmm0                 \n\t" /* xmm0 := (d,d) */
-#if 0
-       "shufpd  $0,%%xmm0,%%xmm0              \n\t"
-#else
-       "movhpd %[cosq],%%xmm0                 \n\t"
-#endif
-       "movapd %%xmm0,%%xmm1                  \n\t"
-       "mulpd  %%xmm1,%%xmm1                  \n\t" /* xmm1 := (d*d,d*d) */
-       "mulpd  %[csVal2PI]  (,%%eax,8),%%xmm0 \n\t"
-       "mulpd  %[csVal2PIPI](,%%eax,8),%%xmm1 \n\t"
-       "addpd  %[csVal]     (,%%eax,8),%%xmm0 \n\t"
-       "addpd  %%xmm1,%%xmm0                  \n\t"
-       "movupd %%xmm0,%[cosq]                 \n\t"
-#else
        "sal    $4,%%eax               \n\t"
        "mov    %%eax,%%ebx            \n\t" /* save in EBX */
        "add    $8,%%eax               \n\t" /* add offset 8 * 2 */
@@ -611,8 +625,11 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 
        /* constants */
        [lutr]        "m"  (lutr),
+       [lutri]       "m"  (lutri),
        [half]        "m"  (half),
        [one]         "m"  (one),
+       [one8]        "m"  (one8),
+       [big]         "m"  (big),
        [two]         "m"  (two),
        [V0011]       "m"  (V0011[0]),
        [V2222]       "m"  (V2222[0]),
