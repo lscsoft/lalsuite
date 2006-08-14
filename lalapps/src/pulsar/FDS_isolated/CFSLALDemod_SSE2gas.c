@@ -196,7 +196,24 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 #ifdef USE_ASS_XTEMP
 	  INT4 xTInt;
 	  __asm __volatile
+#if (defined(USE_SSE2) && !(defined(USE_SSE3)))
 	    (
+	     "movsd     %[xTemp],%%xmm0 \n\t"
+	     "cvttsd2si %%xmm0,%[xTInt] \n\t"
+	     "cvtsi2sd  %[xTInt],%%xmm1 \n\t"
+	     "subsd     %%xmm1,%%xmm0   \n\t"
+	     "movsd     %%xmm0,%[tF0]   \n\t"
+
+	     :
+	     [xTInt] "=m" (xTInt),
+	     [tF0]   "=m" (tempFreq0)
+	     :
+	     [xTemp] "m"  (xTemp)
+#ifndef IGNORE_XMM_REGISTERS
+	     : "xmm0","xmm1"
+#endif
+	     );
+#else /* USE_SSE2 */
 #ifdef USE_SSE3
 	     "fld     %%st(0)          \n\t" /* xT xT */ /* clone xTemp on the stack */
 	     "fisttpl %[xTInt]         \n\t" /* write integer w. truncation reagrdless of rounding */
@@ -228,8 +245,10 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 #ifndef USE_SSE3
 	     ,"st(2)","eax"
 #endif
+#endif /* USE_SSE2 */
 	     );
-#else
+#else /* USE_ASS_XTEMP */
+
 #ifdef USE_FLOOR
 	  REAL4 xTInt =  floor(xTemp);
 #else
@@ -286,13 +305,11 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 
           __asm __volatile
       (
-       /* calculation of tsin and tcos */
-       /* ---------------------------- */
-
 #ifdef USE_SSE2
 
+       /* calculation of tsin and tcos */
+
        "movsd    %[x],%%xmm0                    \n\t" /* xmm0L := x */
-       /* "cvtss2sd %[lutr],%%xmm1                 \n\t" /* xmm1L := LUT_RES */
        "movsd    %[lutr],%%xmm1                 \n\t" /* xmm1L := LUT_RES */
        "mulsd    %%xmm0,%%xmm1                  \n\t" /* xmm1L := (x*LUT_RES) */
        "cvtsd2si %%xmm1,%%eax                   \n\t" /* EAX := (int)(x*LUT_RES) */
@@ -307,7 +324,34 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        "addpd    %%xmm1,%%xmm0                  \n\t"
        "movapd   %%xmm0,%[cosv]                 \n\t"
 
-#else /* SSE2 */
+       /* calculation of yRem */
+
+       "movsd     %[yTemp],%%xmm0               \n\t" /* xmm0L := x */
+       "addsd     %[big],%%xmm0                 \n\t" /* make sure xmm0L is >0 */
+       "cvttsd2si %%xmm0,%%eax                  \n\t" /* EAX := (int)x */
+       "cvtsi2sd  %%eax,%%xmm1                  \n\t" /* xmm1L := (int)x */
+       "subsd     %%xmm1,%%xmm0                 \n\t" /* xmm0L := x-(int)x */
+
+       /* calculation of realQ and imagQ */
+
+       "movsd    %[lutr],%%xmm1                 \n\t" /* xmm1L := LUT_RES */
+       "mulsd    %%xmm0,%%xmm1                  \n\t" /* xmm1L := (x*LUT_RES) */
+       "cvtsd2si %%xmm1,%%eax                   \n\t" /* EAX := (int)(x*LUT_RES) */
+       "subsd    %[diVal](,%%eax,8),%%xmm0      \n\t" /* xmm0L := d = x - diVal[i] */
+       "unpcklpd %%xmm0,%%xmm0                  \n\t" /* xmm0 := (d,d) */
+       "add      %%eax,%%eax                    \n\t" /* EAX*2 as scale is 2,4,8 (need 16) */
+       "movapd   %%xmm0,%%xmm1                  \n\t" /* xmm1 := (d,d) */
+       "mulpd    %%xmm1,%%xmm1                  \n\t" /* xmm1 := (d*d,d*d) */
+       "mulpd    %[csVal2PI]  (,%%eax,8),%%xmm0 \n\t"
+       "mulpd    %[csVal2PIPI](,%%eax,8),%%xmm1 \n\t"
+       "addpd    %[csVal]     (,%%eax,8),%%xmm0 \n\t"
+       "addpd    %%xmm1,%%xmm0                  \n\t"
+       "movapd   %%xmm0,%[cosq]                 \n\t"
+
+#else /* non-SSE2, i.e. x87 FPU */
+
+       /* calculation of tsin and tcos */
+       /* ---------------------------- */
 
        /* calculate index and put into EAX */
        /*                                    vvvvv-- these comments keep track of the FPU stack */
@@ -369,36 +413,6 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        "faddp                         \n\t" /* ((cosVal[i]-d*d*cosVal2PIPI[i])-d*sinVal2PI[i]) */
        "fstpl %[cosv]                 \n\t" /* % */
 
-#endif /* SSE2 */
-
-#ifdef USE_SSE2
-
-       "movsd     %[yTemp],%%xmm0                \n\t" /* xmm0L := x */
-       "addsd     %[big],%%xmm0                  \n\t" /* make sure xmm0L is >0 */
-       "cvttsd2si %%xmm0,%%eax                   \n\t" /* EAX := (int)x */
-       "cvtsi2sd  %%eax,%%xmm1                   \n\t" /* xmm1L := (int)x */
-       "subsd     %%xmm1,%%xmm0                  \n\t" /* xmm0L := x-(int)x */
-       /* "test      %%eax,%%eax                    \n\t" /* sets the sign */
-       /* "jns    yrem" CPU_TYPE_S                "\n\t" /* */
-       /* "addsd    %[one8],%%xmm0                 \n"   /* (yT-(int)yT+1) */
-       /* "yrem" CPU_TYPE_S ":                     \n\t" /* */ 
-
-       "movsd    %[lutr],%%xmm1                 \n\t" /* xmm1L := LUT_RES */
-       "mulsd    %%xmm0,%%xmm1                  \n\t" /* xmm1L := (x*LUT_RES) */
-       "cvtsd2si %%xmm1,%%eax                   \n\t" /* EAX := (int)(x*LUT_RES) */
-       /* "andl     %[lutri],%%eax                 \n\t" */
-       "subsd    %[diVal](,%%eax,8),%%xmm0      \n\t" /* xmm0L := d = x - diVal[i] */
-       "unpcklpd %%xmm0,%%xmm0                  \n\t" /* xmm0 := (d,d) */
-       "add      %%eax,%%eax                    \n\t" /* EAX*2 as scale is 2,4,8 (need 16) */
-       "movapd   %%xmm0,%%xmm1                  \n\t" /* xmm1 := (d,d) */
-       "mulpd    %%xmm1,%%xmm1                  \n\t" /* xmm1 := (d*d,d*d) */
-       "mulpd    %[csVal2PI]  (,%%eax,8),%%xmm0 \n\t"
-       "mulpd    %[csVal2PIPI](,%%eax,8),%%xmm1 \n\t"
-       "addpd    %[csVal]     (,%%eax,8),%%xmm0 \n\t"
-       "addpd    %%xmm1,%%xmm0                  \n\t"
-       "movapd   %%xmm0,%[cosq]                 \n\t"
-
-#else /* SSE2 */
 
        /* calculating yRem */
        /* ---------------- */
@@ -468,7 +482,8 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        "fmull %[csVal2PI](,%%ebx,1)   \n\t" /* (d*sinVal2PI[i]) (cosVal[i]-d*d*cosVal2PIPI[i]) d */
        "faddp                         \n\t" /* ((cosVal[i]-d*d*cosVal2PIPI[i])-d*sinVal2PI[i]) */
        "fstpl %[cosq]                 \n\t" /* % */
-#endif
+
+#endif /* SSE2 */
 
        /* Kernel loop */
 
