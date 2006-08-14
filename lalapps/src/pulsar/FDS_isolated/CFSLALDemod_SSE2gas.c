@@ -214,6 +214,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 #endif
 	     );
 #else /* USE_SSE2 */
+	    (
 #ifdef USE_SSE3
 	     "fld     %%st(0)          \n\t" /* xT xT */ /* clone xTemp on the stack */
 	     "fisttpl %[xTInt]         \n\t" /* write integer w. truncation reagrdless of rounding */
