@@ -289,9 +289,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
           
           /* constants in memory */
           static REAL8 lutr  = LUT_RES; /* LUT_RES in memory */
-	  static REAL8 one8  = 1.0;
 	  static REAL8 big   = 1<<30;   /* real(ly) big number */
-          static UINT4 lutri = LUT_RES; /* LUT_RES as int */
 	  static REAL4 half  = 0.5;
 	  static REAL4 one   = 1.0;
           static REAL4 two   = 2.0;
@@ -306,8 +304,6 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 
           __asm __volatile
       (
-#ifdef USE_SSE2
-
        /* calculation of tsin and tcos */
 
        "movsd    %[x],%%xmm0                    \n\t" /* xmm0L := x */
@@ -348,143 +344,6 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        "addpd    %[csVal]     (,%%eax,8),%%xmm0 \n\t"
        "addpd    %%xmm1,%%xmm0                  \n\t"
        "movapd   %%xmm0,%[cosq]                 \n\t"
-
-#else /* non-SSE2, i.e. x87 FPU */
-
-       /* calculation of tsin and tcos */
-       /* ---------------------------- */
-
-       /* calculate index and put into EAX */
-       /*                                    vvvvv-- these comments keep track of the FPU stack */
-       "fldl   %[x]                   \n\t" /* x */
-       "fldl   %[lutr]                \n\t" /* LUT_RES x */
-       "fmul   %%st(1),%%st(0)        \n\t" /* (x*LUT_RES) x */
-       
-#ifdef USE_DEFAULT_ROUNDING_MODE
-       /* The default rounding mode is round-to-nearest, which is exactly what we want here.
-          It should be restored by the compiler after every operation that involves floating-point-to-integer
-          conversion (rounding). Switching the rounding mode is slow, so the following code is the fastest
-          possible, as it simply expects the default rounding mode being active. However relying on this is
-          kind of dangerous, so we don't do this by default. */
-       "fistpl %[sinv]                \n\t" /* x */
-       "movl   %[sinv],%%eax          \n\t" /* x */
-#else /* DEFAULT_ROUNDING_MODE */
-       "fadds  %[half]                \n\t" /* (x*LUT_RES+.5) x */
-       /* Implementation of floor() that doesn't rely on a rounding mode being set
-          The current way works for positive values only! */
-       /* This code temporary stores integer values in memory locations of float variables,
-          but they're overwritten later anyway */
-       "fistl  %[sinv]                \n\t" /* (x*LUT_RES+.5) x */ /* saving the rounded value, the original in FPU */
-       "fildl  %[sinv]                \n\t" /* ((int)(x*LUT_RES+.5)) (x*LUT_RES+.5) x */
-       "fsubrp                        \n\t" /* ((x*LUT_RES+.5)-((int)(x*LUT_RES+.5))) x */
-       "movl   %[sinv],%%eax          \n\t" /* ((x*LUT_RES+.5)-((int)(x*LUT_RES+.5))) x */ /* get the result in EAX */
-       "fstps  %[cosv]                \n\t" /* x */                /* value - round(value) will be negative if was rounding up */
-       "shll   $1,%[cosv]             \n\t" /* x */                /* shift the sign bit into the carry bit */
-       "sbb    $0,%%eax               \n\t" /* x */                /* substract the carry in EAX */
-#endif /* DEFAULT_ROUNDING_MODE */
-
-       /* calculate d = x - diVal[idx] in st(0) */
-       "fsubl  %[diVal](,%%eax,8)     \n\t" /* (d = x - diVal[i]) */
-       
-       /* calculate indices in csVal tabs: cos/.cs in EBX, sin/.sn in EAX */
-       "sal    $4,%%eax               \n\t"
-       "mov    %%eax,%%ebx            \n\t" /* save in EBX */
-       "add    $8,%%eax               \n\t" /* add offset 8 * 2 */
-
-       /* this calculates d*d */ 
-       "fld    %%st(0)                \n\t" /* d d */
-       "fmul   %%st(0),%%st(0)        \n\t" /* (d*d) d */
-       
-       /* three-term Taylor expansion for sin value, leaving d and d*d on stack, idx kept in eax */
-       /* some reordering by Akos */
-       "fldl  %[csVal2PI](,%%eax,1)   \n\t" /* cosVal2PI[i] (d*d) d */
-       "fmul  %%st(2),%%st(0)         \n\t" /* (d*cosVal2PI[i]) (d*d) d */
-       "faddl %[csVal](,%%eax,1)      \n\t" /* (sinVal[i]+d*cosVal2PI[i]) (d*d) d */
-       "fldl  %[csVal2PIPI](,%%eax,1) \n\t" /* sinVal2PIPI[i] (sinVal[i]+d*cosVal2PI[i]) (d*d) d */
-       "fmul  %%st(2),%%st(0)         \n\t" /* (d*d*sinVal2PIPI[i]) (sinVal[i]+d*cosVal2PI[i]) (d*d) d */
-       "faddp                         \n\t" /* ((sinVal[i]+d*cosVal2PI[i])-d*d*sinVal2PIPI[i]) (d*d) d */
-       "fstpl %[sinv]                 \n\t" /* (d*d) d */
-       
-       /* calculation for cos value, this time popping the stack */
-       /* this ordering mimics the calculation of cos as done by gcc (4.1.0)  */
-       "fmull %[csVal2PIPI](,%%ebx,1) \n\t" /* (d*d*cosVal2PIPI[i]) d */
-       "faddl %[csVal](,%%ebx,1)      \n\t" /* (cosVal[i]-d*d*cosVal2PIPI[i]) d */
-       "fxch                          \n\t" /* d (cosVal[i]-d*d*cosVal2PIPI[i]) d */
-       "fmull %[csVal2PI](,%%ebx,1)   \n\t" /* (d*sinVal2PI[i]) (cosVal[i]-d*d*cosVal2PIPI[i]) d */
-       "faddp                         \n\t" /* ((cosVal[i]-d*d*cosVal2PIPI[i])-d*sinVal2PI[i]) */
-       "fstpl %[cosv]                 \n\t" /* % */
-
-
-       /* calculating yRem */
-       /* ---------------- */
-
-       "fldl   %[yTemp]               \n\t" /* yT */
-       /* it requires some mind-bending to come from the algorithm used in the USE_FLOOR case
-          of the yRem calculation in the C code below (in case yTemp < 0) to the case distinction
-	  implemented here.
-          Hints:  yTemp<0 => yRem = yTemp - ceil(yTemp) + 1.0;
-                  y<0 => ceil(y) = ((y-(int)y)<-.5) ? ((int)y-1.0) : ((int)y)
-                  -1.0 + 1.0 = 0; 0 + 1.0 = +1.0 */
-       /* Surprisingly the two cases (yTemp < 0) and (yTemp >= 0) then come out identical,
-	  so a case distinction is unnecessary. Furthermore this case turns out to be the
-	  same code independent of relying on the default rounding mode or not */
-       "fistl  %[yRem]                \n\t" /* yT */
-       "fisubl %[yRem]                \n\t" /* yT-(int)yT */ /* value - round(value) will be positive if was rounding up */
-       "fsts   %[yRem]                \n\t" /* yT-(int)yT */ /* we will check the sign in integer registers */
-       "sub    %%eax,%%eax            \n\t" /* yT-(int)yT */ /* EAX=0 */
-       "orl    %[yRem],%%eax          \n\t" /* yT-(int)yT */ /* sets the S (sign) flag */
-       "jns    yrem" CPU_TYPE_S      "\n\t" /* yT-(int)yT */ /* append the CPU_TYPE to label to allow more instances */
-       "fadds  %[one]                 \n"   /* (yT-(int)yT+1) */
-       "yrem" CPU_TYPE_S ":           \n\t" /* yR */
-
-       
-       /* calculation of realQ and imagQ */
-       /* ------------------------------ */
-
-       /* yRem is still in st(0), following named x */
-       /* see also comments in calculation of tsin and tcos */
-       
-       "fldl   %[lutr]                \n\t" /* LUT_RES x */
-       "fmul   %%st(1),%%st(0)        \n\t" /* (x*LUT_RES) x */
-       
-#ifdef USE_DEFAULT_ROUNDING_MODE
-       "fistpl %[sinq]                \n\t" /* x */
-       "movl   %[sinq],%%eax          \n\t" /* x */
-#else
-       "fadds  %[half]                \n\t" /* (x*LUT_RES+.5) x */
-       "fistl  %[sinq]                \n\t" /* (x*LUT_RES+.5) x */ /* saving the rounded value, the original in FPU */
-       "fildl  %[sinq]                \n\t" /* ((int)(x*LUT_RES+.5)) (x*LUT_RES+.5) x */
-       "fsubrp                        \n\t" /* ((x*LUT_RES+.5)-((int)(x*LUT_RES+.5))) x */
-       "movl   %[sinq],%%eax          \n\t" /* ((x*LUT_RES+.5)-((int)(x*LUT_RES+.5))) x */ /* get the result in EAX */
-       "fstps  %[cosq]                \n\t" /* x */                /* value - round(value) will be negative if was rounding up */
-       "shll   $1,%[cosq]             \n\t" /* x */                /* shift the sign bit into the carry bit */
-       "sbb    $0,%%eax               \n\t" /* x */                /* substract the carry in EAX */
-#endif
-
-       "fsubl  %[diVal](,%%eax,8)     \n\t" /* (d = x - diVal[i]) */
-       "sal    $4,%%eax               \n\t"
-       "mov    %%eax,%%ebx            \n\t" /* save in EBX */
-       "add    $8,%%eax               \n\t" /* add offset 8 * 2 */
-
-       "fld    %%st(0)                \n\t" /* d d */
-       "fmul   %%st(0),%%st(0)        \n\t" /* (d*d) d */
-
-       "fldl  %[csVal2PI](,%%eax,1)   \n\t" /* cosVal2PI[i] (d*d) d */
-       "fmul  %%st(2),%%st(0)         \n\t" /* (d*cosVal2PI[i]) (d*d) d */
-       "faddl %[csVal](,%%eax,1)      \n\t" /* (sinVal[i]+d*cosVal2PI[i]) (d*d) d */
-       "fldl  %[csVal2PIPI](,%%eax,1) \n\t" /* sinVal2PIPI[i] (sinVal[i]+d*cosVal2PI[i]) (d*d) d */
-       "fmul  %%st(2),%%st(0)         \n\t" /* (d*d*sinVal2PIPI[i]) (sinVal[i]+d*cosVal2PI[i]) (d*d) d */
-       "faddp                         \n\t" /* ((sinVal[i]+d*cosVal2PI[i])-d*d*sinVal2PIPI[i]) (d*d) d */
-       "fstpl %[sinq]                 \n\t" /* (d*d) d */
-       
-       "fmull %[csVal2PIPI](,%%ebx,1) \n\t" /* (d*d*cosVal2PIPI[i]) d */
-       "faddl %[csVal](,%%ebx,1)      \n\t" /* (cosVal[i]-d*d*cosVal2PIPI[i]) d */
-       "fxch                          \n\t" /* d (cosVal[i]-d*d*cosVal2PIPI[i]) d */
-       "fmull %[csVal2PI](,%%ebx,1)   \n\t" /* (d*sinVal2PI[i]) (cosVal[i]-d*d*cosVal2PIPI[i]) d */
-       "faddp                         \n\t" /* ((cosVal[i]-d*d*cosVal2PIPI[i])-d*sinVal2PI[i]) */
-       "fstpl %[cosq]                 \n\t" /* % */
-
-#endif /* SSE2 */
 
        /* Kernel loop */
 
@@ -622,9 +481,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        :
        /* output  (here: to memory)*/
        [cosq]        "=m" (Q.re),
-       [sinq]        "=m" (Q.im),
        [cosv]        "=m" (tsincos.cs),
-       [sinv]        "=m" (tsincos.sn),
        [yRem]        "=m" (yRem),
        [XSumsX]      "=m" (XSumsX),
        [XRes]        "=m" (XRes),
@@ -641,10 +498,8 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 
        /* constants */
        [lutr]        "m"  (lutr),
-       [lutri]       "m"  (lutri),
        [half]        "m"  (half),
        [one]         "m"  (one),
-       [one8]        "m"  (one8),
        [big]         "m"  (big),
        [two]         "m"  (two),
        [V0011]       "m"  (V0011[0]),
