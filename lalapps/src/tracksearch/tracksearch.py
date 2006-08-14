@@ -37,7 +37,7 @@ def buildDir(dirpath):
             print 'File :',str(pathBlock)
             os.abort()
         if not os.path.isdir(pathBlock):
-           print 'Making path:',pathBlock
+           #print 'Making path:',pathBlock
            try: os.mkdir(pathBlock)
            except: pass
     
@@ -141,6 +141,14 @@ class tracksearchCheckIniFile:
         layerTimes.sort()
         if layerTimesOrig != layerTimes:
             self.errList.append('Error inconsistent layer time scales!')
+        #Check [pylibraryfiles] section
+        condorOptList=self.iniOpts.options('pylibraryfiles')
+        for entry in condorOptList:
+            optValue=self.iniOpts.get('pylibraryfiles',entry)
+            if str(optValue).__contains__('/'):
+                if not os.path.exists(str(optValue)):
+                    self.errList.append('Can not find python library file:'+str(entry)+':'+str(optValue))
+
 
     #end checkOpts def
 
@@ -462,8 +470,8 @@ class tracksearchClusterJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         pipeline.AnalysisJob.__init__(self,cp)
         self.block_id=blockID=block_id
         layerID='RESULTS_'+str(blockID)
-        layerPath=determineLayerPath(cp,blockID,layerID)
-        self.initialDir=blockPath=determineBlockPath(cp,blockID)
+        self.initialDir=layerPath=determineLayerPath(cp,blockID,layerID)
+        blockPath=determineBlockPath(cp,blockID)
         #Setup needed directories for this job to write in!
         buildDir(blockPath)
         buildDir(layerPath)
@@ -474,19 +482,12 @@ class tracksearchClusterJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         #Load in the cluster configuration sections!
         #Add the candidateUtils.py equivalent library to dag for proper
         #execution!
-        self.candUtil=str(cp.get('clusterconfig','pyutilfile'))
-        if not os.path.isfile(self.candUtil):
-            print "We have a problem with the candidateUtil python library."
-            print "Check for :",self.candUtil
-            os.abort()
+        self.candUtil=str(cp.get('pylibraryfiles','pyutilfile'))
         self.add_condor_cmd('should_transfer_files','yes')
         self.add_condor_cmd('when_to_transfer_output','on_exit')
         self.add_condor_cmd('transfer_input_files',self.candUtil)
         #self.add_input_file(self.candUtil)
         for sec in ['clusterconfig']:
-            if str(sec).lower().__contains__('pyutilfile') :
-                doNothing=0
-            else:
                 self.add_ini_opts(cp,sec)
         #End __init__ method
 #End class tracksearchClusterJob
@@ -622,7 +623,7 @@ class tracksearch:
         #RETURNS the last node of this layer to satisify the
         #parent child relationship to next execution layer
         #layerID is expected to be a 1 Duh, first layer!
-        print 'Preparing layer ',layerID,' of block ',self.blockID
+        #print 'Preparing layer ',layerID,' of block ',self.blockID
         #We need to make chunks of data from this sciSeg which are
         #layer1SetSize long in time
         mapTime=float(self.cp.get('layerconfig','layer1TimeScale'))
@@ -706,6 +707,7 @@ class tracksearch:
             prevJobList.append(tracksearchCluster_node)
         #Setup the appropriate globbed list clobbering jobs
         tracksearchCluster_job2=tracksearchClusterJob(self.cp,self.blockID,self.dagDirectory)
+        tracksearchCluster_job2.add_condor_cmd('initialdir',tracksearchCluster_job2.initialDir)
         tracksearchCluster_job2.set_sub_file(self.dagDirectory+'tracksearchCluster2.sub')
         tracksearchCluster_job.add_condor_cmd('initialdir',tracksearchCluster_job.initialDir)
         for i in range(1,layerID-1):
@@ -733,7 +735,7 @@ class tracksearch:
         dagDir=self.dagDirectory
         if (layerNumPrevious < 1):
             print 'Error calling the intermediate search layer method!'
-        print 'Preparing layer ',layerID,' of block ',self.blockID
+        #print 'Preparing layer ',layerID,' of block ',self.blockID
         prevLayerJobList=nodeLinks
         # Setup each additonal individual layer
         # The cache build node list clear after first pass through loop
