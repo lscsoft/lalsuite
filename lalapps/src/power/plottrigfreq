@@ -40,10 +40,17 @@ from glue.ligolw import array
 from glue.ligolw import param
 from pylal import llwapp
 from pylal import SnglBurstUtils
+from pylal.xlal import inject
 
 __author__ = "Kipp Cannon <kipp@gravity.phys.uwm.edu>"
 __version__ = "$Revision$"[11:-2]
 __date__ = "$Date$"[7:-2]
+
+inject.cached_detector.update({
+	"H1": inject.cached_detector["LHO_4k"],
+	"H2": inject.cached_detector["LHO_2k"],
+	"L1": inject.cached_detector["LLO_4k"]
+})
 
 
 #
@@ -100,37 +107,87 @@ def make_frequency_plot(fseries):
 
 
 def normalize(array):
-	# used in validation code
+	"""
+	Remove the DC offset, and normalize amplitude so square magnitude
+	of data is 1.
+	"""
+	array = array.copy()
 	array -= array.mean()
-	return array / array.stddev()
+	return array / array.stddev() / math.sqrt(len(array))
 
 
 class RatePlot(SnglBurstUtils.BurstPlot):
-	def __init__(self, instrument):
-		SnglBurstUtils.BurstPlot.__init__(self, "Greenwich Mean Sidereal Time (rad)", "Event Power Accumulation Rate (power / sidereal day / rad)")
+	def __init__(self, instrument, source_ra, source_dec):
+		SnglBurstUtils.BurstPlot.__init__(self, r"Greenwich Mean Sidereal Time (rad)", r"\begin{center}Event Power Accumulation Rate\\(power / sidereal day / rad)\end{center}")
 		self.axes.semilogy()
-
-		self.axes.set_title("%s Event Power Accumulation Rate By Sidereal Time" % instrument)
+		self.axes.set_title(r"\begin{center}%s Event Power Accumulation Rate By Sidereal Time for\\Source at R.A. %g rad, Dec. %g rad\end{center}" % (instrument, source_ra, source_dec))
 		self.axes.set_xticks(numarray.arange(9) * math.pi / 4)
 		self.axes.set_xticklabels([r"0", r"$\pi/4$", r"$\pi/2$", r"$3\pi/4$", r"$\pi$", r"$5\pi/4$", r"$3\pi/2$", r"$7\pi/4$", r"$2\pi$"])
+		#self.axes.set_xticks(numarray.arange(25))
+		self.instrument = instrument
+		self.source_ra = source_ra
+		self.source_dec = source_dec
+
+		l, b, w, h = self.axes.get_position()
+		self.axes2 = self.fig.add_axes((l, b, w, h / 3), sharex = self.axes)
+		self.axes.set_position((l, b + h / 3, w, 2 * h / 3))
+		self.axes2.grid(True)
+		self.axes2.set_ylabel(r"\begin{center}Antenna Response\\($F_{+}^{2} + F_{\times}^{2}$)\end{center}")
+		self.axes2.set_xlabel(r"Greenwich Mean Sidereal Time (rad)")
 
 	def add_contents(self, rate):
 		self.rate = rate
 
 	def finish(self):
-		# some commented-out code for validation
-		#self.axes.plot(self.rate.xvals(), normalize(self.rate.numerator), "go")
-		#self.axes.plot(self.rate.xvals(), normalize(self.rate.denominator), "b")
-		#self.axes.plot(self.rate.xvals(), normalize(self.rate.filtered()), "r")
-		#self.axes.set_xlim([0, 1])
+		self.sidereal_times = self.rate.xvals()
+		sidereal_hours = self.sidereal_times / math.pi * 12.0
+		n = len(self.sidereal_times)
 
-		self.rate.logregularize()
-		#self.rate.set_filterwidth(math.pi / 8)
-		yvals = self.rate.filtered(cyclic = True)
-		ymin = min(numarray.compress(self.rate.denominator, yvals))
-		self.axes.plot(self.rate.xvals(), yvals, "k")
-		self.axes.set_xlim([0, 2.0 * math.pi])
-		self.axes.set_ylim([10.0**int(math.log10(ymin)), 10.0**(int(math.log10(max(yvals))) + 1)])
+		# Compute the normalized power accumulation rate and the
+		# normalized response function
+		rate = self.rate.ratio()
+		response = numarray.array([plus**2.0 + cross**2.0 for (plus, cross) in map(lambda t: inject.XLALComputeDetAMResponse(inject.cached_detector[self.instrument].response(), self.source_ra, self.source_dec, 0.0, t), self.sidereal_times)], "Float64")
+		normalized_rate = normalize(rate)
+		normalized_response = normalize(response)
+
+		# triplicate to simplify cross-correlation computation
+		normalized_rate = numarray.concatenate((normalized_rate, normalized_rate, normalized_rate))
+		normalized_response = numarray.concatenate((normalized_response, normalized_response, normalized_response))
+
+		# compute cross-correlation
+		self.correlation = numarray.zeros((n,), "Float64")
+		self.resp_autocorr = numarray.zeros((n,), "Float64")
+		for i in xrange(n):
+			self.correlation[i] = numarray.innerproduct(normalized_response[0:n], normalized_rate[i + n / 2 : i + 3 * n / 2])
+			self.resp_autocorr[i] = numarray.innerproduct(normalized_response[0:n], normalized_response[i + n / 2 : i + 3 * n / 2])
+
+		# plot
+		self.axes.plot(self.sidereal_times, rate, "k")
+		self.axes2.plot(self.sidereal_times, response, "k")
+		self.axes2.set_ylim([0, 1])
+
+
+class CorrelationPlot(SnglBurstUtils.BurstPlot):
+	def __init__(self):
+		SnglBurstUtils.BurstPlot.__init__(self, r"Phase (rad)", r"Inner Product")
+		self.axes.set_title(r"Projections of Event Power Accumulation Rate onto Antenna Response")
+		self.axes.set_xticks(numarray.arange(9) * math.pi / 4)
+		self.axes.set_xticklabels([r"$-\pi$", r"$-3\pi/4$", r"$-\pi/2$", r"$-\pi/4$", r"$0$", r"$\pi/4$", r"$\pi/2$", r"$3\pi/4$", r"$\pi$"])
+		self.correlation = {}
+
+	def add_contents(self, rateplot):
+		self.correlation[rateplot.instrument] = (rateplot.sidereal_times, rateplot.correlation, rateplot.resp_autocorr)
+
+	def finish(self):
+		colours = iter("rgb")
+		legend = []
+		for instrument, (sidereal_times, correlation, resp_autocorr) in self.correlation.iteritems():
+			colour = colours.next()
+			self.axes.plot(sidereal_times, 10 * correlation, "%s" % colour)
+			self.axes.plot(sidereal_times, resp_autocorr, "%s--" % colour)
+			legend.extend([r"%s \times 10" % instrument, r"%s Response Autocorrelation" % instrument])
+		self.axes.set_ylim([-1, 1])
+		self.axes.legend(legend)
 
 
 #
@@ -151,14 +208,21 @@ for filename in filenames:
 		if options.verbose:
 			print >>sys.stderr, "writing %s..." % outname
 		fig.savefig(outname)
+	correlation = CorrelationPlot()
 	for elem in param.getParamsByName(doc, "rate"):
 		instrument = get_instrument(elem)
 		outname = "%s_rate_%s.png" % (filename, instrument)
 		if options.verbose:
 			print >>sys.stderr, "generating %s..." % outname
-		plot = RatePlot(instrument)
+		plot = RatePlot(instrument, 2.0318570464121519, -0.50628171572274738)
 		plot.add_contents(llwapp.pickle_from_param(elem, "rate"))
 		plot.finish()
+		correlation.add_contents(plot)
 		if options.verbose:
 			print >>sys.stderr, "writing %s..." % outname
 		plot.fig.savefig(outname)
+	correlation.finish()
+	outname = "correlation.png"
+	if options.verbose:
+		print >>sys.stderr, "writing %s..." % outname
+	correlation.fig.savefig(outname)
