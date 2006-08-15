@@ -205,7 +205,7 @@ def fourier_transform(sngl_burst_table, options):
 	return fseries
 
 
-def new_rates():
+def new_rate():
 	# 1 filter-width per 1 sidereal minute
 	return rate.RatiosRate(segments.segment(0.0, 2.0 * math.pi), 60.0 * math.pi / 43200.0)
 
@@ -213,7 +213,7 @@ def new_rates():
 def bin_power_by_sidereal_time(rates, sngl_burst_table):
 	for n, event in enumerate(sngl_burst_table):
 		if event.ifo not in rates:
-			rates[event.ifo] = new_rates()
+			rates[event.ifo] = new_rate()
 		start = date.XLALGreenwichMeanSiderealTime(event.get_start())
 		stop = date.XLALGreenwichMeanSiderealTime(event.get_stop())
 		duration = stop - start
@@ -233,7 +233,7 @@ def gps_seglist_to_gmst(seglist):
 def bin_livetime_by_sidereal_time(rates, segmentlists):
 	for key, value in segmentlists.iteritems():
 		if key not in rates:
-			rates[key] = new_rates()
+			rates[key] = new_rate()
 		value = gps_seglist_to_gmst(value)
 		# in this formula, we add a little bit to the stop time to
 		# ensure we generate a segment for the last day
