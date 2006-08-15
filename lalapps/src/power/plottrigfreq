@@ -63,6 +63,7 @@ inject.cached_detector.update({
 
 def parse_command_line():
 	parser = OptionParser(version="%prog CVS $Id$")
+	parser.add_option("--correlation", metavar = "instrument", action = "append", default = [], help = "in correlation plot, show the traces for this instrument")
 	parser.add_option("-v", "--verbose", action = "store_true", help = "be verbose")
 	options, filenames = parser.parse_args()
 
@@ -120,7 +121,7 @@ class RatePlot(SnglBurstUtils.BurstPlot):
 	def __init__(self, instrument, source_ra, source_dec):
 		SnglBurstUtils.BurstPlot.__init__(self, r"Greenwich Mean Sidereal Time (rad)", r"\begin{center}Event Power Accumulation Rate\\(power / sidereal day / rad)\end{center}")
 		self.axes.semilogy()
-		self.axes.set_title(r"\begin{center}%s Event Power Accumulation Rate By Sidereal Time for\\Source at R.A. %g rad, Dec. %g rad\end{center}" % (instrument, source_ra, source_dec))
+		self.axes.set_title(r"\begin{center}%s Event Power Accumulation Rate By Sidereal Time for\\Source at R.A. %g rad, Dec. %g rad\end{center}" % (instrument.replace("_", r"\_"), source_ra, source_dec))
 		self.axes.set_xticks(numarray.arange(9) * math.pi / 4)
 		self.axes.set_xticklabels([r"0", r"$\pi/4$", r"$\pi/2$", r"$3\pi/4$", r"$\pi$", r"$5\pi/4$", r"$3\pi/2$", r"$7\pi/4$", r"$2\pi$"])
 		#self.axes.set_xticks(numarray.arange(25))
@@ -168,24 +169,27 @@ class RatePlot(SnglBurstUtils.BurstPlot):
 
 
 class CorrelationPlot(SnglBurstUtils.BurstPlot):
-	def __init__(self):
+	def __init__(self, correlation_instruments):
 		SnglBurstUtils.BurstPlot.__init__(self, r"Phase (rad)", r"Inner Product")
 		self.axes.set_title(r"Projections of Event Power Accumulation Rate onto Antenna Response")
 		self.axes.set_xticks(numarray.arange(9) * math.pi / 4)
 		self.axes.set_xticklabels([r"$-\pi$", r"$-3\pi/4$", r"$-\pi/2$", r"$-\pi/4$", r"$0$", r"$\pi/4$", r"$\pi/2$", r"$3\pi/4$", r"$\pi$"])
+		self.correlation_instruments = correlation_instruments
 		self.correlation = {}
 
 	def add_contents(self, rateplot):
 		self.correlation[rateplot.instrument] = (rateplot.sidereal_times, rateplot.correlation, rateplot.resp_autocorr)
 
 	def finish(self):
-		colours = iter("rgb")
+		colours = iter("bgrcmykw")
 		legend = []
 		for instrument, (sidereal_times, correlation, resp_autocorr) in self.correlation.iteritems():
+			if options.correlation and instrument not in options.correlation:
+				continue
 			colour = colours.next()
 			self.axes.plot(sidereal_times, 10 * correlation, "%s" % colour)
 			self.axes.plot(sidereal_times, resp_autocorr, "%s--" % colour)
-			legend.extend([r"%s \times 10" % instrument, r"%s Response Autocorrelation" % instrument])
+			legend.extend([r"%s \times 10" % instrument.replace(r"_", r"\_"), r"%s Response Autocorrelation" % instrument.replace(r"_", r"\_")])
 		self.axes.set_ylim([-1, 1])
 		self.axes.legend(legend)
 
@@ -208,7 +212,7 @@ for filename in filenames:
 		if options.verbose:
 			print >>sys.stderr, "writing %s..." % outname
 		fig.savefig(outname)
-	correlation = CorrelationPlot()
+	correlation = CorrelationPlot(options.correlation)
 	for elem in param.getParamsByName(doc, "rate"):
 		instrument = get_instrument(elem)
 		outname = "%s_rate_%s.png" % (filename, instrument)
@@ -222,7 +226,7 @@ for filename in filenames:
 			print >>sys.stderr, "writing %s..." % outname
 		plot.fig.savefig(outname)
 	correlation.finish()
-	outname = "correlation.png"
+	outname = "%s_correlation.png" % filename
 	if options.verbose:
 		print >>sys.stderr, "writing %s..." % outname
 	correlation.fig.savefig(outname)
