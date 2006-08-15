@@ -27,7 +27,7 @@ REAL8 duration = 16.0;
 INT4  outtype;
 const char *channel = "DARM_ERR";
 const char *path    = NULL;
-FILE       *outfile = stdout;
+FILE       *outfile;
 int cachefile = -1;
 UINT4 numave = 0;
 
@@ -53,6 +53,10 @@ int parseopts( int argc, char **argv )
 		{ "sample-rate", required_argument, 0, 's' },
 		{ 0, 0, 0, 0 } };
 	char args[] = "P:t:d:m:M:c:f:F:o:O:s:";
+
+	/* init defaults */
+	outfile = stdout;
+
 	while ( 1 ) {
 		int option_index = 0;
 		int c;
