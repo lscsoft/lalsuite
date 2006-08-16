@@ -630,7 +630,7 @@ int main(int argc,char *argv[])
 
 
   if ( uvar_NumCandidatesToKeep > 0 )
-    create_toplist(&toplist, uvar_NumCandidatesToKeep);
+    create_fstat_toplist(&toplist, uvar_NumCandidatesToKeep);
 
 
   /* prepare checkpointing file */
@@ -813,7 +813,7 @@ int main(int argc,char *argv[])
 	  LogPrintf ( LOG_NORMAL, "Fstat file reached MaxFileSizeKB ==> compactifying ...");
 
 	  fclose(fpFstat);
-	  howmany = atomic_write_toplist_to_file(toplist, FstatFilename, &fstat_checksum);
+	  howmany = atomic_write_fstat_toplist_to_file(toplist, FstatFilename, &fstat_checksum);
 	  if (howmany < 0) {
 	    LogPrintf (LOG_CRITICAL, "Couldn't write compacted toplist to '%s'\n", FstatFilename);
 	    return (COMPUTEFSTAT_EXIT_OPENFSTAT);
@@ -993,9 +993,9 @@ int main(int argc,char *argv[])
 		       * 2) we use a toplist and the candidate was inserted.
 		       */
 		      if ( uvar_outputFstat && 
-			   ((uvar_NumCandidatesToKeep<=0)|| insert_into_toplist(toplist,outputLine)))
+			   ((uvar_NumCandidatesToKeep<=0)|| insert_into_fstat_toplist(toplist,outputLine)))
 			{	
-			  INT4 howmany = write_toplist_item_to_fp(outputLine, fpFstat, &fstat_checksum );
+			  INT4 howmany = write_fstat_toplist_item_to_fp(outputLine, fpFstat, &fstat_checksum );
 			  if (howmany < 0 ) 
 			    {
 			      fclose(fpFstat);
@@ -1072,7 +1072,7 @@ int main(int argc,char *argv[])
       /* final compactification */
       if ( uvar_NumCandidatesToKeep > 0 )
 	{
-	  if( final_write_toplist_to_file ( toplist, FstatFilename, &fstat_checksum ) < 0 ) 
+	  if( final_write_fstat_toplist_to_file ( toplist, FstatFilename, &fstat_checksum ) < 0 ) 
 	    {
 	      LogPrintf (LOG_CRITICAL, "Couldn't write compacted toplist in '%s'\n", FstatFilename);
 	      return (COMPUTEFSTAT_EXIT_OPENFSTAT);
@@ -1096,7 +1096,7 @@ int main(int argc,char *argv[])
     } /* if fpFstat */
 
   if ( toplist ) 
-    free_toplist(&toplist);
+    free_fstat_toplist(&toplist);
 
 #ifdef RUN_POLKA
   } /* if (!fstats_completed) */
@@ -3955,7 +3955,7 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long
 	  RETURN(stat);
 	}
 
-      if( read_toplist_from_fp( toplist, fp, &computecksum, bcount) < 0 ) 
+      if( read_fstat_toplist_from_fp( toplist, fp, &computecksum, bcount) < 0 ) 
 	{
 	  LogPrintf (LOG_CRITICAL, "Couldn't read '%s' into toplist.\n", fstat_fname);
 	  fclose(fp);
@@ -3995,7 +3995,7 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long
       RETURN(stat);
     }
   else
-    LogPrintf (LOG_NORMAL, "Checksum Ok. Successfully read_toplist_from_fp()\n");
+    LogPrintf (LOG_NORMAL, "Checksum Ok. Successfully read_fstat_toplist_from_fp()\n");
 
   
   *loopcounter = lcount;

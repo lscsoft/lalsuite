@@ -51,14 +51,14 @@ int finite(double);
 
 
 /* local prototypes */
-void reduce_toplist_precision(toplist_t *l);
-int print_toplist_item_to_str(TOPLISTLINE fline, char* buf, int buflen);
+void reduce_fstat_toplist_precision(toplist_t *l);
+int print_fstat_toplist_item_to_str(TOPLISTLINE fline, char* buf, int buflen);
 
 
 
 /* creates a toplist with length elements,
    returns -1 on error (usually out of memory), else 0 */
-int create_toplist(toplist_t**tl, UINT8 length) {
+int create_fstat_toplist(toplist_t**tl, UINT8 length) {
     UINT8 i;
 
     toplist_t *thetoplist = malloc(sizeof(toplist_t));
@@ -91,7 +91,7 @@ int create_toplist(toplist_t**tl, UINT8 length) {
 
 
 /* frees the space occupied by the toplist */
-void free_toplist(toplist_t**l) {
+void free_fstat_toplist(toplist_t**l) {
     if(l)
 	if(*l){
 	    if((**l).data)
@@ -107,7 +107,7 @@ void free_toplist(toplist_t**l) {
    In the latter case, remove the smallest element from the toplist and
    look for the now smallest one.
    Returns 1 if the element was actually inserted, 0 if not. */
-int insert_into_toplist(toplist_t*tl, TOPLISTLINE elem) {
+int insert_into_fstat_toplist(toplist_t*tl, TOPLISTLINE elem) {
  
   if ( !tl )
     return 0;
@@ -143,7 +143,7 @@ int insert_into_toplist(toplist_t*tl, TOPLISTLINE elem) {
 
 typedef TOPLISTLINE* _dummy_t;
 /* ordering function for sorting the list */
-static int _toplist_qsort_function(const void *ppa, const void *ppb) {
+static int _fstat_toplist_qsort_function(const void *ppa, const void *ppb) {
     const _dummy_t *pa = ppa;
     const _dummy_t *pb = ppb;
     const TOPLISTLINE *a = *pa;
@@ -171,11 +171,11 @@ static int _toplist_qsort_function(const void *ppa, const void *ppb) {
 
 /* (q)sort the toplist according to the sorting function.
    This actually only updates the "sorted" pointers */
-void sort_toplist(toplist_t*l) {
+void sort_fstat_toplist(toplist_t*l) {
     qsort(l->sorted,
 	  l->elems,
 	  sizeof(l->sorted),
-	  _toplist_qsort_function);
+	  _fstat_toplist_qsort_function);
 }
 
 
@@ -183,7 +183,7 @@ void sort_toplist(toplist_t*l) {
    returns the number of bytes read,
    -1 if the file contained a syntax error,
    -2 if given an improper toplist */
-int read_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxbytes) {
+int read_fstat_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxbytes) {
     CHAR line[256];       /* buffer for reading a line */
     UINT4 items, lines;   /* number of items read from a line, linecounter */
     UINT4 len, chars = 0; /* length of a line, total characters read from the file */
@@ -273,7 +273,7 @@ int read_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxbytes) {
 	    for(i=0;i<len;i++)
 		*checksum += line[i];
 	
-	insert_into_toplist(l, FstatLine);
+	insert_into_fstat_toplist(l, FstatLine);
 	lines++;
 
 	/* NOTE: it *CAN* happen (and on Linux it DOES) that the fully buffered Fstat stream
@@ -303,12 +303,12 @@ int read_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxbytes) {
 
     return 0;
 
-} /* read_toplist_from_fp() */
+} /* read_fstat_toplist_from_fp() */
 
 
 /* Prints a Tooplist line to a string buffer.
    Separate function to force consistency of output and reduced precision for sorting */
-int print_toplist_item_to_str(TOPLISTLINE fline, char* buf, int buflen) {
+int print_fstat_toplist_item_to_str(TOPLISTLINE fline, char* buf, int buflen) {
       return(LALSnprintf(buf, buflen,
 		  /* output precision: choose by following (generous!) significant-digit constraints:
 		   * Freq:1e-13 
@@ -328,11 +328,11 @@ int print_toplist_item_to_str(TOPLISTLINE fline, char* buf, int buflen) {
 /* writes an TOPLISTLINE line to an open filepointer.
    Returns the number of chars written, -1 if in error
    Updates checksum if given */
-int write_toplist_item_to_fp(TOPLISTLINE fline, FILE*fp, UINT4*checksum) {
+int write_fstat_toplist_item_to_fp(TOPLISTLINE fline, FILE*fp, UINT4*checksum) {
     char linebuf[256];
     UINT4 i;
 
-    UINT4 length = print_toplist_item_to_str(fline, linebuf, sizeof(linebuf));
+    UINT4 length = print_fstat_toplist_item_to_str(fline, linebuf, sizeof(linebuf));
     
     if(length>sizeof(linebuf)) {
        return -1;
@@ -348,11 +348,11 @@ int write_toplist_item_to_fp(TOPLISTLINE fline, FILE*fp, UINT4*checksum) {
 
 /* Reduces the precision of all elements in the toplist which influence the sorting order.
    To be called before sorting and finally writing out the list */
-void reduce_toplist_precision(toplist_t *l) {
+void reduce_fstat_toplist_precision(toplist_t *l) {
   char linebuf[256];
   UINT8 i;
   for(i=0; i < l->elems; i++) {
-    print_toplist_item_to_str(l->data[i], linebuf, sizeof(linebuf));
+    print_fstat_toplist_item_to_str(l->data[i], linebuf, sizeof(linebuf));
     sscanf(linebuf,
 	   "%" LAL_REAL8_FORMAT
 	   " %" LAL_REAL8_FORMAT
@@ -370,13 +370,13 @@ void reduce_toplist_precision(toplist_t *l) {
 /* Writes the toplist to an (already open) filepointer
    Returns the number of written charactes
    Returns something <0 on error */
-int write_toplist_to_fp(toplist_t*tl, FILE*fp, UINT4*checksum) {
+int write_fstat_toplist_to_fp(toplist_t*tl, FILE*fp, UINT4*checksum) {
    UINT8 c=0,i;
    INT8 r;
    if(checksum)
        *checksum = 0;
    for(i=0;i<tl->elems;i++)
-     if ((r = write_toplist_item_to_fp(*(tl->sorted[i]), fp, checksum)) < 0) {
+     if ((r = write_fstat_toplist_item_to_fp(*(tl->sorted[i]), fp, checksum)) < 0) {
        LogPrintf (LOG_CRITICAL, "Failed to write toplistitem to output fp: %d: %s\n",
 		  errno,strerror(errno));
 #ifdef _MSC_VER
@@ -393,7 +393,7 @@ int write_toplist_to_fp(toplist_t*tl, FILE*fp, UINT4*checksum) {
    temporary file to filename. The name of the temporary file is
    derived from the filename by appending ".tmp". Returns the number
    of chars written or -1 if the temp file could not be opened. */
-int atomic_write_toplist_to_file(toplist_t *l, char *filename, UINT4*checksum) {
+int atomic_write_fstat_toplist_to_file(toplist_t *l, char *filename, UINT4*checksum) {
     char tempname[MAXFILENAMELENGTH];
     INT4 length;
     FILE * fpnew;
@@ -409,7 +409,7 @@ int atomic_write_toplist_to_file(toplist_t *l, char *filename, UINT4*checksum) {
 #endif
       return -1;
     }
-    length = write_toplist_to_fp(l,fpnew,checksum);
+    length = write_fstat_toplist_to_fp(l,fpnew,checksum);
     fclose(fpnew);
     if (length < 0) {
       LogPrintf (LOG_CRITICAL, "Failed to write temp Fstat file \"%s\": %d: %s\n",
@@ -434,9 +434,9 @@ int atomic_write_toplist_to_file(toplist_t *l, char *filename, UINT4*checksum) {
 /* meant for the final writing of the toplist
    - reduces toplist precision
    - sorts the toplist
-   - the calls atomic_write_toplist_to_file() */
-int final_write_toplist_to_file(toplist_t *l, char *filename, UINT4*checksum) {
-  reduce_toplist_precision(l);
-  sort_toplist(l);
-  return(atomic_write_toplist_to_file(l,filename,checksum));
+   - the calls atomic_write_fstat_toplist_to_file() */
+int final_write_fstat_toplist_to_file(toplist_t *l, char *filename, UINT4*checksum) {
+  reduce_fstat_toplist_precision(l);
+  sort_fstat_toplist(l);
+  return(atomic_write_fstat_toplist_to_file(l,filename,checksum));
 }
