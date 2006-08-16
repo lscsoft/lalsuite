@@ -1157,7 +1157,6 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, proctable, 
         process_table ), &status );
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
-  free( proctable.processTable );
 
   /* erase the first empty process params entry */
   {
@@ -1219,6 +1218,33 @@ int main( int argc, char *argv[] )
     LAL_CALL( LALOpenLIGOLwXMLFile( &status, &xmlStream, missedFileName ), 
         &status );
 
+    /* write out the process and process params tables */
+    if ( vrbflg ) fprintf( stdout, "process... " );
+    LAL_CALL(LALGPSTimeNow(&status, &(proctable.processTable->end_time),
+          &accuracy), &status);
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_table ),
+        &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, proctable,
+          process_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
+
+    /* write the process params table */
+    if ( vrbflg ) fprintf( stdout, "process_params... " );
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream,
+         process_params_table ), &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, procparams,
+          process_params_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
+
+    /* write search_summary table */
+    if ( vrbflg ) fprintf( stdout, "search_summary... " );
+    outputTable.searchSummaryTable = searchSummList;
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream,
+          search_summary_table ), &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, outputTable,
+          search_summary_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
+
     if ( missedSimHead )
     {
       outputTable.simInspiralTable = missedSimHead;
@@ -1232,6 +1258,9 @@ int main( int argc, char *argv[] )
     LAL_CALL( LALCloseLIGOLwXMLFile( &status, &xmlStream ), &status );
     if ( vrbflg ) fprintf( stdout, "done\n" );
   }
+  
+  /* free process proctable data after found and missed files have been written */  
+  free( proctable.processTable );
 
   if ( summFileName )
   {
