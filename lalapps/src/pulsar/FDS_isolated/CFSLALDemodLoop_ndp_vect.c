@@ -145,10 +145,10 @@
 	    combAF2 = aFreq[0]            * aFreqD;
 #endif
 	    combAF3 = aFreq[0] * aFreq[2];
-	    combAF  = aFreq[0] * combAF1;
+	    combAF  = 1.0 / (aFreq[0] * combAF1);
 
-	    XRes = (Xsum[0] * combAF1 + Xsum[2] * combAF2 + XsumD[0] * combAF3) / combAF;
-	    XIms = (Xsum[1] * combAF1 + Xsum[3] * combAF2 + XsumD[1] * combAF3) / combAF;
+	    XRes = (Xsum[0] * combAF1 + Xsum[2] * combAF2 + XsumD[0] * combAF3) * combAF;
+	    XIms = (Xsum[1] * combAF1 + Xsum[3] * combAF2 + XsumD[1] * combAF3) * combAF;
 
             realXP = tsin2pi * XRes - tcos2pi * XIms;
             imagXP = tcos2pi * XRes + tsin2pi * XIms;
