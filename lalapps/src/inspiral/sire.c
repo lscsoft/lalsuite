@@ -92,8 +92,12 @@ static void print_usage(char *program)
       " [--snr-threshold] snr_star    discard all triggers with snr less than snr_star\n"\
       " [--rsq-threshold] rsq_thresh  discard all triggers whose rsqveto_duration\n"\
       "                               exceeds rsq_thresh\n"\
-      " [--rsq-max-snr]   rsq_max_snr only apply rsq on triggers with snr < rsq_max_snr\n"\
+      " [--rsq-max-snr]   rsq_max_snr apply rsq on triggers with snr < rsq_max_snr\n"\
       "                               exceeds rsq_thresh\n"\
+      " [--rsq-coeff]     rsq_coeff   apply rsq on triggers with snr > rsq_max_snr\n"\
+      "                               exceeds rsq_coeff * snr ^ rsq_power\n"\
+      " [--rsq-power]     rsq_power   apply rsq on triggers with snr > rsq_max_snr\n"\
+      "                               exceeds rsq_coeff * snr ^ rsq_power\n"\
       " [--veto-file]     veto_file   discard all triggers which occur during times\n"\
       "                               contained in the segments of the veto_file\n"\
       "\n"\
@@ -145,6 +149,8 @@ int main( int argc, char *argv[] )
   REAL4 snrStar = -1;
   REAL4 rsqVetoThresh = -1;
   REAL4 rsqMaxSnr     = -1;
+  REAL4 rsqAboveSnrCoeff = -1;
+  REAL4 rsqAboveSnrPow     = -1;
   LALSegList vetoSegs;
   SnglInspiralClusterChoice clusterchoice = none;
   INT8 cluster_dt = -1;
@@ -244,12 +250,14 @@ int main( int argc, char *argv[] )
       {"snr-threshold",           required_argument,      0,              's'},
       {"rsq-threshold",           required_argument,      0,              'r'},
       {"rsq-max-snr",             required_argument,      0,              'R'},
+      {"rsq-coeff",               required_argument,      0,              'p'},
+      {"rsq-power",               required_argument,      0,              'P'},
       {"cluster-algorithm",       required_argument,      0,              'C'},
       {"cluster-time",            required_argument,      0,              't'},
       {"ifo-cut",                 required_argument,      0,              'd'},
       {"veto-file",               required_argument,      0,              'v'},
       {"injection-file",          required_argument,      0,              'I'},
-      {"injection-window",   required_argument,      0,              'T'},
+      {"injection-window",        required_argument,      0,              'T'},
       {"missed-injections",       required_argument,      0,              'm'},
       {0, 0, 0, 0}
     };
@@ -426,6 +434,32 @@ int main( int argc, char *argv[] )
         ADD_PROCESS_PARAM( "float", "%e", rsqMaxSnr );
         break;
 
+      case 'p':
+        rsqAboveSnrCoeff = (REAL4) atof( optarg );
+        if ( rsqAboveSnrCoeff < 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "coefficient must be >= 0: "
+              "(%f specified)\n",
+              long_options[option_index].name, rsqAboveSnrCoeff );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%e", rsqAboveSnrCoeff );
+        break;
+
+      case 'P':
+        rsqAboveSnrPow = (REAL4) atof( optarg );
+        if ( rsqAboveSnrPow < 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "power must be >= 0: "
+              "(%f specified)\n",
+              long_options[option_index].name, rsqAboveSnrPow );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%e", rsqAboveSnrPow );
+        break;
+
       case 'C':
         /* choose the clustering algorithm */
         {        
@@ -593,15 +627,27 @@ int main( int argc, char *argv[] )
   }
 
   /* check that if clustering is being done that we have all the options */
-  if ( (rsqVetoThresh > 0) && (rsqMaxSnr < 0) )
+  if ( (rsqVetoThresh > 0) && ( (rsqMaxSnr < 0) || (rsqAboveSnrCoeff < 0) || (rsqAboveSnrPow < 0) ) )
   {
-    fprintf( stderr, "--rsq-max-snr must be specified if --rsq-threshold"
+    fprintf( stderr, "--rsq-max-snr --rsq-coeff and --rsq-power must be specified if --rsq-threshold"
         "is given\n" );
     exit( 1 );
   }
-  else if ( (rsqVetoThresh < 0) && (rsqMaxSnr > 0) )
+  else if ( (rsqMaxSnr > 0) && ( (rsqVetoThresh < 0) || (rsqAboveSnrCoeff < 0) || (rsqAboveSnrPow < 0) ) )
   {
-    fprintf( stderr, "--rsq-threshold must be specified if --rsq-max-snr"
+    fprintf( stderr, "--rsq-threshold --rsq-coeff and --rsq-power must be specified if --rsq-max-snr"
+        "is given\n" );
+    exit( 1 );
+  }
+  else if ( (rsqAboveSnrCoeff > 0) && ( (rsqMaxSnr < 0) || (rsqVetoThresh < 0) || (rsqAboveSnrPow < 0) ) )
+  {
+    fprintf( stderr, "--rsq-max-snr --rsq-threshold and --rsq-power must be specified if --rsq-coeff"
+        "is given\n" );
+    exit( 1 );
+  }
+  else if ( (rsqAboveSnrPow > 0) && ( (rsqMaxSnr < 0) || (rsqVetoThresh < 0) || (rsqAboveSnrCoeff < 0) ) )
+  {
+    fprintf( stderr, "--rsq-max-snr --rsq-threshold and --rsq-coeff must be specified if --rsq-power"
         "is given\n" );
     exit( 1 );
   }
@@ -791,7 +837,7 @@ int main( int argc, char *argv[] )
     if ( rsqVetoThresh > 0 )
     {
       inspiralFileList = XLALRsqCutSingleInspiral( inspiralFileList, 
-          rsqVetoThresh, rsqMaxSnr );
+          rsqVetoThresh, rsqMaxSnr, rsqAboveSnrCoeff, rsqAboveSnrPow );
       /* count the triggers  */
       numFileTriggers = XLALCountSnglInspiral( inspiralFileList );
 
@@ -1095,8 +1141,14 @@ int main( int argc, char *argv[] )
     {
       fprintf( fp, "performed R-squared veto on triggers with snr < %f\n",
           rsqMaxSnr);
-      fprintf( fp, "number of triggers with rsqveto_duration below %f: %d \n",
-          rsqVetoThresh, numEventsBelowRsqThresh );
+      fprintf( fp, "with rsqveto_duration below %f\n",
+          rsqVetoThresh);
+      fprintf( fp, "and on triggers with snr > %f\n",
+          rsqMaxSnr);
+      fprintf( fp, "with rsqveto_duration above %f * snr ^ %f\n",
+          rsqAboveSnrCoeff, rsqAboveSnrPow );
+      fprintf( fp, "the number of triggers below the R-squared veto are: %d \n",
+          numEventsBelowRsqThresh);
     }
    
     if ( vetoFileName )
