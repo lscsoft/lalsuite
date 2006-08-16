@@ -17,8 +17,10 @@
                 Xalpha_k ++;
               } /* for k < klim */
 
-	    XRes /= accFreq;
-	    XIms /= accFreq;
+	    accFreq = 1.0 / accFreq;
+
+	    XRes *= accFreq;
+	    XIms *= accFreq;
 
             realXP = tsin2pi * XRes - tcos2pi * XIms;
             imagXP = tcos2pi * XRes + tsin2pi * XIms;
