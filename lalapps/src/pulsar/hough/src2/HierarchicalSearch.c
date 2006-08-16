@@ -126,7 +126,33 @@ BOOLEAN uvar_printStats; /**< global variable for calculating Hough map stats */
 #define HSMAX(x,y) ( (x) > (y) ? (x) : (y) )
 #define HSMIN(x,y) ( (x) < (y) ? (x) : (y) )
 
+
+typedef struct {
+  CHAR  *sftbasename;
+  REAL8 deltaF;          /**< SFT frequency resolution */
+  REAL8 deltaFstack;     /**< frequency resolution of stacks */
+  UINT4 nStacks;         /**< number of stacks */
+  LIGOTimeGPS tStartGPS; /**< start and end time of stack */
+  REAL8 tObs;            /**< tEndGPS - tStartGPS */
+  REAL8 refTime;
+  LALPulsarSpinRange spinRange_startTime;
+  LALPulsarSpinRange spinRange_endTime;
+  LALPulsarSpinRange spinRange_refTime;
+  EphemerisData *edat;
+  LIGOTimeGPSVector *midTstack; 
+  LIGOTimeGPSVector *startTstack;   
+  LIGOTimeGPS minStartTimeGPS;
+  LIGOTimeGPS maxEndTimeGPS;
+  UINT4 blocksRngMed;
+  UINT4 Dterms;
+  REAL8 dopplerMax;
+} UsefulStageVariables;
+
+
 /* functions for printing various stuff */
+void SetUpSFTs( LALStatus *status, MultiSFTVectorSequence *stackMultiSFT, MultiNoiseWeightsSequence *stackMultiNoiseWeights,
+		MultiDetectorStateSeriesSequence *stackMultiDetStates, UsefulStageVariables *in);
+
 void PrintFstatVec (LALStatus *status, REAL8FrequencySeries *in, FILE *fp, PulsarDopplerParams *thisPoint, 
 		    LIGOTimeGPS  refTime, INT4 stackIndex);
 
@@ -177,7 +203,7 @@ int main( int argc, char *argv[]) {
 
   /* timestamp vectors */
   LIGOTimeGPSVector *midTstack1=NULL; 
-  LIGOTimeGPSVector midTstack2; 
+  LIGOTimeGPSVector *midTstack2=NULL; 
   LIGOTimeGPSVector *startTstack1=NULL; 
   LIGOTimeGPSVector *startTstack2=NULL; 
   
@@ -210,7 +236,7 @@ int main( int argc, char *argv[]) {
   LIGOTimeGPS minStartTimeGPS, maxEndTimeGPS;
 
   /* number of SFTs in each stack and total number of SFTs */
-  INT4 *numSFTsinStack1, *numSFTsinStack2, nSFTs1, nSFTs2;
+  INT4 nSFTs1, nSFTs2;
 
   /* number of stacks -- not necessarily same as uvar_nStacks! */
   INT4 nStacks1, nStacks2;
@@ -653,7 +679,6 @@ int main( int argc, char *argv[]) {
       LAL_CALL ( PrintStackInfo ( &status, &catalogSeq1, fpSemiCoh), &status);
     }
 
-
     /* calculate start and end times and tobs */
     tStart1GPS = sftTimeStamps1->data[0];
     tEnd1GPS = sftTimeStamps1->data[sftTimeStamps1->length - 1];
@@ -724,9 +749,6 @@ int main( int argc, char *argv[]) {
     fMin = freqLo - doppWings - extraBins * deltaF1; 
     fMax = freqHi + doppWings + extraBins * deltaF1; 
     
-    /* set up vector of number of sfts in each stack */
-    numSFTsinStack1 = NULL;
-    numSFTsinStack1 = (INT4 *)LALCalloc(1, uvar_nStacks1 * sizeof(INT4));
 
     /* set up vector containing mid times of stacks */    
     midTstack1 =  XLALCreateTimestampVector ( uvar_nStacks1 );
@@ -753,9 +775,6 @@ int main( int argc, char *argv[]) {
 
 	MultiPSDVector *psd = NULL;	
 	LIGOTimeGPSVector *startTsftStack = NULL; /* sft time stamps for sfts in current stack */
-
-	/* set number of sfts in stack */
-	numSFTsinStack1[nStacks1] = catalogSeq1.data[k].length;
 
 	/* get SFT timestamps in stack */
 	LAL_CALL( LALSFTtimestampsFromCatalog(  &status, &startTsftStack, catalogSeq1.data + k ), &status);  	
@@ -793,8 +812,6 @@ int main( int argc, char *argv[]) {
     
     /* realloc if nStacks1 != uvar_nStacks1 */
     if ( uvar_nStacks1 > nStacks1 ) {
-      
-      numSFTsinStack1 = (INT4 *)LALRealloc( numSFTsinStack1, nStacks1 * sizeof(INT4));
       
       midTstack1->length = nStacks1;
       midTstack1->data = (LIGOTimeGPS *)LALRealloc( midTstack1->data, nStacks1 * sizeof(LIGOTimeGPS));
@@ -969,16 +986,13 @@ int main( int argc, char *argv[]) {
 
     fMin = startTime_freqLo - doppWings - extraBins * deltaF1; 
     fMax = startTime_freqHi + doppWings + extraBins * deltaF1; 
-    
-    /* set up vector of number of sfts in each stack */
-    numSFTsinStack2 = NULL;
-    numSFTsinStack2 = (INT4 *)LALMalloc( uvar_nStacks2 * sizeof(INT4));
-      
+          
     /* set up vector containing mid times of stacks */    
-    midTstack2.length = uvar_nStacks2;
-    midTstack2.data = (LIGOTimeGPS *)LALMalloc( uvar_nStacks2 * sizeof(LIGOTimeGPS));
+    midTstack2->length = uvar_nStacks2;
+    midTstack2->data = (LIGOTimeGPS *)LALMalloc( uvar_nStacks2 * sizeof(LIGOTimeGPS));
     
     /* set up vector containing start times of stacks */    
+    midTstack2 =  XLALCreateTimestampVector ( uvar_nStacks2 );
     startTstack2 =  XLALCreateTimestampVector ( uvar_nStacks2 );
     
     /* finally memory for multi sfts */
@@ -1000,9 +1014,6 @@ int main( int argc, char *argv[]) {
 	
 	LIGOTimeGPSVector *startTsftStack = NULL; 
 	
-	/* set number of sfts in stack */
-	numSFTsinStack2[nStacks2] = catalogSeq2.data[k].length;
-	
 	/* get SFT timestamps in stack */
 	LAL_CALL( LALSFTtimestampsFromCatalog(  &status, &startTsftStack, catalogSeq2.data + k ), &status);  	
 	
@@ -1010,7 +1021,7 @@ int main( int argc, char *argv[]) {
 	startTstack2->data[nStacks2] = startTsftStack->data[0];
 	
 	/* mid time of stack */          
-	LAL_CALL( LALAddFloatToGPS( &status, midTstack2.data + nStacks2, startTstack2->data + nStacks2,  0.5 * tStack2 ), &status);
+	LAL_CALL( LALAddFloatToGPS( &status, midTstack2->data + nStacks2, startTstack2->data + nStacks2,  0.5 * tStack2 ), &status);
 	
 	/* load the sfts */
 	LAL_CALL( LALLoadMultiSFTs ( &status, stackMultiSFT2.data + nStacks2,  catalogSeq2.data + k, fMin, fMax ), &status);
@@ -1038,10 +1049,8 @@ int main( int argc, char *argv[]) {
     /* realloc if nStacks1 != uvar_nStacks1 */
     if ( uvar_nStacks2 > nStacks2 ) {
        	
-      numSFTsinStack2 = (INT4 *)LALRealloc( numSFTsinStack2, nStacks2 * sizeof(INT4));
-      
-      midTstack2.length = nStacks2;
-      midTstack2.data = (LIGOTimeGPS *)LALRealloc( midTstack2.data, nStacks2 * sizeof(LIGOTimeGPS));
+      midTstack2->length = nStacks2;
+      midTstack2->data = (LIGOTimeGPS *)LALRealloc( midTstack2->data, nStacks2 * sizeof(LIGOTimeGPS));
       
       startTstack2->length = nStacks2;
       startTstack2->data = (LIGOTimeGPS *)LALRealloc( startTstack2->data, nStacks2 * sizeof(LIGOTimeGPS));
@@ -1131,7 +1140,7 @@ int main( int argc, char *argv[]) {
       scanInit2.metricMismatch = uvar_mismatch2;
       scanInit2.projectMetric = TRUE;
       scanInit2.obsDuration = tStack2;
-      scanInit2.obsBegin = midTstack2.data[ nStacks1/2 ];
+      scanInit2.obsBegin = startTstack2->data[ nStacks1/2 ];
       scanInit2.Detector = &(stackMultiDetStates2.data[0]->data[0]->detector);
       scanInit2.ephemeris = edat;  /* used by Ephemeris-based metric */
       scanInit2.skyGridFile = uvar_skyGridFile;
@@ -1395,8 +1404,7 @@ int main( int argc, char *argv[]) {
 
   if ( uvar_followUp )
     {
-      LALFree(numSFTsinStack2);
-      LALFree(midTstack2.data);
+      LALFree(midTstack2->data);
       XLALDestroyTimestampVector(startTstack2);
       /* free sfts */
       for ( k = 0; k < nStacks2; k++) {
@@ -1441,7 +1449,6 @@ int main( int argc, char *argv[]) {
   
   LAL_CALL(LALDestroyTimestampVector ( &status, &sftTimeStamps1), &status);  	  
 
-  LALFree(numSFTsinStack1);
   XLALDestroyTimestampVector(midTstack1);
   XLALDestroyTimestampVector(startTstack1);
 
@@ -2590,7 +2597,202 @@ void GetChkPointIndex( LALStatus *status,
 
 
 
+void SetUpSFTs( LALStatus *status,
+		MultiSFTVectorSequence *stackMultiSFT,
+		MultiNoiseWeightsSequence *stackMultiNoiseWeights,
+		MultiDetectorStateSeriesSequence *stackMultiDetStates,
+		UsefulStageVariables *in)
+{
 
+  SFTCatalog *catalog = NULL;
+  static SFTConstraints constraints;
+  REAL8 timebase, tStack, tObs, refTime, deltaF, S_hat;
+  UINT4 nStacks, k;
+  LIGOTimeGPS tStartGPS, tEndGPS, refTimeGPS;
+  LIGOTimeGPSVector *sftTimeStamps=NULL; 
+  LALPulsarSpinRange spinRange_refTime, spinRange_startTime, spinRange_endTime;
+  SFTCatalogSequence catalogSeq;
+  
+  REAL8 doppWings, fMin, fMax;
+  REAL8 startTime_freqLo, startTime_freqHi;
+  REAL8 endTime_freqLo, endTime_freqHi;
+  REAL8 freqLo, freqHi;
+  INT4 extraBins;
+    
+  INITSTATUS( status, "SetUpSFTs", rcsid );
+  ATTATCHSTATUSPTR (status);
 
+  /* get sft catalog */
+  constraints.startTime = &(in->minStartTimeGPS);
+  constraints.endTime = &(in->maxEndTimeGPS);
+  TRY( LALSFTdataFind( status->statusPtr, &catalog, in->sftbasename, &constraints), status);
+  
+  /*   if ( uvar_followUp ) { */
+  /*     TRY ( PrintCatalogInfo ( status->statusPtr, catalog, fpFstat), status); */
+  /*   } */
+  
+  /*   if ( uvar_printFstat1 ) { */
+  /*     TRY ( PrintCatalogInfo ( status->statusPtr, catalog, fpFstat1), status); */
+  /*   } */
+  
+  /*   if ( uvar_printCand1 ) { */
+  /*     TRY ( PrintCatalogInfo ( status->statusPtr, catalog, fpSemiCoh), status); */
+  /*   } */
+  
+  /* set some sft parameters */
+  in->deltaF = deltaF = catalog->data->header.deltaF;
+  timebase = 1.0/deltaF;
+  
+  /* get sft catalogs for each stack */
+  TRY( SetUpStacks( status->statusPtr, &catalogSeq, &tStack, &sftTimeStamps, catalog, in->nStacks), status);
+  
+  /*   if ( uvar_followUp ) { */
+  /*     TRY ( PrintStackInfo ( status->statusPtr, &catalogSeq, fpFstat), status); */
+  /*   } */
+  
+  /*   if ( uvar_printFstat1 ) { */
+  /*     TRY ( PrintStackInfo ( status->statusPtr, &catalogSeq, fpFstat1), status); */
+  /*   } */
+  
+  /*   if ( uvar_printCand1 ) { */
+  /*     TRY ( PrintStackInfo ( status->statusPtr, &catalogSeq, fpSemiCoh), status); */
+  /*   } */
+  
+  /* calculate start and end times and tobs */
+  tStartGPS = sftTimeStamps->data[0];
+  tEndGPS = sftTimeStamps->data[sftTimeStamps->length - 1];
+  TRY( LALAddFloatToGPS( status->statusPtr, &tEndGPS, &tEndGPS, timebase ), status);
+  TRY ( LALDeltaFloatGPS ( status->statusPtr, &tObs, &tEndGPS, &tStartGPS), status);
 
+  in->tStartGPS = tStartGPS;
+  in->tObs = tObs;
+  
+  /* use stacks info to calculate search frequency resolution */
+  in->deltaFstack = 1.0/tStack;
+  
+  /* set reference time for pular parameters */
+  refTime = in->refTime;
+  if ( refTime > 0)  {
+      TRY ( LALFloatToGPS( status->statusPtr, &refTimeGPS, &refTime), status);
+  }
+  else {
+    refTimeGPS = tStartGPS;
+  }
+  
+  /* get frequency and fdot bands at start time of sfts by extrapolating from reftime */
+  spinRange_refTime.epoch = refTimeGPS;
+  TRY( LALExtrapolatePulsarSpinRange( status->statusPtr, &spinRange_startTime, tStartGPS, &spinRange_refTime), status); 
+  TRY( LALExtrapolatePulsarSpinRange( status->statusPtr, &spinRange_endTime, tEndGPS, &spinRange_refTime), status); 
+       
+  /* set wings of sfts to be read */
+  /* the wings must be enough for the Doppler shift and extra bins
+     for the running median block size and Dterms for Fstat calculation.
+     In addition, it must also include wings for the spindown correcting 
+     for the reference time  */
+  /* calculate Doppler wings at the highest frequency */
+  startTime_freqLo = spinRange_startTime.fkdot->data[0]; /* lowest search freq at start time */
+  startTime_freqHi = startTime_freqLo + spinRange_startTime.fkdotBand->data[0]; /* highest search freq. at start time*/
+  endTime_freqLo = spinRange_endTime.fkdot->data[0];
+  endTime_freqHi = endTime_freqLo + spinRange_endTime.fkdotBand->data[0];
+  
+  freqLo = HSMIN ( startTime_freqLo, endTime_freqLo );
+  freqHi = HSMAX ( startTime_freqHi, endTime_freqHi );
+  doppWings = freqHi * in->dopplerMax;    /* maximum Doppler wing -- probably larger than it has to be */
+  extraBins = HSMAX ( in->blocksRngMed/2 + 1, in->Dterms );
+  
+  fMin = freqLo - doppWings - extraBins * deltaF; 
+  fMax = freqHi + doppWings + extraBins * deltaF; 
+  
+  
+  /* set up vector containing mid times of stacks */    
+  in->midTstack =  XLALCreateTimestampVector ( in->nStacks );
+  
+  /* set up vector containing start times of stacks */    
+  in->startTstack =  XLALCreateTimestampVector ( in->nStacks );
+  
+  /* finally memory for stack of multi sfts */
+  stackMultiSFT->length = in->nStacks;
+  stackMultiSFT->data = (MultiSFTVector **)LALCalloc(1, in->nStacks * sizeof(MultiSFTVector *));
+  
+  stackMultiNoiseWeights->length = in->nStacks;
+  stackMultiNoiseWeights->data = (MultiNoiseWeights **)LALCalloc(1, in->nStacks * sizeof(MultiNoiseWeights *));
+  
+  stackMultiDetStates->length = in->nStacks;
+  stackMultiDetStates->data = (MultiDetectorStateSeries **)LALCalloc(1, in->nStacks * sizeof(MultiDetectorStateSeries *));
+  
+  for (nStacks = 0, k = 0; k < in->nStacks; k++) {
+    /* nStacks is number of non-empty stacks while
+       in->nStacks1 is what the user specified */
+    
+    if ( catalogSeq.data[k].length > 0 ){
+      /* if the stack is non-empty */
+      
+      MultiPSDVector *psd = NULL;	
+      LIGOTimeGPSVector *startTsftStack = NULL; /* sft time stamps for sfts in current stack */
+      
+      /* get SFT timestamps in stack */
+      TRY( LALSFTtimestampsFromCatalog(  status->statusPtr, &startTsftStack, catalogSeq.data + k ), status);  	
+      
+      /* start time of stack */
+      in->startTstack->data[nStacks] = startTsftStack->data[0];
+      
+      /* mid time of stack */          
+      TRY( LALAddFloatToGPS( status->statusPtr, in->midTstack->data + nStacks, in->startTstack->data + nStacks,  
+				    0.5 * tStack ), status);
+      
+      /* load the sfts */
+      TRY( LALLoadMultiSFTs ( status->statusPtr, stackMultiSFT->data + nStacks,  catalogSeq.data + k, 
+				   fMin, fMax ), status);
+      
+      /* normalize sfts and compute noise weights and detector state */
+      TRY( LALNormalizeMultiSFTVect ( status->statusPtr, &psd, stackMultiSFT->data[nStacks], 
+					   in->blocksRngMed ), status );
+      
+      TRY( LALComputeMultiNoiseWeights  ( status->statusPtr, stackMultiNoiseWeights->data + nStacks, &S_hat, 
+					       psd, in->blocksRngMed, 0 ), status );
+	
+      TRY ( LALGetMultiDetectorStates ( status->statusPtr, stackMultiDetStates->data + nStacks, 
+					     stackMultiSFT->data[nStacks], in->edat ), status );
 
+      TRY ( LALDestroyMultiPSDVector ( status->statusPtr, &psd ), status );
+      
+      TRY ( LALDestroyTimestampVector ( status->statusPtr, &startTsftStack), status);
+      
+      nStacks++;
+      
+      } /* if ( catalogSeq->data[k].length > 0 ) */
+  } /* loop over k */
+  
+  
+  /* realloc if nStacks != in->nStacks */
+  if ( in->nStacks > nStacks ) {
+    
+    in->midTstack->length = nStacks;
+    in->midTstack->data = (LIGOTimeGPS *)LALRealloc( in->midTstack->data, nStacks * sizeof(LIGOTimeGPS));
+    
+    in->startTstack->length = nStacks;
+    in->startTstack->data = (LIGOTimeGPS *)LALRealloc( in->startTstack->data, nStacks * sizeof(LIGOTimeGPS));
+    
+    stackMultiSFT->length = nStacks;
+    stackMultiSFT->data = (MultiSFTVector **)LALRealloc( stackMultiSFT->data, nStacks * sizeof(MultiSFTVector *));
+    
+  }  /* finish realloc */
+    
+  /* we don't need the original catalog */
+  TRY( LALDestroySFTCatalog( status->statusPtr, &catalog ), status);  	
+  
+  /* free catalog sequence */
+  for (k = 0; k < in->nStacks; k++)
+    {
+      if ( catalogSeq.data[k].length > 0 ) {
+	LALFree(catalogSeq.data[k].data);
+      } /* end if */
+    } /* loop over stacks */
+  LALFree( catalogSeq.data);  
+
+  in->nStacks = nStacks;  
+  
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+  
+}
