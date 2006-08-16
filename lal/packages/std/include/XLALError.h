@@ -304,6 +304,8 @@ typedef void XLALErrorHandlerType( const char *func, const char *file, int line,
 
 /** The default XLAL error handler. */
 void XLALDefaultErrorHandler( const char *func, const char *file, int line, int errnum );
+/** A silent XLAL error handler. */
+void XLALSilentErrorHandler( const char *func, const char *file, int line, int errnum );
 
 /* Other useful XLAL error handlers. */
 /** The XLAL error handler that raises SIGABRT. */
@@ -320,6 +322,8 @@ XLALErrorHandlerType * XLALSetErrorHandler( XLALErrorHandlerType *newHandler );
 
 /** Sets the error handler to the default handler and returns the old handler. */
 XLALErrorHandlerType * XLALSetDefaultErrorHandler( void );
+/** Sets the error handler to a silent handler and returns the old handler. */
+XLALErrorHandlerType * XLALSetSilentErrorHandler( void );
 
 
 /*
@@ -372,7 +376,7 @@ XLALErrorHandlerType ** XLALGetErrorHandlerPtr( void );
         do { \
           XLALErrorHandlerType *xlalSaveErrorHandler; \
           int xlalSaveErrno; \
-          xlalSaveErrorHandler = XLALSetDefaultErrorHandler(); \
+          xlalSaveErrorHandler = XLALSetSilentErrorHandler(); \
           xlalSaveErrno = xlalErrno; \
           XLALClearErrno(); \
           statement ; \

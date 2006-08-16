@@ -252,6 +252,15 @@ XLALErrorHandlerType * XLALSetDefaultErrorHandler( void )
   return oldHandler;
 }
 
+/** Set the XLAL error handler to a silent handler; return the old handler. */
+XLALErrorHandlerType * XLALSetSilentErrorHandler( void )
+{
+  XLALErrorHandlerType *oldHandler;
+  oldHandler = XLALErrorHandler;
+  XLALErrorHandler = XLALSilentErrorHandler;
+  return oldHandler;
+}
+
 
 /*
  *
@@ -413,6 +422,16 @@ void XLALPerror( const char *func, const char *file, int line, int code )
 void XLALDefaultErrorHandler( const char *func, const char *file, int line, int errnum )
 {
   XLALPerror( func, file, line, errnum );
+  return;
+}
+
+/** Silent XLAL error handler */
+void XLALSilentErrorHandler( const char *func, const char *file, int line, int errnum )
+{
+  func = NULL;
+  file = NULL;
+  line = 0;
+  errnum = 0;
   return;
 }
 
@@ -581,7 +600,7 @@ int print_stack( void )
     if ( ! addr )
       break;
     dladdr( addr, &info );
-    fprintf( stderr, "%s(%s+%p)[%p]\n", info.dli_fname, info.dli_sname, (char *)addr - (char *)info.dli_saddr, addr );
+    fprintf( stderr, "%s(%s+%p)[%p]\n", info.dli_fname, info.dli_sname, (void *)((char *)addr - (char *)info.dli_saddr), addr );
   }
   return 0;
 }
