@@ -1,141 +1,135 @@
           {
-	    NRCSID (CFSLOOPALTIVTAG, "$Id$");
+	    NRCSID (CFSLOOPVECTTAG, "$Id$");
 
-            COMPLEX8 *Xalpha_k = Xalpha + sftIndex;
+	    /* THIS IS DANGEROUS!! It relies on current implementation of COMPLEX8 type!! */
+	    REAL4 *Xalpha_kR4 = &(Xalpha[sftIndex].re);
 
-            realXP=0.0;
-            imagXP=0.0;
+	    /* temporary variables to prevent double calculations */
+	    REAL4 tsin2pi = tsin * (REAL4)OOTWOPI;
+	    REAL4 tcos2pi = tcos * (REAL4)OOTWOPI;
+	    REAL4 XRes, XIms;
+	    REAL8 combAF, combAF1, combAF2, combAF3;
 
-	    /* VERSION 6 - Altivec/scalar hybrid unrolled */
+	    /* The main idea of the vectorization is that
+
+	       [0] of a vector holds the real part of an even-index element
+	       [1] of a vector holds the imaginary part of an even-index element
+	       [2] of a vector holds the real part of an odd-index element
+	       [3] of a vector holds the imaginary part of an odd-index element
+
+	       The calculations for the four vector elements are performed independently
+	       possibly using vector-operations, and the sumsfor even- and odd-indexed
+	       element are combined at the very end.
+
+	       aFreq[0] = aFreq[1] and aFreq[2] = aFreq[3], as well as
+	       tFreq[0] = tFreq[1] and tFreq[2] = tFreq[3] throughout the whole loop.
+
+	       Note that compared to the "old" loop this one is only ran klim/2=DTerms
+	       times.
+
+	       There was added a double-precision part that calculates the "inner"
+	       elements of the loop (that contribute the most to the result) in
+	       double precision. If vectorized, a complex calculation (i.e. two
+	       real ones) should be performed on a 128Bit vector unit capable of double
+	       precision, such as SSE or AltiVec
+ 	    */
+
+	    float XsumS[4]  __attribute__ ((aligned (16))); /* for output */
+	    float align[4]  __attribute__ ((aligned (16))); /* for output */
+	    /* vector unsigned char permute_v = vec_lvsl( 0, (float *) Xalpha_k ); */
+	    vector float fdval, reTFreq;
+	    vector float Xsum = {0,0,0,0};
+	    vector float four2 = {2,2,2,2};
+	    vector float four4 = {4,4,4,4};
+	    vector float tFreq = { ((float)(tempFreq0 + klim/2 - 1)),
+				   ((float)(tempFreq0 + klim/2 - 1)),
+				   ((float)(tempFreq0 + klim/2 - 2)),
+				   ((float)(tempFreq0 + klim/2 - 2)) };
+
+	    /* Unfortunately AltiVec / Velocity Engine doesn't do double precision
+	       vectors, so we have to distinguish here again for the type of
+	       double precision calculation (not really gaining readability...)
+	    */
+	    REAL8 tFreqD, aFreqD = 1;
+	    REAL8 XsumD[2] = {0,0}; /* vector holding partial sums */
+
+	    /* 
+	       tFreq[0] = tempFreq0 + klim/2 - 1; tFreq[1] = tFreq[0];
+	       tFreq[2] = tempFreq0 + klim/2 - 2; tFreq[3] = tFreq[2];
+
+	       aFreqD = 1.0;
+	       XsumD[0]  = 0.0;  XsumD[1] = 0.0;
+	    */
+
+	    /* Vectorized version of the Kernel loop */
+	    /* This loop has now been unrolled manually */
+
+            /* for(k=0; k < klim / 2; k++) { */
 	    {
+	      UINT4 ve; /* this var should be optimized away... */
 
-	      vector float tsin_v, tcos_v;
-	      vector float realXP_v0 = (vector float)(0.0f);
-	      vector float imagXP_v0 = (vector float)(0.0f);
-	      vector float realXP_v1 = (vector float)(0.0f);
-	      vector float imagXP_v1 = (vector float)(0.0f);
-	      
-	      if (klim > tempF_size) {
-		tempf = realloc(tempf, sizeof(REAL4)*klim);
-		tempF_size = klim;
-	      }
-	      
-	      REAL8 tempf1 = tempFreq1;
-	      for (k=0; k+3<klim; k+=4) {
-		tempf[k+0] = tempf1 - 0.0;
-		tempf[k+1] = tempf1 - 1.0;
-		tempf[k+2] = tempf1 - 2.0;
-		tempf[k+3] = tempf1 - 3.0;
-		tempf1-=4;
-	      }
-	      for (; k<klim; k++) {
-		tempf[k] = tempf1;
-		tempf1--;
-	      }
-	      
-	      tsin_v = vec_ld( 0, &tsin );
-	      tsin_v = vec_perm( tsin_v, tsin_v, vec_lvsl( 0, &tsin ) );
-	      tsin_v = vec_splat( tsin_v, 0 );
-	      
-	      tcos_v = vec_ld( 0, &tcos );
-	      tcos_v = vec_perm( tcos_v, tcos_v, vec_lvsl( 0, &tcos ) );
-	      tcos_v = vec_splat( tcos_v, 0 );
-	      
-	      vector unsigned char permute_v = vec_lvsl( 0, (float *) Xalpha_k );
-	      
-	      /* Loop over terms in dirichlet Kernel */
-	      for(k=0; k+7 < klim ; k+=8)
-		{
-		  vector float realP_v0, imagP_v0;
-		  vector float realP_v1, imagP_v1;
-		  vector float xinv_v0, xinv_v1;
-		  vector float Xa_re_v0, Xa_im_v0;
-		  vector float Xa_re_v1, Xa_im_v1;
-		  vector float temp1, temp2, temp3, temp4, temp5, temp6;
-		  vector float tempFreq1_v0 = vec_ld( 0, &tempf[k] );
-		  vector float tempFreq1_v1 = vec_ld( 16, &tempf[k] );
-		  
-		  //Get the reciprocal estimate
-		  vector float estimate0 = vec_re( tempFreq1_v0 );
-		  vector float estimate1 = vec_re( tempFreq1_v1 );
-		  //One round of Newton-Raphson refinement
-		  estimate0 = vec_madd( vec_nmsub( estimate0, tempFreq1_v0, (vector float) (1.0) ), estimate0, estimate0 );
-		  estimate1 = vec_madd( vec_nmsub( estimate1, tempFreq1_v1, (vector float) (1.0) ), estimate1, estimate1 );
-		  xinv_v0 = vec_madd( (vector float)(OOTWOPI), estimate0, (vector float)(0) );
-		  xinv_v1 = vec_madd( (vector float)(OOTWOPI), estimate1, (vector float)(0) );
-		  //xinv_v0 = vec_div( (vector float)(OOTWOPI), tempFreq1_v0 );
-		  //xinv_v1 = vec_div( (vector float)(OOTWOPI), tempFreq1_v1 );
-		  
-		  temp1 = vec_ld( 0, (float *) Xalpha_k );
-		  temp2 = vec_ld( 16, (float *) Xalpha_k );
-		  temp3 = vec_ld( 32, (float *) Xalpha_k );
-		  temp4 = vec_ld( 48, (float *) Xalpha_k );
-		  temp5 = vec_ld( 63, (float *) Xalpha_k );
-		  
-		  temp1 = vec_perm( temp1, temp2, permute_v );
-		  temp2 = vec_perm( temp2, temp3, permute_v );
-		  temp3 = vec_perm( temp3, temp4, permute_v );
-		  temp4 = vec_perm( temp4, temp5, permute_v );
-		  
-		  temp5 = vec_mergeh( temp1, temp2 );
-		  temp6 = vec_mergel( temp1, temp2 );
-		  Xa_re_v0 = vec_mergeh( temp5, temp6 );
-		  Xa_im_v0 = vec_mergel( temp5, temp6 );
-		  
-		  temp5 = vec_mergeh( temp3, temp4 );
-		  temp6 = vec_mergel( temp3, temp4 );
-		  Xa_re_v1 = vec_mergeh( temp5, temp6 );
-		  Xa_im_v1 = vec_mergel( temp5, temp6 );
-		  
-		  Xalpha_k += 8;
-               
-		  realP_v0 = vec_madd( tsin_v, xinv_v0, (vector float)(0.0f) );
-		  imagP_v0 = vec_madd( tcos_v, xinv_v0, (vector float)(0.0f) );
-		  realP_v1 = vec_madd( tsin_v, xinv_v1, (vector float)(0.0f) );
-		  imagP_v1 = vec_madd( tcos_v, xinv_v1, (vector float)(0.0f) );
-		  
-		  /* realXP_v = real_XP_v + Xa_re_v * realP_v - Xa_im_v * imagP_v; */
-		  realXP_v0 = vec_madd( Xa_re_v0, realP_v0, realXP_v0 );
-		  realXP_v0 = vec_nmsub( Xa_im_v0, imagP_v0, realXP_v0 );
-		  imagXP_v0 = vec_madd( Xa_re_v0, imagP_v0, imagXP_v0 );
-		  imagXP_v0 = vec_madd( Xa_im_v0, realP_v0, imagXP_v0 );				
-		  
-		  realXP_v1 = vec_madd( Xa_re_v1, realP_v1, realXP_v1 );
-		  realXP_v1 = vec_nmsub( Xa_im_v1, imagP_v1, realXP_v1 );
-		  imagXP_v1 = vec_madd( Xa_re_v1, imagP_v1, imagXP_v1 );
-		  imagXP_v1 = vec_madd( Xa_im_v1, realP_v1, imagXP_v1 );				
-		} /* for k < klim */
-	      {
-		float realXP_float, imagXP_float;
-		vector float re_sum = vec_add( realXP_v0, realXP_v1 );
-		vector float im_sum = vec_add( imagXP_v0, imagXP_v1 );
-		re_sum = vec_add( re_sum, vec_sld( re_sum, re_sum, 8 ) );
-		im_sum = vec_add( im_sum, vec_sld( im_sum, im_sum, 8 ) );
-		re_sum = vec_add( re_sum, vec_sld( re_sum, re_sum, 4 ) );
-		im_sum = vec_add( im_sum, vec_sld( im_sum, im_sum, 4 ) );
-		vec_ste( re_sum, 0, &realXP_float);
-		vec_ste( im_sum, 0, &imagXP_float);
-		realXP = realXP_float;
-		imagXP = imagXP_float;
-	      }
-	      tempFreq1 = tempFreq1 - k;
+	      /* single precision vector loop */
+#define VEC_LOOP(n)\
+              for(ve=0;ve<4;ve++)\
+	        align[ve]=(Xalpha_kR4+(n))[ve];\
+	      fdval   = vec_ld(0,align);\
+	      reTFreq = vec_re(tFreq);\
+	      tFreq   = vec_sub(tFreq,four2);\
+	      Xsum    = vec_madd(fdval, reTFreq, Xsum);
 
-	      for(; k < klim ; k++)
-		{
-		  REAL4 xinv = (REAL4)OOTWOPI / (REAL4)tempFreq1;
-		  REAL4 Xa_re = Xalpha_k->re;
-		  REAL4 Xa_im = Xalpha_k->im;
-		  Xalpha_k ++;
-		  tempFreq1 --;
-		  
-		  realP = tsin * xinv;
-		  imagP = tcos * xinv;
-		  /* compute P*xtilde */
-		  realXP += Xa_re * realP - Xa_im * imagP;
-		  imagXP += Xa_re * imagP + Xa_im * realP;
-		  
-		} /* for k < klim */
+#if 0
+#define ADD4SSEA(a,b) \
+                  "movlps "#a"(%[Xalpha_kX]),%%xmm4 \n\t"\
+		  "movhps "#b"(%[Xalpha_kX]),%%xmm4 \n\t"\
+		  "rcpps %%xmm0,%%xmm1       \n\t" /* XMM1: 1/(f-1) 1/(f-1) 1/f 1/f */\
+                  "subps %%xmm5,%%xmm0       \n\t" /* XMM0: f-3 f-3 f-2 f-2 */\
+                  "mulps %%xmm4,%%xmm1       \n\t" /* XMM1: ImH/(f-1) ReH/(f-1) ImL/f ReL/f */\
+                  "addps %%xmm1,%%xmm2       \n\t" /* XMM2: C_ImH C_ReH C_ImL C_ReL */
+
+	      mm0 = tFreq;
+	      mm1 = reTF;
+	      mm2 = Xsum;
+	      mm4 = tmp;
+	      mm5 = (2 2 2 2);
+#endif
+
+	      /* non-vectorizing double-precision "loop" */
+#define VEC_LOOP_D(n)\
+              XsumD[0] = XsumD[0] * tFreqD + aFreqD * Xalpha_kR4[n];\
+              XsumD[1] = XsumD[1] * tFreqD + aFreqD * Xalpha_kR4[n+1];\
+	      aFreqD *= tFreqD;\
+              tFreqD -= 1.0;
+
+	      VEC_LOOP(00+0); VEC_LOOP(00+4); VEC_LOOP(00+8); VEC_LOOP(00+12); 
+	      VEC_LOOP(16+0); VEC_LOOP(16+4); VEC_LOOP(16+8);
+
+              /* calculating the inner elements
+		 VEC_LOOP(16+12); VEC_LOOP(32+0);
+		 in double precision */
+
+	      /* skip the values in single precision calculation */
+	      tFreq   = vec_sub(tFreq,four4);
+
+	      tFreqD = tempFreq0 + klim/2 - 15; /* start at the 14th element */
+
+	      /* double precision vectorization */
+	      VEC_LOOP_D(16+12);
+	      VEC_LOOP_D(16+14);
+	      VEC_LOOP_D(32+0);
+	      VEC_LOOP_D(32+2);
+
+                              VEC_LOOP(32+4); VEC_LOOP(32+8); VEC_LOOP(32+12); 
+	      VEC_LOOP(48+0); VEC_LOOP(48+4); VEC_LOOP(48+8); VEC_LOOP(48+12); 
 	    }
-	    
+
+	    /* output the vector */
+	    vec_st(Xsum,0,XsumS);
+
+	    /* conbination of three partial sums: */
+	    combAF  = 1.0 / aFreqD;
+	    XRes = XsumD[0] * combAF + XsumS[0] + XsumS[2];
+	    XIms = XsumD[1] * combAF + XsumS[1] + XsumS[3];
+
+            realXP = tsin2pi * XRes - tcos2pi * XIms;
+            imagXP = tcos2pi * XRes + tsin2pi * XIms;
           } /* if x cannot be close to 0 */
-        
