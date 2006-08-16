@@ -610,7 +610,9 @@ SnglInspiralTable *
 XLALRsqCutSingleInspiral (
     SnglInspiralTable          *eventHead,
     REAL4                       rsqVetoTimeThresh,
-    REAL4                       rsqMaxSnr
+    REAL4                       rsqMaxSnr,
+    REAL4                       rsqAboveSnrCoeff,
+    REAL4                       rsqAboveSnrPow
     );
 
 SnglInspiralTable *

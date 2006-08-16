@@ -122,7 +122,9 @@ triggers which have snr values above a specific snrCut.
 \texttt{XLALRsqCutSingleInspiral()} performs the R-squared veto on a linked
 list of single inspiral tables.  Triggers whose snr is less than
 \texttt{rsqSnrMax} and whose \texttt{rsqveto\_duration} is greater than
-\texttt{rsqVetoThresh} are removed.
+\texttt{rsqVetoThresh} or whose snr is greater than \texttt{rsqSnrMax} and
+whose \texttt{rsqveto\_duration} is greater than
+\texttt{rsqAboveSnrCoeff} * \texttt{snr} ^ \texttt{rsqAboveSnrPow} are removed.
 
 \texttt{XLALVetoSingleInspiral()} takes in a linked list of single inspiral
 tables and a list of segments and returns only those triggers which do not lie
@@ -985,7 +987,9 @@ SnglInspiralTable *
 XLALRsqCutSingleInspiral (
     SnglInspiralTable          *eventHead,
     REAL4                       rsqVetoTimeThresh,
-    REAL4                       rsqMaxSnr
+    REAL4                       rsqMaxSnr,
+    REAL4                       rsqAboveSnrCoeff,
+    REAL4                       rsqAboveSnrPow
     )
 /* </lalVerbatim> */
 {
@@ -1002,8 +1006,12 @@ XLALRsqCutSingleInspiral (
     SnglInspiralTable *tmpEvent = thisEvent;
     thisEvent = thisEvent->next;
     
-    if ( (tmpEvent->snr <= rsqMaxSnr) && 
-         (tmpEvent->rsqveto_duration >= rsqVetoTimeThresh) )
+    if ( (tmpEvent->snr <= rsqMaxSnr) && (tmpEvent->rsqveto_duration >= rsqVetoTimeThresh) )
+    {
+      /* discard this event */
+      XLALFreeSnglInspiral ( &tmpEvent );
+    }
+    else if ( (tmpEvent->snr > rsqMaxSnr) && (tmpEvent->rsqveto_duration >= rsqAboveSnrCoeff * pow(tmpEvent->snr,rsqAboveSnrPow) ) )
     {
       /* discard this event */
       XLALFreeSnglInspiral ( &tmpEvent );
