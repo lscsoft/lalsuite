@@ -36,7 +36,9 @@
 
 	    float XsumS[4]  __attribute__ ((aligned (16))); /* aligned output */
 	    vector unsigned char perm; /* = vec_lvsl(0,(float*)Xalpha_k); */
-	    vector float fdval, reTFreq, load1, load2;
+	    vector float fdval, reTFreq;
+	    vector float load0, load1, load2, load3;
+	    vector float load4, load5, load6, load7;
 	    vector float Xsum  = {0,0,0,0};
 	    vector float four2 = {2,2,2,2};
 	    vector float four4 = {4,4,4,4};
@@ -45,10 +47,6 @@
 				   ((float)(tempFreq0 + klim/2 - 2)),
 				   ((float)(tempFreq0 + klim/2 - 2)) };
 
-	    /* Unfortunately AltiVec / Velocity Engine doesn't do double precision
-	       vectors, so we have to distinguish here again for the type of
-	       double precision calculation (not really gaining readability...)
-	    */
 	    REAL8 tFreqD, aFreqD = 1;
 	    REAL8 XsumD[2] = {0,0}; /* vector holding partial sums */
 
@@ -57,11 +55,9 @@
             /* for(k=0; k < klim / 2; k++) { */
 	    {
 	      /* single precision vector "loop" (isn't actually a loop anymore) */
-#define VEC_LOOP(n)\
-              load1   = vec_ld(0,(Xalpha_kR4+(n)));\
-	      perm    = vec_lvsl(0,(Xalpha_kR4+(n)));\
-              load2   = vec_ld(0,(Xalpha_kR4+(n)+4));\
-	      fdval   = vec_perm(load1,load2,perm);\
+#define VEC_LOOP(n,a,b)\
+              load##b = vec_ld(0,(Xalpha_kR4+(n)+4));\
+	      fdval   = vec_perm(load##a,load##b,perm);\
 	      reTFreq = vec_re(tFreq);\
 	      tFreq   = vec_sub(tFreq,four2);\
 	      Xsum    = vec_madd(fdval, reTFreq, Xsum);
@@ -73,9 +69,12 @@
 	      aFreqD *= tFreqD;\
               tFreqD -= 1.0;
 
+              load0 = vec_ld(0,(Xalpha_kR4));
+	      perm  = vec_lvsl(0,(Xalpha_kR4));
+
 	      /* seven single-precision calculations first */
-	      VEC_LOOP(00+0); VEC_LOOP(00+4); VEC_LOOP(00+8); VEC_LOOP(00+12); 
-	      VEC_LOOP(16+0); VEC_LOOP(16+4); VEC_LOOP(16+8);
+	      VEC_LOOP(00+0,0,1); VEC_LOOP(00+4,1,2); VEC_LOOP(00+8,2,3); VEC_LOOP(00+12,3,4); 
+	      VEC_LOOP(16+0,4,5); VEC_LOOP(16+4,5,6); VEC_LOOP(16+8,6,7);
 
               /* calculating the inner elements
 		 VEC_LOOP(16+12); VEC_LOOP(32+0);
@@ -91,8 +90,10 @@
 	      VEC_LOOP_D(32+0);  VEC_LOOP_D(32+2);
 
 	      /* the rest is done in single precision again */
-                              VEC_LOOP(32+4); VEC_LOOP(32+8); VEC_LOOP(32+12); 
-	      VEC_LOOP(48+0); VEC_LOOP(48+4); VEC_LOOP(48+8); VEC_LOOP(48+12); 
+              load0 = vec_ld(0,(Xalpha_kR4+36));
+
+	      VEC_LOOP(32+4,0,1); VEC_LOOP(32+8,1,2); VEC_LOOP(32+12,2,3); 
+	      VEC_LOOP(48+0,3,4); VEC_LOOP(48+4,4,5); VEC_LOOP(48+8,5,6); VEC_LOOP(48+12,6,7); 
 	    }
 
 	    /* output the vector */
