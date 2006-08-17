@@ -50,6 +50,7 @@
 	    {
 	      /* single precision vector "loop" (isn't actually a loop anymore) */
 #define VEC_LOOP(n,a,b)\
+	      perm    = vec_lvsl(0,(Xalpha_kR4+(n)));\
               load##b = vec_ld(0,(Xalpha_kR4+(n)+4));\
 	      fdval   = vec_perm(load##a,load##b,perm);\
 	      reTFreq = vec_re(tFreq);\
@@ -65,7 +66,6 @@
 
 	      /* init the memory access */
               load0 = vec_ld(0,(Xalpha_kR4));
-	      perm  = vec_lvsl(0,(Xalpha_kR4));
 
 	      /* seven single-precision calculations first */
 	      VEC_LOOP(00+0,0,1); VEC_LOOP(00+4,1,2); VEC_LOOP(00+8,2,3); VEC_LOOP(00+12,3,4); 
