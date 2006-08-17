@@ -2325,7 +2325,7 @@ LALappsWriteSearchResults(LALStatus      *status,
   fprintf(totalFile,"# Legend: Col,Row;gpsSec,gpsNanoSec,Freq,depth\n");
   for (i = 0;i < outCurve.numberOfCurves;i++)
     {
-      fprintf(totalFile,"#Curve number,length,power:%i,%i,%f\n",
+      fprintf(totalFile,"Curve number,length,power:%i,%i,%f\n",
 	      i,
 	      outCurve.curves[i].n,
 	      outCurve.curves[i].totalPower);
