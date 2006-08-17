@@ -8,7 +8,7 @@
 	    REAL4 tsin2pi = tsin * (REAL4)OOTWOPI;
 	    REAL4 tcos2pi = tcos * (REAL4)OOTWOPI;
 	    REAL4 XRes, XIms;
-	    REAL8 combAF, combAF1, combAF2, combAF3;
+	    REAL8 combAF;
 
 	    /* The main idea of the vectorization is that
 
@@ -21,12 +21,6 @@
 	       possibly using vector-operations, and the sumsfor even- and odd-indexed
 	       element are combined at the very end.
 
-	       aFreq[0] = aFreq[1] and aFreq[2] = aFreq[3], as well as
-	       tFreq[0] = tFreq[1] and tFreq[2] = tFreq[3] throughout the whole loop.
-
-	       Note that compared to the "old" loop this one is only ran klim/2=DTerms
-	       times.
-
 	       There was added a double-precision part that calculates the "inner"
 	       elements of the loop (that contribute the most to the result) in
 	       double precision. If vectorized, a complex calculation (i.e. two
@@ -34,25 +28,25 @@
 	       precision, such as SSE or AltiVec
  	    */
 
-	    float XsumS[4]  __attribute__ ((aligned (16))); /* aligned output */
-	    vector unsigned char perm; /* = vec_lvsl(0,(float*)Xalpha_k); */
-	    vector float fdval, reTFreq;
-	    vector float load0, load1, load2, load3;
+	    float XsumS[4]  __attribute__ ((aligned (16))); /* aligned for vector output */
+	    /* the following vectors actually become registers in the AVUnit */
+	    vector unsigned char perm;     /* holds permutation pattern for unaligned memory access */
+	    vector float load0, load1, load2, load3;  /* temp registers for unaligned memory access */
 	    vector float load4, load5, load6, load7;
-	    vector float Xsum  = {0,0,0,0};
-	    vector float four2 = {2,2,2,2};
+	    vector float fdval, reTFreq;              /* temporary variables */
+	    vector float Xsum  = {0,0,0,0};           /* collects the sums */
+	    vector float four2 = {2,2,2,2};           /* vector constants */
 	    vector float four4 = {4,4,4,4};
-	    vector float tFreq = { ((float)(tempFreq0 + klim/2 - 1)),
+	    vector float tFreq = { ((float)(tempFreq0 + klim/2 - 1)), /* tempFreq as vector */
 				   ((float)(tempFreq0 + klim/2 - 1)),
 				   ((float)(tempFreq0 + klim/2 - 2)),
 				   ((float)(tempFreq0 + klim/2 - 2)) };
 
-	    REAL8 tFreqD, aFreqD = 1;
-	    REAL8 XsumD[2] = {0,0}; /* vector holding partial sums */
+	    REAL8 tFreqD, aFreqD = 1;      /* tempFreq and accFreq for double precision */
+	    REAL8 XsumD[2] = {0,0};        /* partial sums */
 
 	    /* Vectorized version of the Kernel loop */
 	    /* This loop has now been unrolled manually */
-            /* for(k=0; k < klim / 2; k++) { */
 	    {
 	      /* single precision vector "loop" (isn't actually a loop anymore) */
 #define VEC_LOOP(n,a,b)\
@@ -69,6 +63,7 @@
 	      aFreqD *= tFreqD;\
               tFreqD -= 1.0;
 
+	      /* init the memory access */
               load0 = vec_ld(0,(Xalpha_kR4));
 	      perm  = vec_lvsl(0,(Xalpha_kR4));
 
