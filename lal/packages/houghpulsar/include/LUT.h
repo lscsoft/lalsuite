@@ -655,7 +655,7 @@ NRCSID (LUTH, "$Id$");
   
 
 /** Width of the thinnest annulus in terms of pixels */
-#define PIXELFACTOR  2
+/* #define PIXELFACTOR  2 */
 
 /** Earth v_epicycle/c  TO BE CHANGED DEPENDING ON DETECTOR */
 #define VEPI 1.0e-06
