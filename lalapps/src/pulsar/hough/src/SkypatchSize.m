@@ -4,8 +4,8 @@
 %% Signal parameters
 FreqSignal = 310;
 fdotSignal = 0;
-AlphaSignal = 1.0;
-DeltaSignal = 0;
+AlphaSignal = 0.0;
+DeltaSignal = 0.0;
 h0 = 5.0e-25;
 cosiota = 0.5;
 psiSignal = 0;
@@ -37,7 +37,7 @@ cmdline = sprintf("lalapps_Makefakedata --outSFTbname=%s --IFO=%s \
 --noiseSqrtSh=%.12g", outputDir, IFO, ephemDir, ephemYear, startTime, \
 		  duration, fmin, Band, AlphaSignal, DeltaSignal, h0, \
 		  cosiota, psiSignal, phi0Signal, FreqSignal, \
-		  fdotSignal, Sh)
+		  fdotSignal, Sh);
 
 
 [output,stat] = system(cmdline)
@@ -54,10 +54,11 @@ fdotSearch = fdotSignal;
 
 %% search with weights 
 
-mismatchWeight = 0:0.1:1.0;
+mismatchWeight = 0:0.01:0.6;
 
 for index = 1:length(mismatchWeight)
 
+  index
 
   AlphaWeight = AlphaSignal + mismatchWeight(index);
   DeltaWeight = DeltaSignal + mismatchWeight(index);
@@ -68,7 +69,7 @@ for index = 1:length(mismatchWeight)
   --Freq=%.12g --fdot=%.12g --AlphaWeight=%.12g --DeltaWeight=%.12g \
   --weighAM=1 --weighNoise=1", outputDir, "*.sft", fStart, fBand, \
 		    AlphaSearch, DeltaSearch, FreqSearch, fdotSearch, \
-		    AlphaWeight, DeltaWeight)
+		    AlphaWeight, DeltaWeight);
   
 
   [output,status] = system(cmdline);
@@ -88,7 +89,7 @@ cmdline = sprintf("./ValidateHoughMulti --sftDir=%s%s \
 --fStart=%.12g --fSearchBand=%.12g  --Alpha=%.12g --Delta=%.12g \
 --Freq=%.12g --fdot=%.12g --weighAM=0 --weighNoise=0", outputDir,
 		  "*.sft", fStart, fBand, \ 
-		  AlphaSearch, DeltaSearch, FreqSearch, fdotSearch)
+		  AlphaSearch, DeltaSearch, FreqSearch, fdotSearch);
 
 
 [output,status] = system(cmdline);
@@ -102,5 +103,14 @@ sigma = tempout(3)
 sigNoWeight = (numberCount - mean)/sigma
 
 
-mismatchPosition(0.1,0,1,1)
+for index = 1:length(mismatchWeight)
+  sigNoWeightVec(index) = sigNoWeight;
+endfor
+
+plot(mismatchWeight, sigWeight,";With Weights;",  mismatchWeight, sigNoWeightVec, "3;Without Weights;" )
+xlabel("Sky Position Mismatch (radians)")
+ylabel("Significance")
+
+
+##mismatchPosition(0.1,0,1,1)
 

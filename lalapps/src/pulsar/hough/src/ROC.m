@@ -16,8 +16,8 @@ sigmaThr = 7;
 FAthr = 4;
 
 ## number of software injections
-numInjections = 50;
-numH0 = 5;
+numInjections = 2;
+numH0 = 2;
 
 ## get skypatch info 
 load skyfileS4c
@@ -60,10 +60,10 @@ for h0Index = 1:numH0
     
     ## run makefakedata
     cmdline = sprintf("lalapps_Makefakedata --outSFTbname=./ROC-SFT/ \
-	--IFO=H1 --ephemDir=/local_data/badkri/lscsoft/share/lal/ \
+	--IFO=H1 --ephemDir=/home/badkri/lscsoft/share/lal/ \
       --ephemYear=05-09 --fmin=%.12g --Band=%.12g --Alpha=%.12g \
     --Delta=%.12g --h0=%.5e --cosi=%.12g --phi0=%.12g --psi=%.12g \
-    --Freq=%.12g --f1dot=%.5e --noiseSFTs='/local_data/badkri/ROC-78/*.sft'", \ 
+    --Freq=%.12g --f1dot=%.5e --noiseSFTs='/home/badkri/ROC-78/*.sft'", \ 
 		      mfdfmin, mfdband, signalAlpha, signalDelta, h0, cosi, phi0, psi, \
 		      signalFreq, signalF1dot);
     
@@ -95,7 +95,7 @@ for h0Index = 1:numH0
     skyPar(1,4) = sizeDeltaVec(maxind);
     
     ## write skypatch info to file which hough driver can use
-    save -ascii tempskyfile1 skyPar
+    save -text tempskyfile1 skyPar
     system("grep -v '#' tempskyfile1 > tempskyfile");
     system("rm tempskyfile1");
     
@@ -103,12 +103,12 @@ for h0Index = 1:numH0
     system("rm -rf ./outMulti/*");
     cmdline = sprintf("./DriveHoughMulti --f0=%.12g --fSearchBand=%.12g --skyfile=./tempskyfile \
     --houghThreshold=%.5e --sftDir='./ROC-SFT/*.sft' --printEvents=1 \
-    --earthEphemeris=/local_data/badkri/lscsoft/share/lal/earth05-09.dat \
-    --sunEphemeris=/local_data/badkri/lscsoft/share/lal/sun05-09.dat \
+    --earthEphemeris=/home/badkri/lscsoft/share/lal/earth05-09.dat \
+    --sunEphemeris=/home/badkri/lscsoft/share/lal/sun05-09.dat \
     --linefiles=../../LineInfo/S4lines_H1_xavi.txt.v2.thinlines,../../LineInfo/S4lines_L1_xavi.txt.v2.thinlines",f0,fBand, \
-		      FAthr)
+		      FAthr);
     
-    [output, status] = system(cmdline)
+    [output, status] = system(cmdline);
     
     ## some cleanup
     system("rm tempskyfile");
@@ -171,4 +171,4 @@ for h0Index = 1:numH0
 
 endfor ## end of all h0 values
 
-save -ascii ROC.out efficiency h0Vector
+save -text ROC.out efficiency h0Vector

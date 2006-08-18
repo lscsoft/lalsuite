@@ -144,6 +144,8 @@ do {                                                                 \
 char *lalWatch;
 #endif
 
+#define PIXELFACTOR  2 
+
 
 /* ******************************************************************
  *  Structure, enum, union, etc., typdefs.

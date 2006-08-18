@@ -139,11 +139,12 @@ NRCSID( HIERARCHICALSEARCHH, "$Id$" );
   /** parameters for the semicoherent stage -- hough or stackslide */
   typedef struct tagSemiCoherentParams {
     LIGOTimeGPSVector *tsMid;  /**< timestamps of mid points of stacks */
-    LIGOTimeGPS refTime;             /**< reference time for f, fdot definition */
+    LIGOTimeGPS refTime;       /**< reference time for f, fdot definition */
     REAL8VectorSequence *vel;  /**< detector velocity for each stack */
     REAL8VectorSequence *pos;  /**< detector position for each stack */
     REAL8 alpha;               /**< right ascension of demodulation point */
     REAL8 delta;               /**< declination of demodulation point*/
+    REAL8 pixelFactor;         /**< Resolution of semicoherent sky-grid */
     REAL8 fdot;                /**< spindown value of demodulation point */
     UINT4 nfdot;               /**< number of fdot values to search over */ 
     CHAR *outBaseName;         /**< file for writing output -- if chosen */

@@ -188,6 +188,7 @@ void PrintStackInfo( LALStatus  *status, const SFTCatalogSequence *catalogSeq, F
 #define NCAND1 5 /**< Default number of candidates to be followed up from first stage */
 #define SFTDIRECTORY "/home/badkri/fakesfts2/H-1_H1*.sft"  /**< Default directory containing sfts */
 #define FNAMEOUT "./out/HS"  /**< Default output file basename */
+#define PIXELFACTOR 2
 #define LAL_INT4_MAX 2147483647
 
 int main( int argc, char *argv[]) {
@@ -304,6 +305,7 @@ int main( int argc, char *argv[]) {
   REAL8 uvar_minStartTime1, uvar_maxEndTime1;
   REAL8 uvar_minStartTime2, uvar_maxEndTime2;
   REAL8 uvar_dopplerMax;
+  REAL8 uvar_pixelFactor;
 
   INT4 uvar_method; /* hough = 0, stackslide = 1*/
   INT4 uvar_nCand1; /* number of candidates to be followed up from first stage */
@@ -365,6 +367,7 @@ int main( int argc, char *argv[]) {
   uvar_gridType = GRID_METRIC;
   uvar_mismatch1 = uvar_mismatch2 = MISMATCH;
   uvar_reallocBlock = 5000;
+  uvar_pixelFactor = PIXELFACTOR;
 
   uvar_minStartTime1 = 0;
   uvar_maxEndTime1 = LAL_INT4_MAX;
@@ -411,6 +414,7 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar(    &status, "nStacks2",     0,  UVAR_OPTIONAL, "No.of 2nd stage stacks", &uvar_nStacks2 ), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "mismatch1",    0,  UVAR_OPTIONAL, "1st stage mismatch", &uvar_mismatch1), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "mismatch2",    0,  UVAR_OPTIONAL, "2nd stage mismatch", &uvar_mismatch2), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "pixelFactor",  0,  UVAR_OPTIONAL, "Semi coherent sky grid resolution", &uvar_pixelFactor), &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "gridType",     0,  UVAR_OPTIONAL, "0=flat,1=isotropic,2=metric,3=file", &uvar_gridType),  &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "metricType",   0,  UVAR_OPTIONAL, "0=none,1=Ptole-analytic,2=Ptole-numeric,3=exact", &uvar_metricType), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyGridFile",  0,  UVAR_OPTIONAL, "sky-grid file", &uvar_skyGridFile), &status);
@@ -741,6 +745,7 @@ int main( int argc, char *argv[]) {
   semiCohPar.vel = velStack1;
   semiCohPar.pos = posStack1;
   semiCohPar.outBaseName = uvar_fnameout;
+  semiCohPar.pixelFactor = uvar_pixelFactor;
 
   /* allocate memory for Hough candidates */
   semiCohCandList1.length = uvar_nCand1;
@@ -1477,7 +1482,7 @@ void ComputeFstatHoughMap(LALStatus *status,
   parRes.deltaF = deltaF;
   parRes.patchSkySizeX  = patchSizeX;
   parRes.patchSkySizeY  = patchSizeY;
-  parRes.pixelFactor = PIXELFACTOR;
+  parRes.pixelFactor = params->pixelFactor;
   parRes.pixErr = PIXERR;
   parRes.linErr = LINERR;
   parRes.vTotC = VTOT;
