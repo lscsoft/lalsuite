@@ -306,6 +306,7 @@ int main( int argc, char *argv[]) {
   REAL8 uvar_minStartTime2, uvar_maxEndTime2;
   REAL8 uvar_dopplerMax;
   REAL8 uvar_pixelFactor;
+  REAL8 uvar_semiCohPatchX, uvar_semiCohPatchY;
 
   INT4 uvar_method; /* hough = 0, stackslide = 1*/
   INT4 uvar_nCand1; /* number of candidates to be followed up from first stage */
@@ -414,7 +415,9 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar(    &status, "nStacks2",     0,  UVAR_OPTIONAL, "No.of 2nd stage stacks", &uvar_nStacks2 ), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "mismatch1",    0,  UVAR_OPTIONAL, "1st stage mismatch", &uvar_mismatch1), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "mismatch2",    0,  UVAR_OPTIONAL, "2nd stage mismatch", &uvar_mismatch2), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "pixelFactor",  0,  UVAR_OPTIONAL, "Semi coherent sky grid resolution", &uvar_pixelFactor), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "pixelFactor",  0,  UVAR_OPTIONAL, "Semi coherent sky grid resolution (x thinnest annulus size)", &uvar_pixelFactor), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "semiCohPatchX",0,  UVAR_OPTIONAL, "Semi coherent sky grid size (x usual default)", &uvar_semiCohPatchX), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "semiCohPatchY",0,  UVAR_OPTIONAL, "Semi coherent sky grid size (x usual default)", &uvar_semiCohPatchY), &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "gridType",     0,  UVAR_OPTIONAL, "0=flat,1=isotropic,2=metric,3=file", &uvar_gridType),  &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "metricType",   0,  UVAR_OPTIONAL, "0=none,1=Ptole-analytic,2=Ptole-numeric,3=exact", &uvar_metricType), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyGridFile",  0,  UVAR_OPTIONAL, "sky-grid file", &uvar_skyGridFile), &status);
@@ -746,6 +749,17 @@ int main( int argc, char *argv[]) {
   semiCohPar.pos = posStack1;
   semiCohPar.outBaseName = uvar_fnameout;
   semiCohPar.pixelFactor = uvar_pixelFactor;
+
+  if ( LALUserVarWasSet(&uvar_semiCohPatchX))
+    semiCohPar.patchSizeX = uvar_semiCohPatchX;
+  else
+    semiCohPar.patchSizeX = -1;
+    
+  if ( LALUserVarWasSet(&uvar_semiCohPatchY))
+    semiCohPar.patchSizeY = uvar_semiCohPatchY;
+  else
+    semiCohPar.patchSizeY = -1;
+
 
   /* allocate memory for Hough candidates */
   semiCohCandList1.length = uvar_nCand1;
@@ -1423,7 +1437,7 @@ void ComputeFstatHoughMap(LALStatus *status,
   pos = params->pos;
   fdot = params->fdot;
   tsMid = params->tsMid;
-  refTimeGPS = params->refTime;
+  refTimeGPS = params->refTime;  
   TRY ( LALGPStoFloat( status->statusPtr, &refTime, &refTimeGPS), status);
 
   /* set patch size */
@@ -1432,8 +1446,14 @@ void ComputeFstatHoughMap(LALStatus *status,
      where Tcoh is coherent time baseline, 
      f0 is frequency and Vepi is rotational velocity 
      of detector */
-  patchSizeX = 0.5 / ( fBinIni * VEPI ); 
-  patchSizeY = 0.5 / ( fBinIni * VEPI ); 
+  patchSizeX = params->patchSizeX;
+  patchSizeY = params->patchSizeY;
+
+  if ( patchSizeX < 0 )
+    patchSizeX = 0.5 / ( fBinIni * VEPI ); 
+
+  if ( patchSizeY < 0 )
+    patchSizeY = 0.5 / ( fBinIni * VEPI ); 
 
   /*--------------- first memory allocation --------------*/
   /* look up table vector */

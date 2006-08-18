@@ -145,6 +145,8 @@ NRCSID( HIERARCHICALSEARCHH, "$Id$" );
     REAL8 alpha;               /**< right ascension of demodulation point */
     REAL8 delta;               /**< declination of demodulation point*/
     REAL8 pixelFactor;         /**< Resolution of semicoherent sky-grid */
+    REAL8 patchSizeX;          /**< Size of semicoherent sky-patch */
+    REAL8 patchSizeY;          /**< Size of semicoherent sky-patch */
     REAL8 fdot;                /**< spindown value of demodulation point */
     UINT4 nfdot;               /**< number of fdot values to search over */ 
     CHAR *outBaseName;         /**< file for writing output -- if chosen */
