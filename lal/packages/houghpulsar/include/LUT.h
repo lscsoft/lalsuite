@@ -736,7 +736,7 @@ typedef struct tagHOUGHResolutionPar{
   REAL8   deltaF;        /**< df=1/TCOH */
   REAL8   patchSkySizeX;     /**< Size of sky patch in radians */
   REAL8   patchSkySizeY;
-  UINT2   pixelFactor; /**< number of pixel that fit in the thinnest annulus*/
+  REAL8   pixelFactor; /**< number of pixel that fit in the thinnest annulus*/
   REAL8   pixErr;   /**< for validity of LUT as PIXERR */
   REAL8   linErr;   /**< as LINERR circle ->line */
   REAL8   vTotC;    /**< estimate value of v-total/C as VTOT */
