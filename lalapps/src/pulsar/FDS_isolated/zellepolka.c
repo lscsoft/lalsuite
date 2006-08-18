@@ -113,7 +113,7 @@ some information on stderr.
 #include <lal/UserInput.h>
 
 #include <lalapps.h>
-
+#include <locale.h>
 
 /* this is defined in C99 and *should* be in math.h.  Long term
    protect this with a HAVE_FINITE */
@@ -251,6 +251,7 @@ typedef struct CandidateListTag
 } CandidateList;     /*   Fstat lines */ 
 #pragma pack(0)
 
+
 /*!
 Liked list containing one INT4 data..
 
@@ -311,10 +312,14 @@ void RePrepareCells( LALStatus *, CellData **cell, const UINT4 CLength , const U
 void PrepareCells( LALStatus *, CellData **cell, const UINT4 datalen );
 
 
+
 int compareNumOfCoincidences(const void *a, const void *b);
+static inline int compareNumOfCoincidencesList(const void *a, const void *b);
 int compareCandidates(const void *ip, const void *jp);
+static inline int compareCandidatesList(const void *a, const void *b);
 int compareSignificances(const void *a, const void *b);
 int compareFrequencyCell(const void *a, const void *b);
+static inline int compareFrequencyCellList(const void *a, const void *b);
 int compareINT4arrays(const INT4 *idata1, const INT4 *idata2, size_t s); /* compare two INT4 arrays of size s.*/
 int compareREAL8arrays(const REAL8 *rdata1, const REAL8 *rdata2, size_t s); /* compare two REAL8 arrays of size s.*/
 void add_int4_data(LALStatus *, struct int4_linked_list **list_ptr, const INT4 *data);
@@ -322,7 +327,7 @@ void delete_int4_linked_list( LALStatus *, struct int4_linked_list *list_ptr);
 
 void get_info_of_the_cell( LALStatus *, CellData *cd, const CandidateList *CList);
 
-void PrintResult( LALStatus *, const PolkaConfigVars *CLA, CellData *cell, const INT4 *ncell, CandidateList *CList , const INT4 cellgridnum);
+void PrintResult( LALStatus *, const PolkaConfigVars *CLA, CellData *cell, const INT4 *ncell, CandidateList *CList , const INT4 cellgridnum, INT4 CellListi[]);
 void print_Fstat_of_the_cell( LALStatus *, FILE *fp, const CellData *cd, const CandidateList *CList, const INT4 icell_start, 
 			      const INT4 icell_end, const REAL8 sig_thr, const REAL8 ncand_thr );
 void print_info_of_the_cell( LALStatus *lalStatus, FILE *fp, const CellData *cd, const INT4 icell_start, 
@@ -333,11 +338,21 @@ void FreeMemory(LALStatus *, PolkaConfigVars *CLA, CellData *cell, CandidateList
 void FreeMemoryCellsOnly(LALStatus *, PolkaConfigVars *CLA, CellData *cell, const UINT4 datalen);
 void FreeConfigVars(LALStatus *, PolkaConfigVars *CLA );
 
-
+void sortCandidates(INT4 *data, INT4 N);
+void sortCandidates2(INT4 *data, INT4 left, INT4 right);
+void sortFreqCells2(INT4 *data, INT4 left, INT4 right);
 
 
 /* ----------------------------------------------------------------------------- */
 /* Global Variables */
+
+CandidateList *SortedC = NULL; /* need to be global to access them in compare functions for qsort */
+CellData *cell = NULL;
+/*
+ListForSort *SortedCList = NULL;
+ListForSort *cellList = NULL;
+*/
+
 /*! @param global_status LALStatus Used to initialize LALStatus lalStatus. */
 LALStatus global_status;
 /*! @param lalDebugLevel INT4 Control debugging behaviours. Defined in lalapps.h */
@@ -364,11 +379,18 @@ RCSID ("$Id$");
 */
 int main(INT4 argc,CHAR *argv[]) 
 {
+  setlocale(LC_ALL, "C");
+  
   LALStatus *lalStatus = &global_status;
   INT4  CLength=0;
   
+  INT4 *SortedCListi = NULL;
+  INT4 *cellListi = NULL;
+  /* 
   CandidateList *SortedC = NULL;
   CellData *cell = NULL;
+  */
+
   INT4 icell, icand, ncell, icell2, ic;
   INT4 cc1,cc2,cc3,cc4,bb1,bb2,bb3,bb4,selectGrid;
   INT4 sizecells;
@@ -394,22 +416,23 @@ int main(INT4 argc,CHAR *argv[])
   /* Reads in candidare files, set CLength */
   LAL_CALL( ReadCandidateFiles(lalStatus, &SortedC, &PCV, &CLength), lalStatus);
 
- 
-  /* --------------------------------------------------------------------------------*/      
+  SortedCListi = (INT4 *) LALCalloc(CLength, sizeof(INT4) );
 
+  /* --------------------------------------------------------------------------------*/      
+  /* SortedCList = (ListForSort *) LALCalloc( CLength, sizeof(ListForSort) ); */
 
   /* flexible declination window */
   DeltaDeltaFlex = 0;
   selectGrid = 0;
-  cc1=0;
-  cc2=0;
-  cc3=0;
-  cc4=0;
+  bb1=0; bb2=0; bb3=0; bb4=0;
+  cc1=0; cc2=0; cc3=0; cc4=0;
+  
   
   for (bb1=0; bb1<2; bb1++) {
     for (bb2=0; bb2<2; bb2++) {
       for (bb3=0; bb3<2; bb3++) {
 	for (bb4=0; bb4<2; bb4++) {
+  
 	 
 	  /*if (selectGrid == PCV.CellGrid) {*/
 
@@ -427,6 +450,7 @@ int main(INT4 argc,CHAR *argv[])
 	    sizecells = ADDITIONAL_MEM;
 	    LAL_CALL( PrepareCells( lalStatus, &cell, sizecells ), lalStatus);  
 
+	   
 	    
 	    for (icand=0;icand<CLength;icand++)
 	      {
@@ -442,33 +466,36 @@ int main(INT4 argc,CHAR *argv[])
 		SortedC[icand].iAlpha=(INT4)( (SortedC[icand].Alpha*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha))  + (cc3 * 0.5)  );
 		SortedC[icand].iF1dot=(INT4)floor(( ((SortedC[icand].F1dot)/(PCV.DeltaF1dot))  + (cc4 * 0.5)  ));
 		SortedC[icand].iCand=icand; /* Keep the original ordering before sort to refer the orignal data later. */
-		
-		/*
-		  printf("DeltaDeltaFlex: %g\n", DeltaDeltaFlex); 
-		  printf("Freq: %f \t Deltaf: %f \t %f \n",SortedC[icand].f, PCV.Deltaf, SortedC[icand].f/(PCV.Deltaf));
-		  printf("iFreq: %d  iAlpha: %d  iDelta: %d  iF1dot: %d\n",SortedC[icand].iFreq,SortedC[icand].iAlpha,SortedC[icand].iDelta,SortedC[icand].iF1dot);
-		*/
-		
+
+		/*SortedCList[icand].nummer=icand; List for sorting purposes. */
+		SortedCListi[icand]=icand;
 	      }
-	    
+
+#if 0
 	    /* sort arrays of candidates */
-	    qsort(SortedC, (size_t)CLength, sizeof(CandidateList), compareCandidates);
+	    qsort(SortedCListi, CLength, sizeof(INT4), compareCandidatesList); 
+#endif
 	    
-	    /*
-	      for (icand = 0; icand < CLength; icand++)
-	      {
-	      printf("iFreq: %d  iAlpha: %d  iDelta: %d  iF1dot: %d  FileID: %d\n",SortedC[icand].iFreq,SortedC[icand].iAlpha,SortedC[icand].iDelta,SortedC[icand].iF1dot, SortedC[icand].FileID);
-	      }
-	    */
-	    
+#if 0
+	    /* Bruce's sorting function */
+	    sortCandidates(SortedCListi, CLength);
+#endif
+
+#if 1
+	    /* Holger's sorting function */
+	    sortCandidates2(SortedCListi, 0, CLength);
+	    printf("%% Sorting of candidates finished. \n");
+#endif
+
+
 	    /* Initialise the first cell by the first candidate. */
 	    icell = 0;
 	    icand = 0;
-	    cell[icell].iFreq = SortedC[icand].iFreq;
-	    cell[icell].iDelta = SortedC[icand].iDelta;
-	    cell[icell].iAlpha = SortedC[icand].iAlpha;
-	    cell[icell].iF1dot = SortedC[icand].iF1dot;
-	    cell[icell].CandID->data = icand; 
+	    cell[icell].iFreq = SortedC[SortedCListi[icand]].iFreq;
+	    cell[icell].iDelta = SortedC[SortedCListi[icand]].iDelta;
+	    cell[icell].iAlpha = SortedC[SortedCListi[icand]].iAlpha;
+	    cell[icell].iF1dot = SortedC[SortedCListi[icand]].iF1dot;
+	    cell[icell].CandID->data = SortedCListi[icand]; 
 	    cell[icell].nCand = 1;
 	    
 	    /* ------------------------------------------------------------------------------*/      
@@ -477,20 +504,20 @@ int main(INT4 argc,CHAR *argv[])
 	    for (icand=1; icand < CLength; icand++)
 	      {
 		/* Skip candidate events with 2F values below the threshold of TwoFthr. */
-		if ( SortedC[icand].TwoF > PCV.TwoFthr ) 
+		if ( SortedC[SortedCListi[icand]].TwoF > PCV.TwoFthr ) 
 		  {
 		    
-		    if( SortedC[icand].iFreq  == cell[icell].iFreq  && 
-			SortedC[icand].iDelta == cell[icell].iDelta &&
-			SortedC[icand].iAlpha == cell[icell].iAlpha &&
-			SortedC[icand].iF1dot == cell[icell].iF1dot ) 
+		    if( SortedC[SortedCListi[icand]].iFreq  == cell[icell].iFreq  && 
+			SortedC[SortedCListi[icand]].iDelta == cell[icell].iDelta &&
+			SortedC[SortedCListi[icand]].iAlpha == cell[icell].iAlpha &&
+			SortedC[SortedCListi[icand]].iF1dot == cell[icell].iF1dot ) 
 		      { 
 			/* This candidate is in this cell. */
 			INT4 lastFileIDinThisCell = SortedC[cell[icell].CandID->data].FileID;
-			if( SortedC[icand].FileID != lastFileIDinThisCell ) 
+			if( SortedC[SortedCListi[icand]].FileID != lastFileIDinThisCell ) 
 			  { 
 			    /* This candidate has a different file id from the candidates in this cell. */
-			    LAL_CALL( add_int4_data( lalStatus, &(cell[icell].CandID), &(icand) ), lalStatus );
+			    LAL_CALL( add_int4_data( lalStatus, &(cell[icell].CandID), &(SortedCListi[icand]) ), lalStatus );
 			    cell[icell].nCand += 1;
 			  }  
 			else  
@@ -511,12 +538,13 @@ int main(INT4 argc,CHAR *argv[])
 			  LAL_CALL( RePrepareCells(lalStatus, &cell, sizecells, icell), lalStatus);
 			}
 			
-			cell[icell].iFreq = SortedC[icand].iFreq;
-			cell[icell].iDelta = SortedC[icand].iDelta;
-			cell[icell].iAlpha = SortedC[icand].iAlpha;
-			cell[icell].iF1dot = SortedC[icand].iF1dot;
-			cell[icell].CandID->data = icand;
+			cell[icell].iFreq = SortedC[SortedCListi[icand]].iFreq;
+			cell[icell].iDelta = SortedC[SortedCListi[icand]].iDelta;
+			cell[icell].iAlpha = SortedC[SortedCListi[icand]].iAlpha;
+			cell[icell].iF1dot = SortedC[SortedCListi[icand]].iF1dot;
+			cell[icell].CandID->data = SortedCListi[icand];
 			cell[icell].nCand = 1;
+		
 		      } /*  if( SortedC[icand].iFreq  == cell[icell].iFreq  && .. ) */ 
 		    
 		  } /* if ( SortedC[icand].TwoF > PCV.TwoFthr ) */
@@ -528,13 +556,19 @@ int main(INT4 argc,CHAR *argv[])
 	    
 	    /* Get the information in each cell. */
 	    ncell=icell+1; /* number of the cells in which more than or at least one candidate exists. */
+	    /* cellList = (ListForSort *) LALCalloc( ncell, sizeof(ListForSort) ); */
+	    cellListi = (INT4 *) LALCalloc(ncell, sizeof(INT4) );
+
 	    for(icell=0;icell<ncell;icell++) {
 	      LAL_CALL( get_info_of_the_cell( lalStatus, &cell[icell], SortedC), lalStatus);
+	      cellListi[icell] = icell;
 	    }  
+	 
 	    
+
 	    /* -----------------------------------------------------------------------------------------*/      
 	    /* Output results */
-	    LAL_CALL( PrintResult( lalStatus, &PCV, cell, &ncell, SortedC, selectGrid),lalStatus );
+	    LAL_CALL( PrintResult( lalStatus, &PCV, cell, &ncell, SortedC, selectGrid, cellListi),lalStatus );
 	    
 	    
 	    /* clean memory for cells */
@@ -542,10 +576,12 @@ int main(INT4 argc,CHAR *argv[])
 	    LALCheckMemoryLeaks(); 
 	    
 	    selectGrid++;
+	      
 	}
       }
     }
   }
+	    
 
   /* -----------------------------------------------------------------------------------------*/      
   /* Clean-up */
@@ -710,7 +746,7 @@ void RePrepareCells( LALStatus *lalStatus, CellData **cell, const UINT4 CLength 
   @param[in]     ncell     UINT4* Number of the cells
   @param[in]     CList     CandidateList
 */
-void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cell, const INT4 *ncell, CandidateList *CList, const INT4 cellgridnum)
+void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cell, const INT4 *ncell, CandidateList *CList, const INT4 cellgridnum, INT4 CellListi[])
 {
   INT4 icell;
   CHAR fnameSigTime[256]; /* Time variation of 2F of some significant outliers. */
@@ -725,6 +761,7 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
   FILE *fp = NULL, *fpSigTime = NULL, *fpSigCell = NULL, *fpCoiTime = NULL, *fpCoiCell = NULL;
   INT4 *count;
   INT4 nc, nmax,idxmax = 0;
+  INT4 idxmaxcoin = 0;
   REAL4 Sigmax = 0.0;
   
   INITSTATUS( lalStatus, "PrintResult", rcsid );
@@ -743,11 +780,37 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
 
 
   /* ------------------------------------------------------------- */
-  /* First Sort arrays of candidates based on number of candidate. */ 
-  qsort(cell, (size_t) (*ncell), sizeof(CellData), compareNumOfCoincidences);
+  /* 
+     First Sort arrays of candidates based on number of candidate. 
+     old: qsort(cell, (size_t) (*ncell), sizeof(CellData), compareNumOfCoincidences); 
+     improved: qsort(CellListi, *ncell, sizeof(INT4), compareNumOfCoincidencesList); 
+  */
+  
+  /* This is the number of the maximum coincidences. */
+  nmax=-1;
+
+  /* elimininate qsort by: */
+
+  for(icell=0;icell<(*ncell);icell++) {
+    if(nmax <= cell[CellListi[icell]].nCand){
+      
+      if (nmax == cell[CellListi[icell]].nCand){
+	if (cell[idxmaxcoin].significance < cell[CellListi[icell]].significance){
+	  nmax=cell[CellListi[icell]].nCand;
+	  idxmaxcoin=CellListi[icell];
+	}
+      }
+
+      else {
+	nmax=cell[CellListi[icell]].nCand;
+	idxmaxcoin=CellListi[icell];
+      }
+
+    }
+  }
 
 
-  nmax = cell[0].nCand; /* This is the number of the maximum coincidences. */
+ 
 
   if( (count = (INT4 *) LALCalloc( (size_t) (nmax + 1), sizeof(INT4))) == NULL ) {
     LALPrintError("Could not allocate Memory! \n");
@@ -774,11 +837,11 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
 
   /* number counts and find the most significant event. */
   for(icell=0;icell<(*ncell);icell++) {
-    nc=cell[icell].nCand;
+    nc=cell[CellListi[icell]].nCand;
     count[nc] += 1;
-    if( Sigmax < cell[icell].significance) {
-      Sigmax = cell[icell].significance;
-      idxmax = icell;
+    if( Sigmax < cell[CellListi[icell]].significance) {
+      Sigmax = cell[CellListi[icell]].significance;
+      idxmax = CellListi[icell];
     }
   }
 
@@ -791,9 +854,8 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
     TRY( print_info_of_the_cell( lalStatus->statusPtr, stderr, cell, idxmax,idxmax+1,0,0), lalStatus);
     fprintf(stderr,"%% Most coincident cell  : freq [Hz]\tdec [rad]\tra [rad]  \tF1dot \t\t   #[events]\tSig" "\n");
     fprintf(stderr, "%%\t\t\t     ");
-    TRY( print_info_of_the_cell( lalStatus->statusPtr, stderr, cell, 0,1,0,0), lalStatus);
+    TRY( print_info_of_the_cell( lalStatus->statusPtr, stderr, cell, idxmaxcoin,idxmaxcoin+1,0,0), lalStatus);
 
-    nmax = cell[0].nCand;
     fprintf(stderr,"%% # of coincidences: \n");
     for(nc=0;nc<=nmax;nc++) {
       fprintf(stderr,"%7d",nc);
@@ -806,14 +868,14 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
     }
     
     fprintf(stderr,"\n%%\n%% Candidates of most coincident cell : \n%% freq [Hz]\tdec [rad]\tra [rad]  \tF1dot[Hz/s]\t\t2F" "\n");
-    TRY( print_cand_of_most_coin_cell( lalStatus->statusPtr, &cell[0], CList), lalStatus);
+    TRY( print_cand_of_most_coin_cell( lalStatus->statusPtr, &cell[idxmaxcoin], CList), lalStatus);
 
   
   }
   LALFree( count );
 
  
-  if( CLA->AutoOut || cell[0].nCand >= CLA->Nthr ) 
+  if( CLA->AutoOut || cell[idxmaxcoin].nCand >= CLA->Nthr ) 
     {
       if( (fpCoiCell = fopen(fnameCoiCell,"w")) == NULL || (fpCoiTime = fopen(fnameCoiTime,"w")) == NULL )
 	{ 
@@ -839,10 +901,10 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
 
       /* Output the info of the most coincident event. */
       /* Information of the cell. */
-      print_info_of_the_cell( lalStatus->statusPtr, fpCoiCell, cell, 0,1,0,0);
+      print_info_of_the_cell( lalStatus->statusPtr, fpCoiCell, cell, idxmaxcoin,idxmaxcoin+1,0,0);
       BEGINFAIL(lalStatus) {fclose(fpCoiCell);} ENDFAIL(lalStatus);
       /* Print F stat from each file contributed to this cell. */
-      print_Fstat_of_the_cell( lalStatus->statusPtr, fpCoiTime, cell, CList, 0,1,0,0 );
+      print_Fstat_of_the_cell( lalStatus->statusPtr, fpCoiTime, cell, CList,  idxmaxcoin,idxmaxcoin+1,0,0 );
       BEGINFAIL(lalStatus) {fclose(fpCoiTime);} ENDFAIL(lalStatus);
     
       /* Output the info of the most significant event. */
@@ -858,7 +920,7 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
   else 
     {
       /* output only on outliers larger than Nthr on number of coincidences and Sthr on significance.*/
-      if( cell[0].nCand >= CLA->Nthr ) 
+      if( cell[CellListi[0]].nCand >= CLA->Nthr ) 
 	{
 	  
 	  /* Information of the cell. */
@@ -889,7 +951,7 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
     } /* else of if( CLA->AutoOut ) */
 
 
-  if( CLA->AutoOut || cell[0].nCand >= CLA->Nthr ) {
+  if( CLA->AutoOut || cell[idxmaxcoin].nCand >= CLA->Nthr ) {
     fclose(fpCoiTime);
     fclose(fpCoiCell);
   }
@@ -903,7 +965,12 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
 
   /* ------------------------------------------------------------- */
   /* Output the maximum coincident event over each frequency cell and over all the sky. */
-  qsort(cell, (size_t) (*ncell), sizeof(CellData), compareFrequencyCell);
+#if 0
+  qsort(CellListi, *ncell, sizeof(INT4), compareFrequencyCellList);
+#endif 
+  /* faster sorting. */
+  sortFreqCells2(CellListi, 0, (*ncell) );
+
 
   
   {
@@ -917,11 +984,11 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
     }
 
     for( icell=0; icell<(*ncell); icell++ ) {
-      if( cell[icell].iFreq != prev_iFreq ) {
-	print_info_of_the_cell( lalStatus->statusPtr, fp, cell, icell, icell+1, 0, 0);
+      if( cell[CellListi[icell]].iFreq != prev_iFreq ) {
+	print_info_of_the_cell( lalStatus->statusPtr, fp, cell, CellListi[icell], CellListi[icell]+1, 0, 0);
 	BEGINFAIL(lalStatus) {fclose(fp);} ENDFAIL(lalStatus);
       }
-      prev_iFreq = cell[icell].iFreq;
+      prev_iFreq = cell[CellListi[icell]].iFreq;
     }
     fclose(fp);
   }
@@ -1323,7 +1390,7 @@ void print_Fstat_of_the_cell( LALStatus *lalStatus,
 
   @param[in] a CellData* to be compared. 
   @param[in] b CellData* to be compared. 
-  @return If a<b, return 1, if a==b return 0, otherwise return 1. 
+  @return If a<b, return -1, if a==b return 0, otherwise return 1. 
 */
 int compareCandidates(const void *a, const void *b)
 {
@@ -1358,6 +1425,46 @@ int compareCandidates(const void *a, const void *b)
 
 /* ########################################################################################## */
 /*!
+  Sorting function to sort cell indices in the INCREASING order of f, delta, alpha, FileID and 
+  DECREASING ORDER OF a significance.
+
+  @param[in] a CellData* to be compared. 
+  @param[in] b CellData* to be compared. 
+  @return If a<b, return -1, if a==b return 0, otherwise return 1. 
+*/
+
+static inline int compareCandidatesList(const void *a, const void *b)
+{
+  const INT4 *ip = a;
+  const INT4 *jp = b;
+
+  if (SortedC[*ip].iFreq<SortedC[*jp].iFreq) return -1;
+  if (SortedC[*ip].iFreq>SortedC[*jp].iFreq) return 1;
+
+  if (SortedC[*ip].iDelta<SortedC[*jp].iDelta) return -1;
+  if (SortedC[*ip].iDelta>SortedC[*jp].iDelta) return 1;
+
+  if (SortedC[*ip].iAlpha<SortedC[*jp].iAlpha) return -1;
+  if (SortedC[*ip].iAlpha>SortedC[*jp].iAlpha) return 1;
+
+  if (SortedC[*ip].iF1dot<SortedC[*jp].iF1dot) return -1;
+  if (SortedC[*ip].iF1dot>SortedC[*jp].iF1dot) return 1;
+
+  if (SortedC[*ip].FileID<SortedC[*jp].FileID) return -1;
+  if (SortedC[*ip].FileID>SortedC[*jp].FileID) return 1;
+
+/* I put jp and ip inversely, because I would like to get decreasingly-ordered set. */ 
+  if (SortedC[*jp].TwoF<SortedC[*ip].TwoF) return -1;
+  if (SortedC[*jp].TwoF>SortedC[*ip].TwoF) return 1;
+
+  return 0;
+} /* int compareCandidatesList() */
+
+
+
+
+/* ########################################################################################## */
+/*!
   Sorting function to sort cells indices in the INCREASING order of a frequency index, and 
   the DECREASING ORDER OF a number of events in a cell.
 
@@ -1371,7 +1478,7 @@ int compareCandidates(const void *a, const void *b)
 
   @param[in] a CellData* to be compared. 
   @param[in] b CellData* to be compared. 
-  @return If a<b, return 1, if a==b return 0, otherwise return 1. 
+  @return If a<b, return -1, if a==b return 0, otherwise return 1. 
 */
 int compareFrequencyCell(const void *a, const void *b)
 {
@@ -1390,8 +1497,46 @@ int compareFrequencyCell(const void *a, const void *b)
   res = compareINT4arrays( ap,  bp, 2);
 
   return res;
-} /* int compareSignificances() */
+} /* int compareFrequecyCell() */
 
+
+
+/* ########################################################################################## */
+/*!
+  Sorting function to sort cells indices in the INCREASING order of a frequency index, and 
+  the DECREASING ORDER OF a number of events in a cell.
+
+  Compare two cells in terms of a frequency index.
+  If those are the same, then compare them in terms of a number of candidates.
+  If we use qsort, we will have cells ordered as 
+  cell[0], cell[1], ....
+  where cell[0] has a smaller frequency index (or if it is equal to that of cell[1]
+  then a larger number of the candidate events) than that of cell[1].
+
+
+  @param[in] a CellData* to be compared. 
+  @param[in] b CellData* to be compared. 
+  @return If a<b, return -1, if a==b return 0, otherwise return 1. 
+*/
+static inline compareFrequencyCellList(const void *a, const void *b)
+{
+  const INT4 *ip = a;
+  const INT4 *jp = b;
+
+  if (cell[*ip].iFreq<cell[*jp].iFreq) return -1;
+  if (cell[*ip].iFreq>cell[*jp].iFreq) return 1;
+
+  /* I put jp and ip inversely, because I would like to get decreasingly-ordered set. */ 
+  if (cell[*jp].nCand<cell[*ip].nCand) return -1;
+  if (cell[*jp].nCand>cell[*ip].nCand) return 1;
+
+  /* I put jp and ip inversely, because I would like to get decreasingly-ordered set. */ 
+  if (cell[*jp].significance<cell[*ip].significance) return -1;
+  if (cell[*jp].significance>cell[*ip].significance) return 1;
+
+  return 0;
+
+} 
 
 
 
@@ -1410,7 +1555,7 @@ int compareFrequencyCell(const void *a, const void *b)
 
   @param[in] a CellData* to be compared. 
   @param[in] b CellData* to be compared. 
-  @return If a<b, return 1, if a==b return 0, otherwise return 1. 
+  @return If a<b, return -1, if a==b return 0, otherwise return 1. 
 */
 int compareSignificances(const void *a, const void *b)
 {
@@ -1451,7 +1596,7 @@ int compareSignificances(const void *a, const void *b)
 
   @param[in] a CellData* to be compared
   @param[in] b CellData* to be compared
-  @return If a<b, return 1, if a==b return 0, otherwise return 1. 
+  @return If a<b, return -1, if a==b return 0, otherwise return 1. 
 */
 int compareNumOfCoincidences(const void *a, const void *b)
 {
@@ -1465,6 +1610,7 @@ int compareNumOfCoincidences(const void *a, const void *b)
   n2=jp->nCand;
   /* I put n1 and n2 inversely, because I would like to get decreasingly-ordered set. */ 
   res = compareINT4arrays( &n2,  &n1, 1);
+
   if( res == 0 ) {
     REAL8 F1, F2;
     F1=ip->significance;
@@ -1475,6 +1621,75 @@ int compareNumOfCoincidences(const void *a, const void *b)
 
   return res;
 } /* int compareNumOfCoincidences() */
+
+
+
+/* ########################################################################################## */
+/*!
+  Sorting function to sort cells indices in the 
+  DECREASING ORDER OF a number of candidate events and a significance in cells.
+
+  Compare two cells in terms of the number of the events in the cells. 
+  If those are the same, then compare them in terms of the significance.
+  If we use qsort, we will have cells ordered as 
+  cell[0], cell[1], ....
+  where cell[0] has a largher number of the candidate events (or if it is equal to that of cell[1]
+  then a larger significane) than that of cell[1].
+
+  @param[in] a CellData* to be compared
+  @param[in] b CellData* to be compared
+  @return If a<b, return -1, if a==b return 0, otherwise return 1. 
+*/
+
+
+static inline int compareNumOfCoincidencesList(const void *a, const void *b)
+{
+  const INT4 *ip = a;
+  const INT4 *jp = b;
+
+  int res;
+  INT4 n1, n2;
+
+  n1=cell[*ip].nCand;
+  n2=cell[*jp].nCand;
+  /* I put n1 and n2 inversely, because I would like to get decreasingly-ordered set. */ 
+  /*  res = compareINT4arrays( &n2,  &n1, 1); */
+
+  if( n2 == n1 ) { 
+    res=0;
+  }
+  else {
+    if ( n2 < n1 ) 
+      res=-1;    
+    else
+      res=1;
+  }
+
+  if( res == 0 ) {
+    REAL8 F1, F2;
+    F1=cell[*ip].significance;
+    F2=cell[*jp].significance;
+    /* I put F1 and F2 inversely, because I would like to get decreasingly-ordered set. */ 
+    /* res = compareREAL8arrays( &F2,  &F1, 1); */
+
+    if( F2 == F1 ) { 
+      res=0;
+    }
+    else {
+      if ( F2 < F1 ) 
+	res=-1;    
+      else
+	res=1;
+    } 
+  }
+  return res;
+} /* int compareNumOfCoincidencesList() */
+
+
+
+
+
+/* ############################################################################### */
 
 
 /*!
@@ -1490,8 +1705,7 @@ int compareNumOfCoincidences(const void *a, const void *b)
   @param[in] n  Size of the array
   @return If ap<bp, return -1, if ap==bp return 0, otherwise return 1. 
 */
-int 
-compareREAL8arrays(const REAL8 *ap, const REAL8 *bp, size_t n) 
+int compareREAL8arrays(const REAL8 *ap, const REAL8 *bp, size_t n) 
 {
   if( (*ap) == (*bp) ) { 
     if ( n > 1 ){  
@@ -1520,8 +1734,7 @@ compareREAL8arrays(const REAL8 *ap, const REAL8 *bp, size_t n)
   @param[in] n  Size of the array
   @return If ap<bp, return -1, if ap==bp return 0, otherwise return 1. 
 */
-int 
-compareINT4arrays(const INT4 *ap, const INT4 *bp, size_t n) 
+int compareINT4arrays(const INT4 *ap, const INT4 *bp, size_t n) 
 {
   if( (*ap) == (*bp) ) { 
     if ( n > 1 ){  
@@ -2832,3 +3045,195 @@ ReadCommandLineArgs( LALStatus *lalStatus,
   DETATCHSTATUSPTR (lalStatus);
   RETURN (lalStatus);
 } /* void ReadCommandLineArgs()  */
+
+
+
+
+
+/* ################################################################### */
+/*
+  Bruce's  sorting function to replace qsort. 
+*/
+
+void sortCandidates(INT4 *data, INT4 N)
+{
+  INT4 i, j, z;
+  INT4 v, t;
+  
+  if(N<=1) return;
+  
+  /* 
+     Partition elements
+     BRUCE: first swap data[0] and data[rand(0,N-1)]
+  */
+  z=(INT4) ((N-1) * (rand() / (RAND_MAX+1.0)));
+  t = data[0]; 
+  data[0] = data[z]; 
+  data[z] = t;
+
+
+  v = data[0];
+  i = 0;
+  j = N;
+
+  for(;;)
+  {
+    while(compareCandidatesList(&v, &data[++i]) && (i < N) ) { }  /*  BRUCE: replace data[]<v with compare function */
+    while(compareCandidatesList(&data[--j], &v) ) { }   /* BRUCE: replace data[]>v with compare function */
+    if(i >= j) break;
+    t = data[i]; 
+    data[i] = data[j]; 
+    data[j] = t;
+  }
+
+  t = data[i-1]; 
+  data[i-1] = data[0]; 
+  data[0] = t;
+  
+ 
+  sortCandidates(data, i-1);
+  sortCandidates(data+i, N-i);
+}
+
+
+/* ################################################################### */
+
+
+
+/* ################################################################### */
+/*
+  Holger's sorting function to replace qsort. 
+*/
+
+void sortCandidates2(INT4 *data, INT4 left, INT4 right)
+{
+  INT4 i, last, t;
+  
+  if(left>=right) 
+    return;
+
+  /* swap (left) and (left+right)/2  */
+  t =  data[(INT4) floor((left+right)/2)]; 
+  data[(INT4) floor((left+right)/2)] = data[left]; 
+  data[left] = t;
+
+  last=left;
+
+  for(i = left + 1; i <= right; i++)
+  {
+    /* if(compareCandidatesList(&data[i], &data[left]) < 0) { */
+
+    if(SortedC[data[i]].iFreq < SortedC[data[left]].iFreq) {  
+      last++;
+      t =  data[last]; 
+      data[last] = data[i]; 
+      data[i] = t;
+    }
+    else if (SortedC[data[i]].iFreq == SortedC[data[left]].iFreq) {
+      if (SortedC[data[i]].iDelta < SortedC[data[left]].iDelta) {
+	last++;
+	t =  data[last]; 
+	data[last] = data[i]; 
+	data[i] = t;
+      }
+      else if (SortedC[data[i]].iDelta == SortedC[data[left]].iDelta) {
+	if (SortedC[data[i]].iAlpha < SortedC[data[left]].iAlpha) {
+	  last++;
+	  t =  data[last]; 
+	  data[last] = data[i]; 
+	  data[i] = t;
+	}
+	else if (SortedC[data[i]].iAlpha == SortedC[data[left]].iAlpha) {
+	  if (SortedC[data[i]].iF1dot < SortedC[data[left]].iF1dot) {
+	    last++;
+	    t =  data[last]; 
+	    data[last] = data[i]; 
+	    data[i] = t;
+	  }
+	  else if (SortedC[data[i]].iF1dot == SortedC[data[left]].iF1dot) {
+	    if (SortedC[data[i]].FileID < SortedC[data[left]].FileID) {
+	      last++;
+	      t =  data[last]; 
+	      data[last] = data[i]; 
+	      data[i] = t;
+	    }
+	    else if (SortedC[data[i]].FileID == SortedC[data[left]].FileID) {
+	      if (SortedC[data[i]].TwoF > SortedC[data[left]].TwoF) {
+		last++;
+		t =  data[last]; 
+		data[last] = data[i]; 
+		data[i] = t;
+	      }
+	    }
+	  }
+	}
+      }
+    }
+  }
+
+  t = data[left]; 
+  data[left] = data[last]; 
+  data[last] = t;
+
+  sortCandidates2(data, left, last-1);
+  sortCandidates2(data, last+1, right);
+}
+
+
+/* ################################################################### */
+
+/* ################################################################### */
+/*
+  Holger's sorting function to replace qsort. 
+*/
+
+void sortFreqCells2(INT4 *data, INT4 left, INT4 right)
+{
+  INT4 i, last, t;
+  
+  if(left>=right) 
+    return;
+
+  /* swap (left) and (left+right)/2  */
+  t =  data[(INT4) floor((left+right)/2)]; 
+  data[(INT4) floor((left+right)/2)] = data[left]; 
+  data[left] = t;
+
+  last=left;
+
+  for(i = left + 1; i <= right; i++)
+  {
+    if(cell[data[i]].iFreq < cell[data[left]].iFreq)  {
+      last++;
+      t =  data[last]; 
+      data[last] = data[i]; 
+      data[i] = t;
+    }
+    else if (cell[data[i]].iFreq == cell[data[left]].iFreq) {
+      if(cell[data[i]].nCand > cell[data[left]].nCand)  {
+	last++;
+	t =  data[last]; 
+	data[last] = data[i]; 
+	data[i] = t;
+      }
+      else if (cell[data[i]].nCand == cell[data[left]].nCand) {
+	 if (cell[data[i]].significance > cell[data[left]].significance)  {
+	   last++;
+	   t =  data[last]; 
+	   data[last] = data[i]; 
+	   data[i] = t;
+	 }
+      }
+    }
+  } 
+
+  t = data[left]; 
+  data[left] = data[last]; 
+  data[last] = t;
+
+  sortFreqCells2(data, left, last-1);
+  sortFreqCells2(data, last+1, right);
+}
+
+
+/* ################################################################### */
