@@ -307,43 +307,58 @@ class candidateList:
         input_fp=open(inputFilename,'r')
         content=input_fp.readlines()
         input_fp.close()
+        if content.__len__() < 1:
+            print "Error no lines in file?"
+            print "Check :",inputFilename
+            os.abort()
         self.totalCount=int(list(content[0].split(':'))[1])
         self.filename=[inputFilename]
-        while content[0].__contains__('#'):
-            content.pop(0)
-        #Check for trailing empty lines
-        reverseIndex=range(0,int(content.__len__()))
-        reverseIndex.reverse()
-        for index in reverseIndex:
+        #Check for comment lines -> #Comment
+        index2pop=[]
+        for index in range(0,int(content.__len__())):
+            if content[index].startswith('#'):
+                index2pop.append(index)
+        index2pop.reverse()
+        for index in index2pop:
+            content.pop(index)
+        #Check for empty lines
+        index2pop=[]
+        for index in range(0,int(content.__len__())):
             if content[index].startswith('\n'):
-                content.pop(index)
-                #Simple file parity check
-        if int(content.__len__()).__mod__(2) != 0:
-            print 'Error parsing :',self.filename," Number of lines :",content.__len__()
+                index2pop.append(index)
+        index2pop.reverse()
+        for index in index2pop:
+            content.pop(index)
+        #Simple file parity check
+        if ((int(content.__len__()).__mod__(2) != 0)):
+            print 'Error parsing :',self.filename," Number of data lines :",content.__len__()
             os.abort()
-        walkIndex=0
-        while walkIndex < content.__len__():
-            entry=[]
-            entryHeader=[]
-            entryElement=[]
-            entryElementTXT=[]
-            entryHeader=str(list(content[walkIndex].split(':'))[1]).split(',')
-            self.curves.append(kurve(entryHeader[0],entryHeader[1],\
-                                     entryHeader[2]))
-            walkIndex=walkIndex.__add__(1)
-            entryElementTXT=str(content[walkIndex].replace(';',',')).split(':')
-            walkIndex=walkIndex.__add__(1)
-            entryList=[]
-            #Parse the text line with our delimiters which designate
-            #pixels in the curve appending them to the curve object
-            for coord in entryElementTXT:
-                tmpElement=str(coord).split(',')
-                self.curves[self.curves.__len__()-1].appendPixel(\
-                    int(tmpElement[0]),int(tmpElement[1]),\
-                    gpsInt(tmpElement[2],tmpElement[3]),\
-                    float(tmpElement[4]),float(tmpElement[5]))
-            #Determine the bin widths in this structure
-            self.findBinWidths()
+        if (content.__len__ > 0):
+             walkIndex=0
+             while walkIndex < content.__len__():
+                 entry=[]
+                 entryHeader=[]
+                 entryElement=[]
+                 entryElementTXT=[]
+                 entryHeader=str(list(content[walkIndex].split(':'))[1]).split(',')
+                 self.curves.append(kurve(entryHeader[0],entryHeader[1],\
+                                          entryHeader[2]))
+                 walkIndex=walkIndex.__add__(1)
+                 entryElementTXT=str(content[walkIndex].replace(';',',')).split(':')
+                 walkIndex=walkIndex.__add__(1)
+                 entryList=[]
+                 #Parse the text line with our delimiters which designate
+                 #pixels in the curve appending them to the curve object
+                 for coord in entryElementTXT:
+                     tmpElement=str(coord).split(',')
+                     self.curves[self.curves.__len__()-1].appendPixel(\
+                         int(tmpElement[0]),int(tmpElement[1]),\
+                         gpsInt(tmpElement[2],tmpElement[3]),\
+                         float(tmpElement[4]),float(tmpElement[5]))
+                      #Determine the bin widths in this structure
+                 self.findBinWidths()
+        else:
+            print "No candidate entries found in:",self.filename
     #End loadfile method
 
     def writefile(self,outputFilename):
@@ -417,7 +432,10 @@ class candidateList:
                 AddMe=float(TDArrayFreq[i][1])-float(TDArrayFreq[i-1][1])
                 freqSum=freqSum.__add__(AddMe)
                 freqSumCount=freqSumCount+1
-        avgFreqWidth=freqSum.__div__(freqSumCount)
+        if freqSumCount != 0:
+            avgFreqWidth=freqSum.__div__(freqSumCount)
+        else:
+            avgFreqWidth=0
         gpsSum=gpsInt(0,0)
         gpsSumCount=0
         for i in range(1,TDArrayGPS.__len__()):
@@ -425,7 +443,10 @@ class candidateList:
                 AddMe=TDArrayGPS[i][1].__sub__(TDArrayGPS[i-1][1])
                 gpsSum=gpsSum.__add__(AddMe)
                 gpsSumCount=gpsSumCount+1
-        avgGpsWidth=gpsSum.__div__(gpsSumCount)
+        if gpsSumCount != 0:
+            avgGpsWidth=gpsSum.__div__(gpsSumCount)
+        else:
+            avgGpsWidth=gpsInt(0,0)
 
         self.freqWidth=float(avgFreqWidth)
         self.gpsWidth=avgGpsWidth
@@ -440,18 +461,28 @@ class candidateList:
         globList=copy.deepcopy(self)
         globTolerance=1e-5
         gpsDiff=self.gpsWidth.__sub__(iCL.gpsWidth)
-        if ((\
-            float((self.freqWidth-iCL.freqWidth)).__abs__() < globTolerance\
-            )
-        and 
-            (\
-            float(gpsDiff.display()).__abs__() < globTolerance)\
-            ):
+        if ((float((self.freqWidth-iCL.freqWidth)).__abs__() < globTolerance)\
+           and \
+           (float(gpsDiff.display()).__abs__() < globTolerance)):
             globList.totalCount=self.totalCount.__add__(iCL.totalCount)
             globList.filename.extend(iCL.filename)
             globList.curves.extend(iCL.curves)
             return globList
-        else:
+        elif ((self.freqWidth==0) or (int(self.gpsWidth.__makeInt__())==0)):
+            globList.freqWidth=self.freqWidth
+            globList.gpsWidth=self.gpsWidth
+            globList.totalCount=self.totalCount.__add__(iCL.totalCount)
+            globList.filename.extend(iCL.filename)
+            globList.curves.extend(iCL.curves)
+            return globList
+        elif ((iCL.freqWidth==0) or (int(iCL.gpsWidth.__makeInt__())==0)):
+            globList.freqWidth=iCL.freqWidth
+            globList.gpsWidth=iCL.gpsWidth
+            globList.totalCount=self.totalCount.__add__(iCL.totalCount)
+            globList.filename.extend(iCL.filename)
+            globList.curves.extend(iCL.curves)
+            return globList
+        else :
             print "Can not glob lists, due to inconsistent values!"
             print self.freqWidth,'VS',iCL.freqWidth
             print self.gpsWidth.display(),'VS',iCL.gpsWidth.display()
@@ -734,32 +765,40 @@ def generateFileList(inputTXT):
     3) a path
     then we create a list object of files to process
     """
+    print "generating file list for :",str(inputTXT)
     absPathFilename=os.path.abspath(inputTXT)
-    if absPathFilename.__contains__('*'):
+    objList=[]
+    dirnameFilename=str(absPathFilename)
+    basenameFilename=''
+    extensionFilename=''
+    if absPathFilename.__contains__("*"):
         dirnameFilename=os.path.dirname(absPathFilename)
         basenameFilename=os.path.basename(absPathFilename)
         extensionFilename=str(str(basenameFilename).split('.')[1])
-    elif os.path.isdir(absPathFilename):
+        print "Found wildcard splitting path into:"
+    if os.path.isdir(dirnameFilename):
         #Create the listing of files to process
         objList=[]
         fileList=[]
-        fileList=os.listdir(absPathFilename)
+        fileList=os.listdir(dirnameFilename)
         for entry in fileList:
-            if absPathFilename.__contains__('*'):
-                if ((str(entry).__contains__(extensionFilename))):
-                    objList.append(str(absPathFilename)+'/'++entry)
-            else:
-                objList.append(str(absPathFilename)+'/'+entry)
-    elif os.path.isfile(absPathFilename):
+            if (extensionFilename != '') and (str(entry).__contains__(extensionFilename)):
+                objList.append(dirnameFilename+'/'+entry)
+            elif (extensionFilename == ''):
+                objList.append(entry)
+    elif os.path.isfile(dirnameFilename):
             #Read this list in from the file
+            #Could possibly be just the name of single candidate file!
             objList=[]
-            objList=file(open(filename,'r')).readlines()
-            #Directory / should not be in candidate files!
-            if str(objList[0]).__contains__('/'):
+            fp=open(dirnameFilename,'r')
+            objList=fp.readlines()
+            fp.close()
+            if str(objList[0]).__contains__('#'):
                 #This is a single candidate file specified
-                objList=absPathFilename
+                objList=[dirnameFilename]
     else:
-        print "Error with getting candidte information files!"
+        print "Error with getting candidate information from: ",absPathFilename
         os.abort()
+    print "file list entries found :",objList.__len__()
     return objList
 #End generateFileList method

@@ -59,9 +59,10 @@ canList=[]
 canList=generateFileList(filename)
 
 #What are we doing with it?
-if (glob and (canList.__len__() > 1)):
+if (glob and (canList.__len__() >= 1)):
     canObjects=[]
     for entry in canList:
+        print "Loading candidate list file: ",entry
         tmpCandidate=candidateList()
         tmpCandidate.loadfile(entry)
         canObjects.append(tmpCandidate)
@@ -78,7 +79,7 @@ elif (clobberFilename != '') and (canList.__len__() == 1):
     #Load file(s) to clobber with
     clobberList=generateFileList(clobberFilename)
     #If there is more than one file we need to glob them first
-    tmpObjClobber=candidateList()
+    tmpObjClobber=[]
     for entry in clobberList:
         object=candidateList()
         object.loadfile(entry)
@@ -91,7 +92,7 @@ elif (clobberFilename != '') and (canList.__len__() == 1):
     clobberVictim=candidateList()
     clobberVictim.loadfile(canList[0])
     #Clobber the Victim
-    newClobberedList=clobberVictim.clusterCheckAgainst(newCandidateClobberObject)
+    newClobberedList=clobberVictim.clusterClobberWith(newCandidateClobberObject)
     #Write the results to the disk!
     if outfile != "":
         newClobberedList.writefile(outfile)

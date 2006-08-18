@@ -694,7 +694,7 @@ class tracksearch:
         prevJobList=[]
         for i in range(1,layerID):
             tracksearchCluster_node=tracksearchClusterNode(tracksearchCluster_job)
-            layer2work=determineLayerPath(self.cp,self.blockID,i)
+            layer2work=determineLayerPath(self.cp,self.blockID,i)+"*.candidates"
             globFilename="Glob:"+str(self.blockID)+"_"+str(i)+".candidates"
             tracksearchCluster_node.add_var_opt('file',layer2work)
             tracksearchCluster_node.add_var_opt('outfile',globFilename)
@@ -712,8 +712,9 @@ class tracksearch:
         tracksearchCluster_job.add_condor_cmd('initialdir',tracksearchCluster_job.initialDir)
         for i in range(1,layerID-1):
             tracksearchCluster_node2=tracksearchClusterNode(tracksearchCluster_job2)
-            file2clobber="Glob:"+str(self.blockID)+"_"+str(i)+".candidates"
-            clobberWith="Glob:"+str(self.blockID)+"_"+str(i+1)+".candidates"
+            DLP=tracksearchCluster_job2.initialDir
+            file2clobber=DLP+"Glob:"+str(self.blockID)+"_"+str(i)+".candidates"
+            clobberWith=DLP+"Glob:"+str(self.blockID)+"_"+str(i+1)+".candidates"
             clobFilename="Clob:"+str(self.blockID)+"_"+str(i)+"_"+str(i+1)+".candidates"
             tracksearchCluster_node2.add_var_opt('file',file2clobber)
             tracksearchCluster_node2.add_var_opt('outfile',clobFilename)
