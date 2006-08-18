@@ -107,7 +107,7 @@ typedef struct CandidateListTag
   REAL8 Delta;       /*  declination  of the candidate */
   REAL8 F1dot;       /*  spindown (d/dt f) of the candidate */
   REAL8 TwoF;        /*  Maximum value of F for the cluster */
-  INT2 FileID;       /*  File ID to specify from which file the candidate under consideration originally came. */
+  INT4 FileID;       /*  File ID to specify from which file the candidate under consideration originally came. */
   INT4 DataStretch;
   CHAR resultfname[256];  /*  Name of the particular result file where values originally came from. */
 } CandidateList;     
@@ -182,8 +182,8 @@ int main(INT4 argc,CHAR *argv[])
   /* Compute shifting of frequency parameters */
   LAL_CALL( ComputeFiducialTimeFrequency( lalStatus, &FTCV, AllmyC, CLength),lalStatus );
  
-  /* sort arrays of candidates */
-  qsort(AllmyC, (size_t)CLength, sizeof(CandidateList), compareCandidates);
+  /* sort arrays of candidates, not needed anymore! */
+  /* qsort(AllmyC, (size_t)CLength, sizeof(CandidateList), compareCandidates);*/
 
   /* -----------------------------------------------------------------------------------------*/      
   /* Output result file */
@@ -770,7 +770,7 @@ void ReadCommandLineArgs( LALStatus *lalStatus,
   LALregSTRINGUserVar(lalStatus,     OutputData,     'o', UVAR_OPTIONAL, "Ouput file name");
   LALregSTRINGUserVar(lalStatus,     InputData,      'i', UVAR_OPTIONAL, "Input file name");
   LALregREALUserVar(lalStatus,       ThrTwoF,        't', UVAR_OPTIONAL, "Threshold on values of 2F");
-  LALregINTUserVar(lalStatus,        InNumLines,       'l', UVAR_OPTIONAL, "Number of lines of input");
+  LALregINTUserVar(lalStatus,        InNumLines,     'l', UVAR_OPTIONAL, "Number of lines of input");
 
 
   TRY (LALUserVarReadAllInput(lalStatus->statusPtr,argc,argv),lalStatus); 
