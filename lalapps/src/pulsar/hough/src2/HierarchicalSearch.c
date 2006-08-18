@@ -784,12 +784,12 @@ int main( int argc, char *argv[]) {
      -- these depend on candidates to be followed up */
   if ( uvar_followUp ) 
     {
-      /* allocate memory for Fstat candidates */
-      if ( LALUserVarWasSet(&uvar_fstatThr))
-	create_toplist(&fstatToplist, uvar_reallocBlock); 
-      else
-	create_toplist(&fstatToplist, uvar_nCand2); 
-
+      /*       /\* allocate memory for Fstat candidates *\/ */
+      /*       if ( LALUserVarWasSet(&uvar_fstatThr)) */
+      /* 	create_toplist(&fstatToplist, uvar_reallocBlock);  */
+      /*       else */
+      /* 	create_toplist(&fstatToplist, uvar_nCand2);  */
+      
      /* prepare initialization of DopplerScanner to step through paramter space */
       scanInit2.dAlpha = uvar_dAlpha;
       scanInit2.dDelta = uvar_dDelta;
@@ -1047,13 +1047,13 @@ int main( int argc, char *argv[]) {
       
 
   /* print fstat candidates */  
-  {
-    UINT4 checksum;
-    if ( uvar_followUp ) 
-      if ( write_toplist_to_fp( fstatToplist, fpFstat, &checksum) < 0)
-	 fprintf( stderr, "Error in writing toplist to file\n");
+  /*   { */
+  /*     UINT4 checksum; */
+    /*     if ( uvar_followUp )  */
+      /*       if ( write_toplist_to_fp( fstatToplist, fpFstat, &checksum) < 0) */
+      /* 	 fprintf( stderr, "Error in writing toplist to file\n"); */
     /*    LAL_CALL( AppendFstatCandidates( &status, &fStatCand, fpFstat), &status); */
-  }
+  /*   } */
 	 
   /*------------ free all remaining memory -----------*/
   
@@ -1074,7 +1074,7 @@ int main( int argc, char *argv[]) {
       LALFree(stackMultiDetStates2.data);
            
       if ( fstatToplist ) 
-	free_toplist(&fstatToplist);
+	/* 	free_toplist(&fstatToplist); */
       
       fclose(fpFstat);
       LALFree(fnameFstatCand);
@@ -2225,7 +2225,7 @@ void GetFstatCandidates( LALStatus *status,
   ATTATCHSTATUSPTR (status);
 
   if (list == NULL)
-    create_toplist( &list, blockRealloc); 
+    /* create_toplist( &list, blockRealloc);  */
 
   length = in->data->length;
   deltaF = in->deltaF;
@@ -2295,7 +2295,7 @@ void GetFstatCandidates_toplist( LALStatus *status,
       line.Fstat = in->data->data[k];
       line.Freq = f0 + k*deltaF;
       
-      debug = insert_into_toplist( list, line);
+      /* debug = insert_into_toplist( list, line); */
 
     }
 
