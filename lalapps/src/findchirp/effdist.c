@@ -15,9 +15,9 @@
 
 int main ( int argc, char *argv[])
 {
-    FILE *fpin;
-    int i,nlines=NLINES,j,arg=1,record=0;
-    float f[NLINES],amp[NLINES], dummy, dum1, dum2,df;
+    FILE *fpin = NULL;
+    int i,nlines=NLINES,arg=1,record=0;
+    float f[NLINES],amp[NLINES],dum1, df;
     float m1, m2, eta, mtot, mu, arm_length=1.0;
     float ins_amp,d_optimal;
 
