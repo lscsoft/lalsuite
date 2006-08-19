@@ -207,7 +207,7 @@ void LALHOUGHComputeSizePar (LALStatus  *status, /* demodulated case */
   linErr = in1->linErr;
   
   /* Make sure the parameters make sense */ 
-  ASSERT (pixelFactor > 1, status, LUTH_EVAL, LUTH_MSGEVAL);
+  ASSERT (pixelFactor > 0, status, LUTH_EVAL, LUTH_MSGEVAL);
   ASSERT (pixErr < 1.0, status, LUTH_EVAL, LUTH_MSGEVAL);
   ASSERT (linErr < 1.0, status, LUTH_EVAL, LUTH_MSGEVAL);
   ASSERT (pixErr > 0.0, status, LUTH_EVAL, LUTH_MSGEVAL);
