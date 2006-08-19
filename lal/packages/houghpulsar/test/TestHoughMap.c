@@ -146,7 +146,7 @@ INT4 lalDebugLevel=0;
 #define DELTA 0.0
 #define MWR 1             /*.minWidthRatio */
 #define FILEOUT "OutHough.asc"      /* file output */
-
+#define PIXELFACTOR 2
 /* Usage format string. */
 
 #define USAGE "Usage: %s [-d debuglevel] [-o outfile] [-f f0] [-p alpha delta] [-s patchSizeX patchSizeY]\n"

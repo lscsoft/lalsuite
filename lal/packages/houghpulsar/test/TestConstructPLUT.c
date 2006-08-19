@@ -164,6 +164,8 @@ do {                                                                 \
 char *lalWatch;
 #endif
 
+#define PIXELFACTOR 2
+
 /* the Hough Map derivative pixel type */
 typedef CHAR HoughDT;
 

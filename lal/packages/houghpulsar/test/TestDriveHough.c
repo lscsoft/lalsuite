@@ -138,7 +138,7 @@ INT4 lalDebugLevel=0;
 #define MOBSCOH 10
 #define NFSIZE  5
 #define STEPALPHA 0.005
-
+#define PIXELFACTOR 2
 /* Usage format string. */
 
 #define USAGE "Usage: %s [-d debuglevel] [-o outfile] [-f f0] [-p alpha delta] [-s patchSizeX patchSizeY]\n"
