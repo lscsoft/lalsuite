@@ -55,4 +55,9 @@ fContactWorkSpace * XLALInitFContactWorkSpace(
 
 void XLALFreeFContactWorkSpace( fContactWorkSpace *workSpace );
 
+/* Functions for generating the error matrix and position vectors for triggers */
+gsl_matrix * XLALGetErrorMatrixFromSnglInspiral(SnglInspiralTable *event);
+
+gsl_vector * XLALGetPositionFromSnglInspiral( SnglInspiralTable *table );
+
 #endif
