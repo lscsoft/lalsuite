@@ -316,7 +316,7 @@ void PrepareCells( LALStatus *, CellData **cell, const UINT4 datalen );
 #endif
 
 int compareNumOfCoincidences(const void *a, const void *b);
-extern __inline__ int compareNumOfCoincidencesList(const void *a, const void *b);
+static __inline__ int compareNumOfCoincidencesList(const void *a, const void *b);
 int compareCandidates(const void *ip, const void *jp);
 static __inline__ int compareCandidatesList(const void *a, const void *b);
 int compareSignificances(const void *a, const void *b);
