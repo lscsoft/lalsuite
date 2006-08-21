@@ -19,6 +19,11 @@ INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 
+bin_SCRIPTS = candidateHandler.py tracksearch_pipe.py
+
+pythonlib_SCRIPTS = candidateUtils.py tracksearch.py
+
+pkgdata_DATA = tracksearchPipeline.ini
 
 
 
