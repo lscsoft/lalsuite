@@ -133,9 +133,9 @@ typedef enum
 { 
   no_test,
   m1_and_m2, 
-  psi0_and_psi3, 
+  psi0_and_psi3,  
   mchirp_and_eta, 
-  mchirp_and_eta_ext 
+  mchirp_and_eta_ext,
 } 
 SnglInspiralParameterTest;
 /*</lalVerbatim> */
@@ -746,6 +746,13 @@ LALCreateTwoIFOCoincList(
     CoincInspiralTable        **coincOutput,
     SnglInspiralTable          *snglInput,
     InspiralAccuracyList       *accuracyParams
+    );
+
+void
+LALCreateTwoIFOCoincListEllipsoid(
+    LALStatus                  *status,
+    CoincInspiralTable        **coincOutput,
+    SnglInspiralTable          *snglInput
     );
 
 void
