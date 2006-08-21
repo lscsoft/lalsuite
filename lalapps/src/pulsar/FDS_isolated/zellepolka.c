@@ -311,15 +311,17 @@ void ReadCandidateListFromZipFile (LALStatus *, CandidateList **CList, CHAR *fna
 void RePrepareCells( LALStatus *, CellData **cell, const UINT4 CLength , const UINT4 iposition);
 void PrepareCells( LALStatus *, CellData **cell, const UINT4 datalen );
 
-
+#ifndef __GNUC__
+#define __inline__ inline
+#endif
 
 int compareNumOfCoincidences(const void *a, const void *b);
-static inline int compareNumOfCoincidencesList(const void *a, const void *b);
+extern __inline__ int compareNumOfCoincidencesList(const void *a, const void *b);
 int compareCandidates(const void *ip, const void *jp);
-static inline int compareCandidatesList(const void *a, const void *b);
+static __inline__ int compareCandidatesList(const void *a, const void *b);
 int compareSignificances(const void *a, const void *b);
 int compareFrequencyCell(const void *a, const void *b);
-static inline int compareFrequencyCellList(const void *a, const void *b);
+static __inline__ int compareFrequencyCellList(const void *a, const void *b);
 int compareINT4arrays(const INT4 *idata1, const INT4 *idata2, size_t s); /* compare two INT4 arrays of size s.*/
 int compareREAL8arrays(const REAL8 *rdata1, const REAL8 *rdata2, size_t s); /* compare two REAL8 arrays of size s.*/
 void add_int4_data(LALStatus *, struct int4_linked_list **list_ptr, const INT4 *data);
@@ -1433,7 +1435,7 @@ int compareCandidates(const void *a, const void *b)
   @return If a<b, return -1, if a==b return 0, otherwise return 1. 
 */
 
-static inline int compareCandidatesList(const void *a, const void *b)
+static __inline__ int compareCandidatesList(const void *a, const void *b)
 {
   const INT4 *ip = a;
   const INT4 *jp = b;
@@ -1518,7 +1520,7 @@ int compareFrequencyCell(const void *a, const void *b)
   @param[in] b CellData* to be compared. 
   @return If a<b, return -1, if a==b return 0, otherwise return 1. 
 */
-static inline compareFrequencyCellList(const void *a, const void *b)
+static __inline__ compareFrequencyCellList(const void *a, const void *b)
 {
   const INT4 *ip = a;
   const INT4 *jp = b;
@@ -1642,7 +1644,7 @@ int compareNumOfCoincidences(const void *a, const void *b)
 */
 
 
-static inline int compareNumOfCoincidencesList(const void *a, const void *b)
+static __inline__ int compareNumOfCoincidencesList(const void *a, const void *b)
 {
   const INT4 *ip = a;
   const INT4 *jp = b;
