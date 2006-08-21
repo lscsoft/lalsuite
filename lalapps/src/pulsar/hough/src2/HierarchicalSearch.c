@@ -37,55 +37,59 @@
    Currently the code does a single stage hierarchical search using the Hough
    algorithm and follows up the candidates using a full coherent integration.  
 
-   - The user specifies a directory containing SFTs, and the number of \e stacks 
-     that this must be broken up into.  
-     At present two ways of breaking up the SFTs into stacks are supported. 
-     These are equivalent if there are no gaps in the data. Either the SFTs are 
-     divided up equally among the stacks, or the total time spanned by the data is 
-     broken up equally
+   - The user specifies a directory containing SFTs, and the number of
+     \e stacks that this must be broken up into.  Stacks are chosen by
+     breaking up the total time spanned by the sfts into equal
+     portions, and then choosing the sfts which lie in each stack
+     portion.  The SFTs can be from multiple IFOs.
 
-   - The user specifies a region in parameter space to search over.  The code 
-     sets up a grid (the "coarse" grid) in this region and calculates the F-statistic 
-     for each stack at each point of the coarse grid.  
+   - The user specifies a region in parameter space to search over.
+     The code sets up a grid (the "coarse" grid) in this region and
+     calculates the F-statistic for each stack at each point of the
+     coarse grid, for the entire frequency band.  Alternatively, the
+     user can specify a sky-grid file.
 
-   - A threshold is set on the F-statistic to convert the 
-     F-statistic vector into a vector of 0s and 1s known as a \e peakgram -- there 
-     is one peakgram for each stack and for each grid point.
+   - The different Fstat vactors for each stack are combined using a
+     semi-coherent method such as the Hough transform or stack slide
+     algorithms.
 
-   - The peakgrams are combined using the Hough transform.  
+   - For Hough, a threshold is set on the F-statistic to convert the
+     F-statistic vector into a vector of 0s and 1s known as a \e
+     peakgram -- there is one peakgram for each stack and for each
+     grid point.  These peakgrams are combined using the Hough algorithm. 
 
-   - The Hough part of the search constructs a grid (the "fine" grid) in a small patch 
-     around every coarse grid point, and combines the different stacks
-     following the \e master equation 
-     \f[
-        f(t) - F_0(t) = \xi(t).(\hat{n} - \hat{n}_0)
-     \f]	
+   - For stack-slide, we add the different Fstatistic values to get
+     the summed Fstatistic power.
+
+   - The semi-coherent part of the search constructs a grid (the
+     "fine" grid) in a small patch around every coarse grid point, and
+     combines the different stacks following the \e master equation
+     \f[ f(t) - F_0(t) = \xi(t).(\hat{n} - \hat{n}_0) \f] 
      where 
-     \f[
-        F_0 = f_0 + \sum \Delta  f_k {(\Delta t)^k \over k!}
-     \f]
-     Here \f$ \hat{n}_0 \f$ is the sky-point at which the F-statistic is calculated
-     and \f$ \Delta f_k \f$ is the \e residual spindown parameter.  For details see
-     Phys.Rev.D 70, 082001 (2004).  The size of the patch depends on the validity of
-     the above master equation.  
+     \f[ F_0 = f_0 + \sum \Delta f_k {(\Delta t)^k \over k!}  \f] 
+     Here \f$ \hat{n}_0 \f$ is the sky-point at which the F-statistic is
+     calculated and \f$ \Delta f_k \f$ is the \e residual spindown
+     parameter.  For details see Phys.Rev.D 70, 082001 (2004).  The
+     size of the patch depends on the validity of the above master
+     equation.
 
-   - The output of the Hough search is a \e number \e count at point of the grid. 
-     A threshold is set on the number count, leading to candidates in parameter space.
+   - The output of the Hough search is a \e number \e count at point
+     of the grid.  A threshold is set on the number count, leading to
+     candidates in parameter space.  For stack slide, instead of the
+     number count, we get the summed Fstatistic power.  Alternatively,
+     the user can specify exactly how many candidates should be
+     followed up for each coarse grid point.
 
-   - These candidates are followed up using a second set of SFTs (also specified by
-     the user).  The follow up consists of a full coherent integration, i.e. the F-statistic
-     is calculated for the whole set of SFTs without breaking them up into stacks. 
-     A threshold can be set on the F-statistic to get the final list of candidates.  
+   - These candidates are followed up using a second set of SFTs (also
+     specified by the user).  The follow up consists of a full
+     coherent integration, i.e. the F-statistic is calculated for the
+     whole set of SFTs without breaking them up into stacks.  A
+     threshold can be set on the F-statistic to get the final list of
+     candidates or alternatively (and preferably), the user can choose
+     to output a toplist of candidates.
 
 
-   \par Immediate to-do list
-
-   - The reference time is not yet handled correctly -- ok if it the default, i.e. the start 
-     time of the first SFT but not in general
-
-   - Use average velocity instead of mid-time
-
-   \par Longer term
+   \par Questions/To-do
 
    - Should we over-resolve the Fstat calculation to reduce loss in signal power?  We would
      still calculate the peakgrams at the 1/T resolution, but the peak selection would 
@@ -188,7 +192,7 @@ void PrintStackInfo( LALStatus  *status, const SFTCatalogSequence *catalogSeq, F
 #define NCAND1 5 /**< Default number of candidates to be followed up from first stage */
 #define SFTDIRECTORY "/home/badkri/fakesfts2/H-1_H1*.sft"  /**< Default directory containing sfts */
 #define FNAMEOUT "./out/HS"  /**< Default output file basename */
-#define PIXELFACTOR 2
+#define PIXELFACTOR 2.0
 #define LAL_INT4_MAX 2147483647
 
 int main( int argc, char *argv[]) {
@@ -415,14 +419,14 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar(    &status, "nStacks2",     0,  UVAR_OPTIONAL, "No.of 2nd stage stacks", &uvar_nStacks2 ), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "mismatch1",    0,  UVAR_OPTIONAL, "1st stage mismatch", &uvar_mismatch1), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "mismatch2",    0,  UVAR_OPTIONAL, "2nd stage mismatch", &uvar_mismatch2), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "pixelFactor",  0,  UVAR_OPTIONAL, "Semi coherent sky grid resolution (x thinnest annulus size)", &uvar_pixelFactor), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "semiCohPatchX",0,  UVAR_OPTIONAL, "Semi coherent sky grid size (x usual default)", &uvar_semiCohPatchX), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "semiCohPatchY",0,  UVAR_OPTIONAL, "Semi coherent sky grid size (x usual default)", &uvar_semiCohPatchY), &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "gridType",     0,  UVAR_OPTIONAL, "0=flat,1=isotropic,2=metric,3=file", &uvar_gridType),  &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "metricType",   0,  UVAR_OPTIONAL, "0=none,1=Ptole-analytic,2=Ptole-numeric,3=exact", &uvar_metricType), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyGridFile",  0,  UVAR_OPTIONAL, "sky-grid file", &uvar_skyGridFile), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "dAlpha",       0,  UVAR_OPTIONAL, "Resolution for flat or isotropic grids", &uvar_dAlpha), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "dDelta",       0,  UVAR_OPTIONAL, "Resolution for flat or isotropic grids", &uvar_dDelta), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "pixelFactor",  0,  UVAR_OPTIONAL, "Semi coh. sky resolution = 1/v*pixelFactor*f*Tcoh", &uvar_pixelFactor), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "semiCohPatchX",0,  UVAR_OPTIONAL, "Semi coh. sky grid size (default = 0.5/f*Tcoh*Vepi)", &uvar_semiCohPatchX), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "semiCohPatchY",0,  UVAR_OPTIONAL, "Semi coh. sky grid size (default = 0.5/f*Tcoh*Vepi)", &uvar_semiCohPatchY), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameout",    'o', UVAR_OPTIONAL, "Output basefileneme", &uvar_fnameout), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "peakThrF",     0,  UVAR_OPTIONAL, "Fstat Threshold", &uvar_peakThrF), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "nCand1",       0,  UVAR_OPTIONAL, "No.of 1st stage candidates to be followed up", &uvar_nCand1), &status);
@@ -432,22 +436,22 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterREALUserVar(   &status, "refTime",      0,  UVAR_OPTIONAL, "Ref. time for pulsar pars [start time]", &uvar_refTime), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemDir",     0,  UVAR_OPTIONAL, "Location of ephemeris files", &uvar_ephemDir),  &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemYear",    0,  UVAR_OPTIONAL, "Ephemeris year", &uvar_ephemYear),  &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "minStartTime1",0,  UVAR_OPTIONAL, "1st Min start time of observation", &uvar_minStartTime1), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "maxEndTime1",  0,  UVAR_OPTIONAL, "1st Max end time of observation",   &uvar_maxEndTime1),   &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "minStartTime2",0,  UVAR_OPTIONAL, "2nd Min start time of observation", &uvar_minStartTime2), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "maxEndTime2",   0,  UVAR_OPTIONAL, "2nd Max end time of observation",  &uvar_maxEndTime2),   &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "minStartTime1",0,  UVAR_OPTIONAL, "1st stage min start time of observation", &uvar_minStartTime1), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "maxEndTime1",  0,  UVAR_OPTIONAL, "1st stage max end time of observation",   &uvar_maxEndTime1),   &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "minStartTime2",0,  UVAR_OPTIONAL, "2nd stage min start time of observation", &uvar_minStartTime2), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "maxEndTime2",  0,  UVAR_OPTIONAL, "2nd stage max end time of observation",   &uvar_maxEndTime2),   &status);
 
   /* developer user variables */
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed", 0, UVAR_DEVELOPER, "RngMed block size", &uvar_blocksRngMed), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "fstatThr",     0, UVAR_DEVELOPER, "Fstat threshold (default --nCand2)", &uvar_fstatThr), &status);
-  LAL_CALL( LALRegisterINTUserVar (   &status, "reallocBlock", 0, UVAR_DEVELOPER,"Blocks to realloc for Fstat output if necessary",   &uvar_reallocBlock),    &status);
-  LAL_CALL( LALRegisterINTUserVar (   &status, "SSBprecision", 0, UVAR_DEVELOPER,"Precision for SSB transform.", &uvar_SSBprecision),    &status);
-  LAL_CALL( LALRegisterINTUserVar (   &status, "nfdot",        0, UVAR_DEVELOPER,"No.of residual fdot values to be searched", &uvar_nfdot), &status);
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printMaps",    0, UVAR_DEVELOPER,"Print Hough maps", &uvar_printMaps), &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printStats",   0, UVAR_DEVELOPER,"Print Hough map statistics", &uvar_printStats), &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printFstat1",  0, UVAR_DEVELOPER,"Print 1st stage Fstat vectors", &uvar_printFstat1), &status);  
-  LAL_CALL( LALRegisterINTUserVar(    &status, "Dterms",       0, UVAR_DEVELOPER,"No.of terms to keep in Dirichlet Kernel", &uvar_Dterms ), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "dopplerMax",   0, UVAR_DEVELOPER,"Max Doppler shift",  &uvar_dopplerMax), &status);
+  LAL_CALL( LALRegisterINTUserVar (   &status, "reallocBlock", 0, UVAR_DEVELOPER, "Blocks to realloc for Fstat output if necessary",   &uvar_reallocBlock),    &status);
+  LAL_CALL( LALRegisterINTUserVar (   &status, "SSBprecision", 0, UVAR_DEVELOPER, "Precision for SSB transform.", &uvar_SSBprecision),    &status);
+  LAL_CALL( LALRegisterINTUserVar (   &status, "nfdot",        0, UVAR_DEVELOPER, "No.of residual fdot values to be searched", &uvar_nfdot), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printMaps",    0, UVAR_DEVELOPER, "Print Hough maps", &uvar_printMaps), &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printStats",   0, UVAR_DEVELOPER, "Print Hough map statistics", &uvar_printStats), &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printFstat1",  0, UVAR_DEVELOPER, "Print 1st stage Fstat vectors", &uvar_printFstat1), &status);  
+  LAL_CALL( LALRegisterINTUserVar(    &status, "Dterms",       0, UVAR_DEVELOPER, "No.of terms to keep in Dirichlet Kernel", &uvar_Dterms ), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "dopplerMax",   0, UVAR_DEVELOPER, "Max Doppler shift",  &uvar_dopplerMax), &status);
 
 
   /* read all command line variables */
@@ -647,7 +651,8 @@ int main( int argc, char *argv[]) {
     usefulParams1.refTime = uvar_refTime;
   else 
     usefulParams1.refTime = -1;
-  
+
+  /* for 1st stage: read sfts, calculate multi-noise weights and detector states */  
   LAL_CALL( SetUpSFTs( &status, &stackMultiSFT1, &stackMultiNoiseWeights1, 
 		       &stackMultiDetStates1, &usefulParams1), &status);
 
@@ -716,6 +721,7 @@ int main( int argc, char *argv[]) {
     else 
       usefulParams2.refTime = -1;
     
+  /* for 2nd stage: read sfts, calculate multi-noise weights and detector states */  
     LAL_CALL( SetUpSFTs( &status, &stackMultiSFT2, &stackMultiNoiseWeights2, 
 			 &stackMultiDetStates2, &usefulParams2), &status);
     
