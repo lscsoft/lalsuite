@@ -26,10 +26,17 @@ XLALComputeFrequencySeries(
 )
 /******** </lalVerbatim> ********/
 {
+	/*
+	 * This function accepts a time series and a window function, and
+	 * computes and returns the Fourier transform of the windowed time
+	 * series.  The output is equal to the left-hand-side of (3) in
+	 * LIGO-T010095-00-Z with the normalization factor (5) applied.
+	 */
+
 	static const char *func = "XLALComputeFrequencySeries";
 	COMPLEX8FrequencySeries *fseries;
 	REAL4Sequence *tmp;
-	REAL4 fac;
+	REAL4 A;
 	size_t i;
 	size_t length = tseries->data->length;
 
@@ -46,11 +53,11 @@ XLALComputeFrequencySeries(
 		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 
 	/* compute normalization factor */
-	fac = sqrt(length / window->sumofsquares) * tseries->deltaT;
+	A = sqrt(length / window->sumofsquares) * tseries->deltaT;
 
 	/* compute windowed version of time series data */
 	for(i = 0; i < length; i++)
-		tmp->data[i] *= fac * window->data->data[i];
+		tmp->data[i] *= A * window->data->data[i];
 
 	/* compute the DFT */
 	XLALREAL4ForwardFFT(fseries->data, tmp, plan);
