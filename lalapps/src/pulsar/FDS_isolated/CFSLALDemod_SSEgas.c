@@ -45,7 +45,6 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
   REAL8 *xSum=NULL, *ySum=NULL; /* temp variables for computation of fs*as and fs*bs */
   INT4 s;                       /* local variable for spinDwn calcs. */
   REAL8 xTemp;                  /* temp variable for phase model */
-  REAL4 xTInt;                  /* integer part of xTemp */
   REAL8 deltaF;                 /* width of SFT band */
   INT4 k=0;                     /* loop counter */
   REAL8 *skyConst;              /* vector of sky constants data */
@@ -174,14 +173,32 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
             exit (COMPUTEFSTAT_EXIT_DEMOD);
         }
 
-#ifdef USE_FLOOR
-        xTInt =  floor(xTemp);
+	{
+#ifdef USE_SSE3
+	  INT4 xTInt;
+	  __asm __volatile
+	    (
+	     "fld     %%st(0)          \n\t" /* xT xT */ /* clone xTemp on the stack */
+	     "fisttpl %[xTInt]         \n\t" /* write integer w. truncation reagrdless of rounding */
+	     "fisubl  %[xTInt]         \n\t" /* tempFreq0 = xTemp - xTInt */
+	     "fstpl   %[tF0]           \n\t" /* store tempFreq0 */
+	     :
+	     [xTInt] "=m" (xTInt),
+	     [tF0]   "=m" (tempFreq0)
+	     :       "t"  (xTemp)
+	     : "st(1)"
+	     );
 #else
-        xTInt =  (UINT4)xTemp;
-#endif
-        tempFreq0 = xTemp - xTInt;   /* lies in [0, +1) by definition */
 
-        sftIndex = xTInt - params->Dterms + 1 - params->ifmin;
+#ifdef USE_FLOOR
+	  REAL4 xTInt =  floor(xTemp);
+#else
+	  REAL4 xTInt =  (UINT4)xTemp;
+#endif
+	  tempFreq0 = xTemp - xTInt;   /* lies in [0, +1) by definition */
+#endif
+	  sftIndex = xTInt - params->Dterms + 1 - params->ifmin;
+	}
 
         if(sftIndex < 0){
               fprintf(stderr,"ERROR! sftIndex = %d < 0 in TestLALDemod run %d\n", sftIndex, cfsRunNo);
@@ -211,6 +228,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
           REAL8    tempFreqF  = tempFreq1 - 15.0;
           
           /* constants in memory */
+	  static REAL8 big   = 1<<30;  /* real(ly) big number */
           static REAL4 lutr = LUT_RES; /* LUT_RES in memory */
           static REAL4 half = .5;
           static REAL4 one  = 1.0;
@@ -299,7 +317,15 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        /* calculating yRem */
        /* ---------------- */
 
-       "fldl   %[yTemp]               \n\t" /* yT */
+       "fldl    %[yTemp]               \n\t" /* yT */
+#ifdef USE_SSE3       
+       "faddl   %[big]                 \n\t" /* yT+big */ /* add a big integer number. This doesn't make a difference to the
+							     outcome, since we're only interested in the fractional part.
+							     However it will ensure yTemp+big is positive */
+       "fld     %%st(0)                \n\t" /* yT+big yT+big */
+       "fisttpl %[yRem]                \n\t" /* yT+big */ /* write integer w. truncation reagrdless of rounding */
+       "fisubl  %[yRem]                \n\t" /* yT+big-int(yT+big) */
+#else
        /* it requires some mind-bending to come from the algorithm used in the USE_FLOOR case
           of the yRem calculation in the C code below (in case yTemp < 0) to the case distinction
 	  implemented here.
@@ -317,7 +343,8 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        "jns    yrem" CPU_TYPE_S      "\n\t" /* yT-(int)yT */ /* append the CPU_TYPE to label to allow more instances */
        "fadds  %[one]                 \n"   /* (yT-(int)yT+1) */
        "yrem" CPU_TYPE_S ":           \n\t" /* yR */
-       
+#endif
+  
        /* calculation of realQ and imagQ */
        /* ------------------------------ */
 
@@ -521,6 +548,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        [half]        "m"  (half),
        [one]         "m"  (one),
        [two]         "m"  (two),
+       [big]         "m"  (big),
        [V0011]       "m"  (V0011[0]),
        [V2222]       "m"  (V2222[0]),
        [V4444]       "m"  (V4444[0]),
