@@ -135,7 +135,7 @@ typedef enum
   m1_and_m2, 
   psi0_and_psi3,  
   mchirp_and_eta, 
-  mchirp_and_eta_ext,
+  mchirp_and_eta_ext
 } 
 SnglInspiralParameterTest;
 /*</lalVerbatim> */
