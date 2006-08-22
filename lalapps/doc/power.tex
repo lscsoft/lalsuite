@@ -256,10 +256,9 @@ power of 2.
 \item[\option{--burstinjection-file} \parm{file name}]
 Use \parm{file name} as a LIGO lightweight XML file containing a list of
 injections to be made.   The file should contain a \verb+sim_burst+ table
-which is used to set information about the types of burst injections to be made.
-This file may be constructed by hand, the
-\verb+lalapps_binj+ program described in Section
-\ref{program:lalapps-binj}.
+which is used to set information about the types of burst injections to be
+made.  This file may be constructed by hand, the \verb+lalapps_binj+
+program described in Section \ref{program:lalapps-binj}.
 
 \item[\option{--calibrated-data} \parm{high pass frequency}]
 When the \option{--calibrated-data} option is supplied, input time series
@@ -540,42 +539,46 @@ Sec.~\ref{section:Butterworth} but this does not change the algorithm,  so
 we ignore it here.  This data is then windowed (using a user specified
 window) and transformed into the frequency domain
 \begin{equation}
-\tilde{s}_k =  \frac{\Delta}{\sigma_w} \sum_{j=0}^{N-1} w_js_j e^{-2 \pi i j k /N}
+\tilde{s}_{k}
+   = \frac{\Delta}{\sigma_{w}} \sum_{j = 0}^{N - 1} w_{j} s_{j} \ee^{-2 \pi
+   \aye j k / N}
 \end{equation}
-where $w_j$ is the window function and $\sigma_w$ is  
+where $w_{j}$ is the window function and $\sigma_{w}$ is  
 \begin{equation}
-{\sigma_w}^2 = \frac{1}{N}\sum_{j=0}^{N-1}{w_j}^2 \; .
+\sigma_{w}^{2}
+   = \frac{1}{N} \sum_{j = 0}^{N - 1} w_{j}^2.
 \end{equation}
 Finally,  the data is whitened
 \begin{equation}
-\hat{s}_k = 2\sqrt{\frac{\Delta f}{P_k}}\tilde{s}_k
+\hat{s}_{k}
+   = 2 \sqrt{\frac{\Delta f}{P_{k}}} \tilde{s}_{k}
 \end{equation}
-where $\Delta f = {1}/{N\Delta}$ is the sampling frequency interval and 
-$P_k = 2 \Delta f\langle|\tilde{s}_k^2| \rangle$ is the 
-power spectral estimate.  This spectrum is estimated using the median
-power at each frequency for a number of overlapping segments.
-The use of the median avoids bias in the spectrum caused by the
-presence of a gravitational wave or other large non-astrophysical
-transients present in any of the segments.   Notice that 
+where $\Delta f = 1 / N \Delta$ is the sampling frequency interval and
+$P_{k} = 2 \Delta f \mean{\magnitude{\tilde{s}_{k}^2}}$ is the power
+spectral estimate.  This spectrum is estimated using the median power at
+each frequency for a number of overlapping segments.  The use of the median
+avoids bias in the spectrum caused by the presence of a gravitational wave
+or other large non-astrophysical transients present in any of the segments.
+Notice that
 \begin{equation}
-\langle | \hat{s}_k |^2 \rangle = 2 \; .
+\mean{\magnitude{\hat{s}_{k}}^2}
+   = 2.
 \end{equation}
 If the original time series contains only Gaussian noise,  this
-construction makes the real and imaginary parts of
-each frequency component a unit variance Gaussian random variable. 
+construction makes the real and imaginary parts of each frequency component
+a unit variance Gaussian random variable. 
 
 \subsubsection{The filter}
 
 The excess-power method relies on having a time-frequency decomposition of
 the the incoming data.   Consider construction of the the time-frequency
-plane in a pass-band $f_0 < f < f_0+b$.  A naive construction would set all
-Fourier components outside of this band to zero and inverse transform.  A
-major problem with this approach is that the band-pass filter,  when viewed
-in the time-domain, has infinite extent(as shown in
+plane in a pass-band $f_{0} < f < f_{0} + b$.  A naive construction would
+set all Fourier components outside of this band to zero and inverse
+transform.  A major problem with this approach is that the band-pass
+filter,  when viewed in the time-domain, has infinite extent(as shown in
 Figure~\ref{fig:timedomainfilter} in a wrap around fashion) and can lead to
 data corruption of the band-passed data stream when contructed as described
 above. 
-
 \begin{figure}
 \begin{center}
 \includegraphics[width=0.9\textwidth]{figures/timedomainfilter}
@@ -588,7 +591,6 @@ We can, however, start from this and construct a filter which
 preferentially passes the appropriate frequencies \emph{and} has finite
 duration in the time domain (Figure~\ref{fig:timedomainfilter_1} \&
 Figure~\ref{fig:freqdomainfilter_1}).
-
 \begin{figure}
 \begin{center}
 \includegraphics[width=0.8\textwidth]{figures/timedomainfilter_1}
@@ -603,188 +605,201 @@ Figure~\ref{fig:freqdomainfilter_1}).
 \label{fig:freqdomainfilter_1}
 \end{center}
 \end{figure}
-
 Consider the rectangular band-pass in the frequency domain
-\begin{eqnarray}
-G(t) &=& \int_{-f_0 - b}^{-f_0} e^{2 \pi i f t} df  +
-\int_{f_0}^{f_0+b}  e^{2 \pi i f t} df 
-= 2 \int_{f_0}^{f_0+b} \cos ( 2 \pi f t ) df \\
-&=& \frac{\sin[2\pi(f_0+b)t] - \sin[2 \pi f_0 t]}{\pi t} \; .
-\end{eqnarray}
-This is just the sum of a sine and cosine at
-frequency $f_0$ modulated at frequency $b$.
-Consequently,  the amplitude modulation has its first zero at
-$t = 1/ (2 b)$ and we can use a truncated time-domain filter
+\begin{align}
+G(t)
+   & = \int_{-f_{0} - b}^{-f_{0}} \ee^{2 \pi \aye f t} \diff f  +
+   \int_{f_{0}}^{f_{0} + b} \ee^{2 \pi \aye f t} \diff f \\
+   & = 2 \int_{f_{0}}^{f_{0} + b} \cos (2 \pi f t) \diff f \\
+   & = \frac{\sin[2 \pi (f_{0} + b) t] - \sin[2 \pi f_{0} t]}{\pi t}.
+\end{align}
+This is just the sum of a sine and cosine at frequency $f_{0}$ modulated at
+frequency $b$.  Consequently,  the amplitude modulation has its first zero
+at $t = 1 / (2 b)$ and we can use a truncated time-domain filter
 \begin{equation}
-\Theta(t - t_0; f_0 , b) = \left\{
-\begin{array}{lrl}
-\displaystyle{
-\frac{\sin[2\pi(f_0+b)(t-t_0)] - \sin[2 \pi f_0 (t-t_0)]}{\pi (t-t_0)} 
-} & \mbox{\ \ } & |t-t_0| < 1/(b)  \\
-0 & & \textrm{Otherwise}
-\end{array} \right. 
 \label{eq:filter}
+\Theta(t - t_0; f_0 , b)
+   = \begin{cases}
+   \frac{\sin[2 \pi (f_{0} + b) (t - t_{0})] - \sin[2 \pi f_{0} (t -
+   t_{0})]}{\pi (t - t_{0})} & \magnitude{t - t_{0}} < 1/b \\
+   0 & \text{Otherwise}
+   \end{cases}
 \end{equation}
-which covers a time frequency volume $V = b (1/b) = 1$ and has its
-peak at time $t_0$.   Notice that
+which covers a time frequency volume $V = b (1 / b) = 1$ and has its peak
+at time $t_{0}$.  Notice that
 \begin{equation}
-\lim_{t\rightarrow t_0} \Theta(t - t_0; f_0 , b) = b\; .
+\lim_{t \rightarrow t_{0}} \Theta(t - t_{0}; f_{0} , b)
+   = b.
 \end{equation}
 
-\subsubsection{The signal-to-noise}
 
-The signal to noise for a filter determined by $f_0$ and $b$ can be
-written as a function of the peak time $t_0$ as
+\subsubsection{The Signal-to-Noise}
+
+The signal to noise for a filter determined by $f_0$ and $b$ can be written
+as a function of the peak time $t_0$ as
 \begin{equation}
-\rho(t_0) = \frac{z(t_0)}{\sigma}
+\rho(t_{0})
+   = \frac{z(t_{0})}{\sigma}
 \end{equation}
 where
 \begin{equation}
-z(t_0) = \int_{-\infty}^\infty \hat{s}(t) \Theta(t-t_0; f_0, b) 
-dt
-\end{equation} and $\sigma^2 = \langle |z(t_0)|^2 \rangle$.  The time
-series $z(t_0)$ is most conveniently computed using Fourier
-transforms,  therefore
+z(t_{0})
+   = \int_{-\infty}^{\infty} \hat{s}(t) \Theta(t - t_{0}; f_{0}, b) \diff t
+\end{equation}
+and $\sigma^{2} = \mean{ \magnitude{z(t_{0})}^2 }$.  The time series
+$z(t_{0})$ is most conveniently computed using Fourier transforms,
+therefore
 \begin{equation}
-z(t_0) = \int_{-\infty}^{\infty} \hat{s}(f) \tilde{\Theta}^\ast (f) 
-e^{2 \pi i ft_0} df
+z(t_{0})
+   = \int_{-\infty}^{\infty} \hat{s}(f) \tilde{\Theta}^{*}(f) \ee^{2 \pi
+   \aye f t_{0}} \diff f.
 \end{equation}
 
-The Excess Power search then identifies triggers which may be
-gravitational wave bursts using the following algorithm.  
-We construct a single
-time frequency plane and then search over all possible tiles of different
-time durations and frequency bands.  One first decides the maximum 
-frequency band and the maximum time duration that are to be tolerated in
-the search.  The maximum frequency band determines the minimum duration
-a tile requiring the time-frequency volume be $1$ and 
-similarly the maximum time duration determines the minimum frequency band
-of the tile.  The time frequency plane is then constructed with a 
-time-frequency resolution finer by at least a factor of $2$ compared to
-the minimum resolutions of the tiles.  As a concrete example,  
-suppose the maximum allowed time duration of a tile is 
-$\Delta T sec = 2^{-(a+1)} sec$  and the maximum frequency band is 
-$\Delta F Hz = 2^{(b-1)} Hz$.  This implies the minimum duration of a tile 
-in the search will be  $\Delta t^{tile} sec = 2^{-(b-1)} sec$  and the 
-minimum frequency band will be  $\Delta f^{tile} Hz = 2^{(a+1)} Hz$.
- The time-frequency plane is then constructed with a timing resolution
-of $\delta t sec = 2^{-b} sec.$ and a frequency resolution of 
-$\delta f Hz = 2^a Hz$.
+The Excess Power search then identifies triggers which may be gravitational
+wave bursts using the following algorithm.  We construct a single time
+frequency plane and then search over all possible tiles of different time
+durations and frequency bands.  One first decides the maximum frequency
+band and the maximum time duration that are to be tolerated in the search.
+The maximum frequency band determines the minimum duration a tile requiring
+the time-frequency volume be $1$ and similarly the maximum time duration
+determines the minimum frequency band of the tile.  The time frequency
+plane is then constructed with a time-frequency resolution finer by at
+least a factor of $2$ compared to the minimum resolutions of the tiles.  As
+a concrete example,  suppose the maximum allowed time duration of a tile is
+$\Delta T = \unit{2^{-(a + 1)}}{\second}$  and the maximum frequency band
+is $\Delta F = \unit{2^{(b - 1)}}{\hertz}$.  This implies the minimum
+duration of a tile in the search will be  $\Delta t_{\text{tile}} =
+\unit{2^{-(b-1)}}{\second}$  and the minimum frequency band will be $\Delta
+f_{\text{tile}} = \unit{2^{(a+1)}}{\hertz}$.  The time-frequency plane is
+then constructed with a timing resolution of $\delta t =
+\unit{2^{-b}}{\second}$ and a frequency resolution of $\delta f =
+\unit{2^a}{\hertz}$.
 
-For each whitened segment $\hat{s}_k$, one constructs multiple channels,  
-each of which is an inverse Fourier tranform of $\delta f Hz$ of data.  
-Now suppose the bandwidth over which we want to search is $ F Hz$ and the 
-time duration is $ T sec $. Therefore there will be
-$n_{chan} = \frac{ F Hz}{\delta f Hz}$ channels and $n_{timebins} 
-= \frac{T sec}{ \delta t sec}$ timebins in each channel. 
-$n_{timebins} \times n_{chan}$ number of elements will then represent 
-this time-frequency plane.
+For each whitened segment $\hat{s}_k$, one constructs multiple channels,
+each of which is an inverse Fourier tranform of a bandwidth $\delta f$ of
+data.  Now suppose the bandwidth over which we want to search is $F$ and
+the time duration is $T$. Therefore there will be $n_{\text{chan}} =
+\frac{F}{\delta f}$ channels and $n_{\text{time bins}} = \frac{T}{\delta
+t}$ time bins in each channel.  $n_{\text{time bins}} \times
+n_{\text{chan}}$ number of elements will then represent this time-frequency
+plane.
 
-If we consider a channel whose low frequency index is $k_0$ 
-(where $k_0 = \frac{flow Hz}{ \delta f Hz}$,  $flow Hz$ being the low 
-frequency of the channel) and the channel width in number of sample 
-points is $ b = \frac{\delta f Hz }{\Delta f Hz} $ ($\Delta f Hz $ is the
- frequency resolution of the fully sampled frequency series),  it's elements 
-can be represented as:
+If we consider a channel whose low frequency index is $k_{0}$ (where $k_{0}
+= \frac{f_{\text{low}}}{\delta f}$,  $f_{\text{low}}$ being the low
+frequency of the channel) and the channel width in number of sample points
+is $b = \frac{\delta f}{\Delta f}$ ($\Delta f$ is the frequency resolution
+of the fully sampled frequency series), it's elements can be represented
+as
 \begin{equation}
-z_{j}(k_0,  b) = \sum_{k=0}^{N-1}  \hat{s}_k \tilde{\Theta}_k^\ast(k_0,  b) 
-e^{2 \pi ijk/N},
 \label{eq:tfplanecountspoints}
-\end{equation}  where $j = 0,\cdots, N-1$.  Note,  the timing
-resolution of $z_j(k_0,  b)$ is equal to that of the sampled detector 
-data $s_j$.  The elements of the time-frequency plane corresponding to this 
-particular channel $z_j(k_0,  b)$ will then be 
+z_{j}(k_{0}, b)
+   = \sum_{k = 0}^{N - 1} \hat{s}_{k} \tilde{\Theta}_{k}^{*}(k_{0}, b)
+   \ee^{2 \pi \aye j k / N},
+\end{equation}
+where $j = 0, \ldots, N - 1$.  Note, the timing resolution of $z_{j}(k_{0},
+b)$ is equal to that of the sampled detector data $s_{j}$.  The elements of
+the time-frequency plane corresponding to this particular channel
+$z_{j}(k_{0}, b)$ will then be 
 \begin{equation}
-Z_J(k_0,  b)   = z_{Jn_t}(k_0,  b),
-\end{equation} where $n_t = \frac{\delta t sec}{\Delta sec}$ are the number 
-of sample points in one time-frequency plane time bin ($\Delta sec$ being 
-the full sampling rate of the timing series)  and $J = 0, \cdots, 
-n_{timebins} - 1$.
+Z_{J}(k_{0}, b)
+   = z_{J n_{t}}(k_{0}, b),
+\end{equation}
+where $n_{t} = \frac{\delta t}{\Delta}$ are the number of sample points in
+one time-frequency plane time bin ($\Delta$ being the full sampling rate of
+the timing series) and $J = 0, \ldots, n_{\text{time bins}} - 1$.
 
 Each channel is normalised so that a sample point in the channel represents
-a Gaussian random variable with zero mean and unit variance. The normalisation 
-constant is given by 
+a Gaussian random variable with zero mean and unit variance. The
+normalisation constant is given by 
 \begin{equation}
-\sigma^2(k_0,  b) = \langle z_j^2(k_0, b) \rangle = \sum_{k=0}^{N-1}
-\sum_{l=0}^{N-1}\langle \hat{s}_k \hat{s}_l^\ast \rangle 
-\tilde{\Theta}_k^\ast(k_0,  b) \tilde{\Theta}_l(k_0,  b) e^{2 \pi ij(k-l)/N},
+\sigma^{2}(k_{0}, b)
+   = \mean{z_{j}^{2}(k_{0}, b)}
+   = \sum_{k = 0}^{N - 1} \sum_{l = 0}^{N - 1} \mean{\hat{s}_{k}
+   \hat{s}_{l}^{*}} \tilde{\Theta}_{k}^{*}(k_{0}, b)
+   \tilde{\Theta}_{l}(k_{0}, b) \ee^{2 \pi \aye j (k - l) / N},
 \end{equation}
-where $\langle \hat{s}_k \hat{s}_l^\ast \rangle = 2\delta(k-l)$.  Hence,  the 
+where $\mean{\hat{s}_{k} \hat{s}_{l}^{*}} = 2 \delta(k - l)$.  Hence, the
 normalisation simplifies to 
 \begin{equation}
-\sigma^2(k_0,  b) = 2\sum_{k=0}^{N-1}\mid \tilde{\Theta}_k^2(k_0,  b) \mid .
+\sigma^{2}(k_{0}, b)
+   = 2 \sum_{k = 0}^{N - 1} \magnitude{\tilde{\Theta}_{k}^{2}(k_{0}, b)}.
 \end{equation}
 
-Now suppose we have a channel with the same low frequency $k_0$ but
-twice the frequency band,  i.e. $2b$ compared to the previous channel.
-We therefore have 
+Now suppose we have a channel with the same low frequency $k_{0}$ but twice
+the frequency band,  i.e.\ $2 b$ compared to the previous channel.  We
+therefore have 
 \begin{equation}
-z_j(k_0,  2b) = \sum_{k=0}^{N-1}  \hat{s}_k \tilde{\Theta}_k^\ast(k_0,  2b) 
-e^{2 \pi ijk/N},
+z_{j}(k_{0}, 2 b)
+   = \sum_{k = 0}^{N - 1} \hat{s}_{k} \tilde{\Theta}_{k}^{*}(k_{0}, 2 b)
+   \ee^{2 \pi \aye j k / N},
 \end{equation}
-where $\tilde{\Theta}_k^\ast(k_0,  2b)$ from Eq~\ref{eq:filter} is given by
+where $\tilde{\Theta}_{k}^{*}(k_{0}, 2 b)$ from \eqref{eq:filter} is given
+by
 \begin{equation}
-\tilde{\Theta}(k_0,  2b) = \sum_{j=0}^{N-1}\frac{sin[2\pi/N(k_0 + 2b)j] 
-- sin[2\pi/Nk_0j]}{\pi j \Delta}e^{-12\pi jk/N}
+\tilde{\Theta}(k_{0}, 2 b)
+   = \sum_{j = 0}^{N - 1} \frac{\sin[2 \pi / N (k_{0} + 2 b) j] - \sin[2
+   \pi / N k_{0} j]}{\pi j \Delta} \ee^{-12 \pi j k / N}
 \end{equation}
 However we can write
-\begin{equation}
-sin[2\pi/N(k_0 + 2b)j] - sin[2\pi/Nk_0j] = sin[2\pi/N(k_0 + b)j] - 
-sin[2\pi/Nk_0j] + sin[2\pi/N(k_0 + 2b)j] - sin[2\pi/N(k_0 + b)j]
+\begin{multline}
 \label{eq:sines}
-\end{equation}
+\sin[2 \pi / N (k_{0} + 2 b) j] - \sin[2 \pi / N k_{0} j]
+   = \\ \sin[2 \pi / N(k_{0} + b) j] - \sin[2 \pi / N k_{0} j] + \sin[2 \pi
+   / N (k_{0} + 2 b) j] - \sin[2 \pi / N (k_{0} + b) j]
+\end{multline}
 and hence we get
 \begin{equation}
-\tilde{\Theta}(k_0,  2b) = \tilde{\Theta}(k_0,  b) + 
-\tilde{\Theta}(k_0 + b,  b)
+\tilde{\Theta}(k_{0}, 2 b)
+   = \tilde{\Theta}(k_{0}, b) + \tilde{\Theta}(k_{0} + b, b)
 \end{equation}
 which implies
 \begin{equation}
-z_j(k_0,  2b) = z_j(k_0,  b) + z_j(k_0 +b,  b).
+z_{j}(k_{0}, 2 b)
+   = z_{j}(k_{0}, b) + z_{j}(k_{0} + b, b).
 \end{equation}
 This is shown in Fig~\ref{fig:sumfilters}.  
 \begin{figure}
 \begin{center}
 \includegraphics[width=0.9\textwidth]{figures/sumoffilters}
-\caption{Response to a 4 hz wide filter compared to the sum of two 2 Hz wide 
-filters}
+\caption{Response to a $\unit{4}{\hertz}$ wide filter compared to the sum
+of two $\unit{2}{\hertz}$ wide filters}
 \label{fig:sumfilters}
 \end{center}
 \end{figure}
 The data used to generate this plot is a delta function in the time domain
-(so that it is a flat line in the frequency domain, as shown by the green 
-curve in the Fig~\ref{fig:sumfilters}). The black curve shows the output when 
-the channel width is $4 Hz$, while the red curve shows the sum of the output 
-of two $2 Hz$ wide channels. 
-
-
-The corresponding normalisation,  
+(so that it is a flat line in the frequency domain, as shown by the green
+curve in the Fig~\ref{fig:sumfilters}). The black curve shows the output
+when the channel width is $\unit{4}{\hertz}$, while the red curve shows the
+sum of the output of two $\unit{2}{\hertz}$ wide channels.  The
+corresponding normalisation is
 \begin{equation}
-\sigma^2(k_0,  2b) = \sigma^2(k_0,  b) + \sigma^2(k_0+b,  b) + 
-2\sum_{k=0}^{N-1}\tilde{\Theta}_k^\ast(k_0,  b)\tilde{\Theta}_k(k_0 + b,  b)
 \label{eq:norm}
+\sigma^{2}(k_{0}, 2 b)
+   = \sigma^{2}(k_{0}, b) + \sigma^{2}(k_{0} + b, b) + 2 \sum_{k = 0}^{N -
+   1} \tilde{\Theta}_{k}^{*}(k_{0}, b) \tilde{\Theta}_{k}(k_{0} + b, b)
 \end{equation}
-The filter being orthogonal(almost),  the cross term in Eq~\ref{eq:norm} 
+The filter being orthogonal (almost), the cross term in \eqref{eq:norm}
 will be negligible.  
 
-A tile in this plane can be denoted as $\tau =\{J_1, \Delta n_t, K_1, \Delta 
-n_f\}$,  where $J_1$ and $K_1$ represent the indices corresponding to the 
-start time and start frequency of the tile respectively while $\Delta n_t$ 
-and $\Delta n_f$ are respectively the time and frequency bins.  The degrees 
-of freedom assosciated with $\tau$ will then be $dof_{\tau} = 2 \times n_t 
-\times \Delta t \times n_f \times \Delta f $.  Requiring that there are at 
-least two sample points in the unit time-frequency volume tile we see that 
-the time-frequency sample points have to be picked at every  $\Delta t^{tile} 
-sec = 1 / (2 \times n_f \times \delta f)$,  where $\delta f$ is the 
-time-frequency plane frequency resolution.  In terms of sample points then 
-every $\Delta t^{tile} / \delta t $ sample point has to be considered while 
-calculating the power of the tile.  Now,  $\Delta t^{tile} / \delta t = 
-\frac{1}{(2 \times n_f \times \delta f) \times \delta t} = n_t / dof_{\tau}$  
-and the power in the tile will then be 
+A tile in this plane can be denoted as $\tau = \{J_{1}, \Delta n_{t},
+K_{1}, \Delta n_{f}\}$,  where $J_{1}$ and $K_{1}$ represent the indices
+corresponding to the start time and start frequency of the tile
+respectively while $\Delta n_{t}$ and $\Delta n_{f}$ are respectively the
+time and frequency bins.  The degrees of freedom assosciated with $\tau$
+will then be $d = 2 n_{t} \Delta t n_{f} \Delta f$.  Requiring that there
+are at least two sample points in the unit time-frequency volume tile we
+see that the time-frequency sample points have to be picked at every
+$\Delta t_{\text{tile}} = 1 / (2 n_{f} \delta f)$,  where $\delta f$ is the
+time-frequency plane frequency resolution.  In terms of sample points then
+every $\Delta t_{\text{tile}} / \delta t$ sample point has to be considered
+while calculating the power of the tile.  Now,  $\Delta t_{\text{tile}} /
+\delta t = \frac{1}{(2 n_{f} \delta f) \delta t} = n_{t} / d$ and the power
+in the tile will then be
 \begin{equation}
-\varepsilon_{\tau} = \sum_{n=0}^{dof_{\tau}-1}\frac{(\sum_{k=K1}^{\Delta 
-n_f -1}Z_{[J_1 + n\frac{n_t}{dof_{\tau}}]}(k,b))^2}{\sum_{k=K1}^{\Delta 
-n_f -1}\sigma^2(k,b)}.
+\varepsilon_{\tau}
+   = \sum_{n = 0}^{d - 1} \frac{\left( \sum_{k = K_{1}}^{\Delta n_{f} - 1}
+   Z_{[J_{1} + n \frac{n_{t}}{d}]}(k, b) \right)^{2}}{\sum_{k =
+   K_{1}}^{\Delta n_{f} -1} \sigma^{2}(k, b)}.
 \end{equation}
 
 In Gaussian noise,  the power in a given tile is $\chi^2$-distributed
@@ -796,67 +811,82 @@ many tiles can be identified as triggers with different sizes and
 aspect ratios.   When the search over a particular segment is
 complete,   triggers are clustered and the clustering is described in 
 Section~\ref{section:clustering} .
-\clearpage
 
-\subsubsection{$h_{rss}$ Estimation}
-The way we estimate $h_{rss}$ corresponding to a tile $\tau$ is described 
-here.  By definition,
+
+\subsubsection{$h_{\text{rss}}$ Estimation}
+
+The way we estimate $h_{\text{rss}}$ corresponding to a tile $\tau$ is
+described here.  By definition,
 \begin{equation}
-h_{rss}^2 =  \int h^2(t)dt = \sum h^2_j \delta t,
+h_{\text{rss}}^{2}
+   = \int h^{2}(t) \diff t
+   = \sum h^{2}_{j} \delta t,
 \end{equation}
-where $h_j$ is the gravitational wave strain data. This in the frequency 
-domain is related to the data in counts units(which has been used for all 
+where $h_j$ is the gravitational wave strain data.  This in the frequency
+domain is related to the data in counts units (which has been used for all
 the documentation till now) by: 
 \begin{equation}
-\tilde h_k = R_k \tilde s_k,
+\tilde{h}_{k}
+   = R_{k} \tilde{s}_{k},
 \end{equation}  
-where $R_k$ is the detector response function with units $strain / counts$ 
-while the unit of $h_k$ is strain and of $s_k$ is counts.  In terms of the 
-normalised data:
+where $R_k$ is the detector response function with units strain / count
+while the unit of $h_{k}$ is strain and of $s_{k}$ is counts.  In terms of
+the normalised data:
 \begin{equation}
-\tilde h_k = \frac{R_k \sqrt P_k}{2\sqrt {\Delta f }}\hat s_k
+\tilde{h}_k
+   = \frac{R_{k} \sqrt{P_{k}}}{2 \sqrt{\Delta f}} \hat{s}_{k}.
 \end{equation}
 The corresponding time-frequency plane points are 
-\begin{eqnarray}
-H_j(k_0, b) &=& \frac{1}{N}\sum_{k=0}^{N-1}\tilde h_k \tilde 
-\Theta^\ast_k(k_0, b)e^{i 2 \pi jk/N} \\
-&=& \frac{1}{N}\sum_{k=0}^{N-1} \frac{R_k(k_0, b)\sqrt P_k(k_0, b)}
-{2\sqrt {\Delta f }}\hat s_k \tilde \Theta^\ast_k(k_0, b)e^{i 2 \pi jk/N}
-\end{eqnarray}
+\begin{align}
+H_{j}(k_{0}, b)
+   & = \frac{1}{N} \sum_{k = 0}^{N - 1} \tilde{h}_k
+   \tilde{\Theta}_{k}^{*}(k_{0}, b) \ee^{\aye 2 \pi j k / N} \\
+   &= \frac{1}{N} \sum_{k = 0}^{N - 1} \frac{R_{k}(k_{0}, b)
+   \sqrt{P_{k}(k_{0}, b)}}{2 \sqrt{\Delta f}} \hat{s}_{k}
+   \tilde{\Theta}_{k}^{*}(k_{0}, b) \ee^{\aye 2 \pi j k / N}.
+\end{align}
 For the present implementation we have assumed 
 \begin{itemize}
 \item the response and the average spectrum can be replaced by their average 
 values over the channel width and 
 \item effect of the response phase is negligible.  
 \end{itemize}
-So we can pull their contributions out of the sum and let us denote that by 
-$F(k_0, b) = \frac{R_k(k_0, b)\sqrt {P_k(k_0, b)}}{2N\sqrt {\Delta f }}$.
+So we can pull their contributions out of the sum and let us denote that by
+\begin{equation}
+F(k_{0}, b)
+   = \frac{R_{k}(k_{0}, b) \sqrt{P_{k}(k_{0}, b)}}{2 N \sqrt{\Delta f}}.
+\end{equation}
 Therefore we get 
 \begin{equation}
-H_j(k_0, b) = F(k_0, b) z_j(k_0, b) , 
+H_{j}(k_{0}, b)
+   = F(k_{0}, b) z_{j}(k_{0}, b), 
 \end{equation} 
-where $z_j$ are the time-frequency sample points obtained by using the data 
-in counts as given in Eq~\ref{eq:tfplanecountspoints}.  The $h_{rss}$ 
-corresponding to the tile $\tau$ will then be 
+where $z_{j}$ are the time-frequency sample points obtained by using the
+data in counts as given in \eqref{eq:tfplanecountspoints}.  The
+$h_{\text{rss}}$ corresponding to the tile $\tau$ will then be 
 \begin{equation}
-h_{rss}^2 = \sum_{n=0}^{dof_{\tau}-1}(\sum_{k=K1}^{\Delta n_f - 1}
-F(k,b)Z_{[J_1 + n\frac{n_t}{dof_{\tau}}]}(k,b))^2\Delta t^{tile}.
+h_{\text{rss}}^2
+   = \sum_{n = 0}^{d - 1} \left( \sum_{k = K_{1}}^{\Delta n_{f} - 1} F(k,b)
+   Z_{[J_{1} + n \frac{n_{t}}{d}]}(k, b) \right)^{2} \Delta
+   t_{\text{tile}}.
 \end{equation}
-How well can we estimate the $h_{rss}$ under the above assumptions
+How well can we estimate the $h_{\text{rss}}$ under the above assumptions
 are shown by Fig~\ref{fig:hrss}.  We have plotted the injected
-$h_{rss}$ on the x-axis and the estimated $h_{rss}$ on the y-axis. Ideally
-we would expect them to lie on a straight line at 45 degrees with the
-x-axis(as marked by the red line in the plot). 
+$h_{\text{rss}}$ on the x-axis and the estimated $h_{\text{rss}}$ on the
+y-axis. Ideally we would expect them to lie on a straight line at 45
+degrees with the x-axis(as marked by the red line in the plot). 
 \begin{figure}
 \begin{center}
 \includegraphics[width=0.9\textwidth]{figures/inj_det_hrss}
-\caption{Injected vs Detected $h_{rss}$}
+\caption{Injected vs Detected $h_{\text{rss}}$}
 \label{fig:hrss}
 \end{center}
 \end{figure}
 \clearpage
  
+
 \subsection{Time Domain Segmentation}
+
 The excess power analysis code does not process the input data as a
 continuous time series;  rather the time series is split into a sequence of
 discrete ``analysis windows'', which are each analyzed individually.  To
@@ -976,15 +1006,15 @@ to have been read.
 \label{section:Gaussian}
 
 In this section we will describe the performance of Excess Power algorithm  
-on Gaussian data.  Instead of reading in real data from frame files we filled 
-in the time series with Gaussian noise generated by the LAL 
-function \textsc{LALNormalDeviate}.  This data is first high passed using
-a Butterworth filter( Section~\ref{section:Butterworth} ) and an 
-average spectrum is estimated.  Figure~\ref{fig:gaussianspectrum} shows the 
-average spectrum which was calculated using $548864$ sample points
-($\sim 33.5$ secs) of the high passed data.  This average spectrum is then 
-used to whiten and normalise the data.   Figure(~\ref{fig:gaussianfreqseries}) 
-shows such a whitened and normalised frequency series of two seconds of data 
+on Gaussian data.  Instead of reading in real data from frame files we
+filled in the time series with Gaussian noise generated by the LAL function
+\textsc{LALNormalDeviate}.  This data is first high passed using a
+Butterworth filter (Section~\ref{section:Butterworth}) and an average
+spectrum is estimated.  Figure~\ref{fig:gaussianspectrum} shows the average
+spectrum which was calculated using $548864$ sample points ($\sim 33.5$
+secs) of the high passed data.  This average spectrum is then used to
+whiten and normalise the data.   Figure ~\ref{fig:gaussianfreqseries} shows
+such a whitened and normalised frequency series of two seconds of data
 (normalisation and whitening will be described in other sections).
 \begin{figure}[h]
 \begin{center}
@@ -1005,7 +1035,7 @@ shows such a whitened and normalised frequency series of two seconds of data
 Our search method relies heavily on the fact that in Gaussian noise, 
  the power in a given tile is $\chi^2$-distributed with 
 $2 V$ degrees of freedom where $V$ is the time-frequency volume of the 
-tile(~\ref{chapter:powertools} ).  Hence to check if our measurements 
+tile (\ref{chapter:powertools}).  Hence to check if our measurements 
 actually follow the right distribution we did the following:
 \begin{itemize}
 \item Selected a tile with degrees of freedom $dof_{\tau} = 2$ and $dof_{\tau} = 4$
@@ -1250,7 +1280,7 @@ f_{merge} = \frac{0.02}{M} \\
 This is conservative in the sense that one can reasonably be sure that
 numerically generated templates will not be needed before $f = f_{merger}$.
 Now LIGO noise floor restricts the lowest frequency that can be searched 
-for and in $S4$ this is $\approx 50 Hz$. Using Eq~\ref{eq:fmerge} we 
+for and in $S4$ this is $\approx 50 Hz$. Using \eqref{eq:fmerge} we 
 then get that a binary system of maximum mass $\approx 80M_{\odot}$ 
 can be searched for in $S4$.  However for a $80 M_{\odot}$ binary the 
 number of cycles in the inspiral phase will be very small and since we
@@ -1264,7 +1294,7 @@ IB search is given by
 \end{equation}
 Given this mass range let us now see what can we estimate about the 
 expected frequency and duration of the merger signals. From 
-Eq~\ref{eq:fmerge} we get the approximte range of the merger frequencies:
+\eqref{eq:fmerge} we get the approximte range of the merger frequencies:
 \begin{equation}
 58 Hz < f_{merge} \leq 140 Hz
 \label{eq:frange}
@@ -1291,7 +1321,7 @@ a coalescence where both the inspiraling black holes are nearly
 maximally spinning, with their spins and the orbital angular momentum
 nearly alligned then the merger may be expected to be long,  while
 for non-spinning black holes the merger will be rather quick.  Thus 
-given our mass range of interest (Eq~\ref{eq:massrange}) the 
+given our mass range of interest (\eqref{eq:massrange}) the 
 time duration of the expected signals whould be somewhere in the 
 range:
 \begin{equation}
@@ -1306,7 +1336,7 @@ search pipeline:
 \item Low frequency cutoff: $50 Hz$
 \item Bandwidth: $1024 Hz$
 \item Maximum duration of a tile: $125 ms$; we have set the duration 
-a few times longer than the maximum duration in Eq~\ref{eq:trange}
+a few times longer than the maximum duration in \eqref{eq:trange}
 because of the uncertainty in the estimations related to the nature 
 of the merger signals.
 \item Maximum bandwidth of a tile: $128 Hz$; we have the bandwidth 

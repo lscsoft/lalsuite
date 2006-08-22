@@ -1,4 +1,6 @@
 \documentclass[oneside]{book}
+\usepackage{amsmath}
+\usepackage{amssymb}
 \usepackage{color}
 \usepackage{fancyhdr}
 \usepackage{geometry}
@@ -12,7 +14,7 @@
 \usepackage{boxedminipage}
 \usepackage{longtable}
 \usepackage{multirow}
-\usepackage{SIunits}
+\usepackage[squaren]{SIunits}
 
 
 \geometry{letterpaper,margin=1in}
@@ -59,6 +61,12 @@
 \newcommand{\function}[1]{\texttt{#1}}
 \newcommand{\option}[1]{\texttt{#1}}
 \newcommand{\parm}[1]{$<$\textit{#1}$>$}
+
+\newcommand*{\diff}{\,\mathrm{d}}       % eg. "\int \diff x"
+\newcommand*{\ee}{\mathrm{e}}           % \log^{-1} 1
+\newcommand*{\aye}{\mathrm{i}}          % \sqrt{-1}
+\newcommand{\mean}[1]{\left\langle#1\right\rangle}
+\newcommand{\magnitude}[1]{\left|#1\right|}
 
 
 \bibliographystyle{lalapps}
