@@ -292,9 +292,6 @@ XLALEPSearch(
 		}
 		XLALDestroyREAL4TimeSeries(cutTimeSeries);
 
-		/* tweak the frequency series' epoch */
-		XLALGPSAdd(&fseries->epoch, params->windowShift * tseries->deltaT);
-		
 		/*
 		 * Normalize the frequency series to the average PSD.
 		 */

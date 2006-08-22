@@ -30,9 +30,9 @@ static COMPLEX8Sequence *generate_filter(size_t length, INT4 fseglength, REAL8 d
 	COMPLEX8Sequence *fdfilter;
 	RealFFTPlan *plan;
 	REAL8 twopiOverNumpts;
-	INT4 firstzero;
+	unsigned firstzero;
 	REAL4 filternorm = 0.0;
-	int j;
+	unsigned j;
 
 	tdfilter = XLALCreateREAL4Sequence(2 * (length - 1));
 	fdfilter = XLALCreateCOMPLEX8Sequence(length);
@@ -214,8 +214,12 @@ int XLALFreqSeriesToTFPlane(
 	/* sampling rate of time series which gave freqSeries */
 	dt = 1.0 / (snr->length * freqSeries->deltaF);
 
-	/* set the epoch of the TF plane */
+	/* set the epoch of the TF plane;  when the time-domain channel
+	 * data is copied into the TF plane, the first windowShift samples
+	 * are dropped (see below), so we adjust the epoch for proper
+	 * book-keeping */
 	plane->epoch = freqSeries->epoch;
+	XLALGPSAdd(&plane->epoch, windowShift * dt);
 
 	/* generate the frequency domain filter function. */
 	filter = generate_filter(freqSeries->data->length, fseglength, dt, flow);
@@ -266,7 +270,9 @@ int XLALFreqSeriesToTFPlane(
 		 * real.  I still don't understand why the difference arises
 		 * with the Eanns's original implementation.   We'll have to
 		 * look at that.  */
-		/* Copy the result into appropriate spot in output structure */
+		/* Copy the result into appropriate spot in output
+		 * structure, skipping the first windowShift samples in
+		 * each channel */
 		for(j = 0; j < nt; j++)
 			plane->data[j * nf + i] = snr->data[j * (INT4) (plane->params.deltaT / dt) + windowShift];
 	}
