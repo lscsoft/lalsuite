@@ -998,8 +998,8 @@ void WriteMap(
  * Diagnostic code to create greyscale pgms of the map
  */
 void DumpTFImage(
-		 REAL4         **image,
-		 const CHAR           *filename,
+		 REAL4        **image,
+		 const CHAR    *filename,
 		 INT4           height,
 		 INT4           width,
 		 BOOLEAN        killNeg
@@ -1119,7 +1119,7 @@ void DumpTFImage(
   fprintf(fp,"Data Dim Width  %i\n",width);
   fprintf(fp,"Data Mean    : %e\n",meanval);
   fprintf(fp,"Data STDDEV  : %e\n",stdDev);
-  fprintf(fp,"Data Elements: %e\n",counter);
+  fprintf(fp,"Data Elements: %i\n",counter);
   fclose(fp);
   LALFree(auxfilename);
   LALFree(pgmfilename);
