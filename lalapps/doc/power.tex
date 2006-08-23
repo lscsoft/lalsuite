@@ -543,7 +543,7 @@ window) and transformed into the frequency domain
    = \frac{\Delta}{\sigma_{w}} \sum_{j = 0}^{N - 1} w_{j} s_{j} \ee^{-2 \pi
    \aye j k / N}
 \end{equation}
-where $w_{j}$ is the window function and $\sigma_{w}$ is  
+where $w_{j}$ is the window function, and $\sigma_{w}$ is  
 \begin{equation}
 \sigma_{w}^{2}
    = \frac{1}{N} \sum_{j = 0}^{N - 1} w_{j}^2.
@@ -708,17 +708,18 @@ where $n_{t} = \frac{\delta t}{\Delta}$ are the number of sample points in
 one time-frequency plane time bin ($\Delta$ being the full sampling rate of
 the timing series) and $J = 0, \ldots, n_{\text{time bins}} - 1$.
 
-Each channel is normalised so that a sample point in the channel represents
-a Gaussian random variable with zero mean and unit variance. The
-normalisation constant is given by 
+Each channel is normalised so that a sample in the channel is a real
+Gaussian random variable with zero mean and unit variance. The
+normalisation constant is given by
 \begin{equation}
 \sigma^{2}(k_{0}, b)
    = \mean{z_{j}^{2}(k_{0}, b)}
    = \sum_{k = 0}^{N - 1} \sum_{l = 0}^{N - 1} \mean{\hat{s}_{k}
    \hat{s}_{l}^{*}} \tilde{\Theta}_{k}^{*}(k_{0}, b)
-   \tilde{\Theta}_{l}(k_{0}, b) \ee^{2 \pi \aye j (k - l) / N},
+   \tilde{\Theta}_{l}(k_{0}, b) \ee^{2 \pi \aye j (k - l) / N}.
 \end{equation}
-where $\mean{\hat{s}_{k} \hat{s}_{l}^{*}} = 2 \delta(k - l)$.  Hence, the
+If the input time series is stationary, the Fourier modes are independant
+so $\mean{\hat{s}_{k} \hat{s}_{l}^{*}} = 2 \delta_{k - l}$, and the
 normalisation simplifies to 
 \begin{equation}
 \sigma^{2}(k_{0}, b)
