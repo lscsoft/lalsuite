@@ -51,6 +51,23 @@ static void print_real4tseries(const REAL4TimeSeries *fseries, const char *file)
 #endif
 }
 
+static void print_real4fseries(const REAL4FrequencySeries *fseries, const char *file)
+{
+#if 0
+  /* FIXME: why can't the linker find this function? */
+  LALCPrintFrequencySeries(fseries, file);
+#else
+  FILE *fp = fopen(file, "w");
+  size_t i;
+
+  if(fp) {
+    for(i = 0; i < fseries->data->length; i++)
+	fprintf(fp, "%f\t%g\n", (i * fseries->deltaF), fseries->data->data[i]);
+    fclose(fp);
+  }
+#endif
+}
+
 static void print_complex8fseries(const COMPLEX8FrequencySeries *fseries, const char *file)
 {
 #if 0
