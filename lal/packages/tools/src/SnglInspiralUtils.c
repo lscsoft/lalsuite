@@ -124,7 +124,7 @@ list of single inspiral tables.  Triggers whose snr is less than
 \texttt{rsqSnrMax} and whose \texttt{rsqveto\_duration} is greater than
 \texttt{rsqVetoThresh} or whose snr is greater than \texttt{rsqSnrMax} and
 whose \texttt{rsqveto\_duration} is greater than
-\texttt{rsqAboveSnrCoeff} * \texttt{snr} ^ \texttt{rsqAboveSnrPow} are removed.
+$\mathtt{rsqAboveSnrCoeff} \times \mathtt{snr}^{\mathtt{rsqAboveSnrPow}}$
 
 \texttt{XLALVetoSingleInspiral()} takes in a linked list of single inspiral
 tables and a list of segments and returns only those triggers which do not lie
