@@ -66,6 +66,7 @@ SnglRingdownTable * ringveto_filter(
   UINT4 segmentLength;
   UINT4 sgmnt;
   UINT4 tmplt;
+  UINT4 subCounter = 0;
 
   if ( ! params->doFilter )
     return NULL;
@@ -91,6 +92,7 @@ SnglRingdownTable * ringveto_filter(
   /* loop over all elements in the template bank */
   UINT4 numEvents = 0;
   while (vetobank->next){
+    subCounter++;
     bank = vetobank->bank;
     for ( sgmnt = 0; sgmnt < segments->numSgmnt; ++sgmnt )
     {
@@ -104,7 +106,8 @@ SnglRingdownTable * ringveto_filter(
         SnglRingdownTable *thisTmplt = bank->tmplt + tmplt;
         REAL8 sigma;
     
-        verbose( "creating template %d\n", tmplt );
+        verbose( "creating template %d for segment %d in subbank %d\n",
+                  tmplt, sgmnt, subCounter );
 
         /* make template and fft it MAYBE I COULD SNIP THIS for */
         /* the cross correlations ?*/
@@ -121,7 +124,8 @@ SnglRingdownTable * ringveto_filter(
             params->dynRangeFac ) );
         Result->sigma = sigma; /* store this value for all these tmplts */
 
-        verbose( "  filtering segment %d against template %d\n", sgmnt, tmplt );
+        verbose( "  filtering segment %d against template %d in subbank %d\n", 
+                sgmnt, tmplt, subCounter );
 
         /* filter the segment with the template */
         filter_segment_template( &(Result->result), &rtilde, &stilde,
@@ -152,15 +156,17 @@ SnglRingdownTable * ringveto_filter(
 
       /* search through results for threshold crossings and record events */
       /* REWRITE this to loop over ALL RESULTS!!! */
+      numEvents = 0;
       while(Result->next){
-        events = find_events( events, &numEvents, &Result->result, Result->sigma,
-            Result->frequency, Result->quality, params );
+        events = find_events( events, &numEvents, &Result->result, 
+            Result->sigma, Result->frequency, Result->quality, params );
         params->numEvents += numEvents;
         /* check the chisq value for each event */
         /* NEED SOME FUNCTION CALL HERE! */
-        verbose( "found %u event%s in template %u and segment%d\n", numEvents,
-          numEvents == 1 ? "" : "s", tmplt, sgmnt );
+        verbose( "found %u event%s in subbank %u and segment%d\n", numEvents,
+          numEvents == 1 ? "" : "s", subCounter, sgmnt );
         Result = Result->next;
+        numEvents = 0;
       }
       /* clean up all the results */
       Result = firstResult;
