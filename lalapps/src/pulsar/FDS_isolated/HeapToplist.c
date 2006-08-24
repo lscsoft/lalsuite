@@ -19,7 +19,7 @@ static void down_heap(toplist_t*list) {
   UINT8 succ;
   char *exch;
   while ((succ = node+node+1) < list->elems) {
-    if (succ <= list->elems)
+    if (succ+1 < list->elems)
       if ((list->smaller)((list->heap)[succ], (list->heap)[succ+1]) < 0)
 	succ++;
     if ((list->smaller)((list->heap)[node], (list->heap)[succ]) < 0) {
