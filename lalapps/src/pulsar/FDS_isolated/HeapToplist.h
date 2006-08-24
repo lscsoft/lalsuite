@@ -17,7 +17,7 @@ typedef struct {
   UINT8  elems;    /* number of elements currently in the toplist */
   size_t size;     /* size of an element */
   char   *data;    /* points to the actual data array */
-  void   **heap;   /* an array of pointers to data */
+  char   **heap;   /* an array of pointers to data */
   int    (*smaller)(const void *, const void *); /* comparison function */
 } toplist_t;
 
@@ -45,6 +45,6 @@ extern void sort_toplist_f(toplist_t*list, int (*compare)(const void *, const vo
 extern void sort_toplist(toplist_t*list);
 
 /* apply a function to all elements of the list in the current sorting order, e.g. for writing out */
-extern void go_through_toplist(toplist_t*list, int (*handle)(const void *));
+extern void go_through_toplist(toplist_t*list, void (*handle)(const void *));
 
 #endif /* HEAPTOPLIST_H */
