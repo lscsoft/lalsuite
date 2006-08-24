@@ -36,15 +36,16 @@ extern void free_toplist(toplist_t**list);
    Returns 1 if the element was actually inserted, 0 if not. */
 extern int insert_into_toplist(toplist_t*list, void *element);
 
-/* sorts the toplist with a sorting function different from "smallest",
+/* sorts the toplist with an arbitrary sorting function
    (potentially) destroying the heap property */
-extern void sort_toplist_f(toplist_t*list, int (*compare)(const void *, const void *));
+extern void qsort_toplist(toplist_t*list, int (*compare)(const void *, const void *));
 
 /* extend the heap property to a complete ordering, sorting the whole list */
 /* not implemented yet */
 extern void sort_toplist(toplist_t*list);
 
-/* apply a function to all elements of the list in the current sorting order, e.g. for writing out */
+/* apply a function to all elements of the list in the current order
+   (probably after calling qsort_toplist(), e.g. for writing out */
 extern void go_through_toplist(toplist_t*list, void (*handle)(const void *));
 
 #endif /* HEAPTOPLIST_H */

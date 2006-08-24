@@ -27,6 +27,8 @@ main(int argc, char**argv){
     insert_into_toplist(l,&elem);
     go_through_toplist(l,print_elem); printf("\n");
   }
+  qsort_toplist(l,smaller);
+  go_through_toplist(l,print_elem); printf("\n");
   free_toplist(&l);
 }
 

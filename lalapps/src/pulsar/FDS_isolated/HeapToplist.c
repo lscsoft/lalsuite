@@ -110,20 +110,33 @@ int insert_into_toplist(toplist_t*list, void *element) {
     memcpy(list->heap[0], element, list->size);
     down_heap(list);
     return(1);
+
   } else
     return(0);
 }
 
 
-/* sorts the toplist with a sorting function different from "smaller",
-   (potentially) destroying the heap property */
-void sort_toplist_f(toplist_t*list, int (*compare)(const void *, const void *)) {
-}
-
-
-/* apply the function "handle" to all elements of the list in the current sorting order */
+/* apply the function "handle" to all elements of the list in the current order */
 void go_through_toplist(toplist_t*list, void (*handle)(const void *)) {
   UINT8 i;
   for(i=0;i<list->elems;i++)
     handle(list->heap[i]);
+}
+
+
+/* using qsort requires some "global" help */
+
+/* global function pointer for qsort */
+static int (*_qsort_compare1)(const void*, const void*);
+/* wrapper function for qsort */
+static int _qsort_compare2(const void*a, const void*b){
+  return (_qsort_compare1(*(void**)a,*(void**)b));
+}
+
+/* sorts the toplist with an arbitrary sorting function
+   (potentially) destroying the heap property */
+void qsort_toplist(toplist_t*list, int (*compare)(const void*, const void*)) {
+  /* point the global function pointer to compare, then call qsort with the wrapper */
+  _qsort_compare1 = compare;
+  qsort(list->heap,list->elems,sizeof(char*),_qsort_compare2);
 }
