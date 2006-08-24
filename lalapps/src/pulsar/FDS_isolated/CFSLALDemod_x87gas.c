@@ -466,7 +466,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
         else /* if ( tempFreq0 >= LD_SMALL ) */
     
           {
-            fprintf(stderr,"small x\n");
+/*            fprintf(stderr,"small x\n"); */
             
             /* C version of the same calculations */
 
