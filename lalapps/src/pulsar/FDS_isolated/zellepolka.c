@@ -311,23 +311,14 @@ void ReadCandidateListFromZipFile (LALStatus *, CandidateList **CList, CHAR *fna
 void RePrepareCells( LALStatus *, CellData **cell, const UINT4 CLength , const UINT4 iposition);
 void PrepareCells( LALStatus *, CellData **cell, const UINT4 datalen );
 
-#ifndef __GNUC__
-#define __inline__ inline
-#endif
-
-int compareNumOfCoincidences(const void *a, const void *b);
-static __inline__ int compareNumOfCoincidencesList(const void *a, const void *b);
-int compareCandidates(const void *ip, const void *jp);
-static __inline__ int compareCandidatesList(const void *a, const void *b);
-int compareSignificances(const void *a, const void *b);
-int compareFrequencyCell(const void *a, const void *b);
-static __inline__ int compareFrequencyCellList(const void *a, const void *b);
-int compareINT4arrays(const INT4 *idata1, const INT4 *idata2, size_t s); /* compare two INT4 arrays of size s.*/
-int compareREAL8arrays(const REAL8 *rdata1, const REAL8 *rdata2, size_t s); /* compare two REAL8 arrays of size s.*/
 void add_int4_data(LALStatus *, struct int4_linked_list **list_ptr, const INT4 *data);
 void delete_int4_linked_list( LALStatus *, struct int4_linked_list *list_ptr);
 
 void get_info_of_the_cell( LALStatus *, CellData *cd, const CandidateList *CList);
+
+int compareREAL8arrays(const REAL8 *ap, const REAL8 *bp, size_t n);
+int compareINT4arrays(const INT4 *ap, const INT4 *bp, size_t n);
+int compareSignificances(const void *a, const void *b);
 
 void PrintResult( LALStatus *, const PolkaConfigVars *CLA, CellData *cell, const INT4 *ncell, CandidateList *CList , const INT4 cellgridnum, INT4 CellListi[]);
 void print_Fstat_of_the_cell( LALStatus *, FILE *fp, const CellData *cd, const CandidateList *CList, const INT4 icell_start, 
@@ -474,11 +465,6 @@ int main(INT4 argc,CHAR *argv[])
 	      }
 
 #if 0
-	    /* sort arrays of candidates */
-	    qsort(SortedCListi, CLength, sizeof(INT4), compareCandidatesList); 
-#endif
-	    
-#if 0
 	    /* Bruce's sorting function */
 	    sortCandidates(SortedCListi, CLength);
 #endif
@@ -486,7 +472,7 @@ int main(INT4 argc,CHAR *argv[])
 #if 1
 	    /* Holger's sorting function */
 	    sortCandidates2(SortedCListi, 0, CLength);
-	    printf("%% Sorting of candidates finished. \n");
+	    fprintf(stderr,"%% Sorting of candidates finished.\n");
 #endif
 
 
@@ -778,20 +764,13 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
   sprintf(fnameCoiTime,"polka_coincident_outlier_2FofTime_%d", cellgridnum);
   sprintf(fnameCoiCell,"polka_coincident_outlier_CellData_%d", cellgridnum);
   sprintf(fnameMaxOverSky,"polka_maxcoincident_over_each_freqcell_and_allsky_%d", cellgridnum);
-
-
-
   /* ------------------------------------------------------------- */
-  /* 
-     First Sort arrays of candidates based on number of candidate. 
-     old: qsort(cell, (size_t) (*ncell), sizeof(CellData), compareNumOfCoincidences); 
-     improved: qsort(CellListi, *ncell, sizeof(INT4), compareNumOfCoincidencesList); 
-  */
+
   
   /* This is the number of the maximum coincidences. */
   nmax=-1;
 
-  /* elimininate qsort by: */
+  /* elimininated qsort to find maximum by: */
 
   for(icell=0;icell<(*ncell);icell++) {
     if(nmax <= cell[CellListi[icell]].nCand){
@@ -963,17 +942,12 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
     fclose(fpSigCell);
   }
 
-
-
   /* ------------------------------------------------------------- */
   /* Output the maximum coincident event over each frequency cell and over all the sky. */
-#if 0
-  qsort(CellListi, *ncell, sizeof(INT4), compareFrequencyCellList);
-#endif 
+
   /* faster sorting. */
   sortFreqCells2(CellListi, 0, (*ncell) );
-
-
+  fprintf(stderr,"%% Sorting of cells finished.\n");
   
   {
     INT4 prev_iFreq = -1;
@@ -1384,164 +1358,6 @@ void print_Fstat_of_the_cell( LALStatus *lalStatus,
 } /* void print_Fstat_of_the_cell( ) */
 
 
-
-/* ########################################################################################## */
-/*!
-  Sorting function to sort cell indices in the INCREASING order of f, delta, alpha, FileID and 
-  DECREASING ORDER OF a significance.
-
-  @param[in] a CellData* to be compared. 
-  @param[in] b CellData* to be compared. 
-  @return If a<b, return -1, if a==b return 0, otherwise return 1. 
-*/
-int compareCandidates(const void *a, const void *b)
-{
-  const CandidateList *ip = a;
-  const CandidateList *jp = b;
-  int res;
-  INT4 ap[5],bp[5];
-
-  ap[0]=ip->iFreq;
-  ap[1]=ip->iDelta;
-  ap[2]=ip->iAlpha;
-  ap[3]=ip->iF1dot;
-  ap[4]=ip->FileID;
-
-  bp[0]=jp->iFreq;
-  bp[1]=jp->iDelta;
-  bp[2]=jp->iAlpha;
-  bp[3]=jp->iF1dot;
-  bp[4]=jp->FileID;
-
-  res = compareINT4arrays( ap,  bp, 5);
-  if( res == 0 ) {
-    REAL8 F1, F2;
-    F1=ip->TwoF;
-    F2=jp->TwoF;
-    /* I put F1 and F2 inversely, because I would like to get decreasingly-ordered set. */ 
-    res = compareREAL8arrays( &F2,  &F1, 1);
-  } 
-  return res;
-} /* int compareCandidates() */
-
-
-/* ########################################################################################## */
-/*!
-  Sorting function to sort cell indices in the INCREASING order of f, delta, alpha, FileID and 
-  DECREASING ORDER OF a significance.
-
-  @param[in] a CellData* to be compared. 
-  @param[in] b CellData* to be compared. 
-  @return If a<b, return -1, if a==b return 0, otherwise return 1. 
-*/
-
-static __inline__ int compareCandidatesList(const void *a, const void *b)
-{
-  const INT4 *ip = a;
-  const INT4 *jp = b;
-
-  if (SortedC[*ip].iFreq<SortedC[*jp].iFreq) return -1;
-  if (SortedC[*ip].iFreq>SortedC[*jp].iFreq) return 1;
-
-  if (SortedC[*ip].iDelta<SortedC[*jp].iDelta) return -1;
-  if (SortedC[*ip].iDelta>SortedC[*jp].iDelta) return 1;
-
-  if (SortedC[*ip].iAlpha<SortedC[*jp].iAlpha) return -1;
-  if (SortedC[*ip].iAlpha>SortedC[*jp].iAlpha) return 1;
-
-  if (SortedC[*ip].iF1dot<SortedC[*jp].iF1dot) return -1;
-  if (SortedC[*ip].iF1dot>SortedC[*jp].iF1dot) return 1;
-
-  if (SortedC[*ip].FileID<SortedC[*jp].FileID) return -1;
-  if (SortedC[*ip].FileID>SortedC[*jp].FileID) return 1;
-
-/* I put jp and ip inversely, because I would like to get decreasingly-ordered set. */ 
-  if (SortedC[*jp].TwoF<SortedC[*ip].TwoF) return -1;
-  if (SortedC[*jp].TwoF>SortedC[*ip].TwoF) return 1;
-
-  return 0;
-} /* int compareCandidatesList() */
-
-
-
-
-/* ########################################################################################## */
-/*!
-  Sorting function to sort cells indices in the INCREASING order of a frequency index, and 
-  the DECREASING ORDER OF a number of events in a cell.
-
-  Compare two cells in terms of a frequency index.
-  If those are the same, then compare them in terms of a number of candidates.
-  If we use qsort, we will have cells ordered as 
-  cell[0], cell[1], ....
-  where cell[0] has a smaller frequency index (or if it is equal to that of cell[1]
-  then a larger number of the candidate events) than that of cell[1].
-
-
-  @param[in] a CellData* to be compared. 
-  @param[in] b CellData* to be compared. 
-  @return If a<b, return -1, if a==b return 0, otherwise return 1. 
-*/
-int compareFrequencyCell(const void *a, const void *b)
-{
-  const CellData *ip = a;
-  const CellData *jp = b;
-  int res;
-  INT4 ap[2],bp[2];
-
-  ap[0]=ip->iFreq; /* iFreq for cand 1.*/
-  bp[0]=jp->iFreq; /* iFreq for cand 2.*/
-
-  /* I put n1 and n2 inversely, because I would like to get decreasingly-ordered set. */ 
-  ap[1]=jp->nCand; /* nCand for cand 2.*/
-  bp[1]=ip->nCand; /* nCand for cand 1.*/
-
-  res = compareINT4arrays( ap,  bp, 2);
-
-  return res;
-} /* int compareFrequecyCell() */
-
-
-
-/* ########################################################################################## */
-/*!
-  Sorting function to sort cells indices in the INCREASING order of a frequency index, and 
-  the DECREASING ORDER OF a number of events in a cell.
-
-  Compare two cells in terms of a frequency index.
-  If those are the same, then compare them in terms of a number of candidates.
-  If we use qsort, we will have cells ordered as 
-  cell[0], cell[1], ....
-  where cell[0] has a smaller frequency index (or if it is equal to that of cell[1]
-  then a larger number of the candidate events) than that of cell[1].
-
-
-  @param[in] a CellData* to be compared. 
-  @param[in] b CellData* to be compared. 
-  @return If a<b, return -1, if a==b return 0, otherwise return 1. 
-*/
-static __inline__ compareFrequencyCellList(const void *a, const void *b)
-{
-  const INT4 *ip = a;
-  const INT4 *jp = b;
-
-  if (cell[*ip].iFreq<cell[*jp].iFreq) return -1;
-  if (cell[*ip].iFreq>cell[*jp].iFreq) return 1;
-
-  /* I put jp and ip inversely, because I would like to get decreasingly-ordered set. */ 
-  if (cell[*jp].nCand<cell[*ip].nCand) return -1;
-  if (cell[*jp].nCand>cell[*ip].nCand) return 1;
-
-  /* I put jp and ip inversely, because I would like to get decreasingly-ordered set. */ 
-  if (cell[*jp].significance<cell[*ip].significance) return -1;
-  if (cell[*jp].significance>cell[*ip].significance) return 1;
-
-  return 0;
-
-} 
-
-
-
 /* ########################################################################################## */
 /*!
   Sorting function to sort cells indices in the 
@@ -1584,115 +1400,8 @@ int compareSignificances(const void *a, const void *b)
 
 
 
-/* ########################################################################################## */
-/*!
-  Sorting function to sort cells indices in the 
-  DECREASING ORDER OF a number of candidate events and a significance in cells.
-
-  Compare two cells in terms of the number of the events in the cells. 
-  If those are the same, then compare them in terms of the significance.
-  If we use qsort, we will have cells ordered as 
-  cell[0], cell[1], ....
-  where cell[0] has a largher number of the candidate events (or if it is equal to that of cell[1]
-  then a larger significane) than that of cell[1].
-
-  @param[in] a CellData* to be compared
-  @param[in] b CellData* to be compared
-  @return If a<b, return -1, if a==b return 0, otherwise return 1. 
-*/
-int compareNumOfCoincidences(const void *a, const void *b)
-{
-  const CellData *ip = a;
-  const CellData *jp = b;
-  int res;
-
-  INT4 n1, n2;
-
-  n1=ip->nCand;
-  n2=jp->nCand;
-  /* I put n1 and n2 inversely, because I would like to get decreasingly-ordered set. */ 
-  res = compareINT4arrays( &n2,  &n1, 1);
-
-  if( res == 0 ) {
-    REAL8 F1, F2;
-    F1=ip->significance;
-    F2=jp->significance;
-    /* I put F1 and F2 inversely, because I would like to get decreasingly-ordered set. */ 
-    res = compareREAL8arrays( &F2,  &F1, 1);
-  } 
-
-  return res;
-} /* int compareNumOfCoincidences() */
-
-
-
-/* ########################################################################################## */
-/*!
-  Sorting function to sort cells indices in the 
-  DECREASING ORDER OF a number of candidate events and a significance in cells.
-
-  Compare two cells in terms of the number of the events in the cells. 
-  If those are the same, then compare them in terms of the significance.
-  If we use qsort, we will have cells ordered as 
-  cell[0], cell[1], ....
-  where cell[0] has a largher number of the candidate events (or if it is equal to that of cell[1]
-  then a larger significane) than that of cell[1].
-
-  @param[in] a CellData* to be compared
-  @param[in] b CellData* to be compared
-  @return If a<b, return -1, if a==b return 0, otherwise return 1. 
-*/
-
-
-static __inline__ int compareNumOfCoincidencesList(const void *a, const void *b)
-{
-  const INT4 *ip = a;
-  const INT4 *jp = b;
-
-  int res;
-  INT4 n1, n2;
-
-  n1=cell[*ip].nCand;
-  n2=cell[*jp].nCand;
-  /* I put n1 and n2 inversely, because I would like to get decreasingly-ordered set. */ 
-  /*  res = compareINT4arrays( &n2,  &n1, 1); */
-
-  if( n2 == n1 ) { 
-    res=0;
-  }
-  else {
-    if ( n2 < n1 ) 
-      res=-1;    
-    else
-      res=1;
-  }
-
-  if( res == 0 ) {
-    REAL8 F1, F2;
-    F1=cell[*ip].significance;
-    F2=cell[*jp].significance;
-    /* I put F1 and F2 inversely, because I would like to get decreasingly-ordered set. */ 
-    /* res = compareREAL8arrays( &F2,  &F1, 1); */
-
-    if( F2 == F1 ) { 
-      res=0;
-    }
-    else {
-      if ( F2 < F1 ) 
-	res=-1;    
-      else
-	res=1;
-    } 
-  }
-  return res;
-} /* int compareNumOfCoincidencesList() */
-
-
-
-
 
 /* ############################################################################### */
-
 
 /*!
   Compare two REAL8 arrays of the same size \b n.
@@ -3051,7 +2760,7 @@ ReadCommandLineArgs( LALStatus *lalStatus,
 
 
 
-
+#if 0
 /* ################################################################### */
 /*
   Bruce's  sorting function to replace qsort. 
@@ -3096,15 +2805,15 @@ void sortCandidates(INT4 *data, INT4 N)
   sortCandidates(data, i-1);
   sortCandidates(data+i, N-i);
 }
-
+#endif
 
 /* ################################################################### */
-
-
-
 /* ################################################################### */
 /*
   Holger's sorting function to replace qsort. 
+/*!
+  Sorting function to sort cell indices in the INCREASING order of f, delta, alpha, FileID and 
+  DECREASING ORDER OF a significance.
 */
 
 void sortCandidates2(INT4 *data, INT4 left, INT4 right)
@@ -3183,7 +2892,6 @@ void sortCandidates2(INT4 *data, INT4 left, INT4 right)
 
 
 /* ################################################################### */
-
 /* ################################################################### */
 /*
   Holger's sorting function to replace qsort. 
