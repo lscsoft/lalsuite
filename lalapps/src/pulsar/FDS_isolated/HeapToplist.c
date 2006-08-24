@@ -20,9 +20,9 @@ static void down_heap(toplist_t*list) {
   char *exch;
   while ((succ = node+node+1) < list->elems) {
     if (succ+1 < list->elems)
-      if ((list->smaller)((list->heap)[succ], (list->heap)[succ+1]) < 0)
+      if ((list->smaller)((list->heap)[succ+1], (list->heap)[succ]) > 0)
 	succ++;
-    if ((list->smaller)((list->heap)[node], (list->heap)[succ]) < 0) {
+    if ((list->smaller)((list->heap)[succ], (list->heap)[node]) > 0) {
       exch = (list->heap)[node];
       (list->heap)[node] = (list->heap)[succ];
       (list->heap)[succ] = exch;
