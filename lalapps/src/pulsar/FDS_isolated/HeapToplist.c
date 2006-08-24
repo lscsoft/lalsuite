@@ -2,15 +2,17 @@
 #include <string.h>
 #include "HeapToplist.h"
 
+
 /* successors of node n: 2*n+1 and 2*n+2
-          0
-    1          2
- 3     4    5     6
-7 8  9 10 11 12 13 14
+        0
+   1          2
+ 3   4     5     6
+7 8 9 10 11 12 13 14
 */
 
-/* this function gets a "partial heap", i.e. a heap where
-   only the top element (potentially) violates the heap property. It "bubbles
+
+/* this function gets a "partial heap", i.e. a heap where only the top
+   element (potentially) violates the heap property. It "bubbles
    down" this element so that the heap property is restored */
 static void down_heap(toplist_t*list) {
   UINT8 node = 0;
@@ -30,13 +32,15 @@ static void down_heap(toplist_t*list) {
   }
 }
 
+
 /* this function gets a "partial heap", i.e. a heap where only an element on
    the lowest level (potentially) violates the heap property. It "bubbles up"
    this element so that the heap property is restored */
 static void up_heap(toplist_t*list, UINT8 node) {
   UINT8 pred;
   char *exch;
-  while ((pred = (node-1)/2) > 0) {
+  while (node > 0) {
+    pred = (node-1)/2;
     if ((list->smaller)((list->heap)[node], (list->heap)[pred]) > 0) {
       exch = (list->heap)[node];
       (list->heap)[node] = (list->heap)[pred];
@@ -46,6 +50,7 @@ static void up_heap(toplist_t*list, UINT8 node) {
       break;
   }
 }
+
 
 /* creates a toplist with length elements,
    returns -1 on error (out of memory), else 0 */
@@ -69,17 +74,20 @@ int create_toplist(toplist_t**list,
   
   listp->length  = length;
   listp->elems   = 0;
+  listp->size    = size;
   listp->smaller = smaller;
   *list = listp;
   return(0);
 }
 
+
 /* frees the space occupied by the toplist */
 void free_toplist(toplist_t**list) {
     free((*list)->heap);
     free((*list)->data);
-    free(list);
+    free(*list);
 }
+
 
 /* Inserts an element in to the toplist either if there is space left
    or the element is larger than the smallest element in the toplist.
@@ -106,10 +114,12 @@ int insert_into_toplist(toplist_t*list, void *element) {
     return(0);
 }
 
+
 /* sorts the toplist with a sorting function different from "smaller",
    (potentially) destroying the heap property */
 void sort_toplist_f(toplist_t*list, int (*compare)(const void *, const void *)) {
 }
+
 
 /* apply the function "handle" to all elements of the list in the current sorting order */
 void go_through_toplist(toplist_t*list, void (*handle)(const void *)) {
@@ -117,4 +127,3 @@ void go_through_toplist(toplist_t*list, void (*handle)(const void *)) {
   for(i=0;i<list->elems;i++)
     handle(list->heap[i]);
 }
-
