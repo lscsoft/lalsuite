@@ -23,7 +23,7 @@ main(int argc, char**argv){
   toplist_t *l;
 
   if (argc < 2)
-    n=10;
+    n=20;
   else
     n=atoi(argv[1]);
 
