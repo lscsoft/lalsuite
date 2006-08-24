@@ -20,9 +20,9 @@ static void down_heap(toplist_t*list) {
   char *exch;
   while ((succ = node+node+1) < list->elems) {
     if (succ <= list->elems)
-      if ((list->smaller)((list->heap)[succ], (list->heap)[succ+1]) > 0)
+      if ((list->smaller)((list->heap)[succ], (list->heap)[succ+1]) < 0)
 	succ++;
-    if ((list->smaller)((list->heap)[node], (list->heap)[succ]) > 0) {
+    if ((list->smaller)((list->heap)[node], (list->heap)[succ]) < 0) {
       exch = (list->heap)[node];
       (list->heap)[node] = (list->heap)[succ];
       (list->heap)[succ] = exch;
@@ -76,6 +76,7 @@ int create_toplist(toplist_t**list,
   listp->elems   = 0;
   listp->size    = size;
   listp->smaller = smaller;
+
   *list = listp;
   return(0);
 }
@@ -132,6 +133,10 @@ static int (*_qsort_compare1)(const void*, const void*);
 static int _qsort_compare2(const void*a, const void*b){
   return (_qsort_compare1(*(void**)a,*(void**)b));
 }
+/* inverse wrapper */
+static int _qsort_compare3(const void*b, const void*a){
+  return (_qsort_compare1(*(void**)a,*(void**)b));
+}
 
 /* sorts the toplist with an arbitrary sorting function
    (potentially) destroying the heap property */
@@ -139,4 +144,11 @@ void qsort_toplist(toplist_t*list, int (*compare)(const void*, const void*)) {
   /* point the global function pointer to compare, then call qsort with the wrapper */
   _qsort_compare1 = compare;
   qsort(list->heap,list->elems,sizeof(char*),_qsort_compare2);
+}
+
+/* qsort function that gives the reverse ordering of the previous */
+void qsort_toplist_r(toplist_t*list, int (*compare)(const void*, const void*)) {
+  /* point the global function pointer to compare, then call qsort with the wrapper */
+  _qsort_compare1 = compare;
+  qsort(list->heap,list->elems,sizeof(char*),_qsort_compare3);
 }

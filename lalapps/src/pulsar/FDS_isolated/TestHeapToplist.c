@@ -19,14 +19,27 @@ static void print_elem(const void*e){
 
 main(int argc, char**argv){
   elem_t elem;
-  int i;
+  int i,n,m;
   toplist_t *l;
-  create_toplist(&l,5,sizeof(elem_t),smaller);
-  for(i=0;i<10;i++){
+
+  if (argc < 2)
+    n=10;
+  else
+    n=atoi(argv[1]);
+
+  if (argc < 3)
+    m=10;
+  else
+    m=atoi(argv[2]);
+
+  create_toplist(&l,m,sizeof(elem_t),smaller);
+  for(i=0;i<n;i++){
     elem = rand()/(double)RAND_MAX;
     insert_into_toplist(l,&elem);
     go_through_toplist(l,print_elem); printf("\n");
   }
+  qsort_toplist_r(l,smaller);
+  go_through_toplist(l,print_elem); printf("\n");
   qsort_toplist(l,smaller);
   go_through_toplist(l,print_elem); printf("\n");
   free_toplist(&l);
