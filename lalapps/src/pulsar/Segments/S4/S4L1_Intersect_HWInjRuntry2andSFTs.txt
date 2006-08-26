@@ -1,0 +1,2 @@
+Unknown option: 1800
+The ./compareSegLists.tcl script finished with an error.
