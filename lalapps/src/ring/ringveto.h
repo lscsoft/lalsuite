@@ -102,8 +102,8 @@ struct tagRingVetoResults {
 typedef struct tagRingVetoResults RingVetoResults;
 
 struct tagRingVetoCC {
-  REAL4Vector                 Beta;
-  INT4Vector		      Tau;
+  REAL4Vector                 *Beta;
+  INT4Vector		      *Tau;
 };
 typedef struct tagRingVetoCC RingVetoCC;
 

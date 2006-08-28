@@ -51,6 +51,13 @@ static RingVetoCC computeCC( RingVetoResults *Result,
                              COMPLEX8FFTPlan *fwdplan,
                              COMPLEX8FFTPlan *revplan );
 
+static void computeChisqVec (REAL4Vector *chisqVec,
+                                     RingVetoResults *thisResult,
+                                     RingVetoResults *firstResult,
+                                     RingVetoCC *RVCC,
+                                     UINT4 i ); 
+
+
 struct tagRV_BT{
   REAL4 beta;
   INT4 tau;
@@ -87,6 +94,7 @@ SnglRingdownTable * ringveto_filter(
   COMPLEX8FrequencySeries  rtilde;
   REAL4FrequencySeries     snipSpec; /*this will actually store the amplitude */
                                      /*spectrum NOT PSD! */
+  REAL4Vector              *chisqVec = NULL;
   UINT4 segmentLength;
   UINT4 sgmnt;
   UINT4 tmplt;
@@ -118,7 +126,7 @@ SnglRingdownTable * ringveto_filter(
   signal.data = XLALCreateREAL4Vector( segmentLength );
   stilde.data = XLALCreateCOMPLEX8Vector( segmentLength/2 + 1 );
   rtilde.data = XLALCreateCOMPLEX8Vector( segmentLength/2 + 1 );
-  
+  chisqVec = XLALCreateREAL4Vector( segmentLength );
 
   firstvetobank = vetobank; /* just remember the first one */
   /* loop over all elements in the template bank */
@@ -200,7 +208,9 @@ SnglRingdownTable * ringveto_filter(
       /* search through results for threshold crossings and record events */
       /* REWRITE this to loop over ALL RESULTS!!! */
       numEvents = 0;
+      sC = 0;
       while(Result->next){
+        computeChisqVec(chisqVec,Result,firstResult,&thisCC,sC);
         events = find_events( events, &numEvents, &Result->result, 
             Result->sigma, Result->frequency, Result->quality, params );
         params->numEvents += numEvents;
@@ -210,8 +220,11 @@ SnglRingdownTable * ringveto_filter(
           numEvents == 1 ? "" : "s", subCounter, sgmnt );
         Result = Result->next;
         numEvents = 0;
+        sC++;
       }
       /* clean up all the results */
+      XLALDestroyREAL4Vector(thisCC.Beta);
+      XLALDestroyINT4Vector(thisCC.Tau);
       Result = firstResult;
       while (Result->next){
         thisResult = Result;
@@ -540,12 +553,16 @@ static RingVetoCC computeCC( RingVetoResults *Result,
                  revplan);
       Beta->data[cnt*i+j] = BT.beta/sqrt(Beta->data[cnt*i+i]*
                                          Beta->data[cnt*j+j]);
+      if(BT.tau > Result->tmpSnipTilde.data->length/2) 
+         BT.tau-=Result->tmpSnipTilde.data->length; /*HACK!*/
       Tau->data[cnt*i+j] = BT.tau;
       /* conjugate pair */
       BT = getBT(&thisResult->next->tmpSnipTilde,&Result->tmpSnipTilde,
                  revplan);
       Beta->data[cnt*j+i] = BT.beta/sqrt(Beta->data[cnt*i+i]*
                                          Beta->data[cnt*j+j]);
+      if(BT.tau > Result->tmpSnipTilde.data->length/2)          
+         BT.tau-=Result->tmpSnipTilde.data->length; /*HACK!*/
       Tau->data[cnt*j+i] = BT.tau;
       thisResult=thisResult->next;
       verbose("i %d j %d\n",i,j);
@@ -554,12 +571,6 @@ static RingVetoCC computeCC( RingVetoResults *Result,
     i++;
     Result=Result->next;
     }
-/*
-      BT = getBT(&thisResult->next->tmpSnipTilde,&Result->tmpSnipTilde,
-                 revplan);
-      Beta->data[cnt*(j)+i] = BT.beta/Beta->data[cnt*(j)+j];
-      Tau->data[cnt*(j)+i] = BT.tau;
-*/
 
   for(i=0;i<cnt;i++) Beta->data[cnt*i+i] = 1; /* normalize */
 
@@ -569,11 +580,13 @@ static RingVetoCC computeCC( RingVetoResults *Result,
     }
   verbose("\n\n");
   for(j=0;j<cnt;j++){
-    for(i=0;i<cnt;i++) verbose("%d ",Tau->data[j*cnt +i]);
+    for(i=0;i<cnt;i++) verbose("%d\t",Tau->data[j*cnt +i]);
     verbose("\n");
     }
   Result = first;
   XLALDestroyREAL4Vector( thisCCresult.data );
+  finalCC.Beta = Beta;
+  finalCC.Tau = Tau;
   return finalCC;
   }
 
@@ -601,11 +614,12 @@ static RV_BT getBT(COMPLEX8FrequencySeries *A,
   verbose("OUT->data->length %d C->data->length %d\n",
            OUT->data->length, C->data->length);
   XLALCOMPLEX8FreqTimeFFT( OUT, C, revplan ); 
+  
   for(i=0; i < OUT->data->length; i++){
-    if (fabs(OUT->data->data[i].re*OUT->data->data[i].re 
+    if (sqrt(OUT->data->data[i].re*OUT->data->data[i].re 
              + OUT->data->data[i].im*OUT->data->data[i].im) > BT.beta){
-      BT.beta = (fabs(OUT->data->data[i].re*OUT->data->data[i].re+ 
-                 OUT->data->data[i].im*OUT->data->data[i].im));
+      BT.beta = sqrt(OUT->data->data[i].re*OUT->data->data[i].re+ 
+                 OUT->data->data[i].im*OUT->data->data[i].im);
       BT.tau = i;
       }
     };
@@ -628,4 +642,67 @@ static void normSnip( COMPLEX8Vector *vec){
     vec->data[i].re/=vecSum;
     vec->data[i].im/=vecSum;
     }
+  }
+
+static void computeChisqVec (REAL4Vector *chisqVec, 
+                                     RingVetoResults *thisResult,
+                                     RingVetoResults *firstResult,
+                                     RingVetoCC *RVCC,
+                                     UINT4 i ) {
+
+  FILE *FP = NULL;
+  UINT4 j = 0;
+  UINT4 k = 0;
+  REAL4 deltasq = 0.45; /*SHOULD BE A PARAMETER */
+  REAL4 effDOF = 0;
+  REAL4 avgBeta = 0;
+  RingVetoResults *Result = NULL;
+  REAL4Vector *beta = NULL;
+  INT4Vector *tau = NULL;
+  beta = XLALCreateREAL4Vector(thisResult->numResults);
+  tau = XLALCreateINT4Vector(thisResult->numResults);
+  verbose("beta->length %d i %d RVCC->Beta.data->length %d\n",
+           beta->length, i, RVCC->Beta->length); 
+  
+  Result = firstResult;
+  while(Result->next){
+    verbose("%d\n Result->result %d",k, (int) Result->result.data );
+    Result=Result->next;
+    k++;
+    }
+
+  for(j=0; j < thisResult->numResults; j++){
+    beta->data[j] = RVCC->Beta->data[(thisResult->numResults)*j+i];
+    avgBeta+=beta->data[j];
+    tau->data[j] = RVCC->Tau->data[(thisResult->numResults)*j+i];
+    verbose("beta[%d] %f, tau[%d] %d\n",j,beta->data[j],j,tau->data[j]);
+    }
+ 
+  avgBeta/=thisResult->numResults;
+  effDOF = 2.0*(thisResult->numResults-1.0)*(1.0-avgBeta);
+  verbose("chisqVec->length %d avgBeta %f effDOF %f\n",
+           chisqVec->length,avgBeta,effDOF);  
+   
+  Result = firstResult;
+  
+  for(k=firstResult->tmpSnip.data->length;
+      k<(firstResult->result.data->length - firstResult->tmpSnip.data->length);k++){
+    Result = firstResult;
+    j = 0;
+    for (j=0;j < (thisResult->numResults);j++){
+      chisqVec->data[k] += 1.0/effDOF*(thisResult->result.data->data[k]-
+              1.0/beta->data[j]*Result->result.data->data[k+tau->data[j]])*
+              (thisResult->result.data->data[k]-
+              1.0/beta->data[j]*Result->result.data->data[k+tau->data[j]]);
+      Result=Result->next;
+      }
+    
+    chisqVec->data[k] /= deltasq*thisResult->result.data->data[k]*
+                         thisResult->result.data->data[k]+1;
+    }
+
+  FP = fopen("chisqVec.dat","w");
+  for(j=0;j<chisqVec->length;j++) fprintf(FP,"%f\n",chisqVec->data[j]);
+  XLALDestroyREAL4Vector(beta);
+  XLALDestroyINT4Vector(tau);
   } 
