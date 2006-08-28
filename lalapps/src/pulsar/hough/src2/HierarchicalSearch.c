@@ -228,8 +228,6 @@ int main( int argc, char *argv[]) {
   LIGOTimeGPSVector *startTstack1=NULL; 
   LIGOTimeGPSVector *startTstack2=NULL; 
   
-  LIGOTimeGPSVector *sftTimeStamps1=NULL; 
-  LIGOTimeGPSVector *sftTimeStamps2=NULL; 
   LIGOTimeGPS refTimeGPS, tStart1GPS, tStart2GPS;
   REAL8 tObs1, tObs2;
 
@@ -1083,7 +1081,7 @@ int main( int argc, char *argv[]) {
 
   if ( uvar_followUp )
     {
-      LALFree(midTstack2->data);
+      XLALDestroyTimestampVector(midTstack2);
       XLALDestroyTimestampVector(startTstack2);
       /* free sfts */
       for ( k = 0; k < nStacks2; k++) {
@@ -1101,7 +1099,6 @@ int main( int argc, char *argv[]) {
       fclose(fpFstat);
       LALFree(fnameFstatCand);
 
-      LAL_CALL(LALDestroyTimestampVector ( &status, &sftTimeStamps2), &status);  	
     }
 
   if ( uvar_printCand1 )
@@ -1126,7 +1123,6 @@ int main( int argc, char *argv[]) {
   LALFree(stackMultiNoiseWeights1.data);
   LALFree(stackMultiDetStates1.data);
   
-  LAL_CALL(LALDestroyTimestampVector ( &status, &sftTimeStamps1), &status);  	  
 
   XLALDestroyTimestampVector(midTstack1);
   XLALDestroyTimestampVector(startTstack1);
@@ -1155,6 +1151,7 @@ int main( int argc, char *argv[]) {
   /* free candidates */
   LALFree(semiCohCandList1.list);
 
+  XLALDestroyPulsarSpinRange(spinRange_refTime);
   XLALDestroyPulsarSpinRange(spinRange_endTime1);
   XLALDestroyPulsarSpinRange(spinRange_endTime2);
   XLALDestroyPulsarSpinRange(spinRange_startTime1);
@@ -1372,6 +1369,7 @@ void SetUpSFTs( LALStatus *status,
       } /* end if */
     } /* loop over stacks */
   LALFree( catalogSeq.data);  
+  XLALDestroyTimestampVector(sftTimeStamps);
 
   in->nStacks = nStacks;  
   
