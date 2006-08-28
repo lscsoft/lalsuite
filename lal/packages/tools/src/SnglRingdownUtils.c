@@ -312,6 +312,7 @@ LALCompareRingdowns (
 {
   INT8    ta,  tb;
   REAL4   df, dQ;
+  REAL4   df_ab, df_ba, dQ_ab, dQ_ba, f_a, f_b, Q_a, Q_b, ds_sqA, ds_sqB;
   InterferometerNumber ifoaNum,  ifobNum;
   SnglRingdownAccuracy aAcc, bAcc;
   
@@ -376,6 +377,38 @@ LALCompareRingdowns (
       goto exit;
     }
   }
+  if ( params->test == ds_sq )
+  {
+    df_ab = ( aPtr->frequency - bPtr->frequency );
+    df_ba = ( bPtr->frequency - aPtr->frequency );
+    dQ_ab = ( aPtr->quality - bPtr->quality );
+    dQ_ba = ( bPtr->quality - aPtr->quality );
+   
+    f_a = aPtr->frequency;
+    f_b = bPtr->frequency;
+    Q_a = aPtr->quality;
+    Q_b = bPtr->quality;
+
+    ds_sqA = 1/8 * dQ_ab * dQ_ab / Q_b / Q_b - 1/4 * dQ_ab / Q_b * df_ab / f_b
+             + Q_b * Q_b * df_ab * df_ab / f_b / f_b;
+
+    ds_sqB = 1/8 * dQ_ba * dQ_ba / Q_a / Q_a - 1/4 * dQ_ba / Q_a * df_ba / f_a
+             + Q_a * Q_a * df_ba * df_ba / f_a / f_a;
+
+
+    if ( ( ds_sqA <= aAcc.ds_sq ) && ( ds_sqB <= (aAcc.ds_sq) ))
+    {
+      LALInfo( status, "Triggers pass the ds_sq coincidence test" );
+      params->match = 1;
+    }
+    else
+    {
+      LALInfo( status, "Triggers fail the ds_sq coincidence test" );
+      params->match = 0;
+      goto exit;
+    }
+  }
+
   else
   {
     LALInfo( status, "error: unknown test\n" );
