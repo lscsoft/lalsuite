@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include "HeapToplist.h"
 #include "FstatToplist.h"
 
 /* short test for the basic functions of this lib. */
@@ -6,7 +7,7 @@ int test_fstat_toplist(UINT8 n, char*filename) {
     REAL8 epsilon=1e-5;
     FILE*fp;
     toplist_t *tl=NULL, *tl2=NULL;
-    FstatsClusterOutput FstatLine;
+    FstatOutputEntry FstatLine;
     UINT8 i,ins=0;
     UINT4 checksum;
 
@@ -39,10 +40,7 @@ int test_fstat_toplist(UINT8 n, char*filename) {
 	FstatLine.f1dot = (double)rand() / (double)RAND_MAX;
 	FstatLine.Alpha = (double)rand() / (double)RAND_MAX;
 	FstatLine.Delta = (double)rand() / (double)RAND_MAX;
-	FstatLine.Nbins = rand();
-	FstatLine.mean = (double)rand() / (double)RAND_MAX;
-	FstatLine.std = (double)rand() / (double)RAND_MAX;
-	FstatLine.max = (double)rand() / (double)RAND_MAX;
+	FstatLine.Fstat = (double)rand() / (double)RAND_MAX;
 
 	if(insert_into_fstat_toplist(tl, FstatLine)) {
 	    ins++;
@@ -102,34 +100,30 @@ int test_fstat_toplist(UINT8 n, char*filename) {
 
     fprintf(stderr,"comparing...\n");
     for(i=0;i<n;i++)
-	if((tl->sorted[i]->Freq  - tl2->sorted[i]->Freq > epsilon) ||
-	   (tl->sorted[i]->f1dot - tl2->sorted[i]->f1dot > epsilon) ||
-	   (tl->sorted[i]->Alpha - tl2->sorted[i]->Alpha > epsilon) ||
-	   (tl->sorted[i]->Delta - tl2->sorted[i]->Delta > epsilon) ||
-	   (tl->sorted[i]->Nbins - tl2->sorted[i]->Nbins > epsilon) ||
-	   (tl->sorted[i]->mean  - tl2->sorted[i]->mean > epsilon) ||
-	   (tl->sorted[i]->std   - tl2->sorted[i]->std > epsilon) ||
-	   (tl->sorted[i]->max   - tl2->sorted[i]->max > epsilon)) {
-
-	    LALPrintError("line %d differs\n",i);
-	    fprintf(stderr,"%e %e %e %e %d %e %e %e\n",
-		    tl->sorted[i]->Freq,
-		    tl->sorted[i]->f1dot,
-		    tl->sorted[i]->Alpha,
-		    tl->sorted[i]->Delta,
-		    tl->sorted[i]->Nbins,
-		    tl->sorted[i]->mean,
-		    tl->sorted[i]->std,
-		    tl->sorted[i]->max);
-	    fprintf(stderr,"%e %e %e %e %d %e %e %e\n",
-		    tl2->sorted[i]->Freq,
-		    tl2->sorted[i]->f1dot,
-		    tl2->sorted[i]->Alpha,
-		    tl2->sorted[i]->Delta,
-		    tl2->sorted[i]->Nbins,
-		    tl2->sorted[i]->mean,
-		    tl2->sorted[i]->std,
-		    tl2->sorted[i]->max);
+      if((((FstatOutputEntry*)(tl->heap[i]))->Freq  -
+	  ((FstatOutputEntry*)(tl2->heap[i]))->Freq > epsilon) ||
+	 (((FstatOutputEntry*)(tl->heap[i]))->f1dot -
+	  ((FstatOutputEntry*)(tl2->heap[i]))->f1dot > epsilon) ||
+	 (((FstatOutputEntry*)(tl->heap[i]))->Alpha -
+	  ((FstatOutputEntry*)(tl2->heap[i]))->Alpha > epsilon) ||
+	 (((FstatOutputEntry*)(tl->heap[i]))->Delta -
+	  ((FstatOutputEntry*)(tl2->heap[i]))->Delta > epsilon) ||
+	 (((FstatOutputEntry*)(tl->heap[i]))->Fstat -
+	  ((FstatOutputEntry*)(tl2->heap[i]))->Fstat > epsilon)) {
+	
+	LALPrintError("line %d differs\n",i);
+	    fprintf(stderr,"%e %e %e %e %e\n",
+		    ((FstatOutputEntry*)(tl->heap[i]))->Freq,
+		    ((FstatOutputEntry*)(tl->heap[i]))->f1dot,
+		    ((FstatOutputEntry*)(tl->heap[i]))->Alpha,
+		    ((FstatOutputEntry*)(tl->heap[i]))->Delta,
+		    ((FstatOutputEntry*)(tl->heap[i]))->Fstat);
+	    fprintf(stderr,"%e %e %e %e %e\n",
+		    ((FstatOutputEntry*)(tl2->heap[i]))->Freq,
+		    ((FstatOutputEntry*)(tl2->heap[i]))->f1dot,
+		    ((FstatOutputEntry*)(tl2->heap[i]))->Alpha,
+		    ((FstatOutputEntry*)(tl2->heap[i]))->Delta,
+		    ((FstatOutputEntry*)(tl2->heap[i]))->Fstat);
 	}
 
     fprintf(stderr,"cleanup...\n");
