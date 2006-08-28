@@ -38,6 +38,7 @@ import sys
 from glue.ligolw import ligolw
 from glue.ligolw import array
 from glue.ligolw import param
+from glue.ligolw import utils
 from pylal import llwapp
 from pylal import SnglBurstUtils
 from pylal.xlal import inject
@@ -79,7 +80,7 @@ def parse_command_line():
 #
 
 def get_instrument(elem):
-	return llwapp.get_param(elem.parentNode, "instrument").pcdata
+	return param.get_param(elem.parentNode, "instrument").pcdata
 
 
 #
@@ -205,7 +206,7 @@ class CorrelationPlot(SnglBurstUtils.BurstPlot):
 options, filenames = parse_command_line()
 
 for filename in filenames:
-	doc = llwapp.load_filename(filename, options.verbose)
+	doc = utils.load_filename(filename, options.verbose)
 	for elem in array.getArraysByName(doc, "confidence_frequencies"):
 		fig = make_frequency_plot(elem.array)
 		outname = "%s_frequency_%s.png" % (filename, get_instrument(elem))
