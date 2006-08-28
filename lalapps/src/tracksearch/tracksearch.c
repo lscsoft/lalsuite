@@ -36,16 +36,16 @@ static void print_real4tseries(const REAL4TimeSeries *fseries, const char *file)
 #else
   FILE *fp = fopen(file, "w");
   LALStatus   status=blank_status;
-  REAL8   time;
+  REAL8   timeT;
   size_t i;
   LAL_CALL(LALGPStoFloat(&status,
-			 &time,
+			 &timeT,
 			 &(fseries->epoch)),
 	   &status);
   if(fp) 
     {
       for(i = 0; i < fseries->data->length; i++)
-	fprintf(fp, "%f\t%g\n", (i * fseries->deltaT)+time, fseries->data->data[i]);
+	fprintf(fp, "%f\t%g\n", (i * fseries->deltaT)+timeT, fseries->data->data[i]);
       fclose(fp);
     }
 #endif
@@ -1184,7 +1184,6 @@ void LALappsTrackSearchInitialize(
 
 	case 'x':
 	  {
-	    INT4 len;
 	    len=strlen(optarg)+1;
 	    params->detectorPSDCache=(CHAR *)
 	      LALCalloc(len,sizeof(CHAR));
@@ -1209,7 +1208,6 @@ void LALappsTrackSearchInitialize(
 	case 'z':
 	  { /* Setting up aux label if present */
 	    /* Insert string copy code here */
-	    INT4 len;
 	    len = strlen(optarg) +1;
 	    params->calFrameCache = (CHAR *) LALCalloc(len,sizeof(CHAR));
 	    memcpy(params->calFrameCache,optarg,len);
@@ -1223,7 +1221,6 @@ void LALappsTrackSearchInitialize(
 	  break;
 	case 'B':
 	  {
-	    INT4 len;
 	    len = strlen(optarg) +1;
 	    params->pgmColorMapFile = (CHAR *) LALCalloc(len,sizeof(CHAR));
 	    memcpy(params->pgmColorMapFile,optarg,len);
@@ -1291,7 +1288,7 @@ void LALappsTrackSearchInitialize(
 	      params->verbosity=all;
 	    else
 	      {
-		printf(stderr,"Invalid option:verbosity: assuming quiet\n");
+		fprintf(stderr,"Invalid option:verbosity: assuming quiet\n");
 		params->verbosity=quiet;
 	      };
 	  }
@@ -1406,15 +1403,9 @@ void LALappsGetFrameData(LALStatus*          status,
 
 
 {
-  MetadataTable        procparams;
-  MetadataTable        procTable;
-  LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
-  ProcessParamsTable   *this_proc_param;
-  MetadataTable         searchsumm;
   FrStream             *stream = NULL;
   FrCache              *frameCache = NULL;
   FrChanIn              channelIn;
-  CHAR                 *comment=NULL;
   REAL4TimeSeries      *tmpData=NULL;
   UINT4                 loadPoints=0;
   UINT4                 i=0;
@@ -1433,7 +1424,6 @@ void LALappsGetFrameData(LALStatus*          status,
   /* only try to load frame if name is specified */
   if (dirname || cachefile)
     {
-      REAL8 tmpTime=0;
       if(dirname){
 	/* Open frame stream */
 	LAL_CALL( LALFrOpen( status, &stream, dirname->data, "*.gwf" ), status);
@@ -1726,7 +1716,6 @@ LALappsDoTSeriesSearch(LALStatus         *status,
 		       TSSearchParams     params,
 		       INT4               callNum)
 {
-  CHAR                   strCallNum[16];
   CreateTimeFreqIn       tfInputs;/*Input params for map making*/
   INT4                   j;
   LALWindowParams        windowParams;/*Needed to generate windowing funcs*/
@@ -1743,6 +1732,9 @@ LALappsDoTSeriesSearch(LALStatus         *status,
   /*
    * Error checking section
    */
+  LALappsTSassert((callNum >= 0),
+		  TRACKSEARCHC_EVAL,
+		  TRACKSEARCHC_MSGEVAL);
   if ((signalSeries == NULL) && ((params.injectMapCache !=NULL) ||
 			   (params.injectSingleMap !=NULL)))
     injectionRun=1;
@@ -2133,6 +2125,9 @@ LALappsDoTSAMapSearch(LALStatus          *status,
 {
   TrackSearchParams      inputs;/*Native LAL format for tracksearch
 				  module*/
+  LALappsTSassert((callNum >= 0),
+		  TRACKSEARCHC_EVAL,
+		  TRACKSEARCHC_MSGEVAL);
   /*
    * Setup search parameter structure
    */
@@ -2551,8 +2546,8 @@ void Dump_Search_Data(
   fprintf(fp,"Total Data Length Points:      %d\n",params.TimeLengthPoints);
   fprintf(fp,"Segment lengths:               %d\n",params.SegLengthPoints);
   fprintf(fp,"Number of Segments Processed:  %s+1 of %d\n",strCallNum,params.NumSeg);
-  fprintf(fp,"Data Sampling Rate:            %d\n",params.SamplingRate);
-  fprintf(fp,"TF Transform Type used:        %i\n",params.TransformType);
+  fprintf(fp,"Data Sampling Rate:            %f\n",params.SamplingRate);
+  fprintf(fp,"TF Transform Type used:        %d\n",params.TransformType);
   fprintf(fp,"Overlap Flag:                  %d\n",params.overlapFlag);
   /*  fprintf(fp,"Number of points in each FFT:  %d\n",params.fftPoints);*/
   fprintf(fp,"Line Width specified for map:  %d\n",params.LineWidth);
