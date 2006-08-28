@@ -37,6 +37,7 @@ __version__ = "$Revision$"[11:-2]
 import math
 import numarray
 from optparse import OptionParser
+from pysqlite2 import dbapi2 as sqlite
 import sys
 
 from glue import segments
@@ -45,9 +46,11 @@ from glue.ligolw import ligolw
 from glue.ligolw import array
 from glue.ligolw import param
 from glue.ligolw import lsctables
+from glue.ligolw import utils
 from pylal import llwapp
 from pylal import date
 from pylal import rate
+from pylal import SnglBurstUtils
 
 
 #
@@ -100,37 +103,10 @@ def parse_command_line():
 #
 
 #
-# read only sngl_burst, process, and search_summary tables
-#
-
-def element_filter(name, attrs):
-	return lsctables.IsTableProperties(lsctables.SnglBurstTable, name, attrs) or lsctables.IsTableProperties(lsctables.ProcessTable, name, attrs) or lsctables.IsTableProperties(lsctables.SearchSummaryTable, name, attrs)
-
-
-class ContentHandler(ligolw.PartialLIGOLWContentHandler):
-	def __init__(self, doc):
-		ligolw.PartialLIGOLWContentHandler.__init__(self, doc, element_filter)
-
-
-llwapp.ContentHandler = ContentHandler
-
-
-#
-# Restrict the columns loaded from the sngl_burst table
-#
-
-lsctables.SnglBurstTable.loadcolumns = ["ifo", "start_time", "start_time_ns", "duration", "snr", "confidence", "tfvolume"]
-
-
-#
 # Override some methods of the SnglBurst and SearchSummary row classes
 #
 
-class SnglBurst(lsctables.SnglBurst):
-	def get_start(self):
-		# use date.LIGOTimeGPS instead of lal.LIGOTimeGPS
-		return date.LIGOTimeGPS(self.start_time, self.start_time_ns)
-
+class SnglBurst(SnglBurstUtils.SnglBurst):
 	def get_stop(self):
 		# lal doesn't include stop time column, so need a different
 		# function
@@ -147,7 +123,7 @@ class SearchSummary(lsctables.SearchSummary):
 		return segments.segment(date.LIGOTimeGPS(self.out_start_time, self.out_start_time_ns), date.LIGOTimeGPS(self.out_end_time, self.out_end_time_ns))
 
 
-lsctables.SnglBurstTable.RowType = SnglBurst
+SnglBurstUtils.SnglBurstTable.RowType = SnglBurst
 lsctables.SearchSummaryTable.RowType = SearchSummary
 
 
@@ -155,11 +131,10 @@ lsctables.SearchSummaryTable.RowType = SearchSummary
 # input cross-checks
 #
 
-def verify_burst_events(doc, program):
-	segmentlists = llwapp.segmentlistdict_fromsearchsummary(doc, program)
-	for event in llwapp.get_table(doc, lsctables.SnglBurstTable.tableName):
+def verify_burst_events(database):
+	for event in database.sngl_burst_table:
 		seg = segments.segment(event.get_start(), event.get_stop())
-		if seg not in segmentlists[event.ifo]:
+		if seg not in database.seglists[event.ifo]:
 			raise ValueError, "event spanning times %s for instrument %s not contained in search summary segments" % (str(seg), event.ifo)
 
 
@@ -284,39 +259,34 @@ options, filenames = parse_command_line()
 
 fseries = {}
 rates = {}
-for n, filename in enumerate(llwapp.sort_files_by_size(filenames, options.verbose)):
+for n, filename in enumerate(utils.sort_files_by_size(filenames, options.verbose)):
 	if options.verbose:
 		print >>sys.stderr, "%d/%d:" % (n + 1, len(filenames)),
-	doc = llwapp.load_filename(filename, options.verbose, gz = filename[-3:] == ".gz")
-	sngl_burst_table = llwapp.get_table(doc, lsctables.SnglBurstTable.tableName)
+	database = SnglBurstUtils.CoincDatabase(sqlite.connect(":memory:"))
+	xmldoc = utils.load_filename(filename, options.verbose, gz = filename[-3:] == ".gz")
+	database.summarize(xmldoc, options.program, options.verbose)
 
 	# check that triggers are all inside segments
 	if options.verbose:
 		print >>sys.stderr, "verifying event times ..."
-	verify_burst_events(doc, options.program)
-
-	# for better numerical accuracy, process events with smallest
-	# confidence first.
-	if options.verbose:
-		print >>sys.stderr, "sorting %d events by confidence..." % len(sngl_burst_table)
-	sngl_burst_table.sort(lambda a, b: cmp(a.confidence, b.confidence))
+	verify_burst_events(database)
 
 	# bin by sidereal time
 	if options.verbose:
 		print >>sys.stderr, "binning power and live time by sidereal time..."
-	bin_power_by_sidereal_time(rates, sngl_burst_table)
-	bin_livetime_by_sidereal_time(rates, llwapp.segmentlistdict_fromsearchsummary(doc, options.program))
+	bin_power_by_sidereal_time(rates, database.sngl_burst_table)
+	bin_livetime_by_sidereal_time(rates, database.seglists)
 
 	# Fourier transform
 	if not options.only_rate:
 		if options.verbose:
 			print >>sys.stderr, "Fourier transforming power..."
-		newfseries = fourier_transform(sngl_burst_table, options)
+		newfseries = fourier_transform(database.sngl_burst_table, options)
 		for key, value in newfseries.iteritems():
 			if key in fseries:
 				fseries[key][1:] += value[1:]
 			else:
 				fseries[key] = value
-	doc.unlink()
+	xmldoc.unlink()
 
-llwapp.write_filename(new_doc(fseries, rates), options.output, options.verbose)
+utils.write_filename(new_doc(fseries, rates), options.output, options.verbose)
