@@ -316,7 +316,8 @@ SnglBurstAccuracy;
 typedef enum
 {
   unknown_test,
-  f_and_Q
+  f_and_Q,
+  ds_sq
 }
 SnglRingdownParameterTest;
 
@@ -328,6 +329,7 @@ tagSnglRingdownAccuracy
   REAL4       df;
   REAL4       dQ;
   REAL4       ddeff;
+  REAL4       ds_sq;
   SnglRingdownParameterTest test;
 }
 SnglRingdownAccuracy;
