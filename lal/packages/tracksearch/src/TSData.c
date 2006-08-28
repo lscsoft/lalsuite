@@ -278,6 +278,7 @@ LALTrackSearchApplyThreshold(
 
 /* Routine to whiten the data stream */
 /* We will overwhiten by calling 2 times in order */
+/* Currently unused and not thoroughly tested */
 void
 LALTrackSearchWhitenREAL4TimeSeries(
 				    LALStatus              *status,
@@ -1157,6 +1158,7 @@ void DumpTFImageCHAR(
   INT4       scale=255;
   
   maxval=0; /* Hold max abs (magnitude) value */
+  minval=0;
   /* Alloc for two filenames dat and pgm */
   pgmfilename = (CHAR*)LALCalloc((strlen(filename)+strlen(PGM)+1),sizeof(CHAR));
   datfilename = (CHAR*)LALCalloc((strlen(filename)+strlen(DAT)+1),sizeof(CHAR));
