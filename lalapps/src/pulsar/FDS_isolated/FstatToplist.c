@@ -1,4 +1,5 @@
 #include "FstatToplist.h"
+#include "HeapToplist.h"
 #include <lal/StringInput.h> /* for LAL_REAL8_FORMAT etc. */
 
 #include <lal/LALStdio.h>
@@ -51,54 +52,30 @@ int finite(double);
 
 
 /* local prototypes */
-void reduce_fstat_toplist_precision(toplist_t *l);
-int print_fstat_toplist_item_to_str(TOPLISTLINE fline, char* buf, int buflen);
+static void reduce_fstat_toplist_precision(toplist_t *l);
+static int print_fstatline_to_str(FstatOutputEntry fline, char* buf, int buflen);
 
+
+static int fstat_smaller(const void*a, const void*b) {
+  if(((FstatOutputEntry*)a)->Fstat < ((FstatOutputEntry*)b)->Fstat)
+    return(1);
+  else if(((FstatOutputEntry*)a)->Fstat < ((FstatOutputEntry*)b)->Fstat)
+    return(1);
+  else
+    return(0);
+}
 
 
 /* creates a toplist with length elements,
    returns -1 on error (usually out of memory), else 0 */
 int create_fstat_toplist(toplist_t**tl, UINT8 length) {
-    UINT8 i;
-
-    toplist_t *thetoplist = malloc(sizeof(toplist_t));
-    if(!thetoplist)
-	return(-1);
-
-    thetoplist->length = length;
-    thetoplist->elems = 0;
-    thetoplist->smallest = 0;
-    
-    thetoplist->data = malloc(length * sizeof(TOPLISTLINE));
-    if(!thetoplist->data) {
-	free(thetoplist);
-	return(-1);
-    }
-
-    thetoplist->sorted = malloc(length * sizeof(TOPLISTLINE*));
-    if(!thetoplist->sorted) {
-	free(thetoplist->data);
-	free(thetoplist);
-	return(-1);
-    }
-
-    for(i=0; i<length; i++)
-	thetoplist->sorted[i] = &(thetoplist->data[i]);
-
-    *tl=thetoplist;
-    return(0);
+  return(create_toplist(tl, length, sizeof(FstatOutputEntry), fstat_smaller));
 }
 
 
 /* frees the space occupied by the toplist */
 void free_fstat_toplist(toplist_t**l) {
-    if(l)
-	if(*l){
-	    if((**l).data)
-		free((**l).data);
-	    free(*l);
-	    *l=NULL;
-	}
+  free_toplist(l);
 }
 
 
@@ -107,75 +84,40 @@ void free_fstat_toplist(toplist_t**l) {
    In the latter case, remove the smallest element from the toplist and
    look for the now smallest one.
    Returns 1 if the element was actually inserted, 0 if not. */
-int insert_into_fstat_toplist(toplist_t*tl, TOPLISTLINE elem) {
- 
+int insert_into_fstat_toplist(toplist_t*tl, FstatOutputEntry elem) {
   if ( !tl )
     return 0;
-
-    /* check if the toplist is full, if not, just add the new element */
-    if (tl->elems < tl->length) {
-	/* just add the new element if the toplist is not full yet */
-	tl->data[tl->elems] = elem;
-	/* update the smallest if necessary */
-	if ((tl->elems==0) || (elem.Fstat < tl->data[tl->smallest].Fstat))
-	    tl->smallest = tl->elems;
-	tl->elems++;
-	return(1); /* element was inserted */
-
-    /* if the toplist is full, we don't need to do anything if the new
-       element is even smaller than the smallest one in the toplist */
-    } else if (elem.Fstat > tl->data[tl->smallest].Fstat) {
-	UINT8 i; /* loop counter */
-	/* replace the smaleest element so far with the new one */
-	tl->data[tl->smallest] = elem;
-	/* find smallest element again */
-	tl->smallest = 0;
-	for(i=1; i<tl->elems; i++)
-	   if(tl->data[i].Fstat < tl->data[tl->smallest].Fstat)
-	      tl->smallest = i;
-	return(1); /* element was inserted */
-    }
-
-    /* if we end up here, the element was not inserted */
-    return(0);
+  else
+    return(insert_into_toplist(tl, (void*)&elem));
 }
 
 
-typedef TOPLISTLINE* _dummy_t;
 /* ordering function for sorting the list */
-static int _fstat_toplist_qsort_function(const void *ppa, const void *ppb) {
-    const _dummy_t *pa = ppa;
-    const _dummy_t *pb = ppb;
-    const TOPLISTLINE *a = *pa;
-    const TOPLISTLINE *b = *pb;
-
-    if      (a->Freq < b->Freq)
+static int _fstat_toplist_qsort_function(const void *a, const void *b) {
+    if      (((FstatOutputEntry*)a)->Freq < ((FstatOutputEntry*)b)->Freq)
 	return -1;
-    else if (a->Freq > b->Freq)
+    else if (((FstatOutputEntry*)a)->Freq > ((FstatOutputEntry*)b)->Freq)
 	return 1;
-    else if (a->Alpha < b->Alpha)
+    else if (((FstatOutputEntry*)a)->Alpha < ((FstatOutputEntry*)b)->Alpha)
 	return -1;
-    else if (a->Alpha > b->Alpha)
+    else if (((FstatOutputEntry*)a)->Alpha > ((FstatOutputEntry*)b)->Alpha)
 	return 1;
-    else if (a->Delta < b->Delta)
+    else if (((FstatOutputEntry*)a)->Delta < ((FstatOutputEntry*)b)->Delta)
 	return -1;
-    else if (a->Delta > b->Delta)
+    else if (((FstatOutputEntry*)a)->Delta > ((FstatOutputEntry*)b)->Delta)
 	return 1;
-    else if (a->f1dot < b->f1dot)
+    else if (((FstatOutputEntry*)a)->f1dot < ((FstatOutputEntry*)b)->f1dot)
 	return -1;
-    else if (a->f1dot > b->f1dot)
+    else if (((FstatOutputEntry*)a)->f1dot > ((FstatOutputEntry*)b)->f1dot)
 	return 1;
     else
 	return 0;
 }
 
-/* (q)sort the toplist according to the sorting function.
-   This actually only updates the "sorted" pointers */
+
+/* (q)sort the toplist according to the sorting function. */
 void sort_fstat_toplist(toplist_t*l) {
-    qsort(l->sorted,
-	  l->elems,
-	  sizeof(l->sorted),
-	  _fstat_toplist_qsort_function);
+  qsort_toplist(l,_fstat_toplist_qsort_function);
 }
 
 
@@ -189,7 +131,7 @@ int read_fstat_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxby
     UINT4 len, chars = 0; /* length of a line, total characters read from the file */
     UINT4 i;              /* loop counter */
     CHAR lastchar;        /* last character of a line read, should be newline */
-    TOPLISTLINE FstatLine;
+    FstatOutputEntry FstatLine;
     REAL8 epsilon=1e-5;
 
     /* basic check that the list argument is valid */
@@ -273,7 +215,7 @@ int read_fstat_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxby
 	    for(i=0;i<len;i++)
 		*checksum += line[i];
 	
-	insert_into_fstat_toplist(l, FstatLine);
+	insert_into_toplist(l, &FstatLine);
 	lines++;
 
 	/* NOTE: it *CAN* happen (and on Linux it DOES) that the fully buffered Fstat stream
@@ -308,7 +250,7 @@ int read_fstat_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxby
 
 /* Prints a Tooplist line to a string buffer.
    Separate function to force consistency of output and reduced precision for sorting */
-int print_fstat_toplist_item_to_str(TOPLISTLINE fline, char* buf, int buflen) {
+static int print_fstatline_to_str(FstatOutputEntry fline, char* buf, int buflen) {
       return(LALSnprintf(buf, buflen,
 		  /* output precision: choose by following (generous!) significant-digit constraints:
 		   * Freq:1e-13 
@@ -325,14 +267,14 @@ int print_fstat_toplist_item_to_str(TOPLISTLINE fline, char* buf, int buflen) {
 }
 
 
-/* writes an TOPLISTLINE line to an open filepointer.
+/* writes an FstatOutputEntry line to an open filepointer.
    Returns the number of chars written, -1 if in error
    Updates checksum if given */
-int write_fstat_toplist_item_to_fp(TOPLISTLINE fline, FILE*fp, UINT4*checksum) {
+int write_fstat_toplist_item_to_fp(FstatOutputEntry fline, FILE*fp, UINT4*checksum) {
     char linebuf[256];
     UINT4 i;
 
-    UINT4 length = print_fstat_toplist_item_to_str(fline, linebuf, sizeof(linebuf));
+    UINT4 length = print_fstatline_to_str(fline, linebuf, sizeof(linebuf));
     
     if(length>sizeof(linebuf)) {
        return -1;
@@ -348,22 +290,23 @@ int write_fstat_toplist_item_to_fp(TOPLISTLINE fline, FILE*fp, UINT4*checksum) {
 
 /* Reduces the precision of all elements in the toplist which influence the sorting order.
    To be called before sorting and finally writing out the list */
-void reduce_fstat_toplist_precision(toplist_t *l) {
+static void reduce_fstatline_precision(const void*line) {
   char linebuf[256];
-  UINT8 i;
-  for(i=0; i < l->elems; i++) {
-    print_fstat_toplist_item_to_str(l->data[i], linebuf, sizeof(linebuf));
-    sscanf(linebuf,
-	   "%" LAL_REAL8_FORMAT
-	   " %" LAL_REAL8_FORMAT
-	   " %" LAL_REAL8_FORMAT
-	   " %" LAL_REAL8_FORMAT
-	   "%*s\n",
-	   &(l->data[i].Freq),
-	   &(l->data[i].Alpha),
-	   &(l->data[i].Delta),
-	   &(l->data[i].f1dot));
-  }
+  print_fstatline_to_str((*(FstatOutputEntry*)line), linebuf, sizeof(linebuf));
+  sscanf(linebuf,
+	 "%" LAL_REAL8_FORMAT
+	 " %" LAL_REAL8_FORMAT
+	 " %" LAL_REAL8_FORMAT
+	 " %" LAL_REAL8_FORMAT
+	 "%*s\n",
+	 &((*(FstatOutputEntry*)line).Freq),
+	 &((*(FstatOutputEntry*)line).Alpha),
+	 &((*(FstatOutputEntry*)line).Delta),
+	 &((*(FstatOutputEntry*)line).f1dot));
+}
+
+static void reduce_fstat_toplist_precision(toplist_t *l) {
+  go_through_toplist(l,reduce_fstatline_precision);
 }
 
 
@@ -376,7 +319,7 @@ int write_fstat_toplist_to_fp(toplist_t*tl, FILE*fp, UINT4*checksum) {
    if(checksum)
        *checksum = 0;
    for(i=0;i<tl->elems;i++)
-     if ((r = write_fstat_toplist_item_to_fp(*(tl->sorted[i]), fp, checksum)) < 0) {
+     if ((r = write_fstat_toplist_item_to_fp(*((FstatOutputEntry*)(tl->heap[i])), fp, checksum)) < 0) {
        LogPrintf (LOG_CRITICAL, "Failed to write toplistitem to output fp: %d: %s\n",
 		  errno,strerror(errno));
 #ifdef _MSC_VER
@@ -387,6 +330,11 @@ int write_fstat_toplist_to_fp(toplist_t*tl, FILE*fp, UINT4*checksum) {
        c += r;
    return(c);
 }
+
+
+/* FIXME:
+   convert everything below this line to the new toplist structure
+*/
 
 
 /* writes the given toplitst to a temporary file, then renames the

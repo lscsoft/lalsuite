@@ -23,5 +23,6 @@ HierarchicalSearch_SOURCES = HierarchicalSearch.c HierarchicalSearch.h \
 			  ../../FDS_isolated/DopplerScan.c ../../FDS_isolated/DopplerScan.h \
 			  ../../FDS_isolated/LogPrintf.c ../../FDS_isolated/LogPrintf.h	\
 			  ../../FDS_isolated/FstatToplist.c ../../FDS_isolated/FstatToplist.h \
+			  ../../FDS_isolated/HeapToplist.c ../../FDS_isolated/HeapToplist.h \
 			  ../../FDS_isolated/ComputeFStatistic.h
 

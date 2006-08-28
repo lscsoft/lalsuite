@@ -31,6 +31,7 @@ CFSsources = 	ComputeFStatistic.h	\
 		clusters.c clusters.h  	\
 		DopplerScan.c DopplerScan.h \
 		FstatToplist.c FstatToplist.h \
+		HeapToplist.c HeapToplist.h \
 		LogPrintf.c LogPrintf.h	
 
 lalapps_ComputeFStatistic_SOURCES = ComputeFStatistic.c CFSLALDemod.c $(CFSsources)
