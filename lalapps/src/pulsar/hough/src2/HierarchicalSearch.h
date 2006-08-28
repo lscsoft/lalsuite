@@ -203,38 +203,18 @@ NRCSID( HIERARCHICALSEARCHH, "$Id$" );
 		      CHAR *fnameOut, 
 		      INT4 iHmap);
 
-  void GetHoughCandidates(LALStatus *status,
-			  SemiCohCandidateList *semiCohCand,
-			  HOUGHMapTotal *ht,
-			  HOUGHPatchGrid  *patch,
-			  HOUGHDemodPar   *parDem,
-			  REAL8 houghThreshold);
-
   void GetHoughCandidates_toplist(LALStatus *status,
-				  SemiCohCandidateList *semiCohCand,
+				  toplist_t *list,
 				  HOUGHMapTotal *ht,
 				  HOUGHPatchGrid  *patch,
 				  HOUGHDemodPar   *parDem);
 
-/*   void GetFstatCandidates( LALStatus *status, */
-/* 			   toplist_t *list, */
-/* 			   REAL8FrequencySeries *in, */
-/* 			   REAL8 FstatThr, */
-/* 			   REAL8 alpha, */
-/* 			   REAL8 delta, */
-/* 			   REAL8 fdot, */
-/* 			   INT4 blockRealloc); */
-
-/*   void GetFstatCandidates_toplist(LALStatus *status, */
-/* 				  toplist_t *list, */
-/* 				  REAL8FrequencySeries   *FstatVec, */
-/* 				  REAL8 alpha, */
-/* 				  REAL8 delta, */
-/* 				  REAL8 fdot); */
-
-  void GetMinSigIndex_toplist(LALStatus *status,
-			      INT4 *minSigIndex,
-			      SemiCohCandidateList *semiCohCand);
+  void GetFstatCandidates_toplist(LALStatus *status,
+				  toplist_t *list,
+				  REAL8FrequencySeries   *FstatVec,
+				  REAL8 alpha,
+				  REAL8 delta,
+				  REAL8 fdot);
 
   void GetChkPointIndex( LALStatus *status,
 			 INT4 *loopindex, 

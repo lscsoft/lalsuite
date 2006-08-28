@@ -153,6 +153,19 @@ typedef struct {
 } UsefulStageVariables;
 
 
+static int smallerHough(const void *a,const void *b) {
+  SemiCohCandidate a1, b1;
+  a1 = *((SemiCohCandidate *)a);
+  b1 = *((SemiCohCandidate *)b);
+  
+  if( a1.significance < b1.significance )
+    return(1);
+  else if( a1.significance > b1.significance)
+    return(-1);
+  else
+    return(0);
+}
+
 /* functions for printing various stuff */
 void GetStackVelPos( LALStatus *status, REAL8VectorSequence **velStack, REAL8VectorSequence **posStack,
 		     MultiDetectorStateSeriesSequence *stackMultiDetStates);
@@ -322,7 +335,6 @@ int main( int argc, char *argv[]) {
   INT4 uvar_nfdot;
   INT4 uvar_gridType;
   INT4 uvar_metricType;
-  INT4 uvar_reallocBlock;
 
   CHAR *uvar_ephemDir=NULL;
   CHAR *uvar_ephemYear=NULL;
@@ -371,7 +383,6 @@ int main( int argc, char *argv[]) {
   uvar_metricType = LAL_PMETRIC_COH_PTOLE_ANALYTIC;
   uvar_gridType = GRID_METRIC;
   uvar_mismatch1 = uvar_mismatch2 = MISMATCH;
-  uvar_reallocBlock = 5000;
   uvar_pixelFactor = PIXELFACTOR;
 
   uvar_minStartTime1 = 0;
@@ -444,7 +455,6 @@ int main( int argc, char *argv[]) {
   /* developer user variables */
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed", 0, UVAR_DEVELOPER, "RngMed block size", &uvar_blocksRngMed), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "fstatThr",     0, UVAR_DEVELOPER, "Fstat threshold (default --nCand2)", &uvar_fstatThr), &status);
-  LAL_CALL( LALRegisterINTUserVar (   &status, "reallocBlock", 0, UVAR_DEVELOPER, "Blocks to realloc for Fstat output if necessary",   &uvar_reallocBlock),    &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "SSBprecision", 0, UVAR_DEVELOPER, "Precision for SSB transform.", &uvar_SSBprecision),    &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "nfdot",        0, UVAR_DEVELOPER, "No.of residual fdot values to be searched", &uvar_nfdot), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printMaps",    0, UVAR_DEVELOPER, "Print Hough maps", &uvar_printMaps), &status);  
@@ -805,10 +815,7 @@ int main( int argc, char *argv[]) {
   if ( uvar_followUp ) 
     {
       /* allocate memory for Fstat candidates */
-      if ( LALUserVarWasSet(&uvar_fstatThr))
-      	create_fstat_toplist(&fstatToplist, uvar_reallocBlock);
-      else
-      	create_fstat_toplist(&fstatToplist, uvar_nCand2);
+      create_fstat_toplist(&fstatToplist, uvar_nCand2);
       
      /* prepare initialization of DopplerScanner to step through paramter space */
       scanInit2.dAlpha = uvar_dAlpha;
@@ -1025,14 +1032,9 @@ int main( int argc, char *argv[]) {
 			  /* select candidates from 2nd stage */
 			  for (k = 0; k < nStacks2; k++) 
 			    {
-			      /* if ( LALUserVarWasSet(&uvar_fstatThr)) */
-			      /* LAL_CALL( GetFstatCandidates( &status, fstatToplist, fstatVector2.data + k, uvar_fstatThr, */
-			      /* thisPoint2.Alpha, thisPoint2.Delta,  */
-			      /* thisPoint2.fkdot[1], uvar_reallocBlock ), &status); */
-			      /* else */
-			      /* LAL_CALL( GetFstatCandidates_toplist( &status, fstatToplist, fstatVector2.data + k,  */
-			      /* thisPoint2.Alpha, thisPoint2.Delta,  */
-			      /* thisPoint2.fkdot[1] ), &status); */
+			      LAL_CALL( GetFstatCandidates_toplist( &status, fstatToplist, fstatVector2.data + k,
+								    thisPoint2.Alpha, thisPoint2.Delta,
+								    thisPoint2.fkdot[1] ), &status);
 			      
 
 			    } /* end loop over nstacks2 for selecting candidates */
@@ -1426,8 +1428,13 @@ void ComputeFstatHoughMap(LALStatus *status,
   CHAR *fileStats = NULL;
   FILE *fpStats = NULL;
 
+  toplist_t *houghToplist;
+
   INITSTATUS( status, "ComputeFstatHoughMap", rcsid );
   ATTATCHSTATUSPTR (status);
+
+  /* create toplist of candidates */
+  create_toplist(&houghToplist, out->length, sizeof(SemiCohCandidate), smallerHough);
 
   /* copy some parameters from peakgram vector */
   deltaF = pgV->pg->deltaF;
@@ -1678,14 +1685,7 @@ void ComputeFstatHoughMap(LALStatus *status,
 	  TRY( LALHOUGHConstructHMT(status->statusPtr, &ht, &freqInd, &phmdVS),status );
 
 	  /* get candidates */
-	  /* 	  if ( selectCandThr ) { */
-	  /* 	    TRY(GetHoughCandidates( status->statusPtr, out, &ht, &patch, &parDem, houghThr), status); */
-	  /* 	  } */
-	  /* 	  else { */
-	  /* 	    TRY(GetHoughCandidates_toplist( status->statusPtr, out, &ht, &patch, &parDem), status);  */
-	  /* 	  } */
-
-	  TRY(GetHoughCandidates_toplist( status->statusPtr, out, &ht, &patch, &parDem), status);
+	  TRY(GetHoughCandidates_toplist( status->statusPtr, houghToplist, &ht, &patch, &parDem), status);
 
 	  /* calculate statistics and histogram */
 	  if ( uvar_printStats && (fpStats != NULL) ) {
@@ -1755,6 +1755,13 @@ void ComputeFstatHoughMap(LALStatus *status,
   LALFree(parDem.spin.data);
 
   TRY( LALDDestroyVector( status->statusPtr, &timeDiffV), status);
+
+  /* copy candidates to output structure */
+  for ( k=0; k<houghToplist->elems; k++) {
+    out->list[k] = *((SemiCohCandidate *)(houghToplist->heap[k]));
+  }
+  out->nCandidates = houghToplist->elems;
+  free_toplist(&houghToplist);
 
   if (uvar_printStats ) {
     
@@ -1955,77 +1962,8 @@ void PrintHmap2file(LALStatus *status,
 
 
 /** Get Hough candidates */
-void GetHoughCandidates(LALStatus *status,
-			SemiCohCandidateList *semiCohCand,
-			HOUGHMapTotal *ht,
-			HOUGHPatchGrid  *patch,
-			HOUGHDemodPar   *parDem,
-			REAL8 houghThreshold)
-{
-  REAL8UnitPolarCoor sourceLocation;
-  REAL8 deltaF, f0, fdot, dFdot, patchSizeX, patchSizeY;
-  INT8 f0Bin;  
-  INT4 nCandidates, i,j, xSide, ySide;
-  
-  INITSTATUS( status, "GetHoughCandidates", rcsid );
-  ATTATCHSTATUSPTR (status);
-
-  deltaF = ht->deltaF;
-  f0Bin = ht->f0Bin;
-  f0 = f0Bin * deltaF;
-
-  fdot = ht->spinDem.data[0] + ht->spinRes.data[0];
-  dFdot = ht->dFdot.data[0];
-
-  xSide = ht->xSide;
-  ySide = ht->ySide;
-
-  patchSizeX = ht->patchSizeX;
-  patchSizeY = ht->patchSizeY;
-
-  for (i = 0; i < ySide; i++){
-    for (j = 0; j < xSide; j++){ 
-      /* if threshold is exceeded then add candidate */
-      if ( ht->map[i*xSide + j] > houghThreshold ) {
-
-	nCandidates = semiCohCand->nCandidates;
-
-	/* if there isn't enough memory then realloc */
-	if ( nCandidates >= semiCohCand->length ) {
-	  semiCohCand->length += 5000;
-	  semiCohCand->list = (SemiCohCandidate *)LALRealloc( semiCohCand->list, semiCohCand->length * sizeof(SemiCohCandidate));
-	} /* end of reallocs */
-
-	semiCohCand->list[nCandidates].freq = f0;
-	semiCohCand->list[nCandidates].dFreq = deltaF;
-	
-	semiCohCand->list[nCandidates].fdot = fdot;
-	semiCohCand->list[nCandidates].dFdot = dFdot;
-
-	/* get sky location of pixel */
-	TRY( LALStereo2SkyLocation (status->statusPtr, &sourceLocation, 
-				    j, i, patch, parDem), status);
-
-	semiCohCand->list[nCandidates].alpha = sourceLocation.alpha;
-	semiCohCand->list[nCandidates].delta = sourceLocation.delta;
-
-	semiCohCand->list[nCandidates].dAlpha = patchSizeX / ((REAL8)xSide);
-	semiCohCand->list[nCandidates].dDelta = patchSizeY / ((REAL8)ySide);
-
-	/* increment candidate count */
-	semiCohCand->nCandidates += 1;
-
-      } /* end if statement */
-    } /* end loop over xSide */
-  } /* end loop over ySide */
-  DETATCHSTATUSPTR (status);
-  RETURN(status);
-}
-
-
-/** Get Hough candidates */
 void GetHoughCandidates_toplist(LALStatus *status,
-				SemiCohCandidateList *semiCohCand,
+				toplist_t *list,
 				HOUGHMapTotal *ht,
 				HOUGHPatchGrid  *patch,
 				HOUGHDemodPar   *parDem)
@@ -2033,8 +1971,8 @@ void GetHoughCandidates_toplist(LALStatus *status,
   REAL8UnitPolarCoor sourceLocation;
   REAL8 deltaF, f0, fdot, dFdot, patchSizeX, patchSizeY;
   INT8 f0Bin;  
-  INT4 nCandidates, maxCandidates; 
-  INT4 i,j, xSide, ySide, minSigIndex;
+  INT4 i,j, xSide, ySide;
+  SemiCohCandidate thisCandidate;
 
   INITSTATUS( status, "GetHoughCandidates_toplist", rcsid );
   ATTATCHSTATUSPTR (status);
@@ -2043,125 +1981,44 @@ void GetHoughCandidates_toplist(LALStatus *status,
   f0Bin = ht->f0Bin;
   f0 = f0Bin * deltaF;
 
-  nCandidates = semiCohCand->nCandidates;
-  maxCandidates = semiCohCand->length;
-
   fdot = ht->spinDem.data[0] + ht->spinRes.data[0];
   dFdot = ht->dFdot.data[0];
 
   xSide = ht->xSide;
   ySide = ht->ySide;
-
   patchSizeX = ht->patchSizeX;
   patchSizeY = ht->patchSizeY;
+
+  thisCandidate.freq =  f0;
+  thisCandidate.dFreq = deltaF;
+  thisCandidate.fdot = fdot;
+  thisCandidate.dFdot = dFdot;
+  thisCandidate.dAlpha = patchSizeX / ((REAL8)xSide);
+  thisCandidate.dDelta = patchSizeY / ((REAL8)ySide);  
 
   for (i = 0; i < ySide; i++)
     {
       for (j = 0; j < xSide; j++)
 	{ 
-	  REAL8 tempSig = ht->map[i*xSide + j];
 
-	  if ( nCandidates < maxCandidates )
-	    {
-	      semiCohCand->list[nCandidates].freq = f0;
-	      semiCohCand->list[nCandidates].dFreq = deltaF;
-	      
-	      semiCohCand->list[nCandidates].fdot = fdot;
-	      semiCohCand->list[nCandidates].dFdot = dFdot;
-	      
-	      /* get sky location of pixel */
-	      TRY( LALStereo2SkyLocation (status->statusPtr, &sourceLocation, 
-					  j, i, patch, parDem), status);
-
-	      semiCohCand->list[nCandidates].alpha = sourceLocation.alpha;
-	      semiCohCand->list[nCandidates].delta = sourceLocation.delta;
-	      semiCohCand->list[nCandidates].dAlpha = patchSizeX / ((REAL8)xSide);
-	      semiCohCand->list[nCandidates].dDelta = patchSizeY / ((REAL8)ySide);
-	      semiCohCand->list[nCandidates].significance = tempSig;
-
-	      TRY ( GetMinSigIndex_toplist ( status->statusPtr, &minSigIndex, semiCohCand), status);		
-	      semiCohCand->minSigIndex = minSigIndex;
-
-	      /* increment candidate count */
-	      semiCohCand->nCandidates += 1;
-	      nCandidates = semiCohCand->nCandidates;
-
-	    }
-	  else 
-	    {
-	      /* if event is more significant than least significant 
-		 event stored in toplist then replace it */
-	      minSigIndex = semiCohCand->minSigIndex;
-	      if ( tempSig > semiCohCand->list[minSigIndex].significance ) 
-		{
-		  semiCohCand->list[minSigIndex].freq = f0;
-		  semiCohCand->list[minSigIndex].dFreq = deltaF;
-		  semiCohCand->list[minSigIndex].fdot = fdot;
-		  semiCohCand->list[minSigIndex].dFdot = dFdot;
+	  /* get sky location of pixel */
+	  TRY( LALStereo2SkyLocation (status->statusPtr, &sourceLocation, 
+				      j, i, patch, parDem), status);
 	  
-		  /* get sky location of pixel */
-		  TRY( LALStereo2SkyLocation (status->statusPtr, &sourceLocation, 
-					      j, i, patch, parDem), status);
-		  
-		  semiCohCand->list[minSigIndex].alpha = sourceLocation.alpha;
-		  semiCohCand->list[minSigIndex].delta = sourceLocation.delta;  
-		  semiCohCand->list[minSigIndex].dAlpha = patchSizeX / ((REAL8)xSide);
-		  semiCohCand->list[minSigIndex].dDelta = patchSizeY / ((REAL8)ySide);
-		  semiCohCand->list[minSigIndex].significance = tempSig;
+	  thisCandidate.alpha = sourceLocation.alpha;
+	  thisCandidate.delta = sourceLocation.delta;
+	  thisCandidate.significance =  ht->map[i*xSide + j];
 
-		  /* find index of new least significant event */
-		  TRY ( GetMinSigIndex_toplist ( status->statusPtr, &minSigIndex, semiCohCand), status);
-		  semiCohCand->minSigIndex = minSigIndex;
-
-		} /* end if statement for replacing least significant candidate */
-
-	    } /* end else part of main if statement */
-
+	  insert_into_toplist(list, &thisCandidate);
+	  
 	} /* end loop over xSide */
 
     } /* end loop over ySide */
 
   DETATCHSTATUSPTR (status);
   RETURN(status);
-}
 
-
-
-
-
-
-/** Get least significant Hough candidate index */
-void GetMinSigIndex_toplist(LALStatus *status,
-			    INT4 *minSigIndex,
-			    SemiCohCandidateList *semiCohCand)
-{
-
-  REAL8 minSig;
-  INT4 k, nCandidates = semiCohCand->nCandidates;
-
-  INITSTATUS( status, "GetMinSigIndex_toplist", rcsid );
-  ATTATCHSTATUSPTR (status);
-
-
-  *minSigIndex = 0;
-  minSig = semiCohCand->list[0].significance;
-  for (k = 1; k < nCandidates; k++)
-    {
-      REAL8 tempSig = semiCohCand->list[k].significance;
-      if ( tempSig < minSig )
-	{
-	  *minSigIndex = k;
-	  minSig = tempSig;
-	}
-    } /* end loop over candidates */
-  
-
-  DETATCHSTATUSPTR (status);
-  RETURN(status);
-}
-
-
-
+} /* end hough toplist selection */
 
 
 
@@ -2294,43 +2151,43 @@ void PrintSemiCohCandidates(LALStatus *status,
 
 
 
-/* void GetFstatCandidates_toplist( LALStatus *status, */
-/* 				 toplist_t *list, */
-/* 				 REAL8FrequencySeries *in, */
-/* 				 REAL8 alpha, */
-/* 				 REAL8 delta, */
-/* 				 REAL8 fdot) */
-/* { */
-/*   INT4 k, length, debug; */
-/*   REAL8 deltaF, f0; */
-/*   toplist_t line; */
+void GetFstatCandidates_toplist( LALStatus *status,
+				 toplist_t *list,
+				 REAL8FrequencySeries *in,
+				 REAL8 alpha,
+				 REAL8 delta,
+				 REAL8 fdot)
+{
+  INT4 k, length, debug;
+  REAL8 deltaF, f0;
+  FstatOutputEntry line;
 
-/*   INITSTATUS( status, "GetFstatCandidates_toplist", rcsid ); */
-/*   ATTATCHSTATUSPTR (status); */
+  INITSTATUS( status, "GetFstatCandidates_toplist", rcsid );
+  ATTATCHSTATUSPTR (status);
 
-/*   /\* fill up alpha, delta and fdot in fstatline *\/ */
-/*   line.f1dot = fdot; */
-/*   line.Alpha = alpha; */
-/*   line.Delta = delta; */
+  /* fill up alpha, delta and fdot in fstatline */
+  line.f1dot = fdot;
+  line.Alpha = alpha;
+  line.Delta = delta;
 
-/*   length = in->data->length; */
-/*   deltaF = in->deltaF; */
-/*   f0 = in->f0; */
+  length = in->data->length;
+  deltaF = in->deltaF;
+  f0 = in->f0;
 
-/*   /\* loop over Fstat vector and fill up toplist *\/ */
-/*   for ( k=0; k<length; k++)  */
-/*     { */
+  /* loop over Fstat vector and fill up toplist */
+  for ( k=0; k<length; k++)
+    {
       
-/*       line.Fstat = in->data->data[k]; */
-/*       line.Freq = f0 + k*deltaF; */
+      line.Fstat = in->data->data[k];
+      line.Freq = f0 + k*deltaF;
       
-/*       debug = insert_into_fstat_toplist( list, line); */
+      debug = insert_into_fstat_toplist( list, line);
 
-/*     } */
+    }
 
-/*   DETATCHSTATUSPTR (status); */
-/*   RETURN(status); */
-/* } */
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+}
 
 
 /** Print hough histogram to a file */
