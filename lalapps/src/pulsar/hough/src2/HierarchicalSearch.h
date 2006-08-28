@@ -172,7 +172,6 @@ NRCSID( HIERARCHICALSEARCHH, "$Id$" );
     LIGOTimeGPS refTime;       /**< reference time for candidates */
     INT4 length;               /**< maximum allowed length of vectors */
     INT4 nCandidates;          /**< number of candidates -- must be less than length */
-    INT4 minSigIndex;          /**< index of least significant candidate */ 
     SemiCohCandidate *list;    /**> list of candidates */
   } SemiCohCandidateList;
 

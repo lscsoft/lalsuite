@@ -779,7 +779,6 @@ int main( int argc, char *argv[]) {
   semiCohCandList1.length = uvar_nCand1;
   semiCohCandList1.refTime = tStart1GPS;
   semiCohCandList1.nCandidates = 0; /* initialization */
-  semiCohCandList1.minSigIndex = 0;
   semiCohCandList1.list = (SemiCohCandidate *)LALCalloc( 1, semiCohCandList1.length * sizeof(SemiCohCandidate));
 
 
