@@ -1070,6 +1070,7 @@ int main( int argc, char *argv[]) {
   {
     UINT4 checksum;
     if ( uvar_followUp )
+      sort_fstat_toplist(fstatToplist);
       if ( write_fstat_toplist_to_fp( fstatToplist, fpFstat, &checksum) < 0)
 	fprintf( stderr, "Error in writing toplist to file\n");
     /*     LAL_CALL( AppendFstatCandidates( &status, &fStatCand, fpFstat), &status); */
