@@ -116,7 +116,8 @@ int main( int argc, char **argv )
 
   /* compute the spectrum */
   invspec = ring_get_invspec( channel, response, fwdplan, revplan, params );
-
+  fprintf(stdout,"stride duration %f\t truncate duration %f\n",
+         params->strideDuration, params->truncateDuration);
   /* create the template bank */
   bank = ring_get_bank( params );
   /* Split the bank up into sub banks which will */

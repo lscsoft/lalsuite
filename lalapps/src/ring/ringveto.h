@@ -91,12 +91,21 @@ typedef struct tagRingVetoTemplateBank RingVetoTemplateBank;
 
 struct tagRingVetoResults {
   REAL4TimeSeries            result;
+  COMPLEX8TimeSeries            tmpSnip;
+  COMPLEX8FrequencySeries    tmpSnipTilde;
   REAL8			     sigma;
   REAL8			     quality;
-  REAL8			     frequency;			
+  REAL8			     frequency;
+  UINT4		             numResults;			
   struct tagRingVetoResults  *next;
 };
 typedef struct tagRingVetoResults RingVetoResults;
+
+struct tagRingVetoCC {
+  REAL4Vector                 Beta;
+  INT4Vector		      Tau;
+};
+typedef struct tagRingVetoCC RingVetoCC;
 
 /* routines in ring_option */
 int ring_parse_options( struct ring_params *params, int argc, char **argv );

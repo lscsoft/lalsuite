@@ -43,6 +43,26 @@ static SnglRingdownTable * find_events(
     struct ring_params       *params
     );
 
+static REAL4Vector *snipInvSpectrum(UINT4 snipLength,
+                                    REAL4FrequencySeries *invspec);
+
+static RingVetoCC computeCC( RingVetoResults *Result, 
+                             REAL4FrequencySeries *snipSpec,
+                             COMPLEX8FFTPlan *fwdplan,
+                             COMPLEX8FFTPlan *revplan );
+
+struct tagRV_BT{
+  REAL4 beta;
+  INT4 tau;
+};
+typedef struct tagRV_BT RV_BT;
+
+static RV_BT getBT(COMPLEX8FrequencySeries *A,
+                   COMPLEX8FrequencySeries *B,
+                   COMPLEX8FFTPlan *revplan);
+
+static void normSnip( COMPLEX8Vector *vec );
+
 SnglRingdownTable * ringveto_filter(
     RingDataSegments         *segments,
     RingVetoTemplateBank     *vetobank,
@@ -60,20 +80,32 @@ SnglRingdownTable * ringveto_filter(
   RingVetoResults          *Result = NULL;
   RingVetoResults          *firstResult = NULL;
   RingVetoResults          *thisResult = NULL;
+  RingVetoCC		   thisCC;
+  COMPLEX8FFTPlan  	   *fwdSnipPlan = NULL;
+  COMPLEX8FFTPlan             *revSnipPlan = NULL;
   COMPLEX8FrequencySeries  stilde;
   COMPLEX8FrequencySeries  rtilde;
-  
+  REAL4FrequencySeries     snipSpec; /*this will actually store the amplitude */
+                                     /*spectrum NOT PSD! */
   UINT4 segmentLength;
   UINT4 sgmnt;
   UINT4 tmplt;
   UINT4 subCounter = 0;
-
+  UINT4 sC = 0;
+  const REAL4 snipFac = 2.0; /*template snip length in seconds should be a 
+                               power of two */
+  UINT4 snipLength;
   if ( ! params->doFilter )
     return NULL;
-
+  
   segmentLength = floor( params->segmentDuration * params->sampleRate + 0.5 );
-
-
+  snipLength = floor( snipFac * params->sampleRate + 0.5 );
+  snipSpec.deltaF = 1.0/snipLength;
+  snipSpec.data = snipInvSpectrum( snipLength, invSpectrum );
+  snipSpec.sampleUnits = invSpectrum->sampleUnits;
+  verbose("invSpectrum->sampleUnits %s\n", invSpectrum->sampleUnits);
+  fwdSnipPlan = XLALCreateCOMPLEX8FFTPlan( snipLength, 1, 0 );
+  revSnipPlan = XLALCreateCOMPLEX8FFTPlan( snipLength, 0, 0 );
   memset( &signal, 0, sizeof( signal ) );
   /* changed to the structure Result not just the timeseries result */
   /* memset( Result, 0, sizeof( Result ) );*/ /* not necessary */
@@ -103,15 +135,26 @@ SnglRingdownTable * ringveto_filter(
       {
         /* changed to Result from result - extra layer of pointers... */
         Result->result.data = XLALCreateREAL4Vector( segmentLength );
+        Result->tmpSnip.data = XLALCreateCOMPLEX8Vector( snipLength );
+        Result->tmpSnipTilde.data = XLALCreateCOMPLEX8Vector( snipLength );
+        Result->tmpSnip.deltaT = 1.0/params->sampleRate;
+        Result->tmpSnipTilde.deltaF = snipSpec.deltaF;
+        Result->tmpSnip.sampleUnits = lalStrainUnit;
         SnglRingdownTable *thisTmplt = bank->tmplt + tmplt;
         REAL8 sigma;
-    
+        verbose( "s length %d stilde %d\n", signal.data->length,stilde.data->length ); 
         verbose( "creating template %d for segment %d in subbank %d\n",
                   tmplt, sgmnt, subCounter );
 
-        /* make template and fft it MAYBE I COULD SNIP THIS for */
-        /* the cross correlations ?*/
+        /* make template and fft it */
+        /* a two second snip is sufficient for the cross correlations*/
         XLALComputeRingTemplate( &signal, thisTmplt );
+        /* snip the template for later WILL THIS WORK?*/
+        for(sC=0;sC<snipLength;sC++){ 
+           Result->tmpSnip.data->data[sC].re = signal.data->data[sC];
+           Result->tmpSnip.data->data[sC].im = 0;
+           }
+        normSnip( Result->tmpSnip.data ); /* normalize the template snip */
         LALSnprintf( signal.name, sizeof(signal.name), "TMPLT_%u", tmplt );
         /*write_REAL4TimeSeries( &signal );*/
         XLALREAL4TimeFreqFFT( &stilde, &signal, fwdPlan );
@@ -153,7 +196,7 @@ SnglRingdownTable * ringveto_filter(
       /* remember to make a time series which is shorter than the */
       /* 256 second signal - that is way too much time to pad and */
       /* fft */
-
+      thisCC = computeCC( Result, &snipSpec, fwdSnipPlan, revSnipPlan );
       /* search through results for threshold crossings and record events */
       /* REWRITE this to loop over ALL RESULTS!!! */
       numEvents = 0;
@@ -174,6 +217,8 @@ SnglRingdownTable * ringveto_filter(
         thisResult = Result;
         Result = Result->next;
         XLALDestroyREAL4Vector(thisResult->result.data);
+        XLALDestroyCOMPLEX8Vector(thisResult->tmpSnip.data);
+        XLALDestroyCOMPLEX8Vector(thisResult->tmpSnipTilde.data);
         free(thisResult);
       }
     } /* end loop over segments */
@@ -242,6 +287,8 @@ static int filter_segment_template(
 
   /* inverse fft to obtain result */
   XLALREAL4FreqTimeFFT( result, rtilde, plan );
+  /*this works without the FFT so the FFT must be raising the units error */
+  /*this works without the FFT so the FFT must be raising the units error */
  /*write_REAL4TimeSeries( result );*/
   result->epoch = rtilde->epoch;
   return 0;
@@ -376,3 +423,209 @@ static SnglRingdownTable * find_events(
   *numEvents += eventCount;
   return events;
 }
+
+static REAL4Vector *snipInvSpectrum(UINT4 snipLength, 
+                                      REAL4FrequencySeries *invspec) {
+  FILE *FP;
+  UINT4 i=0;
+  UINT4 cnt=0;
+  REAL4FrequencySeries smallspec;
+  REAL4FrequencySeries doublesmallspec;
+  UINT4 invSpecLength = snipLength/2 + 1;
+  smallspec.data = XLALCreateREAL4Vector( invSpecLength );
+  doublesmallspec.data = XLALCreateREAL4Vector(snipLength);
+  int factor = floor( invspec->data->length/invSpecLength+0.5 );
+  verbose("invspec = %d snip = %d factor = %d\n",invspec->data->length,
+           invSpecLength,factor);
+  /*this is really bad if both aren't a power of two */
+  smallspec.data->data[0] = invspec->data->data[0];
+  for(i=1;i<invspec->data->length;i++){
+    if( !(i%factor) && cnt <invSpecLength){
+      smallspec.data->data[cnt] = 
+         (invspec->data->data[i-1] +  
+         invspec->data->data[i] +  
+         invspec->data->data[i+1])/3.0;
+      cnt++;
+      }
+    }
+  cnt = invSpecLength;
+  for(i=0;i<smallspec.data->length;i++) 
+     smallspec.data->data[i] = sqrt(smallspec.data->data[i]);
+  for(i=0;i<doublesmallspec.data->length/2;i++){
+     doublesmallspec.data->data[i] = smallspec.data->data[cnt];
+     cnt--;
+     }
+  cnt = 0;
+  for(i=doublesmallspec.data->length/2;i<doublesmallspec.data->length;i++){
+     doublesmallspec.data->data[i] = smallspec.data->data[cnt];
+     cnt++;
+     }
+
+  fprintf(stdout, "length of doublesmallspec %d\n",doublesmallspec.data->length);
+  FP = fopen("miniasd.dat","w");
+  for(i=0;i<doublesmallspec.data->length;i++) fprintf(FP,"%f\n",doublesmallspec.data->data[i]);
+  
+  return doublesmallspec.data;
+  }
+
+static RingVetoCC computeCC( RingVetoResults *Result,
+                             REAL4FrequencySeries *snipSpec,
+			     COMPLEX8FFTPlan *fwdplan,
+			     COMPLEX8FFTPlan *revplan){
+
+  RingVetoResults *first = NULL;
+  RingVetoResults *thisResult = NULL;
+  REAL4TimeSeries thisCCresult; 
+  REAL4Vector *Beta = NULL;
+  INT4Vector *Tau = NULL; 
+  FILE *FP = NULL;
+  RingVetoCC finalCC;
+  UINT4 cnt = 0;
+  UINT4 i=0;
+  UINT4 j=0;
+  RV_BT BT;
+  first = Result;
+  thisCCresult.data = XLALCreateREAL4Vector( Result->tmpSnip.data->length );
+ 
+  while(Result->next){
+    cnt++;
+    Result=Result->next;
+    verbose("cnt = %d\n",cnt);
+    }
+
+  Beta  = XLALCreateREAL4Vector(cnt*cnt);
+  Tau  = XLALCreateINT4Vector(cnt*cnt);
+  Result = first;
+  /*I will go ahead and FFT all the templates now */
+  verbose( "tmpSnip length %d tmpSnipTilde %d\n", 
+         Result->tmpSnip.data->length, Result->tmpSnipTilde.data->length );
+   
+  while(Result->next){
+    XLALCOMPLEX8TimeFreqFFT( &Result->tmpSnipTilde, 
+                          &Result->tmpSnip, fwdplan );
+    /* whiten the templates with the amplitude spectral density */
+    verbose("tmpSnipTilde %d snipSpec %d\n",Result->tmpSnipTilde.data->length,
+              snipSpec->data->length);
+    XLALSCVectorMultiply( Result->tmpSnipTilde.data, 
+                          snipSpec->data, 
+                          Result->tmpSnipTilde.data);
+    Result->numResults = cnt; /*store the number of results */
+    normSnip( Result->tmpSnipTilde.data ); /* normalize whitened temps */
+    Result=Result->next;
+    }
+  Result = first;
+ FP = fopen("template.dat","w");
+ for(i=0;i<Result->tmpSnip.data->length;i++)
+   fprintf(FP,"%f\n",Result->tmpSnip.data->data[i].re);  
+  i=0;
+  /* Now I will evaluate the cc matrix */
+  Result = first;
+  while(Result->next){
+    thisResult = Result;
+    BT = getBT(&thisResult->tmpSnipTilde,&thisResult->tmpSnipTilde,revplan);
+    verbose("beta %e tau %d\n", BT.beta, BT.tau);
+    Beta->data[cnt*i+i] = BT.beta;
+    Tau->data[cnt*i+i] = BT.tau;
+    i++;
+    Result=Result->next;
+    }
+  Result = first;
+  i=0;
+  while(Result->next){
+    thisResult = Result;
+    j=i+1;
+    while(thisResult->next && j<thisResult->numResults){ /*also check j */
+      /* one pair */
+      BT = getBT(&Result->tmpSnipTilde,&thisResult->next->tmpSnipTilde,
+                 revplan);
+      Beta->data[cnt*i+j] = BT.beta/sqrt(Beta->data[cnt*i+i]*
+                                         Beta->data[cnt*j+j]);
+      Tau->data[cnt*i+j] = BT.tau;
+      /* conjugate pair */
+      BT = getBT(&thisResult->next->tmpSnipTilde,&Result->tmpSnipTilde,
+                 revplan);
+      Beta->data[cnt*j+i] = BT.beta/sqrt(Beta->data[cnt*i+i]*
+                                         Beta->data[cnt*j+j]);
+      Tau->data[cnt*j+i] = BT.tau;
+      thisResult=thisResult->next;
+      verbose("i %d j %d\n",i,j);
+      j++;
+      }
+    i++;
+    Result=Result->next;
+    }
+/*
+      BT = getBT(&thisResult->next->tmpSnipTilde,&Result->tmpSnipTilde,
+                 revplan);
+      Beta->data[cnt*(j)+i] = BT.beta/Beta->data[cnt*(j)+j];
+      Tau->data[cnt*(j)+i] = BT.tau;
+*/
+
+  for(i=0;i<cnt;i++) Beta->data[cnt*i+i] = 1; /* normalize */
+
+  for(j=0;j<cnt;j++){
+    for(i=0;i<cnt;i++) verbose("%f ",Beta->data[j*cnt +i]);
+    verbose("\n");
+    }
+  verbose("\n\n");
+  for(j=0;j<cnt;j++){
+    for(i=0;i<cnt;i++) verbose("%d ",Tau->data[j*cnt +i]);
+    verbose("\n");
+    }
+  Result = first;
+  XLALDestroyREAL4Vector( thisCCresult.data );
+  return finalCC;
+  }
+
+
+/* this has to be switched to a COMPLEX FFT */
+static RV_BT getBT(COMPLEX8FrequencySeries *A, 
+                   COMPLEX8FrequencySeries *B, 
+                   COMPLEX8FFTPlan *revplan){
+  
+  COMPLEX8FrequencySeries *C=NULL;
+  COMPLEX8TimeSeries    *OUT=NULL;
+  RV_BT BT;
+  UINT4 i = 0;
+  BT.beta = 0;
+  BT.tau = 0;
+  FILE *FP = NULL;
+  OUT = calloc(1,sizeof(COMPLEX8FrequencySeries));
+  C = calloc(1,sizeof(COMPLEX8FrequencySeries));
+  OUT->data = XLALCreateCOMPLEX8Vector(A->data->length);
+  C->data = XLALCreateCOMPLEX8Vector(A->data->length);
+  OUT->sampleUnits = lalDimensionlessUnit; /* fixed error with FFT? */
+  C->sampleUnits = lalDimensionlessUnit;
+  C->deltaF = A->deltaF;
+  XLALCCVectorMultiplyConjugate(C->data,B->data,A->data);
+  verbose("OUT->data->length %d C->data->length %d\n",
+           OUT->data->length, C->data->length);
+  XLALCOMPLEX8FreqTimeFFT( OUT, C, revplan ); 
+  for(i=0; i < OUT->data->length; i++){
+    if (fabs(OUT->data->data[i].re*OUT->data->data[i].re 
+             + OUT->data->data[i].im*OUT->data->data[i].im) > BT.beta){
+      BT.beta = (fabs(OUT->data->data[i].re*OUT->data->data[i].re+ 
+                 OUT->data->data[i].im*OUT->data->data[i].im));
+      BT.tau = i;
+      }
+    };
+  FP = fopen("OUT.dat","w");
+  for(i=0;i<OUT->data->length;i++) fprintf(FP,"%e\n",sqrt(OUT->data->data[i].re*OUT->data->data[i].re + OUT->data->data[i].im*OUT->data->data[i].im));
+  XLALDestroyCOMPLEX8Vector(OUT->data);
+  XLALDestroyCOMPLEX8Vector(C->data);
+  free(OUT);
+  free(C);
+  return BT;
+  }
+
+static void normSnip( COMPLEX8Vector *vec){
+
+  UINT4 i = 0;
+  REAL4 vecSum = 0;
+  for(i=0;i<vec->length;i++) vecSum+= 
+     sqrt(vec->data[i].re*vec->data[i].re + vec->data[i].im*vec->data[i].im);
+  for(i=0;i<vec->length;i++) {
+    vec->data[i].re/=vecSum;
+    vec->data[i].im/=vecSum;
+    }
+  } 
