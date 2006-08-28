@@ -1025,14 +1025,14 @@ int main( int argc, char *argv[]) {
 			  /* select candidates from 2nd stage */
 			  for (k = 0; k < nStacks2; k++) 
 			    {
-			      if ( LALUserVarWasSet(&uvar_fstatThr))
-				LAL_CALL( GetFstatCandidates( &status, fstatToplist, fstatVector2.data + k, uvar_fstatThr,
-							      thisPoint2.Alpha, thisPoint2.Delta, 
-							      thisPoint2.fkdot[1], uvar_reallocBlock ), &status);
-			      else
-				LAL_CALL( GetFstatCandidates_toplist( &status, fstatToplist, fstatVector2.data + k, 
-								      thisPoint2.Alpha, thisPoint2.Delta, 
-								      thisPoint2.fkdot[1] ), &status);
+			      /* if ( LALUserVarWasSet(&uvar_fstatThr)) */
+			      /* LAL_CALL( GetFstatCandidates( &status, fstatToplist, fstatVector2.data + k, uvar_fstatThr, */
+			      /* thisPoint2.Alpha, thisPoint2.Delta,  */
+			      /* thisPoint2.fkdot[1], uvar_reallocBlock ), &status); */
+			      /* else */
+			      /* LAL_CALL( GetFstatCandidates_toplist( &status, fstatToplist, fstatVector2.data + k,  */
+			      /* thisPoint2.Alpha, thisPoint2.Delta,  */
+			      /* thisPoint2.fkdot[1] ), &status); */
 			      
 
 			    } /* end loop over nstacks2 for selecting candidates */
@@ -2238,99 +2238,99 @@ void PrintSemiCohCandidates(LALStatus *status,
     values for the candidates because the input does not have this information.  This 
     is to be fixed as soon as possible!
 */
-void GetFstatCandidates( LALStatus *status,
-			 toplist_t *list,
-			 REAL8FrequencySeries *in,
-			 REAL8 FstatThr,
-			 REAL8 alpha,
-			 REAL8 delta,
-			 REAL8 fdot,
-			 INT4 blockRealloc)
-{
-  INT4 k, length, nCandidates, maxCandidates;
-  REAL8 deltaF, f0;
+/* void GetFstatCandidates( LALStatus *status, */
+/* 			 toplist_t *list, */
+/* 			 REAL8FrequencySeries *in, */
+/* 			 REAL8 FstatThr, */
+/* 			 REAL8 alpha, */
+/* 			 REAL8 delta, */
+/* 			 REAL8 fdot, */
+/* 			 INT4 blockRealloc) */
+/* { */
+/*   INT4 k, length, nCandidates, maxCandidates; */
+/*   REAL8 deltaF, f0; */
 
-  INITSTATUS( status, "GetFstatCandidates", rcsid );
-  ATTATCHSTATUSPTR (status);
+/*   INITSTATUS( status, "GetFstatCandidates", rcsid ); */
+/*   ATTATCHSTATUSPTR (status); */
 
-  if (list == NULL)
-    create_fstat_toplist( &list, blockRealloc);
+/*   if (list == NULL) */
+/*     create_fstat_toplist( &list, blockRealloc); */
 
-  length = in->data->length;
-  deltaF = in->deltaF;
-  f0 = in->f0;
+/*   length = in->data->length; */
+/*   deltaF = in->deltaF; */
+/*   f0 = in->f0; */
 
 
-  for ( k=0; k<length; k++) {
+/*   for ( k=0; k<length; k++) { */
     
-	nCandidates = list->elems;
-	maxCandidates = list->length;
+/* 	nCandidates = list->elems; */
+/* 	maxCandidates = list->length; */
 
-	/* if there isn't enough memory then realloc */
-	if ( nCandidates >= maxCandidates ) 
-	  {
-	    list->length += blockRealloc;
-	    list->data = (TOPLISTLINE *)LALRealloc( list->data, 
-						    maxCandidates*sizeof(TOPLISTLINE));
+/* 	/\* if there isn't enough memory then realloc *\/ */
+/* 	if ( nCandidates >= maxCandidates )  */
+/* 	  { */
+/* 	    list->length += blockRealloc; */
+/* 	    list->data = (TOPLISTLINE *)LALRealloc( list->data,  */
+/* 						    maxCandidates*sizeof(TOPLISTLINE)); */
 
-	  } /* end of realloc */
+/* 	  } /\* end of realloc *\/ */
 
 
-	if ( in->data->data[k] > FstatThr ) {
+/* 	if ( in->data->data[k] > FstatThr ) { */
 
-	  list->data[nCandidates].Freq = f0 + k*deltaF;
-	  list->data[nCandidates].Alpha = alpha;
-	  list->data[nCandidates].Delta = delta;
-	  list->data[nCandidates].f1dot = fdot;
-	  list->data[nCandidates].Fstat = in->data->data[k];
-	  list->elems += 1;
-	}
-  }
+/* 	  list->data[nCandidates].Freq = f0 + k*deltaF; */
+/* 	  list->data[nCandidates].Alpha = alpha; */
+/* 	  list->data[nCandidates].Delta = delta; */
+/* 	  list->data[nCandidates].f1dot = fdot; */
+/* 	  list->data[nCandidates].Fstat = in->data->data[k]; */
+/* 	  list->elems += 1; */
+/* 	} */
+/*   } */
   
-  DETATCHSTATUSPTR (status);
-  RETURN(status);
-}
+/*   DETATCHSTATUSPTR (status); */
+/*   RETURN(status); */
+/* } */
 
 
 
 
-void GetFstatCandidates_toplist( LALStatus *status,
-				 toplist_t *list,
-				 REAL8FrequencySeries *in,
-				 REAL8 alpha,
-				 REAL8 delta,
-				 REAL8 fdot)
-{
-  INT4 k, length, debug;
-  REAL8 deltaF, f0;
-  TOPLISTLINE line;
+/* void GetFstatCandidates_toplist( LALStatus *status, */
+/* 				 toplist_t *list, */
+/* 				 REAL8FrequencySeries *in, */
+/* 				 REAL8 alpha, */
+/* 				 REAL8 delta, */
+/* 				 REAL8 fdot) */
+/* { */
+/*   INT4 k, length, debug; */
+/*   REAL8 deltaF, f0; */
+/*   toplist_t line; */
 
-  INITSTATUS( status, "GetFstatCandidates_toplist", rcsid );
-  ATTATCHSTATUSPTR (status);
+/*   INITSTATUS( status, "GetFstatCandidates_toplist", rcsid ); */
+/*   ATTATCHSTATUSPTR (status); */
 
-  /* fill up alpha, delta and fdot in fstatline */
-  line.f1dot = fdot;
-  line.Alpha = alpha;
-  line.Delta = delta;
+/*   /\* fill up alpha, delta and fdot in fstatline *\/ */
+/*   line.f1dot = fdot; */
+/*   line.Alpha = alpha; */
+/*   line.Delta = delta; */
 
-  length = in->data->length;
-  deltaF = in->deltaF;
-  f0 = in->f0;
+/*   length = in->data->length; */
+/*   deltaF = in->deltaF; */
+/*   f0 = in->f0; */
 
-  /* loop over Fstat vector and fill up toplist */
-  for ( k=0; k<length; k++) 
-    {
+/*   /\* loop over Fstat vector and fill up toplist *\/ */
+/*   for ( k=0; k<length; k++)  */
+/*     { */
       
-      line.Fstat = in->data->data[k];
-      line.Freq = f0 + k*deltaF;
+/*       line.Fstat = in->data->data[k]; */
+/*       line.Freq = f0 + k*deltaF; */
       
-      debug = insert_into_fstat_toplist( list, line);
+/*       debug = insert_into_fstat_toplist( list, line); */
 
-    }
+/*     } */
 
-  DETATCHSTATUSPTR (status);
-  RETURN(status);
-}
+/*   DETATCHSTATUSPTR (status); */
+/*   RETURN(status); */
+/* } */
 
 
 /** Print hough histogram to a file */

@@ -67,6 +67,8 @@
 /* lalapps includes */
 #include <lalapps.h>
 #include "../../FDS_isolated/DopplerScan.h"
+/* more efficient toplist using heaps */
+#include "../../FDS_isolated/HeapToplist.h"
 #include "../../FDS_isolated/FstatToplist.h"
 
 /******************************************************
@@ -214,21 +216,21 @@ NRCSID( HIERARCHICALSEARCHH, "$Id$" );
 				  HOUGHPatchGrid  *patch,
 				  HOUGHDemodPar   *parDem);
 
-  void GetFstatCandidates( LALStatus *status,
-			   toplist_t *list,
-			   REAL8FrequencySeries *in,
-			   REAL8 FstatThr,
-			   REAL8 alpha,
-			   REAL8 delta,
-			   REAL8 fdot,
-			   INT4 blockRealloc);
+/*   void GetFstatCandidates( LALStatus *status, */
+/* 			   toplist_t *list, */
+/* 			   REAL8FrequencySeries *in, */
+/* 			   REAL8 FstatThr, */
+/* 			   REAL8 alpha, */
+/* 			   REAL8 delta, */
+/* 			   REAL8 fdot, */
+/* 			   INT4 blockRealloc); */
 
-  void GetFstatCandidates_toplist(LALStatus *status,
-				  toplist_t *list,
-				  REAL8FrequencySeries   *FstatVec,
-				  REAL8 alpha,
-				  REAL8 delta,
-				  REAL8 fdot);
+/*   void GetFstatCandidates_toplist(LALStatus *status, */
+/* 				  toplist_t *list, */
+/* 				  REAL8FrequencySeries   *FstatVec, */
+/* 				  REAL8 alpha, */
+/* 				  REAL8 delta, */
+/* 				  REAL8 fdot); */
 
   void GetMinSigIndex_toplist(LALStatus *status,
 			      INT4 *minSigIndex,
