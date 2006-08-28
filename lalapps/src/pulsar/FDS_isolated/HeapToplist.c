@@ -2,6 +2,7 @@
 #include <string.h>
 #include "HeapToplist.h"
 
+static volatile const char *HEAPTOPLISTCID  = "$Id$";
 
 /* successors of node n: 2*n+1 and 2*n+2
         0

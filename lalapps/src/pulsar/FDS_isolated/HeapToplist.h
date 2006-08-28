@@ -7,6 +7,8 @@
 #ifndef HEAPTOPLIST_H
 #define HEAPTOPLIST_H
 
+static volatile const char *HEAPTOPLISTHID  = "$Id$";
+
 #ifndef UINT8
 #define UINT8 unsigned long long
 #endif
