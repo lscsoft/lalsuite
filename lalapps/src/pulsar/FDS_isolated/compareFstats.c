@@ -285,9 +285,11 @@ compareFstatFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALPar
 
       /* read pure Fstats files */
       if ( parse_Fstat_line ( line1, &parsed1 ) ) {
+	printf ("Failed to parse line 1 in file 1\n");
 	ABORT (status, MAKEFAKEDATAC_EFORMAT, MAKEFAKEDATAC_MSGEFORMAT);
       }
       if ( parse_Fstat_line ( line2, &parsed2 ) ) {
+	printf ("Failed to parse line 1 in file 2\n");
 	ABORT (status, MAKEFAKEDATAC_EFORMAT, MAKEFAKEDATAC_MSGEFORMAT);
       }
 
