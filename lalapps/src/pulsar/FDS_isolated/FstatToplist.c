@@ -59,8 +59,8 @@ static int print_fstatline_to_str(FstatOutputEntry fline, char* buf, int buflen)
 static int fstat_smaller(const void*a, const void*b) {
   if(((FstatOutputEntry*)a)->Fstat < ((FstatOutputEntry*)b)->Fstat)
     return(1);
-  else if(((FstatOutputEntry*)a)->Fstat < ((FstatOutputEntry*)b)->Fstat)
-    return(1);
+  else if(((FstatOutputEntry*)a)->Fstat > ((FstatOutputEntry*)b)->Fstat)
+    return(-1);
   else
     return(0);
 }
