@@ -2,7 +2,7 @@
 #include <string.h>
 #include "HeapToplist.h"
 
-static volatile const char *HEAPTOPLISTCID  = "$Id$";
+static volatile const *HEAPTOPLISTCID  = "$Id$";
 
 /* successors of node n: 2*n+1 and 2*n+2
         0
@@ -123,6 +123,36 @@ void go_through_toplist(toplist_t*list, void (*handle)(const void *)) {
   UINT8 i;
   for(i=0;i<list->elems;i++)
     handle(list->heap[i]);
+}
+
+void* toplist_elem(toplist_t*list, UINT8 index) {
+  if (list == NULL)
+    return(NULL);
+  if (index >= list->elems)
+    return(NULL);
+  return(list->heap[index]);
+}
+
+int compare_toplists(toplist_t*list1, toplist_t*list2) {
+  UINT8 i=0, res=0;
+  if ((list1 == NULL) || (list2 == NULL))
+    return(2);
+  if ((list1->smaller != list2->smaller) ||
+      (list1->size    != list2->size))
+    return(2);
+  while((i < list1->elems) &&
+	(i < list2->elems) &&
+	(res == 0)) {
+    res = list1->smaller(toplist_elem(list1,i),toplist_elem(list2,i));
+    i++;
+  }
+  if (res == 0) {
+    if (list1->elems < list2->elems)
+      return(1);
+    else if (list1->elems > list2->elems)
+      return(-1);
+  }
+  return(res);
 }
 
 

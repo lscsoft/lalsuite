@@ -7,7 +7,7 @@
 #ifndef HEAPTOPLIST_H
 #define HEAPTOPLIST_H
 
-static volatile const char *HEAPTOPLISTHID  = "$Id$";
+static volatile char *HEAPTOPLISTHID  = "$Id$";
 
 #ifndef UINT8
 #define UINT8 unsigned long long
@@ -52,9 +52,8 @@ extern void go_through_toplist(toplist_t*list, void (*handle)(const void *));
 
    note that a (q-)sorted list is a heap, but due to the interface of qsort
    the same comparison function will give the reverse order than the heap.
-   in order to restore a heap with qsort_toplist() (e.g. to add more elements) you
-   must qsort_toplist() with the inverse function of the "smaller" function of the heap.
-*/
+   in order to restore a heap with qsort_toplist() (e.g. to add more elements) you must
+   qsort_toplist() with the inverse function of the "smaller" function of the heap. */
 extern void qsort_toplist(toplist_t*list, int (*compare)(const void *, const void *));
 
 
@@ -62,5 +61,14 @@ extern void qsort_toplist(toplist_t*list, int (*compare)(const void *, const voi
    qsort_toplist(), which restores the heap property with the same comparison function */
 extern void qsort_toplist_r(toplist_t*list, int (*compare)(const void *, const void *));
 
+
+/* access a certain element of the toplist (shouldn't be done by fiddling in toplist_t) */
+extern void* toplist_elem(toplist_t*list, UINT8 index);
+
+
+/* compare two toplists
+   returns -1 if list1 is "smaller", 1 if list2 is "smaller", 0 if they are equal,
+   2 if they are uncomparable (different data types or "smaller" functions */
+extern int compare_toplists(toplist_t*list1, toplist_t*list2);
 
 #endif /* HEAPTOPLIST_H - double inclusion protection */
