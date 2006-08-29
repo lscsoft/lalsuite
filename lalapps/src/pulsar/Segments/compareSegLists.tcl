@@ -35,21 +35,22 @@ proc PrintHelp {} {
     puts " ";
     puts "Usage:";
     puts " ";
-    puts "$argv0 -f1 <filename1> -f2 <filename2> \[-t1 <duration1>\] \[-t2 <duration2>\] <-i | -d | -o> \[-s\] \[-T\]";
+    puts "$argv0 -f1 <filename1> -f2 <filename2> \[-t1 <duration1>\] \[-t2 <duration2>\] <-i | -d | -o | -u> \[-s\] \[-T\]";
     puts " ";
-    puts " -f1 <filename1>   Required; name of first file with list of segments or timestamps.";
-    puts " -f2 <filename2>   Required; name of second file with list of segments or timestamps.";
-    puts " -t1 <duration1>   Optional; if given then filename1 contains timestamps as defined above.";
-    puts " -t2 <duration2>   Optional; if given then filename2 contains timestamps as defined above.";    
+    puts " -f1 <filename1>     Required; name of first file with list of segments or timestamps.";
+    puts " -f2 <filename2>     Required; name of second file with list of segments or timestamps.";
+    puts " -t1 <duration1>     Optional; if given then filename1 contains timestamps as defined above.";
+    puts " -t2 <duration2>     Optional; if given then filename2 contains timestamps as defined above.";    
     puts " ";
-    puts " -i | -d | -o      Specifies the operation between segments from filename1 and filename2."
-    puts "                   One of these is required:";
-    puts "                   -i:  find the intersection between the segment lists.";
-    puts "                   -d:  find the difference between the segment lists.";
-    puts "                   -o:  find the percent overlap on a per segment basis."
+    puts " -i | -d | -o | -u   Specifies the operation between segments from filename1 and filename2."
+    puts "                     One of these is required:";
+    puts "                     -i:  find the intersection between the segment lists.";
+    puts "                     -d:  find the difference between the segment lists.";
+    puts "                     -o:  find the percent overlap on a per segment basis."
+    puts "                     -u:  find the union between the segment lists.";
     puts " "
-    puts " -s                Optional; give size of each interval";
-    puts " -T                Optional; give totals";
+    puts " -s                  Optional; give size of each interval";
+    puts " -T                  Optional; give totals";
     puts " ";    
     puts "The output is printed to stdout.";
     puts " ";
@@ -82,7 +83,7 @@ set filename1 "unknown";
 set filename2 "unknown";
 set duration1 0;
 set duration2 0;
-set optList [split "-f1:-f2:-t1:-t2:-i:-d:-o:-s:-T" ":"];
+set optList [split "-f1:-f2:-t1:-t2:-i:-d:-o:-u:-s:-T" ":"];
 set opt "unknown";
 set giveSizes 0;
 set giveTotals 0;
@@ -95,6 +96,8 @@ foreach element $argv {
                    set operation "difference";
                 } elseif {$element == "-o"} {
                    set operation "overlap";
+                } elseif {$element == "-u"} {
+                   set operation "union";
                 } elseif {$element == "-s"} {
                    set giveSizes 1;
                 } elseif {$element == "-T"} {
@@ -121,7 +124,7 @@ foreach element $argv {
 
 # Validate the arguments and set up related values
 if {$operation == "unknown"} {
-      puts "Missing -i, -d, or -o option.";
+      puts "Missing -i, -d, -o, or -u option.";
       Exit 2;
 }
 
@@ -208,6 +211,8 @@ if {$operation == "intersection"} {
    set outputSegs [ setIntersection $segList1 $segList2 ]
 } elseif {$operation == "difference"} {
    set outputSegs [ setDifference $segList1 $segList2 ]
+} elseif {$operation == "union"} {
+   set outputSegs [ setUnion $segList1 $segList2 ]
 } elseif {$operation == "overlap"} {
   if {$giveSizes > 0} {
      puts "Segments From File 1   Duration   Overlap Duration     Fractional Overlap";     
