@@ -790,6 +790,7 @@ int main(int argc, char *argv[])
 	searchsumm.searchSummaryTable->nnodes = 1;
 	searchsumm.searchSummaryTable->out_start_time = *XLALINT8NSToGPS(&searchsumm.searchSummaryTable->in_start_time, options.gps_start_time);
 	searchsumm.searchSummaryTable->out_end_time = *XLALINT8NSToGPS(&searchsumm.searchSummaryTable->in_end_time, options.gps_end_time);
+	snprintf(searchsumm.searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, "H1,H2,L1");
 	searchsumm.searchSummaryTable->nevents = 0;
 
 
