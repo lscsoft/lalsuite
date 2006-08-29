@@ -331,8 +331,8 @@ int main( int argc, char *argv[]) {
   INT4 uvar_Dterms;
   INT4 uvar_SSBprecision;
   INT4 uvar_nfdot;
-  INT4 uvar_gridType;
-  INT4 uvar_metricType;
+  INT4 uvar_gridType1, uvar_gridType2;
+  INT4 uvar_metricType1, uvar_metricType2;
 
   CHAR *uvar_ephemDir=NULL;
   CHAR *uvar_ephemYear=NULL;
@@ -378,8 +378,10 @@ int main( int argc, char *argv[]) {
   uvar_houghThr = 0;
   uvar_fstatThr = FSTATTHRESHOLD;
   uvar_SSBprecision = SSBPREC_RELATIVISTIC;
-  uvar_metricType = LAL_PMETRIC_COH_PTOLE_ANALYTIC;
-  uvar_gridType = GRID_METRIC;
+  uvar_metricType1 = LAL_PMETRIC_COH_PTOLE_ANALYTIC;
+  uvar_metricType2 = LAL_PMETRIC_COH_PTOLE_ANALYTIC;
+  uvar_gridType1 = GRID_METRIC;
+  uvar_gridType2 = GRID_METRIC;
   uvar_mismatch1 = uvar_mismatch2 = MISMATCH;
   uvar_pixelFactor = PIXELFACTOR;
 
@@ -428,8 +430,10 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar(    &status, "nStacks2",     0,  UVAR_OPTIONAL, "No.of 2nd stage stacks", &uvar_nStacks2 ), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "mismatch1",    0,  UVAR_OPTIONAL, "1st stage mismatch", &uvar_mismatch1), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "mismatch2",    0,  UVAR_OPTIONAL, "2nd stage mismatch", &uvar_mismatch2), &status);
-  LAL_CALL( LALRegisterINTUserVar (   &status, "gridType",     0,  UVAR_OPTIONAL, "0=flat,1=isotropic,2=metric,3=file", &uvar_gridType),  &status);
-  LAL_CALL( LALRegisterINTUserVar (   &status, "metricType",   0,  UVAR_OPTIONAL, "0=none,1=Ptole-analytic,2=Ptole-numeric,3=exact", &uvar_metricType), &status);
+  LAL_CALL( LALRegisterINTUserVar (   &status, "gridType1",    0,  UVAR_OPTIONAL, "0=flat,1=isotropic,2=metric,3=file", &uvar_gridType1),  &status);
+  LAL_CALL( LALRegisterINTUserVar (   &status, "gridType2",    0,  UVAR_OPTIONAL, "0=flat,1=isotropic,2=metric,3=file", &uvar_gridType2),  &status);
+  LAL_CALL( LALRegisterINTUserVar (   &status, "metricType1",  0,  UVAR_OPTIONAL, "0=none,1=Ptole-analytic,2=Ptole-numeric,3=exact", &uvar_metricType1), &status);
+  LAL_CALL( LALRegisterINTUserVar (   &status, "metricType2",  0,  UVAR_OPTIONAL, "0=none,1=Ptole-analytic,2=Ptole-numeric,3=exact", &uvar_metricType2), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyGridFile",  0,  UVAR_OPTIONAL, "sky-grid file", &uvar_skyGridFile), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "dAlpha",       0,  UVAR_OPTIONAL, "Resolution for flat or isotropic grids", &uvar_dAlpha), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "dDelta",       0,  UVAR_OPTIONAL, "Resolution for flat or isotropic grids", &uvar_dDelta), &status);
@@ -786,8 +790,8 @@ int main( int argc, char *argv[]) {
   /* prepare initialization of DopplerScanner to step through paramter space */
   scanInit1.dAlpha = uvar_dAlpha;
   scanInit1.dDelta = uvar_dDelta;
-  scanInit1.gridType = uvar_gridType;
-  scanInit1.metricType = uvar_metricType;
+  scanInit1.gridType = uvar_gridType1;
+  scanInit1.metricType = uvar_metricType1;
   scanInit1.metricMismatch = uvar_mismatch1;
   scanInit1.projectMetric = TRUE;
   scanInit1.obsDuration = tStack1;
@@ -817,15 +821,15 @@ int main( int argc, char *argv[]) {
      /* prepare initialization of DopplerScanner to step through paramter space */
       scanInit2.dAlpha = uvar_dAlpha;
       scanInit2.dDelta = uvar_dDelta;
-      scanInit2.gridType = uvar_gridType;
-      scanInit2.metricType = uvar_metricType;
+      scanInit2.gridType = uvar_gridType2;
+      scanInit2.metricType = uvar_metricType2;
       scanInit2.metricMismatch = uvar_mismatch2;
       scanInit2.projectMetric = TRUE;
       scanInit2.obsDuration = tStack2;
       scanInit2.obsBegin = startTstack2->data[ nStacks1/2 ];
       scanInit2.Detector = &(stackMultiDetStates2.data[0]->data[0]->detector);
       scanInit2.ephemeris = edat;  /* used by Ephemeris-based metric */
-      scanInit2.skyGridFile = uvar_skyGridFile;
+      /* scanInit2.skyGridFile = uvar_skyGridFile; */
       /* the search region for scanInit2 will be set later 
 	 -- it depends on the candidates from the first stage */
     } /* end if( uvar_followUp) */
@@ -1018,7 +1022,8 @@ int main( int argc, char *argv[]) {
 			  
 			  /* set spindown value for Fstat calculation */
 			  thisPoint2.fkdot[1] = fdot1 + ifdot2 * dfDot2;
-			  
+			  thisPoint2.fkdot[0] = fStart1;
+
 			  /* calculate the Fstatistic */
 			  for ( k = 0; k < nStacks2; k++) {
 			    LAL_CALL( ComputeFStatFreqBand ( &status, fstatVector2.data + k, &thisPoint2, 
