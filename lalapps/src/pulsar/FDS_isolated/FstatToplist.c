@@ -332,11 +332,6 @@ int write_fstat_toplist_to_fp(toplist_t*tl, FILE*fp, UINT4*checksum) {
 }
 
 
-/* FIXME:
-   convert everything below this line to the new toplist structure
-*/
-
-
 /* writes the given toplitst to a temporary file, then renames the
    temporary file to filename. The name of the temporary file is
    derived from the filename by appending ".tmp". Returns the number
