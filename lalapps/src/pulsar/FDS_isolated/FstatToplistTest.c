@@ -30,7 +30,7 @@ int test_fstat_toplist(UINT8 n, UINT8 m, char*filename) {
     FILE*fp;
     toplist_t *tl=NULL, *tl2=NULL;
     FstatOutputEntry FstatLine;
-    FstatOutputEntry *ll, *llt;
+    FstatOutputEntry *ll;
     UINT8 i,ins=0;
     UINT4 checksum;
 
@@ -63,7 +63,7 @@ int test_fstat_toplist(UINT8 n, UINT8 m, char*filename) {
 
     checksum = 0;
 
-    fprintf(stderr,"filling first toplist...\n");
+    fprintf(stderr,"filling toplist...\n");
     for(i=0;i<m;i++) {
 	FstatLine.Freq = (double)rand() / (double)RAND_MAX;
 	FstatLine.f1dot = (double)rand() / (double)RAND_MAX;
@@ -85,30 +85,11 @@ int test_fstat_toplist(UINT8 n, UINT8 m, char*filename) {
 
     fclose(fp);
 
-    fprintf(stderr,"checksum: %d\n",checksum);
+    fprintf(stderr,"file checksum: %d\n",checksum);
 
-    fprintf(stderr,"open file %s for reading...\n",filename);
-    fp=fopen(filename,"r");
-    if(!fp) {
-	LALPrintError("Couldn't open file %s for reading\n",filename);
-	free_fstat_toplist(&tl);
-	free_fstat_toplist(&tl2);
-	return(-2);
-    }
+    fprintf(stderr,"\nLet's see if we really kept the top elements:\n");
 
-    fprintf(stderr,"reading...\n");
-    read_fstat_toplist_from_fp(tl2, fp, &checksum, 0);
-
-    fclose(fp);
-
-    fprintf(stderr,"checksum: %d\n",checksum);
-
-    /*
-      for(i=0;i<m;i++)
-      print_fstat((void*)&(ll[i]));
-    */
-
-    fprintf(stderr,"sort the reference list and get the top n elements\n");
+    fprintf(stderr,"sort the lists completely\n");
     qsort_toplist(tl,fstat_smaller);
     qsort(ll,m,sizeof(FstatOutputEntry),fstat_smaller);
 
@@ -147,7 +128,23 @@ int test_fstat_toplist(UINT8 n, UINT8 m, char*filename) {
 		    ll[i].Fstat);
 	}
 
+    fprintf(stderr,"\nNow see if we can rebuild the toplist from the written file:\n");
 
+    fprintf(stderr,"open file %s for reading...\n",filename);
+    fp=fopen(filename,"r");
+    if(!fp) {
+	LALPrintError("Couldn't open file %s for reading\n",filename);
+	free_fstat_toplist(&tl);
+	free_fstat_toplist(&tl2);
+	return(-2);
+    }
+
+    fprintf(stderr,"reading...\n");
+    read_fstat_toplist_from_fp(tl2, fp, &checksum, 0);
+
+    fclose(fp);
+
+    fprintf(stderr,"checksum: %d\n",checksum);
 
     sort_fstat_toplist(tl);
 
@@ -206,6 +203,7 @@ int test_fstat_toplist(UINT8 n, UINT8 m, char*filename) {
     fprintf(stderr,"cleanup...\n");
     free_fstat_toplist(&tl);
     free_fstat_toplist(&tl2);
+    free(ll);
 
     return(0);
 }
