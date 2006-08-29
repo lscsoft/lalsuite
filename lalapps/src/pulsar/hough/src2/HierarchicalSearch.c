@@ -312,7 +312,6 @@ int main( int argc, char *argv[]) {
   REAL8 uvar_f1dotBand; /* range of first spindown parameter */
   REAL8 uvar_Freq, uvar_FreqBand;
   REAL8 uvar_peakThrF; /* threshold of Fstat to select peaks */
-  REAL8 uvar_houghThr; /* threshold on hough number count to select candidates */
   REAL8 uvar_fstatThr; /* threshold for selecting candidates from Fstat vector */
   REAL8 uvar_mismatch1; /* metric mismatch for first stage coarse grid */
   REAL8 uvar_mismatch2; /* metric mismatch for second stage coarse grid */
@@ -375,7 +374,6 @@ int main( int argc, char *argv[]) {
   uvar_nfdot = NFDOT;
   uvar_peakThrF = FSTATTHRESHOLD;
   uvar_nCand1 = uvar_nCand2 = NCAND1;
-  uvar_houghThr = 0;
   uvar_fstatThr = FSTATTHRESHOLD;
   uvar_SSBprecision = SSBPREC_RELATIVISTIC;
   uvar_metricType1 = LAL_PMETRIC_COH_PTOLE_ANALYTIC;
@@ -431,7 +429,7 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterREALUserVar(   &status, "mismatch1",    0,  UVAR_OPTIONAL, "1st stage mismatch", &uvar_mismatch1), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "mismatch2",    0,  UVAR_OPTIONAL, "2nd stage mismatch", &uvar_mismatch2), &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "gridType1",    0,  UVAR_OPTIONAL, "0=flat,1=isotropic,2=metric,3=file", &uvar_gridType1),  &status);
-  LAL_CALL( LALRegisterINTUserVar (   &status, "gridType2",    0,  UVAR_OPTIONAL, "0=flat,1=isotropic,2=metric,3=file", &uvar_gridType2),  &status);
+  LAL_CALL( LALRegisterINTUserVar (   &status, "gridType2",    0,  UVAR_OPTIONAL, "0=flat,1=isotropic,2=metric", &uvar_gridType2),  &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "metricType1",  0,  UVAR_OPTIONAL, "0=none,1=Ptole-analytic,2=Ptole-numeric,3=exact", &uvar_metricType1), &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "metricType2",  0,  UVAR_OPTIONAL, "0=none,1=Ptole-analytic,2=Ptole-numeric,3=exact", &uvar_metricType2), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyGridFile",  0,  UVAR_OPTIONAL, "sky-grid file", &uvar_skyGridFile), &status);
@@ -444,7 +442,6 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterREALUserVar(   &status, "peakThrF",     0,  UVAR_OPTIONAL, "Fstat Threshold", &uvar_peakThrF), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "nCand1",       0,  UVAR_OPTIONAL, "No.of 1st stage candidates to be followed up", &uvar_nCand1), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "nCand2",       0,  UVAR_OPTIONAL, "No.of 2nd stage candidates to be followed up",&uvar_nCand2), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "houghThr",     0,  UVAR_OPTIONAL, "Hough number count threshold (default --nCand1)",   &uvar_houghThr), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printCand1",   0,  UVAR_OPTIONAL, "Print 1st stage candidates", &uvar_printCand1), &status);  
   LAL_CALL( LALRegisterREALUserVar(   &status, "refTime",      0,  UVAR_OPTIONAL, "Ref. time for pulsar pars [start time]", &uvar_refTime), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemDir",     0,  UVAR_OPTIONAL, "Location of ephemeris files", &uvar_ephemDir),  &status);
