@@ -777,6 +777,7 @@ int main(int argc, char *argv[])
 	proctable.processTable = calloc(1, sizeof(*proctable.processTable));
 	XLALGPSTimeNow(&proctable.processTable->start_time);
 	LAL_CALL(populate_process_table(&status, proctable.processTable, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE), &status);
+	snprintf(proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "H1,H2,L1");
 	if(options.user_tag)
 		snprintf(proctable.processTable->comment, LIGOMETA_COMMENT_MAX, "%s", options.user_tag);
 
@@ -790,7 +791,7 @@ int main(int argc, char *argv[])
 	searchsumm.searchSummaryTable->nnodes = 1;
 	searchsumm.searchSummaryTable->out_start_time = *XLALINT8NSToGPS(&searchsumm.searchSummaryTable->in_start_time, options.gps_start_time);
 	searchsumm.searchSummaryTable->out_end_time = *XLALINT8NSToGPS(&searchsumm.searchSummaryTable->in_end_time, options.gps_end_time);
-	snprintf(searchsumm.searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, "H1,H2,L1");
+	snprintf(searchsumm.searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, proctable.processTable->ifos);
 	searchsumm.searchSummaryTable->nevents = 0;
 
 
