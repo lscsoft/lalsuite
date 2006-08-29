@@ -312,7 +312,6 @@ int main( int argc, char *argv[]) {
   REAL8 uvar_f1dotBand; /* range of first spindown parameter */
   REAL8 uvar_Freq, uvar_FreqBand;
   REAL8 uvar_peakThrF; /* threshold of Fstat to select peaks */
-  REAL8 uvar_fstatThr; /* threshold for selecting candidates from Fstat vector */
   REAL8 uvar_mismatch1; /* metric mismatch for first stage coarse grid */
   REAL8 uvar_mismatch2; /* metric mismatch for second stage coarse grid */
   REAL8 uvar_refTime;
@@ -374,7 +373,6 @@ int main( int argc, char *argv[]) {
   uvar_nfdot = NFDOT;
   uvar_peakThrF = FSTATTHRESHOLD;
   uvar_nCand1 = uvar_nCand2 = NCAND1;
-  uvar_fstatThr = FSTATTHRESHOLD;
   uvar_SSBprecision = SSBPREC_RELATIVISTIC;
   uvar_metricType1 = LAL_PMETRIC_COH_PTOLE_ANALYTIC;
   uvar_metricType2 = LAL_PMETRIC_COH_PTOLE_ANALYTIC;
@@ -424,6 +422,7 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterREALUserVar(   &status, "FreqBand",    'b', UVAR_OPTIONAL, "Search frequency band", &uvar_FreqBand), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "f1dot",        0,  UVAR_OPTIONAL, "Spindown parameter", &uvar_f1dot), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "f1dotBand",    0,  UVAR_OPTIONAL, "Range of fdot", &uvar_f1dotBand), &status);
+  LAL_CALL( LALRegisterINTUserVar (   &status, "nfdot",        0,  UVAR_OPTIONAL, "No.of residual fdot values to be searched", &uvar_nfdot), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "nStacks1",    'N', UVAR_OPTIONAL, "No.of 1st stage stacks", &uvar_nStacks1 ), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "nStacks2",     0,  UVAR_OPTIONAL, "No.of 2nd stage stacks", &uvar_nStacks2 ), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "mismatch1",    0,  UVAR_OPTIONAL, "1st stage mismatch", &uvar_mismatch1), &status);
@@ -453,9 +452,7 @@ int main( int argc, char *argv[]) {
 
   /* developer user variables */
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed", 0, UVAR_DEVELOPER, "RngMed block size", &uvar_blocksRngMed), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "fstatThr",     0, UVAR_DEVELOPER, "Fstat threshold (default --nCand2)", &uvar_fstatThr), &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "SSBprecision", 0, UVAR_DEVELOPER, "Precision for SSB transform.", &uvar_SSBprecision),    &status);
-  LAL_CALL( LALRegisterINTUserVar (   &status, "nfdot",        0, UVAR_DEVELOPER, "No.of residual fdot values to be searched", &uvar_nfdot), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printMaps",    0, UVAR_DEVELOPER, "Print Hough maps", &uvar_printMaps), &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printStats",   0, UVAR_DEVELOPER, "Print Hough map statistics", &uvar_printStats), &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printFstat1",  0, UVAR_DEVELOPER, "Print 1st stage Fstat vectors", &uvar_printFstat1), &status);  
@@ -2090,65 +2087,6 @@ void PrintSemiCohCandidates(LALStatus *status,
   RETURN(status);
 
 }
-
-/** Sets threshold on Fstat vector and fills up frequency and deltaF values in candidate list. 
-    Important -- Currently this function does not get the sky-loctaion and spindown
-    values for the candidates because the input does not have this information.  This 
-    is to be fixed as soon as possible!
-*/
-/* void GetFstatCandidates( LALStatus *status, */
-/* 			 toplist_t *list, */
-/* 			 REAL8FrequencySeries *in, */
-/* 			 REAL8 FstatThr, */
-/* 			 REAL8 alpha, */
-/* 			 REAL8 delta, */
-/* 			 REAL8 fdot, */
-/* 			 INT4 blockRealloc) */
-/* { */
-/*   INT4 k, length, nCandidates, maxCandidates; */
-/*   REAL8 deltaF, f0; */
-
-/*   INITSTATUS( status, "GetFstatCandidates", rcsid ); */
-/*   ATTATCHSTATUSPTR (status); */
-
-/*   if (list == NULL) */
-/*     create_fstat_toplist( &list, blockRealloc); */
-
-/*   length = in->data->length; */
-/*   deltaF = in->deltaF; */
-/*   f0 = in->f0; */
-
-
-/*   for ( k=0; k<length; k++) { */
-    
-/* 	nCandidates = list->elems; */
-/* 	maxCandidates = list->length; */
-
-/* 	/\* if there isn't enough memory then realloc *\/ */
-/* 	if ( nCandidates >= maxCandidates )  */
-/* 	  { */
-/* 	    list->length += blockRealloc; */
-/* 	    list->data = (TOPLISTLINE *)LALRealloc( list->data,  */
-/* 						    maxCandidates*sizeof(TOPLISTLINE)); */
-
-/* 	  } /\* end of realloc *\/ */
-
-
-/* 	if ( in->data->data[k] > FstatThr ) { */
-
-/* 	  list->data[nCandidates].Freq = f0 + k*deltaF; */
-/* 	  list->data[nCandidates].Alpha = alpha; */
-/* 	  list->data[nCandidates].Delta = delta; */
-/* 	  list->data[nCandidates].f1dot = fdot; */
-/* 	  list->data[nCandidates].Fstat = in->data->data[k]; */
-/* 	  list->elems += 1; */
-/* 	} */
-/*   } */
-  
-/*   DETATCHSTATUSPTR (status); */
-/*   RETURN(status); */
-/* } */
-
 
 
 
