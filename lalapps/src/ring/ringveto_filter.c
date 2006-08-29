@@ -682,16 +682,20 @@ static void computeChisqVec (REAL4Vector *chisqVec,
       k<(firstResult->result.data->length - firstResult->tmpSnip.data->length);k++){
     Result = firstResult;
     j = 0;
+    snrFactor = 1.0 * params->dynRangeFac / thisResult->sigma;
     for (j=0;j < (thisResult->numResults);j++){
-      chisqVec->data[k] += 1.0/effDOF*(thisResult->result.data->data[k]-
-              1.0/beta->data[j]*Result->result.data->data[k+tau->data[j]])*
-              (thisResult->result.data->data[k]-
-              1.0/beta->data[j]*Result->result.data->data[k+tau->data[j]]);
+      REAL4 otherSNRfactor  = 1.0 * params->dynRangeFac / Result->sigma;
+      chisqVec->data[k] += 1.0/effDOF*
+        (fabs(thisResult->result.data->data[k])*snrFactor-
+        1.0/beta->data[j]*fabs(Result->result.data->data[k+tau->data[j]])
+        *otherSNRfactor)*(fabs(thisResult->result.data->data[k])*snrFactor-
+        1.0/beta->data[j]*fabs(Result->result.data->data[k+tau->data[j]]) 
+        *otherSNRfactor);
       Result=Result->next;
       }
-    snrFactor = 2.0 * params->dynRangeFac / thisResult->sigma; 
+    /* weight by snr */
     chisqVec->data[k] /= deltasq*thisResult->result.data->data[k]*
-                         thisResult->result.data->data[k]/snrFactor/snrFactor+1;
+                         thisResult->result.data->data[k]*snrFactor*snrFactor+1;
     }
 
   /*FP = fopen("chisqVec.dat","w");
