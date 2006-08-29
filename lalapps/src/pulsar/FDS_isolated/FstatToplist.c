@@ -56,13 +56,36 @@ static void reduce_fstat_toplist_precision(toplist_t *l);
 static int print_fstatline_to_str(FstatOutputEntry fline, char* buf, int buflen);
 
 
+/* ordering function for sorting the list */
+static int fstat_toplist_qsort_function(const void *a, const void *b) {
+    if      (((FstatOutputEntry*)a)->Freq  < ((FstatOutputEntry*)b)->Freq)
+	return -1;
+    else if (((FstatOutputEntry*)a)->Freq  > ((FstatOutputEntry*)b)->Freq)
+	return 1;
+    else if (((FstatOutputEntry*)a)->Alpha < ((FstatOutputEntry*)b)->Alpha)
+	return -1;
+    else if (((FstatOutputEntry*)a)->Alpha > ((FstatOutputEntry*)b)->Alpha)
+	return 1;
+    else if (((FstatOutputEntry*)a)->Delta < ((FstatOutputEntry*)b)->Delta)
+	return -1;
+    else if (((FstatOutputEntry*)a)->Delta > ((FstatOutputEntry*)b)->Delta)
+	return 1;
+    else if (((FstatOutputEntry*)a)->f1dot < ((FstatOutputEntry*)b)->f1dot)
+	return -1;
+    else if (((FstatOutputEntry*)a)->f1dot > ((FstatOutputEntry*)b)->f1dot)
+	return 1;
+    else
+	return 0;
+}
+
+/* ordering function defining the toplist */
 static int fstat_smaller(const void*a, const void*b) {
-  if(((FstatOutputEntry*)a)->Fstat < ((FstatOutputEntry*)b)->Fstat)
+  if     (((FstatOutputEntry*)a)->Fstat < ((FstatOutputEntry*)b)->Fstat)
     return(1);
   else if(((FstatOutputEntry*)a)->Fstat > ((FstatOutputEntry*)b)->Fstat)
     return(-1);
   else
-    return(0);
+    return(fstat_toplist_qsort_function(a,b));
 }
 
 
@@ -92,32 +115,9 @@ int insert_into_fstat_toplist(toplist_t*tl, FstatOutputEntry elem) {
 }
 
 
-/* ordering function for sorting the list */
-static int _fstat_toplist_qsort_function(const void *a, const void *b) {
-    if      (((FstatOutputEntry*)a)->Freq < ((FstatOutputEntry*)b)->Freq)
-	return -1;
-    else if (((FstatOutputEntry*)a)->Freq > ((FstatOutputEntry*)b)->Freq)
-	return 1;
-    else if (((FstatOutputEntry*)a)->Alpha < ((FstatOutputEntry*)b)->Alpha)
-	return -1;
-    else if (((FstatOutputEntry*)a)->Alpha > ((FstatOutputEntry*)b)->Alpha)
-	return 1;
-    else if (((FstatOutputEntry*)a)->Delta < ((FstatOutputEntry*)b)->Delta)
-	return -1;
-    else if (((FstatOutputEntry*)a)->Delta > ((FstatOutputEntry*)b)->Delta)
-	return 1;
-    else if (((FstatOutputEntry*)a)->f1dot < ((FstatOutputEntry*)b)->f1dot)
-	return -1;
-    else if (((FstatOutputEntry*)a)->f1dot > ((FstatOutputEntry*)b)->f1dot)
-	return 1;
-    else
-	return 0;
-}
-
-
 /* (q)sort the toplist according to the sorting function. */
 void sort_fstat_toplist(toplist_t*l) {
-  qsort_toplist(l,_fstat_toplist_qsort_function);
+  qsort_toplist(l,fstat_toplist_qsort_function);
 }
 
 
