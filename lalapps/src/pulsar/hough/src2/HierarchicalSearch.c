@@ -1757,7 +1757,7 @@ void ComputeFstatHoughMap(LALStatus *status,
 
   /* copy candidates to output structure */
   for ( k=0; k<houghToplist->elems; k++) {
-    out->list[k] = *((SemiCohCandidate *)(houghToplist->heap[k]));
+    out->list[k] = *((SemiCohCandidate *)(toplist_elem(houghToplist, k)));
   }
   out->nCandidates = houghToplist->elems;
   free_toplist(&houghToplist);
