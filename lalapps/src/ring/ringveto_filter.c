@@ -34,14 +34,16 @@ static int filter_segment_template(
     );
 
 static SnglRingdownTable * find_events(
-    SnglRingdownTable        *events,
-    UINT4                    *numEvents,
-    REAL4TimeSeries          *result,
-    REAL4                     tmpltSigma,
-    REAL4                     tmpltFrequency,
-    REAL4                     tmpltQuality,
-    struct ring_params       *params
+    SnglRingdownTable  *events,
+    UINT4              *numEvents,
+    REAL4TimeSeries    *result,
+    REAL4               tmpltSigma,
+    REAL4               tmpltFrequency,
+    REAL4               tmpltQuality,
+    REAL4Vector         *chisqVec,
+    struct ring_params *params
     );
+
 
 static REAL4Vector *snipInvSpectrum(UINT4 snipLength,
                                     REAL4FrequencySeries *invspec);
@@ -55,7 +57,8 @@ static void computeChisqVec (REAL4Vector *chisqVec,
                                      RingVetoResults *thisResult,
                                      RingVetoResults *firstResult,
                                      RingVetoCC *RVCC,
-                                     UINT4 i ); 
+                                     struct ring_params *params,
+                                     UINT4 i );
 
 
 struct tagRV_BT{
@@ -102,6 +105,8 @@ SnglRingdownTable * ringveto_filter(
   UINT4 sC = 0;
   const REAL4 snipFac = 2.0; /*template snip length in seconds should be a 
                                power of two */
+  SnglRingdownTable *thisTmplt = NULL;
+  REAL8 sigma = 0;
   UINT4 snipLength;
   if ( ! params->doFilter )
     return NULL;
@@ -111,7 +116,6 @@ SnglRingdownTable * ringveto_filter(
   snipSpec.deltaF = 1.0/snipLength;
   snipSpec.data = snipInvSpectrum( snipLength, invSpectrum );
   snipSpec.sampleUnits = invSpectrum->sampleUnits;
-  verbose("invSpectrum->sampleUnits %s\n", invSpectrum->sampleUnits);
   fwdSnipPlan = XLALCreateCOMPLEX8FFTPlan( snipLength, 1, 0 );
   revSnipPlan = XLALCreateCOMPLEX8FFTPlan( snipLength, 0, 0 );
   memset( &signal, 0, sizeof( signal ) );
@@ -137,32 +141,35 @@ SnglRingdownTable * ringveto_filter(
     for ( sgmnt = 0; sgmnt < segments->numSgmnt; ++sgmnt )
     {
       /* set up the Results structure to store all the ~10 templates */
-      Result = (RingVetoResults *) calloc(1, sizeof(RingVetoResults));
-      firstResult = Result; /* remember the first one */
-      for ( tmplt = 0; tmplt < bank->numTmplt; ++tmplt )
-      {
+      if (1){/*!sgmnt){*/
+        Result = (RingVetoResults *) calloc(1, sizeof(RingVetoResults));
+        firstResult = Result; /* remember the first one */
+        }
+      
+      for ( tmplt = 0; tmplt < bank->numTmplt; ++tmplt ){
         /* changed to Result from result - extra layer of pointers... */
-        Result->result.data = XLALCreateREAL4Vector( segmentLength );
-        Result->tmpSnip.data = XLALCreateCOMPLEX8Vector( snipLength );
-        Result->tmpSnipTilde.data = XLALCreateCOMPLEX8Vector( snipLength );
-        Result->tmpSnip.deltaT = 1.0/params->sampleRate;
-        Result->tmpSnipTilde.deltaF = snipSpec.deltaF;
-        Result->tmpSnip.sampleUnits = lalStrainUnit;
-        SnglRingdownTable *thisTmplt = bank->tmplt + tmplt;
-        REAL8 sigma;
-        verbose( "s length %d stilde %d\n", signal.data->length,stilde.data->length ); 
-        verbose( "creating template %d for segment %d in subbank %d\n",
+        if (1){/*!sgmnt){ */
+          Result->result.data = XLALCreateREAL4Vector( segmentLength );
+          Result->tmpSnip.data = XLALCreateCOMPLEX8Vector( snipLength );
+          Result->tmpSnipTilde.data = XLALCreateCOMPLEX8Vector( snipLength );
+          Result->tmpSnip.deltaT = 1.0/params->sampleRate;
+          Result->tmpSnipTilde.deltaF = snipSpec.deltaF;
+          Result->tmpSnip.sampleUnits = lalStrainUnit;
+          thisTmplt = bank->tmplt + tmplt;
+          verbose( "creating template %d for segment %d in subbank %d\n",
                   tmplt, sgmnt, subCounter );
-
+          }
         /* make template and fft it */
         /* a two second snip is sufficient for the cross correlations*/
         XLALComputeRingTemplate( &signal, thisTmplt );
-        /* snip the template for later WILL THIS WORK?*/
-        for(sC=0;sC<snipLength;sC++){ 
-           Result->tmpSnip.data->data[sC].re = signal.data->data[sC];
-           Result->tmpSnip.data->data[sC].im = 0;
-           }
-        normSnip( Result->tmpSnip.data ); /* normalize the template snip */
+        if (1){/*!sgmnt){*/
+          /* snip the template for later WILL THIS WORK?*/
+          for(sC=0;sC<snipLength;sC++){ 
+             Result->tmpSnip.data->data[sC].re = signal.data->data[sC];
+             Result->tmpSnip.data->data[sC].im = 0;
+             }
+          normSnip( Result->tmpSnip.data ); /* normalize the template snip */
+          }          
         LALSnprintf( signal.name, sizeof(signal.name), "TMPLT_%u", tmplt );
         /*write_REAL4TimeSeries( &signal );*/
         XLALREAL4TimeFreqFFT( &stilde, &signal, fwdPlan );
@@ -174,7 +181,6 @@ SnglRingdownTable * ringveto_filter(
         sigma = sqrt( compute_template_variance( &stilde, invSpectrum,
             params->dynRangeFac ) );
         Result->sigma = sigma; /* store this value for all these tmplts */
-
         verbose( "  filtering segment %d against template %d in subbank %d\n", 
                 sgmnt, tmplt, subCounter );
 
@@ -192,11 +198,14 @@ SnglRingdownTable * ringveto_filter(
           write_REAL4TimeSeries( &(Result->result) );
         }
         /* save some additional template parameters and add a link */
-        Result->quality = thisTmplt->quality;
-        Result->frequency = thisTmplt->frequency;
-        Result = Result->next = 
+        if (1){/*!sgmnt){ /*only needed for first segment*/
+          Result->quality = thisTmplt->quality;
+          Result->frequency = thisTmplt->frequency;
+          Result = Result->next = 
                  (RingVetoResults *) calloc(1, sizeof(RingVetoResults));
-
+          }
+        else Result = Result->next; /*just write over results*/
+                
       } /* end loop over templates */
       Result->next = NULL; /* terminate the linked list */
       Result = firstResult;
@@ -204,36 +213,40 @@ SnglRingdownTable * ringveto_filter(
       /* remember to make a time series which is shorter than the */
       /* 256 second signal - that is way too much time to pad and */
       /* fft */
-      thisCC = computeCC( Result, &snipSpec, fwdSnipPlan, revSnipPlan );
+      if (1) thisCC = computeCC( Result, &snipSpec, fwdSnipPlan, revSnipPlan );
       /* search through results for threshold crossings and record events */
       /* REWRITE this to loop over ALL RESULTS!!! */
       numEvents = 0;
       sC = 0;
       while(Result->next){
-        computeChisqVec(chisqVec,Result,firstResult,&thisCC,sC);
+        computeChisqVec(chisqVec,Result,firstResult,&thisCC,params,sC);
         events = find_events( events, &numEvents, &Result->result, 
-            Result->sigma, Result->frequency, Result->quality, params );
+            Result->sigma, Result->frequency, Result->quality,chisqVec,params );
         params->numEvents += numEvents;
-        /* check the chisq value for each event */
-        /* NEED SOME FUNCTION CALL HERE! */
         verbose( "found %u event%s in subbank %u and segment%d\n", numEvents,
           numEvents == 1 ? "" : "s", subCounter, sgmnt );
         Result = Result->next;
         numEvents = 0;
         sC++;
-      }
-      /* clean up all the results */
-      XLALDestroyREAL4Vector(thisCC.Beta);
-      XLALDestroyINT4Vector(thisCC.Tau);
-      Result = firstResult;
-      while (Result->next){
-        thisResult = Result;
-        Result = Result->next;
-        XLALDestroyREAL4Vector(thisResult->result.data);
-        XLALDestroyCOMPLEX8Vector(thisResult->tmpSnip.data);
-        XLALDestroyCOMPLEX8Vector(thisResult->tmpSnipTilde.data);
-        free(thisResult);
-      }
+        }
+      Result=firstResult; /* go to head */
+      /* clean up all the results if done with sub bank*/
+      if(1){
+        XLALDestroyREAL4Vector(thisCC.Beta);
+        XLALDestroyINT4Vector(thisCC.Tau);
+        }
+ 
+      if (1){/*sgmnt == (segments->numSgmnt-1)){*/
+        Result = firstResult;
+        while (Result->next){
+          thisResult = Result;
+          Result = Result->next;
+          XLALDestroyREAL4Vector(thisResult->result.data);
+          XLALDestroyCOMPLEX8Vector(thisResult->tmpSnip.data);
+          XLALDestroyCOMPLEX8Vector(thisResult->tmpSnipTilde.data);
+          free(thisResult);
+          }
+        }
     } /* end loop over segments */
   vetobank = vetobank->next;
   } /* end loop over sub banks */
@@ -318,6 +331,7 @@ static SnglRingdownTable * find_events(
     REAL4               tmpltSigma,
     REAL4               tmpltFrequency,
     REAL4               tmpltQuality,
+    REAL4Vector         *chisqVec,
     struct ring_params *params
     )
 {
@@ -371,8 +385,10 @@ static SnglRingdownTable * find_events(
       INT8  timeNS;
       REAL4 sigma;
       REAL4 amp;
+      REAL4 chisq;
 
       snr     = fabs( result->data->data[j] ) * snrFactor;
+      chisq   = chisqVec->data[j];
       timeNS  = epoch_to_ns( &result->epoch );
       timeNS += sec_to_ns( j * result->deltaT );
 
@@ -402,6 +418,7 @@ static SnglRingdownTable * find_events(
         /* specific information about this threshold crossing */
         ns_to_epoch( &thisEvent->start_time, timeNS );
         thisEvent->snr = snr;
+        thisEvent->epsilon = chisq;
 
         
         amp = sqrt( 5.0 / 2.0 * 0.01 )  * ( LAL_G_SI * thisEvent->mass * LAL_MSUN_SI / 
@@ -419,6 +436,7 @@ static SnglRingdownTable * find_events(
         /* update to specific information about this threshold crossing */
         ns_to_epoch( &thisEvent->start_time, timeNS );
         thisEvent->snr        = snr;
+        thisEvent->epsilon    = chisq;
 
         amp = sqrt( 5.0 / 2.0 * 0.01 )  * ( LAL_G_SI * thisEvent->mass * LAL_MSUN_SI/
             pow( LAL_C_SI, 2) * 2.0 / LAL_PC_SI /1000000.0 ) * pow( thisEvent->quality, -0.5 ) *
@@ -448,8 +466,6 @@ static REAL4Vector *snipInvSpectrum(UINT4 snipLength,
   smallspec.data = XLALCreateREAL4Vector( invSpecLength );
   doublesmallspec.data = XLALCreateREAL4Vector(snipLength);
   int factor = floor( invspec->data->length/invSpecLength+0.5 );
-  verbose("invspec = %d snip = %d factor = %d\n",invspec->data->length,
-           invSpecLength,factor);
   /*this is really bad if both aren't a power of two */
   smallspec.data->data[0] = invspec->data->data[0];
   for(i=1;i<invspec->data->length;i++){
@@ -474,10 +490,9 @@ static REAL4Vector *snipInvSpectrum(UINT4 snipLength,
      cnt++;
      }
 
-  fprintf(stdout, "length of doublesmallspec %d\n",doublesmallspec.data->length);
-  FP = fopen("miniasd.dat","w");
-  for(i=0;i<doublesmallspec.data->length;i++) fprintf(FP,"%f\n",doublesmallspec.data->data[i]);
-  
+  /*FP = fopen("miniasd.dat","w");
+  for(i=0;i<doublesmallspec.data->length;i++) fprintf(FP,"%f\n",doublesmallspec.data->data[i]);*/
+
   return doublesmallspec.data;
   }
 
@@ -503,22 +518,17 @@ static RingVetoCC computeCC( RingVetoResults *Result,
   while(Result->next){
     cnt++;
     Result=Result->next;
-    verbose("cnt = %d\n",cnt);
     }
 
   Beta  = XLALCreateREAL4Vector(cnt*cnt);
   Tau  = XLALCreateINT4Vector(cnt*cnt);
   Result = first;
   /*I will go ahead and FFT all the templates now */
-  verbose( "tmpSnip length %d tmpSnipTilde %d\n", 
-         Result->tmpSnip.data->length, Result->tmpSnipTilde.data->length );
    
   while(Result->next){
     XLALCOMPLEX8TimeFreqFFT( &Result->tmpSnipTilde, 
                           &Result->tmpSnip, fwdplan );
     /* whiten the templates with the amplitude spectral density */
-    verbose("tmpSnipTilde %d snipSpec %d\n",Result->tmpSnipTilde.data->length,
-              snipSpec->data->length);
     XLALSCVectorMultiply( Result->tmpSnipTilde.data, 
                           snipSpec->data, 
                           Result->tmpSnipTilde.data);
@@ -527,16 +537,16 @@ static RingVetoCC computeCC( RingVetoResults *Result,
     Result=Result->next;
     }
   Result = first;
- FP = fopen("template.dat","w");
+ /*FP = fopen("template.dat","w");
  for(i=0;i<Result->tmpSnip.data->length;i++)
    fprintf(FP,"%f\n",Result->tmpSnip.data->data[i].re);  
+  */
   i=0;
   /* Now I will evaluate the cc matrix */
   Result = first;
   while(Result->next){
     thisResult = Result;
     BT = getBT(&thisResult->tmpSnipTilde,&thisResult->tmpSnipTilde,revplan);
-    verbose("beta %e tau %d\n", BT.beta, BT.tau);
     Beta->data[cnt*i+i] = BT.beta;
     Tau->data[cnt*i+i] = BT.tau;
     i++;
@@ -565,7 +575,6 @@ static RingVetoCC computeCC( RingVetoResults *Result,
          BT.tau-=Result->tmpSnipTilde.data->length; /*HACK!*/
       Tau->data[cnt*j+i] = BT.tau;
       thisResult=thisResult->next;
-      verbose("i %d j %d\n",i,j);
       j++;
       }
     i++;
@@ -574,15 +583,6 @@ static RingVetoCC computeCC( RingVetoResults *Result,
 
   for(i=0;i<cnt;i++) Beta->data[cnt*i+i] = 1; /* normalize */
 
-  for(j=0;j<cnt;j++){
-    for(i=0;i<cnt;i++) verbose("%f ",Beta->data[j*cnt +i]);
-    verbose("\n");
-    }
-  verbose("\n\n");
-  for(j=0;j<cnt;j++){
-    for(i=0;i<cnt;i++) verbose("%d\t",Tau->data[j*cnt +i]);
-    verbose("\n");
-    }
   Result = first;
   XLALDestroyREAL4Vector( thisCCresult.data );
   finalCC.Beta = Beta;
@@ -611,8 +611,6 @@ static RV_BT getBT(COMPLEX8FrequencySeries *A,
   C->sampleUnits = lalDimensionlessUnit;
   C->deltaF = A->deltaF;
   XLALCCVectorMultiplyConjugate(C->data,B->data,A->data);
-  verbose("OUT->data->length %d C->data->length %d\n",
-           OUT->data->length, C->data->length);
   XLALCOMPLEX8FreqTimeFFT( OUT, C, revplan ); 
   
   for(i=0; i < OUT->data->length; i++){
@@ -623,8 +621,8 @@ static RV_BT getBT(COMPLEX8FrequencySeries *A,
       BT.tau = i;
       }
     };
-  FP = fopen("OUT.dat","w");
-  for(i=0;i<OUT->data->length;i++) fprintf(FP,"%e\n",sqrt(OUT->data->data[i].re*OUT->data->data[i].re + OUT->data->data[i].im*OUT->data->data[i].im));
+  /*FP = fopen("OUT.dat","w");
+  for(i=0;i<OUT->data->length;i++) fprintf(FP,"%e\n",sqrt(OUT->data->data[i].re*OUT->data->data[i].re + OUT->data->data[i].im*OUT->data->data[i].im));*/
   XLALDestroyCOMPLEX8Vector(OUT->data);
   XLALDestroyCOMPLEX8Vector(C->data);
   free(OUT);
@@ -648,6 +646,7 @@ static void computeChisqVec (REAL4Vector *chisqVec,
                                      RingVetoResults *thisResult,
                                      RingVetoResults *firstResult,
                                      RingVetoCC *RVCC,
+                                     struct ring_params *params,
                                      UINT4 i ) {
 
   FILE *FP = NULL;
@@ -656,20 +655,14 @@ static void computeChisqVec (REAL4Vector *chisqVec,
   REAL4 deltasq = 0.45; /*SHOULD BE A PARAMETER */
   REAL4 effDOF = 0;
   REAL4 avgBeta = 0;
+  REAL4 snrFactor = 0;
   RingVetoResults *Result = NULL;
   REAL4Vector *beta = NULL;
   INT4Vector *tau = NULL;
   beta = XLALCreateREAL4Vector(thisResult->numResults);
   tau = XLALCreateINT4Vector(thisResult->numResults);
-  verbose("beta->length %d i %d RVCC->Beta.data->length %d\n",
-           beta->length, i, RVCC->Beta->length); 
   
   Result = firstResult;
-  while(Result->next){
-    verbose("%d\n Result->result %d",k, (int) Result->result.data );
-    Result=Result->next;
-    k++;
-    }
 
   for(j=0; j < thisResult->numResults; j++){
     beta->data[j] = RVCC->Beta->data[(thisResult->numResults)*j+i];
@@ -696,13 +689,13 @@ static void computeChisqVec (REAL4Vector *chisqVec,
               1.0/beta->data[j]*Result->result.data->data[k+tau->data[j]]);
       Result=Result->next;
       }
-    
+    snrFactor = 2.0 * params->dynRangeFac / thisResult->sigma; 
     chisqVec->data[k] /= deltasq*thisResult->result.data->data[k]*
-                         thisResult->result.data->data[k]+1;
+                         thisResult->result.data->data[k]/snrFactor/snrFactor+1;
     }
 
-  FP = fopen("chisqVec.dat","w");
-  for(j=0;j<chisqVec->length;j++) fprintf(FP,"%f\n",chisqVec->data[j]);
+  /*FP = fopen("chisqVec.dat","w");
+  for(j=0;j<chisqVec->length;j++) fprintf(FP,"%f\n",chisqVec->data[j]);*/
   XLALDestroyREAL4Vector(beta);
   XLALDestroyINT4Vector(tau);
   } 

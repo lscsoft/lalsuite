@@ -116,16 +116,13 @@ int main( int argc, char **argv )
 
   /* compute the spectrum */
   invspec = ring_get_invspec( channel, response, fwdplan, revplan, params );
-  fprintf(stdout,"stride duration %f\t truncate duration %f\n",
-         params->strideDuration, params->truncateDuration);
   /* create the template bank */
   bank = ring_get_bank( params );
   /* Split the bank up into sub banks which will */
   /* be used for */
   /* the template bank veto test */
-  fprintf( stdout, "Creating sub banks\n");
+  if (vrbflg) fprintf( stdout, "Creating sub banks\n");
   vetobank = createsubbanks( params, bank );
-  fprintf( stdout, "Finished creating sub banks\n");
   /* write out the bank */
  
   if ( params->bankFile[0] ){ 
@@ -587,21 +584,22 @@ static int is_in_list( int i, const char *list )
 
 static RingVetoTemplateBank *createsubbanks( struct ring_params *params, RingTemplateBank *bank ){
   
-   fprintf(stdout, "Initializing variables in createsubbanks\n"); 
+   /*fprintf(stdout, "Initializing variables in createsubbanks\n"); */
    UINT4 whileloop = 0;
    UINT4 i = 0;
    RingVetoTemplateBank *vetobank = NULL;
    RingVetoTemplateBank *firstvetobank = NULL;
    /*SnglRingdownTable *thisTmplt = NULL;*/
    UINT4 bankSize = bank->numTmplt; /* get the # of temps */
-
+   UINT4 subBankSize = 16;
    /* Here I want to allocate memory for just one */
    /* RingVetoTemplateBank */ 
-   fprintf(stdout, "Allocating one vetobank in createsubbanks\n");
+   /*fprintf(stdout, "Allocating one vetobank in createsubbanks\n");*/
 
    vetobank = LALCalloc(1,
               sizeof(RingVetoTemplateBank)); 
-   fprintf(stdout, "The value of vetobank->next is %d\n",(int) vetobank->next); 
+   /*fprintf(stdout, "The value of vetobank->next is %d\n",
+                       (int) vetobank->next); */
    /* For now I will fix the allocation size of small bank */
    /* to be a constant 10 templates.  THIS MUST BE CHANGED! */
    /* It is likely that this will have to be a dynamic     */
@@ -615,37 +613,28 @@ static RingVetoTemplateBank *createsubbanks( struct ring_params *params, RingTem
    /* loop over all the templates until I reach the end of */
    /* the bank */
    firstvetobank = vetobank;
-   fprintf(stdout, "Entering loop to create sub banks\n"); 
    while( whileloop < bankSize ){
-      fprintf(stdout, "Allocating a sub bank\n");
       vetobank->bank =  LALCalloc(1,
                   sizeof(RingTemplateBank));
       /* this should be dynamically incremented in the */
       /* future */  
-      fprintf(stdout, "Setting the number of templates\n");
       /* Get enough memory to store the small bank */
-      fprintf(stdout, "Allocating an array of SnglRingdowns for the subbank\n");
       vetobank->bank->tmplt = 
-                 LALCalloc( 10, sizeof( SnglRingdownTable ));
-      fprintf(stdout, "looping over the SnglRingdowns\n");
+                 LALCalloc( subBankSize, sizeof( SnglRingdownTable ));
       /* this for loop will change to a while or something else which allows */
       /* the number of templates to be dynamic */
-      for(i=0;i < (10); ++i){
+      for(i=0;i < (subBankSize); ++i){
          if (whileloop == bankSize) break; /* check this upfront!*/
          vetobank->bank->numTmplt = i+1; /*Add the one since i starts at 0*/
-         fprintf(stdout, "Loop %d\twhileloop %d\n",i,whileloop);
          vetobank->bank->tmplt[i] = *(bank->tmplt + whileloop);
-         fprintf(stdout,"quality %f\n",vetobank->bank->tmplt->quality);
          vetobank->bank->tmplt[i].next = bank->tmplt + whileloop + 1;
          whileloop++; /* the global bank counter */
          }
-      fprintf( stdout, "incrementing the while counter %d\n",whileloop);
       vetobank->bank->tmplt[i].next = NULL;
       vetobank = vetobank->next = LALCalloc(1,sizeof(RingVetoTemplateBank));
       }
       /* don't forget to terminate this list */
       vetobank->next = NULL;
-   fprintf(stdout,"Lets check a value template 5 quality %f\n",firstvetobank->bank->tmplt[4].quality);
    return firstvetobank;
    }
 
@@ -662,15 +651,12 @@ static SnglRingdownTable
       totalnum+=subbanks->bank->numTmplt;
       subbanks = subbanks->next;
       }
-   fprintf(stdout,"totalnum = %d\n",totalnum); 
    /* create the flat bank */
    firstTemplate = LALCalloc(totalnum,sizeof(SnglRingdownTable));
    subbanks = firstsub;
    while (subbanks->next){
      for(i=0; i < subbanks->bank->numTmplt; i++){
        firstTemplate[loop] = subbanks->bank->tmplt[i];
-       fprintf(stdout,"template %d frequency %f\n",i,
-                 firstTemplate[loop].frequency);
        if (loop==(totalnum-1)) break;       
        firstTemplate[loop].next = &firstTemplate[loop+1];
        loop++;
