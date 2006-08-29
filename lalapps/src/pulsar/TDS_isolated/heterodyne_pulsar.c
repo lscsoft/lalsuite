@@ -621,7 +621,7 @@ REAL8 freqfactor){
     /* produce second phase for fine heterodyne */
     if(hetParams.heterodyneflag > 0){
       /* set up LALBarycenter */
-      dtpos = hetParams.hetUpdate.posepoch - hetParams.timestamp;
+      dtpos = hetParams.timestamp - hetParams.hetUpdate.posepoch;
 
       /* set up RA, DEC, and distance variables for LALBarycenter*/
       baryinput.alpha = hetParams.hetUpdate.ra +dtpos*hetParams.hetUpdate.pmra/cos(baryinput.delta);
