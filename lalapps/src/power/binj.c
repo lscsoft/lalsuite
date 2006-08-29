@@ -694,7 +694,7 @@ static void write_mdc_xml(MetadataTable mdcinjections)
 
 
 /* LIGO LW XML */
-static void write_xml(MetadataTable proctable, MetadataTable procparams, MetadataTable injections, struct options options)
+static void write_xml(MetadataTable proctable, MetadataTable procparams, MetadataTable searchsumm, MetadataTable injections, struct options options)
 {
 	LALStatus status = blank_status;
 	char fname[256];
@@ -710,22 +710,26 @@ static void write_xml(MetadataTable proctable, MetadataTable procparams, Metadat
 
 	LAL_CALL(LALOpenLIGOLwXMLFile(&status, &xmlfp, fname), &status);
 
+	/* process table */
 	XLALGPSTimeNow(&proctable.processTable->end_time);
 	LAL_CALL(LALBeginLIGOLwXMLTable(&status, &xmlfp, process_table), &status);
 	LAL_CALL(LALWriteLIGOLwXMLTable(&status, &xmlfp, proctable, process_table), &status);
 	LAL_CALL(LALEndLIGOLwXMLTable(&status, &xmlfp), &status);
 
-	if(procparams.processParamsTable) {
-		LAL_CALL(LALBeginLIGOLwXMLTable(&status, &xmlfp, process_params_table), &status);
-		LAL_CALL(LALWriteLIGOLwXMLTable(&status, &xmlfp, procparams, process_params_table), &status);
-		LAL_CALL(LALEndLIGOLwXMLTable(&status, &xmlfp), &status);
-	}
+	/* process params table */
+	LAL_CALL(LALBeginLIGOLwXMLTable(&status, &xmlfp, process_params_table), &status);
+	LAL_CALL(LALWriteLIGOLwXMLTable(&status, &xmlfp, procparams, process_params_table), &status);
+	LAL_CALL(LALEndLIGOLwXMLTable(&status, &xmlfp), &status);
 
-	if(injections.simBurstTable) {
-		LAL_CALL(LALBeginLIGOLwXMLTable(&status, &xmlfp, sim_burst_table), &status);
-		LAL_CALL(LALWriteLIGOLwXMLTable(&status, &xmlfp, injections, sim_burst_table), &status);
-		LAL_CALL(LALEndLIGOLwXMLTable(&status, &xmlfp), &status);
-	}
+	/* search summary table */
+	LAL_CALL(LALBeginLIGOLwXMLTable(&status, &xmlfp, search_summary_table), &status);
+	LAL_CALL(LALWriteLIGOLwXMLTable(&status, &xmlfp, searchsumm, search_summary_table), &status);
+	LAL_CALL(LALEndLIGOLwXMLTable(&status, &xmlfp), &status);
+
+	/* sim burst table */
+	LAL_CALL(LALBeginLIGOLwXMLTable(&status, &xmlfp, sim_burst_table), &status);
+	LAL_CALL(LALWriteLIGOLwXMLTable(&status, &xmlfp, injections, sim_burst_table), &status);
+	LAL_CALL(LALEndLIGOLwXMLTable(&status, &xmlfp), &status);
 
 	LAL_CALL(LALCloseLIGOLwXMLFile(&status, &xmlfp), &status);
 }
@@ -747,6 +751,7 @@ int main(int argc, char *argv[])
 	LALDetector llo = lalCachedDetectors[LALDetectorIndexLLODIFF];
 	MetadataTable proctable;
 	MetadataTable procparams;
+	MetadataTable searchsumm;
 	MetadataTable injections;
 	MetadataTable mdcinjections;
 	SimBurstTable *this_sim_burst = NULL;
@@ -769,11 +774,24 @@ int main(int argc, char *argv[])
 	 * Process table
 	 */
 
-	proctable.processTable = calloc(1, sizeof(ProcessTable));
+	proctable.processTable = calloc(1, sizeof(*proctable.processTable));
 	XLALGPSTimeNow(&proctable.processTable->start_time);
 	LAL_CALL(populate_process_table(&status, proctable.processTable, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE), &status);
 	if(options.user_tag)
 		snprintf(proctable.processTable->comment, LIGOMETA_COMMENT_MAX, "%s", options.user_tag);
+
+	/*
+	 * Search summary table
+	 */
+
+	searchsumm.searchSummaryTable = calloc(1, sizeof(*searchsumm.searchSummaryTable));
+	if(options.user_tag)
+		snprintf(searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX, "%s", options.user_tag);
+	searchsumm.searchSummaryTable->nnodes = 1;
+	searchsumm.searchSummaryTable->out_start_time = *XLALINT8NSToGPS(&searchsumm.searchSummaryTable->in_start_time, options.gps_start_time);
+	searchsumm.searchSummaryTable->out_end_time = *XLALINT8NSToGPS(&searchsumm.searchSummaryTable->in_end_time, options.gps_end_time);
+	searchsumm.searchSummaryTable->nevents = 0;
+
 
 	/*
 	 * Initialize random number generator
@@ -788,10 +806,11 @@ int main(int argc, char *argv[])
 	for(tinj = options.gps_start_time; tinj <= options.gps_end_time; tinj += options.time_step) {
 		/* allocate the injection */
 		if(this_sim_burst) {
-			this_sim_burst->next = calloc(1, sizeof(SimBurstTable));
+			this_sim_burst->next = calloc(1, sizeof(*this_sim_burst->next));
 			this_sim_burst = this_sim_burst->next;
 		} else
-			this_sim_burst = injections.simBurstTable = calloc(1, sizeof(SimBurstTable));
+			this_sim_burst = injections.simBurstTable = calloc(1, sizeof(*this_sim_burst));
+		searchsumm.searchSummaryTable->nevents++;
 
 		/* frequency */
 		switch(options.freq_dist) {
@@ -1036,7 +1055,7 @@ int main(int argc, char *argv[])
 		write_mdc_xml(mdcinjections);
 	} else {
 		/* non-mdc XML output */
-		write_xml(proctable, procparams, injections, options);
+		write_xml(proctable, procparams, searchsumm, injections, options);
 	}
 
 	exit(0);
