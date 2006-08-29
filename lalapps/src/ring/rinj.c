@@ -58,6 +58,7 @@ RCSID( "$Id$" );
 "  --gps-start-time TIME    start injections at GPS time TIME (793130413)\n"\
 "  --gps-end-time TIME      end injections at GPS time TIME (795679213)\n"\
 "  --time-step STEP         space injections by STEP / pi seconds apart (2630)\n"\
+"  --time-interval TIME     distribute injections in interval TIME (0)\n"\
 "  --seed SEED              seed random number generator with SEED (1)\n"\
 "  --user-tag STRING        set the usertag to STRING\n"\
 "  --minimum-mass MIN       set the minimum componenet mass to MIN (13.8)\n"\
@@ -111,6 +112,7 @@ int main( int argc, char *argv[] )
   LIGOTimeGPS   gpsStartTime;
   LIGOTimeGPS   gpsEndTime;
   REAL8         meanTimeStep = 2630 / LAL_PI;
+  REAL8         timeInterval = 0;
   REAL8         tstep = 0;
   UINT4         randSeed = 1;
   CHAR         *userTag = NULL;
@@ -163,6 +165,7 @@ int main( int argc, char *argv[] )
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-end-time",            required_argument, 0,                'b'},
     {"time-step",               required_argument, 0,                't'},
+    {"time-interval",           required_argument, 0,                'i'},
     {"seed",                    required_argument, 0,                's'},
     {"minimum-mass",            required_argument, 0,                'A'},
     {"maximum-mass",            required_argument, 0,                'B'},
@@ -191,6 +194,8 @@ int main( int argc, char *argv[] )
 
   gpsStartTime.gpsSeconds = S4StartTime;
   gpsEndTime.gpsSeconds   = S4StopTime;
+  gpsStartTime.gpsNanoSeconds = 0;
+  gpsEndTime.gpsNanoSeconds   = 0;
 
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) 
@@ -320,6 +325,20 @@ int main( int argc, char *argv[] )
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, "float", 
               "%le", meanTimeStep );
+        break;
+      
+      case 'i':
+        timeInterval = atof( optarg );
+        if ( timeInterval < 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "time interval must be >= 0: (%le seconds specified)\n",
+              long_options[option_index].name, meanTimeStep );
+          exit( 1 );
+        }
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, 
+              "float", "%le", timeInterval );
         break;
 
       case 'A':
@@ -610,12 +629,16 @@ int main( int argc, char *argv[] )
     this_inj->epsilon = epsilon;
     /* set the geocentric start time of the injection */
     /* XXX CHECK XXX */
-
-
-      
     
-    
+  
     this_inj->geocent_start_time = gpsStartTime;
+    if ( timeInterval )
+    {
+      LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
+      LAL_CALL( LALAddFloatToGPS( &status, &(this_inj->geocent_start_time),
+          &(this_inj->geocent_start_time), u * timeInterval ), &status );
+    }    
+
 
     /* mass distribution */
     LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
