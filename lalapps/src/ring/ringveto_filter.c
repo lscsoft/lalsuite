@@ -701,8 +701,8 @@ static void computeChisqVec (REAL4Vector *chisqVec,
                          thisResult->result.data->data[k]*snrFactor*snrFactor+1;*/
     }
 
-  FP = fopen("chisqVec2.dat","w");
-  for(j=0;j<chisqVec->length;j++) fprintf(FP,"%f\n",chisqVec->data[j]);
+  /*FP = fopen("chisqVec2.dat","w");
+  for(j=0;j<chisqVec->length;j++) fprintf(FP,"%f\n",chisqVec->data[j]);*/
   XLALDestroyREAL4Vector(beta);
   XLALDestroyINT4Vector(tau);
   } 
