@@ -167,7 +167,7 @@ void LALHOUGHComputeSizePar (LALStatus  *status, /* demodulated case */
 
   INT8    f0Bin;        /* corresponding freq. bin  */
   REAL8   deltaF;    /* frequency resolution  df=1/TCOH*/
-  UINT2   pixelFactor; /* number of pixel that fit in the thinnest annulus*/
+  REAL8   pixelFactor; /* number of pixel that fit in the thinnest annulus*/
   REAL8   pixErr;   /* for validity of LUT as PIXERR */
   REAL8   linErr;   /* as LINERR circle ->line */
   REAL8   vTotC;    /* estimate value of v-total/C as VTOT */
