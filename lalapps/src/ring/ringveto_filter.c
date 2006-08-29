@@ -685,21 +685,24 @@ static void computeChisqVec (REAL4Vector *chisqVec,
     snrFactor = 1.0 * params->dynRangeFac / thisResult->sigma;
     for (j=0;j < (thisResult->numResults);j++){
       REAL4 otherSNRfactor  = 1.0 * params->dynRangeFac / Result->sigma;
+      /* THIS VARIANCE MIGHT BE BACKWARDS */
+      REAL4 variance = (Result->sigma/thisResult->sigma)*
+                       (Result->sigma/thisResult->sigma);
       chisqVec->data[k] += 1.0/effDOF*
         (fabs(thisResult->result.data->data[k])*snrFactor-
         1.0/beta->data[j]*fabs(Result->result.data->data[k+tau->data[j]])
         *otherSNRfactor)*(fabs(thisResult->result.data->data[k])*snrFactor-
         1.0/beta->data[j]*fabs(Result->result.data->data[k+tau->data[j]]) 
-        *otherSNRfactor);
+        *otherSNRfactor)/variance;
       Result=Result->next;
       }
-    /* weight by snr */
-    chisqVec->data[k] /= deltasq*thisResult->result.data->data[k]*
-                         thisResult->result.data->data[k]*snrFactor*snrFactor+1;
+    /* weight by snr  in the future */
+    /* chisqVec->data[k] /= deltasq*thisResult->result.data->data[k]*
+                         thisResult->result.data->data[k]*snrFactor*snrFactor+1;*/
     }
 
-  /*FP = fopen("chisqVec.dat","w");
-  for(j=0;j<chisqVec->length;j++) fprintf(FP,"%f\n",chisqVec->data[j]);*/
+  FP = fopen("chisqVec2.dat","w");
+  for(j=0;j<chisqVec->length;j++) fprintf(FP,"%f\n",chisqVec->data[j]);
   XLALDestroyREAL4Vector(beta);
   XLALDestroyINT4Vector(tau);
   } 
