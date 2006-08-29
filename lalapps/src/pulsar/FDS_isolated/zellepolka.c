@@ -2759,7 +2759,6 @@ ReadCommandLineArgs( LALStatus *lalStatus,
 
 
 
-
 #if 0
 /* ################################################################### */
 /*
@@ -2818,22 +2817,29 @@ void sortCandidates(INT4 *data, INT4 N)
 
 void sortCandidates2(INT4 *data, INT4 left, INT4 right)
 {
-  INT4 i, last, t;
+  INT4 i, last, t, rzahl=0;
   
   if(left>=right) 
     return;
 
   /* swap (left) and (left+right)/2  */
-  t =  data[(INT4) floor((left+right)/2)]; 
-  data[(INT4) floor((left+right)/2)] = data[left]; 
+  /*
+    t =  data[(INT4) floor((left+right)/2)]; 
+    data[(INT4) floor((left+right)/2)] = data[left]; 
+    data[left] = t;
+  */
+
+  /* better: use rand() here. */
+  rzahl = (INT4) ( rand() % (right-left) );
+  t =  data[left+rzahl];
+  data[left+rzahl] = data[left];
   data[left] = t;
+
 
   last=left;
 
   for(i = left + 1; i <= right; i++)
   {
-    /* if(compareCandidatesList(&data[i], &data[left]) < 0) { */
-
     if(SortedC[data[i]].iFreq < SortedC[data[left]].iFreq) {  
       last++;
       t =  data[last]; 
@@ -2899,15 +2905,24 @@ void sortCandidates2(INT4 *data, INT4 left, INT4 right)
 
 void sortFreqCells2(INT4 *data, INT4 left, INT4 right)
 {
-  INT4 i, last, t;
+  INT4 i, last, t, rzahl=0;
   
   if(left>=right) 
     return;
 
   /* swap (left) and (left+right)/2  */
-  t =  data[(INT4) floor((left+right)/2)]; 
-  data[(INT4) floor((left+right)/2)] = data[left]; 
+  /*
+    t =  data[(INT4) floor((left+right)/2)]; 
+    data[(INT4) floor((left+right)/2)] = data[left]; 
+    data[left] = t;
+  */
+
+  /* better: use rand() here. */
+  rzahl = (INT4) ( rand() % (right-left) );
+  t =  data[left+rzahl];
+  data[left+rzahl] = data[left];
   data[left] = t;
+
 
   last=left;
 
@@ -2944,6 +2959,4 @@ void sortFreqCells2(INT4 *data, INT4 left, INT4 right)
   sortFreqCells2(data, left, last-1);
   sortFreqCells2(data, last+1, right);
 }
-
-
 /* ################################################################### */
