@@ -1313,6 +1313,12 @@ LALSortSnglRingdown (
     int(*comparfunc)    (const void *, const void *)
     );
 
+SnglRingdownTable *
+XLALSortSnglRingdown (
+    SnglRingdownTable  *eventHead,
+    int(*comparfunc)    (const void *, const void *)
+    );
+
 int
 LALCompareSnglRingdownByTime (
     const void *a,
@@ -1325,6 +1331,13 @@ LALClusterSnglRingdownTable (
     SnglRingdownTable          *ringdownEvent,
     INT8                        dtimeNS,
     SnglInspiralClusterChoice   clusterchoice
+    );
+
+SnglRingdownTable *
+XLALVetoSingleRingdown (
+    SnglRingdownTable          *eventHead,
+    LALSegList                 *vetoSegs, 
+    CHAR                       *ifo
     );
 
 void
@@ -1390,9 +1403,75 @@ XLALCountSnglRingdown(
     SnglRingdownTable *head
     );
 
+/* sim ringdown */
+int 
+XLALSimRingdownInSearchedData(
+    SimRingdownTable         **eventHead,
+    SearchSummaryTable        *summList
+    );
+
+void
+XLALSortSimRingdown(
+    SimRingdownTable **head,
+    int (*comparefunc)(const SimRingdownTable * const *,
+      const SimRingdownTable * const *)
+    );
+
+int
+XLALCompareSimRingdownByGeocentStartTime(
+    const SimRingdownTable * const *a,
+    const SimRingdownTable * const *b
+    );
+
+int
+XLALSnglSimRingdownTest (
+    SimRingdownTable  **simHead,
+    SnglRingdownTable **eventHead,
+    SimRingdownTable  **missedSimHead,
+    SnglRingdownTable **missedSnglHead,
+    INT8                injectWindowNS
+    );
+
+int
+XLALCoincSimRingdownTest (   
+    SimRingdownTable   **simHead,
+    CoincRingdownTable **coincHead,
+    SimRingdownTable   **missedSimHead,
+    CoincRingdownTable **missedCoincHead
+    );
+
+int
+XLALSimRingdownInSearchedData(
+    SimRingdownTable         **eventHead,
+    SearchSummaryTable        *summList
+    );
+
+INT8  
+XLALReturnSimRingdownEndTime (
+    SimRingdownTable *event,
+    CHAR             *ifo
+    );
 
 
 /* coinc ringdown */
+int
+XLALRecreateRingdownCoincFromSngls(
+    CoincRingdownTable        **coincPtr,
+    SnglRingdownTable          *snglRingdown
+    );
+
+int 
+XLALCompareCoincRingdownByTime (
+    const void *a,
+    const void *b
+    );
+
+CoincRingdownTable *
+XLALSortCoincRingdown (
+    CoincRingdownTable  *eventHead,
+    int(*comparfunc)    (const void *, const void *)
+    );
+
 void
 LALCreateTwoIFORingdownCoincList(
     LALStatus                  *status,
@@ -1440,6 +1519,13 @@ LALSnglRingdownCoincTest(
     CoincRingdownTable         *coincRingdown,
     SnglRingdownTable          *snglRingdown,
     RingdownAccuracyList       *accuracyParams
+    );
+
+SnglRingdownTable *
+XLALExtractSnglRingdownFromCoinc(
+    CoincRingdownTable         *coincRingdown,
+    LIGOTimeGPS                *gpsStartTime,
+    INT4                        slideNum
     );
 
 void
