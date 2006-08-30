@@ -3,7 +3,8 @@
 if FRAME
 if LALFRAME
 if LALMETAIO
-RINGPROG = lalapps_ring lalapps_rinj lalapps_ringread lalapps_rinca
+RINGPROG = lalapps_ring lalapps_rinj lalapps_ringread lalapps_rinca \
+           lalapps_coincringread
 else
 RINGPROG =
 endif
@@ -13,6 +14,7 @@ endif
 else
 RINGPROG =
 endif
+bin_SCRIPTS = lalapps_ring_pipe 
 bin_PROGRAMS = $(RINGPROG) \
 	       lalapps_qnmode lalapps_qnmode_table lalapps_spheroidal_harmonic \
 	       lalapps_ringdown_amplitude lalapps_ringdown_waveform
@@ -30,6 +32,7 @@ lalapps_ring_SOURCES = ring.c ring.h ring_option.c ring_filter.c ring_output.c \
 lalapps_rinj_SOURCES = rinj.c
 lalapps_ringread_SOURCES = ringread.c
 lalapps_rinca_SOURCES = rinca.c
+lalapps_coincringread_SOURCES = coincringread.c
 endif
 endif
 endif
@@ -38,21 +41,17 @@ lalapps_qnmode_table_SOURCES = qnmode_table.c
 lalapps_spheroidal_harmonic_SOURCES = spheroidal_harmonic.c
 lalapps_ringdown_amplitude_SOURCES = ringdown_amplitude.c
 lalapps_ringdown_waveform_SOURCES = ringdown_waveform.c
-
-if HAVE_PYTHON
-pkgpython_DATA = ring.py
-bin_SCRIPTS = lalapps_ring_pipe 
-endif
-
+pythonlibdir = ${prefix}/lib/python
+pythonlib_SCRIPTS = ring.py
 pkgdata_DATA = ring_test.ini
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 CLEANFILES = python_config.sed lalapps_ring_pipe
-EXTRA_DIST = ring.c ring_pipe.in ring.py $(DATA)
+EXTRA_DIST = ring.c ring_pipe.in $(SCRIPTS) $(DATA)
 
 python_config.sed:
 	-rm -f python_config.sed
-	echo "s+@PYTHONLIBDIR@+@pkgpythondir@+g" > python_config.sed
+	echo "s+@PYTHONLIBDIR@+${pythonlibdir}+g" > python_config.sed
 	echo "s+@PYTHONPROG@+@PYTHON@+g" >> python_config.sed
 	echo "s+@RINGEXECPATH@+${bindir}+g" >> python_config.sed
 
