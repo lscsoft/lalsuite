@@ -686,8 +686,8 @@ static void computeChisqVec (REAL4Vector *chisqVec,
     for (j=0;j < (thisResult->numResults);j++){
       REAL4 otherSNRfactor  = 1.0 * params->dynRangeFac / Result->sigma;
       /* THIS VARIANCE MIGHT BE BACKWARDS */
-      REAL4 variance = (Result->sigma/thisResult->sigma)*
-                       (Result->sigma/thisResult->sigma);
+      REAL4 variance = 1;/*(Result->sigma/thisResult->sigma)*
+                       (Result->sigma/thisResult->sigma);*/
       chisqVec->data[k] += 1.0/effDOF*
         (fabs(thisResult->result.data->data[k])*snrFactor-
         1.0/beta->data[j]*fabs(Result->result.data->data[k+tau->data[j]])
