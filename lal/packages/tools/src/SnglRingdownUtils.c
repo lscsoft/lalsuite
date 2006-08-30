@@ -221,51 +221,66 @@ LALSortSnglRingdown (
     int(*comparfunc)    (const void *, const void *)
     )
 /* </lalVerbatim> */
-{
+{ 
+  INITSTATUS( status, "LALSortSnglRingdown", SNGLRINGDOWNUTILSC );
+  
+  *eventHead = XLALSortSnglRingdown ( *eventHead, comparfunc );
+  
+  RETURN( status ); 
+}
+
+/* <lalVerbatim file="SnglRingdownUtilsCP"> */
+SnglRingdownTable *
+XLALSortSnglRingdown (
+    SnglRingdownTable *eventHead,
+    int(*comparfunc)   (const void *, const void *)
+    )
+/* </lalVerbatim> */
+{   
   INT4                  i;
   INT4                  numEvents = 0;
   SnglRingdownTable    *thisEvent = NULL;
   SnglRingdownTable   **eventHandle = NULL;
-
-  INITSTATUS( status, "LALSortSnglRingdown", SNGLRINGDOWNUTILSC );
-
+  
   /* count the number of events in the linked list */
-  for ( thisEvent = *eventHead; thisEvent; thisEvent = thisEvent->next )
-  {
+  for ( thisEvent = eventHead; thisEvent; thisEvent = thisEvent->next )
+  { 
     ++numEvents;
   }
   if ( ! numEvents )
-  {
-    LALWarning( status, "No events in list to sort" );
-    RETURN( status );
-  }
-
+  { 
+    XLALPrintInfo(
+        "XLALSortSnglRingdown: Empty SnglRingdownTable passed as input" );
+    return( eventHead );
+  } 
+  
   /* allocate memory for an array of pts to sort and populate array */
-  eventHandle = (SnglRingdownTable **) 
+  eventHandle = (SnglRingdownTable **)
     LALCalloc( numEvents, sizeof(SnglRingdownTable *) );
-  for ( i = 0, thisEvent = *eventHead; i < numEvents; 
+  for ( i = 0, thisEvent = eventHead; i < numEvents;
       ++i, thisEvent = thisEvent->next )
   {
     eventHandle[i] = thisEvent;
   }
-
+  
   /* qsort the array using the specified function */
   qsort( eventHandle, numEvents, sizeof(eventHandle[0]), comparfunc );
-
+  
   /* re-link the linked list in the right order */
-  thisEvent = *eventHead = eventHandle[0];
+  thisEvent = eventHead = eventHandle[0];
   for ( i = 1; i < numEvents; ++i )
   {
     thisEvent = thisEvent->next = eventHandle[i];
   }
   thisEvent->next = NULL;
-
+  
   /* free the internal memory */
   LALFree( eventHandle );
-
-  RETURN( status );
+  
+  return( eventHead );
 }
 
+  
 
 /* <lalVerbatim file="SnglRingdownUtilsCP"> */
 int
