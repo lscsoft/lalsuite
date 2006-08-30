@@ -296,7 +296,7 @@ LALCreateNIFORingdownCoincList(
     /* check that this is an (N-1) coinc */
     if ( thisCoinc->numIfos == N - 1 )
     {
-      /* look up the first single inspiral */
+      /* look up the first single ringdown */
       for ( firstEntry = 0; firstEntry < LAL_NUM_IFO; firstEntry++)
       {
         if ( thisCoinc->snglRingdown[firstEntry] )
@@ -690,6 +690,27 @@ LALExtractSnglRingdownFromCoinc(
     )
 /* </lalVerbatim> */
 {
+  INITSTATUS( status, "LALExtractCoincSngls", COINCRINGDOWNUTILSC );
+  ATTATCHSTATUSPTR( status ); 
+  
+  *snglPtr = XLALExtractSnglRingdownFromCoinc( coincRingdown, gpsStartTime,
+      slideNum );
+  
+  
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}
+
+/* <lalVerbatim file="CoincRingdownUtilsCP"> */
+SnglRingdownTable *
+XLALExtractSnglRingdownFromCoinc(
+    CoincRingdownTable         *coincRingdown, 
+    LIGOTimeGPS                *gpsStartTime,
+    INT4                        slideNum
+    )
+/* </lalVerbatim> */
+{
+  static const char *func = "ExtractSnglRingdownFromCoinc";
   SnglRingdownTable  *snglHead = NULL;
   SnglRingdownTable  *thisSngl = NULL;
   SnglRingdownTable  *thisCoincEntry = NULL;
@@ -698,22 +719,15 @@ LALExtractSnglRingdownFromCoinc(
   UINT4               eventNum = 1;
   INT4                j;
   
-  INITSTATUS( status, "LALExtractCoincSngls", COINCRINGDOWNUTILSC );
-  ATTATCHSTATUSPTR( status );
-
-  ASSERT( snglPtr, status, 
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
-  ASSERT( ! (*snglPtr), status, 
-      LIGOMETADATAUTILSH_ENNUL, LIGOMETADATAUTILSH_MSGENNUL );
-  
   if ( !coincRingdown )
   {
-    LALInfo( status, "Empty coincRingdown passed to LALExtractCoincSngls");
-    DETATCHSTATUSPTR (status);
-    RETURN (status);
+    XLALPrintInfo(
+        "XLALExtractSnglRingdownFromCoinc: Empty coincRingdown passed as input"
+        );
+    return( NULL );
   }
 
-  /* loop over the linked list of coinc ringdown */
+    /* loop over the linked list of coinc ringdown */
   for( thisCoinc = coincRingdown; thisCoinc; thisCoinc = thisCoinc->next,
       ++eventNum)
   {
@@ -721,35 +735,55 @@ LALExtractSnglRingdownFromCoinc(
     for ( j = 0; j < LAL_NUM_IFO; j++)
     {
       thisCoincEntry = thisCoinc->snglRingdown[j];
-
+      
       if ( thisCoincEntry )
       {
         /* allocate memory for a new sngl ringdown */
         if ( !snglHead )
         {
-          thisSngl = snglHead = (SnglRingdownTable *) 
+          thisSngl = snglHead = (SnglRingdownTable *)
             LALCalloc( 1, sizeof(SnglRingdownTable) );
         }
         else
         {
-          thisSngl = thisSngl->next = (SnglRingdownTable *) 
+          thisSngl = thisSngl->next = (SnglRingdownTable *)
             LALCalloc( 1, sizeof(SnglRingdownTable) );
         }
 
         /* copy thisCoincEntry into our list */
-        memcpy( thisSngl, thisCoincEntry, sizeof(SnglRingdownTable) );
-        thisSngl->next = NULL;
+        memcpy( thisSngl, thisCoincEntry, sizeof(SnglRingdownTable) );                        thisSngl->next = NULL;
+        
         
         /* create an eventId and populate the id */
         eventId = (EventIDColumn *) LALCalloc( 1, sizeof(EventIDColumn) );
-        eventId->id = LAL_INT8_C(1000000000) * (INT8) gpsStartTime->gpsSeconds
-          + (INT8) eventNum;
+        if ( thisCoincEntry->event_id->id )
+        {
+          /* event id number exists, use it */
+          eventId->id = thisCoincEntry->event_id->id;
+        }
+        else if ( gpsStartTime )
+        {
+          eventId->id = LAL_INT8_C(1000000000) *
+            (INT8) gpsStartTime->gpsSeconds + (INT8) eventNum;
+        }
+        else
+        {
+          XLALPrintError(
+              "Event does not have id and no GPS start time given" );
+          while ( snglHead )
+          {
+            thisSngl = snglHead;
+            snglHead = snglHead->next;
+            XLALFreeSnglRingdown( &thisSngl );
+          }
+          XLAL_ERROR_NULL(func,XLAL_EIO);
+        }
         
         if ( slideNum < 0 )
         {
           eventId->id += LAL_INT8_C(100000)* (-1 *slideNum + 5000);
         }
-        else 
+        else
         {
           eventId->id += LAL_INT8_C(100000) * slideNum;
         }
@@ -758,16 +792,13 @@ LALExtractSnglRingdownFromCoinc(
       }
     }
   }
-
-  *snglPtr = snglHead;
-        
-
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
+  
+  return( snglHead );
+  
 }
 
-
-/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+  
+/* <lalVerbatim file="CoincRingdownUtilsCP"> */
 INT4 XLALCountCoincRingdown( CoincRingdownTable *head )
 /* </lalVerbatim> */
 {
@@ -786,10 +817,9 @@ INT4 XLALCountCoincRingdown( CoincRingdownTable *head )
   return length;
 }
 
-#if 0
 /* <lalVerbatim file="CoincRingdownUtilsCP"> */
 int 
-XLALRecreateCoincFromSngls(
+XLALRecreateRingdownCoincFromSngls(
     CoincRingdownTable        **coincPtr,
     SnglRingdownTable          *snglRingdown
     )
@@ -814,7 +844,7 @@ XLALRecreateCoincFromSngls(
   }
 
   /* loop over the linked list of sngl ringdowns */
-  for( thisSngl = snglringdown; thisSngl; thisSngl = thisSngl->next )
+  for( thisSngl = snglRingdown; thisSngl; thisSngl = thisSngl->next )
   {
     ifoNumber = XLALIFONumber( thisSngl->ifo );
     thisCoinc = coincHead;
@@ -897,6 +927,8 @@ XLALRecreateCoincFromSngls(
         
   return( numCoincs );
 }
+
+#if 0
 
 /* <lalVerbatim file="CoincRingdownUtilsCP"> */
 int 
@@ -1171,3 +1203,108 @@ LALCoincCutSnglInspiral(
   RETURN (status);
 }  
 #endif
+
+INT8 
+XLALCoincRingdownTimeNS (
+    const CoincRingdownTable         *coincRingdown
+    )
+{
+  static const char *func = "XLALCoincRingdownTimeNS";
+  InterferometerNumber  ifoNumber;
+  INT8 startTime = 0;
+  
+  for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+  {
+    if ( coincRingdown->snglRingdown[ifoNumber] )
+    {
+      startTime = XLALGPStoINT8(
+          &(coincRingdown->snglRingdown[ifoNumber]->start_time) );
+      return(startTime);
+    }
+  }
+  XLAL_ERROR(func,XLAL_EIO);
+}
+
+
+/* <lalVerbatim file="CoincRingdownUtilsCP"> */
+int
+XLALCompareCoincRingdownByTime (
+    const void *a,
+    const void *b
+    )
+/* </lalVerbatim> */
+{
+  const CoincRingdownTable *aPtr = *((const CoincRingdownTable * const *)a);
+  const CoincRingdownTable *bPtr = *((const CoincRingdownTable * const *)b);
+  INT8 ta, tb;
+
+  ta = XLALCoincRingdownTimeNS ( aPtr );
+  tb = XLALCoincRingdownTimeNS ( bPtr );
+
+  if ( ta > tb )
+  {
+    return 1;
+  }
+  else if ( ta < tb )
+  {
+    return -1;
+  }
+  else
+  {
+    return 0;
+  }
+}
+
+
+/* <lalVerbatim file="CoincRingdownUtilsCP"> */
+CoincRingdownTable *
+XLALSortCoincRingdown (
+    CoincRingdownTable  *eventHead,
+    int(*comparfunc)    (const void *, const void *)
+    )
+/* </lalVerbatim> */
+{
+  INT4                   i;
+  INT4                   numEvents = 0;
+  CoincRingdownTable    *thisEvent = NULL;
+  CoincRingdownTable   **eventHandle = NULL;
+
+  /* count the number of events in the linked list */
+  for ( thisEvent = eventHead; thisEvent; thisEvent = thisEvent->next )
+  {
+    ++numEvents;
+  }
+  if ( ! numEvents )
+  {
+     XLALPrintInfo(
+      "XLALSortCoincRingdown: Empty coincRingdown passed as input" );
+    return( eventHead );
+  }
+
+  /* allocate memory for an array of pts to sort and populate array */
+  eventHandle = (CoincRingdownTable **)
+    LALCalloc( numEvents, sizeof(CoincRingdownTable *) );
+  for ( i = 0, thisEvent = eventHead; i < numEvents;
+      ++i, thisEvent = thisEvent->next )
+  {
+    eventHandle[i] = thisEvent;
+  }
+
+  /* qsort the array using the specified function */
+  qsort( eventHandle, numEvents, sizeof(eventHandle[0]), comparfunc );
+
+  /* re-link the linked list in the right order */
+  thisEvent = eventHead = eventHandle[0];
+  for ( i = 1; i < numEvents; ++i )
+  {
+    thisEvent = thisEvent->next = eventHandle[i];
+  }
+  thisEvent->next = NULL;
+
+  /* free the internal memory */
+  LALFree( eventHandle );
+
+  return( eventHead );
+
+}
+
