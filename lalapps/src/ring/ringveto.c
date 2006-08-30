@@ -585,13 +585,18 @@ static int is_in_list( int i, const char *list )
 static RingVetoTemplateBank *createsubbanks( struct ring_params *params, RingTemplateBank *bank ){
   
    /*fprintf(stdout, "Initializing variables in createsubbanks\n"); */
-   UINT4 whileloop = 0;
+   UINT4 cloop = 0;
    UINT4 i = 0;
    RingVetoTemplateBank *vetobank = NULL;
    RingVetoTemplateBank *firstvetobank = NULL;
+   RingVetoTemplateBank *lastvetobank = NULL;
    /*SnglRingdownTable *thisTmplt = NULL;*/
    UINT4 bankSize = bank->numTmplt; /* get the # of temps */
-   UINT4 subBankSize = 16;
+   UINT4 subBankSize = 15; /*this could maybe be a command line argument */
+   UINT4 numsubBanks = floor(bankSize / subBankSize);
+   /*fprintf(stdout,"NUM of subbanks = %d\n",numsubBanks);*/
+   UINT4 remainder = bankSize - subBankSize*numsubBanks;
+   UINT4 nextCounter = 0;
    /* Here I want to allocate memory for just one */
    /* RingVetoTemplateBank */ 
    /*fprintf(stdout, "Allocating one vetobank in createsubbanks\n");*/
@@ -600,42 +605,72 @@ static RingVetoTemplateBank *createsubbanks( struct ring_params *params, RingTem
               sizeof(RingVetoTemplateBank)); 
    /*fprintf(stdout, "The value of vetobank->next is %d\n",
                        (int) vetobank->next); */
-   /* For now I will fix the allocation size of small bank */
-   /* to be a constant 10 templates.  THIS MUST BE CHANGED! */
-   /* It is likely that this will have to be a dynamic     */
-   /* quantity */
-
-   /* for now this will just trivially split the bank into */
-   /* groups of ten templates - IN THE FUTURE it will need */
-   /* to choose subsets which have approximately .3 or .4  */
-   /* average overlap */ 
 
    /* loop over all the templates until I reach the end of */
    /* the bank */
    firstvetobank = vetobank;
-   while( whileloop < bankSize ){
+   for(cloop = 0;cloop<numsubBanks;cloop++){
+      /*fprintf(stdout,"allocating subbank %d\n",cloop);*/
       vetobank->bank =  LALCalloc(1,
                   sizeof(RingTemplateBank));
       /* this should be dynamically incremented in the */
       /* future */  
       /* Get enough memory to store the small bank */
-      vetobank->bank->tmplt = 
+      if (cloop < (numsubBanks-1))
+        vetobank->bank->tmplt = 
                  LALCalloc( subBankSize, sizeof( SnglRingdownTable ));
-      /* this for loop will change to a while or something else which allows */
-      /* the number of templates to be dynamic */
+      else vetobank->bank->tmplt =
+                 LALCalloc( subBankSize+remainder, sizeof( SnglRingdownTable ));
+
+      /* something else which allows */
+      /* the number of templates to be dynamic ?*/
       for(i=0;i < (subBankSize); ++i){
-         if (whileloop == bankSize) break; /* check this upfront!*/
+         /*if (whileloop == bankSize) break;  check this upfront!*/
+         /*fprintf(stdout,"allocating template %d subbank %d\n",i,cloop);*/
          vetobank->bank->numTmplt = i+1; /*Add the one since i starts at 0*/
-         vetobank->bank->tmplt[i] = *(bank->tmplt + whileloop);
-         vetobank->bank->tmplt[i].next = bank->tmplt + whileloop + 1;
-         whileloop++; /* the global bank counter */
+         vetobank->bank->tmplt[i] = *(bank->tmplt + i*numsubBanks+cloop);
+         nextCounter = (i+1)*numsubBanks+cloop;
+         if (i < subBankSize-1)
+           vetobank->bank->tmplt[i].next = (bank->tmplt+nextCounter);
+         else vetobank->bank->tmplt[i].next = NULL;
          }
-      vetobank->bank->tmplt[i].next = NULL;
-      vetobank = vetobank->next = LALCalloc(1,sizeof(RingVetoTemplateBank));
+      if (cloop == numsubBanks -1){
+        nextCounter -= numsubBanks;
+        nextCounter +=1;
+        vetobank->bank->tmplt[i].next = (bank->tmplt+nextCounter);
+        for(i = 0; i< (bankSize-nextCounter);i++){
+          /*fprintf(stdout,"appending template %d\n",i+nextCounter);*/
+          vetobank->bank->numTmplt += 1;
+          vetobank->bank->tmplt[i+subBankSize] = 
+                         *(bank->tmplt + i + nextCounter);
+          /*fprintf(stdout,"vetobank->bank->tmplt[i].frequency %f\n",
+            vetobank->bank->tmplt[i+subBankSize].frequency);*/
+          if (i < bankSize-nextCounter-1)
+             vetobank->bank->tmplt[i+subBankSize].next =  
+                  (bank->tmplt + i+1+nextCounter);
+          else vetobank->bank->tmplt[i+subBankSize].next = NULL;
+          }
+        } 
+      /*fprintf(stdout,"incrementing vetobank linked list loop = %d\n",cloop);*/
+      vetobank = vetobank->next = LALCalloc(1,sizeof(RingVetoTemplateBank)); 
       }
-      /* don't forget to terminate this list */
-      vetobank->next = NULL;
+   /* don't forget to terminate this list */
+   /* clean up the end NOTE this could make a subbanks with a large number
+         of templates */
+   vetobank->next = NULL;
+   cloop = 0;
+   vetobank = firstvetobank;
+   /*while(vetobank->next){
+     fprintf(stdout,"counting sub banks %d\n", cloop);
+     cloop++;
+     for(i=0;i<vetobank->bank->numTmplt;i++) 
+        fprintf(stdout,"freq %f qual %f \n",vetobank->bank->tmplt[i].frequency,
+            vetobank->bank->tmplt[i].quality);
+     vetobank=vetobank->next;
+     }*/
+      
    return firstvetobank;
+
    }
 
 static SnglRingdownTable 

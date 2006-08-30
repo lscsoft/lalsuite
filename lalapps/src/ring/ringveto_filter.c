@@ -135,7 +135,7 @@ SnglRingdownTable * ringveto_filter(
   firstvetobank = vetobank; /* just remember the first one */
   /* loop over all elements in the template bank */
   UINT4 numEvents = 0;
-  while (vetobank->next){
+  while (vetobank->next && vetobank->bank){
     subCounter++;
     bank = vetobank->bank;
     for ( sgmnt = 0; sgmnt < segments->numSgmnt; ++sgmnt )
