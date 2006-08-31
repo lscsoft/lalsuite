@@ -288,7 +288,7 @@ inputParams.samplerate, inputParams.resamplerate);  }
       numOutliers = remove_outliers(resampData, times, inputParams.stddevthresh);
       if(inputParams.verbose){  
         fprintf(stderr, "I've removed %lf%% of data above the threshold %.1lf sigma for 1st\
- time.\n", (double)numOutliers/(double)resampData->data->length, inputParams.stddevthresh);
+ time.\n", 100.*(double)numOutliers/(double)resampData->data->length, inputParams.stddevthresh);
       }
     }
     
@@ -305,7 +305,7 @@ inputParams.samplerate, inputParams.resamplerate);  }
       numOutliers = remove_outliers(resampData, times, inputParams.stddevthresh);
       if(inputParams.verbose){  
         fprintf(stderr, "I've removed %lf%% of data above the threshold %.1lf sigma for 2nd\
- time.\n", (double)numOutliers/(double)resampData->data->length, inputParams.stddevthresh);
+ time.\n", 100.*(double)numOutliers/(double)resampData->data->length, inputParams.stddevthresh);
       }
     }
     
