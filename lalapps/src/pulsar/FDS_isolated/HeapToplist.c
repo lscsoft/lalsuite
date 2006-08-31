@@ -16,8 +16,8 @@ static volatile const char *HEAPTOPLISTCID  = "$Id$";
    element (potentially) violates the heap property. It "bubbles
    down" this element so that the heap property is restored */
 static void down_heap(toplist_t*list) {
-  UINT8 node = 0;
-  UINT8 succ;
+  size_t node = 0;
+  size_t succ;
   char *exch;
   while ((succ = node+node+1) < list->elems) {
     if (succ+1 < list->elems)
@@ -37,8 +37,8 @@ static void down_heap(toplist_t*list) {
 /* this function gets a "partial heap", i.e. a heap where only an element on
    the lowest level (potentially) violates the heap property. It "bubbles up"
    this element so that the heap property is restored */
-static void up_heap(toplist_t*list, UINT8 node) {
-  UINT8 pred;
+static void up_heap(toplist_t*list, size_t node) {
+  size_t pred;
   char *exch;
   while (node > 0) {
     pred = (node-1)/2;
@@ -56,7 +56,7 @@ static void up_heap(toplist_t*list, UINT8 node) {
 /* creates a toplist with length elements,
    returns -1 on error (out of memory), else 0 */
 int create_toplist(toplist_t**list,
-		   UINT8 length,
+		   size_t length,
 		   size_t size,
 		   int (*smaller)(const void *, const void *)) {
   toplist_t *listp;
@@ -120,12 +120,12 @@ int insert_into_toplist(toplist_t*list, void *element) {
 
 /* apply the function "handle" to all elements of the list in the current order */
 void go_through_toplist(toplist_t*list, void (*handle)(const void *)) {
-  UINT8 i;
+  size_t i;
   for(i=0;i<list->elems;i++)
     handle(list->heap[i]);
 }
 
-void* toplist_elem(toplist_t*list, UINT8 index) {
+void* toplist_elem(toplist_t*list, size_t index) {
   if (list == NULL)
     return(NULL);
   if (index >= list->elems)
@@ -134,7 +134,8 @@ void* toplist_elem(toplist_t*list, UINT8 index) {
 }
 
 int compare_toplists(toplist_t*list1, toplist_t*list2) {
-  UINT8 i=0, res=0;
+  size_t i=0;
+  int res=0;
   if ((list1 == NULL) || (list2 == NULL))
     return(2);
   if ((list1->smaller != list2->smaller) ||

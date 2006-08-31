@@ -9,14 +9,10 @@
 
 static volatile char *HEAPTOPLISTHID  = "$Id$";
 
-#ifndef UINT8
-#define UINT8 unsigned long long
-#endif
-
 /* toplist structure */
 typedef struct {
-  UINT8  length;   /* the length (maximal number of entries) of the toplist */
-  UINT8  elems;    /* number of elements currently in the toplist */
+  size_t length;   /* the length (maximal number of entries) of the toplist */
+  size_t elems;    /* number of elements currently in the toplist */
   size_t size;     /* size of an element */
   char   *data;    /* the actual data array of 'length'*'size' chars */
   char   **heap;   /* array of 'length' pointers into data */
@@ -27,7 +23,7 @@ typedef struct {
 /* creates a toplist with 'length' elements of size 'size', with
    odering based on comparison function 'smaller'.
    returns -1 on error (out of memory), else 0 */
-extern int create_toplist(toplist_t**list, UINT8 length, size_t size,
+extern int create_toplist(toplist_t**list, size_t length, size_t size,
 			  int (*smaller)(const void *, const void *));
 
 
@@ -63,7 +59,7 @@ extern void qsort_toplist_r(toplist_t*list, int (*compare)(const void *, const v
 
 
 /* access a certain element of the toplist (shouldn't be done by fiddling in toplist_t) */
-extern void* toplist_elem(toplist_t*list, UINT8 index);
+extern void* toplist_elem(toplist_t*list, size_t index);
 
 
 /* compare two toplists
