@@ -2124,7 +2124,10 @@ LALInspiralCreateFlatBankS3S4 (
 }
 
 
-
+/* Thomas: 31 Aug 2006. This function is redundant with the polygon fit. 
+It was design for BBH and therefore had tight boundary. For a more general 
+purpose, I extend the range to generous values
+ */
 void
 LALExcludeTemplate(
     LALStatus            *status, 
@@ -2133,8 +2136,8 @@ LALExcludeTemplate(
     REAL4                 x,
     REAL4                 y)
 {
-  REAL4 psi0Int = 300000.;
-  REAL4 psi3Int = -3000.;
+  REAL4 psi0Int = 1200000.;
+  REAL4 psi3Int = -6000.;
   
 
 
