@@ -282,6 +282,16 @@ inputParams.samplerate, inputParams.resamplerate);  }
     XLALDestroyCOMPLEX16Vector( data->data );
     LALFree(data);
 
+    /* perform outlier removal twice incase very large outliers skew the stddev */
+    if(inputParams.stddevthresh != 0.){
+      INT4 numOutliers=0;
+      numOutliers = remove_outliers(resampData, times, inputParams.stddevthresh);
+      if(inputParams.verbose){  
+        fprintf(stderr, "I've removed %lf%% of data above the threshold %.1lf sigma for 1st\
+ time.\n", (double)numOutliers/(double)resampData->data->length, inputParams.stddevthresh);
+      }
+    }
+    
     /* calibrate */
     if(inputParams.calibrate){
       calibrate(resampData, times, inputParams.calibfiles, inputParams.freqfactor*hetParams.het.f0);
@@ -291,10 +301,11 @@ inputParams.samplerate, inputParams.resamplerate);  }
       
     /* remove outliers above our threshold */
     if(inputParams.stddevthresh != 0.){
-      remove_outliers(resampData, times, inputParams.stddevthresh);
+      INT4 numOutliers = 0;
+      numOutliers = remove_outliers(resampData, times, inputParams.stddevthresh);
       if(inputParams.verbose){  
-        fprintf(stderr, "I've removed outliers above the threshold %.1lf sigma.\n",
-inputParams.stddevthresh);
+        fprintf(stderr, "I've removed %lf%% of data above the threshold %.1lf sigma for 2nd\
+ time.\n", (double)numOutliers/(double)resampData->data->length, inputParams.stddevthresh);
       }
     }
     
@@ -1226,8 +1237,9 @@ frequency*/
   fclose(fp);
 }
 
-/* function to remove outliers above a certain standard deviation threshold */
-void remove_outliers(COMPLEX16TimeSeries *data, REAL8Vector *times, REAL8 stddevthresh){
+/* function to remove outliers above a certain standard deviation threshold - it returns the
+number of outliers removed */
+INT4 remove_outliers(COMPLEX16TimeSeries *data, REAL8Vector *times, REAL8 stddevthresh){
   COMPLEX16 mean;
   COMPLEX16 stddev;
   INT4 i=0, j=0;
@@ -1270,6 +1282,8 @@ stddev.im*stddevthresh){
   /* resize data and times */
   data->data = XLALResizeCOMPLEX16Vector(data->data, j);
   times = XLALResizeREAL8Vector(times, j);
+  
+  return data->data->length - j;
 }
     
 /* function to show memory useage borrowed from Greg's MakeSFTs code */
