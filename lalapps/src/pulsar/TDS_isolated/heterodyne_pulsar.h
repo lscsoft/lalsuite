@@ -186,8 +186,9 @@ REAL8 frequency);
 void get_calibration_values(REAL8 *magnitude, REAL8 *phase, CHAR *calibfilename, REAL8
 frequency);
 
-/* function to remove outliers above a certain standard deviation threshold */
-void remove_outliers(COMPLEX16TimeSeries *data, REAL8Vector *times, REAL8 stddevthresh);
+/* function to remove outliers above a certain standard deviation threshold - returns the number
+of outliers removed */
+INT4 remove_outliers(COMPLEX16TimeSeries *data, REAL8Vector *times, REAL8 stddevthresh);
 
 /*void printmemuse();*/
 
