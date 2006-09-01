@@ -1,8 +1,30 @@
+/*-----------------------------------------------------------------------
+ *
+ * File Name: EllipsoidOverlapTools.h
+ *
+ * Author: Robinson, C. A., and Sengupta, A.
+ *
+ * Revision: $Id$
+ *
+ *-----------------------------------------------------------------------
+ */
+
+#if 0
+<lalVerbatim file="EllipsoidOverlapToolsHV">
+Author: Robinson, C. A. and Sengupta, A. S.
+$Id$
+</lalVerbatim>
+#endif
+
+#ifndef _ELLIPSOIDOVERLAPTOOLS_H
+#define _ELLIPSOIDOVERLAPTOOLS_H
+
+
 #include    <math.h>
 #include    <lal/LALStdlib.h>
 #include    <lal/LALGSL.h>
 #include    <lal/LALError.h>
-#include    <lal/LIGOMetadataUtils.h>
+
 #include    <gsl/gsl_errno.h>
 #include    <gsl/gsl_math.h>
 #include    <gsl/gsl_min.h>
@@ -11,8 +33,11 @@
 #include    <gsl/gsl_blas.h>
 #include    <gsl/gsl_linalg.h>
 
-#ifndef _ELLIPSOIDOVERLAPTOOLSH
-#define _ELLIPSOIDOVERLAPTOOLSH
+#ifdef  __cplusplus
+extern "C" {
+#endif
+
+NRCSID( ELLIPSOIDOVERLAPTOOLSH, "$Id$" );
 
 typedef struct tagfContactWorkSpace
 {
@@ -55,9 +80,8 @@ fContactWorkSpace * XLALInitFContactWorkSpace(
 
 void XLALFreeFContactWorkSpace( fContactWorkSpace *workSpace );
 
-/* Functions for generating the error matrix and position vectors for triggers */
-gsl_matrix * XLALGetErrorMatrixFromSnglInspiral(SnglInspiralTable *event);
-
-gsl_vector * XLALGetPositionFromSnglInspiral( SnglInspiralTable *table );
-
+#ifdef  __cplusplus
+}
 #endif
+
+#endif   /* _ELLIPSOIDOVERLAPTOOLS_H */
