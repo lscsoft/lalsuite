@@ -215,25 +215,28 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
           REAL8 yRem;
 
 	  /* some variants of calculating yRem (for speed...) */
-#ifdef USE_FLOOR_Y
 #ifdef USE_BIG_ADD
 	  /* This adds an integer number big enough to make sure yTemp positive, finally to avoid the
 	     case distinction yTemp<0 below. Note that adding an integer doesn't really matter because
 	     in the following we only use yRem, the fractional part of yTemp
 	  */
 	  yTemp += 4.0e6f;
+#ifdef USE_FLOOR_Y
 	  yRem = yTemp - floor(yTemp);
 #else
+	  yRem = yTemp - (INT4)(yTemp);
+#else
+#ifdef USE_FLOOR_Y
           if (yTemp >= 0) {
             yRem = yTemp - floor(yTemp);
           } else {
             /* yRem = yTemp - ceil(yTemp) + 1.0; */
             yRem = yTemp + floor(- yTemp) + 1.0;
           }
-#endif
 #else
 	  yRem = yTemp - (INT4)(yTemp);
 	  if (yRem < 0) { yRem += 1.0f; } /* make sure this is in [0..1) */
+#endif
 #endif
           {
             UINT4 idx  = yRem * LUT_RES + .5;
