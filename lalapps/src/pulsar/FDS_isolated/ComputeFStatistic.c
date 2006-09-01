@@ -3802,8 +3802,10 @@ int main(int argc, char *argv[])
 
 /* signal handlers */
 void sighandler(int sig){
+#ifdef __GLIBC__
   void *array[64];
   size_t size;
+#endif
   static int killcounter = 0;
 
   /* RP: not sure what this is for. FIXME: better remove?
