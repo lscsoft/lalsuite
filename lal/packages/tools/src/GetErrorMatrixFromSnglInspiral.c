@@ -9,7 +9,7 @@
  *---------------------------------------------------------------------------*/
 
 #if 0
-<lalVerbatim file="LALTrigScanClusterCV">
+<lalVerbatim file="GetErrorMatrixFromSnglInspiralCV">
 Author: Craig Robinson
 $Id$
 </lalVerbatim>
@@ -20,11 +20,11 @@ $Id$
 #include <lal/LALError.h>
 #include <lal/LALGSL.h>
 #include <lal/LIGOMetadataTables.h>
+#include <lal/CoincInspiralEllipsoid.h>
 
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_linalg.h>
-
 
 /* Function for getting the error matrix from the metric in
  * (tc, tau0, tau3) space.
@@ -97,4 +97,14 @@ gsl_vector * XLALGetPositionFromSnglInspiral( SnglInspiralTable *table )
   gsl_vector_set( position, 2, table->tau3 );
 
   return position;
+}
+
+
+/* Sets the time in the position vector to the given value */
+int XLALSetTimeInPositionVector( gsl_vector *position,
+                                 REAL8 time)
+{
+    gsl_vector_set( position, 0, time );
+
+    return XLAL_SUCCESS;
 }
