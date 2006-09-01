@@ -30,7 +30,7 @@ lalapps_ring_SOURCES = ring.c ring.h ring_option.c ring_filter.c ring_output.c \
 	 spectrm.c spectrm.h \
 	 segment.c segment.h
 lalapps_ringveto_SOURCES = ringveto.c \
-         ring.h ring_option.c \
+         ringveto.h ringveto_option.c \
          ringveto_filter.c ring_output.c \
          errutil.c errutil.h \
          gpstime.c gpstime.h \
