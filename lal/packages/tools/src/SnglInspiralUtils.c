@@ -582,6 +582,7 @@ LALCompareInspirals (
   REAL4   dmass1, dmass2;
   REAL4   dmchirp, deta;
   REAL4   dpsi0, dpsi3;
+  REAL4   dtau0, dtau3;
   InterferometerNumber ifoaNum,  ifobNum;
   SnglInspiralAccuracy aAcc, bAcc;
 
@@ -695,6 +696,25 @@ LALCompareInspirals (
     else
     {
       LALInfo( status, "Triggers fail mchirp, eta coincidence test" );
+      params->match = 0;
+      goto exit;
+    }
+  }
+  else if ( params->test == tau0_and_tau3 )
+  {
+    dtau0 = fabs( aPtr->tau0 - bPtr->tau0 );
+    dtau3 = fabs( aPtr->tau3 - bPtr->tau3 );
+
+    /* compare mass1 and mass2 parameters */
+    if ( (dtau0 <= (aAcc.dtau0 + bAcc.dtau0) )
+      && (dtau3 <= (aAcc.dtau3 + bAcc.dtau3) ))
+    {
+      LALInfo( status, "Triggers are coincident in tau0 and tau3" );
+      params->match = 1;
+    }
+    else
+    {
+      LALInfo( status, "Triggers are not coincident in tau0 and tau3" );
       params->match = 0;
       goto exit;
     }

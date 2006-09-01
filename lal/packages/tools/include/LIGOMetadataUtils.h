@@ -135,7 +135,8 @@ typedef enum
   m1_and_m2, 
   psi0_and_psi3,  
   mchirp_and_eta, 
-  mchirp_and_eta_ext
+  mchirp_and_eta_ext,
+  tau0_and_tau3
 } 
 SnglInspiralParameterTest;
 /*</lalVerbatim> */
@@ -161,6 +162,8 @@ tagSnglInspiralAccuracy
   REAL4       highMass;
   REAL4       dpsi0;
   REAL4       dpsi3;
+  REAL4       dtau0;
+  REAL4       dtau3;
   SnglInspiralParameterTest test;
 }
 SnglInspiralAccuracy;
@@ -748,13 +751,6 @@ LALCreateTwoIFOCoincList(
     CoincInspiralTable        **coincOutput,
     SnglInspiralTable          *snglInput,
     InspiralAccuracyList       *accuracyParams
-    );
-
-void
-LALCreateTwoIFOCoincListEllipsoid(
-    LALStatus                  *status,
-    CoincInspiralTable        **coincOutput,
-    SnglInspiralTable          *snglInput
     );
 
 void
