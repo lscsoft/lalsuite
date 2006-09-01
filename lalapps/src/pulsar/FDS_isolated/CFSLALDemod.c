@@ -221,23 +221,24 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 	     in the following we only use yRem, the fractional part of yTemp
 	  */
 	  yTemp += 4.0e6f;
-#ifdef USE_FLOOR_Y
+#ifdef    USE_FLOOR_Y
 	  yRem = yTemp - floor(yTemp);
-#else
+#else  /* USE_FLOOR_Y */
 	  yRem = yTemp - (INT4)(yTemp);
-#else
-#ifdef USE_FLOOR_Y
+#endif /* USE_FLOOR_Y */
+#else  /* USE_BIG_ADD */
+#ifdef    USE_FLOOR_Y
           if (yTemp >= 0) {
             yRem = yTemp - floor(yTemp);
           } else {
             /* yRem = yTemp - ceil(yTemp) + 1.0; */
             yRem = yTemp + floor(- yTemp) + 1.0;
           }
-#else
+#else  /* USE_FLOOR_Y */
 	  yRem = yTemp - (INT4)(yTemp);
 	  if (yRem < 0) { yRem += 1.0f; } /* make sure this is in [0..1) */
-#endif
-#endif
+#endif /* USE_FLOOR_Y */
+#endif /* USE_BIG_ADD */
           {
             UINT4 idx  = yRem * LUT_RES + .5;
             REAL8 d    = yRem - divLUTtab[idx];
