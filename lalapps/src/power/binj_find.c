@@ -658,9 +658,9 @@ static void find_burstinjections(LALStatus *stat, SimBurstTable *injection, Sngl
 			 * don't lie within the trigger's time-frequency
 			 * volume, move to next event */
 			if (comparechoice == comparebytimeandfreq)
-			  LAL_CALL(LALCompareSimBurstAndSnglBurst(stat, injection, event, XLALCompareSimBurstAndSnglBurstByTimeandFreq, &match), stat);
+			  match=XLALCompareSimBurstAndSnglBurstByTimeandFreq((const SimBurstTable * const *)&injection, (const SnglBurstTable * const *)&event);
 			else if (comparechoice == comparebytime)
-			  LAL_CALL(LALCompareSimBurstAndSnglBurst(stat, injection, event, XLALCompareSimBurstAndSnglBurstByTime, &match), stat);
+			  match=XLALCompareSimBurstAndSnglBurstByTime((const SimBurstTable * const *)&injection, (const SnglBurstTable * const *)&event);
 
 			if(!match)
 				continue;
