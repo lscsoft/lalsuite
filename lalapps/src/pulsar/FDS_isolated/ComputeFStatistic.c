@@ -3711,10 +3711,6 @@ int main(int argc, char *argv[])
 #endif // GNUC
   
   
-#ifdef MAC_LIB
-  setMacResources(argv[0]);
-#endif
-  
   globargc=argc;
   globargv=argv;
 
