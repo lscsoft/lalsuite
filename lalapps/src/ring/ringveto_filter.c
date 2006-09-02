@@ -97,7 +97,7 @@ SnglRingdownTable * ringveto_filter(
   COMPLEX8FrequencySeries  rtilde;
   REAL4FrequencySeries     snipSpec; /*this will actually store the amplitude */
                                      /*spectrum NOT PSD! */
-  REAL4Vector              *chisqVec = NULL;
+  REAL4TimeSeries          chisqSeries;
   UINT4 segmentLength;
   UINT4 sgmnt;
   UINT4 tmplt;
@@ -126,11 +126,12 @@ SnglRingdownTable * ringveto_filter(
 
   signal.deltaT = 1.0/params->sampleRate;
   signal.sampleUnits = lalStrainUnit;
+  chisqSeries.deltaT = 1.0/params->sampleRate;
   rtilde.deltaF = 1.0 / params->segmentDuration;
   signal.data = XLALCreateREAL4Vector( segmentLength );
   stilde.data = XLALCreateCOMPLEX8Vector( segmentLength/2 + 1 );
   rtilde.data = XLALCreateCOMPLEX8Vector( segmentLength/2 + 1 );
-  chisqVec = XLALCreateREAL4Vector( segmentLength );
+  chisqSeries.data = XLALCreateREAL4Vector( segmentLength );
 
   firstvetobank = vetobank; /* just remember the first one */
   /* loop over all elements in the template bank */
@@ -170,10 +171,12 @@ SnglRingdownTable * ringveto_filter(
              }
           normSnip( Result->tmpSnip.data ); /* normalize the template snip */
           }          
-        LALSnprintf( signal.name, sizeof(signal.name), "TMPLT_%u", tmplt );
+        LALSnprintf( signal.name, sizeof(signal.name), "BANK_%u_TMPLT_%u", 
+                  subCounter, tmplt );
         /*write_REAL4TimeSeries( &signal );*/
         XLALREAL4TimeFreqFFT( &stilde, &signal, fwdPlan );
-        LALSnprintf( stilde.name, sizeof(stilde.name), "TMPLT_%u_FFT", tmplt );
+        LALSnprintf( stilde.name, sizeof(stilde.name), "BANK_%u_TMPLT_%u_FFT", 
+                  subCounter, tmplt );
         /*    write_COMPLEX8FrequencySeries( &stilde );    */
 
         /* compute sigma for this template MAKE SURE AND SAVE THIS*/
@@ -193,6 +196,9 @@ SnglRingdownTable * ringveto_filter(
         { /* guess we better normalize it so it is SNR-like... */
           REAL4 snrFactor = 2 * params->dynRangeFac / sigma;
           UINT4 k;
+          LALSnprintf( Result->result.name, sizeof(Result->result.name), 
+                      "SNR_BANK_%u_TMPLT_%u_SEGMENT_%u",
+                  subCounter, tmplt, sgmnt );
           for ( k = 0; k < Result->result.data->length; ++k )
             Result->result.data->data[k] *= snrFactor;
           write_REAL4TimeSeries( &(Result->result) );
@@ -219,9 +225,16 @@ SnglRingdownTable * ringveto_filter(
       numEvents = 0;
       sC = 0;
       while(Result->next){
-        computeChisqVec(chisqVec,Result,firstResult,&thisCC,params,sC);
+        computeChisqVec(chisqSeries.data,Result,firstResult,&thisCC,params,sC);
         events = find_events( events, &numEvents, &Result->result, 
-            Result->sigma, Result->frequency, Result->quality,chisqVec,params );
+            Result->sigma, Result->frequency, Result->quality,
+            chisqSeries.data,params );
+        if ( params->writeFilterOutput ){
+          LALSnprintf( chisqSeries.name, sizeof(chisqSeries.name),
+                      "CHISQ_BANK_%u_TMPLT_%u_SEGMENT_%u",
+                       subCounter, sC, sgmnt );
+          write_REAL4TimeSeries( &(chisqSeries) );
+          }
         params->numEvents += numEvents;
         verbose( "found %u event%s in subbank %u and segment%d\n", numEvents,
           numEvents == 1 ? "" : "s", subCounter, sgmnt );
@@ -339,6 +352,7 @@ static SnglRingdownTable * find_events(
   SnglRingdownTable *thisEvent = events; /* the current event */
   REAL4 snrFactor; /* factor to convert from filter result to snr */
   REAL4 threshold; /* modified threshold on filter result (rather than snr) */
+  REAL4 vetoThresh;
   REAL4 filterDuration;
   INT8  lastTimeNS;
   INT8  gapTimeNS;
@@ -372,14 +386,15 @@ static SnglRingdownTable * find_events(
   /* compute modified threshold on filter output rather than snr */
   snrFactor = 2 * params->dynRangeFac / tmpltSigma;
   threshold = params->threshold / snrFactor;
-
+  vetoThresh = params->vetoThresh;
   /* compute start and stop index for scanning time series */
   segmentStride = floor( params->strideDuration / result->deltaT + 0.5 );
   jmin = segmentStride/2;
   jmax = jmin + segmentStride;
 
   for ( j = jmin; j < jmax; ++j )
-    if ( fabs( result->data->data[j] ) > threshold ) /* threshold crossing */
+    if ( (fabs( result->data->data[j] ) > threshold) && 
+               (chisqVec->data[j] < vetoThresh)) /* threshold crossing */
     {
       REAL4 snr;
       INT8  timeNS;
@@ -652,7 +667,7 @@ static void computeChisqVec (REAL4Vector *chisqVec,
   FILE *FP = NULL;
   UINT4 j = 0;
   UINT4 k = 0;
-  REAL4 deltasq = 0.45; /*SHOULD BE A PARAMETER */
+  REAL4 deltasq = 1.0; /*SHOULD BE A PARAMETER? */
   REAL4 effDOF = 0;
   REAL4 avgBeta = 0;
   REAL4 snrFactor = 0;
@@ -664,15 +679,21 @@ static void computeChisqVec (REAL4Vector *chisqVec,
   
   Result = firstResult;
 
+  /*I think I need the average of the cc matrix...*/
+  for(j=0;j < RVCC->Beta->length;j++)
+     avgBeta+=RVCC->Beta->data[j];
+  avgBeta/=RVCC->Beta->length;
+
   for(j=0; j < thisResult->numResults; j++){
     beta->data[j] = RVCC->Beta->data[(thisResult->numResults)*j+i];
-    avgBeta+=beta->data[j];
+    /*avgBeta+=beta->data[j];*/
     tau->data[j] = RVCC->Tau->data[(thisResult->numResults)*j+i];
     verbose("beta[%d] %f, tau[%d] %d\n",j,beta->data[j],j,tau->data[j]);
     }
  
-  avgBeta/=thisResult->numResults;
-  effDOF = 2.0*(thisResult->numResults-1.0)*(1.0-avgBeta);
+  /*avgBeta/=thisResult->numResults;*/
+
+  effDOF = 1.0*(thisResult->numResults-1.0)*(1.0-avgBeta); /*what is this?*/
   verbose("chisqVec->length %d avgBeta %f effDOF %f\n",
            chisqVec->length,avgBeta,effDOF);  
    
@@ -680,15 +701,17 @@ static void computeChisqVec (REAL4Vector *chisqVec,
   
   for(k=firstResult->tmpSnip.data->length;
       k<(firstResult->result.data->length - firstResult->tmpSnip.data->length);k++){
+    chisqVec->data[k] = 0.0;
     Result = firstResult;
     j = 0;
     snrFactor = 1.0 * params->dynRangeFac / thisResult->sigma;
     for (j=0;j < (thisResult->numResults);j++){
       REAL4 otherSNRfactor  = 1.0 * params->dynRangeFac / Result->sigma;
       /* THIS VARIANCE MIGHT BE BACKWARDS */
-      REAL4 variance = 1;/*(Result->sigma/thisResult->sigma)*
+      REAL4 variance = 1.0;/*(Result->sigma/thisResult->sigma)*
                        (Result->sigma/thisResult->sigma);*/
-      chisqVec->data[k] += 1.0/effDOF*
+      chisqVec->data[k] += 1.0/effDOF*  
+     /*this was a bug making every chisq vec get worse until I initialized it!*/
         (fabs(thisResult->result.data->data[k])*snrFactor-
         1.0/beta->data[j]*fabs(Result->result.data->data[k+tau->data[j]])
         *otherSNRfactor)*(fabs(thisResult->result.data->data[k])*snrFactor-
@@ -696,9 +719,9 @@ static void computeChisqVec (REAL4Vector *chisqVec,
         *otherSNRfactor)/variance;
       Result=Result->next;
       }
-    /* weight by snr  in the future */
-    /* chisqVec->data[k] /= deltasq*thisResult->result.data->data[k]*
-                         thisResult->result.data->data[k]*snrFactor*snrFactor+1;*/
+    /* weight by snr squared*/ 
+    chisqVec->data[k] /= deltasq*thisResult->result.data->data[k]*
+                   thisResult->result.data->data[k]*snrFactor*snrFactor+1;
     }
 
   /*FP = fopen("chisqVec2.dat","w");
