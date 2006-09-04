@@ -224,7 +224,11 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 #ifdef    USE_FLOOR_Y
 	  yRem = yTemp - floor(yTemp);
 #else  /* USE_FLOOR_Y */
+#ifdef USE_UINT_y
 	  yRem = yTemp - (INT4)(yTemp);
+#else
+	  yRem = yTemp - (UINT4)(yTemp);
+#endif
 #endif /* USE_FLOOR_Y */
 #else  /* USE_BIG_ADD */
 #ifdef    USE_FLOOR_Y
