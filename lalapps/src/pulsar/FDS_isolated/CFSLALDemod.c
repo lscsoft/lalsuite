@@ -156,9 +156,6 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
         REAL4 a = params->amcoe->a->data[alpha];
         REAL4 b = params->amcoe->b->data[alpha];
         REAL8 x;
-#ifndef USE_LUT_Y
-	REAL8 y;
-#endif
         REAL4 realP, imagP;             /* real and imaginary parts of P, see CVS */
 
         /* NOTE: sky-constants are always positive!!
