@@ -1,9 +1,7 @@
-## Octave script for comparing the 1st stage Fstat calculation of 
-## HierarchicalSearch.c with ComputeFStatistic_v2. We run
-## HierarchicalSearch using 1 stack and compare the outputs on the same
-## parameter space.  The
-## reference time is allowed to be different from the start time of the
-## first sft. 
+## Reads a list of templates and number counts produced 
+## by the Hough driver (DriveHoughMulti.c) and validates 
+## the number counts by doing the Hough search for each 
+## template in the list
 
 
 ## Set the parameters
