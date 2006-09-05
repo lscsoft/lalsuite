@@ -7,7 +7,7 @@
 #ifndef HEAPTOPLIST_H
 #define HEAPTOPLIST_H
 
-static volatile char *HEAPTOPLISTHID  = "$Id$";
+static const char *HEAPTOPLISTHID  = "$Id$";
 
 /* toplist structure */
 typedef struct {

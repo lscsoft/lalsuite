@@ -85,7 +85,8 @@ int create_toplist(toplist_t**list,
 
   if (!(listp = malloc(sizeof(toplist_t))))
     return(-1);
-  listp->data = (void*)HEAPTOPLISTCID;
+  listp->data = (void*)HEAPTOPLISTHID;
+  listp->heap = &HEAPTOPLISTCID;
   if (!(listp->data = malloc(size * length))) {
     free(listp);
     return(-1);
