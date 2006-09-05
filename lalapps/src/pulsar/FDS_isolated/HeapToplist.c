@@ -12,8 +12,8 @@
    effort is necessary to keep such a relation. This allows to perform all operations on the heap
    (including removal and insertion of elements) with O(log n), i.e. at most the depth of the tree.
 
-   Here the tree is a binary tree and stored in an array where the successors of a node with
-   index n succ(n) have indices 2*n+1 and 2*n+2:
+   Here the tree is a binary tree and stored in an array where the successors succ(n) of a node
+   with index n have indices 2*n+1 and 2*n+2:
 
             0
        1          2
