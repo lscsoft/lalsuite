@@ -62,7 +62,9 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
   COMPLEX16 Fa, Fb;
   REAL8 f;
 
+#ifndef klim
   UINT4 klim = 2*params->Dterms;
+#endif
   /* #define klim 32                 /* this actually is only a hint. The assembler Kernel loop
 				   doesn't use this value at all, but relies on it being 32 */ 
 
@@ -174,7 +176,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
         }
 
 	{
-#ifdef USE_SSE3
+#ifdef USE_FISTTPL
 	  INT4 xTInt;
 	  __asm __volatile
 	    (
@@ -228,7 +230,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
           REAL8    tempFreqF  = tempFreq1 - 15.0;
           
           /* constants in memory */
-	  static REAL8 big   = 1<<30;  /* real(ly) big number */
+	  static REAL8 big  = 4e6;   /* real(ly) big number */
           static REAL4 lutr = LUT_RES; /* LUT_RES in memory */
           static REAL4 half = .5;
           static REAL4 one  = 1.0;
@@ -318,10 +320,11 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        /* ---------------- */
 
        "fldl    %[yTemp]               \n\t" /* yT */
-#ifdef USE_SSE3       
+#ifdef USE_BIG_FISTTPL
        "faddl   %[big]                 \n\t" /* yT+big */ /* add a big integer number. This doesn't make a difference to the
 							     outcome, since we're only interested in the fractional part.
-							     However it will ensure yTemp+big is positive */
+							     However it will ensure yTemp+big is positive, so we don't have
+							     to jump conditionally here. */
        "fld     %%st(0)                \n\t" /* yT+big yT+big */
        "fisttpl %[yRem]                \n\t" /* yT+big */ /* write integer w. truncation reagrdless of rounding */
        "fisubl  %[yRem]                \n\t" /* yT+big-int(yT+big) */
