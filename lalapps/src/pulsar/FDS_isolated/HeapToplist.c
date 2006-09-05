@@ -1,15 +1,36 @@
+/* This module keeps a "toplist", i.e. a list of the top n elements (accoding to an externally
+   supplied comparison function) in a standard heap structure.
+
+   A Heap is a partially sorted structure that is typically represented as a (binary) tree.
+   A tree is a heap if for all nodes the value of the node is smaller than that of all its
+   successors according to a given comparison function.
+   Footnote: in most other implementation of a heap the order is different from here, i.e.
+   replace "smaller" with "greater" in the above.
+
+   The nice thing about such a heap for our application (and others) is that this heap property
+   doesn't imply any special relation between two nodes in different branches of the tree, so no
+   effort is necessary to keep such a relation. This allows to perform all operations on the heap
+   (including removal and insertion of elements) with O(log n), i.e. at most the depth of the tree.
+
+   Here the tree is a binary tree and stored in an array where the successors of a node with
+   index n succ(n) have indices 2*n+1 and 2*n+2:
+
+            0
+       1          2
+     3   4     5     6
+    7 8 9 10 11 12 13 14
+
+   There's nothing special about that - look for "Heapsort" in the WWW or an algorithms book.
+
+   Bernd Machenschalk
+*/
+
+
 #include <stdlib.h>
 #include <string.h>
 #include "HeapToplist.h"
 
-static volatile const char *HEAPTOPLISTCID  = "$Id$";
-
-/* successors of node n: 2*n+1 and 2*n+2
-        0
-   1          2
- 3   4     5     6
-7 8 9 10 11 12 13 14
-*/
+static const char *HEAPTOPLISTCID  = "$Id$";
 
 
 /* this function gets a "partial heap", i.e. a heap where only the top
@@ -35,8 +56,9 @@ static void down_heap(toplist_t*list) {
 
 
 /* this function gets a "partial heap", i.e. a heap where only an element on
-   the lowest level (potentially) violates the heap property. It "bubbles up"
-   this element so that the heap property is restored */
+   the lowest level (potentially) violates the heap property. "node" is the 
+   index of this element. The function "bubbles up" this element so that the
+   heap property is restored */
 static void up_heap(toplist_t*list, size_t node) {
   size_t pred;
   char *exch;
@@ -63,6 +85,7 @@ int create_toplist(toplist_t**list,
 
   if (!(listp = malloc(sizeof(toplist_t))))
     return(-1);
+  listp->data = (void*)HEAPTOPLISTCID;
   if (!(listp->data = malloc(size * length))) {
     free(listp);
     return(-1);
