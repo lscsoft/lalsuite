@@ -247,7 +247,7 @@ typedef struct CandidateListTag
   INT4 iDelta;       /*  Declination index. This can be negative. */
   INT4 iAlpha;       /*  Right ascension index */
   INT4 iF1dot;       /*  Spindown index */
-  UINT4 iCand;       /*  Candidate id: unique with in this program.  */
+  INT4 iCand;       /*  Candidate id: unique with in this program.  */
 } CandidateList;     /*   Fstat lines */ 
 #pragma pack(0)
 
@@ -445,8 +445,7 @@ int main(INT4 argc,CHAR *argv[])
 
 	   
 	    
-	    for (icand=0;icand<CLength;icand++)
-	      {
+	    for (icand=0;icand<CLength;icand++) {
 		SortedC[icand].iFreq=(INT4) ( ((SortedC[icand].f)/(PCV.Deltaf)) + (cc1 * 0.5)  );
 		
 		/* This was used for an isotropic sky-grid */
@@ -462,7 +461,7 @@ int main(INT4 argc,CHAR *argv[])
 
 		/*SortedCList[icand].nummer=icand; List for sorting purposes. */
 		SortedCListi[icand]=icand;
-	      }
+	    }
 
 #if 0
 	    /* Bruce's sorting function */
@@ -471,11 +470,9 @@ int main(INT4 argc,CHAR *argv[])
 
 #if 1
 	    /* Holger's sorting function */
-	    sortCandidates2(SortedCListi, 0, CLength);
+	    sortCandidates2(SortedCListi, 0, CLength-1);
 	    fprintf(stderr,"%% Sorting of candidates finished.\n");
 #endif
-
-
 	    /* Initialise the first cell by the first candidate. */
 	    icell = 0;
 	    icand = 0;
@@ -483,9 +480,9 @@ int main(INT4 argc,CHAR *argv[])
 	    cell[icell].iDelta = SortedC[SortedCListi[icand]].iDelta;
 	    cell[icell].iAlpha = SortedC[SortedCListi[icand]].iAlpha;
 	    cell[icell].iF1dot = SortedC[SortedCListi[icand]].iF1dot;
-	    cell[icell].CandID->data = SortedCListi[icand]; 
+	    cell[icell].CandID->data = SortedC[SortedCListi[icand]].iCand; 
 	    cell[icell].nCand = 1;
-	    
+	    	    
 	    /* ------------------------------------------------------------------------------*/      
 	    /* main loop over candidates  */
 	    icell = 0;
@@ -494,18 +491,17 @@ int main(INT4 argc,CHAR *argv[])
 		/* Skip candidate events with 2F values below the threshold of TwoFthr. */
 		if ( SortedC[SortedCListi[icand]].TwoF > PCV.TwoFthr ) 
 		  {
-		    
 		    if( SortedC[SortedCListi[icand]].iFreq  == cell[icell].iFreq  && 
 			SortedC[SortedCListi[icand]].iDelta == cell[icell].iDelta &&
 			SortedC[SortedCListi[icand]].iAlpha == cell[icell].iAlpha &&
 			SortedC[SortedCListi[icand]].iF1dot == cell[icell].iF1dot ) 
-		      { 
+		      {
 			/* This candidate is in this cell. */
 			INT4 lastFileIDinThisCell = SortedC[cell[icell].CandID->data].FileID;
 			if( SortedC[SortedCListi[icand]].FileID != lastFileIDinThisCell ) 
 			  { 
 			    /* This candidate has a different file id from the candidates in this cell. */
-			    LAL_CALL( add_int4_data( lalStatus, &(cell[icell].CandID), &(SortedCListi[icand]) ), lalStatus );
+			    LAL_CALL( add_int4_data( lalStatus, &(cell[icell].CandID), &(SortedC[SortedCListi[icand]].iCand) ), lalStatus );
 			    cell[icell].nCand += 1;
 			  }  
 			else  
@@ -530,7 +526,7 @@ int main(INT4 argc,CHAR *argv[])
 			cell[icell].iDelta = SortedC[SortedCListi[icand]].iDelta;
 			cell[icell].iAlpha = SortedC[SortedCListi[icand]].iAlpha;
 			cell[icell].iF1dot = SortedC[SortedCListi[icand]].iF1dot;
-			cell[icell].CandID->data = SortedCListi[icand];
+			cell[icell].CandID->data = SortedC[SortedCListi[icand]].iCand;
 			cell[icell].nCand = 1;
 		
 		      } /*  if( SortedC[icand].iFreq  == cell[icell].iFreq  && .. ) */ 
@@ -848,7 +844,7 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
       fprintf(stderr, "%7d",count[nc]);
     }
     
-    fprintf(stderr,"\n%%\n%% Candidates of most coincident cell : \n%% freq [Hz]\tdec [rad]\tra [rad]  \tF1dot[Hz/s]\t\t2F" "\n");
+    fprintf(stderr,"\n%%\n%% Candidates of most coincident cell : \n%% data-seg \tfreq [Hz]\tdec [rad]\tra [rad]  \tF1dot[Hz/s]\t\t2F" "\n");
     TRY( print_cand_of_most_coin_cell( lalStatus->statusPtr, &cell[idxmaxcoin], CList), lalStatus);
 
   
@@ -946,7 +942,7 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
   /* Output the maximum coincident event over each frequency cell and over all the sky. */
 
   /* faster sorting. */
-  sortFreqCells2(CellListi, 0, (*ncell) );
+  sortFreqCells2(CellListi, 0, (*ncell)-1 );
   fprintf(stderr,"%% Sorting of cells finished.\n");
   
   {
@@ -1274,8 +1270,8 @@ void print_cand_of_most_coin_cell( LALStatus *lalStatus, CellData *cd, const Can
   while( p !=NULL && ic <= LINKEDSTR_MAX_DEPTH ) { 
     idx = p->data;
 
-    fprintf(stderr,"  %" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t% g" "\t\t%g \n", 
-	    CList[idx].f, CList[idx].Delta, CList[idx].Alpha, CList[idx].F1dot, CList[idx].TwoF);
+    fprintf(stderr,"  %" LAL_INT4_FORMAT "\t\t%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t% g" "\t\t%g \n", 
+	    CList[idx].FileID, CList[idx].f, CList[idx].Delta, CList[idx].Alpha, CList[idx].F1dot, CList[idx].TwoF);
     
     p = p->next;
     ic++;
@@ -2819,26 +2815,17 @@ void sortCandidates2(INT4 *data, INT4 left, INT4 right)
 {
   INT4 i, last, t, rzahl=0;
   
-  if(left>=right) 
+  if (left >= right) 
     return;
 
-  /* swap (left) and (left+right)/2  */
-  /*
-    t =  data[(INT4) floor((left+right)/2)]; 
-    data[(INT4) floor((left+right)/2)] = data[left]; 
-    data[left] = t;
-  */
-
-  /* better: use rand() here. */
   rzahl = (INT4) ( rand() % (right-left) );
   t =  data[left+rzahl];
   data[left+rzahl] = data[left];
   data[left] = t;
-
-
+  
   last=left;
 
-  for(i = left + 1; i <= right; i++)
+  for (i = left + 1; i <= right; i++)
   {
     if(SortedC[data[i]].iFreq < SortedC[data[left]].iFreq) {  
       last++;
@@ -2907,26 +2894,17 @@ void sortFreqCells2(INT4 *data, INT4 left, INT4 right)
 {
   INT4 i, last, t, rzahl=0;
   
-  if(left>=right) 
+  if (left >= right) 
     return;
 
-  /* swap (left) and (left+right)/2  */
-  /*
-    t =  data[(INT4) floor((left+right)/2)]; 
-    data[(INT4) floor((left+right)/2)] = data[left]; 
-    data[left] = t;
-  */
-
-  /* better: use rand() here. */
   rzahl = (INT4) ( rand() % (right-left) );
   t =  data[left+rzahl];
   data[left+rzahl] = data[left];
   data[left] = t;
-
-
+  
   last=left;
 
-  for(i = left + 1; i <= right; i++)
+  for (i = left + 1; i <= right; i++)
   {
     if(cell[data[i]].iFreq < cell[data[left]].iFreq)  {
       last++;
