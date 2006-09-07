@@ -442,7 +442,7 @@ LALInspiralCreateCoarseBank(
     case TaylorF2: 
     case PadeT1: 
     case PadeF1: 
-    case EOB: 
+    case EOB:     
       ASSERT( coarseIn.space == Tau0Tau2 || coarseIn.space == Tau0Tau3, status,
           LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE );
 
@@ -2136,10 +2136,8 @@ LALExcludeTemplate(
     REAL4                 x,
     REAL4                 y)
 {
-  REAL4 psi0Int = 1200000.;
-  REAL4 psi3Int = -6000.;
-  
-
+  REAL4 psi0Int = 2500000.;
+  REAL4 psi3Int = -10000.;
 
   INITSTATUS( status, "LALExcludeTemplate", 
       LALINSPIRALCREATECOARSEBANKC );
