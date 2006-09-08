@@ -28,11 +28,13 @@ NRCSID (LALTRIGSCANCLUSTERC,
 /* ------------------------------------------------------------------*/
 trigScanValidEvent XLALTrigScanExpandCluster (
         INT4                  *list, 
-        trigScanInputPoint    *masterList,
+        trigScanClusterIn     *condenseIn,
         INT4                  nPoints,
-        INT4                  currClusterID
+        INT4                  currClusterID,
+        trigScanClusterOut    **condenseOut
         )
 {
+    static LALStatus        status;
     trigScanValidEvent      flag = trigScanFalse;
     INT4                    seed;
     trigScanEpsSearchInput  epsSearchIn; /* Data structure given as input to*/
@@ -42,9 +44,11 @@ trigScanValidEvent XLALTrigScanExpandCluster (
                               /* have been accessed                */
 
     /* Create the epsSearchIn data structure */
-    epsSearchIn.masterList   = masterList;
-    epsSearchIn.nInputPoints = nPoints;
-    epsSearchIn.clusterID    = currClusterID;
+    epsSearchIn.masterList     = condenseIn->masterList;
+    epsSearchIn.nInputPoints   = nPoints;
+    epsSearchIn.clusterID      = currClusterID;
+    epsSearchIn.maxTcFootPrint = condenseIn->maxTcFootPrint; 
+    epsSearchIn.minLoopIdx     = list[0];
 
     while (pointer < size) { 
 
@@ -54,7 +58,6 @@ trigScanValidEvent XLALTrigScanExpandCluster (
         /* call function which returns the points which are inside the */ 
         /* eps-Neighbourhood. Allow the list to grow as update size as */
         /* more seeds are added to the list                            */
-
         XLALTrigScanGetEpsNeighbourhood (seed, &list, &size, &epsSearchIn);
 
         /* if valid seed then insert and update size by */
@@ -66,7 +69,20 @@ trigScanValidEvent XLALTrigScanExpandCluster (
     /* set flag to true if (size > 1) indicating that a valid cluster 
      * has been discovered
      * */
-    if (size > 1) flag = trigScanTrue;
+    if (size > 1)
+    {
+
+
+        LALTrigScanStoreThisCluster (
+                &status, (const INT4 *)( list ),
+                (const trigScanClusterIn  *)( condenseIn ),
+                (const INT4)( size ), (const INT4)( currClusterID ),
+                condenseOut
+                );
+
+        flag = trigScanTrue;
+
+    }
 
     /* deallocate the list before returning */
     LALFree (list);
@@ -115,7 +131,7 @@ void XLALTrigScanGetEpsNeighbourhood (
     /* Set the shape matrix of the seed point */
     workSpace->invQ1  = epsSearchIn->masterList[seed].invGamma;
 
-    for (i = 0; i < epsSearchIn->nInputPoints; i++)
+    for (i = epsSearchIn->minLoopIdx; i < epsSearchIn->nInputPoints; i++)
     {
         /* check if the point has been classified */
         if (epsSearchIn->masterList[i].clusterID == TRIGSCAN_UNCLASSIFIED)
@@ -126,38 +142,69 @@ void XLALTrigScanGetEpsNeighbourhood (
             q2[1] = epsSearchIn->masterList[i].y;
             q2[2] = epsSearchIn->masterList[i].z;
 
-            /* create a vector view from the q2 array */
-            vq2 = gsl_vector_view_array(q2,3);
-
-            /* Set the shape matrix of the i-th point */
-            workSpace->invQ2    = epsSearchIn->masterList[i].invGamma;
-
-            /* Figure out if the above ellipsoids overlap */
-            distance = XLALCheckOverlapOfEllipsoids (&(vq1.vector), &(vq2.vector), workSpace);
-
-            if (distance > 0 && distance <= 1.) 
+            /* Notice that the triggers are actually time ordered. This means
+             * So, if the endTime difference between trigger and seed exceeds
+             * some value (say 6 * maxTcFootPrint), quit the loop
+             */
+            if ( ( (q2[0] - q1[0]) >= 6.0 * epsSearchIn->maxTcFootPrint ) )
             {
-                /* set the clusterID to the currClusterID */
-                epsSearchIn->masterList[i].clusterID = epsSearchIn->clusterID; 
-
-                /* increment the size variable and hence realloc the list */
-                (*size)++;
-
-                if ( !(*list = (INT4*) 
-                            LALRealloc(*list, 
-                                sizeof(INT4)*(*size)))
-                   )
-                {
-                    fprintf (stderr, "LALRealloc error. Aborting at %d\n", 
-                            *size);
-                    abort ();
-                }
-
-                /* add the shortlisted point to the list at position size - 1*/
-                (*list)[*size - 1]  = i;
+                /* Note that the order q2 - q1 is VERY important in the above
+                 * test. This tests for triggers that are further ahead in time
+                 * than the seed are not too far away. If they are, there is no
+                 * need to continue the loop any further.
+                 fprintf (stderr, "Breaking out as q2 (%d) is too far from q1 (%d) index = %d \n", i, seed, i);
+                 */
+                break;
             }
-        }
-    }
+
+
+            /* Worry about overlaps only if the triggers times differ by a
+             * fixed amount. If the trigger times differ by more than this, it
+             * is assumed that the overlap will fail anyway
+             */
+            if ( (fabs(q2[0] - q1[0]) <= 6.0 * epsSearchIn->maxTcFootPrint ) ) 
+            {
+                /* create a vector view from the q2 array */
+                vq2 = gsl_vector_view_array(q2,3);
+
+                /* Set the shape matrix of the i-th point */
+                workSpace->invQ2    = epsSearchIn->masterList[i].invGamma;
+
+                /* Figure out if the above ellipsoids overlap */
+                distance = XLALCheckOverlapOfEllipsoids (&(vq1.vector), &(vq2.vector), workSpace);
+
+                /*fprintf (stderr, "%d %d distance = %e\n", seed, i,
+                 * distance);*/
+
+                if (distance > 0 && distance <= 1.) 
+                {
+                    /* set the clusterID to the currClusterID */
+                    epsSearchIn->masterList[i].clusterID = epsSearchIn->clusterID; 
+
+                    /* increment the size variable and hence realloc the list */
+                    (*size)++;
+
+                    if ( !(*list = (INT4*) 
+                                LALRealloc(*list, 
+                                    sizeof(INT4)*(*size)))
+                       )
+                    {
+                        fprintf (stderr, "LALRealloc error. Aborting at %d\n", 
+                                *size);
+                        abort ();
+                    }
+
+                    /* add the shortlisted point to the list at position size - 1*/
+                    (*list)[*size - 1]  = i;
+
+                } /* If the two triggers overlap */
+
+            } /* If two triggers are within n times maxTcFootPrint only then */
+
+        } /*if unclassified trigger */
+
+    } /* Loop over triggers */
+
 
     /* De-allocate workSpace allocated earlier */
     /* This workSpace is used to check overlap */
@@ -165,103 +212,64 @@ void XLALTrigScanGetEpsNeighbourhood (
     XLALFreeFContactWorkSpace( workSpace );
 }
 
-/* --------------------------------------------------------------------- 
- * This function is used to fillout the trigScanClusterOut structure after
- * the clustering has been done. 
+/*----------------------------------------------------------------------
+ * Once a cluster has been discovered we need to store it in the
+ * trigScanClusterOut structure. This particular function does that job. The
+ * inputs are the list of triggers in the newly discovered cluster and its
+ * size, the corresponding clusterID.
  ---------------------------------------------------------------------*/ 
-void LALTrigScanClusterMakeOutput (
-        LALStatus               *status,
-        trigScanClusterIn       *condenseIn, 
-        trigScanClusterOut      **condenseOut,
-        INT4                    nclusters
+void LALTrigScanStoreThisCluster (
+        LALStatus                *status,
+        const INT4               *list,
+        const trigScanClusterIn  *condenseIn,
+        const INT4               size,
+        const INT4               currClusterID,
+        trigScanClusterOut       **condenseOut
         )
-{ 
-    INT4          i, j, n, cSize;
-    INT4          *t_idx = NULL, maxResultIdx;
-    REAL8         maxResult;
-    REAL8Vector   *t_rho = NULL ;
+{
+    REAL4Vector *unSortedSnr = NULL;
+    INT4Vector  *heapSortIndex = NULL;
+    INT4        i, mid;
 
-    trigScanInputPoint     *masterList=NULL;
-
-    INITSTATUS (status, "LALTrigScanClusterMakeOutput", LALTRIGSCANCLUSTERC);
+    INITSTATUS (status, "LALTrigScanStoreThisEvent", LALTRIGSCANCLUSTERC);
     ATTATCHSTATUSPTR(status);
 
-    n            = condenseIn->n;
-    masterList   = condenseIn->masterList;
+    /* We can now figure out the maximum SNR here */
+    unSortedSnr    = XLALCreateREAL4Vector( size );
+    heapSortIndex  = XLALCreateINT4Vector( size );
 
-    ASSERT (condenseOut, 
-            status, LALTRIGSCANCLUSTERH_ENULL, LALTRIGSCANCLUSTERH_MSGENULL);
-    ASSERT (masterList, 
-            status, LALTRIGSCANCLUSTERH_ENULL, LALTRIGSCANCLUSTERH_MSGENULL);
-    ASSERT (n > 0, status, 
-            LALTRIGSCANCLUSTERH_ECHOICE, LALTRIGSCANCLUSTERH_MSGECHOICE);
-    ASSERT (nclusters > 0, status, 
-            LALTRIGSCANCLUSTERH_ECHOICE, LALTRIGSCANCLUSTERH_MSGECHOICE);
-
-    t_idx  = (INT4 *) LALMalloc (n * sizeof(INT4));
-    LALDCreateVector (status->statusPtr, &t_rho, n);
-    CHECKSTATUSPTR (status);
-
-    /*-- Loop over the clusters --*/
-    for (i = 1; i <= nclusters; i++) {
-
-        cSize = 0;
-
-        /* loop over all the elements of masterList */
-        for (j = 0; j < n; j++) {
-            if (masterList[j].clusterID == i) {
-                t_rho->data [cSize] = masterList[j].rho;
-                t_idx  [cSize] = j;
-
-#if 0
-                if (condenseIn->vrbflag) 
-                {
-                    fprintf (stdout, "%d %e %e %9.f %9.f %.8e\n", 
-                            i, masterList[j].y, masterList[j].z, 
-                            masterList[j].tc_sec, masterList[j].tc_ns,
-                            masterList[j].rho);
-                }
-#endif
-
-                cSize ++;
-            }
-        }
-        t_rho->length = cSize;
-
-        /* Find the loudest event in this cluster */
-        LALDMax ( status->statusPtr, &maxResult, t_rho, &maxResultIdx);
-        CHECKSTATUSPTR (status);
-
-        (*condenseOut)[i-1].y          = masterList[t_idx[maxResultIdx]].y;
-        (*condenseOut)[i-1].z          = masterList[t_idx[maxResultIdx]].z;
-        (*condenseOut)[i-1].tc_sec     = masterList[t_idx[maxResultIdx]].tc_sec;
-        (*condenseOut)[i-1].tc_ns      = masterList[t_idx[maxResultIdx]].tc_ns;
-        (*condenseOut)[i-1].rho        = masterList[t_idx[maxResultIdx]].rho;
-        (*condenseOut)[i-1].master_idx = t_idx[maxResultIdx];
-        (*condenseOut)[i-1].nelements  = cSize;
-
-#if 0
-        if (condenseIn->vrbflag)
-        {
-            fprintf (stderr, 
-                    "Found cluster %3d of %3d (%3d members) max snr index %3d %9d %9d %e\n", 
-                    i, nclusters, cSize, 
-                    (*condenseOut)[i-1].master_idx,
-                    (INT4)((*condenseOut)[i-1].tc_sec),
-                    (INT4)((*condenseOut)[i-1].tc_ns),
-                    (*condenseOut)[i-1].rho);
-        }
-#endif
-
-    } /* Loop over clusters */
-
-    /* Free memory */
-    if (t_idx) LALFree (t_idx);
-    if (t_rho) 
+    for (i=0; i<size; i++)
     {
-        LALDDestroyVector (status->statusPtr, &t_rho);
-        CHECKSTATUSPTR (status);
+        mid = list[i];
+        unSortedSnr->data[i] = condenseIn->masterList[mid].rho;
     }
+
+    LALSHeapIndex(status->statusPtr, heapSortIndex, unSortedSnr); 
+    CHECKSTATUSPTR( status );
+
+    mid = list[heapSortIndex->data[size-1]];
+
+    /*-- Allocate memory for output --*/
+    if ( !(*condenseOut = (trigScanClusterOut*) 
+                LALRealloc(*condenseOut, 
+                    sizeof(trigScanClusterOut)*(currClusterID)))
+       )
+    {
+        fprintf (stderr, "LALRealloc error in condenseout. \n"); 
+        abort ();
+    }
+
+    (*condenseOut)[currClusterID-1].y          = condenseIn->masterList[mid].y;
+    (*condenseOut)[currClusterID-1].z          = condenseIn->masterList[mid].z;
+    (*condenseOut)[currClusterID-1].tc_sec     = condenseIn->masterList[mid].tc_sec;
+    (*condenseOut)[currClusterID-1].tc_ns      = condenseIn->masterList[mid].tc_ns;
+    (*condenseOut)[currClusterID-1].rho        = condenseIn->masterList[mid].rho;
+    (*condenseOut)[currClusterID-1].master_idx = mid;
+    (*condenseOut)[currClusterID-1].nelements  = size;
+
+    /* Delete the Vectors used for heap sort */
+    XLALDestroyREAL4Vector( unSortedSnr );
+    XLALDestroyINT4Vector( heapSortIndex );
 
     /* Normal exit */
     DETATCHSTATUSPTR(status);
@@ -281,7 +289,7 @@ void LALTrigScanAppendIsolatedTriggers (
     INT4                 i, j, n, ni, n1;
     REAL8                xi, xj, dxij;
     trigScanInputPoint   *masterList=NULL;
-    REAL8                *xx=NULL, *vv=NULL, *nn=NULL;
+    REAL8                *xx=NULL, *vv=NULL;
     INT4                 *mid = NULL;
 
     INITSTATUS (status, 
@@ -291,10 +299,17 @@ void LALTrigScanAppendIsolatedTriggers (
     n            = condenseIn->n;
     masterList   = condenseIn->masterList;
 
-    mid  = LALCalloc (1, (n+1)*sizeof(INT4));
-    xx   = LALCalloc (1, (n+1)*sizeof(REAL8));
-    vv   = LALCalloc (1, (n+1)*sizeof(REAL8));
-    nn   = LALCalloc (1, (n+1)*sizeof(REAL8));
+    /* AT first figure out how many stragglers */
+    for (i=1, n1=0; i<=n; i++) {
+        if (masterList[i-1].clusterID < 1 ) {
+            n1++;
+        }
+    }
+
+    /* Now allocate memory */
+    mid  = LALCalloc (1, (n1+1)*sizeof(INT4));
+    xx   = LALCalloc (1, (n1+1)*sizeof(REAL8));
+    vv   = LALCalloc (1, (n1+1)*sizeof(REAL8));
 
     ASSERT (condenseOut, 
             status, LALTRIGSCANCLUSTERH_ENULL, LALTRIGSCANCLUSTERH_MSGENULL);
@@ -304,7 +319,7 @@ void LALTrigScanAppendIsolatedTriggers (
             LALTRIGSCANCLUSTERH_ECHOICE, LALTRIGSCANCLUSTERH_MSGECHOICE);
     ASSERT (*nclusters >= 0, status, 
             LALTRIGSCANCLUSTERH_ECHOICE, LALTRIGSCANCLUSTERH_MSGECHOICE);
-    ASSERT (xx && vv && nn && mid,
+    ASSERT (xx && vv && mid,
             status, LALTRIGSCANCLUSTERH_ENULL, LALTRIGSCANCLUSTERH_MSGENULL);
 
 #if 0
@@ -316,7 +331,6 @@ void LALTrigScanAppendIsolatedTriggers (
             n1++;
             xx[n1]  = masterList[i-1].tc_sec + masterList[i-1].tc_ns/1.0e9;
             vv[n1]  = masterList[i-1].rho;
-            nn[n1]  = (REAL8)(masterList[i-1].clusterID);
             mid[n1] = i-1; 
 
 #if 0
@@ -341,6 +355,18 @@ void LALTrigScanAppendIsolatedTriggers (
         {
             xj = xx[j];
             dxij = fabs( xi - xj );
+
+            /* We can now the following simplification - since the stragglers
+             * are also time ordered - if (xj-xi) exceeds condenseIn->bin_time
+             * then it is meaningless to continue this loop - so ABORT. Note
+             * that the test has to be done on (xj-xi) (order is important
+             * here).
+             */
+            if ( (xj-xi) > condenseIn->bin_time )
+            {
+                break;
+            }
+
             if ( dxij <= condenseIn->bin_time )
             {
                 ni = ni + 1;
@@ -353,12 +379,10 @@ void LALTrigScanAppendIsolatedTriggers (
 
         /* We are now ready to append the i-th element in this list. The
          * master index has to be de-referenced to k first in order to do
-         * this correctly
+         * this correctly.
          */
         {
-            INT4 k;
-
-            k = mid[i];
+            INT4 k = mid[i];
 
             /*-- Allocate memory for output --*/
             if ( !(*condenseOut = (trigScanClusterOut*) 
@@ -386,10 +410,6 @@ void LALTrigScanAppendIsolatedTriggers (
             /* After adding this element, print it to stderr and stdout */
             if (condenseIn->vrbflag) 
             {
-                fprintf (stdout, "%4d %e %e %9.f %9.f %.8e\n", 
-                        (*nclusters), masterList[k].y, masterList[k].z, 
-                        masterList[k].tc_sec, masterList[k].tc_ns,
-                        masterList[k].rho);
                 fprintf (stderr, "Added cluster %3d after %3d (%3d members) max snr index "
                         "%3d %9d %9d %e\n", 
                         (*nclusters), (*nclusters)-1, (*condenseOut)[(*nclusters)-1].nelements, 
@@ -412,7 +432,6 @@ void LALTrigScanAppendIsolatedTriggers (
     /* Free up memory */
     if (xx)  LALFree (xx);
     if (vv)  LALFree (vv);
-    if (nn)  LALFree (nn);
     if (mid) LALFree (mid);
 
     /* Normal exit */

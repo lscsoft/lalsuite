@@ -38,7 +38,7 @@ NRCSID( LALTRIGSCANCLUSTERH,
         "$Id$");
 
 /* Cluster classification: 
- *      -1 for unclassified, 
+ *     -1 for unclassified, 
  *      0 for noise and 
  *      an integer > 0 for a valid cluster 
  */
@@ -88,6 +88,7 @@ typedef struct tagTrigScanClusterIn
     trigScanInputPoint    *masterList;
     trigScanType          scanMethod;
     INT4                  n;
+    REAL8                 maxTcFootPrint;
 }
 trigScanClusterIn;
 
@@ -105,6 +106,8 @@ typedef struct tagTrigScanEpsSearchIn
     trigScanInputPoint   *masterList;
     INT4                 nInputPoints;
     INT4                 clusterID;
+    REAL8                maxTcFootPrint;
+    INT4                 minLoopIdx;
 }
 trigScanEpsSearchInput;
 
@@ -119,9 +122,10 @@ void LALTrigScanClusterDriver (
 /*--- Core functions which carry out clustering ---*/
 trigScanValidEvent XLALTrigScanExpandCluster (
         INT4                  *list, 
-        trigScanInputPoint    *masterList,
+        trigScanClusterIn     *condenseIn,
         INT4                  nPoints,
-        INT4                  currClusterID
+        INT4                  currClusterID,
+        trigScanClusterOut    **condenseOut
         );
 
 void XLALTrigScanGetEpsNeighbourhood (
@@ -131,11 +135,13 @@ void XLALTrigScanGetEpsNeighbourhood (
         trigScanEpsSearchInput  *epsSearchIn
         );
 
-void LALTrigScanClusterMakeOutput (
-        LALStatus               *status,
-        trigScanClusterIn       *condenseIn, 
-        trigScanClusterOut      **condenseOut,
-        INT4                    nclusters
+void LALTrigScanStoreThisCluster (
+        LALStatus                *status,
+        const INT4               *list,
+        const trigScanClusterIn  *condenseIn,
+        const INT4               size,
+        const INT4               currClusterID,
+        trigScanClusterOut       **condenseOut
         );
 
 void LALTrigScanAppendIsolatedTriggers (

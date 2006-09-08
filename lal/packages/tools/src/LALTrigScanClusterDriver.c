@@ -107,6 +107,12 @@ void LALClusterSnglInspiralOverTemplatesAndEndTime (
                     (const SnglInspiralTable **)(eventHead), condenseIn);
             CHECKSTATUSPTR (status);
 
+            if ( condenseIn->vrbflag ) 
+            {
+                fprintf (stderr, "Max tc footprint = %e\n",  
+                        condenseIn->maxTcFootPrint);
+            }
+
             /*-- Call the clustering driver --*/
             LALTrigScanClusterDriver( status->statusPtr, 
                     condenseIn, &condenseOut, &nclusters );
@@ -236,10 +242,11 @@ void LALTrigScanClusterDriver (
             /*-- the next cluster.                                       --*/
 
             if (!(XLALTrigScanExpandCluster ( 
-                            list, masterList, n, currClusterID 
-                            )))
+                            list, condenseIn, n, currClusterID, condenseOut 
+					)))
             {
                 /* the seed point did not agglomerate into a cluster */
+                /* So re-assign it as noise                          */
                 masterList[i].clusterID = TRIGSCAN_NOISE;
             }
             else
@@ -254,33 +261,14 @@ void LALTrigScanClusterDriver (
     /*-- CLUSTERING ENDS --*/
     /*---------------------*/
 
-    /*--- Output ----------*/
+    /*--- How many clusters ---*/
     (*nclusters) = currClusterID-1;  
 
-    /* Worry about output only if there are clusters */
-    if (*nclusters)
-    {
-        /*-- Allocate memory for output --*/
-        if ( !(*condenseOut = (trigScanClusterOut*) 
-                    LALRealloc(*condenseOut, 
-                        sizeof(trigScanClusterOut)*(*nclusters)))
-           )
-        {
-            fprintf (stderr, "LALRealloc error in condenseout. \n"); 
-            abort ();
-        }
-
-        LALTrigScanClusterMakeOutput ( status->statusPtr, 
-                condenseIn, condenseOut, (*nclusters));
-        CHECKSTATUSPTR (status);
-
-    } 
-
-    /* Append the unclustered points if required */
+    /* Append the stragglers if required */
     if ( condenseIn->appendStragglers )
     {
-        LALTrigScanAppendIsolatedTriggers( status->statusPtr, 
-                condenseIn, condenseOut, nclusters);
+        LALTrigScanAppendIsolatedTriggers( status->statusPtr, condenseIn, 
+                condenseOut, nclusters);
         CHECKSTATUSPTR (status);
     }
 
@@ -320,9 +308,13 @@ static void LALTrigScan3DMetricCoeff_TcT0T3  (
     {
         const SnglInspiralTable *thisEvent = NULL;
         INT4  kk;
+        REAL8 a11, a23, a22, a33, a12, a13, tcFootPrint, t0FootPrint, denom;
 
         if (condenseIn->vrbflag)
               fprintf (stderr, "Input trigger list seems to have the metric ... using it \n");
+
+        /* assume that the maxFootPrint in the tc dimensions to be 0.0 */
+        condenseIn->maxTcFootPrint = 0.0L;
 
         /* Now get the metric at that point */
         for (kk=0, thisEvent = (*eventHead); 
@@ -335,6 +327,22 @@ static void LALTrigScan3DMetricCoeff_TcT0T3  (
             masterList[kk].Gamma[3] = thisEvent->Gamma[3]/(condenseIn->sf_volume*(1.0L - condenseIn->mmCoarse));
             masterList[kk].Gamma[4] = thisEvent->Gamma[4]/(condenseIn->sf_volume*(1.0L - condenseIn->mmCoarse));
             masterList[kk].Gamma[5] = thisEvent->Gamma[5]/(condenseIn->sf_volume*(1.0L - condenseIn->mmCoarse));
+
+            /* Now figure out the largest tc and tau0 footPrints of the triggers */
+            a11 = masterList[kk].Gamma[0] ;
+            a12 = masterList[kk].Gamma[1] ;
+            a13 = masterList[kk].Gamma[2] ;
+            a22 = masterList[kk].Gamma[3] ;
+            a23 = masterList[kk].Gamma[4] ;
+            a33 = masterList[kk].Gamma[5] ;
+
+            tcFootPrint = (a23 * a23 - a22 * a33) * a22;
+            denom = (a12*a23 - a22*a13) * (a12*a23 - a22*a13)
+                    - (a23*a23 - a22*a33) * (a12*a12 - a22*a11);
+            tcFootPrint = sqrt( tcFootPrint / denom );
+
+            if ( tcFootPrint  > condenseIn->maxTcFootPrint )
+                  condenseIn->maxTcFootPrint = tcFootPrint ;
         }
 
     }
