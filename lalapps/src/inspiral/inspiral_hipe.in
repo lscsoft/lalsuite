@@ -229,7 +229,6 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
                 # set the appropriate user-tag and the injection filename
                 grbUserTag=usertag+str(inj)
                 injectionFile='HL-INJECTION.'+str(inj)+'.xml' 
-	        #print injectionFile, newUserTag
 
 	        # check if the inspinj job has already be made
 	        inspinj=inspinj_job.check_node(inj)		 
@@ -485,7 +484,6 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
               trig_chunks_analyzed.append(AnalyzedIFOData(chunk,insp,inj))
 
               # jobs already set up, just add the var_arg and parent to trigbank
-              print coinc_done.get_dag_node().get_output()
               trigbank.add_file_arg(coinc_done.get_dag_node().get_output())
               if opts.coincidence: trigbank.add_parent(coinc_done.get_dag_node())
 
