@@ -298,6 +298,7 @@ int main( int argc, char *argv[] )
   TwoDetsTimeAndASource* sourceDets;
   LIGOTimeGPS           sourceTime;
   REAL8                 timeDelay;
+  INT4                  doGRB=0;
 
 
   const CHAR                   ifoList[LAL_NUM_IFO][LIGOMETA_IFO_MAX] = 
@@ -333,6 +334,7 @@ int main( int argc, char *argv[] )
     {"psi0-psi3-cut",       no_argument,   &doPsi0Psi3Cut,            1 },
     {"bcvc",                no_argument,   &doBCVC,                   1 },
     {"do-veto",             no_argument,   &doVeto,                   1 },
+    {"grb",                 no_argument,   &doGRB,                    1 },
     {"g1-slide",            required_argument, 0,                    'b'},
     {"h1-slide",            required_argument, 0,                    'c'},
     {"h2-slide",            required_argument, 0,                    'd'},
@@ -518,11 +520,7 @@ int main( int argc, char *argv[] )
         else if ( ! strcmp( "mchirp_and_eta", optarg ) )
         {
           accuracyParams.test = mchirp_and_eta;
-        }
-        else if ( ! strcmp( "mchirp_and_eta_ext", optarg ) )
-        {
-          accuracyParams.test = mchirp_and_eta_ext;
-        }
+        }       
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -1206,7 +1204,7 @@ int main( int argc, char *argv[] )
 
   /* Check ext-data type */
   fprintf(stdout,"rec: %f  dec: %f\n", locRec, locDec);
-  if ( accuracyParams.test == mchirp_and_eta_ext )
+  if ( accuracyParams.grb )
   {
     if (locRec<0 || locDec<-90) {
       fprintf( stderr, "Error: --location-rec and --location-dec\
@@ -1435,7 +1433,24 @@ int main( int argc, char *argv[] )
     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
     LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );    
   }
+  
+  /* store the H1H2 snr cut for BCVSpin */
+  if (doGRB)
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+        "%s", PROGRAM_NAME );
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+        "--grb");
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );    
+  }
+
+  /* store the grb option value */
+  accuracyParams.grb=doGRB;
  
+
   /* delete the first, empty process_params entry */
   this_proc_param = processParamsTable.processParamsTable;
   processParamsTable.processParamsTable = 
@@ -1704,7 +1719,7 @@ int main( int argc, char *argv[] )
     for ( ifoTwo = 0; ifoTwo < LAL_NUM_IFO; ifoTwo++)
     {
       XLALReturnDetector( &bDet, ifoTwo );
-      if (accuracyParams.test == mchirp_and_eta_ext ) {
+      if ( accuracyParams.grb ) {
 
         sourceTime.gpsSeconds=(INT4)( (endCoincidence+startCoincidence)/2.0 );
         sourceTime.gpsNanoSeconds=0;
@@ -1788,7 +1803,7 @@ int main( int argc, char *argv[] )
     /* don't analyze zero-lag if numSlides>0 */
     if ( numSlides && !slideNum ) continue;
 
-    /* look for coincidences */    
+    /* look for coincidences */ 
     LAL_CALL( LALCreateTwoIFOCoincList(&status, &coincInspiralList,
 	      inspiralEventList, &accuracyParams ), &status);
 
