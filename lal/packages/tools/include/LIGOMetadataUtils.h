@@ -135,7 +135,6 @@ typedef enum
   m1_and_m2, 
   psi0_and_psi3,  
   mchirp_and_eta, 
-  mchirp_and_eta_ext,
   tau0_and_tau3
 } 
 SnglInspiralParameterTest;
@@ -165,6 +164,7 @@ tagSnglInspiralAccuracy
   REAL4       dtau0;
   REAL4       dtau3;
   SnglInspiralParameterTest test;
+  INT4        grb;
 }
 SnglInspiralAccuracy;
 /*</lalVerbatim> */
@@ -190,6 +190,7 @@ tagInspiralAccuracyList
   INT8                      lightTravelTime[LAL_NUM_IFO][LAL_NUM_IFO];
   REAL4                     iotaCutH1H2;
   REAL4                     iotaCutH1L1;
+  INT4                      grb;
 }
 InspiralAccuracyList;
 /*</lalVerbatim> */
