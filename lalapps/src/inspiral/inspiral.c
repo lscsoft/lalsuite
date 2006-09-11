@@ -208,6 +208,10 @@ CHAR *bankSimFileName   = NULL;         /* file contining sim_inspiral  */
 FindChirpBankSimParams bankSimParams = { 0, 0, -1, -1, NULL, -1, NULL, NULL };
                                         /* template bank sim params     */
 
+/* reverse chirp bank option */
+INT4 reverseChirpBank      = 0;           /* enable the reverse chirp     */
+                                        /* template bank option         */
+
 /* output parameters */
 CHAR  *userTag          = NULL;         /* string the user can tag with */
 CHAR  *ifoTag           = NULL;         /* string to tag parent IFOs    */
@@ -1622,6 +1626,7 @@ int main( int argc, char *argv[] )
   fcDataParams->dynRange = fcTmpltParams->dynRange = dynRange;
   fcTmpltParams->deltaT = chan.deltaT;
   fcTmpltParams->fLow = fLow;
+  fcTmpltParams->reverseChirpBank = reverseChirpBank;
 
   /* initialize findchirp filter functions */
   LAL_CALL( LALFindChirpFilterInit( &status, &fcFilterParams, fcInitParams ), 
@@ -2800,7 +2805,8 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "  --bank-file FILE             read template bank parameters from FILE\n"\
 "  --minimal-match M            override bank minimal match with M (sets delta)\n"\
 "  --start-template N           start filtering at template number N in bank\n"\
-"  --stop-templateN             stop filtering at template number N in bank\n"\
+"  --stop-template N            stop filtering at template number N in bank\n"\
+"  --reverse-chirp-bank         filters data using a reverse chirp template bank\n"\
 "\n"\
 "  --sample-rate F              filter data at F Hz, downsampling if necessary\n"\
 "  --resample-filter TYPE       set resample filter to TYPE (ldas|butterworth)\n"\
@@ -2897,6 +2903,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"disable-rsq-veto",        no_argument,       &enableRsqVeto,    0 },
     {"enable-filter-inj-only",  no_argument,       &flagFilterInjOnly,1 },
     {"disable-filter-inj-only", no_argument,       &flagFilterInjOnly,0 },
+    {"reverse-chirp-bank",      no_argument,       &reverseChirpBank, 1 },
     /* these options don't set a flag */
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-start-time-ns",       required_argument, 0,                'A'},
@@ -4487,6 +4494,25 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   {
     fprintf( stderr, "--bank-file must be specified\n" );
     exit( 1 );
+  }
+
+  /* check FindChirpSP is used if reverse chirp bank is specified */
+  if ( reverseChirpBank )
+  {
+    if ( reverseChirpBank && ! ( approximant == FindChirpSP ) )
+    {
+      fprintf( stderr, "--approximant must be FindChirpSP if "
+          "--reverse-chirp-bank is specified\n" );
+      exit( 1 );
+    }
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX,
+        "%s", PROGRAM_NAME );
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX,
+        "--reverse-chirp-bank" );
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
   }
 
   /* check that a random seed for gaussian noise generation has been given */
