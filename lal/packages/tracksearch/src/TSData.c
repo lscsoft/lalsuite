@@ -710,65 +710,78 @@ LALSVectorPolynomialInterpolation(
 {
   SInterpolatePar               interpolateParams;
   SInterpolateOut               interpolateResult;
-  REAL4Vector                   *xfrag;
-  REAL4Vector                   *yfrag;
-  UINT4                         i,j,k;
-  UINT4                         bottomElement,topElement,currentElement;
+  REAL4Vector                   *xfrag=NULL;
+  REAL4Vector                   *yfrag=NULL;
+  UINT4                         i=0;
+  INT4                          j=0;
+  INT4                          k=0;
+  INT4                         bottomElement,topElement,currentElement;
   BOOLEAN                       cut;
 
   INITSTATUS(status,"LALSVectorPolynomialInterpolation",TSDATAC);
   ATTATCHSTATUSPTR (status);
   ASSERT(range->length > 5,status,TSDATA_EINTP,TSDATA_MSGEINTP);
-  LALCreateVector(status,&xfrag,5);
-  LALCreateVector(status,&yfrag,5);
-  for (i=0;i<newRange->length;i++);
-  {
-    /*
-     *Setup params
-     */
-
-    /* 
-     * Domain is ordered so use bisection technique to extract domain
-     * point of interest.
-     * Since we are interpolating using 5 points from the orignal range
-     */
-    currentElement=((UINT4) (domain->length/2));
-    topElement=domain->length;
-    bottomElement=0;
-    cut=1;
-    while (cut)
-      {  
-	if (newDomain->data[i] >= domain->data[currentElement])
-	  {
-	    bottomElement=currentElement;
-	    currentElement=((UINT4) (topElement-bottomElement)/2)+bottomElement;
-	  }
-	else
-	  {
-	    topElement=currentElement;
-	    currentElement=topElement-((UINT4) (topElement-bottomElement)/2);
-	  }
-	if ((topElement-bottomElement) == 1) cut=0;
-      }
-    if (currentElement < 2) currentElement=3;
-    if ((domain->length - currentElement) < 2)
-      currentElement=domain->length - 3;
-    j=0;
-    for (k=currentElement-2;i<currentElement+3;k++)
-      {
-	xfrag->data[j]=domain->data[k];
-	yfrag->data[j]=range->data[k];
-	j++;
-      }
-    interpolateParams.n=5;
-    interpolateParams.x=xfrag->data;
-    interpolateParams.y=yfrag->data;
-    LALSPolynomialInterpolation(status,
-				&interpolateResult,
-				newDomain->data[i],
-				&interpolateParams);
-    newRange->data[i]=interpolateResult.y;
-  }
+  LALCreateVector(status->statusPtr,&xfrag,5);
+  CHECKSTATUSPTR(status);
+  LALCreateVector(status->statusPtr,&yfrag,5);
+  CHECKSTATUSPTR(status);
+  for (i=0;i<newRange->length;i++)
+    {
+      /*
+       *Setup params
+       */
+      
+      /* 
+       * Domain is ordered so use bisection technique to extract domain
+       * point of interest.
+       * Since we are interpolating using 5 points from the orignal range
+       */
+      currentElement=((UINT4) (domain->length/2));
+      topElement=domain->length;
+      bottomElement=0;
+      cut=1;
+      while (cut)
+	{  
+	  if (newDomain->data[i] >= domain->data[currentElement])
+	    {
+	      bottomElement=currentElement;
+	      currentElement=((UINT4) (topElement-bottomElement)/2)+bottomElement;
+	    }
+	  else
+	    {
+	      topElement=currentElement;
+	      currentElement=topElement-((UINT4) (topElement-bottomElement)/2);
+	    }
+	  if ((topElement-bottomElement) == 1) cut=0;
+	}
+      if (currentElement < 1) currentElement=2;
+      if ((domain->length - currentElement) < 2)
+	currentElement=domain->length - 2;
+      for (j=0,k=currentElement-2;k<currentElement+3;k++,j++)
+	{
+	  xfrag->data[j]=domain->data[k];
+	  yfrag->data[j]=range->data[k];
+	}
+      interpolateParams.n=5;
+      interpolateParams.x=xfrag->data;
+      interpolateParams.y=yfrag->data;
+      LALSPolynomialInterpolation(status->statusPtr,
+				  &interpolateResult,
+				  newDomain->data[i],
+				  &interpolateParams);
+      CHECKSTATUSPTR(status);
+      newRange->data[i]=interpolateResult.y;
+    }
+  if (xfrag)
+    {
+      LALDestroyVector(status->statusPtr,&xfrag);
+      CHECKSTATUSPTR(status);
+    }
+  if (yfrag)
+    {
+      LALDestroyVector(status->statusPtr,&yfrag);
+      CHECKSTATUSPTR(status);     
+    }
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }/* End interpolate vector like Matlab interp1 */
@@ -1028,17 +1041,20 @@ void DumpTFImage(
   CHAR       PGM[5]=".pgm";
   CHAR       DAT[5]=".dat";
   CHAR       AUX[5]=".aux";
+  CHAR       newFilename[256]="";
   INT4       scale=255;
-  
+  static INT4 callCounter=0;
+
   /* Alloc for two filenames dat and pgm */
-  pgmfilename = (CHAR*)LALCalloc((strlen(filename)+strlen(PGM)+1),sizeof(CHAR));
-  datfilename = (CHAR*)LALCalloc((strlen(filename)+strlen(DAT)+1),sizeof(CHAR));
-  auxfilename = (CHAR*)LALCalloc((strlen(filename)+strlen(DAT)+1),sizeof(CHAR));
-  strcat(pgmfilename,filename);
+  sprintf(newFilename,"%s_%i",filename,callCounter++);
+  pgmfilename = (CHAR*)LALCalloc((strlen(newFilename)+strlen(PGM)+1),sizeof(CHAR));
+  datfilename = (CHAR*)LALCalloc((strlen(newFilename)+strlen(DAT)+1),sizeof(CHAR));
+  auxfilename = (CHAR*)LALCalloc((strlen(newFilename)+strlen(DAT)+1),sizeof(CHAR));
+  strcat(pgmfilename,newFilename);
   strcat(pgmfilename,PGM);
-  strcat(datfilename,filename);
+  strcat(datfilename,newFilename);
   strcat(datfilename,DAT);
-  strcat(auxfilename,filename);
+  strcat(auxfilename,newFilename);
   strcat(auxfilename,AUX);
 
   /* Getting max image value to normalize to scale */
