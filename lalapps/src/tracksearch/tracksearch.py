@@ -148,8 +148,6 @@ class tracksearchCheckIniFile:
             if str(optValue).__contains__('/'):
                 if not os.path.exists(str(optValue)):
                     self.errList.append('Can not find python library file:'+str(entry)+':'+str(optValue))
-
-
     #end checkOpts def
 
     def numberErrors(self):
@@ -161,6 +159,11 @@ class tracksearchCheckIniFile:
         for error in self.errList:
             print error
     #end printErrorList
+
+    def injectSecTest(self):
+        injectSecFound=self.iniOpts.has_section('tracksearchinjection')
+        return injectSecFound
+    #end injectSecTest method
 #end Class
 
             
@@ -210,13 +213,25 @@ class tracksearchConvertSegList:
 
 class tracksearchTimeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     """
-    The class running a TIME instance of the tracksearch code
+    The class running a TIME instance of the tracksearch code.  This
+    code must be invoked specifying the type of job to create.  The argument
+    is a string either -> normal  -> injection
+    Then the appropriate ini options will be used to create the job.
     """
-    def __init__(self,cp,block_id,layer_id,dagDir):
+    def __init__(self,cp,block_id,layer_id,dagDir,jobType,injectFile):
+        self.injectFile=injectFile
         self.dagDirectory=dagDir
         #ConfigParser object -> cp
         self.__executable = cp.get('condor','tracksearch')
         self.__universe = cp.get('condor','universe');
+        self.jobType=str(jobType).lower().rstrip().lstrip()
+        self.validJobTypes=['normal','injection']
+        #If invalid type is requested display warning and
+        #assume a normal injection was requested
+        if not self.validJobTypes.__contains__(self.jobType):
+            print "Warning: You requested invalid tracksearchTimeJob type!"
+            print "Assuming you meant -> normal <- job type."
+            self.jobType='normal'
         pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
         pipeline.AnalysisJob.__init__(self,cp)
         blockID=block_id
@@ -229,6 +244,13 @@ class tracksearchTimeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
             self.add_ini_opts(cp,sec)
         for sec in ['tracksearchtime']:
             self.add_ini_opts(cp,sec)
+        #Check the type of job this is and add in the injection options
+        #if needed!
+        if (self.jobType.__contains__(self.validJobTypes[1])):
+            for sec in ['tracksearchinjection']:
+                self.add_ini_opts(cp,sec)
+            self.add_opt('inject_file',os.path.basename(self.injectFile))
+            self.add_condor_cmd('transfer_input_files',self.injectFile)
         #Read expected job sampling rate
         sampleRate=float(cp.get('tracksearchtime','sample_rate'))
         #Read expected TF overlapping percentage
@@ -556,13 +578,18 @@ class tracksearchClusterNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
         
 class tracksearch:
     """
-    The class which wraps all 100 second blocks into a uniq DAG
+    The class which wraps all X sized second blocks into a uniq DAG
     we expect an input of a Science Segment of exactly n seconds
     specified via the ini file
     """
     #TO HANDLE FUTURE COINCIDENT ANALYSIS WE NEED TO ADJUST DAGDIR FOR
     #EACH IFO THEN MAKE A CLUSTERING DIR OR SOMETHING LIKE THAT
-    def __init__(self,cparser,scienceSegment,logfile):
+    def __init__(self,cparser,scienceSegment,injectFile,logfile):
+        self.injectFile=str(injectFile)
+        if self.injectFile == "":
+            self.invokeFlag = False
+        else:
+            self.invokeFlag = True
         #Expects a fixed size PsuedoScience Segment
         #The dag for this run will be then run from this data
         self.sciSeg=scienceSegment
@@ -659,7 +686,16 @@ class tracksearch:
         #Setup the jobs after queries to LSCdataFind as equal children
         block_id=self.blockID
         layer_id=layerID
-        tracksearchTime_job=tracksearchTimeJob(self.cp,block_id,layer_id,dagDir)
+        #If invokeFlag -> True set option
+        jobType='normal'
+        if self.invokeFlag == True:
+            jobType='injection'
+        tracksearchTime_job=tracksearchTimeJob(self.cp,
+                                               block_id,
+                                               layer_id,
+                                               dagDir,
+                                               jobType,
+                                               self.injectFile)
         prevLayerJobList=[]
         #THE FOLLOWIN LOOP NEEDS TO BE REVISED
         #WE ARE LOOSING THE CACHE NAMES IN THE PREVIOUS LOOP

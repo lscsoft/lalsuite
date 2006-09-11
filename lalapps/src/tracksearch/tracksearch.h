@@ -53,6 +53,20 @@
 #define maxFilenameLength 2048
 
 /*
+ * LALapps Structures
+ */
+typedef struct
+tagTSappsInjectParams
+{
+  REAL8    startTimeOffset; /*Seconds to wait before first inject*/
+  UINT4    numOfInjects; /*Number of total injects to try and do*/
+  REAL8    injectSpace; /*Number of seconds between injects*/
+  REAL8    scaleFactor; /*Multiplicative scale factor sets ~SNR*/
+  REAL8    sampleRate; /*Sample rate to make data at if diffs from file*/
+  CHARVector *injectTxtFile; /*Path&Name of file to inject*/
+}TSappsInjectParams;
+
+/*
  * lalapps functions
  */
 /*
@@ -62,6 +76,7 @@ void
 LALappsTrackSearchPrepareData(
 			      LALStatus*,      
 			      REAL4TimeSeries*,
+			      REAL4TimeSeries*,
 			      TSSegmentVector*,
 			      TSSearchParams);
 
@@ -70,6 +85,7 @@ LALappsTrackSearchInitialize(LALStatus*,
 			     int argc,
 			     char* argv[],
 			     TSSearchParams*,
+			     TSappsInjectParams*,
 			     CHARVector**,
 			     CHARVector**);
 void
@@ -101,6 +117,7 @@ LALappsDoTSeriesSearch(LALStatus*,
 void
 LALappsDoTimeSeriesAnalysis(LALStatus*,
 			    TSSearchParams,
+			    TSappsInjectParams,
 			    CHAR*,
 			    CHARVector*);
 
@@ -136,6 +153,11 @@ void
 LALappsWriteBreveResults(LALStatus*,
 			 const CHAR*,
 			 TrackSearchOut);
+
+void
+LALappsCreateInjectableData(LALStatus*,
+			    REAL4TimeSeries**,
+			    TSappsInjectParams);
 /*
  * Following routine need to be fixed
  * they limp along and are prone to error

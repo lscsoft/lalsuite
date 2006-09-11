@@ -169,6 +169,7 @@ int main (int argc, char *argv[])
   /* Variables that will be in final produciton code */
   LALStatus         status;/* Error containing structure */
   TSSearchParams   *params;/*Large struct for all params*/
+  TSappsInjectParams *injectParams;/*Struct for performing injects*/
   CHARVector       *cachefile=NULL;/* name of file with frame cache info */
   CHAR            *cachefileDataField=NULL;/*field of cachefile*/
   CHARVector       *dirpath=NULL;
@@ -176,7 +177,7 @@ int main (int argc, char *argv[])
   /*
    *Sleep for Attaching DDD 
    */
-  unsigned int doze = 0;
+  unsigned int doze = 8;
   pid_t myPID;
   myPID = getpid( );
   fprintf( stdout, "pid %d sleeping for %d seconds\n", myPID, doze );
@@ -193,19 +194,28 @@ int main (int argc, char *argv[])
   lal_errhandler = LAL_ERR_EXIT;
   lal_errhandler = LAL_ERR_RTRN;
   set_debug_level("MEMDBG");
+  set_debug_level("ERROR | WARNING | MEMDBG");
   /*  set_debug_level("ERROR | WARNING | MEMDBG");*/
-  set_debug_level("ERROR | WARNING ");
-  /*    set_debug_level("ALLDBG");*/
+  /*  set_debug_level("ERROR | WARNING ");*/
+  /*      set_debug_level("ALLDBG");*/
 
   /*
    * Initialize status structure 
    */
   
   params=LALMalloc(sizeof(TSSearchParams));
+  injectParams=LALMalloc(sizeof(TSappsInjectParams));
+
   /* 
    * Parse incoming search arguments initialize variables 
    */
-  LALappsTrackSearchInitialize(&status,argc,argv,params,&(cachefile),&(dirpath));
+  LALappsTrackSearchInitialize(&status,
+			       argc,
+			       argv,
+			       params,
+			       injectParams,
+			       &(cachefile),
+			       &(dirpath));
 
   /*
    * Check params structure what analysis are we doing?
@@ -218,7 +228,11 @@ int main (int argc, char *argv[])
        */
       if (cachefile != NULL)
 	cachefileDataField=cachefile->data;
-      LALappsDoTimeSeriesAnalysis(&status,*params,cachefileDataField,dirpath);
+      LALappsDoTimeSeriesAnalysis(&status,
+				  *params,
+				  *injectParams,
+				  cachefileDataField,
+				  dirpath);
     }
   else
     {
@@ -249,6 +263,11 @@ int main (int argc, char *argv[])
     LALFree(params->injectSingleMap);
   if (params)
     LALFree(params);   
+  if (injectParams->injectTxtFile)
+    LAL_CALL(LALCHARDestroyVector(&status,&(injectParams->injectTxtFile)),
+	     &status);
+  if (injectParams)
+    LALFree(injectParams);
   /* 
    * Done freeing for search params struct memory
    */
@@ -276,8 +295,10 @@ int main (int argc, char *argv[])
  */
 void LALappsTrackSearchPrepareData( LALStatus*        status,
 				    REAL4TimeSeries  *dataSet,
+				    REAL4TimeSeries  *injectSet,
 				    TSSegmentVector  *dataSegments,
 				    TSSearchParams    params)
+     /* Add option NULL or with data called REAL4TimeSeries injectSet */
 {
   AverageSpectrumParams     avgPSDParams;
   CHARVector               *dataLabel=NULL;
@@ -512,8 +533,21 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
   /*
    * End the high pass filter
    */
-
-
+  /*
+   * Add in injections if injection variable is not NULL copy up to 
+   * end of dataSet series
+   */
+  if (injectSet != NULL)
+    {
+      if (injectSet->data->length >= dataSet->data->length)
+	for (j=0;j<dataSet->data->length;j++)
+	  dataSet->data->data[j]=
+	    dataSet->data->data[j]+injectSet->data->data[j];
+      else
+	for (j=0;j<injectSet->data->length;j++)
+	  dataSet->data->data[j]=
+	    dataSet->data->data[j]+injectSet->data->data[j];
+    }
   /*
    * Split incoming data into Segment Vector
    */
@@ -522,6 +556,11 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
 				       dataSegments,
 				       params),
 	   status);
+  /*
+   * If injection requested inject a single waveform into each segment
+   * scaled to fit the segment sample rate and use specified scale factor
+   * We don't bandpass the injected waveform!!
+   */
   /*
    * If we are to whiten first let us calculate the 
    * average PSD using the non segment data structure
@@ -815,12 +854,13 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
  * Setup params structure by parsing the command line
  */
 void LALappsTrackSearchInitialize(
-				  LALStatus       *status,
-				  int              argc,
-				  char            *argv[], 
-				  TSSearchParams  *params,
-				  CHARVector     **dPtrCachefile,
-				  CHARVector     **dPtrDirPath
+				  LALStatus          *status,
+				  int                 argc,
+				  char               *argv[], 
+				  TSSearchParams     *params,
+				  TSappsInjectParams *injectParams,
+				  CHARVector        **dPtrCachefile,
+				  CHARVector        **dPtrDirPath
 				  )
 {
   /*Local Variables*/
@@ -863,9 +903,14 @@ void LALappsTrackSearchInitialize(
       {"inject_map",          required_argument,  0,    'D'},
       {"sample_rate",         required_argument,  0,    'E'},
       {"smooth_average_spectrum", required_argument,    0,    'F'},
-      {"filter_high_pass", required_argument, 0,  'G'},
-      {"filter_low_pass", required_argument, 0, 'H'},
-      {"verbosity",required_argument,0,'I'},
+      {"filter_high_pass",    required_argument,  0,    'G'},
+      {"filter_low_pass",     required_argument,  0,    'H'},
+      {"verbosity",           required_argument,  0,    'I'},
+      {"inject_offset",       required_argument,  0,    'J'},
+      {"inject_count",        required_argument,  0,    'K'},
+      {"inject_space",        required_argument,  0,    'L'},
+      {"inject_file",         required_argument,  0,    'M'},
+      {"inject_scale",        required_argument,  0,    'N'},
       {0,                     0,                  0,      0}
     };
   
@@ -930,6 +975,13 @@ void LALappsTrackSearchInitialize(
   strcpy(params->calibrateIFO,"L1");
   params->injectMapCache=NULL;
   params->injectSingleMap=NULL;
+  /* Inject params defaults */
+  injectParams->startTimeOffset=0;
+  injectParams->numOfInjects=0;
+  injectParams->injectSpace=0;
+  injectParams->scaleFactor=0;
+  injectParams->injectTxtFile=NULL;
+  injectParams->sampleRate=params->SamplingRate;
   /* 
    * Parse the command line arguments 
    */
@@ -1252,6 +1304,7 @@ void LALappsTrackSearchInitialize(
 	case 'E':
 	  {
 	    params->SamplingRate=atof(optarg);
+	    injectParams->sampleRate=params->SamplingRate;
 	  }
 	  break;
 
@@ -1293,14 +1346,47 @@ void LALappsTrackSearchInitialize(
 	      };
 	  }
 	  break;
-	      
+	
+	case 'J':
+	  {
+	    injectParams->startTimeOffset=atof(optarg);
+	  }
+	  break;
+
+	case 'K':
+	  {
+	    injectParams->numOfInjects=atoi(optarg);
+	  }
+	  break;
+
+	case 'L':
+	  {
+	    injectParams->injectSpace=atof(optarg);
+	  }
+	  break;
+
+	case 'M':
+	  {
+	    LAL_CALL(LALCHARCreateVector(status,
+					 &(injectParams->injectTxtFile),
+					 strlen(optarg)+1),
+		     status);
+	    memcpy(injectParams->injectTxtFile->data,optarg,strlen(optarg)+1);
+	  }
+	  break;
+
+	case 'N':
+	  {
+	    injectParams->scaleFactor=atof(optarg);
+	  }
+	  break;
+
 	default :
 	  {
 	    fprintf(stderr,TRACKSEARCHC_MSGEMISC);
 	    exit(TRACKSEARCHC_EMISC);
 	  }
 	  break;
-	  
 	};
     };
   /* 
@@ -1934,14 +2020,16 @@ LALappsDoTSeriesSearch(LALStatus         *status,
  */
 
 void
-LALappsDoTimeSeriesAnalysis(LALStatus       *status,
-			    TSSearchParams   params,
-			    CHAR            *cachefile,
-			    CHARVector      *dirpath)
+LALappsDoTimeSeriesAnalysis(LALStatus          *status,
+			    TSSearchParams      params,
+			    TSappsInjectParams  injectParams,
+			    CHAR               *cachefile,
+			    CHARVector         *dirpath)
 {
   TSSegmentVector  *SegVec = NULL;/*Holds array of data sets*/
   TSCreateParams    SegVecParams;/*Hold info for memory allocation*/
   REAL4TimeSeries  *dataset = NULL;/*Structure holding entire dataset to analyze*/
+  REAL4TimeSeries  *injectSet = NULL;/*Struct for holding inject data*/
   UINT4             i;  /* Counter for data breaking */
   INT4              j;
   UINT4             productioncode = 1; /* Variable for ascii or frame */
@@ -2004,6 +2092,20 @@ LALappsDoTimeSeriesAnalysis(LALStatus       *status,
     {
       LALappsGetAsciiData(status,&params,dataset,dirpath);
     }
+  /*
+   * If injections were requested load them up!  We return a NULL time
+   * series variable if no injection is to be done!
+   */
+  if (injectParams.injectTxtFile != NULL)
+    {
+      if (params.verbosity >= verbose)
+	printf("Preparing the injection data!\n");
+      LALappsCreateInjectableData(status,
+				  &injectSet,
+				  injectParams);
+    }
+  if ((params.verbosity >= printFiles) && (injectSet != NULL))
+    print_real4tseries(injectSet,"PreparedInjectData.diag");
   /* 
    * Prepare the data for the call to Tracksearch 
    */
@@ -2014,7 +2116,7 @@ LALappsDoTimeSeriesAnalysis(LALStatus       *status,
 
   if (params.verbosity >= printFiles)
     print_real4tseries(dataset,"InputReal4TimeSeriesPrePrepare.diag");
-  LALappsTrackSearchPrepareData(status,dataset,SegVec,params);
+  LALappsTrackSearchPrepareData(status,dataset,injectSet,SegVec,params);
   if (params.verbosity >= printFiles)
     print_real4tseries(dataset,"InputReal4TimeSeriesPostPrepare.diag");
 
@@ -2037,9 +2139,11 @@ LALappsDoTimeSeriesAnalysis(LALStatus       *status,
   if (SegVec)
     LAL_CALL(LALDestroyTSDataSegmentVector(status,SegVec),
 	     status);
-
   if (dataset)
     LAL_CALL(LALDestroyREAL4TimeSeries(status,dataset),
+	     status);
+  if (injectSet)
+    LAL_CALL(LALDestroyREAL4TimeSeries(status,injectSet),
 	     status);
 }
 /*
@@ -2498,6 +2602,136 @@ void LALappsDestroyCurveDataSection(LALStatus    *status,
   RETURN(status);
 }
 /* End function to deallocate the curve structures */
+
+
+void LALappsCreateInjectableData(LALStatus           *status,
+				 REAL4TimeSeries    **injectSet,
+				 TSappsInjectParams   params)
+{
+  UINT4  i=0;
+  UINT4  j=0;
+  UINT4  k=0;
+  UINT4 timePoints=0;
+  UINT4 offSetPoints=0;
+  UINT4 lineCount=0;
+  UINT4 newLineCount=0;
+  UINT4 pointLength=0;
+
+  REAL4Sequence   *domain=NULL;
+  REAL4Sequence   *range=NULL;
+  REAL4Sequence   *waveDomain=NULL;
+  REAL4Sequence   *waveRange=NULL;
+  REAL4TimeSeries *ptrInjectSet=NULL;
+  REAL8            fileDuration=0;
+  FILE            *fp=NULL;
+  CHAR             c;
+  const LIGOTimeGPS        gps_zero = LIGOTIMEGPSZERO;
+  /*
+   * Try and load the file
+   */
+  fp = fopen(params.injectTxtFile->data,"r");
+  if (!fp)
+    {
+      fprintf(stderr,TRACKSEARCHC_MSGEFILE);
+      exit(TRACKSEARCHC_EFILE);
+    }
+  /*
+   * Count the lines in the file
+   */
+  while ((c = fgetc(fp)) != EOF)
+    if (c == '\n')
+      lineCount++;
+  /*printf("Lines found in input wave file: %i\n",lineCount);*/
+  rewind(fp);
+  /*
+   * Allocate RAM to load up values
+   */
+  LAL_CALL(LALCreateVector(status,&domain,lineCount),status);
+  LAL_CALL(LALCreateVector(status,&range,lineCount),status);
+  /*
+   * Expecting 2C data tstep and amp
+   */
+  for (i=0;i<lineCount;i++)
+    {
+      fscanf(fp,"%f %f\n",&domain->data[i],&range->data[i]);
+      range->data[i]=(range->data[i]*params.scaleFactor);
+    }
+  fileDuration=domain->data[domain->length-1]-domain->data[0];
+  newLineCount=params.sampleRate*fileDuration;
+  offSetPoints=params.sampleRate*params.startTimeOffset;
+  timePoints=params.sampleRate*params.injectSpace;
+  LAL_CALL(LALCreateVector(status,&waveDomain,newLineCount),status);
+  LAL_CALL(LALCreateVector(status,&waveRange,newLineCount),status);
+
+  for (i=0;i<waveDomain->length;i++)
+    {
+      waveDomain->data[i]=i*(1/params.sampleRate);
+      waveRange->data[i]=1.0;
+    }
+  /*
+   * Call interpolating routine to create resample waveform
+   */
+  LAL_CALL(LALSVectorPolynomialInterpolation(status,
+					     waveDomain,
+					     waveRange,
+					     domain,
+					     range),
+	   status);
+
+  pointLength=(params.numOfInjects*
+    (waveDomain->length+timePoints))+offSetPoints;
+  LAL_CALL(
+	   LALCreateREAL4TimeSeries(status,
+				    injectSet,
+				    "Injections",
+				    gps_zero,
+				    0,
+				    1/params.sampleRate,
+				    lalADCCountUnit,
+				    pointLength),
+	   status);
+  /*
+   * Copy the data into a new variable to be returned
+   */
+  i=0;
+  ptrInjectSet = *injectSet;
+  if (ptrInjectSet != NULL)
+    {
+      /*Inject Offset silence*/
+      for (j=0;j<offSetPoints;j++)
+	{
+	  (*injectSet)->data->data[i] = 0;
+	  i++;
+	}
+      /*Loop over the requested injections and silence*/
+      for (k=0;k<params.numOfInjects;k++)
+	{
+	  for (j=0;j<waveDomain->length;j++)
+	    {
+	      (*injectSet)->data->data[i] = waveRange->data[j];
+	      i++;
+	    }
+	  for (j=0;j<timePoints;j++)
+	    {
+	      (*injectSet)->data->data[i] = 0;
+	      i++;
+	    }
+	}
+    }
+  if (domain)
+    LAL_CALL(LALDestroyVector(status,&domain),status);
+  if (range)
+    LAL_CALL(LALDestroyVector(status,&range),status);
+  if (waveRange)
+    LAL_CALL(LALDestroyVector(status,&waveRange),status);
+  if (waveDomain)
+    LAL_CALL(LALDestroyVector(status,&waveDomain),status);
+return;
+}
+/*
+ * End of function LALappsCreateInjectableData to create injectable
+ * data structure for calibration etc
+ */
 
 /*
  * End of Semi Private functions
