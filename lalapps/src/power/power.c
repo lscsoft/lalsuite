@@ -56,7 +56,6 @@ RCSID( "power $Id$");
 
 #define TRUE       1
 #define FALSE      0
-#define SCALE      1e10
 
 /*
  * ============================================================================
@@ -72,7 +71,6 @@ static struct {
 
  	REAL4 simDistance;          /* Distance at which the sim waveforms have been generated */
 	int cluster;                /* TRUE == perform clustering          */
-	int estimateHrss;           /* TRUE == estimate hrss               */
 	CHAR *comment;              /* user comment                        */
 	int FilterCorruption;       /* samples corrupted by conditioning   */
 	INT4 maxSeriesLength;       /* RAM-limited input length            */
@@ -85,7 +83,6 @@ static struct {
 	LIGOTimeGPS stopEpoch;      /* gps stop time                       */
 	int verbose;
 	int calibrated;             /* input is double-precision h(t)      */
-	int getcaltimeseries;       /* flag to read in double time series  */ 
 	REAL8 high_pass;            /* conditioning high pass freq (Hz)    */
 	REAL8 cal_high_pass;        /* double->single high pass freq (Hz)  */
 	int bandwidth;
@@ -190,7 +187,6 @@ static void print_usage(char *program)
 "	 --channel-name <string>\n" \
 "	[--cluster]\n" \
 "	[--debug-level <level>]\n" \
-"	[--estimate-hrss]\n" \
 "	[--max-event-rate <Hz>]\n" \
 "	 --filter-corruption <samples>\n" \
 "	 --frame-cache <cache file>\n" \
@@ -401,7 +397,6 @@ void parse_command_line(
 		{"calibration-cache",   required_argument, NULL,           'B'},
 		{"channel-name",        required_argument, NULL,           'C'},
 		{"cluster",             no_argument, &options.cluster,      TRUE},
-		{"estimate-hrss",       no_argument, &options.estimateHrss, TRUE},
 		{"debug-level",         required_argument, NULL,           'D'},
 		{"max-event-rate",      required_argument, NULL,           'F'},
 		{"filter-corruption",	required_argument, NULL,           'j'},
@@ -456,7 +451,6 @@ void parse_command_line(
 	options.calCacheFile = NULL;	/* default */
 	options.channelName = NULL;	/* impossible */
 	options.cluster = FALSE;	/* default */
-	options.estimateHrss = FALSE;	/* default */
 	options.comment = "";		/* default */
 	options.FilterCorruption = -1;	/* impossible */
 	options.mdcchannelName = NULL;	/* default */
@@ -467,7 +461,6 @@ void parse_command_line(
 	options.seed = 1;	        /* default */
 	options.verbose = FALSE;	/* default */
 	options.calibrated = FALSE;	/* default */
-	options.getcaltimeseries = FALSE; /* default */
 	options.high_pass = -1.0;	/* impossible */
 	options.cal_high_pass = -1.0;	/* impossible */
 	options.max_event_rate = 0;	/* default */
@@ -862,11 +855,14 @@ void parse_command_line(
 	options.PSDAverageLength = block_commensurate(options.PSDAverageLength, options.windowLength, params->windowShift);
 
 	/*
-	 * Ensure calibration cache is given when the hrss estimation option is 
-	 * turned on
+	 * Warn if calibration cache is not provided that a unit response
+	 * will be used for injections and h_rss.
 	 */
-	if(options.estimateHrss && !options.calCacheFile) {
-		fprintf(stderr, "estimate hrss option is turned on but calibration file is missing\n");
+
+	if(!options.calCacheFile) {
+		fprintf(stderr, "warning: no calibration cache is provided:  software injections and hrss will be computed with unit response\n");
+	} else if(options.calibrated) {
+		fprintf(stderr, "error: calibration cache provided for use with calibrated data!\n");
 		exit(1);
 	}
 
@@ -1071,11 +1067,13 @@ static COMPLEX8FrequencySeries *generate_response(
 	if(options.verbose) 
 		fprintf(stderr, "generate_response(): working at GPS time %u.%09u s\n", response->epoch.gpsSeconds, response->epoch.gpsNanoSeconds );
 
-	/* getting the response is handled differently for calibrated data */
-	if(options.calibrated)
+	if(!calcachefile || options.calibrated) {
+		/* generate fake unity response if working with calibrated
+		 * data or if there is no calibration information available
+		 * */
 		for(i = 0; i < response->data->length; i++)
 			response->data->data[i] = one;
-	else {
+	} else {
 		LAL_CALL(LALFrCacheImport(stat, &calcache, calcachefile), stat);
 		LAL_CALL(LALExtractFrameResponse(stat, response, calcache, &calfacts), stat);
 		LAL_CALL(LALDestroyFrCache(stat, &calcache), stat);
@@ -1207,7 +1205,7 @@ static void add_mdc_injections(
 
 	/* write diagnostic info to disk */
 	if(options.printData)
-		LALPrintTimeSeries(mdc, "./timeseriesmdc.dat");
+		LALPrintTimeSeries(mdc, "timeseriesmdc.dat");
 
 	/* add the mdc signal to the given time series */
 	for(i = 0; i < series->data->length; i++)
@@ -1648,12 +1646,10 @@ int main( int argc, char *argv[])
 
 	for(epoch = options.startEpoch; XLALGPSCmp(&epoch, &boundepoch) < 0;) {
 		/*
-		 * Get the data, if reading calibrated data set the flag
+		 * Get the data.
 		 */
-		if (options.calibrated)
-			options.getcaltimeseries = TRUE;
 
-		series = get_time_series(&stat, dirname, cachefile, options.channelName, epoch, options.stopEpoch, options.maxSeriesLength, options.getcaltimeseries);
+		series = get_time_series(&stat, dirname, cachefile, options.channelName, epoch, options.stopEpoch, options.maxSeriesLength, options.calibrated);
 
 		/*
 		 * If we specified input files but nothing got read, there
@@ -1689,33 +1685,32 @@ int main( int argc, char *argv[])
 		 */
 
 		if(options.printData)
-			LALPrintTimeSeries(series, "./timeseriesasq.dat");
+			LALPrintTimeSeries(series, "timeseriesasq.dat");
 
 		/*
-		 * Add burst/inspiral injections into the time series if requested.
+		 * Add burst/inspiral injections into the time series if
+		 * requested.
 		 */
 
 		if(burstInjectionFile || inspiralInjectionFile || options.simCacheFile) {
-			COMPLEX8FrequencySeries  *response = NULL;
+			COMPLEX8FrequencySeries *response;
 
-			/* Create the response function */
-			if(options.calCacheFile)
-				response = generate_response(&stat, options.calCacheFile, options.channelName, series->deltaT, series->epoch, series->data->length);
-
-
+			/* Create the response function (generates unity
+			 * response if cache file is NULL). */
+			response = generate_response(&stat, options.calCacheFile, options.channelName, series->deltaT, series->epoch, series->data->length);
 			if(options.printData)
-			  LALCPrintFrequencySeries(response, "./response.dat");
+				LALCPrintFrequencySeries(response, "response.dat");
 
 			/* perform injections */
 			if(burstInjectionFile)
-			  add_burst_injections(&stat, series, response);
+				add_burst_injections(&stat, series, response);
 			else if(inspiralInjectionFile)
-			  add_inspiral_injections(&stat, series, response);
+				add_inspiral_injections(&stat, series, response);
 			else if(options.simCacheFile)
-			  add_sim_injections(&stat, series, response, options.maxSeriesLength);
-		
+				add_sim_injections(&stat, series, response, options.maxSeriesLength);
+
 			if(options.printData)
-				LALPrintTimeSeries(series, "./injections.dat");
+				LALPrintTimeSeries(series, "injections.dat");
 
 			/*clean up*/
 			XLALDestroyCOMPLEX8FrequencySeries(response);
@@ -1728,19 +1723,18 @@ int main( int argc, char *argv[])
 		if(mdcCacheFile) {
 		        add_mdc_injections(&stat, mdcCacheFile, series, epoch, options.stopEpoch, options.maxSeriesLength);
 			if(options.printData)
-				LALPrintTimeSeries(series, "./timeseriesasqmdc.dat");
+				LALPrintTimeSeries(series, "timeseriesasqmdc.dat");
 		}
 
 		/*
 		 * Generate the response function at the right deltaf to be
-		 * usd for h_rss estimation.
+		 * usd for h_rss estimation.  (if the cache file is NULL
+		 * then a unit response is generated).
 		 */
 
-		if(options.estimateHrss) {
-			hrssresponse = generate_response(&stat, options.calCacheFile, options.channelName, series->deltaT, series->epoch, options.windowLength);
-			if(options.printData)
-				LALCPrintFrequencySeries(hrssresponse, "./hrssresponse.dat");
-		}
+		hrssresponse = generate_response(&stat, options.calCacheFile, options.channelName, series->deltaT, series->epoch, options.windowLength);
+		if(options.printData)
+			LALCPrintFrequencySeries(hrssresponse, "hrssresponse.dat");
 
 		/*
 		 * Condition the time series data.
@@ -1748,9 +1742,10 @@ int main( int argc, char *argv[])
 
 		/* Scale the time series if calibrated data */
 		if(options.calibrated) {
-			UINT4 i;
+			const double scale = 1e10;
+			unsigned i;
 			for(i = 0; i < series->data->length; i++)
-				series->data->data[i] = SCALE*series->data->data[i];
+				series->data->data[i] = scale * series->data->data[i];
 		}
 
 		if(XLALEPConditionData(series, options.high_pass, (REAL8) 1.0 / options.ResampleRate, options.FilterCorruption)) {
@@ -1759,7 +1754,7 @@ int main( int argc, char *argv[])
 		}
 
 		if(options.printData)
-		  LALPrintTimeSeries(series, "./condtimeseries.dat");
+			LALPrintTimeSeries(series, "condtimeseries.dat");
 
 		if(options.verbose)
 			fprintf(stderr, "%s: %u samples (%.9f s) at GPS time %d.%09d s remain after conditioning\n", argv[0], series->data->length, series->data->length * series->deltaT, series->epoch.gpsSeconds, series->epoch.gpsNanoSeconds);
