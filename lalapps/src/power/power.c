@@ -1730,13 +1730,14 @@ int main( int argc, char *argv[])
 		}
 
 		/*
-		 * Generate the response function at the right deltaf to be usd for h_rss estimation.
+		 * Generate the response function at the right deltaf to be
+		 * usd for h_rss estimation.
 		 */
 
-		if (options.estimateHrss) {
+		if(options.estimateHrss) {
 			hrssresponse = generate_response(&stat, options.calCacheFile, options.channelName, series->deltaT, series->epoch, options.windowLength);
 			if(options.printData)
-			  LALCPrintFrequencySeries(hrssresponse, "./hrssresponse.dat");
+				LALCPrintFrequencySeries(hrssresponse, "./hrssresponse.dat");
 		}
 
 		/*
@@ -1744,11 +1745,10 @@ int main( int argc, char *argv[])
 		 */
 
 		/* Scale the time series if calibrated data */
-		if (options.calibrated){
-		  UINT4 i;
-		  for(i = 0;i<series->data->length;i++){
-		    series->data->data[i] = SCALE*series->data->data[i];
-		  }
+		if(options.calibrated) {
+			UINT4 i;
+			for(i = 0; i < series->data->length; i++)
+				series->data->data[i] = SCALE*series->data->data[i];
 		}
 
 		if(XLALEPConditionData(series, options.high_pass, (REAL8) 1.0 / options.ResampleRate, options.FilterCorruption)) {
