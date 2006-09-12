@@ -190,7 +190,7 @@ static void print_usage(char *program)
 "	 --channel-name <string>\n" \
 "	[--cluster]\n" \
 "	[--debug-level <level>]\n" \
-"	[--estimatehrss]\n" \
+"	[--estimate-hrss]\n" \
 "	[--max-event-rate <Hz>]\n" \
 "	 --filter-corruption <samples>\n" \
 "	 --frame-cache <cache file>\n" \
@@ -250,7 +250,7 @@ static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param, c
 	snprintf((*proc_param)->program, LIGOMETA_PROGRAM_MAX, PROGRAM_NAME);
 	snprintf((*proc_param)->type, LIGOMETA_TYPE_MAX, type);
 	snprintf((*proc_param)->param, LIGOMETA_PARAM_MAX, "--%s", param);
-	snprintf((*proc_param)->value, LIGOMETA_VALUE_MAX, value);
+	snprintf((*proc_param)->value, LIGOMETA_VALUE_MAX, "%s", value ? value : "");
 
 	return(&(*proc_param)->next);
 }
@@ -401,7 +401,7 @@ void parse_command_line(
 		{"calibration-cache",   required_argument, NULL,           'B'},
 		{"channel-name",        required_argument, NULL,           'C'},
 		{"cluster",             no_argument, &options.cluster,      TRUE},
-		{"estimatehrss",        no_argument, &options.estimateHrss, TRUE},
+		{"estimate-hrss",       no_argument, &options.estimateHrss, TRUE},
 		{"debug-level",         required_argument, NULL,           'D'},
 		{"max-event-rate",      required_argument, NULL,           'F'},
 		{"filter-corruption",	required_argument, NULL,           'j'},
@@ -767,22 +767,24 @@ void parse_command_line(
 		break;
 
 		case 't':
-		  simInjectionFile = optarg;
-		  ADD_PROCESS_PARAM("string");
-		  break;
+		simInjectionFile = optarg;
+		ADD_PROCESS_PARAM("string");
+		break;
 
 		case 'u':
-		  options.simDistance = atof(optarg);
+		options.simDistance = atof(optarg);
 		if(options.simDistance <= 0.0) {
 			sprintf(msg, "must not be zero/negative (%f Kpc specified), check the specification file for the generation of the sim waveforms to get the distance value", options.simDistance);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		  ADD_PROCESS_PARAM("float");
-		  break;
+		ADD_PROCESS_PARAM("float");
+		break;
 
 		/* option sets a flag */
 		case 0:
+		optarg = NULL;
+		ADD_PROCESS_PARAM("string");
 		break;
 
 		/* end of arguments */
