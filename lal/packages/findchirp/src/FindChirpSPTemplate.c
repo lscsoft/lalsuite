@@ -261,6 +261,12 @@ LALFindChirpSPTemplate (
       expPsi[k].re = 1 + psi2 * ( c2 + psi2 * c4 );
     }
 
+    /* if reverse chirp bank option selected, switch sign of imag. part */
+    if ( params->reverseChirpBank )
+    {
+      expPsi[k].im = - expPsi[k].im;
+    }
+
   }
 
 

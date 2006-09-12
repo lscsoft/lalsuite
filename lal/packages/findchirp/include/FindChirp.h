@@ -335,6 +335,7 @@ tagFindChirpTmpltParams
   REAL4Vector                  *xfacVec;
   RealFFTPlan                  *fwdPlan;
   Approximant                   approximant;
+  INT4                          reverseChirpBank;
 }
 FindChirpTmpltParams;
 /* </lalVerbatim> */
@@ -370,6 +371,8 @@ which is stored in the findchirp template.
 PadeT1, EOB, FindChirpSP, BCV and BCVSpin. For time domain and stationary
 phase templates the post-Newtonian order is always two.
 
+\item[\texttt{INT4 reverseChirpBank}] Switches a FindChirpSP template bank
+to be a reverse chirp template bank if true.
 \end{description}
 
 \subsubsection*{Structure \texttt{Clustering}}
