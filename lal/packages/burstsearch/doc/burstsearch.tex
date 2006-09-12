@@ -773,9 +773,6 @@ planes have been computed.
 
 \item[\texttt{BOOLEAN excessPowerComputed}] Flag set to 1 if the excess-power
 has been computed for each of the tiles and time-frequency planes.
-
-\item[\texttt{BOOLEAN tilesSorted}] Flag set to 1 if the tiles have been
-sorted from most significant to least significant.
 \end{description}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -968,43 +965,6 @@ LALOneMinusChisqCdf
 
 \newpage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Module \texttt{LALSortTFTiling.c}}
-\label{ss:LALSortTFTiling.c}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-Sorts the linked list of TF tiles in a \verb+TFTiling+ structure is
-sorted in order of increasing $\alpha_{\cal T}$.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{SortTFTilingCP}
-\idx{LALSortTFTiling()}
-
-\subsubsection*{Description}
-
-The linked list of TF tiles in a \verb+TFTiling+ structure is sorted in order
-of increasing $\alpha_{\cal T}$ by the routine \verb+SortTFTiling()+, which
-has as an input/output argument a pointer \verb+tfTiling+ to the
-\verb+TFTiling+ structure.  After the routine \verb+SortTFTiling()+ is called,
-the linked list has as its first element the tile with the lowest value of
-$\alpha_{\cal T}$, and consequently the highest probability of being an event.
-The routine \verb+SortTFTiling()+ must be called after calling
-\verb+ComputeExcessPower()+; calling the routines out of sequence will give
-rise to an error.
-
-\subsubsection*{Uses}
-\begin{verbatim}
-LALMalloc
-qsort
-LALFree
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{SortTFTilingCV}}
-
-\newpage
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Module \texttt{LALPrintTFTileList.c}}
 \label{ss:LALPrintTFTileList.c}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1046,10 +1006,9 @@ filtering signal-to-noise ratios.
 
 \end{itemize}
 
-By calling this routine after calling \verb+SortTFTiling()+, and by
-passing to it the parameter $n_{\rm events}$ obtained from the routine
-\verb+CountEPEvents()+, one can obtain an ordered list of all tiles
-passing a specified threshold $\alpha_*$.
+By calling this routine, and by passing to it the parameter $n_{\rm
+events}$ obtained from the routine \verb+CountEPEvents()+, one can obtain
+an ordered list of all tiles passing a specified threshold $\alpha_*$.
 
 \subsubsection*{Uses}
 \begin{verbatim}
@@ -1103,7 +1062,7 @@ inaccurately for ${\bar \Lambda} \ll {\bar \Lambda}_*$.]
 The routine \verb+ComputeLikelihood()+ must be called after calling
 \verb+ComputeExcessPower()+; calling the routines out of sequence will give
 rise to an error.  However, it does not require a prior execution of
-\verb+SortTFTiling()+ or of \verb+CountEPEvents()+.  
+\verb+CountEPEvents()+.  
 
 The routine \verb+ComputeLikelihood()+ allows the user to the second type of
 search discussed in Sec.\ \ref{twomethods} above.  Namely, one can compute

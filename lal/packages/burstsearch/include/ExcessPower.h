@@ -88,12 +88,6 @@ XLALComputeExcessPower(
 );
 
 
-void
-XLALSortTFTilingByAlpha(
-	TFTiling *tiling
-);
-
-
 REAL8
 XLALComputeLikelihood(
 	TFTiling *tiling

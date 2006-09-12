@@ -61,14 +61,21 @@ XLALDestroyTFPlane(
 
 int
 XLALFreqSeriesToTFPlane(
-	REAL4TimeFrequencyPlane *tfp,
-	const COMPLEX8FrequencySeries *freqSeries,
-	UINT4 windowShift,
-	REAL8 *hrssfactor,
-	REAL4 *norm,
-	const COMPLEX8FrequencySeries *response,
+	REAL4TimeFrequencyPlane *tfplane,
+	REAL4 *normalisation,
+	const COMPLEX8FrequencySeries *fseries,
 	const REAL4FrequencySeries *psd,
-	int overwhiten_flag
+	int overwhiten_flag,
+	const REAL4FFTPlan *reverseplan
+);
+
+
+REAL8 *
+XLALTFPlaneEvalHrssFactor(
+	REAL8 *hrssfactor,
+	const REAL4TimeFrequencyPlane *plane,
+	const COMPLEX8FrequencySeries *response,
+	const REAL4FrequencySeries *psd
 );
 
 #ifdef  __cplusplus
