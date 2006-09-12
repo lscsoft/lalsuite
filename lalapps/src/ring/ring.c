@@ -321,13 +321,14 @@ static REAL4FrequencySeries *ring_get_invspec(
     /* compute raw average spectrum; store spectrum in invspec for now */
     invspec = compute_average_spectrum( channel, params->segmentDuration,
         params->strideDuration, fwdplan, params->whiteSpectrum );
-    if ( params->writeSpectrum ) /* write raw spectrum */
-      write_REAL4FrequencySeries( invspec );
 
     /* invert spectrum */
     invert_spectrum( invspec, params->sampleRate, params->strideDuration,
         params->truncateDuration, params->lowCutoffFrequency, fwdplan,
         revplan );
+    if ( params->writeSpectrum ) /* write raw spectrum */
+            write_REAL4FrequencySeries( invspec );
+    
 
     /* calibrate spectrum if necessary */
     if ( response )
@@ -438,6 +439,10 @@ static RingDataSegments *ring_get_segments(
         compute_data_segment( &segments->sgmnt[count++], sgmnt, channel,
             invspec, response, params->segmentDuration, params->strideDuration,
             fwdplan );
+
+    if ( params->writeSegment) /* write data segment */
+            write_REAL4TimeSeries( channel );
+    
   }
 
   return segments;
