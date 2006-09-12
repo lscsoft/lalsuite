@@ -488,7 +488,6 @@ static int ring_usage( const char *program )
   fprintf( stderr, "--write-response           write response function used\n" );
   fprintf( stderr, "--write-spectrum           write computed data power spectrum\n" );
   fprintf( stderr, "--write-inv-spectrum       write inverse power spectrum\n" );
-  fprintf( stderr, "--write-bank               write template bank\n" );
   fprintf( stderr, "--write-segment            write overwhitened data segments\n" );
   fprintf( stderr, "--write-filter-output      write filtered data segments\n" );
 
