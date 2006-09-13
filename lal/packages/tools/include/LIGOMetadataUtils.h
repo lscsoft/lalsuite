@@ -135,7 +135,8 @@ typedef enum
   m1_and_m2, 
   psi0_and_psi3,  
   mchirp_and_eta, 
-  tau0_and_tau3
+  tau0_and_tau3,
+  ellipsoid
 } 
 SnglInspiralParameterTest;
 /*</lalVerbatim> */
@@ -190,6 +191,7 @@ tagInspiralAccuracyList
   INT8                      lightTravelTime[LAL_NUM_IFO][LAL_NUM_IFO];
   REAL4                     iotaCutH1H2;
   REAL4                     iotaCutH1L1;
+  REAL8                     eMatch;
   INT4                      grb;
 }
 InspiralAccuracyList;
@@ -554,6 +556,13 @@ LALCompareSnglInspiral (
     SnglInspiralAccuracy     *params
     );
 
+int
+XLALCompareInspirals (
+    SnglInspiralTable        *aPtr,
+    SnglInspiralTable        *bPtr,
+    InspiralAccuracyList     *params
+    );
+
 void
 LALCompareInspirals (
     LALStatus                *status,
@@ -785,6 +794,13 @@ LALAddSnglInspiralToCoinc(
     LALStatus                  *status,
     CoincInspiralTable        **coincPtr,
     SnglInspiralTable          *snglInspiral
+    );
+
+void
+XLALSnglInspiralCoincTest(
+    CoincInspiralTable         *coincInspiral,
+    SnglInspiralTable          *snglInspiral,
+    InspiralAccuracyList       *accuracyParams
     );
 
 void
