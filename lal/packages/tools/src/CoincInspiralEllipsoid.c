@@ -34,7 +34,7 @@ $Id$
 NRCSID( COINCINSPIRALELLIPSOIDC, "$Id$" );
 
 
-static REAL8 getTimeError(const SnglInspiralTable *table);
+static REAL8 getTimeError(const SnglInspiralTable *table, REAL8 eMatch);
 
 /* <lalVerbatim file="CoincInspiralEllipsoidCP"> */
 void
@@ -71,6 +71,7 @@ LALCreateTwoIFOCoincListEllipsoid(
 
   memset( currentTriggerNS, 0, 2 * sizeof(INT8) );
 
+  printf("e-Match = %e\n", accuracyParams->eMatch);
 /*  XLALClearErrno();*/
   /* Loop through triggers and assign each of them an error ellipsoid */
   for (currentTrigger = snglInput; currentTrigger;
@@ -89,14 +90,15 @@ LALCreateTwoIFOCoincListEllipsoid(
       thisErrorList = thisErrorList->next;
     }
     thisErrorList->trigger    = currentTrigger;
-    thisErrorList->err_matrix = XLALGetErrorMatrixFromSnglInspiral( currentTrigger );
+    thisErrorList->err_matrix = XLALGetErrorMatrixFromSnglInspiral( currentTrigger,
+                                  accuracyParams->eMatch );
     if (!thisErrorList->err_matrix)
     {
       XLALClearErrno();
       ABORTXLAL( status );
     }
     thisErrorList->position   = XLALGetPositionFromSnglInspiral( currentTrigger );
-    thisTimeError = getTimeError(currentTrigger);
+    thisTimeError = getTimeError(currentTrigger, accuracyParams->eMatch);
     if (thisTimeError > timeError)
       timeError = thisTimeError;
   }
@@ -349,6 +351,8 @@ XLALSnglInspiralCoincTestEllipsoid(
   static const char *func = "XLALSnglInspiralCoincTest";
 
 
+  printf("Calling the ellipsoid NIfo coinc function");
+
   /* Loop over sngl_inspirals contained in coinc_inspiral */
   for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
@@ -462,7 +466,7 @@ INT2 XLALCompareInspiralsEllipsoid(
     XLALSetTimeInPositionVector( aPtr->position, originalTimeA );
     XLALSetTimeInPositionVector( bPtr->position, originalTimeB );
   }
-
+  params->match = isCoinc;
   return isCoinc;
 }
 
@@ -470,7 +474,7 @@ INT2 XLALCompareInspiralsEllipsoid(
  * This function returns the largest time error associated with a
  * particular error ellipsoid.
  */
-static REAL8 getTimeError(const SnglInspiralTable *table)
+static REAL8 getTimeError(const SnglInspiralTable *table, REAL8 eMatch)
 {
   REAL8 a11;
   REAL8 a23; 
@@ -481,12 +485,12 @@ static REAL8 getTimeError(const SnglInspiralTable *table)
   REAL8 x;
   REAL8 denom;
   
-  a11 = table->Gamma[0] / 0.3;
-  a12 = table->Gamma[1] / 0.3;
-  a13 = table->Gamma[2] / 0.3;
-  a22 = table->Gamma[3] / 0.3;
-  a23 = table->Gamma[4] / 0.3;
-  a33 = table->Gamma[5] / 0.3;
+  a11 = table->Gamma[0] / (1.0 - eMatch);
+  a12 = table->Gamma[1] / (1.0 - eMatch);
+  a13 = table->Gamma[2] / (1.0 - eMatch);
+  a22 = table->Gamma[3] / (1.0 - eMatch);
+  a23 = table->Gamma[4] / (1.0 - eMatch);
+  a33 = table->Gamma[5] / (1.0 - eMatch);
 
   x = (a23 * a23 - a22 * a33) * a22;
   denom = (a12*a23 - a22*a13) * (a12*a23 - a22*a13)

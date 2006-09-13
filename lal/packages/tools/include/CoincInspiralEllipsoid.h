@@ -85,7 +85,10 @@ XLALSnglInspiralCoincTestEllipsoid(
     );
 
 /* Functions for generating the error matrix and position vectors for triggers */
-gsl_matrix * XLALGetErrorMatrixFromSnglInspiral(SnglInspiralTable *event);
+gsl_matrix * XLALGetErrorMatrixFromSnglInspiral(
+     SnglInspiralTable *event,
+     REAL8              eMatch
+     );
 
 gsl_vector * XLALGetPositionFromSnglInspiral( SnglInspiralTable *table );
 
