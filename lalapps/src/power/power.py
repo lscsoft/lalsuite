@@ -37,7 +37,9 @@ import time
 
 from glue import segments
 from glue import pipeline
+from glue.lal import CacheEntry
 from pylal import packing
+from pylal.date import LIGOTimeGPS
 
 
 #
@@ -121,21 +123,24 @@ class BurstInjNode(pipeline.CondorDAGNode):
 	def get_end(self):
 		return self.get_opts().get("macrogpsendtime", None)
 
-	def get_output_files(self):
+	def get_output_cache(self):
 		"""
-		Returns the list of output file names.  This must be kept
-		synchronized with the name of the output file in binj.c.
-		Note in particular the calculation of the "start" and
-		"duration" parts of the name.
+		Returns a LAL cache of the output file names.  This must be
+		kept synchronized with the name of the output file in
+		binj.c.  Note in particular the calculation of the "start"
+		and "duration" parts of the name.
 		"""
 		if not self.get_start() or not self.get_end():
 			raise ValueError, "start time or end time has not been set"
-
+		seg = segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end()))
 		if self.__usertag:
 			filename = "HL-INJECTIONS_%s-%d-%d.xml" % (self.__usertag, int(self.get_start()), int(self.get_end() - self.get_start()))
 		else:
 			filename = "HL-INJECTIONS-%d-%d.xml" % (int(self.get_start()), int(self.get_end() - self.get_start()))
-		return [filename]
+		return [CacheEntry("H1,H2,L1", self.__usertag, seg, "file://localhost" + os.path.abspath(filename))]
+
+	def get_output_files(self):
+		return [c.url[16:] for c in self.get_output_cache()]
 
 	def get_output(self):
 		raise NotImplementedError
@@ -193,17 +198,21 @@ class PowerNode(pipeline.AnalysisNode):
 	def get_user_tag(self):
 		return self.__usertag
 
-	def get_output_files(self):
+	def get_output_cache(self):
 		"""
-		Returns the file name of output from the power code. This
-		must be kept synchronized with the name of the output file
-		in power.c.  Note in particular the calculation of the
-		"start" and "duration" parts of the name.
+		Returns a LAL cache of the output file name from the power
+		code. This must be kept synchronized with the name of the
+		output file in power.c.  Note in particular the calculation
+		of the "start" and "duration" parts of the name.
 		"""
 		if None in [self.get_start(), self.get_end(), self.get_ifo(), self.__usertag]:
 			raise ValueError, "start time, end time, ifo, or user tag has not been set"
+		seg = segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end()))
 		filename = "%s-POWER_%s-%d-%d.xml" % (self.get_ifo(), self.__usertag, int(self.get_start()), int(self.get_end()) - int(self.get_start()))
-		return [filename]
+		return [CacheEntry(self.get_ifo(), self.__usertag, seg, "file://localhost" + os.path.abspath(filename))]
+
+	def get_output_files(self):
+		return [c.url[16:] for c in self.get_output_cache()]
 
 	def get_output(self):
 		raise NotImplementedError
