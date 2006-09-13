@@ -578,6 +578,25 @@ LALCompareInspirals (
     )
 /* </lalVerbatim> */
 {
+
+  INITSTATUS( status, "LALCompareInspirals", SNGLINSPIRALUTILSC );
+
+  XLALCompareInspirals( aPtr, bPtr, params );
+
+  RETURN( status );
+}
+
+  
+
+/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+int
+XLALCompareInspirals (
+    SnglInspiralTable        *aPtr,
+    SnglInspiralTable        *bPtr,
+    InspiralAccuracyList     *params
+    )
+/* </lalVerbatim> */
+{
   INT8    ta,  tb;
   REAL4   dmass1, dmass2;
   REAL4   dmchirp, deta;
@@ -586,30 +605,28 @@ LALCompareInspirals (
   InterferometerNumber ifoaNum,  ifobNum;
   SnglInspiralAccuracy aAcc, bAcc;
 
-  INITSTATUS( status, "LALCompareInspirals", SNGLINSPIRALUTILSC );
-  ATTATCHSTATUSPTR( status );
-
+  static const char *func = "XLALCompareInspirals";
 
   params->match = 1;
 
   /* check that triggers come from different IFOs */
   if( strcmp(aPtr->ifo, bPtr->ifo) )
   {
-    LALInfo( status, "Triggers from different IFOs");
+    XLALPrintInfo( "Triggers from different IFOs");
     params->match = 1;
   }
   else
   {
-    LALInfo( status, "Triggers from same IFO");
+    XLALPrintInfo( "Triggers from same IFO");
     params->match = 0;
-    goto exit;
+    return params->match;
   }
 
   ifoaNum = XLALIFONumber( aPtr->ifo );
   ifobNum = XLALIFONumber( bPtr->ifo );
   
-  LALGPStoINT8( status->statusPtr, &ta, &(aPtr->end_time) );
-  LALGPStoINT8( status->statusPtr, &tb, &(bPtr->end_time) );
+  ta = XLALGPStoINT8( &(aPtr->end_time) );
+  tb = XLALGPStoINT8( &(bPtr->end_time) );
 
   /* compare on trigger time coincidence */
   aAcc = params->ifoAccuracy[ifoaNum];
@@ -619,116 +636,113 @@ LALCompareInspirals (
   if ( params->grb &&
        labs( ta - tb + params->lightTravelTime[ifoaNum][ifobNum]) < (aAcc.dt + bAcc.dt) )
   {
-    LALInfo( status, "Triggers pass time coincidence test");
+    XLALPrintInfo( "Triggers pass time coincidence test" );
     params->match = 1;
   }
   else if (  !params->grb &&
       labs( ta - tb ) < (aAcc.dt + bAcc.dt)
       + params->lightTravelTime[ifoaNum][ifobNum])
   {
-    LALInfo( status, "Triggers pass time coincidence test");
+    XLALPrintInfo( "Triggers pass time coincidence test" );
     params->match = 1;
   }
   else 
   {
-    LALInfo( status, "Triggers fail time coincidence test" );
+    XLALPrintInfo( "Triggers fail time coincidence test" );
     params->match = 0;
-    goto exit;
+    return params->match;
   }
 
-  /* compare psi0 and psi3 parameters */
-  if ( params->test == psi0_and_psi3 )
+  switch ( params->test )
   {
-    dpsi0 = fabs( aPtr->psi0 - bPtr->psi0 );
-    dpsi3 = fabs( aPtr->psi3 - bPtr->psi3 );
+    case psi0_and_psi3:
+      dpsi0 = fabs( aPtr->psi0 - bPtr->psi0 );
+      dpsi3 = fabs( aPtr->psi3 - bPtr->psi3 );
     
-    if ( ( dpsi0 <= (aAcc.dpsi0 + bAcc.dpsi0) )
-        && ( dpsi3 <= (aAcc.dpsi3 + bAcc.dpsi3) ))
-    {
-      LALInfo( status, "Triggers are coincident in psi0 and psi3" );
-      params->match = 1;
-    }
-    else
-    {
-      LALInfo( status, "Triggers are not coincident in psi0 and psi3" );
-      params->match = 0;
-      goto exit;
-    }
-  }
-  else if ( params->test == m1_and_m2 )
-  {  
-    dmass1 = fabs( aPtr->mass1 - bPtr->mass1 );
-    dmass2 = fabs( aPtr->mass2 - bPtr->mass2 );
+      /* compare psi0 and psi3 parameters */
+      if ( ( dpsi0 <= (aAcc.dpsi0 + bAcc.dpsi0) )
+          && ( dpsi3 <= (aAcc.dpsi3 + bAcc.dpsi3) ))
+      {
+        XLALPrintInfo( "Triggers are coincident in psi0 and psi3" );
+        params->match = 1;
+      }
+      else
+      {
+        XLALPrintInfo( "Triggers are not coincident in psi0 and psi3" );
+        params->match = 0;
+      }
+      break;
 
-    /* compare mass1 and mass2 parameters */
-    if ( (dmass1 <= (aAcc.dm + bAcc.dm) )
-      && (dmass2 <= (aAcc.dm + bAcc.dm) ))
-    {
-      LALInfo( status, "Triggers are coincident in mass1 and mass2" );
-      params->match = 1;
-    }
-    else
-    {
-      LALInfo( status, "Triggers are not coincident in mass1 and mass2" );
-      params->match = 0;
-      goto exit;
-    }
-  }
-  else if ( params->test == mchirp_and_eta )
-  {  
-    REAL4 dmchirpTest;
-    dmchirp = fabs( aPtr->mchirp - bPtr->mchirp );
-    deta = fabs( aPtr->eta - bPtr->eta );
+    case m1_and_m2:  
+      dmass1 = fabs( aPtr->mass1 - bPtr->mass1 );
+      dmass2 = fabs( aPtr->mass2 - bPtr->mass2 );
 
-    /* compare mchirp and eta parameters */
-    if (aAcc.highMass &&
-    ((aPtr->mass1 + aPtr->mass2 > aAcc.highMass) ||
-    (bPtr->mass1 + bPtr->mass2 > bAcc.highMass)))
-      dmchirpTest = aAcc.dmchirpHi + bAcc.dmchirpHi;
-    else
-      dmchirpTest = aAcc.dmchirp + bAcc.dmchirp;
-    if ( (dmchirp <= dmchirpTest)
-          && (deta <= (aAcc.deta + bAcc.deta)) )
-    {
-      LALInfo( status, "Triggers are coincident in mchirp and eta" );
-      params->match = 1;
-    }
-    else
-    {
-      LALInfo( status, "Triggers fail mchirp, eta coincidence test" );
-      params->match = 0;
-      goto exit;
-    }
-  }
-  else if ( params->test == tau0_and_tau3 )
-  {
-    dtau0 = fabs( aPtr->tau0 - bPtr->tau0 );
-    dtau3 = fabs( aPtr->tau3 - bPtr->tau3 );
+      /* compare mass1 and mass2 parameters */
+      if ( (dmass1 <= (aAcc.dm + bAcc.dm) )
+        && (dmass2 <= (aAcc.dm + bAcc.dm) ))
+      {
+        XLALPrintInfo( "Triggers are coincident in mass1 and mass2" );
+        params->match = 1;
+      }
+      else
+      {
+        XLALPrintInfo( "Triggers are not coincident in mass1 and mass2" );
+        params->match = 0;
+      }
+      break;
 
-    /* compare mass1 and mass2 parameters */
-    if ( (dtau0 <= (aAcc.dtau0 + bAcc.dtau0) )
-      && (dtau3 <= (aAcc.dtau3 + bAcc.dtau3) ))
-    {
-      LALInfo( status, "Triggers are coincident in tau0 and tau3" );
-      params->match = 1;
-    }
-    else
-    {
-      LALInfo( status, "Triggers are not coincident in tau0 and tau3" );
+    case mchirp_and_eta:
+      {
+      REAL4 dmchirpTest;
+      dmchirp = fabs( aPtr->mchirp - bPtr->mchirp );
+      deta = fabs( aPtr->eta - bPtr->eta );
+
+      /* compare mchirp and eta parameters */
+      if (aAcc.highMass &&
+      ((aPtr->mass1 + aPtr->mass2 > aAcc.highMass) ||
+      (bPtr->mass1 + bPtr->mass2 > bAcc.highMass)))
+        dmchirpTest = aAcc.dmchirpHi + bAcc.dmchirpHi;
+      else
+        dmchirpTest = aAcc.dmchirp + bAcc.dmchirp;
+      if ( (dmchirp <= dmchirpTest)
+            && (deta <= (aAcc.deta + bAcc.deta)) )
+      {
+        XLALPrintInfo( "Triggers are coincident in mchirp and eta" );
+        params->match = 1;
+      }
+      else
+      {
+        XLALPrintInfo( "Triggers fail mchirp, eta coincidence test" );
+        params->match = 0;
+      }
+      }
+      break;
+
+    case tau0_and_tau3:
+      dtau0 = fabs( aPtr->tau0 - bPtr->tau0 );
+      dtau3 = fabs( aPtr->tau3 - bPtr->tau3 );
+
+      /* compare tau0 and tau3 parameters */
+      if ( (dtau0 <= (aAcc.dtau0 + bAcc.dtau0) )
+        && (dtau3 <= (aAcc.dtau3 + bAcc.dtau3) ))
+      {
+        XLALPrintInfo( "Triggers are coincident in tau0 and tau3" );
+        params->match = 1;
+      }
+      else
+      {
+        XLALPrintInfo( "Triggers are not coincident in tau0 and tau3" );
+        params->match = 0;
+      }
+      break;
+
+    default:
+      XLALPrintInfo( "error: unknown test\n" );
       params->match = 0;
-      goto exit;
-    }
-  }
-  else
-  {
-    LALInfo( status, "error: unknown test\n" );
-    params->match = 0;
-    goto exit;
+      break;
   }
 
-exit:
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
+  return params->match;
 }
 
 
