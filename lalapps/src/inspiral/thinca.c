@@ -23,6 +23,7 @@
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataUtils.h>
+#include <lal/CoincInspiralEllipsoid.h>
 #include <lal/Segments.h>
 #include <lal/SegmentsIO.h>
 #include <lalapps.h>
@@ -121,7 +122,7 @@ static void print_usage(char *program)
       "  [--v1-veto-file]               veto file for V1\n"\
       "\n"\
       "   --parameter-test     test    set parameters with which to test coincidence:\n"\
-      "                                (m1_and_m2|mchirp_and_eta|mchirp_and_eta_ext|psi0_and_psi3)\n"\
+      "                                (m1_and_m2|mchirp_and_eta|mchirp_and_eta_ext|psi0_and_psi3|ellipsoid)\n"\
       "  [--g1-time-accuracy]  g1_dt   specify the timing accuracy of G1 in ms\n"\
       "  [--h1-time-accuracy]  h1_dt   specify the timing accuracy of H1 in ms\n"\
       "  [--h2-time-accuracy]  h2_dt   specify the timing accuracy of H2 in ms\n"\
@@ -163,6 +164,8 @@ static void print_usage(char *program)
       "  [--l1-psi3-accuracy]  l1_dpsi3   specify the psi3 accuracy of L1\n"\
       "  [--t1-psi3-accuracy]  t1_dpsi3   specify the psi3 accuracy of T1\n"\
       "  [--v1-psi3-accuracy]  v1_dpsi3   specify the psi3 accuracy of V1\n"\
+      "\n"
+      "  [--e-thinca-parameter]  match    specify the e-thinca parameter\n"\
       "\n"\
       "  [--h1-h2-distance-cut]           perform H1-H2 distance cut\n"\
       "  [--h1-kappa]          h1_kappa   specify H1 kappa for eff dist test\n"\
@@ -378,6 +381,7 @@ int main( int argc, char *argv[] )
     {"l1-psi3-accuracy",    required_argument, 0,                    '-'},
     {"t1-psi3-accuracy",    required_argument, 0,                    '+'},
     {"v1-psi3-accuracy",    required_argument, 0,                    '='},
+    {"e-thinca-parameter",  required_argument, 0,                    '`'},
     {"h1-kappa",            required_argument, 0,                    'W'},
     {"h2-kappa",            required_argument, 0,                    'Y'},
     {"h1-epsilon",          required_argument, 0,                    'w'},
@@ -482,7 +486,7 @@ int main( int argc, char *argv[] )
     c = getopt_long_only( argc, argv, 
         "A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:VW:Y:Z:"
         "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:"
-        "2:3:4:5:6:7:8:9:!:-:+:=:@:^:&:*:(:):{:}:[:]:~", 
+        "2:3:4:5:6:7:8:9:`:!:-:+:=:@:^:&:*:(:):{:}:[:]:~", 
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -520,7 +524,11 @@ int main( int argc, char *argv[] )
         else if ( ! strcmp( "mchirp_and_eta", optarg ) )
         {
           accuracyParams.test = mchirp_and_eta;
-        }       
+        }
+        else if ( ! strcmp( "ellipsoid", optarg ) )
+        {
+          accuracyParams.test = ellipsoid;
+        }
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -1039,6 +1047,12 @@ int main( int argc, char *argv[] )
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
+      case '`':
+      /* Ellipsoid scaling factor */
+        accuracyParams.eMatch = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
       case '@':
         /* set the maximization window */
         maximizationInterval = atoi( optarg );
@@ -1194,6 +1208,17 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
+  /* Make sure the scaling parameter is set if the parameter test is 
+   * set to ellipsoid.
+   */
+  if ( accuracyParams.test == ellipsoid &&
+       (accuracyParams.eMatch <= 0.0 || accuracyParams.eMatch >= 1.0) )
+  {
+     fprintf( stderr, "Error: Invalid e-thinca parameter\n" );
+     fprintf( stderr, "--e-thinca-parameter should be specified, "\
+               "and should be < 1.\n" );
+     exit(1);
+  }    
 
   /* Data Type */
   if ( dataType == unspecified_data_type )
@@ -1234,7 +1259,8 @@ int main( int argc, char *argv[] )
       LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
 
       /* check that a non-zero timing accuracy was specified */
-      if ( ! accuracyParams.ifoAccuracy[ifoNumber].dt )
+      if ( accuracyParams.test != ellipsoid &&
+           ! accuracyParams.ifoAccuracy[ifoNumber].dt )
       {
         fprintf( stderr, "Error: --dt must be specified for %s\n", 
             ifoName[ifoNumber]);
@@ -1803,10 +1829,17 @@ int main( int argc, char *argv[] )
     /* don't analyze zero-lag if numSlides>0 */
     if ( numSlides && !slideNum ) continue;
 
-    /* look for coincidences */ 
+    /* look for coincidences */    
+    if ( accuracyParams.test == ellipsoid )
+    {
+    LAL_CALL( LALCreateTwoIFOCoincListEllipsoid(&status, &coincInspiralList,
+              inspiralEventList, &accuracyParams ), &status);
+    }
+    else
+    {
     LAL_CALL( LALCreateTwoIFOCoincList(&status, &coincInspiralList,
 	      inspiralEventList, &accuracyParams ), &status);
-
+    }
 
     /* count the zero-lag coincidences */
     if ( !numSlides) {
@@ -1900,7 +1933,8 @@ int main( int argc, char *argv[] )
           }
 	LAL_CALL( LALInspiralDistanceCutCleaning(&status,  &coincInspiralList, 
 		  &accuracyParams, snrCut, &summValueList, &vetoSegs[LAL_IFO_H1], &vetoSegs[LAL_IFO_H2]), &status);
-	if ( vrbflg ) fprintf( stdout, "%d remaining coincident triggers after h1-h2-consisteny .\n",                       XLALCountCoincInspiral(coincInspiralList));
+	if ( vrbflg ) fprintf( stdout, "%d remaining coincident triggers after h1-h2-consisteny .\n", 
+		XLALCountCoincInspiral(coincInspiralList));
       }
 
     /* no time-slide */	  
@@ -1939,10 +1973,10 @@ int main( int argc, char *argv[] )
     }          
 
 
-    if ( slideNum ) {
+    if ( coincInspiralList ) {
       
       /* count the coincs, scroll to end of list */
-      if( coincInspiralList )
+      if( slideNum )
 	{  
 	  for (numCoincInSlide = 1, thisCoinc = coincInspiralList; 
 	       thisCoinc->next; ++numCoincInSlide, thisCoinc = thisCoinc->next );
@@ -1952,27 +1986,27 @@ int main( int argc, char *argv[] )
 	  
 	  numCoinc += numCoincInSlide;		
 	}
-    }
+
       
-    /* for all: write out all coincs as singles with event IDs */
-    LAL_CALL( LALExtractSnglInspiralFromCoinc( &status, &slideOutput, 
+      /* for all: write out all coincs as singles with event IDs */
+      LAL_CALL( LALExtractSnglInspiralFromCoinc( &status, &slideOutput, 
 	      coincInspiralList, &startCoinc, slideNum), &status );
     
-    if ( numSlides ) {
-      /* the output triggers should be slid back to original time */
-      LAL_CALL( LALTimeSlideSingleInspiral( &status, slideOutput,
+      if ( numSlides ) {
+        /* the output triggers should be slid back to original time */
+        LAL_CALL( LALTimeSlideSingleInspiral( &status, slideOutput,
 	        &startCoinc, &endCoinc, slideReset), &status) ;
-      LAL_CALL( LALSortSnglInspiral( &status, &(slideOutput),
-		LALCompareSnglInspiralByTime ), &status );
-    }
-      
-    while ( coincInspiralList )
-      {
-	thisCoinc = coincInspiralList;
-	coincInspiralList = coincInspiralList->next;
-	XLALFreeCoincInspiral( &thisCoinc );
+        LAL_CALL( LALSortSnglInspiral( &status, &(slideOutput),
+	  	LALCompareSnglInspiralByTime ), &status );
       }
-    
+      
+      while ( coincInspiralList )
+      {
+	  thisCoinc = coincInspiralList;
+	  coincInspiralList = coincInspiralList->next;
+	  XLALFreeCoincInspiral( &thisCoinc );
+      }
+    }
 
   
     if ( snglOutput )
