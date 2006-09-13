@@ -36,7 +36,6 @@ import sys
 import time
 
 from glue import segments
-from glue.lal import CacheEntry
 from glue import pipeline
 from pylal import packing
 
@@ -493,7 +492,7 @@ def make_lladd_fragment(dag, parents, instrument, seg, tag, preserves = []):
 	for parent in parents:
 		node.add_parent(parent)
 		for filename in parent.get_output_files():
-			cache.add_new("ANY", "EMPTY", seg, filename)
+			cache.add_new(instrument, None, seg, filename)
 	print >>file(cache_name, "w"), str(cache)
 	node.add_var_opt("input-cache", cache_name)
 	for filename in preserves:
