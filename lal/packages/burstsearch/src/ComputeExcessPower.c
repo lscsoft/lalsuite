@@ -76,7 +76,7 @@ XLALComputeExcessPower(
 		for(bin = 0; bin < tile->tbins; bin += binstep) {
 			sum += pow(XLALREAL4Sum(&plane->data[(tile->tstart + bin) * nf], tile->fstart, tile->fbins), 2.0) / XLALREAL4SumSquares(norm, tile->fstart, tile->fbins);
 			hrsssq += pow(real8_sumwithfac(&plane->data[(tile->tstart + bin) * nf], hrssfactor, tile->fstart, tile->fbins), 2.0);
-	}
+		}
 		tile->excessPower = sum - dof;
 		tile->hrss = sqrt(hrsssq * binstep * tile->deltaT);
 		tile->lnalpha = XLALlnOneMinusChisqCdf(sum, dof);
