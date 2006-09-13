@@ -31,6 +31,7 @@ $Id$
 #include <lal/DetResponse.h>
 #include <lal/TimeDelay.h>
 #include <lal/XLALError.h>
+#include <lal/CoincInspiralEllipsoid.h>
 
 NRCSID( COINCINSPIRALUTILSC, "$Id$" );
 
@@ -316,8 +317,21 @@ LALCreateNIFOCoincList(
   EventIDColumn                *thisID        = NULL;
 
 
+  void (*func)(CoincInspiralTable *, SnglInspiralTable *, InspiralAccuracyList *) = NULL;
+
+
   INITSTATUS( status, "LALCreateNIFOCoincList", COINCINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
+
+  /* Choose the appropriate comparison function */
+  if ( accuracyParams->test == ellipsoid )
+  {
+    func = XLALSnglInspiralCoincTestEllipsoid;
+  }
+  else
+  {
+    func = XLALSnglInspiralCoincTest;
+  }
 
   /* loop over all the coincidences in the list */
   for( thisCoinc = *coincHead; thisCoinc; thisCoinc = thisCoinc->next)
@@ -357,8 +371,8 @@ LALCreateNIFOCoincList(
 
             if ( otherCoinc->snglInspiral[ifoNumber] )
             {
-              LALSnglInspiralCoincTest( status->statusPtr, thisCoinc, 
-                  otherCoinc->snglInspiral[ifoNumber], accuracyParams );
+              (*func)( thisCoinc, otherCoinc->snglInspiral[ifoNumber],
+                                    accuracyParams );
             }
 
             if ( accuracyParams->match )
@@ -711,13 +725,29 @@ LALSnglInspiralCoincTest(
     )
 /* </lalVerbatim> */
 {
+
+  INITSTATUS( status, "LALSnglInspiralCoincTest", COINCINSPIRALUTILSC );
+
+  XLALSnglInspiralCoincTest( coincInspiral, snglInspiral, accuracyParams );
+
+  RETURN( status );
+}
+
+
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+void
+XLALSnglInspiralCoincTest(
+    CoincInspiralTable         *coincInspiral,
+    SnglInspiralTable          *snglInspiral,
+    InspiralAccuracyList       *accuracyParams
+    )
+/* </lalVerbatim> */
+{
   SnglInspiralTable    *thisCoincEntry;
   INT4                  match = 1;
   INT4                  ifoNumber = 0;
   
-  INITSTATUS( status, "LALSnglInspiralCoincTest", COINCINSPIRALUTILSC );
-  ATTATCHSTATUSPTR( status );
-
+  static const char *func = "XLALSnglInspiralCoincTest";
 
   /* Loop over sngl_inspirals contained in coinc_inspiral */
   for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
@@ -729,13 +759,13 @@ LALSnglInspiralCoincTest(
       /* snglInspiral entry exists for this IFO, perform coincidence test */
       if ( ifoNumber == XLALIFONumber(snglInspiral->ifo) )
       {
-        LALInfo( status, "We already have a coinc from this IFO" );
+        XLALPrintInfo( "We already have a coinc from this IFO" );
         accuracyParams->match = 0;
       }
 
       else
       {
-        LALCompareInspirals ( status->statusPtr, snglInspiral, 
+        XLALCompareInspirals ( snglInspiral, 
             thisCoincEntry, accuracyParams );
       }
       /* set match to zero if no match.  Keep same if match */
@@ -745,13 +775,11 @@ LALSnglInspiralCoincTest(
   /* returm errorParams->match to be 1 if we match, zero otherwise */
   accuracyParams->match = match;
   if ( accuracyParams->match == 0 ) 
-    LALInfo( status, "Coincidence test failed" );
+    XLALPrintInfo( "Coincidence test failed" );
   if ( accuracyParams->match == 1 ) 
-    LALInfo( status, "Coincidence test passed" );
+    XLALPrintInfo( "Coincidence test passed" );
 
-
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
+  return;
 }
 
 
