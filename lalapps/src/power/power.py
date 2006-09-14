@@ -38,7 +38,6 @@ import time
 from glue import segments
 from glue import pipeline
 from glue.lal import CacheEntry
-from pylal import packing
 from pylal.date import LIGOTimeGPS
 
 
@@ -140,7 +139,7 @@ class BurstInjNode(pipeline.CondorDAGNode):
 		return [CacheEntry("H1,H2,L1", self.__usertag, seg, "file://localhost" + os.path.abspath(filename))]
 
 	def get_output_files(self):
-		return [c.url[16:] for c in self.get_output_cache()]
+		raise NotImplementedError
 
 	def get_output(self):
 		raise NotImplementedError
@@ -212,7 +211,7 @@ class PowerNode(pipeline.AnalysisNode):
 		return [CacheEntry(self.get_ifo(), self.__usertag, seg, "file://localhost" + os.path.abspath(filename))]
 
 	def get_output_files(self):
-		return [c.url[16:] for c in self.get_output_cache()]
+		raise NotImplementedError
 
 	def get_output(self):
 		raise NotImplementedError
@@ -245,6 +244,40 @@ class PowerNode(pipeline.AnalysisNode):
 		self.add_input_file(file)
 
 
+class LigolwAddNode(pipeline.LigolwAddNode):
+	def __init__(self, *args):
+		pipeline.LigolwAddNode.__init__(self, *args)
+		self.cache = []
+
+	def set_name(self, *args):
+		pipeline.LigolwAddNode.set_name(self, *args)
+		self.cache_name = os.path.join(self._CondorDAGNode__job.cache_dir, "%s.cache" % self.get_name())
+		self.add_var_opt("input-cache", self.cache_name)
+
+	def add_input_cache(self, cache):
+		self.cache.extend(cache)
+
+	def get_output_cache(self):
+		instruments = []
+		for c in self.cache:
+			if c.observatory != None:
+				instruments.extend([ins for ins in c.observatory.split(",") if ins not in instruments])
+		instruments.sort()
+		return [CacheEntry(",".join(instruments), None, segments.segmentlist([c.segment for c in self.cache]).extent(), "file://localhost" + os.path.abspath(self._AnalysisNode__output))]
+
+	def write_input_files(self, *args):
+		f = file(self.cache_name, "w")
+		for c in self.cache:
+			print >>f, str(c)
+		pipeline.LigolwAddNode.write_input_files(self, *args)
+
+	def get_output_files(self):
+		raise NotImplementedError
+
+	def get_output(self):
+		raise NotImplementedError
+
+
 class BucutJob(pipeline.CondorDAGJob):
 	def __init__(self, config_parser):
 		pipeline.CondorDAGJob.__init__(self, "vanilla", get_executable(config_parser, "ligolw_bucut"))
@@ -256,9 +289,25 @@ class BucutJob(pipeline.CondorDAGJob):
 
 
 class BucutNode(pipeline.CondorDAGNode):
+	def __init__(self, *args):
+		pipeline.CondorDAGNode.__init__(self, *args)
+		self.cache = []
+
+	def add_input_cache(self, cache):
+		self.cache.extend(cache)
+		for c in cache:
+			filename = c.path()
+			pipeline.CondorDAGNode.add_file_arg(self, filename)
+			self.add_output_file(filename)
+
 	def add_file_arg(self, filename):
-		pipeline.CondorDAGNode.add_file_arg(self, filename)
-		self.add_output_file(filename)
+		raise NotImplementedError
+
+	def get_output_cache(self):
+		return self.cache
+
+	def get_output_files(self):
+		raise NotImplementedError
 
 	def get_output(self):
 		raise NotImplementedError
@@ -275,9 +324,25 @@ class BuclusterJob(pipeline.CondorDAGJob):
 
 
 class BuclusterNode(pipeline.CondorDAGNode):
+	def __init__(self, *args):
+		pipeline.CondorDAGNode.__init__(self, *args)
+		self.cache = []
+
+	def add_input_cache(self, cache):
+		self.cache.extend(cache)
+		for c in cache:
+			filename = c.path()
+			pipeline.CondorDAGNode.add_file_arg(self, filename)
+			self.add_output_file(filename)
+
 	def add_file_arg(self, filename):
-		pipeline.CondorDAGNode.add_file_arg(self, filename)
-		self.add_output_file(filename)
+		raise NotImplementedError
+
+	def get_output_cache(self):
+		return self.cache
+
+	def get_output_files(self):
+		raise NotImplementedError
 
 	def get_output(self):
 		raise NotImplementedError
@@ -294,9 +359,25 @@ class BinjfindJob(pipeline.CondorDAGJob):
 
 
 class BinjfindNode(pipeline.CondorDAGNode):
+	def __init__(self, *args):
+		pipeline.CondorDAGNode.__init__(self, *args)
+		self.cache = []
+
+	def add_input_cache(self, cache):
+		self.cache.extend(cache)
+		for c in cache:
+			filename = c.path()
+			pipeline.CondorDAGNode.add_file_arg(self, filename)
+			self.add_output_file(filename)
+
 	def add_file_arg(self, filename):
-		pipeline.CondorDAGNode.add_file_arg(self, filename)
-		self.add_output_file(filename)
+		raise NotImplementedError
+
+	def get_output_cache(self):
+		return self.cache
+
+	def get_output_files(self):
+		raise NotImplementedError
 
 	def get_output(self):
 		raise NotImplementedError
@@ -317,6 +398,12 @@ class TisiNode(pipeline.CondorDAGNode):
 		pipeline.CondorDAGNode.add_file_arg(self, filename)
 		self.add_output_file(filename)
 
+	def get_output_cache(self):
+		return [CacheEntry(None, None, segments.segment(-segments.infinity(), segments.infinity()), "file://localhost" + os.path.abspath(filename)) for filename in self._CondorDAGNode__output_files]
+
+	def get_output_files(self):
+		raise NotImplementedError
+
 	def get_output(self):
 		raise NotImplementedError
 
@@ -332,9 +419,25 @@ class BurcaJob(pipeline.CondorDAGJob):
 
 
 class BurcaNode(pipeline.CondorDAGNode):
+	def __init__(self, *args):
+		pipeline.CondorDAGNode.__init__(self, *args)
+		self.cache = []
+
+	def add_input_cache(self, cache):
+		self.cache.extend(cache)
+		for c in cache:
+			filename = c.path()
+			pipeline.CondorDAGNode.add_file_arg(self, filename)
+			self.add_output_file(filename)
+
 	def add_file_arg(self, filename):
-		pipeline.CondorDAGNode.add_file_arg(self, filename)
-		self.add_output_file(filename)
+		raise NotImplementedError
+
+	def get_output_cache(self):
+		return self.cache
+
+	def get_output_files(self):
+		raise NotImplementedError
 
 	def get_output(self):
 		raise NotImplementedError
@@ -495,19 +598,13 @@ def make_tisi_fragment(dag, tag):
 
 
 def make_lladd_fragment(dag, parents, instrument, seg, tag, preserves = []):
-	cache_name = os.path.join(lladdjob.cache_dir, "lladd-%s-%s-%s-%s.cache" % (instrument, tag, int(seg[0]), int(seg.duration())))
-	cache = packing.LALCache()
-
-	node = pipeline.LigolwAddNode(lladdjob)
+	node = LigolwAddNode(lladdjob)
 	node.set_name("lladd-%s-%s-%s-%s" % (instrument, tag, int(seg[0]), int(seg.duration())))
 	for parent in parents:
 		node.add_parent(parent)
-		for filename in parent.get_output_files():
-			cache.add_new(instrument, None, seg, filename)
-	print >>file(cache_name, "w"), str(cache)
-	node.add_var_opt("input-cache", cache_name)
-	for filename in preserves:
-		node.add_var_arg("--remove-input-exclude %s" % filename)
+		node.add_input_cache(parent.get_output_cache())
+	for cache_entry in preserves:
+		node.add_var_arg("--remove-input-exclude %s" % cache_entry.path())
 	dag.add_node(node)
 
 	return node
@@ -535,7 +632,7 @@ def make_bucut_fragment(dag, parents, instrument, seg, tag):
 	node.set_name("ligolw_bucut-%s-%s-%s-%s" % (instrument, tag, int(seg[0]), int(seg.duration())))
 	for parent in parents:
 		node.add_parent(parent)
-		map(node.add_file_arg, parent.get_output_files())
+		node.add_input_cache(parent.get_output_cache())
 	node.add_macro("macrocomment", tag)
 	dag.add_node(node)
 
@@ -573,7 +670,7 @@ def make_bucluster_fragment(dag, parents, instrument, seg, tag):
 	node.set_name("ligolw_bucluster-%s-%s-%s-%s" % (instrument, tag, int(seg[0]), int(seg.duration())))
 	for parent in parents:
 		node.add_parent(parent)
-		map(node.add_file_arg, parent.get_output_files())
+		node.add_input_cache(parent.get_output_cache())
 	node.add_macro("macrocomment", tag)
 	dag.add_node(node)
 
@@ -585,7 +682,7 @@ def make_binjfind_fragment(dag, parents, instrument, seg, tag):
 	node.set_name("ligolw_binjfind-%s-%s-%s-%s" % (instrument, tag, int(seg[0]), int(seg.duration())))
 	for parent in parents:
 		node.add_parent(parent)
-		map(node.add_file_arg, parent.get_output_files())
+		node.add_input_cache(parent.get_output_cache())
 	node.add_macro("macrocomment", tag)
 	dag.add_node(node)
 
@@ -603,7 +700,7 @@ def make_binjfind_fragment(dag, parents, instrument, seg, tag):
 def make_multipower_fragment(dag, powerparents, lladdparents, framecache, seglist, instrument, tag, injargs = {}):
 	segment = seglist.extent()
 	powernodes = [make_power_fragment(dag, powerparents, instrument, seg, tag, framecache, injargs) for seg in seglist]
-	lladdnode = make_lladd_fragment(dag, powernodes + lladdparents, instrument, segment, "POWER_%s" % tag, preserves = reduce(list.__add__, [node.get_output_files() for node in lladdparents], []))
+	lladdnode = make_lladd_fragment(dag, powernodes + lladdparents, instrument, segment, "POWER_%s" % tag, preserves = reduce(list.__add__, [node.get_output_cache() for node in lladdparents], []))
 	lladdnode.set_output("%s-POWER_%s-%s-%s.xml" % (instrument, tag, int(segment[0]), int(segment.duration())))
 	return lladdnode
 
@@ -643,7 +740,7 @@ def make_multibinj_fragment(dag, seg, tag):
 
 	binjnodes = [make_binj_fragment(dag, seg, tag, 0.0, flow, fhigh)]
 
-	node = make_lladd_fragment(dag, binjnodes, "ANY", seg, tag)
+	node = make_lladd_fragment(dag, binjnodes, "ALL", seg, tag)
 	node.set_output("HL-%s-%d-%d.xml" % (tag, int(seg[0]), int(seg.duration())))
 
 	return node
@@ -667,7 +764,7 @@ def make_injection_segment_fragment(dag, datafindnode, segment, instrument, psds
 	if not tisifrag:
 		tisifrag = make_tisi_fragment(dag, "INJECTIONS_%s" % tag)
 
-	lladdnode = make_multipower_fragment(dag, [datafindnode, binjfrag], [binjfrag, tisifrag], datafindnode.get_output(), seglist, instrument, "INJECTIONS_%s" % tag, injargs = {"burstinjection-file": binjfrag.get_output()})
+	lladdnode = make_multipower_fragment(dag, [datafindnode, binjfrag], [binjfrag, tisifrag], datafindnode.get_output(), seglist, instrument, "INJECTIONS_%s" % tag, injargs = {"burstinjection-file": binjfrag.get_output_cache()[0].path()})
 
 	bucutnode = make_bucut_fragment(dag, [lladdnode], instrument, segment, "INJECTIONS_%s" % tag)
 
