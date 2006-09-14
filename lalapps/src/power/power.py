@@ -208,6 +208,15 @@ class PowerNode(pipeline.AnalysisNode):
 			raise ValueError, "start time, end time, ifo, or user tag has not been set"
 		seg = segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end()))
 		filename = "%s-POWER_%s-%d-%d.xml" % (self.get_ifo(), self.__usertag, int(self.get_start()), int(self.get_end()) - int(self.get_start()))
+
+		# Really this should be done somewhere else, but as long as
+		# we are using a DAG post-script to compress the output
+		# file, the only place we know for sure we know the name is
+		# in this function so we can only set the post script here.
+		# What if this function is never called?
+		self.set_post_script("/usr/bin/gzip %s" % os.path.abspath(filename))
+		filename += ".gz"
+
 		return [CacheEntry(self.get_ifo(), self.__usertag, seg, "file://localhost" + os.path.abspath(filename))]
 
 	def get_output_files(self):
@@ -664,7 +673,7 @@ def make_multipower_fragment(dag, powerparents, lladdparents, framecache, seglis
 	segment = seglist.extent()
 	powernodes = [make_power_fragment(dag, powerparents, instrument, seg, tag, framecache, injargs) for seg in seglist]
 	lladdnode = make_lladd_fragment(dag, powernodes + lladdparents, instrument, segment, "POWER_%s" % tag, preserves = reduce(list.__add__, [node.get_output_cache() for node in lladdparents], []))
-	lladdnode.set_output("%s-POWER_%s-%s-%s.xml" % (instrument, tag, int(segment[0]), int(segment.duration())))
+	lladdnode.set_output("%s-POWER_%s-%s-%s.xml.gz" % (instrument, tag, int(segment[0]), int(segment.duration())))
 	return lladdnode
 
 
