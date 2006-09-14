@@ -383,31 +383,6 @@ class BinjfindNode(pipeline.CondorDAGNode):
 		raise NotImplementedError
 
 
-class TisiJob(pipeline.CondorDAGJob):
-	def __init__(self, config_parser):
-		pipeline.CondorDAGJob.__init__(self, "vanilla", get_executable(config_parser, "ligolw_tisi"))
-		self.set_sub_file("ligolw_tisi.sub")
-		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "ligolw_tisi-$(cluster)-$(process).out"))
-		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "ligolw_tisi-$(cluster)-$(process).err"))
-		self.add_condor_cmd("getenv", "True")
-		self.add_ini_opts(config_parser, "ligolw_tisi")
-
-
-class TisiNode(pipeline.CondorDAGNode):
-	def add_file_arg(self, filename):
-		pipeline.CondorDAGNode.add_file_arg(self, filename)
-		self.add_output_file(filename)
-
-	def get_output_cache(self):
-		return [CacheEntry(None, None, None, "file://localhost" + os.path.abspath(filename)) for filename in self._CondorDAGNode__output_files]
-
-	def get_output_files(self):
-		raise NotImplementedError
-
-	def get_output(self):
-		raise NotImplementedError
-
-
 class BurcaJob(pipeline.CondorDAGJob):
 	def __init__(self, config_parser):
 		pipeline.CondorDAGJob.__init__(self, "vanilla", get_executable(config_parser, "ligolw_burca"))
@@ -457,17 +432,16 @@ datafindjob = None
 binjjob = None
 powerjob = None
 lladdjob = None
-tisijob = None
 binjfindjob = None
 bucutjob = None
 buclusterjob = None
 burcajob = None
 
-def init_job_types(config_parser, types = ["datafind", "binj", "power", "lladd", "tisi", "binjfind", "bucluster", "bucut"]):
+def init_job_types(config_parser, types = ["datafind", "binj", "power", "lladd", "binjfind", "bucluster", "bucut", "burca"]):
 	"""
 	Construct definitions of the submit files.
 	"""
-	global datafindjob, binjjob, powerjob, lladdjob, tisijob, binjfindjob, buclusterjob, llb2mjob, bucutjob
+	global datafindjob, binjjob, powerjob, lladdjob, binjfindjob, buclusterjob, llb2mjob, bucutjob, burcajob
 
 	# LSCdataFind
 	if "datafind" in types:
@@ -485,10 +459,6 @@ def init_job_types(config_parser, types = ["datafind", "binj", "power", "lladd",
 	if "lladd" in types:
 		lladdjob = pipeline.LigolwAddJob(get_out_dir(config_parser), config_parser)
 		lladdjob.cache_dir = get_cache_dir(config_parser)
-
-	# ligolw_tisi
-	if "tisi" in types:
-		tisijob = TisiJob(config_parser)
 
 	# ligolw_binjfind
 	if "binjfind" in types:
@@ -573,7 +543,6 @@ def segment_ok(powerjob, segment):
 
 def make_datafind_fragment(dag, instrument, seg):
 	datafind_pad = 512
-
 	node = pipeline.LSCDataFindNode(datafindjob)
 	node.set_name("LSCdataFind-%s-%s-%s" % (instrument, int(seg[0]), int(seg.duration())))
 	node.set_start(seg[0] - datafind_pad)
@@ -583,17 +552,6 @@ def make_datafind_fragment(dag, instrument, seg):
 		node.set_type(datafindjob.get_config_file().get("datafind", "type_%s" % instrument))
 	node.set_post_script(datafindjob.get_config_file().get("condor", "LSCdataFindcheck") + " --dagman-return $RETURN --gps-start-time %s --gps-end-time %s %s" % (str(seg[0]), str(seg[1]), node.get_output()))
 	dag.add_node(node)
-
-	return node
-
-
-def make_tisi_fragment(dag, tag):
-	node = TisiNode(tisijob)
-	node.set_name("ligolw_tisi-%s" % tag)
-	node.add_file_arg("tisi_%s.xml" % tag)
-	node.add_macro("macrocomment", tag)
-	dag.add_node(node)
-
 	return node
 
 
@@ -606,7 +564,6 @@ def make_lladd_fragment(dag, parents, instrument, seg, tag, preserves = []):
 	for cache_entry in preserves:
 		node.add_var_arg("--remove-input-except %s" % cache_entry.path())
 	dag.add_node(node)
-
 	return node
 
 
@@ -623,7 +580,6 @@ def make_power_fragment(dag, parents, instrument, seg, tag, framecache, injargs 
 		# this is a hack, but I can't be bothered
 		node.add_var_arg("--%s %s" % (arg, value))
 	dag.add_node(node)
-
 	return node
 
 
@@ -635,7 +591,6 @@ def make_bucut_fragment(dag, parents, instrument, seg, tag):
 		node.add_input_cache(parent.get_output_cache())
 	node.add_macro("macrocomment", tag)
 	dag.add_node(node)
-
 	return node
 
 
@@ -661,7 +616,6 @@ def make_binj_fragment(dag, seg, tag, offset, flow, fhigh):
 	node.add_macro("macrofratio", fratio)
 	node.add_macro("macroseed", int(time.time() + start))
 	dag.add_node(node)
-
 	return node
 
 
@@ -673,7 +627,17 @@ def make_bucluster_fragment(dag, parents, instrument, seg, tag):
 		node.add_input_cache(parent.get_output_cache())
 	node.add_macro("macrocomment", tag)
 	dag.add_node(node)
+	return node
 
+
+def make_burca_fragment(dag, parents, instrument, seg, tag):
+	node = BurcaNode(burcajob)
+	node.set_name("ligolw_burca-%s-%s-%s-%s" % (instrument, tag, int(seg[0]), int(seg.duration())))
+	for parent in parents:
+		node.add_parent(parent)
+		node.add_input_cache(parent.get_output_cache())
+	node.add_macro("macrocomment", tag)
+	dag.add_node(node)
 	return node
 
 
@@ -685,7 +649,6 @@ def make_binjfind_fragment(dag, parents, instrument, seg, tag):
 		node.add_input_cache(parent.get_output_cache())
 	node.add_macro("macrocomment", tag)
 	dag.add_node(node)
-
 	return node
 
 
@@ -742,7 +705,6 @@ def make_multibinj_fragment(dag, seg, tag):
 
 	node = make_lladd_fragment(dag, binjnodes, "ALL", seg, tag)
 	node.set_output("HL-%s-%d-%d.xml" % (tag, int(seg[0]), int(seg.duration())))
-
 	return node
 
 
@@ -754,17 +716,14 @@ def make_multibinj_fragment(dag, seg, tag):
 # =============================================================================
 #
 
-def make_injection_segment_fragment(dag, datafindnode, segment, instrument, psds_per_job, tag, binjfrag = None, tisifrag = None):
+def make_injection_segment_fragment(dag, datafindnode, segment, instrument, psds_per_job, tag, binjfrag = None):
 	seglist = split_segment(powerjob, segment, psds_per_job)
 	print >>sys.stderr, "Injections split: " + str(seglist)
 
 	if not binjfrag:
 		binjfrag = make_multibinj_fragment(dag, seglist.extent(), "INJECTIONS_%s" % tag)
 
-	if not tisifrag:
-		tisifrag = make_tisi_fragment(dag, "INJECTIONS_%s" % tag)
-
-	lladdnode = make_multipower_fragment(dag, [datafindnode, binjfrag], [binjfrag, tisifrag], datafindnode.get_output(), seglist, instrument, "INJECTIONS_%s" % tag, injargs = {"burstinjection-file": binjfrag.get_output_cache()[0].path()})
+	lladdnode = make_multipower_fragment(dag, [datafindnode, binjfrag], [binjfrag], datafindnode.get_output(), seglist, instrument, "INJECTIONS_%s" % tag, injargs = {"burstinjection-file": binjfrag.get_output_cache()[0].path()})
 
 	bucutnode = make_bucut_fragment(dag, [lladdnode], instrument, segment, "INJECTIONS_%s" % tag)
 
