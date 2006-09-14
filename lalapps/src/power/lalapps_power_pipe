@@ -45,7 +45,8 @@ import tempfile
 from glue import pipeline
 from glue import segments
 from glue import segmentsUtils
-from pylal import ligolw_tisi
+from glue.lal import CacheEntry
+from pylal import ligolw_cafe
 from pylal import llwapp
 from pylal.date import LIGOTimeGPS
 from lalapps import power
@@ -65,8 +66,11 @@ def parse_command_line():
 	parser.add_option("--config-file", metavar = "filename", default = "power.ini", help = "set .ini config file name (default = power.ini)")
 	parser.add_option("--full-segments", action = "store_true", help = "analyze all data from segment lists, not just coincident times")
 	parser.add_option("--no-injections", action = "store_true", help = "do not do injections")
+	parser.add_option("--time-slides", metavar = "filename", default = "time_slides.xml", help = "set file from which to obtain the time slide table")
 	parser.add_option("-v", "--verbose", action = "store_true", help = "be verbose")
 	options, filenames = parser.parse_args()
+
+	options.time_slides = CacheEntry(None, None, None, "file://localhost" + os.path.abspath(options.time_slides))
 
 	return options, (filenames or ["power.dag"])
 
@@ -96,8 +100,6 @@ def parse_config_file(options):
 	for ifo in config.get("pipeline", "ifos").split():
 		options.seglistdict[ifo] = segmentsUtils.fromsegwizard(file(config.get("pipeline", "seglist_%s" % ifo)), coltype = LIGOTimeGPS).coalesce()
 
-	options.timeslides = list(ligolw_tisi.SlidesIter(ligolw_tisi.parse_slides([slidespec for slidespec in config.get("ligolw_tisi", "instrument").split() if slidespec != "--instrument"])))
-
 	options.psds_per_power = config.getint("pipeline", "psds_per_power")
 	options.psds_per_injection = config.getint("pipeline", "psds_per_injection")
 
@@ -125,14 +127,14 @@ power.init_job_types(config_parser)
 # =============================================================================
 #
 
-def compute_segment_lists(options):
-	if options.verbose:
+def compute_segment_lists(seglistdict, time_slides, full_segments = True, verbose = False):
+	if verbose:
 		print >>sys.stderr, "constructing segment list..."
 
-	if not options.full_segments:
+	if not full_segments:
 		# extract the segments that are coincident under the time
 		# slides
-		new = llwapp.get_coincident_segmentlistdict(options.seglistdict, options.timeslides)
+		new = llwapp.get_coincident_segmentlistdict(seglistdict, time_slides)
 
 		# adjust surviving segment lengths up to the next integer
 		# number of PSDs
@@ -147,10 +149,10 @@ def compute_segment_lists(options):
 
 		# and take intersection with original segments to not
 		# exceed original bounds
-		options.seglistdict &= new
+		seglistdict &= new
 
 	# remove segments that are too short
-	for seglist in options.seglistdict.itervalues():
+	for seglist in seglistdict.itervalues():
 		for i in xrange(len(seglist) - 1, -1, -1):
 			if not power.segment_ok(power.powerjob, seglist[i]):
 				del seglist[i]
@@ -164,26 +166,86 @@ def compute_segment_lists(options):
 # =============================================================================
 #
 
-def make_single_instrument_fragment(dag, options, instrument, seglist, binjfrag = None, tisifrag = None):
-	nodes = []
+def make_single_instrument_fragment(dag, options, instrument, seglist, binjfrag = None):
+	powerfrags = []
+	injpowerfrags = []
 	for seg in seglist:
 		if options.verbose:
 			print >>sys.stderr, "generating fragment: %s: %s -- %s" % (instrument, str(seg[0]), str(seg[1]))
+
+		# LSCdataFind
 		datafindfrag = power.make_datafind_fragment(dag, instrument, seg)
 
-		darmpowerfrag = power.make_power_segment_fragment(dag, datafindfrag, seg, instrument, options.psds_per_power, options.tag)
+		# a segment without injections
+		node = power.make_power_segment_fragment(dag, datafindfrag, seg, instrument, options.psds_per_power, options.tag)
 		if "cluster" in power.powerjob.get_opts():
-			darmpowerfrag = power.make_bucluster_fragment(dag, [darmpowerfrag], instrument, seg, options.tag)
+			node = power.make_bucluster_fragment(dag, [node], instrument, seg, options.tag)
 
+		# store fragment
+		powerfrags.append(node)
+
+		# a segment with injections
 		if not options.no_injections:
-			injpowerfrag = power.make_injection_segment_fragment(dag, datafindfrag, seg, instrument, options.psds_per_injection, options.tag, binjfrag = binjfrag, tisifrag = tisifrag)
+			node = power.make_injection_segment_fragment(dag, datafindfrag, seg, instrument, options.psds_per_injection, options.tag, binjfrag = binjfrag)
 			if "cluster" in power.powerjob.get_opts():
-				injpowerfrag = power.make_bucluster_fragment(dag, [injpowerfrag], instrument, seg, "INJECTIONS_%s" % options.tag)
+				node = power.make_bucluster_fragment(dag, [node], instrument, seg, "INJECTIONS_%s" % options.tag)
 
-			binjfindfrag = power.make_binjfind_fragment(dag, [injpowerfrag], instrument, seg, "INJECTIONS_%s" % options.tag)
+			node = power.make_binjfind_fragment(dag, [node], instrument, seg, "INJECTIONS_%s" % options.tag)
 
-		nodes.append(darmpowerfrag)
-	return nodes
+			# store fragment
+			injpowerfrags.append(node)
+
+	return powerfrags, injpowerfrags
+
+
+#
+# =============================================================================
+#
+#                         Coincidence Post-Processing
+#
+# =============================================================================
+#
+
+def make_coinc_stage(dag, parents, tag, time_slides, time_slides_cache_entry, verbose = False):
+	if verbose:
+		print >>sys.stderr, "Generating coincidence nodes for tag = %s" % tag
+
+	# arrange cache entries into groups using ligolw_cafe
+	caches = []
+	for node in parents:
+		cache = node.get_output_cache()
+		if len(cache) != 1:
+			raise Exception, "each parent must provide exactly 1 file"
+		caches.extend(cache)
+	caches = [bin.objects for bin in ligolw_cafe.ligolw_cafe(caches, time_slides, verbose = verbose)[1]]
+
+	# now that the cache entries have been grouped, figure out which
+	# DAG node goes with which entry (assume each DAG fragment provided
+	# a cache of output files with exactly 1 file);  also compute the
+	# segment spanned by each cache while we're at it.
+	segs = []
+	fragments = []
+	# so we can modify it
+	parents = list(parents)
+	for cache_num, cache in enumerate(caches):
+		segs.append(segments.segmentlist([c.segment for c in cache]).extent())
+		fragments.append([])
+		for parent_num in xrange(len(parents) - 1, -1, -1):
+			if parents[parent_num].get_output_cache()[0] in cache:
+				fragments[cache_num].append(parents.pop(parent_num))
+		if len(fragments[cache_num]) != len(cache):
+			# couldn't find the node that provided a cache?
+			raise Exception, "oops"
+	if len(parents):
+		# there were parents that didn't match any caches?
+		raise Exception, "woopsie"
+
+	# build the ligolw_add + ligolw_burca fragments
+	for parents, cache, seg in zip(fragments, caches, segs):
+		node = power.make_lladd_fragment(dag, parents, "ALL", seg, tag, preserves = [time_slides_cache_entry])
+		node.add_input_cache([time_slides_cache_entry])
+		node.set_output("ALL-COINC_%s-%s-%s.xml" % (tag, int(seg[0]), int(seg.duration())))
+		node = power.make_burca_fragment(dag, [node], "ALL", seg, tag)
 
 
 #
@@ -194,7 +256,9 @@ def make_single_instrument_fragment(dag, options, instrument, seglist, binjfrag 
 # =============================================================================
 #
 
-compute_segment_lists(options)
+time_slides = ligolw_cafe.get_time_slides(options.time_slides.path(), verbose = options.verbose, gz = options.time_slides.path()[-3:] == ".gz")
+
+compute_segment_lists(options.seglistdict, time_slides, full_segments = options.full_segments, verbose = options.verbose)
 
 power.make_dag_directories(config_parser)
 
@@ -208,17 +272,32 @@ dag.set_dag_file(os.path.splitext(filenames[0])[0])
 if options.no_injections:
 	binjfrag = None
 else:
-	binjfrag = power.make_multibinj_fragment(dag, options.seglistdict.extent_all(), options.tag)
-tisifrag = power.make_tisi_fragment(dag, options.tag)
+	binjfrag = power.make_multibinj_fragment(dag, options.seglistdict.extent_all(), "INJECTIONS_%s" % options.tag)
 
 #
 # Build single instrument fragments, one for each instrument for each
 # segment.
 #
 
-single_instrument_fragments = {}
+sngl_inst_pwrfrags = []
+sngl_inst_injfrags = []
 for instrument, seglist in options.seglistdict.iteritems():
-	single_instrument_fragments[instrument] = make_single_instrument_fragment(dag, options, instrument, seglist, binjfrag = binjfrag, tisifrag = tisifrag)
+	a, b = make_single_instrument_fragment(dag, options, instrument, seglist, binjfrag = binjfrag)
+	sngl_inst_pwrfrags.extend(a)
+	sngl_inst_injfrags.extend(b)
+
+
+#
+# Coincidence
+#
+
+make_coinc_stage(dag, sngl_inst_pwrfrags, options.tag, time_slides, options.time_slides, verbose = options.verbose)
+make_coinc_stage(dag, sngl_inst_injfrags, "INJECTIONS_%s" % options.tag, time_slides, options.time_slides, verbose = options.verbose)
+
+
+#
+# Output
+#
 
 if options.verbose:
 	print >>sys.stderr, "writing dag..."
