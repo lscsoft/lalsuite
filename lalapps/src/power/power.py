@@ -727,6 +727,5 @@ def make_injection_segment_fragment(dag, datafindnode, binjnode, segment, instru
 	seglist = split_segment(powerjob, segment, psds_per_job)
 	if verbose:
 		print >>sys.stderr, "Injections split: " + str(seglist)
-	node = make_multipower_fragment(dag, [datafindnode, binjnode], [binjnode], datafindnode.get_output(), seglist, instrument, "INJECTIONS_%s" % tag, injargs = {"burstinjection-file": binjnode.get_output_cache()[0].path()})
-	return node
+	return make_multipower_fragment(dag, [datafindnode, binjnode], [], datafindnode.get_output(), seglist, instrument, "INJECTIONS_%s" % tag, injargs = {"burstinjection-file": binjnode.get_output_cache()[0].path()})
 

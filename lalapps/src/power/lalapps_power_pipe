@@ -238,13 +238,16 @@ def make_coinc_stage(dag, parents, tag, time_slides, time_slides_cache_entry, bi
 		# there were parents that didn't match any caches?
 		raise Exception, "woopsie"
 
-	# build the ligolw_add + ligolw_burca fragments
+	# build the ligolw_add + ligolw_burca fragments;  if a binjnode has
+	# been provided, add its output into the lladd node and add
+	# binjfinding.
 	for parents, cache, seg in zip(fragments, caches, segs):
 		node = power.make_lladd_fragment(dag, parents, "ALL", seg, tag, preserves = [time_slides_cache_entry])
-		node.add_input_cache([time_slides_cache_entry])
 		node.set_output("ALL-COINC_%s-%s-%s.xml.gz" % (tag, int(seg[0]), int(seg.duration())))
+		node.add_input_cache([time_slides_cache_entry])
 		# do injection finding here, after files have been combined
 		if binjnode != None:
+			node.add_input_cache(binjnode.get_output_cache())
 			node = power.make_bucut_fragment(dag, [node], "ALL", seg, tag)
 			node = power.make_binjfind_fragment(dag, [node], "ALL", seg, tag)
 		node = power.make_burca_fragment(dag, [node], "ALL", seg, tag)
