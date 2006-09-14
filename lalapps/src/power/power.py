@@ -263,7 +263,7 @@ class LigolwAddNode(pipeline.LigolwAddNode):
 			if c.observatory != None:
 				instruments.extend([ins for ins in c.observatory.split(",") if ins not in instruments])
 		instruments.sort()
-		return [CacheEntry(",".join(instruments), None, segments.segmentlist([c.segment for c in self.cache]).extent(), "file://localhost" + os.path.abspath(self._AnalysisNode__output))]
+		return [CacheEntry(",".join(instruments), None, segments.segmentlist([c.segment for c in self.cache if c.segment != None]).extent(), "file://localhost" + os.path.abspath(self._AnalysisNode__output))]
 
 	def write_input_files(self, *args):
 		f = file(self.cache_name, "w")
@@ -399,7 +399,7 @@ class TisiNode(pipeline.CondorDAGNode):
 		self.add_output_file(filename)
 
 	def get_output_cache(self):
-		return [CacheEntry(None, None, segments.segment(-segments.infinity(), segments.infinity()), "file://localhost" + os.path.abspath(filename)) for filename in self._CondorDAGNode__output_files]
+		return [CacheEntry(None, None, None, "file://localhost" + os.path.abspath(filename)) for filename in self._CondorDAGNode__output_files]
 
 	def get_output_files(self):
 		raise NotImplementedError
@@ -604,7 +604,7 @@ def make_lladd_fragment(dag, parents, instrument, seg, tag, preserves = []):
 		node.add_parent(parent)
 		node.add_input_cache(parent.get_output_cache())
 	for cache_entry in preserves:
-		node.add_var_arg("--remove-input-exclude %s" % cache_entry.path())
+		node.add_var_arg("--remove-input-except %s" % cache_entry.path())
 	dag.add_node(node)
 
 	return node
