@@ -166,7 +166,7 @@ def compute_segment_lists(seglistdict, time_slides, full_segments = True, verbos
 # =============================================================================
 #
 
-def make_single_instrument_fragment(dag, options, instrument, seglist, binjfrag = None):
+def make_single_instrument_fragment(dag, options, instrument, seglist, binjnode = None):
 	powerfrags = []
 	injpowerfrags = []
 	for seg in seglist:
@@ -177,7 +177,7 @@ def make_single_instrument_fragment(dag, options, instrument, seglist, binjfrag 
 		datafindfrag = power.make_datafind_fragment(dag, instrument, seg)
 
 		# a segment without injections
-		node = power.make_power_segment_fragment(dag, datafindfrag, seg, instrument, options.psds_per_power, options.tag)
+		node = power.make_power_segment_fragment(dag, datafindfrag, seg, instrument, options.psds_per_power, options.tag, verbose = options.verbose)
 		if "cluster" in power.powerjob.get_opts():
 			node = power.make_bucluster_fragment(dag, [node], instrument, seg, options.tag)
 
@@ -185,12 +185,10 @@ def make_single_instrument_fragment(dag, options, instrument, seglist, binjfrag 
 		powerfrags.append(node)
 
 		# a segment with injections
-		if not options.no_injections:
-			node = power.make_injection_segment_fragment(dag, datafindfrag, seg, instrument, options.psds_per_injection, options.tag, binjfrag = binjfrag)
+		if binjnode != None:
+			node = power.make_injection_segment_fragment(dag, datafindfrag, binjnode, seg, instrument, options.psds_per_injection, options.tag, verbose = options.verbose)
 			if "cluster" in power.powerjob.get_opts():
 				node = power.make_bucluster_fragment(dag, [node], instrument, seg, "INJECTIONS_%s" % options.tag)
-
-			node = power.make_binjfind_fragment(dag, [node], instrument, seg, "INJECTIONS_%s" % options.tag)
 
 			# store fragment
 			injpowerfrags.append(node)
@@ -206,7 +204,7 @@ def make_single_instrument_fragment(dag, options, instrument, seglist, binjfrag 
 # =============================================================================
 #
 
-def make_coinc_stage(dag, parents, tag, time_slides, time_slides_cache_entry, verbose = False):
+def make_coinc_stage(dag, parents, tag, time_slides, time_slides_cache_entry, binjnode = None, verbose = False):
 	if verbose:
 		print >>sys.stderr, "Generating coincidence nodes for tag = %s" % tag
 
@@ -245,6 +243,10 @@ def make_coinc_stage(dag, parents, tag, time_slides, time_slides_cache_entry, ve
 		node = power.make_lladd_fragment(dag, parents, "ALL", seg, tag, preserves = [time_slides_cache_entry])
 		node.add_input_cache([time_slides_cache_entry])
 		node.set_output("ALL-COINC_%s-%s-%s.xml" % (tag, int(seg[0]), int(seg.duration())))
+		# do injection finding here, after files have been combined
+		if binjnode != None:
+			node = power.make_bucut_fragment(dag, [node], "ALL", seg, tag)
+			node = power.make_binjfind_fragment(dag, [node], "ALL", seg, tag)
 		node = power.make_burca_fragment(dag, [node], "ALL", seg, tag)
 
 
@@ -270,9 +272,9 @@ dag.set_dag_file(os.path.splitext(filenames[0])[0])
 #
 
 if options.no_injections:
-	binjfrag = None
+	binjnode = None
 else:
-	binjfrag = power.make_multibinj_fragment(dag, options.seglistdict.extent_all(), "INJECTIONS_%s" % options.tag)
+	binjnode = power.make_multibinj_fragment(dag, options.seglistdict.extent_all(), "INJECTIONS_%s" % options.tag)
 
 #
 # Build single instrument fragments, one for each instrument for each
@@ -282,7 +284,7 @@ else:
 sngl_inst_pwrfrags = []
 sngl_inst_injfrags = []
 for instrument, seglist in options.seglistdict.iteritems():
-	a, b = make_single_instrument_fragment(dag, options, instrument, seglist, binjfrag = binjfrag)
+	a, b = make_single_instrument_fragment(dag, options, instrument, seglist, binjnode)
 	sngl_inst_pwrfrags.extend(a)
 	sngl_inst_injfrags.extend(b)
 
@@ -292,7 +294,7 @@ for instrument, seglist in options.seglistdict.iteritems():
 #
 
 make_coinc_stage(dag, sngl_inst_pwrfrags, options.tag, time_slides, options.time_slides, verbose = options.verbose)
-make_coinc_stage(dag, sngl_inst_injfrags, "INJECTIONS_%s" % options.tag, time_slides, options.time_slides, verbose = options.verbose)
+make_coinc_stage(dag, sngl_inst_injfrags, "INJECTIONS_%s" % options.tag, time_slides, options.time_slides, binjnode = binjnode, verbose = options.verbose)
 
 
 #

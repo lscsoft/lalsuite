@@ -676,17 +676,15 @@ def make_multipower_fragment(dag, powerparents, lladdparents, framecache, seglis
 # =============================================================================
 #
 
-def make_power_segment_fragment(dag, datafindnode, segment, instrument, psds_per_job, tag):
+def make_power_segment_fragment(dag, datafindnode, segment, instrument, psds_per_job, tag, verbose = False):
 	"""
 	Construct a DAG fragment for an entire segment, splitting the
 	segment into multiple power jobs.
 	"""
 	seglist = split_segment(powerjob, segment, psds_per_job)
-	print >>sys.stderr, "Segment split: " + str(seglist)
-
-	lladdnode = make_multipower_fragment(dag, [datafindnode], [], datafindnode.get_output(), seglist, instrument, tag)
-
-	return lladdnode
+	if verbose:
+		print >>sys.stderr, "Segment split: " + str(seglist)
+	return make_multipower_fragment(dag, [datafindnode], [], datafindnode.get_output(), seglist, instrument, tag)
 
 
 #
@@ -716,16 +714,10 @@ def make_multibinj_fragment(dag, seg, tag):
 # =============================================================================
 #
 
-def make_injection_segment_fragment(dag, datafindnode, segment, instrument, psds_per_job, tag, binjfrag = None):
+def make_injection_segment_fragment(dag, datafindnode, binjnode, segment, instrument, psds_per_job, tag, verbose = False):
 	seglist = split_segment(powerjob, segment, psds_per_job)
-	print >>sys.stderr, "Injections split: " + str(seglist)
-
-	if not binjfrag:
-		binjfrag = make_multibinj_fragment(dag, seglist.extent(), "INJECTIONS_%s" % tag)
-
-	lladdnode = make_multipower_fragment(dag, [datafindnode, binjfrag], [binjfrag], datafindnode.get_output(), seglist, instrument, "INJECTIONS_%s" % tag, injargs = {"burstinjection-file": binjfrag.get_output_cache()[0].path()})
-
-	bucutnode = make_bucut_fragment(dag, [lladdnode], instrument, segment, "INJECTIONS_%s" % tag)
-
-	return bucutnode
+	if verbose:
+		print >>sys.stderr, "Injections split: " + str(seglist)
+	node = make_multipower_fragment(dag, [datafindnode, binjnode], [binjnode], datafindnode.get_output(), seglist, instrument, "INJECTIONS_%s" % tag, injargs = {"burstinjection-file": binjnode.get_output_cache()[0].path()})
+	return node
 
