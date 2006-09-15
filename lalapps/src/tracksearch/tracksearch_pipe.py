@@ -38,9 +38,10 @@ if not os.path.exists(iniFile):
 if not os.path.exists(segmentList):
     print 'Can not find segentlist: ',os.path.basename(segmentList)
     os.abort()
-if not os.path.exists(injectFile):
-    print 'Can not find the file to inject: ',os.path.basename(injectFile)
-    os.abort()
+if injectFile != "":
+    if not os.path.exists(injectFile):
+        print 'Can not find the file to inject: ',os.path.basename(injectFile)
+        os.abort()
 #Read in the configuration file options
 cp = ConfigParser.ConfigParser()
 cp.read(iniFile)
@@ -65,7 +66,7 @@ dataBlockSize=int(float(str.strip(cp.get('layerconfig','layerTopBlockSize'))))
 #Convert the segment list to smaller blocks
 reformatSegList=tracksearch.tracksearchConvertSegList(segmentList,dataBlockSize)
 #Setup logfile mask
-logFilePath=cp.get('fileLayout','logpath')
+logFilePath=cp.get('filelayout','logpath')
 logFileMask=logFilePath+'/logFile_'
 if not(os.path.isdir(logFilePath)):
        print 'Log path does not exist!'

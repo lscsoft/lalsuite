@@ -78,12 +78,12 @@ def powOf2Floor(input):
     return ans
 
 def determineLayerPath(cp,blockID,layerID):
-    layerPath=str('%s/%s/%s/'%(cp.get('fileLayout','workpath'),blockID,layerID))
+    layerPath=str('%s/%s/%s/'%(cp.get('filelayout','workpath'),blockID,layerID))
     return layerPath
 #End def
 
 def determineBlockPath(cp,blockID):
-    blockPath=str('%s/%s/'%(cp.get('fileLayout','workpath'),blockID))
+    blockPath=str('%s/%s/'%(cp.get('filelayout','workpath'),blockID))
     return blockPath
 #End def
 
@@ -466,7 +466,7 @@ class tracksearchDataFindJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         self.dagDirectory=dagDir
         blockID=block_id
         layerID=1
-        blockPath=cp.get('fileLayout','workpath')+'/'+blockID+'/'+layerID+'/'
+        blockPath=cp.get('filelayout','workpath')+'/'+blockID+'/'+layerID+'/'
         cachePath=blockPath+'/'+'cache'
         logPath=blockPath
         self.df_job=pipeline.LSCDataFindJob(cachePath,logPath,cp)
@@ -601,7 +601,7 @@ class tracksearch:
         self.blockID=str(self.sciSeg.start())+':'+str(self.sciSeg.dur())
         self.dag = pipeline.CondorDAG(logfile)
         self.dagName='tracksearchDAG_'+str(self.sciSeg.start())+'_duration_'+str(self.sciSeg.dur())
-        self.resultPath=self.cp.get('fileLayout','workpath')
+        self.resultPath=self.cp.get('filelayout','workpath')
         self.dagDirectory=self.getDagDirectory()
         self.dagFilename=self.dagDirectory+'/'+self.dagName
         buildDir(self.dagDirectory)
