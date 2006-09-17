@@ -266,6 +266,10 @@ class LigolwAddNode(pipeline.LigolwAddNode):
 	def add_input_cache(self, cache):
 		self.cache.extend(cache)
 
+	def add_preserve_cache(self, cache):
+		for c in cache:
+			self.add_var_arg("--remove-input-except %s" % c.path())
+
 	def get_output_cache(self):
 		instruments = []
 		for c in self.cache:
@@ -570,8 +574,7 @@ def make_lladd_fragment(dag, parents, instrument, seg, tag, preserves = []):
 	for parent in parents:
 		node.add_parent(parent)
 		node.add_input_cache(parent.get_output_cache())
-	for cache_entry in preserves:
-		node.add_var_arg("--remove-input-except %s" % cache_entry.path())
+	node.add_preserve_cache(preserves)
 	dag.add_node(node)
 	return node
 
