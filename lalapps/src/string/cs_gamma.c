@@ -70,8 +70,7 @@ int main( int argc, char *argv[] )
 	      {
 		Gmu=pow(10.0,CLA.logGmustart+j*(CLA.logGmuend-CLA.logGmustart)/CLA.nGmu);
 		alpha = epsilon * pow( Gamma * Gmu, CLA.n );
-		
-	       
+			       
 		/* find the z's corresponding to those A's */
 		if(findzofA(Gmu, alpha)) return 3;
 		
@@ -87,11 +86,12 @@ int main( int argc, char *argv[] )
 		    
 		    /* Compute the rate of bursts */
 		    gamma=0.0;
-		    for (l = 0; l < Namp; l++)
+		    for (l = 0; l < Namp-1; l++)
 		      {
-			gamma += eff[l] * zofA[l] * dRdz[l];
+			Dlnz = (-log(zofA[l+1])+log(zofA[l]));
+			gamma += eff[l] * zofA[l] * dRdz[l] * Dlnz;
 		      }
-		    gamma *= Dlnz * c/p;
+		    gamma *= c/p;
 		    fprintf( fp,"%e  %e  %e  %e  %e\n", p,CLA.n,epsilon,Gmu,gamma);
 
 		  }
@@ -124,6 +124,7 @@ int finddRdz(double Gmu, double alpha, double f, double Gamma)
       dRdz[j] = 0.5 * H0 * pow(f/H0,-2.0/3.0) * pow(alpha, -5.0/3.0) / (Gamma*Gmu) *
 	pow(cosmofns.phit[j],-14.0/3.0) * cosmofns.phiV[j] * pow(1+cosmofns.z[j],-5.0/3.0);
 
+      /* remember I have to add the theta cutoff here too */
 /*       fprintf(stdout,"%e %e\n", cosmofns.z[j], dRdz[j]); */
     }
 
@@ -168,10 +169,8 @@ int findzofA(double Gmu, double alpha)
     {
       a = amp[j] * pow(H0,-1.0/3.0) * pow(alpha,-2.0/3.0) / Gmu;
       zofA[j] = gsl_interp_eval (zofa_interp, fz, z, a, acc_zofa );
+/*       fprintf(stdout,"%e %e %e\n", amp[j],a, zofA[j]); */
     }
-
-  /* This is the logarithmic step size in the redshift */
-  Dlnz=log(zofA[0])-log(zofA[1]);
 
   cs_cosmo_functions_free( cosmofns );
   free(fz);
