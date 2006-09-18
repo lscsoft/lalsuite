@@ -1,0 +1,42 @@
+; tracksearch tuning initialization file
+;
+; holds all configuration options to perform a lh,ll space search
+; 1)the calling script will be called to setup the FA rates
+; then called to determine the 1% FA PL values
+; setup the injection pipeline
+; 2) setup the injection pipelines
+; 3) determine the efficiencies of the injections at each params space
+; point
+;
+;
+[all]
+masterini=/home/charlie/research.d/src/lalapps/src/tracksearch/tracksearchPipeline.ini
+tuningHome=/home/charlie/pipeTest/tuneTests
+tuningLogs=/tmp/charlie/myfile.log
+seglist=/home/charlie/pipeTest/segmentsCLIP.txt.revised
+pipeProgram=/home/charlie/research.d/src/lalapps/src/tracksearch/tracksearch_pipe.py
+
+; Software will make series of ini files 1 per pipe label _h_l_, etc
+iniBatchLabel=_pipeTune_
+
+; Lambda_h points -- UpperLh;DeltaLh;LowerLh
+LH=4.0;0.1;0.1
+
+; Lambda_l point (% of Lh) -- UpperLl;DeltaLl;LowerLl
+LL=0.95;0.05;0.05
+
+
+[false-alarm-setup]
+
+[false-alarm-calculate]
+;Find P,L for this FA rate quoted in terms of \pm \sigma ie
+;99%->3sigma FAR=3.0
+FAR=3.00
+;This file will be placed relative to [all],tuningHome
+datfilename=FAR_results.data
+
+[detect-efficiency-setup]
+trialcount=10,000
+injectionFile=/home/charlie/pipeTest/injectMe.txt
+
+[detect-efficiency-calculate]
