@@ -48,9 +48,13 @@ class tuneObject:
         self.myIni=cp.get('all','masterini')
         self.batchMask=cp.get('all','iniBatchLabel')
         self.home=cp.get('all','tuningHome')
-        self.installPipes=self.home+'/pipes'
+        self.installPipes=self.home+'/FA_pipes'
+        self.installIni=self.home+'/FA_ini'
+        self.installPipes2=self.home+'/DE_pipes'
+        self.installIni2=self.home+'/DE_ini'
         self.log=cp.get('all','tuningLogs')
         self.seglist=cp.get('all','seglist')
+        self.mySigmaFA=float(cp.get('false-alarm-calculate','FAR'))
         self.FApipeNames=[]
         self.DEpipeNames=[]
         self.pipeBuilder=cp.get('all','pipeProgram')
@@ -58,7 +62,14 @@ class tuneObject:
         buildDir(self.home)
     #End __init__ method 
 
-    def performFAsetup(self):
+    def __createLHLL__(self):
+        """
+        This method makes a simple 5 element listing for later use.
+        The data will
+        look like [pipeName,prettyH,prettyL,H,L].  It will span the options in
+        [all],LH and LL
+        """
+        i=0
         h=float(self.LH[2])
         l=float(self.LL[2])
         deltah=float(self.LH[1])
@@ -71,18 +82,103 @@ class tuneObject:
         if l>stopl:
             print "Error in config, inconsistent LL options."
             os.abort()
-        i=0
         while (h <= stoph):
             l=float(self.LL[2])
             while (l <= stopl):
                 coord=[h,h*l]
                 pH=str(str(coord[0]).__getslice__(0,int(str(coord[0]).index(".")+4))).zfill(8)
                 pL=str(str(coord[1]).__getslice__(0,int(str(coord[1]).index(".")+4))).zfill(8)
-                pipeIniName=self.home+'/'+'FAsetup_'+self.batchMask+':'+pH+':'+pL+':'+'.ini'
+                pipeIniName=self.installIni+'/'+self.batchMask+':'+pH+':'+pL+':'+'.ini'
                 self.FApipeNames.append([pipeIniName,pH,pL,coord[0],coord[1]])
                 l=l+deltal
                 i=i+1
             h=h+deltah
+    #End __createLHLL__
+
+    def __findResultFiles__(self,searchPath):
+        """
+        Using find via the command module we will find files via pathnames
+        searching for a string
+        """
+        cmdString='find '+searchPath+'/*'
+        errs=commands.getstatusoutput(cmdString)
+        fileList=err[1].split('\n')
+        resultList=[]
+        for entry in fileList:
+            for keywords in entryList:
+                if entry.__contains__('RESULTS'):
+                    if entry.__contains__('_1.candidates'):
+                        resultList.append(entry)
+        return resultList
+
+    # End __findResultFiles__
+
+    def __layer1CandidatePaths__(self,searchPath):
+        """
+        Using find via the command module we will fetch the path & names of
+        candidate files in the /1/ layer to see how many maps were triggered.
+        The efficiency is the number triggered based on the total number of
+        maps tested.
+        """
+        cmdString='find '+searchPath+'/* | grep /1/ | grep MAP | awk -F "MAP" '+"'"+'{print $1}'+"'"
+        errs=commands.getstatusoutput(cmdString)
+        fileList=errs[1].split('\n')
+        resultList=[]
+        for entry in fileList:
+            if entry.__contains__('/1/'):
+                    resultList.append(entry)
+        return resultList
+    #End __layer1CandidatePaths__
+    
+    def __determineDEinPath__(self,candPath):
+        """
+        This uses the shell and grep to count the number of candidate files with
+        a trigger in some particular path
+        """
+        cmdString='grep -h -i "Total Curves" '+str(candPath)+'/* | grep -c -v 0'
+        cmdString2='grep -h -i "Total Curves" '+str(candPath)+'/* | wc -l '
+        errs=commands.getstatusoutput(cmdString)
+        errs2=commands.getstatusoutput(cmdString2)
+        filecount=int(errs2[1])
+        trigFound=int(errs[1])
+        return [trigFound,filecount]
+    # End __determineDEinPath__
+
+    def __buildDAGfrom__(self,dagFilename,root2dags):
+        """
+        Scans all subdirectories to root2dag for dags to create a master dag file for tuning execution.
+        This module uses the shell and find utilities to locate all dags for inclusion.
+        """
+        cmdString='find '+root2dags+'/* | grep ".dag"'
+        errs=commands.getstatusoutput(cmdString)
+        if errs[0] != 0:
+            print "There was an error finding the individual dag submit files for each pipe!"
+            print errs[1]
+            print " "
+        fileList=errs[1].split('\n')
+        print "The master DAG will have ",fileList.__len__()," nodes/subdags."
+        print "Preparing the master dag may take awhile."
+        for dagEntry in fileList:
+            cmdString2='condor_submit_dag -no_submit '+dagEntry
+            errs=commands.getstatusoutput(cmdString2)
+            if errs[0] != 0:
+                print "There is a problem creating Master DAG node :",dagEntry
+                print errs[1]
+                print " "
+                print " "
+        i=0
+        masterDAG_fp=file(dagFilename,'w')
+        for entry in fileList:
+            masterDAG_fp.write('Job '+str(i)+' '+str(entry)+'.condor.sub \n')
+            i=i+1
+        masterDAG_fp.close()
+        print "Master dag is ready."
+    #End __buildDAGfrom__
+
+    def performFAsetup(self):
+        buildDir(self.installPipes)
+        buildDir(self.installIni)
+        self.__createLHLL__()
         print "Creating each pipe configuration script."
         for pipe in self.FApipeNames:
             self.FAconfigure(pipe[3],pipe[4],pipe[0])
@@ -90,6 +186,10 @@ class tuneObject:
         for pipe in self.FApipeNames:
             self.createPipe(pipe[0])
         print "Ok. Finished"
+        #Search the workspace to construct a huge parent DAG for submitting all the DAGs
+        root2dags=self.installPipes
+        dagFilename=self.home+'/FA_Tuning.dag'
+        self.__buildDAGfrom__(dagFilename,root2dags)
     #end performFAsetup method
 
     def FAconfigure(self,LH,LL,iniName):
@@ -100,7 +200,7 @@ class tuneObject:
         """
         newCP=copy.deepcopy(self.cpIni)
         # New/Rewritten ini options
-        uniqStr='_'+str(LH)+'_'+str(LL)+'_'
+        uniqStr='FA_'+str(LH)+'_'+str(LL)+'_'
         newCP.set('filelayout','workpath',self.installPipes+'/'+uniqStr)
         newCP.set('filelayout','logpath',self.log+uniqStr)
         newCP.set('tracksearchbase','start_threshold',LH)
@@ -132,10 +232,51 @@ class tuneObject:
             print " "
     # End method createPipe
 
+    def performFAcalc(self):
+        """
+        This method will parse through all the pipes candidate files to find
+        the individual 
+        P and L values which would alone yield the specified P,L value for
+        the given parameter FAR=3 imples 3sigma or about 99% FA rate.  This
+        option is in the tun file under section [false-alarm-calculate] FAR
+        """
+        #1) Load the RESULTS File for level 1 tseries data
+        #2) Invoke the candidate class method to give P,L list for given
+        #   sigma value
+        #3) Record the LH,LL,P,L quadruple to a file FAR_Results.dat
+        myFAR=self.mySigmaFA
+        
+        # Determine the pipe that should be installed based on tun file.
+        resultFiles=self.__findResultsFiles__(self.tuningHome+'/FalseAlarm')
+        print "Checking ",resultFiles.__len__()," total candidate files."
+        outputData=[]
+        for entry in resultFiles:
+            candidate=candidateList()
+            candidate.loadfile(entry)
+            myStat=candidate.candidateStats()
+            meanP=myStat[3]
+            stdP=myStat[4]
+            meanL=myStat[5]
+            stdL=myStat[6]
+            #Threshold FAR values
+            threshP=meanP+(myFAR*stdP)
+            threshL=meanL+(myFAR*stdL)
+            myOpts=str(str(entry).replace(self.installPipes,'').split('/')[0]).split('_')
+            myLH=myOpts[1]
+            myLL=myOpts[2]
+            outputData.append([float(myLH),float(myLL),float(threshP),float(threshL)])
+        output_fp=open(self.home+'/FA_results.dat','w')
+        for entry in outputData:
+            output_fp.write(entry)
+        output_fp.close()
+    #End performFAcalc method
+
     def performDEsetup(self):
         #1) Read in lambaH lambaL P L result file
         #2) Create corresponding ini file
         #3) Run pipe creation script to create injection pipes
+        buildDir(self.installPipes2)
+        buildDir(self.installIni2)
         myIni=self.myIni
         results=self.readFAresults()
         for entry in results:
@@ -147,6 +288,10 @@ class tuneObject:
             self.DEpipeNames.append(pipeIniName)
             self.DEeditIniFile(pipeIniName)
             self.createPipe(pipeIniName)
+        #Search the workspace to construct a huge parent DAG for submitting all the DAGs
+        root2dags=self.installPipes2
+        dagFilename=self.home+'/DE_Tuning.dag'
+        self.__buildDAGfrom__(dagFilename,root2dags)
     #End performDEsetup
 
     def DEeditIniFile(self,LH,LL,P,L,iniName):
@@ -168,20 +313,24 @@ class tuneObject:
         fp.close()
     #End DEeditIniFile
 
-    def performFAcalc(self):
-        #create 2 list of longest p,l each pipe
-        #calculate the specified p,l for tun file percentile
-        #write a rank file to disk 4c form
-
-        print 'hi'
-    #End FAcalc method
-
     def performDEcalc(self):
         #count num of can files with 1 entry+
         #determine percentage succsessful
         #write 2 ranked 4c list lh ll #map percentage
-
-        print 'there'
+        candFiles=self.__layer1CandidatePaths__(self.installPipes2)
+        output=[]
+        for entry in candFiles:
+            results=self.__determineDEinPath__(entry)
+            myOpts=str(str(entry).replace(self.installPipes2,'').split('/')[0]).split('_')
+            myLH=myOpts[1]
+            myLL=myOpts[2]
+            Eff=float(results[0]/results[1])
+            output.append([myLH,myLL,Eff])
+        #
+        output_fp=open(self.home+'/DE_results.dat','w')
+        for entry in output:
+            output_fp.write(entry)
+        output_fp.close()
     #End performDEcalc
 #
 #
@@ -228,13 +377,13 @@ elif not os.path.exists(tunFile):
     os.abort()
 countOpts=0
 
-if FAsetup:
+if FAsetup: #ready
     countOpts=countOpts+1
-if DEsetup:
+if DEsetup: #NOT READY
     countOpts=countOpts+1
-if FAcalc:
+if FAcalc: #NOT READY
     countOpts=countOpts+1
-if DEcalc:
+if DEcalc: #NOT READY
     countOpts=countOpts+1
 if countOpts != 1:
     print "There is a problem with the options specified at the command line.  Only one action at a time can be specified!"

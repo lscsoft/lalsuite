@@ -776,16 +776,19 @@ def generateFileList(inputTXT):
         basenameFilename=os.path.basename(absPathFilename)
         extensionFilename=str(str(basenameFilename).split('.')[1])
         print "Found wildcard splitting path into:"
+        print dirnameFilename
+        print basenameFilename
+        print extensionFilename
     if os.path.isdir(dirnameFilename):
         #Create the listing of files to process
         objList=[]
         fileList=[]
         fileList=os.listdir(dirnameFilename)
         for entry in fileList:
-            if (extensionFilename != '') and (str(entry).__contains__(extensionFilename)):
+            if (str(entry).__contains__(extensionFilename)):
                 objList.append(dirnameFilename+'/'+entry)
-            elif (extensionFilename == ''):
-                objList.append(entry)
+            #elif (str(entry).__contains__(dirnameFilename)):
+            #    objList.append(entry)
     elif os.path.isfile(dirnameFilename):
             #Read this list in from the file
             #Could possibly be just the name of single candidate file!
@@ -798,7 +801,6 @@ def generateFileList(inputTXT):
                 objList=[dirnameFilename]
     else:
         print "Error with getting candidate information from: ",absPathFilename
-        os.abort()
+        objList=[]
     print "file list entries found :",objList.__len__()
     return objList
-#End generateFileList method
