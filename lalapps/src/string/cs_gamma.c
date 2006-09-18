@@ -120,11 +120,21 @@ int finddRdz(double Gmu, double alpha, double f, double Gamma)
   for ( j = 0; j < Namp; j++ )
     {
 
-      dRdz[j] = 0.5 * H0 * pow(f/H0,-2.0/3.0) * pow(alpha, -5.0/3.0) / (Gamma*Gmu) *
-	pow(cosmofns.phit[j],-14.0/3.0) * cosmofns.phiV[j] * pow(1+cosmofns.z[j],-5.0/3.0);
 
-      /* remember I have to add the theta cutoff here too */
+      double theta = pow((1+cosmofns.z[j]) * f * alpha * cosmofns.phit[j] / H0, -1.0/3.0);
+      
+      if (theta > 1.0)
+	{
+	  dRdz[j] = 0.0;
+	}
+      else
+	{
+	
+	  dRdz[j] = 0.5 * H0 * pow(f/H0,-2.0/3.0) * pow(alpha, -5.0/3.0) / (Gamma*Gmu) *
+	    pow(cosmofns.phit[j],-14.0/3.0) * cosmofns.phiV[j] * pow(1+cosmofns.z[j],-5.0/3.0);
+	}
 /*       fprintf(stdout,"%e %e\n", cosmofns.z[j], dRdz[j]); */
+
     }
 
 
