@@ -64,11 +64,11 @@ int main( int argc, char *argv[] )
 	fprintf( fp,"%%     p           n           epsilon            Gmu              gamma\n");
 	for ( i = 0; i <  CLA.nepsilon; i++ )
 	  {
-	    epsilon=pow(10.0,CLA.logepsilonstart+i*(CLA.logepsilonend-CLA.logepsilonstart)/CLA.nepsilon);
+	    epsilon=pow(10.0,CLA.logepsilonstart+i*(CLA.logepsilonend-CLA.logepsilonstart)/(CLA.nepsilon));
 	    
 	    for ( j = 0; j <  CLA.nGmu; j++ )
 	      {
-		Gmu=pow(10.0,CLA.logGmustart+j*(CLA.logGmuend-CLA.logGmustart)/CLA.nGmu);
+		Gmu=pow(10.0,CLA.logGmustart+j*(CLA.logGmuend-CLA.logGmustart)/(CLA.nGmu-1));
 		alpha = epsilon * pow( Gamma * Gmu, CLA.n );
 			       
 		/* find the z's corresponding to those A's */
@@ -79,9 +79,8 @@ int main( int argc, char *argv[] )
 			
 		for ( k = 0; k <  CLA.np; k++ )
 		  {
-		    p=pow(10.0, CLA.logpstart+k*(CLA.logpend-CLA.logpstart)/CLA.np);
+		    p=pow(10.0, CLA.logpstart+k*(CLA.logpend-CLA.logpstart)/(CLA.np));
 		    
-
  		    fprintf(stdout,"%%Computing effective rate for Gmu=%e, epsilon=%e, p=%e\n ",Gmu, epsilon, p);
 		    
 		    /* Compute the rate of bursts */
