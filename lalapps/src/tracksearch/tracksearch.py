@@ -250,6 +250,7 @@ class tracksearchTimeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
             for sec in ['tracksearchinjection']:
                 self.add_ini_opts(cp,sec)
             self.add_opt('inject_file',os.path.basename(self.injectFile))
+            self.add_condor_cmd('when_to_transfer_output','on_exit')
             self.add_condor_cmd('transfer_input_files',self.injectFile)
         #Read expected job sampling rate
         sampleRate=float(cp.get('tracksearchtime','sample_rate'))
