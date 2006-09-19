@@ -228,45 +228,48 @@ LALTrackSearchApplyThreshold(
   ATTATCHSTATUSPTR (status);
   /*Trackstore struct field not copied! */
   UsefulCurves=0; /*Array numbering starts with zero */
+  dataProduct->numberOfCurves=0;/*Default value*/
   if (curveinfo->numberOfCurves > 0)
-    dataProduct->curves = LALMalloc(sizeof(dataProduct->curves));
-  /* Count up number of useful curves to keep */
-  for(i=0;i<curveinfo->numberOfCurves;i++)
     {
-      if ((curveinfo->curves[i].n >= params.MinLength) && 
-	  (curveinfo->curves[i].totalPower >= params.MinPower))
+      dataProduct->curves = LALMalloc(sizeof(dataProduct->curves));
+      /* Count up number of useful curves to keep */
+      for(i=0;i<curveinfo->numberOfCurves;i++)
 	{
-	  /*UsefulCurve Var is not count but curve index so add 1*/
-	  /* Expand the structure to take in another curve */
-	  dataProduct->curves = LALRealloc(dataProduct->curves,
-					   (sizeof(Curve) * (UsefulCurves+1)));
-	  dataProduct->numberOfCurves = UsefulCurves+1;
-	  /*Length of curve to copy*/
-	  cicn=curveinfo->curves[i].n;
-	  dataProduct->curves[UsefulCurves].row=LALMalloc(sizeof(INT4) * cicn);
-	  dataProduct->curves[UsefulCurves].col=LALMalloc(sizeof(INT4) * cicn);
-	  dataProduct->curves[UsefulCurves].depth=LALMalloc(sizeof(REAL4) * cicn);
-	  dataProduct->curves[UsefulCurves].fBinHz=LALMalloc(sizeof(REAL4) *cicn);
-	  dataProduct->curves[UsefulCurves].gpsStamp=LALMalloc(sizeof(LIGOTimeGPS) * cicn);
-	  dataProduct->curves[UsefulCurves].n = cicn;
-	  dataProduct->curves[UsefulCurves].totalPower = curveinfo->curves[i].totalPower;
-	  /* Copy the data over */
-	  for(j=0;j<dataProduct->curves[UsefulCurves].n;j++)
+	  if ((curveinfo->curves[i].n >= params.MinLength) && 
+	      (curveinfo->curves[i].totalPower >= params.MinPower))
 	    {
-	      dataProduct->curves[UsefulCurves].row[j]=curveinfo->curves[i].row[j];
-	      dataProduct->curves[UsefulCurves].col[j]=curveinfo->curves[i].col[j];
-	      dataProduct->curves[UsefulCurves].depth[j]=
-		curveinfo->curves[i].depth[j];
-	      dataProduct->curves[UsefulCurves].fBinHz[j]=
-		curveinfo->curves[i].fBinHz[j];
-	      dataProduct->curves[UsefulCurves].gpsStamp[j].gpsSeconds=
-		curveinfo->curves[i].gpsStamp[j].gpsSeconds;
-	      dataProduct->curves[UsefulCurves].gpsStamp[j].gpsNanoSeconds=
-		curveinfo->curves[UsefulCurves].gpsStamp[j].gpsNanoSeconds;
+	      /*UsefulCurve Var is not count but curve index so add 1*/
+	      /* Expand the structure to take in another curve */
+	      dataProduct->curves = LALRealloc(dataProduct->curves,
+					       (sizeof(Curve) * (UsefulCurves+1)));
+	      dataProduct->numberOfCurves = UsefulCurves+1;
+	      /*Length of curve to copy*/
+	      cicn=curveinfo->curves[i].n;
+	      dataProduct->curves[UsefulCurves].row=LALMalloc(sizeof(INT4) * cicn);
+	      dataProduct->curves[UsefulCurves].col=LALMalloc(sizeof(INT4) * cicn);
+	      dataProduct->curves[UsefulCurves].depth=LALMalloc(sizeof(REAL4) * cicn);
+	      dataProduct->curves[UsefulCurves].fBinHz=LALMalloc(sizeof(REAL4) *cicn);
+	      dataProduct->curves[UsefulCurves].gpsStamp=LALMalloc(sizeof(LIGOTimeGPS) * cicn);
+	      dataProduct->curves[UsefulCurves].n = cicn;
+	      dataProduct->curves[UsefulCurves].totalPower = curveinfo->curves[i].totalPower;
+	      /* Copy the data over */
+	      for(j=0;j<dataProduct->curves[UsefulCurves].n;j++)
+		{
+		  dataProduct->curves[UsefulCurves].row[j]=curveinfo->curves[i].row[j];
+		  dataProduct->curves[UsefulCurves].col[j]=curveinfo->curves[i].col[j];
+		  dataProduct->curves[UsefulCurves].depth[j]=
+		    curveinfo->curves[i].depth[j];
+		  dataProduct->curves[UsefulCurves].fBinHz[j]=
+		    curveinfo->curves[i].fBinHz[j];
+		  dataProduct->curves[UsefulCurves].gpsStamp[j].gpsSeconds=
+		    curveinfo->curves[i].gpsStamp[j].gpsSeconds;
+		  dataProduct->curves[UsefulCurves].gpsStamp[j].gpsNanoSeconds=
+		    curveinfo->curves[UsefulCurves].gpsStamp[j].gpsNanoSeconds;
+		}
+	      /*Increase index recall count is +1 of index*/
+	      UsefulCurves++;
+	      /* Move on to check next curve */
 	    }
-	  /*Increase index recall count is +1 of index*/
-	  UsefulCurves++;
-	  /* Move on to check next curve */
 	}
     }
   /* Done moving useful curve candidates */
