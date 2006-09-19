@@ -430,12 +430,12 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        ADD4SSEA(0,8)
 
        "FLDL    %[tempFreq1]          \n\t" /* FLD D [TempFreqMinus15]   ;A15 */
-       "FLDS    -16(%[Xalpha_k])      \n\t" /* FLD D [EBP-10h]   ;X14 A15 */
+       "FLDS    -8(%[Xalpha_k])      \n\t" /* FLD D [EBP-10h]   ;X14 A15 */
        "FMUL    %%ST(1),%%ST          \n\t" /* FMUL ST,ST1       ;X14A15 A15 */
        
        ADD4SSEB(16,24)
        
-       "FLDS    -12(%[Xalpha_k])      \n\t" /* FLD D [EBP-0Ch]   ;Y14 X14A15 A15 */
+       "FLDS    -4(%[Xalpha_k])      \n\t" /* FLD D [EBP-0Ch]   ;Y14 X14A15 A15 */
        "FMUL    %%ST(2),%%ST          \n\t" /* FMUL ST,ST2       ;Y14A15 X14A15 A15 */
        "FXCH    %%ST(2)               \n\t" /* FXCH ST2          ;A15 X14A15 Y14A15 */
 
@@ -446,7 +446,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
        
        ADD4SSEB(48,56)
        
-       "FLDS    -8(%[Xalpha_k])       \n\t" /* FLD D [EBP-08h]   ;X15 A14 A15 X14A15 Y14A15 */
+       "FLDS    -16(%[Xalpha_k])       \n\t" /* FLD D [EBP-08h]   ;X15 A14 A15 X14A15 Y14A15 */
        "FMUL    %%ST(1),%%ST          \n\t" /* FMUL ST,ST1       ;X15A14 A14 A15 X14A15 Y14A15 */
 
        ADD4SSEA(64,72)
@@ -456,7 +456,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 
        ADD4SSEB(80,88)
 
-       "FLDS    -4(%[Xalpha_k])       \n\t" /* FLD D [EBP-04h]   ;Y15 A14 Q145 X' Y14A15 */
+       "FLDS    -12(%[Xalpha_k])       \n\t" /* FLD D [EBP-04h]   ;Y15 A14 Q145 X' Y14A15 */
        "FMUL    %%ST(1),%%ST          \n\t" /* FMUL ST,ST1       ;Y15A14 A14 Q145 X' Y14A15 */
 
        ADD4SSEA(96,104) 
