@@ -271,6 +271,12 @@ LALTrackSearchApplyThreshold(
 	      /* Move on to check next curve */
 	    }
 	}
+      /*If nothing passes the threshold deallocate the pointer*/
+      if (dataProduct->numberOfCurves == 0)
+	{
+	  LALFree(dataProduct->curves);
+	  dataProduct->curves=NULL;
+	}
     }
   /* Done moving useful curve candidates */
   DETATCHSTATUSPTR(status);
