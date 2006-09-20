@@ -1,9 +1,9 @@
 /*********************************************************************************/
-/*          Cosmic string model parameter exclusion code for small loops         */
+/*            Cosmic string burst rate computation code for small loops          */
 /*                                                                               */
 /*                  Xavier Siemens, Jolien Creighton, Irit Maor                  */
 /*                                                                               */
-/*                         UWM - September 2006                                  */
+/*                         UWM/Caltech - September 2006                          */
 /*********************************************************************************/
 #include <math.h>
 #include <stdio.h>
@@ -70,7 +70,7 @@ int main( int argc, char *argv[] )
 	
 	snprintf( filename, sizeof( filename ), "gamma.dat");
 	fp = fopen( filename, "w" );
-	fprintf( fp,"%%     p           n           epsilon         Gmu           gammaAverage\n");
+	fprintf( fp,"%%     p           n           epsilon         Gmu       gammaAverage    gammaMin      gammaMax\n");
 	for ( i = 0; i <  CLA.nepsilon; i++ )
 	  {
 	    epsilon=pow(10.0,CLA.logepsilonstart+i*(CLA.logepsilonend-CLA.logepsilonstart)/(CLA.nepsilon));
