@@ -18,4 +18,4 @@ endif
 
 ConvertToSFTv2_SOURCES = ConvertToSFTv2.c
 
-LISAmakeSFTs_SOURCES = LISAmakeSFTs.c
+LISAmakeSFTs_SOURCES = LISAmakeSFTs.c readxml.c readxml.h ezxml.c ezxml.h
