@@ -38,7 +38,7 @@ double *zofA, *dzdA, *dRdz;
 double H0 = LAMBDA_H_0;
 int Namp;   /* size of amplitude/eff array */
 
-char cvsinfo[]  = "$Id$" "$Name$";
+/*  "$Id$" "$Name$"; */
 
 /***************************************************************************/
 /* Reads the command line */

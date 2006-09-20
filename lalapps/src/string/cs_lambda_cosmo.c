@@ -9,7 +9,7 @@
 #include <gsl/gsl_integration.h>
 #include "cs_lambda_cosmo.h"
 
-char cvsinfo[]  = "$Id$" "$Name$";
+/*  "$Id$" "$Name$"; */
 
 static double cs_lambda_hubble( double one_plus_z )
 {

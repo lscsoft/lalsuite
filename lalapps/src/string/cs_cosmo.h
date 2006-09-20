@@ -6,11 +6,13 @@
 /*                         UWM/Caltech - September 2006                          */
 /*********************************************************************************/
 
-char cvsinfo[]  = "$Id$" "$Name$";
+
 
 #ifndef CS_COSMO_H
 #define CS_COSMO_H
 #include <stdlib.h>
+
+/*  "$Id$" "$Name$"; */
 
 typedef struct cs_cosmo_functions {
 	double *phit;
