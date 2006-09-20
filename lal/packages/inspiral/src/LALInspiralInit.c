@@ -46,7 +46,6 @@ function.
 
 #include <lal/LALInspiral.h>
 #define  LALINSPIRALINIT_LENGTHOVERESTIMATION  0.1       /* 10 % */
-#define  LALINSPIRALINIT_MINIMALWAVELENGTH     0.03125   /* 64 bins with a 2048Hz sampling*/
 
 NRCSID (LALINSPIRALAMPLITUDEC, "$Id$");
 
@@ -92,7 +91,7 @@ LALInspiralInit (LALStatus        *status,
     status->statusPtr->statusCode = 0;    
     paramsInit->nbins = 0;
 
-    sprintf(message, "#Estimated Length (seconds) = %f | fCutoff = %f",
+    sprintf(message, "#Estimated Length (seconds) requested = %f | fCutoff = %f",
 	    paramsInit->ak.tn, params->fCutoff);
     LALInfo(status, message);
 
@@ -105,7 +104,7 @@ LALInspiralInit (LALStatus        *status,
     LALWarning(status,  LALINSPIRALH_MSGESIZE);
     status->statusPtr->statusCode = 0;    
     paramsInit->nbins = 0;
-    sprintf(message, "#Estimated Length (seconds) = %f ",
+    sprintf(message, "#Estimated Length (seconds) requested = %f ",
 	    paramsInit->ak.tn);
     LALInfo(status, message);
     
@@ -117,10 +116,10 @@ LALInspiralInit (LALStatus        *status,
 					     estimate the waveform length. */
     /*we add a minimal value and 10 % of overestimation */
     x	= (1.+ LALINSPIRALINIT_LENGTHOVERESTIMATION) 
-      * (paramsInit->ak.tn + LALINSPIRALINIT_MINIMALWAVELENGTH ) * params->tSampling 
-      + params->nStartPad + params->nEndPad;
+      * (paramsInit->ak.tn + 1 ) * params->tSampling 
+      + params->nStartPad + params->nEndPad ;
     ndx 	= ceil(log10(x)/log10(2.));
-    paramsInit->nbins =  pow(2, ndx);
+    paramsInit->nbins =  pow(2, ndx) ;
  
 
     /*now we can free memory */
