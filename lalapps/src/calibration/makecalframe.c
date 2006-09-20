@@ -38,7 +38,8 @@ void err_exit( const char *fmt, ... )
 int main( int argc, char *argv[] )
 {
   char rcsid[] = "$Id$";
-  char *history = NULL;
+  char rcsname[] = "$Name$";
+  char *arguments = NULL;
   LALDataFileNameFields *fields = NULL;
   char fname[FILENAME_MAX] = "";
   char run[FILENAME_MAX] = "";
@@ -68,11 +69,11 @@ int main( int argc, char *argv[] )
   lalDebugLevel = 7 | 32;
   XLALSetErrorHandler( XLALAbortErrorHandler );
 
-  history = XLALStringAppend( history, argv[0] );
+  arguments = XLALStringAppend( arguments, argv[0] );
   for ( arg = 1; arg < argc; ++arg )
   {
-    history = XLALStringAppend( history, " " );
-    history = XLALStringAppend( history, argv[arg] );
+    arguments = XLALStringAppend( arguments, " " );
+    arguments = XLALStringAppend( arguments, argv[arg] );
   }
 
   fprintf( stderr, "Input files:\n\n" );
@@ -226,9 +227,10 @@ int main( int argc, char *argv[] )
 
   XLALGPSSetREAL8( &epoch, tstart );
   frame = XLALFrameNew( &epoch, tend - tstart, "LIGO", 0, 0, detectorFlags );
-  FrHistoryAdd( frame, rcsid );
-  FrHistoryAdd( frame, history );
-  XLALFree( history );
+  XLALFrHistoryAdd( frame, "Program Id", rcsid );
+  XLALFrHistoryAdd( frame, "Program Tag", rcsname );
+  XLALFrHistoryAdd( frame, "Program Args", arguments );
+  XLALFree( arguments );
 
 
   /* now read the data files */
@@ -297,8 +299,13 @@ int main( int argc, char *argv[] )
         unityGamma = XLALCreateREAL4TimeSeries( gamma->name, &unityEpoch, gamma->f0, OPEN_ENDED_DELTA_T, &lalDimensionlessUnit, NUM_OPEN_ENDED_POINTS );
         for ( i = 0; i < NUM_OPEN_ENDED_POINTS; ++i )
           unityAlpha->data->data[i] = unityGamma->data->data[i] = 1.0;
+        /*
         XLALFrameAddCalFac( frame, unityAlpha, version );
         XLALFrameAddCalFac( frame, unityGamma, version );
+        */
+        /* REVISION: version for unity factors is 0 */
+        XLALFrameAddCalFac( frame, unityAlpha, 0 );
+        XLALFrameAddCalFac( frame, unityGamma, 0 );
         XLALDestroyREAL4TimeSeries( unityGamma );
         XLALDestroyREAL4TimeSeries( unityAlpha );
       }

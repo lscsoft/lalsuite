@@ -76,6 +76,42 @@ struct FrFile * XLALFrOpenURL( const char *url )
   return frfile;
 }
 
+/* This routine is essentially the same as FrHistoryNew but the name of the
+ * history can be set too. */
+FrHistory * XLALFrHistoryAdd( FrameH *frame, const char *name, const char *comment )
+{
+  static const char *func = "XLALFrHistoryAdd";
+  union { const char *cs; char *s; } namecnvrt; /* get rid of const qual */
+  union { const char *cs; char *s; } commentcnvrt; /* get rid of const qual */
+  LIGOTimeGPS now;
+  FrHistory *history;
+
+  /* get current time */
+  if ( ! XLALGPSTimeNow( &now ) )
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+
+  /* this nonsense is to convert const char * to char * ... don't worry,
+   * the frame library just copies the string anyway */
+  namecnvrt.cs    = name;
+  commentcnvrt.cs = comment;
+
+  /* now create the history */
+  history = FrHistoryNew( namecnvrt.s, now.gpsSeconds, commentcnvrt.s );
+  if ( ! history )
+    XLAL_ERROR_NULL( func, XLAL_EERR ); /* "internal" error */
+
+  /* attach history to the frame structure */
+  if ( frame )
+  {
+    /* behaviour is identical to FrHistoryAdd if name is NULL */
+    if ( ! name )
+      FrStrCpy( &history->name, frame->name );
+    history->next = frame->history;
+    frame->history = history;
+  }
+
+  return history;
+}
 
 FrDetector * XLALFrDetectorNew( int detector )
 {
@@ -114,6 +150,9 @@ FrameH * XLALFrameNew( LIGOTimeGPS *epoch, double duration,
     const char *project, int run, int frnum, int detectorFlags )
 {
   static const char *func = "XLALFrameNew";
+  static char histidname[] = __FILE__ " Id";
+  static char histtagname[] = __FILE__ " Tag";
+  static char rcsname[] = "$Name$";
   static char rcsid[] = "$Id$";
   int detector;
   char *proj;
@@ -150,7 +189,11 @@ FrameH * XLALFrameNew( LIGOTimeGPS *epoch, double duration,
     }
   }
 
-  FrHistoryAdd( frame, rcsid );
+  /* add history: name of history field is this function's name */
+  if ( ! XLALFrHistoryAdd( frame, histidname, rcsid ) )
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+  if ( ! XLALFrHistoryAdd( frame, histtagname, rcsname ) )
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
   return frame;
 }
 
@@ -328,7 +371,7 @@ FrVect * XLALFrVectCOMPLEX16FrequencySeries( COMPLEX16FrequencySeries *series )
 int XLALFrameAddCalRef( FrameH *frame, COMPLEX8FrequencySeries *series, int version, double duration )
 {
   static const char *func = "XLALFrameAddCalRef";
-  char representation[] = "CAL_REF";
+  char representation[] = "freq_series";
   char comment[] = "$Id$";
   char prefix[3];
   FrDetector *detector;
@@ -420,7 +463,7 @@ COMPLEX8FrequencySeries * XLALFrameGetCalRef( LIGOTimeGPS *validUntil, LIGOTimeG
 int XLALFrameAddCalFac( FrameH *frame, REAL4TimeSeries *series, int version )
 {
   static const char *func = "XLALFrameAddCalFac";
-  char representation[] = "CAL_FAC";
+  char representation[] = "time_series";
   char comment[] = "$Id$";
   char prefix[3];
   FrDetector *detector;
