@@ -193,7 +193,12 @@ INT4 flagFilterInjOnly  = -1;            /* flag for filtering inj. only */
 /* rsq veto params */
 INT4 enableRsqVeto      = -1;           /* enable the r^2 veto          */
 REAL4 rsqVetoWindow     = -1;           /* r^2 veto time window         */ 
-REAL4 rsqVetoThresh     = -1;           /* r^2 veto threshold           */ 
+REAL4 rsqVetoThresh     = -1;           /* r^2 veto threshold           */
+INT4 doRsqVeto          = 0;            /* do the r^2 veto              */
+REAL4 rsqVetoTimeThresh = -1;           /* r^2 veto time threshold      */
+REAL4 rsqVetoMaxSNR     = -1;           /* r^2 veto maximum snr         */
+REAL4 rsqVetoCoeff      = -1;           /* r^2 veto coefficient         */
+REAL4 rsqVetoPow        = -1;           /* r^2 veto power               */
 
 /* generic simulation parameters */
 enum { unset, urandom, user } randSeedType = unset;    /* sim seed type */
@@ -1641,6 +1646,13 @@ int main( int argc, char *argv[] )
       LALCalloc( 1, sizeof(FindChirpFilterOutputVetoParams) );
     fcFilterParams->filterOutputVetoParams->rsqvetoWindow = rsqVetoWindow;
     fcFilterParams->filterOutputVetoParams->rsqvetoThresh = rsqVetoThresh;
+    if ( doRsqVeto )
+    {
+      fcFilterParams->filterOutputVetoParams->rsqvetoTimeThresh = rsqVetoTimeThresh;
+      fcFilterParams->filterOutputVetoParams->rsqvetoMaxSNR = rsqVetoMaxSNR;
+      fcFilterParams->filterOutputVetoParams->rsqvetoCoeff = rsqVetoCoeff;
+      fcFilterParams->filterOutputVetoParams->rsqvetoPow = rsqVetoPow;
+    }
   }
   else
   {
@@ -2840,6 +2852,12 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "  --rsq-veto-window SEC        set the r^2 veto window to SEC\n"\
 "  --rsq-veto-threshold RSQ     set r^2 veto threshold to RSQ\n"\
 "\n"\
+"  --do-rsq-veto                do the r^2 veto\n"\
+"  --rsq-veto-time-thresh SEC   set the r^2 veto window to SEC\n"\
+"  --rsq-veto-max-snr MAXSNR    set the r^2 veto maximum snr to MAXSNR\n"\
+"  --rsq-veto-coeff COEFF       set the r^2 veto coefficient to COEFF\n"\
+"  --rsq-veto-pow POW           set the r^2 veto power to POW\n"\
+"\n"\
 "  --maximization-interval msec set length of maximization interval\n"\
 "\n"\
 "  --ts-cluster   MTHD          max over template and end time MTHD \n"\
@@ -2904,6 +2922,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"enable-filter-inj-only",  no_argument,       &flagFilterInjOnly,1 },
     {"disable-filter-inj-only", no_argument,       &flagFilterInjOnly,0 },
     {"reverse-chirp-bank",      no_argument,       &reverseChirpBank, 1 },
+    {"do-rsq-veto",             no_argument,       &doRsqVeto,        1 },
     /* these options don't set a flag */
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-start-time-ns",       required_argument, 0,                'A'},
@@ -2973,6 +2992,10 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"ts-cluster",              required_argument, 0,                '*'},
     {"ts-endtime-interval",     required_argument, 0,                '<'},
     {"ts-volume-safety",        required_argument, 0,                '>'},
+    {"rsq-veto-time-thresh",    required_argument, 0,                '('},
+    {"rsq-veto-max-snr",        required_argument, 0,                ')'},
+    {"rsq-veto-coeff",          required_argument, 0,                '['},
+    {"rsq-veto-pow",            required_argument, 0,                ']'},
     /* frame writing options */
     {"write-raw-data",          no_argument,       &writeRawData,     1 },
     {"write-filter-data",       no_argument,       &writeFilterData,  1 },
@@ -3008,7 +3031,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     c = getopt_long_only( argc, argv, 
         "-A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:VW:X:Y:Z:"
         "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:"
-        "0:1::2:3:4:567:8:9:*:>:<",
+        "0:1::2:3:4:567:8:9:*:>:<:(:):[:]",
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -4091,6 +4114,58 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         exit( 1 );
         break;
 
+      case '(':
+        rsqVetoTimeThresh = atof( optarg );
+        if ( rsqVetoTimeThresh < 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              " r^2 veto time threshold must be positive: "
+              "(%f specified)\n",
+              long_options[option_index].name, rsqVetoTimeThresh );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
+      case ')':
+        rsqVetoMaxSNR = atof( optarg );
+        if ( rsqVetoMaxSNR < 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              " r^2 veto maximum snr must be positive: "
+              "(%f specified)\n",
+              long_options[option_index].name, rsqVetoMaxSNR );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
+      case '[':
+        rsqVetoCoeff = atof( optarg );
+        if ( rsqVetoCoeff < 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              " r^2 veto coefficient must be positive: "
+              "(%f specified)\n",
+              long_options[option_index].name, rsqVetoCoeff );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
+      case ']':
+        rsqVetoPow = atof( optarg );
+        if ( rsqVetoPow < 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              " r^2 veto power must be positive: "
+              "(%f specified)\n",
+              long_options[option_index].name, rsqVetoPow );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
       default:
         fprintf( stderr, "unknown error while parsing options (%d)\n", c );
         exit( 1 );
@@ -4620,6 +4695,43 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     fprintf( stderr, 
         "one of --enable-rsq-veto or --disable-rsq-veto must be specified\n" );
     exit( 1 );
+  }
+
+  if ( doRsqVeto == 1 )
+  {
+    if ( enableRsqVeto == 0 )
+    {
+      fprintf( stderr, "--enable-rsq-veto must be specified \n"
+          "if the --do-rsq-veto argument is specified\n" );
+      exit( 1 );
+    }
+    else if ( ( rsqVetoTimeThresh < 0 ) || ( rsqVetoMaxSNR < 0 ) )
+    {
+      fprintf( stderr, "--rsq-veto-time-thresh and --rsq-veto-max-snr must be \n"
+          "specified if the --do-rsq-veto argument is specified\n" );
+      exit( 1 );      
+    }
+    else if ( ( rsqVetoCoeff > 0 ) && ( ( rsqVetoTimeThresh < 0 ) || ( rsqVetoMaxSNR < 0 ) || ( rsqVetoPow < 0 ) ) )
+    {
+      fprintf( stderr, "--rsq-veto-time-thresh --rsq-veto-max-snr and --rsq-veto-pow \n"
+          "must be specified if --rsq-veto-coeff is specified\n" );
+      exit( 1 );
+    }
+   else if ( ( rsqVetoPow > 0 ) && ( ( rsqVetoTimeThresh < 0 ) || ( rsqVetoMaxSNR < 0 ) || ( rsqVetoCoeff < 0 ) ) )
+    {
+      fprintf( stderr, "--rsq-veto-time-thresh --rsq-veto-max-snr and --rsq-veto-coeff \n"
+          "must be specified if --rsq-veto-pow is specified\n" );
+      exit( 1 );
+    }
+
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX,
+        "%s", PROGRAM_NAME );
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX,
+        "--do-rsq-veto" );
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
   }
 
   /* check to filter injection segments only */

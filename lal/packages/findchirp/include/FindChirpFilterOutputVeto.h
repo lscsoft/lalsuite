@@ -82,6 +82,10 @@ tagFindChirpFilterOutputVetoParams
 {
   REAL4          rsqvetoWindow;
   REAL4          rsqvetoThresh;
+  REAL4          rsqvetoTimeThresh;
+  REAL4          rsqvetoMaxSNR;
+  REAL4          rsqvetoCoeff;
+  REAL4          rsqvetoPow;
 }
 FindChirpFilterOutputVetoParams;
 /* </lalVerbatim> */

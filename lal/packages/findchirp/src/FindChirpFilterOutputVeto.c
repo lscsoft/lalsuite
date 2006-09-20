@@ -131,7 +131,8 @@ LALFindChirpFilterOutputVeto(
   UINT4                 timeaboversqThresh; /* time spent above the r^2 veto threshold */
   REAL4                 rsqvetoWindow; /* the r^2 veto window */
   REAL4		        rsqvetoThresh; /* the r^2 veto threshold */	
-  SnglInspiralTable    *event = NULL; 
+  SnglInspiralTable    *event = NULL;
+  SnglInspiralTable    *lastevent = NULL; 
   event = *eventList;
 
   INITSTATUS( status, "LALFindChirpFilterFilterOutputVeto", 
@@ -193,7 +194,66 @@ LALFindChirpFilterOutputVeto(
     /* Convert the output to seconds and record the computed values in the 
        sngl_inspiral event */
     event->rsqveto_duration = (REAL4) timeaboversqThresh * deltaT;
-    event = event->next;
+
+    /* do the rsq veto if only rsqvetoTimeThresh and rsqvetoMaxSNR are specified */
+    if ( ( params->rsqvetoTimeThresh > 0 ) && ( params->rsqvetoMaxSNR > 0 ) && ( ( params->rsqvetoCoeff < 0 ) || ( params->rsqvetoPow < 0 ) ) )
+    {
+      if ( ( event->snr < params->rsqvetoMaxSNR ) && ( event->rsqveto_duration > params->rsqvetoTimeThresh ) )
+      {
+        /* reassign eventList if vetoing first event */
+        if ( event == *eventList )
+        {
+          SnglInspiralTable    *tmpevent = event;
+          *eventList = event->next;
+          free( tmpevent );
+          event = *eventList;
+        }
+        else
+        {
+          SnglInspiralTable    *tmpevent = event;
+          lastevent->next = event->next;
+          free( tmpevent );
+          event = lastevent->next;
+        }
+      }
+      else
+      {
+      lastevent = event;
+      event = event->next;
+      }
+    }
+    /* do the rsq veto if all rsqveto parameters are specified */
+    else if ( ( params->rsqvetoTimeThresh > 0 ) && ( params->rsqvetoMaxSNR > 0 ) && ( params->rsqvetoCoeff > 0 ) && ( params->rsqvetoPow > 0 ) )
+    {
+      if ( ( ( event->snr < params->rsqvetoMaxSNR ) && ( event->rsqveto_duration > params->rsqvetoTimeThresh ) ) || ( event->rsqveto_duration > ( params->rsqvetoCoeff*pow( event->snr, params->rsqvetoPow ) ) ) )
+      {
+        /* reassign eventList if vetoing first event */
+        if ( event == *eventList )
+        {
+          SnglInspiralTable    *tmpevent = event;
+          *eventList = event->next;
+          free( tmpevent );
+          event = *eventList;
+        }
+        else
+        {
+          SnglInspiralTable    *tmpevent = event;
+          lastevent->next = event->next;
+          free( tmpevent );
+          event = lastevent->next;
+        }
+      }
+      else
+      {
+      lastevent = event;
+      event = event->next;
+      }
+    }
+    else
+    {
+      lastevent = event;
+      event = event->next;
+    }
   }
 
   /* normal exit */
