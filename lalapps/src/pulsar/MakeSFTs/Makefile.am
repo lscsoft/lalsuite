@@ -10,10 +10,12 @@ else
 frameprogs = 
 endif
 
-bin_PROGRAMS = $(frameprogs) ConvertToSFTv2
+bin_PROGRAMS = $(frameprogs) ConvertToSFTv2 LISAmakeSFTs
 
 if FRAME
 lalapps_MakeSFTs_SOURCES = MakeSFTs.c
 endif
 
 ConvertToSFTv2_SOURCES = ConvertToSFTv2.c
+
+LISAmakeSFTs_SOURCES = LISAmakeSFTs.c
