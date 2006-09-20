@@ -14,6 +14,7 @@
 #include <gsl/gsl_errno.h>
 #include "cs_cosmo.h"
 #include "cs_lambda_cosmo.h"
+#include <lal/LALStdio.h>
 
 #define CUSPS_PER_LOOP 1.0		/* c */
 #define LOOP_RAD_POWER 50.0		/* Gamma */
@@ -38,7 +39,14 @@ double *zofA, *dzdA, *dRdz;
 double H0 = LAMBDA_H_0;
 int Namp;   /* size of amplitude/eff array */
 
-/*  "$Id$" "$Name$"; */
+
+NRCSID( CSGAMMAC, "cs_gamma $Id$");
+RCSID( "cs_gamma $Id$");
+
+#define PROGRAM_NAME "cs_gamma"
+#define CVS_REVISION "$Revision$"
+#define CVS_SOURCE "$Source$"
+#define CVS_DATE "$Date$"
 
 /***************************************************************************/
 /* Reads the command line */
