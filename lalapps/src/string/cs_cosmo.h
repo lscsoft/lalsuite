@@ -6,8 +6,6 @@
 /*                         UWM/Caltech - September 2006                          */
 /*********************************************************************************/
 
-
-
 #ifndef CS_COSMO_H
 #define CS_COSMO_H
 #include <stdlib.h>
