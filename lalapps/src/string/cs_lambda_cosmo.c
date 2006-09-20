@@ -1,6 +1,15 @@
+/*********************************************************************************/
+/*           Cosmological functions for cosmic string burst computation          */
+/*                                                                               */
+/*                  Jolien Creighton, Irit Maor, Xavier Siemens                  */
+/*                                                                               */
+/*                         UWM/Caltech - September 2006                          */
+/*********************************************************************************/
 #include <math.h>
 #include <gsl/gsl_integration.h>
 #include "cs_lambda_cosmo.h"
+
+char cvsinfo[]  = "$Id$" "$Name$";
 
 static double cs_lambda_hubble( double one_plus_z )
 {

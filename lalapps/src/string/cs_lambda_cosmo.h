@@ -1,3 +1,13 @@
+/*********************************************************************************/
+/*     Cosmological functions for cosmic string burst computation (header)       */
+/*                                                                               */
+/*                  Jolien Creighton, Irit Maor, Xavier Siemens                  */
+/*                                                                               */
+/*                         UWM/Caltech - September 2006                          */
+/*********************************************************************************/
+
+char cvsinfo[]  = "$Id$" "$Name$";
+
 #include "cs_cosmo.h"
 
 #define LAMBDA_Z_EQ 5440.0		/* redshift of matter-radiation equilib: 10^3.94 */

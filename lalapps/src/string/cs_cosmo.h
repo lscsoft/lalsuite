@@ -1,3 +1,13 @@
+/*********************************************************************************/
+/*     Cosmological functions for cosmic string burst computation (header)       */
+/*                                                                               */
+/*                  Jolien Creighton, Irit Maor, Xavier Siemens                  */
+/*                                                                               */
+/*                         UWM/Caltech - September 2006                          */
+/*********************************************************************************/
+
+char cvsinfo[]  = "$Id$" "$Name$";
+
 #ifndef CS_COSMO_H
 #define CS_COSMO_H
 #include <stdlib.h>
