@@ -1,3 +1,10 @@
+/*********************************************************************************/
+/*          Cosmic string model parameter exclusion code for small loops         */
+/*                                                                               */
+/*                  Xavier Siemens, Jolien Creighton, Irit Maor                  */
+/*                                                                               */
+/*                         UWM - September 2006                                  */
+/*********************************************************************************/
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,6 +38,8 @@ double *zofA, *dzdA, *dRdz;
 double H0 = LAMBDA_H_0;
 int Namp;   /* size of amplitude/eff array */
 
+char cvsinfo[]  = "$Id$" "$Name$";
+
 /***************************************************************************/
 /* Reads the command line */
 int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA);
@@ -47,7 +56,7 @@ int main( int argc, char *argv[] )
 	double c       = CUSPS_PER_LOOP;	/* cusps per loop */
 
 	double p,epsilon,f,Gmu,alpha;
-	double gamma = 0;
+	double gammaAverage = 0, gammaMin = 0, gammaMax =0;
 	char filename[FILENAME_MAX];
 	FILE *fp;
 	int i,j,k,l;
@@ -61,7 +70,7 @@ int main( int argc, char *argv[] )
 	
 	snprintf( filename, sizeof( filename ), "gamma.dat");
 	fp = fopen( filename, "w" );
-	fprintf( fp,"%%     p           n           epsilon            Gmu              gamma\n");
+	fprintf( fp,"%%     p           n           epsilon         Gmu           gammaAverage\n");
 	for ( i = 0; i <  CLA.nepsilon; i++ )
 	  {
 	    epsilon=pow(10.0,CLA.logepsilonstart+i*(CLA.logepsilonend-CLA.logepsilonstart)/(CLA.nepsilon));
@@ -84,14 +93,21 @@ int main( int argc, char *argv[] )
  		    fprintf(stdout,"%%Computing effective rate for Gmu=%e, epsilon=%e, p=%e\n ",Gmu, epsilon, p);
 		    
 		    /* Compute the rate of bursts */
-		    gamma=0.0;
+		    gammaAverage=0.0;
+		    gammaMin = 0.0;
+		    gammaMax = 0.0;
 		    for (l = 0; l < Namp-1; l++)
 		      {
 			Dlnz = (-log(zofA[l+1])+log(zofA[l]));
-			gamma += eff[l] * zofA[l] * dRdz[l] * Dlnz;
+			gammaAverage += eff[l] * zofA[l] * dRdz[l] * Dlnz;
+			gammaMin += (eff[l]-Deff[l]) * zofA[l] * dRdz[l] * Dlnz;
+			gammaMax += (eff[l]+Deff[l]) * zofA[l] * dRdz[l] * Dlnz;
 		      }
-		    gamma *= c/p;
-		    fprintf( fp,"%e  %e  %e  %e  %e\n", p,CLA.n,epsilon,Gmu,gamma);
+		    gammaAverage *= c/p;
+		    gammaMin *= c/p;
+		    gammaMax *= c/p;
+
+		    fprintf( fp,"%e  %e  %e  %e  %e  %e  %e\n", p,CLA.n,epsilon,Gmu,gammaAverage,gammaMin,gammaMax);
 
 		  }
 				
@@ -237,7 +253,7 @@ int ReadEfficiencyFile(struct CommandLineArgsTag CLA)
 	  if(*line == '#') continue;
 	  if(*line == '%') continue;
 	  sscanf(line,"%le %le %le",lnamp+i,eff+i,Deff+i);
-	  amp[i]= 1e-20 * exp(lnamp[i]);
+	  amp[i]= exp(lnamp[i]);
 	  i=i+1;
 	}
     }
