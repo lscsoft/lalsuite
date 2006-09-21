@@ -954,6 +954,7 @@ LALWriteSFT2file (LALStatus *status,
   ASSERT (fname, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL); 
 
   if ( !is_valid_detector(sft->name) ) {
+    if ( lalDebugLevel ) LALPrintError ("\nInvalid detector prefix '%c%c'\n\n", sft->name[0], sft->name[1] );
     ABORT ( status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL );
   }
 
@@ -2785,6 +2786,9 @@ is_valid_detector (const char *channel)
       "T1",       /* TAMA_300 */
       "V1",       /* Virgo_CITF */
       "V2",       /* Virgo (3km) */
+      "Z1",	  /* LISA effective IFO 1 */
+      "Z2",	  /* LISA effective IFO 2 */
+      "Z3",	  /* LISA effective IFO 3 */
       NULL
     };
   
