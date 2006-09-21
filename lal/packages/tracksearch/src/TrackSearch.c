@@ -1034,6 +1034,7 @@ void LALTrackSearchInsertMarkers(
 	    LALFloatToInterval(status->statusPtr,
 			       &dT,
 			       &currentRelativeFloatTime);	  
+	    CHECKSTATUSPTR(status);
 	  output->curves[i].gpsStamp[j].gpsSeconds=
 	    dT.seconds+input->mapStartGPS.gpsSeconds;
 	  output->curves[i].gpsStamp[j].gpsNanoSeconds=

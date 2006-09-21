@@ -240,16 +240,16 @@ LALTrackSearchApplyThreshold(
 	    {
 	      /*UsefulCurve Var is not count but curve index so add 1*/
 	      /* Expand the structure to take in another curve */
-	      dataProduct->curves = LALRealloc(dataProduct->curves,
-					       (sizeof(Curve) * (UsefulCurves+1)));
+	      dataProduct->curves = (Curve*)LALRealloc(dataProduct->curves,
+						       (sizeof(Curve) * (UsefulCurves+1)));
 	      dataProduct->numberOfCurves = UsefulCurves+1;
 	      /*Length of curve to copy*/
 	      cicn=curveinfo->curves[i].n;
-	      dataProduct->curves[UsefulCurves].row=LALMalloc(sizeof(INT4) * cicn);
-	      dataProduct->curves[UsefulCurves].col=LALMalloc(sizeof(INT4) * cicn);
-	      dataProduct->curves[UsefulCurves].depth=LALMalloc(sizeof(REAL4) * cicn);
-	      dataProduct->curves[UsefulCurves].fBinHz=LALMalloc(sizeof(REAL4) *cicn);
-	      dataProduct->curves[UsefulCurves].gpsStamp=LALMalloc(sizeof(LIGOTimeGPS) * cicn);
+	      dataProduct->curves[UsefulCurves].row=(INT4*)LALMalloc(sizeof(INT4) * cicn);
+	      dataProduct->curves[UsefulCurves].col=(INT4*)LALMalloc(sizeof(INT4) * cicn);
+	      dataProduct->curves[UsefulCurves].depth=(REAL4*)LALMalloc(sizeof(REAL4) * cicn);
+	      dataProduct->curves[UsefulCurves].fBinHz=(REAL4*)LALMalloc(sizeof(REAL4) * cicn);
+	      dataProduct->curves[UsefulCurves].gpsStamp=(LIGOTimeGPS*)LALMalloc(sizeof(LIGOTimeGPS) * cicn);
 	      dataProduct->curves[UsefulCurves].n = cicn;
 	      dataProduct->curves[UsefulCurves].totalPower = curveinfo->curves[i].totalPower;
 	      /* Copy the data over */
@@ -263,8 +263,20 @@ LALTrackSearchApplyThreshold(
 		    curveinfo->curves[i].fBinHz[j];
 		  dataProduct->curves[UsefulCurves].gpsStamp[j].gpsSeconds=
 		    curveinfo->curves[i].gpsStamp[j].gpsSeconds;
-		  dataProduct->curves[UsefulCurves].gpsStamp[j].gpsNanoSeconds=
-		    curveinfo->curves[UsefulCurves].gpsStamp[j].gpsNanoSeconds;
+		  dataProduct->curves[UsefulCurves].gpsStamp[j].gpsNanoSeconds=0;
+		  /*		  dataProduct->curves[UsefulCurves].gpsStamp[j].gpsNanoSeconds=
+				  curveinfo->curves[UsefulCurves].gpsStamp[j].gpsNanoSeconds;*/
+		  printf("%i %i :: %i %i ::Counter i: %i  u: %i j: %i ::Size %i %i %i\n",
+			 curveinfo->curves[i].gpsStamp[j].gpsNanoSeconds,
+			 dataProduct->curves[UsefulCurves].gpsStamp[j].gpsNanoSeconds,
+			 curveinfo->curves[i].col[j],
+			 dataProduct->curves[UsefulCurves].col[j],
+			 i,
+			 UsefulCurves,
+			 j,
+			 curveinfo->curves[i].n,
+			 dataProduct->curves[UsefulCurves].n,
+			 cicn);
 		}
 	      /*Increase index recall count is +1 of index*/
 	      UsefulCurves++;
@@ -282,7 +294,6 @@ LALTrackSearchApplyThreshold(
   DETATCHSTATUSPTR(status);
   RETURN(status);
 } /* End LALTrackSearchApplyThreshold */
- 
 
 
 /* Routine to whiten the data stream */
