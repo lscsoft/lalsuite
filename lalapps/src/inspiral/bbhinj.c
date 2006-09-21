@@ -130,7 +130,8 @@ int main( int argc, char *argv[] )
   UINT4         sumMaxMassUse=0;     /* flag indicating to use the sumMaxMass */
   REAL4         dmin = 1.0;          /* minimum distance from earth (kpc) */
   REAL4         dmax = 20000.0 ;     /* maximum distance from earth (kpc) */
- /* REAL4         Rcore = 0.0; */
+  REAL4 	fLower = 0;          /* default value for th lower cut off frequency */
+/* REAL4         Rcore = 0.0; */
   UINT4         ddistr = 0, mdistr=0;
 
   /* program variables */
@@ -169,6 +170,7 @@ int main( int argc, char *argv[] )
     {"help",                    no_argument,       0,                'h'},
     {"verbose",                 no_argument,       &vrbflg,           1 },
     {"version",                 no_argument,       0,                'V'},
+    {"fl",          		required_argument, 0,                'f'},
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-end-time",            required_argument, 0,                'b'},
     {"time-step",               required_argument, 0,                't'},
@@ -224,7 +226,7 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "a:A:b:B:d:hi:m:p:q:r:s:t:vz:Z:w:", long_options, &option_index );
+        "a:A:b:B:d:f:hi:m:p:q:r:s:t:vz:Z:w:", long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == - 1 )
@@ -299,6 +301,13 @@ int main( int argc, char *argv[] )
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, "int", 
               "%ld", gpsinput );
+        break;
+
+      case 'f':
+        fLower = atof( optarg );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, "float", 
+              "%f", fLower );
         break;
 
       case 's':
@@ -737,6 +746,16 @@ int main( int argc, char *argv[] )
           meanTimeStep ), &status );
     LAL_CALL( LALCompareGPS( &status, &compareGPS, &gpsStartTime, 
           &gpsEndTime ), &status );
+
+    /* finally populate the flower */
+    if (fLower > 0) 	
+    {
+	this_inj->f_lower = fLower;
+    }
+    else
+    {
+	this_inj->f_lower = 0;
+    }
     /* XXX END CHECK XXX */
 
   } /* end loop over injection times */
