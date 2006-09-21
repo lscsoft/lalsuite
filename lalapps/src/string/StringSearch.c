@@ -279,7 +279,7 @@ int main(int argc,char *argv[])
      TESTSTATUS( &status );
    }
 
- XLALSnglBurstAssignIDs(&events);
+ XLALSnglBurstAssignIDs(events);
 
  if (OutputEvents(CommandLineArgs)) return 12;
 
@@ -287,6 +287,7 @@ int main(int argc,char *argv[])
 
  return 0;
 }
+
 
 /************************************* MAIN PROGRAM ENDS *************************************/
 
