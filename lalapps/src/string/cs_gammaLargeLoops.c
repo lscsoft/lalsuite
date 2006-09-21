@@ -80,7 +80,7 @@ int main( int argc, char *argv[] )
 	
 	snprintf( filename, sizeof( filename ), "gammaLL.dat");
 	fp = fopen( filename, "w" );
-	fprintf( fp,"%%     p         Gmu       gammaAverage    gammaMin      gammaMax\n");
+	fprintf( fp,"%%     p           Gmu       gammaAverage     gammaMin      gammaMax\n");
 
 	for ( i = 0; i <  CLA.nGmu; i++ )
 	  {
@@ -153,7 +153,7 @@ double finddRdzdA(double Gmu, double f, double Gamma, double A, double z, double
 /*******************************************************************************/
 double nu(double Gmu, double Gamma, double A, double z, double phit, double phiA)
 {
-  double l = pow ( A / Gmu / H0 * pow(1+z,1.0/3.0)* phiA, 3.0/2.0);
+  double l = pow( A / Gmu / H0 * pow(1.0+z,1.0/3.0)* phiA, 3.0/2.0);
   
   /* Alex's loop distribution */
   double alpha=1e-1;
@@ -181,7 +181,7 @@ double nu(double Gmu, double Gamma, double A, double z, double phit, double phiA
   if( (l < alpha*t) && (t > teq) && (l >  alpha*teq-Gamma*Gmu*(t-teq)) )
     crateM = nuM / t / t / ( l + Gamma*Gmu/H0 * phit) / ( l + Gamma*Gmu/H0 * phit);
  
-  cuspdist = 2/l * (crateR+crateRadStragglers+crateM);
+  cuspdist = 3.0/A * (crateR+crateRadStragglers+crateM);
 
   return cuspdist;
 }
@@ -230,7 +230,11 @@ int ReadEfficiencyFile(struct CommandLineArgsTag CLA)
 	  if(*line == '%') continue;
 	  sscanf(line,"%le %le %le",lnamp+i,eff+i,Deff+i);
 	  amp[i]= exp(lnamp[i]);
+
+/* 	  fprintf(stdout,"%e %e\n", amp[i], eff[i]); */
+
 	  i=i+1;
+
 	}
     }
   else
@@ -268,7 +272,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"help",                        no_argument, NULL,                 'h'},
     {0, 0, 0, 0}
   };
-  char args[] = "ha:b:c:d:e:f:g:i:j:k:l:";
+  char args[] = "ha:b:c:d:e:f:g:i:";
 
   CLA->f=               -300;     
   CLA->logGmustart=     -300;      
@@ -309,19 +313,19 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       /* number of frequencies to do */
       CLA->nGmu=atoi(optarg);
       break;
-    case 'j':
+    case 'e':
       /* highest frequency */
       CLA->logpstart=atof(optarg);
       break;
-    case 'k':
+    case 'f':
       /* number of frequencies to do */
       CLA->logpend=atof(optarg);
       break;
-    case 'l':
+    case 'g':
       /* number of frequencies to do */
       CLA->np=atoi(optarg);
       break;
-    case 'm':
+    case 'i':
       /* number of frequencies to do */
       CLA->efficiencyfile=optarg;
       break;
