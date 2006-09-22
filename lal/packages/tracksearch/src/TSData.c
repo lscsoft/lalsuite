@@ -263,20 +263,8 @@ LALTrackSearchApplyThreshold(
 		    curveinfo->curves[i].fBinHz[j];
 		  dataProduct->curves[UsefulCurves].gpsStamp[j].gpsSeconds=
 		    curveinfo->curves[i].gpsStamp[j].gpsSeconds;
-		  dataProduct->curves[UsefulCurves].gpsStamp[j].gpsNanoSeconds=0;
-		  /*		  dataProduct->curves[UsefulCurves].gpsStamp[j].gpsNanoSeconds=
-				  curveinfo->curves[UsefulCurves].gpsStamp[j].gpsNanoSeconds;*/
-		  printf("%i %i :: %i %i ::Counter i: %i  u: %i j: %i ::Size %i %i %i\n",
-			 curveinfo->curves[i].gpsStamp[j].gpsNanoSeconds,
-			 dataProduct->curves[UsefulCurves].gpsStamp[j].gpsNanoSeconds,
-			 curveinfo->curves[i].col[j],
-			 dataProduct->curves[UsefulCurves].col[j],
-			 i,
-			 UsefulCurves,
-			 j,
-			 curveinfo->curves[i].n,
-			 dataProduct->curves[UsefulCurves].n,
-			 cicn);
+		  dataProduct->curves[UsefulCurves].gpsStamp[j].gpsNanoSeconds=
+				  curveinfo->curves[UsefulCurves].gpsStamp[j].gpsNanoSeconds;
 		}
 	      /*Increase index recall count is +1 of index*/
 	      UsefulCurves++;
