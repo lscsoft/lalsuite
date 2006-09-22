@@ -251,7 +251,7 @@ ConvertLISAtimeseries2LAL ( LALStatus *status, MultiREAL4TimeSeries **lalTs, con
       LALSnprintf ( name, LALNameLength, "Z%d:%s_%s", i+1, thisTs->Name, lisaTs->FileName );
       name[LALNameLength-1] = 0; /* close string if it was truncated */
 
-      epoch.gpsSeconds = lisaTs->TimeOffset + thisTs->TimeOffset;
+      epoch.gpsSeconds = thisTs->TimeOffset;
 
       if ( ( ret->data[i] = XLALCreateREAL4TimeSeries ( name, &epoch, f0, deltaT, &units, length )) == NULL )
 	goto failed;
