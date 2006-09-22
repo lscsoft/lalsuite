@@ -248,8 +248,7 @@ LALSFTdataFind (LALStatus *status,
 					&endian, &this_comment, &this_nsamples ) != 0 )
 	    {
 	      if ( lalDebugLevel ) 
-		LALPrintError ("\nERROR:Filepos %ld < EOF in file '%s' does not start a valid SFT-block!\n\n",
-			       ftell(fp), fname );
+		LALPrintError ("\nERROR:File-block '%s:%ld' is not a valid SFT!\n\n", fname, ftell(fp) );
 	      LALDestroyStringVector ( status->statusPtr, &fnames );
 	      if ( this_comment ) LALFree ( this_comment );
 	      LALDestroySFTCatalog ( status->statusPtr, &ret );
