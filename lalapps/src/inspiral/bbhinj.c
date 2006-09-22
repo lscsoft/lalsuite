@@ -56,6 +56,8 @@ RCSID( "$Id$" );
 "  --help                   display this message\n"\
 "  --version                print version information and exit\n"\
 "  --verbose                print mass and galactocentic cartesian coordinates\n"\
+"  --f-lower FREQUENCY      lower cut-off frequency. If not provided, default value is 0. \n"\
+"                           If so, LAL code will use 40Hz by default.\n"\
 "  --gps-start-time TIME    start injections at GPS time TIME (729273613)\n"\
 "  --gps-end-time TIME      end injections at GPS time TIME (734367613)\n"\
 "  --time-step STEP         space injections by ave of STEP sec (2630/PI)\n"\
@@ -81,17 +83,27 @@ RCSID( "$Id$" );
 "                           (default: EOBtwoPN)\n"\
 "\n"
 
+
+#define S2StartTime  729273613 /* Feb 14 2003 16:00:00 UTC */
+#define S2StopTime   734367613 /* Apr 14 2003 15:00:00 UTC */
 /* all units are in kpc since this is what GalacticInspiralParamStruc expects */
+static ProcessParamsTable *next_process_param( 
+	const char *name, 
+	const char *type,
+    	const char *fmt, ... );
 
 extern int vrbflg;
 
 
-ProcessParamsTable *next_process_param( const char *name, const char *type,
-    const char *fmt, ... )
+ProcessParamsTable *next_process_param( 
+	const char *name, 
+	const char *type,
+    	const char *fmt, ... )
 {
   ProcessParamsTable *pp;
   va_list ap;
   pp = calloc( 1, sizeof( *pp ) );
+
   if ( ! pp )
   {
     perror( "next_process_param" );
@@ -106,6 +118,7 @@ ProcessParamsTable *next_process_param( const char *name, const char *type,
   va_start( ap, fmt );
   LALVsnprintf( pp->value, LIGOMETA_VALUE_MAX, fmt, ap );
   va_end( ap );
+
   return pp;
 }
 
@@ -114,9 +127,10 @@ int main( int argc, char *argv[] )
 {
   LALStatus             status = blank_status;
   LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
-  const INT4            S2StartTime = 729273613; /* Feb 14 2003 16:00:00 UTC */
+ #if 0
+ const INT4            S2StartTime = 729273613; /* Feb 14 2003 16:00:00 UTC */
   const INT4            S2StopTime  = 734367613; /* Apr 14 2003 15:00:00 UTC */
-
+#endif
   /* command line options */
   LIGOTimeGPS   gpsStartTime = {S2StartTime, 0};
   LIGOTimeGPS   gpsEndTime   = {S2StopTime, 0};
@@ -170,7 +184,7 @@ int main( int argc, char *argv[] )
     {"help",                    no_argument,       0,                'h'},
     {"verbose",                 no_argument,       &vrbflg,           1 },
     {"version",                 no_argument,       0,                'V'},
-    {"fl",          		required_argument, 0,                'f'},
+    {"f-lower",        		required_argument, 0,                'f'},
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-end-time",            required_argument, 0,                'b'},
     {"time-step",               required_argument, 0,                't'},
@@ -322,13 +336,13 @@ int main( int argc, char *argv[] )
         if ( meanTimeStep <= 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
-              "time step must be > 0: (%le seconds specified)\n",
+              "time step must be > 0: (%e seconds specified)\n",
               long_options[option_index].name, meanTimeStep );
           exit( 1 );
         }
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, "float", 
-              "%le", meanTimeStep );
+              "%e", meanTimeStep );
         break;
 
       case 'i':
@@ -336,13 +350,13 @@ int main( int argc, char *argv[] )
         if ( timeInterval < 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
-              "time interval must be >= 0: (%le seconds specified)\n",
+              "time interval must be >= 0: (%e seconds specified)\n",
               long_options[option_index].name, meanTimeStep );
           exit( 1 );
         }
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, 
-              "float", "%le", timeInterval );
+              "float", "%e", timeInterval );
         break;
 
       case 'A':
@@ -492,13 +506,9 @@ int main( int argc, char *argv[] )
         break;
         
       case 'h':
-        fprintf( stderr, USAGE );
-        exit( 0 );
-        break;
-
       case '?':
         fprintf( stderr, USAGE );
-        exit( 1 );
+        exit( 0 );
         break;
 
       default:
