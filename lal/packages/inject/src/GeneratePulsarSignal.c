@@ -58,6 +58,9 @@ extern INT4 lalDebugLevel;
 
 static REAL8 eps = 1.e-14;	/* maximal REAL8 roundoff-error (used for determining if some number is an INT) */
 
+/* ----- DEFINES ----- */
+#define GPS2REAL(gps) ((gps).gpsSeconds + 1e-9 * (gps).gpsNanoSeconds )
+
 /* some empty structs for initializing */
 static LALStatus emptyStatus;	
 static SpinOrbitCWParamStruc emptyCWParams;
@@ -322,16 +325,22 @@ LALSignalToSFTs (LALStatus *status,
    * Therefore, we have to generate them now if none have been provided by the user. */
   if (params->timestamps == NULL) 
     {
+      LIGOTimeGPS lastTs;
       TRY(LALMakeTimestamps(status->statusPtr, &timestamps, tStart, duration, params->Tsft ), status);
+      /* see if the last timestamp is valid (can fit a full SFT in?), if not, drop it */
+      lastTs = timestamps->data[timestamps->length-1];
+      if ( GPS2REAL(lastTs) > GPS2REAL(tLast) )
+	timestamps->length --;
     }
   else	/* if given, use those, and check they are valid */
     {
       timestamps = params->timestamps;
-      /* check that all timestamps lie within [tStart, tLast] */
-      if ( check_timestamp_bounds(timestamps, tStart, tLast) != 0) {
-	ABORT (status, GENERATEPULSARSIGNALH_ETIMEBOUND, GENERATEPULSARSIGNALH_MSGETIMEBOUND);
-      }
     }
+  
+  /* check that all timestamps lie within [tStart, tLast] */
+  if ( check_timestamp_bounds(timestamps, tStart, tLast) != 0) {
+    ABORT (status, GENERATEPULSARSIGNALH_ETIMEBOUND, GENERATEPULSARSIGNALH_MSGETIMEBOUND);
+  }
 
   /* check that we have the right number of noise-SFTs */
   if (  params->noiseSFTs && ( params->noiseSFTs->length != timestamps->length)  ) {
