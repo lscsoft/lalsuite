@@ -64,8 +64,6 @@ RCSID ("$Id$");
 #define TRUE    (1==1)
 #define FALSE   (1==0)
 
-#define LISA_START_GPS	1261872014	/**< arbitrary start GPS time for LISA-timeseries: Jan 1, 2020 [hey! let's be optimistic here!] */
-
 /*----- Macros ----- */
 /*---------- internal types ----------*/
 
@@ -241,7 +239,7 @@ ConvertLISAtimeseries2LAL ( LALStatus *status, MultiREAL4TimeSeries **lalTs, con
     {
       UINT4 l;
       CHAR name[LALNameLength];
-      LIGOTimeGPS epoch = { LISA_START_GPS, 0 };
+      LIGOTimeGPS epoch = { 0, 0 };
       REAL8 f0 = 0;	/* no heterodyning */
       LALUnit units = empty_LALUnit;
 
@@ -253,7 +251,7 @@ ConvertLISAtimeseries2LAL ( LALStatus *status, MultiREAL4TimeSeries **lalTs, con
       LALSnprintf ( name, LALNameLength, "Z%d:%s_%s", i+1, thisTs->Name, lisaTs->FileName );
       name[LALNameLength-1] = 0; /* close string if it was truncated */
 
-      epoch.gpsSeconds += lisaTs->TimeOffset + thisTs->TimeOffset;
+      epoch.gpsSeconds = lisaTs->TimeOffset + thisTs->TimeOffset;
 
       if ( ( ret->data[i] = XLALCreateREAL4TimeSeries ( name, &epoch, f0, deltaT, &units, length )) == NULL )
 	goto failed;
