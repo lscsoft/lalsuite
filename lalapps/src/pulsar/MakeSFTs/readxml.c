@@ -226,7 +226,7 @@ static TimeSeries *dotimeseries(ezxml_t series,char *xmlname) {
     timeseries->Length = strtol(length,NULL,10);
     timeseries->Records = strtol(records,NULL,10);
         
-    fprintf(stderr,"Allocating %ld bytes for read buffer...\n",timeseries->Length * timeseries->Records * sizeof(double));
+    /* fprintf(stderr,"Allocating %ld bytes for read buffer...\n",timeseries->Length * timeseries->Records * sizeof(double)); */
     buffer = malloc(timeseries->Length * timeseries->Records * sizeof(double));
     assert(buffer != 0);
 
@@ -235,8 +235,7 @@ static TimeSeries *dotimeseries(ezxml_t series,char *xmlname) {
     binfile = fopen(pathbinfile,"r");
 
     if(binfile == 0) {             
-        fprintf(stderr,"...can't find %s, trying in the working directory...\n",pathbinfile);                                                                    
-        
+      /* fprintf(stderr,"...can't find %s, trying in the working directory...\n",pathbinfile); */
         binfile = fopen(timeseries->FileName,"r");
         assert(binfile != 0);
     }
