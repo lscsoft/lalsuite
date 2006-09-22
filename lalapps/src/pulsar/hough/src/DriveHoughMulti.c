@@ -124,7 +124,7 @@ BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps, uvar_printStats, 
 /* local function prototype */
 void PrintLogFile (LALStatus *status, CHAR *dir, CHAR *basename, CHAR *skyfile, LALStringVector *linefiles, CHAR *executable );
 
-int PrintHistogram(UINT8Vector *hist, CHAR *fnameOut);
+int PrintHistogram(UINT8Vector *hist, CHAR *fnameOut, REAL8 mean, REAL8 sigma);
 
 void PrintnStarFile (LALStatus *status, HoughSignificantEventVector *eventVec, CHAR *dirname, CHAR *basename);
 
@@ -1095,7 +1095,7 @@ int main(int argc, char *argv[]){
       /* printing total histogram */
       /******************************************************************/
       if ( uvar_printStats )
-	if( PrintHistogram( &histTotal, filehisto) ) return 7;
+	if( PrintHistogram( &histTotal, filehisto, meanN, sigmaN) ) return 7;
       
       /******************************************************************/
       /* closing files with statistics results and events */
@@ -1179,12 +1179,13 @@ int main(int argc, char *argv[]){
 /* printing the Histogram of all maps into a file                    */
 /******************************************************************/
   
-int PrintHistogram(UINT8Vector *hist, CHAR *fnameOut){
-
+int PrintHistogram(UINT8Vector *hist, CHAR *fnameOut, REAL8 mean, REAL8 sigma)
+{
+  
   FILE  *fp=NULL;   /* Output file */
   char filename[ MAXFILENAMELENGTH ];
   UINT4  i ;
- 
+  
   strcpy(  filename, fnameOut);
   strcat(  filename, "histo");
   
@@ -1195,11 +1196,12 @@ int PrintHistogram(UINT8Vector *hist, CHAR *fnameOut){
     }
 
   for (i = 0; i < hist->length; i++){
-    fprintf(fp,"%d  %llu\n", i, hist->data[i]);
+    fprintf(fp,"%g  %llu\n", (i - mean)/sigma, hist->data[i]);
   }
   
   fclose( fp );  
   return 0;
+
 }
 
 
