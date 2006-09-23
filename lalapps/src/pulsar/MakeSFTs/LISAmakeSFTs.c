@@ -188,7 +188,7 @@ initUserVars (LALStatus *status)
 
   uvar_extraComment = NULL;
   uvar_miscField = NULL;
-  uvar_Tsft = 1800;	
+  uvar_Tsft = 604800;	
 
   /* now register all our user-variable */
   LALregSTRINGUserVar(status, inputXML,		'i', UVAR_REQUIRED, "XML file describing the LISA timeseries data");
