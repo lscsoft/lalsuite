@@ -49,11 +49,13 @@ Usage: [options]
   -M, --datafind-match       (optional) string to use with the LSCdataFind --match option
   -k, --filter-knee-freq     (optional) high pass filter knee frequency used on time domain data before generating SFTs (default = 40 Hz)
   -T, --time-baseline        time baseline of SFTs  (e.g., 60 or 1800 seconds)
-  -p, --output-sft-path      path to output SFTs
-  -o, --sub-log-path         (optional) path to log file to give in datafind.sub and MakeSFTs.sub (default is $PWD/logs; this directory must exist and usually should be under a local file system.)
+  -p, --sft-path             path to SFTs (either already existing or where to output them)
+  -C  --create-sfts          (optional) create the SFTs !!! (/tmp will be appended to the sft-path and SFTs will be generated there!)
+  -o, --sub-log-path         (optional) path to log files given in .sub files (default is $PWD/logs; this directory must exist and usually should be under a local file system.)
   -N, --channel-name         name of input time-domain channel to read from frames
   -F, --start-freq           (optional) start frequency of the SFTs (default is 48 Hz).
-  -B, --band                 (optional) frequency band of the SFTs (default is 2000 Hz).
+  -B, --band                 (optional) frequency band of the SFTs (default is 100 Hz).
+  -b, --sub-band             (optional) divide frequency band into sub bands of this size (default is 10 Hz)
   -X  --misc-desc            (optional) misc. part of the SFT description field in the filename (also used if -D option is > 0).
   -H, --use-hot              input data is from h(t) calibrated frames (h of t = hot!) (0 or 1).
   
@@ -67,7 +69,7 @@ Usage: [options]
 ####################################
 # PARSE COMMAND LINE OPTIONS 
 #
-shortop = "s:L:G:d:x:M:k:T:p:C:O:o:N:w:P:v:c:F:B:D:X:m:g:l:hSHZR"
+shortop = "s:L:G:d:x:M:k:T:p:O:o:N:w:P:v:c:F:B:b:D:X:m:g:l:hSHZCR"
 longop = [
   "help",
   "analysis-start-time=",
@@ -79,8 +81,8 @@ longop = [
   "datafind-match=",
   "filter-knee-freq=",
   "time-baseline=",
-  "output-sft-path=",
-  "cache-path=",
+  "sft-path=",
+  "create-sfts=",
   "log-path=",
   "sub-log-path=",
   "channel-name=",
@@ -90,6 +92,7 @@ longop = [
   "comment-field=",
   "start-freq=",
   "band=",
+  "sub-band=",
   "make-gps-dirs=",
   "misc-desc=",
   "max-num-per-node=",
@@ -119,7 +122,8 @@ extraDatafindTime = 256L
 datafindMatch = None
 filterKneeFreq = 40
 timeBaseline = None
-outputSFTPath = None
+pathToSFTs = None
+createSFTs = False
 cachePath = "cache"
 logPath = "logs"
 subLogPath = "logs"
@@ -129,7 +133,8 @@ overlapFraction = 0.0
 sftVersion = 1
 commentField = None
 startFreq = 48.0
-freqBand = 10.0
+freqBand = 100.0
+freqSubBand = 10.0
 makeGPSDirs = 0
 miscDesc = None
 maxNumPerNode = 1
@@ -161,10 +166,10 @@ for o, a in opts:
     filterKneeFreq = int(a)
   elif o in ("-T", "--time-baseline"):
     timeBaseline = long(a)
-  elif o in ("-p", "--output-sft-path"):
-    outputSFTPath = a
-  elif o in ("-C", "--cache-path"):
-    cachePath = a
+  elif o in ("-p", "--sft-path"):
+    pathToSFTs = a
+  elif o in ("-C", "--create-sfts"):
+    createSFTs = True
   elif o in ("-O", "--log-path"):
     logPath = a
   elif o in ("-o", "--sub-log-path"):
@@ -183,6 +188,8 @@ for o, a in opts:
     startFreq = long(a)
   elif o in ("-B", "--band"):
     freqBand = long(a)
+  elif o in ("-b", "--sub-band"):
+    freqSubBand = long(a)
   elif o in ("-D", "--make-gps-dirs"):
     makeGPSDirs = int(a)
   elif o in ("-X", "--misc-desc"):
@@ -248,7 +255,7 @@ if not timeBaseline:
   print >> sys.stderr, "Use --help for usage details."
   sys.exit(1)
 
-if not outputSFTPath:
+if not pathToSFTs:
   print >> sys.stderr, "No output SFT path specified."
   print >> sys.stderr, "Use --help for usage details."
   sys.exit(1)
@@ -298,6 +305,11 @@ if (freqBand < 0.0):
   print >> sys.stderr, "Use --help for usage details."
   sys.exit(1)
 
+if (freqSubBand < 0.0):
+  print >> sys.stderr, "Invalid sub-band specified."
+  print >> sys.stderr, "Use --help for usage details."
+  sys.exit(1)
+
 if (makeGPSDirs < 0) or (makeGPSDirs > 10):
   print >> sys.stderr, "Invalid make gps dirs specified."
   print >> sys.stderr, "Use --help for usage details."
@@ -313,30 +325,41 @@ if not maxNumPerNode:
 site = channelName[0]
 ifo = channelName[0] + channelName[1]
 
+print >> sys.stdout,'\nTHE FSCAN DRIVER SCRIPT HAS STARTED!\n'
+  
 ###################################################
-# FIND SCIENCE MODE SEGMENTS; RUN LSCsegFind
-#
-segmentFile = 'tmpSegs%stmp.txt' % tagString
-segCommand = 'LSCsegFind --type Science --interferometer %s --gps-start-time %d --gps-end-time %d > %s' % (ifo,analysisStartTime, analysisEndTime,segmentFile)
-print >> sys.stdout,"Trying: ",segCommand
-try:
+# CHECK IF SFTS NEED TO BE GENERATED
+#    
+if (createSFTs):
+  
+  # For safety, add /tmp to the path to avoid overwriting existing SFTs.
+  pathToSFTs = pathToSFTs + '/tmp'
+  print >> sys.stdout,'Will generate SFTs in %s \n' % pathToSFTs
+  
+  ###################################################
+  # FIND SCIENCE MODE SEGMENTS; RUN LSCsegFind
+  #
+  segmentFile = 'tmpSegs%stmp.txt' % tagString
+  segCommand = 'LSCsegFind --type Science --interferometer %s --gps-start-time %d --gps-end-time %d > %s' % (ifo,analysisStartTime, analysisEndTime,segmentFile)
+  print >> sys.stdout,"Trying: ",segCommand,"\n"
+  try:
     segFindExit = os.system(segCommand)
     if (segFindExit > 0):
-       print >> sys.stderr, 'LSCsegFind failed: %s' % segFindExit
+       print >> sys.stderr, 'LSCsegFind failed: %s \n' % segFindExit
        sys.exit(1)
     else:
-       print >> sys.stderr, 'LSCsegFind succeeded!'
-except:
-    print >> sys.stderr, 'LSCsegFind failed: %s' % segFindExit
+       print >> sys.stderr, 'LSCsegFind succeeded! \n'
+  except:
+    print >> sys.stderr, 'LSCsegFind failed: %s \n' % segFindExit
     sys.exit(1)
-
-###################################################
-# CHECK THE SEGMENT FILE
-#
-segList = [];
-minSegLength = timeBaseline
-adjustSegExtraTime = True
-try:
+  
+  ###################################################
+  # CHECK THE SEGMENT FILE
+  #
+  segList = [];
+  minSegLength = timeBaseline
+  adjustSegExtraTime = True
+  try:
     for line in open(segmentFile):
         try: 
             splitLine = line.split();
@@ -354,50 +377,118 @@ try:
             pass
     # End for line in open(segmentFile)
     if (len(segList) < 1):
-       print >> sys.stderr, "No segments found in segment file: %s." % segmentFile
+       print >> sys.stderr, "No segments found in segment file: %s. \n" % segmentFile
        sys.exit(1)
-except:
-    print >> sys.stderr, "Error reading or parsing segment file: %s." % segmentFile
+  except:
+    print >> sys.stderr, "Error reading or parsing segment file: %s. \n" % segmentFile
     sys.exit(1)
-    
-
-###################################################
-# MAKE THE .dag FILE; RUN MakeSFTDAG
-#
-dagFile = 'tmpDAG%stmp.dag' % tagString
-makeDAGCommand = 'MakeSFTDAG -f %s -G %s -d %s -x %d -k %d -T %d -F %d -B %d -p %s -N %s -m 1 -o %s -X %s -Z -g %s' % (dagFile,tagString,inputDataType,extraDatafindTime,filterKneeFreq,timeBaseline,startFreq,freqBand,outputSFTPath,channelName,subLogPath,miscDesc,segmentFile)
-if (useHoT):
-   makeDAGCommand = makeDAGCommand + ' -H'
-print >> sys.stdout,"Trying: ",makeDAGCommand
-try:
+  
+  ###################################################
+  # MAKE THE .dag FILE; RUN MakeSFTDAG
+  #
+  sftDAGFile = 'tmpSFTDAG%stmp.dag' % tagString
+  makeDAGCommand = 'MakeSFTDAG -f %s -G %s -d %s -x %d -k %d -T %d -F %d -B %d -p %s -N %s -m 1 -o %s -X %s -Z -g %s' % (sftDAGFile,tagString,inputDataType,extraDatafindTime,filterKneeFreq,timeBaseline,startFreq,freqBand,pathToSFTs,channelName,subLogPath,miscDesc,segmentFile)
+  if (useHoT):
+     makeDAGCommand = makeDAGCommand + ' -H'
+  print >> sys.stdout,"Trying: ",makeDAGCommand,"\n"
+  try:
     makeDAGExit = os.system(makeDAGCommand)
     if (makeDAGExit > 0):
-       print >> sys.stderr, 'MakeSFTDAG failed: %s' % makeDAGExit
+       print >> sys.stderr, 'MakeSFTDAG failed: %s \n' % makeDAGExit
        sys.exit(1)
     else:
-       print >> sys.stderr, 'MakeSFTDAG succeeded!'
-except:
-    print >> sys.stderr, 'MakeSFTDAG failed: %s' % makeDAGExit
+       print >> sys.stderr, 'MakeSFTDAG succeeded! \n'
+  except:
+    print >> sys.stderr, 'MakeSFTDAG failed: %s \n' % makeDAGExit
     sys.exit(1)
+else:
+  # else if not createSFTs the SFTs already exist, so just continue
+  sftDAGFile = None
+  print >> sys.stdout,'Will use SFTs already in %s \n' % pathToSFTs
+
+
+#####################################################
+# WRITE A SUPER DAG WHICH RUNS EVERYTHING
+#
+
+dagFileName = 'tmpSUPERDAG%stmp.dag' % tagString
+
+sftDAGSUBJobName = None
+if (createSFTs):
+  # IF GENERATING SFTS ADD THIS TO THE SUPER DAG WHICH RUNS EVERYTHING
+  # First write a submit file for summitting a dag to condor
+  condorDAGSUBFileFID = file('condorDAGSUBFile.sub','w')
+  condorDAGSUBFileLogFile = subLogPath + '/' + 'condorDAGSUBFile_' + dagFileName + '.log'
+  condorDAGSUBFileFID.write('universe = scheduler\n')
+  condorDAGSUBFileFID.write('executable = $ENV($CONDOR_LOCATION)/bin/condor_dagman\n')
+  condorDAGSUBFileFID.write('arguments = $(argList)\n')
+  condorDAGSUBFileFID.write('log = %s\n' % condorDAGSUBFileLogFile)
+  condorDAGSUBFileFID.write('error = %s/condorDAGSUBFile_$(tagstring).err\n' % logPath)
+  condorDAGSUBFileFID.write('output = %s/condorDAGSUBFile_$(tagstring).out\n' % logPath)
+  condorDAGSUBFileFID.write('notification = never\n')
+  condorDAGSUBFileFID.write('queue 1\n')
+  condorDAGSUBFileFID.close
+  # Now add a jobs to run the sft dag to the super dag
+  sftNodeCount = 0L
+  sftDAGSUBJobName = 'runSFTDAGSUB_%i' % sftNodeCount
+  dagFID.write('JOB %s condorDAGSUBFile.sub\n' % sftDAGSUBJobName)
+  dagFID.write('RETRY %s 1\n' % sftDAGSUBJobName)
+  sftDAGSUBFileLogFile = subLogPath + '/' + 'sftDAGSUBFile_' + dagFileName + '.log'
+  argList = '-f -l . -Debug 3 -Lockfile %s.lock -Condorlog %s -Dag %s -Rescue %s.rescue -MaxJobs 40 -MaxPre 1 -MaxPost 1' % (sftDAGFile, sftDAGSUBFileLogFile, sftDAGFile, sftDAGFile)
+  tagStringOut = '%s_%i' % (tagString, sftNodeCount)
+  dagFID.write('VARS %s argList="%s" tagstring="%s"\n'%(sftDAGSUBJobName,argList,tagStringOut))
+
+# CREATE A CONDOR .sub FILE TO RUN spec_avg
+spectrumAverageFID = file('spectrumAverage.sub','w')
+spectrumAverageLogFile = subLogPath + '/' + 'spectrumAverage_' + dagFileName + '.log'
+spectrumAverageFID.write('universe = vanilla\n')
+spectrumAverageFID.write('executable = $ENV(SPECAVG_PATH)/spec_avg\n')
+spectrumAverageFID.write('arguments = $(argList)\n')
+spectrumAverageFID.write('log = %s\n' % spectrumAverageLogFile)
+spectrumAverageFID.write('error = %s/spectrumAverage_$(tagstring).err\n' % logPath)
+spectrumAverageFID.write('output = %s/spectrumAverage_$(tagstring).out\n' % logPath)
+spectrumAverageFID.write('notification = never\n')
+spectrumAverageFID.write('queue 1\n')
+spectrumAverageFID.close
+
+dagFileName = 'SUPERDAG%stmp.dag' % tagString
+dagFID = file(dagFileName,'w')
+endFreq = startFreq + freqBand
+thisStartFreq = startFreq
+nodeCount = 0L
+while (thisStartFreq < endFreq):
+  thisEndFreq = thisStartFreq + freqSubBand  
+  specAvgJobName = 'SpecAvg_%i' % nodeCount
+  dagFID.write('JOB %s spectrumAverage.sub\n' % specAvgJobName)
+  dagFID.write('RETRY %s 10\n' % specAvgJobName)
+  argList = '%d %d %s %d %d %s/SFT*' % (analysisStartTime,analysisEndTime,ifo,thisStartFreq,thisEndFreq,pathToSFTs)
+  tagStringOut = '%s_%i' % (tagString, nodeCount)  
+  dagFID.write('VARS %s argList="%s" tagstring="%s"\n'%(specAvgJobName,argList,tagStringOut))
+  if (createSFTs):  
+    dagFID.write('PARENT %s CHILD %s\n'%(sftDAGSUBJobName,specAvgJobName))
+  thisStartFreq = thisEndFreq
+  nodeCount = nodeCount + 1
+# Close the DAG file
+dagFID.close
 
 ###################################################
 # SUBMIT THE .dag FILE TO CONDOR; RUN condor_submit_dag
 #
-runDAGCommand = 'condor_submit_dag %s' % dagFile
-print >> sys.stdout,"Trying: ",runDAGCommand
+runDAGCommand = 'condor_submit_dag %s' % dagFileName
+print >> sys.stdout,"Trying: ",runDAGCommand,"\n"
 if (runCondorSubmitDag):
    try:
        runDAGExit = os.system(runDAGCommand)
        if (runDAGExit > 0):
-          print >> sys.stderr, 'condor_submit_dag failed: %s' % runDAGExit
+          print >> sys.stderr, 'condor_submit_dag failed: %s \n' % runDAGExit
           sys.exit(1)
        else:
-          print >> sys.stderr, 'condor_submit_dag succeeded!'
+          print >> sys.stderr, 'condor_submit_dag succeeded! \n'
    except:
-       print >> sys.stderr, 'condor_submit_dag failed: %s' % runDAGExit
+       print >> sys.stderr, 'condor_submit_dag failed: %s \n' % runDAGExit
        sys.exit(1)
 else:
-   print >> sys.stderr, 'TRIAL RUN ONLY!!! Either submit %s by hand or run this script with the -R or --run option!' % dagFile
+   print >> sys.stderr, 'TRIAL RUN ONLY!!! Either submit %s by hand or run this script with the -R or --run option! \n' % dagFileName
    sys.exit(1)
 
 ###################################################
