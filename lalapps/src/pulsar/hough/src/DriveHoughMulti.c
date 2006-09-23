@@ -124,7 +124,7 @@ BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps, uvar_printStats, 
 /* local function prototype */
 void PrintLogFile (LALStatus *status, CHAR *dir, CHAR *basename, CHAR *skyfile, LALStringVector *linefiles, CHAR *executable );
 
-int PrintHistogram(UINT8Vector *hist, CHAR *fnameOut, REAL8 mean, REAL8 sigma);
+int PrintHistogram(UINT8Vector *hist, CHAR *fnameOut, REAL8 minSignificance, REAL8 maxSignificance);
 
 void PrintnStarFile (LALStatus *status, HoughSignificantEventVector *eventVec, CHAR *dirname, CHAR *basename);
 
@@ -136,6 +136,13 @@ int PrintHmap2file(HOUGHMapTotal *ht, CHAR *fnameOut, INT4 iHmap);
 
 void ReadTimeStampsFile (LALStatus *status, LIGOTimeGPSVector *ts, CHAR *filename);
 
+void LALHoughHistogramSignificance(LALStatus      *status,
+				   UINT8Vector    *out,
+				   HOUGHMapTotal  *in,
+				   REAL8          mean,
+				   REAL8          sigma,
+				   REAL8          minSignificance,
+				   REAL8          maxSignificance);
 
 
 /******************************************/
@@ -206,6 +213,7 @@ int main(int argc, char *argv[]){
   INT8   f0Bin, fLastBin, fBin;
   REAL8  alpha, delta, timeBase, deltaF, f1jump;
   REAL8  patchSizeX, patchSizeY;
+  REAL8  alphaPeak, minSignificance, maxSignificance;
   UINT2  xSide, ySide;
   UINT2  maxNBins, maxNBorders;
 
@@ -215,7 +223,7 @@ int main(int argc, char *argv[]){
 
   /* user input variables */
   BOOLEAN  uvar_help, uvar_weighAM, uvar_weighNoise, uvar_printLog, uvar_printWeights;
-  INT4     uvar_blocksRngMed, uvar_nfSizeCylinder, uvar_maxBinsClean;
+  INT4     uvar_blocksRngMed, uvar_nfSizeCylinder, uvar_maxBinsClean, uvar_binsHisto;  
   REAL8    uvar_startTime, uvar_endTime;
   REAL8    uvar_f0, uvar_peakThreshold, uvar_houghThreshold, uvar_fSearchBand;
   CHAR     *uvar_earthEphemeris=NULL;
@@ -253,6 +261,7 @@ int main(int argc, char *argv[]){
   uvar_printSigma = FALSE;
   uvar_maxBinsClean = 100;
   uvar_printWeights = FALSE;
+  uvar_binsHisto = 1000;
 
   uvar_earthEphemeris = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_earthEphemeris,EARTHEPHEMERIS);
@@ -292,6 +301,7 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printEvents",      0,  UVAR_OPTIONAL, "Print events above threshold",          &uvar_printEvents),     &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printStats",       0,  UVAR_OPTIONAL, "Print Hough statistics",                &uvar_printStats),      &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printSigma",       0,  UVAR_OPTIONAL, "Print expected number count stdev.",    &uvar_printSigma),      &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "binsHisto",        0,  UVAR_OPTIONAL, "No. of bins for histogram",             &uvar_binsHisto),  &status);
   LAL_CALL( LALRegisterLISTUserVar(   &status, "linefiles",        0,  UVAR_OPTIONAL, "Comma separated List of linefiles (filenames must contain IFO name)",  
 	      &uvar_linefiles),       &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "nfSizeCylinder",   0,  UVAR_OPTIONAL, "Size of cylinder of PHMDs",             &uvar_nfSizeCylinder),  &status);
@@ -321,6 +331,15 @@ int main(int argc, char *argv[]){
  
   if ( uvar_peakThreshold < 0 ) {
     fprintf(stderr, "peak selection threshold must be positive\n");
+    exit(1);
+  }
+
+  /* probability of peak selection */
+  alphaPeak = exp( -uvar_peakThreshold);
+
+
+  if ( uvar_binsHisto < 1 ) {
+    fprintf(stderr, "binsHisto must be at least 1\n");
     exit(1);
   }
 
@@ -430,7 +449,6 @@ int main(int argc, char *argv[]){
        -- this should be sufficiently small so that the maximum significance is 
        always found */
     for ( k = 0; k < nStarEventVec.length; k++) {
-      REAL8 alphaPeak = exp( - uvar_peakThreshold);
       nStarEventVec.event[k].nStarSignificance = -sqrt( mObsCoh * alphaPeak / (1-alphaPeak));
     }
 
@@ -665,14 +683,19 @@ int main(int argc, char *argv[]){
 	  return DRIVEHOUGHCOLOR_EFILE;
 	}
     } /* end if( uvar_printSigma) */
-  
-  
+
+
+  /* min and max values significance that are possible */
+  minSignificance = -sqrt(mObsCoh*alphaPeak/(1-alphaPeak));
+  maxSignificance = sqrt(mObsCoh*(1-alphaPeak)/alphaPeak);
+      
+
   /* loop over sky patches */
   for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++)
     {
       UINT4 k, numsft;
       REAL8 sumWeightSquare;
-      REAL8  alphaPeak, meanN, sigmaN;
+      REAL8  meanN, sigmaN;
       SkyPosition skypos;
 
       /* set sky positions and skypatch sizes */
@@ -724,10 +747,7 @@ int main(int argc, char *argv[]){
 	sumWeightSquare += weightsV.data[k] * weightsV.data[k];
 
 
-
-
       /* probability of selecting a peak expected mean and standard deviation for noise only */
-      alphaPeak = exp( - uvar_peakThreshold);
       meanN = mObsCoh* alphaPeak; 
       sigmaN = sqrt(sumWeightSquare * alphaPeak * (1.0 - alphaPeak));
 
@@ -869,18 +889,19 @@ int main(int argc, char *argv[]){
 
       /* allocating histogram of the number-counts in the Hough maps */
       if ( uvar_printStats ) {
-	hist.length = mObsCoh+1;
-	histTotal.length = mObsCoh+1;
+
+	hist.length = histTotal.length = uvar_binsHisto;
 	hist.data = NULL;
 	histTotal.data = NULL;
-	hist.data = (UINT8 *)LALCalloc((mObsCoh+1), sizeof(UINT8));
-	histTotal.data = (UINT8 *)LALCalloc((mObsCoh+1), sizeof(UINT8));
+	hist.data = (UINT8 *)LALCalloc( hist.length, sizeof(UINT8));
+	histTotal.data = (UINT8 *)LALCalloc( histTotal.length, sizeof(UINT8));
 	{ 
 	  UINT4   j;
-	  for(j=0; j< histTotal.length; ++j)
+	  for(j=0; j<histTotal.length; ++j)
 	    histTotal.data[j]=0;
 	}
       }
+
       
       fBin= f0Bin;
       iHmap = 0;
@@ -889,7 +910,6 @@ int main(int argc, char *argv[]){
       nSpin1Max = floor(uvar_nfSizeCylinder/2.0);
       f1jump = 1./tObs;
       
-
       /* start of main loop over search frequency bins */
       /********** starting the search from f0Bin to fLastBin.
 		  Note one set LUT might not cover all the interval.
@@ -1016,8 +1036,12 @@ int main(int argc, char *argv[]){
 				       stats.maxIndex[0], stats.maxIndex[1], &patch, &parDem), &status);
 
 	      if ( uvar_printStats ) {
-		LAL_CALL( LALHoughHistogram ( &status, &hist, &ht), &status);
-		for(j=0; j< histTotal.length; ++j){ 
+
+		/*LAL_CALL( LALHoughHistogram ( &status, &hist, &ht), &status);*/
+		LAL_CALL( LALHoughHistogramSignificance ( &status, &hist, &ht, meanN, sigmaN, 
+							  minSignificance, maxSignificance), &status);
+
+		for(j = 0; j < histTotal.length; j++){ 
 		  histTotal.data[j] += hist.data[j]; 
 		}	      
 	      }
@@ -1094,9 +1118,11 @@ int main(int argc, char *argv[]){
       /******************************************************************/
       /* printing total histogram */
       /******************************************************************/
-      if ( uvar_printStats )
-	if( PrintHistogram( &histTotal, filehisto, meanN, sigmaN) ) return 7;
-      
+      if ( uvar_printStats ) 
+	{
+	  if( PrintHistogram( &histTotal, filehisto, minSignificance, maxSignificance) ) return 7;
+	}
+
       /******************************************************************/
       /* closing files with statistics results and events */
       /******************************************************************/  
@@ -1179,15 +1205,20 @@ int main(int argc, char *argv[]){
 /* printing the Histogram of all maps into a file                    */
 /******************************************************************/
   
-int PrintHistogram(UINT8Vector *hist, CHAR *fnameOut, REAL8 mean, REAL8 sigma)
+int PrintHistogram(UINT8Vector *hist, CHAR *fnameOut, REAL8 minSignificance, REAL8 maxSignificance)
 {
-  
+
+  INT4 binsHisto;
+  REAL8 dSig;
   FILE  *fp=NULL;   /* Output file */
   char filename[ MAXFILENAMELENGTH ];
   UINT4  i ;
   
   strcpy(  filename, fnameOut);
   strcat(  filename, "histo");
+
+  binsHisto = hist->length;
+  dSig = (maxSignificance - minSignificance)/binsHisto;
   
   if ( (fp = fopen(filename,"w")) == NULL)
     {  
@@ -1195,8 +1226,8 @@ int PrintHistogram(UINT8Vector *hist, CHAR *fnameOut, REAL8 mean, REAL8 sigma)
       return DRIVEHOUGHCOLOR_EFILE; 
     }
 
-  for (i = 0; i < hist->length; i++){
-    fprintf(fp,"%g  %llu\n", (i - mean)/sigma, hist->data[i]);
+  for (i = 0; i < binsHisto; i++){
+    fprintf(fp,"%g  %llu\n", minSignificance + i*dSig, hist->data[i]);
   }
   
   fclose( fp );  
@@ -1580,3 +1611,71 @@ void ReadTimeStampsFile (LALStatus          *status,
   /* normal exit */
   RETURN (status);
 }    
+
+
+
+/** given a total hough map, this function produces a histogram of
+   the number count significance */
+void LALHoughHistogramSignificance(LALStatus      *status,
+				   UINT8Vector    *out,
+				   HOUGHMapTotal  *in,
+				   REAL8          mean,
+				   REAL8          sigma,
+				   REAL8          minSignificance,
+				   REAL8          maxSignificance)
+{
+
+  INT4   i, j, binsHisto, xSide, ySide, binIndex;
+  REAL8  temp;
+
+  INITSTATUS (status, "LALHoughHistogramSignificance", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+  /* make sure arguments are not null */
+  ASSERT (in, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (in->map, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (out, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+
+  /* make sure input hough map is ok*/
+  ASSERT (in->xSide > 0, status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
+  ASSERT (in->ySide > 0, status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
+  ASSERT (in->mObsCoh > 0, status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
+
+  ASSERT (out->length > 0, status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
+
+  binsHisto = out->length;
+  xSide = in->xSide;
+  ySide = in->ySide;
+
+  /* initialize histogram vector*/
+  for (i=0; i < binsHisto; i++) 
+    out->data[i] = 0;
+
+  /* loop over hough map and find histogram */
+  for (i = 0; i < ySide; i++){
+    for (j = 0; j < xSide; j++){
+
+      /* calculate significance of number count */
+      temp = (in->map[i*xSide + j] - mean)/sigma;
+
+      /* make sure temp is in proper range */
+      ASSERT (temp > minSignificance, status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
+      ASSERT (temp < maxSignificance, status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
+
+      binIndex = (INT4) binsHisto * (temp - minSignificance)/(maxSignificance - minSignificance);
+
+      /* make sure binIndex is in proper range */
+      ASSERT (binIndex >= 0, status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
+      ASSERT (binIndex <= binsHisto-1, status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
+
+      /* add to relevant entry in histogram */
+      out->data[binIndex] += 1;
+    }
+  }
+
+  DETATCHSTATUSPTR (status);
+	
+  /* normal exit */	
+  RETURN (status);
+}
+
