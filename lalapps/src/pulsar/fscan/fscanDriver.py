@@ -410,8 +410,9 @@ else:
 #####################################################
 # WRITE A SUPER DAG WHICH RUNS EVERYTHING
 #
-
 dagFileName = 'tmpSUPERDAG%stmp.dag' % tagString
+dagFileName = 'SUPERDAG%stmp.dag' % tagString
+dagFID = file(dagFileName,'w')
 
 sftDAGSUBJobName = None
 if (createSFTs):
@@ -451,8 +452,6 @@ spectrumAverageFID.write('notification = never\n')
 spectrumAverageFID.write('queue 1\n')
 spectrumAverageFID.close
 
-dagFileName = 'SUPERDAG%stmp.dag' % tagString
-dagFID = file(dagFileName,'w')
 endFreq = startFreq + freqBand
 thisStartFreq = startFreq
 nodeCount = 0L
@@ -468,6 +467,7 @@ while (thisStartFreq < endFreq):
     dagFID.write('PARENT %s CHILD %s\n'%(sftDAGSUBJobName,specAvgJobName))
   thisStartFreq = thisEndFreq
   nodeCount = nodeCount + 1
+
 # Close the DAG file
 dagFID.close
 
