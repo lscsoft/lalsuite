@@ -187,7 +187,7 @@ void Freemem(LALStatus *,  ConfigVariables *cfg);
 void WriteFStatLog (LALStatus *, CHAR *argv[]);
 void checkUserInputConsistency (LALStatus *);
 int outputBeamTS( const CHAR *fname, const AMCoeffs *amcoe, const DetectorStateSeries *detStates );
-void InitEphemeris (LALStatus *, EphemerisData *edat, const CHAR *ephemDir, const CHAR *ephemYear, LIGOTimeGPS epoch);
+void InitEphemeris (LALStatus *, EphemerisData *edat, const CHAR *ephemDir, const CHAR *ephemYear, LIGOTimeGPS epoch, BOOLEAN isLISA);
 void getUnitWeights ( LALStatus *, MultiNoiseWeights **multiWeights, const MultiSFTVector *multiSFTs );
 
 int XLALwriteCandidate2file ( FILE *fp,  const PulsarCandidate *cand, const Fcomponents *Fstat );
@@ -737,7 +737,8 @@ InitEphemeris (LALStatus * status,
 	       EphemerisData *edat,	/**< [out] the ephemeris-data */
 	       const CHAR *ephemDir,	/**< directory containing ephems */
 	       const CHAR *ephemYear,	/**< which years do we need? */
-	       LIGOTimeGPS epoch	/**< epoch of observation */
+	       LIGOTimeGPS epoch,	/**< epoch of observation */
+	       BOOLEAN isLISA		/**< hack this function for LISA ephemeris */	
 	       )
 {
 #define FNAME_LENGTH 1024
@@ -754,14 +755,22 @@ InitEphemeris (LALStatus * status,
 
   if ( ephemDir )
     {
-      LALSnprintf(EphemEarth, FNAME_LENGTH, "%s/earth%s.dat", ephemDir, ephemYear);
+      if ( isLISA )
+	LALSnprintf(EphemEarth, FNAME_LENGTH, "%s/ephemMLDC.dat", ephemDir);
+      else
+	LALSnprintf(EphemEarth, FNAME_LENGTH, "%s/earth%s.dat", ephemDir, ephemYear);
+      
       LALSnprintf(EphemSun, FNAME_LENGTH, "%s/sun%s.dat", ephemDir, ephemYear);
     }
   else
     {
-      LALSnprintf(EphemEarth, FNAME_LENGTH, "earth%s.dat", ephemYear);
+      if ( isLISA )
+	LALSnprintf(EphemEarth, FNAME_LENGTH, "ephemMLDC.dat");
+      else
+	LALSnprintf(EphemEarth, FNAME_LENGTH, "earth%s.dat", ephemYear);
       LALSnprintf(EphemSun, FNAME_LENGTH, "sun%s.dat",  ephemYear);
     }
+  
   EphemEarth[FNAME_LENGTH-1]=0;
   EphemSun[FNAME_LENGTH-1]=0;
   
@@ -957,13 +966,19 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
 
   { /* ----- load ephemeris-data ----- */
     CHAR *ephemDir;
+    BOOLEAN isLISA = FALSE;
 
     cfg->edat = LALCalloc(1, sizeof(EphemerisData));
     if ( LALUserVarWasSet ( &uvar_ephemDir ) )
       ephemDir = uvar_ephemDir;
     else
       ephemDir = NULL;
-    TRY( InitEphemeris (status->statusPtr, cfg->edat, ephemDir, uvar_ephemYear, cfg->startTime ),status);
+
+    /* hack: if first detector is LISA, we load MLDC-ephemeris instead of 'earth' files */
+    if ( cfg->multiSFTs->data[0]->data[0].name[0] == 'Z' )
+      isLISA = TRUE;
+
+    TRY( InitEphemeris (status->statusPtr, cfg->edat, ephemDir, uvar_ephemYear, cfg->startTime, isLISA ), status);
   }
   
   /* ----- obtain the (multi-IFO) 'detector-state series' for all SFTs ----- */
