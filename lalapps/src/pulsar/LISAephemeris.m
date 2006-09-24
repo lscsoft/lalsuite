@@ -30,6 +30,9 @@ YRSID_SI	= 31558149.8;		%% Sidereal year (1994), s
 AU_SI		= 1.4959787066e11;	%% Astronomical unit, m 
 C_SI 		= 299792458; 					%% Speed of light in vacuo, m s^-1 
 
+## definition of 't=0' for LISA: set to Jan1,2000 for convenience ==> can use sun00-04.dat
+t0_LISA = 630720013; ## GPS for Jan 1, 2000
+
 if ( nargin != 2 )
   error ("\nNeed exactly two input arguments: start-GPS and end-GPS!");
 endif
@@ -50,13 +53,13 @@ lastGPS = startGPS + nSteps * tStep;
 tiGPS = [startGPS:tStep:lastGPS]' ;
 
 %% ----- implement LISA orbit Eq.(2.1) ----- 
-%% default at t=0 
+%% default at 't=0'
 kappa = 0;
 
 %% orbital frequency
 OmOrb = 2 * pi / YRSID_SI;
 
-alpha = OmOrb * tiGPS + kappa;
+alpha = OmOrb * (tiGPS - t0_LISA) + kappa;
 
 %% center-of-mass motion of Eq.(2.1):
 rOrb = AU_SI / C_SI;	%% ephemeris-files are in units of r/c
