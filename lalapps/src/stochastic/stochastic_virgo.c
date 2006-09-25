@@ -123,11 +123,11 @@ REAL4 omegaRef = 1.;
 
 /* monte carlo parameters */
 REAL4 scaleFactor = 1.;
-INT4 seed = 1;
+INT4 seed = 800;
 
 /* arguments associated with test flag */
-INT4 testInter = 1;
-INT4 testSeg = 1;
+INT4 testInter = 0;
+INT4 testSeg = 0;
 
 /* output file */
 CHAR outputFilePath[200] = "output/";
@@ -146,9 +146,9 @@ INT4 main(INT4 argc, CHAR *argv[])
   CHAR outputFilename1[200], outputFilename2[200];
 
   /* counters */
-  INT4 i;
+  INT4 i, j;
   INT4 lInter, lSeg;
-
+  REAL8 nu;
   /* results parameters */
   REAL8 y, yOpt;
   REAL8 varTheo, inVarTheoSum ;
@@ -182,7 +182,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   SSSimStochBGStrainInput SBInput; 
   SSSimStochBGOutput SBOutput;
   REAL4TimeSeries SimStochBG1, SimStochBG2;
-  
+  REAL4Vector *dataLeft1,*dataLeft2,*dataRight1,*dataRight2,*buffer1,*buffer2;
+  REAL4Vector *sinus1,*sinus2,*cosinus1,*cosinus2;
   REAL4FrequencySeries MComegaGW;
   INT4 MCLength,MCLength1,MCLength2;
   INT4 MCfreqLength;
@@ -391,9 +392,9 @@ INT4 main(INT4 argc, CHAR *argv[])
 
     MCdeltaT1 = 1.0 / (REAL8)resampleRate1;
     MCdeltaT2 = 1.0 / (REAL8)resampleRate2;
-    MCLength1 = (UINT4)(segmentPadDuration * resampleRate1);
-    MCLength2 = (UINT4)(segmentPadDuration * resampleRate2);
-    MCdeltaF = 1./(REAL8)segmentPadDuration;
+    MCLength1 = (UINT4)(segmentDuration * resampleRate1);
+    MCLength2 = (UINT4)(segmentDuration * resampleRate2);
+    MCdeltaF = 1./(REAL8)segmentDuration;
     if(MCLength1>MCLength2)
       MCLength = MCLength1;
     else MCLength = MCLength2;
@@ -420,6 +421,42 @@ INT4 main(INT4 argc, CHAR *argv[])
     SBOutput.SSimStochBG1 = &SimStochBG1;
     SBOutput.SSimStochBG2 = &SimStochBG2;
    
+    dataLeft1 = dataLeft2 = dataRight1 = dataRight2 = buffer1 = buffer2 = NULL;    
+    LAL_CALL( LALSCreateVector( &status, &(dataLeft1), MCLength1),&status);
+    LAL_CALL( LALSCreateVector( &status, &(dataLeft2), MCLength2),&status);
+    LAL_CALL( LALSCreateVector( &status, &(dataRight1), MCLength1),&status);
+    LAL_CALL( LALSCreateVector( &status, &(dataRight2), MCLength2),&status);
+    LAL_CALL( LALSCreateVector( &status, &(buffer1), MCLength1/2+1),&status);
+    LAL_CALL( LALSCreateVector( &status, &(buffer2), MCLength2/2+1),&status);
+
+    memset(dataLeft1->data,0,dataLeft1->length *sizeof(*dataLeft1->data));
+    memset(dataLeft2->data,0,dataLeft2->length *sizeof(*dataLeft2->data));
+    memset(dataRight1->data,0,dataRight1->length *sizeof(*dataRight1->data));
+    memset(dataRight2->data,0,dataRight2->length *sizeof(*dataRight2->data));
+    memset(buffer1->data,0,buffer1->length *sizeof(*buffer1->data));
+    memset(buffer2->data,0,buffer2->length *sizeof(*buffer2->data));
+
+    sinus1 = sinus2 = cosinus1 = cosinus2 = NULL;    
+    LAL_CALL( LALSCreateVector( &status, &(sinus1), MCLength1),&status);
+    LAL_CALL( LALSCreateVector( &status, &(sinus2), MCLength2),&status);
+    LAL_CALL( LALSCreateVector( &status, &(cosinus1), MCLength1),&status);
+    LAL_CALL( LALSCreateVector( &status, &(cosinus2), MCLength2),&status);
+
+    memset(sinus1->data,0,sinus1->length *sizeof(*sinus1->data));
+    memset(sinus2->data,0,sinus2->length *sizeof(*sinus2->data));
+    memset(cosinus1->data,0,cosinus1->length *sizeof(*cosinus1->data));
+    memset(cosinus2->data,0,cosinus2->length *sizeof(*cosinus2->data));
+  
+    for (i=0;i<MCLength1;i++)
+     {
+      sinus1->data[i] = sin(LAL_PI*i/MCLength1); 
+      cosinus1->data[i] = cos(LAL_PI*i/MCLength1);
+     }  	
+    for (i=0;i<MCLength2;i++)
+     {
+      sinus2->data[i] = sin(LAL_PI*i/MCLength2); 
+      cosinus2->data[i] = cos(LAL_PI*i/MCLength2);
+     } 
 		
     /* define parameters for SimulateSB */
     SBParams.length1 = MCLength1;
@@ -871,7 +908,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* initialize parameters for post analysis */
   yOpt = 0.; inVarTheoSum = 0.;
-
+  nu=0.;
   /* open output file */
   LALSnprintf(outputFilename1, LALNameLength,"%s/stat-%s%s-%d-%d.dat",
               outputFilePath, ifo1, ifo2,(INT4)startTime, (INT4)stopTime);
@@ -883,7 +920,7 @@ INT4 main(INT4 argc, CHAR *argv[])
  
   for (lInter=0;lInter<numIntervals;lInter++)
    { 
-
+    
     /* initialise average PSD vector */
     for (i=0;i<filterLength;i++)
      {
@@ -960,11 +997,72 @@ INT4 main(INT4 argc, CHAR *argv[])
           fprintf(stdout, "Simulating SB...\n");
          
 	  /* set parameters for monte carlo */
-	  SimStochBG1.epoch = SimStochBG2.epoch = gpsStartPadTime;
+	  SimStochBG1.epoch = SimStochBG2.epoch = gpsStartTime;
           SBParams.seed = seed ;
                         
           /* perform monte carlo */
-          LALSSSimStochBGStrainTimeSeries(&status,&SBOutput,&SBInput,&SBParams);
+          LALSSSimStochBGStrainTimeSeries(&status,&SBOutput,&SBInput,&SBParams);          
+          for (i=0;i<MCLength1;i++)
+           dataLeft1->data[i] = SimStochBG1.data->data[i];
+          for (i=0;i<MCLength2;i++)
+           dataLeft2->data[i] = SimStochBG2.data->data[i];
+          SBParams.seed = seed + 2;
+
+
+          LALSSSimStochBGStrainTimeSeries(&status,&SBOutput,&SBInput,&SBParams);          for (i=0;i<MCLength1;i++)
+           dataRight1->data[i] = SimStochBG1.data->data[i];
+          for (i=0;i<MCLength2;i++)
+           dataRight2->data[i] = SimStochBG2.data->data[i];
+          
+          if (lSeg==0)
+           {
+            for (i=0;i<MCLength1/2;i++)
+             SimStochBG1.data->data[i]=dataLeft1->data[i]*sinus1->data[i];
+            for (i=0;i<MCLength2/2;i++)  
+             SimStochBG2.data->data[i]=dataLeft2->data[i]*sinus2->data[i];
+	   }
+          else
+	   {
+            for (i=0;i<MCLength1/2;i++)
+             SimStochBG1.data->data[i]=buffer1->data[i]+dataLeft1->data[i]*sinus1->data[i];
+            for (i=0;i<MCLength2/2;i++)  
+             SimStochBG2.data->data[i]=buffer2->data[i]+dataLeft2->data[i]*sinus2->data[i];
+	   }
+          for (i=0;i<MCLength1/2;i++)
+	   {
+	    j=MCLength1/2+i;
+            SimStochBG1.data->data[j]=dataLeft1->data[j]*cosinus1->data[i]+dataRight1->data[i]*sinus1->data[i];
+	   }
+          for (i=0;i<MCLength2/2;i++)
+	   {
+	    j=MCLength2/2+i;
+            SimStochBG2.data->data[j]=dataLeft2->data[j]*cosinus2->data[i]+dataRight2->data[i]*sinus2->data[i];
+	   }
+
+           /* save in buffer for next call */
+          for (i=0;i<MCLength1/2;i++)
+	   {
+	    j=MCLength1/2+i;
+            buffer1->data[i]=dataRight1->data[j]*cosinus1->data[i];
+	   }
+
+          for (i=0;i<MCLength2/2;i++)
+	   {
+	    j=MCLength2/2+i;
+            buffer2->data[i]=dataRight2->data[j]*cosinus2->data[i];
+	   }
+
+
+	   /*
+           for (i=0;i<MCLength1;i++)
+	    {
+	     nu=nu+(1./resampleRate1)/60.;
+	     printf("%e %e\n",nu,SimStochBG1.data->data[i]);
+	    }
+	   */
+              
+          
+
           /* print */
           if ((test_flag)&&(lInter==testInter)&&(lSeg==testSeg))
            {
@@ -974,12 +1072,14 @@ INT4 main(INT4 argc, CHAR *argv[])
 	    
           /* multiply by scale factor and inject into real data */
           for (i=0;i<MCLength1;i++)
-            segmentPad1.data->data[i] = segmentPad1.data->data[i] 
-                            + (scaleFactor * SimStochBG1.data->data[i]);
+            segmentPad1.data->data[i+padData*(INT4)resampleRate1] = 
+                         segmentPad1.data->data[i+padData*(INT4)resampleRate1] 
+                         + (scaleFactor * SimStochBG1.data->data[i]);
 
           for (i=0;i<MCLength2;i++)
-            segmentPad2.data->data[i] = segmentPad2.data->data[i] 
-                            + (scaleFactor * SimStochBG2.data->data[i]);
+            segmentPad2.data->data[i+padData*(INT4)resampleRate2] = 
+                         segmentPad2.data->data[i+padData*(INT4)resampleRate2] 
+                         + (scaleFactor * SimStochBG2.data->data[i]);
                 
           /* print */
           if ((test_flag)&&(lInter==testInter)&&(lSeg == testSeg))
@@ -989,8 +1089,8 @@ INT4 main(INT4 argc, CHAR *argv[])
            }
                 
 	  /* increase seed */
-	  seed = seed + 2 ;
-	 }
+	  seed = seed + 4 ;
+	   }
 
      
         /* high pass filtering */
@@ -1091,7 +1191,7 @@ INT4 main(INT4 argc, CHAR *argv[])
         LALSPrintFrequencySeries(&avPSD1, "avPSD1.dat");
         LALSPrintFrequencySeries(&avPSD2, "avPSD2.dat");
        }
-     }
+       }
     else
      {
       /* shift segments */
@@ -1162,46 +1262,100 @@ INT4 main(INT4 argc, CHAR *argv[])
         LAL_CALL(LALResampleREAL4TimeSeries(&status,&segmentPad2,&resampleParams2),&status);
         }
 
-      
-      /* signal injection */
-      if (inject_flag)
-       {
-        /* simulate signal */
-	if (verbose_flag)
-        fprintf(stdout, "Simulating SB...\n");
-         
-        /* set parameters for monte carlo */
-	SimStochBG1.epoch = SimStochBG2.epoch = gpsStartPadTime;
-        SBParams.seed = seed ;
-                        
-        /* perform monte carlo */
-        LALSSSimStochBGStrainTimeSeries(&status,&SBOutput,&SBInput,&SBParams);
-        /* print */
-        if ((test_flag)&&(lInter==testInter)&&(lSeg==testSeg))
-         {
-          LALSPrintTimeSeries(&SimStochBG1, "simStochBG1.dat");
-          LALSPrintTimeSeries(&SimStochBG2, "simStochBG2.dat");
-         } 
-	    
-        /* multiply by scale factor and inject into real data */
-        for (i=0;i<MCLength1;i++)
-         segmentPad1.data->data[i] = segmentPad1.data->data[i] 
-                          + (scaleFactor * SimStochBG1.data->data[i]);
 
-        for (i=0;i<MCLength2;i++)
-         segmentPad2.data->data[i] = segmentPad2.data->data[i] 
-                            + (scaleFactor * SimStochBG2.data->data[i]);
+      /* signal injection */
+        if (inject_flag)
+	 {
+          /* simulate signal */
+	  if (verbose_flag)
+          fprintf(stdout, "Simulating SB...\n");
+         
+	  /* set parameters for monte carlo */
+	  SimStochBG1.epoch = SimStochBG2.epoch = gpsStartTime;
+          SBParams.seed = seed ;
+                        
+          /* perform monte carlo */
+          LALSSSimStochBGStrainTimeSeries(&status,&SBOutput,&SBInput,&SBParams);          
+          for (i=0;i<MCLength1;i++)
+           dataLeft1->data[i] = SimStochBG1.data->data[i];
+          for (i=0;i<MCLength2;i++)
+           dataLeft2->data[i] = SimStochBG2.data->data[i];
+          SBParams.seed = seed + 2;
+
+
+          LALSSSimStochBGStrainTimeSeries(&status,&SBOutput,&SBInput,&SBParams);          for (i=0;i<MCLength1;i++)
+           dataRight1->data[i] = SimStochBG1.data->data[i];
+          for (i=0;i<MCLength2;i++)
+           dataRight2->data[i] = SimStochBG2.data->data[i];
+	   
+          for (i=0;i<MCLength1/2;i++)
+           SimStochBG1.data->data[i]=buffer1->data[i]+dataLeft1->data[i]*sinus1->data[i];
+          for (i=0;i<MCLength2/2;i++)  
+           SimStochBG2.data->data[i]=buffer2->data[i]+dataLeft2->data[i]*sinus2->data[i];
+
+          for (i=0;i<MCLength1/2;i++)
+	   {
+	    j=MCLength1/2+i;
+            SimStochBG1.data->data[j]=dataLeft1->data[j]*cosinus1->data[i]+dataRight1->data[i]*sinus1->data[i];
+	   }
+          for (i=0;i<MCLength2/2;i++)
+	   {
+	    j=MCLength2/2+i;
+            SimStochBG2.data->data[j]=dataLeft2->data[j]*cosinus2->data[i]+dataRight2->data[i]*sinus2->data[i];
+	   }
+
+           /* save in buffer for next call */
+          for (i=0;i<MCLength1/2;i++)
+	   {
+	    j=MCLength1/2+i;
+            buffer1->data[i]=dataRight1->data[j]*cosinus1->data[i];
+	   }
+
+          for (i=0;i<MCLength2/2;i++)
+	   {
+	    j=MCLength2/2+i;
+            buffer2->data[i]=dataRight2->data[j]*cosinus2->data[i];
+	   }
+ 
+	   /*
+          for (i=0;i<MCLength1;i++)
+	    {
+	     nu=nu+(1./resampleRate1)/60.;
+	     printf("%e %e\n",nu,SimStochBG1.data->data[i]);
+	    }
+	   */
+
+
+          /* print */
+          if ((test_flag)&&(lInter==testInter)&&(lSeg==testSeg))
+           {
+            LALSPrintTimeSeries(&SimStochBG1, "simStochBG1.dat");
+	    LALSPrintTimeSeries(&SimStochBG2, "simStochBG2.dat");
+           } 
+	    
+          /* multiply by scale factor and inject into real data */
+          for (i=0;i<MCLength1;i++)
+            segmentPad1.data->data[i+padData*(INT4)resampleRate1] = 
+                         segmentPad1.data->data[i+padData*(INT4)resampleRate1] 
+                         + (scaleFactor * SimStochBG1.data->data[i]);
+
+          for (i=0;i<MCLength2;i++)
+            segmentPad2.data->data[i+padData*(INT4)resampleRate2] = 
+                         segmentPad2.data->data[i+padData*(INT4)resampleRate2] 
+                         + (scaleFactor * SimStochBG2.data->data[i]);
                 
-        /* print */
-        if ((test_flag)&&(lInter==testInter)&&(lSeg == testSeg))
-         {
-          LALSPrintTimeSeries(&segmentPad1, "segmentPadMC1.dat");
-          LALSPrintTimeSeries(&segmentPad2, "segmentPadMC2.dat");
-         }
+          /* print */
+          if ((test_flag)&&(lInter==testInter)&&(lSeg == testSeg))
+           {
+            LALSPrintTimeSeries(&segmentPad1, "segmentPadMC1.dat");
+	    LALSPrintTimeSeries(&segmentPad2, "segmentPadMC2.dat");
+           }
                 
-        /* increase seed */
-	  seed = seed + 2 ;
+	  /* increase seed */
+	  seed = seed + 4 ;
        }
+
+     
 
     
       /* high pass filtering */
@@ -1393,7 +1547,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   hBarTilde1.epoch = hBarTilde2.epoch = gpsMidSegTime;
   if (verbose_flag)
    fprintf(stdout, "Reduce hBarTilde...\n");
-  for (i=0;i<hBarLength;i++)
+  for (i=0;i<(INT4)hBarLength;i++)
    {
     hBarTilde1.data->data[i] =  hBarTildeTemp1.data->data[i];
     hBarTilde2.data->data[i] =  hBarTildeTemp2.data->data[i];
@@ -1483,12 +1637,22 @@ INT4 main(INT4 argc, CHAR *argv[])
   LAL_CALL(LALDestroyRealFFTPlan(&status,&fftDataPlan2),&status);
   LAL_CALL( LALDestroyVector(&status, &(segment1.data)), &status );
   LAL_CALL( LALDestroyVector(&status, &(segment2.data)), &status );
-  if (inject_flag)
-    {       
+   if (inject_flag)
+    {     
      LAL_CALL( LALDestroyVector(&status, &SimStochBG1.data), &status );
      LAL_CALL( LALDestroyVector(&status, &SimStochBG2.data), &status );
      LAL_CALL( LALDestroyVector(&status, &(MComegaGW.data)), &status ); 
-    }
+     LAL_CALL( LALDestroyVector(&status, &dataLeft1), &status );
+     LAL_CALL( LALDestroyVector(&status, &dataLeft2), &status );
+     LAL_CALL( LALDestroyVector(&status, &dataRight1), &status );
+     LAL_CALL( LALDestroyVector(&status, &dataRight2), &status );
+     LAL_CALL( LALDestroyVector(&status, &buffer1), &status );
+     LAL_CALL( LALDestroyVector(&status, &buffer2), &status );
+     LAL_CALL( LALDestroyVector(&status, &sinus1), &status );
+     LAL_CALL( LALDestroyVector(&status, &sinus2), &status );
+     LAL_CALL( LALDestroyVector(&status, &cosinus1), &status );
+     LAL_CALL( LALDestroyVector(&status, &cosinus2), &status );
+    }  
   if (hannDuration != 0)
    {
     LAL_CALL( LALDestroyVector(&status, &hannWindow1), &status );
