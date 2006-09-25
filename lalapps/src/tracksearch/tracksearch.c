@@ -2439,6 +2439,7 @@ LALappsWriteSearchResults(LALStatus      *status,
   totalFile=fopen(myFilename,"w");
   fprintf(totalFile,"# Total Curves: %i\n",outCurve.numberOfCurves);
   fprintf(totalFile,"# Legend: Col,Row;gpsSec,gpsNanoSec,Freq,depth\n");
+  /*Form of solution FreqIndex,TimeIndex,GPSSec,GPSNano,Power*/
   for (i = 0;i < outCurve.numberOfCurves;i++)
     {
       fprintf(totalFile,"Curve number,length,power:%i,%i,%f\n",

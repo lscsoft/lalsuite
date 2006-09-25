@@ -4,8 +4,6 @@ __author__ = 'Charlie Torres <charlie@phys.utb.edu>'
 __date__ = '$Date$'
 __version__ = ''
 
-from optparse import OptionParser
-import ConfigParser
 import getopt
 import math
 import os
@@ -191,13 +189,16 @@ class gpsInt:
         """
         Setup an instance of gpsfloat for use in the code
         """
-        floatType=type(float(0.0))
-        if ((type(gpsSeconds) == floatType)
-            or (type(gpsNanoSeconds) == floatType)):
-            print 'Error creating gpsInt instance:,gpsSeconds,gpsNanoSeconds'
+        try:
+            self.gpsSeconds=int(gpsSeconds)
+            self.gpsNanoSeconds=int(gpsNanoSeconds)
+        except ValueError:
+            foundType1=type(gpsSeconds)
+            foundType2=type(gpsNanoSeconds)
+            print "Error can not cast input arguments to integer types."
+            print "Found types :",foundType1,foundType2
+            print "Values      :",gpsSeconds,gpsNanoSeconds
             os.abort()
-        self.gpsSeconds=int(gpsSeconds)
-        self.gpsNanoSeconds=int(gpsNanoSeconds)
     #End init method
 
     def __makeInt__(self):
@@ -233,22 +234,23 @@ class gpsInt:
     def __div__(self,divisor):
         secPart=self.gpsSeconds.__floordiv__(divisor)
         secRemain=self.gpsSeconds.__mod__(divisor)
-        nanoSecPart=self.gpsNanoSeconds.__floordiv__(divisor)+secRemain
+        nanoSecPart=int(self.gpsNanoSeconds.__floordiv__(divisor)).__add__(secRemain)
         return gpsInt(secPart,nanoSecPart)
+    #End __div__ method
     
     def display(self):
         secPartIn=str(self.gpsSeconds)
         nanoPartIn=str(str(self.gpsNanoSeconds).rjust(9)).replace(' ','0')
         result=secPartIn+'.'+nanoPartIn
         return result
-
+    #End display method
+    
     def __diskPrint__(self):
         secPartIn=str(self.gpsSeconds)
         nanoPartIn=str(str(self.gpsNanoSeconds).rjust(9)).replace(' ','0')
         result=secPartIn+','+nanoPartIn
         return result
-        
-    #End display method
+    #End __diskPring__ method
 #End gpsInt class
 
 class candidateList:
@@ -333,6 +335,9 @@ class candidateList:
         if ((int(content.__len__()).__mod__(2) != 0)):
             print 'Error parsing :',self.filename," Number of data lines :",content.__len__()
             os.abort()
+        if (content.__len__ > 0) and (self.totalCount == 0):
+            print "Hum?  The file appears inconsistent."
+            print inputFilename
         if (content.__len__ > 0):
              walkIndex=0
              while walkIndex < content.__len__():
@@ -355,10 +360,11 @@ class candidateList:
                          int(tmpElement[0]),int(tmpElement[1]),\
                          gpsInt(tmpElement[2],tmpElement[3]),\
                          float(tmpElement[4]),float(tmpElement[5]))
-                      #Determine the bin widths in this structure
-                 self.findBinWidths()
+                 #Determine the bin widths in this structure
+                 if self.totalCount > 0:
+                     self.findBinWidths()
         else:
-            print "No candidate entries found in:",self.filename
+            print "No candidate entries found in:",inputFilename
     #End loadfile method
 
     def writefile(self,outputFilename):
@@ -443,7 +449,8 @@ class candidateList:
                 AddMe=TDArrayGPS[i][1].__sub__(TDArrayGPS[i-1][1])
                 gpsSum=gpsSum.__add__(AddMe)
                 gpsSumCount=gpsSumCount+1
-        if gpsSumCount != 0:
+        print "Sum Count: ",gpsSumCount,"Total GPS Time: ",gpsSum.display()
+        if gpsSumCount > 0:
             avgGpsWidth=gpsSum.__div__(gpsSumCount)
         else:
             avgGpsWidth=gpsInt(0,0)
