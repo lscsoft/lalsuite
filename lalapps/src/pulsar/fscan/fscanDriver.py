@@ -428,7 +428,7 @@ if (createSFTs):
   condorDAGSUBFileFID = file('condorDAGSUBFile.sub','w')
   condorDAGSUBFileLogFile = subLogPath + '/' + 'condorDAGSUBFile_' + dagFileName + '.log'
   condorDAGSUBFileFID.write('universe = scheduler\n')
-  condorDAGSUBFileFID.write('executable = $ENV($CONDOR_LOCATION)/bin/condor_dagman\n')
+  condorDAGSUBFileFID.write('executable = $ENV(CONDOR_LOCATION)/bin/condor_dagman\n')
   condorDAGSUBFileFID.write('getenv = True\n')
   condorDAGSUBFileFID.write('arguments = $(argList)\n')
   condorDAGSUBFileFID.write('log = %s\n' % condorDAGSUBFileLogFile)
