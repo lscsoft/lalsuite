@@ -4,9 +4,9 @@ THIS CODE IS UNDER CONSTRUCTION:
 
 2. Example Trial Run That Generates A Dag To Make H1 DARM_CTRL SFTs in /archive/home/pulsar/fscan/sfts:
 
-./fscanDriver.py -s 842705233 -L 36000 -G exampleTest -d RDS_R_L1 -k 40 -T 1800 -p /archive/home/pulsar/searchcode/src/lalapps/src/pulsar/fscan/test/sfts -N H1:LSC-DARM_CTRL -F 100 -B 20 -b 5 -X fscanTest -o /usr1/pulsar -C
+../fscanDriver.py -s 842705233 -L 36000 -G exampleTest -d RDS_R_L1 -k 40 -T 1800 -p /archive/home/pulsar/searchcode/src/lalapps/src/pulsar/fscan/test/sfts -N H1:LSC-DARM_CTRL -F 100 -B 20 -b 5 -X fscanTest -o /usr1/pulsar -C
 
 
 3. Example That Generates And Runs A Dag To Make H1 DARM_CTRL SFTs in /archive/home/pulsar/fscan/sfts:
 
-./fscanDriver.py -s 842705233 -L 36000 -G exampleTest -d RDS_R_L1 -k 40 -T 1800 -p /archive/home/pulsar/searchcode/src/lalapps/src/pulsar/fscan/test/sfts -N H1:LSC-DARM_CTRL -F 100 -B 20 -b 5 -X fscanTest -o /usr1/pulsar -C --run 
+../fscanDriver.py -s 842705233 -L 36000 -G exampleTest -d RDS_R_L1 -k 40 -T 1800 -p /archive/home/pulsar/searchcode/src/lalapps/src/pulsar/fscan/test/sfts -N H1:LSC-DARM_CTRL -F 100 -B 20 -b 5 -X fscanTest -o /usr1/pulsar -C --run 
