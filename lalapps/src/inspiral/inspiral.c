@@ -394,6 +394,7 @@ int main( int argc, char *argv[] )
   
   /* trigScan clustering input parameters */
   trigScanClusterIn  *condenseIn=NULL; 
+  REAL8              bankMinMatch=0.0L;
 
 
   /*
@@ -569,6 +570,9 @@ int main( int argc, char *argv[] )
 
   if ( vrbflg ) fprintf( stdout, "parsed %d templates from %s\n", 
       numTmplts, bankFileName );
+
+  /* Store the bankMinMatch before it gets over-riden below */
+  bankMinMatch = bankHead->minMatch;
 
   /* override the minimal match of the bank if specified on the command line */
   if ( minimalMatch >= 0 )
@@ -1878,10 +1882,16 @@ int main( int argc, char *argv[] )
 
     /* If using trigScan clustering, then init the clustering */
     /* input parameters before they are freed up in the code. */
-    if ( trigScanMethod )
+    /* Anand :: We had to put the numTmplts > 0 condition as  */
+    /* trig2tmplt would sometime return an empty template     */
+    /* bank file in the absence of coinc triggers.            */
+    if ( trigScanMethod && numTmplts > 0 )
     { 
         XLALPopulateTrigScanInput( &condenseIn, fcDataParams, 
-                fcTmpltParams, fcFilterParams, bankHead ); 
+                fcTmpltParams, fcFilterParams, bankHead );
+        /* minMatch stored in bankHead could be mangled. Reset 
+         * to the actual value used to create the bank here  */
+        condenseIn->mmCoarse = bankMinMatch;
     }
 
 
