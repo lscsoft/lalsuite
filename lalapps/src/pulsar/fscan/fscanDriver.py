@@ -320,7 +320,12 @@ if not maxNumPerNode:
   print >> sys.stderr, "Use --help for usage details."
   sys.exit(1)
 
-
+# try and make a directory to store the cache files and job logs
+try: os.mkdir(logPath)
+except: pass
+try: os.mkdir(cachePath)
+except: pass
+  
 # Get site and ifo from channel name:
 site = channelName[0]
 ifo = channelName[0] + channelName[1]
@@ -335,7 +340,9 @@ if (createSFTs):
   # For safety, add /tmp to the path to avoid overwriting existing SFTs.
   pathToSFTs = pathToSFTs + '/tmp'
   print >> sys.stdout,'Will generate SFTs in %s \n' % pathToSFTs
-  
+  try: os.mkdir(pathToSFTs)
+  except: pass
+
   ###################################################
   # FIND SCIENCE MODE SEGMENTS; RUN LSCsegFind
   #
@@ -422,6 +429,7 @@ if (createSFTs):
   condorDAGSUBFileLogFile = subLogPath + '/' + 'condorDAGSUBFile_' + dagFileName + '.log'
   condorDAGSUBFileFID.write('universe = scheduler\n')
   condorDAGSUBFileFID.write('executable = $ENV($CONDOR_LOCATION)/bin/condor_dagman\n')
+  condorDAGSUBFileFID.write('getenv = True\n')
   condorDAGSUBFileFID.write('arguments = $(argList)\n')
   condorDAGSUBFileFID.write('log = %s\n' % condorDAGSUBFileLogFile)
   condorDAGSUBFileFID.write('error = %s/condorDAGSUBFile_$(tagstring).err\n' % logPath)
@@ -452,11 +460,15 @@ spectrumAverageFID.write('notification = never\n')
 spectrumAverageFID.write('queue 1\n')
 spectrumAverageFID.close
 
+# Write spec_avg jobs to SUPER DAG:
 endFreq = startFreq + freqBand
 thisStartFreq = startFreq
 nodeCount = 0L
 while (thisStartFreq < endFreq):
-  thisEndFreq = thisStartFreq + freqSubBand  
+  thisEndFreq = thisStartFreq + freqSubBand
+  if (thisEndFreq == endFreq):
+     # Fix off-by-one bin end frequency error; for simplicity remove final 1 Hz
+     thisEndFreq = thisEndFreq - 1
   specAvgJobName = 'SpecAvg_%i' % nodeCount
   dagFID.write('JOB %s spectrumAverage.sub\n' % specAvgJobName)
   dagFID.write('RETRY %s 10\n' % specAvgJobName)
@@ -465,7 +477,7 @@ while (thisStartFreq < endFreq):
   dagFID.write('VARS %s argList="%s" tagstring="%s"\n'%(specAvgJobName,argList,tagStringOut))
   if (createSFTs):  
     dagFID.write('PARENT %s CHILD %s\n'%(sftDAGSUBJobName,specAvgJobName))
-  thisStartFreq = thisEndFreq
+  thisStartFreq = thisStartFreq + freqSubBand
   nodeCount = nodeCount + 1
 
 # Close the DAG file
