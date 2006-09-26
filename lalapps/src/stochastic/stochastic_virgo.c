@@ -76,7 +76,7 @@ static int post_analysis_flag = 0;
 
 /* parameters for the stochastic search */
 UINT8 startTime = 782759053;
-UINT8 stopTime =  782759293;
+UINT8 stopTime =  782760093;
 
 CHAR frameCache1 [200]= "cache/HV-0_1.cache";
 CHAR frameCache2[200] = "cache/HV-0_1.cache";
@@ -99,7 +99,7 @@ INT4 padData=1;
 REAL4 calibFactor=1.e18;
 
 /* double to single precision */
-REAL4 doubleHighPassFreq = 70.;
+REAL4 doubleHighPassFreq = 50.;
 INT4  doubleHighPassOrder = 8;
 REAL4 doubleHighPassAt = 0.9;
 
@@ -1014,18 +1014,19 @@ INT4 main(INT4 argc, CHAR *argv[])
           }
 
           /* high pass the data  */      
-       
+          
           highpassParam.nMax = doubleHighPassOrder;
           highpassParam.f1 = -1.0;
           highpassParam.f2 = (REAL8) doubleHighPassFreq;
           highpassParam.a1 = -1.0;
-          highpassParam.a2 = (REAL8)(1.0 - doubleHighPassAt);
+          highpassParam.a2 = (REAL8)(doubleHighPassAt);
+         
 
           LAL_CALL(LALButterworthREAL8TimeSeries(&status,&segmentPadD1, 
 						 &highpassParam),&status);
           LAL_CALL(LALButterworthREAL8TimeSeries(&status,&segmentPadD2, 
                                         &highpassParam),&status);
-     
+	  
       
           /* cast to REAL4  */
           for (i=0;i<(INT4)segmentPadD1.data->length;i++)           
@@ -1353,18 +1354,18 @@ INT4 main(INT4 argc, CHAR *argv[])
           }
 
           /* high pass the data  */      
-       
+          
           highpassParam.nMax = doubleHighPassOrder;
           highpassParam.f1 = -1.0;
           highpassParam.f2 = (REAL8) doubleHighPassFreq;
           highpassParam.a1 = -1.0;
-          highpassParam.a2 = (REAL8)(1.0 - doubleHighPassAt);
+          highpassParam.a2 = (REAL8)(doubleHighPassAt);
 
           LAL_CALL(LALButterworthREAL8TimeSeries(&status,&segmentPadD1,
                                                  &highpassParam),&status);
           LAL_CALL(LALButterworthREAL8TimeSeries(&status,&segmentPadD2, 
                                                  &highpassParam),&status);
-     
+	  
       
           /* cast to REAL4  */
           for (i=0;i<(INT4)segmentPadD1.data->length;i++)           
