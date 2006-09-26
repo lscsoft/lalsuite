@@ -53,6 +53,7 @@ Usage: [options]
   -C  --create-sfts          (optional) create the SFTs !!! (/tmp will be appended to the sft-path and SFTs will be generated there!)
   -o, --sub-log-path         (optional) path to log files given in .sub files (default is $PWD/logs; this directory must exist and usually should be under a local file system.)
   -N, --channel-name         name of input time-domain channel to read from frames
+  -i, --ifo                  (optional) ifo to use with LSCsegFind: e.g., H1, H2, L1, G1; PEM channels can start with H0, L0, or G0 (default: use start of channel name)
   -F, --start-freq           (optional) start frequency of the SFTs (default is 48 Hz).
   -B, --band                 (optional) frequency band of the SFTs (default is 100 Hz).
   -b, --sub-band             (optional) divide frequency band into sub bands of this size (default is 10 Hz)
@@ -69,7 +70,7 @@ Usage: [options]
 ####################################
 # PARSE COMMAND LINE OPTIONS 
 #
-shortop = "s:L:G:d:x:M:k:T:p:O:o:N:w:P:v:c:F:B:b:D:X:m:g:l:hSHZCR"
+shortop = "s:L:G:d:x:M:k:T:p:O:o:N:i:w:P:v:c:F:B:b:D:X:m:g:l:hSHZCR"
 longop = [
   "help",
   "analysis-start-time=",
@@ -86,6 +87,7 @@ longop = [
   "log-path=",
   "sub-log-path=",
   "channel-name=",
+  "ifo=",
   "window-type=",
   "overlap-fraction=",
   "sft-version=",
@@ -128,6 +130,7 @@ cachePath = "cache"
 logPath = "logs"
 subLogPath = "logs"
 channelName = None
+segIFO = None
 windowType = 1
 overlapFraction = 0.0
 sftVersion = 1
@@ -176,6 +179,8 @@ for o, a in opts:
     subLogPath = a
   elif o in ("-N", "--channel-name"):
     channelName = a
+  elif o in ("-i", "--ifo"):
+    segIFO = a
   elif o in ("-w", "--window-type"):
     windowType = int(a)
   elif o in ("-P", "--overlap-fraction"):
@@ -329,6 +334,8 @@ except: pass
 # Get site and ifo from channel name:
 site = channelName[0]
 ifo = channelName[0] + channelName[1]
+if not segIFO:
+  segIFO = ifo
 
 print >> sys.stdout,'\nTHE FSCAN DRIVER SCRIPT HAS STARTED!\n'
   
@@ -347,7 +354,7 @@ if (createSFTs):
   # FIND SCIENCE MODE SEGMENTS; RUN LSCsegFind
   #
   segmentFile = 'tmpSegs%stmp.txt' % tagString
-  segCommand = 'LSCsegFind --type Science --interferometer %s --gps-start-time %d --gps-end-time %d > %s' % (ifo,analysisStartTime, analysisEndTime,segmentFile)
+  segCommand = 'LSCsegFind --type Science --interferometer %s --gps-start-time %d --gps-end-time %d > %s' % (segIFO,analysisStartTime, analysisEndTime,segmentFile)
   print >> sys.stdout,"Trying: ",segCommand,"\n"
   try:
     segFindExit = os.system(segCommand)
