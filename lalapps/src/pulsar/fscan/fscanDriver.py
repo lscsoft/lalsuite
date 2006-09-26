@@ -321,9 +321,9 @@ if not maxNumPerNode:
   sys.exit(1)
 
 # try and make a directory to store the cache files and job logs
-try: os.mkdir(logPath)
+try: os.makedirs(logPath)
 except: pass
-try: os.mkdir(cachePath)
+try: os.makedirs(cachePath)
 except: pass
   
 # Get site and ifo from channel name:
@@ -340,7 +340,7 @@ if (createSFTs):
   # For safety, add /tmp to the path to avoid overwriting existing SFTs.
   pathToSFTs = pathToSFTs + '/tmp'
   print >> sys.stdout,'Will generate SFTs in %s \n' % pathToSFTs
-  try: os.mkdir(pathToSFTs)
+  try: os.makedirs(pathToSFTs)
   except: pass
 
   ###################################################
