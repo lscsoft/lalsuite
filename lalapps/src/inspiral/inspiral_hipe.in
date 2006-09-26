@@ -219,12 +219,8 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
           if opts.datafind: bank.add_parent(df)
           if (opts.template_bank and not GeoBank): dag.add_node(bank)
                   
-          # set grb flag
-	  doGRB=0;
-  	  if grbInjections>0: doGRB=1
-
  	  # loop ober the GRB injections
-  	  for inj in range(doGRB, grbInjections+1):
+  	  for inj in range(grbInjections[0], grbInjections[1]+1):
     	     if inj>0: 
                 # set the appropriate user-tag and the injection filename
                 grbUserTag=usertag+str(inj)
@@ -340,11 +336,11 @@ def thinca_coinc(ifos,single_data_analyzed,coinc_segs,coinc_job,
   coinc_analyzed = []
 
   # set grb flag
-  doGRB=0;
-  if grbInjections>0: doGRB=1
+  #doGRB=0;
+  #if grbInjections>0: doGRB=1
 
   # loop ober the GRB injections
-  for inj in range(doGRB, grbInjections+1):
+  for inj in range(grbInjections[0], grbInjections[1]+1):
       if inj>0:
          # set the appropriate user-tag and the injection filename
          grbUserTag=usertag+str(inj)
@@ -425,14 +421,11 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
 
   trig_chunks_analyzed = []
 
-  # set grb flag
-  doGRB=0;
-  if grbInjections>0: doGRB=1
-
   # loop ober the GRB injections
-  for inj in range(doGRB, grbInjections+1):
+  for inj in range(grbInjections[0], grbInjections[1]+1):
     if inj>0:
       grbUserTag=usertag+str(inj)
+      injectionFile='HL-INJECTION.'+str(inj)+'.xml' 
   
     # loop over the master science segments
     for seg in ifo_data:
@@ -463,7 +456,9 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
         
               # make an inspiral job for the master chunk
               insp = inspiral.InspiralNode(insp_veto_job)
-              if inj>0: insp.set_user_tag(grbUserTag)
+              if inj>0:
+                insp.add_var_opt('injection-file',injectionFile)
+                insp.set_user_tag(grbUserTag)
               insp.set_start(chunk.start())
               insp.set_end(chunk.end())
               insp.set_trig_start(chunk.trig_start())
@@ -1017,9 +1012,11 @@ else:
 
 # check number of GRB injections
 try:
-  grbInjections=int(cp.get('pipeline','grb-injections'))
+  startGRB=int(cp.get('pipeline','grb-inj-start'))
+  stopGRB=int(cp.get('pipeline','grb-inj-stop'))
+  grbInjections=[startGRB, stopGRB]
 except:
-  grbInjections=0
+  grbInjections=[0,0]
 
  
 # datafind:
