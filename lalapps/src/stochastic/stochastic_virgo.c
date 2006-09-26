@@ -76,7 +76,7 @@ static int post_analysis_flag = 0;
 
 /* parameters for the stochastic search */
 UINT8 startTime = 782759053;
-UINT8 stopTime =  782761993;
+UINT8 stopTime =  782759293;
 
 CHAR frameCache1 [200]= "cache/HV-0_1.cache";
 CHAR frameCache2[200] = "cache/HV-0_1.cache";
@@ -179,7 +179,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4 intervalLength,intervalLength1,intervalLength2; 
   INT4 segmentShift;
   ResampleTSParams resampleParams1, resampleParams2; 
-  REAL8TimeSeries segmentPadD1,segmentPadD2,segmentD1,segmentD2;
+  REAL8TimeSeries segmentPadD1,segmentPadD2;
   REAL4TimeSeries segmentPad1,segmentPad2,segment1,segment2;
   REAL4Vector *seg1[numSegments],*seg2[numSegments];
   /*REAL4Vector *segBuffer1, *segBuffer2;*/
@@ -355,10 +355,21 @@ INT4 main(INT4 argc, CHAR *argv[])
   strncpy(segmentPad1.name, "segmentPad1", LALNameLength);
   strncpy(segmentPad2.name, "segmentPad2", LALNameLength);
   segmentPad1.sampleUnits = segmentPad2.sampleUnits = lalStrainUnit; 
-  segment1.epoch = segment2.epoch = gpsStartPadTime;
+  segmentPad1.epoch = segmentPad2.epoch = gpsStartPadTime;
   segmentPad1.deltaT = 1./(REAL8)sampleRate1;
   segmentPad2.deltaT = 1./(REAL8)sampleRate2;
   segmentPad1.f0 = segmentPad2.f0 = 0;
+
+  if(double_flag)
+   {
+    strncpy(segmentPadD1.name, "segmentPadD1", LALNameLength);
+    strncpy(segmentPadD2.name, "segmentPadD2", LALNameLength);
+    segmentPadD1.sampleUnits = segmentPadD2.sampleUnits = lalStrainUnit; 
+    segmentPadD1.epoch = segmentPadD2.epoch = gpsStartPadTime;
+    segmentPadD1.deltaT = 1./(REAL8)sampleRate1;
+    segmentPadD2.deltaT = 1./(REAL8)sampleRate2;
+    segmentPadD1.f0 = segmentPadD2.f0 = 0;
+   }
 
   strncpy(segment1.name, "segment1", LALNameLength);
   strncpy(segment2.name, "segment2", LALNameLength);
@@ -372,21 +383,6 @@ INT4 main(INT4 argc, CHAR *argv[])
    fprintf(stdout, "Allocating memory for data segments...\n");
 
   /* allocate memory for data segments */
-
-  
-  if(double_flag)
-   {
-     segmentD1.data = segmentD2.data = NULL;
-     LAL_CALL(LALDCreateVector(&status,&(segmentD1.data),segmentLength1), 
-              &status);
-     LAL_CALL( LALDCreateVector(&status,&(segmentD2.data),segmentLength2), 
-               &status );
-
-     memset(segmentD1.data->data, 0,
-            segmentD1.data->length * sizeof(*segmentD1.data->data));
-     memset(segmentD2.data->data, 0,
-            segmentD2.data->length * sizeof(*segmentD2.data->data));
-   }
 
   
   segment1.data = segment2.data = NULL;
@@ -997,6 +993,7 @@ INT4 main(INT4 argc, CHAR *argv[])
           if (verbose_flag)
            fprintf(stdout, "request data at GPS time %d\n",
                    gpsStartPadTime.gpsSeconds);
+
           /* read first channel */	
           if (verbose_flag)
            fprintf(stdout, "Reading in channel \"%s\"...\n", frChanIn1.name);
@@ -1012,8 +1009,8 @@ INT4 main(INT4 argc, CHAR *argv[])
          /* print */
 	  if ((test_flag)&&(lInter==testInter)&&(lSeg==testSeg))
           {
-           LALDPrintTimeSeries(&segmentPadD1, "segmentPad1.dat");
-  	   LALDPrintTimeSeries(&segmentPadD2, "segmentPad2.dat");
+           LALDPrintTimeSeries(&segmentPadD1, "segmentPadD1.dat");
+  	   LALDPrintTimeSeries(&segmentPadD2, "segmentPadD2.dat");
           }
 
           /* high pass the data  */      
@@ -1032,9 +1029,13 @@ INT4 main(INT4 argc, CHAR *argv[])
       
           /* cast to REAL4  */
           for (i=0;i<(INT4)segmentPadD1.data->length;i++)           
-           segmentPad1.data->data[i]= (REAL4)segmentPad1.data->data[i];
+           segmentPad1.data->data[i]= (REAL4)segmentPadD1.data->data[i];
           for (i=0;i<(INT4)segmentPadD2.data->length;i++)           
-           segmentPad2.data->data[i]= (REAL4)segmentPad2.data->data[i];
+           segmentPad2.data->data[i]= (REAL4)segmentPadD2.data->data[i];
+
+          /* clean up */
+          LAL_CALL(LALDDestroyVector(&status, &(segmentPadD1.data)),&status );
+          LAL_CALL(LALDDestroyVector(&status, &(segmentPadD2.data)),&status );
          }  
         else
 	 {
@@ -1347,8 +1348,8 @@ INT4 main(INT4 argc, CHAR *argv[])
          /* print */
 	  if ((test_flag)&&(lInter==testInter)&&(lSeg==testSeg))
           {
-           LALDPrintTimeSeries(&segmentPadD1, "segmentPad1.dat");
-  	   LALDPrintTimeSeries(&segmentPadD2, "segmentPad2.dat");
+           LALDPrintTimeSeries(&segmentPadD1, "segmentPadD1.dat");
+  	   LALDPrintTimeSeries(&segmentPadD2, "segmentPadD2.dat");
           }
 
           /* high pass the data  */      
@@ -1359,17 +1360,21 @@ INT4 main(INT4 argc, CHAR *argv[])
           highpassParam.a1 = -1.0;
           highpassParam.a2 = (REAL8)(1.0 - doubleHighPassAt);
 
-          LAL_CALL(LALButterworthREAL8TimeSeries(&status,&segmentPadD1, 
-						 &highpassParam),&status);
+          LAL_CALL(LALButterworthREAL8TimeSeries(&status,&segmentPadD1,
+                                                 &highpassParam),&status);
           LAL_CALL(LALButterworthREAL8TimeSeries(&status,&segmentPadD2, 
                                                  &highpassParam),&status);
      
       
           /* cast to REAL4  */
           for (i=0;i<(INT4)segmentPadD1.data->length;i++)           
-           segmentPad1.data->data[i]= (REAL4)segmentPad1.data->data[i];
+           segmentPad1.data->data[i]= (REAL4)segmentPadD1.data->data[i];
           for (i=0;i<(INT4)segmentPadD2.data->length;i++)           
-           segmentPad2.data->data[i]= (REAL4)segmentPad2.data->data[i];
+           segmentPad2.data->data[i]= (REAL4)segmentPadD2.data->data[i];
+
+          /* clean up */
+          LAL_CALL(LALDDestroyVector(&status,&(segmentPadD1.data)),&status );
+          LAL_CALL(LALDDestroyVector(&status,&(segmentPadD2.data)),&status );
 	 }   
         else
 	 {
@@ -1786,17 +1791,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   LAL_CALL( LALDestroyVector(&status, &(dataWindow2.data)), &status );
   LAL_CALL(LALDestroyRealFFTPlan(&status,&fftDataPlan1),&status);
   LAL_CALL(LALDestroyRealFFTPlan(&status,&fftDataPlan2),&status);
-  LAL_CALL( LALDestroyVector(&status, &(segmentPad1.data)), &status );
-  LAL_CALL( LALDestroyVector(&status, &(segmentPad2.data)), &status );
   LAL_CALL( LALDestroyVector(&status, &(segment1.data)), &status );
   LAL_CALL( LALDestroyVector(&status, &(segment2.data)), &status );
-  if (double_flag)
-   { 
-    LAL_CALL( LALDestroyVector(&status, &(segmentPad1.data)), &status );
-    LAL_CALL( LALDestroyVector(&status, &(segmentPad2.data)), &status );
-    LAL_CALL( LALDestroyVector(&status, &(segment1.data)), &status );
-    LAL_CALL( LALDestroyVector(&status, &(segment2.data)), &status );
-   }
   if (inject_flag)
    {     
     LAL_CALL( LALDestroyVector(&status, &SimStochBG1.data), &status );
