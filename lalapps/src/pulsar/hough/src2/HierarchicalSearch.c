@@ -468,7 +468,7 @@ int main( int argc, char *argv[]) {
     exit(0); 
 
   /* some basic sanity checks on user vars */
-  if ( (uvar_method != 0) && (uvar_method != 1)) {
+  if ( (uvar_method != 0) && (uvar_method != 1) && (uvar_method != -1)) {
     fprintf(stderr, "Invalid method....must be 0 or 1\n");
     exit( HIERARCHICALSEARCH_EBAD );
   }
@@ -894,7 +894,7 @@ int main( int argc, char *argv[]) {
 	  
 	  /* the hough option */
 	  /* select peaks */ 	      
-	  if ( uvar_method == 0 ) {
+	  if ( (uvar_method == 0) ) {
 	    LAL_CALL( FstatVectToPeakGram( &status, &pgV, &fstatVector1, uvar_peakThrF), &status);
 	    	    
 	    /* get candidates */
@@ -2076,7 +2076,7 @@ void PrintSemiCohCandidates(LALStatus *status,
       /* propagate fkdot back to reference-time  */
       TRY ( LALExtrapolatePulsarSpins(status->statusPtr, fkdot, refTime, fkdot, thisPoint->refTime ), status );
 
-      fprintf(fp, "%.13g %.7g %.7g %.5g %.6g\n", fkdot->data[0], alpha, delta, fkdot->data[1], in->data->data[k]);
+      fprintf(fp, "%.13g %.7g %.7g %.5g %.6g\n", fkdot->data[0], alpha, delta, fkdot->data[1], 2*in->data->data[k]);
     }
 
   fprintf(fp, "\n");
