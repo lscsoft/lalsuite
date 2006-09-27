@@ -65,6 +65,7 @@ extern int optind;
 
 /* flags for getopt_long */
 static int double_flag = 0;
+static int double_high_pass_flag = 0;
 static int recenter_flag = 0;
 static int inject_flag = 0;
 static int inject_file_flag = 0;
@@ -103,11 +104,6 @@ INT4 resampleRate2 = 2500.;
 INT4 padData=1;
 REAL4 calibFactor=1.e18;
 
-/* double to single precision */
-REAL4 DhighPassFreq = 30.;
-INT4  DhighPassOrder = 8;
-REAL4 DhighPassAt = 0.9;
-
 /* time shift */
 UINT8 lagSeconds = 10;
 UINT8 lagNanoSeconds = 0; 
@@ -125,6 +121,11 @@ INT4 hannDuration = 1;
 REAL4 highPassFreq = 40.;
 REAL4 highPassAt ;
 INT4  highPassOrder = 6;
+
+/* double to single precision high pass filter */
+REAL4 DhighPassFreq = 50.;
+INT4  DhighPassOrder = 8;
+REAL4 DhighPassAt = 0.9;
 
 /* number of bins for frequency masking */ 
 INT4 maskBin = 1;
@@ -564,7 +565,7 @@ INT4 main(INT4 argc, CHAR *argv[])
      highpassParam.a2 = highPassAt;
    }
 
-  if (double_flag)
+  if (double_high_pass_flag)
    {
      DhighpassParam.nMax = DhighPassOrder;
      DhighpassParam.f1 = -1.0;
@@ -1055,20 +1056,14 @@ INT4 main(INT4 argc, CHAR *argv[])
   	   LALDPrintTimeSeries(&segmentPadD2, "segmentPadD2.dat");
           }
 
-          /* high pass the data  */      
-          
-          DhighpassParam.nMax = DhighPassOrder;
-          DhighpassParam.f1 = -1.0;
-          DhighpassParam.f2 = (REAL8) DhighPassFreq;
-          DhighpassParam.a1 = -1.0;
-          DhighpassParam.a2 = (REAL8)(DhighPassAt);
-         
+          if(double_high_pass_flag)
+	   {
 
-          LAL_CALL(LALButterworthREAL8TimeSeries(&status,&segmentPadD1, 
-						 &DhighpassParam),&status);
-          LAL_CALL(LALButterworthREAL8TimeSeries(&status,&segmentPadD2, 
+            LAL_CALL(LALButterworthREAL8TimeSeries(&status,&segmentPadD1, 
+	 					 &DhighpassParam),&status);
+            LAL_CALL(LALButterworthREAL8TimeSeries(&status,&segmentPadD2, 
                                                  &DhighpassParam),&status);
-	  
+	   }
       
           /* cast to REAL4  */
           for (i=0;i<(INT4)segmentPadD1.data->length;i++)           
@@ -1114,12 +1109,15 @@ INT4 main(INT4 argc, CHAR *argv[])
   	     LALDPrintTimeSeries(&segmentPadD2, "segmentPadDMC2.dat");
             }
 
-
-            LAL_CALL(LALButterworthREAL8TimeSeries(&status,&segmentPadD1, 
-		  				   &DhighpassParam),&status);
-            LAL_CALL(LALButterworthREAL8TimeSeries(&status,&segmentPadD2, 
-                                                   &DhighpassParam),&status);
-	  
+           if(double_high_pass_flag)
+	    {
+             /* high pass the data  */                
+             LAL_CALL(LALButterworthREAL8TimeSeries(&status,&segmentPadD1, 
+	 					 &DhighpassParam),&status);
+             LAL_CALL(LALButterworthREAL8TimeSeries(&status,&segmentPadD2, 
+                                                 &DhighpassParam),&status);
+	    }
+            
       
             /* cast to REAL4  and inject in data*/
             for (i=0;i<(INT4)segmentPadD1.data->length;i++)           
@@ -1458,19 +1456,15 @@ INT4 main(INT4 argc, CHAR *argv[])
           LALDPrintTimeSeries(&segmentPadD1, "segmentPadD1.dat");
           LALDPrintTimeSeries(&segmentPadD2, "segmentPadD2.dat");
          }
-
-        /* high pass the data  */      
-        DhighpassParam.nMax = DhighPassOrder;
-        DhighpassParam.f1 = -1.0;
-        DhighpassParam.f2 = (REAL8) DhighPassFreq;
-        DhighpassParam.a1 = -1.0;
-        DhighpassParam.a2 = (REAL8)(DhighPassAt);
-
-        LAL_CALL(LALButterworthREAL8TimeSeries(&status,&segmentPadD1,
-                                               &DhighpassParam),&status);
-        LAL_CALL(LALButterworthREAL8TimeSeries(&status,&segmentPadD2, 
-                                               &DhighpassParam),&status);
-      
+         if(double_high_pass_flag)
+	  {
+           /* high pass the data  */                
+           LAL_CALL(LALButterworthREAL8TimeSeries(&status,&segmentPadD1, 
+	 					  &DhighpassParam),&status);
+           LAL_CALL(LALButterworthREAL8TimeSeries(&status,&segmentPadD2, 
+                                                  &DhighpassParam),&status);
+	  }
+        
         /* cast to REAL4  */
         for (i=0;i<(INT4)segmentPadD1.data->length;i++)           
          segmentPad1.data->data[i]= (REAL4)segmentPadD1.data->data[i];
@@ -1516,10 +1510,14 @@ INT4 main(INT4 argc, CHAR *argv[])
            LALDPrintTimeSeries(&segmentPadD2, "segmentPadDMC2.dat");
           }
 
-         LAL_CALL(LALButterworthREAL8TimeSeries(&status,&segmentPadD1, 
-              				        &DhighpassParam),&status);
-         LAL_CALL(LALButterworthREAL8TimeSeries(&status,&segmentPadD2, 
-                                                &DhighpassParam),&status);
+         if(double_high_pass_flag)
+	  {
+           /* high pass the data  */                
+           LAL_CALL(LALButterworthREAL8TimeSeries(&status,&segmentPadD1, 
+	 					  &DhighpassParam),&status);
+           LAL_CALL(LALButterworthREAL8TimeSeries(&status,&segmentPadD2, 
+                                                  &DhighpassParam),&status);
+	  }
 	  
       
          /* cast to REAL4  and inject in data*/
@@ -2028,6 +2026,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
      {
       /* options that set a flag */
       {"double", no_argument, &double_flag,1},
+      {"double-high-pass-filter", no_argument, &double_high_pass_flag, 1},
       {"recenter", no_argument, &recenter_flag,1},
       {"inject", no_argument, &inject_flag, 1},
       {"inject-file", no_argument, &inject_file_flag, 1},
@@ -2247,7 +2246,9 @@ void displayUsage(INT4 exitcode)
   fprintf(stderr, " -h                    print this message\n");
   fprintf(stderr, " -V                    display version\n");
   fprintf(stderr, " --verbose             verbose mode\n");
-  fprintf(stderr, " --test                print intermediate results\n");  
+  fprintf(stderr, " --test                print intermediate results\n");
+  fprintf(stderr, " --double              read double precision data in frames\n"); 
+   fprintf(stderr, " --double-high-pass-filter              high pass data before casting to single precision\n"); 
   fprintf(stderr, " --recenter            recenter jobs\n");
   fprintf(stderr, " --post-analysis       post analysis\n");
   fprintf(stderr, " -t                    GPS start time\n");
