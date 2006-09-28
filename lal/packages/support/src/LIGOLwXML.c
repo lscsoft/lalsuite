@@ -621,9 +621,22 @@ LALWriteLIGOLwXMLTable (
               tablePtr.multiInspiralTable->ligo_axis_ra,
               tablePtr.multiInspiralTable->ligo_axis_dec,
               tablePtr.multiInspiralTable->ligo_angle,
-	      tablePtr.multiInspiralTable->ligo_angle_sig,
-	      tablePtr.multiInspiralTable->inclination,
-              tablePtr.multiInspiralTable->polarization
+	          tablePtr.multiInspiralTable->ligo_angle_sig,
+	          tablePtr.multiInspiralTable->inclination,
+              tablePtr.multiInspiralTable->polarization,
+              tablePtr.multiInspiralTable->event_id->id,
+              tablePtr.multiInspiralTable->h1quad.re,
+              tablePtr.multiInspiralTable->h1quad.im,
+              tablePtr.multiInspiralTable->h2quad.re,
+              tablePtr.multiInspiralTable->h2quad.im,
+              tablePtr.multiInspiralTable->l1quad.re,
+              tablePtr.multiInspiralTable->l1quad.im,
+              tablePtr.multiInspiralTable->v1quad.re,
+              tablePtr.multiInspiralTable->v1quad.im,
+              tablePtr.multiInspiralTable->g1quad.re,
+              tablePtr.multiInspiralTable->g1quad.im,
+              tablePtr.multiInspiralTable->t1quad.re,
+              tablePtr.multiInspiralTable->t1quad.im
                 );
         tablePtr.multiInspiralTable = tablePtr.multiInspiralTable->next;
         ++(xml->rowCount);
