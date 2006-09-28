@@ -190,7 +190,7 @@ int outputBeamTS( const CHAR *fname, const AMCoeffs *amcoe, const DetectorStateS
 void InitEphemeris (LALStatus *, EphemerisData *edat, const CHAR *ephemDir, const CHAR *ephemYear, LIGOTimeGPS epoch, BOOLEAN isLISA);
 void getUnitWeights ( LALStatus *, MultiNoiseWeights **multiWeights, const MultiSFTVector *multiSFTs );
 
-int XLALwriteCandidate2file ( FILE *fp,  const PulsarCandidate *cand, const Fcomponents *Fstat );
+int XLALwriteCandidate2file ( FILE *fp,  const PulsarCandidate *cand, const Fcomponents *Fstat, const MultiAMCoeffs *multiAMcoef );
 
 
 const char *va(const char *format, ...);	/* little var-arg string helper function */
@@ -538,7 +538,6 @@ int main(int argc,char *argv[])
 
       LAL_CALL(LALEstimatePulsarAmplitudeParams (&status, &Amp, &dAmp, &loudestFstat, cfBuffer.multiAMcoef, norm), 
 	       &status);
-      XLALDestroyMultiAMCoeffs ( multiAMcoef );
       
       /* propagate initial-phase from internal reference-time 'startTime' to refTime of Doppler-params */
       fkdotTmp->data[0] = loudestDoppler.fkdot[0];
@@ -575,11 +574,14 @@ int main(int argc,char *argv[])
       cand.Amp = Amp;
       cand.dAmp = dAmp;
       cand.Doppler = loudestDoppler;
-      if ( XLALwriteCandidate2file ( fpLoudest,  &cand, &loudestFstat ) != XLAL_SUCCESS )
+      if ( XLALwriteCandidate2file ( fpLoudest,  &cand, &loudestFstat, cfBuffer.multiAMcoef) != XLAL_SUCCESS )
 	{
 	  LALPrintError("\nXLALwriteCandidate2file() failed with error = %d\n\n", xlalErrno );
 	  return COMPUTEFSTATC_EXLAL;
 	}
+
+      XLALDestroyMultiAMCoeffs ( multiAMcoef );
+
       fclose (fpLoudest);
     } /* write loudest candidate to file */
   
@@ -1310,7 +1312,7 @@ const char *va(const char *format, ...)
 
 
 int
-XLALwriteCandidate2file ( FILE *fp,  const PulsarCandidate *cand, const Fcomponents *Fstat )
+XLALwriteCandidate2file ( FILE *fp,  const PulsarCandidate *cand, const Fcomponents *Fstat, const MultiAMCoeffs *multiAMcoef)
 {
   fprintf (fp, "\n");
 
@@ -1338,6 +1340,14 @@ XLALwriteCandidate2file ( FILE *fp,  const PulsarCandidate *cand, const Fcompone
   fprintf (fp, "f2dot   = % .16g;\n", cand->Doppler.fkdot[2] );
   fprintf (fp, "f3dot   = % .16g;\n", cand->Doppler.fkdot[3] );
 
+  fprintf (fp, "\n");
+
+  /* Amplitude Modulation Coefficients */
+  fprintf (fp, "A       = % .6g;\n", multiAMcoef->A );
+  fprintf (fp, "B       = % .6g;\n", multiAMcoef->B );
+  fprintf (fp, "C       = % .6g;\n", multiAMcoef->C );
+  fprintf (fp, "D       = % .6g;\n", multiAMcoef->D );
+ 
   fprintf (fp, "\n");
 
   /* Fstat-values */
