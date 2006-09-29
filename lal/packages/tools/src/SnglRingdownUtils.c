@@ -714,12 +714,12 @@ LALTimeSlideSingleRingdown(
     LALGPStoINT8( status->statusPtr, &trigTimeNS, &(thisEvent->start_time));
     trigTimeNS += slideNS;
     
-    if ( startTimeNS && trigTimeNS < startTimeNS )
+    while ( startTimeNS && trigTimeNS < startTimeNS )
     {
       /* if before startTime, then wrap trigger time */
       trigTimeNS += endTimeNS - startTimeNS;
     }
-    else if ( endTimeNS && trigTimeNS > endTimeNS )
+    while ( endTimeNS && trigTimeNS > endTimeNS )
     {
       /* if after endTime, then wrap trigger time */
       trigTimeNS -= endTimeNS - startTimeNS;
