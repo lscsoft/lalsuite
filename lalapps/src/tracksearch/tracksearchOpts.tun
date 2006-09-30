@@ -12,7 +12,7 @@
 [all]
 masterini=/home/charlie/research.d/src/lalapps/src/tracksearch/tracksearchPipeline.ini
 tuningHome=/home/charlie/pipeTest/tuneTests
-tuningLogs=/tmp/charlie/myfile.log
+tuningLogs=/tmp/charlie/Logs_tunePipes/
 seglist=/home/charlie/pipeTest/segmentsCLIP.txt.revised
 pipeProgram=/home/charlie/research.d/src/lalapps/src/tracksearch/tracksearch_pipe.py
 

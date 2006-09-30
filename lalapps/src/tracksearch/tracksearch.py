@@ -844,6 +844,8 @@ class tracksearch:
         #a coherent job dag
         #CHECK TO MAKE SURE LAYERCONFIG IS VALID HAS ENTRIES
         #We need a consistency check between above and [tracksearchbase]
+        #Need a new housekeeping method which will go to each step
+        #deleting the MAP:*.dat files to save disk space
         layerID=1
 
         nodeLinkage=self.startingSearchLayer(layerID)
