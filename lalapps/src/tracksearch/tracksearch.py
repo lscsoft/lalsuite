@@ -118,7 +118,7 @@ class tracksearchCheckIniFile:
         if CL < 3:
             self.errList.append('Error invalid choice for curve length threshold')
         IP=float(self.iniOpts.get('tracksearchbase','power_threshold'))
-        if IP <= 0:
+        if IP < 0:
             self.errList.append('Error invalid choice for integrated power threshold')
         #Check [tracksearchtime] section
         WS=1

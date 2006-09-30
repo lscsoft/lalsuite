@@ -194,10 +194,10 @@ int main (int argc, char *argv[])
   lal_errhandler = LAL_ERR_EXIT;
   lal_errhandler = LAL_ERR_RTRN;
   set_debug_level("MEMDBG");
-  set_debug_level("ERROR | WARNING | MEMDBG");
+  /*  set_debug_level("ERROR | WARNING | MEMDBG");*/
   /*  set_debug_level("ERROR | WARNING | MEMDBG");*/
   /*  set_debug_level("ERROR | WARNING ");*/
-  /*      set_debug_level("ALLDBG");*/
+  /*    set_debug_level("ALLDBG");*/
 
   /*
    * Initialize status structure 

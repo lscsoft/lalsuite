@@ -21,6 +21,7 @@ import string
 import sys
 import time
 import tracksearch
+import pickle
 
 #
 #
@@ -100,19 +101,41 @@ class tuneObject:
         Using find via the command module we will find files via pathnames
         searching for a string
         """
-        cmdString='find '+searchPath+'/*'
+        cmdString='find '+searchPath+'/* | grep RESULTS | grep _1.candidates | sort'
         errs=commands.getstatusoutput(cmdString)
-        fileList=err[1].split('\n')
+        if errs[0] != 0:
+            print "Error locating result files!"
+            print errs[1]
+            os.abort()
+        fileList=errs[1].split('\n')
         resultList=[]
         for entry in fileList:
-            for keywords in entryList:
-                if entry.__contains__('RESULTS'):
-                    if entry.__contains__('_1.candidates'):
-                        resultList.append(entry)
+            if entry.__contains__('RESULTS'):
+                if entry.__contains__('_1.candidates'):
+                    resultList.append(entry)
         return resultList
 
     # End __findResultFiles__
 
+    def __findLayer1GlobFiles__(self,searchPath):
+        """
+        Method to use find utility to locate all Glob results files for layer 1
+        fetching complete path names
+        """
+        cmdString='find '+searchPath+'/* | grep Glob | grep _1.candidates'
+        print cmdString
+        errs=commands.getstatusoutput(cmdString)
+        if errs[0] != 0:
+            print "Error locating result files!"
+            print errs[1]
+            os.abort()
+        fileList=errs[1].split('\n')
+        resultList=[]
+        for entry in fileList:
+            resultList.append(entry)
+        return resultList
+    # End __fileLayer1GlobFiles__ method
+    
     def __layer1CandidatePaths__(self,searchPath):
         """
         Using find via the command module we will fetch the path & names of
@@ -168,6 +191,7 @@ class tuneObject:
                 print " "
         i=0
         masterDAG_fp=file(dagFilename,'w')
+        masterDAG_fp.write('DOT MasterDag.dot\n')
         for entry in fileList:
             masterDAG_fp.write('Job '+str(i)+' '+str(entry)+'.condor.sub \n')
             i=i+1
@@ -247,8 +271,9 @@ class tuneObject:
         myFAR=self.mySigmaFA
         
         # Determine the pipe that should be installed based on tun file.
-        resultFiles=self.__findResultsFiles__(self.tuningHome+'/FalseAlarm')
-        print "Checking ",resultFiles.__len__()," total candidate files."
+        resultFiles=self.__findResultFiles__(self.installPipes)
+        print "Checking ",resultFiles.__len__()," total candidate files. This may take a while."
+        auxoutData=[]
         outputData=[]
         for entry in resultFiles:
             candidate=candidateList()
@@ -261,16 +286,38 @@ class tuneObject:
             #Threshold FAR values
             threshP=meanP+(myFAR*stdP)
             threshL=meanL+(myFAR*stdL)
-            myOpts=str(str(entry).replace(self.installPipes,'').split('/')[0]).split('_')
+            myOpts=str(str(entry).replace(self.installPipes,'').split('/')[1]).split('_')
             myLH=myOpts[1]
             myLL=myOpts[2]
+            auxoutData.append([float(myLH),float(myLL),meanL,stdL,meanP,stdL])
             outputData.append([float(myLH),float(myLL),float(threshP),float(threshL)])
+        auxout_fp=open(self.home+'/FA_results.aux','w')
+        auxout_fp.write("LH,LL,Mean L,Stddev L,Mean P,Stddev P\n")
+        for entry in auxoutData:
+            auxout_fp.write(str(entry)+'\n')
+        auxout_fp.close()
         output_fp=open(self.home+'/FA_results.dat','w')
         for entry in outputData:
-            output_fp.write(entry)
+            output_fp.write(str(entry)+'\n')
         output_fp.close()
+        pickleout_fp=open(self.home+'/FA_results.pickle','w')
+        pickle.dump(outputData,pickleout_fp)
+        pickleout_fp.close()
     #End performFAcalc method
 
+    def readFAresults(self):
+        """
+        Parse the results file to setup the appropriate P,L thresholds to do
+        a detection efficiency study.  It uses pickle module to open up the file.
+        """
+        rawText=[]
+        importFile=self.home+'/FA_results.pickle'
+        import_fp=open(importFile,'r')
+        FAresults=pickle.load(import_fp)
+        import_fp.close()
+        return FAresults
+    #End readFAresults method
+    
     def performDEsetup(self):
         #1) Read in lambaH lambaL P L result file
         #2) Create corresponding ini file
@@ -278,15 +325,26 @@ class tuneObject:
         buildDir(self.installPipes2)
         buildDir(self.installIni2)
         myIni=self.myIni
-        results=self.readFAresults()
+        Orig_results=self.readFAresults()
+        #Re-encode results to get one ini file for H,L with P and then H,L with Len
+        results=[]
+        for entry in Orig_results:
+            h=entry[0]
+            l=entry[1]
+            p=entry[2]
+            len=entry[3]
+            #Setup P entry
+            results.append([h,l,p,3])
+            #Setup L entry
+            results.append([h,l,0,len])
         for entry in results:
             h=entry[0]
             l=entry[1]
             p=entry[2]
-            l=entry[3]
-            pipeIniName='DEsetup_'+self.home+self.batchMask+str(h)+str(float(h*l))+'.ini'
+            len=entry[3]
+            pipeIniName=self.installIni2+'/'+self.batchMask+':'+str(h)+':'+str(float(l))+':'+str(float(p))+':'+str(int(len))+':'+'.ini'
             self.DEpipeNames.append(pipeIniName)
-            self.DEeditIniFile(pipeIniName)
+            self.DEeditIniFile(h,l,p,len,pipeIniName)
             self.createPipe(pipeIniName)
         #Search the workspace to construct a huge parent DAG for submitting all the DAGs
         root2dags=self.installPipes2
@@ -299,14 +357,19 @@ class tuneObject:
         This method will edit the original ini file in such a way as to
         prepare the detection efficiency runs to be launched.
         """
-        newCP=copy.deepcopy(self.cp)
+        newCP=copy.deepcopy(self.cpIni)
         #New/Rewritten ini options
-        newCP.set('filelayout','workpath','NEW_WORKPATH')
-        newCP.set('logpath','logpath','NEW_LOGPATH')
+        uniqStr='DE_'+str(LH)+'_'+str(LL)+'_'+str(P)+'_'+str(L)+'_'
+        newCP.set('filelayout','workpath',self.installPipes2+'/'+uniqStr)
+        newCP.set('filelayout','logpath',self.log+uniqStr)
         newCP.set('tracksearchbase','start_threshold',LH)
         newCP.set('tracksearchbase','member_threshold',LL)
         newCP.set('tracksearchbase','length_threshold',L)
         newCP.set('tracksearchbase','power_threshold',P)
+        # The master Ini must have an injection section to continue
+        if not newCP.has_section('tracksearchinjection'):
+            print "Error the master ini in our tun file has no injection section!"
+            os.abort
         # Write out this modified ini file to disk
         fp=open(iniName,'w')
         newCP.write(fp)
@@ -317,20 +380,47 @@ class tuneObject:
         #count num of can files with 1 entry+
         #determine percentage succsessful
         #write 2 ranked 4c list lh ll #map percentage
-        candFiles=self.__layer1CandidatePaths__(self.installPipes2)
-        output=[]
-        for entry in candFiles:
-            results=self.__determineDEinPath__(entry)
-            myOpts=str(str(entry).replace(self.installPipes2,'').split('/')[0]).split('_')
-            myLH=myOpts[1]
-            myLL=myOpts[2]
-            Eff=float(results[0]/results[1])
-            output.append([myLH,myLL,Eff])
-        #
-        output_fp=open(self.home+'/DE_results.dat','w')
-        for entry in output:
-            output_fp.write(entry)
-        output_fp.close()
+        globFiles=self.__findLayer1GlobFiles__(self.installPipes2)
+        outputPickle=[]
+        outputP=[]
+        outputL=[]
+        numInjections=int(self.cpIni.get('tracksearchinjection','inject_count'))
+        print "Calculating efficiencies for ",globFiles.__len__()," files."
+        for entry in globFiles:
+            candObj=candidateList()
+            candObj.loadfile(entry)
+            fileName=entry
+            curveCount=candObj.totalCount
+            myOpts=str(str(entry).replace(self.installPipes2,'').split('/')[1]).split('_')
+            h=myOpts[1]
+            l=myOpts[2]
+            p=myOpts[3]
+            len=myOpts[4]
+            eff=candObj.totalCount/numInjections
+            outputPickle.append([h,l,p,len,eff,candObj.totalCount,entry])
+            if len <= 3 and p >= 0:
+                outputP.append([h,l,p,eff,candObj.totalCount])
+            if p <= 0 and len >= 3:
+                outputL.append([h,l,len,eff,candObj.totalCount])
+        #Write out results files to disk
+        file_fp=open(self.home+'/DE_results_L.dat','w')
+        file_fp.write("H L P Len Eff Count \n")
+        for entry in outputL:
+            file_fp.write(str(entry)+'\n')
+        file_fp.close()
+        file_fp=open(self.home+'/DE_results_P.dat','w')
+        file_fp.write("H L P Len Eff Count \n")
+        for entry in outputL:
+            file_fp.write(str(entry)+'\n')
+        file_fp.close()
+        file_fp=open(self.home+'/DE_results_Mix.dat','w')
+        file_fp.write("H L P Len Eff Count \n")
+        for entry in outputPickle:
+            file_fp.write(str(entry.__getslice__(0,6))+'\n')
+        file_fp.close()
+        pickle_fp=open(self.home+'/DE_results.pickle','w')
+        pickle.dump(outputPickle,pickle_fp)
+        pickle_fp.close()
     #End performDEcalc
 #
 #

@@ -202,23 +202,34 @@ class gpsInt:
     #End init method
 
     def __makeInt__(self):
-        secPartIn=str(str(self.gpsSeconds).ljust(18)).replace(' ','0')
+        secPartIn=str(self.gpsSeconds)
         nanoPartIn=str(str(self.gpsNanoSeconds).rjust(9)).replace(' ','0')
-        intIn=int(secPartIn)+int(nanoPartIn)
+        intIn=int(secPartIn+nanoPartIn)
+  #        print "As Ints: ",secPartIn,nanoPartIn,intIn
         return intIn
     #End __makeInt__ method
 
     def __splitInt__(self,inputInt):
+        negFlag=False
+        if inputInt < 0:
+            inputInt = abs(inputInt)
+            negFlag=True
         strInput=str(inputInt).zfill(18)
         gpsSecondInput=int(strInput.__getslice__(0,9))
         gpsNanoInput=int(strInput.__getslice__(9,18))
+        if negFlag == True:
+            gpsSecondInput=-1*gpsSecondInput
         return gpsSecondInput,gpsNanoInput
     #End __splitInt__ method
     
     def __add__(self,inTime):
+        """
+        Add the argument gpsInt class to the calling gpsInt object ie
+        x.__add__(y) like the operation x+y
+        """
         inTimeInt=inTime.__makeInt__()
         selfTimeInt=self.__makeInt__()
-        intAnswer=selfTimeInt.__add__(inTimeInt)
+        intAnswer=inTimeInt+selfTimeInt
         gpsSecondAnswer,gpsNanoAnswer=self.__splitInt__(intAnswer)
         return gpsInt(gpsSecondAnswer,gpsNanoAnswer)
     #End __add__ method
@@ -250,7 +261,18 @@ class gpsInt:
         nanoPartIn=str(str(self.gpsNanoSeconds).rjust(9)).replace(' ','0')
         result=secPartIn+','+nanoPartIn
         return result
+<<<<<<< candidateUtils.py
     #End __diskPring__ method
+
+    def __abs__(self):
+        if (self.gpsSeconds < 0) and (self.gpsNanoSeconds < 0):
+            print "Major weirdness with data! See ",self.gpsSeconds,self,gpsNanoSeconds
+            print "If you see this something went really wrong!"
+            os.abort()
+        return gpsInt(abs(self.gpsSeconds),abs(self.gpsNanoSeconds))
+=======
+    #End __diskPring__ method
+>>>>>>> 1.5
 #End gpsInt class
 
 class candidateList:
@@ -335,9 +357,16 @@ class candidateList:
         if ((int(content.__len__()).__mod__(2) != 0)):
             print 'Error parsing :',self.filename," Number of data lines :",content.__len__()
             os.abort()
+<<<<<<< candidateUtils.py
+        if (content.__len__() > 1) and (self.totalCount == 0):
+            print "Hum?  The file appears inconsistent."
+            print "File has ",content.__len__(),"lines with header listing ",self.totalCount," entries."
+            print inputFilename
+=======
         if (content.__len__ > 0) and (self.totalCount == 0):
             print "Hum?  The file appears inconsistent."
             print inputFilename
+>>>>>>> 1.5
         if (content.__len__ > 0):
              walkIndex=0
              while walkIndex < content.__len__():
@@ -360,9 +389,17 @@ class candidateList:
                          int(tmpElement[0]),int(tmpElement[1]),\
                          gpsInt(tmpElement[2],tmpElement[3]),\
                          float(tmpElement[4]),float(tmpElement[5]))
+<<<<<<< candidateUtils.py
+             #Determine the bin widths in this structure
+             if self.totalCount > 0:
+                 self.findBinWidths()
+             if self.totalCount != self.curves.__len__():
+                 print "Possible problem, Inconsistent file :",inputFilename
+=======
                  #Determine the bin widths in this structure
                  if self.totalCount > 0:
                      self.findBinWidths()
+>>>>>>> 1.5
         else:
             print "No candidate entries found in:",inputFilename
     #End loadfile method
@@ -429,6 +466,7 @@ class candidateList:
             for entry in curveElement.getKurveDataBlock():
                 TDArrayFreq.append([entry[0],entry[3]])
                 TDArrayGPS.append([entry[1],entry[2]])
+#        print "We will use ",TDArrayFreq.__len__()," total pixels to determine time bin width and freq bin width"
         TDArrayFreq.sort()
         TDArrayGPS.sort()
         freqSum=float(0)
@@ -436,6 +474,7 @@ class candidateList:
         for i in range(1,TDArrayFreq.__len__()):
             if int(TDArrayFreq[i][0]) - int(TDArrayFreq[i-1][0]) == 1:
                 AddMe=float(TDArrayFreq[i][1])-float(TDArrayFreq[i-1][1])
+                AddMe=abs(AddMe)
                 freqSum=freqSum.__add__(AddMe)
                 freqSumCount=freqSumCount+1
         if freqSumCount != 0:
@@ -447,10 +486,18 @@ class candidateList:
         for i in range(1,TDArrayGPS.__len__()):
             if int(TDArrayGPS[i][0]) - int(TDArrayGPS[i-1][0]) == 1:
                 AddMe=TDArrayGPS[i][1].__sub__(TDArrayGPS[i-1][1])
+                AddMe=AddMe.__abs__()
+#                print TDArrayGPS[i][1].display(),TDArrayGPS[i-1][1].display(),AddMe.display()," As INTS ",TDArrayGPS[i][1].__makeInt__(),TDArrayGPS[i-1][1].__makeInt__(),AddMe.__makeInt__()
+#                print "Showing  i,AddMe ",i,AddMe.gpsSeconds,AddMe.gpsNanoSeconds,AddMe.display()
+#                print "Index ",i," of ",TDArrayGPS.__len__()," Adding value : ",AddMe.display()," To ",gpsSum.display()
                 gpsSum=gpsSum.__add__(AddMe)
                 gpsSumCount=gpsSumCount+1
+<<<<<<< candidateUtils.py
+        if gpsSumCount > 0:
+=======
         print "Sum Count: ",gpsSumCount,"Total GPS Time: ",gpsSum.display()
         if gpsSumCount > 0:
+>>>>>>> 1.5
             avgGpsWidth=gpsSum.__div__(gpsSumCount)
         else:
             avgGpsWidth=gpsInt(0,0)
