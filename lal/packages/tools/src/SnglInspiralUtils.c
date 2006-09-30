@@ -1547,7 +1547,6 @@ LALTimeSlideSingleInspiral(
   INT8                  endTimeNS   = 0;
   INT8                  slideNS     = 0;
   INT8                  trigTimeNS  = 0;
-  INT8                  n           = 0;
   INITSTATUS( status, "LALTimeSlideSingleInspiral", SNGLINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
 
@@ -1570,10 +1569,6 @@ LALTimeSlideSingleInspiral(
     LALGPStoINT8( status->statusPtr, &endTimeNS, endTime );
   }
 
-  /* make sure slide time is within segment time */
-  n=(int)( slideNS/(endTimeNS-startTimeNS) );
-  slideNS-=n*(endTimeNS-startTimeNS);
-  
   for( thisEvent = triggerList; thisEvent; thisEvent = thisEvent->next )
   {
     /* calculate the slide time in nanoseconds */
@@ -1583,12 +1578,12 @@ LALTimeSlideSingleInspiral(
     LALGPStoINT8( status->statusPtr, &trigTimeNS, &(thisEvent->end_time));
     trigTimeNS += slideNS;
     
-    if ( startTimeNS && trigTimeNS < startTimeNS )
+    while ( startTimeNS && trigTimeNS < startTimeNS )
     {
       /* if before startTime, then wrap trigger time */
       trigTimeNS += endTimeNS - startTimeNS;
     }
-    else if ( endTimeNS && trigTimeNS > endTimeNS )
+    while ( endTimeNS && trigTimeNS > endTimeNS )
     {
       /* if after endTime, then wrap trigger time */
       trigTimeNS -= endTimeNS - startTimeNS;
