@@ -626,29 +626,27 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
-  /* check that if clustering is being done that we have all the options */
-  if ( (rsqVetoThresh > 0) && ( (rsqMaxSnr < 0) || (rsqAboveSnrCoeff < 0) || (rsqAboveSnrPow < 0) ) )
+  /* check that if the rsq veto is being preformed,
+                         we have the required options */
+  if ( ( (rsqVetoThresh > 0) || (rsqMaxSnr > 0) ) && ( (rsqVetoThresh < 0)
+    || (rsqMaxSnr < 0) ) )
   {
-    fprintf( stderr, "--rsq-max-snr --rsq-coeff and --rsq-power must be specified if --rsq-threshold"
-        "is given\n" );
+    fprintf( stderr, "--rsq-threshold and --rsq-max-snr and must be "
+      "specified together" );
     exit( 1 );
   }
-  else if ( (rsqMaxSnr > 0) && ( (rsqVetoThresh < 0) || (rsqAboveSnrCoeff < 0) || (rsqAboveSnrPow < 0) ) )
+  else if ( (rsqAboveSnrCoeff > 0) && ( (rsqMaxSnr < 0) || (rsqVetoThresh < 0)
+    || (rsqAboveSnrPow < 0) ) )
   {
-    fprintf( stderr, "--rsq-threshold --rsq-coeff and --rsq-power must be specified if --rsq-max-snr"
-        "is given\n" );
+    fprintf( stderr, "--rsq-max-snr --rsq-threshold and --rsq-power "
+      "must be specified if --rsq-coeff is given\n" );
     exit( 1 );
   }
-  else if ( (rsqAboveSnrCoeff > 0) && ( (rsqMaxSnr < 0) || (rsqVetoThresh < 0) || (rsqAboveSnrPow < 0) ) )
+  else if ( (rsqAboveSnrPow > 0) && ( (rsqMaxSnr < 0) || (rsqVetoThresh < 0)
+    || (rsqAboveSnrCoeff < 0) ) )
   {
-    fprintf( stderr, "--rsq-max-snr --rsq-threshold and --rsq-power must be specified if --rsq-coeff"
-        "is given\n" );
-    exit( 1 );
-  }
-  else if ( (rsqAboveSnrPow > 0) && ( (rsqMaxSnr < 0) || (rsqVetoThresh < 0) || (rsqAboveSnrCoeff < 0) ) )
-  {
-    fprintf( stderr, "--rsq-max-snr --rsq-threshold and --rsq-coeff must be specified if --rsq-power"
-        "is given\n" );
+    fprintf( stderr, "--rsq-max-snr --rsq-threshold and --rsq-coeff "
+      "must be specified if --rsq-power is given\n" );
     exit( 1 );
   }
   
@@ -1143,10 +1141,13 @@ int main( int argc, char *argv[] )
           rsqMaxSnr);
       fprintf( fp, "with rsqveto_duration below %f\n",
           rsqVetoThresh);
-      fprintf( fp, "and on triggers with snr > %f\n",
-          rsqMaxSnr);
-      fprintf( fp, "with rsqveto_duration above %f * snr ^ %f\n",
-          rsqAboveSnrCoeff, rsqAboveSnrPow );
+      if ( (rsqAboveSnrCoeff > 0) && (rsqAboveSnrPow > 0) )
+      {
+        fprintf( fp, "and on triggers with snr > %f\n",
+            rsqMaxSnr);
+        fprintf( fp, "with rsqveto_duration above %f * snr ^ %f\n",
+            rsqAboveSnrCoeff, rsqAboveSnrPow );
+      }
       fprintf( fp, "the number of triggers below the R-squared veto are: %d \n",
           numEventsBelowRsqThresh);
     }

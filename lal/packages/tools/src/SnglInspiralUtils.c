@@ -122,8 +122,8 @@ triggers which have snr values above a specific snrCut.
 \texttt{XLALRsqCutSingleInspiral()} performs the R-squared veto on a linked
 list of single inspiral tables.  Triggers whose snr is less than
 \texttt{rsqSnrMax} and whose \texttt{rsqveto\_duration} is greater than
-\texttt{rsqVetoThresh} or whose snr is greater than \texttt{rsqSnrMax} and
-whose \texttt{rsqveto\_duration} is greater than
+\texttt{rsqVetoThresh} or \texttt{(optional)} whose snr is greater than
+\texttt{rsqSnrMax} and whose \texttt{rsqveto\_duration} is greater than
 $\mathtt{rsqAboveSnrCoeff} \times \mathtt{snr}^{\mathtt{rsqAboveSnrPow}}$
 
 \texttt{XLALVetoSingleInspiral()} takes in a linked list of single inspiral
@@ -1040,12 +1040,15 @@ XLALRsqCutSingleInspiral (
     SnglInspiralTable *tmpEvent = thisEvent;
     thisEvent = thisEvent->next;
     
-    if ( (tmpEvent->snr <= rsqMaxSnr) && (tmpEvent->rsqveto_duration >= rsqVetoTimeThresh) )
+    if ( (tmpEvent->snr <= rsqMaxSnr)
+      && (tmpEvent->rsqveto_duration >= rsqVetoTimeThresh) )
     {
       /* discard this event */
       XLALFreeSnglInspiral ( &tmpEvent );
     }
-    else if ( (tmpEvent->snr > rsqMaxSnr) && (tmpEvent->rsqveto_duration >= rsqAboveSnrCoeff * pow(tmpEvent->snr,rsqAboveSnrPow) ) )
+    else if ( ( (tmpEvent->snr > rsqMaxSnr) && (rsqAboveSnrCoeff > 0)
+      && (rsqAboveSnrPow > 0) ) && (tmpEvent->rsqveto_duration >=
+      rsqAboveSnrCoeff * pow(tmpEvent->snr,rsqAboveSnrPow) ) )
     {
       /* discard this event */
       XLALFreeSnglInspiral ( &tmpEvent );
