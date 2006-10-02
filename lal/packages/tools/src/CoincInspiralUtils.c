@@ -1589,9 +1589,11 @@ XLALInspiralDistanceCut(
           snrB = tmpCoinc->snglInspiral[ifoB]->snr;
 
           if( ( sigmasqA > sigmasqB && 
-                fabs(distB - distA)/distA > epsilonB/snrB + kappaB ) ||
+                2*fabs(distB - distA)/(distA + distB) >
+                  epsilonB/snrB + kappaB ) ||
               ( sigmasqB > sigmasqA &&
-                fabs(distA - distB)/distB > epsilonA/snrA + kappaA ) )
+                2*fabs(distA - distB)/(distA + distB) >
+                  epsilonA/snrA + kappaA ) )
           {
             discardTrigger = 1;
             break;
