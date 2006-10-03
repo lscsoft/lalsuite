@@ -141,7 +141,6 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
         break;
       case 'G': /* geo-data-scale */
         localparams.geoScale = atof( optarg );
-        error( "currently geo scale is not implemented correctly\n" );
         break;
       case 'h': /* help */
         ring_usage( program );
@@ -340,6 +339,9 @@ int ring_params_sanity_check( struct ring_params *params )
           params->geoHighpassFrequency = params->lowCutoffFrequency;
       }
       sanity_check( params->geoHighpassFrequency > 0.0 );
+      
+      /* if using geo data then set the dynamic range factor to geo scale factor */
+      params->dynRangeFac = params->geoScale;
     }
   }
 
