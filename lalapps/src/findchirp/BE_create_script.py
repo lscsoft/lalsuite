@@ -13,16 +13,16 @@ import os
 
 
 # init
-path  		= '/archive//home/cokelaer/lalapps/src/findchirp/'
+path  		= './'
 executable_name = 'lalapps_BankEfficiency'
 # 
 # injection parameters for TD
 min_mass       	=  3  	   	# miminal individaul mass to inject
-max_mass       	=  49  	# maximal individua lmass to inject
-maxTotalMass    = 99 
+max_mass       	=  80  	# maximal individua lmass to inject
+maxTotalMass    = -1
 # bank parameters for TD 
-min_massb      	=  3.  		# maximal individua lmass to inject
-max_massb      	=  49  	# maximal individua lmass to inject
+min_massb      	=  3  		# maximal individua lmass to inject
+max_massb      	=  80  	# maximal individua lmass to inject
 #injection parameters for BCV
 signal_psi0_min	= 1000
 signal_psi0_max	= 550000
@@ -30,42 +30,41 @@ signal_psi3_min	= -5000
 signal_psi3_max	= -1000
 #bank parametesr for BCV 
 bank_psi0_min	= 10000
-bank_psi0_max	= 550000
-bank_psi3_min	= -5000
+bank_psi0_max	= 1500000
+bank_psi3_min	= -7000
 bank_psi3_max	= -10
-alpha_bank	= 0.0001
+alpha_bank	= 0.01
 fend_min	=  -2  
 fend_max	=  6 
 number_fcut	=  3 
 # common bank parameters 
-minimal_match 	=  0.95     	# minimal match in bank creation
-lower_frequency = 20		# lower freqency cutoff. identical for both signal and templates for the time being
-freq_moment_bank = 1023
-sampling = 2048
+minimal_match 	 = 0.95     	# minimal match in bank creation
+lower_frequency  = 40		# lower freqency cutoff. identical for both signal and templates for the time being
+freq_moment_bank = 2047
+sampling = 4096
 #injection
-signal 		= 'EOB'
-signal_order 	=  6
+signal 		= 'TaylorT3'
+signal_order 	=  4
 # template bank
-template 	= 'EOB'
-template_order  =  6
+template 	= 'TaylorT3'
+template_order  =  4
 
-noisemodel	= 'VIRGO'
+noisemodel	= 'LIGOI'
 simulation_type = 'SignalOnly'       	# 0 for signal only 1 for noise only and 2 for noise+signal
 signal_amplitude = 8 
 
 #condor parameters 
-number_of_jobs 	= 100 
-number_of_trials_per_job = 100
+number_of_jobs 	= 500
+number_of_trials_per_job = 200
 
 #real data parameters 
-run = "S3"
 channel = "H1:LSC-AS_Q"
 startTime = 752058105
 #startTime = 755512721
 #startTime = 757575852
 
 
-others = '--print-result-xml  --bank-grid-spacing Hexagonal --fast-simulation --debug 33'
+others = '--print-result-xml  --bank-grid-spacing Hexagonal  --debug 33 --print-bank --bank-inside-polygon 0 --data-checkpoint --fast-simulation'
 
 
 space 		= ' '
@@ -106,7 +105,6 @@ arguments = ' --n	' 	  + str(number_of_trials_per_job) \
          +' --bank-psi3-range '	  + str(bank_psi3_min) + space + str(bank_psi3_max)\
          +' --signal-psi3-range ' + str(signal_psi3_min) + space + str(signal_psi3_max)\
          +' --bank-ffinal '       + str(freq_moment_bank)\
-         +' --run '               + str(run) \
          +' --channel '           + str(channel) \
          +' --gps-start-time '    + str(startTime) \
          +' --sampling '          + str(sampling) \
@@ -116,18 +114,41 @@ arguments = ' --n	' 	  + str(number_of_trials_per_job) \
 # create the condor file
 fp =open('BankEfficiency_condor_submit_job','w');
 fp.write('Executable   = ' + path + executable_name +'\n')
-fp.write('Universe     = vanilla\n')
 #fp.write('Universe     = vanilla\n')
+fp.write('Universe     = standard\n')
 #fp.write('Environment  = LD_LIBRARY_PATH=/software/geopptools/lib\n')
 #fp.write('Requirements = Memory >=128 && OpSys == "LINUX" && FileSystemDomain == "explorer" && UidDomain == "explorer"\n')
-#fp.write('+MaxHours =40\n\n')
+fp.write('+MaxHours =40\n\n')
 fp.write('Arguments = '+ '--seed $(Process) ' + arguments)
 fp.write('\n\n')
 fp.write('priority = 10\n')
 fp.write('Log         = log.$(Process)\n')
 fp.write('Output      = out.$(Process)\n')
 fp.write('Error       = err.$(Process)\n\n')
+fp.write('Notification = never\n')
 fp.write('Queue '+str(number_of_jobs))
+fp.close()
+
+
+#possibly create a dag file if n is large 
+fp =open('BankEfficiency.sub','w');
+fp.write('Executable   = ' + path + executable_name +'\n')
+#fp.write('Universe     = vanilla\n')
+fp.write('Universe     = standard\n')
+fp.write('Arguments = '+ '--seed $(macroseed) ' + arguments)
+fp.write('\n\n')
+fp.write('priority = 10\n')
+fp.write('log         = ./log/tmp\n')
+fp.write('output      = ./log/out.$(macroseed)\n')
+fp.write('error       = ./log/err.$(macroseed)\n\n')
+fp.write('notification = never\n')
+fp.write('queue 1')
+fp.close()
+#possibly create a dag file if n is large 
+fp=open('BankEfficiency.dag', 'w')
+for id in range(1,number_of_jobs+1,1):
+ fp.write('JOB '+str(id)+' BankEfficiency.sub'+'\n')
+ fp.write('VARS '+str(id)+' macroseed="'+str(id)+'"\n')
 fp.close()
 
 # create bank
