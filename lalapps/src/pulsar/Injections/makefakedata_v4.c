@@ -23,6 +23,7 @@
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
 #include <lal/GeneratePulsarSignal.h>
+#include <lal/TimeSeries.h>
 
 
 RCSID ("$Id$");
@@ -56,6 +57,7 @@ RCSID ("$Id$");
 
 #define myMax(x,y) ( (x) > (y) ? (x) : (y) )
 #define SQ(x) ( (x) * (x) )
+#define GPS2REAL(gps) (gps.gpsSeconds + 1e-9 * gps.gpsNanoSeconds )
 
 /*----------------------------------------------------------------------*/
 /** configuration-variables derived from user-variables */
@@ -99,6 +101,7 @@ void LoadTransferFunctionFromActuation(LALStatus *,
 
 void LALExtractSFTBand ( LALStatus *, SFTVector **outSFTs, const SFTVector *inSFTs, REAL8 fmin, REAL8 Band );
 
+void LALGenerateLineFeature ( LALStatus *status, REAL4TimeSeries **Tseries, const PulsarSignalParams *params );
 
 extern void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
 extern void write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series);
@@ -109,6 +112,7 @@ static const SFTParams empty_sftParams;
 static const EphemerisData empty_edat;
 static const ConfigVars_t empty_GV;
 static const SFTConstraints empty_SFTConstraints;
+static const LALUnit empty_LALUnit;
 /*----------------------------------------------------------------------*/
 /* User variables */
 /*----------------------------------------------------------------------*/
@@ -192,7 +196,7 @@ REAL8 uvar_orbitArgPeriapse;	/**< Argument of periapsis (radians) */
 
 /* precision-level of signal-generation */
 BOOLEAN uvar_exactSignal;	/**< generate signal timeseries as exactly as possible (slow) */
-
+BOOLEAN uvar_lineFeature;	/**< generate a monochromatic line instead of a pulsar-signal */
 
 /*----------------------------------------------------------------------*/
 
@@ -299,6 +303,10 @@ main(int argc, char *argv[])
 	{
 	  LAL_CALL ( LALSimulateExactPulsarSignal (&status, &Tseries, &params), &status );
 	} 
+      else if ( uvar_lineFeature )
+	{
+	  LAL_CALL ( LALGenerateLineFeature ( &status, &Tseries, &params ), &status );
+	}
       else 
 	{
 	  LAL_CALL ( LALGeneratePulsarSignal(&status, &Tseries, &params), &status );
@@ -512,7 +520,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
       printf ( "\nSpecify EITHER {h0,cosi} OR {aPlus, aCross}!\n\n");
       ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
     }
-    if ( (have_h0 && !have_cosi) || (!have_h0 && have_cosi) ) {
+    if ( (!have_h0 && have_cosi) ) {
       printf ( "\nNeed both --h0 and --cosi!\n\n");
       ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
     }
@@ -1034,6 +1042,10 @@ InitUserVars (LALStatus *status)
   uvar_fmin = 0;	/* no heterodyning by default */
   uvar_Band = 8192;	/* 1/2 LIGO sampling rate by default */
 
+  uvar_psi = 0;
+  uvar_phi0 = 0;
+  uvar_cosi = 0;
+
   uvar_TDDfile = NULL;
 
   uvar_logfile = NULL;
@@ -1101,8 +1113,8 @@ InitUserVars (LALStatus *status)
   LALregREALUserVar(status,   aPlus,	 	 0, UVAR_OPTIONAL, "Alternative to {h0,cosi}: A_+ amplitude");
   LALregREALUserVar(status,   aCross, 	 	 0, UVAR_OPTIONAL, "Alternative to {h0,cosi}: A_x amplitude");
 
-  LALregREALUserVar(status,   psi,  	 	 0, UVAR_REQUIRED, "Polarization angle psi");
-  LALregREALUserVar(status,   phi0,	 	 0, UVAR_REQUIRED, "Initial phase phi");
+  LALregREALUserVar(status,   psi,  	 	 0, UVAR_OPTIONAL, "Polarization angle psi");
+  LALregREALUserVar(status,   phi0,	 	 0, UVAR_OPTIONAL, "Initial phase phi");
   LALregREALUserVar(status,   Freq,  	 	 0, UVAR_OPTIONAL, "Intrinsic GW-frequency at refTime");
   LALregREALUserVar(status,   f0,  	 	 0, UVAR_DEVELOPER, "[DEPRECATED] Use --Freq instead!");
 
@@ -1127,6 +1139,10 @@ InitUserVars (LALStatus *status)
   LALregBOOLUserVar(status,   exactSignal,	 0, UVAR_DEVELOPER, "Generate signal time-series as exactly as possible (slow).");
 
   LALregBOOLUserVar(status,   outSFTv1,	 	 0, UVAR_OPTIONAL, "Write output-SFTs in obsolete SFT-v1 format." );
+
+  LALregBOOLUserVar(status,   lineFeature,	 0, UVAR_OPTIONAL, "Generate a line-feature amplitude h0 and frequency 'Freq'}");
+
+
   
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -1541,3 +1557,56 @@ is_directory ( const CHAR *fname )
 
 } /* is_directory() */
 
+void
+LALGenerateLineFeature ( LALStatus *status, REAL4TimeSeries **Tseries, const PulsarSignalParams *params )
+{
+  REAL4TimeSeries *ret = NULL;
+  CHAR *name, name0[100];
+  LALUnit units = empty_LALUnit;
+  UINT4 i, length;
+  REAL8 deltaT;
+  REAL8 omH;
+  REAL8 h0;
+  REAL8 ti, tStart;
+
+  INITSTATUS (status, "LALGenerateLineFeature", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT ( params, status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD );
+  ASSERT ( Tseries, status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD );
+  ASSERT ( *Tseries == NULL, status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD );
+
+
+  /* set 'name'-field of timeseries to contain the right "channel prefix" for the detector */
+  if ( (name = XLALGetChannelPrefix ( params->site->frDetector.name )) == NULL ) {
+    ABORT (status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD );
+  }
+  strcpy ( name0, name );
+  LALFree ( name );
+
+  /* NOTE: a timeseries of length N*dT has no timestep at N*dT !! (convention) */
+  length = (UINT4) ceil( params->samplingRate * params->duration);
+  deltaT = 1.0 / params->samplingRate;
+  tStart = GPS2REAL( params->startTimeGPS );
+
+  if ( (ret = XLALCreateREAL4TimeSeries (name0, &(params->startTimeGPS), params->fHeterodyne, deltaT, &units, length)) == NULL ) {
+    ABORT ( status, MAKEFAKEDATAC_EMEM, MAKEFAKEDATAC_MSGEMEM );
+  }
+
+  h0 = params->pulsar.aPlus + sqrt ( SQ(params->pulsar.aPlus) - SQ(params->pulsar.aCross) );
+  omH = LAL_TWOPI * ( params->pulsar.f0 - params->fHeterodyne );
+
+  for ( i=0; i < length; i++ )
+    {
+      ti = tStart + i * deltaT;
+      ret->data->data[i] = h0 * sin( omH * ti  + params->pulsar.phi0 );
+    }
+
+  /* return final timeseries */
+  (*Tseries) = ret;
+
+
+  DETATCHSTATUSPTR ( status );
+  RETURN ( status );
+
+} /* LALGenerateLineFeature() */
