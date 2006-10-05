@@ -56,7 +56,11 @@
 \option{--chisq-threshold}~\parm{X} \newline \hspace*{0.5in}          
 \option{--cluster-method}~\parm{MTHD} \newline \hspace*{0.5in}          
 [\option{--cluster-window}~\parm{SEC}] \newline \hspace*{0.5in}        
-[\option{--maximization-interval}~\parm{NSEC}] \newline \hspace*{0.5in}\option{--enable-output} \newline \hspace*{0.5in}                
+[\option{--maximization-interval}~\parm{MSEC}] \newline \hspace*{0.5in}
+[\option{--ts-cluster}~\parm{MTHD}] \newline \hspace*{0.5in}
+[\option{--ts-volume-safety}~\parm{SAFETYFAC}] \newline \hspace*{0.5in}
+[\option{--ts-endtime-interval}~\parm{MSEC}] \newline \hspace*{0.5in}
+\option{--enable-output} \newline \hspace*{0.5in}                
 \option{--disable-output} \newline \hspace*{0.5in}                
 [\option{--trig-start-time}~\parm{SEC}] \newline \hspace*{0.5in}       
 [\option{--trig-end-time}~\parm{SEC}] \newline \hspace*{0.5in}        
@@ -230,10 +234,17 @@ $(tmplt|window|noClustering)$
 \item[\option{--cluster-window}~\parm{SEC}] Optional. If \parm{MTHD} is
 set to window, then the window length must be specified in seconds \parm{SEC}.
 
-\item[\option{--maximization-interval}~\parm{NSEC}] Optional. The
-maximization interval is specified in nanoseconds \parm{NSEC}.  When
-this option is invoked,  the SNR is maximized in fixed intervals of
-\parm{NSEC} after all templates have been filtered against all segments. A typical number might be \parm{NSEC}=10000000 which is 10ms.
+\item[\option{--maximization-interval}~\parm{MSEC}] Optional. The
+maximization interval is specified in milliseconds \parm{MSEC}.  When
+this option is invoked, the SNR is maximized in fixed intervals of
+\parm{MSEC} after all templates have been filtered against all segments. 
+A typical number might be \parm{MSEC}=10.
+
+\item[\option{--ts-cluster}~\parm{MTHD}] Optional. When invoked, the raw inspiral triggers over all the templates are clustered over intrinsic parameter space $(\tau_0, \tau_3)$ and end-time $(t_c)$ using the trigScan clustering algorithm. The specified method \parm{MTHD} should be one of $(T0T3Tc|T0T3TcAS)$. When \parm{MTHD} is set to $T0T3Tc$, the stragglers (isolated triggers, or singletons) are {\bf{not}} appended to the final list of triggers. For production runs, one should always append the stragglers and $T0T3TcAS$ should be chosen. Note: the \option{--ts-cluster} option cannot be used in conjuction with the \option{--maximization-interval} option - as they invoke different clustering algorithms. At present trigScan clustering {\emph{cannot be invoked for BCV searches}} where the templates are placed on phenomenological parameters $(\Psi_0, \Psi_3)$.
+
+\item[\option{--ts-volume-safety}~\parm{SAFETYFAC}] In trigScan clustering algorithm, the raw triggers are modeled as ellipsoids in the space of parameters $\Lambda \equiv (\tau_0, \tau_3, t_c)$ using the metric over $\Lambda$. This \parm{SAFETYFAC} is used to scale-up the volume of the ellipsoids thereby increasing the chances of overlap with neighboring ellipsoids. It is recommended\footnote{Note that, it is a {\it{tunable}} parameter whose optimum value can be determined by trial and error. If the \parm{SAFETYFAC} is set to too large a value, nearby clusters of triggers can merge into one giving poor results. If set to too small a value (close to 1), clusters are likely to fracture resulting in high trigger rate.} to set \parm{SAFETYFAC} to about $(1.5)^3 \sim 3.3$ .  
+
+\item[\option{--ts-endtime-interval}~\parm{MSEC}] Optional. In the trigScan algorithm (when \option{--ts-cluster} is set to $T0T3TcAS$), one can maximize the stragglers over their SNRs using a \parm{MSEC} long window slid along $t_c$ (end time of the triggers) before appending them to the clustered triggers. This option somewhat reduces the total number of triggers at the end of the pipeline. However for safety concerns, it is recommended {\bf{not}} to specify this option for production runs. If this option is not specified, {\bf{all}} the stragglers are appended to the final list of triggers. Obviously this option is irrelevant when \option{--ts-cluster} is set to $T0T3Tc$.
 
 \item[\option{--enable-output}] Write the results to a LIGO LW XML file.
 
@@ -332,5 +343,5 @@ lalapps_inspiral \
 
 
 
-\item[Author] Duncan Brown, Andres Rodriguez, Darren Woods 
+\item[Author] Duncan Brown, Andres Rodriguez, Darren Woods, Anand S. Sengupta
 \end{entry}
