@@ -4095,7 +4095,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case '<':
         /* TrigScan Delta End Time */ 
         trigScanDeltaEndTime = atof( optarg ); 
-        if ( trigScanDeltaEndTime <= 0.0 ) 
+        if ( trigScanDeltaEndTime < 0.0L ) 
         { 
           fprintf( stderr, "invalid argument to --%s:\n" 
               "ts-endtime-interval must be positive: " 
@@ -4777,10 +4777,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   /* Check the trigScan input parameters */
   if ( trigScanMethod )
   {
-      if ( (trigScanDeltaEndTime <= 0.0) || (trigScanVolumeSafetyFac < 1.0) )
+      if ( trigScanVolumeSafetyFac < 1.0 )
       {
-          fprintf ( stderr, "You must specify --ts-endtime-interval"
-                  " and --ts-volume-safety\n" );
+          fprintf ( stderr, "You must specify --ts-volume-safety\n" );
           exit(1);
       }
 
@@ -4788,7 +4787,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       {
           fprintf ( stderr, "Cannot specify both --maximization-interval"
                   " and --ts-cluster \nChoose any one of the two methods"
-                  " for clustering inspiral triggers.\n" );
+                  " for clustering raw inspiral triggers.\n" );
           exit(1);
       }
   }
