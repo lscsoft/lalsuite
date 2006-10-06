@@ -157,7 +157,7 @@ data.read(cp.get('input','segments'),length)
 # create the chunks from the science segments
 data.make_chunks(length,overlap+trig_overlap,playground,0,0)
 #make_chunks(self, length, overlap=0, play=0, sl=0, excl_play=0)
-data.make_chunks_from_unused(length,overlap/2+trig_overlap,playground,overlap/2+trig_overlap,0,0)
+data.make_chunks_from_unused(length,overlap/2+trig_overlap,playground,0,0,0)
 #make_chunks_from_unused(self, length, trig_overlap, play=0, min_length=0, sl=0, excl_play=0)
 
 # get the order of the ifos to filter
