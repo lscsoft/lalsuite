@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005 Reinhard Prix
+ * Copyright (C) 2005 Reinhard Prix, 2006 John T. Whelan
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  *  MA  02111-1307  USA
  */
 
-/** \author R. Prix
+/** \author R. Prix, J. T. Whelan
  * \file 
  * \brief
  * Functions to calculate the so-called F-statistic for a given point in parameter-space, 
@@ -723,6 +723,138 @@ LALGetAMCoeffs(LALStatus *status,
 
 } /* LALGetAMCoeffs() */
 
+/** Compute the 'amplitude coefficients' \f$a(t)\sin\zeta,
+ * b(t)\sin\zeta\f$ as defined in \ref JKS98 for a series of
+ * timestamps.
+ * 
+ * The input consists of the DetectorState-timeseries, which contains
+ * the detector-info and the LMST's corresponding to the different times.
+ * 
+ * In order to allow re-using the output-structure AMCoeffs for subsequent
+ * calls, we require the REAL4Vectors a and b to be allocated already and 
+ * to have the same length as the DetectoStates-timeseries.
+ *
+ * \note This is an alternative implementation to both LALComputeAM()
+ * and LALGetAMCoeffs(), which uses the geometrical definition of
+ * \f$a\sin\zeta$\f and \f$b\sin\zeta$\f as detector response
+ * coefficients in a preferred polarization basis.  (It is thereby
+ * more general than the JKS expressions and could be used e.g., with
+ * the response tensor of a bar detector with no further modification
+ * needed.)  It is not currently in use.
+ */ 
+void
+LALNewGetAMCoeffs(LALStatus *status,
+	       AMCoeffs *coeffs,			/**< [out] amplitude-coeffs {a(t_i), b(t_i)} */
+	       const DetectorStateSeries *DetectorStates,	/**< timeseries of detector states */
+	       SkyPosition skypos			/**< {alpha,delta} of the source */
+	       )
+{
+  REAL4 delta, alpha;
+  REAL4 sin1delta, cos1delta;
+
+  REAL4 xi[2];
+  REAL4 eta[3];
+  REAL4 d[3][3];
+  REAL4 norm;
+  UINT4 i, numSteps;
+  UINT4 j, k;
+  REAL4 d22h2h2;
+
+  INITSTATUS (status, "LALNewGetAMCoeffs", COMPUTEFSTATC);
+
+  /*---------- check input ---------- */
+  ASSERT ( DetectorStates, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+
+  numSteps = DetectorStates->length;
+
+  /* require the coeffients-vectors to be allocated and consistent with timestamps */
+  ASSERT ( coeffs, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT ( coeffs->a && coeffs->b, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT ( (coeffs->a->length == numSteps) && (coeffs->b->length == numSteps), status,
+	   COMPUTEFSTATC_EINPUT,  COMPUTEFSTATC_MSGEINPUT);
+
+  /* read detector response tensor into array */
+  for (j = 0; j < 3; j++)
+    {
+      d[j][j] = DetectorStates->detector.response[j][j];
+      for (k = j; k < 3; k++) {
+	d[j][k] = d[k][j] = DetectorStates->detector.response[j][k];
+      }
+    }
+
+  /* require sky-pos to be in equatorial coordinates */
+  ASSERT ( skypos.system == COORDINATESYSTEM_EQUATORIAL, status, 
+	   SKYCOORDINATESH_ESYS, SKYCOORDINATESH_MSGESYS );
+
+  /*---------- components along celestial north dep only on source-latitude delta */
+  alpha = skypos.longitude;
+  delta = skypos.latitude;
+
+  sin_cos_LUT (&sin1delta, &cos1delta, delta );
+  eta[2] = - cos1delta;
+  d22h2h2 = d[2][2] * eta[2] * eta[2];
+
+  /*---------- Compute the a(t_i) and b(t_i) ---------- */
+  coeffs->A = 0;
+  coeffs->B = 0;
+  coeffs->C = 0;
+  coeffs->D = 0;
+  for ( i=0; i < numSteps; i++ )
+    {
+      REAL4 ah;
+      REAL4 cos1ah, sin1ah;
+      REAL4 ai, bi;
+
+      ah = alpha - DetectorStates->data[i].earthState.gmstRad;
+
+      sin_cos_LUT ( &sin1ah, &cos1ah, ah );
+
+      xi[0] = - sin1ah;
+      xi[1] =  cos1ah;
+      eta[0] = sin1delta * cos1ah;
+      eta[1] = sin1delta * sin1ah;
+
+      ai = d[0][0] * ( xi[0]*xi[0] - eta[0]*eta[0] )
+	+ 2 * d[0][1] * ( xi[0]*xi[1] - eta[0]*eta[1] )
+	- 2 * d[0][2] * eta[0] * eta[2]
+	+ d[1][1] * ( xi[1]*xi[1] - eta[1]*eta[1] )
+	- 2 * d[1][2] * eta[1] * eta[2]
+	- d22h2h2;
+
+      bi = 2 * d[0][0] * xi[0] * eta[0]
+	+ 2 * d[0][1] * xi[0] * eta[1]
+	+ 2 * d[0][2] * xi[0] * eta[2]
+	+ 2 * d[1][0] * xi[1] * eta[0]
+	+ 2 * d[1][1] * xi[1] * eta[1]
+	+ 2 * d[1][2] * xi[1] * eta[2];
+
+      /*      printf("xi = (%f,%f)\n",xi[0],xi[1]);
+      printf("eta = (%f,%f,%f)\n",eta[0],eta[1],eta[2]);
+      printf("d = (%f %f %f\n",d[0][0],d[0][1],d[0][2]);
+      printf("     %f %f %f\n",d[1][0],d[1][1],d[1][2]);
+      printf("     %f %f %f)\n",d[2][0],d[2][1],d[2][2]); */
+
+      coeffs->a->data[i] = ai;
+      coeffs->b->data[i] = bi;
+
+      /* sum A, B, C on the fly */
+      coeffs->A += ai * ai;
+      coeffs->B += bi * bi;
+      coeffs->C += ai * bi;
+
+    } /* for i < numSteps */
+
+  /* finish calculation of A,B,C, D */
+  norm = 2.0f / numSteps;
+  coeffs->A *= norm;
+  coeffs->B *= norm;
+  coeffs->C *= norm;
+
+  coeffs->D = coeffs->A * coeffs->B - coeffs->C * coeffs->C;
+
+  RETURN(status);
+
+} /* LALNewGetAMCoeffs() */
 
 /** For a given DetectorStateSeries, calculate the time-differences
  *  \f$\Delta T_\alpha\equiv T(t_\alpha) - T_0\f$, and their
