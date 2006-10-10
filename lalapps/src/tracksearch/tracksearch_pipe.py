@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.3
+#!/usr/bin/env python
 """
 This is a python script that will setup a big segment run with given
 arguements and a combination from the ini file specified

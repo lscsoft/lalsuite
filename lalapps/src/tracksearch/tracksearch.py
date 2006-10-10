@@ -210,7 +210,17 @@ class tracksearchConvertSegList:
         #Return a string containing the name of the revised segment list
         return(tracksearchConvertSegList.newSegFilename)
 
-
+class tracksearchHousekeeperJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+    """
+    This class is responsible for cleaning out files that are not needed after an anaylsis run completes.
+    Clearing out these file wills save disk space.  Only files in the RESULTS directory which are
+    final data products will remain.  The MAP files and .candidates files in each level of the run
+    will be removed.  The candidate files will be tar.gzed and the MAP files will be scraped.
+    We will also remove the .diag files if they are present as well.
+    """
+    print "hi"
+    #End tracksearchCleanHouseJob class
+    
 class tracksearchTimeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     """
     The class running a TIME instance of the tracksearch code.  This
@@ -672,6 +682,9 @@ class tracksearch:
         outputDir=dataFindInitialDir
         dataFindLogPath=os.path.normpath(determineBlockPath(self.cp,self.blockID)+'/logs/')
         df_job = pipeline.LSCDataFindJob(outputDir,dataFindLogPath,self.cp)
+        #Additional HACK due to recent changes in GLUE
+        # Remember we edited the GLUE archive to make this work.
+        #
         df_job.set_sub_file(self.dagDirectory+'datafind.sub')
         df_job.add_condor_cmd('initialdir',str(dataFindInitialDir))
         prev_df = None

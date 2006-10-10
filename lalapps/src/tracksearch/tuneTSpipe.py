@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.3
+#!/usr/bin/env python
 """
 This is a complete standalone python script which will acess the
 search ini file and call the tracksearch_pipe.py program to setup all

@@ -177,7 +177,7 @@ int main (int argc, char *argv[])
   /*
    *Sleep for Attaching DDD 
    */
-  unsigned int doze = 8;
+  unsigned int doze = 0;
   pid_t myPID;
   myPID = getpid( );
   fprintf( stdout, "pid %d sleeping for %d seconds\n", myPID, doze );
@@ -192,12 +192,14 @@ int main (int argc, char *argv[])
   set_debug_level("NONE");
   memset(&status, 0, sizeof(status));
   lal_errhandler = LAL_ERR_EXIT;
-  lal_errhandler = LAL_ERR_RTRN;
+  /*lal_errhandler = LAL_ERR_RTRN;*/
   set_debug_level("MEMDBG");
+  set_debug_level("ERROR");
+  set_debug_level("3");
   /*  set_debug_level("ERROR | WARNING | MEMDBG");*/
   /*  set_debug_level("ERROR | WARNING | MEMDBG");*/
   /*  set_debug_level("ERROR | WARNING ");*/
-  /*    set_debug_level("ALLDBG");*/
+  /*      set_debug_level("ALLDBG");*/
 
   /*
    * Initialize status structure 
@@ -1496,14 +1498,19 @@ void LALappsGetFrameData(LALStatus*          status,
   UINT4                 loadPoints=0;
   UINT4                 i=0;
   ResampleTSParams      resampleParams;
-
+  INT4                  errCode=0;
+  REAL8                 timeInterval=0;
+  REAL8                 startFloat=0;
+  REAL8                 stopFloat=0;
+  LIGOTimeGPS           stopGPS;
   /* Set all variables from params structure here */
   channelIn.name = params->channelName;
-  memcpy(DataIn->name,
-	 params->channelName,
-	 (strlen(params->channelName)*sizeof(CHAR)));
- 
-  memset( DataIn->data->data, 0, DataIn->data->length*sizeof(REAL4) );
+  /*(  memcpy(DataIn->name,
+   *	 params->channelName,
+   *	 (strlen(params->channelName)*sizeof(CHAR)));
+   *
+   *  memset( DataIn->data->data, 0, DataIn->data->length*sizeof(REAL4) );
+   */
   /* Need to use NULL DataIN->name so we will skip this line of code
      Nullifying the DataIn->name pointer by hand hope it works */
 
@@ -1516,6 +1523,7 @@ void LALappsGetFrameData(LALStatus*          status,
       }
       else if (cachefile){
 	/* Open frame cache */
+	lal_errhandler = LAL_ERR_EXIT;
 	LAL_CALL( LALFrCacheImport( status, &frameCache, cachefile ), status);
 	LAL_CALL( LALFrCacheOpen( status, &stream, frameCache ), status);
 	LAL_CALL( LALDestroyFrCache( status, &frameCache ), status );
@@ -1523,18 +1531,47 @@ void LALappsGetFrameData(LALStatus*          status,
       /*
        * Determine information about the channel and seek to the
        * right place in the fram files 
+       *
+       *      DataIn->epoch.gpsSeconds     = params->GPSstart.gpsSeconds;
+       *      DataIn->epoch.gpsNanoSeconds = params->GPSstart.gpsNanoSeconds;
        */
-      DataIn->epoch.gpsSeconds     = params->GPSstart.gpsSeconds;
-      DataIn->epoch.gpsNanoSeconds = params->GPSstart.gpsNanoSeconds;
+      lal_errhandler = LAL_ERR_EXIT;
+      /* Set verbosity of stream so user sees frame read problems! */
+      LAL_CALL( LALFrSetMode(status,LAL_FR_VERBOSE_MODE,stream),status);
+
+      /* Seek to end or requested data makes sure that all stream is complete!*/
+      LAL_CALL( LALGPStoFloat(status,&startFloat,&(DataIn->epoch)),status);
+      timeInterval=DataIn->data->length*DataIn->deltaT;
+      stopFloat=startFloat+timeInterval;
+      LAL_CALL( LALFloatToGPS(status,&stopGPS,&stopFloat),status);
+      if (params->verbosity > 0)
+	{
+	  fprintf(stderr,"Checking frame stream spans requested data interval!\n");
+	  fprintf(stderr,"Start %i.%i\n",DataIn->epoch.gpsSeconds,DataIn->epoch.gpsNanoSeconds);
+	  fprintf(stderr,"Stop  %i.%i\n",stopGPS.gpsSeconds,stopGPS.gpsNanoSeconds);
+	}
+
+      LAL_CALL( LALFrSeek(status, &(stopGPS),stream),status);
+
       LAL_CALL( LALFrSeek(status, &(DataIn->epoch), stream), status);
+      /*fprintf(stderr,"Stream state :%i\n",stream->state);
+       *if (stream->state != LAL_FR_OK)
+       *	{
+       *	  fprintf(stderr,"There was a problem encountered with the frame stream!\n");
+       *	  fprintf(stderr,"%i:%s\n",TRACKSEARCHC_EREAD,TRACKSEARCHC_MSGEREAD);
+       *	  exit(TRACKSEARCHC_EREAD);
+       *	}
+       */
       /*
        * Load the metadata to check the frame sampling rate
        */
+      lal_errhandler = LAL_ERR_EXIT;
       LAL_CALL( LALFrGetREAL4TimeSeriesMetadata( status, 
 						 DataIn, 
 						 &channelIn, 
 						 stream), 
-		status);
+			status);
+
       /*
        * Determine the sampling rate and assuming the params.sampling rate
        * how many of these points do we load to get the same time duration
@@ -1554,12 +1591,18 @@ void LALappsGetFrameData(LALStatus*          status,
 	       status);
       /* get the data */
       LAL_CALL( LALFrSeek(status, &(tmpData->epoch), stream), status);
-      LAL_CALL( LALFrGetREAL4TimeSeries( status, 
-					 tmpData, 
-					 &channelIn, 
-					 stream), 
-		status);
-      if (params->verbosity > 0)
+      lal_errhandler = LAL_ERR_RTRN;
+      errCode=LAL_CALL( LALFrGetREAL4TimeSeries( status, 
+						 tmpData, 
+						 &channelIn, 
+						 stream), 
+			status);
+      if (errCode != 0)
+	{
+	  fprintf(stderr,"Error loading data. The span of tseries data is not available in framestream!\n");
+	  exit(errCode);
+	}
+      if (params->verbosity >= printFiles)
 	print_real4tseries(tmpData,"OriginalInputTimeSeries.diag");
       /*
        * Prepare for the resample if needed or just copy the data so send
@@ -1578,7 +1621,7 @@ void LALappsGetFrameData(LALStatus*          status,
 					      tmpData,
 					      &resampleParams),
 		   status);
-	  if (params->verbosity > 0)
+	  if (params->verbosity >= printFiles)
 	    print_real4tseries(tmpData,"ResampledlInputTimeSeries.diag");
 	  /*
 	   * Copy only the valid data and fill the returnable metadata
@@ -1604,7 +1647,7 @@ void LALappsGetFrameData(LALStatus*          status,
 	  for (i=0;i<DataIn->data->length;i++)
 	    DataIn->data->data[i]=tmpData->data->data[i];
 	}
-      if (params->verbosity > 0)
+      if (params->verbosity >= printFiles)
     	print_real4tseries(tmpData,"ActualReDoneTimeSeries.diag");
       /*
        * Release the memory for the temporary time series

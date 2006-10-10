@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.3
+#!/usr/bin/env python
 
 __author__ = 'Charlie Torres <charlie@phys.utb.edu>'
 __date__ = '$Date$'

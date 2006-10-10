@@ -10,17 +10,17 @@
 ;
 ;
 [all]
-masterini=/home/charlie/lalsoftware/src/lalapps/src/tracksearch/tracksearchPipeline.ini
+masterini=/home/charlie/research.d/src/lalapps/src/tracksearch/tracksearchPipeline.ini
 tuningHome=/home/charlie/pipeTest/tuneTests
 tuningLogs=/tmp/charlie/Logs_tunePipes/
 seglist=/home/charlie/pipeTest/segmentsCLIP.txt.revised
-pipeProgram=/home/charlie/lalsoftware/src/lalapps/src/tracksearch/tracksearch_pipe.py
+pipeProgram=/home/charlie/research.d/src/lalapps/src/tracksearch/tracksearch_pipe.py
 
 ; Software will make series of ini files 1 per pipe label _h_l_, etc
 iniBatchLabel=_pipeTune_
 
 ; Lambda_h points -- UpperLh;DeltaLh;LowerLh
-LH=1.0;0.1;0.1
+LH=1.0;0.2;0.1
 
 ; Lambda_l point (% of Lh) -- UpperLl;DeltaLl;LowerLl
 LL=0.95;0.25;0.05

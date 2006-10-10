@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.3
+#!/usr/bin/env python
 
 __author__ = 'Charlie Torres <charlie@phys.utb.edu>'
 __date__ = '$Date$'
@@ -261,7 +261,6 @@ class gpsInt:
         nanoPartIn=str(str(self.gpsNanoSeconds).rjust(9)).replace(' ','0')
         result=secPartIn+','+nanoPartIn
         return result
-<<<<<<< candidateUtils.py
     #End __diskPring__ method
 
     def __abs__(self):
@@ -270,9 +269,6 @@ class gpsInt:
             print "If you see this something went really wrong!"
             os.abort()
         return gpsInt(abs(self.gpsSeconds),abs(self.gpsNanoSeconds))
-=======
-    #End __diskPring__ method
->>>>>>> 1.5
 #End gpsInt class
 
 class candidateList:
@@ -357,16 +353,11 @@ class candidateList:
         if ((int(content.__len__()).__mod__(2) != 0)):
             print 'Error parsing :',self.filename," Number of data lines :",content.__len__()
             os.abort()
-<<<<<<< candidateUtils.py
         if (content.__len__() > 1) and (self.totalCount == 0):
             print "Hum?  The file appears inconsistent."
             print "File has ",content.__len__(),"lines with header listing ",self.totalCount," entries."
             print inputFilename
-=======
-        if (content.__len__ > 0) and (self.totalCount == 0):
-            print "Hum?  The file appears inconsistent."
-            print inputFilename
->>>>>>> 1.5
+
         if (content.__len__ > 0):
              walkIndex=0
              while walkIndex < content.__len__():
@@ -389,17 +380,11 @@ class candidateList:
                          int(tmpElement[0]),int(tmpElement[1]),\
                          gpsInt(tmpElement[2],tmpElement[3]),\
                          float(tmpElement[4]),float(tmpElement[5]))
-<<<<<<< candidateUtils.py
              #Determine the bin widths in this structure
              if self.totalCount > 0:
                  self.findBinWidths()
              if self.totalCount != self.curves.__len__():
                  print "Possible problem, Inconsistent file :",inputFilename
-=======
-                 #Determine the bin widths in this structure
-                 if self.totalCount > 0:
-                     self.findBinWidths()
->>>>>>> 1.5
         else:
             print "No candidate entries found in:",inputFilename
     #End loadfile method
@@ -492,12 +477,8 @@ class candidateList:
 #                print "Index ",i," of ",TDArrayGPS.__len__()," Adding value : ",AddMe.display()," To ",gpsSum.display()
                 gpsSum=gpsSum.__add__(AddMe)
                 gpsSumCount=gpsSumCount+1
-<<<<<<< candidateUtils.py
+
         if gpsSumCount > 0:
-=======
-        print "Sum Count: ",gpsSumCount,"Total GPS Time: ",gpsSum.display()
-        if gpsSumCount > 0:
->>>>>>> 1.5
             avgGpsWidth=gpsSum.__div__(gpsSumCount)
         else:
             avgGpsWidth=gpsInt(0,0)
