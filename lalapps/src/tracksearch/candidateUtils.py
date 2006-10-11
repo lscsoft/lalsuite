@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.3
 
 __author__ = 'Charlie Torres <charlie@phys.utb.edu>'
 __date__ = '$Date$'
@@ -237,7 +237,7 @@ class gpsInt:
     def __sub__(self,inTime):
         inTimeInt=inTime.__makeInt__()
         selfTimeInt=self.__makeInt__()
-        intAnswer=selfTimeInt.__sub__(inTimeInt)
+        intAnswer=selfTimeInt-inTimeInt
         gpsSecondAnswer,gpsNanoAnswer=self.__splitInt__(intAnswer)
         return gpsInt(gpsSecondAnswer,gpsNanoAnswer)
     #End __sub__ method
@@ -643,19 +643,20 @@ class candidateList:
             gpsStamps.append(entry.printStartGPS())
             curveCount.append(entry.printCurveID())
             Lsum=Lsum.__add__(float(entry.length))
-            LsumSqr=LsumSqr.__add__(float(entry.length).__pow__(2))
+            LsumSqr=LsumSqr + (float(entry.length)*float(entry.length))
             Psum=Psum.__add__(float(entry.power))
-            PsumSqr=PsumSqr.__add__(float(entry.power).__pow__(2))
+            PsumSqr=PsumSqr + (float(entry.power)*float(entry.power))
         if (curveCount.__len__() < 1):
             print "Stats can not be performed on candidateless candidateList instance!."
             return []
         gpsStamps.sort()
         meanL=meanP=float(0)
         varL=varP=float(0)
-        meanL=Lsum.__div__(curveCount.__len__())
-        varL=LsumSqr.__div__(curveCount.__len__())-meanL
+        n=curveCount.__len__()
+        meanL=Lsum.__div__(n)
+        varL=float(LsumSqr - float(Lsum*Lsum).__div__(n)).__div__(n)
         meanP=Psum.__div__(curveCount.__len__())
-        varP=PsumSqr.__div__(curveCount.__len__())-meanP
+        varP=float(PsumSqr - float(Psum*Psum).__div__(n)).__div__(n)
         if gpsStamps.__len__() == 0:
             startT=0
             stopT=0

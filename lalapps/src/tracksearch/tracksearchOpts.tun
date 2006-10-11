@@ -30,8 +30,8 @@ LL=0.95;0.25;0.05
 
 [false-alarm-calculate]
 ;Find P,L for this FA rate quoted in terms of \pm \sigma ie
-;99%->3sigma FAR=3.0
-FAR=3.00
+;99%->2.333sigma FAR=2.33
+FAR=2.33
 ;This file will be placed relative to [all],tuningHome
 datfilename=FAR_results.data
 

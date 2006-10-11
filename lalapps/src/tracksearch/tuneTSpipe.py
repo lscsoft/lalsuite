@@ -96,62 +96,25 @@ class tuneObject:
             h=h+deltah
     #End __createLHLL__
 
-    def __findResultFiles__(self,searchPath):
+    def __findFiles__(self,searchPath,keywordList):
         """
-        Using find via the command module we will find files via pathnames
-        searching for a string
+        Method that will involk walk to scan a path hierarchy and check that each
+        abs path matches the entries in the list keywordList ['a','b','c'] in filename.
+        All keyword must match the filename somewhere to be returned as a result.
         """
-        cmdString='find '+searchPath+'/* | grep RESULTS | grep _1.candidates | sort'
-        errs=commands.getstatusoutput(cmdString)
-        if errs[0] != 0:
-            print "Error locating result files!"
-            print errs[1]
-            os.abort()
-        fileList=errs[1].split('\n')
-        resultList=[]
-        for entry in fileList:
-            if entry.__contains__('RESULTS'):
-                if entry.__contains__('_1.candidates'):
-                    resultList.append(entry)
-        return resultList
+        filesinPath=[]
+        for root,dir,files in os.walk(searchPath):
+            for entry in files:
+                thisFile=os.path.join(root,entry)
+                hits=0
+                for key in keywordList:
+                    if thisFile.__contains__(key):
+                        hits=hits+1
+                if hits >= keywordList.__len__():
+                    filesinPath.append(thisFile)
+        return filesinPath
+    #End method __findFiles__
 
-    # End __findResultFiles__
-
-    def __findLayer1GlobFiles__(self,searchPath):
-        """
-        Method to use find utility to locate all Glob results files for layer 1
-        fetching complete path names
-        """
-        cmdString='find '+searchPath+'/* | grep Glob | grep _1.candidates'
-        print cmdString
-        errs=commands.getstatusoutput(cmdString)
-        if errs[0] != 0:
-            print "Error locating result files!"
-            print errs[1]
-            os.abort()
-        fileList=errs[1].split('\n')
-        resultList=[]
-        for entry in fileList:
-            resultList.append(entry)
-        return resultList
-    # End __fileLayer1GlobFiles__ method
-    
-    def __layer1CandidatePaths__(self,searchPath):
-        """
-        Using find via the command module we will fetch the path & names of
-        candidate files in the /1/ layer to see how many maps were triggered.
-        The efficiency is the number triggered based on the total number of
-        maps tested.
-        """
-        cmdString='find '+searchPath+'/* | grep /1/ | grep MAP | awk -F "MAP" '+"'"+'{print $1}'+"'"
-        errs=commands.getstatusoutput(cmdString)
-        fileList=errs[1].split('\n')
-        resultList=[]
-        for entry in fileList:
-            if entry.__contains__('/1/'):
-                    resultList.append(entry)
-        return resultList
-    #End __layer1CandidatePaths__
     
     def __determineDEinPath__(self,candPath):
         """
@@ -172,13 +135,14 @@ class tuneObject:
         Scans all subdirectories to root2dag for dags to create a master dag file for tuning execution.
         This module uses the shell and find utilities to locate all dags for inclusion.
         """
-        cmdString='find '+root2dags+'/* | grep ".dag"'
-        errs=commands.getstatusoutput(cmdString)
-        if errs[0] != 0:
-            print "There was an error finding the individual dag submit files for each pipe!"
-            print errs[1]
-            print " "
-        fileList=errs[1].split('\n')
+#        cmdString='find '+root2dags+'/* | grep ".dag"'
+#        errs=commands.getstatusoutput(cmdString)
+ #       if errs[0] != 0:
+  #          print "There was an error finding the individual dag submit files for each pipe!"
+  #          print errs[1]
+  #          print " "
+  #      fileList=errs[1].split('\n')
+        fileList=self.__findFiles__(root2dags,['.dag'])
         print "The master DAG will have ",fileList.__len__()," nodes/subdags."
         print "Preparing the master dag may take awhile."
         for dagEntry in fileList:
@@ -208,7 +172,8 @@ class tuneObject:
             self.FAconfigure(pipe[3],pipe[4],pipe[0])
         print "Building ",self.FApipeNames.__len__()," pipes. This may take awhile."
         for pipe in self.FApipeNames:
-            self.createPipe(pipe[0])
+            #False turns off possible interpretations.
+            self.createPipe(pipe[0],False)
         print "Ok. Finished"
         #Search the workspace to construct a huge parent DAG for submitting all the DAGs
         root2dags=self.installPipes
@@ -238,7 +203,7 @@ class tuneObject:
         fp.close()
     #End FAconfigure method
 
-    def createPipe(self,pipeIniName):
+    def createPipe(self,pipeIniName,injectPipeFlag):
         """
         This method actually invokes a shell to create the pipe in a unique
         directory under the main directory specified in [all] tuningHome
@@ -246,7 +211,10 @@ class tuneObject:
         """
         seglist=self.seglist
         path2bin=self.pipeBuilder
-        commandLine=path2bin+' --file='+pipeIniName+' --segment_file='+seglist
+        if injectPipeFlag == True:
+            commandLine=path2bin+' --file='+pipeIniName+' --segment_file='+seglist+' --invoke_inject'
+        else:
+            commandLine=path2bin+' --file='+pipeIniName+' --segment_file='+seglist
         commandOut=commands.getstatusoutput(commandLine)
         if commandOut[0] != 0:
             print " "
@@ -271,7 +239,8 @@ class tuneObject:
         myFAR=self.mySigmaFA
         
         # Determine the pipe that should be installed based on tun file.
-        resultFiles=self.__findResultFiles__(self.installPipes)
+        # resultFiles=self.__findResultFiles__(self.installPipes)
+        resultFiles=self.__findFiles__(self.installPipes,['_1.candidates','RESULTS'])
         print "Checking ",resultFiles.__len__()," total candidate files. This may take a while."
         auxoutData=[]
         outputData=[]
@@ -280,16 +249,18 @@ class tuneObject:
             candidate.loadfile(entry)
             myStat=candidate.candidateStats()
             meanP=myStat[3]
-            stdP=myStat[4]
+            varP=myStat[4]
+            stdP=math.sqrt(varP)
             meanL=myStat[5]
-            stdL=myStat[6]
+            varL=myStat[6]
+            stdL=math.sqrt(varL)
             #Threshold FAR values
             threshP=meanP+(myFAR*stdP)
             threshL=meanL+(myFAR*stdL)
             myOpts=str(str(entry).replace(self.installPipes,'').split('/')[1]).split('_')
             myLH=myOpts[1]
             myLL=myOpts[2]
-            auxoutData.append([float(myLH),float(myLL),meanL,stdL,meanP,stdL])
+            auxoutData.append([float(myLH),float(myLL),meanL,stdL,meanP,stdP])
             outputData.append([float(myLH),float(myLL),float(threshP),float(threshL)])
         auxout_fp=open(self.home+'/FA_results.aux','w')
         auxout_fp.write("LH,LL,Mean L,Stddev L,Mean P,Stddev P\n")
@@ -345,7 +316,8 @@ class tuneObject:
             pipeIniName=self.installIni2+'/'+self.batchMask+':'+str(h)+':'+str(float(l))+':'+str(float(p))+':'+str(int(len))+':'+'.ini'
             self.DEpipeNames.append(pipeIniName)
             self.DEeditIniFile(h,l,p,len,pipeIniName)
-            self.createPipe(pipeIniName)
+            #True states use the ini file to set injection into the pipeline.
+            self.createPipe(pipeIniName,True)
         #Search the workspace to construct a huge parent DAG for submitting all the DAGs
         root2dags=self.installPipes2
         dagFilename=self.home+'/DE_Tuning.dag'
@@ -380,7 +352,8 @@ class tuneObject:
         #count num of can files with 1 entry+
         #determine percentage succsessful
         #write 2 ranked 4c list lh ll #map percentage
-        globFiles=self.__findLayer1GlobFiles__(self.installPipes2)
+#        globFiles=self.__findLayer1GlobFiles__(self.installPipes2)
+        globFiles=self.__findFiles__(self.installPipes2,['Glob','_1.candidates'])
         outputPickle=[]
         outputP=[]
         outputL=[]

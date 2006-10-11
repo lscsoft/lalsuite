@@ -24,24 +24,20 @@ parser.add_option("-s","--segment_file",dest="segmentList",
                   metavar="FILE")
 parser.add_option("-i","--invoke_inject",dest="invokeInject",
                   help="This option will create a pipeline with injections invoked if there is a section in the config file for doing injections. You must still specify name and path to 2 column text data to inject.",
-                  default="",
+                  default="False",action="store_true",
                   metavar="injectFile")
 
 (options,args) = parser.parse_args()
 
 iniFile=os.path.abspath(str(options.iniFile))
 segmentList=os.path.abspath(str(options.segmentList))
-injectFile=str(options.invokeInject)
+injectFileFlag=bool(options.invokeInject)
 if not os.path.exists(iniFile):
     print 'Can not find iniFile: ',os.path.basename(iniFile)
     os.abort()
 if not os.path.exists(segmentList):
     print 'Can not find segentlist: ',os.path.basename(segmentList)
     os.abort()
-if injectFile != "":
-    if not os.path.exists(injectFile):
-        print 'Can not find the file to inject: ',os.path.basename(injectFile)
-        os.abort()
 #Read in the configuration file options
 cp = ConfigParser.ConfigParser()
 cp.read(iniFile)
@@ -56,7 +52,7 @@ if testIniFile.numberErrors() > 0 :
     os.abort()
 
 #Check ini file for an injection block heading.
-if ((injectFile != "") and (testIniFile.injectSecTest() == False)):
+if ((injectFileFlag == True) and (testIniFile.injectSecTest() == False)):
     print "Ini file doesn't have an injection section!"
     os.abort()
 
@@ -85,7 +81,7 @@ for block in allData:
     """This code is only for 1 100sec stretch"""
     indexA+=1
     logfile=logFileMask+str(indexA)+'.log'
-    tracksearchBlock=tracksearch.tracksearch(cp,block,injectFile,logfile)
+    tracksearchBlock=tracksearch.tracksearch(cp,block,injectFileFlag,logfile)
     tracksearchBlock.createJobs()
     tracksearchBlock.writePipelineDAG()
         

@@ -91,6 +91,8 @@ class tracksearchCheckIniFile:
     """
     This class will check the ini file for appropriate arguements
     where possible.  The errors will be listed upon request
+    Mainly we check for files which the job will need to run
+    executables and other aux files.
     """
 
     def __init__(self,cp):
@@ -148,6 +150,7 @@ class tracksearchCheckIniFile:
             if str(optValue).__contains__('/'):
                 if not os.path.exists(str(optValue)):
                     self.errList.append('Can not find python library file:'+str(entry)+':'+str(optValue))
+
     #end checkOpts def
 
     def numberErrors(self):
@@ -161,7 +164,14 @@ class tracksearchCheckIniFile:
     #end printErrorList
 
     def injectSecTest(self):
+        injectSecFound=False
         injectSecFound=self.iniOpts.has_section('tracksearchinjection')
+        #Check the [injectionsection] section if present searching for injection file.
+        if injectSecFound:
+            injectFile=self.iniOpts.get('tracksearchinjection','inject_file')
+            if not os.path.exists(injectFile):
+                self.errList.append('Can not text file to inject :'+str(injectFile))
+                os.abort()
         return injectSecFound
     #end injectSecTest method
 #end Class
@@ -216,10 +226,29 @@ class tracksearchHousekeeperJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     Clearing out these file wills save disk space.  Only files in the RESULTS directory which are
     final data products will remain.  The MAP files and .candidates files in each level of the run
     will be removed.  The candidate files will be tar.gzed and the MAP files will be scraped.
-    We will also remove the .diag files if they are present as well.
+    We will also remove the .diag files if they are present as well.  This is an umbrella feature.  It works on
+    clearing files from [filelayout],workpath and its subdirectories.  This is all blockIDs for the DAG.
     """
-    print "hi"
-    #End tracksearchCleanHouseJob class
+    def __init__(self,cp,dagDir):
+        self.dagDirectory=dagDir
+        self.cp=cp
+        self.__executable = cp.get('condor','housekeeper')
+        #HACK change to local in new condor version
+        #self.__universe = cp.get('condor','universe')
+        self.__universe = 'scheduler'
+        pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+        pipeline.AnalysisJob.__init__(self,cp)
+        for sec in ['housekeeper']:
+            self.add_ini_opts(cp,sec)
+        workpath=cp.get('filelayout','workpath')
+        self.add_opt('parent-dir',workpath)
+        workpath_logs=workpath+'/logs'
+        buildDir(workpath_logs)
+        self.set_stdout_file(os.path.normpath(workpath_logs+'/tracksearchHousekeeper-$(cluster)-$(process).out'))
+        self.set_stderr_file(os.path.normpath(workpath_logs+'/tracksearchHousekeeper-$(cluster)-$(process).err'))
+        self.set_sub_file(workpath_logs+'/tracksearchHousekeeper.sub')
+        #End init
+    #End class tracksearchHousekeeperJob
     
 class tracksearchTimeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     """
@@ -228,17 +257,17 @@ class tracksearchTimeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     is a string either -> normal  -> injection
     Then the appropriate ini options will be used to create the job.
     """
-    def __init__(self,cp,block_id,layer_id,dagDir,jobType,injectFile):
-        self.injectFile=injectFile
+    def __init__(self,cp,block_id,layer_id,dagDir,jobType):
+        self.injectFile=""
+        self.jobType=jobType
         self.dagDirectory=dagDir
         #ConfigParser object -> cp
         self.__executable = cp.get('condor','tracksearch')
         self.__universe = cp.get('condor','universe');
-        self.jobType=str(jobType).lower().rstrip().lstrip()
         self.validJobTypes=['normal','injection']
         #If invalid type is requested display warning and
         #assume a normal injection was requested
-        if not self.validJobTypes.__contains__(self.jobType):
+        if not self.validJobTypes.__contains__(str(self.jobType).lower()):
             print "Warning: You requested invalid tracksearchTimeJob type!"
             print "Assuming you meant -> normal <- job type."
             self.jobType='normal'
@@ -256,9 +285,10 @@ class tracksearchTimeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
             self.add_ini_opts(cp,sec)
         #Check the type of job this is and add in the injection options
         #if needed!
-        if (self.jobType.__contains__(self.validJobTypes[1])):
+        if (self.jobType == self.validJobTypes[1]):
             for sec in ['tracksearchinjection']:
                 self.add_ini_opts(cp,sec)
+            self.injectFile=cp.get('tracksearchinjection','inject_file')
             self.add_opt('inject_file',os.path.basename(self.injectFile))
             self.add_condor_cmd('when_to_transfer_output','on_exit')
             self.add_condor_cmd('transfer_input_files',self.injectFile)
@@ -378,7 +408,9 @@ class tracksearchMapCacheBuildJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     #Setup job options to take a cache of caches and build new maps
             #ConfigParser object -> cp
         self.__executable = cp.get('condor','cachebuilder')
-        self.__universe = cp.get('condor','universe');
+        #HACK for SETB pool
+        #self.__universe = cp.get('condor','universe');
+        self.__universe = 'scheduler';
         pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
         pipeline.AnalysisJob.__init__(self,cp)
         blockID=block_id
@@ -498,6 +530,7 @@ class tracksearchClusterJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     def __init__(self,cp,block_id,dagDir):
         self.dagDirectory=dagDir
         self.__executable = cp.get('condor','clustertool')
+        #HACK SETB pool the job runs on the scheduler
         self.__universe = cp.get('condor','universe')
         pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
         pipeline.AnalysisJob.__init__(self,cp)
@@ -525,6 +558,19 @@ class tracksearchClusterJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         #End __init__ method
 #End class tracksearchClusterJob
 
+class tracksearchHousekeeperNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
+    """
+    The class acting as a generic template to do carry out the housekeeping job.
+    NOTE: This should be in local universe in most cases please check
+    the code in the corresponding job class above.
+    """
+    def __init__(self,job):
+        #Expects to run CondorDAGJob object for tracksearch
+        pipeline.CondorDAGNode.__init__(self,job)
+        pipeline.AnalysisNode.__init__(self)
+    #End init
+#End Class
+                                   
 class tracksearchTimeNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     The class acting as a generic template to do a Time search
@@ -595,18 +641,21 @@ class tracksearch:
     """
     #TO HANDLE FUTURE COINCIDENT ANALYSIS WE NEED TO ADJUST DAGDIR FOR
     #EACH IFO THEN MAKE A CLUSTERING DIR OR SOMETHING LIKE THAT
-    def __init__(self,cparser,scienceSegment,injectFile,logfile):
-        self.injectFile=str(injectFile)
-        if self.injectFile == "":
-            self.invokeFlag = False
+    def __init__(self,cparser,scienceSegment,injectFlag,logfile):
+        #cp -> ConfigParser object
+        self.cp=cparser
+        self.injectFlag=False
+        self.injectFlag=injectFlag
+        self.jobType=""
+        #Injection relevant config
+        if self.injectFlag == True:
+            self.jobType='injection'
         else:
-            self.invokeFlag = True
+            self.jobType='normal'
         #Expects a fixed size PsuedoScience Segment
         #The dag for this run will be then run from this data
         self.sciSeg=scienceSegment
         self.runStartTime=self.sciSeg.start()
-        #cp -> ConfigParser object
-        self.cp=cparser
         #The variable to link a previous jobblock into next block
         self.blockJobLinkList=[]
         self.blockID=str(self.sciSeg.start())+':'+str(self.sciSeg.dur())
@@ -700,16 +749,12 @@ class tracksearch:
         #Setup the jobs after queries to LSCdataFind as equal children
         block_id=self.blockID
         layer_id=layerID
-        #If invokeFlag -> True set option
-        jobType='normal'
-        if self.invokeFlag == True:
-            jobType='injection'
+        #
         tracksearchTime_job=tracksearchTimeJob(self.cp,
                                                block_id,
                                                layer_id,
                                                dagDir,
-                                               jobType,
-                                               self.injectFile)
+                                               self.jobType)
         prevLayerJobList=[]
         #THE FOLLOWIN LOOP NEEDS TO BE REVISED
         #WE ARE LOOSING THE CACHE NAMES IN THE PREVIOUS LOOP
@@ -760,6 +805,7 @@ class tracksearch:
         tracksearchCluster_job2.add_condor_cmd('initialdir',tracksearchCluster_job2.initialDir)
         tracksearchCluster_job2.set_sub_file(self.dagDirectory+'tracksearchCluster2.sub')
         tracksearchCluster_job.add_condor_cmd('initialdir',tracksearchCluster_job.initialDir)
+        nextJobList=[]
         for i in range(1,layerID-1):
             tracksearchCluster_node2=tracksearchClusterNode(tracksearchCluster_job2)
             DLP=tracksearchCluster_job2.initialDir
@@ -772,6 +818,13 @@ class tracksearch:
             for parents in prevJobList:
                 tracksearchCluster_node2.add_parent(parents)
             self.dag.add_node(tracksearchCluster_node2)
+            nextJobList.append(tracksearchCluster_node2)
+        #Step that sets up the tracksearchHousekeeperJobs
+        tracksearchHousekeeper_job=tracksearchHousekeeperJob(self.cp,self.dagDirectory)
+        tracksearchHousekeeper_node=tracksearchHousekeeperNode(tracksearchHousekeeper_job)
+        for parents in nextJobList:
+            tracksearchHousekeeper_node.add_parent(parents)
+        self.dag.add_node(tracksearchHousekeeper_node)
     #end def finalsearchlayer method
 
     def intermediateSearchLayers(self,layerID,nodeLinks):
