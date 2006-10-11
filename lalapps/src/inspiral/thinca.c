@@ -1858,7 +1858,7 @@ int main( int argc, char *argv[] )
 
 	
     /* BNS and Machos case */
-    if( distCut & !doBCVC  ) /*S3*/
+    if( distCut && !doBCVC ) /*S3*/
       {
 	if ( vrbflg ) fprintf( stdout, 
 			       "Discarding triggers h1-h2-distance-cut using kappa=%f and epsilon = %f\n", 
