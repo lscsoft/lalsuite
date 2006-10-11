@@ -57,6 +57,7 @@ Usage: [options]
   -F, --start-freq           (optional) start frequency of the SFTs (default is 48 Hz).
   -B, --band                 (optional) frequency band of the SFTs (default is 100 Hz).
   -b, --sub-band             (optional) divide frequency band into sub bands of this size (default is 10 Hz)
+  -O, --plot-output-path     (optional) if given then Matlab jobs run and put output plots and data in this directory
   -X  --misc-desc            (optional) misc. part of the SFT description field in the filename (also used if -D option is > 0).
   -H, --use-hot              input data is from h(t) calibrated frames (h of t = hot!) (0 or 1).
   
@@ -70,7 +71,7 @@ Usage: [options]
 ####################################
 # PARSE COMMAND LINE OPTIONS 
 #
-shortop = "s:L:G:d:x:M:k:T:p:O:o:N:i:w:P:v:c:F:B:b:D:X:m:g:l:hSHZCR"
+shortop = "s:L:G:d:x:M:k:T:p:o:N:i:w:P:v:c:F:B:b:O:D:X:m:g:l:hSHZCR"
 longop = [
   "help",
   "analysis-start-time=",
@@ -95,6 +96,7 @@ longop = [
   "start-freq=",
   "band=",
   "sub-band=",
+  "plot-output-path=",
   "make-gps-dirs=",
   "misc-desc=",
   "max-num-per-node=",
@@ -138,6 +140,8 @@ commentField = None
 startFreq = 48.0
 freqBand = 100.0
 freqSubBand = 10.0
+plotOutputPath = None
+makeMatlabPlots = False
 makeGPSDirs = 0
 miscDesc = None
 maxNumPerNode = 1
@@ -173,8 +177,6 @@ for o, a in opts:
     pathToSFTs = a
   elif o in ("-C", "--create-sfts"):
     createSFTs = True
-  elif o in ("-O", "--log-path"):
-    logPath = a
   elif o in ("-o", "--sub-log-path"):
     subLogPath = a
   elif o in ("-N", "--channel-name"):
@@ -195,6 +197,8 @@ for o, a in opts:
     freqBand = long(a)
   elif o in ("-b", "--sub-band"):
     freqSubBand = long(a)
+  elif o in ("-O", "--plot-output-path"):
+    plotOutputPath = a
   elif o in ("-D", "--make-gps-dirs"):
     makeGPSDirs = int(a)
   elif o in ("-X", "--misc-desc"):
@@ -325,6 +329,11 @@ if not maxNumPerNode:
   print >> sys.stderr, "Use --help for usage details."
   sys.exit(1)
 
+if (plotOutputPath == None):
+   makeMatlabPlots = False
+else:
+   makeMatlabPlots = True
+  
 # try and make a directory to store the cache files and job logs
 try: os.makedirs(logPath)
 except: pass
@@ -467,6 +476,22 @@ spectrumAverageFID.write('notification = never\n')
 spectrumAverageFID.write('queue 1\n')
 spectrumAverageFID.close
 
+# MAKE A SUBMIT FILE FOR RUNNING THE MATLAB DRIVER SCRIPT
+if (makeMatlabPlots):
+  runMatlabScriptFID = file('runMatlabPlotScript.sub','w')
+  runMatlabScriptLogFile = subLogPath + '/' + 'runMatlabPlotScript_' + dagFileName + '.log'
+  runMatlabScriptFID.write('universe = vanilla\n')
+  runMatlabScriptFID.write('executable = $ENV(RUNPLOTSPECAVGOUTPUT_PATH)/runPlotSpecAvgOutput.csh\n')
+  runMatlabScriptFID.write('getenv = True\n')
+  runMatlabScriptFID.write('arguments = $(argList)\n')
+  runMatlabScriptFID.write('log = %s\n' % runMatlabScriptLogFile)
+  runMatlabScriptFID.write('error = %s/runMatlabPlotScript_$(tagstring).err\n' % logPath)
+  runMatlabScriptFID.write('output = %s/runMatlabPlotScript_$(tagstring).out\n' % logPath)
+  runMatlabScriptFID.write('notification = never\n')
+  runMatlabScriptFID.write('queue 1\n')
+  runMatlabScriptFID.close
+
+
 # Write spec_avg jobs to SUPER DAG:
 endFreq = startFreq + freqBand
 thisStartFreq = startFreq
@@ -484,6 +509,19 @@ while (thisStartFreq < endFreq):
   dagFID.write('VARS %s argList="%s" tagstring="%s"\n'%(specAvgJobName,argList,tagStringOut))
   if (createSFTs):  
     dagFID.write('PARENT %s CHILD %s\n'%(sftDAGSUBJobName,specAvgJobName))
+  if (makeMatlabPlots):
+     runMatlabPlotScriptJobName = 'runMatlabPlotScript_%i' % nodeCount
+     dagFID.write('JOB %s runMatlabPlotScript.sub\n' % runMatlabPlotScriptJobName)
+     dagFID.write('RETRY %s 3\n' % runMatlabPlotScriptJobName)
+     inputFileName = 'spec_%d.00_%d.00_%s_%d_%d' % (thisStartFreq,thisEndFreq,ifo,analysisStartTime,analysisEndTime)
+     outputFileName = '%s/%s.pdf' % (plotOutputPath, inputFileName)
+     effTBase = timeBaseline/180.0
+     deltaFTicks = 5
+     medBins = 10
+     argList = '%s %s %s %d %d %d %d %d %d %d' % (inputFileName,outputFileName,channelName,analysisStartTime,analysisEndTime,thisStartFreq,thisEndFreq,effTBase,deltaFTicks,medBins)
+     tagStringOut = '%s_%i' % (tagString, nodeCount)  
+     dagFID.write('VARS %s argList="%s" tagstring="%s"\n'%(specAvgJobName,argList,tagStringOut))
+     dagFID.write('PARENT %s CHILD %s\n'%(specAvgJobName,runMatlabPlotScriptJobName))
   thisStartFreq = thisStartFreq + freqSubBand
   nodeCount = nodeCount + 1
 
