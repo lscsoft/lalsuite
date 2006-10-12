@@ -70,6 +70,8 @@ class heterodyneNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.__output_dir = None
     self.__het_flag = None
     self.__pulsar = None
+    self.__high_pass = None
+    self.__scale_fac = None
       
   def set_data_file(self,data_file):
     # set file containing data to be heterodyne (either list of frames or coarse het output)
@@ -164,12 +166,20 @@ class heterodyneNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.add_var_opt('coefficient-file',coefficient_file)
     
   def set_sensing_function(self,sensing_function):
-    # set file containin the sensing function for calibration
+    # set file containing the sensing function for calibration
     self.add_var_opt('sensing-function',sensing_function)
     
   def set_open_loop_gain(self,open_loop_gain):
     # set file containing the open loop gain for calibration
     self.add_var_opt('open-loop-gain',open_loop_gain)
+
+  def set_scale_fac(self,scale_fac)
+    # set scale factor for calibrated data
+    self.add_var_opt('scale-factor',scale_fac)
+
+  def set_high_pass(self,high_pass)
+    # set high-pass frequency for calibrated data
+    self.add_var_opt('high-pass-freq',high_pass)
 
 # taken from pipeline.py to add a log file to the .sub file  
 class LSCDataFindJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
