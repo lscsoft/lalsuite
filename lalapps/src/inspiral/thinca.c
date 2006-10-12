@@ -1111,50 +1111,50 @@ int main( int argc, char *argv[] )
       case '(':
         /* veto filename */
         optarg_len = strlen( optarg ) + 1;
-	vetoFileName[LAL_IFO_H1] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
- 	memcpy( vetoFileName[LAL_IFO_H1], optarg, optarg_len );
+        vetoFileName[LAL_IFO_H1] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( vetoFileName[LAL_IFO_H1], optarg, optarg_len );
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case ')':
         /* veto filename */
         optarg_len = strlen( optarg ) + 1;
-	vetoFileName[LAL_IFO_H2] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
- 	memcpy( vetoFileName[LAL_IFO_H2], optarg, optarg_len );
+        vetoFileName[LAL_IFO_H2] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( vetoFileName[LAL_IFO_H2], optarg, optarg_len );
         ADD_PROCESS_PARAM( "string", "%s", optarg );
-	break;
+        break;
  
       case '}':
         /* veto filename */
         optarg_len = strlen( optarg ) + 1;
-	vetoFileName[LAL_IFO_L1] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
- 	memcpy( vetoFileName[LAL_IFO_L1], optarg, optarg_len );
+        vetoFileName[LAL_IFO_L1] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( vetoFileName[LAL_IFO_L1], optarg, optarg_len );
         ADD_PROCESS_PARAM( "string", "%s", optarg );
-	break;        
+        break;        
         
       case '{':
         /* veto filename */
         optarg_len = strlen( optarg ) + 1;
-	vetoFileName[LAL_IFO_G1] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
- 	memcpy( vetoFileName[LAL_IFO_G1], optarg, optarg_len );
+        vetoFileName[LAL_IFO_G1] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( vetoFileName[LAL_IFO_G1], optarg, optarg_len );
         ADD_PROCESS_PARAM( "string", "%s", optarg );
-	break;        
+        break;        
         
       case '[':
         /* veto filename */
         optarg_len = strlen( optarg ) + 1;
-	vetoFileName[LAL_IFO_T1] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
- 	memcpy( vetoFileName[LAL_IFO_T1], optarg, optarg_len );
+        vetoFileName[LAL_IFO_T1] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( vetoFileName[LAL_IFO_T1], optarg, optarg_len );
         ADD_PROCESS_PARAM( "string", "%s", optarg );
-	break;        
+        break;        
         
       case ']':
         /* veto filename */
         optarg_len = strlen( optarg ) + 1;
-	vetoFileName[LAL_IFO_V1] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
- 	memcpy( vetoFileName[LAL_IFO_V1], optarg, optarg_len );
+        vetoFileName[LAL_IFO_V1] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( vetoFileName[LAL_IFO_V1], optarg, optarg_len );
         ADD_PROCESS_PARAM( "string", "%s", optarg );
-	break;       
+        break;       
 
       case '_':
         /* location of a source on the sky, right ascension (degree) */
@@ -1359,9 +1359,9 @@ int main( int argc, char *argv[] )
   if ( iotaCut )
   {
     if (accuracyParams.iotaCutH1H2<0 || accuracyParams.iotaCutH1H2>2 
-	|| accuracyParams.iotaCutH1L1<0 || accuracyParams.iotaCutH1L1>2) {
+        || accuracyParams.iotaCutH1L1<0 || accuracyParams.iotaCutH1L1>2) {
       fprintf( stderr,"The iota-cut values for H1H2 and/or H1L1 lie outside \n"
-	       "a meaning full range of [0;2]\n");
+               "a meaning full range of [0;2]\n");
       exit( 1 );
     }
 
@@ -1513,7 +1513,7 @@ int main( int argc, char *argv[] )
        * We do not need to do any sanity check.
        * It has been done in the previous call */
       XLALReadSummValueFile(&summValueList, argv[i]);
-	
+        
        
       /* maximize over a given interval */
       if ( maximizationInterval )
@@ -1561,7 +1561,7 @@ int main( int argc, char *argv[] )
   if ( snrCut > 0.0 )
   {    
     if ( vrbflg )
-	fprintf(stdout, "Removing triggers with SNR lower than %f : ", snrCut);   
+        fprintf(stdout, "Removing triggers with SNR lower than %f : ", snrCut);   
     LAL_CALL( LALSNRCutSingleInspiral( &status, &(inspiralEventList), 
           snrCut),  &status );
     numTriggers = XLALCountSnglInspiral(inspiralEventList);
@@ -1569,8 +1569,8 @@ int main( int argc, char *argv[] )
           numTriggers );
   }
   
-  /*	we initialise the veto segment list needed either by the h1h2 
-	consistency check or the veto option itself. */
+  /*    we initialise the veto segment list needed either by the h1h2 
+        consistency check or the veto option itself. */
   if (h1h2Consistency || doVeto)
   {
     for ( ifoNumber = 0; ifoNumber< LAL_NUM_IFO; ifoNumber++)
@@ -1578,27 +1578,27 @@ int main( int argc, char *argv[] )
       /* to perform the veto, we  need the filename. */
       if ( vetoFileName[ifoNumber] && haveTrig[ifoNumber])
       {
-    	XLALSegListInit( &(vetoSegs[ifoNumber]) );
-	LAL_CALL( LALSegListRead( &status, &(vetoSegs[ifoNumber]), vetoFileName[ifoNumber], NULL),
+        XLALSegListInit( &(vetoSegs[ifoNumber]) );
+        LAL_CALL( LALSegListRead( &status, &(vetoSegs[ifoNumber]), vetoFileName[ifoNumber], NULL),
            &status);
         XLALSegListCoalesce( &(vetoSegs[ifoNumber]) );
 
-	/* keep only the segments that lie within the data-segment part */
-	XLALSegListKeep(  &(vetoSegs[ifoNumber]), &startCoinc, &endCoinc );
+        /* keep only the segments that lie within the data-segment part */
+        XLALSegListKeep(  &(vetoSegs[ifoNumber]), &startCoinc, &endCoinc );
 
-	/* if the veto option is set, we remove single inspiral triggers 
-	   inside the list provided but we need to loop over the different ifo name. */
+        /* if the veto option is set, we remove single inspiral triggers 
+           inside the list provided but we need to loop over the different ifo name. */
         if (doVeto)
-	{
-	  if ( vrbflg ) fprintf( stdout, "Applying veto segment (%s) list on ifo  %s \n ",
-		vetoFileName[ifoNumber], ifoList[ifoNumber] );
+        {
+          if ( vrbflg ) fprintf( stdout, "Applying veto segment (%s) list on ifo  %s \n ",
+                vetoFileName[ifoNumber], ifoList[ifoNumber] );
           inspiralEventList = XLALVetoSingleInspiral( inspiralEventList, &(vetoSegs[ifoNumber]), 
-		(CHAR*)(ifoList[ifoNumber]) );
+                (CHAR*)(ifoList[ifoNumber]) );
          /* count the triggers  */
           numTriggers = XLALCountSnglInspiral( inspiralEventList );
           if ( vrbflg ) fprintf( stdout, " --> %d remaining triggers after veto segment list applied.\n",
             numTriggers );
-	}
+        }
       }
     }
   }
@@ -1793,39 +1793,39 @@ int main( int argc, char *argv[] )
       
     if ( numSlides ) {
       for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
-	{
-	  if( slideNum == -numSlides )
-	    {
-	      /* Initialize the slide-times with the initial value, 
-		 which is the negative extreme value */
-	      INT4 tmpSlide = (- numSlides * slideStep[ifoNumber]);
-	      slideTimes[ifoNumber].gpsSeconds = tmpSlide;
-	      slideReset[ifoNumber].gpsSeconds = (-tmpSlide);
-	    }
-	  else
-	    {
-	      /* Set the slide-times to the constant slide-step, 
-		 since this times refers to 'inspiralEventList', which triggers are shifted
-		 in each slide by a constant amount. 
-		 The reset-time however refers to the coincidence list, so it must
-		 be decreased for each slide. */
-	      slideTimes[ifoNumber].gpsSeconds = slideStep[ifoNumber];
-	      slideReset[ifoNumber].gpsSeconds -= slideStep[ifoNumber];
-	    }
-	}
+        {
+          if( slideNum == -numSlides )
+            {
+              /* Initialize the slide-times with the initial value, 
+                 which is the negative extreme value */
+              INT4 tmpSlide = (- numSlides * slideStep[ifoNumber]);
+              slideTimes[ifoNumber].gpsSeconds = tmpSlide;
+              slideReset[ifoNumber].gpsSeconds = (-tmpSlide);
+            }
+          else
+            {
+              /* Set the slide-times to the constant slide-step, 
+                 since this times refers to 'inspiralEventList', which triggers are shifted
+                 in each slide by a constant amount. 
+                 The reset-time however refers to the coincidence list, so it must
+                 be decreased for each slide. */
+              slideTimes[ifoNumber].gpsSeconds = slideStep[ifoNumber];
+              slideReset[ifoNumber].gpsSeconds -= slideStep[ifoNumber];
+            }
+        }
     }
     
     if ( vrbflg ) fprintf(stdout,
-			  "Performing time slide %d\n", slideNum );
+                          "Performing time slide %d\n", slideNum );
     
     /* slide the data for any case */
     LAL_CALL( LALTimeSlideSingleInspiral( &status, inspiralEventList,
-	      &startCoinc, &endCoinc, slideTimes), &status) ;      
+              &startCoinc, &endCoinc, slideTimes), &status) ;      
     LAL_CALL( LALSortSnglInspiral( &status, &(inspiralEventList),
-	      LALCompareSnglInspiralByTime ), &status );
-    for ( ifoNumber = 0; ifoNumber< LAL_NUM_IFO; ifoNumber++) {	  
+              LALCompareSnglInspiralByTime ), &status );
+    for ( ifoNumber = 0; ifoNumber< LAL_NUM_IFO; ifoNumber++) {   
       LAL_CALL( LALTimeSlideSegList( &status, &(vetoSegs[ifoNumber]),
-		&startCoinc, &endCoinc, &(slideTimes[ifoNumber])), &status) ;
+                &startCoinc, &endCoinc, &(slideTimes[ifoNumber])), &status) ;
     }
 
     /* don't analyze zero-lag if numSlides>0 */
@@ -1840,137 +1840,137 @@ int main( int argc, char *argv[] )
     else
     {
     LAL_CALL( LALCreateTwoIFOCoincList(&status, &coincInspiralList,
-	      inspiralEventList, &accuracyParams ), &status);
+              inspiralEventList, &accuracyParams ), &status);
     }
 
     /* count the zero-lag coincidences */
     if ( !numSlides) {
       if( coincInspiralList )
-	{
-	  for (numCoinc = 0, thisCoinc = coincInspiralList;
-	       thisCoinc; ++numCoinc, thisCoinc = thisCoinc->next )
-	    {
-	    }
-	  if ( vrbflg ) 
-	    fprintf( stdout, "%d coincident triggers found before coincidence cuts..\n",
-		     numCoinc);
-	  
-	}
+        {
+          for (numCoinc = 0, thisCoinc = coincInspiralList;
+               thisCoinc; ++numCoinc, thisCoinc = thisCoinc->next )
+            {
+            }
+          if ( vrbflg ) 
+            fprintf( stdout, "%d coincident triggers found before coincidence cuts..\n",
+                     numCoinc);
+          
+        }
     }
 
-	
+        
     /* BNS and Machos case */
     if( distCut && !doBCVC ) /*S3*/
       {
-	if ( vrbflg ) fprintf( stdout, 
-			       "Discarding triggers h1-h2-distance-cut using kappa=%f and epsilon = %f\n", 
-			       accuracyParams.ifoAccuracy[LAL_IFO_H1].kappa,
-			       accuracyParams.ifoAccuracy[LAL_IFO_H1].epsilon);
-	XLALInspiralDistanceCut( &coincInspiralList, &accuracyParams);
+        if ( vrbflg ) fprintf( stdout, 
+                               "Discarding triggers h1-h2-distance-cut using kappa=%f and epsilon = %f\n", 
+                               accuracyParams.ifoAccuracy[LAL_IFO_H1].kappa,
+                               accuracyParams.ifoAccuracy[LAL_IFO_H1].epsilon);
+        XLALInspiralDistanceCut( &coincInspiralList, &accuracyParams);
       }
     
     /* BCV case */  
     if (doBCVC)
       {     
-	
         
-	/* perform the iota cut */
-	if( iotaCut  ) 
-	  {
-	    if ( vrbflg ) 
-	      fprintf( stdout, 
-		       "Applying iota Cut with iotaCutH1H2=%f and iotaCutH1L1=%f \n",
-		       accuracyParams.iotaCutH1H2,accuracyParams.iotaCutH1L1 ); 
-	    XLALInspiralIotaCutBCVC( &coincInspiralList, &accuracyParams );
-	    if ( vrbflg ) 
-	      fprintf( stdout, "%d remaining coincident triggers.\n", 
-		       XLALCountCoincInspiral(coincInspiralList));
-	  }
+        
+        /* perform the iota cut */
+        if( iotaCut  ) 
+          {
+            if ( vrbflg ) 
+              fprintf( stdout, 
+                       "Applying iota Cut with iotaCutH1H2=%f and iotaCutH1L1=%f \n",
+                       accuracyParams.iotaCutH1H2,accuracyParams.iotaCutH1L1 ); 
+            XLALInspiralIotaCutBCVC( &coincInspiralList, &accuracyParams );
+            if ( vrbflg ) 
+              fprintf( stdout, "%d remaining coincident triggers.\n", 
+                       XLALCountCoincInspiral(coincInspiralList));
+          }
       }
     
     if ( doPsi0Psi3Cut ) 
       {
-	if ( vrbflg ) fprintf( stdout, 
-			       "Discarding triggers using Dpsi0Dpsi3 cut \n");
-	XLALInspiralPsi0Psi3CutBCVC( &coincInspiralList );
-	if ( vrbflg )
-	  fprintf( stdout, "%d remaining coincident triggers .\n", 
-		   XLALCountCoincInspiral(coincInspiralList));
+        if ( vrbflg ) fprintf( stdout, 
+                               "Discarding triggers using Dpsi0Dpsi3 cut \n");
+        XLALInspiralPsi0Psi3CutBCVC( &coincInspiralList );
+        if ( vrbflg )
+          fprintf( stdout, "%d remaining coincident triggers .\n", 
+                   XLALCountCoincInspiral(coincInspiralList));
       }
     
     
     /* BCVSpin case */
     if (doBCV2H1H2Veto)
       {
-	if (vrbflg) fprintf (stdout, 
-			     "Discarding triggers with H2 snr > H1 snr \n" );
-	XLALInspiralSNRCutBCV2( &coincInspiralList);
+        if (vrbflg) fprintf (stdout, 
+                             "Discarding triggers with H2 snr > H1 snr \n" );
+        XLALInspiralSNRCutBCV2( &coincInspiralList);
       }
     
    
     
     if ( multiIfoCoinc )
       {
-	for( N = 3; N <= numIFO; N++)
+        for( N = 3; N <= numIFO; N++)
           {
             LAL_CALL( LALCreateNIFOCoincList( &status, &coincInspiralList, 
-					      &accuracyParams, N ), &status );
+                                              &accuracyParams, N ), &status );
           }
-	
-	LAL_CALL( LALRemoveRepeatedCoincs( &status, &coincInspiralList ), 
-		  &status );
+        
+        LAL_CALL( LALRemoveRepeatedCoincs( &status, &coincInspiralList ), 
+                  &status );
       }
   
     
     /* perform the h1h2-consistency check */
     if ( h1h2Consistency ) 
       {
-	if(vrbflg) 
+        if(vrbflg) 
           {
-	    if (vetoFileName[LAL_IFO_H1] && vetoFileName[LAL_IFO_H2])
+            if (vetoFileName[LAL_IFO_H1] && vetoFileName[LAL_IFO_H2])
               fprintf(stdout, "Using h1-h2-consistency with veto segment list %s and %s\n", 
-		      vetoFileName[LAL_IFO_H1], vetoFileName[LAL_IFO_H2]);
+                      vetoFileName[LAL_IFO_H1], vetoFileName[LAL_IFO_H2]);
             else 
               fprintf(stdout, "Using h1-h2-consistency without veto segment list. NOT RECOMMENDED\n");
           }
-	LAL_CALL( LALInspiralDistanceCutCleaning(&status,  &coincInspiralList, 
-		  &accuracyParams, snrCut, &summValueList, &vetoSegs[LAL_IFO_H1], &vetoSegs[LAL_IFO_H2]), &status);
-	if ( vrbflg ) fprintf( stdout, "%d remaining coincident triggers after h1-h2-consisteny .\n", 
-		XLALCountCoincInspiral(coincInspiralList));
+        LAL_CALL( LALInspiralDistanceCutCleaning(&status,  &coincInspiralList, 
+                  &accuracyParams, snrCut, &summValueList, &vetoSegs[LAL_IFO_H1], &vetoSegs[LAL_IFO_H2]), &status);
+        if ( vrbflg ) fprintf( stdout, "%d remaining coincident triggers after h1-h2-consisteny .\n", 
+                XLALCountCoincInspiral(coincInspiralList));
       }
 
-    /* no time-slide */	  
+    /* no time-slide */   
     if ( !slideNum ) {
 
       /* count the coincs */
       if( coincInspiralList )
-	{
-	  for (numCoinc = 0, thisCoinc = coincInspiralList;
-	       thisCoinc; ++numCoinc, thisCoinc = thisCoinc->next )
-	    {
-	      if ( thisCoinc->numIfos == 2 )
-		{
-		  ++numDoubles;
-		}
-	      else if ( thisCoinc->numIfos == 3 )
-		{
-		  ++numTriples;
-		}
-	      else if ( thisCoinc->numIfos == 4 )
-		{
-		  ++numQuadruples;
-		}
-	    }    
-	}
+        {
+          for (numCoinc = 0, thisCoinc = coincInspiralList;
+               thisCoinc; ++numCoinc, thisCoinc = thisCoinc->next )
+            {
+              if ( thisCoinc->numIfos == 2 )
+                {
+                  ++numDoubles;
+                }
+              else if ( thisCoinc->numIfos == 3 )
+                {
+                  ++numTriples;
+                }
+              else if ( thisCoinc->numIfos == 4 )
+                {
+                  ++numQuadruples;
+                }
+            }    
+        }
 
       if ( vrbflg ) 
-	{
-	  fprintf( stdout, "%d coincident triggers found.\n", numCoinc );
-	  fprintf( stdout, "%d double coincident triggers\n"
-		   "%d triple coincident triggers\n"
-		   "%d quadruple coincident triggers\n",
-		   numDoubles, numTriples, numQuadruples );
-	}
+        {
+          fprintf( stdout, "%d coincident triggers found.\n", numCoinc );
+          fprintf( stdout, "%d double coincident triggers\n"
+                   "%d triple coincident triggers\n"
+                   "%d quadruple coincident triggers\n",
+                   numDoubles, numTriples, numQuadruples );
+        }
           
     }          
 
@@ -1979,54 +1979,54 @@ int main( int argc, char *argv[] )
       
       /* count the coincs, scroll to end of list */
       if( slideNum )
-	{  
-	  for (numCoincInSlide = 1, thisCoinc = coincInspiralList; 
-	       thisCoinc->next; ++numCoincInSlide, thisCoinc = thisCoinc->next );
-	  
-	  if ( vrbflg ) fprintf( stdout,
-				 "%d coincident triggers found in slide.\n", numCoincInSlide );
-	  
-	  numCoinc += numCoincInSlide;		
-	}
+        {  
+          for (numCoincInSlide = 1, thisCoinc = coincInspiralList; 
+               thisCoinc->next; ++numCoincInSlide, thisCoinc = thisCoinc->next );
+          
+          if ( vrbflg ) fprintf( stdout,
+                                 "%d coincident triggers found in slide.\n", numCoincInSlide );
+          
+          numCoinc += numCoincInSlide;          
+        }
 
       
       /* for all: write out all coincs as singles with event IDs */
       LAL_CALL( LALExtractSnglInspiralFromCoinc( &status, &slideOutput, 
-	      coincInspiralList, &startCoinc, slideNum), &status );
+              coincInspiralList, &startCoinc, slideNum), &status );
     
       if ( numSlides ) {
         /* the output triggers should be slid back to original time */
         LAL_CALL( LALTimeSlideSingleInspiral( &status, slideOutput,
-	        &startCoinc, &endCoinc, slideReset), &status) ;
+                &startCoinc, &endCoinc, slideReset), &status) ;
         LAL_CALL( LALSortSnglInspiral( &status, &(slideOutput),
-	  	LALCompareSnglInspiralByTime ), &status );
+                LALCompareSnglInspiralByTime ), &status );
       }
       
       while ( coincInspiralList )
       {
-	  thisCoinc = coincInspiralList;
-	  coincInspiralList = coincInspiralList->next;
-	  XLALFreeCoincInspiral( &thisCoinc );
+          thisCoinc = coincInspiralList;
+          coincInspiralList = coincInspiralList->next;
+          XLALFreeCoincInspiral( &thisCoinc );
       }
     }
 
   
     if ( snglOutput )
       {
-	thisInspiralTrigger->next = slideOutput;
+        thisInspiralTrigger->next = slideOutput;
       }
     else
       {
-	snglOutput = slideOutput;
+        snglOutput = slideOutput;
       }
     
     if ( numSlides) {
       /* scroll to the end of the list */
       if ( slideOutput )
-	{
-	  for( thisInspiralTrigger = slideOutput; thisInspiralTrigger->next; 
-	       thisInspiralTrigger = thisInspiralTrigger->next);
-	}
+        {
+          for( thisInspiralTrigger = slideOutput; thisInspiralTrigger->next; 
+               thisInspiralTrigger = thisInspiralTrigger->next);
+        }
     }
  
   }
