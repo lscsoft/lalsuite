@@ -3148,9 +3148,7 @@ XLALReadSummValueFile (
 
   if ( ! inputSummValue || haveSummValue < 1)
   {
-    XLALPrintError("No valid summ_value table in %s, exiting\n",
-        fileName );
-    XLAL_ERROR(func, XLAL_EIO);
+    XLALPrintInfo("No valid summ_value table in %s\n", fileName );
   }
   else
   {
