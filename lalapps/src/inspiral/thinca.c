@@ -276,6 +276,7 @@ int main( int argc, char *argv[] )
   MetadataTable         proctable;
   MetadataTable         processParamsTable;
   MetadataTable         searchsumm;
+  MetadataTable         summValueTable;
   MetadataTable         searchSummvarsTable;
   MetadataTable         inspiralTable;
   ProcessParamsTable   *this_proc_param = NULL;
@@ -1508,8 +1509,9 @@ int main( int argc, char *argv[] )
         exit( 1 );
       }
   
-      /* read the summ value table as well. We do not need to do any sanity check. 
-	 It has been done in the previous call */
+      /* read the summ value table as well. 
+       * We do not need to do any sanity check.
+       * It has been done in the previous call */
       XLALReadSummValueFile(&summValueList, argv[i]);
 	
        
@@ -2123,13 +2125,25 @@ cleanexit:
         search_summary_table ), &status );
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
 
-  /* write the search_summvars tabls */
+  /* write the search_summvars table */
   LAL_CALL( LALBeginLIGOLwXMLTable( &status ,&xmlStream, 
         search_summvars_table), &status );
   searchSummvarsTable.searchSummvarsTable = inputFiles;
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, searchSummvarsTable,
         search_summvars_table), &status );
   LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream), &status );
+
+  
+  /* write the summ_value table */
+  if( summValueList)
+  {
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status ,&xmlStream, 
+          summ_value_table), &status );
+    summValueTable.summValueTable = summValueList;
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, summValueTable,
+          summ_value_table), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream), &status );
+  }
 
   /* write the sngl_inspiral table */
   if( snglOutput )
