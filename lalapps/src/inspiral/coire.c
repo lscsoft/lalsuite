@@ -159,6 +159,7 @@ int main( int argc, char *argv[] )
   SearchSummvarsTable  *thisInputFile = NULL;
   SearchSummaryTable   *searchSummList = NULL;
   SearchSummaryTable   *thisSearchSumm = NULL;
+  SummValueTable       *summValueList = NULL;
 
   SimInspiralTable     *simEventHead = NULL;
   SimInspiralTable     *thisSimEvent = NULL;
@@ -762,6 +763,9 @@ int main( int argc, char *argv[] )
       }
     }
 
+    /* read the summ value table as well. */
+    XLALReadSummValueFile(&summValueList, inFileNameList[j]);
+
     /* Discard triggers from requested ifo */
     if ( ifo )
     {
@@ -1181,6 +1185,16 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, outputTable, 
         search_summary_table ), &status );
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
+
+  /* write summ_value table */
+  if ( vrbflg ) fprintf( stdout, "search_summary... " );
+  outputTable.summValueTable = summValueList;
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, 
+        summ_value_table ), &status );
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, outputTable, 
+        summ_value_table ), &status );
+  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
+
 
   /* Write the found injections to the sim table */
   if ( simEventHead )
