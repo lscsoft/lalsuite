@@ -223,26 +223,32 @@ LALTrackSearchApplyThreshold(
   INT4 i;
   INT4 j;
   INT4 cicn;
-  
+
   INITSTATUS(status,"LALTrackSearchApplyThreshold",TSDATAC);
   ATTATCHSTATUSPTR (status);
+  ASSERT(dataProduct->curves==NULL,status,TS_NON_NULL_POINTER,TS_MSGNON_NULL_POINTER);
   /*Trackstore struct field not copied! */
   UsefulCurves=0; /*Array numbering starts with zero */
   dataProduct->numberOfCurves=0;/*Default value*/
   if (curveinfo->numberOfCurves > 0)
     {
-      dataProduct->curves = LALMalloc(sizeof(dataProduct->curves));
       /* Count up number of useful curves to keep */
       for(i=0;i<curveinfo->numberOfCurves;i++)
 	{
 	  if ((curveinfo->curves[i].n >= params.MinLength) && 
 	      (curveinfo->curves[i].totalPower >= params.MinPower))
 	    {
+	      printf("CurveInfoNum %i ::: dataProdNum %i ::: Len %i Pow  %10.3f\n",
+		     i,
+		     UsefulCurves,
+		     curveinfo->curves[i].n,
+		     curveinfo->curves[i].totalPower);
+
 	      /*UsefulCurve Var is not count but curve index so add 1*/
 	      /* Expand the structure to take in another curve */
-	      dataProduct->curves = (Curve*)LALRealloc(dataProduct->curves,
-						       (sizeof(Curve) * (UsefulCurves+1)));
-	      dataProduct->numberOfCurves = UsefulCurves+1;
+	      UsefulCurves=dataProduct->numberOfCurves;
+	      dataProduct->curves = (Curve*)LALRealloc(dataProduct->curves,(sizeof(Curve) * (UsefulCurves+1)));
+
 	      /*Length of curve to copy*/
 	      cicn=curveinfo->curves[i].n;
 	      dataProduct->curves[UsefulCurves].row=(INT4*)LALMalloc(sizeof(INT4) * cicn);
@@ -264,10 +270,10 @@ LALTrackSearchApplyThreshold(
 		  dataProduct->curves[UsefulCurves].gpsStamp[j].gpsSeconds=
 		    curveinfo->curves[i].gpsStamp[j].gpsSeconds;
 		  dataProduct->curves[UsefulCurves].gpsStamp[j].gpsNanoSeconds=
-				  curveinfo->curves[UsefulCurves].gpsStamp[j].gpsNanoSeconds;
+		    curveinfo->curves[i].gpsStamp[j].gpsNanoSeconds;
 		}
 	      /*Increase index recall count is +1 of index*/
-	      UsefulCurves++;
+	      dataProduct->numberOfCurves++;
 	      /* Move on to check next curve */
 	    }
 	}
