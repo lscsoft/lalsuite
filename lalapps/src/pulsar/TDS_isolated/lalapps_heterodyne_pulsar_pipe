@@ -203,6 +203,14 @@ channel = cp.get('input','channel')
 stddev_thresh = cp.get('input','stddev_thresh')
 freq_factor = cp.get('input', 'freq_factor')
 
+if (channel.find('STRAIN') > -1) | (channel.find('DER_DATA_H') > -1)
+  print >> sys.stderr, """You are looking at calibrated strain data, so read in high-pass frequency and scale factors"""
+  high_pass = cp.get('input', 'high_pass')
+  scale_fac = cp.get('input', 'scale_fac')
+
+  print >> sys.stderr, "Value of high-pass is %s, value of scale factor is %s" % high_pass, scale_fac
+  print >> sys.stderr, "If these don't look sensible then rerun"
+
 # default
 seg_list_file = None
 
@@ -371,6 +379,11 @@ if do_coarse:
       coarse[j].set_seg_list(seg_list_file)
       coarse[j].set_channel(channel)
       
+      # if using calibrated data set high-pass freq and scale factor
+      if (channel.find('STRAIN') > -1 ) | (channel.find('DER_DATA_H' > -1)
+        coarse[j].set_scale_fac(scale_fac)
+	coarse[j].set_high_pass(high_pass)
+      
       coarse[j].set_output_dir(output_dir)
       
       if do_verbose:
@@ -478,7 +491,7 @@ os.path.isfile(sensing_function)):
           fine[j].set_open_loop_gain(open_loop_gain)
           fine[j].set_sensing_function(sensing_function)
         else:
-          print "Could not find any calibration files! Check .ini file."
+          print >> sys.stderr, "Could not find any calibration files! Check .ini file."
           sys.exit(1)
       
       if do_verbose:
