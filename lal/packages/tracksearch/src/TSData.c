@@ -238,12 +238,6 @@ LALTrackSearchApplyThreshold(
 	  if ((curveinfo->curves[i].n >= params.MinLength) && 
 	      (curveinfo->curves[i].totalPower >= params.MinPower))
 	    {
-	      printf("CurveInfoNum %i ::: dataProdNum %i ::: Len %i Pow  %10.3f\n",
-		     i,
-		     UsefulCurves,
-		     curveinfo->curves[i].n,
-		     curveinfo->curves[i].totalPower);
-
 	      /*UsefulCurve Var is not count but curve index so add 1*/
 	      /* Expand the structure to take in another curve */
 	      UsefulCurves=dataProduct->numberOfCurves;
@@ -278,7 +272,8 @@ LALTrackSearchApplyThreshold(
 	    }
 	}
       /*If nothing passes the threshold deallocate the pointer*/
-      if (dataProduct->numberOfCurves == 0)
+      if ((dataProduct->numberOfCurves == 0) && 
+	  (dataProduct->curves != NULL))
 	{
 	  LALFree(dataProduct->curves);
 	  dataProduct->curves=NULL;
