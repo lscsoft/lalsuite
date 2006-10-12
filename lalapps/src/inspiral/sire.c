@@ -1028,6 +1028,13 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
   free( proctable.processTable );
 
+  /* erase the first empty process params entry */
+  {
+    ProcessParamsTable *emptyPPtable = procparams.processParamsTable;
+    procparams.processParamsTable = procparams.processParamsTable->next;
+    free( emptyPPtable );
+  }
+
   /* write the process params table */
   if ( vrbflg ) fprintf( stdout, "process_params... " );
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, 
