@@ -31,6 +31,8 @@
 #include <lal/LALInitBarycenter.h>
 #include <lal/SkyCoordinates.h> 
 
+#include <lal/BandPassTimeSeries.h>
+
 /* frame headers */
 #include <FrIO.h>
 #include <FrameL.h>
@@ -69,12 +71,14 @@ extern "C" {
 " --stddev-thresh     standard deviation threshold veto for outliers\n"\
 " --freq-factor       factor which mulitplies the pulsar spin frequency\n\
                      (default 2.0 i.e. a signal from a triaxial pulsar)\n"\
+" --scale-factor      factor to scale the calibrated h(t) data by\n"\
+" --high-pass-freq    high-pass frequency for calibrated h(t) data\n"\
 "\n"
 
-#define MAXLENGTH 10000000 /* max number of lines in heterodyned data file */
+#define MAXLENGTH 5000000 /* max number of lines in heterodyned data file */
 #define MAXDATALENGTH 1000 /* maximum length of data to be read from frames */
 #define MAXSTRLENGTH 100 /* maximum number of characters in a frame filename */
-#define MAXNUMFRAMES 50000 /* maximum number of frame files in input data file */
+#define MAXNUMFRAMES 5000 /* maximum number of frame files in input data file */
 #define MAXLISTLENGTH 20000 /* maximum length of a list of frames files */
 #define MAXCALIBLENGTH 100000 /* maximum length of a calibration file */
 
@@ -124,6 +128,9 @@ typedef struct tagInputParams{
   CalibrationFiles calibfiles;
   
   REAL8 stddevthresh;
+
+  REAL8 scaleFac;
+  REAL8 highPass;
   
   INT4 verbose;
 }InputParams;
@@ -170,7 +177,7 @@ void get_frame_times(CHAR *framefile, REAL8 *gpstime, INT4 *duration);
 
 /* reads in a time series from frames */
 REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 time, REAL8 length, INT4
-duration);
+duration, REAL8 scalefac, REAL8 highpass);
 
 /* read in science segment list file - returns the number of segments */
 INT4 get_segment_list(INT4Vector *starts, INT4Vector *stops, CHAR *seglistfile);

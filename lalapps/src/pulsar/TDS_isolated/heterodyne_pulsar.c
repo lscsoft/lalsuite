@@ -14,7 +14,7 @@ are required) i.e. it will take the difference of the original heterodyne phase 
 and reheterodyne with this phase difference. This code does not perform any calibration of the data.
 */
 
-#include "heterodyne_pulsar.h"
+#include "heterodyne_pulsar_modified.h"
 
 /* define a macro to round a number without having to use the C round function */
 #define ROUND(a) (ceil(a)-a > 0.5 ? floor(a) : ceil(a))
@@ -193,7 +193,8 @@ hetParams.hetUpdate.f1, hetParams.hetUpdate.pepoch);
 
       /* read in frame data */
       if((datareal = get_frame_data(smalllist, channel, gpstime,
-        inputParams.samplerate * duration, duration)) == NULL){
+        inputParams.samplerate * duration, duration, inputParams.scaleFac, 
+        inputParams.highPass))== NULL){
         fprintf(stderr, "Error... could not open frame files between %d and %d.\n", (INT4)gpstime,
         (INT4)gpstime + duration);
 
@@ -233,12 +234,17 @@ hetParams.hetUpdate.f1, hetParams.hetUpdate.pepoch);
 
       while(fscanf(fpin, "%lf%lf%lf",&times->data[i],&data->data->data[i].re,
             &data->data->data[i].im) != EOF){
+        if(inputParams.scaleFac > 1.0){
+          data->data->data[i].re *= inputParams.scaleFac;
+          data->data->data[i].im *= inputParams.scaleFac;
+        }
+            
         if(i==0)
           hetParams.timestamp = times->data[i]; /* set initial time stamp */
 
         i++;
       }
-
+      
       fclose(fpin);
 
       /* resize vector to actual size */
@@ -256,7 +262,7 @@ hetParams.hetUpdate.f1, hetParams.hetUpdate.pepoch);
     data->deltaT = 1./inputParams.samplerate;
     data->epoch.gpsSeconds = (UINT4)floor(hetParams.timestamp);
     data->epoch.gpsNanoSeconds = (UINT4)(1.e9*(hetParams.timestamp - floor(hetParams.timestamp)));
-
+    
     /* heterodyne data */
     heterodyne_data(data, times, hetParams, inputParams.freqfactor);
     if(inputParams.verbose){  fprintf(stderr, "I've heterodyned the data.\n");  }
@@ -316,8 +322,16 @@ inputParams.samplerate, inputParams.resamplerate);  }
     }
 
     for(i=0;i<resampData->data->length;i++){
-      fprintf(fpout, "%lf\t%le\t%le\n", times->data[i], resampData->data->data[i].re,
-      resampData->data->data[i].im);
+      /* if data has been scaled then undo scaling for output */
+      if(inputParams.scaleFac > 1.0){
+        fprintf(fpout, "%lf\t%le\t%le\n", times->data[i],
+resampData->data->data[i].re/inputParams.scaleFac,
+resampData->data->data[i].im/inputParams.scaleFac);
+      }
+      else{
+        fprintf(fpout, "%lf\t%le\t%le\n", times->data[i], resampData->data->data[i].re,
+resampData->data->data[i].im);
+      }
     }
     if(inputParams.verbose){  fprintf(stderr, "I've output the data.\n"); }
 
@@ -333,15 +347,17 @@ inputParams.samplerate, inputParams.resamplerate);  }
   XLALDestroyINT4Vector(stops);
   XLALDestroyINT4Vector(starts);
   
-  LALDestroyREAL8IIRFilter( &status, &iirFilters.filter1Re );
-  LALDestroyREAL8IIRFilter( &status, &iirFilters.filter1Im ); 
-  LALDestroyREAL8IIRFilter( &status, &iirFilters.filter2Re );
-  LALDestroyREAL8IIRFilter( &status, &iirFilters.filter2Im );   
-  LALDestroyREAL8IIRFilter( &status, &iirFilters.filter3Re );
-  LALDestroyREAL8IIRFilter( &status, &iirFilters.filter3Im );
+  if(inputParams.filterknee > 0.){
+    LALDestroyREAL8IIRFilter( &status, &iirFilters.filter1Re );
+    LALDestroyREAL8IIRFilter( &status, &iirFilters.filter1Im ); 
+    LALDestroyREAL8IIRFilter( &status, &iirFilters.filter2Re );
+    LALDestroyREAL8IIRFilter( &status, &iirFilters.filter2Im );   
+    LALDestroyREAL8IIRFilter( &status, &iirFilters.filter3Re );
+    LALDestroyREAL8IIRFilter( &status, &iirFilters.filter3Im );
   
-  if(inputParams.verbose){  fprintf(stderr, "I've destroyed all filters.\n"); }
-  
+    if(inputParams.verbose){  fprintf(stderr, "I've destroyed all filters.\n"); }
+  }
+    
   return 0;
 }
 
@@ -371,11 +387,13 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
     { "open-loop-gain",           required_argument,  0, 'O' },
     { "stddev-thresh",            required_argument,  0, 'T' },
     { "freq-factor",              required_argument,  0, 'm' },
+    { "scale-factor",             required_argument,  0, 'G' },
+    { "high-pass-freq",           required_argument,  0, 'H' },
     { "verbose",                  no_argument, &inputParams->verbose, 1 },
     { 0, 0, 0, 0 }
   };
   
-  char args[] = "hi:p:z:f:g:k:s:r:d:c:o:e:S:l:R:C:F:O:T:m:";
+  char args[] = "hi:p:z:f:g:k:s:r:d:c:o:e:S:l:R:C:F:O:T:m:G:H:";
   char *program = argv[0];
   
   /* set defaults */
@@ -391,6 +409,9 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
   inputParams->calibfiles.responsefunctionfile = NULL;
   
   inputParams->freqfactor = 2.0; /* default is to look for gws at twice the pulsar spin frequency */
+  
+  inputParams->scaleFac = 1.0; /* default scaling for calibrated GEO data */
+  inputParams->highPass = 0.; /* default to not high-pass GEO data */
   
   /* get input arguments */
   while(1){
@@ -533,6 +554,12 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
             inputParams->freqfactor = atof(optarg);
         }
         break;
+      case 'G':
+        inputParams->scaleFac = atof(optarg);
+        break;
+      case 'H':
+        inputParams->highPass = atof(optarg);
+        break;
       case '?':
         fprintf(stderr, "unknown error while parsing options\n" );
       default:
@@ -542,7 +569,7 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
 
   /* set more defaults */
   /*if the sample rate or resample rate hasn't been defined give error */
-  if(inputParams->samplerate==0 || inputParams->resamplerate==0){
+  if(inputParams->samplerate==0. || inputParams->resamplerate==0.){
     fprintf(stderr, "Error... sample rate and/or resample rate has not been defined.\n");
     exit(0);
   }
@@ -551,12 +578,13 @@ error */
     fprintf(stderr, "Error... sample rate is less than the resample rate.\n");
     exit(0);
   }
-
+  
+  /* FIXME: This check (fmod) doesn't work if any optimisation flags are set when compiling!! */
   /* check that sample rate / resample rate is an integer */
-  if(fmod(inputParams->samplerate/inputParams->resamplerate, 1.) != 0.){
+  /*if(fmod(inputParams->samplerate/inputParams->resamplerate, 1.) > 0.){
     fprintf(stderr, "Error... invalid sample rates.\n");
     exit(0);
-  }
+  }*/
   
   if(inputParams->freqfactor < 0.){
     fprintf(stderr, "Error... frequency factor must be greater than zero.\n");
@@ -724,7 +752,7 @@ void get_frame_times(CHAR *framefile, REAL8 *gpstime, INT4 *duration){
 
 /* function to read in frame data given a framefile and data channel */
 REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 time, REAL8 length, INT4
-duration){
+duration, REAL8 scalefac, REAL8 highpass){
   REAL8TimeSeries *dblseries;
 
   FrFile *frfile=NULL;
@@ -744,6 +772,9 @@ duration){
   epoch.gpsSeconds = (UINT4)floor(time);
   epoch.gpsNanoSeconds = (UINT4)(1.e9*(time-floor(time)));
   dblseries->epoch = epoch;
+  
+  /* assume frames always sampled at 16384 Hz */
+  dblseries->deltaT = 1./16384.;
   
   strncpy( dblseries->name, channel, sizeof( dblseries->name ) - 1 );
 
@@ -765,11 +796,27 @@ an enviromental channel */
   else if(strstr(channel, "STRAIN") != NULL || strstr(channel, "DER_DATA") != NULL){ /* data is
 calibrated h(t) */
     for(i=0;i<(INT4)length;i++){
-      dblseries->data->data[i] = frvect->dataD[i];
+      dblseries->data->data[i] = scalefac*frvect->dataD[i];
+    }
+    
+    /* if a high-pass filter is specified (>0) then filter data */
+    if(highpass > 0.){
+      PassBandParamStruc highpasspar;
+      
+      /* uses 8th order Butterworth, with 10% attenuation */     
+      highpasspar.nMax = 8;
+      highpasspar.f1   = -1;
+      highpasspar.a1   = -1;
+      highpasspar.f2   = highpass;
+      highpasspar.a2   = 0.9; /* this means 10% attenuation at f2 */
+      
+      /* FIXME: I want to pad the data with ~1 minute it's not 
+       * affected by the filter response */
+      XLALButterworthREAL8TimeSeries( dblseries, &highpasspar );
     }
   }
   else{ /* channel name is not recognised */
-    fprintf(stderr, "Channel name %s is not recognised as a proper channel.\n", channel);
+    fprintf(stderr, "Error... Channel name %s is not recognised as a proper channel.\n", channel);
     exit(0); /* abort code */
   }
 
@@ -932,7 +979,7 @@ starts up it will redo sections of the heterodyne, leading to an overlap in the 
 that there can be times when there is doubling up of data, and the time appears to step backwards.
 These doubled up sections should be removed by the checks in this function, with this if statement
 checking for times when the time steps backwards */
-      for(k=0;k<duration*(INT4)sampleRate-1;k++){
+      for(k=0;k<(INT4)(duration*sampleRate)-1;k++){
         /* check for repeated data or break in the data */
         if((times->data[j+k+1] < times->data[j+k]) || (times->data[j+k+1] - times->data[j+k] >
 1./sampleRate)){
@@ -958,14 +1005,14 @@ checking for times when the time steps backwards */
       }
 
       if(duration < size){
-        j += duration*(INT4)sampleRate;
+        j += (INT4)(duration*sampleRate);
         continue; /* if segment is smaller than the number of samples needed then skip to next */
       }
 
-      remainder = (duration*(INT4)sampleRate)%size;
+      remainder = (INT4)(duration*sampleRate)%size;
 
       prevdur = j;
-      for(j=prevdur+floor(remainder/2);j<prevdur + (duration*(INT4)sampleRate)
+      for(j=prevdur+floor(remainder/2);j<prevdur + (INT4)(duration*sampleRate)
           -ceil(remainder/2) - 1;j+=size){
         tempData.re = 0.;
         tempData.im = 0.;
@@ -978,7 +1025,7 @@ checking for times when the time steps backwards */
         series->data->data[count].re = tempData.re/(REAL8)size;
         series->data->data[count].im = tempData.im/(REAL8)size;
 
-        times->data[count] = times->data[j+size/2-1] - (1./sampleRate)/2.;
+        times->data[count] = times->data[j+size/2] - (1./sampleRate)/2.;
         count++;
       }
     }
