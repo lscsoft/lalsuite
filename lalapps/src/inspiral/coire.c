@@ -1187,14 +1187,16 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
 
   /* write summ_value table */
-  if ( vrbflg ) fprintf( stdout, "search_summary... " );
-  outputTable.summValueTable = summValueList;
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, 
-        summ_value_table ), &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, outputTable, 
-        summ_value_table ), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
-
+  if ( summValueList )
+  {
+    if ( vrbflg ) fprintf( stdout, "search_summary... " );
+    outputTable.summValueTable = summValueList;
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, 
+          summ_value_table ), &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, outputTable, 
+          summ_value_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
+  }
 
   /* Write the found injections to the sim table */
   if ( simEventHead )
@@ -1389,6 +1391,14 @@ int main( int argc, char *argv[] )
     procparams.processParamsTable = this_proc_param->next;
     free( this_proc_param );
   }
+
+  while ( summValueList )
+  {
+    SummValueTable *thisSummValue;
+    thisSummValue = summValueList;
+    summValueList = summValueList->next;
+    LALFree( thisSummValue );
+  } 
 
   /* free the found injections */
   while ( simEventHead )
