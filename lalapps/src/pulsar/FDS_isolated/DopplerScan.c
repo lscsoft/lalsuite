@@ -109,8 +109,8 @@ static const PulsarTimesParamStruc empty_PulsarTimesParamStruc;
 const DopplerSkyGrid empty_DopplerSkyGrid;
 const DopplerScanState empty_DopplerScanState;
 const DopplerScanInit empty_DopplerScanInit;
-const DopplerPosition empty_DopplerPosition;
 const DopplerRegion empty_DopplerRegion;
+const PulsarDopplerParams empty_PulsarDopplerParams;
 
 /*---------- Global variables ----------*/
 extern INT4 lalDebugLevel;
@@ -118,7 +118,6 @@ extern INT4 lalDebugLevel;
 /*---------- internal prototypes ----------*/
 void getRange( LALStatus *, meshREAL y[2], meshREAL x, void *params );
 void getMetric( LALStatus *, meshREAL g[3], meshREAL skypos[2], void *params );
-void LALTemplateDistance (LALStatus *, REAL8 *dist, const DopplerPosition *pos1, const DopplerPosition *pos2);
 REAL8 getDopplermax(EphemerisData *edat);
 
 void ConvertTwoDMesh2Grid ( LALStatus *, DopplerSkyGrid **grid, const meshNODE *mesh2d, const SkyRegion *region );
@@ -249,8 +248,8 @@ InitDopplerScan( LALStatus *status,
    * are sufficiently independent of the phase-parameters
    * ----------*/
   {
-    DopplerPosition gridpoint = empty_DopplerPosition;
-    DopplerPosition gridSpacings = empty_DopplerPosition;
+    PulsarDopplerParams gridpoint = empty_PulsarDopplerParams;
+    PulsarDopplerParams gridSpacings = empty_PulsarDopplerParams;
 
     gridpoint.Alpha = scan->grid->Alpha;
     gridpoint.Delta = scan->grid->Delta;
@@ -343,7 +342,7 @@ freeGrid (DopplerSkyGrid *grid)
  *----------------------------------------------------------------------*/
 /* <lalVerbatim file="DopplerScanCP"> */
 void
-NextDopplerPos( LALStatus *status, DopplerPosition *pos, DopplerScanState *scan)
+NextDopplerPos( LALStatus *status, PulsarDopplerParams *pos, DopplerScanState *scan)
 { /* </lalVerbatim> */
 
   INITSTATUS( status, "NextDopplerPos", DOPPLERSCANC);
@@ -1457,8 +1456,8 @@ SkySquare2String (LALStatus *status,
  */
 void
 getGridSpacings( LALStatus *status, 
-		 DopplerPosition *spacings,		/**< OUT: grid-spacings in gridpoint */
-		 DopplerPosition gridpoint,		/**< IN: gridpoint to get spacings for*/
+		 PulsarDopplerParams *spacings,		/**< OUT: grid-spacings in gridpoint */
+		 PulsarDopplerParams gridpoint,		/**< IN: gridpoint to get spacings for*/
 		 const DopplerScanInit *params)		/**< IN: Doppler-scan parameters */
 {
   REAL8Vector *metric = NULL;
@@ -1580,11 +1579,11 @@ getGridSpacings( LALStatus *status,
 void
 getMCDopplerCube (LALStatus *status, 
 		  DopplerRegion *cube, 		/**< OUT: 'cube' around signal-position */
-		  DopplerPosition signal, 	/**< signal-position: approximate cube-center */
+		  PulsarDopplerParams signal, 	/**< signal-position: approximate cube-center */
 		  UINT4 PointsPerDim,		/**< desired number of grid-points per dim. */
 		  const DopplerScanInit *params)/**< search+metric parameters */
 {
-  DopplerPosition spacings = empty_DopplerPosition;
+  PulsarDopplerParams spacings = empty_PulsarDopplerParams;
   REAL8 Alpha, Delta, Freq, f1dot;
   REAL8 dAlpha, dDelta, dFreq, df1dot;
   REAL8 AlphaBand, DeltaBand, FreqBand, f1dotBand;

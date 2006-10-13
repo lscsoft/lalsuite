@@ -286,17 +286,17 @@ extern "C" {
   void initUserVars (LALStatus *);
   INT4 ReadSFTData (void);
   void InitFStat (LALStatus *, ConfigVariables *cfg);
-  void CreateDemodParams (LALStatus *, DopplerPosition dopplerpos);
+  void CreateDemodParams (LALStatus *, PulsarDopplerParams dopplerpos);
   void CreateNautilusDetector (LALStatus *, LALDetector *Detector);
   void Freemem (LALStatus *);
   void EstimateFLines(LALStatus *);
   void NormaliseSFTDataRngMdn (LALStatus *, INT4 windowSize);
   INT4 EstimateSignalParameters(INT4 * maxIndex);
-  int writeFLines(INT4 *maxIndex, DopplerPosition searchpos, FILE *fpOut);
-  int writeFLinesCS(INT4 *maxIndex, DopplerPosition searchpos, FILE *fpOut, long*bytecount, UINT4*checksum);
-  INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN, DopplerPosition searchpos);
+  int writeFLines(INT4 *maxIndex, PulsarDopplerParams searchpos, FILE *fpOut);
+  int writeFLinesCS(INT4 *maxIndex, PulsarDopplerParams searchpos, FILE *fpOut, long*bytecount, UINT4*checksum);
+  INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN, PulsarDopplerParams searchpos);
   int compare(const void *ip, const void *jp);
-  INT4 writeFaFb(INT4 *maxIndex, DopplerPosition searchpos);
+  INT4 writeFaFb(INT4 *maxIndex, PulsarDopplerParams searchpos);
   void checkUserInputConsistency (LALStatus *);
 
   void InitSearchGrid ( LALStatus *, DopplerScanState *scan, ConfigVariables *cfg);
@@ -418,7 +418,7 @@ int main(int argc,char *argv[])
   INT4 *maxIndex=NULL;           /* array that contains indexes of maximum of each cluster */
   INT4 spdwn;                    /* counter over spindown-params */
   DopplerScanState thisScan = empty_DopplerScanState; /* current state of the Doppler-scan */
-  DopplerPosition dopplerpos;    /* current search-parameters */
+  PulsarDopplerParams dopplerpos;    /* current search-parameters */
   SkyPosition thisPoint;
   UINT4 loopcounter;             /* Checkpoint-counters for restarting checkpointed search */
   long fstat_bytecounter;
@@ -910,7 +910,7 @@ int main(int argc,char *argv[])
       
       LAL_CALL (NextDopplerPos( status, &dopplerpos, &thisScan ), status);
       
-      /* Have we scanned all DopplerPositions yet? */
+      /* Have we scanned all PulsarDopplerParamss yet? */
       if (thisScan.state == STATE_FINISHED)
 	{
 	  LogPrintfVerbatim(LOG_DETAIL, "\n");
@@ -1537,7 +1537,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
 
 /* Write the Fa and Fb for the later use of Fstatistic Shape test */
 /* the explicit format specifier like %22.12f looks ugly. */
-int writeFaFb(INT4 *maxIndex, DopplerPosition searchpos)
+int writeFaFb(INT4 *maxIndex, PulsarDopplerParams searchpos)
 {
   INT4 irec,jrec;
   INT4 index,krec=0;
@@ -1655,7 +1655,7 @@ int writeFaFb(INT4 *maxIndex, DopplerPosition searchpos)
 
 /*******************************************************************************/
 
-void CreateDemodParams (LALStatus *status, DopplerPosition searchpos)
+void CreateDemodParams (LALStatus *status, PulsarDopplerParams searchpos)
 {
   CSParams *csParams  = NULL;        /* ComputeSky parameters */
   AMCoeffsParams *amParams;
@@ -1756,7 +1756,7 @@ void CreateDemodParams (LALStatus *status, DopplerPosition searchpos)
 /*  precisely it writes: */
 /*  fr_max alpha delta N_points_of_cluster mean std max (of 2F) */
 int 
-writeFLines(INT4 *maxIndex, DopplerPosition searchpos, FILE *fpOut)
+writeFLines(INT4 *maxIndex, PulsarDopplerParams searchpos, FILE *fpOut)
 {
   INT4 i,j,j1,j2,k,N;
   REAL8 max,log2val,mean,var,std,R;
@@ -1815,7 +1815,7 @@ writeFLines(INT4 *maxIndex, DopplerPosition searchpos, FILE *fpOut)
 
 /* checksumming version of WriteFLines for checkpointing the clustered output */
 int 
-writeFLinesCS(INT4 *maxIndex, DopplerPosition searchpos, FILE *fpOut, long*bytecount, UINT4*checksum)
+writeFLinesCS(INT4 *maxIndex, PulsarDopplerParams searchpos, FILE *fpOut, long*bytecount, UINT4*checksum)
 {
   INT4 i,j,j1,j2,k,N;
   REAL8 max,log2val,mean,var,std,R;
@@ -2947,7 +2947,7 @@ int compare(const void *ip, const void *jp)
  * Basic strategy: sort the array by values of F, then look at the 
  * top ones. Then search for the points above threshold. 
  */
-INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN, DopplerPosition searchpos)
+INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN, PulsarDopplerParams searchpos)
 {
 
   INT4 *indexes,i,j,iF,N;

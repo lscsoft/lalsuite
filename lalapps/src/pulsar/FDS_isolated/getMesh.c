@@ -616,7 +616,7 @@ getSearchRegion (LALStatus *status,
   if ( LALUserVarWasSet(&uvar_searchNeighbors) ) 
     {
       DopplerRegion cube = empty_DopplerRegion;
-      DopplerPosition signal = empty_DopplerPosition;
+      PulsarDopplerParams signal = empty_PulsarDopplerParams;
       
       signal.Alpha = uvar_Alpha;
       signal.Delta = uvar_Delta;

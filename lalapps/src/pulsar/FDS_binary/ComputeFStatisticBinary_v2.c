@@ -15,6 +15,8 @@
 #include <lal/UserInput.h>
 #include <lal/LALDemod.h>
 #include <lal/RngMedBias.h>
+#include <lal/PulsarDataTypes.h>
+
 #include <lalapps.h>
 
 
@@ -205,7 +207,7 @@ extern int vrbflg;
 int main(int argc,char *argv[]) 
 {
   INT4 *maxIndex=NULL; /*  array that contains indexes of maximum of each cluster */
-  DopplerPosition dopplerpos;
+  PulsarDopplerParams dopplerpos;
   SkyPosition thisPoint; 
   CHAR Fstatsfilename[256];         /* Fstats file name*/
   CHAR Fmaxfilename[256];           /* Fmax file name*/

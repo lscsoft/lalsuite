@@ -218,7 +218,7 @@ int main(int argc,char *argv[])
 
   DopplerScanInit scanInit;		/* init-structure for DopperScanner */
   DopplerScanState thisScan = empty_DopplerScanState; /* current state of the Doppler-scan */
-  DopplerPosition dopplerpos;		/* current search-parameters */
+  PulsarDopplerParams dopplerpos;		/* current search-parameters */
   SkyPosition skypos;
   FILE *fpFstat = NULL;
   FILE *fpBstat = NULL;

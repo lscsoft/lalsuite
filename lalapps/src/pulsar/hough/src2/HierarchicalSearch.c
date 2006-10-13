@@ -273,7 +273,7 @@ int main( int argc, char *argv[]) {
   DopplerScanInit scanInit1, scanInit2;   /* init-structure for DopperScanner */
   DopplerScanState thisScan1 = empty_DopplerScanState; /* current state of the Doppler-scan */
   DopplerScanState thisScan2 = empty_DopplerScanState; /* current state of the Doppler-scan */
-  DopplerPosition dopplerpos1, dopplerpos2;	       /* current search-parameters */
+  PulsarDopplerParams dopplerpos1, dopplerpos2;	       /* current search-parameters */
   PulsarDopplerParams thisPoint1, thisPoint2; 
 
   /* various spinrange vectors */

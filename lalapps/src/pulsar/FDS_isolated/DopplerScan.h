@@ -96,13 +96,6 @@ typedef enum
   GRID_LAST
 } DopplerGridType;
 
-/** structure holding one point in (phase-) parameter-space */
-typedef struct {
-  REAL8 Alpha;			/**< longitude in Radians */
-  REAL8 Delta;			/**< latitude in Radians  */
-  PulsarSpins fkdot;		/**< frequency and (max 3) spindowns */
-} DopplerPosition;
-
 /** Structure describing a region in paramter-space (a,d,f,f1dot,..). 
  *  Currently this is simply a direct product of skyRegion x FreqBand x f1dotBand.
  */
@@ -166,13 +159,13 @@ typedef struct {
 extern const DopplerSkyGrid empty_DopplerSkyGrid;
 extern const DopplerScanState empty_DopplerScanState;
 extern const DopplerScanInit empty_DopplerScanInit;
-extern const DopplerPosition empty_DopplerPosition;
+extern const PulsarDopplerParams empty_PulsarDopplerParams;
 extern const DopplerRegion empty_DopplerRegion;
 
 /*---------- external prototypes [API] ----------*/
 
 void InitDopplerScan(LALStatus *, DopplerScanState *scan, const DopplerScanInit *init);
-void NextDopplerPos(LALStatus *, DopplerPosition *pos, DopplerScanState *scan);
+void NextDopplerPos(LALStatus *, PulsarDopplerParams *pos, DopplerScanState *scan);
 void FreeDopplerScan(LALStatus *, DopplerScanState *scan);
 
 void writeSkyGridFile(LALStatus *, const DopplerSkyGrid *grid, const CHAR *fname, 
@@ -181,9 +174,9 @@ void ParseSkyRegionString (LALStatus *, SkyRegion *region, const CHAR *input);
 void SkySquare2String (LALStatus *, CHAR **string, REAL8 Alpha, REAL8 Delta, 
 		       REAL8 AlphaBand, REAL8 DeltaBand);
 
-void getGridSpacings(LALStatus *, DopplerPosition *spacings, DopplerPosition gridpoint, 
+void getGridSpacings(LALStatus *, PulsarDopplerParams *spacings, PulsarDopplerParams gridpoint, 
 		     const DopplerScanInit *params);
-void getMCDopplerCube (LALStatus *, DopplerRegion *cube, DopplerPosition signal, UINT4 PointsPerDim, 
+void getMCDopplerCube (LALStatus *, DopplerRegion *cube, PulsarDopplerParams signal, UINT4 PointsPerDim, 
 		       const DopplerScanInit *params);
 
 void getMetricEllipse(LALStatus *, 
