@@ -21,7 +21,7 @@ parser = OptionParser()
 
 parser.add_option("-f","--file",dest="filename",
                   default="",
-                  help="This specifies the list of curve files to process contained in FILE, either rethresholding, globbing.  If the input is a directory then it is assumed that we will be working on all the seen files.  /PATH/*.ext is allowed.",
+                  help="This specifies the list of curve files to process contained in FILE, either rethresholding, globbing.  If the input is a directory then it is assumed that we will be working on all the seen files.  /PATH/*.ext is allowed.  Only one of the other following options should be specified at run-time.  Combining the following options will yield unpredictable results!",
                   metavar="FILE"
                   )
 parser.add_option("-g","--glob",dest="glob",
@@ -41,6 +41,20 @@ parser.add_option("-t","--threshold",dest="thresholdString",
                   default="",
                   help="This is the the thresholding options that can be done to an already complete candidate list.  We can reprocess the list via the following syntax, 1.0,>,and,=,7  so this would be written like -t 1.0,>,and,=,7 which would logically translated to: The power for the curve should be greater than 1.0 and the length of the curve should equal 7 to pass our threshold.  Please read the comments in this python script for a better explaination."
                   )
+parser.add_option("-T","--expression_threshold",dest="expThreshold",
+                  default="",
+                  help="This is a more flexible thresholding interface.  We are allowed to manipulate variables to build expressions. Variables allowed are:\n P ,power \n L ,pixel length \n T , time duration in seconds \n F , frequency bandwith of kurve \n  See the help for the candidateList class for better explaination of the valid syntax allowed. ENCLOSE THE EXPRESSION IN DOUBLE QUOTES!",
+                  )
+parser.add_option("-s","--write_summary",dest="dumpSummaryDisk",
+                  default=False,
+                  action="store_true",
+                  help="This will write the summary information for the candidate file(s) opened. The filename scheme replaces candidate with summary."
+                  )
+parser.add_option("-d","--display_summary",dest="dumpSummaryScreen",
+                  default=False,
+                  action="store_true",
+                  help="This will display the summary information for the candidate file(s) opened."
+                  )
 parser.add_option("-p","--print",dest="print2file",
                   default=False,
                   action="store_true",
@@ -51,14 +65,21 @@ filename=str(options.filename)
 glob=options.glob
 clobberFilename=str(options.clobberFilename)
 threshold=str(options.thresholdString)
+expThreshold=str(options.expThreshold)
 printFile=options.print2file
 outfile=str(options.outfile)
+dumpSummaryScreen=bool(options.dumpSummaryScreen)
+dumpSummaryDisk=bool(options.dumpSummaryDisk)
+
+if filename == "":
+    print "Filename argument either not specified or invalid!"
+    os.abort()
 
 #Load the file/dir/single file specified by --file option
 canList=[]
 canList=generateFileList(filename)
 
-#What are we doing with it?
+#SECTION TO DO THE GLOBBING OF MANY CANDIDATE FILES
 if (glob and (canList.__len__() >= 1)):
     canObjects=[]
     for entry in canList:
@@ -74,6 +95,8 @@ if (glob and (canList.__len__() >= 1)):
         newCandidateObject.writefile(outfile)
     else:
         newCandidateObject.writefile(newCandidateObject.__filemaskGlob__())
+
+    #SECTION TO DO THE CLOBBERING OF A CANDIDATE FILE WITH ANOTHER
 elif (clobberFilename != '') and (canList.__len__() == 1):
     #Create clobberer
     #Load file(s) to clobber with
@@ -98,6 +121,8 @@ elif (clobberFilename != '') and (canList.__len__() == 1):
         newClobberedList.writefile(outfile)
     else:
         newClobberedList.writefile(clobberVictim.__filemaskClob__(newCandidateClobberObject))
+
+    #SECTION TO APPLY THRESHOLD DO NOT USE THIS ANYMORE
 elif ((threshold != "") and (canList.__len__() >= 1)):
     #Apply specified thresholds to --file argument!
     args=str(threshold).split(',')
@@ -112,9 +137,42 @@ elif ((threshold != "") and (canList.__len__() >= 1)):
         pathName=os.path.basename(outfile)
     saveFiles=pathName+'Threshold:'+str(threshold)+':'+candidateObject.filename[0]
     candidateObject.writefile(saveFiles)
+
+    #SECTION 4 PRINTING
 elif ((canList.__len__() >= 1) and (printFile)):
     #Iterate of files creating plotable graphic for each!
     print "Printing not ready yet!!"
+
+    #SECTION APPLY ABITRARY THRESHOLDS
+elif ((expThreshold != "") and (canList.__len__() >=1)):
+    #Carry out thresholding
+    for entry in canList:
+        candidateObject=candidateList()
+        candidateObject.loadfile(entry)
+        candidateResults=candidateObject.applyArbitraryThresholds(expThreshold)
+    pathName=''
+    if (outfile != "") and (canList.__len__() == 1):
+        candidateResults.writefile(outfile)
+    else:
+        pathName=os.path.dirname(candidateResults.filename[0])
+        saveFiles=pathName+'/Threshold:'+str(expThreshold)+':'+os.path.basename(candidateObject.filename[0])
+        print "Writing file :",saveFiles
+        candidateResults.writefile(saveFiles)        
+
+    #SECTION TO DUMP SUMMARY TO DISK OR SCREEN
+elif ((canList.__len__() >=1) and dumpSummaryDisk):
+    for entry in canList:
+        candidateObject=candidateList()
+        candidateObject.loadfile(entry)
+        candidateObject.writeSummary()
+
+elif ((canList.__len__() >=1) and dumpSummaryScreen):
+    for entry in canList:
+        candidateObject=candidateList()
+        candidateObject.loadfile(entry)
+        candidateObject.printSummary()
+
+    #THIS SECTION SHOULD NEVER HAPPEN
 else:
     print "Error with combination of arguments given!"
     os.abort()

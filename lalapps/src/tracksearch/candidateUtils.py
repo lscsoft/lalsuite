@@ -67,13 +67,13 @@ class kurve:
             result=self.element[0][2].display()
         else:
             print "Object appears to be empty!"
-            result=gpsInt(0,0)
+            result=''
         return result
     #End method print StartGPS
 
     def startGPS(self):
         """
-        This method will return the start GPS time as a text string
+        This method will return the start GPS time as gpsInt
         """
         if self.element.__len__() > 0:
             result=self.element[0][2]
@@ -92,13 +92,13 @@ class kurve:
             result=self.element[curveSize-1][2].display()
         else:
             print "Object appears to be empty!"
-            result=gpsInt(0,0)
+            result=''
         return result
     #End method print StopGPS
 
     def stopGPS(self):
         """
-        This method will return the start GPS time as a text string
+        This method will return the stop GPS time as gpsInt
         """
         curveSize=self.element.__len__()
         if curveSize > 0:
@@ -135,6 +135,27 @@ class kurve:
         return result
     #End method printStopFreq
         
+    def getCandidateBandwidth(self):
+        """
+        This methods figures out the curves maximun bandwidth and returns
+        it in units of Hz.
+        """
+        bandWidth=self.printStopFreq() - self.printStartFreq()
+        #Remember bandwidth above is middle bin to middle bin must and .5 and .5 bin edges!
+        answer=abs(bandWidth)
+        return answer
+    #End method getCandidateBandwidth
+
+    def getCandidateDuration(self):
+        """
+        This method figures out the curves duration in seconds and returns that
+        information instead of a raw pixel length.
+        """
+        gpsDuration=self.stopGPS().__sub__(self.startGPS())
+        #Remember the above duration is from middle of pixel to pixel must add .5 + .5 pixels tail head
+        return gpsDuration.getAsFloat()
+    #End method getCandidateDuration
+
     def getCoordTriple(self,n):
         """
         This method will get the GPStime,Freq and Power of a pixel with
@@ -204,8 +225,21 @@ class gpsInt:
     def __makeInt__(self):
         secPartIn=str(self.gpsSeconds)
         nanoPartIn=str(str(self.gpsNanoSeconds).rjust(9)).replace(' ','0')
-        intIn=int(secPartIn+nanoPartIn)
-  #        print "As Ints: ",secPartIn,nanoPartIn,intIn
+        try:
+            intIn=int(secPartIn+nanoPartIn)
+        except ValueError:
+            print "Error with gpsInt structure. Inconsistent values in fields!"
+            print "Seconds :",self.gpsSeconds," NanoSeconds :",self.gpsNanoSeconds
+            if (self.gpsNanoSeconds < 0) and (self.gpsSeconds >= 0):
+                print "Assuming - sign belongs on gpsSeconds field."
+                self.gpsSeconds= self.gpsSeconds * -1
+                self.gpsNanoSeconds = abs(self.gpsNanoSeconds)
+                secPartIn=str(self.gpsSeconds)
+                nanoPartIn=str(str(self.gpsNanoSeconds).rjust(9)).replace(' ','0')
+                intIn=int(secPartIn+nanoPartIn)
+            else:
+                print "Error is not recoverable! Please check candidate files."
+                os.abort()
         return intIn
     #End __makeInt__ method
 
@@ -269,6 +303,14 @@ class gpsInt:
             print "If you see this something went really wrong!"
             os.abort()
         return gpsInt(abs(self.gpsSeconds),abs(self.gpsNanoSeconds))
+    #End of __abs__ method
+
+    def getAsFloat(self):
+        """
+        This method returns a float representation of the gps number.
+        """
+        return float(self.display())
+    #End of getAsFloat method
 #End gpsInt class
 
 class candidateList:
@@ -441,6 +483,50 @@ class candidateList:
 
     def findBinWidths(self):
         """
+        Use the information loaded to determine the bin sizes.
+        Col->F
+        Row->T
+        """
+        TDArrayFreq=[]
+        TDArrayGPSFloat=[]
+        for curveElement in self.curves:
+            for entry in curveElement.getKurveDataBlock():
+                TDArrayFreq.append(entry[3])
+                TDArrayGPSFloat.append(entry[2].getAsFloat())
+        TDArrayFreq.sort()
+        TDArrayGPSFloat.sort()
+        uniqT=[]
+        uniqF=[]
+        for x in TDArrayFreq:
+            if x not in uniqF:
+                uniqF.append(x)
+        for x in TDArrayGPSFloat:
+            if x not in uniqT:
+                uniqT.append(x)
+        uniqT.sort()
+        uniqF.sort()
+        sumVal=0
+        diff_T=[]
+        diff_F=[]
+        for i in range(1,uniqT.__len__()):
+            diff_T.append(uniqT[i]-uniqT[i-1])
+        diff_T.sort()
+        avgT=diff_T[0]
+        for i in range(1,uniqF.__len__()):
+            diff_F.append(uniqF[i]-uniqF[i-1])
+        diff_F.sort()
+        avgF=diff_F[0]
+        if (uniqT.__len__() < 10):
+            print "Warning less than ten intervals used to determine bin time width!"
+        if (uniqF.__len__() < 10):
+            print "Warning less than ten intervals used to determine bin frequency width!"
+        self.freqWidth=float(avgF)
+        ans=str("%9.9f"%float(avgT)).split('.')
+        self.gpsWidth=gpsInt(ans[0],ans[1])
+    #End def newFindBinWidths
+    
+    def OLD_findBinWidths(self):
+        """
         Use the information loaded to guess the bin size T and F
         we will not know the original map bandwidth but we
         won't really need it Col->F Row->T
@@ -475,6 +561,7 @@ class candidateList:
 #                print TDArrayGPS[i][1].display(),TDArrayGPS[i-1][1].display(),AddMe.display()," As INTS ",TDArrayGPS[i][1].__makeInt__(),TDArrayGPS[i-1][1].__makeInt__(),AddMe.__makeInt__()
 #                print "Showing  i,AddMe ",i,AddMe.gpsSeconds,AddMe.gpsNanoSeconds,AddMe.display()
 #                print "Index ",i," of ",TDArrayGPS.__len__()," Adding value : ",AddMe.display()," To ",gpsSum.display()
+                print TDArrayGPS[i][1].display(),"   ",TDArrayGPS[i-1][1].display(),"    ",AddMe.display()
                 gpsSum=gpsSum.__add__(AddMe)
                 gpsSumCount=gpsSumCount+1
 
@@ -484,7 +571,7 @@ class candidateList:
             avgGpsWidth=gpsInt(0,0)
 
         self.freqWidth=float(avgFreqWidth)
-        self.gpsWidth=avgGpsWidth
+        self.gpsWidth=avgGpsWidth.__abs__()
     #End findBinWidths method
 
     def globList(self,inputCandidateList):
@@ -667,6 +754,106 @@ class candidateList:
         return statList
     #End candidateStats method
 
+    def dumpCandidateKurveSummary(self):
+        """
+        This method scans the entries in the object.  Then
+        it uses it's filename and path to create a file called
+        /PATH/filename.summary.  It is here we will find the summary
+        information about the candidate file. As
+        #filename
+        PixelLength,Power,Duration,Bandwidth
+        """
+        summary=[]
+        for lineInfo in self.curves:
+            curveID,l,p=lineInfo.getKurveHeader()
+            #See notes in methods below for explaination
+            d=lineInfo.getCandidateDuration()+self.gpsWidth.getAsFloat()
+            f=lineInfo.getCandidateBandwidth()+self.freqWidth
+            summary.append([l,p,d,f])
+        return summary
+    #End dumpCandidateKurveSummary()
+
+    def writeSummary(self):
+        """
+        Methods to write summary to disk for viewing
+        """
+        sourceFile=self.filename[0]
+        outRoot,outExt=os.path.splitext(sourceFile)
+        outFile=outRoot+'.summary'
+        summaryData=self.dumpCandidateKurveSummary()
+        format = "%i  %10.5f  %10.5f  %10.5f \n"
+        fp=open(outFile,'w')
+        for entry in summaryData:
+            outString=format%(entry[0],entry[1],entry[2],entry[3])
+            fp.write(outString)
+        fp.close()
+    # End writeSummary method
+
+    def printSummary(self):
+        """
+        Methods to write summary to display for viewing
+        """
+        summaryData=self.dumpCandidateKurveSummary()
+        sourceFile=self.filename[0]
+        print "#"
+        print "#"+sourceFile
+        format = "%i  %10.5f  %10.5f  %10.5f "
+        for entry in summaryData:
+            outString=format%(entry[0],entry[1],entry[2],entry[3])
+            print outString
+    # End writeSummary method
+    
+    def applyArbitraryThresholds(self,expressionString):
+        """
+        This method takes in a string and uses it literally to construct a
+        testing condition to impose on the kurve entries from a candidate file.
+        It then returns the list of candidates meeting the express written in the
+        string.  Use caution with this function! This is parsed left to right!
+        Valid variable labels:
+        P     Integrated Power
+        L     Curve Length in Pixels
+        D     Time Duration in Seconds
+        F     Frequency Bandwidth in Hertz
+        Valid logical operators are:
+        and
+        or
+        <=
+        >=
+        <
+        >
+        =
+        (
+        )
+        Example:
+        P>10 and L < 5
+        D >=2 or P>12
+        F<3 and D >= 8
+        (D > 10 and L = 3) and F < 4
+        """
+        #There is no error checking.  We rely on eval to do this for us!
+        testExp=expressionString
+        #Convert everything to lower case
+        testExp=testExp.lower()
+        resultsList=[]
+        for lineInfo in self.curves:
+            curveID,l,p=lineInfo.getKurveHeader()
+            d=lineInfo.getCandidateDuration()
+            f=lineInfo.getCandidateBandwidth()
+            try:
+                evalResult=eval(testExp)
+            except ValueError:
+                print "Error with expression string syntax."
+                os.abort()
+            if evalResult:
+                resultsList.append(lineInfo)
+        #Return the a modified structure wit self.curves
+        #made only of passing candidates
+        outputList=copy.deepcopy(self)
+        outputList.totalCount=resultsList.__len__()
+        outputList.curves=copy.deepcopy(resultsList)
+        return outputList
+    #end applyAbitraryThresholds method
+    
     def applyNewThresholds(self,powerEq,pVal,conjunction,lengthEq,lVal):
         """
         Parse these three options to determine a course of action for
@@ -801,7 +988,7 @@ def generateFileList(inputTXT):
     3) a path
     then we create a list object of files to process
     """
-    print "generating file list for :",str(inputTXT)
+    #print "generating file list for :",str(inputTXT)
     absPathFilename=os.path.abspath(inputTXT)
     objList=[]
     dirnameFilename=str(absPathFilename)
@@ -811,7 +998,6 @@ def generateFileList(inputTXT):
         dirnameFilename=os.path.dirname(absPathFilename)
         basenameFilename=os.path.basename(absPathFilename)
         extensionFilename=str(str(basenameFilename).split('.')[1])
-        print "Found wildcard splitting path into:"
         print dirnameFilename
         print basenameFilename
         print extensionFilename
@@ -838,5 +1024,4 @@ def generateFileList(inputTXT):
     else:
         print "Error with getting candidate information from: ",absPathFilename
         objList=[]
-    print "file list entries found :",objList.__len__()
     return objList
