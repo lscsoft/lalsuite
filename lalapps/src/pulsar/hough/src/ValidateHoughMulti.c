@@ -535,8 +535,8 @@ int main(int argc, char *argv[]){
   {
     FILE *fp=NULL;
     fp = fopen("./tempout", "w");
-    fprintf(fp, "%g  %g  %g\n", numberCount, meanN ,sigmaN);
-    fprintf(stdout, "%g  %g  %g\n", numberCount, meanN ,sigmaN);
+    fprintf(fp, "%g  %g  %g\n", (numberCount - meanN)/sigmaN, meanN ,sigmaN);
+    fprintf(stdout, "%g  %g  %g\n", (numberCount - meanN)/sigmaN, meanN ,sigmaN);
     fclose(fp);
   }
 
