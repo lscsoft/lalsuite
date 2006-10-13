@@ -2518,7 +2518,6 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchsumm, 
         search_summary_table ), &status );
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
-  free( searchsumm.searchSummaryTable );
 
   /* write the filter table */
   if ( vrbflg ) fprintf( stdout, "  filter table...\n" );
@@ -2583,6 +2582,9 @@ int main( int argc, char *argv[] )
     summvalue.summValueTable = summvalue.summValueTable->next;
     LALFree( this_summ_value );
   }
+
+  /* free the search summary table after the summ_value table is written */
+  free( searchsumm.searchSummaryTable );
 
   /* write the sngl_inspiral triggers to the output xml */
   if ( savedEvents.snglInspiralTable )
