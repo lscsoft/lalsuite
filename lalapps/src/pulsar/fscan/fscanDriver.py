@@ -500,9 +500,9 @@ thisStartFreq = startFreq
 nodeCount = 0L
 while (thisStartFreq < endFreq):
   thisEndFreq = thisStartFreq + freqSubBand
-  if (thisEndFreq == endFreq):
+  if (thisEndFreq >= endFreq):
      # Fix off-by-one bin end frequency error; for simplicity remove final 1 Hz
-     thisEndFreq = thisEndFreq - 1
+     thisEndFreq = endFreq - 1
   specAvgJobName = 'SpecAvg_%i' % nodeCount
   dagFID.write('JOB %s spectrumAverage.sub\n' % specAvgJobName)
   dagFID.write('RETRY %s 10\n' % specAvgJobName)
