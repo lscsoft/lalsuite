@@ -132,7 +132,7 @@ echo
 
 # this part of the command-line is compatible with PredictFStat:
 FreqBand=$(echo $mfd_FreqBand | awk '{printf "%g", ($1-0.05*$1) / 2.0}');
-pfs_CL="--aPlus=$aPlus --aCross=$aCross --psi=$psi --phi=$phi0 --Freq=$freq --FreqBand=$FreqBand --Delta=$Delta --Alpha=$Alpha"
+pfs_CL="--aPlus=$aPlus --aCross=$aCross --psi=$psi --Freq=$freq --Delta=$Delta --Alpha=$Alpha"
 
 # Calculating the Semi-Analytic FStat for detector H1
 cmdline="$pfs_code $pfs_CL --DataFiles='./testSFTs/H-1_H1*'"
