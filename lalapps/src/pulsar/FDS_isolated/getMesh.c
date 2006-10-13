@@ -620,8 +620,8 @@ getSearchRegion (LALStatus *status,
       
       signal.Alpha = uvar_Alpha;
       signal.Delta = uvar_Delta;
-      signal.Freq  = uvar_Freq;
-      signal.f1dot = uvar_f1dot;
+      signal.fkdot[0]  = uvar_Freq;
+      signal.fkdot[1] = uvar_f1dot;
 
       /* set random-seed for MC grid-randomization */
       if ( LALUserVarWasSet(&uvar_randomSeed) )

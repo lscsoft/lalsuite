@@ -40,6 +40,7 @@ extern "C" {
 #include <lal/PtoleMetric.h>
 #include <lal/StackMetric.h>
 #include <lal/LALBarycenter.h>
+#include <lal/PulsarDataTypes.h>
 
 NRCSID( DOPPLERSCANH, "$Id$" );
 
@@ -97,10 +98,9 @@ typedef enum
 
 /** structure holding one point in (phase-) parameter-space */
 typedef struct {
-  REAL8 Alpha;			/**< longitude in Radians, EquatorialCoordinates */
-  REAL8 Delta;			/**< latitude in Radians, EquatorialCoordinates */
-  REAL8 Freq;			/**< frequency */
-  REAL8 f1dot;			/**< first frequency-derivative (spindown) */
+  REAL8 Alpha;			/**< longitude in Radians */
+  REAL8 Delta;			/**< latitude in Radians  */
+  PulsarSpins fkdot;		/**< frequency and (max 3) spindowns */
 } DopplerPosition;
 
 /** Structure describing a region in paramter-space (a,d,f,f1dot,..). 

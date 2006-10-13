@@ -254,17 +254,20 @@ InitDopplerScan( LALStatus *status,
 
     gridpoint.Alpha = scan->grid->Alpha;
     gridpoint.Delta = scan->grid->Delta;
-    gridpoint.Freq  = init->searchRegion.Freq + init->searchRegion.FreqBand;
-    gridpoint.f1dot = 0;
+    gridpoint.fkdot[0] = init->searchRegion.Freq + init->searchRegion.FreqBand;
+    gridpoint.fkdot[1] = 0;
+    gridpoint.fkdot[2] = 0;
+    gridpoint.fkdot[3] = 0;
 
     TRY ( getGridSpacings( status->statusPtr, &gridSpacings, gridpoint, init), status);
 
 
     LogPrintf (LOG_DETAIL, "'theoretical' spacings in frequency and spindown: \n");
-    LogPrintf (LOG_DETAIL, "dFreq = %g, df1dot = %g\n", gridSpacings.Freq, gridSpacings.f1dot);
+    LogPrintf (LOG_DETAIL, "dFreq = %g, df1dot = %g, df2dot = %g, df3dot = %g\n", 
+	       gridSpacings.fkdot[0], gridSpacings.fkdot[1], gridSpacings.fkdot[2], gridSpacings.fkdot[3]);
 
-    scan->dFreq  = gridSpacings.Freq;
-    scan->df1dot = gridSpacings.f1dot;
+    scan->dFreq  = gridSpacings.fkdot[0];
+    scan->df1dot = gridSpacings.fkdot[1];
   }
   
   scan->state = STATE_READY;
@@ -1479,11 +1482,11 @@ getGridSpacings( LALStatus *status,
       /* !!NOTE!!: in the metric-codes, the spindown f1 is defined as 
        * f1 = f1dot / Freq, while here f1dot = d Freq/dt 
        */
-      metricpar.spindown->data[0] = gridpoint.f1dot / gridpoint.Freq;
+      metricpar.spindown->data[0] = gridpoint.fkdot[1] / gridpoint.fkdot[0];
       
       metricpar.epoch = params->obsBegin;
       metricpar.duration = params->obsDuration;
-      metricpar.maxFreq = gridpoint.Freq;
+      metricpar.maxFreq = gridpoint.fkdot[0];
       metricpar.site = params->Detector;
       metricpar.ephemeris = params->ephemeris;	/* needed for ephemeris-metrics */
       metricpar.metricType = params->metricType;
@@ -1504,7 +1507,7 @@ getGridSpacings( LALStatus *status,
        * the number of dimensions D in the parameter-space considered.
        */
 
-      spacings->Freq = 2.0 * sqrt ( params->metricMismatch / g_f0_f0 );
+      spacings->fkdot[0] = 2.0 * sqrt ( params->metricMismatch / g_f0_f0 );
 
       if ( params->projectMetric ) {
 	TRY ( LALProjectMetric( status->statusPtr, metric, 0 ), status);
@@ -1524,7 +1527,7 @@ getGridSpacings( LALStatus *status,
 
       
       gamma_f1_f1 = metric->data[INDEX_f1_f1];
-      spacings->f1dot = 2.0 * gridpoint.Freq * sqrt( params->metricMismatch / gamma_f1_f1 );
+      spacings->fkdot[1] = 2.0 * gridpoint.fkdot[0] * sqrt( params->metricMismatch / gamma_f1_f1 );
 
       gamma_a_a = metric->data[INDEX_A_A];
       gamma_d_d = metric->data[INDEX_D_D];
@@ -1537,10 +1540,10 @@ getGridSpacings( LALStatus *status,
     }
   else	/* no metric: use 'naive' value of 1/(2*T^k) [previous default in CFS] */
     {
-      spacings->Freq = 1.0 / (2.0 * params->obsDuration);
       spacings->Alpha = params->dAlpha;	/* dummy */
       spacings->Delta = params->dDelta;
-      spacings->f1dot = 1.0 / (2.0 * params->obsDuration * params->obsDuration);
+      spacings->fkdot[0] = 1.0 / (2.0 * params->obsDuration);
+      spacings->fkdot[1] = 1.0 / (2.0 * params->obsDuration * params->obsDuration);
     }
 
   DETATCHSTATUSPTR(status);
@@ -1598,8 +1601,8 @@ getMCDopplerCube (LALStatus *status,
 
   dAlpha = spacings.Alpha;
   dDelta = spacings.Delta;
-  dFreq  = spacings.Freq;
-  df1dot = spacings.f1dot;
+  dFreq  = spacings.fkdot[0];
+  df1dot = spacings.fkdot[1];
 
   numSteps = PointsPerDim;
   if ( PointsPerDim )
@@ -1631,10 +1634,10 @@ getMCDopplerCube (LALStatus *status,
       metricpar.position.longitude = signal.Alpha;
       metricpar.position.latitude = signal.Delta;
       TRY ( LALSCreateVector (status->statusPtr, &(metricpar.spindown), 1), status);
-      metricpar.spindown->data[0] = signal.f1dot / signal.Freq;
+      metricpar.spindown->data[0] = signal.fkdot[1] / signal.fkdot[0];
       metricpar.epoch = params->obsBegin;
       metricpar.duration = params->obsDuration;
-      metricpar.maxFreq = signal.Freq;
+      metricpar.maxFreq = signal.fkdot[0];
       metricpar.site = params->Detector;
       metricpar.ephemeris = params->ephemeris;
       metricpar.metricType = params->metricType;
@@ -1646,7 +1649,7 @@ getMCDopplerCube (LALStatus *status,
       TRY ( LALDDestroyVector(status->statusPtr, &metric), status);
 
       /* now we can estimate the Doppler-Band on f: |dFreq| < Freq * 1e-4 * smajor */
-      DopplerFreqBand = 2.0 * signal.Freq * 1.0e-4 * ellipse.smajor;
+      DopplerFreqBand = 2.0 * signal.fkdot[0] * 1.0e-4 * ellipse.smajor;
 
       LogPrintf (LOG_DEBUG, 
 		 "Using projected sky-metric: canonical FreqBand would be %g,"
@@ -1659,8 +1662,8 @@ getMCDopplerCube (LALStatus *status,
   /* set center-point to signal-location */
   Alpha = signal.Alpha - 0.5 * AlphaBand;
   Delta = signal.Delta - 0.5 * DeltaBand;
-  Freq  = signal.Freq  - 0.5 * FreqBand;
-  f1dot = signal.f1dot - 0.5 * f1dotBand;
+  Freq  = signal.fkdot[0] - 0.5 * FreqBand;
+  f1dot = signal.fkdot[1] - 0.5 * f1dotBand;
 
   /* randomize center-point within one grid-cell *
    * (we assume seed has been set elsewhere) */
