@@ -108,10 +108,8 @@ typedef struct {
  */
 typedef struct {
   CHAR *skyRegionString;	/**< sky-region string '(a1,d1), (a2,d2), ..' */
-  REAL8 Freq;			/**< first point of Frequency-interval */
-  REAL8 FreqBand;		/**< width of frequency-interval */
-  REAL8 f1dot;			/**< first spindown-value */
-  REAL8 f1dotBand;		/**< width of spindown-interval */
+  PulsarSpins fkdot;		/**< first points of spin-intervals */
+  PulsarSpins fkdotBand;	/**< spin-intervals */
 } DopplerRegion;
 
 /** structure describing a polygon-region in the sky */

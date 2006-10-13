@@ -793,10 +793,10 @@ int main( int argc, char *argv[]) {
   scanInit1.Detector = &(stackMultiDetStates1.data[0]->data[0]->detector);
   scanInit1.ephemeris = edat;
   scanInit1.skyGridFile = uvar_skyGridFile;
-  scanInit1.searchRegion.Freq = uvar_Freq;
-  scanInit1.searchRegion.FreqBand = uvar_FreqBand;
-  scanInit1.searchRegion.f1dot = uvar_f1dot;
-  scanInit1.searchRegion.f1dotBand = spinRange_startTime1->fkdotBand->data[1];;
+  scanInit1.searchRegion.fkdot[0] = uvar_Freq;
+  scanInit1.searchRegion.fkdotBand[0] = uvar_FreqBand;
+  scanInit1.searchRegion.fkdot[1] = uvar_f1dot;
+  scanInit1.searchRegion.fkdotBand[1] = spinRange_startTime1->fkdotBand->data[1];;
   scanInit1.searchRegion.skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
   strcpy (scanInit1.searchRegion.skyRegionString, uvar_skyRegion);
 
@@ -961,10 +961,10 @@ int main( int argc, char *argv[]) {
 					      alpha1, delta1, alphaBand1, deltaBand1), &status);
 		  
 		  /* set second doppler scan variables */
-		  scanInit2.searchRegion.Freq = fStart1;
-		  scanInit2.searchRegion.FreqBand = freqBand1;
-		  scanInit2.searchRegion.f1dot = fdot1;
-		  scanInit2.searchRegion.f1dotBand = fdotBand1;
+		  scanInit2.searchRegion.fkdot[0] = fStart1;
+		  scanInit2.searchRegion.fkdotBand[0] = freqBand1;
+		  scanInit2.searchRegion.fkdot[1] = fdot1;
+		  scanInit2.searchRegion.fkdotBand[1] = fdotBand1;
 		  
 		  /* allocate fstat memory */
 		  fstatVector2.length = nStacks2;

@@ -193,8 +193,8 @@ main(int argc, char *argv[])
   
 
   /* ----- output grid-info ----- */
-  nFreq = (UINT4)(scanInit.searchRegion.FreqBand / thisScan.dFreq + 1e-6) + 1;  
-  nf1dot =(UINT4)(scanInit.searchRegion.f1dotBand/ thisScan.df1dot + 1e-6) + 1;  
+  nFreq = (UINT4)(scanInit.searchRegion.fkdotBand[0] / thisScan.dFreq + 1e-6) + 1;  
+  nf1dot =(UINT4)(scanInit.searchRegion.fkdotBand[1]/ thisScan.df1dot + 1e-6) + 1;  
 
   /* debug output */
   if ( lalDebugLevel )
@@ -202,11 +202,11 @@ main(int argc, char *argv[])
       printf ("DEBUG: Search-region:\n");
       printf ("       skyRegion = \"%s\"\n", scanInit.searchRegion.skyRegionString);
       printf ("       Freq in  = [%.16g, %.16g]\n", 
-	      scanInit.searchRegion.Freq, 
-	      scanInit.searchRegion.Freq + scanInit.searchRegion.FreqBand);
+	      scanInit.searchRegion.fkdot[0], 
+	      scanInit.searchRegion.fkdot[0] + scanInit.searchRegion.fkdotBand[0]);
       printf ("       f1dot in = [%.16g, %.16g]\n",
-	      scanInit.searchRegion.f1dot, 
-	      scanInit.searchRegion.f1dot + scanInit.searchRegion.f1dotBand);
+	      scanInit.searchRegion.fkdot[1], 
+	      scanInit.searchRegion.fkdot[1] + scanInit.searchRegion.fkdotBand[1]);
 
       printf ("\nDEBUG: actual grid-spacings: dFreq = %g, df1dot = %g\n\n",
 	      thisScan.dFreq, thisScan.df1dot);
@@ -243,10 +243,10 @@ main(int argc, char *argv[])
       Delta = skyregion.lowerLeft.latitude;
       DeltaBand = skyregion.upperRight.latitude - Delta;
       
-      Freq = searchRegion->Freq;
-      FreqBand = searchRegion->FreqBand;
-      f1dot = searchRegion->f1dot;
-      f1dotBand = searchRegion->f1dotBand;
+      Freq = searchRegion->fkdot[0];
+      FreqBand = searchRegion->fkdotBand[0];
+      f1dot = searchRegion->fkdot[1];
+      f1dotBand = searchRegion->fkdotBand[1];
       
       /* now write octave-compatible matrix containing the search-region */
       printf ("[%.12g, %.12g; %.12g, %.12g; %.12g, %.12g; %.12g, %.12g ]\n", 
@@ -589,22 +589,22 @@ getSearchRegion (LALStatus *status,
 	   GETMESH_EINPUT, GETMESH_MSGEINPUT);
 
   /* set defaults */
-  ret.Freq = uvar_Freq;
-  ret.FreqBand = uvar_FreqBand;
+  ret.fkdot[0] = uvar_Freq;
+  ret.fkdotBand[0] = uvar_FreqBand;
 
-  ret.f1dot = uvar_f1dot;
-  ret.f1dotBand = uvar_f1dotBand;
+  ret.fkdot[1] = uvar_f1dot;
+  ret.fkdotBand[1] = uvar_f1dotBand;
 
   /* 'normalize' if negative bands where given */
-  if ( ret.FreqBand < 0 )
+  if ( ret.fkdotBand[0] < 0 )
     {
-      ret.FreqBand *= -1.0;
-      ret.Freq -= ret.FreqBand;
+      ret.fkdotBand[0] *= -1.0;
+      ret.fkdot[0] -= ret.fkdotBand[0];
     }
-  if ( ret.f1dotBand < 0 )
+  if ( ret.fkdotBand[1] < 0 )
     {
-      ret.f1dotBand *= -1.0;
-      ret.f1dot -= ret.f1dotBand;
+      ret.fkdotBand[1] *= -1.0;
+      ret.fkdot[1] -= ret.fkdotBand[1];
     }
 
 
@@ -672,28 +672,28 @@ getSearchRegion (LALStatus *status,
 
     if ( LALUserVarWasSet(&uvar_FreqBand) )	/* manually set Frequency-interval */
       {
-	ret.Freq = uvar_Freq;
-	ret.FreqBand = uvar_FreqBand;
+	ret.fkdot[0] = uvar_Freq;
+	ret.fkdotBand[0] = uvar_FreqBand;
       }
     if ( LALUserVarWasSet(&uvar_f1dotBand) )	/* manually set spindown-interval */
       {
-	ret.f1dot = uvar_f1dot;
-	ret.f1dotBand = uvar_f1dotBand;
+	ret.fkdot[1] = uvar_f1dot;
+	ret.fkdotBand[1] = uvar_f1dotBand;
       }
 
   } /* user-override of search-bands */
 
 
   /* 'normalize' all spin-bands to be positive */
-  if ( ret.FreqBand < 0 )
+  if ( ret.fkdotBand[0] < 0 )
     {
-      ret.FreqBand  *= -1.0;
-      ret.Freq  -= ret.FreqBand;
+      ret.fkdotBand[0]  *= -1.0;
+      ret.fkdot[0]  -= ret.fkdotBand[0];
     }
-  if ( ret.f1dotBand < 0 )
+  if ( ret.fkdotBand[1] < 0 )
     {
-      ret.f1dotBand *= -1.0;
-      ret.f1dot -= ret.f1dotBand;
+      ret.fkdotBand[1] *= -1.0;
+      ret.fkdot[1] -= ret.fkdot[1];
     }
 
   *searchRegion = ret;	/* return the result */

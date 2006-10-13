@@ -254,7 +254,7 @@ InitDopplerScan( LALStatus *status,
 
     gridpoint.Alpha = scan->grid->Alpha;
     gridpoint.Delta = scan->grid->Delta;
-    gridpoint.fkdot[0] = init->searchRegion.Freq + init->searchRegion.FreqBand;
+    gridpoint.fkdot[0] = init->searchRegion.fkdot[0] + init->searchRegion.fkdotBand[0];
     gridpoint.fkdot[1] = 0;
     gridpoint.fkdot[2] = 0;
     gridpoint.fkdot[3] = 0;
@@ -458,7 +458,7 @@ void getMetric( LALStatus *status, meshREAL g[3], meshREAL skypos[2], void *para
 
   metricpar.epoch = par->obsBegin;
   metricpar.duration = par->obsDuration;
-  metricpar.maxFreq = par->searchRegion.Freq + par->searchRegion.FreqBand;
+  metricpar.maxFreq = par->searchRegion.fkdot[0] + par->searchRegion.fkdotBand[0];
   metricpar.site = par->Detector;
   metricpar.ephemeris = par->ephemeris;
 
@@ -621,7 +621,7 @@ plotGrid (LALStatus *status,
       metricPar.spindown->data=NULL;
       metricPar.epoch = init->obsBegin;
       metricPar.duration = init->obsDuration;
-      metricPar.maxFreq = init->searchRegion.Freq + init->searchRegion.FreqBand;
+      metricPar.maxFreq = init->searchRegion.fkdot[0] + init->searchRegion.fkdotBand[0];
       metricPar.site = init->Detector;
       metricPar.ephemeris = init->ephemeris;
       metricPar.metricType = init->metricType;
@@ -1679,10 +1679,10 @@ getMCDopplerCube (LALStatus *status,
   /* convert sky-square into a skyRegionString */
   TRY ( SkySquare2String (status->statusPtr, &(cube->skyRegionString), 
 			  Alpha, Delta, AlphaBand, DeltaBand), status);
-  cube->Freq = Freq;
-  cube->FreqBand = FreqBand;
-  cube->f1dot = f1dot;
-  cube->f1dotBand = f1dotBand;
+  cube->fkdot[0] = Freq;
+  cube->fkdotBand[0] = FreqBand;
+  cube->fkdot[1] = f1dot;
+  cube->fkdotBand[1] = f1dotBand;
 
   DETATCHSTATUSPTR(status);
   RETURN(status);

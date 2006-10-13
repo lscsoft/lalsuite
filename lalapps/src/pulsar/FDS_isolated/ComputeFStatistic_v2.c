@@ -277,11 +277,11 @@ int main(int argc,char *argv[])
   scanInit.Detector = &(GV.multiDetStates->data[0]->detector);	/* FIXME: need multi-IFO metric */
   scanInit.ephemeris = GV.edat;		/* used by Ephemeris-based metric */
   scanInit.skyGridFile = uvar_skyGridFile;
-  /* this is a bit obsolete, but DopplerScan still uses it..: */
-  GV.searchRegion.Freq = GV.spinRangeStart->fkdot->data[0];
-  GV.searchRegion.FreqBand = GV.spinRangeStart->fkdotBand->data[0];
-  GV.searchRegion.f1dot = GV.spinRangeStart->fkdot->data[1];
-  GV.searchRegion.f1dotBand = GV.spinRangeStart->fkdotBand->data[1];
+
+  GV.searchRegion.fkdot[0] = GV.spinRangeStart->fkdot->data[0];
+  GV.searchRegion.fkdotBand[0] = GV.spinRangeStart->fkdotBand->data[0];
+  GV.searchRegion.fkdot[1] = GV.spinRangeStart->fkdot->data[1];
+  GV.searchRegion.fkdotBand[1] = GV.spinRangeStart->fkdotBand->data[1];
   scanInit.searchRegion = GV.searchRegion;
   
   LogPrintf (LOG_DEBUG, "Setting up template grid ... ");
