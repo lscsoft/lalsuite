@@ -481,7 +481,8 @@ if (makeMatlabPlots):
   runMatlabScriptFID = file('runMatlabPlotScript.sub','w')
   runMatlabScriptLogFile = subLogPath + '/' + 'runMatlabPlotScript_' + dagFileName + '.log'
   runMatlabScriptFID.write('universe = vanilla\n')
-  runMatlabScriptFID.write('executable = $ENV(RUNPLOTSPECAVGOUTPUT_PATH)/runPlotSpecAvgOutput.csh\n')
+  # Run compiled version plotSpecAvgOutput.m:
+  runMatlabScriptFID.write('executable = $ENV(PLOTSPECAVGOUTPUT_PATH)/plotSpecAvgOutput\n')
   runMatlabScriptFID.write('getenv = True\n')
   runMatlabScriptFID.write('arguments = $(argList)\n')
   runMatlabScriptFID.write('log = %s\n' % runMatlabScriptLogFile)
