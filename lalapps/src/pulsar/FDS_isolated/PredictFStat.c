@@ -360,15 +360,19 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg )
     have_Ac = LALUserVarWasSet ( &uvar_aCross );
 
     /* ----- handle cosi/cosiota ambiguity */
-    if ( (have_cosi && have_cosiota) || ( !have_cosi && !have_cosiota) ) {
+    if ( (have_cosi && have_cosiota)  ) {
       LogPrintf (LOG_CRITICAL, "Need EITHER --cosi [preferred] OR --cosiota [deprecated]!\n");
       ABORT ( status, PREDICTFSTAT_EINPUT, PREDICTFSTAT_MSGEINPUT );
     }
-    if ( have_cosiota )
+    if ( have_cosiota ) {
       cosi = uvar_cosiota;
-    else
+      have_cosi = TRUE;
+    }
+    else if ( have_cosi ) {
       cosi = uvar_cosi;
-    have_cosi = TRUE;
+      have_cosi = TRUE;
+    }
+
     /* ----- handle {h0,cosi} || {aPlus,aCross} freedom ----- */
     if ( ( have_h0 && !have_cosi ) || ( !have_h0 && have_cosi ) )
       {
