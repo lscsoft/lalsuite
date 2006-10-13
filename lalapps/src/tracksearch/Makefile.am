@@ -20,8 +20,8 @@ lalapps_tfdat2pgm_SOURCES=$(TSUTILSRCS)
 EXTRA_DIST = $(TRACKSEARCHSRCS)
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
-bin_SCRIPTS = candidateHandler.py tracksearch_pipe.py
+bin_SCRIPTS = candidateHandler.py tracksearch_pipe.py tuneTSpipe.py 
 pythonlib_SCRIPTS = candidateUtils.py tracksearch.py
-pkgdata_DATA = tracksearchPipeline.ini
+pkgdata_DATA = tracksearchPipeline.ini tracksearchOpts.tun
 
 

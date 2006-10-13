@@ -163,14 +163,14 @@ class tracksearchCheckIniFile:
             print error
     #end printErrorList
 
-    def injectSecTest(self):
+    def hasInjectSec(self):
         injectSecFound=False
         injectSecFound=self.iniOpts.has_section('tracksearchinjection')
         #Check the [injectionsection] section if present searching for injection file.
         if injectSecFound:
             injectFile=self.iniOpts.get('tracksearchinjection','inject_file')
             if not os.path.exists(injectFile):
-                self.errList.append('Can not text file to inject :'+str(injectFile))
+                self.errList.append('Can not find text file to inject :'+str(injectFile))
                 os.abort()
         return injectSecFound
     #end injectSecTest method
@@ -239,6 +239,13 @@ class tracksearchHousekeeperJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
         pipeline.AnalysisJob.__init__(self,cp)
         for sec in ['housekeeper']:
+            #Check the ini file and warn that we are enabling the rescue of RESULTS directory!
+            ignorePathString=cp.get(sec,'ignore-path')
+            if not(ignorePathString.__contains__('RESULTS')):
+                cp.set(sec,'ignore-path',ignorePathString+',RESULTS')
+                print "I noticed you were not omitting RESULTS directory from cleaning."
+                print "You would delete the RESULTS files, thereby wasting CPU time."
+                print "I'll assume you just forgot and we will keep those files."
             self.add_ini_opts(cp,sec)
         workpath=cp.get('filelayout','workpath')
         self.add_opt('parent-dir',workpath)
@@ -558,6 +565,43 @@ class tracksearchClusterJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         #End __init__ method
 #End class tracksearchClusterJob
 
+class tracksearchThresholdJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+    """
+    This class acts as a thresholding job.  Threshold can be done in the lalapps_tracksearch code
+    but we put it here to allow arbitrary rethresholding after a run.  The user may wish to play
+    with the trigger statistics.  This keeps the pipeline reruns to a minimum.
+    """
+    def __init__(self,cp,block_id,dagDir):
+        self.dagDirectory=dagDir
+        self.__executable = cp.get('condor','clustertool')
+        #HACK SETB pool the jobs runs on the scheduler
+        self.__universe= cp .get('condor','universe')
+        pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+        pipeline.AnalysisJob.__init__(self,cp)
+        self.block_id=blockID=block_id
+        layerID='RESULTS_'+str(blockID)
+        self.initialDir=layerPath=determineLayerPath(cp,blockID,layerID)
+        blockPath=determineBlockPath(cp,blockID)
+        #Setup needed directories for this job to write in!
+        buildDir(blockPath)
+        buildDir(layerPath)
+        buildDir(blockPath+'/logs')
+        self.set_stdout_file(os.path.normpath(blockPath+'/logs/tracksearchThreshold-$(cluster)-$(process).out'))
+        self.set_stderr_file(os.path.normpath(blockPath+'/logs/tracksearchThreshold-$(cluster)-$(process).err'))
+        self.set_sub_file(self.dagDirectory+'tracksearchThreshold.sub')
+        #Load in the cluster configuration sections!
+        #Add the candidateUtils.py equivalent library to dag for proper
+        #execution!
+        self.candUtil=str(cp.get('pylibraryfiles','pyutilfile'))
+        self.add_condor_cmd('should_transfer_files','yes')
+        self.add_condor_cmd('when_to_transfer_output','on_exit')
+        self.add_condor_cmd('transfer_input_files',self.candUtil)
+        #self.add_input_file(self.candUtil)
+        for sec in ['candidatethreshold']:
+                self.add_ini_opts(cp,sec)
+   #End __init__ method
+#End tracksearchThresholdJob class
+
 class tracksearchHousekeeperNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     The class acting as a generic template to do carry out the housekeeping job.
@@ -623,6 +667,22 @@ class tracksearchMapCacheBuildNode(pipeline.CondorDAGNode,
 class tracksearchClusterNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     The class acting as a generic template to allow building a cluster job.
+    It gives the needed features to setup a condor node to cluster/clobber
+    the ascii results files from tracksearch C code.
+    These jobs will always return success.  We will use /bin/true as a
+    post script to ensure this.
+    """
+    def __init__(self,job):
+        #Expects to run CondorDAGJob object for tracksearch
+        pipeline.CondorDAGNode.__init__(self,job)
+        pipeline.AnalysisNode.__init__(self)
+        pipeline.CondorDAGNode.set_post_script(self,'/bin/true')
+    #End init
+#End Class
+
+class tracksearchThresholdNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
+    """
+    The class acting as a generic template to allow building a threshold job.
     It gives the needed features to setup a condor node to cluster/clobber
     the ascii results files from tracksearch C code.
     """
@@ -822,9 +882,18 @@ class tracksearch:
         #Step that sets up the tracksearchHousekeeperJobs
         tracksearchHousekeeper_job=tracksearchHousekeeperJob(self.cp,self.dagDirectory)
         tracksearchHousekeeper_node=tracksearchHousekeeperNode(tracksearchHousekeeper_job)
-        for parents in nextJobList:
+        for parents in prevJobList:
             tracksearchHousekeeper_node.add_parent(parents)
         self.dag.add_node(tracksearchHousekeeper_node)
+        #Only do setup the threshold jobs if the ini file has a threshold section!
+        if self.cp.has_section('candidatethreshold'):
+            tracksearchThreshold_job=tracksearchThresholdJob(self.cp,self.blockID,self.dagDirectory)
+            DLP=tracksearchThreshold_job.initialDir
+            tracksearchThreshold_node=tracksearchThresholdNode(tracksearchThreshold_job)
+            tracksearchThreshold_node.add_var_opt('file',DLP+'*.candidates')
+            for parents in nextJobList:
+                tracksearchThreshold_node.add_parent(parents)
+            self.dag.add_node(tracksearchThreshold_node)
     #end def finalsearchlayer method
 
     def intermediateSearchLayers(self,layerID,nodeLinks):

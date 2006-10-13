@@ -24,7 +24,7 @@ parser.add_option("-s","--segment_file",dest="segmentList",
                   metavar="FILE")
 parser.add_option("-i","--invoke_inject",dest="invokeInject",
                   help="This option will create a pipeline with injections invoked if there is a section in the config file for doing injections. You must still specify name and path to 2 column text data to inject.",
-                  default="False",action="store_true",
+                  default=False,action="store_true",
                   metavar="injectFile")
 
 (options,args) = parser.parse_args()
@@ -52,9 +52,11 @@ if testIniFile.numberErrors() > 0 :
     os.abort()
 
 #Check ini file for an injection block heading.
-if ((injectFileFlag == True) and (testIniFile.injectSecTest() == False)):
-    print "Ini file doesn't have an injection section!"
-    os.abort()
+if (injectFileFlag == True):
+    print "Checking injection options."
+    if not(testIniFile.hasInjectSec()):
+        print "Double check the paramter file's injection section!"
+        os.abort()
 
 #We assume the input segment list is > 100 so we will try to loop it
 dataBlockSize=int(float(str.strip(cp.get('layerconfig','layerTopBlockSize'))))

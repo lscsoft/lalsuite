@@ -208,6 +208,8 @@ class tuneObject:
         This method actually invokes a shell to create the pipe in a unique
         directory under the main directory specified in [all] tuningHome
         which tailors each pipe ini file entry [filelayout] workpath
+        True mean leave 4 injectionsection
+        False means remove injectionsection
         """
         seglist=self.seglist
         path2bin=self.pipeBuilder
@@ -256,7 +258,7 @@ class tuneObject:
             stdL=math.sqrt(varL)
             #Threshold FAR values
             threshP=meanP+(myFAR*stdP)
-            threshL=meanL+(myFAR*stdL)
+            threshL=int(round(float((meanL+(myFAR*stdL))))
             myOpts=str(str(entry).replace(self.installPipes,'').split('/')[1]).split('_')
             myLH=myOpts[1]
             myLL=myOpts[2]
@@ -283,6 +285,9 @@ class tuneObject:
         """
         rawText=[]
         importFile=self.home+'/FA_results.pickle'
+        if not(os.path.isfile(importFile)):
+            print "Did you remember to run the false alarm calculate feature? ./tuneTSpipe.py --file=file.tun -c"
+            os.abort()
         import_fp=open(importFile,'r')
         FAresults=pickle.load(import_fp)
         import_fp.close()
@@ -371,10 +376,8 @@ class tuneObject:
             len=myOpts[4]
             eff=candObj.totalCount/numInjections
             outputPickle.append([h,l,p,len,eff,candObj.totalCount,entry])
-            if len <= 3 and p >= 0:
-                outputP.append([h,l,p,eff,candObj.totalCount])
-            if p <= 0 and len >= 3:
-                outputL.append([h,l,len,eff,candObj.totalCount])
+            outputP.append([h,l,p,eff,candObj.totalCount])
+            outputL.append([h,l,len,eff,candObj.totalCount])
         #Write out results files to disk
         file_fp=open(self.home+'/DE_results_L.dat','w')
         file_fp.write("H L P Len Eff Count \n")

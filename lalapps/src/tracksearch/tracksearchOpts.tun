@@ -33,10 +33,10 @@ LL=0.95;0.25;0.05
 ;99%->2.333sigma FAR=2.33
 FAR=2.33
 ;This file will be placed relative to [all],tuningHome
-datfilename=FAR_results.data
+;datfilename=FAR_results.data
 
 [detect-efficiency-setup]
 trialcount=10,000
-injectionFile=/home/charlie/pipeTest/injectMe.txt
+
 
 [detect-efficiency-calculate]
