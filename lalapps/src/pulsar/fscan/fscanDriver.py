@@ -50,6 +50,7 @@ Usage: [options]
   -k, --filter-knee-freq     (optional) high pass filter knee frequency used on time domain data before generating SFTs (default = 40 Hz)
   -T, --time-baseline        time baseline of SFTs  (e.g., 60 or 1800 seconds)
   -p, --sft-path             path to SFTs (either already existing or where to output them)
+  -v, --sft-version          (optional) SFT version number (1 or 2; default is 1)
   -C  --create-sfts          (optional) create the SFTs !!! (/tmp will be appended to the sft-path and SFTs will be generated there!)
   -o, --sub-log-path         (optional) path to log files given in .sub files (default is $PWD/logs; this directory must exist and usually should be under a local file system.)
   -N, --channel-name         name of input time-domain channel to read from frames
@@ -410,7 +411,7 @@ if (createSFTs):
   # MAKE THE .dag FILE; RUN MakeSFTDAG
   #
   sftDAGFile = 'tmpSFTDAG%stmp.dag' % tagString
-  makeDAGCommand = 'MakeSFTDAG -f %s -G %s -d %s -x %d -k %d -T %d -F %d -B %d -p %s -N %s -m 1 -o %s -X %s -Z -g %s' % (sftDAGFile,tagString,inputDataType,extraDatafindTime,filterKneeFreq,timeBaseline,startFreq,freqBand,pathToSFTs,channelName,subLogPath,miscDesc,segmentFile)
+  makeDAGCommand = 'MakeSFTDAG -f %s -G %s -d %s -x %d -k %d -T %d -F %d -B %d -p %s -N %s -m 1 -o %s -X %s -Z -g %s -v %d' % (sftDAGFile,tagString,inputDataType,extraDatafindTime,filterKneeFreq,timeBaseline,startFreq,freqBand,pathToSFTs,channelName,subLogPath,miscDesc,segmentFile,sftVersion)
   if (useHoT):
      makeDAGCommand = makeDAGCommand + ' -H'
   print >> sys.stdout,"Trying: ",makeDAGCommand,"\n"
@@ -505,7 +506,10 @@ while (thisStartFreq < endFreq):
   specAvgJobName = 'SpecAvg_%i' % nodeCount
   dagFID.write('JOB %s spectrumAverage.sub\n' % specAvgJobName)
   dagFID.write('RETRY %s 10\n' % specAvgJobName)
-  argList = '%d %d %s %d %d %s/SFT*' % (analysisStartTime,analysisEndTime,ifo,thisStartFreq,thisEndFreq,pathToSFTs)
+  if (sftVersion == 2):
+     argList = '%d %d %s %d %d %s/*.sft' % (analysisStartTime,analysisEndTime,ifo,thisStartFreq,thisEndFreq,pathToSFTs)
+  else:
+     argList = '%d %d %s %d %d %s/SFT*' % (analysisStartTime,analysisEndTime,ifo,thisStartFreq,thisEndFreq,pathToSFTs)
   tagStringOut = '%s_%i' % (tagString, nodeCount)  
   dagFID.write('VARS %s argList="%s" tagstring="%s"\n'%(specAvgJobName,argList,tagStringOut))
   if (createSFTs):  
