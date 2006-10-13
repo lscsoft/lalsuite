@@ -307,7 +307,7 @@ XLALSortSnglInspiral (
   if ( ! numEvents )
   {
     XLALPrintInfo( 
-      "XLALSortSnglInspiral: Empty SnglInspiralTable passed as input" );
+      "XLALSortSnglInspiral: Empty SnglInspiralTable passed as input\n" );
     return( eventHead );
   }
 
@@ -612,12 +612,12 @@ XLALCompareInspirals (
   /* check that triggers come from different IFOs */
   if( strcmp(aPtr->ifo, bPtr->ifo) )
   {
-    XLALPrintInfo( "Triggers from different IFOs");
+    XLALPrintInfo( "Triggers from different IFOs\n");
     params->match = 1;
   }
   else
   {
-    XLALPrintInfo( "Triggers from same IFO");
+    XLALPrintInfo( "Triggers from same IFO\n");
     params->match = 0;
     return params->match;
   }
@@ -636,19 +636,19 @@ XLALCompareInspirals (
   if ( params->grb &&
        labs( ta - tb + params->lightTravelTime[ifoaNum][ifobNum]) < (aAcc.dt + bAcc.dt) )
   {
-    XLALPrintInfo( "Triggers pass time coincidence test" );
+    XLALPrintInfo( "Triggers pass time coincidence test\n" );
     params->match = 1;
   }
   else if (  !params->grb &&
       labs( ta - tb ) < (aAcc.dt + bAcc.dt)
       + params->lightTravelTime[ifoaNum][ifobNum])
   {
-    XLALPrintInfo( "Triggers pass time coincidence test" );
+    XLALPrintInfo( "Triggers pass time coincidence test\n" );
     params->match = 1;
   }
   else 
   {
-    XLALPrintInfo( "Triggers fail time coincidence test" );
+    XLALPrintInfo( "Triggers fail time coincidence test\n" );
     params->match = 0;
     return params->match;
   }
@@ -663,12 +663,12 @@ XLALCompareInspirals (
       if ( ( dpsi0 <= (aAcc.dpsi0 + bAcc.dpsi0) )
           && ( dpsi3 <= (aAcc.dpsi3 + bAcc.dpsi3) ))
       {
-        XLALPrintInfo( "Triggers are coincident in psi0 and psi3" );
+        XLALPrintInfo( "Triggers are coincident in psi0 and psi3\n" );
         params->match = 1;
       }
       else
       {
-        XLALPrintInfo( "Triggers are not coincident in psi0 and psi3" );
+        XLALPrintInfo( "Triggers are not coincident in psi0 and psi3\n" );
         params->match = 0;
       }
       break;
@@ -681,12 +681,12 @@ XLALCompareInspirals (
       if ( (dmass1 <= (aAcc.dm + bAcc.dm) )
         && (dmass2 <= (aAcc.dm + bAcc.dm) ))
       {
-        XLALPrintInfo( "Triggers are coincident in mass1 and mass2" );
+        XLALPrintInfo( "Triggers are coincident in mass1 and mass2\n" );
         params->match = 1;
       }
       else
       {
-        XLALPrintInfo( "Triggers are not coincident in mass1 and mass2" );
+        XLALPrintInfo( "Triggers are not coincident in mass1 and mass2\n" );
         params->match = 0;
       }
       break;
@@ -707,12 +707,12 @@ XLALCompareInspirals (
       if ( (dmchirp <= dmchirpTest)
             && (deta <= (aAcc.deta + bAcc.deta)) )
       {
-        XLALPrintInfo( "Triggers are coincident in mchirp and eta" );
+        XLALPrintInfo( "Triggers are coincident in mchirp and eta\n" );
         params->match = 1;
       }
       else
       {
-        XLALPrintInfo( "Triggers fail mchirp, eta coincidence test" );
+        XLALPrintInfo( "Triggers fail mchirp, eta coincidence test\n" );
         params->match = 0;
       }
       }
@@ -726,12 +726,12 @@ XLALCompareInspirals (
       if ( (dtau0 <= (aAcc.dtau0 + bAcc.dtau0) )
         && (dtau3 <= (aAcc.dtau3 + bAcc.dtau3) ))
       {
-        XLALPrintInfo( "Triggers are coincident in tau0 and tau3" );
+        XLALPrintInfo( "Triggers are coincident in tau0 and tau3\n" );
         params->match = 1;
       }
       else
       {
-        XLALPrintInfo( "Triggers are not coincident in tau0 and tau3" );
+        XLALPrintInfo( "Triggers are not coincident in tau0 and tau3\n" );
         params->match = 0;
       }
       break;
@@ -816,7 +816,7 @@ XLALClusterSnglInspiralTable (
   if ( ! *inspiralList )
   {
     XLALPrintInfo( 
-      "XLALClusterSnglInspiralTable: Empty coincList passed as input" );
+      "XLALClusterSnglInspiralTable: Empty coincList passed as input\n" );
     return( 0 );
   }
 
