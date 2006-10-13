@@ -519,7 +519,8 @@ while (thisStartFreq < endFreq):
      dagFID.write('JOB %s runMatlabPlotScript.sub\n' % runMatlabPlotScriptJobName)
      dagFID.write('RETRY %s 3\n' % runMatlabPlotScriptJobName)
      inputFileName = 'spec_%d.00_%d.00_%s_%d_%d' % (thisStartFreq,thisEndFreq,ifo,analysisStartTime,analysisEndTime)
-     outputFileName = '%s/%s.pdf' % (plotOutputPath, inputFileName)
+     # Matlab will append .pdf and .png to outputFileName to save plots:
+     outputFileName = '%s/%s' % (plotOutputPath, inputFileName)     
      effTBase = timeBaseline/180.0
      deltaFTicks = 5
      medBins = 10

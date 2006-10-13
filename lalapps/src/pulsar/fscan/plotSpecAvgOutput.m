@@ -2,7 +2,7 @@ function plotSpecAvgOutput(inputFileName,outputFileName,chanName,tStart,tEnd,fSt
 % usage: plotSpecAvgOutput(inputFileName,outputFileName,chanName,tStart,tEnd,fStart,fEnd,effTBase,deltaFTicks,medBins)
 % 
 % inputFileName  -- the name of the file with data to input; this file is the output from spec_avg.
-% outputFileName -- the name of the output plot to generate (the extension determines the type, e.g., .pdf)
+% outputFileName -- the name of the output plot to generate (this code adds .pdf and .png extensions and outputs these)
 % chanName       -- the name of the channel used to generate the spectrogram data
 % tStart         -- the start time of the data
 % tEnd           -- the end time of the data
@@ -104,7 +104,10 @@ if (medBins > 0)
   end
   fclose(fid);
 end
-saveas(1, outputFileName);
+outputPDFFileName = sprintf('%s.pdf',outputFileName);
+saveas(1, outputPDFFileName);
+outputPNGFileName = sprintf('%s.png',outputFileName);
+saveas(1, outputPNGFileName);
 delete(1);
 
 return;
