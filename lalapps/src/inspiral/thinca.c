@@ -173,6 +173,10 @@ static void print_usage(char *program)
       "  [--h1-epsilon]        h1_epsilon specify H1 epsilon for eff dist test\n"\
       "  [--h2-epsilon]        h2_epsilon specify H1 epsilon for eff dist test\n"\
       "\n"\
+      "  [--h1-h2-consistency]            perform H1-H2 consistency cut\n"\
+      "  [--snr-cut]           snr        reject triggers below this snr\n"\
+      "                                   needed when --h1-h2-consistency is given\n"\
+      "\n"\
       "  [--dmchirp-high]      dmchirp    different chirp mass window for high masses\n"\
       "  [--high-mass]         mass       total mass for trigger above which\n"\
       "                                   the high mass mchirp is used\n"\
@@ -192,8 +196,6 @@ static void print_usage(char *program)
       "\n"\
       "  [--iota-cut-h1h2]    iotaCutH1H2 reject H1H2 triggers with iota above the specified value \n"\
       "  [--iota-cut-h1l1]    iotaCutH1L1 reject H1L1 triggers with iota above the specified value \n"\
-      "\n"\
-      "  [--snr-cut]           snr        reject triggers below this snr \n"\
       "\n"\
       "  [--do-bcvspin-h1h2-veto]         reject coincidences with H1 snr < H2 snr \n"\
       "\n"\
@@ -1409,7 +1411,7 @@ int main( int argc, char *argv[] )
     LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
 
-  /* store the multi-ifo-coinc in the process_params table */
+  /* store the distance cut in the process_params table */
   if ( distCut )
   {
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
@@ -1425,6 +1427,13 @@ int main( int argc, char *argv[] )
   /* store the h1h2 consistency option */ 
   if ( h1h2Consistency )
   {
+    if ( !( snrCut > 0 ) )
+    {
+      fprintf( stderr,"The --snr-cut option must be specified and \n"
+               "greater than zero when --h1-h2-consistency is given\n" );
+      exit( 1 );
+    }
+
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
     LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
