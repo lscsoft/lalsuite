@@ -9,7 +9,7 @@ LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 
 if FRAME
-FRAMEPROGRAMS = lalapps_FrComputeFStatistic
+FRAMEPROGRAMS = ## lalapps_FrComputeFStatistic
 else
 FRAMEPROGRAMS = 
 endif
@@ -36,9 +36,9 @@ CFSsources = 	ComputeFStatistic.h	\
 
 lalapps_ComputeFStatistic_SOURCES = ComputeFStatistic.c CFSLALDemod.c $(CFSsources)
 
-lalapps_FrComputeFStatistic_SOURCES = FrComputeFStatistic.c FrComputeFStatistic.h	\
-	rngmed.c rngmed.h clusters.c clusters.h  			\
-	DopplerScan.c DopplerScan.h NeighboringGridPoints.c LogPrintf.c
+##lalapps_FrComputeFStatistic_SOURCES = FrComputeFStatistic.c FrComputeFStatistic.h	\
+##	rngmed.c rngmed.h clusters.c clusters.h  			\
+##	DopplerScan.c DopplerScan.h NeighboringGridPoints.c LogPrintf.c
 
 lalapps_FstatShapeTest_SOURCES = FstatShapeTest.c 
 lalapps_FstatShapeTestLAL_SOURCES = FstatShapeTestLAL.c
