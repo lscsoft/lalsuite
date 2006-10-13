@@ -69,8 +69,6 @@ struct CommandLineArgsTag {
   REAL8 cosi;
   BOOLEAN help;
   /* ----- deprecated ----- */
-  REAL8 longitude;
-  REAL8 latitude;
   REAL8 cosiota;
   CHAR *detector;
 } CommandLineArgs;
@@ -214,14 +212,14 @@ InitUserVars (LALStatus *status, struct CommandLineArgsTag *CLA)
 			      &(CLA->Alpha)), status);
   TRY( LALRegisterREALUserVar(status->statusPtr, "longitude",  0, UVAR_DEVELOPER, 
 			      "[DEPRECATED] Use --Alpha instead!",  
-			      &(CLA->longitude)), status);
+			      &(CLA->Alpha)), status);
 
   TRY( LALRegisterREALUserVar(status->statusPtr, "Delta", 'd', UVAR_OPTIONAL, 
 			      "Sky position Delta (equatorial coordinates) in radians", 
 			      &(CLA->Delta)), status);
   TRY( LALRegisterREALUserVar(status->statusPtr, "latitude", 0, UVAR_DEVELOPER, 
 			      "[DEPRECATED] Use --Delta instead!", 
-			      &(CLA->latitude)), status);
+			      &(CLA->Delta)), status);
  
   TRY( LALRegisterREALUserVar(status->statusPtr, "phi0",   'Q', UVAR_OPTIONAL, 
 			     "Phi_0: Initial phase in radians", &(CLA->phi0)), status);
