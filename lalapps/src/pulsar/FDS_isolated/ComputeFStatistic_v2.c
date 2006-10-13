@@ -216,8 +216,8 @@ int main(int argc,char *argv[])
 {
   LALStatus status = blank_status;	/* initialize status */
 
-  DopplerScanInit scanInit;		/* init-structure for DopperScanner */
-  DopplerScanState thisScan = empty_DopplerScanState; /* current state of the Doppler-scan */
+  DopplerSkyScanInit scanInit;		/* init-structure for DopperScanner */
+  DopplerSkyScanState thisScan = empty_DopplerSkyScanState; /* current state of the Doppler-scan */
   PulsarDopplerParams dopplerpos;		/* current search-parameters */
   SkyPosition skypos;
   FILE *fpFstat = NULL;
@@ -265,7 +265,7 @@ int main(int argc,char *argv[])
   /* like ephemeries data and template grids: */
   LAL_CALL ( InitFStat(&status, &GV), &status);
 
-  /* prepare initialization of DopplerScanner to step through paramter space */
+  /* prepare initialization of DopplerSkyScanner to step through paramter space */
   scanInit.dAlpha = uvar_dAlpha;
   scanInit.dDelta = uvar_dDelta;
   scanInit.gridType = uvar_gridType;
@@ -282,10 +282,11 @@ int main(int argc,char *argv[])
   GV.searchRegion.fkdotBand[0] = GV.spinRangeStart->fkdotBand->data[0];
   GV.searchRegion.fkdot[1] = GV.spinRangeStart->fkdot->data[1];
   GV.searchRegion.fkdotBand[1] = GV.spinRangeStart->fkdotBand->data[1];
-  scanInit.searchRegion = GV.searchRegion;
-  
+  scanInit.skyRegionString = GV.searchRegion.skyRegionString;
+  scanInit.Freq = GV.searchRegion.fkdot[0] + GV.searchRegion.fkdotBand[0];
+
   LogPrintf (LOG_DEBUG, "Setting up template grid ... ");
-  LAL_CALL ( InitDopplerScan ( &status, &thisScan, &scanInit), &status); 
+  LAL_CALL ( InitDopplerSkyScan ( &status, &thisScan, &scanInit), &status); 
   LogPrintfVerbatim (LOG_DEBUG, "done.\n");
   
   /* ---------- set Frequency- and spindown-resolution if not input by user ----------*/
@@ -301,7 +302,7 @@ int main(int argc,char *argv[])
   /*----------------------------------------------------------------------*/
   if ( uvar_outputSkyGrid ) {
     LogPrintf (LOG_NORMAL, "Now writing sky-grid into file '%s' ...", uvar_outputSkyGrid);
-    LAL_CALL (writeSkyGridFile( &status, thisScan.grid, uvar_outputSkyGrid, &scanInit), &status);
+    LAL_CALL (writeSkyGridFile( &status, thisScan.skyGrid, uvar_outputSkyGrid, &scanInit), &status);
     LogPrintfVerbatim (LOG_NORMAL, " done.\n");
   }
   
@@ -363,14 +364,14 @@ int main(int argc,char *argv[])
   nFreq =  (UINT4)(GV.spinRangeStart->fkdotBand->data[0] / thisScan.dFreq  + 0.5) + 1;  
   nf1dot = (UINT4)(GV.spinRangeStart->fkdotBand->data[1] / thisScan.df1dot + 0.5) + 1; 
   
-  /* the 2nd and 3rd spindown stepsizes are not controlled by DopplerScan (and the metric) yet */
+  /* the 2nd and 3rd spindown stepsizes are not controlled by DopplerSkyScan (and the metric) yet */
   nf2dot = (UINT4)(GV.spinRangeStart->fkdotBand->data[2] / uvar_df2dot + 0.5) + 1; 
   nf3dot = (UINT4)(GV.spinRangeStart->fkdotBand->data[3] / uvar_df3dot + 0.5) + 1; 
 
-  numTemplates = 1.0 * thisScan.numGridPoints * nFreq * nf1dot * nf2dot * nf3dot;
+  numTemplates = 1.0 * thisScan.numSkyGridPoints * nFreq * nf1dot * nf2dot * nf3dot;
   
   LogPrintf (LOG_DEBUG, "N = Sky x Freq x f1dot x f2dot x f3dot = %d x %d x %d x %d x %d = %g\n",
-	     thisScan.numGridPoints, nFreq, nf1dot, nf2dot, nf3dot, 
+	     thisScan.numSkyGridPoints, nFreq, nf1dot, nf2dot, nf3dot, 
 	     numTemplates);
 
   LogPrintf (LOG_DEBUG, "Progress: 0/%g = 0 %% done, Estimated time left: ?? s\n", numTemplates );
@@ -380,7 +381,7 @@ int main(int argc,char *argv[])
   clock0 = time(NULL);
   while (1)
     {
-      LAL_CALL (NextDopplerPos( &status, &dopplerpos, &thisScan ), &status);
+      LAL_CALL (NextDopplerSkyPos( &status, &dopplerpos, &thisScan ), &status);
       if (thisScan.state == STATE_FINISHED) /* scanned all DopplerPositions yet? */
 	break;
       
@@ -588,7 +589,7 @@ int main(int argc,char *argv[])
   LogPrintf (LOG_DEBUG, "Search finished.\n");
   
   /* Free memory */
-  LAL_CALL ( FreeDopplerScan(&status, &thisScan), &status);
+  LAL_CALL ( FreeDopplerSkyScan(&status, &thisScan), &status);
 
   XLALEmptyComputeFBuffer ( cfBuffer );
 

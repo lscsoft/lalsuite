@@ -63,6 +63,7 @@ typedef struct {
   EphemerisData *ephemeris;	/**< ephemeris data (from LALInitBarycenter()) */
   LIGOTimeGPS startTimeGPS;	/**< starttime of observation */
   REAL8 duration;		/**< total observation-time spanned */
+  DopplerRegion searchRegion;	/**< Doppler parameter-space to search */
 } ConfigVariables;
 
 /*---------- empty structs for initializations ----------*/
@@ -73,7 +74,7 @@ static const PtoleMetricIn empty_metricpar;
 void initUserVars (LALStatus *);
 void initGeneral (LALStatus *, ConfigVariables *cfg);
 void checkUserInputConsistency (LALStatus *);
-void getSearchRegion (LALStatus *, DopplerRegion *searchRegion, const DopplerScanInit *params);
+void getSearchRegion (LALStatus *, DopplerRegion *searchRegion, const DopplerSkyScanInit *params);
 void setTrueRandomSeed(void);
 
 /* ---------- User variables ---------- */
@@ -124,8 +125,8 @@ main(int argc, char *argv[])
 {
   LALStatus status = blank_status;
   ConfigVariables config = empty_ConfigVariables;
-  DopplerScanInit scanInit = empty_DopplerScanInit; /* init-structure for DopperScanner */
-  DopplerScanState thisScan = empty_DopplerScanState; /* current state of the Doppler-scan */
+  DopplerSkyScanInit scanInit = empty_DopplerSkyScanInit; /* init-structure for DopperScanner */
+  DopplerSkyScanState thisScan = empty_DopplerSkyScanState; /* current state of the Doppler-scan */
   UINT4 nFreq, nf1dot;
 
   lalDebugLevel = 0;  
@@ -151,7 +152,7 @@ main(int argc, char *argv[])
   LAL_CALL (initGeneral (&status, &config), &status);
 
 
-  /* ---------- main-task: run InitDopplerScan() ---------- */
+  /* ---------- main-task: run InitDopplerSkyScan() ---------- */
   if (lalDebugLevel) printf ("\nSetting up template grid ...");
   scanInit.metricType = (LALPulsarMetricType) uvar_metricType;
   scanInit.dAlpha = uvar_dAlpha;
@@ -166,15 +167,17 @@ main(int argc, char *argv[])
   scanInit.skyGridFile = uvar_skyGridFile;      /* if applicable */
   
   /* figure out searchRegion from UserInput and possibly --searchNeighbors */
-  scanInit.searchRegion = empty_DopplerRegion;	/* set to empty first */
-  LAL_CALL ( getSearchRegion(&status, &(scanInit.searchRegion), &scanInit ), &status);
-  
+  config.searchRegion = empty_DopplerRegion;	/* set to empty first */
+  LAL_CALL ( getSearchRegion(&status, &(config.searchRegion), &scanInit ), &status);
+  scanInit.skyRegionString = config.searchRegion.skyRegionString;
+  scanInit.Freq = config.searchRegion.fkdot[0] + config.searchRegion.fkdotBand[0];
+
   /* the following call generates a skygrid plus determines dFreq, df1dot,..
    * Currently the complete template-grid is more like a 'foliation' of
    * the parameter-space by skygrids, stacked along f and f1dot, 
    * not a full 4D metric template-grid
    */
-  LAL_CALL ( InitDopplerScan( &status, &thisScan, &scanInit), &status); 
+  LAL_CALL ( InitDopplerSkyScan( &status, &thisScan, &scanInit), &status); 
 
   /* ---------- overload Frequency- and spindown-resolution if input by user ----------*/
   if ( LALUserVarWasSet( &uvar_dFreq ) )
@@ -187,32 +190,32 @@ main(int argc, char *argv[])
   if ( uvar_outputSkyGrid ) 
     {
       printf ("\nNow writing sky-grid into file '%s' ...", uvar_outputSkyGrid);
-      LAL_CALL(writeSkyGridFile(&status, thisScan.grid, uvar_outputSkyGrid, &scanInit), &status);
+      LAL_CALL(writeSkyGridFile(&status, thisScan.skyGrid, uvar_outputSkyGrid, &scanInit), &status);
       printf (" done.\n\n");
     }
   
 
   /* ----- output grid-info ----- */
-  nFreq = (UINT4)(scanInit.searchRegion.fkdotBand[0] / thisScan.dFreq + 1e-6) + 1;  
-  nf1dot =(UINT4)(scanInit.searchRegion.fkdotBand[1]/ thisScan.df1dot + 1e-6) + 1;  
+  nFreq = (UINT4)(config.searchRegion.fkdotBand[0] / thisScan.dFreq + 1e-6) + 1;  
+  nf1dot =(UINT4)(config.searchRegion.fkdotBand[1]/ thisScan.df1dot + 1e-6) + 1;  
 
   /* debug output */
   if ( lalDebugLevel )
     {
       printf ("DEBUG: Search-region:\n");
-      printf ("       skyRegion = \"%s\"\n", scanInit.searchRegion.skyRegionString);
+      printf ("       skyRegion = \"%s\"\n", scanInit.skyRegionString);
       printf ("       Freq in  = [%.16g, %.16g]\n", 
-	      scanInit.searchRegion.fkdot[0], 
-	      scanInit.searchRegion.fkdot[0] + scanInit.searchRegion.fkdotBand[0]);
+	      config.searchRegion.fkdot[0], 
+	      config.searchRegion.fkdot[0] + config.searchRegion.fkdotBand[0]);
       printf ("       f1dot in = [%.16g, %.16g]\n",
-	      scanInit.searchRegion.fkdot[1], 
-	      scanInit.searchRegion.fkdot[1] + scanInit.searchRegion.fkdotBand[1]);
+	      config.searchRegion.fkdot[1], 
+	      config.searchRegion.fkdot[1] + config.searchRegion.fkdotBand[1]);
 
       printf ("\nDEBUG: actual grid-spacings: dFreq = %g, df1dot = %g\n\n",
 	      thisScan.dFreq, thisScan.df1dot);
 
       printf ("Templates: sky x Freq x f1dot = %d x %d x %d\n\n",
-	      thisScan.numGridPoints, nFreq, nf1dot );
+	      thisScan.numSkyGridPoints, nFreq, nf1dot );
     } /* debug-output */
 
 
@@ -221,7 +224,7 @@ main(int argc, char *argv[])
    */
   if ( ! LALUserVarWasSet (&uvar_searchNeighbors) )
     {
-      printf ("\n%g\n\n", (REAL8)thisScan.numGridPoints * nFreq *  nf1dot );
+      printf ("\n%g\n\n", (REAL8)thisScan.numSkyGridPoints * nFreq *  nf1dot );
     }
   /* output octave-compatible 'search-range' as a matrix: 
    * [ Alpha, AlphaBand; Delta, DeltaBand; Freq, FreqBand; f1dot, f1dotBand ]
@@ -229,7 +232,7 @@ main(int argc, char *argv[])
   else 
     {
       SkyRegion skyregion;
-      DopplerRegion *searchRegion = &(scanInit.searchRegion);
+      DopplerRegion *searchRegion = &(config.searchRegion);
       REAL8 Alpha, AlphaBand, Delta, DeltaBand;
       REAL8 Freq, FreqBand, f1dot, f1dotBand;
 
@@ -258,15 +261,15 @@ main(int argc, char *argv[])
     } /* if uvar_searchNeighbors */
 
   /* ----- clean up and exit ----- */
-  /* Free DopplerScan-stuff (grid) */
+  /* Free DopplerSkyScan-stuff (grid) */
   thisScan.state = STATE_FINISHED;
-  LAL_CALL ( FreeDopplerScan(&status, &thisScan), &status);
+  LAL_CALL ( FreeDopplerSkyScan(&status, &thisScan), &status);
 
   /* Free User-variables and contents */
   LAL_CALL ( LALDestroyUserVars (&status), &status);
 
-  if ( scanInit.searchRegion.skyRegionString )
-    LALFree ( scanInit.searchRegion.skyRegionString );
+  if ( config.searchRegion.skyRegionString )
+    LALFree ( config.searchRegion.skyRegionString );
 
   LALFree ( config.Detector );
 
@@ -576,7 +579,7 @@ checkUserInputConsistency (LALStatus *status)
 void
 getSearchRegion (LALStatus *status, 
 		 DopplerRegion *searchRegion,	/**< OUT: the DopplerRegion to search over */
-		 const DopplerScanInit *params)	/**< IN: DopplerScan params might be needed */
+		 const DopplerSkyScanInit *params)	/**< IN: DopplerSkyScan params might be needed */
 {
 
   DopplerRegion ret = empty_DopplerRegion;

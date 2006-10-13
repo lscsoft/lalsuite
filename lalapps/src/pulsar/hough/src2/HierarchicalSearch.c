@@ -270,9 +270,9 @@ int main( int argc, char *argv[]) {
   toplist_t *fstatToplist=NULL;
 
   /* template and grid variables */
-  DopplerScanInit scanInit1, scanInit2;   /* init-structure for DopperScanner */
-  DopplerScanState thisScan1 = empty_DopplerScanState; /* current state of the Doppler-scan */
-  DopplerScanState thisScan2 = empty_DopplerScanState; /* current state of the Doppler-scan */
+  DopplerSkyScanInit scanInit1, scanInit2;   /* init-structure for DopperScanner */
+  DopplerSkyScanState thisScan1 = empty_DopplerSkyScanState; /* current state of the Doppler-scan */
+  DopplerSkyScanState thisScan2 = empty_DopplerSkyScanState; /* current state of the Doppler-scan */
   PulsarDopplerParams dopplerpos1, dopplerpos2;	       /* current search-parameters */
   PulsarDopplerParams thisPoint1, thisPoint2; 
 
@@ -781,7 +781,7 @@ int main( int argc, char *argv[]) {
 
 
   /*-----------Create template grid for first stage ---------------*/
-  /* prepare initialization of DopplerScanner to step through paramter space */
+  /* prepare initialization of DopplerSkyScanner to step through paramter space */
   scanInit1.dAlpha = uvar_dAlpha;
   scanInit1.dDelta = uvar_dDelta;
   scanInit1.gridType = uvar_gridType1;
@@ -793,15 +793,12 @@ int main( int argc, char *argv[]) {
   scanInit1.Detector = &(stackMultiDetStates1.data[0]->data[0]->detector);
   scanInit1.ephemeris = edat;
   scanInit1.skyGridFile = uvar_skyGridFile;
-  scanInit1.searchRegion.fkdot[0] = uvar_Freq;
-  scanInit1.searchRegion.fkdotBand[0] = uvar_FreqBand;
-  scanInit1.searchRegion.fkdot[1] = uvar_f1dot;
-  scanInit1.searchRegion.fkdotBand[1] = spinRange_startTime1->fkdotBand->data[1];;
-  scanInit1.searchRegion.skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
-  strcpy (scanInit1.searchRegion.skyRegionString, uvar_skyRegion);
+  scanInit1.skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
+  strcpy (scanInit1.skyRegionString, uvar_skyRegion);
+  scanInit1.Freq = uvar_Freq + uvar_FreqBand;
 
   /* initialize skygrid  */  
-  LAL_CALL ( InitDopplerScan ( &status, &thisScan1, &scanInit1), &status); 
+  LAL_CALL ( InitDopplerSkyScan ( &status, &thisScan1, &scanInit1), &status); 
   
   /* parameters for 2nd stage */
   /* set up parameters for second stage Fstat calculation */
@@ -812,7 +809,7 @@ int main( int argc, char *argv[]) {
       /* allocate memory for Fstat candidates */
       create_fstat_toplist(&fstatToplist, uvar_nCand2);
       
-     /* prepare initialization of DopplerScanner to step through paramter space */
+     /* prepare initialization of DopplerSkyScanner to step through paramter space */
       scanInit2.dAlpha = uvar_dAlpha;
       scanInit2.dDelta = uvar_dDelta;
       scanInit2.gridType = uvar_gridType2;
@@ -841,12 +838,12 @@ int main( int argc, char *argv[]) {
       UINT4 ifdot, nfdot;  /* counter and number of spindown values */
       REAL8 dfDot;  /* resolution in spindown */
 
-      LAL_CALL (NextDopplerPos( &status, &dopplerpos1, &thisScan1 ), &status);
+      LAL_CALL (NextDopplerSkyPos( &status, &dopplerpos1, &thisScan1 ), &status);
       if (thisScan1.state == STATE_FINISHED) /* scanned all DopplerPositions yet? */
 	break;
 
       if (   lalDebugLevel )
-	fprintf( stdout, "Coarse grid has %d points\n", thisScan1.numGridPoints);
+	fprintf( stdout, "Coarse grid has %d points\n", thisScan1.numSkyGridPoints);
       
       /*------------- calculate F statistic for each stack --------------*/
       
@@ -957,14 +954,9 @@ int main( int argc, char *argv[]) {
 		  delta1 = semiCohCandList1.list[j].delta - 0.5 * semiCohCandList1.list[j].dDelta;
 		  alphaBand1 = semiCohCandList1.list[j].dAlpha;
 		  deltaBand1 = semiCohCandList1.list[j].dDelta;
-		  LAL_CALL (SkySquare2String( &status, &(scanInit2.searchRegion.skyRegionString),
+		  LAL_CALL (SkySquare2String( &status, &(scanInit2.skyRegionString),
 					      alpha1, delta1, alphaBand1, deltaBand1), &status);
-		  
-		  /* set second doppler scan variables */
-		  scanInit2.searchRegion.fkdot[0] = fStart1;
-		  scanInit2.searchRegion.fkdotBand[0] = freqBand1;
-		  scanInit2.searchRegion.fkdot[1] = fdot1;
-		  scanInit2.searchRegion.fkdotBand[1] = fdotBand1;
+		  scanInit2.Freq = fStart1 + freqBand1;
 		  
 		  /* allocate fstat memory */
 		  fstatVector2.length = nStacks2;
@@ -983,7 +975,7 @@ int main( int argc, char *argv[]) {
 
 
 		  /* initialize skygrid  */  
-		  LAL_CALL ( InitDopplerScan ( &status, &thisScan2, &scanInit2), &status); 
+		  LAL_CALL ( InitDopplerSkyScan ( &status, &thisScan2, &scanInit2), &status); 
 		  
 		  
 		  /* loop over fine skygrid points */
@@ -992,12 +984,12 @@ int main( int argc, char *argv[]) {
 		      UINT4 ifdot2, nfdot2;  /* counter and number of spindown values */
 		      REAL8 dfDot2;  /* resolution in spindown */
 
-		      LAL_CALL (NextDopplerPos( &status, &dopplerpos2, &thisScan2 ), &status);
+		      LAL_CALL (NextDopplerSkyPos( &status, &dopplerpos2, &thisScan2 ), &status);
 		      if (thisScan2.state == STATE_FINISHED) /* scanned all DopplerPositions yet? */
 			break;
 
 		      if ( lalDebugLevel )
-			fprintf( stdout, "Fine grid has %d points\n", thisScan2.numGridPoints);
+			fprintf( stdout, "Fine grid has %d points\n", thisScan2.numSkyGridPoints);
 
 		      
 		      /*------------- calculate F statistic for each stack --------------*/
@@ -1050,9 +1042,9 @@ int main( int argc, char *argv[]) {
 
 
 		  /* destroy dopplerscan2 variables */ 
-		  LAL_CALL ( FreeDopplerScan(&status, &thisScan2), &status);
-		  if ( scanInit2.searchRegion.skyRegionString )
-		    LALFree ( scanInit2.searchRegion.skyRegionString );
+		  LAL_CALL ( FreeDopplerSkyScan(&status, &thisScan2), &status);
+		  if ( scanInit2.skyRegionString )
+		    LALFree ( scanInit2.skyRegionString );
 		  
 		  
 		} /* end loop over candidates from 1st stage */
@@ -1143,9 +1135,9 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALDDestroyVectorSequence (&status,  &posStack1), &status);
   
   /* free dopplerscan stuff */
-  LAL_CALL ( FreeDopplerScan(&status, &thisScan1), &status);
-  if ( scanInit1.searchRegion.skyRegionString )
-    LALFree ( scanInit1.searchRegion.skyRegionString );
+  LAL_CALL ( FreeDopplerSkyScan(&status, &thisScan1), &status);
+  if ( scanInit1.skyRegionString )
+    LALFree ( scanInit1.skyRegionString );
 
  
   /* free candidates */

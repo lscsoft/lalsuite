@@ -71,7 +71,7 @@ extern int vrbflg;
 int main(int argc, char *argv[]);
 
 void initUserVars (LALStatus *status);
-
+void loadSkyGridFile (LALStatus *, DopplerSkyGrid **grid, const CHAR *fname);
 
 /*--------------------------------------------------*/
 /* Test function(s) */

@@ -299,7 +299,7 @@ extern "C" {
   INT4 writeFaFb(INT4 *maxIndex, PulsarDopplerParams searchpos);
   void checkUserInputConsistency (LALStatus *);
 
-  void InitSearchGrid ( LALStatus *, DopplerScanState *scan, ConfigVariables *cfg);
+  void InitSearchGrid ( LALStatus *, DopplerSkyScanState *scan, ConfigVariables *cfg);
 
   void WriteFStatLog (LALStatus *, CHAR *argv[]);
   static void swap2(char *location);
@@ -417,7 +417,7 @@ int main(int argc,char *argv[])
 
   INT4 *maxIndex=NULL;           /* array that contains indexes of maximum of each cluster */
   INT4 spdwn;                    /* counter over spindown-params */
-  DopplerScanState thisScan = empty_DopplerScanState; /* current state of the Doppler-scan */
+  DopplerSkyScanState thisScan = empty_DopplerSkyScanState; /* current state of the Doppler-scan */
   PulsarDopplerParams dopplerpos;    /* current search-parameters */
   SkyPosition thisPoint;
   UINT4 loopcounter;             /* Checkpoint-counters for restarting checkpointed search */
@@ -501,7 +501,7 @@ int main(int argc,char *argv[])
   /* main initialization of the code: */
   LAL_CALL ( InitFStat(status, &GV), status);
   
-  /* ----- initialization of the DopplerScanner to step through paramter space ----- */
+  /* ----- initialization of the DopplerSkyScanner to step through paramter space ----- */
   LAL_CALL ( InitSearchGrid(status, &thisScan, &GV), status);
 
   /* ---------- overload Frequency- and spindown-resolution if input by user ----------*/
@@ -521,8 +521,8 @@ int main(int argc,char *argv[])
   {
     const CHAR *str;
     LogPrintf (LOG_DEBUG, "Total number of templates (sky x f x fdot) = %d x %d x %d = %g\n",
-	       thisScan.numGridPoints, GV.FreqImax, GV.SpinImax, 
-	       1.0 * thisScan.numGridPoints * GV.FreqImax * GV.SpinImax );
+	       thisScan.numSkyGridPoints, GV.FreqImax, GV.SpinImax, 
+	       1.0 * thisScan.numSkyGridPoints * GV.FreqImax * GV.SpinImax );
 
     str = GV.searchRegion.skyRegionString;
     LogPrintf (LOG_DETAIL, "skyRegion = '%s'\n", str ? str : "NULL" );
@@ -769,7 +769,7 @@ int main(int argc,char *argv[])
     {
       UINT4 i;
       for (i=0; i < loopcounter; i++) {
-	LAL_CALL (NextDopplerPos( status, &dopplerpos, &thisScan ), status);
+	LAL_CALL (NextDopplerSkyPos( status, &dopplerpos, &thisScan ), status);
 	if (thisScan.state == STATE_FINISHED) {
 	  LogPrintf (LOG_CRITICAL, "Checkpointed loopcounter already at the end of main-loop\n");
 	  return COMPUTEFSTAT_ECHECKPOINT; 
@@ -843,7 +843,7 @@ int main(int argc,char *argv[])
         {
 #if USE_BOINC
           /* make sure the last checkpoint is written even if is not time_to_checkpoint */
-	  if ( boinc_is_standalone() || need2checkpoint || boinc_time_to_checkpoint() || (loopcounter >= (thisScan.numGridPoints-1)) )
+	  if ( boinc_is_standalone() || need2checkpoint || boinc_time_to_checkpoint() || (loopcounter >= (thisScan.numSkyGridPoints-1)) )
             {
 #endif
               FILE *fp;
@@ -883,11 +883,11 @@ int main(int argc,char *argv[])
         /* update progress, the last % is reserved for polka in polka commandline runs */
         double local_fraction_done;
         if (cfsRunNo == 1)
-          local_fraction_done=(((double)loopcounter)/((double)thisScan.numGridPoints))*0.99/2;
+          local_fraction_done=(((double)loopcounter)/((double)thisScan.numSkyGridPoints))*0.99/2;
         else if (cfsRunNo == 2)
-          local_fraction_done=(((double)loopcounter)/((double)thisScan.numGridPoints))*0.99/2+0.495;
+          local_fraction_done=(((double)loopcounter)/((double)thisScan.numSkyGridPoints))*0.99/2+0.495;
         else
-          local_fraction_done=((double)loopcounter)/((double)thisScan.numGridPoints);
+          local_fraction_done=((double)loopcounter)/((double)thisScan.numSkyGridPoints);
         if (local_fraction_done<0.0)
           local_fraction_done=0.0;
         if (local_fraction_done>1.0)
@@ -905,10 +905,10 @@ int main(int argc,char *argv[])
 
 #if !USE_BOINC
       LogPrintfVerbatim (LOG_DETAIL, "\r %5.1f%% ", 
-			 (100.0* loopcounter / thisScan.numGridPoints));
+			 (100.0* loopcounter / thisScan.numSkyGridPoints));
 #endif
       
-      LAL_CALL (NextDopplerPos( status, &dopplerpos, &thisScan ), status);
+      LAL_CALL (NextDopplerSkyPos( status, &dopplerpos, &thisScan ), status);
       
       /* Have we scanned all PulsarDopplerParamss yet? */
       if (thisScan.state == STATE_FINISHED)
@@ -1123,8 +1123,8 @@ int main(int argc,char *argv[])
   /* remove checkpoint-file */
   remove (ckp_fname);
 #endif
-  /* Free DopplerScan-stuff (grid) */
-  LAL_CALL ( FreeDopplerScan(status, &thisScan), status);
+  /* Free DopplerSkyScan-stuff (grid) */
+  LAL_CALL ( FreeDopplerSkyScan(status, &thisScan), status);
   
   LAL_CALL ( Freemem(status), status);
   
@@ -4022,20 +4022,20 @@ void PrintAMCoeffs (REAL8 Alpha, REAL8 Delta, AMCoeffs* amc) {
 #endif
 
 
-/** Set up the search-grid and prepare DopplerScan for stepping through parameter-space.
+/** Set up the search-grid and prepare DopplerSkyScan for stepping through parameter-space.
  * \note this is a bit ugly as it's using global uvar_ User-input variables.
  */
 void
 InitSearchGrid ( LALStatus *status, 
-		 DopplerScanState *scan, 
+		 DopplerSkyScanState *scan, 
 		 ConfigVariables *cfg)
 {
-  DopplerScanInit scanInit = empty_DopplerScanInit; /* init-structure for DopperScanner */
+  DopplerSkyScanInit scanInit = empty_DopplerSkyScanInit; /* init-structure for DopperScanner */
 
   INITSTATUS( status, "InitSearchGrid", rcsid );
   ATTATCHSTATUSPTR (status);
 
-  /* Prepare input-structure for initialization of DopplerScan
+  /* Prepare input-structure for initialization of DopplerSkyScan
    */
   LogPrintf (LOG_DEBUG, "Setting up template grid ...\n");
   scanInit.metricType = (LALPulsarMetricType) uvar_metricType;
@@ -4051,20 +4051,21 @@ InitSearchGrid ( LALStatus *status,
   scanInit.ephemeris = cfg->edat;         /* used by Ephemeris-based metric */
   scanInit.skyGridFile = cfg->skyGridFile;      /* if applicable */
 
-  scanInit.searchRegion = cfg->searchRegion;
+  scanInit.skyRegionString = cfg->searchRegion.skyRegionString;
+  scanInit.Freq = cfg->searchRegion.fkdot[0] + cfg->searchRegion.fkdotBand[0];
 
   /* the following call generates a skygrid plus determines dFreq, df1dot,..
    * Currently the complete template-grid is more like a 'foliation' of
    * the parameter-space by skygrids, stacked along f and f1dot, 
    * not a full 4D metric template-grid
    */
-  TRY ( InitDopplerScan( status->statusPtr, scan, &scanInit), status); 
+  TRY ( InitDopplerSkyScan( status->statusPtr, scan, &scanInit), status); 
 
   /* ---------- should we write the sky-grid to disk? ---------- */
   if ( uvar_outputSkyGrid ) 
     {
       LogPrintf (LOG_NORMAL,   "Now writing sky-grid into file '%s' ...", uvar_outputSkyGrid);
-      TRY (writeSkyGridFile( status->statusPtr, scan->grid, uvar_outputSkyGrid, &scanInit), status);
+      TRY (writeSkyGridFile( status->statusPtr, scan->skyGrid, uvar_outputSkyGrid, &scanInit), status);
       LogPrintfVerbatim (LOG_NORMAL, " done.\n\n");
     }
 

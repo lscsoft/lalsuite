@@ -155,7 +155,7 @@ REAL8 medianbias=1.0;
 /* we use this to avoid closing then re-opening the same file */
 FILE *fp_mergedSFT=NULL;
 
-DopplerScanState thisScan;
+DopplerSkyScanState thisScan;
 ConfigVariables GV;
 
 /* local prototypes */
@@ -185,13 +185,6 @@ void initUserVars (LALStatus *Stat);
 /* BINARY-MOD - declaration of binary template reading function */
 INT4 ReadBinaryTemplateBank(void);
 
-/*----------------------------------------------------------------------
- * Helper function (Yousuke): 
- * Refine the skyRegion to search only at neighboring grid points of the 
- * center of the original skyRegion. 
- *----------------------------------------------------------------------*/
-void InitDopplerScanOnRefinedGrid ( LALStatus *status, DopplerScanState *theScan, DopplerScanInit *scanInit);
-
 #define EPHEM_YEARS  "00-04"
 #define SFT_BNAME  ""
 
@@ -212,7 +205,7 @@ int main(int argc,char *argv[])
   CHAR Fstatsfilename[256];         /* Fstats file name*/
   CHAR Fmaxfilename[256];           /* Fmax file name*/
   INT4 s;
-  DopplerScanInit scanInit;
+  DopplerSkyScanInit scanInit;
   LIGOTimeGPS t0, t1;
   REAL8 duration;
   FILE *fpOut=NULL;
@@ -306,7 +299,7 @@ int main(int argc,char *argv[])
 
   if (!uvar_binary) {
 
-    /* prepare initialization of DopplerScanner to step through paramter space */
+    /* prepare initialization of DopplerSkyScanner to step through paramter space */
     scanInit.dAlpha = uvar_dAlpha;
     scanInit.dDelta = uvar_dDelta;
     scanInit.gridType = uvar_gridType;
@@ -317,7 +310,7 @@ int main(int argc,char *argv[])
     scanInit.obsBegin = t0;
     LAL_CALL ( LALDeltaFloatGPS ( &status, &duration, &t1, &t0), &status);
     scanInit.obsDuration = duration + GV.tsft;
-    /* FIXME: temporariliy disable these lines to allow compiling. Call to InitDopplerScan() 
+    /* FIXME: temporariliy disable these lines to allow compiling. Call to InitDopplerSkyScan() 
      * needs to be adjusted to new API...
     scanInit.fmax  = uvar_Freq;
     if (uvar_FreqBand > 0) scanInit.fmax += uvar_FreqBand;
@@ -331,13 +324,13 @@ int main(int argc,char *argv[])
 
     if (lalDebugLevel) LALPrintError ("\nSetting up template grid ...");
 
-    LAL_CALL ( InitDopplerScan ( &status, &thisScan, &scanInit), &status); 
+    LAL_CALL ( InitDopplerSkyScan ( &status, &thisScan, &scanInit), &status); 
 
     /*----------------------------------------------------------------------*/
     if (lalDebugLevel) LALPrintError ("done.\n");
     if ( uvar_outputSkyGrid ) {
       LALPrintError ("\nNow writing sky-grid into file '%s' ...", uvar_outputSkyGrid);
-      LAL_CALL (writeSkyGridFile ( &status, thisScan.grid, uvar_outputSkyGrid, &scanInit), &status);
+      LAL_CALL (writeSkyGridFile ( &status, thisScan.skyGrid, uvar_outputSkyGrid, &scanInit), &status);
       LALPrintError (" done.\n\n");
     }
 
@@ -361,7 +354,7 @@ int main(int argc,char *argv[])
 	  if ( uvar_gridType == GRID_FLAT )
 	    fprintf (fpOut, "grid = %d x %d x %d \n", nFreq, nAlpha, nDelta);
 	  else
-	    fprintf (fpOut, "points = %d \n", nFreq * thisScan.numGridPoints);
+	    fprintf (fpOut, "points = %d \n", nFreq * thisScan.numSkyGridPoints);
 
 	  fprintf (fpOut, 
 		   "format = ascii\n"
@@ -413,7 +406,7 @@ int main(int argc,char *argv[])
       if (!uvar_binary) 
 	{
 
-	  LAL_CALL (NextDopplerPos( &status, &dopplerpos, &thisScan ), &status);
+	  LAL_CALL (NextDopplerSkyPos( &status, &dopplerpos, &thisScan ), &status);
 	  /* Have we scanned all DopplerPositions yet? */
 	  if (thisScan.state == STATE_FINISHED)
 	    break;
@@ -536,7 +529,7 @@ int main(int argc,char *argv[])
 
       counter ++;
       if (lalDebugLevel) LALPrintError ("Search progress: %5.1f%%", 
-					(100.0* counter / thisScan.numGridPoints));
+					(100.0* counter / thisScan.numSkyGridPoints));
       
     } /*  while SkyPos */
 
@@ -1992,8 +1985,8 @@ void Freemem(LALStatus *status)
 
   if (!uvar_binary) 
     {
-      /* Free DopplerScan-stuff (grid) */
-      TRY (FreeDopplerScan (status->statusPtr, &thisScan), status);
+      /* Free DopplerSkyScan-stuff (grid) */
+      TRY (FreeDopplerSkyScan (status->statusPtr, &thisScan), status);
       if (GV.skyRegion)
 	LALFree ( GV.skyRegion );
     }
