@@ -796,6 +796,12 @@ LALAddSnglInspiralToCoinc(
     SnglInspiralTable          *snglInspiral
     );
 
+CoincInspiralTable *
+XLALAddSnglInspiralToCoinc(
+    CoincInspiralTable         *coincInspiral,
+    SnglInspiralTable          *snglInspiral
+    );
+
 void
 XLALSnglInspiralCoincTest(
     CoincInspiralTable         *coincInspiral,

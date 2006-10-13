@@ -642,15 +642,36 @@ LALAddSnglInspiralToCoinc(
       LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
 
 
-  coincInspiral = *coincPtr;
+  *coincPtr = XLALAddSnglInspiralToCoinc(*coincPtr, snglInspiral);
  
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}
+
+
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+CoincInspiralTable *
+XLALAddSnglInspiralToCoinc(
+    CoincInspiralTable         *coincInspiral,
+    SnglInspiralTable          *snglInspiral
+    )
+/* </lalVerbatim> */
+{
+  static const char *func = "XLALAddSnglInspiralToCoinc";
+  EventIDColumn     *eventId = NULL;
+  
   /* allocate memory for new coinc if it doesn't exist */
   if (! coincInspiral )
   {
     coincInspiral = (CoincInspiralTable *) 
       LALCalloc( 1, sizeof(CoincInspiralTable) );
+    if ( !coincInspiral )
+    {
+      LAL_Free( coincInspiral );
+      XLAL_ERROR_NULL(func,XLAL_ENOMEM);
+    }
   }
-  
+
   switch ( (snglInspiral->ifo)[0] ) 
   {
     case 'G':
@@ -669,7 +690,8 @@ LALAddSnglInspiralToCoinc(
       else
       {
         /* Invalid Hanford Detector */
-        ABORT( status, LIGOMETADATAUTILSH_EDET, LIGOMETADATAUTILSH_MSGEDET );
+        XLALPrintError( "Invalid ifo in input snglInspiral" );
+        XLAL_ERROR_NULL(func,XLAL_EIO);
       } 
       break;
 
@@ -687,7 +709,8 @@ LALAddSnglInspiralToCoinc(
 
     default:
       /* Invalid Detector Site */
-      ABORT( status, LIGOMETADATAUTILSH_EDET, LIGOMETADATAUTILSH_MSGEDET );
+      XLALPrintError( "Invalid ifo in input snglInspiral" );
+      XLAL_ERROR_NULL(func,XLAL_EIO);
   }
 
   ++(coincInspiral->numIfos);
@@ -696,22 +719,29 @@ LALAddSnglInspiralToCoinc(
   if ( ! snglInspiral->event_id )
   {
     eventId = (EventIDColumn *) LALCalloc( 1, sizeof(EventIDColumn) );
+    if ( !eventId )
+    {
+      LAL_Free(eventId);
+      XLAL_ERROR_NULL(func,XLAL_ENOMEM);
+    }
     snglInspiral->event_id = eventId;
   }
   else
   {
-     for( eventId = snglInspiral->event_id; eventId->next; 
-         eventId = eventId->next);
-     eventId = eventId->next = (EventIDColumn *) 
-         LALCalloc( 1, sizeof(EventIDColumn) );
+    for( eventId = snglInspiral->event_id; eventId->next; 
+        eventId = eventId->next);
+    eventId = eventId->next = (EventIDColumn *) 
+        LALCalloc( 1, sizeof(EventIDColumn) );
+    if ( !eventId )
+    {
+      LAL_Free(eventId);
+      XLAL_ERROR_NULL(func,XLAL_ENOMEM);
+    }
   }
   eventId->snglInspiralTable = snglInspiral;
   eventId->coincInspiralTable = coincInspiral;
 
-  *coincPtr = coincInspiral;
-
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
+  return coincInspiral;
 }
 
 
@@ -2281,5 +2311,4 @@ XLALStatCutCoincInspiral (
   }
   return( eventHead );
 }
-
 
