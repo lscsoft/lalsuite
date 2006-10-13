@@ -50,7 +50,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
   REAL8 xTemp;                  /* temp variable for phase model */
   REAL4 xTInt;                   /* integer part of xTemp */
   REAL8 deltaF;                 /* width of SFT band */
-  /* INT4  k1;                     /* defining the sum over which is calculated */
+  /* INT4  k1; */                    /* defining the sum over which is calculated */
   UINT4 k=0;
   REAL8 *skyConst;              /* vector of sky constants data */
   REAL8 *spinDwn;               /* vector of spinDwn parameters (maybe a structure? */
