@@ -1,4 +1,4 @@
-#!/usr/bin/octave
+#!/usr/bin/octave -q 
 ## Octave script for comparing the 1st stage Fstat calculation of 
 ## HierarchicalSearch.c with ComputeFStatistic_v2. We run
 ## HierarchicalSearch using 1 stack and compare the outputs on the same
@@ -11,7 +11,13 @@ startTime = 833786244;
 duration = 200*1800;
 #refTime = 600000000;
 refTime = startTime;
-ephemDir = '/local_data/badkri/lscsoft/share/lal/';
+##ephemDir = '/local_data/badkri/lscsoft/share/lal/';
+## check that LAL_DATA_PATH has been set
+check = getenv ("LAL_DATA_PATH");
+if ( check == "" )
+  printf("\n");
+  error ("Sorry, LAL_DATA_PATH needs to be set!\nSet this to your ephemeris directory, e.g. 'lal-installed/share/lal'\n\n");
+endif
 
 ## doppler parameter space
 fStart = 310;
@@ -42,11 +48,11 @@ signalF1dot = 0;
 ## run makefakedata
 system("mkdir -p ./fakesfts");
 cmd = sprintf("lalapps_Makefakedata --outSFTbname=./fakesfts/ \
-    --IFO=H1 --ephemDir=%s --noiseSqrtSh=1.0e-23\
+    --IFO=H1 --noiseSqrtSh=1.0e-23\
     --ephemYear=05-09 --fmin=%.12g --Band=%.12g --Alpha=%.12g \
     --Delta=%.12g --h0=%.5e --cosi=%.12g --phi0=%.12g --psi=%.12g \
     --Freq=%.12g --f1dot=%.5e --startTime=%.12g --duration=%.12g", \ 
-	      ephemDir, mfdfmin, mfdband, signalAlpha, signalDelta, \
+	      mfdfmin, mfdband, signalAlpha, signalDelta, \
 	      signalh0, signalcosi, signalphi0, signalpsi, \
 	      signalFreq, signalF1dot, startTime, duration)
 
@@ -67,10 +73,10 @@ skyGridFile = "./skygrid";
 cmd = sprintf("ComputeFStatistic_v2 --Freq=%.12g --f1dot=%.12g \
 --FreqBand=%.12g --f1dotBand=%.12g --dFreq=%.12g --df1dot=%.12g \
 --Dterms=8 --refTime=%d --DataFiles='%s' --skyGridFile=%s \
---ephemDir=%s --ephemYear=05-09 --TwoFthreshold=0 --gridType=3 \
+--ephemYear=05-09 --TwoFthreshold=0 --gridType=3 \
 --outputLabel=CFSv2 --outputFstat=CFSv2 --RngMedWindow=101",\ 
 	      fStart, fdot, fBand, fdotBand, dFreq, df1dot, \
- 	      refTime, DataFiles, skyGridFile, ephemDir)
+ 	      refTime, DataFiles, skyGridFile )
 
 [output,status] = system(cmd);
 
@@ -79,10 +85,10 @@ cmd = sprintf("ComputeFStatistic_v2 --Freq=%.12g --f1dot=%.12g \
 cmd = sprintf("HierarchicalSearch --followUp=0 --sftData1='%s' \
 --Freq=%.12g --FreqBand=%.12g --f1dot=%.12g --f1dotBand=%.12g \
 --method=-1 \
---nStacks1=%.12g --gridType1=3 --skyGridFile=%s --refTime=%.12g --ephemDir=%s \
+--nStacks1=%.12g --gridType1=3 --skyGridFile=%s --refTime=%.12g \
 --ephemYear=05-09 --printFstat1=1 --fnameout=./outHS", DataFiles, \
 	      fStart, fBand, fdot, fdotBand, nStacks1, skyGridFile, \
-	      refTime, ephemDir)
+	      refTime)
 	      
 [output,status] = system(cmd);
 
