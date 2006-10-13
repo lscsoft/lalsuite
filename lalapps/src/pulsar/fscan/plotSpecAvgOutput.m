@@ -105,5 +105,6 @@ if (medBins > 0)
   fclose(fid);
 end
 saveas(1, outputFileName);
+delete(1);
 
 return;
