@@ -521,7 +521,7 @@ while (thisStartFreq < endFreq):
      medBins = 10
      argList = '%s %s %s %d %d %d %d %d %d %d' % (inputFileName,outputFileName,channelName,analysisStartTime,analysisEndTime,thisStartFreq,thisEndFreq,effTBase,deltaFTicks,medBins)
      tagStringOut = '%s_%i' % (tagString, nodeCount)  
-     dagFID.write('VARS %s argList="%s" tagstring="%s"\n'%(specAvgJobName,argList,tagStringOut))
+     dagFID.write('VARS %s argList="%s" tagstring="%s"\n'%(runMatlabPlotScriptJobName,argList,tagStringOut))
      dagFID.write('PARENT %s CHILD %s\n'%(specAvgJobName,runMatlabPlotScriptJobName))
   thisStartFreq = thisStartFreq + freqSubBand
   nodeCount = nodeCount + 1
