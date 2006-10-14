@@ -72,6 +72,7 @@ int doBCV2H1H2Veto = 0;
 int doBCVC = 0;
 int h1h2Consistency = 0;
 int doVeto = 0;
+int completeCoincs = 0;
 /*
  * 
  * USAGE
@@ -201,6 +202,8 @@ static void print_usage(char *program)
       "\n"\
       "   --data-type          data_type  specify the data type, must be one of\n"\
       "                                   (playground_only|exclude_play|all_data)\n"\
+      "   --complete-coincs               write out triggers from all non-vetoed ifos\n"
+      "                                   if not seen, snr is equal to zero\n"\
       "  [--location-ra]       rec        right ascension of a source on the sky (degree) [with mchirp_and_eta_ext only]\n"\
       "  [--location-de]       dec        declination of a source on the sky (degree) [with mchirp_and_eta_ext only]\n"\
       "\n"\
@@ -260,6 +263,8 @@ int main( int argc, char *argv[] )
   SnglInspiralTable    *inspiralEventList = NULL;
   SnglInspiralTable    *thisInspiralTrigger = NULL;
   SnglInspiralTable    *snglOutput = NULL;
+  SnglInspiralTable    *completionSngls = NULL;
+
   CoincInspiralTable   *coincInspiralList = NULL;
   CoincInspiralTable   *thisCoinc = NULL;
 
@@ -341,6 +346,7 @@ int main( int argc, char *argv[] )
     {"bcvc",                no_argument,   &doBCVC,                   1 },
     {"do-veto",             no_argument,   &doVeto,                   1 },
     {"grb",                 no_argument,   &doGRB,                    1 },
+    {"complete-coincs",     no_argument,   &completeCoincs,           1 },
     {"g1-slide",            required_argument, 0,                    'b'},
     {"h1-slide",            required_argument, 0,                    'c'},
     {"h2-slide",            required_argument, 0,                    'd'},
@@ -1471,7 +1477,7 @@ int main( int argc, char *argv[] )
     LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );    
   }
   
-  /* store the H1H2 snr cut for BCVSpin */
+  /* store the do GRB */
   if (doGRB)
   {
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
@@ -1483,6 +1489,27 @@ int main( int argc, char *argv[] )
     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
     LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );    
   }
+
+  /* store the complete-coincs option */
+  if (completeCoincs)
+  {
+    if (!multiIfoCoinc)
+    {
+      fprintf( stderr,
+          "--multi-ifo-coinc must be specified when --complete-coincs is.\n" );
+      exit( 1 );
+    }
+
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+        "%s", PROGRAM_NAME );
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+        "--complete-coincs");
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );    
+  }
+
 
   /* store the grb option value */
   accuracyParams.grb=doGRB;
@@ -2011,6 +2038,28 @@ int main( int argc, char *argv[] )
         numCoinc += numCoincInSlide;          
       }
 
+      /* complete the coincs */
+      if ( completeCoincs )
+      {
+        completionSngls = XLALCompleteCoincInspiral ( coincInspiralList, 
+            haveTrig);
+
+        /* do a veto on the new sngls */
+        for ( ifoNumber = 0; ifoNumber< LAL_NUM_IFO; ifoNumber++)
+        {
+        
+          if (doVeto && vetoFileName[ifoNumber] && haveTrig[ifoNumber])
+          {
+            XLALReturnIFO(ifo,ifoNumber);
+            if ( vrbflg ) fprintf( stdout, 
+                "Applying veto list %s on completion sngls for ifo %s \n",
+                vetoFileName[ifoNumber], ifo );
+            completionSngls = XLALVetoSingleInspiral( completionSngls,
+                &(vetoSegs[ifoNumber]), ifo );
+          }
+        }
+      }
+
       /* for all: write out all coincs as singles with event IDs */
       LAL_CALL( LALExtractSnglInspiralFromCoinc( &status, &slideOutput, 
             coincInspiralList, &startCoinc, slideNum), &status );
@@ -2030,6 +2079,14 @@ int main( int argc, char *argv[] )
         thisCoinc = coincInspiralList;
         coincInspiralList = coincInspiralList->next;
         XLALFreeCoincInspiral( &thisCoinc );
+      }
+
+      while ( completionSngls )
+      {
+        SnglInspiralTable *thisSngl = NULL;
+        thisSngl = completionSngls;
+        completionSngls = completionSngls->next;
+        XLALFreeSnglInspiral( &thisSngl );
       }
     }
 
