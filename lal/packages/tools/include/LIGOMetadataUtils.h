@@ -954,6 +954,11 @@ XLALStatCutCoincInspiral (
     REAL4                       statCut
     );
 
+SnglInspiralTable *
+XLALCompleteCoincInspiral (
+    CoincInspiralTable         *eventHead,
+    int                         ifoList[LAL_NUM_IFO]
+    );
 
 /* sim inspiral */
 

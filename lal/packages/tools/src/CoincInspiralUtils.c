@@ -100,15 +100,16 @@ memory associated to the \texttt{CoincInspiralTable} pointed to by
 \texttt{coincPtr}.  This entails freeing the \texttt{CoincInspiralTable} as
 well as any \texttt{eventId}s which point to the coinc.
 
-\texttt{LALAddSnglInspiralToCoinc()} adds a pointer to a single inspiral table
-to a coinc inspiral table.  Upon entry, if \texttt{coincPtr} points to a
-\texttt{NULL} coinc inspiral table, the table is created before a pointer to
-the single inspiral table is added.  Additionally, an \texttt{eventId} table is
-created for the single inspiral table.  This points to both the single and
-coinc inspirals.  If an \texttt{eventId} already exists for the single
-inspiral, another eventId table is added to the linked list.  The linked list
-of \texttt{eventId}s associated to a single inspiral table allow us to easily
-determine which coincident events each single is a part of.
+\texttt{LALAddSnglInspiralToCoinc()} and \texttt{XLALAddSnglInspiralToCoinc()}
+add a pointer to a single inspiral table to a coinc inspiral table.  Upon
+entry, if \texttt{coincPtr} points to a \texttt{NULL} coinc inspiral table, the
+table is created before a pointer to the single inspiral table is added.
+Additionally, an \texttt{eventId} table is created for the single inspiral
+table.  This points to both the single and coinc inspirals.  If an
+\texttt{eventId} already exists for the single inspiral, another eventId table
+is added to the linked list.  The linked list of \texttt{eventId}s associated
+to a single inspiral table allow us to easily determine which coincident events
+each single is a part of.
 
 \texttt{LALSnglInspiralCoincTest()} tests for coincidence between a single
 inspiral and a coinc inspiral.  It works by testing for coincidence between
@@ -166,7 +167,12 @@ coincidence.
 inspiral table and counts the number of events. This count is returned 
 as \texttt{numTrigs}.
 
-
+\texttt{XLALCompleteCoincInspiral()} scans through a linked list of coincidence
+inspirals and checks whether the coincs contain a trigger from every ifo in the
+ifoList with a non-zero value.  If a trigger does not exist, it is added at the
+appropriate time for the appropriate ifo, with zero snr.  The code returns a
+linked list of new single inspirals which were created in the process of
+completing the coincs.
 
 \subsubsection*{Algorithm}
 
@@ -2311,4 +2317,68 @@ XLALStatCutCoincInspiral (
   }
   return( eventHead );
 }
+
+
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+SnglInspiralTable *
+XLALCompleteCoincInspiral (
+    CoincInspiralTable         *eventHead,
+    int                         ifoList[LAL_NUM_IFO]
+    )
+/* </lalVerbatim> */
+{
+  static const char     *func = "XLALCompleteCoincInspiral";
+  CoincInspiralTable    *thisCoinc = NULL;
+  SnglInspiralTable     *snglHead  = NULL;
+  SnglInspiralTable     *thisSngl   = NULL;
+  InterferometerNumber   ifoNumber  = LAL_UNKNOWN_IFO;
+  InterferometerNumber   ifoNum  = LAL_UNKNOWN_IFO;
+
+  for ( thisCoinc = eventHead; thisCoinc; thisCoinc = thisCoinc->next )
+  {
+    for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+    {
+      if ( ifoList[ifoNumber] && !thisCoinc->snglInspiral[ifoNumber] )
+      {
+        /* we need to add a trigger for this ifo with zero snr, 
+         * but correct end time */
+        if ( !snglHead )
+        {
+          snglHead = thisSngl = (SnglInspiralTable *) 
+              LALCalloc( 1, sizeof(SnglInspiralTable) );
+        }
+        else
+        {
+          thisSngl = thisSngl->next = (SnglInspiralTable *) 
+              LALCalloc( 1, sizeof(SnglInspiralTable) );
+        }
+        /* check that the sngl was allocated successfully */
+        if ( !thisSngl )
+        {
+          while ( snglHead )
+          {
+            thisSngl = snglHead;
+            snglHead = snglHead->next;
+            LALFree(thisSngl);
+          }
+          XLAL_ERROR_NULL(func,XLAL_ENOMEM);
+        }
+
+        /* populate the ifo field */
+        XLALReturnIFO(thisSngl->ifo,ifoNumber);
+        XLALPrintInfo( "Appending a zero snr trigger for %s\n", thisSngl->ifo);
+
+        /* obtain the end time */
+        ifoNum = 0;
+        while (!thisCoinc->snglInspiral[ifoNum]) ifoNum++;
+        thisSngl->end_time = thisCoinc->snglInspiral[ifoNum]->end_time;
+
+        /* add sngl to coinc */
+        thisCoinc = XLALAddSnglInspiralToCoinc( thisCoinc, thisSngl );
+      }
+    }
+  }
+  return( snglHead );
+}
+
 
