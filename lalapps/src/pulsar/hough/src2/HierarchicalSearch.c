@@ -552,10 +552,21 @@ int main( int argc, char *argv[]) {
 
   /* initialize ephemeris info */ 
   {
-    CHAR ephemE[512], ephemS[512];
+#define FNAME_LENGTH 512
+    CHAR ephemE[FNAME_LENGTH], ephemS[FNAME_LENGTH];
     
-    sprintf(ephemE, "%s/earth%s.dat", uvar_ephemDir, uvar_ephemYear);
-    sprintf(ephemS, "%s/sun%s.dat", uvar_ephemDir, uvar_ephemYear);
+    if ( LALUserVarWasSet(&uvar_ephemDir) )
+      {
+	LALSnprintf(ephemE, FNAME_LENGTH, "%s/earth%s.dat", uvar_ephemDir, uvar_ephemYear);
+	LALSnprintf(ephemS, FNAME_LENGTH, "%s/sun%s.dat", uvar_ephemDir, uvar_ephemYear);
+      }
+    else
+      {
+	LALSnprintf(ephemE, FNAME_LENGTH, "earth%s.dat", uvar_ephemYear);
+	LALSnprintf(ephemS, FNAME_LENGTH, "sun%s.dat",  uvar_ephemYear);
+      }
+    ephemE[FNAME_LENGTH-1]=0;
+    ephemS[FNAME_LENGTH-1]=0;
     
     edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
     (*edat).ephiles.earthEphemeris = ephemE;
