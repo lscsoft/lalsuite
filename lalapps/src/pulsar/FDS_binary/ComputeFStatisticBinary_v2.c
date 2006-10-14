@@ -330,7 +330,7 @@ int main(int argc,char *argv[])
     if (lalDebugLevel) LALPrintError ("done.\n");
     if ( uvar_outputSkyGrid ) {
       LALPrintError ("\nNow writing sky-grid into file '%s' ...", uvar_outputSkyGrid);
-      LAL_CALL (writeSkyGridFile ( &status, thisScan.skyGrid, uvar_outputSkyGrid, &scanInit), &status);
+      LAL_CALL (writeSkyGridFile ( &status, thisScan.skyGrid, uvar_outputSkyGrid ), &status);
       LALPrintError (" done.\n\n");
     }
 
