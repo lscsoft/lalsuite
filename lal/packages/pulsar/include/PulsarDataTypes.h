@@ -67,6 +67,17 @@ typedef struct {
 
 typedef REAL8 PulsarSpins[PULSAR_MAX_SPINS];
 
+/** Contains a "spin-range", ie spins \f$f^{(k)}\f$ and corresponding bands \f$\Delta f^{(k)}\f$
+ *  at a given (SSB) reference GPS-time \f$\tau\f$. 
+ * "Canonical" ordering refers to \f$\Delta f^{(k)} >= 0\f$ for all k.
+ */
+typedef struct
+{
+  LIGOTimeGPS epoch;		/**< SSB reference GPS-time at which spin-range is defined */
+  PulsarSpins fkdot;		/**< Vector of spin-values \f$f^{(k)}\f$ */
+  PulsarSpins fkdotBand;	/**< Vector of spin-bands \f$\Delta f^{(k)}\f$, MUST be same length as fkdot */
+} PulsarSpinRange;
+
 /** Type containing the 'Doppler-parameters' affecting the time-evolution of the phase */
 typedef struct {
   LIGOTimeGPS refTime;	/**< reference time of pulsar parameters (in SSB!) */

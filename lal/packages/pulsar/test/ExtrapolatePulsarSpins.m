@@ -121,8 +121,8 @@ epoch1 = 714180733 + 94608000;
 epoch2 = 714180733 - 94608000;
 
 range0.epoch = epoch0;
-range0.fkdot = [ 300,  -1.0000e-07, 1.0000e-15, -1.0000e-22 , 2.0000e-29 ];
-range0.fkdotBand = [0, -1.0e-7,  1.0e-15, -1.0e-22, -1.0e-30 ];
+range0.fkdot = [ 300,  -1.0000e-07, 1.0000e-15, -1.0000e-22 ];
+range0.fkdotBand = [0, -1.0e-7,  1.0e-15, -1.0e-22];
 
 save_prec = output_precision;
 output_precision = 16;

@@ -184,6 +184,7 @@ LALSimulateExactPulsarSignal (LALStatus *status,
   AMCoeffs *amcoe;
   REAL8 xAzi, yAzi;
   REAL8 Zeta, sinZeta;
+  UINT4 numSpins = PULSAR_MAX_SPINS;
 
   CHAR *channel;
 
@@ -197,13 +198,11 @@ LALSimulateExactPulsarSignal (LALStatus *status,
 
   /* get timestamps of timeseries plus detector-states */
   dt = 1.0 / params->samplingRate;
-  TRY ( LALMakeTimestamps(status->statusPtr, &timestamps, params->startTimeGPS, params->duration, dt), 
-	status);
+  TRY ( LALMakeTimestamps(status->statusPtr, &timestamps, params->startTimeGPS, params->duration, dt),  status);
 
   numSteps = timestamps->length;
 
-  TRY(LALGetDetectorStates(status->statusPtr, &detStates,timestamps,params->site,params->ephemerides,0),
-      status );
+  TRY(LALGetDetectorStates(status->statusPtr, &detStates,timestamps,params->site,params->ephemerides,0), status );
   
   TRY ( LALDestroyTimestampVector (status->statusPtr, &timestamps), status );
   timestamps = NULL;
@@ -216,16 +215,13 @@ LALSimulateExactPulsarSignal (LALStatus *status,
   /* create output timeseries (FIXME: should really know *detector* here, not just site!!) */
   if ( (channel = XLALGetChannelPrefix ( site->name )) == NULL )
     {
-      LALPrintError ("\nXLALGetChannelPrefix() Failed to extract channel-prefix from site '%s'\n\n", 
-		     site->name );
+      LALPrintError ("\nXLALGetChannelPrefix() Failed to extract channel-prefix from site '%s'\n\n", site->name );
       ABORT (status, GENERATEPULSARSIGNALH_EDETECTOR, GENERATEPULSARSIGNALH_MSGEDETECTOR );
     }
 
-  if ( NULL == ((*timeSeries) = XLALCreateREAL4TimeSeries( channel, &(detStates->data[0].tGPS), 
-							   0, dt, &emptyUnit, numSteps) ) )
-    {
-      ABORT ( status, SIMULATEPULSARSIGNAL_EMEM, SIMULATEPULSARSIGNAL_MSGEMEM );
-    }
+  if ( NULL == ((*timeSeries) = XLALCreateREAL4TimeSeries( channel, &(detStates->data[0].tGPS), 0, dt, &emptyUnit, numSteps) ) )  {
+    ABORT ( status, SIMULATEPULSARSIGNAL_EMEM, SIMULATEPULSARSIGNAL_MSGEMEM );
+  }
   LALFree ( channel );
 
   /* orientation of detector arms */
@@ -248,10 +244,9 @@ LALSimulateExactPulsarSignal (LALStatus *status,
   phi0 = params->pulsar.phi0;
   f0   = params->pulsar.f0;
 
-  if ( params->pulsar.spindown && (params->pulsar.spindown->length > NUM_SPINDOWNS) )
+  if ( params->pulsar.spindown && (params->pulsar.spindown->length > numSpins) )
     {
-      LALPrintError ("Sorry, SimulatePulsarSignal() only supports up to %d spindowns!\n", 
-		     NUM_SPINDOWNS );
+      LALPrintError ("Sorry, SimulatePulsarSignal() only supports up to %d spindowns!\n", numSpins );
       ABORT (status,  SIMULATEPULSARSIGNAL_EINPUT,  SIMULATEPULSARSIGNAL_MSGEINPUT);
     }
   if ( params->pulsar.spindown && (params->pulsar.spindown->length >= 3 ) )
@@ -277,21 +272,16 @@ LALSimulateExactPulsarSignal (LALStatus *status,
       REAL8 refTime0 = GPS2REAL8(params->pulsar.tRef);
       REAL8 deltaRef = startTimeSSB - refTime0; 
       LIGOTimeGPS newEpoch;
-      REAL8Vector *fkdotOld, *fkdotNew;
+      PulsarSpins fkdotOld, fkdotNew;
       
       XLALFloatToGPS( &newEpoch, startTimeSSB );
 
-      fkdotOld = XLALCreateREAL8Vector ( 1 + NUM_SPINDOWNS ); 
-      fkdotNew = XLALCreateREAL8Vector ( 1 + NUM_SPINDOWNS ); 
-      if ( (fkdotNew == NULL ) || ( fkdotOld == NULL ) ) {
-	ABORT ( status, SIMULATEPULSARSIGNAL_EMEM, SIMULATEPULSARSIGNAL_MSGEMEM );
-      }
-      fkdotOld->data[0] = f0;
-      fkdotOld->data[1] = f1dot;
-      fkdotOld->data[2] = f2dot;
-      fkdotOld->data[3] = f3dot;
+      fkdotOld[0] = f0;
+      fkdotOld[1] = f1dot;
+      fkdotOld[2] = f2dot;
+      fkdotOld[3] = f3dot;
 
-      TRY ( LALExtrapolatePulsarSpins( status->statusPtr, fkdotNew, newEpoch, fkdotOld, params->pulsar.tRef ), status );
+      TRY ( LALExtrapolatePulsarSpins ( status->statusPtr, fkdotNew, newEpoch, fkdotOld, params->pulsar.tRef ), status );
 
       /* Finally, need to propagate phase */
       phi0 += LAL_TWOPI * (               f0    * deltaRef 
@@ -300,12 +290,10 @@ LALSimulateExactPulsarSignal (LALStatus *status,
 			    + (1.0/24.0)* f3dot * deltaRef * deltaRef * deltaRef * deltaRef 
 			    );
 
-      f0    = fkdotNew->data[0];
-      f1dot = fkdotNew->data[1];
-      f2dot = fkdotNew->data[2];
-      f3dot = fkdotNew->data[3];
-      XLALDestroyREAL8Vector ( fkdotOld );
-      XLALDestroyREAL8Vector ( fkdotNew );
+      f0    = fkdotNew[0];
+      f1dot = fkdotNew[1];
+      f2dot = fkdotNew[2];
+      f3dot = fkdotNew[3];
 
       refTime = startTimeSSB;
 

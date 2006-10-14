@@ -100,36 +100,14 @@ NRCSID( EXTRAPOLATEPULSARSPINSH, "$Id$");
 
 /*---------- exported TYPES ----------*/
 
-/** Contains a "spin-range", ie spins \f$f^{(k)}\f$ and corresponding bands \f$\Delta f^{(k)}\f$
- *  at a given (SSB) reference GPS-time \f$\tau\f$. 
- * "Canonical" ordering refers to \f$\Delta f^{(k)} >= 0\f$ for all k.
- */
-typedef struct
-{
-  LIGOTimeGPS epoch;		/**< SSB reference GPS-time at which spin-range is defined */
-  REAL8Vector *fkdot;		/**< Vector of spin-values \f$f^{(k)}\f$ */
-  REAL8Vector *fkdotBand;	/**< Vector of spin-bands \f$\Delta f^{(k)}\f$, MUST be same length as fkdot */
-} LALPulsarSpinRange;
-  
-
-
 /*---------- exported Global variables ----------*/
 
 /*---------- exported prototypes [API] ----------*/
-LALPulsarSpinRange *XLALCreatePulsarSpinRange ( UINT4 numSpins );
-void XLALDestroyPulsarSpinRange ( LALPulsarSpinRange *range );
+void LALExtrapolatePulsarSpinRange( LALStatus *, PulsarSpinRange *range1, LIGOTimeGPS epoch1,  const PulsarSpinRange *range0 );
 
-void LALExtrapolatePulsarSpinRange( LALStatus *, LALPulsarSpinRange *range1, LIGOTimeGPS epoch1, 
-				    const LALPulsarSpinRange *range0 );
+void LALExtrapolatePulsarSpins (LALStatus *, PulsarSpins fkdot1, LIGOTimeGPS epoch1, PulsarSpins fkdot0, LIGOTimeGPS epoch0 );
 
-void LALExtrapolatePulsarSpins (LALStatus *, REAL8Vector *fkdot1, LIGOTimeGPS epoch1,
-				const REAL8Vector *fkdot0, LIGOTimeGPS epoch0);
-
-void LALExtrapolatePulsarSpins2 (LALStatus *, PulsarSpins fkdot1, LIGOTimeGPS  epoch1, 
-				 PulsarSpins  fkdot0,	LIGOTimeGPS  epoch0 );
-
-void LALExtrapolatePulsarPhase (LALStatus *, REAL8 *phi1, PulsarSpins fkdot1, LIGOTimeGPS epoch1,
-				REAL8 phi0, LIGOTimeGPS epoch0);
+void LALExtrapolatePulsarPhase (LALStatus *, REAL8 *phi1, PulsarSpins fkdot1, LIGOTimeGPS epoch1, REAL8 phi0, LIGOTimeGPS epoch0);
 
 
 #ifdef  __cplusplus

@@ -84,14 +84,12 @@ int main(int argc, char *argv[])
 {
   LALStatus status = empty_status;
   PulsarSpins result;
-  REAL8Vector *fkdot0 = NULL; 
-  REAL8Vector *fkdot1 = NULL;
+  PulsarSpins fkdot0, fkdot1;
   REAL8 tolerance = 1.0e-12;
   REAL8 tolerancePhi = 1.0e-6;
-  PulsarSpins spins0, spins1;
 
-  LALPulsarSpinRange *range0, *range2;
-  LALPulsarSpinRange *rangeResult;
+  PulsarSpinRange range0, range2;
+  PulsarSpinRange rangeResult;
 
   LIGOTimeGPS epoch0 = {714180733, 0};
   LIGOTimeGPS epoch1 = {714180733 + 94608000, 0};	/* 3 years later */
@@ -100,23 +98,11 @@ int main(int argc, char *argv[])
   if ( argc == 1 )
     argc = 1;	/* avoid warning */
 
-  fkdot0 = XLALCreateREAL8Vector ( 4 );	/* 3 spindowns */
-  fkdot1 = XLALCreateREAL8Vector ( 4 );
-
-  range0 = XLALCreatePulsarSpinRange ( 5 );	/* 4 spindowns */
-  range2 = XLALCreatePulsarSpinRange ( 5 );
-  rangeResult = XLALCreatePulsarSpinRange ( 5 );
   /* set up initial spin-values */
-  fkdot0->data[0] = 300.0;
-  fkdot0->data[1] = -1.e-7;
-  fkdot0->data[2] = 1e-15;
-  fkdot0->data[3] = -1e-22;
-
-  /* do the same extrapolations with the 'PulsarSpins' type */
-  spins0[0] = fkdot0->data[0];
-  spins0[1] = fkdot0->data[1];
-  spins0[2] = fkdot0->data[2];
-  spins0[3] = fkdot0->data[3];
+  fkdot0[0] = 300.0;
+  fkdot0[1] = -1.e-7;
+  fkdot0[2] = 1e-15;
+  fkdot0[3] = -1e-22;
 
   /* Result: (from ExtrPulsarSpins.m) */
   result[0] =  2.809011145986047e+02;
@@ -128,166 +114,118 @@ int main(int argc, char *argv[])
   printf(" \n ----- Test1: LALExtrapolatePulsarSpins() ----- \n");
   printf("Input @ tau0 = %d.%09d : [%.10g, %.10g, %.10g, %.10g ]\n", 
 	 epoch0.gpsSeconds, epoch0.gpsNanoSeconds,
-	 fkdot0->data[0], fkdot0->data[1], fkdot0->data[2], fkdot0->data[3] );
+	 fkdot0[0], fkdot0[1], fkdot0[2], fkdot0[3] );
 
   SUB ( LALExtrapolatePulsarSpins (&status, fkdot1, epoch1, fkdot0, epoch0), &status );
 
-  printf("Output@ tau1 = %d.%09d : [%.10g, %.10g, %.10g, %.10g]\n",
-	 epoch1.gpsSeconds, epoch1.gpsNanoSeconds,
-	 fkdot1->data[0], fkdot1->data[1], fkdot1->data[2], fkdot1->data[3] );
-  
-  /* do the same with LALExtrapolatePulsarSpins2() */
-  SUB ( LALExtrapolatePulsarSpins2 (&status, spins1, epoch1, spins0, epoch0), &status );
-
   printf("Output2@ tau1 = %d.%09d : [%.10g, %.10g, %.10g, %.10g]\n",
 	 epoch1.gpsSeconds, epoch1.gpsNanoSeconds,
-	 spins1[0], spins1[1], spins1[2], spins1[3] );
+	 fkdot1[0], fkdot1[1], fkdot1[2], fkdot1[3] );
 
   printf ("Reference-result:                  : [%.10g, %.10g, %.10g, %.10g]\n",
 	  result[0], result[1], result[2], result[3] );
 
-  if ( (RELERROR(fkdot1->data[0], result[0]) > tolerance) ||
-       (RELERROR(fkdot1->data[1], result[1]) > tolerance) ||
-       (RELERROR(fkdot1->data[2], result[2]) > tolerance) ||
-       (RELERROR(fkdot1->data[3], result[3]) > tolerance) )
+  if ( (RELERROR(fkdot1[0], result[0]) > tolerance) ||
+       (RELERROR(fkdot1[1], result[1]) > tolerance) ||
+       (RELERROR(fkdot1[2], result[2]) > tolerance) ||
+       (RELERROR(fkdot1[3], result[3]) > tolerance) )
     {
-      LALPrintError ( "\nRelative error of XLALExtrapolatePulsarSpins() exceeds tolerance of %g \n\n",
-		      tolerance);
+      LALPrintError ( "\nRelative error of XLALExtrapolatePulsarSpins() exceeds tolerance of %g \n\n", tolerance);
       return -1;
     }
   else
-    printf ("\n ==> OK. LALExtrapolatePulsarSpins() lies within %g of the reference-result!\n",
-	    tolerance);
-
-  if ( (RELERROR(spins1[0], result[0]) > tolerance) ||
-       (RELERROR(spins1[1], result[1]) > tolerance) ||
-       (RELERROR(spins1[2], result[2]) > tolerance) ||
-       (RELERROR(spins1[3], result[3]) > tolerance) )
-    {
-      LALPrintError ( "\nRelative error of LALExtrapolatePulsarSpins2() exceeds tolerance of %g \n\n",
-		      tolerance);
-      return -1;
-    }
-  else
-    printf ("\n ==> OK. LALExtrapolatePulsarSpins2() lies within %g of the reference-result!\n",
-	    tolerance);
+    printf ("\n ==> OK. LALExtrapolatePulsarSpins() lies within %g of the reference-result!\n", tolerance);
 
   /* ----- propagate phase from epoch1 --> epoch0, given fkdot0 ----- */
   {
-
     REAL8 phi1Result = 3.951107892803490;	/* from ExtrapolatePulsarSpins.m */
     REAL8 phi0, phi1;
 
     phi0 = 1;
-    SUB ( LALExtrapolatePulsarPhase ( &status, &phi1, spins1, epoch1, phi0, epoch0 ), &status );
+    SUB ( LALExtrapolatePulsarPhase ( &status, &phi1, fkdot1, epoch1, phi0, epoch0 ), &status );
 
     printf ("\nExtrapolated phase phi1 = %.16f, Reference-result = %.16f\n", phi1, phi1Result );
     if ( RELERROR(phi1, phi1Result) > tolerancePhi ) 
       {
-	LALPrintError ( "\nRelative error of LALExtrapolatePulsarPhase() exceeds tolerance of %g \n\n",
-			tolerancePhi);
+	LALPrintError ( "\nRelative error of LALExtrapolatePulsarPhase() exceeds tolerance of %g \n\n", tolerancePhi);
 	return -1;
       }
     else
-      printf ("\n ==> OK. LALExtrapolatePulsarPhase() lies within %g of the reference-result!\n",
-	      tolerancePhi);
+      printf ("\n ==> OK. LALExtrapolatePulsarPhase() lies within %g of the reference-result!\n", tolerancePhi);
   }
 
   /* ----- now test LALExtrapolatePulsarSpinRange() ----- */
   /* set up initial spin-range */
-  range0->epoch = epoch0;
-  range0->fkdot->data[0] = fkdot0->data[0];
-  range0->fkdot->data[1] = fkdot0->data[1];
-  range0->fkdot->data[2] = fkdot0->data[2];
-  range0->fkdot->data[3] = fkdot0->data[3];
-  range0->fkdot->data[4] = 2.0000e-29;
+  range0.epoch = epoch0;
+  range0.fkdot[0] = fkdot0[0];
+  range0.fkdot[1] = fkdot0[1];
+  range0.fkdot[2] = fkdot0[2];
+  range0.fkdot[3] = fkdot0[3];
 
-  range0->fkdotBand->data[0] = 0;
-  range0->fkdotBand->data[1] = -1.0e-7;
-  range0->fkdotBand->data[2] =  1.0e-15;
-  range0->fkdotBand->data[3] = -1.0e-22;
-  range0->fkdotBand->data[4] = -1.0e-30;
+  range0.fkdotBand[0] = 0;
+  range0.fkdotBand[1] = -1.0e-7;
+  range0.fkdotBand[2] =  1.0e-15;
+  range0.fkdotBand[3] = -1.0e-22;
 
   /* set up the range reference-result (from ExtrapolatePulsarSpins.m) */
-  rangeResult->epoch.gpsSeconds = 619572733;
-  rangeResult->epoch.gpsNanoSeconds = 0;
-  rangeResult->fkdot->data[0] = 3.914735849716052e+02;
-  rangeResult->fkdot->data[1] = -4.106967813079040e-06;
-  rangeResult->fkdot->data[2] =  9.549219980800000e-14;
-  rangeResult->fkdot->data[3] =  -2.092160000000000e-21;
-  rangeResult->fkdot->data[4] =   1.900000000000000e-29;
+  rangeResult.epoch.gpsSeconds = 619572733;
+  rangeResult.epoch.gpsNanoSeconds = 0;
 
-  rangeResult->fkdotBand->data[0] =  3.138766569203784e+01;
-  rangeResult->fkdotBand->data[1] =  7.832759055339521e-07;
-  rangeResult->fkdotBand->data[2] =  1.493613683200000e-14;
-  rangeResult->fkdotBand->data[3] =  1.946080000000001e-22;
-  rangeResult->fkdotBand->data[4] =  1.000000000000000e-30;
+  rangeResult.fkdot[0] =  3.280495590653952e+02;
+  rangeResult.fkdot[1] = -1.284283366400000e-06;
+  rangeResult.fkdot[2] =  1.046080000000000e-14;
+  rangeResult.fkdot[3] = -2.000000000000000e-22;
 
+  rangeResult.fkdotBand[0] =  2.804955906539521e+01;
+  rangeResult.fkdotBand[1] =  6.421416832000000e-07;
+  rangeResult.fkdotBand[2] =  1.046080000000000e-14;
+  rangeResult.fkdotBand[3] =  1.000000000000000e-22;
 
   printf(" \n ----- Test2: LALExtrapolatePulsarSpinRange() ----- \n");
-  printf ("Input: epoch = %d.%09d \n", range0->epoch.gpsSeconds, range0->epoch.gpsNanoSeconds );
-  printf ("Input: fkdot     = [%.10g, %.10g, %.10g, %.10g, %.10g ]\n",
-		 range0->fkdot->data[0], range0->fkdot->data[1], range0->fkdot->data[2], 
-		 range0->fkdot->data[3], range0->fkdot->data[4] ); 
-  printf ("Input: fkdotBand = [%.10g, %.10g, %.10g, %.10g, %.10g ]\n",
-		 range0->fkdotBand->data[0], range0->fkdotBand->data[1], range0->fkdotBand->data[2], 
-		 range0->fkdotBand->data[3], range0->fkdotBand->data[4] ); 
+  printf ("Input: epoch = %d.%09d \n", range0.epoch.gpsSeconds, range0.epoch.gpsNanoSeconds );
+  printf ("Input: fkdot     = [%.10g, %.10g, %.10g, %.10g ]\n",
+	  range0.fkdot[0], range0.fkdot[1], range0.fkdot[2],  range0.fkdot[3] );
+  printf ("Input: fkdotBand = [%.10g, %.10g, %.10g, %.10g ]\n",
+	  range0.fkdotBand[0], range0.fkdotBand[1], range0.fkdotBand[2], range0.fkdotBand[3] );
 
-  SUB ( LALExtrapolatePulsarSpinRange (&status, range2, epoch2, range0 ), &status ); 
+  SUB ( LALExtrapolatePulsarSpinRange (&status, &range2, epoch2, &range0 ), &status ); 
 
   printf ("\n");
-  printf ("Output: epoch = %d.%09d \n", range2->epoch.gpsSeconds, range2->epoch.gpsNanoSeconds );
-  printf ("Output: fkdot     = [%.10g, %.10g, %.10g, %.10g, %.10g ]\n",
-		 range2->fkdot->data[0], range2->fkdot->data[1], range2->fkdot->data[2], 
-		 range2->fkdot->data[3], range2->fkdot->data[4] ); 
-  printf ("Output: fkdotBand = [%.10g, %.10g, %.10g, %.10g, %.10g ]\n",
-		 range2->fkdotBand->data[0], range2->fkdotBand->data[1], range2->fkdotBand->data[2], 
-		 range2->fkdotBand->data[3], range2->fkdotBand->data[4] ); 
-
-  printf ("\n");
-  printf ("Octave : fkdot     = [%.10g, %.10g, %.10g, %.10g, %.10g ]\n",
-		 rangeResult->fkdot->data[0], rangeResult->fkdot->data[1], 
-		 rangeResult->fkdot->data[2], rangeResult->fkdot->data[3], 
-		 rangeResult->fkdot->data[4] ); 
-  printf ("Octave : fkdotBand = [%.10g, %.10g, %.10g, %.10g, %.10g ]\n",
-		 rangeResult->fkdotBand->data[0], rangeResult->fkdotBand->data[1], 
-		 rangeResult->fkdotBand->data[2], rangeResult->fkdotBand->data[3], 
-		 rangeResult->fkdotBand->data[4] ); 
+  printf ("Output: epoch = %d.%09d \n", range2.epoch.gpsSeconds, range2.epoch.gpsNanoSeconds );
+  printf ("Output: fkdot     = [%.10g, %.10g, %.10g, %.10g ]\n",
+	  range2.fkdot[0], range2.fkdot[1], range2.fkdot[2], range2.fkdot[3] );
+  printf ("Output: fkdotBand = [%.10g, %.10g, %.10g, %.10g ]\n",
+	  range2.fkdotBand[0], range2.fkdotBand[1], range2.fkdotBand[2], range2.fkdotBand[3] );
   
-  if ( (range2->epoch.gpsSeconds != rangeResult->epoch.gpsSeconds) 
-       || ( range2->epoch.gpsNanoSeconds != rangeResult->epoch.gpsNanoSeconds ) )
+  printf ("\n");
+  printf ("Octave : fkdot     = [%.10g, %.10g, %.10g, %.10g ]\n",
+	  rangeResult.fkdot[0], rangeResult.fkdot[1], rangeResult.fkdot[2], rangeResult.fkdot[3] ); 
+  printf ("Octave : fkdotBand = [%.10g, %.10g, %.10g, %.10g ]\n",
+	  rangeResult.fkdotBand[0], rangeResult.fkdotBand[1], rangeResult.fkdotBand[2], rangeResult.fkdotBand[3] );
+  
+  if ( (range2.epoch.gpsSeconds != rangeResult.epoch.gpsSeconds) 
+       || ( range2.epoch.gpsNanoSeconds != rangeResult.epoch.gpsNanoSeconds ) )
     {
       LALPrintError ("\nOutput-range has wrong epoch\n");
       return -1;
     }
 
-  if ( (RELERROR(range2->fkdot->data[0], rangeResult->fkdot->data[0]) > tolerance) ||
-       (RELERROR(range2->fkdot->data[1], rangeResult->fkdot->data[1]) > tolerance) ||
-       (RELERROR(range2->fkdot->data[2], rangeResult->fkdot->data[2]) > tolerance) ||
-       (RELERROR(range2->fkdot->data[3], rangeResult->fkdot->data[3]) > tolerance) ||
-       (RELERROR(range2->fkdot->data[4], rangeResult->fkdot->data[4]) > tolerance) ||
+  if ( (RELERROR(range2.fkdot[0], rangeResult.fkdot[0]) > tolerance) ||
+       (RELERROR(range2.fkdot[1], rangeResult.fkdot[1]) > tolerance) ||
+       (RELERROR(range2.fkdot[2], rangeResult.fkdot[2]) > tolerance) ||
+       (RELERROR(range2.fkdot[3], rangeResult.fkdot[3]) > tolerance) ||
 
-       (RELERROR(range2->fkdotBand->data[0], rangeResult->fkdotBand->data[0]) > tolerance) ||
-       (RELERROR(range2->fkdotBand->data[1], rangeResult->fkdotBand->data[1]) > tolerance) ||
-       (RELERROR(range2->fkdotBand->data[2], rangeResult->fkdotBand->data[2]) > tolerance) ||
-       (RELERROR(range2->fkdotBand->data[3], rangeResult->fkdotBand->data[3]) > tolerance) ||
-       (RELERROR(range2->fkdotBand->data[4], rangeResult->fkdotBand->data[4]) > tolerance) 
+       (RELERROR(range2.fkdotBand[0], rangeResult.fkdotBand[0]) > tolerance) ||
+       (RELERROR(range2.fkdotBand[1], rangeResult.fkdotBand[1]) > tolerance) ||
+       (RELERROR(range2.fkdotBand[2], rangeResult.fkdotBand[2]) > tolerance) ||
+       (RELERROR(range2.fkdotBand[3], rangeResult.fkdotBand[3]) > tolerance) 
        )
     {
-      LALPrintError ( "\nRelative error of LALExtrapolatePulsarSpinRange() exceeds tolerance of %g \n",
-		      tolerance );
+      LALPrintError ( "\nRelative error of LALExtrapolatePulsarSpinRange() exceeds tolerance of %g \n", tolerance );
       return -1;
     }
   else
-    printf ("\n ==> OK. LALExtrapolatePulsarSpinRange() lies within %g of the reference-result!\n\n",
-	    tolerance);
-
-  LALDDestroyVector (&status, &fkdot0);
-  LALDDestroyVector (&status, &fkdot1);
-
-  XLALDestroyPulsarSpinRange(range0);
-  XLALDestroyPulsarSpinRange(range2);
-  XLALDestroyPulsarSpinRange(rangeResult);
+    printf ("\n ==> OK. LALExtrapolatePulsarSpinRange() lies within %g of the reference-result!\n\n", tolerance);
 
   LALCheckMemoryLeaks();
 

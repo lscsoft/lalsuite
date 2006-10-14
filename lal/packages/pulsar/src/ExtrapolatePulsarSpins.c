@@ -50,73 +50,11 @@ NRCSID( EXTRAPOLATEPULSARSPINSC, "$Id$");
 
 /*---------- main functions ---------- */
 
-/** Extrapolate the Pulsar spin-paramters \f$\{f, \stackrel{.}{f},\ddot{f},...\}\f$
- *  (\a fkdotOld) from the initial reference-epoch \f$\tau_0\f$ (\a epoch0)
- *  to the new reference-epoch \f$\tau_1\f$ (\a epoch1).
- *
- * This is a simple wrapper to LALExtrapolatePulsarSpinRange() for the simpler case of zero-band ranges.
- * Both fkdot1 and fkdot0 must be allocated and have the same length, but ARE allowed to 
- * point to the SAME vector, in which case the input gets overwritten with the output.
- */
-void
-LALExtrapolatePulsarSpins (LALStatus *status,
-			   REAL8Vector *fkdot1,		/**< [out] spin-parameters at epoch1 */
-			   LIGOTimeGPS  epoch1, 	/**< [in] GPS SSB-time of new epoch */
-			   const REAL8Vector *fkdot0,	/**< [in] spin-params at reference epoch0 */
-			   LIGOTimeGPS epoch0		/**< [in] GPS SSB-time of reference-epoch */
-			   )
-{
-  UINT4 numSpins;
-  UINT4 k;
-  LALPulsarSpinRange *range = NULL;
-
-  INITSTATUS( status, "LALExtrapolatePulsarSpins", EXTRAPOLATEPULSARSPINSC );
-  ATTATCHSTATUSPTR ( status );
-
-  ASSERT ( fkdot1, status, EXTRAPOLATEPULSARSPINS_ENULL, EXTRAPOLATEPULSARSPINS_MSGENULL);
-  ASSERT ( fkdot0, status, EXTRAPOLATEPULSARSPINS_ENULL, EXTRAPOLATEPULSARSPINS_MSGENULL);
-
-  numSpins = fkdot0->length;
-  ASSERT ( numSpins == fkdot1->length, status, EXTRAPOLATEPULSARSPINS_ENUMSPINS, EXTRAPOLATEPULSARSPINS_MSGENUMSPINS);
-
-  /* create temporary Range-variable for calling LALExtrapolatePulsarSpinRange() */
-  if ( ( range = XLALCreatePulsarSpinRange ( numSpins )) == NULL ) {
-    ABORT ( status,  EXTRAPOLATEPULSARSPINS_EMEM,  EXTRAPOLATEPULSARSPINS_MSGEMEM );
-  }
-  for ( k = 0; k < numSpins; k ++ )
-    {
-      range->fkdot->data[k] = fkdot0->data[k];
-      range->fkdotBand->data[k] = 0;
-    } /* for k < numSpins */
-  range->epoch = epoch0;
-
-  /* we use the (inRange == outRange) feature and have LALExtrapolatePulsarSpinRange() overwrite the input-range */
-  TRY ( LALExtrapolatePulsarSpinRange ( status->statusPtr, range, epoch1, range ), status );
-  
-  /* by definition the output-range also has zero-bands => return spins at epoch1 */
-  for ( k = 0; k < numSpins; k ++ )
-    {
-      fkdot1->data[k] = range->fkdot->data[k];
-      if ( range->fkdotBand->data[k] != 0 )  /* be paranoid */
-	{
-	  LALPrintError ( "\nSomething gone wrong in LALExtrapolatePulsarSpinRange(): zero-band range should always remain zero-band!\n\n");
-	  ABORT ( status, EXTRAPOLATEPULSARSPINS_EXLAL, EXTRAPOLATEPULSARSPINS_MSGEXLAL );
-	}
-    }  /* for k < numSpins */
-
-  /* we're done, free intermediate range variable */
-  XLALDestroyPulsarSpinRange ( range );
-
-  DETATCHSTATUSPTR (status );
-  RETURN(status);
-} /* LALExtrapolateSpins() */
-
 /** General pulsar-spin extraploation function: given a "spin-range" (ie spins + spin-bands) at time
  * \f$\tau_0\f$, propagate the whole spin-range to time \f$\tau_1\f$.
  *
- * NOTE: the output spin-range \a range1 must be allocated, have the same length as the input spin-range 
- * \a range0 and IS allowed to be identical with \a range0, in which case it will be overwritten with the
- * new range !
+ * NOTE: *range1 is allowed to point to the same spin-range as *range0: the input will be overwritten
+ *       with the output.
  *
  * NOTE2: The output-range is in the 'canonical' order of \f$[ f^{(k)}, f^{(k)} + \Delta f^{(k)}]\f$,
  * where \f$\Delta f^{(k)} \ge 0\f$.
@@ -125,40 +63,27 @@ LALExtrapolatePulsarSpins (LALStatus *status,
  */
 void
 LALExtrapolatePulsarSpinRange(  LALStatus *status,
-			     LALPulsarSpinRange *range1,
-			     LIGOTimeGPS epoch1,
-			     const LALPulsarSpinRange *range0 )
-
+				PulsarSpinRange *range1,
+				LIGOTimeGPS epoch1,
+				const PulsarSpinRange *range0 )
 {
-  UINT4 numSpins;
+  UINT4 numSpins = PULSAR_MAX_SPINS; 			/* fixed size array */
   UINT4 k, l;
-  LALPulsarSpinRange *inRange = NULL;
+  PulsarSpinRange inRange;
   REAL8 dtau;
 
-  INITSTATUS( status, "LALExtrapolatePulsarSpins", EXTRAPOLATEPULSARSPINSC );  
+  INITSTATUS( status, "LALExtrapolatePulsarSpinRange", EXTRAPOLATEPULSARSPINSC );  
 
   ASSERT ( range1, status, EXTRAPOLATEPULSARSPINS_ENULL, EXTRAPOLATEPULSARSPINS_MSGENULL);
   ASSERT ( range0, status, EXTRAPOLATEPULSARSPINS_ENULL, EXTRAPOLATEPULSARSPINS_MSGENULL);
-  ASSERT ( range0->fkdot, status, EXTRAPOLATEPULSARSPINS_ENULL, EXTRAPOLATEPULSARSPINS_MSGENULL);
-  ASSERT ( range0->fkdotBand, status, EXTRAPOLATEPULSARSPINS_ENULL, EXTRAPOLATEPULSARSPINS_MSGENULL);
-
-  numSpins = range0->fkdot->length;
-  ASSERT ( numSpins > 0, status, EXTRAPOLATEPULSARSPINS_ENUMSPINS, EXTRAPOLATEPULSARSPINS_MSGENUMSPINS);
-  ASSERT ( range0->fkdotBand->length == numSpins, status, EXTRAPOLATEPULSARSPINS_ENUMSPINS, EXTRAPOLATEPULSARSPINS_MSGENUMSPINS);
-  ASSERT ( range1->fkdot->length == numSpins, status, EXTRAPOLATEPULSARSPINS_ENUMSPINS, EXTRAPOLATEPULSARSPINS_MSGENUMSPINS);
-  ASSERT ( range1->fkdotBand->length == numSpins, status, EXTRAPOLATEPULSARSPINS_ENUMSPINS, EXTRAPOLATEPULSARSPINS_MSGENUMSPINS);
 
   /* ----- make a copy of input range, because we allow input == output range, so 
    * the input can get overwritten */
-  if ( ( inRange = XLALCreatePulsarSpinRange ( numSpins ) ) == NULL ) {
-    ABORT ( status,  EXTRAPOLATEPULSARSPINS_EMEM,  EXTRAPOLATEPULSARSPINS_MSGEMEM );
-  }
   for ( k = 0 ; k < numSpins; k ++ )
     {
-      inRange->fkdot->data[k] = range0->fkdot->data[k];
-      inRange->fkdotBand->data[k] = range0->fkdotBand->data[k];
+      inRange.fkdot[k]     = range0->fkdot[k];
+      inRange.fkdotBand[k] = range0->fkdotBand[k];
     } /* for k < numSpins */
-    
   
   /* ----- translate each spin-value \f$\f^{(l)}\f$ from epoch0 to epoch1 */
   dtau = GPS2REAL8(epoch1) - GPS2REAL8(range0->epoch); 
@@ -170,8 +95,8 @@ LALExtrapolatePulsarSpinRange(  LALStatus *status,
 
       for ( k = 0; k < numSpins - l; k ++ )
 	{
-	  REAL8 fkltauk0 = inRange->fkdot->data[k+l] * dtau_powk;
-	  REAL8 fkltauk1 = fkltauk0 + inRange->fkdotBand->data[k+l] * dtau_powk;
+	  REAL8 fkltauk0 = inRange.fkdot[k+l] * dtau_powk;
+	  REAL8 fkltauk1 = fkltauk0 + inRange.fkdotBand[k+l] * dtau_powk;
 
 	  REAL8 fkltauk_min = MYMIN ( fkltauk0, fkltauk1 );
 	  REAL8 fkltauk_max = MYMAX ( fkltauk0, fkltauk1 );
@@ -182,78 +107,31 @@ LALExtrapolatePulsarSpinRange(  LALStatus *status,
 	  kfact *= (k+1);
 	  dtau_powk *= dtau;
 
-	} /* for k < numSpins - l */
+	} /* for l < numSpins */
 
-      range1->fkdot->data[l] = flmin;
-      range1->fkdotBand->data[l] = flmax - flmin;
+      range1->fkdot[l]     = flmin;
+      range1->fkdotBand[l] = flmax - flmin;
 
     } /* for l < numSpins */
   
   /* set proper epoch for output */
   range1->epoch = epoch1;
 
-  /* free intermediate copy of input */
-  XLALDestroyPulsarSpinRange ( inRange );
-
   RETURN( status );
 
 } /* ExtrapolatePulsarSpinRange() */
-
-/** Simple function allocating a PulsarSpinRange with \a numSpins spin-values */
-LALPulsarSpinRange *
-XLALCreatePulsarSpinRange ( UINT4 numSpins )
-{
-  LALPulsarSpinRange *range = NULL;
-
-  if ( numSpins == 0 )
-    XLAL_ERROR_NULL( "XLALCreatePulsarSpinRange", XLAL_EINVAL );
-
-  if ( ( range = LALCalloc ( 1, sizeof( *range) )) == NULL ) 
-    XLAL_ERROR_NULL( "XLALCreatePulsarSpinRange", XLAL_ENOMEM );
-  
-  if ( ( range->fkdot = XLALCreateREAL8Vector ( numSpins ) ) == NULL )
-    {
-      LALFree( range );
-      XLAL_ERROR_NULL( "XLALCreatePulsarSpinRange", XLAL_ENOMEM );
-    }
-
-  if ( ( range->fkdotBand = XLALCreateREAL8Vector ( numSpins ) ) == NULL )
-    {
-      XLALDestroyREAL8Vector ( range->fkdot );
-      LALFree( range );
-      XLAL_ERROR_NULL( "XLALCreatePulsarSpinRange", XLAL_ENOMEM );
-    }
-
-  return ( range );
-
-} /* XLALCreatePulsarSpinRange() */
-
-/** Free memory of a LALPulsarSpinRange */
-void
-XLALDestroyPulsarSpinRange ( LALPulsarSpinRange *range )
-{
-  if ( !range )
-    return;	/* no error */
-
-  XLALDestroyREAL8Vector ( range->fkdot );
-  XLALDestroyREAL8Vector ( range->fkdotBand );
-  LALFree( range );
-  
-  return;
-
-} /* XLALDestroyPulsarSpinRange() */
 
 
 /** Extrapolate the Pulsar spin-paramters \f$\{f, \stackrel{.}{f},\ddot{f},...\}\f$
  *  (\a fkdotOld) from the initial reference-epoch \f$\tau_0\f$ (\a epoch0)
  *  to the new reference-epoch \f$\tau_1\f$ (\a epoch1).
  *
- * This is equivalent to LALExtrapolatePulsarSpins(), but uses the fixed-size array-typ3
+ * This is equivalent to LALExtrapolatePulsarSpins(), but uses the fixed-size array-type
  * 'PulsarSpins' = REAL8[PULSAR_MAX_SPINS] instead, which is easier to handle and avoids
  * any dynamic-memory hassles.
  */
 void
-LALExtrapolatePulsarSpins2 (LALStatus   *status,
+LALExtrapolatePulsarSpins (LALStatus   *status,
 			    PulsarSpins  fkdot1,	/**< [out] spin-parameters at epoch1 */
 			    LIGOTimeGPS  epoch1, 	/**< [in] GPS SSB-time of new epoch1 */
 			    PulsarSpins  fkdot0,	/**< [in] spin-params at reference epoch0 */
@@ -337,3 +215,117 @@ LALExtrapolatePulsarPhase (LALStatus *status,
   RETURN (status);
 
 } /* LALExtrapolatePulsarPhase() */
+
+/* ============================== DEACTIVATED STUFF ============================== */
+#if 0 
+/* ===== DEACTIVATED: use new functions built on PulsarSpins-type instead ===== */
+
+/** Extrapolate the Pulsar spin-paramters \f$\{f, \stackrel{.}{f},\ddot{f},...\}\f$
+ *  (\a fkdotOld) from the initial reference-epoch \f$\tau_0\f$ (\a epoch0)
+ *  to the new reference-epoch \f$\tau_1\f$ (\a epoch1).
+ *
+ * This is a simple wrapper to LALExtrapolatePulsarSpinRange() for the simpler case of zero-band ranges.
+ * Both fkdot1 and fkdot0 must be allocated and have the same length, but ARE allowed to 
+ * point to the SAME vector, in which case the input gets overwritten with the output.
+ */
+void
+LALExtrapolatePulsarSpins (LALStatus *status,
+			   REAL8Vector *fkdot1,		/**< [out] spin-parameters at epoch1 */
+			   LIGOTimeGPS  epoch1, 	/**< [in] GPS SSB-time of new epoch */
+			   const REAL8Vector *fkdot0,	/**< [in] spin-params at reference epoch0 */
+			   LIGOTimeGPS epoch0		/**< [in] GPS SSB-time of reference-epoch */
+			   )
+{
+  UINT4 numSpins;
+  UINT4 k;
+  LALPulsarSpinRange *range = NULL;
+
+  INITSTATUS( status, "LALExtrapolatePulsarSpins", EXTRAPOLATEPULSARSPINSC );
+  ATTATCHSTATUSPTR ( status );
+
+  ASSERT ( fkdot1, status, EXTRAPOLATEPULSARSPINS_ENULL, EXTRAPOLATEPULSARSPINS_MSGENULL);
+  ASSERT ( fkdot0, status, EXTRAPOLATEPULSARSPINS_ENULL, EXTRAPOLATEPULSARSPINS_MSGENULL);
+
+  numSpins = fkdot0->length;
+  ASSERT ( numSpins == fkdot1->length, status, EXTRAPOLATEPULSARSPINS_ENUMSPINS, EXTRAPOLATEPULSARSPINS_MSGENUMSPINS);
+  /* create temporary Range-variable for calling LALExtrapolatePulsarSpinRange() */
+  if ( ( range = XLALCreatePulsarSpinRange ( numSpins )) == NULL ) {
+    ABORT ( status,  EXTRAPOLATEPULSARSPINS_EMEM,  EXTRAPOLATEPULSARSPINS_MSGEMEM );
+  }
+  for ( k = 0; k < numSpins; k ++ )
+    {
+      range->fkdot->data[k] = fkdot0->data[k];
+      range->fkdotBand->data[k] = 0;
+    } /* for k < numSpins */
+  range->epoch = epoch0;
+
+  /* we use the (inRange == outRange) feature and have LALExtrapolatePulsarSpinRange() overwrite the input-range */
+  TRY ( LALExtrapolatePulsarSpinRange ( status->statusPtr, range, epoch1, range ), status );
+  
+  /* by definition the output-range also has zero-bands => return spins at epoch1 */
+  for ( k = 0; k < numSpins; k ++ )
+    {
+      fkdot1->data[k] = range->fkdot->data[k];
+      if ( range->fkdotBand->data[k] != 0 )  /* be paranoid */
+	{
+	  LALPrintError ( "\nSomething gone wrong in LALExtrapolatePulsarSpinRange(): zero-band range should always remain zero-band!\n\n");
+	  ABORT ( status, EXTRAPOLATEPULSARSPINS_EXLAL, EXTRAPOLATEPULSARSPINS_MSGEXLAL );
+	}
+    }  /* for k < numSpins */
+
+  /* we're done, free intermediate range variable */
+  XLALDestroyPulsarSpinRange ( range );
+
+  DETATCHSTATUSPTR (status );
+  RETURN(status);
+} /* LALExtrapolateSpins() */
+
+
+/** Simple function allocating a PulsarSpinRange with \a numSpins spin-values */
+LALPulsarSpinRange *
+XLALCreatePulsarSpinRange ( UINT4 numSpins )
+{
+  LALPulsarSpinRange *range = NULL;
+
+  if ( numSpins == 0 )
+    XLAL_ERROR_NULL( "XLALCreatePulsarSpinRange", XLAL_EINVAL );
+
+  if ( ( range = LALCalloc ( 1, sizeof( *range) )) == NULL ) 
+    XLAL_ERROR_NULL( "XLALCreatePulsarSpinRange", XLAL_ENOMEM );
+  
+  if ( ( range->fkdot = XLALCreateREAL8Vector ( numSpins ) ) == NULL )
+    {
+      LALFree( range );
+      XLAL_ERROR_NULL( "XLALCreatePulsarSpinRange", XLAL_ENOMEM );
+    }
+
+  if ( ( range->fkdotBand = XLALCreateREAL8Vector ( numSpins ) ) == NULL )
+    {
+      XLALDestroyREAL8Vector ( range->fkdot );
+      LALFree( range );
+      XLAL_ERROR_NULL( "XLALCreatePulsarSpinRange", XLAL_ENOMEM );
+    }
+
+  return ( range );
+
+} /* XLALCreatePulsarSpinRange() */
+
+/** Free memory of a LALPulsarSpinRange */
+void
+XLALDestroyPulsarSpinRange ( LALPulsarSpinRange *range )
+{
+  if ( !range )
+    return;	/* no error */
+
+  XLALDestroyREAL8Vector ( range->fkdot );
+  XLALDestroyREAL8Vector ( range->fkdotBand );
+  LALFree( range );
+  
+  return;
+
+} /* XLALDestroyPulsarSpinRange() */
+
+
+#endif 
+/* ===== DEACTIVATED CODE ===== */
+
