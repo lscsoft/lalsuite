@@ -107,9 +107,8 @@ typedef struct {
   REAL8 Tsft;                               /**< length of one SFT in seconds */
   REAL8 duration;			    /**< total time-span of the data (all streams) in seconds */
   LIGOTimeGPS refTime;			    /**< reference-time for pulsar-parameters in SBB frame */
-  LALPulsarSpinRange *spinRangeRef; 	    /**< pulsar spin-range at reference-time 'refTime' */
-  LALPulsarSpinRange *spinRangeStart; 	    /**< pulsar spin-range at start of observation 'startTime; */
-  DopplerRegion searchRegion;		    /**< parameter-space region to search over (FIXME) */
+  PulsarSpinRange spinRangeRef; 	    /**< pulsar spin-range at reference-time 'refTime' */
+  DopplerRegion searchRange;		    /**< parameter-space region to search over */
   EphemerisData *edat;			    /**< ephemeris data (from LALInitBarycenter()) */
   MultiSFTVector *multiSFTs;		    /**< multi-IFO SFT-vectors */
   MultiDetectorStateSeries *multiDetStates; /**< pos, vel and LMSTs for detector at times t_i */
@@ -277,13 +276,8 @@ int main(int argc,char *argv[])
   scanInit.Detector = &(GV.multiDetStates->data[0]->detector);	/* FIXME: need multi-IFO metric */
   scanInit.ephemeris = GV.edat;		/* used by Ephemeris-based metric */
   scanInit.skyGridFile = uvar_skyGridFile;
-
-  GV.searchRegion.fkdot[0] = GV.spinRangeStart->fkdot->data[0];
-  GV.searchRegion.fkdotBand[0] = GV.spinRangeStart->fkdotBand->data[0];
-  GV.searchRegion.fkdot[1] = GV.spinRangeStart->fkdot->data[1];
-  GV.searchRegion.fkdotBand[1] = GV.spinRangeStart->fkdotBand->data[1];
-  scanInit.skyRegionString = GV.searchRegion.skyRegionString;
-  scanInit.Freq = GV.searchRegion.fkdot[0] + GV.searchRegion.fkdotBand[0];
+  scanInit.skyRegionString = GV.searchRange.skyRegionString;
+  scanInit.Freq = GV.searchRange.fkdot[0] + GV.searchRange.fkdotBand[0];
 
   LogPrintf (LOG_DEBUG, "Setting up template grid ... ");
   LAL_CALL ( InitDopplerSkyScan ( &status, &thisScan, &scanInit), &status); 
@@ -302,7 +296,7 @@ int main(int argc,char *argv[])
   /*----------------------------------------------------------------------*/
   if ( uvar_outputSkyGrid ) {
     LogPrintf (LOG_NORMAL, "Now writing sky-grid into file '%s' ...", uvar_outputSkyGrid);
-    LAL_CALL (writeSkyGridFile( &status, thisScan.skyGrid, uvar_outputSkyGrid, &scanInit), &status);
+    LAL_CALL (writeSkyGridFile( &status, thisScan.skyGrid, uvar_outputSkyGrid ), &status);
     LogPrintfVerbatim (LOG_NORMAL, " done.\n");
   }
   
@@ -361,18 +355,17 @@ int main(int argc,char *argv[])
   doppler.refTime = GV.startTime;	/* we compute at startTime, not refTime right now */  
   doppler.orbit = NULL;			/* binary pulsars not implemented yet */
   /* loop-counters for spin-loops fkdot */
-  nFreq =  (UINT4)(GV.spinRangeStart->fkdotBand->data[0] / thisScan.dFreq  + 0.5) + 1;  
-  nf1dot = (UINT4)(GV.spinRangeStart->fkdotBand->data[1] / thisScan.df1dot + 0.5) + 1; 
+  nFreq =  (UINT4)(GV.searchRange.fkdotBand[0] / thisScan.dFreq  + 0.5) + 1;  
+  nf1dot = (UINT4)(GV.searchRange.fkdotBand[1] / thisScan.df1dot + 0.5) + 1; 
   
   /* the 2nd and 3rd spindown stepsizes are not controlled by DopplerSkyScan (and the metric) yet */
-  nf2dot = (UINT4)(GV.spinRangeStart->fkdotBand->data[2] / uvar_df2dot + 0.5) + 1; 
-  nf3dot = (UINT4)(GV.spinRangeStart->fkdotBand->data[3] / uvar_df3dot + 0.5) + 1; 
+  nf2dot = (UINT4)(GV.searchRange.fkdotBand[2] / uvar_df2dot + 0.5) + 1; 
+  nf3dot = (UINT4)(GV.searchRange.fkdotBand[3] / uvar_df3dot + 0.5) + 1; 
 
   numTemplates = 1.0 * thisScan.numSkyGridPoints * nFreq * nf1dot * nf2dot * nf3dot;
   
   LogPrintf (LOG_DEBUG, "N = Sky x Freq x f1dot x f2dot x f3dot = %d x %d x %d x %d x %d = %g\n",
-	     thisScan.numSkyGridPoints, nFreq, nf1dot, nf2dot, nf3dot, 
-	     numTemplates);
+	     thisScan.numSkyGridPoints, nFreq, nf1dot, nf2dot, nf3dot, numTemplates);
 
   LogPrintf (LOG_DEBUG, "Progress: 0/%g = 0 %% done, Estimated time left: ?? s\n", numTemplates );
 
@@ -397,20 +390,20 @@ int main(int argc,char *argv[])
       /*----- loop over spindown values */
       for ( if3dot = 0; if3dot < nf3dot; if3dot ++ )
 	{
-	  doppler.fkdot[3] = GV.spinRangeStart->fkdot->data[3] + if3dot * uvar_df3dot;
+	  doppler.fkdot[3] = GV.searchRange.fkdot[3] + if3dot * uvar_df3dot;
 	  
 	  for ( if2dot = 0; if2dot < nf2dot; if2dot ++ )
 	    {
-	      doppler.fkdot[2] = GV.spinRangeStart->fkdot->data[2] + if2dot * uvar_df2dot;
+	      doppler.fkdot[2] = GV.searchRange.fkdot[2] + if2dot * uvar_df2dot;
 
 	      for (if1dot = 0; if1dot < nf1dot; if1dot ++)
 		{
-		  doppler.fkdot[1] = GV.spinRangeStart->fkdot->data[1] + if1dot * thisScan.df1dot;
+		  doppler.fkdot[1] = GV.searchRange.fkdot[1] + if1dot * thisScan.df1dot;
 	  
 		  /* Loop over frequencies to be demodulated */
 		  for ( iFreq = 0 ; iFreq < nFreq ; iFreq ++ )
 		    {
-		      doppler.fkdot[0] = GV.spinRangeStart->fkdot->data[0] + iFreq * thisScan.dFreq;
+		      doppler.fkdot[0] = GV.searchRange.fkdot[0] + iFreq * thisScan.dFreq;
 		      
 		      LAL_CALL( ComputeFStat(&status, &Fstat, &doppler, GV.multiSFTs, GV.multiNoiseWeights, 
 					     GV.multiDetStates, &GV.CFparams, &cfBuffer ), &status );
@@ -465,7 +458,7 @@ int main(int argc,char *argv[])
 		      fkdotTmp->data[2] = doppler.fkdot[2];
 		      fkdotTmp->data[3] = doppler.fkdot[3];
 
-		      LAL_CALL ( LALExtrapolatePulsarSpins2 ( &status, fkdotRef, GV.refTime, doppler.fkdot, 
+		      LAL_CALL ( LALExtrapolatePulsarSpins ( &status, fkdotRef, GV.refTime, doppler.fkdot, 
 							      GV.startTime ), &status );
 
 		      /* calculate the baysian-marginalized 'B-statistic' */
@@ -871,67 +864,60 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     REAL8 f3dotMin = MYMIN ( uvar_f3dot, uvar_f3dot + uvar_f3dotBand );
     REAL8 f3dotMax = MYMAX ( uvar_f3dot, uvar_f3dot + uvar_f3dotBand );
     
-    if ( ( cfg->spinRangeRef = XLALCreatePulsarSpinRange ( NUM_SPINS )) == NULL ) {
-      ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
-    }
-    cfg->spinRangeRef->epoch = cfg->refTime;
-    cfg->spinRangeRef->fkdot->data[0] = fMin;
-    cfg->spinRangeRef->fkdotBand->data[0] = fMax - fMin;
-    cfg->spinRangeRef->fkdot->data[1] = f1dotMin;
-    cfg->spinRangeRef->fkdotBand->data[1] = f1dotMax - f1dotMin;
-    cfg->spinRangeRef->fkdot->data[2] = f2dotMin;
-    cfg->spinRangeRef->fkdotBand->data[2] = f2dotMax - f2dotMin;
-    cfg->spinRangeRef->fkdot->data[3] = f3dotMin;
-    cfg->spinRangeRef->fkdotBand->data[3] = f3dotMax - f3dotMin;
+    cfg->spinRangeRef.epoch = cfg->refTime;
+    cfg->spinRangeRef.fkdot[0] = fMin;
+    cfg->spinRangeRef.fkdot[1] = f1dotMin;
+    cfg->spinRangeRef.fkdot[2] = f2dotMin;
+    cfg->spinRangeRef.fkdot[3] = f3dotMin;
+
+    cfg->spinRangeRef.fkdotBand[0] = fMax - fMin;
+    cfg->spinRangeRef.fkdotBand[1] = f1dotMax - f1dotMin;
+    cfg->spinRangeRef.fkdotBand[2] = f2dotMax - f2dotMin;
+    cfg->spinRangeRef.fkdotBand[3] = f3dotMax - f3dotMin;
   } /* spin-range at refTime */
 
   { /* ----- get sky-region to search ----- */
     BOOLEAN haveAlphaDelta = LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta);
     if (uvar_skyRegion)
       {
-	cfg->searchRegion.skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
-	if ( cfg->searchRegion.skyRegionString == NULL ) {
+	cfg->searchRange.skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
+	if ( cfg->searchRange.skyRegionString == NULL ) {
 	  ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
 	}
-	strcpy (cfg->searchRegion.skyRegionString, uvar_skyRegion);
+	strcpy (cfg->searchRange.skyRegionString, uvar_skyRegion);
       }
     else if (haveAlphaDelta)    /* parse this into a sky-region */
       {
 	REAL8 eps = 1e-9;	/* hack for backwards compatbility */
-	TRY ( SkySquare2String( status->statusPtr, &(cfg->searchRegion.skyRegionString),
+	TRY ( SkySquare2String( status->statusPtr, &(cfg->searchRange.skyRegionString),
 				uvar_Alpha, uvar_Delta,
 				uvar_AlphaBand + eps, uvar_DeltaBand + eps), status);
       }
   } /* get sky-region */
 
   { /* ----- propagate spin-range from refTime to startTime and endTime of observation ----- */
-    LALPulsarSpinRange *spinRangeEnd;	/* temporary only */
+    PulsarSpinRange spinRangeStart, spinRangeEnd;	/* temporary only */
     REAL8 fmaxStart, fmaxEnd, fminStart, fminEnd;
 
-    if ( ( cfg->spinRangeStart = XLALCreatePulsarSpinRange ( NUM_SPINS )) == NULL ) {
-      ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
-    }
-    if ( ( spinRangeEnd = XLALCreatePulsarSpinRange ( NUM_SPINS )) == NULL ) {
-      ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
-    }
-
     /* compute spin-range at startTime of observation */
-    TRY ( LALExtrapolatePulsarSpinRange (status->statusPtr, 
-					 cfg->spinRangeStart, cfg->startTime, cfg->spinRangeRef ), status );
+    TRY ( LALExtrapolatePulsarSpinRange (status->statusPtr, &spinRangeStart, cfg->startTime, &cfg->spinRangeRef ), status );
     /* compute spin-range at endTime of these SFTs */
-    TRY ( LALExtrapolatePulsarSpinRange (status->statusPtr, 
-					 spinRangeEnd, endTime, cfg->spinRangeRef ), status );
+    TRY ( LALExtrapolatePulsarSpinRange (status->statusPtr, &spinRangeEnd, endTime, &cfg->spinRangeRef ), status );
 
-    fminStart = cfg->spinRangeStart->fkdot->data[0];
+    fminStart = spinRangeStart.fkdot[0];
     /* ranges are in canonical format! */
-    fmaxStart = fminStart + cfg->spinRangeStart->fkdotBand->data[0];  
-    fminEnd   = spinRangeEnd->fkdot->data[0];
-    fmaxEnd   = fminEnd + spinRangeEnd->fkdotBand->data[0];
+    fmaxStart = fminStart + spinRangeStart.fkdotBand[0];  
+    fminEnd   = spinRangeEnd.fkdot[0];
+    fmaxEnd   = fminEnd + spinRangeEnd.fkdotBand[0];
 
-    XLALDestroyPulsarSpinRange ( spinRangeEnd );
     /*  get covering frequency-band  */
     fCoverMax = MYMAX ( fmaxStart, fmaxEnd );
     fCoverMin = MYMIN ( fminStart, fminEnd );
+
+    /* spin searchRange defined by spin-range at start time */
+    cfg->searchRange.epoch = spinRangeStart.epoch;
+    memcpy ( &cfg->searchRange.fkdot, &spinRangeStart.fkdot, sizeof(spinRangeStart.fkdot) );
+    memcpy ( &cfg->searchRange.fkdotBand, &spinRangeStart.fkdotBand, sizeof(spinRangeStart.fkdotBand) );
 
   } /* extrapolate spin-range */
 
@@ -998,7 +984,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     time_t tp;
     CHAR dateStr[512], line[512], summary[4096];
     CHAR *cmdline = NULL;
-    UINT4 i, numDet, numSpins;
+    UINT4 i, numDet, numSpins = PULSAR_MAX_SPINS;
     const CHAR *codeID = "$Id$";
 
     /* first get full commandline describing search*/
@@ -1029,13 +1015,13 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     strcat ( summary, line );
     sprintf (line, "%%%% Effective spin-range at tStart: " );
     strcat ( summary, line );
-    numSpins = cfg->spinRangeStart->fkdot->length;
+
     strcat (summary, "fkdot = [ " );
     for (i=0; i < numSpins; i ++ ) 
       {
 	sprintf (line, "%.16g:%.16g%s", 
-		 cfg->spinRangeStart->fkdot->data[i],
-		 cfg->spinRangeStart->fkdot->data[i] + cfg->spinRangeStart->fkdotBand->data[i],
+		 cfg->searchRange.fkdot[i], 
+		 cfg->searchRange.fkdot[i] + cfg->searchRange.fkdotBand[i], 
 		 (i < numSpins - 1)?", ":" ]\n");
 	strcat ( summary, line );
       }
@@ -1139,16 +1125,13 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
   /* Free config-Variables and userInput stuff */
   TRY (LALDestroyUserVars (status->statusPtr), status);
 
-  if ( GV.searchRegion.skyRegionString )
-    LALFree ( GV.searchRegion.skyRegionString );
+  if ( GV.searchRange.skyRegionString )
+    LALFree ( GV.searchRange.skyRegionString );
   
   /* Free ephemeris data */
   LALFree(cfg->edat->ephemE);
   LALFree(cfg->edat->ephemS);
   LALFree(cfg->edat);
-
-  XLALDestroyPulsarSpinRange ( cfg->spinRangeStart );
-  XLALDestroyPulsarSpinRange ( cfg->spinRangeRef );
 
   if ( cfg->logstring ) 
     LALFree ( cfg->logstring );

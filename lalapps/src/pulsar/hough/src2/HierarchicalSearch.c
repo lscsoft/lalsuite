@@ -130,6 +130,7 @@ BOOLEAN uvar_printStats; /**< global variable for calculating Hough map stats */
 #define HSMAX(x,y) ( (x) > (y) ? (x) : (y) )
 #define HSMIN(x,y) ( (x) < (y) ? (x) : (y) )
 
+#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 
 typedef struct {
   CHAR  *sftbasename;
@@ -139,9 +140,9 @@ typedef struct {
   LIGOTimeGPS tStartGPS; /**< start and end time of stack */
   REAL8 tObs;            /**< tEndGPS - tStartGPS */
   REAL8 refTime;
-  LALPulsarSpinRange *spinRange_startTime;
-  LALPulsarSpinRange *spinRange_endTime;
-  LALPulsarSpinRange *spinRange_refTime;
+  PulsarSpinRange spinRange_startTime;
+  PulsarSpinRange spinRange_endTime;
+  PulsarSpinRange spinRange_refTime;
   EphemerisData *edat;
   LIGOTimeGPSVector *midTstack; 
   LIGOTimeGPSVector *startTstack;   
@@ -155,8 +156,8 @@ typedef struct {
 
 static int smallerHough(const void *a,const void *b) {
   SemiCohCandidate a1, b1;
-  a1 = *((SemiCohCandidate *)a);
-  b1 = *((SemiCohCandidate *)b);
+  a1 = *((const SemiCohCandidate *)a);
+  b1 = *((const SemiCohCandidate *)b);
   
   if( a1.significance < b1.significance )
     return(1);
@@ -214,7 +215,8 @@ int main( int argc, char *argv[]) {
   LALStatus status = blank_status;
   
   /* temp loop variables: generally k loops over stacks and j over SFTs in a stack*/
-  INT4 j, k;
+  INT4 j;
+  UINT4 k;
 
   /* in general any variable ending with 1 is for the 
      first stage, 2 for the second and so on */
@@ -252,7 +254,7 @@ int main( int argc, char *argv[]) {
   UsefulStageVariables usefulParams1, usefulParams2;
 
   /* number of stacks -- not necessarily same as uvar_nStacks! */
-  INT4 nStacks1, nStacks2;
+  UINT4 nStacks1, nStacks2;
   REAL8 deltaF1, deltaF2, timebase1, timebase2; /* frequency resolution of SFTs */
   REAL8 deltaFstack1, deltaFstack2; /* frequency resolution of Fstat calculation */
 
@@ -276,10 +278,8 @@ int main( int argc, char *argv[]) {
   PulsarDopplerParams dopplerpos1, dopplerpos2;	       /* current search-parameters */
   PulsarDopplerParams thisPoint1, thisPoint2; 
 
-  /* various spinrange vectors */
-  LALPulsarSpinRange *spinRange_refTime, *spinRange_startTime1, *spinRange_startTime2;
-  LALPulsarSpinRange *spinRange_endTime1, *spinRange_endTime2;
-  LALPulsarSpinRange *spinRange_Temp=NULL;
+  /* temporary storage for spinrange vector */
+  PulsarSpinRange spinRange_Temp;
 
   /* variables for logging */
   CHAR *fnamelog=NULL;
@@ -567,7 +567,7 @@ int main( int argc, char *argv[]) {
       }
     ephemE[FNAME_LENGTH-1]=0;
     ephemS[FNAME_LENGTH-1]=0;
-    
+
     edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
     (*edat).ephiles.earthEphemeris = ephemE;
     (*edat).ephiles.sunEphemeris = ephemS;
@@ -575,25 +575,6 @@ int main( int argc, char *argv[]) {
     /* read in ephemeris data */
     LAL_CALL( LALInitBarycenter( &status, edat), &status);        
   }
-  
-  /* create spin range vectors */
-  spinRange_refTime = XLALCreatePulsarSpinRange(2);
-  spinRange_startTime1 = XLALCreatePulsarSpinRange(2);
-  spinRange_startTime2 = XLALCreatePulsarSpinRange(2);
-  spinRange_endTime1 = XLALCreatePulsarSpinRange(2);
-  spinRange_endTime2 = XLALCreatePulsarSpinRange(2);
-
-  /* utility temp variable */
-  spinRange_Temp = XLALCreatePulsarSpinRange(2);
-
-  /* copy user specified spin variables at reftime  */
-  for (j = 0; j < 2; j++)  
-    {
-      spinRange_refTime->fkdot->data[0] = uvar_Freq; /* frequency */
-      spinRange_refTime->fkdot->data[1] = uvar_f1dot;  /* 1st spindown */
-      spinRange_refTime->fkdotBand->data[0] = uvar_FreqBand; /* frequency range */
-      spinRange_refTime->fkdotBand->data[1] = uvar_f1dotBand; /* spindown range */
-    }
 
   /* some compute F params */
   CFparams.Dterms = uvar_Dterms;
@@ -646,16 +627,23 @@ int main( int argc, char *argv[]) {
 	}
     }
 
-
   /*------------ Set up stacks, noise weights, detector states etc. */
-
+  /* initialize spin range vectors */
+  INIT_MEM(spinRange_Temp);
 
   /* some useful first stage params */
   usefulParams1.sftbasename = uvar_sftData1;
   usefulParams1.nStacks = uvar_nStacks1;
-  usefulParams1.spinRange_startTime = spinRange_startTime1;
-  usefulParams1.spinRange_endTime = spinRange_endTime1;
-  usefulParams1.spinRange_refTime = spinRange_refTime;
+
+  INIT_MEM ( usefulParams1.spinRange_startTime );
+  INIT_MEM ( usefulParams1.spinRange_endTime );
+  INIT_MEM ( usefulParams1.spinRange_refTime );
+  /* copy user specified spin variables at reftime  */
+  usefulParams1.spinRange_refTime.fkdot[0] = uvar_Freq; /* frequency */
+  usefulParams1.spinRange_refTime.fkdot[1] = uvar_f1dot;  /* 1st spindown */
+  usefulParams1.spinRange_refTime.fkdotBand[0] = uvar_FreqBand; /* frequency range */
+  usefulParams1.spinRange_refTime.fkdotBand[1] = uvar_f1dotBand; /* spindown range */
+
   usefulParams1.edat = edat;
   usefulParams1.minStartTimeGPS = minStartTimeGPS1;
   usefulParams1.maxEndTimeGPS = maxEndTimeGPS1;
@@ -684,7 +672,7 @@ int main( int argc, char *argv[]) {
   tStart1GPS = usefulParams1.tStartGPS;
   midTstack1 = usefulParams1.midTstack;
   startTstack1 = usefulParams1.startTstack;
-  refTimeGPS = spinRange_refTime->epoch;
+  refTimeGPS = usefulParams1.spinRange_refTime.epoch;
 
   /* set reference time for calculating Fstatistic */
   thisPoint1.refTime = tStart1GPS;
@@ -697,13 +685,13 @@ int main( int argc, char *argv[]) {
   fstatVector1.length = nStacks1;
   fstatVector1.data = NULL;
   fstatVector1.data = (REAL8FrequencySeries *)LALCalloc( 1, nStacks1 * sizeof(REAL8FrequencySeries));
-  binsFstat1 = (UINT4)(spinRange_startTime1->fkdotBand->data[0]/deltaFstack1 + 0.5) + 1;
+  binsFstat1 = (UINT4)(usefulParams1.spinRange_startTime.fkdotBand[0]/deltaFstack1 + 0.5) + 1;
   for (k = 0; k < nStacks1; k++) 
     { 
       /* careful--the epoch here is not the reference time for f0! */
       fstatVector1.data[k].epoch = startTstack1->data[k];
       fstatVector1.data[k].deltaF = deltaFstack1;
-      fstatVector1.data[k].f0 = spinRange_startTime1->fkdot->data[0];
+      fstatVector1.data[k].f0 = usefulParams1.spinRange_startTime.fkdot[0];
       fstatVector1.data[k].data = (REAL8Sequence *)LALCalloc( 1, sizeof(REAL8Sequence));
       fstatVector1.data[k].data->length = binsFstat1;
       fstatVector1.data[k].data->data = (REAL8 *)LALCalloc( 1, binsFstat1 * sizeof(REAL8));
@@ -722,9 +710,9 @@ int main( int argc, char *argv[]) {
     /* some useful first stage params */
     usefulParams2.sftbasename = uvar_sftData2;
     usefulParams2.nStacks = uvar_nStacks2;
-    usefulParams2.spinRange_startTime = spinRange_startTime2;
-    usefulParams2.spinRange_endTime = spinRange_endTime2;
-    usefulParams2.spinRange_refTime = spinRange_refTime;
+    INIT_MEM ( usefulParams2.spinRange_startTime );
+    INIT_MEM ( usefulParams2.spinRange_endTime );
+    usefulParams2.spinRange_refTime = usefulParams1.spinRange_refTime;
     usefulParams2.edat = edat;
     usefulParams2.minStartTimeGPS = minStartTimeGPS2;
     usefulParams2.maxEndTimeGPS = maxEndTimeGPS2;
@@ -865,14 +853,14 @@ int main( int argc, char *argv[]) {
       /* number of fdot values */
       dfDot = thisScan1.df1dot;
       
-      nfdot = (UINT4)( spinRange_startTime1->fkdotBand->data[1]/ dfDot + 0.5) + 1; 
+      nfdot = (UINT4)( usefulParams1.spinRange_startTime.fkdotBand[1]/ dfDot + 0.5) + 1; 
       
       /* loop over fdot values */
       for ( ifdot=0; ifdot<nfdot; ifdot++)
 	{
 	  /* set spindown value for Fstat calculation */
-  	  thisPoint1.fkdot[1] = spinRange_startTime1->fkdot->data[1] + ifdot * dfDot;
-	  thisPoint1.fkdot[0] = spinRange_startTime1->fkdot->data[0];
+  	  thisPoint1.fkdot[1] = usefulParams1.spinRange_startTime.fkdot[1] + ifdot * dfDot;
+	  thisPoint1.fkdot[0] = usefulParams1.spinRange_startTime.fkdot[0];
 	  	  
 	  /* calculate the Fstatistic for each stack*/
 	  for ( k = 0; k < nStacks1; k++) {
@@ -945,20 +933,20 @@ int main( int argc, char *argv[]) {
 		  REAL8 alpha1, delta1, alphaBand1, deltaBand1;
 
 		  /* get spin range of candidate */
-		  spinRange_Temp->epoch = tStart1GPS;
-		  spinRange_Temp->fkdot->data[0] = semiCohCandList1.list[j].freq - 0.5 * semiCohCandList1.list[j].dFreq;
-		  spinRange_Temp->fkdotBand->data[0] = semiCohCandList1.list[j].dFreq;
-		  spinRange_Temp->fkdot->data[1] = semiCohCandList1.list[j].fdot - 0.5 * semiCohCandList1.list[j].dFdot;
-		  spinRange_Temp->fkdotBand->data[1] = semiCohCandList1.list[j].dFdot;
+		  spinRange_Temp.epoch = tStart1GPS;
+		  spinRange_Temp.fkdot[0] = semiCohCandList1.list[j].freq - 0.5 * semiCohCandList1.list[j].dFreq;
+		  spinRange_Temp.fkdotBand[0] = semiCohCandList1.list[j].dFreq;
+		  spinRange_Temp.fkdot[1] = semiCohCandList1.list[j].fdot - 0.5 * semiCohCandList1.list[j].dFdot;
+		  spinRange_Temp.fkdotBand[1] = semiCohCandList1.list[j].dFdot;
 
 		  /* extrapulate spin range to start time of second stack */
-		  LAL_CALL( LALExtrapolatePulsarSpinRange(  &status, spinRange_Temp, tStart2GPS, spinRange_Temp ), &status);
+		  LAL_CALL( LALExtrapolatePulsarSpinRange(  &status, &spinRange_Temp, tStart2GPS, &spinRange_Temp ), &status);
 
 		  /* set frequency and spindown ranges */
-		  fStart1 = spinRange_Temp->fkdot->data[0];
-		  freqBand1 = spinRange_Temp->fkdotBand->data[0];
-		  fdot1 = spinRange_Temp->fkdot->data[1];
-		  fdotBand1 = spinRange_Temp->fkdotBand->data[1];
+		  fStart1 = spinRange_Temp.fkdot[0];
+		  freqBand1 = spinRange_Temp.fkdotBand[0];
+		  fdot1 = spinRange_Temp.fkdot[1];
+		  fdotBand1 = spinRange_Temp.fkdotBand[1];
 		  
 		  /* set sky region to be refined */
 		  alpha1 = semiCohCandList1.list[j].alpha - 0.5 * semiCohCandList1.list[j].dAlpha;
@@ -1154,13 +1142,6 @@ int main( int argc, char *argv[]) {
   /* free candidates */
   LALFree(semiCohCandList1.list);
 
-  XLALDestroyPulsarSpinRange(spinRange_refTime);
-  XLALDestroyPulsarSpinRange(spinRange_endTime1);
-  XLALDestroyPulsarSpinRange(spinRange_endTime2);
-  XLALDestroyPulsarSpinRange(spinRange_startTime1);
-  XLALDestroyPulsarSpinRange(spinRange_startTime2);
-  XLALDestroyPulsarSpinRange(spinRange_Temp);
-
   LAL_CALL (LALDestroyUserVars(&status), &status);  
 
   LALCheckMemoryLeaks();
@@ -1263,9 +1244,9 @@ void SetUpSFTs( LALStatus *status,
   }
   
   /* get frequency and fdot bands at start time of sfts by extrapolating from reftime */
-  in->spinRange_refTime->epoch = refTimeGPS;
-  TRY( LALExtrapolatePulsarSpinRange( status->statusPtr, in->spinRange_startTime, tStartGPS, in->spinRange_refTime), status); 
-  TRY( LALExtrapolatePulsarSpinRange( status->statusPtr, in->spinRange_endTime, tEndGPS, in->spinRange_refTime), status); 
+  in->spinRange_refTime.epoch = refTimeGPS;
+  TRY( LALExtrapolatePulsarSpinRange( status->statusPtr, &in->spinRange_startTime, tStartGPS, &in->spinRange_refTime), status); 
+  TRY( LALExtrapolatePulsarSpinRange( status->statusPtr, &in->spinRange_endTime, tEndGPS, &in->spinRange_refTime), status); 
        
   /* set wings of sfts to be read */
   /* the wings must be enough for the Doppler shift and extra bins
@@ -1273,10 +1254,10 @@ void SetUpSFTs( LALStatus *status,
      In addition, it must also include wings for the spindown correcting 
      for the reference time  */
   /* calculate Doppler wings at the highest frequency */
-  startTime_freqLo = in->spinRange_startTime->fkdot->data[0]; /* lowest search freq at start time */
-  startTime_freqHi = startTime_freqLo + in->spinRange_startTime->fkdotBand->data[0]; /* highest search freq. at start time*/
-  endTime_freqLo = in->spinRange_endTime->fkdot->data[0];
-  endTime_freqHi = endTime_freqLo + in->spinRange_endTime->fkdotBand->data[0];
+  startTime_freqLo = in->spinRange_startTime.fkdot[0]; /* lowest search freq at start time */
+  startTime_freqHi = startTime_freqLo + in->spinRange_startTime.fkdotBand[0]; /* highest search freq. at start time*/
+  endTime_freqLo = in->spinRange_endTime.fkdot[0];
+  endTime_freqHi = endTime_freqLo + in->spinRange_endTime.fkdotBand[0];
   
   freqLo = HSMIN ( startTime_freqLo, endTime_freqLo );
   freqHi = HSMAX ( startTime_freqHi, endTime_freqHi );
@@ -1415,7 +1396,8 @@ void ComputeFstatHoughMap(LALStatus *status,
 
   UINT2  xSide, ySide, maxNBins, maxNBorders;
   INT8  fBinIni, fBinFin, fBin;
-  INT4  k, iHmap, nSpin1Max, nSpin1Min, nStacks, nfdot;
+  INT4  iHmap, nSpin1Max, nSpin1Min, nfdot;
+  UINT4 k, nStacks ;
   REAL8 deltaF, alpha, delta;
   REAL8 patchSizeX, patchSizeY, f1jump;
   REAL8VectorSequence *vel, *pos;
@@ -2055,18 +2037,18 @@ void PrintSemiCohCandidates(LALStatus *status,
 {
   INT4 length, k;
   REAL8 f0, deltaF, alpha, delta;
-  REAL8Vector *fkdot=NULL;
+  PulsarSpins fkdot;
 
   INITSTATUS( status, "PrintFstatVec", rcsid );
   ATTATCHSTATUSPTR (status);
 
-  TRY( LALDCreateVector( status->statusPtr, &fkdot, 2), status);
+  INIT_MEM(fkdot);
 
   fprintf(fp, "## Fstat values from stack %d (reftime -- %d %d)\n", stackIndex, refTime.gpsSeconds, refTime.gpsNanoSeconds);
 
   alpha = thisPoint->Alpha;
   delta = thisPoint->Delta;
-  fkdot->data[1] = thisPoint->fkdot[1];
+  fkdot[1] = thisPoint->fkdot[1];
   f0 = thisPoint->fkdot[0];
 
   length = in->data->length;
@@ -2074,17 +2056,15 @@ void PrintSemiCohCandidates(LALStatus *status,
 
   for (k=0; k<length; k++)
     {
-      fkdot->data[0] = f0 + k*deltaF;
+      fkdot[0] = f0 + k*deltaF;
 		      
       /* propagate fkdot back to reference-time  */
-      TRY ( LALExtrapolatePulsarSpins(status->statusPtr, fkdot, refTime, fkdot, thisPoint->refTime ), status );
+      TRY ( LALExtrapolatePulsarSpins (status->statusPtr, fkdot, refTime, fkdot, thisPoint->refTime ), status );
 
-      fprintf(fp, "%.13g %.7g %.7g %.5g %.6g\n", fkdot->data[0], alpha, delta, fkdot->data[1], 2*in->data->data[k]);
+      fprintf(fp, "%.13g %.7g %.7g %.5g %.6g\n", fkdot[0], alpha, delta, fkdot[1], 2*in->data->data[k]);
     }
 
   fprintf(fp, "\n");
-
-  TRY( LALDDestroyVector( status->statusPtr, &fkdot), status);
 
   DETATCHSTATUSPTR (status);
   RETURN(status);
@@ -2134,8 +2114,8 @@ void GetFstatCandidates_toplist( LALStatus *status,
 
 /** Print hough histogram to a file */
 void PrintHoughHistogram( LALStatus *status,
-		     UINT8Vector *hist, 
-		     CHAR *fnameOut)
+			  UINT8Vector *hist, 
+			  CHAR *fnameOut)
 {
 
   FILE  *fp=NULL;   /* Output file */
