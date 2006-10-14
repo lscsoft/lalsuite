@@ -190,7 +190,7 @@ main(int argc, char *argv[])
   if ( uvar_outputSkyGrid ) 
     {
       printf ("\nNow writing sky-grid into file '%s' ...", uvar_outputSkyGrid);
-      LAL_CALL(writeSkyGridFile(&status, thisScan.skyGrid, uvar_outputSkyGrid, &scanInit), &status);
+      LAL_CALL(writeSkyGridFile(&status, thisScan.skyGrid, uvar_outputSkyGrid ), &status);
       printf (" done.\n\n");
     }
   

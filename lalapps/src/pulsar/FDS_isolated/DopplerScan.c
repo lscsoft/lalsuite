@@ -182,7 +182,6 @@ InitDopplerSkyScan( LALStatus *status,
 	ABORT (status, DOPPLERSCANH_E2DSKY, DOPPLERSCANH_MSGE2DSKY);
       }
     } /* if gridType != GRID_FILE || GRID_METRIC_SKYFILE */
-
  
   switch (init->gridType)
     {
@@ -1097,8 +1096,7 @@ loadSkyGridFile (LALStatus *status, DopplerSkyGrid **skyGrid, const CHAR *fname)
 void
 writeSkyGridFile (LALStatus *status, 
 		  const DopplerSkyGrid *skyGrid, 
-		  const CHAR *fname, 
-		  const DopplerSkyScanInit *init)
+		  const CHAR *fname )
 {
   FILE *fp;
   const DopplerSkyGrid *node;
@@ -1108,7 +1106,6 @@ writeSkyGridFile (LALStatus *status,
 
   ASSERT ( skyGrid, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
   ASSERT ( fname, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
-  ASSERT ( init, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
 
   if ( (fp = fopen(fname, "w")) == NULL )
     {
