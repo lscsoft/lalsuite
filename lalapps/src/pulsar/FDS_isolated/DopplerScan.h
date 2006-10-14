@@ -41,6 +41,7 @@ extern "C" {
 #include <lal/StackMetric.h>
 #include <lal/LALBarycenter.h>
 #include <lal/PulsarDataTypes.h>
+#include <lal/ComputeFstat.h>
 
 NRCSID( DOPPLERSCANH, "$Id$" );
 
@@ -101,6 +102,7 @@ typedef enum
  */
 typedef struct {
   CHAR *skyRegionString;	/**< sky-region string '(a1,d1), (a2,d2), ..' */
+  LIGOTimeGPS epoch;
   PulsarSpins fkdot;		/**< first points of spin-intervals */
   PulsarSpins fkdotBand;	/**< spin-intervals */
 } DopplerRegion;
@@ -127,14 +129,14 @@ typedef struct {
   REAL8 angle;
 } MetricEllipse;
 
-/** initialization-structure passed to InitDopplerScan() */  
+/** initialization-structure passed to InitDopplerSkyScan() */  
 typedef struct {
   CHAR *skyRegionString;	/**< sky-region to search: format polygon '(a1,d1), (a2,d2), ..' */
   REAL8 Freq;			/**< Frequency for which to build the skyGrid */
   DopplerGridType gridType;	/**< which type of skygrid to generate */  
   LALPulsarMetricType metricType; /**< which metric to use if GRID_METRIC */
-  REAL8 dAlpha, dDelta;		/**< sky step-sizes for GRID_FLAT */
-  REAL8 metricMismatch;		/**< for GRID_METRIC and GRID_ISOTROPIC */
+  REAL8 dAlpha, dDelta;		/**< sky step-sizes for GRID_FLAT and GRID_ISOTROPIC */
+  REAL8 metricMismatch;		/**< for GRID_METRIC */
   LIGOTimeGPS obsBegin; 	/**< GPS start-time of time-series */
   REAL8 obsDuration;		/**< length of time-series in seconds */
   BOOLEAN projectMetric;	/**< project the metric orthogonal to Freq? */
@@ -154,6 +156,7 @@ typedef struct {
   DopplerSkyGrid *skyNode;	/**< pointer to current grid-node in skygrid */
 } DopplerSkyScanState;
 
+
 /*---------- Global variables ----------*/
 /* some empty structs for initializations */
 extern const DopplerSkyGrid empty_DopplerSkyGrid;
@@ -168,14 +171,13 @@ void InitDopplerSkyScan(LALStatus *, DopplerSkyScanState *skyScan, const Doppler
 void NextDopplerSkyPos(LALStatus *, PulsarDopplerParams *pos, DopplerSkyScanState *skyScan);
 void FreeDopplerSkyScan(LALStatus *, DopplerSkyScanState *skyScan);
 
-void writeSkyGridFile(LALStatus *, const DopplerSkyGrid *grid, const CHAR *fname, const DopplerSkyScanInit *init);
+void writeSkyGridFile(LALStatus *, const DopplerSkyGrid *grid, const CHAR *fname );
 void ParseSkyRegionString (LALStatus *, SkyRegion *region, const CHAR *input);
 void SkySquare2String (LALStatus *, CHAR **string, REAL8 Alpha, REAL8 Delta, 
 		       REAL8 AlphaBand, REAL8 DeltaBand);
 
 void getMCDopplerCube (LALStatus *, DopplerRegion *cube, PulsarDopplerParams signal, UINT4 PointsPerDim, const DopplerSkyScanInit *params);
 void getMetricEllipse(LALStatus *, MetricEllipse *ellipse, REAL8 mismatch, const REAL8Vector *metric, UINT4 dim0);
-
 
 #ifdef  __cplusplus
 }
