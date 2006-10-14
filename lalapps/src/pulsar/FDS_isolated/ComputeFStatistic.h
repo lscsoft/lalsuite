@@ -92,7 +92,8 @@ typedef struct {
   CHAR **filelist; 		/**< array of filenames to load SFTs from */
   LALDetector Detector;         /**< detector of data to be searched */
   EphemerisData *edat;		/**< ephemeris data (from LALInitBarycenter()) */
-  DopplerRegion searchRegion;	/**< parameter-space region to search over */
+  CHAR *skyRegionString;	/**< sky-region to search '(a1,d1), (a2,d2), ..' */
+  PulsarSpinRange spinRange;	/**< spin-range to search over */
   INT4 FreqImax;		/**< number of frequency-bins to run LALDemod for */
   INT4 SpinImax;		/**< number of spindown-values */
   REAL8 DeltaFreqRef;		/**< difference f(tRef) - f(tStart) */

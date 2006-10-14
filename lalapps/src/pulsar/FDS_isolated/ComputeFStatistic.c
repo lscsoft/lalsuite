@@ -514,8 +514,8 @@ int main(int argc,char *argv[])
   DemodParams->df   = thisScan.dFreq;
 
   /* Number of Freq- and spindown values to calculate F for */
-  GV.FreqImax = (INT4)(GV.searchRegion.fkdotBand[0] / thisScan.dFreq + 1e-6) + 1;  
-  GV.SpinImax = (INT4)(GV.searchRegion.fkdotBand[1] / thisScan.df1dot + 1e-6) + 1;  
+  GV.FreqImax = (INT4)(GV.spinRange.fkdotBand[0] / thisScan.dFreq + 1e-6) + 1;  
+  GV.SpinImax = (INT4)(GV.spinRange.fkdotBand[1] / thisScan.df1dot + 1e-6) + 1;  
 
   /* debug output about search-parameters */
   {
@@ -524,12 +524,12 @@ int main(int argc,char *argv[])
 	       thisScan.numSkyGridPoints, GV.FreqImax, GV.SpinImax, 
 	       1.0 * thisScan.numSkyGridPoints * GV.FreqImax * GV.SpinImax );
 
-    str = GV.searchRegion.skyRegionString;
+    str = GV.skyRegionString;
     LogPrintf (LOG_DETAIL, "skyRegion = '%s'\n", str ? str : "NULL" );
     LogPrintf (LOG_DETAIL, "Frequency-range [%.16g, %.16g]\n", 
-	       GV.searchRegion.fkdot[0], GV.searchRegion.fkdot[0] + GV.searchRegion.fkdotBand[0]);
+	       GV.spinRange.fkdot[0], GV.spinRange.fkdot[0] + GV.spinRange.fkdotBand[0]);
     LogPrintf (LOG_DETAIL, "Spindown-range [%.16g, %.16g]\n", 
-	       GV.searchRegion.fkdot[1], GV.searchRegion.fkdot[1] + GV.searchRegion.fkdotBand[1]);
+	       GV.spinRange.fkdot[1], GV.spinRange.fkdot[1] + GV.spinRange.fkdotBand[1]);
     LogPrintf (LOG_DETAIL, "Grid-spacings: dFreq = %g, df1dot = %g\n\n",
 	       thisScan.dFreq, thisScan.df1dot);
   }
@@ -538,12 +538,12 @@ int main(int argc,char *argv[])
   {
     REAL8 f_min, f_max;
     REAL8 f1dot_1, f1dot_2, f1dot_max, df;
-    f_min = GV.searchRegion.fkdot[0];
-    f_max = f_min + GV.searchRegion.fkdotBand[0];
+    f_min = GV.spinRange.fkdot[0];
+    f_max = f_min + GV.spinRange.fkdotBand[0];
 
     /* correct for spindown-shift of frequency: extend frequency-band */
-    f1dot_1 = GV.searchRegion.fkdot[1];
-    f1dot_2 = f1dot_1 + GV.searchRegion.fkdotBand[1];
+    f1dot_1 = GV.spinRange.fkdot[1];
+    f1dot_2 = f1dot_1 + GV.spinRange.fkdotBand[1];
     f1dot_max = fabs(f1dot_1) > fabs(f1dot_2) ? f1dot_1 : f1dot_2;
     df = f1dot_max * (GV.Tf - GV.Ti);
     if ( df < 0)
@@ -943,7 +943,7 @@ int main(int argc,char *argv[])
       /* loop over spin params */
       for (spdwn=0; spdwn < GV.SpinImax; spdwn++)
         {
-          DemodParams->spinDwn[0] = GV.searchRegion.fkdot[1] + spdwn * thisScan.df1dot;
+          DemodParams->spinDwn[0] = GV.spinRange.fkdot[1] + spdwn * thisScan.df1dot;
 	  
           switch ( uvar_expLALDemod )
 	    {
@@ -973,7 +973,7 @@ int main(int argc,char *argv[])
                 {
 		  REAL8 Fval = 2.0*medianbias*Fstat.F[i];
 		  /* correct frequency back to reference-time: assume maximaly 1 spindown */
-		  REAL8 freq = GV.searchRegion.fkdot[0] + i * thisScan.dFreq + GV.DeltaFreqRef; 
+		  REAL8 freq = GV.spinRange.fkdot[0] + i * thisScan.dFreq + GV.DeltaFreqRef; 
 
 		  if ( Fval > uvar_Fthreshold )
 		    {
@@ -1506,7 +1506,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
                             +hc*hc*((A+B)/2.0-(A-B)/2.0*cos(4.0*psi_mle)
                                     -C*sin(4.0*psi_mle)));
       LALPrintError ( "A=%f,B=%f,C=%f,f=%f,h0=%f,F=%f\n",
-              A,B,C,GV.searchRegion.fkdot[0]+irec* DemodParams->df,h0mle,Fstat.F[irec]*medianbias);
+              A,B,C,GV.spinRange.fkdot[0]+irec* DemodParams->df,h0mle,Fstat.F[irec]*medianbias);
       }
 #endif
 
@@ -1515,7 +1515,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
       /* and Phi0_PULGROUPDOC is the one used in In.data. */
  
       /* medianbias is 1 if GV.SignalOnly==1 */
-      fprintf(fpMLEParam,"%16.8f %22E", GV.searchRegion.fkdot[0] + irec*DemodParams->df, 
+      fprintf(fpMLEParam,"%16.8f %22E", GV.spinRange.fkdot[0] + irec*DemodParams->df, 
 	      2.0*medianbias*Fstat.F[irec]);
 
 
@@ -1582,9 +1582,9 @@ int writeFaFb(INT4 *maxIndex, PulsarDopplerParams searchpos)
 
     fprintf(fp,"%10d\n",N);
     fprintf(fp,"%22.12f %22.12f\n",
-            GV.searchRegion.fkdot[0] + maxIndex[irec]* DemodParams->df,
+            GV.spinRange.fkdot[0] + maxIndex[irec]* DemodParams->df,
             Fstat.F[maxIndex[irec]]*bias*bias);
-    fprintf(fp,"%22.12f %22.12f\n",GV.searchRegion.fkdot[0] + index * DemodParams->df, DemodParams->df);
+    fprintf(fp,"%22.12f %22.12f\n",GV.spinRange.fkdot[0] + index * DemodParams->df, DemodParams->df);
     fprintf(fp,"%22.12f %22.12f %22.12f\n",amc.A,amc.B,amc.C);
 
 
@@ -1624,7 +1624,7 @@ int writeFaFb(INT4 *maxIndex, PulsarDopplerParams searchpos)
       fprintf(fp,"%22.16f %22.16f "
                  "%E %20.17f %20.17f "
                  "%22.16f %22.16f %22.16f %22.16f %22.16f %22.16f %22.16f\n",
-              GV.searchRegion.fkdot[0] + index* DemodParams->df,Fstat.F[index]*bias*bias,
+              GV.spinRange.fkdot[0] + index* DemodParams->df,Fstat.F[index]*bias*bias,
               DemodParams->spinDwn[0], searchpos.Alpha, searchpos.Delta,
               Fstat.Fa[index].re/sqrt(GV.SFTno)*bias,
               Fstat.Fa[index].im/sqrt(GV.SFTno)*bias,
@@ -1634,7 +1634,7 @@ int writeFaFb(INT4 *maxIndex, PulsarDopplerParams searchpos)
 #else
       /* Freqency, Re[Fa],Im[Fa],Re[Fb],Im[Fb], F */
       fprintf(fp,"%22.16f %22.12f %22.12f %22.12f %22.12f %22.12f\n",
-              GV.searchRegion.fkdot[0] + index* DemodParams->df,
+              GV.spinRange.fkdot[0] + index* DemodParams->df,
               Fstat.Fa[index].re/sqrt(GV.SFTno)*bias,
               Fstat.Fa[index].im/sqrt(GV.SFTno)*bias,
               Fstat.Fb[index].re/sqrt(GV.SFTno)*bias,
@@ -1726,7 +1726,7 @@ void CreateDemodParams (LALStatus *status, PulsarDopplerParams searchpos)
   DemodParams->spinDwnOrder = 1;
   DemodParams->SFTno = GV.SFTno;
 
-  DemodParams->f0   = GV.searchRegion.fkdot[0];
+  DemodParams->f0   = GV.spinRange.fkdot[0];
   DemodParams->imax = GV.FreqImax;
 
   DemodParams->Dterms = uvar_Dterms;
@@ -1799,7 +1799,7 @@ writeFLines(INT4 *maxIndex, PulsarDopplerParams searchpos, FILE *fpOut)
     var=var/N;
     std=sqrt(var);
     /* correct frequency back to reference-time: assume maximally 1 spindown */
-    freq = GV.searchRegion.fkdot[0] + imax * DemodParams->df + GV.DeltaFreqRef;
+    freq = GV.spinRange.fkdot[0] + imax * DemodParams->df + GV.DeltaFreqRef;
 
     /* print the output */
     if (fpOut) 
@@ -1860,7 +1860,7 @@ writeFLinesCS(INT4 *maxIndex, PulsarDopplerParams searchpos, FILE *fpOut, long*b
     var=var/N;
     std=sqrt(var);
     /* correct frequency back to reference-time: assume maximally 1 spindown */
-    freq = GV.searchRegion.fkdot[0] + imax * DemodParams->df + GV.DeltaFreqRef;
+    freq = GV.spinRange.fkdot[0] + imax * DemodParams->df + GV.DeltaFreqRef;
 
     /* print the output */
     if (fpOut) {
@@ -2305,9 +2305,9 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 
   /* ----- determine search-region in parameter-space from user-input ----- */
   {
-    UINT4 spdnOrder = 1;	/* hard-coded default FIXME. DON'T change without fixing main() */
     LIGOTimeGPS refTime;
-    REAL8Vector *fkdotRef = NULL, *fkdot0 = NULL;
+    PulsarSpins fkdotRef, fkdot0;
+
     BOOLEAN haveAlphaDelta = LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta);
 
     /* Standardise reference-time:
@@ -2315,21 +2315,16 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
      * reference-time uvar_refTime to the internal reference-time, which 
      * we chose as the start-time of the first SFT (*verbatim*, i.e. not translated to SSB! )
      */
-    if ( LALUserVarWasSet(&uvar_refTime)) 
-      {
-	TRY ( LALFloatToGPS (status->statusPtr, &refTime, &uvar_refTime), status);
-      } 
-    else
-      {
-	refTime.gpsSeconds = cfg->Ti;
-	refTime.gpsNanoSeconds = 0;
-      }
+    if ( LALUserVarWasSet(&uvar_refTime)) {
+      TRY ( LALFloatToGPS (status->statusPtr, &refTime, &uvar_refTime), status);
+    } else {
+      refTime.gpsSeconds = cfg->Ti; refTime.gpsNanoSeconds = 0;
+    }
     
-    TRY ( LALDCreateVector (status->statusPtr, &fkdotRef, 1 + spdnOrder), status);
-    TRY ( LALDCreateVector (status->statusPtr, &fkdot0, 1 + spdnOrder), status);
-    fkdotRef->data[0] = uvar_Freq;
-    if ( spdnOrder > 0 )
-      fkdotRef->data[1] = uvar_f1dot;	    /* currently not more spindowns implemented... */
+    memset ( &fkdotRef, 0, sizeof(fkdotRef) );
+    memset ( &fkdot0, 0, sizeof(fkdotRef) );
+    fkdotRef[0] = uvar_Freq;
+    fkdotRef[1] = uvar_f1dot;	    /* currently not more spindowns implemented... */
     
     /* now translate spin-params to internal reference-time (ie. startTime) */
     TRY ( LALExtrapolatePulsarSpins ( status->statusPtr, fkdot0, starttime, fkdotRef, refTime), status );
@@ -2339,43 +2334,39 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
      * accounting for the difference between reference-time and data start-time,
      * i.e. DeltaFreqRef =  f(tRef) - f(tStart)
      */
-    cfg->DeltaFreqRef = fkdotRef->data[0] - fkdot0->data[0];
+    cfg->DeltaFreqRef = fkdotRef[0] - fkdot0[0];
 
 
-    cfg->searchRegion.fkdot[0] = fkdot0->data[0];
-    if ( spdnOrder > 0 )
-      cfg->searchRegion.fkdot[1] = fkdot0->data[1];
+    cfg->spinRange.fkdot[0] = fkdot0[0];
+    cfg->spinRange.fkdot[1] = fkdot0[1];
 
-    TRY ( LALDDestroyVector (status->statusPtr, &fkdotRef), status);
-    TRY ( LALDDestroyVector (status->statusPtr, &fkdot0), status);
-
-    cfg->searchRegion.fkdotBand[0] = uvar_FreqBand;
-    cfg->searchRegion.fkdotBand[1] = uvar_f1dotBand;
+    cfg->spinRange.fkdotBand[0] = uvar_FreqBand;
+    cfg->spinRange.fkdotBand[1] = uvar_f1dotBand;
     /* 'normalize' if negative bands where given */
-    if ( cfg->searchRegion.fkdotBand[0] < 0 )
+    if ( cfg->spinRange.fkdotBand[0] < 0 )
       {
-	cfg->searchRegion.fkdotBand[0] *= -1.0;
-	cfg->searchRegion.fkdot[0] -= cfg->searchRegion.fkdotBand[0];
+	cfg->spinRange.fkdotBand[0] *= -1.0;
+	cfg->spinRange.fkdot[0] -= cfg->spinRange.fkdotBand[0];
       }
-    if ( cfg->searchRegion.fkdotBand[1] < 0 )
+    if ( cfg->spinRange.fkdotBand[1] < 0 )
       {
-	cfg->searchRegion.fkdotBand[1] *= -1.0;
-	cfg->searchRegion.fkdot[1] -= cfg->searchRegion.fkdotBand[1];
+	cfg->spinRange.fkdotBand[1] *= -1.0;
+	cfg->spinRange.fkdot[1] -= cfg->spinRange.fkdotBand[1];
       }
 
     /* get sky-region */
     if (uvar_skyRegion)
       {
-	cfg->searchRegion.skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
-	if ( cfg->searchRegion.skyRegionString == NULL ) {
+	cfg->skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
+	if ( cfg->skyRegionString == NULL ) {
 	  ABORT (status, COMPUTEFSTAT_EMEM, COMPUTEFSTAT_MSGEMEM);
 	}
-	strcpy (cfg->searchRegion.skyRegionString, uvar_skyRegion);
+	strcpy (cfg->skyRegionString, uvar_skyRegion);
       }
     else if (haveAlphaDelta)    /* parse this into a sky-region */
       {
 	REAL8 eps = 1e-9;	/* hack for backwards compatbility */
-	TRY ( SkySquare2String( status->statusPtr, &(cfg->searchRegion.skyRegionString),
+	TRY ( SkySquare2String( status->statusPtr, &(cfg->skyRegionString),
 				uvar_Alpha, uvar_Delta,
 				uvar_AlphaBand + eps, uvar_DeltaBand + eps), status);
       }
@@ -2579,8 +2570,8 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 
   /* Tell the user what we have arrived at */
   LogPrintf ( LOG_DETAIL, "# SFT time baseline:                  %f min\n",header.tbase/60.0);
-  LogPrintf ( LOG_DETAIL, "# Starting search frequency:          %f Hz\n", cfg->searchRegion.fkdot[0]);
-  LogPrintf ( LOG_DETAIL, "# Demodulation frequency band:        %f Hz\n",cfg->searchRegion.fkdotBand[0]);
+  LogPrintf ( LOG_DETAIL, "# Starting search frequency:          %f Hz\n", cfg->spinRange.fkdot[0]);
+  LogPrintf ( LOG_DETAIL, "# Demodulation frequency band:        %f Hz\n",cfg->spinRange.fkdotBand[0]);
   LogPrintf ( LOG_DETAIL, "# Actual # of SFTs:                   %d\n", cfg->SFTno);
   LogPrintf ( LOG_DETAIL, "# total observation time:             %f hours\n",1.0*(cfg->Tf-cfg->Ti)/3600.0);
 
@@ -2873,10 +2864,10 @@ void Freemem(LALStatus *status)
   /* Free config-Variables and userInput stuff */
   TRY (LALDestroyUserVars(status->statusPtr), status);
 
-  if (GV.searchRegion.skyRegionString)
+  if (GV.skyRegionString)
     {
-      LALFree ( GV.searchRegion.skyRegionString );
-      GV.searchRegion.skyRegionString = NULL;
+      LALFree ( GV.skyRegionString );
+      GV.skyRegionString = NULL;
     }
 
   /* this comes from clusters.c */
@@ -3002,10 +2993,10 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN, PulsarDopplerParams searchpo
   if( ic==0 ) {
     LogPrintf (LOG_CRITICAL,  "Warning: Search frequency band may be too small to cover the outlier.\n");
     leftEdgeTwoF = Fstat.F[ic];
-    leftEdgeFreq = GV.searchRegion.fkdot[0] + ic*GV.dFreq;
+    leftEdgeFreq = GV.spinRange.fkdot[0] + ic*GV.dFreq;
   } else {/* shift slightly downwards to cover the half-maximum point, if possible */
     leftEdgeTwoF = Fstat.F[ic-1];
-    leftEdgeFreq = GV.searchRegion.fkdot[0] + (ic-1)*GV.dFreq;
+    leftEdgeFreq = GV.spinRange.fkdot[0] + (ic-1)*GV.dFreq;
   }
 
 
@@ -3016,10 +3007,10 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN, PulsarDopplerParams searchpo
   if( ic==GV.FreqImax-1 ) {
     LogPrintf (LOG_CRITICAL,  "Warning: Search frequency band may be too small to cover the outlier.\n");
     rightEdgeTwoF = Fstat.F[ic];
-    rightEdgeFreq = GV.searchRegion.fkdot[0] + ic*GV.dFreq;
+    rightEdgeFreq = GV.spinRange.fkdot[0] + ic*GV.dFreq;
   } else { /* shift slightly upwards to cover the half-maximum point, if possible */
     rightEdgeTwoF = Fstat.F[ic+1];
-    rightEdgeFreq = GV.searchRegion.fkdot[0] + (ic+1)*GV.dFreq;
+    rightEdgeFreq = GV.spinRange.fkdot[0] + (ic+1)*GV.dFreq;
   }
 
   maximumTwoF= Fstat.F[indexes[0]];
@@ -3035,7 +3026,7 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN, PulsarDopplerParams searchpo
     for (ntop=0; ntop<ReturnMaxN; ntop++)
       if (Fstat.F[indexes[ntop]]>TwoFthr){
         err=fprintf(fpmax, "%20.10f %10.8f %10.8f %20.15f\n",
-                    GV.searchRegion.fkdot[0] + indexes[ntop]*GV.dFreq,
+                    GV.spinRange.fkdot[0] + indexes[ntop]*GV.dFreq,
                     searchpos.Alpha, searchpos.Delta, 2.0*log2val*Fstat.F[indexes[ntop]]);
         if (err<=0) {
           LogPrintf (LOG_CRITICAL,  "PrintTopValues couldn't print to Fmax!\n");
@@ -3082,7 +3073,7 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN, PulsarDopplerParams searchpo
 #ifdef FILE_FMAX_DEBG    
 /*    print the output */
   err=fprintf(fpmax,"%10.5f %10.8f %10.8f    %d %10.5f %10.5f %10.5f\n",
-	      GV.searchRegions.fkdot[0], searchpos.Alpha, searchpos.Delta, 
+	      GV.spinRange.fkdot[0], searchpos.Alpha, searchpos.Delta, 
 	      GV.FreqImax-N, mean, std, 2.0*log2val*Fstat.F[indexes[0]]);
 #endif
   LALFree(indexes);
@@ -3184,7 +3175,7 @@ EstimateFLines(LALStatus *stat)
   outliersParams->Thr=THR/(2.0*medianbias);
   outliersParams->Floor = FloorF1;
   outliersParams->wings=wings; /*these must be the same as ClustersParams->wings */
-  outliersInput->ifmin = (INT4) ((GV.searchRegion.fkdot[0] /DemodParams->df)+0.5);
+  outliersInput->ifmin = (INT4) ((GV.spinRange.fkdot[0] /DemodParams->df)+0.5);
   outliersInput->data = F1;
 
   /*find values of F above THR and populate outliers with them */
@@ -4051,8 +4042,8 @@ InitSearchGrid ( LALStatus *status,
   scanInit.ephemeris = cfg->edat;         /* used by Ephemeris-based metric */
   scanInit.skyGridFile = cfg->skyGridFile;      /* if applicable */
 
-  scanInit.skyRegionString = cfg->searchRegion.skyRegionString;
-  scanInit.Freq = cfg->searchRegion.fkdot[0] + cfg->searchRegion.fkdotBand[0];
+  scanInit.skyRegionString = cfg->skyRegionString;
+  scanInit.Freq = cfg->spinRange.fkdot[0] + cfg->spinRange.fkdotBand[0];
 
   /* the following call generates a skygrid plus determines dFreq, df1dot,..
    * Currently the complete template-grid is more like a 'foliation' of
@@ -4065,7 +4056,7 @@ InitSearchGrid ( LALStatus *status,
   if ( uvar_outputSkyGrid ) 
     {
       LogPrintf (LOG_NORMAL,   "Now writing sky-grid into file '%s' ...", uvar_outputSkyGrid);
-      TRY (writeSkyGridFile( status->statusPtr, scan->skyGrid, uvar_outputSkyGrid, &scanInit), status);
+      TRY (writeSkyGridFile( status->statusPtr, scan->skyGrid, uvar_outputSkyGrid), status);
       LogPrintfVerbatim (LOG_NORMAL, " done.\n\n");
     }
 
