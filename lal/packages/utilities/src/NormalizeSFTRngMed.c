@@ -369,7 +369,7 @@ void LALNormalizeSFTVect (LALStatus  *status,
 			  UINT4     blockSize)
 {/*   *********************************************  </lalVerbatim> */
   /* normalizes a sft vector using RngMed */
-  INT4 j, lengthsft;
+  UINT4 j, lengthsft;
   REAL8FrequencySeries *psd = NULL;
 
   INITSTATUS (status, "LALNormalizeSFT", NORMALIZESFTRNGMEDC);
