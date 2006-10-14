@@ -1,9 +1,8 @@
+#! /usr/bin/octave -q
 ## Another script for comparing HierarchicalSearch.c with CFSv2.
 ## This is more general that ValidateHS.c because it goes through 
 ## the results produved by HS 1-by-1.  Thus it can deal with the case
 ## when we use multiple stacks
-
-
 
 fStart=310;
 fBand=0.1;
