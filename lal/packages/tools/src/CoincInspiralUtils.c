@@ -673,7 +673,7 @@ XLALAddSnglInspiralToCoinc(
       LALCalloc( 1, sizeof(CoincInspiralTable) );
     if ( !coincInspiral )
     {
-      LAL_Free( coincInspiral );
+      LALFree( coincInspiral );
       XLAL_ERROR_NULL(func,XLAL_ENOMEM);
     }
   }
@@ -727,7 +727,7 @@ XLALAddSnglInspiralToCoinc(
     eventId = (EventIDColumn *) LALCalloc( 1, sizeof(EventIDColumn) );
     if ( !eventId )
     {
-      LAL_Free(eventId);
+      LALFree(eventId);
       XLAL_ERROR_NULL(func,XLAL_ENOMEM);
     }
     snglInspiral->event_id = eventId;
@@ -740,7 +740,7 @@ XLALAddSnglInspiralToCoinc(
         LALCalloc( 1, sizeof(EventIDColumn) );
     if ( !eventId )
     {
-      LAL_Free(eventId);
+      LALFree(eventId);
       XLAL_ERROR_NULL(func,XLAL_ENOMEM);
     }
   }
