@@ -500,6 +500,7 @@ tagInspiralTemplate
   REAL8 spin2[3];
   REAL8 sourceTheta;
   REAL8 sourcePhi;
+  REAL8 polarisationAngle;
 
 /* Parameters which are currently might be used */
 
