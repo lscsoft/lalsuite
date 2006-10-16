@@ -256,10 +256,7 @@ LALConvertSkyCoordinates( LALStatus        *stat,
 
 
 
-/** If sky-position is not in the canonical range 
- * \f$(\alpha,\delta)\in [0,2\pi]\times[-\pi/2, \pi/2]\f$, normalize it
- * by mapping it into this coordinate-interval.
- * Based on Alicia's function with some additional "unwinding" added.  
+/** LAL interface to XLALNormalizeSkyPosition() 
  */
 void
 LALNormalizeSkyPosition (LALStatus *stat, 
@@ -274,6 +271,27 @@ LALNormalizeSkyPosition (LALStatus *stat,
   ASSERT (posOut, stat, SKYCOORDINATESH_ENUL ,  SKYCOORDINATESH_MSGENUL );
 
   tmp = *posIn;
+
+  XLALNormalizeSkyPosition ( &tmp );
+
+  *posOut = tmp;
+
+  RETURN (stat);
+
+} /* LALNormalizeSkyPosition() */
+
+
+/** If sky-position is not in the canonical range 
+ * \f$(\alpha,\delta)\in [0,2\pi]\times[-\pi/2, \pi/2]\f$, normalize it
+ * by mapping it into this coordinate-interval.
+ * Based on Alicia's function with some additional "unwinding" added.  
+ */
+void
+XLALNormalizeSkyPosition ( SkyPosition *posInOut ) /**< [in,out] sky-position to normalize*/
+{
+  SkyPosition tmp;
+
+  tmp = *posInOut;
   
   /* FIRST STEP: completely "unwind" positions, i.e. make sure that 
    * [0 <= alpha < 2pi] and [-pi < delta <= pi] */
@@ -317,10 +335,8 @@ LALNormalizeSkyPosition (LALStatus *stat,
 	}
     }
 
-  *posOut = tmp;
+  *posInOut = tmp;
 
-  RETURN (stat);
+  return;
 
-} /* LALNormalizeSkyPosition() */
-
-
+} /* XLALNormalizeSkyPosition() */
