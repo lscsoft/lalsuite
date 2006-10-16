@@ -164,6 +164,8 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
 	params->nStartPad = atoi(argv[++i]);}
       else if (strcmp(argv[i], "--nEndPad")==0){
 	params->nEndPad = atoi(argv[++i]);}
+      else if (strcmp(argv[i],"--fFinal")==0){
+        params->fFinal = atof(argv[++i]);}
       else if (strcmp(argv[i],"--mass1")==0){
 	params->mass1 = atof(argv[++i]);}
       else if (strcmp(argv[i],"--mass2")==0){
