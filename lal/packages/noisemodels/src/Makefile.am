@@ -5,6 +5,7 @@ LALAddVectors.c\
 LALColoredNoise.c\
 LALInspiralWaveCorrelate.c\
 LALGEOPsd.c\
+LALEGOPsd.c\
 LALLIGOIPsd.c\
 LALNoiseSpectralDensity.c\
 LALInspiralComputeChisq.c\

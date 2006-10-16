@@ -218,7 +218,7 @@ extern "C" {
                 REAL8 minDistance, maxDistance;
                 REAL8 spin1min, spin1max, spin2min, spin2max;
                 REAL8 theta0min, theta0max, phi0min, phi0max;
-                REAL8 polarisationAngleMin, polarisationAngleMax, polarisationAngle;
+                REAL8 polarisationAngleMin, polarisationAngleMax;
                 REAL8 sourceThetaMin, sourceThetaMax, sourcePhiMin, sourcePhiMax;
                 REAL8 inclinationMin, inclinationMax;
             }  
@@ -453,6 +453,19 @@ extern "C" {
             );
 
     /* <lalLaTeX>
+       \newpage\input{LALEGOPsdC}
+       </lalLaTeX>  */
+
+    void 
+            LALEGOPsd 
+            (
+             LALStatus *status, 
+             REAL8     *shf, 
+             REAL8     x
+            );
+
+
+    /* <lalLaTeX>
        \newpage\input{LALGEOPsdC}
        </lalLaTeX>  */
 
@@ -678,6 +691,11 @@ extern "C" {
             );
 
     /*==============================================*/
+ void GenerateTimeDomainWaveformForInjection (
+        LALStatus              *status, 
+        REAL4Vector            *buff,
+        InspiralTemplate       *params
+        );
 
     /* <lalLaTeX>
        \newpage\input{FilterTestC}
