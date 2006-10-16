@@ -152,7 +152,7 @@ LALConvertSkyCoordinates( LALStatus        *,
 			  ConvertSkyParams *params );
 
 void LALNormalizeSkyPosition (LALStatus *status, SkyPosition *posOut, const SkyPosition *posIn);
-void XLALNormalizeSkyPosition ( SkyPosition *posInOut );
+int XLALNormalizeSkyPosition ( SkyPosition *posInOut );
 
 #ifdef  __cplusplus
 }

@@ -285,11 +285,15 @@ LALNormalizeSkyPosition (LALStatus *stat,
  * \f$(\alpha,\delta)\in [0,2\pi]\times[-\pi/2, \pi/2]\f$, normalize it
  * by mapping it into this coordinate-interval.
  * Based on Alicia's function with some additional "unwinding" added.  
+ * return 0 = OK, -1 = ERROR
  */
-void
+int
 XLALNormalizeSkyPosition ( SkyPosition *posInOut ) /**< [in,out] sky-position to normalize*/
 {
   SkyPosition tmp;
+
+  if ( !posInOut )
+    return -1;
 
   tmp = *posInOut;
   
@@ -337,6 +341,6 @@ XLALNormalizeSkyPosition ( SkyPosition *posInOut ) /**< [in,out] sky-position to
 
   *posInOut = tmp;
 
-  return;
+  return 0;
 
 } /* XLALNormalizeSkyPosition() */
