@@ -159,11 +159,6 @@ LALAddVectors
 #define random() rand()
 #define srandom( seed ) srand( seed )
 
-static void GenerateTimeDomainWaveformForInjection (
-        LALStatus              *status, 
-        REAL4Vector            *buff,
-        RandomInspiralSignalIn *randIn
-        );
 static void GenerateRandomSpinTaylorParameters ( 
         LALStatus *status, 
         RandomInspiralSignalIn *randIn 
@@ -495,17 +490,17 @@ void LALRandomInspiralSignal
                  * timedomain approximants, we recourse to calling
                  * LALInspiralWave () function.
                  */
-
                 if (randIn->param.approximant == SpinTaylor)
                 {
-                    GenerateTimeDomainWaveformForInjection (status->statusPtr, &buff, randIn);
+                    randIn->param.fFinal=0; 
+                    GenerateTimeDomainWaveformForInjection (status->statusPtr, &buff, &randIn->param);
                     CHECKSTATUSPTR(status);
                 }
-                else 
+                else
                 {
                     /* force to compute fFinal is it really necessary  ? */ 
                     randIn->param.fFinal=0; 
-                    LALInspiralWave(status->statusPtr, &buff, &randIn->param); 
+                    LALInspiralWave(status->statusPtr, &buff, &randIn->param);
                     CHECKSTATUSPTR(status);
                 }
 
@@ -596,16 +591,9 @@ void LALRandomInspiralSignal
             }
             else
             {
-                if (randIn->param.approximant == SpinTaylor)
-                {
-                    GenerateTimeDomainWaveformForInjection (status->statusPtr, signal, randIn);
-                    CHECKSTATUSPTR(status);
-                }
-                else {
-
-                    LALInspiralWave(status->statusPtr, signal, &randIn->param);
-                    CHECKSTATUSPTR(status);
-                }
+                LALInspiralWave(status->statusPtr, signal, &randIn->param);
+                CHECKSTATUSPTR(status);
+                
 
                 /* Now convert from time domain signal(t) ---> frequency
                  * domain waveform buff(f) i.e signal(t) -> buff(f)*/
@@ -697,7 +685,7 @@ static void GenerateRandomSkyPositionAndPolarisation (
     randIn->param.sourcePhi = randIn->sourcePhiMin +  
             u * (randIn->sourcePhiMax - randIn->sourcePhiMin);
     u = (float)(random())/(float)(RAND_MAX); 
-    randIn->polarisationAngle = randIn->polarisationAngleMin + 
+    randIn->param.polarisationAngle = randIn->polarisationAngleMin + 
             u * (randIn->polarisationAngleMax - 
                     randIn->polarisationAngleMin);
 
@@ -796,10 +784,10 @@ static void GenerateRandomSpinTaylorParameters (
 }
 
 /* Function to generate time domain waveform for injection */
-static void GenerateTimeDomainWaveformForInjection (
+void GenerateTimeDomainWaveformForInjection (
         LALStatus              *status, 
         REAL4Vector            *buff,
-        RandomInspiralSignalIn *randIn
+        InspiralTemplate       *param
         )
 {
 
@@ -813,18 +801,18 @@ static void GenerateTimeDomainWaveformForInjection (
 
     memset( &waveform, 0, sizeof(CoherentGW) );
 
-    ppnParams.deltaT               = 1.0 / randIn->param.tSampling;
-    ppnParams.mTot                 = randIn->param.mass1 + randIn->param.mass2;
-    ppnParams.eta                  = randIn->param.eta;
-    ppnParams.d                    = randIn->param.distance;
-    ppnParams.inc                  = randIn->param.inclination;
-    ppnParams.phi                  = randIn->param.startPhase;
-    ppnParams.fStartIn             = randIn->param.fLower;
+    ppnParams.deltaT               = 1.0 / param->tSampling;
+    ppnParams.mTot                 = param->mass1 + param->mass2;
+    ppnParams.eta                  = param->eta;
+    ppnParams.d                    = param->distance;
+    ppnParams.inc                  = param->inclination;
+    ppnParams.phi                  = param->startPhase;
+    ppnParams.fStartIn             = param->fLower;
     ppnParams.fStopIn              = -1.0 / (6.0 * sqrt(6.0) * LAL_PI * ppnParams.mTot * LAL_MTSUN_SI);
-    ppnParams.position.longitude   = randIn->param.sourcePhi;
-    ppnParams.position.latitude    = randIn->param.sourceTheta;
+    ppnParams.position.longitude   = param->sourcePhi;
+    ppnParams.position.latitude    = param->sourceTheta;
     ppnParams.position.system      = COORDINATESYSTEM_EQUATORIAL;
-    ppnParams.psi                  = randIn->polarisationAngle;
+    ppnParams.psi                  = param->polarisationAngle;
     ppnParams.epoch.gpsSeconds     = 0;
     ppnParams.epoch.gpsNanoSeconds = 0;
 
@@ -832,18 +820,18 @@ static void GenerateTimeDomainWaveformForInjection (
     /* the waveform generation itself */
 
     /* Note that in the call to LALInspiralWaveForInjection,
-     * the randIn->param.nStartPad will be reset to zero. We do
+     * the param.nStartPad will be reset to zero. We do
      * not want to lose the information. So we should save it
      * somewhere (in a temporary variable) before the function
      * call.
      */
-    nStartPad = randIn->param.nStartPad;
-
-    LALInspiralWaveForInjection(status->statusPtr, &waveform, &randIn->param, &ppnParams); 
+    nStartPad = param->nStartPad;
+   
+    LALInspiralWaveForInjection(status->statusPtr, &waveform, param, &ppnParams); 
     CHECKSTATUSPTR(status);
 
     /* Now reinstate nStartPad from saved value */
-    randIn->param.nStartPad = nStartPad;
+    param->nStartPad = nStartPad;
 
     /* Generate F+ and Fx and combine it with h+ and hx to get
      * the correct waveform. See equation from BCV2 (Eq 29,
@@ -853,29 +841,42 @@ static void GenerateTimeDomainWaveformForInjection (
         REAL8 fp, fc, hp, hc; 
         INT4  kk;
 
-        t = cos(randIn->param.sourceTheta);
-        p = 2. * randIn->param.sourcePhi;
-        s = 2. * randIn->polarisationAngle;
+        t = cos(param->sourceTheta);
+        p = 2. * param->sourcePhi;
+        s = 2. * param->polarisationAngle;
 
         fp = 0.5*(1 + t*t)*cos(p)*cos(s) - t*sin(p)*sin(s);
         fc = 0.5*(1 + t*t)*cos(p)*sin(s) + t*sin(p)*cos(s);
 
         phi0 = waveform.phi->data->data[0];
-
         for (kk=0; kk < waveform.phi->data->length; kk++) 
         {
             a1    = waveform.a->data->data[2*kk];
             a2    = waveform.a->data->data[2*kk+1];
+/*            phi   = waveform.phi->data->data[kk] - phi0 -
+ *            param->startPhase;*/
             phi   = waveform.phi->data->data[kk] - phi0;
             shift = waveform.shift->data->data[kk];
             hp    = a1*cos(shift)*cos(phi) - a2*sin(shift)*sin(phi);
             hc    = a1*sin(shift)*cos(phi) + a2*cos(shift)*sin(phi);
-            buff->data[kk + randIn->param.nStartPad] = fp*hp + fc*hc;
+            buff->data[kk + param->nStartPad] = fp*hp + fc*hc;
         }
-    }
 
-    randIn->param.fFinal = ppnParams.fStop; 
+    LALSDestroyVectorSequence( status->statusPtr, &(waveform.a->data) );
+    CHECKSTATUSPTR( status );
+    LALSDestroyVector( status->statusPtr, &(waveform.f->data) );
+    CHECKSTATUSPTR( status );
+    LALDDestroyVector( status->statusPtr, &(waveform.phi->data) );
+    CHECKSTATUSPTR( status );
+    LALSDestroyVector( status->statusPtr, &(waveform.shift->data) );
+    CHECKSTATUSPTR( status );
+    LALFree( waveform.a );
+    LALFree( waveform.f );
+    LALFree( waveform.phi );
+    LALFree( waveform.shift );
+    } 
 
+    param->fFinal = ppnParams.fStop; 
     DETATCHSTATUSPTR(status);
     RETURN(status);
 }
