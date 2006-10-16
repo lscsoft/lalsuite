@@ -8,11 +8,21 @@ NRCSID( BANKEFFICIENCYC, "$Id$");
 RCSID(  "$Id$");
 
 #define CVS_ID_STRING_C      "$Id$"
-#define CVS_REVISION_C      "$Revision$"
+#define CVS_REVISION_C       "$Revision$"
+
+#define CVS_NAME_STRING_C    "$Name$"
+#define CVS_SOURCE_C         "$Source$"
+#define CVS_DATE_C           "$Date$"
+#define PROGRAM_NAME         "BankEfficiency"
 
 
-static COMPLEX8Vector *strainSegment = NULL;
-static COMPLEX8FrequencySeries       resp;
+#ifdef LALAPPS_CONDOR
+extern int condor_compress_ckpt;
+void init_image_with_file_name( char *ckpt_file_name );
+void ckpt_and_exit( void );
+#endif
+
+
 static int vrbflg = 0;
 
 RandomParams *randParams = NULL;
@@ -25,7 +35,10 @@ main (INT4 argc, CHAR **argv )
 
   /* checkpointing */
   CHAR  ckptPath[FILENAME_MAX];           /* input and ckpt file path     */
-  CHAR  outputPath[FILENAME_MAX];         /* output data file path        */
+  /*CHAR  outputPath[FILENAME_MAX];         */
+  CHAR  fname[FILENAME_MAX];
+  CHAR   fileName[FILENAME_MAX];          /* name of output files         */
+
 
   /* --- Variables ---*/
   INT4          ntrials = 0;
@@ -49,6 +62,7 @@ main (INT4 argc, CHAR **argv )
   SnglInspiralTable            *tmpltHead  = NULL;
   SnglInspiralTable            *tmpltCurrent  = NULL;
   /* --- filtering related --- */
+
 
   REAL4Vector    correlation;
   REAL4Vector    FilterBCVSpin1;
@@ -92,7 +106,6 @@ main (INT4 argc, CHAR **argv )
   ParametersInitialization(&coarseBankIn, 
 		  	   &randIn,
 			   &userParam);
-
   /* --- Read user parameters --- */
   ParseParameters(&argc,
 		  argv,
@@ -113,8 +126,11 @@ main (INT4 argc, CHAR **argv )
 
  /* zero out the checkpoint and output paths */
   memset( ckptPath, 0, FILENAME_MAX * sizeof(CHAR) );
-  memset( outputPath, 0, FILENAME_MAX * sizeof(CHAR) );
-  LALSnprintf( outputPath, FILENAME_MAX * sizeof(CHAR), "bankefficiency.ckpt");
+  memset( fname, 0, FILENAME_MAX * sizeof(CHAR) );
+  memset( fileName, 0, FILENAME_MAX * sizeof(CHAR) );
+/*  memset( outputPath, 0, FILENAME_MAX * sizeof(CHAR) );*/
+  LALSnprintf( fileName, FILENAME_MAX * sizeof(CHAR), "bankefficiency");
+  LALSnprintf( ckptPath, FILENAME_MAX * sizeof(CHAR), "/home2/spxtc/");
         
 
   /* init a random structure using possibly the seed from user input*/
@@ -195,9 +211,9 @@ main (INT4 argc, CHAR **argv )
    if (coarseBankIn.approximant == BCVSpin){
      coarseBankIn.mMin = 0;
    }
+   /*coarseBankIn.span = bhns_only;*/
    LAL_CALL( LALInspiralBankGeneration( &status, &coarseBankIn, &tmpltHead, &sizeBank),
 	     &status );
-
 
 
    if ( sizeBank )
@@ -216,10 +232,32 @@ main (INT4 argc, CHAR **argv )
        fflush(stdout);
      }
  }
+/*
 
+if  ( userParam.dataCheckPoint )
+  {
+#ifdef LALAPPS_CONDOR
+     condor_compress_ckpt = 1;
+     if ( ckptPath[0] )
+      {
+        LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s/%s-%d.ckpt",
+                     ckptPath, fileName, randIn.useed );
+      }
+      else
+      {
+        LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s-%d.ckpt", fileName, randIn.useed );
+     }
+      if ( vrbflg ) fprintf( stdout, "checkpointing to file %s\n", fname );
+       init_image_with_file_name( fname );
+     ckpt_and_exit();
+#else
+      fprintf( stderr, "--data-checkpoint cannot be used unless "
+             "lalapps is condor compiled\n" );
+      exit( 1 );
+#endif
+     }
 
-
- 
+ */
 
   /* --- Estimate the fft's plans --- */
   LAL_CALL(LALCreateForwardRealFFTPlan(&status, &fwdp, signal.length, 0), 
@@ -276,9 +314,12 @@ main (INT4 argc, CHAR **argv )
        * then we just add real noise to the simulated signal. */
       if (userParam.realNoise && userParam.noiseModel == REALPSD) {
         for (i=0; i<(INT4)signal.length/2; i++){
-	  INT4 k = signal.length-i;
-	    signal.data[i] = strainSegment->data[i].re; 
+	  /*INT4 k = signal.length-i;
+	    to be done*/
+		/*
+signal.data[i] = strainSegment->data[i].re; 
 	    signal.data[k] = strainSegment->data[i].im; 
+*/
         }
       }
       else
@@ -290,7 +331,6 @@ main (INT4 argc, CHAR **argv )
 	    }
 	  LAL_CALL(BEGenerateInputData(&status,  &signal, &randIn, userParam),
 		   &status);
-
 	}
 
       overlapin.signal 	= signal;
@@ -395,6 +435,7 @@ main (INT4 argc, CHAR **argv )
 	    case PadeT1:
 	    case PadeF1:
 	    case SpinTaylor:
+	    
 	      CreateListfromTmplt(&insptmplt, tmpltCurrent);
 	      insptmplt.massChoice=t03;
 	      LAL_CALL(LALInspiralParameterCalc( &status,  &(insptmplt) ), &status);
@@ -405,7 +446,6 @@ main (INT4 argc, CHAR **argv )
               overlapin.param.fCutoff = coarseBankIn.fUpper;
               overlapin.param.fFinal = randIn.param.tSampling/2. - 1;
 
-
               
               if (userParam.faithfulness){ /* same parameters but different templates */
                /* randIn.param.fCutoff = coarseBankIn.fUpper;*/
@@ -415,6 +455,7 @@ main (INT4 argc, CHAR **argv )
                 LAL_CALL(LALInspiralParameterCalc( &status,  &(overlapin.param) ), &status);
                 overlapin.param.fCutoff = coarseBankIn.fUpper;
                 overlapin.param.fFinal = randIn.param.tSampling/2. - 1;
+
 		overlapin.param.approximant        = userParam.template;
 		overlapin.param.order              = tempOrder;
 		sizeBank                           = 1;  /* we dont need the whole bank for checking */ 
@@ -436,9 +477,9 @@ main (INT4 argc, CHAR **argv )
 		sizeBank                           = 1;  /* we dont need the whole bank for checking */ 
 	      }
 
-	      /* if we want to cut integration before the fFinal
-		 overlapin.param.fCutoff = 512;
-	      */ 
+	      /* if we want to cut integration before the fFinal*/
+   	      /* overlapin.param.fCutoff = 512;*/
+	       
 	      if (
 		  (userParam.fastSimulation == 1 ) &&
 		  		  ((fabs(randIn.param.t0 - insptmplt.t0)> .3) ||
@@ -488,8 +529,31 @@ main (INT4 argc, CHAR **argv )
 			    &OverlapOutputBestTemplate);
 	  /* We can also keep the best trigger in each template. */
 
+/*	if ( userParam.dataCheckPoint && (ntrials%10)==0 )
+	    {
+	fprintf(stderr, "checkpoiting at trial number %d\n", ntrials);
+	#ifdef LALAPPS_CONDOR
+	      condor_compress_ckpt = 1;
+	      if ( ckptPath[0] )
+	        {
+	          LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s/%s-%d.ckpt",
+	                       ckptPath, fileName, randIn.useed );
+	        }
+	      else
+	        {
+	          LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s-%d.ckpt", fileName , randIn.useed);
+	        }
+	      if ( vrbflg ) fprintf( stdout, "checkpointing to file %s\n", fname );
 
-	  
+	      init_image_with_file_name( fname );
+	      ckpt_and_exit();
+	#else
+	      fprintf( stderr, "--data-checkpoint cannot be used unless "
+	               "lalapps is condor compiled\n" );
+	      exit( 1 );
+	#endif
+      }
+*/
 	}/*end of  bank process*/
 
       
@@ -547,7 +611,7 @@ main (INT4 argc, CHAR **argv )
 	}
       }
 
-      if (userParam.template == EOB) {
+      if (userParam.template == EOB || userParam.template == SpinTaylor) {
 	if (userParam.printBestOverlap ) {
 	  Foutput=  fopen("BE_correlation.dat","w");
 	  
@@ -596,6 +660,9 @@ main (INT4 argc, CHAR **argv )
    
   LALFree(FilterBCV2.data);
   LALFree(FilterBCV1.data);
+  LALFree(FilterBCVSpin2.data);
+  LALFree(FilterBCVSpin1.data);
+  LALFree(FilterBCVSpin3.data);
   
   LALFree(randIn.psd.data);
   LALDDestroyVector( &status, &(coarseBankIn.shf.data) );
@@ -941,7 +1008,6 @@ LALCreateBCVSpinFilters(REAL4Vector         *FilterBCVSpin1,
 {
   UINT4			i;
   UINT4  		n = FilterBCVSpin1->length;
-  UINT4	  		nby2 = FilterBCVSpin1->length / 2;
   
   REAL4 a11,a21,a22; 
   REAL8 phase, c_phase, s_phase, c_phase_beta, s_phase_beta;
@@ -952,10 +1018,6 @@ LALCreateBCVSpinFilters(REAL4Vector         *FilterBCVSpin1,
   beta = overlapin->param.beta;
   psi3 = overlapin->param.psi3;
   psi0 = overlapin->param.psi0;
-
-
-  fprintf(stderr, "%f %f %f\n", beta, psi0, psi3);
-
 
   deltaF = sampling/n;
   deltaTto2by3 = pow(deltaF, -2./3);
@@ -970,9 +1032,6 @@ LALCreateBCVSpinFilters(REAL4Vector         *FilterBCVSpin1,
      is much less than psi0/psi3. We might have a 2 dimensional 
      set of vector having i as first dimension and beta as second.
   */  
-  
-
-
 
   for ( i = kMin; i < kMax; i++ )
     {
@@ -1135,7 +1194,7 @@ LALWaveOverlapBCV(	     LALStatus               *status,
   
   REAL4   BestPhase=0,thetab,thetav=0, alphaMax, a11,a22,a21, 
 	  x1_2, x2_2, x3_2, x4_2, 		/* some temporary data 	      		*/
-	  V0, V1, V2, 				/* idem 				*/
+	  Vector0, Vector1, Vector2, 				/* idem 				*/
 	  rho		= 0,			/* the SNR 				*/
            alpha, alphaFU, fm23, fp23;
   
@@ -1276,23 +1335,23 @@ LALWaveOverlapBCV(	     LALStatus               *status,
       x3_2 = x3.data[i] * x3.data[i];
       x4_2 = x4.data[i] * x4.data[i];      
       
-      V0 = x1_2 + x2_2 + x3_2 + x4_2;
-      V1 = x1_2 + x3_2 - x2_2 - x4_2;
-      V2 = 2*(x1.data[i]*x2.data[i] + x3.data[i]*x4.data[i]);
+      Vector0 = x1_2 + x2_2 + x3_2 + x4_2;
+      Vector1 = x1_2 + x3_2 - x2_2 - x4_2;
+      Vector2 = 2*(x1.data[i]*x2.data[i] + x3.data[i]*x4.data[i]);
       
-      rhoUnconstraint = sqrt((V0 + sqrt(V1*V1+V2*V2))/2.);
+      rhoUnconstraint = sqrt((Vector0 + sqrt(Vector1*Vector1+Vector2*Vector2))/2.);
 
       /* get thetav first in order to constraint alpha_F*/
 
-      thetav =   atan2(V2,V1);
+      thetav =   atan2(Vector2,Vector1);
 	
       if(userParam.printBestOverlap && userParam.extraFinalPrinting){
 	rho1.data[i] = rhoUnconstraint;
-	rho2.data[i] = sqrt((V0 + V1)/2.);
-	rho3.data[i] = sqrt((V0+V1*cos(2*thetab)+V2*sin(2*thetab))/2.);
-	v0.data[i]   = V0;
-	v1.data[i]   = V1;
-	v2.data[i]   = V2;
+	rho2.data[i] = sqrt((Vector0 + Vector1)/2.);
+	rho3.data[i] = sqrt((Vector0+Vector1*cos(2*thetab)+Vector2*sin(2*thetab))/2.);
+	v0.data[i]   = Vector0;
+	v1.data[i]   = Vector1;
+	v2.data[i]   = Vector2;
         phaseV.data[i] = .5*thetav; /*used to compute alpha*/
       }
              
@@ -1302,11 +1361,11 @@ LALWaveOverlapBCV(	     LALStatus               *status,
 	  rhoConstraint = rhoUnconstraint;
 	}
 	else if (thetab-LAL_PI <= thetav && thetav < 0) {
-	  rhoConstraint = sqrt((V0 + V1)/2.);	  
+	  rhoConstraint = sqrt((Vector0 + Vector1)/2.);	  
 	}
 	else if( (2*thetab  < thetav && thetav<=LAL_PI+1e-4 )
 		 || (-LAL_PI-1e-4<=thetav && thetav < -LAL_PI+thetab)){
-	  rhoConstraint =sqrt((V0+V1*cos(2*thetab)+V2*sin(2*thetab))/2.);;
+	  rhoConstraint =sqrt((Vector0+Vector1*cos(2*thetab)+Vector2*sin(2*thetab))/2.);;
 	}
 	else
 	  {
@@ -1320,17 +1379,17 @@ LALWaveOverlapBCV(	     LALStatus               *status,
 	  rhoConstraint = rhoUnconstraint;
 	}
 	else if (0 < thetav &&  thetav  <= LAL_PI + thetab ) {
-	  rhoConstraint = sqrt((V0 + V1)/2.);	  
+	  rhoConstraint = sqrt((Vector0 + Vector1)/2.);	  
 	}
 	else if( (-LAL_PI-1e-4  <= thetav && thetav < 2*thetab ) || 
 		 (LAL_PI +thetab <= thetav && thetav <= LAL_PI+1e-4))
         {
-	  rhoConstraint =sqrt((V0+V1*cos(2*thetab)+V2*sin(2*thetab))/2.);;
+	  rhoConstraint =sqrt((Vector0+Vector1*cos(2*thetab)+Vector2*sin(2*thetab))/2.);;
 	}
 	else 
 	  {
 	    fprintf(stderr,"must not enter herethetav = %e thetab=%e %e %e %d\n ",
-                thetav , thetab, V1, V2, i);
+                thetav , thetab, Vector1, Vector2, i);
 	    exit(0);
 	  }
       }
@@ -1553,8 +1612,7 @@ LALWaveOverlapBCVSpin(	     LALStatus               *status,
 			     REAL4Vector             *FilterBCVSpin2,
 			     REAL4Vector             *FilterBCVSpin3,
 			     UserParametersIn         userParam ,
-			     OverlapOutputIn          *OverlapOutput, 
-			     BEMoments *moments
+			     OverlapOutputIn          *OverlapOutput
 		  	     )
      /*  </lalVerbatim>  */
 {
@@ -1567,9 +1625,8 @@ LALWaveOverlapBCVSpin(	     LALStatus               *status,
 
   
   REAL4
-    a11,a22,a21, 
-    x5_2,x6_2,x1_2, x2_2, x3_2, x4_2, 		/* some temporary data 	      		*/
-    alpha, fm23, fp23, phase;
+     x5_2,x6_2,x1_2, x2_2, x3_2, x4_2, 		/* some temporary data 	      		*/
+     alpha=0 , phase=0;
   
   REAL4Vector 
     template, 
@@ -1586,7 +1643,10 @@ LALWaveOverlapBCVSpin(	     LALStatus               *status,
 	  
   INITSTATUS (status, "LALWaveOverlapBCV", BANKEFFICIENCYC);
   ATTATCHSTATUSPTR(status);
-  
+
+  /* to avoid warnings*/  
+  i = userParam.useed;
+
   /* size affectation*/
   x1.length = x2.length = x3.length = x4.length = 
   x5.length = x6.length =  template.length= n;
@@ -1742,36 +1802,49 @@ BEPrintBank(	InspiralCoarseBankIn coarseBankIn,
   output = fopen(BANKEFFICIENCY_PRINTBANK_FILEASCII,"w");
 
   fprintf(output,"#Number of Coarse Bank Templates=%d\n",sizeBank);
-  if (coarseBankIn.approximant == BCV)
-    {
-      fprintf(output, "#psi0Min=%e, psi0Max=%e, psi3Min=%e, psi3Max=%e\n", 
-	      coarseBankIn.psi0Min, coarseBankIn.psi0Max, coarseBankIn.psi3Min, coarseBankIn.psi3Max);
-      fprintf(output, "#psi0 psi3  totalMass fFinal\n");
-      
-    }
-  else
-    {
-      fprintf(output, "#mMin=%e, mMax=%e\n", coarseBankIn.mMin,coarseBankIn.mMax);
-      fprintf(output, "#tau0, tau3, mass1, mass2\n");
+  switch (coarseBankIn.approximant)
+  {
+	case BCV:
+	      	fprintf(output, "#psi0Min=%e, psi0Max=%e, psi3Min=%e, psi3Max=%e\n", 
+	      	coarseBankIn.psi0Min, coarseBankIn.psi0Max, coarseBankIn.psi3Min, coarseBankIn.psi3Max);
+	      	fprintf(output, "#psi0 psi3  totalMass fFinal\n");
+		break;
+	case BCVSpin:
+		fprintf(output, "#psi0Min=%e, psi0Max=%e, psi3Min=%e, psi3Max=%e\n", 
+	      	coarseBankIn.psi0Min, coarseBankIn.psi0Max, coarseBankIn.psi3Min, coarseBankIn.psi3Max);
+		fprintf(output, "#psi0 psi3  beta totalMass fFinal\n");
+		break;
+      default:
+      		fprintf(output, "#mMin=%e, mMax=%e\n", coarseBankIn.mMin,coarseBankIn.mMax);
+		fprintf(output, "#tau0, tau3, mass1, mass2\n");
+		break;
     }
 
   for ( i = 0; i < sizeBank; i++)
     {
-      if (coarseBankIn.approximant == BCV)
-	{      		   
-      		fprintf(output, "%e %e %e %e\n", 	(*list)[i].params.psi0, 
+      switch (coarseBankIn.approximant)
+	{
+	case BCV:	  		   
+		fprintf(output, "%e %e %e %e\n", 	(*list)[i].params.psi0, 
 				  			(*list)[i].params.psi3,
 							(*list)[i].params.totalMass,
 						       	(*list)[i].params.fFinal);
-	} 
-      else
-	{
-
+		break;
+        case BCVSpin:
+		fprintf(output, "%e %e %e %e %e\n", 	(*list)[i].params.psi0, 
+				  			(*list)[i].params.psi3,
+				  			(*list)[i].params.beta,
+							(*list)[i].params.totalMass,
+ 						       	(*list)[i].params.fFinal);
+     		break;
+	default:
       		fprintf(output, "%e %e %e %e\n", 	(*list)[i].params.t0, 
 				  			(*list)[i].params.t3, 
 							(*list)[i].params.mass1, 
 							(*list)[i].params.mass2);
+		break;
 	}
+	
     }	   
   fprintf(output,"&\n");
   fclose(output);
@@ -1867,14 +1940,14 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
       coarseBankIn.fUpper);
   ADD_2PROCESS_PARAM("float","%f %f","--bank-mass-range",
       coarseBankIn.mMin, coarseBankIn.mMax);
+  ADD_2PROCESS_PARAM("float","%f %f","--bank-beta-range",
+      coarseBankIn.betaMin, coarseBankIn.betaMax);
   ADD_2PROCESS_PARAM("float","%f %f","--bank-psi0-range",
       coarseBankIn.psi0Min, coarseBankIn.psi0Max);
   ADD_2PROCESS_PARAM("float","%f %f","--bank-psi3-range",
       coarseBankIn.psi3Min, coarseBankIn.psi3Max);
   ADD_PROCESS_PARAM("string","%s","--bank-grid-spacing",
       GetStringFromGridType(coarseBankIn.gridSpacing));
-  ADD_PROCESS_PARAM("string", "%s","--channel",
-      userParam.chanName);    
   ADD_PROCESS_PARAM("string", "%s","--detector",
       GetStringFromDetector(userParam.detector));
   ADD_PROCESS_PARAM("float","%f","--fl",	
@@ -1905,8 +1978,6 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
       userParam.psi0);
   ADD_PROCESS_PARAM("float","%f","--psi3",
       userParam.psi3);
-  ADD_PROCESS_PARAM("string", "%s","--run",
-      GetStringFromScientificRun(userParam.run));
   ADD_PROCESS_PARAM("float","%f","--sampling",
       coarseBankIn.tSampling);
   ADD_PROCESS_PARAM("string","%s","--simulation-type",
@@ -1969,144 +2040,140 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 
 CHAR* GetStringFromSimulationType(INT4 input)
 {
+  static CHAR this[256]; 
+
   switch (input){
     case 0:
-      return "SignalOnly";
+      LALSnprintf(this, sizeof(this), "SignalOnly");
       break;
     case 1:
-      return "NoiseOnly";
+      LALSnprintf(this, sizeof(this), "NoiseOnly");
       break;
     case 2:
-      return "NoiseAndSignal";
+      LALSnprintf(this, sizeof(this), "NoiseAndSignal");
       break;
   }
-  return NULL;
+
+  return this;
 }
 CHAR* GetStringFromTemplate(INT4 input)
 {
+  static CHAR this[256];
+
   switch (input){
     case EOB:
-      return "EOB";
+      LALSnprintf(this, sizeof(this), "EOB");
       break;
     case TaylorT1:
-      return "TaylorT1";
+      LALSnprintf(this, sizeof(this),"TaylorT1");
       break;
     case TaylorT2:
-      return "TaylorT2";
+      LALSnprintf(this,  sizeof(this),"TaylorT2");
       break;
     case TaylorT3:
-      return "TaylorT3";
+      LALSnprintf(this, sizeof(this), "TaylorT3");
       break;
     case PadeT1:
-      return "PadeT1";
+      LALSnprintf(this, sizeof(this), "PadeT1");
       break;
     case TaylorF2:
-      return "TaylorF2";
+      LALSnprintf(this, sizeof(this), "TaylorF2");
       break;
     case BCV:
-      return "BCV";
+      LALSnprintf(this, sizeof(this), "BCV");
+      break;
+    case BCVSpin:
+      LALSnprintf(this, sizeof(this), "BCVSpin");
       break;
     case SpinTaylor:
-      return "SpinTaylor";
+      LALSnprintf(this, sizeof(this), "SpinTaylor");
       break;
   }
-  return NULL;
+  return this;
 }
 
 CHAR* GetStringFromGridType(INT4 input)
- {
+{
+  static CHAR this[256]; 
+
   switch (input){
   case Square:
-    return "Square";
+    LALSnprintf(this, sizeof(this), "Square");
     break;
   case SquareNotOriented:
-    return "SquareNotOriented";
+    LALSnprintf(this, sizeof(this), "SquareNotOriented");
     break;
   case HexagonalNotOriented:
-    return "HexagonalNotOriented";
+    LALSnprintf(this,  sizeof(this), "HexagonalNotOriented");
     break;
   case Hexagonal:
-    return "Hexagonal";
+    LALSnprintf(this, sizeof(this),"Hexagonal");
     break;
   }
-  return NULL;
+  
+  return this;
 }
 
 CHAR* GetStringFromNoiseModel(INT4 input)
- {
+{
+  static CHAR this[256];
+
   switch (input){
   case LIGOI:
-    return "LIGOI";
+    LALSnprintf(this, sizeof(this),"LIGOI");
     break;
   case LIGOA:
-    return "LIGOA";
+    LALSnprintf(this, sizeof(this),"LIGOA");
     break;
   case VIRGO:
-    return "VIRGO";
+    LALSnprintf(this, sizeof(this),"VIRGO");
+    break;
+  case EGO:
+    LALSnprintf(this, sizeof(this),"EGO");
     break;
   case GEO:
-    return "GEO";
+    LALSnprintf(this, sizeof(this),"GEO");
     break;
   case TAMA:    
-    return "TAMA"; 
+    LALSnprintf(this, sizeof(this),"TAMA");
     break;
   case UNITY:    
-    return "UNITY";
+    LALSnprintf(this, sizeof(this),"UNITY");
     break;
   case REALPSD:
-    return "REALPSD";
+    LALSnprintf(this, sizeof(this),"REALPSD");
     break;
   } 
-  return NULL;
- }
+  return this;
+}
 
 CHAR* GetStringFromDetector(INT4 input)
  {
-   
+  static CHAR this[3];  
+
   switch (input){
   case L1: 
-    return "L1";
+    LALSnprintf(this, sizeof(this),"L1");
     break;
   case H1: 
-    return "H1";
+    LALSnprintf(this, sizeof(this),"H1");
     break;
   case H2: 
-    return "H2";
+    LALSnprintf(this, sizeof(this),"H2");
     break;
   case V1: 
-    return "V1";
+    LALSnprintf(this, sizeof(this),"V1");
     break;
   case G1: 
-    return "G1";
+    LALSnprintf(this, sizeof(this),"G1");
     break;
   }
-  return NULL;
- }
+  
+  return this;
+}
 
 
-CHAR* GetStringFromScientificRun(INT4 input)
- {
-  switch (input){
-     case S2: 
-       return "S2";
-       break;
-     case S3: 
-       return "S3";
-       break;
-     case S1: 
-       return "S1";
-       break;
-     case S4:
-       return "S4";
-       break;
-     case S5:
-       return "S5";
-       break;
-  }
-  return NULL;
- }
-
-
+      
 /* xml file for the standalone code */
 void 
 BEPrintResultsXml( InspiralCoarseBankIn         coarseBankIn,
@@ -2154,9 +2221,9 @@ BEPrintResultsXml( InspiralCoarseBankIn         coarseBankIn,
     LAL_CALL( populate_process_table( &status, 
 				      templateBank.processTable, 
 				      PROGRAM_NAME, 
-				      CVS_REVISION,
-				      CVS_SOURCE,
-				      CVS_DATE ), &status );
+				      CVS_REVISION_C,
+				      CVS_SOURCE_C,
+				      CVS_DATE_C ), &status );
     this_proc_param = processParamsTable.processParamsTable = 
       (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
     
@@ -2186,7 +2253,7 @@ BEPrintResultsXml( InspiralCoarseBankIn         coarseBankIn,
     /* finally write sngl inspiral table */
     
     PRINT_LIGOLW_XML_BANKEFFICIENCY(xmlStream.fp);
-    
+   
     fprintf(xmlStream.fp,BANKEFFICIENCY_PARAMS_ROW,
 	    trigger.psi0_trigger,
 	    trigger.psi3_trigger,
@@ -2198,6 +2265,14 @@ BEPrintResultsXml( InspiralCoarseBankIn         coarseBankIn,
 	    trigger.tau3_trigger,
 	    randIn.param.t0, 
 	    randIn.param.t3, 
+            randIn.param.spin1[0],
+            randIn.param.spin1[1],
+            randIn.param.spin1[2],
+            randIn.param.spin2[0],
+            randIn.param.spin2[1],
+            randIn.param.spin2[2],
+            randIn.param.orbitTheta0,
+            randIn.param.orbitPhi0,
 	    trigger.fend_trigger, 
 	    trigger.fend_inject,
 	    trigger.mass1_inject,
@@ -2238,6 +2313,14 @@ BEPrintResultsXml( InspiralCoarseBankIn         coarseBankIn,
 	      trigger.tau3_trigger,
 	      randIn.param.t0, 
 	      randIn.param.t3, 
+              randIn.param.spin1[0],
+              randIn.param.spin1[1],
+              randIn.param.spin1[2],
+              randIn.param.spin2[0],
+              randIn.param.spin2[1],
+              randIn.param.spin2[2],
+              randIn.param.orbitTheta0,
+              randIn.param.orbitPhi0,
 	      trigger.fend_trigger, 
 	      trigger.fend_inject,
 	      trigger.mass1_inject,
@@ -2317,7 +2400,7 @@ BEPrintProtoXml(InspiralCoarseBankIn   coarseBankIn,
     LAL_CALL( LALGPSTimeNow ( &status, &(templateBank.processTable->start_time),
 			      &accuracy ), &status );
     LAL_CALL( populate_process_table( &status, templateBank.processTable, 
-				      PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &status );
+				      PROGRAM_NAME, CVS_REVISION_C, CVS_SOURCE_C, CVS_DATE_C ), &status );
     this_proc_param = processParamsTable.processParamsTable = 
       (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
     
@@ -2453,6 +2536,10 @@ void BECreatePsd(LALStatus                *status,
       LAL_CALL(LALNoiseSpectralDensity (status->statusPtr, coarseBankIn->shf.data, &LALVIRGOPsd, df),
 	       status->statusPtr);;
       break;
+    case EGO: 
+      LAL_CALL(LALNoiseSpectralDensity (status->statusPtr, coarseBankIn->shf.data, &LALEGOPsd, df),
+	       status->statusPtr);;
+      break;
     case GEO:
       LAL_CALL(LALNoiseSpectralDensity (status->statusPtr, coarseBankIn->shf.data, &LALGEOPsd, df), 
 	       status->statusPtr);
@@ -2462,14 +2549,18 @@ void BECreatePsd(LALStatus                *status,
 	       status->statusPtr);
       break;
     case REALPSD:	
-      /* Read psd dans le fichier InputPSD.dat */
-      LAL_CALL(LALCreateRealPsd (status->statusPtr, coarseBankIn, *randIn , userParam), 
+      /*    LAL_CALL(LALCreateRealPsd (status->statusPtr, coarseBankIn, *randIn , userParam), 
 	       status->statusPtr);
+      */
       break;
+
     case READPSD:
      coarseBankIn->shf.data->data[0]=0;
      if ((Finput= fopen(userParam.inputPSD,"r")) == NULL)
-       BEPrintError("userParam.inputPSD does not exists\n");
+	{
+	  fprintf(stderr, "userParam.inputPSD does not exists\n");
+	  exit(1);
+	}
      else
      while(fscanf(Finput, "%f %le\n",&dummy, &coarseBankIn->shf.data->data[i+1]) == 2)  
          i++;
@@ -2560,13 +2651,13 @@ void BEGenerateInputData(LALStatus *status,
 		  REAL8 epsilon1 = (float) rand()/(float)RAND_MAX;
 		  REAL8 epsilon2 = (float) rand()/(float)RAND_MAX;
 		  REAL8 fend = 10000000.;
-		  int trial = 0; 
+		  int trials = 0; 
 		  
 		  randIn->param.psi0 = randIn->psi0Min + epsilon1 * (randIn->psi0Max - randIn->psi0Min);
 		  randIn->param.psi3 = randIn->psi3Min + epsilon2 * (randIn->psi3Max - randIn->psi3Min);
 		  
 		  
-		  while (((fend > randIn->param.tSampling/2.) || ( fend < randIn->param.fLower)) && (trial < 10))
+		  while (((fend > randIn->param.tSampling/2.) || ( fend < randIn->param.fLower)) && (trials < 10))
 		    { 	     
 		      
 		      REAL8 fLR, fLSO;
@@ -2586,9 +2677,9 @@ void BEGenerateInputData(LALStatus *status,
 		      randIn->param.fFinal = fend;		  
 		      randIn->param.fCutoff = fend;		  
 		      
-		      trial++;
+		      trials++;
 		    }
-		  if (trial == 10 ) valid = 0;
+		  if (trials == 10 ) valid = 0;
 		  else valid = 1;
 		}
 	    }
@@ -2627,6 +2718,32 @@ void BEGenerateInputData(LALStatus *status,
 	  {
 	    randIn->param.massChoice = m1Andm2;
 	    randIn->param.massChoice = totalMassUAndEta;	    
+	    randIn->param.distance = 1;
+	    randIn->param.signalAmplitude = 1;
+	    if (randIn->param.approximant==SpinTaylor)
+	    {  
+		randIn->param.distance = 1;
+	    	randIn->param.signalAmplitude = 1;
+		randIn->param.massChoice = massesAndSpin;	   
+	        randIn->spin1min = 0;
+	        randIn->spin1max = 1;
+	        randIn->spin2min = 0;
+	        randIn->spin2max = 1;
+	        randIn->inclinationMin = 0.;
+	        randIn->inclinationMax = 1.3;
+	        randIn->sourcePhiMin = 0.;
+	        randIn->sourcePhiMax = 1.;
+	        randIn->sourceThetaMin = 0.;
+	        randIn->sourceThetaMax = 1.;
+	        randIn->polarisationAngleMin = 0.;
+	        randIn->polarisationAngleMax = 1.;
+	        randIn->theta0min = 0.1;
+	        randIn->theta0max = 1.;
+	        randIn->phi0min = 0.1;
+	        randIn->phi0max = 1.;
+	        randIn->minDistance = 0.1;
+	        randIn->maxDistance = 1.;
+	    }
 	    LALRandomInspiralSignal(status->statusPtr, signal, randIn);
 	    CHECKSTATUSPTR(status);
 	    
@@ -2637,7 +2754,7 @@ void BEGenerateInputData(LALStatus *status,
 
     if (randIn->type == 1)
       {
-	randIn->param.massChoice = m1Andm2;	
+	randIn->param.massChoice = m1Andm2;
 	LALRandomInspiralSignal(status->statusPtr, signal, randIn);
 	CHECKSTATUSPTR(status);
       }    
@@ -2648,1139 +2765,6 @@ void BEGenerateInputData(LALStatus *status,
   RETURN (status);
 
 }
-
-void 
-LALCreateRealPsd(LALStatus *status, 
-		 InspiralCoarseBankIn *bankIn,
-		 RandomInspiralSignalIn randIn, 
-		 UserParametersIn userParam)
-{
-
-
-
-
-  enum
-    {
-      undefined,
-      real_4,
-      real_8
-    } calData = undefined;
-
-  enum { unset, urandom, user } randSeedType = user;    /* sim seed type */
-  INT4  randomSeed        = 1;            /* value of sim rand seed       */
-  REAL4 gaussVar          = 1.0;         /* variance of gaussian noise   */
-  INT4  gaussianNoise     = 0;            /* make input data gaussian   0 non , 1 oui  */
-  RandomParams *randParams = NULL;
-
-
-  /* frame input data */
-  FrCache      *frInCache = NULL;
-  FrCache      *calCache = NULL;
-  FrStream     *frStream = NULL;
-  FrChanIn      frChan;
-  CHAR tmpChName[LALNameLength];
-
-  COMPLEX8FrequencySeries       injResp;
-  COMPLEX8FrequencySeries      *injRespPtr;
-  LIGOTimeGPS slideData   = {0,0};        /* slide data for time shifting */
-
-  INT8  durationNS = 0;  
-  INT8  gpsEndTimeNS     = 0;             /* input data GPS end time ns   */
-  INT8  gpsStartTimeNS   = 0;             /* input data GPS start time ns */
-
-  /* parameters used to generate calibrated power spectrum */
-  LIGOTimeGPS gpsStartTime = { 0, 0 };    /* input data GPS start time    */
-  LIGOTimeGPS gpsEndTime = { 0, 0 };      /* input data GPS end time      */
-  INT4  padData = 8;                      /* saftety margin on input data */
-  CHAR  *fqChanName       = NULL;
-
-
-  /*CHAR *injectionFile = "/home/cokelaer/Work/TestWaveOverlap/HL-INJECTIONS_1-732005208-2048.xml";*/
-  CHAR *injectionFile = NULL;
-  CHAR  *frInCacheName = NULL;
-
-  INT4  numPoints         = (randIn.psd.length-1)*2;           /* points in a segment          */
-  INT4  numSegments       = 15;           /* number of segments           */
-  CHAR  ifo[3];                           /* two character ifo code       */
-
-  INT4  inputDataLength =  -1;              /* number of points in input    */
-  INT4   resampFiltType   = 0;           /* low pass filter used for res 0 = = ldas*/
-  INT4   sampleRate       = randIn.param.tSampling;           /* sample rate of filter data   */
-  INT4   highPass         = 1;           /* enable high pass on raw data */
-  REAL4  highPassFreq     = bankIn->fLower;            /* high pass frequency          */
-  INT4   highPassOrder    = 8;           /* order of the td iir filter   */
-  REAL4  highPassAtten    = 0.1;           /* attenuation of the td filter */
-  REAL4  fLow             = bankIn->fLower;           /* low frequency cutoff         */
-  INT4   specType         = 1;           /* use median (1)or mean(0) psd   or gauss    */
-
-  CHAR  *calCacheName     = NULL;
-  INT4   pointCal         = 0;            /* don't average cal over chunk */
-  REAL4  dynRangeExponent = 40;            /*onent of dynamic range    */
-  REAL4 geoHighPassFreq = -1;             /* GEO high pass frequency      */
-  INT4  geoHighPassOrder = -1;            /* GEO high pass filter order   */
-  REAL4 geoHighPassAtten = -1;            /* GEO high pass attenuation    */  
-  /* raw iut data storage */
-  REAL4TimeSeries               chan;
-  REAL8TimeSeries               geoChan;
-  REAL4FrequencySeries          spec;
-  
-  /* structures for preconditioning */
-  ResampleTSParams              resampleParams;
-    
-  
-  /* counters and other variables */
-  UINT4 cut,  j, k;
-  const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
-  
-  LALUnitPair pair;
-  REAL8 respRe, respIm;
-  REAL8 shf;
-  REAL8 inputLengthNS;
-  UINT4 numInputPoints;
-  const REAL8 epsilon = 1.0e-8;
-  UINT4 resampleChan = 0;
-  CalibrationUpdateParams calfacts, inj_calfacts;
-  REAL8 dynRange = 0;
-  REAL8 inputDeltaT;
-
-
-  WindowSpectrumIn windowSpectrumParam;
-  /*InspiralPipelineIn inspiralPipelineIn;*/
-
-  CHAR         *calGlobPattern;
-
-  INITSTATUS( status, "LALCreatRealPsd", BANKEFFICIENCYC );
-  ATTATCHSTATUSPTR( status );
-
-  
-  /*  SetInspiralPipelineParams(&inspiralPipelineIn, randIn);*/
-
-
-  /*  fprintf(stderr,"Generating real PSD\n");*/
-  calData = undefined;
-  /*calData = real_4;*/
-
-  memset( ifo, 0, sizeof(ifo));
-
-  switch (userParam.detector){
-  case L1: 
-    memcpy( ifo, "L1", sizeof(ifo) - 1 );
-    break;
-  case H1: 
-    memcpy( ifo, "H1", sizeof(ifo) - 1 );
-    break;
-  case H2: 
-    memcpy( ifo, "H2", sizeof(ifo) - 1 );
-    break;
-  case V1: 
-  case G1: 
-    break;
-  }
-
-
-  if ( dynRangeExponent )
-  {
-    /* compute the dynamic range scaling for the psd computation */
-    dynRange = (REAL8) pow( 2.0, dynRangeExponent );
-  }
-  else
-  {
-    dynRange = 1.0;
-  }
-  if ( vrbflg )
-    fprintf( stdout, "using dynamic range scaling %e\n", dynRange );
-
-
-
-
-  /** Add on Thomas BEGIN */ 
-  
-  
-
-  /* S3 */
-  /*gpsStartTimeNS += (INT8) (752578908) * 1000000000LL;*/
-
-  /* S2 */
-   /*   gpsStartTimeNS += (INT8) (732005200 +padData) * 1000000000LL ;
-  gpsStartTimeNS += (INT8) (0);
-  */
-
-  gpsStartTimeNS += (INT8) (userParam.startTime) *  1000000000LL;
-  fqChanName    = userParam.chanName; 
-  calCacheName  = userParam.calCacheName;
-  frInCacheName = userParam.frInCacheName;
-
-  inputDataLength = numPoints   * ( numSegments + 1) / 2 ;
-
-
-  
-  
-  gpsEndTimeNS = gpsStartTimeNS;
-  gpsEndTimeNS += (INT8) ((UINT8)inputDataLength /(UINT8)sampleRate) 
-    * 1000000000LL;
-  gpsEndTimeNS += (INT8) (0);
- 
-  LAL_CALL( LALINT8toGPS( status->statusPtr, &(gpsStartTime), &(gpsStartTimeNS) ), 
-	    status->statusPtr ); 
-  LAL_CALL( LALINT8toGPS( status->statusPtr, &(gpsEndTime), &(gpsEndTimeNS) ), 
-	    status->statusPtr );
-  /** End Thomas */
-
-  /*
-   *
-   * read in the input data channel
-   *
-   */
- 
-
-  /* set the time series parameters of the input data and resample params */
-  memset( &resampleParams, 0, sizeof(ResampleTSParams) );
-  resampleParams.deltaT = 1.0 / (REAL8) sampleRate;
-  
-  /* set the params of the input data time series */
-  memset( &chan, 0, sizeof(REAL4TimeSeries) );
-  memset( &geoChan, 0, sizeof(REAL8TimeSeries) );
-  chan.epoch = gpsStartTime;
-  chan.epoch.gpsSeconds -= padData; /* subtract pad seconds from start */
-  /* subtract slide from start */
-  chan.epoch.gpsSeconds -= slideData.gpsSeconds; 
-  chan.epoch.gpsNanoSeconds -= slideData.gpsNanoSeconds;
-  /* copy the start time into the GEO time series */
-  geoChan.epoch = chan.epoch;
-
-
-  
-  if ( vrbflg ) 
-    fprintf( stdout,  "reading frame file locations from cache file: %s\n", frInCacheName );
-
-  /* read a frame cache from the specified file */
-  LAL_CALL( LALFrCacheImport( status->statusPtr, &frInCache, 
-			      frInCacheName), status->statusPtr );
-  
-
-  /* open the input data frame stream from the frame cache */
-  LAL_CALL( LALFrCacheOpen( status->statusPtr, &frStream,frInCache ), status->statusPtr );
-
-  /* set the mode of the frame stream to fail on gaps or time errors */
-  frStream->mode = LAL_FR_VERBOSE_MODE;
-
-  /* seek to required epoch and set chan name */
-  LAL_CALL( LALFrSeek( status->statusPtr, &(chan.epoch), frStream ), status->statusPtr );
-  frChan.name = fqChanName;
-
-  if ( calData == real_8 )
-  {
-    /* determine the sample rate of the raw data */
-    LAL_CALL( LALFrGetREAL8TimeSeries( status->statusPtr, &geoChan, &frChan, frStream ),
-        status->statusPtr );
-
-    /* copy the data paramaters from the GEO channel to input data channel */
-    LALSnprintf( chan.name, LALNameLength * sizeof(CHAR), "%s", geoChan.name );
-    chan.epoch          = geoChan.epoch;
-    chan.deltaT         = geoChan.deltaT;
-    chan.f0             = geoChan.f0;
-    chan.sampleUnits    = geoChan.sampleUnits;
-  }
-  else
-  {
-    /* determine the sample rate of the raw data and allocate enough memory */
-    LAL_CALL( LALFrGetREAL4TimeSeries( status->statusPtr, &chan, &frChan, frStream ),
-        status->statusPtr );
-  }
-
-
-  inputDeltaT = chan.deltaT;
-
-
-
-  /* determine if we need to resample the channel */
-  if ( vrbflg )
-  {
-    fprintf( stdout, "resampleParams.deltaT = %e\n", resampleParams.deltaT );
-    fprintf( stdout, "chan.deltaT = %e\n", chan.deltaT );
-  }
-  if ( ! ( fabs( resampleParams.deltaT - chan.deltaT ) < epsilon ) )
-  {
-    resampleChan = 1;
-    if ( vrbflg )
-      fprintf( stdout, "input channel will be resampled\n" );
-
-    if ( resampFiltType == 0 )
-    {
-      resampleParams.filterType = LDASfirLP;
-    }
-    else if ( resampFiltType == 1 )
-    {
-      resampleParams.filterType = defaultButterworth;
-    }
-  }
-
-  /* determine the number of points to get and create storage for the data */
-  inputLengthNS = 
-    (REAL8) ( gpsEndTimeNS - gpsStartTimeNS + 2000000000LL * padData );
-  numInputPoints = (UINT4) floor( inputLengthNS / (chan.deltaT * 1.0e9) + 0.5 );
-  if ( calData == real_8 )
-    {
-    /* create storage for the GEO input data */
-      LAL_CALL( LALDCreateVector( status->statusPtr, &(geoChan.data), numInputPoints ), 
-		status->statusPtr );
-    }
-  LAL_CALL( LALSCreateVector( status->statusPtr, &(chan.data), numInputPoints ), 
-	    status->statusPtr );
-
-  if ( vrbflg ) fprintf( stdout, "input channel %s has sample interval "
-      "(deltaT) = %e\nreading %d points from frame stream\n", fqChanName, 
-      chan.deltaT, numInputPoints );
-
-  if ( calData == real_8 )
-  {
-    /* read in the GEO data here */
-    PassBandParamStruc geoHighpassParam;
-
-    /* read the GEO data from the time series into geoChan      */
-    /* which already has the correct amount of memory allocated */
-    if ( vrbflg ) fprintf( stdout, "reading GEO data from frames... " );
-
-    LAL_CALL( LALFrGetREAL8TimeSeries( status->statusPtr, &geoChan, &frChan, frStream ),
-        status->statusPtr);
-
-    if ( vrbflg ) fprintf( stdout, "done\n" );
-
-    /* high pass the GEO data using the parameters specified on the cmd line */
-    geoHighpassParam.nMax = geoHighPassOrder;
-    geoHighpassParam.f1 = -1.0;
-    geoHighpassParam.f2 = (REAL8) geoHighPassFreq;
-    geoHighpassParam.a1 = -1.0;
-    geoHighpassParam.a2 = (REAL8)(1.0 - geoHighPassAtten);
-    if ( vrbflg ) fprintf( stdout, "applying %d order high pass to GEO data: "
-        "%3.2f of signal passes at %4.2f Hz\n", 
-			   geoHighpassParam.nMax, 
-			   geoHighpassParam.a2,
-			   geoHighpassParam.f2 );
-
-    LAL_CALL( LALButterworthREAL8TimeSeries( status->statusPtr, &geoChan, 
-          &geoHighpassParam ), status->statusPtr );
-
-    /* cast the GEO data to REAL4 in the chan time series       */
-    /* which already has the correct amount of memory allocated */
-    for ( j = 0 ; j <numInputPoints ; ++j )
-    {
-      chan.data->data[j] = (REAL4) ( geoChan.data->data[j] * dynRange );
-    }
-
-    /* re-copy the data paramaters from the GEO channel to input data channel */
-    LALSnprintf( chan.name, LALNameLength * sizeof(CHAR), "%s", geoChan.name );
-    chan.epoch          = geoChan.epoch;
-    chan.deltaT         = geoChan.deltaT;
-    chan.f0             = geoChan.f0;
-    chan.sampleUnits    = geoChan.sampleUnits;
-
-    /* free the REAL8 GEO input data */
-    LAL_CALL( LALDDestroyVector( status->statusPtr, &(geoChan.data) ), status->statusPtr );
-    geoChan.data = NULL;
-  }
-  else if ( calData == real_4)
-    {
-      /* read the data channel time series from frames */
-      LAL_CALL( LALFrGetREAL4TimeSeries( status->statusPtr, &chan, &frChan, frStream ),
-		status->statusPtr );
-      
-      /* multiply the input data by dynRange */
-      for ( j = 0 ; j < numInputPoints ; ++j )
-	{
-	  chan.data->data[j] *= dynRange;           
-	}
-    }
-  else
-    {
-      /* read the data channel time series from frames */
-      LAL_CALL( LALFrGetREAL4TimeSeries( status->statusPtr, &chan, &frChan, frStream ),
-		status->statusPtr );	
-    }
-
-
-
-  memcpy( &(chan.sampleUnits), &lalADCCountUnit, sizeof(LALUnit) );
-
-
-  /* close the frame file stream and destroy the cache */
-  LAL_CALL( LALFrClose( status->statusPtr, &frStream ), status->statusPtr );
-
-
-  LAL_CALL( LALDestroyFrCache( status->statusPtr, &frInCache ), status->statusPtr );
-
-
-  if ( vrbflg ) fprintf( stdout, "read channel %s from frame stream\n"
-      "got %d points with deltaT %e\nstarting at GPS time %d sec %d ns\n", 
-      chan.name, chan.data->length, chan.deltaT, 
-      chan.epoch.gpsSeconds, chan.epoch.gpsNanoSeconds );
-
-
-
-  /*
-   *
-   * create the random seed if it will be needed
-   *
-   */
-
-
-  if ( randSeedType != unset )
-    {
-      
-    if ( randSeedType == urandom )
-    {
-      FILE   *fpRand = NULL;
-      INT4    randByte;
-
-      if ( vrbflg ) 
-        fprintf( stdout, "obtaining random seed from /dev/urandom: " );
-
-      randomSeed = 0;
-      fpRand = fopen( "/dev/urandom", "r" );
-      if ( fpRand )
-      {
-        for ( randByte = 0; randByte < 4 ; ++randByte )
-        {
-          INT4 tmpSeed = (INT4) fgetc( fpRand );
-          randomSeed += tmpSeed << ( randByte * 8 );
-        }
-        fclose( fpRand );
-      }
-      else
-      {
-        perror( "error obtaining random seed from /dev/urandom" );
-        exit( 1 );
-      }
-    }
-    else if ( randSeedType == user )
-    {
-      if ( vrbflg ) 
-        fprintf( stdout, "using user specified random seed: " );
-    }
-    else
-    {
-      /* should never get here */
-      fprintf( stderr, "error obtaining random seed\n" );
-      exit( 1 );
-    }
-
-    if ( vrbflg ) fprintf( stdout, "%d\n", randomSeed );
-
-    /* create the tmplt bank random parameter structure */
-    LAL_CALL( LALCreateRandomParams( status->statusPtr, &randParams, randomSeed ),
-        status->statusPtr );
-  }
-
-  /* replace the input data with gaussian noise if necessary */
-  if ( gaussianNoise )
-  {
-    if ( vrbflg ) fprintf( stdout, 
-        "setting input data to gaussian noise with variance %e... ", gaussVar );
-    memset( chan.data->data, 0, chan.data->length * sizeof(REAL4) );
-    LAL_CALL( LALNormalDeviates(status->statusPtr, chan.data, randParams ), 
-	      status->statusPtr );
-    for ( j = 0; j < chan.data->length; ++j )
-    {
-      chan.data->data[j] *= gaussVar;
-    }
-    if ( vrbflg ) fprintf( stdout, "done\n" );
-
-  }
-
-
-  
-
-  /*
-   *
-   * generate the response function for the requested time
-   *
-   */
-  
-  memset( &resp, 0, sizeof(COMPLEX8FrequencySeries) );
-  LAL_CALL( LALCCreateVector( status->statusPtr, &(resp.data), numPoints / 2 + 1 ), 
-      status->statusPtr );
-  
-  /* set the parameters of the response to match the data */
-  resp.epoch.gpsSeconds = chan.epoch.gpsSeconds + padData;
-  resp.epoch.gpsNanoSeconds = chan.epoch.gpsNanoSeconds;
-  resp.deltaF = (REAL8) sampleRate / (REAL8) numPoints;
-  resp.sampleUnits = strainPerCount;
-  strcpy( resp.name, chan.name );
-
-  /* generate the response function for the current time */
-  if ( vrbflg ) fprintf( stdout, "generating response at time %d sec %d ns\n",
-			 resp.epoch.gpsSeconds, resp.epoch.gpsNanoSeconds );
-  
-  /* initialize the calfacts */
-  memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );
-  calfacts.ifo = ifo;
-
-  /* determine length of chunk */
-  if ( pointCal )
-    {
-    calfacts.duration.gpsSeconds = 1;
-    calfacts.duration.gpsNanoSeconds = 0;
-    }
-  else
-    {
-     durationNS = gpsEndTimeNS - gpsStartTimeNS;
-      LAL_CALL( LALINT8toGPS( status->statusPtr, &(calfacts.duration), 
-			      &durationNS ), status->statusPtr );
-    }
-
-  
-  if ( calData )
-  {
-    /* if we are using calibrated data set the response to unity */
-
-    for( k = 0; k < resp.data->length; ++k )
-    {
-      resp.data->data[k].re = (REAL4) (1.0 / dynRange);
-      resp.data->data[k].im = 0.0;
-    }
-  }
-  else
-  {
-    calGlobPattern = NULL;        
-    if ( vrbflg ) fprintf( stdout, 
-          "reading calibration data from cache: %s ....", calCacheName );
-    LAL_CALL( LALCreateCalibFrCache( status->statusPtr, &calCache, calCacheName, 
-          NULL, calGlobPattern ), status->statusPtr );
-  
-    
-    if ( calGlobPattern ) LALFree( calGlobPattern );
-
-
-    /* get the response from the frame data */
-    LAL_CALL( LALExtractFrameResponse( status->statusPtr, &resp, calCache, 
-				       &calfacts), status->statusPtr );
-    
-    LAL_CALL( LALDestroyFrCache( status->statusPtr, &calCache), status->statusPtr );
-    if ( vrbflg ) fprintf( stdout, 
-			   "for calibration of data, alpha = %f and alphabeta = %f\n",
-			   (REAL4) calfacts.alpha.re, (REAL4) calfacts.alphabeta.re);
-  }
-
-
-  if ( gaussianNoise )
-    {
-      /* replace the response function with unity if */
-      /* we are filtering gaussian noise             */
-      if ( vrbflg ) fprintf( stdout, "setting response to unity... " );
-      for ( k = 0; k < resp.data->length; ++k )
-	{
-	  resp.data->data[k].re = 1.0;
-	  resp.data->data[k].im = 0;
-	}
-      if ( vrbflg ) fprintf( stdout, "done\n" );
-      
-  
-    }
-  
-        injectionFile = NULL;
-    
-
-
-  if ( injectionFile )
-  {
-    /* get injections within 500 seconds of either end of the segment.   */
-    /* a 0.4,0.4 MACHO starting at 30.0 Hz has length 435.374683 seconds */
-    /* so this should be plenty of safety. better to waste cpu than miss */
-    /* injected signals...                                               */
-    INT4 injSafety = 500;
-    int  numInjections = 0;
-    SimInspiralTable    *injections = NULL;
-    SimInspiralTable    *thisInj = NULL;
-
-    /* read in the injection data from XML */
-    numInjections = SimInspiralTableFromLIGOLw( &injections, injectionFile,
-        gpsStartTime.gpsSeconds - injSafety, 
-        gpsEndTime.gpsSeconds + injSafety );
-
-    if ( numInjections < 0 )
-    {
-      fprintf( stderr, "error: cannot read injection file" );
-      exit( 1 );
-    }
-    else if ( numInjections )
-    {
-
-      fprintf(stderr, "resample injection\n");
-
-      /* see if we need a higher resolution response to do the injections */
-      if ( resampleChan )	
-      {
-
-
-        /* we need a different resolution of response function for injections */
-        UINT4 rateRatio = floor( resampleParams.deltaT / chan.deltaT + 0.5 );
-        UINT4 rawNumPoints = rateRatio * numPoints;
-
-        if ( vrbflg ) fprintf( stdout, "rateRatio = %d\nrawNumPoints = %d\n"
-            "chan.deltaT = %e\n", rateRatio, rawNumPoints, chan.deltaT );
-
-        memset( &injResp, 0, sizeof(COMPLEX8FrequencySeries) );
-        LAL_CALL( LALCCreateVector( status->statusPtr, &(injResp.data), 
-              rawNumPoints / 2 + 1 ), status->statusPtr );
-        injResp.epoch = resp.epoch;
-        injResp.deltaF = 1.0 / ( rawNumPoints * chan.deltaT );
-        injResp.sampleUnits = strainPerCount;
-        strcpy( injResp.name, chan.name );
-
-	
-        if ( calData )
-        {
-          /* if we are using calibrated data set the response to unity */
-          if ( vrbflg ) fprintf( stdout, 
-              "setting injection response to inverse dynRange... " );
-	  dynRange = (REAL8) pow( 2.0, 40);
-          for ( k = 0; k < injResp.data->length; ++k )
-          {
-            injResp.data->data[k].re = (REAL4)(1.0/dynRange);
-            injResp.data->data[k].im = 0.0;
-          }
-          injRespPtr = &injResp;
-        }
-        else
-        {
-          /* generate the response function for the current time */
-          if ( vrbflg ) fprintf( stdout, 
-              "generating high resolution response at time %d sec %d ns\n"
-              "length = %d points, deltaF = %e Hz\n",
-              resp.epoch.gpsSeconds, resp.epoch.gpsNanoSeconds,
-              injResp.data->length, injResp.deltaF );
-
-          /* initialize the inj_calfacts */
-          memset( &inj_calfacts, 0, sizeof(CalibrationUpdateParams) );
-          inj_calfacts.ifo = ifo;
-
-	  LAL_CALL( LALINT8toGPS( status->statusPtr, &(inj_calfacts.duration), 
-				  &durationNS ), status->statusPtr );
-	  
-          /* create the lal calibration frame cache */
-	  calGlobPattern = NULL;
-	  if ( vrbflg ) fprintf( stdout, 
-				 "reading calibration data from cache: %s\n", calCacheName );
-	  
-	  LAL_CALL( LALCreateCalibFrCache( status->statusPtr, &calCache, calCacheName, 
-                NULL, calGlobPattern ), status->statusPtr );
-          if ( calGlobPattern ) LALFree( calGlobPattern );
-
-
-	  /* extract the calibration from frames */
-          LAL_CALL( LALExtractFrameResponse( status->statusPtr, &injResp, calCache, 
-                &inj_calfacts ), status->statusPtr );
-
-	  
-	  LAL_CALL( LALDestroyFrCache( status->statusPtr, &calCache), status->statusPtr );
-	  
-
-          injRespPtr = &injResp;	  
-	}
-	if ( gaussianNoise )
-	  {
-	    /* replace the response function with unity if */
-	    /* we are filtering gaussian noise             */
-	    if ( vrbflg ) fprintf( stdout, "setting response to unity... " );
-	    for ( k = 0; k < injResp.data->length; ++k )
-	      {
-		injResp.data->data[k].re = 1.0;
-		injResp.data->data[k].im = 0;
-	      }
-	    if ( vrbflg ) fprintf( stdout, "done\n" );
-	    
-        }
-
-      }
-      else
-      {
-        /* the data is already at the correct sample rate, just do injections */
-        injRespPtr = &resp;
-        memset( &injResp, 0, sizeof(COMPLEX8FrequencySeries) );
-      }
-
-      /* inject the signals, preserving the channel name (Tev mangles it) */
-
-
-      /* if injectOverhead option, then set chan.name to "ZENITH".  
-       * This causes no detector site to be found in the injection code so
-       * that the injection is done directly overhead (i.e. with a response 
-       * function of F+ = 1; Fx = 0) */
-      LALSnprintf( tmpChName, LALNameLength * sizeof(CHAR), "%s", chan.name );
-      
-      LALSnprintf( chan.name, LALNameLength * sizeof(CHAR), "ZENITH" );
-
-
-      LAL_CALL( LALFindChirpInjectSignals( status->statusPtr, &chan, injections, 
-            injRespPtr ), status->statusPtr );
-      LALSnprintf( chan.name,  LALNameLength * sizeof(CHAR), "%s", tmpChName );
-
-      if ( vrbflg ) fprintf( stdout, "injected %d signals from %s into %s\n", 
-          numInjections, injectionFile, chan.name );
-
-      while ( injections )
-      {
-        thisInj = injections;
-        injections = injections->next;
-        LALFree( thisInj );
-      }
-
-      /* write the raw channel data plus injections to the output frame file */
-
-      if ( injResp.data )
-        LAL_CALL( LALCDestroyVector( status->statusPtr, &(injResp.data) ), status->statusPtr );
-    }
-    else
-    {
-      if ( vrbflg ) fprintf( stdout, "no injections in this chunk\n" );
-    }
-  }
-
-
-  /* resample the input data */
-  if ( resampleChan )
-  {
-    if (vrbflg) fprintf( stdout, "resampling input data from %e to %e\n",
-        chan.deltaT, resampleParams.deltaT );
-
-    LAL_CALL( LALResampleREAL4TimeSeries( status->statusPtr, &chan, &resampleParams ),
-        status->statusPtr );
-
-    if ( vrbflg ) fprintf( stdout, "channel %s resampled:\n"
-        "%d points with deltaT %e\nstarting at GPS time %d sec %d ns\n", 
-        chan.name, chan.data->length, chan.deltaT, 
-        chan.epoch.gpsSeconds, chan.epoch.gpsNanoSeconds );
-  }
-
-
-  /* 
-   *
-   * high pass the data, removed pad from time series and check length of data
-   *
-   */
-  
-  /* iir filter to remove low frequencies from data channel */
-  if ( highPass )
-  {
-    PassBandParamStruc highpassParam;
-    highpassParam.nMax = highPassOrder;
-    highpassParam.f1 = -1.0;
-    highpassParam.f2 = (REAL8) highPassFreq;
-    highpassParam.a1 = -1.0;
-    highpassParam.a2 = (REAL8)(1.0 - highPassAtten); /* a2 is not attenuation */
-
-    if ( vrbflg ) fprintf( stdout, "applying %d order high pass: "
-        "%3.2f of signal passes at %4.2f Hz\n", 
-        highpassParam.nMax, highpassParam.a2, highpassParam.f2 );
-
-    LAL_CALL( LALButterworthREAL4TimeSeries( status->statusPtr, &chan, &highpassParam ),
-        status->statusPtr );
-  }
-
-  /* remove pad from requested data from start and end of time series */
-  memmove( chan.data->data, chan.data->data + padData * sampleRate, 
-      (chan.data->length - 2 * padData * sampleRate) * sizeof(REAL4) );
-  LALRealloc( chan.data->data, 
-      (chan.data->length - 2 * padData * sampleRate) * sizeof(REAL4) );
-  chan.data->length -= 2 * padData * sampleRate;
-  chan.epoch.gpsSeconds += padData;
-
-  if ( vrbflg ) fprintf( stdout, "after removal of %d second padding at "
-      "start and end:\ndata channel sample interval (deltaT) = %e\n"
-      "data channel length = %d\nstarting at %d sec %d ns\n", 
-      padData , chan.deltaT , chan.data->length, 
-      chan.epoch.gpsSeconds, chan.epoch.gpsNanoSeconds );
-
-
-  /*
-   *
-   * power spectrum estimation
-   *
-   */
-
-
-  /* create storage for the power spectral estimate */
-  memset( &spec, 0, sizeof(REAL4FrequencySeries) );
-  LAL_CALL( LALSCreateVector( status->statusPtr, &(spec.data), numPoints / 2 + 1 ), 
-      status->statusPtr );
-
-
-  windowSpectrumParam.numPoints =  numPoints ;
-  windowSpectrumParam.gaussVar =  gaussVar ;
-  windowSpectrumParam.inputDeltaT =  inputDeltaT ;
-  windowSpectrumParam.specType =  specType ;
-
-
-  LAL_CALL( LALComputeWindowSpectrum( status->statusPtr, 
-				      &windowSpectrumParam,
-				      &spec, 
-				      &chan ),
-	    status->statusPtr );
-
-
-
-
-  /* set low frequency cutoff of power spectrum */
-  cut = fLow / spec.deltaF > 1 ?  fLow / spec.deltaF : 1;
-
-  /* compute a calibrated strain power spectrum */
-  
-  bankIn->shf.epoch = spec.epoch;
-  memcpy( bankIn->shf.name, spec.name, LALNameLength * sizeof(CHAR) );
-  bankIn->shf.deltaF = spec.deltaF;
-  bankIn->shf.f0 = spec.f0;
-  bankIn->shf.data = NULL;
-  
-  pair.unitOne = &(spec.sampleUnits);
-  pair.unitTwo = &(resp.sampleUnits);
-  LAL_CALL( LALUnitMultiply( status->statusPtr, &(bankIn->shf.sampleUnits), &pair ), 
-      status->statusPtr );
-  LAL_CALL( LALDCreateVector( status->statusPtr, &(bankIn->shf.data), spec.data->length ),
-      status->statusPtr );
-  memset( bankIn->shf.data->data, 0, 
-      bankIn->shf.data->length * sizeof(COMPLEX8) ); 
-  
-  shf = spec.data->data[cut] * 
-    ( resp.data->data[cut].re * resp.data->data[cut].re +
-      resp.data->data[cut].im * resp.data->data[cut].im );
-
-  for ( k = 1; k < cut ; ++k )
-  {
-    bankIn->shf.data->data[k] = shf;
-  }
-
-  for ( k = cut; k < bankIn->shf.data->length; ++k )
-  {
-    respRe = (REAL8) resp.data->data[k].re;
-    respIm = (REAL8) resp.data->data[k].im;
-    bankIn->shf.data->data[k] = (REAL8) spec.data->data[k] *
-      ( respRe * respRe + respIm * respIm );
-
-    
-  }
-  
-
-/*  Foutput= fopen("spec.dat","w");
-
-  for (i = 1; i < (int)bankIn->shf.data->length; i++)
-    fprintf(Foutput, "%15.10e\n", bankIn->shf.data->data[i]);  
-  fclose(Foutput);*/
-
-   LALDPrintFrequencySeries( &(bankIn->shf), "spec.dat" );  
-  /*
-   Foutput= fopen("uncalibratedpsd.dat","w");
-
-  for (i = 1; i < spec.data->length; i++)
-    fprintf(Foutput, "%15.10e\n",spec.data->data[i]);  
-  fclose(Foutput); 
-
-
-  Foutput= fopen("respre.dat","w");
-
-  for (i = 0; i < spec.data->length; i++){
-    respRe = (REAL8) resp.data->data[i].re;
-    fprintf(Foutput, "%e\n",respRe);  
-  }
-  fclose(Foutput); 
-  
-  Foutput= fopen("respim.dat","w");
-
-  for (i = 1; i < spec.data->length; i++){
-    respIm = (REAL8) resp.data->data[i].im;
-    fprintf(Foutput, "%e\n",respIm);  
-  }
-  fclose(Foutput); 
-
-  */
-
-  /* ADD on Thomas Create strain data to be process by Overlap or something else */
-
-  {
-    REAL4       *dataPtr;
-    RealFFTPlan                  *fwdPlan = NULL;
-
-
-    REAL4Vector    *rawSegment = NULL ; 
-
-
-    INT4 length;
-
-    length = numPoints/2 + 1;
-    strainSegment = NULL;
-
-    LALCreateVector( status->statusPtr, &rawSegment,
-		     numPoints);
-    CHECKSTATUSPTR( status );
-    
-    LALCCreateVector( status->statusPtr, &strainSegment,
-		      numPoints/2+1);    
-    CHECKSTATUSPTR( status );
- 
-
-     
-    dataPtr = chan.data->data;
-    rawSegment->data = dataPtr;
-   
-    
-    LALCreateForwardRealFFTPlan( status->statusPtr, &fwdPlan, 
-				 numPoints, 0);
-    CHECKSTATUSPTR( status );
-
-    /*     Foutput= fopen("raw0.dat","w");
-    for (i = 1; i < rawSegment->length; i++)
-      fprintf(Foutput, "%e\n", rawSegment->data[i]);  
-    fclose(Foutput); 
-    */
-   
-    
-    
-    LALForwardRealFFT( status->statusPtr, strainSegment,
-		       rawSegment, fwdPlan );
-    CHECKSTATUSPTR( status );
-
-
-
-    dynRange = (REAL8) pow( 2.0, 0);
-    
-    
-    for ( k = 0; k < strainSegment->length; ++k )
-      {
-	
-	REAL4 p = strainSegment->data[k].re;
-	REAL4 q = strainSegment->data[k].im;
-	REAL4 x = resp.data->data[k].re * dynRange;
-	REAL4 y = resp.data->data[k].im * dynRange;
-	
-	strainSegment->data[k].re =  p*x - q*y;
-	strainSegment->data[k].im =  p*y + q*x;
-      }
-    
-    LALDestroyRealFFTPlan(status->statusPtr,&fwdPlan);
-       
-
-    for ( k = 0; k < cut; ++k )
-      {
-	strainSegment->data[k].re = 0.0;
-	strainSegment->data[k].im = 0.0;
-      }
-      
-    dynRange = (REAL8) pow( 2.0, 40);/* pour avoir meme resultat que LAL avant filtrage*/
-    /*
-    Foutput= fopen("finalstrainre.dat","w");
-    
-    for (i = 0; i < strainSegment->length; i++)
-      fprintf(Foutput, "%15.10e\n", strainSegment->data[i].re*dynRange );  
-    fclose(Foutput); 
-      
-      Foutput= fopen("finalstrainim.dat","w");
-      
-      for (i = 0; i < strainSegment->length; i++)
-	fprintf(Foutput, "%15.10e\n", strainSegment->data[i].im*dynRange );  
-	
-	fclose(Foutput); 
-    */
-    
-  
-  }
-  /* END ADD on Thomas*/                                                                                                                        
-
-
-  /* spec, uncalibrated spec, and raw0.dat identical to 
-     inspiral in FindChipSPData. */
-
-  /*if one want to inject BCV directly in the bcv injection*/
-#if 0
- { 
-   REAL4Vector            signal;
-   RandomInspiralSignalIn randIn;
-   UINT4 n,k;
-  RealFFTPlan 			*fwdp = NULL;
-
-
-   n 	= (strainSegment->length-1)*2;
-   signal.length = n;
-   signal.data 		= (REAL4*) LALCalloc(1, sizeof(REAL4) * signal.length);
-
-   LALCreateForwardRealFFTPlan(status->statusPtr, &fwdp, signal.length, 0);
-   randIn.mMin = 3; 
-   randIn.mMax =5; 
-   randIn.MMax = 10;
-
-   randIn.param.tSampling  = sampleRate;
-   randIn.param.massChoice = fixedPsi;
-   randIn.param.psi0 = 200000;
-   randIn.param.psi3 = -500;
-   randIn.param.fCutoff = 900;
-   randIn.param.alpha = .99;
-   randIn.param.approximant = BCV;
-   randIn.param.massChoice = fixedPsi;
-   randIn.param.fLower  = 40 ; 
-   randIn.psd.length 	= strainSegment->length;
-   randIn.psd.data 	= (REAL8*) LALMalloc(sizeof(REAL8) * randIn.psd.length); 
-   randIn.type = 0;
-   randIn.param.order = twoPN;
-   randIn.fwdp = fwdp;
-   randIn.param.signalAmplitude = 1;
-   randIn.param.startPhase = 0;
-   randIn.param.nStartPad =  128 *sampleRate;
-
-
-   fprintf(stderr, "%d %d %d\n",n,bankIn->shf.data->length, strainSegment->length);
-   for ( k = 1; k < bankIn->shf.data->length; ++k )
-     {    
-       randIn.psd.data[k] =  bankIn->shf.data->data[k];
-     }
-      
-
-      
-   LALRandomInspiralSignal(status->statusPtr, &signal, &randIn);
-   CHECKSTATUSPTR(status);
-   
-   
-   for ( k = 0; k < n/2; ++k )
-     {
-       
-       strainSegment->data[k].re += signal.data[k] *10;
-       strainSegment->data[k].im += signal.data[n - k] *10;
-     
-       }
-      
- }
-#endif
-
-
-
-  LALCheckMemoryLeaks();    
-
-
-
-
-  DETATCHSTATUSPTR( status );
-  RETURN( status );  
-}
-
-
-
-void LALComputeWindowSpectrum(LALStatus *status, 
-			      WindowSpectrumIn *param,
-			      REAL4FrequencySeries  *spec,
-			      REAL4TimeSeries *chan)
-{
-  
-  LALWindowParams               wpars;
-  AverageSpectrumParams         avgSpecParams;
-  INT4 k;
-  
-  INITSTATUS( status, "LALCreatRealPsd", BANKEFFICIENCYC );
-  ATTATCHSTATUSPTR( status );
-  
-  /* compute the windowed power spectrum for the data channel */
-  avgSpecParams.window = NULL;
-  avgSpecParams.plan   = NULL; 
-  
-  LAL_CALL( LALCreateForwardRealFFTPlan( status->statusPtr, 
-					 &(avgSpecParams.plan), 
-					 param->numPoints, 0 ),
-	    status->statusPtr );
-  
-  
-  switch ( param->specType )
-    {
-    case 0:
-      avgSpecParams.method = useMean;
-      if ( vrbflg ) fprintf( stdout, "computing mean psd" );
-      break;
-    case 1:
-      avgSpecParams.method = useMedian;
-      if ( vrbflg ) fprintf( stdout, "computing median psd" );
-      break;
-    case 2:
-      avgSpecParams.method = useUnity;
-      if ( vrbflg ) fprintf( stdout, "simulation gaussian noise psd" );
-      break;
-    }
-  
-  
-  wpars.type = Hann;
-  wpars.length = param->numPoints;
-  avgSpecParams.overlap = param->numPoints / 2;
-  if ( vrbflg ) 
-    fprintf( stdout, " with overlap %d\n", avgSpecParams.overlap );
-  
-  LAL_CALL( LALCreateREAL4Window( status->statusPtr, &(avgSpecParams.window),
-				  &wpars ), status->statusPtr );
-  LAL_CALL( LALREAL4AverageSpectrum( status->statusPtr, spec, chan, &avgSpecParams ),
-	    status->statusPtr );
-  LAL_CALL( LALDestroyREAL4Window( status->statusPtr, &(avgSpecParams.window) ), 
-	    status->statusPtr );
-  LAL_CALL( LALDestroyRealFFTPlan( status->statusPtr, &(avgSpecParams.plan) ), status->statusPtr );
-
-  strcpy( spec->name, chan->name );
-
-  if ( param->specType == 2 )
-  {
-    /* multiply the unit power spectrum to get a gaussian psd */
-    REAL4 gaussVarSq = param->gaussVar * param->gaussVar;
-    if ( param->inputDeltaT != chan->deltaT )
-    {
-      /* reduce the variance as we have resampled the data */
-      gaussVarSq *= param->inputDeltaT / chan->deltaT;
-    }
-    for ( k = 0; k < (int)spec->data->length; ++k )
-    {
-      spec->data->data[k] *= 2.0 * gaussVarSq * (REAL4) chan->deltaT;
-    }
-
-    if ( vrbflg ) 
-      fprintf( stdout, "set psd to constant value = %e\n", spec->data->data[0] );
-  }
-
-
-  DETATCHSTATUSPTR( status );
-  RETURN( status );  
-
-}
-
-
-void SetInspiralPipelineParam(InspiralPipelineIn *param,
-			      RandomInspiralSignalIn randIn)
-{
-
-  /* parameters used to generate calibrated power spectrum */
-  /*  param->gpsStartTime = {0,0};
-    param->gpsEndTime = 0;
-  */
-  param->padData = 8;                
-  param->fqChanName       = NULL;
-
-
-  param->injectionFile = "/home/cokelaer/Work/TestWaveOverlap/HL-INJECTIONS_1-732005208-2048.xml";
-  param->frInCacheName = NULL;
-
-  param->numPoints         = (randIn.psd.length-1)*2;           /* points in a segment          */
-  param->numSegments       = 15;           /* number of segments           */
-  
-
-  param->inputDataLength =  -1;            
-  param->resampFiltType   = 0;           
-  param->sampleRate       = randIn.param.tSampling;    
-  param->highPass         = 1;           
-  param->highPassFreq     = randIn.param.fLower;            
-  param->highPassOrder    = 8;           
-  param->highPassAtten    = 0.1;         
-  param->fLow             = randIn.param.fLower;
-  param->specType         = 1;           
-
-  param->calCacheName     = NULL;
-  param->pointCal         = 0;            
-  param->dynRangeExponent = 40;            
-  param->geoHighPassFreq = -1;     
-  param->geoHighPassOrder = -1;    
-  param->geoHighPassAtten = -1;    
-}
-
-
-
 
 
 
@@ -3962,8 +2946,8 @@ void LALInspiralOverlapBCVSpin(LALStatus *status,
 				 FilterBCVSpin2, 
 				 FilterBCVSpin3,
 				 *userParam, 
-				 overlapout, 
-				 moments), 
+				 overlapout
+				), 
 	   status->statusPtr);
   
   
@@ -3978,7 +2962,7 @@ void LALInspiralOverlapBCVSpin(LALStatus *status,
 
 void
 PrintParameters(InspiralCoarseBankIn 	coarse,
-		RandomInspiralSignalIn 	rand,
+		RandomInspiralSignalIn 	randIn,
 		UserParametersIn    	other)
 {
 
@@ -4064,34 +3048,34 @@ PrintParameters(InspiralCoarseBankIn 	coarse,
 	  "param.signalAmplitude\t=\t%f\n"
 	  "param.nEndPad\t=\t%d\n"
 	  "NoiseAmp\t=\t%f\n",
-	  rand.useed,
-	  rand.type,
-	  rand.SignalAmp,
-	  rand.param.order,
-	  rand.param.alpha,
-	  rand.param.ieta,
-	  rand.param.mass1,
-	  rand.param.mass2,
-	  rand.param.fLower,
-	  rand.param.OmegaS,
-	  rand.param.Theta,
-	  rand.mMin,
-	  rand.mMax,
-	  rand.MMax,
-	  rand.etaMin,
-	  rand.psi0Min,
-	  rand.psi0Max,
-	  rand.psi3Min,
-	  rand.psi3Max,
-	  rand.param.approximant,
-	  rand.param.tSampling,
-	  rand.param.fCutoff,
-	  rand.param.startTime,
-	  rand.param.startPhase,
-	  rand.param.nStartPad,
-	  rand.param.signalAmplitude,
-	  rand.param.nEndPad,
-	  rand.NoiseAmp);
+	  randIn.useed,
+	  randIn.type,
+	  randIn.SignalAmp,
+	  randIn.param.order,
+	  randIn.param.alpha,
+	  randIn.param.ieta,
+	  randIn.param.mass1,
+	  randIn.param.mass2,
+	  randIn.param.fLower,
+	  randIn.param.OmegaS,
+	  randIn.param.Theta,
+	  randIn.mMin,
+	  randIn.mMax,
+	  randIn.MMax,
+	  randIn.etaMin,
+	  randIn.psi0Min,
+	  randIn.psi0Max,
+	  randIn.psi3Min,
+	  randIn.psi3Max,
+	  randIn.param.approximant,
+	  randIn.param.tSampling,
+	  randIn.param.fCutoff,
+	  randIn.param.startTime,
+	  randIn.param.startPhase,
+	  randIn.param.nStartPad,
+	  randIn.param.signalAmplitude,
+	  randIn.param.nEndPad,
+	  randIn.NoiseAmp);
 
   
 
@@ -4124,28 +3108,7 @@ PrintParameters(InspiralCoarseBankIn 	coarse,
 	  "fastSimulation\t\t%d\t\n"       
 	  "noiseModel\t\t%d\t\n"           
 	  "binaryInjection\t\t%d\t\n"      
-	  "maxTotalMass\t\t%f\t\n"         
-	  "detector\t\t%d\t\n" 
-	  "run\t\t%d\t\n"      
-	  "chanName\t\t%s\t\n" 
-	  "calCacheName\t\t%s\t\n" 
-	  "startTime\t\t%d\t\n"  
-	  "numSeconds\t\t%d\t\n" 
-	  "L1.chanName\t\t%s\t\n"             
-	  "H1.chanName\t\t%s\t\n"             
-	  "H2.chanName\t\t%s\t\n"               
-	  "L1.dataFile.S3.calCacheName\t%s\t\n"         
-	  "L1.dataFile.S3.frInCacheName\t%s\t\n"        
-	  "H1.dataFile.S3.calCacheName\t%s\t\n"         
-	  "H1.dataFile.S3.frInCacheName\t%s\t\n"        
-	  "H2.dataFile.S3.calCacheName\t%s\t\n"         
-	  "H2.dataFile.S3.frInCacheName\t%s\t\n"        
-	  "L1.dataFile.S2.calCacheName\t%s\t\n"         
-	  "L1.dataFile.S2.frInCacheName\t%s\t\n"        
-	  "H1.dataFile.S2.calCacheName\t%s\t\n"         
-	  "H1.dataFile.S2.frInCacheName\t%s\t\n"        
-	  "H2.dataFile.S2.calCacheName\t%s\t\n"         
-	  "H2.dataFile.S2.frInCacheName\t%s\t\n",
+	  "maxTotalMass\t\t%f\t\n",         
 	  other.alphaFConstraint,
 	  other.extraFinalPrinting,
 	  other.template,
@@ -4171,28 +3134,7 @@ PrintParameters(InspiralCoarseBankIn 	coarse,
 	  other.fastSimulation,       
 	  other.noiseModel,           
 	  other.binaryInjection,      
-	  other.maxTotalMass,         
-	  other.detector, 
-	  other.run,      
-	  other.chanName, 
-	  other.calCacheName, 
-	  other.startTime,  
-	  other.numSeconds, 
-	  other.L1.chanName,             
-	  other.H1.chanName,             
-	  other.H2.chanName,               
-	  other.L1.dataFile.S3.calCacheName,         
-	  other.L1.dataFile.S3.frInCacheName,        
-	  other.H1.dataFile.S3.calCacheName,         
-	  other.H1.dataFile.S3.frInCacheName,        
-	  other.H2.dataFile.S3.calCacheName,         
-	  other.H2.dataFile.S3.frInCacheName,        
-	  other.L1.dataFile.S2.calCacheName,         
-	  other.L1.dataFile.S2.frInCacheName,        
-	  other.H1.dataFile.S2.calCacheName,         
-	  other.H1.dataFile.S2.frInCacheName,        
-	  other.H2.dataFile.S2.calCacheName,         
-	  other.H2.dataFile.S2.frInCacheName);
+	  other.maxTotalMass); 
 }
 
 
@@ -4302,7 +3244,7 @@ void LALBankPrintXML(MetadataTable templateBank ,
   LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time),
 			    &accuracy ), &status );
   LAL_CALL( populate_process_table( &status, proctable.processTable, 
-				    PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &status );
+				    PROGRAM_NAME, CVS_REVISION_C, CVS_SOURCE_C, CVS_DATE_C ), &status );
   this_proc_param = processParamsTable.processParamsTable = 
     (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
 
@@ -4353,18 +3295,18 @@ void LALBankPrintXML(MetadataTable templateBank ,
 
 void
  CreateListfromTmplt(InspiralTemplate  *params, 
-		     SnglInspiralTable *tmplt)
+		     SnglInspiralTable *tmplts)
 {
   /* Right now only t03 and psi0psi3 bank exists so we 
      only need those information in principle and nothing else*/
-  params->mass1 = tmplt->mass1; 
-  params->mass2 = tmplt->mass2; 
-  params->fFinal = tmplt->f_final; 
-  params->t0 = tmplt->tau0;
-  params->t3 = tmplt->tau3;
-  params->psi0 = tmplt->psi0;
-  params->psi3 = tmplt->psi3;
-  params->beta = tmplt->beta;
+  params->mass1 = tmplts->mass1; 
+  params->mass2 = tmplts->mass2; 
+  params->fFinal = tmplts->f_final; 
+  params->t0 = tmplts->tau0;
+  params->t3 = tmplts->tau3;
+  params->psi0 = tmplts->psi0;
+  params->psi3 = tmplts->psi3;
+  params->beta = tmplts->beta;
 
 
   /*      tmplt->mchirp  = (REAL4) coarseList[0].params.chirpMass;
@@ -4387,7 +3329,6 @@ void ParametersInitialization(	InspiralCoarseBankIn 	*coarseBankIn,
 				RandomInspiralSignalIn	*randIn, 
 				UserParametersIn	*userParam)
 {
-  
   InitInspiralCoarseBankIn(coarseBankIn);
   InitRandomInspiralSignalIn(randIn);
   InitUserParametersIn(userParam);
@@ -4450,10 +3391,10 @@ void InitRandomInspiralSignalIn(RandomInspiralSignalIn *randIn)
   randIn->mMin          	= BANKEFFICIENCY_MMIN;				/* min mass to inject			*/
   randIn->mMax          	= BANKEFFICIENCY_MMAX;				/* max mass to inject 			*/
   randIn->MMax          	= BANKEFFICIENCY_MMAX * 2;			/* total mass max 			*/
-  randIn->t0Min                 = 0.;                                           /* min tau0 to inject                   */
+  randIn->t0Min                 = 0;                                           /* min tau0 to inject                   */
   randIn->t0Max                 = 0.;                                           /* max tau0 to inject                   */
-  randIn->t0Min                 = 0.;                                           /* min tau3 to inject                   */
-  randIn->t0Max                 = 0.;                                           /* max tau3 to inject                   */
+  randIn->tnMin                 = 0.1;                                           /* min tau3 to inject                   */
+  randIn->tnMax                 = 1.;                                           /* max tau3 to inject                   */
   randIn->etaMin                = BANKEFFICIENCY_MMIN
     * (BANKEFFICIENCY_MMAX - BANKEFFICIENCY_MMIN) 
     / (BANKEFFICIENCY_MMAX * 2) / (BANKEFFICIENCY_MMAX * 2);
@@ -4506,41 +3447,11 @@ void InitUserParametersIn(UserParametersIn *userParam)
   userParam->binaryInjection      = NoUserChoice; 
   userParam->maxTotalMass         = -1;
   userParam->startPhase           = 1;
-
   userParam->detector     = L1;
-  userParam->run          = S3;
-  userParam->chanName     = NULL;
-  userParam->calCacheName = NULL;
-  userParam->calCacheName = NULL;
   userParam->startTime    = 751956568;
   userParam->numSeconds   = -1;
   userParam->realNoise    = 0;
   userParam->inputPSD     = NULL;
-  
-  userParam->L1.chanName             = "L1:LSC-AS_Q";
-  userParam->H1.chanName             = "H1:LSC-AS_Q";
-  userParam->H2.chanName             = "H2:LSC-AS_Q";
-  
-  userParam->L1.dataFile.S4.calCacheName         =  "/home/spxcar/inspiralRuns/Calibration/L1-CAL-V03-793126813-796025053.cache";
-  userParam->L1.dataFile.S4.frInCacheName        =  "/home/spxcar/inspiralRuns/cacheFiles/L-RDS_R_L3-793131485-795679161.cache";     
-  userParam->H1.dataFile.S4.calCacheName         =  "/home/spxcar/inspiralRuns/Calibration/H1-CAL-V03-793126813-796025053.cache";
-  userParam->H1.dataFile.S4.frInCacheName        =  "/home/spxcar/inspiralRuns/cacheFiles/H-RDS_R_L3-793139225-795679221.cache";     
-  userParam->H2.dataFile.S4.calCacheName         =  "/home/spxcar/inspiralRuns/Calibration/H2-CAL-V03-793126813-796025053.cache";
-  userParam->H2.dataFile.S4.frInCacheName        =  "/home/spxcar/inspiralRuns/cacheFiles/H-RDS_R_L3-793139225-795679221.cache";
-
-  userParam->L1.dataFile.S3.calCacheName         =  "/home/spxcar/cache_files/L1-CAL-V02-729273600-734367600.cache";
-  userParam->L1.dataFile.S3.frInCacheName        =  "/home/spxcar/cachefiles/inspiralRuns/cacheFiles/CacheFile_L_S3_RDS_R_L3.txt";     
-  userParam->H1.dataFile.S3.calCacheName         =  "/home/spxcar/cache_files/H1-CAL-V02-751651244-757699245.cache";
-  userParam->H1.dataFile.S3.frInCacheName        =  "/home/spxcar/cachefiles/inspiralRuns/cacheFiles/CacheFile_H_S3_RDS_R_L3.txt";     
-  userParam->H2.dataFile.S3.calCacheName         =  "/home/spxcar/cache_files/H2-CAL-V02-751651244-757699245.cache";
-  userParam->H2.dataFile.S3.frInCacheName        =  "/home/spxcar/cachefiles/inspiralRuns/cacheFiles/CacheFile_H_S3_RDS_R_L3.txt";     
-
-  userParam->L1.dataFile.S2.calCacheName         =  "/home/spxcar/inspiralRuns/Calibrationcache_files/L1-CAL-V03-729273600-734367600.cache";
-  userParam->L1.dataFile.S2.frInCacheName        =  "/home/spxcar/inspiralRuns//cacheFiles/CacheFile_L_S2_RDS_R_L3.txt";     
-  userParam->H1.dataFile.S2.calCacheName         =  "/home/spxcar/inspiralRuns/Calibrationcache_files/H1-CAL-V03-729273600-734367600.cache";
-  userParam->H1.dataFile.S2.frInCacheName        =  "/home/spxcar/inspiralRuns/cacheFiles/CacheFile_H_S2_RDS_R_L3.txt";     
-  userParam->H2.dataFile.S2.calCacheName         =  "/home/spxcar/inspiralRuns/Calibration/cache_files/H2-CAL-V03-731849076-734367576.cache";
-  userParam->H2.dataFile.S2.frInCacheName        =  "/home/spxcar/inspiralRuns/cacheFiles/CacheFile_H_S2_RDS_R_L3.txt";      
   userParam->dataCheckPoint                      = 0;
 }
 
@@ -4561,6 +3472,7 @@ ParseParameters(	INT4 			*argc,
   
   while(i < *argc)
     {
+     
       if (!strcmp(argv[i],	"--bank-alpha")) {
         BEParseGetDouble(argv,  &i, &(coarseBankIn->alpha)); 
       }
@@ -4602,6 +3514,9 @@ ParseParameters(	INT4 			*argc,
       else if (!strcmp(argv[i],"--bank-mass-range")) {
 	BEParseGetDouble2(argv,  &i, &(coarseBankIn->mMin), &(coarseBankIn->mMax));
       }
+      else if (!strcmp(argv[i],"--bank-beta-range")) {
+	BEParseGetDouble2(argv,  &i, &(coarseBankIn->betaMin), &(coarseBankIn->betaMax));
+      }
       else if (!strcmp(argv[i],	"--bank-psi0-range")) {
         BEParseGetDouble2(argv,  &i, &(coarseBankIn->psi0Min), &(coarseBankIn->psi0Max));
       }
@@ -4615,7 +3530,7 @@ ParseParameters(	INT4 			*argc,
       else if (!strcmp(argv[i],"--debug")) {
         BEParseGetInt(argv,  &i, &(lalDebugLevel)); 
       }
-      else if (!strcmp(argv[i], "dataCheckPoint")) {
+      else if (!strcmp(argv[i], "--data-checkpoint")) {
 	userParam->dataCheckPoint = 1;	
       }
       else if (!strcmp(argv[i], "--detector")) {
@@ -4655,7 +3570,9 @@ ParseParameters(	INT4 			*argc,
 	userParam->maxTotalMass = (REAL4)tmp1;	
       }
       else if (!strcmp(argv[i],"--ascii2xml")) {       
-	ascii2xml = 1;	
+	ascii2xml = 1;
+        /* we do not need to parse the other arguments */
+        i = *argc+1;
       }
       else if (!strcmp(argv[i], "--m1")){
         BEParseGetDouble(argv,  &i, &(userParam->m1));
@@ -4689,6 +3606,9 @@ ParseParameters(	INT4 			*argc,
 	else if (!strcmp(argv[i], "VIRGO")) {
 	  userParam->noiseModel = VIRGO;
 	}
+	else if (!strcmp(argv[i], "EGO")) {
+	  userParam->noiseModel = EGO;
+	}
 	else if (!strcmp(argv[i], "TAMA")) {
 	  userParam->noiseModel = TAMA;
 	}
@@ -4721,21 +3641,6 @@ ParseParameters(	INT4 			*argc,
       else if (!strcmp(argv[i], "--real-noise")) {
 	userParam->realNoise = 1;
       }
-      else if (!strcmp(argv[i], "--run")) {
-	BEParseGetString(argv, &i);	 
-	if (!strcmp(argv[i],  "S2")) {
-	  userParam->run = S2;
-	}
-	else if (!strcmp(argv[i],"S3")){
-	    userParam->run = S3;	  
-	}
-	else if (!strcmp(argv[i],"S4")){
-	    userParam->run = S4;	  
-	}
-	else {
-	    userParam->run = None;
-	}
-      } 
       else if (!strcmp(argv[i],"--sampling")) {
         BEParseGetDouble(argv,  &i, &(coarseBankIn->tSampling));
         randIn->param.tSampling = coarseBankIn->tSampling;
@@ -4756,8 +3661,16 @@ ParseParameters(	INT4 			*argc,
 	else if (strcmp(argv[i],"EOB")	==0)    	        userParam->signal = EOB;
 	else if (strcmp(argv[i],"BCV")	==0)                    userParam->signal = BCV;
 	else if (strcmp(argv[i],"BCVSpin")	==0)            userParam->signal = BCVSpin;
-	else if (strcmp(argv[i],"SpinTaylorT3")==0)	    	userParam->signal = SpinTaylorT3;
-	else  BEPrintError("wrong approximant\n");
+	else if (strcmp(argv[i],"SpinTaylor")==0)	    	
+	{
+		userParam->signal = SpinTaylor;
+		
+	}
+	else  
+	{
+	  fprintf(stderr, "wrong approximant use (TaylorT1, TaylorT2, TaylorT3, EOB, PadeT1, BCV, SpinTaylor)\n");
+	  exit( 1 );
+	}
 	randIn->param.approximant = userParam->signal;		  
       }
       else if (!strcmp(argv[i],	"--signal-alpha")){	     
@@ -4826,7 +3739,7 @@ ParseParameters(	INT4 			*argc,
       else if (!strcmp(argv[i],"--template")) {
 	BEParseGetString(argv, &i);
 	
-	if (!strcmp(argv[i],	"TaylorT1")	)	userParam->template = TaylorT1;
+	if (!strcmp(argv[i],	"TaylorT1")	)		userParam->template = TaylorT1;
 	else if (!strcmp(argv[i],	"TaylorT2")	)	userParam->template = TaylorT2;
 	else if (!strcmp(argv[i],	"TaylorT3")	)	userParam->template = TaylorT3;
 	else if (!strcmp(argv[i],	"TaylorF1")	)	userParam->template = TaylorF1;
@@ -4838,11 +3751,15 @@ ParseParameters(	INT4 			*argc,
 	else if (!strcmp(argv[i],	"BCVSpin")	)
 	  {
 	    userParam->template = BCVSpin;
-	    coarseBankIn->betaMin = 0.;
-	    coarseBankIn->betaMax = 1000.;
+	    coarseBankIn->spinBank = 1.;
 	  }
-	else if (!strcmp(argv[i],	"SpinTaylorT3")	)	userParam->template = SpinTaylorT3;
-	else BEPrintError("wrong approximant\n");
+	else if (!strcmp(argv[i],	"SpinTaylor")	)	userParam->template = SpinTaylor;
+	else 
+	  {
+	    fprintf(stderr, "wrong approximant\n");
+	    exit( 1 );
+	  }
+
 	
 	coarseBankIn->approximant = userParam->template;
 	if ( coarseBankIn->approximant == BCV || coarseBankIn->approximant == BCVSpin) 	
@@ -4888,8 +3805,8 @@ ParseParameters(	INT4 			*argc,
       else if (!strcmp(argv[i],"--version")) {
 	fprintf(stderr, "BankEfficiency code"
 		"Thomas Cokelaer, Thomas.Cokelaer@astro.cf.ac.uk\n"
-		"CVS Version :" CVS_ID_STRING_C "\n"
-		"CVS Version :" CVS_ID_STRING "\n"
+		"CVS Version source:" CVS_ID_STRING_C "\n"
+		"CVS Version include:" CVS_ID_STRING "\n"
 		"CVS Tag: " CVS_NAME_STRING "\n");
 	exit(0);
       }
@@ -4940,7 +3857,8 @@ BEParseGetInt(  CHAR    **argv,
 	  sprintf(msg, "Expect a float after option %s (got %s)\n ",
 		  argv[*index],
 		  argv[*index+1]);
-	  BEPrintError(msg);
+	  fprintf(stderr, msg);
+  	  exit( 1 ); 
 	}
     }
   else  
@@ -4948,7 +3866,8 @@ BEParseGetInt(  CHAR    **argv,
       sprintf(msg, "Expect a float after option %s (got %s)\n ",
 	      argv[*index],
 	      argv[*index+1]);
-      BEPrintError(msg);
+      fprintf(stderr, msg);
+      exit( 1 ); 
     }
   *index =*index + 1;
 }
@@ -4963,7 +3882,8 @@ BEParseGetString(  CHAR    **argv,
     {
       sprintf(msg, "Expect a string after %s\n ",
 	      argv[*index] );
-      BEPrintError(msg);
+      fprintf(stderr, msg);
+      exit( 1 );
     }
   *index =*index + 1;
 }
@@ -4987,7 +3907,7 @@ BEParseGetDouble(CHAR    **argv,
 	  sprintf(msg, "Expect a float after option %s (got %s)\n ",
 		  argv[*index],
 		  argv[*index+1]);
-	  BEPrintError(msg);
+	  fprintf(stderr, msg);
 	}
     }
   else  
@@ -4995,7 +3915,7 @@ BEParseGetDouble(CHAR    **argv,
       sprintf(msg, "Expect a float after option %s (got %s)\n ",
 	      argv[*index],
 	      argv[*index+1]);
-      BEPrintError(msg);
+      fprintf(stderr, msg);
     }
   *index =*index + 1;
 }
@@ -5027,7 +3947,7 @@ BEParseGetDouble2(CHAR    **argv,
 	  sprintf(msg, "Expect 2 floats after option %s (got %s and %s)\n ",
 		  argv[*index],
 		  argv[*index+1],argv[*index+2]);
-	  BEPrintError(msg);
+          fprintf(stderr,msg);
 	}
     }
   else  
@@ -5035,7 +3955,7 @@ BEParseGetDouble2(CHAR    **argv,
       sprintf(msg, "Expect 2 floats after option %s (got %s and %s)\n ",
 	      argv[*index],
 	      argv[*index+1],argv[*index+2]);
-      BEPrintError(msg);
+      fprintf(stderr, msg);
     }
   *index = *index +2 ;  
 }  
@@ -5049,6 +3969,10 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
   REAL4  temp;
   CHAR   msg[2048];
 
+  /* if we just want to parse the ascii file an convert into xml */
+  if (ascii2xml == 1) 
+    return;
+  
   temp =randIn->param.mass1; /*just to avoid boring warning*/
 
   userParam->useed = randIn->useed;
@@ -5070,7 +3994,7 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
   if (coarseBankIn->alpha < 0 ){
     sprintf(msg, "--bank-alpha (%f) parameter must be positive in the range [0,1] \n",
 	    coarseBankIn->alpha);
-    BEPrintError(msg);
+    fprintf(stderr, msg);
     }
 
   if (coarseBankIn->fUpper <= coarseBankIn->fLower 
@@ -5079,7 +4003,7 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
 	    coarseBankIn->fUpper,
 	    coarseBankIn->fLower ,
 	    coarseBankIn->tSampling/2); 
-    BEPrintError(msg);
+    fprintf(stderr,  msg);
   }
   
 
@@ -5087,14 +4011,14 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
     sprintf(msg, "--bank-grid-spacing (%d) parameter must be < square, hexagonal, hexagonalOriented, squareOriented> \n",
 	    coarseBankIn->gridSpacing);
     
-    BEPrintError(msg);
+    fprintf(stderr,msg);
   }
 
   
   if  ((coarseBankIn->mMin >= coarseBankIn->mMax ) || (coarseBankIn->mMin <=0)){
     sprintf(msg, "--bank-mass-range (%f %f) paramter must be sorted and > 0 \n",
 	    coarseBankIn->mMin, coarseBankIn->mMax);
-    BEPrintError(msg);
+    fprintf(stderr, msg);
   }
   else /* if valid parameters */
     {
@@ -5127,13 +4051,13 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
   if (coarseBankIn->psi0Min <=0 || coarseBankIn->psi0Min > coarseBankIn->psi0Max) {
     sprintf(msg, "--bank-psi0-range (%f %f) paramter must be sorted and > 0 \n",
 	    coarseBankIn->psi0Min, coarseBankIn->psi0Max);
-    BEPrintError(msg);
+    fprintf(stderr, msg);
   } 
 
   if (coarseBankIn->psi3Min >=0 || coarseBankIn->psi3Min > coarseBankIn->psi3Max) {
     sprintf(msg, "--bank-psi0-range (%f %f) paramter must be sorted and >= 0 \n",
 	    coarseBankIn->psi3Min, coarseBankIn->psi3Max);
-    BEPrintError(msg);
+    fprintf(stderr, msg);
   }
 
 
@@ -5141,28 +4065,32 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
     {
       sprintf(msg, "--detector (%d) expect option <H1, H2, L1> only",
 	      userParam->detector);
-      BEPrintError(msg);
+      fprintf(stderr, msg);
+      exit(1);
     }
 
   if (coarseBankIn->LowGM > coarseBankIn->HighGM)
     {
       sprintf(msg, "--bank-fcut-range (%f %f) expect sorted , typically 3 and 6",
 	      coarseBankIn->LowGM , coarseBankIn->HighGM);
-      BEPrintError(msg);
+      fprintf(stderr, msg);
+      exit(1);
     }
  
   if (coarseBankIn->fLower <10 || randIn->param.fLower < 10)
     {
       sprintf(msg, "--fl or --fl-signal or --fl-template must be >=10 Hz (%f %f)",
 	      randIn->param.fLower , coarseBankIn->fLower);
-      BEPrintError(msg);
+      fprintf(stderr, msg);
+      exit(1);
     }
 
   if (userParam->startTime <= 0 )
     {
       sprintf(msg, "--gps-start-time (%d) invalid. must be > 0 ",
 	      userParam->startTime );
-      BEPrintError(msg);
+      fprintf(stderr, msg);
+      exit(1);
     }
 
   if (userParam->maxTotalMass != -1)
@@ -5171,7 +4099,8 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
 	{	
 	  sprintf(msg, "--max-total-mass (%f) must be > twice the minimla mass (%f) ",
 	      userParam->maxTotalMass , randIn->mMin );
-	  BEPrintError(msg);
+          fprintf(stderr, msg);
+          exit(1);
 	}
     }
 
@@ -5183,7 +4112,8 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
       if ((userParam->m1 == -1) || (userParam->m2==-1))
 	{
 	  sprintf(msg, "if --template-m1 and template-m2 are used, you must set --m1 and --m2 \n");
-	  BEPrintError(msg);
+          fprintf(stderr, msg);
+          exit(1);
 	}       
     }
 
@@ -5206,7 +4136,8 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
     }
     if (userParam->psi0 != -1 ||userParam->psi3 != -1 || userParam->tau0 != -1 || userParam->tau3 != -1){
       sprintf(msg, "--m1 --m2 --psi0 --psi3 --tau0 --tau3 error. If particular injection is requested,  you must choose either (--m1,--m2) options or (--psi0,--psi3) or (--tau0,--tau3)\n");
-      BEPrintError(msg);
+      fprintf(stderr, msg);
+      exit(1);
     } 
   }
      
@@ -5218,7 +4149,8 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
 
    if (userParam->m1 != -1 ||userParam->m2 != -1 || userParam->tau0 != -1 || userParam->tau3 != -1){
      sprintf(msg, "--m1 --m2 --psi0 --psi3 --tau0 --tau3 error. If particular injection is requested,  you must choose either (--m1,--m2) options or (--psi0,--psi3) or (--tau0,--tau3)\n");
-     BEPrintError(msg);
+     fprintf(stderr, msg);
+     exit(1);
    } 
   } 
   
@@ -5229,7 +4161,8 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
    randIn->param.fCutoff = userParam->signalfFinal;
    if (userParam->psi0 != -1 ||userParam->psi3 != -1 || userParam->m1 != -1 || userParam->m2 != -1){
      sprintf(msg, "--m1 --m2 --psi0 --psi3 --tau0 --tau3 error. If particular injection is requested,  you must choose either (--m1,--m2) options or (--psi0,--psi3) or (--tau0,--tau3)\n");
-     BEPrintError(msg);  
+     fprintf(stderr, msg);  
+     exit(1);
    } 
   } 
 
@@ -5242,27 +4175,27 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
  if (coarseBankIn->mmCoarse <=0 || coarseBankIn->mmCoarse>=1){
    sprintf(msg, "--mm (%f) must be in the range ]0 1[\n", 
 	   coarseBankIn->mmCoarse);
-     BEPrintError(msg);  
+     fprintf(stderr, msg);  
+     exit(1);
  } 
  if (userParam->noiseModel == None){
    sprintf(msg, "--noise-model must be <LIGOI, LIGOA, VIRGO, GEO, TAMA, REALPSD>\n");
-   BEPrintError(msg);  
+   fprintf(stderr, msg);  
+   exit(1);
  } 
   
  if (coarseBankIn->numFcutTemplates <= 0){
    sprintf(msg, "--bank-number-fcut (%d) must be > 0>\n", coarseBankIn->numFcutTemplates);
-   BEPrintError(msg);  
+   fprintf(stderr, msg);  
+   exit(1);
  } 
  
- if (userParam->run == None){
-   sprintf(msg, "--run must be <S2 or S3>\n");
-   BEPrintError(msg);  
- } 
 
  if  ((randIn->mMin >= randIn->mMax ) || (randIn->mMin <=0)){
     sprintf(msg, "--signal-mass-range (%f %f) paramter must be sorted and > 0 \n",
 	    randIn->mMin, randIn->mMax);
-    BEPrintError(msg);
+   fprintf(stderr, msg);  
+   exit(1);
   }
  else /* if valid parameters */
    {
@@ -5297,133 +4230,48 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
         ((randIn->t0Min >= randIn->t0Max ) || (randIn->t0Min <=0))){
     sprintf(msg, "--signal-tau0-range (%f %f) paramter must be sorted and > 0 \n",
             randIn->t0Min, randIn->t0Max);
-    BEPrintError(msg);
+    fprintf(stderr, msg);
+    exit(1);
   }
 
   if ((randIn->tnMin != 0 || randIn->tnMax != 0) && 
         ((randIn->tnMin >= randIn->tnMax ) || (randIn->tnMin <=0))){
     sprintf(msg, "--signal-tau3-range (%f %f) paramter must be sorted and > 0 \n",
             randIn->tnMin, randIn->tnMax);
-    BEPrintError(msg);
+    fprintf(stderr, msg);
+    exit(1);
   }
 
-  switch ( userParam->detector)
-    {
-    case L1:
-      switch (userParam->run)
-	{
-	case S2:
-	  userParam->calCacheName   = userParam->L1.dataFile.S2.calCacheName  ;
-	  userParam->frInCacheName  = userParam->L1.dataFile.S2.frInCacheName ;       
-	  if (!userParam->chanName)
-	    userParam->chanName  =  userParam->L1.chanName;
-
-	  break;
-	case S3:
-	  userParam->calCacheName   = userParam->L1.dataFile.S3.calCacheName  ;
-	  userParam->frInCacheName  = userParam->L1.dataFile.S3.frInCacheName ;
-	  if (!userParam->chanName) userParam->chanName  =  userParam->L1.chanName;
-
-	  break;
-	case S1:
-	case S4:
-	  userParam->calCacheName   = userParam->L1.dataFile.S4.calCacheName  ;
-	  userParam->frInCacheName  = userParam->L1.dataFile.S4.frInCacheName ;
-	  if (!userParam->chanName) userParam->chanName  =  userParam->L1.chanName;
-	  break;
-	case S5:
-	case S6:
-	  break;
-	}
-      break;
-    case H1:
-      switch (userParam->run)
-	{
-	case S1:
-	case S4:
-	  userParam->calCacheName   = userParam->H1.dataFile.S4.calCacheName  ;
-	  userParam->frInCacheName  = userParam->H1.dataFile.S4.frInCacheName ;
-	 if (!userParam->chanName)  userParam->chanName  =  userParam->H1.chanName;
-    	  break;
-	case S5:
-	case S6:
-	  break;
-	case S2:
-	  userParam->calCacheName   = userParam->H1.dataFile.S2.calCacheName  ;
-	  userParam->frInCacheName  = userParam->H1.dataFile.S2.frInCacheName ;
-	 if (!userParam->chanName)  userParam->chanName  =  userParam->H1.chanName;
-		  
-	  break;
-	case S3:
-	  userParam->calCacheName   = userParam->H1.dataFile.S3.calCacheName  ;
-	  userParam->frInCacheName  = userParam->H1.dataFile.S3.frInCacheName        ;
-	 if (!userParam->chanName)  userParam->chanName       = userParam->H1.chanName;
-	  break;
-	}
-      break;
-     
-    case H2:
-      switch (userParam->run)
-	{
-	case S1:
-	case S4:
-	  userParam->calCacheName   = userParam->H2.dataFile.S4.calCacheName;
-	  userParam->frInCacheName  = userParam->H2.dataFile.S4.frInCacheName;
-	  if (!userParam->chanName) userParam->chanName  =  userParam->H2.chanName;
-	  break;
-	case S5:
-	case S6:
-	  break;
-	case S2:
-	  userParam->calCacheName   = userParam->H2.dataFile.S2.calCacheName;
-	  userParam->frInCacheName  = userParam->H2.dataFile.S2.frInCacheName;
-	  if (!userParam->chanName) userParam->chanName  =  userParam->H2.chanName;
-	  break;
-	case S3:
-	  userParam->calCacheName   = userParam->H2.dataFile.S3.calCacheName;
-	  userParam->frInCacheName  = userParam->H2.dataFile.S3.frInCacheName;
-	  if (!userParam->chanName) userParam->chanName       =  userParam->H2.chanName;
-	  break;
-	}
-      break;
-      
-    case V1:break;
-      
-    case G1:break;
-    }
   if (userParam->faithfulness ==1 && randIn->type == 1)
-      BEPrintError("can not check code if no injection performed. use simulation-type = 0 or 2\n");
-
+    {
+      fprintf(stderr, "No injection performed so the check option can not be used (change simulation-type option)\n");
+      exit ( 1 );
+    }
   if (coarseBankIn->approximant == (Approximant)(-1))
-      BEPrintError("--template,  template approximant must be provided\n");
-
+    {
+      fprintf(stderr, "--template,  template approximant must be provided\n");
+      exit( 1 );
+    }
   if (randIn->param.approximant == (Approximant)(-1))
-      BEPrintError("--signal, signal approximant must be provided\n");
-
+    {
+      fprintf(stderr, "--signal, signal approximant must be provided\n");
+      exit( 1 );
+    }
   if (userParam->binaryInjection == BHNS){
     if (randIn->mMin >3 || randIn->mMax < 3 ){
-      BEPrintError("if you want to inject BHNS systems then adjust the mass-range so that the minimum is less than 3 solar mass and the maximum  is greater than 3 solar mass !! \n");
+      fprintf(stderr, "BH-NS injection request to have the minimum mass less than 3 and maximum greater than 3.\n");
+      exit( 1 );
     }
   }      
 }
 
 
 
-void
-BEPrintError(char *chaine)
-{
-  fprintf(stderr,"//--->  BankEfficiency code Error <---//\n");
-  fprintf(stderr,"----->  %s",chaine);
-  fprintf(stderr,"//---> please use \"--help\" option to get help documentation <---//\n");
-  exit(0);
-}
-
-
 
 /* ****************************************************************************
  *  Documenation  on line
  *  **************************************************************************/
-void Help()
+void Help(void)
 {
   CHAR msg[2048];
 
@@ -5442,7 +4290,7 @@ void Help()
   sprintf(msg,
 	  "\t The injections which can be performed uses the inspiral packages and therefore \n"  
 	  "\t allows the following approximant [TaylorT1, TaylorT2, TaylorT3, EOB, PadeT1 \n"
-	  "\t and SpinTaylorT3. \n\n\tThe bank and filtering uses the noisemodels packages for time- \n"
+	  "\t and SpinTaylor. \n\n\tThe bank and filtering uses the noisemodels packages for time- \n"
 	  "\t domain approximant and BankEfficiency functions to perform BCV filtering method.\n"
 	  "\t Both noisemodesl (for Time-domain) and BankEfficiency (for BCV) and in agreement\n"
 	  );
@@ -5492,10 +4340,9 @@ void Help()
   fprintf(stderr, "\t[--num-seconds<integer>]\t set number of seconds of data to look at.\n");
   fprintf(stderr, "\t[--psi0<float>]\t\t\t force injection psi0  value; request to psi3 as well. \n");
   fprintf(stderr, "\t[--psi3<float>]\t\t\t force injection psi3 value; request psi0 as well\n");
-  fprintf(stderr, "\t[--run<string>]\t\t\t set run <S2, S3>\n");
   fprintf(stderr, "\t[--sampling<float>]\t\t set sampling frequency.\n");
   fprintf(stderr, "\t[--seed<integer>]\t\t set seed for random generator.\n");
-  fprintf(stderr, "\t[--signal<string>]\t\t set signal approximant (TaylorT1, TaylorT2, TaylorT3, TaylorF2, PadeT1, EOB, SpinTaylorT3)\n");
+  fprintf(stderr, "\t[--signal<string>]\t\t set signal approximant (TaylorT1, TaylorT2, TaylorT3, TaylorF2, PadeT1, EOB, SpinTaylor)\n");
   fprintf(stderr, "\t[--signal-alpha<float>]\t\t set alpha parameter of BCV injection\n");
   fprintf(stderr, "\t[--signal-amplitude<float>]\t set SNR of injection in the case NoiseandSignal simulation\n");
   fprintf(stderr, "\t[--signal-ffinal<float>]\t force final frequency value\n");
@@ -5508,7 +4355,7 @@ void Help()
   fprintf(stderr, "\t[--simulation-type<string>]\t set type of simulation (SignalOnly, noiseOnly, NoiseAndSignal)\n");
   fprintf(stderr, "\t[--tau0<float>]\t\t\t force injection to have tau0 value \n");
   fprintf(stderr, "\t[--tau3<float>]\t\t\t force injection to have tau3 value\n");
-  fprintf(stderr, "\t[--template<string>]\t\tset signal approximant (TaylorT1, TaylorT2, TaylorT3, TaylorF2, PadeT1, EOB, SpinTaylorT3)\n");
+  fprintf(stderr, "\t[--template<string>]\t\tset signal approximant (TaylorT1, TaylorT2, TaylorT3, TaylorF2, PadeT1, EOB, SpinTaylor)\n");
   fprintf(stderr, "\t[--template-order<integer>]\t set PN order of template\n");
   fprintf(stderr, "\t[--alpha-constraint]\t\t set BCV code to be constrained \n");
   fprintf(stderr, "\t[--bhns-injection]\t\t set injection to be only bhbs systems\n");
@@ -5528,33 +4375,21 @@ void Help()
 
 
 void 
-BEAscii2Xml()
+BEAscii2Xml(void)
 {
-  UINT4 line=0;
-  UINT8  id=0;
+  UINT4 line = 0;
+  UINT8  id = 0;
   UINT4 start = 0;
   ResultIn trigger;
-  REAL4 tau0, tau3, tau0I, tau3I, psi0, psi3, phaseI, beta;
+  REAL4 tau0, tau3, tau0I, tau3I, psi0, psi3, phaseI, beta, spin1_a, spin1_b, spin1_c, spin2_a, spin2_b, spin2_c ,theta0, phi0  ;
   FILE *input1, *input2, *bank;
   FILE *output;      
+
   SnglInspiralTable     *inputData = NULL;
   INT4 numFileTriggers = 0, nStartPad;
 
-
-
-
-
-
   char sbuf[512];
   
-  /*  if (argc>1) {
-    if (strcmp(argv[1], "--help")==0) {
-      BEAscii2XmlHelp();
-    }  
-    if (strcmp(argv[1], "-h")==0) { 
-      BEAscii2XmlHelp();
-    }  
-    }*/
   /* Main program starts here */
   /* First we open the file containing the ascii results */
   fprintf(stderr,"opening the xml output data file -- %s", BEASCII2XML_OUTPUT);
@@ -5583,11 +4418,8 @@ BEAscii2Xml()
       while(fgets(sbuf,1024,input2) !=NULL)
 	fputs(sbuf, output);
       fprintf(stderr," done\n");
-
-      
     }
   
-
   /* insert the template bank here */
   if  ( (bank  = fopen(BEASCII2XML_BANK,"r"))==NULL)
     {
@@ -5600,9 +4432,9 @@ BEAscii2Xml()
       fprintf(stderr,"parsing the bank  -- ");
       fprintf( stdout, "reading triggers from file: %s\n", BEASCII2XML_BANK );
       numFileTriggers = 
-        LALSnglInspiralTableFromLIGOLw( &inputData,BEASCII2XML_BANK , 0, -1 );
+      LALSnglInspiralTableFromLIGOLw( &inputData,BEASCII2XML_BANK , 0, -1 );
       fprintf(stderr," done %d\n", numFileTriggers);      
-       myfprintf(output, LIGOLW_XML_SNGL_INSPIRAL );
+      myfprintf(output, LIGOLW_XML_SNGL_INSPIRAL );
        while(inputData)
 	{
 	  /*	  id = inputData->event_id->id;*/
@@ -5648,6 +4480,16 @@ BEAscii2Xml()
 		  inputData->chisq_dof,
 		  inputData->sigmasq,
 		  inputData->rsqveto_duration,
+		  inputData->Gamma[0],
+		  inputData->Gamma[1],  
+		  inputData->Gamma[2],
+		  inputData->Gamma[3],
+		  inputData->Gamma[4],
+		  inputData->Gamma[5],
+		  inputData->Gamma[6],
+		  inputData->Gamma[7],
+		  inputData->Gamma[8],
+		  inputData->Gamma[9],
 		  id);
 	  inputData = inputData->next;
 	  fprintf(output, "\n");
@@ -5676,6 +4518,14 @@ BEAscii2Xml()
 	     &tau3, 
 	     &tau0I, 
 	     &tau3I,
+             &spin1_a,
+             &spin1_b,
+             &spin1_c,
+             &spin2_a,
+             &spin2_b,
+             &spin2_c,
+             &theta0,
+             &phi0,
 	     &trigger.fend_trigger, 
 	     &trigger.fend_inject,
 	     &trigger.mass1_inject,
@@ -5707,7 +4557,15 @@ BEAscii2Xml()
 	     tau3, 
 	     tau0I, 
 	     tau3I,
-	     trigger.fend_trigger, 
+             spin1_a,
+             spin1_b,
+             spin1_c,
+             spin2_a,
+             spin2_b,
+             spin2_c,
+	     theta0, 
+             phi0,
+             trigger.fend_trigger, 
 	     trigger.fend_inject,
 	     trigger.mass1_inject,
 	     trigger.mass2_inject,
@@ -5723,14 +4581,12 @@ BEAscii2Xml()
     }
    while(!feof(input1));
 
-    fprintf(stderr,"read %d lines...done\n", line);
+  fprintf(stderr,"read %d lines...done\n", line);
   PRINT_LIGOLW_XML_TABLE_FOOTER(output);
   PRINT_LIGOLW_XML_FOOTER(output);
 
   fclose(output);
-    fprintf(stderr,"closing xml file\n");
-
-
+  fprintf(stderr,"closing xml file\n");
 }
 
 
@@ -5756,3 +4612,18 @@ void BEAscii2XmlHelp(void)
   
 
 }
+
+
+/*      
+void 
+LALCreateRealPsd(LALStatus *status,
+                InspiralCoarseBankIn *bankIn,
+                RandomInspiralSignalIn randIn,
+                UserParametersIn userParam)
+{
+  char* command=NULL;
+  sprintf(command, "./lalapps_tmpltbank --help");
+  system(command);
+}
+ 
+*/
