@@ -45,7 +45,7 @@
 
 #include <lalapps.h>
 
-#include "LogPrintf.h"
+#include <lal/LogPrintf.h>
 
 /* local includes */
 

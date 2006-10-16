@@ -3,7 +3,7 @@
 #include <lal/StringInput.h> /* for LAL_REAL8_FORMAT etc. */
 
 #include <lal/LALStdio.h>
-#include "LogPrintf.h"
+#include <lal/LogPrintf.h>
 
 #ifdef USE_BOINC
 #include "filesys.h"
@@ -11,7 +11,7 @@
 #define rename boinc_rename
 #endif
 
-#include "LogPrintf.h"
+#include <lal/LogPrintf.h>
 
 RCSID("$Id$");
 

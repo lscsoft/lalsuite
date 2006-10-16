@@ -51,11 +51,13 @@ int finite(double);
 #include <lal/ComputeFstat.h>
 #include <lal/LALHough.h>
 
+#include <lal/LogPrintf.h>
+
 #include <lalapps.h>
 
 /* local includes */
 #include "DopplerScan.h"
-#include "LogPrintf.h"
+
 
 RCSID( "$Id$");
 
@@ -113,7 +115,7 @@ typedef struct {
   MultiSFTVector *multiSFTs;		    /**< multi-IFO SFT-vectors */
   MultiDetectorStateSeries *multiDetStates; /**< pos, vel and LMSTs for detector at times t_i */
   MultiNoiseWeights *multiNoiseWeights;	    /**< normalized noise-weights of those SFTs */
-  REAL8 S_hat;                              /**< Sum over the 1/Sn */ 
+  REAL8 S_inv;                              /**< Sum over the 1/Sn */ 
   ComputeFParams CFparams;		    /**< parameters for Fstat (e.g Dterms, SSB-prec,...) */
   CHAR *logstring;                          /**< log containing max-info on this search setup */
 } ConfigVariables;
@@ -515,7 +517,7 @@ int main(int argc,char *argv[])
   if ( uvar_outputLoudest )
     {
       MultiAMCoeffs *multiAMcoef = NULL;
-      REAL8 norm = GV.Tsft * GV.S_hat;
+      REAL8 norm = GV.Tsft * GV.S_inv;
       FILE *fpLoudest;
       PulsarAmplitudeParams Amp, dAmp;
       PulsarCandidate cand = empty_PulsarCandidate;
@@ -939,15 +941,15 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   if ( uvar_SignalOnly )
     {
       cfg->multiNoiseWeights = NULL; 
-      GV.S_hat = 2;
+      GV.S_inv = 2;
     }
   else
     {
       MultiPSDVector *psds = NULL;
 
       TRY ( LALNormalizeMultiSFTVect (status->statusPtr, &psds, cfg->multiSFTs, uvar_RngMedWindow ), status );
-      /* note: the normalization S_hat would be required to compute the ML-estimator for A^\mu */
-      TRY ( LALComputeMultiNoiseWeights  (status->statusPtr, &(cfg->multiNoiseWeights), &GV.S_hat, psds, uvar_RngMedWindow, 0 ), status );
+      /* note: the normalization S_inv would be required to compute the ML-estimator for A^\mu */
+      TRY ( LALComputeMultiNoiseWeights  (status->statusPtr, &(cfg->multiNoiseWeights), &GV.S_inv, psds, uvar_RngMedWindow, 0 ), status );
 
       TRY ( LALDestroyMultiPSDVector (status->statusPtr, &psds ), status );
 

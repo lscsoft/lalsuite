@@ -37,11 +37,11 @@
 #include <lal/ConfigFile.h>
 #include <lal/Velocity.h>
 
+#include <lal/LogPrintf.h>
+
 #include "FlatPulsarMetric.h"
 
 #include "DopplerScan.h"
-
-#include "LogPrintf.h"
 
 /*---------- DEFINES ----------*/
 #define MIN(x,y) (x < y ? x : y)
