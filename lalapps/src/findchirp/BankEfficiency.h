@@ -45,9 +45,9 @@
 
 #define MAXIFO 2
 #define BANKEFFICIENCY_PARAMS_ROW \
-"         %f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%d"
+"         %f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%d"
 #define BANKEFFICIENCY_PARAMS_ROW_SPACE \
-"         %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d %d %d "
+"         %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d %d %d "
 
 /*do not use capital here for future mysql migration */
 #define PRINT_LIGOLW_XML_BANKEFFICIENCY(fp) ( \
@@ -62,6 +62,14 @@ fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau0\"          
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau3\"                Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau0_sim\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau3_sim\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin1_x\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin1_y\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin1_z\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin2_x\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin2_y\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:spin2_z\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:theta0\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:phi0\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:ffinal\"              Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:ffinal_sim\"          Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:mass1_sim\"           Type=\"real_4\"/>\n", fp) == EOF ||  \
@@ -211,7 +219,8 @@ typedef enum{
     TAMA,
     VIRGO,
     REALPSD,
-    READPSD
+    READPSD,
+    EGO
 } DetectorName;
 
 /* what detectors (real noise only )*/
@@ -443,8 +452,8 @@ LALWaveOverlapBCVSpin(LALStatus 		  *status,
 		      REAL4Vector             *Filter2,
 		      REAL4Vector             *Filter3,
 		      UserParametersIn        userParam, 
-		      OverlapOutputIn         *OverlapOutput,
-		      BEMoments               *moments);
+		      OverlapOutputIn         *OverlapOutput
+		      );
 
 
 /* Function to store the moments needed by the BCV overlap process 
@@ -546,6 +555,7 @@ PrintResults(
     RandomInspiralSignalIn      rand);
 
 
+
 /* Print each  template bank overlap 
  * */
 void
@@ -604,6 +614,13 @@ BEFillProc(
 /* xml file for the standalone code */
 void 
 BEPrintResultsXml( 
+    InspiralCoarseBankIn         coarseBankIn,
+    RandomInspiralSignalIn       randIn,
+    UserParametersIn             userParam,
+    ResultIn                     trigger
+    );
+void 
+BEPrintResultsXml2( 
     InspiralCoarseBankIn         coarseBankIn,
     RandomInspiralSignalIn       randIn,
     UserParametersIn             userParam,
