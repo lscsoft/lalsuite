@@ -22,9 +22,13 @@ for that frequency. The noise PSD is based on data provided by
 grqc/0607092
 \begin{equation}
    S_h(f) = 
-   s_0 \left (  to be completed \right ),
+   s_0 \left\{  x^{p_1} + a_1x^{p_2} +a_2 \frac{1+b_1x +b_2x^2+b_3x^3+b_4x^4+b_5x^5+b_6x^6}{1+c_1x+c_2x^2+c_3x^3+c_4x^4} \right\}
 \end{equation}
-where $s_0=1.61e-51$
+where $S_0=1.61e-51$\\
+$p_1=-4.05, p_2=-0.69$\\
+$a_1=185.62, p_2=232.52$\\
+$b_1 = 31.18, b_2=-64.72, b_3=52.24, b_4=-42.16, b_5=10.17, b_6=11.53$\\
+and $c_1=13.58, c_2 = -36.46, c_3=18.56, c_4=27.43$
 \subsubsection*{Algorithm}
 \subsubsection*{Uses}
 None.
