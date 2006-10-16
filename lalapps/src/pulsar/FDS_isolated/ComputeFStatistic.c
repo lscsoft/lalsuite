@@ -37,6 +37,7 @@
 #include <lal/LALInitBarycenter.h>
 #include <lal/UserInput.h>
 #include <lal/ExtrapolatePulsarSpins.h>
+#include <lal/LogPrintf.h>
 
 #include <lalapps.h>
 
@@ -47,7 +48,7 @@
 
 #include "FstatToplist.h"
 
-#include "LogPrintf.h"
+
 
 /* this is defined in C99 and *should* be in math.h.  Long term
    protect this with a HAVE_FINITE */
