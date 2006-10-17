@@ -82,11 +82,12 @@ int create_toplist(toplist_t**list,
 		   size_t size,
 		   int (*smaller)(const void *, const void *)) {
   toplist_t *listp;
+  const char *rcsid_dummy;
 
+  rcsid_dummy = HEAPTOPLISTHID;
+  rcsid_dummy = HEAPTOPLISTCID;
   if (!(listp = malloc(sizeof(toplist_t))))
     return(-1);
-  listp->data = (void*)HEAPTOPLISTHID;
-  listp->heap = &HEAPTOPLISTCID;
   if (!(listp->data = malloc(size * length))) {
     free(listp);
     return(-1);
