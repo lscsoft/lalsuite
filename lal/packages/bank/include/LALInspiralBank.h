@@ -320,7 +320,8 @@ Generation;
 typedef enum
 {
   MinComponentMassMaxTotalMass,
-  MinMaxComponentMass
+  MinMaxComponentMass,
+  MinMaxComponentTotalMass
 } 
 InspiralBankMassRange;
 /*  </lalVerbatim>  */
@@ -387,7 +388,11 @@ tagHexaGridParam
   REAL4 mMin; 
   REAL4 mMax; 
   REAL4 etaMin;
-  REAL4 space;
+  REAL4 MMin;
+  REAL4 MMax;
+
+  InspiralBankMassRange         massRange;
+  CoordinateSpace               space;
 }
 HexaGridParam;
 
@@ -466,7 +471,8 @@ tagInspiralCoarseBankIn
 
   REAL8                         mMin;           
   REAL8                         mMax;           
-  REAL8                         MMax;         
+  REAL8                         MMax;        
+  REAL8                         MMin; 
   REAL8                         alpha;      
   REAL8                         psi0Min;      
   REAL8                         psi0Max;      
@@ -1015,7 +1021,6 @@ print_list(CellList *head);
 
 int
 Length(CellList *head);
-
 
 
 /* <lalLaTeX>
