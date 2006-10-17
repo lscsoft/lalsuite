@@ -1,4 +1,4 @@
-#!/usr/bin/python 
+#!/usr/bin/python2.2 
 """
 python script to create a condor_script and xml prototype  
 arguments might be changed directly in this file.
@@ -15,9 +15,19 @@ import optparse
 import locale
 import math
 from optparse import OptionParser
+import time  
 
+#find the path for lalapps_bankefficiency
+user = os.getlogin()
+uname = os.uname()
+host = uname[2]
+if host.find('explorer')>0:
+        path  		= '/home/'+user+'/lscsoft/lalapps/src/findchirp/'
+elif host.find('coma')>0:        
+        path  		= '/home2/'+user+'/lscsoft/lalapps/src/findchirp/'
+else:
+        path  		= '/home/cokelaer/lscsoft/lalapps/src/findchirp/'
 
-path  		= '/home2/spxtc/lscsoft/lalapps/src/findchirp/'
 executable_name = 'lalapps_BankEfficiency'
 
 
@@ -62,7 +72,7 @@ def create_condor_file(BE, arguments):
 	fp.write('priority = 10\n')
 	
 	tag = str(BE['noise-model'])+'_'+str(BE['fl'])+'_'+ str(BE['search']) +'_'+str(BE['signal'])+'_'+str(BE['signal-order'])+'_'+str(BE['template'])+'_'+str(BE['template-order'])+'_'+str(BE['sampling'])+'_'+str(BE['mm'])+'.$(macroseed)\n'
-	msg = 'log = ./log/log_'+tag
+	msg = 'log = ./log/tmp
 	fp.write(msg)
 	msg = 'output = out_'+tag
 	fp.write(msg)
@@ -84,35 +94,40 @@ def create_bank(arguments):
 	a=os.system('./BankEfficiency_createbank')
 	
 	if a==0:
-		print '->done (your parameters seems correct). See BE_Bank.xml file.'
+		print '... done (your parameters seems correct). See BE_Bank.xml file.'
 	else:
-		print '->failed (your parameters seems correct)'
+		print '... failed (your parameters seems correct)'
 		quit
+        time.sleep(.5)
 
 def create_dag_file(njobs):
-	fp=open('BankEfficiency.dag', 'w')
+        print '--- Generating the dag file'
+	fp=open('bep.dag', 'w')
 	for id in range(1,njobs+1,1):
-		fp.write('JOB '+str(id)+' BankEfficiency.sub'+'\n')
+		fp.write('JOB '+str(id)+' bep.sub'+'\n')
 	 	fp.write('VARS '+str(id)+' macroseed="'+str(id)+'"\n')
 	fp.close()
+        print '... done'
+        time.sleep(.5)
 
 
 def check_executable():
 	try:
-		print 'check that the excutable is present ...'
+		print '--- Check that the executable ('+executable_name+')is present in '+path
 		f = open(path+executable_name, 'r')
 		f.close()
 	except:
-		print 'Can not find ' +path + executable_name
+		print '### Can not find ' +path + executable_name
 		sys.exit()
-	print 'lalapps_bankefficiency found. Going ahead'
-	print '--'
+	print '... executable found. Going ahead'
 	
 
 
 
 def main():
-
+    check_executable()
+    time.sleep(1)
+    print '--- Parsing user arguments'
     parser = OptionParser()
     
     parser.add_option("", "--noise-model", 
@@ -197,8 +212,8 @@ def main():
 
     #depending on the "search" value, we set some extra default values
     BE = set_predefined_search_parameter(BE)
-    #check that the executable is present
-    check_executable()
+    
+    time.sleep(1)
 
     if BE['fl']==-1:
         if BE['noise-model']=='VIRGO':
@@ -213,14 +228,16 @@ def main():
     # compute the number of trial per node   
     nCondor = math.ceil(options.ntrial/options.njobs)
     BE['ntrial'] = nCondor
+    
 
     for arg in  BE:
 	if arg!='search':
 		arguments = arguments +  ' --'+arg+' '+ str(BE[arg])
-
+    
     if options.max_total_mass > 0:
-	arguments = arguments + ' --max-total-mass ' + str(option.max_total_mass)
+	BE['max-total-mass'] = str(options.max_total_mass)
 
+    time.sleep(1)
     # print some information on the screen
     print """
 	The condor script will use the following arguments 
@@ -229,8 +246,8 @@ def main():
 
     for arg in BE:
 	print '    ' + arg + ' = ' +str(BE[arg])
-    print 'The number of simulation requested is '+str(BE['ntrial'])
-    print 'They will be split into '+ str(options.njobs)+' jobs'
+    print '\n--- The number of simulation requested is '+str(BE['ntrial'])
+    print '--- They will be split into '+ str(options.njobs)+' jobs'
 
     # create the condor file using the input parameter stored in BE
     create_condor_file(BE, arguments)
@@ -240,14 +257,15 @@ def main():
     # input parameters are correct
     create_bank(arguments)
 
-    print 'Generating the prototype xml file for merging condor job'
-    command = path + executable_name + ' ' + arguments +' --print-prototype 1>out 2>err'
+    print '--- Generating the prototype xml file for merging condor job'
+    command = path + executable_name + ' ' + arguments +' --print-prototype 1>bep.out 2>bep.err'
     os.system(command)
-    print '->done'
+    print '... done'
+    time.sleep(.5)
     
-    print """ In order to start the job, type
-    	-->	condor_submit BankEfficiency.dag
-    	which reads BankEfficiency.sub. Once the dag is finished, 
+    print """--- In order to start the job, type
+    		condor_submit bep.dag
+    	which reads bep.sub. Once the dag is finished, 
     	you\'ll get '+str(options.njobs)+' files. 
     	concatenate the job using 
     	cat out.* > Trigger.dat
