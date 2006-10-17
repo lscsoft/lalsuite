@@ -106,10 +106,24 @@ def create_dag_file(njobs):
 	for id in range(1,njobs+1,1):
 		fp.write('JOB '+str(id)+' bep.sub'+'\n')
 	 	fp.write('VARS '+str(id)+' macroseed="'+str(id)+'"\n')
+
+                
 	fp.close()
         print '... done'
         time.sleep(.5)
 
+def create_finalise_script(BE, options):
+        fp = open('finalise.sh', 'w')
+        fp.write('#!/bin/sh\n')
+        fp.write('cat out_* > Trigger.dat\n')
+        fp.write('cp TMPLTBANK.xml BE_Bank.xml\n')
+        fp.write(path+executable_name +' --ascii2xml --template EOB --signal EOB\n')
+        fp.write('mv Trigger.xml Trigger_' + BE['noise-model'] +'_'+str(BE['fl'])+'_'+options.search+'_'+BE['bank-grid-spacing']+'_'+BE['template'])
+        fp.write('_'+str(BE['template-order']))
+        fp.write('_'+BE['signal']+'_'+str(BE['signal-order'])+'_'+str(BE['sampling'])+'_'+str(BE['mm'])+'.xml')
+        fp.close()
+        os.system('chmod 755 finalise.sh')
+        
 
 def check_executable():
 	try:
@@ -166,9 +180,6 @@ def main():
     parser.add_option("-n","--ntrial",
 		dest='ntrial', default=10000, type='int',
 		help="number of trial." )
-    parser.add_option("","--njobs",
-		dest='njobs', default=100, type='int',
-		help="number of jobs." )
     parser.add_option("","--bank-grid-spacing",
 		dest='bank_grid_spacing', default='Hexagonal', 
 	 	help="type of template bank placement : Hexagonal, SquareNotOriented, HexagonalNotOriented" )
@@ -182,6 +193,11 @@ def main():
 		action="store_true", default="false",
 		dest='fast_simulation', 
 		help="fast simulation" )
+
+#pipeline parameters
+    parser.add_option("","--njobs",
+		dest='njobs', default=100, type='int',
+		help="number of jobs." )
 
 
     (options, args) = parser.parse_args()
@@ -259,6 +275,7 @@ def main():
     # input parameters are correct
     create_bank(arguments)
 
+    #create prototyp
     print '--- Generating the prototype xml file for merging condor job'
     command = path + executable_name + ' ' + arguments +' --print-prototype 1>bep_proto.out 2>bep_proto.err'
     os.system(command)
@@ -266,16 +283,15 @@ def main():
     time.sleep(.5)
     
     print """--- In order to start the job, type
-    		condor_submit bep.dag
-    	which reads bep.sub. Once the dag is finished, 
-    	you\'ll get '+str(options.njobs)+' files. 
-    	concatenate the job using 
-    	cat out.* > Trigger.dat
-    	cp BE_Proto.xml and TMPLTBANK.xml into your directory and type
-    	./lalapps_bankefficiency --ascii2xml """
+    	
+                condor_submit_dag -maxjobs 100  bep.dag
+                
+        Once the dag is finished and all the job are completed, get back all
+        the results together within an xml file by using the script 
+                
+                 finalise.sh"""
 
-
-
-
+    create_finalise_script(BE, options)
+        
 if __name__ == "__main__":
     main()
