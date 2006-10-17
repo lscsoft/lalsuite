@@ -60,7 +60,7 @@ def set_predefined_search_parameter(BE):
 	return BE
 
 def create_condor_file(BE, arguments):
-	fp = open('BankEfficiency.sub','w');
+	fp = open('bep.sub','w');
 	fp.write('Executable   = ' + path + executable_name +'\n')
 	fp.write('Universe     = vanilla\n')
 	#fp.write('Universe     = vanilla\n')
@@ -88,7 +88,7 @@ def create_bank(arguments):
 	print '###'
 	print ' We are creating the template bank for sanity check. Please wait'
 	fp =open('BankEfficiency_createbank','w');
-	fp.write( path + executable_name + arguments+' --n 1 --faithfulness --print-bank 1> out 2>err'+'\n')
+	fp.write( path + executable_name + arguments+' --n 1 --faithfulness --print-bank 1> bep_bank.out 2>bep_bank.err'+'\n')
 	fp.close()
 	os.system('chmod 755 BankEfficiency_createbank')
 	a=os.system('./BankEfficiency_createbank')
@@ -258,7 +258,7 @@ def main():
     create_bank(arguments)
 
     print '--- Generating the prototype xml file for merging condor job'
-    command = path + executable_name + ' ' + arguments +' --print-prototype 1>bep.out 2>bep.err'
+    command = path + executable_name + ' ' + arguments +' --print-prototype 1>bep_proto.out 2>bep_proto.err'
     os.system(command)
     print '... done'
     time.sleep(.5)
