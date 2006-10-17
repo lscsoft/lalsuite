@@ -172,6 +172,7 @@ int main( int argc, char *argv[] )
   int                   numTriggers = 0;
   int                   numCoincs = 0;
   int                   numEventsInIfos = 0;
+  int                   numEventsPlayTest = 0;
   int                   numEventsAboveThresh = 0;
   int                   numEventsCoinc = 0;
   int                   numClusteredEvents = 0;
@@ -786,21 +787,6 @@ int main( int argc, char *argv[] )
           numFileTriggers, ifo );
     }
 
-    /* Do playground_only or exclude_play cut */
-    if ( dataType != all_data )
-    {
-      inspiralFileList = XLALPlayTestSingleInspiral( inspiralFileList, 
-          &dataType );
-      /* count the triggers, scroll to end of list */
-      numFileTriggers = XLALCountSnglInspiral( inspiralFileList );
-      
-      if ( dataType == playground_only && vrbflg ) fprintf( stdout, 
-        "Have %d playground triggers\n", numFileTriggers );
-      else if ( dataType == exclude_play && vrbflg ) fprintf( stdout, 
-        "Have %d non-playground triggers\n", numFileTriggers );
-    }
-
-    
     /* If there are any remaining triggers ... */
     if ( inspiralFileList )
     {
@@ -845,6 +831,21 @@ int main( int argc, char *argv[] )
       numEventsInIfos += numFileCoincs;
     }
 
+    /* Do playground_only or exclude_play cut */
+    if ( dataType != all_data )
+    {
+      coincFileHead = XLALPlayTestCoincInspiral( coincFileHead, 
+          &dataType );
+      /* count the triggers, scroll to end of list */
+      numFileCoincs = XLALCountCoincInspiral( coincFileHead );
+
+      if ( dataType == playground_only && vrbflg ) fprintf( stdout, 
+        "Have %d playground triggers\n", numFileCoincs );
+      else if ( dataType == exclude_play && vrbflg ) fprintf( stdout, 
+        "Have %d non-playground triggers\n", numFileCoincs );
+      numEventsPlayTest += numFileCoincs;
+    }
+
     /* perform the statistic cut */
     if( statThreshold )
     {
@@ -877,6 +878,22 @@ int main( int argc, char *argv[] )
   {
     fprintf( stdout, "Read in %d triggers\n", numTriggers );
     fprintf( stdout, "Recreated %d coincs\n", numCoincs );
+    if ( ifos )
+    {
+      fprintf( stdout, "Have %d coincs from %s\n", numEventsInIfos,
+          ifos );
+    }
+    if ( dataType != all_data ) 
+    {
+      fprintf( stdout, 
+          "Have %d coincs after play test\n", numEventsPlayTest);
+    }
+    if ( statThreshold ) 
+    {
+      fprintf( stdout, 
+          "Have %d coincs above threshold of %6.2f\n", numEventsAboveThresh, 
+          statThreshold);
+    }
   }
 
   for ( thisSearchSumm = searchSummList; thisSearchSumm; 
@@ -1308,6 +1325,11 @@ int main( int argc, char *argv[] )
     {
       fprintf( fp, "number of triggers from %s ifos: %d \n", ifos, 
           numEventsInIfos );
+    }
+    if ( dataType != all_data )
+    {
+      fprintf( fp, "number of triggers after playground test: %d \n", 
+          numEventsPlayTest);
     }
     if ( statThreshold )
     {
