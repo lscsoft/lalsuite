@@ -2296,7 +2296,8 @@ SummValueTableFromLIGOLw (
   mioStatus = MetaioOpenTable( env, fileName, "summ_value" );
   if ( mioStatus )
   {
-    fprintf( stderr, "error opening summ_value table from file %s\n", 
+    fprintf( stderr, 
+        "warning: unable to opening summ_value table from file %s\n", 
         fileName );
     return -1;
   }
