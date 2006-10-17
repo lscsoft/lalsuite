@@ -208,6 +208,20 @@ void LALInspiralValidParams(
         *valid = 1;
       }
       break;
+
+    case MinMaxComponentTotalMass:
+      if (
+          Pars->mass1 >= coarseIn.mMin &&
+          Pars->mass2 >= coarseIn.mMin &&
+          Pars->totalMass <= coarseIn.MMax &&
+          Pars->totalMass >= coarseIn.MMin &&
+          Pars->eta <= 0.25 &&
+          Pars->eta >= coarseIn.etamin
+         )
+      {
+        *valid = 1;
+      }
+      break;
       
     default:
       ABORT(status, 999, "Invalid choice for enum InspiralBankMassRange");

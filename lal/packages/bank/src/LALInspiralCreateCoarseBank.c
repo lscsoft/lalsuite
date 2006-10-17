@@ -785,7 +785,7 @@ LALInspiralCreatePNCoarseBankHexa(
   
   /* Allocate memory for one cell */
   cells = (InspiralCell*)
-    LALCalloc(1,   sizeof(InspiralCell) );
+      LALCalloc(1,   sizeof(InspiralCell) );
 
   /*define gridParam*/
   gridParam.mm = coarseIn.mmCoarse;
@@ -795,8 +795,12 @@ LALInspiralCreatePNCoarseBankHexa(
   gridParam.x1Max     = bankPars.x1Max;
   gridParam.mMin      = coarseIn.mMin;
   gridParam.mMax      = coarseIn.mMax;
+  gridParam.MMin      = coarseIn.MMin;
+  gridParam.MMax      = coarseIn.MMax;
   gridParam.etaMin    = coarseIn.etamin;
   gridParam.space     = coarseIn.space;
+  gridParam.massRange = coarseIn.massRange;
+  
 
   cellEvolution.nTemplate = 1;
   cellEvolution.nTemplateMax = 1;
@@ -889,7 +893,7 @@ LALInspiralCreatePNCoarseBankHexa(
     length = cellEvolution.nTemplate;
 
     for (k=0; k<length; k++)
-      {  
+    {  
 	REAL4  a,b, x0, tempA3;
 	SFindRootIn input;
 	INT4 valid;
@@ -967,7 +971,7 @@ LALInspiralCreatePNCoarseBankHexa(
 	  }
 	} 
       }
-  }
+    }
 
   for (i=0; i<cellEvolution.nTemplate; i++) {
     if (cells[i].position == In ) {
@@ -2371,24 +2375,88 @@ LALFindPosition(LALStatus               *status,
       RETURN(status);
     }   
 
-  if (
-      paramsIn->mass1 >= gridParam->mMin &&
-      paramsIn->mass2 >= gridParam->mMin &&
-      paramsIn->mass1 <= gridParam->mMax &&
-      paramsIn->mass2 <= gridParam->mMax &&
-      paramsIn->eta <= 0.25 && 
-      paramsIn->eta >= gridParam->etaMin
-      ) 
-    {
-      *position = In;
-    }
-  else
-    if (paramsIn->eta > .25){
-      *position = Below; 
-    }
-    else{
-      *position = Above;
-    }    
+  switch ( gridParam->massRange )
+  {
+    case MinMaxComponentMass:
+      if (
+          paramsIn->mass1 >= gridParam->mMin &&
+          paramsIn->mass2 >= gridParam->mMin &&
+          paramsIn->mass1 <= gridParam->mMax &&
+          paramsIn->mass2 <= gridParam->mMax &&
+          paramsIn->eta <= 0.25 && 
+          paramsIn->eta >= gridParam->etaMin
+          ) 
+        {
+          *position = In;
+        }
+      else
+        if (paramsIn->eta > .25){
+          *position = Below; 
+        }
+        else{
+          *position = Above;
+        }
+      break;
+
+    case MinComponentMassMaxTotalMass:
+      if (
+          paramsIn->mass1 >= gridParam->mMin &&
+          paramsIn->mass2 >= gridParam->mMin &&
+          paramsIn->totalMass <= gridParam->MMax &&
+          paramsIn->eta <= 0.25 &&
+          paramsIn->eta >= gridParam->etaMin
+          )
+        {
+          *position = In;
+        }
+      else
+        if (paramsIn->eta > .25){
+          *position = Below;
+        }
+        else{
+          *position = Above;
+        }
+      break;
+
+    case MinMaxComponentTotalMass:
+      if (
+          paramsIn->mass1 >= gridParam->mMin &&
+          paramsIn->mass2 >= gridParam->mMin &&
+          paramsIn->totalMass <= gridParam->MMax &&
+          paramsIn->totalMass >= gridParam->MMin &&
+          paramsIn->eta <= 0.25 &&
+          paramsIn->eta >= gridParam->etaMin
+          )
+        {
+          *position = In;
+        }
+      else if (paramsIn->eta > .25 ){
+          *position = Below;
+        }
+      else{
+        *position = Above;
+        }
+
+      /* Now cut out unnecessary templates */
+      if ( paramsIn->totalMass < gridParam->MMin )
+      {
+        REAL4 totalMass2 = A0 * (paramsIn->t3 - dx1)/(A3 * paramsIn->t0);
+        totalMass2 = totalMass2 / LAL_MTSUN_SI;
+        totalMass     = A0 * paramsIn->t3/(A3 * (paramsIn->t0 - dx0));
+        totalMass = totalMass / LAL_MTSUN_SI;
+
+        if ( totalMass < gridParam->MMin && totalMass2 < gridParam->MMin )
+        {
+          *position = Out;
+        }
+      }
+
+      break;
+
+    default:
+      ABORT(status, 999, "Invalid choice for enum InspiralBankMassRange"); 
+      break;
+  }
   
   DETATCHSTATUSPTR(status);
   RETURN(status);

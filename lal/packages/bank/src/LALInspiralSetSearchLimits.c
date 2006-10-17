@@ -71,7 +71,7 @@ LALInspiralSetSearchLimits (
     )
 /* </lalVerbatim> */
 {  
-   InspiralTemplate *Pars1=NULL, *Pars2=NULL, *Pars3=NULL;
+   InspiralTemplate *Pars1=NULL, *Pars2=NULL, *Pars3=NULL, *Pars4=NULL;
 
    INITSTATUS( status, "LALInspiralSetSearchLimits", 
        LALINSPIRALSETSEARCHLIMITSC );
@@ -97,7 +97,9 @@ LALInspiralSetSearchLimits (
    Pars1 = (InspiralTemplate *) LALCalloc( 1, sizeof(InspiralTemplate) );
    Pars2 = (InspiralTemplate *) LALCalloc( 1, sizeof(InspiralTemplate) );
    Pars3 = (InspiralTemplate *) LALCalloc( 1, sizeof(InspiralTemplate) );
-   if ( ! Pars1 || ! Pars2 || ! Pars3 )
+   Pars4 = (InspiralTemplate *) LALCalloc( 1, sizeof(InspiralTemplate) );
+
+   if ( ! Pars1 || ! Pars2 || ! Pars3 || !Pars4 )
    {
      ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
    }
@@ -109,16 +111,26 @@ LALInspiralSetSearchLimits (
    CHECKSTATUSPTR(status);
    LALInspiralSetParams(status->statusPtr, Pars3, coarseIn);
    CHECKSTATUSPTR(status);
+   LALInspiralSetParams(status->statusPtr, Pars4, coarseIn);
+   CHECKSTATUSPTR(status);
 
    Pars1->massChoice = Pars2->massChoice = Pars3->massChoice = m1Andm2;
+   Pars4->massChoice = m1Andm2;
 
    /* Calculate the value of the parameters at the three corners */
    /* of the search space                                        */
    Pars1->mass1 = Pars1->mass2 = coarseIn.MMax/2.;
    LALInspiralParameterCalc( status->statusPtr, Pars1 );
    CHECKSTATUSPTR( status );
-   
-   Pars2->mass1 = Pars2->mass2 = coarseIn.mMin;
+
+   if ( coarseIn.massRange == MinMaxComponentTotalMass )
+   {
+     Pars2->mass1 = Pars2->mass2 = coarseIn.MMin/2.;
+   }
+   else
+   {   
+     Pars2->mass1 = Pars2->mass2 = coarseIn.mMin;
+   }
    LALInspiralParameterCalc( status->statusPtr, Pars2 );
    CHECKSTATUSPTR( status );
    
@@ -127,11 +139,23 @@ LALInspiralSetSearchLimits (
    LALInspiralParameterCalc( status->statusPtr, Pars3 ); 
    CHECKSTATUSPTR( status );
 
+   if ( coarseIn.massRange == MinMaxComponentTotalMass )
+   {
+     Pars4->mass1 = coarseIn.mMin;
+     Pars4->mass2 = coarseIn.MMin - coarseIn.mMin;
+     LALInspiralParameterCalc( status->statusPtr, Pars4 );
+     CHECKSTATUSPTR( status );
+   }
+   else
+   {
+     Pars4->t0 = 0.0;
+   }
+
    /* Find the minimum and maximum values of the parameters and set     */
    /* the search space.  (The minimum values of chirp times are those   */
    /* corresponding to m1 = m2 = MMax/2, i.e., Pars1 structure.         */
    bankParams->x0 = bankParams->x0Min = Pars1->t0;
-   bankParams->x0Max = Pars2->t0;
+   bankParams->x0Max = (Pars2->t0 > Pars4->t0) ? Pars2->t0 : Pars4->t0;
 
    switch ( coarseIn.space ) 
    {
@@ -152,6 +176,7 @@ LALInspiralSetSearchLimits (
    LALFree( Pars1 );
    LALFree( Pars2 );
    LALFree( Pars3 );
+   LALFree( Pars4 );
 
    DETATCHSTATUSPTR( status );
    RETURN( status );
