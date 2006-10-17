@@ -960,6 +960,12 @@ XLALCompleteCoincInspiral (
     int                         ifoList[LAL_NUM_IFO]
     );
 
+CoincInspiralTable *
+XLALPlayTestCoincInspiral(
+    CoincInspiralTable         *eventHead,
+    LALPlaygroundDataMask      *dataType
+    );
+
 /* sim inspiral */
 
 void

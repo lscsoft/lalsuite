@@ -1853,7 +1853,7 @@ XLALCoincInspiralStat(
 }
 
 
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
 int
 XLALClusterCoincInspiralTable (
     CoincInspiralTable        **coincList,
@@ -2273,7 +2273,7 @@ INT4 XLALCountCoincInspiral( CoincInspiralTable *head )
 }
 
 
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
 CoincInspiralTable *
 XLALStatCutCoincInspiral (
     CoincInspiralTable         *eventHead,
@@ -2381,4 +2381,80 @@ XLALCompleteCoincInspiral (
   return( snglHead );
 }
 
+
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+CoincInspiralTable *
+XLALPlayTestCoincInspiral(
+    CoincInspiralTable         *eventHead,
+    LALPlaygroundDataMask      *dataType
+    )
+/* </lalVerbatim> */
+{
+  CoincInspiralTable    *coincEventList = NULL;
+  CoincInspiralTable    *thisEvent = NULL;
+  CoincInspiralTable    *prevEvent = NULL;
+
+  INT8 triggerTime = 0;
+  INT4 isPlay = 0;
+  INT4 numTriggers;
+
+  /* Remove all the triggers which are not of the desired type */
+
+  numTriggers = 0;
+  thisEvent = eventHead;
+
+  if ( (*dataType == playground_only) || (*dataType == exclude_play) )
+  {
+    while ( thisEvent )
+    {
+      CoincInspiralTable *tmpEvent = thisEvent;
+      thisEvent = thisEvent->next;
+
+      triggerTime = XLALCoincInspiralTimeNS( tmpEvent );
+      isPlay = XLALINT8NanoSecIsPlayground( &triggerTime );
+
+      if ( ( (*dataType == playground_only)  && isPlay ) || 
+          ( (*dataType == exclude_play) && ! isPlay) )
+      {
+        /* keep this trigger */
+        if ( ! coincEventList  )
+        {
+          coincEventList = tmpEvent;
+        }
+        else
+        {
+          prevEvent->next = tmpEvent;
+        }
+        tmpEvent->next = NULL;
+        prevEvent = tmpEvent;
+        ++numTriggers;
+      }
+      else
+      {
+        /* discard this template */
+        XLALFreeCoincInspiral ( &tmpEvent );
+      }
+    }
+    eventHead = coincEventList; 
+    if ( *dataType == playground_only )
+    {
+      XLALPrintInfo( "Kept %d playground triggers \n", numTriggers );
+    }
+    else if ( *dataType == exclude_play )
+    {
+      XLALPrintInfo( "Kept %d non-playground triggers \n", numTriggers );
+    }
+  }
+  else if ( *dataType == all_data )
+  {
+    XLALPrintInfo( "Keeping all triggers since all_data specified\n" );
+  }
+  else
+  {
+    XLALPrintInfo( "Unknown data type, returning no triggers\n" );
+    eventHead = NULL;
+  }
+
+  return(eventHead);
+}  
 
