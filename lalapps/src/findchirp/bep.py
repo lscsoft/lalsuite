@@ -21,10 +21,9 @@ import time
 user = os.getlogin()
 uname = os.uname()
 host = uname[1]
-print host
-if host.find('explorer')>0:
+if host.find('explorer')>=0:
         path  		= '/home/'+user+'/lscsoft/lalapps/src/findchirp/'
-elif host.find('coma')>0:        
+elif host.find('coma')>=0:        
         path  		= '/home2/'+user+'/lscsoft/lalapps/src/findchirp/'
 else:
         path  		= '/home/cokelaer/lscsoft/lalapps/src/findchirp/'
