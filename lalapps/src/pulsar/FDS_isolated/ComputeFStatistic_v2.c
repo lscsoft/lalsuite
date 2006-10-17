@@ -376,7 +376,7 @@ int main(int argc,char *argv[])
   clock0 = time(NULL);
   while (1)
     {
-      LAL_CALL (NextDopplerSkyPos( &status, &dopplerpos, &thisScan ), &status);
+      XLALNextDopplerSkyPos( &dopplerpos, &thisScan );
       if (thisScan.state == STATE_FINISHED) /* scanned all DopplerPositions yet? */
 	break;
       

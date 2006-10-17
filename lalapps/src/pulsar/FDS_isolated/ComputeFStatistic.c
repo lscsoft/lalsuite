@@ -770,7 +770,7 @@ int main(int argc,char *argv[])
     {
       UINT4 i;
       for (i=0; i < loopcounter; i++) {
-	LAL_CALL (NextDopplerSkyPos( status, &dopplerpos, &thisScan ), status);
+	XLALNextDopplerSkyPos( &dopplerpos, &thisScan );
 	if (thisScan.state == STATE_FINISHED) {
 	  LogPrintf (LOG_CRITICAL, "Checkpointed loopcounter already at the end of main-loop\n");
 	  return COMPUTEFSTAT_ECHECKPOINT; 
@@ -909,7 +909,7 @@ int main(int argc,char *argv[])
 			 (100.0* loopcounter / thisScan.numSkyGridPoints));
 #endif
       
-      LAL_CALL (NextDopplerSkyPos( status, &dopplerpos, &thisScan ), status);
+      XLALNextDopplerSkyPos( &dopplerpos, &thisScan );
       
       /* Have we scanned all PulsarDopplerParamss yet? */
       if (thisScan.state == STATE_FINISHED)

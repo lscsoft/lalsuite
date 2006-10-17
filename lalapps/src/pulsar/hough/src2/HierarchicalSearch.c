@@ -837,7 +837,7 @@ int main( int argc, char *argv[]) {
       UINT4 ifdot, nfdot;  /* counter and number of spindown values */
       REAL8 dfDot;  /* resolution in spindown */
 
-      LAL_CALL (NextDopplerSkyPos( &status, &dopplerpos1, &thisScan1 ), &status);
+      XLALNextDopplerSkyPos( &dopplerpos1, &thisScan1 );
       if (thisScan1.state == STATE_FINISHED) /* scanned all DopplerPositions yet? */
 	break;
 
@@ -983,7 +983,7 @@ int main( int argc, char *argv[]) {
 		      UINT4 ifdot2, nfdot2;  /* counter and number of spindown values */
 		      REAL8 dfDot2;  /* resolution in spindown */
 
-		      LAL_CALL (NextDopplerSkyPos( &status, &dopplerpos2, &thisScan2 ), &status);
+		      XLALNextDopplerSkyPos( &dopplerpos2, &thisScan2 );
 		      if (thisScan2.state == STATE_FINISHED) /* scanned all DopplerPositions yet? */
 			break;
 

@@ -406,7 +406,7 @@ int main(int argc,char *argv[])
       if (!uvar_binary) 
 	{
 
-	  LAL_CALL (NextDopplerSkyPos( &status, &dopplerpos, &thisScan ), &status);
+	  XLALNextDopplerSkyPos( &dopplerpos, &thisScan );
 	  /* Have we scanned all DopplerPositions yet? */
 	  if (thisScan.state == STATE_FINISHED)
 	    break;
