@@ -86,7 +86,7 @@ enum {
   STATE_LAST
 };
 
-/** different types of Sky-grids: */
+/** different types of grids: */
 typedef enum
 {
   GRID_FLAT,			/**< "flat" sky-grid: fixed step-size (dAlpha,dDelta) */
@@ -97,16 +97,6 @@ typedef enum
   GRID_LAST
 } DopplerGridType;
 
-/** Structure describing a region in paramter-space (a,d,f,f1dot,..). 
- *  Currently this is simply a direct product of skyRegion x FreqBand x f1dotBand.
- */
-typedef struct {
-  CHAR *skyRegionString;	/**< sky-region string '(a1,d1), (a2,d2), ..' */
-  LIGOTimeGPS epoch;
-  PulsarSpins fkdot;		/**< first points of spin-intervals */
-  PulsarSpins fkdotBand;	/**< spin-intervals */
-} DopplerRegion;
-
 /** structure describing a polygon-region in the sky */
 typedef struct {
   UINT4 numVertices;		/**< number of polygon-vertices */
@@ -115,19 +105,20 @@ typedef struct {
   SkyPosition upperRight;	/**< upper-right point of bounding square */
 } SkyRegion;
 
+typedef struct {
+  CHAR *skyRegionString;	/**< sky-region string '(a1,d1), (a2,d2), ..' */
+  LIGOTimeGPS epoch;
+  PulsarSpins fkdot;		/**< first points of spin-intervals */
+  PulsarSpins fkdotBand;	/**< spin-intervals */
+} DopplerRegion;
+
+/* ==================== SKYGRID-ONLY types ==================== */
 /** sky grid */
 typedef struct tagDopplerSkyGrid {
   REAL8 Alpha;
   REAL8 Delta;
   struct tagDopplerSkyGrid *next;
 } DopplerSkyGrid;
-
-/** a "sky-ellipse", described by the two major axes and it's angle wrt x-axis */
-typedef struct {
-  REAL8 smajor;
-  REAL8 sminor;
-  REAL8 angle;
-} MetricEllipse;
 
 /** initialization-structure passed to InitDopplerSkyScan() */  
 typedef struct {
@@ -140,7 +131,7 @@ typedef struct {
   LIGOTimeGPS obsBegin; 	/**< GPS start-time of time-series */
   REAL8 obsDuration;		/**< length of time-series in seconds */
   BOOLEAN projectMetric;	/**< project the metric orthogonal to Freq? */
-  LALDetector *Detector; 	/**< Current detector */
+  const LALDetector *Detector; 	/**< Current detector */
   EphemerisData *ephemeris;	/**< ephemeris-data for "exact" metric */
   CHAR *skyGridFile;		/**< file containing a sky-grid (list of points) if GRID_FILE */
 } DopplerSkyScanInit;
@@ -156,6 +147,32 @@ typedef struct {
   DopplerSkyGrid *skyNode;	/**< pointer to current grid-node in skygrid */
 } DopplerSkyScanState;
 
+/** a "sky-ellipse", described by the two major axes and it's angle wrt x-axis */
+typedef struct {
+  REAL8 smajor;
+  REAL8 sminor;
+  REAL8 angle;
+} MetricEllipse;
+
+/* ==================== FULL MULTIDIMENSIONAL-GRID types ==================== */
+/** Structure describing a region in paramter-space (a,d,f,f1dot,..). 
+ *  Currently this is simply a direct product of skyRegion x FreqBand x f1dotBand.
+ */
+
+/** initialization struct for full InitDopplerScan() [UNDER CONSTRUCTION] */
+typedef struct {
+  DopplerRegion searchRegion;		/**< Doppler-space region to be covered + scanned */
+  DopplerGridType gridType;		/**< which type of grid to generate */  
+  LALPulsarMetricType metricType; 	/**< which metric to use if GRID_METRIC */
+  PulsarDopplerParams spacings;		/**< user-settings for stepsizes if GRID_FLAT */
+  REAL8 metricMismatch;			/**< for GRID_METRIC and GRID_ISOTROPIC */
+  CHAR *skyGridFile;			/**< file containing a sky-grid (list of points) if GRID_FILE */
+  EphemerisData *ephemeris;		/**< ephemeris-data for "exact" metric */  
+} DopplerFullScanInit;
+
+/** opaque type to reflects the current state of a full multi-dimensional DopplerScan */
+typedef struct tagDopplerFullScanState DopplerFullScanState; 	/* opaque type */
+
 
 /*---------- Global variables ----------*/
 /* some empty structs for initializations */
@@ -167,14 +184,19 @@ extern const DopplerRegion empty_DopplerRegion;
 
 /*---------- external prototypes [API] ----------*/
 
+/* ------ functions to handle foliated sky-grid x freq x f1dot covering ----- */
 void InitDopplerSkyScan(LALStatus *, DopplerSkyScanState *skyScan, const DopplerSkyScanInit *init);
-void NextDopplerSkyPos(LALStatus *, PulsarDopplerParams *pos, DopplerSkyScanState *skyScan);
+int  XLALNextDopplerSkyPos( PulsarDopplerParams *pos, DopplerSkyScanState *skyScan);
 void FreeDopplerSkyScan(LALStatus *, DopplerSkyScanState *skyScan);
-
 void writeSkyGridFile(LALStatus *, const DopplerSkyGrid *grid, const CHAR *fname );
+
+/* ----- full-fledged multi-dimensional Doppler scanner functions ----- */
+void InitDopplerFullScan(LALStatus *, DopplerFullScanState *scanState, const DetectorStateSeries *detStates, const DopplerFullScanInit *init);
+int  XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan);
+
+/* ----- variout utility functions ----- */
 void ParseSkyRegionString (LALStatus *, SkyRegion *region, const CHAR *input);
-void SkySquare2String (LALStatus *, CHAR **string, REAL8 Alpha, REAL8 Delta, 
-		       REAL8 AlphaBand, REAL8 DeltaBand);
+void SkySquare2String (LALStatus *, CHAR **string, REAL8 Alpha, REAL8 Delta, REAL8 AlphaBand, REAL8 DeltaBand);
 
 void getMCDopplerCube (LALStatus *, DopplerRegion *cube, PulsarDopplerParams signal, UINT4 PointsPerDim, const DopplerSkyScanInit *params);
 void getMetricEllipse(LALStatus *, MetricEllipse *ellipse, REAL8 mismatch, const REAL8Vector *metric, UINT4 dim0);
