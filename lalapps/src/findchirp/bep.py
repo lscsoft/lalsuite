@@ -149,7 +149,7 @@ def main():
     
     parser.add_option("", "--noise-model", 
 		dest='noise_model',default='LIGOI',metavar='NOISEMODEL',
-		help=" <VIRGO, GEO, LIGOI, LIGOA>") 
+		help=" <VIRGO, GEO, LIGOI, LIGOA, EGO>") 
     parser.add_option("", "--search",
 		dest='search',default='BNS',
 		help=" <BNS, BBH, PBH , BHNS>")
@@ -250,6 +250,8 @@ def main():
             BE['fl']=40
         elif BE['noise-model']=='LIGOA':
             BE['fl']=20
+        elif BE['noise-model']=='EGO':
+            BE['fl']=10
 
     # compute the number of trial per node   
     nCondor = math.ceil(options.ntrial/options.njobs)
