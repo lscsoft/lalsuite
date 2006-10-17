@@ -72,7 +72,7 @@ def create_condor_file(BE, arguments):
 	fp.write('priority = 10\n')
 	
 	tag = str(BE['noise-model'])+'_'+str(BE['fl'])+'_'+ str(BE['search']) +'_'+str(BE['signal'])+'_'+str(BE['signal-order'])+'_'+str(BE['template'])+'_'+str(BE['template-order'])+'_'+str(BE['sampling'])+'_'+str(BE['mm'])+'.$(macroseed)\n'
-	msg = 'log = ./log/tmp'
+	msg = 'log = ./log/tmp\n'
 	fp.write(msg)
 	msg = 'output = out_'+tag
 	fp.write(msg)
