@@ -179,7 +179,7 @@ def main():
 		dest='max_total_mass', default=-1, type='float',
 		help="max total mass (injection)" )
     parser.add_option("","--fast-simulation",
-		default="false",
+		action="store_true", default="false",
 		dest='fast_simulation', 
 		help="fast simulation" )
 
@@ -208,6 +208,7 @@ def main():
     others = ' --print-result-xml  --debug 33 --print-bank '
     if options.fast_simulation==True:
   	others = others + ' --fast-simulation '
+        
     arguments  = others
 
     #depending on the "search" value, we set some extra default values
@@ -246,6 +247,7 @@ def main():
 
     for arg in BE:
 	print '    ' + arg + ' = ' +str(BE[arg])
+    print '    we also use these options :'+others
     print '\n--- The number of simulation requested is '+str(BE['ntrial'])
     print '--- They will be split into '+ str(options.njobs)+' jobs'
 
