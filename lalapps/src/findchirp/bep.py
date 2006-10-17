@@ -20,7 +20,8 @@ import time
 #find the path for lalapps_bankefficiency
 user = os.getlogin()
 uname = os.uname()
-host = uname[2]
+host = uname[1]
+print host
 if host.find('explorer')>0:
         path  		= '/home/'+user+'/lscsoft/lalapps/src/findchirp/'
 elif host.find('coma')>0:        
