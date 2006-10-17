@@ -40,7 +40,7 @@ def set_predefined_search_parameter(BE):
 	elif BE['search']=='BBH':
 	    BE['bank-mass-range'] = '3 30'
 	    BE['signal-mass-range'] = '3 30'
-	    BE['sampling'] = 2048
+	    BE['sampling'] = 4096
 	    BE['bank-ffinal'] = BE['sampling']/2 - 1
 	
 	elif BE['search']=='BHNS':
@@ -64,7 +64,10 @@ def create_condor_file(BE, arguments):
 	fp.write('Executable   = ' + path + executable_name +'\n')
 	fp.write('Universe     = vanilla\n')
 	#fp.write('Universe     = vanilla\n')
-	#fp.write('Environment  = LD_LIBRARY_PATH=/software/geopptools/lib\n')
+	
+        if host.find('coma')>=0:        
+                fp.write('Environment  = LD_LIBRARY_PATH=/usr/lscsoft/non-lsc/lib\n')
+                
 	#fp.write('Requirements = Memory >=128 && OpSys == "LINUX" && FileSystemDomain == "explorer" && UidDomain == "explorer"\n')
 	#fp.write('+MaxHours =40\n\n')
 	fp.write('Arguments = '+ '--seed $(macroseed) ' + arguments)
@@ -193,6 +196,10 @@ def main():
 		action="store_true", default="false",
 		dest='fast_simulation', 
 		help="fast simulation" )
+    parser.add_option("","--bhns-injection",
+		action="store_true", default="false",
+		dest='bhns_simulation', 
+		help="bhns injection only" )
 
 #pipeline parameters
     parser.add_option("","--njobs",
@@ -224,6 +231,8 @@ def main():
     others = ' --print-result-xml  --debug 33 --print-bank '
     if options.fast_simulation==True:
   	others = others + ' --fast-simulation '
+    if options.bhns_simulation==True:
+  	others = others + ' --bhns-injection '
         
     arguments  = others
 
