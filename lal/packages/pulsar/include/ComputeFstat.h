@@ -62,6 +62,16 @@ NRCSID( COMPUTEFSTATH, "$Id$" );
 
 /*---------- exported types ----------*/
 
+/** The 'detector tensor' for a GW-detector: symmetric 3x3 matrix, storing only the upper triangle
+ */
+typedef struct 
+{
+  REAL4 d11;   REAL4 d12;   REAL4 d13;
+               REAL4 d22;   REAL4 d23;
+                            REAL4 d33;
+} DetectorTensor;
+  
+
 /* ----- Output types for LALGetDetectorStates() */
 /** State-info about position, velocity and LMST of a detector together 
  * with corresponding EarthState.
@@ -71,8 +81,9 @@ typedef struct
   LIGOTimeGPS tGPS;		/**< GPS timestamps corresponding to this entry */
   REAL8 rDetector[3];		/**< Cartesian coords of detector position in ICRS J2000. Units=sec */
   REAL8 vDetector[3];		/**< Cart. coords. of detector velocity, in dimensionless units (v/c)*/
+  DetectorTensor detT;		/**< Detector-tensor components in SSB-fixed, Cartesian coordinates */
   REAL8 LMST;			/**< local mean sidereal time at the detector-location in radians */
-  EarthState earthState;	/**< pointer to EarthState information */
+  EarthState earthState;	/**< EarthState information */
 } DetectorState;
 
 
@@ -180,6 +191,12 @@ LALGetAMCoeffs(LALStatus *,
 	       AMCoeffs *coeffs, 
 	       const DetectorStateSeries *DetectorStates,
 	       SkyPosition skypos);
+
+void
+LALNewGetAMCoeffs(LALStatus *,
+		  AMCoeffs *coeffs,
+		  const DetectorStateSeries *DetectorStates,
+		  SkyPosition skypos);
 
 void
 LALGetDetectorStates (LALStatus *, 
