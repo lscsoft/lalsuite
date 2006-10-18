@@ -11,7 +11,7 @@ LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 #AM_LDFLAGS = -all-static
 
 
-isolated_src = $(isolated_DIR)/rngmed.c $(isolated_DIR)/DopplerScan.c
+isolated_src = $(isolated_DIR)/DopplerScan.c $(isolated_DIR)/DopplerScan.h
 
 bin_PROGRAMS = lalapps_ComputeFStatisticBinary lalapps_GenerateBinaryMesh \
 	lalapps_MakeSubMesh lalapps_GenerateRandomBinaryInput \
@@ -19,11 +19,9 @@ bin_PROGRAMS = lalapps_ComputeFStatisticBinary lalapps_GenerateBinaryMesh \
 	lalapps_CalculateSensitivity lalapps_FindCoincidence \
 	lalapps_ComputeUL
 
-EXTRA_DIST = clusters.h
-
 lalapps_ComputeFStatisticBinary_SOURCES = ComputeFStatisticBinary_v2.c ReadWriteBinaryHeader_v1.c \
-	ComputeFStatisticBinary_v2.h clusters.c ${isolated_src} ReadSourceFile_v1.c \
-	GenerateBinaryMesh_v1.h
+	ComputeFStatisticBinary_v2.h clusters.c clusters.h ${isolated_src} ReadSourceFile_v1.c \
+	GenerateBinaryMesh_v1.h rngmed.c rngmed.h
 
 lalapps_GenerateBinaryMesh_SOURCES = GenerateBinaryMesh_v1.c OrbitalParameterConversion_v1.c \
 	ReadWriteBinaryHeader_v1.c PeriapseShift_v1.c ReadSourceFile_v1.c \
