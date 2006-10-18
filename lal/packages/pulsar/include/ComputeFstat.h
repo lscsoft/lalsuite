@@ -62,7 +62,9 @@ NRCSID( COMPUTEFSTATH, "$Id$" );
 
 /*---------- exported types ----------*/
 
-/** The 'detector tensor' for a GW-detector: symmetric 3x3 matrix, storing only the upper triangle
+/** The 'detector tensor' for a GW-detector: symmetric 3x3 matrix, storing only the upper triangle.
+ * The coordinate-system is SSB-fixed Cartesian coordinates, in particular EQUATORIAL coords for 
+ * Earth-based detectors and ECLIPTIC coords for LISA.
  */
 typedef struct 
 {
@@ -253,6 +255,8 @@ LALEstimatePulsarAmplitudeParams (LALStatus *,
 				  const Fcomponents *Fstat,
 				  const MultiAMCoeffs *multiAMcoef,
 				  REAL8 TsftShat);
+
+void LALComputeDetectorTensor ( LALStatus *, DetectorTensor *detT, const LALDetector *det, LIGOTimeGPS tgps );
 
 
 void LALCreateDetectorStateSeries (LALStatus *, DetectorStateSeries **vect, UINT4 length );
