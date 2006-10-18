@@ -515,7 +515,7 @@ class TmpltBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
       bank = self.get_ifo() + '-' + tag_base + '_' + self.__usertag + '-'  
       bank = bank + str(self.get_start())
     elif self.get_ifo_tag():
-      bank = self.get_ifo() + '-' + tag_base + + '_' + self.get_ifo_tag() + '-'  
+      bank = self.get_ifo() + '-' + tag_base + '_' + self.get_ifo_tag() + '-'  
       bank = bank + str(self.get_start())
     else:
       bank = self.get_ifo() + '-' + tag_base + '-' + str(self.get_start())
