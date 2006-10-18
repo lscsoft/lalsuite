@@ -25,6 +25,8 @@ if host.find('explorer')>=0:
         path  		= '/home/'+user+'/lscsoft/lalapps/src/findchirp/'
 elif host.find('coma')>=0:        
         path  		= '/home2/'+user+'/lscsoft/lalapps/src/findchirp/'
+elif host.find('ldas-grid')>=0:        
+        path  		= '/archive/home/'+user+'/opt/lalapps/src/findchirp/'
 else:
         path  		= '/home/cokelaer/lscsoft/lalapps/src/findchirp/'
 
@@ -147,56 +149,56 @@ def main():
     print '--- Parsing user arguments'
     parser = OptionParser()
     
-    parser.add_option("", "--noise-model", 
+    parser.add_option( "--noise-model", 
 		dest='noise_model',default='LIGOI',metavar='NOISEMODEL',
 		help=" <VIRGO, GEO, LIGOI, LIGOA, EGO>") 
-    parser.add_option("", "--search",
+    parser.add_option("--search",
 		dest='search',default='BNS',
 		help=" <BNS, BBH, PBH , BHNS>")
-    parser.add_option("","--signal-mass-range",
+    parser.add_option("--signal-mass-range",
 		default='1 3', dest='signal_mass_range',
 		help="min and max individual mass in solar mass." )
-    parser.add_option("","--bank-mass-range",
+    parser.add_option("--bank-mass-range",
 		default='1 3', dest='bank_mass_range',
 		help="min and max individual mass in solar mass." )
-    parser.add_option("","--signal",
+    parser.add_option("--signal",
 		default='EOB', dest='signal',type='string',
 		help="approximant of the injection (EOB, TaylorT1, ...)." )
-    parser.add_option("","--template",
+    parser.add_option("--template",
 		default='EOB', dest='template',type='string',
 	 	help="approximant of the injection (EOB, TaylorT1, ...)." )
-    parser.add_option("","--template-order",
+    parser.add_option("--template-order",
 		default=4, dest='template_order',type='int',
 		help="PN order of the template." )
-    parser.add_option("","--signal-order",
+    parser.add_option("--signal-order",
 		default=4,dest='signal_order', type='int',
 		help="PN order of the signal." )
-    parser.add_option("","--minimal-match",
+    parser.add_option("--minimal-match",
 		default=0.95, dest='minimal_match', 
 		help="minimal match." )
-    parser.add_option("","--sampling",
+    parser.add_option("--sampling",
 		dest='sampling', default=4096, type='float',
 		help="sampling frequency" )
-    parser.add_option("","--bank-ffinal",
+    parser.add_option("--bank-ffinal",
 		dest='bank_ffinal', default=2047, type='float',
 		help="upper frequency to be used" )
     parser.add_option("-n","--ntrial",
 		dest='ntrial', default=10000, type='int',
 		help="number of trial." )
-    parser.add_option("","--bank-grid-spacing",
+    parser.add_option("--bank-grid-spacing",
 		dest='bank_grid_spacing', default='Hexagonal', 
 	 	help="type of template bank placement : Hexagonal, SquareNotOriented, HexagonalNotOriented" )
-    parser.add_option("","--fl",
+    parser.add_option("--fl",
 		dest='fl',  type='int',default=-1, 
 		help="lower cut off frequency" )
-    parser.add_option("","--max-total-mass",
+    parser.add_option("--max-total-mass",
 		dest='max_total_mass', default=-1, type='float',
 		help="max total mass (injection)" )
-    parser.add_option("","--fast-simulation",
+    parser.add_option("--fast-simulation",
 		action="store_true", default="false",
 		dest='fast_simulation', 
-		help="fast simulation" )
-    parser.add_option("","--bhns-injection",
+		help="fast simulation option" )
+    parser.add_option("--bhns-injection",
 		action="store_true", default="false",
 		dest='bhns_simulation', 
 		help="bhns injection only" )
@@ -229,6 +231,7 @@ def main():
     
     #[some other default values]
     others = ' --print-result-xml  --debug 33 --print-bank '
+    print options.fast_simulation
     if options.fast_simulation==True:
   	others = others + ' --fast-simulation '
     if options.bhns_simulation==True:
