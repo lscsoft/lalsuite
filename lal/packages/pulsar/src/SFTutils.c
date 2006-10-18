@@ -56,7 +56,7 @@ LALStatus empty_status;
 /*---------- Global variables ----------*/
 
 /*---------- internal prototypes ----------*/
-static int create_nautilus_site ( LALDetector *Detector );
+static int create_LISA_detectors (LALDetector *Detector, UINT4 detIndex );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -857,10 +857,10 @@ XLALGetChannelPrefix ( const CHAR *name )
    * also in some input-strings */
   else if ( strstr(name, "Virgo") || strstr(name, "V1") || strstr(name, "V2") )
     {
-      if ( strstr(name, "Virgo_CITF") || strstr(name, "V2") )
-	strcpy ( channel, "V2" );
-      else if ( strstr(name, "Virgo") || strstr(name, "V1") )
+      if ( strstr(name, "Virgo_CITF") || strstr(name, "V1") )
 	strcpy ( channel, "V1" );
+      else if ( strstr(name, "Virgo") || strstr(name, "V2") )
+	strcpy ( channel, "V2" );
     } /* if Virgo */
 
     
@@ -896,48 +896,47 @@ XLALGetSiteInfo ( const CHAR *name )
   switch ( channel[0] )
     {
     case 'T':
-      (*site) = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
+      (*site) = lalCachedDetectors[LAL_TAMA_300_DETECTOR];
       break;
     case 'V':
-      (*site) = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
+      (*site) = lalCachedDetectors[LAL_VIRGO_DETECTOR];
       break;
     case 'G':
-      (*site) = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
+      (*site) = lalCachedDetectors[LAL_GEO_600_DETECTOR];
       break;
     case 'H':
-      (*site) = lalCachedDetectors[LALDetectorIndexLHODIFF];
+      if ( channel[1] == 1 )
+	(*site) = lalCachedDetectors[LAL_LHO_4K_DETECTOR];
+      else
+	(*site) = lalCachedDetectors[LAL_LHO_2K_DETECTOR];
       break;
     case 'L':
-      (*site) = lalCachedDetectors[LALDetectorIndexLLODIFF];
+      (*site) = lalCachedDetectors[LAL_LLO_4K_DETECTOR];
       break;
     case 'P':
-      (*site) = lalCachedDetectors[LALDetectorIndexCIT40DIFF];
+      (*site) = lalCachedDetectors[LAL_CIT_40_DETECTOR];
       break;
     case 'N':
-      if ( 0 != create_nautilus_site ( site ) ) 
+      (*site) = lalCachedDetectors[LAL_NAUTILUS_DETECTOR];
+      break;
+
+    case 'Z':       /* create dummy-sites for LISA  */
+      if ( create_LISA_detectors ( site, channel[1] ) != 0 ) 
 	{
-	  if ( lalDebugLevel ) LALPrintError("\nFailed to created Nautilus detector-site info\n\n");
+	  LALPrintError("\nFailed to created LISA detector '%d'\n\n", channel[1]);
 	  LALFree ( site );
 	  LALFree ( channel );
 	  XLAL_ERROR_NULL ( "XLALGetSiteInfo()", XLAL_EFUNC );
 	}
       break;
 
-    case 'Z':       /* we don't have LISA site defined yet, so we pretend it's in Hanford */
-      (*site) = lalCachedDetectors[LALDetectorIndexLHODIFF];
-      break;
-
     default:
-      if ( lalDebugLevel ) 
-	LALPrintError ( "\nSorry, I don't have the site-info for '%c%c'\n\n", channel[0], channel[1]);
+      LALPrintError ( "\nSorry, I don't have the site-info for '%c%c'\n\n", channel[0], channel[1]);
       LALFree(site);
       LALFree(channel);
       XLAL_ERROR_NULL ( "XLALGetSiteInfo()", XLAL_EINVAL );
       break;
     } /* switch channel[0] */
-
-  /* "hack" the returned LALDetector-structure, to contain a proper detector-unique 'name'-entry */
-  strcpy ( site->frDetector.name , channel );
 
   LALFree ( channel );
 
@@ -946,11 +945,14 @@ XLALGetSiteInfo ( const CHAR *name )
 } /* XLALGetSiteInfo() */
 
 
-/* Set up the \em LALDetector struct representing the NAUTILUS detector-site 
+/** Set up the \em LALDetector struct representing LISA X, Y, Z TDI observables.
+ * INPUT: detIndex = 1, 2, 3: detector-tensor corresponding to TDIs X, Y, Z respectively.
  * return -1 on ERROR, 0 if OK
  */
 static int 
-create_nautilus_site ( LALDetector *Detector )
+create_LISA_detectors (LALDetector *Detector,	/**< [out] LALDetector */
+		       UINT4 detIndex		/**< [in] which TDI observable: 1 = X, 2= Y, 3 = Z */
+		       )
 {
   LALFrDetector detector_params;
   LALDetector Detector1;
@@ -959,14 +961,31 @@ create_nautilus_site ( LALDetector *Detector )
   if ( !Detector )
     return -1;
 
-  strcpy ( detector_params.name, "NAUTILUS" );
-  detector_params.vertexLongitudeRadians = 12.67 * LAL_PI / 180.0;
-  detector_params.vertexLatitudeRadians = 41.82 * LAL_PI / 180.0;
-  detector_params.vertexElevation = 300.0;
-  detector_params.xArmAltitudeRadians = 0.0;
-  detector_params.xArmAzimuthRadians = 44.0 * LAL_PI / 180.0;
+  switch ( detIndex )
+    {
+    case 1:
+      strcpy ( detector_params.name, "Z1: LISA TDI X" );
+      break;
+    case 2:
+      strcpy ( detector_params.name, "Z2: LISA TDI Y" );
+      break;
+    case 3:
+      strcpy ( detector_params.name, "Z3: LISA TDI Z" );
+      break;
+    default:
+      LALPrintError ("\nIllegal LISA TDI index '%d': must be one of {1, 2, 3}.\n\n", detIndex );
+      return -1;      
+      break;
+    } /* switch (detIndex) */
 
-  LALCreateDetector(&status, &Detector1, &detector_params, LALDETECTORTYPE_CYLBAR );
+  /* fill frDetector with dummy numbers: meaningless for LISA */
+  detector_params.vertexLongitudeRadians = 0;
+  detector_params.vertexLatitudeRadians = 0;
+  detector_params.vertexElevation = 0;
+  detector_params.xArmAltitudeRadians = 0;
+  detector_params.xArmAzimuthRadians = 0;
+
+  LALCreateDetector(&status, &Detector1, &detector_params, LALDETECTORTYPE_IFODIFF );
   if ( status.statusCode != 0 )
     return -1;
 
@@ -974,9 +993,7 @@ create_nautilus_site ( LALDetector *Detector )
 
   return 0;
   
-} /* CreateNautilusDetector() */
-
-
+} /* create_LISA_detectors */
 
 /** Computes weight factors arising from SFTs with different noise 
     floors -- it multiplies an existing weight vector */
