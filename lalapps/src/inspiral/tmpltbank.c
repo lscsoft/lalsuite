@@ -112,6 +112,8 @@ REAL4 geoHighPassAtten = -1;            /* GEO high pass attenuation    */
 /* template bank generation parameters */
 REAL4   minMass         = -1;           /* minimum component mass       */
 REAL4   maxMass         = -1;           /* maximum component mass       */
+REAL4   minTotalMass    = -1;           /* minimum total mass           */
+REAL4   maxTotalMass    = -1;           /* maximum total mass           */
 REAL4   psi0Min         = 0;            /* minimum value of psi0        */
 REAL4   psi0Max         = 0;            /* maximum value of psi0        */
 REAL4   psi3Min         = 0;            /* minimum value of psi3        */
@@ -127,7 +129,6 @@ Approximant approximant;                /* approximation method         */
 CoordinateSpace space;                  /* coordinate space used        */
 INT4    haveGridSpacing = 0;            /* flag to indicate gridspacing */
 GridSpacing gridSpacing = SquareNotOriented; /* grid spacing (square or hexa)*/
-INT4   	isMaxTotMass    = 0;            /* Use a maximum total mass?	*/
 int     polygonFit      = 1;            /* fit a polygon around BCV bank */
 
 /* generic simulation parameters */
@@ -913,19 +914,27 @@ int main ( int argc, char *argv[] )
 
 
   /* bank generation parameters */
-  if (isMaxTotMass)
-    bankIn.massRange   = MinComponentMassMaxTotalMass;
-  else
-    bankIn.massRange     = MinMaxComponentMass;
   bankIn.mMin          = (REAL8) minMass;
   bankIn.mMax          = (REAL8) maxMass;
-  if (isMaxTotMass)
+  if (maxTotalMass > 0)
   {
-    bankIn.MMax	       = (REAL8) maxMass;
-    bankIn.mMax	       = bankIn.MMax - bankIn.mMin;
+    bankIn.MMax        = (REAL8) maxTotalMass;
+    bankIn.mMax        = bankIn.MMax - bankIn.mMin;
+    if (minTotalMass > 0)
+    {
+      bankIn.massRange = MinMaxComponentTotalMass;
+      bankIn.MMin      = (REAL8) minTotalMass;
+    }
+    else
+    {
+      bankIn.massRange   = MinComponentMassMaxTotalMass;
+    }
   }
   else
+  {
+    bankIn.massRange     = MinMaxComponentMass;
     bankIn.MMax          = bankIn.mMax * 2.0;
+  }
   bankIn.psi0Min       = (REAL8) psi0Min;
   bankIn.psi0Max       = (REAL8) psi0Max;
   bankIn.psi3Min       = (REAL8) psi3Min;
@@ -1203,7 +1212,8 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "\n"\
 "  --minimum-mass MASS          set minimum component mass of bank to MASS\n"\
 "  --maximum-mass MASS          set maximum component mass of bank to MASS\n"\
-"  --maximum-total-mass         make --maximum-mass refer to total mass\n"\
+"  --max-total-mass MASS        set maximum total mass of the bank to MASS\n"\
+"  --min-total-mass MASS        set minimum total mass of the bank to MASS\n"\
 "\n"\
 "  --minimum-psi0 PSI0          set minimum range of BCV parameter psi0 to PSI0\n"\
 "  --maximum-psi0 PSI0          set maximum range of BCV parameter psi0 to PSI0\n"\
@@ -1292,7 +1302,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"approximant",             required_argument, 0,                'F'},
     {"space",                   required_argument, 0,                'G'},
     {"grid-spacing",            required_argument, 0,                'v'},
-    {"maximum-total-mass", 	no_argument, 	   0,		     'y'},
+    {"max-total-mass",          required_argument, 0,                'y'},
+    {"min-total-mass",          required_argument, 0,                'W'},
     {"disable-polygon-fit",     no_argument, 	   &polygonFit,       0 },
 
     /* standard candle parameters */
@@ -2028,8 +2039,29 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       case 'y':
-        isMaxTotMass = 1;
-        ADD_PROCESS_PARAM( "int", "%d", 1 );
+        maxTotalMass = (REAL4) atof( optarg );
+        if ( maxTotalMass <= 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "maximum total mass must be > 0: "
+              "(%f solar masses specified)\n",
+              long_options[option_index].name, maxTotalMass );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%e", maxTotalMass );
+        break;
+
+      case 'W':
+        minTotalMass = (REAL4) atof( optarg );
+        if ( minTotalMass <= 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "minimum total mass must be > 0: "
+              "(%f solar masses specified)\n",
+              long_options[option_index].name, minTotalMass );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%e", minTotalMass );
         break;
          
       case 'k':
@@ -2488,9 +2520,14 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       fprintf( stderr, "--minimum-mass must be specified\n" );
       exit( 1 );
     }
-    if ( maxMass < 0 )
+    if ( maxMass < 0 && maxTotalMass < 0 )
     {
-      fprintf( stderr, "--maximum-mass must be specified\n" );
+      fprintf( stderr, "Either --maximum-mass or --max-total-mass must be specified\n" );
+      exit( 1 );
+    }
+    if ( minTotalMass > 0 && maxTotalMass < 0 )
+    {
+      fprintf( stderr, "--max-total-mass must be specified with --min-total-mass\n" );
       exit( 1 );
     }
   }
