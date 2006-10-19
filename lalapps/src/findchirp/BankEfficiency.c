@@ -803,6 +803,10 @@ PrintResults(   ResultIn result,
 	  randIn.param.t0,
 	  randIn.param.t3);
   
+  fprintf(stdout, "%e %e %e %e %e %e %e %e", 
+	  0.0, 0.0, 0.0, 0.0, 
+	  0.0, 0.0, 0.0, 0.0); 
+  
   fprintf(stdout, "%7.2f %7.2f   %e %e %e ", 
 	  result.fend_trigger, 
 	  randIn.param.fFinal,
