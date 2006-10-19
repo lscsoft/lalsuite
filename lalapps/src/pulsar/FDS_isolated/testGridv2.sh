@@ -54,7 +54,7 @@ mfd_fmin=$(echo $Freq $mfd_FreqBand | awk '{printf "%g", $1 - $2 / 2.0}');
 
 echo "mfd_fmin = $mfd_fmin"
 
-noiseSqrtSh=5
+noiseSqrtSh=0
 
 ## ------------------------------------------------------------
 
@@ -152,7 +152,7 @@ echo "----------------------------------------"
 echo
 
 echo
-cmdline="$cmp_code -1 ./Fstat_v1.dat -2 ./Fstat_v2.dat --clusterFiles=0 --Ftolerance=0.3"
+cmdline="$cmp_code -1 ./Fstat_v1.dat -2 ./Fstat_v2.dat --clusterFiles=0 --Ftolerance=0.1"
 echo $cmdline
 if ! eval $cmdline; then
     echo "OUCH... files differ. Something might be wrong..."
