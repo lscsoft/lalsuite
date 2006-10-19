@@ -572,7 +572,10 @@ int main( int argc, char *argv[] )
       numTmplts, bankFileName );
 
   /* Store the bankMinMatch before it gets over-riden below */
-  bankMinMatch = bankHead->minMatch;
+  if ( bankHead )
+  {
+    bankMinMatch = bankHead->minMatch;
+  }
 
   /* override the minimal match of the bank if specified on the command line */
   if ( minimalMatch >= 0 )
