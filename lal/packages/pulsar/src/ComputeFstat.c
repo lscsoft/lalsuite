@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2005 Reinhard Prix, 2006 John T. Whelan
+ * Copyright (C) 2006 John T. Whelan
+ * Copyright (C) 2005, 2006 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -966,7 +967,7 @@ LALGetSSBtimes (LALStatus *status,
 
 } /* LALGetSSBtimes() */
 
-/** Get the 'detector state' (ie position, velocity, etc) for the given
+/** Get the 'detector state' (ie detector-tensor, position, velocity, etc) for the given
  * vector of timestamps, shifted by a common time-shift \a tOffset.
  *
  * This function just calls LALBarycenterEarth() and LALBarycenter() for the
@@ -1055,6 +1056,12 @@ LALGetDetectorStates (LALStatus *status,
       /* insert timestamp */
       state->tGPS = tgps;
 
+      LALComputeDetectorTensor ( status->statusPtr, &state->detT, detector, tgps );
+      BEGINFAIL(status) {
+	TRY ( LALDestroyDetectorStateSeries(status->statusPtr, &ret), status);
+      } ENDFAIL(status);
+      
+
     } /* for i < numSteps */
 
   /* return result */
@@ -1064,6 +1071,30 @@ LALGetDetectorStates (LALStatus *status,
   RETURN (status);
 
 } /* LALGetDetectorStates() */
+
+
+
+/** Function to compute the detector-tensor \a detT for the given \a detector in 
+ * SSB-fixed cartesian coordinates at time \a tgps.
+ * The coordinates used are: EQUATORIAL for Earth-based detectors, but ECLIPTIC for LISA.
+ */
+void 
+LALComputeDetectorTensor ( LALStatus *status, 
+			   DetectorTensor *detT, 
+			   const LALDetector *detector, 
+			   LIGOTimeGPS tgps )
+{
+
+  INITSTATUS( status, "LALComputeDetectorTensor", COMPUTEFSTATC );
+  ATTATCHSTATUSPTR (status);
+
+  
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+
+} /* LALComputeDetectorTensor() */
+
 
 
 /* ===== Multi-IFO versions of some of the above functions ===== */
