@@ -855,11 +855,11 @@ XLALGetChannelPrefix ( const CHAR *name )
     }
   /* try matching VIRGO last, because 'V1','V2' might be used as version-numbers
    * also in some input-strings */
-  else if ( strstr(name, "Virgo") || strstr(name, "V1") || strstr(name, "V2") )
+  else if ( strstr(name, "Virgo") || strstr(name, "VIRGO") || strstr(name, "V1") || strstr(name, "V2") )
     {
       if ( strstr(name, "Virgo_CITF") || strstr(name, "V1") )
 	strcpy ( channel, "V1" );
-      else if ( strstr(name, "Virgo") || strstr(name, "V2") )
+      else if ( strstr(name, "Virgo") || strstr(name, "VIRGO") || strstr(name, "V2") )
 	strcpy ( channel, "V2" );
     } /* if Virgo */
 
