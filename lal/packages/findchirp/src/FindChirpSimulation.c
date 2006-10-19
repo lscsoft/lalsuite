@@ -414,6 +414,130 @@ XLALFindChirpSetAnalyzeSegment (
   return 0;
 }
 
+/* <lalVerbatim file="FindChirpSimulationCP"> */
+INT4 
+XLALFindChirpTagTemplateAndSegment (
+        DataSegmentVector       *dataSegVec,
+        InspiralTemplateNode    *tmpltHead,
+        SnglInspiralTable       **events,
+        CHAR                    *ifo,
+        REAL4                   tdFast,
+        UINT4                   *analyseThisTmplt
+        )
+/* </lalVerbatim> */
+{
+    static const char *func = "XLALFindChirpTagTemplateAndSegment";
+
+    UINT4                s, t;  /* s over segments and t over templates */
+    SnglInspiralTable    *thisEvent = NULL;
+    InspiralTemplateNode *thisTmplt = NULL;
+    DataSegment          *currentSegment = NULL;
+    UINT4                flag = 0;
+    INT8                 tc, chanStartTime, chanEndTime;
+
+#ifndef LAL_NDEBUG
+    /* Sanity checks on input arguments for debugging */
+    if (!dataSegVec || !tmpltHead || !events || !(*events) || 
+          !ifo || !analyseThisTmplt )
+       XLAL_ERROR( func, XLAL_EFAULT );
+
+    if ( tdFast < 0.0 || tdFast > 1.0 )
+       XLAL_ERROR( func, XLAL_EINVAL );
+#endif
+
+    /* Do a IFO cut on the coinc list */
+    (*events) =  XLALIfoCutSingleInspiral( events, ifo);
+
+    if ( XLALClearErrno() ) {
+       XLAL_ERROR( func, XLAL_EFUNC ); 
+    }
+    
+    /* make sure the sngl inspirals are time ordered */
+    *events = XLALSortSnglInspiral(*events, LALCompareSnglInspiralByTime);
+
+    /* TODO: Make sure triggers are unique in masses or time */
+
+    /* Loop over the coinc events */
+    for (thisEvent=*events; thisEvent; thisEvent=thisEvent->next)
+    {
+        REAL8    g11, g12, g22;
+        
+        tc = XLALGPStoINT8( &thisEvent->end_time );
+        flag = 0;
+
+        /* Loop over segments */
+        for (s = 0; s < dataSegVec->length; ++s )
+        {
+
+           /* point to current segment */
+           currentSegment = dataSegVec->data + s;
+
+           /* compute the start and end of segment */
+           chanStartTime = XLALGPStoINT8( &currentSegment->chan->epoch );
+           chanEndTime = chanStartTime +
+                (INT8) (1e9 * currentSegment->chan->data->length *
+                currentSegment->chan->deltaT);
+          
+           if ( tc > chanStartTime && tc <= chanEndTime )
+           {
+              flag += (1 << s);
+           }
+           
+           
+        } /* loop over segs */
+
+        /* Check we haven't gone beyond the time of interest */
+        if ( !flag )
+        {
+           if ( tc > chanEndTime )
+              break;
+           else
+              continue;
+        }
+
+
+        /* Projected metric g_ij for this event */
+        g11 = thisEvent->Gamma[3] - 
+           thisEvent->Gamma[1] * thisEvent->Gamma[1]/thisEvent->Gamma[0];
+
+        g12 = thisEvent->Gamma[4] - 
+           thisEvent->Gamma[1]*thisEvent->Gamma[2]/thisEvent->Gamma[0];
+
+        g22 = thisEvent->Gamma[5] - 
+           thisEvent->Gamma[2]*thisEvent->Gamma[2]/thisEvent->Gamma[0];
+
+        /* Loop over templates */
+        for ( thisTmplt = tmpltHead, t = 0; thisTmplt; 
+                  thisTmplt = thisTmplt->next, t++ )
+        {
+
+            REAL8    dt0, dt3;
+            REAL8    match;
+
+            dt0   = thisTmplt->tmpltPtr->t0 - thisEvent->tau0;
+            dt3   = thisTmplt->tmpltPtr->t3 - thisEvent->tau3;
+            match = g11*dt0*dt0 + 2.0*g12*dt0*dt3 + g22*dt3*dt3;
+            match = 1.0 - match;
+
+
+            /* If the match between the template and the event is high enough,
+             * we mark the template to analyse the segments. This is achieved
+             * using bitwise or. */
+            if ( match >= tdFast )
+            {
+                analyseThisTmplt[t] = analyseThisTmplt[t] | flag;
+            }
+
+        } /* loop over templts */
+
+
+    } /* loop over events */
+
+    return XLAL_SUCCESS;
+
+}
+
+
 
 /* <lalVerbatim file="FindChirpSimulationCP"> */
 INT4
