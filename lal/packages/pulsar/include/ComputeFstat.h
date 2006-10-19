@@ -42,6 +42,7 @@ NRCSID( COMPUTEFSTATH, "$Id$" );
 /*---------- exported INCLUDES ----------*/
 #include <lal/LALComputeAM.h>
 #include <lal/PulsarDataTypes.h>
+#include <lal/DetectorStates.h>
 
 /*---------- exported DEFINES ----------*/
 
@@ -61,52 +62,6 @@ NRCSID( COMPUTEFSTATH, "$Id$" );
 #define COMPUTEFSTATC_MSGEIEEE		"Floating point failure"
 
 /*---------- exported types ----------*/
-
-/** The 'detector tensor' for a GW-detector: symmetric 3x3 matrix, storing only the upper triangle.
- * The coordinate-system is SSB-fixed Cartesian coordinates, in particular EQUATORIAL coords for 
- * Earth-based detectors and ECLIPTIC coords for LISA.
- */
-typedef struct 
-{
-  REAL4 d11;   REAL4 d12;   REAL4 d13;
-               REAL4 d22;   REAL4 d23;
-                            REAL4 d33;
-} DetectorTensor;
-  
-
-/* ----- Output types for LALGetDetectorStates() */
-/** State-info about position, velocity and LMST of a detector together 
- * with corresponding EarthState.
- */
-typedef struct
-{
-  LIGOTimeGPS tGPS;		/**< GPS timestamps corresponding to this entry */
-  REAL8 rDetector[3];		/**< Cartesian coords of detector position in ICRS J2000. Units=sec */
-  REAL8 vDetector[3];		/**< Cart. coords. of detector velocity, in dimensionless units (v/c)*/
-  DetectorTensor detT;		/**< Detector-tensor components in SSB-fixed, Cartesian coordinates */
-  REAL8 LMST;			/**< local mean sidereal time at the detector-location in radians */
-  EarthState earthState;	/**< EarthState information */
-} DetectorState;
-
-
-/** Timeseries of DetectorState's, representing the detector-info at different timestamps.
- * In addition to the standard 'vector'-fields we also store the detector-info in here.
- */
-typedef struct
-{
-  UINT4 length;			/**< total number of entries */
-  DetectorState *data;		/**< array of DetectorState entries */
-  LALDetector detector;		/**< detector-info corresponding to this timeseries */
-} DetectorStateSeries;
-
-/** Multi-IFO time-series of DetectorStates */
-typedef struct
-{
-  UINT4 length;			/**< number of detectors */
-  DetectorStateSeries **data;	/**< vector of pointers to DetectorStateSeries */
-  REAL8 Tspan;			/**< total spanned duration of the observation */
-} MultiDetectorStateSeries;
-
 
 /** Simple container for two REAL8-vectors, namely the SSB-timings DeltaT_alpha  and Tdot_alpha,
  * with one entry per SFT-timestamp. These are required input for XLALNewDemod().
@@ -201,20 +156,6 @@ LALNewGetAMCoeffs(LALStatus *,
 		  SkyPosition skypos);
 
 void
-LALGetDetectorStates (LALStatus *, 
-		      DetectorStateSeries **DetectorStates,
-		      const LIGOTimeGPSVector *timestamps,
-		      const LALDetector *detector,
-		      const EphemerisData *edat,
-		      REAL8 tOffset);
-
-void 
-LALGetMultiDetectorStates( LALStatus *, 
-			   MultiDetectorStateSeries **mdetStates, 
-			   const MultiSFTVector *multiSFTs, 
-			   const EphemerisData *edat );
-
-void
 LALGetMultiSSBtimes (LALStatus *, 
 		     MultiSSBtimes **multiSSB,
 		     const MultiDetectorStateSeries *multiDetStates,
@@ -256,15 +197,7 @@ LALEstimatePulsarAmplitudeParams (LALStatus *,
 				  const MultiAMCoeffs *multiAMcoef,
 				  REAL8 TsftShat);
 
-void LALComputeDetectorTensor ( LALStatus *, DetectorTensor *detT, const LALDetector *det, LIGOTimeGPS tgps );
-
-
-void LALCreateDetectorStateSeries (LALStatus *, DetectorStateSeries **vect, UINT4 length );
-
 /* destructors */
-void XLALDestroyDetectorStateSeries ( DetectorStateSeries *detStates );
-void LALDestroyDetectorStateSeries(LALStatus *, DetectorStateSeries **vect );
-void XLALDestroyMultiDetectorStateSeries ( MultiDetectorStateSeries *mdetStates );
 void XLALDestroyMultiSSBtimes ( MultiSSBtimes *multiSSB );
 void XLALDestroyMultiAMCoeffs ( MultiAMCoeffs *multiAMcoef );
 
