@@ -77,7 +77,17 @@ def create_condor_file(BE, arguments):
 	fp.write('priority = 10\n')
 	
 	tag = str(BE['noise-model'])+'_'+str(BE['fl'])+'_'+ str(BE['search']) +'_'+str(BE['signal'])+'_'+str(BE['signal-order'])+'_'+str(BE['template'])+'_'+str(BE['template-order'])+'_'+str(BE['sampling'])+'_'+str(BE['mm'])+'.$(macroseed)\n'
-	msg = 'log = ./log/tmp\n'
+        if host.find('ldas-grid')>=0:        
+		index = 1
+		this_path = '/usr1/'+user+'/'
+		this_file = 'tmp'+str(index)
+		while os.path.isfile(path+this_file)==True:
+			index=index+1
+			this_file = 'tmp'+str(index)
+			
+		msg = 'log = '+this_path+this_file+'\n'	
+	else:
+		msg = 'log = ./log/tmp\n'
 	fp.write(msg)
 	msg = 'output = out_'+tag
 	fp.write(msg)
@@ -231,7 +241,7 @@ def main():
     
     #[some other default values]
     others = ' --print-result-xml  --debug 33 --print-bank '
-    print options.fast_simulation
+    # options  without arguments 
     if options.fast_simulation==True:
   	others = others + ' --fast-simulation '
     if options.bhns_simulation==True:
@@ -243,7 +253,7 @@ def main():
     BE = set_predefined_search_parameter(BE)
     
     time.sleep(1)
-
+    # default values for lower cut off frequency 
     if BE['fl']==-1:
         if BE['noise-model']=='VIRGO':
             BE['fl'] = 20        
