@@ -357,12 +357,12 @@ int main(int argc,char *argv[])
   doppler.refTime = GV.startTime;	/* we compute at startTime, not refTime right now */  
   doppler.orbit = NULL;			/* binary pulsars not implemented yet */
   /* loop-counters for spin-loops fkdot */
-  nFreq =  (UINT4)(GV.searchRange.fkdotBand[0] / thisScan.dFreq  + 0.5) + 1;  
-  nf1dot = (UINT4)(GV.searchRange.fkdotBand[1] / thisScan.df1dot + 0.5) + 1; 
+  nFreq =  (UINT4)(GV.searchRange.fkdotBand[0] / thisScan.dFreq  + 1e-6) + 1;  
+  nf1dot = (UINT4)(GV.searchRange.fkdotBand[1] / thisScan.df1dot + 1e-6) + 1; 
   
   /* the 2nd and 3rd spindown stepsizes are not controlled by DopplerSkyScan (and the metric) yet */
-  nf2dot = (UINT4)(GV.searchRange.fkdotBand[2] / uvar_df2dot + 0.5) + 1; 
-  nf3dot = (UINT4)(GV.searchRange.fkdotBand[3] / uvar_df3dot + 0.5) + 1; 
+  nf2dot = (UINT4)(GV.searchRange.fkdotBand[2] / uvar_df2dot + 1e-6) + 1; 
+  nf3dot = (UINT4)(GV.searchRange.fkdotBand[3] / uvar_df3dot + 1e-6) + 1; 
 
   numTemplates = 1.0 * thisScan.numSkyGridPoints * nFreq * nf1dot * nf2dot * nf3dot;
   
@@ -844,7 +844,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   cfg->Tsft = 1.0 / catalog->data[0].header.deltaF;
   cfg->startTime = catalog->data[0].header.epoch;
   endTime   = catalog->data[numSFTs-1].header.epoch;
-  LALAddFloatToGPS(status->statusPtr, &endTime, &endTime, cfg->Tsft );	/* can't fail */
+  XLALAddFloatToGPS(&endTime, cfg->Tsft);
   cfg->duration = GPS2REAL8(endTime) - GPS2REAL8 (cfg->startTime);
 
   /* ----- get reference-time (from user if given, use startTime otherwise): ----- */
@@ -904,7 +904,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     /* compute spin-range at startTime of observation */
     TRY ( LALExtrapolatePulsarSpinRange (status->statusPtr, &spinRangeStart, cfg->startTime, &cfg->spinRangeRef ), status );
     /* compute spin-range at endTime of these SFTs */
-    TRY ( LALExtrapolatePulsarSpinRange (status->statusPtr, &spinRangeEnd, endTime, &cfg->spinRangeRef ), status );
+    TRY ( LALExtrapolatePulsarSpinRange (status->statusPtr, &spinRangeEnd, endTime, &spinRangeStart ), status );
 
     fminStart = spinRangeStart.fkdot[0];
     /* ranges are in canonical format! */
