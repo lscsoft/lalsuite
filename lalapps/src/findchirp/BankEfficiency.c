@@ -301,7 +301,7 @@ if  ( userParam.dataCheckPoint )
 	fprintf(stdout,"Init ... done\n");
       }
       
-/*      randIn.param.fCutoff = userParam.signalfFinal; */
+      randIn.param.fCutoff = userParam.signalfFinal; 
       if (vrbflg){
         fprintf(stdout, "Upper frequency cut-off on signal: %e\n", randIn.param.fCutoff);
 	fprintf(stdout,"Signal Generation ... ");
