@@ -119,8 +119,8 @@ LALGeneratePulsarSignal (LALStatus *status,
   else
     sourceParams.rPeriNorm = 0.0;		/* this defines an isolated pulsar */
 
-  if ( params->pulsar.tRef.gpsSeconds != 0)
-    sourceParams.spinEpoch = params->pulsar.tRef;   /* pulsar reference-time in SSB frame (TDB) */
+  if ( params->pulsar.refTime.gpsSeconds != 0)
+    sourceParams.spinEpoch = params->pulsar.refTime;   /* pulsar reference-time in SSB frame (TDB) */
   else	/* if not given: use startTime converted to SSB as tRef ! */
     {
       TRY ( LALConvertGPS2SSB(status->statusPtr, &tmpTime, params->startTimeGPS, params), status);

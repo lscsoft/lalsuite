@@ -267,9 +267,9 @@ LALSimulateExactPulsarSignal (LALStatus *status,
    * startTime
    */
   startTimeSSB = GPS2REAL8(detStates->data[0].tGPS) + SCALAR(vn, detStates->data[0].rDetector );
-  if ( params->pulsar.tRef.gpsSeconds != 0 )
+  if ( params->pulsar.refTime.gpsSeconds != 0 )
     {
-      REAL8 refTime0 = GPS2REAL8(params->pulsar.tRef);
+      REAL8 refTime0 = GPS2REAL8(params->pulsar.refTime);
       REAL8 deltaRef = startTimeSSB - refTime0; 
       LIGOTimeGPS newEpoch;
       PulsarSpins fkdotOld, fkdotNew;
@@ -281,7 +281,7 @@ LALSimulateExactPulsarSignal (LALStatus *status,
       fkdotOld[2] = f2dot;
       fkdotOld[3] = f3dot;
 
-      TRY ( LALExtrapolatePulsarSpins ( status->statusPtr, fkdotNew, newEpoch, fkdotOld, params->pulsar.tRef ), status );
+      TRY ( LALExtrapolatePulsarSpins ( status->statusPtr, fkdotNew, newEpoch, fkdotOld, params->pulsar.refTime ), status );
 
       /* Finally, need to propagate phase */
       phi0 += LAL_TWOPI * (               f0    * deltaRef 

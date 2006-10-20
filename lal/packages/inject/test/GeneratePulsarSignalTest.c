@@ -438,7 +438,7 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
     pPulsarSignalParams->pulsar.position.longitude = skyPosData[iSky][0] + (((REAL8)randval) - 0.5)*tmpDeltaRA;
 
     /* Find reference time in SSB for this sky positions */
-    LALConvertGPS2SSB(status->statusPtr,&(pPulsarSignalParams->pulsar.tRef), GPSin, pPulsarSignalParams);
+    LALConvertGPS2SSB(status->statusPtr,&(pPulsarSignalParams->pulsar.refTime), GPSin, pPulsarSignalParams);
     CHECKSTATUSPTR (status);
     
     /* one per sky position fill in SkyConstAndZeroPsiAMResponse for use with LALFastGeneratePulsarSFTs */

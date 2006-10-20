@@ -86,7 +86,7 @@ LALExtrapolatePulsarSpinRange(  LALStatus *status,
     } /* for k < numSpins */
   
   /* ----- translate each spin-value \f$\f^{(l)}\f$ from epoch0 to epoch1 */
-  dtau = GPS2REAL8(epoch1) - GPS2REAL8(range0->epoch); 
+  dtau = GPS2REAL8(epoch1) - GPS2REAL8(range0->refTime); 
 
   for ( l = 0; l < numSpins; l ++ )
     {
@@ -115,7 +115,7 @@ LALExtrapolatePulsarSpinRange(  LALStatus *status,
     } /* for l < numSpins */
   
   /* set proper epoch for output */
-  range1->epoch = epoch1;
+  range1->refTime = epoch1;
 
   RETURN( status );
 

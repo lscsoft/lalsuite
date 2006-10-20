@@ -156,7 +156,7 @@ int main(int argc, char *argv[])
 
   /* ----- now test LALExtrapolatePulsarSpinRange() ----- */
   /* set up initial spin-range */
-  range0.epoch = epoch0;
+  range0.refTime = epoch0;
   range0.fkdot[0] = fkdot0[0];
   range0.fkdot[1] = fkdot0[1];
   range0.fkdot[2] = fkdot0[2];
@@ -168,8 +168,8 @@ int main(int argc, char *argv[])
   range0.fkdotBand[3] = -1.0e-22;
 
   /* set up the range reference-result (from ExtrapolatePulsarSpins.m) */
-  rangeResult.epoch.gpsSeconds = 619572733;
-  rangeResult.epoch.gpsNanoSeconds = 0;
+  rangeResult.refTime.gpsSeconds = 619572733;
+  rangeResult.refTime.gpsNanoSeconds = 0;
 
   rangeResult.fkdot[0] =  3.280495590653952e+02;
   rangeResult.fkdot[1] = -1.284283366400000e-06;
@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
   rangeResult.fkdotBand[3] =  1.000000000000000e-22;
 
   printf(" \n ----- Test2: LALExtrapolatePulsarSpinRange() ----- \n");
-  printf ("Input: epoch = %d.%09d \n", range0.epoch.gpsSeconds, range0.epoch.gpsNanoSeconds );
+  printf ("Input: epoch = %d.%09d \n", range0.refTime.gpsSeconds, range0.refTime.gpsNanoSeconds );
   printf ("Input: fkdot     = [%.10g, %.10g, %.10g, %.10g ]\n",
 	  range0.fkdot[0], range0.fkdot[1], range0.fkdot[2],  range0.fkdot[3] );
   printf ("Input: fkdotBand = [%.10g, %.10g, %.10g, %.10g ]\n",
@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
   SUB ( LALExtrapolatePulsarSpinRange (&status, &range2, epoch2, &range0 ), &status ); 
 
   printf ("\n");
-  printf ("Output: epoch = %d.%09d \n", range2.epoch.gpsSeconds, range2.epoch.gpsNanoSeconds );
+  printf ("Output: epoch = %d.%09d \n", range2.refTime.gpsSeconds, range2.refTime.gpsNanoSeconds );
   printf ("Output: fkdot     = [%.10g, %.10g, %.10g, %.10g ]\n",
 	  range2.fkdot[0], range2.fkdot[1], range2.fkdot[2], range2.fkdot[3] );
   printf ("Output: fkdotBand = [%.10g, %.10g, %.10g, %.10g ]\n",
@@ -203,8 +203,8 @@ int main(int argc, char *argv[])
   printf ("Octave : fkdotBand = [%.10g, %.10g, %.10g, %.10g ]\n",
 	  rangeResult.fkdotBand[0], rangeResult.fkdotBand[1], rangeResult.fkdotBand[2], rangeResult.fkdotBand[3] );
   
-  if ( (range2.epoch.gpsSeconds != rangeResult.epoch.gpsSeconds) 
-       || ( range2.epoch.gpsNanoSeconds != rangeResult.epoch.gpsNanoSeconds ) )
+  if ( (range2.refTime.gpsSeconds != rangeResult.refTime.gpsSeconds) 
+       || ( range2.refTime.gpsNanoSeconds != rangeResult.refTime.gpsNanoSeconds ) )
     {
       LALPrintError ("\nOutput-range has wrong epoch\n");
       return -1;

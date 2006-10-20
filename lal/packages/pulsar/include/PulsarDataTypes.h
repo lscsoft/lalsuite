@@ -73,7 +73,7 @@ typedef REAL8 PulsarSpins[PULSAR_MAX_SPINS];
  */
 typedef struct
 {
-  LIGOTimeGPS epoch;		/**< SSB reference GPS-time at which spin-range is defined */
+  LIGOTimeGPS refTime;		/**< SSB reference GPS-time at which spin-range is defined */
   PulsarSpins fkdot;		/**< Vector of spin-values \f$f^{(k)}\f$ */
   PulsarSpins fkdotBand;	/**< Vector of spin-bands \f$\Delta f^{(k)}\f$, MUST be same length as fkdot */
 } PulsarSpinRange;
@@ -107,10 +107,10 @@ typedef struct {
  * so we can't easily get rid of it any more, so we keep it for now....
  */
 typedef struct {
-   LIGOTimeGPS tRef;	/**< reference time of pulsar parameters (in SSB!) */
-   SkyPosition position;	/**< source location (in radians) */
+   LIGOTimeGPS refTime;	/**< reference time of pulsar parameters (in SSB!) */
+   SkyPosition position; /**< source location (in radians) */
    REAL4 psi;            /**< polarization angle (radians) at tRef */
-   REAL4 aPlus; 		/**< plus-polarization amplitude at tRef */
+   REAL4 aPlus; 	/**< plus-polarization amplitude at tRef */
    REAL4 aCross;  	/**< cross-polarization amplitude at tRef */
    REAL8 phi0;           /**< initial phase (radians) at tRef */
    REAL8 f0;             /**< WAVE-frequency(!) at tRef (in Hz) */
