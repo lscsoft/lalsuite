@@ -1601,8 +1601,8 @@ LALEstimatePulsarAmplitudeParams (LALStatus *status,
   gsl_matrix_memcpy ( Jh_Mu_nu, tmp2 );
   
   /* ===== debug-output resulting matrices ===== */
-  if ( lalDebugLevel )
-    printGSLmatrix4 ( stdout, "var(dBh^mu, dBh^nu) = \n", Jh_Mu_nu );
+  /* if ( lalDebugLevel ) */
+  /* printGSLmatrix4 ( stdout, "var(dBh^mu, dBh^nu) = \n", Jh_Mu_nu ); */
 
   /* fill candidate-struct with the obtained signal-parameters and error-estimations */
   Amp->h0     = normAmu * h0;
