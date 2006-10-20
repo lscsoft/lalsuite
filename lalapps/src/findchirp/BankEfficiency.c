@@ -1,6 +1,3 @@
-/* ****************************************************************
- * Author: Cokelaer, T. and Sathyaprakash, B. S.
- * ************************************************************** */
 #include "BankEfficiency.h"
 
 /* --- version information --- */
@@ -28,6 +25,7 @@ static int vrbflg = 0;
 RandomParams *randParams = NULL;
 INT4 randnStartPad = 0;
 INT4 ascii2xml=0;
+
 
 int
 main (INT4 argc, CHAR **argv ) 
@@ -303,7 +301,7 @@ if  ( userParam.dataCheckPoint )
 	fprintf(stdout,"Init ... done\n");
       }
       
-      randIn.param.fCutoff = userParam.signalfFinal; 
+/*      randIn.param.fCutoff = userParam.signalfFinal; */
       if (vrbflg){
         fprintf(stdout, "Upper frequency cut-off on signal: %e\n", randIn.param.fCutoff);
 	fprintf(stdout,"Signal Generation ... ");
@@ -803,7 +801,7 @@ PrintResults(   ResultIn result,
 	  randIn.param.t0,
 	  randIn.param.t3);
   
-  fprintf(stdout, "%e %e %e %e %e %e %e %e", 
+  fprintf(stdout, "%e %e %e %e %e %e %e %e ", 
 	  0.0, 0.0, 0.0, 0.0, 
 	  0.0, 0.0, 0.0, 0.0); 
   
@@ -3408,7 +3406,7 @@ void InitRandomInspiralSignalIn(RandomInspiralSignalIn *randIn)
   randIn->psi3Max  		= BANKEFFICIENCY_PSI3MAX;	
   randIn->param.approximant 	= BANKEFFICIENCY_SIGNAL;			/* approximant of h, the signal		*/
   randIn->param.tSampling 	= BANKEFFICIENCY_TSAMPLING;			/* sampling 				*/
-  randIn->param.fCutoff		= BANKEFFICIENCY_TSAMPLING/2.-1;		/* sampling 				*/
+  randIn->param.fCutoff 	= 0.; 			/*will be populate later once sampling is well defined*/
   randIn->param.startTime       = BANKEFFICIENCY_STARTTIME; 
   randIn->param.startPhase      = BANKEFFICIENCY_STARTPHASE; 
   randIn->param.nStartPad       = BANKEFFICIENCY_NSTARTPAD;
@@ -3426,7 +3424,9 @@ void InitUserParametersIn(UserParametersIn *userParam)
   userParam->alphaFConstraint   = ALPHAFConstraint;
   userParam->extraFinalPrinting = 0; 
   userParam->template		= BANKEFFICIENCY_TEMPLATE;
-  userParam->signalfFinal       =  BANKEFFICIENCY_TSAMPLING/2.-1;
+  /*By default, this value is empty and will be populate with the sampling frequency later*/
+  userParam->signalfFinal       =  0.;
+
   userParam->signal       	= BANKEFFICIENCY_SIGNAL;
   userParam->m1           	= -1;
   userParam->m2           	= -1;
@@ -3989,12 +3989,16 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
     coarseBankIn->fUpper = coarseBankIn->tSampling/2 -1.;
   }
  
-  randIn->param.fCutoff = coarseBankIn->fUpper;
- 
-  if (randIn->param.fCutoff >=coarseBankIn->tSampling/2. -1.){
+  /* the user might provide this arguments. If not, it is equal to zero */
+  if (randIn->param.fCutoff == 0){
       randIn->param.fCutoff = coarseBankIn->tSampling/2 -1.;
   }
-  
+  else {
+      if (randIn->param.fCutoff >=coarseBankIn->tSampling/2. -1.){
+      randIn->param.fCutoff = coarseBankIn->tSampling/2 -1.;
+      } 
+  }
+
   if (coarseBankIn->alpha < 0 ){
     sprintf(msg, "--bank-alpha (%f) parameter must be positive in the range [0,1] \n",
 	    coarseBankIn->alpha);
@@ -4127,7 +4131,6 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
     randIn->param.massChoice = fixedMasses; 
     randIn->param.mass1 = userParam->m1;
     randIn->param.mass2 = userParam->m2;
-    randIn->param.fCutoff = userParam->signalfFinal;
     /* we need to update the mMin which is used to estimate the length of the vetors*/
     if (userParam->m1  > userParam->m2){
       randIn->mMin = userParam->m2;
@@ -4149,7 +4152,6 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
    randIn->param.massChoice = fixedPsi; 
    randIn->param.psi0 = userParam->psi0;
    randIn->param.psi3 = userParam->psi3;
-   randIn->param.fCutoff = userParam->signalfFinal;
 
    if (userParam->m1 != -1 ||userParam->m2 != -1 || userParam->tau0 != -1 || userParam->tau3 != -1){
      sprintf(msg, "--m1 --m2 --psi0 --psi3 --tau0 --tau3 error. If particular injection is requested,  you must choose either (--m1,--m2) options or (--psi0,--psi3) or (--tau0,--tau3)\n");
@@ -4162,7 +4164,6 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
    randIn->param.massChoice = fixedTau; 
    randIn->param.t0 = userParam->tau0;
    randIn->param.t3 = userParam->tau3;
-   randIn->param.fCutoff = userParam->signalfFinal;
    if (userParam->psi0 != -1 ||userParam->psi3 != -1 || userParam->m1 != -1 || userParam->m2 != -1){
      sprintf(msg, "--m1 --m2 --psi0 --psi3 --tau0 --tau3 error. If particular injection is requested,  you must choose either (--m1,--m2) options or (--psi0,--psi3) or (--tau0,--tau3)\n");
      fprintf(stderr, msg);  
@@ -4227,7 +4228,6 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
 	   / (randIn->MMax )
 	   / (randIn->MMax );
        }
-     randIn->param.fCutoff = userParam->signalfFinal;
    }
 
   if ((randIn->t0Min != 0 || randIn->t0Max != 0) && 
@@ -4266,7 +4266,21 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
       fprintf(stderr, "BH-NS injection request to have the minimum mass less than 3 and maximum greater than 3.\n");
       exit( 1 );
     }
-  }      
+  }  
+
+  if (userParam->signalfFinal>0 && userParam->signalfFinal< coarseBankIn->tSampling/2)
+  {
+    randIn->param.fCutoff = userParam->signalfFinal;
+  }
+  if (userParam->signalfFinal>0 && userParam->signalfFinal>=coarseBankIn->tSampling/2)
+  {
+    fprintf(stderr, "--signal-ffinal must be less than the sampling/2. Replaced it with %f\n", coarseBankIn->tSampling/2);
+     exit(0)  ;
+  }
+  if (userParam->signalfFinal==0)
+  userParam->signalfFinal = randIn->param.fCutoff ;
+  
+
 }
 
 
