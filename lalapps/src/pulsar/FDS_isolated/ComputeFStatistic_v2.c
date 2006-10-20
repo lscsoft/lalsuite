@@ -110,8 +110,9 @@ typedef struct {
   REAL8 duration;			    /**< total time-span of the data (all streams) in seconds */
   LIGOTimeGPS refTime;			    /**< reference-time for pulsar-parameters in SBB frame */
   PulsarSpinRange spinRangeRef; 	    /**< pulsar spin-range at reference-time 'refTime' */
-  DopplerRegion searchRange;		    /**< parameter-space region to search over */
-  EphemerisData *edat;			    /**< ephemeris data (from LALInitBarycenter()) */
+  DopplerRegion searchRegion;		    /**< parameter-space region to search over */
+  PulsarDopplerParams stepSizes;	    /**< user-preferences on Doppler-param step-sizes */
+  EphemerisData *ephemeris;			    /**< ephemeris data (from LALInitBarycenter()) */
   MultiSFTVector *multiSFTs;		    /**< multi-IFO SFT-vectors */
   MultiDetectorStateSeries *multiDetStates; /**< pos, vel and LMSTs for detector at times t_i */
   MultiNoiseWeights *multiNoiseWeights;	    /**< normalized noise-weights of those SFTs */
@@ -217,25 +218,22 @@ int main(int argc,char *argv[])
 {
   LALStatus status = blank_status;	/* initialize status */
 
-  DopplerSkyScanInit scanInit;		/* init-structure for DopperScanner */
-  DopplerSkyScanState thisScan = empty_DopplerSkyScanState; /* current state of the Doppler-scan */
-  PulsarDopplerParams dopplerpos;		/* current search-parameters */
+  DopplerFullScanInit scanInit;			/* init-structure for DopperScanner */
+  DopplerFullScanState *thisScan = NULL; 	/* current state of the Doppler-scan */
+
   SkyPosition skypos;
   FILE *fpFstat = NULL;
   FILE *fpBstat = NULL;
   CHAR buf[512];
   PulsarSpins fkdotRef = {0,0,0,0};
-  REAL8Vector *fkdotTmp = NULL;
   ComputeFBuffer cfBuffer = empty_ComputeFBuffer;
-  UINT4 nFreq, nf1dot, nf2dot, nf3dot;	/* number of frequency- and f1dot-bins */
-  UINT4 iFreq, if1dot, if2dot, if3dot;  /* counters over freq- and f1dot- bins */
   REAL8 numTemplates, templateCounter;
   REAL8 tickCounter;
   time_t clock0;
   Fcomponents Fstat, loudestFstat;
-  PulsarDopplerParams doppler = empty_DopplerParams;
+  PulsarDopplerParams dopplerpos = empty_DopplerParams;		/* current search-parameters */
   PulsarDopplerParams loudestDoppler = empty_DopplerParams;
-
+  int ret;
 
   lalDebugLevel = 0;  
   vrbflg = 1;	/* verbose error-messages */
@@ -266,42 +264,21 @@ int main(int argc,char *argv[])
   /* like ephemeries data and template grids: */
   LAL_CALL ( InitFStat(&status, &GV), &status);
 
-  /* prepare initialization of DopplerSkyScanner to step through paramter space */
-  scanInit.dAlpha = uvar_dAlpha;
-  scanInit.dDelta = uvar_dDelta;
+  /* initialize full multi-dimensional Doppler-scanner */
+  scanInit.searchRegion = GV.searchRegion;
   scanInit.gridType = uvar_gridType;
   scanInit.metricType = uvar_metricType;
   scanInit.metricMismatch = uvar_metricMismatch;
-  scanInit.projectMetric = TRUE;
-  scanInit.obsDuration = GV.duration;
-  scanInit.obsBegin = GV.startTime;
-  scanInit.Detector = &(GV.multiDetStates->data[0]->detector);	/* FIXME: need multi-IFO metric */
-  scanInit.ephemeris = GV.edat;		/* used by Ephemeris-based metric */
+  scanInit.stepSizes = GV.stepSizes;
   scanInit.skyGridFile = uvar_skyGridFile;
-  scanInit.skyRegionString = GV.searchRange.skyRegionString;
-  scanInit.Freq = GV.searchRange.fkdot[0] + GV.searchRange.fkdotBand[0];
+  scanInit.ephemeris = GV.ephemeris;		/* used by Ephemeris-based metric */
 
   LogPrintf (LOG_DEBUG, "Setting up template grid ... ");
-  LAL_CALL ( InitDopplerSkyScan ( &status, &thisScan, &scanInit), &status); 
-  LogPrintfVerbatim (LOG_DEBUG, "done.\n");
-  
-  /* ---------- set Frequency- and spindown-resolution if not input by user ----------*/
-  if ( LALUserVarWasSet( &uvar_dFreq ) )
-    thisScan.dFreq = uvar_dFreq;
-  
-  if( LALUserVarWasSet( &uvar_df1dot) ) 
-    thisScan.df1dot = uvar_df1dot;
+  LAL_CALL ( InitDopplerFullScan ( &status, &thisScan, GV.multiDetStates->data[0], &scanInit), &status); 
+  numTemplates = XLALNumDopplerTemplates ( thisScan );
+  LogPrintfVerbatim (LOG_DEBUG, "done: %.0f templates.\n", numTemplates);
 
-  LogPrintf (LOG_DEBUG, "Actual grid-spacings: dFreq = %g, df1dot = %g\n\n", 
-	     thisScan.dFreq, thisScan.df1dot );
-  
-  /*----------------------------------------------------------------------*/
-  if ( uvar_outputSkyGrid ) {
-    LogPrintf (LOG_NORMAL, "Now writing sky-grid into file '%s' ...", uvar_outputSkyGrid);
-    LAL_CALL (writeSkyGridFile( &status, thisScan.skyGrid, uvar_outputSkyGrid ), &status);
-    LogPrintfVerbatim (LOG_NORMAL, " done.\n");
-  }
-  
+
   /* if a complete output of the F-statistic file was requested,
    * we open and prepare the output-file here */
   if (uvar_outputFstat)
@@ -345,158 +322,95 @@ int main(int argc,char *argv[])
 	}
     } /* if outputBstat */
 
-  if ( ( fkdotTmp = XLALCreateREAL8Vector ( NUM_SPINS ) ) == NULL ) {
-    return COMPUTEFSTATISTIC_EMEM;
-  }
-
   /*----------------------------------------------------------------------
    * main loop: demodulate data for each point in the sky-position grid
    * and for each value of the frequency-spindown
    */
   
-  doppler.refTime = GV.startTime;	/* we compute at startTime, not refTime right now */  
-  doppler.orbit = NULL;			/* binary pulsars not implemented yet */
-  /* loop-counters for spin-loops fkdot */
-  nFreq =  (UINT4)(GV.searchRange.fkdotBand[0] / thisScan.dFreq  + 1e-6) + 1;  
-  nf1dot = (UINT4)(GV.searchRange.fkdotBand[1] / thisScan.df1dot + 1e-6) + 1; 
-  
-  /* the 2nd and 3rd spindown stepsizes are not controlled by DopplerSkyScan (and the metric) yet */
-  nf2dot = (UINT4)(GV.searchRange.fkdotBand[2] / uvar_df2dot + 1e-6) + 1; 
-  nf3dot = (UINT4)(GV.searchRange.fkdotBand[3] / uvar_df3dot + 1e-6) + 1; 
-
-  numTemplates = 1.0 * thisScan.numSkyGridPoints * nFreq * nf1dot * nf2dot * nf3dot;
-  
-  LogPrintf (LOG_DEBUG, "N = Sky x Freq x f1dot x f2dot x f3dot = %d x %d x %d x %d x %d = %g\n",
-	     thisScan.numSkyGridPoints, nFreq, nf1dot, nf2dot, nf3dot, numTemplates);
-
-  LogPrintf (LOG_DEBUG, "Progress: 0/%g = 0 %% done, Estimated time left: ?? s\n", numTemplates );
-
   templateCounter = 0.0; 
   tickCounter = 0;
   clock0 = time(NULL);
-  while (1)
+  while ( (ret = XLALNextDopplerPos( &dopplerpos, thisScan )) == 0 )
     {
-      XLALNextDopplerSkyPos( &dopplerpos, &thisScan );
-      if (thisScan.state == STATE_FINISHED) /* scanned all DopplerPositions yet? */
-	break;
-      
-      /* normalize skyposition: correctly map into [0,2pi]x[-pi/2,pi/2] */
-      skypos.longitude = dopplerpos.Alpha;
-      skypos.latitude = dopplerpos.Delta;
-      skypos.system = COORDINATESYSTEM_EQUATORIAL;
-      LAL_CALL (LALNormalizeSkyPosition(&status, &skypos, &skypos), &status);
-      /* set parameter-space point: sky-position */
-      doppler.Alpha = skypos.longitude;
-      doppler.Delta = skypos.latitude;
+      LAL_CALL( ComputeFStat(&status, &Fstat, &dopplerpos, GV.multiSFTs, GV.multiNoiseWeights, 
+			     GV.multiDetStates, &GV.CFparams, &cfBuffer ), &status );
 
-      /*----- loop over spindown values */
-      for ( if3dot = 0; if3dot < nf3dot; if3dot ++ )
+      templateCounter += 1.0;
+      tickCounter += 1.0;
+      if ( lalDebugLevel && ( tickCounter > uvar_timerCount) )
 	{
-	  doppler.fkdot[3] = GV.searchRange.fkdot[3] + if3dot * uvar_df3dot;
-	  
-	  for ( if2dot = 0; if2dot < nf2dot; if2dot ++ )
-	    {
-	      doppler.fkdot[2] = GV.searchRange.fkdot[2] + if2dot * uvar_df2dot;
-
-	      for (if1dot = 0; if1dot < nf1dot; if1dot ++)
-		{
-		  doppler.fkdot[1] = GV.searchRange.fkdot[1] + if1dot * thisScan.df1dot;
-	  
-		  /* Loop over frequencies to be demodulated */
-		  for ( iFreq = 0 ; iFreq < nFreq ; iFreq ++ )
-		    {
-		      doppler.fkdot[0] = GV.searchRange.fkdot[0] + iFreq * thisScan.dFreq;
-		      
-		      LAL_CALL( ComputeFStat(&status, &Fstat, &doppler, GV.multiSFTs, GV.multiNoiseWeights, 
-					     GV.multiDetStates, &GV.CFparams, &cfBuffer ), &status );
-
-		      templateCounter += 1.0;
-		      tickCounter += 1.0;
-		      if ( lalDebugLevel && ( tickCounter > uvar_timerCount) )
-			{
-			  REAL8 diffSec = time(NULL) - clock0 ;  /* seconds since start of loop*/
-			  REAL8 taup = diffSec / templateCounter ;
-			  REAL8 timeLeft = (numTemplates - templateCounter) *  taup;
-			  tickCounter = 0.0;
-			  LogPrintf (LOG_DEBUG, 
-				     "Progress: %g/%g = %.2f %% done, Estimated time left: %.0f s\n",
-				     templateCounter, numTemplates, 
-				     templateCounter/numTemplates * 100.0, timeLeft);
-			}
-
-		      if ( !finite(Fstat.F) )
-			{
-			  LogPrintf(LOG_CRITICAL, 
-				    "non-finite F = %.16g, Fa=(%.16g,%.16g), Fb=(%.16g,%.16g)\n", 
-				    Fstat.F, Fstat.Fa.re, Fstat.Fa.im, Fstat.Fb.re, Fstat.Fb.im );
-			  LogPrintf (LOG_CRITICAL, 
-				     "[Alpha,Delta] = [%.16g,%.16g],\n"
-				     "fkdot=[%.16g,%.16g,%.16g,%16.g]\n",
-				     dopplerpos.Alpha, dopplerpos.Delta, 
-				     fkdotRef[0], fkdotRef[1], fkdotRef[2], fkdotRef[3] );
-			  return -1;
-			}
-
-		      /* correct results in --SignalOnly case:
-		       * this means we didn't normalize data by 1/sqrt(Tsft * 0.5 * Sh) in terms of 
-		       * the single-sided PSD Sh: the SignalOnly case is characterized by
-		         
-		       * setting Sh->1, so we need to divide Fa,Fb by sqrt(0.5*Tsft)
-		       * and F by (0.5*Tsft)
-		       */
-		      if ( uvar_SignalOnly )
-			{
-			  REAL8 norm = 1.0 / sqrt( 0.5 * GV.Tsft );
-			  Fstat.Fa.re *= norm;
-			  Fstat.Fa.im *= norm;
-			  Fstat.Fb.re *= norm;
-			  Fstat.Fb.im *= norm;
-			  Fstat.F *= norm * norm;
-			} /* if SignalOnly */
-		      
-		      /* propagate fkdot back to reference-time for outputting results */
-		      fkdotTmp->data[0] = doppler.fkdot[0];
-		      fkdotTmp->data[1] = doppler.fkdot[1];
-		      fkdotTmp->data[2] = doppler.fkdot[2];
-		      fkdotTmp->data[3] = doppler.fkdot[3];
-
-		      LAL_CALL ( LALExtrapolatePulsarSpins ( &status, fkdotRef, GV.refTime, doppler.fkdot, 
-							      GV.startTime ), &status );
-
-		      /* calculate the baysian-marginalized 'B-statistic' */
-		      if ( fpBstat )
-			{
-			  fprintf (fpBstat, "%16.12f %8.7f %8.7f %.17g %10.6g\n", 
-				   fkdotRef[0], dopplerpos.Alpha, dopplerpos.Delta, fkdotRef[1], Fstat.Bstat );
-			}
-		      
-		      /* now, if user requested it, we output ALL F-statistic results above threshold */
-		      if ( uvar_outputFstat && ( 2.0 * Fstat.F >= uvar_TwoFthreshold ) )
-			{
- 			  LALSnprintf (buf, 511, "%.16g %.16g %.16g %.6g %.5g %.5g %.9g\n",
-				       fkdotRef[0], 
-				       dopplerpos.Alpha, dopplerpos.Delta, 
-				       fkdotRef[1], fkdotRef[2], fkdotRef[3],
-				       2.0 * Fstat.F );
-			  buf[511] = 0;
-			  if ( fpFstat )
-			    fprintf (fpFstat, buf );
-			} /* if F > threshold */
-
-		      /* keep track of loudest candidate */
-		      if ( Fstat.F > loudestFstat.F )
-			{
-			  loudestFstat = Fstat;
-			  loudestDoppler = doppler;
-			  /* keep spins at reference-time */
-			  memcpy ( &loudestDoppler.fkdot, &fkdotRef, sizeof fkdotRef );
-			}
-		    } /* for i < nBins: loop over frequency-bins */
-		} /* For GV.spinImax: loop over 1st spindowns */
-	    } /* for if2dot < nf2dot */
-	} /* for if3dot < nf3dot */
-    } /*  while SkyPos : loop over skypositions */
-
+	  REAL8 diffSec = time(NULL) - clock0 ;  /* seconds since start of loop*/
+	  REAL8 taup = diffSec / templateCounter ;
+	  REAL8 timeLeft = (numTemplates - templateCounter) *  taup;
+	  tickCounter = 0.0;
+	  LogPrintf (LOG_DEBUG, 
+		     "Progress: %g/%g = %.2f %% done, Estimated time left: %.0f s\n",
+		     templateCounter, numTemplates, 
+		     templateCounter/numTemplates * 100.0, timeLeft);
+	}
+      
+      if ( !finite(Fstat.F) )
+	{
+	  LogPrintf(LOG_CRITICAL, 
+		    "non-finite F = %.16g, Fa=(%.16g,%.16g), Fb=(%.16g,%.16g)\n", 
+		    Fstat.F, Fstat.Fa.re, Fstat.Fa.im, Fstat.Fb.re, Fstat.Fb.im );
+	  LogPrintf (LOG_CRITICAL, 
+		     "[Alpha,Delta] = [%.16g,%.16g],\n"
+		     "fkdot=[%.16g,%.16g,%.16g,%16.g]\n",
+		     dopplerpos.Alpha, dopplerpos.Delta, 
+		     fkdotRef[0], fkdotRef[1], fkdotRef[2], fkdotRef[3] );
+	  return -1;
+	}
+      
+      /* correct results in --SignalOnly case:
+       * this means we didn't normalize data by 1/sqrt(Tsft * 0.5 * Sh) in terms of 
+       * the single-sided PSD Sh: the SignalOnly case is characterized by
+       
+       * setting Sh->1, so we need to divide Fa,Fb by sqrt(0.5*Tsft)
+       * and F by (0.5*Tsft)
+       */
+      if ( uvar_SignalOnly )
+	{
+	  REAL8 norm = 1.0 / sqrt( 0.5 * GV.Tsft );
+	  Fstat.Fa.re *= norm;
+	  Fstat.Fa.im *= norm;
+	  Fstat.Fb.re *= norm;
+	  Fstat.Fb.im *= norm;
+	  Fstat.F *= norm * norm;
+	} /* if SignalOnly */
+      
+      /* propagate fkdot back to reference-time for outputting results */
+      LAL_CALL ( LALExtrapolatePulsarSpins ( &status, fkdotRef, GV.refTime, dopplerpos.fkdot, GV.startTime ), &status );
+      
+      /* calculate the baysian-marginalized 'B-statistic' */
+      if ( fpBstat )
+	{
+	  fprintf (fpBstat, "%16.12f %8.7f %8.7f %.17g %10.6g\n", 
+		   fkdotRef[0], dopplerpos.Alpha, dopplerpos.Delta, fkdotRef[1], Fstat.Bstat );
+	}
+      
+      /* now, if user requested it, we output ALL F-statistic results above threshold */
+      if ( uvar_outputFstat && ( 2.0 * Fstat.F >= uvar_TwoFthreshold ) )
+	{
+	  LALSnprintf (buf, 511, "%.16g %.16g %.16g %.6g %.5g %.5g %.9g\n",
+		       fkdotRef[0], 
+		       dopplerpos.Alpha, dopplerpos.Delta, 
+		       fkdotRef[1], fkdotRef[2], fkdotRef[3],
+		       2.0 * Fstat.F );
+	  buf[511] = 0;
+	  if ( fpFstat )
+	    fprintf (fpFstat, buf );
+	} /* if F > threshold */
+      
+      /* keep track of loudest candidate */
+      if ( Fstat.F > loudestFstat.F )
+	{
+	  loudestFstat = Fstat;
+	  loudestDoppler = dopplerpos;
+	  /* keep spins at reference-time */
+	  memcpy ( &loudestDoppler.fkdot, &fkdotRef, sizeof fkdotRef );
+	}
+    } /*  while another Doppler position  */
  
   if ( fpFstat )
     {
@@ -536,12 +450,7 @@ int main(int argc,char *argv[])
 	       &status);
       
       /* propagate initial-phase from internal reference-time 'startTime' to refTime of Doppler-params */
-      fkdotTmp->data[0] = loudestDoppler.fkdot[0];
-      fkdotTmp->data[1] = loudestDoppler.fkdot[1];
-      fkdotTmp->data[2] = loudestDoppler.fkdot[2];
-      fkdotTmp->data[3] = loudestDoppler.fkdot[3];
-      LAL_CALL(LALExtrapolatePulsarPhase (&status, &Amp.phi0, loudestDoppler.fkdot, GV.refTime, 
-					  Amp.phi0,GV.startTime),&status);
+      LAL_CALL(LALExtrapolatePulsarPhase (&status, &Amp.phi0, loudestDoppler.fkdot, GV.refTime, Amp.phi0,GV.startTime),&status);
       if ( Amp.phi0 < 0 )	      /* make sure phi0 in [0, 2*pi] */
 	Amp.phi0 += LAL_TWOPI;
       Amp.phi0 = fmod ( Amp.phi0, LAL_TWOPI );
@@ -584,11 +493,9 @@ int main(int argc,char *argv[])
   LogPrintf (LOG_DEBUG, "Search finished.\n");
   
   /* Free memory */
-  LAL_CALL ( FreeDopplerSkyScan(&status, &thisScan), &status);
+  LAL_CALL ( FreeDopplerFullScan(&status, &thisScan), &status);
 
   XLALEmptyComputeFBuffer ( cfBuffer );
-
-  XLALDestroyREAL8Vector ( fkdotTmp );
 
   LAL_CALL ( Freemem(&status, &GV), &status);
   
@@ -613,13 +520,10 @@ initUserVars (LALStatus *status)
   /* set a few defaults */
   uvar_Dterms 	= 16;
   uvar_FreqBand = 0.0;
-  uvar_dFreq 	= 0.0;
   uvar_Alpha 	= 0.0;
   uvar_Delta 	= 0.0;
   uvar_AlphaBand = 0;
   uvar_DeltaBand = 0;
-  uvar_dAlpha 	= 0.001;
-  uvar_dDelta 	= 0.001;
   uvar_skyRegion = NULL;
 
   uvar_ephemYear = LALCalloc (1, strlen(EPHEM_YEARS)+1);
@@ -634,10 +538,16 @@ initUserVars (LALStatus *status)
   uvar_addOutput =FALSE;
 
   uvar_f1dot     = 0.0;
+  uvar_f1dotBand = 0.0;
+
+  /* default step-sizes for GRID_FLAT */
+  uvar_dAlpha 	= 0.001;
+  uvar_dDelta 	= 0.001;
+  uvar_dFreq 	 = 1.0;
   uvar_df1dot    = 1.0;
   uvar_df2dot    = 1.0;
   uvar_df3dot    = 1.0;
-  uvar_f1dotBand = 0.0;
+
   
   uvar_TwoFthreshold = 10.0;
   uvar_metricType =  LAL_PMETRIC_NONE;
@@ -685,8 +595,8 @@ initUserVars (LALStatus *status)
 
   LALregREALUserVar(status, 	dAlpha, 	'l', UVAR_OPTIONAL, "Resolution in alpha (equatorial coordinates) in radians");
   LALregREALUserVar(status, 	dDelta, 	'g', UVAR_OPTIONAL, "Resolution in delta (equatorial coordinates) in radians");
-  LALregREALUserVar(status,     dFreq,          'r', UVAR_OPTIONAL, "Frequency resolution in Hz (default: 1/( 2 * Tobs )");
-  LALregREALUserVar(status, 	df1dot, 	'e', UVAR_OPTIONAL, "Stepsize for f1dot (default 1/( 2 * Tobs^2 )");
+  LALregREALUserVar(status,     dFreq,          'r', UVAR_OPTIONAL, "Frequency resolution in Hz");
+  LALregREALUserVar(status, 	df1dot, 	'e', UVAR_OPTIONAL, "Stepsize for f1dot");
   LALregREALUserVar(status, 	df2dot, 	 0 , UVAR_OPTIONAL, "Stepsize for f2dot");
   LALregREALUserVar(status, 	df3dot, 	 0 , UVAR_OPTIONAL, "Stepsize for f3dot");
 
@@ -806,7 +716,6 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   INITSTATUS (status, "InitFStat", rcsid);
   ATTATCHSTATUSPTR (status);
 
-
   /* set the current working directory */
   if(chdir(uvar_workingDir) != 0)
     {
@@ -882,16 +791,16 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     BOOLEAN haveAlphaDelta = LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta);
     if (uvar_skyRegion)
       {
-	cfg->searchRange.skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
-	if ( cfg->searchRange.skyRegionString == NULL ) {
+	cfg->searchRegion.skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
+	if ( cfg->searchRegion.skyRegionString == NULL ) {
 	  ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
 	}
-	strcpy (cfg->searchRange.skyRegionString, uvar_skyRegion);
+	strcpy (cfg->searchRegion.skyRegionString, uvar_skyRegion);
       }
     else if (haveAlphaDelta)    /* parse this into a sky-region */
       {
 	REAL8 eps = 1e-9;	/* hack for backwards compatbility */
-	TRY ( SkySquare2String( status->statusPtr, &(cfg->searchRange.skyRegionString),
+	TRY ( SkySquare2String( status->statusPtr, &(cfg->searchRegion.skyRegionString),
 				uvar_Alpha, uvar_Delta,
 				uvar_AlphaBand + eps, uvar_DeltaBand + eps), status);
       }
@@ -916,10 +825,10 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     fCoverMax = MYMAX ( fmaxStart, fmaxEnd );
     fCoverMin = MYMIN ( fminStart, fminEnd );
 
-    /* spin searchRange defined by spin-range at start time */
-    cfg->searchRange.epoch = spinRangeStart.epoch;
-    memcpy ( &cfg->searchRange.fkdot, &spinRangeStart.fkdot, sizeof(spinRangeStart.fkdot) );
-    memcpy ( &cfg->searchRange.fkdotBand, &spinRangeStart.fkdotBand, sizeof(spinRangeStart.fkdotBand) );
+    /* spin searchRegion defined by spin-range at start time */
+    cfg->searchRegion.epoch = spinRangeStart.epoch;
+    memcpy ( &cfg->searchRegion.fkdot, &spinRangeStart.fkdot, sizeof(spinRangeStart.fkdot) );
+    memcpy ( &cfg->searchRegion.fkdotBand, &spinRangeStart.fkdotBand, sizeof(spinRangeStart.fkdotBand) );
 
   } /* extrapolate spin-range */
 
@@ -959,7 +868,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     CHAR *ephemDir;
     BOOLEAN isLISA = FALSE;
 
-    cfg->edat = LALCalloc(1, sizeof(EphemerisData));
+    cfg->ephemeris = LALCalloc(1, sizeof(EphemerisData));
     if ( LALUserVarWasSet ( &uvar_ephemDir ) )
       ephemDir = uvar_ephemDir;
     else
@@ -969,16 +878,24 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     if ( cfg->multiSFTs->data[0]->data[0].name[0] == 'Z' )
       isLISA = TRUE;
 
-    TRY( InitEphemeris (status->statusPtr, cfg->edat, ephemDir, uvar_ephemYear, cfg->startTime, isLISA ), status);
+    TRY( InitEphemeris (status->statusPtr, cfg->ephemeris, ephemDir, uvar_ephemYear, cfg->startTime, isLISA ), status);
   }
   
   /* ----- obtain the (multi-IFO) 'detector-state series' for all SFTs ----- */
-  TRY ( LALGetMultiDetectorStates ( status->statusPtr, &(cfg->multiDetStates), cfg->multiSFTs, cfg->edat ), status );
+  TRY ( LALGetMultiDetectorStates ( status->statusPtr, &(cfg->multiDetStates), cfg->multiSFTs, cfg->ephemeris ), status );
 
   /* ----- set computational parameters for F-statistic from User-input ----- */
   cfg->CFparams.Dterms = uvar_Dterms;
   cfg->CFparams.SSBprec = uvar_SSBprecision;
 
+  /* ----- set fixed grid step-sizes from user-input for GRID_FLAT ----- */
+  cfg->stepSizes.Alpha = uvar_dAlpha;
+  cfg->stepSizes.Delta = uvar_dDelta;
+  cfg->stepSizes.fkdot[0] = uvar_dFreq;
+  cfg->stepSizes.fkdot[1] = uvar_df1dot;
+  cfg->stepSizes.fkdot[2] = uvar_df2dot;
+  cfg->stepSizes.fkdot[3] = uvar_df3dot;
+  cfg->stepSizes.orbit = NULL;
 
   /* ----- produce a log-string describing the data-specific setup ----- */
   {
@@ -1022,8 +939,8 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     for (i=0; i < numSpins; i ++ ) 
       {
 	sprintf (line, "%.16g:%.16g%s", 
-		 cfg->searchRange.fkdot[i], 
-		 cfg->searchRange.fkdot[i] + cfg->searchRange.fkdotBand[i], 
+		 cfg->searchRegion.fkdot[i], 
+		 cfg->searchRegion.fkdot[i] + cfg->searchRegion.fkdotBand[i], 
 		 (i < numSpins - 1)?", ":" ]\n");
 	strcat ( summary, line );
       }
@@ -1127,13 +1044,13 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
   /* Free config-Variables and userInput stuff */
   TRY (LALDestroyUserVars (status->statusPtr), status);
 
-  if ( GV.searchRange.skyRegionString )
-    LALFree ( GV.searchRange.skyRegionString );
+  if ( GV.searchRegion.skyRegionString )
+    LALFree ( GV.searchRegion.skyRegionString );
   
   /* Free ephemeris data */
-  LALFree(cfg->edat->ephemE);
-  LALFree(cfg->edat->ephemS);
-  LALFree(cfg->edat);
+  LALFree(cfg->ephemeris->ephemE);
+  LALFree(cfg->ephemeris->ephemS);
+  LALFree(cfg->ephemeris);
 
   if ( cfg->logstring ) 
     LALFree ( cfg->logstring );
