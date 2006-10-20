@@ -905,7 +905,7 @@ XLALGetSiteInfo ( const CHAR *name )
       (*site) = lalCachedDetectors[LAL_GEO_600_DETECTOR];
       break;
     case 'H':
-      if ( channel[1] == 1 )
+      if ( channel[1] == '1' )
 	(*site) = lalCachedDetectors[LAL_LHO_4K_DETECTOR];
       else
 	(*site) = lalCachedDetectors[LAL_LHO_2K_DETECTOR];
@@ -951,7 +951,7 @@ XLALGetSiteInfo ( const CHAR *name )
  */
 static int 
 create_LISA_detectors (LALDetector *Detector,	/**< [out] LALDetector */
-		       UINT4 detIndex		/**< [in] which TDI observable: 1 = X, 2= Y, 3 = Z */
+		       CHAR detIndex		/**< [in] which TDI observable: '1' = X, '2'= Y, '3' = Z */
 		       )
 {
   LALFrDetector detector_params;
@@ -963,17 +963,17 @@ create_LISA_detectors (LALDetector *Detector,	/**< [out] LALDetector */
 
   switch ( detIndex )
     {
-    case 1:
+    case '1':
       strcpy ( detector_params.name, "Z1: LISA TDI X" );
       break;
-    case 2:
+    case '2':
       strcpy ( detector_params.name, "Z2: LISA TDI Y" );
       break;
-    case 3:
+    case '3':
       strcpy ( detector_params.name, "Z3: LISA TDI Z" );
       break;
     default:
-      LALPrintError ("\nIllegal LISA TDI index '%d': must be one of {1, 2, 3}.\n\n", detIndex );
+      LALPrintError ("\nIllegal LISA TDI index '%c': must be one of {'1', '2', '3'}.\n\n", detIndex );
       return -1;      
       break;
     } /* switch (detIndex) */
