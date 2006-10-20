@@ -130,7 +130,7 @@ typedef struct {
 int
 XLALComputeFaFb ( Fcomponents *FaFb,
 		  const SFTVector *sfts, 
-		  const REAL8Vector *fkdot,
+		  PulsarSpins fkdot,
 		  const SSBtimes *tSSB,
 		  const AMCoeffs *amcoe,
 		  UINT4 Dterms);

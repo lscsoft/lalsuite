@@ -184,8 +184,6 @@ ComputeFStat ( LALStatus *status,
   MultiSSBtimes *multiSSB = NULL;
   MultiAMCoeffs *multiAMcoef = NULL;
   REAL8 A, B, C, Dinv;
-  REAL8Vector *fkdot = NULL;
-  REAL8 spdnOrder = 0;
 
   INITSTATUS( status, "ComputeFStat", COMPUTEFSTATC );
   ATTATCHSTATUSPTR (status);
@@ -207,16 +205,6 @@ ComputeFStat ( LALStatus *status,
     LALPrintError ("\nSorry, binary-pulsar search not yet implemented in LALComputeFStat()\n\n");
     ABORT ( status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
   }
-
-  /* create+initialize fkdot-vector (3 spindowns by default) */
-  spdnOrder = 3;
-  if ( ( fkdot = XLALCreateREAL8Vector ( 1 + spdnOrder ) ) == NULL ) {
-    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
-  }
-  fkdot->data[0] = doppler->fkdot[0];
-  fkdot->data[1] = doppler->fkdot[1];
-  fkdot->data[2] = doppler->fkdot[2];
-  fkdot->data[3] = doppler->fkdot[3];
 
   /* check if that skyposition SSB+AMcoef were already buffered */
   if ( cfBuffer 
@@ -272,7 +260,7 @@ ComputeFStat ( LALStatus *status,
     {
       Fcomponents FcX = empty_Fcomponents;	/* for detector-specific FaX, FbX */
  		  
-      if ( XLALComputeFaFb (&FcX, multiSFTs->data[X], fkdot, multiSSB->data[X], multiAMcoef->data[X], params->Dterms) != 0)
+      if ( XLALComputeFaFb (&FcX, multiSFTs->data[X], doppler->fkdot, multiSSB->data[X], multiAMcoef->data[X], params->Dterms) != 0)
 	{
 	  LALPrintError ("\nXALNewLALDemod() failed\n");
 	  ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
@@ -317,8 +305,6 @@ ComputeFStat ( LALStatus *status,
       XLALDestroyMultiAMCoeffs ( multiAMcoef );
     } /* if !cfBuffer */
 
-  XLALDestroyREAL8Vector ( fkdot );
-
   DETATCHSTATUSPTR (status);
   RETURN (status);
 
@@ -331,7 +317,7 @@ ComputeFStat ( LALStatus *status,
 int
 XLALComputeFaFb ( Fcomponents *FaFb,
 		  const SFTVector *sfts,
-		  const REAL8Vector *fkdot,
+		  PulsarSpins fkdot,
 		  const SSBtimes *tSSB,
 		  const AMCoeffs *amcoe,
 		  UINT4 Dterms) 
@@ -361,16 +347,16 @@ XLALComputeFaFb ( Fcomponents *FaFb,
     XLAL_ERROR ( "XLALComputeFaFb", XLAL_EINVAL);
   }
   
-  if ( !fkdot || !tSSB || !tSSB->DeltaT || !tSSB->Tdot || !amcoe || !amcoe->a || !amcoe->b )
+  if ( !tSSB || !tSSB->DeltaT || !tSSB->Tdot || !amcoe || !amcoe->a || !amcoe->b )
     {
       LALPrintError ("\nIllegal NULL in input !\n\n");
       XLAL_ERROR ( "XLALComputeFaFb", XLAL_EINVAL);
     }
 
-  if ( fkdot->length >= NUM_FACT )
+  if ( PULSAR_MAX_SPINS > NUM_FACT )
     {
       LALPrintError ("\nInverse factorials table only up to order s=%d, can't handle %d spin-order\n\n",
-		     NUM_FACT, fkdot->length );
+		     NUM_FACT, PULSAR_MAX_SPINS - 1 );
       XLAL_ERROR ( "XLALComputeFaFb", XLAL_EINVAL);
     }
 #endif
@@ -383,11 +369,11 @@ XLALComputeFaFb ( Fcomponents *FaFb,
   freqIndex1 = freqIndex0 + sfts->data[0].data->length;
 
   /* find highest non-zero spindown-entry */
-  for ( spdnOrder = fkdot->length - 1;  spdnOrder > 0 ; spdnOrder --  )
-    if ( fkdot->data[spdnOrder] )
+  for ( spdnOrder = PULSAR_MAX_SPINS - 1;  spdnOrder > 0 ; spdnOrder --  )
+    if ( fkdot[spdnOrder] )
       break;
 
-  f = fkdot->data[0];
+  f = fkdot[0];
 
   Fa.re = 0.0f;
   Fa.im = 0.0f;
@@ -432,7 +418,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 
 	for (s=0; s <= spdnOrder; s++)
 	  {
-	    REAL8 fsdot = fkdot->data[s];
+	    REAL8 fsdot = fkdot[s];
 	    Dphi_alpha += fsdot * Tas * inv_fact[s]; 	/* here: DT^s/s! */
 	    Tas *= DT_al;				/* now: DT^(s+1) */
 	    phi_alpha += fsdot * Tas * inv_fact[s+1];
