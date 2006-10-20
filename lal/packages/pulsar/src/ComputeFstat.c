@@ -317,7 +317,7 @@ ComputeFStat ( LALStatus *status,
 int
 XLALComputeFaFb ( Fcomponents *FaFb,
 		  const SFTVector *sfts,
-		  PulsarSpins fkdot,
+		  const PulsarSpins fkdot,
 		  const SSBtimes *tSSB,
 		  const AMCoeffs *amcoe,
 		  UINT4 Dterms) 
