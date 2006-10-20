@@ -616,8 +616,8 @@ int main(int argc, char *argv[]){
   params.samplingRate = tSamplingRate;
   params.fHeterodyne = fHeterodyne;
   
-  params.pulsar.tRef.gpsSeconds = timeV->data[0].gpsSeconds; 
-  params.pulsar.tRef.gpsNanoSeconds = timeV->data[0].gpsNanoSeconds; 
+  params.pulsar.refTime.gpsSeconds = timeV->data[0].gpsSeconds; 
+  params.pulsar.refTime.gpsNanoSeconds = timeV->data[0].gpsNanoSeconds; 
   /* ****************************************************************/
   
   /* WE SHOULD LOOP OVER MC SIGNAL INJECTION HERE

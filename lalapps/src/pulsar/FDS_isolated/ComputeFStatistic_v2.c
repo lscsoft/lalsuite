@@ -775,7 +775,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     REAL8 f3dotMin = MYMIN ( uvar_f3dot, uvar_f3dot + uvar_f3dotBand );
     REAL8 f3dotMax = MYMAX ( uvar_f3dot, uvar_f3dot + uvar_f3dotBand );
     
-    cfg->spinRangeRef.epoch = cfg->refTime;
+    cfg->spinRangeRef.refTime = cfg->refTime;
     cfg->spinRangeRef.fkdot[0] = fMin;
     cfg->spinRangeRef.fkdot[1] = f1dotMin;
     cfg->spinRangeRef.fkdot[2] = f2dotMin;
@@ -826,7 +826,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     fCoverMin = MYMIN ( fminStart, fminEnd );
 
     /* spin searchRegion defined by spin-range at start time */
-    cfg->searchRegion.epoch = spinRangeStart.epoch;
+    cfg->searchRegion.refTime = spinRangeStart.refTime;
     memcpy ( &cfg->searchRegion.fkdot, &spinRangeStart.fkdot, sizeof(spinRangeStart.fkdot) );
     memcpy ( &cfg->searchRegion.fkdotBand, &spinRangeStart.fkdotBand, sizeof(spinRangeStart.fkdotBand) );
 

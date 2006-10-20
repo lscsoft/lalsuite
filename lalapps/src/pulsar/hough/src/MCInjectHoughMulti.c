@@ -83,8 +83,6 @@ RCSID ("$Id$");
 int main(int argc, char *argv[]){
 
   static LALStatus            status;  
-  /* LAL error-handler */
-  lal_errhandler   =   LAL_ERR_EXIT;
    
   EphemerisData              *edat = NULL;
   static REAL8Cart3CoorVector  velV;
@@ -109,6 +107,9 @@ int main(int argc, char *argv[]){
   REAL8  *skyAlpha, *skyDelta, *skySizeAlpha, *skySizeDelta; 
   UINT4   nSkyPatches, skyIndex, skyCounter=0; 
   static REAL8Cart3CoorVector skyPatchCenterV;
+
+  /* LAL error-handler */
+  lal_errhandler   =   LAL_ERR_EXIT;
 
   /* standard pulsar sft types */ 
   MultiSFTVector *inputSFTs  = NULL;
@@ -695,8 +696,8 @@ int main(int argc, char *argv[]){
   params.duration = injectPar.timeObs; /* length of time series in seconds */
   params.samplingRate = tSamplingRate;
   params.fHeterodyne = fHeterodyne;  
-  params.pulsar.tRef.gpsSeconds = firstTimeStamp.gpsSeconds; 
-  params.pulsar.tRef.gpsNanoSeconds = firstTimeStamp.gpsNanoSeconds; 
+  params.pulsar.refTime.gpsSeconds = firstTimeStamp.gpsSeconds; 
+  params.pulsar.refTime.gpsNanoSeconds = firstTimeStamp.gpsNanoSeconds; 
   /* ****************************************************************/
   
   /* WE SHOULD LOOP OVER MC SIGNAL INJECTION HERE

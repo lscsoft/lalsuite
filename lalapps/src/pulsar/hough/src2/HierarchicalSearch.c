@@ -672,7 +672,7 @@ int main( int argc, char *argv[]) {
   tStart1GPS = usefulParams1.tStartGPS;
   midTstack1 = usefulParams1.midTstack;
   startTstack1 = usefulParams1.startTstack;
-  refTimeGPS = usefulParams1.spinRange_refTime.epoch;
+  refTimeGPS = usefulParams1.spinRange_refTime.refTime;
 
   /* set reference time for calculating Fstatistic */
   thisPoint1.refTime = tStart1GPS;
@@ -933,7 +933,7 @@ int main( int argc, char *argv[]) {
 		  REAL8 alpha1, delta1, alphaBand1, deltaBand1;
 
 		  /* get spin range of candidate */
-		  spinRange_Temp.epoch = tStart1GPS;
+		  spinRange_Temp.refTime = tStart1GPS;
 		  spinRange_Temp.fkdot[0] = semiCohCandList1.list[j].freq - 0.5 * semiCohCandList1.list[j].dFreq;
 		  spinRange_Temp.fkdotBand[0] = semiCohCandList1.list[j].dFreq;
 		  spinRange_Temp.fkdot[1] = semiCohCandList1.list[j].fdot - 0.5 * semiCohCandList1.list[j].dFdot;
@@ -1244,7 +1244,7 @@ void SetUpSFTs( LALStatus *status,
   }
   
   /* get frequency and fdot bands at start time of sfts by extrapolating from reftime */
-  in->spinRange_refTime.epoch = refTimeGPS;
+  in->spinRange_refTime.refTime = refTimeGPS;
   TRY( LALExtrapolatePulsarSpinRange( status->statusPtr, &in->spinRange_startTime, tStartGPS, &in->spinRange_refTime), status); 
   TRY( LALExtrapolatePulsarSpinRange( status->statusPtr, &in->spinRange_endTime, tEndGPS, &in->spinRange_refTime), status); 
        

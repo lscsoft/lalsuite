@@ -503,8 +503,8 @@ int main( int argc, char *argv[]){
   params.samplingRate = tSamplingRate;
   params.fHeterodyne = fHeterodyne;
   /* reference time for frequency and spindown is first timestamp */
-  params.pulsar.tRef.gpsSeconds = timeV.data[0].gpsSeconds; 
-  params.pulsar.tRef.gpsNanoSeconds = timeV.data[0].gpsNanoSeconds;
+  params.pulsar.refTime.gpsSeconds = timeV.data[0].gpsSeconds; 
+  params.pulsar.refTime.gpsNanoSeconds = timeV.data[0].gpsNanoSeconds;
 
   params.pulsar.position.longitude = pulsarInject.longitude;
   params.pulsar.position.latitude = pulsarInject.latitude ;

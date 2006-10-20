@@ -237,7 +237,7 @@ main(int argc, char *argv[])
    * fill the PulsarSignalParams struct 
    *----------------------------------------*/
   /* pulsar params */
-  params.pulsar.tRef               = GV.pulsar.Doppler.refTime;
+  params.pulsar.refTime            = GV.pulsar.Doppler.refTime;
   params.pulsar.position.system    = COORDINATESYSTEM_EQUATORIAL;
   params.pulsar.position.longitude = GV.pulsar.Doppler.Alpha;
   params.pulsar.position.latitude  = GV.pulsar.Doppler.Delta;
@@ -245,7 +245,7 @@ main(int argc, char *argv[])
     REAL8 h0   = GV.pulsar.Amp.h0;
     REAL8 cosi = GV.pulsar.Amp.cosi;
     params.pulsar.aPlus		   = 0.5 * h0 * ( 1.0 + SQ(cosi) );
-    params.pulsar.aCross		   = h0 * cosi;
+    params.pulsar.aCross	   = h0 * cosi;
   }
   params.pulsar.phi0		   = GV.pulsar.Amp.phi0;
   params.pulsar.psi 		   = GV.pulsar.Amp.psi;

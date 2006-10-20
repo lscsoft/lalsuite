@@ -112,7 +112,7 @@ typedef struct {
 
 typedef struct {
   CHAR *skyRegionString;	/**< sky-region string '(a1,d1), (a2,d2), ..' */
-  LIGOTimeGPS epoch;
+  LIGOTimeGPS refTime;
   PulsarSpins fkdot;		/**< first points of spin-intervals */
   PulsarSpins fkdotBand;	/**< spin-intervals */
 } DopplerRegion;

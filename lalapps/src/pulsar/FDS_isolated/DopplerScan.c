@@ -264,7 +264,7 @@ initFactoredGrid (LALStatus *status,
 
   TRY ( InitDopplerSkyScan ( status->statusPtr, &(thisScan->skyScan), &skyScanInit), status); 
 
-  thisScan->spinRange.epoch = init->searchRegion.epoch;
+  thisScan->spinRange.refTime = init->searchRegion.refTime;
   memcpy ( thisScan->spinRange.fkdot, init->searchRegion.fkdot, sizeof(PulsarSpins) );
   memcpy ( thisScan->spinRange.fkdotBand, init->searchRegion.fkdotBand, sizeof(PulsarSpins) );
 
@@ -273,7 +273,7 @@ initFactoredGrid (LALStatus *status,
     thisScan->dfkdot[i] = init->stepSizes.fkdot[i];
 
   /* ----- set Doppler-scanner to start-point ----- */
-  thisScan->thisPoint.refTime = init->searchRegion.epoch;	/* set proper reference time for spins */
+  thisScan->thisPoint.refTime = init->searchRegion.refTime;	/* set proper reference time for spins */
 
   /* normalize skyposition: correctly map into [0,2pi]x[-pi/2,pi/2] */
   skypos.longitude = thisScan->skyScan.skyNode->Alpha;
