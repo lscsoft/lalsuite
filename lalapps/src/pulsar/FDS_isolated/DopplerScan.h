@@ -89,11 +89,16 @@ enum {
 /** different types of grids: */
 typedef enum
 {
+  /* ----- factored grid-types: sky x f0dot x f1dot x f2dot x f3dot  */
   GRID_FLAT,			/**< "flat" sky-grid: fixed step-size (dAlpha,dDelta) */
   GRID_ISOTROPIC,		/**< approximately isotropic sky-grid */
   GRID_METRIC,			/**< generate grid using a 2D sky-metric */
   GRID_FILE,			/**< read skygrid from a file */
   GRID_METRIC_SKYFILE,		/**< 'hybrid' grid-construction: use skygrid from file, metric for others */
+  GRID_SKY_LAST,		/**< end-marker for factored grid types */
+  /* ----- full multi-dim grid-types ----- */
+  
+  /* ----- end-marker ----- */
   GRID_LAST
 } DopplerGridType;
 
@@ -164,7 +169,7 @@ typedef struct {
   DopplerRegion searchRegion;		/**< Doppler-space region to be covered + scanned */
   DopplerGridType gridType;		/**< which type of grid to generate */  
   LALPulsarMetricType metricType; 	/**< which metric to use if GRID_METRIC */
-  PulsarDopplerParams spacings;		/**< user-settings for stepsizes if GRID_FLAT */
+  PulsarDopplerParams stepSizes;	/**< user-settings for stepsizes if GRID_FLAT */
   REAL8 metricMismatch;			/**< for GRID_METRIC and GRID_ISOTROPIC */
   CHAR *skyGridFile;			/**< file containing a sky-grid (list of points) if GRID_FILE */
   EphemerisData *ephemeris;		/**< ephemeris-data for "exact" metric */  
@@ -184,15 +189,20 @@ extern const DopplerRegion empty_DopplerRegion;
 
 /*---------- external prototypes [API] ----------*/
 
-/* ------ functions to handle foliated sky-grid x freq x f1dot covering ----- */
+/* ------ functions to handle factored grids: 'sky x freq x f1dot...' covering ----- */
 void InitDopplerSkyScan(LALStatus *, DopplerSkyScanState *skyScan, const DopplerSkyScanInit *init);
 int  XLALNextDopplerSkyPos( PulsarDopplerParams *pos, DopplerSkyScanState *skyScan);
 void FreeDopplerSkyScan(LALStatus *, DopplerSkyScanState *skyScan);
+int XLALFreeDopplerSkyScan (DopplerSkyScanState *skyScan);
+void FreeDopplerFullScan (LALStatus *status, DopplerFullScanState **scan);
+
 void writeSkyGridFile(LALStatus *, const DopplerSkyGrid *grid, const CHAR *fname );
 
 /* ----- full-fledged multi-dimensional Doppler scanner functions ----- */
-void InitDopplerFullScan(LALStatus *, DopplerFullScanState *scanState, const DetectorStateSeries *detStates, const DopplerFullScanInit *init);
+void InitDopplerFullScan(LALStatus *, DopplerFullScanState **scanState, const DetectorStateSeries *detStates, const DopplerFullScanInit *init);
 int  XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan);
+void FreeDopplerFullScan (LALStatus *status, DopplerFullScanState **scan);
+REAL8 XLALNumDopplerTemplates ( DopplerFullScanState *scan);
 
 /* ----- variout utility functions ----- */
 void ParseSkyRegionString (LALStatus *, SkyRegion *region, const CHAR *input);

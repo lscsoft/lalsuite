@@ -102,13 +102,15 @@ typedef TwoDMeshParamStruc meshPARAMS;
 /** ----- internal [opaque] type to store the state of a FULL multidimensional grid-scan ----- */
 struct tagDopplerFullScanState {
   INT2 state;  			/**< idle, ready or finished */
+  DopplerGridType gridType;	/**< what type of grid are we dealing with */
 
-  /* ----- the following are used to emulate foliated grids sky x Freq x f1dot ... */
+  PulsarDopplerParams thisPoint; /**< current doppler-position of the scan */
+  REAL8 numTemplates;		/**< total number of templates in the grid */
+
+  /* ----- the following are used to emulate FACTORED grids sky x Freq x f1dot ... */
   DopplerSkyScanState skyScan;	/**< keep track of sky-grid stepping */
-
   PulsarSpinRange spinRange;	/**< spin-range to search */
   PulsarSpins dfkdot;		/**< fixed stepsizes in spins */
-  UINT4 spinCounters[PULSAR_MAX_SPINS]; /**< index of current spin-values being searched */
 
   /* ----- future extensions for real multidim-grids  ----- */
  
@@ -135,6 +137,9 @@ const DopplerFullScanState empty_DopplerFullScanState;
 extern INT4 lalDebugLevel;
 
 /*---------- internal prototypes ----------*/
+void initFactoredGrid (LALStatus *, DopplerFullScanState **scan, const DetectorStateSeries *detStates, const DopplerFullScanInit *init );
+int nextFactoredGridPoint (PulsarDopplerParams *pos, DopplerFullScanState *scan);
+
 void getRange( LALStatus *, meshREAL y[2], meshREAL x, void *params );
 void getMetric( LALStatus *, meshREAL g[3], meshREAL skypos[2], void *params );
 REAL8 getDopplermax(EphemerisData *edat);
@@ -161,40 +166,89 @@ const char *va(const char *format, ...);	/* little var-arg string helper functio
 /*==================== FUNCTION DEFINITIONS ====================*/
 
 /** Set up a full multi-dimensional grid-scan. 
- * Currently this only emulates a 'foliated' grid-scan with sky x Freq x f1dot ... , but
+ * Currently this only emulates a 'factored' grid-scan with 'sky x Freq x f1dot ...' , but
  * keeps all details within the DopplerScan module for future extension to real multidimensional
- * grids. Use 'NextDopplerPos()' to step through this grid.
+ * grids. 
+ * 
+ * NOTE: Use 'NextDopplerPos()' to step through this template grid.
+ * 
  */
 void 
 InitDopplerFullScan(LALStatus *status, 
-		    DopplerFullScanState *scan,			/**< [out] initialized Doppler scan state */
+		    DopplerFullScanState **scan,		/**< [out] initialized Doppler scan state */
 		    const DetectorStateSeries *detStates, 	/**< [in] used for list of integration timestamps and detector-info */
 		    const DopplerFullScanInit *init		/**< [in] initialization parameters */
 		    )
 {
-  DopplerSkyScanInit skyScanInit = empty_DopplerSkyScanInit;
-  LIGOTimeGPS startTime, endTime;
-  REAL8 duration;
-  UINT4 i;
 
   INITSTATUS( status, "InitDopplerFullScan", DOPPLERSCANC );
   ATTATCHSTATUSPTR (status); 
 
   ASSERT ( scan, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
+  ASSERT ( *scan == NULL, status, DOPPLERSCANH_ENONULL, DOPPLERSCANH_MSGENONULL );  
+  ASSERT ( detStates, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
+  ASSERT ( init, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
+
+  /* which "class" of template grid to generate?: factored, or full-multidim ? */
+  switch ( init->gridType )
+    {
+      /* emulate old 'factored' grids 'sky x f0dot x f1dot x f2dot x f3dot': */
+    case GRID_FLAT:
+    case GRID_ISOTROPIC:
+    case GRID_METRIC:
+    case GRID_FILE:
+    case GRID_METRIC_SKYFILE:
+      /* backwards-compatibility mode */
+      TRY ( initFactoredGrid ( status->statusPtr, scan, detStates, init ), status );
+      break;
+
+    default:
+      LALPrintError("\nInvalid grid type '%d'\n\n", init->gridType );
+      ABORT ( status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
+      break;
+    } /* switch gridType */
+
+  DETATCHSTATUSPTR (status);
+  RETURN( status );
+
+} /* InitDopplerFullScan() */
+
+/** Initialize Doppler-scanner to emulate an old-style factored template grid: 'sky x f0dot x f1dot x f2dot x f3dot'.
+ *  This is a compatiblity-mode with the previous implementation currently also used in ComputeFStatistic.c.
+ */
+void 
+initFactoredGrid (LALStatus *status, 
+		  DopplerFullScanState **scan,			/**< [bout] initialized Doppler scan state */
+		  const DetectorStateSeries *detStates, 	/**< [in] used for list of integration timestamps and detector-info */
+		  const DopplerFullScanInit *init		/**< [in] initialization parameters */
+		  )
+{
+  DopplerFullScanState *thisScan;
+  DopplerSkyScanInit skyScanInit = empty_DopplerSkyScanInit;
+  LIGOTimeGPS startTime, endTime;
+  SkyPosition skypos;
+  REAL8 duration;
+  UINT4 i;
+
+  INITSTATUS( status, "initFactoredGrid", DOPPLERSCANC );
+  ATTATCHSTATUSPTR (status); 
+
+  ASSERT ( scan, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
+  ASSERT ( *scan == NULL, status, DOPPLERSCANH_ENONULL, DOPPLERSCANH_MSGENONULL );  
   ASSERT ( detStates, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
   ASSERT ( init, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
 
   startTime = detStates->data[0].tGPS;
-  endTime = detStates->data[detStates->length].tGPS;
+  endTime = detStates->data[detStates->length - 1].tGPS;
   duration = XLALGPSDiff ( &endTime, &startTime );
 
-  /* set up FullScanState */
-  (*scan) = empty_DopplerFullScanState;
+  if ( (thisScan = LALCalloc (1, sizeof(*thisScan) )) == NULL ) {
+    ABORT (status, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
+  }
 
-  /* ===== now we just emulate the foliate sky x Freq x f1dot scanning ===== */
   /* prepare initialization of DopplerSkyScanner to step through paramter space */
-  skyScanInit.dAlpha = init->spacings.Alpha;
-  skyScanInit.dDelta = init->spacings.Delta;
+  skyScanInit.dAlpha = init->stepSizes.Alpha;
+  skyScanInit.dDelta = init->stepSizes.Delta;
   skyScanInit.gridType = init->gridType;
   skyScanInit.metricType = init->metricType;
   skyScanInit.metricMismatch = init->metricMismatch;
@@ -208,124 +262,220 @@ InitDopplerFullScan(LALStatus *status,
   skyScanInit.skyRegionString = init->searchRegion.skyRegionString;
   skyScanInit.Freq = init->searchRegion.fkdot[0] + init->searchRegion.fkdotBand[0];
 
-  LogPrintf (LOG_DEBUG, "Setting up template sky-grid ... ");
-  TRY ( InitDopplerSkyScan ( status->statusPtr, &(scan->skyScan), &skyScanInit), status); 
-  LogPrintfVerbatim (LOG_DEBUG, "done.\n");
+  TRY ( InitDopplerSkyScan ( status->statusPtr, &(thisScan->skyScan), &skyScanInit), status); 
 
-  scan->spinRange.epoch = init->searchRegion.epoch;
-  memcpy ( scan->spinRange.fkdot, init->searchRegion.fkdot, sizeof(PulsarSpins) );
-  memcpy ( scan->spinRange.fkdotBand, init->searchRegion.fkdotBand, sizeof(PulsarSpins) );
+  thisScan->spinRange.epoch = init->searchRegion.epoch;
+  memcpy ( thisScan->spinRange.fkdot, init->searchRegion.fkdot, sizeof(PulsarSpins) );
+  memcpy ( thisScan->spinRange.fkdotBand, init->searchRegion.fkdotBand, sizeof(PulsarSpins) );
 
-  scan->dfkdot[0] = scan->skyScan.dFreq;
-  scan->dfkdot[1] = scan->skyScan.df1dot;
-
-  /* override with user-settings if given */
+  /* user-setting for step-sizes [used in GRID_FLAT ] */
   for (i=0; i < PULSAR_MAX_SPINS; i ++ )
-    if ( init->spacings.fkdot[i] )
-      scan->dfkdot[i] = init->spacings.fkdot[i];
+    thisScan->dfkdot[i] = init->stepSizes.fkdot[i];
 
-  /* set counters to start */
-  memset ( scan->spinCounters, 0, sizeof(scan->spinCounters) );
+  /* ----- set Doppler-scanner to start-point ----- */
+  thisScan->thisPoint.refTime = init->searchRegion.epoch;	/* set proper reference time for spins */
 
+  /* normalize skyposition: correctly map into [0,2pi]x[-pi/2,pi/2] */
+  skypos.longitude = thisScan->skyScan.skyNode->Alpha;
+  skypos.latitude  = thisScan->skyScan.skyNode->Delta;
+  skypos.system = COORDINATESYSTEM_EQUATORIAL;
+  XLALNormalizeSkyPosition ( &skypos );
+  thisScan->thisPoint.Alpha = skypos.longitude;
+  thisScan->thisPoint.Delta = skypos.latitude;
+  /* set spins to start */
+  for (i=0; i < PULSAR_MAX_SPINS; i ++ )
+    thisScan->thisPoint.fkdot[i] = thisScan->spinRange.fkdot[i];
+
+  { /* count total number of templates */
+    REAL8 nSky, nSpins = 1;
+    nSky = thisScan->skyScan.numSkyGridPoints;
+    for ( i=0; i < PULSAR_MAX_SPINS; i ++ )
+      nSpins *= floor( thisScan->spinRange.fkdotBand[i] / thisScan->dfkdot[i] ) + 1.0;
+    thisScan->numTemplates = nSky * nSpins;
+  }
+  
   /* we're ready */
-  scan->state = STATE_READY;
+  thisScan->state = STATE_READY;
 
+  /* return result */
+  (*scan) = thisScan;
 
   DETATCHSTATUSPTR (status);
   RETURN( status );
 
-} /* InitDopplerFullScan() */
+} /* initFactoredGrid() */
+
+/** Return (and compute if not done so yet) the total number of Doppler templates 
+ * of the DopplerScan \a scan
+ */
+REAL8 
+XLALNumDopplerTemplates ( DopplerFullScanState *scan)
+{ 
+  if ( scan->numTemplates )	/* pre-computed already ? */
+    return scan->numTemplates;
+  else
+    {
+      /* FIXME: not implemented yet */
+      LogPrintf ( LOG_NORMAL, "template counting not implemented yet!\n"); 
+      return -1;
+    }
+
+} /* XLALNumDopplerTemplates() */
 
 /** Function to step through the full template grid point by point. 
- * Normal return = 0, errors return -1, end of scan is signalled by return = 1
+ * Normal return = 0, 
+ * errors return -1, 
+ * end of scan is signalled by return = 1
  */
 int
 XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
 { 
-  PulsarDopplerParams dopplerpos = empty_PulsarDopplerParams;
-  SkyPosition skypos;
-  PulsarSpins fkdotStep;
-  UINT4 i;
 
   /* This traps coding errors in the calling routine. */
-  if ( pos == NULL || scan == NULL )
+  if ( pos == NULL || scan == NULL || scan->state == STATE_IDLE )
     {
       xlalErrno = XLAL_EINVAL;
       return -1;
     }
 
-  memset ( fkdotStep, 0, sizeof( fkdotStep ) );
+  /* is this search finished? then return '1' */
+  if (  scan->state == STATE_FINISHED ) 
+    return 1;
 
-  switch( scan->state )
+  /* ----- step foward one template in full grid ----- */
+  /* Which "class" of template grid are we dealing with: factored, or full-multidim ? */
+  switch ( scan->gridType )
     {
-    case STATE_IDLE:
-    case STATE_FINISHED:
-      xlalErrno = XLAL_EFAILED;
-      LogPrintf (LOG_CRITICAL, "DopplerScan 'scan' not in ready state\n");
-      return -1;	/* scan is not ready to proceed */
+      /* emulate old 'factored' grids 'sky x f0dot x f1dot x f2dot x f3dot': */
+    case GRID_FLAT:
+    case GRID_ISOTROPIC:
+    case GRID_METRIC:
+    case GRID_FILE:
+    case GRID_METRIC_SKYFILE:
+      /* backwards-compatibility mode */
+      nextFactoredGridPoint ( pos, scan );
       break;
 
-    case STATE_READY:  
-      /* get next template, using the ordering: { df3dot , df2dot, df1dot, df0dot, sky[Alpha,Delta] } */
-      scan->spinCounters[3] ++;
-      fkdotStep[3] = scan->spinCounters[3] * scan->dfkdot[3];
-      if ( fkdotStep[3] > scan->spinRange.fkdotBand[3] )
-	{
-	  scan->spinCounters[3] = 0;
-	  fkdotStep[3] = 0;
-	  scan->spinCounters[2] ++;
-	  fkdotStep[2] = scan->spinCounters[2] * scan->dfkdot[2];
-	  if ( fkdotStep[2] > scan->spinRange.fkdotBand[2] )
-	    {
-	      scan->spinCounters[2] = 0;
-	      fkdotStep[2] = 0;
-	      scan->spinCounters[1] ++;
-	      fkdotStep[1] = scan->spinCounters[1] * scan->dfkdot[1];
-		if ( fkdotStep[1] > scan->spinRange.fkdotBand[1] )
-		  {
-		    scan->spinCounters[1] = 0;
-		    fkdotStep[1] = 0;
-		    scan->spinCounters[0] ++;
-		    fkdotStep[0] = scan->spinCounters[0] * scan->dfkdot[0];
-		    if ( fkdotStep[0] > scan->spinRange.fkdotBand[0] )
-		    {
-		      scan->spinCounters[0] = 0;
-		      fkdotStep[0] = 0;
-		      if ( XLALNextDopplerSkyPos(&dopplerpos, &scan->skyScan ) != 0 ) {
-			LogPrintf (LOG_CRITICAL, "sky-stepping with NextDopplerSkyPos() failed!\n");
-			return -1;
-		      }
-		      if (scan->skyScan.state == STATE_FINISHED) /* scanned all sky-positions yet? */
-			{
-			  scan->state = STATE_FINISHED;
-			  return 1;
-			} /* sky-scan finished ? */
-		      else
-			{
-			  /* normalize skyposition: correctly map into [0,2pi]x[-pi/2,pi/2] */
-			  skypos.longitude = dopplerpos.Alpha;
-			  skypos.latitude = dopplerpos.Delta;
-			  skypos.system = COORDINATESYSTEM_EQUATORIAL;
-			  XLALNormalizeSkyPosition ( &skypos );
-			} /* [ Alpha, Delta ] */
-		    } /* f0dot */
-		  } /* f1dot */
-	    } /* f2dot */
-	} /* f3dot */
-      
-      /* return the new Doppler-position */
-      pos->Alpha = skypos.longitude;
-      pos->Delta = skypos.latitude;
-      for (i=0; i < PULSAR_MAX_SPINS; i ++ )
-	pos->fkdot[i] = scan->spinRange.fkdot[i] + fkdotStep[i];
-      
+    default:
+      LALPrintError("\nInvalid grid type '%d'\n\n", scan->gridType );
+      xlalErrno = XLAL_EINVAL;
+      return -1;
       break;
-  
-    } /* switch scan->state */
+    } /* switch gridType */
 
   return 0;
   
 } /* XLALNextDopplerPos() */
+
+/** return current grid-point and step forward one template in 'factored' grids (sky x f0dot x f1dot ... )
+ * return 0 = OK, -1 = ERROR
+*/
+int
+nextFactoredGridPoint (PulsarDopplerParams *pos, DopplerFullScanState *scan)
+{
+  PulsarDopplerParams nextPos = empty_PulsarDopplerParams;
+  PulsarSpinRange *range = &(scan->spinRange);	/* shortcut */
+  PulsarSpins fkdotMax;
+  SkyPosition skypos;
+
+  if ( pos == NULL || scan == NULL )
+    return -1;
+
+  (*pos) = scan->thisPoint;	/* RETURN current Doppler-point (struct-copy) */
+  
+  nextPos = scan->thisPoint;	/* struct-copy: start from current point to get next one */
+  
+  /* shortcuts: spin boundaries */
+  fkdotMax[3] = range->fkdot[3] + range->fkdotBand[3];
+  fkdotMax[2] = range->fkdot[2] + range->fkdotBand[2];
+  fkdotMax[1] = range->fkdot[1] + range->fkdotBand[1];
+  fkdotMax[0] = range->fkdot[0] + range->fkdotBand[0];
+  
+  /* try to advance to next template */
+  nextPos.fkdot[0] += scan->dfkdot[0];			/* f0dot one forward */
+  if ( nextPos.fkdot[0] >  fkdotMax[0] )		/* too far? */
+    {
+      nextPos.fkdot[0] = range->fkdot[0];		/* f0dot return to start */
+      nextPos.fkdot[1] += scan->dfkdot[1];		/* f1dot one step forward */
+      if ( nextPos.fkdot[1] > fkdotMax[1] )
+	{
+	  nextPos.fkdot[1] = range->fkdot[1];		/* f1dot return to start */
+	  nextPos.fkdot[2] += scan->dfkdot[2];		/* f2dot one forward */
+	  if ( nextPos.fkdot[2] > fkdotMax[2] )
+	    {
+	      nextPos.fkdot[2] = range->fkdot[2];	/* f2dot return to start */
+	      nextPos.fkdot[3] += scan->dfkdot[3];	/* f3dot one forward */
+	      if ( nextPos.fkdot[3] > fkdotMax[3] )
+		{
+		  nextPos.fkdot[3] = range->fkdot[3];	/* f3dot return to start */
+		  					/* skygrid one forward */
+		  if ( (scan->skyScan.skyNode = scan->skyScan.skyNode->next) == NULL ) /* no more sky-points ?*/
+		    {
+		      scan->state = STATE_FINISHED;	/* we're done */
+		    } 
+		  else
+		    {
+		      /* normalize next skyposition: correctly map into [0,2pi]x[-pi/2,pi/2] */
+		      skypos.longitude = scan->skyScan.skyNode->Alpha; 
+		      skypos.latitude  = scan->skyScan.skyNode->Delta;
+		      skypos.system = COORDINATESYSTEM_EQUATORIAL;
+		      XLALNormalizeSkyPosition ( &skypos );
+		      nextPos.Alpha = skypos.longitude;
+		      nextPos.Delta = skypos.latitude;      
+		    }
+		} /* f3dot */
+	    } /* f2dot */
+	} /* f1dot */
+    } /* f0dot */
+  
+  /* prepare next step */
+  scan->thisPoint = nextPos;
+
+  return 0;
+
+} /* nextFactoredGridPoint() */
+
+
+/** NextDopplerSkyPos(): step through sky-grid 
+ * return 0 = OK, -1 = ERROR 
+ */
+int 
+XLALNextDopplerSkyPos( PulsarDopplerParams *pos, DopplerSkyScanState *skyScan)
+{ 
+
+  /* This traps coding errors in the calling routine. */
+  if ( pos == NULL || skyScan == NULL )
+    {
+      xlalErrno = XLAL_EINVAL;
+      return -1;
+    }
+
+  switch( skyScan->state )
+    {
+    case STATE_IDLE:
+    case STATE_FINISHED:
+      xlalErrno = XLAL_EFAILED;
+      return -1;
+      break;
+
+    case STATE_READY:  
+      if (skyScan->skyNode == NULL) 	/* we're done */
+	skyScan->state = STATE_FINISHED;
+      else
+	{
+	  pos->Alpha = skyScan->skyNode->Alpha;
+	  pos->Delta = skyScan->skyNode->Delta;
+
+	  skyScan->skyNode = skyScan->skyNode->next;  /* step forward */
+	}
+      break;
+
+    } /* switch skyScan->stat */
+
+  return 0;
+
+} /* XLALNextDopplerSkyPos() */
+
 
 
 /* ============================== SKYGRID-ONLY scanning functions ============================== */
@@ -342,9 +492,9 @@ InitDopplerSkyScan( LALStatus *status,
   ATTATCHSTATUSPTR (status); 
 
   /* This traps coding errors in the calling routine. */
-  ASSERT ( skyScan != NULL, status, DOPPLERSCANH_ENONULL, DOPPLERSCANH_MSGENONULL );  
+  ASSERT ( skyScan, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );  
   ASSERT ( skyScan->state == STATE_IDLE, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
-  ASSERT ( init->gridType < GRID_LAST, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
+  ASSERT ( init->gridType < GRID_SKY_LAST, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
   
   /* trap some abnormal input */
   if ( (init->gridType != GRID_FILE) && (init->gridType != GRID_METRIC_SKYFILE) && (init->skyRegionString == NULL) ) 
@@ -467,6 +617,30 @@ InitDopplerSkyScan( LALStatus *status,
 } /* InitDopplerSkyScan() */
 
 
+/** Destroy the a full DopplerFullScanState structure  
+ */
+void
+FreeDopplerFullScan (LALStatus *status, DopplerFullScanState **scan)
+{ 
+
+  INITSTATUS( status, "FreeDopplerFullScan", DOPPLERSCANC);
+  ATTATCHSTATUSPTR (status);
+
+  /* This traps coding errors in the calling routine. */
+  ASSERT( scan, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );
+  ASSERT( *scan, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );
+  
+  TRY ( FreeDopplerSkyScan ( status->statusPtr, &((*scan)->skyScan) ), status );
+
+  LALFree ( (*scan) );
+  (*scan) = NULL;
+
+  DETATCHSTATUSPTR (status);
+  RETURN( status );
+
+} /* FreeDopplerSkyScan() */
+
+
 /** Destroy the DopplerSkyScanState structure  
  */
 void
@@ -524,46 +698,6 @@ freeSkyGrid (DopplerSkyGrid *skygrid)
 
   return;
 } /* freeSkyGrid() */
-
-/** NextDopplerSkyPos(): step through sky-grid 
- * return 0 = OK, -1 = ERROR 
- */
-int 
-XLALNextDopplerSkyPos( PulsarDopplerParams *pos, DopplerSkyScanState *skyScan)
-{ 
-
-  /* This traps coding errors in the calling routine. */
-  if ( pos == NULL || skyScan == NULL )
-    {
-      xlalErrno = XLAL_EINVAL;
-      return -1;
-    }
-
-  switch( skyScan->state )
-    {
-    case STATE_IDLE:
-    case STATE_FINISHED:
-      xlalErrno = XLAL_EFAILED;
-      return -1;
-      break;
-
-    case STATE_READY:  
-      if (skyScan->skyNode == NULL) 	/* we're done */
-	skyScan->state = STATE_FINISHED;
-      else
-	{
-	  pos->Alpha = skyScan->skyNode->Alpha;
-	  pos->Delta = skyScan->skyNode->Delta;
-
-	  skyScan->skyNode = skyScan->skyNode->next;  /* step forward */
-	}
-      break;
-
-    } /* switch skyScan->stat */
-
-  return 0;
-
-} /* XLALNextDopplerSkyPos() */
 
 
 /* **********************************************************************
