@@ -56,7 +56,7 @@ LALStatus empty_status;
 /*---------- Global variables ----------*/
 
 /*---------- internal prototypes ----------*/
-static int create_LISA_detectors (LALDetector *Detector, UINT4 detIndex );
+static int create_LISA_detectors (LALDetector *Detector, CHAR detIndex );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
