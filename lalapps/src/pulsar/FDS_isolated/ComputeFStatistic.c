@@ -1268,7 +1268,7 @@ initUserVars (LALStatus *status)
 		      "Output-file for the (unclustered) F-statistic field over the parameter-space");
   LALregSTRINGUserVar(status,     outputClusters,	0,  UVAR_OPTIONAL,
 		      "Output-file for the *clustered* F-statistic field over the parameter-space");
-
+  LALregINTUserVar(status,        NumCandidatesToKeep,0, UVAR_OPTIONAL, "Number of Fstat 'candidates' to keep. (0 = All)");
 
   /* the following are 'developer'-options */
   LALregSTRINGUserVar(status,     workingDir,     'w', UVAR_DEVELOPER, "Directory to be made the working directory.");
@@ -1290,8 +1290,6 @@ initUserVars (LALStatus *status)
 
   LALregINTUserVar(status,        MaxFileSizeKB,  0, UVAR_DEVELOPER, 
 		   "Size to which the Fstat-output file can grow until re-compactified (in kB)");
-  LALregINTUserVar(status,        NumCandidatesToKeep,0, UVAR_DEVELOPER, 
-		   "Number of Fstat 'canidates' to keep. (0 = All)");
 
   LALregINTUserVar(status,        RngMedWindow,     0, UVAR_DEVELOPER, "Window-size to use in running-median normalization of data");
 
