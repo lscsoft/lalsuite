@@ -2,7 +2,7 @@
 # $Id$
 if LALMETAIO
 LALMETAIOPROGRAMS = lalapps_exc_resp lalapps_ivana lalapps_inspmultiawg \
-                    lalapps_chirplen lalapps_BankEfficiency 
+                    lalapps_chirplen lalapps_BankEfficiency lalapps_TestRandomBank  
 else
 LALMETAIOPROGRAMS = 
 endif
@@ -24,12 +24,13 @@ lalapps_ivana_SOURCES 			= ivana.c
 lalapps_inspmultiawg_SOURCES 		= inspmultiawg.c 
 lalapps_chirplen_SOURCES 		= chirplen.c
 lalapps_BankEfficiency_SOURCES		= BankEfficiency.c BankEfficiency.h
+lalapps_TestRandomBank_SOURCES		= TestRandomBank.c 
 endif
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
-EXTRA_DIST = 	exc_resp.c ivana.c inspmultiawg.c chirplen.c BankEfficiency.c BankEfficiency.h \
+EXTRA_DIST = 	exc_resp.c ivana.c inspmultiawg.c chirplen.c TestRandomBank.c BankEfficiency.c BankEfficiency.h \
 		BE_create_script.py
 
 CLEANFILES = 	lalapps_BankEfficiency  \
