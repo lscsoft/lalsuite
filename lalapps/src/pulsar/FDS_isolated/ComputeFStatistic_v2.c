@@ -57,6 +57,7 @@ int finite(double);
 
 /* local includes */
 #include "DopplerScan.h"
+#include "HeapToplist.h"
 
 
 RCSID( "$Id$");
@@ -119,13 +120,17 @@ typedef struct {
   REAL8 S_inv;                              /**< Sum over the 1/Sn */ 
   ComputeFParams CFparams;		    /**< parameters for Fstat (e.g Dterms, SSB-prec,...) */
   CHAR *logstring;                          /**< log containing max-info on this search setup */
+  toplist_t* FstatToplist;		    /**< sorted 'toplist' of the NumCandidatesToKeep loudest candidates */
 } ConfigVariables;
 
+/** What info do we want to store in our toplist? */
+typedef struct {
+  PulsarDopplerParams doppler;		/**< Doppler params of this 'candidate' */
+  Fcomponents  Fstat;			/**< the Fstat-value (plus Fa,Fb) for this candidate */
+} FstatCandidate_t;
 
 /*---------- Global variables ----------*/
 extern int vrbflg;		/**< defined in lalapps.c */
-
-ConfigVariables GV;		/**< global container for various derived configuration settings */
 
 /* ----- User-variables: can be set from config-file or command-line */
 INT4 uvar_Dterms;
@@ -168,6 +173,9 @@ CHAR *uvar_outputLabel;
 CHAR *uvar_outputFstat;
 CHAR *uvar_outputBstat;
 CHAR *uvar_outputLoudest;
+
+INT4 uvar_NumCandidatesToKeep;
+
 CHAR *uvar_skyGridFile;
 CHAR *uvar_outputSkyGrid;
 REAL8 uvar_dopplermax;
@@ -194,6 +202,7 @@ void getUnitWeights ( LALStatus *, MultiNoiseWeights **multiWeights, const Multi
 
 int XLALwriteCandidate2file ( FILE *fp,  const PulsarCandidate *cand, const Fcomponents *Fstat, const MultiAMCoeffs *multiAMcoef );
 
+int compareFstatCandidates ( const void *candA, const void *candB );
 
 const char *va(const char *format, ...);	/* little var-arg string helper function */
 
@@ -231,9 +240,12 @@ int main(int argc,char *argv[])
   REAL8 tickCounter;
   time_t clock0;
   Fcomponents Fstat, loudestFstat;
+
   PulsarDopplerParams dopplerpos = empty_DopplerParams;		/* current search-parameters */
   PulsarDopplerParams loudestDoppler = empty_DopplerParams;
   int ret;
+
+  ConfigVariables GV;		/**< global container for various derived configuration settings */
 
   lalDebugLevel = 0;  
   vrbflg = 1;	/* verbose error-messages */
@@ -618,6 +630,9 @@ initUserVars (LALStatus *status)
   LALregSTRINGUserVar(status,	outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for F-statistic field over the parameter-space");
   LALregSTRINGUserVar(status,	outputBstat,	 0,  UVAR_OPTIONAL, "Output-file for 'B-statistic' field over the parameter-space");
 
+  LALregINTUserVar(status,   NumCandidatesToKeep,0,  UVAR_OPTIONAL, "Number of Fstat 'candidates' to keep. (0 = All)");
+
+
   LALregINTUserVar ( status, 	minStartTime, 	 0,  UVAR_OPTIONAL, "Earliest SFT-timestamp to include");
   LALregINTUserVar ( status, 	maxEndTime, 	 0,  UVAR_OPTIONAL, "Latest SFT-timestamps to include");
 
@@ -832,9 +847,6 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
 
   } /* extrapolate spin-range */
 
-  /* ----- correct for maximal doppler-shift due to earth's motion */
- 
-  
   {/* ----- load the multi-IFO SFT-vectors ----- */
     UINT4 wings = MYMAX(uvar_Dterms, uvar_RngMedWindow/2 +1);	/* extra frequency-bins needed for rngmed, and Dterms */
     REAL8 fMax = (1.0 + uvar_dopplermax) * fCoverMax + wings / cfg->Tsft; /* correct for doppler-shift and wings */
@@ -850,7 +862,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   if ( uvar_SignalOnly )
     {
       cfg->multiNoiseWeights = NULL; 
-      GV.S_inv = 2;
+      cfg->S_inv = 2;
     }
   else
     {
@@ -858,7 +870,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
 
       TRY ( LALNormalizeMultiSFTVect (status->statusPtr, &psds, cfg->multiSFTs, uvar_RngMedWindow ), status );
       /* note: the normalization S_inv would be required to compute the ML-estimator for A^\mu */
-      TRY ( LALComputeMultiNoiseWeights  (status->statusPtr, &(cfg->multiNoiseWeights), &GV.S_inv, psds, uvar_RngMedWindow, 0 ), status );
+      TRY ( LALComputeMultiNoiseWeights  (status->statusPtr, &(cfg->multiNoiseWeights), &cfg->S_inv, psds, uvar_RngMedWindow, 0 ), status );
 
       TRY ( LALDestroyMultiPSDVector (status->statusPtr, &psds ), status );
 
@@ -896,6 +908,15 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   cfg->stepSizes.fkdot[2] = uvar_df2dot;
   cfg->stepSizes.fkdot[3] = uvar_df3dot;
   cfg->stepSizes.orbit = NULL;
+
+  /* ----- set up toplist if requested ----- */
+  if ( uvar_NumCandidatesToKeep > 0 )
+    {
+      if ( create_toplist( &(cfg->FstatToplist), uvar_NumCandidatesToKeep, sizeof(FstatCandidate_t), compareFstatCandidates) != 0 ) {
+	ABORT (status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM ); 
+      }
+    } /* create toplist */
+
 
   /* ----- produce a log-string describing the data-specific setup ----- */
   {
@@ -1040,12 +1061,15 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
   /* destroy DetectorStateSeries */
   XLALDestroyMultiDetectorStateSeries ( cfg->multiDetStates );
 
+  /* destroy FstatToplist if any */
+  if ( cfg->FstatToplist )
+    free_toplist( &(cfg->FstatToplist) );
 
   /* Free config-Variables and userInput stuff */
   TRY (LALDestroyUserVars (status->statusPtr), status);
 
-  if ( GV.searchRegion.skyRegionString )
-    LALFree ( GV.searchRegion.skyRegionString );
+  if ( cfg->searchRegion.skyRegionString )
+    LALFree ( cfg->searchRegion.skyRegionString );
   
   /* Free ephemeris data */
   LALFree(cfg->ephemeris->ephemE);
@@ -1263,3 +1287,13 @@ XLALwriteCandidate2file ( FILE *fp,  const PulsarCandidate *cand, const Fcompone
 
 } /* XLALwriteCandidate2file() */
 
+/** comparison function for our candidates toplist */
+int 
+compareFstatCandidates ( const void *candA, const void *candB )
+{
+  if ( ((const FstatCandidate_t *)candA)->Fstat.F < ((const FstatCandidate_t *)candB)->Fstat.F )
+    return 1;
+  else
+    return 0;
+
+} /* compareFstatCandidates() */
