@@ -138,7 +138,7 @@ extern INT4 lalDebugLevel;
 
 /*---------- internal prototypes ----------*/
 void initFactoredGrid (LALStatus *, DopplerFullScanState **scan, const DetectorStateSeries *detStates, const DopplerFullScanInit *init );
-int nextFactoredGridPoint (PulsarDopplerParams *pos, DopplerFullScanState *scan);
+int nextPointInFactoredGrid (PulsarDopplerParams *pos, DopplerFullScanState *scan);
 
 void getRange( LALStatus *, meshREAL y[2], meshREAL x, void *params );
 void getMetric( LALStatus *, meshREAL g[3], meshREAL skypos[2], void *params );
@@ -353,7 +353,7 @@ XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
     case GRID_FILE:
     case GRID_METRIC_SKYFILE:
       /* backwards-compatibility mode */
-      nextFactoredGridPoint ( pos, scan );
+      nextPointInFactoredGrid ( pos, scan );
       break;
 
     default:
@@ -371,7 +371,7 @@ XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
  * return 0 = OK, -1 = ERROR
 */
 int
-nextFactoredGridPoint (PulsarDopplerParams *pos, DopplerFullScanState *scan)
+nextPointInFactoredGrid (PulsarDopplerParams *pos, DopplerFullScanState *scan)
 {
   PulsarDopplerParams nextPos = empty_PulsarDopplerParams;
   PulsarSpinRange *range = &(scan->spinRange);	/* shortcut */
@@ -411,6 +411,7 @@ nextFactoredGridPoint (PulsarDopplerParams *pos, DopplerFullScanState *scan)
 		  					/* skygrid one forward */
 		  if ( (scan->skyScan.skyNode = scan->skyScan.skyNode->next) == NULL ) /* no more sky-points ?*/
 		    {
+		      scan->skyScan.state = STATE_FINISHED;	/* avoid warning when freeing */
 		      scan->state = STATE_FINISHED;	/* we're done */
 		    } 
 		  else
@@ -433,7 +434,7 @@ nextFactoredGridPoint (PulsarDopplerParams *pos, DopplerFullScanState *scan)
 
   return 0;
 
-} /* nextFactoredGridPoint() */
+} /* nextPointInFactoredGrid() */
 
 
 /** NextDopplerSkyPos(): step through sky-grid 
