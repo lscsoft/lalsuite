@@ -37,6 +37,7 @@ def set_predefined_search_parameter(BE):
 	if BE['search']=='BNS':
 	    BE['bank-mass-range'] = '1 3'
 	    BE['signal-mass-range'] = '1 3'
+	    BE['sampling'] = 4096
 	    BE['bank-ffinal']= BE['sampling']/2 - 1
     
 	elif BE['search']=='BBH':
@@ -46,13 +47,15 @@ def set_predefined_search_parameter(BE):
 	    BE['bank-ffinal'] = BE['sampling']/2 - 1
 	
 	elif BE['search']=='BHNS':
-	    BE['bank-mass-range'] = '1 33'
-	    BE['signal-mass-range'] = '1 30'
+	    BE['bank-mass-range'] = '1 63'
+	    BE['signal-mass-range'] = '1 60'
+	    BE['sampling'] = 4096
 	    BE['bank-ffinal'] = BE['sampling']/2 - 1
 	   
 	elif BE['search']=='PBH':
 	    BE['bank-mass-range'] = '.3 1'
 	    BE['signal-mass-range'] = '.3 1'
+	    BE['sampling'] = 4096
 	    BE['bank-ffinal'] = BE['sampling']/2 - 1
 	else:
 	    BE['bank-mass-range'] = '1 3'
@@ -210,8 +213,8 @@ def main():
 		help="fast simulation option" )
     parser.add_option("--bhns-injection",
 		action="store_true", default="false",
-		dest='bhns_simulation', 
-		help="bhns injection only" )
+		dest='bhns_injection', 
+		help="bhns injection only. If search arguments is set to BHNS, this parameter will always be used." )
 
 #pipeline parameters
     parser.add_option("","--njobs",
@@ -242,9 +245,12 @@ def main():
     #[some other default values]
     others = ' --print-result-xml  --debug 33 --print-bank '
     # options  without arguments 
+    
     if options.fast_simulation==True:
   	others = others + ' --fast-simulation '
-    if options.bhns_simulation==True:
+    if options.bhns_injection==True:
+  	others = others + ' --bhns-injection '
+    if BE['search']=='BHNS':
   	others = others + ' --bhns-injection '
         
     arguments  = others
@@ -264,7 +270,7 @@ def main():
         elif BE['noise-model']=='LIGOA':
             BE['fl']=20
         elif BE['noise-model']=='EGO':
-            BE['fl']=10
+            BE['fl']=14
 
     # compute the number of trial per node   
     nCondor = math.ceil(options.ntrial/options.njobs)
