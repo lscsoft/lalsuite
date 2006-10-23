@@ -40,7 +40,7 @@ extern int insert_into_toplist(toplist_t*list, void *element);
 
 /* apply a function to all elements of the list in the current order
    (possibly after calling qsort_toplist(), e.g. for writing out */
-extern void go_through_toplist(toplist_t*list, void (*handle)(const void *));
+extern void go_through_toplist(toplist_t*list, void (*handle)(void *));
 
 
 /* sort the toplist with an arbitrary sorting function

@@ -144,7 +144,7 @@ int insert_into_toplist(toplist_t*list, void *element) {
 
 
 /* apply the function "handle" to all elements of the list in the current order */
-void go_through_toplist(toplist_t*list, void (*handle)(const void *)) {
+void go_through_toplist(toplist_t*list, void (*handle)(void *)) {
   size_t i;
   for(i=0;i<list->elems;i++)
     handle(list->heap[i]);
