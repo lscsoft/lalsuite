@@ -201,13 +201,13 @@ XLALFillDetectorTensor (DetectorState *detState,	/**< [out,in]: detector state: 
       /* we distinuish (currently) 3 different TDI observables: X (channel=1), Y (channel=2), Z (channel=3) */
       switch ( channel[1] )
 	{
-	case 1: 	/* TDI observable 'X' */
+	case '1': 	/* TDI observable 'X' */
 	  armA = LISA_ARM3; armB = LISA_ARM2;
 	  break;
-	case 2:		/* TDI observable 'Y' */
+	case '2':		/* TDI observable 'Y' */
 	  armA = LISA_ARM1; armB = LISA_ARM3;
 	  break;
-	case 3:		/* TDI observable 'Z' */
+	case '3':		/* TDI observable 'Z' */
 	  armA = LISA_ARM2; armB = LISA_ARM1;
 	  break;
 	default:	/* unknown */
