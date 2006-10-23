@@ -59,7 +59,7 @@ NRCSID( EXTRAPOLATEPULSARSPINSC, "$Id$");
  * NOTE2: The output-range is in the 'canonical' order of \f$[ f^{(k)}, f^{(k)} + \Delta f^{(k)}]\f$,
  * where \f$\Delta f^{(k)} \ge 0\f$.
  * 
- * NOTE3: This function is supposed to work correctly for both epoch1 > epoch0 and epoch1 <= epoch0 !
+ * NOTE3: This function works correctly for both epoch1 > epoch0 and epoch1 <= epoch0 !
  */
 void
 LALExtrapolatePulsarSpinRange(  LALStatus *status,
@@ -129,22 +129,29 @@ LALExtrapolatePulsarSpinRange(  LALStatus *status,
  * This is equivalent to LALExtrapolatePulsarSpins(), but uses the fixed-size array-type
  * 'PulsarSpins' = REAL8[PULSAR_MAX_SPINS] instead, which is easier to handle and avoids
  * any dynamic-memory hassles.
+ *
+ * NOTE: this can be called with fkdot1 == fkdot0, in which case the input will be correctly 
+ * replaced by the output.
  */
 void
 LALExtrapolatePulsarSpins (LALStatus   *status,
-			    PulsarSpins  fkdot1,	/**< [out] spin-parameters at epoch1 */
-			    LIGOTimeGPS  epoch1, 	/**< [in] GPS SSB-time of new epoch1 */
-			    PulsarSpins  fkdot0,	/**< [in] spin-params at reference epoch0 */
-			    LIGOTimeGPS  epoch0		/**< [in] GPS SSB-time of reference-epoch0 */
-			    )
+			   PulsarSpins  fkdot1,	/**< [out] spin-parameters at epoch1 */
+			   LIGOTimeGPS  epoch1, 	/**< [in] GPS SSB-time of new epoch1 */
+			   const PulsarSpins  fkdot0,	/**< [in] spin-params at reference epoch0 */
+			   LIGOTimeGPS  epoch0		/**< [in] GPS SSB-time of reference-epoch0 */
+			   )
 {
   UINT4 numSpins = PULSAR_MAX_SPINS; 			/* fixed size array */
   UINT4 k, l;
   REAL8 kfact, dtau, dtauk;
+  PulsarSpins inSpins;
 
-  INITSTATUS( status, "LALExtrapolatePulsarSpins2", EXTRAPOLATEPULSARSPINSC );
+  INITSTATUS( status, "LALExtrapolatePulsarSpins", EXTRAPOLATEPULSARSPINSC );
 
   ASSERT ( fkdot1, status, EXTRAPOLATEPULSARSPINS_ENULL, EXTRAPOLATEPULSARSPINS_MSGENULL);
+
+  /* keep a local copy of input to allow the input- and output- pointers to be identical */
+  memcpy ( inSpins, fkdot0, sizeof(PulsarSpins) );
 
   /* ----- translate each spin-value \f$\f^{(l)}\f$ from epoch0 to epoch1 */
   dtau = XLALDeltaFloatGPS( &epoch1, &epoch0 );
@@ -158,7 +165,7 @@ LALExtrapolatePulsarSpins (LALStatus   *status,
     {
       REAL8 kcoef  = dtauk / kfact;
       for ( l=0; l < numSpins - k ; l ++ )
-	fkdot1[l] += fkdot0[ k + l ] * kcoef;
+	fkdot1[l] += inSpins[ k + l ] * kcoef;
 
       kfact *= (k+1);
       dtauk *= dtau;
