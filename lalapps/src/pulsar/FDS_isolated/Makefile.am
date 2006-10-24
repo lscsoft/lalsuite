@@ -58,7 +58,7 @@ lalapps_skynet_SOURCES = skynet.c
 
 compareFstats_SOURCES = compareFstats.c
 
-ComputeFStatistic_v2_SOURCES = ComputeFStatistic_v2.c  DopplerScan.c DopplerScan.h 
+ComputeFStatistic_v2_SOURCES = ComputeFStatistic_v2.c  DopplerScan.c DopplerScan.h HeapToplist.c HeapToplist.h 
 
 lalapps_PredictFStat_SOURCES = PredictFStat.c
 
