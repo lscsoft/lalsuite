@@ -355,13 +355,6 @@ int main( int argc, char *argv[] )
                                     "h2-triggers", "l1-triggers", 
                                     "t1-triggers", "v1-triggers"};
 
-  /* do the memory allocation */
-  site1     = (LALPlaceAndGPS*)LALMallocShort( sizeof(LALPlaceAndGPS ));
-  site2     = (LALPlaceAndGPS*)LALMallocShort( sizeof(LALPlaceAndGPS ));
-  source    = (SkyPosition*)LALMallocShort( sizeof(SkyPosition ));
-  sourceDets= (TwoDetsTimeAndASource*)LALMallocShort( 
-      sizeof(TwoDetsTimeAndASource));
-
 
   /* getopt arguments */
   struct option long_options[] =
