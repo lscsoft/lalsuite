@@ -14,7 +14,7 @@ are required) i.e. it will take the difference of the original heterodyne phase 
 and reheterodyne with this phase difference. This code does not perform any calibration of the data.
 */
 
-#include "heterodyne_pulsar_modified.h"
+#include "heterodyne_pulsar.h"
 
 /* define a macro to round a number without having to use the C round function */
 #define ROUND(a) (ceil(a)-a > 0.5 ? floor(a) : ceil(a))
