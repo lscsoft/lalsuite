@@ -428,8 +428,7 @@ int main(int argc,char *argv[])
 	return COMPUTEFSTATC_EXLAL;
       }
 
-      LAL_CALL(LALEstimatePulsarAmplitudeParams (&status, &Amp, &dAmp, &loudestFstat, cfBuffer.multiAMcoef, norm), 
-	       &status);
+      LAL_CALL(LALEstimatePulsarAmplitudeParams (&status, &Amp, &dAmp, &loudestFstat, multiAMcoef, norm), &status);
       
       /* propagate initial-phase from internal reference-time 'startTime' to refTime of Doppler-params */
       LAL_CALL(LALExtrapolatePulsarPhase (&status, &Amp.phi0, loudestDoppler.fkdot, GV.refTime, Amp.phi0,GV.startTime),&status);
@@ -461,7 +460,7 @@ int main(int argc,char *argv[])
       cand.Amp = Amp;
       cand.dAmp = dAmp;
       cand.Doppler = loudestDoppler;
-      if ( write_PulsarCandidate_to_fp ( fpLoudest,  &cand, &loudestFstat, cfBuffer.multiAMcoef) != XLAL_SUCCESS )
+      if ( write_PulsarCandidate_to_fp ( fpLoudest,  &cand, &loudestFstat, multiAMcoef) != XLAL_SUCCESS )
 	{
 	  LogPrintf(LOG_CRITICAL, "call to write_PulsarCandidate_to_fp() failed!\n");
 	  return COMPUTEFSTATISTIC_ESYS;
