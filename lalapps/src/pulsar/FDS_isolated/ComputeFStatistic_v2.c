@@ -136,8 +136,6 @@ extern int vrbflg;		/**< defined in lalapps.c */
 INT4 uvar_Dterms;
 CHAR *uvar_IFO;
 BOOLEAN uvar_SignalOnly;
-BOOLEAN uvar_noHeader;
-BOOLEAN uvar_addOutput;
 REAL8 uvar_Freq;
 REAL8 uvar_FreqBand;
 REAL8 uvar_dFreq;
@@ -293,25 +291,13 @@ int main(int argc,char *argv[])
    * we open and prepare the output-file here */
   if (uvar_outputFstat)
     {
-      if(uvar_addOutput)
+      if ( (fpFstat = fopen (uvar_outputFstat, "wb")) == NULL)
 	{
-	  if ( (fpFstat = fopen (uvar_outputFstat, "ab")) == NULL)
-	    {
-	      LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputFstat);
-	      return (COMPUTEFSTATISTIC_ESYS);
-	    }
-	}
-      else
-	{
-	  if ( (fpFstat = fopen (uvar_outputFstat, "wb")) == NULL)
-	    {
-	      LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputFstat);
-	      return (COMPUTEFSTATISTIC_ESYS);
-	    }
+	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputFstat);
+	  return (COMPUTEFSTATISTIC_ESYS);
 	}
       
-      if(!uvar_noHeader)
-	fprintf (fpFstat, "%s", GV.logstring );
+      fprintf (fpFstat, "%s", GV.logstring );
     } /* if outputFstat */
   
   /*----------------------------------------------------------------------
@@ -402,9 +388,7 @@ int main(int argc,char *argv[])
  
   if ( fpFstat )
     {
-      if(!uvar_noHeader)
-	fprintf (fpFstat, "%%DONE\n");
-
+      fprintf (fpFstat, "%%DONE\n");
       fclose (fpFstat);
       fpFstat = NULL;
     }
@@ -436,25 +420,14 @@ int main(int argc,char *argv[])
 	Amp.phi0 += LAL_TWOPI;
       Amp.phi0 = fmod ( Amp.phi0, LAL_TWOPI );
 
-      if(uvar_addOutput)
+      if ( (fpLoudest = fopen (uvar_outputLoudest, "wb")) == NULL)
 	{
-	  if ( (fpLoudest = fopen (uvar_outputLoudest, "ab")) == NULL)
-	    {
-	      LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputLoudest);
-	      return COMPUTEFSTATISTIC_ESYS;
-	    }
+	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputLoudest);
+	  return COMPUTEFSTATISTIC_ESYS;
 	}
-      else
-	{
-	  if ( (fpLoudest = fopen (uvar_outputLoudest, "wb")) == NULL)
-	    {
-	      LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputLoudest);
-	      return COMPUTEFSTATISTIC_ESYS;
-	    }
-	}
+
       /* write header with run-info */
-      if(!uvar_noHeader)
-	fprintf (fpLoudest, "%s", GV.logstring );
+      fprintf (fpLoudest, "%s", GV.logstring );
 
       /* assemble 'candidate' structure */
       cand.Amp = Amp;
@@ -515,8 +488,6 @@ initUserVars (LALStatus *status)
   strcpy (uvar_ephemDir, DEFAULT_EPHEMDIR);
 
   uvar_SignalOnly = FALSE;
-  uvar_noHeader = FALSE;
-  uvar_addOutput =FALSE;
 
   uvar_f1dot     = 0.0;
   uvar_f1dotBand = 0.0;
@@ -613,8 +584,6 @@ initUserVars (LALStatus *status)
 
   LALregSTRINGUserVar(status,   workingDir,     'w', UVAR_DEVELOPER, "Directory to use as work directory.");
   LALregREALUserVar(status, 	timerCount, 	 0,  UVAR_DEVELOPER, "N: Output progress/timer info every N templates");  
-  LALregBOOLUserVar(status, 	noHeader, 	'H', UVAR_DEVELOPER, "Do not print the header if this option is used");
-  LALregBOOLUserVar(status, 	addOutput, 	'A', UVAR_DEVELOPER, "Add output result to the previous run");
 
 
   DETATCHSTATUSPTR (status);
