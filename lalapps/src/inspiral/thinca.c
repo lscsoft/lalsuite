@@ -347,13 +347,8 @@ int main( int argc, char *argv[] )
   
   char*                 sourceFile=NULL;
  
-  LALPlaceAndGPS*       site1;
-  LALPlaceAndGPS*       site2;
-  SkyPosition*          source;
-  TwoDetsTimeAndASource* sourceDets;
   LIGOTimeGPS           sourceTime;
   REAL8                 timeDelay;
-
 
   const CHAR                  *ifoArg[LAL_NUM_IFO] = 
                                    {"g1-triggers", "h1-triggers", 
@@ -1807,24 +1802,12 @@ int main( int argc, char *argv[] )
       XLALReturnDetector( &bDet, ifoTwo );
       if ( accuracyParams.grb )
       {
-
         sourceTime.gpsSeconds=(INT4)( (endCoincidence+startCoincidence)/2.0 );
         sourceTime.gpsNanoSeconds=0;
-        site1->p_detector=&aDet;
-        site1->p_gps=&sourceTime;
-        site2->p_detector=&bDet;
-        site2->p_gps=&sourceTime;
-
-        source->longitude=locRec*LAL_PI_180;
-        source->latitude=locDec*LAL_PI_180;
-        source->system=COORDINATESYSTEM_EQUATORIAL;
-  
-        sourceDets->p_det_and_time1=site1;
-        sourceDets->p_det_and_time2=site2;
-        sourceDets->p_source=source; 
-
-        LALTimeDelay( &status, &timeDelay, sourceDets );
-        accuracyParams.lightTravelTime[ ifoNumber][ ifoTwo ] = 
+	
+	/* compute signal travel time  */
+	timeDelay=-XLALArrivalTimeDiff( aDet.location, bDet.location, locRec*LAL_PI_180, locDec*LAL_PI_180, &sourceTime);
+	accuracyParams.lightTravelTime[ ifoNumber][ ifoTwo ] = 
           (INT8) 1e9*timeDelay;
 
       }
@@ -1835,7 +1818,6 @@ int main( int argc, char *argv[] )
       }
     }
   }
-
 
   
   /* 
