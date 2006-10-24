@@ -171,7 +171,6 @@ CHAR *uvar_DataFiles;
 BOOLEAN uvar_help;
 CHAR *uvar_outputLabel;
 CHAR *uvar_outputFstat;
-CHAR *uvar_outputBstat;
 CHAR *uvar_outputLoudest;
 
 INT4 uvar_NumCandidatesToKeep;
@@ -232,9 +231,7 @@ int main(int argc,char *argv[])
 
   SkyPosition skypos;
   FILE *fpFstat = NULL;
-  FILE *fpBstat = NULL;
   CHAR buf[512];
-  PulsarSpins fkdotRef = {0,0,0,0};
   ComputeFBuffer cfBuffer = empty_ComputeFBuffer;
   REAL8 numTemplates, templateCounter;
   REAL8 tickCounter;
@@ -316,24 +313,6 @@ int main(int argc,char *argv[])
 	fprintf (fpFstat, "%s", GV.logstring );
     } /* if outputFstat */
   
-  if (uvar_outputBstat)
-    {
-      if ( (fpBstat = fopen (uvar_outputBstat, "wb")) == NULL)
-	{
-	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputBstat);
-	  return (COMPUTEFSTATISTIC_ESYS);
-	}
-    } /* if outputFstat */
-  
-  if (uvar_outputBstat)
-    {
-      if ( (fpBstat = fopen (uvar_outputBstat, "wb")) == NULL)
-	{
-	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputBstat);
-	  return (COMPUTEFSTATISTIC_ESYS);
-	}
-    } /* if outputBstat */
-
   /*----------------------------------------------------------------------
    * main loop: demodulate data for each point in the sky-position grid
    * and for each value of the frequency-spindown
@@ -370,7 +349,7 @@ int main(int argc,char *argv[])
 		     "[Alpha,Delta] = [%.16g,%.16g],\n"
 		     "fkdot=[%.16g,%.16g,%.16g,%16.g]\n",
 		     dopplerpos.Alpha, dopplerpos.Delta, 
-		     fkdotRef[0], fkdotRef[1], fkdotRef[2], fkdotRef[3] );
+		     dopplerpos.fkdot[0], dopplerpos.fkdot[1], dopplerpos.fkdot[2], dopplerpos.fkdot[3] );
 	  return -1;
 	}
       
@@ -392,36 +371,41 @@ int main(int argc,char *argv[])
 	} /* if SignalOnly */
       
       /* propagate fkdot back to reference-time for outputting results */
-      LAL_CALL ( LALExtrapolatePulsarSpins ( &status, fkdotRef, GV.refTime, dopplerpos.fkdot, GV.startTime ), &status );
-      
-      /* calculate the baysian-marginalized 'B-statistic' */
-      if ( fpBstat )
-	{
-	  fprintf (fpBstat, "%16.12f %8.7f %8.7f %.17g %10.6g\n", 
-		   fkdotRef[0], dopplerpos.Alpha, dopplerpos.Delta, fkdotRef[1], Fstat.Bstat );
-	}
+      LAL_CALL ( LALExtrapolatePulsarSpins ( &status, dopplerpos.fkdot, GV.refTime, dopplerpos.fkdot, GV.startTime ), &status );
       
       /* now, if user requested it, we output ALL F-statistic results above threshold */
-      if ( uvar_outputFstat && ( 2.0 * Fstat.F >= uvar_TwoFthreshold ) )
+      if ( 2.0 * Fstat.F >= uvar_TwoFthreshold )
 	{
-	  LALSnprintf (buf, 511, "%.16g %.16g %.16g %.6g %.5g %.5g %.9g\n",
-		       fkdotRef[0], 
-		       dopplerpos.Alpha, dopplerpos.Delta, 
-		       fkdotRef[1], fkdotRef[2], fkdotRef[3],
-		       2.0 * Fstat.F );
-	  buf[511] = 0;
-	  if ( fpFstat )
-	    fprintf (fpFstat, buf );
-	} /* if F > threshold */
+	  /* insert this into toplist if requested */
+	  if ( GV.FstatToplist  )
+	    {
+	      FstatCandidate_t thisCand;
+	      thisCand.doppler = dopplerpos;
+	      thisCand.Fstat   = Fstat;
+	      if ( insert_into_toplist(GV.FstatToplist, (void*)&thisCand ) )
+		LogPrintf ( LOG_DEBUG, "Added new candidate into toplist: 2F = %f\n", 2.0 * Fstat.F );
+	    }
+	  else if ( fpFstat ) /* write out immediately */
+	    {
+	      LALSnprintf (buf, 511, "%.16g %.16g %.16g %.6g %.5g %.5g %.9g\n",
+			   dopplerpos.fkdot[0], 
+			   dopplerpos.Alpha, dopplerpos.Delta, 
+			   dopplerpos.fkdot[1], dopplerpos.fkdot[2], dopplerpos.fkdot[3],
+			   2.0 * Fstat.F );
+	      buf[511] = 0;
+	      if ( fpFstat )
+		fprintf (fpFstat, buf );
+	    } /* if outputFstat */
+
+	} /* if 2F > threshold */
       
       /* keep track of loudest candidate */
       if ( Fstat.F > loudestFstat.F )
 	{
 	  loudestFstat = Fstat;
 	  loudestDoppler = dopplerpos;
-	  /* keep spins at reference-time */
-	  memcpy ( &loudestDoppler.fkdot, &fkdotRef, sizeof fkdotRef );
 	}
+
     } /*  while another Doppler position  */
  
   if ( fpFstat )
@@ -431,12 +415,6 @@ int main(int argc,char *argv[])
 
       fclose (fpFstat);
       fpFstat = NULL;
-    }
-  if ( fpBstat )
-    {
-      fprintf (fpBstat, "%%DONE\n");
-      fclose (fpBstat);
-      fpBstat = NULL;
     }
 
   /* do full parameter-estimation for loudest canidate and output into separate file */
@@ -571,7 +549,6 @@ initUserVars (LALStatus *status)
   uvar_outputLabel = NULL;
 
   uvar_outputFstat = NULL;
-  uvar_outputBstat = NULL;
 
   uvar_skyGridFile = NULL;
 
@@ -628,7 +605,6 @@ initUserVars (LALStatus *status)
   LALregREALUserVar(status,	refTime,	 0,  UVAR_OPTIONAL, "SSB reference time for pulsar-paramters");
   LALregREALUserVar(status, 	dopplermax, 	'q', UVAR_OPTIONAL, "Maximum doppler shift expected");  
   LALregSTRINGUserVar(status,	outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for F-statistic field over the parameter-space");
-  LALregSTRINGUserVar(status,	outputBstat,	 0,  UVAR_OPTIONAL, "Output-file for 'B-statistic' field over the parameter-space");
 
   LALregINTUserVar(status,   NumCandidatesToKeep,0,  UVAR_OPTIONAL, "Number of Fstat 'candidates' to keep. (0 = All)");
 
