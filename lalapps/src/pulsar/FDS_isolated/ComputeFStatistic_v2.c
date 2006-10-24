@@ -214,6 +214,7 @@ static const ComputeFBuffer empty_ComputeFBuffer;
 static const LIGOTimeGPS empty_LIGOTimeGPS;
 static const PulsarCandidate empty_PulsarCandidate;
 static const PulsarDopplerParams empty_DopplerParams;
+static const ConfigVariables empty_ConfigVariables;
 /*----------------------------------------------------------------------*/
 /* Function definitions start here */
 /*----------------------------------------------------------------------*/
@@ -242,7 +243,7 @@ int main(int argc,char *argv[])
   PulsarDopplerParams loudestDoppler = empty_DopplerParams;
   int ret;
 
-  ConfigVariables GV;		/**< global container for various derived configuration settings */
+  ConfigVariables GV = empty_ConfigVariables;		/**< global container for various derived configuration settings */
 
   lalDebugLevel = 0;  
   vrbflg = 1;	/* verbose error-messages */
