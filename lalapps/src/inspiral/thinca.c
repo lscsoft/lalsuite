@@ -73,6 +73,9 @@ int doBCVC = 0;
 int h1h2Consistency = 0;
 int doVeto = 0;
 int completeCoincs = 0;
+REAL4 locRec=-1; /* for specifying a certain location on the sky */
+REAL4 locDec=-100;   
+
 /*
  * 
  * USAGE
@@ -204,14 +207,54 @@ static void print_usage(char *program)
       "                                   (playground_only|exclude_play|all_data)\n"\
       "   --complete-coincs               write out triggers from all non-vetoed ifos\n"
       "                                   if not seen, snr is equal to zero\n"\
-      "  [--location-ra]       rec        right ascension of a source on the sky (degree) [with mchirp_and_eta_ext only]\n"\
-      "  [--location-de]       dec        declination of a source on the sky (degree) [with mchirp_and_eta_ext only]\n"\
+      "  [--grb]               source     enables the GRB mode (using actual time delays) for a source\n"\
+      "                                   specified in the source file\n"\
       "\n"\
       "[LIGOLW XML input files] list of the input trigger files.\n"\
       "\n", program);
 }
 
+/*
+ * 
+ * readSource
+ *
+ */
 
+ /* read the source location in GRB mode */
+static void readSource( char* sourceFile, REAL4* rec, REAL4* dec )
+{
+  FILE *fp;
+  char line[256];
+  char dummy[16]; 
+  char ra_sgn, dec_sgn;
+  double ra_h, ra_m, dec_d, dec_m;
+  int c;
+  
+  fp = fopen( sourceFile, "r" );
+  while ( fgets( line, sizeof( line ), fp ) )
+    if ( line[0] == '#' )
+      continue;
+    else
+      {
+	c = sscanf( line, "%s %c%le:%le %c%le:%le %s %s %s",
+		    &dummy, &ra_sgn, &ra_h, &ra_m, &dec_sgn, &dec_d, &dec_m,
+		    &dummy, &dummy, &dummy);
+	*rec=( ra_h + ra_m / 60.0 ) * LAL_PI / 12.0;
+	*dec=( dec_d + dec_m / 60.0 ) * LAL_PI / 180.0;
+	if ( ra_sgn == '-' )
+	  *rec *= -1;
+	if ( dec_sgn == '-' )
+	  *dec *= -1;
+      }
+  
+  fclose( fp );
+}
+
+/*
+ * 
+ * MAIN
+ *
+ */
 int main( int argc, char *argv[] )
 {
   static LALStatus      status;
@@ -299,18 +342,17 @@ int main( int argc, char *argv[] )
   SnglInspiralBCVCalphafCut  alphafParams;
 
   /* by default we do not remove any triggers in the SNR Cut*/  
+  
   REAL4                 snrCut = 0;   
-
-  REAL4                 locRec=-1; /* for specifying a certain 
-                                      location on the sky */
-  REAL4                 locDec=-100;   
+  
+  char*                 sourceFile=NULL;
+ 
   LALPlaceAndGPS*       site1;
   LALPlaceAndGPS*       site2;
   SkyPosition*          source;
   TwoDetsTimeAndASource* sourceDets;
   LIGOTimeGPS           sourceTime;
   REAL8                 timeDelay;
-  INT4                  doGRB=0;
 
 
   const CHAR                  *ifoArg[LAL_NUM_IFO] = 
@@ -345,7 +387,6 @@ int main( int argc, char *argv[] )
     {"psi0-psi3-cut",       no_argument,   &doPsi0Psi3Cut,            1 },
     {"bcvc",                no_argument,   &doBCVC,                   1 },
     {"do-veto",             no_argument,   &doVeto,                   1 },
-    {"grb",                 no_argument,   &doGRB,                    1 },
     {"complete-coincs",     no_argument,   &completeCoincs,           1 },
     {"g1-slide",            required_argument, 0,                    'b'},
     {"h1-slide",            required_argument, 0,                    'c'},
@@ -424,8 +465,7 @@ int main( int argc, char *argv[] )
     {"l1-veto-file",        required_argument, 0,                    '}'},
     {"t1-veto-file",        required_argument, 0,                    '['},
     {"v1-veto-file",        required_argument, 0,                    ']'},
-    {"location-ra",         required_argument, 0,                    '_'},
-    {"location-de",         required_argument, 0,                    '~'},
+    {"grb",                 required_argument, 0,                    '_'},
     {0, 0, 0, 0}
   };
   int c;
@@ -443,6 +483,7 @@ int main( int argc, char *argv[] )
      with those values ALL triggers will survive (i.e. no cut). */
   accuracyParams.iotaCutH1H2=-1.0;
   accuracyParams.iotaCutH1L1=-1.0;
+  accuracyParams.grb=0;
 
 
   /*
@@ -1165,15 +1206,12 @@ int main( int argc, char *argv[] )
         break;       
 
       case '_':
-        /* location of a source on the sky, right ascension (degree) */
-        locRec= atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
-        break;
-
-      case '~':
-        /* location of a source on the sky, declination (degree) */
-        locDec= atof(optarg);
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
+	/* specifying GRB source file */
+        optarg_len = strlen(optarg) + 1;
+        sourceFile = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+        memcpy( sourceFile, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+	accuracyParams.grb=1;
         break;
         
       default:
@@ -1234,17 +1272,6 @@ int main( int argc, char *argv[] )
   {
     fprintf( stderr, "Error: --data-type must be specified\n");
     exit(1);
-  }
-
-  /* Check ext-data type */
-  fprintf(stdout,"rec: %f  dec: %f\n", locRec, locDec);
-  if ( accuracyParams.grb )
-  {
-    if (locRec<0 || locDec<-90) {
-      fprintf( stderr, "Error: --location-rec and --location-dec\
-          must be specified (coordinates of a source on the sky)\n");
-      exit(1);
-    }
   }
 
 
@@ -1477,18 +1504,6 @@ int main( int argc, char *argv[] )
     LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );    
   }
   
-  /* store the do GRB */
-  if (doGRB)
-  {
-    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
-      calloc( 1, sizeof(ProcessParamsTable) );
-    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
-        "%s", PROGRAM_NAME );
-    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
-        "--grb");
-    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );    
-  }
 
   /* store the complete-coincs option */
   if (completeCoincs)
@@ -1511,9 +1526,10 @@ int main( int argc, char *argv[] )
   }
 
 
-  /* store the grb option value */
-  accuracyParams.grb=doGRB;
- 
+  /* read the source location in GRB mode */
+  if (sourceFile) {
+    readSource( sourceFile, &locRec, &locDec );   
+  }
 
   /* delete the first, empty process_params entry */
   this_proc_param = processParamsTable.processParamsTable;
