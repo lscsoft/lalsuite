@@ -137,6 +137,11 @@ if test -z "$autoheader_version"; then
   fail "finding program autoheader"
 fi
 case "$autoconf_version" in
+  2.6*)
+  CONFIGFILE="configure.ac"
+  # TODO: FIXME 
+  AUTOCONF25="yes" # hack: assume that 2.6x works with the 2.5x configure.ac
+  ;;
   2.5*)
   CONFIGFILE="configure.ac"
   AUTOCONF25="yes"
