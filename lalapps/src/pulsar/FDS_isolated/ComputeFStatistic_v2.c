@@ -1259,7 +1259,7 @@ compareFstatCandidates ( const void *candA, const void *candB )
   if ( ((const FstatCandidate *)candA)->Fstat.F < ((const FstatCandidate *)candB)->Fstat.F )
     return 1;
   else
-    return 0;
+    return -1;
 
 } /* compareFstatCandidates() */
 
