@@ -702,12 +702,12 @@ int main( int argc, char *argv[] )
      else if (ddistr == 2)
      /* uniform volume distribution */
      {
-       REAL4 d2min = dmin * dmin ;
-       REAL4 d2max = dmax * dmax ;
+       REAL4 d2min = pow(dmin,3.0) ;
+       REAL4 d2max = pow(dmax,3.0) ;
        REAL4 deltad2 = d2max - d2min ;
        LAL_CALL(  LALUniformDeviate(&status,&u,randParams),&status );
        d2 = d2min + u * deltad2 ;
-       this_inj->distance = sqrt(d2);
+       this_inj->distance = pow(d2,1.0/3.0);
      }
 
      this_inj->distance = this_inj->distance / 1000.0; /*convert to Mpc */
