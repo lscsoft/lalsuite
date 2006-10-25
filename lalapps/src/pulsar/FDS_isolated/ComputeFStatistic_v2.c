@@ -197,7 +197,7 @@ int outputBeamTS( const CHAR *fname, const AMCoeffs *amcoe, const DetectorStateS
 void InitEphemeris (LALStatus *, EphemerisData *edat, const CHAR *ephemDir, const CHAR *ephemYear, LIGOTimeGPS epoch, BOOLEAN isLISA);
 void getUnitWeights ( LALStatus *, MultiNoiseWeights **multiWeights, const MultiSFTVector *multiSFTs );
 
-int write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisCand );
+int write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand );
 int write_PulsarCandidate_to_fp ( FILE *fp,  const PulsarCandidate *cand, const Fcomponents *Fstat, const MultiAMCoeffs *multiAMcoef);
 
 int compareFstatCandidates ( const void *candA, const void *candB );
@@ -235,11 +235,9 @@ int main(int argc,char *argv[])
   REAL8 numTemplates, templateCounter;
   REAL8 tickCounter;
   time_t clock0;
-  Fcomponents Fstat, loudestFstat;
-
+  Fcomponents Fstat;
   PulsarDopplerParams dopplerpos = empty_DopplerParams;		/* current search-parameters */
-  PulsarDopplerParams loudestDoppler = empty_DopplerParams;
-  int ret;
+  FstatCandidate loudestFCand, thisFCand;
 
   ConfigVariables GV = empty_ConfigVariables;		/**< global container for various derived configuration settings */
 
@@ -308,7 +306,7 @@ int main(int argc,char *argv[])
   templateCounter = 0.0; 
   tickCounter = 0;
   clock0 = time(NULL);
-  while ( (ret = XLALNextDopplerPos( &dopplerpos, thisScan )) == 0 )
+  while ( XLALNextDopplerPos( &dopplerpos, thisScan ) == 0 )
     {
       /* main function call: compute F-statistic for this template */
       LAL_CALL( ComputeFStat(&status, &Fstat, &dopplerpos, GV.multiSFTs, GV.multiNoiseWeights, 
@@ -352,23 +350,27 @@ int main(int argc,char *argv[])
       
       /* propagate fkdot back to reference-time for outputting results */
       LAL_CALL ( LALExtrapolatePulsarSpins ( &status, dopplerpos.fkdot, GV.refTime, dopplerpos.fkdot, GV.startTime ), &status );
-      
-      /* two types of threshold: fixed (TwoFThreshold) and dynamic (NumCandidatesToKeep) */
-      if ( 2.0 * Fstat.F >= uvar_TwoFthreshold )	/* fixed threshold */
-	{
-	  FstatCandidate thisCand;
-	  thisCand.doppler = dopplerpos;
-	  thisCand.Fstat   = Fstat;
 
+      /* FIXME: set proper reference times */
+      
+      /* collect data on current 'Fstat-candidate' */
+      thisFCand.doppler = dopplerpos;
+      thisFCand.Fstat   = Fstat;
+
+      /* two types of threshold: fixed (TwoFThreshold) and dynamic (NumCandidatesToKeep) */
+      if ( 2.0 * thisFCand.Fstat.F >= uvar_TwoFthreshold )	/* fixed threshold */
+	{
 	  /* insert this into toplist if requested */
 	  if ( GV.FstatToplist  )			/* dynamic threshold */
 	    {
-	      if ( insert_into_toplist(GV.FstatToplist, (void*)&thisCand ) )
+	      if ( insert_into_toplist(GV.FstatToplist, (void*)&thisFCand ) )
 		LogPrintf ( LOG_DEBUG, "Added new candidate into toplist: 2F = %f\n", 2.0 * Fstat.F );
+	      else
+		LogPrintf ( LOG_DEBUG, "NOT added the candidate into toplist: 2F = %f\n", 2 * Fstat.F );
 	    }
 	  else if ( fpFstat ) 				/* no toplist :write out immediately */
 	    {
-	      if ( write_FstatCandidate_to_fp ( fpFstat, &thisCand ) != 0 )
+	      if ( write_FstatCandidate_to_fp ( fpFstat, &thisFCand ) != 0 )
 		{
 		  LogPrintf (LOG_CRITICAL, "Failed to write candidate to file.\n");
 		  return -1;
@@ -378,14 +380,37 @@ int main(int argc,char *argv[])
 	} /* if 2F > threshold */
       
       /* separately keep track of loudest candidate (for --outputLoudest) */
-      if ( Fstat.F > loudestFstat.F )
-	{
-	  loudestFstat = Fstat;
-	  loudestDoppler = dopplerpos;
-	}
+      if ( thisFCand.Fstat.F > loudestFCand.Fstat.F )
+	loudestFCand = thisFCand;
 
-    } /*  while another Doppler position  */
+    } /* while more Doppler positions to scan */
  
+  /* ----- if using toplist: sort and write it out to file now ----- */
+  if ( fpFstat && GV.FstatToplist )
+    {
+      UINT4 el;
+
+      /* sort toplist */
+      LogPrintf ( LOG_DEBUG, "Sorting toplist ... ");
+      qsort_toplist ( GV.FstatToplist, compareFstatCandidates );
+      LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
+
+      for ( el=0; el < GV.FstatToplist->elems; el ++ )
+	{
+	  const FstatCandidate *candi;
+	  if ( ( candi = (const FstatCandidate *) toplist_elem ( GV.FstatToplist, el )) == NULL ) {
+	    LogPrintf ( LOG_CRITICAL, "Internal consistency problems with toplist: contains fewer elements than expected!\n");
+	    return -1;
+	  }
+	  if ( write_FstatCandidate_to_fp ( fpFstat, candi ) != 0 )
+	    {
+	      LogPrintf (LOG_CRITICAL, "Failed to write candidate to file.\n");
+	      return -1;
+	    }	  
+	} /* for el < elems in toplist */
+
+    } /* if fpFstat && toplist */ 
+
   if ( fpFstat )
     {
       fprintf (fpFstat, "%%DONE\n");
@@ -402,8 +427,8 @@ int main(int argc,char *argv[])
       PulsarAmplitudeParams Amp, dAmp;
       PulsarCandidate cand = empty_PulsarCandidate;
 
-      skypos.longitude = loudestDoppler.Alpha;
-      skypos.latitude  = loudestDoppler.Delta;
+      skypos.longitude = loudestFCand.doppler.Alpha;
+      skypos.latitude  = loudestFCand.doppler.Delta;
       skypos.system = COORDINATESYSTEM_EQUATORIAL;
       LAL_CALL ( LALGetMultiAMCoeffs ( &status, &multiAMcoef, GV.multiDetStates, skypos ), &status);
       /* noise-weigh Antenna-patterns and compute A,B,C */
@@ -412,10 +437,10 @@ int main(int argc,char *argv[])
 	return COMPUTEFSTATC_EXLAL;
       }
 
-      LAL_CALL(LALEstimatePulsarAmplitudeParams (&status, &Amp, &dAmp, &loudestFstat, multiAMcoef, norm), &status);
+      LAL_CALL(LALEstimatePulsarAmplitudeParams (&status, &Amp, &dAmp, &loudestFCand.Fstat, multiAMcoef, norm), &status);
       
       /* propagate initial-phase from internal reference-time 'startTime' to refTime of Doppler-params */
-      LAL_CALL(LALExtrapolatePulsarPhase (&status, &Amp.phi0, loudestDoppler.fkdot, GV.refTime, Amp.phi0,GV.startTime),&status);
+      LAL_CALL(LALExtrapolatePulsarPhase (&status, &Amp.phi0, loudestFCand.doppler.fkdot, GV.refTime, Amp.phi0,GV.startTime),&status);
       if ( Amp.phi0 < 0 )	      /* make sure phi0 in [0, 2*pi] */
 	Amp.phi0 += LAL_TWOPI;
       Amp.phi0 = fmod ( Amp.phi0, LAL_TWOPI );
@@ -432,8 +457,8 @@ int main(int argc,char *argv[])
       /* assemble 'candidate' structure */
       cand.Amp = Amp;
       cand.dAmp = dAmp;
-      cand.Doppler = loudestDoppler;
-      if ( write_PulsarCandidate_to_fp ( fpLoudest,  &cand, &loudestFstat, multiAMcoef) != XLAL_SUCCESS )
+      cand.Doppler = loudestFCand.doppler;
+      if ( write_PulsarCandidate_to_fp ( fpLoudest,  &cand, &loudestFCand.Fstat, multiAMcoef) != XLAL_SUCCESS )
 	{
 	  LogPrintf(LOG_CRITICAL, "call to write_PulsarCandidate_to_fp() failed!\n");
 	  return COMPUTEFSTATISTIC_ESYS;
@@ -1242,16 +1267,16 @@ compareFstatCandidates ( const void *candA, const void *candB )
  * Return: 0 = OK, -1 = ERROR
  */
 int
-write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisCand )
+write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand )
 {
 
-  if ( !fp || !thisCand )
+  if ( !fp || !thisFCand )
     return -1;
 
   fprintf (fp, "%.16g %.16g %.16g %.6g %.5g %.5g %.9g\n",
-	   thisCand->doppler.fkdot[0], thisCand->doppler.Alpha, thisCand->doppler.Delta, 
-	   thisCand->doppler.fkdot[1], thisCand->doppler.fkdot[2], thisCand->doppler.fkdot[3], 
-	   2.0 * thisCand->Fstat.F );
+	   thisFCand->doppler.fkdot[0], thisFCand->doppler.Alpha, thisFCand->doppler.Delta, 
+	   thisFCand->doppler.fkdot[1], thisFCand->doppler.fkdot[2], thisFCand->doppler.fkdot[3], 
+	   2.0 * thisFCand->Fstat.F );
   
   return 0;
   
