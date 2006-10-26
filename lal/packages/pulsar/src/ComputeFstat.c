@@ -1256,7 +1256,7 @@ XLALWeighMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *m
 	    Cd += ahat * bhat;
 	    } /* for alpha < numSFTsX */
 	} /* for X < numDetectors */
-      Sinv_Tsft = 2.0;
+      Sinv_Tsft = 0;
     } /* if multiWeights == NULL */
 
   multiAMcoef->Mmunu.Ad = Ad;
