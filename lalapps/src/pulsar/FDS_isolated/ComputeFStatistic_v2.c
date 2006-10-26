@@ -117,7 +117,6 @@ typedef struct {
   MultiSFTVector *multiSFTs;		    /**< multi-IFO SFT-vectors */
   MultiDetectorStateSeries *multiDetStates; /**< pos, vel and LMSTs for detector at times t_i */
   MultiNoiseWeights *multiNoiseWeights;	    /**< normalized noise-weights of those SFTs */
-  REAL8 S_inv;                              /**< Sum over the 1/Sn */ 
   ComputeFParams CFparams;		    /**< parameters for Fstat (e.g Dterms, SSB-prec,...) */
   CHAR *logstring;                          /**< log containing max-info on this search setup */
   toplist_t* FstatToplist;		    /**< sorted 'toplist' of the NumCandidatesToKeep loudest candidates */
@@ -127,6 +126,7 @@ typedef struct {
 typedef struct {
   PulsarDopplerParams doppler;		/**< Doppler params of this 'candidate' */
   Fcomponents  Fstat;			/**< the Fstat-value (plus Fa,Fb) for this candidate */
+  AntennaPatternMatrix Mmunu;		/**< antenna-pattern matrix Mmunu = 0.5* Sinv*Tsft * [ Ad, Cd; Cd; Bd ] */
 } FstatCandidate;
 
 /*---------- Global variables ----------*/
@@ -198,7 +198,7 @@ void InitEphemeris (LALStatus *, EphemerisData *edat, const CHAR *ephemDir, cons
 void getUnitWeights ( LALStatus *, MultiNoiseWeights **multiWeights, const MultiSFTVector *multiSFTs );
 
 int write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand );
-int write_PulsarCandidate_to_fp ( FILE *fp,  const PulsarCandidate *cand, const Fcomponents *Fstat, const MultiAMCoeffs *multiAMcoef);
+int write_PulsarCandidate_to_fp ( FILE *fp,  const PulsarCandidate *pulsarParams, const FstatCandidate *Fcand );
 
 int compareFstatCandidates ( const void *candA, const void *candB );
 
@@ -229,7 +229,6 @@ int main(int argc,char *argv[])
   DopplerFullScanInit scanInit;			/* init-structure for DopperScanner */
   DopplerFullScanState *thisScan = NULL; 	/* current state of the Doppler-scan */
 
-  SkyPosition skypos;
   FILE *fpFstat = NULL;
   ComputeFBuffer cfBuffer = empty_ComputeFBuffer;
   REAL8 numTemplates, templateCounter;
@@ -335,6 +334,14 @@ int main(int argc,char *argv[])
 	  return -1;
 	}
       
+      /* propagate fkdot back to reference-time for outputting results */
+      LAL_CALL ( LALExtrapolatePulsarSpins ( &status, dopplerpos.fkdot, GV.refTime, dopplerpos.fkdot, GV.startTime ), &status );
+      /* FIXME: set proper reference times */
+
+      /* collect data on current 'Fstat-candidate' */
+      thisFCand.doppler = dopplerpos;
+      thisFCand.Mmunu = cfBuffer.multiAMcoef->Mmunu;
+
       /* correct normalization in --SignalOnly case:
        * we didn't normalize data by 1/sqrt(Tsft * 0.5 * Sh) in terms of 
        * the single-sided PSD Sh: the SignalOnly case is characterized by
@@ -346,17 +353,11 @@ int main(int argc,char *argv[])
 	  Fstat.Fa.re *= norm;  Fstat.Fa.im *= norm;
 	  Fstat.Fb.re *= norm;  Fstat.Fb.im *= norm;
 	  Fstat.F *= norm * norm;
+	  thisFCand.Mmunu.Sinv_Tsft = 2.0 * GV.Tsft; 
 	} 
-      
-      /* propagate fkdot back to reference-time for outputting results */
-      LAL_CALL ( LALExtrapolatePulsarSpins ( &status, dopplerpos.fkdot, GV.refTime, dopplerpos.fkdot, GV.startTime ), &status );
-
-      /* FIXME: set proper reference times */
-      
-      /* collect data on current 'Fstat-candidate' */
-      thisFCand.doppler = dopplerpos;
       thisFCand.Fstat   = Fstat;
 
+      
       /* two types of threshold: fixed (TwoFThreshold) and dynamic (NumCandidatesToKeep) */
       if ( 2.0 * thisFCand.Fstat.F >= uvar_TwoFthreshold )	/* fixed threshold */
 	{
@@ -421,29 +422,18 @@ int main(int argc,char *argv[])
   /* do full parameter-estimation for loudest canidate and output into separate file */
   if ( uvar_outputLoudest )
     {
-      MultiAMCoeffs *multiAMcoef = NULL;
-      REAL8 norm = GV.Tsft * GV.S_inv;
       FILE *fpLoudest;
-      PulsarAmplitudeParams Amp, dAmp;
-      PulsarCandidate cand = empty_PulsarCandidate;
+      PulsarCandidate pulsarParams = empty_PulsarCandidate;
 
-      skypos.longitude = loudestFCand.doppler.Alpha;
-      skypos.latitude  = loudestFCand.doppler.Delta;
-      skypos.system = COORDINATESYSTEM_EQUATORIAL;
-      LAL_CALL ( LALGetMultiAMCoeffs ( &status, &multiAMcoef, GV.multiDetStates, skypos ), &status);
-      /* noise-weigh Antenna-patterns and compute A,B,C */
-      if ( XLALWeighMultiAMCoeffs ( multiAMcoef, GV.multiNoiseWeights ) != XLAL_SUCCESS ) {
-	LALPrintError("\nXLALWeighMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
-	return COMPUTEFSTATC_EXLAL;
-      }
-
-      LAL_CALL(LALEstimatePulsarAmplitudeParams (&status, &Amp, &dAmp, &loudestFCand.Fstat, multiAMcoef, norm), &status);
+      pulsarParams.Doppler = loudestFCand.doppler;
+      LAL_CALL ( LALEstimatePulsarAmplitudeParams (&status, &pulsarParams, &loudestFCand.Fstat, &loudestFCand.Mmunu ), &status );
       
       /* propagate initial-phase from internal reference-time 'startTime' to refTime of Doppler-params */
-      LAL_CALL(LALExtrapolatePulsarPhase (&status, &Amp.phi0, loudestFCand.doppler.fkdot, GV.refTime, Amp.phi0,GV.startTime),&status);
-      if ( Amp.phi0 < 0 )	      /* make sure phi0 in [0, 2*pi] */
-	Amp.phi0 += LAL_TWOPI;
-      Amp.phi0 = fmod ( Amp.phi0, LAL_TWOPI );
+      LAL_CALL ( LALExtrapolatePulsarPhase (&status, &pulsarParams.Amp.phi0, loudestFCand.doppler.fkdot, GV.refTime, 
+					    pulsarParams.Amp.phi0, GV.startTime),&status);
+      if ( pulsarParams.Amp.phi0 < 0 )	      /* make sure phi0 in [0, 2*pi] */
+	pulsarParams.Amp.phi0 += LAL_TWOPI;
+      pulsarParams.Amp.phi0 = fmod ( pulsarParams.Amp.phi0, LAL_TWOPI );
 
       if ( (fpLoudest = fopen (uvar_outputLoudest, "wb")) == NULL)
 	{
@@ -455,16 +445,11 @@ int main(int argc,char *argv[])
       fprintf (fpLoudest, "%s", GV.logstring );
 
       /* assemble 'candidate' structure */
-      cand.Amp = Amp;
-      cand.dAmp = dAmp;
-      cand.Doppler = loudestFCand.doppler;
-      if ( write_PulsarCandidate_to_fp ( fpLoudest,  &cand, &loudestFCand.Fstat, multiAMcoef) != XLAL_SUCCESS )
+      if ( write_PulsarCandidate_to_fp ( fpLoudest,  &pulsarParams, &loudestFCand) != XLAL_SUCCESS )
 	{
 	  LogPrintf(LOG_CRITICAL, "call to write_PulsarCandidate_to_fp() failed!\n");
 	  return COMPUTEFSTATISTIC_ESYS;
 	}
-
-      XLALDestroyMultiAMCoeffs ( multiAMcoef );
 
       fclose (fpLoudest);
     } /* write loudest candidate to file */
@@ -593,7 +578,7 @@ initUserVars (LALStatus *status)
   LALregREALUserVar(status, 	dopplermax, 	'q', UVAR_OPTIONAL, "Maximum doppler shift expected");  
   LALregSTRINGUserVar(status,	outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for F-statistic field over the parameter-space");
 
-  LALregINTUserVar(status,   NumCandidatesToKeep,0,  UVAR_OPTIONAL, "Number of Fstat 'candidates' to keep. (0 = All)");
+  LALregINTUserVar(status,      NumCandidatesToKeep,0,  UVAR_OPTIONAL, "Number of Fstat 'candidates' to keep. (0 = All)");
 
 
   LALregINTUserVar ( status, 	minStartTime, 	 0,  UVAR_OPTIONAL, "Earliest SFT-timestamp to include");
@@ -820,19 +805,16 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   }
 
   /* ----- normalize SFTs and calculate noise-weights ----- */
-  if ( uvar_SignalOnly )
+  if ( uvar_SignalOnly ) 
     {
       cfg->multiNoiseWeights = NULL; 
-      cfg->S_inv = 2;
-    }
-  else
+    } 
+  else 
     {
       MultiPSDVector *psds = NULL;
 
       TRY ( LALNormalizeMultiSFTVect (status->statusPtr, &psds, cfg->multiSFTs, uvar_RngMedWindow ), status );
-      /* note: the normalization S_inv would be required to compute the ML-estimator for A^\mu */
-      TRY ( LALComputeMultiNoiseWeights  (status->statusPtr, &(cfg->multiNoiseWeights), &cfg->S_inv, psds, uvar_RngMedWindow, 0 ), status );
-
+      TRY ( LALComputeMultiNoiseWeights  (status->statusPtr, &(cfg->multiNoiseWeights), psds, uvar_RngMedWindow, 0 ), status );
       TRY ( LALDestroyMultiPSDVector (status->statusPtr, &psds ), status );
 
     } /* if ! SignalOnly */
@@ -1202,51 +1184,50 @@ const char *va(const char *format, ...)
  * RETURN 0 = OK, -1 = ERROR
  */
 int
-write_PulsarCandidate_to_fp ( FILE *fp,  const PulsarCandidate *cand, const Fcomponents *Fstat, const MultiAMCoeffs *multiAMcoef)
+write_PulsarCandidate_to_fp ( FILE *fp,  const PulsarCandidate *pulsarParams, const FstatCandidate *Fcand )
 {
-  if ( !fp || !cand || !Fstat || !multiAMcoef )
+  if ( !fp || !pulsarParams || !Fcand  )
     return -1;
 
   fprintf (fp, "\n");
 
-  fprintf (fp, "refTime  = % 9d;\n", cand->Doppler.refTime.gpsSeconds );   /* forget about ns... */
+  fprintf (fp, "refTime  = % 9d;\n", pulsarParams->Doppler.refTime.gpsSeconds );   /* forget about ns... */
 
   fprintf (fp, "\n");
 
   /* Amplitude parameters with error-estimates */
-  fprintf (fp, "h0       = % .6g;\n", cand->Amp.h0 );
-  fprintf (fp, "dh0      = % .6g;\n", cand->dAmp.h0 );
-  fprintf (fp, "cosi     = % .6g;\n", cand->Amp.cosi );
-  fprintf (fp, "dcosi    = % .6g;\n", cand->dAmp.cosi );
-  fprintf (fp, "phi0     = % .6g;\n", cand->Amp.phi0 );
-  fprintf (fp, "dphi0    = % .6g;\n", cand->dAmp.phi0 );
-  fprintf (fp, "psi      = % .6g;\n", cand->Amp.psi );
-  fprintf (fp, "dpsi     = % .6g;\n", cand->dAmp.psi );
+  fprintf (fp, "h0       = % .6g;\n", pulsarParams->Amp.h0 );
+  fprintf (fp, "dh0      = % .6g;\n", pulsarParams->dAmp.h0 );
+  fprintf (fp, "cosi     = % .6g;\n", pulsarParams->Amp.cosi );
+  fprintf (fp, "dcosi    = % .6g;\n", pulsarParams->dAmp.cosi );
+  fprintf (fp, "phi0     = % .6g;\n", pulsarParams->Amp.phi0 );
+  fprintf (fp, "dphi0    = % .6g;\n", pulsarParams->dAmp.phi0 );
+  fprintf (fp, "psi      = % .6g;\n", pulsarParams->Amp.psi );
+  fprintf (fp, "dpsi     = % .6g;\n", pulsarParams->dAmp.psi );
 
   fprintf (fp, "\n");
 
   /* Doppler parameters */
-  fprintf (fp, "Alpha    = % .16g;\n", cand->Doppler.Alpha );
-  fprintf (fp, "Delta    = % .16g;\n", cand->Doppler.Delta );
-  fprintf (fp, "Freq     = % .16g;\n", cand->Doppler.fkdot[0] );
-  fprintf (fp, "f1dot   = % .16g;\n", cand->Doppler.fkdot[1] );
-  fprintf (fp, "f2dot   = % .16g;\n", cand->Doppler.fkdot[2] );
-  fprintf (fp, "f3dot   = % .16g;\n", cand->Doppler.fkdot[3] );
+  fprintf (fp, "Alpha    = % .16g;\n", pulsarParams->Doppler.Alpha );
+  fprintf (fp, "Delta    = % .16g;\n", pulsarParams->Doppler.Delta );
+  fprintf (fp, "Freq     = % .16g;\n", pulsarParams->Doppler.fkdot[0] );
+  fprintf (fp, "f1dot    = % .16g;\n", pulsarParams->Doppler.fkdot[1] );
+  fprintf (fp, "f2dot    = % .16g;\n", pulsarParams->Doppler.fkdot[2] );
+  fprintf (fp, "f3dot    = % .16g;\n", pulsarParams->Doppler.fkdot[3] );
 
   fprintf (fp, "\n");
 
   /* Amplitude Modulation Coefficients */
-  fprintf (fp, "A       = % .6g;\n", multiAMcoef->A );
-  fprintf (fp, "B       = % .6g;\n", multiAMcoef->B );
-  fprintf (fp, "C       = % .6g;\n", multiAMcoef->C );
-  fprintf (fp, "D       = % .6g;\n", multiAMcoef->D );
- 
+  fprintf (fp, "Ad       = % .6g;\n", Fcand->Mmunu.Ad );
+  fprintf (fp, "Bd       = % .6g;\n", Fcand->Mmunu.Bd );
+  fprintf (fp, "Cd       = % .6g;\n", Fcand->Mmunu.Cd );
+  fprintf (fp, "Sinv_Tsft= % .6g;\n", Fcand->Mmunu.Sinv_Tsft );
   fprintf (fp, "\n");
 
   /* Fstat-values */
-  fprintf (fp, "Fa       = % .6g  %+.6gi;\n", Fstat->Fa.re, Fstat->Fa.im );
-  fprintf (fp, "Fb       = % .6g  %+.6gi;\n", Fstat->Fb.re, Fstat->Fb.im );
-  fprintf (fp, "twoF     = % .6g;\n", 2.0 * Fstat->F );
+  fprintf (fp, "Fa       = % .6g  %+.6gi;\n", Fcand->Fstat.Fa.re, Fcand->Fstat.Fa.im );
+  fprintf (fp, "Fb       = % .6g  %+.6gi;\n", Fcand->Fstat.Fb.re, Fcand->Fstat.Fb.im );
+  fprintf (fp, "twoF     = % .6g;\n", 2.0 * Fcand->Fstat.F );
 
   return 0;
 
