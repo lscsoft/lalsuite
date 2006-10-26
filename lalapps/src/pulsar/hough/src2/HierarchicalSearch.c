@@ -1164,7 +1164,7 @@ void SetUpSFTs( LALStatus *status,
 
   SFTCatalog *catalog = NULL;
   static SFTConstraints constraints;
-  REAL8 timebase, tStack, tObs, refTime, deltaF, S_hat;
+  REAL8 timebase, tStack, tObs, refTime, deltaF;
   UINT4 nStacks, k;
   LIGOTimeGPS tStartGPS, tEndGPS, refTimeGPS;
   LIGOTimeGPSVector *sftTimeStamps=NULL; 
@@ -1312,8 +1312,8 @@ void SetUpSFTs( LALStatus *status,
       TRY( LALNormalizeMultiSFTVect ( status->statusPtr, &psd, stackMultiSFT->data[nStacks], 
 					   in->blocksRngMed ), status );
       
-      TRY( LALComputeMultiNoiseWeights  ( status->statusPtr, stackMultiNoiseWeights->data + nStacks, &S_hat, 
-					       psd, in->blocksRngMed, 0 ), status );
+      TRY( LALComputeMultiNoiseWeights  ( status->statusPtr, stackMultiNoiseWeights->data + nStacks, 
+					  psd, in->blocksRngMed, 0 ), status );
 	
       TRY ( LALGetMultiDetectorStates ( status->statusPtr, stackMultiDetStates->data + nStacks, 
 					     stackMultiSFT->data[nStacks], in->edat ), status );

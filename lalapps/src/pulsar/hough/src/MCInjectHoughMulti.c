@@ -108,9 +108,6 @@ int main(int argc, char *argv[]){
   UINT4   nSkyPatches, skyIndex, skyCounter=0; 
   static REAL8Cart3CoorVector skyPatchCenterV;
 
-  /* LAL error-handler */
-  lal_errhandler   =   LAL_ERR_EXIT;
-
   /* standard pulsar sft types */ 
   MultiSFTVector *inputSFTs  = NULL;
   MultiSFTVector *sumSFTs    = NULL;
@@ -171,6 +168,8 @@ int main(int argc, char *argv[]){
   /******************************************************************/ 
   /*  set up the default parameters  */
   /******************************************************************/ 
+  /* LAL error-handler */
+  lal_errhandler   =   LAL_ERR_EXIT;
   
   lalDebugLevel = 0;
   /* LALDebugLevel must be called before anything else */
@@ -922,7 +921,7 @@ int main(int argc, char *argv[]){
       {   
 	MultiNoiseWeights *multweight = NULL;    
 	MultiPSDVector *multPSD = NULL;  
-	REAL8 dmpNormalization, sumWeightSquare;
+	REAL8 sumWeightSquare;
 	
 	
 	/* initialize all weights to unity  each time*/
@@ -935,7 +934,7 @@ int main(int argc, char *argv[]){
 	
 	/* compute multi noise weights */ 
 	if ( uvar_weighNoise ) {
- 	  LAL_CALL ( LALComputeMultiNoiseWeights ( &status, &multweight, &dmpNormalization, multPSD, uvar_blocksRngMed, 0), &status);
+ 	  LAL_CALL ( LALComputeMultiNoiseWeights ( &status, &multweight, multPSD, uvar_blocksRngMed, 0), &status);
 	}
 	
 	/* we are now done with the psd */

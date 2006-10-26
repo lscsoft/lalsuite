@@ -354,7 +354,6 @@ int main(int argc, char *argv[]){
   { 
     MultiNoiseWeights *multweight = NULL;    
     MultiPSDVector *multPSD = NULL;  
-    REAL8 dmpNormalization;
     INT4 tmpLeap;
     UINT4 iIFO, iSFT, j;
     LALLeapSecFormatAndAcc lsfas = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
@@ -380,7 +379,7 @@ int main(int argc, char *argv[]){
    
     /* compute multi noise weights if required */
     if ( uvar_weighNoise ) {
-      LAL_CALL ( LALComputeMultiNoiseWeights ( &status, &multweight, &dmpNormalization, multPSD, uvar_blocksRngMed, 0), &status);
+      LAL_CALL ( LALComputeMultiNoiseWeights ( &status, &multweight, multPSD, uvar_blocksRngMed, 0), &status);
     }
     
     /* we are now done with the psd */

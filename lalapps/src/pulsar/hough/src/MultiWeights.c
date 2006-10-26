@@ -80,9 +80,6 @@ int main(int argc, char *argv[]){
   /* LALStatus pointer */
   static LALStatus  status;  
 
-  /* LAL error-handler */
-  lal_errhandler = LAL_ERR_EXIT;
-
   REAL8 scalepow=1.0e40;
   
   /* standard pulsar sft types */ 
@@ -92,7 +89,6 @@ int main(int argc, char *argv[]){
   REAL8Vector weightsNoise;
   MultiNoiseWeights *multweight = NULL;    
   MultiPSDVector *multPSD = NULL;  
-  REAL8 dmpNormalization;
   UINT4 iIFO, iSFT, numsft;
   INT4 j;
   LIGOTimeGPSVector *inputTimeStampsVector=NULL;
@@ -110,7 +106,11 @@ int main(int argc, char *argv[]){
   CHAR     *uvar_timeStampsFile=NULL;
 
   /* Set up the default parameters */  
+
+  /* LAL error-handler */
+  lal_errhandler = LAL_ERR_EXIT;
   lalDebugLevel = 0;  /* LALDebugLevel must be called before anything else */
+
   LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);  
   uvar_help = FALSE;
   uvar_printLog = FALSE;
@@ -261,7 +261,7 @@ int main(int argc, char *argv[]){
 
 
   /* compute multi noise weights */
-  LAL_CALL ( LALComputeMultiNoiseWeights ( &status, &multweight, &dmpNormalization, multPSD, uvar_blocksRngMed, 0), &status);
+  LAL_CALL ( LALComputeMultiNoiseWeights ( &status, &multweight, multPSD, uvar_blocksRngMed, 0), &status);
 
 
   weightsNoise.length = mObsCoh;
