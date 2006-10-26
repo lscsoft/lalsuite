@@ -112,9 +112,8 @@ typedef struct {
 typedef struct {
   UINT4 length;		/**< number of ifos */
   REAL8Vector **data;	/**< weights-vector for each SFTs */
-} MultiREAL8Vector;
-
-typedef MultiREAL8Vector MultiNoiseWeights;
+  REAL8 Sinv_Tsft;	/**< normalization factor used: \f$\mathcal{S}^{-1}\,T_\mathrm{SFT}\f$ */
+} MultiNoiseWeights;
 
 /** A collection of (multi-IFO) time-series */
 typedef struct {
@@ -180,8 +179,8 @@ LALDetector *XLALGetSiteInfo ( const CHAR *name );
 
 void LALComputeNoiseWeights  (LALStatus *status, REAL8Vector *weightV, const SFTVector *sftVect, 
 			      INT4 blkSize, UINT4 excludePercentile);
-void LALComputeMultiNoiseWeights  (LALStatus *status, MultiNoiseWeights **weightsV, REAL8 *normalization, 
-				   const MultiPSDVector *multipsd, UINT4 blocksRngMed, UINT4 excludePercentile);
+void LALComputeMultiNoiseWeights  (LALStatus *status, MultiNoiseWeights **weightsV, const MultiPSDVector *multipsd, 
+				   UINT4 blocksRngMed, UINT4 excludePercentile);
 void LALDestroyMultiNoiseWeights  (LALStatus *status, MultiNoiseWeights **weights);
 
 #ifdef  __cplusplus

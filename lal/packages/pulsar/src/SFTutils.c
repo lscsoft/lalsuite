@@ -1110,16 +1110,16 @@ void LALComputeNoiseWeights  (LALStatus        *status,
  */
 void LALComputeMultiNoiseWeights  (LALStatus             *status, 
 				   MultiNoiseWeights     **out,
-				   REAL8                 *normalization,
 				   const MultiPSDVector  *multipsd,
 				   UINT4                 blocksRngMed,
 				   UINT4                 excludePercentile) 
 {
-  REAL8 Sn=0.0, sumSn=0.0;
+  REAL8 Tsft_Sn=0.0, Tsft_sumSn=0.0;
   UINT4 i, k, j, numifos, numsfts, lengthsft, numsftsTot;
   UINT4 excludeIndex, halfLengthPSD, lengthPSD;
   MultiNoiseWeights *weights;
   REAL8 Tsft = 1.0 / multipsd->data[0]->data[0].deltaF;
+  REAL8 Tsft_calS;	/* overall noise-normalization */
 
   INITSTATUS (status, "LALComputeMultiNoiseWeights", SFTUTILSC);
   ATTATCHSTATUSPTR (status); 
@@ -1177,27 +1177,30 @@ void LALComputeMultiNoiseWeights  (LALStatus             *status,
 	  excludeIndex =  excludePercentile * halfLengthPSD ; /* integer arithmetic */
 	  excludeIndex /= 100; /* integer arithmetic */
 
-	  for ( Sn = 0.0, i = halfBlock + excludeIndex; i < lengthsft - halfBlock - excludeIndex; i++)
-	    Sn += psd->data->data[i];
-	  Sn /= lengthsft - 2*halfBlock - 2*excludeIndex;
+	  for ( Tsft_Sn = 0.0, i = halfBlock + excludeIndex; i < lengthsft - halfBlock - excludeIndex; i++)
+	    Tsft_Sn += psd->data->data[i];
+	  Tsft_Sn /= lengthsft - 2*halfBlock - 2*excludeIndex;
 
-	  sumSn += Sn; /* sumSn is just a normalization factor */
+	  Tsft_sumSn += Tsft_Sn; /* sumSn is just a normalization factor */
 
-	  weights->data[k]->data[j] = 1.0/Sn;
+	  weights->data[k]->data[j] = 1.0/Tsft_Sn;
 	} /* end loop over sfts for each ifo */
 
     } /* end loop over ifos */
 
+  Tsft_calS = Tsft_sumSn/numsftsTot;	/* overall noise-normalization is the average Tsft * <S_{X,\alpha}> */
 
   /* make weights of order unity by myltiplying by sumSn/total number of sfts */
   for ( k = 0; k < numifos; k++) {
     numsfts = weights->data[k]->length;    
     for ( j = 0; j < numsfts; j++) 
-      weights->data[k]->data[j] *= sumSn/numsftsTot;
+      weights->data[k]->data[j] *= Tsft_calS;
   }
 
+  weights->Sinv_Tsft = Tsft*Tsft / Tsft_calS;		/* 'Sinv * Tsft' normalization factor */
+
   *out = weights;
-  *normalization = Tsft * numsftsTot / sumSn;	/* 'S_hat' normalization factor */
+
   
   DETATCHSTATUSPTR (status);
    /* normal exit */
