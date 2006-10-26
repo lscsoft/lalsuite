@@ -76,7 +76,7 @@ INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 TESTS = StackMetricTest FlatMeshTest TwoDMeshTest SkyMetricTest      \
   ResampleTest FoldAmplitudesTest LALBarycenterTest \
   PtoleMetricTest PtoleMeshTest GeneralMetricTest GeneralMeshTest FitToPulsarTest PulsarCatTest \
-  ExtrapolatePulsarSpinsTest GetAMCoeffsTest NewGetAMCoeffsTest
+  ExtrapolatePulsarSpinsTest GetAMCoeffsTest
 
 TESTS_ENVIRONMENT = 1>/dev/null 2>/dev/null LAL_DATA_PATH=$(srcdir)
 DISTCLEANFILES = *.tex
