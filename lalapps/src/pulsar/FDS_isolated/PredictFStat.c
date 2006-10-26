@@ -91,8 +91,7 @@ RCSID( "$Id$");
 typedef struct {
   CHAR *dataSummary;            /**< descriptive string describing the data */
   REAL8 aPlus, aCross;		/**< internally always use Aplus, Across */
-  REAL8 A, B, C;		/**< antenna-pattern integrals */
-  REAL8 TsftShat;		/**< noise normalization */
+  AntennaPatternMatrix Mmunu;	/**< antenna-pattern matrix and normalization */
 } ConfigVariables;
 
 /*---------- Global variables ----------*/
@@ -177,7 +176,7 @@ int main(int argc,char *argv[])
     al3 = ( Ap2 - Ac2 ) * sin(2.0*uvar_psi) * cos(2.0*uvar_psi);	/* A1 A2 + A3 A4 */
     
     /* SNR^2 */
-    rho2 = 0.5 * GV.TsftShat * (GV.A * al1 + GV.B * al2 + 2.0 * GV.C * al3 );
+    rho2 = 0.5 * GV.Mmunu.Sinv_Tsft * (GV.Mmunu.Ad * al1 + GV.Mmunu.Bd * al2 + 2.0 * GV.Mmunu.Cd * al3 );
   }
 
   fprintf(stdout, "\n%.1f\n", 4.0 + rho2);
@@ -333,7 +332,6 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg )
   SFTCatalog *catalog = NULL;
   SFTConstraints constraints = empty_SFTConstraints;
   SkyPosition skypos;
-  REAL8 S_hat;
 
   LIGOTimeGPS startTime, endTime;
   REAL8 duration, Tsft;
@@ -503,10 +501,7 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg )
 
   TRY ( LALGetMultiAMCoeffs ( status->statusPtr, &multiAMcoef, multiDetStates, skypos ), status);
   TRY ( LALNormalizeMultiSFTVect(status->statusPtr, &multiPSDs, multiSFTs, uvar_RngMedWindow ), status);
-  TRY ( LALComputeMultiNoiseWeights (status->statusPtr, &multiNoiseWeights, &S_hat, multiPSDs, 
-				     uvar_RngMedWindow, 0 ), status );
-
-  cfg->TsftShat = Tsft * S_hat;	/* overall inverse noise-norm for Fstat */
+  TRY ( LALComputeMultiNoiseWeights (status->statusPtr, &multiNoiseWeights, multiPSDs, uvar_RngMedWindow, 0 ), status );
 
   /* noise-weighting of Antenna-patterns and compute A,B,C */
   if ( XLALWeighMultiAMCoeffs ( multiAMcoef, multiNoiseWeights ) != XLAL_SUCCESS ) {
@@ -514,10 +509,8 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg )
     ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
   }
 
-  /* OK: we only need the integrated antenna-pattern coefficients A,B,C, D */
-  cfg->A = multiAMcoef->A;
-  cfg->B = multiAMcoef->B;
-  cfg->C = multiAMcoef->C;
+  /* OK: we only need the antenna-pattern matrix M_mu_nu */
+  cfg->Mmunu = multiAMcoef->Mmunu;
 
   /* free everything not needed any more */
   TRY ( LALDestroyMultiPSDVector (status->statusPtr, &multiPSDs ), status );
