@@ -708,8 +708,8 @@ LALGetAMCoeffs(LALStatus *status,
 
 } /* LALGetAMCoeffs() */
 
-/** Compute the 'amplitude coefficients' \f$a(t)\sin\zeta,
- * b(t)\sin\zeta\f$ as defined in \ref JKS98 for a series of
+/** Compute the 'amplitude coefficients' \f$a(t)\sin\zeta\f$,
+ * \f$b(t)\sin\zeta\f$ as defined in \ref JKS98 for a series of
  * timestamps.
  * 
  * The input consists of the DetectorState-timeseries, which contains
@@ -721,7 +721,7 @@ LALGetAMCoeffs(LALStatus *status,
  *
  * \note This is an alternative implementation to both LALComputeAM()
  * and LALGetAMCoeffs(), which uses the geometrical definition of
- * \f$a\sin\zeta$\f and \f$b\sin\zeta$\f as detector response
+ * \f$a\sin\zeta\f$ and \f$b\sin\zeta\f$ as detector response
  * coefficients in a preferred polarization basis.  (It is thereby
  * more general than the JKS expressions and could be used e.g., with
  * the response tensor of a bar detector with no further modification
