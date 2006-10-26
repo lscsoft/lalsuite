@@ -146,7 +146,7 @@ typedef struct {
   REAL8 Ad; 		/**<  \f$A_d \equiv \sum_{X,\alpha} \widehat{a}^X_\alpha \widehat{a}^X_\alpha\f$ */
   REAL8 Bd; 		/**<  \f$B_d \equiv \sum_{X,\alpha} \widehat{b}^X_\alpha \widehat{b}^X_\alpha\f$ */
   REAL8 Cd; 		/**<  \f$C_d \equiv \sum_{X,\alpha} \widehat{a}^X_\alpha \widehat{b}^X_\alpha\f$ */
-  REAL Sinv_Tsft;	/**< normalization-factor \f$\mathcal{S}^{-1}\,T_\mathrm{SFT}\f$ */
+  REAL8 Sinv_Tsft;	/**< normalization-factor \f$\mathcal{S}^{-1}\,T_\mathrm{SFT}\f$ */
 } AntennaPatternMmunu;
 
 /*---------- exported Global variables ----------*/
