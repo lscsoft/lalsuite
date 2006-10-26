@@ -736,14 +736,13 @@ LALNewGetAMCoeffs(LALStatus *status,
 {
   REAL4 delta, alpha;
   REAL4 sin1delta, cos1delta;
+  REAL4 sin1alpha, cos1alpha;
 
-  REAL4 xi[2];
-  REAL4 eta[3];
-  REAL4 d[3][3];
+  REAL4 xi1, xi2;
+  REAL4 eta1, eta2, eta3;
   REAL4 norm;
   UINT4 i, numSteps;
   UINT4 j, k;
-  REAL4 d22h2h2;
 
   INITSTATUS (status, "LALNewGetAMCoeffs", COMPUTEFSTATC);
 
@@ -758,26 +757,21 @@ LALNewGetAMCoeffs(LALStatus *status,
   ASSERT ( (coeffs->a->length == numSteps) && (coeffs->b->length == numSteps), status,
 	   COMPUTEFSTATC_EINPUT,  COMPUTEFSTATC_MSGEINPUT);
 
-  /* read detector response tensor into array */
-  for (j = 0; j < 3; j++)
-    {
-      d[j][j] = DetectorStates->detector.response[j][j];
-      for (k = j; k < 3; k++) {
-	d[j][k] = d[k][j] = DetectorStates->detector.response[j][k];
-      }
-    }
-
   /* require sky-pos to be in equatorial coordinates */
   ASSERT ( skypos.system == COORDINATESYSTEM_EQUATORIAL, status, 
 	   SKYCOORDINATESH_ESYS, SKYCOORDINATESH_MSGESYS );
 
-  /*---------- components along celestial north dep only on source-latitude delta */
+  /*---------- We write components of xi and eta vectors in SSB-fixed coords */
   alpha = skypos.longitude;
   delta = skypos.latitude;
 
   sin_cos_LUT (&sin1delta, &cos1delta, delta );
-  eta[2] = - cos1delta;
-  d22h2h2 = d[2][2] * eta[2] * eta[2];
+  sin_cos_LUT (&sin1alpha, &cos1alpha, alpha );
+  xi1 = - sin1alpha;
+  xi2 =  cos1alpha;
+  eta1 = sin1delta * cos1alpha;
+  eta2 = sin1delta * sin1alpha;
+  eta3 = - cos1delta;
 
   /*---------- Compute the a(t_i) and b(t_i) ---------- */
   coeffs->A = 0;
@@ -786,38 +780,30 @@ LALNewGetAMCoeffs(LALStatus *status,
   coeffs->D = 0;
   for ( i=0; i < numSteps; i++ )
     {
-      REAL4 ah;
-      REAL4 cos1ah, sin1ah;
       REAL4 ai, bi;
 
-      ah = alpha - DetectorStates->data[i].earthState.gmstRad;
+      DetectorTensor *d = &(DetectorStates->data[i].detT);
+      
+      ai =    d->d11 * ( xi1 * xi1 - eta1 * eta1 )
+	+ 2 * d->d12 * ( xi1*xi2 - eta1*eta2 )
+	- 2 * d->d13 *             eta1 * eta3
+	+     d->d22 * ( xi2*xi2 - eta2*eta2 )
+	- 2 * d->d23 *             eta2 * eta3
+	-     d->d33 *             eta3*eta3;
 
-      sin_cos_LUT ( &sin1ah, &cos1ah, ah );
+      bi =    d->d11 * 2 * xi1 * eta1
+	+ 2 * d->d12 *   ( xi1 * eta2 + xi2 * eta1 )
+	+ 2 * d->d13 *     xi1 * eta3
+	+     d->d22 * 2 * xi2 * eta2
+	+ 2 * d->d23 *     xi2 * eta3;
 
-      xi[0] = - sin1ah;
-      xi[1] =  cos1ah;
-      eta[0] = sin1delta * cos1ah;
-      eta[1] = sin1delta * sin1ah;
-
-      ai = d[0][0] * ( xi[0]*xi[0] - eta[0]*eta[0] )
-	+ 2 * d[0][1] * ( xi[0]*xi[1] - eta[0]*eta[1] )
-	- 2 * d[0][2] * eta[0] * eta[2]
-	+ d[1][1] * ( xi[1]*xi[1] - eta[1]*eta[1] )
-	- 2 * d[1][2] * eta[1] * eta[2]
-	- d22h2h2;
-
-      bi = 2 * d[0][0] * xi[0] * eta[0]
-	+ 2 * d[0][1] * xi[0] * eta[1]
-	+ 2 * d[0][2] * xi[0] * eta[2]
-	+ 2 * d[1][0] * xi[1] * eta[0]
-	+ 2 * d[1][1] * xi[1] * eta[1]
-	+ 2 * d[1][2] * xi[1] * eta[2];
-
-      /*      printf("xi = (%f,%f)\n",xi[0],xi[1]);
-      printf("eta = (%f,%f,%f)\n",eta[0],eta[1],eta[2]);
-      printf("d = (%f %f %f\n",d[0][0],d[0][1],d[0][2]);
-      printf("     %f %f %f\n",d[1][0],d[1][1],d[1][2]);
-      printf("     %f %f %f)\n",d[2][0],d[2][1],d[2][2]); */
+      /*
+      printf("xi = (%f,%f)\n",xi1,xi2);
+      printf("eta = (%f,%f,%f)\n",eta1,eta2,eta3);
+      printf("d = (%f %f %f\n",d->d11,d->d12,d->d13);
+      printf("     %f %f %f\n",d->d12,d->d22,d->d23);
+      printf("     %f %f %f)\n",d->d13,d->d23,d->d33);
+      */
 
       coeffs->a->data[i] = ai;
       coeffs->b->data[i] = bi;
@@ -1281,7 +1267,7 @@ XLALWeighMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *m
 /* ===== General internal helper functions ===== */
 
 /** Calculate sin(x) and cos(x) to roughly 1e-7 precision using 
- * a lookup-table and Tayler-expansion.
+ * a lookup-table and Taylor-expansion.
  *
  * NOTE: this function will fail for arguments larger than
  * |x| > INT4_MAX = 2147483647 ~ 2e9 !!!
