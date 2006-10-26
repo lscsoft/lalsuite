@@ -29,6 +29,7 @@
 #define __USE_ISOC99 1
 #include <math.h>
 
+#include "ComputeFstat.h"
 #include "DetectorStates.h"
 
 NRCSID( DETECTORSTATESC, "$Id$");
