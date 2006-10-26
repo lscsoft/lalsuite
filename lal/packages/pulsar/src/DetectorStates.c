@@ -256,6 +256,7 @@ LALGetMultiDetectorStates( LALStatus *status,
   UINT4 X, numDetectors;
   MultiDetectorStateSeries *ret = NULL;
   REAL8 t0=LAL_REAL4_MAX, t1=0;
+  LIGOTimeGPS startTime;	/* keep track of earliest start time of observation */
 
   INITSTATUS (status, "LALGetMultiDetectorStates", DETECTORSTATESC );
   ATTATCHSTATUSPTR (status);
@@ -288,7 +289,12 @@ LALGetMultiDetectorStates( LALStatus *status,
       REAL8 ti;
       /* get earliest start-time, and latest end-time */
       ti = GPS2REAL8(this_sftvect->data[0].epoch);
-      t0 = MYMIN(t0, ti );
+      if ( ti < t0 ) 
+	{
+	  t0 = ti;
+	  startTime = this_sftvect->data[0].epoch;
+	}
+      /* ... latest end-time */
       ti = GPS2REAL8(this_sftvect->data[this_sftvect->length-1].epoch) + Tsft;
       t1 = MYMAX(t1, ti );
 
@@ -325,7 +331,7 @@ LALGetMultiDetectorStates( LALStatus *status,
     } /* for X < numDetectors */
 
   ret->Tspan = t1 - t0;		/* total time spanned by all SFTs */
-
+  ret->startTime = startTime;	/* earliest start-time of observation */
   goto success;
 
  failed:
