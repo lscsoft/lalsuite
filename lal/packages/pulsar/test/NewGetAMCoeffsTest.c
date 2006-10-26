@@ -103,9 +103,6 @@ int main(int argc, char *argv[])
 {
   LALStatus status = empty_status;
 
-  /* LIGOTimeGPS startTime = {714275242, 0};
-  REAL8 duration = 86164;
-  REAL8 Tsft = 2154.1; */
   LIGOTimeGPS startTime = {714180733, 0};
   REAL8 duration = 180000;	/* 50 hours */
   REAL8 Tsft = 1800;		/* assume 30min SFTs */
@@ -128,6 +125,11 @@ int main(int argc, char *argv[])
   UINT4 pickedSite;
   char earthEphem[] = "earth00-04.dat";
   char sunEphem[] = "sun00-04.dat";
+
+  /* ----- old testing code to use 9 degree earth rotations ----- */
+  /* startTime.gpsSeconds = 714275242;
+  duration = 86164;
+  Tsft = 2154.1; */
 
   lalDebugLevel = 0;
   if ( argc == 2 && !strcmp(argv[1], "-v1") )
