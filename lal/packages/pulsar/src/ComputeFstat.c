@@ -183,7 +183,7 @@ ComputeFStat ( LALStatus *status,
   UINT4 X, numDetectors;	
   MultiSSBtimes *multiSSB = NULL;
   MultiAMCoeffs *multiAMcoef = NULL;
-  REAL8 A, B, C, Dinv;
+  REAL8 Ad, Bd, Cd, Dd_inv;
 
   INITSTATUS( status, "ComputeFStat", COMPUTEFSTATC );
   ATTATCHSTATUSPTR (status);
@@ -250,10 +250,10 @@ ComputeFStat ( LALStatus *status,
 
     } /* if no buffer, different skypos or different detStates */
 
-  A = multiAMcoef->A;
-  B = multiAMcoef->B;
-  C = multiAMcoef->C;
-  Dinv = 1.0 / multiAMcoef->D;
+  Ad = multiAMcoef->Mmunu.Ad;
+  Bd = multiAMcoef->Mmunu.Bd;
+  Cd = multiAMcoef->Mmunu.Cd;
+  Dd_inv = 1.0 / (Ad * Bd - Cd * Cd );
 
   /* ----- loop over detectors and compute all detector-specific quantities ----- */
   for ( X=0; X < numDetectors; X ++)
@@ -291,9 +291,9 @@ ComputeFStat ( LALStatus *status,
    * where based on the single-sided PSD.
    */ 
  		       
-  retF.F = Dinv * (B * (SQ(retF.Fa.re) + SQ(retF.Fa.im) ) 
-		   + A * ( SQ(retF.Fb.re) + SQ(retF.Fb.im) )
-		   - 2.0 * C *( retF.Fa.re * retF.Fb.re + retF.Fa.im * retF.Fb.im )  
+  retF.F = Dd_inv * (  Bd * (SQ(retF.Fa.re) + SQ(retF.Fa.im) ) 
+                     + Ad * ( SQ(retF.Fb.re) + SQ(retF.Fb.im) )
+                     - 2.0 * Cd *( retF.Fa.re * retF.Fb.re + retF.Fa.im * retF.Fb.im )  
 		   );
 
   (*Fstat) = retF;
@@ -1178,9 +1178,9 @@ XLALEmptyComputeFBuffer ( ComputeFBuffer cfb )
 } /* XLALDestroyComputeFBuffer() */
 
 
-/**< Multiply AM-coeffs \f$a_{Xi}, b_{Xi}\f$ by weights \f$\sqrt(w_{Xi})\f$ and 
- * compute the resulting A, B, C (and D) by simply *SUMMING* them, i.e.
- * \f$A = \sum_{X,i} \sqrt{w_{Xi} a_{Xi}^2\f$ etc.
+/**< Multiply AM-coeffs \f$a_{X\alpha}, b_{X\alpha}\f$ by weights \f$\sqrt(w_{X\alpha})\f$ and 
+ * compute the resulting \f$A_d, B_d, C_d\f$ by simply *SUMMING* them, i.e.
+ * \f$A_d \equiv \sum_{X,\alpha} \sqrt{w_{X\alpha} a_{X\alpha}^2\f$ etc.
  * 
  * NOTE: this function modifies the AMCoeffs *in place* !
  * NOTE2: if the weights = NULL, we assume unit-weights.
@@ -1189,7 +1189,7 @@ int
 XLALWeighMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *multiWeights )
 {
   UINT4 numDetectors, X;
-  REAL8 A, B, C;
+  REAL8 Ad, Bd, Cd, Sinv_Tsft;
   UINT4 alpha;
 
   if ( !multiAMcoef )
@@ -1204,60 +1204,65 @@ XLALWeighMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *m
     }
   
   /* noise-weight Antenna-patterns and compute A,B,C */
-  A = B = C = 0;
+  Ad = Bd = Cd = 0;
 
   if ( multiWeights  )
-    for ( X=0; X < numDetectors; X ++)
-      {
-	AMCoeffs *amcoeX = multiAMcoef->data[X];
-	UINT4 numSteps = amcoeX->a->length;
-
-	REAL8Vector *weightsX = multiWeights->data[X];;
-	if ( weightsX->length != numSteps ) 
-	  {
-	    LALPrintError("\nmultiWeights must have same length as mulitAMcoef!\n\n");
-	    XLAL_ERROR( "XLALWeighMultiAMCoeffs", XLAL_EINVAL );
-	  }
-	
-	for(alpha = 0; alpha < numSteps; alpha++)
-	  {
-	    REAL8 Sqwi = sqrt ( weightsX->data[alpha] );
-	    REAL8 ahat = Sqwi * amcoeX->a->data[alpha] ;
-	    REAL8 bhat = Sqwi * amcoeX->b->data[alpha] ;
-	    
-	    /* *replace* original a(t), b(t) by noise-weighed version! */
-	    amcoeX->a->data[alpha] = ahat;
-	    amcoeX->b->data[alpha] = bhat;
-	    
-	    /* sum A, B, C on the fly */
-	    A += ahat * ahat;
-	    B += bhat * bhat;
-	    C += ahat * bhat;
-	  } /* for alpha < numSFTsX */
-      } /* for X < numDetectors */
+    {
+      for ( X=0; X < numDetectors; X ++)
+	{
+	  AMCoeffs *amcoeX = multiAMcoef->data[X];
+	  UINT4 numSteps = amcoeX->a->length;
+	  
+	  REAL8Vector *weightsX = multiWeights->data[X];;
+	  if ( weightsX->length != numSteps ) 
+	    {
+	      LALPrintError("\nmultiWeights must have same length as mulitAMcoef!\n\n");
+	      XLAL_ERROR( "XLALWeighMultiAMCoeffs", XLAL_EINVAL );
+	    }
+	  
+	  for(alpha = 0; alpha < numSteps; alpha++)
+	    {
+	      REAL8 Sqwi = sqrt ( weightsX->data[alpha] );
+	      REAL8 ahat = Sqwi * amcoeX->a->data[alpha] ;
+	      REAL8 bhat = Sqwi * amcoeX->b->data[alpha] ;
+	      
+	      /* *replace* original a(t), b(t) by noise-weighed version! */
+	      amcoeX->a->data[alpha] = ahat;
+	      amcoeX->b->data[alpha] = bhat;
+	      
+	      /* sum A, B, C on the fly */
+	      Ad += ahat * ahat;
+	      Bd += bhat * bhat;
+	      Cd += ahat * bhat;
+	    } /* for alpha < numSFTsX */
+	} /* for X < numDetectors */
+      Sinv_Tsft = multiWeights->Sinv_Tsft;
+    }
   else /* if no noise-weights: simply add to get A,B,C */
-    for ( X=0; X < numDetectors; X ++)
-      {
-	AMCoeffs *amcoeX = multiAMcoef->data[X];
-	UINT4 numSteps = amcoeX->a->length;
-
-	for(alpha = 0; alpha < numSteps; alpha++)
-	  {
-	    REAL8 ahat = amcoeX->a->data[alpha] ;
+    {
+      for ( X=0; X < numDetectors; X ++)
+	{
+	  AMCoeffs *amcoeX = multiAMcoef->data[X];
+	  UINT4 numSteps = amcoeX->a->length;
+	  
+	  for(alpha = 0; alpha < numSteps; alpha++)
+	    {
+	      REAL8 ahat = amcoeX->a->data[alpha] ;
 	    REAL8 bhat = amcoeX->b->data[alpha] ;
 	    
 	    /* sum A, B, C on the fly */
-	    A += ahat * ahat;
-	    B += bhat * bhat;
-	    C += ahat * bhat;
-	  } /* for alpha < numSFTsX */
-      } /* for X < numDetectors */
+	    Ad += ahat * ahat;
+	    Bd += bhat * bhat;
+	    Cd += ahat * bhat;
+	    } /* for alpha < numSFTsX */
+	} /* for X < numDetectors */
+      Sinv_Tsft = 2.0;
+    } /* if multiWeights == NULL */
 
-  multiAMcoef->A = A;
-  multiAMcoef->B = B;
-  multiAMcoef->C = C;
-
-  multiAMcoef->D = A * B - C * C;
+  multiAMcoef->Mmunu.Ad = Ad;
+  multiAMcoef->Mmunu.Bd = Bd;
+  multiAMcoef->Mmunu.Cd = Cd;
+  multiAMcoef->Mmunu.Sinv_Tsft = Sinv_Tsft;
 
   return XLAL_SUCCESS;
 
@@ -1349,16 +1354,13 @@ sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
  * extended for error-estimation.
  * This implementation follows closely the derivations found in 
  * http://www.lsc-group.phys.uwm.edu/cgi-bin/enote.pl?nb=puls5knownpulsardemod&action=view&page=12
- * The normalization 'Shat' is returned from LALComputeMultiNoiseWeights(), 
- * and Tsft is the length of an SFT in seconds.
  */
 void
-LALEstimatePulsarAmplitudeParams (LALStatus *status, 
-				  PulsarAmplitudeParams *Amp, /**< [out] estimated params {h0,cosi,phi0,psi} */
-				  PulsarAmplitudeParams *dAmp,/**< [out] estimated errors in Amp (can be NULL) */
-				  const Fcomponents *Fstat,   /**<  Fstat-components Fa, Fb */
-				  const MultiAMCoeffs *multiAMcoef, /**<  antenna-pattern A,B,C,D */
-				  REAL8 TsftShat)             /**<  overall normalization: Tsft * Shat */
+LALEstimatePulsarAmplitudeParams (LALStatus * status,
+				  PulsarCandidate *pulsarParams,  	/**< [out] estimated params {h0,cosi,phi0,psi} plus error-estimates */
+				  const Fcomponents *Fstat,	 	/**<  Fstat-components Fa, Fb */
+				  const AntennaPatternMatrix *Mmunu 	/**<  antenna-pattern A,B,C and normalization S_inv*Tsft */
+				  )
 {
   REAL8 A1h, A2h, A3h, A4h;
   REAL8 Ad, Bd, Cd, Dd;
@@ -1387,16 +1389,16 @@ LALEstimatePulsarAmplitudeParams (LALStatus *status,
   INITSTATUS (status, "LALEstimatePulsarAmplitudeParams", COMPUTEFSTATC );
   ATTATCHSTATUSPTR (status);
 
-  ASSERT ( Amp, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
+  ASSERT ( pulsarParams, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
   ASSERT ( Fstat, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
-  ASSERT ( multiAMcoef, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
+  ASSERT ( Mmunu, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
 
-  Ad = multiAMcoef->A;
-  Bd = multiAMcoef->B;
-  Cd = multiAMcoef->C;
-  Dd = multiAMcoef->D;
+  Ad = Mmunu->Ad;
+  Bd = Mmunu->Bd;
+  Cd = Mmunu->Cd;
+  Dd = Ad * Bd - Cd * Cd;
 
-  normAmu = 2.0 / sqrt(TsftShat);	/* generally *very* small!! */
+  normAmu = 2.0 / sqrt(Mmunu->Sinv_Tsft);	/* generally *very* small!! */
 
   /* ----- GSL memory allocation ----- */
   if ( ( x_mu = gsl_vector_calloc (4) ) == NULL ) {
@@ -1457,7 +1459,6 @@ LALEstimatePulsarAmplitudeParams (LALStatus *status,
 
   /* LogPrintf (LOG_DEBUG, "norm= %g; A1 = %g, A2 = %g, A3 = %g, A4 = %g\n",  normAmu, A1h, A2h, A3h, A4h ); 
    */
-
   Asq = SQ(A1h) + SQ(A2h) + SQ(A3h) + SQ(A4h);
   Da = A1h * A4h - A2h * A3h;
   disc = sqrt ( SQ(Asq) - 4.0 * SQ(Da) );
@@ -1504,7 +1505,8 @@ LALEstimatePulsarAmplitudeParams (LALStatus *status,
        ( fabs( (A4check - A4h)/A4h ) > tolerance ) )
     {
       if ( lalDebugLevel )
-	LALPrintError ( "WARNING LALEstimatePulsarAmplitudeParams(): Difference between estimated and reconstructed Amu exceeds tolerance of %g\n",  tolerance );
+	LALPrintError ( "WARNING LALEstimatePulsarAmplitudeParams(): Difference between estimated and reconstructed Amu exceeds tolerance of %g\n",  
+			tolerance );
     }
 
   /* translate A_{+,x} into {h_0, cosi} */
@@ -1577,19 +1579,16 @@ LALEstimatePulsarAmplitudeParams (LALStatus *status,
   /* printGSLmatrix4 ( stdout, "var(dBh^mu, dBh^nu) = \n", Jh_Mu_nu ); */
 
   /* fill candidate-struct with the obtained signal-parameters and error-estimations */
-  Amp->h0     = normAmu * h0;
-  Amp->cosi   = cosi;
-  Amp->phi0   = phi0;
-  Amp->psi    = psi;
+  pulsarParams->Amp.h0     = normAmu * h0;
+  pulsarParams->Amp.cosi   = cosi;
+  pulsarParams->Amp.phi0   = phi0;
+  pulsarParams->Amp.psi    = psi;
 
-  if ( dAmp )
-    {
-      /* read out principal estimation-errors from diagonal elements */
-      dAmp->h0     = normAmu * sqrt( gsl_matrix_get (Jh_Mu_nu, 0, 0 ) );
-      dAmp->cosi   = sqrt( gsl_matrix_get (Jh_Mu_nu, 1, 1 ) );
-      dAmp->phi0   = sqrt( gsl_matrix_get (Jh_Mu_nu, 2, 2 ) );
-      dAmp->psi    = sqrt( gsl_matrix_get (Jh_Mu_nu, 3, 3 ) );
-    }
+  /* read out principal estimation-errors from diagonal elements of inverse Fisher-matrix*/
+  pulsarParams->dAmp.h0     = normAmu * sqrt( gsl_matrix_get (Jh_Mu_nu, 0, 0 ) );
+  pulsarParams->dAmp.cosi   = sqrt( gsl_matrix_get (Jh_Mu_nu, 1, 1 ) );
+  pulsarParams->dAmp.phi0   = sqrt( gsl_matrix_get (Jh_Mu_nu, 2, 2 ) );
+  pulsarParams->dAmp.psi    = sqrt( gsl_matrix_get (Jh_Mu_nu, 3, 3 ) );
 
   /* ----- free GSL memory ----- */
   gsl_vector_free ( x_mu );
