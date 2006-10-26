@@ -227,8 +227,47 @@ XLALFillDetectorTensor (DetectorState *detState,	/**< [out,in]: detector state: 
     } /* if LISA */
   else
     {
-      /* ==> FIXME: EARTH-based case goes here <== */
-      ;
+      REAL4 sinG, cosG, sinGcosG, sinGsinG, cosGcosG;
+      DetectorTensor *detT = &(detState->detT);
+
+      sin_cos_LUT ( &sinG, &cosG, detState->earthState.gmstRad );
+      sinGsinG = sinG * sinG;
+      sinGcosG = sinG * cosG;
+      cosGcosG = cosG * cosG;      
+
+      /*
+      printf("GMST = %fdeg; cosG = %f, sinG= %f\n",
+	     LAL_180_PI * atan2(sinG,cosG), cosG, sinG);
+      */
+
+      detT->d11 = detector->response[0][0] * cosGcosG
+            - 2 * detector->response[0][1] * sinGcosG
+                + detector->response[1][1] * sinGsinG;
+      detT->d22 = detector->response[0][0] * sinGsinG
+            + 2 * detector->response[0][1] * sinGcosG
+                + detector->response[1][1] * cosGcosG;
+      detT->d12 = (detector->response[0][0] - detector->response[1][1])
+                                           * sinGcosG
+	        + detector->response[0][1] * (cosGcosG - sinGsinG);
+      detT->d13 = detector->response[0][2] * cosG
+                - detector->response[1][2] * sinG;
+      detT->d23 = detector->response[0][2] * sinG
+                + detector->response[1][2] * cosG;
+      detT->d33 = detector->response[2][2];
+
+      /*
+      printf("d = (%f %f %f\n",detT->d11,detT->d12,detT->d13);
+      printf("     %f %f %f\n",detT->d12,detT->d22,detT->d23);
+      printf("     %f %f %f)\n",detT->d13,detT->d23,detT->d33);
+
+      printf("d*= (%f %f %f\n",detector->response[0][0],
+	     detector->response[0][1],detector->response[0][2]);
+      printf("     %f %f %f\n",detector->response[1][0],
+	     detector->response[1][1],detector->response[1][2]);
+      printf("     %f %f %f)\n",detector->response[2][0],
+	     detector->response[2][1],detector->response[2][2]);
+      */
+
     } /* if Earth-based */
     
 
