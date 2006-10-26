@@ -110,7 +110,6 @@ struct tagDopplerFullScanState {
   /* ----- the following are used to emulate FACTORED grids sky x Freq x f1dot ... */
   DopplerSkyScanState skyScan;	/**< keep track of sky-grid stepping */
   PulsarSpinRange spinRange;	/**< spin-range to search */
-  PulsarSpins dfkdot;		/**< fixed stepsizes in spins */
 
   /* ----- future extensions for real multidim-grids  ----- */
  
@@ -137,7 +136,7 @@ const DopplerFullScanState empty_DopplerFullScanState;
 extern INT4 lalDebugLevel;
 
 /*---------- internal prototypes ----------*/
-void initFactoredGrid (LALStatus *, DopplerFullScanState **scan, const DetectorStateSeries *detStates, const DopplerFullScanInit *init );
+void initFactoredGrid (LALStatus *, DopplerFullScanState **scan, const MultiDetectorStateSeries *mdetStates, const DopplerFullScanInit *init );
 int nextPointInFactoredGrid (PulsarDopplerParams *pos, DopplerFullScanState *scan);
 
 void getRange( LALStatus *, meshREAL y[2], meshREAL x, void *params );
@@ -176,7 +175,7 @@ const char *va(const char *format, ...);	/* little var-arg string helper functio
 void 
 InitDopplerFullScan(LALStatus *status, 
 		    DopplerFullScanState **scan,		/**< [out] initialized Doppler scan state */
-		    const DetectorStateSeries *detStates, 	/**< [in] used for list of integration timestamps and detector-info */
+		    const MultiDetectorStateSeries *mdetStates,	/**< [in] used for list of integration timestamps and detector-info */
 		    const DopplerFullScanInit *init		/**< [in] initialization parameters */
 		    )
 {
@@ -186,7 +185,7 @@ InitDopplerFullScan(LALStatus *status,
 
   ASSERT ( scan, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
   ASSERT ( *scan == NULL, status, DOPPLERSCANH_ENONULL, DOPPLERSCANH_MSGENONULL );  
-  ASSERT ( detStates, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
+  ASSERT ( mdetStates, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
   ASSERT ( init, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
 
   /* which "class" of template grid to generate?: factored, or full-multidim ? */
@@ -199,7 +198,7 @@ InitDopplerFullScan(LALStatus *status,
     case GRID_FILE:
     case GRID_METRIC_SKYFILE:
       /* backwards-compatibility mode */
-      TRY ( initFactoredGrid ( status->statusPtr, scan, detStates, init ), status );
+      TRY ( initFactoredGrid ( status->statusPtr, scan, mdetStates, init ), status );
       break;
 
     default:
@@ -219,15 +218,13 @@ InitDopplerFullScan(LALStatus *status,
 void 
 initFactoredGrid (LALStatus *status, 
 		  DopplerFullScanState **scan,			/**< [bout] initialized Doppler scan state */
-		  const DetectorStateSeries *detStates, 	/**< [in] used for list of integration timestamps and detector-info */
+		  const MultiDetectorStateSeries *mdetStates, 	/**< [in] used for list of integration timestamps and detector-info */
 		  const DopplerFullScanInit *init		/**< [in] initialization parameters */
 		  )
 {
   DopplerFullScanState *thisScan;
   DopplerSkyScanInit skyScanInit = empty_DopplerSkyScanInit;
-  LIGOTimeGPS startTime, endTime;
   SkyPosition skypos;
-  REAL8 duration;
   UINT4 i;
 
   INITSTATUS( status, "initFactoredGrid", DOPPLERSCANC );
@@ -235,12 +232,8 @@ initFactoredGrid (LALStatus *status,
 
   ASSERT ( scan, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
   ASSERT ( *scan == NULL, status, DOPPLERSCANH_ENONULL, DOPPLERSCANH_MSGENONULL );  
-  ASSERT ( detStates, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
+  ASSERT ( mdetStates, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
   ASSERT ( init, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
-
-  startTime = detStates->data[0].tGPS;
-  endTime = detStates->data[detStates->length - 1].tGPS;
-  duration = XLALGPSDiff ( &endTime, &startTime );
 
   if ( (thisScan = LALCalloc (1, sizeof(*thisScan) )) == NULL ) {
     ABORT (status, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
@@ -253,10 +246,10 @@ initFactoredGrid (LALStatus *status,
   skyScanInit.metricType = init->metricType;
   skyScanInit.metricMismatch = init->metricMismatch;
   skyScanInit.projectMetric = TRUE;
-  skyScanInit.obsBegin = startTime;
-  skyScanInit.obsDuration = duration;
+  skyScanInit.obsBegin = mdetStates->startTime;
+  skyScanInit.obsDuration = mdetStates->Tspan;
 
-  skyScanInit.Detector = &(detStates->detector);
+  skyScanInit.Detector = &(mdetStates->data[0]->detector);
   skyScanInit.ephemeris = init->ephemeris;		/* used only by Ephemeris-based metric */
   skyScanInit.skyGridFile = init->skyGridFile;
   skyScanInit.skyRegionString = init->searchRegion.skyRegionString;
@@ -268,9 +261,10 @@ initFactoredGrid (LALStatus *status,
   memcpy ( thisScan->spinRange.fkdot, init->searchRegion.fkdot, sizeof(PulsarSpins) );
   memcpy ( thisScan->spinRange.fkdotBand, init->searchRegion.fkdotBand, sizeof(PulsarSpins) );
 
-  /* user-setting for step-sizes [used in GRID_FLAT ] */
+  /* overload spin step-sizes with user-settings if given */
   for (i=0; i < PULSAR_MAX_SPINS; i ++ )
-    thisScan->dfkdot[i] = init->stepSizes.fkdot[i];
+    if ( init->stepSizes.fkdot[i] )
+      thisScan->skyScan.dfkdot[i] = init->stepSizes.fkdot[i];
 
   /* ----- set Doppler-scanner to start-point ----- */
   thisScan->thisPoint.refTime = init->searchRegion.refTime;	/* set proper reference time for spins */
@@ -290,7 +284,7 @@ initFactoredGrid (LALStatus *status,
     REAL8 nSky, nSpins = 1;
     nSky = thisScan->skyScan.numSkyGridPoints;
     for ( i=0; i < PULSAR_MAX_SPINS; i ++ )
-      nSpins *= floor( thisScan->spinRange.fkdotBand[i] / thisScan->dfkdot[i] ) + 1.0;
+      nSpins *= floor( thisScan->spinRange.fkdotBand[i] / thisScan->skyScan.dfkdot[i] ) + 1.0;
     thisScan->numTemplates = nSky * nSpins;
   }
   
@@ -392,19 +386,19 @@ nextPointInFactoredGrid (PulsarDopplerParams *pos, DopplerFullScanState *scan)
   fkdotMax[0] = range->fkdot[0] + range->fkdotBand[0];
   
   /* try to advance to next template */
-  nextPos.fkdot[0] += scan->dfkdot[0];			/* f0dot one forward */
+  nextPos.fkdot[0] += scan->skyScan.dfkdot[0];		/* f0dot one forward */
   if ( nextPos.fkdot[0] >  fkdotMax[0] )		/* too far? */
     {
       nextPos.fkdot[0] = range->fkdot[0];		/* f0dot return to start */
-      nextPos.fkdot[1] += scan->dfkdot[1];		/* f1dot one step forward */
+      nextPos.fkdot[1] += scan->skyScan.dfkdot[1];	/* f1dot one step forward */
       if ( nextPos.fkdot[1] > fkdotMax[1] )
 	{
 	  nextPos.fkdot[1] = range->fkdot[1];		/* f1dot return to start */
-	  nextPos.fkdot[2] += scan->dfkdot[2];		/* f2dot one forward */
+	  nextPos.fkdot[2] += scan->skyScan.dfkdot[2];	/* f2dot one forward */
 	  if ( nextPos.fkdot[2] > fkdotMax[2] )
 	    {
 	      nextPos.fkdot[2] = range->fkdot[2];	/* f2dot return to start */
-	      nextPos.fkdot[3] += scan->dfkdot[3];	/* f3dot one forward */
+	      nextPos.fkdot[3] += scan->skyScan.dfkdot[3]; /* f3dot one forward */
 	      if ( nextPos.fkdot[3] > fkdotMax[3] )
 		{
 		  nextPos.fkdot[3] = range->fkdot[3];	/* f3dot return to start */
@@ -605,8 +599,7 @@ InitDopplerSkyScan( LALStatus *status,
     LogPrintf (LOG_DETAIL, "dFreq = %g, df1dot = %g, df2dot = %g, df3dot = %g\n", 
 	       gridSpacings.fkdot[0], gridSpacings.fkdot[1], gridSpacings.fkdot[2], gridSpacings.fkdot[3]);
 
-    skyScan->dFreq  = gridSpacings.fkdot[0];
-    skyScan->df1dot = gridSpacings.fkdot[1];
+    memcpy ( skyScan->dfkdot, gridSpacings.fkdot, sizeof(PulsarSpins) );
   }
   
   skyScan->state = STATE_READY;
@@ -1785,6 +1778,7 @@ getGridSpacings( LALStatus *status,
   REAL8Vector *metric = NULL;
   REAL8 g_f0_f0 = 0, gamma_f1_f1 = 0, gamma_a_a, gamma_d_d;
   PtoleMetricIn metricpar = empty_metricpar;
+  UINT4 s;
 
   INITSTATUS( status, "getGridSpacings", DOPPLERSCANC );
   ATTATCHSTATUSPTR (status); 
@@ -1845,10 +1839,12 @@ getGridSpacings( LALStatus *status,
 			 metric->data[INDEX_f1_f1]);
 	}
 
-      
       gamma_f1_f1 = metric->data[INDEX_f1_f1];
       spacings->fkdot[1] = 2.0 * gridpoint.fkdot[0] * sqrt( params->metricMismatch / gamma_f1_f1 );
-
+      /* FIXME: metric spin-spacings would be better */
+      for ( s=2; s < PULSAR_MAX_SPINS; s++)
+	spacings->fkdot[s] = 1;		/* non-zero defaults for remaining spin-steps (avoid div by 0 ) */
+      
       gamma_a_a = metric->data[INDEX_A_A];
       gamma_d_d = metric->data[INDEX_D_D];
 
@@ -1858,12 +1854,17 @@ getGridSpacings( LALStatus *status,
       TRY( LALDDestroyVector (status->statusPtr, &metric), status);
       metric = NULL;
     }
-  else	/* no metric: use 'naive' value of 1/(2*T^k) [previous default in CFS] */
+  else	/* no metric: use 'naive' value of 1/(2*T^(k+1)) [previous default in CFS] */
     {
+      REAL8 Tobs = params->obsDuration;
+      REAL8 Tobs_s = Tobs;	/* start-value */
       spacings->Alpha = params->dAlpha;	/* dummy */
       spacings->Delta = params->dDelta;
-      spacings->fkdot[0] = 1.0 / (2.0 * params->obsDuration);
-      spacings->fkdot[1] = 1.0 / (2.0 * params->obsDuration * params->obsDuration);
+      for (s=0; s < PULSAR_MAX_SPINS; s ++ )
+	{
+	  spacings->fkdot[s] = 1.0 / (2.0 * Tobs_s);
+	  Tobs_s *= Tobs;
+	}
     }
 
   DETATCHSTATUSPTR(status);

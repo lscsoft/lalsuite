@@ -507,16 +507,16 @@ int main(int argc,char *argv[])
 
   /* ---------- overload Frequency- and spindown-resolution if input by user ----------*/
   if ( LALUserVarWasSet( &uvar_dFreq ) )
-    thisScan.dFreq = uvar_dFreq;
+    thisScan.dfkdot[0] = uvar_dFreq;
 
   if( LALUserVarWasSet( &uvar_df1dot) ) 
-    thisScan.df1dot = uvar_df1dot;
+    thisScan.dfkdot[1] = uvar_df1dot;
 
-  DemodParams->df   = thisScan.dFreq;
+  DemodParams->df   = thisScan.dfkdot[0];
 
   /* Number of Freq- and spindown values to calculate F for */
-  GV.FreqImax = (INT4)(GV.spinRange.fkdotBand[0] / thisScan.dFreq + 1e-6) + 1;  
-  GV.SpinImax = (INT4)(GV.spinRange.fkdotBand[1] / thisScan.df1dot + 1e-6) + 1;  
+  GV.FreqImax = (INT4)(GV.spinRange.fkdotBand[0] / thisScan.dfkdot[0] + 1e-6) + 1;  
+  GV.SpinImax = (INT4)(GV.spinRange.fkdotBand[1] / thisScan.dfkdot[1] + 1e-6) + 1;  
 
   /* debug output about search-parameters */
   {
@@ -532,7 +532,7 @@ int main(int argc,char *argv[])
     LogPrintf (LOG_DETAIL, "Spindown-range [%.16g, %.16g]\n", 
 	       GV.spinRange.fkdot[1], GV.spinRange.fkdot[1] + GV.spinRange.fkdotBand[1]);
     LogPrintf (LOG_DETAIL, "Grid-spacings: dFreq = %g, df1dot = %g\n\n",
-	       thisScan.dFreq, thisScan.df1dot);
+	       thisScan.dfkdot[0], thisScan.dfkdot[1]);
   }
 
   /* determine smallest required band of frequency-bins for the search-parameters */
@@ -944,7 +944,7 @@ int main(int argc,char *argv[])
       /* loop over spin params */
       for (spdwn=0; spdwn < GV.SpinImax; spdwn++)
         {
-          DemodParams->spinDwn[0] = GV.spinRange.fkdot[1] + spdwn * thisScan.df1dot;
+          DemodParams->spinDwn[0] = GV.spinRange.fkdot[1] + spdwn * thisScan.dfkdot[1];
 	  
           switch ( uvar_expLALDemod )
 	    {
@@ -974,7 +974,7 @@ int main(int argc,char *argv[])
                 {
 		  REAL8 Fval = 2.0*medianbias*Fstat.F[i];
 		  /* correct frequency back to reference-time: assume maximaly 1 spindown */
-		  REAL8 freq = GV.spinRange.fkdot[0] + i * thisScan.dFreq + GV.DeltaFreqRef; 
+		  REAL8 freq = GV.spinRange.fkdot[0] + i * thisScan.dfkdot[0] + GV.DeltaFreqRef; 
 
 		  if ( Fval > uvar_Fthreshold )
 		    {
@@ -2756,7 +2756,7 @@ WriteFStatLog (LALStatus *stat, char *argv[])
     fprintf (fplog, "# ----------------------------------------------------------------------\n");
     fclose (fplog);
     
-    sprintf (command, "ident %s | sort -u >> %s", argv[0], fname);
+    sprintf (command, "ident %s 2> /dev/null | sort -u >> %s", argv[0], fname);
     system (command);   /* we currently don't check this. If it fails, we assume that */
                         /* one of the system-commands was not available, and */
                         /* therefore the CVS-versions will simply not be logged */

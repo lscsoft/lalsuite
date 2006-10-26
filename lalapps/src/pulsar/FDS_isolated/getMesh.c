@@ -181,10 +181,10 @@ main(int argc, char *argv[])
 
   /* ---------- overload Frequency- and spindown-resolution if input by user ----------*/
   if ( LALUserVarWasSet( &uvar_dFreq ) )
-    thisScan.dFreq = uvar_dFreq;
+    thisScan.dfkdot[0] = uvar_dFreq;
 
   if( LALUserVarWasSet( &uvar_df1dot) ) 
-    thisScan.df1dot = uvar_df1dot;
+    thisScan.dfkdot[1] = uvar_df1dot;
 
   /* we write the sky-grid to disk? */
   if ( uvar_outputSkyGrid ) 
@@ -196,8 +196,8 @@ main(int argc, char *argv[])
   
 
   /* ----- output grid-info ----- */
-  nFreq = (UINT4)(config.searchRegion.fkdotBand[0] / thisScan.dFreq + 1e-6) + 1;  
-  nf1dot =(UINT4)(config.searchRegion.fkdotBand[1]/ thisScan.df1dot + 1e-6) + 1;  
+  nFreq = (UINT4)(config.searchRegion.fkdotBand[0] / thisScan.dfkdot[0] + 1e-6) + 1;  
+  nf1dot =(UINT4)(config.searchRegion.fkdotBand[1]/ thisScan.dfkdot[1] + 1e-6) + 1;  
 
   /* debug output */
   if ( lalDebugLevel )
@@ -212,7 +212,7 @@ main(int argc, char *argv[])
 	      config.searchRegion.fkdot[1] + config.searchRegion.fkdotBand[1]);
 
       printf ("\nDEBUG: actual grid-spacings: dFreq = %g, df1dot = %g\n\n",
-	      thisScan.dFreq, thisScan.df1dot);
+	      thisScan.dfkdot[0], thisScan.dfkdot[1]);
 
       printf ("Templates: sky x Freq x f1dot = %d x %d x %d\n\n",
 	      thisScan.numSkyGridPoints, nFreq, nf1dot );

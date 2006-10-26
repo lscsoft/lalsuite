@@ -851,7 +851,7 @@ int main( int argc, char *argv[]) {
       thisPoint1.Delta = dopplerpos1.Delta;
       
       /* number of fdot values */
-      dfDot = thisScan1.df1dot;
+      dfDot = thisScan1.dfkdot[1];
       
       nfdot = (UINT4)( usefulParams1.spinRange_startTime.fkdotBand[1]/ dfDot + 0.5) + 1; 
       
@@ -998,7 +998,7 @@ int main( int argc, char *argv[]) {
 		      thisPoint2.Delta = dopplerpos2.Delta;
 		      		      
 		      /* number of fdot values */
-		      dfDot2 = thisScan2.df1dot;
+		      dfDot2 = thisScan2.dfkdot[1];
 		      nfdot2 = (UINT4)( fdotBand1 / dfDot2 + 0.5) + 1; 
 		      
 		      /* loop over fdot values */

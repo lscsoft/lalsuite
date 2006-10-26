@@ -280,7 +280,7 @@ int main(int argc,char *argv[])
   scanInit.ephemeris = GV.ephemeris;		/* used by Ephemeris-based metric */
 
   LogPrintf (LOG_DEBUG, "Setting up template grid ... ");
-  LAL_CALL ( InitDopplerFullScan ( &status, &thisScan, GV.multiDetStates->data[0], &scanInit), &status); 
+  LAL_CALL ( InitDopplerFullScan ( &status, &thisScan, GV.multiDetStates, &scanInit), &status); 
   numTemplates = XLALNumDopplerTemplates ( thisScan );
   LogPrintfVerbatim (LOG_DEBUG, "done: %.0f templates.\n", numTemplates);
 
@@ -520,10 +520,10 @@ initUserVars (LALStatus *status)
   /* default step-sizes for GRID_FLAT */
   uvar_dAlpha 	= 0.001;
   uvar_dDelta 	= 0.001;
-  uvar_dFreq 	 = 1.0;
-  uvar_df1dot    = 1.0;
-  uvar_df2dot    = 1.0;
-  uvar_df3dot    = 1.0;
+  uvar_dFreq 	 = 0.0;		/* zero indicates 'not set by user==> i.e. use canonical default */
+  uvar_df1dot    = 0.0;
+  uvar_df2dot    = 0.0;
+  uvar_df3dot    = 0.0;
 
   
   uvar_TwoFthreshold = 10.0;
@@ -571,10 +571,10 @@ initUserVars (LALStatus *status)
 
   LALregREALUserVar(status, 	dAlpha, 	'l', UVAR_OPTIONAL, "Resolution in alpha (equatorial coordinates) in radians");
   LALregREALUserVar(status, 	dDelta, 	'g', UVAR_OPTIONAL, "Resolution in delta (equatorial coordinates) in radians");
-  LALregREALUserVar(status,     dFreq,          'r', UVAR_OPTIONAL, "Frequency resolution in Hz");
-  LALregREALUserVar(status, 	df1dot, 	'e', UVAR_OPTIONAL, "Stepsize for f1dot");
-  LALregREALUserVar(status, 	df2dot, 	 0 , UVAR_OPTIONAL, "Stepsize for f2dot");
-  LALregREALUserVar(status, 	df3dot, 	 0 , UVAR_OPTIONAL, "Stepsize for f3dot");
+  LALregREALUserVar(status,     dFreq,          'r', UVAR_OPTIONAL, "Frequency resolution in Hz [Default: 1/(2T)]");
+  LALregREALUserVar(status, 	df1dot, 	'e', UVAR_OPTIONAL, "Stepsize for f1dot [Default: 1/(2T^2)");
+  LALregREALUserVar(status, 	df2dot, 	 0 , UVAR_OPTIONAL, "Stepsize for f2dot [Default: 1/(2T^3)");
+  LALregREALUserVar(status, 	df3dot, 	 0 , UVAR_OPTIONAL, "Stepsize for f3dot [Default: 1/(2T^4)");
 
   LALregSTRINGUserVar(status,	skyRegion, 	'R', UVAR_OPTIONAL, "ALTERNATIVE: Specify sky-region by polygon (or use 'allsky')");
   LALregSTRINGUserVar(status,	DataFiles, 	'D', UVAR_REQUIRED, "File-pattern specifying (multi-IFO) input SFT-files"); 

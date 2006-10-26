@@ -146,8 +146,7 @@ typedef struct {
   INT2 state;  			/**< idle, ready or finished */
   SkyRegion skyRegion; 		/**< polygon (and bounding square) defining sky-region  */
   UINT4 numSkyGridPoints;	/**< how many skygrid-points */
-  REAL8 dFreq;			/**< fixed stepsize in frequency */
-  REAL8 df1dot;			/**< fixed stepsize in spindown-value f1dot */
+  PulsarSpins dfkdot;		/**< fixed-size steps in spins */ 
   DopplerSkyGrid *skyGrid; 	/**< head of linked list of skygrid nodes */  
   DopplerSkyGrid *skyNode;	/**< pointer to current grid-node in skygrid */
 } DopplerSkyScanState;
@@ -199,7 +198,7 @@ void FreeDopplerFullScan (LALStatus *status, DopplerFullScanState **scan);
 void writeSkyGridFile(LALStatus *, const DopplerSkyGrid *grid, const CHAR *fname );
 
 /* ----- full-fledged multi-dimensional Doppler scanner functions ----- */
-void InitDopplerFullScan(LALStatus *, DopplerFullScanState **scanState, const DetectorStateSeries *detStates, const DopplerFullScanInit *init);
+void InitDopplerFullScan(LALStatus *, DopplerFullScanState **scanState, const MultiDetectorStateSeries *mdetStates, const DopplerFullScanInit *init);
 int  XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan);
 void FreeDopplerFullScan (LALStatus *status, DopplerFullScanState **scan);
 REAL8 XLALNumDopplerTemplates ( DopplerFullScanState *scan);
