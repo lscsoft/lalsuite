@@ -199,7 +199,7 @@ int main (int argc, char *argv[])
   /*  set_debug_level("ERROR | WARNING | MEMDBG");*/
   /*  set_debug_level("ERROR | WARNING | MEMDBG");*/
   /*  set_debug_level("ERROR | WARNING ");*/
-  /*      set_debug_level("ALLDBG");*/
+  /*        set_debug_level("ALLDBG");*/
 
   /*
    * Initialize status structure 
@@ -500,11 +500,6 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
    *End calibration conditional 
    */
 
-  /* STRIP OUT LATER */
-  /* Set all data points to 1 and see what happens */
-  /*  for (j=0;j<dataSet->data->length;j++)*/
-  /*    dataSet->data->data[j]=1;*/
-
   /*
    * Perform low pass filtering on the input data stream if requested
    */
@@ -536,19 +531,22 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
    * End the high pass filter
    */
   /*
-   * Add in injections if injection variable is not NULL copy up to 
-   * end of dataSet series
+   * Perform injections when inject structure has data.
    */
   if (injectSet != NULL)
     {
-      if (injectSet->data->length >= dataSet->data->length)
-	for (j=0;j<dataSet->data->length;j++)
-	  dataSet->data->data[j]=
-	    dataSet->data->data[j]+injectSet->data->data[j];
-      else
-	for (j=0;j<injectSet->data->length;j++)
-	  dataSet->data->data[j]=
-	    dataSet->data->data[j]+injectSet->data->data[j];
+      if (params.verbosity > quiet)
+	printf("Making requested injections.\n");
+      if (params.verbosity >= printFiles)
+	print_real4tseries(dataSet,"PreInjectDataSet.diag");
+
+      for (i=0,j=0;
+	   ((i<injectSet->data->length)&&(j<dataSet->data->length));
+	   i++,j++)
+	dataSet->data->data[j]=injectSet->data->data[i]+dataSet->data->data[i];
+
+      if (params.verbosity >= printFiles)
+	print_real4tseries(dataSet,"PostInjectDataSet.diag");
     }
   /*
    * Split incoming data into Segment Vector
@@ -832,7 +830,7 @@ void LALappsTrackSearchPrepareData( LALStatus*        status,
 		    status);
 	}
     }
-  if (params.verbosity == printFiles)
+  if (params.verbosity >= printFiles)
     {
       tmpSignalPtr=NULL;
       for (i=0;i<dataSegments->length;i++)
@@ -1751,7 +1749,7 @@ void LALappsDoTrackSearch(
   /*
    * Write PGM to disk if requested
    */
-  if (params.verbosity == printFiles)
+  if (params.verbosity >= printFiles)
     DumpTFImage(tfmap->map,"DumpMap0",tsInputs.height,tsInputs.width,1);
   /*
    * Setup for call to function to do map marking
@@ -1791,7 +1789,6 @@ void LALappsDoTrackSearch(
    * Apply the user requested thresholds 
    */
   outputCurvesThreshold.curves = NULL;
-  outputCurvesThreshold.numberOfCurves = 0;
   LAL_CALL( LALTrackSearchApplyThreshold(status,
 					 &outputCurves,
 					 &outputCurvesThreshold,
@@ -1885,10 +1882,28 @@ LALappsDoTSeriesSearch(LALStatus         *status,
 
       LAL_CALL(LALCreateTimeFreqRep(status,&tfmap,&tfInputs),
 	       status);
-
+      /*
+       * There is an issue with the overlapping of fft windows used to
+       * construct the TFR.  Example:
+       * SegLength = 32
+       * Tbins = 32 
+       * then tfmap->timeInstant[i]=i
+       * is Ok but consider the case of we now want a TFR with only
+       * 8 time bins.  Then the time indices of TFR variable are no
+       * longer right.  We must reindex timeInstant into
+       * 2,6,10,14,18,22,26,30
+       * This will then make the correct TFR
+       * SegPoints = T, TimeBins=B
+       * Indices  ::: floor(T/2B+(i*(T/B)))
+       * i goes 0,1,2,...B 
+       * Bug found Date 26Oct06 Thur
+       */
       for (j=0;j<tfmap->tCol;j++)
 	{
-	  tfmap->timeInstant[j]=j;
+	  tfmap->timeInstant[j]=floor(
+				      (params.SegLengthPoints/(2*params.TimeBins)
+				       +(j*(params.SegLengthPoints/params.TimeBins)))
+				      );
 	}
       windowParams.length = params.windowsize;
       windowParams.type = params.window;
@@ -1913,6 +1928,7 @@ LALappsDoTSeriesSearch(LALStatus         *status,
 	    memcpy(autoparams->windowT->data,
 		   tempWindow->data->data,
 		   (windowParams.length * sizeof(REAL4)));
+	    lal_errhandler = LAL_ERR_EXIT;
 	    LAL_CALL( LALTfrSp(status,signalSeries->data,tfmap,autoparams),
 		      status);
 	  }
