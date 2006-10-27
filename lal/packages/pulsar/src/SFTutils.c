@@ -505,6 +505,7 @@ LALConcatSFTVectors (LALStatus *status,
       } ENDFAIL(status);
     } /* for i < numSFTs1 */
 
+  (*outVect) = ret;
   
   DETATCHSTATUSPTR (status); 
   RETURN (status);
