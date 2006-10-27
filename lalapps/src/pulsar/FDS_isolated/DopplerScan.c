@@ -128,8 +128,6 @@ const DopplerSkyGrid empty_DopplerSkyGrid;
 const DopplerSkyScanState empty_DopplerSkyScanState;
 const DopplerSkyScanInit empty_DopplerSkyScanInit;
 const DopplerRegion empty_DopplerRegion;
-const PulsarDopplerParams empty_PulsarDopplerParams;
-
 const DopplerFullScanState empty_DopplerFullScanState;
 
 /*---------- Global variables ----------*/

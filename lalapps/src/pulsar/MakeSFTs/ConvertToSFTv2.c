@@ -58,10 +58,6 @@ RCSID ("$Id$");
 /*---------- internal types ----------*/
 
 /*---------- empty initializers ---------- */
-static const LALStatus empty_status;
-static const SFTConstraints empty_constraints;
-static const SFTCatalog empty_catalog;
-static const LIGOTimeGPS empty_LIGOTimeGPS;
 
 /*---------- Global variables ----------*/
 
@@ -90,8 +86,8 @@ void initUserVars (LALStatus *status);
 int
 main(int argc, char *argv[]) 
 {
-  LALStatus status = empty_status;	/* initialize status */
-  SFTConstraints constraints = empty_constraints;
+  LALStatus status = blank_status;	/* initialize status */
+  SFTConstraints constraints = empty_SFTConstraints;
   LIGOTimeGPS minStartTimeGPS = empty_LIGOTimeGPS;
   LIGOTimeGPS maxEndTimeGPS = empty_LIGOTimeGPS;
   SFTCatalog *FullCatalog = NULL;

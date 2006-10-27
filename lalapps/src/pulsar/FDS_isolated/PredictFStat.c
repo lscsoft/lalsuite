@@ -130,7 +130,6 @@ void InitPFS ( LALStatus *, ConfigVariables *cfg );
 void InitEphemeris (LALStatus *, EphemerisData *edat, const CHAR *ephemDir, const CHAR *ephemYear, LIGOTimeGPS epoch);
 
 /*---------- empty initializers ---------- */
-static const SFTConstraints empty_SFTConstraints;
 
 /*----------------------------------------------------------------------*/
 /* Main Function starts here */

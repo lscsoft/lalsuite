@@ -107,11 +107,7 @@ extern void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
 extern void write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series);
 BOOLEAN is_directory ( const CHAR *fname );
 /*----------------------------------------------------------------------*/
-static const PulsarSignalParams empty_params;
-static const SFTParams empty_sftParams;
-static const EphemerisData empty_edat;
 static const ConfigVars_t empty_GV;
-static const SFTConstraints empty_SFTConstraints;
 static const LALUnit empty_LALUnit;
 /*----------------------------------------------------------------------*/
 /* User variables */
@@ -210,7 +206,7 @@ main(int argc, char *argv[])
 {
   LALStatus status = blank_status;	/* initialize status */
   ConfigVars_t GV = empty_GV;
-  PulsarSignalParams params = empty_params;
+  PulsarSignalParams params = empty_PulsarSignalParams;
   SFTVector *SFTs = NULL;
   REAL4TimeSeries *Tseries = NULL;
   UINT4 i_chunk, numchunks;
@@ -374,7 +370,7 @@ main(int argc, char *argv[])
        *----------------------------------------*/
       if (uvar_outSFTbname)
 	{
-	  SFTParams sftParams = empty_sftParams;
+	  SFTParams sftParams = empty_SFTParams;
 	  LIGOTimeGPSVector ts;
 	  SFTVector noise;
 	  
@@ -879,7 +875,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
     UINT4 len;
     INT4 leapSecs;
     LALLeapSecFormatAndAcc leapParams;
-    EphemerisData edat = empty_edat;
+    EphemerisData edat = empty_EphemerisData;
     CHAR *earthdata, *sundata;
 
     len = strlen(uvar_ephemYear) + 20;

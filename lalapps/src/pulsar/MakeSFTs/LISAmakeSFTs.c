@@ -70,8 +70,6 @@ RCSID ("$Id$");
 /*---------- internal types ----------*/
 
 /*---------- empty initializers ---------- */
-static const LALStatus empty_status;
-static const LIGOTimeGPS empty_LIGOTimeGPS;
 static const LALUnit empty_LALUnit;
 /*---------- Global variables ----------*/
 
@@ -97,7 +95,7 @@ CHAR *assembleDescription ( const CHAR *name, const CHAR *miscField );
 int
 main(int argc, char *argv[]) 
 {
-  LALStatus status = empty_status;	/* initialize status */
+  LALStatus status = blank_status;	/* initialize status */
   CHAR *add_comment = NULL;
   TimeSeries *lisaTimeSeries;		/* lisaXML timeseries-type */
   MultiREAL4TimeSeries *multiTs = NULL;	/* LAL-equivalent: hold 3 timeseries (X(t), Y(t), Z(t)) */

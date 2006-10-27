@@ -55,8 +55,6 @@ typedef struct {
 } FstatLine_t;
 
 /*----------------------------------------------------------------------*/
-static const LALStatus empty_status;
-/*----------------------------------------------------------------------*/
 /* User variables */
 CHAR *uvar_Fname1;
 CHAR *uvar_Fname2;
@@ -81,7 +79,7 @@ REAL8 relError(REAL8 x, REAL8 y);
 int
 main(int argc, char *argv[]) 
 {
-  LALStatus status = empty_status;	/* initialize status */
+  LALStatus status = blank_status;	/* initialize status */
   LALParsedDataFile *Fstats1 =NULL, *Fstats2 = NULL;
   UINT4 diffs = 0;
   UINT4 nlines1, nlines2;

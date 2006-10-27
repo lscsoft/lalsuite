@@ -110,10 +110,9 @@ typedef struct {
   REAL8 Tsft;                               /**< length of one SFT in seconds */
   REAL8 duration;			    /**< total time-span of the data (all streams) in seconds */
   LIGOTimeGPS refTime;			    /**< reference-time for pulsar-parameters in SBB frame */
-  PulsarSpinRange spinRangeRef; 	    /**< pulsar spin-range at reference-time 'refTime' */
   DopplerRegion searchRegion;		    /**< parameter-space region to search over */
   PulsarDopplerParams stepSizes;	    /**< user-preferences on Doppler-param step-sizes */
-  EphemerisData *ephemeris;			    /**< ephemeris data (from LALInitBarycenter()) */
+  EphemerisData *ephemeris;		    /**< ephemeris data (from LALInitBarycenter()) */
   MultiSFTVector *multiSFTs;		    /**< multi-IFO SFT-vectors */
   MultiDetectorStateSeries *multiDetStates; /**< pos, vel and LMSTs for detector at times t_i */
   MultiNoiseWeights *multiNoiseWeights;	    /**< normalized noise-weights of those SFTs */
@@ -205,14 +204,8 @@ int compareFstatCandidates ( const void *candA, const void *candB );
 const char *va(const char *format, ...);	/* little var-arg string helper function */
 
 /*---------- empty initializers ---------- */
-static const PulsarTimesParamStruc empty_PulsarTimesParamStruc;
-static const BarycenterInput empty_BarycenterInput;
-static const SFTConstraints empty_SFTConstraints;
-static const ComputeFBuffer empty_ComputeFBuffer;
-static const LIGOTimeGPS empty_LIGOTimeGPS;
-static const PulsarCandidate empty_PulsarCandidate;
-static const PulsarDopplerParams empty_DopplerParams;
 static const ConfigVariables empty_ConfigVariables;
+
 /*----------------------------------------------------------------------*/
 /* Function definitions start here */
 /*----------------------------------------------------------------------*/
@@ -235,7 +228,7 @@ int main(int argc,char *argv[])
   REAL8 tickCounter;
   time_t clock0;
   Fcomponents Fstat;
-  PulsarDopplerParams dopplerpos = empty_DopplerParams;		/* current search-parameters */
+  PulsarDopplerParams dopplerpos = empty_PulsarDopplerParams;		/* current search-parameters */
   FstatCandidate loudestFCand, thisFCand;
 
   ConfigVariables GV = empty_ConfigVariables;		/**< global container for various derived configuration settings */
@@ -365,9 +358,9 @@ int main(int argc,char *argv[])
 	  if ( GV.FstatToplist  )			/* dynamic threshold */
 	    {
 	      if ( insert_into_toplist(GV.FstatToplist, (void*)&thisFCand ) )
-		LogPrintf ( LOG_DEBUG, "Added new candidate into toplist: 2F = %f\n", 2.0 * Fstat.F );
+		LogPrintf ( LOG_DETAIL, "Added new candidate into toplist: 2F = %f\n", 2.0 * Fstat.F );
 	      else
-		LogPrintf ( LOG_DEBUG, "NOT added the candidate into toplist: 2F = %f\n", 2 * Fstat.F );
+		LogPrintf ( LOG_DETAIL, "NOT added the candidate into toplist: 2F = %f\n", 2 * Fstat.F );
 	    }
 	  else if ( fpFstat ) 				/* no toplist :write out immediately */
 	    {
@@ -670,6 +663,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   SFTConstraints constraints = empty_SFTConstraints;
   LIGOTimeGPS minStartTimeGPS = empty_LIGOTimeGPS;
   LIGOTimeGPS maxEndTimeGPS = empty_LIGOTimeGPS;
+  PulsarSpinRange spinRangeRef = empty_PulsarSpinRange; 
 
   UINT4 numSFTs;
   LIGOTimeGPS endTime;
@@ -704,8 +698,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
 
   if ( !catalog || catalog->length == 0 ) 
     {
-      LALPrintError ("\nSorry, didn't find any matching SFTs with pattern '%s'!\n\n", 
-		     uvar_DataFiles );
+      LALPrintError ("\nSorry, didn't find any matching SFTs with pattern '%s'!\n\n", uvar_DataFiles );
       ABORT ( status,  COMPUTEFSTATISTIC_EINPUT,  COMPUTEFSTATISTIC_MSGEINPUT);
     }
 
@@ -736,16 +729,16 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     REAL8 f3dotMin = MYMIN ( uvar_f3dot, uvar_f3dot + uvar_f3dotBand );
     REAL8 f3dotMax = MYMAX ( uvar_f3dot, uvar_f3dot + uvar_f3dotBand );
     
-    cfg->spinRangeRef.refTime = cfg->refTime;
-    cfg->spinRangeRef.fkdot[0] = fMin;
-    cfg->spinRangeRef.fkdot[1] = f1dotMin;
-    cfg->spinRangeRef.fkdot[2] = f2dotMin;
-    cfg->spinRangeRef.fkdot[3] = f3dotMin;
+    spinRangeRef.refTime = cfg->refTime;
+    spinRangeRef.fkdot[0] = fMin;
+    spinRangeRef.fkdot[1] = f1dotMin;
+    spinRangeRef.fkdot[2] = f2dotMin;
+    spinRangeRef.fkdot[3] = f3dotMin;
 
-    cfg->spinRangeRef.fkdotBand[0] = fMax - fMin;
-    cfg->spinRangeRef.fkdotBand[1] = f1dotMax - f1dotMin;
-    cfg->spinRangeRef.fkdotBand[2] = f2dotMax - f2dotMin;
-    cfg->spinRangeRef.fkdotBand[3] = f3dotMax - f3dotMin;
+    spinRangeRef.fkdotBand[0] = fMax - fMin;
+    spinRangeRef.fkdotBand[1] = f1dotMax - f1dotMin;
+    spinRangeRef.fkdotBand[2] = f2dotMax - f2dotMin;
+    spinRangeRef.fkdotBand[3] = f3dotMax - f3dotMin;
   } /* spin-range at refTime */
 
   { /* ----- get sky-region to search ----- */
@@ -772,7 +765,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     REAL8 fmaxStart, fmaxEnd, fminStart, fminEnd;
 
     /* compute spin-range at startTime of observation */
-    TRY ( LALExtrapolatePulsarSpinRange (status->statusPtr, &spinRangeStart, cfg->startTime, &cfg->spinRangeRef ), status );
+    TRY ( LALExtrapolatePulsarSpinRange (status->statusPtr, &spinRangeStart, cfg->startTime, &spinRangeRef ), status );
     /* compute spin-range at endTime of these SFTs */
     TRY ( LALExtrapolatePulsarSpinRange (status->statusPtr, &spinRangeEnd, endTime, &spinRangeStart ), status );
 
