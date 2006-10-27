@@ -348,7 +348,7 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg )
 
   { /* Check user-input consistency */
     BOOLEAN have_h0, have_cosi, have_cosiota, have_Ap, have_Ac;
-    REAL8 cosi;
+    REAL8 cosi = 0;
 
     have_h0 = LALUserVarWasSet ( &uvar_h0 );
     have_cosi = LALUserVarWasSet ( &uvar_cosi );

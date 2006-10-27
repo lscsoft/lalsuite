@@ -59,10 +59,6 @@ int main(int argc, char *argv[]){
 
   static LALStatus  status;  
 
-  /* LAL error-handler */
-  lal_errhandler = LAL_ERR_EXIT;
-
-
   static LALDetector          *detector;
   static LIGOTimeGPSVector    timeV;
   static REAL8Cart3CoorVector velV;
@@ -104,6 +100,9 @@ int main(int argc, char *argv[]){
   /******************************************************************/
   /*    Set up the default parameters.      */
   /* ****************************************************************/
+
+  /* LAL error-handler */
+  lal_errhandler = LAL_ERR_EXIT;
   
   lalDebugLevel = 0;
   /* LALDebugLevel must be called before anything else */

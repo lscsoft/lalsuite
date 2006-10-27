@@ -230,7 +230,7 @@ int main( int argc, char *argv[]) {
   LIGOTimeGPSVector *startTstack1=NULL; 
   LIGOTimeGPSVector *startTstack2=NULL; 
   
-  LIGOTimeGPS refTimeGPS, tStart1GPS, tStart2GPS;
+  LIGOTimeGPS refTimeGPS, tStart1GPS, tStart2GPS = empty_LIGOTimeGPS;
   REAL8 tObs1, tObs2;
 
   /* velocities and positions at midTstack */
@@ -238,7 +238,7 @@ int main( int argc, char *argv[]) {
   REAL8VectorSequence *posStack1=NULL;
 
   /* duration of each stack */
-  REAL8 tStack1, tStack2;
+  REAL8 tStack1, tStack2 = 0;
 
   /* sft related stuff */
   static MultiSFTVectorSequence stackMultiSFT1;
@@ -254,9 +254,9 @@ int main( int argc, char *argv[]) {
   UsefulStageVariables usefulParams1, usefulParams2;
 
   /* number of stacks -- not necessarily same as uvar_nStacks! */
-  UINT4 nStacks1, nStacks2;
+  UINT4 nStacks1, nStacks2 = 0;
   REAL8 deltaF1, deltaF2, timebase1, timebase2; /* frequency resolution of SFTs */
-  REAL8 deltaFstack1, deltaFstack2; /* frequency resolution of Fstat calculation */
+  REAL8 deltaFstack1, deltaFstack2 = 0; /* frequency resolution of Fstat calculation */
 
   /* LALdemod related stuff */
   REAL8FrequencySeriesVector fstatVector1, fstatVector2; /* Fstatistic vectors for each stack */

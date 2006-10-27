@@ -276,7 +276,7 @@ char *fstatbuff = NULL;
 
 FstatOutputEntry empty_FstatOutputEntry;
 
-UINT4 maxSFTindex = 0;
+INT4 maxSFTindex = 0;
 
 /*----------------------------------------------------------------------*/
 /* local prototypes */

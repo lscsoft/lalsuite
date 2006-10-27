@@ -147,9 +147,6 @@ int main(int argc, char *argv[]){
   /* LALStatus pointer */
   static LALStatus  status;  
 
-  /* LAL error-handler */
-  lal_errhandler = LAL_ERR_EXIT;
-  
   /* detector */
   static LALDetector  *detector;
 
@@ -235,7 +232,8 @@ int main(int argc, char *argv[]){
   
 
   /* Set up the default parameters */
-  
+  /* LAL error-handler */
+  lal_errhandler = LAL_ERR_EXIT;
   lalDebugLevel = 0;  /* LALDebugLevel must be called before anything else */
   LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
   

@@ -374,7 +374,6 @@ int main(INT4 argc,CHAR *argv[])
 {
   setlocale(LC_ALL, "C");
   
-  LALStatus *lalStatus = &global_status;
   INT4  CLength=0;
   
   INT4 *SortedCListi = NULL;
@@ -384,7 +383,7 @@ int main(INT4 argc,CHAR *argv[])
   CellData *cell = NULL;
   */
 
-  INT4 icell, icand, ncell, icell2, ic;
+  INT4 icell, icand, ncell, icell2;
   INT4 cc1,cc2,cc3,cc4,bb1,bb2,bb3,bb4,selectGrid;
   INT4 sizecells;
 
@@ -396,6 +395,7 @@ int main(INT4 argc,CHAR *argv[])
   PCV.AlphaMIN=10000000.0;
   PCV.DeltaMIN=10000000.0;
 
+  LALStatus *lalStatus = &global_status;
   lalDebugLevel = 0 ;  
   vrbflg = 1;   /* verbose error-messages */
 
@@ -659,13 +659,14 @@ void RePrepareCells( LALStatus *lalStatus, CellData **cell, const UINT4 CLength 
 {
   UINT4 icell, ncell;
   INT4 errflg = 0;
+  CellData *tmp;
   
   INITSTATUS( lalStatus, "RePrepareCells", rcsid );
   ATTATCHSTATUSPTR (lalStatus);
 
   /*  ASSERT( *cell == NULL, lalStatus, POLKAC_ENONULL, POLKAC_MSGENONULL); */
 
-  CellData *tmp;
+
   tmp = (CellData *)LALRealloc (*cell, ( CLength * sizeof(CellData)) );
   if ( !tmp ) 
     { 
@@ -1040,8 +1041,6 @@ void FreeMemory( LALStatus *lalStatus,
 	    CandidateList *CList, 
 	    const UINT4 datalen)
 {
-  UINT4 icell;
-
   INITSTATUS( lalStatus, "FreeMemory", rcsid );
   ATTATCHSTATUSPTR (lalStatus);
 
@@ -1480,7 +1479,7 @@ ReadCandidateFiles(LALStatus *lalStatus,
 {
   UINT4 kc;
   /* UINT4 *CLenFthr;*/
-  REAL8 percentage = 0;
+  /* REAL8 percentage = 0; */
 
   INITSTATUS( lalStatus, "ReadCandidateFiles", rcsid );
   ATTATCHSTATUSPTR (lalStatus);
@@ -2806,7 +2805,7 @@ void sortCandidates(INT4 *data, INT4 N)
 /* ################################################################### */
 /*
   Holger's sorting function to replace qsort. 
-/*!
+
   Sorting function to sort cell indices in the INCREASING order of f, delta, alpha, FileID and 
   DECREASING ORDER OF a significance.
 */

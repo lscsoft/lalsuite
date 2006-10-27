@@ -54,6 +54,7 @@ typedef struct {
   REAL8 TwoF;
 } FstatLine_t;
 
+static const FstatLine_t empty_FstatLine;
 /*----------------------------------------------------------------------*/
 /* User variables */
 CHAR *uvar_Fname1;
@@ -262,7 +263,7 @@ compareFstatFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALPar
   UINT4 i;
   REAL8 relErr;
   REAL4 eps4 = 100.0 * LAL_REAL4_EPS;
-  FstatLine_t parsed1, parsed2;
+  FstatLine_t parsed1 = empty_FstatLine, parsed2 = empty_FstatLine;
 
   INITSTATUS (status, "compareFstatFiles", rcsid );
 
