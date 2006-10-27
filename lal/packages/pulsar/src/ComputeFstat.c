@@ -30,6 +30,8 @@
 #define __USE_ISOC99 1
 #include <math.h>
 
+#include <lal/ExtrapolatePulsarSpins.h>
+
 /* GSL includes */
 #include <lal/LALGSL.h>
 #include <gsl/gsl_vector.h>
@@ -1367,6 +1369,7 @@ void
 LALEstimatePulsarAmplitudeParams (LALStatus * status,
 				  PulsarCandidate *pulsarParams,  	/**< [out] estimated params {h0,cosi,phi0,psi} plus error-estimates */
 				  const Fcomponents *Fstat,	 	/**<  Fstat-components Fa, Fb */
+				  const LIGOTimeGPS *FstatRefTime,	/**<  reference-time for the phase of Fa, Fb */
 				  const AntennaPatternMatrix *Mmunu 	/**<  antenna-pattern A,B,C and normalization S_inv*Tsft */
 				  )
 {
@@ -1399,6 +1402,7 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,
 
   ASSERT ( pulsarParams, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
   ASSERT ( Fstat, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
+  ASSERT ( FstatRefTime, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
   ASSERT ( Mmunu, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
 
   Ad = Mmunu->Ad;
@@ -1585,6 +1589,14 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,
   /* ===== debug-output resulting matrices ===== */
   /* if ( lalDebugLevel ) */
   /* printGSLmatrix4 ( stdout, "var(dBh^mu, dBh^nu) = \n", Jh_Mu_nu ); */
+
+  /* propagate initial-phase from Fstat-reference-time to refTime of Doppler-params */
+  TRY ( LALExtrapolatePulsarPhase (status->statusPtr, &phi0, pulsarParams->Doppler.fkdot, pulsarParams->Doppler.refTime, phi0, (*FstatRefTime) ),
+	status );
+  
+  if ( phi0 < 0 )	      /* make sure phi0 in [0, 2*pi] */
+    phi0 += LAL_TWOPI;
+  phi0 = fmod ( phi0, LAL_TWOPI );
 
   /* fill candidate-struct with the obtained signal-parameters and error-estimations */
   pulsarParams->Amp.h0     = normAmu * h0;

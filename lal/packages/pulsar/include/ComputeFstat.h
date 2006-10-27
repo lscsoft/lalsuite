@@ -221,9 +221,10 @@ int
 XLALWeighMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *multiWeights );
 
 void
-LALEstimatePulsarAmplitudeParams (LALStatus *,
+LALEstimatePulsarAmplitudeParams (LALStatus * status,
 				  PulsarCandidate *pulsarParams,
 				  const Fcomponents *Fstat,
+				  const LIGOTimeGPS *FstatRefTime,
 				  const AntennaPatternMatrix *Mmunu
 				  );
 
