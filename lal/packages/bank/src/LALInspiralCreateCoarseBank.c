@@ -460,6 +460,15 @@ LALInspiralCreateCoarseBank(
       else {
         ABORT( status, LALINSPIRALBANKH_EGRIDSPACING, LALINSPIRALBANKH_MSGEGRIDSPACING );
       }
+
+      /* Anand:: Nudge the templates only if using max-total-mass cut */
+      if ( coarseIn.massRange == MinComponentMassMaxTotalMass  || 
+             coarseIn.massRange == MinMaxComponentTotalMass )
+      { 
+          LALNudgeTemplatesToConstantTotalMassLine( status->statusPtr, list, (*nlist), coarseIn); 
+          CHECKSTATUSPTR( status );
+      }
+      
       break;
       
     default:
@@ -484,6 +493,122 @@ LALInspiralCreateCoarseBank(
   RETURN (status);
 }
 
+/* Anand:: 26 October 2006
+ * This function nudges the templates in the list to 
+ * the (max-total-mass = constant) line.
+ * This is done only for those templates whose total 
+ * mass exceeds the desired max-total-mass value. The
+ * templates are nudged along the metric eigen direction
+ * until they lie on the said line.
+ */
+void
+LALNudgeTemplatesToConstantTotalMassLine( 
+    LALStatus            *status, 
+    InspiralTemplateList **list, 
+    INT4                 nlist,
+    InspiralCoarseBankIn coarseIn
+    )
+{
+  InspiralTemplate      *tempPars=NULL;
+  InspiralMetric        *metric=NULL;
+  InspiralMomentsEtc    moments;
+  
+  INITSTATUS( status, "LALNudgeTemplatesToConstantTotalMassLine", 
+      LALINSPIRALCREATECOARSEBANKC );
+  ATTATCHSTATUSPTR( status );
+
+  /* If there are no templates, return now */
+  if ( nlist <= 0 )
+  {
+      LALWarning( status, "number of templates is <= 0 ! " );
+      
+      DETATCHSTATUSPTR(status);
+      RETURN (status);
+  }
+
+  /* Allocate memory (only required to calculate noise moments) */
+  tempPars = (InspiralTemplate *)
+          LALCalloc( 1, sizeof(InspiralTemplate) );
+  metric   = (InspiralMetric *)
+          LALCalloc( 1, sizeof(InspiralMetric) );
+
+  /* Init the tempPars */
+  LALInspiralSetParams( status->statusPtr, tempPars, coarseIn );
+  CHECKSTATUSPTR( status );
+
+  tempPars->totalMass  = coarseIn.MMax;
+  tempPars->eta        = 0.25;
+  tempPars->ieta       = 1.L;
+  tempPars->fLower     = coarseIn.fLower;
+  tempPars->massChoice = totalMassAndEta; 
+  LALInspiralParameterCalc( status->statusPtr, tempPars );
+  CHECKSTATUSPTR( status );
+
+  /* Get the moments of the PSD required in the computation of the metric */
+  LALGetInspiralMoments( status->statusPtr, &moments, &coarseIn.shf, tempPars );
+  CHECKSTATUSPTR( status );
+  
+  /* Loop over template list and nudge the templates if required */
+  {
+      INT4   i;
+      REAL4  P, Q, M, C, ms, t0, t3;
+
+      M = coarseIn.MMax*LAL_MTSUN_SI;
+      P = (5./256.)*pow( (LAL_PI*coarseIn.fLower), -8./3. ) ;
+      Q = (LAL_PI/8.)*pow( (LAL_PI*coarseIn.fLower), -5./3. ) ;
+     
+      for (i=0; i < nlist; i++) 
+      {
+          /* If the totalMass of this template exceeds max-total-mass
+           * then nudge along the metric eigen-direction.
+           */
+          if ( (*list)[i].params.totalMass > coarseIn.MMax )
+          {
+             ms = tan( LAL_PI/2. + (*list)[i].metric.theta );
+             C  = (*list)[i].params.t3 - ms*((*list)[i].params.t0);
+
+             /* Calculate the new co-ordinates in tau0-tau3 space */
+             (*list)[i].params.t3  = C / ( 1. -  (ms*P/(M*Q)) );
+             (*list)[i].params.t0  = P*(*list)[i].params.t3/(M*Q);
+
+             /* Calculate the other parameters */
+             LALInspiralParameterCalc( status->statusPtr, &(*list)[i].params ); 
+             CHECKSTATUSPTR( status );
+
+             /* Check that the new point has not gone down below the
+              * equal mass line. If it has, set it to m1=m2=coarseIn.MMax/2.0
+              */
+             if ( (*list)[i].params.eta > 0.25L )
+             {
+                 InputMasses originalMassChoice = (*list)[i].params.massChoice;
+
+                 (*list)[i].params.totalMass = coarseIn.MMax ;
+                 (*list)[i].params.eta       = 0.25L;
+                 (*list)[i].params.massChoice = totalMassAndEta; 
+                 
+                 LALInspiralParameterCalc( status->statusPtr, &(*list)[i].params ); 
+                 CHECKSTATUSPTR( status );
+
+                 /* Reset the massChoice to whatever it was */
+                 (*list)[i].params.massChoice = originalMassChoice;
+             }
+
+             /* Recalculate the metric at this new point */
+             LALInspiralComputeMetric( status->statusPtr, &((*list)[i].metric), 
+                     &((*list)[i].params), &moments );
+             CHECKSTATUSPTR( status );
+          }
+      }/* Loop over templates */
+  } 
+  
+  /* Clean up */
+  LALFree( tempPars ); 
+  LALFree( metric );  
+  
+  /* Normal exit */
+  DETATCHSTATUSPTR(status);
+  RETURN (status);
+}
 
 void 
 LALInspiralCreatePNCoarseBank(
