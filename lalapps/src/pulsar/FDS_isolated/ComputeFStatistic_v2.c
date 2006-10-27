@@ -106,11 +106,9 @@ RCSID( "$Id$");
  * These are 'pre-processed' settings, which have been derived from the user-input.
  */
 typedef struct {
-  LIGOTimeGPS startTime;		    /**< start time of observation */
   REAL8 Tsft;                               /**< length of one SFT in seconds */
-  REAL8 duration;			    /**< total time-span of the data (all streams) in seconds */
   LIGOTimeGPS refTime;			    /**< reference-time for pulsar-parameters in SBB frame */
-  DopplerRegion searchRegion;		    /**< parameter-space region to search over */
+  DopplerRegion searchRegion;		    /**< parameter-space region (at *internalRefTime*) to search over */
   PulsarDopplerParams stepSizes;	    /**< user-preferences on Doppler-param step-sizes */
   EphemerisData *ephemeris;		    /**< ephemeris data (from LALInitBarycenter()) */
   MultiSFTVector *multiSFTs;		    /**< multi-IFO SFT-vectors */
@@ -177,6 +175,7 @@ CHAR *uvar_outputSkyGrid;
 REAL8 uvar_dopplermax;
 INT4 uvar_RngMedWindow;
 REAL8 uvar_refTime;
+REAL8 uvar_internalRefTime;
 INT4 uvar_SSBprecision;
 
 INT4 uvar_minStartTime;
@@ -328,8 +327,8 @@ int main(int argc,char *argv[])
 	  return -1;
 	}
       
-      /* propagate fkdot back to reference-time for outputting results */
-      LAL_CALL ( LALExtrapolatePulsarSpins ( &status, dopplerpos.fkdot, GV.refTime, dopplerpos.fkdot, GV.startTime ), &status );
+      /* propagate fkdot from internalRefTime back to refTime for outputting results */
+      LAL_CALL ( LALExtrapolatePulsarSpins ( &status, dopplerpos.fkdot, GV.refTime, dopplerpos.fkdot, GV.searchRegion.refTime ), &status );
       dopplerpos.refTime = GV.refTime;
 
       /* collect data on current 'Fstat-candidate' */
@@ -420,7 +419,8 @@ int main(int argc,char *argv[])
       PulsarCandidate pulsarParams = empty_PulsarCandidate;
       pulsarParams.Doppler = loudestFCand.doppler;
 
-      LAL_CALL ( LALEstimatePulsarAmplitudeParams (&status, &pulsarParams, &loudestFCand.Fstat, &GV.startTime, &loudestFCand.Mmunu ), &status );
+      LAL_CALL(LALEstimatePulsarAmplitudeParams (&status, &pulsarParams, &loudestFCand.Fstat, &GV.searchRegion.refTime, &loudestFCand.Mmunu ), 
+	       &status );
 
       if ( (fpLoudest = fopen (uvar_outputLoudest, "wb")) == NULL)
 	{
@@ -560,7 +560,7 @@ initUserVars (LALStatus *status)
   LALregREALUserVar(status, 	metricMismatch,	'X', UVAR_OPTIONAL, "Maximal allowed mismatch for metric tiling");
   LALregSTRINGUserVar(status,	outputLabel,	'o', UVAR_OPTIONAL, "Label to be appended to all output file-names");
   LALregSTRINGUserVar(status,	skyGridFile,	 0,  UVAR_OPTIONAL, "Load sky-grid from this file.");
-  LALregREALUserVar(status,	refTime,	 0,  UVAR_OPTIONAL, "SSB reference time for pulsar-paramters");
+  LALregREALUserVar(status,	refTime,	 0,  UVAR_OPTIONAL, "SSB reference time for pulsar-paramters [Default: startTime]");
   LALregREALUserVar(status, 	dopplermax, 	'q', UVAR_OPTIONAL, "Maximum doppler shift expected");  
   LALregSTRINGUserVar(status,	outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for F-statistic field over the parameter-space");
 
@@ -579,7 +579,7 @@ initUserVars (LALStatus *status)
 
   LALregSTRINGUserVar(status,   workingDir,     'w', UVAR_DEVELOPER, "Directory to use as work directory.");
   LALregREALUserVar(status, 	timerCount, 	 0,  UVAR_DEVELOPER, "N: Output progress/timer info every N templates");  
-
+  LALregREALUserVar(status,	internalRefTime, 0,  UVAR_DEVELOPER, "internal reference time to use for Fstat-computation [Default: startTime]");
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -660,7 +660,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   PulsarSpinRange spinRangeRef = empty_PulsarSpinRange; 
 
   UINT4 numSFTs;
-  LIGOTimeGPS endTime;
+  LIGOTimeGPS startTime, endTime;
 
   INITSTATUS (status, "InitFStat", rcsid);
   ATTATCHSTATUSPTR (status);
@@ -699,16 +699,16 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   /* deduce start- and end-time of the observation spanned by the data */
   numSFTs = catalog->length;
   cfg->Tsft = 1.0 / catalog->data[0].header.deltaF;
-  cfg->startTime = catalog->data[0].header.epoch;
+  startTime = catalog->data[0].header.epoch;
   endTime   = catalog->data[numSFTs-1].header.epoch;
-  XLALAddFloatToGPS(&endTime, cfg->Tsft);
-  cfg->duration = GPS2REAL8(endTime) - GPS2REAL8 (cfg->startTime);
+  XLALAddFloatToGPS(&endTime, cfg->Tsft);	/* add on Tsft to last SFT start-time */
 
-  /* ----- get reference-time (from user if given, use startTime otherwise): ----- */
+  /* ----- get reference-times (from user if given, use startTime otherwise): ----- */
   if ( LALUserVarWasSet(&uvar_refTime)) {
     TRY ( LALFloatToGPS (status->statusPtr, &(cfg->refTime), &uvar_refTime), status);
-  } else
-    cfg->refTime = cfg->startTime;
+  } 
+  else
+    cfg->refTime = startTime;
 
   { /* ----- prepare spin-range at refTime (in *canonical format*, ie all Bands >= 0) ----- */
     REAL8 fMin = MYMIN ( uvar_Freq, uvar_Freq + uvar_FreqBand );
@@ -735,24 +735,6 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     spinRangeRef.fkdotBand[3] = f3dotMax - f3dotMin;
   } /* spin-range at refTime */
 
-  { /* ----- get sky-region to search ----- */
-    BOOLEAN haveAlphaDelta = LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta);
-    if (uvar_skyRegion)
-      {
-	cfg->searchRegion.skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
-	if ( cfg->searchRegion.skyRegionString == NULL ) {
-	  ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
-	}
-	strcpy (cfg->searchRegion.skyRegionString, uvar_skyRegion);
-      }
-    else if (haveAlphaDelta)    /* parse this into a sky-region */
-      {
-	REAL8 eps = 1e-9;	/* hack for backwards compatbility */
-	TRY ( SkySquare2String( status->statusPtr, &(cfg->searchRegion.skyRegionString),
-				uvar_Alpha, uvar_Delta,	uvar_AlphaBand + eps, uvar_DeltaBand + eps), status);
-      }
-  } /* get sky-region */
-
   { /* ----- What frequency-band do we need to read from the SFTs?
      * propagate spin-range from refTime to startTime and endTime of observation 
      */
@@ -760,7 +742,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     REAL8 fmaxStart, fmaxEnd, fminStart, fminEnd;
 
     /* compute spin-range at startTime of observation */
-    TRY ( LALExtrapolatePulsarSpinRange (status->statusPtr, &spinRangeStart, cfg->startTime, &spinRangeRef ), status );
+    TRY ( LALExtrapolatePulsarSpinRange (status->statusPtr, &spinRangeStart, startTime, &spinRangeRef ), status );
     /* compute spin-range at endTime of these SFTs */
     TRY ( LALExtrapolatePulsarSpinRange (status->statusPtr, &spinRangeEnd, endTime, &spinRangeStart ), status );
 
@@ -773,11 +755,6 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     /*  get covering frequency-band  */
     fCoverMax = MYMAX ( fmaxStart, fmaxEnd );
     fCoverMin = MYMIN ( fminStart, fminEnd );
-
-    /* spin searchRegion defined by spin-range at start time */
-    cfg->searchRegion.refTime = spinRangeStart.refTime;
-    memcpy ( &cfg->searchRegion.fkdot, &spinRangeStart.fkdot, sizeof(spinRangeStart.fkdot) );
-    memcpy ( &cfg->searchRegion.fkdotBand, &spinRangeStart.fkdotBand, sizeof(spinRangeStart.fkdotBand) );
 
   } /* extrapolate spin-range */
 
@@ -821,8 +798,43 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     if ( cfg->multiSFTs->data[0]->data[0].name[0] == 'Z' )
       isLISA = TRUE;
 
-    TRY( InitEphemeris (status->statusPtr, cfg->ephemeris, ephemDir, uvar_ephemYear, cfg->startTime, isLISA ), status);
+    TRY( InitEphemeris (status->statusPtr, cfg->ephemeris, ephemDir, uvar_ephemYear, startTime, isLISA ), status);
   }
+
+  { /* ----- set up Doppler region (at internalRefTime) to scan ----- */
+    LIGOTimeGPS internalRefTime = empty_LIGOTimeGPS;
+    PulsarSpinRange spinRangeInt = empty_PulsarSpinRange;
+    BOOLEAN haveAlphaDelta = LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta);
+
+    if (uvar_skyRegion)
+      {
+	cfg->searchRegion.skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
+	if ( cfg->searchRegion.skyRegionString == NULL ) {
+	  ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+	}
+	strcpy (cfg->searchRegion.skyRegionString, uvar_skyRegion);
+      }
+    else if (haveAlphaDelta)    /* parse this into a sky-region */
+      {
+	REAL8 eps = 1e-9;	/* hack for backwards compatbility */
+	TRY ( SkySquare2String( status->statusPtr, &(cfg->searchRegion.skyRegionString),
+				uvar_Alpha, uvar_Delta,	uvar_AlphaBand + eps, uvar_DeltaBand + eps), status);
+      }
+
+    if ( LALUserVarWasSet ( &uvar_internalRefTime ) ) {
+      TRY ( LALFloatToGPS (status->statusPtr, &(internalRefTime), &uvar_internalRefTime), status);
+    }
+    else
+      internalRefTime = startTime;
+
+    /* spin searchRegion defined by spin-range at *internal* reference-time */
+    TRY ( LALExtrapolatePulsarSpinRange (status->statusPtr, &spinRangeInt, internalRefTime, &spinRangeRef ), status );
+    cfg->searchRegion.refTime = spinRangeInt.refTime;
+    memcpy ( &cfg->searchRegion.fkdot, &spinRangeInt.fkdot, sizeof(spinRangeInt.fkdot) );
+    memcpy ( &cfg->searchRegion.fkdotBand, &spinRangeInt.fkdotBand, sizeof(spinRangeInt.fkdotBand) );
+
+  } /* get DopplerRegion */
+
   
   /* ----- obtain the (multi-IFO) 'detector-state series' for all SFTs ----- */
   TRY ( LALGetMultiDetectorStates ( status->statusPtr, &(cfg->multiDetStates), cfg->multiSFTs, cfg->ephemeris ), status );
@@ -892,18 +904,22 @@ getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg )
 	       (i < numDet - 1)?", ":" ]\n");
       strcat ( summary, line );
     }
-  utc = *XLALGPSToUTC( &utc, (INT4)GPS2REAL8(cfg->startTime) );
+  utc = *XLALGPSToUTC( &utc, (INT4)GPS2REAL8(cfg->multiDetStates->startTime) );
   strcpy ( dateStr, asctime(&utc) );
   dateStr[ strlen(dateStr) - 1 ] = 0;
   sprintf (line, "%%%% Start GPS time tStart = %12.3f    (%s GMT)\n", 
-	   GPS2REAL8(cfg->startTime), dateStr);
+	   GPS2REAL8(cfg->multiDetStates->startTime), dateStr);
   strcat ( summary, line );
   sprintf (line, "%%%% Total time spanned    = %12.3f s  (%.1f hours)\n", 
-	   cfg->duration, cfg->duration/3600 );
+	   cfg->multiDetStates->Tspan, cfg->multiDetStates->Tspan/3600 );
   strcat ( summary, line );
-  sprintf (line, "%%%% Effective spin-range at tStart: " );
+  sprintf (line, "%%%% Pulsar-params refTime = %12.3f \n", GPS2REAL8(cfg->refTime) );
   strcat ( summary, line );
-  
+  sprintf (line, "%%%% InternalRefTime       = %12.3f \n", GPS2REAL8(cfg->searchRegion.refTime) );
+  strcat ( summary, line );
+  sprintf (line, "%%%% Spin-range at internalRefTime: " );
+  strcat ( summary, line );
+
   strcat (summary, "fkdot = [ " );
   for (i=0; i < numSpins; i ++ ) 
     {
