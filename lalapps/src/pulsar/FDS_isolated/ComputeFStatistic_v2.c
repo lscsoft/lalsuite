@@ -200,6 +200,7 @@ int write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand );
 int write_PulsarCandidate_to_fp ( FILE *fp,  const PulsarCandidate *pulsarParams, const FstatCandidate *Fcand );
 
 int compareFstatCandidates ( const void *candA, const void *candB );
+void getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg );
 
 const char *va(const char *format, ...);	/* little var-arg string helper function */
 
@@ -652,6 +653,8 @@ InitEphemeris (LALStatus * status,
 
 } /* InitEphemeris() */
 
+
+
 /** Initialized Fstat-code: handle user-input and set everything up.
  * NOTE: the logical *order* of things in here is very important, so be careful
  */
@@ -755,12 +758,13 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
       {
 	REAL8 eps = 1e-9;	/* hack for backwards compatbility */
 	TRY ( SkySquare2String( status->statusPtr, &(cfg->searchRegion.skyRegionString),
-				uvar_Alpha, uvar_Delta,
-				uvar_AlphaBand + eps, uvar_DeltaBand + eps), status);
+				uvar_Alpha, uvar_Delta,	uvar_AlphaBand + eps, uvar_DeltaBand + eps), status);
       }
   } /* get sky-region */
 
-  { /* ----- propagate spin-range from refTime to startTime and endTime of observation ----- */
+  { /* ----- What frequency-band do we need to read from the SFTs?
+     * propagate spin-range from refTime to startTime and endTime of observation 
+     */
     PulsarSpinRange spinRangeStart, spinRangeEnd;	/* temporary only */
     REAL8 fmaxStart, fmaxEnd, fminStart, fminEnd;
 
@@ -855,59 +859,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
 
 
   /* ----- produce a log-string describing the data-specific setup ----- */
-  {
-    struct tm utc;
-    time_t tp;
-    CHAR dateStr[512], line[512], summary[4096];
-    CHAR *cmdline = NULL;
-    UINT4 i, numDet, numSpins = PULSAR_MAX_SPINS;
-    const CHAR *codeID = "$Id$";
-
-    /* first get full commandline describing search*/
-    TRY ( LALUserVarGetLog (status->statusPtr, &cmdline,  UVAR_LOGFMT_CMDLINE ), status );
-    sprintf (summary, "%%%% %s\n%%%% %s\n", codeID, cmdline );
-    LALFree ( cmdline );
-
-    numDet = cfg->multiSFTs->length;
-    tp = time(NULL);
-    sprintf (line, "%%%% Started search: %s", asctime( gmtime( &tp ) ) );
-    strcat ( summary, line );
-    strcat (summary, "%% Loaded SFTs: [ " );
-    for ( i=0; i < numDet; i ++ ) 
-      {
-	sprintf (line, "%s:%d%s",  cfg->multiSFTs->data[i]->data->name, 
-		 cfg->multiSFTs->data[i]->length,
-		 (i < numDet - 1)?", ":" ]\n");
-	strcat ( summary, line );
-      }
-    utc = *XLALGPSToUTC( &utc, (INT4)GPS2REAL8(cfg->startTime) );
-    strcpy ( dateStr, asctime(&utc) );
-    dateStr[ strlen(dateStr) - 1 ] = 0;
-    sprintf (line, "%%%% Start GPS time tStart = %12.3f    (%s GMT)\n", 
-	     GPS2REAL8(cfg->startTime), dateStr);
-    strcat ( summary, line );
-    sprintf (line, "%%%% Total time spanned    = %12.3f s  (%.1f hours)\n", 
-	     cfg->duration, cfg->duration/3600 );
-    strcat ( summary, line );
-    sprintf (line, "%%%% Effective spin-range at tStart: " );
-    strcat ( summary, line );
-
-    strcat (summary, "fkdot = [ " );
-    for (i=0; i < numSpins; i ++ ) 
-      {
-	sprintf (line, "%.16g:%.16g%s", 
-		 cfg->searchRegion.fkdot[i], 
-		 cfg->searchRegion.fkdot[i] + cfg->searchRegion.fkdotBand[i], 
-		 (i < numSpins - 1)?", ":" ]\n");
-	strcat ( summary, line );
-      }
-
-    if ( (cfg->logstring = LALCalloc(1, strlen(summary) + 1 )) == NULL ) {
-      ABORT (status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM);
-    }
-    strcpy ( cfg->logstring, summary );
-  } /* write dataSummary string */
-
+  TRY ( getLogString ( status->statusPtr, &(cfg->logstring), cfg ), status );
   LogPrintfVerbatim( LOG_DEBUG, cfg->logstring );
 
 
@@ -915,6 +867,77 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
   RETURN (status);
 
 } /* InitFStat() */
+
+/** Produce a log-string describing the present run-setup 
+ */
+void
+getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg )
+{
+  struct tm utc;
+  time_t tp;
+  CHAR dateStr[512], line[512], summary[4096];
+  CHAR *cmdline = NULL;
+  UINT4 i, numDet, numSpins = PULSAR_MAX_SPINS;
+  const CHAR *codeID = "$Id$";
+  CHAR *ret = NULL;
+
+  INITSTATUS( status, "getLogString", rcsid );
+  ATTATCHSTATUSPTR (status);
+
+  /* first get full commandline describing search*/
+  TRY ( LALUserVarGetLog (status->statusPtr, &cmdline,  UVAR_LOGFMT_CMDLINE ), status );
+  sprintf (summary, "%%%% %s\n%%%% %s\n", codeID, cmdline );
+  LALFree ( cmdline );
+  
+  numDet = cfg->multiSFTs->length;
+  tp = time(NULL);
+  sprintf (line, "%%%% Started search: %s", asctime( gmtime( &tp ) ) );
+  strcat ( summary, line );
+  strcat (summary, "%% Loaded SFTs: [ " );
+  for ( i=0; i < numDet; i ++ ) 
+    {
+      sprintf (line, "%s:%d%s",  cfg->multiSFTs->data[i]->data->name, 
+	       cfg->multiSFTs->data[i]->length,
+	       (i < numDet - 1)?", ":" ]\n");
+      strcat ( summary, line );
+    }
+  utc = *XLALGPSToUTC( &utc, (INT4)GPS2REAL8(cfg->startTime) );
+  strcpy ( dateStr, asctime(&utc) );
+  dateStr[ strlen(dateStr) - 1 ] = 0;
+  sprintf (line, "%%%% Start GPS time tStart = %12.3f    (%s GMT)\n", 
+	   GPS2REAL8(cfg->startTime), dateStr);
+  strcat ( summary, line );
+  sprintf (line, "%%%% Total time spanned    = %12.3f s  (%.1f hours)\n", 
+	   cfg->duration, cfg->duration/3600 );
+  strcat ( summary, line );
+  sprintf (line, "%%%% Effective spin-range at tStart: " );
+  strcat ( summary, line );
+  
+  strcat (summary, "fkdot = [ " );
+  for (i=0; i < numSpins; i ++ ) 
+    {
+      sprintf (line, "%.16g:%.16g%s", 
+	       cfg->searchRegion.fkdot[i], 
+	       cfg->searchRegion.fkdot[i] + cfg->searchRegion.fkdotBand[i], 
+	       (i < numSpins - 1)?", ":" ]\n");
+      strcat ( summary, line );
+    }
+  
+  if ( (ret = LALCalloc(1, strlen(summary) + 1 )) == NULL ) {
+    ABORT (status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM);
+  }
+
+  strcpy ( ret, summary );
+
+  /* return result */
+  (*logstr) = ret;
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+
+} /* getLogString() */
+
+
 
 /***********************************************************************/
 /** Log the all relevant parameters of the present search-run to a log-file.
