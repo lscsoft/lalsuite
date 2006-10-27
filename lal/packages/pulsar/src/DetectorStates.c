@@ -296,7 +296,7 @@ LALGetMultiDetectorStates( LALStatus *status,
   UINT4 X, numDetectors;
   MultiDetectorStateSeries *ret = NULL;
   REAL8 t0=LAL_REAL4_MAX, t1=0;
-  LIGOTimeGPS startTime;	/* keep track of earliest start time of observation */
+  LIGOTimeGPS startTime = empty_LIGOTimeGPS;	/* keep track of earliest start time of observation */
 
   INITSTATUS (status, "LALGetMultiDetectorStates", DETECTORSTATESC );
   ATTATCHSTATUSPTR (status);

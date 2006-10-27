@@ -402,7 +402,7 @@ LALSFTdataFind (LALStatus *status,
   /* have all matched SFTs identical dFreq values ? */
   for ( i = 0; i < ret->length; i ++ )
     {
-      SFTtype first_header;
+      SFTtype first_header = empty_SFTtype;	/* avoid warning */
       SFTtype this_header = ret->data[i].header;
 
       if ( i == 0 )
