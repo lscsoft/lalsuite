@@ -24,11 +24,12 @@
  * \brief Test for LALNewGetAMCoeffs(): compare results to older, well-tested
  * (but less efficient, and harder to understand) function LALComputeAM()
  *                                                                          
- * This routine currently compares LALNewGetAMCoeffs() to
- * LALComputeAM() by mimicking the behavior of Reinhard Prix's
- * GetAMCoeffsTest, with LALGetAMCoeffs() replaced by
- * LALNewGetAMCoeffs().  It should be modified to compare all three
- * routines.
+ * This routine currently compares LALComputeAM(), LALGetAMCoeffs() and LALNewGetAMCoeffs() to
+ * each other, by computing average and maximal relative differences between the respective
+ * a's and b's.
+ * 
+ * Detector and sky-location are picked at random each time, which allows a minimal
+ * Monte-Carlo validation by simply running this script repeatedly.
  *                                                                          
  *********************************************************************************/
 #include <math.h>
@@ -112,12 +113,12 @@ int main(int argc, char *argv[])
   EphemerisData edat = empty_EphemerisData;
   BarycenterInput baryinput = empty_BarycenterInput;
   LALDetector *det = NULL;
-  AMCoeffs AMold = empty_AMCoeffs, AMnew = empty_AMCoeffs;
+  AMCoeffs AMold = empty_AMCoeffs, AMnew1 = empty_AMCoeffs, AMnew2 = empty_AMCoeffs;
   REAL8 alpha, delta;
   AMCoeffsParams amParams = empty_AMCoeffsParams;
   EarthState earth;
   UINT4 i;
-  REAL8 maxerr_a, maxerr_b, averr_a, averr_b;
+  REAL8 maxerr01, maxerr02, maxerr12, averr01, averr02, averr12;
   REAL8 tolerance = 1e-2;	/* be generous: allow 1% error */
   struct tms buf;
 
@@ -151,8 +152,10 @@ int main(int argc, char *argv[])
   /* ----- allocate memory for AM-coeffs ----- */
   AMold.a = XLALCreateREAL4Vector ( timestamps->length );
   AMold.b = XLALCreateREAL4Vector ( timestamps->length );
-  AMnew.a = XLALCreateREAL4Vector ( timestamps->length );
-  AMnew.b = XLALCreateREAL4Vector ( timestamps->length );
+  AMnew1.a = XLALCreateREAL4Vector ( timestamps->length );
+  AMnew1.b = XLALCreateREAL4Vector ( timestamps->length );
+  AMnew2.a = XLALCreateREAL4Vector ( timestamps->length );
+  AMnew2.b = XLALCreateREAL4Vector ( timestamps->length );
 
   /* ----- pick detector-site at random ----- */
   pickedSite = floor( 5 * (1.0 * rand() / (RAND_MAX + 1.0) ) );  /* int in [0,5) */
@@ -204,43 +207,67 @@ int main(int argc, char *argv[])
   skypos.longitude = alpha;
   skypos.latitude = delta;
 
-  SUB ( LALNewGetAMCoeffs ( &status, &AMnew, detStates, skypos ), &status );
+  /* the 'new' and the 'newer' way ... */
+  SUB ( LALGetAMCoeffs ( &status, &AMnew1, detStates, skypos ), &status );	/* 'new1' */
+  SUB ( LALNewGetAMCoeffs ( &status, &AMnew2, detStates, skypos ), &status );	/* 'new2' */
 
 
-  /* ===== analyse relative error ===== */
-  maxerr_a = maxerr_b = averr_a = averr_b = 0;
+  /* ===== analyse relative errors ===== */
+  maxerr01 = maxerr02 = maxerr12 = 0; /* errors between 0='old', 1='new1', 2='new2' */
+  averr01 = averr02 = averr12 = 0;
   for ( i=0; i < timestamps->length; i ++ )
     {
       /*      printf("GPS time: %d s %d ns; GMST in radians: %f\n",
 	     detStates->data[i].tGPS.gpsSeconds,
 	     detStates->data[i].tGPS.gpsNanoSeconds,
 	     fmod(detStates->data[i].earthState.gmstRad,LAL_TWOPI));
-	     printf("Old AM coeffs: a=%f, b=%f\nNew AM coeffs: a=%f, b=%f\n",
+	     printf("Old AM coeffs: a=%f, b=%f\nNew AM coeffs: a=%f, b=%f\nNEWER AM coeffs: a=%f b=%f",
 	     AMold.a->data[i], AMold.b->data[i],
-	     AMnew.a->data[i], AMnew.b->data[i]); */
+	     AMnew.a->data[i], AMnew.b->data[i],
+	     AMnewer.a->data[i], AMnewer.b->data[i]); */
       REAL8 thisErr;
-      thisErr = sqrt( SQ ( AMold.a->data[i] -  AMnew.a->data[i] ) / AMold.A );
-      averr_a += thisErr;
-      maxerr_a = MYMAX( thisErr, maxerr_a );
-      thisErr = sqrt( SQ ( AMold.b->data[i] - AMnew.b->data[i] ) / AMold.B );
-      averr_b += thisErr;
-      maxerr_b = MYMAX( thisErr, maxerr_b );
+      /* compare 0-1 */
+      thisErr = sqrt( SQ ( AMold.a->data[i] -  AMnew1.a->data[i] ) / AMold.A );
+      averr01 += thisErr;
+      maxerr01 = MYMAX( thisErr, maxerr01 );
+      thisErr = sqrt( SQ ( AMold.b->data[i] -  AMnew1.b->data[i] ) / AMold.B );
+      averr01 += thisErr;
+      maxerr01 = MYMAX( thisErr, maxerr01 );
+
+      /* compare 0-2 */
+      thisErr = sqrt( SQ ( AMold.a->data[i] -  AMnew2.a->data[i] ) / AMold.A );
+      averr02 += thisErr;
+      maxerr02 = MYMAX( thisErr, maxerr02 );
+      thisErr = sqrt( SQ ( AMold.b->data[i] -  AMnew2.b->data[i] ) / AMold.B );
+      averr02 += thisErr;
+      maxerr02 = MYMAX( thisErr, maxerr02 );
+
+      /* compare 1-2 */
+      thisErr = sqrt( SQ ( AMnew1.a->data[i] -  AMnew2.a->data[i] ) / AMold.A );
+      averr12 += thisErr;
+      maxerr12 = MYMAX( thisErr, maxerr12 );
+      thisErr = sqrt( SQ ( AMnew1.b->data[i] -  AMnew2.b->data[i] ) / AMold.B );
+      averr12 += thisErr;
+      maxerr12 = MYMAX( thisErr, maxerr12 );
+
     }
-  averr_a /= timestamps->length;
-  averr_b /= timestamps->length;
+  averr01 /= 2.0 * timestamps->length;
+  averr02 /= 2.0 * timestamps->length;
+  averr12 /= 2.0 * timestamps->length;
 
   if ( lalDebugLevel ) 
     {
       printf ("Parameters: IFO = %s, skypos = [%g, %g]\n", sites[pickedSite], alpha, delta );
-      printf ("Maximal relative errors: maxerr(a) = %g %%, maxerr(b) = %g %% \n", 
-	      100.0 * maxerr_a, 100.0 * maxerr_b);
-      printf ("Average relative errors: averr(a)  = %g %%, averr(b)  = %g %% \n",
-	      100.0 * averr_a, 100.0 * averr_b );
+      printf ("Maximal relative errors: maxerr(0-1) = %g %%, maxerr(0-2) = %g %% maxerr(1-2) = %g %%\n", 
+	      100.0 * maxerr01, 100.0 * maxerr02, 100.0 * maxerr12 );
+      printf ("Average relative errors: averr(0-1)  = %g %%, averr(0-2)  = %g %% averr(1-2)  = %g %%\n",
+	      100.0 * averr01, 100.0 * averr02, 100.0 * averr12 );
     }
   else
-    printf ("%d %g %g %g %g %g %g \n", pickedSite, alpha, delta, averr_a, averr_b, maxerr_a, maxerr_b);
+    printf ("%d %g %g \t %g %g %g \t %g %g %g\n", pickedSite, alpha, delta, averr01, averr02, averr12, maxerr01, maxerr02, maxerr12);
 
-  if ( (averr_a > tolerance) || (averr_b > tolerance) || (maxerr_a > tolerance) ||(maxerr_b > tolerance))
+  if ( (averr01 > tolerance) || (averr02 > tolerance) || (averr12 > tolerance) 
+       || (maxerr01 > tolerance) ||(maxerr02 > tolerance) || (maxerr12 > tolerance) )
     {
       LALPrintError ("Maximal error-tolerance of %g %% was exceeded!\n", 100.0 * tolerance );
       return 1;
@@ -250,8 +277,10 @@ int main(int argc, char *argv[])
   XLALDestroyTimestampVector ( timestamps );
   XLALDestroyREAL4Vector ( AMold.a );
   XLALDestroyREAL4Vector ( AMold.b );
-  XLALDestroyREAL4Vector ( AMnew.a );
-  XLALDestroyREAL4Vector ( AMnew.b );
+  XLALDestroyREAL4Vector ( AMnew1.a );
+  XLALDestroyREAL4Vector ( AMnew1.b );
+  XLALDestroyREAL4Vector ( AMnew2.a );
+  XLALDestroyREAL4Vector ( AMnew2.b );
   LALFree ( det );
   XLALDestroyDetectorStateSeries ( detStates );
   LALFree ( amParams.das->pSource );
