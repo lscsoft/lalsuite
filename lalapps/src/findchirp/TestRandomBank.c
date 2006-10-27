@@ -47,7 +47,7 @@ main (INT4 argc, CHAR **argv )
   INT4                          filter_processed = 0;
    
   /* --- variables needed for the random bank */
-  UINT4 randI, randN=4;
+  UINT4 randI, randN=1418;
   REAL8 randM1, randM2;
   /* ------------------ */
 
@@ -379,6 +379,7 @@ main (INT4 argc, CHAR **argv )
 	   tmpltCurrent && thisTemplateIndex < sizeBank;
 	   tmpltCurrent = tmpltCurrent->next, thisTemplateIndex++)
 	{ 
+		fprintf(stderr, "%d\n", thisTemplateIndex);
 	  /* populate InspiralTemplateList with tmplt */
 
 	  if (vrbflg){	    
@@ -1603,8 +1604,7 @@ LALWaveOverlapBCVSpin(	     LALStatus               *status,
 			     REAL4Vector             *FilterBCVSpin2,
 			     REAL4Vector             *FilterBCVSpin3,
 			     UserParametersIn         userParam ,
-			     OverlapOutputIn          *OverlapOutput, 
-			     BEMoments *moments
+			     OverlapOutputIn          *OverlapOutput 
 		  	     )
      /*  </lalVerbatim>  */
 {
@@ -4012,8 +4012,7 @@ void LALInspiralOverlapBCVSpin(LALStatus *status,
 				 FilterBCVSpin2, 
 				 FilterBCVSpin3,
 				 *userParam, 
-				 overlapout, 
-				 moments), 
+				 overlapout),
 	   status->statusPtr);
   
   
