@@ -50,10 +50,20 @@ NRCSID( SFTUTILSC, "$Id$" );
 
 /*---------- internal types ----------*/
 
-/*---------- empty initializers ---------- */
-LALStatus empty_status;
-
 /*---------- Global variables ----------*/
+/* empty struct initializers */
+static LALStatus empty_status;
+
+const SFTtype empty_SFTtype;
+const SFTVector empty_SFTVector;
+const PSDVector empty_PSDVector;
+const MultiSFTVector empty_MultiSFTVector;
+const MultiPSDVector empty_MultiPSDVector;
+const MultiNoiseWeights empty_MultiNoiseWeights;
+const MultiREAL4TimeSeries empty_MultiREAL4TimeSeries;
+const LIGOTimeGPSVector empty_LIGOTimeGPSVector;
+const MultiLIGOTimeGPSVector empty_MultiLIGOTimeGPSVector;
+const LALStringVector empty_LALStringVector;
 
 /*---------- internal prototypes ----------*/
 static int create_LISA_detectors (LALDetector *Detector, CHAR detIndex );

@@ -257,6 +257,11 @@ typedef struct
   SFTDescriptor *data;		/**< array of data-entries describing matched SFTs */
 } SFTCatalog;
 
+/*---------- Global variables ----------*/
+/* empty init-structs for the types defined in here */
+extern const SFTConstraints empty_SFTConstraints;
+extern const SFTCatalog empty_SFTCatalog;
+
 /*
  * Functions Declarations (i.e., prototypes).
  */

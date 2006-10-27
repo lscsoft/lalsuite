@@ -81,9 +81,6 @@ do {                                                                 \
 
 
 static const LALStatus empty_status;
-static const EphemerisData empty_EphemerisData;
-static const BarycenterInput empty_BarycenterInput;
-static const SkyPosition empty_SkyPosition;
 static const AMCoeffsParams empty_AMCoeffsParams;
 static const AMCoeffs empty_AMCoeffs;
 

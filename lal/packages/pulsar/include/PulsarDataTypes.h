@@ -35,6 +35,7 @@
 #include <lal/DetectorSite.h>
 #include <lal/Date.h>
 #include <lal/SkyCoordinates.h>
+#include <lal/LALBarycenter.h>
 
 #include "SFTutils.h"
 
@@ -101,7 +102,7 @@ typedef struct {
 } PulsarCandidate;
 
 
-/** [OBSOLETE] Type defining the parameters of a pulsar-source of Gravitational waves.
+/** [DEPRECATED] Type defining the parameters of a pulsar-source of Gravitational waves.
  * NOTE: this type is obsolete and should no longer be used [==> use 'PulsarParams' instead]
  * however, it's too entrenched in the the GeneratePulsarSignal() functions and codes using it,
  * so we can't easily get rid of it any more, so we keep it for now....
@@ -116,6 +117,21 @@ typedef struct {
    REAL8 f0;             /**< WAVE-frequency(!) at tRef (in Hz) */
    REAL8Vector *spindown;/**< wave-frequency spindowns at tRef (NOT f0-normalized!) */
 } PulsarSourceParams;
+
+/*---------- Global variables ----------*/
+/* empty init-structs for the types defined in here */
+extern const BinaryOrbitParams empty_BinaryOrbitParams;
+extern const PulsarAmplitudeParams empty_PulsarAmplitudeParams;
+extern const PulsarSpinRange empty_PulsarSpinRange;
+extern const PulsarDopplerParams empty_PulsarDopplerParams;
+extern const PulsarParams empty_PulsarParams;
+extern const PulsarCandidate empty_PulsarCandidate;
+
+/* initializers for frequently used non-pulsar types */
+extern const LIGOTimeGPS empty_LIGOTimeGPS;
+extern const BarycenterInput empty_BarycenterInput;
+extern const EphemerisData empty_EphemerisData;
+extern const SkyPosition empty_SkyPosition;
 
 #ifdef  __cplusplus
 }

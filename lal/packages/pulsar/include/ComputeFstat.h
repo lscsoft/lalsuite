@@ -148,6 +148,14 @@ typedef struct {
 
 
 /*---------- exported Global variables ----------*/
+/* empty init-structs for the types defined in here */
+extern const SSBtimes empty_SSBtimes;
+extern const MultiSSBtimes empty_MultiSSBtimes;
+extern const AntennaPatternMatrix empty_AntennaPatternMatrix;
+extern const MultiAMCoeffs empty_MultiAMCoeffs;
+extern const Fcomponents empty_Fcomponents;
+extern const ComputeFParams empty_ComputeFParams;
+extern const ComputeFBuffer empty_ComputeFBuffer;
 
 /*---------- exported prototypes [API] ----------*/
 int

@@ -61,10 +61,16 @@ static REAL8 eps = 1.e-14;	/* maximal REAL8 roundoff-error (used for determining
 /* ----- DEFINES ----- */
 #define GPS2REAL(gps) ((gps).gpsSeconds + 1e-9 * (gps).gpsNanoSeconds )
 
-/* some empty structs for initializing */
+/*---------- Global variables ----------*/
+/* empty init-structs for the types defined in here */
 static LALStatus emptyStatus;	
 static SpinOrbitCWParamStruc emptyCWParams;
 static CoherentGW emptySignal;
+
+const PulsarSignalParams empty_PulsarSignalParams;
+const SFTParams empty_SFTParams;
+const SFTandSignalParams empty_SFTandSignalParams;
+
 
 /** Generate a time-series at the detector for a given pulsar.
  */

@@ -98,11 +98,11 @@ typedef struct
 } _SFT_header_v2_t;
 
 
-/*---------- empty initializers ---------- */
-static LALStatus empty_status;
-static SFTtype empty_SFTtype;
-
 /*---------- Global variables ----------*/
+/* empty struct initializers */
+static LALStatus empty_status;
+const SFTConstraints empty_SFTConstraints;
+const SFTCatalog empty_SFTCatalog;
 
 /*---------- internal prototypes ----------*/
 static LALStringVector *find_files (const CHAR *fpattern);

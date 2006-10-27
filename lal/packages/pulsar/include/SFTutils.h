@@ -140,6 +140,18 @@ typedef struct {
 } LALStringVector;
 
 /*---------- Global variables ----------*/
+/* empty init-structs for the types defined in here */
+extern const SFTtype empty_SFTtype;
+extern const SFTVector empty_SFTVector;
+extern const PSDVector empty_PSDVector;
+extern const MultiSFTVector empty_MultiSFTVector;
+extern const MultiPSDVector empty_MultiPSDVector;
+extern const MultiNoiseWeights empty_MultiNoiseWeights;
+extern const MultiREAL4TimeSeries empty_MultiREAL4TimeSeries;
+extern const LIGOTimeGPSVector empty_LIGOTimeGPSVector;
+extern const MultiLIGOTimeGPSVector empty_MultiLIGOTimeGPSVector;
+extern const LALStringVector empty_LALStringVector;
+
 
 /*---------- exported prototypes [API] ----------*/
 /* ----------------------------------------------------------------------

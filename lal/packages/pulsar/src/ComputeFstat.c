@@ -71,15 +71,21 @@ NRCSID( COMPUTEFSTATC, "$Id$");
 
 /*---------- internal types ----------*/
 
-/*---------- empty initializers ---------- */
-static const BarycenterInput empty_BarycenterInput;
-static const LALStatus empty_status;
-static const Fcomponents empty_Fcomponents;
-static const ComputeFBuffer empty_ComputeFBuffer;
-
 /*---------- Global variables ----------*/
 #define NUM_FACT 6
 static const REAL8 inv_fact[NUM_FACT] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0), (1.0/24.0), (1.0/120.0) };
+
+/* empty initializers  */
+static const LALStatus empty_status;
+
+const SSBtimes empty_SSBtimes;
+const MultiSSBtimes empty_MultiSSBtimes;
+const AntennaPatternMatrix empty_AntennaPatternMatrix;
+const MultiAMCoeffs empty_MultiAMCoeffs;
+const Fcomponents empty_Fcomponents;
+const ComputeFParams empty_ComputeFParams;
+const ComputeFBuffer empty_ComputeFBuffer;
+
 
 /*---------- internal prototypes ----------*/
 int finite(double x);
@@ -616,6 +622,9 @@ LALGetAMCoeffs(LALStatus *status,
     gamma = LAL_PI_2 - 0.5 * (xAzi + yAzi);
     /* get detector position latitude (lambda) */
     lambda = DetectorStates->detector.frDetector.vertexLatitudeRadians;
+    /*
+    printf ("IFO = %s: sin(zeta) = %f\n", DetectorStates->detector.frDetector.name, sin( xAzi - yAzi ) );
+    */
   }
 
   /*---------- coefficient ahN, bhN dependent ONLY on detector-position  ---------- */
@@ -742,7 +751,6 @@ LALNewGetAMCoeffs(LALStatus *status,
   REAL4 eta1, eta2, eta3;
   REAL4 norm;
   UINT4 i, numSteps;
-  UINT4 j, k;
 
   INITSTATUS (status, "LALNewGetAMCoeffs", COMPUTEFSTATC);
 

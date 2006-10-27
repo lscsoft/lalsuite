@@ -340,6 +340,12 @@ typedef struct {
       REAL4  *fCrossZeroPsi; /**< vector of Fcross values for psi = 0 at midpoint of each SFT */
 } SkyConstAndZeroPsiAMResponse;
 
+/*---------- Global variables ----------*/
+/* empty init-structs for the types defined in here */
+extern const PulsarSignalParams empty_PulsarSignalParams;
+extern const SFTParams empty_SFTParams;
+extern const SFTandSignalParams empty_SFTandSignalParams;
+
 
 /* Function prototypes */
 void LALGeneratePulsarSignal (LALStatus *, REAL4TimeSeries **signal, const PulsarSignalParams *params);
