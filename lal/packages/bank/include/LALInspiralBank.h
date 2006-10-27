@@ -668,6 +668,14 @@ LALInspiralBCVRegularFcutBank (
     INT4                *NList, 
     InspiralCoarseBankIn coarseIn);
 
+void
+LALNudgeTemplatesToConstantTotalMassLine( 
+    LALStatus            *status, 
+    InspiralTemplateList **list, 
+    INT4                 nlist,
+    InspiralCoarseBankIn coarseIn
+    );
+
 
 /* <lalLaTeX>
    \newpage\input{InspiralSpinBankC}
