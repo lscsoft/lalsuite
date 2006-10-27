@@ -330,7 +330,7 @@ int main(int argc,char *argv[])
       
       /* propagate fkdot back to reference-time for outputting results */
       LAL_CALL ( LALExtrapolatePulsarSpins ( &status, dopplerpos.fkdot, GV.refTime, dopplerpos.fkdot, GV.startTime ), &status );
-      /* FIXME: set proper reference times */
+      dopplerpos.refTime = GV.refTime;
 
       /* collect data on current 'Fstat-candidate' */
       thisFCand.doppler = dopplerpos;
@@ -413,21 +413,14 @@ int main(int argc,char *argv[])
       fpFstat = NULL;
     }
 
-  /* do full parameter-estimation for loudest canidate and output into separate file */
+  /* ----- estimate amplitude-parameters for the loudest canidate and output into separate file ----- */
   if ( uvar_outputLoudest )
     {
       FILE *fpLoudest;
       PulsarCandidate pulsarParams = empty_PulsarCandidate;
-
       pulsarParams.Doppler = loudestFCand.doppler;
-      LAL_CALL ( LALEstimatePulsarAmplitudeParams (&status, &pulsarParams, &loudestFCand.Fstat, &loudestFCand.Mmunu ), &status );
-      
-      /* propagate initial-phase from internal reference-time 'startTime' to refTime of Doppler-params */
-      LAL_CALL ( LALExtrapolatePulsarPhase (&status, &pulsarParams.Amp.phi0, loudestFCand.doppler.fkdot, GV.refTime, 
-					    pulsarParams.Amp.phi0, GV.startTime),&status);
-      if ( pulsarParams.Amp.phi0 < 0 )	      /* make sure phi0 in [0, 2*pi] */
-	pulsarParams.Amp.phi0 += LAL_TWOPI;
-      pulsarParams.Amp.phi0 = fmod ( pulsarParams.Amp.phi0, LAL_TWOPI );
+
+      LAL_CALL ( LALEstimatePulsarAmplitudeParams (&status, &pulsarParams, &loudestFCand.Fstat, &GV.startTime, &loudestFCand.Mmunu ), &status );
 
       if ( (fpLoudest = fopen (uvar_outputLoudest, "wb")) == NULL)
 	{
@@ -438,7 +431,7 @@ int main(int argc,char *argv[])
       /* write header with run-info */
       fprintf (fpLoudest, "%s", GV.logstring );
 
-      /* assemble 'candidate' structure */
+      /* write this 'candidate' to disc */
       if ( write_PulsarCandidate_to_fp ( fpLoudest,  &pulsarParams, &loudestFCand) != XLAL_SUCCESS )
 	{
 	  LogPrintf(LOG_CRITICAL, "call to write_PulsarCandidate_to_fp() failed!\n");
@@ -557,8 +550,7 @@ initUserVars (LALStatus *status)
 
   LALregSTRINGUserVar(status,	skyRegion, 	'R', UVAR_OPTIONAL, "ALTERNATIVE: Specify sky-region by polygon (or use 'allsky')");
   LALregSTRINGUserVar(status,	DataFiles, 	'D', UVAR_REQUIRED, "File-pattern specifying (multi-IFO) input SFT-files"); 
-  LALregSTRINGUserVar(status, 	IFO, 		'I', UVAR_OPTIONAL, 
-		      "Detector-constraint: 'G1', 'L1', 'H1', 'H2' ...(useful for single-IFO v1-SFTs only!)");
+  LALregSTRINGUserVar(status, 	IFO, 		'I', UVAR_OPTIONAL, "Detector: 'G1', 'L1', 'H1', 'H2' ...(useful for single-IFO v1-SFTs only!)");
   LALregSTRINGUserVar(status,	ephemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
   LALregSTRINGUserVar(status,	ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
   LALregBOOLUserVar(status, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
@@ -578,13 +570,12 @@ initUserVars (LALStatus *status)
   LALregINTUserVar ( status, 	minStartTime, 	 0,  UVAR_OPTIONAL, "Earliest SFT-timestamp to include");
   LALregINTUserVar ( status, 	maxEndTime, 	 0,  UVAR_OPTIONAL, "Latest SFT-timestamps to include");
 
-  /* ----- more experimental/expert options follow here ----- */
+  /* ----- more experimental/expert options ----- */
   LALregINTUserVar (status, 	SSBprecision,	 0,  UVAR_DEVELOPER, "Precision to use for time-transformation to SSB: 0=Newtonian 1=relativistic");
   LALregINTUserVar(status, 	RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");
   LALregINTUserVar(status,	Dterms,		't', UVAR_DEVELOPER, "Number of terms to keep in Dirichlet kernel sum");
   LALregSTRINGUserVar(status,	outputSkyGrid,	 0,  UVAR_DEVELOPER, "Write sky-grid into this file.");
-  LALregSTRINGUserVar(status,   outputLoudest,	 0,  UVAR_DEVELOPER, 
-		      "Output-file for the loudest F-statistic candidate in this search");
+  LALregSTRINGUserVar(status,   outputLoudest,	 0,  UVAR_DEVELOPER, "Output-file for the loudest F-statistic candidate in this search");
 
   LALregSTRINGUserVar(status,   workingDir,     'w', UVAR_DEVELOPER, "Directory to use as work directory.");
   LALregREALUserVar(status, 	timerCount, 	 0,  UVAR_DEVELOPER, "N: Output progress/timer info every N templates");  
