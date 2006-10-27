@@ -122,7 +122,8 @@ int main(int argc, char *argv[])
   REAL8 tolerance = 1e-2;	/* be generous: allow 1% error */
   struct tms buf;
 
-  const CHAR *sites[] = {"H1", "L1", "V2", "G1", "T1" };
+  const CHAR *sites[]   = {"H1", "L1", "V2", "G1", "T1" };
+  REAL8 sinzeta;	/* zeta = IFO opening angle */
   UINT4 pickedSite;
   char earthEphem[] = "earth00-04.dat";
   char sunEphem[] = "sun00-04.dat";
@@ -159,7 +160,15 @@ int main(int argc, char *argv[])
 
   /* ----- pick detector-site at random ----- */
   pickedSite = floor( 5 * (1.0 * rand() / (RAND_MAX + 1.0) ) );  /* int in [0,5) */
-  /* pickedSite = 4; */
+
+  /* NOTE: contrary to ComputeAM() and LALGetAMCoffs(), the new function LALNewGetAMCoeffs()
+   * computes 'a * sinzeta' and 'b * sinzeta': for the comparison we therefore need to correct 
+   * for GEO's opening-angle of 94.33degrees [JKS98]: */ 
+  if ( ! strcmp ( sites[pickedSite], "G1" ) )
+    sinzeta = 0.997146;
+  else
+    sinzeta = 1;
+
   if ( ( det = XLALGetSiteInfo ( sites[pickedSite] )) == NULL ) 
     {
       LALPrintError ("\nCall to XLALGetSiteInfo() has failed for site = '%s'... \n\n", 
@@ -235,18 +244,18 @@ int main(int argc, char *argv[])
       maxerr01 = MYMAX( thisErr, maxerr01 );
 
       /* compare 0-2 */
-      thisErr = sqrt( SQ ( AMold.a->data[i] -  AMnew2.a->data[i] ) / AMold.A );
+      thisErr = sqrt( SQ ( AMold.a->data[i] -  AMnew2.a->data[i]/sinzeta ) / AMold.A );
       averr02 += thisErr;
       maxerr02 = MYMAX( thisErr, maxerr02 );
-      thisErr = sqrt( SQ ( AMold.b->data[i] -  AMnew2.b->data[i] ) / AMold.B );
+      thisErr = sqrt( SQ ( AMold.b->data[i] -  AMnew2.b->data[i]/sinzeta ) / AMold.B );
       averr02 += thisErr;
       maxerr02 = MYMAX( thisErr, maxerr02 );
 
       /* compare 1-2 */
-      thisErr = sqrt( SQ ( AMnew1.a->data[i] -  AMnew2.a->data[i] ) / AMold.A );
+      thisErr = sqrt( SQ ( AMnew1.a->data[i] -  AMnew2.a->data[i]/sinzeta ) / AMold.A );
       averr12 += thisErr;
       maxerr12 = MYMAX( thisErr, maxerr12 );
-      thisErr = sqrt( SQ ( AMnew1.b->data[i] -  AMnew2.b->data[i] ) / AMold.B );
+      thisErr = sqrt( SQ ( AMnew1.b->data[i] -  AMnew2.b->data[i]/sinzeta ) / AMold.B );
       averr12 += thisErr;
       maxerr12 = MYMAX( thisErr, maxerr12 );
 
