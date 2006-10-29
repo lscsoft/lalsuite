@@ -107,8 +107,8 @@ int main( int argc, char *argv[] )
 		      {
 			Dlnz = (-log(zofA[l+1])+log(zofA[l]));
 			gammaAverage += eff[l] * zofA[l] * dRdz[l] * Dlnz;
-			gammaMin += (eff[l]-Deff[l]) * zofA[l] * dRdz[l] * Dlnz;
-			gammaMax += (eff[l]+Deff[l]) * zofA[l] * dRdz[l] * Dlnz;
+			gammaMin += fmaxf((eff[l]-Deff[l]),0.0) * zofA[l] * dRdz[l] * Dlnz;
+			gammaMax += fminf((eff[l]+Deff[l]),1.0) * zofA[l] * dRdz[l] * Dlnz;
 		      }
 		    gammaAverage *= c/p;
 		    gammaMin *= c/p;
@@ -120,6 +120,7 @@ int main( int argc, char *argv[] )
 				
 	      }
 	  }
+
 	fclose( fp );
 
 	free(amp);
