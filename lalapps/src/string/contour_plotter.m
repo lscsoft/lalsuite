@@ -33,7 +33,7 @@ rate = zeros(length(eps2),length(Gmu2));
 
 for kk = 1:length(Gmu2)
   for jj = 1:length(eps2)
-    cut = gammaS(:,4) == Gmu2(kk) & gammaS(:,3) == eps2(jj);
+    cut = (gammaS(:,4) == Gmu2(kk)) & (gammaS(:,3) == eps2(jj));
     if sum(cut) == 1
 
       rateS(jj,kk) = gammaS(cut,5);
