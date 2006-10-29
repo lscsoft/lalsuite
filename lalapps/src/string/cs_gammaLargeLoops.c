@@ -107,8 +107,8 @@ int main( int argc, char *argv[] )
 		    dRdA += z*dRdzdA*dlnz;
 		  }
 		RAve +=      eff[j]      * amp[j] * dRdA * DlnA;
-		RMin += (eff[j]-Deff[j]) * amp[j] * dRdA * DlnA;
-		RMax += (eff[j]+Deff[j]) * amp[j] * dRdA * DlnA;
+		RMin +=  fmaxf((eff[l]-Deff[l]),0.0) * amp[j] * dRdA * DlnA;
+		RMax +=  fminf((eff[l]+Deff[l]),1.0) * amp[j] * dRdA * DlnA;
 	      }
 
 	    for ( k = 0; k <  CLA.np; k++ )
