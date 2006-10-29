@@ -1,8 +1,8 @@
 clear
 
 %files with rate data
-load /home/siemens/LIGOCS-S4paper/gamma_S4sens.dat
-load /home/siemens/LIGOCS-S4paper/gamma_S4UL.dat
+load /home/siemens/LIGOCS-S4paper/test/nooverlap/injections/gamma_S4sens.dat
+load /home/siemens/LIGOCS-S4paper/test/nooverlap/injections/gamma_S4UL.dat
 
 %one year
 %T=365*24*3600;
