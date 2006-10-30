@@ -62,13 +62,6 @@ NRCSID( DETECTORSTATESH, "$Id$" );
 
 /*---------- exported types ----------*/
 
-/** Translate TDI arm indices to C-indexing */
-typedef enum { 
-  LISA_ARM1 = 0, 
-  LISA_ARM2, 
-  LISA_ARM3 
-} LISAarmT;
-
 /** The 'detector tensor' for a GW-detector: symmetric 3x3 matrix, storing only the upper triangle.
  * The coordinate-system is SSB-fixed Cartesian coordinates, in particular EQUATORIAL coords for 
  * Earth-based detectors and ECLIPTIC coords for LISA.
@@ -139,7 +132,6 @@ void LALDestroyDetectorStateSeries(LALStatus *, DetectorStateSeries **vect );
 void XLALDestroyMultiDetectorStateSeries ( MultiDetectorStateSeries *mdetStates );
 
 /* helpers */
-int XLALgetLISAtwoArmIFO ( DetectorTensor *detT, LIGOTimeGPS tGPS, LISAarmT armA, LISAarmT armB );
 
 #ifdef  __cplusplus
 }

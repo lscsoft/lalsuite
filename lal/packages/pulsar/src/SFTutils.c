@@ -52,8 +52,6 @@ NRCSID( SFTUTILSC, "$Id$" );
 
 /*---------- Global variables ----------*/
 /* empty struct initializers */
-static LALStatus empty_status;
-
 const SFTtype empty_SFTtype;
 const SFTVector empty_SFTVector;
 const PSDVector empty_PSDVector;
@@ -66,7 +64,6 @@ const MultiLIGOTimeGPSVector empty_MultiLIGOTimeGPSVector;
 const LALStringVector empty_LALStringVector;
 
 /*---------- internal prototypes ----------*/
-static int create_LISA_detectors (LALDetector *Detector, CHAR detIndex );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -932,7 +929,7 @@ XLALGetSiteInfo ( const CHAR *name )
       break;
 
     case 'Z':       /* create dummy-sites for LISA  */
-      if ( create_LISA_detectors ( site, channel[1] ) != 0 ) 
+      if ( XLALcreateLISA ( site, channel[1] ) != 0 ) 
 	{
 	  LALPrintError("\nFailed to created LISA detector '%d'\n\n", channel[1]);
 	  LALFree ( site );
@@ -955,56 +952,6 @@ XLALGetSiteInfo ( const CHAR *name )
   
 } /* XLALGetSiteInfo() */
 
-
-/** Set up the \em LALDetector struct representing LISA X, Y, Z TDI observables.
- * INPUT: detIndex = 1, 2, 3: detector-tensor corresponding to TDIs X, Y, Z respectively.
- * return -1 on ERROR, 0 if OK
- */
-static int 
-create_LISA_detectors (LALDetector *Detector,	/**< [out] LALDetector */
-		       CHAR detIndex		/**< [in] which TDI observable: '1' = X, '2'= Y, '3' = Z */
-		       )
-{
-  LALFrDetector detector_params;
-  LALDetector Detector1;
-  LALStatus status = empty_status;
-
-  if ( !Detector )
-    return -1;
-
-  switch ( detIndex )
-    {
-    case '1':
-      strcpy ( detector_params.name, "Z1: LISA TDI X" );
-      break;
-    case '2':
-      strcpy ( detector_params.name, "Z2: LISA TDI Y" );
-      break;
-    case '3':
-      strcpy ( detector_params.name, "Z3: LISA TDI Z" );
-      break;
-    default:
-      LALPrintError ("\nIllegal LISA TDI index '%c': must be one of {'1', '2', '3'}.\n\n", detIndex );
-      return -1;      
-      break;
-    } /* switch (detIndex) */
-
-  /* fill frDetector with dummy numbers: meaningless for LISA */
-  detector_params.vertexLongitudeRadians = 0;
-  detector_params.vertexLatitudeRadians = 0;
-  detector_params.vertexElevation = 0;
-  detector_params.xArmAltitudeRadians = 0;
-  detector_params.xArmAzimuthRadians = 0;
-
-  LALCreateDetector(&status, &Detector1, &detector_params, LALDETECTORTYPE_IFODIFF );
-  if ( status.statusCode != 0 )
-    return -1;
-
-  (*Detector) = Detector1;
-
-  return 0;
-  
-} /* create_LISA_detectors */
 
 /** Computes weight factors arising from SFTs with different noise 
     floors -- it multiplies an existing weight vector */

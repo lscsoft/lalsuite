@@ -31,6 +31,7 @@
 
 #include "ComputeFstat.h"
 #include "DetectorStates.h"
+#include "LISAspecifics.h"
 
 NRCSID( DETECTORSTATESC, "$Id$");
 
@@ -181,50 +182,24 @@ XLALFillDetectorTensor (DetectorState *detState,	/**< [out,in]: detector state: 
 			const LALDetector *detector	/**< [in]: which detector */
 			)
 {
-  CHAR *channel;
+  const CHAR *prefix;
 
   if ( !detState || !detector ) {
     xlalErrno = XLAL_EINVAL;
     return -1;
   }
 
-  /* get a normalized descriptor for this detector from its name */
-  if ( (channel = XLALGetChannelPrefix ( detector->frDetector.name )) == NULL ) {
-    LALPrintError ("\nXLALGetChannelPrefix() failed for detector name '%s'\n\n", detector->frDetector.name);
-    xlalErrno = XLAL_EINVAL;
-    return -1;
-  }
+  prefix = detector->frDetector.prefix;
 
   /* we need to distinguish two cases: space-borne (i.e. LISA) and Earth-based detectors */
-  if ( channel[0] == 'Z' )	/* LISA */
+  if ( prefix[0] == 'Z' )	/* LISA */
     { 
-      LISAarmT armA, armB;
-      /* we distinuish (currently) 3 different TDI observables: X (channel=1), Y (channel=2), Z (channel=3) */
-      switch ( channel[1] )
-	{
-	case '1': 	/* TDI observable 'X' */
-	  armA = LISA_ARM3; armB = LISA_ARM2;
-	  break;
-	case '2':		/* TDI observable 'Y' */
-	  armA = LISA_ARM1; armB = LISA_ARM3;
-	  break;
-	case '3':		/* TDI observable 'Z' */
-	  armA = LISA_ARM2; armB = LISA_ARM1;
-	  break;
-	default:	/* unknown */
-	  xlalErrno = XLAL_EINVAL;
-	  return -1;
-	  break;
-	} /* switch channel[1] */
-
-      if ( XLALgetLISAtwoArmIFO ( &(detState->detT), detState->tGPS, armA, armB ) != 0 ) {
-	LALPrintError ("\nXLALgetLISAtwoArmIFO() failed !\n\n");
+      if ( XLALgetLISADetectorTensor ( &(detState->detT), detState->tGPS, prefix[1] ) != 0 ) {
+	LALPrintError ("\nXLALgetLISADetectorTensor() failed !\n\n");
 	xlalErrno = XLAL_EINVAL;
 	return -1;
       }
 
-
-      
     } /* if LISA */
   else
     {
@@ -271,9 +246,6 @@ XLALFillDetectorTensor (DetectorState *detState,	/**< [out,in]: detector state: 
 
     } /* if Earth-based */
     
-
-  LALFree ( channel );
-
   return 0;
 
 } /* XLALFillDetectorTensor() */

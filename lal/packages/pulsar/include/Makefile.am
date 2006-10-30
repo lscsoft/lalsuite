@@ -4,7 +4,7 @@ pkginclude_HEADERS = FlatMesh.h TwoDMesh.h PulsarTimes.h StackMetric.h 		\
 	LALDemod.h FoldAmplitudes.h LALBarycenter.h PtoleMetric.h 		\
 	PulsarCat.h HeterodynePulsar.h FitToPulsar.h BinaryPulsarTiming.h 	\
 	PulsarDataTypes.h ExtrapolatePulsarSpins.h LatticeCovering.h		\
-	ComputeFstat.h SFTutils.h DetectorStates.h
+	ComputeFstat.h SFTutils.h DetectorStates.h LISAspecifics.h
 
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex

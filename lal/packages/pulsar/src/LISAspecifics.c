@@ -26,12 +26,16 @@
  */
 
 /*---------- INCLUDES ----------*/
-#define __USE_ISOC99 1
 #include <math.h>
+#include <string.h>
 
-#include "ComputeFstat.h"
+#include <lal/LALError.h>
+#include <ComputeFstat.h>
 
-NRCSID( LISASPECIFICS, "$Id$");
+#include "LISAspecifics.h"
+
+
+NRCSID( LISASPECIFICSC, "$Id$");
 
 /*---------- local DEFINES ----------*/
 #define TRUE (1==1)
@@ -51,8 +55,104 @@ NRCSID( LISASPECIFICS, "$Id$");
 /*---------- Global variables ----------*/
 
 /*---------- internal prototypes ----------*/
+int XLALgetLISAtwoArmIFO ( DetectorTensor *detT, LIGOTimeGPS tGPS, LISAarmT armA, LISAarmT armB );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
+
+/** Set up the \em LALDetector struct representing LISA X, Y, Z TDI observables.
+ * INPUT: channelNum = '1', '2', '3': detector-tensor corresponding to TDIs X, Y, Z respectively.
+ * return -1 on ERROR, 0 if OK
+ */
+int 
+XLALcreateLISA (LALDetector *Detector,	/**< [out] LALDetector */
+		CHAR channelNum		/**< [in] which TDI observable: '1' = X, '2'= Y, '3' = Z */
+		)
+{
+  LALFrDetector detector_params;
+  LALDetector Detector1;
+
+  if ( !Detector )
+    return -1;
+
+  switch ( channelNum )
+    {
+    case '1':
+      strcpy ( detector_params.name, "Z1: LISA TDI X" );
+      strcpy ( detector_params.prefix, "Z1");
+      break;
+    case '2':
+      strcpy ( detector_params.name, "Z2: LISA TDI Y" );
+      strcpy ( detector_params.prefix, "Z2");
+      break;
+    case '3':
+      strcpy ( detector_params.name, "Z3: LISA TDI Z" );
+      strcpy ( detector_params.prefix, "Z3");
+      break;
+    default:
+      LALPrintError ("\nIllegal LISA TDI index '%c': must be one of {'1', '2', '3'}.\n\n", channelNum );
+      return -1;      
+      break;
+    } /* switch (detIndex) */
+
+  /* fill frDetector with dummy numbers: meaningless for LISA */
+  detector_params.vertexLongitudeRadians = 0;
+  detector_params.vertexLatitudeRadians = 0;
+  detector_params.vertexElevation = 0;
+  detector_params.xArmAltitudeRadians = 0;
+  detector_params.xArmAzimuthRadians = 0;
+
+  if ( XLALCreateDetector(&Detector1, &detector_params, LALDETECTORTYPE_IFODIFF ) == NULL )
+    return -1;
+
+  (*Detector) = Detector1;
+
+  return 0;
+  
+} /* XLALcreateLISA() */
+
+/* Construct the long-wavelength-limit (LWL) detector tensor for LISA, given the prefix
+ * 
+ * RETURN 0 = OK, -1 = ERROR
+ */
+int
+XLALgetLISADetectorTensor ( DetectorTensor *detT, 	/**< [out]: LISA LWL detector-tensor */
+			    LIGOTimeGPS tGPS,		/**< [in] GPS time to compute IFO at */
+			    CHAR channelNum )		/**< channel-number (as a char)  '1', '2', '3' .. */
+{
+  LISAarmT armA, armB;
+
+  if ( !detT )
+    return -1;
+
+  /* we distinuish (currently) 3 different TDI observables: X (channel=1), Y (channel=2), Z (channel=3) */
+  switch ( channelNum )
+    {
+    case '1': 	/* TDI observable 'X' */
+      armA = LISA_ARM3; armB = LISA_ARM2;
+      break;
+    case '2':		/* TDI observable 'Y' */
+      armA = LISA_ARM1; armB = LISA_ARM3;
+      break;
+    case '3':		/* TDI observable 'Z' */
+      armA = LISA_ARM2; armB = LISA_ARM1;
+      break;
+    default:	/* unknown */
+      LALPrintError ("\nInvalid channel-number '%c' for LISA \n\n", channelNum );
+      xlalErrno = XLAL_EINVAL;
+      return -1;
+      break;
+    } /* switch channel[1] */
+  
+  if ( XLALgetLISAtwoArmIFO ( detT, tGPS, armA, armB ) != 0 ) {
+    LALPrintError ("\nXLALgetLISAtwoArmIFO() failed !\n\n");
+    xlalErrno = XLAL_EINVAL;
+    return -1;
+  }
+
+  return 0;
+
+} /* XLALgetLISADetectorTensor() */
+
 
 /** return a long-wavelength-limit (LWL) two-arm IFO detector tensor for LISA, given 'armA' and 'armB' 
  * This implements LISA LWL-tensor using spacecraft-orbits described by Eq.(2.1) in LISA-MLCD 
