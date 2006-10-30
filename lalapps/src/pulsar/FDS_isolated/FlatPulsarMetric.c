@@ -142,10 +142,21 @@ XLALFlatMetricCW ( gsl_matrix *gij, 				/**< [out] metric */
       for ( i=0; i < numStepsX; i ++ )
 	{
 	  /* detector position-series in ecliptic coordinates, normalized by 1AU */
-	  rx->data[l] = (LAL_C_SI / LAL_AU_SI) * detStates->data[i].rDetector[0] ;
-	  ry->data[i] = (LAL_C_SI / LAL_AU_SI) * ( coseps * detStates->data[i].rDetector[1]  + sineps * detStates->data[i].rDetector[2] );
+	  /* 
+	     rx->data[l] = (LAL_C_SI / LAL_AU_SI) * detStates->data[i].rDetector[0] ;
+	     ry->data[i] = (LAL_C_SI / LAL_AU_SI) * ( coseps * detStates->data[i].rDetector[1]  + sineps * detStates->data[i].rDetector[2] );
+	  */
+
+	  rx->data[l] = (LAL_C_SI / LAL_AU_SI) * detStates->data[i].earthState.posNow[0] ;
+	  ry->data[i] = (LAL_C_SI / LAL_AU_SI) * ( coseps * detStates->data[i].earthState.posNow[1]  
+						   + sineps * detStates->data[i].earthState.posNow[2] );
+
+	  /* 
+	  printf ("ti = %d, rx = %.6f, ry = %.6f\n", detStates->data[i].tGPS.gpsSeconds, rx->data[l], ry->data[l] );
+	  */
+
 	  /* spins */
-	  ti[0]->data[l] = XLALGPSDiff ( &refTime, &(detStates->data[i].tGPS) )  / Tspan;
+	  ti[0]->data[l] = XLALGPSDiff ( &(detStates->data[i].tGPS), &refTime )  / Tspan;
 	  for ( s=1; s < numSpins; s ++ )
 	    ti[s]->data[l] = ti[s-1]->data[l] * ti[0]->data[l] / (s + 1.0);
 
@@ -167,15 +178,15 @@ XLALFlatMetricCW ( gsl_matrix *gij, 				/**< [out] metric */
   /* spins */
   for ( s=0; s < numSpins; s ++ )
     {
-      gg = XLALcov ( rx, ti[s] );
+      gg =  - XLALcov ( rx, ti[s] );
       gsl_matrix_set (gij, 0, s+2, gg);
       gsl_matrix_set (gij, s+2, 0, gg);
 
-      gg = XLALcov ( ry, ti[s] );
+      gg = - XLALcov ( ry, ti[s] );
       gsl_matrix_set (gij, 1, s+2, gg);
       gsl_matrix_set (gij, s+2, 1, gg);
 
-      for ( sp=s; sp < numSpins; s ++ )
+      for ( sp=s; sp < numSpins; sp ++ )
 	{
 	  gg = XLALcov ( ti[s], ti[sp] );
 	  gsl_matrix_set (gij, s+2,  sp+2, gg);
@@ -221,6 +232,7 @@ REAL8
 XLALcov ( const REAL8Vector *at, const REAL8Vector *bt )
 {
   UINT4 i, N;
+  REAL8 norm;
   REAL8 av_a, av_b, av_ab;
   const REAL8 *this_a, *this_b;
 
@@ -235,22 +247,34 @@ XLALcov ( const REAL8Vector *at, const REAL8Vector *bt )
   this_a = &at->data[0];
   this_b = &bt->data[0];
 
-  for ( i=0; i <  N; i ++ )
+
+  /* use trapezoidal rule */  
+  for ( i=0; i <  N ; i ++ )
     {
       REAL8 a = *this_a;
       REAL8 b = *this_b;
 
-      av_ab += a * b;
-      av_a  += a;
-      av_b  += b;
+      if ( (i > 0) && ( i < N -1 ) )
+	{
+	  av_ab += a * b;
+	  av_a  += a;
+	  av_b  += b;
+	}
+      else
+	{
+	  av_ab += 0.5 * a * b;
+	  av_a  += 0.5 * a;
+	  av_b  += 0.5 * b;
+	}
 
       this_a ++;
       this_b ++;
     } /* for i < N */
-  
-  av_ab *= (1.0 / N);
-  av_a  *= (1.0 / N);
-  av_b  *= (1.0 / N);
+
+  norm = (1.0 / (N - 1.0));  
+  av_ab *= norm;
+  av_a  *= norm;
+  av_b  *= norm;
 
   return ( av_ab - av_a * av_b );
 
