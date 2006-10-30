@@ -197,6 +197,9 @@ class tuneObject:
         # If injection section present strip it out!
         if newCP.has_section('tracksearchinjection'):
             newCP.remove_section('tracksearchinjection')
+        # If candidatethreshold section present strip it out!
+        if newCP.has_section('candidatethreshold'):
+            newCP.remove_section('candidatethreshold')
         # Write out this modified ini file to disk
         fp=open(iniName,'w')
         newCP.write(fp)
@@ -250,15 +253,20 @@ class tuneObject:
             candidate=candidateList()
             candidate.loadfile(entry)
             myStat=candidate.candidateStats()
-            meanP=myStat[3]
-            varP=myStat[4]
-            stdP=math.sqrt(varP)
-            meanL=myStat[5]
-            varL=myStat[6]
-            stdL=math.sqrt(varL)
-            #Threshold FAR values
-            threshP=meanP+(myFAR*stdP)
-            threshL=int(round(float((meanL+(myFAR*stdL))))
+            if myStat == []:
+                meanP=varP=stdP=meanL=stdL=0
+                threshP=0
+                threshL=3
+            else:
+                meanP=myStat[3]
+                varP=myStat[4]
+                stdP=math.sqrt(varP)
+                meanL=myStat[5]
+                varL=myStat[6]
+                stdL=math.sqrt(varL)
+                #Threshold FAR values
+                threshP=meanP+(myFAR*stdP)
+                threshL=int(round(float((meanL+(myFAR*stdL)))))
             myOpts=str(str(entry).replace(self.installPipes,'').split('/')[1]).split('_')
             myLH=myOpts[1]
             myLL=myOpts[2]
@@ -313,6 +321,7 @@ class tuneObject:
             results.append([h,l,p,3])
             #Setup L entry
             results.append([h,l,0,len])
+        print "The detection efficiency pipes to be created are",results.__len__()," this may take a while."
         for entry in results:
             h=entry[0]
             l=entry[1]
@@ -353,6 +362,31 @@ class tuneObject:
         fp.close()
     #End DEeditIniFile
 
+    def NEW_DEeditIniFile(self,LH,LL,P,L,iniName):
+        """
+        This method will edit the original ini file in such a way as to
+        prepare the detection efficiency runs to be launched.
+        """
+        newCP=copy.deepcopy(self.cpIni)
+        #New/Rewritten ini options
+        uniqStr='DE_'+str(LH)+'_'+str(LL)+'_'+str(P)+'_'+str(L)+'_'
+        newCP.set('filelayout','workpath',self.installPipes2+'/'+uniqStr)
+        newCP.set('filelayout','logpath',self.log+uniqStr)
+        newCP.set('tracksearchbase','start_threshold',LH)
+        newCP.set('tracksearchbase','member_threshold',LL)
+        #We adjust the options associated with the python post processing routines.
+        expString="(P>%f)and(L>%i)"%(P,L)
+        newCP,set('candidatethreshold','expression_threshold',expString)
+        # The master Ini must have an injection section to continue
+        if not newCP.has_section('tracksearchinjection'):
+            print "Error the master ini in our tun file has no injection section!"
+            os.abort
+        # Write out this modified ini file to disk
+        fp=open(iniName,'w')
+        newCP.write(fp)
+        fp.close()
+    #End DEeditIniFile
+    
     def performDEcalc(self):
         #count num of can files with 1 entry+
         #determine percentage succsessful
@@ -374,25 +408,34 @@ class tuneObject:
             l=myOpts[2]
             p=myOpts[3]
             len=myOpts[4]
-            eff=candObj.totalCount/numInjections
-            outputPickle.append([h,l,p,len,eff,candObj.totalCount,entry])
-            outputP.append([h,l,p,eff,candObj.totalCount])
-            outputL.append([h,l,len,eff,candObj.totalCount])
+            eff=float(candObj.totalCount)/float(numInjections)
+            outputPickle.append([h,l,p,len,eff,candObj.totalCount,numInjections,entry])
+            outputP.append([float(h),float(l),float(p),float(eff),int(candObj.totalCount),int(numInjections)])
+            outputL.append([float(h),float(l),int(float(len)),float(eff),int(candObj.totalCount),int(numInjections)])
         #Write out results files to disk
+        format4CL = "%10.5f  %10.5f  %15i    %10.5f %10i %10i\n"
+        format4CP = "%10.5f  %10.5f  %10.5f  %10.5f %10i %10i\n"
+        format6C = "%10.5f %10.5f  %10.5f %10i  %10.5f %10i %10i\n"
         file_fp=open(self.home+'/DE_results_L.dat','w')
         file_fp.write("H L P Len Eff Count \n")
         for entry in outputL:
-            file_fp.write(str(entry)+'\n')
+            file_fp.write(format4CL % (entry[0],entry[1],entry[2],entry[3],entry[4],entry[5]))
         file_fp.close()
         file_fp=open(self.home+'/DE_results_P.dat','w')
         file_fp.write("H L P Len Eff Count \n")
-        for entry in outputL:
-            file_fp.write(str(entry)+'\n')
+        for entry in outputP:
+            file_fp.write(format4CP % (entry[0],entry[1],entry[2],entry[3],entry[4],entry[5]))
         file_fp.close()
         file_fp=open(self.home+'/DE_results_Mix.dat','w')
         file_fp.write("H L P Len Eff Count \n")
         for entry in outputPickle:
-            file_fp.write(str(entry.__getslice__(0,6))+'\n')
+            file_fp.write(format6C % (float(entry[0]),
+                                      float(entry[1]),
+                                      float(entry[2]),
+                                      int(float(entry[3])),
+                                      float(entry[4]),
+                                      int(float(entry[5])),
+                                      int(float(entry[6]))))
         file_fp.close()
         pickle_fp=open(self.home+'/DE_results.pickle','w')
         pickle.dump(outputPickle,pickle_fp)

@@ -90,6 +90,7 @@ if (glob and (canList.__len__() >= 1)):
     #Glob the input files and exit writing to disk!
     newCandidateObject=copy.deepcopy(canObjects.pop(0))
     for entry in canObjects:
+        print "Globing file:",entry.filename[0]
         newCandidateObject=newCandidateObject.globList(entry)
     if outfile != "":
         newCandidateObject.writefile(outfile)

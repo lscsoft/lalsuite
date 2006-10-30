@@ -424,7 +424,13 @@ class candidateList:
                          float(tmpElement[4]),float(tmpElement[5]))
              #Determine the bin widths in this structure
              if self.totalCount > 0:
-                 self.findBinWidths()
+                 try: self.findBinWidths()
+                 except ValueError:
+                     print "Can not estimate the bin widths from file:",inputFilename
+                     print "Assuming file is invalid! Forgeting data."
+                     self.curves=[]
+                     self.gpsWidth=gpsInt(0,0)
+                     self.freqWidth=float(0)
              if self.totalCount != self.curves.__len__():
                  print "Possible problem, Inconsistent file :",inputFilename
         else:
@@ -511,11 +517,21 @@ class candidateList:
         for i in range(1,uniqT.__len__()):
             diff_T.append(uniqT[i]-uniqT[i-1])
         diff_T.sort()
-        avgT=diff_T[0]
         for i in range(1,uniqF.__len__()):
             diff_F.append(uniqF[i]-uniqF[i-1])
         diff_F.sort()
-        avgF=diff_F[0]
+        if uniqF.__len__() < 2:
+            print "Warning unable to uniquely determine f bin width!"
+            self.freqWidth=0
+            avgF=0
+        else:
+            avgF=diff_F[0]
+        if uniqT.__len__() < 2:
+            print "Warning unable to uniquely determine t bin width!"
+            self.gpsWidth=gpsInt(0,0)
+            avgT=0
+        else:
+            avgT=diff_T[0]
         if (uniqT.__len__() < 10):
             print "Warning less than ten intervals used to determine bin time width!"
         if (uniqF.__len__() < 10):
@@ -581,26 +597,35 @@ class candidateList:
         """
         iCL=inputCandidateList
         globList=copy.deepcopy(self)
-        globTolerance=1e-5
+        globTolerance=1e-4
+        zeroGPS=gpsInt(0,0)
+        if self.gpsWidth == zeroGPS:
+            self.gpsWidth=iCL.gpsWidth
+        if iCL.gpsWidth == zeroGPS:
+            iCL.gpsWidth=self.gpsWidth
+        if self.freqWidth == 0:
+            self.freqWidth=iCL.freqWidth
+        if iCL.freqWidth == 0:
+            iCL.freqWidth=self.freqWidth
         gpsDiff=self.gpsWidth.__sub__(iCL.gpsWidth)
         if ((float((self.freqWidth-iCL.freqWidth)).__abs__() < globTolerance)\
            and \
            (float(gpsDiff.display()).__abs__() < globTolerance)):
-            globList.totalCount=self.totalCount.__add__(iCL.totalCount)
+            globList.totalCount=self.totalCount + iCL.totalCount
             globList.filename.extend(iCL.filename)
             globList.curves.extend(iCL.curves)
             return globList
         elif ((self.freqWidth==0) or (int(self.gpsWidth.__makeInt__())==0)):
             globList.freqWidth=self.freqWidth
             globList.gpsWidth=self.gpsWidth
-            globList.totalCount=self.totalCount.__add__(iCL.totalCount)
+            globList.totalCount=self.totalCount + iCL.totalCount
             globList.filename.extend(iCL.filename)
             globList.curves.extend(iCL.curves)
             return globList
         elif ((iCL.freqWidth==0) or (int(iCL.gpsWidth.__makeInt__())==0)):
             globList.freqWidth=iCL.freqWidth
             globList.gpsWidth=iCL.gpsWidth
-            globList.totalCount=self.totalCount.__add__(iCL.totalCount)
+            globList.totalCount=self.totalCount + iCL.totalCount
             globList.filename.extend(iCL.filename)
             globList.curves.extend(iCL.curves)
             return globList
@@ -608,8 +633,9 @@ class candidateList:
             print "Can not glob lists, due to inconsistent values!"
             print self.freqWidth,'VS',iCL.freqWidth
             print self.gpsWidth.display(),'VS',iCL.gpsWidth.display()
-            print "Returning empy list"
-            return candidateList()
+            print "Returning original list with no additional entries!"
+            print "Orignal list entry count:",self.totalCount," Ignored list entry count:",iCL.totalCount
+            return copy.deepcopy(self)
     #End globList method
 
     def clusterClobberWith(self,inputReferenceList):
