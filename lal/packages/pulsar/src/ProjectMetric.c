@@ -1,52 +1,45 @@
-/******************************** <lalVerbatim file="ProjectMetricCV">
-Author: Creighton, T. D.
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+ * \author Creighton, T. D.
+ * \date 2000
+ * \file 
+ * \ingroup PulsarMetric
+ * \brief Project out the zeroth dimension of a metric.
+ *
+ * $Id$
+ *
 
-/********************************************************** <lalLaTeX>
+ \par Description
 
-\subsection{Module \texttt{ProjectMetric.c}}
-\label{ss:ProjectMetric.c}
+ This function takes a metric \f$g_{\alpha\beta}\f$, where
+ \f$\alpha,\beta=0,1,\ldots,n\f$, and computes the projected metric
+ \f$\gamma_{ij}\f$ on the subspace \f$i,j=1,\ldots,n\f$, as described in the
+ header StackMetric.h.
 
-Projects out the zeroth dimension of a metric.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{ProjectMetricCP}
-\idx{LALProjectMetric()}
-
-\subsubsection*{Description}
-
-This function takes a metric $g_{\alpha\beta}$, where
-$\alpha,\beta=0,1,\ldots,n$, and computes the projected metric
-$\gamma_{ij}$ on the subspace $i,j=1,\ldots,n$, as described in the
-header \verb@StackMetric.h@.
-
-The argument \verb@*metric@ stores the metric components in the manner
-used by the functions \verb@CoherentMetric()@ and
-\verb@StackMetric()@, and \verb@errors@ indicates whether error
-estimates are included in \verb@*metric@.  Thus \verb@*metric@ is a
-vector of length $(n+1)(n+2)/2$ if \verb@errors@ is zero, or of length
-$(n+1)(n+2)$ if \verb@errors@ is nonzero; see \verb@CoherentMetric.c@
+The argument \a *metric stores the metric components in the manner
+used by the functions CoherentMetric() and
+StackMetric(), and \a errors indicates whether error
+estimates are included in \a *metric.  Thus \a *metric is a
+vector of length \f$(n+1)(n+2)/2\f$ if \a errors is zero, or of length
+\f$(n+1)(n+2)\f$ if \a errors is nonzero; see CoherentMetric.c
 for the indexing scheme.
 
-Upon return, \verb@*metric@ stores the components of $\gamma_{ij}$ in
+Upon return, \a *metric stores the components of \f$\gamma_{ij}\f$ in
 the same manner as above, with the physically meaningless components
-$\gamma_{\alpha0} = \gamma_{0\alpha}$ (and their uncertainties) set
+\f$\gamma_{\alpha0} = \gamma_{0\alpha}\f$ (and their uncertainties) set
 identically to zero.
 
-\subsubsection*{Algorithm}
+\par Algorithm
 
-The function simply implements Eq.~\ref{eq:gij-gab} in header
-\verb@StackMetric.h@.  The formula used to convert uncertainties
-$s_{\alpha\beta}$ in the metric components $g_{\alpha\beta}$ into
-uncertainties $\sigma_{ij}$ in $\gamma_{ij}$ is:
-$$
+The function simply implements \ref eq_gij_gab "Eq. (2)" in header
+StackMetric.h.  The formula used to convert uncertainties
+\f$s_{\alpha\beta}\f$ in the metric components \f$g_{\alpha\beta}\f$ into
+uncertainties \f$\sigma_{ij}\f$ in \f$\gamma_{ij}\f$ is:
+\f[
 \sigma_{ij} = s_{ij}
 	+ s_{0i}\left|\frac{g_{0j}}{g_{00}}\right|
 	+ s_{0j}\left|\frac{g_{0i}}{g_{00}}\right|
 	+ s_{00}\left|\frac{g_{0i}g_{0j}}{(g_{00})^2}\right| \; .
-$$
+\f]
 Note that if the metric is highly degenerate, one may find that one or
 more projected components are comparable in magnitude to their
 estimated numerical uncertainties.  This can occur when the
@@ -58,24 +51,18 @@ components are often not relevant for data analysis, and can be
 effectively set to zero.
 
 Technically, starting from a full metric
-$g_{\alpha\beta}(\bm{\lambda})$, the projection
-$\gamma_{ij}(\vec\lambda)$ is the metric of a subspace
-$\{\vec\lambda\}$ passing through the point \bm{\lambda} on a plane
-orthogonal to the $\lambda^0$ axis.  In order for $\gamma_{ij}$ to
-measure the \emph{maximum} distance between points $\vec\lambda$, it
-is important to evaluate $g_{\alpha\beta}$ at the value of $\lambda^0$
+\f$g_{\alpha\beta}(\mathbf{\lambda})\f$, the projection
+\f$\gamma_{ij}(\vec\lambda)\f$ is the metric of a subspace
+\f$\{\vec\lambda\}\f$ passing through the point \f$\mathbf{\lambda}\f$ on a plane
+orthogonal to the \f$\lambda^0\f$ axis.  In order for \f$\gamma_{ij}\f$ to
+measure the \em maximum distance between points \f$\vec\lambda\f$, it
+is important to evaluate \f$g_{\alpha\beta}\f$ at the value of \f$\lambda^0\f$
 that gives the largest possible separations.  For the pulsar search
-formalism discussed in the header \verb@StackMetric.h@, this is always
-achieved by choosing the largest value of $\lambda^0=f_\mathrm{max}$
+formalism discussed in the header StackMetric.h, this is always
+achieved by choosing the largest value of \f$\lambda^0=f_\mathrm{max}\f$
 that is to be covered in the search.
 
-\subsubsection*{Uses}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{ProjectMetricCV}}
-
-******************************************************* </lalLaTeX> */
+*/
 
 #include<math.h>
 #include<lal/LALStdlib.h>

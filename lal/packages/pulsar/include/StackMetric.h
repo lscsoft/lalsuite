@@ -8,6 +8,8 @@
  *
  * $Id$
  *
+ * \par Description 
+ * 
  This header covers routines that determine the metric
  coefficients for the mismatch function (ambiguity function) on the
  parameter space for a pulsar search.  The assumed search method is
@@ -19,11 +21,11 @@
  brief.  We assume that a model waveform in our search is described by
  an overall frequency scale \f$f_0\f$, and by some modulation about that
  frequency described by ``shape'' parameters
- \f$\vec\lambda=(\lambda^1,\ldots,\lambda^n)\f$, such that the
+ \f$\vec{\lambda}=(\lambda^1,\ldots,\lambda^n)\f$, such that the
  parameterized phase of the waveform is \f$\phi[t;\mathbf{\lambda}] = 2\pi
- f_0\tau[t;\vec\lambda]\f$.  Here \f$\mathbf{\lambda} = (\lambda^0,\vec\lambda)
+ f_0\tau[t;\vec{\lambda}]\f$.  Here \f$\mathbf{\lambda} = (\lambda^0,\vec{\lambda})
  = (f_0,\lambda^1,\ldots,\lambda^n)\f$ represents the total set of
- parameters we must search over, and \f$\tau[t;\vec\lambda]\f$ is a
+ parameters we must search over, and \f$\tau[t;\vec{\lambda}]\f$ is a
  canonical time coordinate describing the shape of the waveform.
  
  A (local) maximum in detected power \f$P\f$ occurs if a signal is filtered
@@ -34,7 +36,7 @@
  power loss \f$\Delta P/P\f$ thus has a (local) minimum of 0 for matched
  parameters and increases for mismatched parameters; it can be thought
  of as describing a distance between the two (nearby) parameter sets.
- The \emph{metric} of this distance measure is simply the set of
+ The \em metric of this distance measure is simply the set of
  quadratic coefficients of the Taylor expansion of \f$\Delta P/P\f$ about
  its minimum.
  
@@ -44,9 +46,9 @@
  is computed from a coherent power spectrum of a time interval \f$\Delta t\f$, 
  then the metric components are given simply by the covariances of
  the phase derivatives \f$\partial\phi/\partial\lambda^\alpha\f$ over the
- time interval:
+ time interval: \anchor eq_gab_phi
  \f{equation}
- g_{\alpha\beta}(\mathbf\lambda) =
+ g_{\alpha\beta}(\mathbf{\lambda}) =
  \left\langle
  \frac{\partial\phi[t;\mathbf{\lambda}]}{\partial\lambda^\alpha}
  \frac{\partial\phi[t;\mathbf{\lambda}]}{\partial\lambda^\beta}
@@ -58,14 +60,13 @@
  \left\langle
  \frac{\partial\phi[t;\mathbf{\lambda}]}{\partial\lambda^\beta}
  \right\rangle \; ,
- \label{eq:gab-phi}
- \f}
+ \f} 
  where \f$\langle\ldots\rangle\f$ denotes a time average over the interval
  \f$\Delta t\f$, and \f$\alpha\f$ and \f$\beta\f$ are indecies running from 0 to
- \f$n\f$.  The partial derivatives are evaluated at the point \mathbf{\lambda}
+ \f$n\f$.  The partial derivatives are evaluated at the point \f$\mathbf{\lambda}\f$
  in parameter space.  If instead the detected power is computed from
  the sum of several power spectra computed from separate time intervals
- (of the same length), then the overall metric is the \emph{average} of
+ (of the same length), then the overall metric is the \em average of
  the metrics from each time interval.
  
  When power spectra are computed using fast Fourier transforms, the
@@ -73,16 +74,16 @@
  scans all frequencies for significant peaks.  In this case one is
  concerned with how the peak power (maximized over frequency) is
  reduced by mismatch in the remaining ``shape'' parameters
- \f$\vec\lambda\f$.  This is given by the the \em projected metric
- \f$\gamma_{ij}(\vec\lambda)\f$, where \f$i\f$ and \f$j\f$ run from 1 to \f$n\f$:
+ \f$\vec{\lambda}\f$.  This is given by the the \em projected metric
+ \f$\gamma_{ij}(\vec{\lambda})\f$, where \f$i\f$ and \f$j\f$ run from 1 to \f$n\f$:
+ \anchor eq_gij_gab
  \f{equation}
- \gamma_{ij}(\vec\lambda) = \left[g_{ij}-\frac{g_{0i}g_{0j}}{g_{00}}
+ \gamma_{ij}(\vec{\lambda}) = \left[g_{ij}-\frac{g_{0i}g_{0j}}{g_{00}}
  \right]_{\lambda^0=f_\mathrm{max}} \; .
- \label{eq:gij-gab}
  \f}
  Here \f$f_\mathrm{max}\f$ is the highest-frequency signal expected to be
  present, which ensures that, for lower-frequency signals,
- \f$\gamma_{ij}\f$ will \emph{overestimate} the detection scheme's
+ \f$\gamma_{ij}\f$ will \em overestimate the detection scheme's
  sensitivity to the ``shape'' parameters.
 */
 

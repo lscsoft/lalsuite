@@ -8,6 +8,8 @@
  *
  * $Id$
  *
+ * \par Description
+ *
  This header covers routines for using a ``Ptolemaic'' (epicyclic)
  approximation to the detector motion to compute the parameter-space metric
  for a pulsar search. (At the moment, the search is assumed to be a single

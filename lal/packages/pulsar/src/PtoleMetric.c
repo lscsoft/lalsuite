@@ -1,71 +1,59 @@
-/**************************************** <lalVerbatim file="PtoleMetricCV">
-Author: Jones D. I., Owen, B. J., and Whitbeck, D. M.
-$Id$
-********************************************************** </lalVerbatim> */
+/**
+ * \author Jones D. I., Owen, B. J., and Whitbeck, D. M.
+ * \date 2001-2005
+ * \file 
+ * \ingroup PulsarMetric
+ * \brief Computes metric components for a pulsar search in the ``Ptolemaic''
+ * approximation.  Both the Earth's spin and orbit are included.
+ *
+ * $Id$
+ *
 
-/**************************************************************** <lalLaTeX>
+ \par Description
 
-\subsection{Module \texttt{LALPtoleMetric.c}}
-\label{ss:PtoleMetric}
+ This function computes metric components in a way that yields results
+ very similar to those of LALCoherentMetric() called with the
+ output of LALTBaryPtolemaic(). The CPU demand, however, is less,
+ and the metric components can be expressed analytically, lending
+ themselves to better understanding of the behavior of the parameter
+ space.  For short durations (less than about 70000 seconds or 20 hours) a
+ Taylor series expansion is used to improve the accuracy with which several
+ terms are computed.
 
-Computes metric components for a pulsar search in the ``Ptolemaic''
-approximation.  Both the Earth's spin and orbit are included.
+ \par Algorithm
 
-\subsubsection*{Prototypes}
-\input{PtoleMetricCP}
-\idx{PtoleMetric}
+ For speed and checking reasons, a minimum of numerical computation is
+ involved. The metric components can be expressed analytically (though not
+ tidily) in terms of trig functions and are much too large to be worth
+ writing down here.  More comprehensive documentation on the derivation of
+ the metric components can be found in the pulgroup CVS archive as
+ docs/S2/FDS/Isolated/ptolemetric.tex.  Jones, Owen, and Whitbeck will write
+ up the calculation and some tests as a journal article.
 
-\subsubsection*{Description}
+ The function LALGetEarthTimes() is used to calculate the spin and
+ rotational phase of the Earth at the beginning of the observation.
 
-This function computes metric components in a way that yields results
-very similar to those of \texttt{CoherentMetric} called with the
-output of \texttt{TBaryPtolemaic}. The CPU demand, however, is less,
-and the metric components can be expressed analytically, lending
-themselves to better understanding of the behavior of the parameter
-space.  For short durations (less than about 70000 seconds or 20 hours) a
-Taylor series expansion is used to improve the accuracy with which several
-terms are computed.
+ On output, the \a metric->data is arranged with the same indexing
+ scheme as in LALCoherentMetric(). The order of the parameters is
+ \f$(f_0, \alpha, \delta)\f$.
 
-\subsubsection*{Algorithm}
+ \par Notes
 
-For speed and checking reasons, a minimum of numerical computation is
-involved. The metric components can be expressed analytically (though not
-tidily) in terms of trig functions and are much too large to be worth
-writing down here.  More comprehensive documentation on the derivation of
-the metric components can be found in the pulgroup CVS archive as
-docs/S2/FDS/Isolated/ptolemetric.tex.  Jones, Owen, and Whitbeck will write
-up the calculation and some tests as a journal article.
+ The analytic metric components were derived separately by Jones and
+ Whitbeck (and partly by Owen) and found to agree.  Also, the output of this
+ function has been compared against that of the function combination
+ (CoherentMetric + TDBaryPtolemaic), which is a numerical implementation of
+ the Ptolemaic approximation, and found to agree up to the fourth
+ significant figure or better.  Even using DTEphemeris.c for the true
+ Earth's orbit only causes errors in the metric components of order 10\%,
+ with (so far) no noticeable effect on the sky coverage.
+ 
+ At present, only one spindown parameter can be included with the sky
+ location.  The code contains (commented out) expressions for
+ spindown-spindown metric components for an arbitrary number of spindowns,
+ but the (commented out) spindown-sky components neglect orbital motion.
 
-The function \texttt{GetEarthTimes} is used to calculate the spin and
-rotational phase of the Earth at the beginning of the observation.
-
-On output, the \texttt{metric->data} is arranged with the same indexing
-scheme as in \texttt{CoherentMetric()}. The order of the parameters is
-$(f_0, \alpha, \delta)$.
-
-\subsubsection*{Uses}
-
-LALGetEarthTimes()
-
-\subsubsection*{Notes}
-
-The analytic metric components were derived separately by Jones and
-Whitbeck (and partly by Owen) and found to agree.  Also, the output of this
-function has been compared against that of the function combination
-(CoherentMetric + TDBaryPtolemaic), which is a numerical implementation of
-the Ptolemaic approximation, and found to agree up to the fourth
-significant figure or better.  Even using DTEphemeris.c for the true
-Earth's orbit only causes errors in the metric components of order 10\%,
-with (so far) no noticeable effect on the sky coverage.
-
-At present, only one spindown parameter can be included with the sky
-location.  The code contains (commented out) expressions for
-spindown-spindown metric components for an arbitrary number of spindowns,
-but the (commented out) spindown-sky components neglect orbital motion.
-
-\vfill{\footnotesize\input{PtoleMetricCV}}
-
-************************************************************* </lalLaTeX> */
+*/
 
 #include <math.h>
 #include <stdlib.h>
@@ -92,11 +80,10 @@ NRCSID( PTOLEMETRICC, "$Id$" );
 /* A private factorial function */
 static int factrl( int );
 
-/* <lalVerbatim file="PtoleMetricCP"> */
 void LALPtoleMetric( LALStatus *status,
                      REAL8Vector *metric,
                      PtoleMetricIn *input )
-{ /* </lalVerbatim> */
+{
   INT2 j;              /* Loop counters */
   /*REAL8 temp1, temp2, temp3, temp4; dummy variables */
   REAL8 R_o, R_s;         /* Amplitude of daily/yearly modulation, s */
@@ -630,18 +617,16 @@ static int factrl( int arg )
 } /* factrl() */
 
 
-/*----------------------------------------------------------------------
- * this is a "wrapper" to provide a uniform interface to PtoleMetric() 
- * and CoherentMetric(), from DopplerScan.c, written by Reinhard Prix.
+/** Unified "wrapper" to provide a uniform interface to LALPtoleMetric() 
+ * and LALCoherentMetric(), from DopplerScan.c, written by Reinhard Prix.
  *
- * the parameter structure of PtoleMetric() was used, because it's more 
+ * The parameter structure of LALPtoleMetric() was used, because it's more 
  * compact
- *----------------------------------------------------------------------*/
-/* <lalVerbatim file="PulsarMetricCP"> */
+ */
 void LALPulsarMetric ( LALStatus *stat, 
 		       REAL8Vector **metric,
 		       PtoleMetricIn *input )
-{ /* </lalVerbatim> */
+{
   MetricParamStruc params = empty_MetricParamStruc;
   PulsarTimesParamStruc spinParams = empty_PulsarTimesParamStruc;
   PulsarTimesParamStruc baryParams = empty_PulsarTimesParamStruc;

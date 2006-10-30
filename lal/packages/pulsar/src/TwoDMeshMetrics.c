@@ -1,64 +1,42 @@
-/****************************** <lalVerbatim file="TwoDMeshMetricsCV">
-Author: Creighton, T. D.
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+ * \author Creighton, T. D.
+ * \date 2003
+ * \file 
+ * \ingroup PulsarMetric
+ * \brief Some metric computation routines suitable for use in LALCreateTwoDMesh()
+ *
+ * $Id$
+ *
+ * \par Description
+ * 
+ This module contains metric computation routines suitable for passing
+ into LALCreateTwoDMesh() via the \a params->getMetric
+ function parameter.
+ 
+ The routine LALGetNearestMetric() takes as its parameter a
+ \a (void *) pointer to a \a REAL4VectorSequence structure,
+ containing a list of 5-dimensional vectors
+ \f$(x,y,g_{xx},g_{yy},g_{xy})\f$ giving the values of the specified metric
+ components evaluated at the specified position.  The function returns
+ in \a metric the components at the location in \a params
+ nearest to the requested \a position, where ``nearness'' to a
+ point refers to proper distance computed from the metric at that
+ point.
 
-/********************************************************** <lalLaTeX>
-
-\subsection{Module \texttt{TwoDMeshMetrics.c}}
-\label{ss:TwoDMeshMetrics.c}
-
-Some metric computation routines suitable for use in
-\verb@LALCreateTwoDMesh()@.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{TwoDMeshMetricsCP}
-\idx{LALNearestMetric()}
-\idx{LALInterpolatedMetric()}
-
-\subsubsection*{Description}
-
-This module contains metric computation routines suitable for passing
-into \verb@LALCreateTwoDMesh()@ via the \verb@params->getMetric@
-function parameter.
-
-The routine \verb@LALGetNearestMetric()@ takes as its parameter a
-\verb@(void *)@ pointer to a \verb@REAL4VectorSequence@ structure,
-containing a list of 5-dimensional vectors
-$(x,y,g_{xx},g_{yy},g_{xy})$ giving the values of the specified metric
-components evaluated at the specified position.  The function returns
-in \verb@metric@ the components at the location in \verb@params@
-nearest to the requested \verb@position@, where ``nearness'' to a
-point refers to proper distance computed from the metric at that
-point.
-
-The routine \verb@LALInterpolateMetricGrid()@ takes as its parameter a
-\verb@(void *)@ pointer to a \verb@REAL4Grid@ structure of physical
-dimension 2 and data dimension 3, where the first two dimensions refer
-to the $(x,y)$ grid points, and the third dimension must be of length
-3, storing the three metric components $g_{xx}$, $g_{yy}$, and
-$g_{xy}$ in that order.  The routine locates the four grid points
-surrounding the specified \verb@position@, and interpolates the metric
-values using a simple bilinear fit $f(x,y)=A+Bx+Cy+Dxy$, where $A$,
-$B$, $C$, and $D$ are specified by the four surrounding points.  If
-the point $(x,y)$ is outside the region, then the metric components
-are interpolated from the two nearest edge points if it is nearest to
-an edge, or the nearest corner point if it is nearest to a corner.
-(``Nearness'' in this case refers to \emph{coordinate} distances.)
-
-\subsubsection*{Algorithm}
-
-\subsubsection*{Uses}
-\begin{verbatim}
-lalDebugLevel
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{TwoDMeshMetricsCV}}
-
-******************************************************* </lalLaTeX> */
+ The routine LALInterpolateMetricGrid() takes as its parameter a
+ \a (void *) pointer to a \a REAL4Grid structure of physical
+ dimension 2 and data dimension 3, where the first two dimensions refer
+ to the \f$(x,y)\f$ grid points, and the third dimension must be of length
+ 3, storing the three metric components \f$g_{xx}\f$, \f$g_{yy}\f$, and
+ \f$g_{xy}\f$ in that order.  The routine locates the four grid points
+ surrounding the specified \a position, and interpolates the metric
+ values using a simple bilinear fit \f$f(x,y)=A+Bx+Cy+Dxy\f$, where \f$A\f$,
+ \f$B\f$, \f$C\f$, and \f$D\f$ are specified by the four surrounding points.  If
+ the point \f$(x,y)\f$ is outside the region, then the metric components
+ are interpolated from the two nearest edge points if it is nearest to
+ an edge, or the nearest corner point if it is nearest to a corner.
+ (``Nearness'' in this case refers to \em coordinate distances.)
+*/
 
 #include <lal/LALStdlib.h>
 #include <lal/Grid.h>
@@ -66,10 +44,9 @@ lalDebugLevel
 
 NRCSID( TWODMESHMETRICSC, "$Id$" );
 
-/* <lalVerbatim file="TwoDMeshMetricsCP"> */
 void
 LALGetNearestMetric( LALStatus *stat, REAL4 metric[3], REAL4 position[2], void *params )
-{ /* </lalVerbatim> */
+{ 
   UINT4 length;    /* number of metric mesh points */
   UINT4 iMin;      /* index of point with minimum proper distance */
   UINT4 i, j;      /* i = index of current mesh point, j = 5*i  */
@@ -118,10 +95,9 @@ LALGetNearestMetric( LALStatus *stat, REAL4 metric[3], REAL4 position[2], void *
 }
 
 
-/* <lalVerbatim file="TwoDMeshMetricsCP"> */
 void
 LALInterpolateMetricGrid( LALStatus *stat, REAL4 metric[3], REAL4 position[2], void *params )
-{ /* </lalVerbatim> */
+{
   REAL4Grid *p;         /* params cast to a REAL4Grid */
   REAL8 *p0;            /* pointer to p->offset->data */
   REAL8 *dp;            /* pointer to p->interval->data */

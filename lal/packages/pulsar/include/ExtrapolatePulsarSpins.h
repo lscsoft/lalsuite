@@ -17,7 +17,7 @@
  *  MA  02111-1307  USA
  */
 
-/** \defgroup ExtrapolatePulsarSpins
+/** \defgroup ExtrapolatePulsarSpins Extrapolate Pulsar Spins and Phase
  *  \ingroup pulsarCommon
  *  \author Reinhard Prix
  *  \date $Date$

@@ -1,65 +1,54 @@
-/******************************* <lalVerbatim file="CoherentMetricCV">
-Author: Creighton, T. D.
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+ * \author Creighton, T. D.
+ * \date 2000 - 2003
+ * \file 
+ * \ingroup PulsarMetric
+ * \brief Computes the parameter space metric for a coherent pulsar search.
+ *
+ * $Id$
+ *
+ This function computes the metric \f$g_{\alpha\beta}(\mathbf{\lambda})\f$, as
+ discussed in the header StackMetric.h, under the assumption
+ that the search consists of scanning the Fourier power spectrum
+ constructed from a single time interval \f$\Delta t\f$.  The indecies
+ \f$\alpha\f$ and \f$\beta\f$ are assumed to run from 0 to \f$n\f$, where \f$n\f$ is
+ the total number of ``shape'' parameters.
+ 
+ The argument \a *metric is normally a vector of length
+ \f$(n+1)(n+2)/2\f$ storing all non-redundant coefficients of
+ \f$g_{\alpha\beta}\f$.  The indexing scheme is as follows: Let us assume
+ that \f$\alpha\geq\beta\f$.  Then \f$g_{\alpha\beta} = g_{\beta\alpha} =
+ \f$metric->data[\f$\beta + \alpha(\alpha+1)/2]\f$.  If
+ \a params->errors is nonzero, then \a *metric must be double
+ this length, and LALCoherentMetric() will store metric
+ components and their estimated uncertainty in alternate slots; i.e.
+ the metric component
+ \f$g_{\alpha\beta}=\f$metric->data[\f$2\beta+\alpha(\alpha+1)]\f$,
+ and the uncertainty
+ \f$s_{\alpha\beta}=\f$metric->data[\f$1+2\beta+\alpha(\alpha+1)]\f$.
+ 
+ The argument \a lambda is another vector, of length \f$n+1\f$,
+ storing the components of \f$\mathbf{\lambda}=(\lambda^0,\ldots,\lambda^n)\f$
+ for the parameter space point at which the metric is being evaluated.
+ The argument \a *params stores the remaining parameters for
+ computing the metric, as given in the Structures section of StackMetric.h.
+ 
+ \par Algorithm
 
-/********************************************************** <lalLaTeX>
-
-\subsection{Module \texttt{CoherentMetric.c}}
-\label{ss:CoherentMetric.c}
-
-Computes the parameter space metric for a coherent pulsar search.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{CoherentMetricCP}
-\idx{LALCoherentMetric()}
-
-\subsubsection*{Description}
-
-This function computes the metric $g_{\alpha\beta}(\bm{\lambda})$, as
-discussed in the header \verb@StackMetric.h@, under the assumption
-that the search consists of scanning the Fourier power spectrum
-constructed from a single time interval $\Delta t$.  The indecies
-$\alpha$ and $\beta$ are assumed to run from 0 to $n$, where $n$ is
-the total number of ``shape'' parameters.
-
-The argument \verb@*metric@ is normally a vector of length
-$(n+1)(n+2)/2$ storing all non-redundant coefficients of
-$g_{\alpha\beta}$.  The indexing scheme is as follows: Let us assume
-that $\alpha\geq\beta$.  Then $g_{\alpha\beta} = g_{\beta\alpha} =
-$\verb@metric->data[@$\beta + \alpha(\alpha+1)/2$\verb@]@.  If
-\verb@params->errors@ is nonzero, then \verb@*metric@ must be double
-this length, and \verb@LALCoherentMetric()@ will store metric
-components and their estimated uncertainty in alternate slots; i.e.\
-the metric component
-$g_{\alpha\beta}=$\verb@metric->data[@$2\beta+\alpha(\alpha+1)$\verb@]@,
-and the uncertainty
-$s_{\alpha\beta}=$\verb@metric->data[@$1+2\beta+\alpha(\alpha+1)$\verb@]@.
-
-The argument \verb@*lambda@ is another vector, of length $n+1$,
-storing the components of $\bm{\lambda}=(\lambda^0,\ldots,\lambda^n)$
-for the parameter space point at which the metric is being evaluated.
-The argument \verb@*params@ stores the remaining parameters for
-computing the metric, as given in the Structures section of
-\verb@StackMetric.h@.
-
-\subsubsection*{Algorithm}
-
-This routne simply computes the function given in Eq.~\ref{eq:gab-phi}
-of header \verb@StackMetric.h@.  Most of the work is done by the
-function \verb@params->dtCanon()@, which computes the value and
-parameter derivatives of the canonical time coordinate
-$\tau[t;\vec\lambda]$.  Since the phase function is simply
-$\phi[t;\bm{\lambda}]=2\pi\lambda^0 \tau[t;\vec\lambda]$, where
-$\lambda^0=f_0$, the metric components are simply:
-\begin{eqnarray}
-g_{00}(\bm\lambda) & = &
+ This routne simply computes the function given in \ref eq_gab_phi "Eq.(1)"
+ of header StackMetric.h.  Most of the work is done by the
+ function \a params->dtCanon(), which computes the value and
+ parameter derivatives of the canonical time coordinate
+ \f$\tau[t;\vec{\lambda}]\f$.  Since the phase function is simply
+ \f$\phi[t;\mathbf{\lambda}]=2\pi\lambda^0 \tau[t;\vec\lambda]\f$, where
+ \f$\lambda^0=f_0\f$, the metric components are simply:
+ \f{eqnarray}
+ g_{00}(\mathbf{\lambda}) & = &
 	4\pi^2\bigg\langle\!(\tau[t;\vec\lambda])^2\bigg\rangle -
 	4\pi^2\bigg\langle\!\tau[t;\vec\lambda]\bigg\rangle^2 \; ,
 	\nonumber\\
-g_{i0}(\bm\lambda) \;\; = \;\;
-g_{0i}(\bm\lambda) & = &
+g_{i0}(\mathbf{\lambda}) \;\; = \;\;
+g_{0i}(\mathbf{\lambda}) & = &
 	4\pi^2 f_0\bigg\langle\!
 	\tau[t;\vec\lambda]
 	\frac{\partial\tau[t;\vec\lambda]}{\partial\lambda^i}
@@ -71,7 +60,7 @@ g_{0i}(\bm\lambda) & = &
 	\bigg\langle
 	\frac{\partial\tau[t;\vec\lambda]}{\partial\lambda^i}
 	\bigg\rangle \; , \nonumber\\
-g_{ij}(\bm\lambda) & = &
+g_{ij}(\mathbf{\lambda}) & = &
 	4\pi^2 f_0^2\bigg\langle
 	\frac{\partial\tau[t;\vec\lambda]}{\partial\lambda^i}
 	\frac{\partial\tau[t;\vec\lambda]}{\partial\lambda^j}
@@ -83,13 +72,12 @@ g_{ij}(\bm\lambda) & = &
 	\bigg\langle
 	\frac{\partial\tau[t;\vec\lambda]}{\partial\lambda^j}
 	\bigg\rangle \; , \nonumber
-\end{eqnarray}
-where the indecies $i$ and $j$ run from 1 to $n$.
+\f}
+where the indecies \f$i\f$ and \f$j\f$ run from 1 to \f$n\f$.
 
 In the rigorous definition of the metric, the angle brackets denote an
-average over the \emph{canonical} time, not the detector time, so we
-have:
-\begin{eqnarray}
+average over the \em canonical time, not the detector time, so we have:
+\f{eqnarray}
 \bigg\langle\ldots\bigg\rangle
 & = & \frac{1}{\tau(t_\mathrm{start}+\Delta t)-\tau(t_\mathrm{start})}
 	\int_{\tau(t_\mathrm{start})}^{\tau(t_\mathrm{start}+\Delta t)}
@@ -100,45 +88,35 @@ have:
 & \approx & \frac{1}{\Delta t}
 	\int_{t_\mathrm{start}}^{t_\mathrm{start}+\Delta t}
 	\ldots\,dt \nonumber \; ,
-\end{eqnarray}
-where the approximation is good to order $\epsilon$ equal to the
-maximum difference between 1 and $\partial\tau/\partial t$.  For an
-Earth-motion barycentred time coordinate, for instance, $\epsilon$ is
-of order $10^{-4}$ and the approximation is quite good.  However, the
+\f}
+where the approximation is good to order \f$\epsilon\f$ equal to the
+maximum difference between 1 and \f$\partial\tau/\partial t\f$.  For an
+Earth-motion barycentred time coordinate, for instance, \f$\epsilon\f$ is
+of order \f$10^{-4}\f$ and the approximation is quite good.  However, the
 current implementation of the metric algorithm uses the second, exact
 formula.  If speed considerations become important, this is one
 obvious area for simplification.
 
-At present, the time averaging is performed by evaluating $\tau$ and
-its derivatives at equally-spaced points over $\Delta t$ and applying
+At present, the time averaging is performed by evaluating \f$\tau\f$ and
+its derivatives at equally-spaced points over \f$\Delta t\f$ and applying
 a trapezoidal method; i.e.
-$$
+\f[
 \frac{1}{T}\int_0^T F(t)\,dt \approx \frac{1}{N}\left(\frac{1}{2}F_0
 	+ F_1 + F_2 + \ldots + F_{N-1} + \frac{1}{2}F_N \right) \; ,
-$$
-where $F_k=F(kT/N)$ are the $N+1$ sample points of the integrand.  The
+\f]
+where \f$F_k=F(kT/N)\f$ are the \f$N+1\f$ sample points of the integrand.  The
 number of points is a compiled-in constant.  The error is on the order
-of $F''T^2/N^2$, where $F''$ is the second derivative of $F(t)$ at
+of \f$F''T^2/N^2\f$, where \f$F''\f$ is the second derivative of \f$F(t)\f$ at
 some point in the interval; we liberally estimate the error to be:
-$$
+\f[
 \sigma = \max_{k\in\{1,\ldots,N-1\}}
 	\left\{F_{k-1} - 2F_k + F_{k+1}\right\} \; .
-$$
+\f]
 Other more sophisticated integration techniques may be considered in
-future.  To save on recomputing costs, the derivatives of $\tau$ at
+future.  To save on recomputing costs, the derivatives of \f$\tau\f$ at
 all times are stored in a large vector sequence.
 
-\subsubsection*{Uses}
-\begin{verbatim}
-LALDCreateVector()              LALDDestroyVector()
-LALDCreateVectorSequence()      LALDDestroyVectorSequence()
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{CoherentMetricCV}}
-
-******************************************************* </lalLaTeX> */
+*/
 
 #include<math.h>
 #include<lal/LALStdlib.h>
@@ -149,23 +127,22 @@ LALDCreateVectorSequence()      LALDDestroyVectorSequence()
 
 NRCSID(COHERENTMETRICC,"$Id$");
 
-#define COHERENTMETRICC_NPTS 100000
-/* Number of points to average per time interval. */
+#define COHERENTMETRICC_NPTS 100000	/** Number of points to average per time interval. */
+
 
 /* #define APPROXIMATE Whether to use the approximation in the last
 		       form of the averaging integral */
 
-static REAL8
-Average(REAL8Vector *integrand, REAL8 *uncertainty);
-/* Local function to perform the averaging. */
+/** Local function to perform the averaging. */
+static REAL8 Average(REAL8Vector *integrand, REAL8 *uncertainty);
 
-/* <lalVerbatim file="CoherentMetricCP"> */
+
 void
 LALCoherentMetric( LALStatus        *stat,
 		   REAL8Vector      *metric,
 		   REAL8Vector      *lambda,
 		   MetricParamStruc *params )
-{ /* </lalVerbatim> */
+{
   UINT4 s = 0;      /* The number of parameters. */
   UINT4 i, j, k, l; /* Indecies. */
   REAL8 dt;         /* The sampling interval, in s. */
