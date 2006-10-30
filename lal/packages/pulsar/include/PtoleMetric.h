@@ -59,6 +59,7 @@ NRCSID( PTOLEMETRICH, "$Id$" );
 #define PTOLEMETRICH_MSGEPARM   "bad parameter value"
 #define PTOLEMETRICH_MSGEDIM    "bad array length"
 #define PTOLEMETRICH_MSGENONULL "unexpected non-null pointer"
+#define PTOLEMETRICH_MSGEMETRIC "unknown metric type"
 /* @} */
 
 /** Constants defining different types of pulsar-metrics. */
