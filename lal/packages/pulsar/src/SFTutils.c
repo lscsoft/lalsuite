@@ -34,6 +34,7 @@
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
 #include <lal/NormalizeSFTRngMed.h>
+#include <lal/LISAspecifics.h>
 
 #include "SFTutils.h"
 
