@@ -48,7 +48,7 @@ extern "C" {
 
 NRCSID( PTOLEMETRICH, "$Id$" );
 
-/** \name Error conditions
+/** @{ \name Error conditions
  */
 #define PTOLEMETRICH_ENULL   1
 #define PTOLEMETRICH_EPARM   2
@@ -60,6 +60,7 @@ NRCSID( PTOLEMETRICH, "$Id$" );
 #define PTOLEMETRICH_MSGEPARM   "bad parameter value"
 #define PTOLEMETRICH_MSGEDIM    "bad array length"
 #define PTOLEMETRICH_MSGENONULL "unexpected non-null pointer"
+/* @} */
 
 /** Constants defining different types of pulsar-metrics. */
 typedef enum
