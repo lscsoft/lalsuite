@@ -125,7 +125,7 @@ typedef struct tagMetricParamStruc{
 } MetricParamStruc;
 
 
-
+void
 LALCoherentMetric( LALStatus *,
 		   REAL8Vector *metric,
 		   REAL8Vector *lambda,
