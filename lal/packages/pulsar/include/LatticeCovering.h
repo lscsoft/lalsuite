@@ -62,11 +62,6 @@ NRCSID( LATTICECOVERINGH, "$Id$" );
 
 
 /*---------- DEFINES ----------*/
-#define PMETRIC_MIN(x,y) ((x) < (y) ? (x) : (y))
-#define PMETRIC_MAX(x,y) ((x) > (y) ? (x) : (y))
-
-/** Translate metrix matrix-indices (a,b) into vector-index l */
-#define PMETRIC_INDEX(a,b) (PMETRIC_MIN((a),(b))+PMETRIC_MAX((a),(b))*(PMETRIC_MAX((a),(b)) + 1 ) / 2 )
 
 /*----- Error-codes -----*/
 

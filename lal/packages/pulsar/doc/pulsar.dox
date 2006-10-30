@@ -9,6 +9,12 @@
     metric calculation, mesh-generation ...)
 */
 
+/** \defgroup PulsarMetric
+ *  \ingroup pulsar
+ *  \brief  Modules to deal with pulsar-specific parameter-space metrics and coverings.
+ */
+
+
 /** \defgroup houghpulsar The Hough transform
     \ingroup pulsar
 */
