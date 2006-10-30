@@ -350,7 +350,7 @@ class candidateList:
             return 'DefaultName.file'
         else:
             filename='GLOB:'+os.path.basename(self.filename[0])+\
-            'Entries:'+str(self.filename.__len__())
+            'FileCount:'+str(self.filename.__len__())
         return filename
 
     def __filemaskClob__(self,clobWith):
@@ -590,14 +590,20 @@ class candidateList:
         self.gpsWidth=avgGpsWidth.__abs__()
     #End findBinWidths method
 
-    def globList(self,inputCandidateList):
+    def globList(self,inputCandidateList,force):
         """
         Take list arguement and concatinate it with the self candidate list
-        only if the frequency and time bin widths match
+        only if the frequency and time bin widths match.  The boolean
+        variable force if TRUE will push though not checking the
+        bin width are matching.  This is viable for groups of files
+        that we know have matching bin widths but are incorrectly calculated.
         """
         iCL=inputCandidateList
         globList=copy.deepcopy(self)
         globTolerance=1e-4
+        if (force==True):
+            "Forcing a glob of the data structures!"
+            globTolerance=1
         zeroGPS=gpsInt(0,0)
         if self.gpsWidth == zeroGPS:
             self.gpsWidth=iCL.gpsWidth
@@ -614,6 +620,8 @@ class candidateList:
             globList.totalCount=self.totalCount + iCL.totalCount
             globList.filename.extend(iCL.filename)
             globList.curves.extend(iCL.curves)
+            if (force == True):
+                print "Bin width differences (Hz,Time):",float(self.freqWidth-iCL.freqWidth),float(self.gpsWidth.getAsFloat()-iCL.gpsWidth.getAsFloat())
             return globList
         elif ((self.freqWidth==0) or (int(self.gpsWidth.__makeInt__())==0)):
             globList.freqWidth=self.freqWidth
@@ -631,6 +639,7 @@ class candidateList:
             return globList
         else :
             print "Can not glob lists, due to inconsistent values!"
+            print "Original List VS List to Glob"
             print self.freqWidth,'VS',iCL.freqWidth
             print self.gpsWidth.display(),'VS',iCL.gpsWidth.display()
             print "Returning original list with no additional entries!"

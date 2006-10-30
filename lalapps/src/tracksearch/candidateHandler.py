@@ -91,7 +91,11 @@ if (glob and (canList.__len__() >= 1)):
     newCandidateObject=copy.deepcopy(canObjects.pop(0))
     for entry in canObjects:
         print "Globing file:",entry.filename[0]
-        newCandidateObject=newCandidateObject.globList(entry)
+        newCandidateObject=newCandidateObject.globList(entry,True)
+        #newCandidateObject=newCandidateObject.globList(entry,FALSE)
+        #Should be a del entry line to free memory instead of holding
+        #memory
+        del entry
     if outfile != "":
         newCandidateObject.writefile(outfile)
     else:
