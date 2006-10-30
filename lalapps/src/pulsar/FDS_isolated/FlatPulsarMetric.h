@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005 Reinhard Prix
+ * Copyright (C) 2005, 2006 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,18 +18,10 @@
  */
 
 /**
- * \defgroup flatPulsarMetric
- * \ingroup pulsarCommon
- * \brief Implement a flat approximation to the pulsar-metric, based
- *        on the "linear model I" in \ref JK99.
- *
- */
-
-/**
  * \author Reinhard Prix
  * \date 2005
  * \file 
- * \ingroup flatPulsarMetric
+ * \ingroup PulsarMetric
  * \brief Header-file defining the API for the flat pulsar-metric functions.
  *
  * $Id$
@@ -45,23 +37,21 @@ extern "C" {
 #endif
 
 /*---------- INCLUDES ----------*/
+#include <gsl/gsl_block.h>
+#include <gsl/gsl_vector.h>
+#include <gsl/gsl_matrix.h>
+
 #include <lal/LALStdlib.h>
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
 #include <lal/DetectorSite.h>
-
+#include <lal/DetectorStates.h>
+#include <lal/PtoleMetric.h>
 
 NRCSID( FLATPULSARMETRICH, "$Id$" );
 
 
 /*---------- DEFINES ----------*/
-#ifndef PMETRIC_MIN
-#define PMETRIC_MIN(x,y) ((x) < (y) ? (x) : (y))
-#define PMETRIC_MAX(x,y) ((x) > (y) ? (x) : (y))
-
-/** Translate metrix matrix-indices (a,b) into vector-index l */
-#define PMETRIC_INDEX(a,b) (PMETRIC_MIN((a),(b))+PMETRIC_MAX((a),(b))*(PMETRIC_MAX((a),(b)) + 1 ) / 2 )
-#endif
 
 /*----- Error-codes -----*/
 #define FLATPULSARMETRIC_ENULL 		1
@@ -83,11 +73,9 @@ NRCSID( FLATPULSARMETRICH, "$Id$" );
 /*---------- Global variables ----------*/
 
 /*---------- exported prototypes [API] ----------*/
-void LALFlatPulsarMetric ( LALStatus *, 
-			   REAL8Vector **metric,	
-			   LIGOTimeGPS startTime,
-			   REAL8 duration, 
-			   const LALDetector *site);
+int XLALFlatMetricCW ( gsl_matrix *gij, const MultiDetectorStateSeries *mDetSeries, LIGOTimeGPS refTime );
+
+void LALFlatPulsarMetric ( LALStatus *, REAL8Vector **metric, LIGOTimeGPS startTime, REAL8 duration, const LALDetector *site);
 
 #ifdef  __cplusplus
 }

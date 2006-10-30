@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004, 2005 Reinhard Prix
+ * Copyright (C) 2004, 2005, 2006 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 
 /**
  * \author Reinhard Prix
- * \date 2004, 2005
+ * \date 2004, 2005, 2006
  * \file 
  * \brief Header file defining the API for DopplerScan.
  *
@@ -60,6 +60,7 @@ NRCSID( DOPPLERSCANH, "$Id$" );
 #define DOPPLERSCANH_ESKYREGION		11
 #define DOPPLERSCANH_EINPUT		12
 #define DOPPLERSCANH_ENEGMETRIC		13
+#define DOPPLERSCANH_EXLAL		14
 
 
 #define DOPPLERSCANH_MSGENULL 		"Arguments contained an unexpected null pointer"
@@ -75,6 +76,7 @@ NRCSID( DOPPLERSCANH, "$Id$" );
 #define DOPPLERSCANH_MSGESKYREGION	"Could not parse sky-region correctly"
 #define DOPPLERSCANH_MSGEINPUT		"Invald input parameter"
 #define DOPPLERSCANH_MSGENEGMETRIC	"Negative metric encountered"
+#define DOPPLERSCANH_MSGEXLAL		"XLAL call failed"
 
 /*---------- external types ----------*/
 
@@ -97,7 +99,7 @@ typedef enum
   GRID_METRIC_SKYFILE,		/**< 'hybrid' grid-construction: use skygrid from file, metric for others */
   GRID_SKY_LAST,		/**< end-marker for factored grid types */
   /* ----- full multi-dim grid-types ----- */
-  
+  GRID_METRIC_LATTICE,		/**< 'optimal' covering using An*-lattice and flat metric */
   /* ----- end-marker ----- */
   GRID_LAST
 } DopplerGridType;
@@ -158,26 +160,6 @@ typedef struct {
   REAL8 angle;
 } MetricEllipse;
 
-/* ==================== FULL MULTIDIMENSIONAL-GRID types ==================== */
-/** Structure describing a region in paramter-space (a,d,f,f1dot,..). 
- *  Currently this is simply a direct product of skyRegion x FreqBand x f1dotBand.
- */
-
-/** initialization struct for full InitDopplerScan() [UNDER CONSTRUCTION] */
-typedef struct {
-  DopplerRegion searchRegion;		/**< Doppler-space region to be covered + scanned */
-  DopplerGridType gridType;		/**< which type of grid to generate */  
-  LALPulsarMetricType metricType; 	/**< which metric to use if GRID_METRIC */
-  PulsarDopplerParams stepSizes;	/**< user-settings for stepsizes if GRID_FLAT */
-  REAL8 metricMismatch;			/**< for GRID_METRIC and GRID_ISOTROPIC */
-  CHAR *skyGridFile;			/**< file containing a sky-grid (list of points) if GRID_FILE */
-  EphemerisData *ephemeris;		/**< ephemeris-data for "exact" metric */  
-} DopplerFullScanInit;
-
-/** opaque type to reflects the current state of a full multi-dimensional DopplerScan */
-typedef struct tagDopplerFullScanState DopplerFullScanState; 	/* opaque type */
-
-
 /*---------- Global variables ----------*/
 /* some empty structs for initializations */
 extern const DopplerSkyGrid empty_DopplerSkyGrid;
@@ -193,15 +175,8 @@ void InitDopplerSkyScan(LALStatus *, DopplerSkyScanState *skyScan, const Doppler
 int  XLALNextDopplerSkyPos( PulsarDopplerParams *pos, DopplerSkyScanState *skyScan);
 void FreeDopplerSkyScan(LALStatus *, DopplerSkyScanState *skyScan);
 int XLALFreeDopplerSkyScan (DopplerSkyScanState *skyScan);
-void FreeDopplerFullScan (LALStatus *status, DopplerFullScanState **scan);
 
 void writeSkyGridFile(LALStatus *, const DopplerSkyGrid *grid, const CHAR *fname );
-
-/* ----- full-fledged multi-dimensional Doppler scanner functions ----- */
-void InitDopplerFullScan(LALStatus *, DopplerFullScanState **scanState, const MultiDetectorStateSeries *mdetStates, const DopplerFullScanInit *init);
-int  XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan);
-void FreeDopplerFullScan (LALStatus *status, DopplerFullScanState **scan);
-REAL8 XLALNumDopplerTemplates ( DopplerFullScanState *scan);
 
 /* ----- variout utility functions ----- */
 void ParseSkyRegionString (LALStatus *, SkyRegion *region, const CHAR *input);

@@ -56,7 +56,7 @@ int finite(double);
 #include <lalapps.h>
 
 /* local includes */
-#include "DopplerScan.h"
+#include "DopplerFullScan.h"
 #include "HeapToplist.h"
 
 

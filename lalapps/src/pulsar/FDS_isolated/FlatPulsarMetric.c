@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005 Reinhard Prix
+ * Copyright (C) 2005, 2006 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,10 +19,10 @@
 
 /**
  * \author Reinhard Prix
- * \date 2005
+ * \date 2005, 2006
  * \file 
- * \ingroup flatPulsarMetric
- * \brief Calculate the flat approximation to the pulsar-metric.
+ * \ingroup PulsarMetric
+ * \brief Calculate flat approximation to the pulsar-metric.
  *
  * $Id$
  *
@@ -31,6 +31,14 @@
 /*---------- INCLUDES ----------*/
 #include <math.h>
 
+/* gsl includes */
+#include <gsl/gsl_block.h>
+#include <gsl/gsl_vector.h>
+#include <gsl/gsl_matrix.h>
+#include <gsl/gsl_linalg.h>
+#include <gsl/gsl_blas.h>
+
+#include <lal/DetectorStates.h>
 #include <lal/PulsarTimes.h>
 
 #include "FlatPulsarMetric.h"
@@ -50,10 +58,209 @@ NRCSID( FLATPULSARMETRICC, "$Id$");
 /*---------- Global variables ----------*/
 
 /*---------- internal prototypes ----------*/
+REAL8 XLALcov ( const REAL8Vector *at, const REAL8Vector *bt );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
-/** Compute the constant-coefficient approximate pulsar-metric.
+/** Compute a flat approximation for the continuous-wave metric (by neglecting the z-motion of 
+ * the detector in ecliptic coordinates. 
+ * 
+ * gij has to be an allocated symmetric matrix of dimension \a dim: the order of coordinates
+ * is \f$[ \omega_0, \tilde{k}_x, \tilde{k}_y, \omega_1, \omega_2, ... ]\f$, 
+ * but \a dim must be at least 3 and maximally 6 (Freq + 2 sky + 3 spin-downs)
+ * The dimensionless coordinates are defined as
+ * \f$\omega_s \equiv 2\pi \, f^{(s)}\, T^{s+1}\f$ in terms of the observation time \f$T\f$,
+ * and \f$\tilde{k}_l \equiv - 2\pi \bar{f} \hat{n} R_\mathrm{orb} / c\f$.
+ * 
+ * NOTE: the different detectors are currently combined simply by unit-weight averaging.
+ */
+int
+XLALFlatMetricCW ( gsl_matrix *gij, 				/**< [out] metric */
+		      const MultiDetectorStateSeries *mDetStates,/**< [in] detector-state series */
+		      LIGOTimeGPS refTime			/**< [in] reference time for spin-parameters */
+		      )
+{
+  UINT4 dim, numSpins, s, sp;
+  UINT4 X, numDet;
+  UINT4 i, l, numSteps;
+  REAL8Vector *rx, *ry;		/* position time-series in ecliptic coordinates */
+  REAL8Vector **ti;		/* time-series of deltaT^(s+1)/(Tspan (s+1)!) */
+
+  REAL8 coseps, sineps;		/* inclination equatorial wrt ecliptic coords (eps ~23.4deg) */
+  REAL8 Tspan;
+  REAL8 gg;
+
+  if ( !gij || !mDetStates || ( gij->size1 != gij->size2  ) )
+    return -1;
+
+  dim = gij->size1;
+  if ( dim < 3 || dim > 6 )
+    {
+      LALPrintError ("\nMetric dimension must be 3 <= dim <= 6!\n\n");
+      return -1;
+    }
+  numSpins = dim - 2;
+
+  switch ( mDetStates->data[0]->system )
+    {
+    case COORDINATESYSTEM_ECLIPTIC:
+      coseps = 1;
+      sineps = 0;
+      break;
+    case COORDINATESYSTEM_EQUATORIAL:
+      sineps = sin ( LAL_IEARTH );
+      coseps = cos ( LAL_IEARTH );
+      break;
+    default:
+      LALPrintError("\nIllegal coordinate system '%d' for XLALFlatMetricCW(): only EQUATORIAL or ECLIPTIC allowed!\n\n");
+      return -1;
+    } /* switch (system) */
+
+  numDet = mDetStates->length;    
+  numSteps = 0;
+  for ( X=0; X < numDet; X ++ )
+    numSteps += mDetStates->data[X]->length;
+
+  Tspan = mDetStates->Tspan;
+  
+  if ( (rx = XLALCreateREAL8Vector ( numSteps ) ) == NULL )
+    goto failed;
+  if ( (ry = XLALCreateREAL8Vector ( numSteps ) ) == NULL )
+    goto failed;
+  ti = LALCalloc ( numSpins, sizeof(REAL8Vector*) );
+  for ( s=0; s < numSpins; s ++ )
+    if ( ( ti[s] = XLALCreateREAL8Vector ( numSteps )) == NULL )
+      goto failed;
+
+
+  /* determine the 2 + numSpins time-series {rx(t), ry(t), deltaT^{s+1}/(s+1)!} */
+  l = 0;
+  for ( X=0; X < numDet; X ++ )
+    {
+      const DetectorStateSeries *detStates = mDetStates->data[X];
+      UINT4 numStepsX = detStates->length;
+      for ( i=0; i < numStepsX; i ++ )
+	{
+	  /* detector position-series in ecliptic coordinates, normalized by 1AU */
+	  rx->data[l] = (LAL_C_SI / LAL_AU_SI) * detStates->data[i].rDetector[0] ;
+	  ry->data[i] = (LAL_C_SI / LAL_AU_SI) * ( coseps * detStates->data[i].rDetector[1]  + sineps * detStates->data[i].rDetector[2] );
+	  /* spins */
+	  ti[0]->data[l] = XLALGPSDiff ( &refTime, &(detStates->data[i].tGPS) )  / Tspan;
+	  for ( s=1; s < numSpins; s ++ )
+	    ti[s]->data[l] = ti[s-1]->data[l] * ti[0]->data[l] / (s + 1.0);
+
+	  l ++ ;	/* counter over all time-steps */
+	} /* for i < numStepsX */
+    } /* for X < numDet */
+
+  /* gxx */
+  gg = XLALcov ( rx, rx );
+  gsl_matrix_set (gij, 0, 0, gg);
+  /* gyy */
+  gg = XLALcov ( ry, ry );
+  gsl_matrix_set (gij, 1, 1, gg);
+  /* gxy */
+  gg = XLALcov ( rx, ry );
+  gsl_matrix_set (gij, 0, 1, gg);
+  gsl_matrix_set (gij, 1, 0, gg);
+  
+  /* spins */
+  for ( s=0; s < numSpins; s ++ )
+    {
+      gg = XLALcov ( rx, ti[s] );
+      gsl_matrix_set (gij, 0, s+2, gg);
+      gsl_matrix_set (gij, s+2, 0, gg);
+
+      gg = XLALcov ( ry, ti[s] );
+      gsl_matrix_set (gij, 1, s+2, gg);
+      gsl_matrix_set (gij, s+2, 1, gg);
+
+      for ( sp=s; sp < numSpins; s ++ )
+	{
+	  gg = XLALcov ( ti[s], ti[sp] );
+	  gsl_matrix_set (gij, s+2,  sp+2, gg);
+	  gsl_matrix_set (gij, sp+2, s+2, gg);
+	} /* for s' in [s, numSpins) */
+
+    } /* for s < numSpins */
+
+  /* get metric from {kx, ky, w0, w1, w2,..} into 'canonical' order {w0, kx, ky, w1, w2, ... } */
+  gsl_matrix_swap_rows (gij, 0, 2);	/* swap w0 <--> kx */
+  gsl_matrix_swap_rows (gij, 1, 2);	/* swap kx <--> ky */
+  gsl_matrix_swap_columns (gij, 0, 2);	/* swap w0 <--> kx */
+  gsl_matrix_swap_columns (gij, 1, 2);	/* swap kx <--> ky */
+
+
+  /* Ok */
+  if ( rx ) XLALDestroyREAL8Vector ( rx);
+  if ( ry ) XLALDestroyREAL8Vector ( ry);
+  for ( s=0; s < numSpins; s ++ )
+    if ( ti[s] )
+      XLALDestroyREAL8Vector ( ti[s] );
+
+  return 0;
+
+ failed:
+  if ( rx ) XLALDestroyREAL8Vector ( rx);
+  if ( ry ) XLALDestroyREAL8Vector ( ry);
+  for ( s=0; s < numSpins; s ++ )
+    if ( ti[s] )
+      XLALDestroyREAL8Vector ( ti[s] );
+  
+  return -1;
+  
+
+} /* XLALFlatMetricCW() */
+
+
+/** Compute the 'covariance' between two time-series a(t), and b(t), namely
+ * \f$\mathrm{cov}(a,b) = \langle a\, b\rangle - \langle a \rangle \langle b \rangle\f$, 
+ * where \f$ \langle a \rangle = (1/T) \int_0^T a(t) \, d t\f$.
+ */
+REAL8
+XLALcov ( const REAL8Vector *at, const REAL8Vector *bt )
+{
+  UINT4 i, N;
+  REAL8 av_a, av_b, av_ab;
+  const REAL8 *this_a, *this_b;
+
+  if ( !at || !bt || at->length != bt->length ) {
+    LALPrintError("\nXLALcov(): NULL input or time-series of different lengths!\n\n");
+    XLAL_ERROR_REAL8 ( "XLALcov()", XLAL_EINVAL );
+  }
+
+  N = at->length;
+
+  av_ab = av_a = av_b = 0;
+  this_a = &at->data[0];
+  this_b = &bt->data[0];
+
+  for ( i=0; i <  N; i ++ )
+    {
+      REAL8 a = *this_a;
+      REAL8 b = *this_b;
+
+      av_ab += a * b;
+      av_a  += a;
+      av_b  += b;
+
+      this_a ++;
+      this_b ++;
+    } /* for i < N */
+  
+  av_ab *= (1.0 / N);
+  av_a  *= (1.0 / N);
+  av_b  *= (1.0 / N);
+
+  return ( av_ab - av_a * av_b );
+
+} /* XLALcov() */
+
+
+
+/* [OBSOLETE?] ================================================================================*/
+
+/** [OBSOLETE?] Compute the constant-coefficient approximate pulsar-metric.
  *  The returned metric symmetric matrix \f$g_{\alpha \beta}\f$ 
  * is encoded in a 1D vector \f$v_l\f$ in the same
  *  way as in LALPulsarMetric(), namely: 
@@ -287,3 +494,5 @@ LALFlatPulsarMetric ( LALStatus *status,
   RETURN(status);
 
 } /* LALFlatPulsarMetric() */
+
+
