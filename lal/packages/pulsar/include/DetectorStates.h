@@ -96,6 +96,7 @@ typedef struct
   UINT4 length;			/**< total number of entries */
   DetectorState *data;		/**< array of DetectorState entries */
   LALDetector detector;		/**< detector-info corresponding to this timeseries */
+  CoordinateSystem system; 	/**< The coordinate system used for detector's position/velocity and detector-tensor */
 } DetectorStateSeries;
 
 /** Multi-IFO time-series of DetectorStates */

@@ -103,6 +103,11 @@ LALGetDetectorStates (LALStatus *status,
   /* enter detector-info into the head of the state-vector */
   ret->detector = (*detector);
 
+  /* set SSB coordinate system used: EQUATORIAL for Earth-based, ECLIPTIC for LISA */
+  if ( detector->frDetector.prefix[0] == 'Z' )	/* LISA */
+    ret->system = COORDINATESYSTEM_ECLIPTIC;
+  else	/* Earth-based */
+    ret->system = COORDINATESYSTEM_EQUATORIAL;
 
   /* now fill all the vector-entries corresponding to different timestamps */
   for ( i=0; i < numSteps; i++ )
