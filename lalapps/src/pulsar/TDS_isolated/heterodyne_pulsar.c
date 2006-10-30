@@ -232,6 +232,8 @@ hetParams.hetUpdate.f1, hetParams.hetUpdate.pepoch);
     }
     else if(inputParams.heterodyneflag == 1 || inputParams.heterodyneflag == 2){/* i.e. reading
       from a heterodyned file */
+      REAL8 temptime=0.; /* temporary time storage variable */
+      
       data->data = NULL;
       data->data = XLALCreateCOMPLEX16Vector( MAXLENGTH );
 
@@ -252,7 +254,11 @@ hetParams.hetUpdate.f1, hetParams.hetUpdate.pepoch);
             data->data->data[i].im *= inputParams.scaleFac;
           }
           
-          i++;
+          /* make sure data doesn't overlap previous data */
+          if(times->data[i] > temptime){
+            temptime = times->data[i];
+            i++;
+          }
           
           /* if there is an error during read in then exit */
           if(ferror(fpin)){
@@ -269,7 +275,11 @@ hetParams.hetUpdate.f1, hetParams.hetUpdate.pepoch);
             data->data->data[i].im *= inputParams.scaleFac;
           }
 
-          i++;
+          /* make sure data doesn't overlap previous data */
+          if(times->data[i] > temptime){
+            temptime = times->data[i];
+            i++;
+          }
         }
       }
       
@@ -1048,28 +1058,14 @@ stops->data[i]);
         continue;
       
       /* check that data is contiguous within a segment - if not split in two */
-      /* OR if data is repeated - then ignore the repeated data. This is a fix needed due to
-problems that can effect the coarse heterodyne if performed using Condor - this problem being that
-if the job is evicted from a node but wasn't checkpointed recently enough, then when the program
-starts up it will redo sections of the heterodyne, leading to an overlap in the data. This means
-that there can be times when there is doubling up of data, and the time appears to step backwards.
-These doubled up sections should be removed by the checks in this function, with this if statement
-checking for times when the time steps backwards */
       for(k=0;k<(INT4)(duration*sampleRate)-1;k++){
-        /* check for repeated data or break in the data */
-        if((times->data[j+k+1] < times->data[j+k]) || (times->data[j+k+1] - times->data[j+k] >
-1./sampleRate)){
-          INT4 tempCount = j;  
-        
-          /* get duration of segment up until the repeated data or time of split */
+        /* check for break in the data */
+        if((times->data[j+k+1] - times->data[j+k] > 1./sampleRate)){        
+          /* get duration of segment up until time of split */
           duration = times->data[j+k] - starts->data[i] - ((1./sampleRate)/2.);
-          
-          /* scan through times until we find the point where the data is no longer repeated */
-          while(times->data[tempCount+k+1] < times->data[j+k])
-            tempCount++;
              
           /* restart from this point as if it's a new segment */
-          starts->data[i] = times->data[tempCount+k+1] - ((1./sampleRate)/2.);
+          starts->data[i] = times->data[j+k+1] - ((1./sampleRate)/2.);
           
           /* check that the new point is still in the same segment or not - if we are then redo
              new segment, if not then move on to next segment */ 
