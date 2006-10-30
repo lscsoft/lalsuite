@@ -8,33 +8,32 @@
  *
  * $Id$
  *
+ This header covers routines for using a ``Ptolemaic'' (epicyclic)
+ approximation to the detector motion to compute the parameter-space metric
+ for a pulsar search. (At the moment, the search is assumed to be a single
+ coherent integration.) The results should be very similar to those under the
+ <tt>StackMetric.h</tt> header, and reading that documention is a good
+ background for this documentation.
+ 
+ Why this extra header? Two words: simplicity and speed. The metric
+ components can be expressed analytically in terms of trig functions,
+ allowing one to get a feel for what the parameter space will look like
+ before using a single CPU cycle. In addition, CPU usage is much reduced
+ (compared to the routines in <tt>StackMetric.h</tt>) in numerical
+ explorations such as testing the suitability of various tiling codes. Thus,
+ the functions in this header can be very useful in the current stage of
+ exploring parameter space and wondering how we can practically take
+ advantage of correlations. It's also good at catching bugs and errors in the
+ numerical routines under <tt>StackMetric.h</tt>. The effectiveness of the
+ tiling at catching signals should be very little reduced by the
+ approximation. Jones, Owen, and Whitbeck will write a short paper on this
+ and other details.
+ 
+ *
  */
 
 #ifndef _PTOLEMETRIC_H
 #define _PTOLEMETRIC_H
-
-/** 
-    This header covers routines for using a ``Ptolemaic'' (epicyclic)
-    approximation to the detector motion to compute the parameter-space metric
-    for a pulsar search. (At the moment, the search is assumed to be a single
-    coherent integration.) The results should be very similar to those under the
-    <tt>StackMetric.h</tt> header, and reading that documention is a good
-    background for this documentation.
-
-    Why this extra header? Two words: simplicity and speed. The metric
-    components can be expressed analytically in terms of trig functions,
-    allowing one to get a feel for what the parameter space will look like
-    before using a single CPU cycle. In addition, CPU usage is much reduced
-    (compared to the routines in \texttt{StackMetric.h}) in numerical
-    explorations such as testing the suitability of various tiling codes. Thus,
-    the functions in this header can be very useful in the current stage of
-    exploring parameter space and wondering how we can practically take
-    advantage of correlations. It's also good at catching bugs and errors in the
-    numerical routines under <tt>StackMetric.h</tt>. The effectiveness of the
-    tiling at catching signals should be very little reduced by the
-    approximation. Jones, Owen, and Whitbeck will write a short paper on this
-    and other details.
-*/
 
 #include <lal/DetectorSite.h>
 #include <lal/LALConstants.h>
