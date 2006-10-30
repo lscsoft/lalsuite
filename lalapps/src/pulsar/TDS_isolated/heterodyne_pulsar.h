@@ -73,6 +73,8 @@ extern "C" {
                      (default 2.0 i.e. a signal from a triaxial pulsar)\n"\
 " --scale-factor      factor to scale the calibrated h(t) data by\n"\
 " --high-pass-freq    high-pass frequency for calibrated h(t) data\n"\
+" --binary-input      read in input data from binary file (for fine and\n\
+                     update heterodynes only)\n"\
 "\n"
 
 #define MAXLENGTH 5000000 /* max number of lines in heterodyned data file */
@@ -133,6 +135,9 @@ typedef struct tagInputParams{
   REAL8 highPass;
   
   INT4 verbose;
+  
+  INT4 binaryinput;
+  INT4 binaryoutput;
 }InputParams;
 
 typedef struct tagHeterodyneParams{

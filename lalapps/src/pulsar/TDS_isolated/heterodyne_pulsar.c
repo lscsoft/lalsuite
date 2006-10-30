@@ -113,9 +113,17 @@ hetParams.hetUpdate.f1, hetParams.hetUpdate.pepoch);
   stops = XLALResizeINT4Vector(stops, numSegs);
 
   /* open input file */
-  if((fpin = fopen(inputParams.datafile, "r")) == NULL){
-    fprintf(stderr, "Error... Can't open input data file!\n");
-    return 1;
+  if(inputParams.binaryinput){
+    if((fpin = fopen(inputParams.datafile, "rb")) == NULL){
+      fprintf(stderr, "Error... Can't open input data file!\n");
+      return 1;
+    }
+  }
+  else{
+    if((fpin = fopen(inputParams.datafile, "r")) == NULL){
+      fprintf(stderr, "Error... Can't open input data file!\n");
+      return 1;
+    }
   }
 
   if(inputParams.heterodyneflag == 0){ /* input comes from frame files so read in frame filenames */
@@ -232,21 +240,43 @@ hetParams.hetUpdate.f1, hetParams.hetUpdate.pepoch);
 
       fprintf(stderr, "Reading heterodyned data from %s.\n", inputParams.datafile);
 
-      while(fscanf(fpin, "%lf%lf%lf",&times->data[i],&data->data->data[i].re,
+      /* read in file - depends on if file is binary or not */
+      if(inputParams.binaryinput){
+        do{
+          fread((void *)&times->data[i], sizeof(double), 1, fpin);
+          fread((void *)&data->data->data[i].re, sizeof(double), 1, fpin);
+          fread((void *)&data->data->data[i].im, sizeof(double), 1, fpin);
+          
+          if(inputParams.scaleFac > 1.0){
+            data->data->data[i].re *= inputParams.scaleFac;
+            data->data->data[i].im *= inputParams.scaleFac;
+          }
+          
+          i++;
+          
+          /* if there is an error during read in then exit */
+          if(ferror(fpin)){
+            fprintf(stderr, "Error... problem reading in binary data file!\n");
+            exit(0);
+          }
+        }while(feof(fpin));
+      }
+      else{
+        while(fscanf(fpin, "%lf%lf%lf",&times->data[i],&data->data->data[i].re,
             &data->data->data[i].im) != EOF){
-        if(inputParams.scaleFac > 1.0){
-          data->data->data[i].re *= inputParams.scaleFac;
-          data->data->data[i].im *= inputParams.scaleFac;
-        }
-            
-        if(i==0)
-          hetParams.timestamp = times->data[i]; /* set initial time stamp */
+          if(inputParams.scaleFac > 1.0){
+            data->data->data[i].re *= inputParams.scaleFac;
+            data->data->data[i].im *= inputParams.scaleFac;
+          }
 
-        i++;
+          i++;
+        }
       }
       
       fclose(fpin);
 
+      hetParams.timestamp = times->data[0]; /* set initial time stamp */
+      
       /* resize vector to actual size */
       data->data = XLALResizeCOMPLEX16Vector(data->data, i);
       hetParams.length = i;
@@ -316,22 +346,56 @@ inputParams.samplerate, inputParams.resamplerate);  }
     }
     
     /* output data */
+    if(inputParams.binaryoutput){
+      if((fpout = fopen(outputfile, "ab"))==NULL){
+        fprintf(stderr, "Error... can't open output file %s!\n", outputfile);
+        return 0;
+      }
+    }
+    else{
     if((fpout = fopen(outputfile, "a"))==NULL){
-      fprintf(stderr, "Error... can't open output file %s!\n", outputfile);
-      return 0;
+        fprintf(stderr, "Error... can't open output file %s!\n", outputfile);
+        return 0;
+      }
     }
 
     for(i=0;i<resampData->data->length;i++){
       /* if data has been scaled then undo scaling for output */
-      if(inputParams.scaleFac > 1.0){
-        fprintf(fpout, "%lf\t%le\t%le\n", times->data[i],
-resampData->data->data[i].re/inputParams.scaleFac,
-resampData->data->data[i].im/inputParams.scaleFac);
+      
+      if(inputParams.binaryoutput){
+        if(inputParams.scaleFac > 1.0){
+          REAL8 tempreal, tempimag;
+      
+          tempreal = resampData->data->data[i].re/inputParams.scaleFac;
+          tempimag = resampData->data->data[i].im/inputParams.scaleFac;
+          
+          fwrite(&times->data[i], sizeof(double), 1, fpout);
+          fwrite(&tempreal, sizeof(double), 1, fpout);
+          fwrite(&tempimag, sizeof(double), 1, fpout);
+        }
+        else{
+          fwrite(&times->data[i], sizeof(double), 1, fpout);
+          fwrite(&resampData->data->data[i].re, sizeof(double), 1, fpout);
+          fwrite(&resampData->data->data[i].im, sizeof(double), 1, fpout);
+        }
+        
+        if(ferror(fpout)){
+          fprintf(stderr, "Error... problem writing out data to binary file!\n");
+          exit(0);
+        }
       }
       else{
-        fprintf(fpout, "%lf\t%le\t%le\n", times->data[i], resampData->data->data[i].re,
-resampData->data->data[i].im);
+        if(inputParams.scaleFac > 1.0){
+          fprintf(fpout, "%lf\t%le\t%le\n", times->data[i],
+                  resampData->data->data[i].re/inputParams.scaleFac,
+                  resampData->data->data[i].im/inputParams.scaleFac);
+        }
+        else{
+          fprintf(fpout, "%lf\t%le\t%le\n", times->data[i], resampData->data->data[i].re,
+                  resampData->data->data[i].im);
+        }
       }
+      
     }
     if(inputParams.verbose){  fprintf(stderr, "I've output the data.\n"); }
 
@@ -389,6 +453,8 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
     { "freq-factor",              required_argument,  0, 'm' },
     { "scale-factor",             required_argument,  0, 'G' },
     { "high-pass-freq",           required_argument,  0, 'H' },
+    { "binary-input",             no_argument, &inputParams->binaryinput, 1 },
+    { "binary-output",            no_argument, &inputParams->binaryoutput, 1 },
     { "verbose",                  no_argument, &inputParams->verbose, 1 },
     { 0, 0, 0, 0 }
   };
@@ -402,6 +468,8 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
   inputParams->samplerate = 0.;
   inputParams->calibrate = 0; /* default is not to calibrate */
   inputParams->verbose = 0; /* default is not to do verbose */
+  inputParams->binaryinput = 0; /* default to NOT read in data from a binary file */
+  inputParams->binaryoutput = 0; /* default is to output data as ASCII text */
   inputParams->stddevthresh = 0.; /* default is not to threshold */
   inputParams->calibfiles.calibcoefficientfile = NULL;
   inputParams->calibfiles.sensingfunctionfile = NULL;
@@ -589,6 +657,14 @@ error */
   if(inputParams->freqfactor < 0.){
     fprintf(stderr, "Error... frequency factor must be greater than zero.\n");
     exit(0);
+  }
+  
+  /* check that we're not trying to set a binary file input for a coarse heterodyne */
+  if(inputParams->binaryinput){
+    if(inputParams->heterodyneflag == 1 || inputParams->heterodyneflag == 2){
+      fprintf(stderr, "Error... binary input should not be set for fine heterodyne!\n");
+      exit(0);
+    }
   }
 }
 
