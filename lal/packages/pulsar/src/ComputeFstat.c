@@ -1073,10 +1073,11 @@ LALGetMultiAMCoeffs (LALStatus *status,
 	goto failed;
       }
 
-      LALGetAMCoeffs (status->statusPtr, amcoeX, multiDetStates->data[X], skypos );
+      /* LALGetAMCoeffs (status->statusPtr, amcoeX, multiDetStates->data[X], skypos ); */
+      LALNewGetAMCoeffs (status->statusPtr, amcoeX, multiDetStates->data[X], skypos );
       if ( status->statusPtr->statusCode ) 
 	{
-	  LALPrintError ( "\nCall to LALGetAMCoeffs() has failed ... \n\n");
+	  LALPrintError ( "\nCall to LALNewGetAMCoeffs() has failed ... \n\n");
 	  goto failed;
 	}
  
