@@ -6,7 +6,7 @@
 %  It will look into all the different patches
  
 % Remember to add the path where this file is located: 
-% addpath /local_data/badkri/src/pulsar/hough/m_files
+% addpath  /local_data/badkri/src/pulsar/hough/m_files
 %   To run simply type AllSkyMax
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
