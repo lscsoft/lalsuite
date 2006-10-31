@@ -332,9 +332,7 @@ LALTwoDNodeCopy( LALStatus    *status,
 		 TwoDMeshNode **new,
 		 TwoDMeshNode *old );
 
-/* <lalLaTeX>
-\newpage\input{TwoDMeshMetricsC}
-</lalLaTeX> */
+
 void
 LALGetNearestMetric( LALStatus *status, REAL4 metric[3], REAL4 position[2], void *params );
 
