@@ -80,6 +80,7 @@ extern INT4 lalDebugLevel;
 void initLatticeCovering(LALStatus *, DopplerFullScanState *scan, const MultiDetectorStateSeries *mdetStates, const DopplerFullScanInit *init);
 void initFactoredGrid (LALStatus *, DopplerFullScanState *scan,	const MultiDetectorStateSeries *mdetStates, const DopplerFullScanInit *init);
 int nextPointInFactoredGrid (PulsarDopplerParams *pos, DopplerFullScanState *scan);
+int printGSLmatrix ( FILE *fp, const CHAR *fmt, const gsl_matrix *mat );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -210,11 +211,16 @@ initFactoredGrid (LALStatus *status,
     scan->thisPoint.fkdot[i] = scan->spinRange.fkdot[i];
 
   { /* count total number of templates */
-    REAL8 nSky, nSpins = 1;
+    REAL8 nSky, nTot;
+    REAL8 nSpins[PULSAR_MAX_SPINS];
     nSky = scan->skyScan.numSkyGridPoints;
     for ( i=0; i < PULSAR_MAX_SPINS; i ++ )
-      nSpins *= floor( scan->spinRange.fkdotBand[i] / scan->skyScan.dfkdot[i] ) + 1.0;
-    scan->numTemplates = nSky * nSpins;
+      nSpins[i] = floor( scan->spinRange.fkdotBand[i] / scan->skyScan.dfkdot[i] ) + 1.0;
+    nTot = nSky;
+    for ( i=0; i < PULSAR_MAX_SPINS; i ++ )
+      nTot *= nSpins[i];
+    scan->numTemplates = nTot;
+    LogPrintf (LOG_DEBUG, "Template grid: nSky x nFreq x nf1dot = %.0f x %.0f x %.0f = %.0f \n", nSky, nSpins[0], nSpins[1], nTot );
   }
   
   /* we're ready */
@@ -253,8 +259,14 @@ XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
 { 
 
   /* This traps coding errors in the calling routine. */
-  if ( pos == NULL || scan == NULL || scan->state == STATE_IDLE )
+  if ( pos == NULL || scan == NULL )
     {
+      xlalErrno = XLAL_EINVAL;
+      return -1;
+    }
+  if ( scan->state == STATE_IDLE )
+    {
+      LALPrintError ("\nCalled XLALNextDopplerPos() on un-initialized DopplerFullScanState !\n\n");
       xlalErrno = XLAL_EINVAL;
       return -1;
     }
@@ -400,7 +412,7 @@ initLatticeCovering ( LALStatus *status,
 
   /* determine number of spins to compute metric for (at least 1) */
   numSpins = PULSAR_MAX_SPINS;
-  while ( (numSpins >= 1) && (init->searchRegion.fkdotBand[numSpins - 1] == 0) )
+  while ( (numSpins > 1) && (init->searchRegion.fkdotBand[numSpins - 1] == 0) )
     numSpins --;
 
   dim = 2 + numSpins;	/* sky + spins (must be at least 3) */
@@ -409,13 +421,12 @@ initLatticeCovering ( LALStatus *status,
   if ( (scan->gij = gsl_matrix_calloc (dim, dim)) == NULL ) {
     ABORT (status, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
   }
-  
-  
   if ( XLALFlatMetricCW ( scan->gij, mdetStates, init->searchRegion.refTime ) != 0 ) {
     LALPrintError ("\nCall to XLALFlatMetricCW() failed!\n\n");
     ABORT ( status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL );
   }
   
+  printGSLmatrix ( stderr, "%.9f ", scan->gij );
 
 
   
@@ -424,3 +435,29 @@ initLatticeCovering ( LALStatus *status,
 
 } /* initLatticeCovering() */
 
+/** output gsl-matrix in octave-compatible format to fp, using format \a fmt 
+ * for each element 
+ */
+int
+printGSLmatrix ( FILE *fp, const CHAR *fmt, const gsl_matrix *mat )
+{
+  UINT4 i, j, rows, cols;
+
+  if ( !fp || !fmt || !mat )
+    return -1;
+
+  rows = mat->size1;
+  cols = mat->size2;
+
+  fprintf (fp,  "[ ");
+  for ( i=0; i < rows; i ++ )
+    {
+      for ( j=0; j < cols; j ++ )
+	fprintf ( fp, fmt, gsl_matrix_get (mat, i, j ) );
+      if ( i != rows - 1) fprintf (fp, ";\n");
+    }
+  fprintf (fp, " ];\n");
+  
+  return 0;
+
+} /* printGSLmatrix() */
