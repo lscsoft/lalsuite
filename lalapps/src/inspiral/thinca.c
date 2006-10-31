@@ -1898,7 +1898,8 @@ int main( int argc, char *argv[] )
     }
         
     /* BNS and Machos case */
-    if( distCut && !doBCVC ) /*S3*/
+    if( distCut && !doBCVC && haveTrig[LAL_IFO_H1] && haveTrig[LAL_IFO_H2] )
+    /*S3*/
     {
       if ( vrbflg ) fprintf( stdout, 
          "Discarding triggers h1-h2-distance-cut using kappa=%f and epsilon = %f\n",                       
@@ -1957,7 +1958,7 @@ int main( int argc, char *argv[] )
     }
   
     /* perform the h1h2-consistency check */
-    if ( h1h2Consistency ) 
+    if ( h1h2Consistency && haveTrig[LAL_IFO_H1] && haveTrig[LAL_IFO_H2] ) 
     {
       if(vrbflg) 
       {
