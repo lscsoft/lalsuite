@@ -599,7 +599,7 @@ class candidateList:
         that we know have matching bin widths but are incorrectly calculated.
         """
         iCL=inputCandidateList
-        globList=copy.deepcopy(self)
+        globList=self
         globTolerance=1e-4
         if (force==True):
             "Forcing a glob of the data structures!"
@@ -640,11 +640,11 @@ class candidateList:
         else :
             print "Can not glob lists, due to inconsistent values!"
             print "Original List VS List to Glob"
-            print self.freqWidth,'VS',iCL.freqWidth
-            print self.gpsWidth.display(),'VS',iCL.gpsWidth.display()
+            print globList.freqWidth,'VS',iCL.freqWidth
+            print globList.gpsWidth.display(),'VS',iCL.gpsWidth.display()
             print "Returning original list with no additional entries!"
             print "Orignal list entry count:",self.totalCount," Ignored list entry count:",iCL.totalCount
-            return copy.deepcopy(self)
+            return globList
     #End globList method
 
     def clusterClobberWith(self,inputReferenceList):
