@@ -17,6 +17,37 @@ from candidateUtils import *
 #Begin MAIN part of this python code to actually manipulate the curve
 #lists
 
+
+#################### Internal Methods #################
+
+def buildCandidateGlob(fileList):
+    #Build glob var from filelist.  Memory friendly
+    #Returns copy of results
+    canList=fileList
+    if canList.__len__() == 1:
+        print "Globbing is not possible only one file found!"
+        print "Returning the result as that entry!"
+        tmpObject=candidateList()
+        tmpObject.loadfile(canList.pop(0))
+        newCandidateObject=copy.deepcopy(tmpObject)
+    else:
+        tmpObject=candidateList()
+        tmpObject.loadfile(canList.pop(0))
+        newCandidateObject=copy.deepcopy(tmpObject)
+    for entry in canList:
+            print " "
+            print "Loading candidate list file: ",entry
+            tmpCandidate=candidateList()
+            tmpCandidate.loadfile(entry)
+            print "Globing file:",tmpCandidate.filename[0]
+            newCandidateObject=newCandidateObject.globList(tmpCandidate,True)
+            del tmpCandidate
+    return copy.deepcopy(newCandidateObject)
+#End method
+
+
+###################End internal methods #################
+
 parser = OptionParser()
 
 parser.add_option("-f","--file",dest="filename",
@@ -81,21 +112,7 @@ canList=generateFileList(filename)
 
 #SECTION TO DO THE GLOBBING OF MANY CANDIDATE FILES
 if (glob and (canList.__len__() >= 1)):
-    canObjects=[]
-    for entry in canList:
-        print "Loading candidate list file: ",entry
-        tmpCandidate=candidateList()
-        tmpCandidate.loadfile(entry)
-        canObjects.append(tmpCandidate)
-    #Glob the input files and exit writing to disk!
-    newCandidateObject=copy.deepcopy(canObjects.pop(0))
-    for entry in canObjects:
-        print "Globing file:",entry.filename[0]
-        newCandidateObject=newCandidateObject.globList(entry,True)
-        #newCandidateObject=newCandidateObject.globList(entry,FALSE)
-        #Should be a del entry line to free memory instead of holding
-        #memory
-        del entry
+    newCandidateObject=buildCandidateGlob(canList)
     if outfile != "":
         newCandidateObject.writefile(outfile)
     else:
@@ -107,15 +124,7 @@ elif (clobberFilename != '') and (canList.__len__() == 1):
     #Load file(s) to clobber with
     clobberList=generateFileList(clobberFilename)
     #If there is more than one file we need to glob them first
-    tmpObjClobber=[]
-    for entry in clobberList:
-        object=candidateList()
-        object.loadfile(entry)
-        tmpObjClobber.append(object)
-    #Do the glob
-    newCandidateClobberObject=candidateList()
-    for entry in tmpObjClobber:
-        newCandidateClobberObject=newCandidateClobberObject.globList(entry)
+    newCandidateClobberObject=buildCandidateGlob(clobberList)
     #Create candidate list to clobber.
     clobberVictim=candidateList()
     clobberVictim.loadfile(canList[0])
@@ -155,30 +164,33 @@ elif ((expThreshold != "") and (canList.__len__() >=1)):
         candidateObject=candidateList()
         candidateObject.loadfile(entry)
         candidateResults=candidateObject.applyArbitraryThresholds(expThreshold)
-    pathName=''
-    if (outfile != "") and (canList.__len__() == 1):
-        candidateResults.writefile(outfile)
-    else:
-        pathName=os.path.dirname(candidateResults.filename[0])
-        saveFiles=pathName+'/Threshold:'+str(expThreshold)+':'+os.path.basename(candidateObject.filename[0])
-        print "Writing file :",saveFiles
-        candidateResults.writefile(saveFiles)        
-
+        pathName=''
+        if (outfile != "") and (canList.__len__() == 1):
+            candidateResults.writefile(outfile)
+        else:
+            pathName=os.path.dirname(candidateResults.filename[0])
+            saveFiles=pathName+'/Threshold:'+str(expThreshold)+':'+os.path.basename(candidateObject.filename[0])
+            print "Writing file :",saveFiles
+            candidateResults.writefile(saveFiles)        
+        del entry
+        del candidateResults
+        del candidateObject
     #SECTION TO DUMP SUMMARY TO DISK OR SCREEN
 elif ((canList.__len__() >=1) and dumpSummaryDisk):
     for entry in canList:
         candidateObject=candidateList()
         candidateObject.loadfile(entry)
         candidateObject.writeSummary()
-
+        del candidateObject
+        
 elif ((canList.__len__() >=1) and dumpSummaryScreen):
     for entry in canList:
         candidateObject=candidateList()
         candidateObject.loadfile(entry)
         candidateObject.printSummary()
-
+        del entry
+        
     #THIS SECTION SHOULD NEVER HAPPEN
 else:
     print "Error with combination of arguments given!"
     os.abort()
-
