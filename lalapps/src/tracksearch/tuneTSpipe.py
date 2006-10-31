@@ -168,12 +168,22 @@ class tuneObject:
         buildDir(self.installIni)
         self.__createLHLL__()
         print "Creating each pipe configuration script."
+        countMe=0
+        modValue=20
         for pipe in self.FApipeNames:
             self.FAconfigure(pipe[3],pipe[4],pipe[0])
+            if countMe%modValue==0:
+                print ".",
+            countMe=countMe+1
+        print " "
         print "Building ",self.FApipeNames.__len__()," pipes. This may take awhile."
         for pipe in self.FApipeNames:
             #False turns off possible interpretations.
             self.createPipe(pipe[0],False)
+            if countMe%modValue==0:
+                print ".",
+            countMe=countMe+1
+        print " "
         print "Ok. Finished"
         #Search the workspace to construct a huge parent DAG for submitting all the DAGs
         root2dags=self.installPipes
