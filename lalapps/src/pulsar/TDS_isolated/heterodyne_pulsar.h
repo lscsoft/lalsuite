@@ -75,6 +75,7 @@ extern "C" {
 " --high-pass-freq    high-pass frequency for calibrated h(t) data\n"\
 " --binary-input      read in input data from binary file (for fine and\n\
                      update heterodynes only)\n"\
+" --binary-output     output data to a binary file\n"\
 "\n"
 
 #define MAXLENGTH 5000000 /* max number of lines in heterodyned data file */
@@ -201,8 +202,6 @@ frequency);
 /* function to remove outliers above a certain standard deviation threshold - returns the number
 of outliers removed */
 INT4 remove_outliers(COMPLEX16TimeSeries *data, REAL8Vector *times, REAL8 stddevthresh);
-
-/*void printmemuse();*/
 
 #ifdef  __cplusplus
 }

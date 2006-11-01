@@ -5,14 +5,13 @@
 
 /* Matt Pitkin - 07/02/06 ------------- heterodyne_pulsar.c */
 
-/* lalapps code to perform a coarse/fine heterodyne on LIGO or GEO data given a set of frequency
-parameters. The heterodyne can either be a 2 stage process with the code run for a coarse
+/* lalapps code to perform a coarse/fine heterodyne on LIGO or GEO data given a set of pulsar
+parameters. The heterodyne is a 2 stage process with the code run for a coarse
 heterodyne (not taking into account the SSB and BSB time delays, but using the other frequency
 params) and then rerun for the fine heterodyne (taking into account SSB and BSB time delays). The
 code can also be used to update heterodyned data using new parameters (old and new parameter files
 are required) i.e. it will take the difference of the original heterodyne phase and the new phase
-and reheterodyne with this phase difference. This code does not perform any calibration of the data.
-*/
+and reheterodyne with this phase difference. */
 
 #include "heterodyne_pulsar.h"
 
@@ -113,17 +112,9 @@ hetParams.hetUpdate.f1, hetParams.hetUpdate.pepoch);
   stops = XLALResizeINT4Vector(stops, numSegs);
 
   /* open input file */
-  if(inputParams.binaryinput){
-    if((fpin = fopen(inputParams.datafile, "rb")) == NULL){
-      fprintf(stderr, "Error... Can't open input data file!\n");
-      return 1;
-    }
-  }
-  else{
-    if((fpin = fopen(inputParams.datafile, "r")) == NULL){
-      fprintf(stderr, "Error... Can't open input data file!\n");
-      return 1;
-    }
+  if((fpin = fopen(inputParams.datafile, "r")) == NULL){
+    fprintf(stderr, "Error... Can't open input data file!\n");
+    return 1;
   }
 
   if(inputParams.heterodyneflag == 0){ /* input comes from frame files so read in frame filenames */
@@ -244,11 +235,11 @@ hetParams.hetUpdate.f1, hetParams.hetUpdate.pepoch);
 
       /* read in file - depends on if file is binary or not */
       if(inputParams.binaryinput){
-        do{
-          fread((void *)&times->data[i], sizeof(double), 1, fpin);
-          fread((void *)&data->data->data[i].re, sizeof(double), 1, fpin);
-          fread((void *)&data->data->data[i].im, sizeof(double), 1, fpin);
-          
+        do{       
+          fread((void*)&times->data[i], sizeof(REAL8), 1, fpin);
+          fread((void*)&data->data->data[i].re, sizeof(REAL8), 1, fpin);
+          fread((void*)&data->data->data[i].im, sizeof(REAL8), 1, fpin);
+                  
           if(inputParams.scaleFac > 1.0){
             data->data->data[i].re *= inputParams.scaleFac;
             data->data->data[i].im *= inputParams.scaleFac;
@@ -259,13 +250,13 @@ hetParams.hetUpdate.f1, hetParams.hetUpdate.pepoch);
             temptime = times->data[i];
             i++;
           }
-          
+
           /* if there is an error during read in then exit */
           if(ferror(fpin)){
             fprintf(stderr, "Error... problem reading in binary data file!\n");
             exit(0);
           }
-        }while(feof(fpin));
+        }while(!feof(fpin));
       }
       else{
         while(fscanf(fpin, "%lf%lf%lf",&times->data[i],&data->data->data[i].re,
@@ -373,20 +364,22 @@ inputParams.samplerate, inputParams.resamplerate);  }
       /* if data has been scaled then undo scaling for output */
       
       if(inputParams.binaryoutput){
+        /* FIXME: maybe add header info to binary output - or output to frames! */
+        /* binary output will be same as ASCII text - time real imag */
         if(inputParams.scaleFac > 1.0){
           REAL8 tempreal, tempimag;
       
           tempreal = resampData->data->data[i].re/inputParams.scaleFac;
           tempimag = resampData->data->data[i].im/inputParams.scaleFac;
           
-          fwrite(&times->data[i], sizeof(double), 1, fpout);
-          fwrite(&tempreal, sizeof(double), 1, fpout);
-          fwrite(&tempimag, sizeof(double), 1, fpout);
+          fwrite(&times->data[i], sizeof(REAL8), 1, fpout);
+          fwrite(&tempreal, sizeof(REAL8), 1, fpout);
+          fwrite(&tempimag, sizeof(REAL8), 1, fpout);
         }
         else{
-          fwrite(&times->data[i], sizeof(double), 1, fpout);
-          fwrite(&resampData->data->data[i].re, sizeof(double), 1, fpout);
-          fwrite(&resampData->data->data[i].im, sizeof(double), 1, fpout);
+          fwrite(&times->data[i], sizeof(REAL8), 1, fpout);
+          fwrite(&resampData->data->data[i].re, sizeof(REAL8), 1, fpout);
+          fwrite(&resampData->data->data[i].im, sizeof(REAL8), 1, fpout);
         }
         
         if(ferror(fpout)){
@@ -671,8 +664,8 @@ error */
   
   /* check that we're not trying to set a binary file input for a coarse heterodyne */
   if(inputParams->binaryinput){
-    if(inputParams->heterodyneflag == 1 || inputParams->heterodyneflag == 2){
-      fprintf(stderr, "Error... binary input should not be set for fine heterodyne!\n");
+    if(inputParams->heterodyneflag == 0){
+      fprintf(stderr, "Error... binary input should not be set for coarse heterodyne!\n");
       exit(0);
     }
   }
@@ -1404,13 +1397,3 @@ stddev.im*stddevthresh){
   
   return data->data->length - j;
 }
-    
-/* function to show memory useage borrowed from Greg's MakeSFTs code */
-/*void printmemuse() {
-  pid_t mypid=getpid();
-  char commandline[256];
-  fflush(NULL);
-  sprintf(commandline,"cat /proc/%d/status | /bin/grep Vm | /usr/bin/fmt -140 -u", (int)mypid);
-  system(commandline);
-  fflush(NULL);
-}*/
