@@ -45,6 +45,9 @@ NRCSID( LISASPECIFICSH, "$Id$" );
 #include <lal/DetectorStates.h>
 
 /*---------- exported DEFINES ----------*/
+
+#define LISA_TIME_ORIGIN		700000000; 	/* ad-hoc setting for MLDC 't=0' to GPS for Tue Mar 12 20:26:27 GMT 2002 */
+
 /*---------- exported types ----------*/
 /** Translate TDI arm indices to C-indexing */
 typedef enum { 
