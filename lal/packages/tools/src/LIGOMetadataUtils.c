@@ -697,6 +697,9 @@ LALDistanceScanSummValueTable (
   INITSTATUS( status, "LALDistanceScanSummValueTable", LIGOMETADATAUTILSC );
   ATTATCHSTATUSPTR( status );
 
+  /* initialize diatnce to zero */
+  *distance = 0;
+
   /* convert the input GPS time into INT8 */
   LALGPStoINT8( status->statusPtr, &ta, &(gps) );
 
@@ -719,6 +722,11 @@ LALDistanceScanSummValueTable (
       } 
     }
   }
+
+  if ( *distance = 0 )
+    {
+      ABORT ( status, LIGOMETADATAUTILSH_EDIST, LIGOMETADATAUTILSH_MSGEDIST );
+    }
   
   DETATCHSTATUSPTR (status);
   RETURN (status);
