@@ -69,6 +69,7 @@ NRCSID( LIGOMETADATAUTILSH, "$Id$" );
 #define LIGOMETADATAUTILSH_ESDUB 6
 #define LIGOMETADATAUTILSH_ETEST 7
 #define LIGOMETADATAUTILSH_EDET 8
+#define LIGOMETADATAUTILSH_EDIST 9
 #define LIGOMETADATAUTILSH_MSGENULL "Null pointer"
 #define LIGOMETADATAUTILSH_MSGENNUL "Non-null pointer"
 #define LIGOMETADATAUTILSH_MSGETIME "Invalid GPS Time"
@@ -77,7 +78,7 @@ NRCSID( LIGOMETADATAUTILSH, "$Id$" );
 #define LIGOMETADATAUTILSH_MSGESDUB "Repeated data in Search Summary Input"
 #define LIGOMETADATAUTILSH_MSGETEST "Unknown parameter test for sorting events"
 #define LIGOMETADATAUTILSH_MSGEDET "Unknown detector"
-
+#define LIGOMETADATAUTILSH_MSGEDIST "No horizon distance for consistency cut"
 
 /* </lalErrTable> */
 
