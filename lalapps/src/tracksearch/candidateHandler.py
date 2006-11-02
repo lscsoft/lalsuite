@@ -31,9 +31,8 @@ def buildCandidateGlob(fileList):
         tmpObject.loadfile(canList.pop(0))
         newCandidateObject=copy.deepcopy(tmpObject)
     else:
-        tmpObject=candidateList()
-        tmpObject.loadfile(canList.pop(0))
-        newCandidateObject=copy.deepcopy(tmpObject)
+        newCandidateObject=candidateList()
+        newCandidateObject.loadfile(canList.pop(0))
     for entry in canList:
             print " "
             print "Loading candidate list file: ",entry

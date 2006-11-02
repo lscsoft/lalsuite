@@ -265,9 +265,9 @@ class tuneObject:
             if countMe%modValue==0:
                 print ".",
             countMe=countMe+1
+            #Revising to avoid opening data files
             candidate=candidateList()
-            candidate.loadfile(entry)
-            myStat=candidate.candidateStats()
+            myStat == candidate.candidateStatFromFile(entry)
             if myStat == []:
                 meanP=varP=stdP=meanL=stdL=0
                 threshP=0

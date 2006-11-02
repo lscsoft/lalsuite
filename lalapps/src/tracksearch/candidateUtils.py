@@ -789,6 +789,48 @@ class candidateList:
         return statList
     #End candidateStats method
 
+    def candidateStatsFromFile(self,inputFilename):
+        """
+        This method just scans the candidate list for information like
+        integrated power in a curve and curve length in pixels.  It
+        then calculates the same stats as method candidateStats() but
+        without loading the data from the file.
+        """
+        Lsum=float(0)
+        Psum=float(0)
+        LsumSqr=float(0)
+        PsumSqr=float(0)
+        curveCount=int(0)
+        curveNum=float(0)
+        L=float(0)
+        P=float(0)
+        #Load the files summary line data
+        input_fp=open(inputFilename,'r')
+        content=input_fp.readlines()
+        input_fp.close()
+        #Select out just the summary lines
+        for line in content:
+            if line.startswith('Curve'):
+                (curveNum,L,P)=str(line.split(':')[1]).split(',')   
+                L=float(L)
+                P=float(P)
+                Lsum=Lsum+L
+                Psum=Psum+P
+                LsumSqr=LsumSqr+(L*L)
+                PsumSqr=PsumSqr+(P*P)
+                curveCount=curveCount+1
+                print curveCount,L,P,"    ",Lsum,Psum,LsumSqr,PsumSqr
+        meanL=meanP=float(0)
+        varL=varP=float(0)
+        n=curveCount
+        meanL=Lsum.__div__(n)
+        varL=float(LsumSqr - float(Lsum*Lsum).__div__(n)).__div__(n)
+        meanP=Psum.__div__(n)
+        varP=float(PsumSqr - float(Psum*Psum).__div__(n)).__div__(n)
+        statList=[0,0,n,meanP,varP,meanL,varL]
+        return statList
+    #end method candidateStatsFromFile
+    
     def dumpCandidateKurveSummary(self):
         """
         This method scans the entries in the object.  Then
