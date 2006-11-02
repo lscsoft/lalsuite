@@ -1406,15 +1406,14 @@ LALInspiralDistanceCutCleaning(
   while( thisCoinc )
   {
     INT4  discardTrigger = 0;
-    REAL4 snrA = 0, snrB = 0;
-    REAL4 distA = 0, distB = 0;
-    REAL8 sigmasqA = 0, sigmasqB = 0;
     CoincInspiralTable *tmpCoinc = thisCoinc;
     thisCoinc = thisCoinc->next;
     
     if( tmpCoinc->snglInspiral[LAL_IFO_H1] && !tmpCoinc->snglInspiral[LAL_IFO_H2])
     {
       snrH1 = tmpCoinc->snglInspiral[LAL_IFO_H1]->snr;
+      dH1 = 0;
+      dH2 = 0;
       LALDistanceScanSummValueTable(status->statusPtr, summValueList,
 				    tmpCoinc->snglInspiral[LAL_IFO_H1]->end_time, "H1",  &dH1);
       
@@ -1442,6 +1441,8 @@ LALInspiralDistanceCutCleaning(
     if( tmpCoinc->snglInspiral[LAL_IFO_H2] && !tmpCoinc->snglInspiral[LAL_IFO_H1])
       {
 	snrH2 = tmpCoinc->snglInspiral[LAL_IFO_H2]->snr;
+        dH1 = 0;
+        dH2 = 0;
 	LALDistanceScanSummValueTable(status->statusPtr, summValueList,
 				      tmpCoinc->snglInspiral[LAL_IFO_H2]->end_time, "H1",  &dH1);
 	LALDistanceScanSummValueTable(status->statusPtr, summValueList, 
