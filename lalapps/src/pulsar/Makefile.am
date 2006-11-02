@@ -4,9 +4,9 @@
 SUBDIRS = FDS_isolated Injections FDS_griphyn hough FDS_binary MakeSFTs
 
 if FRAME
-FRAMEPROGS = lalapps_make_job_input_data lalapps_make_sfts lalapps_Calibrate60sSFTs lalapps_Calibrate1800SFTs lalapps_FreqAverager lalapps_psd
+FRAMEPROGS = lalapps_make_job_input_data lalapps_make_sfts lalapps_Calibrate60sSFTs lalapps_Calibrate1800SFTs lalapps_FreqAverager lalapps_psd lalapps_ComputePSD
 else
-FRAMEPROGS = lalapps_Calibrate60sSFTs lalapps_Calibrate1800SFTs lalapps_FreqAverager lalapps_psd
+FRAMEPROGS = lalapps_Calibrate60sSFTs lalapps_Calibrate1800SFTs lalapps_FreqAverager lalapps_psd lalapps_ComputePSD
 endif
 
 bin_PROGRAMS = $(FRAMEPROGS)
@@ -24,6 +24,7 @@ lalapps_Calibrate60sSFTs_SOURCES = Calibrate60sSFTs.c Calibrate60sSFTs.h
 lalapps_Calibrate1800SFTs_SOURCES = Calibrate1800SFTs.c Calibrate1800SFTs.h
 lalapps_FreqAverager_SOURCES = FreqAverager.c FreqAverager.h
 lalapps_psd_SOURCES = psd.c psd.h
+lalapps_ComputePSD_SOURCES = ComputePSD.c
 
 EXTRA_DIST = \
 make_locked_data_list \
@@ -55,4 +56,5 @@ S1-L1segments.txt \
 S2-H1segments.txt \
 S2-H2segments.txt \
 S2-L1segments.txt
-INCLUDES = -I$(top_srcdir)/src
+INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
+LDADD = $(top_builddir)/src/lalapps/liblalapps.la
