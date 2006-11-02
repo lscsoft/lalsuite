@@ -259,7 +259,12 @@ class tuneObject:
         print "Checking ",resultFiles.__len__()," total candidate files. This may take a while."
         auxoutData=[]
         outputData=[]
+        countMe=0
+        modValue=20
         for entry in resultFiles:
+            if countMe%modValue==0:
+                print ".",
+            countMe=countMe+1
             candidate=candidateList()
             candidate.loadfile(entry)
             myStat=candidate.candidateStats()
@@ -332,7 +337,12 @@ class tuneObject:
             #Setup L entry
             results.append([h,l,0,len])
         print "The detection efficiency pipes to be created are",results.__len__()," this may take a while."
+        countMe=0
+        modValue=20
         for entry in results:
+            if countMe%modValue==0:
+                print ".",
+            countMe=countMe+1
             h=entry[0]
             l=entry[1]
             p=entry[2]
