@@ -169,7 +169,7 @@ class tuneObject:
         self.__createLHLL__()
         print "Creating each pipe configuration script."
         countMe=0
-        modValue=20
+        modValue=10
         for pipe in self.FApipeNames:
             self.FAconfigure(pipe[3],pipe[4],pipe[0])
             if countMe%modValue==0:
@@ -178,7 +178,7 @@ class tuneObject:
         print " "
         print "Building ",self.FApipeNames.__len__()," pipes. This may take awhile."
         for pipe in self.FApipeNames:
-            #False turns off possible interpretations.
+            #False turns off possible injections.
             self.createPipe(pipe[0],False)
             if countMe%modValue==0:
                 print ".",
@@ -267,7 +267,7 @@ class tuneObject:
             countMe=countMe+1
             #Revising to avoid opening data files
             candidate=candidateList()
-            myStat == candidate.candidateStatFromFile(entry)
+            myStat=candidate.candidateStatsFromFile(entry)
             if myStat == []:
                 meanP=varP=stdP=meanL=stdL=0
                 threshP=0

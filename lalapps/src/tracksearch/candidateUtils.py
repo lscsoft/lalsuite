@@ -811,7 +811,12 @@ class candidateList:
         #Select out just the summary lines
         for line in content:
             if line.startswith('Curve'):
-                (curveNum,L,P)=str(line.split(':')[1]).split(',')   
+                try:
+                    (curveNum,L,P)=str(line.split(':')[1]).split(',')
+                except IndexError:
+                    print "Problem with file:",inputFilename
+                    print "Returning zeroes for this file stats!"
+                    return [0,0,0,0,0,0,0]
                 L=float(L)
                 P=float(P)
                 Lsum=Lsum+L
@@ -819,7 +824,6 @@ class candidateList:
                 LsumSqr=LsumSqr+(L*L)
                 PsumSqr=PsumSqr+(P*P)
                 curveCount=curveCount+1
-                print curveCount,L,P,"    ",Lsum,Psum,LsumSqr,PsumSqr
         meanL=meanP=float(0)
         varL=varP=float(0)
         n=curveCount
