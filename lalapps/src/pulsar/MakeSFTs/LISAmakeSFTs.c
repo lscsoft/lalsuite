@@ -36,6 +36,7 @@
 #include <lal/TimeSeries.h>
 #include <lal/LALStdio.h>
 #include <lal/GeneratePulsarSignal.h>
+#include <lal/LISAspecifics.h>
 
 /* lisaXML stuff */
 #include "readxml.h"
@@ -63,8 +64,6 @@ RCSID ("$Id$");
 /*---------- DEFINES ----------*/
 #define TRUE    (1==1)
 #define FALSE   (1==0)
-
-#define LISA_T0		630720013; 	/* ad-hoc setting for MLDC 't=0' to GPS for Jan 1, 2000 */
 
 /*----- Macros ----- */
 /*---------- internal types ----------*/
@@ -251,7 +250,7 @@ ConvertLISAtimeseries2LAL ( LALStatus *status, MultiREAL4TimeSeries **lalTs, con
       LALSnprintf ( name, LALNameLength, "Z%d:%s_%s", i+1, thisTs->Name, lisaTs->FileName );
       name[LALNameLength-1] = 0; /* close string if it was truncated */
 
-      epoch.gpsSeconds = thisTs->TimeOffset + LISA_T0;	/* offset by LISA_T0 for convenience of GPS-time range */
+      epoch.gpsSeconds = thisTs->TimeOffset + LISA_TIME_ORIGIN;	/* offset for convenience of GPS-time ranges */
 
       if ( ( ret->data[i] = XLALCreateREAL4TimeSeries ( name, &epoch, f0, deltaT, &units, length )) == NULL )
 	goto failed;
