@@ -185,7 +185,7 @@ XLALgetLISAtwoArmIFO ( DetectorTensor *detT, 	/**< [out]: two-arm IFO detector-t
     REAL4 a = LAL_AU_SI;
     REAL4 e = 0.00965;		/* eccentricity */
     REAL4 kappa = 0, lambda = 0;	/* MLDC default */
-    REAL8 ti = XLALGPSGetREAL8( &tGPS );
+    REAL8 ti = XLALGPSGetREAL8( &tGPS ) - LISA_TIME_ORIGIN;
     REAL8 Om = LAL_TWOPI /  LAL_YRSID_SI;
     REAL8 alpha_ti  = Om * ti + kappa;
     REAL4 sin_alpha, cos_alpha;
