@@ -293,7 +293,7 @@ int main(int argc, char *argv[]){
 
       for ( k = 0; k < nBins; k++) {       
 
-	periodo[iIFO][k] += multPSD->data[iIFO]->data[iSFT].data->data[k];
+	periodo[iIFO][k] += multPSD->data[iIFO]->data[iSFT].data->data[k]/numsft;
 
       } /* look over frequency bins */
 
