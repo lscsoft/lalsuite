@@ -287,6 +287,7 @@ class tuneObject:
             myLL=myOpts[2]
             auxoutData.append([float(myLH),float(myLL),meanL,stdL,meanP,stdP])
             outputData.append([float(myLH),float(myLL),float(threshP),float(threshL)])
+        print " "
         auxout_fp=open(self.home+'/FA_results.aux','w')
         auxout_fp.write("LH,LL,Mean L,Stddev L,Mean P,Stddev P\n")
         for entry in auxoutData:

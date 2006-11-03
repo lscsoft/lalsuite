@@ -916,6 +916,7 @@ class candidateList:
         #Convert everything to lower case
         testExp=testExp.lower()
         resultsList=[]
+        #print "String to threshold with :",testExp
         for lineInfo in self.curves:
             curveID,l,p=lineInfo.getKurveHeader()
             d=lineInfo.getCandidateDuration()
@@ -929,10 +930,9 @@ class candidateList:
                 resultsList.append(lineInfo)
         #Return the a modified structure wit self.curves
         #made only of passing candidates
-        outputList=copy.deepcopy(self)
-        outputList.totalCount=resultsList.__len__()
-        outputList.curves=copy.deepcopy(resultsList)
-        return outputList
+        self.totalCount=resultsList.__len__()
+        self.curves=copy.deepcopy(resultsList)
+        return self
     #end applyAbitraryThresholds method
     
     def applyNewThresholds(self,powerEq,pVal,conjunction,lengthEq,lVal):
