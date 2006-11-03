@@ -30,8 +30,8 @@ YRSID_SI	= 31558149.8;		%% Sidereal year (1994), s
 AU_SI		= 1.4959787066e11;	%% Astronomical unit, m 
 C_SI 		= 299792458; 					%% Speed of light in vacuo, m s^-1 
 
-## definition of 't=0' for LISA: set to Jan1,2000 for convenience ==> can use sun00-04.dat
-t0_LISA = 630720013; ## GPS for Jan 1, 2000
+## MLDC time-origin "t=0" (MUST be equal to setting in lal/packages/pulsar/include/LISAspecifics.h)
+LISA_TIME_ORIGIN = 700000000; 
 
 if ( nargin != 2 )
   error ("\nNeed exactly two input arguments: start-GPS and end-GPS!");
@@ -59,7 +59,7 @@ kappa = 0;
 %% orbital frequency
 OmOrb = 2 * pi / YRSID_SI;
 
-alpha = OmOrb * (tiGPS - t0_LISA) + kappa;
+alpha = OmOrb * (tiGPS - LISA_TIME_ORIGIN) + kappa;
 
 %% center-of-mass motion of Eq.(2.1):
 rOrb = AU_SI / C_SI;	%% ephemeris-files are in units of r/c
