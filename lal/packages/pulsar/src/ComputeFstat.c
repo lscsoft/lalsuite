@@ -1200,7 +1200,7 @@ int
 XLALWeighMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *multiWeights )
 {
   UINT4 numDetectors, X;
-  REAL8 Ad, Bd, Cd, Sinv_Tsft;
+  REAL8 Ad, Bd, Cd;
   UINT4 alpha;
 
   if ( !multiAMcoef )
@@ -1247,7 +1247,7 @@ XLALWeighMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *m
 	      Cd += ahat * bhat;
 	    } /* for alpha < numSFTsX */
 	} /* for X < numDetectors */
-      Sinv_Tsft = multiWeights->Sinv_Tsft;
+      multiAMcoef->Mmunu.Sinv_Tsft = multiWeights->Sinv_Tsft;
     }
   else /* if no noise-weights: simply add to get A,B,C */
     {
@@ -1273,7 +1273,7 @@ XLALWeighMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *m
   multiAMcoef->Mmunu.Ad = Ad;
   multiAMcoef->Mmunu.Bd = Bd;
   multiAMcoef->Mmunu.Cd = Cd;
-  multiAMcoef->Mmunu.Sinv_Tsft = Sinv_Tsft;
+
 
   return XLAL_SUCCESS;
 
