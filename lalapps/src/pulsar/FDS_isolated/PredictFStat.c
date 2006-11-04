@@ -113,6 +113,7 @@ REAL8 uvar_cosiota;	/* DEPRECATED in favor of cosi */
 REAL8 uvar_Freq;
 REAL8 uvar_Alpha;
 REAL8 uvar_Delta;
+BOOLEAN uvar_SignalOnly;
 
 CHAR *uvar_IFO;
 CHAR *uvar_ephemDir;
@@ -162,7 +163,7 @@ int main(int argc,char *argv[])
 
   /* Initialize code-setup */
   LAL_CALL ( InitPFS(&status, &GV), &status);
-  
+
   { /* Calculating the F-Statistic */
     REAL8 al1, al2, al3;
     REAL8 Ap2 = SQ(GV.aPlus);
@@ -267,7 +268,11 @@ initUserVars (LALStatus *status)
   LALregINTUserVar ( status,	minStartTime, 	 0,  UVAR_OPTIONAL, "Earliest SFT-timestamp to include");
   LALregINTUserVar ( status,	maxEndTime, 	 0,  UVAR_OPTIONAL, "Latest SFT-timestamps to include");
 
+  LALregBOOLUserVar(status,	SignalOnly,	'S', UVAR_OPTIONAL, "Using noise-free data");  
+
   LALregINTUserVar(status,	RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");  
+
+
   
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -499,8 +504,22 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg )
   TRY (LALNormalizeSkyPosition ( status->statusPtr, &skypos, &skypos), status);
 
   TRY ( LALGetMultiAMCoeffs ( status->statusPtr, &multiAMcoef, multiDetStates, skypos ), status);
-  TRY ( LALNormalizeMultiSFTVect(status->statusPtr, &multiPSDs, multiSFTs, uvar_RngMedWindow ), status);
-  TRY ( LALComputeMultiNoiseWeights (status->statusPtr, &multiNoiseWeights, multiPSDs, uvar_RngMedWindow, 0 ), status );
+
+  /* correctly handle --SignalOnly case:
+   * we don't use noise-weights.
+   * The SignalOnly case is characterized by
+   * setting Sh->1 (single-sided), so Sinv=2 (double-sided) 
+   */
+  if ( uvar_SignalOnly )
+    {
+      multiNoiseWeights = NULL;
+      multiAMcoef->Mmunu.Sinv_Tsft = 2.0 * Tsft; 
+    } 
+  else
+    {
+      TRY ( LALNormalizeMultiSFTVect(status->statusPtr, &multiPSDs, multiSFTs, uvar_RngMedWindow ), status);
+      TRY ( LALComputeMultiNoiseWeights (status->statusPtr, &multiNoiseWeights, multiPSDs, uvar_RngMedWindow, 0 ), status );
+    }
 
   /* noise-weighting of Antenna-patterns and compute A,B,C */
   if ( XLALWeighMultiAMCoeffs ( multiAMcoef, multiNoiseWeights ) != XLAL_SUCCESS ) {
