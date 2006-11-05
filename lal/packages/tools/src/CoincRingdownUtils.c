@@ -797,7 +797,191 @@ XLALExtractSnglRingdownFromCoinc(
   
 }
 
+
+/* <lalVerbatim file="CoincRingdownUtilsCP"> */
+int
+XLALCoincRingdownIfos (
+    CoincRingdownTable  *coincRingdown,
+    char                *ifos
+    )
+/* </lalVerbatim> */
+{
+  InterferometerNumber  ifoNumber  = LAL_UNKNOWN_IFO;
+  int                   ifosMatch  = 1;
+  CHAR                  ifo[LIGOMETA_IFO_MAX];
+
+  if ( !coincRingdown )
+  {
+    return ( 0 );
+  }
+
+  for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+  {
+    XLALReturnIFO( ifo, ifoNumber);
+
+    /* check that the coinc is of the correct type */
+    if ( (coincRingdown->snglRingdown[ifoNumber] &&  !strstr(ifos,ifo)) ||
+        (!coincRingdown->snglRingdown[ifoNumber] &&  strstr(ifos,ifo)) )
+    {
+      ifosMatch = 0;
+      break;
+    }
+  }
+  return( ifosMatch );
+}
+
+
+int
+XLALCoincRingdownIfosCut(
+    CoincRingdownTable **coincHead,
+    char                *ifos
+    )
+{
+  CoincRingdownTable    *prevCoinc = NULL;
+  CoincRingdownTable    *thisCoinc = NULL;
+  int                    numCoinc = 0;
+
+  thisCoinc = *coincHead;
+  *coincHead = NULL;
+
+  while ( thisCoinc )
+  {
+    CoincRingdownTable *tmpCoinc = thisCoinc;
+    thisCoinc = thisCoinc->next;
+
+    if ( XLALCoincRingdownIfos( tmpCoinc, ifos ) )
+    {
+      /* ifos match so keep tmpCoinc */
+      if ( ! *coincHead  )
+      {
+        *coincHead = tmpCoinc;
+      }
+      else
+      {
+        prevCoinc->next = tmpCoinc;
+      }
+      tmpCoinc->next = NULL;
+      prevCoinc = tmpCoinc;
+      ++numCoinc;
+    }
+    else
+    {
+      /* discard tmpCoinc */
+      XLALFreeCoincRingdown( &tmpCoinc );
+    }
+  }
+
+  return( numCoinc );
+}
+
+
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+UINT8
+XLALCoincRingdownIdNumber (
+    CoincRingdownTable  *coincRingdown
+    )
+/* </lalVerbatim> */
+{
+  static const char *func = "CoincRingdownIdNumber";
+  SnglRingdownTable    *thisSngl = NULL;
+  InterferometerNumber  ifoNumber  = LAL_UNKNOWN_IFO;
+
+  if ( !coincRingdown )
+  {
+    XLAL_ERROR(func,XLAL_EIO);
+  }
+
+  for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+  {
+    EventIDColumn *thisID = NULL;
+    if ( (thisSngl = coincRingdown->snglRingdown[ifoNumber]) )
+    {
+      /* loop over the list of eventID's until we get to the one that
+       * points to thisCoinc */
+      thisID = thisSngl->event_id;
+
+      while ( thisID )
+      {
+        /* test if thisID points to our coinc */
+        if ( thisID->coincRingdownTable == coincRingdown )
+        {
+          return( thisID->id );
+          break;
+        }
+      }
+    }
+  }
+  /* should never get here */
+  XLALPrintError( "Unable to find id associated to this event" );
+  XLAL_ERROR(func,XLAL_EIO);
+}
+
+
+CoincRingdownTable *
+XLALCoincRingdownSlideCut(
+    CoincRingdownTable **coincHead,
+    int                  slideNum
+    )
+{
+  CoincRingdownTable    *prevCoinc      = NULL;
+  CoincRingdownTable    *thisCoinc      = NULL;
+  CoincRingdownTable    *slideHead      = NULL;
+  CoincRingdownTable    *thisSlideCoinc = NULL;
+
+  UINT8 idNumber = 0;
+
+  if( slideNum < 0 )
+  {
+    slideNum = 5000 - slideNum;
+  }
+
+  thisCoinc = *coincHead;
+  *coincHead = NULL;
+
+  while ( thisCoinc )
+  {
+    idNumber = XLALCoincRingdownIdNumber( thisCoinc );
+
+    if ( (int) ((idNumber % 1000000000) / 100000) == slideNum )
+    {
+      /* add thisCoinc to the slideCoinc list */
+      if ( slideHead )
+      {
+        thisSlideCoinc = thisSlideCoinc->next = thisCoinc;
+      }
+      else
+      {
+        slideHead = thisSlideCoinc = thisCoinc;
+      }
+
+      /* remove from coincHead list */
+      if ( prevCoinc )
+      {
+        prevCoinc->next = thisCoinc->next;
+      }
+
+      thisCoinc = thisCoinc->next;
+      thisSlideCoinc->next = NULL;
+    }
+    else
+    {
+      /* move along the list */
+      if( ! *coincHead )
+      {
+        *coincHead = thisCoinc;
+      }
+
+      prevCoinc = thisCoinc;
+      thisCoinc = thisCoinc->next;
+    }
+  }
+  return( slideHead );
+}
+
+
   
+
+
 /* <lalVerbatim file="CoincRingdownUtilsCP"> */
 INT4 XLALCountCoincRingdown( CoincRingdownTable *head )
 /* </lalVerbatim> */
@@ -816,6 +1000,85 @@ INT4 XLALCountCoincRingdown( CoincRingdownTable *head )
 
   return length;
 }
+
+
+/* <lalVerbatim file="CoincRingdownUtilsCP"> */
+CoincRingdownTable *
+XLALPlayTestCoincRingdown(
+    CoincRingdownTable         *eventHead,
+    LALPlaygroundDataMask      *dataType
+    )
+/* </lalVerbatim> */
+{
+  CoincRingdownTable    *coincEventList = NULL;
+  CoincRingdownTable    *thisEvent = NULL;
+  CoincRingdownTable    *prevEvent = NULL;
+
+  INT8 triggerTime = 0;
+  INT4 isPlay = 0;
+  INT4 numTriggers;
+
+  /* Remove all the triggers which are not of the desired type */
+
+  numTriggers = 0;
+  thisEvent = eventHead;
+
+  if ( (*dataType == playground_only) || (*dataType == exclude_play) )
+  {
+    while ( thisEvent )
+    {
+      CoincRingdownTable *tmpEvent = thisEvent;
+      thisEvent = thisEvent->next;
+
+      triggerTime = XLALCoincRingdownTimeNS( tmpEvent );
+      isPlay = XLALINT8NanoSecIsPlayground( &triggerTime );
+
+      if ( ( (*dataType == playground_only)  && isPlay ) ||
+          ( (*dataType == exclude_play) && ! isPlay) )
+      {
+        /* keep this trigger */
+        if ( ! coincEventList  )
+        {
+          coincEventList = tmpEvent;
+        }
+        else
+        {
+          prevEvent->next = tmpEvent;
+        }
+        tmpEvent->next = NULL;
+        prevEvent = tmpEvent;
+        ++numTriggers;
+      }
+      else
+      {
+        /* discard this template */
+        XLALFreeCoincRingdown ( &tmpEvent );
+      }
+    }
+    eventHead = coincEventList;
+    if ( *dataType == playground_only )
+    {
+      XLALPrintInfo( "Kept %d playground triggers \n", numTriggers );
+    }
+    else if ( *dataType == exclude_play )
+    {
+      XLALPrintInfo( "Kept %d non-playground triggers \n", numTriggers );
+    }
+  }
+  else if ( *dataType == all_data )
+  {
+    XLALPrintInfo( "Keeping all triggers since all_data specified\n" );
+  }
+  else
+  {
+    XLALPrintInfo( "Unknown data type, returning no triggers\n" );
+    eventHead = NULL;
+  }
+
+  return(eventHead);
+}
+
+
 
 /* <lalVerbatim file="CoincRingdownUtilsCP"> */
 int 
@@ -1226,6 +1489,126 @@ XLALCoincRingdownTimeNS (
 }
 
 
+REAL4
+XLALCoincRingdownStat(
+    CoincRingdownTable         *coincRingdown,
+    CoincInspiralStatistic      coincStat
+    )
+{
+  InterferometerNumber  ifoNumber;
+  SnglRingdownTable    *snglRingdown;
+  REAL4                 statValues[LAL_NUM_IFO];
+  REAL4 statValue = 0;
+  INT4  i;
+
+  if( coincStat == no_stat )
+  {
+    return(0);
+  }
+
+  for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+  {
+    if ( (snglRingdown = coincRingdown->snglRingdown[ifoNumber]) )
+    {
+      if ( coincStat == snrsq )
+      {
+        statValue += snglRingdown->snr * snglRingdown->snr;
+      }
+    }
+  }
+
+  return( statValue );
+}
+
+
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+int
+XLALClusterCoincRingdownTable (
+    CoincRingdownTable        **coincList,
+    INT8                        dtimeNS,
+    CoincInspiralStatistic      coincStat
+    )
+/* </lalVerbatim> */
+{
+  static const char *func = "XLALClusterCoincRingdownTable";
+  CoincRingdownTable     *thisCoinc = NULL;
+  CoincRingdownTable     *prevCoinc = NULL;
+  CoincRingdownTable     *nextCoinc = NULL;
+  int                     numCoincClust = 0;
+
+  if ( !coincList )
+  {
+    XLAL_ERROR(func,XLAL_EIO);
+  }
+
+  if ( ! *coincList )
+  {
+    XLALPrintInfo(
+      "XLALClusterCoincRingdownTable: Empty coincList passed as input" );    
+  return( 0 );
+  }
+
+  thisCoinc = (*coincList);
+  nextCoinc = (*coincList)->next;
+  *coincList = NULL;
+
+  while ( nextCoinc )
+  {
+    INT8 thisTime = XLALCoincRingdownTimeNS( thisCoinc );
+    INT8 nextTime = XLALCoincRingdownTimeNS( nextCoinc );
+
+    /* find events within the cluster window */
+    if ( (nextTime - thisTime) < dtimeNS )
+        {
+      REAL4 thisStat =
+        XLALCoincRingdownStat( thisCoinc, coincStat );
+      REAL4 nextStat =
+        XLALCoincRingdownStat( nextCoinc, coincStat );
+
+      if ( nextStat > thisStat )
+      {
+        /* displace previous event in cluster */
+        if( prevCoinc )
+        {
+          prevCoinc->next = nextCoinc;
+        }
+        XLALFreeCoincRingdown( &thisCoinc );
+        thisCoinc = nextCoinc;
+        nextCoinc = thisCoinc->next;
+      }
+      else
+      {
+        /* otherwise just dump next event from cluster */
+        thisCoinc->next = nextCoinc->next;
+        XLALFreeCoincRingdown ( &nextCoinc );
+        nextCoinc = thisCoinc->next;
+      }
+    }
+    else
+    {
+      /* otherwise we keep this unique event trigger */
+      if ( ! (*coincList) )
+      {
+        *coincList = thisCoinc;
+      }
+      prevCoinc = thisCoinc;
+      thisCoinc = thisCoinc->next;
+      nextCoinc = thisCoinc->next;
+      ++numCoincClust;
+    }
+  }
+
+  /* store the last event */
+  if ( ! (*coincList) )
+  {
+    *coincList = thisCoinc;
+  }
+  ++numCoincClust;
+
+  return(numCoincClust);
+}
+
+
 /* <lalVerbatim file="CoincRingdownUtilsCP"> */
 int
 XLALCompareCoincRingdownByTime (
@@ -1307,4 +1690,5 @@ XLALSortCoincRingdown (
   return( eventHead );
 
 }
+
 
