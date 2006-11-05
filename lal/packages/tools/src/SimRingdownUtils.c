@@ -29,6 +29,85 @@ static INT8 geocent_start_time(const SimRingdownTable *x)
   return(XLALGPStoINT8(&x->geocent_start_time));
 }
 
+
+/* <lalVerbatim file="SimInspiralUtilsCP"> */
+void
+XLALPlayTestSimRingdown(     
+    SimRingdownTable         **eventHead,
+    LALPlaygroundDataMask      *dataType     
+    )
+/* </lalVerbatim> */ 
+{
+  SimRingdownTable    *ringdownEventList = NULL;
+  SimRingdownTable    *thisEvent = NULL;
+  SimRingdownTable    *prevEvent = NULL;
+
+  INT8 triggerTime = 0;
+  INT4 isPlay = 0;   
+  INT4 numTriggers;
+  
+  /* Remove all the triggers which are not of the desired type */
+ 
+  numTriggers = 0;
+  thisEvent = *eventHead; 
+ 
+  if ( (*dataType == playground_only) || (*dataType == exclude_play) )
+  {
+    while ( thisEvent )
+    {
+      SimRingdownTable *tmpEvent = thisEvent;
+      thisEvent = thisEvent->next;
+
+      triggerTime = XLALGPStoINT8( &(tmpEvent->geocent_start_time) );
+      isPlay = XLALINT8NanoSecIsPlayground( &triggerTime );
+
+      if ( ( (*dataType == playground_only)  && isPlay ) ||
+          ( (*dataType == exclude_play) && ! isPlay) )
+      {
+        /* keep this trigger */
+        if ( ! ringdownEventList  )
+        {
+          ringdownEventList = tmpEvent;
+        }
+        else
+        {
+          prevEvent->next = tmpEvent;
+        }
+        tmpEvent->next = NULL;
+        prevEvent = tmpEvent;
+        ++numTriggers;
+      }
+      else
+      {
+        /* discard this template */
+        XLALFreeSimRingdown ( &tmpEvent );
+      }
+    }
+    *eventHead = ringdownEventList;
+    if ( *dataType == playground_only )
+    {
+      XLALPrintInfo( "Kept %d playground triggers \n", numTriggers );
+    }
+    else if ( *dataType == exclude_play )
+    {
+      XLALPrintInfo( "Kept %d non-playground triggers \n", numTriggers );    }
+  }
+  else if ( *dataType == all_data )
+  {
+    XLALPrintInfo(
+        "XLALPlayTestSimRingdown: Keeping all triggers\n" );
+  }
+  else
+  {
+    XLALPrintInfo(
+        "XLALPlayTestSimRingdown: Unknown data type, returning no triggers\n"
+        );
+    *eventHead = NULL;
+  }
+
+}
+
+
 int
 XLALSimRingdownInSearchedData(
     SimRingdownTable         **eventHead,
@@ -144,6 +223,27 @@ XLALSortSimRingdown(
   LALFree(array);
 }
 
+
+/* <lalVerbatim file="SimRingdownUtilsCP"> */
+int
+XLALFreeSimRingdown (
+    SimRingdownTable **eventHead
+    )
+/* </lalVerbatim> */
+{
+  EventIDColumn        *eventId;
+
+  while ( (*eventHead)->event_id )
+  {
+    /* free any associated event_id's */
+    eventId = (*eventHead)->event_id;
+    (*eventHead)->event_id = (*eventHead)->event_id->next;
+    LALFree( eventId );
+  }
+  LALFree( *eventHead );
+
+  return (0);
+}
 
 
 int
