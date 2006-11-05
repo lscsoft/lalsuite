@@ -327,7 +327,8 @@ LALCompareRingdowns (
 {
   INT8    ta,  tb;
   REAL4   df, dQ;
-  REAL4   df_ab, df_ba, dQ_ab, dQ_ba, f_a, f_b, Q_a, Q_b, ds_sqA, ds_sqB;
+  REAL4   fa, fb, Qa, Qb, Fa, Fb, Xa, Xb, Ya, Yb, Omegaa, Omegab, Ra, Rb, D;
+  REAL4   AA, BB, CC, DD, EE;
   InterferometerNumber ifoaNum,  ifobNum;
   SnglRingdownAccuracy aAcc, bAcc;
   
@@ -394,24 +395,32 @@ LALCompareRingdowns (
   }
   if ( params->test == ds_sq )
   {
-    df_ab = ( aPtr->frequency - bPtr->frequency );
-    df_ba = ( bPtr->frequency - aPtr->frequency );
-    dQ_ab = ( aPtr->quality - bPtr->quality );
-    dQ_ba = ( bPtr->quality - aPtr->quality );
-   
-    f_a = aPtr->frequency;
-    f_b = bPtr->frequency;
-    Q_a = aPtr->quality;
-    Q_b = bPtr->quality;
+    fa = aPtr->frequency;
+    fb = bPtr->frequency;
+    Qa = aPtr->quality;
+    Qb = bPtr->quality;
 
-    ds_sqA = 1/8 * dQ_ab * dQ_ab / Q_b / Q_b - 1/4 * dQ_ab / Q_b * df_ab / f_b
-             + Q_b * Q_b * df_ab * df_ab / f_b / f_b;
+    /* transforming to a space where the contours of constant ds^2 are circles*/
+    Fa = log(fa);
+    Xa = Fa + 1.0/16 * pow(Qa,-2) + 1.0/256 * pow(Qa,-4) - 11.0/3072 * pow(Qa,-6) 
+           + 49.0/32768 * pow(Qa,-8) - 179.0/327680 * pow(Qa,-10);
+    Ya = 1.0/sqrt(2) * ( pow(Qa,-1) - 1.0/6 * pow(Qa,-3) + 27.0/640 * pow(Qa,-5) 
+           - 43.0/3584 * pow(Qa,-7) + 1067.0/294912 * pow(Qa,-9) );
+    Omegaa = pow(Ya,6)/5400 + pow(Ya,4)/756 + pow(Ya,2)/120 + 1.0/24 + 1.0/8 * pow(Ya,-2);
+    Ra = sqrt( aAcc.ds_sq / Omegaa);  /* radius of circle */
 
-    ds_sqB = 1/8 * dQ_ba * dQ_ba / Q_a / Q_a - 1/4 * dQ_ba / Q_a * df_ba / f_a
-             + Q_a * Q_a * df_ba * df_ba / f_a / f_a;
+    Fb = log(fb);
+    Xb = Fb + 1.0/16 * pow(Qb,-2) + 1.0/256 * pow(Qb,-4) - 11.0/3072 * pow(Qb,-6)
+            + 49.0/32768 * pow(Qb,-8) - 179.0/327680 * pow(Qb,-10);
+    Yb = 1.0/sqrt(2) * ( pow(Qb,-1) - 1.0/6 * pow(Qb,-3) + 27.0/640 * pow(Qb,-5)
+            - 43.0/3584 * pow(Qb,-7) + 1067.0/294912 * pow(Qb,-9) );
+    Omegab = pow(Yb,6)/5400 + pow(Yb,4)/756 + pow(Yb,2)/120 + 1.0/24 + 1.0/8 * pow(Yb,-2); 
+    
+    Rb = sqrt( bAcc.ds_sq / Omegab); 
 
+    D = sqrt( pow((Xa - Xb),2) + pow((Ya - Yb),2) ); /*geometric distance between templates*/
 
-    if ( ( ds_sqA <= aAcc.ds_sq ) && ( ds_sqB <= (aAcc.ds_sq) ))
+    if ( D < (Ra+Rb) )
     {
       LALInfo( status, "Triggers pass the ds_sq coincidence test" );
       params->match = 1;
@@ -509,53 +518,94 @@ LALIfoCutSingleRingdown(
     )
 /* </lalVerbatim> */
 {
-  SnglRingdownTable    *eventList = NULL;
-  SnglRingdownTable    *prevEvent = NULL;
+  SnglRingdownTable    *ifoHead   = NULL;
   SnglRingdownTable    *thisEvent = NULL;
 
-  INITSTATUS( status, "LALIfoScanSingleRingdown", SNGLRINGDOWNUTILSC );
+  INITSTATUS( status, "LALIfoCutSingleRingdown", SNGLRINGDOWNUTILSC );
   ATTATCHSTATUSPTR( status );
 
-  /* check that eventHead is non-null */
-  ASSERT( eventHead, status, 
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+  ifoHead = XLALIfoCutSingleRingdown( eventHead, ifo );
 
+  /* free events from other ifos */
+  while ( *eventHead )
+  {
+    thisEvent = *eventHead;
+    *eventHead = (*eventHead)->next;
+
+    XLALFreeSnglRingdown( &thisEvent );
+  }
+
+  *eventHead = ifoHead;
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}
+
+/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+SnglRingdownTable *
+XLALIfoCutSingleRingdown(
+    SnglRingdownTable         **eventHead,
+    char                       *ifo
+    )
+/* </lalVerbatim> */
+{
+  static const char *func = "IfoCutSingleRingdown";
+  SnglRingdownTable    *prevEvent   = NULL;
+  SnglRingdownTable    *thisEvent   = NULL;
+  SnglRingdownTable    *ifoHead     = NULL;
+  SnglRingdownTable    *thisIfoTrig = NULL;
+
+  /* check that eventHead is non-null */
+  if ( ! eventHead )
+    {
+      XLAL_ERROR_NULL(func,XLAL_EIO);
+     }
   /* Scan through a linked list of sngl_ringdown tables and return a
      pointer to the head of a linked list of tables for a specific IFO */
 
   thisEvent = *eventHead;
+  *eventHead = NULL;
   
   while ( thisEvent )
   {
-    SnglRingdownTable *tmpEvent = thisEvent;
-    thisEvent = thisEvent->next;
-
-    if ( ! strcmp( tmpEvent->ifo, ifo ) )
+    if ( ! strcmp( thisEvent->ifo, ifo ) )
     {
       /* ifos match so keep this event */
-      if ( ! eventList  )
+      if ( ifoHead  )
       {
-        eventList = tmpEvent;
+        thisIfoTrig = thisIfoTrig->next = thisEvent;
       }
       else
       {
-        prevEvent->next = tmpEvent;
+        ifoHead = thisIfoTrig = thisEvent;
+       }
+    
+      /* remove from eventHead list */
+      if ( prevEvent )
+      {
+        prevEvent->next = thisEvent->next;
       }
-      tmpEvent->next = NULL;
-      prevEvent = tmpEvent;
+
+      /* move to next event */
+      thisEvent = thisEvent->next;
+      /* terminate ifo list */
+      thisIfoTrig->next = NULL;
     }
     else
     {
-      /* discard this template */
-      LALFreeSnglRingdown ( status->statusPtr, &tmpEvent );
+      /* move along the list */
+      if ( ! *eventHead )
+      {
+        *eventHead = thisEvent;
+      }
+
+      prevEvent = thisEvent;
+      thisEvent = thisEvent->next;
     }
   }
-  *eventHead = eventList; 
 
+  return( ifoHead );
+}
 
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
-}  
 
 /* <lalVerbatim file="SnglRingdownUtilsCP"> */
 void
