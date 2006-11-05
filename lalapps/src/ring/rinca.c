@@ -111,7 +111,9 @@ static void print_usage(char *program)
       "  [--h2-distance-accuracy] h2_ddeff   specify the effective distance accuracy of H2\n"\
       "  [--l1-distance-accuracy] l1_ddeff   specify the effective distance accuracy of L1\n"\
       "\n"\
-      "  [--ds_sq-accuracy]  ds_sq     specify the ds squared accuracy\n"\
+      "  [--h1-ds_sq-accuracy]  ds_sq     specify the ds squared accuracy\n"\
+      "  [--h2-ds_sq-accuracy]  ds_sq     specify the ds squared accuracy\n"\
+      "  [--l1-ds_sq-accuracy]  ds_sq     specify the ds squared accuracy\n"\
       "\n"\
       "   --data-type        data_type specify the data type, must be one of\n"\
       "                                (playground_only|exclude_play|all_data)\n"\
@@ -226,7 +228,9 @@ int main( int argc, char *argv[] )
     {"h1-dist-accuracy",    required_argument, 0,                    'n'},
     {"h2-dist-accuracy",    required_argument, 0,                    'o'},
     {"l1-dist-accuracy",    required_argument, 0,                    'p'},
-    {"ds_sq-accuracy",      required_argument, 0,                    'A'},
+    {"h1-ds_sq-accuracy",   required_argument, 0,                    'E'},
+    {"h2-ds_sq-accuracy",   required_argument, 0,                    'F'},
+    {"l1-ds_sq-accuracy",   required_argument, 0,                    'G'},
     {"parameter-test",      required_argument, 0,                    'a'},
     {"gps-start-time",      required_argument, 0,                    's'},
     {"gps-end-time",        required_argument, 0,                    't'},
@@ -293,7 +297,7 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "A:B:C:D:H:I:J:N:O:P:T:V:Z:"
+        "B:C:D:E:F:G:H:I:J:N:O:P:T:V:Z:"
         "a:c:d:e:h:i:k:n:o:p:s:t:x:z:"
         "@:&:", 
         long_options, &option_index );
@@ -358,14 +362,23 @@ int main( int argc, char *argv[] )
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
-      case 'A':
-        /* ds^2 accuracy */
+      case 'E':
+        /* ds^2 accuracy H1*/
         accuracyParams.ifoAccuracy[LAL_IFO_H1].ds_sq = atof(optarg);
-        accuracyParams.ifoAccuracy[LAL_IFO_H2].ds_sq = atof(optarg);
-        accuracyParams.ifoAccuracy[LAL_IFO_L1].ds_sq = atof(optarg);
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
+      case 'F':
+        /* ds^2 accuracy H2*/
+        accuracyParams.ifoAccuracy[LAL_IFO_H2].ds_sq = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
+     case 'G':
+        /* ds^2 accuracy L1*/
+        accuracyParams.ifoAccuracy[LAL_IFO_L1].ds_sq = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
 
       case 'H':
         /* frequency accuracy H1, argument is in Hz */
