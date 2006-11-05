@@ -2,7 +2,7 @@
  * 
  * File Name: coincringread.c
  *
- * Author: Goggin, L. M. based on coire.c by Fairhurst, S
+ * Author: Goggin, L. M. based on v 1.11 of coire.c by Fairhurst, S
  * 
  * 
  *-----------------------------------------------------------------------
@@ -76,7 +76,17 @@ static void print_usage(char *program)
       "  --output             output   write output data to file: output\n"\
       "  --summary-file       summ     write trigger analysis summary to summ\n"\
       "\n"\
+     "  --data-type          datatype specify the data type, must be one of\n"\
+      "                                (playground_only|exclude_play|all_data)\n"\
+      "\n"\
+      " [--discard-ifo]       ifo      discard all triggers from ifo\n"\
+      " [--coinc-cut]         ifos     only keep triggers from IFOS\n"\
+      " [--extract-slide]     slide    only keep triggers from specified slide\n"\
+      "\n"\
+      " [--num-slides]        slides   number of time slides performed \n"\
+      "                                (used in clustering)\n"\
       " [--sort-triggers]              time sort the coincident triggers\n"\
+      " [--coinc-stat]        stat     use coinc statistic for cluster/cut\n"\
       " [--injection-file]    inj_file read injection parameters from inj_file\n"\
       " [--injection-window]  inj_win  trigger and injection coincidence window (ms)\n"\
       " [--missed-injections] missed   write missed injections to file missed\n"\
@@ -94,8 +104,7 @@ static char *get_next_line( char *line, size_t size, FILE *fp )
 }
 
 int sortTriggers = 0;
-/*LALPlaygroundDataMask dataType;*/
-/*dataType = all_data;*/
+LALPlaygroundDataMask dataType;
 
 int main( int argc, char *argv[] )
 {
@@ -107,10 +116,15 @@ int main( int argc, char *argv[] )
   extern int vrbflg;
   CHAR *userTag = NULL;
   CHAR comment[LIGOMETA_COMMENT_MAX];
+  char *ifos = NULL;
+  char *ifo  = NULL;
   char *inputGlob = NULL;
   char *inputFileName = NULL;
   char *outputFileName = NULL;
   char *summFileName = NULL;
+  CoincInspiralStatistic coincstat = no_stat;
+  REAL4 statThreshold = 0;
+  INT8 cluster_dt = 0;
   char *injectFileName = NULL;
   INT8 injectWindowNS = -1;
   char *missedFileName = NULL;
@@ -140,11 +154,15 @@ int main( int argc, char *argv[] )
   SimRingdownTable     *missedSimHead = NULL;
   SimRingdownTable     *missedSimCoincHead = NULL;
   SimRingdownTable     *tmpSimEvent = NULL;
-
+  
+  int                   extractSlide = 0;
+  int                   numSlides = 0;
   int                   numTriggers = 0;
   int                   numCoincs = 0;
   int                   numEventsInIfos = 0;
+  int                   numEventsPlayTest = 0;
   int                   numEventsCoinc = 0;
+  int                   numClusteredEvents = 0;
   int                   numSnglFound = 0;
   int                   numCoincFound = 0;
 
@@ -205,10 +223,18 @@ int main( int argc, char *argv[] )
       {"userTag",                 required_argument,      0,              'Z'},
       {"comment",                 required_argument,      0,              'c'},
       {"version",                 no_argument,            0,              'V'},
+      {"data-type",               required_argument,      0,              'k'},
       {"glob",                    required_argument,      0,              'g'},
       {"input",                   required_argument,      0,              'i'},
       {"output",                  required_argument,      0,              'o'},
       {"summary-file",            required_argument,      0,              'S'},
+      {"extract-slide",           required_argument,      0,              'e'},
+      {"num-slides",              required_argument,      0,              'N'},
+      {"coinc-stat",              required_argument,      0,              'C'},
+      {"stat-threshold",          required_argument,      0,              'E'},
+      {"cluster-time",            required_argument,      0,              't'},
+      {"discard-ifo",             required_argument,      0,              'd'},
+      {"coinc-cut",               required_argument,      0,              'D'},
       {"injection-file",          required_argument,      0,              'I'},
       {"injection-window",        required_argument,      0,              'T'},
       {"missed-injections",       required_argument,      0,              'm'},
@@ -220,8 +246,8 @@ int main( int argc, char *argv[] )
     int option_index = 0;
     size_t optarg_len;
 
-    c = getopt_long_only ( argc, argv, "c:g:h:i:m:o:z:"
-                                       "I:S:T:V:Z", long_options, 
+    c = getopt_long_only ( argc, argv, "c:d:e:g:h:i:k:m:o:t:z:"
+                                       "C:D:E:I:N:S:T:V:Z", long_options, 
                                        &option_index );
 
     /* detect the end of the options */
@@ -315,6 +341,35 @@ int main( int argc, char *argv[] )
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
+
+      case 'e':
+        /* store the number of slides */
+        extractSlide = atoi( optarg );
+        if ( extractSlide == 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+             "extractSlide must be non-zero: "
+             "(%d specified)\n",
+             long_options[option_index].name, extractSlide );
+          exit( 1 );
+         }
+        ADD_PROCESS_PARAM( "int", "%d", extractSlide );
+        break;   
+ 
+      case 'N':
+        /* store the number of slides */
+        numSlides = atoi( optarg );
+        if ( numSlides < 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "numSlides >= 0: "
+              "(%d specified)\n",
+              long_options[option_index].name, numSlides );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "int", "%d", numSlides );
+        break;
+
       case 'S':
         /* create storage for the summ file name */
         optarg_len = strlen( optarg ) + 1;
@@ -323,11 +378,105 @@ int main( int argc, char *argv[] )
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
+      case 'k':
+        /* type of data to analyze */
+        if ( ! strcmp( "playground_only", optarg ) )
+        {
+          dataType = playground_only;
+        }
+        else if ( ! strcmp( "exclude_play", optarg ) )
+        {
+          dataType = exclude_play;
+        }
+        else if ( ! strcmp( "all_data", optarg ) )
+        {
+          dataType = all_data;
+        }
+        else
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "unknown data type, %s, specified: "
+              "(must be playground_only, exclude_play or all_data)\n",
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+
+      case 'C':
+        /* choose the coinc statistic */
+        {        
+          if ( ! strcmp( "snrsq", optarg ) )
+          {
+            coincstat = snrsq;
+          }
+          else if ( ! strcmp( "effective_snrsq", optarg) )
+          {
+            coincstat = effective_snrsq;
+          }
+          else
+          {
+            fprintf( stderr, "invalid argument to  --%s:\n"
+               "unknown coinc statistic:\n "
+               "%s (must be one of:\n"
+               "snrsq, effective_snrsq, bitten_l, s3_snr_chi_stat)\n",
+                long_options[option_index].name, optarg);
+            exit( 1 );
+          }
+          ADD_PROCESS_PARAM( "string", "%s", optarg );
+        }
+        break; 
+
+      case 'E':
+        /* store the stat threshold for a cut */
+        statThreshold = atof( optarg );
+        if ( statThreshold <= 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+             "statThreshold must be positive: (%f specified)\n",
+              long_options[option_index].name, statThreshold );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%f", statThreshold );
+        break;
+         
+      case 't':
+        /* cluster time is specified on command line in ms */
+        cluster_dt = (INT8) atoi( optarg );
+        if ( cluster_dt <= 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "custer window must be > 0: "
+              "(%lld specified)\n",
+              long_options[option_index].name, cluster_dt );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "int", "%lld", cluster_dt );
+        /* convert cluster time from ms to ns */
+        cluster_dt *= 1000000LL;
+        break;
+
       case 'I':
         /* create storage for the injection file name */
         optarg_len = strlen( optarg ) + 1;
         injectFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
         memcpy( injectFileName, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+
+      case 'd':
+        /* discard all triggers from ifo */
+        optarg_len = strlen( optarg ) + 1;
+        ifo = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( ifo, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+
+      case 'D':
+        /* keep only coincs found in ifos */
+        optarg_len = strlen( optarg ) + 1;
+        ifos = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( ifos, optarg, optarg_len );
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
@@ -409,6 +558,28 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
+  /* check that Data Type has been specified */
+  if ( dataType == unspecified_data_type )
+  {
+    fprintf( stderr, "Error: --data-type must be specified\n");
+    exit(1);
+  }
+
+  /* check that if clustering is being done that we have all the options */
+  if ( cluster_dt && (coincstat == no_stat) )
+  {
+    fprintf( stderr, 
+        "--coinc-stat must be specified if --cluster-time is given\n" );
+    exit( 1 );
+  }
+ 
+  /* check that if stat cut is being done that we have all the options */
+  if ( statThreshold && (coincstat == no_stat) )
+  {
+    fprintf( stderr, 
+        "--coinc-stat must be specified if --stat-threshold is given\n" );
+    exit( 1 );
+  }
 
   /* check that we have all the options to do injections */
   if ( injectFileName && injectWindowNS < 0 )
@@ -526,6 +697,26 @@ int main( int argc, char *argv[] )
       }
     }
     
+    /* Discard triggers from requested ifo */
+    if ( ifo )
+    {
+      SnglRingdownTable *ifoTrigList = NULL;
+ 
+      ifoTrigList = XLALIfoCutSingleRingdown( &ringdownFileList, ifo );
+ 
+       /* discard events from ifo */
+       while ( ifoTrigList )
+       {
+         thisSngl = ifoTrigList;
+         ifoTrigList = ifoTrigList->next;
+         LALFreeSnglRingdown( &status, &thisSngl );
+       }
+       numFileTriggers = XLALCountSnglRingdown( ringdownFileList );
+       if ( vrbflg ) fprintf( stdout, 
+          "Have %d triggers after discarding those from ifo %s\n",
+           numFileTriggers, ifo );
+    }
+
     /* If there are any remaining triggers ... */
     if ( ringdownFileList )
     {
@@ -561,7 +752,30 @@ int main( int argc, char *argv[] )
     }
     numCoincs += numFileCoincs;
 
-    
+    /* keep only the requested coincs */
+   if( ifos )
+     {
+       numFileCoincs = XLALCoincRingdownIfosCut( &coincFileHead, ifos );
+       if ( vrbflg ) fprintf( stdout,
+           "Kept %d coincs from %s instruments\n", numFileCoincs, ifos );
+       numEventsInIfos += numFileCoincs;
+     }
+ 
+     /* Do playground_only or exclude_play cut */
+     if ( dataType != all_data )
+     {
+       coincFileHead = XLALPlayTestCoincRingdown( coincFileHead, 
+           &dataType );
+       /* count the triggers, scroll to end of list */
+       numFileCoincs = XLALCountCoincRingdown( coincFileHead );
+ 
+       if ( dataType == playground_only && vrbflg ) fprintf( stdout, 
+         "Have %d playground triggers\n", numFileCoincs );
+       else if ( dataType == exclude_play && vrbflg ) fprintf( stdout, 
+         "Have %d non-playground triggers\n", numFileCoincs );
+       numEventsPlayTest += numFileCoincs;
+     }
+
     /* add coincs to list */
     if( numFileCoincs )
     {
@@ -582,8 +796,53 @@ int main( int argc, char *argv[] )
   {
     fprintf( stdout, "Read in %d triggers\n", numTriggers );
     fprintf( stdout, "Recreated %d coincs\n", numCoincs );
+    if ( ifos )
+    {
+      fprintf( stdout, "Have %d coincs from %s\n", numEventsInIfos,
+          ifos );
+    }
+    if ( dataType != all_data ) 
+    {
+      fprintf( stdout, 
+          "Have %d coincs after play test\n", numEventsPlayTest);
+    }
   }
 
+  for ( thisSearchSumm = searchSummList; thisSearchSumm; 
+      thisSearchSumm = thisSearchSumm->next )
+  {
+    UINT8 outPlayNS, outStartNS, outEndNS, triggerTimeNS;
+    LIGOTimeGPS inPlay, outPlay;
+    outStartNS = XLALGPStoINT8( &(thisSearchSumm->out_start_time) );
+    outEndNS = XLALGPStoINT8( &(thisSearchSumm->out_end_time) );
+    triggerTimeNS = outEndNS - outStartNS;
+ 
+    /* check for events and playground */
+    if ( dataType != all_data )
+    {
+      XLALPlaygroundInSearchSummary( thisSearchSumm, &inPlay, &outPlay );
+      outPlayNS = XLALGPStoINT8( &outPlay );
+ 
+      if ( dataType == playground_only )
+      {
+        /* increment the total trigger time by the amount of playground */
+        triggerInputTimeNS += outPlayNS;
+      }
+      else if ( dataType == exclude_play )
+      {
+        /* increment the total trigger time by the out time minus */
+        /* the time that is in the playground                     */
+        triggerInputTimeNS += triggerTimeNS - outPlayNS;
+      }
+    }
+    else
+    {
+      /* increment the total trigger time by the out time minus */
+      triggerInputTimeNS += triggerTimeNS;
+    }
+  }
+ 
+  
 
   /*
    *
@@ -592,7 +851,7 @@ int main( int argc, char *argv[] )
    */
 
 
-  if ( sortTriggers )
+  if ( sortTriggers || cluster_dt )
   {
     if ( vrbflg ) fprintf( stdout, "sorting coinc ringdown trigger list..." );
     coincHead = XLALSortCoincRingdown( coincHead, 
@@ -612,6 +871,7 @@ int main( int argc, char *argv[] )
     if ( vrbflg ) 
       fprintf( stdout, "reading injections from %s... ", injectFileName );
 #if 0
+why??????????????
     numSimEvents = XLALSimRingdownTableFromLIGOLw(injectFileName, 0, 0 );
 
     if ( vrbflg ) fprintf( stdout, "got %d injections\n", numSimEvents );
@@ -634,6 +894,15 @@ int main( int argc, char *argv[] )
           injectFileName );
       exit( 1 );
     }
+
+    /* keep play/non-play/all injections */
+    if ( dataType == playground_only && vrbflg ) fprintf( stdout, 
+        "Keeping only playground injections\n" );
+    else if ( dataType == exclude_play && vrbflg ) fprintf( stdout, 
+        "Keeping only non-playground injections\n" );
+    else if ( dataType == all_data && vrbflg ) fprintf( stdout, 
+         "Keeping all injections\n" );
+    XLALPlayTestSimRingdown( &simEventHead, &dataType );
     
     /* keep only injections in times analyzed */
     numSimInData = XLALSimRingdownInSearchedData( &simEventHead, 
@@ -705,6 +974,103 @@ int main( int argc, char *argv[] )
 
   } 
 
+
+  /*
+   *
+   * extract specified slide
+   *
+   */
+ 
+   if ( extractSlide )
+   {
+     CoincRingdownTable *slideCoinc = NULL;
+     slideCoinc = XLALCoincRingdownSlideCut( &coincHead, extractSlide );
+     /* free events from other slides */
+     while ( coincHead )
+     {
+       thisCoinc = coincHead;
+       coincHead = coincHead->next;
+       XLALFreeCoincRingdown( &thisCoinc );
+     }
+ 
+     /* move events to coincHead */
+     coincHead = slideCoinc;
+     slideCoinc = NULL;
+   }
+
+
+   /*
+    *
+    * cluster the remaining events
+    *
+    */
+ 
+ 
+   if ( coincHead && cluster_dt )
+   {
+     if ( vrbflg ) fprintf( stdout, "clustering remaining triggers... " );
+ 
+     if ( !numSlides )
+     {
+       numClusteredEvents = XLALClusterCoincRingdownTable( &coincHead, 
+           cluster_dt, coincstat );
+     }
+     else
+     { 
+       int slide = 0;
+       int numClusteredSlide = 0;
+       CoincRingdownTable *slideCoinc = NULL;
+       CoincRingdownTable *slideClust = NULL;
+       
+       if ( vrbflg ) fprintf( stdout, "splitting events by slide\n" );
+
+       for( slide = -numSlides; slide < (numSlides + 1); slide++)
+       {
+         if ( vrbflg ) fprintf( stdout, "slide number %d; ", slide );
+         /* extract the slide */
+         slideCoinc = XLALCoincRingdownSlideCut( &coincHead, slide );
+         /* run clustering */
+         numClusteredSlide = XLALClusterCoincRingdownTable( &slideCoinc, 
+           cluster_dt, coincstat);
+         
+         if ( vrbflg ) fprintf( stdout, "%d clustered events \n", 
+           numClusteredSlide );
+         numClusteredEvents += numClusteredSlide;
+
+         /* add clustered triggers */
+         if( slideCoinc )
+         {
+           if( slideClust )
+           {
+             thisCoinc = thisCoinc->next = slideCoinc;
+           }
+           else
+           {
+             slideClust = thisCoinc = slideCoinc;
+           }
+           /* scroll to end of list */
+           for( ; thisCoinc->next; thisCoinc = thisCoinc->next);
+         }
+      }
+ 
+      /* free coincHead -- although we expect it to be empty */
+      while ( coincHead )
+      {
+        thisCoinc = coincHead;
+        coincHead = coincHead->next;
+        XLALFreeCoincRingdown( &thisCoinc );
+      }
+ 
+      /* move events to coincHead */
+      coincHead = slideClust;
+       slideClust = NULL;
+     }
+     
+     if ( vrbflg ) fprintf( stdout, "done\n" );
+     if ( vrbflg ) fprintf( stdout, "%d clustered events \n", 
+         numClusteredEvents );
+  }
+ 
 
   /*
    *
@@ -816,12 +1182,30 @@ int main( int argc, char *argv[] )
     /* write out a summary file */
     fp = fopen( summFileName, "w" );
 
-    fprintf( fp, "using all input data\n" );
+    switch ( dataType )
+    {
+      case playground_only:
+        fprintf( fp, "using data from playground times only\n" );
+        break;
+      case exclude_play:
+        fprintf( fp, "excluding all triggers in playground times\n" );
+        break;
+      case all_data:
+        fprintf( fp, "using all input data\n" );
+        break;
+      default:
+        fprintf( stderr, "data set not defined\n" );
+        exit( 1 );
+    }
 
     fprintf( fp, "read triggers from %d files\n", numInFiles );
     fprintf( fp, "number of triggers in input files: %d \n", numTriggers );
     fprintf( fp, "number of reconstructed coincidences: %d \n", numCoincs );
-    
+    if ( ifos )
+    {
+      fprintf( fp, "number of triggers from %s ifos: %d \n", ifos, 
+          numEventsInIfos );
+    }    
     XLALINT8toGPS( &triggerTime, triggerInputTimeNS );
     fprintf( fp, "amount of time analysed for triggers %d sec %d ns\n", 
         triggerTime.gpsSeconds, triggerTime.gpsNanoSeconds );
@@ -840,6 +1224,22 @@ int main( int argc, char *argv[] )
 
       fprintf( fp, "efficiency: %f \n", 
           (REAL4) numCoincFound / (REAL4) numSimInData );
+    }
+
+    if ( extractSlide )
+    {
+      fprintf( fp, "kept only triggers from slide %d\n", extractSlide );
+    }
+
+    if ( cluster_dt )
+    {
+      if ( numSlides )
+      {
+        fprintf( fp, "clustering triggers from %d slides separately\n",
+            numSlides );
+      }
+      fprintf( fp, "number of event clusters with %lld msec window: %d\n",
+          cluster_dt/ 1000000LL, numClusteredEvents ); 
     }
 
     fclose( fp ); 
