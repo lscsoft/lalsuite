@@ -350,8 +350,24 @@ tagRingdownAccuracyList
   INT8                      lightTravelTime[LAL_NUM_IFO][LAL_NUM_IFO];
 }
 RingdownAccuracyList;
-  
+ 
+#if 0 
+/* <lalVerbatim> */
+typedef enum
+{
+  none,
+  snr
+}
+SnglRingdownClusterChoice;
 
+typedef enum
+{
+  no_stat,
+  snr_sq,
+  effective_snrsq
+}
+CoincRingdownStatistic;
+#endif
 
 /*
  *
@@ -1322,7 +1338,8 @@ XLALIfoCutSnglBurst (
 /*
  *  ringdown specific functions
  * 
- *      */
+ *  
+ */
 
 /* sngl ringdown */
 
@@ -1379,6 +1396,12 @@ LALIfoCutSingleRingdown(
     );
 
 SnglRingdownTable *
+XLALIfoCutSingleRingdown(
+    SnglRingdownTable         **eventHead,
+    char                       *ifo
+    );
+
+SnglRingdownTable *
 XLALTimeCutSingleRingdown(
     SnglRingdownTable          *eventList,
     LIGOTimeGPS                *startTime,
@@ -1400,6 +1423,7 @@ LALIfoCountSingleRingdown(
     SnglRingdownTable          *input,
     InterferometerNumber        ifoNumber
     );
+
 
 void
 LALTimeSlideSingleRingdown(
@@ -1435,12 +1459,6 @@ XLALCountSnglRingdown(
     );
 
 /* sim ringdown */
-int 
-XLALSimRingdownInSearchedData(
-    SimRingdownTable         **eventHead,
-    SearchSummaryTable        *summList
-    );
-
 void
 XLALSortSimRingdown(
     SimRingdownTable **head,
@@ -1455,21 +1473,16 @@ XLALCompareSimRingdownByGeocentStartTime(
     );
 
 int
-XLALSnglSimRingdownTest (
-    SimRingdownTable  **simHead,
-    SnglRingdownTable **eventHead,
-    SimRingdownTable  **missedSimHead,
-    SnglRingdownTable **missedSnglHead,
-    INT8                injectWindowNS
+XLALFreeSimRingdown (
+    SimRingdownTable **eventHead
     );
+ 
+void
+XLALPlayTestSimRingdown(
+     SimRingdownTable          **eventHead,
+     LALPlaygroundDataMask      *dataType
+     );
 
-int
-XLALCoincSimRingdownTest (   
-    SimRingdownTable   **simHead,
-    CoincRingdownTable **coincHead,
-    SimRingdownTable   **missedSimHead,
-    CoincRingdownTable **missedCoincHead
-    );
 
 int
 XLALSimRingdownInSearchedData(
@@ -1483,25 +1496,26 @@ XLALReturnSimRingdownEndTime (
     CHAR             *ifo
     );
 
+int
+XLALSnglSimRingdownTest (
+    SimRingdownTable  **simHead,
+    SnglRingdownTable **eventHead,
+    SimRingdownTable  **missedSimHead,
+    SnglRingdownTable **missedSnglHead,
+    INT8                injectWindowNS
+    );
+
+int
+XLALCoincSimRingdownTest (
+    SimRingdownTable   **simHead,
+    CoincRingdownTable **coincHead,
+    SimRingdownTable   **missedSimHead,
+    CoincRingdownTable **missedCoincHead
+    );
+
+
 
 /* coinc ringdown */
-int
-XLALRecreateRingdownCoincFromSngls(
-    CoincRingdownTable        **coincPtr,
-    SnglRingdownTable          *snglRingdown
-    );
-
-int 
-XLALCompareCoincRingdownByTime (
-    const void *a,
-    const void *b
-    );
-
-CoincRingdownTable *
-XLALSortCoincRingdown (
-    CoincRingdownTable  *eventHead,
-    int(*comparfunc)    (const void *, const void *)
-    );
 
 void
 LALCreateTwoIFORingdownCoincList(
@@ -1536,7 +1550,6 @@ XLALFreeCoincRingdown(
     CoincRingdownTable        **coincPtr
     );
 
-
 void
 LALAddSnglRingdownToCoinc(
     LALStatus                  *status,
@@ -1566,6 +1579,72 @@ LALExtractSnglRingdownFromCoinc(
     CoincRingdownTable         *coincRingdown,
     LIGOTimeGPS                *gpsStartTime,
     INT4                        slideNum
+    );
+
+int
+XLALRecreateRingdownCoincFromSngls(
+    CoincRingdownTable        **coincPtr,
+    SnglRingdownTable          *snglRingdown
+    );
+
+
+INT8 
+XLALCoincRingdownTimeNS (
+    const CoincRingdownTable         *coincRingdown
+    );
+
+REAL4
+XLALCoincRingdownStat(
+    CoincRingdownTable         *coincRingdown,
+    CoincInspiralStatistic      coincStat
+    );
+
+int 
+XLALClusterCoincRingdownTable (
+    CoincRingdownTable        **coincList,
+    INT8                        dtimeNS,
+    CoincInspiralStatistic      coincStat
+    );
+
+int
+XLALCompareCoincRingdownByTime (
+    const void *a,
+    const void *b
+    );
+
+CoincRingdownTable *
+XLALSortCoincRingdown (
+    CoincRingdownTable  *eventHead,
+    int(*comparfunc)    (const void *, const void *)
+    );
+
+int
+XLALCoincRingdownIfos (
+    CoincRingdownTable  *coincRingdown,
+    char                *ifos    
+    );
+
+int
+XLALCoincRingdownIfosCut(
+    CoincRingdownTable **coincHead,
+    char                *ifos    
+     );
+
+UINT8
+XLALCoincRingdownIdNumber (
+    CoincRingdownTable  *coincRingdown
+    );
+
+CoincRingdownTable *
+XLALCoincRingdownSlideCut(
+    CoincRingdownTable **coincHead,
+    int                  slideNum    
+    );
+
+CoincRingdownTable *
+XLALPlayTestCoincRingdown(
+    CoincRingdownTable         *eventHead,
+    LALPlaygroundDataMask      *dataType
     );
 
 INT4
