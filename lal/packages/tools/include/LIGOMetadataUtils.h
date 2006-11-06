@@ -351,24 +351,6 @@ tagRingdownAccuracyList
 }
 RingdownAccuracyList;
  
-#if 0 
-/* <lalVerbatim> */
-typedef enum
-{
-  none,
-  snr
-}
-SnglRingdownClusterChoice;
-
-typedef enum
-{
-  no_stat,
-  snr_sq,
-  effective_snrsq
-}
-CoincRingdownStatistic;
-#endif
-
 /*
  *
  * general manipulation functions
