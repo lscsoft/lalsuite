@@ -189,7 +189,6 @@ void PrintStackInfo( LALStatus  *status, const SFTCatalogSequence *catalogSeq, F
 /* default values for input variables */
 #define EPHEMERISDIR "/local_data/badkri/lscsoft/share/lal/" /**< Default location of ephemeris files*/
 #define EPHEMERISYEAR "05-09"   /**< Default location of sun ephemeris */
-#define NSTACKS 10    /**< Default number of stacks */
 #define BLOCKSRNGMED 101 /**< Default running median window size */
 #define FSTART 310.0   /**< Default Start search frequency */
 
@@ -254,7 +253,7 @@ int main( int argc, char *argv[]) {
   UsefulStageVariables usefulParams1, usefulParams2;
 
   /* number of stacks -- not necessarily same as uvar_nStacks! */
-  UINT4 nStacks1, nStacks2 = 0;
+  UINT4 nStacks1, nStacks2;
   REAL8 deltaF1, deltaF2, timebase1, timebase2; /* frequency resolution of SFTs */
   REAL8 deltaFstack1, deltaFstack2 = 0; /* frequency resolution of Fstat calculation */
 
@@ -321,11 +320,11 @@ int main( int argc, char *argv[]) {
   REAL8 uvar_pixelFactor;
   REAL8 uvar_semiCohPatchX, uvar_semiCohPatchY;
 
-  INT4 uvar_method; /* hough = 0, stackslide = 1*/
+  INT4 uvar_method; /* hough = 0, stackslide = 1, -1 = pure fstat*/
   INT4 uvar_nCand1; /* number of candidates to be followed up from first stage */
   INT4 uvar_nCand2; /* number of candidates from second stage */
   INT4 uvar_blocksRngMed;
-  INT4 uvar_nStacks1, uvar_nStacks2;
+  INT4 uvar_nStacks1;
   INT4 uvar_Dterms;
   INT4 uvar_SSBprecision;
   INT4 uvar_nfdot;
@@ -334,8 +333,8 @@ int main( int argc, char *argv[]) {
 
   CHAR *uvar_ephemDir=NULL;
   CHAR *uvar_ephemYear=NULL;
-  CHAR *uvar_sftData1=NULL;
-  CHAR *uvar_sftData2=NULL;
+  CHAR *uvar_DataFiles1=NULL;
+  CHAR *uvar_DataFiles2=NULL;
   CHAR *uvar_fnameout=NULL;
   CHAR *uvar_skyGridFile=NULL;
   CHAR *uvar_skyRegion=NULL;
@@ -353,15 +352,14 @@ int main( int argc, char *argv[]) {
   /* now set the other defaults */
   uvar_help = FALSE;
   uvar_log = FALSE;
-  uvar_method = 0;
-  uvar_followUp = TRUE;
+  uvar_method = -1;
+  uvar_followUp = FALSE;
   uvar_printMaps = FALSE;
   uvar_printStats = FALSE;
   uvar_printCand1 = FALSE;
   uvar_printFstat1 = FALSE;
   uvar_chkPoint = FALSE;
-  uvar_nStacks1 = NSTACKS;
-  uvar_nStacks2 = 1;
+  uvar_nStacks1 = 1;
   uvar_Dterms = DTERMS;
   uvar_dAlpha = DALPHA;
   uvar_dDelta = DDELTA;
@@ -400,11 +398,11 @@ int main( int argc, char *argv[]) {
   uvar_ephemYear = (CHAR *)LALMalloc(512*sizeof(CHAR));
   strcpy(uvar_ephemYear, EPHEMERISYEAR);
 
-  uvar_sftData1 = (CHAR *)LALMalloc(512*sizeof(CHAR));
-  strcpy(uvar_sftData1, SFTDIRECTORY);
+  uvar_DataFiles1 = (CHAR *)LALMalloc(512*sizeof(CHAR));
+  strcpy(uvar_DataFiles1, SFTDIRECTORY);
 
-  /* do not set default for sftData2 -- use only if user specifies */
-  /*   uvar_sftData2 = (CHAR *)LALMalloc(512*sizeof(CHAR)); */
+  /* do not set default for DataFiles2 -- use only if user specifies */
+  /*   uvar_DataFiles2 = (CHAR *)LALMalloc(512*sizeof(CHAR)); */
 
   uvar_fnameout = (CHAR *)LALMalloc(512*sizeof(CHAR));
   strcpy(uvar_fnameout, FNAMEOUT);
@@ -413,10 +411,10 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",        'h', UVAR_HELP,     "Print this message", &uvar_help), &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "log",          0,  UVAR_OPTIONAL, "Write log file", &uvar_log), &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "chkPoint",     0,  UVAR_OPTIONAL, "For checkpointing", &uvar_chkPoint), &status);  
-  LAL_CALL( LALRegisterINTUserVar(    &status, "method",       0,  UVAR_OPTIONAL, "Hough=0, stackslide=1", &uvar_method ), &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "method",       0,  UVAR_OPTIONAL, "0=Hough,1=stackslide,-1=fstat", &uvar_method ), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "followUp",     0,  UVAR_OPTIONAL, "Follow up stage?", &uvar_followUp), &status);  
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftData1",     0,  UVAR_OPTIONAL, "1st SFT file pattern", &uvar_sftData1), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftData2",     0,  UVAR_OPTIONAL, "2nd SFT file pattern", &uvar_sftData2), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "DataFiles1",     0,  UVAR_OPTIONAL, "1st SFT file pattern", &uvar_DataFiles1), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "DataFiles2",     0,  UVAR_OPTIONAL, "2nd SFT file pattern", &uvar_DataFiles2), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyRegion",    0,  UVAR_OPTIONAL, "sky-region polygon (or 'allsky')", &uvar_skyRegion), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "Freq",        'f', UVAR_OPTIONAL, "Start search frequency", &uvar_Freq), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "FreqBand",    'b', UVAR_OPTIONAL, "Search frequency band", &uvar_FreqBand), &status);
@@ -424,7 +422,6 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterREALUserVar(   &status, "f1dotBand",    0,  UVAR_OPTIONAL, "Range of fdot", &uvar_f1dotBand), &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "nfdot",        0,  UVAR_OPTIONAL, "No.of residual fdot values to be searched", &uvar_nfdot), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "nStacks1",    'N', UVAR_OPTIONAL, "No.of 1st stage stacks", &uvar_nStacks1 ), &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "nStacks2",     0,  UVAR_OPTIONAL, "No.of 2nd stage stacks", &uvar_nStacks2 ), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "mismatch1",    0,  UVAR_OPTIONAL, "1st stage mismatch", &uvar_mismatch1), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "mismatch2",    0,  UVAR_OPTIONAL, "2nd stage mismatch", &uvar_mismatch2), &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "gridType1",    0,  UVAR_OPTIONAL, "0=flat,1=isotropic,2=metric,3=file", &uvar_gridType1),  &status);
@@ -469,7 +466,7 @@ int main( int argc, char *argv[]) {
 
   /* some basic sanity checks on user vars */
   if ( (uvar_method != 0) && (uvar_method != 1) && (uvar_method != -1)) {
-    fprintf(stderr, "Invalid method....must be 0 or 1\n");
+    fprintf(stderr, "Invalid method....must be 0, 1 or -1\n");
     exit( HIERARCHICALSEARCH_EBAD );
   }
 
@@ -478,10 +475,6 @@ int main( int argc, char *argv[]) {
     exit( HIERARCHICALSEARCH_EBAD );
   }
 
-  if ( uvar_nStacks2 < 1) {
-    fprintf(stderr, "Invalid number of stacks\n");
-    exit( HIERARCHICALSEARCH_EBAD );
-  }
 
   if ( uvar_blocksRngMed < 1 ) {
     fprintf(stderr, "Invalid Running Median block size\n");
@@ -493,7 +486,7 @@ int main( int argc, char *argv[]) {
     exit( HIERARCHICALSEARCH_EBAD );
   }
 
-  if ( uvar_followUp && (!LALUserVarWasSet(&uvar_sftData2))) {
+  if ( uvar_followUp && (!LALUserVarWasSet(&uvar_DataFiles2))) {
     fprintf( stderr, "Must specify SFTs for second stage!\n");
     exit( HIERARCHICALSEARCH_EBAD );
   }
@@ -632,7 +625,7 @@ int main( int argc, char *argv[]) {
   INIT_MEM(spinRange_Temp);
 
   /* some useful first stage params */
-  usefulParams1.sftbasename = uvar_sftData1;
+  usefulParams1.sftbasename = uvar_DataFiles1;
   usefulParams1.nStacks = uvar_nStacks1;
 
   INIT_MEM ( usefulParams1.spinRange_startTime );
@@ -708,8 +701,8 @@ int main( int argc, char *argv[]) {
   if ( uvar_followUp ) {
     
     /* some useful first stage params */
-    usefulParams2.sftbasename = uvar_sftData2;
-    usefulParams2.nStacks = uvar_nStacks2;
+    usefulParams2.sftbasename = uvar_DataFiles2;
+    usefulParams2.nStacks = 1;
     INIT_MEM ( usefulParams2.spinRange_startTime );
     INIT_MEM ( usefulParams2.spinRange_endTime );
     usefulParams2.spinRange_refTime = usefulParams1.spinRange_refTime;
@@ -726,7 +719,7 @@ int main( int argc, char *argv[]) {
     else 
       usefulParams2.refTime = -1;
     
-  /* for 2nd stage: read sfts, calculate multi-noise weights and detector states */  
+    /* for 2nd stage: read sfts, calculate multi-noise weights and detector states */  
     LAL_CALL( SetUpSFTs( &status, &stackMultiSFT2, &stackMultiNoiseWeights2, 
 			 &stackMultiDetStates2, &usefulParams2), &status);
     
@@ -854,7 +847,6 @@ int main( int argc, char *argv[]) {
       dfDot = thisScan1.dfkdot[1];
       
       nfdot = (UINT4)( usefulParams1.spinRange_startTime.fkdotBand[1]/ dfDot + 0.5) + 1; 
-      fprintf(stdout, "%d\n", nfdot);
 
       
       /* loop over fdot values */
@@ -1550,8 +1542,6 @@ void ComputeFstatHoughMap(LALStatus *status,
   fBinIni += parSize.maxNBins;
   fBinFin -= parSize.maxNBins;
 
-  fprintf(stdout, "%d\n", fBinIni-fBinFin); 
-
   ASSERT ( fBinIni < fBinFin, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
 
   /*------------------ start main Hough calculation ---------------------*/
@@ -1659,8 +1649,6 @@ void ComputeFstatHoughMap(LALStatus *status,
 
 	nSpin1Max = (nfdot < fBinFin - fBinSearch)? nfdot : fBinFin - fBinSearch;
 	nSpin1Min = (nfdot < fBinSearch - fBinIni)? nfdot : fBinSearch - fBinIni;
-
-	fprintf(stdout, "%d  %d \n", nSpin1Max, nSpin1Min);
 
 	/*loop over all values of residual spindown */
 	for( n = -nSpin1Min; n <= nSpin1Max; n++ ){ 
