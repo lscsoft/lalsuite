@@ -449,13 +449,13 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterREALUserVar(   &status, "maxEndTime1",  0,  UVAR_OPTIONAL, "1st stage max end time of observation",   &uvar_maxEndTime1),   &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "minStartTime2",0,  UVAR_OPTIONAL, "2nd stage min start time of observation", &uvar_minStartTime2), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "maxEndTime2",  0,  UVAR_OPTIONAL, "2nd stage max end time of observation",   &uvar_maxEndTime2),   &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printFstat1",  0, UVAR_OPTIONAL,  "Print 1st stage Fstat vectors", &uvar_printFstat1), &status);  
 
   /* developer user variables */
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed", 0, UVAR_DEVELOPER, "RngMed block size", &uvar_blocksRngMed), &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "SSBprecision", 0, UVAR_DEVELOPER, "Precision for SSB transform.", &uvar_SSBprecision),    &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printMaps",    0, UVAR_DEVELOPER, "Print Hough maps", &uvar_printMaps), &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printStats",   0, UVAR_DEVELOPER, "Print Hough map statistics", &uvar_printStats), &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printFstat1",  0, UVAR_DEVELOPER, "Print 1st stage Fstat vectors", &uvar_printFstat1), &status);  
   LAL_CALL( LALRegisterINTUserVar(    &status, "Dterms",       0, UVAR_DEVELOPER, "No.of terms to keep in Dirichlet Kernel", &uvar_Dterms ), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "dopplerMax",   0, UVAR_DEVELOPER, "Max Doppler shift",  &uvar_dopplerMax), &status);
 
@@ -816,7 +816,7 @@ int main( int argc, char *argv[]) {
       scanInit2.metricMismatch = uvar_mismatch2;
       scanInit2.projectMetric = TRUE;
       scanInit2.obsDuration = tStack2;
-      scanInit2.obsBegin = startTstack2->data[ nStacks1/2 ];
+      scanInit2.obsBegin = startTstack2->data[0];
       scanInit2.Detector = &(stackMultiDetStates2.data[0]->data[0]->detector);
       scanInit2.ephemeris = edat;  /* used by Ephemeris-based metric */
       /* scanInit2.skyGridFile = uvar_skyGridFile; */
@@ -854,6 +854,8 @@ int main( int argc, char *argv[]) {
       dfDot = thisScan1.dfkdot[1];
       
       nfdot = (UINT4)( usefulParams1.spinRange_startTime.fkdotBand[1]/ dfDot + 0.5) + 1; 
+      fprintf(stdout, "%d\n", nfdot);
+
       
       /* loop over fdot values */
       for ( ifdot=0; ifdot<nfdot; ifdot++)
@@ -1548,6 +1550,8 @@ void ComputeFstatHoughMap(LALStatus *status,
   fBinIni += parSize.maxNBins;
   fBinFin -= parSize.maxNBins;
 
+  fprintf(stdout, "%d\n", fBinIni-fBinFin); 
+
   ASSERT ( fBinIni < fBinFin, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
 
   /*------------------ start main Hough calculation ---------------------*/
@@ -1655,6 +1659,8 @@ void ComputeFstatHoughMap(LALStatus *status,
 
 	nSpin1Max = (nfdot < fBinFin - fBinSearch)? nfdot : fBinFin - fBinSearch;
 	nSpin1Min = (nfdot < fBinSearch - fBinIni)? nfdot : fBinSearch - fBinIni;
+
+	fprintf(stdout, "%d  %d \n", nSpin1Max, nSpin1Min);
 
 	/*loop over all values of residual spindown */
 	for( n = -nSpin1Min; n <= nSpin1Max; n++ ){ 
@@ -2014,10 +2020,9 @@ void PrintSemiCohCandidates(LALStatus *status,
 
   INITSTATUS( status, "PrintSemiCohCandidates", rcsid );
   ATTATCHSTATUSPTR (status);
-
  
   for (k=0; k < in->nCandidates; k++)
-    fprintf(fp, "%e   %e   %g   %g   %g   %g   %e   %e\n", in->list[k].freq, 
+    fprintf(fp, "%e %e %e %g %g %g %g %e %e\n", in->list[k].significance, in->list[k].freq, 
 	    in->list[k].dFreq, in->list[k].alpha, in->list[k].dAlpha, in->list[k].delta, in->list[k].dDelta,
 	    in->list[k].fdot, in->list[k].dFdot);
 
