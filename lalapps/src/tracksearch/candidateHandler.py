@@ -163,12 +163,13 @@ elif ((expThreshold != "") and (canList.__len__() >=1)):
         candidateObject=candidateList()
         candidateObject.loadfile(entry)
         candidateResults=candidateObject.applyArbitraryThresholds(expThreshold)
+        expThresholdName=str(expThreshold).replace('(','--').replace(')','--')
         pathName=''
         if (outfile != "") and (canList.__len__() == 1):
             candidateResults.writefile(outfile)
         else:
             pathName=os.path.dirname(candidateResults.filename[0])
-            saveFiles=pathName+'/Threshold:'+str(expThreshold)+':'+os.path.basename(candidateObject.filename[0])
+            saveFiles=pathName+'/Threshold:'+str(expThresholdName)+':'+os.path.basename(candidateObject.filename[0])
             print "Writing file :",saveFiles
             candidateResults.writefile(saveFiles)        
         del entry
@@ -192,4 +193,6 @@ elif ((canList.__len__() >=1) and dumpSummaryScreen):
     #THIS SECTION SHOULD NEVER HAPPEN
 else:
     print "Error with combination of arguments given!"
+    print options
+    print args
     os.abort()

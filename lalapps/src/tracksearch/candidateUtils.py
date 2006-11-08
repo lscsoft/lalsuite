@@ -197,7 +197,7 @@ class kurve:
         This method is normally invoked by writefile method in
         candidateList class
         """
-        return copy.deepcopy(self.element)
+        return self.element
         #End method getKurveDataBlock
         
 class gpsInt:
@@ -452,12 +452,12 @@ class candidateList:
             text="Curve number,length,power:"+str(CurveId)+','+str(Length)+','+str(Power)+'\n'
             output_fp.write(text)
             text=""
+            data=[]
             for elements in entry.getKurveDataBlock():
-                text=text+str(elements[0])+','+str(elements[1])+\
+                data.append(str(elements[0])+','+str(elements[1])+\
                       ';'+str(elements[2].__diskPrint__())+','\
-                      +str(elements[3])+','+str(elements[4])+':'
-            text=text.rstrip(':')+'\n'
-            output_fp.write(text)
+                      +str(elements[3])+','+str(elements[4]))
+            output_fp.write(str(':').join(data)+'\n')
     #End writefile method
 
     def sortList(self):

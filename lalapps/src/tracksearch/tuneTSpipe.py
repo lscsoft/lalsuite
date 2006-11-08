@@ -173,15 +173,18 @@ class tuneObject:
         for pipe in self.FApipeNames:
             self.FAconfigure(pipe[3],pipe[4],pipe[0])
             if countMe%modValue==0:
-                print ".",
+                sys.stdout.writelines('.')
+                sys.stdout.flush()
             countMe=countMe+1
         print " "
         print "Building ",self.FApipeNames.__len__()," pipes. This may take awhile."
+        countMe=0
         for pipe in self.FApipeNames:
             #False turns off possible injections.
             self.createPipe(pipe[0],False)
             if countMe%modValue==0:
-                print ".",
+                sys.stdout.writelines('.')
+                sys.stdout.flush()
             countMe=countMe+1
         print " "
         print "Ok. Finished"
@@ -260,10 +263,11 @@ class tuneObject:
         auxoutData=[]
         outputData=[]
         countMe=0
-        modValue=20
+        modValue=10
         for entry in resultFiles:
             if countMe%modValue==0:
-                print ".",
+                sys.stdout.writelines('.')
+                sys.stdout.flush()
             countMe=countMe+1
             #Revising to avoid opening data files
             candidate=candidateList()
@@ -339,10 +343,11 @@ class tuneObject:
             results.append([h,l,0,len])
         print "The detection efficiency pipes to be created are",results.__len__()," this may take a while."
         countMe=0
-        modValue=20
+        modValue=10
         for entry in results:
             if countMe%modValue==0:
-                print ".",
+                sys.stdout.writelines('.')
+                sys.stdout.flush()
             countMe=countMe+1
             h=entry[0]
             l=entry[1]
@@ -350,7 +355,8 @@ class tuneObject:
             len=entry[3]
             pipeIniName=self.installIni2+'/'+self.batchMask+':'+str(h)+':'+str(float(l))+':'+str(float(p))+':'+str(int(len))+':'+'.ini'
             self.DEpipeNames.append(pipeIniName)
-            self.DEeditIniFile(h,l,p,len,pipeIniName)
+            #self.DEeditIniFile(h,l,p,len,pipeIniName)
+            self.NEW_DEeditIniFile(h,l,p,len,pipeIniName)
             #True states use the ini file to set injection into the pipeline.
             self.createPipe(pipeIniName,True)
         #Search the workspace to construct a huge parent DAG for submitting all the DAGs
@@ -397,7 +403,7 @@ class tuneObject:
         newCP.set('tracksearchbase','member_threshold',LL)
         #We adjust the options associated with the python post processing routines.
         expString="(P>%f)and(L>%i)"%(P,L)
-        newCP,set('candidatethreshold','expression_threshold',expString)
+        newCP.set('candidatethreshold','expression_threshold',expString)
         # The master Ini must have an injection section to continue
         if not newCP.has_section('tracksearchinjection'):
             print "Error the master ini in our tun file has no injection section!"
