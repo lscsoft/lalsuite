@@ -245,7 +245,7 @@ FrCache * XLALFrSieveCache( FrCache *input, FrCacheSieve *params )
           || regexec( &dscReg, file->description, 0, NULL, 0 ) )
       continue; /* description doesn't match regex */
     if ( params->urlRegEx )
-      if ( ! file->source || regexec( &urlReg, file->source, 0, NULL, 0 ) )
+      if ( ! file->source || regexec( &urlReg, file->url, 0, NULL, 0 ) )
         continue; /* url doesn't match regex */
     ++n;
   }
@@ -284,7 +284,7 @@ FrCache * XLALFrSieveCache( FrCache *input, FrCacheSieve *params )
             || regexec( &dscReg, file->description, 0, NULL, 0 ) )
           continue; /* description doesn't match regex */
       if ( params->urlRegEx )
-        if ( ! file->source || regexec( &urlReg, file->source, 0, NULL, 0 ) )
+        if ( ! file->source || regexec( &urlReg, file->url, 0, NULL, 0 ) )
           continue; /* url doesn't match regex */
 
       /* copy frame file stat */
