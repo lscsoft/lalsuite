@@ -597,6 +597,13 @@ class tracksearchThresholdJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         self.add_condor_cmd('when_to_transfer_output','on_exit')
         self.add_condor_cmd('transfer_input_files',self.candUtil)
         #self.add_input_file(self.candUtil)
+        #Setp escaping possible quotes in threshold string!
+        if cp.has_option('candidatethreshold','expression_threshold'):
+            newVal=val=cp.get('candidatethreshold','expression_threshold')
+            if val.__contains__('"'):
+                print "Escaping quotes for required SUBMIT file syntax!"       
+                newVal=str(val).replace('"','\\"')
+                cp.set('candidatethreshold','expression_threshold',newVal)
         for sec in ['candidatethreshold']:
                 self.add_ini_opts(cp,sec)
    #End __init__ method
@@ -891,8 +898,12 @@ class tracksearch:
             DLP=tracksearchThreshold_job.initialDir
             tracksearchThreshold_node=tracksearchThresholdNode(tracksearchThreshold_job)
             tracksearchThreshold_node.add_var_opt('file',DLP+'*.candidates')
-            for parents in nextJobList:
-                tracksearchThreshold_node.add_parent(parents)
+            if nextJobList!=[]:
+                for parents in nextJobList:
+                    tracksearchThreshold_node.add_parent(parents)
+            else:
+                for parents in prevJobList:
+                    tracksearchThreshold_node.add_parent(parents)
             self.dag.add_node(tracksearchThreshold_node)
     #end def finalsearchlayer method
 
