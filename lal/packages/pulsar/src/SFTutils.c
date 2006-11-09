@@ -1074,7 +1074,7 @@ void LALComputeMultiNoiseWeights  (LALStatus             *status,
 				   UINT4                 excludePercentile) 
 {
   REAL8 Tsft_Sn=0.0, Tsft_sumSn=0.0;
-  UINT4 i, k, j, numifos, numsfts, lengthsft, numsftsTot;
+  UINT4 Y, X, alpha, k, numifos, numsfts, lengthsft, numsftsTot;
   UINT4 excludeIndex, halfLengthPSD, lengthPSD;
   MultiNoiseWeights *weights;
   REAL8 Tsft = 1.0 / multipsd->data[0]->data[0].deltaF;
@@ -1102,27 +1102,27 @@ void LALComputeMultiNoiseWeights  (LALStatus             *status,
   }
 
   numsftsTot = 0;
-  for ( k = 0; k < numifos; k++) 
+  for ( X = 0; X < numifos; X++) 
     {
-      numsfts = multipsd->data[k]->length;
+      numsfts = multipsd->data[X]->length;
       numsftsTot += numsfts;
 
       /* create k^th weights vector */
-      LALDCreateVector ( status->statusPtr, weights->data + k, numsfts);
+      LALDCreateVector ( status->statusPtr, &(weights->data[X]), numsfts);
       BEGINFAIL( status ) {
-	for ( i = 0; i < k-1; i++)
-	  LALDDestroyVector (status->statusPtr, weights->data + i);
+	for ( Y = 0; Y < X-1; Y++)
+	  LALDDestroyVector (status->statusPtr, &(weights->data[Y]));
 	LALFree (weights->data);
 	LALFree (weights);
       } ENDFAIL(status);
       
       /* loop over psds and calculate weights -- one for each sft */
-      for ( j = 0; j < numsfts; j++) 
+      for ( alpha = 0; alpha < numsfts; alpha++) 
 	{
 	  REAL8FrequencySeries *psd;
 	  UINT4 halfBlock = blocksRngMed/2;
 	  
-	  psd = multipsd->data[k]->data + j;
+	  psd = &(multipsd->data[X]->data[alpha]);
 	  
 	  lengthsft = psd->data->length;
 	  if ( lengthsft < blocksRngMed ) {
@@ -1136,13 +1136,14 @@ void LALComputeMultiNoiseWeights  (LALStatus             *status,
 	  excludeIndex =  excludePercentile * halfLengthPSD ; /* integer arithmetic */
 	  excludeIndex /= 100; /* integer arithmetic */
 
-	  for ( Tsft_Sn = 0.0, i = halfBlock + excludeIndex; i < lengthsft - halfBlock - excludeIndex; i++)
-	    Tsft_Sn += psd->data->data[i];
+	  Tsft_Sn = 0.0; 
+	  for ( k = halfBlock + excludeIndex; k < lengthsft - halfBlock - excludeIndex; k++)
+	    Tsft_Sn += psd->data->data[k];
 	  Tsft_Sn /= lengthsft - 2*halfBlock - 2*excludeIndex;
 
 	  Tsft_sumSn += Tsft_Sn; /* sumSn is just a normalization factor */
 
-	  weights->data[k]->data[j] = 1.0/Tsft_Sn;
+	  weights->data[X]->data[alpha] = 1.0/Tsft_Sn;
 	} /* end loop over sfts for each ifo */
 
     } /* end loop over ifos */
@@ -1150,10 +1151,10 @@ void LALComputeMultiNoiseWeights  (LALStatus             *status,
   Tsft_calS = Tsft_sumSn/numsftsTot;	/* overall noise-normalization is the average Tsft * <S_{X,\alpha}> */
 
   /* make weights of order unity by myltiplying by sumSn/total number of sfts */
-  for ( k = 0; k < numifos; k++) {
-    numsfts = weights->data[k]->length;    
-    for ( j = 0; j < numsfts; j++) 
-      weights->data[k]->data[j] *= Tsft_calS;
+  for ( X = 0; X < numifos; X ++) {
+    numsfts = weights->data[X]->length;    
+    for ( alpha = 0; alpha < numsfts; alpha ++) 
+      weights->data[X]->data[alpha] *= Tsft_calS;
   }
 
   weights->Sinv_Tsft = Tsft*Tsft / Tsft_calS;		/* 'Sinv * Tsft' normalization factor */
