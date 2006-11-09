@@ -63,6 +63,7 @@
 #include <lal/ComputeFstat.h>
 #include <lal/Statistics.h>
 #include <lal/GeneratePulsarSignal.h> 
+#include <lal/LogPrintf.h>
 
 /* lalapps includes */
 #include <lalapps.h>

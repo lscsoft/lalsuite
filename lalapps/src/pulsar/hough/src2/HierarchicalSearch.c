@@ -464,6 +464,9 @@ int main( int argc, char *argv[]) {
   if (uvar_help)
     exit(0); 
 
+  /* set log-level */
+  LogSetLevel ( lalDebugLevel );
+
   /* some basic sanity checks on user vars */
   if ( (uvar_method != 0) && (uvar_method != 1) && (uvar_method != -1)) {
     fprintf(stderr, "Invalid method....must be 0, 1 or -1\n");
@@ -651,9 +654,10 @@ int main( int argc, char *argv[]) {
     usefulParams1.refTime = -1;
 
   /* for 1st stage: read sfts, calculate multi-noise weights and detector states */  
+  LogPrintf (LOG_DEBUG, "Reading SFTs and setting up stacks ... ");
   LAL_CALL( SetUpSFTs( &status, &stackMultiSFT1, &stackMultiNoiseWeights1, 
 		       &stackMultiDetStates1, &usefulParams1), &status);
-
+  LogPrintfVerbatim (LOG_DEBUG, "done\n");
 
   /* some useful params computed by SetUpSFTs */
   deltaF1 = usefulParams1.deltaF;
@@ -666,7 +670,21 @@ int main( int argc, char *argv[]) {
   midTstack1 = usefulParams1.midTstack;
   startTstack1 = usefulParams1.startTstack;
   refTimeGPS = usefulParams1.spinRange_refTime.refTime;
+  
+  /* some debug info */
+  LogPrintf(LOG_DEBUG, "Number of stacks: %d,  Duration: %fsec\n", nStacks1, tStack1);
+  for (k=0; k<nStacks1; k++) {
+    LogPrintfVerbatim(LOG_DEBUG, "Stack %d ", k);
+    LogPrintfVerbatim(LOG_DEBUG, "(GPS start time %d) ", startTstack1->data[k].gpsSeconds);
+    for ( j = 0; j < (INT4)stackMultiSFT1.data[k]->length; j++) {
+      INT4 tmpVar = stackMultiSFT1.data[k]->data[j]->length;
+      LogPrintfVerbatim(LOG_DEBUG, "%s: %d  ", stackMultiSFT1.data[k]->data[j]->data[0].name, tmpVar);
+    } /* loop over ifos */    
+    LogPrintfVerbatim(LOG_DEBUG, "\n");
+  } /* loop over stacks */
 
+
+  
   /* set reference time for calculating Fstatistic */
   thisPoint1.refTime = tStart1GPS;
   /* binary orbit and higher spindowns not considered so far */
@@ -693,8 +711,9 @@ int main( int argc, char *argv[]) {
   
   /*------------ calculate velocity and position for each 1st stage stack ------------*/
 
+  LogPrintf (LOG_DEBUG, "Calculating detector velocity and positions ... ");
   LAL_CALL( GetStackVelPos( &status, &velStack1, &posStack1, &stackMultiDetStates1), &status);
-
+  LogPrintfVerbatim (LOG_DEBUG, "done\n");
 
   /*------------------ read sfts and set up stacks for follow up stage -----------------------*/
   /* check if user requested a follow up stage*/
@@ -718,10 +737,13 @@ int main( int argc, char *argv[]) {
       usefulParams2.refTime = uvar_refTime;
     else 
       usefulParams2.refTime = -1;
-    
+
+    LogPrintf (LOG_DEBUG, "Setting up follow up stage SFTs ... ");
     /* for 2nd stage: read sfts, calculate multi-noise weights and detector states */  
     LAL_CALL( SetUpSFTs( &status, &stackMultiSFT2, &stackMultiNoiseWeights2, 
 			 &stackMultiDetStates2, &usefulParams2), &status);
+    LogPrintfVerbatim (LOG_DEBUG, "done \n");
+
     
     /* some useful params computed by SetUpSFTs */
     deltaF2 = usefulParams2.deltaF;
@@ -733,6 +755,16 @@ int main( int argc, char *argv[]) {
     tStart2GPS = usefulParams2.tStartGPS;
     midTstack2 = usefulParams2.midTstack;
     startTstack2 = usefulParams2.startTstack;
+
+    /* some second stage debug info */
+    LogPrintf(LOG_DEBUG, "GPS start time: %d, Duration: %fsec, ", startTstack2->data[0].gpsSeconds, tStack2);
+    for ( j = 0; j < (INT4)stackMultiSFT2.data[0]->length; j++) {
+      INT4 tmpVar = stackMultiSFT2.data[0]->data[j]->length;
+      LogPrintfVerbatim(LOG_DEBUG, "%s: %d  ", stackMultiSFT2.data[0]->data[j]->data[0].name, tmpVar);
+      } /* loop over ifos */    
+    LogPrintfVerbatim(LOG_DEBUG, "\n");
+    
+    
     
     /* set reference time for calculating fstat */
     thisPoint2.refTime = tStart2GPS;
@@ -790,8 +822,11 @@ int main( int argc, char *argv[]) {
   scanInit1.Freq = uvar_Freq + uvar_FreqBand;
 
   /* initialize skygrid  */  
+  LogPrintf(LOG_DEBUG, "Setting up coarse sky grid...");
   LAL_CALL ( InitDopplerSkyScan ( &status, &thisScan1, &scanInit1), &status); 
-  
+  LogPrintfVerbatim(LOG_DEBUG, "done\n");  
+
+
   /* parameters for 2nd stage */
   /* set up parameters for second stage Fstat calculation */
   /* we don't set frequency and frequency band 
@@ -833,9 +868,7 @@ int main( int argc, char *argv[]) {
       XLALNextDopplerSkyPos( &dopplerpos1, &thisScan1 );
       if (thisScan1.state == STATE_FINISHED) /* scanned all DopplerPositions yet? */
 	break;
-
-      if (   lalDebugLevel )
-	fprintf( stdout, "Coarse grid has %d points\n", thisScan1.numSkyGridPoints);
+      LogPrintf(LOG_DEBUG, "Coarse grid has %d sky points\n", thisScan1.numSkyGridPoints);
       
       /*------------- calculate F statistic for each stack --------------*/
       
@@ -850,6 +883,7 @@ int main( int argc, char *argv[]) {
 
       
       /* loop over fdot values */
+      LogPrintf(LOG_DEBUG, "Starting Fstat calculation for each stack...");
       for ( ifdot=0; ifdot<nfdot; ifdot++)
 	{
 	  /* set spindown value for Fstat calculation */
@@ -862,6 +896,7 @@ int main( int argc, char *argv[]) {
 					     stackMultiSFT1.data[k], stackMultiNoiseWeights1.data[k], 
 					     stackMultiDetStates1.data[k], &CFparams), &status);
 	  }
+	  LogPrintfVerbatim(LOG_DEBUG, "done\n");
 	  
 	  /* print fstat vector if required -- mostly for debugging */
 	  if ( uvar_printFstat1 )
@@ -885,6 +920,8 @@ int main( int argc, char *argv[]) {
 	  /* the hough option */
 	  /* select peaks */ 	      
 	  if ( (uvar_method == 0) ) {
+
+	    LogPrintf(LOG_DEBUG, "Starting Hough calculation...");
 	    LAL_CALL( FstatVectToPeakGram( &status, &pgV, &fstatVector1, uvar_peakThrF), &status);
 	    	    
 	    /* get candidates */
@@ -894,7 +931,10 @@ int main( int argc, char *argv[]) {
 	    for (k=0; k<nStacks1; k++) 
 	      LALFree(pgV.pg[k].peak);
 	    LALFree(pgV.pg);
-	  }
+	    LogPrintfVerbatim(LOG_DEBUG, "done\n");
+
+	  } /* end hough */
+
 
 
 	  /* --- stackslide option should come here --------*/
@@ -909,14 +949,11 @@ int main( int argc, char *argv[]) {
 	  
 	  /*------------- Follow up candidates --------------*/
 	  
-	  /* this part is more general than it has to be.
-	     it is meant to be generalized to the case when 
-	     nStacks2 is not necessarily 1 */
-	  
 	  /* check if user requested a follow up stage*/
 	  if ( uvar_followUp ) 
 	    {
-	      
+
+	      LogPrintf(LOG_DEBUG, "Starting followup %d candidates...", semiCohCandList1.nCandidates);	      
 	      /* loop over candidates surviving 1st stage  */
 	      for ( j=0; j < semiCohCandList1.nCandidates; j++) 
 		{		  
@@ -981,9 +1018,6 @@ int main( int argc, char *argv[]) {
 		      if (thisScan2.state == STATE_FINISHED) /* scanned all DopplerPositions yet? */
 			break;
 
-		      if ( lalDebugLevel )
-			fprintf( stdout, "Fine grid has %d points\n", thisScan2.numSkyGridPoints);
-
 		      
 		      /*------------- calculate F statistic for each stack --------------*/
 		      
@@ -1042,6 +1076,8 @@ int main( int argc, char *argv[]) {
 		  
 		} /* end loop over candidates from 1st stage */
 	      
+	      LogPrintfVerbatim(LOG_DEBUG, "done\n");
+
 	    } /* end block for follow-up stage */ 
 	  
 	} /* end loop over coarse grid fdot values */
