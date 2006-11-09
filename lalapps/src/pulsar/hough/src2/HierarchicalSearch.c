@@ -216,6 +216,7 @@ int main( int argc, char *argv[]) {
   /* temp loop variables: generally k loops over stacks and j over SFTs in a stack*/
   INT4 j;
   UINT4 k;
+  UINT4 skyGridCounter;
 
   /* in general any variable ending with 1 is for the 
      first stage, 2 for the second and so on */
@@ -860,6 +861,7 @@ int main( int argc, char *argv[]) {
           selecting candidates and following up --------*/
  
   /* loop over skygrid points */
+  skyGridCounter = 0;
   while(1)
     {
       UINT4 ifdot, nfdot;  /* counter and number of spindown values */
@@ -868,7 +870,8 @@ int main( int argc, char *argv[]) {
       XLALNextDopplerSkyPos( &dopplerpos1, &thisScan1 );
       if (thisScan1.state == STATE_FINISHED) /* scanned all DopplerPositions yet? */
 	break;
-      LogPrintf(LOG_DEBUG, "Coarse grid has %d sky points\n", thisScan1.numSkyGridPoints);
+
+      skyGridCounter++;
       
       /*------------- calculate F statistic for each stack --------------*/
       
@@ -883,14 +886,16 @@ int main( int argc, char *argv[]) {
 
       
       /* loop over fdot values */
-      LogPrintf(LOG_DEBUG, "Starting Fstat calculation for each stack...");
       for ( ifdot=0; ifdot<nfdot; ifdot++)
 	{
+	  LogPrintf(LOG_DEBUG, "Analyzing %d/%d Coarse sky grid points and %d/%d spindown values\n", 
+			    skyGridCounter, thisScan1.numSkyGridPoints, ifdot+1, nfdot);
 	  /* set spindown value for Fstat calculation */
   	  thisPoint1.fkdot[1] = usefulParams1.spinRange_startTime.fkdot[1] + ifdot * dfDot;
 	  thisPoint1.fkdot[0] = usefulParams1.spinRange_startTime.fkdot[0];
 	  	  
 	  /* calculate the Fstatistic for each stack*/
+	  LogPrintf(LOG_DEBUG, "Starting Fstat calculation for each stack...");
 	  for ( k = 0; k < nStacks1; k++) {
 	    LAL_CALL( ComputeFStatFreqBand ( &status, fstatVector1.data + k, &thisPoint1, 
 					     stackMultiSFT1.data[k], stackMultiNoiseWeights1.data[k], 
@@ -953,7 +958,7 @@ int main( int argc, char *argv[]) {
 	  if ( uvar_followUp ) 
 	    {
 
-	      LogPrintf(LOG_DEBUG, "Starting followup %d candidates...", semiCohCandList1.nCandidates);	      
+	      LogPrintf(LOG_DEBUG, "Starting followup of %d candidates...", semiCohCandList1.nCandidates);	      
 	      /* loop over candidates surviving 1st stage  */
 	      for ( j=0; j < semiCohCandList1.nCandidates; j++) 
 		{		  
