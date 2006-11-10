@@ -184,6 +184,9 @@ void PrintCatalogInfo( LALStatus  *status, const SFTCatalog *catalog, FILE *fp);
 
 void PrintStackInfo( LALStatus  *status, const SFTCatalogSequence *catalogSeq, FILE *fp);
 
+void GetHoughCandidates_threshold(LALStatus *status, SemiCohCandidateList *out, HOUGHMapTotal *ht, HOUGHPatchGrid *patch,
+				  HOUGHDemodPar *parDem, REAL8 threshold);
+
 /* default values for input variables */
 #define EPHEMERISDIR "/local_data/badkri/lscsoft/share/lal/" /**< Default location of ephemeris files*/
 #define EPHEMERISYEAR "05-09"   /**< Default location of sun ephemeris */
@@ -1704,8 +1707,9 @@ void ComputeFstatHoughMap(LALStatus *status,
 	  TRY( LALHOUGHConstructHMT(status->statusPtr, &ht, &freqInd, &phmdVS),status );
 
 	  /* get candidates */
-	  TRY(GetHoughCandidates_toplist( status->statusPtr, houghToplist, &ht, &patch, &parDem), status);
-
+	  /* TRY(GetHoughCandidates_toplist( status->statusPtr, houghToplist, &ht, &patch, &parDem), status); */
+	  TRY(GetHoughCandidates_threshold( status->statusPtr, out, &ht, &patch, &parDem, 0.2*nStacks), status);
+  
 	  /* calculate statistics and histogram */
 	  if ( uvar_printStats && (fpStats != NULL) ) {
 	    TRY( LALHoughStatistics ( status->statusPtr, &stats, &ht), status );
@@ -1776,10 +1780,10 @@ void ComputeFstatHoughMap(LALStatus *status,
   TRY( LALDDestroyVector( status->statusPtr, &timeDiffV), status);
 
   /* copy candidates to output structure */
-  for ( k=0; k<houghToplist->elems; k++) {
-    out->list[k] = *((SemiCohCandidate *)(toplist_elem(houghToplist, k)));
-  }
-  out->nCandidates = houghToplist->elems;
+  /*   for ( k=0; k<houghToplist->elems; k++) { */
+  /*     out->list[k] = *((SemiCohCandidate *)(toplist_elem(houghToplist, k))); */
+  /*   } */
+  /*   out->nCandidates = houghToplist->elems; */
   free_toplist(&houghToplist);
 
   if (uvar_printStats ) {
@@ -2001,7 +2005,7 @@ void PrintHmap2file(LALStatus *status,
 }
 
 
-/** Get Hough candidates */
+/** Get Hough candidates as a toplist */
 void GetHoughCandidates_toplist(LALStatus *status,
 				toplist_t *list,
 				HOUGHMapTotal *ht,
@@ -2059,6 +2063,78 @@ void GetHoughCandidates_toplist(LALStatus *status,
   RETURN(status);
 
 } /* end hough toplist selection */
+
+
+
+/** Get Hough candidates as a toplist using a fixed threshold*/
+void GetHoughCandidates_threshold(LALStatus            *status,
+				  SemiCohCandidateList *out,
+				  HOUGHMapTotal        *ht,
+				  HOUGHPatchGrid       *patch,
+				  HOUGHDemodPar        *parDem,
+				  REAL8                threshold)
+{
+  REAL8UnitPolarCoor sourceLocation;
+  REAL8 deltaF, f0, fdot, dFdot, patchSizeX, patchSizeY;
+  INT8 f0Bin;  
+  INT4 i,j, xSide, ySide, numCandidates;
+  SemiCohCandidate thisCandidate;
+
+  INITSTATUS( status, "GetHoughCandidates_threshold", rcsid );
+  ATTATCHSTATUSPTR (status);
+
+  deltaF = ht->deltaF;
+  f0Bin = ht->f0Bin;
+  f0 = f0Bin * deltaF;
+
+  fdot = ht->spinDem.data[0] + ht->spinRes.data[0];
+  dFdot = ht->dFdot.data[0];
+
+  xSide = ht->xSide;
+  ySide = ht->ySide;
+  patchSizeX = ht->patchSizeX;
+  patchSizeY = ht->patchSizeY;
+
+  thisCandidate.freq =  f0;
+  thisCandidate.dFreq = deltaF;
+  thisCandidate.fdot = fdot;
+  thisCandidate.dFdot = dFdot;
+  thisCandidate.dAlpha = patchSizeX / ((REAL8)xSide);
+  thisCandidate.dDelta = patchSizeY / ((REAL8)ySide);  
+
+  numCandidates = out->nCandidates;
+
+  for (i = 0; i < ySide; i++)
+    {
+      for (j = 0; j < xSide; j++)
+	{ 
+	  
+	  thisCandidate.significance =  ht->map[i*xSide + j];
+	  /* add to list if candidate exceeds threshold and there is enough space in list */
+	  if( ((REAL8)thisCandidate.significance > threshold) && (numCandidates < out->length) ) {
+	    /* get sky location of pixel */
+	    TRY( LALStereo2SkyLocation (status->statusPtr, &sourceLocation, 
+					j, i, patch, parDem), status);
+	    
+	    thisCandidate.alpha = sourceLocation.alpha;
+	    thisCandidate.delta = sourceLocation.delta;
+	    
+	    out->list[numCandidates] = thisCandidate;
+	    numCandidates++;
+	    out->nCandidates = numCandidates;
+	  }
+
+	  
+	} /* end loop over xSide */
+
+    } /* end loop over ySide */
+
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+
+} /* end hough toplist selection */
+
+
 
 
 
