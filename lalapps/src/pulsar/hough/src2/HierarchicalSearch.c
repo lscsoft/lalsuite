@@ -23,7 +23,7 @@
  * \file HierarchicalSearch.c
  * \brief Program for calculating F-stat values for different time segments 
    and combining them semi-coherently using the Hough transform, and following 
-   up candidates using a more sensitive search.
+   up candidates using a longer coherent integration.
 
    \par  Description
    
@@ -73,7 +73,7 @@
      size of the patch depends on the validity of the above master
      equation.
 
-   - The output of the Hough search is a \e number \e count at point
+   - The output of the Hough search is a \e number \e count at each point
      of the grid.  A threshold is set on the number count, leading to
      candidates in parameter space.  For stack slide, instead of the
      number count, we get the summed Fstatistic power.  Alternatively,
@@ -83,10 +83,8 @@
    - These candidates are followed up using a second set of SFTs (also
      specified by the user).  The follow up consists of a full
      coherent integration, i.e. the F-statistic is calculated for the
-     whole set of SFTs without breaking them up into stacks.  A
-     threshold can be set on the F-statistic to get the final list of
-     candidates or alternatively (and preferably), the user can choose
-     to output a toplist of candidates.
+     whole set of SFTs without breaking them up into stacks.  The user
+     can choose to output the N highest significance candidates.
 
 
    \par Questions/To-do
@@ -520,7 +518,7 @@ int main( int argc, char *argv[]) {
       /* get the log string */
       LAL_CALL( LALUserVarGetLog(&status, &logstr, UVAR_LOGFMT_CFGFILE), &status);  
       
-      fprintf( fpLog, "## Log file for DriveHoughFStat\n\n");
+      fprintf( fpLog, "## Log file for HierarchicalSearch.c\n\n");
       fprintf( fpLog, "# User Input:\n");
       fprintf( fpLog, "#-------------------------------------------\n");
       fprintf( fpLog, logstr);
@@ -671,8 +669,22 @@ int main( int argc, char *argv[]) {
   midTstack1 = usefulParams1.midTstack;
   startTstack1 = usefulParams1.startTstack;
   refTimeGPS = usefulParams1.spinRange_refTime.refTime;
+
+  LogPrintf(LOG_DEBUG, "Frequency and spindown range at refTime (%d): [%f-%f], [%e-%e]\n", 
+	    usefulParams1.spinRange_refTime.refTime.gpsSeconds,
+	    usefulParams1.spinRange_refTime.fkdot[0], 
+	    usefulParams1.spinRange_refTime.fkdot[0] + usefulParams1.spinRange_refTime.fkdotBand[0], 
+	    usefulParams1.spinRange_refTime.fkdot[1], 
+	    usefulParams1.spinRange_refTime.fkdot[1] + usefulParams1.spinRange_refTime.fkdotBand[1]);
   
-  /* some debug info */
+  LogPrintf(LOG_DEBUG, "Frequency and spindown range at startTime (%d): [%f-%f], [%e-%e]\n", 
+	    usefulParams1.spinRange_startTime.refTime.gpsSeconds,
+	    usefulParams1.spinRange_startTime.fkdot[0], 
+	    usefulParams1.spinRange_startTime.fkdot[0] + usefulParams1.spinRange_startTime.fkdotBand[0], 
+	    usefulParams1.spinRange_startTime.fkdot[1], 
+	    usefulParams1.spinRange_startTime.fkdot[1] + usefulParams1.spinRange_startTime.fkdotBand[1]);
+
+  /* print some debug info */
   LogPrintf(LOG_DEBUG, "Number of stacks: %d,  Duration: %fsec\n", nStacks1, tStack1);
   for (k=0; k<nStacks1; k++) {
     LogPrintfVerbatim(LOG_DEBUG, "Stack %d ", k);
@@ -1191,10 +1203,10 @@ int main( int argc, char *argv[]) {
 /** Set up stacks, read SFTs, calculate SFT noise weights and calculate 
     detector-state */
 void SetUpSFTs( LALStatus *status,
-		MultiSFTVectorSequence *stackMultiSFT,
-		MultiNoiseWeightsSequence *stackMultiNoiseWeights,
-		MultiDetectorStateSeriesSequence *stackMultiDetStates,
-		UsefulStageVariables *in)
+		MultiSFTVectorSequence *stackMultiSFT, /**< output multi sft vector for each stack */
+		MultiNoiseWeightsSequence *stackMultiNoiseWeights, /**< output multi noise weights for each stack */
+		MultiDetectorStateSeriesSequence *stackMultiDetStates, /**< output multi detector states for each stack */
+		UsefulStageVariables *in /**< input params */)
 {
 
   SFTCatalog *catalog = NULL;
@@ -1222,17 +1234,6 @@ void SetUpSFTs( LALStatus *status,
   constraints.endTime = &(in->maxEndTimeGPS);
   TRY( LALSFTdataFind( status->statusPtr, &catalog, in->sftbasename, &constraints), status);
   
-  /*   if ( uvar_followUp ) { */
-  /*     TRY ( PrintCatalogInfo ( status->statusPtr, catalog, fpFstat), status); */
-  /*   } */
-  
-  /*   if ( uvar_printFstat1 ) { */
-  /*     TRY ( PrintCatalogInfo ( status->statusPtr, catalog, fpFstat1), status); */
-  /*   } */
-  
-  /*   if ( uvar_printCand1 ) { */
-  /*     TRY ( PrintCatalogInfo ( status->statusPtr, catalog, fpSemiCoh), status); */
-  /*   } */
   
   /* set some sft parameters */
   in->deltaF = deltaF = catalog->data->header.deltaF;
@@ -1240,18 +1241,6 @@ void SetUpSFTs( LALStatus *status,
   
   /* get sft catalogs for each stack */
   TRY( SetUpStacks( status->statusPtr, &catalogSeq, &tStack, &sftTimeStamps, catalog, in->nStacks), status);
-  
-  /*   if ( uvar_followUp ) { */
-  /*     TRY ( PrintStackInfo ( status->statusPtr, &catalogSeq, fpFstat), status); */
-  /*   } */
-  
-  /*   if ( uvar_printFstat1 ) { */
-  /*     TRY ( PrintStackInfo ( status->statusPtr, &catalogSeq, fpFstat1), status); */
-  /*   } */
-  
-  /*   if ( uvar_printCand1 ) { */
-  /*     TRY ( PrintStackInfo ( status->statusPtr, &catalogSeq, fpSemiCoh), status); */
-  /*   } */
   
   /* calculate start and end times and tobs */
   tStartGPS = sftTimeStamps->data[0];
@@ -1301,8 +1290,7 @@ void SetUpSFTs( LALStatus *status,
   
   fMin = freqLo - doppWings - extraBins * deltaF; 
   fMax = freqHi + doppWings + extraBins * deltaF; 
-  
-  
+    
   /* set up vector containing mid times of stacks */    
   in->midTstack =  XLALCreateTimestampVector ( in->nStacks );
   
@@ -1880,13 +1868,19 @@ void FstatVectToPeakGram (LALStatus *status,
 }
 
 
+/** \brief Breaks up input sft catalog into specified number of stacks
 
+    Loops over elements of the catalog, assigns a bin index and
+    allocates memory to the output catalog sequence appropriately.  If
+    there are long gaps in the data, then some of the catalogs in the
+    output catalog sequence may be of zero length. 
+*/
 void SetUpStacks(LALStatus *status, 
-		 SFTCatalogSequence  *out,
-		 REAL8 *tStack,
-		 LIGOTimeGPSVector **ts,
-		 SFTCatalog  *in,
-		 UINT4 nStacks)
+		 SFTCatalogSequence  *out, /**< Output catalog of sfts -- one for each stack */
+		 REAL8 *tStack,            /**< Output duration of each stack */
+		 LIGOTimeGPSVector **ts,   /**< Output sft timestamps */
+		 SFTCatalog  *in,          /**< Input sft catalog to be broken up into stacks (ordered in increasing time)*/
+		 UINT4 nStacks )           /**< User specified number of stacks */
 {
 
   UINT4 nSFTs, length, j, k;
@@ -1896,18 +1890,28 @@ void SetUpStacks(LALStatus *status,
   INITSTATUS( status, "SetUpStacks", rcsid );
   ATTATCHSTATUSPTR (status);
 
+  /* check input parameters */
+  ASSERT ( in != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  ASSERT ( in->length > 0, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
+  ASSERT ( nStacks > 0, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
+  ASSERT ( nStacks < nSFTs, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
+  ASSERT ( *ts == NULL, status, HIERARCHICALSEARCH_ENONULL, HIERARCHICALSEARCH_MSGENONULL );
+  ASSERT ( in != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  ASSERT ( tStack != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  ASSERT ( out != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+
   out->length = nStacks;
   out->data = (SFTCatalog *)LALCalloc( 1, nStacks * sizeof(SFTCatalog));
   
   nSFTs = in->length;
 
-  ASSERT ( nStacks < nSFTs, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
-
+  /* get sft timestamps from catalog */
   TRY( LALSFTtimestampsFromCatalog( status->statusPtr, ts, in), status);  	
 
   deltaF = in->data[0].header.deltaF;
   timeBase = 1.0/deltaF;
 
+  /* get first and last sft timestamp */
   TRY ( LALGPStoFloat ( status->statusPtr, &tStart, ts[0]->data), status);
   TRY ( LALGPStoFloat ( status->statusPtr, &tEnd, ts[0]->data + nSFTs - 1), status);
   *tStack = (tEnd + timeBase - tStart) / nStacks;
@@ -1916,15 +1920,18 @@ void SetUpStacks(LALStatus *status,
   for( j = 0; j < nSFTs; j++) {
 
     /* calculate which stack the j^th SFT belongs to */
+    /* thisTime is current sft timestamp */
     TRY ( LALGPStoFloat ( status->statusPtr, &thisTime, ts[0]->data + j), status);
     k = (UINT4)((thisTime - tStart)/(*tStack));
 
     out->data[k].length += 1;    
 
     length = out->data[k].length;
-    
+
+    /* realloc to increase length of catalog */    
     out->data[k].data = (SFTDescriptor *)LALRealloc( out->data[k].data, length * sizeof(SFTDescriptor));
 
+    /* copy catalog struct */
     out->data[k].data[length - 1] = in->data[j];   
 
   } /* loop over sfts */
@@ -2325,11 +2332,13 @@ void GetStackVelPos( LALStatus *status,
   
   /* calculate detector velocity and position for each stack*/
   /* which detector?  -- think carefully about this! */
-  /* Since only the sfts are associated with a detector, the cleanest solution 
-     (unless something better comes up) seems to be to average the velocities 
-     and positions of the sfts in each stack.  Thus, for the purposes of the velocity
-     and position calculation, we can view the sfts as coming from the a single 
-     hypothetical ifo which is moving in a strange way */
+  /* Since only the sfts are associated with a detector, the cleanest
+     solution (unless something better comes up) seems to be to
+     average the velocities and positions of the ifo within the sft
+     time intervals in each stack.  Thus, for the purposes of the
+     velocity and position calculation, we can view the sfts as coming
+     from the a single hypothetical ifo which is moving in a strange
+     way */
 
   for (k = 0; k < nStacks; k++)
     {
