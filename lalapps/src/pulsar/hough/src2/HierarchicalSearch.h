@@ -98,6 +98,7 @@ NRCSID( HIERARCHICALSEARCHH, "$Id$" );
 #define HIERARCHICALSEARCH_EFILE 4
 #define HIERARCHICALSEARCH_ENULL 5
 #define HIERARCHICALSEARCH_EVAL  6
+#define HIERARCHICALSEARCH_ENONULL 7
 
 #define HIERARCHICALSEARCH_MSGENORM "Normal exit"
 #define HIERARCHICALSEARCH_MSGESUB  "Subroutine failed"
@@ -106,7 +107,7 @@ NRCSID( HIERARCHICALSEARCHH, "$Id$" );
 #define HIERARCHICALSEARCH_MSGEFILE "Could not create output file"
 #define HIERARCHICALSEARCH_MSGENULL "Null pointer"
 #define HIERARCHICALSEARCH_MSGEVAL "Invalid value"
-
+#define HIERARCHICALSEARCH_MSGENONULL "Pointer not null"
 
 
 /* ******************************************************************

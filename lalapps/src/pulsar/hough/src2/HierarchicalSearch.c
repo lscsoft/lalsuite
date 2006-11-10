@@ -571,9 +571,6 @@ int main( int argc, char *argv[]) {
     LAL_CALL( LALInitBarycenter( &status, edat), &status);        
   }
 
-  /* some compute F params */
-  CFparams.Dterms = uvar_Dterms;
-  CFparams.SSBprec = uvar_SSBprecision;
 
   LAL_CALL ( LALFloatToGPS( &status, &minStartTimeGPS1, &uvar_minStartTime1), &status);
   LAL_CALL ( LALFloatToGPS( &status, &maxEndTimeGPS1, &uvar_maxEndTime1), &status);
@@ -670,6 +667,7 @@ int main( int argc, char *argv[]) {
   startTstack1 = usefulParams1.startTstack;
   refTimeGPS = usefulParams1.spinRange_refTime.refTime;
 
+  /* print some debug info */
   LogPrintf(LOG_DEBUG, "Frequency and spindown range at refTime (%d): [%f-%f], [%e-%e]\n", 
 	    usefulParams1.spinRange_refTime.refTime.gpsSeconds,
 	    usefulParams1.spinRange_refTime.fkdot[0], 
@@ -684,7 +682,6 @@ int main( int argc, char *argv[]) {
 	    usefulParams1.spinRange_startTime.fkdot[1], 
 	    usefulParams1.spinRange_startTime.fkdot[1] + usefulParams1.spinRange_startTime.fkdotBand[1]);
 
-  /* print some debug info */
   LogPrintf(LOG_DEBUG, "Number of stacks: %d,  Duration: %fsec\n", nStacks1, tStack1);
   for (k=0; k<nStacks1; k++) {
     LogPrintfVerbatim(LOG_DEBUG, "Stack %d ", k);
@@ -704,6 +701,10 @@ int main( int argc, char *argv[]) {
   thisPoint1.orbit = NULL;
   thisPoint1.fkdot[2] = 0.0;
   thisPoint1.fkdot[3] = 0.0;
+
+  /* some compute F params */
+  CFparams.Dterms = uvar_Dterms;
+  CFparams.SSBprec = uvar_SSBprecision;
       
   /* allocate fstat memory */
   fstatVector1.length = nStacks1;
@@ -727,6 +728,7 @@ int main( int argc, char *argv[]) {
   LogPrintf (LOG_DEBUG, "Calculating detector velocity and positions ... ");
   LAL_CALL( GetStackVelPos( &status, &velStack1, &posStack1, &stackMultiDetStates1), &status);
   LogPrintfVerbatim (LOG_DEBUG, "done\n");
+
 
   /*------------------ read sfts and set up stacks for follow up stage -----------------------*/
   /* check if user requested a follow up stage*/
