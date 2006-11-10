@@ -367,7 +367,7 @@ int main( int argc, char *argv[]) {
   uvar_Freq = FSTART;
   uvar_FreqBand = FBAND;
   uvar_blocksRngMed = BLOCKSRNGMED;
-  uvar_nfdot = NFDOT;
+  uvar_nfdot = 0;
   uvar_peakThrF = FSTATTHRESHOLD;
   uvar_nCand1 = uvar_nCand2 = NCAND1;
   uvar_SSBprecision = SSBPREC_RELATIVISTIC;
@@ -419,7 +419,7 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterREALUserVar(   &status, "FreqBand",    'b', UVAR_OPTIONAL, "Search frequency band", &uvar_FreqBand), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "f1dot",        0,  UVAR_OPTIONAL, "Spindown parameter", &uvar_f1dot), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "f1dotBand",    0,  UVAR_OPTIONAL, "Range of fdot", &uvar_f1dotBand), &status);
-  LAL_CALL( LALRegisterINTUserVar (   &status, "nfdot",        0,  UVAR_OPTIONAL, "No.of residual fdot values to be searched", &uvar_nfdot), &status);
+  LAL_CALL( LALRegisterINTUserVar (   &status, "nfdot",        0,  UVAR_OPTIONAL, "No.of residual fdot values (default=nStacks1)", &uvar_nfdot), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "nStacks1",    'N', UVAR_OPTIONAL, "No.of 1st stage stacks", &uvar_nStacks1 ), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "mismatch1",    0,  UVAR_OPTIONAL, "1st stage mismatch", &uvar_mismatch1), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "mismatch2",    0,  UVAR_OPTIONAL, "2nd stage mismatch", &uvar_mismatch2), &status);
@@ -667,6 +667,10 @@ int main( int argc, char *argv[]) {
   startTstack1 = usefulParams1.startTstack;
   refTimeGPS = usefulParams1.spinRange_refTime.refTime;
 
+  if ( !LALUserVarWasSet(&uvar_nfdot) ) {
+    uvar_nfdot = nStacks1;
+  }
+    
   /* print some debug info */
   LogPrintf(LOG_DEBUG, "Frequency and spindown range at refTime (%d): [%f-%f], [%e-%e]\n", 
 	    usefulParams1.spinRange_refTime.refTime.gpsSeconds,
@@ -834,7 +838,8 @@ int main( int argc, char *argv[]) {
   scanInit1.skyGridFile = uvar_skyGridFile;
   scanInit1.skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
   strcpy (scanInit1.skyRegionString, uvar_skyRegion);
-  scanInit1.Freq = uvar_Freq + uvar_FreqBand;
+  scanInit1.Freq = uvar_Freq + uvar_FreqBand; /* this is not strictly right -- but for narrow frequency 
+						 bands the error should not be large */
 
   /* initialize skygrid  */  
   LogPrintf(LOG_DEBUG, "Setting up coarse sky grid...");
@@ -894,8 +899,12 @@ int main( int argc, char *argv[]) {
       thisPoint1.Delta = dopplerpos1.Delta;
       
       /* number of fdot values */
-      dfDot = thisScan1.dfkdot[1];
-      
+      /* coarse grid spacing in spindown as given in thisScan1 is based on 
+	 the g_f1_f1 component of the metric */
+      /* dfDot = thisScan1.dfkdot[1]; */
+      /* we can also use the value 1/tStack1^2 -- check this */
+      dfDot = 1.0/(tStack1*tStack1);
+
       nfdot = (UINT4)( usefulParams1.spinRange_startTime.fkdotBand[1]/ dfDot + 0.5) + 1; 
 
       
@@ -1045,7 +1054,8 @@ int main( int argc, char *argv[]) {
 		      thisPoint2.Delta = dopplerpos2.Delta;
 		      		      
 		      /* number of fdot values */
-		      dfDot2 = thisScan2.dfkdot[1];
+		      /* dfDot2 = thisScan2.dfkdot[1]; */
+		      dfDot2 = 1.0/(tStack2*tStack2);
 		      nfdot2 = (UINT4)( fdotBand1 / dfDot2 + 0.5) + 1; 
 		      
 		      /* loop over fdot values */
