@@ -307,6 +307,7 @@ int main( int argc, char *argv[]) {
   BOOLEAN uvar_chkPoint;
   BOOLEAN uvar_followUp;
   BOOLEAN uvar_printFstat1;
+  BOOLEAN uvar_useToplist1;
 
   REAL8 uvar_dAlpha, uvar_dDelta; /* resolution for flat or isotropic grids */
   REAL8 uvar_f1dot; /* first spindown value */
@@ -321,6 +322,7 @@ int main( int argc, char *argv[]) {
   REAL8 uvar_dopplerMax;
   REAL8 uvar_pixelFactor;
   REAL8 uvar_semiCohPatchX, uvar_semiCohPatchY;
+  REAL8 uvar_threshold1;
 
   INT4 uvar_method; /* hough = 0, stackslide = 1, -1 = pure fstat*/
   INT4 uvar_nCand1; /* number of candidates to be followed up from first stage */
@@ -361,6 +363,7 @@ int main( int argc, char *argv[]) {
   uvar_printCand1 = FALSE;
   uvar_printFstat1 = FALSE;
   uvar_chkPoint = FALSE;
+  uvar_useToplist1 = FALSE;
   uvar_nStacks1 = 1;
   uvar_Dterms = DTERMS;
   uvar_dAlpha = DALPHA;
@@ -380,7 +383,7 @@ int main( int argc, char *argv[]) {
   uvar_gridType2 = GRID_METRIC;
   uvar_mismatch1 = uvar_mismatch2 = MISMATCH;
   uvar_pixelFactor = PIXELFACTOR;
-
+  uvar_threshold1 = 0;
   uvar_minStartTime1 = 0;
   uvar_maxEndTime1 = LAL_INT4_MAX;
 
@@ -414,9 +417,10 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "log",          0,  UVAR_OPTIONAL, "Write log file", &uvar_log), &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "chkPoint",     0,  UVAR_OPTIONAL, "For checkpointing", &uvar_chkPoint), &status);  
   LAL_CALL( LALRegisterINTUserVar(    &status, "method",       0,  UVAR_OPTIONAL, "0=Hough,1=stackslide,-1=fstat", &uvar_method ), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "useToplist1",  0,  UVAR_OPTIONAL, "Use toplist for 1st stage candidates?", &uvar_useToplist1 ), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "followUp",     0,  UVAR_OPTIONAL, "Follow up stage?", &uvar_followUp), &status);  
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "DataFiles1",     0,  UVAR_OPTIONAL, "1st SFT file pattern", &uvar_DataFiles1), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "DataFiles2",     0,  UVAR_OPTIONAL, "2nd SFT file pattern", &uvar_DataFiles2), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "DataFiles1",   0,  UVAR_OPTIONAL, "1st SFT file pattern", &uvar_DataFiles1), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "DataFiles2",   0,  UVAR_OPTIONAL, "2nd SFT file pattern", &uvar_DataFiles2), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyRegion",    0,  UVAR_OPTIONAL, "sky-region polygon (or 'allsky')", &uvar_skyRegion), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "Freq",        'f', UVAR_OPTIONAL, "Start search frequency", &uvar_Freq), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "FreqBand",    'b', UVAR_OPTIONAL, "Search frequency band", &uvar_FreqBand), &status);
@@ -439,7 +443,8 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameout",    'o', UVAR_OPTIONAL, "Output basefileneme", &uvar_fnameout), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "peakThrF",     0,  UVAR_OPTIONAL, "Fstat Threshold", &uvar_peakThrF), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "nCand1",       0,  UVAR_OPTIONAL, "No.of 1st stage candidates to be followed up", &uvar_nCand1), &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "nCand2",       0,  UVAR_OPTIONAL, "No.of 2nd stage candidates to be followed up",&uvar_nCand2), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "threshold1",   0,  UVAR_OPTIONAL, "Threshold for 1st stage candidate selection (if no toplist)", &uvar_threshold1), &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "nCand2",       0,  UVAR_OPTIONAL, "No.of 2nd stage candidates to be saved",&uvar_nCand2), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printCand1",   0,  UVAR_OPTIONAL, "Print 1st stage candidates", &uvar_printCand1), &status);  
   LAL_CALL( LALRegisterREALUserVar(   &status, "refTime",      0,  UVAR_OPTIONAL, "Ref. time for pulsar pars [start time]", &uvar_refTime), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemDir",     0,  UVAR_OPTIONAL, "Location of ephemeris files", &uvar_ephemDir),  &status);
@@ -802,6 +807,8 @@ int main( int argc, char *argv[]) {
   /* start setting up the semicoherent (Hough or stack slide) part of the search */
   
   /* set up some semiCoherent parameters */
+  semiCohPar.useToplist = uvar_useToplist1;
+  semiCohPar.threshold = uvar_threshold1;
   semiCohPar.tsMid = midTstack1;
   semiCohPar.refTime = tStart1GPS;
   semiCohPar.vel = velStack1;
@@ -1456,7 +1463,9 @@ void ComputeFstatHoughMap(LALStatus *status,
   ATTATCHSTATUSPTR (status);
 
   /* create toplist of candidates */
-  create_toplist(&houghToplist, out->length, sizeof(SemiCohCandidate), smallerHough);
+  if (params->useToplist) {
+    create_toplist(&houghToplist, out->length, sizeof(SemiCohCandidate), smallerHough);
+  }
 
   /* copy some parameters from peakgram vector */
   deltaF = pgV->pg->deltaF;
@@ -1707,9 +1716,13 @@ void ComputeFstatHoughMap(LALStatus *status,
 	  TRY( LALHOUGHConstructHMT(status->statusPtr, &ht, &freqInd, &phmdVS),status );
 
 	  /* get candidates */
-	  /* TRY(GetHoughCandidates_toplist( status->statusPtr, houghToplist, &ht, &patch, &parDem), status); */
-	  TRY(GetHoughCandidates_threshold( status->statusPtr, out, &ht, &patch, &parDem, 0.2*nStacks), status);
-  
+	  if ( params->useToplist ) {
+	    TRY(GetHoughCandidates_toplist( status->statusPtr, houghToplist, &ht, &patch, &parDem), status);
+	  }
+	  else {
+	    TRY(GetHoughCandidates_threshold( status->statusPtr, out, &ht, &patch, &parDem, params->threshold), status);
+	  }
+
 	  /* calculate statistics and histogram */
 	  if ( uvar_printStats && (fpStats != NULL) ) {
 	    TRY( LALHoughStatistics ( status->statusPtr, &stats, &ht), status );
@@ -1779,12 +1792,14 @@ void ComputeFstatHoughMap(LALStatus *status,
 
   TRY( LALDDestroyVector( status->statusPtr, &timeDiffV), status);
 
-  /* copy candidates to output structure */
-  /*   for ( k=0; k<houghToplist->elems; k++) { */
-  /*     out->list[k] = *((SemiCohCandidate *)(toplist_elem(houghToplist, k))); */
-  /*   } */
-  /*   out->nCandidates = houghToplist->elems; */
-  free_toplist(&houghToplist);
+  /* copy toplist candidates to output structure if necessary */
+  if ( params->useToplist ) {
+    for ( k=0; k<houghToplist->elems; k++) {
+      out->list[k] = *((SemiCohCandidate *)(toplist_elem(houghToplist, k)));
+    }
+    out->nCandidates = houghToplist->elems;
+    free_toplist(&houghToplist);
+  }
 
   if (uvar_printStats ) {
     

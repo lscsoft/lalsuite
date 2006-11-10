@@ -154,6 +154,8 @@ NRCSID( HIERARCHICALSEARCHH, "$Id$" );
     REAL8 fdot;                /**< spindown value of demodulation point */
     UINT4 nfdot;               /**< number of fdot values to search over */ 
     CHAR *outBaseName;         /**< file for writing output -- if chosen */
+    BOOLEAN useToplist;        /**< Use a toplist for producing candidates? */
+    REAL8  threshold;          /**< Threshold for candidate selection */
   } SemiCoherentParams;
 
   /** one hough candidate */
