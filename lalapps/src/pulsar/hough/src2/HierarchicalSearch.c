@@ -715,6 +715,7 @@ int main( int argc, char *argv[]) {
   fstatVector1.data = NULL;
   fstatVector1.data = (REAL8FrequencySeries *)LALCalloc( 1, nStacks1 * sizeof(REAL8FrequencySeries));
   binsFstat1 = (UINT4)(usefulParams1.spinRange_startTime.fkdotBand[0]/deltaFstack1 + 0.5) + 1;
+  LogPrintf(LOG_DEBUG, "Number of Fstat frequency bins = %d\n", binsFstat1); 
   for (k = 0; k < nStacks1; k++) 
     { 
       /* careful--the epoch here is not the reference time for f0! */
