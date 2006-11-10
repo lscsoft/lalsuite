@@ -1905,6 +1905,8 @@ void SetUpStacks(LALStatus *status,
   /* check input parameters */
   ASSERT ( in != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
   ASSERT ( in->length > 0, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
+  nSFTs = in->length;
+
   ASSERT ( nStacks > 0, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
   ASSERT ( nStacks < nSFTs, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
   ASSERT ( *ts == NULL, status, HIERARCHICALSEARCH_ENONULL, HIERARCHICALSEARCH_MSGENONULL );
@@ -1915,7 +1917,7 @@ void SetUpStacks(LALStatus *status,
   out->length = nStacks;
   out->data = (SFTCatalog *)LALCalloc( 1, nStacks * sizeof(SFTCatalog));
   
-  nSFTs = in->length;
+
 
   /* get sft timestamps from catalog */
   TRY( LALSFTtimestampsFromCatalog( status->statusPtr, ts, in), status);  	
