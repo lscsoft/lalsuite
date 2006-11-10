@@ -686,7 +686,7 @@ int main( int argc, char *argv[]) {
 	    usefulParams1.spinRange_startTime.fkdot[1], 
 	    usefulParams1.spinRange_startTime.fkdot[1] + usefulParams1.spinRange_startTime.fkdotBand[1]);
 
-  LogPrintf(LOG_DEBUG, "Number of stacks: %d,  Duration: %fsec\n", nStacks1, tStack1);
+  LogPrintf(LOG_DEBUG, "1st stage params: Nstacks = %d,  Tstack = %.0fsec, Tobs = %.0fsec\n", nStacks1, tStack1, tObs1);
   for (k=0; k<nStacks1; k++) {
     LogPrintfVerbatim(LOG_DEBUG, "Stack %d ", k);
     LogPrintfVerbatim(LOG_DEBUG, "(GPS start time %d) ", startTstack1->data[k].gpsSeconds);
