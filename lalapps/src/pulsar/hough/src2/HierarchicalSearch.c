@@ -119,6 +119,21 @@ RCSID( "$Id$");
 #define TRUE (1==1)
 #define FALSE (1==0)
 
+/* Hooks for Einstein@Home / BOINC
+   These are defined to do nothing special in the standalone case
+   and will be set in boinc_extras.h if USE_BOINC is set
+ */
+#ifdef EAH_BOINC
+#include "boinc_extras.h"
+#else
+#define SET_CHECKPOINT(filename,rac,dec,tpl_count,tpl_total) /* length, checksum */
+#define GET_CHECKPOINT(filename)
+#define REMOVE_CHECKPOINT(filename) /* should we do this at all ?? pobably in the non-BOINC case only */
+#define SHOW_PROGRESS(rac,dec,tpl_count,tpl_total)
+#define MAIN  main
+#define FOPEN fopen
+#endif
+
 extern int lalDebugLevel;
 
 BOOLEAN uvar_printMaps; /**< global variable for printing Hough maps */
@@ -209,7 +224,7 @@ void GetHoughCandidates_threshold(LALStatus *status, SemiCohCandidateList *out, 
 #define PIXELFACTOR 2.0
 #define LAL_INT4_MAX 2147483647
 
-int main( int argc, char *argv[]) {
+int MAIN( int argc, char *argv[]) {
 
   /* initialize status */
   LALStatus status = blank_status;
@@ -296,7 +311,7 @@ int main( int argc, char *argv[]) {
   FILE *fpFstat1=NULL;
   
   /* checkpoint filename and index of loop over skypoints */
-  /*   CHAR *fnameChkPoint=NULL; */
+  CHAR *fnameChkPoint="checkpoint.cpt";
   /*   FILE *fpChkPoint=NULL; */
   /*   UINT4 loopindex, loopcounter; */
   
@@ -892,16 +907,22 @@ int main( int argc, char *argv[]) {
  
   /* loop over skygrid points */
   skyGridCounter = 0;
-  while(1)
+
+  GET_CHECKPOINT(fnameChkPoint);
+
+  XLALNextDopplerSkyPos( &dopplerpos1, &thisScan1 );
+  while(thisScan1.state == STATE_FINISHED)
     {
       UINT4 ifdot, nfdot;  /* counter and number of spindown values */
       REAL8 dfDot;  /* resolution in spindown */
 
-      XLALNextDopplerSkyPos( &dopplerpos1, &thisScan1 );
-      if (thisScan1.state == STATE_FINISHED) /* scanned all DopplerPositions yet? */
-	break;
-
       skyGridCounter++;
+
+      SHOW_PROGRESS(thisscan1.state.SkyNode.Alpha,
+		    thisscan1.state.SkyNode.Delta,
+		    skyGridCounter,
+		    thisscan1.state.numSkyGridPoints)
+
       
       /*------------- calculate F statistic for each stack --------------*/
       
@@ -1121,6 +1142,14 @@ int main( int argc, char *argv[]) {
 	    } /* end block for follow-up stage */ 
 	  
 	} /* end loop over coarse grid fdot values */
+
+      SET_CHECKPOINT(fnameChkPoint,
+		     thisscan1.state.SkyNode.Alpha,
+		     thisscan1.state.SkyNode.Delta,
+		     skyGridCounter,
+		     thisscan1.state.numSkyGridPoints);
+
+      XLALNextDopplerSkyPos( &dopplerpos1, &thisScan1 );
       
     } /* end while loop over 1st stage coarse skygrid */
       
@@ -1215,6 +1244,8 @@ int main( int argc, char *argv[]) {
   LAL_CALL (LALDestroyUserVars(&status), &status);  
 
   LALCheckMemoryLeaks();
+
+  REMOVE_CHECKPOINT(fnameChkPoint);
 
   return HIERARCHICALSEARCH_ENORM;
 } /* main */
