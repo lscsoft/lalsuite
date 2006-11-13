@@ -911,7 +911,8 @@ int MAIN( int argc, char *argv[]) {
   GET_CHECKPOINT(fnameChkPoint);
 
   XLALNextDopplerSkyPos( &dopplerpos1, &thisScan1 );
-  while(thisScan1.state == STATE_FINISHED)
+
+  while(thisScan1.state != STATE_FINISHED)
     {
       UINT4 ifdot, nfdot;  /* counter and number of spindown values */
       REAL8 dfDot;  /* resolution in spindown */
@@ -1152,7 +1153,8 @@ int MAIN( int argc, char *argv[]) {
       XLALNextDopplerSkyPos( &dopplerpos1, &thisScan1 );
       
     } /* end while loop over 1st stage coarse skygrid */
-      
+
+  LogPrintf(LOG_DEBUG, "Finished analysis and now printing results and cleaning up...");
 
   /* print fstat candidates */  
   {
@@ -1246,6 +1248,8 @@ int MAIN( int argc, char *argv[]) {
   LALCheckMemoryLeaks();
 
   REMOVE_CHECKPOINT(fnameChkPoint);
+
+  LogPrintfVerbatim(LOG_DEBUG, "done\n");
 
   return HIERARCHICALSEARCH_ENORM;
 } /* main */
