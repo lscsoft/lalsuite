@@ -66,6 +66,8 @@ RCSID ("$Id$");
 /*@}*/
 
 /*---------- DEFINES ----------*/
+#define MAX_FILENAME_LEN   5012
+
 #define TRUE    (1==1)
 #define FALSE   (1==0)
 
@@ -129,9 +131,17 @@ main(int argc, char *argv[])
 
   /* -- unfortunately getTDIdata() only works if xml-file is in local directory! ==> we need to cd there */
   {
-    CHAR *basedir, *tmp, *basename;
-    if ( ( basedir = LALCalloc ( 1, strlen(uvar_inputXML) + 1 )) == NULL ) {
-      return LISAMAKESFTS_EMEM;
+    CHAR basedir[MAX_FILENAME_LEN], curdir[MAX_FILENAME_LEN];
+    CHAR *tmp, *basename;
+    /* remember current directory */
+    if ( getcwd ( curdir, MAX_FILENAME_LEN ) == NULL ) {
+      LogPrintf ( LOG_CRITICAL, "Current directory path '%s' exceeds maximal length %d\n", curdir, MAX_FILENAME_LEN );
+      return LISAMAKESFTS_EINPUT;      
+    }
+    /* copy input-XML directory and split in basedir + basename */
+    if ( strlen ( uvar_inputXML ) >= MAX_FILENAME_LEN ) {
+      LogPrintf ( LOG_CRITICAL, "Input path '%s' exceeds maximal length %d \n", uvar_inputXML, MAX_FILENAME_LEN );
+      return LISAMAKESFTS_EINPUT;      
     }
     strcpy ( basedir, uvar_inputXML );
     if ( (tmp = strrchr( basedir, '/')) == NULL ) {
@@ -142,18 +152,23 @@ main(int argc, char *argv[])
       *tmp = 0;	/* just terminate string at last '/' */
       basename = tmp + 1;
     }
-    printf ("\nbasedir = %s, basename = %s\n", basedir, basename );
+    /* change into input-XML directory for reading the time-series */
     if(chdir( basedir ) != 0)
       {
 	LogPrintf (LOG_CRITICAL,  "Unable to change directory to xml-directory '%s'\n", basedir);
 	return LISAMAKESFTS_EINPUT;
       }
-
     /* load xml-file and corresponding binary-data into lisaXML-type 'TimeSeries' */
     if ( (lisaTimeSeries = getTDIdata(basename)) == NULL ) {
       fprintf (stderr, "\nlisaXML::getTDIdata() failed for file '%s'\n\n",  uvar_inputXML );
       return LISAMAKESFTS_EFILE;
     }
+    /* return to original directory */
+    if(chdir( curdir ) != 0)
+      {
+	LogPrintf (LOG_CRITICAL,  "Unable to return to start-directory '%s'\n", curdir);
+	return LISAMAKESFTS_EINPUT;
+      }
   } /* chdir to xml-directory */
 
   /* convert lisaXML::TimeSeries -> LAL::REAL4TimeSeries */
