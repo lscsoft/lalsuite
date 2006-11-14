@@ -19,7 +19,7 @@
 
 
 /**
- * \author Reinhard Prix
+ * \author Reinhard Prix and John Whelan
  * \date 2006
  * \file 
  * \brief Read in MLDC timeseries-files and produce SFTs (v2) for them
@@ -65,6 +65,9 @@ RCSID ("$Id$");
 #define TRUE    (1==1)
 #define FALSE   (1==0)
 
+/*---------- pseudo-LISA parameters ----------*/
+#define LISA_ARM_LENGTH_SECONDS 16.6782
+
 /*----- Macros ----- */
 /*---------- internal types ----------*/
 
@@ -99,7 +102,9 @@ main(int argc, char *argv[])
   TimeSeries *lisaTimeSeries;		/* lisaXML timeseries-type */
   MultiREAL4TimeSeries *multiTs = NULL;	/* LAL-equivalent: hold 3 timeseries (X(t), Y(t), Z(t)) */
   SFTParams sftParams;
-  UINT4 ifo;
+  UINT4 ifo, sidx, fidx;
+  COMPLEX8FrequencySeries *sft = NULL;
+  REAL4 fourpifL;
 
   lalDebugLevel = 0;
 
@@ -152,6 +157,19 @@ main(int argc, char *argv[])
 	return -1;
 
       LAL_CALL ( LALSignalToSFTs (&status, &SFTvect, multiTs->data[ifo], &sftParams ), &status );
+      /* Calibrate into "strain" using long-wavelength approx */
+      for ( sidx=0; sidx < SFTvect->length; sidx++ )
+	{
+	  sft = &(SFTvect->data[sidx]);
+	  for ( fidx=0; fidx < sft->data->length; fidx++ )
+	    {
+	      fourpifL = (2.0*LAL_TWOPI*LISA_ARM_LENGTH_SECONDS)
+		* (sft->f0 + fidx * sft->deltaF);
+	      sft->data->data[fidx].re *= fourpifL * fourpifL;
+	      sft->data->data[fidx].im *= fourpifL * fourpifL;
+	    }
+	}
+
       LAL_CALL ( LALWriteSFTVector2Dir (&status, SFTvect, uvar_outputDir, add_comment, desc ), &status );
       LALFree ( desc );
       LAL_CALL ( LALDestroySFTVector ( &status, &SFTvect ), &status );
