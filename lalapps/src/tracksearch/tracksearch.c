@@ -1141,13 +1141,29 @@ void LALappsTrackSearchInitialize(
 	case 'm':
 	  /* Setup the designated windowing function for FFTing */
 	  {
-	    params->window = atoi(optarg);
-	    /* Error check FIX THIS LATER*/
-	    if ((params->window > NumberWindowTypes))
+	    if (!strcmp(optarg,"Rectangular"))
+	      params->window=Rectangular;
+	    else if (!strcmp(optarg,"Hann"))
+	      params->window=Hann;
+	    else if (!strcmp(optarg,"Welch"))
+	      params->window=Welch;
+	    else if (!strcmp(optarg,"Bartlett"))
+	      params->window=Bartlett;
+	    else if (!strcmp(optarg,"Parzen"))
+	      params->window=Parzen;
+	    else if (!strcmp(optarg,"Papoulis"))
+	      params->window=Papoulis;
+	    else if (!strcmp(optarg,"Hamming"))
+	      params->window=Hamming;
+	    else if (!strcmp(optarg,"Kaiser"))
+	      params->window=Kaiser;
+	    else if (!strcmp(optarg,"Creighton"))
+	      params->window=Creighton;
+	    else
 	      {
-		fprintf(stderr,TRACKSEARCHC_MSGEARGS);
-		exit(TRACKSEARCHC_EARGS);
-	      }
+		fprintf(stderr,"Invalid window option: using Rectangular window");
+		params->window=Rectangular;
+	      };
 	  }
 	  break;
 	  
