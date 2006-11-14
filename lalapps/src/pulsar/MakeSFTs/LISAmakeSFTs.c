@@ -29,6 +29,9 @@
  */
 
 /* ---------- includes ---------- */
+#include <unistd.h>
+
+
 #include <lalapps.h>
 
 #include <lal/UserInput.h>
@@ -37,6 +40,7 @@
 #include <lal/LALStdio.h>
 #include <lal/GeneratePulsarSignal.h>
 #include <lal/LISAspecifics.h>
+#include <lal/LogPrintf.h>
 
 /* lisaXML stuff */
 #include "readxml.h"
@@ -123,11 +127,34 @@ main(int argc, char *argv[])
   if (uvar_help) 	/* help requested: we're done */
     exit (0);
 
-  /* load xml-file and corresponding binary-data into lisaXML-type 'TimeSeries' */
-  if ( (lisaTimeSeries = getTDIdata(uvar_inputXML)) == NULL ) {
-    fprintf (stderr, "\nlisaXML::getTDIdata() failed for file '%s'\n\n",  uvar_inputXML );
-    return LISAMAKESFTS_EFILE;
-  }
+  /* -- unfortunately getTDIdata() only works if xml-file is in local directory! ==> we need to cd there */
+  {
+    CHAR *basedir, *tmp, *basename;
+    if ( ( basedir = LALCalloc ( 1, strlen(uvar_inputXML) + 1 )) == NULL ) {
+      return LISAMAKESFTS_EMEM;
+    }
+    strcpy ( basedir, uvar_inputXML );
+    if ( (tmp = strrchr( basedir, '/')) == NULL ) {
+      basedir[0] = '.'; basedir[1] = 0;
+      basename = uvar_inputXML;
+    }
+    else {
+      *tmp = 0;	/* just terminate string at last '/' */
+      basename = tmp + 1;
+    }
+    printf ("\nbasedir = %s, basename = %s\n", basedir, basename );
+    if(chdir( basedir ) != 0)
+      {
+	LogPrintf (LOG_CRITICAL,  "Unable to change directory to xml-directory '%s'\n", basedir);
+	return LISAMAKESFTS_EINPUT;
+      }
+
+    /* load xml-file and corresponding binary-data into lisaXML-type 'TimeSeries' */
+    if ( (lisaTimeSeries = getTDIdata(basename)) == NULL ) {
+      fprintf (stderr, "\nlisaXML::getTDIdata() failed for file '%s'\n\n",  uvar_inputXML );
+      return LISAMAKESFTS_EFILE;
+    }
+  } /* chdir to xml-directory */
 
   /* convert lisaXML::TimeSeries -> LAL::REAL4TimeSeries */
   LAL_CALL ( ConvertLISAtimeseries2LAL ( &status, &multiTs, lisaTimeSeries ), &status );
