@@ -213,7 +213,7 @@ channel = cp.get('input','channel')
 stddev_thresh = cp.get('input','stddev_thresh')
 freq_factor = cp.get('input', 'freq_factor')
 
-if (channel.find('STRAIN') > -1) | (channel.find('DER_DATA_H') > -1)
+if (channel.find('STRAIN') > -1) | (channel.find('DER_DATA_H') > -1):
   print >> sys.stderr, """You are looking at calibrated strain data, so read in high-pass frequency and scale factors"""
   high_pass = cp.get('input', 'high_pass')
   scale_fac = cp.get('input', 'scale_fac')
@@ -390,9 +390,9 @@ if do_coarse:
       coarse[j].set_channel(channel)
       
       # if using calibrated data set high-pass freq and scale factor
-      if (channel.find('STRAIN') > -1 ) | (channel.find('DER_DATA_H' > -1)
+      if (channel.find('STRAIN') > -1 ) | (channel.find('DER_DATA_H' > -1):
         coarse[j].set_scale_fac(scale_fac)
-	coarse[j].set_high_pass(high_pass)
+        coarse[j].set_high_pass(high_pass)
       
       coarse[j].set_output_dir(output_dir)
       
