@@ -982,7 +982,7 @@ int MAIN( int argc, char *argv[]) {
 	  /* select peaks */ 	      
 	  if ( (uvar_method == 0) ) {
 
-	    LogPrintf(LOG_DEBUG, "Starting Hough calculation...");
+	    LogPrintf(LOG_DEBUG, "Starting Hough calculation...\n");
 	    LAL_CALL( FstatVectToPeakGram( &status, &pgV, &fstatVector1, uvar_peakThrF), &status);
 	    	    
 	    /* get candidates */
@@ -992,7 +992,7 @@ int MAIN( int argc, char *argv[]) {
 	    for (k=0; k<nStacks1; k++) 
 	      LALFree(pgV.pg[k].peak);
 	    LALFree(pgV.pg);
-	    LogPrintfVerbatim(LOG_DEBUG, "done\n");
+	    LogPrintf(LOG_DEBUG, "...finished Hough calculation\n");
 
 	  } /* end hough */
 
@@ -1094,6 +1094,10 @@ int MAIN( int argc, char *argv[]) {
 		      /* loop over fdot values */
 		      for ( ifdot2 = 0; ifdot2 < nfdot2; ifdot2++)
 			{
+
+			  /*LogPrintf(LOG_DEBUG, "Following up with %d Freq. bins, %d/%d spindowns, %d skypoints\n",
+			    binsFstat2, ifdot,nfdot, thisScan2.numSkyGridPoints); */
+
 			  
 			  /* set spindown value for Fstat calculation */
 			  thisPoint2.fkdot[1] = fdot1 + ifdot2 * dfDot2;
@@ -1527,12 +1531,15 @@ void ComputeFstatHoughMap(LALStatus *status,
      of detector */
   patchSizeX = params->patchSizeX;
   patchSizeY = params->patchSizeY;
-
+  /* if patchsize is not negative, then set default value */
   if ( patchSizeX < 0 )
-    patchSizeX = 0.5 / ( fBinIni * VEPI ); 
+    patchSizeX = 0.5 / ( fBinFin * VEPI ); 
 
   if ( patchSizeY < 0 )
-    patchSizeY = 0.5 / ( fBinIni * VEPI ); 
+    patchSizeY = 0.5 / ( fBinFin * VEPI ); 
+
+  LogPrintf(LOG_DEBUG,"Hough patchsize is %f rad x %f rad\n", patchSizeX, patchSizeY);
+
 
   /*--------------- first memory allocation --------------*/
   /* look up table vector */
@@ -1628,9 +1635,10 @@ void ComputeFstatHoughMap(LALStatus *status,
   parRes.f0Bin =  fBinIni;      
     /* need a function to more accurately calculate maxNBins apriori */
   TRY( LALHOUGHComputeSizePar( status->statusPtr, &parSize, &parRes ),  status );
-  fBinIni += parSize.maxNBins;
-  fBinFin -= parSize.maxNBins;
+  fBinIni += parSize.maxNBins + nfdot;
+  fBinFin -= parSize.maxNBins + nfdot;
 
+  LogPrintf(LOG_DEBUG, "Number of Hough frequency bins analyzed = %d\n", fBinFin - fBinIni);
   ASSERT ( fBinIni < fBinFin, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
 
   /*------------------ start main Hough calculation ---------------------*/
@@ -1704,7 +1712,7 @@ void ComputeFstatHoughMap(LALStatus *status,
     }
     
     /*--------- build the set of  PHMD centered around fBin -------------*/     
-    phmdVS.fBinMin = fBin - nfdot;
+    phmdVS.fBinMin = fBin-nfdot;
     TRY( LALHOUGHConstructSpacePHMD(status->statusPtr, &phmdVS, pgV, &lutV), status );
     
     /*-------------- initializing the Total Hough map space ------------*/   
@@ -1724,7 +1732,7 @@ void ComputeFstatHoughMap(LALStatus *status,
     
     /*  Search frequency interval possible using the same LUTs */
     fBinSearch = fBin;
-    fBinSearchMax = fBin + parSize.nFreqValid - 1 - nfdot; /* do we need the -nfdot here? */
+    fBinSearchMax = fBin + parSize.nFreqValid - 1; /* do we need the -nfdot here? */
      
     /* Study all possible frequencies with one set of LUT */    
     while ( (fBinSearch <= fBinFin) && (fBinSearch < fBinSearchMax) )  { 
@@ -1736,11 +1744,11 @@ void ComputeFstatHoughMap(LALStatus *status,
 
 	ht.f0Bin = fBinSearch;
 
-	nSpin1Max = (nfdot < fBinFin - fBinSearch)? nfdot : fBinFin - fBinSearch;
-	nSpin1Min = (nfdot < fBinSearch - fBinIni)? nfdot : fBinSearch - fBinIni;
+	/* 	nSpin1Max = HSMIN( nfdot, fBinFin-fBinSearch); */
+	/* 	nSpin1Min = HSMIN( nfdot, fBinSearch-fBinIni); */
 
 	/*loop over all values of residual spindown */
-	for( n = -nSpin1Min; n <= nSpin1Max; n++ ){ 
+	for( n = -nfdot; n <= nfdot; n++ ){ 
 	  f1dis =  n*f1jump;
 
 	  ht.spinRes.data[0] =  f1dis*deltaF;
