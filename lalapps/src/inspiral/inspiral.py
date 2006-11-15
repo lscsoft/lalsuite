@@ -311,10 +311,30 @@ class Tama2LigoLwJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_stderr_file('logs/tama2ligolw-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
     self.set_sub_file('tama2ligolw.sub')
 
+class FrJoinJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+  """
+  A lalapps_frjoin job used by the inspiral pipeline. The path to the
+  executable is determined from the ini file.
+  """
+  def __init__(self,cp):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    self.__executable = cp.get('condor','cohbank')
+    self.__universe = cp.get('condor','universe')
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    pipeline.AnalysisJob.__init__(self,cp)
+    
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+
+    self.set_stdout_file('logs/frjoin-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/frjoin-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
+    self.set_sub_file('frjoin.sub')
+
 class CohBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
   A lalapps_coherent_inspiral job used by the inspiral pipeline. The static
-  options are read from the section [chia] in the ini file.  The stdout and
+  options are read from the section [cohbank] in the ini file.  The stdout and
   stderr from the job are directed to the logs directory.  The path to the
   executable is determined from the ini file.
   """
@@ -1171,6 +1191,33 @@ class Tama2LigoLwNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     self.__input = None
     self.__output = None
     self.__usertag = job.get_config('pipeline','user-tag')
+
+class FrJoinNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+  """
+  A FrJoinNode runs an instance of lalapps_frjoin in a Condor DAG
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of lalapps_frjoin.
+    """
+    pipeline.CondorDAGNode.__init__(self,job)
+    pipeline.AnalysisNode.__init__(self)
+
+  def set_output(self, outputName):
+    """
+    Set the output name of the frame file
+    @param outputName: name of the injection file created
+    """
+    self.add_var_opt('output',outputName)
+    self.__outputName = outputName
+    
+  def get_output(self):
+    """
+    Get the output name of the frame file
+    """
+    return self.__outputName
+
+
 
 class CohBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
