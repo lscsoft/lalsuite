@@ -207,8 +207,8 @@ main(int argc, char *argv[])
 	    {
 	      fourpifL = (2.0*LAL_TWOPI*LISA_ARM_LENGTH_SECONDS)
 		* (sft->f0 + fidx * sft->deltaF);
-	      sft->data->data[fidx].re *= fourpifL * fourpifL;
-	      sft->data->data[fidx].im *= fourpifL * fourpifL;
+	      sft->data->data[fidx].re /= (fourpifL * fourpifL);
+	      sft->data->data[fidx].im /= (fourpifL * fourpifL);
 	    }
 	}
 
