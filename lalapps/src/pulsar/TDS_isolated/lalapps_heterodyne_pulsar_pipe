@@ -390,7 +390,7 @@ if do_coarse:
       coarse[j].set_channel(channel)
       
       # if using calibrated data set high-pass freq and scale factor
-      if (channel.find('STRAIN') > -1 ) | (channel.find('DER_DATA_H' > -1):
+      if (channel.find('STRAIN') > -1 ) | (channel.find('DER_DATA_H') > -1):
         coarse[j].set_scale_fac(scale_fac)
         coarse[j].set_high_pass(high_pass)
       
