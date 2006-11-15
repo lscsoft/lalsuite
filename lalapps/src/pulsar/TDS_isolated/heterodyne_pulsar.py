@@ -159,11 +159,11 @@ class heterodyneNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     
   def set_bininput(self):
     # set binary input file flag
-    self.add_var_opt('verbose', '') # no variable required
+    self.add_var_opt('binary-input', '') # no variable required
     
   def set_binoutput(self):
     # set binary output file flag
-    self.add_var_opt('verbose', '') # no variable required
+    self.add_var_opt('binary-output', '') # no variable required
     
   def set_response_function(self,response_function):
     # set reponse function file
