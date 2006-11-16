@@ -13,6 +13,18 @@ int main( int argc, char *argv[] )
     return 1;
   }
 
+  if ( !strcmp(argv[1],"--output") )
+  { 
+    if ( argc < 4  )
+    {
+      fprintf( stderr, "alternative usage: %s --output outfile infiles\n", 
+          argv[0] );
+      return 1;
+    }
+    --argc;
+    ++argv;
+  }
+
   FrLibIni( NULL, stderr, 0 );
 
   if ( ! ( frfileout = FrFileONewH( *++argv, 0, history ) ) )
@@ -26,7 +38,6 @@ int main( int argc, char *argv[] )
 
     if ( ! ( frfilein = FrFileINew( *++argv ) ) )
       return fprintf( stderr, "input file %s not found!\n", *argv ), 1;
-
     while ( ( frame = FrameRead( frfilein ) ) )
     {
       FrameWrite( frame, frfileout );
