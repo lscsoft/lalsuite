@@ -710,7 +710,7 @@ LALDistanceScanSummValueTable (
     /* if this is the requested ifo */
     if ( !strcmp(thisSummValue->ifo, ifo) ) 
     {
-      /* IFOs match so now let us check if the this entry coincide 
+      /* IFOs match so now let us check if this entry coincides 
 	with the requested GPS time */
 
       LALGPStoINT8( status->statusPtr, &tb, &(thisSummValue->start_time) );
@@ -723,7 +723,7 @@ LALDistanceScanSummValueTable (
     }
   }
 
-  if ( *distance = 0 )
+  if ( *distance == 0 )
     {
       ABORT ( status, LIGOMETADATAUTILSH_EDIST, LIGOMETADATAUTILSH_MSGEDIST );
     }
