@@ -197,7 +197,6 @@ NRCSID( HIERARCHICALSEARCHH, "$Id$" );
   void SetUpStacks(LALStatus *status, 
 		 SFTCatalogSequence  *out,  
 		 REAL8 *tStack,
-		 LIGOTimeGPSVector **ts,
 		 SFTCatalog  *in,
 		 UINT4 nStacks);
 
