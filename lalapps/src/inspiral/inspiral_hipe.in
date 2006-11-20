@@ -594,7 +594,8 @@ def follow_up(ifo_data,ifo_name,coinc_data,coinc_ifos,tmplt_follow_job,\
             if not calibrated: insp.calibration()
             insp.set_bank(bank.get_output())
             if approximant: insp.add_var_opt('approximant', approximant)
-            insp.add_var_opt('td-follow-up', coinc_done.get_dag_node().get_output())
+            insp.add_var_opt('td-follow-up', 
+                coinc_done.get_dag_node().get_output())
             if opts.datafind: insp.add_parent(seg.get_df_node())
             if opts.td_follow_bank: insp.add_parent(bank)
             if opts.td_follow_inspiral: dag.add_node(insp)
@@ -604,7 +605,8 @@ def follow_up(ifo_data,ifo_name,coinc_data,coinc_ifos,tmplt_follow_job,\
 
             # jobs already set up, just add the var_arg and parent to trigbank
           if not banks: 
-            bank.add_var_opt('td-follow-up', coinc_done.get_dag_node().get_output())
+            bank.add_var_opt('td-follow-up',
+                coinc_done.get_dag_node().get_output())
             if opts.coincidence: bank.add_parent(coinc_done.get_dag_node())
 
   return follow_chunks_analyzed, bankList
@@ -723,10 +725,21 @@ def coherent_analysis(ifos,single_ifo_segments,coinc_nodes,cb_job,
     # set up trigbank and inspiral
     for ifo in ifo_list:
       if ifo in ifos:
+        # set up the frjoin job
+        frjoin = inspiral.FrJoinNode(frjoin_job)
+        outputName = ifo + '-INSPIRAL_'
+        if usertag: outputName += usertag + '_'
+        outputName += ifotag + '-' + str(coinc_done.get_chunk().start()) + \
+            '-' + str(coinc_done.get_chunk().end() - \
+            coinc_done.get_chunk().start()) + '.gwf'      
+        frjoin.set_output(outputName)
+
         for seg in single_ifo_segments[ifo]:
+          
           for chunk in seg:
             if inspiral.overlap_test(coinc_done.get_chunk(),chunk):
-
+              
+              # set up the trigbank
               trigbank = inspiral.TrigToTmpltNode(trig_coh_jobs[ifo])
               trigbank.set_ifo_tag(ifotag)
               trigbank.set_output_ifo(ifo)
@@ -737,6 +750,7 @@ def coherent_analysis(ifos,single_ifo_segments,coinc_nodes,cb_job,
               if opts.coherent_bank: trigbank.add_parent(cohbank)
               if opts.coherent_bank: dag.add_node(trigbank)
 
+              # set up the inspiral
               insp = inspiral.InspiralNode(insp_coh_jobs[ifo])
               insp.set_start(chunk.start())
               insp.set_end(chunk.end())
@@ -752,9 +766,15 @@ def coherent_analysis(ifos,single_ifo_segments,coinc_nodes,cb_job,
                 insp.set_cache(seg.get_df_node().get_output())
               else: insp.set_cache(cp.get('datafind',ifo + "-cache"))
               insp.set_bank(trigbank.get_trig_out())
+              frjoin.add_file_arg( insp.get_froutput() )
+
               if opts.coherent_bank: insp.add_parent(trigbank)
+              if opts.coherent_bank: frjoin.add_parent(insp)
               if opts.coherent_bank: dag.add_node(insp)
-              if opts.coherent_inspiral: cohinsp.add_parent(insp)
+
+        cohinsp.add_var_opt( ifo + '-framefile', frjoin.get_output() )
+        if opts.coherent_bank: dag.add_node(frjoin)
+        if opts.coherent_inspiral: cohinsp.add_parent(frjoin)
 
     if opts.coherent_inspiral: dag.add_node(cohinsp)
      
@@ -1135,9 +1155,16 @@ for ifo in ifo_list:
   insp_coh_jobs[ifo].set_sub_file( basename + '.insp_coh_' + ifo +
     subsuffix )
 
+# fr join:
+frjoin_job = inspiral.FrJoinJob(cp)
+frjoin_job.set_sub_file( basename + '.frjoin' + subsuffix )
+
 # coherent_inspiral:
-cohinsp_job = inspiral.ChiaJob(cp)
-cohinsp_job.set_sub_file( basename + '.cohinspiral' + subsuffix )
+cohinsp_jobs = {}
+for ifos in ifo_coincs:
+  cohinsp_jobs[ifos] = inspiral.ChiaJob(cp)
+  cohinsp_jobs[ifos].set_sub_file(basename + '.cohinspiral_' + ifos + 
+      subsuffix )
 
 # sire:
 sire_job = inspiral.SireJob(cp)
@@ -1159,6 +1186,7 @@ all_jobs.extend(thinca2_jobs.values())
 all_jobs.extend(thinca2_slide_jobs.values())
 all_jobs.extend(trig_coh_jobs.values())
 all_jobs.extend(insp_coh_jobs.values())
+all_jobs.extend(cohinsp_jobs.values())
 
 ##############################################################################
 # set the usertag in the jobs
@@ -1167,6 +1195,7 @@ if usertag:
     job.add_opt('user-tag',usertag)
 
 all_jobs.append(df_job)
+all_jobs.append(frjoin_job)
 ##############################################################################
 # set the condor job priority
 if opts.priority:
@@ -1588,7 +1617,7 @@ for ifos in ifo_coincs:
   sys.stdout.flush()
   
   coherent_analysis(ifos,data,coinc2_nodes[ifos],cb_job,
-      trig_coh_jobs,insp_coh_jobs,cohinsp_job,dag)
+      trig_coh_jobs,insp_coh_jobs,cohinsp_jobs[ifos],dag)
 
   print "done"
 
