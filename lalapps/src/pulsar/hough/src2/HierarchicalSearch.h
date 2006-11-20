@@ -156,6 +156,7 @@ NRCSID( HIERARCHICALSEARCHH, "$Id$" );
     CHAR *outBaseName;         /**< file for writing output -- if chosen */
     BOOLEAN useToplist;        /**< Use a toplist for producing candidates? */
     REAL8  threshold;          /**< Threshold for candidate selection */
+    REAL8Vector *weightsV;     /**< Vector of weights for each stack */
   } SemiCoherentParams;
 
   /** one hough candidate */

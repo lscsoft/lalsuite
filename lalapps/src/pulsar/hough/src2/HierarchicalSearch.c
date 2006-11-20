@@ -181,6 +181,8 @@ static int smallerHough(const void *a,const void *b) {
 }
 
 /* functions for printing various stuff */
+void ComputeStackNoiseWeights( LALStatus *status, REAL8Vector **out, MultiNoiseWeightsSequence *in );
+
 void GetStackVelPos( LALStatus *status, REAL8VectorSequence **velStack, REAL8VectorSequence **posStack,
 		     MultiDetectorStateSeriesSequence *stackMultiDetStates);
 
@@ -255,6 +257,10 @@ int MAIN( int argc, char *argv[]) {
   /* velocities and positions at midTstack */
   REAL8VectorSequence *velStack1=NULL;
   REAL8VectorSequence *posStack1=NULL;
+
+  /* weights for each stack*/
+  REAL8Vector *weightsV=NULL;
+  REAL8Vector *weightsNoise=NULL;
 
   /* duration of each stack */
   REAL8 tStack1, tStack2 = 0;
@@ -701,7 +707,13 @@ int MAIN( int argc, char *argv[]) {
   if ( !LALUserVarWasSet(&uvar_nfdot) ) {
     uvar_nfdot = nStacks1;
   }
-    
+
+  /* compute noise weight for each stack and initialize total weights vector */
+  LAL_CALL( ComputeStackNoiseWeights( &status, &weightsNoise, &stackMultiNoiseWeights1), &status);
+
+  LAL_CALL( LALDCreateVector( &status, &weightsV, nStacks1), &status);
+  LAL_CALL( LALHOUGHInitializeWeights( &status, weightsV), &status);
+      
   /* print some debug info about spinrange */
   LogPrintf(LOG_DEBUG, "Frequency and spindown range at refTime (%d): [%f-%f], [%e-%e]\n", 
 	    usefulParams1.spinRange_refTime.refTime.gpsSeconds,
@@ -734,11 +746,16 @@ int MAIN( int argc, char *argv[]) {
   /* print debug info about stacks */
   LogPrintf(LOG_DEBUG, "1st stage params: Nstacks = %d,  Tstack = %.0fsec, Tobs = %.0fsec\n", nStacks1, tStack1, tObs1);
   for (k=0; k<nStacks1; k++) {
-    LogPrintfVerbatim(LOG_DEBUG, "Stack %d ", k);
-    LogPrintfVerbatim(LOG_DEBUG, "(GPS start time %d) ", startTstack1->data[k].gpsSeconds);
+
+    LogPrintf(LOG_DEBUG, "Stack %d ", k);
+    LogPrintfVerbatim(LOG_DEBUG, "(GPS start time = %d, Noise weight = %f ) ", startTstack1->data[k].gpsSeconds, 
+		      weightsNoise->data[k]);
+
     for ( j = 0; j < (INT4)stackMultiSFT1.data[k]->length; j++) {
+
       INT4 tmpVar = stackMultiSFT1.data[k]->data[j]->length;
       LogPrintfVerbatim(LOG_DEBUG, "%s: %d  ", stackMultiSFT1.data[k]->data[j]->data[0].name, tmpVar);
+
     } /* loop over ifos */    
     LogPrintfVerbatim(LOG_DEBUG, "\n");
   } /* loop over stacks */
@@ -780,7 +797,7 @@ int MAIN( int argc, char *argv[]) {
   LogPrintf (LOG_DEBUG, "Calculating detector velocity and positions ... ");
   LAL_CALL( GetStackVelPos( &status, &velStack1, &posStack1, &stackMultiDetStates1), &status);
   LogPrintfVerbatim (LOG_DEBUG, "done\n");
-
+  
 
   /*------------------ read sfts and set up stacks for follow up stage -----------------------*/
   /* check if user requested a follow up stage*/
@@ -1260,6 +1277,9 @@ int MAIN( int argc, char *argv[]) {
   LALFree(edat);
   LAL_CALL( LALDDestroyVectorSequence (&status,  &velStack1), &status);
   LAL_CALL( LALDDestroyVectorSequence (&status,  &posStack1), &status);
+
+  LAL_CALL( LALDDestroyVector ( &status, &weightsNoise ), &status);
+  LAL_CALL( LALDDestroyVector ( &status, &weightsV ), &status);
   
   /* free dopplerscan stuff */
   LAL_CALL ( FreeDopplerSkyScan(&status, &thisScan1), &status);
@@ -2578,6 +2598,68 @@ void GetStackVelPos( LALStatus *status,
       posStack[0]->data[3*k+2] /= counter;
 
     } /* loop over stacks -- end velocity and position calculation */
+
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+
+}
+
+
+/** Calculate noise weight for each stack*/
+void ComputeStackNoiseWeights( LALStatus *status,
+			       REAL8Vector **out,
+			       MultiNoiseWeightsSequence *in )
+{
+  
+  INT4 nStacks, k, j, i, numifo, numsft;
+  REAL8Vector *weightsVec=NULL;
+  MultiNoiseWeights *multNoiseWts;
+
+
+  INITSTATUS( status, "", rcsid );
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT ( in != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  ASSERT ( in->length > 0, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
+  ASSERT ( in->data != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );  
+
+  ASSERT ( out != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  ASSERT ( *out == NULL, status, HIERARCHICALSEARCH_ENONULL, HIERARCHICALSEARCH_MSGENONULL );
+
+  nStacks = in->length;
+
+  TRY( LALDCreateVector( status->statusPtr, &weightsVec, nStacks), status);
+  
+
+  for (k=0; k<nStacks; k++) {
+
+    multNoiseWts = in->data[k];
+    ASSERT ( multNoiseWts != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );  
+
+    numifo = multNoiseWts->length;
+    ASSERT ( numifo > 0, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );  
+
+    /* initialize */
+    weightsVec->data[k] = 0;    
+
+    for ( j = 0; j < numifo; j++) {
+
+      numsft = multNoiseWts->data[j]->length;
+
+      for ( i = 0; i < numsft; i++) {
+
+	weightsVec->data[k] += multNoiseWts->data[j]->data[i]; 
+
+      } /* loop over sfts */
+
+    }/* loop over ifos in stack */
+    
+  } /* loop over stacks*/ 
+
+
+  LAL_CALL( LALHOUGHNormalizeWeights( status->statusPtr, weightsVec), status);
+
+  *out = weightsVec;
 
   DETATCHSTATUSPTR (status);
   RETURN(status);
