@@ -2854,17 +2854,85 @@ find_files (const CHAR *globdir)
   intptr_t dir;
   struct _finddata_t entry;
 #endif
-  CHAR *dname, *ptr1;
+  CHAR *dname, *ptr1, *ptr2;
   CHAR *fpattern;
   size_t dirlen;
   CHAR **filelist = NULL; 
-  UINT4 numFiles = 0;
+  UINT4 numFiles = 0, newNumFiles = 0;
   LALStringVector *ret = NULL;
   UINT4 j;
   UINT4 namelen;
   CHAR *thisFname;
 
-  /* First we separate the globdir into directory-path and file-pattern */
+#define FILE_SEPARATOR ';'
+  /* fprintf(stderr,"find_files called with \"%s\";\n", globdir); */
+
+  if (ptr2 = strrchr (globdir, FILE_SEPARATOR))
+    { /* globdir is multi-pattern ("pattern1;pattern2;pattern3") */
+      /* call find_files() with every pattern found in globdir */
+
+      ptr1 = (CHAR*)globdir;
+      while (ptr2 = strrchr (ptr1, FILE_SEPARATOR))
+	{
+	  /* ptr1 points to the beginning of a pattern, ptr2 to the end */
+
+	  /* copy the current name to thisFname */
+	  namelen = ptr2 - ptr1;
+	  if ((thisFname = LALRealloc(thisFname, (namelen+1)*sizeof(CHAR))) == NULL) {
+	    for (j=0; j < numFiles; j++)
+	      LALFree (filelist[j]);
+	    LALFree (filelist);
+	    return(NULL);
+	  }
+	  strncpy(thisFname,ptr1,namelen);
+	  thisFname[namelen] = '\0';
+
+	  /* call find_files(thisFname) */
+	  ret = find_files(thisFname);
+
+	  /* append the output (if any) to the existing filelist */
+	  if (ret) {
+	    newNumFiles = numFiles + ret->length;
+
+	    if ((filelist = LALRealloc (filelist, (newNumFiles) * sizeof(CHAR*))) == NULL) {
+	      DestroyStringVector(ret);
+	      return (NULL);
+	    }
+
+	    for(j=0; j < ret->length; j++)
+	      filelist[numFiles+j] = ret->data[j];
+	    LALFree(ret->data);
+	    LALFree(ret);
+	    numFiles = newNumFiles;
+	  }
+
+	  /* skip the separator */
+	  ptr1 = ptr2 + 1;
+	} /* while */
+
+      LALFree(thisFname);
+
+      ret = find_files(ptr1);
+      if (ret) {
+	newNumFiles = numFiles + ret->length;
+
+	if ((filelist = LALRealloc (filelist, (newNumFiles) * sizeof(CHAR*))) == NULL) {
+	  DestroyStringVector(ret);
+	  return (NULL);
+	}
+
+	for(j=0; j < ret->length; j++)
+	  filelist[numFiles+j] = ret->data[j];
+	LALFree(ret->data);
+	LALFree(ret);
+	numFiles = newNumFiles;
+      }
+
+    }
+  else
+    { /* globdir is a single glob-style pattern */
+      
+      /* First we separate the globdir into directory-path and file-pattern */
 
 #ifndef _MSC_VER
 #define DIR_SEPARATOR '/'
@@ -2872,116 +2940,121 @@ find_files (const CHAR *globdir)
 #define DIR_SEPARATOR '\\'
 #endif
 
-  /* any path specified or not ? */
-  ptr1 = strrchr (globdir, DIR_SEPARATOR);
-  if (ptr1)
-    { /* yes, copy directory-path */
-      dirlen = (size_t)(ptr1 - globdir) + 1;
-      if ( (dname = LALCalloc (1, dirlen)) == NULL) 
-	return (NULL);
-      strncpy (dname, globdir, dirlen);
-      dname[dirlen-1] = '\0';
-
-      ptr1 ++; /* skip dir-separator */
-      /* copy the rest as a glob-pattern for matching */
-      if ( (fpattern = LALCalloc (1, strlen(ptr1) + 1)) == NULL )
+      /* any path specified or not ? */
+      ptr1 = strrchr (globdir, DIR_SEPARATOR);
+      if (ptr1)
+	{ /* yes, copy directory-path */
+	  dirlen = (size_t)(ptr1 - globdir) + 1;
+	  if ( (dname = LALCalloc (1, dirlen)) == NULL) 
+	    return (NULL);
+	  strncpy (dname, globdir, dirlen);
+	  dname[dirlen-1] = '\0';
+	  
+	  ptr1 ++; /* skip dir-separator */
+	  /* copy the rest as a glob-pattern for matching */
+	  if ( (fpattern = LALCalloc (1, strlen(ptr1) + 1)) == NULL )
+	    {
+	      LALFree (dname);
+	      return (NULL);
+	    }
+	  strcpy (fpattern, ptr1);   
+	  
+	} /* if ptr1 */
+      else /* no pathname given, assume "." */
 	{
-	  LALFree (dname);
-	  return (NULL);
-	}
-      strcpy (fpattern, ptr1);   
-
-    } /* if ptr1 */
-  else /* no pathname given, assume "." */
-    {
-      if ( (dname = LALCalloc(1, 2)) == NULL) 
-	return (NULL);
-      strcpy (dname, ".");
-
-      if ( (fpattern = LALCalloc(1, strlen(globdir)+1)) == NULL)
-	{
-	  LALFree (dname);
-	  return (NULL);
-	}
-      strcpy (fpattern, globdir);	/* just file-pattern given */
-    } /* if !ptr */
-  
+	  if ( (dname = LALCalloc(1, 2)) == NULL) 
+	    return (NULL);
+	  strcpy (dname, ".");
+	  
+	  if ( (fpattern = LALCalloc(1, strlen(globdir)+1)) == NULL)
+	    {
+	      LALFree (dname);
+	      return (NULL);
+	    }
+	  strcpy (fpattern, globdir);	/* just file-pattern given */
+	} /* if !ptr */
+      
 
 #ifndef _MSC_VER
-  /* now go through the file-list in this directory */
-  if ( (dir = opendir(dname)) == NULL) {
-    LALPrintError ("Can't open data-directory `%s`\n", dname);
-    LALFree (dname);
-    return (NULL);
-  }
+      /* now go through the file-list in this directory */
+      if ( (dir = opendir(dname)) == NULL) {
+	LALPrintError ("Can't open data-directory `%s`\n", dname);
+	LALFree (dname);
+	return (NULL);
+      }
 #else
-  if ((ptr1 = (CHAR*)LALMalloc(strlen(dname)+3)) == NULL)
-    return(NULL);
-  sprintf(ptr1,"%s\\*",dname);  
-  dir = _findfirst(ptr1,&entry);
-  LALFree(ptr1);
-  if (dir == -1) {
-    LALPrintError ("Can't find file for pattern `%s`\n", ptr1);
-    LALFree (dname);
-    return (NULL);
-  }
+      if ((ptr1 = (CHAR*)LALMalloc(strlen(dname)+3)) == NULL)
+	return(NULL);
+      sprintf(ptr1,"%s\\*",dname);  
+      dir = _findfirst(ptr1,&entry);
+      LALFree(ptr1);
+      if (dir == -1) {
+	LALPrintError ("Can't find file for pattern `%s`\n", ptr1);
+	LALFree (dname);
+	return (NULL);
+      }
 #endif
 
 #ifndef _MSC_VER
-  while ( (entry = readdir (dir)) != NULL )
-    {
-      thisFname = entry->d_name;
+      while ( (entry = readdir (dir)) != NULL )
 #else
-  do
-    {
-      thisFname = entry.name;
+      do
 #endif
-      /* now check if glob-pattern fpattern matches the current filename */
-      if ( amatch(thisFname, fpattern) 
-	   /* and check if we didnt' match some obvious garbage like "." or ".." : */
-	   && strcmp( thisFname, ".") && strcmp( thisFname, "..") )
 	{
+#ifndef _MSC_VER
+	  thisFname = entry->d_name;
+#else
+	  thisFname = entry.name;
+#endif
 
-	  numFiles ++;
-	  if ( (filelist = LALRealloc (filelist, numFiles * sizeof(CHAR*))) == NULL) {
-	    LALFree (dname);
-	    LALFree (fpattern);
-	    return (NULL);
-	  }
+	  /* now check if glob-pattern fpattern matches the current filename */
+	  if ( amatch(thisFname, fpattern) 
+	       /* and check if we didnt' match some obvious garbage like "." or ".." : */
+	       && strcmp( thisFname, ".") && strcmp( thisFname, "..") )
+	    {
+	      
+	      numFiles ++;
+	      if ( (filelist = LALRealloc (filelist, numFiles * sizeof(CHAR*))) == NULL) {
+		LALFree (dname);
+		LALFree (fpattern);
+		return (NULL);
+	      }
+	      
+	      namelen = strlen(thisFname) + strlen(dname) + 2 ;
+	      
+	      if ( (filelist[ numFiles - 1 ] = LALCalloc (1, namelen)) == NULL) {
+		for (j=0; j < numFiles; j++)
+		  LALFree (filelist[j]);
+		LALFree (filelist);
+		LALFree (dname);
+		LALFree (fpattern);
+		return (NULL);
+	      }
 
-	  namelen = strlen(thisFname) + strlen(dname) + 2 ;
-
-	  if ( (filelist[ numFiles - 1 ] = LALCalloc (1, namelen)) == NULL) {
-	    for (j=0; j < numFiles; j++)
-	      LALFree (filelist[j]);
-	    LALFree (filelist);
-	    LALFree (dname);
-	    LALFree (fpattern);
-	    return (NULL);
-	  }
-
-	  sprintf(filelist[numFiles-1], "%s%c%s", dname, DIR_SEPARATOR, thisFname);
-
-	} /* if filename matched pattern */
-
-    } /* while more directory entries */
+	      sprintf(filelist[numFiles-1], "%s%c%s", dname, DIR_SEPARATOR, thisFname);
+	      
+	    } /* if filename matched pattern */
+	  
+	} /* while more directory entries */
 #ifdef _MSC_VER
-  while ( _findnext (dir,&entry) == 0 );
+      while ( _findnext (dir,&entry) == 0 );
 #endif
 
 #ifndef _MSC_VER
-  closedir (dir);
+      closedir (dir);
 #else
-  _findclose(dir);
+      _findclose(dir);
 #endif
 
-  LALFree (dname);
-  LALFree (fpattern);
+      LALFree (dname);
+      LALFree (fpattern);
+
+    } /* if no multifile */
 
   /* ok, did we find anything? */
   if (numFiles == 0)
     return (NULL);
-
+      
   if ( (ret = LALCalloc (1, sizeof (LALStringVector) )) == NULL) 
     {
       for (j=0; j<numFiles; j++)
@@ -2989,7 +3062,7 @@ find_files (const CHAR *globdir)
       LALFree (filelist);
       return (NULL);
     }
-
+      
   ret->length = numFiles;
   ret->data = filelist;
 
