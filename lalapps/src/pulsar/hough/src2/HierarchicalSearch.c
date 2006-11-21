@@ -1004,6 +1004,11 @@ int MAIN( int argc, char *argv[]) {
       }
       semiCohPar.weightsV = weightsV;
       
+      LogPrintf(LOG_DEBUG, "Stack weights for alpha = %f, delta = %f are:\n", skypos.longitude, skypos.latitude);
+      for (k=0; k<nStacks1; k++) {
+	LogPrintf(LOG_DEBUG, "%f\n", weightsV->data[k]);
+      }
+
       /* loop over fdot values */
       for ( ifdot=0; ifdot<nfdot; ifdot++)
 	{
@@ -1806,6 +1811,7 @@ void ComputeFstatHoughMap(LALStatus *status,
     /*--------- build the set of  PHMD centered around fBin -------------*/     
     phmdVS.fBinMin = fBin - nfdotBy2;
     TRY( LALHOUGHConstructSpacePHMD(status->statusPtr, &phmdVS, pgV, &lutV), status );
+    TRY( LALHOUGHWeighSpacePHMD(status->statusPtr, &phmdVS, params->weightsV), status);
     
     /*-------------- initializing the Total Hough map space ------------*/   
     ht.xSide = xSide;
@@ -1846,7 +1852,7 @@ void ComputeFstatHoughMap(LALStatus *status,
 	  for (j=0; j < (UINT4)nStacks; j++)
 	    freqInd.data[j] = fBinSearch + floor(timeDiffV->data[j]*f1dis + 0.5);
 	  
-	  TRY( LALHOUGHConstructHMT(status->statusPtr, &ht, &freqInd, &phmdVS),status );
+	  TRY( LALHOUGHConstructHMT_W(status->statusPtr, &ht, &freqInd, &phmdVS),status );
 
 	  /* get candidates */
 	  if ( params->useToplist ) {
@@ -1888,7 +1894,8 @@ void ComputeFstatHoughMap(LALStatus *status,
       /*------ shift the search freq. & PHMD structure 1 freq.bin -------*/
       ++fBinSearch;
       TRY( LALHOUGHupdateSpacePHMDup(status->statusPtr, &phmdVS, pgV, &lutV), status );
-      
+      TRY( LALHOUGHWeighSpacePHMD(status->statusPtr, &phmdVS, params->weightsV), status);      
+
     }   /* closing while loop over fBinSearch */
     
     fBin = fBinSearch;
@@ -2738,7 +2745,7 @@ void ComputeStackNoiseAndAMWeights( LALStatus *status,
     /* initialize */
     out->data[iStack] = 0;    
 
-
+    multiAMcoef = NULL;
     TRY ( LALGetMultiAMCoeffs ( status->statusPtr, &multiAMcoef, multDetStates, skypos), status);
 
 
