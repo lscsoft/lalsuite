@@ -940,7 +940,7 @@ int MAIN( int argc, char *argv[]) {
       scanInit2.obsBegin = startTstack2->data[0];
       scanInit2.Detector = &(stackMultiDetStates2.data[0]->data[0]->detector);
       scanInit2.ephemeris = edat;  /* used by Ephemeris-based metric */
-      scanInit2.Freq = usefulParams2.spinRange_startTime.fkdot[0] + usefulParams2.spinRange_startTime.fkdotBand[0];
+      scanInit2.Freq = usefulParams2.spinRange_midTime.fkdot[0] + usefulParams2.spinRange_midTime.fkdotBand[0];
 
       /* the search region for scanInit2 will be set later 
 	 -- it depends on the candidates from the first stage */
@@ -987,7 +987,7 @@ int MAIN( int argc, char *argv[]) {
       /* we can also use the value 1/tStack1^2 -- check this */
       dfDot = 1.0/(tStack1*tStack1);
 
-      nfdot = (UINT4)( usefulParams1.spinRange_startTime.fkdotBand[1]/ dfDot + 0.5) + 1; 
+      nfdot = (UINT4)( usefulParams1.spinRange_midTime.fkdotBand[1]/ dfDot + 0.5) + 1; 
 
       /* get amplitude modulation weights */
       skypos.longitude = thisPoint1.Alpha;
@@ -1015,8 +1015,8 @@ int MAIN( int argc, char *argv[]) {
 	  LogPrintf(LOG_DEBUG, "Analyzing %d/%d Coarse sky grid points and %d/%d spindown values\n", 
 			    skyGridCounter, thisScan1.numSkyGridPoints, ifdot+1, nfdot);
 	  /* set spindown value for Fstat calculation */
-  	  thisPoint1.fkdot[1] = usefulParams1.spinRange_startTime.fkdot[1] + ifdot * dfDot;
-	  thisPoint1.fkdot[0] = usefulParams1.spinRange_startTime.fkdot[0];
+  	  thisPoint1.fkdot[1] = usefulParams1.spinRange_midTime.fkdot[1] + ifdot * dfDot;
+	  thisPoint1.fkdot[0] = usefulParams1.spinRange_midTime.fkdot[0];
 	  	  
 	  /* calculate the Fstatistic for each stack*/
 	  LogPrintf(LOG_DEBUG, "Starting Fstat calculation for each stack...");
