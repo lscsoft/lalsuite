@@ -183,6 +183,9 @@ static int smallerHough(const void *a,const void *b) {
 /* functions for printing various stuff */
 void ComputeStackNoiseWeights( LALStatus *status, REAL8Vector **out, MultiNoiseWeightsSequence *in );
 
+void ComputeStackNoiseAndAMWeights( LALStatus *status, REAL8Vector *out, MultiNoiseWeightsSequence *inNoise,
+				    MultiDetectorStateSeriesSequence *inDetStates, SkyPosition skypos);
+
 void GetStackVelPos( LALStatus *status, REAL8VectorSequence **velStack, REAL8VectorSequence **posStack,
 		     MultiDetectorStateSeriesSequence *stackMultiDetStates);
 
@@ -331,6 +334,7 @@ int MAIN( int argc, char *argv[]) {
   BOOLEAN uvar_followUp;
   BOOLEAN uvar_printFstat1;
   BOOLEAN uvar_useToplist1;
+  BOOLEAN uvar_useWeights;
 
   REAL8 uvar_dAlpha, uvar_dDelta; /* resolution for flat or isotropic grids */
   REAL8 uvar_f1dot; /* first spindown value */
@@ -387,6 +391,7 @@ int MAIN( int argc, char *argv[]) {
   uvar_printFstat1 = FALSE;
   uvar_chkPoint = FALSE;
   uvar_useToplist1 = FALSE;
+  uvar_useWeights = FALSE;
   uvar_nStacks1 = 1;
   uvar_Dterms = DTERMS;
   uvar_dAlpha = DALPHA;
@@ -441,6 +446,7 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "chkPoint",     0,  UVAR_OPTIONAL, "For checkpointing", &uvar_chkPoint), &status);  
   LAL_CALL( LALRegisterINTUserVar(    &status, "method",       0,  UVAR_OPTIONAL, "0=Hough,1=stackslide,-1=fstat", &uvar_method ), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "useToplist1",  0,  UVAR_OPTIONAL, "Use toplist for 1st stage candidates?", &uvar_useToplist1 ), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "useWeights",  0,  UVAR_OPTIONAL, "Weight each stack using noise and AM?", &uvar_useWeights ), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "followUp",     0,  UVAR_OPTIONAL, "Follow up stage?", &uvar_followUp), &status);  
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "DataFiles1",   0,  UVAR_OPTIONAL, "1st SFT file pattern", &uvar_DataFiles1), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "DataFiles2",   0,  UVAR_OPTIONAL, "2nd SFT file pattern", &uvar_DataFiles2), &status);
@@ -708,11 +714,12 @@ int MAIN( int argc, char *argv[]) {
     uvar_nfdot = nStacks1;
   }
 
-  /* compute noise weight for each stack and initialize total weights vector */
+  /* compute noise weight for each stack and initialize total weights vector 
+     -- for debugging purposes only -- we will calculate noise and AM weights later */
   LAL_CALL( ComputeStackNoiseWeights( &status, &weightsNoise, &stackMultiNoiseWeights1), &status);
 
+  /* weightsV is the actual weights vector used */
   LAL_CALL( LALDCreateVector( &status, &weightsV, nStacks1), &status);
-  LAL_CALL( LALHOUGHInitializeWeights( &status, weightsV), &status);
       
   /* print some debug info about spinrange */
   LogPrintf(LOG_DEBUG, "Frequency and spindown range at refTime (%d): [%f-%f], [%e-%e]\n", 
@@ -957,6 +964,7 @@ int MAIN( int argc, char *argv[]) {
     {
       UINT4 ifdot, nfdot;  /* counter and number of spindown values */
       REAL8 dfDot;  /* resolution in spindown */
+      SkyPosition skypos;
 
       skyGridCounter++;
 
@@ -981,6 +989,20 @@ int MAIN( int argc, char *argv[]) {
 
       nfdot = (UINT4)( usefulParams1.spinRange_startTime.fkdotBand[1]/ dfDot + 0.5) + 1; 
 
+      /* get amplitude modulation weights */
+      skypos.longitude = thisPoint1.Alpha;
+      skypos.latitude = thisPoint1.Delta;
+      skypos.system = COORDINATESYSTEM_EQUATORIAL;
+
+      /* initialize weights to unity */
+      LAL_CALL( LALHOUGHInitializeWeights( &status, weightsV), &status);
+
+
+      if (uvar_useWeights) {
+	LAL_CALL( ComputeStackNoiseAndAMWeights( &status, weightsV, &stackMultiNoiseWeights1,
+						 &stackMultiDetStates1, skypos), &status);
+      }
+      semiCohPar.weightsV = weightsV;
       
       /* loop over fdot values */
       for ( ifdot=0; ifdot<nfdot; ifdot++)
@@ -2660,6 +2682,89 @@ void ComputeStackNoiseWeights( LALStatus *status,
   LAL_CALL( LALHOUGHNormalizeWeights( status->statusPtr, weightsVec), status);
 
   *out = weightsVec;
+
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+
+}
+
+
+
+
+/** Calculate noise and AM weight for each stack for a given sky position*/
+void ComputeStackNoiseAndAMWeights( LALStatus *status,
+				    REAL8Vector *out,
+				    MultiNoiseWeightsSequence *inNoise,
+				    MultiDetectorStateSeriesSequence *inDetStates,
+				    SkyPosition skypos)
+{
+  
+  UINT4 nStacks, iStack, iIFO, iSFT, numifo, numsft;
+  REAL8 a, b, n;
+  MultiNoiseWeights *multNoiseWts;
+  MultiDetectorStateSeries *multDetStates;
+  MultiAMCoeffs *multiAMcoef = NULL;
+
+  INITSTATUS( status, "ComputeStackNoiseAndAMWeights", rcsid );
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT ( inNoise != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  ASSERT ( inNoise->length > 0, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
+  ASSERT ( inNoise->data != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );  
+
+  nStacks = inNoise->length;
+
+  ASSERT ( inDetStates != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  ASSERT ( inDetStates->length == nStacks, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
+  ASSERT ( inDetStates->data != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );  
+
+  ASSERT ( out != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  ASSERT ( out->length == nStacks, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
+  ASSERT ( out->data != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  
+
+  for (iStack=0; iStack<nStacks; iStack++) {
+
+    multNoiseWts = inNoise->data[iStack];
+    ASSERT ( multNoiseWts != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );  
+
+    multDetStates = inDetStates->data[iStack];
+    ASSERT ( multDetStates != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );  
+
+    numifo = multNoiseWts->length;
+    ASSERT ( numifo > 0, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );  
+    ASSERT ( multDetStates->length == numifo, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );  
+
+    /* initialize */
+    out->data[iStack] = 0;    
+
+
+    TRY ( LALGetMultiAMCoeffs ( status->statusPtr, &multiAMcoef, multDetStates, skypos), status);
+
+
+    for ( iIFO = 0; iIFO < numifo; iIFO++) {
+
+      numsft = multNoiseWts->data[iIFO]->length;
+      ASSERT ( multDetStates->data[iIFO]->length == numsft, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );  
+
+      for ( iSFT = 0; iSFT < numsft; iSFT++) {
+
+	a = multiAMcoef->data[iIFO]->a->data[iSFT];
+	b = multiAMcoef->data[iIFO]->b->data[iSFT];    
+	n =  multNoiseWts->data[iIFO]->data[iSFT]; 
+
+	out->data[iStack] += (a*a + b*b)*n; 
+
+      } /* loop over sfts */
+
+    }/* loop over ifos in stack */
+    
+    XLALDestroyMultiAMCoeffs ( multiAMcoef );
+
+  } /* loop over stacks*/ 
+
+
+  TRY( LALHOUGHNormalizeWeights( status->statusPtr, out), status);
 
   DETATCHSTATUSPTR (status);
   RETURN(status);
