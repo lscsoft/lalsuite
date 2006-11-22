@@ -95,10 +95,11 @@ typedef enum
   GRID_FLAT,			/**< "flat" sky-grid: fixed step-size (dAlpha,dDelta) */
   GRID_ISOTROPIC,		/**< approximately isotropic sky-grid */
   GRID_METRIC,			/**< generate grid using a 2D sky-metric */
-  GRID_FILE,			/**< read skygrid from a file */
+  GRID_FILE_SKYGRID,		/**< read skygrid from a file */
   GRID_METRIC_SKYFILE,		/**< 'hybrid' grid-construction: use skygrid from file, metric for others */
   GRID_SKY_LAST,		/**< end-marker for factored grid types */
   /* ----- full multi-dim grid-types ----- */
+  GRID_FILE_FULLGRID,		/**< load the full D-dim grid from a file */
   GRID_METRIC_LATTICE,		/**< 'optimal' covering using An*-lattice and flat metric */
   /* ----- end-marker ----- */
   GRID_LAST

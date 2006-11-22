@@ -480,12 +480,12 @@ checkUserInputConsistency (LALStatus *status)
     BOOLEAN haveAlphaBand = LALUserVarWasSet( &uvar_AlphaBand );
     BOOLEAN haveDeltaBand = LALUserVarWasSet( &uvar_DeltaBand );
 
-    BOOLEAN haveSkyRegion, haveAlphaDelta, haveGridFile, useGridFile, haveMetric, useMetric;
+    BOOLEAN haveSkyRegion, haveAlphaDelta, haveSkyGridFile, useSkyGridFile, haveMetric, useMetric;
 
     haveSkyRegion  = (uvar_skyRegion != NULL);
     haveAlphaDelta = (LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta) );
-    haveGridFile   = (uvar_skyGridFile != NULL);
-    useGridFile   = (uvar_gridType == GRID_FILE) || (uvar_gridType == GRID_METRIC_SKYFILE);
+    haveSkyGridFile   = (uvar_skyGridFile != NULL);
+    useSkyGridFile   = (uvar_gridType == GRID_FILE_SKYGRID) || (uvar_gridType == GRID_METRIC_SKYFILE);
     haveMetric     = (uvar_metricType > LAL_PMETRIC_NONE);
     useMetric     = (uvar_gridType == GRID_METRIC);
 
@@ -495,7 +495,7 @@ checkUserInputConsistency (LALStatus *status)
         ABORT (status, GETMESH_EINPUT, GETMESH_MSGEINPUT);
       }
 
-    if ( !useGridFile && !(haveSkyRegion || haveAlphaDelta) )
+    if ( !useSkyGridFile && !(haveSkyRegion || haveAlphaDelta) )
       {
         LALPrintError ("\nNeed sky-region: either use (Alpha,Delta) or skyRegion!\n\n");
         ABORT (status, GETMESH_EINPUT, GETMESH_MSGEINPUT);
@@ -506,17 +506,17 @@ checkUserInputConsistency (LALStatus *status)
 		       " OR skyRegion!\n\n");
         ABORT (status, GETMESH_EINPUT, GETMESH_MSGEINPUT);
       }
-    if ( useGridFile && !haveGridFile )
+    if ( useSkyGridFile && !haveSkyGridFile )
       {
         LALPrintError ("\nERROR: gridType=FILE, but no skyGridFile specified!\n\n");
         ABORT (status, GETMESH_EINPUT, GETMESH_MSGEINPUT);  
       }
-    if ( !useGridFile && haveGridFile )
+    if ( !useSkyGridFile && haveSkyGridFile )
       {
         LALWarning (status, "\nWARNING: skyGridFile was specified but not needed ..."
 		    " will be ignored\n");
       }
-    if ( useGridFile && (haveSkyRegion || haveAlphaDelta) )
+    if ( useSkyGridFile && (haveSkyRegion || haveAlphaDelta) )
       {
         LALWarning (status, "\nWARNING: We are using skyGridFile, but sky-region was"
 		    " also specified ... will be ignored!\n");

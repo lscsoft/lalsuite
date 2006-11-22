@@ -120,7 +120,7 @@ InitDopplerFullScan(LALStatus *status,
     case GRID_FLAT:
     case GRID_ISOTROPIC:
     case GRID_METRIC:
-    case GRID_FILE:
+    case GRID_FILE_SKYGRID:
     case GRID_METRIC_SKYFILE:
       /* backwards-compatibility mode */
       TRY ( initFactoredGrid ( status->statusPtr, thisScan, mdetStates, init ), status );
@@ -283,7 +283,7 @@ XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
     case GRID_FLAT:
     case GRID_ISOTROPIC:
     case GRID_METRIC:
-    case GRID_FILE:
+    case GRID_FILE_SKYGRID:
     case GRID_METRIC_SKYFILE:
       /* backwards-compatibility mode */
       nextPointInFactoredGrid ( pos, scan );

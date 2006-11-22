@@ -197,12 +197,12 @@ InitDopplerSkyScan( LALStatus *status,
   ASSERT ( init->gridType < GRID_SKY_LAST, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
   
   /* trap some abnormal input */
-  if ( (init->gridType != GRID_FILE) && (init->gridType != GRID_METRIC_SKYFILE) && (init->skyRegionString == NULL) ) 
+  if ( (init->gridType != GRID_FILE_SKYGRID) && (init->gridType != GRID_METRIC_SKYFILE) && (init->skyRegionString == NULL) ) 
     {
       LogPrintf (LOG_CRITICAL, "ERROR: No sky-region was specified!\n\n");
       ABORT (status,  DOPPLERSCANH_ENULL ,  DOPPLERSCANH_MSGENULL );
     } 
-  if ( (init->gridType == GRID_FILE) && (init->skyGridFile == NULL) )
+  if ( (init->gridType == GRID_FILE_SKYGRID) && (init->skyGridFile == NULL) )
     {
       LogPrintf (LOG_CRITICAL, "ERROR: no skyGridFile has been specified!\n\n");
       ABORT (status,  DOPPLERSCANH_ENULL ,  DOPPLERSCANH_MSGENULL );
@@ -233,7 +233,7 @@ InitDopplerSkyScan( LALStatus *status,
       break;
 
     case GRID_METRIC_SKYFILE:
-    case GRID_FILE:
+    case GRID_FILE_SKYGRID:
       TRY ( loadSkyGridFile (status->statusPtr, &skyScan->skyGrid, init->skyGridFile, &skyScan->skyRegion), status);
       break;
 

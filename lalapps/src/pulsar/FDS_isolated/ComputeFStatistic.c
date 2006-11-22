@@ -1241,7 +1241,7 @@ initUserVars (LALStatus *status)
   LALregREALUserVar(status,       AlphaBand,      'z', UVAR_OPTIONAL, "Band in alpha (equatorial coordinates) in radians");
   LALregREALUserVar(status,       DeltaBand,      'c', UVAR_OPTIONAL, "Band in delta (equatorial coordinates) in radians");
   LALregSTRINGUserVar(status,     skyRegion,      'R', UVAR_OPTIONAL, "ALTERNATIVE: specify sky-region by polygon (or use 'allsky')");
-  LALregINTUserVar(status,        gridType,        0 , UVAR_OPTIONAL, "Grid: 0=flat, 1=isotropic, 2=metric, 3=file, 4=SkyGridFILE+metric");
+  LALregINTUserVar(status,        gridType,        0 , UVAR_OPTIONAL, "Grid: 0=flat, 1=isotropic, 2=metric, 3=sky-file, 4=SkyGridFILE+metric");
   LALregINTUserVar(status,        metricType,     'M', UVAR_OPTIONAL, "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
   LALregREALUserVar(status,       metricMismatch, 'X', UVAR_OPTIONAL, "Maximal mismatch per dimension for metric grid");
   LALregREALUserVar(status,       dAlpha,         'l', UVAR_OPTIONAL, "Resolution in alpha (equatorial coordinates) in radians");
@@ -2651,7 +2651,7 @@ checkUserInputConsistency (LALStatus *lstat)
     haveSkyRegion  = (uvar_skyRegion != NULL);
     haveAlphaDelta = (LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta) );
     haveSkyGridFile   = (uvar_skyGridFile != NULL);
-    useSkyGridFile   = (uvar_gridType == GRID_FILE) || (uvar_gridType == GRID_METRIC_SKYFILE);
+    useSkyGridFile   = (uvar_gridType == GRID_FILE_SKYGRID) || (uvar_gridType == GRID_METRIC_SKYFILE);
     haveMetric     = (uvar_metricType > LAL_PMETRIC_NONE);
     useMetric     = (uvar_gridType == GRID_METRIC) || (uvar_gridType == GRID_METRIC_SKYFILE);
 
