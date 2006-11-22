@@ -2894,6 +2894,7 @@ find_files (const CHAR *globdir)
 
 	    if ((filelist = LALRealloc (filelist, (newNumFiles) * sizeof(CHAR*))) == NULL) {
 	      DestroyStringVector(ret);
+	      LALFree(thisFname);
 	      return (NULL);
 	    }
 
@@ -2902,6 +2903,12 @@ find_files (const CHAR *globdir)
 	    LALFree(ret->data);
 	    LALFree(ret);
 	    numFiles = newNumFiles;
+	  } else {
+	    for (j=0; j < numFiles; j++)
+	      LALFree (filelist[j]);
+	    LALFree (filelist);
+	    LALFree(thisFname);
+	    return(NULL);
 	  }
 
 	  /* skip the separator */
