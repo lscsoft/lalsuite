@@ -31,6 +31,8 @@
 #ifndef _PULSARDATATYPES_H  /* Double-include protection. */
 #define _PULSARDATATYPES_H
 
+#include <gsl/gsl_matrix.h>
+
 #include <lal/LALDatatypes.h>
 #include <lal/DetectorSite.h>
 #include <lal/Date.h>
@@ -99,6 +101,7 @@ typedef struct {
   PulsarAmplitudeParams Amp, dAmp;	/**< amplitude-parameters and error-estimates */
   PulsarDopplerParams Doppler, dDoppler;/**< Doppler-parameters and error-bars */
   REAL8 significance;			/**< a (user-chosen) measure of 'significance': Fstat, Hough-count,... */
+  gsl_matrix *AmpFisherMatrix;		/**< Fisher-matrix of amplitude-subspace: has more info than dAmp! */
 } PulsarCandidate;
 
 
