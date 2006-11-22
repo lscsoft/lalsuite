@@ -482,10 +482,10 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
               # store this chunk in the list of filtered data
               trig_chunks_analyzed.append(AnalyzedIFOData(chunk,insp,inj))
 
-              # jobs already set up, just add the var_arg and parent to trigbank
-              trigbank.add_file_arg(coinc_done.get_dag_node().get_output())
-              if opts.coincidence: 
-                  trigbank.add_parent(coinc_done.get_dag_node())
+            # jobs already set up, just add the var_arg and parent to trigbank
+            trigbank.add_file_arg(coinc_done.get_dag_node().get_output())
+            if opts.coincidence: 
+                trigbank.add_parent(coinc_done.get_dag_node())
 
   return trig_chunks_analyzed
 
