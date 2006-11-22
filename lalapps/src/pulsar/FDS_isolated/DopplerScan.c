@@ -66,13 +66,11 @@
 
 #define INDEX_f1_f1	PMETRIC_INDEX(3,3)
 
-/* stay away ~ 1e-2 from all boundaries to avoid roundoff-problems leading to discrete 
- * differences on different platforms. This is particularly important for E@H-validation.
- */
-#define DELTA_0     "-1.56)"
-#define DELTA_1     " 1.56)"
-#define ALPHA_0     "(1.0e-2, "
-#define ALPHA_1     "(6.27, "
+/* all-sky skyregion string, with exact boundaries */
+#define DELTA_0     "-1.570796326794897)"
+#define DELTA_1     " 1.570796326794897)"
+#define ALPHA_0     "(0, "
+#define ALPHA_1     "(6.283185307179586, "
 
 #define SKYREGION_ALLSKY  ALPHA_0 DELTA_0 "," ALPHA_1 DELTA_0 "," ALPHA_1 DELTA_1 "," ALPHA_0 DELTA_1
 
@@ -188,7 +186,7 @@ InitDopplerSkyScan( LALStatus *status,
 {
   DopplerSkyGrid *node; 
 
-  INITSTATUS( status, "InitDopplerSkyInit", DOPPLERSCANC );
+  INITSTATUS( status, "InitDopplerSkyScan", DOPPLERSCANC );
   ATTATCHSTATUSPTR (status); 
 
   /* This traps coding errors in the calling routine. */
@@ -1296,8 +1294,7 @@ getDopplermax(EphemerisData *edat)
  * string-format is
  *   " (ra1, dec1), (ra2, dec2), (ra3, dec3), ... "
  *
- * One special string "allsky" is current understood ==> replace by a 
- * sky-region covering the whole sky.
+ * If input == NULL or input == "allsky":==> sky-region covering the whole sky.
  *
  */
 void
@@ -1313,7 +1310,6 @@ ParseSkyRegionString (LALStatus *status, SkyRegion *region, const CHAR *input)
 
   ASSERT (region != NULL, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
   ASSERT (region->vertices == NULL, status, DOPPLERSCANH_ENONULL,  DOPPLERSCANH_MSGENONULL);
-  ASSERT (input != NULL, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
 
   region->numVertices = 0;
   region->lowerLeft.longitude = LAL_TWOPI;
@@ -1323,15 +1319,19 @@ ParseSkyRegionString (LALStatus *status, SkyRegion *region, const CHAR *input)
   region->lowerLeft.system = region->upperRight.system = COORDINATESYSTEM_EQUATORIAL;
 
   /* ----- first check if special skyRegion string was specified: */
-  strncpy (buf, input, 99);
-  buf[99] = 0;
-  TRY ( LALLowerCaseString (status->statusPtr, buf), status);
-  /* check if "allsky" was given: replace input by allsky-skyRegion */
-  if ( !strcmp( buf, "allsky" ) )	/* All-sky search */
+  if ( input == NULL )
     skyRegion = SKYREGION_ALLSKY;
   else
-    skyRegion = input;
-
+    {
+      strncpy (buf, input, 99);
+      buf[99] = 0;
+      TRY ( LALLowerCaseString (status->statusPtr, buf), status);
+      /* check if "allsky" was given: replace input by allsky-skyRegion */
+      if ( !strcmp( buf, "allsky" ) )	/* All-sky search */
+	skyRegion = SKYREGION_ALLSKY;
+      else
+	skyRegion = input;
+    }
 
   /* count number of entries (by # of opening parantheses) */
   pos = skyRegion;

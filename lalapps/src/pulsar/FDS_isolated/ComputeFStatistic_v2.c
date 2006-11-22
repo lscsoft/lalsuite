@@ -109,6 +109,7 @@ typedef struct {
   REAL8 Tsft;                               /**< length of one SFT in seconds */
   LIGOTimeGPS refTime;			    /**< reference-time for pulsar-parameters in SBB frame */
   DopplerRegion searchRegion;		    /**< parameter-space region (at *internalRefTime*) to search over */
+  DopplerFullScanState *scanState;          /**< current state of the Doppler-scan */
   PulsarDopplerParams stepSizes;	    /**< user-preferences on Doppler-param step-sizes */
   EphemerisData *ephemeris;		    /**< ephemeris data (from LALInitBarycenter()) */
   MultiSFTVector *multiSFTs;		    /**< multi-IFO SFT-vectors */
@@ -171,6 +172,7 @@ CHAR *uvar_outputLoudest;
 INT4 uvar_NumCandidatesToKeep;
 
 CHAR *uvar_skyGridFile;
+CHAR *uvar_gridFile;
 CHAR *uvar_outputSkyGrid;
 REAL8 uvar_dopplermax;
 INT4 uvar_RngMedWindow;
@@ -219,9 +221,6 @@ int main(int argc,char *argv[])
 {
   LALStatus status = blank_status;	/* initialize status */
 
-  DopplerFullScanInit scanInit;			/* init-structure for DopperScanner */
-  DopplerFullScanState *thisScan = NULL; 	/* current state of the Doppler-scan */
-
   FILE *fpFstat = NULL;
   ComputeFBuffer cfBuffer = empty_ComputeFBuffer;
   REAL8 numTemplates, templateCounter;
@@ -262,21 +261,6 @@ int main(int argc,char *argv[])
   /* like ephemeries data and template grids: */
   LAL_CALL ( InitFStat(&status, &GV), &status);
 
-  /* initialize full multi-dimensional Doppler-scanner */
-  scanInit.searchRegion = GV.searchRegion;
-  scanInit.gridType = uvar_gridType;
-  scanInit.metricType = uvar_metricType;
-  scanInit.metricMismatch = uvar_metricMismatch;
-  scanInit.stepSizes = GV.stepSizes;
-  scanInit.skyGridFile = uvar_skyGridFile;
-  scanInit.ephemeris = GV.ephemeris;		/* used by Ephemeris-based metric */
-
-  LogPrintf (LOG_DEBUG, "Setting up template grid ... ");
-  LAL_CALL ( InitDopplerFullScan ( &status, &thisScan, GV.multiDetStates, &scanInit), &status); 
-  numTemplates = XLALNumDopplerTemplates ( thisScan );
-  LogPrintfVerbatim (LOG_DEBUG, "done: %.0f templates.\n", numTemplates);
-
-
   /* if a complete output of the F-statistic file was requested,
    * we open and prepare the output-file here */
   if (uvar_outputFstat)
@@ -294,11 +278,11 @@ int main(int argc,char *argv[])
    * main loop: demodulate data for each point in the sky-position grid
    * and for each value of the frequency-spindown
    */
-  
+  numTemplates = XLALNumDopplerTemplates ( GV.scanState );
   templateCounter = 0.0; 
   tickCounter = 0;
   clock0 = time(NULL);
-  while ( XLALNextDopplerPos( &dopplerpos, thisScan ) == 0 )
+  while ( XLALNextDopplerPos( &dopplerpos, GV.scanState ) == 0 )
     {
       /* main function call: compute F-statistic for this template */
       LAL_CALL( ComputeFStat(&status, &Fstat, &dopplerpos, GV.multiSFTs, GV.multiNoiseWeights, 
@@ -444,7 +428,7 @@ int main(int argc,char *argv[])
   LogPrintf (LOG_DEBUG, "Search finished.\n");
   
   /* Free memory */
-  LAL_CALL ( FreeDopplerFullScan(&status, &thisScan), &status);
+  LAL_CALL ( FreeDopplerFullScan(&status, &GV.scanState), &status);
 
   XLALEmptyComputeFBuffer ( cfBuffer );
 
@@ -510,6 +494,7 @@ initUserVars (LALStatus *status)
   uvar_outputFstat = NULL;
 
   uvar_skyGridFile = NULL;
+  uvar_gridFile = NULL;
 
   uvar_dopplermax =  1.05e-4;
   uvar_RngMedWindow = 50;	/* for running-median */
@@ -555,11 +540,11 @@ initUserVars (LALStatus *status)
   LALregSTRINGUserVar(status,	ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
   LALregBOOLUserVar(status, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
   LALregREALUserVar(status, 	TwoFthreshold,	'F', UVAR_OPTIONAL, "Set the threshold for selection of 2F");
-  LALregINTUserVar(status, 	gridType,	 0 , UVAR_OPTIONAL, "Template grid: 0=flat, 1=isotropic, 2=metric, 3=sky-file");
+  LALregINTUserVar(status, 	gridType,	 0 , UVAR_OPTIONAL, "Template grid: 0=flat, 1=isotropic, 2=metric, 3=skygrid-file, 6=grid-file");
   LALregINTUserVar(status, 	metricType,	'M', UVAR_OPTIONAL, "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
   LALregREALUserVar(status, 	metricMismatch,	'X', UVAR_OPTIONAL, "Maximal allowed mismatch for metric tiling");
   LALregSTRINGUserVar(status,	outputLabel,	'o', UVAR_OPTIONAL, "Label to be appended to all output file-names");
-  LALregSTRINGUserVar(status,	skyGridFile,	 0,  UVAR_OPTIONAL, "Load sky-grid from this file.");
+  LALregSTRINGUserVar(status,	gridFile,	 0,  UVAR_OPTIONAL, "Load grid from this file: sky-grid or full-grid depending on --gridType.");
   LALregREALUserVar(status,	refTime,	 0,  UVAR_OPTIONAL, "SSB reference time for pulsar-paramters [Default: startTime]");
   LALregREALUserVar(status, 	dopplermax, 	'q', UVAR_OPTIONAL, "Maximum doppler shift expected");  
 
@@ -581,6 +566,8 @@ initUserVars (LALStatus *status)
   LALregSTRINGUserVar(status,   workingDir,     'w', UVAR_DEVELOPER, "Directory to use as work directory.");
   LALregREALUserVar(status, 	timerCount, 	 0,  UVAR_DEVELOPER, "N: Output progress/timer info every N templates");  
   LALregREALUserVar(status,	internalRefTime, 0,  UVAR_DEVELOPER, "internal reference time to use for Fstat-computation [Default: startTime]");
+
+  LALregSTRINGUserVar(status,	skyGridFile,	 0,  UVAR_DEVELOPER, "[OBSOLETE: use --gridFile] Load sky-grid from this file.");
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -861,6 +848,31 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
       }
     } /* create toplist */
 
+  /* initialize full multi-dimensional Doppler-scanner */
+  {
+    DopplerFullScanInit scanInit;			/* init-structure for DopperScanner */
+    CHAR *gridFile = NULL;
+
+    /* deal with the redundant --skyGridFile [OBSOLETE] and --gridFile options */
+    if ( uvar_skyGridFile ) {
+      LogPrintf (LOG_NORMAL, "Warning: --skyGridFile is obsolete and will disappear in the future, use --gridFile instead!\n");
+      gridFile = uvar_skyGridFile;
+    }
+    else
+      gridFile = uvar_gridFile;
+    
+    scanInit.searchRegion = cfg->searchRegion;
+    scanInit.gridType = uvar_gridType;
+    scanInit.gridFile = gridFile;
+    scanInit.metricType = uvar_metricType;
+    scanInit.metricMismatch = uvar_metricMismatch;
+    scanInit.stepSizes = cfg->stepSizes;
+    scanInit.ephemeris = cfg->ephemeris;		/* used by Ephemeris-based metric */
+    
+    LogPrintf (LOG_DEBUG, "Setting up template grid ... ");
+    TRY ( InitDopplerFullScan ( status->statusPtr, &cfg->scanState, cfg->multiDetStates, &scanInit), status); 
+    LogPrintf (LOG_DEBUG, "template grid ready: %.0f templates.\n", XLALNumDopplerTemplates ( cfg->scanState ) );
+  }
 
   /* ----- produce a log-string describing the data-specific setup ----- */
   TRY ( getLogString ( status->statusPtr, &(cfg->logstring), cfg ), status );
@@ -1089,15 +1101,37 @@ checkUserInputConsistency (LALStatus *status)
   {
     BOOLEAN haveAlphaBand = LALUserVarWasSet( &uvar_AlphaBand );
     BOOLEAN haveDeltaBand = LALUserVarWasSet( &uvar_DeltaBand );
-    BOOLEAN haveSkyRegion, haveAlphaDelta, haveSkyGridFile, useSkyGridFile, haveMetric, useMetric;
+    BOOLEAN haveSkyRegion, haveAlphaDelta, haveSkyGridFile, haveGridFile; 
+    BOOLEAN useSkyGridFile, useFullGridFile, haveMetric, useMetric;
 
-    haveSkyRegion  = (uvar_skyRegion != NULL);
-    haveAlphaDelta = (LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta) );
-    haveSkyGridFile   = (uvar_skyGridFile != NULL);
-    useSkyGridFile   = (uvar_gridType == GRID_FILE_SKYGRID);
-    haveMetric     = (uvar_metricType > LAL_PMETRIC_NONE);
-    useMetric     = (uvar_gridType == GRID_METRIC);
+    haveSkyRegion  	= (uvar_skyRegion != NULL);
+    haveAlphaDelta 	= (LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta) );
+    haveSkyGridFile   	= (uvar_skyGridFile != NULL);
+    haveGridFile      	= (uvar_gridFile != NULL);
+    useSkyGridFile   	= (uvar_gridType == GRID_FILE_SKYGRID);
+    useFullGridFile	= (uvar_gridType == GRID_FILE_FULLGRID);
+    haveMetric     	= (uvar_metricType > LAL_PMETRIC_NONE);
+    useMetric     	= (uvar_gridType == GRID_METRIC);
 
+    if ( haveSkyGridFile && haveGridFile ) 
+      {
+	LALPrintError("\nERROR: Don't specify both --skyGridFile and --gridFile!\n\n");
+	ABORT ( status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT );
+      }
+    if ( !useFullGridFile && !useSkyGridFile && ( haveSkyGridFile || haveGridFile ) )
+      {
+        LALWarning (status, "\nWARNING: gridFile was specified but not needed ... will be ignored\n\n");
+      }
+    if ( useSkyGridFile && !( haveSkyGridFile || haveGridFile ) )
+      {
+        LALPrintError ("\nERROR: gridType=SKY-FILE, but no --gridFile specified!\n\n");
+        ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);  
+      }
+    if ( useFullGridFile && !haveGridFile )
+      {
+	LALPrintError ("\nERROR: gridType=GRID-FILE, but no --gridFile specified!\n\n");
+        ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);  
+      }
 
     if ( (haveAlphaBand && !haveDeltaBand) || (haveDeltaBand && !haveAlphaBand) )
       {
@@ -1105,36 +1139,14 @@ checkUserInputConsistency (LALStatus *status)
         ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
       }
 
-    if ( !useSkyGridFile && !(haveSkyRegion || haveAlphaDelta) )
-      {
-        LALPrintError ("\nNeed sky-region: either use (Alpha,Delta) or skyRegion!\n\n");
-        ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
-      }
     if ( haveSkyRegion && haveAlphaDelta )
       {
-        LALPrintError ("\nOverdetermined sky-region: only use EITHER (Alpha,Delta)"
-		       " OR skyRegion!\n\n");
+        LALPrintError ("\nOverdetermined sky-region: only use EITHER (Alpha,Delta) OR skyRegion!\n\n");
         ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
-      }
-    if ( useSkyGridFile && !haveSkyGridFile )
-      {
-        LALPrintError ("\nERROR: gridType=FILE, but no skyGridFile specified!\n\n");
-        ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);  
-      }
-    if ( !useSkyGridFile && haveSkyGridFile )
-      {
-        LALWarning (status, "\nWARNING: skyGridFile was specified but not needed ..."
-		    " will be ignored\n");
-      }
-    if ( useSkyGridFile && (haveSkyRegion || haveAlphaDelta) )
-      {
-        LALWarning (status, "\nWARNING: We are using skyGridFile, but sky-region was"
-		    " also specified ... will be ignored!\n");
       }
     if ( !useMetric && haveMetric) 
       {
-        LALWarning (status, "\nWARNING: Metric was specified for non-metric grid..."
-		    " will be ignored!\n");
+        LALWarning (status, "\nWARNING: Metric was specified for non-metric grid... will be ignored!\n");
       }
     if ( useMetric && !haveMetric) 
       {

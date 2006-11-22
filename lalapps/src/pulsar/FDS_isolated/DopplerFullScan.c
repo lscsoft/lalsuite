@@ -127,6 +127,10 @@ InitDopplerFullScan(LALStatus *status,
       break;
 
       /* ----- multi-dimensional coverings based on flat metric approximation ----- */
+    case GRID_FILE_FULLGRID:
+      TRY ( loadFullGridFile ( status->statusPtr, thisScan, init ), status );
+      break;
+
     case GRID_METRIC_LATTICE:
       /* NOTE: experimental und under construction */
       TRY ( initLatticeCovering ( status->statusPtr, thisScan, mdetStates, init ), status );
@@ -181,7 +185,7 @@ initFactoredGrid (LALStatus *status,
 
   skyScanInit.Detector = &(mdetStates->data[0]->detector);
   skyScanInit.ephemeris = init->ephemeris;		/* used only by Ephemeris-based metric */
-  skyScanInit.skyGridFile = init->skyGridFile;
+  skyScanInit.skyGridFile = init->gridFile;
   skyScanInit.skyRegionString = init->searchRegion.skyRegionString;
   skyScanInit.Freq = init->searchRegion.fkdot[0] + init->searchRegion.fkdotBand[0];
 
@@ -434,6 +438,26 @@ initLatticeCovering ( LALStatus *status,
   RETURN ( status );
 
 } /* initLatticeCovering() */
+
+
+/** load a full multi-dim template grid from the file given 
+ */
+void
+loadFullGridFile ( LALStatus *status, 
+		   DopplerFullScanState *scan, 
+		   const DopplerFullScanInit *init 
+		   )
+{
+
+  INITSTATUS( status, "loadFullGridFile", DOPPLERFULLSCANC );
+  ATTATCHSTATUSPTR ( status );
+
+  
+  DETATCHSTATUSPTR ( status );
+  RETURN ( status );
+  
+} /* loadFullGridFile() */
+
 
 /** output gsl-matrix in octave-compatible format to fp, using format \a fmt 
  * for each element 

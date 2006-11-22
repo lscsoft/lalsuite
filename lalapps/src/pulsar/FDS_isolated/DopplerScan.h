@@ -92,15 +92,15 @@ enum {
 typedef enum
 {
   /* ----- factored grid-types: sky x f0dot x f1dot x f2dot x f3dot  */
-  GRID_FLAT,			/**< "flat" sky-grid: fixed step-size (dAlpha,dDelta) */
-  GRID_ISOTROPIC,		/**< approximately isotropic sky-grid */
-  GRID_METRIC,			/**< generate grid using a 2D sky-metric */
-  GRID_FILE_SKYGRID,		/**< read skygrid from a file */
-  GRID_METRIC_SKYFILE,		/**< 'hybrid' grid-construction: use skygrid from file, metric for others */
-  GRID_SKY_LAST,		/**< end-marker for factored grid types */
+  GRID_FLAT 		= 0,		/**< "flat" sky-grid: fixed step-size (dAlpha,dDelta) */
+  GRID_ISOTROPIC	= 1,		/**< approximately isotropic sky-grid */
+  GRID_METRIC		= 2,		/**< generate grid using a 2D sky-metric */
+  GRID_FILE_SKYGRID	= 3,		/**< read skygrid from a file */
+  GRID_METRIC_SKYFILE	= 4,		/**< 'hybrid' grid-construction: use skygrid from file, metric for others */
+  GRID_SKY_LAST,			/**< end-marker for factored grid types */
   /* ----- full multi-dim grid-types ----- */
-  GRID_FILE_FULLGRID,		/**< load the full D-dim grid from a file */
-  GRID_METRIC_LATTICE,		/**< 'optimal' covering using An*-lattice and flat metric */
+  GRID_FILE_FULLGRID	= 6,		/**< load the full D-dim grid from a file */
+  GRID_METRIC_LATTICE	= 7,		/**< 'optimal' covering using An*-lattice and flat metric */
   /* ----- end-marker ----- */
   GRID_LAST
 } DopplerGridType;
