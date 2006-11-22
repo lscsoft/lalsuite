@@ -92,8 +92,6 @@ const ComputeFBuffer empty_ComputeFBuffer;
 /*---------- internal prototypes ----------*/
 int finite(double x);
 
-static int printGSLmatrix4 ( FILE *fp, const CHAR *prefix, const gsl_matrix *gij );
-
 /*==================== FUNCTION DEFINITIONS ====================*/
 
 
@@ -1189,7 +1187,7 @@ XLALEmptyComputeFBuffer ( ComputeFBuffer cfb )
 } /* XLALDestroyComputeFBuffer() */
 
 
-/**< Multiply AM-coeffs \f$a_{X\alpha}, b_{X\alpha}\f$ by weights \f$\sqrt(w_{X\alpha})\f$ and 
+/** Multiply AM-coeffs \f$a_{X\alpha}, b_{X\alpha}\f$ by weights \f$\sqrt(w_{X\alpha})\f$ and 
  * compute the resulting \f$A_d, B_d, C_d\f$ by simply *SUMMING* them, i.e.
  * \f$A_d \equiv \sum_{X,\alpha} \sqrt{w_{X\alpha} a_{X\alpha}^2\f$ etc.
  * 
@@ -1588,9 +1586,6 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,
   gsl_matrix_memcpy ( Jh_Mu_nu, tmp2 );
   
   /* ===== debug-output resulting matrices ===== */
-  /* if ( lalDebugLevel ) */
-  /* printGSLmatrix4 ( stdout, "var(dBh^mu, dBh^nu) = \n", Jh_Mu_nu ); */
-
   /* propagate initial-phase from Fstat-reference-time to refTime of Doppler-params */
   TRY ( LALExtrapolatePulsarPhase (status->statusPtr, &phi0, pulsarParams->Doppler.fkdot, pulsarParams->Doppler.refTime, phi0, (*FstatRefTime) ),
 	status );
@@ -1610,6 +1605,10 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,
   pulsarParams->dAmp.cosi   = sqrt( gsl_matrix_get (Jh_Mu_nu, 1, 1 ) );
   pulsarParams->dAmp.phi0   = sqrt( gsl_matrix_get (Jh_Mu_nu, 2, 2 ) );
   pulsarParams->dAmp.psi    = sqrt( gsl_matrix_get (Jh_Mu_nu, 3, 3 ) );
+  /* return also the full Amplitude-Fisher matrix: invert Jh_Mu_nu */
+  TRYGSL( gsl_linalg_LU_decomp (Jh_Mu_nu, permh, &signum ), status);
+  TRYGSL(gsl_linalg_LU_invert  (Jh_Mu_nu, permh, tmp ), status);
+  pulsarParams->AmpFisherMatrix = tmp;
 
   /* ----- free GSL memory ----- */
   gsl_vector_free ( x_mu );
@@ -1617,7 +1616,6 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,
   gsl_matrix_free ( M_Mu_Nu );
   gsl_matrix_free ( Jh_Mu_nu );
   gsl_permutation_free ( permh );
-  gsl_matrix_free ( tmp );
   gsl_matrix_free ( tmp2 );
 
   DETATCHSTATUSPTR (status);
@@ -1625,36 +1623,3 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,
 
 } /* LALEstimatePulsarAmplitudeParams() */
 
-
-/** Output 4x4 gsl_matrix in octave-format.
- * return -1 on error, 0 if OK.
- */
-static int
-printGSLmatrix4 ( FILE *fp, const CHAR *prefix, const gsl_matrix *gij )
-{
-  if ( !gij )
-    return -1;
-  if ( !fp )
-    return -1;
-  if ( (gij->size1 != 4) || (gij->size2 != 4 ) )
-    return -1;
-  if ( !prefix ) 
-    return -1;
-
-  fprintf (fp, prefix );
-  fprintf (fp, " [ %.9f, %.9f, %.9f, %.9f;\n",
-	   gsl_matrix_get ( gij, 0, 0 ), gsl_matrix_get ( gij, 0, 1 ), 
-	   gsl_matrix_get ( gij, 0, 2 ), gsl_matrix_get ( gij, 0, 3 ) );
-  fprintf (fp, "   %.9f, %.9f, %.9f, %.9f;\n",
-	   gsl_matrix_get ( gij, 1, 0 ), gsl_matrix_get ( gij, 1, 1 ),
-	   gsl_matrix_get ( gij, 1, 2 ), gsl_matrix_get ( gij, 1, 3 ) );
-  fprintf (fp, "   %.9f, %.9f, %.9f, %.9f;\n",
-	   gsl_matrix_get ( gij, 2, 0 ), gsl_matrix_get ( gij, 2, 1 ),
-	   gsl_matrix_get ( gij, 2, 2 ), gsl_matrix_get ( gij, 2, 3 ) );
-  fprintf (fp, "   %.9f, %.9f, %.9f, %.9f ];\n",
-	   gsl_matrix_get ( gij, 3, 0 ), gsl_matrix_get ( gij, 3, 1 ),
-	   gsl_matrix_get ( gij, 3, 2 ), gsl_matrix_get ( gij, 3, 3 ) );
-  
-  return 0;
-
-} /* printGSLmatrix4() */
