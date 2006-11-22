@@ -207,6 +207,7 @@ const char *va(const char *format, ...);	/* little var-arg string helper functio
 
 /*---------- empty initializers ---------- */
 static const ConfigVariables empty_ConfigVariables;
+static const FstatCandidate empty_FstatCandidate;
 
 /*----------------------------------------------------------------------*/
 /* Function definitions start here */
@@ -226,9 +227,10 @@ int main(int argc,char *argv[])
   REAL8 numTemplates, templateCounter;
   REAL8 tickCounter;
   time_t clock0;
-  Fcomponents Fstat;
+  Fcomponents Fstat = empty_Fcomponents;
   PulsarDopplerParams dopplerpos = empty_PulsarDopplerParams;		/* current search-parameters */
-  FstatCandidate loudestFCand, thisFCand;
+  FstatCandidate loudestFCand = empty_FstatCandidate, thisFCand = empty_FstatCandidate;
+
 
   ConfigVariables GV = empty_ConfigVariables;		/**< global container for various derived configuration settings */
 
