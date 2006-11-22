@@ -240,3 +240,46 @@ LogFormatLevel( LogLevel_t level )
   return buf;
 
 } /* LogFormatLevel() */
+
+
+
+/** Output gsl_matrix in octave-format, using the given format for the matrix-entries
+ * return -1 on error, 0 if OK.
+ */
+int
+XLALfprintfGSLmatrix ( FILE *fp, const CHAR *fmt, const gsl_matrix *gij )
+{
+  UINT4 cols, rows;
+  UINT4 i, j;
+
+  /* check user input */
+  if ( !gij )
+    return -1;
+  if ( !fp )
+    return -1;
+  if ( !fmt ) 
+    return -1;
+
+  rows = gij->size1;
+  cols = gij->size2;
+
+  if ( (gij->size1 != 4) || (gij->size2 != 4 ) )
+    return -1;
+
+  fprintf (fp, " [ " );
+  for ( i=0; i < rows; i ++ )
+    {
+      for (j=0; j < cols; j ++ )
+	{
+	  fprintf (fp, fmt, gsl_matrix_get ( gij, i, j ) );
+	  if ( j < cols - 1 )
+	    fprintf (fp, ", ");
+	  else
+	    fprintf (fp, ";\n");
+	} /* for j < cols */
+    }
+  fprintf (fp, " ];\n" );
+  
+  return 0;
+
+} /* XLALprintGSLmatrix() */

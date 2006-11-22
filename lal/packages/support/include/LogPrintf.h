@@ -37,9 +37,15 @@
 extern "C" {
 #endif
 
-/*---------- INCLUDES ----------*/
+#include <lal/LALRCSID.h>
+NRCSID( LOGPRINTFH, "$Id$" );
 
+/*---------- INCLUDES ----------*/
 #include <stdarg.h>
+
+#include <lal/LALDatatypes.h>
+
+#include <gsl/gsl_matrix.h>
 
 /*---------- DEFINES ----------*/
 /*---------- TYPES ----------*/
@@ -62,6 +68,7 @@ void LogSetLevel(LogLevel_t level);
 void LogPrintf (LogLevel_t, const char* format, ...);
 void LogPrintfVerbatim (LogLevel_t, const char* format, ...);
 
+int XLALfprintfGSLmatrix ( FILE *fp, const CHAR *fmt, const gsl_matrix *gij );
 
 #ifdef  __cplusplus
 }
