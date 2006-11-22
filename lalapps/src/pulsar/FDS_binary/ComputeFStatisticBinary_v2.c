@@ -1786,7 +1786,7 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
       haveSkyRegion  = (uvar_skyRegion != NULL);
       haveAlphaDelta = (LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta) );
       haveGridFile   = (uvar_skyGridFile != NULL);
-      needGridFile   = (uvar_gridType == GRID_FILE);
+      needGridFile   = (uvar_gridType == GRID_FILE_SKYGRID);
       haveMetric     = (uvar_metricType > LAL_PMETRIC_NONE);
       needMetric     = (uvar_gridType == GRID_METRIC);
       setMetric      = LALUserVarWasSet (&uvar_metricType);
