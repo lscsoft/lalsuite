@@ -425,6 +425,9 @@ int main(int argc,char *argv[])
 	}
 
       fclose (fpLoudest);
+
+      gsl_matrix_free ( pulsarParams.AmpFisherMatrix );
+
     } /* write loudest candidate to file */
   
   LogPrintf (LOG_DEBUG, "Search finished.\n");
@@ -1266,6 +1269,9 @@ write_PulsarCandidate_to_fp ( FILE *fp,  const PulsarCandidate *pulsarParams, co
   fprintf (fp, "Fa       = % .6g  %+.6gi;\n", Fcand->Fstat.Fa.re, Fcand->Fstat.Fa.im );
   fprintf (fp, "Fb       = % .6g  %+.6gi;\n", Fcand->Fstat.Fb.re, Fcand->Fstat.Fb.im );
   fprintf (fp, "twoF     = % .6g;\n", 2.0 * Fcand->Fstat.F );
+
+  fprintf (fp, "AmpFisher = \\\n" );
+  XLALfprintfGSLmatrix ( fp, "%.9g",pulsarParams->AmpFisherMatrix );
 
   return 0;
 
