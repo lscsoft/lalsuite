@@ -512,7 +512,7 @@ initUserVars (LALStatus *status)
   uvar_workingDir = (CHAR*)LALMalloc(512);
   strcpy(uvar_workingDir, ".");
 
-  uvar_timerCount = 1e4;	/* output a timer/progress count every N templates */
+  uvar_timerCount = 1e5;	/* output a timer/progress count every N templates */
 
   /* ---------- register all user-variables ---------- */
   LALregBOOLUserVar(status, 	help, 		'h', UVAR_HELP,     "Print this message"); 
