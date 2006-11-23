@@ -83,6 +83,7 @@ static const LALUnit empty_LALUnit;
 
 /* User variables */
 BOOLEAN uvar_help;
+BOOLEAN uvar_lisasim;
 CHAR *uvar_extraComment;
 CHAR *uvar_outputDir;
 CHAR *uvar_inputXML;
@@ -111,6 +112,7 @@ main(int argc, char *argv[])
   UINT4 ifo, sidx, fidx;
   COMPLEX8FrequencySeries *sft = NULL;
   REAL4 fourpifL;
+  COMPLEX8 ztmp;
 
   lalDebugLevel = 0;
 
@@ -207,8 +209,18 @@ main(int argc, char *argv[])
 	    {
 	      fourpifL = (2.0*LAL_TWOPI*LISA_ARM_LENGTH_SECONDS)
 		* (sft->f0 + fidx * sft->deltaF);
-	      sft->data->data[fidx].re /= (fourpifL * fourpifL);
-	      sft->data->data[fidx].im /= (fourpifL * fourpifL);
+	      if (uvar_lisasim)
+		{
+		  /* divide by    - 4 pi i f L */
+		  ztmp = sft->data->data[fidx];
+		  sft->data->data[fidx].re = - ztmp.im / fourpifL;
+		  sft->data->data[fidx].im = ztmp.re / fourpifL;
+		}
+	      else
+		{
+		  sft->data->data[fidx].re /= (fourpifL * fourpifL);
+		  sft->data->data[fidx].im /= (fourpifL * fourpifL);
+		}
 	    }
 	}
 
@@ -256,6 +268,8 @@ initUserVars (LALStatus *status)
   LALregSTRINGUserVar(status, extraComment,	'C', UVAR_OPTIONAL, "Additional comment to be added to output-SFTs");
   LALregSTRINGUserVar(status, miscField,	'm', UVAR_OPTIONAL, "User-specifiable portion of the SFT-filename ('misc' field)");
   
+  LALregBOOLUserVar(status,   lisasim,		's', UVAR_OPTIONAL, "TDI data are from LISA Simulator");
+
   LALregBOOLUserVar(status,   help,		'h', UVAR_HELP,     "Print this help/usage message");
   
   DETATCHSTATUSPTR (status);
