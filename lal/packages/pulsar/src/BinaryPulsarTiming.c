@@ -944,6 +944,65 @@ LALReadTEMPOParFile(  LALStatus *status,
   RETURN(status);
 }
 
+/* function to print out to screen all the pulsar parameters and there associated errors */
+void PrintPulsarParameters( BinaryPulsarParams params ){
+  fprintf(stderr, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n");
+  fprintf(stderr, "PULSAR %s :\n", params.name);
+  fprintf(stderr, "sky position:\tra %.7lf +/- %.3le rads, dec %.7lf +/- %.3le rads\n", params.ra,
+params.raErr, params.dec, params.decErr);
+  if(params.pmra != 0. || params.pmdec != 0.)
+    fprintf(stderr, "proper motion:\tra %.4le +/- %.1le rads/s, dec %.4le +/- %.1le rads/s\n",
+params.pmra, params.pmraErr, params.pmdec, params.pmdecErr);
+  if(params.pepoch != 0. || params.posepoch != 0.)
+    fprintf(stderr, "epochs:\tperiod %lf (GPS), position %lf (GPS)\n", params.pepoch,
+params.posepoch);
+  fprintf(stderr, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n\n");
+  
+  fprintf(stderr, "Frequency parameters\n");
+  if(params.f0 != 0.)
+    fprintf(stderr, "\tf0 = %.10lf +/- %.3le (Hz)\n", params.f0, params.f0Err);
+  if(params.f1 != 0.)
+    fprintf(stderr, "\tf1 = %.5le +/- %.3le (Hz/s)\n", params.f1, params.f1Err);
+  if(params.f2 != 0.)
+    fprintf(stderr, "\tf1 = %.5le +/- %.3le (Hz/s^2)\n", params.f2, params.f2Err);
+  /* print binary parameters */
+  if(params.model != NULL){
+    fprintf(stderr, "\nBinary parameters:\tmodel %s\n", params.model);
+    
+    fprintf(stderr, "Keplarian parameters:-\n");
+    if(params.Pb != 0.)
+      fprintf(stderr, "\tperiod = %lf +/- %.3le (days)\n", params.Pb, params.PbErr);
+    if(params.x != 0.)
+      fprintf(stderr, "\tprojected semi-major axis = %lf +/- %.3le (light sec)\n", params.x,
+params.xErr);
+    if(params.e != 0.)
+      fprintf(stderr, "\teccentricity = %lf +/- %.3le\n", params.e, params.eErr);
+    if(params.w0 != 0.)
+      fprintf(stderr, "\tlongitude of periastron = %lf +/- %.3lf (degs)\n", params.w0,
+params.w0Err);
+    if(params.T0 != 0.)
+      fprintf(stderr, "\ttime of periastron = %lf +/- %.3lf (GPS)\n", params.T0, params.T0Err);
+    if(params.Tasc != 0.)
+      fprintf(stderr, "\ttime of ascending node = %lf +/- %.3lf (GPS)\n", params.Tasc,
+params.TascErr);
+    if(params.eps1 != 0.)
+      fprintf(stderr, "\tfirst Laplace-Lagrange parameter (eps1) = %le +/- %.3le\n", params.eps1,
+params.eps1Err);
+    if(params.eps2 != 0.)
+      fprintf(stderr, "\tsecond Laplace-Lagrange parameter (eps1) = %le +/- %.3le\n", params.eps2,
+params.eps2Err);
+    if(params.eps2 != 0.)
+      fprintf(stderr, "\tsecond Laplace-Lagrange parameter (eps1) = %le +/- %.3le\n", params.eps2,
+params.eps2Err);
+    
+    /*fprintf(stderr, "Post-Newtonian parameters:-\n");
+    if(params.gamma != 0.)
+      fprintf(stderr, "\tGravitational redshift parameter = %le +/- %.3le\n", params.gamma,
+params.gammaErr);*/
+      
+  }
+}
+
 /* function converts dec or ra from format dd/hh:mm:ss.sss or format 
    dd/hhmmss.ss to radians */
 REAL8 LALDegsToRads(CHAR *degs, const CHAR *coord){
