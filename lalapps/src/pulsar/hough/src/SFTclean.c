@@ -75,6 +75,7 @@ int main(int argc, char *argv[]){
 
   static MultiSFTVector  *inputSFTs = NULL;
   static SFTCatalog *catalog = NULL;
+  static SFTCatalog thisCatalog;
   static SFTConstraints constraints;
 
 
@@ -82,7 +83,7 @@ int main(int argc, char *argv[]){
   FILE *fp=NULL;   
   INT4 seed, ranCount;
   RandomParams *randPar=NULL; 
-  UINT4 k;  
+  UINT4 k, j;  
 
   /* user input variables */
   BOOLEAN uvar_help;
@@ -138,41 +139,53 @@ int main(int argc, char *argv[]){
     fprintf (stderr,"Unable to match any SFTs with pattern '%s'\n", uvar_sftDir );
     exit(1);
   }
-  
-  /* read the sfts */
-  LAL_CALL( LALLoadMultiSFTs ( &status, &inputSFTs, catalog, uvar_fMin, uvar_fMax), &status);
-  
-  /* generate random number seed */
-  fp=fopen("/dev/urandom", "r");
-  if (!fp) 
-    { 
-      fprintf(stderr,"Error in opening /dev/urandom \n"); 
-      exit(1); 
-    } 
-  ranCount = fread(&seed, sizeof(seed), 1, fp);
-  if (!(ranCount==1)) 
-    { 
-      fprintf(stderr,"Error in reading random seed \n"); 
-      exit(1); 
-    } 
+
+  thisCatalog.length = 1;
   LAL_CALL ( LALCreateRandomParams (&status, &randPar, seed), &status );
+  fprintf(stdout, "%d\n",catalog->length);
 
+  /* loop over sfts and clean them -- load one sft at a time */
+  for (j=0; j<catalog->length; j++) {
 
-  /* clean  lines */
-  if ( LALUserVarWasSet( &uvar_linefiles ) ) {
-    LAL_CALL( LALRemoveKnownLinesInMultiSFTVector ( &status, inputSFTs, uvar_maxBins, 
-						  uvar_window, uvar_linefiles, randPar), &status);
-  }
+    thisCatalog.data = catalog->data + j;
+  
+    /* read the sfts */
+    LAL_CALL( LALLoadMultiSFTs ( &status, &inputSFTs, &thisCatalog, uvar_fMin, uvar_fMax), &status);
+  
+    /* generate random number seed */
+    fp=fopen("/dev/urandom", "r");
+    if (!fp) 
+      { 
+	fprintf(stderr,"Error in opening /dev/urandom \n"); 
+	exit(1); 
+      } 
+    ranCount = fread(&seed, sizeof(seed), 1, fp);
+    if (!(ranCount==1)) 
+      { 
+	fprintf(stderr,"Error in reading random seed \n"); 
+	exit(1); 
+      } 
+    
+    
+    /* clean  lines */
+    if ( LALUserVarWasSet( &uvar_linefiles ) ) {
+      LAL_CALL( LALRemoveKnownLinesInMultiSFTVector ( &status, inputSFTs, uvar_maxBins, 
+						      uvar_window, uvar_linefiles, randPar), &status);
+    }
+    
+    /* write output */
+    for (k = 0; k < inputSFTs->length; k++) {
+      LAL_CALL( LALWriteSFTVector2Dir ( &status, inputSFTs->data[k], uvar_outDir, "cleaned", "cleaned"), &status);
+    }
 
-  /* write output */
-  for (k = 0; k < inputSFTs->length; k++) {
-    LAL_CALL( LALWriteSFTVector2Dir ( &status, inputSFTs->data[k], uvar_outDir, "cleaned", "cleaned"), &status);
-  }
+    LAL_CALL( LALDestroyMultiSFTVector(&status, &inputSFTs), &status );
+
+  } /* end loop over sfts */
 
   /* Free memory */
   fclose(fp);
   LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);
-  LAL_CALL( LALDestroyMultiSFTVector(&status, &inputSFTs), &status );
+
   LAL_CALL( LALDestroyUserVars(&status), &status);
   LAL_CALL( LALDestroyRandomParams (&status, &randPar), &status);
 

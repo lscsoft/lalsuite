@@ -8,7 +8,7 @@
 
 fStart=310;
 fBand=0.05;
-DataFiles="/home/badkri/fakesfts2/H-1_H*.sft";
+DataFiles="/local_data/badkri/fakesfts2/H-1_H*.sft";
 skyfile="./skypatchfile";
 
 system("rm -rf ./outMulti");
