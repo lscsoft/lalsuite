@@ -113,8 +113,10 @@ InitDopplerFullScan(LALStatus *status,
     ABORT (status, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
   }
 
+  thisScan->gridType = init->gridType;
+
   /* which "class" of template grid to generate?: factored, or full-multidim ? */
-  switch ( init->gridType )
+  switch ( thisScan->gridType )
     {
       /* emulate old 'factored' grids 'sky x f0dot x f1dot x f2dot x f3dot': */
     case GRID_FLAT:
