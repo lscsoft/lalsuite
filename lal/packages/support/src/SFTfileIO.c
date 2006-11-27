@@ -58,6 +58,8 @@ NRCSID (SFTFILEIOC, "$Id$");
 /*----- Macros ----- */
 #define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
 
+#define GPSEQUAL(gps1,gps2) (((gps1).gpsSeconds == (gps2).gpsSeconds) && ((gps1).gpsNanoSeconds == (gps2).gpsNanoSeconds))
+
 /* rounding for positive numbers! */
 #define MYROUND(x) ( floor( (x) + 0.5 ) )
       
@@ -573,10 +575,6 @@ LALLoadSFTs ( LALStatus *status,
    sequences of (v2-)SFT segments and putting them together to single SFTs while reading.
    While devoping it is kept as a separate function
 */
-/* TODO:
-   - fix epoch comparison
-   - error handling in case mallocs and Creates fail
-*/
 void
 LALLoadSegmentedSFTs ( LALStatus *status,
 		       SFTVector **outsfts,	   /**< [out] vector of read-in SFTs */
@@ -598,14 +596,21 @@ LALLoadSegmentedSFTs ( LALStatus *status,
   UINT4 i;                     /* loop counter */
   UINT4 firstInSFT, lastInSFT; /* first and last bin in current SFT */
 
-  /* sort Catalog by header timestamps, then starting frequencies */
-  /* qsort( (void*)catalog->data, catalog->length, sizeof( catalog->data[0] ), compareSFTdesc ); */
+  INITSTATUS (status, "LALLoadSegmentedSFTs", SFTFILEIOC);
+  ATTATCHSTATUSPTR (status); 
+
+  ASSERT ( outsfts, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
+  ASSERT ( *outsfts == NULL, status, SFTFILEIO_ENONULL, SFTFILEIO_MSGENONULL );
+  ASSERT ( catalog, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
+  ASSERT ( fmin <= fmax, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL );
 
   sfts = (SFTVector*)LALMalloc(sizeof(SFTVector));
+  if (!sfts)
+    ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
   sfts->length = 0;
   sfts->data = NULL;
 
-  /* while there are files in Catalog left */
+  /* while there are files in catalog */
   while (catFile < catalog->length)
     {
       /* calculate first and last frequency bin to read */
@@ -619,17 +624,19 @@ LALLoadSegmentedSFTs ( LALStatus *status,
   
       /* add a new SFT to the output SFTVector */
       sfts->data = (SFTtype*)LALRealloc(sfts->data,(sfts->length+1)*sizeof(SFTtype*));
+      if (!sfts->data)
+	ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
       /* copy header information, the "data" of the header should be NULL */
       sfts->data[sfts->length] = catalog->data[catFile].header;;
       /* allocate space for the frequency bins */
-      LALCreateCOMPLEX8Sequence(status->statusPtr, &sftbins, lastbin-firstbin+1);
+      TRY (LALCreateCOMPLEX8Sequence(status->statusPtr, &sftbins, lastbin-firstbin+1), status);
       /* attach the bin space */
       sfts->data[sfts->length].data = sftbins;
       /* vector lenth has increased */
       sfts->length++;
 
       /* while there are files with this timestamp */
-      while (GPS2REAL8(epoch) == GPS2REAL8(catalog->data[catFile].header.epoch)) /* FIXME: comparison function */
+      while (GPSEQUAL(epoch,catalog->data[catFile].header.epoch))
 	{
 	  firstInSFT = MYROUND( catalog->data[catFile].header.f0 / catalog->data[catFile].header.deltaF );
 	  lastInSFT  = firstInSFT + catalog->data[catFile].numBins - 1;
@@ -670,7 +677,7 @@ LALLoadSegmentedSFTs ( LALStatus *status,
 	    LALDestroySFTType(status->statusPtr,&onesft);
       
 	    /* skip remaining catalog files with same timestamp (must have higher frequency) */
-	    while (GPS2REAL8(epoch) == GPS2REAL8(catalog->data[catFile].header.epoch)) /* FIXME */
+	    while (GPSEQUAL(epoch,catalog->data[catFile].header.epoch))
 	      catFile++;
 
 
