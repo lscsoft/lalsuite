@@ -84,7 +84,6 @@ except getopt.GetoptError:
 
 # default options
 usertag = None
-config_file = None
 do_datafind = None
 do_stochastic = None
 do_stopp = None

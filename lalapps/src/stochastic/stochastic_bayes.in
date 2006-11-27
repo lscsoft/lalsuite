@@ -82,7 +82,6 @@ except getopt.GetoptError:
 
 # default options
 usertag = None
-config_file = None
 do_datafind = None
 do_stochastic = None
 condor_prio = None
