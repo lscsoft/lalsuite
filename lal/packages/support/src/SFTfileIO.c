@@ -590,7 +590,7 @@ LALLoadSegmentedSFTs ( LALStatus *status,
   UINT4 binsread;              /* number of bins actually read from an sft */
   REAL8 deltaF;
   SFTtype *onesft;             /* a single SFT that was read */
-  COMPLEX8Sequence *sftbins;   /* bins of the SFT that is constructed */
+  COMPLEX8Vector *sftbins;     /* bins of the SFT that is constructed */
   SFTVector *sfts;
   FILE *fp;                    /* filepointer to read an SFT from */
   UINT4 i;                     /* loop counter */
@@ -602,13 +602,19 @@ LALLoadSegmentedSFTs ( LALStatus *status,
   ASSERT ( outsfts, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
   ASSERT ( *outsfts == NULL, status, SFTFILEIO_ENONULL, SFTFILEIO_MSGENONULL );
   ASSERT ( catalog, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
-  ASSERT ( fmin <= fmax, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL );
+  ASSERT ( fMin <= fMax, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL );
 
   sfts = (SFTVector*)LALMalloc(sizeof(SFTVector));
   if (!sfts)
     ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
   sfts->length = 0;
   sfts->data = NULL;
+
+#ifdef SFTFILEIO_DEBUG
+  fprintf(stderr, ": catalog has %u files:\n", catalog->length);
+  for(i=0; i < catalog->length; i++)
+    fprintf(stderr, ": %s\n", XLALshowSFTLocator ( catalog->data[catFile].locator ) );
+#endif
 
   /* while there are files in catalog */
   while (catFile < catalog->length)
@@ -622,6 +628,10 @@ LALLoadSegmentedSFTs ( LALStatus *status,
       /* get first timestamp */
       epoch = catalog->data[catFile].header.epoch;
   
+#ifdef SFTFILEIO_DEBUG
+      fprintf(stderr,"+ firstbin: %u, lastbin: %u\n", firstbin, lastbin);
+#endif
+
       /* add a new SFT to the output SFTVector */
       sfts->data = (SFTtype*)LALRealloc(sfts->data,(sfts->length+1)*sizeof(SFTtype*));
       if (!sfts->data)
@@ -629,7 +639,9 @@ LALLoadSegmentedSFTs ( LALStatus *status,
       /* copy header information, the "data" of the header should be NULL */
       sfts->data[sfts->length] = catalog->data[catFile].header;;
       /* allocate space for the frequency bins */
-      TRY (LALCreateCOMPLEX8Sequence(status->statusPtr, &sftbins, lastbin-firstbin+1), status);
+      sftbins = XLALCreateCOMPLEX8Vector(lastbin-firstbin+1);
+      if (!sftbins)
+	ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
       /* attach the bin space */
       sfts->data[sfts->length].data = sftbins;
       /* vector lenth has increased */
@@ -641,7 +653,11 @@ LALLoadSegmentedSFTs ( LALStatus *status,
 	  firstInSFT = MYROUND( catalog->data[catFile].header.f0 / catalog->data[catFile].header.deltaF );
 	  lastInSFT  = firstInSFT + catalog->data[catFile].numBins - 1;
 
-
+#ifdef SFTFILEIO_DEBUG
+	  fprintf(stderr, "- nextbin: %u, firstInSFT: %u, lastInSFT: %u, %s\n",
+		  nextbin, firstInSFT, lastInSFT,
+		  XLALshowSFTLocator ( catalog->data[catFile].locator ) );
+#endif
 
 	  /* if fmax is in this SFT, this is either a single SFT or the last in a sequence */
 	  if (( lastbin >= firstInSFT) &&
@@ -674,7 +690,7 @@ LALLoadSegmentedSFTs ( LALStatus *status,
 	    /* insert read bins in to the final sft */
 	    for(i=0; i < binsread; i++)
 	      sftbins->data[nextbin - firstbin + i] = onesft->data->data[i];
-	    LALDestroySFTType(status->statusPtr,&onesft);
+	    LALDestroySFTtype(status->statusPtr,&onesft);
       
 	    /* skip remaining catalog files with same timestamp (must have higher frequency) */
 	    while (GPSEQUAL(epoch,catalog->data[catFile].header.epoch))
@@ -703,7 +719,7 @@ LALLoadSegmentedSFTs ( LALStatus *status,
 	    /* insert read bins in to the final sft */
 	    for(i=0; i < binsread; i++)
 	      sftbins->data[i] = onesft->data->data[i];
-	    LALDestroySFTType(status->statusPtr,&onesft);
+	    LALDestroySFTtype(status->statusPtr,&onesft);
 
 	    /* read from nextbin on in next file */
 	    nextbin += binsread;
@@ -732,7 +748,7 @@ LALLoadSegmentedSFTs ( LALStatus *status,
 	    /* insert read bins in to the final sft */
 	    for(i=0; i < binsread; i++)
 	      sftbins->data[nextbin - firstbin + i] = onesft->data->data[i];
-	    LALDestroySFTType(status->statusPtr,&onesft);
+	    LALDestroySFTtype(status->statusPtr,&onesft);
 
 	    /* read from nextbin on in next file */
 	    nextbin += binsread;
@@ -749,8 +765,10 @@ LALLoadSegmentedSFTs ( LALStatus *status,
 
 	  /* if none of the above applies, something must be wrong with this sequence */
 	  } else {
-	    LALPrintError ( "Error in SFT sequence at locator '%s'\n", 
-			    XLALshowSFTLocator ( catalog->data[catFile].locator ) );
+	    LALPrintError ( "Error in SFT sequence at locator '%s'\n"
+			    "  (expected bin:%u, SFT has bins %u to %u)\n", 
+			    XLALshowSFTLocator ( catalog->data[catFile].locator ),
+			    nextbin, firstInSFT, lastInSFT);
 	    ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
 	  }
 	}
