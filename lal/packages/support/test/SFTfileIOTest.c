@@ -206,6 +206,17 @@ int main(int argc, char *argv[])
   SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-test*", NULL ), &status,  SFTFILEIO_EDIFFTSFT );
   /* skip sft nr 4 with has Tsft=50 instead of Tsft=60 */
   SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-test[123567]*", NULL ), &status );
+  SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
+  /* try the same with a ";" separated list of files and of patterns */
+  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog,
+				 TESTDIR "SFT-test1;"
+				 TESTDIR "SFT-test2;"
+				 TESTDIR "SFT-test3;"
+				 TESTDIR "SFT-test5;"
+				 TESTDIR "SFT-test6;"
+				 TESTDIR "SFT-test7", NULL ), &status );
+  SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
+  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-test[123]*;" TESTDIR "SFT-test[567]*", NULL ), &status );
   /* load once as a single SFT-vector (mix of detectors) */
   SHOULD_WORK ( LALLoadSFTs ( &status, &sft_vect, catalog, -1, -1 ), &status );
   /* load once as a multi-SFT vector */
