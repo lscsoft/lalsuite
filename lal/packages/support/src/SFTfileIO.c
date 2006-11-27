@@ -121,6 +121,8 @@ static FILE * fopen_SFTLocator ( const struct tagSFTLocator *locator );
 static BOOLEAN has_valid_v2_crc64 (FILE *fp );
 
 static void read_one_sft_from_fp (  LALStatus *status, SFTtype **sft, REAL8 fMin, REAL8 fMax, FILE *fp );
+static void read_sft_bins_from_fp ( LALStatus *status, SFTtype **sft, UINT4 *binsread, UINT4 firstBin2read, UINT4 larstBin2read , FILE *fp );
+
 static int read_sft_header_from_fp (FILE *fp, SFTtype  *header, UINT4 *version, UINT8 *crc64, BOOLEAN *swapEndian, CHAR **comment, UINT4 *numBins );
 static int read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *header_crc64, UINT8 *ref_crc64, CHAR **comment, BOOLEAN swapEndian);
 static int read_v1_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, BOOLEAN swapEndian);
@@ -564,6 +566,180 @@ LALLoadSFTs ( LALStatus *status,
   RETURN(status);
 
 } /* LALLoadSFTs() */
+
+
+/* This is meant to replace LALLoadSFT().
+   It has the same interface and basically does the same, with the additional capability to read
+   sequences of (v2-)SFT segments and putting them together to single SFTs while reading.
+   While devoping it is kept as a separate function
+*/
+/* TODO:
+   - fix epoch comparison
+   - error handling in case mallocs and Creates fail
+*/
+LALLoadSegmentedSFTs ( LALStatus *status,
+		       SFTVector **outsfts,	   /**< [out] vector of read-in SFTs */
+		       const SFTCatalog *catalog,  /**< The 'catalogue' of SFTs to load */
+		       REAL8 fMin,		   /**< minumum requested frequency (-1 = read from lowest) */
+		       REAL8 fMax		   /**< maximum requested frequency (-1 = read up to highest) */
+		       )
+{
+  UINT4 catFile = 0;           /* current file in catalog */
+  LIGOTimeGPS epoch;           /* current timestamp */
+  UINT4 firstbin, lastbin;     /* the first and last bin we want to read */
+  UINT4 nextbin;               /* the Bin we expect to read next */
+  UINT4 binsread;              /* number of bins actually read from an sft */
+  REAL8 deltaF;
+  SFTtype *onesft;             /* a single SFT that was read */
+  SFTtype *outsft;             /* SFT that is constructed */
+  COMPLEX8Sequence *sftbins;   /* bins of the SFT that is constructed */
+  SFTVector *sfts;
+  FILE *fp;                    /* filepointer to read an SFT from */
+  UINT4 i;                     /* loop counter */
+  UINT4 firstInSFT, lastInSFT; /* first and last bin in current SFT */
+
+  /* sort Catalog by header timestamps, then starting frequencies */
+  /* qsort( (void*)catalog->data, catalog->length, sizeof( catalog->data[0] ), compareSFTdesc ); */
+
+  sfts = (SFTVector*)LALMalloc(sizeof(SFTVector));
+  sfts->length = 0;
+  sfts->data = NULL;
+
+  /* while there are files in Catalog left */
+  while (catFile < catalog->length)
+    {
+      /* calculate first and last frequency bin to read */
+      deltaF   = catalog->data[catFile].header.deltaF; /* Hz/bin */
+      firstbin = floor(fMin / deltaF);
+      lastbin  = ceil (fMax / deltaF);
+      nextbin  = firstbin;
+
+      /* get first timestamp */
+      epoch = catalog->data[catFile].header.epoch;
+  
+      /* add a new SFT to the output SFTVector */
+      sfts->data = (SFTtype*)LALRealloc(sfts->data,(sfts->length+1)*sizeof(SFTtype*));
+      /* copy header information, the "data" of the header should be NULL */
+      sfts->data[sfts->length] = catalog->data[catFile].header;;
+      /* allocate space for the frequency bins */
+      LALCreateCOMPLEX8Sequence(status->statusPtr,&sftbins,lastbin-firstbin+1);
+      /* attach the bin space */
+      sfts->data[sfts->length].data = sftbins;
+      /* vector lenth has increased */
+      sfts->length++;
+
+      /* while there are files with this timestamp */
+      while (GPS2REAL8(epoch) == GPS2REAL8(catalog->data[catFile].header.epoch)) /* FIXME: comparison function */
+	{
+	  firstInSFT = catalog->data[catFile].header.f0 / catalog->data[catFile].header.deltaF;
+	  lastInSFT  = firstInSFT + catalog->data[catFile].numBins - 1;
+
+	  /* if fmax is in this SFT, this is either a single SFT or the last in a sequence */
+	  if (( lastbin >= firstInSFT) &&
+	      ( lastbin <  lastInSFT)) {
+
+	    /* issue an error if the file neither contains firstbin nor starts with nextbin */
+	    if (( firstbin < firstInSFT ) &&
+		( nextbin != firstInSFT )) {
+	      LALPrintError ( "Start frequency wrong in last SFT of a sequence '%s'\n", 
+			      XLALshowSFTLocator ( catalog->data[catFile].locator ) );
+	      LALDestroySFTVector (status->statusPtr, &sfts);
+	      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
+	      }
+
+	    /* read from nextbin to lastbin */
+	    if ( (fp = fopen_SFTLocator ( catalog->data[i].locator )) == NULL ) {
+	      LALPrintError ( "Failed to open locator '%s'\n", 
+			      XLALshowSFTLocator ( catalog->data[i].locator ) );
+	      LALDestroySFTVector (status->statusPtr, &sfts);
+	      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
+	    }
+	    read_sft_bins_from_fp (status->statusPtr, &onesft, &binsread, nextbin, lastbin, fp);
+	    fclose(fp);
+	    if ( status->statusPtr->statusCode ) {
+	      LALPrintError ( "Failed to read from locator '%s'\n", 
+			      XLALshowSFTLocator ( catalog->data[i].locator ) );
+	      LALDestroySFTVector (status->statusPtr, &sfts);
+	      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
+	    }
+	    for(i=0; i < binsread; i++)
+	      outsft->data[nextbin - firstbin + i] = onesft->data[i];
+	    LALDestroySFTType(status->statusPtr,&onesft);
+      
+	    /* skip catalog files with same timestamp (and higher frequency) */
+	    while (GPS2REAL8(epoch) == GPS2REAL8(catalog->data[catFile].header.epoch)) /* FIXME */
+	      catFile++;
+
+	  /* if fmin is in this SFT (and not fmax), this SFT starts a sequence */
+	  } else if (( firstbin >= firstInSFT ) &&
+		     ( firstbin <  lastInSFT  )) {
+	    /* read from firstbin to end */
+	    if ( (fp = fopen_SFTLocator ( catalog->data[i].locator )) == NULL ) {
+	      LALPrintError ( "Failed to open locator '%s'\n", 
+			      XLALshowSFTLocator ( catalog->data[i].locator ) );
+	      LALDestroySFTVector (status->statusPtr, &sfts);
+	      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
+	    }
+	    read_sft_bins_from_fp (status->statusPtr, &onesft, &binsread, firstbin, lastbin, fp);
+	    fclose(fp);
+	    if ( status->statusPtr->statusCode ) {
+	      LALPrintError ( "Failed to read from locator '%s'\n", 
+			      XLALshowSFTLocator ( catalog->data[i].locator ) );
+	      LALDestroySFTVector (status->statusPtr, &sfts);
+	      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
+	    }
+	    for(i=0; i < binsread; i++)
+	      outsft->data[i] = onesft->data[i];
+	    LALDestroySFTType(status->statusPtr,&onesft);
+
+	    /* read from nextbin on in next file */
+	    nextbin += binsread;
+	    catFile++;
+
+          /* if this SFT starts with nextbin, it is the next SFT we expect to read */
+	  } else if ( nextbin == firstInSFT) {
+	    /* read whole file */
+	    if ( (fp = fopen_SFTLocator ( catalog->data[i].locator )) == NULL ) {
+	      LALPrintError ( "Failed to open locator '%s'\n", 
+			      XLALshowSFTLocator ( catalog->data[i].locator ) );
+	      LALDestroySFTVector (status->statusPtr, &sfts);
+	      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
+	    }
+	    read_sft_bins_from_fp (status->statusPtr, &onesft, &binsread, nextbin, lastbin, fp);
+
+	    fclose(fp);
+	    if ( status->statusPtr->statusCode ) {
+	      LALPrintError ( "Failed to read from locator '%s'\n", 
+			      XLALshowSFTLocator ( catalog->data[i].locator ) );
+	      LALDestroySFTVector (status->statusPtr, &sfts);
+	      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
+	    }
+	    for(i=0; i < binsread; i++)
+	      outsft->data[nextbin - firstbin + i] = onesft->data[i];
+	    LALDestroySFTType(status->statusPtr,&onesft);
+
+	    /* read from nextbin on in next file */
+	    nextbin += binsread;
+	    catFile++;
+
+	  /* if the frequency range of this file is completely lower than fmin, skip this file */
+	  } else if ( firstbin > lastInSFT ) {
+	    /* skip this file */
+	    catFile++;
+
+	  /* if none of the above applies, something must be wrong with this sequence */
+	  } else {
+	    LALPrintError ( "Error in SFT sequence at locator '%s'\n", 
+			    XLALshowSFTLocator ( catalog->data[catFile].locator ) );
+	    ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
+	  }
+	}
+    }
+
+  *outsfts = sfts;
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+}
 
 
 /** Function to load a catalog of SFTs from possibly different detectors.
@@ -2357,6 +2533,134 @@ read_one_sft_from_fp (  LALStatus *status, SFTtype **sft, REAL8 fMin, REAL8 fMax
   RETURN (status);
 } /* read_one_sft_from_fp() */
 
+/* local copy of read_one_sft_from_fp() that deals with bins instead of frequencies.
+   firstBin2read is the first bin to read from the SFT the fp points to,
+   lastBin2read is the last bin. An error is issued if firstBin2read is not contained
+   in the sft, but NO ERROR is issued if lastBin2read is not contained.
+   binread is set to the number of bins actually read (from firtsBin to either
+   lastBin or the end of the SFT
+*/
+static void
+read_sft_bins_from_fp ( LALStatus *status, SFTtype **sft, UINT4 *binsread, UINT4 firstBin2read, UINT4 lastBin2read , FILE *fp )
+{
+  SFTtype *ret = NULL;
+  UINT4 version;
+  UINT8 crc64;
+  BOOLEAN swapEndian;
+  UINT4 numBins2read;
+  UINT4 firstSFTbin, lastSFTbin, numSFTbins;
+  INT4 offsetBins;
+  long offsetBytes;
+  volatile REAL8 tmp;	/* intermediate results: try to force IEEE-arithmetic */
+
+  INITSTATUS (status, "read_one_sft_from_fp", SFTFILEIOC);
+  ATTATCHSTATUSPTR ( status );
+
+  ASSERT ( sft, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
+  ASSERT ( *sft == NULL, status, SFTFILEIO_ENONULL, SFTFILEIO_MSGENONULL );
+
+  TRY ( LALCreateSFTtype ( status->statusPtr, &ret, 0 ), status );
+
+  if ( read_sft_header_from_fp (fp, ret, &version, &crc64, &swapEndian, NULL, &numSFTbins ) != 0 )
+    {
+      if ( lalDebugLevel ) LALPrintError ("\nFailed to read SFT-header!\n\n");
+      LALDestroySFTtype ( status->statusPtr, &ret );
+      ABORT ( status, SFTFILEIO_EHEADER, SFTFILEIO_MSGEHEADER ); 
+    }
+
+  tmp = ret->f0 / ret->deltaF;
+  firstSFTbin = MYROUND ( tmp );
+  lastSFTbin = firstSFTbin + numSFTbins - 1;
+
+  if ( firstBin2read > lastBin2read )
+    {
+      if ( lalDebugLevel ) 
+	LALPrintError ("\nEmpty frequency-interval requested [%d, %d] bins\n\n", 
+		       firstBin2read, lastBin2read );
+      ABORT ( status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL );
+    }
+
+  /* check that requested interval is found in SFT */
+  if ( firstBin2read < firstSFTbin )
+    {
+      if ( lalDebugLevel ) 
+	LALPrintError ( "\nRequested bin is not contained in SFT! (%d < %d)\n\n", 
+			firstBin2read, firstSFTbin );
+      LALDestroySFTtype ( status->statusPtr, &ret );
+      ABORT ( status, SFTFILEIO_EFREQBAND, SFTFILEIO_MSGEFREQBAND );
+    }
+  if ( lastBin2read > lastSFTbin )
+    lastBin2read = lastSFTbin;
+  *binsread = lastBin2read - firstBin2read + 1;
+  
+  offsetBins = firstBin2read - firstSFTbin;
+  offsetBytes = offsetBins * 2 * sizeof( REAL4 );
+  numBins2read = lastBin2read - firstBin2read + 1;
+
+  if ( fseek ( fp, offsetBytes, SEEK_CUR ) != 0 )
+    {
+      if ( lalDebugLevel ) 
+	LALPrintError ( "\nFailed to fseek() to first frequency-bin %d: %s\n\n", 
+			firstBin2read, strerror(errno) );
+      LALDestroySFTtype ( status->statusPtr, &ret );
+      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
+    }
+
+  if ( (ret->data = XLALCreateCOMPLEX8Vector ( numBins2read )) == NULL ) {
+    LALDestroySFTtype ( status->statusPtr, &ret );
+    ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
+  }
+
+  if ( numBins2read != fread ( ret->data->data, 2*sizeof( REAL4 ), numBins2read, fp ) )
+    {
+      if (lalDebugLevel) LALPrintError ("\nFailed to read %d bins from SFT!\n\n", numBins2read );
+      LALDestroySFTtype ( status->statusPtr, &ret );
+      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
+    }
+
+  /* update the start-frequency entry in the SFT-header to the new value */
+  ret->f0 = 1.0 * firstBin2read * ret->deltaF;
+
+  /* take care of normalization and endian-swapping */
+  if ( version == 1 || swapEndian )
+    {
+      UINT4 i;
+      REAL8 band = 1.0 * numSFTbins * ret->deltaF;/* need the TOTAL frequency-band in the SFT-file! */
+      REAL8 fsamp = 2.0 * band;
+      REAL8 dt = 1.0 / fsamp;
+
+      for ( i=0; i < numBins2read; i ++ )
+	{
+	  REAL4 *rep, *imp;
+
+	  rep = &(ret->data->data[i].re);
+	  imp = &(ret->data->data[i].im);
+
+	  if ( swapEndian )
+	    {
+	      endian_swap( (CHAR *) rep, sizeof ( *rep ), 1 );
+	      endian_swap( (CHAR *) imp, sizeof ( *imp ), 1 );
+	    }
+
+	  /* if the SFT-file was in v1-Format: need to renormalize the data now by 'Delta t' 
+	   * in order to follow the correct SFT-normalization 
+	   * (see LIGO-T040164-01-Z, and LIGO-T010095-00)
+	   */ 
+	  if ( version == 1 )
+	    {
+	      (*rep) *= dt;
+	      (*imp) *= dt;
+	    }
+	} /* for i < numBins2read */
+    } /* if SFT-v1 */
+
+  /* return resulting SFT */
+  (*sft) = ret;
+
+  DETATCHSTATUSPTR ( status );
+  RETURN (status);
+} /* read_one_sft_from_fp() */
+
 
 /* Try to read an SFT-header (of ANY VALID SFT-VERSION) at the given FILE-pointer fp,
  * and return the SFT-header, SFT-version-number and number of frequency-samples in the SFT. 
@@ -3182,21 +3486,23 @@ calc_crc64(const CHAR *data, UINT4 length, UINT8 crc)
 
 } /* calc_crc64() */
 
-
-/* compare two SFT-descriptors by their GPS-epoch */
+/* compare two SFT-descriptors by their GPS-epoch, then starting frequency */
 static int 
 compareSFTdesc(const void *ptr1, const void *ptr2)
 {
   const SFTDescriptor *desc1 = ptr1;
   const SFTDescriptor *desc2 = ptr2;
 
-  if ( GPS2REAL8( desc1->header.epoch ) < GPS2REAL8 ( desc2->header.epoch ) )
+  if      ( GPS2REAL8( desc1->header.epoch ) < GPS2REAL8 ( desc2->header.epoch ) )
     return -1;
   else if ( GPS2REAL8( desc1->header.epoch ) > GPS2REAL8 ( desc2->header.epoch ) )
     return 1;
+  else if ( desc1->header.f0 < desc2->header.f0 )
+    return -1;
+  else if ( desc1->header.f0 > desc2->header.f0 )
+    return 1;
   else
     return 0;
-  
 } /* compareSFTdesc() */
 
 /** Read valid SFT version-number at position fp, and determine if we need to 
@@ -3400,4 +3706,3 @@ amatch(char *str, char *p)
 
 	return !*str;
 }
-
