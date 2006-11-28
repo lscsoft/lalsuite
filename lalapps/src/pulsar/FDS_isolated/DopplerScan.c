@@ -214,8 +214,8 @@ InitDopplerSkyScan( LALStatus *status,
 
   if (skyScan->skyRegion.numVertices == 2){ /* anomaly! Allowed are either 1 or >= 3 */
     ABORT (status, DOPPLERSCANH_E2DSKY, DOPPLERSCANH_MSGE2DSKY);
-  }
- 
+  } 
+
   switch (init->gridType)
     {
     case GRID_FLAT:		/* flat-grid: constant dAlpha, dDelta */
@@ -842,6 +842,9 @@ buildFlatSkyGrid (LALStatus *status,
   ASSERT ( (dAlpha > 0) && (dDelta > 0), status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
   ASSERT ( *skyGrid == NULL, status, DOPPLERSCANH_ENONULL, DOPPLERSCANH_MSGENONULL);
 
+  if ( skyRegion->numVertices < 3 )	/* got no surface to cover */
+    return;
+
   thisPoint = skyRegion->lowerLeft;	/* start from lower-left corner */
 
   node = &head;
@@ -902,6 +905,9 @@ buildIsotropicSkyGrid (LALStatus *status, DopplerSkyGrid **skyGrid, const SkyReg
   ASSERT ( skyGrid, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
   ASSERT ( skyRegion, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
   ASSERT ( *skyGrid == NULL, status, DOPPLERSCANH_ENONULL, DOPPLERSCANH_MSGENONULL);
+
+  if ( skyRegion->numVertices < 3 )	/* got no surface to cover */
+    return;
 
   thisPoint = skyRegion->lowerLeft;	/* start from lower-left corner */
 
@@ -979,6 +985,9 @@ buildMetricSkyGrid (LALStatus *status,
   ASSERT ( *skyGrid == NULL, status, DOPPLERSCANH_ENONULL, DOPPLERSCANH_MSGENONULL);
   ASSERT ( (init->metricType > LAL_PMETRIC_NONE) && (init->metricType < LAL_PMETRIC_LAST), 
 	   status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
+
+  if ( skyRegion->numVertices < 3 )	/* got no surface to cover */
+    return;
 
   thisPoint = skyRegion->lowerLeft;	/* start from lower-left corner */
   
