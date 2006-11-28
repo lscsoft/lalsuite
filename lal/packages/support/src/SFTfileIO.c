@@ -589,7 +589,7 @@ LALLoadSegmentedSFTs ( LALStatus *status,
   UINT4 nextbin;               /* the Bin we expect to read next */
   UINT4 binsread;              /* number of bins actually read from an sft */
   REAL8 deltaF;
-  SFTtype *onesft;             /* a single SFT that was read */
+  SFTtype *onesft = NULL;      /* a single SFT that was read */
   COMPLEX8Vector *sftbins;     /* bins of the SFT that is constructed */
   SFTVector *sfts;
   FILE *fp;                    /* filepointer to read an SFT from */
@@ -632,17 +632,17 @@ LALLoadSegmentedSFTs ( LALStatus *status,
       fprintf(stderr,"+ firstbin: %u, lastbin: %u\n", firstbin, lastbin);
 #endif
 
-      /* add a new SFT to the output SFTVector */
-      sfts->data = (SFTtype*)LALRealloc(sfts->data,(sfts->length+1)*sizeof(SFTtype*));
-      if (!sfts->data)
-	ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
-      /* copy header information, the "data" of the header should be NULL */
-      sfts->data[sfts->length] = catalog->data[catFile].header;;
       /* allocate space for the frequency bins */
       sftbins = XLALCreateCOMPLEX8Vector(lastbin-firstbin+1);
       if (!sftbins)
 	ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
-      /* attach the bin space */
+      /* add a new SFT to the output SFTVector */
+      sfts->data = (SFTtype*)LALRealloc(sfts->data, (sfts->length+1)*sizeof(SFTtype));
+      if (!sfts->data)
+	ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
+      /* copy header information, the "data" of the header should be NULL */
+      sfts->data[sfts->length] = catalog->data[catFile].header;;
+      /* attach the bin space to the sft vector */
       sfts->data[sfts->length].data = sftbins;
       /* vector lenth has increased */
       sfts->length++;
@@ -673,9 +673,9 @@ LALLoadSegmentedSFTs ( LALStatus *status,
 	      }
 
 	    /* read from nextbin to lastbin */
-	    if ( (fp = fopen_SFTLocator ( catalog->data[i].locator )) == NULL ) {
+	    if ( (fp = fopen_SFTLocator ( catalog->data[catFile].locator )) == NULL ) {
 	      LALPrintError ( "Failed to open locator '%s'\n", 
-			      XLALshowSFTLocator ( catalog->data[i].locator ) );
+			      XLALshowSFTLocator ( catalog->data[catFile].locator ) );
 	      LALDestroySFTVector (status->statusPtr, &sfts);
 	      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
 	    }
@@ -683,7 +683,7 @@ LALLoadSegmentedSFTs ( LALStatus *status,
 	    fclose(fp);
 	    if ( status->statusPtr->statusCode ) {
 	      LALPrintError ( "Failed to read from locator '%s'\n",
-			      XLALshowSFTLocator ( catalog->data[i].locator ) );
+			      XLALshowSFTLocator ( catalog->data[catFile].locator ) );
 	      LALDestroySFTVector (status->statusPtr, &sfts);
 	      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
 	    }
@@ -702,9 +702,9 @@ LALLoadSegmentedSFTs ( LALStatus *status,
 	  } else if (( firstbin >= firstInSFT ) &&
 		     ( firstbin <  lastInSFT  )) {
 	    /* read from firstbin to end */
-	    if ( (fp = fopen_SFTLocator ( catalog->data[i].locator )) == NULL ) {
+	    if ( (fp = fopen_SFTLocator ( catalog->data[catFile].locator )) == NULL ) {
 	      LALPrintError ( "Failed to open locator '%s'\n", 
-			      XLALshowSFTLocator ( catalog->data[i].locator ) );
+			      XLALshowSFTLocator ( catalog->data[catFile].locator ) );
 	      LALDestroySFTVector (status->statusPtr, &sfts);
 	      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
 	    }
@@ -712,7 +712,7 @@ LALLoadSegmentedSFTs ( LALStatus *status,
 	    fclose(fp);
 	    if ( status->statusPtr->statusCode ) {
 	      LALPrintError ( "Failed to read from locator '%s'\n", 
-			      XLALshowSFTLocator ( catalog->data[i].locator ) );
+			      XLALshowSFTLocator ( catalog->data[catFile].locator ) );
 	      LALDestroySFTVector (status->statusPtr, &sfts);
 	      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
 	    }
@@ -730,9 +730,9 @@ LALLoadSegmentedSFTs ( LALStatus *status,
           /* if this SFT starts with nextbin, it is the next SFT we expect to read */
 	  } else if ( nextbin == firstInSFT) {
 	    /* read whole file */
-	    if ( (fp = fopen_SFTLocator ( catalog->data[i].locator )) == NULL ) {
+	    if ( (fp = fopen_SFTLocator ( catalog->data[catFile].locator )) == NULL ) {
 	      LALPrintError ( "Failed to open locator '%s'\n", 
-			      XLALshowSFTLocator ( catalog->data[i].locator ) );
+			      XLALshowSFTLocator ( catalog->data[catFile].locator ) );
 	      LALDestroySFTVector (status->statusPtr, &sfts);
 	      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
 	    }
@@ -741,7 +741,7 @@ LALLoadSegmentedSFTs ( LALStatus *status,
 	    fclose(fp);
 	    if ( status->statusPtr->statusCode ) {
 	      LALPrintError ( "Failed to read from locator '%s'\n", 
-			      XLALshowSFTLocator ( catalog->data[i].locator ) );
+			      XLALshowSFTLocator ( catalog->data[catFile].locator ) );
 	      LALDestroySFTVector (status->statusPtr, &sfts);
 	      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
 	    }
