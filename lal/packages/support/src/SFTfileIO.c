@@ -576,7 +576,6 @@ LALLoadSFTs ( LALStatus *status,
    While devoping it is kept as a separate function
 */
 /* TODO:
-   - check freeing in error cases
    - consistency checks (deltaF?)
 */
 void
@@ -638,14 +637,19 @@ LALLoadSegmentedSFTs ( LALStatus *status,
 
       /* allocate space for the frequency bins */
       sftbins = XLALCreateCOMPLEX8Vector(lastbin-firstbin+1);
-      if (!sftbins)
+      if (!sftbins) {
+	LALDestroySFTVector (status->statusPtr, &sfts);
 	ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
+      }
       /* add a new SFT to the output SFTVector */
       sfts->data = (SFTtype*)LALRealloc(sfts->data, (sfts->length+1)*sizeof(SFTtype));
-      if (!sfts->data)
+      if (!sfts->data) {
+	LALFree(sfts);
 	ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
-      /* copy header information, the "data" of the header should be NULL */
+      }
+      /* initialize metadata, copying the header information from the first SFT for defaults */
       sfts->data[sfts->length] = catalog->data[catFile].header;;
+      sfts->data[sfts->length].f0 = firstbin * deltaF;
       /* attach the bin space to the sft vector */
       sfts->data[sfts->length].data = sftbins;
       /* vector lenth has increased */
@@ -778,7 +782,7 @@ LALLoadSegmentedSFTs ( LALStatus *status,
 	  }
 
 
-	} /* while files with this timestamp */
+	} /* while there are files with this timestamp */
 
 
       /* last check: did we find fMax at all? */
@@ -792,7 +796,9 @@ LALLoadSegmentedSFTs ( LALStatus *status,
 
     } /* while files in catalog */
 
+  /* assign output value */
   *outsfts = sfts;
+  /* cleanup & return */
   DETATCHSTATUSPTR (status);
   RETURN(status);
 }
