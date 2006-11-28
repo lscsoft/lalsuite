@@ -575,6 +575,10 @@ LALLoadSFTs ( LALStatus *status,
    sequences of (v2-)SFT segments and putting them together to single SFTs while reading.
    While devoping it is kept as a separate function
 */
+/* TODO:
+   - check freeing in error cases
+   - consistency checks (deltaF?)
+*/
 void
 LALLoadSegmentedSFTs ( LALStatus *status,
 		       SFTVector **outsfts,	   /**< [out] vector of read-in SFTs */
@@ -591,7 +595,7 @@ LALLoadSegmentedSFTs ( LALStatus *status,
   REAL8 deltaF;
   SFTtype *onesft = NULL;      /* a single SFT that was read */
   COMPLEX8Vector *sftbins;     /* bins of the SFT that is constructed */
-  SFTVector *sfts;
+  SFTVector *sfts;             /* the SFTVector to return */
   FILE *fp;                    /* filepointer to read an SFT from */
   UINT4 i;                     /* loop counter */
   UINT4 firstInSFT, lastInSFT; /* first and last bin in current SFT */
@@ -611,7 +615,7 @@ LALLoadSegmentedSFTs ( LALStatus *status,
   sfts->data = NULL;
 
 #ifdef SFTFILEIO_DEBUG
-  fprintf(stderr, ": catalog has %u files:\n", catalog->length);
+  fprintf(stderr, ": catalog has %u files\n", catalog->length);
   for(i=0; i < catalog->length; i++)
     fprintf(stderr, ": %s\n", XLALshowSFTLocator ( catalog->data[catFile].locator ) );
 #endif
@@ -650,7 +654,7 @@ LALLoadSegmentedSFTs ( LALStatus *status,
       /* while there are files with this timestamp */
       while (GPSEQUAL(epoch,catalog->data[catFile].header.epoch))
 	{
-	  firstInSFT = MYROUND( catalog->data[catFile].header.f0 / catalog->data[catFile].header.deltaF );
+	  firstInSFT = MYROUND( catalog->data[catFile].header.f0 / deltaF );
 	  lastInSFT  = firstInSFT + catalog->data[catFile].numBins - 1;
 
 #ifdef SFTFILEIO_DEBUG
@@ -666,8 +670,9 @@ LALLoadSegmentedSFTs ( LALStatus *status,
 	    /* issue an error if the file neither contains firstbin nor starts with nextbin */
 	    if (( firstbin < firstInSFT ) &&
 		( nextbin != firstInSFT )) {
-	      LALPrintError ( "Starting frequency wrong in last SFT of a sequence '%s'\n", 
-			      XLALshowSFTLocator ( catalog->data[catFile].locator ) );
+	      LALPrintError ( "Starting frequency %f not contained in SFT '%s'\n"
+			      "   (or sequence broken at this last file)\n", 
+			      fMin, XLALshowSFTLocator ( catalog->data[catFile].locator ) );
 	      LALDestroySFTVector (status->statusPtr, &sfts);
 	      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
 	      }
@@ -687,7 +692,7 @@ LALLoadSegmentedSFTs ( LALStatus *status,
 	      LALDestroySFTVector (status->statusPtr, &sfts);
 	      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
 	    }
-	    /* insert read bins in to the final sft */
+	    /* insert read bins into the sft vector to retun */
 	    for(i=0; i < binsread; i++)
 	      sftbins->data[nextbin - firstbin + i] = onesft->data->data[i];
 	    LALDestroySFTtype(status->statusPtr,&onesft);
@@ -716,7 +721,7 @@ LALLoadSegmentedSFTs ( LALStatus *status,
 	      LALDestroySFTVector (status->statusPtr, &sfts);
 	      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
 	    }
-	    /* insert read bins in to the final sft */
+	    /* insert read bins into the sft vector to retun */
 	    for(i=0; i < binsread; i++)
 	      sftbins->data[i] = onesft->data->data[i];
 	    LALDestroySFTtype(status->statusPtr,&onesft);
@@ -745,7 +750,7 @@ LALLoadSegmentedSFTs ( LALStatus *status,
 	      LALDestroySFTVector (status->statusPtr, &sfts);
 	      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
 	    }
-	    /* insert read bins in to the final sft */
+	    /* insert read bins into the sft vector to retun */
 	    for(i=0; i < binsread; i++)
 	      sftbins->data[nextbin - firstbin + i] = onesft->data->data[i];
 	    LALDestroySFTtype(status->statusPtr,&onesft);
@@ -771,8 +776,21 @@ LALLoadSegmentedSFTs ( LALStatus *status,
 			    nextbin, firstInSFT, lastInSFT);
 	    ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
 	  }
-	}
-    }
+
+
+	} /* while files with this timestamp */
+
+
+      /* last check: did we find fMax at all? */
+      if ( lastbin > lastInSFT) {
+	LALPrintError ( "Ending frequency %f not contained in SFT (sequence)\n"
+			"  (expected bin: %u, last bin in SFT sequence: %u)\n", 
+			fMax, lastbin, lastInSFT);
+	ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
+      }
+
+
+    } /* while files in catalog */
 
   *outsfts = sfts;
   DETATCHSTATUSPTR (status);
