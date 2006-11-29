@@ -70,6 +70,7 @@ CHAR *uvar_descriptionMisc;
 CHAR *uvar_IFO;
 REAL8 uvar_fmin;
 REAL8 uvar_fmax;
+REAL8 uvar_mysteryFactor;
 
 INT4 uvar_minStartTime;
 INT4 uvar_maxEndTime;
@@ -77,6 +78,7 @@ INT4 uvar_maxEndTime;
 
 /*---------- internal prototypes ----------*/
 void initUserVars (LALStatus *status);
+void applyFactor2SFTs ( LALStatus *status, SFTVector *SFTs, REAL8 factor );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -193,6 +195,11 @@ main(int argc, char *argv[])
 
       LAL_CALL ( LALLoadSFTs ( &status, &thisSFT, &oneSFTCatalog, fMin, fMax ), &status );
 
+      if ( uvar_mysteryFactor != 1.0 ) {
+	LAL_CALL ( applyFactor2SFTs ( &status, thisSFT, uvar_mysteryFactor ), &status );
+      }
+
+
       LAL_CALL ( LALWriteSFTVector2Dir (&status, thisSFT, uvar_outputDir, new_comment, uvar_descriptionMisc ), &status );
 
       LAL_CALL ( LALDestroySFTVector ( &status, &thisSFT ), &status );
@@ -231,7 +238,10 @@ initUserVars (LALStatus *status)
   uvar_minStartTime = 0;
   uvar_maxEndTime = LAL_INT4_MAX;
 
+  uvar_mysteryFactor = 1.0;
+
   /* now register all our user-variable */
+  LALregBOOLUserVar(status,   help,		'h', UVAR_HELP,     "Print this help/usage message");
   LALregSTRINGUserVar(status, inputSFTs,	'i', UVAR_REQUIRED, "File-pattern for input SFTs");
   LALregSTRINGUserVar(status, IFO,		'I', UVAR_OPTIONAL, "IFO of input SFTs: 'G1', 'H1', 'H2', ...(required for v1-SFTs)");
 
@@ -247,11 +257,41 @@ initUserVars (LALStatus *status)
   LALregINTUserVar ( status, 	minStartTime, 	 0,  UVAR_OPTIONAL, "Earliest GPS start-time to include");
   LALregINTUserVar ( status, 	maxEndTime, 	 0,  UVAR_OPTIONAL, "Latest GPS end-time to include");
 
+  /* developer-options */
+  LALregREALUserVar(status,   mysteryFactor,	 0, UVAR_DEVELOPER, "Change data-normalization by applying this factor (for E@H)");
 
-  LALregBOOLUserVar(status,   help,		'h', UVAR_HELP,     "Print this help/usage message");
+
+
   
   DETATCHSTATUSPTR (status);
   RETURN (status);
 
 } /* initUserVars() */
 
+void
+applyFactor2SFTs ( LALStatus *status, SFTVector *SFTs, REAL8 factor )
+{
+  UINT4 i, numSFTs;
+
+  INITSTATUS( status, "applyFactor2SFTs", rcsid );
+
+  ASSERT ( SFTs, status, CONVERTSFT_EINPUT, CONVERTSFT_MSGEINPUT );
+
+  numSFTs = SFTs->length;
+
+  for ( i=0; i < numSFTs; i ++ )
+    {
+      SFTtype *thisSFT = &(SFTs->data[i]);
+      UINT4 k, numBins = thisSFT->data->length;
+      
+      for ( k=0; k < numBins; k ++ )
+	{
+	  thisSFT->data->data[k].re *= factor;
+	  thisSFT->data->data[k].im *= factor;
+	} /* for k < numBins */
+
+    } /* for i < numSFTs */
+
+  RETURN (status);
+
+} /* applyFactor2SFTs() */
