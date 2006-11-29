@@ -614,6 +614,31 @@ class candidateList:
         self.gpsWidth=avgGpsWidth.__abs__()
     #End findBinWidths method
 
+    def globListFile(self,file1,file2):
+        """
+        This takes two files which are assumed to be candidateList
+        data.  It then takes file2 and appends it straight to file1.
+        It creates file1 if it doesn't exist.  This is a disk
+        operation not data what so ever is loaded in this method call.
+        """
+        file1_fp=file(file1,'a')
+        try:
+            file2_fp=file(file2,'r')
+        except IOError:
+            print "File IO error"
+            print "Check : ",inputFilename
+            print "Glob skipped thie file!"
+            print ""
+            return
+        try:
+            file1_fp.write(file2_fp.read())
+        except IOError:
+            print "Error writing glob file!"
+            print "Check disk space!"
+            return
+        return
+    #End globListFile method
+    
     def globList(self,inputCandidateList,force):
         """
         Take list arguement and concatinate it with the self candidate list
@@ -818,7 +843,7 @@ class candidateList:
         This method just scans the candidate list for information like
         integrated power in a curve and curve length in pixels.  It
         then calculates the same stats as method candidateStats() but
-        without loading the data from the file.
+        loading the data from the file but creating data structures.
         """
         Lsum=float(0)
         Psum=float(0)
@@ -861,6 +886,65 @@ class candidateList:
         return statList
     #end method candidateStatsFromFile
     
+    def candidateStatsOnDisk(self,inputFilename):
+        """
+        This method just scans the candidate list for information like
+        integrated power in a curve and curve length in pixels.  It
+        then calculates the same stats as method candidateStats() but
+        parses the files a line a time constructing stat information
+        on the fly with no data loading what so ever! This is slower
+        than other stat methods but it does not eat up the memory.
+        """
+        Lsum=float(0)
+        Psum=float(0)
+        LsumSqr=float(0)
+        PsumSqr=float(0)
+        curveCount=int(0)
+        curveNum=float(0)
+        L=float(0)
+        P=float(0)
+        #Create the file pointer and try to open it
+        try:
+            line=str('start')
+            input_fp=open(inputFilename,'r')
+        except IOError:
+            print "File IO error"
+            print "Check : ",inputFilename
+            print ""
+            line=str('')
+            return
+        #Loop through file lines
+        while line:
+            #Load file info one line at a time!
+            line=input_fp.readline()
+            if line.startswith('Curve'):
+                try:
+                    (curveNum,L,P)=str(line.split(':')[1]).split(',')
+                except IndexError:
+                    print "Problem with file:",inputFilename
+                    print "Returning zeroes for this file stats!"
+                    return [0,0,0,0,0,0,0]
+                L=float(L)
+                P=float(P)
+                Lsum=Lsum+L
+                Psum=Psum+P
+                LsumSqr=LsumSqr+(L*L)
+                PsumSqr=PsumSqr+(P*P)
+                curveCount=curveCount+1
+        meanL=meanP=float(0)
+        varL=varP=float(0)
+        n=curveCount
+        if curveCount < 1:
+            return [0,0,0,0,0,0,0]
+        meanL=Lsum.__div__(n)
+        varL=float(LsumSqr - float(Lsum*Lsum).__div__(n)).__div__(n)
+        meanP=Psum.__div__(n)
+        varP=float(PsumSqr - float(Psum*Psum).__div__(n)).__div__(n)
+        statList=[0,0,n,meanP,varP,meanL,varL]
+        return statList
+    #end method candidateStatsOnDisk
+    
+
     def dumpCandidateKurveSummary(self):
         """
         This method scans the entries in the object.  Then
