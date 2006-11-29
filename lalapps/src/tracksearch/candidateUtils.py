@@ -45,7 +45,9 @@ class kurve:
         """
         Add a new pixel to our curve.  This should not be used manually in
         most cases.  It is invoked via the loadfile method in the candidateList
-        class
+        class.
+        Variable is a list of lists.  Each element is
+        [int(row),int(col),gpsInt(gpsStamp),float(freq),float(power)]
         """
         self.element.append([Row,Col,gpsStamp,Freq,Power])
         self.length=self.__len__()
@@ -195,10 +197,24 @@ class kurve:
         """
         This method will return an copied iterable N*5 2 dimensional list.
         This method is normally invoked by writefile method in
-        candidateList class
+        candidateList class (See self.appendPixel for variable structure)
         """
         return self.element
         #End method getKurveDataBlock
+        
+    def getKurveDataBlock_HumanReadable(self):
+        """
+        This method will call getKurveDataBlock() to get the information
+        about the curve self.  The data will be returned as a 2D list.
+        Each element is [float(time),float(freq),float(power)].
+        """
+        tmpVariable=[]
+        for entry in self.getKurveDataBlock():
+            tmpVariable.append([float(entry[2].getAsFloat()),
+                                float(entry[3]),
+                                float(entry[4])])
+        return tmpVariable
+        #End getKurveDataBlock_HumanReadable
         
 class gpsInt:
     """
@@ -366,15 +382,23 @@ class candidateList:
         """
         Reads in a candidate list from the disk with a given filename
         """
-        input_fp=open(inputFilename,'r')
+        try:
+            input_fp=open(inputFilename,'r')
+        except IOError:
+            print "File IO error"
+            print "Check : ",inputFilename
+            print ""
+            return
         content=input_fp.readlines()
         input_fp.close()
         if content.__len__() < 1:
             print "Error no lines in file?"
             print "Check :",inputFilename
-            os.abort()
+            self.totalCount=0
+            print "Object memory left untouched!"
+            return
         self.totalCount=int(list(content[0].split(':'))[1])
-        self.filename=[inputFilename]
+        self.filename=[str(inputFilename)]
         #Check for comment lines -> #Comment
         index2pop=[]
         for index in range(0,int(content.__len__())):
@@ -827,6 +851,8 @@ class candidateList:
         meanL=meanP=float(0)
         varL=varP=float(0)
         n=curveCount
+        if curveCount < 1:
+            return [0,0,0,0,0,0,0]
         meanL=Lsum.__div__(n)
         varL=float(LsumSqr - float(Lsum*Lsum).__div__(n)).__div__(n)
         meanP=Psum.__div__(n)
@@ -857,6 +883,7 @@ class candidateList:
     def writeSummary(self):
         """
         Methods to write summary to disk for viewing
+        Length,Power,Duration,Bandwidth
         """
         sourceFile=self.filename[0]
         outRoot,outExt=os.path.splitext(sourceFile)
@@ -873,6 +900,7 @@ class candidateList:
     def printSummary(self):
         """
         Methods to write summary to display for viewing
+        Length,Power,Duration,Bandwidth
         """
         summaryData=self.dumpCandidateKurveSummary()
         sourceFile=self.filename[0]
@@ -937,6 +965,7 @@ class candidateList:
     
     def applyNewThresholds(self,powerEq,pVal,conjunction,lengthEq,lVal):
         """
+        DO NOT USE!
         Parse these three options to determine a course of action for
         additional thresholds to apply to the candidate lists. Valid options
         are:
@@ -1057,6 +1086,30 @@ class candidateList:
         return outputList
     #End applyNewThresholds method
 
+    def getPixelList(self):
+        """
+        Method to get a 3C list of all pixels from this candidate file.  It is
+        a list of lists each element is [float(time),float(freq),float(power)].
+        The list is loaded from all Kurves contained in self.
+        """
+        pixelList=[]
+        for element in self.curves:
+            for point in element.getKurveDataBlock_HumanReadable():
+                pixelList.append(point)
+        return pixelList
+    #End method getPixelList()
+
+    def writePixelList(self,filename):
+        """
+        Write the list of pixels to a 3C file given a FILENAME
+        arguement
+        """
+        output_fp=open(filename,'w')
+        format="%10.5f %10.5f %10.5f\n"
+        for line in self.getPixelList():
+            output_fp.write(format%(line[0],line[1],line[2]))
+        output_fp.close()
+        #End method writePixelList()
 #End candidateList class
 
 #Misc methods

@@ -38,7 +38,7 @@ def buildCandidateGlob(fileList):
             print "Loading candidate list file: ",entry
             tmpCandidate=candidateList()
             tmpCandidate.loadfile(entry)
-            print "Globing file:",tmpCandidate.filename[0]
+            print "Globing file:",entry
             newCandidateObject=newCandidateObject.globList(tmpCandidate,True)
             del tmpCandidate
     return copy.deepcopy(newCandidateObject)
@@ -78,7 +78,7 @@ parser.add_option("-T","--expression_threshold",dest="expThreshold",
 parser.add_option("-s","--write_summary",dest="dumpSummaryDisk",
                   default=False,
                   action="store_true",
-                  help="This will write the summary information for the candidate file(s) opened. The filename scheme replaces candidate with summary."
+                  help="This will write the summary information for the candidate file(s) opened. The filename scheme replaces candidate with summary. The data store is Length Pixels,Power,Duration Sec,Bandwidth Hz"
                   )
 parser.add_option("-d","--display_summary",dest="dumpSummaryScreen",
                   default=False,
@@ -88,7 +88,7 @@ parser.add_option("-d","--display_summary",dest="dumpSummaryScreen",
 parser.add_option("-p","--print",dest="print2file",
                   default=False,
                   action="store_true",
-                  help="This option states that files specified with the --file option should be printed to a similiar list of files that may be plotted using some external X interface, such as gnuplot. To show you a visual representation of the candidates found.  THIS OPTION NOT YET IMPLEMENTED!"
+                  help="This option states that files specified with the --file option should be printed to a similiar list of coordinate pairs that may be plotted using some external X interface, such as gnuplot. To show you a visual representation of the candidates found.  THIS OPTION NOT YET IMPLEMENTED!"
                   )
 (options,args)=parser.parse_args()
 filename=str(options.filename)
@@ -154,7 +154,18 @@ elif ((threshold != "") and (canList.__len__() >= 1)):
     #SECTION 4 PRINTING
 elif ((canList.__len__() >= 1) and (printFile)):
     #Iterate of files creating plotable graphic for each!
-    print "Printing not ready yet!!"
+    for entry in canList:
+        candidateObject=candidateList()
+        candidateObject.loadfile(entry)
+        if (outfile != "") and (canList.__len__() == 1):
+            candidateObject.writePixelList(outfile)
+        else:
+            pathName=os.path.dirname(candidateObject.filename[0])
+            saveFiles=pathName+'/ScatterPlot:'+os.path.basename(candidateObject.filename[0])
+            print "Writing scatter plotable data :",saveFiles
+            candidateObject.writePixelList(saveFiles)        
+        del entry
+        del candidateObject
 
     #SECTION APPLY ABITRARY THRESHOLDS
 elif ((expThreshold != "") and (canList.__len__() >=1)):
@@ -168,8 +179,8 @@ elif ((expThreshold != "") and (canList.__len__() >=1)):
         if (outfile != "") and (canList.__len__() == 1):
             candidateResults.writefile(outfile)
         else:
-            pathName=os.path.dirname(candidateResults.filename[0])
-            saveFiles=pathName+'/Threshold:'+str(expThresholdName)+':'+os.path.basename(candidateObject.filename[0])
+            pathName=os.path.dirname(entry)
+            saveFiles=pathName+'/Threshold:'+str(expThresholdName)+':'+os.path.basename(entry)
             print "Writing file :",saveFiles
             candidateResults.writefile(saveFiles)        
         del entry
@@ -189,7 +200,11 @@ elif ((canList.__len__() >=1) and dumpSummaryScreen):
         candidateObject.loadfile(entry)
         candidateObject.printSummary()
         del entry
-        
+
+    #IF there are no files to work on found.    
+elif (canList.__len() < 0):
+      print "It appears there are no files to process!"
+
     #THIS SECTION SHOULD NEVER HAPPEN
 else:
     print "Error with combination of arguments given!"
