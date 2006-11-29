@@ -128,13 +128,13 @@ XLALgetLISADetectorTensor ( DetectorTensor *detT, 	/**< [out]: LISA LWL detector
   switch ( channelNum )
     {
     case '1': 	/* TDI observable 'X' */
-      armA = LISA_ARM3; armB = LISA_ARM2;
+      armA = LISA_ARM2; armB = LISA_ARM3;
       break;
     case '2':		/* TDI observable 'Y' */
-      armA = LISA_ARM1; armB = LISA_ARM3;
+      armA = LISA_ARM3; armB = LISA_ARM1;
       break;
     case '3':		/* TDI observable 'Z' */
-      armA = LISA_ARM2; armB = LISA_ARM1;
+      armA = LISA_ARM1; armB = LISA_ARM2;
       break;
     default:	/* unknown */
       LALPrintError ("\nInvalid channel-number '%c' for LISA \n\n", channelNum );
