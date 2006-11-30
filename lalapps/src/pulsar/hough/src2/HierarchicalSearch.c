@@ -296,6 +296,7 @@ int MAIN( int argc, char *argv[]) {
   HOUGHPeakGramVector pgV;
   SemiCoherentParams semiCohPar;
   SemiCohCandidateList semiCohCandList1;
+  REAL8 alphaPeak, sumWeightSquare, meanN, sigmaN;
 
   /* fstat candidate structure */
   toplist_t *fstatToplist=NULL;
@@ -474,7 +475,7 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameout",    'o', UVAR_OPTIONAL, "Output basefileneme", &uvar_fnameout), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "peakThrF",     0,  UVAR_OPTIONAL, "Fstat Threshold", &uvar_peakThrF), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "nCand1",       0,  UVAR_OPTIONAL, "No.of 1st stage candidates to be followed up", &uvar_nCand1), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "threshold1",   0,  UVAR_OPTIONAL, "Threshold for 1st stage candidate selection (if no toplist)", &uvar_threshold1), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "threshold1",   0,  UVAR_OPTIONAL, "Threshold on significance for 1st stage (if no toplist)", &uvar_threshold1), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "nCand2",       0,  UVAR_OPTIONAL, "No.of 2nd stage candidates to be saved",&uvar_nCand2), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printCand1",   0,  UVAR_OPTIONAL, "Print 1st stage candidates", &uvar_printCand1), &status);  
   LAL_CALL( LALRegisterREALUserVar(   &status, "refTime",      0,  UVAR_OPTIONAL, "Ref. time for pulsar pars [start time]", &uvar_refTime), &status);
@@ -526,6 +527,10 @@ int MAIN( int argc, char *argv[]) {
     fprintf(stderr, "Invalid value of Fstatistic threshold\n");
     exit( HIERARCHICALSEARCH_EBAD );
   }
+
+  /* probability of peak selection */
+  alphaPeak = (1+uvar_peakThrF)*exp(-uvar_peakThrF);
+  
 
   if ( uvar_followUp && (!LALUserVarWasSet(&uvar_DataFiles2))) {
     fprintf( stderr, "Must specify SFTs for second stage!\n");
@@ -754,7 +759,7 @@ int MAIN( int argc, char *argv[]) {
 
   /* print debug info about stacks */
   LogPrintf(LOG_DEBUG, "1st stage params: Nstacks = %d,  Tstack = %.0fsec, Tobs = %.0fsec\n", nStacks1, tStack1, tObs1);
-  for (k=0; k<nStacks1; k++) {
+  for (k = 0; k < nStacks1; k++) {
 
     LogPrintf(LOG_DEBUG, "Stack %d ", k);
     LogPrintfVerbatim(LOG_DEBUG, "(GPS start time = %d, Noise weight = %f ) ", startTstack1->data[k].gpsSeconds, 
@@ -869,7 +874,6 @@ int MAIN( int argc, char *argv[]) {
   
   /* set up some semiCoherent parameters */
   semiCohPar.useToplist = uvar_useToplist1;
-  semiCohPar.threshold = uvar_threshold1;
   semiCohPar.tsMid = midTstack1;
   /* semiCohPar.refTime = tStart1GPS; */
   semiCohPar.refTime = tMid1GPS;
@@ -1032,7 +1036,7 @@ int MAIN( int argc, char *argv[]) {
 	  /* print fstat vector if required -- mostly for debugging */
 	  if ( uvar_printFstat1 )
 	    {
-	      for (k=0; k<nStacks1; k++)
+	      for (k = 0; k < nStacks1; k++)
 		LAL_CALL( PrintFstatVec ( &status, fstatVector1.data + k, fpFstat1, &thisPoint1, refTimeGPS, k+1), &status); 
 	    }
 
@@ -1042,11 +1046,21 @@ int MAIN( int argc, char *argv[]) {
 	  /* the input to this section is the set of fstat vectors fstatVector1 and the 
 	     parameters semiCohPar. The output is the list of candidates in semiCohCandList1 */
 
+	  /* set number count threshold based on significance threshold */
+	  sumWeightSquare = 0.0;
+	  for ( k = 0; k < nStacks1; k++)
+	    sumWeightSquare += weightsV->data[k] * weightsV->data[k];
+
+	  meanN = nStacks1 * alphaPeak; 
+	  sigmaN = sqrt(sumWeightSquare * alphaPeak * (1.0 - alphaPeak));
+	  semiCohPar.threshold = uvar_threshold1*sigmaN + meanN;	 
+
 	  /* set sky location and spindown for Hough grid -- same as for Fstat calculation */	  
 	  semiCohPar.alpha = thisPoint1.Alpha;
 	  semiCohPar.delta = thisPoint1.Delta;
 	  semiCohPar.fdot = thisPoint1.fkdot[1];
-	  
+
+ 
 	  /* the hough option */
 	  /* select peaks */ 	      
 	  if ( (uvar_method == 0) ) {
@@ -2288,7 +2302,11 @@ void GetHoughCandidates_threshold(LALStatus            *status,
 	  isLocalMax = (thisCandidate.significance > ht->map[i*xSide + j - 1]) 
 	    && (thisCandidate.significance > ht->map[i*xSide + j + 1]) 
 	    && (thisCandidate.significance > ht->map[(i+1)*xSide + j]) 
-	    && (thisCandidate.significance > ht->map[(i-1)*xSide + j]);
+	    && (thisCandidate.significance > ht->map[(i-1)*xSide + j])
+	    && (thisCandidate.significance > ht->map[(i-1)*xSide + j - 1])
+	    && (thisCandidate.significance > ht->map[(i-1)*xSide + j + 1])
+	    && (thisCandidate.significance > ht->map[(i+1)*xSide + j - 1])
+	    && (thisCandidate.significance > ht->map[(i+1)*xSide + j + 1]);
 
 	  /* realloc list if necessary */
 	  if (numCandidates >= out->length) {
