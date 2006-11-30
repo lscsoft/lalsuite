@@ -145,6 +145,8 @@ BOOLEAN uvar_printStats; /**< global variable for calculating Hough map stats */
 
 #define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 
+#define BLOCKSIZE_REALLOC 50
+
 typedef struct {
   CHAR  *sftbasename;
   REAL8 deltaFstack;     /**< frequency resolution of stacks */
@@ -1005,12 +1007,12 @@ int MAIN( int argc, char *argv[]) {
       semiCohPar.weightsV = weightsV;
       
       LogPrintf(LOG_DEBUG, "Stack weights for alpha = %f, delta = %f are:\n", skypos.longitude, skypos.latitude);
-      for (k=0; k<nStacks1; k++) {
+      for (k = 0; k < nStacks1; k++) {
 	LogPrintf(LOG_DEBUG, "%f\n", weightsV->data[k]);
       }
 
       /* loop over fdot values */
-      for ( ifdot=0; ifdot<nfdot; ifdot++)
+      for ( ifdot = 0; ifdot < nfdot; ifdot++)
 	{
 	  LogPrintf(LOG_DEBUG, "Analyzing %d/%d Coarse sky grid points and %d/%d spindown values\n", 
 			    skyGridCounter, thisScan1.numSkyGridPoints, ifdot+1, nfdot);
@@ -1607,8 +1609,6 @@ void ComputeFstatHoughMap(LALStatus *status,
   if (params->useToplist) {
     create_toplist(&houghToplist, out->length, sizeof(SemiCohCandidate), smallerHough);
   }
-
-
 
   /* copy some parameters from peakgram vector */
   deltaF = pgV->pg->deltaF;
@@ -2241,9 +2241,20 @@ void GetHoughCandidates_threshold(LALStatus            *status,
   INT8 f0Bin;  
   INT4 i,j, xSide, ySide, numCandidates;
   SemiCohCandidate thisCandidate;
+  BOOLEAN isLocalMax = TRUE;
 
   INITSTATUS( status, "GetHoughCandidates_threshold", rcsid );
   ATTATCHSTATUSPTR (status);
+
+
+  ASSERT ( out != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  ASSERT ( out->length > 0, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
+  ASSERT ( out->list != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+
+  ASSERT ( ht != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  ASSERT ( patch != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  ASSERT ( parDem != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  ASSERT ( threshold > 0, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
 
   deltaF = ht->deltaF;
   f0Bin = ht->f0Bin;
@@ -2261,20 +2272,35 @@ void GetHoughCandidates_threshold(LALStatus            *status,
   thisCandidate.dFreq = deltaF;
   thisCandidate.fdot = fdot;
   thisCandidate.dFdot = dFdot;
-  thisCandidate.dAlpha = patchSizeX / ((REAL8)xSide);
-  thisCandidate.dDelta = patchSizeY / ((REAL8)ySide);  
+  thisCandidate.dAlpha = 3.0 * patchSizeX / ((REAL8)xSide);
+  thisCandidate.dDelta = 3.0 * patchSizeY / ((REAL8)ySide);  
 
   numCandidates = out->nCandidates;
 
-  for (i = 0; i < ySide; i++)
+  for (i = 1; i < ySide-1; i++)
     {
-      for (j = 0; j < xSide; j++)
+      for (j = 1; j < xSide-1; j++)
 	{ 
 	  
 	  thisCandidate.significance =  ht->map[i*xSide + j];
+
+	  /* check if this is a local maximum */
+	  isLocalMax = (thisCandidate.significance > ht->map[i*xSide + j - 1]) 
+	    && (thisCandidate.significance > ht->map[i*xSide + j + 1]) 
+	    && (thisCandidate.significance > ht->map[(i+1)*xSide + j]) 
+	    && (thisCandidate.significance > ht->map[(i-1)*xSide + j]);
+
+	  /* realloc list if necessary */
+	  if (numCandidates >= out->length) {
+	    out->length += BLOCKSIZE_REALLOC;
+	    out->list = (SemiCohCandidate *)LALRealloc( out->list, out->length * sizeof(SemiCohCandidate));
+	    fprintf(stdout, "Need to realloc\n");
+	  } /* need a safeguard to ensure that the reallocs don't happen too often */
+
 	  /* add to list if candidate exceeds threshold and there is enough space in list */
-	  if( ((REAL8)thisCandidate.significance > threshold) && (numCandidates < out->length) ) {
+	  if( ((REAL8)thisCandidate.significance > threshold) && (numCandidates < out->length) && isLocalMax) {
 	    /* get sky location of pixel */
+
 	    TRY( LALStereo2SkyLocation (status->statusPtr, &sourceLocation, 
 					j, i, patch, parDem), status);
 	    
