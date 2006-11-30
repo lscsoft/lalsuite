@@ -1595,10 +1595,20 @@ void ComputeFstatHoughMap(LALStatus *status,
   INITSTATUS( status, "ComputeFstatHoughMap", rcsid );
   ATTATCHSTATUSPTR (status);
 
+  ASSERT ( out != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  ASSERT ( out->length > 0, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
+  ASSERT ( out->list != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );  
+
+  /* initialise number of candidates -- this means that any previous candidates 
+     stored in the list will be lost */
+  out->nCandidates = 0; 
+  
   /* create toplist of candidates */
   if (params->useToplist) {
     create_toplist(&houghToplist, out->length, sizeof(SemiCohCandidate), smallerHough);
   }
+
+
 
   /* copy some parameters from peakgram vector */
   deltaF = pgV->pg->deltaF;
