@@ -1055,6 +1055,8 @@ int MAIN( int argc, char *argv[]) {
 	  sigmaN = sqrt(sumWeightSquare * alphaPeak * (1.0 - alphaPeak));
 	  semiCohPar.threshold = uvar_threshold1*sigmaN + meanN;	 
 
+	  LogPrintf(LOG_DEBUG, "Expected mean number count=%f, std=%f, threshold=%f\n", meanN, sigmaN, semiCohPar.threshold);
+
 	  /* set sky location and spindown for Hough grid -- same as for Fstat calculation */	  
 	  semiCohPar.alpha = thisPoint1.Alpha;
 	  semiCohPar.delta = thisPoint1.Delta;
@@ -2312,7 +2314,7 @@ void GetHoughCandidates_threshold(LALStatus            *status,
 	  if (numCandidates >= out->length) {
 	    out->length += BLOCKSIZE_REALLOC;
 	    out->list = (SemiCohCandidate *)LALRealloc( out->list, out->length * sizeof(SemiCohCandidate));
-	    fprintf(stdout, "Need to realloc\n");
+	    LogPrintf(LOG_DEBUG, "Need to realloc Hough candidate list to %d entries\n", out->length);
 	  } /* need a safeguard to ensure that the reallocs don't happen too often */
 
 	  /* add to list if candidate exceeds threshold and there is enough space in list */
