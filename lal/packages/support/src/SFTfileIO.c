@@ -573,10 +573,7 @@ LALLoadSFTs ( LALStatus *status,
 /* This is meant to replace LALLoadSFT().
    It has the same interface and basically does the same, with the additional capability to read
    sequences of (v2-)SFT segments and putting them together to single SFTs while reading.
-   While devoping it is kept as a separate function
-*/
-/* TODO:
-   - consistency checks (deltaF?)
+   While developing it is kept as a separate function
 */
 void
 LALLoadSegmentedSFTs ( LALStatus *status,
@@ -658,6 +655,15 @@ LALLoadSegmentedSFTs ( LALStatus *status,
       /* while there are files with this timestamp */
       while (GPSEQUAL(epoch,catalog->data[catFile].header.epoch))
 	{
+	  /* deltaF consistency check */
+	  if ( deltaF != catalog->data[catFile].header.deltaF ) {
+	    LALPrintError ( "Frequency spacing dosn't match in SFT '%s (%f %f)\n",
+			    XLALshowSFTLocator ( catalog->data[catFile].locator ),
+			    deltaF, catalog->data[catFile].header.deltaF );
+	    LALDestroySFTVector (status->statusPtr, &sfts);
+	    ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
+	  }
+	  
 	  firstInSFT = MYROUND( catalog->data[catFile].header.f0 / deltaF );
 	  lastInSFT  = firstInSFT + catalog->data[catFile].numBins - 1;
 
@@ -679,7 +685,7 @@ LALLoadSegmentedSFTs ( LALStatus *status,
 			      fMin, XLALshowSFTLocator ( catalog->data[catFile].locator ) );
 	      LALDestroySFTVector (status->statusPtr, &sfts);
 	      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
-	      }
+	    }
 
 	    /* read from nextbin to lastbin */
 	    if ( (fp = fopen_SFTLocator ( catalog->data[catFile].locator )) == NULL ) {
