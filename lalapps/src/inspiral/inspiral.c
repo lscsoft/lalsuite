@@ -1870,18 +1870,46 @@ int main( int argc, char *argv[] )
       }  
     }
 
-    if ( injectionFile )
+
+    /*================================================================
+     * This is a dense bit of logical constructs and basically 
+     * implements the following truth table
+     *
+     *   Injection   Follow-Up    --fast      Action
+     *   ---------   ---------    --------  ----------
+     *      T           F           F        SetAnalyseTemplate()
+     *      T           F           T              "
+     *      T           T           F              "
+     *      T           T           T        TagTemplateAndSegment()
+     *      F           T           T              "
+     *      F           T           F        Do Nothing
+     *      F           F           F        Do Nothing
+     *      F           F           T        Irrelevant (do nothing)
+     *================================================================*/
+    if ( injectionFile  || (tdFollowUpFile && mmFast >= 0.0))
     {
       /* Make space for analyseThisTmplt */
       analyseThisTmplt = (UINT4 *) LALCalloc (numTmplts, sizeof(UINT4));
 
+      /* If we are performing a follow up, we only want to follow up templates
+       * near coincident events, regardless of the injection file used
+       */
+      if ( injectionFile && (!tdFollowUpFile || mmFast < 0) )
+      {
+          
       /* set the analyseThisTmplt flag on templates     */
       /* that are 'close' to the injections             */
-      LAL_CALL( LALFindChirpSetAnalyseTemplate( &status, analyseThisTmplt,
+        LAL_CALL( LALFindChirpSetAnalyseTemplate( &status, analyseThisTmplt,
             mmFast, fcSegVec->data[0].data->deltaF, sampleRate, fcDataParams,
             numTmplts, tmpltHead, numInjections, injections ), &status );
 
-    }
+      }
+      else
+      {
+        XLALFindChirpTagTemplateAndSegment(dataSegVec, tmpltHead, &tdFollowUpEvents,
+                ifo, mmFast, analyseThisTmplt );
+      }
+    }  
 
     /* If using trigScan clustering, then init the clustering */
     /* input parameters before they are freed up in the code. */
@@ -1992,12 +2020,15 @@ int main( int argc, char *argv[] )
         {
           if ( tdFollowUpFile )
           {
-#if 0
-            analyseTag = XLALCmprSgmntTmpltFlags( numTDFollowUpEvents,
-                analyseThisTmplt[thisTemplateIndex], 
-                fcSegVec->data[i].analyzeSegment );
-#endif
-            if ( !fcSegVec->data[i].analyzeSegment )
+            if ( mmFast >= 0.0 )
+            {
+                /* Compare tmplt flag with segment number using bitwise and */
+                if ( !(analyseThisTmplt[thisTemplateIndex] & ( 1u << i )))
+                {
+                    analyseTag = 0;
+                }
+            }
+            else if ( !fcSegVec->data[i].analyzeSegment )
             {
               analyseTag = 0;
             }
