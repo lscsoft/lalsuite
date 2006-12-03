@@ -113,6 +113,12 @@ void LALappsStackSlideVecF(LALStatus *status,
 			  REAL8FrequencySeriesVector *vecF,  /* vector with Fstat values or any REAL8FrequencySeriesVector */
 			  SemiCoherentParams *params);       /* input parameters  */
 
+void LALappsFindFreqFromMasterEquation(LALStatus *status, 
+                                       PulsarDopplerParams *outputPoint,  /* outputs f(t) for output sky position and spindown values                       */
+                                       PulsarDopplerParams *inputPoint,   /* input demodulation f0, sky position, and spindown values                       */
+                                       REAL8 *vel,                        /* vx = vel[0], vy = vel[1], vz = vel[2] = ave detector velocity                  */
+                                       REAL8 deltaT,                      /* time since the reference time                                                  */
+                                       UINT2 numSpindown);                /* Number of spindown values == high deriv. of include == 1 if just df/dt, etc... */
   
 #ifdef  __cplusplus
 }                /* Close C++ protection */

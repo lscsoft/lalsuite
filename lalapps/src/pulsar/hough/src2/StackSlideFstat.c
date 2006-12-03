@@ -86,23 +86,26 @@ void LALappsStackSlideVecF(LALStatus *status,
   REAL8FrequencySeries stackslideSum;  /* The output of StackSliding the vecF values */
   
   REAL8 *pstackslideData;  /* temporary pointer */
-  REAL8 *pFVecData;  /* temporary pointer */
+  REAL8 *pFVecData;        /* temporary pointer */
   
   REAL8 pixelFactor;
   REAL8 alphaStart, alphaEnd, dAlpha;
   REAL8 deltaStart, deltaEnd, dDelta;
   REAL8 fdotStart, fdotEnd, dfdot;
   UINT4 ialpha,nalpha,idelta,ndelta,ifdot,nfdot;
+  UINT2 numSpindown;
 
-  INT4 fBinIni, fBinFin, fBin, nSearchBins;
-  INT4 j, k, nStacks, offset;
-  REAL8 f0,deltaF, alpha, delta;
+  INT4 fBinIni, fBinFin, fBin, nSearchBins, nSearchBinsm1;
+  INT4 j, k, nStacks, offset, offsetj;
+  REAL8 f0, deltaF, tEffSTK, fmid, alpha, delta;
   REAL8 patchSizeX, patchSizeY, f1jump;
   REAL8VectorSequence *vel, *pos;
   REAL8 fdot, refTime;
   LIGOTimeGPS refTimeGPS;
   LIGOTimeGPSVector   *tsMid;
   REAL8Vector *timeDiffV=NULL;
+
+  PulsarDopplerParams outputPoint, inputPoint;
 
   /* toplist_t *stackslideToplist; */ /* TO BE ADDED IN */
 
@@ -117,12 +120,17 @@ void LALappsStackSlideVecF(LALStatus *status,
   /* copy some params to local variables */
   pixelFactor = params->pixelFactor;   
   nStacks = vecF->length;  
-  nSearchBins = vecF->data->data->length;  
+  nSearchBins = vecF->data->data->length;
+  nSearchBinsm1 = nSearchBins - 1;
   f0 = vecF->data[0].f0;
-  deltaF = vecF->data[0].deltaF;  
-  fBinIni = floor( f0/deltaF + 0.5);
+  deltaF = vecF->data[0].deltaF;
+  tEffSTK = 1.0/deltaF; /*  Effective time baseline a stack */
+  fBinIni = floor( f0*tEffSTK + 0.5);
   fBinFin = fBinIni + nSearchBins - 1;
-  nfdot = params->nfdot;
+  fmid = vecF->data[0].f0 + ((REAL8)(nSearchBins/2))*deltaF;
+  
+  numSpindown = 1;       /* Current search is over 1 spindown value, df/dt */
+  nfdot = params->nfdot; /* Number of df/dt values to search over */
   alpha = params->alpha;
   delta = params->delta;
   vel = params->vel;
@@ -149,7 +157,7 @@ void LALappsStackSlideVecF(LALStatus *status,
      of detector */
   patchSizeX = params->patchSizeX;
   patchSizeY = params->patchSizeY;
-  /* if patchsize is not negative, then set default value */
+  /* if patchsize is negative, then set default value */
   if ( patchSizeX < 0 )
     patchSizeX = 0.5 / ( fBinFin * VEPI ); 
 
@@ -182,26 +190,43 @@ void LALappsStackSlideVecF(LALStatus *status,
   dfdot     = deltaF * f1jump;
   fdotStart = fdot - dfdot*(REAL8)(nfdot/2);
   fdotEnd   = fdot + dfdot*(REAL8)(nfdot/2);
-  if (nfdot < 1); nfdot = 1; /* do at least one value of fdto below */
+  if (nfdot < 1); nfdot = 1; /* do at least one value of fdot below */
+
+  /* The input parameter space point */
+  inputPoint.refTime = refTimeGPS;
+  inputPoint.orbit = NULL;
+  inputPoint.fkdot[0] = fmid;
+  inputPoint.fkdot[1] = fdot;
+  inputPoint.fkdot[2] = 0.0;
+  inputPoint.fkdot[3] = 0.0;
+  inputPoint.Alpha = alpha;
+  inputPoint.Delta = delta;
   
-  offset = 0;
-  
+  /* Values for output parameter space point that do not change */  
+  outputPoint.refTime = refTimeGPS;
+  outputPoint.orbit = NULL;
+  outputPoint.fkdot[2] = 0.0;
+  outputPoint.fkdot[3] = 0.0;
+    
   /* Let the loops over sky position and spindown values begin! */
   
   /* loop over delta */
   for (idelta = 0; idelta<ndelta; idelta++) {
-      
+
       thisDelta = deltaStart + ((REAL8)idelta)*dDelta;
-      
+
       if ( (thisDelta < LAL_PI_2) && (thisDelta > -1.0*LAL_PI_2) ) {
-         dAlpha = dDelta/cos(thisDelta);
-         nalpha = floor( (alphaEnd - alphaStart)/dAlpha + 0.5);
+         /* Find the spacing in alpha for thisDelta and adjust this to */
+         /* fit evenly spaced points between alphaEnd and alphaStart */
+         dAlpha = dDelta/cos(thisDelta); 
+         nalpha = ceil( (alphaEnd - alphaStart)/dAlpha );
+         dAlpha = (alphaEnd - alphaStart)/((REAL8)nalpha);
          if (nalpha < 1) nalpha = 1; /* do at least one value of alpha */
       } else {
          dAlpha = 0.0;
          nalpha = 1;
       }
-      
+
       /* loop over alpha */
       for (ialpha = 0; ialpha<nalpha; ialpha++) {
           thisAlpha = alphaStart + ((REAL8)ialpha)*dAlpha;
@@ -211,20 +236,33 @@ void LALappsStackSlideVecF(LALStatus *status,
               thisFdot = fdotStart + ((REAL8)ifdot)*dfdot;
 
               /* for thisAlpha, thisDelta, and thisFdot, compute the StackSlide Sum (average) of the Fvecs */
-              
+              outputPoint.fkdot[0] = fmid; /* This will get changed by solving the Master Equation */
+              outputPoint.fkdot[1] = thisFdot;
+              outputPoint.Alpha = thisAlpha;
+              outputPoint.Delta = thisDelta;
+
               /* loop over each stack  */
               for (k=0; k<nStacks; k++) {
-                  pV = FstatVect->data[k].data->data;
-                  
-                  /* TO DO: COMPUTE f(t) using master equation and find bin offset */
-                  /* ASSUMES same offset for entire band, assumed to be very narrow */
 
+                  
+                  /* COMPUTE f(t) using the master equation and find bin offset for  */
+                  /* the frequency in the middle of the band, fmid.                  */
+                  /* ASSUMES same offset for entire band, assumed to be very narrow. */
+                  TRY ( LALappsFindFreqFromMasterEquation(status->statusPtr,&outputPoint,&inputPoint,(vel->data + 3*k),timeDiffV->data[k],numSpindown), status);
+
+                  
+                  offset = floor( (outputPoint.fkdot[0] - fmid)*tEffSTK + 0.5 );
+                  
+                  pFVecData = vecF->data[k].data->data;
                   /* loop over frequency bins */
                   for(j=0; j<nSearchBins; j++) {
+                     offsetj = j + offset;
+                     if (offsetj < 0) j = 0;  /* TO DO: NEED EXTRA BINS IN STACKS TO ALLOW FOR SLIDING */
+                     if (offsetj > nSearchBinsm1) j = nSearchBinsm1;
                      if (k == 0) {
-                        pstackslideData[j] += pV[j + offset];
+                        pstackslideData[j] = pFVecData[offsetj];
                      } else {
-                        pstackslideData[j] += pV[j + offset];
+                        pstackslideData[j] += pFVecData[offsetj];
                      } /* END if (k == 0) */
                   } /* END for(j=0; j<nSearchBins; j++) */
 
@@ -256,4 +294,94 @@ void LALappsStackSlideVecF(LALStatus *status,
   DETATCHSTATUSPTR (status);
   RETURN(status);
 
+}
+
+
+/* Calculate f(t) using the master equation given by Eq. 6.18 in gr-qc/0407001 */
+/* Returns f(t) in outputPoint.fkdot[0] */
+void LALappsFindFreqFromMasterEquation(LALStatus *status, 
+                                       PulsarDopplerParams *outputPoint,  /* outputs f(t) for output sky position and spindown values                       */
+                                       PulsarDopplerParams *inputPoint,   /* input demodulation f0, sky position, and spindown values                       */
+                                       REAL8 *vel,                        /* vx = vel[0], vy = vel[1], vz = vel[2] = ave detector velocity                  */
+                                       REAL8 deltaT,                      /* time since the reference time                                                  */
+                                       UINT2 numSpindown)                 /* Number of spindown values == high deriv. of include == 1 if just df/dt, etc... */
+{
+                  UINT2 k;
+                  REAL8 f0, F0, F0zeta, alpha, delta, cosAlpha, cosDelta, sinAlpha, sinDelta;
+                  REAL8 nx, ny, nz, ndx, ndy, ndz;
+                  REAL8 vx, vy, vz;
+                  REAL8 kFact, deltaTPowk;
+                  PulsarSpins inputfkdot; /* input demodulation spindown values */
+                  PulsarSpins deltafkdot; /* residual spindown values */
+
+                  INITSTATUS( status, "LALappsFindFreqFromMasterEquation", rcsid );
+                  ATTATCHSTATUSPTR (status);
+  
+                  ASSERT ( outputPoint != NULL, status, STACKSLIDEFSTAT_ENULL, STACKSLIDEFSTAT_MSGENULL );
+                  ASSERT ( inputPoint != NULL, status, STACKSLIDEFSTAT_ENULL, STACKSLIDEFSTAT_MSGENULL );
+                  ASSERT ( vel != NULL, status, STACKSLIDEFSTAT_ENULL, STACKSLIDEFSTAT_MSGENULL );
+
+                  /* the x, y, and z components of the input demodulation sky position: */
+                  alpha = inputPoint->Alpha;
+                  delta = inputPoint->Delta
+                  cosAlpha = cos(alpha);
+                  cosDelta = cos(delta);
+                  sinAlpha = sin(alpha);
+                  sinDelta = sin(delta);
+                  ndx = cosDelta*cosAlpha;
+                  ndy = cosDelta*sinDelta;
+                  ndz = sinDelta;
+
+                  /* the x, y, and z components of the output sky position: */
+                  alpha = outputPoint->Alpha;
+                  delta = outputPoint->Delta
+                  cosAlpha = cos(alpha);
+                  cosDelta = cos(delta);
+                  sinAlpha = sin(alpha);
+                  sinDelta = sin(delta);
+                  nx = cosDelta*cosAlpha;
+                  ny = cosDelta*sinDelta;
+                  nz = sinDelta;
+                  
+                  f0 = inputPoint.fkdot[0];  /* input f0 */
+
+                  /* input and residual spindown values: */
+                  deltafkdot[0] = 0;  /* unused */
+                  inputfkdot[0] = f0; /* unused */
+                  for (k=1; k<=numSpindown; k++) {
+                      inputfkdot[k] = inputPoint->fkdot[k];
+                      deltafkdot[k] = outputPoint->fkdot[k] - inputPoint->fkdot[k];
+                  }
+
+                  /* the x, y, and z components of velocity of the detector(s) for this stack */
+                  vx = vel[0];
+                  vy = vel[1];
+                  vz = vel[2];
+
+                  /* Compute F0 */
+                  F0 = f0;
+                  kFact = 1.0;
+                  deltaTPowk = 1.0;
+                  for (k=1; k<=numSpindown; k++) {
+                      kFact *= ((REAL8)k);
+                      deltaTPowk *= deltaT;
+                      F0 += deltafkdot[k]*deltaTPowk/kFact;
+                  }
+                  
+                  /* Compute F0 plus spindown; call this F0zeta.  See the master equation. */                  
+                  F0zeta = F0;
+                  kFact = 1.0;
+                  deltaTPowk = 1.0;
+                  for (k=1; k<=numSpindown; k++) {
+                      kFact *= ((REAL8)k);
+                      deltaTPowk *= deltaT;
+                      F0zeta += inputfkdot[k]*deltaTPowk/kFact;
+                  }
+
+                  /* Compute the output frequency. */
+                  /* NOTE that the small correction fkdot[k]*(deltaT^(k-1)/(k-1)!)*(r - r0)/c is ignored */
+                  outputPoint->fkdot[0] = F0 + F0zeta*( vx*(nx-ndx) + vy*(ny-ndy) + vz*(nz-ndz) );
+
+                  DETATCHSTATUSPTR (status);
+                  RETURN(status);
 }
