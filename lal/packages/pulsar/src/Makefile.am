@@ -5,7 +5,7 @@ libpulsar_la_SOURCES = \
   CoherentMetric.c                                                       \
   StackMetric.c ProjectMetric.c FlatMesh.c CreateResampleRules.c         \
   DestroyResampleRules.c ApplyResampleRules.c PolycoToTimingDifference.c \
-  RulesToTimingDifference.c LALComputeAM.c LALDemod.c ComputeSky.c       \
+  RulesToTimingDifference.c LALComputeAM.c LALDemod.c LALDemodFAST.c ComputeSky.c       \
   FoldAmplitudes.c TwoDMesh.c TwoDMeshInternal.c TwoDMeshMetrics.c       \
   TwoDMeshRanges.c LALBarycenter.c PtoleMetric.c HeterodynePulsar.c      \
   FitToPulsar.c BinaryPulsarTiming.c PulsarCat.c PulsarCatInput.c        \
