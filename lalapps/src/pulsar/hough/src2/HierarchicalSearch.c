@@ -1103,6 +1103,8 @@ int MAIN( int argc, char *argv[]) {
 	      /* loop over candidates surviving 1st stage  */
 	      for ( j=0; j < semiCohCandList1.nCandidates; j++) 
 		{		  
+		  LogPrintf(LOG_DEBUG, "Following up %d of %d semicoherent candidates\n", j, semiCohCandList1.nCandidates);
+
 		  /* 2nd stage frequency and spindown variables */
 		  /* these are the parameters passed down from the 
 		     first stage which is why they have the subscript 1 */
@@ -2356,10 +2358,15 @@ void PrintSemiCohCandidates(LALStatus *status,
   INITSTATUS( status, "PrintSemiCohCandidates", rcsid );
   ATTATCHSTATUSPTR (status);
  
-  for (k=0; k < in->nCandidates; k++)
-    fprintf(fp, "%e %e %e %g %g %g %g %e %e\n", in->list[k].significance, in->list[k].freq, 
-	    in->list[k].dFreq, in->list[k].alpha, in->list[k].dAlpha, in->list[k].delta, in->list[k].dDelta,
-	    in->list[k].fdot, in->list[k].dFdot);
+  for (k=0; k < in->nCandidates; k++) {
+    /*     fprintf(fp, "%e %e %e %g %g %g %g %e %e\n", in->list[k].significance, in->list[k].freq,  */
+    /* 	    in->list[k].dFreq, in->list[k].alpha, in->list[k].dAlpha, in->list[k].delta, in->list[k].dDelta, */
+    /* 	    in->list[k].fdot, in->list[k].dFdot); */
+
+    fprintf(fp, "%f %f %f %f %e\n", in->list[k].significance, in->list[k].freq,
+    	    in->list[k].alpha, in->list[k].delta, in->list[k].fdot);
+    
+  }
 
 
   DETATCHSTATUSPTR (status);
