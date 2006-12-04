@@ -23,6 +23,10 @@
  * \brief Module with functions that StackSlide a vector of Fstat values or any REAL8FrequencySeriesVector.
 */
 
+/* define preprocessor flags:  */
+/* #define PRINT_STACKSLIDE_BINOFFSETS */
+
+/* include files: */
 #include "./StackSlideFstat.h"
 
 RCSID( "$Id$");
@@ -31,6 +35,21 @@ RCSID( "$Id$");
 #define FALSE (1==0)
 
 extern int lalDebugLevel;
+
+#define BLOCKSIZE_REALLOC 50
+
+static int smallerStackSlide(const void *a,const void *b) {
+  SemiCohCandidate a1, b1;
+  a1 = *((const SemiCohCandidate *)a);
+  b1 = *((const SemiCohCandidate *)b);
+  
+  if( a1.significance < b1.significance )
+    return(1);
+  else if( a1.significance > b1.significance)
+    return(-1);
+  else
+    return(0);
+}
 
 /** \brief Function StackSlides a vector of Fstat frequency series or any REAL8FrequencySeriesVector.
     \param out SemiCohCandidateList is a list of candidates
@@ -43,51 +62,11 @@ void LALappsStackSlideVecF(LALStatus *status,
 			  REAL8FrequencySeriesVector *vecF,  /* vector with Fstat values or any REAL8FrequencySeriesVector */
 			  SemiCoherentParams *params)        /* input parameters  */
 {
-
-  /* parameters for the semicoherent stage -- hough or stackslide */
-  typedef struct tagSemiCoherentParams {
-    LIGOTimeGPSVector *tsMid;  /**< timestamps of mid points of stacks */
-    LIGOTimeGPS refTime;       /**< reference time for f, fdot definition */
-    REAL8VectorSequence *vel;  /**< detector velocity for each stack */
-    REAL8VectorSequence *pos;  /**< detector position for each stack */
-    REAL8 alpha;               /**< right ascension of demodulation point */
-    REAL8 delta;               /**< declination of demodulation point*/
-    REAL8 pixelFactor;         /**< Resolution of semicoherent sky-grid */
-    REAL8 patchSizeX;          /**< Size of semicoherent sky-patch */
-    REAL8 patchSizeY;          /**< Size of semicoherent sky-patch */
-    REAL8 fdot;                /**< spindown value of demodulation point */
-    UINT4 nfdot;               /**< number of fdot values to search over */ 
-    CHAR *outBaseName;         /**< file for writing output -- if chosen */
-    BOOLEAN useToplist;        /**< Use a toplist for producing candidates? */
-    REAL8  threshold;          /**< Threshold for candidate selection */
-  } SemiCoherentParams;
-
-  /** one candidate */
-  typedef struct tagSemiCohCandidate {
-    REAL8 freq;        /**< frequency */
-    REAL8 alpha;       /**< right ascension */
-    REAL8 delta;       /**< declination */
-    REAL8 fdot;        /**< spindown */
-    REAL8 dFreq;       /**< frequency error */
-    REAL8 dAlpha;      /**< alpha error */
-    REAL8 dDelta ;     /**< delta error */
-    REAL8 dFdot;       /**< fdot error */
-    REAL8 significance;/**< significance */
-  } SemiCohCandidate;  
-
-  /** structure for storing candidates */
-  typedef struct tagSemiCohCandidateList {
-    LIGOTimeGPS refTime;       /**< reference time for candidates */
-    INT4 length;               /**< maximum allowed length of vectors */
-    INT4 nCandidates;          /**< number of candidates -- must be less than length */
-    SemiCohCandidate *list;    /**> list of candidates */
-  } SemiCohCandidateList;
-
   REAL8FrequencySeries stackslideSum;  /* The output of StackSliding the vecF values */
   
   REAL8 *pstackslideData;  /* temporary pointer */
   REAL8 *pFVecData;        /* temporary pointer */
-  
+
   REAL8 pixelFactor;
   REAL8 alphaStart, alphaEnd, dAlpha;
   REAL8 deltaStart, deltaEnd, dDelta;
@@ -104,18 +83,24 @@ void LALappsStackSlideVecF(LALStatus *status,
   LIGOTimeGPS refTimeGPS;
   LIGOTimeGPSVector   *tsMid;
   REAL8Vector *timeDiffV=NULL;
+  REAL8Vector *weightsV=NULL;
+  REAL8 thisWeight;
+  REAL8 threshold;
+  
+  toplist_t *stackslideToplist;
 
-  PulsarDopplerParams outputPoint, inputPoint;
+  PulsarDopplerParams outputPoint, outputPointUnc, inputPoint;
 
-  /* toplist_t *stackslideToplist; */ /* TO BE ADDED IN */
+  /* Add error checking here: */
+  ASSERT ( REAL8FrequencySeriesVector != NULL, status, STACKSLIDEFSTAT_ENULL, STACKSLIDEFSTAT_MSGENULL );
 
   INITSTATUS( status, "LALappsStackSlideVecF", rcsid );
   ATTATCHSTATUSPTR (status);
 
   /* create toplist of candidates */
-  /* if (params->useToplist) {
-    create_toplist(&stackslideToplist, out->length, sizeof(SemiCohCandidate), smallerHough);
-  } */
+  if (params->useToplist) {
+    create_toplist(&stackslideToplist, out->length, sizeof(SemiCohCandidate), smallerStackSlide);
+  }
 
   /* copy some params to local variables */
   pixelFactor = params->pixelFactor;   
@@ -128,7 +113,9 @@ void LALappsStackSlideVecF(LALStatus *status,
   fBinIni = floor( f0*tEffSTK + 0.5);
   fBinFin = fBinIni + nSearchBins - 1;
   fmid = vecF->data[0].f0 + ((REAL8)(nSearchBins/2))*deltaF;
-  
+  weightsV=params->weightsV; /* Needs to be NULL or normalized stack weights */
+  threshold = params->threshold;
+    
   numSpindown = 1;       /* Current search is over 1 spindown value, df/dt */
   nfdot = params->nfdot; /* Number of df/dt values to search over */
   alpha = params->alpha;
@@ -201,13 +188,22 @@ void LALappsStackSlideVecF(LALStatus *status,
   inputPoint.fkdot[3] = 0.0;
   inputPoint.Alpha = alpha;
   inputPoint.Delta = delta;
-  
+
   /* Values for output parameter space point that do not change */  
   outputPoint.refTime = refTimeGPS;
   outputPoint.orbit = NULL;
   outputPoint.fkdot[2] = 0.0;
   outputPoint.fkdot[3] = 0.0;
-    
+
+  /* uncertainties in the output parameter space point */
+  outputPointUnc.refTime = refTimeGPS;
+  outputPointUnc.orbit = NULL;
+  outputPointUnc.fkdot[0] = deltaF;
+  outputPointUnc.fkdot[1] = dfdot;
+  outputPointUnc.fkdot[2] = 0.0;
+  outputPointUnc.fkdot[3] = 0.0;
+  outputPointUnc.Delta = dDelta;
+
   /* Let the loops over sky position and spindown values begin! */
   
   /* loop over delta */
@@ -226,6 +222,7 @@ void LALappsStackSlideVecF(LALStatus *status,
          dAlpha = 0.0;
          nalpha = 1;
       }
+      outputPointUnc.Alpha = dAlpha;
 
       /* loop over alpha */
       for (ialpha = 0; ialpha<nalpha; ialpha++) {
@@ -244,31 +241,56 @@ void LALappsStackSlideVecF(LALStatus *status,
               /* loop over each stack  */
               for (k=0; k<nStacks; k++) {
 
-                  
                   /* COMPUTE f(t) using the master equation and find bin offset for  */
                   /* the frequency in the middle of the band, fmid.                  */
                   /* ASSUMES same offset for entire band, assumed to be very narrow. */
                   TRY ( LALappsFindFreqFromMasterEquation(status->statusPtr,&outputPoint,&inputPoint,(vel->data + 3*k),timeDiffV->data[k],numSpindown), status);
 
-                  
                   offset = floor( (outputPoint.fkdot[0] - fmid)*tEffSTK + 0.5 );
                   
+                  #ifdef PRINT_STACKSLIDE_BINOFFSETS
+                     LogPrintf(LOG_DETAIL,"offset = %i for stack %i.",offset,k);
+                  #endif
+
                   pFVecData = vecF->data[k].data->data;
                   /* loop over frequency bins */
-                  for(j=0; j<nSearchBins; j++) {
+                  if (weightsV == NULL) {
+                   /* WITHOUT WEIGHTS */
+                   for(j=0; j<nSearchBins; j++) {
                      offsetj = j + offset;
                      if (offsetj < 0) j = 0;  /* TO DO: NEED EXTRA BINS IN STACKS TO ALLOW FOR SLIDING */
                      if (offsetj > nSearchBinsm1) j = nSearchBinsm1;
+
                      if (k == 0) {
                         pstackslideData[j] = pFVecData[offsetj];
                      } else {
                         pstackslideData[j] += pFVecData[offsetj];
                      } /* END if (k == 0) */
-                  } /* END for(j=0; j<nSearchBins; j++) */
+                   } /* END for(j=0; j<nSearchBins; j++) */
+                 } else {
+                   /* WITH WEIGHTS */
+                   thisWeight = weightsV->data[k];
+                   for(j=0; j<nSearchBins; j++) {
+                     offsetj = j + offset;
+                     if (offsetj < 0) j = 0;  /* TO DO: NEED EXTRA BINS IN STACKS TO ALLOW FOR SLIDING */
+                     if (offsetj > nSearchBinsm1) j = nSearchBinsm1;
+
+                     if (k == 0) {
+                        pstackslideData[j] = thisWeight*pFVecData[offsetj];
+                     } else {
+                        pstackslideData[j] += thisWeight*pFVecData[offsetj];
+                     } /* END if (k == 0) */
+                   } /* END for(j=0; j<nSearchBins; j++) */
+                 } /* END if (weightsV == NULL) */
 
               } /* END for (k=0; k<nStacks; k++) */
-              
-              /* TO DO: find candidates */
+
+             /* TO DO: get candidates */
+             if ( params->useToplist ) {
+               TRY(GetStackSlideCandidates_toplist( status->statusPtr, stackslideToplist, &stackslideSum, &outputPoint, &outputPointUnc), status);
+             } else {
+               TRY(GetStackSlideCandidates_threshold( status->statusPtr, out, &stackslideSum, &outputPoint, &outputPointUnc, threshold), status);
+             }
 
           } /* END for (ifdot = 0; ifdot<nfdot; ifdot++) */
 
@@ -283,19 +305,18 @@ void LALappsStackSlideVecF(LALStatus *status,
   LALFree(stackslideSum.data);
 
   /* copy toplist candidates to output structure if necessary */
-  /* if ( params->useToplist ) {
+  if ( params->useToplist ) {
     for ( k=0; k<stackslideToplist->elems; k++) {
       out->list[k] = *((SemiCohCandidate *)(toplist_elem(stackslideToplist, k)));
     }
     out->nCandidates = stackslideToplist->elems;
     free_toplist(&stackslideToplist);
-  } */
+  }
 
   DETATCHSTATUSPTR (status);
   RETURN(status);
 
-}
-
+} /* END LALappsStackSlideVecF */
 
 /* Calculate f(t) using the master equation given by Eq. 6.18 in gr-qc/0407001 */
 /* Returns f(t) in outputPoint.fkdot[0] */
@@ -384,4 +405,127 @@ void LALappsFindFreqFromMasterEquation(LALStatus *status,
 
                   DETATCHSTATUSPTR (status);
                   RETURN(status);
-}
+} /* END LALappsFindFreqFromMasterEquation */
+
+/* Get StackSlide candidates using a fixed threshold */
+void GetStackSlideCandidates_threshold(LALStatus *status,
+                                       SemiCohCandidateList *out,            /* output list of candidates */
+                                       REAL8FrequencySeries *stackslideSum;  /* input stackslide sum of F stat values */
+                                       PulsarDopplerParams *outputPoint;     /* parameter space point for which to output candidate */
+                                       PulsarDopplerParams *outputPointUnc;  /* uncertainties in parameter space point for which to output candidate */
+                                       REAL8 threshold)                      /* threshold on significance */
+{
+  REAL8 deltaF, f0, freq;
+  INT4 j, jminus1, jplus1, nSearchBins, nSearchBinsm1, numCandidates;
+  SemiCohCandidate thisCandidate;
+  BOOLEAN isLocalMax = TRUE;
+  REAL8 thisSig;
+  REAL8 *pstackslideData;  /* temporary pointer */
+  
+  INITSTATUS( status, "GetStackSlideCandidates_threshold", rcsid );
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT ( out != NULL, status, STACKSLIDEFSTAT_ENULL, STACKSLIDEFSTAT_MSGENULL );
+  ASSERT ( out->length > 0, status, STACKSLIDEFSTAT_EVAL, STACKSLIDEFSTAT_MSGEVAL );
+  ASSERT ( out->list != NULL, status, STACKSLIDEFSTAT_ENULL, STACKSLIDEFSTAT_MSGENULL );
+  ASSERT ( stackslideSum != NULL, status, STACKSLIDEFSTAT_ENULL, STACKSLIDEFSTAT_MSGENULL );
+  ASSERT ( stackslideSum->data->data != NULL, status, STACKSLIDEFSTAT_ENULL, STACKSLIDEFSTAT_MSGENULL );
+  ASSERT ( outputPoint != NULL, status, STACKSLIDEFSTAT_ENULL, STACKSLIDEFSTAT_MSGENULL );
+
+  pstackslideData = stackslideSum->data->data;
+
+  f0 = stackslideSum->f0;
+  deltaF = stackslideSum->deltaF;
+  thisCandidate.dFreq = deltaF; 
+  thisCandidate.fdot = outputPoint->fkdot[1];
+  thisCandidate.dFdot = outputPointUnc->fkdot[1];
+  thisCandidate.alpha = outputPoint->alpha;
+  thisCandidate.delta = outputPoint->delta;
+  thisCandidate.dAlpha = outputPointUnc->alpha;
+  thisCandidate.dDelta = outputPointUnc->delta;
+
+  numCandidates = out->nCandidates;  
+  nSearchBins = stackslideSum->data->length;
+  nSearchBinsm1 = nSearchBins - 1;
+
+  /* Search frequencies for candidates above threshold that are local maxima */
+  for(j=0; j<nSearchBins; j++) {
+     freq = f0 + ((REAL8)j)*deltaF;
+          
+     /* realloc list if necessary */
+     if (numCandidates >= out->length) {
+         out->length += BLOCKSIZE_REALLOC;
+         out->list = (SemiCohCandidate *)LALRealloc( out->list, out->length * sizeof(SemiCohCandidate));
+         LogPrintf(LOG_DEBUG, "Need to realloc StackSlide candidate list to %d entries\n", out->length);
+     } /* need a safeguard to ensure that the reallocs don't happen too often */
+
+     thisSig = pstackslideData[j]; /* Should we do more than this to find significance? */
+
+     /* candidates are above threshold and local maxima */
+     if (thisSig > threshold) {
+        jminus1 = j - 1; if (j < 0) j = 0;
+        jplus1 = j + 1;  if (j > nSearchBinsm1) j = nSearchBinsm1;
+        isLocalMax = (thisSig > pstackslideData[jminus1]) && (thisSig > pstackslideData[jplus1]);       
+        if ( (numCandidates < out->length) && isLocalMax ) {
+           thisCandidate.significance = thisSig;
+           thisCandidate.freq =  freq;
+           out->list[numCandidates] = thisCandidate;
+           numCandidates++;
+           out->nCandidates = numCandidates;
+        }
+     }
+  } /* END for(j=0; j<nSearchBins; j++) */
+
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+
+} /* END GetStackSlideCandidates_threshold */
+
+/* Get StackSlide candidates as a toplist */
+void GetStackSlideCandidates_toplist(LALStatus *status,
+                                     toplist_t *list,
+                                     REAL8FrequencySeries *stackslideSum;  /* input stackslide sum of F stat values */
+                                     PulsarDopplerParams *outputPoint;     /* parameter space point for which to output candidate */
+                                     PulsarDopplerParams *outputPointUnc)  /* uncertainties in parameter space point for which to output candidate */
+{
+  REAL8 deltaF, f0, freq;
+  INT4 j, nSearchBins;
+  SemiCohCandidate thisCandidate;
+  REAL8 *pstackslideData;  /* temporary pointer */
+
+  INITSTATUS( status, "GetStackSlideCandidates_toplist", rcsid );
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT ( stackslideSum != NULL, status, STACKSLIDEFSTAT_ENULL, STACKSLIDEFSTAT_MSGENULL );
+  ASSERT ( stackslideSum->data->data != NULL, status, STACKSLIDEFSTAT_ENULL, STACKSLIDEFSTAT_MSGENULL );
+  ASSERT ( outputPoint != NULL, status, STACKSLIDEFSTAT_ENULL, STACKSLIDEFSTAT_MSGENULL );
+
+  pstackslideData = stackslideSum->data->data;
+
+  f0 = stackslideSum->f0;
+  deltaF = stackslideSum->deltaF;
+  thisCandidate.dFreq = deltaF; 
+  thisCandidate.fdot = outputPoint->fkdot[1];
+  thisCandidate.dFdot = outputPointUnc->fkdot[1];
+  thisCandidate.alpha = outputPoint->alpha;
+  thisCandidate.delta = outputPoint->delta;
+  thisCandidate.dAlpha = outputPointUnc->alpha;
+  thisCandidate.dDelta = outputPointUnc->delta;
+
+  nSearchBins = stackslideSum->data->length;
+
+  /* Search frequencies for candidates above threshold that are local maxima */
+  for(j=0; j<nSearchBins; j++) {
+
+     freq = f0 + ((REAL8)j)*deltaF;
+     thisCandidate.freq =  freq;
+     thisCandidate.significance = pstackslideData[j]; /* Should we do more than this to find significance? */
+     
+     insert_into_toplist(list, &thisCandidate);
+
+  } /* END for(j=0; j<nSearchBins; j++) */
+
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+
+} /* END GetStackSlideCandidates_toplist */
