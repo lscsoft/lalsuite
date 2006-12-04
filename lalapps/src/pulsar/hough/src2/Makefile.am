@@ -19,7 +19,7 @@ HoughMismatch_SOURCES = HoughMismatch.c ../src/MCInjectHoughS2.h \
 			../src/DriveHoughColor.h ../src/PeakSelect.h \
 			../src/PeakSelect.c
 
-HierarchicalSearch_SOURCES = HierarchicalSearch.c HierarchicalSearch.h \
+HierarchicalSearch_SOURCES = HierarchicalSearch.c HierarchicalSearch.h StackSlideFstat.c StackSlideFstat.h \
 			  ../../FDS_isolated/DopplerScan.c ../../FDS_isolated/DopplerScan.h \
 			  ../../FDS_isolated/FstatToplist.c ../../FDS_isolated/FstatToplist.h \
 			  ../../FDS_isolated/HeapToplist.c ../../FDS_isolated/HeapToplist.h \

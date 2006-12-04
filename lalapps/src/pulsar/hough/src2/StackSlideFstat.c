@@ -57,10 +57,10 @@ static int smallerStackSlide(const void *a,const void *b) {
     \param params is a pointer to SemiCoherentParams
     \out SemiCohCandidateList is a list of candidates
 */
-void LALappsStackSlideVecF(LALStatus *status,
-			  SemiCohCandidateList  *out,        /* output candidates */
-			  REAL8FrequencySeriesVector *vecF,  /* vector with Fstat values or any REAL8FrequencySeriesVector */
-			  SemiCoherentParams *params)        /* input parameters  */
+void StackSlideVecF(LALStatus *status,
+                    SemiCohCandidateList  *out,        /* output candidates */
+                    REAL8FrequencySeriesVector *vecF,  /* vector with Fstat values or any REAL8FrequencySeriesVector */
+                    SemiCoherentParams *params)        /* input parameters  */
 {
   REAL8FrequencySeries stackslideSum;  /* The output of StackSliding the vecF values */
   
@@ -68,14 +68,15 @@ void LALappsStackSlideVecF(LALStatus *status,
   REAL8 *pFVecData;        /* temporary pointer */
 
   REAL8 pixelFactor;
-  REAL8 alphaStart, alphaEnd, dAlpha;
-  REAL8 deltaStart, deltaEnd, dDelta;
-  REAL8 fdotStart, fdotEnd, dfdot;
+  REAL8 alphaStart, alphaEnd, dAlpha, thisAlpha;
+  REAL8 deltaStart, deltaEnd, dDelta, thisDelta;
+  REAL8 fdotStart, fdotEnd, dfdot, thisFdot;
   UINT4 ialpha,nalpha,idelta,ndelta,ifdot,nfdot;
   UINT2 numSpindown;
 
-  INT4 fBinIni, fBinFin, fBin, nSearchBins, nSearchBinsm1;
+  INT4 fBinIni, fBinFin, nSearchBins, nSearchBinsm1;
   INT4 j, k, nStacks, offset, offsetj;
+  UINT4 uk;
   REAL8 f0, deltaF, tEffSTK, fmid, alpha, delta;
   REAL8 patchSizeX, patchSizeY, f1jump;
   REAL8VectorSequence *vel, *pos;
@@ -92,9 +93,9 @@ void LALappsStackSlideVecF(LALStatus *status,
   PulsarDopplerParams outputPoint, outputPointUnc, inputPoint;
 
   /* Add error checking here: */
-  ASSERT ( REAL8FrequencySeriesVector != NULL, status, STACKSLIDEFSTAT_ENULL, STACKSLIDEFSTAT_MSGENULL );
+  ASSERT ( vecF != NULL, status, STACKSLIDEFSTAT_ENULL, STACKSLIDEFSTAT_MSGENULL );
 
-  INITSTATUS( status, "LALappsStackSlideVecF", rcsid );
+  INITSTATUS( status, "StackSlideVecF", rcsid );
   ATTATCHSTATUSPTR (status);
 
   /* create toplist of candidates */
@@ -177,7 +178,7 @@ void LALappsStackSlideVecF(LALStatus *status,
   dfdot     = deltaF * f1jump;
   fdotStart = fdot - dfdot*(REAL8)(nfdot/2);
   fdotEnd   = fdot + dfdot*(REAL8)(nfdot/2);
-  if (nfdot < 1); nfdot = 1; /* do at least one value of fdot below */
+  if (nfdot < 1) nfdot = 1; /* do at least one value of fdot below */
 
   /* The input parameter space point */
   inputPoint.refTime = refTimeGPS;
@@ -306,8 +307,8 @@ void LALappsStackSlideVecF(LALStatus *status,
 
   /* copy toplist candidates to output structure if necessary */
   if ( params->useToplist ) {
-    for ( k=0; k<stackslideToplist->elems; k++) {
-      out->list[k] = *((SemiCohCandidate *)(toplist_elem(stackslideToplist, k)));
+    for ( uk=0; uk<stackslideToplist->elems; uk++) {
+      out->list[uk] = *((SemiCohCandidate *)(toplist_elem(stackslideToplist, uk)));
     }
     out->nCandidates = stackslideToplist->elems;
     free_toplist(&stackslideToplist);
@@ -316,7 +317,7 @@ void LALappsStackSlideVecF(LALStatus *status,
   DETATCHSTATUSPTR (status);
   RETURN(status);
 
-} /* END LALappsStackSlideVecF */
+} /* END StackSlideVecF */
 
 /* Calculate f(t) using the master equation given by Eq. 6.18 in gr-qc/0407001 */
 /* Returns f(t) in outputPoint.fkdot[0] */
@@ -344,7 +345,7 @@ void LALappsFindFreqFromMasterEquation(LALStatus *status,
 
                   /* the x, y, and z components of the input demodulation sky position: */
                   alpha = inputPoint->Alpha;
-                  delta = inputPoint->Delta
+                  delta = inputPoint->Delta;
                   cosAlpha = cos(alpha);
                   cosDelta = cos(delta);
                   sinAlpha = sin(alpha);
@@ -355,7 +356,7 @@ void LALappsFindFreqFromMasterEquation(LALStatus *status,
 
                   /* the x, y, and z components of the output sky position: */
                   alpha = outputPoint->Alpha;
-                  delta = outputPoint->Delta
+                  delta = outputPoint->Delta;
                   cosAlpha = cos(alpha);
                   cosDelta = cos(delta);
                   sinAlpha = sin(alpha);
@@ -364,7 +365,7 @@ void LALappsFindFreqFromMasterEquation(LALStatus *status,
                   ny = cosDelta*sinDelta;
                   nz = sinDelta;
                   
-                  f0 = inputPoint.fkdot[0];  /* input f0 */
+                  f0 = inputPoint->fkdot[0];  /* input f0 */
 
                   /* input and residual spindown values: */
                   deltafkdot[0] = 0;  /* unused */
@@ -410,9 +411,9 @@ void LALappsFindFreqFromMasterEquation(LALStatus *status,
 /* Get StackSlide candidates using a fixed threshold */
 void GetStackSlideCandidates_threshold(LALStatus *status,
                                        SemiCohCandidateList *out,            /* output list of candidates */
-                                       REAL8FrequencySeries *stackslideSum;  /* input stackslide sum of F stat values */
-                                       PulsarDopplerParams *outputPoint;     /* parameter space point for which to output candidate */
-                                       PulsarDopplerParams *outputPointUnc;  /* uncertainties in parameter space point for which to output candidate */
+                                       REAL8FrequencySeries *stackslideSum,  /* input stackslide sum of F stat values */
+                                       PulsarDopplerParams *outputPoint,     /* parameter space point for which to output candidate */
+                                       PulsarDopplerParams *outputPointUnc,  /* uncertainties in parameter space point for which to output candidate */
                                        REAL8 threshold)                      /* threshold on significance */
 {
   REAL8 deltaF, f0, freq;
@@ -439,10 +440,10 @@ void GetStackSlideCandidates_threshold(LALStatus *status,
   thisCandidate.dFreq = deltaF; 
   thisCandidate.fdot = outputPoint->fkdot[1];
   thisCandidate.dFdot = outputPointUnc->fkdot[1];
-  thisCandidate.alpha = outputPoint->alpha;
-  thisCandidate.delta = outputPoint->delta;
-  thisCandidate.dAlpha = outputPointUnc->alpha;
-  thisCandidate.dDelta = outputPointUnc->delta;
+  thisCandidate.alpha = outputPoint->Alpha;
+  thisCandidate.delta = outputPoint->Delta;
+  thisCandidate.dAlpha = outputPointUnc->Alpha;
+  thisCandidate.dDelta = outputPointUnc->Delta;
 
   numCandidates = out->nCandidates;  
   nSearchBins = stackslideSum->data->length;
@@ -484,8 +485,8 @@ void GetStackSlideCandidates_threshold(LALStatus *status,
 /* Get StackSlide candidates as a toplist */
 void GetStackSlideCandidates_toplist(LALStatus *status,
                                      toplist_t *list,
-                                     REAL8FrequencySeries *stackslideSum;  /* input stackslide sum of F stat values */
-                                     PulsarDopplerParams *outputPoint;     /* parameter space point for which to output candidate */
+                                     REAL8FrequencySeries *stackslideSum,  /* input stackslide sum of F stat values */
+                                     PulsarDopplerParams *outputPoint,     /* parameter space point for which to output candidate */
                                      PulsarDopplerParams *outputPointUnc)  /* uncertainties in parameter space point for which to output candidate */
 {
   REAL8 deltaF, f0, freq;
@@ -507,10 +508,10 @@ void GetStackSlideCandidates_toplist(LALStatus *status,
   thisCandidate.dFreq = deltaF; 
   thisCandidate.fdot = outputPoint->fkdot[1];
   thisCandidate.dFdot = outputPointUnc->fkdot[1];
-  thisCandidate.alpha = outputPoint->alpha;
-  thisCandidate.delta = outputPoint->delta;
-  thisCandidate.dAlpha = outputPointUnc->alpha;
-  thisCandidate.dDelta = outputPointUnc->delta;
+  thisCandidate.alpha = outputPoint->Alpha;
+  thisCandidate.delta = outputPoint->Delta;
+  thisCandidate.dAlpha = outputPointUnc->Alpha;
+  thisCandidate.dDelta = outputPointUnc->Delta;
 
   nSearchBins = stackslideSum->data->length;
 

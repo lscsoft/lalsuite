@@ -113,6 +113,7 @@
 
 
 #include"./HierarchicalSearch.h"
+#include "./StackSlideFstat.h" /* This need to go here after HierarchicalSearch.h is included; StackSlideFstat.h needs SemiCohCandidateList defined. */
 
 RCSID( "$Id$");
 
@@ -1078,15 +1079,12 @@ int MAIN( int argc, char *argv[]) {
 	      LALFree(pgV.pg[k].peak);
 	    LALFree(pgV.pg);
 	    LogPrintf(LOG_DEBUG, "...finished Hough calculation\n");
-
-	  } /* end hough */
-
-
-
-	  /* --- stackslide option should come here --------*/
-
-	  /* if ( uvar_method == 1 ) {.....} */	  
-
+	    
+	    /* end hough */
+	  } else if ( uvar_method == 1 ) {
+            /* --- stackslide option --------*/
+            LAL_CALL( StackSlideVecF( &status, &semiCohCandList1, &fstatVector1, &semiCohPar), &status);
+          }
 
 	  /* print candidates if desired */
 	  if ( uvar_printCand1 ) {

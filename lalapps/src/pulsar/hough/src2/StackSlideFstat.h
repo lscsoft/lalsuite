@@ -64,7 +64,7 @@
 #include <lal/Statistics.h>
 #include <lal/GeneratePulsarSignal.h> 
 #include <lal/LogPrintf.h>
-
+#include "./HierarchicalSearch.h"
 /******************************************************
  *   Protection against C++ name mangling
  */
@@ -110,34 +110,34 @@ NRCSID( STACKSLIDEFSTATH, "$Id$" );
 /* prototypes */
 
 /* Function that stackslides a vector of Fstat frequency series or any REAL8FrequencySeriesVector. */
-void LALappsStackSlideVecF(LALStatus *status,
-			  SemiCohCandidateList  *out,        /* output candidates */
-			  REAL8FrequencySeriesVector *vecF,  /* vector with Fstat values or any REAL8FrequencySeriesVector */
-			  SemiCoherentParams *params);       /* input parameters  */
+void StackSlideVecF(LALStatus *status, 
+                    SemiCohCandidateList *out, 
+                    REAL8FrequencySeriesVector *vecF, 
+                    SemiCoherentParams *params);
 
 /* Calculate f(t) using the master equation given by Eq. 6.18 in gr-qc/0407001 */
 /* Returns f(t) in outputPoint.fkdot[0] */
 void LALappsFindFreqFromMasterEquation(LALStatus *status, 
-                                       PulsarDopplerParams *outputPoint,  /* outputs f(t) for output sky position and spindown values                       */
-                                       PulsarDopplerParams *inputPoint,   /* input demodulation f0, sky position, and spindown values                       */
-                                       REAL8 *vel,                        /* vx = vel[0], vy = vel[1], vz = vel[2] = ave detector velocity                  */
-                                       REAL8 deltaT,                      /* time since the reference time                                                  */
-                                       UINT2 numSpindown);                /* Number of spindown values == high deriv. of include == 1 if just df/dt, etc... */
+                                       PulsarDopplerParams *outputPoint,
+                                       PulsarDopplerParams *inputPoint,
+                                       REAL8 *vel,
+                                       REAL8 deltaT,
+                                       UINT2 numSpindown);
 
 /* Get StackSlide candidates using a fixed threshold */
-void GetStackSlideCandidates_threshold(LALStatus *status,
-                                       SemiCohCandidateList *out,            /* output list of candidates */
-                                       REAL8FrequencySeries *stackslideSum;  /* input stackslide sum of F stat values */
-                                       PulsarDopplerParams *outputPoint;     /* parameter space point for which to output candidate */
-                                       PulsarDopplerParams *outputPointUnc;  /* uncertainties in parameter space point for which to output candidate */
-                                       REAL8 threshold);                      /* threshold on significance */
+void GetStackSlideCandidates_threshold(LALStatus *status, 
+                                       SemiCohCandidateList *out,
+                                       REAL8FrequencySeries *stackslideSum, 
+                                       PulsarDopplerParams *outputPoint,
+                                       PulsarDopplerParams *outputPointUnc,
+                                       REAL8 threshold);
 
 /* Get StackSlide candidates as a toplist */
 void GetStackSlideCandidates_toplist(LALStatus *status,
                                      toplist_t *list,
-                                     REAL8FrequencySeries *stackslideSum;  /* input stackslide sum of F stat values */
-                                     PulsarDopplerParams *outputPoint;     /* parameter space point for which to output candidate */
-                                     PulsarDopplerParams *outputPointUnc);  /* uncertainties in parameter space point for which to output candidate */
+                                     REAL8FrequencySeries *stackslideSum,
+                                     PulsarDopplerParams *outputPoint,
+                                     PulsarDopplerParams *outputPointUnc);
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */
