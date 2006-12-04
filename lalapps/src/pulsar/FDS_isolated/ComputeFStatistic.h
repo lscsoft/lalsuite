@@ -56,6 +56,7 @@ extern "C" {
 #define COMPUTEFSTAT_EXIT_BOINCRESOLVE   23  /* boinc_resolve_filename failed */
 #define COMPUTEFSTAT_EXIT_DLOPEN         24  /* problems with dynamic lib */
 #define COMPUTEFSTAT_EXIT_WORKER         25  /* can't start worker-thread */
+#define COMPUTEFSTAT_EXIT_UPSAMPLESFTFAIL     26  /* UpsampleSFT failed */
 
 #define COMPUTEFSTAT_EXIT_LALCALLERROR  100  /* added to LAL status for BOINC exit value */
 
