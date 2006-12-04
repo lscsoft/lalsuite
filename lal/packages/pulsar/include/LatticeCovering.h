@@ -127,8 +127,8 @@ REAL8 XLALMetricScalarProduct (const gsl_vector *vector1, const gsl_vector *vect
 
 
 /* some REAL8 list-handling functions that might be useful to users of the above functions */
-REAL8VectorList* REAL8VectorListAddEntry (REAL8VectorList *head, const REAL8Vector *entry);
-void REAL8VectorListDestroy (REAL8VectorList *head);
+REAL8VectorList* XLALREAL8VectorListAddEntry (REAL8VectorList *head, const REAL8Vector *entry);
+void XLALREAL8VectorListDestroy (REAL8VectorList *head);
 
 /* convert a symmetric gsl_matrix into a 'LAL-encoded' vector containing only 
  * the independent symmetric-matrix elements (see PMETRIC_INDEX) */

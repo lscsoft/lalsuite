@@ -288,7 +288,7 @@ LALLatticeFill (LALStatus *status,
 
 	  /* and store its physical coordinates in a REAL8VectorList as well (avoids
 	   * re-calculating physical coordinates again later...) */
-	  if ( NULL == REAL8VectorListAddEntry ( &realPoints, physicalPoint) )
+	  if ( NULL == XLALREAL8VectorListAddEntry ( &realPoints, physicalPoint) )
 	    {	
 	      /* NOTE: head always stays empty for simplicity! */
 	      LALPrintError ("\nERROR: REAL8VectorListAddEntry () failed!\n\n");
@@ -314,7 +314,7 @@ LALLatticeFill (LALStatus *status,
 	      /* add the other ones to list of open-ends */
 	      if ( NULL == INT4VectorListAddEntry ( &openEnds, latticePoint ) )
 		{
-	  /* NOTE: head always stays empty for simplicity! */
+		  /* NOTE: head always stays empty for simplicity! */
 		  LALPrintError ("\nERROR: REAL8VectorListAddEntry () failed!\n\n");
 		  ABORT (status, LATTICECOVERING_ELIST, LATTICECOVERING_MSGELIST);
 		}
@@ -954,7 +954,7 @@ INT4VectorListAddEntry (INT4VectorList *head, const INT4Vector *entry)
  * other list-entries...
  */
 REAL8VectorList *
-REAL8VectorListAddEntry (REAL8VectorList *head, const REAL8Vector *entry)
+XLALREAL8VectorListAddEntry (REAL8VectorList *head, const REAL8Vector *entry)
 {
   UINT4 dim;
   REAL8VectorList *ptr = NULL;	/* running list-pointer */
@@ -985,7 +985,7 @@ REAL8VectorListAddEntry (REAL8VectorList *head, const REAL8Vector *entry)
   
   return newElement;
 
-} /* REAL8VectorListAddEntry() */
+} /* XLALREAL8VectorListAddEntry() */
 
 
 /** "relink" the given element (from whatever list) to the end of the given list 'head'
@@ -1078,7 +1078,7 @@ INT4VectorListDestroy (INT4VectorList *head)
  * sure not to pass a non-freeable head (like an automatic variabe) 
  */
 void
-REAL8VectorListDestroy (REAL8VectorList *head)
+XLALREAL8VectorListDestroy (REAL8VectorList *head)
 {
   REAL8VectorList *ptr, *next;
 
@@ -1100,7 +1100,7 @@ REAL8VectorListDestroy (REAL8VectorList *head)
     } while ( (ptr = next) != NULL );
   
   return;
-} /* REAL8VectorListDestroy() */
+} /* XLALREAL8VectorListDestroy() */
 
 
 
