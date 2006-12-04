@@ -278,7 +278,7 @@ testCovering2 (void)
     } /* if uvar_numMCpoints */
 
   /* free memory */
-  REAL8VectorListDestroy ( covering );
+  XLALREAL8VectorListDestroy ( covering );
   LALFree ( startPoint.data );
   LAL_CALL ( LALDDestroyVector (&status, &metric), &status);
 
@@ -370,7 +370,7 @@ testCovering (void)
     }
   writeREAL8VectorList (fp, covering);
   fclose(fp);
-  REAL8VectorListDestroy ( covering );
+  XLALREAL8VectorListDestroy ( covering );
   covering = NULL;
 
   /* do the same again with the new high-level function */
@@ -385,7 +385,7 @@ testCovering (void)
     }
   writeREAL8VectorList (fp, covering);
   fclose(fp);
-  REAL8VectorListDestroy ( covering );
+  XLALREAL8VectorListDestroy ( covering );
   covering = NULL;
 
   /* free memory */
