@@ -10,6 +10,7 @@
 
 #include "config.h"
 
+
 /* System includes */
 #include <stdio.h>
 #ifdef HAVE_STDLIB_H
@@ -247,7 +248,8 @@ REAL8 uvar_WUfpops;
 /*----------------------------------------------------------------------*/
 /* some other global variables */
 
-FFT **SFTData=NULL;	/**< SFT Data for LALDmod */
+FFT **SFTData=NULL;	/**< SFT Data for LALDemod */
+FFT **UpSFTData=NULL;	/**< Upsampled SFT Data for LALDemodFAST */
 DemodPar *DemodParams;	/**< Demodulation parameters for LALDemod */
 LIGOTimeGPS *timestamps;/**< Time stamps from SFT data */
 LALFstat Fstat;		/**< output from LALDemod(): F-statistic and amplitudes Fa and Fb */
@@ -286,6 +288,7 @@ extern "C" {
   int main(int argc,char *argv[]);
   void initUserVars (LALStatus *);
   INT4 ReadSFTData (void);
+  INT4 UpsampleSFTData (void);
   void InitFStat (LALStatus *, ConfigVariables *cfg);
   void CreateDemodParams (LALStatus *, PulsarDopplerParams dopplerpos);
   void CreateNautilusDetector (LALStatus *, LALDetector *Detector);
@@ -575,6 +578,13 @@ int main(int argc,char *argv[])
   
   /* normalize SFTs by running median */
   LAL_CALL (NormaliseSFTDataRngMdn(status, uvar_RngMedWindow), status);
+
+  /* Here's where I need to upsample the SFTs */
+  if ( uvar_expLALDemod == 3)
+    {
+      if (UpsampleSFTData()) return COMPUTEFSTAT_EXIT_UPSAMPLESFTFAIL;
+      fprintf(stdout,"Finished upsampling data\n");
+    }
 
 #ifdef FILE_FMAX
   {
@@ -941,6 +951,7 @@ int main(int argc,char *argv[])
 #ifdef FILE_AMCOEFFS
       PrintAMCoeffs(dopplerpos.Alpha, dopplerpos.Delta, DemodParams->amcoe);
 #endif
+
       /* loop over spin params */
       for (spdwn=0; spdwn < GV.SpinImax; spdwn++)
         {
@@ -953,6 +964,9 @@ int main(int argc,char *argv[])
 	      break;
 	    case 1:
 	      LAL_CALL ( TestLALDemod(status, &Fstat, SFTData, DemodParams), status);
+	      break;
+	    case 3:
+	      LAL_CALL ( LALDemodFAST(status, &Fstat, UpSFTData, DemodParams), status);
 	      break;
 	    default:
 	      LogPrintf (LOG_CRITICAL, "Invalid expLALDemod value %d\n", uvar_expLALDemod);
@@ -1273,7 +1287,7 @@ initUserVars (LALStatus *status)
   /* the following are 'developer'-options */
   LALregSTRINGUserVar(status,     workingDir,     'w', UVAR_DEVELOPER, "Directory to be made the working directory.");
   LALregBOOLUserVar(status,       doCheckpointing, 0,  UVAR_DEVELOPER, "Do checkpointing and resume for previously checkpointed statuse.");
-  LALregINTUserVar(status,        expLALDemod,     0,  UVAR_DEVELOPER, "Type of LALDemod to use. 0=standard, 1=exp1, 2=REAL4");
+  LALregINTUserVar(status,        expLALDemod,     0,  UVAR_DEVELOPER, "Type of LALDemod to use. 0=standard, 1=exp1, 2=REAL4, 3=LALDemodFAST");
   LALregINTUserVar(status,        Dterms,         't', UVAR_DEVELOPER, "Number of terms to keep in Dirichlet kernel sum");
   LALregSTRINGUserVar(status,     mergedSFTFile,  'B', UVAR_DEVELOPER, "Merged SFT's file to be used"); 
 #if BOINC_COMPRESS
@@ -2021,6 +2035,137 @@ int ReadSFTData(void)
 
 } /* ReadSFTData() */
 
+/** Upsamples the SFT data
+ *
+ * This function upsamples the SFTs using the Dirichlet kernel
+ *
+ */
+int UpsampleSFTData(void)
+{
+  INT4 fileno=0;
+  INT4 k=0,i;
+  INT4  res=64;                    /*resolution of the argument of the trig functions: 2pi/res.*/
+  REAL8 sinVal[res+1], cosVal[res+1];
+  INT4 ndeltaf=GV.ifmax-GV.ifmin+1, imax;
+  REAL8 df=DemodParams->df; /* frequency resolution of upsampled SFTs */
+
+  /* number of fine ferquency bins in upsampled SFTs */
+  imax = (INT4) ( ((REAL4)(GV.ifmax - GV.ifmin))/(REAL4)GV.tsft /df );
+  
+  /* This size LUT gives errors ~ 10^-7 with a three-term Taylor series */
+   for (k=0; k<=res; k++){
+     sinVal[k]=sin((LAL_TWOPI*k)/res);
+     cosVal[k]=cos((LAL_TWOPI*k)/res);
+   }
+
+  UpSFTData=(FFT **)LALMalloc(GV.SFTno*sizeof(FFT *));
+
+  for (fileno=0;fileno<GV.SFTno; fileno++ ) 
+    {
+  
+      UpSFTData[fileno]=(FFT *)LALMalloc(sizeof(FFT));
+
+      UpSFTData[fileno]->fft=(COMPLEX8FrequencySeries *)LALMalloc(sizeof(COMPLEX8FrequencySeries));
+      UpSFTData[fileno]->fft->data=(COMPLEX8Vector *)LALMalloc(sizeof(COMPLEX8Vector));
+      UpSFTData[fileno]->fft->data->data=(COMPLEX8 *)LALMalloc(imax*sizeof(COMPLEX8));
+
+      /* Loop over frequencies to be upsampled to */
+      for(i=0 ; i <  imax ; i++ )
+	{
+	  REAL8 f =  GV.ifmin/GV.tsft+ i*df;
+	  REAL8 xTemp, realXP, imagXP, tempFreq, tsin, tcos;
+	  INT4 index, k1;
+
+	  xTemp=f*GV.tsft;
+	  realXP=0.0;
+	  imagXP=0.0;
+	  /* find correct index into LUT -- pick closest point */
+	  tempFreq=xTemp-(INT4)xTemp;
+	  index=(INT4)(tempFreq*res+0.5); 
+
+	  {
+	    REAL8 d=LAL_TWOPI*(tempFreq-(REAL8)index/64.0);/*just like res above*/
+	    REAL8 d2=0.5*d*d;
+	    REAL8 ts=sinVal[index];
+	    REAL8 tc=cosVal[index];
+	    
+	    tsin=ts+d*tc-d2*ts;
+	    tcos=tc-d*ts-d2*tc-1.0;
+	  }
+
+	  tempFreq=LAL_TWOPI*( tempFreq + uvar_Dterms-1);
+	  k1=(INT4)xTemp-uvar_Dterms+1;
+
+	  /* Upsample each SFT using the Dirichlet kernel */
+	  for( k = 0; k < 2*uvar_Dterms; k++)
+	    {
+	      COMPLEX8 Xalpha_k;
+	      REAL8 x, realP, imagP;
+	      INT4 SFTIndex;
+
+	      x=tempFreq-LAL_TWOPI*(REAL8)k;
+	      realP=tsin/x;
+	      imagP=tcos/x;
+	      
+	      /* If x is small we need correct x->0 limit of Dirichlet kernel */
+	      if(fabs(x) < 0.000001)
+		{
+		  realP=1.0;
+		  imagP=0.0;
+		}
+	      
+	      SFTIndex=k1+k-GV.ifmin;
+
+/* 	      fprintf(stdout,"%d %d %d %d %d\n",k1,k,GV.ifmin,k1+k-GV.ifmin,SFTIndex); */
+
+	      if (SFTIndex < 0 || SFTIndex > ndeltaf-1)
+		{
+		  Xalpha_k.re= Xalpha_k.im=0.0;
+		}else{
+		Xalpha_k=SFTData[fileno]->fft->data->data[SFTIndex];
+	      }
+
+	      /* these four lines compute P*xtilde */
+	      realXP += Xalpha_k.re*realP;
+	      realXP -= Xalpha_k.im*imagP;
+	      imagXP += Xalpha_k.re*imagP;
+	      imagXP += Xalpha_k.im*realP;
+	    }
+     
+	  /* fill in the data here */
+	  UpSFTData[fileno]->fft->data->data[i].re= realXP;
+	  UpSFTData[fileno]->fft->data->data[i].im= imagXP;
+	  
+/*  	  fprintf(stdout,"%d %d %e %e\n", i, fileno, realXP, imagXP); */
+
+	}
+
+      /* Fill in actual SFT data, and housekeeping */
+      UpSFTData[fileno]->fft->epoch=timestamps[fileno];
+      UpSFTData[fileno]->fft->f0 = GV.ifmin / GV.tsft;
+      /* The line below is a total hack. I need to have this be the wrong resolution to pass it to 
+	 LALDemodFAST; should move this to DemodParams */
+      UpSFTData[fileno]->fft->deltaF = 1.0 / GV.tsft;
+      UpSFTData[fileno]->fft->data->length = imax;
+
+    }
+
+/*   for (fileno=0;fileno<GV.SFTno; fileno++ )  */
+/*     { */
+/*       for(i=0 ; i <  imax ; i++ ) */
+/* 	{ */
+/* 	 fprintf(stdout,"%d %d %e %e\n", i, fileno, */
+/* 		 UpSFTData[fileno]->fft->data->data[i].re, */
+/* 		 UpSFTData[fileno]->fft->data->data[i].im); */
+/* 	} */
+/*     } */
+
+
+  return 0;  
+
+} /* UpsampleSFTData() */
+
+
 /*----------------------------------------------------------------------*/
 /** Do some basic initializations of the F-statistic code before starting the main-loop.
  * Things we do in this function: 
@@ -2539,6 +2684,8 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     TRY (LALLeapSecs(status->statusPtr, &leap, &starttime, &formatAndAcc), status);
     cfg->edat->leap = leap;
 
+    fprintf(stdout,"%d\n",leap);
+
     TRY (LALInitBarycenter(status->statusPtr, cfg->edat), status);               
 
   } /* end: init ephemeris data */
@@ -2825,9 +2972,25 @@ void Freemem(LALStatus *status)
     } /* for k < SFTno */
   LALFree(SFTData);
   SFTData = NULL;
-
   LALFree(GV.filelist);
   GV.filelist = NULL;
+
+  /* Free upsampled SFt data */
+  if ( uvar_expLALDemod == 3)
+    {
+      /* Free UpSFTData */
+      for (k=0;k<GV.SFTno;k++)
+	{
+	  /* data */
+	  LALFree(UpSFTData[k]->fft->data->data);
+	  LALFree(UpSFTData[k]->fft->data);
+	  LALFree(UpSFTData[k]->fft);
+	  LALFree(UpSFTData[k]);
+	} /* for k < SFTno */
+      LALFree(UpSFTData);
+      UpSFTData = NULL;
+    }
+
 
   /* Free timestamps */
   LALFree(timestamps);
