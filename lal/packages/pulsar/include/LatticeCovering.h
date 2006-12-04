@@ -106,6 +106,9 @@ typedef struct tagREAL8VectorList
 } REAL8VectorList;
 
 /*---------- Global variables ----------*/
+/*---------- empty initializers ---------- */
+extern INT4VectorList empty_INT4VectorList;
+extern REAL8VectorList empty_REAL8VectorList;
 
 /*---------- exported prototypes [API] ----------*/
 void LALLatticeCovering (LALStatus *, REAL8VectorList **covering, REAL8 coveringRadius, 
