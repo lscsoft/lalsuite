@@ -326,7 +326,7 @@ int MAIN( int argc, char *argv[]) {
   FILE *fpFstat1=NULL;
   
   /* checkpoint filename and index of loop over skypoints */
-  /* const CHAR *fnameChkPoint="checkpoint.cpt"; */
+  CHAR *fnameChkPoint="checkpoint.cpt"; */
   /*   FILE *fpChkPoint=NULL; */
   /*   UINT4 loopindex, loopcounter; */
   
