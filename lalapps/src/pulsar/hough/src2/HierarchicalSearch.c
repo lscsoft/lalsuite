@@ -426,8 +426,9 @@ int MAIN( int argc, char *argv[]) {
 
   uvar_skyGridFile = NULL;
 
-  uvar_skyRegion = (CHAR *)LALMalloc(512*sizeof(CHAR));
-  strcpy(uvar_skyRegion, SKYREGION);
+  uvar_skyRegion = NULL;
+  /* uvar_skyRegion = (CHAR *)LALMalloc(512*sizeof(CHAR)); */
+  /*   strcpy(uvar_skyRegion, SKYREGION); */
 
   uvar_ephemDir = (CHAR *)LALMalloc(512*sizeof(CHAR));
   strcpy(uvar_ephemDir, EPHEMERISDIR);
