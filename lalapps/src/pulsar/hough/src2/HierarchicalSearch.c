@@ -200,7 +200,7 @@ void SetUpSFTs( LALStatus *status, MultiSFTVectorSequence *stackMultiSFT, MultiN
 void PrintFstatVec (LALStatus *status, REAL8FrequencySeries *in, FILE *fp, PulsarDopplerParams *thisPoint, 
 		    LIGOTimeGPS  refTime, INT4 stackIndex);
 
-void PrintSemiCohCandidates(LALStatus *status, SemiCohCandidateList *in, FILE *fp);
+void PrintSemiCohCandidates(LALStatus *status, SemiCohCandidateList *in, FILE *fp, LIGOTimeGPS refTime);
 
 void PrintHoughHistogram(LALStatus *status, UINT8Vector *hist, CHAR *fnameOut);
 
@@ -628,7 +628,7 @@ int MAIN( int argc, char *argv[]) {
     {
       fnameSemiCohCand = (CHAR *)LALMalloc( 512*sizeof(CHAR));
       strcpy(fnameSemiCohCand, uvar_fnameout);
-      strcat(fnameSemiCohCand, "_semicoh.txt");
+      strcat(fnameSemiCohCand, "_semicoh.dat");
       if (!(fpSemiCoh = fopen(fnameSemiCohCand, "w"))) 
 	{
 	  fprintf ( stderr, "Unable to open file '%s' for writing.\n", fnameSemiCohCand);
@@ -643,7 +643,7 @@ int MAIN( int argc, char *argv[]) {
       
       fnameFstatCand = (CHAR *)LALMalloc( 512*sizeof(CHAR));
       strcpy(fnameFstatCand, uvar_fnameout);
-      strcat(fnameFstatCand, "_fstat.txt");
+      strcat(fnameFstatCand, "_fstat.dat");
 
       if  (!(fpFstat = fopen(fnameFstatCand, "w")))
 	{
@@ -657,7 +657,7 @@ int MAIN( int argc, char *argv[]) {
 
       fnameFstatVec1 = (CHAR *)LALMalloc( 512*sizeof(CHAR));
       strcpy(fnameFstatVec1, uvar_fnameout);
-      strcat(fnameFstatVec1, "_fstatVec1.txt");
+      strcat(fnameFstatVec1, "_fstatVec1.dat");
       if ( !(fpFstat1 = fopen( fnameFstatVec1, "w")))
 	{
 	  fprintf ( stderr, "Unable to open Fstat file fstatvec1.out for writing.\n");
@@ -1089,7 +1089,7 @@ int MAIN( int argc, char *argv[]) {
 
 	  /* print candidates if desired */
 	  if ( uvar_printCand1 ) {
-	    LAL_CALL ( PrintSemiCohCandidates ( &status, &semiCohCandList1, fpSemiCoh), &status);
+	    LAL_CALL ( PrintSemiCohCandidates ( &status, &semiCohCandList1, fpSemiCoh, refTimeGPS), &status);
 	  }
 	  
 	  /*------------- Follow up candidates --------------*/
@@ -1202,7 +1202,6 @@ int MAIN( int argc, char *argv[]) {
 			      LAL_CALL( GetFstatCandidates_toplist( &status, fstatToplist, fstatVector2.data + k,
 								    thisPoint2.Alpha, thisPoint2.Delta,
 								    thisPoint2.fkdot[1] ), &status);
-			      
 
 			    } /* end loop over nstacks2 for selecting candidates */
 			  
@@ -1239,7 +1238,7 @@ int MAIN( int argc, char *argv[]) {
 		     thisscan1.state.SkyNode.Delta,
 		     skyGridCounter,
 		     thisscan1.state.numSkyGridPoints);
-
+      
       XLALNextDopplerSkyPos( &dopplerpos1, &thisScan1 );
       
     } /* end while loop over 1st stage coarse skygrid */
@@ -1350,7 +1349,6 @@ int MAIN( int argc, char *argv[]) {
 
 
 
-
 /** Set up stacks, read SFTs, calculate SFT noise weights and calculate 
     detector-state */
 void SetUpSFTs( LALStatus *status,
@@ -1420,13 +1418,17 @@ void SetUpSFTs( LALStatus *status,
     
     if ( catalogSeq.data[k].length > 0 ){
       /* if the stack is non-empty */
+      INT4 numSFTby2;
       
       /* start time of stack = time of first sft in stack */
       in->startTstack->data[nStacks] = catalogSeq.data[k].data[0].header.epoch;
-      
-      /* mid time of stack */          
-      TRY( LALAddFloatToGPS( status->statusPtr, in->midTstack->data + nStacks, in->startTstack->data + nStacks,  
-				    0.5 * tStack ), status);
+
+      /* mid time of stack */                
+      numSFTby2 = catalogSeq.data[k].length/2;
+      in->midTstack->data[nStacks] = catalogSeq.data[k].data[numSFTby2].header.epoch;
+
+      /*       TRY( LALAddFloatToGPS( status->statusPtr, in->midTstack->data + nStacks, in->startTstack->data + nStacks,   */
+      /* 				    0.5 * tStack ), status); */
       
       nStacks++;
 
@@ -2337,22 +2339,31 @@ void GetHoughCandidates_threshold(LALStatus            *status,
 
 /** Print Hough candidates */
 void PrintSemiCohCandidates(LALStatus *status,
-			  SemiCohCandidateList *in,
-			  FILE *fp)
+			    SemiCohCandidateList *in,
+			    FILE *fp,
+			    LIGOTimeGPS refTime)
 {
   INT4 k;
+  PulsarSpins  fkdotIn, fkdotOut;
 
   INITSTATUS( status, "PrintSemiCohCandidates", rcsid );
   ATTATCHSTATUSPTR (status);
+
+  INIT_MEM ( fkdotIn );
+  INIT_MEM ( fkdotOut );
  
   for (k=0; k < in->nCandidates; k++) {
     /*     fprintf(fp, "%e %e %e %g %g %g %g %e %e\n", in->list[k].significance, in->list[k].freq,  */
     /* 	    in->list[k].dFreq, in->list[k].alpha, in->list[k].dAlpha, in->list[k].delta, in->list[k].dDelta, */
     /* 	    in->list[k].fdot, in->list[k].dFdot); */
 
-    fprintf(fp, "%f %f %f %f %e\n", in->list[k].significance, in->list[k].freq,
-    	    in->list[k].alpha, in->list[k].delta, in->list[k].fdot);
-    
+    fkdotIn[0] = in->list[k].freq;
+    fkdotIn[1] = in->list[k].fdot;
+
+    TRY( LALExtrapolatePulsarSpins ( status->statusPtr, fkdotOut, refTime, fkdotIn, in->refTime), status);
+
+    fprintf(fp, "%f %f %f %e %f\n", fkdotOut[0], in->list[k].alpha, in->list[k].delta, 
+	    fkdotOut[1], in->list[k].significance);     
   }
 
 
