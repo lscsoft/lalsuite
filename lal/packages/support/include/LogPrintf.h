@@ -43,8 +43,6 @@ NRCSID( LOGPRINTFH, "$Id$" );
 /*---------- INCLUDES ----------*/
 #include <stdarg.h>
 
-#include <lal/LALDatatypes.h>
-
 #include <gsl/gsl_matrix.h>
 
 /*---------- DEFINES ----------*/
@@ -68,7 +66,7 @@ void LogSetLevel(LogLevel_t level);
 void LogPrintf (LogLevel_t, const char* format, ...);
 void LogPrintfVerbatim (LogLevel_t, const char* format, ...);
 
-int XLALfprintfGSLmatrix ( FILE *fp, const CHAR *fmt, const gsl_matrix *gij );
+int XLALfprintfGSLmatrix ( FILE *fp, const char *fmt, const gsl_matrix *gij );
 
 #ifdef  __cplusplus
 }

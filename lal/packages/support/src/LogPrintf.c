@@ -247,10 +247,10 @@ LogFormatLevel( LogLevel_t level )
  * return -1 on error, 0 if OK.
  */
 int
-XLALfprintfGSLmatrix ( FILE *fp, const CHAR *fmt, const gsl_matrix *gij )
+XLALfprintfGSLmatrix ( FILE *fp, const char *fmt, const gsl_matrix *gij )
 {
-  UINT4 cols, rows;
-  UINT4 i, j;
+  int cols, rows;
+  int i, j;
 
   /* check user input */
   if ( !gij )
