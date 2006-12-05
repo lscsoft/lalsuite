@@ -219,7 +219,7 @@ void GetHoughCandidates_threshold(LALStatus *status, SemiCohCandidateList *out, 
 #define FBAND 0.01    /**< Default search band */
 #define FDOT 0.0      /**< Default value of first spindown */
 #define DFDOT 0.0   /**< Default range of first spindown parameter */
-#define SKYREGION "(1,1),(1,1.3),(1.3,1.3),(1.3,1)" /**< default sky region to search over -- just a single point*/
+#define SKYREGION "allsky" /**< default sky region to search over -- just a single point*/
 #define NFDOT  10    /**< Default size of hough cylinder of look up tables */
 #define DTERMS 8     /**< Default number of dirichlet kernel terms for calculating Fstat */
 #define MISMATCH 0.2 /**< Default for metric grid maximal mismatch value */
@@ -426,9 +426,8 @@ int MAIN( int argc, char *argv[]) {
 
   uvar_skyGridFile = NULL;
 
-  uvar_skyRegion = NULL;
-  /* uvar_skyRegion = (CHAR *)LALMalloc(512*sizeof(CHAR)); */
-  /*   strcpy(uvar_skyRegion, SKYREGION); */
+  uvar_skyRegion = (CHAR *)LALMalloc(512*sizeof(CHAR));
+  strcpy(uvar_skyRegion, SKYREGION);
 
   uvar_ephemDir = (CHAR *)LALMalloc(512*sizeof(CHAR));
   strcpy(uvar_ephemDir, EPHEMERISDIR);
@@ -1102,13 +1101,14 @@ int MAIN( int argc, char *argv[]) {
 	      /* loop over candidates surviving 1st stage  */
 	      for ( j=0; j < semiCohCandList1.nCandidates; j++) 
 		{		  
-		  LogPrintf(LOG_DEBUG, "Following up %d of %d semicoherent candidates\n", j, semiCohCandList1.nCandidates);
 
 		  /* 2nd stage frequency and spindown variables */
 		  /* these are the parameters passed down from the 
 		     first stage which is why they have the subscript 1 */
 		  REAL8 fStart1, freqBand1, fdot1, fdotBand1;
 		  REAL8 alpha1, delta1, alphaBand1, deltaBand1;
+
+		  LogPrintf(LOG_DEBUG, "Following up %d of %d semicoherent candidates\n", j, semiCohCandList1.nCandidates);
 
 		  /* get spin range of candidate */
 		  spinRange_Temp.refTime = semiCohCandList1.refTime;
@@ -1183,7 +1183,6 @@ int MAIN( int argc, char *argv[]) {
 
 			  /*LogPrintf(LOG_DEBUG, "Following up with %d Freq. bins, %d/%d spindowns, %d skypoints\n",
 			    binsFstat2, ifdot,nfdot, thisScan2.numSkyGridPoints); */
-
 			  
 			  /* set spindown value for Fstat calculation */
 			  thisPoint2.fkdot[1] = fdot1 + ifdot2 * dfDot2;
