@@ -80,7 +80,7 @@ BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps, uvar_printStats, 
 void SplitSFTs(LALStatus         *status,
 	       REAL8Vector       *weightsV,
 	       HoughParamsTest   *chi2Params
-               )
+    );
 
 
 /* ****************************************
