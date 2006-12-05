@@ -127,7 +127,8 @@ RCSID( "$Id$");
 #ifdef EAH_BOINC
 #include "boinc_extras.h"
 #else
-#define SET_CHECKPOINT(filename,rac,dec,tpl_count,tpl_total) /* length, checksum */
+/* do something with the filename, or else gcc will issue a warning */
+#define SET_CHECKPOINT(filename,rac,dec,tpl_count,tpl_total) filename = filename; /* length, checksum */
 #define GET_CHECKPOINT(filename)
 #define REMOVE_CHECKPOINT(filename) /* should we do this at all ?? pobably in the non-BOINC case only */
 #define SHOW_PROGRESS(rac,dec,tpl_count,tpl_total)
