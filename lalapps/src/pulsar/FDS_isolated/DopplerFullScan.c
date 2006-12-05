@@ -62,13 +62,15 @@ struct tagDopplerFullScanState {
   DopplerGridType gridType;	/**< what type of grid are we dealing with */
   REAL8 numTemplates;		/**< total number of templates in the grid */
 
+  /* ----- full multi-dim parameter-space grid stuff ----- */
+  gsl_matrix *gij;			/**< flat parameter-space metric */
+  LIGOTimeGPS refTime;		/**< reference time for grid templates */
+  REAL8VectorList *covering;		/**< multi-dimensional covering */
+  REAL8VectorList *thisGridPoint; 	/**< pointer to current grid-point */
+
   /* ----- emulate old-style factored grids */
   factoredGridScan_t *factoredScan;	/**< only used to emulate FACTORED grids sky x Freq x f1dot */
 
-  /* ----- full multi-dim parameter-space grids  ----- */
-  gsl_matrix *gij;		/**< flat parameter-space metric */
-  REAL8VectorList *covering;	/**< multi-dimensional covering lattice */
- 
 } /* struct DopplerFullScanState */;
 
 
@@ -131,9 +133,10 @@ InitDopplerFullScan(LALStatus *status,
       TRY ( initFactoredGrid ( status->statusPtr, thisScan, mdetStates, init ), status );
       break;
 
-      /* ----- multi-dimensional coverings based on flat metric approximation ----- */
+      /* ----- multi-dimensional covering of full parameter space ----- */
     case GRID_FILE_FULLGRID:
       TRY ( loadFullGridFile ( status->statusPtr, thisScan, init ), status );
+      thisScan->refTime = mdetStates->startTime;
       break;
 
     case GRID_METRIC_LATTICE:
@@ -147,6 +150,9 @@ InitDopplerFullScan(LALStatus *status,
       ABORT ( status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
       break;
     } /* switch gridType */
+
+  /* we're ready */
+  thisScan->state = STATE_READY;
 
   /* return result */
   (*scan) = thisScan;
@@ -237,9 +243,6 @@ initFactoredGrid (LALStatus *status,
     LogPrintf (LOG_DEBUG, "Template grid: nSky x nFreq x nf1dot = %.0f x %.0f x %.0f = %.0f \n", nSky, nSpins[0], nSpins[1], nTot );
   }
   
-  /* we're ready */
-  scan->state = STATE_READY;
-
   DETATCHSTATUSPTR (status);
   RETURN( status );
 
@@ -301,6 +304,21 @@ XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
     case GRID_METRIC_SKYFILE:
       /* backwards-compatibility mode */
       nextPointInFactoredGrid ( pos, scan );
+      break;
+
+    case GRID_FILE_FULLGRID:
+      pos->refTime = scan->refTime;
+      pos->fkdot[0]	= scan->thisGridPoint->entry.data[0];
+      pos->Alpha 	= scan->thisGridPoint->entry.data[1];
+      pos->Delta 	= scan->thisGridPoint->entry.data[2];
+      pos->fkdot[1] 	= scan->thisGridPoint->entry.data[3];
+      pos->fkdot[2] 	= scan->thisGridPoint->entry.data[4];
+      pos->fkdot[3] 	= scan->thisGridPoint->entry.data[5];
+      pos->orbit = NULL;
+      /* advance to next grid point */
+      if ( ( scan->thisGridPoint = scan->thisGridPoint->next ) == NULL )
+	scan->state = STATE_FINISHED;
+      
       break;
 
     default:
@@ -408,7 +426,7 @@ FreeDopplerFullScan (LALStatus *status, DopplerFullScanState **scan)
   }
 
   if ( (*scan)->covering )
-    REAL8VectorListDestroy ( (*scan)->covering );
+    XLALREAL8VectorListDestroy ( (*scan)->covering );
 
   LALFree ( (*scan) );
   (*scan) = NULL;
@@ -462,7 +480,7 @@ initLatticeCovering ( LALStatus *status,
 } /* initLatticeCovering() */
 
 
-/** load a full multi-dim template grid from the file given 
+/** load a full multi-dim template grid from the file init->gridFile
  */
 void
 loadFullGridFile ( LALStatus *status, 
@@ -471,6 +489,10 @@ loadFullGridFile ( LALStatus *status,
 		   )
 {
   LALParsedDataFile *data = NULL;
+  REAL8VectorList head = empty_REAL8VectorList;
+  REAL8VectorList *tail = NULL;
+  REAL8Vector *entry = NULL;
+  UINT4 numTemplates, i;
 
   INITSTATUS( status, "loadFullGridFile", DOPPLERFULLSCANC );
   ATTATCHSTATUSPTR ( status );
@@ -478,46 +500,46 @@ loadFullGridFile ( LALStatus *status,
   ASSERT ( scan, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
   ASSERT ( init, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
   ASSERT ( init->gridFile, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
+  ASSERT ( scan->state == STATE_IDLE, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
 
   TRY (LALParseDataFile (status->statusPtr, &data, init->gridFile), status);
 
-#if 0   
-  REAL8VectorList* REAL8VectorListAddEntry (REAL8VectorList *head, const REAL8Vector *entry);
+  numTemplates = data->lines->nTokens;
 
-
+  if ( (entry = XLALCreateREAL8Vector ( 6 ) ) == NULL ) {
+    ABORT (status, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
+  }
 
   /* parse this list of lines into a full grid */
-  node = &head;	/* head will remain empty! */
-  for (i=0; i < data->lines->nTokens; i++)
+  tail = &head;	/* head will remain empty! */
+  for (i=0; i < numTemplates; i++)
     {
-      if ( 2 != sscanf( data->lines->tokens[i], "%" LAL_REAL8_FORMAT "%" LAL_REAL8_FORMAT, 
-			&(thisPoint.longitude), &(thisPoint.latitude)) )
+      if ( 6 != sscanf( data->lines->tokens[i], "%lf %lf %lf %lf %lf %lf", 
+			entry->data + 0, entry->data + 1, entry->data + 2, entry->data + 3, entry->data + 4, entry->data + 5 ) )
 	{
-	  LogPrintf (LOG_CRITICAL,"ERROR: could not parse line %d in skyGrid-file '%s'\n\n", i, fname);
-	  freeSkyGrid (head.next);
+	  LogPrintf (LOG_CRITICAL,"ERROR: Failed to parse 6 REAL's from line %d in grid-file '%s'\n\n", i, init->gridFile);
+	  if ( head.next )
+	    XLALREAL8VectorListDestroy (head.next);
 	  ABORT (status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
 	}
-      if (pointInPolygon (&thisPoint, region) )
+
+      if ( (tail = XLALREAL8VectorListAddEntry (tail, entry)) == NULL )
 	{
-	  /* prepare new list-entry */
-	  if ( (node->next = LALCalloc (1, sizeof (DopplerSkyGrid))) == NULL)
-	    {
-	      freeSkyGrid (head.next);
-	      ABORT (status, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
-	    }
-	  node = node->next;
-	  node->Alpha = thisPoint.longitude;
-	  node->Delta = thisPoint.latitude;
-	} /* if pointInPolygon() */
+	  if ( head.next )
+	    XLALREAL8VectorListDestroy (head.next);
+	  ABORT ( status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL );
+	}
     
-    } /* for i < nLines */
+    } /* for i < numTemplates */
 
   TRY ( LALDestroyParsedDataFile (status->statusPtr, &data), status);
+  LALFree ( entry );
 
-  *skyGrid = head.next;	/* pass result (without head!) */
-
-
-#endif
+  LogPrintf (LOG_DEBUG, "Template grid: nTot = %.0f\n", 1.0 * numTemplates );
+  /* return ready scan-state  */
+  scan->numTemplates = numTemplates;
+  scan->covering = head.next;	/* pass result (without head!) */
+  scan->thisGridPoint = scan->covering;	/* init to start */
   
   DETATCHSTATUSPTR ( status );
   RETURN ( status );
