@@ -184,6 +184,7 @@ INT4 uvar_minStartTime;
 INT4 uvar_maxEndTime;
 CHAR *uvar_workingDir;
 REAL8 uvar_timerCount;
+INT4 uvar_upsampleSFTs;
 
 /* ---------- local prototypes ---------- */
 int main(int argc,char *argv[]);
@@ -204,6 +205,11 @@ int compareFstatCandidates ( const void *candA, const void *candB );
 void getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg );
 
 const char *va(const char *format, ...);	/* little var-arg string helper function */
+
+COMPLEX8Vector *XLALrefineCOMPLEX8Vector (const COMPLEX8Vector *in, UINT4 refineby, UINT4 Dterms);
+void upsampleMultiSFTVector (LALStatus *, MultiSFTVector *inout, UINT4 upsample, UINT4 Dterms);
+void upsampleSFTVector (LALStatus *, SFTVector *inout, UINT4 upsample, UINT4 Dterms);
+
 
 /*---------- empty initializers ---------- */
 static const ConfigVariables empty_ConfigVariables;
@@ -460,6 +466,7 @@ initUserVars (LALStatus *status)
   ATTATCHSTATUSPTR (status);
 
   /* set a few defaults */
+  uvar_upsampleSFTs = 1;
   uvar_Dterms 	= 16;
   uvar_FreqBand = 0.0;
   uvar_Alpha 	= 0.0;
@@ -575,6 +582,7 @@ initUserVars (LALStatus *status)
   LALregREALUserVar(status,	internalRefTime, 0,  UVAR_DEVELOPER, "internal reference time to use for Fstat-computation [Default: startTime]");
 
   LALregSTRINGUserVar(status,	skyGridFile,	 0,  UVAR_DEVELOPER, "[OBSOLETE: use --gridFile] Load sky-grid from this file.");
+  LALregINTUserVar(status,	upsampleSFTs,	 0,  UVAR_DEVELOPER, "(integer) Factor to up-sample SFTs by");
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -762,6 +770,22 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     TRY ( LALLoadMultiSFTs ( status->statusPtr, &(cfg->multiSFTs), catalog, fMin, fMax ), status );
     LogPrintfVerbatim (LOG_DEBUG, "done.\n");
     TRY ( LALDestroySFTCatalog ( status->statusPtr, &catalog ), status );
+  }
+
+  /* ----- upsample SFTs ----- */
+  LogPrintf (LOG_DEBUG, "Upsampling SFTs by factor %d ... ", uvar_upsampleSFTs );
+  TRY ( upsampleMultiSFTVector ( status->statusPtr, cfg->multiSFTs, uvar_upsampleSFTs, uvar_Dterms ), status );
+  LogPrintfVerbatim (LOG_DEBUG, "done.\n");
+
+  if ( lalDebugLevel >= 2 )
+  {
+    UINT4 X, numDet = cfg->multiSFTs->length;
+    LogPrintf (LOG_DEBUG, "Writing upsampled SFTs for debugging ... ");
+    for (X=0; X < numDet ; X ++ ) 
+      {
+	TRY ( LALWriteSFTVector2Dir ( status->statusPtr, cfg->multiSFTs->data[X], "./", "oversampled", "_oversamp_"), status );
+      }
+    LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
   }
 
   /* ----- normalize SFTs and calculate noise-weights ----- */
@@ -1308,3 +1332,185 @@ write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand )
   return 0;
   
 } /* write_candidate_to_fp() */
+
+/* ==================================================
+ * SFT up-sampling routines
+ * temporarily put in here for testing, eventually to 
+ * go into LAL [FIXME]
+ * ==================================================
+ */
+
+/** upsample a given multi-SFTvector by the given (integer) factor, 
+ *  _replacing_ the original SFTs
+ */
+void
+upsampleMultiSFTVector (LALStatus *status,
+			  MultiSFTVector *inout,	/**< [in,out]: upsampled multi SFT-vector */
+			  UINT4 upsample, 		/**< integer factor to upsample by */
+			  UINT4 Dterms			/**< number of terms in Dirichlet kernel [on each side] */
+			  )
+{
+  UINT4 X, numDet;
+
+  INITSTATUS( status, "upsampleMultiSFTVector", rcsid );  
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT ( inout, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT ( inout->length, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+
+  if ( upsample < 2 ) 	/* nothing to do */
+    goto done;
+
+  numDet = inout->length;
+
+  for ( X=0; X < numDet; X ++ )
+    {
+      SFTVector *thisSFTvect = inout->data[X];
+      TRY ( upsampleSFTVector ( status->statusPtr, thisSFTvect, upsample, Dterms ), status );
+    } /* for X < numDet */
+
+ done:
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+
+} /* upsampleMultiSFTVector() */
+
+
+void
+upsampleSFTVector (LALStatus *status,
+		     SFTVector *inout,		/**< [in,out]: upsampled SFT-vector */
+		     UINT4 upsample, 		/**< integer factor to upsample by */
+		     UINT4 Dterms		/**< number of terms in Dirichlet kernel [on each side] */
+		     )
+{
+  UINT4 alpha, numSFTs;
+
+  INITSTATUS( status, "upsampleSFTVector", rcsid );  
+  ATTATCHSTATUSPTR (status);
+  
+  ASSERT ( inout, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT ( inout->length, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+
+  numSFTs = inout->length;
+
+  for ( alpha=0; alpha < numSFTs; alpha ++ )
+    {
+      COMPLEX8Vector *this_data = inout->data[alpha].data;
+      COMPLEX8Vector *new_data;
+      if ( (new_data = XLALrefineCOMPLEX8Vector ( this_data, upsample, Dterms )) == NULL ) {
+	LALPrintError ("\nSFT oversampling failed ... \n\n");
+	ABORT ( status, COMPUTEFSTATISTIC_EXLAL, COMPUTEFSTATISTIC_MSGEXLAL );
+      }
+
+      /* now replace old SFT with new upsampled one */
+      XLALDestroyCOMPLEX8Vector ( this_data );
+      inout->data[alpha].data = new_data;
+      inout->data[alpha].deltaF /= (1.0 * upsample); 
+
+    } /* for alpha < numSFTs */
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+
+} /* upsampleSFTVector() */
+
+
+/** Interpolate frequency-series to newLen frequency-bins.
+ *  This is using DFT-interpolation (derived from zero-padding).
+ */
+COMPLEX8Vector *
+XLALrefineCOMPLEX8Vector (const COMPLEX8Vector *in, 
+			  UINT4 refineby, 
+			  UINT4 Dterms)
+{
+  REAL8 Yk_Re, Yk_Im;
+  REAL8 b, d;
+  UINT4 lstar;
+  UINT4 newLen, oldLen, k;
+  COMPLEX8Vector *ret = NULL;
+
+  REAL8 invOldLen, invNewLen, TWOPIOverOldLen;	/* tmp results for optimization */
+
+  if ( !in )
+    return NULL;
+
+  oldLen = in->length;
+  newLen = oldLen * refineby;
+
+  /* the following are used to speed things up in the innermost loop */
+  invOldLen = 1.0 / oldLen;
+  TWOPIOverOldLen = LAL_TWOPI / oldLen;
+  invNewLen = 1.0 / newLen;
+
+  if ( (ret = XLALCreateCOMPLEX8Vector ( newLen )) == NULL ) 
+    return NULL;
+
+  for (k=0; k < newLen; k++)
+    {
+      INT4 lm;
+      UINT4 l, l0, l1;
+      REAL8 x;
+      REAL8 phaseN;
+      /* common frequency-bins remain unchanged */
+      if ( k % refineby == 0 )
+	{
+	  ret->data[k] = in->data[k / refineby];	
+	  continue;
+	}
+
+      Yk_Re = Yk_Im = 0;
+
+      lstar = (UINT4)(1.0*k * oldLen * invNewLen + 0.5);
+
+      /* boundaries for innermost loop */
+      lm = (INT4)lstar - Dterms;
+      l0 = MYMAX( lm, 0);
+
+      l1 = lstar + Dterms +1;
+      l1 = MYMIN ( l1, oldLen );
+      
+      /* Optimization: phase is defined as phase = 2*pi*( l/oldLen - k/newLen )
+       * but is implemented a bit more economically here.
+       * Start with value of phase in first iteration of inner loop:
+       */
+      x = ( l0 * invOldLen - k * invNewLen ); 
+      /* oldLen*phase doesn't actually change in the innermost loop(!), 
+       * so we calculate all its derived quantities here: 
+       */
+      phaseN = LAL_TWOPI * x * oldLen;
+      d = 0.5 * sin(phaseN);
+      b = 0.5 * (1.0 - cos(phaseN));
+
+      /* ---------- innermost loop: l over 2*Dterms around lstar ---------- */
+      for (l = l0; l < l1; l++)
+	{
+	  REAL8 cInva, Rlk_Re, Rlk_Im;
+	  REAL8 Xd_Re, Xd_Im;
+	  REAL4 tsin, tcos;
+
+	  Xd_Re = in->data[l].re;
+	  Xd_Im = in->data[l].im;
+		
+	  sin_cos_2PI_LUT ( &tsin, &tcos, x );
+
+	  cInva = tsin / (1.0 - tcos);
+	      
+	  Rlk_Re = b + cInva * d;
+	  Rlk_Im = cInva * b - d;
+
+	  Yk_Re += Xd_Re * Rlk_Re - Xd_Im * Rlk_Im;
+	  Yk_Im += Xd_Im * Rlk_Re + Xd_Re * Rlk_Im;
+
+	  /* calculate phase for next iteration */
+	  x += invOldLen;
+
+	} /* ---------- innermost loop in l ---------- */
+
+      ret->data[k].re = Yk_Re * invOldLen;
+      ret->data[k].im = Yk_Im * invOldLen;
+
+    }  /* for k <= M-1 */
+
+  return ret;
+
+} /* XLALrefineCOMPLEX8Vector() */
