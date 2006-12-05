@@ -101,11 +101,14 @@ void LALDemodFAST(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
   REAL8	y;		        /* local variable for holding y */
   REAL8 realQ, imagQ;
   INT4 *tempInt1;
-  INT4 myindex;
   REAL8 FaSq;
   REAL8 FbSq;
   REAL8 FaFb;
   COMPLEX16 Fa, Fb;
+  REAL8 *sinVal,*cosVal;        /*LUT values computed by the routine do_trig_lut*/
+  INT4  res;                    /*resolution of the argument of the trig functions: 2pi/res.*/
+  INT4  myindex;                /*LUT index*/
+  REAL8 Y;                      /*Phase in alpha loop*/
 
   REAL8 f;
   COMPLEX8 Xalpha_k;
@@ -114,6 +117,9 @@ void LALDemodFAST(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
   REAL8 A=params->amcoe->A,B=params->amcoe->B,C=params->amcoe->C,D=params->amcoe->D;
   INT4 M=params->SFTno;
   INT4 ifmin;
+
+  REAL8 N=4.0/(D*M);
+  REAL8 TwoC=2.0*C;
 
   INITSTATUS( status, "LALDemodFAST", LALDEMODFASTC );
 
@@ -143,6 +149,16 @@ void LALDemodFAST(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
       ySum[alpha] += spinDwn[s] * skyConst[tempInt1[alpha]+1+2*s];
     }
   }
+
+  /* res=10*(params->mCohSFT); */
+  /* This size LUT gives errors ~ 10^-7 with a three-term Taylor series */
+   res=64;
+   sinVal=(REAL8 *)LALMalloc((res+1)*sizeof(REAL8));
+   cosVal=(REAL8 *)LALMalloc((res+1)*sizeof(REAL8)); 
+   for (k=0; k<=res; k++){
+     sinVal[k]=sin((LAL_TWOPI*k)/res);
+     cosVal[k]=cos((LAL_TWOPI*k)/res);
+   }
 
   /* fine frequency resolution */
   df=params->df;
@@ -179,12 +195,21 @@ void LALDemodFAST(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
 
 	Xalpha_k=input[alpha]->fft->data->data[sftIndex];
 	
-	y = -LAL_TWOPI * (f*skyConst[tempInt1[alpha]-1]+ySum[alpha]);
+	Y = - f*skyConst[tempInt1[alpha]-1] - ySum[alpha];
 
 	/* since this is now in the innermost loop: should evaluate these 
 	   sines and cosines using LUT */
-	realQ = cos(y);
-	imagQ = sin(y);
+/* 	y = -LAL_TWOPI * (f*skyConst[tempInt1[alpha]-1]+ySum[alpha]); */
+/* 	realQ = cos(y); */
+/* 	imagQ = sin(y); */
+	
+	/* Here's LUT version of what's been commented above */
+	Y = - f*skyConst[tempInt1[alpha]-1] - ySum[alpha];
+	Y = Y - (INT4)Y;  
+	if ( Y < 0.0 ) Y = Y + 1.0;
+	myindex = (INT4)(Y*res+0.5);
+	realQ = cosVal[myindex];
+	imagQ = sinVal[myindex];
 	  
 	realQXP = Xalpha_k.re*realQ-Xalpha_k.im*imagQ;
 	imagQXP = Xalpha_k.re*imagQ+Xalpha_k.im*realQ;
@@ -200,7 +225,7 @@ void LALDemodFAST(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
     FbSq = Fb.re*Fb.re+Fb.im*Fb.im;
     FaFb = Fa.re*Fb.re+Fa.im*Fb.im;
 
-    Fstat->F[i] = (4.0/(M*D))*(B*FaSq + A*FbSq - 2.0*C*FaFb);
+    Fstat->F[i] = N*(B*FaSq + A*FbSq - TwoC*FaFb);
     if (params->returnFaFb)
       {
 	Fstat->Fa[i] = Fa;
@@ -213,6 +238,9 @@ void LALDemodFAST(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
   LALFree(tempInt1);
   LALFree(xSum);
   LALFree(ySum);
+
+  LALFree(sinVal);
+  LALFree(cosVal);
   
   RETURN( status );
 
