@@ -605,8 +605,9 @@ LALLoadSegmentedSFTs ( LALStatus *status,
   ASSERT ( fMin <= fMax, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL );
 
   sfts = (SFTVector*)LALMalloc(sizeof(SFTVector));
-  if (!sfts)
+  if (!sfts) {
     ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
+  }
   sfts->length = 0;
   sfts->data = NULL;
 
@@ -3237,12 +3238,12 @@ find_files (const CHAR *globdir)
   CHAR *thisFname = NULL;
 
 #define FILE_SEPARATOR ';'
-  if (ptr2 = strchr (globdir, FILE_SEPARATOR))
+  if ( (ptr2 = strchr (globdir, FILE_SEPARATOR)) )
     { /* globdir is multi-pattern ("pattern1;pattern2;pattern3") */
       /* call find_files() with every pattern found in globdir */
 
       ptr1 = (CHAR*)globdir;
-      while (ptr2 = strchr (ptr1, FILE_SEPARATOR))
+      while ( (ptr2 = strchr (ptr1, FILE_SEPARATOR)) )
 	{
 	  /* ptr1 points to the beginning of a pattern, ptr2 to the end */
 
