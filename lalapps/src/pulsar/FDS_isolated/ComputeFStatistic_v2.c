@@ -433,7 +433,9 @@ int main(int argc,char *argv[])
   LogPrintf (LOG_DEBUG, "Search finished.\n");
   
   /* Free memory */
+  LogPrintf (LOG_DEBUG, "Freeing Doppler grid ... ");
   LAL_CALL ( FreeDopplerFullScan(&status, &GV.scanState), &status);
+  LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
 
   XLALEmptyComputeFBuffer ( cfBuffer );
 
