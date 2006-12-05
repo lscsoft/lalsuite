@@ -428,13 +428,34 @@ int main(int argc, char *argv[]){
       LALFree( inputTimeStampsVector.data );
     }
 
-    /* get some sft parameters */
-    mObsCoh = catalog->length; /* number of sfts */
-    deltaF = catalog->data->header.deltaF;  /* frequency resolution */
+
+
+    /* firsr some sft parameters */
+    deltaF = catalog->data[0].header.deltaF;  /* frequency resolution */
     timeBase= 1.0/deltaF; /* coherent integration time */
     f0Bin = floor( uvar_f0 * timeBase + 0.5); /* initial search frequency */
     length =  uvar_fSearchBand * timeBase; /* total number of search bins - 1 */
     fLastBin = f0Bin + length;   /* final frequency bin to be analyzed */
+    
+
+    /* read sft files making sure to add extra bins for running median */
+    /* add wings for Doppler modulation and running median block size*/
+    doppWings = (uvar_f0 + uvar_fSearchBand) * VTOT;    
+    fmin = uvar_f0 - doppWings - (uvar_blocksRngMed + uvar_nfSizeCylinder) * deltaF;
+    fmax = uvar_f0 + uvar_fSearchBand + doppWings + (uvar_blocksRngMed + uvar_nfSizeCylinder) * deltaF;
+
+    /* read the sfts */
+    LAL_CALL( LALLoadMultiSFTs ( &status, &inputSFTs, catalog, fmin, fmax), &status);
+    numifo = inputSFTs->length;    
+
+    /* find number of sfts */
+    /* loop over ifos and calculate number of sfts */
+    /* note that we can't use the catalog to determine the number of SFTs
+       because SFTs might be segmented in frequency */
+    mObsCoh = 0; /* initialization */
+    for (k = 0; k < (INT4)numifo; k++ ) {
+      mObsCoh += inputSFTs->data[k]->length;
+    } 
     
     /* catalog is ordered in time so we can get start, end time and tObs*/
     firstTimeStamp = catalog->data[0].header.epoch;
@@ -467,16 +488,6 @@ int main(int argc, char *argv[]){
     timeDiffV.data = NULL; 
     timeDiffV.data = (REAL8 *)LALCalloc(mObsCoh, sizeof(REAL8));
   
-    /* add wings for Doppler modulation and running median block size*/
-    doppWings = (uvar_f0 + uvar_fSearchBand) * VTOT;    
-    fmin = uvar_f0 - doppWings - (uvar_blocksRngMed + uvar_nfSizeCylinder) * deltaF;
-    fmax = uvar_f0 + uvar_fSearchBand + doppWings + (uvar_blocksRngMed + uvar_nfSizeCylinder) * deltaF;
-
-    /* read sft files making sure to add extra bins for running median */
-    /* read the sfts */
-    LAL_CALL( LALLoadMultiSFTs ( &status, &inputSFTs, catalog, fmin, fmax), &status);
-
-
     /* clean sfts if required */
     if ( LALUserVarWasSet( &uvar_linefiles ) )
       {
@@ -504,7 +515,6 @@ int main(int argc, char *argv[]){
 
 
     /* SFT info -- assume all SFTs have same length */
-    numifo = inputSFTs->length;
     binsSFT = inputSFTs->data[0]->data->data->length;
 
     LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);  	
@@ -1211,7 +1221,7 @@ int PrintHistogram(UINT8Vector *hist, CHAR *fnameOut, REAL8 minSignificance, REA
   REAL8 dSig;
   FILE  *fp=NULL;   /* Output file */
   char filename[ MAXFILENAMELENGTH ];
-  UINT4  i ;
+  INT4  i ;
   
   strcpy(  filename, fnameOut);
   strcat(  filename, "histo");
