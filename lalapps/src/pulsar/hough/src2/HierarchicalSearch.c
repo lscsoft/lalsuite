@@ -326,7 +326,7 @@ int MAIN( int argc, char *argv[]) {
   FILE *fpFstat1=NULL;
   
   /* checkpoint filename and index of loop over skypoints */
-  CHAR *fnameChkPoint="checkpoint.cpt";
+  /* const CHAR *fnameChkPoint="checkpoint.cpt"; */
   /*   FILE *fpChkPoint=NULL; */
   /*   UINT4 loopindex, loopcounter; */
   
@@ -2082,7 +2082,6 @@ void SetUpStacks(LALStatus *status,
 
   UINT4 nSFTs, length, j, k;
   REAL8 timeBase, deltaF, tStart, tEnd, thisTime;
-  LIGOTimeGPSVector *ts=NULL;
 
   INITSTATUS( status, "SetUpStacks", rcsid );
   ATTATCHSTATUSPTR (status);
@@ -2101,15 +2100,13 @@ void SetUpStacks(LALStatus *status,
   out->length = nStacks;
   out->data = (SFTCatalog *)LALCalloc( 1, nStacks * sizeof(SFTCatalog));
   
-  /* get sft timestamps from catalog */
-  TRY( LALSFTtimestampsFromCatalog( status->statusPtr, &ts, in), status);  	
 
   deltaF = in->data[0].header.deltaF;
   timeBase = 1.0/deltaF;
 
   /* get first and last sft timestamp */
-  TRY ( LALGPStoFloat ( status->statusPtr, &tStart, ts->data), status);
-  TRY ( LALGPStoFloat ( status->statusPtr, &tEnd, ts->data + nSFTs - 1), status);
+  TRY ( LALGPStoFloat ( status->statusPtr, &tStart, &(in->data[0].header.epoch)), status);
+  TRY ( LALGPStoFloat ( status->statusPtr, &tEnd, &(in->data[nSFTs - 1].header.epoch)), status);
   *tStack = (tEnd + timeBase - tStart) / nStacks;
 
   /* loop over the sfts and find out if it belongs to the k^th stack */
@@ -2117,7 +2114,7 @@ void SetUpStacks(LALStatus *status,
 
     /* calculate which stack the j^th SFT belongs to */
     /* thisTime is current sft timestamp */
-    TRY ( LALGPStoFloat ( status->statusPtr, &thisTime, ts->data + j), status);
+    TRY ( LALGPStoFloat ( status->statusPtr, &thisTime, &(in->data[j].header.epoch)), status);
     k = (UINT4)((thisTime - tStart)/(*tStack));
 
     out->data[k].length += 1;    
@@ -2132,7 +2129,6 @@ void SetUpStacks(LALStatus *status,
 
   } /* loop over sfts */
 
-  XLALDestroyTimestampVector(ts);
 
   DETATCHSTATUSPTR (status);
   RETURN(status);
