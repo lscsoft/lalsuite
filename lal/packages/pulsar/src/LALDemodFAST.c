@@ -195,8 +195,6 @@ void LALDemodFAST(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
 
 	Xalpha_k=input[alpha]->fft->data->data[sftIndex];
 	
-	Y = - f*skyConst[tempInt1[alpha]-1] - ySum[alpha];
-
 	/* since this is now in the innermost loop: should evaluate these 
 	   sines and cosines using LUT */
 /* 	y = -LAL_TWOPI * (f*skyConst[tempInt1[alpha]-1]+ySum[alpha]); */
@@ -205,8 +203,9 @@ void LALDemodFAST(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
 	
 	/* Here's LUT version of what's been commented above */
 	Y = - f*skyConst[tempInt1[alpha]-1] - ySum[alpha];
-	Y = Y - (INT4)Y;  
-	if ( Y < 0.0 ) Y = Y + 1.0;
+	Y -= (INT4)Y;  
+	if ( Y < 0.0 ) Y += 1.0;
+
 	myindex = (INT4)(Y*res+0.5);
 	realQ = cosVal[myindex];
 	imagQ = sinVal[myindex];
