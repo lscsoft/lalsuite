@@ -1420,19 +1420,12 @@ void SetUpSFTs( LALStatus *status,
     if ( catalogSeq.data[k].length > 0 ){
       /* if the stack is non-empty */
       
-      LIGOTimeGPSVector *startTsftStack = NULL; /* sft time stamps for sfts in current stack */
-      
-      /* get SFT timestamps in stack */
-      TRY( LALSFTtimestampsFromCatalog(  status->statusPtr, &startTsftStack, catalogSeq.data + k ), status);  	
-      
-      /* start time of stack */
-      in->startTstack->data[nStacks] = startTsftStack->data[0];
+      /* start time of stack = time of first sft in stack */
+      in->startTstack->data[nStacks] = catalogSeq.data[k].data[0].header.epoch;
       
       /* mid time of stack */          
       TRY( LALAddFloatToGPS( status->statusPtr, in->midTstack->data + nStacks, in->startTstack->data + nStacks,  
 				    0.5 * tStack ), status);
-      
-      TRY ( LALDestroyTimestampVector ( status->statusPtr, &startTsftStack), status);
       
       nStacks++;
 
@@ -2100,7 +2093,6 @@ void SetUpStacks(LALStatus *status,
   out->length = nStacks;
   out->data = (SFTCatalog *)LALCalloc( 1, nStacks * sizeof(SFTCatalog));
   
-
   deltaF = in->data[0].header.deltaF;
   timeBase = 1.0/deltaF;
 
@@ -2523,7 +2515,7 @@ void PrintStackInfo( LALStatus  *status,
 
   INT4 nStacks, k;
  
-  INITSTATUS( status, "PrintCatalogInfo", rcsid );
+  INITSTATUS( status, "PrintStackInfo", rcsid );
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( fp != NULL, status, HIERARCHICALSEARCH_EFILE, HIERARCHICALSEARCH_MSGEFILE );
