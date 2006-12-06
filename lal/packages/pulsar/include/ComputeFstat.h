@@ -167,6 +167,15 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 		  const AMCoeffs *amcoe,
 		  const ComputeFParams *params);
 
+int
+XLALComputeFaFbXavie ( Fcomponents *FaFb,
+		       const SFTVector *sfts, 
+		       const PulsarSpins fkdot,
+		       const SSBtimes *tSSB,
+		       const AMCoeffs *amcoe,
+		       const ComputeFParams *params);
+  
+
 void
 LALGetSSBtimes (LALStatus *, 
 		SSBtimes *tSSB,
