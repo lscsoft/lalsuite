@@ -132,6 +132,7 @@ typedef enum {
 /** Extra parameters controlling the actual computation of F */
 typedef struct {
   UINT4 Dterms;		/**< how many terms to keep in the Dirichlet kernel (~16 is usually fine) */
+  REAL8 upsampling;	/**< frequency-upsampling applied to SFTs ==> dFreq != 1/Tsft ... */
   SSBprecision SSBprec; /**< wether to use full relativist SSB-timing, or just simple Newtonian */
 } ComputeFParams;
 
@@ -164,7 +165,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 		  const PulsarSpins fkdot,
 		  const SSBtimes *tSSB,
 		  const AMCoeffs *amcoe,
-		  UINT4 Dterms);
+		  const ComputeFParams *params);
 
 void
 LALGetSSBtimes (LALStatus *, 
