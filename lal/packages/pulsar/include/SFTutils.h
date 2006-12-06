@@ -125,6 +125,7 @@ typedef struct {
 typedef struct {
   UINT4 	length;		/**< number of timestamps */
   LIGOTimeGPS 	*data;		/**< array of timestamps */
+  REAL8		deltaT;		/**< 'length' of each timestamp (e.g. typically Tsft) */
 } LIGOTimeGPSVector;
 
 /** A vector of 'timestamps' of type LIGOTimeGPS */
