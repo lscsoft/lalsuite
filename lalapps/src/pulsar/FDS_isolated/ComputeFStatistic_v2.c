@@ -1419,15 +1419,21 @@ upsampleSFTVector (LALStatus *status,
       /* now replace old SFT with new upsampled one */
       XLALDestroyCOMPLEX8Vector ( this_data );
       inout->data[alpha].data = new_data;
+      /*
+      inout->data[alpha].deltaF /= 1.0 * upsample;
+      */
 
     } /* for alpha < numSFTs */
+
+
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
 
 } /* upsampleSFTVector() */
 
-
+#define LD_SMALL4       (1.0e-6)		/**< "small" number for REAL4*/
+#define OOTWOPI		(1.0 / LAL_TWOPI )
 /** Interpolate frequency-series to newLen frequency-bins.
  *  This is using DFT-interpolation (derived from zero-padding).
  */
@@ -1436,13 +1442,8 @@ XLALrefineCOMPLEX8Vector (const COMPLEX8Vector *in,
 			  UINT4 refineby, 
 			  UINT4 Dterms)
 {
-  REAL8 Yk_Re, Yk_Im;
-  REAL8 b, d;
-  UINT4 lstar;
-  UINT4 newLen, oldLen, k;
+  UINT4 newLen, oldLen, l;
   COMPLEX8Vector *ret = NULL;
-
-  REAL8 invOldLen, invNewLen, TWOPIOverOldLen;	/* tmp results for optimization */
 
   if ( !in )
     return NULL;
@@ -1451,78 +1452,62 @@ XLALrefineCOMPLEX8Vector (const COMPLEX8Vector *in,
   newLen = oldLen * refineby;
 
   /* the following are used to speed things up in the innermost loop */
-  invOldLen = 1.0 / oldLen;
-  TWOPIOverOldLen = LAL_TWOPI / oldLen;
-  invNewLen = 1.0 / newLen;
-
   if ( (ret = XLALCreateCOMPLEX8Vector ( newLen )) == NULL ) 
     return NULL;
 
-  for (k=0; k < newLen; k++)
+  for (l=0; l < newLen; l++)
     {
-      INT4 lm;
-      UINT4 l, l0, l1;
-      REAL8 x;
-      REAL8 phaseN;
-      /* common frequency-bins remain unchanged */
-      if ( k % refineby == 0 )
-	{
-	  ret->data[k] = in->data[k / refineby];	
-	  continue;
-	}
+      
+      REAL8 kappa_l_k;
+      REAL8 remainder, kstarREAL;
+      UINT4 kstar, kmin, kmax, k;
+      REAL8 sink, coskm1;
+      REAL8 Yk_re, Yk_im, Xd_re, Xd_im;
 
-      Yk_Re = Yk_Im = 0;
-
-      lstar = (UINT4)(1.0*k * oldLen * invNewLen + 0.5);
+      kstarREAL = 1.0 * l  / refineby;
+      kstar = (INT4)( kstarREAL + 0.5);	/* round to closest bin */
+      kstar = MYMIN ( kstar, oldLen - 1 );	/* stay within the old SFT index-bounds */
+      remainder = kstarREAL - kstar;
 
       /* boundaries for innermost loop */
-      lm = (INT4)lstar - Dterms;
-      l0 = MYMAX( lm, 0);
+      kmin = MYMAX( 0, (INT4)kstar - (INT4)Dterms );
+      kmax = MYMIN( oldLen, kstar + Dterms );
 
-      l1 = lstar + Dterms +1;
-      l1 = MYMIN ( l1, oldLen );
-      
-      /* Optimization: phase is defined as phase = 2*pi*( l/oldLen - k/newLen )
-       * but is implemented a bit more economically here.
-       * Start with value of phase in first iteration of inner loop:
-       */
-      x = ( l0 * invOldLen - k * invNewLen ); 
-      /* oldLen*phase doesn't actually change in the innermost loop(!), 
-       * so we calculate all its derived quantities here: 
-       */
-      phaseN = LAL_TWOPI * x * oldLen;
-      d = 0.5 * sin(phaseN);
-      b = 0.5 * (1.0 - cos(phaseN));
-
-      /* ---------- innermost loop: l over 2*Dterms around lstar ---------- */
-      for (l = l0; l < l1; l++)
+      Yk_re = Yk_im = 0;
+      if ( fabs(remainder) > 1e-5 )	/* denominater doens't vanish */
 	{
-	  REAL8 cInva, Rlk_Re, Rlk_Im;
-	  REAL8 Xd_Re, Xd_Im;
-	  REAL4 tsin, tcos;
-
-	  Xd_Re = in->data[l].re;
-	  Xd_Im = in->data[l].im;
-		
-	  sin_cos_2PI_LUT ( &tsin, &tcos, x );
-
-	  cInva = tsin / (1.0 - tcos);
+	  /* Optimization: sin(2pi*kappa(l,k)) = sin(2pi*kappa(l,0) and idem for cos */
+	  sink = sin ( LAL_TWOPI * remainder );
+	  coskm1 = cos ( LAL_TWOPI * remainder ) - 1.0;
+	  
+	  /* ---------- innermost loop: k over 2*Dterms around kstar ---------- */
+	  for (k = kmin; k < kmax; k++)
+	    {
+	      REAL8 Plk_re, Plk_im;
 	      
-	  Rlk_Re = b + cInva * d;
-	  Rlk_Im = cInva * b - d;
+	      Xd_re = in->data[k].re;
+	      Xd_im = in->data[k].im;
+	      
+	      kappa_l_k = kstarREAL - k;
+		
+	      Plk_re = sink / kappa_l_k;
+	      Plk_im = coskm1 / kappa_l_k;
 
-	  Yk_Re += Xd_Re * Rlk_Re - Xd_Im * Rlk_Im;
-	  Yk_Im += Xd_Im * Rlk_Re + Xd_Re * Rlk_Im;
+	      Yk_re += Plk_re * Xd_re - Plk_im * Xd_im;
+	      Yk_im += Plk_re * Xd_im + Plk_im * Xd_re;
 
-	  /* calculate phase for next iteration */
-	  x += invOldLen;
+	    } /* hotloop over Dterms */
+	} 
+      else	/* kappa -> 0: Plk = 2pi delta(k, l) */
+	{
+	  Yk_re = LAL_TWOPI * in->data[kstar].re;
+	  Yk_im = LAL_TWOPI * in->data[kstar].im;
+	}
 
-	} /* ---------- innermost loop in l ---------- */
+      ret->data[l].re = OOTWOPI * Yk_re;
+      ret->data[l].im = OOTWOPI * Yk_im;
 
-      ret->data[k].re = Yk_Re * invOldLen;
-      ret->data[k].im = Yk_Im * invOldLen;
-
-    }  /* for k <= M-1 */
+    }  /* for l < newlen */
 
   return ret;
 
