@@ -2044,7 +2044,10 @@ int UpsampleSFTData(void)
 {
   INT4 fileno=0;
   INT4 k=0,i;
-  INT4  res=64;                    /*resolution of the argument of the trig functions: 2pi/res.*/
+  /* sorry - variable array size is a gcc extension.
+     As this is not changed anywhere in this function, I put this as a macro.
+     BM */
+#define res 64                    /*resolution of the argument of the trig functions: 2pi/res.*/
   REAL8 sinVal[res+1], cosVal[res+1];
   INT4 ndeltaf=GV.ifmax-GV.ifmin+1, imax;
   REAL8 df=DemodParams->df; /* frequency resolution of upsampled SFTs */
