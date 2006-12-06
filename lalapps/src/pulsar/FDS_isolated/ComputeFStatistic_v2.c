@@ -771,38 +771,6 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     LogPrintfVerbatim (LOG_DEBUG, "done.\n");
     TRY ( LALDestroySFTCatalog ( status->statusPtr, &catalog ), status );
   }
-
-  /* ----- upsample SFTs ----- */
-  LogPrintf (LOG_DEBUG, "Upsampling SFTs by factor %d ... ", uvar_upsampleSFTs );
-  TRY ( upsampleMultiSFTVector ( status->statusPtr, cfg->multiSFTs, uvar_upsampleSFTs, uvar_Dterms ), status );
-  LogPrintfVerbatim (LOG_DEBUG, "done.\n");
-
-  if ( lalDebugLevel >= 2 )
-  {
-    UINT4 X, numDet = cfg->multiSFTs->length;
-    LogPrintf (LOG_DEBUG, "Writing upsampled SFTs for debugging ... ");
-    for (X=0; X < numDet ; X ++ ) 
-      {
-	TRY ( LALWriteSFTVector2Dir ( status->statusPtr, cfg->multiSFTs->data[X], "./", "oversampled", "_oversamp_"), status );
-      }
-    LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
-  }
-
-  /* ----- normalize SFTs and calculate noise-weights ----- */
-  if ( uvar_SignalOnly ) 
-    {
-      cfg->multiNoiseWeights = NULL; 
-    } 
-  else 
-    {
-      MultiPSDVector *psds = NULL;
-
-      TRY ( LALNormalizeMultiSFTVect (status->statusPtr, &psds, cfg->multiSFTs, uvar_RngMedWindow ), status );
-      TRY ( LALComputeMultiNoiseWeights  (status->statusPtr, &(cfg->multiNoiseWeights), psds, uvar_RngMedWindow, 0 ), status );
-      TRY ( LALDestroyMultiPSDVector (status->statusPtr, &psds ), status );
-
-    } /* if ! SignalOnly */
-
   { /* ----- load ephemeris-data ----- */
     CHAR *ephemDir;
     BOOLEAN isLISA = FALSE;
@@ -819,6 +787,55 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
 
     TRY( InitEphemeris (status->statusPtr, cfg->ephemeris, ephemDir, uvar_ephemYear, startTime, isLISA ), status);
   }
+
+  /* ----- obtain the (multi-IFO) 'detector-state series' for all SFTs ----- */
+  TRY ( LALGetMultiDetectorStates ( status->statusPtr, &(cfg->multiDetStates), cfg->multiSFTs, cfg->ephemeris ), status );
+
+  /* ----- normalize SFTs and calculate noise-weights ----- */
+  if ( uvar_SignalOnly ) 
+    {
+      cfg->multiNoiseWeights = NULL; 
+    } 
+  else 
+    {
+      MultiPSDVector *psds = NULL;
+
+      TRY ( LALNormalizeMultiSFTVect (status->statusPtr, &psds, cfg->multiSFTs, uvar_RngMedWindow ), status );
+      TRY ( LALComputeMultiNoiseWeights  (status->statusPtr, &(cfg->multiNoiseWeights), psds, uvar_RngMedWindow, 0 ), status );
+      TRY ( LALDestroyMultiPSDVector (status->statusPtr, &psds ), status );
+
+    } /* if ! SignalOnly */
+
+
+  /* ----- upsample SFTs ----- */
+  if ( (lalDebugLevel >= 2) && (uvar_upsampleSFTs > 1) )
+  {
+    UINT4 X, numDet = cfg->multiSFTs->length;
+    LogPrintf (LOG_DEBUG, "Writing original SFTs for debugging ... ");
+    for (X=0; X < numDet ; X ++ ) 
+      {
+	TRY ( LALWriteSFTVector2Dir ( status->statusPtr, cfg->multiSFTs->data[X], "./", "original", "orig"), status );
+      }
+    LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
+  }
+
+  LogPrintf (LOG_DEBUG, "Upsampling SFTs by factor %d ... ", uvar_upsampleSFTs );
+  TRY ( upsampleMultiSFTVector ( status->statusPtr, cfg->multiSFTs, uvar_upsampleSFTs, 16 ), status );
+  LogPrintfVerbatim (LOG_DEBUG, "done.\n");
+
+  if ( lalDebugLevel >= 2 && (uvar_upsampleSFTs > 1) )
+  {
+    UINT4 X, numDet = cfg->multiSFTs->length;
+    CHAR tag[60];
+    sprintf (tag, "upsampled%02d", uvar_upsampleSFTs );
+    LogPrintf (LOG_DEBUG, "Writing upsampled SFTs for debugging ... ");
+    for (X=0; X < numDet ; X ++ ) 
+      {
+	TRY ( LALWriteSFTVector2Dir ( status->statusPtr, cfg->multiSFTs->data[X], "./", tag, tag), status );
+      }
+    LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
+  }
+
 
   { /* ----- set up Doppler region (at internalRefTime) to scan ----- */
     LIGOTimeGPS internalRefTime = empty_LIGOTimeGPS;
@@ -854,13 +871,10 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
 
   } /* get DopplerRegion */
 
-  
-  /* ----- obtain the (multi-IFO) 'detector-state series' for all SFTs ----- */
-  TRY ( LALGetMultiDetectorStates ( status->statusPtr, &(cfg->multiDetStates), cfg->multiSFTs, cfg->ephemeris ), status );
-
   /* ----- set computational parameters for F-statistic from User-input ----- */
   cfg->CFparams.Dterms = uvar_Dterms;
   cfg->CFparams.SSBprec = uvar_SSBprecision;
+  cfg->CFparams.upsampling = 1.0 * uvar_upsampleSFTs; 
 
   /* ----- set fixed grid step-sizes from user-input for GRID_FLAT ----- */
   cfg->stepSizes.Alpha = uvar_dAlpha;
@@ -1405,7 +1419,6 @@ upsampleSFTVector (LALStatus *status,
       /* now replace old SFT with new upsampled one */
       XLALDestroyCOMPLEX8Vector ( this_data );
       inout->data[alpha].data = new_data;
-      inout->data[alpha].deltaF /= (1.0 * upsample); 
 
     } /* for alpha < numSFTs */
 
