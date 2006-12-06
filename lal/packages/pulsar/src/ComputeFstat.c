@@ -276,7 +276,6 @@ ComputeFStat ( LALStatus *status,
 	}
       else
 	{
-	  params->upsampling = 1;
 	  if ( XLALComputeFaFb (&FcX, multiSFTs->data[X], doppler->fkdot, multiSSB->data[X], multiAMcoef->data[X], params) != 0)
 	    {
 	      LALPrintError ("\nXALComputeFaFb() failed\n");
@@ -353,13 +352,9 @@ XLALComputeFaFb ( Fcomponents *FaFb,
   REAL8 *DeltaT_al, *Tdot_al;	/* pointer to alpha-arrays of SSB-timings */
   SFTtype *SFT_al;		/* SFT alpha  */
   UINT4 Dterms = params->Dterms;
-
+  
   REAL8 norm = OOTWOPI; /*  / params->upsampling; */
-
-  if ( (params->upsampling != 1) && (params->Dterms != 0) )
-    {
-      fprintf (stderr, "\n===== WARNING: XLALComputeFaFb() does not work correctly if using UPSAMPLING and Dterms!=0! you have been warned!\n\n");
-    }
+  INT4 upsampling;
 
   /* ----- check validity of input */
 #ifndef LAL_NDEBUG
@@ -386,6 +381,16 @@ XLALComputeFaFb ( Fcomponents *FaFb,
       XLAL_ERROR ( "XLALComputeFaFb", XLAL_EINVAL);
     }
 #endif
+
+  if ( params->upsampling == 0 )
+    upsampling = 1;
+  else
+    upsampling = params->upsampling;
+
+  if ( (params->upsampling > 1) && (params->Dterms != 0) )
+    {
+      fprintf (stderr, "\n===== WARNING: XLALComputeFaFb() does not work correctly if using UPSAMPLING and Dterms!=0! you have been warned!\n\n");
+    }
 
   /* ----- prepare convenience variables */
   numSFTs = sfts->length;
