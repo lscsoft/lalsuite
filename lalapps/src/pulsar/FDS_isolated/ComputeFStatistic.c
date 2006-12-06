@@ -583,7 +583,7 @@ int main(int argc,char *argv[])
   if ( uvar_expLALDemod == 3)
     {
       if (UpsampleSFTData()) return COMPUTEFSTAT_EXIT_UPSAMPLESFTFAIL;
-      fprintf(stdout,"Finished upsampling data\n");
+      fprintf(stdout,"Finished upsampling data by factor of %f\n", 1.0 / ( DemodParams->df * GV.tsft) );
     }
 
 #ifdef FILE_FMAX
