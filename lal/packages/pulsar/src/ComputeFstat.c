@@ -276,6 +276,7 @@ ComputeFStat ( LALStatus *status,
 	}
       else
 	{
+	  params->upsampling = 1;
 	  if ( XLALComputeFaFb (&FcX, multiSFTs->data[X], doppler->fkdot, multiSSB->data[X], multiAMcoef->data[X], params) != 0)
 	    {
 	      LALPrintError ("\nXALComputeFaFb() failed\n");
