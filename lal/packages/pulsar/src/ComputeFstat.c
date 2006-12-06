@@ -266,7 +266,7 @@ ComputeFStat ( LALStatus *status,
     {
       Fcomponents FcX = empty_Fcomponents;	/* for detector-specific FaX, FbX */
 
-      if ( params->upsampling != 1) 
+      if ( params->upsampling > 1) 
 	{
 	  if ( XLALComputeFaFbXavie (&FcX, multiSFTs->data[X], doppler->fkdot, multiSSB->data[X], multiAMcoef->data[X], params) != 0)
 	    {
