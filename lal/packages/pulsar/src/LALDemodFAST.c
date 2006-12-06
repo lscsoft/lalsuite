@@ -107,6 +107,7 @@ void LALDemodFAST(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
   COMPLEX16 Fa, Fb;
   REAL8 *sinVal,*cosVal;        /*LUT values computed by the routine do_trig_lut*/
   INT4  res;                    /*resolution of the argument of the trig functions: 2pi/res.*/
+  INT4  reso2;                   /*resolution of the argument of the trig functions divided by 2*/
   INT4  myindex;                /*LUT index*/
   REAL8 Y;                      /*Phase in alpha loop*/
 
@@ -152,12 +153,13 @@ void LALDemodFAST(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
 
   /* res=10*(params->mCohSFT); */
   /* This size LUT gives errors ~ 10^-7 with a three-term Taylor series */
-   res=64;
+   res=128;
+   reso2=res/2;
    sinVal=(REAL8 *)LALMalloc((res+1)*sizeof(REAL8));
    cosVal=(REAL8 *)LALMalloc((res+1)*sizeof(REAL8)); 
    for (k=0; k<=res; k++){
-     sinVal[k]=sin((LAL_TWOPI*k)/res);
-     cosVal[k]=cos((LAL_TWOPI*k)/res);
+     sinVal[k]=sin((LAL_TWOPI*(k-reso2))/reso2);
+     cosVal[k]=cos((LAL_TWOPI*(k-reso2))/reso2);
    }
 
   /* fine frequency resolution */
@@ -174,6 +176,13 @@ void LALDemodFAST(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
   /* Loop over frequencies to be demodulated */
   for(i=0 ; i< params->imax  ; i++ )
   {
+    FFT **inputptr=input;
+    REAL8 *xSumptr=xSum;
+    REAL8 *ySumptr=ySum;
+    REAL4 *aptr=params->amcoe->a->data;
+    REAL4 *bptr=params->amcoe->b->data;
+    INT4 *tempInt1ptr = tempInt1;
+
     Fa.re = 0.0;
     Fa.im = 0.0;
     Fb.re = 0.0;
@@ -185,28 +194,22 @@ void LALDemodFAST(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
     for(alpha=0;alpha<params->SFTno;alpha++)
       {
 	REAL8 tsin, tcos, tempFreq;
-	REAL4 a = params->amcoe->a->data[alpha];
-	REAL4 b = params->amcoe->b->data[alpha];
 	REAL8 realQXP;
 	REAL8 imagQXP;
+	REAL4 a = *aptr;
+	REAL4 b = *bptr;
+	INT4  no = *tempInt1ptr;
 
 	/* compute the frequency bin in over-resolved SFTs */
-	sftIndex =(INT4) ( (f*skyConst[tempInt1[alpha]]+xSum[alpha])*norm - ifmin );
+	sftIndex =(INT4) ( (f*skyConst[ no ]+ *xSumptr )*norm - ifmin );
 
-	Xalpha_k=input[alpha]->fft->data->data[sftIndex];
-	
-	/* since this is now in the innermost loop: should evaluate these 
-	   sines and cosines using LUT */
-/* 	y = -LAL_TWOPI * (f*skyConst[tempInt1[alpha]-1]+ySum[alpha]); */
-/* 	realQ = cos(y); */
-/* 	imagQ = sin(y); */
-	
-	/* Here's LUT version of what's been commented above */
-	Y = - f*skyConst[tempInt1[alpha]-1] - ySum[alpha];
+	Xalpha_k=(*inputptr)->fft->data->data[sftIndex];
+		
+	/* Here's the LUT version of the phase computation */
+	Y = - f*skyConst[ no - 1 ] - *ySumptr;
 	Y -= (INT4)Y;  
-	if ( Y < 0.0 ) Y += 1.0;
 
-	myindex = (INT4)(Y*res+0.5);
+	myindex = (INT4)(Y*reso2+reso2+0.5);
 	realQ = cosVal[myindex];
 	imagQ = sinVal[myindex];
 	  
@@ -218,6 +221,15 @@ void LALDemodFAST(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
 	Fa.im += a*imagQXP;
 	Fb.re += b*realQXP;
 	Fb.im += b*imagQXP;
+	
+	/* advance pointers that are functions of alpha: a, b,
+	   tempInt1, xSum, ySum, input */
+	inputptr++;
+	xSumptr++;
+	ySumptr++;
+	aptr++;
+	bptr++;
+	tempInt1ptr++;
       }      
 
     FaSq = Fa.re*Fa.re+Fa.im*Fa.im;
