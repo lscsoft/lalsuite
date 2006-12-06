@@ -451,17 +451,23 @@ LALSFTdataFind (LALStatus *status,
 
 
 /** Extract a timstamps-vector from the given SFTCatalog.
+ * 
+ * \note A list of *unique* timestamps is returned, i.e. only a single copy of a timestamp
+ * is returned, even if there are multiple occurrances of this timestamp in the catalog,
+ * e.g. for multiple IFOs or multiple frequency-bands...
+ * 
  */
 void
 LALSFTtimestampsFromCatalog (LALStatus *status,
 			     LIGOTimeGPSVector **timestamps,	/**< [out] extracted timestamps */
 			     const SFTCatalog *catalog )	/**< input SFT-catalogue */
 {
-  UINT4 numSFTs;
+  UINT4 numSFTs, numTS;
   UINT4 i;
   LIGOTimeGPSVector *ret = NULL;
+  REAL8 Tsft;
 
-  INITSTATUS (status, "LALSFTdataFind", SFTFILEIOC);
+  INITSTATUS (status, "LALSFTtimestampsFromCatalog", SFTFILEIOC);
   ATTATCHSTATUSPTR (status); 
 
   ASSERT ( timestamps, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
@@ -471,12 +477,29 @@ LALSFTtimestampsFromCatalog (LALStatus *status,
 
   numSFTs = catalog->length;
 
+  Tsft = 1.0 / catalog->data[0].header.deltaF;
+
+  /* large enough for all timestamps, but we might have fewer than that */
   TRY ( LALCreateTimestampVector ( status->statusPtr, &ret, numSFTs ), status );
 
+  numTS = 0;
   for ( i=0; i < numSFTs; i ++ )
-    ret->data[i] = catalog->data[i].header.epoch;
+    {
+      LIGOTimeGPS *thisTs = &(catalog->data[i].header.epoch);
+      if ( i && (thisTs->gpsSeconds == ret->data[i-1].gpsSeconds) && (thisTs->gpsNanoSeconds == ret->data[i-1].gpsNanoSeconds) )
+	continue;	/* skip double timestamp */
+      
+      ret->data[numTS++] = catalog->data[i].header.epoch;	/* new timestamp */
 
-
+    } /* for i < numSFTs */
+  
+  /* realloc data-segment in timestamps-vector to the actual length */
+  if ( (ret->data = LALRealloc ( ret->data, numTS * sizeof ( *ret->data ) )) == NULL ) { 
+    ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
+  }
+  ret->length = numTS;
+  ret->deltaT = Tsft;
+  
   /* done: return Ts-vector */
   (*timestamps) = ret;
 
@@ -3227,7 +3250,8 @@ find_files (const CHAR *globdir)
   intptr_t dir;
   struct _finddata_t entry;
 #endif
-  CHAR *dname, *ptr1, *ptr2;
+  CHAR *dname;
+  const CHAR *ptr1, *ptr2;
   CHAR *fpattern;
   size_t dirlen;
   CHAR **filelist = NULL; 
@@ -3242,7 +3266,7 @@ find_files (const CHAR *globdir)
     { /* globdir is multi-pattern ("pattern1;pattern2;pattern3") */
       /* call find_files() with every pattern found in globdir */
 
-      ptr1 = (CHAR*)globdir;
+      ptr1 = (const CHAR*)globdir;
       while ( (ptr2 = strchr (ptr1, FILE_SEPARATOR)) )
 	{
 	  /* ptr1 points to the beginning of a pattern, ptr2 to the end */
