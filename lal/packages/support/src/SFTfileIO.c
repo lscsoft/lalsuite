@@ -3013,7 +3013,7 @@ read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *head
 	}
 
       /* check that no NON-NULL bytes after first NULL in comment (->spec) */
-      ptr = index ( comm, 0 );	/* guaranteed to find sth, after previous check */
+      ptr = strchr ( comm, 0 );	/* guaranteed to find sth, after previous check */
       while ( ptr < (comm + rawheader.comment_length - 1) )
 	if ( *ptr++ != 0 )
 	  {
