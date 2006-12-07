@@ -2,7 +2,7 @@
 # $Id$
 
 # for using lalapps-defines + functions
-INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
+INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_srcdir)/src/pulsar/FDS_isolated
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 ## not usable before automake-1.6:

@@ -66,10 +66,10 @@
 
 /* lalapps includes */
 #include <lalapps.h>
-#include "../../FDS_isolated/DopplerScan.h"
+#include <DopplerScan.h>
 /* more efficient toplist using heaps */
-#include "../../FDS_isolated/HeapToplist.h"
-#include "../../FDS_isolated/FstatToplist.h"
+#include <HeapToplist.h>
+#include <FstatToplist.h>
 
 /******************************************************
  *   Protection against C++ name mangling
