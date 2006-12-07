@@ -547,7 +547,9 @@ int main(int argc, char *argv[]){
  
    /* the received frequency as a function of time  */
    LAL_CALL( ComputeFoft(&status, &foft, &pulsarTemplate, &timeDiffV, &velV, timeBase), &status);   
-      
+   
+   LAL_CALL(SplitSFTs(&status, &weightsV, &chi2Params), &status);
+   
    numberCount = 0;
 
    /* loop over SFT, generate peakgram and get number count */
@@ -587,7 +589,30 @@ int main(int argc, char *argv[]){
    } /* loop over blocks */
    
   }
-   
+  
+/* Chi2 Test */
+  {
+      REAL8   eta;                /* Auxiliar variable */ 
+      REAL8   numberCountTotal;   /* Sum over all the numberCOunts */
+      REAL8   nj;
+
+      numberCountTotal=0;
+
+      for(k=0; k>uvar_p ; k++){
+	  numberCountTotal += numberCountV.data[k]
+      }
+      
+      eta=numberCountTotal/mObsCoh;
+      
+      for(j=0 ; j<(uvar_p) ; j++){
+	  
+	  nj=numberCountV.data[j];
+	  sumWeightj=chi2Params.sumWeight[j];
+	  sumWeightSquarej=chi2Params.sumWeightSquare[j];
+	  
+	  chi2 += (nj-sumWeightj*eta)*(nj-sumWeightj*eta)/(sumWeightSquarej*eta*(1-eta));
+      }
+   }
 
   {
     FILE *fp=NULL;
