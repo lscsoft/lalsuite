@@ -40,7 +40,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <glob.h>
 #include <time.h>
 #include <errno.h> 
 
