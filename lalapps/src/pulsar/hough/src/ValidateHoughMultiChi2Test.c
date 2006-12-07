@@ -77,11 +77,6 @@ BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps, uvar_printStats, 
 /* local function prototype */
 
 
-void SplitSFTs(LALStatus         *status,
-	       REAL8Vector       *weightsV,
-	       HoughParamsTest   *chi2Params
-    );
-
 
 /* ****************************************
  * Structure, HoughParamsTest, typedef
@@ -94,6 +89,8 @@ typedef struct tagHoughParamsTest{
     REAL8  *sumWeightSquare;  /* Pointer to the sumWeightSquare of each block of data */
 }HoughParamsTest; 
 
+
+void SplitSFTs(LALStatus  *status, REAL8Vector   *weightsV, HoughParamsTest   *chi2Params);
 
 
 /******************************************/
@@ -162,7 +159,7 @@ int main(int argc, char *argv[]){
   CHAR     *uvar_timeStampsFile=NULL;
   CHAR     *uvar_outfile=NULL;
   LALStringVector *uvar_linefiles=NULL;
-  INT4     uvar_p
+  INT4     uvar_p;
 
 
   /* Set up the default parameters */  
@@ -481,7 +478,7 @@ int main(int argc, char *argv[]){
       
       /* loop over the weights and multiply them by the appropriate
 	 AM coefficients */
-      for ( k = 0, iIFO = 0; iIFO < numifo; iIFO++) {chi2Params->numberSFTp[p]=numberSFT
+      for ( k = 0, iIFO = 0; iIFO < numifo; iIFO++) {
 	
 	numsft = mdetStates->data[iIFO]->length;
 	
@@ -531,7 +528,7 @@ int main(int argc, char *argv[]){
 
   /* block for calculating peakgram and number count */  
   {
-    UINT4 iIFO, iSFT, ii;
+    UINT4 iIFO, iSFT, ii, numberSFTp;
     INT4 index;
     REAL8 sumWeightSquare;
     SFTtype  *sft;        
@@ -703,14 +700,13 @@ void ComputeFoft(LALStatus   *status,
 
 void SplitSFTs(LALStatus         *status,
 	       REAL8Vector       *weightsV,
-	       HoughParamsTest   *chi2Params
-               ){
+	       HoughParamsTest   *chi2Params){
   
     INT4    j=0;           /* index of each block. It runs betwen 0 and p */       
     REAL8   *weights_ptr;  /* pointer to weightsV.data */
     REAL8   sumWeightpMax; /* Value of sumWeight we want to fix in each set of SFTs */
     UINT4   numberSFT;     /* Counter with the # of SFTs in each set */
-    UINT4   mObsCoh;
+    UINT4   mObsCoh, p;
     REAL8   partialsumWeightp, partialsumWeightSquarep;
   
   /* --------------------------------------------- */
@@ -722,32 +718,35 @@ void SplitSFTs(LALStatus         *status,
   ASSERT (chi2Params,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
   
   ASSERT (weightsV->data,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
-  ASSERT (chi2Params->data,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (chi2Params->length,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
   ASSERT (chi2Params->numberSFTp,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
   ASSERT (chi2Params->sumWeight,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
   ASSERT (chi2Params->sumWeightSquare,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL); 
   
   mObsCoh = weightsV->length;    
-  p = chiParams->length;
+  p = chi2Params->length;
 
   sumWeightpMax=mObsCoh/p;       /* Compute the value of the sumWeight we want to fix in each set of SFT's */
   weights_ptr=weightsV->data;    /* Make the pointer to point to the first position of the vector weightsV.data */
 
-   
-      for (j=0;(weights_ptr-weightsV->data)<mObsCoh;j++){
+ 
+      for (j=0;(UINT4)(weights_ptr-weightsV->data)<mObsCoh;j++){
+
+	  partialsumWeightSquarep=0;
+	  partialsumWeightp=0;
 	  
-	  for(numberSFT=1,partialsumWeightp=0,partialsumWeightSquarep=0;
-	      partialsumWeightp<sumWeightp;
-	      weights_ptr++,numberSFTs++){
+	  for(numberSFT=1;
+	      partialsumWeightp<sumWeightpMax;
+	      numberSFT++){
 		  
 		  partialsumWeightp += *weights_ptr;
-		  partialsumWeightsquarep += (*weights_ptr)*(*weights_ptr);
-	      
+		  partialsumWeightSquarep += (*weights_ptr)*(*weights_ptr);
+		  weights_ptr++;
 	      } /* loop over SFTs */
 	  
 	  chi2Params->numberSFTp[j]=numberSFT;
-	  chi2Params->sumweight[j]=partialSumweight;
-	  chi2Params->sumweightSquare[j]=partialSumWeightSquare;
+	  chi2Params->sumWeight[j]=partialsumWeightp;
+	  chi2Params->sumWeightSquare[j]=partialsumWeightSquarep;
       
        } /* loop over the p blocks of data */
   
