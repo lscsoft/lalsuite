@@ -72,8 +72,7 @@ for o, a in opts:
     usage()
     sys.exit(1)
 
-#log_path = '/usr1/siemens/'
-log_path = '/tmp/'
+log_path = '/usr1/siemens/'
 df_pad=128
 
 if not config_file:
