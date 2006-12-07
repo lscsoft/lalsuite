@@ -22,7 +22,7 @@ INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 if HAVE_PYTHON
-bin_SCRIPTS = lalapps_strain_pipe
+bin_SCRIPTS = lalapps_strain_pipe lalapps_noise_comp_pipe
 pkgpython_DATA = mkcal.py strain.py
 endif
 
@@ -50,4 +50,8 @@ python_config.sed:
 lalapps_strain_pipe: $(srcdir)/strain_pipe.in python_config.sed
 	sed -f python_config.sed $(srcdir)/strain_pipe.in > lalapps_strain_pipe 
 	chmod +x lalapps_strain_pipe
+
+lalapps_noise_comp_pipe: $(srcdir)/noise_comp_pipe.in python_config.sed
+	sed -f python_config.sed $(srcdir)/noise_comp_pipe.in > lalapps_noise_comp_pipe 
+	chmod +x lalapps_noise_comp_pipe
 
