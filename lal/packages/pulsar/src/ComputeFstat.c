@@ -51,7 +51,7 @@ NRCSID( COMPUTEFSTATC, "$Id$");
 #define FALSE (1==0)
 
 
-#define LD_SMALL4       (1.0e-6)		/**< "small" number for REAL4*/
+#define LD_SMALL4       (1.0e-6)		/**< "small" number for REAL4*/ 
 #define OOTWOPI         (1.0 / LAL_TWOPI)	/**< 1/2pi */
 
 #define TWOPI_FLOAT     6.28318530717958f  	/**< single-precision 2*pi */
@@ -285,7 +285,7 @@ ComputeFStat ( LALStatus *status,
 
 #ifndef LAL_NDEBUG
       if ( !finite(FcX.Fa.re) || !finite(FcX.Fa.im) || !finite(FcX.Fb.re) || !finite(FcX.Fb.im) ) {
-	LALPrintError("XLALComputeFaFb() return non-finite: Fa=(%f,%f), Fb=(%f,%f)\n", 
+	LALPrintError("XLALComputeFaFb() returned non-finite: Fa=(%f,%f), Fb=(%f,%f)\n", 
 		      FcX.Fa.re, FcX.Fa.im, FcX.Fb.re, FcX.Fb.im );
 	ABORT (status,  COMPUTEFSTATC_EIEEE,  COMPUTEFSTATC_MSGEIEEE);
       }
@@ -387,7 +387,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,
   else
     upsampling = params->upsampling;
 
-  if ( (params->upsampling > 1) && (params->Dterms != 0) )
+  if ( (upsampling > 1) && (params->Dterms != 0) )
     {
       fprintf (stderr, "\n===== WARNING: XLALComputeFaFb() does not work correctly if using UPSAMPLING and Dterms!=0! you have been warned!\n\n");
     }
@@ -396,7 +396,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,
   numSFTs = sfts->length;
   Tsft = 1.0 / sfts->data[0].deltaF;
   {
-    REAL8 dFreq = sfts->data[0].deltaF / params->upsampling;
+    REAL8 dFreq = sfts->data[0].deltaF / upsampling;
     freqIndex0 = (UINT4) ( sfts->data[0].f0 / dFreq + 0.5); /* lowest freqency-index */
     freqIndex1 = freqIndex0 + sfts->data[0].data->length;
   }
@@ -466,9 +466,9 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 	  XLAL_ERROR ( "XLALComputeFaFb", XLAL_EFUNC);
 	}
 
-	kstar = (INT4) (Dphi_alpha * params->upsampling + 0.5);	/* k* = round(Dphi_alpha*chi) for positive Dphi */
-	kappa_star = Dphi_alpha - 1.0 * kstar / params->upsampling;
-	kappa_max = kappa_star + 1.0 * Dterms / params->upsampling;
+	kstar = (INT4) (Dphi_alpha * upsampling + 0.5);	/* k* = round(Dphi_alpha*chi) for positive Dphi */
+	kappa_star = Dphi_alpha - 1.0 * kstar / upsampling;
+	kappa_max = kappa_star + 1.0 * Dterms / upsampling;
 
 	/* ----- check that required frequency-bins are found in the SFTs ----- */
 	k0 = kstar - Dterms;	
@@ -527,7 +527,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 	      Xalpha_l ++;
 	      Xal = *Xalpha_l;
 	      
-	      pn = pn - 1.0f / params->upsampling; /* p_(n+1) */
+	      pn = pn - 1.0f / upsampling; /* p_(n+1) */
 	      Sn = pn * Sn + qn * Xal.re;	/* S_(n+1) */
 	      Tn = pn * Tn + qn * Xal.im;	/* T_(n+1) */
 	      qn *= pn;				/* q_(n+1) */
