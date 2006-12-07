@@ -75,7 +75,6 @@ struct CommandLineArgsTag {
   REAL8 t;                 /* Time interval to compute the FFT */
   char *hoftFrCacheFile;       /* Frame cache file for h(t) */
   char *derrFrCacheFile;       /* Frame cache file for DARM_ERR */
-  char *calFrCacheFile;       /* calibration frame cache file */
   char *derr_chan;         /* DARM_ERR channel name */ 
   char *hoft_chan;         /* h(t) channel name */
   char *noisefile;         /* output file for the noise */
@@ -483,7 +482,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"band",                 required_argument, NULL,           'c'},
     {"hoft-cache",           required_argument, NULL,           'd'},
     {"derr-cache",           required_argument, NULL,           'e'},
-    {"cal-cache",            required_argument, NULL,           'f'},
     {"derr-channel",         required_argument, NULL,           'g'},
     {"hoft-channel",         required_argument, NULL,           'i'},
     {"gps-start-time",       required_argument, NULL,           'j'},
@@ -493,7 +491,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"help",                 no_argument, NULL,                 'h'},
     {0, 0, 0, 0}
   };
-  char args[] = "ha:b:c:d:e:f:g:i:j:k:l:";
+  char args[] = "ha:b:c:d:e:g:i:j:k:l:";
 
   /* Initialize default values */
   CLA->f=0.0;
@@ -501,7 +499,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->t=0.0;
   CLA->hoftFrCacheFile=NULL;
   CLA->derrFrCacheFile=NULL;
-  CLA->calFrCacheFile=NULL;
   CLA->derr_chan=NULL;
   CLA->hoft_chan=NULL;
   CLA->noisefile=NULL;
@@ -536,10 +533,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     case 'e':
       CLA->derrFrCacheFile=optarg;
       break;    
-    case 'f':
-      /* name of as_q channel */
-      CLA->calFrCacheFile=optarg;
-      break;    
     case 'g':
       /* name of darm channel */
       CLA->derr_chan=optarg;
@@ -572,7 +565,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\t band (-c)\tFLOAT\t Frequency band (Hz).\n");
       fprintf(stdout,"\t hoft-cache (-d)\tFLOAT\t h(t) cache file name.\n");
       fprintf(stdout,"\t derr-cache (-e)\tFLOAT\t DARM_ERR cache file name.\n");
-      fprintf(stdout,"\t cal-cache (-f)\tFLOAT\t Calibration cache file name.\n");
       fprintf(stdout,"\t derr-channel (-g)\tFLOAT\t DARM_ERR channel name.\n");
       fprintf(stdout,"\t hoft-channel (-i)\tFLOAT\t h(t) channel name.\n");
       fprintf(stdout,"\t gps-start-time (-j)\tINT\t GPS start time.\n");
@@ -631,12 +623,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   if(CLA->derrFrCacheFile==NULL)
     {
       fprintf(stderr,"No DARM_ERR frame cache file specified.\n");
-      fprintf(stderr,"Try %s -h \n", argv[0]);
-      return 1;
-    }
-  if(CLA->calFrCacheFile==NULL)
-    {
-      fprintf(stderr,"No calibration frame cache file specified.\n");
       fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }
