@@ -71,7 +71,32 @@ class StrainJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_stderr_file('logs/strain-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
     self.set_sub_file('strain.sub')
     
+class NoiseJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+  """
+  A lalapps_StringSearch job used by the string pipeline. The static options
+  are read from the section in the ini file. The
+  stdout and stderr from the job are directed to the logs directory. The job
+  runs in the universe specified in the ini file. The path to the executable
+  is determined from the ini file.
+  """
+  def __init__(self,cp):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    self.__executable = cp.get('condor','noise')
+    self.__universe = cp.get('condor','universe')
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    pipeline.AnalysisJob.__init__(self,cp)
 
+    for sec in ['noisecomp']:
+      self.add_ini_opts(cp,sec)
+
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+
+    self.set_stdout_file('logs/noisecomp-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/noisecomp-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
+    self.set_sub_file('noisecomp.sub')
+    
 class DataFindNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
   A DataFindNode runs an instance of datafind in a Condor DAG.
@@ -135,6 +160,18 @@ class DataFindNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 
 
 class StrainNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+  """
+  A RingNode runs an instance of the ring code in a Condor DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of lalapps_StringSearch.
+    """
+    pipeline.CondorDAGNode.__init__(self,job)
+    pipeline.AnalysisNode.__init__(self)
+
+
+class NoiseNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
   A RingNode runs an instance of the ring code in a Condor DAG.
   """
