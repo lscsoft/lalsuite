@@ -57,6 +57,14 @@ extern int optind, opterr, optopt;
 #define MAXLINESRS   500000     /* Maximum # of lines in a Response file */
 
 
+NRCSID( NOISECOMPARISONC, "NoiseComparison $Id$");
+RCSID( "NoiseComparison $Id$");
+
+#define PROGRAM_NAME "NoiseComparison"
+#define CVS_REVISION "$Revision$"
+#define CVS_SOURCE "$Source$"
+#define CVS_DATE "$Date$"
+
 /***************************************************************************/
 
 /* STRUCTURES */
