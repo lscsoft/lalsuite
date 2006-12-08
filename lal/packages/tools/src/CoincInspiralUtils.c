@@ -1778,6 +1778,7 @@ XLALCoincInspiralStat(
   REAL4                 statValues[LAL_NUM_IFO];
   REAL4 statValue = 0;
   INT4  i;
+  INT4  ifoCounter = 0;
   
   if( coincStat == no_stat )
   {
@@ -1785,7 +1786,7 @@ XLALCoincInspiralStat(
   }
 
   /* for bittenL only*/
-  if( coincStat == bitten_l)
+  if( coincStat == bitten_l || coincStat == bitten_lsq)
   {
     for ( i = 0; i < LAL_NUM_IFO ; i++)
     {
@@ -1798,6 +1799,9 @@ XLALCoincInspiralStat(
   {
     if ( (snglInspiral = coincInspiral->snglInspiral[ifoNumber]) )
     {
+      /* count the number of IFOs for this coincidence */
+      ifoCounter++;
+
       if ( coincStat == snrsq )
       {        
         statValue += snglInspiral->snr * snglInspiral->snr;
@@ -1813,7 +1817,7 @@ XLALCoincInspiralStat(
           sqrt ( tmp_chisq/(2*tmp_bins-2) * (1+tmp_snr*tmp_snr/250) ) ;
       }
 
-      else if ( coincStat == bitten_l )
+      else if ( coincStat == bitten_l || coincStat == bitten_lsq)
       {
         statValues[ifoNumber] = bittenLParams->param_a[ifoNumber] 
                 * snglInspiral->snr 
@@ -1834,17 +1838,19 @@ XLALCoincInspiralStat(
 
   /*    for the bitten L case only , we need to compare different 
         values and keep the minimum one */
-  if ( coincStat == bitten_l )
+  if ( coincStat == bitten_l || coincStat == bitten_lsq)
   {
     statValue = sqrt(statValue);
     
-    for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
-    {
-      if ( (snglInspiral = coincInspiral->snglInspiral[ifoNumber]) )
+    if (coincStat == bitten_l || ifoCounter<3) {
+      for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
       {
-        if (statValues[ifoNumber] < statValue)
+        if ( (snglInspiral = coincInspiral->snglInspiral[ifoNumber]) )
         {
-         statValue = statValues[ifoNumber];
+          if (statValues[ifoNumber] < statValue)
+          {
+           statValue = statValues[ifoNumber];
+          }
         }
       }
     }
