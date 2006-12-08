@@ -479,6 +479,11 @@ CheckUserInput (LALStatus *status,  struct CommandLineArgsTag *CLA )
       fprintf (stderr, "\nSpecify only one of {duration, nTsft}!\n\n");
       ABORT (status, SEMIANALYTIC_EINPUT, SEMIANALYTIC_MSGEINPUT);
     }
+  if ( !have_duration && !have_nTsft && !have_timestamps )
+    {
+      fprintf (stderr, "\nDuration has not been specified! Use one of {duration, nTsft, timestamps}!\n\n");
+      ABORT (status, SEMIANALYTIC_EINPUT, SEMIANALYTIC_MSGEINPUT);
+    }
 
   /* now one can either specify {h0, cosiota} OR {aPlus, aCross} */
   {
