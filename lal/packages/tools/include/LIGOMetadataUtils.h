@@ -254,7 +254,8 @@ typedef enum
   snrsq,
   effective_snrsq,
   s3_snr_chi_stat,
-  bitten_l 
+  bitten_l,
+  bitten_lsq
 } 
 CoincInspiralStatistic;
 /*</lalVerbatim> */
