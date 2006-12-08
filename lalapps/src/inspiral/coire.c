@@ -465,6 +465,11 @@ int main( int argc, char *argv[] )
           {
             coincstat = bitten_l;
           }
+          else if ( ! strcmp( "bitten_lsq", optarg ) )
+          {
+            coincstat = bitten_lsq;
+          }
+
           else if ( ! strcmp( "s3_snr_chi_stat", optarg) )
           {
             coincstat = s3_snr_chi_stat;
