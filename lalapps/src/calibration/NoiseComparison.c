@@ -346,7 +346,7 @@ int ComputeNoise(struct CommandLineArgsTag CLA)
 
 
   fprintf(fpout, "    %d         %e          %e          %e\n", gpsepoch.gpsSeconds, 
-	  sqrt(mean_Sh_derr), sqrt(mean_Sh_hoft), sqrt(mean_Sh_hoft)/sqrt(mean_Sh_derr));
+	  sqrt(mean_Sh_hoft), sqrt(mean_Sh_derr), sqrt(mean_Sh_hoft)/sqrt(mean_Sh_derr));
   
   return 0;
 }
@@ -570,6 +570,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\t gps-start-time (-j)\tINT\t GPS start time.\n");
       fprintf(stdout,"\t gps-end-time (-k)\tINT\t GPS end time.\n");
       fprintf(stdout,"\t ouput-file (-l)\tSTRING\t Name of output file.\n");
+      fprintf(stdout,"\t response-file (-l)\tSTRING\t Name of response file.\n");
       fprintf(stdout,"\thelp (-h)\tFLAG\t This message\n");    
       exit(0);
       break;
@@ -641,6 +642,12 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   if(CLA->noisefile==NULL)
     {
       fprintf(stderr,"No output file specified.\n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
+      return 1;
+    }
+  if(CLA->ResponseFile==NULL)
+    {
+      fprintf(stderr,"No response file specified.\n");
       fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }
