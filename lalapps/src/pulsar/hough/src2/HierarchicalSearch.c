@@ -292,7 +292,7 @@ int MAIN( int argc, char *argv[]) {
   /* LALdemod related stuff */
   REAL8FrequencySeriesVector fstatVector1, fstatVector2; /* Fstatistic vectors for each stack */
   UINT4 binsFstat1, binsFstat2;
-  ComputeFParams CFparams;		   
+  static ComputeFParams CFparams;		   
 
   /* hough variables */
   HOUGHPeakGramVector pgV;
