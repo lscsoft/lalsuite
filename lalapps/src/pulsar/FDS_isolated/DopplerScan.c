@@ -67,10 +67,10 @@
 #define INDEX_f1_f1	PMETRIC_INDEX(3,3)
 
 /* all-sky skyregion string, with exact boundaries */
-#define DELTA_0     "-1.570796326794897)"
-#define DELTA_1     " 1.570796326794897)"
-#define ALPHA_0     "(0, "
-#define ALPHA_1     "(6.283185307179586, "
+#define DELTA_0     "-1.570796)"
+#define DELTA_1     " 1.570796)"
+#define ALPHA_0     "(1e-6, "
+#define ALPHA_1     "(6.283185, "
 
 #define SKYREGION_ALLSKY  ALPHA_0 DELTA_0 "," ALPHA_1 DELTA_0 "," ALPHA_1 DELTA_1 "," ALPHA_0 DELTA_1
 
