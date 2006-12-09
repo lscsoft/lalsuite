@@ -5,7 +5,7 @@
  * \ingroup PulsarMetric
  * \brief Computes the parameter space metric for a coherent pulsar search.
  *
- * $Id$
+ * \verbatim $Id$ \endverbatim
  *
  This function computes the metric \f$g_{\alpha\beta}(\mathbf{\lambda})\f$, as
  discussed in the header StackMetric.h, under the assumption
