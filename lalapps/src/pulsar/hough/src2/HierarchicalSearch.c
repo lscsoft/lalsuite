@@ -287,9 +287,9 @@ int MAIN( int argc, char *argv[]) {
 
   /* number of stacks -- not necessarily same as uvar_nStacks! */
   UINT4 nStacks1, nStacks2;
-  REAL8 deltaFstack1, deltaFstack2 = 0; /* frequency resolution of Fstat calculation */
-  REAL8 df1dot, df1dotRes;  /* coarse grid resolution in spindown */
-  UINT4 nf1dot, nf1dotRes; /* coarse and fine grid number of spindown values */
+  REAL8 deltaFstack1, deltaFstack2; /* frequency resolution of Fstat calculation */
+  REAL8 df1dot, df1dotRes, df1dot2;  /* coarse grid resolution in spindown */
+  UINT4 nf1dot, nf1dotRes, nf1dot2; /* coarse and fine grid number of spindown values */
 
   /* LALdemod related stuff */
   REAL8FrequencySeriesVector fstatVector1, fstatVector2; /* Fstatistic vectors for each stack */
@@ -343,11 +343,13 @@ int MAIN( int argc, char *argv[]) {
   BOOLEAN uvar_useToplist1;
   BOOLEAN uvar_useWeights;
 
-  REAL8 uvar_dAlpha, uvar_dDelta; /* resolution for flat or isotropic grids */
+  REAL8 uvar_dAlpha, uvar_dDelta; /* resolution for flat or isotropic grids -- coarse grid*/
+  REAL8 uvar_dAlpha2, uvar_dDelta2; /* resolution for flat or isotropic grids -- follow up*/
   REAL8 uvar_f1dot; /* first spindown value */
   REAL8 uvar_f1dotBand; /* range of first spindown parameter */
   REAL8 uvar_Freq, uvar_FreqBand;
-  REAL8 uvar_dFreq, uvar_df1dot;
+  REAL8 uvar_dFreq, uvar_df1dot; /* coarse grid frequency and spindown resolution */
+  REAL8 uvar_dFreq2, uvar_df1dot2; /* follow-up grid frequency and spindown resolution */
   REAL8 uvar_peakThrF; /* threshold of Fstat to select peaks */
   REAL8 uvar_mismatch1; /* metric mismatch for first stage coarse grid */
   REAL8 uvar_mismatch2; /* metric mismatch for second stage coarse grid */
@@ -406,6 +408,8 @@ int MAIN( int argc, char *argv[]) {
   uvar_Dterms = DTERMS;
   uvar_dAlpha = DALPHA;
   uvar_dDelta = DDELTA;
+  uvar_dAlpha2 = DALPHA;
+  uvar_dDelta2 = DDELTA;
   uvar_f1dot = FDOT;
   uvar_f1dotBand = DFDOT;
   uvar_Freq = FSTART;
@@ -463,13 +467,15 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "DataFiles2",   0,  UVAR_OPTIONAL, "2nd SFT file pattern", &uvar_DataFiles2), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyRegion",    0,  UVAR_OPTIONAL, "sky-region polygon (or 'allsky')", &uvar_skyRegion), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "Freq",        'f', UVAR_OPTIONAL, "Start search frequency", &uvar_Freq), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "dFreq",        0, UVAR_OPTIONAL, "Frequency resolution (default=1/Tstack)", &uvar_dFreq), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "dFreq",        0,  UVAR_OPTIONAL, "Frequency resolution (default=1/Tstack)", &uvar_dFreq), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "FreqBand",    'b', UVAR_OPTIONAL, "Search frequency band", &uvar_FreqBand), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "f1dot",        0,  UVAR_OPTIONAL, "Spindown parameter", &uvar_f1dot), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "df1dot",       0,  UVAR_OPTIONAL, "Spindown resolution (default=1/Tstack^2)", &uvar_df1dot), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "f1dotBand",    0,  UVAR_OPTIONAL, "Spindown Range", &uvar_f1dotBand), &status);
   LAL_CALL( LALRegisterREALUserVar (  &status, "df1dotRes",    0,  UVAR_OPTIONAL, "Resolution in residual fdot values (default=df1dot/nStacks1)", &uvar_df1dotRes), &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "nf1dotRes",    0,  UVAR_OPTIONAL, "No.of residual fdot values (default=nStacks1)", &uvar_nf1dotRes), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "dFreq2",       0,  UVAR_OPTIONAL, "Frequency resolution for follow-up (default=1/Tstack2)", &uvar_dFreq2), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "df1dot2",      0,  UVAR_OPTIONAL, "Spindown resolution for follow-up (default=1/Tstack2^2)", &uvar_df1dot2), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "nStacks1",    'N', UVAR_OPTIONAL, "No.of 1st stage stacks", &uvar_nStacks1 ), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "mismatch1",    0,  UVAR_OPTIONAL, "1st stage mismatch", &uvar_mismatch1), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "mismatch2",    0,  UVAR_OPTIONAL, "2nd stage mismatch", &uvar_mismatch2), &status);
@@ -478,8 +484,10 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar (   &status, "metricType1",  0,  UVAR_OPTIONAL, "0=none,1=Ptole-analytic,2=Ptole-numeric,3=exact", &uvar_metricType1), &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "metricType2",  0,  UVAR_OPTIONAL, "0=none,1=Ptole-analytic,2=Ptole-numeric,3=exact", &uvar_metricType2), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyGridFile",  0,  UVAR_OPTIONAL, "sky-grid file", &uvar_skyGridFile), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "dAlpha",       0,  UVAR_OPTIONAL, "Resolution for flat or isotropic grids", &uvar_dAlpha), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "dDelta",       0,  UVAR_OPTIONAL, "Resolution for flat or isotropic grids", &uvar_dDelta), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "dAlpha",       0,  UVAR_OPTIONAL, "Resolution for flat or isotropic coarse grid", &uvar_dAlpha), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "dDelta",       0,  UVAR_OPTIONAL, "Resolution for flat or isotropic coarse grid", &uvar_dDelta), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "dAlpha2",      0,  UVAR_OPTIONAL, "Resolution for flat or isotropic grids for follow up", &uvar_dAlpha2), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "dDelta2",      0,  UVAR_OPTIONAL, "Resolution for flat or isotropic grids for follow up", &uvar_dDelta2), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "pixelFactor",  0,  UVAR_OPTIONAL, "Semi coh. sky resolution = 1/v*pixelFactor*f*Tcoh", &uvar_pixelFactor), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "semiCohPatchX",0,  UVAR_OPTIONAL, "Semi coh. sky grid size (default = 1/f*Tcoh*Vepi)", &uvar_semiCohPatchX), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "semiCohPatchY",0,  UVAR_OPTIONAL, "Semi coh. sky grid size (default = 1/f*Tcoh*Vepi)", &uvar_semiCohPatchY), &status);
@@ -950,13 +958,31 @@ int MAIN( int argc, char *argv[]) {
     
     /* some useful params computed by SetUpSFTs */
     tStack2 = usefulParams2.tStack;
-    deltaFstack2 = 1.0/tStack2;
     tObs2 = usefulParams2.tObs;
     nStacks2 = usefulParams2.nStacks;
     tStart2GPS = usefulParams2.tStartGPS;
     midTstack2 = usefulParams2.midTstack;
     startTstack2 = usefulParams2.startTstack;
 
+
+    /* set Fstat calculation frequency resolution
+       -- default is 1/tstack */
+    if ( LALUserVarWasSet(&uvar_dFreq2) ) {
+      deltaFstack2 = uvar_dFreq2;
+    }
+    else {
+      deltaFstack2 = 1.0/tStack2;
+    }
+    
+    /* set Fstat spindown resolution
+       -- default is 1/Tstack^2 */
+    if ( LALUserVarWasSet(&uvar_df1dot) ) {
+      df1dot2 = uvar_df1dot2;
+    }
+    else {
+      df1dot2 = 1.0/(tStack2*tStack2);
+    }
+    
     /* some second stage debug info */
     LogPrintf(LOG_DEBUG, "GPS start time: %d, Duration: %fsec, ", startTstack2->data[0].gpsSeconds, tStack2);
     for ( j = 0; j < (INT4)stackMultiSFT2.data[0]->length; j++) {
@@ -965,8 +991,7 @@ int MAIN( int argc, char *argv[]) {
       } /* loop over ifos */    
     LogPrintfVerbatim(LOG_DEBUG, "\n");
     
-    
-    
+        
     /* set reference time for calculating fstat -- now it is beginning of second stack*/
     thisPoint2.refTime = tStart2GPS;
     /* binary and higher spindowns not implemented so far */
@@ -976,8 +1001,6 @@ int MAIN( int argc, char *argv[]) {
               
   } /* end if(uvar_followup) */
   
-
-  /* start setting up the semicoherent (Hough or stack slide) part of the search */
   
 
 
@@ -1014,8 +1037,8 @@ int MAIN( int argc, char *argv[]) {
       create_fstat_toplist(&fstatToplist, uvar_nCand2);
       
      /* prepare initialization of DopplerSkyScanner to step through paramter space */
-      scanInit2.dAlpha = uvar_dAlpha;
-      scanInit2.dDelta = uvar_dDelta;
+      scanInit2.dAlpha = uvar_dAlpha2;
+      scanInit2.dDelta = uvar_dDelta2;
       scanInit2.gridType = uvar_gridType2;
       scanInit2.metricType = uvar_metricType2;
       scanInit2.metricMismatch = uvar_mismatch2;
@@ -1227,8 +1250,7 @@ int MAIN( int argc, char *argv[]) {
 		  /* loop over fine skygrid points */
 		  while(1)
 		    {
-		      UINT4 ifdot2, nfdot2;  /* counter and number of spindown values */
-		      REAL8 dfDot2;  /* resolution in spindown */
+		      UINT4 ifdot2;  /* counter for spindown values */
 
 		      XLALNextDopplerSkyPos( &dopplerpos2, &thisScan2 );
 		      if (thisScan2.state == STATE_FINISHED) /* scanned all DopplerPositions yet? */
@@ -1242,19 +1264,17 @@ int MAIN( int argc, char *argv[]) {
 		      thisPoint2.Delta = dopplerpos2.Delta;
 		      		      
 		      /* number of fdot values */
-		      /* dfDot2 = thisScan2.dfkdot[1]; */
-		      dfDot2 = 1.0/(tStack2*tStack2);
-		      nfdot2 = (UINT4)( fdotBand1 / dfDot2 + 0.5) + 1; 
+		      nf1dot2 = (UINT4)( fdotBand1 / df1dot2 + 0.5) + 1; 
 		      
 		      /* loop over fdot values */
-		      for ( ifdot2 = 0; ifdot2 < nfdot2; ifdot2++)
+		      for ( ifdot2 = 0; ifdot2 < nf1dot2; ifdot2++)
 			{
 
 			  /*LogPrintf(LOG_DEBUG, "Following up with %d Freq. bins, %d/%d spindowns, %d skypoints\n",
 			    binsFstat2, ifdot,nfdot, thisScan2.numSkyGridPoints); */
 			  
 			  /* set spindown value for Fstat calculation */
-			  thisPoint2.fkdot[1] = fdot1 + ifdot2 * dfDot2;
+			  thisPoint2.fkdot[1] = fdot1 + ifdot2 * df1dot2;
 			  thisPoint2.fkdot[0] = fStart1;
 
 			  /* calculate the Fstatistic */
