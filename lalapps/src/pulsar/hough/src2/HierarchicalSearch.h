@@ -152,10 +152,12 @@ NRCSID( HIERARCHICALSEARCHH, "$Id$" );
     REAL8 patchSizeY;          /**< Size of semicoherent sky-patch */
     REAL8 fdot;                /**< spindown value of demodulation point */
     UINT4 nfdot;               /**< number of fdot values to search over */ 
+    REAL8 dfdot;               /**< resolution in residual spindowns */
     CHAR *outBaseName;         /**< file for writing output -- if chosen */
     BOOLEAN useToplist;        /**< Use a toplist for producing candidates? */
     REAL8  threshold;          /**< Threshold for candidate selection */
     REAL8Vector *weightsV;     /**< Vector of weights for each stack */
+    UINT4 extraBinsFstat;      /**< Extra bins required for Fstat calculation */
   } SemiCoherentParams;
 
   /** one hough candidate */
