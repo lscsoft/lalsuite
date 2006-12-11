@@ -138,6 +138,8 @@ int main(int argc, char *argv[]){
   /* Chi2Test parameters */
   static HoughParamsTest chi2Params;
   static REAL8Vector numberCountV;  /* Vector with the number count of each block inside */
+  REAL8  numberCountTotal;
+  REAL8  chi2;
 
   /* sft constraint variables */
   LIGOTimeGPS startTimeGPS, endTimeGPS;
@@ -594,12 +596,13 @@ int main(int argc, char *argv[]){
   {
       REAL8   eta;                /* Auxiliar variable */ 
       REAL8   numberCountTotal;   /* Sum over all the numberCOunts */
-      REAL8   nj;
+      REAL8   nj, sumWeightj, sumWeightSquarej;
+      REAL8   chi2;               
 
       numberCountTotal=0;
 
       for(k=0; k>uvar_p ; k++){
-	  numberCountTotal += numberCountV.data[k]
+	  numberCountTotal += numberCountV.data[k];
       }
       
       eta=numberCountTotal/mObsCoh;
@@ -617,8 +620,8 @@ int main(int argc, char *argv[]){
   {
     FILE *fp=NULL;
     fp = fopen("./tempout", "w");
-    fprintf(fp, "%g  %g  %g\n", (numberCount - meanN)/sigmaN, meanN ,sigmaN);
-    fprintf(stdout, "%g  %g  %g\n", (numberCount - meanN)/sigmaN, meanN ,sigmaN);
+    fprintf(fp, "%g  %g  %g  %g \n", (numberCountTotal - meanN)/sigmaN, meanN ,sigmaN, chi2);
+    fprintf(stdout, "%g  %g  %g  %g \n", (numberCountTotal - meanN)/sigmaN, meanN ,sigmaN, chi2);
     fclose(fp);
   }
 
