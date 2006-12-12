@@ -162,6 +162,10 @@ void LALCreateSFTtype (LALStatus *status, SFTtype **sft, UINT4 SFTlen);
 void LALCreateSFTVector (LALStatus *status, SFTVector **sftvect, UINT4 numSFTs, UINT4 SFTlen);
 void LALCreateMultiSFTVector ( LALStatus *status, MultiSFTVector **out, UINT4 length, UINT4Vector *numsft );
 
+COMPLEX8Vector *XLALrefineCOMPLEX8Vector (const COMPLEX8Vector *in, UINT4 refineby, UINT4 Dterms);
+void upsampleMultiSFTVector (LALStatus *, MultiSFTVector *inout, UINT4 upsample, UINT4 Dterms);
+void upsampleSFTVector (LALStatus *, SFTVector *inout, UINT4 upsample, UINT4 Dterms);
+
 void LALDestroySFTtype (LALStatus *status, SFTtype **sft);
 void LALDestroySFTVector (LALStatus *status, SFTVector **sftvect);
 void LALDestroyPSDVector (LALStatus *status, PSDVector **vect);
