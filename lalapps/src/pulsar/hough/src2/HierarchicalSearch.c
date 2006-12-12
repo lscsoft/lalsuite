@@ -212,8 +212,9 @@ void GetHoughCandidates_threshold(LALStatus *status, SemiCohCandidateList *out, 
 				  HOUGHDemodPar *parDem, REAL8 threshold);
 
 /* default values for input variables */
-#define EPHEMERISDIR "/local_data/badkri/lscsoft/share/lal/" /**< Default location of ephemeris files*/
-#define EPHEMERISYEAR "05-09"   /**< Default location of sun ephemeris */
+#define EARTHEPHEMERIS "./earth05-09.dat"
+#define SUNEPHEMERIS "./sun05-09.dat"
+
 #define BLOCKSRNGMED 101 /**< Default running median window size */
 #define FSTART 310.0   /**< Default Start search frequency */
 
@@ -374,8 +375,8 @@ int MAIN( int argc, char *argv[]) {
   INT4 uvar_metricType1, uvar_metricType2;
   INT4 uvar_sftUpsampling;
 
-  CHAR *uvar_ephemDir=NULL;
-  CHAR *uvar_ephemYear=NULL;
+  CHAR *uvar_ephemE=NULL;
+  CHAR *uvar_ephemS=NULL;
   CHAR *uvar_DataFiles1=NULL;
   CHAR *uvar_DataFiles2=NULL;
   CHAR *uvar_fnameout=NULL;
@@ -437,14 +438,15 @@ int MAIN( int argc, char *argv[]) {
 
   uvar_skyGridFile = NULL;
 
+
+  uvar_ephemE = (CHAR *)LALMalloc( 512*sizeof(CHAR));
+  strcpy(uvar_ephemE,EARTHEPHEMERIS);
+
+  uvar_ephemS = (CHAR *)LALMalloc( 512*sizeof(CHAR));
+  strcpy(uvar_ephemS,SUNEPHEMERIS);
+
   uvar_skyRegion = (CHAR *)LALMalloc(512*sizeof(CHAR));
   strcpy(uvar_skyRegion, SKYREGION);
-
-  uvar_ephemDir = (CHAR *)LALMalloc(512*sizeof(CHAR));
-  strcpy(uvar_ephemDir, EPHEMERISDIR);
-
-  uvar_ephemYear = (CHAR *)LALMalloc(512*sizeof(CHAR));
-  strcpy(uvar_ephemYear, EPHEMERISYEAR);
 
   uvar_DataFiles1 = (CHAR *)LALMalloc(512*sizeof(CHAR));
   strcpy(uvar_DataFiles1, SFTDIRECTORY);
@@ -498,8 +500,8 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar(    &status, "nCand2",       0,  UVAR_OPTIONAL, "No.of 2nd stage candidates to be saved",&uvar_nCand2), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printCand1",   0,  UVAR_OPTIONAL, "Print 1st stage candidates", &uvar_printCand1), &status);  
   LAL_CALL( LALRegisterREALUserVar(   &status, "refTime",      0,  UVAR_OPTIONAL, "Ref. time for pulsar pars [start time]", &uvar_refTime), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemDir",     0,  UVAR_OPTIONAL, "Location of ephemeris files", &uvar_ephemDir),  &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemYear",    0,  UVAR_OPTIONAL, "Ephemeris year", &uvar_ephemYear),  &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemE",       0,  UVAR_OPTIONAL, "Location of Earth ephemeris file", &uvar_ephemE),  &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemS",       0,  UVAR_OPTIONAL, "Location of Sun ephemeris file", &uvar_ephemS),  &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "minStartTime1",0,  UVAR_OPTIONAL, "1st stage min start time of observation", &uvar_minStartTime1), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "maxEndTime1",  0,  UVAR_OPTIONAL, "1st stage max end time of observation",   &uvar_maxEndTime1),   &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "minStartTime2",0,  UVAR_OPTIONAL, "2nd stage min start time of observation", &uvar_minStartTime2), &status);
@@ -610,30 +612,13 @@ int MAIN( int argc, char *argv[]) {
   /*--------- Some initializations ----------*/
 
   /* initialize ephemeris info */ 
-  {
-#define FNAME_LENGTH 512
-    CHAR ephemE[FNAME_LENGTH], ephemS[FNAME_LENGTH];
-    
-    if ( LALUserVarWasSet(&uvar_ephemDir) )
-      {
-	LALSnprintf(ephemE, FNAME_LENGTH, "%s/earth%s.dat", uvar_ephemDir, uvar_ephemYear);
-	LALSnprintf(ephemS, FNAME_LENGTH, "%s/sun%s.dat", uvar_ephemDir, uvar_ephemYear);
-      }
-    else
-      {
-	LALSnprintf(ephemE, FNAME_LENGTH, "earth%s.dat", uvar_ephemYear);
-	LALSnprintf(ephemS, FNAME_LENGTH, "sun%s.dat",  uvar_ephemYear);
-      }
-    ephemE[FNAME_LENGTH-1]=0;
-    ephemS[FNAME_LENGTH-1]=0;
 
-    edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
-    (*edat).ephiles.earthEphemeris = ephemE;
-    (*edat).ephiles.sunEphemeris = ephemS;
-    
-    /* read in ephemeris data */
-    LAL_CALL( LALInitBarycenter( &status, edat), &status);        
-  }
+  edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
+  (*edat).ephiles.earthEphemeris = uvar_ephemE;
+  (*edat).ephiles.sunEphemeris = uvar_ephemS;
+  
+  /* read in ephemeris data */
+  LAL_CALL( LALInitBarycenter( &status, edat), &status);        
 
 
   LAL_CALL ( LALFloatToGPS( &status, &minStartTimeGPS1, &uvar_minStartTime1), &status);
