@@ -54,7 +54,27 @@ extern int optind, opterr, optopt;
 
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 100; } else ((void)0)
+
+COMPLEX8 tmpa, tmpb, tmpc; 
+REAL4 tmpx, tmpy;
+
+#define cdiv( a, b ) \
+( tmpa = (a), tmpb = (b), \
+  fabs( tmpb.re ) >= fabs( tmpb.im ) ? \
+    ( tmpx = tmpb.im / tmpb.re, \
+      tmpy = tmpb.re + tmpx * tmpb.im, \
+      tmpc.re = ( tmpa.re + tmpx * tmpa.im ) / tmpy, \
+      tmpc.im = ( tmpa.im - tmpx * tmpa.re ) / tmpy, \
+      tmpc ) : \
+    ( tmpx = tmpb.re / tmpb.im, \
+      tmpy = tmpb.im + tmpx * tmpb.re, \
+      tmpc.re = ( tmpa.re * tmpx + tmpa.im ) / tmpy, \
+      tmpc.im = ( tmpa.im * tmpx - tmpa.re ) / tmpy, \
+      tmpc ) )
+
+
 #define MAXLINESRS   500000     /* Maximum # of lines in a Response file */
+#define MAXFACTORS   500000       /* Maximum # of factors to be computed */
 
 
 NRCSID( NOISECOMPARISONC, "NoiseComparison $Id$");
@@ -71,16 +91,27 @@ RCSID( "NoiseComparison $Id$");
 
 struct CommandLineArgsTag {
   REAL8 f;                 /* Starting Frequency */
+  REAL8 fcal;              /* Calibration line frequency */
   REAL8 b;                 /* band */    
   REAL8 t;                 /* Time interval to compute the FFT */
-  char *hoftFrCacheFile;       /* Frame cache file for h(t) */
-  char *derrFrCacheFile;       /* Frame cache file for DARM_ERR */
+  char *hoftFrCacheFile;   /* Frame cache file for h(t) */
+  char *derrFrCacheFile;   /* Frame cache file for DARM_ERR */
   char *derr_chan;         /* DARM_ERR channel name */ 
+  char *exc_chan;          /* DARM_ERR channel name */ 
+  char *darm_chan;         /* DARM_ERR channel name */ 
+  char *asq_chan;          /* DARM_ERR channel name */ 
   char *hoft_chan;         /* h(t) channel name */
   char *noisefile;         /* output file for the noise */
-  char *ResponseFile;         /* response function file */
+  char *OLGFile;           /* open loop gain file */
+  char *SensingFile;       /* sensing function file */
   INT4 GPSStart;           /* Start and end GPS times of the segment to be compared*/
-  INT4 GPSEnd;
+  INT4 GPSEnd;         
+  REAL8 G0Re;              /* Real part of open loop gain at cal line freq.*/
+  REAL8 G0Im;              /* Imaginary part of open loop gain at cal line freq. */
+  REAL8 D0Re;              /* Real part of digital filter at cal line freq.*/
+  REAL8 D0Im;              /* Imaginary part of digital filter at cal line freq. */
+  REAL8 W0Re;              /* Real part of whitening filter at cal line freq.*/
+  REAL8 W0Im;              /* Imaginary part of whitening filter at cal line freq. */
 } CommandLineArgs;
 
 typedef struct ResponseFunctionTag
@@ -124,7 +155,9 @@ REAL4FFTPlan *fftPlan=NULL;
 FrPos derrpos;
 FrPos hoftpos;
 
-Response R0,R;
+Response OLG0, OLG, Sensing0, Sensing;
+
+REAL8 gamma[MAXFACTORS];
 
 /***************************************************************************/
 
@@ -134,9 +167,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA);
 /* */
 int Initialise(struct CommandLineArgsTag CLA);
 /* */
-int ReadResponse(struct CommandLineArgsTag CLA);
+int GetFactors(struct CommandLineArgsTag CLA);
 /* */
-int ComputeNoise(struct CommandLineArgsTag CLA);   
+int ReadCalFiles(struct CommandLineArgsTag CLA);
+/* */
+int ComputeNoise(struct CommandLineArgsTag CLA, int i);   
 /* */
 int Finalise(void);
 
@@ -148,7 +183,7 @@ int main(int argc,char *argv[])
 
   if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
 
-  if (ReadResponse(CommandLineArgs)) return 3;
+  if (ReadCalFiles(CommandLineArgs)) return 2;
 
   duration = CommandLineArgs.GPSEnd-CommandLineArgs.GPSStart;
 
@@ -157,17 +192,19 @@ int main(int argc,char *argv[])
   gpsepoch.gpsSeconds=CommandLineArgs.GPSStart;
   gpsepoch.gpsNanoSeconds=0;
 
-  if(Initialise(CommandLineArgs)) return 1;
+  if(Initialise(CommandLineArgs)) return 3;
+
+  if(GetFactors(CommandLineArgs)) return 4;
   
   for(i=0;i<N;i++)
     {
       gpsepoch.gpsSeconds=CommandLineArgs.GPSStart+i*CommandLineArgs.t;
       gpsepoch.gpsNanoSeconds=0;
 
-      if(ComputeNoise(CommandLineArgs)) return 2;
+      if(ComputeNoise(CommandLineArgs,i)) return 5;
     }
   
-  if(Finalise()) return 1;
+  if(Finalise()) return 6;
  
   return 0;
 }
@@ -177,6 +214,7 @@ int main(int argc,char *argv[])
 
 /*  FUNCTIONS */
 /*******************************************************************************/
+
 int Initialise(struct CommandLineArgsTag CLA)
 {
 
@@ -266,14 +304,195 @@ int Initialise(struct CommandLineArgsTag CLA)
   
   return 0;
 }
+
 /*******************************************************************************/
 
-int ComputeNoise(struct CommandLineArgsTag CLA)
+int GetFactors(struct CommandLineArgsTag CLA)
+{
+
+FrPos pos1;
+
+static REAL4TimeSeries darm;
+static REAL4TimeSeries asq;
+static REAL4TimeSeries exc;
+
+static FrChanIn chanin_darm;
+static FrChanIn chanin_asq;
+static FrChanIn chanin_exc;
+
+CalFactors factors;
+UpdateFactorsParams params;
+
+REAL4Vector *asqwin=NULL,*excwin=NULL,*darmwin=NULL;  /* windows */
+
+LALWindowParams winparams;
+
+INT4 k,m;
+LIGOTimeGPS localgpsepoch=gpsepoch; /* Local variable epoch used to calculate the calibration factors */
+long double gtime=(long double)(localgpsepoch.gpsSeconds+(long double)localgpsepoch.gpsNanoSeconds*1E-9);
+
+FrCache *framecache;                                           /* frame reading variables */
+FrStream *framestream=NULL;
+
+  /* create Frame cache, open frame stream and delete frame cache */
+  LALFrCacheImport(&status,&framecache,CommandLineArgs.derrFrCacheFile);
+  TESTSTATUS( &status );
+  LALFrCacheOpen(&status,&framestream,framecache);
+  TESTSTATUS( &status );
+  LALDestroyFrCache(&status,&framecache);
+  TESTSTATUS( &status );
+
+ 
+
+  chanin_asq.type  = ADCDataChannel;
+  chanin_darm.type = ADCDataChannel;
+  chanin_exc.type  = ADCDataChannel;
+
+  chanin_asq.name  = CLA.asq_chan;
+  chanin_darm.name = CLA.darm_chan;
+  chanin_exc.name  = CLA.exc_chan; 
+
+  /* Get channel time step size by calling LALFrGetREAL4TimeSeries */
+  LALFrSeek(&status,&localgpsepoch,framestream);
+  TESTSTATUS( &status );
+  LALFrGetPos(&status,&pos1,framestream);
+  TESTSTATUS( &status );
+  LALFrGetREAL4TimeSeries(&status,&asq,&chanin_asq,framestream);
+  TESTSTATUS( &status );
+  LALFrSetPos(&status,&pos1,framestream);
+  TESTSTATUS( &status );
+  LALFrGetREAL4TimeSeries(&status,&darm,&chanin_darm,framestream);
+  TESTSTATUS( &status );
+  LALFrSetPos(&status,&pos1,framestream);
+  TESTSTATUS( &status );
+  LALFrGetREAL4TimeSeries(&status,&exc,&chanin_exc,framestream);
+  TESTSTATUS( &status );
+
+
+  /* Allocate space for data vectors */
+  LALCreateVector(&status,&asq.data,(UINT4)(CLA.t/asq.deltaT +0.5));
+  TESTSTATUS( &status );
+  LALCreateVector(&status,&darm.data,(UINT4)(CLA.t/darm.deltaT +0.5));
+  TESTSTATUS( &status );
+  LALCreateVector(&status,&exc.data,(UINT4)(CLA.t/exc.deltaT +0.5));
+  TESTSTATUS( &status );
+
+
+  /* Create Window vectors */
+  LALCreateVector(&status,&asqwin,(UINT4)(CLA.t/asq.deltaT +0.5));
+  TESTSTATUS( &status );
+  LALCreateVector(&status,&darmwin,(UINT4)(CLA.t/darm.deltaT +0.5));
+  TESTSTATUS( &status );
+  LALCreateVector(&status,&excwin,(UINT4)(CLA.t/exc.deltaT +0.5));
+  TESTSTATUS( &status );
+
+  winparams.type=Hann;
+   
+  /* windows for time domain channels */
+  /* asq */
+  winparams.length=(INT4)(CLA.t/asq.deltaT +0.5);
+  LALWindow(&status,asqwin,&winparams);
+  TESTSTATUS( &status );
+  
+  /* darm */
+  winparams.length=(INT4)(CLA.t/darm.deltaT +0.5);
+  LALWindow(&status,darmwin,&winparams);
+  TESTSTATUS( &status );
+
+  /* exc */
+  winparams.length=(INT4)(CLA.t/exc.deltaT +0.5);
+  LALWindow(&status,excwin,&winparams);
+  TESTSTATUS( &status );
+
+  for(m=0;m < (INT4)(duration/CLA.t);m++)
+    {
+      /* Fill data vectors with data */
+      LALFrSeek(&status,&localgpsepoch,framestream);
+      TESTSTATUS( &status );
+      LALFrGetPos(&status,&pos1,framestream);
+      TESTSTATUS( &status );
+
+      LALFrSetPos(&status,&pos1,framestream);
+      TESTSTATUS( &status );
+      LALFrGetREAL4TimeSeries(&status,&asq,&chanin_asq,framestream);
+      TESTSTATUS( &status );
+
+      LALFrSetPos(&status,&pos1,framestream);
+      TESTSTATUS( &status );
+      LALFrGetREAL4TimeSeries(&status,&darm,&chanin_darm,framestream);
+      TESTSTATUS( &status );
+
+      LALFrSetPos(&status,&pos1,framestream);
+      TESTSTATUS( &status );
+      LALFrGetREAL4TimeSeries(&status,&exc,&chanin_exc,framestream);
+      TESTSTATUS( &status );
+
+      /* Window the data */
+      for(k=0;k<(INT4)(CLA.t/asq.deltaT +0.5);k++)
+	{
+	  asq.data->data[k] *= 2.0*asqwin->data[k];
+	}
+      for(k=0;k<(INT4)(CLA.t/darm.deltaT +0.5);k++)
+	{
+	  darm.data->data[k] *= 2.0*darmwin->data[k];
+	}
+      for(k=0;k<(INT4)(CLA.t/exc.deltaT +0.5);k++)
+	{
+	  exc.data->data[k] *= 2.0*excwin->data[k];
+	}
+      
+      /* set params to call LALComputeCalibrationFactors */
+      params.darmCtrl = &darm;
+      params.asQ = &asq;
+      params.exc = &exc;
+      params.lineFrequency = CLA.fcal;
+      params.openloop.re =  CLA.G0Re;
+      params.openloop.im =  CLA.G0Im;
+      params.digital.re = CLA.D0Re;
+      params.digital.im = CLA.D0Im;
+      params.whitener.re = CLA.W0Re;
+      params.whitener.im = CLA.W0Im;
+	  
+      LALComputeCalibrationFactors(&status,&factors,&params);
+      TESTSTATUS( &status );
+
+      /* put factors into series for frame output */
+      gamma[m]   = factors.alphabeta.re;
+
+      gtime += CLA.t;	
+      localgpsepoch.gpsSeconds = (INT4)gtime;
+      localgpsepoch.gpsNanoSeconds = (INT4)((gtime-(INT4)gtime)*1E+09);      
+    }
+
+  LALDestroyVector(&status,&darm.data);
+  TESTSTATUS( &status );
+  LALDestroyVector(&status,&exc.data);
+  TESTSTATUS( &status );
+  LALDestroyVector(&status,&asq.data);
+  TESTSTATUS( &status );
+
+  LALDestroyVector(&status,&asqwin);
+  TESTSTATUS( &status );
+  LALDestroyVector(&status,&darmwin);
+  TESTSTATUS( &status );
+  LALDestroyVector(&status,&excwin);
+  TESTSTATUS( &status );
+
+  LALFrClose(&status,&framestream);
+  TESTSTATUS( &status );
+  
+  return 0;
+}
+
+/*******************************************************************************/
+
+int ComputeNoise(struct CommandLineArgsTag CLA, int n)
 {
 
   INT4 k;
   REAL8 mean_Sh_derr;
   REAL8 mean_Sh_hoft;
+  COMPLEX8 R,H,C;
 
   /* Fill data vectors with data */
   /* DARM_ERR */
@@ -329,9 +548,17 @@ int ComputeNoise(struct CommandLineArgsTag CLA)
       REAL4 hi= ffthtData->data[k+firstbin].im;
       REAL8 hpsq;
 
+      /* Compute Response */
+      C.re=gamma[n]*Sensing.re[k];
+      C.im=gamma[n]*Sensing.im[k];
+      
+      H.re=1.0+gamma[n]*OLG.re[k];
+      H.im=gamma[n]*OLG.im[k];
+      R=cdiv(H,C);
+
       /* Apply response to DARM_ERR */
-      caldr=dr*R.re[k]-di*R.im[k];
-      caldi=di*R.re[k]+dr*R.im[k];
+      caldr=dr*R.re-di*R.im;
+      caldi=di*R.re+dr*R.im;
       
       dpsq=pow(caldr,2.0)+pow(caldi,2);
       hpsq=pow(hr,2.0)+pow(hi,2);
@@ -354,7 +581,7 @@ int ComputeNoise(struct CommandLineArgsTag CLA)
 
 /*******************************************************************************/
 
-int ReadResponse(struct CommandLineArgsTag CLA)
+int ReadCalFiles(struct CommandLineArgsTag CLA)
 {
   char line[256];
 
@@ -363,12 +590,12 @@ int ReadResponse(struct CommandLineArgsTag CLA)
   int nsamples=(INT4)(CLA.b*CLA.t+0.5);
   REAL4 f,df;
 
- /* ------ Open and read Response File ------ */
+ /* ------ Open and read OLG File ------ */
  i=0;
- fpR=fopen(CLA.ResponseFile,"r");
+ fpR=fopen(CLA.OLGFile,"r");
  if (fpR==NULL) 
    {
-     fprintf(stderr,"Weird... %s doesn't exist!\n",CLA.ResponseFile);
+     fprintf(stderr,"Weird... %s doesn't exist!\n",CLA.OLGFile);
      return 1;
    }
  while(fgets(line,sizeof(line),fpR))
@@ -377,15 +604,15 @@ int ReadResponse(struct CommandLineArgsTag CLA)
      if(*line == '%') continue;
      if (i >= MAXLINESRS)
        {
-	 fprintf(stderr,"Too many lines in file %s! Exiting... \n", CLA.ResponseFile);
+	 fprintf(stderr,"Too many lines in file %s! Exiting... \n", CLA.OLGFile);
 	 return 1;
        }
-     sscanf(line,"%e %e %e",&R0.Frequency[i],&R0.Magnitude[i],&R0.Phase[i]);
-     R0.re[i]=R0.Magnitude[i]*cos(R0.Phase[i]);
-     R0.im[i]=R0.Magnitude[i]*sin(R0.Phase[i]);
+     sscanf(line,"%e %e %e",&OLG0.Frequency[i],&OLG0.Magnitude[i],&OLG0.Phase[i]);
+     OLG0.re[i]=OLG0.Magnitude[i]*cos(OLG0.Phase[i]);
+     OLG0.im[i]=OLG0.Magnitude[i]*sin(OLG0.Phase[i]);
      i++;
    }
- /* -- close Response file -- */
+ /* -- close OLG file -- */
  fclose(fpR);     
 
  /* Now compute a response appropriate for the frequency spacing of our data */
@@ -396,9 +623,9 @@ int ReadResponse(struct CommandLineArgsTag CLA)
 
       f = CLA.f  + j/CLA.t;
 
-      while (i < MAXLINESRS-1 && f > R0.Frequency[i]) i++; 
+      while (i < MAXLINESRS-1 && f > OLG0.Frequency[i]) i++; 
 
-      if(i == MAXLINESRS-1 && f > R0.Frequency[i])
+      if(i == MAXLINESRS-1 && f > OLG0.Frequency[i])
 	{
 	  fprintf(stderr,"No calibration info for frequency %f!\n",f);
 	  return 1;
@@ -409,25 +636,92 @@ int ReadResponse(struct CommandLineArgsTag CLA)
       /* can compute a weighted average of the raw frequencies at i-1 and i */
 
       /* check both bounds!!!!! */
-      if(f < R0.Frequency[i-1] || f > R0.Frequency[i])
+      if(f < OLG0.Frequency[i-1] || f > OLG0.Frequency[i])
 	{
-	  fprintf(stderr,"Frequency %f in SFT does not lie between two lines in Response file!\n",f);
+	  fprintf(stderr,"Frequency %f in SFT does not lie between two lines in OLG file!\n",f);
 	  return 1;
 	}
 
       /* If the frequencies are closely spaced this may create dangerous floating point errors */
-      df=R0.Frequency[i]-R0.Frequency[i-1];
+      df=OLG0.Frequency[i]-OLG0.Frequency[i-1];
 
-      a=(f-R0.Frequency[i-1])/df;
+      a=(f-OLG0.Frequency[i-1])/df;
       if (a>1.0) a=1.0;
       b=1.0-a;
 
-      R.Frequency[j]=f;
-      R.Magnitude[j]=a*R0.Magnitude[i]+b*R0.Magnitude[i-1];
-      R.Phase[j]=a*R0.Phase[i]+b*R0.Phase[i-1];
+      OLG.Frequency[j]=f;
+      OLG.Magnitude[j]=a*OLG0.Magnitude[i]+b*OLG0.Magnitude[i-1];
+      OLG.Phase[j]=a*OLG0.Phase[i]+b*OLG0.Phase[i-1];
 
-      R.re[j]=a*R0.re[i]+b*R0.re[i-1];
-      R.im[j]=a*R0.im[i]+b*R0.im[i-1];      
+      OLG.re[j]=a*OLG0.re[i]+b*OLG0.re[i-1];
+      OLG.im[j]=a*OLG0.im[i]+b*OLG0.im[i-1];      
+    }
+
+ /* ------ Open and read Sensing File ------ */
+ i=0;
+ fpR=fopen(CLA.SensingFile,"r");
+ if (fpR==NULL) 
+   {
+     fprintf(stderr,"Weird... %s doesn't exist!\n",CLA.SensingFile);
+     return 1;
+   }
+ while(fgets(line,sizeof(line),fpR))
+   {
+     if(*line == '#') continue;
+     if(*line == '%') continue;
+     if (i >= MAXLINESRS)
+       {
+	 fprintf(stderr,"Too many lines in file %s! Exiting... \n", CLA.SensingFile);
+	 return 1;
+       }
+     sscanf(line,"%e %e %e",&Sensing0.Frequency[i],&Sensing0.Magnitude[i],&Sensing0.Phase[i]);
+     Sensing0.re[i]=Sensing0.Magnitude[i]*cos(Sensing0.Phase[i]);
+     Sensing0.im[i]=Sensing0.Magnitude[i]*sin(Sensing0.Phase[i]);
+     i++;
+   }
+ /* -- close Sensing file -- */
+ fclose(fpR);     
+
+ /* Now compute a response appropriate for the frequency spacing of our data */
+ i=0;
+ for (j=0; j < nsamples;j++)               
+    {
+      REAL4 a,b;
+
+      f = CLA.f  + j/CLA.t;
+
+      while (i < MAXLINESRS-1 && f > Sensing0.Frequency[i]) i++; 
+
+      if(i == MAXLINESRS-1 && f > Sensing0.Frequency[i])
+	{
+	  fprintf(stderr,"No calibration info for frequency %f!\n",f);
+	  return 1;
+	}
+      /* checks order */
+
+      /* Since now Rraw.Frequency[i-1] < f =< Rraw.Frequency[i] ||*/
+      /* can compute a weighted average of the raw frequencies at i-1 and i */
+
+      /* check both bounds!!!!! */
+      if(f < Sensing0.Frequency[i-1] || f > Sensing0.Frequency[i])
+	{
+	  fprintf(stderr,"Frequency %f in SFT does not lie between two lines in Sensing file!\n",f);
+	  return 1;
+	}
+
+      /* If the frequencies are closely spaced this may create dangerous floating point errors */
+      df=Sensing0.Frequency[i]-Sensing0.Frequency[i-1];
+
+      a=(f-Sensing0.Frequency[i-1])/df;
+      if (a>1.0) a=1.0;
+      b=1.0-a;
+
+      Sensing.Frequency[j]=f;
+      Sensing.Magnitude[j]=a*Sensing0.Magnitude[i]+b*Sensing0.Magnitude[i-1];
+      Sensing.Phase[j]=a*Sensing0.Phase[i]+b*Sensing0.Phase[i-1];
+
+      Sensing.re[j]=a*Sensing0.re[i]+b*Sensing0.re[i-1];
+      Sensing.im[j]=a*Sensing0.im[i]+b*Sensing0.im[i-1];      
     }
 
 
@@ -482,29 +776,51 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"band",                 required_argument, NULL,           'c'},
     {"hoft-cache",           required_argument, NULL,           'd'},
     {"derr-cache",           required_argument, NULL,           'e'},
-    {"derr-channel",         required_argument, NULL,           'g'},
-    {"hoft-channel",         required_argument, NULL,           'i'},
-    {"gps-start-time",       required_argument, NULL,           'j'},
-    {"gps-end-time",         required_argument, NULL,           'k'},
-    {"output-file",          required_argument, NULL,           'l'},
-    {"response-file",        required_argument, NULL,           'm'},
+    {"derr-channel",         required_argument, NULL,           'f'},
+    {"darm-channel",         required_argument, NULL,           'g'},
+    {"exc-channel",          required_argument, NULL,           'i'},
+    {"asq-channel",          required_argument, NULL,           'j'},
+    {"hoft-channel",         required_argument, NULL,           'k'},
+    {"gps-start-time",       required_argument, NULL,           'l'},
+    {"gps-end-time",         required_argument, NULL,           'm'},
+    {"output-file",          required_argument, NULL,           'n'},
+    {"olg-file",             required_argument, NULL,           'o'},
+    {"sensing-file",         required_argument, NULL,           'p'},
+    {"olg-re",               required_argument, NULL,           'q'},
+    {"olg-im",               required_argument, NULL,           'r'},
+    {"servo-re",             required_argument, NULL,           's'},
+    {"servo-im",             required_argument, NULL,           't'},
+    {"whitener-re",          required_argument, NULL,           'u'},
+    {"whitener-im",          required_argument, NULL,           'v'},
+    {"fcal",                 required_argument, NULL,           'w'},
     {"help",                 no_argument, NULL,                 'h'},
     {0, 0, 0, 0}
   };
-  char args[] = "ha:b:c:d:e:g:i:j:k:l:";
+  char args[] = "ha:b:c:d:e:g:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:";
 
   /* Initialize default values */
   CLA->f=0.0;
+  CLA->fcal=0.0;
   CLA->b=0.0;
   CLA->t=0.0;
   CLA->hoftFrCacheFile=NULL;
   CLA->derrFrCacheFile=NULL;
   CLA->derr_chan=NULL;
+  CLA->asq_chan=NULL;
+  CLA->darm_chan=NULL;
+  CLA->exc_chan=NULL;
   CLA->hoft_chan=NULL;
   CLA->noisefile=NULL;
-  CLA->ResponseFile=NULL;
+  CLA->OLGFile=NULL;
+  CLA->SensingFile=NULL;
   CLA->GPSStart = 0;
   CLA->GPSEnd = 0;
+  CLA->G0Re=0.0;
+  CLA->G0Im=0.0;
+  CLA->D0Re=0.0;
+  CLA->D0Im=0.0;
+  CLA->W0Re=0.0;
+  CLA->W0Im=0.0;
 
   /* Scan through list of command line arguments */
   while ( 1 )
@@ -533,29 +849,73 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     case 'e':
       CLA->derrFrCacheFile=optarg;
       break;    
-    case 'g':
+    case 'f':
       /* name of darm channel */
       CLA->derr_chan=optarg;
       break;    
+    case 'g':
+      /* name of darm channel */
+      CLA->darm_chan=optarg;
+      break;    
     case 'i':
+      /* name of darm channel */
+      CLA->exc_chan=optarg;
+      break;    
+    case 'j':
+      /* name of darm channel */
+      CLA->asq_chan=optarg;
+      break;    
+    case 'k':
       /* name of darm err channel */
       CLA->hoft_chan=optarg;
       break;    
-    case 'j':
+    case 'l':
       /* GPS start */
       CLA->GPSStart=atoi(optarg);
       break;
-    case 'k':
+    case 'm':
       /* GPS end */
       CLA->GPSEnd=atof(optarg);
       break;
-    case 'l':
+    case 'n':
       /* real part of OLG */
       CLA->noisefile=optarg;
       break;
-    case 'm':
+    case 'o':
       /* real part of OLG */
-      CLA->ResponseFile=optarg;
+      CLA->OLGFile=optarg;
+      break;
+    case 'p':
+      /* real part of OLG */
+      CLA->SensingFile=optarg;
+      break;
+    case 'q':
+      /* real part of OLG */
+      CLA->G0Re=atof(optarg);
+      break;
+    case 'r':
+      /* imaginary part of OLG */
+      CLA->G0Im=atof(optarg);
+      break;
+    case 's':
+      /*  real part of servo*/
+      CLA->D0Re=atof(optarg);
+      break;
+    case 't':
+      /*  imaginary part of servo */
+      CLA->D0Im=atof(optarg);
+      break;
+    case 'u':
+      /*  real part of servo*/
+      CLA->W0Re=atof(optarg);
+      break;
+    case 'v':
+      /*  imaginary part of servo */
+      CLA->W0Im=atof(optarg);
+      break;
+    case 'w':
+      /*  imaginary part of servo */
+      CLA->fcal=atof(optarg);
       break;
     case 'h':
       /* print usage/help message */
@@ -565,12 +925,24 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\t band (-c)\tFLOAT\t Frequency band (Hz).\n");
       fprintf(stdout,"\t hoft-cache (-d)\tFLOAT\t h(t) cache file name.\n");
       fprintf(stdout,"\t derr-cache (-e)\tFLOAT\t DARM_ERR cache file name.\n");
-      fprintf(stdout,"\t derr-channel (-g)\tFLOAT\t DARM_ERR channel name.\n");
-      fprintf(stdout,"\t hoft-channel (-i)\tFLOAT\t h(t) channel name.\n");
-      fprintf(stdout,"\t gps-start-time (-j)\tINT\t GPS start time.\n");
-      fprintf(stdout,"\t gps-end-time (-k)\tINT\t GPS end time.\n");
-      fprintf(stdout,"\t ouput-file (-l)\tSTRING\t Name of output file.\n");
-      fprintf(stdout,"\t response-file (-l)\tSTRING\t Name of response file.\n");
+      fprintf(stdout,"\t derr-channel (-f)\tFLOAT\t DARM_ERR channel name.\n");
+      fprintf(stdout,"\t darm-channel (-g)\tFLOAT\t DARM_CTRL channel name.\n");
+      fprintf(stdout,"\t exc-channel (-i)\tFLOAT\t EXC channel name.\n");
+      fprintf(stdout,"\t asq-channel (-j)\tFLOAT\t ASQ channel name.\n");
+      fprintf(stdout,"\t hoft-channel (-k)\tFLOAT\t h(t) channel name.\n");
+      fprintf(stdout,"\t gps-start-time (-l)\tINT\t GPS start time.\n");
+      fprintf(stdout,"\t gps-end-time (-m)\tINT\t GPS end time.\n");
+      fprintf(stdout,"\t ouput-file (-n)\tSTRING\t Name of output file.\n");
+      fprintf(stdout,"\t response-file (-o)\tSTRING\t Name of response file.\n");
+      fprintf(stdout,"\t olg-file (-o)\tSTRING\t Name of open loop gain file.\n");
+      fprintf(stdout,"\t sensing-file (-p)\tSTRING\t Name of sensing function file.\n");
+      fprintf(stdout,"\tolg-re (-q)\tFLOAT\t Real part of the open loop gain at the calibration line frequency.\n");
+      fprintf(stdout,"\tolg-im (-r)\tFLOAT\t Imaginary part of the open loop gain at the calibration line frequency.\n");
+      fprintf(stdout,"\tservo-re (-s)\tFLOAT\t Real part of the digital filter at the calibration line frequency.\n");
+      fprintf(stdout,"\tservo-im (-t)\tFLOAT\t Imaginary part of digital filter at the calibration line frequency.\n");
+      fprintf(stdout,"\twhitener-re (-u)\tFLOAT\t Real part of the whitening filter at the calibration line frequency.\n");
+      fprintf(stdout,"\twhitener-im (-v)\tFLOAT\t Imaginary part of whitening filter at the calibration line frequency.\n");
+      fprintf(stdout,"\tfcal (-w)\tFLOAT\t Calibration line frequency.\n");
       fprintf(stdout,"\thelp (-h)\tFLAG\t This message\n");    
       exit(0);
       break;
@@ -633,6 +1005,24 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }
+  if(CLA->exc_chan==NULL)
+    {
+      fprintf(stderr,"No EXC channel name specified.\n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
+      return 1;
+    }
+  if(CLA->asq_chan==NULL)
+    {
+      fprintf(stderr,"No ASQ channel name specified.\n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
+      return 1;
+    }
+  if(CLA->darm_chan==NULL)
+    {
+      fprintf(stderr,"No DARM_CTRL channel name specified.\n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
+      return 1;
+    }
   if(CLA->hoft_chan==NULL)
     {
       fprintf(stderr,"No h(t) channel name specified.\n");
@@ -645,17 +1035,53 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }
-  if(CLA->ResponseFile==NULL)
+  if(CLA->OLGFile==NULL)
     {
       fprintf(stderr,"No response file specified.\n");
       fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }
+  if(CLA->SensingFile==NULL)
+    {
+      fprintf(stderr,"No response file specified.\n");
+      fprintf(stderr,"Try %s -h \n", argv[0]);
+      return 1;
+    }
+  if(CLA->G0Re == 0.0 )
+    {
+      fprintf(stderr,"No real part of open loop gain specified.\n");
+      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      return 1;
+    }
+  if(CLA->G0Im == 0.0 )
+    {
+      fprintf(stderr,"No imaginary part of open loop gain specified.\n");
+      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      return 1;
+    }
+  if(CLA->D0Re == 0.0 )
+    {
+      fprintf(stderr,"No real part of digital filter specified.\n");
+      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      return 1;
+    }
+  if(CLA->D0Im == 0.0 )
+    {
+      fprintf(stderr,"No imaginary part of digital filter specified.\n");
+      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      return 1;
+    }
  
+
   /* Some sanity checks */
   if (CLA->b < 1/CLA->t)
     {
       fprintf(stderr,"Frequency band requested (%e) is smaller than frequency resolution[1/integration time] (%e)\n", CLA->b, 1.0/CLA->t);
+      return 1;
+    }
+  if (CLA->t < (CLA->GPSStart-CLA->GPSEnd) )
+    {
+      fprintf(stderr,"Integration time (%e) larger than duration (%d) \n", CLA->t, (CLA->GPSStart-CLA->GPSEnd));
       return 1;
     }
 
