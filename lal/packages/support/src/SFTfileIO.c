@@ -1339,7 +1339,7 @@ LALWriteSFTVector2Dir (LALStatus *status,
 
   /* will not be same as actual sft timebase if it is not
      an integer number of seconds */
-  timeBase = ceil(1.0/sftVect->data[0].deltaF);
+  timeBase = floor(1.0/sftVect->data[0].deltaF + 0.5);
 
   for ( k = 0; k < length; k++) {
 
@@ -1355,14 +1355,11 @@ LALWriteSFTVector2Dir (LALStatus *status,
 
     time0 = sft->epoch;
 
-    /* calculate sft duration -- may be different from timebase if nanosecond  
-       of sft-epoch is non-zero or is timebase is not an integer number of seconds */ 
-    XLALGPSAdd( &time0, timeBase);
+    /* calculate sft 'duration' -- may be different from timebase if nanosecond  
+       of sft-epoch is non-zero */
+    duration = timeBase;
     if ( time0.gpsNanoSeconds > 0) {
-      duration = time0.gpsSeconds - sft->epoch.gpsSeconds + 1;
-    }
-    else {
-      duration = time0.gpsSeconds - sft->epoch.gpsSeconds;
+      duration += 1;
     }
     
     /* create the k^th filename following naming convention 
