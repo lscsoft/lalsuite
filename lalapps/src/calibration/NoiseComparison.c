@@ -189,6 +189,12 @@ int main(int argc,char *argv[])
 
   N = duration / CommandLineArgs.t ;
 
+  if (N > MAXFACTORS-1 ) 
+    {
+      fprintf(stderr,"Too many subsegments in segment, exiting.\n");
+      return 10;
+    }
+
   gpsepoch.gpsSeconds=CommandLineArgs.GPSStart;
   gpsepoch.gpsNanoSeconds=0;
 
@@ -456,8 +462,17 @@ FrStream *framestream=NULL;
       LALComputeCalibrationFactors(&status,&factors,&params);
       TESTSTATUS( &status );
 
-      /* put factors into series for frame output */
+      /* put factors into series */
       gamma[m]   = factors.alphabeta.re;
+
+      fprintf(stdout,"%18.9Lf %f %f %f %f %f %f %f %f %f %f %f %f \n",gtime,
+	      factors.alpha.re,factors.alpha.im,
+	      factors.beta.re,factors.beta.im,
+	      factors.alphabeta.re,factors.alphabeta.im,
+	      factors.asq.re*2/CLA.t,factors.asq.im*2/CLA.t,
+	      factors.darm.re*2/CLA.t,factors.darm.im*2/CLA.t,
+	      factors.exc.re*2/CLA.t,factors.exc.im*2/CLA.t);
+
 
       gtime += CLA.t;	
       localgpsepoch.gpsSeconds = (INT4)gtime;
@@ -933,7 +948,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\t gps-start-time (-l)\tINT\t GPS start time.\n");
       fprintf(stdout,"\t gps-end-time (-m)\tINT\t GPS end time.\n");
       fprintf(stdout,"\t ouput-file (-n)\tSTRING\t Name of output file.\n");
-      fprintf(stdout,"\t response-file (-o)\tSTRING\t Name of response file.\n");
       fprintf(stdout,"\t olg-file (-o)\tSTRING\t Name of open loop gain file.\n");
       fprintf(stdout,"\t sensing-file (-p)\tSTRING\t Name of sensing function file.\n");
       fprintf(stdout,"\tolg-re (-q)\tFLOAT\t Real part of the open loop gain at the calibration line frequency.\n");
