@@ -220,123 +220,6 @@ LALCreateTwoIFOCoincListEllipsoid(
 
 /* <lalVerbatim file="CoincInspiralEllipsoidCP"> */
 void
-LALCreateNIFOCoincListEllipsoid(
-    LALStatus                  *status,
-    CoincInspiralTable        **coincHead,
-    InspiralAccuracyList       *accuracyParams,
-    INT4                        N
-    )
-/* </lalVerbatim> */
-{
-  INT4                          numEvents  = 0;
-  InterferometerNumber          ifoNumber  = LAL_UNKNOWN_IFO;
-  InterferometerNumber          ifoNum     = LAL_UNKNOWN_IFO;
-  InterferometerNumber          firstEntry = LAL_UNKNOWN_IFO;
-  CoincInspiralTable           *thisCoinc     = NULL;
-  CoincInspiralTable           *lastCoinc     = NULL;
-  CoincInspiralTable           *otherCoinc    = NULL;
-  CoincInspiralTable           *nIfoCoincHead = NULL;
-  CoincInspiralTable           *thisNIfoCoinc = NULL;
-  EventIDColumn                *eventIDHead   = NULL;
-  EventIDColumn                *thisID        = NULL;
-
-
-  INITSTATUS( status, "LALCreateNIFOCoincList", COINCINSPIRALELLIPSOIDC );
-  ATTATCHSTATUSPTR( status );
-
-  /* loop over all the coincidences in the list */
-  for( thisCoinc = *coincHead; thisCoinc; thisCoinc = thisCoinc->next)
-  {
-    lastCoinc = thisCoinc;
-
-    /* check that this is an (N-1) coinc */
-    if ( thisCoinc->numIfos == N - 1 )
-    {
-      /* look up the first single inspiral */
-      for ( firstEntry = 0; firstEntry < LAL_NUM_IFO; firstEntry++)
-      {
-        if ( thisCoinc->snglInspiral[firstEntry] )
-        {
-          LALInfo( status, "Found the first entry in the coinc" );
-          break;
-        }
-      }
-
-      /* get the list of event IDs for this first entry */
-      eventIDHead = thisCoinc->snglInspiral[firstEntry]->event_id;
-
-      /* loop over the (N-1) ifo coincs that first entry is a member of
-       * and try to find an N ifo coinc */
-      for( thisID = eventIDHead; thisID; thisID = thisID->next )
-      {
-        otherCoinc = thisID->coincInspiralTable;
-
-        if( otherCoinc->numIfos == N - 1 )
-        {
-          /* loop over all singles which are alphabetically before the
-           * first one in thisCoinc */
-          for( ifoNumber = 0; ifoNumber < firstEntry; ifoNumber++ )
-          {
-            /* test whether we have an N ifo coincidence */
-            accuracyParams->match = 0;
-
-            if ( otherCoinc->snglInspiral[ifoNumber] )
-            {
-              XLALSnglInspiralCoincTestEllipsoid( thisCoinc,
-                  otherCoinc->snglInspiral[ifoNumber], accuracyParams );
-            }
-
-            if ( accuracyParams->match )
-            {
-              LALInfo( status, "We have found an N ifo coinc, storing");
-              ++numEvents;
-
-              /* create a N IFO coinc and store */
-              if ( ! nIfoCoincHead  )
-              {
-                nIfoCoincHead = thisNIfoCoinc = (CoincInspiralTable *)
-                  LALCalloc( 1, sizeof(CoincInspiralTable) );
-              }
-              else
-              {
-                thisNIfoCoinc = thisNIfoCoinc->next = (CoincInspiralTable *)
-                  LALCalloc( 1, sizeof(CoincInspiralTable) );
-              }
-
-              /* add the single to the new N coinc */
-              LALAddSnglInspiralToCoinc( status->statusPtr, &thisNIfoCoinc,
-                  otherCoinc->snglInspiral[ifoNumber] );
-
-              /* add the triggers from the (N-1) coinc to the new N coinc */
-              for( ifoNum = 0; ifoNum < LAL_NUM_IFO; ifoNum++ )
-              {
-                if( thisCoinc->snglInspiral[ifoNum] )
-                {
-                  LALAddSnglInspiralToCoinc( status->statusPtr, &thisNIfoCoinc,
-                      thisCoinc->snglInspiral[ifoNum] );
-                }
-              }
-            } /* closes: if ( accuracyParams->match ) */
-          }
-        }
-      } /* closes: for( thisID = eventIDHead; thisID; thisID->next ) */
-    }
-  } /* closes: for( thisCoinc = coincHead; thisCoinc;
-     *              thisCoinc = thisCoinc->next) */
-
-  /* append the N ifo coincs to the end of the linked list */
-  if ( lastCoinc )
-  {
-    lastCoinc->next = nIfoCoincHead;
-  }
-
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
-
-}
-
-/* <lalVerbatim file="CoincInspiralEllipsoidCP"> */
-void
 XLALSnglInspiralCoincTestEllipsoid(
     CoincInspiralTable         *coincInspiral,
     SnglInspiralTable          *snglInspiral,
@@ -468,6 +351,163 @@ INT2 XLALCompareInspiralsEllipsoid(
   }
   params->match = isCoinc;
   return isCoinc;
+}
+
+
+/* <lalVerbatim file="CoincInspiralEllipsoidCP"> */
+REAL8 XLALCalculateEThincaParameter( 
+          SnglInspiralTable *table1,
+          SnglInspiralTable *table2
+             )
+/* </lalVerbatim> */
+{
+
+   static const char *func = "XLALCalculateEThincaParameter";
+
+   TriggerErrorList   errorList[2];
+
+   REAL8 loMatch, hiMatch, midMatch;
+   
+   INT4 ifoNumber, ifoTwo, i;
+   INT2  isOverlap;
+   LALDetector aDet, bDet;
+   InspiralAccuracyList accuracyParams;
+   fContactWorkSpace    *workSpace;
+   
+
+   loMatch = 0.0;
+   hiMatch = 0.9999;
+
+  if ( !table1 || !table2 )
+    XLAL_ERROR_REAL8( func, XLAL_EFAULT );
+
+  workSpace = XLALInitFContactWorkSpace( 3, NULL, NULL, gsl_min_fminimizer_brent, 1.0e-2 );
+  if (!workSpace)
+  {
+    XLAL_ERROR_REAL8( func, XLAL_EFUNC );
+  }
+
+  memset( &accuracyParams, 0, sizeof( InspiralAccuracyList ));
+
+  /* Populate the lightTravel matrix */
+  for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  {
+    XLALReturnDetector( &aDet, ifoNumber );
+
+    for ( ifoTwo = 0; ifoTwo < LAL_NUM_IFO; ifoTwo++)
+    {
+      XLALReturnDetector( &bDet, ifoTwo );
+
+      accuracyParams.lightTravelTime[ ifoNumber][ ifoTwo ] =
+      XLALLightTravelTime( &aDet, &bDet );
+    }
+  }
+
+  /* Set up the trigger lists */
+  if ( XLALGPStoINT8( &(table1->end_time) ) < XLALGPStoINT8( &(table2->end_time )) )
+  {
+     errorList[0].trigger = table1;
+     errorList[1].trigger = table2;
+  }
+  else
+  {
+     errorList[0].trigger = table2;
+     errorList[1].trigger = table1;
+  }
+
+  for (i = 0; i < 2; i++ )
+  {
+    errorList[i].position = XLALGetPositionFromSnglInspiral( errorList[i].trigger );
+
+    errorList[i].err_matrix = XLALGetErrorMatrixFromSnglInspiral( errorList[i].trigger,
+                                 hiMatch );
+  }
+
+  /* Check to see if they overlap for the highest match possible. If so there is
+   * nothing more to be done.
+   */
+   isOverlap = XLALCompareInspiralsEllipsoid( &errorList[0], &errorList[1], workSpace,
+                                        &accuracyParams );
+
+   for (i = 0; i < 2; i++ )
+   {
+     gsl_matrix_free( errorList[i].err_matrix );
+   }
+
+   if (isOverlap)
+   {
+     for (i = 0; i < 2; i++ )
+     {
+       gsl_vector_free( errorList[i].position );
+     }
+     XLALFreeFContactWorkSpace( workSpace );
+     return hiMatch;
+   }
+
+  /* Now test for the lowest match */
+  for (i = 0; i < 2; i++ )
+  {
+
+    errorList[i].err_matrix = XLALGetErrorMatrixFromSnglInspiral( errorList[i].trigger,
+                                 loMatch );
+  }
+   
+   isOverlap = XLALCompareInspiralsEllipsoid( &errorList[0], &errorList[1], workSpace,
+                                        &accuracyParams );
+
+   for (i = 0; i < 2; i++ )
+   {
+     gsl_matrix_free( errorList[i].err_matrix );
+   }
+   if (!isOverlap)
+   {
+     for (i = 0; i < 2; i++ )
+     {
+       gsl_vector_free( errorList[i].position );
+     }
+     XLALFreeFContactWorkSpace( workSpace );
+     XLALPrintError("The two triggers provided are NOT coincident!!");
+     XLAL_ERROR_REAL8( func, XLAL_EINVAL );
+   }
+
+   /* Now onto the algorithm proper */
+   while (fabs( hiMatch - loMatch ) > 0.001 )
+   {
+     midMatch = (hiMatch + loMatch) / 2.0;
+
+
+     for (i = 0; i < 2; i++ )
+     {
+
+      errorList[i].err_matrix = XLALGetErrorMatrixFromSnglInspiral( errorList[i].trigger,
+                                 midMatch );
+     }
+     isOverlap = XLALCompareInspiralsEllipsoid( &errorList[0], &errorList[1], workSpace,
+                                        &accuracyParams );
+
+     for (i = 0; i < 2; i++ )
+     {
+       gsl_matrix_free( errorList[i].err_matrix );
+     }
+     if (isOverlap)
+     {
+       loMatch = midMatch;
+     }
+     else
+     {
+       hiMatch = midMatch;
+     }
+   }
+
+   /* Free all accocated memory */
+   for (i = 0; i < 2; i++ )
+   {
+     gsl_vector_free( errorList[i].position );
+   }
+   XLALFreeFContactWorkSpace( workSpace );
+
+   return midMatch;
+
 }
 
 /* 

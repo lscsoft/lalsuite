@@ -61,14 +61,6 @@ LALCreateTwoIFOCoincListEllipsoid(
     InspiralAccuracyList       *accuracyParams
     );
 
-void
-LALCreateNIFOCoincListEllipsoid(
-    LALStatus                  *status,
-    CoincInspiralTable        **coincHead,
-    InspiralAccuracyList       *accuracyParams,
-    INT4                        N
-    );
-
 /* Functions for checking for coincidence between inspiral events */
 INT2 XLALCompareInspiralsEllipsoid(
       TriggerErrorList              *aPtr,
@@ -95,6 +87,12 @@ gsl_vector * XLALGetPositionFromSnglInspiral( SnglInspiralTable *table );
 int XLALSetTimeInPositionVector( gsl_vector *position,
                                  REAL8       time
                                );
+
+/* Function for calculating the e-thinca parameter between coincident events */
+REAL8 XLALCalculateEThincaParameter(
+          SnglInspiralTable *table1,
+          SnglInspiralTable *table2
+             );
 
 #ifdef  __cplusplus
 }
