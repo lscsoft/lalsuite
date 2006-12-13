@@ -272,7 +272,6 @@ extern const SFTCatalog empty_SFTCatalog;
 void LALSFTdataFind (LALStatus *, SFTCatalog **catalog, const CHAR *file_pattern, SFTConstraints *constraints);
 
 void LALLoadSFTs ( LALStatus *, SFTVector **sfts, const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
-void LALLoadSegmentedSFTs ( LALStatus *status, SFTVector **outsfts, const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
 void LALLoadMultiSFTs ( LALStatus *status, MultiSFTVector **sfts, const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
 
 void LALWriteSFT2file (LALStatus *, const SFTtype *sft, const CHAR *fname, const CHAR *comment ); 

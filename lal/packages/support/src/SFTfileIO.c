@@ -520,12 +520,12 @@ LALSFTtimestampsFromCatalog (LALStatus *status,
  * in the SFT-file. 
  */
 void
-LALLoadSFTs ( LALStatus *status,
-	      SFTVector **sfts,			/**< [out] vector of read-in SFTs */
-	      const SFTCatalog *catalog,	/**< The 'catalogue' of SFTs to load */
-	      REAL8 fMin,		  /**< minumum requested frequency (-1 = read from lowest) */
-	      REAL8 fMax		  /**< maximum requested frequency (-1 = read up to highest) */
-	      )
+_LALLoadSFTs ( LALStatus *status,
+	       SFTVector **sfts,			/**< [out] vector of read-in SFTs */
+	       const SFTCatalog *catalog,	/**< The 'catalogue' of SFTs to load */
+	       REAL8 fMin,		  /**< minumum requested frequency (-1 = read from lowest) */
+	       REAL8 fMax		  /**< maximum requested frequency (-1 = read up to highest) */
+	       )
 {
   UINT4 i;
   UINT4 numSFTs;
@@ -599,12 +599,12 @@ LALLoadSFTs ( LALStatus *status,
    While developing it is kept as a separate function
 */
 void
-LALLoadSegmentedSFTs ( LALStatus *status,
-		       SFTVector **outsfts,	   /**< [out] vector of read-in SFTs */
-		       const SFTCatalog *catalog,  /**< The 'catalogue' of SFTs to load */
-		       REAL8 fMin,		   /**< minumum requested frequency (-1 = read from lowest) */
-		       REAL8 fMax		   /**< maximum requested frequency (-1 = read up to highest) */
-		       )
+LALLoadSFTs ( LALStatus *status,
+	      SFTVector **outsfts,	   /**< [out] vector of read-in SFTs */
+	      const SFTCatalog *catalog,  /**< The 'catalogue' of SFTs to load */
+	      REAL8 fMin,		   /**< minumum requested frequency (-1 = read from lowest) */
+	      REAL8 fMax		   /**< maximum requested frequency (-1 = read up to highest) */
+	      )
 {
   UINT4 catFile = 0;           /* current file in catalog */
   LIGOTimeGPS epoch;           /* current timestamp */
