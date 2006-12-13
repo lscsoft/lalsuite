@@ -1,5 +1,6 @@
 /* Extras for BOINC compilation of HierarchicalSearch
    Author: Bernd Machenschalk
+   $Id$
 */
 
 /* linking proper functions to the hooks in HierarchicalSearch.c */
@@ -18,5 +19,8 @@ extern void show_progress(double rac, double dec, long tpl_count, long tpl_total
 /* the main() function of HierarchicalSerach.c becomes the main_hierarchical_search()
    the real main() function of the BOINC App is defined in boinc_extras.c
 */
-define MAIN main_hierarchical_search
+#define MAIN main_hierarchical_search
+
+#define fopen boinc_fopen
+
 

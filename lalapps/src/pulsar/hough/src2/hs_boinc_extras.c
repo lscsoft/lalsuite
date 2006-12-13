@@ -1,13 +1,34 @@
+/* Extras for building an Einstein@Home BOINC App from HierarchicalSearch
+   Bernd Machenschalk for Einstein@Home
+   $Id$
+*/
+
+/* TODO:
+   - error handling
+   - signal handling
+   - checkpointing
+   - boinc_init(), boinc finish
+*/
+
+#include "hs_boinc_extras.h"
+
+
 #define MAX_PATH_LEN 256
+
 
 /* compare strings s1 and s2 up to the length of s1 (w/o the '\0') and set l to the length */
 #define MATCH_START(s1,s2,l) (0 == strncmp(s1,s2,(l=strlen(s1))-1))
 
+
+
+/* a local structure to keep information about the output files */
 static struct {
   char **outfiles = NULL;        /* the names  of the output files of the program */
   int  noutfiles  = 0;           /* the number of the output files of the program */
   char resultfile[MAX_PATH_LEN]; /* the name of the file / zip archive to return */
 } boinc_output;
+
+
 
 /* this registers a new output file to be zipped into the archive that is returned
    to the server as a result file */
@@ -22,10 +43,65 @@ void register_output_file(char*filename) {
   boinc_output.noutfiles++;
 }
 
+
+
+/* to be inmplemented... */
+void set_checkpoint(char*filename,double rac,double dec, long tpl_count, long tpl_total);
+void get_checkpoint(char*filename);
+void show_progress(double rac, double dec, long tpl_count, long tpl_total);
+
+
+
+/* check if given file is a zip-file by checking the zip-magic header 'PK\003\044'
+ * RETURN: 1 = true, 0 = false, -1 = error
+ */
+static int is_zipped ( const char *fname ) {
+  FILE *fp;
+  CHAR zip_magic[] = {'P', 'K', 3, 4 };
+  CHAR file_header[4];
+
+  if ( (fp = fopen( fname, "rb")) == NULL ) {
+    LogPrintf (LOG_CRITICAL, "Failed to open '%s' for reading.\n", fname);
+    return -1;
+  }
+  if ( 4 != fread ( file_header, sizeof(CHAR), 4, fp ) ) {
+    LogPrintf (LOG_CRITICAL, "Failed to read first 4 bytes from '%s'.\n", fname);
+    return -1;
+  }
+  fclose(fp);
+
+  if ( memcmp ( file_header, zip_magic, 4 ) )
+    return 0;	/* false: no zip-file */
+  else
+    return 1;	/* yep, found magic zip-header */
+} /* is_zipped() */
+
+
+
+/* unzip a file in-place if it is zipped */
+/* TODO: error handling */
+static int unzip_if_necessary(char*filename) {
+  char zipname[MAX_PATH_LEN];
+  int zipped;
+  zipped = is_zipped (filename);
+  if (zipped<0) {
+    return(-1);
+  } else if (zipped) { 
+    strncpy(zipname,filename,sizeof(zipname));
+    strncat(zipname,".zip",sizeof(zipname));
+    boinc_delete_file(zipname);
+    boinc_rename(filename,zipname);
+    boinc_zip(UNZIP_IT,zipname,filename);
+    boinc_delete_file(zipname);
+  }
+  return(0);
+}
+
+
+
+
 /* the main function of the BOINC App
 */
-
-/* TODO: boinc_init, boinc_finish */
 main (int argc, char*argv[]) {
   int i,j,l;
   int rargc = argc;
@@ -45,7 +121,6 @@ main (int argc, char*argv[]) {
   rargv[0] = argv[0];
   /* TODO: ephermis files */
   /* TODO: unzippig */
-  /* TODO: zipping of output file(s) */
   for (i=1; i<argc; i++) {
     
     /* config file */
@@ -57,7 +132,7 @@ main (int argc, char*argv[]) {
       }
 
     /* skygrid file */
-    } else if (MATCH_START("--skyGridFile=",argv[i],l) {
+    } else if (MATCH_START("--skyGridFile=",argv[i],l)) {
       rargv[i] = (char*)malloc(MAX_PATH_LEN);
       strncpy(rargv[i],argv[i],l);
       if (boinc_resolve_filename(argv[i]+l,rargv[i]+l,MAX_PATH_LEN-l)) {
@@ -65,14 +140,14 @@ main (int argc, char*argv[]) {
       }
 
     /* file to return (zip archive) */
-    } else if (MATCH_START("--BOINCresfile=",argv[i],l) {
+    } else if (MATCH_START("--BOINCresfile=",argv[i],l)) {
       if (boinc_resolve_filename(argv[i]+l,boinc_output.resultfile,sizeof(boinc_output.resultfile))) {
         LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve skygrid file '%s'\n", argv[i]+1);
       }
       rargc--; /* this argument is not passed to the main worker function */
 
     /* ephermis files/directory */
-    } else if (MATCH_START("--ephemDir=",argv[i],l) {
+    } else if (MATCH_START("--ephemDir=",argv[i],l)) {
       rargv[i] = (char*)malloc(MAX_PATH_LEN);
       strncpy(rargv[i],argv[i],l);
       if (boinc_resolve_filename(argv[i]+l,rargv[i]+l,MAX_PATH_LEN-l)) {
@@ -105,8 +180,22 @@ main (int argc, char*argv[]) {
       }
 
     /* any other argument */
-    } else {
+     } else 
       rargv[i] = argv[i];
-    }
+  } /* for all command line arguments */
+
+  if (!boinc_output.resultfile) {
+      LogPrintf (LOG_ERROR, "ERROR: no result file has been specified");
+
+  res=main_hierarchical_search(rargc,rargv);
+  if (res) {
+    LogPrintf (LOG_ERROR, "ERROR: main worker returned with error '%d'\n",res);
   }
+
+  if(boinc_output.noutfiles == 0)
+    LogPrintf (LOG_ERROR, "ERROR: no output file has been specified");
+  for(i=0;i<boinc_output.noutfiles;i++)
+    if ( boinc_zip(ZIP_IT, boinc_output.resultfile, boinc_output.outfiles[i]) ) {
+      LogPrintf (LOG_NORMAL, "WARNING: Can't zip output file '%s'\n", boinc_output.outfiles[i]);
+    }
 }

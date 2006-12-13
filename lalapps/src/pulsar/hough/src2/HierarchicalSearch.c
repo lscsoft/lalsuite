@@ -125,7 +125,7 @@ RCSID( "$Id$");
    and will be set in boinc_extras.h if USE_BOINC is set
  */
 #ifdef EAH_BOINC
-#include "boinc_extras.h"
+#include "hs_boinc_extras.h"
 #else
 /* do something with the filename, or else gcc will issue a warning */
 #define SET_CHECKPOINT(filename,rac,dec,tpl_count,tpl_total) filename = filename; /* length, checksum */
