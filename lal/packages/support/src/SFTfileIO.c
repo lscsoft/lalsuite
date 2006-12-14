@@ -592,7 +592,6 @@ _LALLoadSFTs ( LALStatus *status,
 
 } /* LALLoadSFTs() */
 
-
 /* This is meant to replace LALLoadSFT().
    It has the same interface and basically does the same, with the additional capability to read
    sequences of (v2-)SFT segments and putting them together to single SFTs while reading.
@@ -637,17 +636,28 @@ LALLoadSFTs ( LALStatus *status,
 #ifdef SFTFILEIO_DEBUG
   fprintf(stderr, ": catalog has %u files\n", catalog->length);
   for(i=0; i < catalog->length; i++)
-    fprintf(stderr, ": %s\n", XLALshowSFTLocator ( catalog->data[catFile].locator ) );
+    fprintf(stderr, ": %s\n", XLALshowSFTLocator ( catalog->data[i].locator ) );
 #endif
 
   /* while there are files in catalog */
   while (catFile < catalog->length)
     {
       /* calculate first and last frequency bin to read */
-      deltaF   = catalog->data[catFile].header.deltaF; /* Hz/bin */
-      firstbin = floor(fMin / deltaF);
-      lastbin  = ceil (fMax / deltaF);
-      nextbin  = firstbin;
+      /* the patch for fMin/fMax == -1 should work as it did before
+	 with 'single' SFT files. However with segmented SFT files,
+	 the function reads only the frequency range of the
+	 FIRST SEGMENT
+      */
+      deltaF = catalog->data[catFile].header.deltaF; /* Hz/bin */
+      if (fMin < 0)
+	firstbin = MYROUND( catalog->data[catFile].header.f0 / deltaF );
+      else
+	firstbin = floor(fMin / deltaF);
+      if (fMax < 0)
+	lastbin = firstbin + catalog->data[catFile].numBins - 1;
+      else
+	lastbin = ceil (fMax / deltaF);
+      nextbin = firstbin;
 
       /* get first timestamp */
       epoch = catalog->data[catFile].header.epoch;
