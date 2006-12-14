@@ -12,8 +12,33 @@
 
 #include "hs_boinc_extras.h"
 
+#include <stdlib.h>
+#include <string.h>
 
-#define MAX_PATH_LEN 256
+/* #include "boinc_api.h" */
+#include "diagnostics.h"
+#include "boinc_zip.h"
+
+
+#define MAX_PATH_LEN 512
+
+
+
+#define DEBUG 1
+#ifdef DEBUG
+/* stupid simulation of LogPrintf for testing */
+#define LogPrintf fprintf
+#define LOG_CRITICAL stderr
+#define LOG_NORMAL stderr
+#define LOG_ERROR stderr
+
+int boinc_resolve_filename(char*name,char*resolved,int len) {
+  strncpy(resolved,"res:",strlen("res:"));
+  strncat(resolved,name,len);
+  return(0);
+}
+#endif /* DEBUG */
+
 
 
 /* compare strings s1 and s2 up to the length of s1 (w/o the '\0') and set l to the length */
@@ -22,25 +47,23 @@
 
 
 /* a local structure to keep information about the output files */
-static struct {
-  char **outfiles = NULL;        /* the names  of the output files of the program */
-  int  noutfiles  = 0;           /* the number of the output files of the program */
-  char resultfile[MAX_PATH_LEN]; /* the name of the file / zip archive to return */
-} boinc_output;
 
+static char **outfiles = NULL;        /* the names  of the output files of the program */
+static int  noutfiles  = 0;           /* the number of the output files of the program */
+static char resultfile[MAX_PATH_LEN]; /* the name of the file / zip archive to return */
 
 
 /* this registers a new output file to be zipped into the archive that is returned
    to the server as a result file */
 void register_output_file(char*filename) {
-  boinc_output.names = realloc(boinc_output.names,(boinc_output.noutfiles+1)*sizeof(char*));
-  if (boinc_output.names == NULL)
-    LogPrintf (LOG_FATAL, "ERROR: Can't allocate output filename '%s'\n", filename);
-  boinc_output.names[boinc_output.noutfiles] = malloc(strlen(filename));
-  if (boinc_output.names[boinc_output.noutfiles] == NULL)
-    LogPrintf (LOG_FATAL, "ERROR: Can't allocate output filename '%s'\n", filename);
-  strcpy(boinc_output.names[boinc_output.noutfiles],filename);
-  boinc_output.noutfiles++;
+  outfiles = (char**)realloc(outfiles,(noutfiles+1)*sizeof(char*));
+  if (outfiles == NULL)
+    LogPrintf (LOG_CRITICAL, "ERROR: Can't allocate output filename '%s'\n", filename);
+  outfiles[noutfiles] = malloc(strlen(filename));
+  if (outfiles[noutfiles] == NULL)
+    LogPrintf (LOG_CRITICAL, "ERROR: Can't allocate output filename '%s'\n", filename);
+  strcpy(outfiles[noutfiles],filename);
+  noutfiles++;
 }
 
 
@@ -57,14 +80,14 @@ void show_progress(double rac, double dec, long tpl_count, long tpl_total);
  */
 static int is_zipped ( const char *fname ) {
   FILE *fp;
-  CHAR zip_magic[] = {'P', 'K', 3, 4 };
-  CHAR file_header[4];
+  char zip_magic[] = {'P', 'K', 3, 4 };
+  char file_header[4];
 
   if ( (fp = fopen( fname, "rb")) == NULL ) {
     LogPrintf (LOG_CRITICAL, "Failed to open '%s' for reading.\n", fname);
     return -1;
   }
-  if ( 4 != fread ( file_header, sizeof(CHAR), 4, fp ) ) {
+  if ( 4 != fread ( file_header, sizeof(char), 4, fp ) ) {
     LogPrintf (LOG_CRITICAL, "Failed to read first 4 bytes from '%s'.\n", fname);
     return -1;
   }
@@ -99,14 +122,20 @@ static int unzip_if_necessary(char*filename) {
 
 
 
-
 /* the main function of the BOINC App
 */
 main (int argc, char*argv[]) {
-  int i,j,l;
-  int rargc = argc;
-  char **rargv = NULL;
-  char tempstr[MAX_PATH_LEN];
+  int i,j;                     /* loop counter */
+  int l;                       /* length of matched string */
+  int res;                     /* return value of function call */
+  int rargc = argc;            /* argc and ... */
+  char **rargv = NULL;         /* ... argv values for calling the MAIN() function of the worker */
+  char tempstr[MAX_PATH_LEN];  /* temporary holds a filename / -path */
+  char *startc,*endc,*appc;
+
+  /* INIT BOINC
+   */
+
 
   /* PATCH THE COMMAND LINE
 
@@ -125,9 +154,12 @@ main (int argc, char*argv[]) {
     
     /* config file */
     if (argv[i][0] == '@') {
+#ifdef DEBUG
+      fprintf(stderr,"arg: %s\n",argv[i]);
+#endif
       rargv[i] = (char*)malloc(MAX_PATH_LEN);
       rargv[i][0] = '@';
-      if (boinc_resolve_filename(argv[i]+1,rargv[i]+1,255)) {
+      if (boinc_resolve_filename(argv[i]+1,rargv[i]+1,MAX_PATH_LEN-1)) {
         LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve config file '%s'\n", argv[i]+1);
       }
 
@@ -139,30 +171,37 @@ main (int argc, char*argv[]) {
         LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve skygrid file '%s'\n", argv[i]+1);
       }
 
-    /* file to return (zip archive) */
-    } else if (MATCH_START("--BOINCresfile=",argv[i],l)) {
-      if (boinc_resolve_filename(argv[i]+l,boinc_output.resultfile,sizeof(boinc_output.resultfile))) {
+    /* ephermeris files */
+    } else if (MATCH_START("--ephemE=",argv[i],l)) {
+      rargv[i] = (char*)malloc(MAX_PATH_LEN);
+      strncpy(rargv[i],argv[i],l);
+      if (boinc_resolve_filename(argv[i]+l,rargv[i]+l,MAX_PATH_LEN-l)) {
         LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve skygrid file '%s'\n", argv[i]+1);
       }
-      rargc--; /* this argument is not passed to the main worker function */
-
-    /* ephermis files/directory */
-    } else if (MATCH_START("--ephemDir=",argv[i],l)) {
+    } else if (MATCH_START("--ephemS=",argv[i],l)) {
       rargv[i] = (char*)malloc(MAX_PATH_LEN);
       strncpy(rargv[i],argv[i],l);
       if (boinc_resolve_filename(argv[i]+l,rargv[i]+l,MAX_PATH_LEN-l)) {
         LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve skygrid file '%s'\n", argv[i]+1);
       }
 
+    /* file to return (zip archive) */
+    } else if (MATCH_START("--BOINCresfile=",argv[i],l)) {
+      if (boinc_resolve_filename(argv[i]+l,resultfile,sizeof(resultfile))) {
+        LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve skygrid file '%s'\n", argv[i]+1);
+      }
+      rargc--; /* this argument is not passed to the main worker function */
+
+
     /* SFT files (no unzipping, but dealing with multiple files separated by ';' */
     } else if (0 == strncmp("--DataFiles",argv[i],11)) {
       rargv[i] = (char*)malloc(1024);
       /* copy & skip the "[1|2]=" characters, too */
       strncpy(rargv[i],argv[i],13);
-      appc = rargv[i][13];
+      appc = rargv[i]+13;
       startc = argv[i]+13;
       /* look for multiple paths separated by ';' */
-      while(endc=srchr(startc,';')) {
+      while(endc = strchr(startc,';')) {
 	*endc = '\0';
 	if (boinc_resolve_filename(startc,appc,255)) {
 	  LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve input file '%s'\n", tempstr);
@@ -184,18 +223,26 @@ main (int argc, char*argv[]) {
       rargv[i] = argv[i];
   } /* for all command line arguments */
 
-  if (!boinc_output.resultfile) {
+  if (!resultfile) {
       LogPrintf (LOG_ERROR, "ERROR: no result file has been specified");
+  }
 
-  res=main_hierarchical_search(rargc,rargv);
+  /* CALL WORKER's MAIN()
+   */
+  
+  res = MAIN(rargc,rargv);
   if (res) {
     LogPrintf (LOG_ERROR, "ERROR: main worker returned with error '%d'\n",res);
   }
 
-  if(boinc_output.noutfiles == 0)
+
+  /* HANDLE OUTPUT FILES
+   */
+  if(noutfiles == 0)
     LogPrintf (LOG_ERROR, "ERROR: no output file has been specified");
-  for(i=0;i<boinc_output.noutfiles;i++)
-    if ( boinc_zip(ZIP_IT, boinc_output.resultfile, boinc_output.outfiles[i]) ) {
-      LogPrintf (LOG_NORMAL, "WARNING: Can't zip output file '%s'\n", boinc_output.outfiles[i]);
+  for(i=0;i<noutfiles;i++)
+    if ( boinc_zip(ZIP_IT, resultfile, outfiles[i]) ) {
+      LogPrintf (LOG_NORMAL, "WARNING: Can't zip output file '%s'\n", outfiles[i]);
     }
+
 }
