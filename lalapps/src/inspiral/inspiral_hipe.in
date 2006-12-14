@@ -594,8 +594,6 @@ def follow_up(ifo_data,ifo_name,coinc_data,coinc_ifos,tmplt_follow_job,\
             if not calibrated: insp.calibration()
             insp.set_bank(bank.get_output())
             if approximant: insp.add_var_opt('approximant', approximant)
-            insp.add_var_opt('td-follow-up', 
-                coinc_done.get_dag_node().get_output())
             if opts.datafind: insp.add_parent(seg.get_df_node())
             if opts.td_follow_bank: insp.add_parent(bank)
             if opts.td_follow_inspiral: dag.add_node(insp)
@@ -604,9 +602,21 @@ def follow_up(ifo_data,ifo_name,coinc_data,coinc_ifos,tmplt_follow_job,\
             follow_chunks_analyzed.append(AnalyzedIFOData(chunk,insp))
 
             # jobs already set up, just add the var_arg and parent to trigbank
-          if not banks: 
-            bank.add_var_opt('td-follow-up',
+            # and inspiral-veto 
+          if 'macrotdfollowup' in insp.get_opts().keys():
+            insp.add_var_opt('td-follow-up', insp.get_opts()['macrotdfollowup'] +
+                ' ' + coinc_done.get_dag_node().get_output())
+          else:
+            insp.add_var_opt('td-follow-up',
                 coinc_done.get_dag_node().get_output())
+
+          if not banks: 
+            if 'macrotdfollowup' in bank.get_opts().keys():
+              bank.add_var_opt('td-follow-up', bank.get_opts()['macrotdfollowup'] +
+                  ' ' + coinc_done.get_dag_node().get_output())
+            else:
+              bank.add_var_opt('td-follow-up',
+                  coinc_done.get_dag_node().get_output())
             if opts.coincidence: bank.add_parent(coinc_done.get_dag_node())
 
   return follow_chunks_analyzed, bankList
