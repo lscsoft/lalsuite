@@ -172,7 +172,8 @@ CHAR  *calCacheName     = NULL;         /* location of calibration data */
 INT4   globCalData      = 0;            /* glob for calibration frames  */
 INT4   pointCal         = 0;            /* don't average cal over chunk */
 CHAR  *injectionFile    = NULL;         /* name of file containing injs */
-CHAR  *tdFollowUpFile   = NULL;         /* name of file containing td f */
+CHAR **tdFollowUpFiles  = NULL;         /* name of file containing td f */
+INT4   numTDFiles       = 0;            /* Number of files to follow up */
 int    injectOverhead   = 0;            /* inject h+ into detector      */
 REAL4  mmFast           = -1.0;         /* match for the --fast option  */
 
@@ -1047,7 +1048,7 @@ int main( int argc, char *argv[] )
   chan.epoch.gpsNanoSeconds += slideData.gpsNanoSeconds;
 
 
-  if ( tdFollowUpFile )
+  if ( tdFollowUpFiles )
   {
     INT4 injSafety = 10;
     LIGOTimeGPS startKeep = gpsStartTime;
@@ -1057,8 +1058,35 @@ int main( int argc, char *argv[] )
     endKeep.gpsSeconds   += injSafety;
 
     /* read in the time domain follow-up data from XML */
-    numTDFollowUpEvents = LALSnglInspiralTableFromLIGOLw( &tdFollowUpEvents,
-            tdFollowUpFile, 0, -1);
+    for (i = 0; i < numTDFiles; i++ )
+    {
+      INT4 thisTDNum = 0;
+      if ( !tdFollowUpEvents )
+      {
+        thisTDNum = LALSnglInspiralTableFromLIGOLw(&tdFollowUpEvents, 
+             tdFollowUpFiles[i], 0, -1);
+        thisFollowUpEvent = tdFollowUpEvents;
+      }
+      else
+      {
+        thisTDNum = LALSnglInspiralTableFromLIGOLw(&(thisFollowUpEvent->next),
+             tdFollowUpFiles[i], 0, -1);
+      }
+      if ( thisTDNum < 0 )
+      {
+        fprintf( stderr, "Error reading file %s\n", tdFollowUpFiles[i] );
+        exit( 1 );
+      }
+
+      if ( thisTDNum )
+      {
+        while ( thisFollowUpEvent->next )
+        {
+          thisFollowUpEvent = thisFollowUpEvent->next;
+        }
+      }
+    }
+    
     tdFollowUpEvents = XLALTimeCutSingleInspiral( tdFollowUpEvents,
         &startKeep, &endKeep);
   }
@@ -1613,9 +1641,9 @@ int main( int argc, char *argv[] )
         &chan, &spec, &resp, fcInitParams ), &status );
 
   /* set the analyze flag according to what we are doing */
-  if ( tdFollowUpFile || injectionFile )
+  if ( tdFollowUpFiles || injectionFile )
   {
-    if (tdFollowUpFile)
+    if (tdFollowUpFiles)
     {
       /* Only analyze segments containing coincident BCV triggers */
       XLALFindChirpSetFollowUpSegment (dataSegVec, &tdFollowUpEvents);
@@ -1886,7 +1914,7 @@ int main( int argc, char *argv[] )
      *      F           F           F        Do Nothing
      *      F           F           T        Irrelevant (do nothing)
      *================================================================*/
-    if ( injectionFile  || (tdFollowUpFile && mmFast >= 0.0))
+    if ( numTmplts > 0 && ( injectionFile  || (tdFollowUpFiles && mmFast >= 0.0) ))
     {
       /* Make space for analyseThisTmplt */
       analyseThisTmplt = (UINT4 *) LALCalloc (numTmplts, sizeof(UINT4));
@@ -1894,7 +1922,7 @@ int main( int argc, char *argv[] )
       /* If we are performing a follow up, we only want to follow up templates
        * near coincident events, regardless of the injection file used
        */
-      if ( injectionFile && (!tdFollowUpFile || mmFast < 0) )
+      if ( injectionFile && (!tdFollowUpFiles || mmFast < 0) )
       {
           
       /* set the analyseThisTmplt flag on templates     */
@@ -2016,9 +2044,9 @@ int main( int argc, char *argv[] )
         /* If injections are being done or if in td follow-up mode */
         /* check if for any reason the analyseTag flag needs to be */
         /* brought down                                            */
-        if ( tdFollowUpFile || ( injectionFile  && flagFilterInjOnly ))
+        if ( tdFollowUpFiles || ( injectionFile  && flagFilterInjOnly ))
         {
-          if ( tdFollowUpFile )
+          if ( tdFollowUpFiles )
           {
             if ( mmFast >= 0.0 )
             {
@@ -2769,9 +2797,9 @@ int main( int argc, char *argv[] )
   if ( vrbflg ) fprintf( stdout, "done. XML file closed\n" );
 
   /* free the rest of the memory, check for memory leaks and exit */
-  if ( tdFollowUpFile )
+  if ( tdFollowUpFiles )
   {
-    free ( tdFollowUpFile );
+    free ( tdFollowUpFiles );
     while ( tdFollowUpEvents )
     {
       thisFollowUpEvent = tdFollowUpEvents;
@@ -4088,11 +4116,26 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;  
 
       case '9':
-        /* create storage for the injection file name */
-        optarg_len = strlen( optarg ) + 1;
-        tdFollowUpFile = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( tdFollowUpFile, optarg, optarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        numTDFiles = 1;
+        /* Count the number of thinca files to follow up */
+        while ( !strstr( argv[optind], "--" ) )
+        {
+          numTDFiles++;
+          optind++;
+        }
+        optind = optind - numTDFiles;
+
+        /* Set pointers to the relevant filenames */
+        tdFollowUpFiles = (CHAR **) calloc( numTDFiles, sizeof(CHAR *));
+
+        numTDFiles = 0;
+        while ( !strstr( argv[optind], "--" ) )
+        {
+          tdFollowUpFiles[numTDFiles++] = argv[optind];
+          ADD_PROCESS_PARAM( "string", "%s", argv[optind] );
+          optind++;
+
+        }
         break;
 
       case '*':

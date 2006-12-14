@@ -140,8 +140,9 @@ REAL4   candleSnr = -1;                 /* candle signal to noise ratio */
 REAL4   candleMass1 = -1;               /* standard candle mass (solar) */
 REAL4   candleMass2 = -1;               /* standard candle mass (solar) */
 
-/* TD follow up filename */
-CHAR tdFileName[256] = "";
+/* TD follow up filenames */
+CHAR **tdFileNames = NULL;
+INT4  numTDFiles = 0;
 
 /* output parameters */
 CHAR  *userTag          = NULL;
@@ -219,7 +220,8 @@ int main ( int argc, char *argv[] )
 
   /* TD follow-up variables */
   int numTdFollow;           /* Number of events to follow up in this time */
-  SnglInspiralTable *tdFollowUp = NULL;
+  SnglInspiralTable *tdFollowUp   = NULL;
+  SnglInspiralTable *thisTdFollow = NULL;
 
   /*
    *
@@ -278,45 +280,58 @@ int main ( int argc, char *argv[] )
   /* If we're doing a td follow-up we dont want to generate a bank
    * if there was no BCV trigger in this time
    */
-  if (strcmp(tdFileName, ""))
+  if ( tdFileNames )
   {
-    if (vrbflg)
-      fprintf( stdout, "We are doing a TD follow-up" );
+    if ( vrbflg )
+    {
+      fprintf( stdout, "We are doing a TD follow-up\n" );
+      fprintf( stdout, "Following up %d files...\n", numTDFiles );
+    }
 
-    numTdFollow = LALSnglInspiralTableFromLIGOLw(&tdFollowUp, tdFileName,
+    numTdFollow = 0;
+  
+    for (i = 0; i < numTDFiles; i++ )
+    {
+      INT4 thisTDNum = 0;
+      if ( !tdFollowUp )
+      {
+        thisTDNum = LALSnglInspiralTableFromLIGOLw(&tdFollowUp, tdFileNames[i],
 			0, -1);
+        thisTdFollow = tdFollowUp;
+      }
+      else
+      {
+        thisTDNum = LALSnglInspiralTableFromLIGOLw(&(thisTdFollow->next), tdFileNames[i],
+                        0, -1);
+      }
+      if ( thisTDNum < 0 )
+      {
+        fprintf( stderr, "Error reading file %s\n", tdFileNames[i] );
+        exit( 1 );
+      }
+      numTdFollow += thisTDNum;
+
+      while ( thisTdFollow->next )
+      {
+        thisTdFollow = thisTdFollow->next;
+      }
+    }
 
     if (numTdFollow <= 0) goto cleanExit;
-    else
+
+    tdFollowUp  = XLALIfoCutSingleInspiral( &tdFollowUp, ifo );
+    if ( tdFollowUp )
+       tdFollowUp = XLALTimeCutSingleInspiral( tdFollowUp, &gpsStartTime, &gpsEndTime );
+
+    /* If there are no events to follow up, we just exit */
+    if ( !tdFollowUp ) goto cleanExit;
+
+    /* Free the follow-up events */
+    while (tdFollowUp)
     {
-      BOOLEAN genBank = 0;    /* Variable to determine whether to generate the bank */
-      SnglInspiralTable *thisTdFollow = NULL;
-
-      tdFollowUp  = XLALSortSnglInspiral(tdFollowUp, LALCompareSnglInspiralByTime);
-
-      while (tdFollowUp && (tdFollowUp->end_time.gpsSeconds < gpsEndTime.gpsSeconds))
-      {
-
-        thisTdFollow = tdFollowUp;
-        tdFollowUp = tdFollowUp->next;
-
-
-        if (thisTdFollow->end_time.gpsSeconds >= gpsStartTime.gpsSeconds)
-          genBank = 1;
-
-        XLALFreeSnglInspiral( &thisTdFollow );
-
-        if (genBank) break;
-      }
-
-      while (tdFollowUp)
-      {
-        thisTdFollow = tdFollowUp;
-        tdFollowUp = tdFollowUp->next;
-        XLALFreeSnglInspiral(&thisTdFollow);
-      }
-
-      if (!genBank) goto cleanExit;
+      thisTdFollow = tdFollowUp;
+      tdFollowUp = tdFollowUp->next;
+      XLALFreeSnglInspiral(&thisTdFollow);
     }
   }
 
@@ -1137,6 +1152,7 @@ cleanExit:
   LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &results ), &status );
 
   /* free the rest of the memory, check for memory leaks and exit */
+  if ( tdFileNames ) free( tdFileNames );
   if ( calCacheName ) free( calCacheName );
   if ( frInCacheName ) free( frInCacheName );
   if ( frInType ) free( frInType );
@@ -2104,8 +2120,26 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       case 'w':
-        LALSnprintf(tdFileName, sizeof(tdFileName), "%s", optarg);
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        numTDFiles = 1;
+        /* Count the number of thinca files to follow up */
+        while ( !strstr( argv[optind], "--" ) )
+        {
+          numTDFiles++;
+          optind++;
+        }
+        optind = optind - numTDFiles;
+
+        /* Set pointers to the relevant filenames */
+        tdFileNames = (CHAR **) calloc( numTDFiles, sizeof(CHAR *));
+        numTDFiles = 0;
+
+        while ( !strstr( argv[optind], "--" ) )
+        {
+          tdFileNames[numTDFiles++] = argv[optind];
+          ADD_PROCESS_PARAM( "string", "%s", argv[optind] );
+          optind++;
+
+        }
 	break;
 
       case 'Y':   
