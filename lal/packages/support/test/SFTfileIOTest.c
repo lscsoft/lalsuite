@@ -219,6 +219,22 @@ int main(int argc, char *argv[])
   SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-test[123]*;" TESTDIR "SFT-test[567]*", NULL ), &status );
   /* load once as a single SFT-vector (mix of detectors) */
   SHOULD_WORK ( LALLoadSFTs ( &status, &sft_vect, catalog, -1, -1 ), &status );
+
+/*   SHOULD_WORK ( _LALLoadSFTs ( &status, &sft_vect, catalog, -1, -1 ), &status ); */
+/*   { */
+/*     UINT4 alpha; */
+/*     CHAR name[100], comment[200]; */
+
+/*     for ( alpha=0; alpha < sft_vect->length; alpha ++ ) */
+/*       { */
+/* 	REAL8 Tsft = 1.0 / sft_vect->data[alpha].deltaF; */
+/* 	sprintf ( name, "SFT-test%d.new", alpha + 1 ); */
+/* 	sprintf ( comment, "This is the SFT '%s'!", name ); */
+/* 	sft_vect->data[alpha].epoch.gpsSeconds += alpha * Tsft ; */
+/* 	SHOULD_WORK ( LALWriteSFT2file( &status, &(sft_vect->data[alpha]), name, comment), &status ); */
+/*       } */
+/*   } */
+
   /* load once as a multi-SFT vector */
   SHOULD_WORK ( LALLoadMultiSFTs ( &status, &multsft_vect, catalog, -1, -1 ), &status );
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
@@ -239,6 +255,7 @@ int main(int argc, char *argv[])
   SHOULD_WORK ( LALWriteSFTVector2Dir( &status, multsft_vect->data[0], ".", "A v2-SFT file for testing!", "test"), &status);
 
   /* write v2-SFt as a v1-SFT to disk (correct normalization) */
+  multsft_vect->data[0]->data[0].epoch.gpsSeconds += 60;	/* shift start-time so they don't look like segmented SFTs! */
   SHOULD_WORK ( LALWrite_v2SFT_to_v1file( &status, &(multsft_vect->data[0]->data[0]), "outputsftv2_v1.sft"), &status );
 
   SUB ( LALDestroySFTVector ( &status, &sft_vect ), &status );
