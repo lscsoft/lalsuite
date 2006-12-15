@@ -24,7 +24,11 @@
 */
 
 /* define preprocessor flags:  */
-/* #define PRINT_STACKSLIDE_BINOFFSETS */
+/* #define PRINT_STACKSLIDE_BINOFFSETS  */
+/* Uncomment the next flag when using a threshold to only accept local maximum that stand high enough above neighboring bins */
+/* #define INCLUDE_EXTRA_STACKSLIDE_THREHOLDCHECK */
+/* THRESHOLDFRACSS is the fraction of power that must be in the local maxima when INCLUDE_EXTRA_STACKSLIDE_THREHOLDCHECK is defined */
+#define THRESHOLDFRACSS 0.667
 
 /* include files: */
 #include "./StackSlideFstat.h"
@@ -74,11 +78,14 @@ void StackSlideVecF(LALStatus *status,
   UINT4 ialpha,nalpha,idelta,ndelta,ifdot,nfdot;
   UINT2 numSpindown;
 
-  INT4 fBinIni, fBinFin, nSearchBins, nSearchBinsm1;
+  /* INT4 fBinIni, fBinFin, nSearchBins, nSearchBinsm1; */ 
+  INT4 fBinIni, fBinFin, nSearchBins, nStackBinsm1; /* 12/14/06 gm; now account for extra bins in stack  */
   INT4 j, k, nStacks, offset, offsetj;
+  INT4 extraBinsFstat, halfExtraBinsFstat; /* 12/14/06 gm; new parameter and half this parameter */
   UINT4 uk;
   REAL8 f0, deltaF, tEffSTK, fmid, alpha, delta;
-  REAL8 patchSizeX, patchSizeY, f1jump;
+  /* REAL8 patchSizeX, patchSizeY, f1jump; */  /* 12/14/06 gm; f1jump no longer needed */
+  REAL8 patchSizeX, patchSizeY;
   REAL8VectorSequence *vel, *pos;
   REAL8 fdot, refTime;
   LIGOTimeGPS refTimeGPS;
@@ -105,15 +112,23 @@ void StackSlideVecF(LALStatus *status,
 
   /* copy some params to local variables */
   pixelFactor = params->pixelFactor;   
-  nStacks = vecF->length;  
+  nStacks = vecF->length;
+  extraBinsFstat = (INT4)params->extraBinsFstat;      /* 12/14/06 gm; new parameter */
+  halfExtraBinsFstat = extraBinsFstat/2;              /* 12/14/06 gm; half the new parameter */
   nSearchBins = vecF->data->data->length;
-  nSearchBinsm1 = nSearchBins - 1;
-  f0 = vecF->data[0].f0;
+  nSearchBins -= extraBinsFstat;                      /* 12/14/06 gm; subtract extra bins */
+  /* nSearchBinsm1 = nSearchBins - 1; */
+  nStackBinsm1  = vecF->data->data->length - 1;       /* 12/14/06 gm; need to know this for the entire stack */
   deltaF = vecF->data[0].deltaF;
   tEffSTK = 1.0/deltaF; /*  Effective time baseline a stack */
-  fBinIni = floor( f0*tEffSTK + 0.5);
-  fBinFin = fBinIni + nSearchBins - 1;
-  fmid = vecF->data[0].f0 + ((REAL8)(nSearchBins/2))*deltaF;
+  /* fBinIni = floor( f0*tEffSTK + 0.5);
+  fBinFin = fBinIni + nSearchBins - 1; */
+  fBinIni = floor( vecF->data[0].f0*tEffSTK + 0.5);   /* 12/14/06 gm; defined on the full stack band */
+  fBinFin = fBinIni + vecF->data->data->length - 1;   /* 12/14/06 gm; defined on the full stack band */
+  /* fmid = vecF->data[0].f0 + ((REAL8)(nSearchBins/2))*deltaF;*/
+  /* f0 = vecF->data[0].f0; */  
+  fmid = ((REAL8)((fBinIni+fBinFin)/2))*deltaF;       /* 12/14/06 gm; defined on the full stack band */
+  f0 = ((REAL8)(fBinIni+halfExtraBinsFstat))*deltaF;  /* 12/14/06 gm; start frequency of stackslide output */
   weightsV=params->weightsV; /* Needs to be NULL or normalized stack weights */
   threshold = params->threshold;
     
@@ -174,8 +189,9 @@ void StackSlideVecF(LALStatus *status,
   }
 
   /* if there are residual spindowns */
-  f1jump = 1.0 / timeDiffV->data[nStacks - 1]; /* resolution in residual fdot */  
-  dfdot     = deltaF * f1jump;
+  /* f1jump = 1.0 / timeDiffV->data[nStacks - 1]; */ /* resolution in residual fdot */  
+  /* dfdot     = deltaF * f1jump; */
+  dfdot     = params->dfdot; /* 12/14/06 gm; dfdot now a user parameter; default is df1dot/nStacks1; not nfdot set above. */
   fdotStart = fdot - dfdot*(REAL8)(nfdot/2);
   fdotEnd   = fdot + dfdot*(REAL8)(nfdot/2);
   if (nfdot < 1) nfdot = 1; /* do at least one value of fdot below */
@@ -258,9 +274,11 @@ void StackSlideVecF(LALStatus *status,
                   if (weightsV == NULL) {
                    /* WITHOUT WEIGHTS */
                    for(j=0; j<nSearchBins; j++) {
-                     offsetj = j + offset;
-                     if (offsetj < 0) j = 0;  /* TO DO: NEED EXTRA BINS IN STACKS TO ALLOW FOR SLIDING */
-                     if (offsetj > nSearchBinsm1) j = nSearchBinsm1;
+                     /* offsetj = j + offset; */
+                     offsetj = j + halfExtraBinsFstat + offset;    /* 12/14/06 gm; account for extra bins */
+                     if (offsetj < 0) j = 0;                       /* 12/14/06 gm; do not go off the end of the stack */
+                     /* if (offsetj > nSearchBinsm1) j = nSearchBinsm1; */
+                     if (offsetj > nStackBinsm1) j = nStackBinsm1; /* 12/14/06 gm; do not go off the end of the stack */
 
                      if (k == 0) {
                         pstackslideData[j] = pFVecData[offsetj];
@@ -272,9 +290,11 @@ void StackSlideVecF(LALStatus *status,
                    /* WITH WEIGHTS */
                    thisWeight = weightsV->data[k];
                    for(j=0; j<nSearchBins; j++) {
-                     offsetj = j + offset;
-                     if (offsetj < 0) j = 0;  /* TO DO: NEED EXTRA BINS IN STACKS TO ALLOW FOR SLIDING */
-                     if (offsetj > nSearchBinsm1) j = nSearchBinsm1;
+                     /* offsetj = j + offset; */
+                     offsetj = j + halfExtraBinsFstat + offset;    /* 12/14/06 gm; account for extra bins */
+                     if (offsetj < 0) j = 0;                       /* 12/14/06 gm; do not go off the end of the stack */
+                     /* if (offsetj > nSearchBinsm1) j = nSearchBinsm1; */
+                     if (offsetj > nStackBinsm1) j = nStackBinsm1; /* 12/14/06 gm; do not go off the end of the stack */
 
                      if (k == 0) {
                         pstackslideData[j] = thisWeight*pFVecData[offsetj];
@@ -420,7 +440,7 @@ void GetStackSlideCandidates_threshold(LALStatus *status,
   INT4 j, jminus1, jplus1, nSearchBins, nSearchBinsm1, numCandidates;
   SemiCohCandidate thisCandidate;
   BOOLEAN isLocalMax = TRUE;
-  REAL8 thisSig;
+  REAL8 thisSig, thisSigMinus1, thisSigPlus1;
   REAL8 *pstackslideData;  /* temporary pointer */
   
   INITSTATUS( status, "GetStackSlideCandidates_threshold", rcsid );
@@ -464,9 +484,31 @@ void GetStackSlideCandidates_threshold(LALStatus *status,
 
      /* candidates are above threshold and local maxima */
      if (thisSig > threshold) {
-        jminus1 = j - 1; if (j < 0) j = 0;
-        jplus1 = j + 1;  if (j > nSearchBinsm1) j = nSearchBinsm1;
-        isLocalMax = (thisSig > pstackslideData[jminus1]) && (thisSig > pstackslideData[jplus1]);       
+        /* 12/14/06 gm; improve local maxima checking */
+        jminus1 = j - 1;
+        jplus1 = j + 1;
+        if (jminus1 < 0) {
+           if (jplus1 > nSearchBinsm1) jplus1 = nSearchBinsm1; /* just to be safe */
+           thisSigPlus1 = pstackslideData[jplus1];
+           isLocalMax = (thisSig > thisSigPlus1);
+           #ifdef INCLUDE_EXTRA_STACKSLIDE_THREHOLDCHECK
+              isLocalMax = ( isLocalMax && ( thisSig > 2.0*THRESHOLDFRACSS*thisSigPlus1 ) );
+           #endif
+        } else if (jplus1 > nSearchBinsm1) {
+           if (jminus1 < 0) jminus1 = 0; /* just to be safe */
+           thisSigMinus1 = pstackslideData[jminus1];
+           isLocalMax = (thisSig > thisSigMinus1);
+           #ifdef INCLUDE_EXTRA_STACKSLIDE_THREHOLDCHECK
+              isLocalMax = ( isLocalMax && ( thisSig > 2.0*THRESHOLDFRACSS*thisSigMinus1 ) );
+           #endif
+        } else {
+           thisSigMinus1 = pstackslideData[jminus1];
+           thisSigPlus1 = pstackslideData[jplus1];
+           isLocalMax = (thisSig > thisSigMinus1) && (thisSig > thisSigPlus1);
+           #ifdef INCLUDE_EXTRA_STACKSLIDE_THREHOLDCHECK
+              isLocalMax = ( isLocalMax && ( thisSig > THRESHOLDFRACSS*(thisSigMinus1 + thisSigPlus1) ) );
+           #endif
+        }
         if ( (numCandidates < out->length) && isLocalMax ) {
            thisCandidate.significance = thisSig;
            thisCandidate.freq =  freq;
