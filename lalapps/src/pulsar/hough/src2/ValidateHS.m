@@ -45,6 +45,11 @@ signalphi0 = 0;
 signalFreq = fStart + 0.25;
 signalF1dot = 0;
 
+## cleanup from previous runs
+system("rm -rf ./fakesfts");
+unlink ("CFSv2");
+unlink ("outHS_fstatVec1.dat");
+
 ## run makefakedata
 system("mkdir -p ./fakesfts");
 cmd = sprintf("lalapps_Makefakedata --outSFTbname=./fakesfts/ \
@@ -57,7 +62,9 @@ cmd = sprintf("lalapps_Makefakedata --outSFTbname=./fakesfts/ \
 	      signalFreq, signalF1dot, startTime, duration)
 
 [output,status] = system(cmd);
-
+if ( status != 0 )
+  error ("Failed to create SFTs! output = '%s'!", output );
+endif
 
 ## the fake sfts are created 
 ## -- now run HierarchicalSearch.c and CFSv2
@@ -79,7 +86,9 @@ cmd = sprintf("ComputeFStatistic_v2 --Freq=%.12g --f1dot=%.12g \
  	      refTime, DataFiles, skyGridFile )
 
 [output,status] = system(cmd);
-
+if ( status != 0 )
+  error("CFSv2 failed: output = '%s'", output );
+endif
 
 ## now HierarchicalSearch.c without hough or followup stages
 cmd = sprintf("HierarchicalSearch --followUp=0 --DataFiles1='%s' \
@@ -91,10 +100,13 @@ cmd = sprintf("HierarchicalSearch --followUp=0 --DataFiles1='%s' \
 	      refTime)
 	      
 [output,status] = system(cmd);
+if ( status != 0 )
+  error("HierarchicalSearch failed! out = '%s'", output );
+endif
 
 ## compare outputs from the two codes
-load CFSv2
-load outHS_fstatVec1.txt
+load "CFSv2";
+load "outHS_fstatVec1.dat";
 
 F1 = CFSv2(:,7);
 F2 = outHS_fstatVec1(:,5);
