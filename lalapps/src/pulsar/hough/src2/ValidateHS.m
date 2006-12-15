@@ -72,7 +72,7 @@ skyGridFile = "./skygrid";
 ## run ComputeFStatistic_v2
 cmd = sprintf("ComputeFStatistic_v2 --Freq=%.12g --f1dot=%.12g \
 --FreqBand=%.12g --f1dotBand=%.12g --dFreq=%.12g --df1dot=%.12g \
---Dterms=8 --refTime=%d --DataFiles='%s' --skyGridFile=%s \
+--Dterms=8 --refTime=%d --DataFiles='%s' --gridFile=%s \
 --ephemYear=05-09 --TwoFthreshold=0 --gridType=3 \
 --outputLabel=CFSv2 --outputFstat=CFSv2 --RngMedWindow=101",\ 
 	      fStart, fdot, fBand, fdotBand, dFreq, df1dot, \
@@ -82,11 +82,11 @@ cmd = sprintf("ComputeFStatistic_v2 --Freq=%.12g --f1dot=%.12g \
 
 
 ## now HierarchicalSearch.c without hough or followup stages
-cmd = sprintf("HierarchicalSearch --followUp=0 --sftData1='%s' \
+cmd = sprintf("HierarchicalSearch --followUp=0 --DataFiles1='%s' \
 --Freq=%.12g --FreqBand=%.12g --f1dot=%.12g --f1dotBand=%.12g \
 --method=-1 \
 --nStacks1=%.12g --gridType1=3 --skyGridFile=%s --refTime=%.12g \
---ephemYear=05-09 --printFstat1=1 --fnameout=./outHS", DataFiles, \
+--printFstat1=1 --fnameout=./outHS", DataFiles, \
 	      fStart, fBand, fdot, fdotBand, nStacks1, skyGridFile, \
 	      refTime)
 	      
