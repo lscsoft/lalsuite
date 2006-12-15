@@ -809,8 +809,9 @@ int MAIN( int argc, char *argv[]) {
   for (k = 0; k < nStacks1; k++) {
 
     LogPrintf(LOG_DEBUG, "Stack %d ", k);
-    LogPrintfVerbatim(LOG_DEBUG, "(GPS start time = %d, Noise weight = %f ) ", startTstack1->data[k].gpsSeconds, 
-		      weightsNoise->data[k]);
+    if ( weightsNoise )
+      LogPrintfVerbatim(LOG_DEBUG, "(GPS start time = %d, Noise weight = %f ) ", startTstack1->data[k].gpsSeconds, 
+			weightsNoise->data[k]);
 
     for ( j = 0; j < (INT4)stackMultiSFT1.data[k]->length; j++) {
 
