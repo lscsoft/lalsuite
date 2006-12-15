@@ -212,8 +212,8 @@ void GetHoughCandidates_threshold(LALStatus *status, SemiCohCandidateList *out, 
 				  HOUGHDemodPar *parDem, REAL8 threshold);
 
 /* default values for input variables */
-#define EARTHEPHEMERIS "./earth05-09.dat"
-#define SUNEPHEMERIS "./sun05-09.dat"
+#define EARTHEPHEMERIS "earth05-09.dat"
+#define SUNEPHEMERIS "sun05-09.dat"
 
 #define BLOCKSRNGMED 101 /**< Default running median window size */
 #define FSTART 310.0   /**< Default Start search frequency */
