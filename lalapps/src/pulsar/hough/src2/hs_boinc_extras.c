@@ -46,11 +46,31 @@ int boinc_resolve_filename(char*name,char*resolved,int len) {
 
 
 
-/* a local structure to keep information about the output files */
-
+/* information about the output files */
 static char **outfiles = NULL;        /* the names  of the output files of the program */
 static int  noutfiles  = 0;           /* the number of the output files of the program */
 static char resultfile[MAX_PATH_LEN]; /* the name of the file / zip archive to return */
+
+/* hooks for communication with the graphics thread */
+void (*set_search_pos_hook)(float,float) = NULL;
+int (*boinc_init_graphics_hook)(void (*worker)(void)) = NULL;
+double *fraction_done_hook = NULL;
+
+/* provide these variables here if we need them and don't get them from a dynamic library */
+#if (BOINC_GRAPHICS == 1)
+extern double fraction_done;
+extern void set_search_pos(float RAdeg, float DEdeg);
+extern int boinc_init_graphics(void (*worker)(void));
+#endif
+
+
+/* show some progress in the graphics thread */
+void show_progress(double rac, double dec, long tpl_count, long tpl_total) {
+  if (fraction_done_hook)
+    *fraction_done_hook = (double)tpl_count / (double)tpl_total;
+  if (set_search_pos_hook)
+    set_search_pos_hook(rac * 180.0/LAL_PI, dec * 180.0/LAL_PI);
+}
 
 
 /* this registers a new output file to be zipped into the archive that is returned
@@ -71,7 +91,6 @@ void register_output_file(char*filename) {
 /* to be inmplemented... */
 void set_checkpoint(char*filename,double rac,double dec, long tpl_count, long tpl_total);
 void get_checkpoint(char*filename);
-void show_progress(double rac, double dec, long tpl_count, long tpl_total);
 
 
 
@@ -122,9 +141,7 @@ static int unzip_if_necessary(char*filename) {
 
 
 
-/* the main function of the BOINC App
-*/
-main (int argc, char*argv[]) {
+worker (int argc, char*argv[]) {
   int i,j;                     /* loop counter */
   int l;                       /* length of matched string */
   int res;                     /* return value of function call */
@@ -133,14 +150,26 @@ main (int argc, char*argv[]) {
   char tempstr[MAX_PATH_LEN];  /* temporary holds a filename / -path */
   char *startc,*endc,*appc;
 
-  /* INIT BOINC
-   */
-
+  /* try to load the graphics library and set the hooks if successful */
+#if (BOINC_GRAPHICS == 2) 
+  if (graphics_lib_handle) {
+    if (!(set_search_pos_hook = dlsym(graphics_lib_handle,"set_search_pos"))) {
+      LogPrintf (LOG_CRITICAL,   "unable to resolve set_search_pos(): %s\n", dlerror());
+      boinc_finish(COMPUTEFSTAT_EXIT_DLOPEN);
+    }
+    if (!(fraction_done_hook = dlsym(graphics_lib_handle,"fraction_done"))) {
+      LogPrintf (LOG_CRITICAL,   "unable to resolve fraction_done(): %s\n", dlerror());
+      boinc_finish(COMPUTEFSTAT_EXIT_DLOPEN);
+    }
+  }
+  else
+    LogPrintf (LOG_CRITICAL,  "graphics_lib_handle NULL: running without graphics\n");
+#endif
 
   /* PATCH THE COMMAND LINE
 
      The actual parsing of the command line will be left to the
-     main_hierarchical_search(). However, command line arguments
+     MAIN() of HierarchicalSearch.c. However, command line arguments
      that can be identified as filenames must be boinc_resolved
      before passing them to the main function.
      We will also look if the files are possibly zipped and unzip
@@ -148,53 +177,57 @@ main (int argc, char*argv[]) {
   */
   rargv = (char**)malloc(argc*sizeof(char*));
   rargv[0] = argv[0];
-  /* TODO: ephermis files */
-  /* TODO: unzippig */
+
+  /* for all args in the command line (except argv[0]) */
   for (i=1; i<argc; i++) {
     
     /* config file */
     if (argv[i][0] == '@') {
-#ifdef DEBUG
-      fprintf(stderr,"arg: %s\n",argv[i]);
-#endif
       rargv[i] = (char*)malloc(MAX_PATH_LEN);
       rargv[i][0] = '@';
       if (boinc_resolve_filename(argv[i]+1,rargv[i]+1,MAX_PATH_LEN-1)) {
         LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve config file '%s'\n", argv[i]+1);
       }
+    }
 
     /* skygrid file */
-    } else if (MATCH_START("--skyGridFile=",argv[i],l)) {
+    else if (MATCH_START("--skyGridFile=",argv[i],l)) {
       rargv[i] = (char*)malloc(MAX_PATH_LEN);
       strncpy(rargv[i],argv[i],l);
       if (boinc_resolve_filename(argv[i]+l,rargv[i]+l,MAX_PATH_LEN-l)) {
         LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve skygrid file '%s'\n", argv[i]+1);
       }
+      unzip_if_necessary(rargv[i]);
+    }
 
     /* ephermeris files */
-    } else if (MATCH_START("--ephemE=",argv[i],l)) {
+    else if (MATCH_START("--ephemE=",argv[i],l)) {
       rargv[i] = (char*)malloc(MAX_PATH_LEN);
       strncpy(rargv[i],argv[i],l);
       if (boinc_resolve_filename(argv[i]+l,rargv[i]+l,MAX_PATH_LEN-l)) {
         LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve skygrid file '%s'\n", argv[i]+1);
       }
-    } else if (MATCH_START("--ephemS=",argv[i],l)) {
+      unzip_if_necessary(rargv[i]);
+    }
+    else if (MATCH_START("--ephemS=",argv[i],l)) {
       rargv[i] = (char*)malloc(MAX_PATH_LEN);
       strncpy(rargv[i],argv[i],l);
       if (boinc_resolve_filename(argv[i]+l,rargv[i]+l,MAX_PATH_LEN-l)) {
         LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve skygrid file '%s'\n", argv[i]+1);
       }
+      unzip_if_necessary(rargv[i]);
+    }
 
     /* file to return (zip archive) */
-    } else if (MATCH_START("--BOINCresfile=",argv[i],l)) {
+    else if (MATCH_START("--BOINCresfile=",argv[i],l)) {
       if (boinc_resolve_filename(argv[i]+l,resultfile,sizeof(resultfile))) {
         LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve skygrid file '%s'\n", argv[i]+1);
       }
       rargc--; /* this argument is not passed to the main worker function */
-
+    }
 
     /* SFT files (no unzipping, but dealing with multiple files separated by ';' */
-    } else if (0 == strncmp("--DataFiles",argv[i],11)) {
+    else if (0 == strncmp("--DataFiles",argv[i],11)) {
       rargv[i] = (char*)malloc(1024);
       /* copy & skip the "[1|2]=" characters, too */
       strncpy(rargv[i],argv[i],13);
@@ -217,9 +250,10 @@ main (int argc, char*argv[]) {
       if (boinc_resolve_filename(startc,appc,255)) {
 	LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve input file '%s'\n", tempstr);
       }
+    }
 
     /* any other argument */
-     } else 
+    else 
       rargv[i] = argv[i];
   } /* for all command line arguments */
 
@@ -244,5 +278,48 @@ main (int argc, char*argv[]) {
     if ( boinc_zip(ZIP_IT, resultfile, outfiles[i]) ) {
       LogPrintf (LOG_NORMAL, "WARNING: Can't zip output file '%s'\n", outfiles[i]);
     }
+}
 
+
+/* the main function of the BOINC App
+   deals with boinc_init(_graphics) and calls the worker
+*/
+
+int main(int argc, char**argv) {
+
+#if (BOINC_GRAPHICS == 1)
+  set_search_pos_hook = set_search_pos;
+  fraction_done_hook = &fraction_done;
+#endif
+
+  /* boinc_init() or boinc_init_graphics() needs to be run before any
+   * boinc_api functions are used */
+  
+#if BOINC_GRAPHICS>0
+  {
+    int retval;
+#if BOINC_GRAPHICS==2
+    /* Try loading screensaver-graphics as a dynamic library.  If this
+       succeeds then extern void* graphics_lib_handle is set, and can
+       be used with dlsym() to resolve symbols from that library as
+       needed.
+    */
+    retval=boinc_init_graphics_lib(worker, argv[0]);
+#endif /* BOINC_GRAPHICS==2 */
+#if BOINC_GRAPHICS==1
+    /* no dynamic library, just call boinc_init_graphics() */
+    retval = boinc_init_graphics(worker);
+#endif /* BOINC_GRAPHICS==1 */
+    LogPrintf (LOG_CRITICAL,  "boinc_init_graphics[_lib]() returned %d. This indicates an error...\n", retval);
+    boinc_finish(COMPUTEFSTAT_EXIT_WORKER );
+  }
+#endif /*  BOINC_GRAPHICS>0 */
+    
+  /* we end up hereo only if BOINC_GRAPHICS == 0
+     or a call to boinc_init_graphics failed */
+  boinc_init();
+  worker(argc,argv);
+  boinc_finish(COMPUTEFSTAT_EXIT_WORKER );
+  /* boinc_init(graphics) ends the program, we never get here!! */
+  return 0;
 }
