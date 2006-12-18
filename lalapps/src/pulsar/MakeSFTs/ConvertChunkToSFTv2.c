@@ -185,8 +185,8 @@ main(int argc, char *argv[])
   strcat ( new_comment, add_comment );
 
   /* switch this back to LALLoadSFTs once LALLoadSegmntedSFTs has replaced it in lalsupport */
-  LAL_CALL ( LALLoadSegmentedSFTs ( &status, &thisSFT, FullCatalog, fMin, fMax ), &status ); /**/
-  /* LAL_CALL ( LALLoadSFTs ( &status, &thisSFT, FullCatalog, fMin, fMax ), &status ); /**/
+  /* LAL_CALL ( LALLoadSegmentedSFTs ( &status, &thisSFT, FullCatalog, fMin, fMax ), &status ); /**/
+  LAL_CALL ( LALLoadSFTs ( &status, &thisSFT, FullCatalog, fMin, fMax ), &status ); /**/
 
   LAL_CALL ( LALWriteSFTVector2Dir (&status, thisSFT, uvar_outputDir,
 				    new_comment, uvar_descriptionMisc ), &status );
