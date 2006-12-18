@@ -532,7 +532,7 @@ int MAIN( int argc, char *argv[]) {
 
   /* exit if help was required */
   if (uvar_help)
-    exit(0); 
+    /*exit*/ return(0); 
 
   /* set log-level */
   LogSetLevel ( lalDebugLevel );
@@ -540,23 +540,23 @@ int MAIN( int argc, char *argv[]) {
   /* some basic sanity checks on user vars */
   if ( (uvar_method != 0) && (uvar_method != 1) && (uvar_method != -1)) {
     fprintf(stderr, "Invalid method....must be 0, 1 or -1\n");
-    exit( HIERARCHICALSEARCH_EBAD );
+    /*exit*/ return( HIERARCHICALSEARCH_EBAD );
   }
 
   if ( uvar_nStacksMax < 1) {
     fprintf(stderr, "Invalid number of stacks\n");
-    exit( HIERARCHICALSEARCH_EBAD );
+    /*exit*/ return( HIERARCHICALSEARCH_EBAD );
   }
 
 
   if ( uvar_blocksRngMed < 1 ) {
     fprintf(stderr, "Invalid Running Median block size\n");
-    exit( HIERARCHICALSEARCH_EBAD );
+    /*exit*/ return( HIERARCHICALSEARCH_EBAD );
   }
 
   if ( uvar_peakThrF < 0 ) {
     fprintf(stderr, "Invalid value of Fstatistic threshold\n");
-    exit( HIERARCHICALSEARCH_EBAD );
+    /*exit*/ return( HIERARCHICALSEARCH_EBAD );
   }
 
   /* probability of peak selection */
@@ -565,7 +565,7 @@ int MAIN( int argc, char *argv[]) {
 
   if ( uvar_followUp && (!LALUserVarWasSet(&uvar_DataFiles2))) {
     fprintf( stderr, "Must specify SFTs for second stage!\n");
-    exit( HIERARCHICALSEARCH_EBAD );
+    /*exit*/ return( HIERARCHICALSEARCH_EBAD );
   }
 
   /* no need to follow up zero 1st stage candidates */
@@ -591,7 +591,7 @@ int MAIN( int argc, char *argv[]) {
       if ((fpLog = fopen(fnamelog, "w")) == NULL) {
 	fprintf(stderr, "Unable to open file %s for writing\n", fnamelog);
 	LALFree(fnamelog);
-	exit(1);
+	/*exit*/ return(1);
       }
 
       /* get the log string */
