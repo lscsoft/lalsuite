@@ -211,6 +211,9 @@ void PrintStackInfo( LALStatus  *status, const SFTCatalogSequence *catalogSeq, F
 void GetHoughCandidates_threshold(LALStatus *status, SemiCohCandidateList *out, HOUGHMapTotal *ht, HOUGHPatchGrid *patch,
 				  HOUGHDemodPar *parDem, REAL8 threshold);
 
+void GetSemiCohToplist(LALStatus *status, toplist_t *list, SemiCohCandidateList *in);
+
+
 /* default values for input variables */
 #define EARTHEPHEMERIS "earth05-09.dat"
 #define SUNEPHEMERIS "sun05-09.dat"
@@ -305,6 +308,7 @@ int MAIN( int argc, char *argv[]) {
 
   /* fstat candidate structure */
   toplist_t *fstatToplist=NULL;
+  toplist_t *semiCohToplist=NULL;
 
   /* template and grid variables */
   DopplerSkyScanInit scanInit1, scanInit2;   /* init-structure for DopperScanner */
@@ -343,6 +347,7 @@ int MAIN( int argc, char *argv[]) {
   BOOLEAN uvar_printFstat1;
   BOOLEAN uvar_useToplist1;
   BOOLEAN uvar_useWeights;
+  BOOLEAN uvar_semiCohToplist; /* if overall first stage candidates are to be output */
 
   REAL8 uvar_dAlpha, uvar_dDelta; /* resolution for flat or isotropic grids -- coarse grid*/
   REAL8 uvar_dAlpha2, uvar_dDelta2; /* resolution for flat or isotropic grids -- follow up*/
@@ -362,12 +367,13 @@ int MAIN( int argc, char *argv[]) {
   REAL8 uvar_semiCohPatchX, uvar_semiCohPatchY;
   REAL8 uvar_threshold1;
   REAL8 uvar_df1dotRes;
+  REAL8 uvar_tStack;
 
   INT4 uvar_method; /* hough = 0, stackslide = 1, -1 = pure fstat*/
   INT4 uvar_nCand1; /* number of candidates to be followed up from first stage */
   INT4 uvar_nCand2; /* number of candidates from second stage */
   INT4 uvar_blocksRngMed;
-  INT4 uvar_nStacks1;
+  INT4 uvar_nStacksMax;
   INT4 uvar_Dterms;
   INT4 uvar_SSBprecision;
   INT4 uvar_nf1dotRes;
@@ -405,7 +411,8 @@ int MAIN( int argc, char *argv[]) {
   uvar_chkPoint = FALSE;
   uvar_useToplist1 = FALSE;
   uvar_useWeights = FALSE;
-  uvar_nStacks1 = 1;
+  uvar_semiCohToplist = FALSE;
+  uvar_nStacksMax = 1;
   uvar_Dterms = DTERMS;
   uvar_dAlpha = DALPHA;
   uvar_dDelta = DDELTA;
@@ -463,6 +470,7 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "chkPoint",     0,  UVAR_OPTIONAL, "For checkpointing", &uvar_chkPoint), &status);  
   LAL_CALL( LALRegisterINTUserVar(    &status, "method",       0,  UVAR_OPTIONAL, "0=Hough,1=stackslide,-1=fstat", &uvar_method ), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "useToplist1",  0,  UVAR_OPTIONAL, "Use toplist for 1st stage candidates?", &uvar_useToplist1 ), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "semiCohToplist",0, UVAR_OPTIONAL, "Print semicoh toplist?", &uvar_semiCohToplist ), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "useWeights",   0,  UVAR_OPTIONAL, "Weight each stack using noise and AM?", &uvar_useWeights ), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "followUp",     0,  UVAR_OPTIONAL, "Follow up stage?", &uvar_followUp), &status);  
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "DataFiles1",   0,  UVAR_OPTIONAL, "1st SFT file pattern", &uvar_DataFiles1), &status);
@@ -474,11 +482,12 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterREALUserVar(   &status, "f1dot",        0,  UVAR_OPTIONAL, "Spindown parameter", &uvar_f1dot), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "df1dot",       0,  UVAR_OPTIONAL, "Spindown resolution (default=1/Tstack^2)", &uvar_df1dot), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "f1dotBand",    0,  UVAR_OPTIONAL, "Spindown Range", &uvar_f1dotBand), &status);
-  LAL_CALL( LALRegisterREALUserVar (  &status, "df1dotRes",    0,  UVAR_OPTIONAL, "Resolution in residual fdot values (default=df1dot/nStacks1)", &uvar_df1dotRes), &status);
-  LAL_CALL( LALRegisterINTUserVar (   &status, "nf1dotRes",    0,  UVAR_OPTIONAL, "No.of residual fdot values (default=nStacks1)", &uvar_nf1dotRes), &status);
+  LAL_CALL( LALRegisterREALUserVar (  &status, "df1dotRes",    0,  UVAR_OPTIONAL, "Resolution in residual fdot values (default=df1dot/nStacks)", &uvar_df1dotRes), &status);
+  LAL_CALL( LALRegisterINTUserVar (   &status, "nf1dotRes",    0,  UVAR_OPTIONAL, "No.of residual fdot values (default=nStacks)", &uvar_nf1dotRes), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "dFreq2",       0,  UVAR_OPTIONAL, "Frequency resolution for follow-up (default=1/Tstack2)", &uvar_dFreq2), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "df1dot2",      0,  UVAR_OPTIONAL, "Spindown resolution for follow-up (default=1/Tstack2^2)", &uvar_df1dot2), &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "nStacks1",    'N', UVAR_OPTIONAL, "No.of 1st stage stacks", &uvar_nStacks1 ), &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "nStacksMax",   0,  UVAR_OPTIONAL, "Maximum No. of 1st stage stacks", &uvar_nStacksMax ),&status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "tStack",       0,  UVAR_REQUIRED, "Duration of 1st stage stacks (sec)", &uvar_tStack ),&status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "mismatch1",    0,  UVAR_OPTIONAL, "1st stage mismatch", &uvar_mismatch1), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "mismatch2",    0,  UVAR_OPTIONAL, "2nd stage mismatch", &uvar_mismatch2), &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "gridType1",    0,  UVAR_OPTIONAL, "0=flat,1=isotropic,2=metric,3=file", &uvar_gridType1),  &status);
@@ -534,7 +543,7 @@ int MAIN( int argc, char *argv[]) {
     exit( HIERARCHICALSEARCH_EBAD );
   }
 
-  if ( uvar_nStacks1 < 1) {
+  if ( uvar_nStacksMax < 1) {
     fprintf(stderr, "Invalid number of stacks\n");
     exit( HIERARCHICALSEARCH_EBAD );
   }
@@ -562,6 +571,10 @@ int MAIN( int argc, char *argv[]) {
   /* no need to follow up zero 1st stage candidates */
   if ( uvar_nCand1 <= 0 )
     uvar_followUp = FALSE;
+
+  /* create toplist -- semiCohToplist has the same structure 
+     as a fstat candidate, so treat it as a fstat candidate */
+  create_fstat_toplist(&semiCohToplist, uvar_nCand1);
 
   /* no need to follow up if no candidates are to be saved */
   if ( uvar_nCand2 <= 0 )
@@ -674,7 +687,8 @@ int MAIN( int argc, char *argv[]) {
 
   /* some useful first stage params */
   usefulParams1.sftbasename = uvar_DataFiles1;
-  usefulParams1.nStacks = uvar_nStacks1;
+  usefulParams1.nStacks = uvar_nStacksMax;
+  usefulParams1.tStack = uvar_tStack;
 
   INIT_MEM ( usefulParams1.spinRange_startTime );
   INIT_MEM ( usefulParams1.spinRange_endTime );
@@ -1168,7 +1182,13 @@ int MAIN( int argc, char *argv[]) {
 	  if ( uvar_printCand1 ) {
 	    LAL_CALL ( PrintSemiCohCandidates ( &status, &semiCohCandList1, fpSemiCoh, refTimeGPS), &status);
 	  }
-	  
+
+
+	  if( uvar_semiCohToplist) {
+	    LAL_CALL( GetSemiCohToplist(&status, semiCohToplist, &semiCohCandList1), &status);
+	  }
+
+  
 	  /*------------- Follow up candidates --------------*/
 	  
 	  /* check if user requested a follow up stage*/
@@ -1408,6 +1428,7 @@ int MAIN( int argc, char *argv[]) {
  
   /* free candidates */
   LALFree(semiCohCandList1.list);
+  free_fstat_toplist(&semiCohToplist);
 
   LAL_CALL (LALDestroyUserVars(&status), &status);  
 
@@ -1434,8 +1455,8 @@ void SetUpSFTs( LALStatus *status,
 
   SFTCatalog *catalog = NULL;
   static SFTConstraints constraints;
-  REAL8 timebase, tStack, tObs, deltaFsft;
-  UINT4 nStacks, k;
+  REAL8 timebase, tObs, deltaFsft;
+  UINT4 k,numSFTby2;
   LIGOTimeGPS tStartGPS, tEndGPS, refTimeGPS;
   SFTCatalogSequence catalogSeq;
   
@@ -1457,7 +1478,7 @@ void SetUpSFTs( LALStatus *status,
   TRY( LALSFTdataFind( status->statusPtr, &catalog, in->sftbasename, &constraints), status);
 
   /* set some sft parameters */
-  deltaFsft = catalog->data->header.deltaF;
+  deltaFsft = catalog->data[0].header.deltaF;
   timebase = 1.0/deltaFsft;
   
   /* calculate start and end times and tobs from catalog*/
@@ -1473,10 +1494,10 @@ void SetUpSFTs( LALStatus *status,
   in->edat->leap = (INT2)tmpLeap;
       
   /* get sft catalogs for each stack */
-  TRY( SetUpStacks( status->statusPtr, &catalogSeq, &tStack, catalog, in->nStacks), status);
+  TRY( SetUpStacks( status->statusPtr, &catalogSeq, in->tStack, catalog, in->nStacks), status);
 
-  /* use stacks info to calculate search frequency resolution */
-  in->tStack = tStack;
+  /* reset number of stacks */
+  in->nStacks = catalogSeq.length;
     
   /* get timestamps of start and mid of each stack */  
   /* set up vector containing mid times of stacks */    
@@ -1486,27 +1507,20 @@ void SetUpSFTs( LALStatus *status,
   in->startTstack =  XLALCreateTimestampVector ( in->nStacks );
 
   /* now loop over stacks and get time stamps */
-  for (nStacks = 0, k = 0; k < in->nStacks; k++) {
-    /* nStacks is number of non-empty stacks while
-       in->nStacks1 is what the user specified */
+  for (k = 0; k < in->nStacks; k++) {
     
-    if ( catalogSeq.data[k].length > 0 ){
-      /* if the stack is non-empty */
-      INT4 numSFTby2;
-      
-      /* start time of stack = time of first sft in stack */
-      in->startTstack->data[nStacks] = catalogSeq.data[k].data[0].header.epoch;
+    if ( catalogSeq.data[k].length == 0 ) {
+      /* something is wrong */
+      ABORT ( status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
+    }
+  
+    /* start time of stack = time of first sft in stack */
+    in->startTstack->data[k] = catalogSeq.data[k].data[0].header.epoch;
+    
+    /* mid time of stack */                
+    numSFTby2 = catalogSeq.data[k].length/2;
+    in->midTstack->data[k] = catalogSeq.data[k].data[numSFTby2].header.epoch;
 
-      /* mid time of stack */                
-      numSFTby2 = catalogSeq.data[k].length/2;
-      in->midTstack->data[nStacks] = catalogSeq.data[k].data[numSFTby2].header.epoch;
-
-      /*       TRY( LALAddFloatToGPS( status->statusPtr, in->midTstack->data + nStacks, in->startTstack->data + nStacks,   */
-      /* 				    0.5 * tStack ), status); */
-      
-      nStacks++;
-
-      } /* if ( catalogSeq->data[k].length > 0 ) */
   } /* loop over k */
 
   
@@ -1518,7 +1532,7 @@ void SetUpSFTs( LALStatus *status,
   else {  /* set refTime to midtime of central stack */
     REAL8 refTimeTemp;
 
-    refTimeGPS = in->midTstack->data[nStacks/2];
+    refTimeGPS = in->midTstack->data[in->nStacks/2];
 
     TRY( LALGPStoFloat(status->statusPtr, &refTimeTemp, &refTimeGPS), status);
     in->refTime = refTimeTemp;
@@ -1529,7 +1543,7 @@ void SetUpSFTs( LALStatus *status,
   in->spinRange_refTime.refTime = refTimeGPS;
   TRY( LALExtrapolatePulsarSpinRange( status->statusPtr, &in->spinRange_startTime, tStartGPS, &in->spinRange_refTime), status); 
   TRY( LALExtrapolatePulsarSpinRange( status->statusPtr, &in->spinRange_endTime, tEndGPS, &in->spinRange_refTime), status); 
-  TRY( LALExtrapolatePulsarSpinRange( status->statusPtr, &in->spinRange_midTime, in->midTstack->data[nStacks/2], 
+  TRY( LALExtrapolatePulsarSpinRange( status->statusPtr, &in->spinRange_midTime, in->midTstack->data[in->nStacks/2], 
 				      &in->spinRange_refTime), status); 
 
 
@@ -1563,53 +1577,43 @@ void SetUpSFTs( LALStatus *status,
   stackMultiDetStates->data = (MultiDetectorStateSeries **)LALCalloc(1, in->nStacks * sizeof(MultiDetectorStateSeries *));
 
   /* loop over stacks and read sfts */  
-  for (nStacks = 0, k = 0; k < in->nStacks; k++) {
-    /* nStacks is number of non-empty stacks while
-       in->nStacks1 is what the user specified */
+  for (k = 0; k < in->nStacks; k++) {
+      
+    MultiPSDVector *psd = NULL;	
     
-    if ( catalogSeq.data[k].length > 0 ){
-      /* if the stack is non-empty */
-      
-      MultiPSDVector *psd = NULL;	
-      
-      /* load the sfts */
-      TRY( LALLoadMultiSFTs ( status->statusPtr, stackMultiSFT->data + nStacks,  catalogSeq.data + k, 
-				   fMin, fMax ), status);
-      
-      /* normalize sfts and compute noise weights and detector state */
-      TRY( LALNormalizeMultiSFTVect ( status->statusPtr, &psd, stackMultiSFT->data[nStacks], 
-					   in->blocksRngMed ), status );
-      
-      TRY( LALComputeMultiNoiseWeights  ( status->statusPtr, stackMultiNoiseWeights->data + nStacks, 
-					  psd, in->blocksRngMed, 0 ), status );
-	
-      TRY ( LALGetMultiDetectorStates ( status->statusPtr, stackMultiDetStates->data + nStacks, 
-					     stackMultiSFT->data[nStacks], in->edat ), status );
-
-      TRY ( LALDestroyMultiPSDVector ( status->statusPtr, &psd ), status );
-      
-      
-      nStacks++;
-      
-      } /* if ( catalogSeq->data[k].length > 0 ) */
+    /* load the sfts */
+    TRY( LALLoadMultiSFTs ( status->statusPtr, stackMultiSFT->data + k,  catalogSeq.data + k, 
+			    fMin, fMax ), status);
+    
+    /* normalize sfts and compute noise weights and detector state */
+    TRY( LALNormalizeMultiSFTVect ( status->statusPtr, &psd, stackMultiSFT->data[k], 
+				    in->blocksRngMed ), status );
+    
+    TRY( LALComputeMultiNoiseWeights  ( status->statusPtr, stackMultiNoiseWeights->data + k, 
+					psd, in->blocksRngMed, 0 ), status );
+    
+    TRY ( LALGetMultiDetectorStates ( status->statusPtr, stackMultiDetStates->data + k, 
+				      stackMultiSFT->data[k], in->edat ), status );
+    
+    TRY ( LALDestroyMultiPSDVector ( status->statusPtr, &psd ), status );
+    
   } /* loop over k */
   
   
   /* realloc if nStacks != in->nStacks */
-  if ( in->nStacks > nStacks ) {
-    
-    in->midTstack->length = nStacks;
-    in->midTstack->data = (LIGOTimeGPS *)LALRealloc( in->midTstack->data, nStacks * sizeof(LIGOTimeGPS));
-    
-    in->startTstack->length = nStacks;
-    in->startTstack->data = (LIGOTimeGPS *)LALRealloc( in->startTstack->data, nStacks * sizeof(LIGOTimeGPS));
-    
-    stackMultiSFT->length = nStacks;
-    stackMultiSFT->data = (MultiSFTVector **)LALRealloc( stackMultiSFT->data, nStacks * sizeof(MultiSFTVector *));
-    
-  }  /* finish realloc */
-
-
+  /*   if ( in->nStacks > nStacks ) { */
+  
+  /*     in->midTstack->length = nStacks; */
+  /*     in->midTstack->data = (LIGOTimeGPS *)LALRealloc( in->midTstack->data, nStacks * sizeof(LIGOTimeGPS)); */
+  
+  /*     in->startTstack->length = nStacks; */
+  /*     in->startTstack->data = (LIGOTimeGPS *)LALRealloc( in->startTstack->data, nStacks * sizeof(LIGOTimeGPS)); */
+  
+  /*     stackMultiSFT->length = nStacks; */
+  /*     stackMultiSFT->data = (MultiSFTVector **)LALRealloc( stackMultiSFT->data, nStacks * sizeof(MultiSFTVector *)); */
+  
+  /*   }  */
+  
   /* we don't need the original catalog anymore*/
   TRY( LALDestroySFTCatalog( status->statusPtr, &catalog ), status);  	
       
@@ -1621,8 +1625,6 @@ void SetUpSFTs( LALStatus *status,
       } /* end if */
     } /* loop over stacks */
   LALFree( catalogSeq.data);  
-
-  in->nStacks = nStacks;  
   
   DETATCHSTATUSPTR (status);
   RETURN(status);
@@ -2133,13 +2135,13 @@ void FstatVectToPeakGram (LALStatus *status,
 */
 void SetUpStacks(LALStatus *status, 
 		 SFTCatalogSequence  *out, /**< Output catalog of sfts -- one for each stack */
-		 REAL8 *tStack,            /**< Output duration of each stack */
+		 REAL8 tStack,             /**< Output duration of each stack */
 		 SFTCatalog  *in,          /**< Input sft catalog to be broken up into stacks (ordered in increasing time)*/
-		 UINT4 nStacks )           /**< User specified number of stacks */
+		 UINT4 nStacksMax )        /**< User specified number of stacks */
 {
 
-  UINT4 nSFTs, length, j, k;
-  REAL8 timeBase, deltaF, tStart, tEnd, thisTime;
+  UINT4 j, stackCounter, length, newNstacks;
+  REAL8 tStart, thisTime;
 
   INITSTATUS( status, "SetUpStacks", rcsid );
   ATTATCHSTATUSPTR (status);
@@ -2147,45 +2149,71 @@ void SetUpStacks(LALStatus *status,
   /* check input parameters */
   ASSERT ( in != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
   ASSERT ( in->length > 0, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
-  nSFTs = in->length;
-
-  ASSERT ( nStacks > 0, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
-  ASSERT ( nStacks < nSFTs, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
+  ASSERT ( nStacksMax > 0, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
   ASSERT ( in != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
-  ASSERT ( tStack != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  ASSERT ( tStack > 0, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
   ASSERT ( out != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
 
-  out->length = nStacks;
-  out->data = (SFTCatalog *)LALCalloc( 1, nStacks * sizeof(SFTCatalog));
+  /* set memory of output catalog sequence to maximum possible length */
+  out->length = nStacksMax;
+  out->data = (SFTCatalog *)LALCalloc( 1, nStacksMax * sizeof(SFTCatalog));
   
-  deltaF = in->data[0].header.deltaF;
-  timeBase = 1.0/deltaF;
-
-  /* get first and last sft timestamp */
+  /* get first sft timestamp */
+  /* tStart will be start time of a given stack. 
+     This initializes tStart to the first sft time stamp as this will 
+     be the start time of the first stack */
   TRY ( LALGPStoFloat ( status->statusPtr, &tStart, &(in->data[0].header.epoch)), status);
-  TRY ( LALGPStoFloat ( status->statusPtr, &tEnd, &(in->data[nSFTs - 1].header.epoch)), status);
-  *tStack = (tEnd + timeBase - tStart) / nStacks;
 
-  /* loop over the sfts and find out if it belongs to the k^th stack */
-  for( j = 0; j < nSFTs; j++) {
+  /* loop over the sfts */
+  for( stackCounter = 0, j = 0; j < in->length; j++) {
 
-    /* calculate which stack the j^th SFT belongs to */
-    /* thisTime is current sft timestamp */
-    TRY ( LALGPStoFloat ( status->statusPtr, &thisTime, &(in->data[j].header.epoch)), status);
-    k = (UINT4)((thisTime - tStart)/(*tStack));
+    /* proceed only if we have not exceeded maximum allowed number of stacks */
+    if (stackCounter < nStacksMax) {
+      
+      /* thisTime is current sft timestamp */
+      TRY ( LALGPStoFloat ( status->statusPtr, &thisTime, &(in->data[j].header.epoch)), status);
+      
+      /* if sft lies in stack duration then add 
+	 this sft to the stack. Otherwise move 
+	 on to the next stack */
+      if ( (thisTime - tStart < tStack) ) {
+	
+	out->data[stackCounter].length += 1;    
+	
+	length = out->data[stackCounter].length;
 
-    out->data[k].length += 1;    
+	/* realloc to increase length of catalog */    
+	out->data[stackCounter].data = (SFTDescriptor *)LALRealloc( out->data[stackCounter].data, length * sizeof(SFTDescriptor));
+	out->data[stackCounter].data[length - 1] = in->data[j];   
+      }    
+      else { /* move onto the next stack */
 
-    length = out->data[k].length;
+	stackCounter++;
 
-    /* realloc to increase length of catalog */    
-    out->data[k].data = (SFTDescriptor *)LALRealloc( out->data[k].data, length * sizeof(SFTDescriptor));
+	/* check again if we have not exceeded nStacksMax */
+	if (stackCounter < nStacksMax) {
 
-    /* copy catalog struct */
-    out->data[k].data[length - 1] = in->data[j];   
+	  /* reset start time of stack */
+	  TRY ( LALGPStoFloat ( status->statusPtr, &tStart, &(in->data[j].header.epoch)), status);
+	
+	  /* realloc to increase length of catalog and copy data */    
+	  out->data[stackCounter].data = (SFTDescriptor *)LALRealloc( out->data[stackCounter].data, sizeof(SFTDescriptor));
+	  out->data[stackCounter].data[0] = in->data[j];   
+
+	} /* 	if (stackCounter < nStacksMax) */
+	
+      } /* else */
+
+    } /* if stackCounter < nStacksMax */
 
   } /* loop over sfts */
 
+  /* realloc catalog sequence length to actual number of stacks */
+  newNstacks = stackCounter + 1;
+  if ( newNstacks < nStacksMax ) {
+    out->length = newNstacks;
+    out->data = (SFTCatalog *)LALRealloc( out->data, newNstacks * sizeof(SFTCatalog));
+  }
 
   DETATCHSTATUSPTR (status);
   RETURN(status);
@@ -2900,3 +2928,39 @@ void ComputeStackNoiseAndAMWeights( LALStatus *status,
   RETURN(status);
 
 }
+
+
+/** Get SemiCoh candidates toplist */
+void GetSemiCohToplist(LALStatus *status,
+		       toplist_t *list,
+		       SemiCohCandidateList *in)
+{
+
+  INT4 k, debug;
+  FstatOutputEntry line;
+
+  INITSTATUS( status, "GetSemiCohToplist", rcsid );
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT ( list != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  ASSERT ( in != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  ASSERT ( in->length >= in->nCandidates, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
+
+  /* go through candidates and insert into toplist if necessary */
+  for ( k = 0; k < in->nCandidates; k++) {
+
+    line.Freq = in->list[k].freq;
+    line.Alpha = in->list[k].alpha;
+    line.Delta = in->list[k].delta;
+    line.f1dot = in->list[k].fdot;
+    line.Fstat = in->list[k].significance;
+
+    debug = insert_into_fstat_toplist( list, line);
+
+  }
+
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+
+} /* GetSemiCohToplist() */
+

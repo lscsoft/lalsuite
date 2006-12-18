@@ -160,7 +160,7 @@ NRCSID( HIERARCHICALSEARCHH, "$Id$" );
     UINT4 extraBinsFstat;      /**< Extra bins required for Fstat calculation */
   } SemiCoherentParams;
 
-  /** one hough candidate */
+  /** one hough or stackslide candidate */
   typedef struct tagSemiCohCandidate {
     REAL8 freq;        /**< frequency */
     REAL8 alpha;       /**< right ascension */
@@ -198,7 +198,7 @@ NRCSID( HIERARCHICALSEARCHH, "$Id$" );
 
   void SetUpStacks(LALStatus *status, 
 		 SFTCatalogSequence  *out,  
-		 REAL8 *tStack,
+		 REAL8 tStack,
 		 SFTCatalog  *in,
 		 UINT4 nStacks);
 
