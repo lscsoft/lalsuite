@@ -24,7 +24,7 @@
 */
 
 /* define preprocessor flags:  */
-/* #define PRINT_STACKSLIDE_BINOFFSETS  */
+/* #define PRINT_STACKSLIDE_BINOFFSETS */
 /* Uncomment the next flag when using a threshold to only accept local maximum that stand high enough above neighboring bins */
 /* #define INCLUDE_EXTRA_STACKSLIDE_THREHOLDCHECK */
 /* THRESHOLDFRACSS is the fraction of power that must be in the local maxima when INCLUDE_EXTRA_STACKSLIDE_THREHOLDCHECK is defined */
@@ -233,8 +233,8 @@ void StackSlideVecF(LALStatus *status,
          /* fit evenly spaced points between alphaEnd and alphaStart */
          dAlpha = dDelta/cos(thisDelta); 
          nalpha = ceil( (alphaEnd - alphaStart)/dAlpha );
-         dAlpha = (alphaEnd - alphaStart)/((REAL8)nalpha);
          if (nalpha < 1) nalpha = 1; /* do at least one value of alpha */
+         dAlpha = (alphaEnd - alphaStart)/((REAL8)nalpha);
       } else {
          dAlpha = 0.0;
          nalpha = 1;
@@ -266,7 +266,7 @@ void StackSlideVecF(LALStatus *status,
                   offset = floor( (outputPoint.fkdot[0] - fmid)*tEffSTK + 0.5 );
                   
                   #ifdef PRINT_STACKSLIDE_BINOFFSETS
-                     LogPrintf(LOG_DETAIL,"offset = %i for stack %i.",offset,k);
+                     LogPrintf(LOG_DETAIL,"offset = %i for stack %i.\n",offset,k);
                   #endif
 
                   pFVecData = vecF->data[k].data->data;
@@ -307,7 +307,8 @@ void StackSlideVecF(LALStatus *status,
               } /* END for (k=0; k<nStacks; k++) */
 
              /* TO DO: get candidates */
-             if ( params->useToplist ) {
+             /* 12/18/06 gm; Even if using a toplist, get candidate list based on threshold if thresold > 0.0 */
+             if ( params->useToplist && threshold <= 0.0 ) {
                TRY(GetStackSlideCandidates_toplist( status->statusPtr, stackslideToplist, &stackslideSum, &outputPoint, &outputPointUnc), status);
              } else {
                TRY(GetStackSlideCandidates_threshold( status->statusPtr, out, &stackslideSum, &outputPoint, &outputPointUnc, threshold), status);
@@ -326,7 +327,19 @@ void StackSlideVecF(LALStatus *status,
   LALFree(stackslideSum.data);
 
   /* copy toplist candidates to output structure if necessary */
-  if ( params->useToplist ) {
+  if ( params->useToplist && threshold <= 0.0 ) {
+    for ( uk=0; uk<stackslideToplist->elems; uk++) {
+      out->list[uk] = *((SemiCohCandidate *)(toplist_elem(stackslideToplist, uk)));
+    }
+    out->nCandidates = stackslideToplist->elems;
+    free_toplist(&stackslideToplist);
+  } else if ( params->useToplist ) {
+    /* 12/18/06 gm; Even if using a toplist, get candidate list based on threshold if thresold > 0.0 */
+    /* First put candidates into the top list: */
+    for ( uk=0; uk<out->nCandidates; uk++) {
+        insert_into_toplist(stackslideToplist, out->list + uk);
+    }
+    /* Now put back into the output list: */
     for ( uk=0; uk<stackslideToplist->elems; uk++) {
       out->list[uk] = *((SemiCohCandidate *)(toplist_elem(stackslideToplist, uk)));
     }

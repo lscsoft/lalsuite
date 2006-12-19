@@ -1175,6 +1175,8 @@ int MAIN( int argc, char *argv[]) {
 	    /* end hough */
 	  } else if ( uvar_method == 1 ) {
             /* --- stackslide option --------*/
+            LogPrintf(LOG_DEBUG, "Starting StackSlide calculation...\n");
+            semiCohPar.threshold = uvar_threshold1; /* 12/18/06 gm; use threshold from command line as threshold on stackslide sum of F-stat values */
             LAL_CALL( StackSlideVecF( &status, &semiCohCandList1, &fstatVector1, &semiCohPar), &status);
           }
 
