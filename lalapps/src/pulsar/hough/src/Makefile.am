@@ -8,7 +8,7 @@ LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 ## not usable before automake-1.6:
 ## AM_LDFLAGS = -all-static
 
-bin_PROGRAMS = NstarClean SFTclean MCInjectS2 DriveHough_v3 HoughValidate DriveHoughMulti MCInjectHoughMulti MultiWeights ValidateHoughMulti
+bin_PROGRAMS = NstarClean SFTclean MCInjectS2 DriveHough_v3 HoughValidate DriveHoughMulti MCInjectHoughMulti MultiWeights ValidateHoughMulti ValidateChi2Test
 
 NstarClean_SOURCES = NstarClean.c
 SFTclean_SOURCES = SFTclean.c 
@@ -19,3 +19,4 @@ DriveHoughMulti_SOURCES = DriveHoughMulti.c  DriveHoughColor.h PeakSelect.c Peak
 ValidateHoughMulti_SOURCES = ValidateHoughMulti.c  DriveHoughColor.h PeakSelect.c PeakSelect.h MCInjectHoughMulti.h
 MultiWeights_SOURCES = MultiWeights.c  DriveHoughColor.h
 MCInjectHoughMulti_SOURCES = MCInjectHoughMulti.c MCInjectHoughMulti.h DriveHoughColor.h  PeakSelect.c PeakSelect.h
+ValidateChi2Test_SOURCES = ValidateHoughMultiChi2Test.c  DriveHoughColor.h PeakSelect.c PeakSelect.h MCInjectHoughMulti.h
