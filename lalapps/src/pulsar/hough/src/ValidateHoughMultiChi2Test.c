@@ -75,6 +75,9 @@ BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps, uvar_printStats, 
 
 #define NBLOCKSTEST 8 /* number of data blocks to do Chi2 test */
 
+
+#define SFTDIRECTORY "/local_data/sintes/SFT-S5-120-130/*SFT*.*"
+
 /* local function prototype */
 
 
@@ -211,6 +214,10 @@ int main(int argc, char *argv[]){
 
   uvar_sunEphemeris = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_sunEphemeris,SUNEPHEMERIS);
+
+
+  uvar_sftDir = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
+  strcpy(uvar_sftDir,SFTDIRECTORY);
 
 
   /* register user input variables */
