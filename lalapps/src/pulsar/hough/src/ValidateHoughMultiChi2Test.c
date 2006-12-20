@@ -50,12 +50,12 @@ BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps, uvar_printStats, 
 /* #define EARTHEPHEMERIS "./earth05-09.dat" */
 /* #define SUNEPHEMERIS "./sun05-09.dat"    */
 
-#define EARTHEPHEMERIS "/home/badkri/lscsoft/share/lal/earth05-09.dat"
-#define SUNEPHEMERIS "/home/badkri/lscsoft/share/lal/sun05-09.dat"
+#define EARTHEPHEMERIS "/home/llucia/chi2/earth05-09.dat"
+#define SUNEPHEMERIS "/home/llucia/chi2/sun05-09.dat"
 
 #define MAXFILENAMELENGTH 512 /* maximum # of characters  of a filename */
 
-#define DIROUT "./outMulti"   /* output directory */
+#define DIROUT "./outMultiChi2Test"   /* output directory */
 #define BASENAMEOUT "HM"    /* prefix file output */
 
 #define THRESHOLD 1.6 /* thresold for peak selection, with respect to the
@@ -89,8 +89,13 @@ typedef struct tagHoughParamsTest{
     REAL8  *sumWeightSquare;  /* Pointer to the sumWeightSquare of each block of data */
 }HoughParamsTest; 
 
+/******************************************/
 
-void SplitSFTs(LALStatus  *status, REAL8Vector   *weightsV, HoughParamsTest   *chi2Params);
+/* function to Split the SFTs into p blocks */
+
+void SplitSFTs(LALStatus         *status, 
+	       REAL8Vector       *weightsV, 
+	       HoughParamsTest   *chi2Params);
 
 
 /******************************************/
@@ -138,7 +143,7 @@ int main(int argc, char *argv[]){
   /* Chi2Test parameters */
   static HoughParamsTest chi2Params;
   static REAL8Vector numberCountV;  /* Vector with the number count of each block inside */
-  REAL8  numberCountTotal;
+  REAL8  numberCountTotal;   /* Sum over all the numberCounts */
   REAL8  chi2;
 
   /* sft constraint variables */
@@ -595,11 +600,11 @@ int main(int argc, char *argv[]){
 /* Chi2 Test */
   {
       REAL8   eta;                /* Auxiliar variable */ 
-      REAL8   numberCountTotal;   /* Sum over all the numberCOunts */
       REAL8   nj, sumWeightj, sumWeightSquarej;
       REAL8   chi2;               
 
       numberCountTotal=0;
+      chi2=0;   
 
       for(k=0; k>uvar_p ; k++){
 	  numberCountTotal += numberCountV.data[k];
