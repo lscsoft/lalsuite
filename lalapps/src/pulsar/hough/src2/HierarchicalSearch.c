@@ -7,7 +7,7 @@
  *  (at your option) any later version.
  *
  *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  but WITHOUT ANY WARRANTY; withoulistt even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
@@ -469,7 +469,6 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "log",          0,  UVAR_OPTIONAL, "Write log file", &uvar_log), &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "chkPoint",     0,  UVAR_OPTIONAL, "For checkpointing", &uvar_chkPoint), &status);  
   LAL_CALL( LALRegisterINTUserVar(    &status, "method",       0,  UVAR_OPTIONAL, "0=Hough,1=stackslide,-1=fstat", &uvar_method ), &status);
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "useToplist1",  0,  UVAR_OPTIONAL, "Use toplist for 1st stage candidates?", &uvar_useToplist1 ), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "semiCohToplist",0, UVAR_OPTIONAL, "Print semicoh toplist?", &uvar_semiCohToplist ), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "useWeights",   0,  UVAR_OPTIONAL, "Weight each stack using noise and AM?", &uvar_useWeights ), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "followUp",     0,  UVAR_OPTIONAL, "Follow up stage?", &uvar_followUp), &status);  
@@ -525,7 +524,7 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar(    &status, "Dterms",       0, UVAR_DEVELOPER, "No.of terms to keep in Dirichlet Kernel", &uvar_Dterms ), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "dopplerMax",   0, UVAR_DEVELOPER, "Max Doppler shift",  &uvar_dopplerMax), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "sftUpsampling",0, UVAR_DEVELOPER, "Upsampling factor for fast LALDemod",  &uvar_sftUpsampling), &status);
-
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "useToplist1",  0, UVAR_DEVELOPER, "Use toplist for 1st stage candidates?", &uvar_useToplist1 ), &status);
 
   /* read all command line variables */
   LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
@@ -1181,10 +1180,10 @@ int MAIN( int argc, char *argv[]) {
           }
 
 	  /* print candidates if desired */
-	  if ( uvar_printCand1 ) {
-	    LAL_CALL ( PrintSemiCohCandidates ( &status, &semiCohCandList1, fpSemiCoh, refTimeGPS), &status);
-	  }
-
+	  /* 	  if ( uvar_printCand1 ) { */
+	  /* 	    LAL_CALL ( PrintSemiCohCandidates ( &status, &semiCohCandList1, fpSemiCoh, refTimeGPS), &status); */
+	  /* 	  } */
+	  
 
 	  if( uvar_semiCohToplist) {
 	    LAL_CALL( GetSemiCohToplist(&status, semiCohToplist, &semiCohCandList1), &status);
@@ -1351,7 +1350,19 @@ int MAIN( int argc, char *argv[]) {
     /*     LAL_CALL( AppendFstatCandidates( &status, &fStatCand, fpFstat), &status); */
     }
   }
-	 
+	
+
+  /* print 1st stage candidates */  
+  {
+    UINT4 checksum;
+    if ( uvar_printCand1 && uvar_semiCohToplist ) {
+      sort_fstat_toplist(semiCohToplist);
+      if ( write_fstat_toplist_to_fp( semiCohToplist, fpSemiCoh, &checksum) < 0)
+	fprintf( stderr, "Error in writing toplist to file\n");
+    /*     LAL_CALL( AppendFstatCandidates( &status, &fStatCand, fpFstat), &status); */
+    }
+  }
+ 
   /*------------ free all remaining memory -----------*/
   
   /* free memory */
