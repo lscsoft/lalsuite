@@ -565,44 +565,36 @@ int main(int argc, char *argv[]){
    
    LAL_CALL(SplitSFTs(&status, &weightsV, &chi2Params), &status);
    
-   numberCount = 0;
-
    /* loop over SFT, generate peakgram and get number count */
+
    j=0;
-   iIFO=0;
-   iSFT=0;
-   numsft = mdetStates->data[iIFO]->length;
+  
+   for (iIFO=0 ; iIFO<numifo ; iIFO++){
+
+      iSFT=0;
+      numsft = mdetStates->data[iIFO]->length;
      
-   for (k=0; k<uvar_p;k++){
+      for (k=0 ; k<uvar_p ; k++){
        
-       numberSFTp=chi2Params.numberSFTp[k];
-       numberCount = 0;
+         numberSFTp=chi2Params.numberSFTp[k];
+         numberCount = 0;
 
-       for ( ii = 0; ii < numberSFTp; ii++) {
-       
-	   if ( iSFT==numsft ) {
-	       iIFO++ ;
-	       iSFT=0;
-	       numsft = mdetStates->data[iIFO]->length;
-	   }
+         for (ii=0 ; ii < numberSFTp ; ii++ , iSFT++ , j++) {
 	   
-	   sft = inputSFTs->data[iIFO]->data + iSFT;
+	    sft = inputSFTs->data[iIFO]->data + iSFT;
 
-           LAL_CALL (SFTtoUCHARPeakGram( &status, &pg1, sft, uvar_peakThreshold), &status);	    
+            LAL_CALL (SFTtoUCHARPeakGram( &status, &pg1, sft, uvar_peakThreshold), &status);	    
 
-           index = floor( foft.data[j]*timeBase - sftFminBin + 0.5); 
+            index = floor( foft.data[j]*timeBase - sftFminBin + 0.5); 
 
-           numberCount += pg1.data[index]*weightsV.data[j];
+            numberCount += pg1.data[index]*weightsV.data[j];
+
+         } /* loop over SFTs */
        
-	   j++;
-	   iSFT++;
-
-       } /* loop over SFTs */
-       
-       numberCountV.data[k]=numberCount;
+         numberCountV.data[k]=numberCount;
        	  
-   } /* loop over blocks */
-   
+      } /* loop over blocks */
+   } /* loop over IFOs */
   }
   
 /* Chi2 Test */
