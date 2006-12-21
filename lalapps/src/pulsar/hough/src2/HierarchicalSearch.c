@@ -211,7 +211,7 @@ void PrintStackInfo( LALStatus  *status, const SFTCatalogSequence *catalogSeq, F
 void GetHoughCandidates_threshold(LALStatus *status, SemiCohCandidateList *out, HOUGHMapTotal *ht, HOUGHPatchGrid *patch,
 				  HOUGHDemodPar *parDem, REAL8 threshold);
 
-void GetSemiCohToplist(LALStatus *status, toplist_t *list, SemiCohCandidateList *in);
+void GetSemiCohToplist(LALStatus *status, toplist_t *list, SemiCohCandidateList *in, REAL8 meanN, REAL8 sigmaN);
 
 
 /* default values for input variables */
@@ -1177,6 +1177,7 @@ int MAIN( int argc, char *argv[]) {
             LogPrintf(LOG_DEBUG, "Starting StackSlide calculation...\n");
             semiCohPar.threshold = uvar_threshold1; /* 12/18/06 gm; use threshold from command line as threshold on stackslide sum of F-stat values */
             LAL_CALL( StackSlideVecF( &status, &semiCohCandList1, &fstatVector1, &semiCohPar), &status);
+	    LogPrintf(LOG_DEBUG, "...finished StackSlide calculation\n");
           }
 
 	  /* print candidates if desired */
@@ -1184,9 +1185,9 @@ int MAIN( int argc, char *argv[]) {
 	  /* 	    LAL_CALL ( PrintSemiCohCandidates ( &status, &semiCohCandList1, fpSemiCoh, refTimeGPS), &status); */
 	  /* 	  } */
 	  
-
 	  if( uvar_semiCohToplist) {
-	    LAL_CALL( GetSemiCohToplist(&status, semiCohToplist, &semiCohCandList1), &status);
+	  LogPrintf(LOG_DEBUG, "Selecting toplist from semicoherent candidates\n");
+	    LAL_CALL( GetSemiCohToplist(&status, semiCohToplist, &semiCohCandList1, meanN, sigmaN), &status);
 	  }
 
   
@@ -1703,7 +1704,7 @@ void ComputeFstatHoughMap(LALStatus *status,
   ASSERT ( out->list != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );  
 
   /* initialise number of candidates -- this means that any previous candidates 
-     stored in the list will be lost */
+     stored in the list will be lost for all practical purposes*/
   out->nCandidates = 0; 
   
   /* create toplist of candidates */
@@ -2351,7 +2352,7 @@ void GetHoughCandidates_threshold(LALStatus            *status,
   INT8 f0Bin;  
   INT4 i,j, xSide, ySide, numCandidates;
   SemiCohCandidate thisCandidate;
-  BOOLEAN isLocalMax = TRUE;
+  UINT2 criteria=1;
 
   INITSTATUS( status, "GetHoughCandidates_threshold", rcsid );
   ATTATCHSTATUSPTR (status);
@@ -2378,63 +2379,130 @@ void GetHoughCandidates_threshold(LALStatus            *status,
   patchSizeX = ht->patchSizeX;
   patchSizeY = ht->patchSizeY;
 
-  thisCandidate.freq =  f0;
-  thisCandidate.dFreq = deltaF;
-  thisCandidate.fdot = fdot;
-  thisCandidate.dFdot = dFdot;
-  thisCandidate.dAlpha = 3.0 * patchSizeX / ((REAL8)xSide);
-  thisCandidate.dDelta = 3.0 * patchSizeY / ((REAL8)ySide);  
-
   numCandidates = out->nCandidates;
 
-  for (i = 1; i < ySide-1; i++)
-    {
-      for (j = 1; j < xSide-1; j++)
-	{ 
-	  
-	  thisCandidate.significance =  ht->map[i*xSide + j];
 
-	  /* check if this is a local maximum */
-	  isLocalMax = (thisCandidate.significance > ht->map[i*xSide + j - 1]) 
-	    && (thisCandidate.significance > ht->map[i*xSide + j + 1]) 
-	    && (thisCandidate.significance > ht->map[(i+1)*xSide + j]) 
-	    && (thisCandidate.significance > ht->map[(i-1)*xSide + j])
-	    && (thisCandidate.significance > ht->map[(i-1)*xSide + j - 1])
-	    && (thisCandidate.significance > ht->map[(i-1)*xSide + j + 1])
-	    && (thisCandidate.significance > ht->map[(i+1)*xSide + j - 1])
-	    && (thisCandidate.significance > ht->map[(i+1)*xSide + j + 1]);
+  /* choose local max and threshold crossing */
+  if (criteria == 0) {
 
-	  /* realloc list if necessary */
-	  if (numCandidates >= out->length) {
-	    out->length += BLOCKSIZE_REALLOC;
-	    out->list = (SemiCohCandidate *)LALRealloc( out->list, out->length * sizeof(SemiCohCandidate));
-	    LogPrintf(LOG_DEBUG, "Need to realloc Hough candidate list to %d entries\n", out->length);
-	  } /* need a safeguard to ensure that the reallocs don't happen too often */
+    thisCandidate.freq =  f0;
+    thisCandidate.dFreq = deltaF;
+    thisCandidate.fdot = fdot;
+    thisCandidate.dFdot = dFdot;
+    thisCandidate.dAlpha = 3.0 * patchSizeX / ((REAL8)xSide);
+    thisCandidate.dDelta = 3.0 * patchSizeY / ((REAL8)ySide);  
 
-	  /* add to list if candidate exceeds threshold and there is enough space in list */
-	  if( ((REAL8)thisCandidate.significance > threshold) && (numCandidates < out->length) && isLocalMax) {
-	    /* get sky location of pixel */
+    
+    for (i = 1; i < ySide-1; i++)
+      {
+	for (j = 1; j < xSide-1; j++)
+	  { 
 
-	    TRY( LALStereo2SkyLocation (status->statusPtr, &sourceLocation, 
-					j, i, patch, parDem), status);
+	    BOOLEAN isLocalMax = TRUE;
 	    
-	    thisCandidate.alpha = sourceLocation.alpha;
-	    thisCandidate.delta = sourceLocation.delta;
+	    thisCandidate.significance =  ht->map[i*xSide + j];
 	    
-	    out->list[numCandidates] = thisCandidate;
-	    numCandidates++;
-	    out->nCandidates = numCandidates;
-	  }
+	    /* check if this is a local maximum */
+	    isLocalMax = (thisCandidate.significance > ht->map[i*xSide + j - 1]) 
+	      && (thisCandidate.significance > ht->map[i*xSide + j + 1]) 
+	      && (thisCandidate.significance > ht->map[(i+1)*xSide + j]) 
+	      && (thisCandidate.significance > ht->map[(i-1)*xSide + j])
+	      && (thisCandidate.significance > ht->map[(i-1)*xSide + j - 1])
+	      && (thisCandidate.significance > ht->map[(i-1)*xSide + j + 1])
+	      && (thisCandidate.significance > ht->map[(i+1)*xSide + j - 1])
+	      && (thisCandidate.significance > ht->map[(i+1)*xSide + j + 1]);
+	    
+	    /* realloc list if necessary */
+	    if (numCandidates >= out->length) {
+	      out->length += BLOCKSIZE_REALLOC;
+	      out->list = (SemiCohCandidate *)LALRealloc( out->list, out->length * sizeof(SemiCohCandidate));
+	      LogPrintf(LOG_DEBUG, "Need to realloc Hough candidate list to %d entries\n", out->length);
+	    } /* need a safeguard to ensure that the reallocs don't happen too often */
+	    
+	    /* add to list if candidate exceeds threshold and there is enough space in list */
+	    if( ((REAL8)thisCandidate.significance > threshold) && (numCandidates < out->length) && isLocalMax) {
+	      /* get sky location of pixel */
+	      
+	      TRY( LALStereo2SkyLocation (status->statusPtr, &sourceLocation, 
+					  j, i, patch, parDem), status);
+	      
+	      thisCandidate.alpha = sourceLocation.alpha;
+	      thisCandidate.delta = sourceLocation.delta;
+	      
+	      out->list[numCandidates] = thisCandidate;
+	      numCandidates++;
+	      out->nCandidates = numCandidates;
+	    }
+	    
+	    
+	  } /* end loop over xSide */
+	
+      } /* end loop over ySide */
+    
+  } /* local maximum criteria for candidate selection */
 
-	  
-	} /* end loop over xSide */
 
-    } /* end loop over ySide */
+  /* choose global maximum */
+  if ( criteria == 1) {
+
+    REAL8 currentMax;
+    INT4 jMax, iMax;
+
+    currentMax = 0.0;
+    jMax = iMax = 0;
+
+    /* loop over hough map to get location of max */
+    for (i = 0; i < ySide; i++)
+      {
+	for (j = 0; j < xSide; j++)
+	  { 
+	    
+	    if ( ht->map[i*xSide + j] > currentMax ) {
+	      currentMax = ht->map[i*xSide + j];
+	      jMax = j;
+	      iMax = i;
+	    }	    
+	    
+	  } /* end loop over xSide */
+	
+      } /* end loop over ySide */
+
+
+    thisCandidate.significance =  ht->map[iMax*xSide + jMax];
+    
+    thisCandidate.freq =  f0;
+    thisCandidate.dFreq = deltaF;
+    thisCandidate.fdot = fdot;
+    thisCandidate.dFdot = dFdot;
+    thisCandidate.dAlpha = 3.0 * patchSizeX / ((REAL8)xSide);
+    thisCandidate.dDelta = 3.0 * patchSizeY / ((REAL8)ySide);  
+
+	    
+    /* realloc list if necessary */
+    if (numCandidates >= out->length) {
+      out->length += BLOCKSIZE_REALLOC;
+      out->list = (SemiCohCandidate *)LALRealloc( out->list, out->length * sizeof(SemiCohCandidate));
+      LogPrintf(LOG_DEBUG, "Need to realloc Hough candidate list to %d entries\n", out->length);
+    } /* need a safeguard to ensure that the reallocs don't happen too often */
+    
+    
+    /* get sky location of pixel */
+    
+    TRY( LALStereo2SkyLocation (status->statusPtr, &sourceLocation, 
+				jMax, iMax, patch, parDem), status);
+      
+    thisCandidate.alpha = sourceLocation.alpha;
+    thisCandidate.delta = sourceLocation.delta;
+    
+    out->list[numCandidates] = thisCandidate;
+    numCandidates++;
+    out->nCandidates = numCandidates;    
+  }
 
   DETATCHSTATUSPTR (status);
   RETURN(status);
 
-} /* end hough toplist selection */
+} /* end hough threshold selection */
 
 
 
@@ -2944,9 +3012,11 @@ void ComputeStackNoiseAndAMWeights( LALStatus *status,
 
 
 /** Get SemiCoh candidates toplist */
-void GetSemiCohToplist(LALStatus *status,
-		       toplist_t *list,
-		       SemiCohCandidateList *in)
+void GetSemiCohToplist(LALStatus            *status,
+		       toplist_t            *list,
+		       SemiCohCandidateList *in,
+		       REAL8                meanN,
+		       REAL8                sigmaN)
 {
 
   INT4 k, debug;
@@ -2966,7 +3036,7 @@ void GetSemiCohToplist(LALStatus *status,
     line.Alpha = in->list[k].alpha;
     line.Delta = in->list[k].delta;
     line.f1dot = in->list[k].fdot;
-    line.Fstat = in->list[k].significance;
+    line.Fstat = (in->list[k].significance - meanN)/sigmaN;
 
     debug = insert_into_fstat_toplist( list, line);
 
