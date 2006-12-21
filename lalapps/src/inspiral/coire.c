@@ -80,6 +80,11 @@ static void print_usage(char *program)
       "  --data-type          datatype specify the data type, must be one of\n"\
       "                                (playground_only|exclude_play|all_data)\n"\
       "\n"\
+      "  --mass-cut           masstype keep only triggers in mass range of type\n"\
+      "                                (mchirp|mtotal)\n"\
+      "  --mass-range-low     lowmass  lower bound on mass range\n"\
+      "  --mass-range-high    highmass upper bound on mass range\n"\
+      "\n"\
       " [--discard-ifo]       ifo      discard all triggers from ifo\n"\
       " [--coinc-cut]         ifos     only keep triggers from IFOS\n"\
       " [--extract-slide]     slide    only keep triggers from specified slide\n"\
@@ -146,6 +151,10 @@ int main( int argc, char *argv[] )
   char **inFileNameList;
   char line[MAX_PATH];
 
+  char *massCut = NULL;
+  REAL4 massRangeLow = -1;
+  REAL4 massRangeHigh = -1;
+
   UINT8 triggerInputTimeNS = 0;
 
   MetadataTable         proctable;
@@ -173,6 +182,7 @@ int main( int argc, char *argv[] )
   int                   numCoincs = 0;
   int                   numEventsInIfos = 0;
   int                   numEventsPlayTest = 0;
+  int                   numEventsInMassRange = 0;
   int                   numEventsAboveThresh = 0;
   int                   numEventsCoinc = 0;
   int                   numClusteredEvents = 0;
@@ -260,6 +270,9 @@ int main( int argc, char *argv[] )
       {"l1-bittenl-a",            required_argument,      0,              'l'},
       {"l1-bittenl-b",            required_argument,      0,              'p'},
       {"missed-injections",       required_argument,      0,              'm'},
+      {"mass-cut",                required_argument,      0,              'M'},
+      {"mass-range-low",          required_argument,      0,              'q'},
+      {"mass-range-high",         required_argument,      0,              'Q'},
       {0, 0, 0, 0}
     };
     int c;
@@ -568,6 +581,25 @@ int main( int argc, char *argv[] )
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
+      case 'M':
+        /* create storage for the missed injection file name */
+        optarg_len = strlen( optarg ) + 1;
+        massCut = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( massCut, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+
+      case 'q':
+        massRangeLow = atof(optarg);
+      ADD_PROCESS_PARAM( "float", "%s", optarg);
+        break;
+
+      case 'Q':
+        massRangeHigh = atof(optarg);
+      ADD_PROCESS_PARAM( "float", "%s", optarg);
+        break;
+
+
       case '?':
         exit( 1 );
         break;
@@ -666,7 +698,28 @@ int main( int argc, char *argv[] )
         "this doesn't make sense\n" );
     exit( 1 );
   }
-  
+ 
+  if ( ( massCut || massRangeLow >= 0 || massRangeHigh >= 0 ) && 
+       ! ( massCut && massRangeLow >= 0 && massRangeHigh >= 0 ) )
+  {
+    fprintf( stderr, "--mass-cut, --mass-range-low, and --mass-rang-high "
+        "must all be used together\n" );
+    exit( 1 );
+  }
+
+  if ( massCut && ( massRangeLow >= massRangeHigh ) )
+  {
+    fprintf( stderr, "--mass-range-low must be greater than "
+        "--mass-range-high\n" );
+    exit( 1 );
+  }
+
+  if ( massCut && strcmp( "mchirp", massCut ) && strcmp("mtotal", massCut) )
+  {
+    fprintf( stderr, "--mass-cut must be either mchirp or mtotal\n" );
+    exit( 1 );
+  }
+ 
   /* save the sort triggers flag */
   if ( sortTriggers )
   {
@@ -850,6 +903,23 @@ int main( int argc, char *argv[] )
         "Have %d non-playground triggers\n", numFileCoincs );
       numEventsPlayTest += numFileCoincs;
     }
+
+    /* Do mean mass cut */
+    if ( massCut )
+    {
+      numFileCoincs = XLALCountCoincInspiral( coincFileHead );
+
+      coincFileHead = XLALMeanMassCut( coincFileHead,
+          massCut, massRangeLow, massRangeHigh );
+      /* count the triggers, scroll to end of list */
+      numFileCoincs = XLALCountCoincInspiral( coincFileHead );
+
+      if ( vrbflg ) fprintf( stdout,
+          "Kept %d coincs in mass range %f to %f\n", numFileCoincs, 
+            massRangeLow, massRangeHigh );
+      numEventsInMassRange += numFileCoincs;
+    }
+
 
     /* perform the statistic cut */
     if( statThreshold )
