@@ -1836,7 +1836,7 @@ void ComputeFstatHoughMap(LALStatus *status,
   fBinFin -= params->extraBinsFstat/2;
 
   LogPrintf(LOG_DEBUG, "Freq. range analyzed by Hough = [%fHz - %fHz] (%d bins)\n", 
-	    fBinIni*deltaF, fBinFin*deltaF, fBinFin - fBinIni);
+	    fBinIni*deltaF, fBinFin*deltaF, fBinFin - fBinIni + 1);
   ASSERT ( fBinIni < fBinFin, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
 
   /*------------------ start main Hough calculation ---------------------*/
