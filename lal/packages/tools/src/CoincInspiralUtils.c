@@ -2465,3 +2465,80 @@ XLALPlayTestCoincInspiral(
   return(eventHead);
 }  
 
+
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+CoincInspiralTable *
+XLALMeanMassCut(
+    CoincInspiralTable         *eventHead,
+    char                       *massCut,
+    REAL4                      massRangeLow,
+    REAL4                      massRangeHigh
+    )
+/* </lalVerbatim> */
+{
+  CoincInspiralTable    *coincEventList = NULL;
+  CoincInspiralTable    *thisEvent = NULL;
+  CoincInspiralTable    *prevEvent = NULL;
+
+  InterferometerNumber ifoNumber = 0;
+  REAL4 meanMass = 0;
+  INT4 numIfos = 0;
+  INT4 numTriggers;
+
+  /* Remove all the triggers which are not of the desired type */
+
+  numTriggers = 0;
+  thisEvent = eventHead;
+
+  while ( thisEvent )
+  {
+    CoincInspiralTable *tmpEvent = thisEvent;
+    thisEvent = thisEvent->next;
+    numIfos = 0;
+    meanMass = 0;
+
+    for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+    {
+      if( tmpEvent->snglInspiral[ifoNumber] )
+      {
+        if ( ! strcmp(massCut,"mchirp") )
+        {
+          meanMass += tmpEvent->snglInspiral[ifoNumber]->mchirp;
+        }
+        else if ( ! strcmp(massCut,"mtotal") )
+        {
+          meanMass += tmpEvent->snglInspiral[ifoNumber]->mass1 +
+                       tmpEvent->snglInspiral[ifoNumber]->mass2;
+        }
+        numIfos += 1;
+      }
+    }
+
+    meanMass = meanMass/numIfos;
+
+    if ( (meanMass >= massRangeLow) && ( meanMass < massRangeHigh ) )
+    {
+      /* keep this trigger */
+      if ( ! coincEventList  )
+      {
+        coincEventList = tmpEvent;
+      }
+      else
+      {
+        prevEvent->next = tmpEvent;
+      }
+      tmpEvent->next = NULL;
+      prevEvent = tmpEvent;
+      ++numTriggers;
+    }
+    else
+    {
+      /* discard this template */
+      XLALFreeCoincInspiral ( &tmpEvent );
+    }
+  }
+
+  eventHead = coincEventList;
+  return(eventHead);
+}
+

@@ -966,6 +966,14 @@ XLALPlayTestCoincInspiral(
     LALPlaygroundDataMask      *dataType
     );
 
+CoincInspiralTable *
+XLALMeanMassCut(
+    CoincInspiralTable         *eventHead,
+    char                       *massCut,
+    REAL4                      massRangeLow,
+    REAL4                      massRangeHigh
+    );
+
 /* sim inspiral */
 
 void
