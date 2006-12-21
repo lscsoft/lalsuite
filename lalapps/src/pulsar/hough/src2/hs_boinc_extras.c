@@ -25,6 +25,9 @@
 
 #define MAX_PATH_LEN 512
 
+/* don't want to include LAL headers here */
+#define LAL_PI 3.1415926535897932384626433832795029  /**< pi */
+
 #define BOINC_TRY(test,code,mess) \
   if (test) { \
     LogPrintf (LOG_CRITICAL, "ERROR %d: %s\n", code, mess); \
