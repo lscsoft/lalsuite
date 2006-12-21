@@ -643,7 +643,7 @@ int MAIN( int argc, char *argv[]) {
     {
       fnameSemiCohCand = (CHAR *)LALMalloc( 512*sizeof(CHAR));
       strcpy(fnameSemiCohCand, uvar_fnameout);
-      strcat(fnameSemiCohCand, "_semicoh.dat");
+      /* strcat(fnameSemiCohCand, "_semicoh.dat"); */
       if (!(fpSemiCoh = fopen(fnameSemiCohCand, "w"))) 
 	{
 	  fprintf ( stderr, "Unable to open file '%s' for writing.\n", fnameSemiCohCand);
