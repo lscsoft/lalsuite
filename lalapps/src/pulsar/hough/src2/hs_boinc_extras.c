@@ -15,23 +15,31 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* #include "boinc_api.h" */
+
+#if !DEBUG
+#include "boinc_api.h"
+#endif
 #include "diagnostics.h"
 #include "boinc_zip.h"
 
 
 #define MAX_PATH_LEN 512
 
+#define BOINC_TRY(test,code,mess) \
+  if (test) { \
+    LogPrintf (LOG_CRITICAL, "ERROR %d: %s\n", code, mess); \
+    boinc_finish(code); \
+  }
+    
 
-
-#define DEBUG 1
-#ifdef DEBUG
-/* stupid simulation of LogPrintf for testing */
+#if DEBUG
+/* trivial simulation of LogPrintf for testing */
 #define LogPrintf fprintf
 #define LOG_CRITICAL stderr
 #define LOG_NORMAL stderr
 #define LOG_ERROR stderr
 
+/* dummy for boinc_resolve_filename */
 int boinc_resolve_filename(char*name,char*resolved,int len) {
   strncpy(resolved,"res:",strlen("res:"));
   strncat(resolved,name,len);
@@ -41,7 +49,8 @@ int boinc_resolve_filename(char*name,char*resolved,int len) {
 
 
 
-/* compare strings s1 and s2 up to the length of s1 (w/o the '\0') and set l to the length */
+/* compare strings s1 and s2 up to the length of s1 (w/o the '\0'!!)
+   and set l to the length */
 #define MATCH_START(s1,s2,l) (0 == strncmp(s1,s2,(l=strlen(s1))-1))
 
 
@@ -50,13 +59,14 @@ int boinc_resolve_filename(char*name,char*resolved,int len) {
 static char **outfiles = NULL;        /* the names  of the output files of the program */
 static int  noutfiles  = 0;           /* the number of the output files of the program */
 static char resultfile[MAX_PATH_LEN]; /* the name of the file / zip archive to return */
+static double estimated_flops = -1;
 
 /* hooks for communication with the graphics thread */
 void (*set_search_pos_hook)(float,float) = NULL;
 int (*boinc_init_graphics_hook)(void (*worker)(void)) = NULL;
 double *fraction_done_hook = NULL;
 
-/* provide these variables here if we need them and don't get them from a dynamic library */
+/* declare graphics stuff here if we don't get it from a dynamic library */
 #if (BOINC_GRAPHICS == 1)
 extern double fraction_done;
 extern void set_search_pos(float RAdeg, float DEdeg);
@@ -64,12 +74,16 @@ extern int boinc_init_graphics(void (*worker)(void));
 #endif
 
 
-/* show some progress in the graphics thread */
+/* show progress */
 void show_progress(double rac, double dec, long tpl_count, long tpl_total) {
+  double fraction_done = (double)tpl_count / (double)tpl_total;
   if (fraction_done_hook)
-    *fraction_done_hook = (double)tpl_count / (double)tpl_total;
+    *fraction_done_hook = fraction_done;
   if (set_search_pos_hook)
     set_search_pos_hook(rac * 180.0/LAL_PI, dec * 180.0/LAL_PI);
+  boinc_fraction_done(fraction_done);
+  if (estimated_flops >= 0)
+    boinc_ops_cumulative(estimated_flops * fraction_done, 0); /* ignore IOPS */
 }
 
 
@@ -94,7 +108,7 @@ void get_checkpoint(char*filename);
 
 
 
-/* check if given file is a zip-file by checking the zip-magic header 'PK\003\044'
+/* check if given file is a zip archive by looking for the zip-magic header 'PK\003\044'
  * RETURN: 1 = true, 0 = false, -1 = error
  */
 static int is_zipped ( const char *fname ) {
@@ -226,6 +240,11 @@ worker (int argc, char*argv[]) {
       rargc--; /* this argument is not passed to the main worker function */
     }
 
+    else if (MATCH_START("--WUfpops=",argv[i],l)) {
+      estimated_flops=atof(argv[i]+l);
+      rargc--; /* this argument is not passed to the main worker function */
+    }
+
     /* SFT files (no unzipping, but dealing with multiple files separated by ';' */
     else if (0 == strncmp("--DataFiles",argv[i],11)) {
       rargv[i] = (char*)malloc(1024);
@@ -278,6 +297,10 @@ worker (int argc, char*argv[]) {
     if ( boinc_zip(ZIP_IT, resultfile, outfiles[i]) ) {
       LogPrintf (LOG_NORMAL, "WARNING: Can't zip output file '%s'\n", outfiles[i]);
     }
+
+  /* finally set (fl)ops count if given */
+  if (estimated_flops >= 0)
+    boinc_ops_cumulative(estimated_flops * fraction_done, 0); /* ignore IOPS */
 }
 
 
