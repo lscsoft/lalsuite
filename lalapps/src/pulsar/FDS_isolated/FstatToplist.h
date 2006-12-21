@@ -4,6 +4,29 @@
 #include "ComputeFStatistic.h"
 #include "HeapToplist.h"
 
+/* next level: a toplist as a checkpointed file */
+
+typedef struct {
+  CHAR* filename;    /* name of the toplist file */
+  UINT4 bytes;       /* counts the bytes in the file */
+  UINT4 bufsize;     /* buffer size if needed */
+  UINT4 maxsixe;     /* the file must not grow larger than that */
+  UINT4 checksum;    /* keeps the checksum */
+  FILE* fp;          /* FILE* currently associated */
+  toplist_t*list;    /* toplist this file reflects */
+} FStatCheckpointFile;
+
+/* opens a file for checkpointing the desired toplist */
+extern int fstat_cpt_file_open (FStatCheckpointFile*cptf);
+/* adds an item to the toplist and keeps the file consistent, i.e.
+   adds the entry to the file if it was really inserted
+   and compacts the file if necessary */
+extern int fstat_cpt_file_add  (FStatCheckpointFile*cptf, FstatOutputEntry line);
+/* closes and compacts the file */
+extern int fstat_cpt_file_close(FStatCheckpointFile*cptf);
+/* reads a written checkpointed toplist back into memory */
+extern int fstat_cpt_file_read (FStatCheckpointFile*cptf);
+
 /* This has by now been reduced to an interface to the HeapToplist functions */
 
 /* creates a toplist with length elements,
@@ -15,8 +38,7 @@ extern void free_fstat_toplist(toplist_t**list);
 
 /* Inserts an element in to the toplist either if there is space left
    or the element is larger than the smallest element in the toplist.
-   In the latter case, remove the smallest element from the toplist and
-   look for the now smallest one.
+   In the latter case, remove the smallest element from the toplist
    Returns 1 if the element was actually inserted, 0 if not. */
 extern int insert_into_fstat_toplist(toplist_t*list, FstatOutputEntry line);
 
@@ -29,7 +51,8 @@ extern int write_fstat_toplist_to_fp(toplist_t*list, FILE*fp, UINT4*checksum);
 /* reads a (created!) toplist from an open filepointer
    sets the checksum if non-NULL
    reads maximum maxbytes, all that is there if maxbytes is 0
-   returns -1 if the file contained a syntax error,
+   returns the number of bytes read,
+   -1 if the file contained a syntax error,
    -2 if given an improper toplist */
 extern int read_fstat_toplist_from_fp(toplist_t*list, FILE*fp, UINT4*checksum, UINT4 maxbytes);
 
