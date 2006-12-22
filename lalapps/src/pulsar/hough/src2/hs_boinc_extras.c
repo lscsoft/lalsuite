@@ -74,6 +74,10 @@ extern void set_search_pos(float RAdeg, float DEdeg);
 extern int boinc_init_graphics(void (*worker)(void));
 #endif
 
+/* worker doesn't take arguments, so we have to pass them as (mol) global vars :-( */
+static int global_argc;
+static char **global_argv;
+
 
 /* show progress */
 void show_progress(double rac, double dec, long tpl_count, long tpl_total) {
@@ -156,12 +160,14 @@ static int unzip_if_necessary(char*filename) {
 
 
 
-worker (int argc, char*argv[]) {
-  int i,j;                     /* loop counter */
+void worker (void) {
+  int argc    = global_argc;   /* as worker is defined void worker(void), ... */
+  char**argv  = global_argv;   /* ...  take argc and argv from global variables */
+  int rargc   = global_argc;   /* argc and ... */
+  char**rargv = NULL;          /* ... argv values for calling the MAIN() function of the worker */
+  int i;                       /* loop counter */
   int l;                       /* length of matched string */
   int res;                     /* return value of function call */
-  int rargc = argc;            /* argc and ... */
-  char **rargv = NULL;         /* ... argv values for calling the MAIN() function of the worker */
   char tempstr[MAX_PATH_LEN];  /* temporary holds a filename / -path */
   char *startc,*endc,*appc;
 
@@ -310,6 +316,8 @@ worker (int argc, char*argv[]) {
 */
 
 int main(int argc, char**argv) {
+  global_argc = argc;
+  global_argv = argv;
 
 #if (BOINC_GRAPHICS == 1)
   set_search_pos_hook = set_search_pos;
