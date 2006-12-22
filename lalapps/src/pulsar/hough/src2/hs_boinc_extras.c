@@ -260,7 +260,7 @@ void worker (void) {
       appc = rargv[i]+13;
       startc = argv[i]+13;
       /* look for multiple paths separated by ';' */
-      while(endc = strchr(startc,';')) {
+      while((endc = strchr(startc,';'))) {
 	*endc = '\0';
 	if (boinc_resolve_filename(startc,appc,255)) {
 	  LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve input file '%s'\n", tempstr);
@@ -307,7 +307,7 @@ void worker (void) {
 
   /* finally set (fl)ops count if given */
   if (estimated_flops >= 0)
-    boinc_ops_cumulative(estimated_flops * fraction_done, 0); /* ignore IOPS */
+    boinc_ops_cumulative(estimated_flops, 0); /* ignore IOPS */
 }
 
 
