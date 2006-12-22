@@ -68,8 +68,8 @@ int (*boinc_init_graphics_hook)(void (*worker)(void)) = NULL;
 double *fraction_done_hook = NULL;
 
 /* declare graphics stuff here if we don't get it from a dynamic library */
-extern double fraction_done;
 #if (BOINC_GRAPHICS == 1)
+extern double fraction_done;
 extern void set_search_pos(float RAdeg, float DEdeg);
 extern int boinc_init_graphics(void (*worker)(void));
 #endif
@@ -81,14 +81,14 @@ static char **global_argv;
 
 /* show progress */
 void show_progress(double rac, double dec, long tpl_count, long tpl_total) {
-  double fraction_done = (double)tpl_count / (double)tpl_total;
+  double fraction = (double)tpl_count / (double)tpl_total;
   if (fraction_done_hook)
-    *fraction_done_hook = fraction_done;
+    *fraction_done_hook = fraction;
   if (set_search_pos_hook)
     set_search_pos_hook(rac * 180.0/LAL_PI, dec * 180.0/LAL_PI);
-  boinc_fraction_done(fraction_done);
+  boinc_fraction_done(fraction);
   if (estimated_flops >= 0)
-    boinc_ops_cumulative(estimated_flops * fraction_done, 0); /* ignore IOPS */
+    boinc_ops_cumulative(estimated_flops * fraction, 0); /* ignore IOPS */
 }
 
 
