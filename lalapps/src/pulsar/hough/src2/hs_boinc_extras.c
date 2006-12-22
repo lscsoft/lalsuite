@@ -350,7 +350,7 @@ int main(int argc, char**argv) {
   /* we end up hereo only if BOINC_GRAPHICS == 0
      or a call to boinc_init_graphics failed */
   boinc_init();
-  worker(argc,argv);
+  worker();
   boinc_finish( HIERARCHICALSEARCH_ENORM );
   /* boinc_init(graphics) ends the program, we never get here!! */
   return 0;
