@@ -218,7 +218,7 @@ void worker (void) {
       if (boinc_resolve_filename(argv[i]+l,rargv[i]+l,MAX_PATH_LEN-l)) {
         LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve skygrid file '%s'\n", argv[i]+1);
       }
-      unzip_if_necessary(rargv[i]);
+      unzip_if_necessary(rargv[i]+l);
     }
 
     /* ephermeris files */
@@ -228,7 +228,7 @@ void worker (void) {
       if (boinc_resolve_filename(argv[i]+l,rargv[i]+l,MAX_PATH_LEN-l)) {
         LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve skygrid file '%s'\n", argv[i]+1);
       }
-      unzip_if_necessary(rargv[i]);
+      unzip_if_necessary(rargv[i]+l);
     }
     else if (MATCH_START("--ephemS=",argv[i],l)) {
       rargv[i] = (char*)malloc(MAX_PATH_LEN);
@@ -236,15 +236,25 @@ void worker (void) {
       if (boinc_resolve_filename(argv[i]+l,rargv[i]+l,MAX_PATH_LEN-l)) {
         LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve skygrid file '%s'\n", argv[i]+1);
       }
-      unzip_if_necessary(rargv[i]);
+      unzip_if_necessary(rargv[i]+l);
     }
 
-    /* file to return (zip archive) */
-    else if (MATCH_START("--BOINCresfile=",argv[i],l)) {
+    /* output file */
+    else if (MATCH_START("--fnameout=",argv[i],l)) {
       if (boinc_resolve_filename(argv[i]+l,resultfile,sizeof(resultfile))) {
-        LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve skygrid file '%s'\n", argv[i]+1);
+        LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve result file '%s'\n", argv[i]+1);
       }
-      rargc--; /* this argument is not passed to the main worker function */
+      register_output_file(argv[i]+l);
+      rargv[i] = argv[i]; /* this is passed unchanged, just recorded */
+    }
+    else if (0 == strncmp("-o",argv[i],3)) {
+      rargv[i] = argv[i];
+      i++;
+      if (boinc_resolve_filename(argv[i],resultfile,sizeof(resultfile))) {
+        LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve result file '%s'\n", argv[i]+1);
+      }
+      register_output_file(argv[i]);
+      rargv[i] = argv[i]; /* this is passed unchanged, just recorded */
     }
 
     else if (MATCH_START("--WUfpops=",argv[i],l)) {
@@ -301,7 +311,9 @@ void worker (void) {
   if(noutfiles == 0)
     LogPrintf (LOG_CRITICAL, "ERROR: no output file has been specified");
   for(i=0;i<noutfiles;i++)
-    if ( boinc_zip(ZIP_IT, resultfile, outfiles[i]) ) {
+    if ( 0 == strncmp(resultfile, outfiles[i],sizeof(resultfile)) )
+      LogPrintf (LOG_CRITICAL, "WARNING: output and result file are identical - output not zipped\n",res);
+    else if ( boinc_zip(ZIP_IT, resultfile, outfiles[i]) ) {
       LogPrintf (LOG_NORMAL, "WARNING: Can't zip output file '%s'\n", outfiles[i]);
     }
 
