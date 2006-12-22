@@ -15,14 +15,14 @@
         set_checkpoint(filename,rac,dec,tpl_count,tpl_total)
 #define GET_CHECKPOINT(filename)\
         get_checkpoint(filename)
-#define SHOW_PROGRESS(rac,dec,tpl_count,tpl_total)\
-        show_progress(rac,dec,tpl_count,tpl_total)
 
 so for now we define only dummies: */
 
 #define SET_CHECKPOINT(filename,rac,dec,tpl_count,tpl_total) filename = filename;
 #define GET_CHECKPOINT(filename)
 #define REMOVE_CHECKPOINT(filename)
+#define SHOW_PROGRESS(rac,dec,tpl_count,tpl_total)\
+        show_progress(rac,dec,tpl_count,tpl_total)
 
 
 #define fopen boinc_fopen
