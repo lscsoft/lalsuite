@@ -15,16 +15,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if !DEBUG
 #include "boinc_api.h"
-#endif
 #include "diagnostics.h"
 #include "boinc_zip.h"
 
 
 #define MAX_PATH_LEN 512
 
-/* don't want to include LAL headers here */
+/* don't want to include LAL headers for PI */
 #define LAL_PI 3.1415926535897932384626433832795029  /**< pi */
 
 #define BOINC_TRY(test,code,mess) \
@@ -33,22 +31,6 @@
     boinc_finish(code); \
   }
     
-
-#if DEBUG
-/* trivial simulation of LogPrintf for testing */
-#define LogPrintf fprintf
-#define LOG_CRITICAL stderr
-#define LOG_NORMAL stderr
-
-/* dummy for boinc_resolve_filename */
-int boinc_resolve_filename(char*name,char*resolved,int len) {
-  strncpy(resolved,"res:",strlen("res:"));
-  strncat(resolved,name,len);
-  return(0);
-}
-#endif /* DEBUG */
-
-
 
 /* compare strings s1 and s2 up to the length of s1 (w/o the '\0'!!)
    and set l to the length */
@@ -79,6 +61,7 @@ static int global_argc;
 static char **global_argv;
 
 
+
 /* show progress */
 void show_progress(double rac, double dec, long tpl_count, long tpl_total) {
   double fraction = (double)tpl_count / (double)tpl_total;
@@ -90,6 +73,7 @@ void show_progress(double rac, double dec, long tpl_count, long tpl_total) {
   if (estimated_flops >= 0)
     boinc_ops_cumulative(estimated_flops * fraction, 0); /* ignore IOPS */
 }
+
 
 
 /* this registers a new output file to be zipped into the archive that is returned
@@ -159,7 +143,11 @@ static int unzip_if_necessary(char*filename) {
 }
 
 
-
+/* The worker() ist called either from main() directly or from boinc_init_graphics
+   (in a separate thread). It does some funny things to the command line (mostly
+   boinc-resolving filenames), then calls MAIN() (from HierarchicalSearch.c), and
+   finally handles the output / result file before properly exiting with boinc_finish().
+*/
 void worker (void) {
   int argc    = global_argc;   /* as worker is defined void worker(void), ... */
   char**argv  = global_argv;   /* ...  take argc and argv from global variables */
@@ -297,12 +285,12 @@ void worker (void) {
       LogPrintf (LOG_CRITICAL, "ERROR: no result file has been specified");
   }
 
+
   /* CALL WORKER's MAIN()
-   */
-  
+   */  
   res = MAIN(rargc,rargv);
   if (res) {
-    LogPrintf (LOG_CRITICAL, "ERROR: main worker returned with error '%d'\n",res);
+    LogPrintf (LOG_CRITICAL, "ERROR: MAIN() returned with error '%d'\n",res);
   }
 
 
@@ -320,7 +308,10 @@ void worker (void) {
   /* finally set (fl)ops count if given */
   if (estimated_flops >= 0)
     boinc_ops_cumulative(estimated_flops, 0); /* ignore IOPS */
+
+  boinc_finish( HIERARCHICALSEARCH_ENORM );
 }
+
 
 
 /* the main function of the BOINC App
