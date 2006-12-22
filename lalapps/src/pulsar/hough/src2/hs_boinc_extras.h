@@ -10,11 +10,11 @@
 
 /* linking proper functions to the hooks in HierarchicalSearch.c */
 #define SET_CHECKPOINT(filename,rac,dec,tpl_count,tpl_total)\
-        set_checkpoint(filename,rac,dec,tpl_count,tpl_total);
+        set_checkpoint(filename,rac,dec,tpl_count,tpl_total)
 #define GET_CHECKPOINT(filename)\
-        get_checkpoint(filename);
+        get_checkpoint(filename)
 #define SHOW_PROGRESS(rac,dec,tpl_count,tpl_total)\
-        show_progress(rac,dec,tpl_count,tpl_total);
+        show_progress(rac,dec,tpl_count,tpl_total)
 
 #define fopen boinc_fopen
 
