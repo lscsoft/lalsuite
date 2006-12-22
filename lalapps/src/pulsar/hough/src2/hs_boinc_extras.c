@@ -7,14 +7,13 @@
    - error handling
    - signal handling
    - checkpointing
-   - boinc_init(), boinc finish
 */
 
 #include "hs_boinc_extras.h"
-
+#include "HierarchicalSearch.h"
+#include <lal/LogPrintf.h>
 #include <stdlib.h>
 #include <string.h>
-
 
 #if !DEBUG
 #include "boinc_api.h"
@@ -40,7 +39,6 @@
 #define LogPrintf fprintf
 #define LOG_CRITICAL stderr
 #define LOG_NORMAL stderr
-#define LOG_ERROR stderr
 
 /* dummy for boinc_resolve_filename */
 int boinc_resolve_filename(char*name,char*resolved,int len) {
@@ -70,8 +68,8 @@ int (*boinc_init_graphics_hook)(void (*worker)(void)) = NULL;
 double *fraction_done_hook = NULL;
 
 /* declare graphics stuff here if we don't get it from a dynamic library */
-#if (BOINC_GRAPHICS == 1)
 extern double fraction_done;
+#if (BOINC_GRAPHICS == 1)
 extern void set_search_pos(float RAdeg, float DEdeg);
 extern int boinc_init_graphics(void (*worker)(void));
 #endif
@@ -172,11 +170,11 @@ worker (int argc, char*argv[]) {
   if (graphics_lib_handle) {
     if (!(set_search_pos_hook = dlsym(graphics_lib_handle,"set_search_pos"))) {
       LogPrintf (LOG_CRITICAL,   "unable to resolve set_search_pos(): %s\n", dlerror());
-      boinc_finish(COMPUTEFSTAT_EXIT_DLOPEN);
+      boinc_finish(HIERARCHICALSEARCH_EDLOPEN);
     }
     if (!(fraction_done_hook = dlsym(graphics_lib_handle,"fraction_done"))) {
       LogPrintf (LOG_CRITICAL,   "unable to resolve fraction_done(): %s\n", dlerror());
-      boinc_finish(COMPUTEFSTAT_EXIT_DLOPEN);
+      boinc_finish(HIERARCHICALSEARCH_EDLOPEN);
     }
   }
   else
@@ -280,7 +278,7 @@ worker (int argc, char*argv[]) {
   } /* for all command line arguments */
 
   if (!resultfile) {
-      LogPrintf (LOG_ERROR, "ERROR: no result file has been specified");
+      LogPrintf (LOG_CRITICAL, "ERROR: no result file has been specified");
   }
 
   /* CALL WORKER's MAIN()
@@ -288,14 +286,14 @@ worker (int argc, char*argv[]) {
   
   res = MAIN(rargc,rargv);
   if (res) {
-    LogPrintf (LOG_ERROR, "ERROR: main worker returned with error '%d'\n",res);
+    LogPrintf (LOG_CRITICAL, "ERROR: main worker returned with error '%d'\n",res);
   }
 
 
   /* HANDLE OUTPUT FILES
    */
   if(noutfiles == 0)
-    LogPrintf (LOG_ERROR, "ERROR: no output file has been specified");
+    LogPrintf (LOG_CRITICAL, "ERROR: no output file has been specified");
   for(i=0;i<noutfiles;i++)
     if ( boinc_zip(ZIP_IT, resultfile, outfiles[i]) ) {
       LogPrintf (LOG_NORMAL, "WARNING: Can't zip output file '%s'\n", outfiles[i]);
@@ -337,7 +335,7 @@ int main(int argc, char**argv) {
     retval = boinc_init_graphics(worker);
 #endif /* BOINC_GRAPHICS==1 */
     LogPrintf (LOG_CRITICAL,  "boinc_init_graphics[_lib]() returned %d. This indicates an error...\n", retval);
-    boinc_finish(COMPUTEFSTAT_EXIT_WORKER );
+    boinc_finish(HIERARCHICALSEARCH_EWORKER );
   }
 #endif /*  BOINC_GRAPHICS>0 */
     
@@ -345,7 +343,7 @@ int main(int argc, char**argv) {
      or a call to boinc_init_graphics failed */
   boinc_init();
   worker(argc,argv);
-  boinc_finish(COMPUTEFSTAT_EXIT_WORKER );
+  boinc_finish( HIERARCHICALSEARCH_ENORM );
   /* boinc_init(graphics) ends the program, we never get here!! */
   return 0;
 }

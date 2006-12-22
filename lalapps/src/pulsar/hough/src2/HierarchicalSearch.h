@@ -68,7 +68,6 @@
 #include <lalapps.h>
 #include <DopplerScan.h>
 /* more efficient toplist using heaps */
-#include <HeapToplist.h>
 #include <FstatToplist.h>
 
 /******************************************************
@@ -98,6 +97,9 @@ NRCSID( HIERARCHICALSEARCHH, "$Id$" );
 #define HIERARCHICALSEARCH_ENULL 5
 #define HIERARCHICALSEARCH_EVAL  6
 #define HIERARCHICALSEARCH_ENONULL 7
+#define HIERARCHICALSEARCH_EDLOPEN 8
+#define HIERARCHICALSEARCH_EWORKER 9
+
 
 #define HIERARCHICALSEARCH_MSGENORM "Normal exit"
 #define HIERARCHICALSEARCH_MSGESUB  "Subroutine failed"

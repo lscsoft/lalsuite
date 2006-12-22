@@ -112,8 +112,10 @@
 
 
 
-#include"./HierarchicalSearch.h"
-#include "./StackSlideFstat.h" /* This need to go here after HierarchicalSearch.h is included; StackSlideFstat.h needs SemiCohCandidateList defined. */
+#include"HierarchicalSearch.h"
+/* This need to go here after HierarchicalSearch.h is included;
+   StackSlideFstat.h needs SemiCohCandidateList defined. */
+#include "StackSlideFstat.h"
 
 RCSID( "$Id$");
 
