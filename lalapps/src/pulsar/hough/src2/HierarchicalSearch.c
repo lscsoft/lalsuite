@@ -1073,10 +1073,10 @@ int MAIN( int argc, char *argv[]) {
 
       skyGridCounter++;
 
-      SHOW_PROGRESS(thisscan1.state.SkyNode.Alpha,
-		    thisscan1.state.SkyNode.Delta,
+      SHOW_PROGRESS(thisScan1.skyNode->Alpha,
+		    thisScan1.skyNode->Delta,
 		    skyGridCounter,
-		    thisscan1.state.numSkyGridPoints)
+		    thisScan1.numSkyGridPoints);
 
       
       /*------------- calculate F statistic for each stack --------------*/
@@ -1330,10 +1330,10 @@ int MAIN( int argc, char *argv[]) {
 	} /* end loop over coarse grid fdot values */
 
       SET_CHECKPOINT(fnameChkPoint,
-		     thisscan1.state.SkyNode.Alpha,
-		     thisscan1.state.SkyNode.Delta,
+		     thisScan1.skyNode->Alpha,
+		     thisScan1.skyNode->Delta,
 		     skyGridCounter,
-		     thisscan1.state.numSkyGridPoints);
+		     thisScan1.numSkyGridPoints);
       
       XLALNextDopplerSkyPos( &dopplerpos1, &thisScan1 );
       
