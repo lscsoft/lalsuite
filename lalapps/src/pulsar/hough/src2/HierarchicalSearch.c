@@ -1075,8 +1075,8 @@ int MAIN( int argc, char *argv[]) {
 
       skyGridCounter++;
 
-      SHOW_PROGRESS(thisScan1.skyNode->Alpha,
-		    thisScan1.skyNode->Delta,
+      SHOW_PROGRESS((thisScan1.skyNode)?(thisScan1.skyNode->Alpha):0,
+		    (thisScan1.skyNode)?(thisScan1.skyNode->Delta):0,
 		    skyGridCounter,
 		    thisScan1.numSkyGridPoints);
 
