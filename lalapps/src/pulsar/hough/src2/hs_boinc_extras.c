@@ -9,15 +9,16 @@
    - checkpointing
 */
 
+#include "boinc_api.h"
+#include "diagnostics.h"
+#include "boinc_zip.h"
+
 #include "hs_boinc_extras.h"
 #include "HierarchicalSearch.h"
 #include <lal/LogPrintf.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "boinc_api.h"
-#include "diagnostics.h"
-#include "boinc_zip.h"
 
 
 #define MAX_PATH_LEN 512
