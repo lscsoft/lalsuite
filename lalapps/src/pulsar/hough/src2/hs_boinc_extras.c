@@ -9,16 +9,25 @@
    - checkpointing
 */
 
+/* BOINC - needs to be before the #defines in hs_boinc_extras.h */
 #include "boinc_api.h"
 #include "diagnostics.h"
 #include "boinc_zip.h"
+#if BOINC_GRAPHICS
+#include "graphics_api.h"
+#include "graphics_lib.h"
+#endif
 
 #include "hs_boinc_extras.h"
 #include "HierarchicalSearch.h"
 #include <lal/LogPrintf.h>
+
+/* probably already include by previous headers, but anyway */
 #include <stdlib.h>
 #include <string.h>
-
+#if (BOINC_GRAPHICS == 2)
+#include <dlfcn.h>
+#endif
 
 
 #define MAX_PATH_LEN 512
