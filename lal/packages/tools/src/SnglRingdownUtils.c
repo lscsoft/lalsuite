@@ -508,6 +508,46 @@ LALClusterSnglRingdownTable (
   RETURN (status);
 }
 
+/* <lalVerbatim file="SnglRingdownUtilsCP"> */
+SnglRingdownTable *
+XLALVetoSingleRingdown (
+    SnglRingdownTable          *eventHead,
+    LALSegList                 *vetoSegs, 
+    CHAR                        *ifo
+    )
+/* </lalVerbatim> */
+{
+  SnglRingdownTable    *thisEvent = NULL;
+  SnglRingdownTable    *prevEvent = NULL;
+ 
+  thisEvent = eventHead;
+  eventHead = NULL;
+   
+  while ( thisEvent )
+  {
+    /*-- Check the time of this event against the veto segment list --*/
+    if ( XLALSegListSearch( vetoSegs, &(thisEvent->start_time) )  
+        && (strcmp(thisEvent->ifo, ifo)==0) )
+    {
+      /*-- This event's start_time falls within one of the veto segments --*/
+      /* discard the trigger and move to the next one */
+      SnglRingdownTable    *tmpEvent = NULL;
+      if ( prevEvent ) prevEvent->next = thisEvent->next;
+      tmpEvent = thisEvent;
+      thisEvent = thisEvent->next;
+      XLALFreeSnglRingdown ( &tmpEvent );
+    } 
+    else 
+    {
+      /* This ringdown trigger does not fall within any veto segment */
+      /* keep the trigger and increment the count of triggers */
+      if ( ! eventHead ) eventHead = thisEvent;
+      prevEvent = thisEvent;
+      thisEvent = thisEvent->next;
+    }
+  }
+  return( eventHead );
+}
 
 /* <lalVerbatim file="SnglRingdownUtilsCP"> */
 void
