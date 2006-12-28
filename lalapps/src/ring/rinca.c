@@ -57,7 +57,8 @@ int haveTrig[LAL_NUM_IFO];
 int checkTimes = 0;
 int multiIfoCoinc = 0;
 int distCut = 0;
-
+int doVeto = 0;
+int completeCoincs = 0;
 
 /*
  * 
@@ -118,6 +119,11 @@ static void print_usage(char *program)
       "   --data-type        data_type specify the data type, must be one of\n"\
       "                                (playground_only|exclude_play|all_data)\n"\
       "\n"\
+      "   --complete-coincs               write out triggers from all non-vetoed ifos\n"
+      "  [--do-veto]         do_veto   veto cetain segments\n"\
+      "  [--h1-veto-file]    h1_veto_file   specify h1 triggers to be vetoed\n"\
+      "  [--h2-veto-file]    h2_veto_file   specify h2 triggers to be vetoed\n"\
+      "  [--l1-veto-file]    l1_veto_file   specify l1 triggers to be vetoed\n"\
       "[LIGOLW XML input files] list of the input trigger files.\n"\
       "\n", program);
 }
@@ -146,13 +152,17 @@ int main( int argc, char *argv[] )
   CHAR  ifos[LIGOMETA_IFOS_MAX];
   CHAR  ifoA[LIGOMETA_IFO_MAX];
   CHAR  ifoB[LIGOMETA_IFO_MAX];
-  
+  CHAR  ifo[LIGOMETA_IFO_MAX];
+
   CHAR  comment[LIGOMETA_COMMENT_MAX];
   CHAR *userTag = NULL;
   CHAR *ifoTag = NULL;
 
   CHAR  fileName[FILENAME_MAX];
   CHAR  fileSlide[FILENAME_MAX];
+  CHAR *vetoFileName[LAL_NUM_IFO] = {NULL, NULL, NULL, NULL, NULL, NULL};
+
+  LALSegList vetoSegs[LAL_NUM_IFO];
 
   INT4   numIFO = 0;
   UINT4  numTrigIFO = 0;
@@ -169,6 +179,7 @@ int main( int argc, char *argv[] )
   SnglRingdownTable    *ringdownEventList = NULL;
   SnglRingdownTable    *thisRingdownTrigger = NULL;
   SnglRingdownTable    *snglOutput = NULL;
+  SnglRingdownTable    *completionSngls = NULL;
   CoincRingdownTable   *coincRingdownList = NULL;
   CoincRingdownTable   *thisCoinc = NULL;
 
@@ -212,6 +223,8 @@ int main( int argc, char *argv[] )
     {"check-times",         no_argument,   &checkTimes,               1 },
     {"multi-ifo-coinc",     no_argument,   &multiIfoCoinc,            1 },
     {"h1-h2-distance-cut",  no_argument,   &distCut,                  1 },
+    {"do-veto",             no_argument,   &doVeto,                   1 },
+    {"complete-coincs",     no_argument,   &completeCoincs,           1 },
     {"h1-slide",            required_argument, 0,                    'c'},
     {"h2-slide",            required_argument, 0,                    'd'},
     {"l1-slide",            required_argument, 0,                    'e'},
@@ -244,6 +257,9 @@ int main( int argc, char *argv[] )
     {"debug-level",         required_argument, 0,                    'z'},
     {"version",             no_argument,       0,                    'V'},
     {"high-mass",           required_argument, 0,                    '&'},
+    {"h1-veto-file",        required_argument, 0,                    '('},
+    {"h2-veto-file",        required_argument, 0,                    ')'},
+    {"l1-veto-file",        required_argument, 0,                    '}'},
     {0, 0, 0, 0}
   };
   int c;
@@ -299,7 +315,7 @@ int main( int argc, char *argv[] )
     c = getopt_long_only( argc, argv, 
         "B:C:D:E:F:G:H:I:J:N:O:P:T:V:Z:"
         "a:c:d:e:h:i:k:n:o:p:s:t:x:z:"
-        "@:&:", 
+        "@:&:(:):}", 
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -645,6 +661,30 @@ int main( int argc, char *argv[] )
         }
         ADD_PROCESS_PARAM( "int", "%lld",  maximizationInterval );
         break;
+
+      case '(':
+        /* veto filename */
+        optarg_len = strlen( optarg ) + 1;
+        vetoFileName[LAL_IFO_H1] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( vetoFileName[LAL_IFO_H1], optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+
+      case ')':
+        /* veto filename */
+        optarg_len = strlen( optarg ) + 1;
+        vetoFileName[LAL_IFO_H2] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( vetoFileName[LAL_IFO_H2], optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+
+      case '}':
+        /* veto filename */
+        optarg_len = strlen( optarg ) + 1;
+        vetoFileName[LAL_IFO_L1] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( vetoFileName[LAL_IFO_L1], optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
   
       default:
         fprintf( stderr, "Error: Unknown error while parsing options\n" );
@@ -834,6 +874,40 @@ if ( vrbflg)
     LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
 
+  /* store the veto option */ 
+  if ( doVeto )
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+        "%s", PROGRAM_NAME );
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+        "--do-veto" );
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );    
+  }
+
+  /* store the complete-coincs option */
+  if (completeCoincs)
+  {
+    if (!multiIfoCoinc)
+    {
+      fprintf( stderr,
+          "--multi-ifo-coinc must be specified when --complete-coincs is.\n" );
+      exit( 1 );
+    }
+
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX,
+        "%s", PROGRAM_NAME );
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX,
+        "--complete-coincs");
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+  }
+
+
   /* delete the first, empty process_params entry */
   this_proc_param = processParamsTable.processParamsTable;
   processParamsTable.processParamsTable = 
@@ -907,6 +981,44 @@ if ( vrbflg)
   else if ( vrbflg && maximizationInterval )
     fprintf( stdout, "After maximization have a total of %d triggers.\n",  numTriggers );
    
+   /*    we initialise the veto segment list needed either by the h1h2 
+        consistency check or the veto option itself. */
+   if ( doVeto )
+   {
+     for ( ifoNumber = 0; ifoNumber< LAL_NUM_IFO; ifoNumber++)
+     {
+       /* to perform the veto, we  need the filename. */
+       if ( vetoFileName[ifoNumber] && haveTrig[ifoNumber])
+       {
+         XLALSegListInit( &(vetoSegs[ifoNumber]) );
+         LAL_CALL( LALSegListRead( &status, &(vetoSegs[ifoNumber]),
+               vetoFileName[ifoNumber], NULL),&status);
+         XLALSegListCoalesce( &(vetoSegs[ifoNumber]) );
+
+         /* keep only the segments that lie within the data-segment part */
+         XLALSegListKeep(  &(vetoSegs[ifoNumber]), &startCoinc, &endCoinc );
+
+         /* if the veto option is set, we remove single ringdown triggers 
+            inside the list provided but we need to loop over the different 
+            ifo name. */
+         if (doVeto)
+         {
+           XLALReturnIFO(ifo,ifoNumber);
+           if ( vrbflg ) fprintf( stdout,
+               "Applying veto segment (%s) list on ifo  %s \n ",
+               vetoFileName[ifoNumber], ifo );
+           ringdownEventList = XLALVetoSingleRingdown( ringdownEventList,
+               &(vetoSegs[ifoNumber]), ifo );
+           /* count the triggers  */
+           numTriggers = XLALCountSnglRingdown( ringdownEventList );
+           if ( vrbflg ) fprintf( stdout,
+               " --> %d remaining triggers after veto segment list applied.\n",
+               numTriggers );
+         }
+       }
+     }
+   }
+
   /* check that we have read in data for all the requested times
      in all the requested instruments */
   if ( checkTimes )
@@ -1031,154 +1143,200 @@ if ( vrbflg)
    *
    */
 
-  if ( !numSlides )
+  /* perform the time slides */
+  for( slideNum = -numSlides; slideNum <= numSlides; slideNum++ )
   {
-    LAL_CALL( LALCreateTwoIFORingdownCoincList( &status, &coincRingdownList,
-        ringdownEventList, &accuracyParams ), &status );
+    SnglRingdownTable    *slideOutput = NULL;
+    INT4                  numCoincInSlide = 0;
 
-    /* count the coincs */
-    if( coincRingdownList )
+    coincRingdownList = NULL;
+
+    if ( numSlides )
     {
-      for (numCoinc = 0, thisCoinc = coincRingdownList;
-            thisCoinc; ++numCoinc, thisCoinc = thisCoinc->next )
-      {
-      }
-
-    }
-
-    if ( multiIfoCoinc )
-    {
-      for( N = 3; N <= numIFO; N++)
-      {
-        LAL_CALL( LALCreateNIFORingdownCoincList( &status, &coincRingdownList, 
-               &accuracyParams, N ), &status );
-      }
- 
-      LAL_CALL( LALRemoveRepeatedRingdownCoincs( &status, &coincRingdownList ), 
-           &status );
-    }
-
-    /* count number of coincidences */
-    if ( vrbflg ) fprintf( stdout, "%d coincident triggers found (with repeated) .\n", 
-               XLALCountCoincRingdown(coincRingdownList));
-
-    /* count the coincs */
-    if( coincRingdownList )
-    {
-      for (numCoinc = 0, thisCoinc = coincRingdownList;
-            thisCoinc; ++numCoinc, thisCoinc = thisCoinc->next )
-      {
-        if ( thisCoinc->numIfos == 2 )
-        {
-          ++numDoubles;
-        }
-        else if ( thisCoinc->numIfos == 3 )
-        {
-          ++numTriples;
-        }
-      }
-    }
-    
-    if ( vrbflg ) 
-    {
-      fprintf( stdout, "%d coincident triggers found.\n", numCoinc );
-      fprintf( stdout, "%d double coincident triggers\n"
-                       "%d triple coincident triggers\n",
-                       numDoubles, numTriples );
-    }
-
-    /* write out all coincs as singles with event IDs */
-    LAL_CALL( LALExtractSnglRingdownFromCoinc( &status, &snglOutput, 
-          coincRingdownList, &startCoinc, slideNum), &status );
-  }
-  else
-  {
-    /* perform the time slides */
-    for( slideNum = -numSlides; slideNum <= numSlides; slideNum++ )
-    {
-      SnglRingdownTable    *slideOutput = NULL;
-      INT4                  numCoincInSlide = 0;
-
-      coincRingdownList = NULL;
-      
       for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
       {
         if( slideNum == -numSlides )
         {
+          /* Initialize the slide-times with the initial value, 
+          which is the negative extreme value */
           INT4 tmpSlide = (- numSlides * slideStep[ifoNumber]);
           slideTimes[ifoNumber].gpsSeconds = tmpSlide;
           slideReset[ifoNumber].gpsSeconds = (-tmpSlide);
         }
         else
         {
+          /* Set the slide-times to the constant slide-step, 
+             since this times refers to 'ringdownEventList', 
+             which triggers are shifted in each slide by a constant amount.
+             The reset-time however refers to the coincidence list, so it must
+             be decreased for each slide. */
           slideTimes[ifoNumber].gpsSeconds = slideStep[ifoNumber];
           slideReset[ifoNumber].gpsSeconds -= slideStep[ifoNumber];
         }
       }
-    
-      if ( vrbflg ) fprintf(stdout,
-          "Performing time slide %d\n", slideNum );
+    }
 
-      /* slide the data */
-      LAL_CALL( LALTimeSlideSingleRingdown( &status, ringdownEventList,
-            &startCoinc, &endCoinc, slideTimes), &status) ;
-      LAL_CALL( LALSortSnglRingdown( &status, &(ringdownEventList),
-            LALCompareSnglRingdownByTime ), &status );
-      
-      /* look for coincidences, except in the zero lag */
-      if( slideNum )
-      {
-        LAL_CALL( LALCreateTwoIFORingdownCoincList(&status, &coincRingdownList,
+    if ( vrbflg ) fprintf(stdout, "Performing time slide %d\n", slideNum );
+
+    /* slide the data */
+    LAL_CALL( LALTimeSlideSingleRingdown( &status, ringdownEventList,
+              &startCoinc, &endCoinc, slideTimes), &status) ;
+    LAL_CALL( LALSortSnglRingdown( &status, &(ringdownEventList),
+              LALCompareSnglRingdownByTime ), &status );
+
+    for ( ifoNumber = 0; ifoNumber< LAL_NUM_IFO; ifoNumber++)
+    {
+      LAL_CALL( LALTimeSlideSegList( &status, &(vetoSegs[ifoNumber]),
+               &startCoinc, &endCoinc, &(slideTimes[ifoNumber])), &status) ;
+    }
+ 
+    /* don't analyze zero-lag if numSlides>0 */
+    if ( numSlides && !slideNum ) continue;
+
+    /* look for coincidences */
+    LAL_CALL( LALCreateTwoIFORingdownCoincList(&status, &coincRingdownList,
           ringdownEventList, &accuracyParams ), &status);
+    
+    /* count the zero-lag coincidences */ 
+    if ( !numSlides)
+    {
+      if( coincRingdownList )
+      {
+        for (numCoinc = 0, thisCoinc = coincRingdownList;
+               thisCoinc; ++numCoinc, thisCoinc = thisCoinc->next )
+        {
+        }
+        if ( vrbflg ) fprintf( stdout,
+            "%d coincident triggers found before coincidence cuts..\n",
+            numCoinc);
+      }
+    }
 
-        /* count the coincs, scroll to end of list */
-        if( coincRingdownList )
-        {  
-          for (numCoincInSlide = 1, thisCoinc = coincRingdownList; 
-              thisCoinc->next; ++numCoincInSlide, thisCoinc = thisCoinc->next );
+    if ( multiIfoCoinc )
+    {
+      for( N = 3; N <= numIFO; N++)
+      {
+        LAL_CALL( LALCreateNIFORingdownCoincList( &status, &coincRingdownList,
+               &accuracyParams, N ), &status );
+      }
+ 
+      LAL_CALL( LALRemoveRepeatedRingdownCoincs( &status, &coincRingdownList ),
+           &status );
+    }
 
-          if ( vrbflg ) fprintf( stdout,
-              "%d coincident triggers found in slide.\n", numCoincInSlide );
-
-          numCoinc += numCoincInSlide;
-
-
-          /* write out all coincs as singles with event IDs */
-          LAL_CALL( LALExtractSnglRingdownFromCoinc( &status, &slideOutput, 
-                coincRingdownList, &startCoinc, slideNum), &status );
-
-          /* the output triggers should be slid back to original time */
-          LAL_CALL( LALTimeSlideSingleRingdown( &status, slideOutput,
-                &startCoinc, &endCoinc, slideReset), &status) ;
-          LAL_CALL( LALSortSnglRingdown( &status, &(slideOutput),
-                LALCompareSnglRingdownByTime ), &status );
-
-          while ( coincRingdownList )
+    /* no time-slide */
+    if ( !slideNum )
+    {
+      /* count the coincs */
+      if( coincRingdownList )
+      {
+        for (numCoinc = 0, thisCoinc = coincRingdownList;
+              thisCoinc; ++numCoinc, thisCoinc = thisCoinc->next )
+        {
+          if ( thisCoinc->numIfos == 2 )
           {
-            thisCoinc = coincRingdownList;
-            coincRingdownList = coincRingdownList->next;
-            LALFree( thisCoinc );
+            ++numDoubles;
           }
-
+          else if ( thisCoinc->numIfos == 3 )
+          {
+            ++numTriples;
+          }
         }
       }
-      
-      if ( snglOutput )
+
+      if ( vrbflg )
       {
-        thisRingdownTrigger->next = slideOutput;
+        fprintf( stdout, "%d coincident triggers found.\n", numCoinc );
+        fprintf( stdout, "%d double coincident triggers\n"
+                         "%d triple coincident triggers\n",
+                         numDoubles, numTriples );
       }
-      else
+    }
+
+    if ( coincRingdownList )
+    {
+      /* count the coincs, scroll to end of list */
+      if( slideNum )
       {
-        snglOutput = slideOutput;
+        for (numCoincInSlide = 1, thisCoinc = coincRingdownList;
+            thisCoinc->next; ++numCoincInSlide, thisCoinc = thisCoinc->next );
+
+        if ( vrbflg ) fprintf( stdout,
+            "%d coincident triggers found in slide.\n", numCoincInSlide );
+        numCoinc += numCoincInSlide;
       }
 
+      /* complete the coincs */
+      if ( completeCoincs )
+      {
+        completionSngls = XLALCompleteCoincRingdown ( coincRingdownList, 
+            haveTrig);
+
+        /* do a veto on the new sngls */
+        for ( ifoNumber = 0; ifoNumber< LAL_NUM_IFO; ifoNumber++)
+        {
+        
+          if (doVeto && vetoFileName[ifoNumber] && haveTrig[ifoNumber])
+          {
+            XLALReturnIFO(ifo,ifoNumber);
+            if ( vrbflg ) fprintf( stdout, 
+                "Applying veto list %s on completion sngls for ifo %s \n",
+                vetoFileName[ifoNumber], ifo );
+            completionSngls = XLALVetoSingleRingdown( completionSngls,
+               &(vetoSegs[ifoNumber]), ifo );
+          }
+        }
+      }
+
+      /* write out all coincs as singles with event IDs */
+      LAL_CALL( LALExtractSnglRingdownFromCoinc( &status, &slideOutput,
+            coincRingdownList, &startCoinc, slideNum), &status );
+
+      if ( numSlides )
+      {
+
+        /* the output triggers should be slid back to original time */
+        LAL_CALL( LALTimeSlideSingleRingdown( &status, slideOutput,
+              &startCoinc, &endCoinc, slideReset), &status) ;
+        LAL_CALL( LALSortSnglRingdown( &status, &(slideOutput),
+              LALCompareSnglRingdownByTime ), &status );
+      }
+
+      while ( coincRingdownList )
+      {
+        thisCoinc = coincRingdownList;
+        coincRingdownList = coincRingdownList->next;
+        XLALFreeCoincRingdown( &thisCoinc );
+      }
+
+      while ( completionSngls )
+      {
+        SnglRingdownTable *thisSngl = NULL;
+        thisSngl = completionSngls;
+        completionSngls = completionSngls->next;
+        XLALFreeSnglRingdown( &thisSngl );
+      }
+
+    }
+
+    if ( snglOutput )
+    {
+       thisRingdownTrigger->next = slideOutput;
+    }
+    else
+    {
+      snglOutput = slideOutput;
+    }
+
+    if ( numSlides )
+    {
       /* scroll to the end of the list */
       if ( slideOutput )
       {
-        for( thisRingdownTrigger = slideOutput; thisRingdownTrigger->next; 
-          thisRingdownTrigger = thisRingdownTrigger->next);
+        for( thisRingdownTrigger = slideOutput; thisRingdownTrigger->next;
+             thisRingdownTrigger = thisRingdownTrigger->next);
       }
-    } 
+    }
   }
 
 
@@ -1332,6 +1490,19 @@ cleanexit:
     LALFree( thisSearchSumm );
   }
 
+  /* free the veto segment list. */
+  for (ifoNumber=0; ifoNumber<LAL_NUM_IFO; ifoNumber++)
+  {
+    if ( vetoFileName[ifoNumber]  && haveTrig[ifoNumber])
+    {
+      free( vetoFileName[ifoNumber] );
+    }
+
+   if (vetoSegs[ifoNumber].initMagic == SEGMENTSH_INITMAGICVAL )
+   {
+        XLALSegListClear( &vetoSegs[ifoNumber] );
+    }
+  }
 
   /* free the snglRingdown */
   while ( ringdownEventList )
