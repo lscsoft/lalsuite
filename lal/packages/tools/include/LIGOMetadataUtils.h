@@ -1548,6 +1548,12 @@ LALAddSnglRingdownToCoinc(
     SnglRingdownTable          *snglRingdown
     );
 
+CoincRingdownTable *
+XLALAddSnglRingdownToCoinc(
+    CoincRingdownTable         *coincRingdown,
+    SnglRingdownTable          *snglRingdown
+    );
+
 void
 LALSnglRingdownCoincTest(
     LALStatus                  *status,
@@ -1630,6 +1636,12 @@ CoincRingdownTable *
 XLALCoincRingdownSlideCut(
     CoincRingdownTable **coincHead,
     int                  slideNum    
+    );
+
+SnglRingdownTable *
+XLALCompleteCoincRingdown (
+    CoincRingdownTable         *eventHead,
+    int                         ifoList[LAL_NUM_IFO]
     );
 
 CoincRingdownTable *

@@ -564,14 +564,34 @@ LALAddSnglRingdownToCoinc(
   ASSERT( snglRingdown, status, 
       LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
 
+  *coincPtr = XLALAddSnglRingdownToCoinc(*coincPtr, snglRingdown);
 
-  coincRingdown = *coincPtr;
- 
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}
+
+
+/* <lalVerbatim file="CoincRingdownUtilsCP"> */
+CoincRingdownTable *
+XLALAddSnglRingdownToCoinc(
+    CoincRingdownTable         *coincRingdown,
+    SnglRingdownTable          *snglRingdown
+    )
+/* </lalVerbatim> */
+{
+  static const char *func = "XLALAddSnglRingdownToCoinc";
+  EventIDColumn     *eventId = NULL;
+
   /* allocate memory for new coinc if it doesn't exist */
   if (! coincRingdown )
   {
     coincRingdown = (CoincRingdownTable *) 
       LALCalloc( 1, sizeof(CoincRingdownTable) );
+    if ( !coincRingdown )
+    {
+      LALFree( coincRingdown );
+      XLAL_ERROR_NULL(func,XLAL_ENOMEM);
+    }
   }
   
   switch ( (snglRingdown->ifo)[0] ) 
@@ -588,7 +608,8 @@ LALAddSnglRingdownToCoinc(
       else
       {
         /* Invalid Hanford Detector */
-        ABORT( status, LIGOMETADATAUTILSH_EDET, LIGOMETADATAUTILSH_MSGEDET );
+        XLALPrintError( "Invalid ifo in input snglInspiral" );
+        XLAL_ERROR_NULL(func,XLAL_EIO);
       } 
       break;
 
@@ -598,7 +619,8 @@ LALAddSnglRingdownToCoinc(
 
     default:
       /* Invalid Detector Site */
-      ABORT( status, LIGOMETADATAUTILSH_EDET, LIGOMETADATAUTILSH_MSGEDET );
+      XLALPrintError( "Invalid ifo in input snglInspiral" );
+      XLAL_ERROR_NULL(func,XLAL_EIO);
   }
 
   ++(coincRingdown->numIfos);
@@ -607,6 +629,11 @@ LALAddSnglRingdownToCoinc(
   if ( ! snglRingdown->event_id )
   {
     eventId = (EventIDColumn *) LALCalloc( 1, sizeof(EventIDColumn) );
+    if ( !eventId )
+    {
+      LALFree(eventId);
+      XLAL_ERROR_NULL(func,XLAL_ENOMEM);
+    }
     snglRingdown->event_id = eventId;
   }
   else
@@ -615,14 +642,16 @@ LALAddSnglRingdownToCoinc(
          eventId = eventId->next);
      eventId = eventId->next = (EventIDColumn *) 
          LALCalloc( 1, sizeof(EventIDColumn) );
+    if ( !eventId )
+    {
+      LALFree(eventId);
+      XLAL_ERROR_NULL(func,XLAL_ENOMEM);
+    }
   }
   eventId->snglRingdownTable = snglRingdown;
   eventId->coincRingdownTable = coincRingdown;
 
-  *coincPtr = coincRingdown;
-
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
+  return coincRingdown;
 }
 
 /* <lalVerbatim file="CoincRingdownUtilsCP"> */
@@ -1000,6 +1029,69 @@ INT4 XLALCountCoincRingdown( CoincRingdownTable *head )
 
   return length;
 }
+
+/* <lalVerbatim file="CoincRingdownUtilsCP"> */
+SnglRingdownTable *
+XLALCompleteCoincRingdown (
+    CoincRingdownTable         *eventHead,
+    int                         ifoList[LAL_NUM_IFO]
+    )
+/* </lalVerbatim> */
+{
+  static const char     *func = "XLALCompleteCoincRingdown";
+  CoincRingdownTable    *thisCoinc = NULL;
+  SnglRingdownTable     *snglHead  = NULL;
+  SnglRingdownTable     *thisSngl   = NULL;
+  InterferometerNumber   ifoNumber  = LAL_UNKNOWN_IFO;
+  InterferometerNumber   ifoNum  = LAL_UNKNOWN_IFO;
+
+  for ( thisCoinc = eventHead; thisCoinc; thisCoinc = thisCoinc->next )
+  {
+    for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+    {
+      if ( ifoList[ifoNumber] && !thisCoinc->snglRingdown[ifoNumber] )
+      {
+        /* we need to add a trigger for this ifo with zero snr, 
+         * but correct end time */
+        if ( !snglHead )
+        {
+          snglHead = thisSngl = (SnglRingdownTable *)
+              LALCalloc( 1, sizeof(SnglRingdownTable) );
+        }
+        else
+        {
+          thisSngl = thisSngl->next = (SnglRingdownTable *)
+              LALCalloc( 1, sizeof(SnglRingdownTable) );
+        }
+        /* check that the sngl was allocated successfully */
+        if ( !thisSngl )
+        {
+          while ( snglHead )
+          {
+            thisSngl = snglHead;
+            snglHead = snglHead->next;
+            LALFree(thisSngl);
+          }
+          XLAL_ERROR_NULL(func,XLAL_ENOMEM);
+        }
+
+        /* populate the ifo field */
+        XLALReturnIFO(thisSngl->ifo,ifoNumber);
+        XLALPrintInfo( "Appending a zero snr trigger for %s\n", thisSngl->ifo);
+
+        /* obtain the end time */
+        ifoNum = 0;
+        while (!thisCoinc->snglRingdown[ifoNum]) ifoNum++;
+        thisSngl->start_time = thisCoinc->snglRingdown[ifoNum]->start_time;
+
+        /* add sngl to coinc */
+        thisCoinc = XLALAddSnglRingdownToCoinc( thisCoinc, thisSngl );
+      }
+    }
+  }
+  return( snglHead );
+}
+
 
 
 /* <lalVerbatim file="CoincRingdownUtilsCP"> */
@@ -1521,7 +1613,7 @@ XLALCoincRingdownStat(
 }
 
 
-/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+/* <lalVerbatim file="CoincRingdownUtilsCP"> */
 int
 XLALClusterCoincRingdownTable (
     CoincRingdownTable        **coincList,
