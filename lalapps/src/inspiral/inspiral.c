@@ -2170,38 +2170,23 @@ int main( int argc, char *argv[] )
               if ( coherentInputData )
               {
                 cDataForFrame = 1;
-                LALSnprintf( cdataStr, LALNameLength*sizeof(CHAR),
-                    "CData_%d", nCDataFr++ );
-		LALSnprintf( segNormStr, LALNameLength*sizeof(CHAR),
-		    "SegNorm_%d", nCDataFr - 1 );
+		LALSnprintf( cdataStr, LALNameLength*sizeof(CHAR),
+			     "CData_%Ld", tmpltCurrent->tmpltPtr->event_id->id );
                 strcpy( coherentInputData->name, chan.name );
                 if ( ! coherentFrames )
                 {
                   thisCoherentFrame = coherentFrames = (FrameHNode *) 
                     LALCalloc( 1, sizeof(FrameHNode) );
-		  thisSegNormFrame = segNormFrames = (FrameHNode *) 
-                      LALCalloc( 1, sizeof(FrameHNode) );
                 }
                 else
                 {
                   thisCoherentFrame = thisCoherentFrame->next = (FrameHNode *) 
                     LALCalloc( 1, sizeof(FrameHNode) );
-		  thisSegNormFrame = thisSegNormFrame->next = (FrameHNode *) 
-                      LALCalloc( 1, sizeof(FrameHNode) );
                 }
                 thisCoherentFrame->frHeader = fr_add_proc_COMPLEX8TimeSeries( 
                     outFrame, coherentInputData, "none", cdataStr );
-		memset( &tempSegNorm, 0, sizeof(REAL4FrequencySeries) );
-		LAL_CALL( LALSCreateVector( &status, &(tempSegNorm.data), 
-                    fcSegVec->data[i].segNorm->length ), &status );
-		memcpy( tempSegNorm.data->data, fcSegVec->data[i].segNorm->data,
-                    fcSegVec->data[i].segNorm->length * sizeof(REAL4) );
-		thisSegNormFrame->frHeader = fr_add_proc_REAL4FrequencySeries( 
-		    outFrame, &tempSegNorm, "none", segNormStr );
                 LAL_CALL( LALCDestroyVector( &status, 
                       &(coherentInputData->data) ), &status );
-		LAL_CALL( LALSDestroyVector( &status,
-		      &(tempSegNorm.data) ), &status );
                 LALFree( coherentInputData );
                 coherentInputData = NULL;
               }
@@ -2519,15 +2504,10 @@ int main( int argc, char *argv[] )
     while( coherentFrames )
     {
       thisCoherentFrame = coherentFrames;
-      thisSegNormFrame = segNormFrames;
       FrameWrite( coherentFrames->frHeader, frOutFile );
-      FrameWrite( segNormFrames->frHeader, frOutFile );
       coherentFrames = coherentFrames->next;
-      segNormFrames = segNormFrames->next;
       LALFree( thisCoherentFrame );
-      LALFree( thisSegNormFrame );
       thisCoherentFrame = NULL;
-      thisSegNormFrame = NULL;
     }
     FrFileOEnd( frOutFile );
     if ( vrbflg ) fprintf( stdout, "done\n" );
