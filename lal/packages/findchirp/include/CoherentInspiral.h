@@ -209,7 +209,7 @@ tagCoherentInspiralFilterParams
   REAL4                         fLow;
   REAL4                         deltaT;
   REAL4                         cohSNRThresh;
-  REAL4                         segNorm[4];
+  REAL8                         sigmasq[4];
   REAL4                         templateNorm;
   INT4                          segmentLength; /* time points */
   UINT4                         cohSNROut;
@@ -378,7 +378,7 @@ void
 LALCoherentInspiralEstimatePsiEpsilonCoaPhase (
     LALStatus                             *status,
     INT4                                   caseID[6],
-    REAL4                                  segNorm[4],
+    REAL8                                  sigmasq[4],
     REAL4                                  theta,
     REAL4                                  phi,
     COMPLEX8                               cData[4],
@@ -390,7 +390,7 @@ LALCoherentInspiralEstimatePsiEpsilonCoaPhase (
 void
 LALCoherentInspiralEstimateDistance (
     LALStatus                             *status,
-    REAL4                                  segNorm[4],
+    REAL8                                  sigmasq[4],
     REAL4                                  templateNorm,
     REAL4                                  deltaT,
     INT4                                   segmentLength,  /* time pts */
