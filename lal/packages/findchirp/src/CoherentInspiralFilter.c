@@ -617,7 +617,7 @@ void
 LALCoherentInspiralEstimatePsiEpsilonCoaPhase (
     LALStatus                             *status,
     INT4                                   caseID[6],
-    REAL4                                  segNorm[4],
+    REAL8                                  sigmasq[4],
     REAL4                                  theta,
     REAL4                                  phi,
     COMPLEX8                               cData[4],
@@ -684,7 +684,7 @@ LALCoherentInspiralEstimatePsiEpsilonCoaPhase (
   ATTATCHSTATUSPTR( status );
 
   /* Must have 3 sites to estimate psi and epsilon */
-  ASSERT( segNorm[0] && segNorm[1] && segNorm[2], status,
+  ASSERT( sigmasq[0] && sigmasq[1] && sigmasq[2], status,
 	  COHERENTINSPIRALH_ENUMZ, COHERENTINSPIRALH_MSGENUMZ );
   ASSERT( cData[0].re && cData[1].re && cData[2].re, status,
 	  COHERENTINSPIRALH_ENUMZ, COHERENTINSPIRALH_MSGENUMZ );
@@ -1068,13 +1068,13 @@ LALCoherentInspiralEstimatePsiEpsilonCoaPhase (
     {
       if( caseID[i] )
 	{
-	  cPlus.re += segNorm[k] * ( cData[k].re * dVectorPlusRe[i] 
+	  cPlus.re += sigmasq[k] * ( cData[k].re * dVectorPlusRe[i] 
                 - cData[k].im * dVectorPlusIm[i] );
-	  cPlus.im += segNorm[k] * ( cData[k].re * dVectorPlusIm[i] 
+	  cPlus.im += sigmasq[k] * ( cData[k].re * dVectorPlusIm[i] 
 		+ cData[k].im * dVectorPlusRe[i] );
-	  cMinus.re += segNorm[k] * ( cData[k].re * dVectorMinusRe[i] 
+	  cMinus.re += sigmasq[k] * ( cData[k].re * dVectorMinusRe[i] 
                 - cData[k].im * dVectorMinusIm[i] );
-	  cMinus.im += segNorm[k] * ( cData[k].re * dVectorMinusIm[i] 
+	  cMinus.im += sigmasq[k] * ( cData[k].re * dVectorMinusIm[i] 
 		+ cData[k].im * dVectorMinusRe[i] );
 	  k++;
 
@@ -1104,8 +1104,8 @@ LALCoherentInspiralEstimatePsiEpsilonCoaPhase (
     {
       if( caseID[i] )
 	{
-	  eVectorRe[i] = segNorm[k] * (gelFandPEZPlusRe*dVectorPlusRe[i] - gelFandPEZPlusIm*dVectorPlusIm[i] + gelFandPEZMinusRe*dVectorPlusRe[i] + gelFandPEZMinusIm*dVectorPlusIm[i]);
-	  eVectorIm[i] = segNorm[k] * (gelFandPEZPlusRe*dVectorPlusIm[i] + gelFandPEZPlusIm*dVectorPlusRe[i] + gelFandPEZMinusIm*dVectorPlusRe[i] - gelFandPEZMinusRe*dVectorPlusIm[i]);
+	  eVectorRe[i] = sigmasq[k] * (gelFandPEZPlusRe*dVectorPlusRe[i] - gelFandPEZPlusIm*dVectorPlusIm[i] + gelFandPEZMinusRe*dVectorPlusRe[i] + gelFandPEZMinusIm*dVectorPlusIm[i]);
+	  eVectorIm[i] = sigmasq[k] * (gelFandPEZPlusRe*dVectorPlusIm[i] + gelFandPEZPlusIm*dVectorPlusRe[i] + gelFandPEZMinusIm*dVectorPlusRe[i] - gelFandPEZMinusRe*dVectorPlusIm[i]);
 	  k++;
 	}
     }
@@ -1148,7 +1148,7 @@ LALCoherentInspiralEstimatePsiEpsilonCoaPhase (
 void
 LALCoherentInspiralEstimateDistance (
     LALStatus                             *status,
-    REAL4                                  segNorm[4],
+    REAL8                                  sigmasq[4],
     REAL4                                  templateNorm,
     REAL4                                  deltaT,
     INT4                                   segmentLength,  /* time pts */
@@ -1157,7 +1157,6 @@ LALCoherentInspiralEstimateDistance (
     )
 {
   INT4                 i = 0;
-  REAL4                sigmaSq[4] = {0.0, 0.0, 0.0, 0.0};
   REAL4                sigmaCoherent = 0.0;
 
   INITSTATUS( status, "LALCoherentInspiralEstimateDistance", 
@@ -1166,7 +1165,7 @@ LALCoherentInspiralEstimateDistance (
 
   /* Check the validity of the input params */
   
-  /*ASSERT( segNorm[0] && segNorm[1], status, COHERENTINSPIRALH_ENUMZ, COHERENTINSPIRALH_MSGENUMZ );
+  /*ASSERT( sigmasq[0] && sigmasq[1], status, COHERENTINSPIRALH_ENUMZ, COHERENTINSPIRALH_MSGENUMZ );
   ASSERT( coherentSNR > 0, status, 
       COHERENTINSPIRALH_ESEGZ, COHERENTINSPIRALH_MSGESEGZ );
   ASSERT( templateNorm > 0, status, 
@@ -1176,16 +1175,13 @@ LALCoherentInspiralEstimateDistance (
   ASSERT( segmentLength > 0, status, 
       COHERENTINSPIRALH_ESEGZ, COHERENTINSPIRALH_MSGESEGZ );*/
 
-  /* Now estimate the distance coherently */
   for( i = 0; i < 4; i++ )
     {
-      sigmaSq[i] = segNorm[i] * templateNorm;
-    }
-  for( i = 0; i < 4; i++ )
-    {
-      sigmaCoherent += sigmaSq[i];
+      sigmaCoherent += sigmasq[i];
     }
 
+  /* CHECK: The following formula is not general enough for non-aligned ifos;
+     will generalize it in the next update */
   *distance = (2 / coherentSNR) * sqrt( (sigmaCoherent * deltaT) / segmentLength );
 
   /* normal exit */
@@ -1531,14 +1527,14 @@ LALCoherentInspiralFilterSegment (
                 thisEvent->h2quad.re=0;	    
                 thisEvent->h2quad.im=0;
                 }
-                /*CHECK: finished chages*/
+                /*CHECK: finished changes*/
 			  thisEvent->snr = cohSNR;
 			  strcpy(thisEvent->ifos,caseStr);
 			  thisEvent->mass1 = input->tmplt->mass1;
 			  thisEvent->mass2 = input->tmplt->mass2;
 			  thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
 			  thisEvent->eta = input->tmplt->eta;		       
-			  LALCoherentInspiralEstimateDistance( status->statusPtr, params->segNorm, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+			  LALCoherentInspiralEstimateDistance( status->statusPtr, params->sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
 			  thisEvent->eff_distance = distanceEstimate;
 			  
 			  
@@ -1631,7 +1627,7 @@ LALCoherentInspiralFilterSegment (
 		       thisEvent->mass2 = input->tmplt->mass2;
 		       thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
 		       thisEvent->eta = input->tmplt->eta;
-		       LALCoherentInspiralEstimateDistance( status->statusPtr, params->segNorm, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		       LALCoherentInspiralEstimateDistance( status->statusPtr, params->sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
 		       thisEvent->eff_distance = distanceEstimate;
 		       
 		       tempTime = 0.0;
@@ -1735,7 +1731,7 @@ LALCoherentInspiralFilterSegment (
 		       thisEvent->mass2 = input->tmplt->mass2;
 		       thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
 		       thisEvent->eta = input->tmplt->eta;
-		       LALCoherentInspiralEstimateDistance( status->statusPtr, params->segNorm, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		       LALCoherentInspiralEstimateDistance( status->statusPtr, params->sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
 		       thisEvent->eff_distance = distanceEstimate;
 		       
 		       /* Need to initialize the event start index to new value */
@@ -1892,7 +1888,7 @@ LALCoherentInspiralFilterSegment (
 		thisEvent->mass2 = input->tmplt->mass2;
 		thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
 		thisEvent->eta = input->tmplt->eta;
-		LALCoherentInspiralEstimateDistance( status->statusPtr, params->segNorm, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		LALCoherentInspiralEstimateDistance( status->statusPtr, params->sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
 		thisEvent->eff_distance = distanceEstimate;
 		
 	
@@ -1997,7 +1993,7 @@ LALCoherentInspiralFilterSegment (
 		thisEvent->mass2 = input->tmplt->mass2;
 		thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
 		thisEvent->eta = input->tmplt->eta;
-		LALCoherentInspiralEstimateDistance( status->statusPtr, params->segNorm, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		LALCoherentInspiralEstimateDistance( status->statusPtr, params->sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
 		thisEvent->eff_distance = distanceEstimate;
 		thisEvent->ligo_angle = acos( LAL_C_SI * deltaT * abs(k-w) / distance[1] );
 		if( (k-w) > 0 )
@@ -2111,7 +2107,7 @@ LALCoherentInspiralFilterSegment (
 		thisEvent->mass2 = input->tmplt->mass2;
 		thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
 		thisEvent->eta = input->tmplt->eta;
-		LALCoherentInspiralEstimateDistance( status->statusPtr, params->segNorm, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		LALCoherentInspiralEstimateDistance( status->statusPtr, params->sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
 		thisEvent->eff_distance = distanceEstimate;
 		thisEvent->ligo_angle = acos( LAL_C_SI * deltaT * abs(k-w) / distance[1] );
 		if( (k-w) > 0 )
@@ -2282,7 +2278,7 @@ LALCoherentInspiralFilterSegment (
 		    thisEvent->mass2 = input->tmplt->mass2;
 		    thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
 		    thisEvent->eta = input->tmplt->eta;
-		    LALCoherentInspiralEstimateDistance( status->statusPtr, params->segNorm, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		    LALCoherentInspiralEstimateDistance( status->statusPtr, params->sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
 		    thisEvent->eff_distance = distanceEstimate;
 
 		    thisEvent->ligo_angle = acos( LAL_C_SI * deltaT * abs(k-w) / distance[1] );
@@ -2383,7 +2379,7 @@ LALCoherentInspiralFilterSegment (
 		    thisEvent->mass2 = input->tmplt->mass2;
 		    thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
 		    thisEvent->eta = input->tmplt->eta;
-		    LALCoherentInspiralEstimateDistance( status->statusPtr, params->segNorm, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		    LALCoherentInspiralEstimateDistance( status->statusPtr, params->sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
 		    thisEvent->eff_distance = distanceEstimate;
 		    thisEvent->ligo_angle = acos( LAL_C_SI * deltaT * abs(k-w) / distance[1] );
 		if( (k-w) > 0 )
@@ -2496,7 +2492,7 @@ LALCoherentInspiralFilterSegment (
 		    thisEvent->mass2 = input->tmplt->mass2;
 		    thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
 		    thisEvent->eta = input->tmplt->eta;
-		    LALCoherentInspiralEstimateDistance( status->statusPtr, params->segNorm, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		    LALCoherentInspiralEstimateDistance( status->statusPtr, params->sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
 		    thisEvent->eff_distance = distanceEstimate;
 		    thisEvent->ligo_angle = acos( LAL_C_SI * deltaT * abs(k-w) / distance[1] );
 		if( (k-w) > 0 )
@@ -2726,11 +2722,11 @@ LALCoherentInspiralFilterSegment (
 		       cDataTemp[1].im = cData[1].data->data[qTemp].im;
 		       cDataTemp[2].re = cData[2].data->data[wTemp].re;
 		       cDataTemp[2].im = cData[2].data->data[wTemp].im;
-		       LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, params->segNorm, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
+		       LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, params->sigmasq, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
 		       thisEvent->inclination = inclination;
 		       thisEvent->polarization = polarization;
 		       thisEvent->coa_phase = coaPhase;
-		       LALCoherentInspiralEstimateDistance( status->statusPtr, params->segNorm, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		       LALCoherentInspiralEstimateDistance( status->statusPtr, params->sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
 		       thisEvent->eff_distance = distanceEstimate;
    	             
 		       thisEvent->ligo_axis_ra = phi;
@@ -2833,11 +2829,11 @@ LALCoherentInspiralFilterSegment (
 		       cDataTemp[1].im = cData[1].data->data[qTemp].im;
 		       cDataTemp[2].re = cData[2].data->data[wTemp].re;
 		       cDataTemp[2].im = cData[2].data->data[wTemp].im;
-		       LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, params->segNorm, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
+		       LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, params->sigmasq, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
 		       thisEvent->inclination = inclination;
 		       thisEvent->polarization = polarization;
 		       thisEvent->coa_phase = coaPhase;
-		       LALCoherentInspiralEstimateDistance( status->statusPtr, params->segNorm, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		       LALCoherentInspiralEstimateDistance( status->statusPtr, params->sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
 		       thisEvent->eff_distance = distanceEstimate;
 		       thisEvent->ligo_axis_ra = phi;
 		       thisEvent->ligo_axis_dec = theta;
@@ -2952,11 +2948,11 @@ LALCoherentInspiralFilterSegment (
 		       cDataTemp[1].im = cData[1].data->data[qTemp].im;
 		       cDataTemp[2].re = cData[2].data->data[wTemp].re;
 		       cDataTemp[2].im = cData[2].data->data[wTemp].im;
-		       LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, params->segNorm, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
+		       LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, params->sigmasq, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
 		       thisEvent->inclination = inclination;
 		       thisEvent->polarization = polarization;
 		       thisEvent->coa_phase = coaPhase;
-		       LALCoherentInspiralEstimateDistance( status->statusPtr, params->segNorm, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		       LALCoherentInspiralEstimateDistance( status->statusPtr, params->sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
 		       thisEvent->eff_distance = distanceEstimate;
 		       thisEvent->ligo_axis_ra = phi;
 		       thisEvent->ligo_axis_dec = theta;
@@ -3201,11 +3197,11 @@ LALCoherentInspiralFilterSegment (
 		        cDataTemp[2].im = cData[2].data->data[qTemp].im;
 		        cDataTemp[3].re = cData[3].data->data[wTemp].re;
 		        cDataTemp[3].im = cData[3].data->data[wTemp].im;
-		        LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, params->segNorm, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
+		        LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, params->sigmasq, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
 		        thisEvent->inclination = inclination;
 		        thisEvent->polarization = polarization;
 			thisEvent->coa_phase = coaPhase;
-		        LALCoherentInspiralEstimateDistance( status->statusPtr, params->segNorm, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		        LALCoherentInspiralEstimateDistance( status->statusPtr, params->sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
 		        thisEvent->eff_distance = distanceEstimate;
 
    	                thisEvent->ligo_axis_ra = phi;
@@ -3310,11 +3306,11 @@ LALCoherentInspiralFilterSegment (
 		        cDataTemp[2].im = cData[2].data->data[qTemp].im;
 		        cDataTemp[3].re = cData[3].data->data[wTemp].re;
 		        cDataTemp[3].im = cData[3].data->data[wTemp].im;
-		        LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, params->segNorm, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
+		        LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, params->sigmasq, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
 		        thisEvent->inclination = inclination;
 		        thisEvent->polarization = polarization;
 			thisEvent->coa_phase = coaPhase;
-		        LALCoherentInspiralEstimateDistance( status->statusPtr, params->segNorm, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		        LALCoherentInspiralEstimateDistance( status->statusPtr, params->sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
 		        thisEvent->eff_distance = distanceEstimate;
 		        thisEvent->ligo_axis_ra = phi;
 		        thisEvent->ligo_axis_dec = theta;
@@ -3431,11 +3427,11 @@ LALCoherentInspiralFilterSegment (
 		        cDataTemp[2].im = cData[2].data->data[qTemp].im;
 		        cDataTemp[3].re = cData[3].data->data[wTemp].re;
 		        cDataTemp[3].im = cData[3].data->data[wTemp].im;
-		        LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, params->segNorm, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
+		        LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, params->sigmasq, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
 		        thisEvent->inclination = inclination;
 		        thisEvent->polarization = polarization;
 			thisEvent->coa_phase = coaPhase;
-		        LALCoherentInspiralEstimateDistance( status->statusPtr, params->segNorm, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		        LALCoherentInspiralEstimateDistance( status->statusPtr, params->sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
 		        thisEvent->eff_distance = distanceEstimate;
 		        thisEvent->ligo_axis_ra = phi;
 		        thisEvent->ligo_axis_dec = theta;
@@ -3698,11 +3694,11 @@ LALCoherentInspiralFilterSegment (
 		        cDataTemp[2].im = cData[2].data->data[wTemp].im;
 		        cDataTemp[3].re = cData[3].data->data[jTemp].re;
 		        cDataTemp[3].im = cData[3].data->data[jTemp].im;
-		        LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, params->segNorm, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
+		        LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, params->sigmasq, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
 		        thisEvent->inclination = inclination;
 		        thisEvent->polarization = polarization;
 			thisEvent->coa_phase = coaPhase;
-		        LALCoherentInspiralEstimateDistance( status->statusPtr, params->segNorm, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		        LALCoherentInspiralEstimateDistance( status->statusPtr, params->sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
 		        thisEvent->eff_distance = distanceEstimate;
 
    	                thisEvent->ligo_axis_ra = phi;
@@ -3807,11 +3803,11 @@ LALCoherentInspiralFilterSegment (
 		        cDataTemp[2].im = cData[2].data->data[wTemp].im;
 		        cDataTemp[3].re = cData[3].data->data[jTemp].re;
 		        cDataTemp[3].im = cData[3].data->data[jTemp].im;
-		        LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, params->segNorm, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
+		        LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, params->sigmasq, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
 		        thisEvent->inclination = inclination;
 		        thisEvent->polarization = polarization;
 			thisEvent->coa_phase = coaPhase;
-		        LALCoherentInspiralEstimateDistance( status->statusPtr, params->segNorm, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		        LALCoherentInspiralEstimateDistance( status->statusPtr, params->sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
 		        thisEvent->eff_distance = distanceEstimate;
 		        thisEvent->ligo_axis_ra = phi;
 		        thisEvent->ligo_axis_dec = theta;
@@ -3928,11 +3924,11 @@ LALCoherentInspiralFilterSegment (
 		        cDataTemp[2].im = cData[2].data->data[wTemp].im;
 		        cDataTemp[3].re = cData[3].data->data[jTemp].re;
 		        cDataTemp[3].im = cData[3].data->data[jTemp].im;
-		        LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, params->segNorm, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
+		        LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, params->sigmasq, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
 		        thisEvent->inclination = inclination;
 		        thisEvent->polarization = polarization;
 			thisEvent->coa_phase = coaPhase;
-		        LALCoherentInspiralEstimateDistance( status->statusPtr, params->segNorm, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		        LALCoherentInspiralEstimateDistance( status->statusPtr, params->sigmasq, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
 		        thisEvent->eff_distance = distanceEstimate;
 		        thisEvent->ligo_axis_ra = phi;
 		        thisEvent->ligo_axis_dec = theta;
