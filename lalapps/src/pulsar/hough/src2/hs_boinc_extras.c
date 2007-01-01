@@ -166,7 +166,6 @@ void worker (void) {
   int i;                       /* loop counter */
   int l;                       /* length of matched string */
   int res;                     /* return value of function call */
-  char tempstr[MAX_PATH_LEN];  /* temporary holds a filename / -path */
   char *startc,*endc,*appc;
 
   /* try to load the graphics library and set the hooks if successful */
@@ -271,7 +270,7 @@ void worker (void) {
       while((endc = strchr(startc,';'))) {
 	*endc = '\0';
 	if (boinc_resolve_filename(startc,appc,255)) {
-	  LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve input file '%s'\n", tempstr);
+	  LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve input file '%s'\n", startc);
 	}
 	/* append a ';' */
 	appc = appc + strlen(appc) + 1;
@@ -282,7 +281,7 @@ void worker (void) {
       }
       /* handle last or only filename */
       if (boinc_resolve_filename(startc,appc,255)) {
-	LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve input file '%s'\n", tempstr);
+	LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve input file '%s'\n", startc);
       }
     }
 
