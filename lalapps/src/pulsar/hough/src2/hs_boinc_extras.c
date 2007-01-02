@@ -493,8 +493,8 @@ int main(int argc, char**argv) {
 #endif
 
 
-#define DEBUG_LEVEL_FNAME "CFS_DEBUG_LEVEL"
-#define DEBUG_DDD_FNAME   "CFS_DEBUG_DDD"
+#define DEBUG_LEVEL_FNAME "EAH_DEBUG_LEVEL"
+#define DEBUG_DDD_FNAME   "EAH_DEBUG_DDD"
 
   LogPrintfVerbatim (LOG_NORMAL, "\n");
   LogPrintf (LOG_NORMAL, "Start of BOINC application '%s'.\n", argv[0]);
