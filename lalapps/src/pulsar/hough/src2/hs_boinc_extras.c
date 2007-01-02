@@ -213,7 +213,7 @@ void worker (void) {
       rargv[i] = (char*)malloc(MAX_PATH_LEN);
       strncpy(rargv[i],argv[i],l);
       if (boinc_resolve_filename(argv[i]+l,rargv[i]+l,MAX_PATH_LEN-l)) {
-        LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve skygrid file '%s'\n", argv[i]+1);
+        LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve skygrid file '%s'\n", argv[i]+l);
       }
       unzip_if_necessary(rargv[i]+l);
     }
@@ -223,7 +223,7 @@ void worker (void) {
       rargv[i] = (char*)malloc(MAX_PATH_LEN);
       strncpy(rargv[i],argv[i],l);
       if (boinc_resolve_filename(argv[i]+l,rargv[i]+l,MAX_PATH_LEN-l)) {
-        LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve skygrid file '%s'\n", argv[i]+1);
+        LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve skygrid file '%s'\n", argv[i]+l);
       }
       unzip_if_necessary(rargv[i]+l);
     }
@@ -231,7 +231,7 @@ void worker (void) {
       rargv[i] = (char*)malloc(MAX_PATH_LEN);
       strncpy(rargv[i],argv[i],l);
       if (boinc_resolve_filename(argv[i]+l,rargv[i]+l,MAX_PATH_LEN-l)) {
-        LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve skygrid file '%s'\n", argv[i]+1);
+        LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve skygrid file '%s'\n", argv[i]+l);
       }
       unzip_if_necessary(rargv[i]+l);
     }
@@ -239,7 +239,7 @@ void worker (void) {
     /* output file */
     else if (MATCH_START("--fnameout=",argv[i],l)) {
       if (boinc_resolve_filename(argv[i]+l,resultfile,sizeof(resultfile))) {
-        LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve result file '%s'\n", argv[i]+1);
+        LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve result file '%s'\n", argv[i]+l);
       }
       register_output_file(argv[i]+l);
       rargv[i] = argv[i]; /* this is passed unchanged, just recorded */
@@ -248,7 +248,7 @@ void worker (void) {
       rargv[i] = argv[i];
       i++;
       if (boinc_resolve_filename(argv[i],resultfile,sizeof(resultfile))) {
-        LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve result file '%s'\n", argv[i]+1);
+        LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve result file '%s'\n", argv[i]+l);
       }
       register_output_file(argv[i]);
       rargv[i] = argv[i]; /* this is passed unchanged, just recorded */
