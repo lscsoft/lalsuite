@@ -84,7 +84,7 @@ void show_progress(double rac, double dec, long tpl_count, long tpl_total) {
     set_search_pos_hook(rac * 180.0/LAL_PI, dec * 180.0/LAL_PI);
   boinc_fraction_done(fraction);
   if (estimated_flops >= 0)
-    boinc_ops_cumulative(estimated_flops * fraction, 0); /* ignore IOPS */
+    boinc_ops_cumulative(estimated_flops * fraction, 0 /*ignore IOPS*/ );
 }
 
 
@@ -251,7 +251,7 @@ void worker (void) {
       rargv[i] = argv[i];
       i++;
       if (boinc_resolve_filename(argv[i],resultfile,sizeof(resultfile))) {
-        LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve result file '%s'\n", argv[i]+l);
+        LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve result file '%s'\n", argv[i]);
       }
       register_output_file(argv[i]);
       rargv[i] = argv[i]; /* this is passed unchanged, just recorded */
