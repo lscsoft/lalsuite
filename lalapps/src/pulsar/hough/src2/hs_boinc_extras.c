@@ -1,11 +1,9 @@
 /* Extras for building an Einstein@Home BOINC App from HierarchicalSearch
    Bernd Machenschalk for Einstein@Home
-   $Id$
 */
 
 /* TODO:
    - unzipping in-place is a bad idea for multi-CPU systems
-   - ID string for boinc extras
    - start debugger by file
    - error handling
    - signal handling
@@ -24,6 +22,8 @@
 #include "hs_boinc_extras.h"
 #include "HierarchicalSearch.h"
 #include <lal/LogPrintf.h>
+
+RCSID("$Id$");
 
 /* probably already included by previous headers, but anyway */
 #include <stdlib.h>
@@ -76,15 +76,15 @@ static char **global_argv;
 
 
 /* show progress */
-void show_progress(double rac, double dec, long tpl_count, long tpl_total) {
-  double fraction = (double)tpl_count / (double)tpl_total;
+void show_progress(double rac, double dec, long count, long total) {
+  double fraction = (double)count / (double)total;
   if (fraction_done_hook)
     *fraction_done_hook = fraction;
   if (set_search_pos_hook)
     set_search_pos_hook(rac * 180.0/LAL_PI, dec * 180.0/LAL_PI);
   boinc_fraction_done(fraction);
   if (estimated_flops >= 0)
-    boinc_ops_cumulative(estimated_flops * fraction, 0 /*ignore IOPS*/ );
+    boinc_ops_cumulative( estimated_flops * fraction, 0 /*ignore IOPS*/ );
 }
 
 
@@ -257,8 +257,9 @@ void worker (void) {
       rargv[i] = argv[i]; /* this is passed unchanged, just recorded */
     }
 
+    /* flops estimation */
     else if (MATCH_START("--WUfpops=",argv[i],l)) {
-      estimated_flops=atof(argv[i]+l);
+      estimated_flops = atof(argv[i]+l);
       rargc--; /* this argument is not passed to the main worker function */
     }
 
@@ -319,7 +320,7 @@ void worker (void) {
 
   /* finally set (fl)ops count if given */
   if (estimated_flops >= 0)
-    boinc_ops_cumulative(estimated_flops, 0); /* ignore IOPS */
+    boinc_ops_cumulative( estimated_flops, 0 /*ignore IOPS*/ );
 
   boinc_finish( HIERARCHICALSEARCH_ENORM );
 }
