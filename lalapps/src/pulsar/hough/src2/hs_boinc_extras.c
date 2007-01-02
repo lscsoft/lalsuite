@@ -3,7 +3,6 @@
 */
 
 /* TODO:
-   - unzipping in-place is a bad idea for multi-CPU systems
    - error handling
    - checkpointing
 */
@@ -266,6 +265,34 @@ static int unzip_if_necessary(char*filename) {
 }
 
 
+static int resolve_and_unzip(const char*filename, char*resfilename, const size_t size) {
+  int zipped;
+  if (boinc_resolve_filename(filename,resfilename,size)) {
+    LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve file '%s'\n", filename);
+
+    zipped = is_zipped (filename);
+    if (zipped<0) {
+      return(-1);
+    } else if (zipped) { 
+      LogPrintf (LOG_NORMAL, "WARNING: Unzipping %s in-place\n", filename);
+      strncpy(resfilename,filename,size);
+      strncat(resfilename,".zip",size);
+      boinc_delete_file(resfilename);
+      boinc_rename(filename,resfilename);
+      boinc_zip(UNZIP_IT,resfilename,filename);
+      boinc_delete_file(resfilename);
+      strncpy(resfilename,filename,size);
+    }
+    return(0);
+  }
+  zipped = is_zipped (filename);
+  if (zipped<0)
+    return(-1);
+  else if (zipped)
+    return(boinc_zip(UNZIP_IT,filename,resfilename));
+  return(0);
+}
+
 
 
 /*
@@ -330,28 +357,19 @@ static void worker (void) {
     else if (MATCH_START("--skyGridFile=",argv[i],l)) {
       rargv[i] = (char*)malloc(MAX_PATH_LEN);
       strncpy(rargv[i],argv[i],l);
-      if (boinc_resolve_filename(argv[i]+l,rargv[i]+l,MAX_PATH_LEN-l)) {
-        LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve skygrid file '%s'\n", argv[i]+l);
-      }
-      unzip_if_necessary(rargv[i]+l);
+      resolve_and_unzip(argv[i]+l,rargv[i]+l,MAX_PATH_LEN-l);
     }
 
     /* ephermeris files */
     else if (MATCH_START("--ephemE=",argv[i],l)) {
       rargv[i] = (char*)malloc(MAX_PATH_LEN);
       strncpy(rargv[i],argv[i],l);
-      if (boinc_resolve_filename(argv[i]+l,rargv[i]+l,MAX_PATH_LEN-l)) {
-        LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve skygrid file '%s'\n", argv[i]+l);
-      }
-      unzip_if_necessary(rargv[i]+l);
+      resolve_and_unzip(argv[i]+l,rargv[i]+l,MAX_PATH_LEN-l);
     }
     else if (MATCH_START("--ephemS=",argv[i],l)) {
       rargv[i] = (char*)malloc(MAX_PATH_LEN);
       strncpy(rargv[i],argv[i],l);
-      if (boinc_resolve_filename(argv[i]+l,rargv[i]+l,MAX_PATH_LEN-l)) {
-        LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve skygrid file '%s'\n", argv[i]+l);
-      }
-      unzip_if_necessary(rargv[i]+l);
+      resolve_and_unzip(argv[i]+l,rargv[i]+l,MAX_PATH_LEN-l);
     }
 
     /* output file */
@@ -453,7 +471,7 @@ static void worker (void) {
 
 int main(int argc, char**argv) {
   FILE* fp_debug;
-  int skipsighandler;
+  int skipsighandler = 0;
 
   /* pass argc/v to the worker via global vars */
   global_argc = argc;
