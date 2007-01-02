@@ -4,6 +4,9 @@
 */
 
 /* TODO:
+   - unzipping in-place is a bad idea for multi-CPU systems
+   - ID string for boinc extras
+   - start debugger by file
    - error handling
    - signal handling
    - checkpointing
@@ -22,7 +25,7 @@
 #include "HierarchicalSearch.h"
 #include <lal/LogPrintf.h>
 
-/* probably already include by previous headers, but anyway */
+/* probably already included by previous headers, but anyway */
 #include <stdlib.h>
 #include <string.h>
 #if (BOINC_GRAPHICS == 2)
