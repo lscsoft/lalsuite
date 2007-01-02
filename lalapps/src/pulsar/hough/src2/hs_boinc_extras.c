@@ -23,7 +23,7 @@
 #include "HierarchicalSearch.h"
 #include <lal/LogPrintf.h>
 
-RCSID("$Id$");
+NRCSID("BOINCEXTRASC","$Id$");
 
 /* probably already included by previous headers, but anyway */
 #include <stdlib.h>

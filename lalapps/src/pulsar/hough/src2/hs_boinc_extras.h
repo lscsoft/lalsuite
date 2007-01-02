@@ -3,7 +3,7 @@
 */
 
 #include <lal/LALRCSID.h>
-NRCSID("HSBOINCEXTRASH","$Id$");
+NRCSID(HSBOINCEXTRASHRCSID,"$Id$");
 
 /* BOINC includes */
 #include <sys/types.h>
