@@ -239,11 +239,14 @@ void GetSemiCohToplist(LALStatus *status, toplist_t *list, SemiCohCandidateList 
 #define PIXELFACTOR 2.0
 #define LAL_INT4_MAX 2147483647
 
+/* a global pointer to MAIN()s head of the LALStatus structure,
+   made global so a signal handler can read it */ 
+LALStatus *global_status;
+
 int MAIN( int argc, char *argv[]) {
 
-  /* initialize status */
-  LALStatus status = blank_status;
-  
+  static LALStatus status;
+
   /* temp loop variables: generally k loops over stacks and j over SFTs in a stack*/
   INT4 j;
   UINT4 k;
@@ -391,6 +394,9 @@ int MAIN( int argc, char *argv[]) {
   CHAR *uvar_skyGridFile=NULL;
   CHAR *uvar_skyRegion=NULL;
 
+  /* initialize status */
+  status = blank_status;
+  global_status = &status;
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
