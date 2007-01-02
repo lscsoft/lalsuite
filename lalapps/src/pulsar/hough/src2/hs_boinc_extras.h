@@ -2,13 +2,14 @@
    Author: Bernd Machenschalk
 */
 
-#include <lal/LALRCSID.h>
-NRCSID(HSBOINCEXTRASHRCSID,"$Id$");
-
 /* BOINC includes */
 #include <sys/types.h>
 #include <unistd.h>
 #include "filesys.h"
+
+#include <lal/LALError.h>
+#include <lal/LALRCSID.h>
+NRCSID(HSBOINCEXTRASHRCSID,"$Id$");
 
 /* linking proper functions to the hooks in HierarchicalSearch.c */
 /* not implemented yet at all
@@ -34,10 +35,13 @@ so for now we define only dummies: */
 extern "C"{
 #endif
 
+extern LALStatus *global_status;
+
 /* function prototypes, they are defined in boinc_extras.c */
 extern void set_checkpoint(char*filename,double rac,double dec, long count, long total);
 extern void get_checkpoint(char*filename);
 extern void show_progress(double rac, double dec, long count, long total);
+extern void register_output_file(char*filename);
 
 /* the main() function of HierarchicalSerach.c becomes the main_hierarchical_search()
    the real main() function of the BOINC App is defined in boinc_extras.c
