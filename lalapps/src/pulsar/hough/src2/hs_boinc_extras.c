@@ -403,6 +403,12 @@ static void worker (void) {
       strncpy(rargv[i],argv[i],13);
       appc = rargv[i]+13;
       startc = argv[i]+13;
+      /* skip single quotes if and only if they are surrounding the complete path-string */
+      if ((*startc == '\'') && (*(startc+(strlen(startc)-1)) == '\'')) {
+        LogPrintf (LOG_DEBUG, "DEBUG: removing quotes from path %s\n", argv[i]);
+	*(startc+strlen(startc)-1) = '\0';
+	startc++;
+      }
       /* look for multiple paths separated by ';' */
       while((endc = strchr(startc,';'))) {
 	*endc = '\0';
