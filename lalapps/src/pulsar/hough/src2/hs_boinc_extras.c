@@ -3,7 +3,7 @@
 */
 
 /* TODO:
-   - error handling
+   - error handling in worker()
    - checkpointing
 */
 
@@ -242,31 +242,13 @@ static int is_zipped ( const char *fname ) {
 
 
 /*
-  unzip_if_necessary()
+  resolve_and_unzip()
 
-  unzip a file in-place if it is zipped
+  prepare an input file for the program, i.e. boinc_resolve and/or unzip it
  */
-/* TODO: error handling */
-static int unzip_if_necessary(char*filename) {
-  char zipname[MAX_PATH_LEN];
-  int zipped;
-  zipped = is_zipped (filename);
-  if (zipped<0) {
-    return(-1);
-  } else if (zipped) { 
-    strncpy(zipname,filename,sizeof(zipname));
-    strncat(zipname,".zip",sizeof(zipname));
-    boinc_delete_file(zipname);
-    boinc_rename(filename,zipname);
-    boinc_zip(UNZIP_IT,zipname,filename);
-    boinc_delete_file(zipname);
-  }
-  return(0);
-}
-
-
 static int resolve_and_unzip(const char*filename, char*resfilename, const size_t size) {
   int zipped;
+
   if (boinc_resolve_filename(filename,resfilename,size)) {
     LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve file '%s'\n", filename);
 
@@ -274,22 +256,46 @@ static int resolve_and_unzip(const char*filename, char*resfilename, const size_t
     if (zipped<0) {
       return(-1);
     } else if (zipped) { 
-      LogPrintf (LOG_NORMAL, "WARNING: Unzipping %s in-place\n", filename);
+      /* unzip in-place:
+	 unzip file to "filename.uz", then replace original file with "filename.uz" */
+      LogPrintf (LOG_NORMAL, "WARNING: Unzipping '%s' in-place\n", filename);
       strncpy(resfilename,filename,size);
-      strncat(resfilename,".zip",size);
+      strncat(resfilename,".uz",size);
       boinc_delete_file(resfilename);
-      boinc_rename(filename,resfilename);
-      boinc_zip(UNZIP_IT,resfilename,filename);
-      boinc_delete_file(resfilename);
-      strncpy(resfilename,filename,size);
+      if( boinc_zip(UNZIP_IT,filename,resfilename) ) {
+	LogPrintf (LOG_CRITICAL, "ERROR: Couldn't unzip '%s'\n", filename);
+	return(-1);
+      }
+      if( boinc_delete_file(filename) ) {
+	LogPrintf (LOG_CRITICAL, "ERROR: Couldn't delete '%s'\n", filename);
+	return(-1);
+      }
+      if( boinc_rename(resfilename,filename) ) {
+	LogPrintf (LOG_CRITICAL, "ERROR: Couldn't rename to '%s'\n", filename);
+	return(-1);
+      }
     }
+    /* copy the filename into resfile as if boinc_resove() had succeeded */
+    strncpy(resfilename,filename,size);
     return(0);
   }
-  zipped = is_zipped (filename);
-  if (zipped<0)
+
+  /* we end up here if boinc_resolve was successful */
+  zipped = is_zipped (resfilename);
+  if (zipped <= 0)
+    return(zipped);
+  /* delete the local link so we can unzip to that name */
+  if( boinc_delete_file(filename) ) {
+    LogPrintf (LOG_CRITICAL, "ERROR: Couldn't delete '%s'\n", filename);
     return(-1);
-  else if (zipped)
-    return(boinc_zip(UNZIP_IT,filename,resfilename));
+  }
+  /* unzip */
+  if ( boinc_zip(UNZIP_IT,resfilename,filename) ) {
+    LogPrintf (LOG_CRITICAL, "ERROR: Couldn't unzip '%s'\n", resfilename);
+    return(-1);
+  }
+  /* the new resolved filename is the unzipped file */
+  strncpy(resfilename,filename,size);
   return(0);
 }
 
@@ -372,6 +378,38 @@ static void worker (void) {
       resolve_and_unzip(argv[i]+l,rargv[i]+l,MAX_PATH_LEN-l);
     }
 
+    /* SFT files (no unzipping, but dealing with multiple files separated by ';' */
+    else if (0 == strncmp("--DataFiles",argv[i],11)) {
+      rargv[i] = (char*)malloc(1024);
+      /* copy & skip the "[1|2]=" characters, too */
+      strncpy(rargv[i],argv[i],13);
+      appc = rargv[i]+13;
+      startc = argv[i]+13;
+      /* skip single quotes if and only if they are surrounding the complete path-string */
+      if ((*startc == '\'') && (*(startc+(strlen(startc)-1)) == '\'')) {
+        LogPrintf (LOG_DEBUG, "DEBUG: removing quotes from path %s\n", argv[i]);
+	*(startc+strlen(startc)-1) = '\0';
+	startc++;
+      }
+      /* look for multiple paths separated by ';' */
+      while((endc = strchr(startc,';'))) {
+	*endc = '\0';
+	if (boinc_resolve_filename(startc,appc,255)) {
+	  LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve input file '%s'\n", startc);
+	}
+	/* append a ';' to resolved string */
+	appc = appc + strlen(appc) + 1;
+	*(appc-1) = ';';
+	*appc = '\0';
+	/* skip the ';' in the original string */
+	startc = endc+1;
+      }
+      /* handle last (or only) filename */
+      if (boinc_resolve_filename(startc,appc,255)) {
+	LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve input file '%s'\n", startc);
+      }
+    }
+
     /* output file */
     else if (MATCH_START("--fnameout=",argv[i],l)) {
       if (boinc_resolve_filename(argv[i]+l,resultfile,sizeof(resultfile))) {
@@ -394,38 +432,6 @@ static void worker (void) {
     else if (MATCH_START("--WUfpops=",argv[i],l)) {
       estimated_flops = atof(argv[i]+l);
       rargc--; /* this argument is not passed to the main worker function */
-    }
-
-    /* SFT files (no unzipping, but dealing with multiple files separated by ';' */
-    else if (0 == strncmp("--DataFiles",argv[i],11)) {
-      rargv[i] = (char*)malloc(1024);
-      /* copy & skip the "[1|2]=" characters, too */
-      strncpy(rargv[i],argv[i],13);
-      appc = rargv[i]+13;
-      startc = argv[i]+13;
-      /* skip single quotes if and only if they are surrounding the complete path-string */
-      if ((*startc == '\'') && (*(startc+(strlen(startc)-1)) == '\'')) {
-        LogPrintf (LOG_DEBUG, "DEBUG: removing quotes from path %s\n", argv[i]);
-	*(startc+strlen(startc)-1) = '\0';
-	startc++;
-      }
-      /* look for multiple paths separated by ';' */
-      while((endc = strchr(startc,';'))) {
-	*endc = '\0';
-	if (boinc_resolve_filename(startc,appc,255)) {
-	  LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve input file '%s'\n", startc);
-	}
-	/* append a ';' */
-	appc = appc + strlen(appc) + 1;
-	*(appc-1) = ';';
-	*appc = '\0';
-	/* skip the ';' */
-	startc = endc+1;
-      }
-      /* handle last or only filename */
-      if (boinc_resolve_filename(startc,appc,255)) {
-	LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve input file '%s'\n", startc);
-      }
     }
 
     /* any other argument */
@@ -479,11 +485,15 @@ int main(int argc, char**argv) {
   FILE* fp_debug;
   int skipsighandler = 0;
 
+
+
   /* pass argc/v to the worker via global vars */
   global_argc = argc;
   global_argv = argv;
 
-/* setup windows diagnostics (e.g. redirect stderr into a file!) */
+
+
+  /* setup windows diagnostics (e.g. redirect stderr into a file!) */
 #ifdef _WIN32
   boinc_init_diagnostics(BOINC_DIAG_DUMPCALLSTACKENABLED |
                          BOINC_DIAG_HEAPCHECKENABLED |
@@ -492,6 +502,9 @@ int main(int argc, char**argv) {
                          BOINC_DIAG_TRACETOSTDERR);
 #endif
 
+
+
+  /* debugging support by files */
 
 #define DEBUG_LEVEL_FNAME "EAH_DEBUG_LEVEL"
 #define DEBUG_DDD_FNAME   "EAH_DEBUG_DDD"
@@ -553,6 +566,9 @@ int main(int argc, char**argv) {
 #endif // GNUC
 
 
+
+  /* install signal handler */
+
 #ifndef _WIN32
   /* install signal-handler for SIGTERM, SIGINT and SIGABRT(?) 
    * NOTE: it is critical to catch SIGINT, because a user
@@ -586,8 +602,9 @@ int main(int argc, char**argv) {
 #endif /* WIN32 */
 
 
-  /* boinc_init() or boinc_init_graphics() needs to be run before any
-   * boinc_api functions are used */
+
+  /* boinc_init variations */
+
 #if BOINC_GRAPHICS>0
   {
     int retval;
@@ -610,11 +627,10 @@ int main(int argc, char**argv) {
   }
 #endif /*  BOINC_GRAPHICS>0 */
     
-  /* we end up hereo only if BOINC_GRAPHICS == 0
-     or a call to boinc_init_graphics failed */
+  /* we end up hereo only if BOINC_GRAPHICS == 0 or a call to boinc_init_graphics failed */
   boinc_init();
   worker();
   boinc_finish( HIERARCHICALSEARCH_ENORM );
-  /* boinc_init(graphics) ends the program, we never get here!! */
-  return 0;
+  /* boinc_init_graphics() or boinc_finish() ends the program, we never get here */
+  return(0);
 }
