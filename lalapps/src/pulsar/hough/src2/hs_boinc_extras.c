@@ -544,7 +544,7 @@ int main(int argc, char**argv) {
       if (boinc_resolve_filename(ptr, resolved_name, sizeof(resolved_name)))
 	LogPrintf (LOG_NORMAL,  "Unable to boinc_resolve_filename(%s), so no debugging\n", ptr);
       else {
-	skipsighandler=1;
+	skipsighandler = 1;
 	LALSnprintf(commandstring,sizeof(commandstring),"ddd %s %d &", resolved_name ,process_id);
 	system(commandstring);
 	sleep(20);
@@ -561,7 +561,6 @@ int main(int argc, char**argv) {
    * should wait for the client to send <quit/> and cleanly exit. 
    */
   boinc_set_signal_handler(SIGTERM, sighandler);
-  boinc_set_signal_handler(SIGINT,  sighandler);
   boinc_set_signal_handler(SIGABRT, sighandler);
 
   /* install signal handler (for ALL threads) for catching
@@ -569,6 +568,7 @@ int main(int argc, char**argv) {
    * violations and Illegal instructions */
   if ( !skipsighandler )
     {
+      boinc_set_signal_handler(SIGINT,  sighandler);
       boinc_set_signal_handler(SIGSEGV, sighandler);
       boinc_set_signal_handler(SIGFPE,  sighandler);
       boinc_set_signal_handler(SIGILL,  sighandler);
@@ -576,12 +576,12 @@ int main(int argc, char**argv) {
     } /* if !skipsighandler */
 #else /* WIN32 */
   signal(SIGTERM, sighandler);
-  signal(SIGINT,  sighandler);
   signal(SIGABRT, sighandler);
   if ( !skipsighandler ) {
-      signal(SIGSEGV, sighandler);
-      signal(SIGFPE,  sighandler);
-      signal(SIGILL,  sighandler);
+    signal(SIGINT,  sighandler);
+    signal(SIGSEGV, sighandler);
+    signal(SIGFPE,  sighandler);
+    signal(SIGILL,  sighandler);
   }
 #endif /* WIN32 */
 
