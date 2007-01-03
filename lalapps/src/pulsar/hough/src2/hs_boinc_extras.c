@@ -1,4 +1,4 @@
-/* Extras for building an Einstein@Home BOINC App from HierarchicalSearch
+e/* Extras for building an Einstein@Home BOINC App from HierarchicalSearch
    Bernd Machenschalk for Einstein@Home
 */
 
@@ -455,7 +455,8 @@ static void worker (void) {
   /* HANDLE OUTPUT FILES
    */
   if(noutfiles == 0)
-    LogPrintf (LOG_CRITICAL, "ERROR: no output file has been specified");
+    LogPrintf (LOG_CRITICAL, "ERROR: no output file has been specified\n");
+
   for(i=0;i<noutfiles;i++)
     if ( 0 == strncmp(resultfile, outfiles[i],sizeof(resultfile)) )
       LogPrintf (LOG_CRITICAL, "WARNING: output and result file are identical - output not zipped\n",res);
