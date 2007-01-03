@@ -2219,6 +2219,7 @@ void SetUpStacks(LALStatus *status,
 	  TRY ( LALGPStoFloat ( status->statusPtr, &tStart, &(in->data[j].header.epoch)), status);
 	
 	  /* realloc to increase length of catalog and copy data */    
+	  out->data[stackCounter].length = 1;    /* first entry in new stack */
 	  out->data[stackCounter].data = (SFTDescriptor *)LALRealloc( out->data[stackCounter].data, sizeof(SFTDescriptor));
 	  out->data[stackCounter].data[0] = in->data[j];   
 
