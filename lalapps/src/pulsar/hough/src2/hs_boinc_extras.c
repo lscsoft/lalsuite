@@ -1,4 +1,4 @@
-e/* Extras for building an Einstein@Home BOINC App from HierarchicalSearch
+/* Extras for building an Einstein@Home BOINC App from HierarchicalSearch
    Bernd Machenschalk for Einstein@Home
 */
 
