@@ -193,11 +193,16 @@ void show_progress(double rac, double dec, long count, long total) {
  */
 void register_output_file(char*filename) {
   outfiles = (char**)realloc(outfiles,(noutfiles+1)*sizeof(char*));
-  if (outfiles == NULL)
+  if (outfiles == NULL) {
     LogPrintf (LOG_CRITICAL, "ERROR: Can't allocate output filename '%s'\n", filename);
+    noutfiles = 0;
+    return;
+  }
   outfiles[noutfiles] = malloc(strlen(filename));
-  if (outfiles[noutfiles] == NULL)
+  if (outfiles[noutfiles] == NULL) {
     LogPrintf (LOG_CRITICAL, "ERROR: Can't allocate output filename '%s'\n", filename);
+    return;
+  }
   strcpy(outfiles[noutfiles],filename);
   noutfiles++;
 }
@@ -350,8 +355,9 @@ static void worker (void) {
      MAIN() of HierarchicalSearch.c. However, command line arguments
      that can be identified as filenames must be boinc_resolved
      before passing them to the main function.
-     We will also look if the files are possibly zipped and unzip
-     them as needed.
+     We will also look if input files are possibly zipped and unzip
+     them as needed. Output filename(s) will be recorded (resolved
+     and unresolved) and the flops estimation will be dealt with.
   */
   rargv = (char**)malloc(argc*sizeof(char*));
   rargv[0] = argv[0];
@@ -372,19 +378,22 @@ static void worker (void) {
     else if (MATCH_START("--skyGridFile=",argv[i],l)) {
       rargv[i] = (char*)malloc(MAX_PATH_LEN);
       strncpy(rargv[i],argv[i],l);
-      resolve_and_unzip(argv[i]+l, rargv[i]+l, MAX_PATH_LEN-l);
+      if (resolve_and_unzip(argv[i]+l, rargv[i]+l, MAX_PATH_LEN-l) < 0)
+	res = HIERARCHICALSEARCH_EFILE;
     }
 
     /* ephermeris files */
     else if (MATCH_START("--ephemE=",argv[i],l)) {
       rargv[i] = (char*)malloc(MAX_PATH_LEN);
       strncpy(rargv[i],argv[i],l);
-      resolve_and_unzip(argv[i]+l, rargv[i]+l, MAX_PATH_LEN-l);
+      if (resolve_and_unzip(argv[i]+l, rargv[i]+l, MAX_PATH_LEN-l) < 0)
+	res = HIERARCHICALSEARCH_EFILE;
     }
     else if (MATCH_START("--ephemS=",argv[i],l)) {
       rargv[i] = (char*)malloc(MAX_PATH_LEN);
       strncpy(rargv[i],argv[i],l);
-      resolve_and_unzip(argv[i]+l, rargv[i]+l, MAX_PATH_LEN-l);
+      if (resolve_and_unzip(argv[i]+l, rargv[i]+l, MAX_PATH_LEN-l) < 0)
+	res = HIERARCHICALSEARCH_EFILE;
     }
 
 
@@ -456,18 +465,34 @@ static void worker (void) {
       rargv[i] = argv[i];
   } /* for all command line arguments */
 
+
+
   /* sanity check */
   if (!resultfile) {
       LogPrintf (LOG_CRITICAL, "ERROR: no result file has been specified\n");
+      res = HIERARCHICALSEARCH_EFILE;
   }
+
+  /* debug */
+  for(i=0;i<rargc;i++)
+    LogPrintf (LOG_DETAIL, "DETAIL: command-line argument %d: %s\n", i,rargv[i]);
+
+  /* if there already was an error, there is no use in continuing */
+  if (!res)
+    boinc_finish(res);
+
 
 
   /* CALL WORKER's MAIN()
-   */  
+   */
+
   res = MAIN(rargc,rargv);
   if (res) {
     LogPrintf (LOG_CRITICAL, "ERROR: MAIN() returned with error '%d'\n",res);
   }
+
+  /* we'll still try to zip and send back what's left from an output file for diagnostics */
+  /* in case of an error before any output was written the result will contain the link file */
 
 
   /* HANDLE OUTPUT FILES
@@ -477,7 +502,7 @@ static void worker (void) {
 
   for(i=0;i<noutfiles;i++)
     if ( 0 == strncmp(resultfile, outfiles[i],sizeof(resultfile)) )
-      LogPrintf (LOG_CRITICAL, "WARNING: output and result file are identical - output not zipped\n",res);
+      LogPrintf (LOG_NORMAL, "WARNING: output and result file are identical - output not zipped\n",res);
     else if ( boinc_zip(ZIP_IT, resultfile, outfiles[i]) ) {
       LogPrintf (LOG_NORMAL, "WARNING: Can't zip output file '%s'\n", outfiles[i]);
     }
@@ -486,7 +511,7 @@ static void worker (void) {
   if (estimated_flops >= 0)
     boinc_ops_cumulative( estimated_flops, 0 /*ignore IOPS*/ );
 
-  boinc_finish( HIERARCHICALSEARCH_ENORM );
+  boinc_finish(res);
 }
 
 
@@ -504,7 +529,7 @@ int main(int argc, char**argv) {
   FILE* fp_debug;
   int skipsighandler = 0;
 
-
+  LogSetLevel(LOG_DETAIL); /* as long as we are debugging */
 
   /* pass argc/v to the worker via global vars */
   global_argc = argc;
