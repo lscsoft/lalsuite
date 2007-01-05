@@ -333,6 +333,12 @@ static void worker (void) {
   int res = 0;                 /* return value of function call */
   char *startc,*endc,*appc;
 
+  boinc_init_diagnostics(BOINC_DIAG_DUMPCALLSTACKENABLED |
+                         BOINC_DIAG_HEAPCHECKENABLED |
+                         BOINC_DIAG_ARCHIVESTDERR |
+                         BOINC_DIAG_REDIRECTSTDERR |
+                         BOINC_DIAG_TRACETOSTDERR);
+
   /* try to load the graphics library and set the hooks if successful */
 #if (BOINC_GRAPHICS == 2) 
   if (graphics_lib_handle) {
@@ -502,8 +508,8 @@ static void worker (void) {
     LogPrintf (LOG_CRITICAL, "ERROR: no output file has been specified\n");
 
   for(i=0;i<noutfiles;i++)
-    if ( 0 == strncmp(resultfile, outfiles[i],sizeof(resultfile)) )
-      LogPrintf (LOG_NORMAL, "WARNING: output and result file are identical - output not zipped\n",res);
+    if ( 0 == strncmp(resultfile, outfiles[i], sizeof(resultfile)) )
+      LogPrintf (LOG_NORMAL, "WARNING: output (%d) and result file are identical (%s) - output not zipped\n", i, resultfile);
     else if ( boinc_zip(ZIP_IT, resultfile, outfiles[i]) ) {
       LogPrintf (LOG_NORMAL, "WARNING: Can't zip output file '%s'\n", outfiles[i]);
     }
@@ -513,7 +519,7 @@ static void worker (void) {
     boinc_ops_cumulative( estimated_flops, 0 /*ignore IOPS*/ );
 
   boinc_finish(res);
-}
+} /* worker() */
 
 
 
