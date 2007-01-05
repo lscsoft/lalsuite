@@ -1108,9 +1108,9 @@ int MAIN( int argc, char *argv[]) {
       }
       semiCohPar.weightsV = weightsV;
       
-      LogPrintf(LOG_DEBUG, "Stack weights for alpha = %f, delta = %f are:\n", skypos.longitude, skypos.latitude);
+      LogPrintf(LOG_DETAIL, "Stack weights for alpha = %f, delta = %f are:\n", skypos.longitude, skypos.latitude);
       for (k = 0; k < nStacks1; k++) {
-	LogPrintf(LOG_DEBUG, "%f\n", weightsV->data[k]);
+	LogPrintf(LOG_DETAIL, "%f\n", weightsV->data[k]);
       }
 
       /* loop over fdot values
@@ -1551,13 +1551,13 @@ void SetUpSFTs( LALStatus *status,
     REAL8 refTime = in->refTime;
     TRY ( LALFloatToGPS( status->statusPtr, &refTimeGPS, &refTime), status);
   }
-  else {  /* set refTime to midtime of central stack */
-    REAL8 refTimeTemp;
+  else {  /* set refTime to exact midtime of the total observation-time spanned */
+    REAL8 tStart8, tEnd8;
 
-    refTimeGPS = in->midTstack->data[in->nStacks/2];
-
-    TRY( LALGPStoFloat(status->statusPtr, &refTimeTemp, &refTimeGPS), status);
-    in->refTime = refTimeTemp;
+    tStart8 = XLALGPSGetREAL8( &tStartGPS );
+    tEnd8   = XLALGPSGetREAL8( &tEndGPS );
+    in->refTime = 0.5 * ( tEnd8 + tStart8 );
+    XLALGPSSetREAL8( &refTimeGPS, in->refTime );
   }
 
   
@@ -2164,6 +2164,7 @@ void SetUpStacks(LALStatus *status,
 
   UINT4 j, stackCounter, length, newNstacks;
   REAL8 tStart, thisTime;
+  REAL8 Tsft;
 
   INITSTATUS( status, "SetUpStacks", rcsid );
   ATTATCHSTATUSPTR (status);
@@ -2180,6 +2181,8 @@ void SetUpStacks(LALStatus *status,
   out->length = nStacksMax;
   out->data = (SFTCatalog *)LALCalloc( 1, nStacksMax * sizeof(SFTCatalog));
   
+  Tsft = 1.0 / in->data[0].header.deltaF;
+
   /* get first sft timestamp */
   /* tStart will be start time of a given stack. 
      This initializes tStart to the first sft time stamp as this will 
@@ -2198,7 +2201,7 @@ void SetUpStacks(LALStatus *status,
       /* if sft lies in stack duration then add 
 	 this sft to the stack. Otherwise move 
 	 on to the next stack */
-      if ( (thisTime - tStart < tStack) ) {
+      if ( (thisTime - tStart + Tsft <= tStack) ) {
 	
 	out->data[stackCounter].length += 1;    
 	
