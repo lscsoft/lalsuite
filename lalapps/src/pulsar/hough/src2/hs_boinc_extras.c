@@ -330,7 +330,7 @@ static void worker (void) {
   char**rargv = NULL;          /* ... argv values for calling the MAIN() function of the worker */
   int i;                       /* loop counter */
   int l;                       /* length of matched string */
-  int res;                     /* return value of function call */
+  int res = 0;                 /* return value of function call */
   char *startc,*endc,*appc;
 
   /* try to load the graphics library and set the hooks if successful */
@@ -478,9 +478,10 @@ static void worker (void) {
     LogPrintf (LOG_DETAIL, "DETAIL: command-line argument %d: %s\n", i,rargv[i]);
 
   /* if there already was an error, there is no use in continuing */
-  if (!res)
+  if (res) {
+    LogPrintf (LOG_CRITICAL, "ERROR: error %d in command-line parsing\n", res);
     boinc_finish(res);
-
+  }
 
 
   /* CALL WORKER's MAIN()
