@@ -1124,13 +1124,13 @@ int MAIN( int argc, char *argv[]) {
 	  thisPoint1.fkdot[0] = usefulParams1.spinRange_midTime.fkdot[0];
 	  	  
 	  /* calculate the Fstatistic for each stack*/
-	  LogPrintf(LOG_DEBUG, "Starting Fstat calculation for each stack...");
+	  LogPrintf(LOG_DETAIL, "Starting Fstat calculation for each stack...");
 	  for ( k = 0; k < nStacks1; k++) {
 	    LAL_CALL( ComputeFStatFreqBand ( &status, fstatVector1.data + k, &thisPoint1, 
 					     stackMultiSFT1.data[k], stackMultiNoiseWeights1.data[k], 
 					     stackMultiDetStates1.data[k], &CFparams), &status);
 	  }
-	  LogPrintfVerbatim(LOG_DEBUG, "done\n");
+	  LogPrintfVerbatim(LOG_DETAIL, "done\n");
 	  
 	  /* print fstat vector if required -- mostly for debugging */
 	  if ( uvar_printFstat1 )
@@ -1194,7 +1194,7 @@ int MAIN( int argc, char *argv[]) {
 	  /* 	  } */
 	  
 	  if( uvar_semiCohToplist) {
-	    LogPrintf(LOG_DEBUG, "Selecting toplist from semicoherent candidates\n");
+	    LogPrintf(LOG_DETAIL, "Selecting toplist from semicoherent candidates\n");
 	    LAL_CALL( GetSemiCohToplist(&status, semiCohToplist, &semiCohCandList1, meanN, sigmaN), &status);
 	  }
 
