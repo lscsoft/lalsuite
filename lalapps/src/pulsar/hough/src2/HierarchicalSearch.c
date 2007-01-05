@@ -509,7 +509,7 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterREALUserVar(   &status, "pixelFactor",  0,  UVAR_OPTIONAL, "Semi coh. sky resolution = 1/v*pixelFactor*f*Tcoh", &uvar_pixelFactor), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "semiCohPatchX",0,  UVAR_OPTIONAL, "Semi coh. sky grid size (default = 1/f*Tcoh*Vepi)", &uvar_semiCohPatchX), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "semiCohPatchY",0,  UVAR_OPTIONAL, "Semi coh. sky grid size (default = 1/f*Tcoh*Vepi)", &uvar_semiCohPatchY), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameout",    'o', UVAR_OPTIONAL, "Output basefileneme", &uvar_fnameout), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameout",    'o', UVAR_OPTIONAL, "Output fileneme", &uvar_fnameout), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "peakThrF",     0,  UVAR_OPTIONAL, "Fstat Threshold", &uvar_peakThrF), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "nCand1",       0,  UVAR_OPTIONAL, "No.of 1st stage candidates to be followed up", &uvar_nCand1), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "threshold1",   0,  UVAR_OPTIONAL, "Threshold on significance for 1st stage (if no toplist)", &uvar_threshold1), &status);
@@ -652,9 +652,9 @@ int MAIN( int argc, char *argv[]) {
       fnameSemiCohCand = (CHAR *)LALMalloc( 512*sizeof(CHAR));
       strcpy(fnameSemiCohCand, uvar_fnameout);
       /* strcat(fnameSemiCohCand, "_semicoh.dat"); */
-      if (!(fpSemiCoh = fopen(fnameSemiCohCand, "w"))) 
+      if (!(fpSemiCoh = fopen(fnameSemiCohCand, "wb"))) 
 	{
-	  fprintf ( stderr, "Unable to open file '%s' for writing.\n", fnameSemiCohCand);
+	  LogPrintf ( LOG_CRITICAL, "Unable to open output-file '%s' for writing.\n", fnameSemiCohCand);
 	  return HIERARCHICALSEARCH_EFILE;
 	}
     }
@@ -1194,7 +1194,7 @@ int MAIN( int argc, char *argv[]) {
 	  /* 	  } */
 	  
 	  if( uvar_semiCohToplist) {
-	  LogPrintf(LOG_DEBUG, "Selecting toplist from semicoherent candidates\n");
+	    LogPrintf(LOG_DEBUG, "Selecting toplist from semicoherent candidates\n");
 	    LAL_CALL( GetSemiCohToplist(&status, semiCohToplist, &semiCohCandList1, meanN, sigmaN), &status);
 	  }
 
