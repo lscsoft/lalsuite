@@ -709,7 +709,7 @@ LALLoadSFTs ( LALStatus *status,
 
 	  /* if fmax is in this SFT, this is either a single SFT or the last in a sequence */
 	  if (( lastbin >= firstInSFT) &&
-	      ( lastbin <  lastInSFT)) {
+	      ( lastbin <= lastInSFT)) {
 
 	    /* issue an error if the file neither contains firstbin nor starts with nextbin */
 	    if (( firstbin < firstInSFT ) &&
@@ -3283,7 +3283,8 @@ find_files (const CHAR *globdir)
 	  if ((thisFname = LALRealloc(thisFname, (namelen+1)*sizeof(CHAR))) == NULL) {
 	    for (j=0; j < numFiles; j++)
 	      LALFree (filelist[j]);
-	    LALFree (filelist);
+	    if(filelist)
+	      LALFree (filelist);
 	    return(NULL);
 	  }
 	  strncpy(thisFname,ptr1,namelen);
@@ -3310,7 +3311,8 @@ find_files (const CHAR *globdir)
 	  } else {
 	    for (j=0; j < numFiles; j++)
 	      LALFree (filelist[j]);
-	    LALFree (filelist);
+	    if(filelist)
+	      LALFree (filelist);
 	    LALFree(thisFname);
 	    return(NULL);
 	  }
