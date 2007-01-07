@@ -1401,6 +1401,8 @@ int MAIN( int argc, char *argv[]) {
   if ( uvar_printCand1 )
     {
       LALFree(fnameSemiCohCand);
+      if (fprintf(fpSemiCoh,"%DONE\n") < 0)
+	fprintf(stderr, "Error writing end marker\n");
       fclose(fpSemiCoh);
     }
   
