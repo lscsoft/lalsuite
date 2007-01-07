@@ -3,7 +3,7 @@
 */
 
 /* TODO:
-   - error handling in worker()
+   - catch malloc errors in worker()
    - checkpointing
 */
 
@@ -441,23 +441,36 @@ static void worker (void) {
       }
     }
 
-
     /* output file */
+#define OUTPUT_EXT ".res"
     else if (MATCH_START("--fnameout=",argv[i],l)) {
+      int s;
       if (boinc_resolve_filename(argv[i]+l,resultfile,sizeof(resultfile))) {
         LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve result file '%s'\n", argv[i]+l);
       }
-      register_output_file(argv[i]+l);
-      rargv[i] = argv[i]; /* this is passed unchanged, just recorded */
+      s = strlen(argv[i])+strlen(OUTPUT_EXT);
+      rargv[i] = (char*)malloc(s);
+      strncpy(rargv[i],argv[i],s);
+      strncat(rargv[i],OUTPUT_EXT,s);
+      register_output_file(rargv[i]+l);
     }
-    else if (0 == strncmp("-o",argv[i],3)) {
-      rargv[i] = argv[i];
-      i++;
-      if (boinc_resolve_filename(argv[i],resultfile,sizeof(resultfile))) {
-        LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve result file '%s'\n", argv[i]);
+    else if (0 == strncmp("-o",argv[i],strlen("-o"))) {
+      int s;
+      rargv[i] = argv[i]; /* copy the "-o" */
+      i++;                /* grab next argument */
+      if(i >= argc) {
+	LogPrintf(LOG_CRITICAL,"ERROR in command line: no argument following '-o' option\n");
+	res = HIERARCHICALSEARCH_EFILE;
+      } else {
+	if (boinc_resolve_filename(argv[i],resultfile,sizeof(resultfile))) {
+	  LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve result file '%s'\n", argv[i]);
+	}
+	s = strlen(argv[i])+strlen(OUTPUT_EXT);
+	rargv[i] = (char*)malloc(s);
+	strncpy(rargv[i],argv[i],s);
+	strncat(rargv[i],OUTPUT_EXT,s);
+	register_output_file(rargv[i]);
       }
-      register_output_file(argv[i]);
-      rargv[i] = argv[i]; /* this is passed unchanged, just recorded */
     }
 
     /* flops estimation */
