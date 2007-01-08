@@ -563,7 +563,7 @@ void LALHOUGHConstructHMT_W (LALStatus                  *status,
   HOUGHMapDeriv hd; /* the Hough map derivative */
 
   /* --------------------------------------------- */
-  INITSTATUS (status, "LALHOUGHConstructHMT", DRIVEHOUGHC);
+  INITSTATUS (status, "LALHOUGHConstructHMT_W", DRIVEHOUGHC);
   ATTATCHSTATUSPTR (status); 
 
   /*   Make sure the arguments are not NULL: */ 
