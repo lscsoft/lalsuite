@@ -749,7 +749,7 @@ LALLoadSFTs ( LALStatus *status,
 
 	  /* if fmin is in this SFT, this SFT starts a sequence (single SFT was previous case) */
 	  } else if (( firstbin >= firstInSFT ) &&
-		     ( firstbin <  lastInSFT  )) {
+		     ( firstbin <= lastInSFT  )) {
 	    /* read from firstbin to end */
 	    if ( (fp = fopen_SFTLocator ( catalog->data[catFile].locator )) == NULL ) {
 	      LALPrintError ( "Failed to open locator '%s'\n", 
