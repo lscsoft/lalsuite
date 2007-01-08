@@ -1074,6 +1074,9 @@ int MAIN( int argc, char *argv[]) {
 
   XLALNextDopplerSkyPos( &dopplerpos1, &thisScan1 );
 
+  LogPrintf(LOG_DEBUG, "Total skypoints = %d. Progress: ", thisScan1.numSkyGridPoints);
+
+
   while(thisScan1.state != STATE_FINISHED)
     {
       UINT4 ifdot;  /* counter for spindown values */
@@ -1086,6 +1089,7 @@ int MAIN( int argc, char *argv[]) {
 		    skyGridCounter,
 		    thisScan1.numSkyGridPoints);
 
+      LogPrintfVerbatim(LOG_DEBUG, "%d, ", skyGridCounter );
       
       /*------------- calculate F statistic for each stack --------------*/
       
@@ -1117,7 +1121,7 @@ int MAIN( int argc, char *argv[]) {
 	 -- spindown range and resolutionhas been set earlier */
       for ( ifdot = 0; ifdot < nf1dot; ifdot++)
 	{
-	  LogPrintf(LOG_DEBUG, "Analyzing %d/%d Coarse sky grid points and %d/%d spindown values\n", 
+	  LogPrintf(LOG_DETAIL, "Analyzing %d/%d Coarse sky grid points and %d/%d spindown values\n", 
 			    skyGridCounter, thisScan1.numSkyGridPoints, ifdot+1, nf1dot);
 	  /* set spindown value for Fstat calculation */
   	  thisPoint1.fkdot[1] = usefulParams1.spinRange_midTime.fkdot[1] + ifdot * df1dot;
@@ -1155,7 +1159,7 @@ int MAIN( int argc, char *argv[]) {
 	  /* select peaks */ 	      
 	  if ( (uvar_method == 0) ) {
 
-	    LogPrintf(LOG_DEBUG, "Starting Hough calculation...\n");
+	    LogPrintf(LOG_DETAIL, "Starting Hough calculation...\n");
 	    sumWeightSquare = 0.0;
 	    for ( k = 0; k < nStacks1; k++)
 	      sumWeightSquare += weightsV->data[k] * weightsV->data[k];
@@ -1164,7 +1168,7 @@ int MAIN( int argc, char *argv[]) {
 	    meanN = nStacks1 * alphaPeak; 
 	    sigmaN = sqrt(sumWeightSquare * alphaPeak * (1.0 - alphaPeak));
 	    semiCohPar.threshold = uvar_threshold1*sigmaN + meanN;	 
-	    LogPrintf(LOG_DEBUG, "Expected mean number count=%f, std=%f, threshold=%f\n", 
+	    LogPrintf(LOG_DETAIL, "Expected mean number count=%f, std=%f, threshold=%f\n", 
 		      meanN, sigmaN, semiCohPar.threshold);
 	    
 	    /* convert fstat vector to peakgrams using the Fstat threshold */
@@ -1177,13 +1181,14 @@ int MAIN( int argc, char *argv[]) {
 	    for (k=0; k<nStacks1; k++) 
 	      LALFree(pgV.pg[k].peak);
 	    LALFree(pgV.pg);
-	    LogPrintf(LOG_DEBUG, "...finished Hough calculation\n");
+	    LogPrintf(LOG_DETAIL, "...finished Hough calculation\n");
 	    
 	    /* end hough */
 	  } else if ( uvar_method == 1 ) {
             /* --- stackslide option --------*/
             LogPrintf(LOG_DEBUG, "Starting StackSlide calculation...\n");
-            semiCohPar.threshold = uvar_threshold1; /* 12/18/06 gm; use threshold from command line as threshold on stackslide sum of F-stat values */
+	    /* 12/18/06 gm; use threshold from command line as threshold on stackslide sum of F-stat values */
+            semiCohPar.threshold = uvar_threshold1; 
             LAL_CALL( StackSlideVecF( &status, &semiCohCandList1, &fstatVector1, &semiCohPar), &status);
 	    LogPrintf(LOG_DEBUG, "...finished StackSlide calculation\n");
           }
@@ -1346,6 +1351,8 @@ int MAIN( int argc, char *argv[]) {
       XLALNextDopplerSkyPos( &dopplerpos1, &thisScan1 );
       
     } /* end while loop over 1st stage coarse skygrid */
+
+  LogPrintfVerbatim ( LOG_DEBUG, " done.\n");
 
   LogPrintf(LOG_DEBUG, "Finished analysis and now printing results and cleaning up...");
 
