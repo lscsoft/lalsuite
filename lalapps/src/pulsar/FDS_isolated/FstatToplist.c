@@ -50,6 +50,11 @@ int finite(double);
 #endif
 
 
+/* local variables */
+static int toplistfile_bytecount;
+static int toplistfile_checksum;
+
+
 
 /* local prototypes */
 static void reduce_fstat_toplist_precision(toplist_t *l);
@@ -383,3 +388,165 @@ int final_write_fstat_toplist_to_file(toplist_t *l, char *filename, UINT4*checks
   sort_fstat_toplist(l);
   return(atomic_write_fstat_toplist_to_file(l,filename,checksum));
 }
+
+
+
+
+/* sets up a FStatCheckpointFile from parameters */
+int fstat_cpt_file_create (FStatCheckpointFile **cptf,
+			   CHAR  *filename,
+			   UINT4 bufsize,
+			   UINT4 maxsize,
+			   toplist_t*list) {
+
+  /* input sanity checks */
+  if ( (cptf != NULL) ||
+       (list == NULL) ||
+       (filename == NULL) ||
+       (strlen (filename) == 0) ) {
+    LogPrintf (LOG_CRITICAL, "ERROR: error in input parameters (fstat_cpt_file_create)\n");
+    return(-1);
+  }
+
+  /* allocation */
+  *cptf = LALMalloc(sizeof(FStatCheckpointFile));
+  if (!(*cptf)) {
+    LogPrintf (LOG_CRITICAL, "ERROR: out of memeory (fstat_cpt_file_create)\n");
+    return(-1);
+  }
+
+  (*cptf)->filename = LALMalloc(strlen(filename)+1);
+  if (!((*cptf)->filename)) {
+    LogPrintf (LOG_CRITICAL, "ERROR: out of memeory (fstat_cpt_file_create)\n");
+    LALFree(*cptf);
+    *cptf = NULL;
+    return(-1);
+  }
+
+  if (bufsize > 0) {
+    (*cptf)->buffer = LALMalloc(bufsize);
+    if (!((*cptf)->buffer)) {
+      LogPrintf (LOG_CRITICAL, "ERROR: out of memeory (fstat_cpt_file_create)\n");
+      LALFree(*cptf);
+      LALFree((*cptf)->filename);
+      *cptf = NULL;
+      return(-1);
+    }
+  }
+
+  /* initializing */
+  strncpy((*cptf)->filename,filename,strlen(filename)+1);
+
+  (*cptf)->bytes = 0;
+  (*cptf)->bufsize = bufsize;
+  (*cptf)->maxsize = maxsize;
+  (*cptf)->checksum = 0;
+  (*cptf)->fp = NULL;
+  (*cptf)->list = list;
+  return(0);
+}
+
+
+
+/* destroys a FStatCheckpointFile structure */
+int fstat_cpt_file_destroy (FStatCheckpointFile **cptf) {
+  if (!cptf) {
+    LogPrintf (LOG_CRITICAL, "ERROR: FStatCheckpointFile is NULL\n");
+    return(-1);
+  }
+  if((*cptf)->filename)
+    LALFree((*cptf)->filename);
+  if((*cptf)->buffer)
+    LALFree((*cptf)->buffer);
+  LALFree(*cptf);
+  *cptf = NULL;
+  return(0);
+}
+
+
+
+/* opens the file named in the structure (for writing) and attaches an output buffer if specified */
+int fstat_cpt_file_open (FStatCheckpointFile *cptf) {
+  if (!cptf) {
+    LogPrintf (LOG_CRITICAL, "ERROR: FStatCheckpointFile is NULL\n");
+    return(-1);
+  }
+  cptf->fp = fopen(cptf->filename, (cptf->bytes > 0) ? "rb+" : "wb");
+  if (!(cptf->fp)) {
+    LogPrintf (LOG_CRITICAL, "ERROR: Couldn't open checkpointing toplist file %s\n",cptf->filename);
+    return(-1);
+  }
+  /* set a buffer large enough that no output is written to disk
+   * unless we fflush(). Policy is fully buffered. */
+  if (cptf->bufsize > 0)
+    setvbuf(cptf->fp, cptf->buffer, _IOFBF, cptf->bufsize);
+  return(0);
+}
+
+
+
+/* flushes the checkpoint file (only useful if buffered) */
+int fstat_cpt_file_flush (FStatCheckpointFile *cptf) {
+  if (!cptf) {
+    LogPrintf (LOG_CRITICAL, "ERROR: FStatCheckpointFile is NULL\n");
+    return(-1);
+  }
+  if (!(cptf->fp)) {
+    LogPrintf (LOG_CRITICAL, "ERROR: invalid checkpointing toplist file pointer\n");
+    return(-1);
+  }
+  return(fflush(cptf->fp));
+}
+
+
+
+/* returns information for checkpointing */
+extern int fstat_cpt_file_info (FStatCheckpointFile *cptf, CHAR**filename, UINT4*bytes, UINT4*checksum) {
+  if (!cptf) {
+    LogPrintf (LOG_CRITICAL, "ERROR: FStatCheckpointFile is NULL\n");
+    return(-1);
+  }
+  if (filename)
+    *filename = cptf->filename;
+  if (bytes)
+    *bytes = cptf->bytes;
+  if (checksum)
+    *checksum = cptf->checksum;
+  return(0);
+}
+
+
+
+/*
+int compact_fstat_toplist_file(toplist_t *l, char *filename, FILE*fp, UINT4 maxsize) {
+
+  INT4 howmany;
+	  
+  if (toplistfile_bytecount > maxsize) {
+
+    LogPrintf ( LOG_NORMAL, "Fstat file reached MaxFileSizeKB ==> compactifying ...");
+
+    fclose(fp);
+    howmany = atomic_write_fstat_toplist_to_file(toplist, filename, &checksum);
+    if (howmany < 0) {
+      LogPrintf (LOG_CRITICAL, "Couldn't write compacted toplist to '%s'\n", filename);
+      return (COMPUTEFSTAT_EXIT_OPENFSTAT);
+    }
+    if (howmany >= maxize) {
+      LogPrintf (LOG_CRITICAL, "Size of compacted list exceeds MaxFileSize\n", filename);
+      return (COMPUTEFSTAT_EINPUT);
+    }
+    toplistfile_bytecount = howmany;
+    
+    if ( (fpFstat = fopen(filename, "ab")) == NULL )
+      {
+	LogPrintf (LOG_CRITICAL, "Couldn't open compacted toplist for appending\n");
+	return (COMPUTEFSTAT_EXIT_OPENFSTAT2);
+      }
+    if ( fstatbuff )
+      setvbuf(fpFstat, fstatbuff, _IOFBF, uvar_OutputBufferKB * 1024);
+  
+    LogPrintfVerbatim ( LOG_NORMAL, " done.\n");
+  }
+}
+*/
