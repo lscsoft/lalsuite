@@ -104,6 +104,6 @@ extern int fstat_cpt_file_add  (FStatCheckpointFile*cptf, FstatOutputEntry line)
 extern int fstat_cpt_file_close(FStatCheckpointFile*cptf);
 
 /* reads a written checkpointed toplist back into memory */
-extern int fstat_cpt_file_read (FStatCheckpointFile*cptf);
+extern int fstat_cpt_file_read (FStatCheckpointFile*cptf, UINT4 maxbytes);
 
 #endif /* FSTATTOPLIST_H */

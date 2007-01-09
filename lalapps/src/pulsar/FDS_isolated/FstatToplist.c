@@ -50,11 +50,6 @@ int finite(double);
 #endif
 
 
-/* local variables */
-static int toplistfile_bytecount;
-static int toplistfile_checksum;
-
-
 
 /* local prototypes */
 static void reduce_fstat_toplist_precision(toplist_t *l);
@@ -471,7 +466,7 @@ int fstat_cpt_file_open (FStatCheckpointFile *cptf) {
     LogPrintf (LOG_CRITICAL, "ERROR: FStatCheckpointFile is NULL\n");
     return(-1);
   }
-  cptf->fp = fopen(cptf->filename, (cptf->bytes > 0) ? "rb+" : "wb");
+  cptf->fp = fopen(cptf->filename, "rb+");
   if (!(cptf->fp)) {
     LogPrintf (LOG_CRITICAL, "ERROR: Couldn't open checkpointing toplist file %s\n",cptf->filename);
     return(-1);
@@ -501,7 +496,8 @@ int fstat_cpt_file_flush (FStatCheckpointFile *cptf) {
 
 
 /* returns information for checkpointing */
-extern int fstat_cpt_file_info (FStatCheckpointFile *cptf, CHAR**filename, UINT4*bytes, UINT4*checksum) {
+extern int fstat_cpt_file_info (FStatCheckpointFile *cptf,
+				CHAR**filename, UINT4*bytes, UINT4*checksum) {
   if (!cptf) {
     LogPrintf (LOG_CRITICAL, "ERROR: FStatCheckpointFile is NULL\n");
     return(-1);
@@ -516,37 +512,70 @@ extern int fstat_cpt_file_info (FStatCheckpointFile *cptf, CHAR**filename, UINT4
 }
 
 
-
-/*
-int compact_fstat_toplist_file(toplist_t *l, char *filename, FILE*fp, UINT4 maxsize) {
-
-  INT4 howmany;
-	  
-  if (toplistfile_bytecount > maxsize) {
-
-    LogPrintf ( LOG_NORMAL, "Fstat file reached MaxFileSizeKB ==> compactifying ...");
-
-    fclose(fp);
-    howmany = atomic_write_fstat_toplist_to_file(toplist, filename, &checksum);
-    if (howmany < 0) {
-      LogPrintf (LOG_CRITICAL, "Couldn't write compacted toplist to '%s'\n", filename);
-      return (COMPUTEFSTAT_EXIT_OPENFSTAT);
-    }
-    if (howmany >= maxize) {
-      LogPrintf (LOG_CRITICAL, "Size of compacted list exceeds MaxFileSize\n", filename);
-      return (COMPUTEFSTAT_EINPUT);
-    }
-    toplistfile_bytecount = howmany;
-    
-    if ( (fpFstat = fopen(filename, "ab")) == NULL )
-      {
-	LogPrintf (LOG_CRITICAL, "Couldn't open compacted toplist for appending\n");
-	return (COMPUTEFSTAT_EXIT_OPENFSTAT2);
-      }
-    if ( fstatbuff )
-      setvbuf(fpFstat, fstatbuff, _IOFBF, uvar_OutputBufferKB * 1024);
-  
-    LogPrintfVerbatim ( LOG_NORMAL, " done.\n");
+/* closes and compacts the file */
+int fstat_cpt_file_close(FStatCheckpointFile*cptf) {
+  if (!cptf) {
+    LogPrintf (LOG_CRITICAL, "ERROR: FStatCheckpointFile is NULL\n");
+    return(-1);
   }
+  fclose(cptf->fp);
+  return(final_write_fstat_toplist_to_file(cptf->list,
+					   cptf->filename,
+					   &(cptf->checksum)));
 }
-*/
+
+
+/* adds an item to the toplist and keeps the file consistent, i.e.
+   adds the entry to the file if it was really inserted
+   and compacts the file if necessary
+   returns 1 if the item was actually inserted, 0 if not,
+   -1 in case of an error
+ */
+int fstat_cpt_file_add (FStatCheckpointFile*cptf, FstatOutputEntry line) {
+  int ret, bytes;
+  ret = insert_into_toplist(cptf->list, &line);
+  if (ret) {
+    bytes = write_fstat_toplist_item_to_fp(line, cptf->fp, &(cptf->checksum));
+    if (bytes < 0) {
+      LogPrintf(LOG_CRITICAL, "Failed to write toplist item to file: %d: %s\n",
+		errno,strerror(errno));
+      return(-1);
+    }
+    cptf->bytes += bytes;
+    if (cptf->bytes >= cptf->maxsize) {
+      bytes = atomic_write_fstat_toplist_to_file(cptf->list, cptf->filename, &(cptf->checksum));
+      if (bytes < 0) {
+	LogPrintf(LOG_CRITICAL, "Failed to write toplist to file: %d: %s\n",
+		  errno,strerror(errno));
+	return(-1);
+      }
+      cptf->bytes = bytes;
+    }
+  }
+  return(ret);
+}
+
+
+/* reads a written checkpointed toplist back into a toplist
+   returns 0 if successful,
+   -1 if the file contained a syntax error,
+   -2 if given an improper toplist */
+int fstat_cpt_file_read (FStatCheckpointFile*cptf, UINT4 maxbytes) {
+  INT4 bytes;
+  if (!cptf) {
+    LogPrintf (LOG_CRITICAL, "ERROR: FStatCheckpointFile is NULL\n");
+    return(-1);
+  }
+  bytes = read_fstat_toplist_from_fp(cptf->list, cptf->fp, &(cptf->checksum), maxbytes);
+  if (bytes == -2) {
+    LogPrintf (LOG_CRITICAL, "ERROR: invalid toplist\n");
+    return(bytes);
+  } else if (bytes == -1) {
+    cptf->bytes = 0;
+    LogPrintf (LOG_CRITICAL, "ERROR: format error in toplist\n");
+    /* seek to start of file and truncate */
+    return(bytes);
+  }
+  cptf->bytes = bytes;
+  return(0);
+}
