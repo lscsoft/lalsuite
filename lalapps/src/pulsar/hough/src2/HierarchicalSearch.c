@@ -217,27 +217,28 @@ void GetSemiCohToplist(LALStatus *status, toplist_t *list, SemiCohCandidateList 
 
 
 /* default values for input variables */
-#define EARTHEPHEMERIS "earth05-09.dat"
-#define SUNEPHEMERIS "sun05-09.dat"
+#define EARTHEPHEMERIS 		"earth05-09.dat"
+#define SUNEPHEMERIS 		"sun05-09.dat"
 
-#define BLOCKSRNGMED 101 /**< Default running median window size */
-#define FSTART 310.0   /**< Default Start search frequency */
+#define BLOCKSRNGMED 		101 	/**< Default running median window size */
+#define FSTART 			310.0	/**< Default Start search frequency */
 
-#define FBAND 0.01    /**< Default search band */
-#define FDOT 0.0      /**< Default value of first spindown */
-#define DFDOT 0.0   /**< Default range of first spindown parameter */
-#define SKYREGION "allsky" /**< default sky region to search over -- just a single point*/
-#define NFDOT  10    /**< Default size of hough cylinder of look up tables */
-#define DTERMS 8     /**< Default number of dirichlet kernel terms for calculating Fstat */
-#define MISMATCH 0.2 /**< Default for metric grid maximal mismatch value */
-#define DALPHA 0.001 /**< Default resolution for isotropic or flat grids */
-#define DDELTA 0.001 /**< Default resolution for isotropic or flat grids */
-#define FSTATTHRESHOLD 2.6  /**< Default threshold on Fstatistic for peak selection */
-#define NCAND1 5 /**< Default number of candidates to be followed up from first stage */
-#define SFTDIRECTORY "/home/badkri/fakesfts2/H-1_H1*.sft"  /**< Default directory containing sfts */
-#define FNAMEOUT "./out/HS"  /**< Default output file basename */
-#define PIXELFACTOR 2.0
-#define LAL_INT4_MAX 2147483647
+#define FBAND 			0.01	/**< Default search band */
+#define FDOT 			0.0	/**< Default value of first spindown */
+#define DFDOT 			0.0	/**< Default range of first spindown parameter */
+#define SKYREGION 		"allsky" /**< default sky region to search over -- just a single point*/
+#define NFDOT  			10    	/**< Default size of hough cylinder of look up tables */
+#define DTERMS 			8     	/**< Default number of dirichlet kernel terms for calculating Fstat */
+#define MISMATCH 		0.2 	/**< Default for metric grid maximal mismatch value */
+#define DALPHA 			0.001 	/**< Default resolution for isotropic or flat grids */
+#define DDELTA 			0.001 	/**< Default resolution for isotropic or flat grids */
+#define FSTATTHRESHOLD 		2.6	/**< Default threshold on Fstatistic for peak selection */
+#define NCAND1 			5 	/**< Default number of candidates to be followed up from first stage */
+#define FNAMEOUT 		"./out/HS.dat"  /**< Default output file basename */
+#define PIXELFACTOR 		2.0
+#ifndef LAL_INT4_MAX
+#define LAL_INT4_MAX 		2147483647
+#endif
 
 /* a global pointer to MAIN()s head of the LALStatus structure,
    made global so a signal handler can read it */ 
@@ -245,7 +246,7 @@ LALStatus *global_status;
 
 int MAIN( int argc, char *argv[]) {
 
-  static LALStatus status;
+  LALStatus status = blank_status;
 
   /* temp loop variables: generally k loops over stacks and j over SFTs in a stack*/
   INT4 j;
@@ -339,7 +340,7 @@ int MAIN( int argc, char *argv[]) {
   FILE *fpFstat1=NULL;
   
   /* checkpoint filename and index of loop over skypoints */
-  CHAR *fnameChkPoint="checkpoint.cpt";
+  const CHAR *fnameChkPoint="checkpoint.cpt";
   /*   FILE *fpChkPoint=NULL; */
   /*   UINT4 loopindex, loopcounter; */
   
@@ -394,8 +395,6 @@ int MAIN( int argc, char *argv[]) {
   CHAR *uvar_skyGridFile=NULL;
   CHAR *uvar_skyRegion=NULL;
 
-  /* initialize status */
-  status = blank_status;
   global_status = &status;
 
   /* set LAL error-handler */
@@ -454,22 +453,21 @@ int MAIN( int argc, char *argv[]) {
   uvar_skyGridFile = NULL;
 
 
-  uvar_ephemE = (CHAR *)LALMalloc( 512*sizeof(CHAR));
-  strcpy(uvar_ephemE,EARTHEPHEMERIS);
+  uvar_ephemE = LALCalloc( strlen( EARTHEPHEMERIS ) + 1, sizeof(CHAR) );
+  strcpy(uvar_ephemE, EARTHEPHEMERIS);
 
-  uvar_ephemS = (CHAR *)LALMalloc( 512*sizeof(CHAR));
-  strcpy(uvar_ephemS,SUNEPHEMERIS);
+  uvar_ephemS = LALCalloc( strlen(SUNEPHEMERIS) + 1, sizeof(CHAR) );
+  strcpy(uvar_ephemS, SUNEPHEMERIS);
 
-  uvar_skyRegion = (CHAR *)LALMalloc(512*sizeof(CHAR));
+  uvar_skyRegion = LALCalloc( strlen(SKYREGION) + 1, sizeof(CHAR) );
   strcpy(uvar_skyRegion, SKYREGION);
 
-  uvar_DataFiles1 = (CHAR *)LALMalloc(512*sizeof(CHAR));
-  strcpy(uvar_DataFiles1, SFTDIRECTORY);
+  uvar_DataFiles1 = NULL;
 
   /* do not set default for DataFiles2 -- use only if user specifies */
   /*   uvar_DataFiles2 = (CHAR *)LALMalloc(512*sizeof(CHAR)); */
 
-  uvar_fnameout = (CHAR *)LALMalloc(512*sizeof(CHAR));
+  uvar_fnameout = LALCalloc( strlen(FNAMEOUT) + 1, sizeof(CHAR) );
   strcpy(uvar_fnameout, FNAMEOUT);
 
   /* register user input variables */
@@ -480,7 +478,7 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "semiCohToplist",0, UVAR_OPTIONAL, "Print semicoh toplist?", &uvar_semiCohToplist ), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "useWeights",   0,  UVAR_OPTIONAL, "Weight each stack using noise and AM?", &uvar_useWeights ), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "followUp",     0,  UVAR_OPTIONAL, "Follow up stage?", &uvar_followUp), &status);  
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "DataFiles1",   0,  UVAR_OPTIONAL, "1st SFT file pattern", &uvar_DataFiles1), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "DataFiles1",   0,  UVAR_REQUIRED, "1st SFT file pattern", &uvar_DataFiles1), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "DataFiles2",   0,  UVAR_OPTIONAL, "2nd SFT file pattern", &uvar_DataFiles2), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyRegion",    0,  UVAR_OPTIONAL, "sky-region polygon (or 'allsky')", &uvar_skyRegion), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "Freq",        'f', UVAR_OPTIONAL, "Start search frequency", &uvar_Freq), &status);
@@ -539,7 +537,7 @@ int MAIN( int argc, char *argv[]) {
 
   /* exit if help was required */
   if (uvar_help)
-    /*exit*/ return(0); 
+    return(0); 
 
   /* set log-level */
   LogSetLevel ( lalDebugLevel );
@@ -547,23 +545,23 @@ int MAIN( int argc, char *argv[]) {
   /* some basic sanity checks on user vars */
   if ( (uvar_method != 0) && (uvar_method != 1) && (uvar_method != -1)) {
     fprintf(stderr, "Invalid method....must be 0, 1 or -1\n");
-    /*exit*/ return( HIERARCHICALSEARCH_EBAD );
+    return( HIERARCHICALSEARCH_EBAD );
   }
 
   if ( uvar_nStacksMax < 1) {
     fprintf(stderr, "Invalid number of stacks\n");
-    /*exit*/ return( HIERARCHICALSEARCH_EBAD );
+    return( HIERARCHICALSEARCH_EBAD );
   }
 
 
   if ( uvar_blocksRngMed < 1 ) {
     fprintf(stderr, "Invalid Running Median block size\n");
-    /*exit*/ return( HIERARCHICALSEARCH_EBAD );
+    return( HIERARCHICALSEARCH_EBAD );
   }
 
   if ( uvar_peakThrF < 0 ) {
     fprintf(stderr, "Invalid value of Fstatistic threshold\n");
-    /*exit*/ return( HIERARCHICALSEARCH_EBAD );
+    return( HIERARCHICALSEARCH_EBAD );
   }
 
   /* probability of peak selection */
@@ -572,7 +570,7 @@ int MAIN( int argc, char *argv[]) {
 
   if ( uvar_followUp && (!LALUserVarWasSet(&uvar_DataFiles2))) {
     fprintf( stderr, "Must specify SFTs for second stage!\n");
-    /*exit*/ return( HIERARCHICALSEARCH_EBAD );
+    return( HIERARCHICALSEARCH_EBAD );
   }
 
   /* no need to follow up zero 1st stage candidates */
@@ -591,11 +589,11 @@ int MAIN( int argc, char *argv[]) {
   /* write the log file */
   if ( uvar_log ) 
     {
-      fnamelog = (CHAR *)LALMalloc( 512*sizeof(CHAR));
+      fnamelog = LALCalloc( strlen(uvar_fnameout) + 1 + 4, sizeof(CHAR) );
       strcpy(fnamelog, uvar_fnameout);
       strcat(fnamelog, ".log");
       /* open the log file for writing */
-      if ((fpLog = fopen(fnamelog, "w")) == NULL) {
+      if ((fpLog = fopen(fnamelog, "wb")) == NULL) {
 	fprintf(stderr, "Unable to open file %s for writing\n", fnamelog);
 	LALFree(fnamelog);
 	/*exit*/ return(1);
@@ -633,7 +631,7 @@ int MAIN( int argc, char *argv[]) {
 
   /* initialize ephemeris info */ 
 
-  edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
+  edat = (EphemerisData *)LALCalloc(1, sizeof(EphemerisData));
   (*edat).ephiles.earthEphemeris = uvar_ephemE;
   (*edat).ephiles.sunEphemeris = uvar_ephemS;
   
@@ -649,9 +647,8 @@ int MAIN( int argc, char *argv[]) {
   /* create output Hough file for writing if requested by user */
   if ( uvar_printCand1 )
     {
-      fnameSemiCohCand = (CHAR *)LALMalloc( 512*sizeof(CHAR));
+      fnameSemiCohCand = LALCalloc( strlen(uvar_fnameout) + 1, sizeof(CHAR) );
       strcpy(fnameSemiCohCand, uvar_fnameout);
-      /* strcat(fnameSemiCohCand, "_semicoh.dat"); */
       if (!(fpSemiCoh = fopen(fnameSemiCohCand, "wb"))) 
 	{
 	  LogPrintf ( LOG_CRITICAL, "Unable to open output-file '%s' for writing.\n", fnameSemiCohCand);
@@ -663,12 +660,12 @@ int MAIN( int argc, char *argv[]) {
   /* create output Fstat file name and open it for writing */
   if ( uvar_followUp ) 
     {
-      
-      fnameFstatCand = (CHAR *)LALMalloc( 512*sizeof(CHAR));
+      const CHAR *append = "_fstat.dat";
+      fnameFstatCand = LALCalloc( strlen(uvar_fnameout) + strlen(append) + 1, sizeof(CHAR) );
       strcpy(fnameFstatCand, uvar_fnameout);
-      strcat(fnameFstatCand, "_fstat.dat");
+      strcat(fnameFstatCand, append);
 
-      if  (!(fpFstat = fopen(fnameFstatCand, "w")))
+      if  (!(fpFstat = fopen(fnameFstatCand, "wb")))
 	{
 	  fprintf ( stderr, "Unable to open Fstat file '%s' for writing.\n", fnameFstatCand);
 	  return HIERARCHICALSEARCH_EFILE;
@@ -677,11 +674,11 @@ int MAIN( int argc, char *argv[]) {
 
   if ( uvar_printFstat1 )
     {
-
-      fnameFstatVec1 = (CHAR *)LALMalloc( 512*sizeof(CHAR));
+      const CHAR *append = "_fstatVec1.dat";
+      fnameFstatVec1 = LALCalloc( strlen(uvar_fnameout) + strlen(append) + 1, sizeof(CHAR) );
       strcpy(fnameFstatVec1, uvar_fnameout);
-      strcat(fnameFstatVec1, "_fstatVec1.dat");
-      if ( !(fpFstat1 = fopen( fnameFstatVec1, "w")))
+      strcat(fnameFstatVec1, append);
+      if ( !(fpFstat1 = fopen( fnameFstatVec1, "wb")))
 	{
 	  fprintf ( stderr, "Unable to open Fstat file fstatvec1.out for writing.\n");
 	  return HIERARCHICALSEARCH_EFILE;
@@ -720,14 +717,13 @@ int MAIN( int argc, char *argv[]) {
   if ( LALUserVarWasSet(&uvar_refTime)) 
     usefulParams1.refTime = uvar_refTime;
   else {
-    LogPrintf(LOG_DEBUG, "Reference time will be set to mid-time of central stack\n");
+    LogPrintf(LOG_DEBUG, "Reference time will be set to mid-time of observation time\n");
     usefulParams1.refTime = -1;
   }
   
   /* for 1st stage: read sfts, calculate multi-noise weights and detector states */  
   LogPrintf (LOG_DEBUG, "Reading SFTs and setting up stacks ... ");
-  LAL_CALL( SetUpSFTs( &status, &stackMultiSFT1, &stackMultiNoiseWeights1, 
-		       &stackMultiDetStates1, &usefulParams1), &status);
+  LAL_CALL( SetUpSFTs( &status, &stackMultiSFT1, &stackMultiNoiseWeights1, &stackMultiDetStates1, &usefulParams1), &status);
   LogPrintfVerbatim (LOG_DEBUG, "done\n");
 
   /* some useful params computed by SetUpSFTs */
@@ -1823,11 +1819,13 @@ void ComputeFstatHoughMap(LALStatus *status,
       for(j=0; j< histTotal.length; ++j) 
 	histTotal.data[j]=0; 
     }
-    fileStats = NULL;
-    fileStats = (CHAR *)LALCalloc(1, 256 * sizeof(CHAR));
-    strcpy( fileStats, params->outBaseName);
-    strcat( fileStats, "stats");
-    if ( !(fpStats = fopen(fileStats, "w")))
+    {
+      const CHAR *append = "stats";
+      fileStats = LALCalloc(strlen(params->outBaseName) + strlen(append) + 1, sizeof(CHAR) );
+      strcpy( fileStats, params->outBaseName);
+      strcat( fileStats, append);
+    }
+    if ( !(fpStats = fopen(fileStats, "wb")))
       {
 	fprintf(stderr, "Unable to open file '%s' for writing...continuing\n", fileStats);
       }
@@ -2277,7 +2275,7 @@ void PrintHmap2file(LALStatus *status,
   sprintf( filenumber, ".%06d",iHmap); 
   strcat(  filename, filenumber);
 
-  fp=fopen(filename,"w");  
+  fp=fopen(filename,"wb");  
   ASSERT ( fp != NULL, status, HIERARCHICALSEARCH_EFILE, HIERARCHICALSEARCH_MSGEFILE );
 
   ySide= ht->ySide;
@@ -2671,7 +2669,7 @@ void PrintHoughHistogram( LALStatus *status,
     }
 
   for (i=0; i < hist->length; i++)
-    fprintf(fp,"%d  %llu\n", i, hist->data[i]);
+    fprintf(fp,"%d  %" LAL_UINT8_FORMAT "\n", i, hist->data[i]);
   
   fclose( fp );  
   
@@ -2748,7 +2746,7 @@ void PrintStackInfo( LALStatus  *status,
     the existing results file */
 void GetChkPointIndex( LALStatus *status,
 		       INT4 *loopindex, 
-		       CHAR *fnameChkPoint)
+		       const CHAR *fnameChkPoint)
 {
 
   FILE  *fp=NULL;
