@@ -2432,7 +2432,7 @@ void GetHoughCandidates_threshold(LALStatus            *status,
 	    if (numCandidates >= out->length) {
 	      out->length += BLOCKSIZE_REALLOC;
 	      out->list = (SemiCohCandidate *)LALRealloc( out->list, out->length * sizeof(SemiCohCandidate));
-	      LogPrintf(LOG_DETAIL, "Need to realloc Hough candidate list to %d entries\n", out->length);
+	      LogPrintf(LOG_DEBUG, "Need to realloc Hough candidate list to %d entries\n", out->length);
 	    } /* need a safeguard to ensure that the reallocs don't happen too often */
 	    
 	    /* add to list if candidate exceeds threshold and there is enough space in list */
@@ -2498,7 +2498,7 @@ void GetHoughCandidates_threshold(LALStatus            *status,
     if (numCandidates >= out->length) {
       out->length += BLOCKSIZE_REALLOC;
       out->list = (SemiCohCandidate *)LALRealloc( out->list, out->length * sizeof(SemiCohCandidate));
-      LogPrintf(LOG_DETAIL, "Need to realloc Hough candidate list to %d entries\n", out->length);
+      LogPrintf(LOG_DEBUG, "Need to realloc Hough candidate list to %d entries\n", out->length);
     } /* need a safeguard to ensure that the reallocs don't happen too often */
     
     

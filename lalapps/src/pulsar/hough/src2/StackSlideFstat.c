@@ -490,7 +490,7 @@ void GetStackSlideCandidates_threshold(LALStatus *status,
      if (numCandidates >= out->length) {
          out->length += BLOCKSIZE_REALLOC;
          out->list = (SemiCohCandidate *)LALRealloc( out->list, out->length * sizeof(SemiCohCandidate));
-         LogPrintf(LOG_DETAIL, "Need to realloc StackSlide candidate list to %d entries\n", out->length);
+         LogPrintf(LOG_DEBUG, "Need to realloc StackSlide candidate list to %d entries\n", out->length);
      } /* need a safeguard to ensure that the reallocs don't happen too often */
 
      thisSig = pstackslideData[j]; /* Should we do more than this to find significance? */
