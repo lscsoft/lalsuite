@@ -75,7 +75,7 @@
 		 VEC_LOOP(16+12); VEC_LOOP(32+0);
 		 in double precision */
 
-	      /* skip the values in single precision calculation */
+	      /* skip these values in single precision calculation */
 	      tFreq   = vec_sub(tFreq,four4);
 
 	      tFreqD = tempFreq0 + klim/2 - 15; /* start at the 14th element */
@@ -85,6 +85,7 @@
 	      VEC_LOOP_D(32+0);  VEC_LOOP_D(32+2);
 
 	      /* the rest is done in single precision again */
+	      /* init the memory access as above */
               load0 = vec_ld(0,(Xalpha_kR4+36));
 
 	      VEC_LOOP(32+4,0,1); VEC_LOOP(32+8,1,2); VEC_LOOP(32+12,2,3); 
