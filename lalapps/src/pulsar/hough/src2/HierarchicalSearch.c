@@ -1186,11 +1186,11 @@ int MAIN( int argc, char *argv[]) {
 	    /* end hough */
 	  } else if ( uvar_method == 1 ) {
             /* --- stackslide option --------*/
-            LogPrintf(LOG_DEBUG, "Starting StackSlide calculation...\n");
+            LogPrintf(LOG_DETAIL, "Starting StackSlide calculation...\n");
 	    /* 12/18/06 gm; use threshold from command line as threshold on stackslide sum of F-stat values */
             semiCohPar.threshold = uvar_threshold1; 
             LAL_CALL( StackSlideVecF( &status, &semiCohCandList1, &fstatVector1, &semiCohPar), &status);
-	    LogPrintf(LOG_DEBUG, "...finished StackSlide calculation\n");
+	    LogPrintf(LOG_DETAIL, "...finished StackSlide calculation\n");
           }
 
 	  /* print candidates if desired */
@@ -2437,7 +2437,7 @@ void GetHoughCandidates_threshold(LALStatus            *status,
 	    if (numCandidates >= out->length) {
 	      out->length += BLOCKSIZE_REALLOC;
 	      out->list = (SemiCohCandidate *)LALRealloc( out->list, out->length * sizeof(SemiCohCandidate));
-	      LogPrintf(LOG_DEBUG, "Need to realloc Hough candidate list to %d entries\n", out->length);
+	      LogPrintf(LOG_DETAIL, "Need to realloc Hough candidate list to %d entries\n", out->length);
 	    } /* need a safeguard to ensure that the reallocs don't happen too often */
 	    
 	    /* add to list if candidate exceeds threshold and there is enough space in list */
@@ -2503,7 +2503,7 @@ void GetHoughCandidates_threshold(LALStatus            *status,
     if (numCandidates >= out->length) {
       out->length += BLOCKSIZE_REALLOC;
       out->list = (SemiCohCandidate *)LALRealloc( out->list, out->length * sizeof(SemiCohCandidate));
-      LogPrintf(LOG_DEBUG, "Need to realloc Hough candidate list to %d entries\n", out->length);
+      LogPrintf(LOG_DETAIL, "Need to realloc Hough candidate list to %d entries\n", out->length);
     } /* need a safeguard to ensure that the reallocs don't happen too often */
     
     
