@@ -362,7 +362,7 @@ class candidateList:
         file name to write to the disk with.
         """
         if self.filename.__len__() == 0:
-            print 'Error with header information in instance'
+            print 'Error with header information in instance, using default DefaultName.file'
             return 'DefaultName.file'
         else:
             filename='GLOB:'+os.path.basename(self.filename[0])+\
@@ -1183,15 +1183,33 @@ class candidateList:
         return pixelList
     #End method getPixelList()
 
-    def writePixelList(self,filename):
+    def writePixelList(self,filename,style):
         """
         Write the list of pixels to a 3C file given a FILENAME
-        arguement
+        arguement and STYLE argument
+        TFP gets 3C data of time,freq,power
+        anything else gets just time,freq
+        The list is in terms of the first time value and its offset.
+        The start time should be listed in the filename! (I hope)
         """
+        if type(style) != type(str('test')):
+            print "Error on type of pixel list file!"
+            os.abort
         output_fp=open(filename,'w')
-        format="%10.5f %10.5f %10.5f\n"
-        for line in self.getPixelList():
-            output_fp.write(format%(line[0],line[1],line[2]))
+        format3C="%10.5f %10.5f %10.5f\n"
+        format2C="%10.5f %10.5f\n"
+        pixelList=self.getPixelList()
+        pixelList.sort()
+        minVal=pixelList[0][0]
+        newPixelList=[]
+        for entry in pixelList:
+            newPixelList.append([entry[0]-minVal,entry[1],entry[2]])
+        if style.lower() == 'tfp':
+            for line in newPixelList:
+                output_fp.write(format3C%(line[0],line[1],line[2]))
+        else:
+            for line in newPixelList:
+                output_fp.write(format2C%(line[0],line[1]))
         output_fp.close()
         #End method writePixelList()
 #End candidateList class

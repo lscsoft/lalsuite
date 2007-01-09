@@ -44,6 +44,17 @@ def buildCandidateGlob(fileList):
     return copy.deepcopy(newCandidateObject)
 #End method
 
+def gnuplotScriptFile(filename):
+    """
+    Invokes gnuPlot in an unusual hackish was to create a PS scatter
+    plot to view the pixels found as part of a curve(s). Add a .plt
+    extension to the filename specified
+    """
+    txtTemplate='plot "%s"\n set size 1.0,0.6\n set terminal postscript portrait enhanced mono dashed lw 1 "Helvetica" 14\n set output "%s.ps"\n replot\n set terminal x11\n set size 1,1\n'
+    output_fp=open(filename+'.plt','w')
+    output_fp.write(txtTemplate%(filename,filename))
+    output_fp.close()
+#End method gnuplotScriptFile()
 
 ###################End internal methods #################
 
@@ -111,11 +122,18 @@ canList=generateFileList(filename)
 
 #SECTION TO DO THE GLOBBING OF MANY CANDIDATE FILES
 if (glob and (canList.__len__() >= 1)):
-    newCandidateObject=buildCandidateGlob(canList)
+    newGlobFile=candidateList()
     if outfile != "":
-        newCandidateObject.writefile(outfile)
+        outName=outfile
     else:
-        newCandidateObject.writefile(newCandidateObject.__filemaskGlob__())
+        outName=newGlobFile.__filemaskGlob__()
+    #If file preexists erase it first!
+    if os.path.isfile(outName):
+        print "Prexistinf file found:",outName
+        print "Removing!"
+        os.unlink(outName)
+    for entry in canList:
+        newGlobFile.globListFile(outfile,entry)
 
     #SECTION TO DO THE CLOBBERING OF A CANDIDATE FILE WITH ANOTHER
 elif (clobberFilename != '') and (canList.__len__() == 1):
@@ -158,12 +176,13 @@ elif ((canList.__len__() >= 1) and (printFile)):
         candidateObject=candidateList()
         candidateObject.loadfile(entry)
         if (outfile != "") and (canList.__len__() == 1):
-            candidateObject.writePixelList(outfile)
+            candidateObject.writePixelList(outfile,'tf')
         else:
             pathName=os.path.dirname(candidateObject.filename[0])
             saveFiles=pathName+'/ScatterPlot:'+os.path.basename(candidateObject.filename[0])
             print "Writing scatter plotable data :",saveFiles
-            candidateObject.writePixelList(saveFiles)        
+            candidateObject.writePixelList(saveFiles,'tf')        
+            gnuplotScriptFile(saveFiles)
         del entry
         del candidateObject
 
@@ -202,7 +221,7 @@ elif ((canList.__len__() >=1) and dumpSummaryScreen):
         del entry
 
     #IF there are no files to work on found.    
-elif (canList.__len() < 0):
+elif (canList.__len__() < 0):
       print "It appears there are no files to process!"
 
     #THIS SECTION SHOULD NEVER HAPPEN

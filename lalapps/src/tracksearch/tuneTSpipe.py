@@ -163,6 +163,51 @@ class tuneObject:
         print "Master dag is ready."
     #End __buildDAGfrom__
 
+    def __writeFAfiles__(self,auxoutData,outputData):
+        """
+        Common code to write out FA_results file.  This facilitates ease
+        of use for FA routines. Expects two input lists [] an empty list
+        will not be written out.
+        """
+        if auxoutData !=[]:
+            auxout_fp=open(self.home+'/FA_results.aux','w')
+            auxout_fp.write("LH,LL,Mean L,Stddev L,Mean P,Stddev P Count\n")
+            txt=""
+            for entry in auxoutData:
+                for element in entry:
+                    txt=txt+str("%15.5f")%(float(element))
+                entryTXT=txt
+                txt=""
+                #entryTXT=str(entry).replace('[','').replace(']','').replace("'",'').replace(',',' ')
+                auxout_fp.write(str(entryTXT)+'\n')
+            auxout_fp.close()
+        if outputData != []:
+            output_fp=open(self.home+'/FA_results.dat','w')
+            for entry in outputData:
+                output_fp.write(str(entry)+'\n')
+            output_fp.close()
+            pickleout_fp=open(self.home+'/FA_results.pickle','w')
+            pickle.dump(outputData,pickleout_fp)
+            pickleout_fp.close()
+            output_fp=open(self.home+'/FA_results_MatlabPlot.dat','w')
+            formatContour = "%10.5f %10.5f %10.5f %10i\n"
+            contourData=outputData
+            for entry in contourData:
+                output_fp.write(formatContour % (float(entry[0]),
+                                                 float(entry[1]),
+                                                 float(entry[2]),
+                                                 int(entry[3])))
+            output_fp.close()
+            formatContour = "%10.5f %10.5f %10.5f %10i\n"
+            output_fp=open(self.home+'/FA_results_CurvesFound_MatlabPlot.dat','w')
+            for entry in auxoutData:
+                output_fp.write(formatContour % (float(entry[0]),
+                                                 float(entry[1]),
+                                                 float(entry[6]),
+                                                 int(entry[6])))
+        output_fp.close()
+    #End __writeFAfiles__()
+    
     def performFAsetup(self):
         buildDir(self.installPipes)
         buildDir(self.installIni)
@@ -262,6 +307,7 @@ class tuneObject:
         print "Checking ",resultFiles.__len__()," total candidate files. This may take a while."
         auxoutData=[]
         outputData=[]
+        contourData=[]
         countMe=0
         modValue=10
         for entry in resultFiles:
@@ -271,12 +317,13 @@ class tuneObject:
             countMe=countMe+1
             #Revising to avoid opening data files
             candidate=candidateList()
-            myStat=candidate.candidateStatsFromFile(entry)
+            myStat=candidate.candidateStatsOnDisk(entry)
             if myStat == []:
-                meanP=varP=stdP=meanL=stdL=0
+                curves=meanP=varP=stdP=meanL=stdL=0
                 threshP=0
                 threshL=3
             else:
+                curves=myStat[2]
                 meanP=myStat[3]
                 varP=myStat[4]
                 stdP=math.sqrt(varP)
@@ -289,23 +336,35 @@ class tuneObject:
             myOpts=str(str(entry).replace(self.installPipes,'').split('/')[1]).split('_')
             myLH=myOpts[1]
             myLL=myOpts[2]
-            auxoutData.append([float(myLH),float(myLL),meanL,stdL,meanP,stdP])
+            auxoutData.append([float(myLH),float(myLL),float(meanL),float(stdL),float(meanP),float(stdP),int(curves)])
             outputData.append([float(myLH),float(myLL),float(threshP),float(threshL)])
+            contourData.append([float(myLH),float(myLL),float(threshP),float(threshL)])
         print " "
-        auxout_fp=open(self.home+'/FA_results.aux','w')
-        auxout_fp.write("LH,LL,Mean L,Stddev L,Mean P,Stddev P\n")
-        for entry in auxoutData:
-            auxout_fp.write(str(entry)+'\n')
-        auxout_fp.close()
-        output_fp=open(self.home+'/FA_results.dat','w')
-        for entry in outputData:
-            output_fp.write(str(entry)+'\n')
-        output_fp.close()
-        pickleout_fp=open(self.home+'/FA_results.pickle','w')
-        pickle.dump(outputData,pickleout_fp)
-        pickleout_fp.close()
+        self.__writeFAfiles__(auxoutData,outputData)
     #End performFAcalc method
 
+    def rewriteFARfile(self):
+        """
+        This method uses the output of performFAcalc to re-write the threshold files this is in case we want to change the FAR value and rerun the detection efficiency tests
+        """
+        #Load up the statistic aux file.
+        auxout_fp=open(self.home+'/FA_results.aux','r')
+        auxTxt=auxout_fp.readlines()
+        auxout_fp.close()
+        outputData=[]
+        myFAR=self.mySigmaFA
+        headerTxt=auxTxt.pop(0)
+        #Recalculate stats        
+        for entry in auxTxt:
+            (myLH,myLL,meanL,stdL,meanP,stdP,curves)=entry.split()
+            threshP=float(meanP)+(myFAR*float(stdP))
+            threshL=int(round(float((float(meanL)+(myFAR*float(stdL))))))
+            outputData.append([float(myLH),float(myLL),float(threshP),float(threshL)])
+        #Rewrite the threshold pickle file and dat file
+        #
+        self.__writeFAfiles__([],outputData)
+    #End rewriteFARfile
+    
     def readFAresults(self):
         """
         Parse the results file to setup the appropriate P,L thresholds to do
@@ -355,8 +414,14 @@ class tuneObject:
             len=entry[3]
             pipeIniName=self.installIni2+'/'+self.batchMask+':'+str(h)+':'+str(float(l))+':'+str(float(p))+':'+str(int(len))+':'+'.ini'
             self.DEpipeNames.append(pipeIniName)
-            #self.DEeditIniFile(h,l,p,len,pipeIniName)
-            self.NEW_DEeditIniFile(h,l,p,len,pipeIniName)
+            #Check to see if the threshold section exits...
+            #If it does we implicity keep all triggers for FA and DE
+            #Else the DE runs try to save disk space and allow tracksearch
+            #to perform our simple L and P thresholds. Check MasterIni
+            if self.cpIni.has_section('candidatethreshold'):
+                self.keepTrigs_DEeditIniFile(h,l,p,len,pipeIniName)
+            else:
+                self.saveDisk_DEeditIniFile(h,l,p,len,pipeIniName)
             #True states use the ini file to set injection into the pipeline.
             self.createPipe(pipeIniName,True)
         #Search the workspace to construct a huge parent DAG for submitting all the DAGs
@@ -365,10 +430,11 @@ class tuneObject:
         self.__buildDAGfrom__(dagFilename,root2dags)
     #End performDEsetup
 
-    def DEeditIniFile(self,LH,LL,P,L,iniName):
+    def saveDisk_DEeditIniFile(self,LH,LL,P,L,iniName):
         """
         This method will edit the original ini file in such a way as to
         prepare the detection efficiency runs to be launched.
+        Do not use this method!
         """
         newCP=copy.deepcopy(self.cpIni)
         #New/Rewritten ini options
@@ -389,7 +455,7 @@ class tuneObject:
         fp.close()
     #End DEeditIniFile
 
-    def NEW_DEeditIniFile(self,LH,LL,P,L,iniName):
+    def keepTrigs_DEeditIniFile(self,LH,LL,P,L,iniName):
         """
         This method will edit the original ini file in such a way as to
         prepare the detection efficiency runs to be launched.
@@ -419,40 +485,63 @@ class tuneObject:
         #determine percentage succsessful
         #write 2 ranked 4c list lh ll #map percentage
 #        globFiles=self.__findLayer1GlobFiles__(self.installPipes2)
-        globFiles=self.__findFiles__(self.installPipes2,['Glob','_1.candidates'])
+        if self.cpIni.has_section('candidatethreshold'):
+            globFiles=self.__findFiles__(self.installPipes2,['Glob','_1.candidates','DE_','Threshold:'])
+        else:
+            globFiles=self.__findFiles__(self.installPipes2,['Glob','_1.candidates','DE_'])
         outputPickle=[]
         outputP=[]
         outputL=[]
+        outputContour=[]
         numInjections=int(self.cpIni.get('tracksearchinjection','inject_count'))
+        numInjections=0
         print "Calculating efficiencies for ",globFiles.__len__()," files."
+        countMe=0
+        modValue=10
         for entry in globFiles:
+            if countMe%modValue==0:
+                sys.stdout.writelines('.')
+                sys.stdout.flush()
+            countMe=countMe+1
             candObj=candidateList()
-            candObj.loadfile(entry)
+            candStats=candObj.candidateStatsFromFile(entry)
             fileName=entry
-            curveCount=candObj.totalCount
+            curveCount=candStats[2]
             myOpts=str(str(entry).replace(self.installPipes2,'').split('/')[1]).split('_')
             h=myOpts[1]
             l=myOpts[2]
             p=myOpts[3]
             len=myOpts[4]
-            eff=float(candObj.totalCount)/float(numInjections)
-            outputPickle.append([h,l,p,len,eff,candObj.totalCount,numInjections,entry])
-            outputP.append([float(h),float(l),float(p),float(eff),int(candObj.totalCount),int(numInjections)])
-            outputL.append([float(h),float(l),int(float(len)),float(eff),int(candObj.totalCount),int(numInjections)])
+            #eff=float(candObj.totalCount)/float(numInjections)
+            eff=0
+            outputPickle.append([h,l,p,len,eff,curveCount,numInjections,entry])
+            if float(p)>0:
+                outputP.append([float(h),float(l),float(p),float(eff),int(curveCount),int(numInjections)])
+            if float(len)>3:
+                outputL.append([float(h),float(l),int(float(len)),float(eff),int(curveCount),int(numInjections)])
+            outputContour.append([float(h),float(l),float(p),int(curveCount)])
+        print " "
         #Write out results files to disk
         format4CL = "%10.5f  %10.5f  %15i    %10.5f %10i %10i\n"
         format4CP = "%10.5f  %10.5f  %10.5f  %10.5f %10i %10i\n"
         format6C = "%10.5f %10.5f  %10.5f %10i  %10.5f %10i %10i\n"
+        formatContour = "%10.5f %10.5f %10.5f %10i\n"
         file_fp=open(self.home+'/DE_results_L.dat','w')
+        file2_fp=open(self.home+'/DE_results_Matlab_Length.dat','w')
         file_fp.write("H L P Len Eff Count \n")
         for entry in outputL:
             file_fp.write(format4CL % (entry[0],entry[1],entry[2],entry[3],entry[4],entry[5]))
+            file2_fp.write(formatContour % (entry[0],entry[1],entry[2],entry[4]))
         file_fp.close()
+        file2_fp.close()
         file_fp=open(self.home+'/DE_results_P.dat','w')
+        file1_fp=open(self.home+'/DE_results_Matlab_Power.dat','w')
         file_fp.write("H L P Len Eff Count \n")
         for entry in outputP:
             file_fp.write(format4CP % (entry[0],entry[1],entry[2],entry[3],entry[4],entry[5]))
+            file1_fp.write( formatContour %(entry[0],entry[1],entry[2],entry[4]))
         file_fp.close()
+        file1_fp.close()
         file_fp=open(self.home+'/DE_results_Mix.dat','w')
         file_fp.write("H L P Len Eff Count \n")
         for entry in outputPickle:
@@ -463,6 +552,18 @@ class tuneObject:
                                       float(entry[4]),
                                       int(float(entry[5])),
                                       int(float(entry[6]))))
+        file_fp.close()
+        newOutputContour=list()
+        lList=[]
+        pList=[]
+        tmpList=copy.deepcopy(outputContour)
+        tmpList.sort()
+        file_fp=open(self.home+'/DE_results_MatlabPlot.dat','w')
+        for entry in tmpList:
+            file_fp.write(formatContour % (float(entry[0]),
+                                           float(entry[1]),
+                                           float(entry[2]),
+                                           int(float(entry[3]))))
         file_fp.close()
         pickle_fp=open(self.home+'/DE_results.pickle','w')
         pickle.dump(outputPickle,pickle_fp)
@@ -492,6 +593,10 @@ parser.add_option("-c","--false-alarm-calculate",dest="FAcalc",
                   default=False,
                   action="store_true",
                   help="Specify this option after executing the false-alarm-setup(FAS) jobs successfully.  The script will then parse the results from the FAS jobs and determine the values of integrated curve power (IP) and curve length (CL) to achieve the false alarm rates requested in the tun file.  The solution will be written to the parent directory which contains all the pipeline tuning jobs.")
+parser.add_option("-r","--false-alarm-recalculate",dest="FAagain",
+                  default=False,
+                  action="store_true",
+                  help="Invoke this option to recalculate IP and CL thresholds if the false alarm rate has been altered in the tun file.")
 parser.add_option("-e","--detect-effeciency-calculate",dest="DEcalc",
                   default=False,
                   action="store_true",
@@ -504,6 +609,7 @@ tunFile=os.path.abspath(str(options.tunFile))
 FAsetup=bool(options.FAsetup)
 DEsetup=bool(options.DEsetup)
 FAcalc=bool(options.FAcalc)
+FAagain=bool(options.FAagain)
 DEcalc=bool(options.DEcalc)
 if options.tunFile == "":
     print "The tun file required to perform any step of the tuning process is not specified!"
@@ -520,6 +626,8 @@ if DEsetup: #NOT READY
 if FAcalc: #NOT READY
     countOpts=countOpts+1
 if DEcalc: #NOT READY
+    countOpts=countOpts+1
+if FAagain:
     countOpts=countOpts+1
 if countOpts != 1:
     print "There is a problem with the options specified at the command line.  Only one action at a time can be specified!"
@@ -541,6 +649,8 @@ elif FAcalc:
     tuner.performFAcalc()
 elif DEcalc:
     tuner.performDEcalc()
+elif FAagain:
+    tuner.rewriteFARfile()
 else:
     print "This should never happen!"
     os.abort()

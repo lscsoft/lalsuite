@@ -229,9 +229,10 @@ class tracksearchHousekeeperJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     We will also remove the .diag files if they are present as well.  This is an umbrella feature.  It works on
     clearing files from [filelayout],workpath and its subdirectories.  This is all blockIDs for the DAG.
     """
-    def __init__(self,cp,dagDir):
+    def __init__(self,cp,block_id,dagDir):
         self.dagDirectory=dagDir
         self.cp=cp
+        self.block_id=block_id
         self.__executable = cp.get('condor','housekeeper')
         #HACK change to local in new condor version
         #self.__universe = cp.get('condor','universe')
@@ -249,11 +250,13 @@ class tracksearchHousekeeperJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
             self.add_ini_opts(cp,sec)
         workpath=cp.get('filelayout','workpath')
         self.add_opt('parent-dir',workpath)
+        blockPath=determineBlockPath(cp,self.block_id)
+        workpath=blockPath
         workpath_logs=workpath+'/logs'
         buildDir(workpath_logs)
         self.set_stdout_file(os.path.normpath(workpath_logs+'/tracksearchHousekeeper-$(cluster)-$(process).out'))
         self.set_stderr_file(os.path.normpath(workpath_logs+'/tracksearchHousekeeper-$(cluster)-$(process).err'))
-        self.set_sub_file(workpath_logs+'/tracksearchHousekeeper.sub')
+        self.set_sub_file(os.path.normpath(self.dagDirectory+'/tracksearchHousekeeper.sub'))
         #End init
     #End class tracksearchHousekeeperJob
     
@@ -601,7 +604,6 @@ class tracksearchThresholdJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         if cp.has_option('candidatethreshold','expression_threshold'):
             newVal=val=cp.get('candidatethreshold','expression_threshold')
             if val.__contains__('"'):
-                print "Escaping quotes for required SUBMIT file syntax!"       
                 newVal=str(val).replace('"','\\"')
                 cp.set('candidatethreshold','expression_threshold',newVal)
         for sec in ['candidatethreshold']:
@@ -630,6 +632,7 @@ class tracksearchTimeNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
         #Expects to run CondorDAGJob object for tracksearch
         pipeline.CondorDAGNode.__init__(self,job)
         pipeline.AnalysisNode.__init__(self)
+        pipeline.CondorDAGNode.set_retry(self,3)
     #End init
 #End Class
 
@@ -683,7 +686,8 @@ class tracksearchClusterNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
         #Expects to run CondorDAGJob object for tracksearch
         pipeline.CondorDAGNode.__init__(self,job)
         pipeline.AnalysisNode.__init__(self)
-        pipeline.CondorDAGNode.set_post_script(self,'/bin/true')
+        #pipeline.CondorDAGNode.set_post_script(self,'/bin/true')
+        pipeline.CondorDAGNode.set_retry(self,3)
     #End init
 #End Class
 
@@ -887,7 +891,7 @@ class tracksearch:
             self.dag.add_node(tracksearchCluster_node2)
             nextJobList.append(tracksearchCluster_node2)
         #Step that sets up the tracksearchHousekeeperJobs
-        tracksearchHousekeeper_job=tracksearchHousekeeperJob(self.cp,self.dagDirectory)
+        tracksearchHousekeeper_job=tracksearchHousekeeperJob(self.cp,self.blockID,self.dagDirectory)
         tracksearchHousekeeper_node=tracksearchHousekeeperNode(tracksearchHousekeeper_job)
         for parents in prevJobList:
             tracksearchHousekeeper_node.add_parent(parents)
