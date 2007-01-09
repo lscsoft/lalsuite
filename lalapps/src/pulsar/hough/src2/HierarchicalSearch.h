@@ -224,7 +224,7 @@ NRCSID( HIERARCHICALSEARCHH, "$Id$" );
 
   void GetChkPointIndex( LALStatus *status,
 			 INT4 *loopindex, 
-			 CHAR *fnameChkPoint);
+			 const CHAR *fnameChkPoint);
 
 
   
