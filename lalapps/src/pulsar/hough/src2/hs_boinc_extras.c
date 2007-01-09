@@ -448,7 +448,7 @@ static void worker (void) {
       if (boinc_resolve_filename(argv[i]+l,resultfile,sizeof(resultfile))) {
         LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve result file '%s'\n", argv[i]+l);
       }
-      s = strlen(argv[i])+strlen(OUTPUT_EXT);
+      s = strlen(argv[i])+strlen(OUTPUT_EXT)+1;
       rargv[i] = (char*)malloc(s);
       strncpy(rargv[i],argv[i],s);
       strncat(rargv[i],OUTPUT_EXT,s);
@@ -465,7 +465,7 @@ static void worker (void) {
 	if (boinc_resolve_filename(argv[i],resultfile,sizeof(resultfile))) {
 	  LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve result file '%s'\n", argv[i]);
 	}
-	s = strlen(argv[i])+strlen(OUTPUT_EXT);
+	s = strlen(argv[i])+strlen(OUTPUT_EXT)+1;
 	rargv[i] = (char*)malloc(s);
 	strncpy(rargv[i],argv[i],s);
 	strncat(rargv[i],OUTPUT_EXT,s);
