@@ -348,7 +348,6 @@ int MAIN( int argc, char *argv[]) {
   BOOLEAN uvar_help; /* true if -h option is given */
   BOOLEAN uvar_log; /* logging done if true */
   BOOLEAN uvar_printCand1; /* if 1st stage candidates are to be printed */
-  BOOLEAN uvar_chkPoint;
   BOOLEAN uvar_followUp;
   BOOLEAN uvar_printFstat1;
   BOOLEAN uvar_useToplist1;
@@ -415,7 +414,6 @@ int MAIN( int argc, char *argv[]) {
   uvar_printStats = FALSE;
   uvar_printCand1 = FALSE;
   uvar_printFstat1 = FALSE;
-  uvar_chkPoint = FALSE;
   uvar_useToplist1 = FALSE;
   uvar_useWeights = FALSE;
   uvar_semiCohToplist = FALSE;
@@ -473,7 +471,6 @@ int MAIN( int argc, char *argv[]) {
   /* register user input variables */
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",        'h', UVAR_HELP,     "Print this message", &uvar_help), &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "log",          0,  UVAR_OPTIONAL, "Write log file", &uvar_log), &status);  
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "chkPoint",     0,  UVAR_OPTIONAL, "For checkpointing", &uvar_chkPoint), &status);  
   LAL_CALL( LALRegisterINTUserVar(    &status, "method",       0,  UVAR_OPTIONAL, "0=Hough,1=stackslide,-1=fstat", &uvar_method ), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "semiCohToplist",0, UVAR_OPTIONAL, "Print semicoh toplist?", &uvar_semiCohToplist ), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "useWeights",   0,  UVAR_OPTIONAL, "Weight each stack using noise and AM?", &uvar_useWeights ), &status);
