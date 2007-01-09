@@ -297,7 +297,7 @@ int MAIN( int argc, char *argv[]) {
 
   /* number of stacks -- not necessarily same as uvar_nStacks! */
   UINT4 nStacks1, nStacks2;
-  REAL8 deltaFstack1, deltaFstack2; /* frequency resolution of Fstat calculation */
+  REAL8 dFreqStack1, dFreqStack2; /* frequency resolution of Fstat calculation */
   REAL8 df1dot, df1dotRes, df1dot2;  /* coarse grid resolution in spindown */
   UINT4 nf1dot, nf1dotRes, nf1dot2; /* coarse and fine grid number of spindown values */
 
@@ -740,10 +740,10 @@ int MAIN( int argc, char *argv[]) {
   /* set Fstat calculation frequency resolution
      -- default is 1/tstack */
   if ( LALUserVarWasSet(&uvar_dFreq) ) {
-    deltaFstack1 = uvar_dFreq;
+    dFreqStack1 = uvar_dFreq;
   }
   else {
-    deltaFstack1 = 1.0/tStack1;
+    dFreqStack1 = 1.0/tStack1;
   }
 
   /* set Fstat spindown resolution
@@ -819,7 +819,7 @@ int MAIN( int argc, char *argv[]) {
 
   /* print debug info about stacks */
   LogPrintf(LOG_DEBUG, "1st stage params: Nstacks = %d,  Tstack = %.0fsec, dFreq = %eHz, Tobs = %.0fsec\n", 
-	    nStacks1, tStack1, deltaFstack1, tObs1);
+	    nStacks1, tStack1, dFreqStack1, tObs1);
   for (k = 0; k < nStacks1; k++) {
 
     LogPrintf(LOG_DEBUG, "Stack %d ", k);
@@ -901,9 +901,9 @@ int MAIN( int argc, char *argv[]) {
     UINT4 extraBinsSky, extraBinsfdot;
 
     extraBinsSky = LAL_SQRT2 * VTOT * usefulParams1.spinRange_midTime.fkdot[0] 
-      * HSMAX(semiCohPar.patchSizeX, semiCohPar.patchSizeY) / deltaFstack1;
+      * HSMAX(semiCohPar.patchSizeX, semiCohPar.patchSizeY) / dFreqStack1;
 
-    extraBinsfdot = tObs1 * nf1dotRes * df1dotRes / deltaFstack1;
+    extraBinsfdot = tObs1 * nf1dotRes * df1dotRes / dFreqStack1;
     
     semiCohPar.extraBinsFstat = extraBinsSky + extraBinsfdot;    
     LogPrintf(LOG_DEBUG, "No. of extra Fstat freq. bins = %d for skypatch + %d for residual fdot\n",
@@ -914,14 +914,14 @@ int MAIN( int argc, char *argv[]) {
   fstatVector1.length = nStacks1;
   fstatVector1.data = NULL;
   fstatVector1.data = (REAL8FrequencySeries *)LALCalloc( 1, nStacks1 * sizeof(REAL8FrequencySeries));
-  binsFstat1 = (UINT4)(usefulParams1.spinRange_midTime.fkdotBand[0]/deltaFstack1 + 0.5) + semiCohPar.extraBinsFstat;
+  binsFstat1 = (UINT4)(usefulParams1.spinRange_midTime.fkdotBand[0]/dFreqStack1 + 0.5) + semiCohPar.extraBinsFstat;
   LogPrintf(LOG_DEBUG, "Number of Fstat frequency bins = %d\n", binsFstat1); 
 
   for (k = 0; k < nStacks1; k++) { 
     /* careful--the epoch here is not the reference time for f0! */
     fstatVector1.data[k].epoch = startTstack1->data[k];
-    fstatVector1.data[k].deltaF = deltaFstack1;
-    fstatVector1.data[k].f0 = usefulParams1.spinRange_midTime.fkdot[0] - 0.5 * semiCohPar.extraBinsFstat * deltaFstack1;
+    fstatVector1.data[k].deltaF = dFreqStack1;
+    fstatVector1.data[k].f0 = usefulParams1.spinRange_midTime.fkdot[0] - 0.5 * semiCohPar.extraBinsFstat * dFreqStack1;
     fstatVector1.data[k].data = (REAL8Sequence *)LALCalloc( 1, sizeof(REAL8Sequence));
     fstatVector1.data[k].data->length = binsFstat1;
     fstatVector1.data[k].data->data = (REAL8 *)LALCalloc( 1, binsFstat1 * sizeof(REAL8));
@@ -968,10 +968,10 @@ int MAIN( int argc, char *argv[]) {
     /* set Fstat calculation frequency resolution
        -- default is 1/tstack */
     if ( LALUserVarWasSet(&uvar_dFreq2) ) {
-      deltaFstack2 = uvar_dFreq2;
+      dFreqStack2 = uvar_dFreq2;
     }
     else {
-      deltaFstack2 = 1.0/tStack2;
+      dFreqStack2 = 1.0/tStack2;
     }
     
     /* set Fstat spindown resolution
@@ -1245,11 +1245,11 @@ int MAIN( int argc, char *argv[]) {
 		  fstatVector2.length = nStacks2;
 		  fstatVector2.data = NULL;
 		  fstatVector2.data = (REAL8FrequencySeries *)LALCalloc( 1, nStacks2 * sizeof(REAL8FrequencySeries));
-		  binsFstat2 = (UINT4)(freqBand1/deltaFstack2 + 0.5) + 1;
+		  binsFstat2 = (UINT4)(freqBand1/dFreqStack2 + 0.5) + 1;
 		  for (k = 0; k < nStacks2; k++) 
 		    { 
 		      fstatVector2.data[k].epoch = startTstack2->data[k];
-		      fstatVector2.data[k].deltaF = deltaFstack2;
+		      fstatVector2.data[k].deltaF = dFreqStack2;
 		      fstatVector2.data[k].f0 = fStart1;
 		      fstatVector2.data[k].data = (REAL8Sequence *)LALCalloc( 1, sizeof(REAL8Sequence));
 		      fstatVector2.data[k].data->length = binsFstat2;
