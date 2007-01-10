@@ -510,6 +510,80 @@ REAL8 XLALCalculateEThincaParameter(
 
 }
 
+
+/* This function returns the e-thinca parameter between a trigger and an injection */
+REAL8 XLALEThincaParameterForInjection( 
+                    SimInspiralTable  *injection,
+                    SnglInspiralTable *trigger
+                    )
+{
+
+  const static char *func = "XLALEThincaParameterForInjection";
+
+  /* Trigger parameters */
+  REAL8 fLower;
+  REAL8 mTotal;
+  REAL8 tau0;
+  REAL8 eta;
+
+  /* Inj parameters */
+  InspiralTemplate injTmplt;   /* Used to calculate parameters */
+  INT8 injEndTime;
+
+  /* Parameter differences */
+  REAL8 dtC, dt0, dt3;
+
+  REAL8 eMatch;
+
+  LALStatus status;
+
+  if ( !injection || !trigger )
+    XLAL_ERROR_REAL8( func, XLAL_EFAULT );
+
+  memset( &status, 0, sizeof(LALStatus));
+
+  /* We need the tau0 and tau3 for the injection */
+  /* To do this, we will need to calculate the lower frequency used in the
+   * case of the inspiral trigger */
+
+  mTotal = trigger->mass1 + trigger->mass2;
+  eta    = trigger->eta;
+  tau0   = trigger->tau0;
+
+  mTotal = mTotal * LAL_MTSUN_SI;
+
+  fLower = 5.0 / (256.0 * eta * pow(mTotal, 5.0/3.0) * tau0 );
+  fLower = pow(fLower, 3.0/8.0) / LAL_PI;
+
+  XLALPrintInfo("%s: fLower found to be %e\n", func, fLower );
+
+  /* Now populate the inspiral template with relevant parameters */
+  injTmplt.mass1      = injection->mass1;
+  injTmplt.mass2      = injection->mass2;
+  injTmplt.massChoice = m1Andm2;
+  injTmplt.fLower     = fLower;
+
+  LALInspiralParameterCalc( &status, &injTmplt );
+
+  /* Get the GPS time from the injection*/
+  injEndTime = XLALReturnSimInspiralEndTime( injection, trigger->ifo );
+
+  dtC = ( injEndTime - XLALGPStoINT8( &(trigger->end_time) ) ) * 1.0e-9;
+  dt0 = injTmplt.t0 - trigger->tau0;
+  dt3 = injTmplt.t3 - trigger->tau3;
+
+  eMatch = trigger->Gamma[0] * dtC * dtC
+         + 2.0 * trigger->Gamma[1] * dtC * dt0
+         + 2.0 * trigger->Gamma[2] * dtC * dt3
+         + trigger->Gamma[3] * dt0 * dt0
+         + 2.0 * trigger->Gamma[4] * dt0 * dt3
+         + trigger->Gamma[5] * dt3 * dt3;
+
+  eMatch = 1.0 - eMatch;
+
+  return eMatch;
+}
+
 /* 
  * This function returns the largest time error associated with a
  * particular error ellipsoid.
