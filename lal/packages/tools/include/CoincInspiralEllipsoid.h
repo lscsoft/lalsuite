@@ -94,6 +94,11 @@ REAL8 XLALCalculateEThincaParameter(
           SnglInspiralTable *table2
              );
 
+REAL8 XLALEThincaParameterForInjection(
+                    SimInspiralTable  *injection,
+                    SnglInspiralTable *trigger
+                    );
+
 #ifdef  __cplusplus
 }
 #endif
