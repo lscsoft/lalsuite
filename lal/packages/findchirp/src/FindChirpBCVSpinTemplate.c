@@ -41,7 +41,68 @@ spinning BCV template as described by the algorithm below.
 
 \subsubsection*{Algorithm}
 
-Blah.
+This code calculates a number of quantities required by the 
+{\tt LALFindChirpBCVSpinFilterSegment()} function.
+To improve efficiency we calculate every template dependent 
+quantity that does not require detector data
+in this function.
+Since the template bank does not provide values for $f_{final}$ we calculate 
+it here. For every combination of $\psi_0$ and $\psi_3$ values provided by 
+the template bank we find the frequency at the last stable orbit using 
+$f_{final} = (-16 \pi \psi_0)/(\psi_3 r_{LSO}^{3/2})$
+where $r_{LSO} = 6M_{\odot}$ is the separation of the binaries components.  
+We then calculate the complex phase of the template 
+$\psi_{NM}(f) = \psi_{initial} + f^{-5/3}(\psi_0 + f \psi_3)$
+between $f_{low}$ and $f_{final}$.
+Next we calculate 5 moments which are required to construct the template:
+\begin{eqnarray}
+I &=& 4 \int_{0}^{\infty} f^{-7/3} \frac{df} {S_{n} (f) } \nonumber\\
+J &=& 4 \int_{0}^{\infty} f^{-7/3} \cos ( \beta f^{-2/3}) 
+\frac{df} {S_{n} (f) } \nonumber\\
+K &=& 4 \int_{0}^{\infty} f^{-7/3} \sin ( \beta f^{-2/3}) 
+\frac{df} {S_{n} (f) } \nonumber\\
+L &=& 2 \int_{0}^{\infty} f^{-7/3} \sin (2\beta f^{-2/3}) 
+\frac{df} {S_{n} (f) } \nonumber\\
+M &=& 2 \int_{0}^{\infty} f^{-7/3} \cos (2\beta f^{-2/3}) 
+\frac{df} {S_{n} (f) }
+\end{eqnarray}
+In practise we integrate between our lowest non-zero frequency sample 
+point {\tt k=1} (a division-by-zero error would
+occur at $0 Hz$) and the Nyquist frequency {\tt k=numPoints/2}. From 
+these moments we then find the
+orthonormalised amplitude vectors:
+\begin{eqnarray}
+\mathcal{\widehat{A}}_1(f)   =  \frac { f^{-7/6} }  { I^{1/2}}
+\nonumber
+\end{eqnarray}
+
+\begin{eqnarray}
+\mathcal{\widehat{A}}_2(f)   =  \frac{ f^{-7/6} \bigg 
+[ \cos(\beta f^{-2/3}) - \frac{J}{I} \bigg ] I^{1/2} } 
+{ \bigg[ IM + \frac{I^{2}}{2}
+- J^{2} \bigg] ^{1/2} }
+\nonumber
+\end{eqnarray}
+
+\begin{eqnarray}
+\mathcal{\widehat{A}}_3(f) & = & \frac{ f^{-7/6} \bigg [
+\sin(\beta f^{-2/3})
+- \frac{K}{I}
+- \frac{IL - JK}{IM + \frac{I^{2}}{2} - J^{2}} 
+\big[\cos(\beta f^{-2/3}) -\frac{J}{I} \big ]
+\bigg ] I^{1/2} }
+{ \bigg [
+\frac{I^{2}}{2} - IM - K^{2} - \frac{ (IL - JK)^{2}}
+{IM + \frac{I^{2}}{2} - J^{2} }
+\bigg ] ^{1/2} }
+\end{eqnarray}
+where $\beta$ is provided by the template bank code and the 
+$f^{-7/6}$ and $f^{-2/3}$ vectors were calculated previously
+in {\tt LALFindChirpDataInit()}. To avoid division-by-zero 
+errors we explicitly set 
+$\mathcal{\widehat{A}}_2(f) = \mathcal{\widehat{A}}_3(f) = 0$ 
+when $\beta = 0$.
+
 
 \subsubsection*{Uses}
 \begin{verbatim}
