@@ -62,6 +62,7 @@ LALInspiralBankGeneration(
       bank->mass1 = coarseList[cnt].params.mass1;
       bank->mass2 = coarseList[cnt].params.mass2;
       bank->mchirp = coarseList[cnt].params.chirpMass;
+      bank->mtotal = coarseList[cnt].params.totalMass;
       bank->eta = coarseList[cnt].params.eta;
       bank->tau0 = coarseList[cnt].params.t0;
       bank->tau2 = coarseList[cnt].params.t2;
