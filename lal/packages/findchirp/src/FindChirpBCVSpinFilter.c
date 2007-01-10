@@ -26,12 +26,65 @@ Provides functions to filter data for spinning BCV templates.
 \input{FindChirpBCVSpinFilterCP}
 \idx{LALFindChirpBCVSpinFilter()}
 
-The function \texttt{LALFindChirpBCVSpinFilter()} filters data for 
+The function \texttt{LALFindChirpBCVSpinFilterSegment()} filters data for 
 spinning BCV templates as described by the algorithm below.
 
 \subsubsection*{Algorithm}
 
-Blah.
+Using the quantities calculated in {\tt LALFindChirpBCVSpinTemplate()} we 
+construct a template and filter our data producing a clustered 
+signal-to-noise ratio time series.
+We filter our data in 256 second data segments.
+We first calculate the following functions in the frequency domain:
+\begin{eqnarray}
+{\tt qtilde}         & = & \frac {\mathcal{\widehat{A}}_1(f) 
+e^{i \psi_{NM} (f)} s^* (f)} {S_h (f)} \nonumber\\
+{\tt qtildeBCVSpin1} & = & \frac {\mathcal{\widehat{A}}_2(f) 
+e^{i \psi_{NM} (f)} s^* (f)} {S_h (f)} \nonumber\\
+{\tt qtildeBCVSpin2} & = & \frac {\mathcal{\widehat{A}}_3(f) 
+e^{i \psi_{NM} (f)} s^* (f)} {S_h (f)}
+\end{eqnarray}
+where $\mathcal{\widehat{A}}_1(f)$, $\mathcal{\widehat{A}}_2(f)$ 
+and $\mathcal{\widehat{A}}_3(f)$ are the orthonormal amplitude functions 
+and $\psi_{NM} (f)$ is the non-modulational phase of our template. These
+quantitites were calculated in {\tt LALFindChirpBCVSpinTemplate()}. $s^*$ 
+is the complex conjugate of our (detector) data in the frequency domain 
+and $S_h (f)$ is our estimate of the power spectral density of the detector 
+data estimated over a 2048 second ``blocks''.
+Using inverse FFT's we construct the complex time domain quantities 
+{\tt q}, {\tt qBCVSpin1} and {\tt qBCVSpin2}.
+We then calculate signal-to-noise ratio as
+\begin{eqnarray}
+\rho(t)^2 & = & {\tt q.re}^2 
+           + {\tt q.im}^2 
+           + {\tt qBCVSpin1.re}^2 
+           + {\tt qBCVSpin1.im}^2 + \nonumber\\
+       &   & {\tt qBCVSpin2.re}^2 
+           + {\tt qBCVSpin2.im}^2.
+\end{eqnarray}
+We then look for values of $\rho(t)$ above our threshold - note that the 
+$\beta = 0$ threshold is currently hardcoded. We do not calculate 
+signal-to-noise ratio for the 64 second stretch at the beginning and end
+of each data segment to avoid edge-effects. These times are picked up by 
+overlapping our 256 second data segments.
+For times for which signal-to-noise ratio is calculated we have the option 
+of clustering our output using the {\tt --cluster-method window} option in 
+{\tt lalapps\_inspiral} with an appropriate choice of cluster length.
+For events that pass the signal-to-noise ratio threshold and survive 
+clustering we store the template parameters $\psi_0$, $\psi_3$, $\beta$ 
+and $f_{final}$ as well as 6 $\alpha$ values which encode the relative 
+contribution of the {\tt q}, {\tt qBCVSpin1} and {\tt qBCVSpin2} functions 
+to the overall signal-to-noise ratio. These are simply calculated as
+\begin{eqnarray}
+\alpha_1 & = & {\tt q.re} / \rho \nonumber \\
+\alpha_2 & = & {\tt qBCVSpin1.re} / \rho \nonumber \\
+\alpha_3 & = & {\tt qBCVSpin2.re} / \rho \nonumber \\
+\alpha_4 & = & {\tt q.im} / \rho \nonumber \\
+\alpha_5 & = & {\tt qBCVSpin1.im} / \rho \nonumber \\
+\alpha_6 & = & {\tt qBCVSpin2.im} / \rho.
+\end{eqnarray}
+These obey $\sum_{i=1}^6 \alpha_i = 1$ and might prove useful in future 
+signal based vetoe studies.
 
 \subsubsection*{Uses}
 \begin{verbatim}
