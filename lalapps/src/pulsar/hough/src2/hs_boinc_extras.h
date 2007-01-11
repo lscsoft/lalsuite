@@ -48,7 +48,11 @@ extern void register_output_file(char*filename);
    This also set the count & total (skypos) for checkpointing */
 extern void show_progress(double rac, double dec, long count, long total);
 
-/* inits checkpointing for the toplist and reads the last checkpoint if present */
+/* inits checkpointing for the toplist and reads the last checkpoint if present
+   This expects all passed variables to be already initialized.
+   If *cptname is NULL, the name is constructed by appending ".cpt"
+   to the output filename.
+   The variables are modified only if a checkpoint file was found. */
 extern void init_and_read_checkpoint(toplist_t*toplist,
 				     unsigned long*total, unsigned long*count,
 				     char*outputname, char*cptname);
@@ -57,11 +61,10 @@ extern void init_and_read_checkpoint(toplist_t*toplist,
    It inserts a candidate into the toplist, updates the file
    and "compacts" it if necessary (i.e. bytes > maxsize).
    NOTE that the toplist parameter is just a dummy to make the interface
-        compatible to insert_into_fstat_toplist(). The operations is
+        compatible to insert_into_fstat_toplist(). The operation is
         actually performed on the toplist passed to the least recent call
         of init_and_read_checkpoint(), which, however, should be the same
-        in all reasonable cases.
- */
+        in all reasonable cases. */
 extern int add_candidate_and_checkpoint (toplist_t*toplist, FstatOutputEntry cand);
 
 /* does the final (compact) write of the file and cleans up checkpointing stuff
@@ -70,7 +73,7 @@ extern void write_and_close_output_file (void);
 
 
 
-/* the main() function of HierarchicalSerach.c becomes the main_hierarchical_search()
+/* the main() function of HierarchicalSerach.c becomes the extern MAIN(),
    the real main() function of the BOINC App is defined in boinc_extras.c
 */
 extern int MAIN(int,char**);

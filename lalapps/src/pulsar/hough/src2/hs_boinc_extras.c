@@ -3,11 +3,11 @@
 */
 
 /* TODO:
-   - catch malloc errors in worker()
-   - checkpointing
+   - sanity checking of values read from the checkpoint file
+       before modifying important variables
    - error handling in checkpointing
-   - format srings in checkpoint file
-   - bahavior when boinc_is_standlone()
+   - catch malloc errors in worker()
+   - behavior when boinc_is_standlone()?
 */
 
 
@@ -723,11 +723,6 @@ int main(int argc, char**argv) {
 
 
 /* inits checkpointing and read a checkpoint if already there */
-/* This expects all passed variables to be already initialized.
-   If *cptname is NULL, the name is constructed by appending ".cpt"
-   to the output filename.
-   The variables are set only if a checkpoint file was found.
-*/
 void init_and_read_checkpoint(toplist_t*toplist,
 			      unsigned long*total, unsigned long*count,
 			      char*outputname, char*cptname) {
@@ -761,6 +756,7 @@ void init_and_read_checkpoint(toplist_t*toplist,
   fclose(fp);
 }
 
+
 /* set_checkpoint() */
 int add_candidate_and_checkpoint (toplist_t*toplist, FstatOutputEntry cand) {
   int ret = fstat_cpt_file_add (cptf, cand);
@@ -776,6 +772,7 @@ int add_candidate_and_checkpoint (toplist_t*toplist, FstatOutputEntry cand) {
   }
   return (ret);
 }
+
 
 void write_and_close_output_file (void) {
   fstat_cpt_file_close(cptf);
