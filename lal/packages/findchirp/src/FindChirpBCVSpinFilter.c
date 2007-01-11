@@ -51,7 +51,7 @@ quantitites were calculated in {\tt LALFindChirpBCVSpinTemplate()}. $s^*$
 is the complex conjugate of our (detector) data in the frequency domain 
 and $S_h (f)$ is our estimate of the power spectral density of the detector 
 data estimated over a 2048 second ``blocks''.
-Using inverse FFT's we construct the complex time domain quantities 
+Using inverse FFTs we construct the complex time domain quantities 
 {\tt q}, {\tt qBCVSpin1} and {\tt qBCVSpin2}.
 We then calculate signal-to-noise ratio as
 \begin{eqnarray}
