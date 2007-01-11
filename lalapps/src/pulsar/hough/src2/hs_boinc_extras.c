@@ -82,6 +82,14 @@ extern int boinc_init_graphics(void (*worker)(void));
 static int global_argc;
 static char **global_argv;
 
+/* variables for checkpointing */
+static char* cptfilename;
+static FStatCheckpointFile* cptf;
+static UINT4 bufsize = 8*1024;
+static UINT4 maxsize = 1024*1024;
+static double last_rac, last_dec;
+static UINT4 last_count, last_total;
+
 
 
 
@@ -174,6 +182,10 @@ static void sighandler(int sig){
   show_progress()
  */
 void show_progress(double rac, double dec, long count, long total) {
+  last_rac = rac;
+  last_dec = dec;
+  last_count = count;
+  last_total = total;
   double fraction = (double)count / (double)total;
   if (fraction_done_hook)
     *fraction_done_hook = fraction;
@@ -709,13 +721,6 @@ int main(int argc, char**argv) {
 
 
 
-#if 0
-
-/* variables for checkpointing */
-static char* cptfilename;
-static FStatCheckpointFile* cptf;
-static UINT4 bufsize = 8*1024;
-static UINT4 int maxsize = 1024*1024;
 
 /* inits checkpointing and read a checkpoint if already there */
 /* This expects all passed variables to be already initialized.
@@ -723,8 +728,9 @@ static UINT4 int maxsize = 1024*1024;
    to the output filename.
    The variables are set only if a checkpoint file was found.
 */
-void init_and_get_checkpoint(toplist_t*toplist, long*total, long*count,
-                             char*outputname, char*cptname) {
+void init_and_read_checkpoint(toplist_t*toplist,
+			      unsigned long*total, unsigned long*count,
+			      char*outputname, char*cptname) {
   FILE*fp;
   UINT4 checksum, bytes;
 
@@ -732,12 +738,12 @@ void init_and_get_checkpoint(toplist_t*toplist, long*total, long*count,
   
   fstat_cpt_file_create (&cptf, outputname, bufsize, maxsize, toplist);
 
-  fstat_cpt_file_open (&cptf);
+  fstat_cpt_file_open (cptf);
 
   /* create checkpoint file name if necc. */
   if(!cptname) {
 #define CHECKPOINT_EXT ".cpt"
-    int s = strlen(argv[i])+strlen(CHECKPOINT_EXT)+1;
+    int s = strlen(outputname)+strlen(CHECKPOINT_EXT)+1;
     cptfilename = (char*)malloc(s);
     strncpy(cptfilename,outputname,s);
     strncat(cptfilename,CHECKPOINT_EXT,s);
@@ -746,27 +752,33 @@ void init_and_get_checkpoint(toplist_t*toplist, long*total, long*count,
   fp = fopen(cptfilename,"r");
   
   if (fp)
-    if (6 == fscanf(fp,"%f,%f,%d,%d,%d,%d",&rac,&dec,count,total,&checksum,&bytes))
-      fstat_cpt_file_read (cptf, checksum, maxbytes);
+    if (6 == fscanf(fp,"%lf,%lf,%lu,%lu,%u,%u",
+		    &last_rac, &last_dec,
+		    count, total,
+		    &checksum, &bytes))
+      fstat_cpt_file_read (cptf, checksum, bytes);
+
+  fclose(fp);
 }
 
 /* set_checkpoint() */
-void add_candidate_and_checkpoint (FstatOutputEntry cand) {
+int add_candidate_and_checkpoint (toplist_t*toplist, FstatOutputEntry cand) {
   int ret = fstat_cpt_file_add (cptf, cand);
   if (boinc_time_to_checkpoint()) {
     FILE* fp;
     fstat_cpt_file_flush (cptf);
     fp = fopen(cptfilename,"w");
-    fstat_cpt_file_read (cptf, checksum, maxbytes);
-    fprintf(fp,"%f,%f,%d,%d,%d,%d\n",rac,dec,count,total,checksum,bytes);
+    fprintf(fp,"%f,%f,%d,%d,%d,%d\n",
+	    last_rac, last_dec, last_count, last_total,
+	    cptf->checksum, cptf->bytes);
     fclose(fp);
     boinc_checkpoint_completed();
   }
+  return (ret);
 }
 
-void write_and_close_output_file (fp) {
-  /* final ("atomic") write output file */
-  /* destroy checkpointfile structure */
+void write_and_close_output_file (void) {
+  fstat_cpt_file_close(cptf);
+  fstat_cpt_file_destroy(&cptf);
 }
 
-#endif
