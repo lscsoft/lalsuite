@@ -5,6 +5,9 @@
 /* TODO:
    - catch malloc errors in worker()
    - checkpointing
+   - error handling in checkpointing
+   - format srings in checkpoint file
+   - bahavior when boinc_is_standlone()
 */
 
 
@@ -328,6 +331,7 @@ static void worker (void) {
   char**argv  = global_argv;   /* ...  take argc and argv from global variables */
   int rargc   = global_argc;   /* argc and ... */
   char**rargv = NULL;          /* ... argv values for calling the MAIN() function of the worker */
+  int arg, rarg;               /* current command-line argument */
   int i;                       /* loop counter */
   int l;                       /* length of matched string */
   int res = 0;                 /* return value of function call */
@@ -367,54 +371,55 @@ static void worker (void) {
   */
   rargv = (char**)malloc(argc*sizeof(char*));
   rargv[0] = argv[0];
+  rarg = 1;
 
   /* for all args in the command line (except argv[0]) */
-  for (i=1; i<argc; i++) {
+  for (arg=1; arg<argc; arg++) {
     
     /* config file */
-    if (argv[i][0] == '@') {
-      rargv[i] = (char*)malloc(MAX_PATH_LEN);
-      rargv[i][0] = '@';
-      if (boinc_resolve_filename(argv[i]+1,rargv[i]+1,MAX_PATH_LEN-1)) {
-        LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve config file '%s'\n", argv[i]+1);
+    if (argv[arg][0] == '@') {
+      rargv[rarg] = (char*)malloc(MAX_PATH_LEN);
+      rargv[rarg][0] = '@';
+      if (boinc_resolve_filename(argv[arg]+1,rargv[rarg]+1,MAX_PATH_LEN-1)) {
+        LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve config file '%s'\n", argv[arg]+1);
       }
     }
 
     /* skygrid file */
-    else if (MATCH_START("--skyGridFile=",argv[i],l)) {
-      rargv[i] = (char*)malloc(MAX_PATH_LEN);
-      strncpy(rargv[i],argv[i],l);
-      if (resolve_and_unzip(argv[i]+l, rargv[i]+l, MAX_PATH_LEN-l) < 0)
+    else if (MATCH_START("--skyGridFile=",argv[arg],l)) {
+      rargv[rarg] = (char*)malloc(MAX_PATH_LEN);
+      strncpy(rargv[rarg],argv[arg],l);
+      if (resolve_and_unzip(argv[arg]+l, rargv[rarg]+l, MAX_PATH_LEN-l) < 0)
 	res = HIERARCHICALSEARCH_EFILE;
     }
 
     /* ephermeris files */
-    else if (MATCH_START("--ephemE=",argv[i],l)) {
-      rargv[i] = (char*)malloc(MAX_PATH_LEN);
-      strncpy(rargv[i],argv[i],l);
-      if (resolve_and_unzip(argv[i]+l, rargv[i]+l, MAX_PATH_LEN-l) < 0)
+    else if (MATCH_START("--ephemE=",argv[arg],l)) {
+      rargv[rarg] = (char*)malloc(MAX_PATH_LEN);
+      strncpy(rargv[rarg],argv[arg],l);
+      if (resolve_and_unzip(argv[arg]+l, rargv[rarg]+l, MAX_PATH_LEN-l) < 0)
 	res = HIERARCHICALSEARCH_EFILE;
     }
-    else if (MATCH_START("--ephemS=",argv[i],l)) {
-      rargv[i] = (char*)malloc(MAX_PATH_LEN);
-      strncpy(rargv[i],argv[i],l);
-      if (resolve_and_unzip(argv[i]+l, rargv[i]+l, MAX_PATH_LEN-l) < 0)
+    else if (MATCH_START("--ephemS=",argv[arg],l)) {
+      rargv[rarg] = (char*)malloc(MAX_PATH_LEN);
+      strncpy(rargv[rarg],argv[arg],l);
+      if (resolve_and_unzip(argv[arg]+l, rargv[rarg]+l, MAX_PATH_LEN-l) < 0)
 	res = HIERARCHICALSEARCH_EFILE;
     }
 
 
     /* SFT files (no unzipping, but dealing with multiple files separated by ';' */
-    else if (0 == strncmp("--DataFiles",argv[i],11)) {
-      rargv[i] = (char*)malloc(1024);
+    else if (0 == strncmp("--DataFiles",argv[arg],11)) {
+      rargv[rarg] = (char*)malloc(1024);
 
       /* copy & skip the "[1|2]=" characters, too */
-      strncpy(rargv[i],argv[i],13);
-      appc = rargv[i]+13;
-      startc = argv[i]+13;
+      strncpy(rargv[rarg],argv[arg],13);
+      appc = rargv[rarg]+13;
+      startc = argv[arg]+13;
 
       /* skip single quotes if and only if they are surrounding the complete path-string */
       if ((*startc == '\'') && (*(startc+(strlen(startc)-1)) == '\'')) {
-        LogPrintf (LOG_DEBUG, "DEBUG: removing quotes from path %s\n", argv[i]);
+        LogPrintf (LOG_DEBUG, "DEBUG: removing quotes from path %s\n", argv[arg]);
 	*(startc+strlen(startc)-1) = '\0';
 	startc++;
       }
@@ -443,45 +448,48 @@ static void worker (void) {
 
     /* output file */
 #define OUTPUT_EXT ".res"
-    else if (MATCH_START("--fnameout=",argv[i],l)) {
+    else if (MATCH_START("--fnameout=",argv[arg],l)) {
       int s;
-      if (boinc_resolve_filename(argv[i]+l,resultfile,sizeof(resultfile))) {
-        LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve result file '%s'\n", argv[i]+l);
+      if (boinc_resolve_filename(argv[arg]+l,resultfile,sizeof(resultfile))) {
+        LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve result file '%s'\n", argv[arg]+l);
       }
-      s = strlen(argv[i])+strlen(OUTPUT_EXT)+1;
-      rargv[i] = (char*)malloc(s);
-      strncpy(rargv[i],argv[i],s);
-      strncat(rargv[i],OUTPUT_EXT,s);
-      register_output_file(rargv[i]+l);
+      s = strlen(argv[arg])+strlen(OUTPUT_EXT)+1;
+      rargv[rarg] = (char*)malloc(s);
+      strncpy(rargv[rarg],argv[arg],s);
+      strncat(rargv[rarg],OUTPUT_EXT,s);
+      register_output_file(rargv[rarg]+l);
     }
-    else if (0 == strncmp("-o",argv[i],strlen("-o"))) {
+    else if (0 == strncmp("-o",argv[arg],strlen("-o"))) {
       int s;
-      rargv[i] = argv[i]; /* copy the "-o" */
-      i++;                /* grab next argument */
-      if(i >= argc) {
+      rargv[rarg] = argv[arg]; /* copy the "-o" */
+      arg++;                /* grab next argument */
+      rarg++;
+      if(arg >= argc) {
 	LogPrintf(LOG_CRITICAL,"ERROR in command line: no argument following '-o' option\n");
 	res = HIERARCHICALSEARCH_EFILE;
       } else {
-	if (boinc_resolve_filename(argv[i],resultfile,sizeof(resultfile))) {
-	  LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve result file '%s'\n", argv[i]);
+	if (boinc_resolve_filename(argv[arg],resultfile,sizeof(resultfile))) {
+	  LogPrintf (LOG_NORMAL, "WARNING: Can't boinc-resolve result file '%s'\n", argv[arg]);
 	}
-	s = strlen(argv[i])+strlen(OUTPUT_EXT)+1;
-	rargv[i] = (char*)malloc(s);
-	strncpy(rargv[i],argv[i],s);
-	strncat(rargv[i],OUTPUT_EXT,s);
-	register_output_file(rargv[i]);
+	s = strlen(argv[arg])+strlen(OUTPUT_EXT)+1;
+	rargv[rarg] = (char*)malloc(s);
+	strncpy(rargv[rarg],argv[arg],s);
+	strncat(rargv[rarg],OUTPUT_EXT,s);
+	register_output_file(rargv[rarg]);
       }
     }
 
     /* flops estimation */
-    else if (MATCH_START("--WUfpops=",argv[i],l)) {
-      estimated_flops = atof(argv[i]+l);
-      rargc--; /* this argument is not passed to the main worker function */
+    else if (MATCH_START("--WUfpops=",argv[arg],l)) {
+      estimated_flops = atof(argv[arg]+l);
+      rarg--; rargc--; /* this argument is not passed to the main worker function */
     }
 
     /* any other argument */
     else 
-      rargv[i] = argv[i];
+      rargv[rarg] = argv[arg];
+
+    rarg++;
   } /* for all command line arguments */
 
 
@@ -698,3 +706,67 @@ int main(int argc, char**argv) {
   /* boinc_init_graphics() or boinc_finish() ends the program, we never get here */
   return(0);
 }
+
+
+
+#if 0
+
+/* variables for checkpointing */
+static char* cptfilename;
+static FStatCheckpointFile* cptf;
+static UINT4 bufsize = 8*1024;
+static UINT4 int maxsize = 1024*1024;
+
+/* inits checkpointing and read a checkpoint if already there */
+/* This expects all passed variables to be already initialized.
+   If *cptname is NULL, the name is constructed by appending ".cpt"
+   to the output filename.
+   The variables are set only if a checkpoint file was found.
+*/
+void init_and_get_checkpoint(toplist_t*toplist, long*total, long*count,
+                             char*outputname, char*cptname) {
+  FILE*fp;
+  UINT4 checksum, bytes;
+
+  /* fixme: input checks */
+  
+  fstat_cpt_file_create (&cptf, outputname, bufsize, maxsize, toplist);
+
+  fstat_cpt_file_open (&cptf);
+
+  /* create checkpoint file name if necc. */
+  if(!cptname) {
+#define CHECKPOINT_EXT ".cpt"
+    int s = strlen(argv[i])+strlen(CHECKPOINT_EXT)+1;
+    cptfilename = (char*)malloc(s);
+    strncpy(cptfilename,outputname,s);
+    strncat(cptfilename,CHECKPOINT_EXT,s);
+  }
+
+  fp = fopen(cptfilename,"r");
+  
+  if (fp)
+    if (6 == fscanf(fp,"%f,%f,%d,%d,%d,%d",&rac,&dec,count,total,&checksum,&bytes))
+      fstat_cpt_file_read (cptf, checksum, maxbytes);
+}
+
+/* set_checkpoint() */
+void add_candidate_and_checkpoint (FstatOutputEntry cand) {
+  int ret = fstat_cpt_file_add (cptf, cand);
+  if (boinc_time_to_checkpoint()) {
+    FILE* fp;
+    fstat_cpt_file_flush (cptf);
+    fp = fopen(cptfilename,"w");
+    fstat_cpt_file_read (cptf, checksum, maxbytes);
+    fprintf(fp,"%f,%f,%d,%d,%d,%d\n",rac,dec,count,total,checksum,bytes);
+    fclose(fp);
+    boinc_checkpoint_completed();
+  }
+}
+
+void write_and_close_output_file (fp) {
+  /* final ("atomic") write output file */
+  /* destroy checkpointfile structure */
+}
+
+#endif
