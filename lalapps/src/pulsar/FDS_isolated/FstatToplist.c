@@ -560,7 +560,7 @@ int fstat_cpt_file_add (FStatCheckpointFile*cptf, FstatOutputEntry line) {
    returns 0 if successful,
    -1 if the file contained a syntax error,
    -2 if given an improper toplist */
-int fstat_cpt_file_read (FStatCheckpointFile*cptf, UINT4 maxbytes) {
+int fstat_cpt_file_read (FStatCheckpointFile*cptf, UINT4 checksum, UINT4 maxbytes) {
   INT4 bytes;
   if (!cptf) {
     LogPrintf (LOG_CRITICAL, "ERROR: FStatCheckpointFile is NULL\n");
@@ -573,6 +573,11 @@ int fstat_cpt_file_read (FStatCheckpointFile*cptf, UINT4 maxbytes) {
   } else if (bytes == -1) {
     cptf->bytes = 0;
     LogPrintf (LOG_CRITICAL, "ERROR: format error in toplist\n");
+    /* seek to start of file and truncate */
+    return(bytes);
+  } else if (checksum != cptf->checksum) {
+    cptf->bytes = 0;
+    LogPrintf (LOG_CRITICAL, "ERROR: checksum error in toplist\n");
     /* seek to start of file and truncate */
     return(bytes);
   }
