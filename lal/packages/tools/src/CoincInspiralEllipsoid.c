@@ -321,6 +321,13 @@ INT2 XLALCompareInspiralsEllipsoid(
     XLALSetTimeInPositionVector( bPtr->position,
           (curTimeBNS - curTimeANS) * 1.0e-9 );
 
+    /* if analyzing a grb the position and time-delay is KNOWN */
+    if (params->grb) 
+    {
+      timeShift=travelTime;
+      XLALSetTimeInPositionVector( aPtr->position, timeShift );
+    }
+
     /* Loop over the time shift to sweep the light travel time */
     while (timeShift <= travelTime)
     {
