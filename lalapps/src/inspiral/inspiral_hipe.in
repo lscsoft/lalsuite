@@ -1048,8 +1048,8 @@ else:
 
 # check number of GRB injections
 try:
-  startGRB=int(cp.get('pipeline','grb-inj-start'))
-  stopGRB=int(cp.get('pipeline','grb-inj-stop'))
+  startGRB=int(cp.get('pipeline','exttrig-inj-start'))
+  stopGRB=int(cp.get('pipeline','exttrig-inj-stop'))
   grbInjections=[startGRB, stopGRB]
 except:
   grbInjections=[0,0]
