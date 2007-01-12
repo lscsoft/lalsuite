@@ -207,7 +207,8 @@ static void print_usage(char *program)
       "                                   (playground_only|exclude_play|all_data)\n"\
       "   --complete-coincs               write out triggers from all non-vetoed ifos\n"
       "                                   if not seen, snr is equal to zero\n"\
-      "  [--grb]               source     enables the GRB mode (using actual time delays) for a source\n"\
+      "  [--exttrig]           source     enables the External-Trigger mode \n"\
+"                                         (using actual time delays) for a source\n"\
       "                                   specified in the source file\n"\
       "\n"\
       "[LIGOLW XML input files] list of the input trigger files.\n"\
@@ -220,7 +221,8 @@ static void print_usage(char *program)
  *
  */
 
- /* read the source location in GRB mode */
+ /* read the source location in GRB mode,
+    returns the coordinates in radians  */
 static void readSource( char* sourceFile, REAL4* rec, REAL4* dec )
 {
   FILE *fp;
@@ -231,6 +233,12 @@ static void readSource( char* sourceFile, REAL4* rec, REAL4* dec )
   int c;
   
   fp = fopen( sourceFile, "r" );
+  if (!fp) {
+    fprintf( stderr, "Error: Unable to open file %s.\n", sourceFile );
+    fprintf( stderr, "It does not exist or is read-permitted.\n ");
+    exit(1);
+  }
+
   while ( fgets( line, sizeof( line ), fp ) )
     if ( line[0] == '#' )
       continue;
@@ -1514,7 +1522,8 @@ int main( int argc, char *argv[] )
   }
 
 
-  /* read the source location in GRB mode */
+  /* read the source location in GRB mode,
+     right ascension and declination read in radians */
   if (sourceFile) {
     readSource( sourceFile, &locRec, &locDec );   
   }
@@ -1647,7 +1656,7 @@ int main( int argc, char *argv[] )
       }
     }
   }
- 
+
 
   /*
    * for the case of BCV unconstrained-max, discard the triggers that
@@ -1799,7 +1808,7 @@ int main( int argc, char *argv[] )
         sourceTime.gpsNanoSeconds=0;
 	
 	/* compute signal travel time  */
-	timeDelay=-XLALArrivalTimeDiff( aDet.location, bDet.location, locRec*LAL_PI_180, locDec*LAL_PI_180, &sourceTime);
+	timeDelay=-XLALArrivalTimeDiff( aDet.location, bDet.location, locRec, locDec, &sourceTime);
 	accuracyParams.lightTravelTime[ ifoNumber][ ifoTwo ] = 
           (INT8) 1e9*timeDelay;
 
@@ -1811,7 +1820,7 @@ int main( int argc, char *argv[] )
       }
     }
   }
-
+ 
   
   /* 
    *  
@@ -1882,6 +1891,7 @@ int main( int argc, char *argv[] )
               inspiralEventList, &accuracyParams ), &status);
     }
 
+
     /* count the zero-lag coincidences */
     if ( !numSlides) 
     {
@@ -1943,8 +1953,7 @@ int main( int argc, char *argv[] )
           "Discarding triggers with H2 snr > H1 snr \n" );
       XLALInspiralSNRCutBCV2( &coincInspiralList);
     }
-    
-   
+       
     
     if ( multiIfoCoinc )
     {
@@ -1958,7 +1967,7 @@ int main( int argc, char *argv[] )
     }
   
     /* perform the h1h2-consistency check */
-    if ( h1h2Consistency && haveTrig[LAL_IFO_H1] && haveTrig[LAL_IFO_H2] ) 
+    if ( h1h2Consistency && haveTrig[LAL_IFO_H1] && haveTrig[LAL_IFO_H2] )
     {
       if(vrbflg) 
       {
