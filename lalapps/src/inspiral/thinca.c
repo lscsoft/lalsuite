@@ -461,7 +461,7 @@ int main( int argc, char *argv[] )
     {"l1-veto-file",        required_argument, 0,                    '}'},
     {"t1-veto-file",        required_argument, 0,                    '['},
     {"v1-veto-file",        required_argument, 0,                    ']'},
-    {"grb",                 required_argument, 0,                    '_'},
+    {"exttrig",             required_argument, 0,                    '_'},
     {0, 0, 0, 0}
   };
   int c;
