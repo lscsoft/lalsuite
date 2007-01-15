@@ -54,20 +54,29 @@
 "                           Random in cos(i) if not specified\n"\
 "  --min-distance DMIN      set the minimum distance to DMIN kpc (1)\n"\
 "  --max-distance DMAX      set the maximum distance to DMAX kpc (20000)\n"\
-"  --d-distr DDISTR         distribute injections uniformly over\n"\
-"                           d (DDISTR = 0), or over log10(d) (DDISTR = 1)\n"\
-"                           or over volume (DDISTR = 2)\n"\
-"                           (default: DDISTR = -1, using sorce list)\n"\
+"  --d-distr DDISTR         distribute injections uniformly over d\n"\
+"                           (DDISTR = uniform), or over log10(d) \n"\
+"                           (DDISTR = log10),\n"\
+"                           or over volume (DDISTR = volume)\n"\
+"                           or using source list (DDISTR = source)\n"\
 "  --min-mass MIN           set the minimum component mass to MIN (3.0)\n"\
 "  --max-mass MAX           set the maximum component mass to MAX (20.0)\n"\
+"  [--min-mass2 MIN]      set the minimum component mass2 to MIN (minMass1)\n"\
+"  [--max-mass2 MAX]      set the maximum component mass2 to MAX (maxMass1)\n"\
+"  [--max-mtotal MAXTOTAL]  sets the maximum total mass to MAXTOTAL\n"\
 "  --m-distr MDISTR         distribute injections uniformly over\n"\
-"                           total mass (MDISTR = 0), or over mass1 and\n"\
-"                           over mass2 (MDISTR = 1), or gaussian (MDISTR=2)\n"\
-"                           (default: MDISTR=-1, using mass file)\n"\
-"  --mean-mass MASS         set the mean value for the mass if MDISTR=2\n"\
-"  --stdev-mass MSTD        set the standard deviation for mass if MDISTR=2\n"\
+"                           total mass (MDISTR = totalMass), or over mass1 and\n"\
+"                           over mass2 (MDISTR = componentMass), \n"\
+"                           or gaussian (MDISTR=gaussian), \n"\
+"                           or using mass file (MDISTR=source)\n"\
+"  --mean-mass MASS         set the mean value for both mass components if \n"\
+"                           MDISTR=gaussian\n"\
+"  [--mean-mass2 MASS]      set the mean value for mass2 if MDISTR=gaussian\n"\
+"  --stdev-mass MSTD        set the standard deviation for both component\n"\
+"                            masses if MDISTR=gaussian\n"\
+"  [--stdev-mass2 MSTD]     set the standard deviation for mass2 if \n"\
+"                           MDISTR=gaussian\n"\
 "  [--output NAME]          set the output filename \n"\
-"  [--grb]                  set maximum of mass1 to 3\n"\
 "\n"
 
 RCSID( "$Id$" );
@@ -115,6 +124,8 @@ ProcessParamsTable *next_process_param( const char *name, const char *type,
 
 enum { mTotElem, etaElem, distElem, incElem, phiElem, lonElem, latElem,
   psiElem, m1Elem, m2Elem, numElem };
+enum dDistTag {sourceD, uniform, logten, volume} dDistr;
+enum mDistrTag {sourceM, totalMass, componentMass, gaussian} mDistr;
 
 SimInspiralTable *this_sim_insp;
 
@@ -131,17 +142,20 @@ char *outputFileName = NULL;
 int allowMW=-1;
 float mwLuminosity = -1;
 
-int ddistr=-1;
+
 float dmin= 1;
 float dmax=20000;
-int mdistr=-1;
-float minMass=3;
-float maxMass=20;
-float meanMass=-1.0;
-float massStdev=-1.0;
+float minMass1=3.0;
+float maxMass1=20.0;
+float minMass2=-1;
+float maxMass2=-1;
+float maxMtotal=-1;
+float meanMass1=-1.0;
+float meanMass2=-1.0;
+float massStdev1=-1.0;
+float massStdev2=-1.0;
 float inclPeak=1;
 int flagInclPeak=0;
-int flagGRB=0;
 
 static LALStatus status;
 static RandomParams* randParams;
@@ -625,8 +639,9 @@ int inj_params( double *injPar, char *source )
   double delta;
   double dist;
   double u;
-  double deltaM;
-  double mtotal;
+  double deltaM1=0, deltaM2=0;
+  double mtotal=0;
+  double minMass=0, maxMass=0;
 
   /* get sky position */
   sky_position( &dist, &alpha, &delta, source );
@@ -644,71 +659,71 @@ int inj_params( double *injPar, char *source )
   }
 
   /* use the user-specified parameters to calculate the masses */
-  if (mdistr>=0) 
+  if ( mDistr!=sourceM )
   {
     /* mass range, per component */
-    deltaM = maxMass - minMass;
+    deltaM1 = maxMass1 - minMass1;
+    deltaM2 = maxMass2 - minMass2;
 
-    if (mdistr == 1) 
-    {
-      /* uniformly distributed mass1 and uniformly distributed mass2 */
-      u=my_urandom();
-      m1 = minMass + u * deltaM;
-      u=my_urandom();
-      m2 = minMass + u * deltaM;
-
-      /* If GRB injections are made make sure mass1 is no larger than 3.0 */
-      if ( flagGRB ) {
-	u=my_urandom();
-	m1 = minMass + u * (3.0-minMass);
-      }
-    }
-    else if (mdistr == 2)
-    {
-      /* gaussian distributed mass1 and mass2 */
-      m1 = 0.0;
-      while ( (m1-maxMass)*(m1-minMass) > 0 )
-      {
-        u = (float)gsl_ran_gaussian(rngR, massStdev);
-        m1 = meanMass + u;
-      }
-      m2 = 0.0;
-      while ( (m2-maxMass)*(m2-minMass) > 0 )
-      {
-        u = (float)gsl_ran_gaussian(rngR, massStdev);
-        m2 = meanMass + u;
-      }
-    }
-    else if (mdistr == 0) 
-    {
-      /*uniformly distributed total mass */
-      u=my_urandom();
-      mtotal = 2.0 * minMass + u * 2.0 *deltaM ;        
-      u=my_urandom();
-      m1 = minMass + u * deltaM;
-      m2 = mtotal - m1;
-
-      while (m1 >= mtotal || 
-          m2 >= maxMass || m2 <= minMass ) 
-      {
-        u=my_urandom();
-        m1 = minMass + u * deltaM;
-        m2 = mtotal - m1;
-      }
-    }
+    do {
+      if (mDistr == componentMass)
+	{
+	  /* uniformly distributed mass1 and uniformly distributed mass2 */
+	  u=my_urandom();
+	  m1 = minMass1 + u * deltaM1;
+	  u=my_urandom();
+	  m2 = minMass2 + u * deltaM2;
+	}
+      else if (mDistr == gaussian )
+	{
+	  /* gaussian distributed mass1 and mass2 */
+	  m1 = 0.0;
+	  while ( (m1-maxMass1)*(m1-minMass1) > 0 )
+	    {
+	      u = (float)gsl_ran_gaussian(rngR, massStdev1);
+	      m1 = meanMass1 + u;
+	    }
+	  m2 = 0.0;
+	  while ( (m2-maxMass2)*(m2-minMass2) > 0 )
+	    {
+	      u = (float)gsl_ran_gaussian(rngR, massStdev2);
+	      m2 = meanMass2 + u;
+	    }
+	}
+      else if (mDistr == totalMass )
+	{
+	  /*uniformly distributed total mass */
+	  u=my_urandom();
+	  minMass=minMass1+minMass2;
+	  maxMass=maxMass1+maxMass2;
+	  mtotal = minMass + u * (maxMass-minMass);
+	  u=my_urandom();
+	  m1 = minMass1 + u * (maxMass1-minMass1);
+	  m2 = mtotal - m1;
+	  
+	  while (m1 >= mtotal || 
+		 m2 >= maxMass2 || m2 <= minMass2 ) 
+	    {
+	      u=my_urandom();
+	      m1 = minMass1 + u * deltaM1;
+	      m2 = mtotal - m1;
+	    }
+	}
+      
+    } while (maxMtotal>0 && (m1+m2)>maxMtotal);
   }
 
   /* use the user-specified parameters to calculate the distance */
-  if (ddistr>=0) 
+  if ( dDistr!=sourceD )
   {
-    if (ddistr == 0)
+    if (dDistr == uniform )
     {
       /* uniform distribution in distance */
       REAL4 deltaD = dmax - dmin ;
       u=my_urandom();
       dist = (dmin + deltaD * u) * KPC;
     }
-    else if (ddistr == 1)
+    else if ( dDistr ==logten )
     {
       /* uniform distribution in log(distance) */
       REAL4 lmin = log10(dmin);
@@ -719,7 +734,7 @@ int inj_params( double *injPar, char *source )
       exponent = lmin + deltaL * u;
       dist = pow(10.0,(REAL4) exponent) * KPC;
     }
-    else if (ddistr == 2)
+    else if (dDistr == volume )
     {
       /* uniform volume distribution */
       REAL4 d2min = dmin * dmin ;
@@ -728,7 +743,7 @@ int inj_params( double *injPar, char *source )
       REAL4 d2;
       u=my_urandom();
       d2 = d2min + u * deltad2 ;
-      dist = sqrt(d2) * KPC;
+      dist = pow(d2, 1.0/3.0) * KPC;     
     }    
   } 
 
@@ -786,6 +801,7 @@ int main( int argc, char *argv[] )
   int rand_seed = 1;
   static int ilwd = 0;
   int lalEffDist = 0;
+
   /* waveform */
   CHAR waveform[LIGOMETA_WAVEFORM_MAX];
 
@@ -799,6 +815,8 @@ int main( int argc, char *argv[] )
   MetadataTable         injections;
   ProcessParamsTable   *this_proc_param;
   LIGOLwXMLStream       xmlfp;
+
+  CHAR dummy[256];
 
   /* getopt arguments */
   struct option long_options[] =
@@ -817,18 +835,22 @@ int main( int argc, char *argv[] )
     {"m-distr",                 required_argument, 0,                'd'},
     {"min-mass",                required_argument, 0,                'j'},
     {"max-mass",                required_argument, 0,                'k'},
+    {"min-mass2",               required_argument, 0,                'J'},
+    {"max-mass2",               required_argument, 0,                'K'},
+    {"max-mtotal",              required_argument, 0,                'L'},
     {"mean-mass",               required_argument, 0,                'n'},
+    {"mean-mass2",              required_argument, 0,                'N'},
     {"stdev-mass",              required_argument, 0,                'o'},
+    {"stdev-mass2",             required_argument, 0,                'O'},
     {"incl-peak",               required_argument, 0,                'c'},
     {"min-distance",            required_argument, 0,                'p'},
     {"max-distance",            required_argument, 0,                'r'},
     {"d-distr",                 required_argument, 0,                'e'},
     {"enable-milkyway",         required_argument, 0,                'M'},
-    {"output",                  required_argument, 0,                'O'},
+    {"output",                  required_argument, 0,                'P'},
     {"lal-eff-dist",                  no_argument, &lalEffDist,       1 },
     {"ilwd",                          no_argument, &ilwd,             1 },
     {"disable-milkyway",              no_argument, &allowMW,          0 },
-    {"grb",                           no_argument, &flagGRB,          1 },
     {0, 0, 0, 0}
   };
   int c;
@@ -1022,38 +1044,96 @@ int main( int argc, char *argv[] )
         break;
 
       case 'd':
-        mdistr = atoi( optarg );
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, 
-              "int", "%d", mdistr );
-        break;
+	optarg_len = strlen( optarg ) + 1;
+	memcpy( dummy, optarg, optarg_len );
+	this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+          calloc( 1, sizeof(ProcessParamsTable) );
+        LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+		     PROGRAM_NAME );
+        LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--m-distr" );
+        LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+        LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
+            optarg );
+
+	if (!strcmp(dummy, "source")) 
+	{	  
+	  mDistr=sourceM; 
+	} 
+	else if (!strcmp(dummy, "totalMass")) 
+	{
+	  mDistr=totalMass;
+	}  
+	else if (!strcmp(dummy, "componentMass")) 
+	{
+	  mDistr=componentMass;
+	}  
+	else if (!strcmp(dummy, "gaussian")) 
+	{
+	  mDistr=gaussian;
+	} 
+	break;
 
       case 'j':
-        minMass = atof( optarg );
+        minMass1 = atof( optarg );
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, 
-              "float", "%le", minMass );
+              "float", "%le", minMass1 );
         break; 
 
       case 'k':
-        maxMass = atof( optarg );
+        maxMass1 = atof( optarg );
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, 
-              "float", "%le", maxMass );
+              "float", "%le", maxMass1 );
+        break;
+
+      case 'J':
+        minMass2 = atof( optarg );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, 
+              "float", "%le", minMass2 );
+        break; 
+
+      case 'K':
+        maxMass2 = atof( optarg );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, 
+              "float", "%le", maxMass2 );
+        break;
+
+      case 'L':
+        maxMtotal = atof( optarg );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, 
+              "float", "%le", maxMtotal );
         break;
 
       case 'n':
-        meanMass = atof( optarg );
+        meanMass1 = atof( optarg );
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, 
-              "float", "%le", meanMass );
+              "float", "%le", meanMass1 );
+        break;
+
+     case 'N':
+        meanMass2 = atof( optarg );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, 
+              "float", "%le", meanMass2 );
         break;
 
       case 'o':
-        massStdev = atof( optarg );
+        massStdev1 = atof( optarg );
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, 
-              "float", "%le", massStdev );
+              "float", "%le", massStdev1 );
+        break;
+
+      case 'O':
+        massStdev2 = atof( optarg );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, 
+              "float", "%le", massStdev2 );
         break;
 
       case 'c':
@@ -1097,21 +1177,36 @@ int main( int argc, char *argv[] )
         break;
 
       case 'e':
-        ddistr = (UINT4) atoi( optarg );
-        if ( ddistr != 0 && ddistr != 1 && ddistr != 2)
-        {
-          fprintf( stderr, "invalid argument to --%s:\n"
-              "DDISTR must be either 0 or 1 or 2\n",
-              long_options[option_index].name);
-          exit(1);
-        }
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, 
-              "int", "%d", ddistr );
+	optarg_len = strlen( optarg ) + 1;
+	memcpy( dummy, optarg, optarg_len );
+	this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+          calloc( 1, sizeof(ProcessParamsTable) );
+        LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+		     PROGRAM_NAME );
+        LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--d-distr" );
+        LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+        LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
+            optarg );
 
-        break;
+	if (!strcmp(dummy, "source")) 
+	{	  
+	  dDistr=sourceD; 
+	} 
+	else if (!strcmp(dummy, "uniform")) 
+	{
+	  dDistr=uniform;
+	}  
+	else if (!strcmp(dummy, "log10")) 
+	{
+	  dDistr=logten;
+	} 
+	else if (!strcmp(dummy, "volume")) 
+	{
+	  dDistr=volume;
+	} 
+	break;
 
-    case 'O':
+    case 'P':
         optarg_len = strlen( optarg ) + 1;
         outputFileName = calloc( 1, optarg_len * sizeof(char) );
         memcpy( outputFileName, optarg, optarg_len * sizeof(char) );
@@ -1146,7 +1241,7 @@ int main( int argc, char *argv[] )
   }
 
   /* check selection of masses */
-  if (!massFileName && mdistr==-1)
+  if ( !massFileName && mDistr==sourceM )
   {
     fprintf( stderr, 
         "Must specify either a --mass-file or a --m-distr\n" );
@@ -1155,12 +1250,32 @@ int main( int argc, char *argv[] )
   }
 
   /* check for gaussian mass distribution parameters */
-  if (mdistr==2 && meanMass < 0.0 && massStdev < 0.0)
+  if (mDistr==gaussian && meanMass1 < 0.0 && massStdev1 < 0.0)
   {
     fprintf( stderr, 
         "Must specify both --mean-mass and --stdev-mass for mdistr=2\n" );
     fprintf( stderr, USAGE );
     exit( 1 );
+  }
+
+  /* check if to set minMass2/maxMass2 */
+  if (minMass2<0) 
+  {
+    minMass2=minMass1;
+  }
+  if (maxMass2<0) 
+  {
+    maxMass2=maxMass1;
+  }
+
+  /* check if to set meanmass2/stddev2 */
+  if (meanMass2<0) 
+  {
+    meanMass2=meanMass1;
+  }  
+  if (massStdev2<0) 
+  {
+    massStdev2=massStdev1;
   }
 
   seed_random( rand_seed );
@@ -1219,19 +1334,6 @@ int main( int argc, char *argv[] )
         LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
     LALSnprintf( procparams.processParamsTable->param,
         LIGOMETA_PARAM_MAX, "--disable-milkyway" );
-    LALSnprintf( procparams.processParamsTable->type, 
-        LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( procparams.processParamsTable->value, 
-        LIGOMETA_TYPE_MAX, " " );
-  }
-
-  /* store the grb-flag argument */
-  if ( flagGRB )
-  {
-    LALSnprintf( procparams.processParamsTable->program, 
-        LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
-    LALSnprintf( procparams.processParamsTable->param,
-        LIGOMETA_PARAM_MAX, "--grb" );
     LALSnprintf( procparams.processParamsTable->type, 
         LIGOMETA_TYPE_MAX, "string" );
     LALSnprintf( procparams.processParamsTable->value, 
