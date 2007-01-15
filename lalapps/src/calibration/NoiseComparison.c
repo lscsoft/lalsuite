@@ -157,7 +157,7 @@ FrPos hoftpos;
 
 Response OLG0, OLG, Sensing0, Sensing;
 
-REAL8 gamma[MAXFACTORS];
+REAL8 gamma_fac[MAXFACTORS];
 
 /***************************************************************************/
 
@@ -463,7 +463,7 @@ FrStream *framestream=NULL;
       TESTSTATUS( &status );
 
       /* put factors into series */
-      gamma[m]   = factors.alphabeta.re;
+      gamma_fac[m]   = factors.alphabeta.re;
 
       fprintf(stdout,"%18.9Lf %f %f %f %f %f %f %f %f %f %f %f %f \n",gtime,
 	      factors.alpha.re,factors.alpha.im,
@@ -545,6 +545,7 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
   XLALREAL8ForwardFFT( ffthtData, hoft.data, fftPlanDouble );
   XLALREAL4ForwardFFT( fftderrData, derr.data, fftPlan );
 
+
   /* Compute the noise */
   mean_Sh_derr = 0.0;
   mean_Sh_hoft = 0.0;
@@ -564,11 +565,11 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
       REAL8 hpsq;
 
       /* Compute Response */
-      C.re=gamma[n]*Sensing.re[k];
-      C.im=gamma[n]*Sensing.im[k];
+      C.re=gamma_fac[n]*Sensing.re[k];
+      C.im=gamma_fac[n]*Sensing.im[k];
       
-      H.re=1.0+gamma[n]*OLG.re[k];
-      H.im=gamma[n]*OLG.im[k];
+      H.re=1.0+gamma_fac[n]*OLG.re[k];
+      H.im=gamma_fac[n]*OLG.im[k];
       R=cdiv(H,C);
 
       /* Apply response to DARM_ERR */
