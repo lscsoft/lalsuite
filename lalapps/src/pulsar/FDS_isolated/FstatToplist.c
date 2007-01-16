@@ -5,7 +5,7 @@
 #include <lal/LALStdio.h>
 #include <lal/LogPrintf.h>
 
-#ifdef USE_BOINC
+#if defined(USE_BOINC) || defined(EAH_BOINC)
 #include "filesys.h"
 #define fopen boinc_fopen
 #define rename boinc_rename
