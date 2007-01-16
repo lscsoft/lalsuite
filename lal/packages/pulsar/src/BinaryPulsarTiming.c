@@ -178,6 +178,9 @@ LALBinaryPulsarDeltaT( LALStatus            *status,
     T0 = Tasc + Dt;
   }
 
+  /* set time at which to calculate the binary time delay */
+  tb = input->tb;
+  
   /* for BT model */
   if(strstr(model, "BT") != NULL){
     REAL8 tt0;
