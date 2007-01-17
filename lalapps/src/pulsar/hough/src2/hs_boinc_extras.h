@@ -15,24 +15,23 @@ NRCSID(HSBOINCEXTRASHRCSID,"$Id$");
 #include "FstatToplist.h"
 
 /* linking proper functions to the hooks in HierarchicalSearch.c */
-/* not implemented yet at all
 
-#define SET_CHECKPOINT(filename,rac,dec,tpl_count,tpl_total)\
-        set_checkpoint(filename,rac,dec,tpl_count,tpl_total)
-#define GET_CHECKPOINT(filename)\
-        get_checkpoint(filename)
+#define SHOW_PROGRESS show_progress
+#define fopen boinc_fopen
+
+/* not implemented yet
+
+#define GET_CHECKPOINT init_and_read_checkpoint
+#define HS_CHECKPOINTING
+#define INSERT_INTO_FSTAT_TOPLIST add_candidate_and_checkpoint
+#define CLEANUP_CHECKPOINTING
 
 so for now we define only dummies: */
 
-#define SET_CHECKPOINT(filename,rac,dec,count,total) filename = filename;
 #define GET_CHECKPOINT(filename)
-#define REMOVE_CHECKPOINT(filename)
-
-
-#define SHOW_PROGRESS(rac,dec,count,total)\
-        show_progress(rac,dec,count,total)
-
-#define fopen boinc_fopen
+#define CLEANUP_CHECKPOINTING
+#undef  HS_CHECKPOINTING
+#define INSERT_INTO_FSTAT_TOPLIST insert_into_fstat_toplist
 
 #ifdef  __cplusplus
 extern "C" {
@@ -47,13 +46,8 @@ extern LALStatus *global_status;
 extern void register_output_file(char*filename);
 
 /* show progress of the App.
-   This also set the count & total (skypos) for checkpointing */
-extern void show_progress(double rac, double dec, long count, long total);
-
-/* This function is meant as a "dummy" replacement for fopen(output_file)
-   It doesn't actually return a FILE*, but just a (casted) pointer to
-   the filename. */
-extern FILE* checkpointed_fopen(char*filename,char*dummy);
+   NOTE: This also set the count & total (skypos) for checkpointing */
+extern void show_progress(double rac, double dec, UINT4 count, UINT4 total);
 
 /* inits checkpointing for the toplist and reads the last checkpoint if present
    This expects all passed variables (toplist, total, count) to be already initialized.
@@ -61,8 +55,8 @@ extern FILE* checkpointed_fopen(char*filename,char*dummy);
    If *cptname (name of the checkpoint file) is NULL,
    the name is constructed by appending ".cpt" to the output filename.
    The FILE* should be the one that checpointed_fopen() above has returned. */
-extern void init_and_read_checkpoint(FILE* fp, toplist_t*toplist,
-				     unsigned long*total, unsigned long*count,
+extern void init_and_read_checkpoint(toplist_t*toplist,
+				     UINT4*total, UINT4*count,
 				     char*outputname, char*cptname);
 
 /* This corresponds to insert_into_fstat_toplist().
@@ -76,10 +70,8 @@ extern void init_and_read_checkpoint(FILE* fp, toplist_t*toplist,
 extern int add_candidate_and_checkpoint (toplist_t*toplist, FstatOutputEntry cand);
 
 /* does the final (compact) write of the file and cleans up checkpointing stuff
-   The checkpoint file remains there in case something goes wrong during the rest
-   The interface of the function is that of fclose(), so it can be used to replace
-   the usual fclose(output_filepointer) */
-extern int write_and_close_checkpointed_file (FILE*fp);
+   The checkpoint file remains there in case something goes wrong during the rest */
+extern void write_and_close_checkpointed_file (void);
 
 
 

@@ -721,13 +721,9 @@ int main(int argc, char**argv) {
 
 
 
-FILE* checkpointed_fopen(char*filename,char*dummy) {
-  return((FILE*)filename);
-}
-
 /* inits checkpointing and read a checkpoint if already there */
-void init_and_read_checkpoint(FILE* dummy_fp, toplist_t*toplist,
-			      unsigned long*total, unsigned long*count,
+void init_and_read_checkpoint(toplist_t*toplist,
+			      UINT4*total, UINT4*count,
 			      char*outputname, char*cptname) {
   FILE*fp;
   UINT4 checksum, bytes;
@@ -777,7 +773,7 @@ int add_candidate_and_checkpoint (toplist_t*toplist, FstatOutputEntry cand) {
 }
 
 
-int write_and_close_checkpointed_file (FILE*fp) {
+void write_and_close_checkpointed_file (void) {
   fstat_cpt_file_close(cptf);
   fstat_cpt_file_destroy(&cptf);
   return(0);
