@@ -78,10 +78,10 @@ extern "C" {
 " --binary-output     output data to a binary file\n"\
 "\n"
 
-#define MAXLENGTH 5000000 /* max number of lines in heterodyned data file */
+#define MAXLENGTH 8400000 /* max number of lines in heterodyned data file */
 #define MAXDATALENGTH 1000 /* maximum length of data to be read from frames */
 #define MAXSTRLENGTH 100 /* maximum number of characters in a frame filename */
-#define MAXNUMFRAMES 5000 /* maximum number of frame files in input data file */
+#define MAXNUMFRAMES 25000 /* maximum number of frame files in input data file */
 #define MAXLISTLENGTH 20000 /* maximum length of a list of frames files */
 #define MAXCALIBLENGTH 100000 /* maximum length of a calibration file */
 
