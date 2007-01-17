@@ -1075,10 +1075,8 @@ int MAIN( int argc, char *argv[]) {
       UINT4 ifdot;  /* counter for spindown values */
       SkyPosition skypos;
 
-      SHOW_PROGRESS((thisScan1.skyNode)?(thisScan1.skyNode->Alpha):0,
-		    (thisScan1.skyNode)?(thisScan1.skyNode->Delta):0,
-		    skyGridCounter,
-		    thisScan1.numSkyGridPoints);
+      SHOW_PROGRESS(dopplerpos1.Alpha,dopplerpos1.Delta,
+		    skyGridCounter,thisScan1.numSkyGridPoints);
 
       LogPrintfVerbatim(LOG_DEBUG, "%d, ", skyGridCounter );
       
@@ -1193,10 +1191,8 @@ int MAIN( int argc, char *argv[]) {
 	  if( uvar_semiCohToplist) {
 	    /* this is necessary here, because GetSemiCohToplist() might set
 	       a checkpoint that needs some information from here */
-	    SHOW_PROGRESS((thisScan1.skyNode)?(thisScan1.skyNode->Alpha):0,
-			  (thisScan1.skyNode)?(thisScan1.skyNode->Delta):0,
-			  skyGridCounter,
-			  thisScan1.numSkyGridPoints);
+	    SHOW_PROGRESS(dopplerpos1.Alpha,dopplerpos1.Delta,
+			  skyGridCounter,thisScan1.numSkyGridPoints);
 
 	    LogPrintf(LOG_DETAIL, "Selecting toplist from semicoherent candidates\n");
 	    LAL_CALL( GetSemiCohToplist(&status, semiCohToplist, &semiCohCandList1, meanN, sigmaN), &status);
