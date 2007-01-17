@@ -25,6 +25,8 @@
 /* 12/28/05 gam; Add comment-field, -c option, for comment for version 2 SFTs */
 /* 01/05/06 gam; Add in version 2 normalization; add function to print example version 2 SFT data; add memory checking */
 /* 01/09/06 gam; Add make-tmp-file, -Z option; write SFT to .*.tmp file, then move to final file name. */
+/* 01/10/07 gam; Add -u --frame-struct-type option; specified the input data type in the frames (default ADC_REAL4) */
+/* 01/14/07 gam; Add -i --ifo option to specify the ifo independent of the channel name which can begin with H0, L0, or G0. */
 
 #include <config.h>
 #if !defined HAVE_LIBGSL || !defined HAVE_LIBLALFRAME
@@ -112,11 +114,13 @@ struct CommandLineArgsTag {
   BOOLEAN makeTmpFile;     /* 01/09/06 gam */
   char *FrCacheFile;       /* Frame cache file */
   char *ChannelName;
+  char *IFO;               /* 01/14/07 gam */
   char *SFTpath;           /* path to SFT file location */
   char *miscDesc;          /* 12/28/05 gam; string giving misc. part of the SFT description field in the filename */
   INT4 windowOption;       /* 12/28/05 gam; window options; 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window */
   REAL8 overlapFraction;   /* 12/28/05 gam; overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 1.0). */
   BOOLEAN useSingle;       /* 11/19/05 gam; use single rather than double precision */
+  char *frameStructType;   /* 01/10/07 gam */
 } CommandLineArgs;
 
 struct headertag {
@@ -142,6 +146,9 @@ FrStream *framestream=NULL;
 
 REAL8TimeSeries dataDouble;
 REAL4TimeSeries dataSingle;
+INT2TimeSeries dataINT2;
+INT4TimeSeries dataINT4;
+INT8TimeSeries dataINT8;
 INT4 SegmentDuration;
 LIGOTimeGPS gpsepoch;
 
@@ -489,6 +496,8 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"make-gps-dirs",        optional_argument, NULL,          'D'},
     {"make-tmp-file",        optional_argument, NULL,          'Z'},
     {"misc-desc",            optional_argument, NULL,          'X'},
+    {"frame-struct-type",    optional_argument, NULL,          'u'},
+    {"ifo",                  optional_argument, NULL,          'i'},
     {"window-type",          optional_argument, NULL,          'w'},
     {"overlap-fraction",     optional_argument, NULL,          'P'},
     {"ht-data",              no_argument,       NULL,          'H'},
@@ -496,7 +505,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"help",                 no_argument,       NULL,          'h'},
     {0, 0, 0, 0}
   };
-  char args[] = "hHZSf:t:C:N:s:e:v:c:F:B:D:X:w:P:p:";
+  char args[] = "hHZSf:t:C:N:i:s:e:v:c:F:B:D:X:u:w:P:p:";
 
   /* Initialize default values */
   CLA->HPf=-1.0;
@@ -508,6 +517,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->makeGPSDirs=0; /* 12/27/05 gam; add option to make directories based on gps time */
   CLA->sftVersion=1;  /* 12/28/05 gam; output SFT version; default is version 1 SFTs */
   CLA->ChannelName=NULL;
+  CLA->IFO=NULL;        /* 01/14/07 gam */
   CLA->SFTpath=NULL;
   CLA->miscDesc=NULL;   /* 12/28/05 gam; misc. part of the SFT description field in the filename (also used if makeGPSDirs > 0) */
   CLA->commentField=NULL; /* 12/28/05 gam; comment for version 2 SFT header. */
@@ -516,6 +526,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->htdata = 0;
   CLA->makeTmpFile = 0; /* 01/09/06 gam */  
   CLA->useSingle = 0; /* 11/19/05 gam; default is to use double precision, not single. */
+  CLA->frameStructType=NULL; /* 01/10/07 gam */
 
   /* Scan through list of command line arguments */
   while ( 1 )
@@ -586,6 +597,9 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       /* 12/28/05 gam; misc. part of the SFT description field in the filename (also used if makeGPSDirs > 0) */
       CLA->miscDesc=optarg;
       break;
+    case 'u':
+      CLA->frameStructType=optarg; /* 01/10/07 gam */
+      break;
     case 'w':
       /* 12/28/05 gam; window options; 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window */
       CLA->windowOption=atoi(optarg);
@@ -596,6 +610,9 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       break;
     case 'N':
       CLA->ChannelName=optarg;       
+      break;
+    case 'i':
+      CLA->IFO=optarg; /* 01/14/07 gam */
       break;
     case 'p':
       CLA->SFTpath=optarg;       
@@ -610,18 +627,20 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\tgps-start-time (-s)\tINT\t GPS start time of segment.\n");
       fprintf(stdout,"\tgps-end-time (-e)\tINT\t GPS end time of segment.\n");
       fprintf(stdout,"\tchannel-name (-N)\tSTRING\t Name of channel to read within a frame.\n");
+      fprintf(stdout,"\tifo (-i)\t\tSTRING\t (optional) Name of IFO, i.e., H1, H2, L1, or G1; use if channel name begins with H0, L0, or G0; default: use first two characters from channel name.\n");
       fprintf(stdout,"\tsft-version (-v)\tINT\t (optional) SFT version (1 = default = output version 1 SFTs; 2 = output version 2 SFTs.\n");
-      fprintf(stdout,"\tcomment-field (-c)\tSTRING\t (optional) comment for version 2 SFT header.\n");
-      fprintf(stdout,"\tstart-freq (-F) \tFLOAT\t (optional) start frequency of the SFTs (default is 48 Hz).\n");
-      fprintf(stdout,"\tband (-B)       \tFLOAT\t (optional) frequency band of the SFTs (default is 2000 Hz).\n");
-      fprintf(stdout,"\tmake-gps-dirs (-D)\tINT\t (optional) make directories for output SFTs based on this many digits of the GPS time.\n");
-      fprintf(stdout,"\tmake-tmp-file (-Z)\tINT\t (optional) write SFT to .*.tmp file, then move to final filename.\n");
-      fprintf(stdout,"\tmisc-desc (-X)   \tSTRING\t (optional) misc. part of the SFT description field in the filename (also used if make-gps-dirs, -D option, is > 0)\n");
+      fprintf(stdout,"\tcomment-field (-c)\tSTRING\t (optional) Comment for version 2 SFT header.\n");
+      fprintf(stdout,"\tstart-freq (-F) \tFLOAT\t (optional) Start frequency of the SFTs (default is 48 Hz).\n");
+      fprintf(stdout,"\tband (-B)       \tFLOAT\t (optional) Frequency band of the SFTs (default is 2000 Hz).\n");
+      fprintf(stdout,"\tmake-gps-dirs (-D)\tINT\t (optional) Make directories for output SFTs based on this many digits of the GPS time.\n");
+      fprintf(stdout,"\tmake-tmp-file (-Z)\tINT\t (optional) Write SFT to .*.tmp file, then move to final filename.\n");
+      fprintf(stdout,"\tmisc-desc (-X)   \tSTRING\t (optional) Misc. part of the SFT description field in the filename (also used if make-gps-dirs, -D option, is > 0)\n");
       fprintf(stdout,"\twindow-type (-w)\tINT\t (optional) 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window\n");
-      fprintf(stdout,"\toverlap-fraction (-P)\tFLOAT\t (optional) overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 0.0).\n");
-      fprintf(stdout,"\tht-data (-H)\t\tFLAG\t This is h(t) data (use Real8's; Procdata ).\n");
-      fprintf(stdout,"\tuse-single (-S)\t\tFLAG\t Use single precision for window, plan, and fft; double precision filtering is always done.\n");
-      fprintf(stdout,"\thelp (-h)\t\tFLAG\t This message\n");    
+      fprintf(stdout,"\toverlap-fraction (-P)\tFLOAT\t (optional) Overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 0.0).\n");
+      fprintf(stdout,"\tht-data (-H)\t\tFLAG\t (optional) Input data is h(t) data (input is PROC_REAL8 data ).\n");
+      fprintf(stdout,"\tuse-single (-S)\t\tFLAG\t (optional) Use single precision for window, plan, and fft; double precision filtering is always done.\n");
+      fprintf(stdout,"\tframe-struct-type (-u)\tSTRING\t (optional) String specifying the input frame structure and data type. Must begin with ADC_ or PROC_ followed by REAL4, REAL8, INT2, INT4, or INT8; default: ADC_REAL4; -H is the same as PROC_REAL8.\n");
+      fprintf(stdout,"\thelp (-h)\t\tFLAG\t This message.\n");
       exit(0);
       break;
     default:
@@ -735,6 +754,46 @@ int AllocateData(struct CommandLineArgsTag CLA)
       TESTSTATUS( &status );
       dataSingle.deltaT=dataDouble.deltaT;      
     }
+  else if (CLA.frameStructType != NULL) 
+    {
+      /* 01/10/07 gam */  
+      if ( strstr(CLA.frameStructType,"ADC_") ) {
+         chanin.type  = ADCDataChannel;
+      } else if ( strstr(CLA.frameStructType,"PROC_") ) {
+         chanin.type  = ProcDataChannel;
+      } else {
+        return 1; 
+      }
+      /* Get channel time step size by calling LALFrGet... functions: */
+      LALFrSeek(&status,&gpsepoch,framestream);
+      TESTSTATUS( &status );      
+      if ( strstr(CLA.frameStructType,"REAL8") ) {
+         LALFrGetREAL8TimeSeries(&status,&dataDouble,&chanin,framestream);
+         TESTSTATUS( &status );
+         dataSingle.deltaT=dataDouble.deltaT;
+      } else if ( strstr(CLA.frameStructType,"REAL4") ) { 
+         LALFrGetREAL4TimeSeries(&status,&dataSingle,&chanin,framestream);
+         TESTSTATUS( &status );
+         dataDouble.deltaT=dataSingle.deltaT;
+      } else if ( strstr(CLA.frameStructType,"INT2") ) {
+         LALFrGetINT2TimeSeries(&status,&dataINT2,&chanin,framestream);
+         TESTSTATUS( &status );
+         dataDouble.deltaT = dataINT2.deltaT;
+         dataSingle.deltaT=dataDouble.deltaT;
+      } else if ( strstr(CLA.frameStructType,"INT4") ) {
+         LALFrGetINT4TimeSeries(&status,&dataINT4,&chanin,framestream);
+         TESTSTATUS( &status );
+         dataDouble.deltaT = dataINT4.deltaT;
+         dataSingle.deltaT=dataDouble.deltaT;
+      } else if ( strstr(CLA.frameStructType,"INT8") ) {      
+         LALFrGetINT8TimeSeries(&status,&dataINT8,&chanin,framestream);
+         TESTSTATUS( &status );
+         dataDouble.deltaT = dataINT8.deltaT;
+         dataSingle.deltaT=dataDouble.deltaT;
+      } else {
+        return 1;
+      }      
+    }
   else
     {
       chanin.type  = ADCDataChannel;
@@ -813,7 +872,7 @@ int ReadData(struct CommandLineArgsTag CLA)
       #endif
 
       /*copy the data into the single precision timeseries */
-      for (k = 0; k < dataSingle.data->length; k++) {
+      for (k = 0; k < (int)dataSingle.data->length; k++) {
           dataSingle.data->data[k] = dataDouble.data->data[k];
       }
 
@@ -824,6 +883,135 @@ int ReadData(struct CommandLineArgsTag CLA)
         printf("Memory use after destroying dataDouble.\n"); printmemuse();
       #endif
 
+    }
+    else if (CLA.frameStructType != NULL)
+    {
+      /* 01/10/07 gam */  
+      if ( strstr(CLA.frameStructType,"ADC_") ) {
+         chanin.type  = ADCDataChannel;
+      } else if ( strstr(CLA.frameStructType,"PROC_") ) {
+         chanin.type  = ProcDataChannel;
+      } else {
+        return 1; 
+      }
+      if ( strstr(CLA.frameStructType,"REAL8") ) {
+         #if TRACKMEMUSE
+           printf("Memory use before creating dataDouble and calling LALFrGetREAL8TimeSeries.\n"); printmemuse();
+         #endif
+
+         LALDCreateVector(&status,&dataDouble.data,(UINT4)(CLA.T/dataDouble.deltaT +0.5));
+         TESTSTATUS( &status );
+
+         LALFrGetREAL8TimeSeries(&status,&dataDouble,&chanin,framestream);
+         TESTSTATUS( &status );
+
+         #if TRACKMEMUSE
+           printf("Memory use after creating dataDouble and calling LALFrGetREAL8TimeSeries.\n"); printmemuse();
+         #endif
+
+         /*copy the data into the single precision timeseries */
+         for (k = 0; k < (int)dataSingle.data->length; k++) {
+             dataSingle.data->data[k] = dataDouble.data->data[k];
+         }
+
+         LALDDestroyVector(&status,&dataDouble.data);
+         TESTSTATUS( &status );
+
+         #if TRACKMEMUSE
+           printf("Memory use after destroying dataDouble.\n"); printmemuse();
+         #endif
+      } else if ( strstr(CLA.frameStructType,"REAL4") ) {      
+         #if TRACKMEMUSE
+           printf("Memory use before calling LALFrGetREAL4TimeSeries.\n"); printmemuse();
+         #endif
+
+         LALFrGetREAL4TimeSeries(&status,&dataSingle,&chanin,framestream);
+         TESTSTATUS( &status );
+
+         #if TRACKMEMUSE
+           printf("Memory use after calling LALFrGetREAL4TimeSeries.\n"); printmemuse();
+         #endif
+      } else if ( strstr(CLA.frameStructType,"INT2") ) {
+         #if TRACKMEMUSE
+           printf("Memory use before creating dataINT2 and calling LALFrGetINT2TimeSeries.\n"); printmemuse();
+         #endif
+
+         LALI2CreateVector(&status,&dataINT2.data,(UINT4)(CLA.T/dataINT2.deltaT +0.5));
+         TESTSTATUS( &status );
+
+         LALFrGetINT2TimeSeries(&status,&dataINT2,&chanin,framestream);
+         TESTSTATUS( &status );
+
+         #if TRACKMEMUSE
+           printf("Memory use after creating dataINT2 and calling LALFrGetINT2TimeSeries.\n"); printmemuse();
+         #endif
+
+         /*copy the data into the single precision timeseries */
+         for (k = 0; k < (int)dataDouble.data->length; k++) {
+             dataSingle.data->data[k] = (REAL4)(dataINT2.data->data[k]);
+         }     
+
+         LALI2DestroyVector(&status,&dataINT2.data);
+         TESTSTATUS( &status );
+
+         #if TRACKMEMUSE
+           printf("Memory use after destroying dataINT2.\n"); printmemuse();
+         #endif
+      } else if ( strstr(CLA.frameStructType,"INT4") ) {
+         #if TRACKMEMUSE
+           printf("Memory use before creating dataINT4 and calling LALFrGetINT4TimeSeries.\n"); printmemuse();
+         #endif
+
+         LALI4CreateVector(&status,&dataINT4.data,(UINT4)(CLA.T/dataINT4.deltaT +0.5));
+         TESTSTATUS( &status );
+
+         LALFrGetINT4TimeSeries(&status,&dataINT4,&chanin,framestream);
+         TESTSTATUS( &status );
+
+         #if TRACKMEMUSE
+           printf("Memory use after creating dataINT4 and calling LALFrGetINT4TimeSeries.\n"); printmemuse();
+         #endif
+
+         /*copy the data into the single precision timeseries */
+         for (k = 0; k < (int)dataDouble.data->length; k++) {
+             dataSingle.data->data[k] = (REAL4)(dataINT4.data->data[k]);
+         }     
+
+         LALI4DestroyVector(&status,&dataINT4.data);
+         TESTSTATUS( &status );
+
+         #if TRACKMEMUSE
+           printf("Memory use after destroying dataINT4.\n"); printmemuse();
+         #endif
+      } else if ( strstr(CLA.frameStructType,"INT8") ) {
+         #if TRACKMEMUSE
+           printf("Memory use before creating dataINT8 and calling LALFrGetINT8TimeSeries.\n"); printmemuse();
+         #endif
+
+         LALI8CreateVector(&status,&dataINT8.data,(UINT4)(CLA.T/dataINT8.deltaT +0.5));
+         TESTSTATUS( &status );
+
+         LALFrGetINT8TimeSeries(&status,&dataINT8,&chanin,framestream);
+         TESTSTATUS( &status );
+
+         #if TRACKMEMUSE
+           printf("Memory use after creating dataINT8 and calling LALFrGetINT8TimeSeries.\n"); printmemuse();
+         #endif
+
+         /*copy the data into the single precision timeseries */
+         for (k = 0; k < (int)dataDouble.data->length; k++) {
+             dataSingle.data->data[k] = (REAL4)(dataINT8.data->data[k]);
+         }     
+
+         LALI8DestroyVector(&status,&dataINT8.data);
+         TESTSTATUS( &status );
+
+         #if TRACKMEMUSE
+           printf("Memory use after destroying dataINT8.\n"); printmemuse();
+         #endif
+      } else {
+        return 1;
+      }      
     }
     else
     {
@@ -863,6 +1051,135 @@ int ReadData(struct CommandLineArgsTag CLA)
         printf("Memory use after calling LALFrGetREAL8TimeSeries.\n"); printmemuse();
       #endif
 
+    }
+    else if (CLA.frameStructType != NULL) 
+    {
+      /* 01/10/07 gam */  
+      if ( strstr(CLA.frameStructType,"ADC_") ) {
+         chanin.type  = ADCDataChannel;
+      } else if ( strstr(CLA.frameStructType,"PROC_") ) {
+         chanin.type  = ProcDataChannel;
+      } else {
+        return 1; 
+      }
+      if ( strstr(CLA.frameStructType,"REAL8") ) {
+         #if TRACKMEMUSE
+           printf("Memory use before calling LALFrGetREAL8TimeSeries.\n"); printmemuse();
+         #endif
+
+         LALFrGetREAL8TimeSeries(&status,&dataDouble,&chanin,framestream);
+         TESTSTATUS( &status );
+
+         #if TRACKMEMUSE
+           printf("Memory use after calling LALFrGetREAL8TimeSeries.\n"); printmemuse();
+         #endif
+      } else if ( strstr(CLA.frameStructType,"REAL4") ) {      
+         #if TRACKMEMUSE
+           printf("Memory use before creating dataSingle and calling LALFrGetREAL4TimeSeries.\n"); printmemuse();
+         #endif
+
+         LALCreateVector(&status,&dataSingle.data,(UINT4)(CLA.T/dataSingle.deltaT +0.5));
+         TESTSTATUS( &status );
+
+         LALFrGetREAL4TimeSeries(&status,&dataSingle,&chanin,framestream);
+         TESTSTATUS( &status );
+ 
+         #if TRACKMEMUSE
+           printf("Memory use after creating dataSingle and calling LALFrGetREAL4TimeSeries.\n"); printmemuse();
+         #endif
+
+         /*copy the data into the double precision timeseries */
+         for (k = 0; k < (int)dataDouble.data->length; k++) {
+             dataDouble.data->data[k] = dataSingle.data->data[k];
+         }     
+
+         LALDestroyVector(&status,&dataSingle.data);
+         TESTSTATUS( &status );
+
+         #if TRACKMEMUSE
+           printf("Memory use after destroying dataSingle.\n"); printmemuse();
+         #endif      
+      } else if ( strstr(CLA.frameStructType,"INT2") ) {
+         #if TRACKMEMUSE
+           printf("Memory use before creating dataINT2 and calling LALFrGetINT2TimeSeries.\n"); printmemuse();
+         #endif
+
+         LALI2CreateVector(&status,&dataINT2.data,(UINT4)(CLA.T/dataINT2.deltaT +0.5));
+         TESTSTATUS( &status );
+
+         LALFrGetINT2TimeSeries(&status,&dataINT2,&chanin,framestream);
+         TESTSTATUS( &status );
+
+         #if TRACKMEMUSE
+           printf("Memory use after creating dataINT2 and calling LALFrGetINT2TimeSeries.\n"); printmemuse();
+         #endif
+
+         /*copy the data into the double precision timeseries */
+         for (k = 0; k < (int)dataDouble.data->length; k++) {
+             dataDouble.data->data[k] = (REAL8)(dataINT2.data->data[k]);
+         }     
+
+         LALI2DestroyVector(&status,&dataINT2.data);
+         TESTSTATUS( &status );
+
+         #if TRACKMEMUSE
+           printf("Memory use after destroying dataINT2.\n"); printmemuse();
+         #endif
+      } else if ( strstr(CLA.frameStructType,"INT4") ) {
+         #if TRACKMEMUSE
+           printf("Memory use before creating dataINT4 and calling LALFrGetINT4TimeSeries.\n"); printmemuse();
+         #endif
+
+         LALI4CreateVector(&status,&dataINT4.data,(UINT4)(CLA.T/dataINT4.deltaT +0.5));
+         TESTSTATUS( &status );
+
+         LALFrGetINT4TimeSeries(&status,&dataINT4,&chanin,framestream);
+         TESTSTATUS( &status );
+
+         #if TRACKMEMUSE
+           printf("Memory use after creating dataINT4 and calling LALFrGetINT4TimeSeries.\n"); printmemuse();
+         #endif
+
+         /*copy the data into the double precision timeseries */
+         for (k = 0; k < (int)dataDouble.data->length; k++) {
+             dataDouble.data->data[k] = (REAL8)(dataINT4.data->data[k]);
+         }     
+
+         LALI4DestroyVector(&status,&dataINT4.data);
+         TESTSTATUS( &status );
+
+         #if TRACKMEMUSE
+           printf("Memory use after destroying dataINT4.\n"); printmemuse();
+         #endif
+      } else if ( strstr(CLA.frameStructType,"INT8") ) {
+         #if TRACKMEMUSE
+           printf("Memory use before creating dataINT8 and calling LALFrGetINT8TimeSeries.\n"); printmemuse();
+         #endif
+
+         LALI8CreateVector(&status,&dataINT8.data,(UINT4)(CLA.T/dataINT8.deltaT +0.5));
+         TESTSTATUS( &status );
+
+         LALFrGetINT8TimeSeries(&status,&dataINT8,&chanin,framestream);
+         TESTSTATUS( &status );
+
+         #if TRACKMEMUSE
+           printf("Memory use after creating dataINT8 and calling LALFrGetINT8TimeSeries.\n"); printmemuse();
+         #endif
+
+         /*copy the data into the double precision timeseries */
+         for (k = 0; k < (int)dataDouble.data->length; k++) {
+             dataDouble.data->data[k] = (REAL8)(dataINT8.data->data[k]);
+         }     
+
+         LALI8DestroyVector(&status,&dataINT8.data);
+         TESTSTATUS( &status );
+
+         #if TRACKMEMUSE
+           printf("Memory use after destroying dataINT8.\n"); printmemuse();
+         #endif
+      } else {
+        return 1;
+      }      
     }
     else
     {
@@ -1154,7 +1471,11 @@ int WriteSFT(struct CommandLineArgsTag CLA)
   numSFTs[1] = '\0'; /* null terminate */
   strncpy( site, CLA.ChannelName, 1 );
   site[1] = '\0'; /* null terminate */
-  strncpy( ifo, CLA.ChannelName, 2 );
+  if (CLA.IFO != NULL) {
+    strncpy( ifo, CLA.IFO, 2 );
+  } else {
+    strncpy( ifo, CLA.ChannelName, 2 );
+  }
   ifo[2] = '\0'; /* null terminate */
   sprintf(gpstime,"%09d",gpsepoch.gpsSeconds);
 
@@ -1282,7 +1603,11 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
   numSFTs[1] = '\0'; /* null terminate */
   strncpy( site, CLA.ChannelName, 1 );
   site[1] = '\0'; /* null terminate */
-  strncpy( ifo, CLA.ChannelName, 2 );
+  if (CLA.IFO != NULL) {
+    strncpy( ifo, CLA.IFO, 2 );
+  } else {  
+    strncpy( ifo, CLA.ChannelName, 2 );
+  }
   ifo[2] = '\0'; /* null terminate */
   sprintf(gpstime,"%09d",gpsepoch.gpsSeconds);
 

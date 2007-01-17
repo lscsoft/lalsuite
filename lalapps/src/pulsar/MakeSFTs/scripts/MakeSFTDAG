@@ -23,6 +23,7 @@ __version__ = '$Revision$'[11:-2]
 # 12/28/05 gam; Add --comment-field, -c option, for comment for version 2 SFTs.
 # 12/28/05 gam; Remove sample rate option
 # 01/09/06 gam; Add -Z option; write SFT to .*.tmp file, then move to final file name.
+# 01/14/07 gam; Add -u option to specify frame struct and type; add -i option to specify IFO name.
 
 # import standard modules and append the lalapps prefix to the python path
 import sys, os
@@ -65,6 +66,7 @@ Usage: MakeSFTDAG [options]
   -O, --log-path             (optional) path to some log, output, and error files (default is $PWD/logs; this directory is created if it does not exist and should agree with that given in .sub files)
   -o, --sub-log-path         (optional) path to log file to give in datafind.sub and MakeSFTs.sub (default is $PWD/logs; this directory must exist and usually should be under a local file system.)
   -N, --channel-name         name of input time-domain channel to read from frames
+  -i, --ifo                  (optional) Name of IFO, i.e., H1, H2, L1, or G1; use if channel name begins with H0, L0, or G0; default: use first two characters from channel name.
   -v, --sft-version          (optional) sft version to output (1 or 2; default is 1)
   -c, --comment-field        (optional) comment for version 2 SFT header.
   -F, --start-freq           (optional) start frequency of the SFTs (default is 48 Hz).
@@ -76,17 +78,18 @@ Usage: MakeSFTDAG [options]
   -P, --overlap-fraction     (optional) overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 0.0).
   -m, --max-num-per-node     maximum number of SFTs to generate on one node
   -L, --max-length-all-jobs  maximum total amount of data to process, in seconds (optional and unused if a segment file is given)
-  -g, --segment-file         alternative file with segments to use, rather than the input times.
+  -g, --segment-file         (optional) alternative file with segments to use, rather than the input times.
   -l, --min-seg-length       (optional) minimum length segments to process in seconds (used only if a segment file is given; default is 0)
-  -S, --use-single           use single precision in MakeSFTs for windowing, plan and fft; filtering is always done in double precision. Use of double precision in MakeSFTs is the default.
-  -H, --use-hot              input data is from h(t) calibrated frames (h of t = hot!) (0 or 1).
+  -S, --use-single           (optional) use single precision in MakeSFTs for windowing, plan and fft; filtering is always done in double precision. Use of double precision in MakeSFTs is the default.
+  -H, --use-hot              (optional) input data is from h(t) calibrated frames (h of t = hot!) (0 or 1).
+  -u  --frame-struct-type    (optional) string specifying the input frame structure and data type. Must begin with ADC_ or PROC_ followed by REAL4, REAL8, INT2, INT4, or INT8; default: ADC_REAL4; -H is the same as PROC_REAL8.
 """
   print >> sys.stdout, msg
 
 #
 # FUNCTION THAT WRITE ONE JOB TO DAG FILE
 #
-def writeToDag(dagFID, nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, extraDatafindTime, useSingle, useHoT, makeTmpFile, tagString, windowType, overlapFraction, sftVersion, makeGPSDirs, miscDesc, commentField, startFreq, freqBand):
+def writeToDag(dagFID, nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, extraDatafindTime, useSingle, useHoT, makeTmpFile, tagString, windowType, overlapFraction, sftVersion, makeGPSDirs, miscDesc, commentField, startFreq, freqBand, frameStructType, IFO):
   LSCdataFind = 'LSCdataFind_%i' % nodeCount
   MakeSFTs    = 'MakeSFTs_%i' % nodeCount
   startTimeDatafind = startTimeThisNode - extraDatafindTime
@@ -100,7 +103,9 @@ def writeToDag(dagFID, nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, c
   dagFID.write('RETRY %s 5\n' % MakeSFTs)
   argList = '-f %s -t %s -p %s -C %s -s %s -e %s -N %s' %(filterKneeFreq, timeBaseline, outputSFTPath, cacheFile, startTimeThisNode, endTimeThisNode, channelName)
   if sftVersion != 1: argList = argList + ' -v %s' % sftVersion
+  if IFO != None: argList = argList + ' -i %s' % IFO
   if commentField != None: argList = argList + ' -c %s' % commentField
+  if frameStructType != None: argList = argList + ' -u %s' % frameStructType
   if startFreq != 48.0: argList = argList + ' -F %s' % startFreq
   if freqBand != 2000.0: argList = argList + ' -B %s' % freqBand
   if makeGPSDirs != 0: argList = argList + ' -D %s' % makeGPSDirs
@@ -118,7 +123,7 @@ def writeToDag(dagFID, nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, c
 #
 
 # parse the command line options
-shortop = "s:e:a:b:f:t:G:d:x:M:k:T:p:C:O:o:N:w:P:v:c:F:B:D:X:m:L:g:l:hSHZ"
+shortop = "s:e:a:b:f:t:G:d:x:M:k:T:p:C:O:o:N:i:w:P:u:v:c:F:B:D:X:m:L:g:l:hSHZ"
 longop = [
   "help",
   "gps-start-time=",
@@ -138,8 +143,10 @@ longop = [
   "log-path=",
   "sub-log-path=",
   "channel-name=",
+  "ifo=",
   "window-type=",
   "overlap-fraction=",
+  "frame-struct-type=",
   "sft-version=",
   "comment-field=",
   "start-freq=",
@@ -179,10 +186,12 @@ cachePath = "cache"
 logPath = "logs"
 subLogPath = "logs"
 channelName = None
+IFO = None
 windowType = 1
 overlapFraction = 0.0
 sftVersion = 1
 commentField = None
+frameStructType = None
 startFreq = 48.0
 freqBand = 2000.0
 makeGPSDirs = 0
@@ -233,10 +242,14 @@ for o, a in opts:
     subLogPath = a
   elif o in ("-N", "--channel-name"):
     channelName = a
+  elif o in ("-i", "--ifo"):
+    IFO = a
   elif o in ("-w", "--window-type"):
     windowType = int(a)
   elif o in ("-P", "--overlap-fraction"):
     overlapFraction = float(a)
+  elif o in ("-u", "--frame-struct-type"):
+    frameStructType = a
   elif o in ("-v", "--sft-version"):
     sftVersion = int(a)
   elif o in ("-c", "--comment-field"):
@@ -526,7 +539,7 @@ for seg in segList:
                # write jobs to dag for this node
                nodeCount = nodeCount + 1
                if (nodeCount == 1): startTimeAllNodes = startTimeThisNode
-               writeToDag(dagFID,nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, extraDatafindTime, useSingle, useHoT, makeTmpFile, tagString, windowType, overlapFraction, sftVersion, makeGPSDirs, miscDesc, commentField, startFreq, freqBand)
+               writeToDag(dagFID,nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, extraDatafindTime, useSingle, useHoT, makeTmpFile, tagString, windowType, overlapFraction, sftVersion, makeGPSDirs, miscDesc, commentField, startFreq, freqBand, frameStructType, IFO)
                # Update for next node
                numThisNode       = 0L
                if overlapFraction != 0.0:
@@ -541,7 +554,7 @@ for seg in segList:
             # write jobs to dag for this node
             nodeCount = nodeCount + 1
             if (nodeCount == 1): startTimeAllNodes = startTimeThisNode
-            writeToDag(dagFID,nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, extraDatafindTime, useSingle, useHoT, makeTmpFile, tagString, windowType, overlapFraction, sftVersion, makeGPSDirs, miscDesc, commentField, startFreq, freqBand)
+            writeToDag(dagFID,nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, extraDatafindTime, useSingle, useHoT, makeTmpFile, tagString, windowType, overlapFraction, sftVersion, makeGPSDirs, miscDesc, commentField, startFreq, freqBand, frameStructType, IFO)
     # END while (endTimeAllNodes < analysisEndTime)
 # END for seg in segList
 
