@@ -181,7 +181,7 @@ static void sighandler(int sig){
 /*
   show_progress()
  */
-void show_progress(double rac, double dec, long count, long total) {
+void show_progress(double rac, double dec, UINT4 count, UINT4 total) {
   last_rac = rac;
   last_dec = dec;
   last_count = count;
@@ -776,6 +776,5 @@ int add_candidate_and_checkpoint (toplist_t*toplist, FstatOutputEntry cand) {
 void write_and_close_checkpointed_file (void) {
   fstat_cpt_file_close(cptf);
   fstat_cpt_file_destroy(&cptf);
-  return(0);
 }
 
