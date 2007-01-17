@@ -54,13 +54,14 @@ Usage: [options]
   -C  --create-sfts          (optional) create the SFTs !!! (/tmp will be appended to the sft-path and SFTs will be generated there!)
   -o, --sub-log-path         (optional) path to log files given in .sub files (default is $PWD/logs; this directory must exist and usually should be under a local file system.)
   -N, --channel-name         name of input time-domain channel to read from frames
-  -i, --ifo                  (optional) ifo to use with LSCsegFind: e.g., H1, H2, L1, G1; PEM channels can start with H0, L0, or G0 (default: use start of channel name)
+  -i, --ifo                  (optional) ifo to use with LSCsegFind and MakeSFTDAG: e.g., H1, H2, L1, G1; PEM channels can start with H0, L0, or G0 (default: use start of channel name)
+  -u, --frame-struct-type    (optional) string specifying the input frame structure and data type. Must begin with ADC_ or PROC_ followed by REAL4, REAL8, INT2, INT4, or INT8; default: ADC_REAL4; -H is the same as PROC_REAL8.
   -F, --start-freq           (optional) start frequency of the SFTs (default is 48 Hz).
   -B, --band                 (optional) frequency band of the SFTs (default is 100 Hz).
   -b, --sub-band             (optional) divide frequency band into sub bands of this size (default is 10 Hz)
   -O, --plot-output-path     (optional) if given then Matlab jobs run and put output plots and data in this directory
   -X  --misc-desc            (optional) misc. part of the SFT description field in the filename (also used if -D option is > 0).
-  -H, --use-hot              input data is from h(t) calibrated frames (h of t = hot!) (0 or 1).
+  -H, --use-hot              (optional) input data is from h(t) calibrated frames (h of t = hot!) (0 or 1).
   
 """
   print >> sys.stdout, msg
@@ -72,7 +73,7 @@ Usage: [options]
 ####################################
 # PARSE COMMAND LINE OPTIONS 
 #
-shortop = "s:L:G:d:x:M:k:T:p:o:N:i:w:P:v:c:F:B:b:O:D:X:m:g:l:hSHZCR"
+shortop = "s:L:G:d:x:M:k:T:p:o:N:i:w:P:u:v:c:F:B:b:O:D:X:m:g:l:hSHZCR"
 longop = [
   "help",
   "analysis-start-time=",
@@ -90,6 +91,7 @@ longop = [
   "sub-log-path=",
   "channel-name=",
   "ifo=",
+  "frame-struct-type=",
   "window-type=",
   "overlap-fraction=",
   "sft-version=",
@@ -134,6 +136,8 @@ logPath = "logs"
 subLogPath = "logs"
 channelName = None
 segIFO = None
+makeSFTIFO = None
+frameStructType = None
 windowType = 1
 overlapFraction = 0.0
 sftVersion = 1
@@ -184,6 +188,8 @@ for o, a in opts:
     channelName = a
   elif o in ("-i", "--ifo"):
     segIFO = a
+  elif o in ("-u", "--frame-struct-type"):
+    frameStructType = a
   elif o in ("-w", "--window-type"):
     windowType = int(a)
   elif o in ("-P", "--overlap-fraction"):
@@ -346,6 +352,10 @@ site = channelName[0]
 ifo = channelName[0] + channelName[1]
 if not segIFO:
   segIFO = ifo
+else:
+  # 01/14/07 gam; also send this to MakeSFTDAG using -i option.
+  ifo = segIFO
+  makeSFTIFO = segIFO
 
 print >> sys.stdout,'\nTHE FSCAN DRIVER SCRIPT HAS STARTED!\n'
   
@@ -414,6 +424,10 @@ if (createSFTs):
   makeDAGCommand = 'MakeSFTDAG -f %s -G %s -d %s -x %d -k %d -T %d -F %d -B %d -p %s -N %s -m 1 -o %s -X %s -Z -g %s -v %d' % (sftDAGFile,tagString,inputDataType,extraDatafindTime,filterKneeFreq,timeBaseline,startFreq,freqBand,pathToSFTs,channelName,subLogPath,miscDesc,segmentFile,sftVersion)
   if (useHoT):
      makeDAGCommand = makeDAGCommand + ' -H'
+  if (makeSFTIFO != None):
+     makeDAGCommand = makeDAGCommand + ' -i %s' % makeSFTIFO
+  if (frameStructType != None):
+     makeDAGCommand = makeDAGCommand + ' -u %s' % frameStructType
   print >> sys.stdout,"Trying: ",makeDAGCommand,"\n"
   try:
     makeDAGExit = os.system(makeDAGCommand)
