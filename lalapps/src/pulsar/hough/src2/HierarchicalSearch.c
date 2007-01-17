@@ -646,11 +646,6 @@ int MAIN( int argc, char *argv[]) {
     {
       fnameSemiCohCand = LALCalloc( strlen(uvar_fnameout) + 1, sizeof(CHAR) );
       strcpy(fnameSemiCohCand, uvar_fnameout);
-      if (!(fpSemiCoh = fopen(fnameSemiCohCand, "wb"))) 
-	{
-	  LogPrintf ( LOG_CRITICAL, "Unable to open output-file '%s' for writing.\n", fnameSemiCohCand);
-	  return HIERARCHICALSEARCH_EFILE;
-	}
     }
   
   /* open output fstat file for writing */
@@ -1363,10 +1358,14 @@ int MAIN( int argc, char *argv[]) {
 
   /* print 1st stage candidates */  
   {
-    UINT4 checksum;
+    if (!(fpSemiCoh = fopen(fnameSemiCohCand, "wb"))) 
+      {
+	LogPrintf ( LOG_CRITICAL, "Unable to open output-file '%s' for writing.\n", fnameSemiCohCand);
+	return HIERARCHICALSEARCH_EFILE;
+      }
     if ( uvar_printCand1 && uvar_semiCohToplist ) {
       sort_fstat_toplist(semiCohToplist);
-      if ( write_fstat_toplist_to_fp( semiCohToplist, fpSemiCoh, &checksum) < 0)
+      if ( write_fstat_toplist_to_fp( semiCohToplist, fpSemiCoh, NULL) < 0)
 	fprintf( stderr, "Error in writing toplist to file\n");
     /*     LAL_CALL( AppendFstatCandidates( &status, &fStatCand, fpFstat), &status); */
     }
