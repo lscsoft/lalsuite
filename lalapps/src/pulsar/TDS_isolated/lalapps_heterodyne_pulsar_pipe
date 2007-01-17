@@ -135,7 +135,7 @@ for o, a in opts:
     log_path = a
   elif o in ("-b", "--binary-input"):
     do_bininput = 1 # set this to read in input data from a binary file
-  else o in ("-O", "--binary-output"):
+  elif o in ("-O", "--binary-output"):
     do_binoutput = 1 # set this if you want the data outout to a binary file
   elif o in ("-V", "--verbose"):
     do_verbose = 1 # this is the set verbose when running lalapps_heterodyne_pulsar NOT this script
