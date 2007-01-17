@@ -181,11 +181,11 @@ class heterodyneNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     # set file containing the open loop gain for calibration
     self.add_var_opt('open-loop-gain',open_loop_gain)
 
-  def set_scale_fac(self,scale_fac)
+  def set_scale_fac(self,scale_fac):
     # set scale factor for calibrated data
     self.add_var_opt('scale-factor',scale_fac)
 
-  def set_high_pass(self,high_pass)
+  def set_high_pass(self,high_pass):
     # set high-pass frequency for calibrated data
     self.add_var_opt('high-pass-freq',high_pass)
 
