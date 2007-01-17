@@ -129,10 +129,8 @@ RCSID( "$Id$");
 #ifdef EAH_BOINC
 #include "hs_boinc_extras.h"
 #else
-#define GET_CHECKPOINT(toplist,total,count,outputname,cptname) *total=0;
-#define CLEANUP_CHECKPOINTING
-
 #undef  HS_CHECKPOINTING /* no checkpointing in the non-BOINC case (yet) */
+#define GET_CHECKPOINT(toplist,total,count,outputname,cptname) *total=0;
 #define INSERT_INTO_FSTAT_TOPLIST insert_into_fstat_toplist
 #define SHOW_PROGRESS(rac,dec,tpl_count,tpl_total)
 #define MAIN  main
@@ -1381,6 +1379,8 @@ int MAIN( int argc, char *argv[]) {
       fclose(fpSemiCoh);
     }
   }
+#else
+  write_and_close_checkpointed_file();
 #endif
 
 
@@ -1466,8 +1466,6 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL (LALDestroyUserVars(&status), &status);  
 
   LALCheckMemoryLeaks();
-
-  CLEANUP_CHECKPOINTING;
 
   LogPrintfVerbatim(LOG_DEBUG, "done\n");
 

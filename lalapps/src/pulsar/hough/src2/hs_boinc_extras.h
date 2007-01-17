@@ -19,19 +19,17 @@ NRCSID(HSBOINCEXTRASHRCSID,"$Id$");
 #define SHOW_PROGRESS show_progress
 #define fopen boinc_fopen
 
-/* not implemented yet
-
-#define GET_CHECKPOINT init_and_read_checkpoint
-#define HS_CHECKPOINTING
-#define INSERT_INTO_FSTAT_TOPLIST add_candidate_and_checkpoint
-#define CLEANUP_CHECKPOINTING
-
-so for now we define only dummies: */
-
-#define GET_CHECKPOINT(filename)
-#define CLEANUP_CHECKPOINTING
+/* for now, as we can't properly test it
+   - undef'd this shouldn't change any functionality at all */
 #undef  HS_CHECKPOINTING
+
+#ifdef HS_CHECKPOINTING
+#define GET_CHECKPOINT init_and_read_checkpoint
+#define INSERT_INTO_FSTAT_TOPLIST add_candidate_and_checkpoint
+#else
+#define GET_CHECKPOINT(toplist,total,count,outputname,cptname) *total=0;
 #define INSERT_INTO_FSTAT_TOPLIST insert_into_fstat_toplist
+#endif
 
 #ifdef  __cplusplus
 extern "C" {
