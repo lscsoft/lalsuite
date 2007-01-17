@@ -129,10 +129,11 @@ RCSID( "$Id$");
 #ifdef EAH_BOINC
 #include "hs_boinc_extras.h"
 #else
-/* do something with the filename, or else gcc will issue a warning */
-#define SET_CHECKPOINT(filename,rac,dec,tpl_count,tpl_total) filename = filename; /* length, checksum */
-#define GET_CHECKPOINT(filename)
-#define REMOVE_CHECKPOINT(filename) /* should we do this at all ?? pobably in the non-BOINC case only */
+#define GET_CHECKPOINT(toplist,total,count,outputname,cptname) *total=0;
+#define CLEANUP_CHECKPOINTING
+
+#undef  HS_CHECKPOINTING /* no checkpointing in the non-BOINC case (yet) */
+#define INSERT_INTO_FSTAT_TOPLIST insert_into_fstat_toplist
 #define SHOW_PROGRESS(rac,dec,tpl_count,tpl_total)
 #define MAIN  main
 #define FOPEN fopen
@@ -340,7 +341,7 @@ int MAIN( int argc, char *argv[]) {
   FILE *fpFstat1=NULL;
   
   /* checkpoint filename and index of loop over skypoints */
-  const CHAR *fnameChkPoint="checkpoint.cpt";
+  /* const CHAR *fnameChkPoint="checkpoint.cpt"; */
   /*   FILE *fpChkPoint=NULL; */
   /*   UINT4 loopindex, loopcounter; */
   
@@ -1058,9 +1059,13 @@ int MAIN( int argc, char *argv[]) {
   /* loop over skygrid points */
   skyGridCounter = 0;
 
-  GET_CHECKPOINT(fnameChkPoint);
-
-  XLALNextDopplerSkyPos( &dopplerpos1, &thisScan1 );
+  /* this makes at least one call to XLALNextDopplerSkyPos even if there was noc checkpoint */
+  {
+    UINT4 total, count = 0;
+    GET_CHECKPOINT(semiCohToplist, &total, &count, fnameSemiCohCand, NULL);
+    for(skyGridCounter = 0; skyGridCounter <= count; skyGridCounter++)
+      XLALNextDopplerSkyPos(&dopplerpos1, &thisScan1);
+  }
 
   LogPrintf(LOG_DEBUG, "Total skypoints = %d. Progress: ", thisScan1.numSkyGridPoints);
 
@@ -1069,8 +1074,6 @@ int MAIN( int argc, char *argv[]) {
     {
       UINT4 ifdot;  /* counter for spindown values */
       SkyPosition skypos;
-
-      skyGridCounter++;
 
       SHOW_PROGRESS((thisScan1.skyNode)?(thisScan1.skyNode->Alpha):0,
 		    (thisScan1.skyNode)?(thisScan1.skyNode->Delta):0,
@@ -1185,8 +1188,16 @@ int MAIN( int argc, char *argv[]) {
 	  /* 	  if ( uvar_printCand1 ) { */
 	  /* 	    LAL_CALL ( PrintSemiCohCandidates ( &status, &semiCohCandList1, fpSemiCoh, refTimeGPS), &status); */
 	  /* 	  } */
-	  
+
+
 	  if( uvar_semiCohToplist) {
+	    /* this is necessary here, because GetSemiCohToplist() might set
+	       a checkpoint that needs some information from here */
+	    SHOW_PROGRESS((thisScan1.skyNode)?(thisScan1.skyNode->Alpha):0,
+			  (thisScan1.skyNode)?(thisScan1.skyNode->Delta):0,
+			  skyGridCounter,
+			  thisScan1.numSkyGridPoints);
+
 	    LogPrintf(LOG_DETAIL, "Selecting toplist from semicoherent candidates\n");
 	    LAL_CALL( GetSemiCohToplist(&status, semiCohToplist, &semiCohCandList1, meanN, sigmaN), &status);
 	  }
@@ -1330,13 +1341,9 @@ int MAIN( int argc, char *argv[]) {
 	  
 	} /* end loop over coarse grid fdot values */
 
-      SET_CHECKPOINT(fnameChkPoint,
-		     thisScan1.skyNode->Alpha,
-		     thisScan1.skyNode->Delta,
-		     skyGridCounter,
-		     thisScan1.numSkyGridPoints);
-      
       XLALNextDopplerSkyPos( &dopplerpos1, &thisScan1 );
+
+      skyGridCounter++;
       
     } /* end while loop over 1st stage coarse skygrid */
 
@@ -1356,6 +1363,7 @@ int MAIN( int argc, char *argv[]) {
   }
 	
 
+#ifndef HS_CHECKPOINTING
   /* print 1st stage candidates */  
   {
     if (!(fpSemiCoh = fopen(fnameSemiCohCand, "wb"))) 
@@ -1368,9 +1376,14 @@ int MAIN( int argc, char *argv[]) {
       if ( write_fstat_toplist_to_fp( semiCohToplist, fpSemiCoh, NULL) < 0)
 	fprintf( stderr, "Error in writing toplist to file\n");
     /*     LAL_CALL( AppendFstatCandidates( &status, &fStatCand, fpFstat), &status); */
+      if (fprintf(fpSemiCoh,"%%DONE\n") < 0)
+	fprintf(stderr, "Error writing end marker\n");
+      fclose(fpSemiCoh);
     }
   }
- 
+#endif
+
+
   /*------------ free all remaining memory -----------*/
   
   /* free memory */
@@ -1400,9 +1413,6 @@ int MAIN( int argc, char *argv[]) {
   if ( uvar_printCand1 )
     {
       LALFree(fnameSemiCohCand);
-      if (fprintf(fpSemiCoh,"%%DONE\n") < 0)
-	fprintf(stderr, "Error writing end marker\n");
-      fclose(fpSemiCoh);
     }
   
   if ( uvar_printFstat1 )
@@ -1457,7 +1467,7 @@ int MAIN( int argc, char *argv[]) {
 
   LALCheckMemoryLeaks();
 
-  REMOVE_CHECKPOINT(fnameChkPoint);
+  CLEANUP_CHECKPOINTING;
 
   LogPrintfVerbatim(LOG_DEBUG, "done\n");
 
@@ -3053,7 +3063,7 @@ void GetSemiCohToplist(LALStatus            *status,
     line.f1dot = in->list[k].fdot;
     line.Fstat = (in->list[k].significance - meanN)/sigmaN;
 
-    debug = insert_into_fstat_toplist( list, line);
+    debug = INSERT_INTO_FSTAT_TOPLIST( list, line);
 
   }
 
