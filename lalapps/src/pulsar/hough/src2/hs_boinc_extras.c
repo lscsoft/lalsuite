@@ -722,11 +722,10 @@ int main(int argc, char**argv) {
 
 
 /* inits checkpointing and read a checkpoint if already there */
-void init_and_read_checkpoint(toplist_t*toplist,
-			      UINT4*total, UINT4*count,
-			      char*outputname, char*cptname) {
+void init_and_read_checkpoint(toplist_t*toplist, UINT4*count,
+			      UINT4 total, char*outputname, char*cptname) {
   FILE*fp;
-  UINT4 checksum, bytes;
+  UINT4 checksum, bytes, tot;
 
   /* fixme: input checks */
   
@@ -748,9 +747,10 @@ void init_and_read_checkpoint(toplist_t*toplist,
   if (fp)
     if (6 == fscanf(fp,"%lf,%lf,%lu,%lu,%u,%u",
 		    &last_rac, &last_dec,
-		    count, total,
+		    count, &tot,
 		    &checksum, &bytes))
-      fstat_cpt_file_read (cptf, checksum, bytes);
+      if (tot == total)
+	fstat_cpt_file_read (cptf, checksum, bytes);
 
   fclose(fp);
 }

@@ -53,9 +53,8 @@ extern void show_progress(double rac, double dec, UINT4 count, UINT4 total);
    If *cptname (name of the checkpoint file) is NULL,
    the name is constructed by appending ".cpt" to the output filename.
    The FILE* should be the one that checpointed_fopen() above has returned. */
-extern void init_and_read_checkpoint(toplist_t*toplist,
-				     UINT4*total, UINT4*count,
-				     char*outputname, char*cptname);
+extern void init_and_read_checkpoint(toplist_t*toplist, UINT4*count,
+				     UINT4 total, char*outputname, char*cptname);
 
 /* This corresponds to insert_into_fstat_toplist().
    It inserts a candidate into the toplist, updates the file

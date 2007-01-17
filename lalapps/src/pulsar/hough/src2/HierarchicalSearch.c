@@ -1057,11 +1057,13 @@ int MAIN( int argc, char *argv[]) {
   /* loop over skygrid points */
   skyGridCounter = 0;
 
-  /* this makes at least one call to XLALNextDopplerSkyPos even if there was noc checkpoint */
+  XLALNextDopplerSkyPos(&dopplerpos1, &thisScan1);
+  
+  /* "spool forward" if we found a checkpoint */
   {
-    UINT4 total, count = 0;
-    GET_CHECKPOINT(semiCohToplist, &total, &count, fnameSemiCohCand, NULL);
-    for(skyGridCounter = 0; skyGridCounter <= count; skyGridCounter++)
+    UINT4 count = 0;
+    GET_CHECKPOINT(semiCohToplist, &count, thisScan1.numSkyGridPoints, fnameSemiCohCand, NULL);
+    for(skyGridCounter = 0; skyGridCounter < count; skyGridCounter++)
       XLALNextDopplerSkyPos(&dopplerpos1, &thisScan1);
   }
 
