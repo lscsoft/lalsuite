@@ -721,7 +721,7 @@ int main(int argc, char**argv) {
 
 
 
-FILE* checpointed_fopen(cher*filename,char*dummy) {
+FILE* checkpointed_fopen(char*filename,char*dummy) {
   return((FILE*)filename);
 }
 

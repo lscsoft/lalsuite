@@ -2,9 +2,11 @@
    Author: Bernd Machenschalk
 */
 
-/* BOINC includes */
 #include <sys/types.h>
 #include <unistd.h>
+#include <stdio.h>
+
+/* BOINC includes */
 #include "filesys.h"
 
 #include <lal/LALError.h>
@@ -51,7 +53,7 @@ extern void show_progress(double rac, double dec, long count, long total);
 /* This function is meant as a "dummy" replacement for fopen(output_file)
    It doesn't actually return a FILE*, but just a (casted) pointer to
    the filename. */
-extern FILE* checpointed_fopen(cher*filename,char*dummy);
+extern FILE* checkpointed_fopen(char*filename,char*dummy);
 
 /* inits checkpointing for the toplist and reads the last checkpoint if present
    This expects all passed variables (toplist, total, count) to be already initialized.
