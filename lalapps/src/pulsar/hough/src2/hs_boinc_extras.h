@@ -48,12 +48,18 @@ extern void register_output_file(char*filename);
    This also set the count & total (skypos) for checkpointing */
 extern void show_progress(double rac, double dec, long count, long total);
 
+/* This function is meant as a "dummy" replacement for fopen(output_file)
+   It doesn't actually return a FILE*, but just a (casted) pointer to
+   the filename. */
+extern FILE* checpointed_fopen(cher*filename,char*dummy);
+
 /* inits checkpointing for the toplist and reads the last checkpoint if present
-   This expects all passed variables to be already initialized.
-   If *cptname is NULL, the name is constructed by appending ".cpt"
-   to the output filename.
-   The variables are modified only if a checkpoint file was found. */
-extern void init_and_read_checkpoint(toplist_t*toplist,
+   This expects all passed variables (toplist, total, count) to be already initialized.
+   The variables are modified only if a previous checkpoint was found.
+   If *cptname (name of the checkpoint file) is NULL,
+   the name is constructed by appending ".cpt" to the output filename.
+   The FILE* should be the one that checpointed_fopen() above has returned. */
+extern void init_and_read_checkpoint(FILE* fp, toplist_t*toplist,
 				     unsigned long*total, unsigned long*count,
 				     char*outputname, char*cptname);
 
@@ -68,8 +74,10 @@ extern void init_and_read_checkpoint(toplist_t*toplist,
 extern int add_candidate_and_checkpoint (toplist_t*toplist, FstatOutputEntry cand);
 
 /* does the final (compact) write of the file and cleans up checkpointing stuff
-   The checkpoint file remains there in case something goes wrong during this */
-extern void write_and_close_output_file (void);
+   The checkpoint file remains there in case something goes wrong during the rest
+   The interface of the function is that of fclose(), so it can be used to replace
+   the usual fclose(output_filepointer) */
+extern int write_and_close_checkpointed_file (FILE*fp);
 
 
 
