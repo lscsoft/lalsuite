@@ -111,6 +111,8 @@ hetParams.hetUpdate.f1, hetParams.hetUpdate.pepoch);
   starts = XLALResizeINT4Vector(starts, numSegs);
   stops = XLALResizeINT4Vector(stops, numSegs);
 
+  if(inputParams.verbose){ fprintf(stderr, "I've read in the segment list.\n"); }
+
   /* open input file */
   if((fpin = fopen(inputParams.datafile, "r")) == NULL){
     fprintf(stderr, "Error... Can't open input data file!\n");
@@ -125,7 +127,9 @@ hetParams.hetUpdate.f1, hetParams.hetUpdate.pepoch);
     while(fscanf(fpin, "%s%s%d%d file://localhost%s", det, type, &cache.starttime[frcount],
 &cache.duration[frcount], cache.framelist[frcount]) != EOF){
       /* fscanf(fpin, "%s", framelist[frcount]);*/
-      frcount++;
+      if(frcount++ >= MAXNUMFRAMES){
+        fprintf(stderr, "Error... increase length of MAXNUMFRAMES or decrease number of frame files to read in.\n");
+      }
     }
     fclose(fpin);
     
