@@ -66,7 +66,7 @@ NRCSID (NRWAVEIOH, "$Id$");
 /*@}*/
 
 
-REAL4TimeVectorSeries * XLALReadNRWave( REAL8  mass, CHAR   *filename); 
+REAL4TimeVectorSeries * XLALReadNRWave( REAL4  mass, CHAR   *filename); 
 
 
 #ifdef  __cplusplus
