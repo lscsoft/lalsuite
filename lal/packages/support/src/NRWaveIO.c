@@ -37,9 +37,11 @@ NRCSID( NRWAVEIOC, "$Id$");
 
 
 /** Reads a numerical relativity waveform given a filename and a value of the 
-    total mass for setting the timescale */
+    total mass for setting the timescale.  The output waveform is scaled corresponding
+    to a distance of 1Mpc.
+*/
 REAL4TimeVectorSeries *
-XLALReadNRWave( REAL8  mass,       /**< Value of total mass for setting time scale */
+XLALReadNRWave( REAL4  mass,       /**< Value of total mass for setting time scale */
 		CHAR   *filename   /**< File containing numrel waveform */) 
 {
 
@@ -48,6 +50,7 @@ XLALReadNRWave( REAL8  mass,       /**< Value of total mass for setting time sca
   REAL4TimeVectorSeries *out=NULL;
   REAL4VectorSequence *data=NULL;
   REAL4Vector *timeVec=NULL;
+  REAL4 massMpc;
 
   CHAR str1[16], str2[16],str3[16], str4[16];
   REAL4 tmp1, tmp2, tmp3;
@@ -93,6 +96,10 @@ XLALReadNRWave( REAL8  mass,       /**< Value of total mass for setting time sca
     XLAL_ERROR_NULL( "XLALReadNRWave", XLAL_ENOMEM );
   }
 
+
+  /* mass in Mpc -- we multiply h(t) by this factor */
+  massMpc = LAL_MRSUN_SI / ( LAL_PC_SI * 1.0e6);
+
   /* loop over file again */
   count = 0;
   do 
@@ -100,16 +107,19 @@ XLALReadNRWave( REAL8  mass,       /**< Value of total mass for setting time sca
       r = fscanf(fp,"%f%f%f\n", &tmp1, &tmp2, &tmp3);
       /* make sure the line has the right number of entries or is EOF */
       if (r==3) {
-	data->data[count] = tmp2;
-	data->data[data->length + count] = tmp3;
+	timeVec->data[count] = tmp1;
+	data->data[count] = massMpc * tmp2;
+	data->data[data->vectorLength + count] = massMpc * tmp3;
 	count++;
       }
-
+      
     } while ( r != EOF);
+  
 
-
-  /* need additional consistency check on timeVec*/
+  /* scale time */
   out->deltaT = LAL_MTSUN_SI * mass * ( timeVec->data[1] - timeVec->data[0]);
+  /* need additional consistency check on timeVec to 
+     make sure it is spaced uniformly */
 
   fclose(fp);
 
