@@ -1,5 +1,5 @@
-function plotSpecAvgOutput(inputFileName,outputFileName,chanName,tStart,tEnd,fStart,fEnd,effTBase,deltaFTicks,medBins)
-% usage: plotSpecAvgOutput(inputFileName,outputFileName,chanName,tStart,tEnd,fStart,fEnd,effTBase,deltaFTicks,medBins)
+function plotSpecAvgOutput(inputFileName,outputFileName,chanName,tStart,tEnd,fStart,fEnd,effTBase,deltaFTicks,taveFlag)
+% usage: plotSpecAvgOutput(inputFileName,outputFileName,chanName,tStart,tEnd,fStart,fEnd,effTBase,deltaFTicks,taveFlag)
 % 
 % inputFileName  -- the name of the file with data to input; this file is the output from spec_avg.
 % outputFileName -- the name of the output plot to generate (this code adds .pdf and .png extensions and outputs these)
@@ -11,10 +11,10 @@ function plotSpecAvgOutput(inputFileName,outputFileName,chanName,tStart,tEnd,fSt
 % effTBase       -- the effective time base line: 1/effTBase gives the frequency resolution of the plot
 %                   so that a effTBase of 10 seconds means deltaF = 0.1 Hz.
 % deltaFTicks    -- the change in frequency between major tick marks (e.g., 5 Hz)
-% medBins        -- if > 0 then this many frequency bins is used to find a running median normalized averaged
-%                   StackSlide style output spectrum. The spectrograms is given as subplot(2,1,1) and this
-%                   spectrum as subplot(2,1,2).  Also, .txt is appended to the plot name, and f versus the
-%                   normalized averaged power is output into this text file.
+% taveFlag       -- if > 0 then produce StackSlide style time average output without sliding.
+%                   The spectrograms is given as subplot(2,1,1) and this spectrum as subplot(2,1,2).
+%                   Also, .txt is appended to the plot name, and f versus the normalized averaged
+%                   power is output into this text file.
 
 % Convert relevant strings to numbers.
 if (ischar(tStart))
@@ -35,8 +35,8 @@ end
 if (ischar(deltaFTicks))
     deltaFTicks=str2num(deltaFTicks);
 end
-if (ischar(medBins))
-    medBins=str2num(medBins);
+if (ischar(taveFlag))
+    taveFlag=str2num(taveFlag);
 end
 
 xIn = load(inputFileName);
@@ -44,7 +44,7 @@ xIn = load(inputFileName);
 x = transpose(log10(xIn));
 
 figure(1);
-if (medBins > 0)
+if (taveFlag > 0)
    subplot(2,1,1)
 end
 imagesc(flipud(x));
@@ -64,32 +64,11 @@ xlabel('SFT number (see table for corresponding date)');
 ylabel('Frequency (Hz)');
 colorbar;
 
-if (medBins > 0)
+if (taveFlag > 0)
   subplot(2,1,2)
-  % Produce StackSlide style output:
-  % normalize each row using a median value every 10 bins:
-  jMax = length(xIn(:,1));
-  kMax = length(xIn(1,:));
-  medBinso2 = floor(medBins/2);
-  kMaxmmedBinso2 = kMax - medBinso2;
-  kMaxmmedBins = kMax - medBins;
-  for j = 1:jMax
-    for k = 1:kMax
-        if ( (k > medBinso2) & (k < kMaxmmedBinso2) )
-           xss(j,k) = xIn(j,k)/ median( xIn(j,k - medBinso2:k + medBinso2) );
-        elseif ( (k <= medBinso2) & (k < kMaxmmedBins) )
-           xss(j,k) = xIn(j,k)/ median( xIn(j,k:k + medBins) );
-        elseif ( (k > medBins) & (k >= kMaxmmedBinso2) )
-           xss(j,k) = xIn(j,k)/ median( xIn(j,k - medBins:k) );
-        else
-           xss(j,k) = xIn(j,k)/ median( xIn(j,:) );
-        end
-    end
-  end
-  for k = 1:kMax
-    xout(k) = sum(xss(:,k))/kMax;
-  end
-  fk = fStart + (0:kMax-1)/effTBase;
+  % Produce StackSlide style time average output without sliding:
+  timeaverageFileName = sprintf('%s_timeaverage',inputFileName);
+  [fk, xout] = textread(timeaverageFileName,'%f %f');
   semilogy(fk,xout)
   %set(gca, 'XTick', vecTicks);
   %set(gca, 'XTickLabel', vecFLabels);
@@ -98,7 +77,8 @@ if (medBins > 0)
   ylabel('Normalized Average Power');
   xlabel('Frequency (Hz)');
   outputTextFile = sprintf('%s.txt',outputFileName);
-  fid = fopen(outputTextFile,'w');  
+  fid = fopen(outputTextFile,'w');
+  kMax = length(xout);
   for k = 1:kMax
       fprintf(fid,'%f %f\n',fk(k),xout(k));
   end
