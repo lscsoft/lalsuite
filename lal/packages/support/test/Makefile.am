@@ -3,7 +3,7 @@ check_PROGRAMS = PrintVectorTest\
 	         PrintFTSeriesTest ReadFTSeriesTest StreamInputTest\
                  StreamSeriesInputTest SFTfileIOTest \
 		 ConfigFileTest UserInputTest LALMath3DPlotTest LALMathNDPlotTest \
-		 SegmentsIOTest
+		 SegmentsIOTest NRWaveIOTest
 
 noinst_DATA = StreamInput.data StreamSeriesInput.data inputsft.0 inputsft.1 ConfigFileSample.cfg SegmentsInput1.data \
 	SFT-bad1   SFT-bad13  SFT-bad4	SFT-bad8   SFT-test2  SFT-test6 SFT-bad10  SFT-bad14  SFT-bad5	SFT-bad9   \
@@ -46,6 +46,8 @@ LALMathNDPlotTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la 
 SegmentsIOTest_SOURCES = SegmentsIOTest.c
 SegmentsIOTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 
+NRWaveIOTest_SOURCES = NRWaveIOTest.c
+NRWaveIOTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 #TESTS = PrintVectorTest \
