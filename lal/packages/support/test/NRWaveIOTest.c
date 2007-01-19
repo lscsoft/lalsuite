@@ -149,13 +149,19 @@ int main(int argc, char *argv[])
 	    nrdata->data->data[length+k]);
   }
 
+  fprintf(stdout, "%%filename=%s, deltaT=%e sec, Heterodyne Freq.=%e, length=%d \n", 
+	  nrdata->name, nrdata->deltaT, nrdata->f0, nrdata->data->vectorLength);
 
   /* the following (SFT-bad6) has a wrong CRC64 checksum. However, this is 
    * not checked in LALSFTdataFind, so it should succeed! */
   /*   SHOULD_WORK( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad6", NULL ), &status ); */
   /*   SUB ( LALDestroySFTCatalog( &status, &catalog), &status ); */
 
+  XLALDestroyREAL4VectorSequence ( nrdata->data );
+  LALFree(nrdata);
 
+  LALCheckMemoryLeaks(); 
+ 
   INFO( NRWAVEIOTESTC_MSGENORM );
   return NRWAVEIOTESTC_ENORM;
 }
