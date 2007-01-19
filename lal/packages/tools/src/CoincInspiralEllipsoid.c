@@ -569,6 +569,7 @@ REAL8 XLALEThincaParameterForInjection(
   injTmplt.mass2      = injection->mass2;
   injTmplt.massChoice = m1Andm2;
   injTmplt.fLower     = fLower;
+  injTmplt.order      = threePointFivePN;
 
   LALInspiralParameterCalc( &status, &injTmplt );
 
