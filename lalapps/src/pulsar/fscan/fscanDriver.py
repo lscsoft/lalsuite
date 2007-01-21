@@ -58,8 +58,11 @@ Usage: [options]
   -u, --frame-struct-type    (optional) string specifying the input frame structure and data type. Must begin with ADC_ or PROC_ followed by REAL4, REAL8, INT2, INT4, or INT8; default: ADC_REAL4; -H is the same as PROC_REAL8.
   -F, --start-freq           (optional) start frequency of the SFTs (default is 48 Hz).
   -B, --band                 (optional) frequency band of the SFTs (default is 100 Hz).
-  -b, --sub-band             (optional) divide frequency band into sub bands of this size (default is 10 Hz)
-  -O, --plot-output-path     (optional) if given then Matlab jobs run and put output plots and data in this directory
+  -b, --sub-band             (optional) divide frequency band into sub bands of this size (default is 10 Hz).
+  -O, --plot-output-path     (optional) if given then Matlab jobs run and put output plots and data in this directory.
+  -W, --html-filename        (optional) path and filename of output html file that displays output plots and data.
+  -r  --html-reference-path  (optional) path to already existing reference output plots and data for display on html page.
+  -e  --html-ref-ifo-epoch   (optional) string that give ifo and GPS start and end times of reference plots, e.g.,H1_840412814_845744945.
   -X  --misc-desc            (optional) misc. part of the SFT description field in the filename (also used if -D option is > 0).
   -H, --use-hot              (optional) input data is from h(t) calibrated frames (h of t = hot!) (0 or 1).
   
@@ -73,7 +76,7 @@ Usage: [options]
 ####################################
 # PARSE COMMAND LINE OPTIONS 
 #
-shortop = "s:L:G:d:x:M:k:T:p:o:N:i:w:P:u:v:c:F:B:b:O:D:X:m:g:l:hSHZCR"
+shortop = "s:L:G:d:x:M:k:T:p:o:N:i:w:P:u:v:c:F:B:b:O:W:r:e:D:X:m:g:l:hSHZCR"
 longop = [
   "help",
   "analysis-start-time=",
@@ -100,6 +103,9 @@ longop = [
   "band=",
   "sub-band=",
   "plot-output-path=",
+  "html-filename=",
+  "html-reference-path=",
+  "html-ref-ifo-epoch=",  
   "make-gps-dirs=",
   "misc-desc=",
   "max-num-per-node=",
@@ -147,6 +153,9 @@ freqBand = 100.0
 freqSubBand = 10.0
 plotOutputPath = None
 makeMatlabPlots = False
+htmlFilename = None
+htmlReferenceDir = None
+htmlRefIFOEpoch = None
 makeGPSDirs = 0
 miscDesc = None
 maxNumPerNode = 1
@@ -206,6 +215,12 @@ for o, a in opts:
     freqSubBand = long(a)
   elif o in ("-O", "--plot-output-path"):
     plotOutputPath = a
+  elif o in ("-W", "--html-filename"):
+    htmlFilename = a
+  elif o in ("-r", "--html-reference-path"):
+    htmlReferenceDir = a
+  elif o in ("-e", "--html-ref-ifo-epoch"):
+    htmlRefIFOEpoch = a
   elif o in ("-D", "--make-gps-dirs"):
     makeGPSDirs = int(a)
   elif o in ("-X", "--misc-desc"):
@@ -507,6 +522,24 @@ if (makeMatlabPlots):
   runMatlabScriptFID.write('queue 1\n')
   runMatlabScriptFID.close
 
+if (htmlFilename != None):
+  htmlFID = file(htmlFilename,'w')
+  htmlFID.write('<html>\n')
+  htmlFID.write('<head>\n')
+  htmlFID.write('<meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">\n')
+  htmlFID.write('<title>FSCANPLOTS</title>\n')
+  htmlFID.write('</head>\n')
+  htmlFID.write('<body>\n')
+  htmlFID.write('<div style="text-align: center;">\n')
+  htmlFID.write('<h1>FSCAN PLOTS</h1>\n')
+  htmlFID.write('</div>\n')
+  htmlFID.write('<br>\n')
+  htmlFID.write('<div style="text-align: center;">\n')
+  htmlFID.write('<h3>Click on a plot to get a larger pdf version. Click on a link below a plot to get corresponding timestamp or frequency vs power data file.</h3>\n')
+  htmlFID.write('</div>\n')
+  htmlFID.write('<br>\n')  
+  htmlFID.write('<table style="width: 100%; text-align: left;" border="1" cellpadding="2" cellspacing="2">\n')
+  htmlFID.write('<tbody>\n')
 
 # Write spec_avg jobs to SUPER DAG:
 endFreq = startFreq + freqBand
@@ -542,11 +575,47 @@ while (thisStartFreq < endFreq):
      tagStringOut = '%s_%i' % (tagString, nodeCount)  
      dagFID.write('VARS %s argList="%s" tagstring="%s"\n'%(runMatlabPlotScriptJobName,argList,tagStringOut))
      dagFID.write('PARENT %s CHILD %s\n'%(specAvgJobName,runMatlabPlotScriptJobName))
+  if (htmlFilename != None):
+     inputFileName = 'spec_%d.00_%d.00_%s_%d_%d' % (thisStartFreq,thisEndFreq,ifo,analysisStartTime,analysisEndTime)
+     # Matlab will append .pdf and .png to outputFileName to save plots.
+     htmlFID.write('  <tr>\n')
+     htmlFID.write('  <td style="vertical-align: top;">\n')
+     htmlFID.write('    <a href="%s.pdf"><img alt="" src="%s.png" style="border: 0px solid ; width: 576px; height: 432px;"></a><br>\n' % (inputFileName,inputFileName))
+     htmlFID.write('  </td>\n')
+     if (htmlReferenceDir != None):
+        referenceFileName = '%s/spec_%d.00_%d.00_%s\n' % (htmlReferenceDir,thisStartFreq,thisEndFreq,htmlRefIFOEpoch)
+        htmlFID.write('  <td style="vertical-align: top;">\n')
+        htmlFID.write('    <a href="%s.pdf"><img alt="" src="%s.png" style="border: 0px solid ; width: 576px; height: 432px;"></a><br>\n' % (referenceFileName,referenceFileName))
+        htmlFID.write('  </td>\n')     
+     htmlFID.write('  </tr>\n')
+     # Next row with links to text files:
+     htmlFID.write('  <tr>\n')
+     htmlFID.write('  <td style="vertical-align: top;">\n')
+     htmlFID.write('    SFT Timestamps: <a href="%s_timestamps">%s_timestamps</a><br>\n' % (inputFileName,inputFileName))
+     htmlFID.write('    Freq. vs Power: <a href="%s.txt">%s.txt</a><br>\n' % (inputFileName,inputFileName))
+     htmlFID.write('    Freq. vs Power (Sorted): <a href="%s_sorted.txt">%s_sorted.txt</a><br>\n' % (inputFileName,inputFileName))
+     htmlFID.write('  </td>\n')
+     if (htmlReferenceDir != None):
+        htmlFID.write('  <td style="vertical-align: top;">\n')
+        htmlFID.write('    SFT Timestamps: <a href="%s_timestamps">%s_timestamps</a><br>\n' % (referenceFileName,referenceFileName))
+        htmlFID.write('    Freq. vs Power: <a href="%s.txt">%s.txt</a><br>\n' % (referenceFileName,referenceFileName))
+        htmlFID.write('    Freq. vs Power (Sorted): <a href="%s_sorted.txt">%s_sorted.txt</a><br>\n' % (referenceFileName,referenceFileName))
+        htmlFID.write('  </td>\n')
+     htmlFID.write('  </tr>\n')
   thisStartFreq = thisStartFreq + freqSubBand
   nodeCount = nodeCount + 1
 
 # Close the DAG file
 dagFID.close
+
+if (htmlFilename != None):
+  htmlFID.write('</tbody>\n')
+  htmlFID.write('</table>\n')
+  htmlFID.write('<span style="text-decoration: underline;"><br>\n')
+  htmlFID.write('</span>\n')
+  htmlFID.write('</body>\n')
+  htmlFID.write('</html>\n')
+  htmlFID.close
 
 ###################################################
 # SUBMIT THE .dag FILE TO CONDOR; RUN condor_submit_dag

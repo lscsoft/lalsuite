@@ -77,12 +77,18 @@ if (taveFlag > 0)
   ylabel('Normalized Average Power');
   xlabel('Frequency (Hz)');
   outputTextFile = sprintf('%s.txt',outputFileName);
+  outputSortedTextFile = sprintf('%s_sorted.txt',outputFileName);
+  [xoutSorted,iSorted] = sort(xout,'descend');
+  fSorted = fk(iSorted);
   fid = fopen(outputTextFile,'w');
+  fid2 = fopen(outputSortedTextFile,'w');
   kMax = length(xout);
   for k = 1:kMax
       fprintf(fid,'%f %f\n',fk(k),xout(k));
+      fprintf(fid2,'%f %f\n',fSorted(k),xoutSorted(k));
   end
   fclose(fid);
+  fclose(fid2);
 end
 outputPDFFileName = sprintf('%s.pdf',outputFileName);
 saveas(1, outputPDFFileName);
