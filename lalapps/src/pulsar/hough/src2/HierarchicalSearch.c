@@ -897,8 +897,9 @@ int MAIN( int argc, char *argv[]) {
     extraBinsSky = LAL_SQRT2 * VTOT * usefulParams1.spinRange_midTime.fkdot[0] 
       * HSMAX(semiCohPar.patchSizeX, semiCohPar.patchSizeY) / dFreqStack1;
 
-    extraBinsfdot = tObs1 * nf1dotRes * df1dotRes / dFreqStack1;
-    
+    /* extraBinsfdot = tObs1 * nf1dotRes * df1dotRes / dFreqStack1; */
+    extraBinsfdot = nStacks1;    
+
     semiCohPar.extraBinsFstat = extraBinsSky + extraBinsfdot;    
     LogPrintf(LOG_DEBUG, "No. of extra Fstat freq. bins = %d for skypatch + %d for residual fdot\n",
 	      extraBinsSky, extraBinsfdot, semiCohPar.extraBinsFstat); 
@@ -1961,7 +1962,7 @@ void ComputeFstatHoughMap(LALStatus *status,
 
 	/*loop over all values of residual spindown */
 	/* check limits of loop */
-	for( n = -nfdotBy2+1; n <= nfdotBy2-1; n++ ){ 
+	for( n = -nfdotBy2; n <= nfdotBy2; n++ ){ 
 
 	  ht.spinRes.data[0] =  n*dfdot; 
 	  
