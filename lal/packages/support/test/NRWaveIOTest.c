@@ -137,10 +137,13 @@ int main(int argc, char *argv[])
 { 
   /* LALStatus status = empty_status; */
 
+  CHAR filename[128];
+
   UINT4 k, length;
   REAL4TimeVectorSeries *nrdata=NULL;
 
-  nrdata = XLALReadNRWave(10.0, "NRWaveIOTest.dat");
+  sprintf(filename, "NRWaveIOTest.dat");
+  nrdata = XLALReadNRWave(10.0, filename);
 
   length = nrdata->data->vectorLength;
 
