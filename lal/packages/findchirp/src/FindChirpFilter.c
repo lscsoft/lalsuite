@@ -323,9 +323,8 @@ LALFindChirpFilterSegment (
 
 
   memset( qtilde, 0, numPoints * sizeof(COMPLEX8) );
-
   /* qtilde positive frequency, not DC or nyquist */
-  for ( k = 1; k < numPoints/2; ++k )
+  for ( k = 1; k < kmax; ++k )
   {
     REAL4 r = inputData[k].re;
     REAL4 s = inputData[k].im;

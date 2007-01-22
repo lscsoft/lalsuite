@@ -931,7 +931,8 @@ REAL4
 XLALFindChirpBankSimSignalNorm( 
     FindChirpDataParams         *fcDataParams,
     FindChirpSegmentVector      *fcSegVec,
-    UINT4                        cut
+    UINT4                        cut,
+    UINT4                        kMax
     );
 
 SimInstParamsTable *

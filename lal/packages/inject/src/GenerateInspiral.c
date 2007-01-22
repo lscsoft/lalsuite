@@ -152,6 +152,9 @@ LALGenerateInspiral(
     /* the waveform generation itself */
     LALInspiralWaveForInjection(status->statusPtr, waveform, &inspiralParams,
         ppnParams);
+    /* we populate the simInspiral table with the fFinal needed for 
+       template normalisation. */
+    thisEvent->f_final = inspiralParams.fFinal;
     CHECKSTATUSPTR(status);
   }
 
@@ -163,6 +166,7 @@ LALGenerateInspiral(
     LALInfo( status, warnMsg );
     ABORT( status, LALINSPIRALH_ENOWAVEFORM, LALINSPIRALH_MSGENOWAVEFORM );
   }
+
 
   /* If sampling problem */
   if ( ppnParams->dfdt > 2.0 )

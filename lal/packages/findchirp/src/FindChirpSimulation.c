@@ -1150,7 +1150,8 @@ REAL4
 XLALFindChirpBankSimSignalNorm( 
     FindChirpDataParams         *fcDataParams,
     FindChirpSegmentVector      *fcSegVec,
-    UINT4                        cut
+    UINT4                        cut,
+    UINT4                        kMax
     )
 {
   /* compute the minimal match normalization */
@@ -1165,6 +1166,7 @@ XLALFindChirpBankSimSignalNorm(
   switch ( fcDataParams->approximant )
   {
     case FindChirpSP:
+      /* up to Nyquist */
       for ( k = cut; k < fcDataParams->tmpltPowerVec->length; ++k )
       {
         if ( tmpltPower[k] ) matchNorm += ( fcData[k].re * fcData[k].re +
@@ -1179,7 +1181,8 @@ XLALFindChirpBankSimSignalNorm(
     case EOB:
     case GeneratePPN:
     case BCVSpin:
-      for ( k = cut; k < fcDataParams->wtildeVec->length; ++k )
+      /* integrated only up to kMax defined by fFinal*/
+      for ( k = cut; k < kMax; ++k )
       {
         if ( wtilde[k].re ) matchNorm += ( fcData[k].re * fcData[k].re +
             fcData[k].im * fcData[k].im ) / wtilde[k].re;
