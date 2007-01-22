@@ -174,6 +174,9 @@ void LALClusterSnglInspiralOverTemplatesAndEndTime (
     if ( condenseIn->masterList )
           LALFree( condenseIn->masterList );
 
+    if ( condenseOut )
+          LALFree( condenseOut );
+
     /* Normal Exit */
     DETATCHSTATUSPTR(status);
     RETURN(status);
