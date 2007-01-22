@@ -395,7 +395,8 @@ int fstat_cpt_file_create (FStatCheckpointFile **cptf,
 			   toplist_t*list) {
 
   /* input sanity checks */
-  if ( (cptf != NULL) ||
+  if ( (cptf == NULL) ||
+       (*cptf != NULL) ||
        (list == NULL) ||
        (filename == NULL) ||
        (strlen (filename) == 0) ) {

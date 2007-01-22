@@ -84,7 +84,7 @@ static char **global_argv;
 
 /* variables for checkpointing */
 static char* cptfilename;
-static FStatCheckpointFile* cptf;
+static FStatCheckpointFile* cptf = NULL;
 static UINT4 bufsize = 8*1024;
 static UINT4 maxsize = 1024*1024;
 static double last_rac, last_dec;
@@ -744,15 +744,20 @@ void init_and_read_checkpoint(toplist_t*toplist, UINT4*count,
 
   fp = fopen(cptfilename,"r");
   
-  if (fp)
+  if (fp) {
+    LogPrintf (LOG_DEBUG,  "Found checkpoint - reading...\n");
     if (6 == fscanf(fp,"%lf,%lf,%lu,%lu,%u,%u",
 		    &last_rac, &last_dec,
 		    count, &tot,
 		    &checksum, &bytes))
-      if (tot == total)
+      if (tot == total) {
+	LogPrintf (LOG_DEBUG,  "Read checkpoint - reading previous output...\n");
 	fstat_cpt_file_read (cptf, checksum, bytes);
-
-  fclose(fp);
+      } else {
+	LogPrintf (LOG_DEBUG,  "Couldn't read checkpoint - startng over\n");
+      }
+    fclose(fp);
+  }
 }
 
 
