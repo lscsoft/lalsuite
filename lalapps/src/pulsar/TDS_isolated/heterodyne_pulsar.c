@@ -746,8 +746,8 @@ REAL8 freqfactor){
       dtpos = hetParams.timestamp - hetParams.hetUpdate.posepoch;
 
       /* set up RA, DEC, and distance variables for LALBarycenter*/
+      baryinput.delta = hetParams.hetUpdate.dec + dtpos*hetParams.hetUpdate.pmdec;
       baryinput.alpha = hetParams.hetUpdate.ra +dtpos*hetParams.hetUpdate.pmra/cos(baryinput.delta);
-      baryinput.delta = hetParams.hetUpdate.dec + dtpos*hetParams.hetUpdate.pmdec;;
       baryinput.dInv = 0.0;  /* no parallax */
 
       t = times->data[i]; /* get data time */
