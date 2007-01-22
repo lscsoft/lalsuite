@@ -139,7 +139,6 @@ char *massFileName = NULL;
 char *sourceFileName = NULL;
 char *outputFileName = NULL;
 
-int allowMW=-1;
 float mwLuminosity = -1;
 
 
@@ -445,8 +444,9 @@ int read_source_mass_data( double **pm1, double **pm2 )
   if ( ! fp )
   {
     perror( "read_source_mass_data" );
-    fprintf( stderr, "Could not find file %s\n", fname );
-    fprintf( stderr, "Set environment LALAPPS_DATA_PATH to location of file %s\n", basename );
+    fprintf( stderr, 
+        "Set environment LALAPPS_DATA_PATH to location of file %s\n", 
+        basename );
     exit( 1 );
   }
 
@@ -482,6 +482,7 @@ int read_source_data( void )
   int i;
 
   LALSnprintf( fname, sizeof( fname ), sourceFileName );
+
   if ( ! sourceFileName || ! ( fp = fopen( sourceFileName, "r" ) ) )
   {
     if ( *basename != '.' && *basename != '/' ) /* not abs or rel path */
@@ -497,7 +498,9 @@ int read_source_data( void )
   {
     perror( "read_source_data" );
     fprintf( stderr, "Could not find file %s\n", fname );
-    fprintf( stderr, "Set environment LALAPPS_DATA_PATH to location of file %s\n", basename );
+    fprintf( stderr, 
+        "Set environment LALAPPS_DATA_PATH to location of file %s\n", 
+        basename );
     exit( 1 );
   }
 
@@ -573,15 +576,10 @@ int sky_position( double *dist, double *alpha, double *delta, char *source )
   if ( ! init )
   {
     init = 1;
-    if (allowMW) 
-    {
-      norm = mwLuminosity; /* milky way */
-    } 
-    else 
-    {
-      norm = 0; /* do not use the milky way as sourec, only the source list */
-    } 
+    norm = mwLuminosity; /* milky way */
+
     num_source = read_source_data();
+
     ratio = calloc( num_source, sizeof( *ratio ) );
     if ( ! ratio )
     {
@@ -635,16 +633,14 @@ int inj_params( double *injPar, char *source )
   size_t i;
   double m1=0;
   double m2=0;
-  double alpha;
-  double delta;
+  double alpha = 0;
+  double delta = 0;
   double dist;
   double u;
   double deltaM1=0, deltaM2=0;
   double mtotal=0;
   double minMass=0, maxMass=0;
 
-  /* get sky position */
-  sky_position( &dist, &alpha, &delta, source );
 
   if (massFileName) 
   {
@@ -665,57 +661,69 @@ int inj_params( double *injPar, char *source )
     deltaM1 = maxMass1 - minMass1;
     deltaM2 = maxMass2 - minMass2;
 
-    do {
+    do 
+    {
       if (mDistr == componentMass)
-	{
-	  /* uniformly distributed mass1 and uniformly distributed mass2 */
-	  u=my_urandom();
-	  m1 = minMass1 + u * deltaM1;
-	  u=my_urandom();
-	  m2 = minMass2 + u * deltaM2;
-	}
+      {
+        /* uniformly distributed mass1 and uniformly distributed mass2 */
+        u=my_urandom();
+        m1 = minMass1 + u * deltaM1;
+        u=my_urandom();
+        m2 = minMass2 + u * deltaM2;
+      }
       else if (mDistr == gaussian )
-	{
-	  /* gaussian distributed mass1 and mass2 */
-	  m1 = 0.0;
-	  while ( (m1-maxMass1)*(m1-minMass1) > 0 )
-	    {
-	      u = (float)gsl_ran_gaussian(rngR, massStdev1);
-	      m1 = meanMass1 + u;
-	    }
-	  m2 = 0.0;
-	  while ( (m2-maxMass2)*(m2-minMass2) > 0 )
-	    {
-	      u = (float)gsl_ran_gaussian(rngR, massStdev2);
-	      m2 = meanMass2 + u;
-	    }
-	}
+      {
+        /* gaussian distributed mass1 and mass2 */
+        m1 = 0.0;
+        while ( (m1-maxMass1)*(m1-minMass1) > 0 )
+        {
+          u = (float)gsl_ran_gaussian(rngR, massStdev1);
+          m1 = meanMass1 + u;
+        }
+        m2 = 0.0;
+        while ( (m2-maxMass2)*(m2-minMass2) > 0 )
+        {
+          u = (float)gsl_ran_gaussian(rngR, massStdev2);
+          m2 = meanMass2 + u;
+        }
+      }
       else if (mDistr == totalMass )
-	{
-	  /*uniformly distributed total mass */
-	  u=my_urandom();
-	  minMass=minMass1+minMass2;
-	  maxMass=maxMass1+maxMass2;
-	  mtotal = minMass + u * (maxMass-minMass);
-	  u=my_urandom();
-	  m1 = minMass1 + u * (maxMass1-minMass1);
-	  m2 = mtotal - m1;
-	  
-	  while (m1 >= mtotal || 
-		 m2 >= maxMass2 || m2 <= minMass2 ) 
-	    {
-	      u=my_urandom();
-	      m1 = minMass1 + u * deltaM1;
-	      m2 = mtotal - m1;
-	    }
-	}
-      
+      {
+        /*uniformly distributed total mass */
+        u=my_urandom();
+        minMass=minMass1+minMass2;
+        maxMass=maxMass1+maxMass2;
+        mtotal = minMass + u * (maxMass-minMass);
+        u=my_urandom();
+        m1 = minMass1 + u * (maxMass1-minMass1);
+        m2 = mtotal - m1;
+
+        while (m1 >= mtotal || 
+            m2 >= maxMass2 || m2 <= minMass2 ) 
+        {
+          u=my_urandom();
+          m1 = minMass1 + u * deltaM1;
+          m2 = mtotal - m1;
+        }
+      }
+
     } while (maxMtotal>0 && (m1+m2)>maxMtotal);
   }
 
   /* use the user-specified parameters to calculate the distance */
-  if ( dDistr!=sourceD )
+
+  if ( dDistr == sourceD )
   {
+    /* get sky position */
+    sky_position( &dist, &alpha, &delta, source );
+  }
+  else
+  {
+    /* generate sky angles */
+    alpha = asin( 2.0 * my_urandom() - 1.0 ) ;
+    delta = LAL_TWOPI * my_urandom() ;
+
+
     if (dDistr == uniform )
     {
       /* uniform distribution in distance */
@@ -847,10 +855,10 @@ int main( int argc, char *argv[] )
     {"max-distance",            required_argument, 0,                'r'},
     {"d-distr",                 required_argument, 0,                'e'},
     {"enable-milkyway",         required_argument, 0,                'M'},
+    {"disable-milkyway",              no_argument, 0,                'D'},
     {"output",                  required_argument, 0,                'P'},
     {"lal-eff-dist",                  no_argument, &lalEffDist,       1 },
     {"ilwd",                          no_argument, &ilwd,             1 },
-    {"disable-milkyway",              no_argument, &allowMW,          0 },
     {0, 0, 0, 0}
   };
   int c;
@@ -1024,7 +1032,14 @@ int main( int argc, char *argv[] )
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, "float", 
               "%le", mwLuminosity );
-        allowMW = 1;
+        break;
+
+      case 'D':
+        /* set the luminosity of the Milky Way */
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, "string", 
+              "" );
+        mwLuminosity = 0;
         break;
 
       case 'Z':
@@ -1044,34 +1059,42 @@ int main( int argc, char *argv[] )
         break;
 
       case 'd':
-	optarg_len = strlen( optarg ) + 1;
-	memcpy( dummy, optarg, optarg_len );
-	this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+        optarg_len = strlen( optarg ) + 1;
+        memcpy( dummy, optarg, optarg_len );
+        this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
         LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
-		     PROGRAM_NAME );
+            PROGRAM_NAME );
         LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--m-distr" );
         LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
         LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
             optarg );
 
-	if (!strcmp(dummy, "source")) 
-	{	  
-	  mDistr=sourceM; 
-	} 
-	else if (!strcmp(dummy, "totalMass")) 
-	{
-	  mDistr=totalMass;
-	}  
-	else if (!strcmp(dummy, "componentMass")) 
-	{
-	  mDistr=componentMass;
-	}  
-	else if (!strcmp(dummy, "gaussian")) 
-	{
-	  mDistr=gaussian;
-	} 
-	break;
+        if (!strcmp(dummy, "source")) 
+        {         
+          mDistr=sourceM; 
+        } 
+        else if (!strcmp(dummy, "totalMass")) 
+        {
+          mDistr=totalMass;
+        }  
+        else if (!strcmp(dummy, "componentMass")) 
+        {
+          mDistr=componentMass;
+        }  
+        else if (!strcmp(dummy, "gaussian")) 
+        {
+          mDistr=gaussian;
+        } 
+        else
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "unknown mass distribution: "
+              "%s must be one of (source,totalMass,componentMass,gaussian)\n", 
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
+        break;
 
       case 'j':
         minMass1 = atof( optarg );
@@ -1115,7 +1138,7 @@ int main( int argc, char *argv[] )
               "float", "%le", meanMass1 );
         break;
 
-     case 'N':
+      case 'N':
         meanMass2 = atof( optarg );
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, 
@@ -1177,36 +1200,45 @@ int main( int argc, char *argv[] )
         break;
 
       case 'e':
-	optarg_len = strlen( optarg ) + 1;
-	memcpy( dummy, optarg, optarg_len );
-	this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+        optarg_len = strlen( optarg ) + 1;
+        memcpy( dummy, optarg, optarg_len );
+        this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
         LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
-		     PROGRAM_NAME );
+            PROGRAM_NAME );
         LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--d-distr" );
         LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
         LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
             optarg );
 
-	if (!strcmp(dummy, "source")) 
-	{	  
-	  dDistr=sourceD; 
-	} 
-	else if (!strcmp(dummy, "uniform")) 
-	{
-	  dDistr=uniform;
-	}  
-	else if (!strcmp(dummy, "log10")) 
-	{
-	  dDistr=logten;
-	} 
-	else if (!strcmp(dummy, "volume")) 
-	{
-	  dDistr=volume;
-	} 
-	break;
+        if (!strcmp(dummy, "source")) 
+        {         
+          dDistr=sourceD; 
+        } 
+        else if (!strcmp(dummy, "uniform")) 
+        {
+          dDistr=uniform;
+        }  
+        else if (!strcmp(dummy, "log10")) 
+        {
+          dDistr=logten;
+        } 
+        else if (!strcmp(dummy, "volume")) 
+        {
+          dDistr=volume;
+        } 
+        else
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "unknown source distribution: "
+              "%s must be one of (uniform, log10, volume, source)\n", 
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
 
-    case 'P':
+        break;
+
+      case 'P':
         optarg_len = strlen( optarg ) + 1;
         outputFileName = calloc( 1, optarg_len * sizeof(char) );
         memcpy( outputFileName, optarg, optarg_len * sizeof(char) );
@@ -1232,13 +1264,25 @@ int main( int argc, char *argv[] )
     }
   }
 
-  /* check if proper GRB mode is selected */
-  if (allowMW==-1) {
-    fprintf( stderr, 
-        "Must specify either --enable-milkyway or --disable-milkyway\n" );
-    fprintf( stderr, USAGE );
-    exit( 1 );
+  /* if using source file, check that file and MW choice selected */
+  if (dDistr==sourceD )
+  {
+    if ( mwLuminosity < 0 ) 
+    {
+      fprintf( stderr, 
+          "Must specify either --enable-milkyway or --disable-milkyway\n" );
+      fprintf( stderr, USAGE );
+      exit( 1 );
+    }
+    if ( ! sourceFileName )
+    {
+      fprintf( stderr, 
+          "Must specify --source-file when using --d-distr source \n" );
+      fprintf( stderr, USAGE );
+      exit( 1 );
+    }
   }
+
 
   /* check selection of masses */
   if ( !massFileName && mDistr==sourceM )
@@ -1325,19 +1369,6 @@ int main( int argc, char *argv[] )
     this_proc_param = procparams.processParamsTable;
     procparams.processParamsTable = procparams.processParamsTable->next;
     free( this_proc_param );
-  }
-
-  /* store the milkyway-injection flag */
-  if (!allowMW) 
-  {
-    LALSnprintf( procparams.processParamsTable->program, 
-        LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
-    LALSnprintf( procparams.processParamsTable->param,
-        LIGOMETA_PARAM_MAX, "--disable-milkyway" );
-    LALSnprintf( procparams.processParamsTable->type, 
-        LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( procparams.processParamsTable->value, 
-        LIGOMETA_TYPE_MAX, " " );
   }
 
 
@@ -1542,6 +1573,7 @@ int main( int argc, char *argv[] )
 
   memset( &xmlfp, 0, sizeof(LIGOLwXMLStream) );
 
+
   if ( userTag )
   {
     LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml", 
@@ -1553,10 +1585,10 @@ int main( int argc, char *argv[] )
         rand_seed, gpsStartTime, gpsEndTime - gpsStartTime );
   }
   if ( outputFileName ) {
-     LALSnprintf( fname, sizeof(fname), "%s", 
-		  outputFileName);
+    LALSnprintf( fname, sizeof(fname), "%s", 
+        outputFileName);
   }
-  
+
 
   if ( ! ilwd )
   {
@@ -1573,7 +1605,7 @@ int main( int argc, char *argv[] )
     if ( procparams.processParamsTable )
     {
       LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, process_params_table ),
-            &status );
+          &status );
       LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, procparams, 
             process_params_table ), &status );
       LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
@@ -1582,7 +1614,7 @@ int main( int argc, char *argv[] )
     if ( injections.simInspiralTable )
     {
       LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, sim_inspiral_table ), 
-            &status );
+          &status );
       LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, injections, 
             sim_inspiral_table ), &status );
       LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
