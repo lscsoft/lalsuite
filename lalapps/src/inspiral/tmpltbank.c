@@ -105,9 +105,9 @@ CHAR  *calCacheName     = NULL;         /* location of calibration data */
 INT4   globCalData      = 0;            /* glob for calibration frames  */
 INT4   pointCal         = 0;            /* don't average cal over chunk */
 REAL4  dynRangeExponent = 0;            /* exponent of dynamic range    */
-REAL4 geoHighPassFreq = -1;             /* GEO high pass frequency      */
-INT4  geoHighPassOrder = -1;            /* GEO high pass filter order   */
-REAL4 geoHighPassAtten = -1;            /* GEO high pass attenuation    */
+REAL4  strainHighPassFreq = -1;         /* h(t) high pass frequency     */
+INT4   strainHighPassOrder = -1;        /* h(t) high pass filter order  */
+REAL4  strainHighPassAtten = -1;        /* h(t) high pass attenuation   */
 
 /* template bank generation parameters */
 REAL4   minMass         = -1;           /* minimum component mass       */
@@ -177,7 +177,7 @@ int main ( int argc, char *argv[] )
 
   /* raw input data storage */
   REAL4TimeSeries               chan;
-  REAL8TimeSeries               geoChan;
+  REAL8TimeSeries               strainChan;
   REAL4FrequencySeries          spec;
   COMPLEX8FrequencySeries       resp;
 
@@ -362,12 +362,12 @@ int main ( int argc, char *argv[] )
 
   /* set the params of the input data time series */
   memset( &chan, 0, sizeof(REAL4TimeSeries) );
-  memset( &geoChan, 0, sizeof(REAL8TimeSeries) );
+  memset( &strainChan, 0, sizeof(REAL8TimeSeries) );
   chan.epoch = gpsStartTime;
   chan.epoch.gpsSeconds -= padData; /* subtract pad seconds from start */
 
-  /* copy the start time into the GEO time series */
-  geoChan.epoch = chan.epoch;
+  /* copy the start time into the REAL8 h(t) time series */
+  strainChan.epoch = chan.epoch;
 
   if ( globFrameData )
   {
@@ -432,15 +432,16 @@ int main ( int argc, char *argv[] )
   if ( calData == real_8 )
   {
     /* determine the sample rate of the raw data */
-    LAL_CALL( LALFrGetREAL8TimeSeries( &status, &geoChan, &frChan, frStream ),
-        &status );
+    LAL_CALL( LALFrGetREAL8TimeSeries( &status, &strainChan, &frChan, 
+        frStream ), &status );
 
-    /* copy the data paramaters from the GEO channel to input data channel */
-    LALSnprintf( chan.name, LALNameLength * sizeof(CHAR), "%s", geoChan.name );
-    chan.epoch          = geoChan.epoch;
-    chan.deltaT         = geoChan.deltaT;
-    chan.f0             = geoChan.f0;
-    chan.sampleUnits    = geoChan.sampleUnits;
+    /* copy the data paramaters from the h(t) channel to input data channel */
+    LALSnprintf( chan.name, LALNameLength * sizeof(CHAR), "%s", 
+        strainChan.name );
+    chan.epoch          = strainChan.epoch;
+    chan.deltaT         = strainChan.deltaT;
+    chan.f0             = strainChan.f0;
+    chan.sampleUnits    = strainChan.sampleUnits;
   }
   else
   {
@@ -485,8 +486,8 @@ int main ( int argc, char *argv[] )
   numInputPoints = (UINT4) floor( inputLengthNS / chan.deltaT + 0.5 );
   if ( calData == real_8 )
   {
-    /* create storage for the GEO input data */
-    LAL_CALL( LALDCreateVector( &status, &(geoChan.data), numInputPoints ), 
+    /* create storage for the REAL8 h(t) input data */
+    LAL_CALL( LALDCreateVector( &status, &(strainChan.data), numInputPoints ), 
         &status );
   }
   LAL_CALL( LALSCreateVector( &status, &(chan.data), numInputPoints ), 
@@ -498,48 +499,51 @@ int main ( int argc, char *argv[] )
 
   if ( calData == real_8 )
   {
-    /* read in the GEO data here */
-    PassBandParamStruc geoHighpassParam;
+    /* read in the REAL8 h(t) data here */
+    PassBandParamStruc strainHighpassParam;
 
-    /* read the GEO data from the time series into geoChan      */
+    /* read the REAL8 h(t) data from the time series into strainChan      */
     /* which already has the correct amount of memory allocated */
-    if ( vrbflg ) fprintf( stdout, "reading GEO data from frames... " );
+    if ( vrbflg ) fprintf( stdout, "reading REAL8 h(t) data from frames... " );
 
-    LAL_CALL( LALFrGetREAL8TimeSeries( &status, &geoChan, &frChan, frStream ),
-        &status);
+    LAL_CALL( LALFrGetREAL8TimeSeries( &status, &strainChan, &frChan, 
+        frStream ), &status);
 
     if ( vrbflg ) fprintf( stdout, "done\n" );
 
-    /* high pass the GEO data using the parameters specified on the cmd line */
-    geoHighpassParam.nMax = geoHighPassOrder;
-    geoHighpassParam.f1 = -1.0;
-    geoHighpassParam.f2 = (REAL8) geoHighPassFreq;
-    geoHighpassParam.a1 = -1.0;
-    geoHighpassParam.a2 = (REAL8)(1.0 - geoHighPassAtten);
-    if ( vrbflg ) fprintf( stdout, "applying %d order high pass to GEO data: "
+    /* high pass the h(t) data using the parameters specified on the cmd line*/
+    strainHighpassParam.nMax = strainHighPassOrder;
+    strainHighpassParam.f1 = -1.0;
+    strainHighpassParam.f2 = (REAL8) strainHighPassFreq;
+    strainHighpassParam.a1 = -1.0;
+    strainHighpassParam.a2 = (REAL8)(1.0 - strainHighPassAtten);
+    if ( vrbflg ) fprintf( stdout, 
+        "applying %d order high pass to REAL8 h(t) data: "
         "%3.2f of signal passes at %4.2f Hz\n", 
-        geoHighpassParam.nMax, geoHighpassParam.a2, geoHighpassParam.f2 );
+        strainHighpassParam.nMax, strainHighpassParam.a2, 
+        strainHighpassParam.f2 );
 
-    LAL_CALL( LALButterworthREAL8TimeSeries( &status, &geoChan, 
-          &geoHighpassParam ), &status );
+    LAL_CALL( LALButterworthREAL8TimeSeries( &status, &strainChan, 
+          &strainHighpassParam ), &status );
 
-    /* cast the GEO data to REAL4 in the chan time series       */
+    /* cast the REAL8 h(t) data to REAL4 in the chan time series       */
     /* which already has the correct amount of memory allocated */
     for ( j = 0 ; j < numInputPoints ; ++j )
     {
-      chan.data->data[j] = (REAL4) ( geoChan.data->data[j] * dynRange );
+      chan.data->data[j] = (REAL4) ( strainChan.data->data[j] * dynRange );
     }
 
-    /* re-copy the data paramaters from the GEO channel to input data channel */
-    LALSnprintf( chan.name, LALNameLength * sizeof(CHAR), "%s", geoChan.name );
-    chan.epoch          = geoChan.epoch;
-    chan.deltaT         = geoChan.deltaT;
-    chan.f0             = geoChan.f0;
-    chan.sampleUnits    = geoChan.sampleUnits;
+    /* re-copy the data paramaters from h(t) channel to input data channel */
+    LALSnprintf( chan.name, LALNameLength * sizeof(CHAR), "%s", 
+        strainChan.name );
+    chan.epoch          = strainChan.epoch;
+    chan.deltaT         = strainChan.deltaT;
+    chan.f0             = strainChan.f0;
+    chan.sampleUnits    = strainChan.sampleUnits;
 
-    /* free the REAL8 GEO input data */
-    LAL_CALL( LALDDestroyVector( &status, &(geoChan.data) ), &status );
-    geoChan.data = NULL;
+    /* free the REAL8 h(t) input data */
+    LAL_CALL( LALDDestroyVector( &status, &(strainChan.data) ), &status );
+    strainChan.data = NULL;
   }
   else
   {
@@ -1198,9 +1202,9 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "\n"\
 "  --channel-name CHAN          read data from interferometer channel CHAN\n"\
 "  --calibrated-data TYPE       calibrated data of TYPE real_4 or real_8\n"\
-"  --geo-high-pass-freq F       high pass GEO data above F Hz using an IIR filter\n"\
-"  --geo-high-pass-order O      set the order of the GEO high pass filter to O\n"\
-"  --geo-high-pass-atten A      set the attenuation of the high pass filter to A\n"\
+"  --strain-high-pass-freq F    high pass REAL8 h(t) data above F Hz\n"\
+"  --strain-high-pass-order O   set the order of the h(t) high pass filter to O\n"\
+"  --strain-high-pass-atten A   set the attenuation of the high pass filter to A\n"\
 "  --point-calibration          use the first point in the chunk to calibrate\n"\
 "\n"\
 "  --sample-rate F              filter data at F Hz, downsampling if necessary\n"\
@@ -1280,9 +1284,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"number-of-segments",      required_argument, 0,                'e'},
     {"sample-rate",             required_argument, 0,                'g'},
     {"calibrated-data",         required_argument, 0,                'M'},
-    {"geo-high-pass-freq",      required_argument, 0,                'J'},
-    {"geo-high-pass-order",     required_argument, 0,                'K'},
-    {"geo-high-pass-atten",     required_argument, 0,                'L'},
+    {"strain-high-pass-freq",   required_argument, 0,                'J'},
+    {"strain-high-pass-order",  required_argument, 0,                'K'},
+    {"strain-high-pass-atten",  required_argument, 0,                'L'},
     {"help",                    no_argument,       0,                'h'},
     {"low-frequency-cutoff",    required_argument, 0,                'i'},
     {"spectrum-type",           required_argument, 0,                'j'},
@@ -1530,42 +1534,42 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       case 'J':
-        geoHighPassFreq = (REAL4) atof( optarg );
-        if ( geoHighPassFreq <= 0 )
+        strainHighPassFreq = (REAL4) atof( optarg );
+        if ( strainHighPassFreq <= 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
-              "GEO high pass filter frequency must be greater than 0 Hz: "
+              "REAL8 h(t) high pass filter frequency must be greater than 0 Hz:"
               "(%f Hz specified)\n",
-              long_options[option_index].name, geoHighPassFreq );
+              long_options[option_index].name, strainHighPassFreq );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "float", "%e", geoHighPassFreq );
+        ADD_PROCESS_PARAM( "float", "%e", strainHighPassFreq );
         break;
 
       case 'K':
-        geoHighPassOrder = (INT4) atoi( optarg );
-        if ( geoHighPassOrder <= 0 )
+        strainHighPassOrder = (INT4) atoi( optarg );
+        if ( strainHighPassOrder <= 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
-              "GEO high pass filter order must be greater than 0: "
+              "REAL8 h(t) high pass filter order must be greater than 0: "
               "(%d specified)\n",
-              long_options[option_index].name, geoHighPassOrder );
+              long_options[option_index].name, strainHighPassOrder );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "int", "%d", geoHighPassOrder );
+        ADD_PROCESS_PARAM( "int", "%d", strainHighPassOrder );
         break;
 
       case 'L':
-        geoHighPassAtten = (REAL4) atof( optarg );
-        if ( geoHighPassAtten < 0.0 || geoHighPassAtten > 1.0 )
+        strainHighPassAtten = (REAL4) atof( optarg );
+        if ( strainHighPassAtten < 0.0 || strainHighPassAtten > 1.0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
-              "GEO high pass attenuation must be in the range [0:1]: "
+              "REAL8 h(t) high pass attenuation must be in the range [0:1]: "
               "(%f specified)\n",
-              long_options[option_index].name, geoHighPassAtten );
+              long_options[option_index].name, strainHighPassAtten );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "float", "%e", geoHighPassAtten );
+        ADD_PROCESS_PARAM( "float", "%e", strainHighPassAtten );
         break;
 
       case 'h':
@@ -2261,23 +2265,23 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
   if ( calData == real_8 )
   {
-    /* check that geo high pass parameters have been specified */
-    if ( geoHighPassFreq < 0 )
+    /* check that strain high pass parameters have been specified */
+    if ( strainHighPassFreq < 0 )
     {
       fprintf( stderr, 
-          "--geo-high-pass-freq must be specified for GEO data\n" );
+          "--strain-high-pass-freq must be specified for REAL8 h(t) data\n" );
       exit( 1 );
     }
-    if ( geoHighPassOrder < 0 )
+    if ( strainHighPassOrder < 0 )
     {
       fprintf( stderr, 
-          "--geo-high-pass-order must be specified for GEO data\n" );
+          "--strain-high-pass-order must be specified for REAL8 h(t) data\n");
       exit( 1 );
     }
-    if ( geoHighPassAtten < 0 )
+    if ( strainHighPassAtten < 0 )
     {
       fprintf( stderr, 
-          "--geo-high-pass-atten must be specified for GEO data\n" );
+          "--strain-high-pass-atten must be specified for REAL8 h(t) data\n");
       exit( 1 );
     }
   }
