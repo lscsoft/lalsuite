@@ -897,8 +897,8 @@ int MAIN( int argc, char *argv[]) {
     extraBinsSky = LAL_SQRT2 * VTOT * usefulParams1.spinRange_midTime.fkdot[0] 
       * HSMAX(semiCohPar.patchSizeX, semiCohPar.patchSizeY) / dFreqStack1;
 
-    /* extraBinsfdot = tObs1 * nf1dotRes * df1dotRes / dFreqStack1; */
-    extraBinsfdot = nStacks1;    
+    extraBinsfdot = 0.25 * tObs1 * (nf1dotRes-1) * df1dotRes / dFreqStack1;
+    /* extraBinsfdot = nStacks1;     */
 
     semiCohPar.extraBinsFstat = extraBinsSky + extraBinsfdot;    
     LogPrintf(LOG_DEBUG, "No. of extra Fstat freq. bins = %d for skypatch + %d for residual fdot\n",
@@ -1695,7 +1695,7 @@ void ComputeFstatHoughMap(LALStatus *status,
 
   UINT2  xSide, ySide, maxNBins, maxNBorders;
   INT8  fBinIni, fBinFin, fBin;
-  INT4  iHmap, nfdot, nfdotBy2;
+  INT4  iHmap, nfdot;
   UINT4 k, nStacks ;
   REAL8 deltaF, dfdot, alpha, delta;
   REAL8 patchSizeX, patchSizeY;
@@ -1731,13 +1731,12 @@ void ComputeFstatHoughMap(LALStatus *status,
   /* copy some parameters from peakgram vector */
   deltaF = pgV->pg->deltaF;
   nStacks = pgV->length;
+  fBinIni = pgV->pg[0].fBinIni;
+  fBinFin = pgV->pg[0].fBinFin;
 
   /* copy some params to local variables */
   nfdot = params->nfdot;
   dfdot = params->dfdot;
-  nfdotBy2 = nfdot/2;
-  fBinIni = pgV->pg[0].fBinIni;
-  fBinFin = pgV->pg[0].fBinFin;
   alpha = params->alpha;
   delta = params->delta;
   vel = params->vel;
@@ -1757,6 +1756,18 @@ void ComputeFstatHoughMap(LALStatus *status,
   patchSizeY = params->patchSizeY;
 
 
+  /* calculate time differences from start of observation time for each stack*/
+  TRY( LALDCreateVector( status->statusPtr, &timeDiffV, nStacks), status);
+  
+  for (k=0; k<nStacks; k++) {
+    REAL8 tMidStack;
+
+    TRY ( LALGPStoFloat ( status->statusPtr, &tMidStack, tsMid->data + k), status);
+    timeDiffV->data[k] = tMidStack - refTime;
+  }
+
+
+
   /*--------------- first memory allocation --------------*/
   /* look up table vector */
   lutV.length = nStacks;
@@ -1765,7 +1776,22 @@ void ComputeFstatHoughMap(LALStatus *status,
   
   /* partial hough map derivative vector */
   phmdVS.length  = nStacks;
-  phmdVS.nfSize  = 2*nfdotBy2 + 1;
+
+  {
+    REAL8 maxTimeDiff, startTimeDiff, endTimeDiff;
+    INT4 nfdotBy2;
+
+    startTimeDiff = fabs(timeDiffV->data[0]);
+    endTimeDiff = fabs(timeDiffV->data[timeDiffV->length - 1]);
+    maxTimeDiff = HSMAX( startTimeDiff, endTimeDiff);
+
+    nfdotBy2 = nfdot/2;
+
+    /* phmdVS.nfSize  = 2*nfdotBy2 + 1; */
+    phmdVS.nfSize  = 2 * floor(nfdotBy2 * dfdot * maxTimeDiff / deltaF + 0.5) + 1; 
+
+  }
+
   phmdVS.deltaF  = deltaF;
   phmdVS.phmd = NULL;
   phmdVS.phmd=(HOUGHphmd *)LALMalloc( phmdVS.length * phmdVS.nfSize *sizeof(HOUGHphmd));
@@ -1835,16 +1861,6 @@ void ComputeFstatHoughMap(LALStatus *status,
   }
 
 
-  /* calculate time differences from start of observation time */
-  TRY( LALDCreateVector( status->statusPtr, &timeDiffV, nStacks), status);
-
-  for (k=0; k<nStacks; k++) {
-    REAL8 tMidStack;
-
-    TRY ( LALGPStoFloat ( status->statusPtr, &tMidStack, tsMid->data + k), status);
-    timeDiffV->data[k] = tMidStack - refTime;
-  }
-
  
   /* adjust fBinIni and fBinFin to take maxNBins into account */
   /* and make sure that we have fstat values for sufficient number of bins */
@@ -1852,6 +1868,7 @@ void ComputeFstatHoughMap(LALStatus *status,
 
   fBinIni += params->extraBinsFstat/2;
   fBinFin -= params->extraBinsFstat/2;
+  /* this is not very clean -- the Fstat calculation has to know how many extra bins are needed */
 
   LogPrintf(LOG_DETAIL, "Freq. range analyzed by Hough = [%fHz - %fHz] (%d bins)\n", 
 	    fBinIni*deltaF, fBinFin*deltaF, fBinFin - fBinIni + 1);
@@ -1899,7 +1916,7 @@ void ComputeFstatHoughMap(LALStatus *status,
       }
     }
 
-    for(j=0; j<phmdVS.length * phmdVS.nfSize; ++j){
+    for(j = 0; j < phmdVS.length * phmdVS.nfSize; ++j){
       phmdVS.phmd[j].maxNBorders = maxNBorders;
       phmdVS.phmd[j].leftBorderP =
 	(HOUGHBorder **)LALMalloc(maxNBorders*sizeof(HOUGHBorder *));
@@ -1928,7 +1945,7 @@ void ComputeFstatHoughMap(LALStatus *status,
     }
     
     /*--------- build the set of  PHMD centered around fBin -------------*/     
-    phmdVS.fBinMin = fBin - nfdotBy2;
+    phmdVS.fBinMin = fBin - phmdVS.nfSize/2;
     TRY( LALHOUGHConstructSpacePHMD(status->statusPtr, &phmdVS, pgV, &lutV), status );
     TRY( LALHOUGHWeighSpacePHMD(status->statusPtr, &phmdVS, params->weightsV), status);
     
@@ -1956,13 +1973,14 @@ void ComputeFstatHoughMap(LALStatus *status,
 
       /* finally we can construct the hough maps and select candidates */
       {
-	INT4   n;
+	INT4   n, nfdotBy2;
 
+	nfdotBy2 = nfdot/2;
 	ht.f0Bin = fBinSearch;
 
 	/*loop over all values of residual spindown */
 	/* check limits of loop */
-	for( n = -nfdotBy2; n <= nfdotBy2; n++ ){ 
+	for( n = -nfdotBy2; n <= nfdotBy2 ; n++ ){ 
 
 	  ht.spinRes.data[0] =  n*dfdot; 
 	  
