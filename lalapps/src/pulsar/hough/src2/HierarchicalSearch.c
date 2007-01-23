@@ -1487,7 +1487,7 @@ void SetUpSFTs( LALStatus *status,
   static SFTConstraints constraints;
   REAL8 timebase, tObs, deltaFsft;
   UINT4 k,numSFTby2;
-  LIGOTimeGPS tStartGPS, tEndGPS, refTimeGPS;
+  LIGOTimeGPS tStartGPS, tEndGPS, refTimeGPS, tMidGPS;
   SFTCatalogSequence catalogSeq;
   
   REAL8 doppWings, fMin, fMax;
@@ -1555,26 +1555,29 @@ void SetUpSFTs( LALStatus *status,
 
   
   /* set reference time for pular parameters */
+  /* first calculate the mid time of observation time span*/
+  {
+    REAL8 tStart8, tEnd8, tMid8;
+
+    tStart8 = XLALGPSGetREAL8( &tStartGPS );
+    tEnd8   = XLALGPSGetREAL8( &tEndGPS );
+    tMid8 = 0.5 * (tStart8 + tEnd8);
+    XLALGPSSetREAL8( &tMidGPS, tMid8 );
+  }
+
   if ( in->refTime > 0)  {
     REAL8 refTime = in->refTime;
     TRY ( LALFloatToGPS( status->statusPtr, &refTimeGPS, &refTime), status);
   }
   else {  /* set refTime to exact midtime of the total observation-time spanned */
-    REAL8 tStart8, tEnd8;
-
-    tStart8 = XLALGPSGetREAL8( &tStartGPS );
-    tEnd8   = XLALGPSGetREAL8( &tEndGPS );
-    in->refTime = 0.5 * ( tEnd8 + tStart8 );
-    XLALGPSSetREAL8( &refTimeGPS, in->refTime );
+    refTimeGPS = tMidGPS;
   }
-
   
   /* get frequency and fdot bands at start time of sfts by extrapolating from reftime */
   in->spinRange_refTime.refTime = refTimeGPS;
   TRY( LALExtrapolatePulsarSpinRange( status->statusPtr, &in->spinRange_startTime, tStartGPS, &in->spinRange_refTime), status); 
   TRY( LALExtrapolatePulsarSpinRange( status->statusPtr, &in->spinRange_endTime, tEndGPS, &in->spinRange_refTime), status); 
-  TRY( LALExtrapolatePulsarSpinRange( status->statusPtr, &in->spinRange_midTime, in->midTstack->data[in->nStacks/2], 
-				      &in->spinRange_refTime), status); 
+  TRY( LALExtrapolatePulsarSpinRange( status->statusPtr, &in->spinRange_midTime, tMidGPS, &in->spinRange_refTime), status); 
 
 
   /* set wings of sfts to be read */
