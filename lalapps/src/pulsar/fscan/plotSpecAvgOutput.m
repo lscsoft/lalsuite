@@ -142,6 +142,7 @@ if (taveFlag > 0)
        end
    end
    fclose(fid3);
+  end 
 end
 outputPDFFileName = sprintf('%s.pdf',outputFileName);
 saveas(1, outputPDFFileName);
