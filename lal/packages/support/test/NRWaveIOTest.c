@@ -135,9 +135,10 @@ INT4 lalDebugLevel = 3;
 /* ----------------------------------------------------------------------*/
 int main(int argc, char *argv[])
 { 
-  /* LALStatus status = empty_status; */
+  LALStatus status = empty_status;
 
   CHAR filename[128];
+  NRWaveCatalog nrcatalog;
 
   UINT4 k, length;
   REAL4TimeVectorSeries *nrdata=NULL;
@@ -155,6 +156,23 @@ int main(int argc, char *argv[])
   fprintf(stdout, "%%filename=%s, deltaT=%e sec, Heterodyne Freq.=%e, length=%d \n", 
 	  nrdata->name, nrdata->deltaT, nrdata->f0, nrdata->data->vectorLength);
 
+
+  /* test config file reading */
+  sprintf(filename, "NRWaveIOTest.cfg");
+  SHOULD_WORK (LALNRDataFind( &status, &nrcatalog, filename), &status);
+  fprintf(stdout, "config file %s contains %d waves\n", filename, nrcatalog.length);
+
+  for ( k = 0; k < nrcatalog.length; k++) {
+    fprintf("\n\n Wave # %d:\n", k);
+    fprintf(stdout, "Mass ratio = %f, spin1=(%f,%f,%f), spin2=(%f,%f, %f), l=%d, m=%d, datafile=%s\n", 
+	    nrcatalog.data[k].massRatio, nrcatalog.data[k].spin1[0], nrcatalog.data[k].spin1[1],
+	    nrcatalog.data[k].spin1[2], nrcatalog.data[k].spin2[0], nrcatalog.data[k].spin1[1],
+	    nrcatalog.data[k].spin1[2], nrcatalog.data[k].mode[0], nrcatalog.data[k].mode[1], 
+	    nrcatalog.data[k].filename);
+  }
+
+
+
   /* the following (SFT-bad6) has a wrong CRC64 checksum. However, this is 
    * not checked in LALSFTdataFind, so it should succeed! */
   /*   SHOULD_WORK( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-bad6", NULL ), &status ); */
@@ -162,6 +180,8 @@ int main(int argc, char *argv[])
 
   XLALDestroyREAL4VectorSequence ( nrdata->data );
   LALFree(nrdata);
+
+  LALFree(nrcatalog.data);
 
   LALCheckMemoryLeaks(); 
  

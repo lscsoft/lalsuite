@@ -47,6 +47,13 @@
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
+#include <lal/ConfigFile.h>
+#include <lal/LALStdlib.h>
+#include <lal/LALError.h>
+#include <lal/LALStdio.h>
+#include <lal/FileIO.h>
+#include <lal/StreamInput.h>
+
 
 
 #ifdef  __cplusplus   /* C++ protection. */
@@ -60,13 +67,45 @@ NRCSID (NRWAVEIOH, "$Id$");
 /*@{*/
 #define NRWAVEIO_ENULL 	1
 #define NRWAVEIO_EFILE 	2
-#define NRWAVEIO_EHEADER 	3
-#define NRWAVEIO_EVERSION 	4
-#define NRWAVEIO_EVAL 		5
+#define NRWAVEIO_EVAL 	5
+
+
+#define NRWAVEIO_MSGENULL 	"Null pointer"
+#define NRWAVEIO_MSGEFILE 	"Error in file-IO"
+#define NRWAVEIO_MSGEVAL  	"Invalid value"
+
 /*@}*/
 
+/** Struct containing metadata information about a 
+    single numerical relativity waveform.  This information
+    will be read from a metadata file. It is expected that 
+    more elements will be added to this struct as required.
+*/ 
+typedef struct 
+{
+  REAL8 massRatio; /**< Mass ratio m1/m2 where we assume m1 >= m2*/
+  REAL8 spin1[3];  /**< Spin of m1 */
+  REAL8 spin2[3];  /**< Spin of m2 */
+  INT4  mode[2];   /**< l and m values */
+  CHAR  filename[LALNameLength]; /**< filename where data is stored */
+} 
+NRWaveMetaData;
 
-REAL4TimeVectorSeries * XLALReadNRWave( REAL4  mass, CHAR   *filename); 
+
+/** List of numrel waveform metadata */
+typedef struct
+{
+  UINT4           length; /**< Number of waveforms */
+  NRWaveMetaData  *data;  /**< List of waveforms */
+}
+NRWaveCatalog;
+
+
+REAL4TimeVectorSeries * XLALReadNRWave( REAL4  mass, CHAR *filename); 
+
+void LALNRDataFind( LALStatus *status, NRWaveCatalog *out, CHAR   *filename);
+
+void LALGetSingleNRMetaData( LALStatus *status, NRWaveMetaData *data, const CHAR *cfgstr);
 
 
 #ifdef  __cplusplus

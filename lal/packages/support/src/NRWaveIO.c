@@ -133,3 +133,75 @@ XLALReadNRWave( REAL4  mass,       /**< Value of total mass for setting time sca
 } /* XLALReadNRWave() */
 
 
+
+/** Function for reading a numerical relativity metadata file.
+    It returns a list of numrel wave parameters.  It uses 
+    LALParseDataFile() for reading the data file.  This automatically
+    takes care of removing comment lines starting with # and other details. 
+ */
+void
+LALNRDataFind( LALStatus *status,
+	       NRWaveCatalog *out, /**< list of numrel metadata */
+	       CHAR   *filename /**< File with metadata information */)
+{
+  LALParsedDataFile *cfgdata=NULL;
+  UINT4 k, numWaves;
+
+  INITSTATUS (status, "LALNRDataFind", NRWAVEIOC);
+  ATTATCHSTATUSPTR (status); 
+
+  ASSERT (filename != NULL, status, NRWAVEIO_ENULL, NRWAVEIO_MSGENULL );
+  ASSERT ( out != NULL, status, NRWAVEIO_ENULL, NRWAVEIO_MSGENULL );
+
+  TRY( LALParseDataFile ( status->statusPtr, &cfgdata, filename), status);
+  numWaves = cfgdata->lines->nTokens; /*number of waves */
+
+  /* allocate memory for output catalog */
+  out->length = numWaves;
+  out->data = LALCalloc(1, out->length * sizeof(NRWaveMetaData));
+
+  /* now get wave parameters from each line of data */
+  for (k = 0; k < numWaves; k++) {
+    TRY(LALGetSingleNRMetaData( status->statusPtr, out->data + k, cfgdata->lines->tokens[k]), status);
+  }
+
+  TRY( LALDestroyParsedDataFile (status->statusPtr, &cfgdata), status);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+
+
+
+/** Parse a single string to fill the NRWaveMetaData structure */
+void
+LALGetSingleNRMetaData( LALStatus             *status,
+			NRWaveMetaData  *out, /**< Meta data struct to be filled */
+			const CHAR            *cfgstr /**< config string containing the data for a single NR wave*/) 
+{
+  REAL4 tmpR[7];
+  INT4  tmpI[2];
+
+  INITSTATUS (status, "LALGetSingleNRMetaData", NRWAVEIOC);
+  ATTATCHSTATUSPTR (status); 
+
+  ASSERT (cfgstr != NULL, status, NRWAVEIO_ENULL, NRWAVEIO_MSGENULL );
+  ASSERT (out != NULL, status, NRWAVEIO_ENULL, NRWAVEIO_MSGENULL );
+
+  sscanf(cfgstr, "%f%f%f%f%f%f%f%d%d%s", tmpR, tmpR+1, tmpR+2, tmpR+3, tmpR+4, tmpR+5, 
+	 tmpR+6, tmpI, tmpI+1, out->filename);
+
+  out->massRatio = tmpR[0];
+  out->spin1[0] = tmpR[1];
+  out->spin1[1] = tmpR[2];
+  out->spin1[2] = tmpR[3];
+  out->spin2[0] = tmpR[4];
+  out->spin2[1] = tmpR[5];
+  out->spin2[2] = tmpR[6];
+
+  out->mode[0] = tmpI[0];
+  out->mode[1] = tmpI[1];
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
