@@ -76,9 +76,9 @@ REAL8 XLALcov ( const REAL8Vector *at, const REAL8Vector *bt );
  */
 int
 XLALFlatMetricCW ( gsl_matrix *gij, 				/**< [out] metric */
-		      const MultiDetectorStateSeries *mDetStates,/**< [in] detector-state series */
-		      LIGOTimeGPS refTime			/**< [in] reference time for spin-parameters */
-		      )
+		   const MultiDetectorStateSeries *mDetStates,/**< [in] detector-state series */
+		   LIGOTimeGPS refTime			/**< [in] reference time for spin-parameters */
+		   )
 {
   UINT4 dim, numSpins, s, sp;
   UINT4 X, numDet;

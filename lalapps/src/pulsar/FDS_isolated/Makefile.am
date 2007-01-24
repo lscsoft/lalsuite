@@ -19,7 +19,7 @@ bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnal
 	lalapps_makeInvetofile lalapps_extractSFTband lalapps_FindSh \
 	lalapps_monteint lalapps_skynet getMetric lalapps_zellepolka	\
 	testLatticeCovering testFlatPulsarMetric matchGrids	\
-	getMesh ComputeFStatistic_v2 lalapps_PredictFStat
+	getMesh ComputeFStatistic_v2 lalapps_PredictFStat FstatMetric
 
 EXTRA_PROGRAMS = $(FRAMEPROGRAMS) 
 
@@ -77,3 +77,5 @@ testLatticeCovering_SOURCES = testLatticeCovering.c  DopplerScan.c
 testFlatPulsarMetric_SOURCES = testFlatPulsarMetric.c FlatPulsarMetric.c FlatPulsarMetric.h
 
 matchGrids_SOURCES = matchGrids.c DopplerScan.c
+
+FstatMetric_SOURCES = FstatMetric.c 
