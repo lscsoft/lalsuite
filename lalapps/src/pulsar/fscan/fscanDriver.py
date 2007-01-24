@@ -545,7 +545,7 @@ if (htmlFilename != None):
   htmlFID.write('</div>\n')
   htmlFID.write('<br>\n')
   if (htmlReferenceDir != None) and (thresholdSNR > 0):
-    htmlLinesFilename = 'Lines_%s' % htmlFilename
+    htmlLinesFilename = '%s_Lines.html' % htmlFilename
     htmlLinesFID = file(htmlLinesFilename,'w')
     htmlLinesFID.write('<html>\n')
     htmlLinesFID.write('<head>\n')
