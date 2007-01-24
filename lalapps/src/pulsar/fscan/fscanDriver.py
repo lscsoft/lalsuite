@@ -604,7 +604,7 @@ while (thisEndFreq < endFreq):
      deltaFTicks = 5
      taveFlag = 1
      if (htmlReferenceDir != None):
-        referenceFileName = '%s/spec_%d.00_%d.00_%s\n' % (htmlReferenceDir,thisStartFreq,thisEndFreq,htmlRefIFOEpoch)
+        referenceFileName = '%s/spec_%d.00_%d.00_%s' % (htmlReferenceDir,thisStartFreq,thisEndFreq,htmlRefIFOEpoch)
      else:
         referenceFileName = 'none'
      argList = '%s %s %s %d %d %d %d %d %d %d %d %d %d %s' % (inputFileName,outputFileName,channelName,analysisStartTime,analysisEndTime,thisStartFreq,thisEndFreq,effTBase,deltaFTicks,taveFlag,effTBaseFull,thresholdSNR,coincidenceDeltaF,referenceFileName)
@@ -619,7 +619,7 @@ while (thisEndFreq < endFreq):
      htmlFID.write('    <a href="%s.pdf"><img alt="" src="%s.png" style="border: 0px solid ; width: 576px; height: 432px;"></a><br>\n' % (inputFileName,inputFileName))
      htmlFID.write('  </td>\n')
      if (htmlReferenceDir != None):
-        referenceFileName = '%s/spec_%d.00_%d.00_%s\n' % (htmlReferenceDir,thisStartFreq,thisEndFreq,htmlRefIFOEpoch)
+        referenceFileName = '%s/spec_%d.00_%d.00_%s' % (htmlReferenceDir,thisStartFreq,thisEndFreq,htmlRefIFOEpoch)
         htmlFID.write('  <td style="vertical-align: top;">\n')
         htmlFID.write('    <a href="%s.pdf"><img alt="" src="%s.png" style="border: 0px solid ; width: 576px; height: 432px;"></a><br>\n' % (referenceFileName,referenceFileName))
         htmlFID.write('  </td>\n')     
