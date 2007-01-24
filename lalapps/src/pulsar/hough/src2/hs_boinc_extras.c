@@ -21,6 +21,11 @@
 #include "graphics_lib.h"
 #endif
 
+/* this includes patches for chdir() and sleep() */
+#ifdef _WIN32
+#include "win_lib.h"
+#endif
+
 #include "hs_boinc_extras.h"
 #include "HierarchicalSearch.h"
 #include <lal/LogPrintf.h>
@@ -181,11 +186,14 @@ static void sighandler(int sig){
   show_progress()
  */
 void show_progress(double rac, double dec, UINT4 count, UINT4 total) {
+  double fraction = (double)count / (double)total;
+
+  /* set globals */
   last_rac = rac;
   last_dec = dec;
   last_count = count;
   last_total = total;
-  double fraction = (double)count / (double)total;
+
   if (fraction_done_hook)
     *fraction_done_hook = fraction;
   if (set_search_pos_hook)
