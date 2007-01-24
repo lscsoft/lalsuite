@@ -3,8 +3,7 @@
 */
 
 /* TODO:
-   - sanity checking of values read from the checkpoint file
-       before modifying important variables
+   - cleanup of toplist if something goes wrong reading it from checkpoint
    - error handling in checkpointing
    - catch malloc errors in worker()
    - behavior when boinc_is_standlone()?
@@ -725,10 +724,10 @@ int main(int argc, char**argv) {
 void init_and_read_checkpoint(toplist_t*toplist, UINT4*count,
 			      UINT4 total, char*outputname, char*cptname) {
   FILE*fp;
-  UINT4 checksum, bytes, tot;
+  unsigned int  checksum, bytes;
+  unsigned long count_read, total_read;
+  int scanned;
 
-  /* fixme: input checks */
-  
   fstat_cpt_file_create (&cptf, outputname, bufsize, maxsize, toplist);
 
   fstat_cpt_file_open (cptf);
@@ -744,21 +743,40 @@ void init_and_read_checkpoint(toplist_t*toplist, UINT4*count,
 
   fp = fopen(cptfilename,"r");
   
-  if (fp) {
-    LogPrintf (LOG_DEBUG,  "Found checkpoint - reading...\n");
-    if (6 == fscanf(fp,"%lf,%lf,%lu,%lu,%u,%u",
-		    &last_rac, &last_dec,
-		    count, &tot,
-		    &checksum, &bytes))
-      if (tot == total) {
-	LogPrintf (LOG_DEBUG,  "Read checkpoint - reading previous output...\n");
-	fstat_cpt_file_read (cptf, checksum, bytes);
-      } else {
-	LogPrintf (LOG_DEBUG,  "Couldn't read checkpoint - startng over\n");
-      }
-    fclose(fp);
+  if (!fp) {
+    LogPrintf (LOG_DEBUG,  "Couldn't open checkpoint - startng over\n");
+    return;
   }
+
+  LogPrintf (LOG_DEBUG,  "Found checkpoint - reading...\n");
+
+  scanned = fscanf(fp,"%lf,%lf,%lu,%lu,%u,%u\n",
+		  &last_rac, &last_dec,
+		  &count_read, &total_read,
+		  &checksum, &bytes);
+
+  fclose(fp);
+
+  if (scanned != 6) {
+    LogPrintf (LOG_DEBUG,  "Error reading checkpoint - startng over\n");
+    return;
+  }
+
+  if (total_read != total) {
+    LogPrintf (LOG_DEBUG,  "Error reading checkpoint - startng over\n");
+    return;
+  }
+
+  LogPrintf (LOG_DEBUG,  "Read checkpoint - reading previous output...\n");
+
+  if (0 > fstat_cpt_file_read (cptf, checksum, bytes)) {
+    LogPrintf (LOG_DEBUG,  "Error reading previous output - startng over\n");
+    return;
+  }
+
+  *count = count_read;
 }
+
 
 
 /* set_checkpoint() */
@@ -782,4 +800,3 @@ void write_and_close_checkpointed_file (void) {
   fstat_cpt_file_close(cptf);
   fstat_cpt_file_destroy(&cptf);
 }
-
