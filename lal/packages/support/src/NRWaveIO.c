@@ -181,6 +181,7 @@ LALGetSingleNRMetaData( LALStatus             *status,
 {
   REAL4 tmpR[7];
   INT4  tmpI[2];
+  INT4 test;
 
   INITSTATUS (status, "LALGetSingleNRMetaData", NRWAVEIOC);
   ATTATCHSTATUSPTR (status); 
@@ -188,9 +189,19 @@ LALGetSingleNRMetaData( LALStatus             *status,
   ASSERT (cfgstr != NULL, status, NRWAVEIO_ENULL, NRWAVEIO_MSGENULL );
   ASSERT (out != NULL, status, NRWAVEIO_ENULL, NRWAVEIO_MSGENULL );
 
-  sscanf(cfgstr, "%f%f%f%f%f%f%f%d%d%s", tmpR, tmpR+1, tmpR+2, tmpR+3, tmpR+4, tmpR+5, 
+  test = sscanf(cfgstr, "%f%f%f%f%f%f%f%d%d%s", tmpR, tmpR+1, tmpR+2, tmpR+3, tmpR+4, tmpR+5, 
 	 tmpR+6, tmpI, tmpI+1, out->filename);
 
+  /* Check the metadata file format */
+  if ( test != 10) {
+    /* there must be exactly 10 data entries 
+       -- massratio, spin1[3], spin2[3], l, m, filename */
+    ABORT( status, NRWAVEIO_EFORMAT, NRWAVEIO_MSGEFORMAT );
+  }
+
+  /*** need a few more format checks here ***/
+
+  /* copy values to out */
   out->massRatio = tmpR[0];
   out->spin1[0] = tmpR[1];
   out->spin1[1] = tmpR[2];

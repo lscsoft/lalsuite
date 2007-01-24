@@ -68,12 +68,12 @@ NRCSID (NRWAVEIOH, "$Id$");
 #define NRWAVEIO_ENULL 	1
 #define NRWAVEIO_EFILE 	2
 #define NRWAVEIO_EVAL 	5
-
+#define NRWAVEIO_EFORMAT 6
 
 #define NRWAVEIO_MSGENULL 	"Null pointer"
 #define NRWAVEIO_MSGEFILE 	"Error in file-IO"
 #define NRWAVEIO_MSGEVAL  	"Invalid value"
-
+#define NRWAVEIO_MSGEFORMAT     "Meta data file format incorrect"
 /*@}*/
 
 /** Struct containing metadata information about a 
