@@ -129,7 +129,7 @@ RCSID( "$Id$");
 #ifdef EAH_BOINC
 #include "hs_boinc_extras.h"
 #else
-#undef  HS_CHECKPOINTING /* no checkpointing in the non-BOINC case (yet) */
+#define HS_CHECKPOINTING 0 /* no checkpointing in the non-BOINC case (yet) */
 #define GET_CHECKPOINT(toplist,total,count,outputname,cptname) *total=0;
 #define INSERT_INTO_FSTAT_TOPLIST insert_into_fstat_toplist
 #define SHOW_PROGRESS(rac,dec,tpl_count,tpl_total)
@@ -1360,7 +1360,7 @@ int MAIN( int argc, char *argv[]) {
   }
 	
 
-#ifndef HS_CHECKPOINTING
+#if (!HS_CHECKPOINTING)
   /* print 1st stage candidates */  
   {
     if (!(fpSemiCoh = fopen(fnameSemiCohCand, "wb"))) 

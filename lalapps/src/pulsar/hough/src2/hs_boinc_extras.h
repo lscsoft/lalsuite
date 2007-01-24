@@ -19,11 +19,11 @@ NRCSID(HSBOINCEXTRASHRCSID,"$Id$");
 #define SHOW_PROGRESS show_progress
 #define fopen boinc_fopen
 
-/* for now, as we can't properly test it
-   - undef'd this shouldn't change any functionality at all */
-#undef  HS_CHECKPOINTING
-
 #ifdef HS_CHECKPOINTING
+#define HS_CHECKPOINTING 0
+#endif
+
+#if (HS_CHECKPOINTING)
 #define GET_CHECKPOINT init_and_read_checkpoint
 #define INSERT_INTO_FSTAT_TOPLIST add_candidate_and_checkpoint
 #else
