@@ -64,8 +64,11 @@ typedef struct {
   LALPulsarMetricType metricType; 	/**< which metric to use if GRID_METRIC */
   PulsarDopplerParams stepSizes;	/**< user-settings for stepsizes if GRID_FLAT */
   REAL8 metricMismatch;			/**< for GRID_METRIC and GRID_ISOTROPIC */
-  CHAR *gridFile;			/**< filename for sky-grid or full-grid if GRID_FILE_SKYGRID or GRID_FILE_FULLGRID */
-  EphemerisData *ephemeris;		/**< ephemeris-data for "exact" metric */  
+  LIGOTimeGPS startTime;		/**< start-time of the observation */
+  REAL8 Tspan;				/**< total time spanned by observation */
+  const LALDetector *Detector; 		/**< Current detector */
+  const EphemerisData *ephemeris;	/**< ephemeris-data for numerical metrics */  
+  const CHAR *gridFile;			/**< filename for sky-grid or full-grid if GRID_FILE_SKYGRID or GRID_FILE_FULLGRID */
 } DopplerFullScanInit;
 
 /** opaque type to reflects the current state of a full multi-dimensional DopplerScan */
@@ -78,8 +81,7 @@ typedef struct tagDopplerFullScanState DopplerFullScanState; 	/* opaque type */
 /*---------- external prototypes [API] ----------*/
 
 /* ----- full-fledged multi-dimensional Doppler scanner functions ----- */
-void InitDopplerFullScan(LALStatus *, DopplerFullScanState **scanState, const MultiDetectorStateSeries *mdetStates, 
-			 const DopplerFullScanInit *init);
+void InitDopplerFullScan(LALStatus *, DopplerFullScanState **scanState, const DopplerFullScanInit *init);
 void loadFullGridFile ( LALStatus *, DopplerFullScanState *scan, const DopplerFullScanInit *init );
 
 int  XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan);

@@ -64,7 +64,7 @@ struct tagDopplerFullScanState {
 
   /* ----- full multi-dim parameter-space grid stuff ----- */
   gsl_matrix *gij;			/**< flat parameter-space metric */
-  LIGOTimeGPS refTime;		/**< reference time for grid templates */
+  LIGOTimeGPS refTime;			/**< reference time for grid templates */
   REAL8VectorList *covering;		/**< multi-dimensional covering */
   REAL8VectorList *thisGridPoint; 	/**< pointer to current grid-point */
 
@@ -82,8 +82,8 @@ const DopplerFullScanState empty_DopplerFullScanState;
 extern INT4 lalDebugLevel;
 
 /*---------- internal prototypes ----------*/
-void initLatticeCovering(LALStatus *, DopplerFullScanState *scan, const MultiDetectorStateSeries *mdetStates, const DopplerFullScanInit *init);
-void initFactoredGrid (LALStatus *, DopplerFullScanState *scan,	const MultiDetectorStateSeries *mdetStates, const DopplerFullScanInit *init);
+void initLatticeCovering(LALStatus *, DopplerFullScanState *scan, const DopplerFullScanInit *init);
+void initFactoredGrid (LALStatus *, DopplerFullScanState *scan,	const DopplerFullScanInit *init);
 int nextPointInFactoredGrid (PulsarDopplerParams *pos, DopplerFullScanState *scan);
 int printGSLmatrix ( FILE *fp, const CHAR *fmt, const gsl_matrix *mat );
 
@@ -100,7 +100,6 @@ int printGSLmatrix ( FILE *fp, const CHAR *fmt, const gsl_matrix *mat );
 void 
 InitDopplerFullScan(LALStatus *status, 
 		    DopplerFullScanState **scan,		/**< [out] initialized Doppler scan state */
-		    const MultiDetectorStateSeries *mdetStates,	/**< [in] used for list of integration timestamps and detector-info */
 		    const DopplerFullScanInit *init		/**< [in] initialization parameters */
 		    )
 {
@@ -111,7 +110,6 @@ InitDopplerFullScan(LALStatus *status,
 
   ASSERT ( scan, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
   ASSERT ( *scan == NULL, status, DOPPLERSCANH_ENONULL, DOPPLERSCANH_MSGENONULL );  
-  ASSERT ( mdetStates, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
   ASSERT ( init, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
 
   if ( (thisScan = LALCalloc (1, sizeof(*thisScan) )) == NULL ) {
@@ -130,18 +128,18 @@ InitDopplerFullScan(LALStatus *status,
     case GRID_FILE_SKYGRID:
     case GRID_METRIC_SKYFILE:
       /* backwards-compatibility mode */
-      TRY ( initFactoredGrid ( status->statusPtr, thisScan, mdetStates, init ), status );
+      TRY ( initFactoredGrid ( status->statusPtr, thisScan, init ), status );
       break;
 
       /* ----- multi-dimensional covering of full parameter space ----- */
     case GRID_FILE_FULLGRID:
       TRY ( loadFullGridFile ( status->statusPtr, thisScan, init ), status );
-      thisScan->refTime = mdetStates->startTime;
+      thisScan->refTime = init->startTime;
       break;
 
     case GRID_METRIC_LATTICE:
       /* NOTE: experimental und under construction */
-      TRY ( initLatticeCovering ( status->statusPtr, thisScan, mdetStates, init ), status );
+      TRY ( initLatticeCovering ( status->statusPtr, thisScan, init ), status );
       
       break;
 
@@ -168,7 +166,6 @@ InitDopplerFullScan(LALStatus *status,
 void 
 initFactoredGrid (LALStatus *status, 
 		  DopplerFullScanState *scan,			/**< [bout] initialized Doppler scan state */
-		  const MultiDetectorStateSeries *mdetStates, 	/**< [in] used for list of integration timestamps and detector-info */
 		  const DopplerFullScanInit *init		/**< [in] initialization parameters */
 		  )
 {
@@ -182,7 +179,6 @@ initFactoredGrid (LALStatus *status,
 
   ASSERT ( scan, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
   ASSERT ( scan->state == STATE_IDLE, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
-  ASSERT ( mdetStates, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
   ASSERT ( init, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
 
   /* prepare initialization of DopplerSkyScanner to step through paramter space */
@@ -192,10 +188,10 @@ initFactoredGrid (LALStatus *status,
   skyScanInit.metricType = init->metricType;
   skyScanInit.metricMismatch = init->metricMismatch;
   skyScanInit.projectMetric = TRUE;
-  skyScanInit.obsBegin = mdetStates->startTime;
-  skyScanInit.obsDuration = mdetStates->Tspan;
+  skyScanInit.obsBegin = init->startTime;
+  skyScanInit.obsDuration = init->Tspan;
 
-  skyScanInit.Detector = &(mdetStates->data[0]->detector);
+  skyScanInit.Detector = init->Detector;
   skyScanInit.ephemeris = init->ephemeris;		/* used only by Ephemeris-based metric */
   skyScanInit.skyGridFile = init->gridFile;
   skyScanInit.skyRegionString = init->searchRegion.skyRegionString;
@@ -441,7 +437,6 @@ FreeDopplerFullScan (LALStatus *status, DopplerFullScanState **scan)
 void
 initLatticeCovering ( LALStatus *status, 
 		     DopplerFullScanState *scan, 
-		     const MultiDetectorStateSeries *mdetStates, 
 		     const DopplerFullScanInit *init)
 {
   UINT4 numSpins, dim;
@@ -451,7 +446,6 @@ initLatticeCovering ( LALStatus *status,
 
   ASSERT ( scan, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
   ASSERT ( scan->state == STATE_IDLE, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
-  ASSERT ( mdetStates, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
   ASSERT ( init, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
 
   /* determine number of spins to compute metric for (at least 1) */
@@ -465,11 +459,13 @@ initLatticeCovering ( LALStatus *status,
   if ( (scan->gij = gsl_matrix_calloc (dim, dim)) == NULL ) {
     ABORT (status, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
   }
+  /* 
   if ( XLALFlatMetricCW ( scan->gij, mdetStates, init->searchRegion.refTime ) != 0 ) {
     LALPrintError ("\nCall to XLALFlatMetricCW() failed!\n\n");
     ABORT ( status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL );
   }
-  
+  */
+
   printGSLmatrix ( stderr, "%.9f ", scan->gij );
 
 

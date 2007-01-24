@@ -908,9 +908,12 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
     scanInit.metricMismatch = uvar_metricMismatch;
     scanInit.stepSizes = cfg->stepSizes;
     scanInit.ephemeris = cfg->ephemeris;		/* used by Ephemeris-based metric */
-    
+    scanInit.startTime = cfg->multiDetStates->startTime;
+    scanInit.Tspan     = cfg->multiDetStates->Tspan;
+    scanInit.Detector  = &(cfg->multiDetStates->data[0]->detector);	/* just use first IFO for metric */
+
     LogPrintf (LOG_DEBUG, "Setting up template grid ... ");
-    TRY ( InitDopplerFullScan ( status->statusPtr, &cfg->scanState, cfg->multiDetStates, &scanInit), status); 
+    TRY ( InitDopplerFullScan ( status->statusPtr, &cfg->scanState, &scanInit), status); 
     LogPrintf (LOG_DEBUG, "template grid ready: %.0f templates.\n", XLALNumDopplerTemplates ( cfg->scanState ) );
   }
 
